@@ -3659,7 +3659,7 @@ end
 
 relation is_ext_explicit_call : Absyn.ExternalDecl => () =
 
-  axiom is_ext_explicit_call Absyn.EXTERNALDECL(SOME(id),_,_,_)
+  axiom is_ext_explicit_call Absyn.EXTERNALDECL(SOME(id),_,_,_,_)
 
 end
 
@@ -3690,17 +3690,17 @@ relation inst_ext_make_externaldecl: (Ident, SCode.Element list, Absyn.ExternalD
 	Util.list_map (invars, inst_ext_make_crefs) => explists &
 	Util.list_flatten explists => exps &
 	inst_ext_make_crefs outvar => [Absyn.CREF(retcref)] &
-	let extdecl = Absyn.EXTERNALDECL(SOME(id),lang,SOME(retcref),exps)
+	let extdecl = Absyn.EXTERNALDECL(SOME(id),lang,SOME(retcref),exps,NONE)
 	------------------------------------------------
-	inst_ext_make_externaldecl (id, els, Absyn.EXTERNALDECL(_,lang,_,_)) 
+	inst_ext_make_externaldecl (id, els, Absyn.EXTERNALDECL(_,lang,_,_,_)) 
 	  => extdecl
 
   rule	Util.list_matching (els, is_inout_var) => inoutvars &
 	Util.list_map (inoutvars, inst_ext_make_crefs) => explists &
 	Util.list_flatten explists => exps &
-	let extdecl = Absyn.EXTERNALDECL(SOME(id),lang,NONE,exps)
+	let extdecl = Absyn.EXTERNALDECL(SOME(id),lang,NONE,exps,NONE)
 	------------------------------------------------
-	inst_ext_make_externaldecl (id, els, Absyn.EXTERNALDECL(_,lang,_,_)) 
+	inst_ext_make_externaldecl (id, els, Absyn.EXTERNALDECL(_,lang,_,_,_)) 
 	  => extdecl
 
   rule	Debug.fprint("failtrace", "#-- inst_ext_make_externaldecl failed\n")
@@ -3786,8 +3786,8 @@ end
 
 relation inst_ext_get_fname : (Absyn.ExternalDecl, Ident) => Ident =
 
-  axiom	inst_ext_get_fname (Absyn.EXTERNALDECL(SOME(id),_,_,_), fid) => id
-  axiom	inst_ext_get_fname (Absyn.EXTERNALDECL(NONE,_,_,_), fid) => fid
+  axiom	inst_ext_get_fname (Absyn.EXTERNALDECL(SOME(id),_,_,_,_), fid) => id
+  axiom	inst_ext_get_fname (Absyn.EXTERNALDECL(NONE,_,_,_,_), fid) => fid
 
 end
 
@@ -3800,9 +3800,9 @@ end
 
 relation inst_ext_get_lang : Absyn.ExternalDecl => string =
 
-  axiom	inst_ext_get_lang Absyn.EXTERNALDECL(_,SOME(lang),_,_) => lang
+  axiom	inst_ext_get_lang Absyn.EXTERNALDECL(_,SOME(lang),_,_,_) => lang
 
-  axiom	inst_ext_get_lang Absyn.EXTERNALDECL(_,NONE,_,_) => "C"
+  axiom	inst_ext_get_lang Absyn.EXTERNALDECL(_,NONE,_,_,_) => "C"
 end
 
 (** relation: elab_exp_list_ext
@@ -3868,7 +3868,7 @@ relation inst_ext_get_fargs : (Env.Env, Absyn.ExternalDecl, bool (*impl*) ) => D
   rule	elab_exp_list_ext (env, absexps, impl, NONE) => (exps,props,_) &
 	inst_ext_get_fargs2 (env, exps, props) => extargs	
 	---------------------------------------------------------
-	inst_ext_get_fargs (env, Absyn.EXTERNALDECL(id,lang,retcr,absexps),impl) => extargs
+	inst_ext_get_fargs (env, Absyn.EXTERNALDECL(id,lang,retcr,absexps,_),impl) => extargs
 
   rule	Debug.fprint("failtrace", "- inst_ext_get_fargs failed\n")
 	-------------------------------------------------
@@ -3937,12 +3937,12 @@ end
 relation inst_ext_get_rettype : (Env.Env, Absyn.ExternalDecl, bool (*impl*) ) 
 	  => DAE.ExtArg =
 
-  axiom	inst_ext_get_rettype (_, Absyn.EXTERNALDECL(_,_,NONE,_),_) => DAE.NOEXTARG
+  axiom	inst_ext_get_rettype (_, Absyn.EXTERNALDECL(_,_,NONE,_,_),_) => DAE.NOEXTARG
 
   rule	Static.elab_cref (env,cref,impl) => (exp,prop,acc) &
 	inst_ext_get_fargs_single (env, exp,prop) => extarg
 	-----------------------------------------
-	inst_ext_get_rettype (env,Absyn.EXTERNALDECL(n,lang,SOME(cref),args),impl) => extarg
+	inst_ext_get_rettype (env,Absyn.EXTERNALDECL(n,lang,SOME(cref),args,_),impl) => extarg
 
   rule	Debug.fprint("failtrace", "#-- inst_ext_rettype failed\n")
 	--------------------------------------------------------

@@ -372,7 +372,7 @@ relation print_componentitem: Absyn.ComponentItem => Node =
   rule	print "" &
 	let nn = Graphviz.NODE(n,[],[]) 
 	--------
-	print_componentitem(Absyn.COMPONENTITEM(Absyn.COMPONENT(n,a,m),_)) => Graphviz.LNODE("COMPONENT",[n],[],[nn])
+	print_componentitem(Absyn.COMPONENTITEM(Absyn.COMPONENT(n,a,m),_,_)) => Graphviz.LNODE("COMPONENT",[n],[],[nn])
 end
 
 (** relation: print_equations

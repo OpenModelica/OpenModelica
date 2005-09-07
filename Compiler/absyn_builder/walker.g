@@ -57,7 +57,8 @@ tokens {
     void* make_inner_outer(RefMyAST &i,RefMyAST &o)
     {
 		void *innerouter;
-		if (i!=NULL) {
+        if (i!=NULL && o != NULL) { innerouter = Absyn__INNEROUTER; }
+        else if (i!=NULL) {
 			innerouter = Absyn__INNER; 
 		} else if (o != NULL) {
 			innerouter = Absyn__OUTER;
@@ -67,6 +68,19 @@ tokens {
 		return innerouter;
 	}
     
+    void* make_redeclare_keywords(bool replaceable,bool redeclare)
+    {
+		void *keywords=0;
+        if (replaceable && redeclare) {
+            keywords = Absyn__REDECLARE_5fREPLACEABLE;
+        } else if (replaceable) {
+            keywords = Absyn__REPLACEABLE; 
+        } else if (redeclare) {
+            keywords = Absyn__REDECLARE;
+        } 
+		return keywords;
+	}
+
     int str_to_int(mstring const& str)
     {
 		return atoi(str.c_str());
@@ -198,16 +212,20 @@ class_definition [bool final] returns [ void* ast ]
         #(CLASS_DEFINITION 
             (e:ENCAPSULATED )? 
             (p:PARTIAL )?
+            (ex:EXPANDABLE)?
             restr = class_restriction
-            i:IDENT 	
+            (i:IDENT)?
             class_spec = class_specifier
         )
         {   
+            if (ex && restr == Absyn__R_5fCONNECTOR ) {
+                restr = Absyn__R_5fEXP_5fCONNECTOR;
+            }
             ast = Absyn__CLASS(
-                to_rml_str(i),
+                i? to_rml_str(i): mk_scon(""),
                 RML_PRIM_MKBOOL(p != 0),
-				RML_PRIM_MKBOOL(final),
-				RML_PRIM_MKBOOL(e != 0), 
+                RML_PRIM_MKBOOL(final),
+                RML_PRIM_MKBOOL(e != 0), 
                 restr,
                 class_spec,
                 mk_scon((char*)(modelicafilename.c_str()))
@@ -232,6 +250,7 @@ class_specifier returns [void* ast]
 {
 	void *comp = 0;
 	void *cmt = 0;
+    void *cmod = 0;
 }
 	:
 		( (cmt = string_comment )
@@ -240,8 +259,45 @@ class_specifier returns [void* ast]
 				ast = Absyn__PARTS(comp,cmt ? mk_some(cmt) : mk_none());
 			}
 		)
-	| #(EQUALS ( ast = derived_class | ast = enumeration | ast = overloading)) 
+	| #(EQUALS ( ast = derived_class 
+            | ast = enumeration 
+            | ast = overloading
+            | ast = pder )) 
+    | #(CLASS_EXTENDS i:IDENT (cmod = class_modification)? 
+                        cmt = string_comment comp = composition)
+        {
+            if (!cmod) { cmod = mk_nil(); }
+            ast = Absyn__CLASS_5fEXTENDS(
+                to_rml_str(i),
+                cmod,
+                cmt ? mk_some(cmt) : mk_none(),
+                comp);
+        }
 	;
+
+pder returns [void* ast] 
+{
+    void* func=0;
+    void* var_lst=0;
+}
+    : #(DER func = name_path var_lst = ident_list)
+        {
+            ast = Absyn__PDER(func,var_lst);
+        }
+    ;
+
+ident_list returns [void* ast]
+{
+    l_stack el_stack;
+}
+    : #(IDENT_LIST 
+            (i:IDENT { el_stack.push(to_rml_str(i)); } )
+            (i2:IDENT {el_stack.push(to_rml_str(i2));} )*
+        )
+        {
+            ast = make_rml_list_from_stack(el_stack);
+        }
+    ;
 
 overloading returns [void *ast]
 {
@@ -305,18 +361,27 @@ enumeration returns [void* ast]
 }
     : 
 		#(ENUMERATION 
-			el = enumeration_literal
-			{ el_stack.push(el); }
 			(
-				el = enumeration_literal
-				{ el_stack.push(el); }
-				
-			)* 
+                (el = enumeration_literal
+                    { el_stack.push(el); }
+                    (
+                        el = enumeration_literal
+                        { el_stack.push(el); }
+                        
+                    )*) 
+            |
+                c:COLON
+            )
 			(cmt=comment)?
 		)
 		{
-			ast = Absyn__ENUMERATION(make_rml_list_from_stack(el_stack),
-				cmt ? mk_some(cmt) : mk_none());
+            if (c) {
+                ast = Absyn__ENUMERATION(Absyn__ENUM_5fCOLON,
+                cmt ? mk_some(cmt) : mk_none());
+            } else {
+                ast = Absyn__ENUMERATION(Absyn__ENUMLITERALS(make_rml_list_from_stack(el_stack)),
+                    cmt ? mk_some(cmt) : mk_none());
+            }
 		}
 	;
 
@@ -334,7 +399,7 @@ composition returns [void* ast]
 {
     void* el = 0;
     l_stack el_stack;
-    void * ann;	
+    void * ann = 0;	
 }
     :
         el = element_list
@@ -354,10 +419,10 @@ composition returns [void* ast]
         )*
         (	#(EXTERNAL
 				( el = external_function_call)
-				( ann = annotation)?
+                (ann = external_annotation) ?
 				{ 
-					el_stack.push(el); 
-					
+					el_stack.push(Absyn__EXTERNAL(el,
+                            ann ? mk_some(ann) : mk_none())); 
 				}
 			)
 		)?
@@ -366,6 +431,13 @@ composition returns [void* ast]
         }
     ;
 
+external_annotation returns [void* ast] 
+{
+    ast = 0;
+}
+    :
+        #(EXTERNAL_ANNOTATION ast = annotation)
+    ;
 public_element_list returns [void* ast]
 {
     void* el;    
@@ -398,9 +470,9 @@ external_function_call returns [void* ast]
 {
 	void* expl=0;
 	void* retexp=0;
-	void *lang=0;
-    void *funcname=0;
-	void *ann=0;
+	void* lang=0;
+    void* funcname=0;
+    void* ann=0;
 	ast = 0;
 }
 	:
@@ -421,15 +493,16 @@ external_function_call returns [void* ast]
 						}
 					}
 				)
-			))? (ann=annotation)?                            
+			))? 
+        ( ann = annotation)?
 		{
 			if (!expl) { expl = mk_nil(); }
 			if (!retexp) { retexp = mk_none(); } 
 			if (!lang) { lang = mk_none(); }
-			if (!ann) { ann = mk_none(); } else { ann = mk_some(ann); }
 			if (!funcname) { funcname = mk_none(); }
-			ast = Absyn__EXTERNAL(Absyn__EXTERNALDECL(funcname,
-					lang, retexp, expl), ann);
+            ann = ann ? mk_some(ann) : mk_none();
+			ast = Absyn__EXTERNALDECL(funcname,
+					lang, retexp, expl,ann);
         }
     ;
 
@@ -465,26 +538,32 @@ element returns [void* ast]
 	void* final = 0;
 	void* innerouter = 0;
 	void* constr = 0;
+    void* keywords = 0;
+    
 }
 
 	: 
 		( e_spec = i_clause:import_clause
 			{                
-				ast = Absyn__ELEMENT(RML_FALSE,RML_FALSE,Absyn__UNSPECIFIED,mk_scon("import"),
+				ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__UNSPECIFIED,mk_scon("import"),
                     e_spec,mk_scon((char*)(modelicafilename.c_str())),mk_icon(i_clause->getLine()),mk_none());
 			}
 		| e_spec = e_clause:extends_clause
 			{
-				ast = Absyn__ELEMENT(RML_FALSE,RML_FALSE,Absyn__UNSPECIFIED,mk_scon("extends"),
+				ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__UNSPECIFIED,mk_scon("extends"),
                     e_spec,mk_scon((char*)(modelicafilename.c_str())),mk_icon(e_clause->getLine()),mk_none());
 			}
 		| #(decl:DECLARATION 
-				(   
-					(f:FINAL)? { final = f!=NULL ? RML_TRUE : RML_FALSE; ;}
-					(i:INNER | o:OUTER)? { innerouter = make_inner_outer(i,o); }
-					(e_spec = component_clause
+                (re:REDECLARE)? 
+                (f:FINAL)? { final = f!=NULL ? RML_TRUE : RML_FALSE; }
+                (i:INNER)?  
+                (o:OUTER)? { innerouter = make_inner_outer(i,o); }
+				(	(e_spec = component_clause
 						{
-							ast = Absyn__ELEMENT(final,RML_FALSE,innerouter,
+                            keywords = make_redeclare_keywords(false,re);
+							ast = Absyn__ELEMENT(final,
+                                keywords ? mk_some(keywords) : mk_none(),
+                                innerouter,
 								mk_scon("component"),e_spec,
                                 mk_scon((char*)(modelicafilename.c_str())),mk_icon(decl->getLine()),mk_none());
             
@@ -493,9 +572,10 @@ element returns [void* ast]
 						e_spec = component_clause 
 						( constr = constraining_clause)?
 						{
+                            keywords = make_redeclare_keywords(r,re);
 							ast = Absyn__ELEMENT(final,
-								r ? RML_TRUE : RML_FALSE,
-								Absyn__UNSPECIFIED,
+								keywords ? mk_some(keywords) : mk_none(),
+								innerouter,
 								mk_scon("replaceable_component"),e_spec,
                                 mk_scon((char*)(modelicafilename.c_str())),mk_icon(decl->getLine()),
 								constr? mk_some(constr):mk_none());
@@ -504,15 +584,21 @@ element returns [void* ast]
 				)
 			)
 		| #(def:DEFINITION
-				(   
-					(fd:FINAL)? { final = fd!=NULL?RML_TRUE:RML_FALSE; }
-					(id:INNER | od:OUTER)? { innerouter = make_inner_outer(i,o); }
+                (re2:REDECLARE)? 
+                (fd:FINAL)? { final = fd!=NULL?RML_TRUE:RML_FALSE; }
+                (id:INNER)? (od:OUTER)? { innerouter = make_inner_outer(i,o); }
+				(                   
 					(
 						class_def = class_definition[fd != NULL]
 						{
-							ast = Absyn__CLASSDEF(RML_PRIM_MKBOOL(0),
+                            keywords = make_redeclare_keywords(false,re2);
+                            ast = Absyn__CLASSDEF(RML_PRIM_MKBOOL(0),
 								class_def);
-							ast = Absyn__ELEMENT(final,RML_FALSE,innerouter,mk_scon("??"),
+							ast = Absyn__ELEMENT(
+                                final,
+								keywords ? mk_some(keywords) : mk_none(),
+                                innerouter,
+                                mk_scon("??"),
                                 ast,mk_scon((char*)(modelicafilename.c_str())),mk_icon(def->getLine()),mk_none());
 
 						}
@@ -522,10 +608,13 @@ element returns [void* ast]
 							(constr = constraining_clause)?
 						)
 						{
-							ast = Absyn__CLASSDEF(rd ? RML_TRUE : RML_FALSE,
+                            keywords = make_redeclare_keywords(rd,re2);
+                            ast = Absyn__CLASSDEF(rd ? RML_TRUE : RML_FALSE,
 								class_def);
-							ast = Absyn__ELEMENT(final,
-								rd ? RML_TRUE : RML_FALSE,innerouter,
+							ast = Absyn__ELEMENT(
+                                final,
+								keywords ? mk_some(keywords) : mk_none(),
+                                innerouter,
 								mk_scon("??"),
 								ast,mk_scon((char*)(modelicafilename.c_str())),mk_icon(def->getLine()),
                                 constr ? mk_some(constr) : mk_none());
@@ -689,15 +778,30 @@ component_declaration returns [void* ast]
 {
 	void* cmt = 0;
 	void* dec = 0;
+    void* cond = 0;
 
 }
 	:
-		(dec = declaration) (cmt = comment)?
+		(dec = declaration) (cond = conditional_attribute)? (cmt = comment)?
 		{
-			ast = Absyn__COMPONENTITEM(dec,cmt ? mk_some(cmt) : mk_none());
+			ast = Absyn__COMPONENTITEM(
+                dec,
+                cond ? mk_some(cond): mk_none(),
+                cmt ? mk_some(cmt) : mk_none()
+            );
 		}
 	;
 
+conditional_attribute returns [void* ast]
+{
+    void* expr = 0;
+}
+    :
+        #(IF expr = expression)
+        {
+            ast = expr;
+        }
+        ;
 
 // returns datatype Component
 declaration returns [void* ast]
@@ -764,29 +868,44 @@ argument_list returns [void* ast]
 
 argument returns [void* ast]
 	:
-		#(ELEMENT_MODIFICATION ast = element_modification)
+		#(ELEMENT_MODIFICATION ast = element_modification_or_replaceable)
 	|
 		#(ELEMENT_REDECLARATION ast = element_redeclaration) 
 	;
 
-element_modification returns [void* ast]
-{
+element_modification_or_replaceable returns [void * ast]
+    :
+        (e:EACH)?
+		(f:FINAL)? 
+        (ast = element_modification[e!=NULL,f!=NULL]  
+        | ast = element_replaceable[e!=NULL,f!=NULL,false] )
+    ;
+
+element_modification [bool each, bool final] returns [void* ast]
+    {
 	void* cref;
 	void* mod=0;
-	void* final;
-	void* each;
-	void* cmt=0;
-}
+	void* ast_final;
+	void* ast_each;
+	void* cmt=0; 
+} 
 	:
-		(e:EACH)?
-		(f:FINAL)? 
-		cref = component_reference 
-		(mod = modification)?
-		cmt = string_comment
+		(
+            cref = component_reference 
+            ( mod = modification )?
+            cmt = string_comment
+        )
 		{
-			final = f != NULL ? RML_TRUE : RML_FALSE;
-			each = e != NULL ? Absyn__EACH : Absyn__NON_5fEACH;
-			ast = Absyn__MODIFICATION(final, each, cref, mod ? mk_some(mod) : mk_none(), cmt ? mk_some(cmt) : mk_none());
+			ast_final = final ? RML_TRUE : RML_FALSE;
+			ast_each = each ? Absyn__EACH : Absyn__NON_5fEACH;
+
+			ast = Absyn__MODIFICATION(
+                ast_final, 
+                ast_each, 
+                cref, 
+                mod ? mk_some(mod) : mk_none(), 
+                cmt ? mk_some(cmt) : mk_none()
+            );
 		}
 	;
 
@@ -794,50 +913,83 @@ element_redeclaration returns [void* ast]
 {
 	void* class_def = 0;
 	void* e_spec = 0; 
-	void* constr = 0;
 	void* final = 0;
 	void* each = 0;
+    void* keywords = 0;
 }
 	:
-		(#(r:REDECLARE (e:EACH)? (f:FINAL)?
-                (	
-					(class_def = class_definition[false] 
-						{
-							e_spec = Absyn__CLASSDEF(RML_FALSE,class_def);
-							final = f != NULL ? RML_TRUE : RML_FALSE;
-							each = e != NULL ? Absyn__EACH : Absyn__NON_5fEACH;				
-							ast = Absyn__REDECLARATION(final, each, e_spec, mk_none());
-						}
-					| e_spec = component_clause1
-						{
-							final = f != NULL ? RML_TRUE : RML_FALSE;
-							each = e != NULL ? Absyn__EACH : Absyn__NON_5fEACH;				
-							ast = Absyn__REDECLARATION(final, each, e_spec, mk_none());
-						}
-					)
-				|
-					( re:REPLACEABLE 
-						(class_def = class_definition[false]                            
-						| e_spec = component_clause1
-						)
-						(constr = constraining_clause)?
-						{	
-							if (class_def) 
-							{	
-								e_spec = Absyn__CLASSDEF(RML_TRUE, class_def);
-								final = f != NULL ? RML_TRUE : RML_FALSE;
-								each = e != NULL ? Absyn__EACH : Absyn__NON_5fEACH;				
-								ast = Absyn__REDECLARATION(final, each, e_spec,
-									constr ? mk_some(constr) : mk_none());
-							} else {
-								ast = Absyn__REDECLARATION(final, each, e_spec,
-									constr ? mk_some(constr) : mk_none());
-							}
-						}
-					)
-				)
-			)
-		)
+		    (#(REDECLARE (e:EACH)? (f:FINAL)?
+                (
+                    (
+                        (class_def = class_definition[false] 
+                            {
+                                e_spec = Absyn__CLASSDEF(RML_FALSE,class_def);
+                                final = f != NULL ? RML_TRUE : RML_FALSE;
+                                each = e != NULL ? Absyn__EACH : Absyn__NON_5fEACH;
+                                keywords = make_redeclare_keywords(
+                                    false, // not replaceable 
+                                    true); // but redeclare
+                                
+                                ast = Absyn__REDECLARATION(final, keywords,each, e_spec, mk_none());
+                            }
+                        | e_spec = component_clause1
+                            {
+                                final = f != NULL ? RML_TRUE : RML_FALSE;
+                                each = e != NULL ? Absyn__EACH : Absyn__NON_5fEACH;
+                                keywords = make_redeclare_keywords(
+                                    false, // not replaceable 
+                                    true); // but redeclare
+                                ast = Absyn__REDECLARATION(final, keywords, each, e_spec, mk_none());
+                            }   
+                        )
+                    )
+                    
+                |
+                    ( ast = element_replaceable[
+                            e!=NULL,
+                            f!=NULL,
+                            true/*has redeclare keyword */
+                        ]
+                    )
+                )
+            )
+        )
+	;
+
+element_replaceable [bool each, bool final,bool redeclare]  returns [void* ast]
+{
+	void* class_def = 0;
+	void* e_spec = 0; 
+	void* constr = 0;
+	void* ast_final = 0;
+	void* ast_each = 0;
+    void* keywords = 0;
+}
+	:
+        
+        (#(REPLACEABLE 
+            (class_def = class_definition[false]                            
+            | e_spec = component_clause1
+            )
+            (constr = constraining_clause)?
+            {	
+                ast_final = final ? RML_TRUE : RML_FALSE;
+                ast_each = each ? Absyn__EACH : Absyn__NON_5fEACH;
+                keywords = make_redeclare_keywords(true,redeclare);
+                
+                if (class_def) 
+                    {	
+                    e_spec = Absyn__CLASSDEF(RML_TRUE, class_def);
+                    
+                    ast = Absyn__REDECLARATION(ast_final, keywords, ast_each, e_spec,
+                            constr ? mk_some(constr) : mk_none());
+                } else {
+                    ast = Absyn__REDECLARATION(ast_final, keywords, ast_each, e_spec,
+                        constr ? mk_some(constr) : mk_none());
+                }   
+            }
+            )
+        )
 	;
 
 component_clause1 returns [void* ast]
@@ -1515,6 +1667,7 @@ primary returns [void* ast]
 {
 	l_stack el_stack;
 	void* e;
+    ast = 0;
 }
 	:
 		( ui:UNSIGNED_INTEGER 
@@ -1532,7 +1685,12 @@ primary returns [void* ast]
 		| FALSE { ast = Absyn__BOOL(RML_FALSE); }
 		| TRUE { ast = Absyn__BOOL(RML_TRUE); }
 		| ast = component_reference__function_call
+        | #(DER e = function_call)
+            {
+                ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("der"), mk_nil()),e);
+            }
 		| #(LPAR ast = tuple_expression_list)
+
 		| #(LBRACK  e = expression_list { el_stack.push(e); }
 				(e = expression_list { el_stack.push(e); } )* )
 			{

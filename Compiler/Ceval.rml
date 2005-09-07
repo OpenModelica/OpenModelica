@@ -1019,9 +1019,9 @@ relation ceval_ast_citems: (Env.Env, Absyn.ComponentItem list,
 	ceval_ast_modopt(env,modopt,impl,st,msg) => modopt' &
 	ceval_ast_arraydim(env,ad,impl,st,msg) => ad' 
 	------------------------------------------------
-	ceval_ast_citems (env,Absyn.COMPONENTITEM(Absyn.COMPONENT(id,ad,modopt),cmt)::xs,
+	ceval_ast_citems (env,Absyn.COMPONENTITEM(Absyn.COMPONENT(id,ad,modopt),cond,cmt)::xs,
 			  impl,st,msg)
-	  => (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,ad',modopt'),cmt)::res)
+	  => (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,ad',modopt'),cond,cmt)::res)
 
   	  (* If one component fails, the rest should still succeed *)
   rule	ceval_ast_citems(env,xs,impl,st,msg) => res 

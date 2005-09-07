@@ -216,6 +216,8 @@ relation unparse_str : Absyn.Program => string =
 	string_append(s3,"\n") => str
 	------------------------
 	unparse_str Absyn.PROGRAM(cs,w) => str
+
+  axiom	unparse_str (_) => "unparsing failed\n" 
 end
 
 (** relation: unparse_class_list
@@ -271,8 +273,9 @@ end
  **
  ** Prettyprints a Class.
  **)
-
+	    
 relation unparse_class_str: (int, Absyn.Class,string,string,string) => string =
+	
   rule	indent_str(i) => is &
 	select_string(p, "partial ","") => s1 &
 	select_string(f, "final ","") => s2 &
@@ -310,7 +313,43 @@ relation unparse_class_str: (int, Absyn.Class,string,string,string) => string =
 	unparse_comment_option(cmt) => s5 &
 	Util.string_append_list([is,s2',s1,s2,re,io,s3," ",n,"= enumeration(",s4,")",s5]) => str
 	-------------------------------
-	unparse_class_str(i, Absyn.CLASS(n,p,f,e,r,Absyn.ENUMERATION(l,cmt),_),fi,re,io) => str    
+	unparse_class_str(i, Absyn.CLASS(n,p,f,e,r,Absyn.ENUMERATION(Absyn.ENUMLITERALS(l),cmt),_),fi,re,io) => str    
+
+  rule	indent_str(i) => is &
+	select_string(p, "partial ", "") => s1 &
+	select_string(f, "final ", "") => s2 &
+	select_string(e, "encapsulated ","") => s2' &
+	unparse_restriction_str (r)  => s3 &
+	unparse_comment_option(cmt) => s5 &
+	Util.string_append_list([is,s2',s1,s2,re,io,s3," ",n,"= enumeration(:)",s5]) => str
+	-------------------------------
+	unparse_class_str(i, Absyn.CLASS(n,p,f,e,r,Absyn.ENUMERATION(ENUM_COLON,cmt),_),fi,re,io) => str    
+
+  rule	indent_str(i) => is &
+	select_string(p, "partial ","") => s1 &
+	select_string(f, "final ","") => s2 &
+	select_string(e, "encapsulated ","") => s2' &
+	unparse_restriction_str (r) => s3 &
+	int_add(i,1) => i' &
+	unparse_class_part_str_lst(i',parts,true) => s4 &
+	unparse_mod1_str(cmod) => s5 &
+	unparse_string_comment_option(optcmt) => s6 &
+	Util.string_append_list([is, s2', s1, s2, re, io, s3, " extends ",
+				 name, s5, s6, "\n", s4, is, "end ", name]) => str
+	-----------------------------
+	unparse_class_str(i, Absyn.CLASS(n,p,f,e,r,Absyn.CLASS_EXTENDS(name,cmod,optcmt,parts),_),fi,re,io) => str
+
+  rule  indent_str(i) => is &
+	select_string(p, "partial ","") => s1 &
+	select_string(f, "final ","") => s2 &
+	select_string(e, "encapsulated ","") => s2' &
+	unparse_restriction_str (r) => s3 &
+	Absyn.path_string fname => s4 &
+	Util.string_delimit_list(vars,", ") => s5 &
+	Util.string_append_list([is, s2', s1, s2, re, io, s3," ",n, " = der(",
+				 s4,", ",s5,")"]) => str
+	---------------------------
+	unparse_class_str(i,Absyn.CLASS(n,p,f,e,r,Absyn.PDER(fname,vars),_),fi,re,io) => str 
 
 end 
 
@@ -461,6 +500,7 @@ relation unparse_restriction_str : Absyn.Restriction => string =
   axiom	unparse_restriction_str Absyn.R_RECORD			=> "record"
   axiom	unparse_restriction_str Absyn.R_BLOCK			=> "block"
   axiom	unparse_restriction_str Absyn.R_CONNECTOR		=> "connector"
+  axiom	unparse_restriction_str Absyn.R_EXP_CONNECTOR		=> "expandable connector"
   axiom	unparse_restriction_str Absyn.R_TYPE			=> "type"
   axiom	unparse_restriction_str Absyn.R_PACKAGE			=> "package"
   axiom	unparse_restriction_str Absyn.R_FUNCTION			=> "function"
@@ -568,7 +608,13 @@ relation print_classdef: Absyn.ClassDef => () =
 	dump_comment_option comment  &
 	Print.print_buf ")" 
 	----------------------------
-	print_classdef(Absyn.ENUMERATION(enumlst, comment))
+	print_classdef(Absyn.ENUMERATION(Absyn.ENUMLITERALS(enumlst), comment))
+
+  rule	Print.print_buf "Absyn.ENUMERATION( :, " &
+	dump_comment_option comment  &
+	Print.print_buf ")" 
+	----------------------------
+	print_classdef(Absyn.ENUMERATION(Absyn.ENUM_COLON, comment))
 
   rule	Print.print_buf "Absyn.OVERLOAD( fill in )"
  	------------------------
@@ -601,6 +647,10 @@ relation print_class_restriction: Absyn.Restriction => () =
   rule	Print.print_buf "Absyn.R_CONNECTOR" 
 	-----------------------
 	print_class_restriction Absyn.R_CONNECTOR
+
+  rule	Print.print_buf "Absyn.R_EXP_CONNECTOR" 
+	-----------------------
+	print_class_restriction Absyn.R_EXP_CONNECTOR
 
   rule	Print.print_buf "Absyn.R_TYPE" 
 	-----------------------
@@ -705,7 +755,7 @@ relation print_element_arg =
 	print_elementspec spec &
 	Print.print_buf ",_)"
 	-------------------------------------------
-	print_element_arg(Absyn.REDECLARATION(f,each,spec,_))
+	print_element_arg(Absyn.REDECLARATION(f,keywords,each,spec,_))
 
 end
 
@@ -727,37 +777,34 @@ relation unparse_element_arg_str: (Absyn.ElementArg) => string =
 	
   rule	unparse_each_str ( each ) => s1 &
 	select_string(f,"final ","")  => s2 &
-	unparse_elementspec_str(0, spec,s2,"","") => s3 &
-	unparse_elementspec_str(0,constropt,"","","") => s4 &
-	Util.string_append_list([s1,s2,"redeclare ",s3," ",s4]) => str
-	-----------------------------------------------------------
-	unparse_element_arg_str(Absyn.REDECLARATION(f,each, spec,SOME(constropt))) => str
-
-  rule	(* Since unparse_elementspec_str does not print "replaceable" we need to check for it here*)
-	unparse_each_str ( each ) => s1 &
-	select_string(f,"final ","")  => s2 &
-	select_string(repl, "replaceable ","") => s3 &
-	unparse_elementspec_str(0, spec,"",s3,"") => s4 &
+	unparse_redeclarekeywords (keywords) => s3 &
+	unparse_elementspec_str(0, spec,s2,"","") => s4 &
 	unparse_elementspec_str(0,constropt,"","","") => s5 &
-	Util.string_append_list([s1,s2,"redeclare ",s4," ",s5]) => str
+	Util.string_append_list([s1,s2,s3,s4," ",s5]) => str
 	-----------------------------------------------------------
-	unparse_element_arg_str(Absyn.REDECLARATION(f,each, spec as Absyn.CLASSDEF(repl,cl) ,SOME(constropt))) => str
+	unparse_element_arg_str(Absyn.REDECLARATION(f,keywords,each, spec,SOME(constropt))) => str
 
-  rule	(* Since unparse_elementspec_str does not print "replaceable" we need to check for it here*)
-	unparse_each_str ( each ) => s1 &
-	select_string(f,"final ","")  => s2 &
-	select_string(repl, "replaceable ","") => s3 &
-	unparse_elementspec_str(0, spec,"",s3,"") => s4 &
-	Util.string_append_list([s1,s2,"redeclare ",s4]) => str
-	-----------------------------------------------------------
-	unparse_element_arg_str(Absyn.REDECLARATION(f,each, spec as Absyn.CLASSDEF(repl,cl),NONE)) => str
 
   rule	unparse_each_str ( each ) => s1 &
 	select_string(f,"final ","")  => s2 &
-	unparse_elementspec_str(0, spec,"","","") => s3 &
-	Util.string_append_list([s1,s2,"redeclare ",s3]) => str
+	unparse_redeclarekeywords (keywords) => s3 &
+	unparse_elementspec_str(0, spec,s2,"","") => s4 &
+	Util.string_append_list([s1,s2,s3,s4]) => str
 	-----------------------------------------------------------
-	unparse_element_arg_str(Absyn.REDECLARATION(f,each, spec,NONE)) => str
+	unparse_element_arg_str(Absyn.REDECLARATION(f,keywords,each, spec,NONE)) => str
+
+end
+
+(** relation: unparse_redeclarekeywords
+ ** 
+ ** Prettyprints the redeclare keywords, i.e 'replaceable' and 'redeclare'
+ **)
+
+ relation unparse_redeclarekeywords: Absyn.RedeclareKeywords => string =
+
+  axiom	unparse_redeclarekeywords Absyn.REDECLARE => "redeclare "
+  axiom	unparse_redeclarekeywords Absyn.REPLACEABLE => "replaceable "
+  axiom	unparse_redeclarekeywords Absyn.REDECLARE_REPLACEABLE => "redeclare replaceable "
 end
 
 (** relation: unparse_each_str
@@ -849,7 +896,7 @@ relation print_external_decl : Absyn.ExternalDecl => () =
 				 expstr, ")"]) => str &
 	Print.print_buf str
 	-------------------
-	print_external_decl Absyn.EXTERNALDECL(id, NONE, cref, exps)
+	print_external_decl Absyn.EXTERNALDECL(id, NONE, cref, exps,_)
 
   rule	get_option_str (id, identity) => idstr &
 	get_option_str (cref, print_component_ref_str) => crefstr &
@@ -858,7 +905,7 @@ relation print_external_decl : Absyn.ExternalDecl => () =
 				 expstr, ")"]) => str &
 	Print.print_buf str
 	-------------------
-	print_external_decl Absyn.EXTERNALDECL(id, SOME(lang), cref, exps)
+	print_external_decl Absyn.EXTERNALDECL(id, SOME(lang), cref, exps,_)
 
 end
 
@@ -943,9 +990,10 @@ axiom	unparse_class_part_str(i, Absyn.INITIALALGORITHMS([]),_) => ""
 	string_append(langstr," ") => s1 &
 	indent_str(i) => is &
 	unparse_annotation_option (i,ann) => annstr &
-	Util.string_append_list(["\n", is, "external ",langstr," ", outputstr, "=",ident,"(",expstr,") ",annstr,";\n"]) => str
+	unparse_annotation_option_semi(i,ann2) => annstr2 &
+	Util.string_append_list(["\n", is, "external ",langstr," ", outputstr, "=",ident,"(",expstr,") ",annstr,";",annstr2,"\n"]) => str
 	--------------------------------------
-	unparse_class_part_str(i, Absyn.EXTERNAL(Absyn.EXTERNALDECL(SOME(ident),lang,SOME(output),expl),ann),_)
+	unparse_class_part_str(i, Absyn.EXTERNAL(Absyn.EXTERNALDECL(SOME(ident),lang,SOME(output),expl,ann),ann2),_)
 	    => str
 
   rule	get_extlang_str(lang) => langstr &
@@ -953,17 +1001,19 @@ axiom	unparse_class_part_str(i, Absyn.INITIALALGORITHMS([]),_) => ""
 	string_append(langstr," ") => s1 &
 	indent_str(i) => is &
 	unparse_annotation_option (i,ann) => annstr &
-	Util.string_append_list(["\n", is, "external ", langstr," ",ident,"(",expstr,") ",annstr,";\n"]) => str
+	unparse_annotation_option_semi(i,ann2) => annstr2 &
+	Util.string_append_list(["\n", is, "external ", langstr," ",ident,"(",expstr,") ",annstr,"; ",annstr2,"\n"]) => str
 	--------------------------------------
-	unparse_class_part_str(i, Absyn.EXTERNAL(Absyn.EXTERNALDECL(SOME(ident),lang,NONE,expl),ann),_) 
+	unparse_class_part_str(i, Absyn.EXTERNAL(Absyn.EXTERNALDECL(SOME(ident),lang,NONE,expl,ann),ann2),_) 
 	    => str
 
   rule	indent_str(i) => is &
 	get_extlang_str(lang) => langstr &
 	unparse_annotation_option (i,ann) => annstr &
-	Util.string_append_list(["\n",is,"external ",langstr," ",annstr,";\n"]) => res
+	unparse_annotation_option_semi(i,ann2) => annstr2 &
+	Util.string_append_list(["\n",is,"external ",langstr," ",annstr,";",annstr2,"\n"]) => res
 	-----------------
-	unparse_class_part_str(i, Absyn.EXTERNAL(Absyn.EXTERNALDECL(NONE,lang,NONE,_),ann),_) 
+	unparse_class_part_str(i, Absyn.EXTERNAL(Absyn.EXTERNALDECL(NONE,lang,NONE,_,ann),ann2),_) 
 	    => res
 end
 
@@ -1083,6 +1133,23 @@ relation unparse_elementitem_str: (int(* indent*), Absyn.ElementItem)
 	
 end
 
+(** relation: unparse_annotation_option_semi
+ **
+ ** Prettyprint an annotation and a semicolon if annoation present.
+ **)
+
+
+relation unparse_annotation_option_semi: (int, Absyn.Annotation option) 
+	  => string =	
+
+  axiom	unparse_annotation_option_semi(_,NONE) => ""
+
+  rule	unparse_annotation_option(i,ann) => s &
+	string_append(s,";") => res
+	--------------------------
+	unparse_annotation_option_semi(i,ann) => res
+end
+
 (** relation: unparse_annotation_option
  **
  ** Prettyprint an annotation.
@@ -1113,8 +1180,7 @@ relation print_element: Absyn.Element => () =
 	
   rule	Print.print_buf "Absyn.ELEMENT(" & 
 	print_bool(final) &
-	Print.print_buf ", " &
-	print_bool(repl) &
+	Print.print_buf ", _" &
 	Print.print_buf ", " &
 	print_innerouter inout &
 	Print.print_buf ", \"" &
@@ -1132,8 +1198,7 @@ relation print_element: Absyn.Element => () =
 
   rule	Print.print_buf "Absyn.ELEMENT(" & 
 	print_bool(final) &
-	Print.print_buf ", " &
-	print_bool(repl) &
+	Print.print_buf ", _" &
 	Print.print_buf ", " &
 	print_innerouter inout &
 	Print.print_buf ", \"" &
@@ -1159,7 +1224,7 @@ end
 relation unparse_element_str: (int, Absyn.Element) => string = 
 
   rule	select_string(final, "final ", "") => s1 &
-	select_string(repl, "replaceable ", "") => s2 &
+	unparse_redeclarekeywords repl => s2 &
 	unparse_innerouter_str inout => s3 &
 	unparse_elementspec_str(i, spec,s1,s2,s3) => s4 &	
 	int_string(lineno) => s5 &
@@ -1167,7 +1232,16 @@ relation unparse_element_str: (int, Absyn.Element) => string =
         Util.string_append_list([s4, ";"]) => str
 (*	Util.string_append_list([s4, " ", filename," ", s5,";"]) => str *)
 	----------------------------
-	unparse_element_str(i, Absyn.ELEMENT(final,repl,inout,_,spec,filename,lineno,constr)) => str
+	unparse_element_str(i, Absyn.ELEMENT(final,SOME(repl),inout,_,spec,filename,lineno,constr)) => str
+
+  rule	select_string(final, "final ", "") => s1 &
+	unparse_innerouter_str inout => s3 &
+	unparse_elementspec_str(i, spec,s1,"",s3) => s4 &	
+	int_string(lineno) => s5 &
+	indent_str(i) => is &
+        Util.string_append_list([s4, ";"]) => str
+	----------------------------
+	unparse_element_str(i, Absyn.ELEMENT(final,NONE,inout,_,spec,filename,lineno,constr)) => str
 end
 
 
@@ -1185,6 +1259,10 @@ relation print_innerouter: Absyn.InnerOuter => () =
         ----------------------------
         print_innerouter(Absyn.OUTER)
 
+   rule Print.print_buf "Absyn.INNEROUTER "
+        ----------------------------------
+        print_innerouter(Absyn.INNEROUTER)
+
    rule Print.print_buf "Absyn.UNSPECIFIED "
         ----------------------------------
         print_innerouter(Absyn.UNSPECIFIED)
@@ -1200,6 +1278,8 @@ relation unparse_innerouter_str: Absyn.InnerOuter => string =
   axiom	unparse_innerouter_str(Absyn.INNER) => "inner "
 
   axiom	unparse_innerouter_str(Absyn.OUTER) => "outer "
+
+  axiom	unparse_innerouter_str(Absyn.INNEROUTER) => "inner outer "
 
   axiom	unparse_innerouter_str(Absyn.UNSPECIFIED) => ""
 end
@@ -1492,7 +1572,7 @@ relation print_componentitem: Absyn.ComponentItem => () =
 	dump_comment_option optcmt &
 	Print.print_buf ")" 
 	------------------------------------------
-	print_componentitem(Absyn.COMPONENTITEM(c,optcmt))
+	print_componentitem(Absyn.COMPONENTITEM(c,optcond,optcmt))
 end
 
 (** relation: unparse_component_str
@@ -1518,10 +1598,27 @@ end
 relation unparse_componentitem_str: Absyn.ComponentItem => string =
 
   rule	unparse_component_str c => s1 &
-	unparse_comment_option cmtopt => s2 &
-	string_append(s1,s2) => str
+	unparse_comment_option cmtopt => s3 &
+	unparse_component_condition optcond => s2 &
+	Util.string_append_list([s1,s2,s3]) => str
 	------------------------------------------
-	unparse_componentitem_str(Absyn.COMPONENTITEM(c,cmtopt)) => str
+	unparse_componentitem_str(Absyn.COMPONENTITEM(c,optcond,cmtopt)) => str
+end
+
+(** relation: unparse_component_condition
+ **
+ ** Prints a ComponentCondition option to a string.
+ **)
+
+relation unparse_component_condition: Absyn.ComponentCondition option 
+	  => string =
+
+  rule	print_exp_str(cond) => s1 &
+	string_append (" if ",s1) => res
+	--------------------------------
+	unparse_component_condition(SOME(cond)) => res
+
+  axiom	unparse_component_condition(NONE) => ""
 end
 
 (** relation: print_arraydim_opt

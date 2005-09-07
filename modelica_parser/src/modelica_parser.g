@@ -28,6 +28,7 @@ tokens {
 	ARGUMENT_LIST;
     BEGIN_DEFINITION;
 	CLASS_DEFINITION	;
+    CLASS_EXTENDS ;
 	CLASS_MODIFICATION;
 	CODE_EXPRESSION;
 	CODE_MODIFICATION;
@@ -46,9 +47,11 @@ tokens {
 	ELEMENT_MODIFICATION		;
 	ELEMENT_REDECLARATION	;
     EQUATION_STATEMENT;
+    EXTERNAL_ANNOTATION ;
  	INITIAL_EQUATION;
 	INITIAL_ALGORITHM;
     IMPORT_DEFINITION;
+    IDENT_LIST;
 	EXPRESSION_LIST;
 	EXTERNAL_FUNCTION_CALL;
     FOR_INDICES ;
@@ -128,9 +131,8 @@ within_clause :
 class_definition :
 		(ENCAPSULATED)? 
 		(PARTIAL)?
-		class_type
-		IDENT
-		class_specifier
+		class_type     
+        class_specifier
 		{ 
 			#class_definition = #([CLASS_DEFINITION, "CLASS_DEFINITION"], 
 				class_definition); 
@@ -138,18 +140,39 @@ class_definition :
 		;
 
 class_type :
-		( CLASS | MODEL | RECORD | BLOCK | CONNECTOR | TYPE | PACKAGE 
-			| FUNCTION 
+		( CLASS | MODEL | RECORD | BLOCK | ( EXPANDABLE )? CONNECTOR | TYPE 
+        | PACKAGE | FUNCTION 
 		)
 		;
 
-class_specifier :
+class_specifier: 	
+        IDENT class_specifier2 
+    |   EXTENDS! IDENT (class_modification)? string_comment composition
+            END! IDENT! 
+        {
+            #class_specifier = #([CLASS_EXTENDS,"CLASS_EXTENDS"],#class_specifier);
+        }
+        ;
+
+class_specifier2 :
 		( string_comment composition END! IDENT!
 		| EQUALS^  base_prefix name_path ( array_subscripts )? ( class_modification )? comment
 		| EQUALS^ enumeration
-		| EQUALS^ overloading	
+        | EQUALS^ pder    
+		| EQUALS^ overloading
 		)
 		;
+
+pder:   DER^ LPAR! name_path COMMA! ident_list RPAR! comment ;
+
+ident_list : 
+        IDENT 
+    | IDENT COMMA! ident_list
+        {
+            #ident_list=#([IDENT_LIST,"IDENT_LIST"],#ident_list);
+        }
+    ;
+        
 
 overloading:
 		OVERLOAD^ LPAR! name_list RPAR! comment
@@ -164,7 +187,7 @@ name_list:
 		;
 
 enumeration :
-		ENUMERATION^ LPAR! enum_list RPAR! comment 
+		ENUMERATION^ LPAR! (enum_list | COLON ) RPAR! comment 
 		;
 enum_list :
 		enumeration_literal ( COMMA! enumeration_literal)*
@@ -192,13 +215,20 @@ composition :
 
 external_clause :
         EXTERNAL^	
-            ( language_specification )? 
-            ( external_function_call )?
-			(SEMICOLON!) ?  
-			/* Relaxed from Modelica 2.0. This code will be correct in 2.1 */ 
-			( annotation SEMICOLON! )?
+        ( language_specification )? 
+        ( external_function_call )?
+        ( annotation )? SEMICOLON!
+        ( external_annotation )?
         ;
-		
+
+external_annotation:
+		annotation SEMICOLON! 
+        { 
+            #external_annotation=#([EXTERNAL_ANNOTATION,
+					"EXTERNAL_ANNOTATION"],#external_annotation); 
+        }
+    ;
+
 public_element_list :
 		PUBLIC^ element_list
 		;
@@ -227,8 +257,10 @@ element_list :
 element :
 			ic:import_clause
 		|	ec:extends_clause			 
-		|	(FINAL)?	 
-			(INNER | OUTER)?
+		|	(REDECLARE)?
+        (FINAL)?	 
+        (INNER)? 
+        (OUTER)?
 		(	(class_definition | cc:component_clause)
 			|(REPLACEABLE ( class_definition | cc2:component_clause )
 				(constraining_clause comment)?
@@ -312,8 +344,12 @@ component_list :
 		;
 
 component_declaration :
-		declaration comment
+		declaration (conditional_attribute)? comment
 		;
+
+conditional_attribute:
+        IF^ expression
+        ;
 
 declaration :
 		IDENT^ (array_subscripts)? (modification)?
@@ -346,7 +382,7 @@ argument_list :
 		;
 
 argument ! :
-		(em:element_modification 
+		(em:element_modification_or_replaceable
 		{ 
 			#argument = #([ELEMENT_MODIFICATION,"ELEMENT_MODIFICATION"], #em); 
 		}
@@ -356,24 +392,31 @@ argument ! :
 		)
 		;
 
+element_modification_or_replaceable: 
+        (EACH)? (FINAL)? (element_modification | element_replaceable)
+    ;
+
 element_modification :
-		( EACH )? ( FINAL )? component_reference ( modification )? string_comment
+		component_reference ( modification )? string_comment
 	;
 
 element_redeclaration :
 		REDECLARE^ ( EACH )? (FINAL )?
-		(	(class_definition | component_clause1)
-			|
-			( REPLACEABLE ( class_definition | component_clause1 )
+		(	(class_definition | component_clause1) | element_replaceable )
+		;
+
+element_replaceable: 
+        REPLACEABLE^ ( class_definition | component_clause1 )
 				(constraining_clause)?
-			)
-		)
-		;
-
+    ;
 component_clause1 :
-		type_prefix type_specifier component_declaration
+		type_prefix type_specifier component_declaration1
 		;
 
+component_declaration1 :
+        declaration comment
+    ;
+        
 
 /*
  * 2.2.6 Equations
@@ -705,6 +748,7 @@ primary :
 		| FALSE
 		| TRUE
 		| component_reference__function_call
+        | DER^ function_call
 		| LPAR^ expression_list RPAR!
 		| LBRACK^ expression_list (SEMICOLON! expression_list)* RBRACK!
 		| LBRACE^ for_or_expression_list RBRACE!
@@ -734,7 +778,7 @@ name_path :
 		IDENT DOT^ name_path
 		;
 
-name_path_star returns [bool val]
+name_path_star returns [bool val=false]
 		: 
 		{ LA(2)!=DOT }? IDENT { val=false;}|
 		{ LA(2)!=DOT }? STAR! { val=true;}|

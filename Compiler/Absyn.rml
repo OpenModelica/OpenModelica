@@ -181,10 +181,23 @@ module Absyn:
 			       * ElementAttributes   
 			       * ElementArg list
 			       * Comment option	     (* comment *)
-		    | ENUMERATION of EnumLiteral list   
+		    | ENUMERATION of EnumDef   
 				* Comment option     (* comment*)		
 	            | OVERLOAD of Path list (* function names *)
 				* Comment option
+		    | CLASS_EXTENDS of Ident
+				* ElementArg list  
+				* string option (* comment *)
+				* ClassPart list 
+		    | PDER of Path * (* function name *)
+			      Ident list (* derived variables *)
+				
+
+   (** The definition of an enumeration is either a list of literals
+    ** or a colon, ':', which defines a supertype of all enumerations **)
+
+  datatype EnumDef = ENUMLITERALS of EnumLiteral list
+ 		   | ENUM_COLON
 
   (** EnumLiteral, which is a name in an enumeration and an optional
    Comment.*)
@@ -213,7 +226,7 @@ module Absyn:
   (** - Elements *)
   (* The basic element type in Modelica *)
   datatype Element = ELEMENT of bool		      (* final *)
-			      * bool		      (* replaceable *)
+			      * RedeclareKeywords option (* replaceable, redeclare *)
 			      * InnerOuter	      (* inner/outer *)	     
 			      * Ident                 (* Element name *)
 			      * ElementSpec           (* Actual element specification*)
@@ -244,7 +257,7 @@ module Absyn:
 				     * ComponentItem list
   (** One of the keyword inner and outer CAN be given to reference an inner or
       outer component. Thus there are three disjoint possibilities. **)		     
-  datatype InnerOuter = INNER | OUTER | UNSPECIFIED
+  datatype InnerOuter = INNER | OUTER | INNEROUTER | UNSPECIFIED
 
   (* Import statements, different kinds  *) 				     
   datatype Import = NAMED_IMPORT of Ident * Path
@@ -253,8 +266,13 @@ module Absyn:
 
   (* Collection of component and an optional comment *)
   datatype ComponentItem = COMPONENTITEM of Component
+					  * ComponentCondition option
 					  * Comment option
 
+(* A componentItem can have a condition that must be fulfilled if
+ ** the component should be instantiated.
+ **)
+ type ComponentCondition = Exp
   (* Some kind of Modelica entity (object or variable) *)
   datatype Component = COMPONENT of Ident 	     (* component name *)
 				  * ArrayDim         (* Array dimensions, if any *) 
@@ -311,8 +329,14 @@ module Absyn:
 
   (* Wrapper for things that modify elements, modifications and redeclarations *)
   datatype ElementArg = MODIFICATION of bool * Each * ComponentRef * Modification option * string option
-		      | REDECLARATION of bool * Each * ElementSpec * ConstrainClass option
+		      | REDECLARATION of bool * (* final *)
+					RedeclareKeywords * (* 'redeclare' 'replaceable' *)
+					Each * (* each keyword *)
+					ElementSpec * (* class definition or declaration *)
+					ConstrainClass option (* constraint *)
 
+(* The keywords 'redeclare' and 'replacable' can be given in three different kombinations, each one by themself or the both combined. *)
+  datatype RedeclareKeywords = REDECLARE | REPLACEABLE | REDECLARE_REPLACEABLE 
 
   (** - Each attribute *)
   (** The each keyword can be present in both MODIFICATION's and REDECLARATION's. *)
@@ -415,6 +439,7 @@ module Absyn:
 		       | R_RECORD
 		       | R_BLOCK
 		       | R_CONNECTOR
+		       | R_EXP_CONNECTOR
 		       | R_TYPE
 		       | R_PACKAGE
 		       | R_FUNCTION
@@ -446,7 +471,8 @@ module Absyn:
 				  Ident option  * (* The name of the external function *)
 				  string option * (* Lanugage of the external function *)
 				  ComponentRef option * (* ouput parameter as return value*)
-				  Exp list (* only positional arguments, i.e. expression list*)						     
+				  Exp list *(* only positional arguments, i.e. expression list*)
+				  Annotation option 
 				   		       
 
 
@@ -492,7 +518,7 @@ relation element_spec_name : ElementSpec => Ident =
 
   axiom element_spec_name CLASSDEF(_,CLASS(n,_,_,_,_,_,_)) => n
 
-  axiom element_spec_name COMPONENTS(_,_,[COMPONENTITEM(COMPONENT(n,_,_),_)]) => n
+  axiom element_spec_name COMPONENTS(_,_,[COMPONENTITEM(COMPONENT(n,_,_),_,_)]) => n
 
   rule  Print.print_buf "# element_spec_name EXTENDS\n"
 	-------------------------------------

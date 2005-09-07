@@ -177,6 +177,16 @@ module SCode :
 		    | ENUMERATION of Ident list
 
 		    | OVERLOAD of Absyn.Path list 		 
+		    | CLASS_EXTENDS of Ident
+				* Mod
+				* Element list
+				* Equation list
+				* Equation list 
+				* Algorithm list
+				* Algorithm list
+		    | PDER of Absyn.Path *    (* function name *)
+			      Ident list (* derived variables *)					 
+							 
   (** The major difference between these types and their `Absyn' *)
   (** counterparts is that the `PARTS' constructor contains separate *)
   (** lists for elements, equations and algorithms. *)
@@ -292,6 +302,9 @@ relation elaborate : Absyn.Program => Program =
 	-----------------------------
 	elaborate(Absyn.PROGRAM(c::cs,w)) => (c'::cs')
 
+  rule	Debug.fprint("failtrace","-elaborate failed\n") 
+	-----------------------
+	elaborate(p) => fail
 end
 
 (** relation: elab_class
@@ -330,6 +343,7 @@ relation elab_restriction: (Absyn.Class, Absyn.Restriction) => Restriction =
   axiom	elab_restriction(_,Absyn.R_RECORD) => R_RECORD
   axiom	elab_restriction(_,Absyn.R_BLOCK) => R_BLOCK
   axiom	elab_restriction(_,Absyn.R_CONNECTOR) => R_CONNECTOR
+  axiom	elab_restriction(_,Absyn.R_EXP_CONNECTOR) => R_CONNECTOR (* fixme *)
   axiom	elab_restriction(_,Absyn.R_TYPE) => R_TYPE
   axiom	elab_restriction(_,Absyn.R_PACKAGE) => R_PACKAGE
   axiom	elab_restriction(_,Absyn.R_ENUMERATION) => R_ENUMERATION
@@ -389,9 +403,24 @@ relation elab_classdef: Absyn.ClassDef => ClassDef =
 
   rule	elab_enumlist(lst) => lst'
 	--------------------------
-	elab_classdef(Absyn.ENUMERATION(lst,_)) => ENUMERATION(lst')
+	elab_classdef(Absyn.ENUMERATION(Absyn.ENUMLITERALS(lst),_)) 
+	  => ENUMERATION(lst')
+
+  axiom	elab_classdef(Absyn.ENUMERATION(Absyn.ENUM_COLON,_)) => ENUMERATION([])
 
   axiom	elab_classdef(Absyn.OVERLOAD(lst,_)) => OVERLOAD(lst)
+
+  rule	elab_classdef_elements parts => els &
+	elab_classdef_equations parts => eqs &
+	elab_classdef_initialequations parts => initeqs &
+	elab_classdef_algorithms parts => als &
+	elab_classdef_initialalgorithms parts => initals &
+	build_mod(SOME(Absyn.CLASSMOD(cmod, NONE)), false) => mod
+	-------------------------------------
+	elab_classdef (Absyn.CLASS_EXTENDS(name,cmod,cmt,parts)) 
+          => CLASS_EXTENDS(name,mod,els,eqs,initeqs,als,initals)
+
+  axiom	elab_classdef(Absyn.PDER(path,vars)) => PDER(path,vars)
 end
 
 (** relation: elab_enumlist
@@ -616,7 +645,7 @@ end
  ** protected, respectively.
  **)
 
-relation elab_elementspec: (bool,bool,bool,Absyn.ElementSpec) => Element list =
+relation elab_elementspec: (bool,Absyn.RedeclareKeywords option,bool,Absyn.ElementSpec) => Element list =
 
   rule	elab_classdef(de) => de' &
 	elab_restriction(cl,re) => re'
@@ -640,15 +669,28 @@ relation elab_elementspec: (bool,bool,bool,Absyn.ElementSpec) => Element list =
 	(* PR. This adds the arraydimension that may be specified together with
 	 the type of the component.  *)
 	elab_variability(pa) => pa' &
-	list_append(d,ad) => tot_dim
+	list_append(d,ad) => tot_dim &
+	elab_redeclarekeywords(repl) => repl'
 	--------------------------------------------------
 	elab_elementspec(final,repl,prot,
 			 Absyn.COMPONENTS(attr as Absyn.ATTR(fl,pa,di,ad),t,
-					  Absyn.COMPONENTITEM(Absyn.COMPONENT(n,d,m),comment)::xs))
-	  => COMPONENT(n,final,repl,prot,ATTR(tot_dim,fl,RW,pa',di),t,mod,NONE,comment)::xs'
+					  Absyn.COMPONENTITEM(Absyn.COMPONENT(n,d,m),_,comment)::xs))
+	  => COMPONENT(n,final,repl',prot,ATTR(tot_dim,fl,RW,pa',di),t,mod,NONE,comment)::xs'
 
   axiom	elab_elementspec(final,repl,prot,Absyn.IMPORT(imp,_)) => [IMPORT(imp)]
 
+end
+
+(** relation: elab_redeclarekeywords
+ ** author: PA
+ **
+ ** For now, translate to bool, replaceable.
+ **)
+relation elab_redeclarekeywords: Absyn.RedeclareKeywords option => bool =
+
+  axiom	elab_redeclarekeywords(SOME(Absyn.REPLACEABLE)) => true 
+  axiom	elab_redeclarekeywords(SOME(Absyn.REDECLARE_REPLACEABLE)) => true 
+  axiom	elab_redeclarekeywords(_) => false
 end
 
 (** relation: elab_variability
@@ -861,9 +903,9 @@ relation build_args : (Absyn.ElementArg list) => SubMod list =
 	Absyn.element_spec_name spec => n &
 	(** LS:: don't know what to use for "protected", so using false **)
 	(** LS:: don't know what to use for "replaceable", so using false **)
-	elab_elementspec(final,false,false,spec) => elist
+	elab_elementspec(final,NONE,false,spec) => elist
 	---------------------------
-	build_args((Absyn.REDECLARATION(final,each,spec,constropt)::xs))
+	build_args((Absyn.REDECLARATION(final,keywords,each,spec,constropt)::xs))
 	  => (NAMEMOD(n,REDECL(final,elist))::subs)
 
 end
