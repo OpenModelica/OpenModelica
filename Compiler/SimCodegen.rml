@@ -457,13 +457,21 @@ relation generate_var_names_and_comments_derivatives:(DAELow.Var list) => (strin
   axiom	generate_var_names_and_comments_derivatives([]) => ([],[])
 	
   rule	generate_var_names_and_comments_derivatives(vs) => (res,res2) &
-	Util.string_append_list(["\"der(",origname,")\""]) => origname' &
+        Util.string_split_at_char(origname,#".") => origname_lst &
+        Util.list_last(origname_lst) => var_name &
+        Util.list_strip_last(origname_lst) => origname_lst' &
+	Util.string_append_list(["der(",var_name,")"]) => der_var_name' &
+        Util.string_delimit_list(origname_lst',".") => prefix &
+        Util.string_append_list(["\"",prefix,
+                                ".",
+                                der_var_name',
+                                "\""]) => complete_var_name &
         Dump.unparse_comment_option(comment) => comment &
 	generate_empty_string(comment) => comment'
 	-----------------------
 	generate_var_names_and_comments_derivatives(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> (origname'::res,comment'::res2)
+	=> (complete_var_name::res,comment::res2)
 
   rule	generate_var_names_and_comments_derivatives(vs) =>(res,res2) 
 	-----------------------
