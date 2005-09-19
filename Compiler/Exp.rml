@@ -2240,10 +2240,14 @@ end
 
 (** relation: contain_functioncall
  ** Returns true if expression or subexpression is a functioncall.
- ** otherwise false 
+ ** otherwise false.
+ ** Note: the 'der' operator is represented as a function call but still return 
+ ** false.
 **)
 	    
 relation contain_functioncall : Exp => bool =
+
+  axiom	contain_functioncall(CALL(Absyn.IDENT("der"),_,_,_)) => false
 
   axiom	contain_functioncall(CALL(_,_,_,_)) => true
 

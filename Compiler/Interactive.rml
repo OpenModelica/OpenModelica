@@ -5075,7 +5075,7 @@ relation create_funcargs_from_elementargs: Absyn.ElementArg list
 
    rule	get_componentitems_annotations_from_items(rest,env) => res 
 	 -----------------------
-	 get_componentitems_annotations_from_items (Absyn.COMPONENTITEM(_,_,NONE)::(rest as _::_),env) => "{},"::res
+	 get_componentitems_annotations_from_items (Absyn.COMPONENTITEM(_,_,NONE)::(rest as _::_),env) => "{}"::res
 
    axiom	get_componentitems_annotations_from_items ([Absyn.COMPONENTITEM(_,_,NONE)],env) => ["{}"]
 
@@ -6446,6 +6446,11 @@ end
 
  relation annotation_list_to_absyn_comment2: (Absyn.NamedArg list) 
 	  => Absyn.Comment option =
+	   (*special case for empty string *)
+   rule	annotation_list_to_absyn(nargs) => Absyn.ANNOTATION([]) &
+	 comment_to_absyn(nargs) => SOME("")
+	 ----------------------------------
+	 annotation_list_to_absyn_comment2(nargs) => NONE
 
    rule	annotation_list_to_absyn(nargs) => Absyn.ANNOTATION([]) &
 	 comment_to_absyn(nargs) => SOME(strcmt)
@@ -6462,7 +6467,7 @@ end
 	 ----------------------------------
 	 annotation_list_to_absyn_comment2(nargs) => SOME(Absyn.COMMENT(SOME(annotation),strcmt))
 
-   axiom	annotation_list_to_absyn_comment2(_) => NONE
+   axiom annotation_list_to_absyn_comment2(_) => NONE
  end
 
 (** relation: comment_to_absyn

@@ -1970,15 +1970,39 @@ relation elab_builtin_der : (Env.Env, Absyn.Exp list, bool (*impl*))
 	elab_builtin_der(env,[exp as Absyn.CREF(cr)],impl) 
 	  => (Exp.CALL(Absyn.IDENT("der"),[exp'],false,true), Types.PROP((Types.T_REAL([]),NONE),Types.C_VAR))
 
+	  (* Temporary hack for vectors and matrices *)
+	(* vectors*)
+  rule	elab_exp(env,exp,impl,NONE) => (exp',Types.PROP(tt as (Types.T_ARRAY(dim, (Types.T_REAL([]),_)),_),Types.C_VAR),_)  &
+	cref_vectorize(exp',tt) => Exp.ARRAY(tp,scalar,e_lst) &
+	call_vectorize(Exp.CALL(Absyn.IDENT("der"),[], false,true),e_lst) 
+	  => e_lst'
+	----------------------------------
+	elab_builtin_der(env,[exp as Absyn.CREF(cr)],impl) 
+	  => (Exp.ARRAY(tp,scalar,e_lst'), Types.PROP(tt,Types.C_VAR))
+
+	  (* matrices *)
+ rule	elab_exp(env,exp,impl,NONE) => (exp',Types.PROP(tt as (Types.T_ARRAY(dim1, (Types.T_ARRAY(dim2,(Types.T_REAL([]),_)),_)),_),Types.C_VAR),_)  &
+	cref_vectorize(exp',tt) => Exp.ARRAY(tp,scalar,e_lst) &
+	call_vectorize(Exp.CALL(Absyn.IDENT("der"),[], false,true),e_lst) 
+	  => e_lst'
+	----------------------------------
+	elab_builtin_der(env,[exp as Absyn.CREF(cr)],impl) 
+	  => (Exp.ARRAY(tp,scalar,e_lst'), Types.PROP(tt,Types.C_VAR))
+
+
 	  (* Constant expressions should fail *)
   rule	elab_exp(env,exp,impl,NONE) => (exp',Types.PROP((Types.T_REAL([]),_),c),_)  &
 	Print.print_error_buf "# Error, der operator applied to constant expression\n" 
 	----------------------------------
 	elab_builtin_der(env,[exp as Absyn.CREF(cr)],impl) 
 	  => fail
-  rule	Print.print_error_buf "#Error, wrong type or wrong number of arguments to der operator.\n"
+  rule	Print.print_error_buf "#Error, wrong type or wrong number of arguments to der operator in '\n" &
+	Util.list_map(expl,Dump.print_exp_str) => lst &
+	Util.string_delimit_list(lst,", ") => s &
+	Util.string_append_list(["der(",s,")'.\n"]) => s &
+	Print.print_error_buf s
 	------------------------------------
-	elab_builtin_der(env,_,_) => fail	
+	elab_builtin_der(env,expl,_) => fail	
 end
 
 (** relation: elab_builtin_sample
@@ -3561,8 +3585,8 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef, bool (*impl*) )
 	Print.print_error_buf "# Unknown component: " & 
 	Dump.print_component_ref_str c => s & 
 	Print.print_error_buf s &
-	Print.print_error_buf "\nENV" &
-	Env.print_env_str env => str &
+	Print.print_error_buf " in scope " &
+	Env.print_env_path_str env => str &
 	Print.print_error_buf str &
 	Print.print_error_buf "\n" 
 	-----------------------------------------------------
@@ -3741,6 +3765,7 @@ relation elab_cref2 : (Env.Env,
 	------------------------------
 	elab_cref2 (_,cr,_, _,_,Types.EQBOUND(exp,_,Types.C_VAR)) => fail
 
+	(* constants without value produce error. *)
   rule	Print.print_error_buf "# Constant without a value\n" &
 	Print.print_error_buf "# component: " & 
 	Exp.print_component_ref_str cr => s & 
@@ -3749,14 +3774,17 @@ relation elab_cref2 : (Env.Env,
 	----------------------------------------------
 	elab_cref2 (env,cr,_,SCode.CONST,_,Types.UNBOUND) => fail
 
-  rule	Print.print_error_buf "# Parameter without a value\n" &
+	(* Parameters without value produce warning *)
+  rule	Print.print_error_buf "# Warning, Parameter without a value\n" &
 	Print.print_error_buf "# component: " & 
 	Exp.print_component_ref_str cr => s &
 	Print.print_error_buf s &
-	Print.print_error_buf "\n" 
+	Print.print_error_buf "\n" &
+	Types.elab_type tt => t &
+	fill_cref_subscripts (cr,tt) => cr'
 	----------------------------------------------
-	elab_cref2 (env,cr,_,SCode.PARAM,_,Types.UNBOUND) => fail
-
+	elab_cref2 (env,cr,acc,SCode.PARAM,tt,Types.UNBOUND) 
+	  => (Exp.CREF(cr',t),Types.C_PARAM, acc)
 
   rule	Debug.fprint("failtrace","-elab_cref2 failed\n") 
 	----------------------------------------
@@ -3773,9 +3801,15 @@ end
  ** gives cref_vectorize('x', <arraytype>) => '{x[1],x[2],x[3]}'
  ** This is needed since the DAE does not know what the variable 'x' is, it only
  ** knows the variables 'x[1]', 'x[2]' and 'x[3]'.
+ ** NOTE: Currently only works for one and two dimensions.
 **)
 
 relation cref_vectorize: (Exp.Exp,Types.Type) => Exp.Exp =
+
+
+  rule	create_cref_array_2d(cr,1,ds,ds2,exptp,t) => e
+	-----------------------------------
+	cref_vectorize(Exp.CREF(cr,exptp),(Types.T_ARRAY(Types.DIM(SOME(ds)),(Types.T_ARRAY(Types.DIM(SOME(ds2)),t),_)),_)) =>  e
 
   rule	create_cref_array(cr,1,ds,exptp,t) => e
 	-----------------------------------
@@ -3783,6 +3817,33 @@ relation cref_vectorize: (Exp.Exp,Types.Type) => Exp.Exp =
 
   axiom	cref_vectorize(e,_) => e
 end
+
+(** relation: call_vectorize
+ ** author: PA
+ **
+ ** Takes an expression that is a function call and an expresion list
+ ** and maps the call to each expression in the list.
+ ** For instance, call_vectorize(Exp.CALL(XX("der",),...),{1,2,3}))
+ ** => {Exp.CALL(XX("der"),[1]), Exp.CALL(XX("der"),[2]),Exp.CALL(XX("der",[3]))}
+ ** NOTE: the vectorized expression is inserted first in the argument list
+** of the call, so if extra arguments should be passed these can be given as
+** input to the call expression.	    
+**)
+relation call_vectorize: (Exp.Exp, Exp.Exp list) => Exp.Exp list =
+
+	axiom call_vectorize(e,[]) => []
+
+  rule	call_vectorize(callexp,es) => es' 
+	--------------------------------
+	call_vectorize(callexp as Exp.CALL(fn,args,tuple,builtin),e::es)
+	  => Exp.CALL(fn,e::args,tuple,builtin)::es'
+
+  rule	Debug.fprint("failtrace", "-call_vectorize failed\n")
+	-----------------------------
+	call_vectorize(_,_) => fail
+end
+				 
+ 
 
 (** relation: create_cref_array
  **
@@ -3811,6 +3872,36 @@ relation create_cref_array: (Exp.ComponentRef,
 	------------------------
 	create_cref_array(cr,indx,ds,et,t) => fail
 end
+
+(** relation: create_cref_array_2d
+ **
+ ** helper relation to cref_vectorize, creates each individual cref, 
+ ** e.g. {x[1,1],x[2,1], ...} from x.
+ **)
+
+relation create_cref_array_2d: (Exp.ComponentRef,
+				int, (* index iterator *)
+				int, (* dimension size 1*)
+				int, (* dimension size 2*)
+				Exp.Type, 
+				Types.Type) => Exp.Exp =
+
+  rule	int_gt(indx,ds) => true
+	------------------------
+	create_cref_array_2d(cr,indx,ds,ds2,et,t) => Exp.ARRAY(et,false,[])
+
+  rule	int_add(indx,1) => indx' &
+	create_cref_array(cr,indx',ds,et,t) => Exp.ARRAY(_,_,expl) &
+	Exp.subscript_cref(cr,[Exp.INDEX(Exp.ICONST(indx))]) => cr' &
+	cref_vectorize(Exp.CREF(cr',et),t) => e'
+	------------------------
+	create_cref_array_2d(cr,indx,ds,ds2,et,t) => Exp.ARRAY(et,false,e'::expl)
+
+  rule	Debug.fprint("failtrace","create_cref_array failed\n")
+	------------------------
+	create_cref_array_2d(cr,indx,ds,ds2,et,t) => fail
+end
+
 
 (** relation: elab_cref_subs
  **

@@ -2290,7 +2290,7 @@ relation inst_var2 : (Env.Env,
 	
         inst_start_binding_exp(mod,ty,idxs') => start &
 
-        inst_dae_variable_attributes(mod,ty,idxs') => dae_var_attr &
+        inst_dae_variable_attributes(env,mod,ty,idxs') => dae_var_attr &
 
         dae_declare(cr,ci_state,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,
  		            inst_dims, start, dae_var_attr,comment) => dae3 & 
@@ -4646,7 +4646,7 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	inst_eq_equation_2(Exp.CREF(cr,t),e2,(Types.T_ENUMERATION(_,_),_),initial) => [dae]
 
 
-  rule	RTOpts.split_arrays => true &
+  rule	(*RTOpts.split_arrays => true &*)
 	Exp.contain_functioncall(e1) => false &
 	Exp.contain_functioncall(e2) => false &
 (*	 For debugging.*)
@@ -5491,8 +5491,8 @@ relation inst_binding: (Types.Mod,Types.Type,int list,string)
         (* Have subscript/index *)
   rule  Mod.lookup_comp_modification(mod,bind_name) => mod2 &
         inst_binding2(mod2,etype,index_list,bind_name) => result 
-	    ---------------------------------------------------
-	    inst_binding (mod,etype,index_list,bind_name) => result
+	 ---------------------------------------------------
+	 inst_binding (mod,etype,index_list,bind_name) => result
 
 	(* No modifier for this name. *)
   rule  not Mod.lookup_comp_modification(mod,bind_name) => mod2 
@@ -5566,68 +5566,68 @@ end
  ** somtimes a varible does not contain the variable-attr.
  **)
 
-relation inst_dae_variable_attributes: (Types.Mod,Types.Type,int list) 
+relation inst_dae_variable_attributes: (Env.Env,Types.Mod,Types.Type,int list) 
 	  => DAE.VariableAttributes option =
 
 	  (* Real *)
-  rule  inst_string_binding(mod,index_list,"quantity") => quantity_str &
-        inst_string_binding(mod,index_list,"unit") => unit_str &
-        inst_string_binding(mod,index_list,"displayUnit") => displayunit_str &
-        inst_real_binding(mod,index_list,"min") => min_val &
-        inst_real_binding(mod,index_list,"max") => max_val &
-        inst_real_binding(mod,index_list,"start") => start_val &
-        inst_bool_binding(mod,index_list,"fixed") => fixed_val &
-        inst_real_binding(mod,index_list,"nominal") => nominal_val &
+  rule  inst_string_binding(env,mod,index_list,"quantity") => quantity_str &
+        inst_string_binding(env,mod,index_list,"unit") => unit_str &
+        inst_string_binding(env,mod,index_list,"displayUnit") => displayunit_str &
+        inst_real_binding(env,mod,index_list,"min") => min_val &
+        inst_real_binding(env,mod,index_list,"max") => max_val &
+        inst_real_binding(env,mod,index_list,"start") => start_val &
+        inst_bool_binding(env,mod,index_list,"fixed") => fixed_val &
+        inst_real_binding(env,mod,index_list,"nominal") => nominal_val &
 
-        inst_enumeration_binding(mod,index_list,"stateSelect") => exp_bind_select &
+        inst_enumeration_binding(env,mod,index_list,"stateSelect") => exp_bind_select &
         get_stateSelect_from_exp_option(exp_bind_select) => stateSelect_value
         -----------------------------------------
-        inst_dae_variable_attributes(mod,(Types.T_REAL(_),path),index_list) 
+        inst_dae_variable_attributes(env,mod,(Types.T_REAL(_),path),index_list) 
           => SOME(DAE.VAR_ATTR_REAL(quantity_str,unit_str,displayunit_str,(min_val,max_val),start_val,
                                fixed_val,nominal_val,stateSelect_value))
 
 	(* Integer *)
-  rule  inst_string_binding(mod,index_list,"quantity") => quantity_str &
-        inst_int_binding(mod,index_list,"min") => min_val &
-        inst_int_binding(mod,index_list,"max") => max_val &
-        inst_int_binding(mod,index_list,"start") => start_val &
-        inst_bool_binding(mod,index_list,"fixed") => fixed_val 
+  rule  inst_string_binding(env,mod,index_list,"quantity") => quantity_str &
+        inst_int_binding(env,mod,index_list,"min") => min_val &
+        inst_int_binding(env,mod,index_list,"max") => max_val &
+        inst_int_binding(env,mod,index_list,"start") => start_val &
+        inst_bool_binding(env,mod,index_list,"fixed") => fixed_val 
         -----------------------------------------
-        inst_dae_variable_attributes(mod,(Types.T_INTEGER(_),_),index_list) 
+        inst_dae_variable_attributes(env,mod,(Types.T_INTEGER(_),_),index_list) 
           => SOME(DAE.VAR_ATTR_INT(quantity_str,(min_val,max_val),start_val,
                                fixed_val))
         
 	(* Boolean *)
-  rule  inst_string_binding(mod,index_list,"quantity") => quantity_str &
-        inst_bool_binding(mod,index_list,"start") => start_val &
-        inst_bool_binding(mod,index_list,"fixed") => fixed_val 
+  rule  inst_string_binding(env,mod,index_list,"quantity") => quantity_str &
+        inst_bool_binding(env,mod,index_list,"start") => start_val &
+        inst_bool_binding(env,mod,index_list,"fixed") => fixed_val 
         -----------------------------------------
-        inst_dae_variable_attributes(mod,(Types.T_BOOL(_),_),index_list) 
+        inst_dae_variable_attributes(env,mod,(Types.T_BOOL(_),_),index_list) 
           => SOME(DAE.VAR_ATTR_BOOL(quantity_str,start_val,
                                fixed_val))
   
 	(* String *)
-  rule  inst_string_binding(mod,index_list,"quantity") => quantity_str &
-        inst_string_binding(mod,index_list,"start") => start_val 
+  rule  inst_string_binding(env,mod,index_list,"quantity") => quantity_str &
+        inst_string_binding(env,mod,index_list,"start") => start_val 
         -----------------------------------------
-        inst_dae_variable_attributes(mod,(Types.T_STRING(_),_),index_list) 
+        inst_dae_variable_attributes(env,mod,(Types.T_STRING(_),_),index_list) 
           => SOME(DAE.VAR_ATTR_STRING(quantity_str,start_val))
 
 	  (* Enumeration *)
-  rule  inst_string_binding(mod,index_list,"quantity") => quantity_str &
+  rule  inst_string_binding(env,mod,index_list,"quantity") => quantity_str &
         inst_binding(mod,enumtype,index_list,"min") => exp_bind_min &
         inst_binding(mod,enumtype,index_list,"max") => exp_bind_max &
         inst_binding(mod,enumtype,index_list,"start") => exp_bind_start &
-        inst_bool_binding(mod,index_list,"fixed") => fixed_val 
+        inst_bool_binding(env,mod,index_list,"fixed") => fixed_val 
         -----------------------------------------
-        inst_dae_variable_attributes(mod, enumtype as (Types.T_ENUMERATION(_,_),_),index_list) 
+        inst_dae_variable_attributes(env,mod, enumtype as (Types.T_ENUMERATION(_,_),_),index_list) 
           => SOME(DAE.VAR_ATTR_ENUMERATION(quantity_str,(exp_bind_min,exp_bind_max),exp_bind_start,fixed_val))
 
   rule  (*  Print.print_error_buf "# unknown type for variable.\n"  & *)
 (*         Mod.print_mod_str(mod) => str & *)
 (*         print str & print "<- mod \n" *)
         -----------------------------------------
-        inst_dae_variable_attributes(mod,_,_) => NONE
+        inst_dae_variable_attributes(env,mod,_,_) => NONE
 
 end
 
@@ -5639,20 +5639,29 @@ end
  ** difference between parameters and variables
  **)
 
-relation inst_bool_binding: (Types.Mod,int list,string) => bool option =
+relation inst_bool_binding: (Env.Env, Types.Mod,int list,string) => bool option =
      
   rule inst_binding(mod,(Types.T_BOOL([]),NONE),index_list,bind_name) 
-	  => SOME(Exp.BCONST(result))
+	  => SOME(e) &
+	Ceval.ceval(env,e,false,NONE,NONE,Ceval.NO_MSG) => (Values.BOOL(result),_)
           -----------------------------------------
-        inst_bool_binding(mod,index_list,bind_name) => SOME(result)
+        inst_bool_binding(env,mod,index_list,bind_name) => SOME(result)
+
+	(* Non constant expression return NONE *)
+  rule inst_binding(mod,(Types.T_BOOL([]),NONE),index_list,bind_name) 
+	  => SOME(e) 
+          -----------------------------------------
+        inst_bool_binding(env,mod,index_list,bind_name) => NONE
    
   rule inst_binding(mod,(Types.T_BOOL([]),NONE),index_list,bind_name) => NONE
         -----------------------------------------
-        inst_bool_binding(mod,index_list,bind_name) => NONE
+        inst_bool_binding(env,mod,index_list,bind_name) => NONE
 
-  rule  Print.print_error_buf "# Wrong type on predefined.\n"
+rule 	Print.print_error_buf "# Wrong type on " &
+	Print.print_error_buf bind_name &
+	Print.print_error_buf " expecting Boolean.\n"
         -----------------------------------------
-        inst_bool_binding(mod,index_list,_) => fail
+        inst_bool_binding(env,mod,index_list,bind_name) => fail
    
 end
 
@@ -5662,24 +5671,29 @@ end
  ** instantiates a real binding and retrieves the value.
  **)
 
-relation inst_real_binding: (Types.Mod,int list,string) => real option =
-     
-  rule inst_binding(mod,(Types.T_REAL([]),NONE),index_list,bind_name) => SOME(Exp.RCONST(result))
+relation inst_real_binding: (Env.Env,Types.Mod,int list,string) => real option =
+
+  rule inst_binding(mod,(Types.T_REAL([]),NONE),index_list,bind_name) 
+	  => SOME(e) &
+	Ceval.ceval(env,e,false,NONE,NONE,Ceval.NO_MSG) => (Values.REAL(result),_)
         -----------------------------------------
-        inst_real_binding(mod,index_list,bind_name) => SOME(result)
-   
-  rule inst_binding(mod,(Types.T_INTEGER([]),NONE),index_list,bind_name) => SOME(Exp.ICONST(result)) &
-        int_real(result) => r_result
+        inst_real_binding(env,mod,index_list,bind_name) => SOME(result)
+
+	(* non constant expression, return NONE *)
+  rule inst_binding(mod,(Types.T_REAL([]),NONE),index_list,bind_name) 
+	  => SOME(e) 
         -----------------------------------------
-        inst_real_binding(mod,index_list,bind_name) => SOME(r_result)
+        inst_real_binding(env,mod,index_list,bind_name) => NONE
 
   rule	inst_binding(mod,(Types.T_REAL([]),NONE),index_list,bind_name) => NONE
         -----------------------------------------
-        inst_real_binding(mod,index_list,bind_name) => NONE
+        inst_real_binding(env,mod,index_list,bind_name) => NONE
 
-  rule  Print.print_error_buf "# Wrong type on predefined.\n"
+  rule  Print.print_error_buf "# Wrong type on " &
+	Print.print_error_buf bind_name &
+	Print.print_error_buf " expecting Real.\n" 
         -----------------------------------------
-        inst_real_binding(mod,index_list,_) => fail 
+        inst_real_binding(env,mod,index_list,bind_name) => fail 
    
 end
 
@@ -5689,19 +5703,30 @@ end
  ** instantiates an int binding and retrieves the value.
  **)
 
-relation inst_int_binding: (Types.Mod,int list,string) => int option =
+relation inst_int_binding: (Env.Env,Types.Mod,int list,string) => int option =
      
-  rule inst_binding(mod,(Types.T_INTEGER([]),NONE),index_list,bind_name) => SOME(Exp.ICONST(result))
+  rule inst_binding(mod,(Types.T_INTEGER([]),NONE),index_list,bind_name) 
+	  => SOME(e) &
+	Ceval.ceval(env,e,false,NONE,NONE,Ceval.NO_MSG) => (Values.INTEGER(result),_)
         -----------------------------------------
-        inst_int_binding(mod,index_list,bind_name) => SOME(result)
+        inst_int_binding(env,mod,index_list,bind_name) => SOME(result)
+
+	(* got non-constant expression, return NONE *)
+  rule	inst_binding(mod,(Types.T_INTEGER([]),NONE),index_list,bind_name) 
+	  => SOME(e) 
+	  ------------------
+        inst_int_binding(env,mod,index_list,bind_name) => NONE
    
   rule inst_binding(mod,(Types.T_INTEGER([]),NONE),index_list,bind_name) => NONE
         -----------------------------------------
-        inst_int_binding(mod,index_list,bind_name) => NONE
+        inst_int_binding(env,mod,index_list,bind_name) => NONE
 
-  rule  Print.print_error_buf "# Wrong type on predefined.\n"
+
+  rule  Print.print_error_buf "# Wrong type on " &
+	Print.print_error_buf bind_name &
+	Print.print_error_buf " expecting Integer\n"
         -----------------------------------------
-        inst_int_binding(mod,index_list,_) => fail
+        inst_int_binding(env,mod,index_list,bind_name) => fail
    
 end
 
@@ -5711,19 +5736,30 @@ end
  ** instantiates a string binding and retrieves the value.
  **)
 
-relation inst_string_binding: (Types.Mod,int list,string) => string option =
+relation inst_string_binding: (Env.Env,Types.Mod,int list,string) => string option =
      
-  rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => SOME(Exp.SCONST(result))
+  rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) 
+	  => SOME(e) &
+	Ceval.ceval(env,e,false,NONE,NONE,Ceval.NO_MSG) 
+	  => (Values.STRING(result),_)
         -----------------------------------------
-        inst_string_binding(mod,index_list,bind_name) => SOME(result)
-   
+        inst_string_binding(env,mod,index_list,bind_name) => SOME(result)
+
+	(* Non constant expression return NONE *)
+  rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) 
+	  => SOME(e) 
+        -----------------------------------------
+        inst_string_binding(env,mod,index_list,bind_name) => NONE
+
   rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) => NONE
         -----------------------------------------
-        inst_string_binding(mod,index_list,bind_name) => NONE
+        inst_string_binding(env,mod,index_list,bind_name) => NONE
 
-  rule  Print.print_error_buf "# Wrong type on predefined.\n"
+  rule	Print.print_error_buf "# Wrong type on " &
+	Print.print_error_buf bind_name &
+	Print.print_error_buf " expecting Integer\n"
         -----------------------------------------
-        inst_string_binding(mod,index_list,_) => fail
+        inst_string_binding(env,mod,index_list,bind_name) => fail
    
 end
 
@@ -5732,16 +5768,19 @@ end
  **
  ** instantiates a enumeration binding and retrieves the value.
  **)
-relation inst_enumeration_binding: (Types.Mod,int list,string) 
+relation inst_enumeration_binding: (Env.Env,Types.Mod,int list,string) 
 	  => Exp.Exp option =
      
-  rule inst_binding(mod,(Types.T_ENUMERATION([],[]),NONE),index_list,bind_name) => result
+  rule inst_binding(mod,(Types.T_ENUMERATION([],[]),NONE),index_list,bind_name) 
+	  => result
         -----------------------------------------
-        inst_enumeration_binding(mod,index_list,bind_name) => result
+        inst_enumeration_binding(env,mod,index_list,bind_name) => result
    
-  rule  Print.print_error_buf "# Wrong type on predefined.\n"
+  rule	Print.print_error_buf "# Wrong type on " &
+	Print.print_error_buf bind_name &
+	Print.print_error_buf " expecting enumeration type.\n"
         -----------------------------------------
-        inst_enumeration_binding(mod,index_list,_) => fail
+        inst_enumeration_binding(env,mod,index_list,bind_name) => fail
    
 end
 

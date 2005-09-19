@@ -242,7 +242,8 @@ relation generate_simulation_code: (DAE.DAElist,
 	generate_simulation_code(dae,dlow,ass1,ass2,m,mt,comps,class,filename) => ()
 
 
-  rule	print "-generate_simulation_code failed\n" 
+  rule	print "-generate_simulation_code failed\n" &
+	Print.print_error_buf "# Generation of simulation code failed\n" 
 	-----------------------
 	generate_simulation_code(_,_,_,_,_,_,_,_,_) => fail
 end
