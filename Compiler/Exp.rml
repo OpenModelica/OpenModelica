@@ -4267,7 +4267,7 @@ relation solve : (Exp, (* lhs *)
 	solve (crexp as CREF(cr1,_), rhs, CREF(cr2,_)) => rhs
 	
 	(* Special case when already solved, lhs = cr1
-	 ** otherwise division by zero  when dividing with derivative *)
+ 	 ** otherwise division by zero  when dividing with derivative *)
   rule	cref_equal(cr1,cr2) => true &
 	exp_contains (lhs,crexp) => false 
 	---------------------------------

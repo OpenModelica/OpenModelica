@@ -223,13 +223,12 @@ relation generate_simulation_code: (DAE.DAElist,
 	generate_output_function_code(dlow) => (out_str,n_o) &
 	generate_input_function_code(dlow) => (in_str,n_i) &
         generate_global_data(class,dlow,n_o,n_i) => cglobal &  
-        
         generate_compute_output(cname,dae,dlow,ass1,ass2,blt_no_states) 
 	  => coutput &
           generate_compute_residual_state(cname,dae,dlow,ass1,ass2,blt_states) 
 	  => cstate &
 	generate_ode_code(dlow,blt_states,ass1,ass2,m,mt,class) => c_ode &
-        generate_initial_value_code(dlow) => s_code &
+	generate_initial_value_code(dlow) => s_code &
 	generate_when_clauses(cname,dae,dlow,ass1,ass2,comps) => cwhen &
 	string_append(cname,"_functions.cpp") => funcfilename &
 	Util.string_append_list(["//Simulation code for ",cname,
@@ -472,7 +471,7 @@ relation generate_var_names_and_comments_derivatives:(DAELow.Var list) => (strin
 	-----------------------
 	generate_var_names_and_comments_derivatives(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,
 				_,value,indx,origname,_,dae_var_attr,comment,flow)::vs)
-	=> (complete_var_name::res,comment::res2)
+	=> (complete_var_name::res,comment'::res2)
 
   rule	generate_var_names_and_comments_derivatives(vs) =>(res,res2) 
 	-----------------------
@@ -1471,13 +1470,15 @@ relation generate_functions: (SCode.Program, (* Needed to instantiate functions*
 	generate_functions_2(p,funcpaths) => funcelems &
 	Print.get_string => debugstr &
 	Print.clear_buf &
-	Codegen.generate_functions(DAE.DAE(funcelems)) &
+	(*debug*) Debug.fprintln("info", "Generating functions, call Codegen.\n") &
+ 	Codegen.generate_functions(DAE.DAE(funcelems)) &
 	Print.write_buf(filename)
 	--------------------------------------------------
 	generate_functions (p,dae as DAE.DAE(elements), dlow, path, filename)
 
 
-  rule	print "-generate_functions failed\n" 
+  rule	print "-generate_functions failed\n" & 
+	Print.print_error_buf "# Generate functions failed\n" 
 	-------------------------------------
 	generate_functions (_, _, _, _, _) => fail
 
@@ -2278,7 +2279,6 @@ end
 	 DAELow.vararray_nth(vararr,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flow)) &  
 	 DAELow.is_non_state kind => true &
 	 (*print "Solving for non-states\n" &*)
-	 
 	 let varexp = Exp.CREF(cr,Exp.REAL) &
 	 Exp.solve(e1,e2,varexp) => expr &
          Exp.simplify(expr) => simplify_exp &

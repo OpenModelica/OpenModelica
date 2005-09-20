@@ -5060,23 +5060,65 @@ relation translate_dae: DAELow => DAELow =
 	equation_list(seqns) => seqnsl &
 	equation_list(ieqns) => ieqnsl &
 	variable_replacements(totvars,eqnsl) => (s,t) &
-	replace_variables(eqnsl,s,t) => eqnsl' &
+	
+	translate_dae_replace(s,t,eqnsl,seqnsl,ieqnsl,al,wc,varlst',knvarlst',"$")
+	  => (eqnsl',seqnsl',ieqnsl',al',wc',varlst'',knvarlst'') &
+	
+	(* remove dollar sign *)
+	variable_replacements_no_dollar(varlst'',knvarlst'') => (s1,t1) &
+
+	translate_dae_replace(s1,t1,eqnsl',seqnsl',ieqnsl',al',wc',varlst'',knvarlst'',"")
+	  => (eqnsl'',seqnsl'',ieqnsl'',al'',wc'',varlst''',knvarlst''') &
+
+        empty_vars() => vars' &
+	empty_vars() => knvars' &
+	add_vars(varlst''',vars') => vars'' &
+	add_vars(knvarlst''',knvars') => knvars'' &
+	list_equation(eqnsl'') => eqns'  &
+	list_equation(seqnsl'') => seqns' &
+	list_equation(ieqnsl'') => ieqns' &
+	let trans_dae = DAELOW(vars'',knvars'',eqns',seqns',ieqns',al'',EVENT_INFO(wc'',zc))
+	------------------------------------
+	translate_dae(DAELOW(vars,knvars,eqns,seqns,ieqns,al,EVENT_INFO(wc,zc)))
+	  => trans_dae
+end
+
+(** relation: translate_dae_replace
+ ** author: PA
+ **
+ ** Helper relation to translate_dae, replaces all expressions in various parts
+ ** of the daelow,
+ ** given a set of transformation rules.
+ **)
+
+relation translate_dae_replace: (Exp.Exp list, (* sources *)
+				 Exp.Exp list, (* targets *)
+				 Equation list, (* eqns *)
+				 Equation list, (* reqns *)
+				 Equation list, (* ieqns *)
+				 Algorithm.Algorithm array, (*algs *)
+				 WhenClause list, (* wc *)
+				 Var list, (* vars *)
+ 				 Var list, (* knvars *)
+				 string) (* variable prefix, "$" or "" *)
+	  => ( Equation list, (* eqns *)
+	      Equation list, (* reqns *)
+	      Equation list, (* ieqns *)
+	      Algorithm.Algorithm array, (*algs *)
+	      WhenClause list,
+	      Var list,
+	      Var list) =
+
+  rule	replace_variables(eqnsl,s,t) => eqnsl' &
 	replace_variables(seqnsl,s,t) => seqnsl' &
 	replace_variables(ieqnsl,s,t) => ieqnsl' &
 	replace_variables_in_alg(al,s,t) => al' &
 	replace_variables_in_when_clauses(wc,s,t) => wc' &
-	transform_variables(varlst',s,t) => varlst'' &
-	transform_variables(knvarlst',s,t) => knvarlst''  &
-        empty_vars() => vars' &
-	empty_vars() => knvars' &
-	add_vars(varlst'',vars') => vars'' &
-	add_vars(knvarlst'',knvars') => knvars'' &
-	list_equation(eqnsl') => eqns'  &
-	list_equation(seqnsl') => seqns' &
-	list_equation(ieqnsl') => ieqns' 
-	------------------------------------
-	translate_dae(DAELOW(vars,knvars,eqns,seqns,ieqns,al,EVENT_INFO(wc,zc))) 
-	  => DAELOW(vars'',knvars'',eqns',seqns',ieqns',al',EVENT_INFO(wc',zc)) 
+	transform_variables(varlst,s,t,var_prefix) => varlst' &
+	transform_variables(knvarlst,s,t,var_prefix) => knvarlst'  
+	------------------------------
+	translate_dae_replace(s,t,eqnsl,seqnsl,ieqnsl,al,wc,varlst,knvarlst,var_prefix)
+	  => (eqnsl',seqnsl',ieqnsl',al',wc',varlst',knvarlst')
 end
 
 (** relation: replace_variables_in_when_clauses
@@ -5922,10 +5964,10 @@ end
  ** author: PA
  **
  ** Returns a two list of replacement expressions for variable transformations.
- ** For instance, replacing state s with x[3] and der(s) with xd[3],
+ ** For instance, replacing state s with $x[3] and der(s) with $xd[3],
  ** NOTE: The derivative expressions must be first, so they are replaced first
  ** i.e der(s) is replaced before s is replaced which gives a wrong 
- ** variable like der(x[5])
+ ** variable like der($x[5])
  **)
 
 relation variable_replacements: (Var list, Equation list) 
@@ -5945,69 +5987,142 @@ relation variable_replacements: (Var list, Equation list)
 	variable_replacements(vars,eqns) =>  fail
 end
 
+(** relation: variable_replacements_no_dollar
+ ** author: PA
+ **
+ ** When all variables have been replaced to a indexed variable starting
+ ** with a dollar sig, '$', it can again be translated to remove the sign.
+ ** This relation builds replacement rules for removing the sign.
+ **)
+
+relation variable_replacements_no_dollar: (Var list, Var list) 
+	  => (Exp.Exp list, Exp.Exp list) =
+	  
+  rule	variable_replacements_remove_dollar(vars) => (s1,t1) &
+	variable_replacements_remove_dollar(knvars) => (s2,t2) &
+	list_append(s1,s2) => s &
+	list_append(t1,t2) => t
+	---------------------
+	variable_replacements_no_dollar(vars,knvars) =>  (s,t)
+	
+  rule	print "-variable_replacements_no_dollar failed\n" 
+	---------------------------------------
+	variable_replacements_no_dollar(vars,knvars) =>  fail
+end
+
+(** relation: variable_replacements_remove_dollar
+ ** author: PA
+ **
+ ** Removes the prefixed dollar sign on each variable, returning a list 
+ ** of replacements rules.
+ **)
+relation variable_replacements_remove_dollar: Var list 
+	  => (Exp.Exp list, Exp.Exp list) = 
+
+  axiom variable_replacements_remove_dollar([]) => ([],[])
+
+	(* Special case for states, add $xd[indx] too .*)
+  rule	variable_replacements_remove_dollar(vs) => (s,t) &
+	string_list(str) => #"$"::#"x"::rest & 
+	list_string(rest) => str' &
+	string_append("x",str') => str'' &
+	string_append("xd",str') => xd_t &
+	string_append("$xd",str') => xd_s 
+	-------------------------------
+	variable_replacements_remove_dollar(VAR(cr as Exp.CREF_IDENT(str,[]),STATE,_,_,_,_,_,_,_,_,_,_,_,_)::vs) 
+ 	  => (Exp.CREF(cr,Exp.REAL)::Exp.CREF(Exp.CREF_IDENT(xd_s,[]),Exp.REAL)::s, 
+	      Exp.CREF(Exp.CREF_IDENT(str',[]),Exp.REAL)::Exp.CREF(Exp.CREF_IDENT(xd_t,[]),Exp.REAL)::t)
+
+  rule	variable_replacements_remove_dollar(vs) => (s,t) &
+	string_list(str) => #"$"::rest & (* first character dollar sign. *)
+	list_string(rest) => str' 
+	-------------------------------
+	variable_replacements_remove_dollar(VAR(cr as Exp.CREF_IDENT(str,[]),_,_,_,_,_,_,_,_,_,_,_,_,_)::vs) 
+	  => (Exp.CREF(cr,Exp.REAL)::s, Exp.CREF(Exp.CREF_IDENT(str',[]),Exp.REAL)::t)
+
+  rule	not string_list(str) => #"$"::_  &
+	print "Error, variable not prefixed with dollar sign.\n"
+	-------------------------------
+	variable_replacements_remove_dollar(VAR(cr as Exp.CREF_IDENT(str,[]),_,_,_,_,_,_,_,_,_,_,_,_,_)::vs) 
+	  => fail
+  rule	print "-variable_replacements_remove_dollar failed\n" 
+	----------------------------
+	variable_replacements_remove_dollar(_) => fail
+end
+
 (** relation: alg_variable_replacements
  ** author: PA
  **
  ** Build replacement "rules" for the variables, eg. states, 
- ** algebraic variables, parameters, etc. 
+ ** algebraic variables, parameters, etc.
+ ** Note: the new variable must be an identifier not valid in Modelica, 
+ ** otherwise name collisions may occur.
  **)
 
 relation alg_variable_replacements: (Var list) => (Exp.Exp list, Exp.Exp list) =
 
   axiom	alg_variable_replacements([]) => ([],[])
 
+	(* algebraic variables, '$y[index]' *)
   rule	alg_variable_replacements(vs) => (s1,t1) &
 	int_string(indx) => indxs &
-	Util.string_append_list(["y[",indxs,"]"]) => newid
+	Util.string_append_list(["$y[",indxs,"]"]) => newid
 	--------------------
 	alg_variable_replacements(VAR(cr,VARIABLE,_,_,_ ,_,_,_,indx,_,_,dae_var_attr,comment,flow)::vs)
 	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
 
+	  (* state variables, '$x[index]' *)
   rule	alg_variable_replacements(vs) => (s1,t1) &
 	int_string(indx) => indxs &
-	Util.string_append_list(["x[",indxs,"]"]) => newid
+	Util.string_append_list(["$x[",indxs,"]"]) => newid
 	--------------------
 	alg_variable_replacements(VAR(cr,STATE,_,_,_, _,_,_,indx,_,_,dae_var_attr,comment,flow)::vs)
 	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
 
+	  (* dummy derivatives => alg. vars *)
   rule	alg_variable_replacements(vs) => (s1,t1) &
 	int_string(indx) => indxs &
-	Util.string_append_list(["y[",indxs,"]"]) => newid
+	Util.string_append_list(["$y[",indxs,"]"]) => newid
 	--------------------
 	alg_variable_replacements(VAR(cr,DUMMY_DER,_,_, _,_,_,_,indx,_,_,dae_var_attr,comment,flow)::vs)
 	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
 
+	  (* dummy states => alg. vars *)
   rule	alg_variable_replacements(vs) => (s1,t1) &
 	int_string(indx) => indxs &
-	Util.string_append_list(["y[",indxs,"]"]) => newid
+	Util.string_append_list(["$y[",indxs,"]"]) => newid
 	--------------------
 	alg_variable_replacements(VAR(cr,DUMMY_STATE,_,_, _,_,_,_,indx,_,_,dae_var_attr,comment,flow)::vs)
 	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
 
+	  (* discrete variables, => alg. vars *)
   rule	alg_variable_replacements(vs) => (s1,t1) &
 	int_string(indx) => indxs &
-	Util.string_append_list(["y[",indxs,"]"]) => newid
+	Util.string_append_list(["$y[",indxs,"]"]) => newid
 	--------------------
 	alg_variable_replacements(VAR(cr,DISCRETE,_,_, _,_,_,_,indx,_,_,dae_var_attr,comment,flow)::vs)
 	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
 
+	  (* parameters *)
   rule	alg_variable_replacements(vs) => (s1,t1) &
 	int_string(indx) => indxs &
-	Util.string_append_list(["p[",indxs,"]"]) => newid
+	Util.string_append_list(["$p[",indxs,"]"]) => newid
 	--------------------
 	alg_variable_replacements(VAR(cr,PARAM,_,_, _,_,_,_,indx,_,_,dae_var_attr,comment,flow)::vs)
 	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
 
+	  (* structural parameters *)
   rule	alg_variable_replacements(vs) => (s1,t1) &
 	int_string(indx) => indxs &
-	Util.string_append_list(["p[",indxs,"]"]) => newid
+	Util.string_append_list(["$p[",indxs,"]"]) => newid
 	--------------------
 	alg_variable_replacements(VAR(cr,STRUCTPARAM,_,_, _,_,_,_,indx,_,_,dae_var_attr,comment,flow)::vs)
 	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
 
+	  (* constants, should not occur... *)
   rule	alg_variable_replacements(vs) => (s1,t1) &
 	int_string(indx) => indxs &
-	Util.string_append_list(["p[",indxs,"]"]) => newid
+	Util.string_append_list(["$p[",indxs,"]"]) => newid
 	--------------------
 	alg_variable_replacements(VAR(cr,CONST,_,_, _,_,_,_,indx,_,_,dae_var_attr,comment,flow)::vs)
 	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
@@ -6063,7 +6178,7 @@ relation derivative_replacements: (Exp.ComponentRef list, Var list)
   rule	derivative_replacements(ss,vars)  => (s1,t1) &
 	get_index(s,vars) => indx &
 	int_string(indx) => indxs &
-	Util.string_append_list(["xd[",indxs,"]"]) => newid
+	Util.string_append_list(["$xd[",indxs,"]"]) => newid
 	------------------------------------------
 	derivative_replacements(s::ss,vars) 
 	  => (Exp.CALL(Absyn.IDENT("der"),
@@ -6123,25 +6238,46 @@ end
  ** Helper relation to translate_dae
 **)
 
-relation transform_variables: (Var list, Exp.Exp list, Exp.Exp list) => (Var list) =
+relation transform_variables: (Var list, 
+			       Exp.Exp list, 
+			       Exp.Exp list,
+			       string (* varible prefix, "$" or "" *)
+			       ) => (Var list) =
 
-  axiom transform_variables([],_,_) => []
+  axiom transform_variables([],_,_,_) => []
 
-  rule	transform_variables(vs,s,t) => vs' &
-	transform_variable(i,kind) => cr' &
+	(* When dollar sign, save original name *)
+  rule	transform_variables(vs,s,t,var_prefix) => vs' &
+	transform_variable(i,kind,var_prefix) => cr' &
 	Exp.print_component_ref_str(cr) => name &	
         Exp.replace_exp_list(e,s,t) => (e',_) &
         transform_startValue(start,s,t) => start'
 	-------------------
-	transform_variables(VAR(cr,kind,a,b,SOME(e), c,d,start,i,_,j,dae_var_attr,comment,flow)::vs,s,t)
+	transform_variables(VAR(cr,kind,a,b,SOME(e), c,d,start,i,_,j,dae_var_attr,comment,flow)::vs,s,t,var_prefix as "$")
 	=> (VAR(cr',kind,a,b,SOME(e'),c,d,start',i,name,j,dae_var_attr,comment,flow)::vs')
-
-  rule	transform_variables(vs,s,t) => vs' &
-	transform_variable(i,kind) => cr' &
+	(* when empty prefix, use old original name *)
+  rule	transform_variables(vs,s,t,var_prefix) => vs' &
+	transform_variable(i,kind,var_prefix) => cr' &
+        Exp.replace_exp_list(e,s,t) => (e',_) &
+        transform_startValue(start,s,t) => start'
+	------------------- 
+	transform_variables(VAR(cr,kind,a,b,SOME(e), c,d,start,i,name,j,dae_var_attr,comment,flow)::vs,s,t,var_prefix as "")
+	=> (VAR(cr',kind,a,b,SOME(e'),c,d,start',i,name,j,dae_var_attr,comment,flow)::vs')
+	  (* When dollar sign, save original name *)
+  rule	transform_variables(vs,s,t,var_prefix) => vs' &
+	transform_variable(i,kind,var_prefix) => cr' &
 	Exp.print_component_ref_str(cr) => name &
         transform_startValue(start,s,t) => start'
 	---------------------------------------
-	transform_variables(VAR(cr,kind,a,b,NONE, c,d,start,i,_,j,dae_var_attr,comment,flow)::vs,s,t)
+	transform_variables(VAR(cr,kind,a,b,NONE, c,d,start,i,_,j,dae_var_attr,comment,flow)::vs,s,t,var_prefix as "$")
+	=> (VAR(cr',kind,a,b,NONE,c,d,start',i,name,j,dae_var_attr,comment,flow)::vs')
+
+	(* when empty prefix, use old original name *)
+  rule	transform_variables(vs,s,t,var_prefix) => vs' &
+	transform_variable(i,kind,var_prefix) => cr' &
+        transform_startValue(start,s,t) => start'
+	---------------------------------------
+	transform_variables(VAR(cr,kind,a,b,NONE, c,d,start,i,name,j,dae_var_attr,comment,flow)::vs,s,t,var_prefix as "")
 	=> (VAR(cr',kind,a,b,NONE,c,d,start',i,name,j,dae_var_attr,comment,flow)::vs')
 
 end
@@ -6169,42 +6305,45 @@ end
  ** Helper relation to transform_variables
 **)
 
-relation transform_variable: (int, VarKind) => Exp.ComponentRef =
+relation transform_variable: (int, 
+			      VarKind, 
+			      string (* varible prefix, "$" or "" *)
+			      ) => Exp.ComponentRef =
 
   rule	int_string(i) => is &
-	Util.string_append_list(["y[",is,"]"]) => id
+	Util.string_append_list([var_prefix,"y[",is,"]"]) => id
 	-------------------
- 	transform_variable(i, VARIABLE) => Exp.CREF_IDENT(id,[])
+ 	transform_variable(i, VARIABLE,var_prefix) => Exp.CREF_IDENT(id,[])
 
   rule	int_string(i) => is &
-	Util.string_append_list(["x[",is,"]"]) => id
+	Util.string_append_list([var_prefix,"x[",is,"]"]) => id
 	-------------------
- 	transform_variable(i, STATE) => Exp.CREF_IDENT(id,[])
+ 	transform_variable(i, STATE,var_prefix) => Exp.CREF_IDENT(id,[])
 
   rule	int_string(i) => is &
-	Util.string_append_list(["y[",is,"]"]) => id
+	Util.string_append_list([var_prefix,"y[",is,"]"]) => id
 	-------------------
- 	transform_variable(i, DUMMY_DER) => Exp.CREF_IDENT(id,[])
+ 	transform_variable(i, DUMMY_DER,var_prefix) => Exp.CREF_IDENT(id,[])
 
   rule	int_string(i) => is &
-	Util.string_append_list(["y[",is,"]"]) => id
+	Util.string_append_list([var_prefix,"y[",is,"]"]) => id
 	-------------------
- 	transform_variable(i, DUMMY_STATE) => Exp.CREF_IDENT(id,[])
+ 	transform_variable(i, DUMMY_STATE,var_prefix) => Exp.CREF_IDENT(id,[])
 
   rule	int_string(i) => is &
-	Util.string_append_list(["y[",is,"]"]) => id
+	Util.string_append_list([var_prefix,"y[",is,"]"]) => id
 	-------------------
- 	transform_variable(i, DISCRETE) => Exp.CREF_IDENT(id,[])
+ 	transform_variable(i, DISCRETE,var_prefix) => Exp.CREF_IDENT(id,[])
 
   rule	int_string(i) => is &
-	Util.string_append_list(["p[",is,"]"]) => id
+	Util.string_append_list([var_prefix,"p[",is,"]"]) => id
 	-------------------
- 	transform_variable(i, PARAM) => Exp.CREF_IDENT(id,[])
+ 	transform_variable(i, PARAM,var_prefix) => Exp.CREF_IDENT(id,[])
 
   rule	int_string(i) => is &
-	Util.string_append_list(["p[",is,"]"]) => id
+	Util.string_append_list([var_prefix,"p[",is,"]"]) => id
 	-------------------
- 	transform_variable(i, CONST) => Exp.CREF_IDENT(id,[])
+ 	transform_variable(i, CONST,var_prefix) => Exp.CREF_IDENT(id,[])
 end
 
 (** relation: calculate_indexes2

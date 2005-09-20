@@ -1590,7 +1590,7 @@ relation generate_algorithm: (DAE.Element, int)
 	generate_algorithm (DAE.ALGORITHM(Algorithm.ALGORITHM(stmts)),tnr)
 	  => (cfn,tnr')
 
-  rule	Print.print_buf "# generate_algorithm failed\n"
+  rule	Debug.fprint("failtrace","# generate_algorithm failed\n")
 	------------------------------------
   	generate_algorithm (_,_) => fail
 
@@ -2499,9 +2499,13 @@ relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	------------------------------------
 	generate_binary(e1,Exp.DIV(_),e2,tnr) => (cfn,var,tnr2)
 
-  rule	Print.print_buf "# pow not implemented yet"
+	(* POW uses the math lib function with the same name. *)
+  rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2,tnr1) =>(cfn2,var2,tnr2) &
+	Util.string_append_list(["pow(",var1,", ",var2,")"]) => var &
+	c_merge_fn(cfn1,cfn2) => cfn
 	-------------------------------
-	generate_binary(e1,Exp.POW(_),e2,tnr) => fail
+	generate_binary(e1,Exp.POW(_),e2,tnr) => (cfn,var,tnr2)
 
   rule	Print.print_buf "# Unary minus in binary expression (internal error)"
 	-------------------------
