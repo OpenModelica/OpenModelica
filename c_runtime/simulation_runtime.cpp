@@ -22,19 +22,28 @@
 //#include <iostream>
 #include <string>
 #include <limits>
+#include <list>
+#include <math.h>
 #include "simulation_runtime.h"
 #include "options.h"
 
 using namespace std;
 
-// dummy zeroCrossing
-int zeroCrossing(long *neqm, double *t, double *y, long *ng, double *gout, double *rpar, long* ipar){
-  //Parameter adjustments
-  double time = *t;
-  --y;
-  --gout;
-  return 0;
-}
+static long current_pos;
+static double* data;
+
+static list<long> EventQueue;
+
+long numpoints; // the number of points allocated for in data array
+long actual_points=0; // the number of actual points saved
+double t;
+
+double* h_saved;
+double* x_saved;
+double* xd_saved;
+double* y_saved;
+double* gout;
+long* zeroCrossingEnabled;
 
 // dummy Jacobian
 int dummyJacobianDASSL(double *t, double *y, double *yprime, double *pd, long *cj, double *rpar, long* ipar){
@@ -54,8 +63,33 @@ inline void dumpresult(double t, double y, long idid, double* rwork, long* iwork
   cout << endl;
 }
 
+// relation functions used in zero crossing detection
+double Less(double a, double b) 
+{
+  return a-b;
+}
+
+double LessEq(double a, double b) 
+{
+  return a-b;
+}
+
+double Greater(double a, double b) 
+{
+  return b-a;
+}
+
+double GreaterEq(double a, double b) 
+{
+  return b-a;
+}
+
+
+static int maxpoints;
+
 inline double * initialize_simdata(long numpoints,long nx, long ny)
 {
+  maxpoints = numpoints;
   
   double *data = new double[numpoints*(nx*2+ny+1)];
   if (!data) {
@@ -63,7 +97,39 @@ inline double * initialize_simdata(long numpoints,long nx, long ny)
 	      << endl;
     exit(-1);
   }
+  current_pos = 0;
   return data;
+}
+
+inline double newTime(double t, double step)
+{
+  return (floor( (t+1e-10) / step) + 1.0)*step;
+}
+
+inline void calcEnabledZeroCrossings()
+{
+  int i;
+  for (i=0;i<ng;i++) {
+    zeroCrossingEnabled[i] = 1;
+  }
+  function_zeroCrossing(&nx,&t,x,&ng,gout,0,0);
+  for (i=0;i<ng;i++) {
+    if (gout[i] > 0)
+      zeroCrossingEnabled[i] = 1;
+    else if (gout[i] < 0)
+      zeroCrossingEnabled[i] = -1;
+    else
+      zeroCrossingEnabled[i] = 0;
+    //    cout << "e[" << i << "]=" << zeroCrossingEnabled[i] << endl;
+  }
+}
+
+void emit()
+{
+  if (actual_points < maxpoints)
+    add_result(data,t,x,xd,y,nx,ny,&actual_points);
+  else
+    cout << "To many points" << endl;
 }
 
 int euler_main(int, char **);
@@ -107,7 +173,7 @@ int euler_main(int argc,char** argv) {
   long numpoints = long((stop-start)/step)+2;
   
   // load default initial values.
-  double *data =  initialize_simdata(numpoints,nx,ny);
+  data =  initialize_simdata(numpoints,nx,ny);
   
   // Calculate initial values from (fixed) start attributes and intial equation
   // sections
@@ -168,8 +234,6 @@ int dassl_main(int argc, char **argv)
   
   long info[15];
   status = 0;
-  long ng = 0;
-  double t;
   double tout;
   double rtol = 1.0e-5;
   double atol = 1.0e-5;
@@ -177,11 +241,7 @@ int dassl_main(int argc, char **argv)
 
   //double rpar = 0.0;
   long ipar = 0;
-  long jroot;
   int i;
-  long numpoints; // the number of points allocated for in data array
-  long actual_points=0; // the number of actual points saved
-  
 
   for(i=0; i<15; i++) 
     info[i] = 0;
@@ -189,6 +249,8 @@ int dassl_main(int argc, char **argv)
     iwork[i] = 0;
   for(i=0; i<lrw; i++) 
     rwork[i] = 0.0;
+  for(i=0; i<nhelp; i++)
+    h[i] = 0;
   
   if (argc == 2 && flagSet("?",argc,argv)) {
     cout << "usage: " << argv[0]  << " <-f initfile> <-r result file> -m solver:{dassl, euler}" << endl;
@@ -200,36 +262,82 @@ int dassl_main(int argc, char **argv)
   numpoints = long((stop-start)/step)+2;
 
   // load default initial values.
-  double *data =  initialize_simdata(numpoints,nx,ny);
+  gout = new double[ng];
+  h_saved = new double[nhelp];  
+  x_saved = new double[nx];
+  xd_saved = new double[nx];
+  y_saved = new double[ny];
+  zeroCrossingEnabled = new long[ng];
+  data =  initialize_simdata(5*numpoints,nx,ny);
 
   // Calculate initial values from (fixed) start attributes and intial equation
   // sections
   initial_function(x,xd,y,p,nx,ny,np);
   
   t=start;
-  tout = t+step;
-  DDASRT(functionDAE_res, &nx,   &t, x, xd, &tout, info,&rtol, &atol, &idid,rwork,&lrw, iwork, &liw, y /* rpar */, &ipar, dummyJacobianDASSL, zeroCrossing, &ng, &jroot);
+  tout = newTime(t, step); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
+
+  function_updateDependents(&t);
+  saveall();
+  emit();
+  calcEnabledZeroCrossings();
+
+  DDASRT(functionDAE_res, &nx,   &t, x, xd, &tout, info,&rtol, &atol, &idid,rwork,&lrw, iwork, &liw, y, &ipar, dummyJacobianDASSL, function_zeroCrossing, &ng, jroot);
+  info[0] = 1;
+
   functionDAE_res(&t,x,xd,dummy_delta,0,0,0); // Since residual function calculates 
 					      // alg vars too.
   functionDAE_output(&t,x,xd,y,p);
-  add_result(data,t,x,xd,y,nx,ny,&actual_points);
-  info[0] = 1;
-  //dumpresult(t,y,idid,rwork,iwork);
+
   tout += step;
   while(t<stop && idid>0) {
-    DDASRT(functionDAE_res, &nx, &t, x, xd, &tout, info,&rtol, &atol, &idid,rwork,&lrw, iwork, &liw, y /*rpar */, &ipar, dummyJacobianDASSL, zeroCrossing, &ng, &jroot);
+    // TODO: check here if time event has been reached.
+    while (idid == 4) {
+      emit();
+      saveall();
+      calcEnabledZeroCrossings();
+      StateEventHandler(jroot, &t);
+      CheckForNewEvents(&t);
+      StartEventIteration(&t);
+      saveall();
+
+      // Restart simulation
+      info[0] = 0;
+      calcEnabledZeroCrossings();
+      DDASRT(functionDAE_res, &nx,   &t, x, xd, &tout, info,&rtol, &atol, 
+	     &idid,rwork,&lrw, iwork, &liw, y, &ipar, dummyJacobianDASSL, 
+	     function_zeroCrossing, &ng, jroot);
+
+      functionDAE_res(&t,x,xd,dummy_delta,0,0,0); // Since residual function calculates 
+					      // alg vars too.
+      functionDAE_output(&t,x,xd,y,p);
+
+      info[0] = 1;
+    }
+    
+    emit();
+    saveall();
+    tout = newTime(t,step); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
+    calcEnabledZeroCrossings();
+    DDASRT(functionDAE_res, &nx, &t, x, xd, &tout, info,&rtol, &atol, &idid,rwork,&lrw, iwork, &liw, y, &ipar, dummyJacobianDASSL, function_zeroCrossing, &ng, jroot);
     functionDAE_res(&t,x,xd,dummy_delta,0,0,0); // Since residual function calculates 
 					      // alg vars too.
-    functionDAE_output(&t,x,xd,y,p);
-    add_result(data,t,x,xd,y,nx,ny,&actual_points);
-    //dumpresult(t,y,idid,rwork,iwork);
-    tout += step;
+    functionDAE_output(&t,x,xd,y,p);  // descrete variables should probably be seperated so that the can be emited before and after the event.    
   }  
+  emit();
   if (idid < 0 ) {
     cerr << "Error, simulation stopped at time: " << t << endl;
     cerr << "Result written to file." << endl;
 	status = 1;
   }
+
+  delete [] h_saved;
+  delete [] x_saved;
+  delete [] xd_saved;
+  delete [] y_saved;
+  delete [] gout;
+  delete [] zeroCrossingEnabled;
+
   string * result_file =(string*)getFlagValue("r",argc,argv);
   const char * result_file_cstr;
   if (!result_file) {
@@ -240,6 +348,80 @@ int dassl_main(int argc, char **argv)
   store_result(result_file_cstr,data,actual_points,nx,ny);
 
   return status;
+}
+
+void saveall()
+{
+  int i;
+  for(i=0;i<nx; i++) {
+    x_saved[i] = x[i];
+    xd_saved[i] = xd[i];
+  }
+  for(i=0;i<ny; i++) {
+    y_saved[i] = y[i];
+  }
+  for(i=0;i<nhelp; i++) {
+    h_saved[i] = h[i];
+  }
+}
+
+
+
+
+
+void save(double & var) 
+{
+  double* pvar = &var;
+  long ind;
+
+
+  ind = long(pvar - h);
+  if (ind >= 0 && ind < nhelp) {
+    h_saved[ind] = var;
+    return;
+  }
+  ind = long(pvar - x);
+  if (ind >= 0 && ind < nx) {
+    x_saved[ind] = var;
+    return;
+  }
+  ind = long(pvar - xd);
+  if (ind >= 0 && ind < nx) {    
+    xd_saved[ind] = var;
+    return;
+  }
+  ind = long(pvar - y);
+  if (ind >= 0 && ind < ny) {
+    y_saved[ind] = var;
+    return;
+  }
+  return;
+}
+
+double pre(double & var) 
+{
+  double* pvar = &var;
+  long ind;
+
+  ind = long(pvar - x);
+  if (ind >= 0 && ind < nx) {
+    return x_saved[ind];
+  }
+  ind = long(pvar - xd);
+  if (ind >= 0 && ind < nx) {    
+    return xd_saved[ind];
+  }
+  ind = long(pvar - y);
+  if (ind >= 0 && ind < ny) {
+    return y_saved[ind];
+  }
+  ind = long(pvar - h);
+  return h_saved[ind];
+}
+
+bool edge(double& var) 
+{
+  return var && ! pre(var);
 }
 
 /* store_result
@@ -313,8 +495,6 @@ void store_result(const char * filename, double*data,long numpoints, long nx, lo
 void add_result(double *data, double time,double *x, double *xd, double *y,
 		long nx, long ny, long *actual_points)
 {
-  static long current_pos = 0;
-  
   //save time first
   //cerr << "adding result for time: " << time;
   //cerr.flush();
@@ -414,4 +594,79 @@ inline void read_commented_value( ifstream &f, int *res)
   char c[160];
   f.getline(c,160);
 }
+
+
+void StateEventHandler(long* jroot, double *t) 
+{
+  for(int i=0;i<ng;i++) {
+    if (jroot[i] ) {
+      handleZeroCrossing(i,t);
+      function_updateDependents(t);
+    }
+  }
+  emit();
+}
+
+void
+checkForDiscreteVarChanges(double *t);
+void AddEvent(long);
+
+void CheckForNewEvents(double *t)
+{
+  // Check for changes in discrete variables
+  checkForDiscreteVarChanges(t);
+
+  function_zeroCrossing(&nx,t,x,&ng,gout,0,0);
+  for (long i=0;i<ng;i++) {
+    if (gout[i] < 0) {
+       AddEvent(i);
+    }
+  }
+}
+
+void AddEvent(long index)
+{
+  list<long>::iterator i;
+  for (i=EventQueue.begin(); i != EventQueue.end(); i++) {
+    if (*i == index)
+      return;
+  }
+  EventQueue.push_back(index);
+  //  cout << "Adding Event:" << index << " queue length:" << EventQueue.size() << endl;
+}
+
+bool
+ExecuteNextEvent(double *t)
+{
+  if (EventQueue.begin() != EventQueue.end()) {
+    long nextEvent = EventQueue.front();
+    //    calcEnabledZeroCrossings();
+    if (nextEvent >= ng) {
+      function_when(nextEvent-ng, t);
+    }
+    else {
+      handleZeroCrossing(nextEvent, t);
+      function_updateDependents(t);
+    }
+    //    CheckForNewEvents(t);
+    emit();
+    EventQueue.pop_front();
+    return true;
+  }
+  return false;
+}
+
+void
+StartEventIteration(double *t)
+{
+  while (EventQueue.begin() != EventQueue.end()) {
+    calcEnabledZeroCrossings();
+    while (ExecuteNextEvent(t)) {}
+    for (unsigned int i = 0; i < nhelp; i++) save(h[i]);
+    function_updateDependents(t);
+    CheckForNewEvents(t);
+  }
+  //  cout << "EventIteration done" << endl;
+}
+
 

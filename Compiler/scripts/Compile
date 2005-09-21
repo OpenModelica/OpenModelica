@@ -1,1 +1,2 @@
+#!/bin/sh
 make -f $1 > /dev/null

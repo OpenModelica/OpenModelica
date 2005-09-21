@@ -61,18 +61,27 @@ void read_input(int argc, char **argv,
 		double *p, int nx,int ny, int np,
 		double *start, double *stop,
 		double *step);
+
+extern double h[];
 extern double x[];
 extern double xd[];
 extern double dummy_delta[];
 extern double y[];
 extern double p[];
+extern long jroot[];
 extern long liw;
 extern long lrw;
 extern double rwork[];
 extern long iwork[];
-extern long nx,ny,np;
+extern long nhelp,nx,ny,np,ng;
 extern char *model_name;
 extern char *varnames[];
+
+int 
+function_zeroCrossing(long *neqm, double *t, double *x, long *ng, double *gout, double *rpar, long* ipar);
+
+void
+handleZeroCrossing(long index, double* t);
 
 // function for calculating ouput values 
 int 
@@ -81,6 +90,11 @@ functionDAE_output(double *t, double *x, double *xprimne, double *y, double* p);
 // function for calculating state values on residual form
 int
 functionDAE_res(double *t, double *x, double *xprime, double *delta, long int *ires, double *rpar, long int* ipar);
+
+void
+function_when(int i, double *t);
+void
+function_updateDependents(double *t);
 
 // function for calculating states on explicit ODE form
 void functionODE(double *x, double *xd, double *y, double *p, 
@@ -108,5 +122,12 @@ void euler ( double *x, double *xd, double *y, double *p, double *data,
 		       double*,// p
 		       int,int,int, //nx,ny,np
 		       double *));
+void saveall();
+void save(double & var);
+double pre(double & var);
+
+void CheckForNewEvents(double *t);
+void StartEventIteration(double *t);
+void StateEventHandler(long jroot[], double *t);
 
 #endif

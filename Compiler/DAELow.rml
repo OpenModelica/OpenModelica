@@ -166,11 +166,12 @@
   datatype WhenEquation = WHEN_EQ of int *		 (* index in when clauses *)
 				Exp.ComponentRef * (* Left hand side of equation *)
 				Exp.Exp		 (* Right hand side of equation *)
-		      | REINIT of int *		 (* index in when clauses *)
-				Exp.ComponentRef * (* state variable to reinit *)
-				Exp.Exp		 (* value after reinit *)
 
-  datatype WhenClause = WHEN_CLAUSE of Exp.Exp (* condition *)
+  datatype ReinitStatement = REINIT of Exp.ComponentRef * (* state variable to reinit *)
+				Exp.Exp		 (* value after reinit *)
+ 
+  datatype WhenClause = WHEN_CLAUSE of Exp.Exp * (* condition *)
+				ReinitStatement list 
 
   datatype ZeroCrossing = ZERO_CROSSING of Exp.Exp * (* relation *)
 				      int list * (* list of equations where the relation occurs *)
@@ -316,7 +317,8 @@ type MatchingOptions = (IndexReduction*EquationConstraints)
 	  
   relation calculate_sizes: DAELow => (int, (* nx *)
 				       int, (* ny *)
-				       int) (* np *)
+				       int, (* np *)
+				       int) (* ng *)
 
   relation calculate_jacobian: (Variables, 
 				EquationArray, 
@@ -378,7 +380,7 @@ type MatchingOptions = (IndexReduction*EquationConstraints)
         
   relation get_all_exps : DAELow => Exp.Exp list
   relation get_when_equation_expr : WhenEquation => (Exp.ComponentRef, Exp.Exp) 
-
+  relation get_zero_crossing_indices_from_when_clause: (DAELow, int) => (int list) 
   relation simple_equation: (Equation) => (Exp.ComponentRef, Exp.ComponentRef)
 
 end (* End Module *)
@@ -425,15 +427,10 @@ relation lower: (DAE.DAElist) => DAELow =
 	detect_implicit_discrete(vars, eqns) => vars' &
 	sort_eqn(eqns) => eqns' &
 	find_zero_crossings(vars',eqns',whenclauses') => (zero_crossings) &
-
-(*	Util.list_map(zero_crossings,dump_zc_str) => zcstr &
-	Util.string_append_list zcstr => zcstr' &
-	print zcstr' &
-*)
 	list_equation(eqns') => eqnarr &
 	list_equation(reqns) => reqnarr &
 	list_equation(ieqns) => ieqnarr &
-	list_array(algs) => algarr
+	list_array(algs) => algarr 
 	--------------------
 	lower(lst) 
 	  => DAELOW(vars',knvars,eqnarr,reqnarr,ieqnarr,algarr,EVENT_INFO(whenclauses',zero_crossings))
@@ -460,7 +457,7 @@ end
  **
  ** Takes a list of zero crossings and if more than one have identical
  ** relation expressions they are merged into one zerocrossing.
- ** In trhe resulting list all zerocrossing have uniq relation expressions.
+ ** In the resulting list all zerocrossing have uniq relation expressions.
  **)
 relation merge_zero_crossings : ZeroCrossing list => ZeroCrossing list =
 
@@ -562,13 +559,13 @@ relation find_zero_crossings2 : (Variables, Equation list, int, WhenClause list,
 	make_zero_crossings(rel,[],[wc_count]) => res2 &
 	list_append(res1,res2) => res
 	----------------------------------------
-	find_zero_crossings2 (v,el,eq_count,(wc as WHEN_CLAUSE(e))::xs,wc_count) => (res)
+	find_zero_crossings2 (v,el,eq_count,(wc as WHEN_CLAUSE(e,_))::xs,wc_count) => (res)
 end
 
 (** relation: make_zero_crossing
  **
- ** Constructs a ZeroCrossing from an expression and lists of equation indecies
- ** and when clause indecies.
+ ** Constructs a ZeroCrossing from an expression and lists of equation indices
+ ** and when clause indices.
  **) 
 relation make_zero_crossing : (Exp.Exp, int list, int list) => ZeroCrossing =
 
@@ -579,8 +576,8 @@ end
 (** relation: make_zero_crossings
  **
  ** Constructs a list of ZeroCrossings from a list expressions and lists of 
- ** equation indecies and when clause indecies.
- ** Each Zerocrossing gets the same lists of indecies.
+ ** equation indices and when clause indices.
+ ** Each Zerocrossing gets the same lists of indicies.
  **) 
 relation make_zero_crossings : (Exp.Exp list, int list, int list) => ZeroCrossing list =
 
@@ -1223,6 +1220,7 @@ relation remove_simple_equations: (Variables, (* vars *)
 	VarTransform.replace_equations(eqns',vartransf) => eqns'' &
 	VarTransform.replace_equations(seqns,vartransf) => seqns' &
 	move_variables(vars,knvars,movedvars')=> (vars',knvars') 
+
 	(*& print_vars_statistics(vars',knvars')*)
 	-------------------------------------
 	remove_simple_equations(vars,knvars,eqns,reqns,states) 
@@ -1786,39 +1784,77 @@ end
 
 (** relation: lower_when_eqn
  **
- ** This relation lowers a when clause. The condition expresion is but in the 
- ** WhenClause list and the equations inside are but in the equation list.
- ** if the condition involves expressions that are not pure boolean variables
- ** a help variable is inserted together with an extra equation 
+ ** This relation lowers a when clause. The condition expresion is put in the 
+ ** WhenClause list and the equations inside are put in the equation list.
+ ** For each equation in the clause a new entry in the WhenClause list is generated
+ ** and one extra for all the reinit statements.
  **)
+
 relation lower_when_eqn: (DAE.Element, int (* when-clause index *),WhenClause list)  
 	  =>  (Equation list, Variables, int (* when-clause index*), WhenClause list) =
 
   rule	empty_vars() => vars &
-	i + 1 => i' &
-	lower_when_eqn2(eqnl,i) => res 
+	lower_when_eqn2(eqnl,i) => (res, reinit) &
+         list_length(res) => equation_count &
+	list_length(reinit) => reinit_count &
+         reinit_count > 0 => hasReinit &
+	Util.if(hasReinit,1,0) => extra &
+	equation_count + extra => tot_count &
+	i + tot_count => i' &
+         make_WhenClauses(equation_count,cond,[]) => whenClauseList1 &
+         make_WhenClauses(extra,cond,reinit) => whenClauseList2 &
+	list_append(whenClauseList2,whenClauseList1) => whenClauseList3 &
+	list_append(whenClauseList3,whenList) => whenClauseList4 
 	--------------------------------------
 	lower_when_eqn(DAE.WHEN_EQUATION(cond,eqnl,NONE(* No elsewhen yet *)),i,whenList)  
-	  => (res,vars,i',WHEN_CLAUSE(cond)::whenList)
+	  => (res,vars,i',whenClauseList4)
 end
+
+(** relation: make_WhenClauses
+ ** Constructs a list of identical WhenClause elements
+ ** Arg1: Number of elements to construct
+ ** Arg2: condition expression of the when clause
+ **)
+relation make_WhenClauses: (int (* number of copies to make *),
+			    Exp.Exp, 
+			    ReinitStatement list) 
+	  => (WhenClause list) =
+
+  axiom make_WhenClauses(0,_,_) => []
+
+  rule	i  - 1 => i' &
+	make_WhenClauses(i',cond,reinit) => res
+	--------------------------------------------------
+	make_WhenClauses(i,cond,reinit) => WHEN_CLAUSE(cond,reinit)::res
+
+end
+
 
 (** relation: lower_when_eqn2
  **
  ** Helper relation to lower_when_eqn.
  **)
-
-relation lower_when_eqn2: (DAE.Element list, int) => Equation list = 
+relation lower_when_eqn2: (DAE.Element list, int) => (Equation list, ReinitStatement list) = 
 	
-  axiom lower_when_eqn2([],_) => []
+  axiom lower_when_eqn2([],_) => ([],[])
 
-  rule	
-	lower_when_eqn2(xs,i) => eqnl &
+  rule	i + 1 => i' &
+	lower_when_eqn2(xs,i') => (eqnl,reinit) &
 	Exp.simplify(e) => e' &
 	Exp.stringify_crefs(e') => e'' &
 	Exp.stringify_component_ref(cr) => cr'
 	------------------------------
 	lower_when_eqn2(DAE.EQUATION(cre as Exp.CREF(cr,_) ,e)::xs, i) 
-	  => WHEN_EQUATION(WHEN_EQ(i,cr',e''))::eqnl
+	  => (WHEN_EQUATION(WHEN_EQ(i,cr',e''))::eqnl,reinit)
+
+  rule	lower_when_eqn2(xs,i) => (eqnl,reinit) &
+	Exp.simplify(e) => e' &
+	Exp.stringify_crefs(e') => e'' &
+	Exp.stringify_component_ref(cr) => cr'
+	------------------------------
+	lower_when_eqn2(DAE.REINIT(cr,e)::xs, i) 
+	  => (eqnl,REINIT(cr',e'')::reinit)
+
 end
 
 (** relation: lower2
@@ -3927,6 +3963,7 @@ relation replace_dummy_der_others:(Equation, Variables) => (Equation, Variables)
 	replace_dummy_der_others(WHEN_EQUATION(WHEN_EQ(i,cr,e2)),vars)
 	  => (WHEN_EQUATION(WHEN_EQ(i,cr,e2')),vars')
 
+
   rule	print "-replace_dummy_der_others failed\n" 
 	---------------------
 	replace_dummy_der_others(_,_) => fail 
@@ -5061,14 +5098,14 @@ relation translate_dae: DAELow => DAELow =
 	equation_list(ieqns) => ieqnsl &
 	variable_replacements(totvars,eqnsl) => (s,t) &
 	
-	translate_dae_replace(s,t,eqnsl,seqnsl,ieqnsl,al,wc,varlst',knvarlst',"$")
-	  => (eqnsl',seqnsl',ieqnsl',al',wc',varlst'',knvarlst'') &
+	translate_dae_replace(s,t,eqnsl,seqnsl,ieqnsl,al,wc,zc,varlst',knvarlst',"$")
+	  => (eqnsl',seqnsl',ieqnsl',al',wc',zc',varlst'',knvarlst'') &
 	
 	(* remove dollar sign *)
 	variable_replacements_no_dollar(varlst'',knvarlst'') => (s1,t1) &
 
-	translate_dae_replace(s1,t1,eqnsl',seqnsl',ieqnsl',al',wc',varlst'',knvarlst'',"")
-	  => (eqnsl'',seqnsl'',ieqnsl'',al'',wc'',varlst''',knvarlst''') &
+	translate_dae_replace(s1,t1,eqnsl',seqnsl',ieqnsl',al',wc',zc',varlst'',knvarlst'',"")
+	  => (eqnsl'',seqnsl'',ieqnsl'',al'',wc'',zc'',varlst''',knvarlst''') &
 
         empty_vars() => vars' &
 	empty_vars() => knvars' &
@@ -5077,7 +5114,7 @@ relation translate_dae: DAELow => DAELow =
 	list_equation(eqnsl'') => eqns'  &
 	list_equation(seqnsl'') => seqns' &
 	list_equation(ieqnsl'') => ieqns' &
-	let trans_dae = DAELOW(vars'',knvars'',eqns',seqns',ieqns',al'',EVENT_INFO(wc'',zc))
+	let trans_dae = DAELOW(vars'',knvars'',eqns',seqns',ieqns',al'',EVENT_INFO(wc'',zc''))
 	------------------------------------
 	translate_dae(DAELOW(vars,knvars,eqns,seqns,ieqns,al,EVENT_INFO(wc,zc)))
 	  => trans_dae
@@ -5098,6 +5135,7 @@ relation translate_dae_replace: (Exp.Exp list, (* sources *)
 				 Equation list, (* ieqns *)
 				 Algorithm.Algorithm array, (*algs *)
 				 WhenClause list, (* wc *)
+				 ZeroCrossing list, (* zc *)
 				 Var list, (* vars *)
  				 Var list, (* knvars *)
 				 string) (* variable prefix, "$" or "" *)
@@ -5106,6 +5144,7 @@ relation translate_dae_replace: (Exp.Exp list, (* sources *)
 	      Equation list, (* ieqns *)
 	      Algorithm.Algorithm array, (*algs *)
 	      WhenClause list,
+	      ZeroCrossing list,
 	      Var list,
 	      Var list) =
 
@@ -5114,11 +5153,12 @@ relation translate_dae_replace: (Exp.Exp list, (* sources *)
 	replace_variables(ieqnsl,s,t) => ieqnsl' &
 	replace_variables_in_alg(al,s,t) => al' &
 	replace_variables_in_when_clauses(wc,s,t) => wc' &
+	replace_variables_in_zero_crossings(zc,s,t) => zc' &
 	transform_variables(varlst,s,t,var_prefix) => varlst' &
 	transform_variables(knvarlst,s,t,var_prefix) => knvarlst'  
 	------------------------------
-	translate_dae_replace(s,t,eqnsl,seqnsl,ieqnsl,al,wc,varlst,knvarlst,var_prefix)
-	  => (eqnsl',seqnsl',ieqnsl',al',wc',varlst',knvarlst')
+	translate_dae_replace(s,t,eqnsl,seqnsl,ieqnsl,al,wc,zc,varlst,knvarlst,var_prefix)
+	  => (eqnsl',seqnsl',ieqnsl',al',wc',zc',varlst',knvarlst')
 end
 
 (** relation: replace_variables_in_when_clauses
@@ -5143,15 +5183,62 @@ end
  **
  ** Helper relation to replace_variables_in_when_clauses.
  **)
-
 relation replace_variables_in_when_clause: (WhenClause, 
 					     Exp.Exp list, (* source list *) 
 					     Exp.Exp list) (* target list *)
 	  => WhenClause =
 
+  rule	Exp.replace_exp_list(e,s,t) => (e',_) & 
+	Util.list_map_2(reinit, replace_variable_in_reinit, s, t) => reinit'
+	----------------------------------------
+	replace_variables_in_when_clause(WHEN_CLAUSE(e,reinit),s,t) 
+	  => WHEN_CLAUSE(e',reinit')
+
+end
+
+(** relation: replace_variable_in_reinit
+ ** Replaces varaiables in reinit statements.
+ **)
+relation replace_variable_in_reinit: (ReinitStatement,
+				      Exp.Exp list, (* source list *)
+				      Exp.Exp list) (* target list *) 
+	  => (ReinitStatement) =
+	
+  rule	Exp.replace_exp_list(e,s,t) => (e',_) &
+	Exp.replace_exp_list(Exp.CREF(cr,Exp.OTHER),s,t) => (Exp.CREF(cr',_),_)
+	----------------------------------------
+	replace_variable_in_reinit(REINIT(cr,e),s,t) => REINIT(cr',e')
+
+end
+
+(** relation: replace_variables_in_zero_crossings
+ ** Replaces variables in zero crossing releations
+ **)
+relation replace_variables_in_zero_crossings: (ZeroCrossing list, 
+					     Exp.Exp list, (* source list *) 
+					     Exp.Exp list) (* target list *)
+	  => ZeroCrossing list =
+
+  axiom	replace_variables_in_zero_crossings([],_,_) => [] 
+
+  rule	replace_variables_in_zero_crossing(zc,s,t) => zc' &
+	replace_variables_in_zero_crossings(zcx,s,t) => zcx'
+	----------------------------------------
+	replace_variables_in_zero_crossings(zc::zcx,s,t) => (zc'::zcx')
+end
+
+(** relation: replace_variables_in_zero_crossing
+ ** Replaces variables in a zero crossing releation
+ **)
+relation replace_variables_in_zero_crossing: (ZeroCrossing, 
+					     Exp.Exp list, (* source list *) 
+					     Exp.Exp list) (* target list *)
+	  => ZeroCrossing =
+
   rule	Exp.replace_exp_list(e,s,t) => (e',_) 
 	----------------------------------------
-	replace_variables_in_when_clause(WHEN_CLAUSE(e),s,t) => WHEN_CLAUSE(e')
+	replace_variables_in_zero_crossing(ZERO_CROSSING(e,eql,wcl),s,t) 
+	  => ZERO_CROSSING(e',eql,wcl)
 
 end
 
@@ -5727,16 +5814,18 @@ end
 
 relation calculate_sizes: DAELow => (int, (* nx *)
 				     int, (* ny *)
-				     int) (* np *) =
+				     int, (* np *) 
+				     int) (* ng *) =
   rule	(* input variables are put in the known var list, 
 	 ** but they should be counted by the ny counter. *)
 	var_list(vars) => varlst &
 	var_list(knvars) => knvarlst &
 	calculate_param_sizes(knvarlst) => np &
+	list_length zc => ng &
 	calculate_var_sizes(varlst,0,0) => (nx,ny) &
 	calculate_var_sizes(knvarlst,nx,ny) => (nx',ny')
 	-----------------------------------
-	calculate_sizes(DAELOW(vars,knvars,_,_,_,_,_)) => (nx',ny',np)
+	calculate_sizes(DAELOW(vars,knvars,_,_,_,_,EVENT_INFO(wc,zc))) => (nx',ny',np,ng)
 end
 
 (** relation: calculate_param_sizes
@@ -6031,7 +6120,7 @@ relation variable_replacements_remove_dollar: Var list
 	-------------------------------
 	variable_replacements_remove_dollar(VAR(cr as Exp.CREF_IDENT(str,[]),STATE,_,_,_,_,_,_,_,_,_,_,_,_)::vs) 
  	  => (Exp.CREF(cr,Exp.REAL)::Exp.CREF(Exp.CREF_IDENT(xd_s,[]),Exp.REAL)::s, 
-	      Exp.CREF(Exp.CREF_IDENT(str',[]),Exp.REAL)::Exp.CREF(Exp.CREF_IDENT(xd_t,[]),Exp.REAL)::t)
+	      Exp.CREF(Exp.CREF_IDENT(str'',[]),Exp.REAL)::Exp.CREF(Exp.CREF_IDENT(xd_t,[]),Exp.REAL)::t)
 
   rule	variable_replacements_remove_dollar(vs) => (s,t) &
 	string_list(str) => #"$"::rest & (* first character dollar sign. *)
@@ -7105,3 +7194,38 @@ relation get_when_equation_expr : WhenEquation => (Exp.ComponentRef, Exp.Exp) =
 
 end
 
+(** relation: get_zero_crossing_indices_from_when_clause
+ ** Returns a list of indices of zerocrossings that a given when clause is dependent on.
+ **)
+relation get_zero_crossing_indices_from_when_clause: (DAELow, int) => (int list) =
+
+  rule	get_zero_crossing_indices_from_when_clause2(zcLst,0,when_index) => res
+	----------------------------------------
+	get_zero_crossing_indices_from_when_clause(DAELOW(_,_,_,_,_,_,EVENT_INFO(_,zcLst)), when_index) => res
+
+end
+
+(** relation: get_zero_crossing_indices_from_when_clause2
+ ** helper relation to get_zero_crossing_indices_from_when_clause
+ **)
+relation get_zero_crossing_indices_from_when_clause2: (ZeroCrossing list, int, int) => (int list) =
+
+  axiom	get_zero_crossing_indices_from_when_clause2([],_,_) => []
+
+  rule 	Util.list_getmember(when_index, whenClauseList) => _ &
+	count + 1 => count' &
+         get_zero_crossing_indices_from_when_clause2(rest,count',when_index) => resx
+	----------------------------------------
+	get_zero_crossing_indices_from_when_clause2(ZERO_CROSSING(_,_,whenClauseList)::rest,count,when_index) => count::resx
+
+  rule	not Util.list_getmember(when_index, whenClauseList) => _ &
+	count + 1 => count' &
+         get_zero_crossing_indices_from_when_clause2(rest,count',when_index) => resx
+	----------------------------------------
+	get_zero_crossing_indices_from_when_clause2(ZERO_CROSSING(_,_,whenClauseList)::rest,count,when_index) => resx
+
+  rule	print "-get_zero_crossing_indices_from_when_clause2 failed\n"
+	--------------------------------------------------
+	get_zero_crossing_indices_from_when_clause2(_,_,_) => fail
+
+end

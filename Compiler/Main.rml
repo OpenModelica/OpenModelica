@@ -525,7 +525,7 @@ relation modpar: (DAELow.DAELow, int vector, int vector, int list list) => () =
 	TaskGraphExt.dump_merged_graph("merged_model.viz") &
 	RTOpts.no_proc => n &
 	TaskGraphExt.schedule(n) &
-	DAELow.calculate_sizes(indexed_dae') => (nx,ny,np)  &
+	DAELow.calculate_sizes(indexed_dae') => (nx,ny,np,_)  &
 	int_string np => nps &
 	print "=======\nnp =" & print nps & print "=======\n" &
 	TaskGraphExt.generate_code(nx,ny,np) &

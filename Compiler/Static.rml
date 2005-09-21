@@ -919,14 +919,14 @@ relation elab_array : (Env.Env, Absyn.Exp list,
 
   rule	elab_exp (env,e,impl,st) => (e',Types.PROP(t1,c1),_) &
 	elab_array (env,es,impl,st) => (es',Types.PROP(t2,c2)) &
-	t1 = t2 &
+	Types.equivtypes(t1,t2) => true &
 	Types.const_and (c1,c2) => c
 	---------------------------------
 	elab_array (env,e::es,impl,st) => (e'::es',Types.PROP(t1,c))
 
   rule	elab_exp (env,e,impl,st) => (e',Types.PROP(t1,c1),_) &
 	elab_array (env,es,impl,st) => (es',Types.PROP(t2,c2)) &
-	not t1 = t2 &
+	Types.equivtypes(t1,t2) => false &
 	Print.print_error_buf "# Incompatible types in array expression\n" &
 	Print.print_error_buf "  " & Dump.print_exp_str e => str  & 
 	Print.print_error_buf str &

@@ -26,7 +26,7 @@
 #include "../absyn_builder/yacclib.h"
 
 #define GROWTH_FACTOR 1.4  /* According to some roumours of buffer growth */
-#define INITIAL_BUFSIZE 4000 /* Seems reasonable */
+#define INITIAL_BUFSIZE 4000000 /* Seems reasonable */
 char *buf = NULL;
 char *errorBuf = NULL;
 
@@ -36,7 +36,7 @@ int cursize=0;
 int errorNfilled=0;
 int errorCursize=0;
 
-void increase_buffer(void);
+int increase_buffer(void);
 void error_increase_buffer(void);
 void Print_5finit(void)
 {
@@ -94,19 +94,21 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__print_5fbuf)
 {
+  long strl;	
   char* str = RML_STRINGDATA(rmlA0);
-  /*  printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str));*/
-  
-  assert(str != NULL);
-  while (nfilled + strlen(str)+1 > cursize) {
-    increase_buffer();
-    /* printf("increased -- cursize: %d, nfilled %d\n",cursize,nfilled);*/
+
+  if (str == NULL) {
+	  	RML_TAILCALLK(rmlFC); 
+  }
+  strl = strlen(str);
+  while (nfilled + strl+1 > cursize) {
+	  if (!increase_buffer()) {
+		  RML_TAILCALLK(rmlFC);
+	  }
   }
 
-  sprintf((char*)(buf+strlen(buf)),"%s",str);
+  sprintf((char*)(buf+nfilled),"%s",str);
   nfilled=strlen(buf);
-
-  /*  printf("%s",str);*/
 
   RML_TAILCALLK(rmlSC);
 }
@@ -158,19 +160,23 @@ RML_BEGIN_LABEL(Print__write_5fbuf)
 RML_END_LABEL
 
 
-void increase_buffer(void) 
+int increase_buffer(void) 
 {
   char * new_buf;
   int new_size;
 
   if (cursize == 0) {
     new_buf = (char*)malloc(INITIAL_BUFSIZE);
-    assert(new_buf != NULL);
-    new_buf[0]='\0';
+	if (new_buf == NULL) {
+		return 0;
+	}
+	new_buf[0]='\0';
     cursize = INITIAL_BUFSIZE;
   } else {
     new_buf = (char*)malloc(new_size =(int) (cursize * GROWTH_FACTOR));
-    assert(new_buf != NULL);
+	if (new_buf == NULL) {
+		return 0;
+	}
     memcpy(new_buf,buf,cursize);
     cursize = new_size;
   }
@@ -178,6 +184,7 @@ void increase_buffer(void)
     free(buf);
   }
   buf = new_buf;
+  return 1;
 }
 
 void error_increase_buffer(void) 

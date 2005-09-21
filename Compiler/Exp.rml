@@ -298,6 +298,8 @@ module Exp:
   relation abs: (Exp) => Exp
 
   relation dump_exp_str : (Exp,int) => string  
+
+  relation pre_exp : (Exp) => Exp
 end
 
 
@@ -422,6 +424,8 @@ relation is_const: Exp => bool =
   axiom	is_const(ICONST(ival)) => true
 
   axiom	is_const(RCONST(rval)) => true
+
+  axiom	is_const(BCONST(bval)) => true
 
   rule	is_const(e) => res
 	---------------------------
@@ -4415,6 +4419,12 @@ relation exp_contains : (Exp, Exp) => bool =
   axiom	exp_contains (SCONST(i), cr as CREF(_,_)) => false
   axiom	exp_contains (BCONST(i), cr as CREF(_,_)) => false
 
+
+  rule	Util.list_map_1(explist, exp_contains,cr) => reslist &
+	Util.bool_or_list reslist => res
+	----------------------------
+	exp_contains (ARRAY(_,_,explist),cr) => res
+
   rule	cref_equal (cr1, cr2) => res
 	---------------------------
 	exp_contains (c1 as CREF(cr1,_), c2 as CREF(cr2,_)) => res
@@ -4674,5 +4684,70 @@ relation get_function_calls : Exp => Exp list =
 	get_function_calls(SIZE(e1,e2)) => res
 
  axiom	get_function_calls(_) => []
+
+end
+
+(** relation pre_exp
+ ** 
+ ** traverses an expression and puts the pre-operator around each cref
+ **)
+relation pre_exp : (Exp) => Exp =
+
+  rule	let e' = CALL(Absyn.IDENT("pre"), [e],false,true)
+	-------------------------------
+	pre_exp(e as CREF(_,_)) =>  e'
+		
+  rule	pre_exp(e1) => e1' &
+        pre_exp(e2) => e2' 
+	-----------------------------------------------
+	pre_exp(BINARY(e1,op,e2)) => BINARY(e1',op,e2')
+
+  rule	pre_exp(e) => e' 
+	-----------------------------------------------
+	pre_exp(UNARY(op,e)) => UNARY(op,e')
+
+  rule	pre_exp(e1) => e1' &
+        pre_exp(e2) => e2' 
+	-----------------------------------------------
+	pre_exp(LBINARY(e1,op,e2)) => LBINARY(e1',op,e2')
+
+  rule	pre_exp(e) => e' 
+	-----------------------------------------------
+	pre_exp(LUNARY(op,e)) => LUNARY(op,e')
+
+  rule	pre_exp(e1) => e1' &
+        pre_exp(e2) => e2' 
+	-----------------------------------------------
+	pre_exp(RELATION(e1,op,e2)) => RELATION(e1',op,e2')
+	
+  rule	pre_exp(e1) => e1' &
+        pre_exp(e2) => e2' &
+	pre_exp(e3) => e3'
+	-----------------------------------------------
+	pre_exp(IFEXP(e1,e2,e3)) => IFEXP(e1',e2',e3)
+	
+  rule   Util.list_map(elist,pre_exp) => elist'
+	----------------------------------------
+	pre_exp(CALL(path,elist,tuple,builtin)) => CALL(path,elist',tuple,builtin)
+
+  rule   Util.list_map(elist,pre_exp) => elist'
+	----------------------------------------
+	pre_exp(ARRAY(t,scalar,elist)) => ARRAY(t,scalar,elist')
+
+  (* TODO matrix *)
+
+  rule   Util.list_map(elist,pre_exp) => elist'
+	----------------------------------------
+	pre_exp(TUPLE(elist)) => TUPLE(elist')
+
+  rule	pre_exp(e) => e'
+	----------------------------------------
+	pre_exp(CAST(t,e)) => CAST(t,e')
+
+  rule	pre_exp(e) => e'
+	----------------------------------------
+	pre_exp(ASUB(e,i)) => ASUB(e',i)
+
+  axiom  pre_exp(e) => e
 
 end

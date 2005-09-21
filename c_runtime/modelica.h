@@ -51,6 +51,20 @@ typedef modelica_integer size_integer_array_rettype;
 typedef modelica_real cos_rettype;
 #if defined(__cplusplus)
 }
+
+double pre(double&);
+void   save(double&);
+void   saveall();
+bool   edge(double&);
 #endif
+void AddEvent(long);
+
+extern long* zeroCrossingEnabled;
+
+double Less(double a,double b);
+double LessEq(double a,double b);
+double Greater(double a,double b);
+double GreaterEq(double a,double b);
+#define ZEROCROSSING(ind,exp) gout[ind] = (zeroCrossingEnabled[ind])?double(zeroCrossingEnabled[ind])*exp:1.0
 
 #endif
