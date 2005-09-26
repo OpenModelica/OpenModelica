@@ -268,6 +268,8 @@ relation differentiate_exp_time: (Exp.Exp,DAELow.Variables) => Exp.Exp =
 	differentiate_exp_time(Exp.CALL(a as Absyn.IDENT("der"),expl,b,c),tv) 
 	  => Exp.CALL(a,expl',b,c)
 
+
+
   rule	print "Error. differentiating of function not impl. yet.\n" &
 	Util.list_map_1(expl,differentiate_exp_time,tv) => expl' 
 	-------------------------------------------------
@@ -512,7 +514,15 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
 	-------------------------------------------------
 	differentiate_exp(Exp.CALL(a as Absyn.IDENT("der"),[exp as Exp.CREF(cr,_)],b,c),tv) 
 	  => Exp.CALL(a,[exp,Exp.ICONST(2)],b,c)
-	
+
+	(* der(abs(x)) = sign(x)*der(x) *)
+  rule	differentiate_exp(exp,tv) => exp' 
+	-------------------------------------------------
+	differentiate_exp(Exp.CALL(a as Absyn.IDENT("abs"),[exp],b,c),tv) 
+	  => Exp.BINARY(Exp.CALL(Absyn.IDENT("sign"),[exp'],false,true),
+			Exp.MUL(Exp.REAL),
+			exp')
+
   rule	Util.list_map_1(expl,differentiate_exp,tv) => expl' 
 	--------------------------------------------
 	differentiate_exp(Exp.ARRAY(tp,b,expl),tv) => Exp.ARRAY(tp,b,expl')

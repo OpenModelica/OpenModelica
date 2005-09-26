@@ -344,6 +344,7 @@ type MatchingOptions = (IndexReduction*EquationConstraints)
   relation list_var: (Var list ) => Variables
 
   relation var_cref: (Var) => Exp.ComponentRef 
+  relation var_orig_name: (Var) => string 
   relation var_index: (Var) => int
   relation var_nominal: (Var) => real
   relation var_equal: (Var,Var) => bool
@@ -1036,6 +1037,19 @@ end
 relation var_cref: (Var) => Exp.ComponentRef =
 
   axiom	var_cref(VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,flow)) => cr
+
+end
+
+
+(** relation: var_orig_name
+ ** author: PA
+ **
+ ** extracts the original name of a variable.
+ **)
+
+relation var_orig_name: (Var) => string  =
+
+  axiom	var_orig_name(VAR(_,_,_,_,_,_,_,_,_,s,_,_,_,_)) => s
 
 end
 

@@ -149,6 +149,9 @@ module Util :
   relation list_map_1_2: ('a list, ('a, 'b) => ('c,'d), 'b) => ('c list,'d list)
   relation list_map_2_2: ('a list, ('a, 'b,'c) => ('d,'e), 'b,'c) => ('d * 'e) list
   relation list_fold: ('a list, ('a,'b)=> 'b, 'b) => 'b	  
+
+  relation list_fold_map: ('a list, ('a*'b) => ('a*'b), 'b) => ('a list,'b)
+
   relation list_list_map : ('a list list, 'a => 'b) => 'b list list 
   relation list_list_reverse: ('a list list) => 'a list list
   relation list_thread : ('a list, 'a list) => 'a list
@@ -206,6 +209,8 @@ module Util :
   relation apply_option : ('a option,'a => 'b) => 'b option
 
   relation make_option: 'a => 'a option
+
+  relation string_option: string option => string 
 
   relation option_to_list: 'a option => 'a list
   relation flatten_option: ('a option, 'a) => 'a
@@ -502,6 +507,7 @@ relation list_list_map : ('a list list, 'a => 'b) => 'b list list =
 	list_list_map (f::r,fn) => f'::r'
 
 end
+
 (** relation: list_fold
  ** Takes a list and a relation operating on list elements having an extra argument that is 'updated'
  ** thus returned from the relation. The third argument is the startvalue for the updated value.
@@ -519,6 +525,24 @@ relation list_fold: ('a list, ('a,'b)=> 'b, 'b) => 'b =
 	--------------------------
 	list_fold(l::lst,r,b) => b''
 end
+
+(** relation: list_fold_map
+ ** author: PA
+ **
+ ** For example see Exp.traverse_exp.
+ **)
+
+relation list_fold_map: ('a list, (('a*'b)=> ('a*'b)), 'b) => ('a list,'b) =
+
+  axiom	list_fold_map([],rel,e_arg) => ([],e_arg)
+
+  rule	rel((elt,b)) => ((elt',b')) &
+	list_fold_map(elts,rel,b') => (elts',b'')
+	---------------------------------
+	list_fold_map(elt::elts,rel,b) 	
+	  => (elt'::elts',b'')
+end
+	  
 
 (** relation: list_list_reverse
  ** Takes a list of lists and reverses it at both levels, i.e. both the list itself
@@ -1427,6 +1451,18 @@ end
 relation make_option: 'a => 'a option =
 
 	axiom make_option(v) => SOME(v)
+end
+
+
+(** relation: string_option
+ ** author: PA
+**
+ ** Returns string value or empty string from string option.
+ **)
+relation string_option: string option => string =
+
+  axiom	string_option(NONE) => ""
+  axiom	string_option(SOME(s)) => s 
 end
 
 (** relation: list_split

@@ -299,6 +299,13 @@ module Exp:
 
   relation dump_exp_str : (Exp,int) => string  
 
+
+  relation traverse_exp: (Exp, 
+			  ((Exp * 'a) => (Exp * 'a)),  (* rel-ation to apply*)
+			  'a) (* extra value passed to re-lation*)
+	  => (Exp *  'a) 
+
+
   relation pre_exp : (Exp) => Exp
 end
 
@@ -4750,4 +4757,177 @@ relation pre_exp : (Exp) => Exp =
 
   axiom  pre_exp(e) => e
 
+end
+
+(** relation traverse_exp
+ **
+ ** Traverses all subexpressions of an expression.
+ ** Takes a relation and an extra argument passed through the traversal.
+ **)
+		    
+ relation traverse_exp: (Exp, 
+			 ((Exp * 'a) => (Exp * 'a)),  (* rel-ation to apply*)
+			 'a) (* extra value passed to re-lation*)
+	  => (Exp *  'a) =
+	   
+	   (* unary *)
+  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
+	 rel((e,ext_arg')) => ((UNARY(op',_),ext_arg''))
+	 -----------------------------------
+	 traverse_exp(e as UNARY(op,e1),rel,ext_arg) 
+	  => ((UNARY(op',e1'),ext_arg''))
+	   
+	   (* binary *)
+  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
+	 traverse_exp(e2,rel,ext_arg') => ((e2',ext_arg'')) &
+	 rel((e,ext_arg'')) => ((BINARY(_,op',_),ext_arg'''))
+	 ----------------------------------------------
+	 traverse_exp(e as BINARY(e1,op,e2),rel,ext_arg) 
+	  => ((BINARY(e1',op',e2'),ext_arg'''))
+	   
+	   (* logic unary *)
+  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
+	 rel((e,ext_arg')) => ((LUNARY(op',_),ext_arg''))
+ 	 -----------------------------------
+	 traverse_exp(e as LUNARY(op,e1),rel,ext_arg) 
+	  => ((LUNARY(op',e1'),ext_arg''))
+	   
+	   (* logic binary *)
+  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
+	 traverse_exp(e2,rel,ext_arg') => ((e2',ext_arg'')) &
+	 rel((e,ext_arg'')) => ((LBINARY(_,op',_),ext_arg'''))
+	 ----------------------------------------------
+	 traverse_exp(e as LBINARY(e1,op,e2),rel,ext_arg) 
+	  => ((LBINARY(e1',op',e2'),ext_arg'''))
+	   
+	   (* RELATION *)
+  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
+	traverse_exp(e2,rel,ext_arg') => ((e2',ext_arg'')) &
+	 rel((e,ext_arg'')) => ((RELATION(_,op',_),ext_arg'''))
+	 ----------------------------------------------
+	 traverse_exp(e as RELATION(e1,op,e2),rel,ext_arg) 
+	  => ((RELATION(e1',op',e2'),ext_arg'''))
+
+	  (* if expression *)
+  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
+	traverse_exp(e2,rel,ext_arg') => ((e2',ext_arg'')) &
+	traverse_exp(e3,rel,ext_arg'') => ((e3',ext_arg''')) &
+	 rel((e,ext_arg''')) => ((e',ext_arg''''))
+	----------------------------------------------
+	traverse_exp(e as IFEXP(e1,e2,e3),rel,ext_arg) 
+	  => ((IFEXP(e1',e2',e3'),ext_arg''''))
+
+  rule	Util.list_fold_map(expl,rel,ext_arg) =>(expl',ext_arg') &
+	 rel((e,ext_arg')) => ((CALL(fn',_,t',b'),ext_arg''))
+	----------------------------------------------
+	traverse_exp(e as CALL(fn,expl,t,b),rel,ext_arg) 
+	  => ((CALL(fn',expl',t',b'),ext_arg''))
+
+  rule	Util.list_fold_map(expl,rel,ext_arg) =>(expl',ext_arg') &
+	 rel((e,ext_arg')) => ((ARRAY(tp',scalar',_),ext_arg''))
+	----------------------------------------------
+	traverse_exp(e as ARRAY(tp,scalar,expl),rel,ext_arg) 
+	  => ((ARRAY(tp',scalar',expl'),ext_arg''))
+
+  rule	traverse_exp_matrix(expl,rel,ext_arg) => (expl',ext_arg') &
+	 rel((e,ext_arg')) => ((MATRIX(tp',scalar',_),ext_arg''))
+	----------------------------------------------
+	traverse_exp(e as MATRIX(tp,scalar,expl),rel,ext_arg) 
+	  => ((MATRIX(tp,scalar,expl'),ext_arg''))
+
+  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
+	traverse_exp(e2,rel,ext_arg') => ((e2',ext_arg'')) &
+	 rel((e,ext_arg'')) => ((RANGE(tp',_,_,_),ext_arg'''))
+	----------------------------------------------
+	traverse_exp(e as RANGE(tp,e1,NONE,e2),rel,ext_arg) 
+	  => ((RANGE(tp',e1',NONE,e2'),ext_arg'''))
+
+  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
+	traverse_exp(e2,rel,ext_arg') => ((e2',ext_arg''))  &
+	traverse_exp(e3,rel,ext_arg'') => ((e3',ext_arg''')) &
+	 rel((e,ext_arg''')) => ((RANGE(tp',_,_,_),ext_arg''''))
+	----------------------------------------------
+	traverse_exp(e as RANGE(tp,e1,SOME(e2),e3),rel,ext_arg) 
+	  => ((RANGE(tp',e1',SOME(e3),e2'),ext_arg''''))
+
+  rule	Util.list_fold_map(expl,rel,ext_arg) => (expl',ext_arg') &
+	 rel((e,ext_arg')) => ((e',ext_arg''))
+	----------------------------------------------
+	traverse_exp(e as TUPLE(expl),rel,ext_arg) 
+	  => ((TUPLE(expl'),ext_arg''))
+
+  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
+	 rel((e,ext_arg')) => ((CAST(tp',_),ext_arg''))
+	----------------------------------------------
+	traverse_exp(e as CAST(tp,e1),rel,ext_arg) 
+	  => ((CAST(tp,e1'),ext_arg''))
+
+  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
+	rel((e,ext_arg')) => ((ASUB(_,i'),ext_arg''))
+	----------------------------------------------
+	traverse_exp(e as ASUB(e1,i),rel,ext_arg) 
+	  => ((ASUB(e1',i'),ext_arg''))
+
+  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
+	rel((e,ext_arg')) => ((e',ext_arg''))
+	----------------------------------------------
+	traverse_exp(e as SIZE(e1,NONE),rel,ext_arg)
+	  => ((SIZE(e1',NONE),ext_arg''))
+
+  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
+	traverse_exp(e2,rel,ext_arg') => ((e2',ext_arg'')) &
+	rel((e,ext_arg'')) => ((e',ext_arg'''))
+	----------------------------------------------
+	traverse_exp(e as SIZE(e1,SOME(e2)),rel,ext_arg) 
+	  => ((SIZE(e1',SOME(e2')),ext_arg'''))
+
+  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
+	traverse_exp(e2,rel,ext_arg') => ((e2',ext_arg'')) &
+	 rel((e,ext_arg'')) => ((REDUCTION(path',_,id',_),ext_arg'''))
+	 ------------------------
+	 traverse_exp(e as REDUCTION(path,e1,id,e2),rel,ext_arg)
+	  => ((REDUCTION(path',e1',id',e2'),ext_arg'''))
+
+  rule	rel((e,ext_arg)) => ((e',ext_arg'))
+	-----------------------
+	traverse_exp(e,rel,ext_arg) => ((e',ext_arg'))
+end
+
+(** relation: traverse_exp_matrix
+ ** author: PA
+ ** 
+ **  Helper relation to traverse_exp, traverses matrix expressions.
+ **)
+relation traverse_exp_matrix:((Exp*bool) list list, 
+			      ((Exp * 'a) => (Exp * 'a)),
+			      'a) 
+	  => ((Exp*bool) list list,'a) =
+	  
+  axiom	traverse_exp_matrix([],rel,e_arg) => ([],e_arg)
+	
+  rule	traverse_exp_matrix_2(row,rel,e_arg) => (row',e_arg') &
+	traverse_exp_matrix(rows,rel,e_arg') => (rows',e_arg'')
+	----------------
+	traverse_exp_matrix(row::rows,rel,e_arg) 
+	  => (row'::rows',e_arg'')
+end
+
+(** relation: traverse_exp_matrix_2
+ ** author: PA
+ **
+ ** Helper relation to traverse_exp_matrix.
+ **)
+
+relation traverse_exp_matrix_2: ((Exp*bool) list, 
+				  ((Exp * 'a) => (Exp * 'a)),
+				  'a) 
+	  => ((Exp*bool) list,'a) = 
+
+  axiom	traverse_exp_matrix_2([],_,e_arg) => ([],e_arg)
+
+  rule	traverse_exp(e,rel,e_arg) => ((e',e_arg')) &
+	traverse_exp_matrix_2(rest,rel,e_arg') => (rest',e_arg'')
+	------------------------------
+	traverse_exp_matrix_2((e,b)::rest,rel,e_arg) 
+	  => ( (e',b)::rest',e_arg'')
 end
