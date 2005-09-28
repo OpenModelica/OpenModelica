@@ -839,3 +839,29 @@ void * generate_array(char type, int curdim, type_description *desc, void *data)
   }
   return lst;
 }
+
+
+char* class_names_for_simulation = NULL;
+RML_BEGIN_LABEL(System__get_5fclassnames_5ffor_5fsimulation)
+{
+  if(class_names_for_simulation)
+    rmlA0 = (void*) mk_scon(strdup(class_names_for_simulation));
+  else
+    rmlA0 = (void*) mk_scon("{}");
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__set_5fclassnames_5ffor_5fsimulation)
+{
+  char* class_names = RML_STRINGDATA(rmlA0);
+  if(class_names_for_simulation)
+    free(class_names_for_simulation);
+
+  class_names_for_simulation = (char*)malloc(strlen(class_names)+1);
+  assert(class_names_for_simulation != NULL);
+  memcpy(class_names_for_simulation,class_names,strlen(class_names)+1);
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

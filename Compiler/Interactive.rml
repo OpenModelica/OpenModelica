@@ -1037,6 +1037,24 @@ with "Ceval.rml"
 	     ),
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
+   rule	System.get_classnames_for_simulation => resstr
+	 -----------------------
+	 evaluate_graphical_api(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("getClassNamesForSimulation",_),
+		 Absyn.FUNCTIONARGS([],_)))],_
+	     ),
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+   rule	System.set_classnames_for_simulation(str)
+	 -----------------------
+	 evaluate_graphical_api(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("setClassNamesForSimulation",_),
+		 Absyn.FUNCTIONARGS([Absyn.STRING(str)],_)))],_
+	     ),
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true",st)
+
    rule	is_primitive(cr,p) => b1 &
 	 Util.bool_string(b1) => resstr
 	 -----------------------

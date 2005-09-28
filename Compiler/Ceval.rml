@@ -1189,90 +1189,37 @@ end
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("jacobian"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (Values.STRING(res),Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
 
-  rule  Static.component_ref_to_path(cr) => classname &
-	 SCode.elaborate(p) => p' &
-	 Inst.instantiate_class(p',classname) => (dae as DAE.DAE(dael),env) &
-	 Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(classname,dael,env)) 
-	  => ic' &
-	   DAELow.lower(dae) => dlow &
-	 DAELow.incidence_matrix(dlow) => m &
-	 DAELow.transpose_matrix(m) => mT &
-	 DAELow.matching_algorithm(dlow,m,mT,(DAELow.INDEX_REDUCTION,DAELow.EXACT)) 
-	  => (ass1,ass2,dlow',m,mT) &
-	 DAELow.strong_components(m,mT,ass1,ass2) => (comps) &
-	 DAELow.translate_dae (dlow') => indexed_dlow &
-	 DAELow.calculate_values(indexed_dlow) => indexed_dlow' &
-	 Absyn.path_string(classname) => cname_str &
-	 Util.string_append_list([cname_str,".cpp"]) => filename &
-	 Util.string_append_list([cname_str,"_functions.cpp"]) => funcfilename &
-	 Util.string_append_list([cname_str,".makefile"]) => makefilename &
-	 SimCodegen.generate_functions(p',dae,indexed_dlow',classname,funcfilename) &
-	 SimCodegen.generate_simulation_code(dae,indexed_dlow',ass1,ass2,m,mT,comps,classname,filename) &
-	 SimCodegen.generate_makefile(makefilename,classname) 
-         (*	Util.string_append_list(["make -f ",cname_str, ".makefile\n"]) => s_call &
-          *)
+  rule  translate_model(env,cr,st) => (ret_val,st',_,_)
 	 -------------------------
-	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
-          => (Values.STRING("The model have been translated"),st)
-	 
-  axiom
-	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
-	  => (Values.STRING("The environment variable OPENMODELICAHOME was not set"),st)
-           
-	   
-	   (* FIXME: Should ceval be called with impl=true here? *)
-  rule	(* Build and simulate model *)
-	 ceval(env,starttime,true,SOME(st),NONE,msg) 
-	  => (Values.REAL(starttime_r),SOME(st)) &
-	   ceval(env,stoptime,true,SOME(st),NONE,msg) 
-	  => (Values.REAL(stoptime_r),SOME(st)) &
-	   ceval(env,interval,true,SOME(st),NONE,msg) 
-	  => (Values.INTEGER(interval_i),SOME(st)) &
-	   ceval(env,method,true,SOME(st),NONE,msg) 
-	  => (Values.STRING(method_str),SOME(st)) &
-	   real_sub(stoptime_r,starttime_r) => delta_time &
-	 int_real(interval_i) => interval_r &
-	 real_div(delta_time,interval_r) => stepsize_r &
-	 Static.component_ref_to_path(cr) => classname &
-	 SCode.elaborate(p) => p' &
-	 Inst.instantiate_class(p',classname) => (dae as DAE.DAE(dael),env) &
-	 Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(classname,dael,env)) 
-	  => ic' &
-	   DAELow.lower(dae) => dlow &
-	 DAELow.incidence_matrix(dlow) => m &
-	 DAELow.transpose_matrix(m) => mT &
-	 DAELow.matching_algorithm(dlow,m,mT,(DAELow.INDEX_REDUCTION,DAELow.EXACT)) 
-	  => (ass1,ass2,dlow',m,mT) &
-	 DAELow.strong_components(m,mT,ass1,ass2) => (comps) &
-	 DAELow.translate_dae (dlow') => indexed_dlow &
-	 DAELow.calculate_values(indexed_dlow) => indexed_dlow' &
-	 Absyn.path_string(classname) => cname_str &
-	 Util.string_append_list([cname_str,".cpp"]) => filename &
-	 Util.string_append_list([cname_str,"_functions.cpp"]) => funcfilename &
-	 Util.string_append_list([cname_str,"_init.txt"]) => init_filename &
-	 Util.string_append_list([cname_str,".makefile"]) => makefilename &
-	 SimCodegen.generate_functions(p',dae,indexed_dlow',classname,funcfilename) &
-	 SimCodegen.generate_simulation_code(dae,indexed_dlow',ass1,ass2,m,mT,comps,classname,filename) &
-	 SimCodegen.generate_init_data(indexed_dlow',classname,init_filename,
-				       starttime_r,stoptime_r,stepsize_r) &
-	 SimCodegen.generate_makefile(makefilename,classname) &
-         (*	Util.string_append_list(["make -f ",cname_str, ".makefile\n"]) => s_call &
-          *)
-	 System.path_delimiter => pd &
-	 System.read_env("OPENMODELICAHOME") => omhome & 
-	 win_citation() => cit &
-	 Util.string_append_list([cit,omhome, pd, "Compiler", 
-                                  pd, "scripts", pd, "Compile ", 
-                                  makefilename," > output.log 2>&1",cit
-                                  ]) => s_call &
-         (*> output.log 2>&1 = redirect stderr to stdout and put it in output.log *)
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),
+                                                    [Exp.CREF(cr,_)],_,_),
+                                      st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
+          => (ret_val,st')(*(Values.STRING("The model have been translated"),st')*)
 
-	 System.system_call(s_call) => 0 &
+ 
+  rule  build_model(env,exp,st',msg) => (cname_str,method_str,st) 
+         -------------------------------
+	 ceval_interactive_functions (env, exp as Exp.CALL(Absyn.IDENT("buildModel"),
+                                                           [Exp.CREF(cr,_),
+                                                            starttime,stoptime,interval,method],_,_),
+                                      st' as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
+	  => (Values.STRING(cname_str),st)
+           
+
+  rule  (* FIXME: Should ceval be called with impl=true here? *)
+         (* Build and simulate model *)
+	 
+         build_model(env,exp,st',msg) => (cname_str,method_str,st) &
+         
+         win_citation() => cit &
+	 System.path_delimiter => pd &
 	 Util.string_append_list([cit,".", pd, cname_str, " -m ",
                                   method_str," >> output.log 2>&1",
                                   cit]) => sim_call &
 	 System.system_call(sim_call) => _ &
-	 Util.string_append_list([cname_str,"_res.plt"]) => result_file &
+         
+         Util.string_append_list([cname_str,"_res.plt"]) => result_file &
+         
 	 let simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),[Values.STRING(result_file)],["resultFile"]) &
 	 let simType = (Types.T_COMPLEX(ClassInf.RECORD("SimulationResult")
 				        ,[Types.VAR("resultFile",
@@ -1287,7 +1234,10 @@ end
 	  => newst &
 	   Print.clear_error_buf()
 	 ------------------------------------------------------------------
-	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("simulate"),[Exp.CREF(cr,_),starttime,stoptime,interval,method],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
+	 ceval_interactive_functions (env, exp as Exp.CALL(Absyn.IDENT("simulate"),
+                                                    [Exp.CREF(cr,_),
+                                                     starttime,stoptime,interval,method],_,_),
+                                      st' as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (simValue,newst)
 	   
   rule	
@@ -1619,6 +1569,154 @@ end
 	  => (Values.STRING(res), st)
            (* /FIXME: test code: remove *)
 
+end
+
+relation generate_makefilename:(Exp.ComponentRef) => string =
+        
+  rule  Static.component_ref_to_path(cr) => classname &
+	Absyn.path_string(classname) => cname_str &
+	 Util.string_append_list([cname_str,".makefile"]) => makefilename 
+        ----------------------------
+        generate_makefilename(cr) => makefilename
+        
+end
+
+(**relation translate_model
+**author: x02lucpo
+**
+**translates a model into cpp code and writes also a makefile 
+**)
+relation translate_model: (Env.Env, 
+			   Exp.ComponentRef, (* component ref for model *)
+			   Interactive.InteractiveSymbolTable)
+	  => (Values.Value, Interactive.InteractiveSymbolTable,
+              DAELow.DAELow,Absyn.Path) =
+
+  rule  Static.component_ref_to_path(cr) => classname &
+	 SCode.elaborate(p) => p' &
+	 Inst.instantiate_class(p',classname) => (dae as DAE.DAE(dael),env) &
+	 Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(classname,dael,env)) 
+	  => ic' &
+	   DAELow.lower(dae) => dlow &
+	 DAELow.incidence_matrix(dlow) => m &
+	 DAELow.transpose_matrix(m) => mT &
+	 DAELow.matching_algorithm(dlow,m,mT,(DAELow.INDEX_REDUCTION,DAELow.EXACT)) 
+	  => (ass1,ass2,dlow',m,mT) &
+	 DAELow.strong_components(m,mT,ass1,ass2) => (comps) &
+	 DAELow.translate_dae (dlow') => indexed_dlow &
+	 DAELow.calculate_values(indexed_dlow) => indexed_dlow' &
+	 Absyn.path_string(classname) => cname_str &
+	 Util.string_append_list([cname_str,".cpp"]) => filename &
+	 Util.string_append_list([cname_str,"_functions.cpp"]) => funcfilename &
+	generate_makefilename(cr) => makefilename &
+        SimCodegen.generate_functions(p',dae,indexed_dlow',classname,funcfilename) &
+	 SimCodegen.generate_simulation_code(dae,indexed_dlow',ass1,ass2,m,mT,comps,classname,filename) &
+	 SimCodegen.generate_makefile(makefilename,classname) 
+         (*	Util.string_append_list(["make -f ",cname_str, ".makefile\n"]) => s_call &
+          *)
+        ---------------------------------------------
+ 	translate_model (env, cr,
+                         st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf)) 
+          => (Values.STRING("The model have been translated"),st,
+              indexed_dlow',
+              classname)
+          
+  rule 
+        ---------------------------------------------
+        translate_model (env, cr,
+                         st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
+	  => fail
+
+end
+
+(**relation calculate_simulation_settings
+ **author: x02lucpo
+ **
+ **calculates the start,end,interval,stepsize, method and init_file_name
+**)
+relation calculate_simulation_settings: (Env.Env,Exp.Exp,
+					 Interactive.InteractiveSymbolTable,
+                                         Msg,
+                                         string)
+          => (string(* filename *),
+              real, (* start time*)
+              real, (* stop time *)
+              real, (* step size *)
+              string (* method*) )  =
+
+  rule  ceval(env,starttime,true,SOME(st),NONE,msg) 
+	  => (Values.REAL(starttime_r),SOME(st)) &
+	   ceval(env,stoptime,true,SOME(st),NONE,msg) 
+	  => (Values.REAL(stoptime_r),SOME(st)) &
+	   ceval(env,interval,true,SOME(st),NONE,msg) 
+	  => (Values.INTEGER(interval_i),SOME(st)) &
+	   ceval(env,method,true,SOME(st),NONE,msg) 
+	  => (Values.STRING(method_str),SOME(st)) &
+	   real_sub(stoptime_r,starttime_r) => delta_time &
+	 int_real(interval_i) => interval_r &
+	 real_div(delta_time,interval_r) => stepsize_r &
+	 Util.string_append_list([cname_str,"_init.txt"]) => init_filename 
+        ---------------------------------
+        calculate_simulation_settings(env, 
+                                      Exp.CALL(_,
+                                               [Exp.CREF(cr,_),
+                                                starttime,stoptime,interval,method],_,_),
+                                      st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),
+                                      msg,
+                                      cname_str)
+          => (init_filename,starttime_r,stoptime_r,stepsize_r,method_str)
+
+  rule  
+        ----------------------------------
+        calculate_simulation_settings(_,_,_,_,_) => fail
+
+end
+
+(**relation build_model
+**author: x02lucpo
+**
+**translates and builds the model through the compiler script
+**)
+relation build_model:(Env.Env, 
+		      Exp.Exp, (* component ref for model *)
+		      Interactive.InteractiveSymbolTable,Msg)
+        => (string, (*classname*)
+            string,
+            Interactive.InteractiveSymbolTable) (*method*) =
+
+  rule  translate_model(env,cr,st') => (ret_val, st,indexed_dlow',classname) &
+        
+	Absyn.path_string(classname) => cname_str &
+        
+        calculate_simulation_settings(env,exp,st,msg,cname_str) => (init_filename,starttime_r,
+                                                                     stoptime_r,stepsize_r,method_str) &
+        
+	SimCodegen.generate_init_data(indexed_dlow',classname,init_filename,
+				      starttime_r,stoptime_r,stepsize_r) &
+        
+        generate_makefilename(cr) => makefilename &
+        (*	Util.string_append_list(["make -f ",cname_str, ".makefile\n"]) => s_call &
+         *)
+        
+	System.path_delimiter => pd &
+	System.read_env("OPENMODELICAHOME") => omhome & 
+        win_citation() => cit &
+        Util.string_append_list([cit,omhome, pd, "Compiler", 
+                                 pd, "scripts", pd, "Compile ", 
+                                 makefilename," > output.log 2>&1",cit
+                                 ]) => s_call &
+        (*> output.log 2>&1 = redirect stderr to stdout and put it in output.log *)
+        
+	System.system_call(s_call) => 0 
+        -------------------------------------------
+        build_model(env,exp as Exp.CALL(Absyn.IDENT("simulate"),
+                                        [Exp.CREF(cr,_),
+                                         starttime,stoptime,interval,method],_,_)
+                    ,st',msg) => (cname_str,method_str,st)
+
+  rule
+        -----------------------------------------
+        build_model(_,_,_,_) => fail
 end
 
 (** relation: win_citation

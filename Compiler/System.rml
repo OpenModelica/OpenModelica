@@ -345,5 +345,16 @@ relation acos: real => real
 relation atan: real => real 
 
 
+(** relation get_classnames_for_simulation
+ ** this returns a list of classnames that are in the
+ ** simulation list.
+ **)
+relation get_classnames_for_simulation: () => string
+
+
+(** relation add_classnames_to_simulation 
+ ** this adds a classname to the simulation list
+ **)
+relation set_classnames_for_simulation: string => ()
 end
 
