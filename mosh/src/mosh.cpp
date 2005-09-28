@@ -103,8 +103,9 @@ int main(int argc, char* argv[])
     cout << "Using corba communication" << endl;
   }  
   if(!scriptname) {
-    cout << "Open Source Modelica 1.2.2" << endl;
-    cout << "Copyright 2002, PELAB, Linkoping University" << endl;
+    cout << "Open Source Modelica 1.2.2" << endl
+	 << "Copyright 2002, PELAB, Linkoping University" << endl << endl
+	 << "To get help on using Mosh and OpenModelica, type \"help()\" and press enter" << endl;
   }
   if (corba_comm) {
     if (!noserv) {
