@@ -84,6 +84,22 @@ double GreaterEq(double a, double b)
   return b-a;
 }
 
+double Sample(double t, double start ,double interval)
+{
+  double pipi = atan(1.0)*8.0;
+  if (t<(start-interval*.25)) return -1.0;
+  return sin(pipi*(t-start)/interval);
+}
+
+double sample(double start ,double interval)
+{
+  double sloop = 4.0/interval;
+  int count = int((t - start) / interval);
+  if (t < (start-interval*0.25)) return 0;
+  if (( t-start-count*interval) < 0) return 0;
+  if (( t-start-count*interval) > interval*0.5) return 0;
+  return 1;
+}
 
 static int maxpoints;
 
@@ -303,6 +319,7 @@ int dassl_main(int argc, char **argv)
 
       // Restart simulation
       info[0] = 0;
+      if (tout-t < atol) tout = newTime(t,step);
       calcEnabledZeroCrossings();
       DDASRT(functionDAE_res, &nx,   &t, x, xd, &tout, info,&rtol, &atol, 
 	     &idid,rwork,&lrw, iwork, &liw, y, &ipar, dummyJacobianDASSL, 

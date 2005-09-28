@@ -2204,6 +2204,12 @@ relation dump_zero_crossing_str: (DAELow.ZeroCrossing) => string =
 	----------------------------------------
 	dump_zero_crossing_str (DAELow.ZERO_CROSSING(Exp.RELATION(e1,op,e2),_,_)) => zc_str
 
+  rule	print_exp_cpp_str(start) => e1_str &
+	print_exp_cpp_str(interval) => e2_str &
+	Util.string_append_list(["Sample(*t,",e1_str,",",e2_str,")"]) => zc_str
+	----------------------------------------
+	dump_zero_crossing_str (DAELow.ZERO_CROSSING(Exp.CALL(Absyn.IDENT("sample"),[start,interval],_,_),_,_)) => zc_str
+
 end
 
 relation isZeroCrossingAffectingHelpVar: ((int * Exp.Exp * int), (int * DAELow.DAELow)) => bool =

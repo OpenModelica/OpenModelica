@@ -537,9 +537,9 @@ relation find_zero_crossings2 : (Variables, Equation list, int, WhenClause list,
        
   axiom	find_zero_crossings2 (v, [], _, [], _) => ([])
 
-  rule	Exp.get_relations(e1) => rellst1 &
+  rule	find_zero_crossings3(e1) => rellst1 &
 	make_zero_crossings(rellst1, [eq_count], []) => zc1 &
-	Exp.get_relations(e2) => rellst2 &
+	find_zero_crossings3(e2) => rellst2 &
 	make_zero_crossings(rellst2, [eq_count], []) => zc2 &
 	eq_count + 1 => eq_count' &
 	find_zero_crossings2 (v,xs,eq_count',[],0) => zc3 &
@@ -556,11 +556,32 @@ relation find_zero_crossings2 : (Variables, Equation list, int, WhenClause list,
 
   rule	wc_count + 1 => wc_count' &
 	find_zero_crossings2 (v,el,eq_count,xs,wc_count') => (res1) &
-	Exp.get_relations(e) => rel &
+	find_zero_crossings3(e) => rel &
 	make_zero_crossings(rel,[],[wc_count]) => res2 &
 	list_append(res1,res2) => res
 	----------------------------------------
 	find_zero_crossings2 (v,el,eq_count,(wc as WHEN_CLAUSE(e,_))::xs,wc_count) => (res)
+end
+
+
+relation collect_zero_crossings: (Exp.Exp *  Exp.Exp list) 
+	  => (Exp.Exp * Exp.Exp list) =
+
+  axiom	collect_zero_crossings( ((e as Exp.CALL(Absyn.IDENT("noEvent"),_,_,_)),_) ) => ((e,[])) 
+
+  axiom	collect_zero_crossings( ((e as Exp.CALL(Absyn.IDENT("sample"),_,_,_)),zeroCrossings) ) => ((e,e::zeroCrossings))
+
+  axiom	collect_zero_crossings( ((e as Exp.RELATION(_,_,_)),zeroCrossings)  )=> 
+			       ((e,e::zeroCrossings))
+
+  axiom	collect_zero_crossings((e,zeroCrossings)) => ((e,zeroCrossings))
+end
+
+relation find_zero_crossings3: (Exp.Exp) => (Exp.Exp list) =
+  
+  rule	Exp.traverse_exp(e,collect_zero_crossings,[]) => ((_,zeroCrossings))
+	--------------------------------------------------
+	find_zero_crossings3(e) => zeroCrossings
 end
 
 (** relation: make_zero_crossing
