@@ -66,5 +66,6 @@ double LessEq(double a,double b);
 double Greater(double a,double b);
 double GreaterEq(double a,double b);
 #define ZEROCROSSING(ind,exp) gout[ind] = (zeroCrossingEnabled[ind])?double(zeroCrossingEnabled[ind])*exp:1.0
+#define noEvent(arg) arg
 
 #endif

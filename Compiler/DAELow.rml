@@ -1952,6 +1952,22 @@ relation lower2: (DAE.DAElist, BinTree (* states *), WhenClause list)
 	--------------------------------
 	lower2(DAE.DAE(DAE.COMP(_,dae)::xs),states,whenclauses) 
 	  => (vars,knvars,eqns,reqns,ieqns,algs,whenclauses'')
+
+  rule	Print.print_error_buf "#Error, if-equations not supported. Please rewrite as if-expressions\n"
+	---------------------
+	lower2 (DAE.DAE(DAE.IF_EQUATION(_,_,_)::xs),states,whenclauses) => fail
+
+  rule	Print.print_error_buf "#Error, if-equations not supported. Please rewrite as if-expressions\n"
+	---------------------
+	lower2 (DAE.DAE(DAE.INITIAL_IF_EQUATION(_,_,_)::xs),states,whenclauses) => fail
+
+  rule	Print.print_error_buf "#Warning, Asserts are not supported/checked for.\n" &
+	lower2(DAE.DAE(xs),states,whenclauses) 
+	  => (v,kv,e,re,ie,al,whenclauses')
+
+	---------------------
+	lower2 (DAE.DAE(DAE.ASSERT(_)::xs),states,whenclauses) 
+	  => (v,kv,e,re,ie,al,whenclauses')
 	
   rule	lower2(DAE.DAE(xs),states,whenclauses) 
 	  => (v,kv,e,re,ie,al,whenclauses')
