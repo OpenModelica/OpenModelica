@@ -2871,7 +2871,7 @@ relation relop_symbol : Exp.Operator => string =
   axiom	relop_symbol(Exp.LESSEQ(_))     => " <= "
   axiom	relop_symbol(Exp.GREATER(_))    => " > "
   axiom	relop_symbol(Exp.GREATEREQ(_))  => " >= "
-  axiom	relop_symbol(Exp.EQUAL(_))      => " = "
+  axiom	relop_symbol(Exp.EQUAL(_))      => " == "
   axiom	relop_symbol(Exp.NEQUAL(_))     => " <> "
 end
 
