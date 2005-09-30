@@ -1276,18 +1276,40 @@ end
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("instantiateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (Values.STRING(str),Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
 
-  rule	Util.list_map(vars,Exp.print_exp_str) => vars' &
+(*  relation ceval : (Env.Env, Exp.Exp, bool (implicit) ,
+		    Interactive.InteractiveSymbolTable option, 
+		    int option, ( dimensions )
+		    Msg)
+	  => (Values.Value, Interactive.InteractiveSymbolTable option)
+*)
+
+  rule	 ceval(env,size_expression,true,SOME(st),NONE,msg) => 
+	    (size_value as Values.INTEGER(size),SOME(st)) &
+	 Util.list_map(vars,Exp.print_exp_str) => vars' &
 	 System.pwd() => pwd &
 	 System.path_delimiter => pd & 
 	 Util.string_append_list([pwd,pd,filename]) => filename' &
 	 System.read_ptolemyplot_dataset(filename',vars',size) => value
 	 ------------------------------------
-	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResult"),[Exp.SCONST(filename),Exp.ARRAY(_,_,vars),Exp.ICONST(size)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResult"),[Exp.SCONST(filename),Exp.ARRAY(_,_,vars),size_expression],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (value,st)
 
   rule	Print.print_error_buf "#Error reading simulation result. Check that filename and variablenames are correct.\n" 
 	 ------------------------------------
-	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResult"),[Exp.SCONST(filename),Exp.ARRAY(_,_,vars),Exp.ICONST(size)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResult"),[Exp.SCONST(filename),Exp.ARRAY(_,_,_),_],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
+	  => fail
+
+  rule	System.pwd() => pwd &
+	 System.path_delimiter => pd & 
+	 Util.string_append_list([pwd,pd,filename]) => filename' &
+	 System.read_ptolemyplot_dataset_size(filename') => value 
+	 ------------------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResultSize"),[Exp.SCONST(filename)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
+	  => (value,st)
+
+  rule	Print.print_error_buf "#Error reading simulation result when checking its size. Check that filename and variablenames are correct.\n" 
+	 ------------------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResultSize"),[Exp.SCONST(filename)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => fail
 
   rule	(* plot *)

@@ -2409,23 +2409,39 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	      SOME(st))
 
   rule	elab_variablenames(vars) => vars' &
+	elab_exp(env,size_absyn,false,SOME(st)) => (size_exp,ptop, st') &
 	list_length(vars) => var_len 
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("readSimulationResult",_),
 			      [ Absyn.STRING(filename),
 			       Absyn.ARRAY(vars),
-			       Absyn.INTEGER(size)
+			       size_absyn
 			       ],args,impl,
 			      SOME(st)) 
 	  => (Exp.CALL(Absyn.IDENT("readSimulationResult"),
 		       [Exp.SCONST(filename),
 			Exp.ARRAY(Exp.OTHER,false,vars'),
-			Exp.ICONST(size)], 
+			size_exp], 
 		       false,
 		       true),
-	      Types.PROP((Types.T_ARRAY(Types.DIM(SOME(size)),
+	      Types.PROP((Types.T_ARRAY(Types.DIM(NONE),
 					(Types.T_ARRAY(Types.DIM(SOME(var_len)), (Types.T_REAL([]),NONE)),NONE)),NONE),Types.C_VAR),
 	      SOME(st))
+
+  rule	(*elab_variablenames(vars) => vars' &
+	list_length(vars) => var_len *)
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("readSimulationResultSize",_),
+			      [ Absyn.STRING(filename)],
+			      args,impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("readSimulationResultSize"),
+		       [Exp.SCONST(filename)], 
+		       false,
+		       true),
+	      Types.PROP((Types.T_INTEGER([]),NONE),Types.C_VAR),
+	      SOME(st))
+
 	
   rule	elab_variablenames(vars) => vars'
 	------------------------------------------------------------------
