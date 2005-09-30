@@ -647,6 +647,22 @@ RML_BEGIN_LABEL(System__read_5fptolemyplot_5fdataset)
 }   
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__read_5fptolemyplot_5fdataset_5fsize)
+{
+  int size;
+  char* filename = RML_STRINGDATA(rmlA0);
+  void* p;
+
+  size=read_ptolemy_dataset_size(filename);
+  
+  rmlA0 = (void*)Values__INTEGER(mk_icon(size));
+  if (rmlA0 == NULL) {
+    RML_TAILCALLK(rmlFC);
+  }
+  RML_TAILCALLK(rmlSC);
+}   
+RML_END_LABEL
+
 
 RML_BEGIN_LABEL(System__write_5fptolemyplot_5fdataset)
 {
