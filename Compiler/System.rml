@@ -220,6 +220,16 @@ relation read_ptolemyplot_dataset: (string, (* filename *)
 				    int) (* size *)
  => Values.Value
 
+(** relation: read_ptoleyplot_dataset_size
+ **
+ ** Determines the size of a dataset in the ptolemy plot data format.
+ **)
+
+relation read_ptolemyplot_dataset_size: (string (* filename *))
+ => Values.Value
+
+
+
 (** relation: system_call
  ** 
  ** Execute a system call, returning the exit code of the call.
