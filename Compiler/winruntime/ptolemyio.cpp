@@ -116,4 +116,31 @@ void print_error_buf_impl(char*str);
     olst = Values__ARRAY(olst);
     return olst;
   }
+  /* Given a file name, returns the size of that simulation result in that file*/
+  void * read_ptolemy_dataset_size(char*filename)
+  {
+    char buf[255];
+    ifstream stream(filename);
+    
+
+    if (!stream) {
+      cerr << "Error opening file" << endl;
+      return NULL;
+    }
+
+    // Find interval size
+    while( stream.getline(buf,255)
+	   && string(buf).find("#IntervalSize") == string(buf).npos);
+
+    string intervalText=string(buf);
+    int equalPos=intervalText.find("=");
+    int readIntervalSize = atoi(intervalText.substr(equalPos+1).c_str());
+    // exit if intervals not compatible...
+    if( readIntervalSize == 0) {
+      cerr << "could not read interval size." << endl;
+      print_error_buf_impl("could not read interval size.\n");
+      return NULL;
+    }
+    return (void*)readIntervalSize;
+  }
 }

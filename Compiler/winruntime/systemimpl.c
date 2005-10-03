@@ -38,6 +38,7 @@ char * cc=NULL;
 char * cflags=NULL;
 
 void * read_ptolemy_dataset(char*filename, int size,char**vars,int datasize);
+void * read_ptolemy_dataset_size(char*filename);
 void * generate_array(char,int,type_description *,void *data);
 float next_realelt(float*);
 int next_intelt(int*);
@@ -620,6 +621,22 @@ RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
   }
   else {
     rmlA0 = (void*)res;
+  }
+  RML_TAILCALLK(rmlSC);
+}   
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__read_5fptolemyplot_5fdataset_5fsize)
+{
+  int size;
+  char* filename = RML_STRINGDATA(rmlA0);
+  void* p;
+
+  size=read_ptolemy_dataset_size(filename);
+  
+  rmlA0 = (void*)Values__INTEGER(mk_icon(size));
+  if (rmlA0 == NULL) {
+    RML_TAILCALLK(rmlFC);
   }
   RML_TAILCALLK(rmlSC);
 }   
