@@ -1,5 +1,6 @@
 Open Source Modelica functions
 ------------------------------
+Exit Mosh by pressing Ctrl-d
 
 
 cd() -                        Return the current directory
@@ -30,8 +31,8 @@ loadModel(classname) -        Load model or package relative to $MODELICAPATH.
 
 listVariables() -             Return a vector of the defined variables names.
 
-plot(vars) -                  Plots the variables given as a vector, e.g., plot({x1,x2}), 
-                              using an external plotter.
+plot(vars) -                  Plots the variables given as a vector using an 
+                              external plotter.
                               Ex: plot({x,y})
                               Ex: list(dcmotor)
 readFile(str) -               Load file given as string and return a string of the
@@ -47,7 +48,7 @@ readSimulationResult(filename, variables, size) -
                               Reads the results for a simulation from a file. 
 			      Size is the size of the resulting record
 			      Variables is a vector of the variables to investigate
-                              Ex: readSimulationResult("dcmotor_res.plt", {R1.i,L1.v}, 10);
+                              Ex: readSimulationResult("dcmotor_res.plt", {R1.i,L1.v}, 10)
 
 runScript(str) -              Exectute script file (.mos)  given as string argument.
                               Ex: runScript("simulation.mos")
@@ -58,7 +59,8 @@ saveModel(str,modelname) -    Save the model/class with name modelname in the
 simulate(modelname [,startTime=<Real>][,stopTime=<Real>][,numberOfIntervals=<Integer>])
                               Translates a model and simulates it.
                               Ex: simulate(dcmotor)
-                              Ex: simulate(dcmotor,startTime=0, stopTime=10, numberOfIntervals=1000)
+                              Ex: simulate(dcmotor,startTime=0, stopTime=10, 
+                                numberOfIntervals=1000)
 
 system(str) -                 Execute str as a system(shell) command, return integer
                               success value.
