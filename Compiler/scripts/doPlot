@@ -1,2 +1,2 @@
 #!/bin/sh
-exec ptplot "`cygpath -w $1`" &
+exec /cygdrive/c/Ptolemy/Ptplot5.5/ptplot "`cygpath -w $1`" &
