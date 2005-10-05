@@ -1,47 +1,75 @@
 Open Source Modelica functions
 ------------------------------
 
-instantiateModel(modelname) - Instantiates a model/class and return a string
+
+cd() -                        Return the current directory
+
+cd(dir) -                     Change directory to the directory given as string.
+                              Ex: cd("myModels/myLibrary")
+
+clear() -                     Clears everything.
+
+clearVariables() -            Clears the variables.
+
+help() -                      Print this helptext (returned as a string).
+
+instantiateModel(modelname) - Instantiates a model/class and returns a string
                               containing the flat class definition.
+                              Ex: instantiateModel(dcmotor)
 
-simulate(modelname) - translates a model and simulates it.
+list() -                      Returns a string containing all class definitions.
+
+list(modelname) -             Returns a string containing the class definition of
+                              the named class.
+
+loadFile(str) -               Load modelica file given as string argument.
+                              Ex: loadFile("../myLibrary/myModels.mo")               
+
+loadModel(classname) -        Load model or package relative to $MODELICAPATH.
+                              Ex: loadModel(Modelica.Electrical)
+
+listVariables() -             Return a vector of the defined variables names.
+
+plot(vars) -                  Plots the variables given as a vector, e.g., plot({x1,x2}), 
+                              using an external plotter.
+                              Ex: plot({x,y})
+                              Ex: list(dcmotor)
+readFile(str) -               Load file given as string and return a string of the
+                              file content.
+                              Ex: readFile("myModel/myModelr.mo")
+
+readSimulationResultSize(filename) - 
+                              Returns the size of the record resulting from a simulation
+			      The size is read from the result file, given as a string
+                              Ex: readSimulationResultSize("dcmotor_res.plt");
+
+readSimulationResult(filename, variables, size) - 
+                              Reads the results for a simulation from a file. 
+			      Size is the size of the resulting record
+			      Variables is a vector of the variables to investigate
+                              Ex: readSimulationResult("dcmotor_res.plt", {R1.i,L1.v}, 10);
+
+runScript(str) -              Exectute script file (.mos)  given as string argument.
+                              Ex: runScript("simulation.mos")
+
+saveModel(str,modelname) -    Save the model/class with name modelname in the
+                              file given by the string argument.
+
 simulate(modelname [,startTime=<Real>][,stopTime=<Real>][,numberOfIntervals=<Integer>])
+                              Translates a model and simulates it.
+                              Ex: simulate(dcmotor)
+                              Ex: simulate(dcmotor,startTime=0, stopTime=10, numberOfIntervals=1000)
 
-plot(vars) - Plots the variables given as a vector, e.g., plot({x1,x2}), using an external plotter.
+system(str) -                 Execute str as a system(shell) command, return integer
+                              success value.
+                              Ex: system("touch myFile")
 
-list() - Returns a string containing all class definitions.
 
-list(modelname) - Returns a string containing the class definition of
-the named class.
 
-typeOf(variable) - Returns the type of the variable as a string.
+timing(expr) -                Evaluates expression and returns the number of seconds
+                              the evaluation took.
+                              Ex: timing(x*4711+5)
 
-clear() - Clears everything.
+typeOf(variable) -            Returns the type of the variable as a string.
+                              Ex: typeOf(R1.v)
 
-clearVariables() - Clears the variables.
-
-timing(expr) - Evaluates expression and returns the number of seconds
-the evaluation took.
-
-cd() - Return the current directory
-
-cd(dir) - Change directory to the directory given as string.
-
-system(str) - Execute str as a system(shell) command, return integer
-success value.
-
-readFile(str) - Load file given as string and return a string of the
-file content.
-
-listVariables() - Return a vector of the defined variables names.
-
-runScript(str) - Exectute script file given as string argument.
-
-loadModel(classname) - Load model or package from MODELICAPATH.
-
-loadFile(str) - Load modelica file (.mo) given as string argument.
-
-saveModel(str,modelname) - Save the model/class with name modelname in the
-file given by the string argument.
-
-help() - print this helptext (returned as a string).
