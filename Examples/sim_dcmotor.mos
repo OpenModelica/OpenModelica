@@ -1,0 +1,4 @@
+loadModel(Modelica);
+loadFile("dcmotor.mo");
+simulate(dcmotor,startTime=0.0,stopTime=10.0);
+plot({load.w,load.phi});

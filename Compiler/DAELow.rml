@@ -510,6 +510,15 @@ relation collect_zero_crossings: (Exp.Exp *  Exp.Exp list)
   axiom	collect_zero_crossings( ((e as Exp.RELATION(_,_,_)),zeroCrossings)  )=> 
 			       ((e,e::zeroCrossings))
 
+  rule	--------------------------------------------------
+	collect_zero_crossings( ((e as Exp.ARRAY(_,_,[])),zeroCrossings)) => ((e,zeroCrossings))
+
+  rule	Exp.traverse_exp(e, collect_zero_crossings, zeroCrossings) => ((_,zeroCrossings')) &
+        collect_zero_crossings( (Exp.ARRAY(tp,scalar,el),zeroCrossings) ) => ((e',zeroCrossings'')) &
+	list_append(zeroCrossings',zeroCrossings'') => zeroCrossings'''
+	--------------------------------------------------
+	collect_zero_crossings( ((Exp.ARRAY(tp,scalar,e::el)),zeroCrossings)) => ((e,zeroCrossings'''))
+
   axiom	collect_zero_crossings((e,zeroCrossings)) => ((e,zeroCrossings))
 end
 
