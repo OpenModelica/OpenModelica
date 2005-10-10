@@ -2380,6 +2380,18 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	      SOME(st))
 
 	
+  rule	elab_variablenames([cr]) => vars'
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("plot",_),
+			      [cr as Absyn.CREF(_)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("plot"),
+		       [Exp.ARRAY(Exp.OTHER,false,vars')],
+		       false,
+		       true),
+	      Types.PROP((Types.T_BOOL([]),NONE),Types.C_VAR),
+	      SOME(st))
+
   rule	elab_variablenames(vars) => vars'
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("plot",_),
