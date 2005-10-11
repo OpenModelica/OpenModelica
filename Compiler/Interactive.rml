@@ -3748,6 +3748,9 @@ relation get_component_count: (Absyn.ComponentRef,Absyn.Program) => int =
   ** This relation takes a `ComponentRef', a `Program' and
   ** returns a list of all component annotations, as returned by 
   ** get_nth_component_annotation.
+  ** Both public and protected components are returned, but they need to
+  ** be in the same order as get_components relations, i.e. first public 
+  ** components then protected ones.
   **)
 
  relation get_component_annotations: (Absyn.ComponentRef,
@@ -3756,7 +3759,9 @@ relation get_component_count: (Absyn.ComponentRef,Absyn.Program) => int =
 
    rule	Absyn.cref_to_path(model) => modelpath &
 	 get_pathed_class_in_program(modelpath,p) => cdef &
-	 get_components_in_class(cdef) => comps &
+	 get_public_components_in_class(cdef) => comps1 &
+	 get_protected_components_in_class(cdef) => comps2 &
+	 list_append(comps1,comps2) => comps &
 	 get_component_annotations_from_elts(comps) => s1 &
 	 string_append("{",s1) => s2 &
 	 string_append(s2,"}") => str
