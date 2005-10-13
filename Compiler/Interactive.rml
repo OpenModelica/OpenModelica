@@ -4452,6 +4452,7 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
 
  relation get_icon_annotation_in_class : (Absyn.Class) => string =
 
+	 (* class definitions *)
    rule	get_icon_annotation_from_parts(parts) => annlst &
 	 get_icon_annotation_str(annlst) => s1 &
 	 string_append("{",s1) => s2 &
@@ -4459,6 +4460,13 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
 	 ------------------------
 	 get_icon_annotation_in_class (Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_)) 
 	   => str	
+
+	   (* short class definitions *)
+  rule	get_icon_annotation_str(annlst) => s1 &
+	 string_append("{",s1) => s2 &
+	 string_append(s2,"}") => str 
+	 ------------------------
+	 get_icon_annotation_in_class (Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(_,_,_,_,SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_))),_)) => str 
  end
 
 (** relation: get_icon_annotation_from_parts
@@ -4595,12 +4603,18 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
 
  relation get_diagram_annotation_in_class : (Absyn.Class) => string =
 
+	(* class def. *)
    rule	get_public_list(parts) => publst &
 	 get_protected_list(parts) => protlst &
 	 list_append(publst,protlst) => lst &
 	 get_diagram_annotation_in_elementitemlist(lst) => str
 	 ----------------------------
 	 get_diagram_annotation_in_class (Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_)) => str	
+
+   rule	get_diagram_annotation_str(annlst) => str 
+	----------------------------
+	get_diagram_annotation_in_class (Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(_,_,_,_,SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_))),_)) => str
+
  end
 
  relation get_diagram_annotation_in_elementitemlist: (Absyn.ElementItem list) => string =

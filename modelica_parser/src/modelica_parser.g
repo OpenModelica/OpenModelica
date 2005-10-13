@@ -460,8 +460,8 @@ initial_algorithm_clause :
 		}
 		;
 equation :
-
-		(	(simple_expression EQUALS) => equality_equation
+        
+		(   (simple_expression EQUALS) => equality_equation
 		|	conditional_equation_e
 		|	for_clause_e
 		|	connect_clause
@@ -494,7 +494,7 @@ multi_assign_clause_a :
         LPAR! expression_list RPAR! ASSIGN^ component_reference function_call;
 
 equality_equation :
-		simple_expression EQUALS^ expression
+		simple_expression EQUALS^ expression 
 		;
 
 conditional_equation_e :

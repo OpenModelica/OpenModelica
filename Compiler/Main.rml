@@ -91,7 +91,7 @@ relation server_loop: (int,Interactive.InteractiveSymbolTable)  => Interactive.I
 	Debug.fprint ("interactivedump" , str ) &
 	Debug.fprint ("interactivedump", "------- End recieved Data-----\n") &
 	Print.clear_buf & 
-	Print.clear_error_buf &
+	(*Print.clear_error_buf &*)
    	handle_command (str,isymb)  => (true,replystr,newsymb) &
 	Socket.sendreply(shandle,replystr) &
 	server_loop (shandle,newsymb) => ressymb
@@ -103,7 +103,7 @@ relation server_loop: (int,Interactive.InteractiveSymbolTable)  => Interactive.I
 	Debug.fprint ("interactivedump" ,"------- Recieved Data from client -----\n") &
 	Debug.fprint ("interactivedump" , str ) &
 	Debug.fprint ("interactivedump", "------- End recieved Data-----\n") &
-	Print.clear_error_buf &
+	(*Print.clear_error_buf &*)
 	Print.clear_buf & 
 	handle_command (str,isymb)  => (false,replystr,newsymb) &
 	(* 2004-11-27 - adrpo added part ends here *)

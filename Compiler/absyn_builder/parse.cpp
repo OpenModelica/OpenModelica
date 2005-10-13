@@ -42,6 +42,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <iostream>
 #include <sstream>
+
+
 #include <fstream> 
 
 #include "modelica_lexer.hpp"
@@ -65,6 +67,9 @@ using namespace std;
 string modelicafilename; // The filename for the parsed file.
 extern "C"
 {
+
+  extern int print_error_buf_impl(char *);
+  
 
 	int check_debug_flag(char const* strdata);
 
@@ -101,8 +106,10 @@ extern "C"
 		std::ifstream stream(filename);
 		if (!stream) 
 		{
-			std::cerr << "Error opening file" << std::endl;
-			RML_TAILCALLK(rmlFC);
+		  const char* msg = "Error opening file";
+		  std::cerr << msg << std::endl;
+		  print_error_buf_impl((char*)msg);
+		  RML_TAILCALLK(rmlFC);
 		}
 		//bool debug = true;
 		modelica_lexer *lex=0;
@@ -142,6 +149,7 @@ extern "C"
 				parse->setASTFactory( &my_factory );
 
 				parse->stored_definition();
+
 				t = RefMyAST(parse->getAST());
 			}
 		} 
@@ -152,36 +160,58 @@ extern "C"
 		}
 		catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamRecognitionException &e) 
 		{
-			std::cerr << "Parsing error. TokenStreamRecognitionException on line "
-				<< flat_lex->getLine() << "near :"<< flat_lex->getText() << std::endl;
-			ast = mk_nil();
+		  modelica_lexer *currentLex=0;
+		  
+		  if (parseFlatModelica) {
+		    currentLex = (modelica_lexer*)flat_lex;
+		  }
+		  else {
+		    currentLex = lex;
+		  }
+		  stringstream str;
+		  str << "Syntax error on line " << currentLex->getLine()
+		      << " near :" << currentLex->getText() << std::endl;
+		  string msg = str.str();
+		  print_error_buf_impl((char*)msg.c_str());
+		  ast = mk_nil();
 		}
 		catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException &e) 
 		{
-			std::cerr << "[" << filestring << ":" << e.getLine() << ":" << e.getColumn() 
-				<< "]: error: " << e.getMessage() << std::endl;
-			ast = mk_nil();
+		  stringstream str;
+		  str << "[" << filestring << ":" << e.getLine() << ":"
+		      << e.getColumn() << "]: error: " << e.getMessage()
+		      << std::endl;		  
+		  string msg = str.str();
+		  print_error_buf_impl((char*)msg.c_str());
+		  ast = mk_nil();
 		}
 		catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamException &e) 
 		{
-			std::cerr << "[" << filestring << ":" << flat_lex->getLine() << ":" << flat_lex->getColumn() 
-				<< "]: error: illegal token" << std::endl;
+		  stringstream str;
+		  str << "[" << filestring << ":" << flat_lex->getLine()
+		      << ":" << flat_lex->getColumn() 
+		      << "]: error: illegal token" << std::endl;
+		  string msg = str.str();
+		  print_error_buf_impl((char*)msg.c_str());
 			ast = mk_nil();
 		}
 		catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e) 
 		{
-			std::cerr << "ANTLRException: " << e.getMessage() << std::endl;
-			ast = mk_nil();
+		  string msg = string("ANTLRException: ") + e.getMessage();
+		  print_error_buf_impl((char*)msg.c_str());
+		  ast = mk_nil();
 		}
 		catch (std::exception &e) 
 		{
-			std::cerr << "Error while parsing:\n" << e.what() << "\n";
-			ast = mk_nil();
+		  string msg = string("Error while parsing:\n") + e.what();
+		  print_error_buf_impl((char*)msg.c_str());
+		  ast = mk_nil();
 		}
 		catch (...) 
 		{
-			std::cerr << "Error while parsing\n";
-			ast = mk_nil();
+		  string msg = string("Error while parsing");
+		  print_error_buf_impl((char*)msg.c_str());
+		  ast = mk_nil();
 		}
 
 		//Parsing complete
@@ -235,9 +265,8 @@ extern "C"
 				if (parse) delete parse;
 				if (flat_parse) delete parse;
 				if (lex) delete lex;
-				ast = mk_nil();
 				modelicafilename=string("");
-				RML_TAILCALLK(rmlSC); // rmlFC
+				RML_TAILCALLK(rmlFC); // rmlFC
 			}
 			modelicafilename=string("");
 			if (debug) 
@@ -245,7 +274,8 @@ extern "C"
 				std::cout << "Build done\n";
 			} 
 
-			rmlA0 = ast ? ast : mk_nil();
+			
+			rmlA0 = ast;
 
 			// adrpo added 2004-10-27 
 			if (flat_parse) delete parse;
@@ -253,6 +283,9 @@ extern "C"
 			if (lex) delete lex;
 			if (flat_lex) delete flat_lex;
 
+			if (!ast) {
+			  RML_TAILCALLK(rmlFC); 
+			}
 			RML_TAILCALLK(rmlSC); 
 		}    
 		else 
@@ -263,10 +296,10 @@ extern "C"
 			if (lex) delete lex;
 			if (flat_lex) delete flat_lex;
 			ast = mk_nil();
-			std::cerr << "Error building AST" << std::endl;
+			//std::cerr << "Error building AST" << std::endl;
 		}
 
-		RML_TAILCALLK(rmlSC); // rmlFC
+		RML_TAILCALLK(rmlFC); // rmlFC
 	}
 	RML_END_LABEL
 

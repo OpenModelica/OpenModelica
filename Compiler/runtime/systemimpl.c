@@ -1,7 +1,6 @@
 #include "rml.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <string.h>
 #include <sys/unistd.h>
 #include <sys/stat.h>
@@ -91,29 +90,32 @@ void * generate_array(char,int,type_description *,void *data);
 float next_realelt(float*);
 int next_intelt(int*);
 
-void set_cc(char *str)
+int set_cc(char *str)
 {
   if (cc != NULL) {
     free(cc);
   }
   cc = (char*)malloc(strlen(str)+1);
-  assert(cc != NULL);
+  if (cc == NULL) return -1;
   memcpy(cc,str,strlen(str)+1);
+  return 0;
 }
 
-void set_cflags(char *str)
+int set_cflags(char *str)
 {
   if (cflags != NULL) {
     free(cflags);
   }
   cflags = (char*)malloc(strlen(str)+1);
-  assert(cflags != NULL);
+  if (cflags == NULL) { return -1; }
   memcpy(cflags,str,strlen(str)+1);
+  return 0;
 }
 
 void System_5finit(void)
 {
   set_cc("gcc");
+    
   set_cflags("-I$OPENMODELICAHOME/c_runtime -L$OPENMODELICAHOME/c_runtime -lc_runtime -lm $MODELICAUSERCFLAGS");
 }
 
@@ -280,7 +282,9 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__set_5fc_5fcompiler)
 {
   char* str = RML_STRINGDATA(rmlA0);
-  set_cc(str);
+  if(set_cc(str))  { 
+    RML_TAILCALLK(rmlFC); 
+  }
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -289,7 +293,9 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__set_5fc_5fflags)
 {
   char* str = RML_STRINGDATA(rmlA0);
-  set_cflags(str);
+  if (set_cflags(str)) {
+    RML_TAILCALLK(rmlFC);
+  }
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -350,7 +356,6 @@ RML_BEGIN_LABEL(System__write_5ffile)
   char* filename = RML_STRINGDATA(rmlA0);
   FILE * file=NULL;
   file = fopen(filename,"w");
-  /*   assert(file != NULL); */
   if (file == NULL) {
     RML_TAILCALLK(rmlFC);
   }
@@ -875,7 +880,9 @@ RML_BEGIN_LABEL(System__set_5fclassnames_5ffor_5fsimulation)
     free(class_names_for_simulation);
 
   class_names_for_simulation = (char*)malloc(strlen(class_names)+1);
-  assert(class_names_for_simulation != NULL);
+  if (class_names_for_simulation == NULL) {
+    RML_TAILCALLK(rmlFC);
+  }
   memcpy(class_names_for_simulation,class_names,strlen(class_names)+1);
 
   RML_TAILCALLK(rmlSC);

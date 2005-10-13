@@ -1315,7 +1315,13 @@ end
 	 int_eq (res,0) => true &
 	 System.pwd => str' 
 	 -------------------------
-	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("cd"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.STRING(str'),st)
+	    ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("cd"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.STRING(str'),st)
+
+	    (* no such directory *)
+  rule	not System.directory_exist(str) => 0 &
+	    Util.string_append_list(["Error, directory ", str, " does not exist,"]) => res
+	    ----------------------
+	    ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("cd"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.STRING(res),st)
 
   rule	System.pwd() => str'
 	 -------------------------
@@ -1376,6 +1382,8 @@ end
 	 ------------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.BOOL(false),st)
 
+	    (* loadModel failed *)
+  axiom	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.BOOL(false),st)
 
   rule  System.regular_file_exist(name) => 0 &
          Parser.parse(name) => p1 &
@@ -1392,8 +1400,8 @@ end
          ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),[Exp.SCONST(name)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg)
 	  => (Values.BOOL(false),st)
            
-           
-  rule	not Parser.parse(name) => _
+				
+  rule	(*not Parser.parse(name) => _*) 
 	 --------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),[Exp.SCONST(name)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg)
 	  => (Values.BOOL(false),st)
@@ -1512,23 +1520,6 @@ end
 				     st,msg)
 	  => (v, st')
  
-           (* FIXME: test code: remove *)
-  rule	Exp.exp_contains (exp1, exp2) => res
-	 ----------------------------------------------
-	 ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("exp_contains"),
-						   [exp1, exp2], _, _),
-				     st,msg)
-	  => (Values.BOOL(res), st)
-
-  rule	Exp.solve (exp1, exp2, exp3) => res1 &
-	 Exp.print_exp_str res1 => res
-	 ----------------------------------------------
-	 ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("solve"),
-						   [exp1, exp2, exp3], _, _),
-				     st,msg)
-	  => (Values.STRING(res), st)
-           (* /FIXME: test code: remove *)
-
 end
 
 relation generate_makefilename:(Exp.ComponentRef) => string =

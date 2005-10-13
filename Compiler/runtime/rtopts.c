@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include "rml.h"
 #include <errno.h>
-#include <assert.h>
 
 static int type_info;
 static int split_arrays;
@@ -76,8 +75,8 @@ static int set_debug_flags(char *flagstr)
     debug_all=1;
   }
   if (flag!=flagc) {
-    fprintf(stderr, "--Warning: Internal error flag=%d, flagc=%d",flag,flagc);
-    assert(1);
+    fprintf(stderr, "Error in setting flags.\n",flag,flagc);
+    return -1;
   }
   
   debug_flagc=flagc;
@@ -125,7 +124,7 @@ int check_debug_flag(char const* strdata)
 RML_BEGIN_LABEL(RTOpts__args)
 {
   void *args = rmlA0;
-  void *res = mk_nil();
+  void *res = (void*)mk_nil();
 
   debug_none = 1;
   
@@ -166,8 +165,8 @@ RML_BEGIN_LABEL(RTOpts__args)
 	}
 	if (arg[2]!='=' ||
 	    set_debug_flags(&(arg[3])) != 0) {
-	  fprintf(stderr, "# Flag Usage:  +d=flg1,flg2,...") ;
-	  fprintf(stderr, "#              +dd for debug flag info");
+	  fprintf(stderr, "# Flag Usage:  +d=flg1,flg2,...\n") ;
+	  fprintf(stderr, "#              +dd for debug flag info\n");
 	  RML_TAILCALLK(rmlFC);
 	}
 	break;
@@ -210,7 +209,7 @@ RML_BEGIN_LABEL(RTOpts__args)
       }
     }
     else
-      res = mk_cons(RML_CAR(args), res);
+      res = (void*)mk_cons(RML_CAR(args), res);
     args = RML_CDR(args);
   }
 
@@ -291,21 +290,21 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(RTOpts__no_5fproc)
 {
-  rmlA0 = mk_icon(nproc);
+  rmlA0 = (void*)mk_icon(nproc);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(RTOpts__latency)
 {
-  rmlA0 = mk_rcon(latency);
+  rmlA0 = (void*)mk_rcon(latency);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(RTOpts__bandwidth)
 {
-  rmlA0 = mk_rcon(bandwidth);
+  rmlA0 = (void*)mk_rcon(bandwidth);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

@@ -2,7 +2,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdio.h>
-#include <assert.h>
 #include <netinet/in.h>
 
 int 
@@ -17,20 +16,22 @@ make_socket (unsigned short int port)
   sock = socket (PF_INET, SOCK_STREAM, 0);
   if (sock < 0)
     {
-      perror ("socket");
-      exit (1);
+      printf("Error creating socket\n");
+      return 0;
     }
   
   /* Give the socket a name. */
   name.sin_family = PF_INET;
   name.sin_port = htons (port);
   name.sin_addr.s_addr = htonl (INADDR_ANY);
-  assert(setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,(char*)&one,sizeof(int)) == 0);
+  if (setsockopt(sock,SOL_SOCKET,SO_REUSEADDR,(char*)&one,sizeof(int))) {
+    return 0;
+  }
 
   if (bind (sock, (struct sockaddr *) &name, sizeof (name)) < 0)
     {
-      perror ("bind");
-      exit (1);
+      printf("Error binding socket\n");
+      return 0;
     }
   
   return sock;
@@ -54,6 +55,9 @@ RML_BEGIN_LABEL(Socket__waitforconnect)
   int ns;
  
   serversocket = make_socket(port);
+  if (serversocket==0) { 
+    RML_TAILCALLK(rmlFC);
+  }
   
   if (listen(serversocket,5)==-1) { /* Listen, pending client list length = 1 */ 
     perror("listen:");

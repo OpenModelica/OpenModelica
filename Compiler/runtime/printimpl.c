@@ -1,6 +1,5 @@
 #include "rml.h"
 #include <stdio.h>
-#include <assert.h>
 
 #define GROWTH_FACTOR 1.4  /* According to some roumours of buffer growth */
 #define INITIAL_BUFSIZE 4000 /* Seems reasonable */
@@ -13,20 +12,24 @@ int cursize=0;
 int errorNfilled=0;
 int errorCursize=0;
 
-void increase_buffer(void);
-void error_increase_buffer(void);
+int increase_buffer(void);
+int error_increase_buffer(void);
 void Print_5finit(void)
 {
 
 }
 
-void print_error_buf_impl(char *str)
+int print_error_buf_impl(char *str)
 {
   /*  printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str));*/
   
-  assert(str != NULL);
+  if (str == NULL) {
+    return -1;
+  }
   while (errorNfilled + strlen(str)+1 > errorCursize) {
-    error_increase_buffer();
+    if (error_increase_buffer() != 0) {
+      return -1;
+    }
     /* printf("increased -- cursize: %d, nfilled %d\n",cursize,nfilled);*/
   }
 
@@ -36,11 +39,13 @@ void print_error_buf_impl(char *str)
 
 RML_BEGIN_LABEL(Print__print_5ferror_5fbuf)
 {
- char* str = RML_STRINGDATA(rmlA0);
- print_error_buf_impl(str);
-
+  char* str = RML_STRINGDATA(rmlA0);
+  if (print_error_buf_impl(str) != 0) {
+    RML_TAILCALLK(rmlFC);
+  }
+  
   /*  printf("%s",str);*/
-
+  
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -59,7 +64,9 @@ RML_END_LABEL
 RML_BEGIN_LABEL(Print__get_5ferror_5fstring)
 {
   if (errorBuf == 0) {
-    error_increase_buffer();
+    if(error_increase_buffer() != 0) {
+      RML_TAILCALLK(rmlFC);
+    }
   }
 
   rmlA0=(void*)mk_scon(errorBuf);
@@ -72,10 +79,11 @@ RML_BEGIN_LABEL(Print__print_5fbuf)
 {
   char* str = RML_STRINGDATA(rmlA0);
   /*  printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str));*/
-  
-  assert(str != NULL);
+    
   while (nfilled + strlen(str)+1 > cursize) {
-    increase_buffer();
+    if(increase_buffer()!= 0) {
+        RML_TAILCALLK(rmlFC);
+    }
     /* printf("increased -- cursize: %d, nfilled %d\n",cursize,nfilled);*/
   }
 
@@ -102,7 +110,9 @@ RML_END_LABEL
 RML_BEGIN_LABEL(Print__get_5fstring)
 {
   if (buf == 0) {
-    increase_buffer();
+    if (increase_buffer() != 0) {
+      RML_TAILCALLK(rmlFC);
+    }
   }
 
   rmlA0=(void*)mk_scon(buf);
@@ -134,19 +144,19 @@ RML_BEGIN_LABEL(Print__write_5fbuf)
 RML_END_LABEL
 
 
-void increase_buffer(void) 
+int increase_buffer(void) 
 {
   char * new_buf;
   int new_size;
 
   if (cursize == 0) {
     new_buf = (char*)malloc(INITIAL_BUFSIZE);
-    assert(new_buf != NULL);
+    if (new_buf == NULL) { return -1; }
     new_buf[0]='\0';
     cursize = INITIAL_BUFSIZE;
   } else {
     new_buf = (char*)malloc(new_size =(int) (cursize * GROWTH_FACTOR));
-    assert(new_buf != NULL);
+    if (new_buf == NULL) { return -1; }
     memcpy(new_buf,buf,cursize);
     cursize = new_size;
   }
@@ -154,21 +164,22 @@ void increase_buffer(void)
     free(buf);
   }
   buf = new_buf;
+  return 0;
 }
 
-void error_increase_buffer(void) 
+int error_increase_buffer(void) 
 {
   char * new_buf;
   int new_size;
 
   if (errorCursize == 0) {
     new_buf = (char*)malloc(INITIAL_BUFSIZE);
-    assert(new_buf != NULL);
+    if (new_buf == NULL) { return -1; }
     new_buf[0]='\0';
     errorCursize = INITIAL_BUFSIZE;
   } else {
     new_buf = (char*)malloc(new_size =(int) (errorCursize * GROWTH_FACTOR));
-    assert(new_buf != NULL);
+    if (new_buf == NULL) { return -1; }
     memcpy(new_buf,errorBuf,errorCursize);
     errorCursize = new_size;
   }
@@ -176,4 +187,5 @@ void error_increase_buffer(void)
     free(errorBuf);
   }
   errorBuf = new_buf;
+  return 0;
 }

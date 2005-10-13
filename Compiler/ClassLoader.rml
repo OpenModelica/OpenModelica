@@ -68,6 +68,7 @@ with "Parser.rml"
 with "Print.rml"
 with "Env.rml"
 with "Dump.rml"
+with "Debug.rml"
 
 (** relation: load_class
  ** This relation takes a 'Path' and the $MODELICAPATH as a string
@@ -100,7 +101,7 @@ relation load_class: (Absyn.Path, string) => (Absyn.Program) =
 	-------------------------------------
 	load_class(path as Absyn.QUALIFIED(pack,rest),mp) => p
 
-  rule	print "load_class failed\n"
+  rule	Debug.fprint("failtrace", "load_class failed\n")
 	-------------------
 	load_class(_,_) => fail
 end
@@ -174,7 +175,7 @@ relation load_class_from_mp: (Absyn.Ident, string) => Absyn.Program =
 	--------------------------------------
 	load_class_from_mp(class,mp') => p
 	
-  rule	print "load_class_from_mp failed\n" 
+  rule	Debug.fprint("failtrace", "load_class_from_mp failed\n" )
 	--------------------
 	load_class_from_mp(_,_) => fail
 end
