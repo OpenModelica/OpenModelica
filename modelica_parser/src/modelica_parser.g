@@ -407,7 +407,7 @@ element_redeclaration :
 
 element_replaceable: 
         REPLACEABLE^ ( class_definition | component_clause1 )
-				(constraining_clause)?
+				(constraining_clause comment)?
     ;
 component_clause1 :
 		type_prefix type_specifier component_declaration1

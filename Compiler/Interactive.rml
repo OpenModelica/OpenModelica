@@ -4611,9 +4611,10 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
 	 ----------------------------
 	 get_diagram_annotation_in_class (Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_)) => str	
 
-   rule	get_diagram_annotation_str(annlst) => str 
+   rule	get_diagram_annotation_str(annlst) => str &
+	 Util.string_append_list(["{",str,"}"]) => res
 	----------------------------
-	get_diagram_annotation_in_class (Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(_,_,_,_,SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_))),_)) => str
+	get_diagram_annotation_in_class (Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(_,_,_,_,SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_))),_)) => res
 
  end
 

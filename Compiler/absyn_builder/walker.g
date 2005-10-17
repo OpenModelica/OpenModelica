@@ -578,6 +578,7 @@ element returns [void* ast]
 	void* final = 0;
 	void* innerouter = 0;
 	void* constr = 0;
+    void* cmt = 0;
     void* keywords = 0;
     
 }
@@ -610,7 +611,7 @@ element returns [void* ast]
 						}
 					| r:REPLACEABLE 
 						e_spec = component_clause 
-						( constr = constraining_clause)?
+						( constr = constraining_clause cmt = comment)?
 						{
                             keywords = make_redeclare_keywords(r,re);
 							ast = Absyn__ELEMENT(final,
@@ -618,7 +619,7 @@ element returns [void* ast]
 								innerouter,
 								mk_scon("replaceable_component"),e_spec,
                                 mk_scon((char*)(modelicafilename.c_str())),mk_icon(decl->getLine()),
-								constr? mk_some(constr):mk_none());
+								constr? mk_some(Absyn__CONSTRAINCLASS(constr, cmt? mk_some(cmt):mk_none())) : mk_none());
 						}
 					)
 				)
@@ -645,7 +646,7 @@ element returns [void* ast]
 					| 
 						(rd:REPLACEABLE 
 							class_def = class_definition[fd != NULL] 
-							(constr = constraining_clause)?
+							(constr = constraining_clause cmt = comment)?
 						)
 						{
                             keywords = make_redeclare_keywords(rd,re2);
@@ -657,7 +658,7 @@ element returns [void* ast]
                                 innerouter,
 								mk_scon("??"),
 								ast,mk_scon((char*)(modelicafilename.c_str())),mk_icon(def->getLine()),
-                                constr ? mk_some(constr) : mk_none());
+                                constr ? mk_some(Absyn__CONSTRAINCLASS(constr,cmt ? mk_some(cmt):mk_none())) : mk_none());
 						}
 					)
 				)
@@ -1001,6 +1002,7 @@ element_replaceable [bool each, bool final,bool redeclare]  returns [void* ast]
 	void* class_def = 0;
 	void* e_spec = 0; 
 	void* constr = 0;
+    void* cmt = 0;
 	void* ast_final = 0;
 	void* ast_each = 0;
     void* keywords = 0;
@@ -1011,7 +1013,7 @@ element_replaceable [bool each, bool final,bool redeclare]  returns [void* ast]
             (class_def = class_definition[false]                            
             | e_spec = component_clause1
             )
-            (constr = constraining_clause)?
+            (constr = constraining_clause cmt = comment)?
             {	
                 ast_final = final ? RML_TRUE : RML_FALSE;
                 ast_each = each ? Absyn__EACH : Absyn__NON_5fEACH;
@@ -1022,10 +1024,10 @@ element_replaceable [bool each, bool final,bool redeclare]  returns [void* ast]
                     e_spec = Absyn__CLASSDEF(RML_TRUE, class_def);
                     
                     ast = Absyn__REDECLARATION(ast_final, keywords, ast_each, e_spec,
-                            constr ? mk_some(constr) : mk_none());
+                            constr ? mk_some(Absyn__CONSTRAINCLASS(constr,cmt?mk_some(cmt):mk_none())) : mk_none());
                 } else {
                     ast = Absyn__REDECLARATION(ast_final, keywords, ast_each, e_spec,
-                        constr ? mk_some(constr) : mk_none());
+                        constr ? mk_some(Absyn__CONSTRAINCLASS(constr,cmt?mk_some(cmt):mk_none())) : mk_none());
                 }   
             }
             )

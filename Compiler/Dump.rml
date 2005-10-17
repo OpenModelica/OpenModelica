@@ -715,19 +715,10 @@ relation unparse_element_arg_str: (Absyn.ElementArg) => string =
 	select_string(f,"final ","")  => s2 &
 	unparse_redeclarekeywords (keywords) => s3 &
 	unparse_elementspec_str(0, spec,s2,"","") => s4 &
-	unparse_elementspec_str(0,constropt,"","","") => s5 &
+	unparse_constrainclass_opt_str(constr) => s5 &
 	Util.string_append_list([s1,s2,s3,s4," ",s5]) => str
 	-----------------------------------------------------------
-	unparse_element_arg_str(Absyn.REDECLARATION(f,keywords,each, spec,SOME(constropt))) => str
-
-
-  rule	unparse_each_str ( each ) => s1 &
-	select_string(f,"final ","")  => s2 &
-	unparse_redeclarekeywords (keywords) => s3 &
-	unparse_elementspec_str(0, spec,s2,"","") => s4 &
-	Util.string_append_list([s1,s2,s3,s4]) => str
-	-----------------------------------------------------------
-	unparse_element_arg_str(Absyn.REDECLARATION(f,keywords,each, spec,NONE)) => str
+	unparse_element_arg_str(Absyn.REDECLARATION(f,keywords,each, spec,constr)) => str
 
 end
 
@@ -1163,23 +1154,51 @@ relation unparse_element_str: (int, Absyn.Element) => string =
 	unparse_redeclarekeywords repl => s2 &
 	unparse_innerouter_str inout => s3 &
 	unparse_elementspec_str(i, spec,s1,s2,s3) => s4 &	
-	int_string(lineno) => s5 &
-	indent_str(i) => is &
-        Util.string_append_list([s4, ";"]) => str
-(*	Util.string_append_list([s4, " ", filename," ", s5,";"]) => str *)
+	unparse_constrainclass_opt_str(constr) => s5 &
+        Util.string_append_list([s4, s5, ";"]) => str
 	----------------------------
 	unparse_element_str(i, Absyn.ELEMENT(final,SOME(repl),inout,_,spec,filename,lineno,constr)) => str
 
   rule	select_string(final, "final ", "") => s1 &
 	unparse_innerouter_str inout => s3 &
 	unparse_elementspec_str(i, spec,s1,"",s3) => s4 &	
-	int_string(lineno) => s5 &
-	indent_str(i) => is &
-        Util.string_append_list([s4, ";"]) => str
+	unparse_constrainclass_opt_str(constr) => s5 &
+        Util.string_append_list([s4,s5, ";"]) => str
 	----------------------------
 	unparse_element_str(i, Absyn.ELEMENT(final,NONE,inout,_,spec,filename,lineno,constr)) => str
 end
 
+(** relation: unparse_constrainclass_opt_str
+ ** author: PA
+ **
+ ** This relation prettyprints a ConstrainClass option to a string.
+ **)
+
+relation unparse_constrainclass_opt_str: (Absyn.ConstrainClass option) 
+	  => string =
+
+  axiom	unparse_constrainclass_opt_str(NONE) => ""
+
+  rule	unparse_constrainclass_str(constr) => res
+	----------------------
+	unparse_constrainclass_opt_str(SOME(constr)) => res
+end
+
+(** relation: unparse_constrainclass_str
+ ** author: PA
+ **
+ ** This relation prettyprints a ConstrainClass to a string.
+ **)
+
+relation unparse_constrainclass_str: (Absyn.ConstrainClass) => string =
+
+  rule	unparse_elementspec_str(0,spec,"","","") => s1 &
+	unparse_comment_option(cmt) => s2 &
+	string_append(s1,s2) => res
+	---------------------------------
+	unparse_constrainclass_str(Absyn.CONSTRAINCLASS(spec,cmt)) => res
+
+end
 
 (** relation: print_innerouter
  **

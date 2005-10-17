@@ -70,6 +70,7 @@ tokens {
 	TRUE		= "true"	;
 	TYPE		= "type"	;
 	UNSIGNED_REAL	= "unsigned_real";
+    DOT         = ".";
 	WHEN		= "when"	;
 	WHILE		= "while"	;
 	WITHIN		= "within" 	;
@@ -92,7 +93,7 @@ PLUS		: '+'	;
 MINUS		: '-'	;
 STAR		: '*'	;
 SLASH		: '/'	;
-DOT		: '.'	;
+
 COMMA		: ','	;
 LESS		: '<'	;
 LESSEQ		: "<="	;
@@ -158,13 +159,13 @@ EXPONENT :
 
 
 UNSIGNED_INTEGER :
-	(( (DIGIT)+ '.' ) => (DIGIT)+ ( '.' (DIGIT)* ) 
-			{ 
-				$setType(UNSIGNED_REAL); 
-			}
-	| 	(DIGIT)+
-	)
-	(EXPONENT { $setType(UNSIGNED_REAL); } )?
+        (DIGIT)+ ('.' (DIGIT)* { $setType(UNSIGNED_REAL);} )? 
+        (EXPONENT { $setType(UNSIGNED_REAL); } )?
+    |
+        ('.' DIGIT) => ('.' (DIGIT)+ { $setType(UNSIGNED_REAL);})         
+        (EXPONENT { $setType(UNSIGNED_REAL); } )?
+    | 
+      '.' { $setType(DOT); }
 	;
 
 STRING : '"'! (SCHAR | SESCAPE)* '"'!;

@@ -173,7 +173,8 @@ module Absyn:
 
   
   (* Constraining type, must be extendes *)
-  type ConstrainClass = ElementSpec
+  datatype ConstrainClass = CONSTRAINCLASS of ElementSpec (* must be extends*)
+					    * Comment option (* comment *)
 
   (** An element is something that occurs in a public or protected
    ** section in a class definition.  There is one constructor in the
