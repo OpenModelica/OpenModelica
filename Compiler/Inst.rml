@@ -2021,10 +2021,12 @@ relation redeclare_type: (Types.Mod,
 	get_cref_from_mod(mod) => crefs &
 	update_components_in_env(Types.NOMOD (* m *),crefs,env,ci_state,impl) => env' &
 	Mod.elab_mod(env',pre,mod,impl) => m' &
-	Mod.merge(rmod,m',env',pre) => m''
+	Mod.elab_mod(env',pre,old_mod,impl) => old_m' &
+	Mod.merge(rmod,m',env',pre) => m'' &
+	Mod.merge(m'',old_m',env',pre) => m''' 
 	--------------------------------
 	redeclare_type ((m as Types.REDECL(_,((redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,mod,bc,comment)),rmod)::rest)),
-			SCode.COMPONENT(n2,false,repl2,prot2,_,t2,_,_,_),env,pre,ci_state,impl) => (redecl,m'',env')
+			SCode.COMPONENT(n2,false,repl2,prot2,_,t2,old_mod,_,_),env,pre,ci_state,impl) => (redecl,m''',env')
 
   rule	not n1=n2 &
 	redeclare_type(Types.REDECL(redfin,rest),comp,env,pre,ci_state,impl) 

@@ -172,7 +172,6 @@ relation unelab_mod: Types.Mod => SCode.Mod =
 	  => SCode.MOD(final,subs',SOME(e))
 	  
   rule	Exp.print_exp_str e => es &
-	print "unelab typed mod...  = " & print es & print "\n" &
 	unelab_submods (subs) => subs' &
 	Exp.unelab_exp(e) => e'
 	------------------------------------

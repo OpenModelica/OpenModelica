@@ -2086,17 +2086,6 @@ relation unparse_algorithm_str_lst: (int, Absyn.AlgorithmItem list,string)
   axiom unparse_algorithm_str_lst (_,[],_) => ""
 
   rule	unparse_algorithm_str(i,x) => s1 &
-	string_append(s1,sep) => res 
-	------------------------------------
-	unparse_algorithm_str_lst(i, [x], sep) => res
-	
-  rule	unparse_algorithm_str(i,x1) => s1 &
-	unparse_algorithm_str(i,x2) => s2 &
-	Util.string_append_list([s1,sep,s2]) => res
-	------------------------------------
-	unparse_algorithm_str_lst(i, [x1,x2], sep) => res
-
-  rule	unparse_algorithm_str(i,x) => s1 &
 	unparse_algorithm_str_lst(i,xs,sep) => s2 &
 	Util.string_append_list([s1,sep,s2]) => res
 	------------------------------------
