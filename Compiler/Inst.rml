@@ -4280,6 +4280,7 @@ relation inst_equation_common : (Env,Mod, Prefix, Connect.Sets, ClassInf.State,
 	 **)
 
 rule	Static.elab_exp (env,e,impl,NONE) => (e',_,_) &
+	Prefix.prefix_exp(env,e',pre) => e'' &
 	inst_list(env,mod,pre,csets,ci_state,inst_e_equation, el, impl) => (dae1,env',_,_) &
 	inst_equation_common(env',mod,pre,csets,ci_state,SCode.EQ_WHEN(ee,eel,eex),initial,impl) 
 	  => (dae2::_, env'',_,ci_state') &
@@ -4287,16 +4288,17 @@ rule	Static.elab_exp (env,e,impl,NONE) => (e',_,_) &
 	-----------------------------------------------------------
 	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_WHEN(e,el, (ee,eel)::eex),   
 			     initial as NON_INITIAL,impl)
-	=> ([DAE.WHEN_EQUATION(e',dae1,SOME(dae2))], env'',csets, ci_state'')
+	=> ([DAE.WHEN_EQUATION(e'',dae1,SOME(dae2))], env'',csets, ci_state'')
 
 
 rule	Static.elab_exp (env,e,impl,NONE) => (e',_,_) &
+	Prefix.prefix_exp(env,e',pre) => e'' &
 	inst_list(env,mod,pre,csets,ci_state,inst_e_equation, el, impl) => (dae1,env',_,_) &
          inst_equation_common_ci_trans (ci_state, initial) => ci_state'
 	-----------------------------------------------------------
 	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_WHEN(e,el,[]),   
 			     initial as NON_INITIAL,impl)
-	  => ([DAE.WHEN_EQUATION(e',dae1,NONE)], env', csets, ci_state')
+	  => ([DAE.WHEN_EQUATION(e'',dae1,NONE)], env', csets, ci_state')
 
 (* seems unnecessary to handle when equations that are initial *) 
 

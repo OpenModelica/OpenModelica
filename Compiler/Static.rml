@@ -2347,6 +2347,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 
   rule	elab_variablenames(vars) => vars' &
 	elab_exp(env,size_absyn,false,SOME(st)) => (size_exp,ptop, st') &
+        Ceval.ceval(env,size_exp,false,st',NONE,Ceval.MSG) => (Values.INTEGER(size),_) &
 	list_length(vars) => var_len 
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("readSimulationResult",_),
@@ -2361,8 +2362,8 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 			size_exp], 
 		       false,
 		       true),
-	      Types.PROP((Types.T_ARRAY(Types.DIM(NONE),
-					(Types.T_ARRAY(Types.DIM(SOME(var_len)), (Types.T_REAL([]),NONE)),NONE)),NONE),Types.C_VAR),
+	      Types.PROP((Types.T_ARRAY(Types.DIM(SOME(var_len)),
+					(Types.T_ARRAY(Types.DIM(SOME(size)), (Types.T_REAL([]),NONE)),NONE)),NONE),Types.C_VAR),
 	      SOME(st))
 
   rule	(*elab_variablenames(vars) => vars' &
