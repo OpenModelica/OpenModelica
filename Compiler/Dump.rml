@@ -2099,6 +2099,7 @@ end
 
 relation unparse_algorithm_str: (int, Absyn.AlgorithmItem) => string =
 	
+	(* ALG_ASSIGN *)
   rule	print_component_ref_str cr => s1 &
 	print_exp_str(exp) => s2 & 
 	unparse_comment_option(optcmt) => s3 &
@@ -2106,7 +2107,17 @@ relation unparse_algorithm_str: (int, Absyn.AlgorithmItem) => string =
 	Util.string_append_list([is,s1,":=",s2,s3,";"]) => str
 	-------------------------------------------
 	unparse_algorithm_str(i, Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(cr,exp),optcmt)) => str
+
+	(* ALG_TUPLE_ASSIGN *)
+  rule	print_exp_str(e1) => s1 &
+	print_exp_str(e2) => s2 &
+	unparse_comment_option(optcmt) => s3 &
+	indent_str(i) => is &
+	Util.string_append_list([is,s1," := ",s2,s3,";"]) => str
+	----------------------
+	unparse_algorithm_str(i, Absyn.ALGORITHMITEM(Absyn.ALG_TUPLE_ASSIGN(e1,e2),optcmt)) => str
 	
+	(* ALG_IF *)
   rule	print_exp_str(e) => s1 &
 	int_add(i,1) => i' &
 	unparse_algorithm_str_lst(i,tb,"\n") => s2 &
@@ -2118,6 +2129,7 @@ relation unparse_algorithm_str: (int, Absyn.AlgorithmItem) => string =
 	----------------------------------------------------
 	unparse_algorithm_str(i, Absyn.ALGORITHMITEM(Absyn.ALG_IF(e,tb,eb,fb),optcmt)) => str
 	
+	(* ALG_FOR *)
   rule	print_exp_str(e)=> s1 &
 	int_add(ident,1) => ident' &
 	unparse_algorithm_str_lst(ident',el,"\n") => s2 &
@@ -2126,7 +2138,8 @@ relation unparse_algorithm_str: (int, Absyn.AlgorithmItem) => string =
 	Util.string_append_list([is,"for ", i, " in ", s1, " loop\n",is, s2, "\n",is,"end for", s3, ";"]) => str
 	----------------------------------------------------------
         unparse_algorithm_str (ident, Absyn.ALGORITHMITEM(Absyn.ALG_FOR(i,e,el),optcmt)) => str
-				     
+			
+	(* ALG_WHILE *)
   rule	print_exp_str(e) => s1 &
 	int_add(i,1) => i' &
 	unparse_algorithm_str_lst(i',al,"\n") => s2 &
@@ -2136,6 +2149,7 @@ relation unparse_algorithm_str: (int, Absyn.AlgorithmItem) => string =
 	----------------------------------------------------------
 	unparse_algorithm_str (i, Absyn.ALGORITHMITEM(Absyn.ALG_WHILE(e,al),optcmt)) => str
 	
+	(* ALG_WHEN_A *)
   rule	print_exp_str(e) => s1 &
 	int_add(i,1) => i' &
 	unparse_algorithm_str_lst(i', al, "\n") => s2 &
@@ -2146,6 +2160,7 @@ relation unparse_algorithm_str: (int, Absyn.AlgorithmItem) => string =
         ----------------------------------------------------------
 	unparse_algorithm_str (i, Absyn.ALGORITHMITEM(Absyn.ALG_WHEN_A(e,al,al2),optcmt)) => str
 	
+	(* ALG_NORETCALL *)
   rule	print_component_ref_str(cr) => s1 &
 	print_function_args_str(fargs) => s2 &
 	unparse_comment_option(optcmt) => s3 &
@@ -2154,12 +2169,13 @@ relation unparse_algorithm_str: (int, Absyn.AlgorithmItem) => string =
 	-----------------------------------------------
 	unparse_algorithm_str(i, Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(cr,fargs),optcmt)) => str
 
+
   rule	unparse_annotation_option(i, SOME(ann)) => str &
 	string_append(str,";") => str'
 	------------------------------------------
 	unparse_algorithm_str (i,Absyn.ALGORITHMITEMANN(ann)) => str'
   
-  rule	Print.print_buf " *Failure! UNKNOWN ALGORITHM CLAUSE ** "
+  rule	Print.print_error_buf "#Error, unparse_algorithm_str failed\n"
 	--------------------------------
 	unparse_algorithm_str(_,_) => ""
 	
@@ -2274,13 +2290,7 @@ relation unparse_alg_elseif_str_lst: (int, (Absyn.Exp * Absyn.AlgorithmItem list
 	unparse_alg_elseif_str(i,x) => s1 &
 	Util.string_append_list([s1,sep,s2]) => res
 	--------------------
-	unparse_alg_elseif_str_lst(i,x::(xs as _::_),sep) => res
-
-  rule	unparse_alg_elseif_str(i,x1) => s1 &
-	unparse_alg_elseif_str(i,x2) => s2 &
-	Util.string_append_list([s1,sep,s2]) => res
-	-------------------------------------
-	unparse_alg_elseif_str_lst(i,[x1,x2],sep) => res
+	unparse_alg_elseif_str_lst(i,x::xs,sep) => res
 end
 
 (** relation: unparse_alg_elseif_str
