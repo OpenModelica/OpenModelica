@@ -1,20 +1,21 @@
 #ifndef __MATRIX_H
 #define __MATRIX_H
 
+#include "blaswrap.h"
+#include "f2c.h"
+
 
 #if defined(__cplusplus)
 extern "C" {
 
 #endif
 
-#include "blaswrap.h"
-#include "f2c.h"
 
 
 int dgesv_(integer *n, integer *nrhs, doublereal *a, integer 
 	   *lda, integer *ipiv, doublereal *b, integer *ldb, integer *info);
 
-void hybrd_(void (int*, double *, double*, int*),
+void hybrd_(void (*) (int*, double *, double*, int*),
 	    int* n, double* x,double* fvec,double* xtol,
 	    int* maxfev, int* ml,int* mu,double* epsfcn,
 	    double* diag,int* mode, double* factor, 

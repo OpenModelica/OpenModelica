@@ -29,6 +29,7 @@
 #include <assert.h>
 #include <stdarg.h>
 
+
 int real_array_ok(real_array_t* a)
 {
     int i;

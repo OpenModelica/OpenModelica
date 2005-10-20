@@ -22,24 +22,42 @@
 #ifndef MODELICA_H_
 #define MODELICA_H_
 
+
+#include "modelica_string.h"
+
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+
+#include "memory_pool.h"
+#include "index_spec.h"
+
+#include "string_array.h"
+#include "boolean_array.h"
+
+
+#if defined(__cplusplus)
+}
+#endif
+
+#include "real_array.h"
+#include "integer_array.h"
+
+#include "utility.h"
+
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
 #include <assert.h>
-
-#include "memory_pool.h"
-#include "index_spec.h"
-
-#include "real_array.h"
-#include "integer_array.h"
-#include "string_array.h"
-#include "boolean_array.h"
-#include "utility.h"
-#include "modelica_string.h"
 #include "read_write.h"
-
 #include "matrix.h"
+
+
+
 
 typedef real_array_t real_array;
 typedef integer_array_t integer_array;
@@ -66,7 +84,6 @@ double LessEq(double a,double b);
 double Greater(double a,double b);
 double GreaterEq(double a,double b);
 #define ZEROCROSSING(ind,exp) gout[ind] = (zeroCrossingEnabled[ind])?double(zeroCrossingEnabled[ind])*exp:1.0
-double Sample(double t, double start,double interval);
-double sample(double start,double interval);
-#define noEvent(x) (x)
+#define noEvent(arg) arg
+
 #endif
