@@ -196,6 +196,7 @@ end
   axiom ceval_builtin_handler "sign" => ceval_builtin_sign
   axiom	ceval_builtin_handler "exp" => ceval_builtin_exp 
   axiom	ceval_builtin_handler "noEvent" => ceval_builtin_noevent
+  axiom	ceval_builtin_handler "cardinality" => ceval_builtin_cardinality 
 
   rule	Debug.fprint("ceval", "No ceval_builtin_handler found for: ") &
 	Debug.fprintln("ceval", id)
@@ -2026,6 +2027,36 @@ relation ceval_builtin_noevent : (Env.Env, Exp.Exp list, bool, Interactive.Inter
 	ceval_builtin_noevent(env,[exp],impl,st,msg) => (v,st)
 
 end
+
+(** relation: ceval_builtin_cardinality
+ ** author: PA
+ ** 
+ ** Evaluates the cardinality operator. The cardinality of a connector 
+ ** instance is its number of (inside and outside) connections, i.e. 
+ ** number of occurences in connect equations.
+ **)
+
+relation ceval_builtin_cardinality : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option, Msg) 
+	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
+          
+  rule  ceval_cardinality(env,cr) => cnt
+	--------------------------------------
+	ceval_builtin_cardinality(env,[Exp.CREF(cr,_)],impl,st,msg) 
+	  => (Values.INTEGER(cnt),st)
+end
+
+(** relation: ceval_cardinality 
+ ** author: PA
+ ** 
+ ** counts the number of connect occurences of the component ref in 
+ ** equations in current scope.
+ **)
+relation ceval_cardinality: (Env.Env, Exp.ComponentRef) => int =
+	
+  axiom	ceval_cardinality(_,_) => 0
+	
+end
+
 
 (** relation: ceval_builtin_floor
  ** author: LP

@@ -118,7 +118,8 @@ module Static :
 
   relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list, bool (*impl*) ) 
 					  => (Exp.Exp, Types.Properties)) 
-
+  relation elab_builtin_handler_generic : Ident => ((Env.Env, Absyn.Exp list, bool (*impl*) ) 
+					  => (Exp.Exp, Types.Properties)) 
 
   (* Property matching (type conversions etc.) *)
 
@@ -843,6 +844,11 @@ end
 (** relation: elab_array 
  **
  ** This relation elaborates on array expressions.
+ ** 
+ ** All types of an array should be equivalent. However, mixed Integer and Real
+ ** elements are allowed in an array and in that case the Integer elements
+ ** are converted to Real elements.
+ 
  **)
 
 relation elab_array : (Env.Env, Absyn.Exp list,
@@ -850,19 +856,181 @@ relation elab_array : (Env.Env, Absyn.Exp list,
 		       Interactive.InteractiveSymbolTable option)
 	  => (Exp.Exp list, Types.Properties) =
 
+	  (* array contains mixed Integer and Real types *)
+  rule	elab_array_has_mixed_int_reals(env,expl,impl,st) &       
+	elab_array_real(env,expl,impl,st) => (expl',prop)
+	-------------
+	elab_array(env,expl,impl,st) => (expl',prop)
+
+  rule	elab_array2(env,expl,impl,st) => (expl',prop)
+	----------------------
+	elab_array(env,expl,impl,st) => (expl',prop)
+end
+
+(** relation: elab_array_has_mixed_int_reals
+ **
+ ** Helper relation to elab_array, checks if expression list contains both
+ ** Integer and Real types.
+ **)
+relation elab_array_has_mixed_int_reals: (Env.Env, Absyn.Exp list,
+					  bool (*impl*), 
+					  Interactive.InteractiveSymbolTable option) => () =
+
+  rule	elab_array_has_int(env,expl,impl,st) & 
+	elab_array_has_real(env,expl,impl,st)
+	---------------------------------------------------
+	elab_array_has_mixed_int_reals(env,expl,impl,st)
+end
+
+(** relation: elab_array_has_int
+ ** author :PA
+ **
+ ** Helper relation to elab_array.
+ **)
+
+relation elab_array_has_int: (Env.Env, Absyn.Exp list,
+			      bool (* impl *),
+			      Interactive.InteractiveSymbolTable  option)
+	  => () =
+
+  rule	elab_exp(env,e,impl,st) => (e',Types.PROP((Types.T_INTEGER([]),_),_),_)
+	-----------------------------
+	elab_array_has_int(env,e::expl,impl,st)
+
+  rule	elab_array_has_int(env,expl,impl,st)
+	-----------------------------
+	elab_array_has_int(env,e::expl,impl,st)
+end
+
+(** relation: elab_array_has_real
+ ** author :PA
+ **
+ ** Helper relation to elab_array. 
+ **)
+
+relation elab_array_has_real: (Env.Env, Absyn.Exp list,
+			      bool (* impl *),
+			      Interactive.InteractiveSymbolTable  option)
+	  => () =
+
+  rule	elab_exp(env,e,impl,st) => (e',Types.PROP((Types.T_REAL([]),_),_),_)
+	-----------------------------
+	elab_array_has_real(env,e::expl,impl,st)
+
+  rule	elab_array_has_real(env,expl,impl,st)
+	-----------------------------
+	elab_array_has_real(env,e::expl,impl,st)
+end
+
+(** relation: elab_array_real
+ ** 
+ ** Helper relation to elab_array, converts all elements to Real
+ **)
+
+relation elab_array_real : (Env.Env, Absyn.Exp list,
+		       bool (*impl*), 
+		       Interactive.InteractiveSymbolTable option)
+	  => (Exp.Exp list, Types.Properties) =
+
+	  (* elaborate each expression, pick first realtype
+	   ** and type_convert all expressions to that type *)
+  rule	elab_exp_list(env,expl,impl,st) => (expl',props,_) &
+	elab_array_first_props_real(props) => real_tp &
+	elab_array_const(props) => const &
+	Util.list_map(props,Types.get_prop_type) => types &
+	elab_array_real2(expl',types,real_tp) => (expl'',real_tp')
+	-----------------------
+	elab_array_real(env,expl,impl,st) 
+	  => (expl'',Types.PROP(real_tp',const))
+end
+
+(** relation: elab_array_first_props_real
+ ** author: PA
+ **
+ ** Pick the first type among the list of properties which has elementype
+ ** Real.
+ **)
+
+relation elab_array_first_props_real: Types.Properties list => Types.Type =
+
+  rule	Types.array_element_type(tp) => (tp' as (Types.T_REAL(_),_))
+	-----------------------------------
+	elab_array_first_props_real(Types.PROP(tp,_)::_) => tp'
+
+  rule	elab_array_first_props_real(rest) => tp 
+	-----------------------------------
+	elab_array_first_props_real(_::rest) => tp
+end
+
+(** relation: elab_array_const
+ **
+ ** Constructs a const value from a list of properties, using const_and.
+ **)
+
+relation elab_array_const: (Types.Properties list) => Types.Const  =
+
+  axiom	elab_array_const([Types.PROP(tp,c)]) => c
+
+  rule	elab_array_const(rest) => c2 &
+	Types.const_and(c2,c1) => c
+	--------------------------
+	elab_array_const(Types.PROP(_,c1)::rest) => c
+end
+
+(** relation: elab_array_real2
+ ** author: PA
+ ** 
+ ** Applies type_convert to all expressions in a list to the type given
+ ** as argument.
+ **)
+
+relation elab_array_real2: (Exp.Exp list, (* expl *)
+			    Types.Type list,
+			    Types.Type) (* to_type*) 
+	  => (Exp.Exp list, (* new_expl*)
+	      Types.Type) (* res_type *) =
+
+  axiom	elab_array_real2([],[],tp) => ([],tp)
+
+	(* No need for type conversion. *)
+  rule	Types.equivtypes(t,to_type) => true &
+	elab_array_real2(es,ts,to_type) => (res,res_type)
+	------------------------------------
+	elab_array_real2(e::es,t::ts,to_type) 
+	  => (e::res,res_type)
+
+	  (* type conversion *)
+  rule	Types.type_convert(e,t,to_type) => (e',res_type) &
+	elab_array_real2(es,ts,to_type) => (res,_)
+	------------------------------------
+	elab_array_real2(e::es,t::ts,to_type) 
+	  => (e'::res,res_type)
+end
+
+
+(** relation: elab_array2
+ ** 
+ ** Helper relation to elab_array, checks that all elements are equivalent.
+ **)
+
+relation elab_array2 : (Env.Env, Absyn.Exp list,
+		       bool (*impl*), 
+		       Interactive.InteractiveSymbolTable option)
+	  => (Exp.Exp list, Types.Properties) =
+
   rule	elab_exp (env,e,impl,st) => (e',prop,_)
 	-----------------------------
-	elab_array (env,[e],impl,st) => ([e'],prop)
+	elab_array2 (env,[e],impl,st) => ([e'],prop)
 
   rule	elab_exp (env,e,impl,st) => (e',Types.PROP(t1,c1),_) &
-	elab_array (env,es,impl,st) => (es',Types.PROP(t2,c2)) &
+	elab_array2 (env,es,impl,st) => (es',Types.PROP(t2,c2)) &
 	Types.equivtypes(t1,t2) => true &
 	Types.const_and (c1,c2) => c
 	---------------------------------
-	elab_array (env,e::es,impl,st) => (e'::es',Types.PROP(t1,c))
+	elab_array2 (env,e::es,impl,st) => (e'::es',Types.PROP(t1,c))
 
   rule	elab_exp (env,e,impl,st) => (e',Types.PROP(t1,c1),_) &
-	elab_array (env,es,impl,st) => (es',Types.PROP(t2,c2)) &
+	elab_array2 (env,es,impl,st) => (es',Types.PROP(t2,c2)) &
 	Types.equivtypes(t1,t2) => false &
 	Print.print_error_buf "# Incompatible types in array expression\n" &
 	Print.print_error_buf "  " & Dump.print_exp_str e => str  & 
@@ -878,11 +1046,11 @@ relation elab_array : (Env.Env, Absyn.Exp list,
 	Print.print_error_buf str &
 	Print.print_error_buf "\n"
 	---------------------------------------------------------
-	elab_array (env,e::es,impl,st) => fail
+	elab_array2 (env,e::es,impl,st) => fail
 
   rule	Debug.fprint("failtrace","elab_array failed\n") 
 	-----------------------------
-	elab_array (_,expl,_,_) => fail
+	elab_array2 (_,expl,_,_) => fail
 
 end
 
@@ -962,7 +1130,7 @@ relation elab_matrix_semi : (Env.Env, Absyn.Exp list list, bool(*implicit inst.*
 	---------------------------------
 	elab_matrix_semi(env,[el],impl,st,havereal) => ([el'], props, 1, dim, maxn)
 
-  rule	list_length(el) => dim &
+  rule	list_length(el::els) => dim &
 	elab_matrix_comma(env,el,impl,st,havereal) => (el',props1,dim1,maxn1) &
 	elab_matrix_semi(env,els,impl,st,havereal) => (els',props2,_,dim2,maxn2) &
 
@@ -1007,6 +1175,23 @@ relation elab_matrix_semi : (Env.Env, Absyn.Exp list list, bool(*implicit inst.*
 	--------------------------------------------
 	elab_matrix_semi(env,el::els) => fail
 *)
+end
+
+(** relation: elab_builtin_cardinality
+ ** author: PA
+ ** 
+ ** This relation elaborates the cardinality operator.
+ **)
+
+relation elab_builtin_cardinality : (Env.Env, Absyn.Exp list, bool (*impl*) ) 
+	  => (Exp.Exp, Types.Properties) =
+
+  rule	elab_exp(env,exp,impl,NONE) 
+	  => (exp' as Exp.CREF(cr',_),Types.PROP(tp1,_),_) 
+	  ----------------------------
+	elab_builtin_cardinality(env,[exp as Absyn.CREF(cr)],impl) 
+	  => (Exp.CALL(Absyn.IDENT("cardinality"),[exp'],false,true),
+	      Types.PROP((Types.T_INTEGER([]),NONE),Types.C_CONST))
 end
 
 (** relation: elab_builtin_size
@@ -2044,6 +2229,22 @@ relation elab_builtin_change : (Env.Env, Absyn.Exp list, bool (*impl*))
 	elab_builtin_change(env,[exp],impl) 
 	  => fail
 end
+(** relation: elab_builtin_handler_generic
+ **
+ ** This relation dispatches the elaboration of special builtin operators by 
+ ** returning the appropriate relation, see also elab_builtin_handler.
+ ** These special builtin operators can not be represented in the 
+ ** environment since they must be generated on the fly, given a generated 
+ ** type.
+**)
+		 
+relation elab_builtin_handler_generic : Ident => ((Env.Env, Absyn.Exp list, bool (*impl*) ) 
+					  => (Exp.Exp, Types.Properties)) =
+
+  axiom	elab_builtin_handler_generic "cardinality" => elab_builtin_cardinality
+
+end
+
 
 (** relation: elab_builtin_handler
  **

@@ -888,6 +888,12 @@ relation lookup_functions_in_env: (Env.Env,Absyn.Path) => (Types.Type list) =
 	----------------------------------
 	lookup_functions_in_env(env, iid as Absyn.IDENT(id)) => reslist
 
+  rule	(* Check for special builtin operators that can not be represented
+	  in environment like for instance cardinality. *)
+	Static.elab_builtin_handler_generic id => _ &
+	create_generic_builtin_functions(env,id) => reslist 
+	----------------------------------
+	lookup_functions_in_env(env, iid as Absyn.IDENT(id)) => reslist
 
   rule	lookup_functions_in_frame(ht,httypes,env,id) => c1 &
 	lookup_functions_in_env(fs,iid) => c2 &
@@ -927,6 +933,19 @@ relation lookup_functions_in_env: (Env.Env,Absyn.Path) => (Types.Type list) =
 	lookup_functions_in_env (_,_) => fail
 end
 
+(** relation: create_generic_builtin_functions
+ ** author: PA
+ **
+ ** This relation creates function types on-the-fly for special builtin 
+ ** operators/functions which can not be represented in the builtin 
+ ** environment.
+ **)
+relation create_generic_builtin_functions: (Env.Env, string (* function_name*)) => Types.Type list =
+
+	(* cardinality *)
+  axiom	create_generic_builtin_functions(env,"cardinality") => [ (Types.T_FUNCTION([("x",(Types.T_COMPLEX(ClassInf.CONNECTOR("$$"),[]),NONE))],(Types.T_INTEGER([]),NONE)),NONE) ]
+
+end
 
 (** - Internal relations *)
 

@@ -108,6 +108,7 @@ module Types :
 		| T_TUPLE of Type list			  (* For functions returning 
 							   multiple values. *)
 		| T_NOTYPE				  (* Used when type is not yet determined *)
+		| T_ANYTYPE of ClassInf.State option	  (* any_type - used for generic types. When class state present the type is assumed to be a complex type which has that restriction.*)
 
 
   datatype ArrayDim = DIM of int option
@@ -1021,6 +1022,8 @@ relation unparse_type: Type => string =
 
   axiom	unparse_type ((T_NOTYPE,_)) => "/* #NOTYPE# */"	
 
+  axiom	unparse_type ((T_ANYTYPE(_),_)) => "/* #ANYTYPE# */"
+
   axiom	unparse_type(ty) => "/* unparse_type: not implemented yet */\n"  
 
 end	
@@ -1138,6 +1141,10 @@ relation print_type : Type => () =
   rule	Print.print_error_buf "#NOTYPE#"
 	----------------
 	print_type((T_NOTYPE,_))
+
+  rule	Print.print_error_buf "#T_ANYTYPE#"
+	----------------
+	print_type((T_ANYTYPE(_),_))
 
   rule	Print.print_error_buf "print_type failed!\n"
 	---------------------------
@@ -2008,13 +2015,13 @@ relation type_convert : (Exp.Exp, Type, Type) => (Exp.Exp, Type) =
   axiom	type_convert(e, (T_INTEGER(v),_), (T_REAL(_),p)) 
 	  => (Exp.CAST(Exp.REAL,e),(T_REAL(v),p))
 
-(*  rule	Debug.fprint("tcvt","- type conversion failed: ") &
+  rule	Debug.fprint("tcvt","- type conversion failed: ") &
 	Debug.fcall ("tcvt",print_type,t1) & 
 	Debug.fprint("tcvt",", ") & 
 	Debug.fcall ("tcvt",print_type,t2) &
 	Debug.fprint("tcvt","\n")
 	-------------------------------
-	type_convert (_,t1,t2) => fail *)
+	type_convert (_,t1,t2) => fail 
 end
 
 (** relation: type_convert_array

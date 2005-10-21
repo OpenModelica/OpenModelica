@@ -314,6 +314,9 @@ val real2bool = (Types.T_FUNCTION([("x",(Types.T_REAL([]),NONE))],
 val real_real2bool = (Types.T_FUNCTION([("x",(Types.T_REAL([]),NONE)),("y",(Types.T_REAL([]),NONE))],
 				      (Types.T_BOOL([]),NONE)),NONE)
 
+val anyconnector2int = (Types.T_FUNCTION([("x",(Types.T_ANYTYPE(SOME(ClassInf.CONNECTOR("$dummy$"))),NONE))],
+				      (Types.T_INTEGER([]),NONE)),NONE)
+
 val array1dimint2int= (Types.T_FUNCTION([("x",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER([]),NONE)),NONE))], (Types.T_INTEGER([]),NONE)),NONE)
 val array2dimint2int= (Types.T_FUNCTION([("x",(Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_INTEGER([]),NONE)),NONE))], (Types.T_INTEGER([]),NONE)),NONE)
 val array3dimint2int= (Types.T_FUNCTION([("x",(Types.T_ARRAY(Types.DIM(SOME(3)),(Types.T_INTEGER([]),NONE)),NONE))], (Types.T_INTEGER([]),NONE)),NONE)
@@ -732,7 +735,7 @@ relation initial_env =
         Env.extend_frame_t(env, "sample", real_real2bool)	   => env &
         Env.extend_frame_t(env, "change", real2bool)		   => env &
 	Env.extend_frame_t(env, "der", real2real)                  => env &
-
+	Env.extend_frame_t(env, "cardinality",anyconnector2int)    => env &
         (* PA NOTE: Temporary hack to make der(vector) and der(matrix) work.
 	 * Once automatic vectorization of calls have been implemented
 	 * these should be removed *)

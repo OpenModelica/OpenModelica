@@ -377,9 +377,6 @@ relation instantiate_class : (SCode.Program, SCode.Path)
 	instantiate_class(cdecls as _::_, path as Absyn.QUALIFIED(name,_)) 
 	  => (DAE.DAE([DAE.COMP(pathstr,DAE.DAE(dae))]),env'')
 	
-  rule	Print.print_error_buf("# The instantiation of the model failed.")
-	------------
-	instantiate_class(_,_) => fail
 end
 
 (** relation: instantiate_class_implicit
@@ -1949,13 +1946,6 @@ axiom	inst_element(env, mod, pre, csets, ci_state, (SCode.IMPORT(imp),_), instdi
 
   rule	Debug.fprint("failtrace", "- inst_element failed\n") &
 	Debug.fcall("failtrace",SCode.print_element, el) &
-	print "- inst_element failed\n" &
-	SCode.print_element_str el => s & print s & print "\nmod :" &
-	Mod.print_mod_str mod => mod_str &
-	print mod_str & print "\n" &
-	Mod.print_mod_str omod => omod_str &
-	print "outer mod :" & print omod_str &
-	print "\n" &
 	Debug.fprint("failtrace", "\n") 
 	-----------------------------------------------------------------
 	inst_element(env,omod,_,_,_,(el,mod),_,_,_) => fail 
@@ -5039,10 +5029,6 @@ relation inst_connect: (Connect.Sets, Env, Prefix,
 	  => (sets',dae)
 	---------------------------------
 	inst_connect(sets, env,pre,c1,c2,impl) => (sets',dae)
-
-  rule	Print.print_error_buf "# could not connect\n"
-	---------------------------------
-	inst_connect(sets,_,_,_,_,impl) => fail
 
 end
 
