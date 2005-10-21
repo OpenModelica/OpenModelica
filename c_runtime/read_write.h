@@ -23,11 +23,11 @@
 #ifndef READ_WRITE_H_
 #define READ_WRITE_H_
 
-#include "modelica.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include "modelica.h"
 
 #define PRE_VARIABLES FILE *in_file,*out_file;int close_file;
 #define PRE_OPEN_FILE(fv,fn,m,df) if(strcmp("-",fn)==0){fv=df;close_file=0;}else{fv=fopen(fn,m);close_file=1;if(!fv){return errno;}}
