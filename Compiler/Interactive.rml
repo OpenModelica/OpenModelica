@@ -142,6 +142,7 @@ module Interactive:
 end
 
 
+with "Connect.rml"
 with "Dump.rml"
 with "Debug.rml"
 with "RTOpts.rml"
@@ -239,16 +240,7 @@ with "Ceval.rml"
 	 -------------------------------
 	 evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => (str,st'')
 
-   rule	build_env_from_symboltable(st) => env &	
-	 not Static.elab_exp(env,exp,true,SOME(st)) => (sexp,prop,SOME(st')) 
-	 -------------------------------
-	 evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => fail
 
-   rule	build_env_from_symboltable(st) => env &	
-	 Static.elab_exp(env,exp,true,SOME(st)) => (sexp,prop,SOME(st')) &
-	 not Ceval.ceval (env,sexp,true,SOME(st'),NONE,Ceval.NO_MSG) => (_,_) 
-	 -------------------------------
-	 evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => fail
 
    rule	build_env_from_symboltable(st) => env &	
 	 Static.elab_exp(env,cond,true,SOME(st)) 
@@ -290,7 +282,8 @@ with "Ceval.rml"
 	 evaluate_expr(IALG(Absyn.ALGORITHMITEM(Absyn.ALG_TUPLE_ASSIGN(Absyn.TUPLE(crefexps),rexp),_)),st as SYMBOLTABLE(p,_,_,_,_)) 
 	     => ("", newst)
 
-   rule	Print.get_error_string() => s1 & Print.clear_error_buf() & string_append("Error evaluating expr.\n",s1) => str &
+   rule	Print.get_error_string() => s1 & Print.clear_error_buf() 
+	 & string_append("Error evaluating expr.\n",s1) => str &
 	 Debug.fprint ("failtrace", "#-- evaluate_expr failed:") &
 	 Debug.fcall ("failtrace", Dump.dump_istmt, ISTMTS([stmt], true)) &
 	 Debug.fprintln ("failtrace", "\n")
@@ -1212,7 +1205,7 @@ with "Ceval.rml"
 	   => (cl as SCode.CLASS(id,_,encflag,restr,_),env') &
 	 Env.open_scope(env',encflag,SOME(id)) => env2 &
 	 ClassInf.start(restr,id) => ci_state &
-	 Inst.partial_inst_class_in(env2,Types.NOMOD,Prefix.NOPRE,[],ci_state,cl,false,[]) 
+	 Inst.partial_inst_class_in(env2,Types.NOMOD,Prefix.NOPRE,Connect.empty_set,ci_state,cl,false,[]) 
 	   => (env'',_)
 	 ---------------------
 	 get_class_env(p,p_class) => env''
@@ -3588,7 +3581,7 @@ relation get_nth_inherited_class: (Absyn.ComponentRef,int,Absyn.Program)
    rule	(* If that fails, instantiate, which takes more time*)
 	 Env.open_scope(env,encflag,SOME(id)) => env2 &
 	 ClassInf.start(restr,id) => ci_state &
-	 Inst.partial_inst_class_in(env2,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[]) 
+	 Inst.partial_inst_class_in(env2,Types.NOMOD,Prefix.NOPRE,Connect.empty_set,ci_state,c,false,[]) 
 	   => (env'',_) &
 	 get_base_classes(cdef,env'') => lst &  
 	 int_sub(n,1) => n' &
@@ -3697,7 +3690,7 @@ relation get_component_count: (Absyn.ComponentRef,Absyn.Program) => int =
 
   rule	Env.open_scope(env,encflag,SOME(id)) => env2 &
 	 ClassInf.start(restr,id) => ci_state &
-	 Inst.partial_inst_class_in(env2,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[]) 
+	 Inst.partial_inst_class_in(env2,Types.NOMOD,Prefix.NOPRE,Connect.empty_set,ci_state,c,false,[]) 
 	   => (env'',_) &
 	 get_nth_component_in_class(cdef,n) => comp &
 	 get_component_info_old (comp,env'') => [s1] &
@@ -3728,7 +3721,7 @@ relation get_component_count: (Absyn.ComponentRef,Absyn.Program) => int =
 	   => (c as SCode.CLASS(id,_,encflag,restr,_),env') &
 	 Env.open_scope(env',encflag,SOME(id)) => env2 &
 	 ClassInf.start(restr,id) => ci_state &
-	 Inst.partial_inst_class_in(env2,Types.NOMOD,Prefix.NOPRE,[],ci_state,c,false,[]) 
+	 Inst.partial_inst_class_in(env2,Types.NOMOD,Prefix.NOPRE,Connect.empty_set,ci_state,c,false,[]) 
 	   => (env'',_) &
 	 get_public_components_in_class(cdef) => comps1 &
 	 get_components_info (comps1,"\"public\"",env'') => s1 &
@@ -5033,7 +5026,7 @@ relation create_funcargs_from_elementargs: Absyn.ElementArg list
   rule	Lookup.lookup_class(env,Absyn.IDENT("Placement"),false) => (c,env') &
 	 SCode.build_mod(SOME(Absyn.CLASSMOD(mod,NONE)),false) => mod' &
 	 Mod.elab_mod(env',Prefix.NOPRE,mod',false) => mod'' &
-	 Inst.inst_class(env', mod'', Prefix.NOPRE, [], c,
+	 Inst.inst_class(env', mod'', Prefix.NOPRE, Connect.empty_set, c,
 		 	 [], false,Inst.TOP_CALL) 
  	  => (dae, _, cs, t, state) &
 	 (* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
@@ -5179,7 +5172,7 @@ relation get_component_annotation: Absyn.Element => string =
 	 get_class_in_program("Icon",p) => placementc &
 	 SCode.elab_class(placementc) => placementclass &
 	 Mod.elab_mod (env,Prefix.NOPRE,mod',false) => mod'' &	
-	 Inst.inst_class(env, mod'', Prefix.NOPRE, [], placementclass,
+	 Inst.inst_class(env, mod'', Prefix.NOPRE, Connect.empty_set, placementclass,
 			 [], false,Inst.TOP_CALL) 
 	   => (dae, _, cs, t, state) &
 
@@ -5204,7 +5197,7 @@ relation get_component_annotation: Absyn.Element => string =
 	 get_class_in_program("Icon",p) => placementc &
 	 SCode.elab_class(placementc) => placementclass &
 	 Mod.elab_mod (env,Prefix.NOPRE,mod',true) => mod'' &	
-	 Inst.inst_class(env, mod'', Prefix.NOPRE, [], placementclass,
+	 Inst.inst_class(env, mod'', Prefix.NOPRE, Connect.empty_set, placementclass,
 			 [], false,Inst.TOP_CALL) 
 	   => (dae, _, cs, t, state) &
 	 (* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)
@@ -5221,7 +5214,7 @@ relation get_component_annotation: Absyn.Element => string =
 	 get_class_in_program("Diagram",p) => placementc &
 	 SCode.elab_class(placementc) => placementclass &
 	 Mod.elab_mod (env,Prefix.NOPRE,mod',false) => mod'' &
-	 Inst.inst_class(env, mod'', Prefix.NOPRE, [], placementclass,
+	 Inst.inst_class(env, mod'', Prefix.NOPRE, Connect.empty_set, placementclass,
 			 [], false,Inst.TOP_CALL) 
 	   => (dae, _,cs, t, state) &
 
@@ -5244,7 +5237,7 @@ relation get_component_annotation: Absyn.Element => string =
 	 get_class_in_program(anncname,p) => placementc &
 	 SCode.elab_class(placementc) => placementclass &
 	 Mod.elab_mod (env,Prefix.NOPRE,mod',false) => mod'' &
-	 Inst.inst_class(env, mod'', Prefix.NOPRE, [], placementclass,
+	 Inst.inst_class(env, mod'', Prefix.NOPRE, Connect.empty_set, placementclass,
 			 [], false,Inst.TOP_CALL) 
 	   => (dae, _, cs, t, state) &
 	 (* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)

@@ -999,7 +999,8 @@ relation unparse_type: Type => string =
 
   rule	Util.list_map(vs,unparse_var) => vars &
 	Util.string_append_list(vars) => vstr &
-	Util.string_append_list(["record ",name,"\n",vstr,"end record;"]) => res
+	Util.string_append_list(["record ",name,"\n",vstr,"end record;"]) 
+	  => res
 	---------------------------
 	unparse_type((t as T_COMPLEX(ClassInf.RECORD(name),vs),_))=> res
 
@@ -1010,21 +1011,21 @@ relation unparse_type: Type => string =
   rule  Util.list_map(params, unparse_param) => paramstrs &	
 	Util.string_delimit_list(paramstrs, ", ") => paramstr &
 	unparse_type restype => restypestr &
-	Util.string_append_list(["/* function(", paramstr, ") => ", restypestr, "*/"]) => res 
+	Util.string_append_list(["function(", paramstr, ") => ", restypestr]) => res 
 	--------------------------------------
 	unparse_type((T_FUNCTION(params,restype),_)) => res
 
   rule	Util.list_map(tys, unparse_type) => tystrs &
 	Util.string_delimit_list(tystrs, ", ") => tystr &
-	Util.string_append_list(["/* (", tystr, ") */"]) => res
+	Util.string_append_list(["(", tystr, ")"]) => res
 	--------------------------------------------------
 	unparse_type ((T_TUPLE(tys),_)) => res
 
-  axiom	unparse_type ((T_NOTYPE,_)) => "/* #NOTYPE# */"	
+  axiom	unparse_type ((T_NOTYPE,_)) => "#NOTYPE#"	
 
-  axiom	unparse_type ((T_ANYTYPE(_),_)) => "/* #ANYTYPE# */"
+  axiom	unparse_type ((T_ANYTYPE(_),_)) => "#ANYTYPE#"
 
-  axiom	unparse_type(ty) => "/* unparse_type: not implemented yet */\n"  
+  axiom	unparse_type(ty) => "Internal error unparse_type: not implemented yet\n"  
 
 end	
 

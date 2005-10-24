@@ -2374,7 +2374,6 @@ relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg
 	------------------------------------
 	elab_call (env,fn,args,nargs,impl as true,st) => (e,prop,st')
 
-
 	(* Non-interactive mode *)
   rule	Debug.fprint ("sei", "elab_call 4: ") &
 	Dump.print_component_ref_str fn => fnstr &
@@ -3185,12 +3184,28 @@ relation elab_call_args : (Env.Env,
 	-----------------------------------------------
 	elab_call_args (env,fn,args,nargs,impl,st) => (Exp.CALL(fn',args',tuple,builtin), prop)
 
+
+	(* no matching type found. *)
+  rule	Lookup.lookup_functions_in_env(env,fn) => typelist &
+	Util.list_map(typelist,Types.unparse_type) => t_lst &
+	Absyn.path_string fn => fn_str &
+	Util.string_delimit_list(t_lst,"\n -") => types_str &
+	Util.string_append_list(
+	   ["Error, no matching function found for ", fn_str,
+	    ", candidates are: \n -",types_str, ".\n"]) => str &
+	Print.print_error_buf str
+	-------------------------
+	elab_call_args(env,fn,args,nargs,impl,st) => fail
+
   rule	not Lookup.lookup_type(env,fn,false (*msg*)) => (_,_) &	
 	Print.print_error_buf "# Couldn't find function " & 
 	Absyn.path_string fn => s & Print.print_error_buf s &
 	Print.print_error_buf "\n" 
 	-------------------------------------------------------------------
 	elab_call_args(env,fn,args,nargs,impl,st) => fail
+
+
+
 
   rule	(*elab_exp(env, e) => (e',Types.PROP(t,_)) &*)
 	Debug.fprint("failtrace", "- elab_call_args failed\n")
