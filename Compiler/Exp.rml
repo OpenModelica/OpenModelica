@@ -203,6 +203,12 @@ module Exp:
   relation cref_to_path : ComponentRef => Absyn.Path
   relation path_to_cref : Absyn.Path => ComponentRef 
   relation cref_modelica_str : ComponentRef => string
+  relation cref_last_ident : ComponentRef => Ident 
+  relation cref_contained_in: (ComponentRef(*x*), ComponentRef(*y*))
+	  => bool
+  relation cref_prefix_of: (ComponentRef (* x*), ComponentRef (*y*))
+	  => bool
+  relation ident_equal: (Ident, Ident) => bool 
   relation print_list_str : ('a list, 'a => string, string) => string
   relation print_exp_str : Exp => string
   relation to_exp_cref : Absyn.ComponentRef => ComponentRef
@@ -314,6 +320,83 @@ relation cref_modelica_str : ComponentRef => string =
 	string_append(s1,ns) => ss
 	-------------------------------------
 	cref_modelica_str(CREF_QUAL(s,_,n)) => ss
+end
+
+(** relation: cref_last_ident
+ ** author: PA
+ **
+ ** Returns the last identfifier of a 'ComponentRef'.
+ **)
+
+relation cref_last_ident : ComponentRef => Ident =
+
+  axiom	cref_last_ident(CREF_IDENT(id,_)) => id
+
+  rule	cref_last_ident(cr) => res
+	-------------------
+	cref_last_ident(CREF_QUAL(_,_,cr)) => res
+end
+
+(** relation: cref_contained_in
+ ** author: PA
+ **
+ ** Returns true if y is a sub component ref of x.
+ ** For instance, b.c. is a sub_component of a.b.c.
+ **)
+relation cref_contained_in: (ComponentRef(*x*), ComponentRef(*y*)) 
+	  => bool =
+	  
+  rule	cref_equal(x,y) => true
+	-----------------------
+	cref_contained_in(x,y) => true
+	
+  rule	cref_contained_in(y,cr2) => res
+	----------------------
+	cref_contained_in(CREF_QUAL(_,_,cr2),y) => res
+
+  axiom	cref_contained_in(_,_) => false
+end
+
+(** relation: cref_prefix_of
+ ** author: PA
+ ** 
+ ** Returns true if y is a prefix of x
+ ** For example, a.b is a prefix of a.b.c
+ **)
+relation cref_prefix_of: (ComponentRef (* x*), ComponentRef (*y*))
+	=> bool =
+
+  rule	cref_equal(cr1,cr2) => true 
+	------------------------
+	cref_prefix_of(cr1,cr2) => true 
+
+  rule	id1=id2 &
+	subscript_equal(ss1,ss2) => true &
+	cref_prefix_of(cr1,cr2) => res
+	-------------------------
+	cref_prefix_of(CREF_QUAL(id1,ss1,cr1),CREF_QUAL(id2,ss2,cr2)) => res
+
+  rule	id1 = id2 &
+	subscript_equal(ss1,ss2) => res
+	-------------------------------
+	cref_prefix_of(CREF_IDENT(id1,ss1),CREF_QUAL(id2,ss2,_)) => res
+
+  axiom	cref_prefix_of(_,_) => false
+end
+
+(** relation: ident_equal
+ ** author: PA
+ **
+** Compares two 'Ident'.
+**)
+
+relation ident_equal: (Ident, Ident) => bool =
+
+  rule	id1 = id2 
+	-------------------
+	ident_equal(id1,id2) => true
+
+  axiom	ident_equal(_,_) => false
 end
 
 (** relation: is_range

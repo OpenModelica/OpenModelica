@@ -155,6 +155,7 @@ with "ClassLoader.rml"
 with "Mod.rml"
 with "Prefix.rml"
 with "Ceval.rml"
+with "Connect.rml"
 
 (** relation: elab_exp_list
  **
@@ -2321,10 +2322,18 @@ end
 relation elab_call_builtin : (Env.Env, Absyn.ComponentRef, Absyn.Exp list, bool (*impl*) )
 	=> (Exp.Exp, Types.Properties) =
 
+	  (* for normal builtin operators and functions *)
   rule	elab_builtin_handler name => handler &
 	handler (env, args, impl) => (exp,prop)
 	-------------------
 	elab_call_builtin (env, Absyn.CREF_IDENT(name,[]), args, impl) => (exp, prop)
+
+	(* For generic types, like e.g. cardinality *)
+  rule	elab_builtin_handler_generic name => handler &
+	handler (env, args, impl) => (exp,prop)
+	-------------------
+	elab_call_builtin (env, Absyn.CREF_IDENT(name,[]), args, impl) => (exp, prop)
+
 end
 
 
@@ -3037,7 +3046,8 @@ relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Type
 	Lookup.lookup_class(env, path, false (*message*)) => (cls, env') &
 	Debug.fprintln("sei", "generate_compiled_function: class looked up") &
 	Inst.implicit_function_instantiation(env', Types.NOMOD,
-					     Prefix.NOPRE, [], cls, [], false)
+					     Prefix.NOPRE, 
+					     Connect.empty_set, cls, [], false)
 	  => (env'',d) &
 	Debug.fprintln("sei", "generate_compiled_function: function instantiated") &
 	Print.clear_buf() &

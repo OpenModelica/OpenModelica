@@ -98,6 +98,7 @@ module Util :
 	  => ('a * 'b) list list
   relation list_select:('a list, 'a => bool) => 'a list
   relation list_select_1:('a list,'b, ('a,'b) => bool) => 'a list
+relation list_select_1_r:('a list,'b, ('b,'a) => bool) => 'a list 
   relation list_position: (''a, ''a list)  => int
   relation list_getmember: (''a, ''a list) => ''a
   relation list_deletemember: (''a list,''a) => ''a list
@@ -601,6 +602,24 @@ relation list_select_1:('a list,'b, ('a,'b) => bool) => 'a list =
 	list_select_1(xs,arg,cond) => xs' 
 	---------------------------
 	list_select_1(x::xs,arg,cond) => xs'
+end
+
+(** relation list_select_1_r
+ ** Same as list_select_1 above, but with swapped arguments.
+ **)
+relation list_select_1_r:('a list,'b, ('b,'a) => bool) => 'a list =
+
+  axiom	list_select_1_r([],arg,_) => []
+
+  rule	cond(arg,x) => true &
+	list_select_1_r(xs,arg,cond) => xs' 
+	---------------------------
+	list_select_1_r(x::xs,arg,cond) => x::xs'
+
+  rule	cond(arg,x) => false &
+	list_select_1_r(xs,arg,cond) => xs' 
+	---------------------------
+	list_select_1_r(x::xs,arg,cond) => xs'
 end
 
 (** relation: list_position

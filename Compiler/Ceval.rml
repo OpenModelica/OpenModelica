@@ -116,6 +116,7 @@ with "Prefix.rml"
 with "Codegen.rml"
 with "ClassLoader.rml"
 with "Derive.rml"
+with "Connect.rml"
 
 
 
@@ -753,7 +754,7 @@ relation ceval_function: (Env.Env, Absyn.Path, Values.Value list,
 	Lookup.lookup_class(env,funcname,false) => (c,env') &
 	SCode.component_names(c) => compnames &
 	Types.values_to_mods(vallst,compnames) => mod &
-	Inst.inst_class(env',mod,Prefix.NOPRE,[],c,[],impl,Inst.TOP_CALL)
+	Inst.inst_class(env',mod,Prefix.NOPRE,Connect.empty_set,c,[],impl,Inst.TOP_CALL)
 	  => (dae,_,_,_,_) &
 	DAE.dae_to_record_value(funcname,dae,impl) => value  
 	----------------------
@@ -1717,7 +1718,7 @@ relation get_builtin_attribute: (Exp.ComponentRef, Exp.ComponentRef, string,
 	  => (c as SCode.CLASS(n, _, encflag, r, _), env') &
 	    Env.open_scope(env',encflag,SOME(n)) => env3 &
 	  ClassInf.start(r,n) => ci_state &
-	  Inst.inst_class_in(env3, Types.NOMOD, Prefix.NOPRE, [], ci_state, 
+	  Inst.inst_class_in(env3, Types.NOMOD, Prefix.NOPRE, Connect.empty_set, ci_state, 
 			     c, false, [], false, false)
 	  => (dae1, env4, csets', ci_state', tys) &
 	    Exp.join_crefs(cref,Exp.CREF_IDENT("stateSelect",[])) => cref' &
@@ -1745,7 +1746,8 @@ relation get_builtin_attribute: (Exp.ComponentRef, Exp.ComponentRef, string,
 	  => (c as SCode.CLASS(n, _, encflag, r, _), env') &
 	    Env.open_scope(env',encflag,SOME(n)) => env3 &
 	  ClassInf.start(r,n) => ci_state &
-	  Inst.inst_class_in(env3, Types.NOMOD, Prefix.NOPRE, [], ci_state, 
+	  Inst.inst_class_in(env3, Types.NOMOD, Prefix.NOPRE, 
+			     Connect.empty_set, ci_state, 
 			     c, false, [], false, false)
 	  => (dae1, env4, csets', ci_state', tys) &
 	    Exp.join_crefs(cref,Exp.CREF_IDENT(attribute,[])) => cref' &
@@ -2053,8 +2055,10 @@ end
  **)
 relation ceval_cardinality: (Env.Env, Exp.ComponentRef) => int =
 	
-  axiom	ceval_cardinality(_,_) => 0
-	
+  rule	Util.list_select_1(crs,cr,Exp.cref_contained_in) => cr_lst &
+	list_length(cr_lst) => res
+	--------------------------
+	ceval_cardinality(Env.FRAME(_,_,_,_,_,crs,_)::_,cr) => res
 end
 
 
@@ -2604,10 +2608,11 @@ relation ceval_builtin_rem : (Env.Env,
 			      Msg) 
 	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
 	  
-  rule  ceval (env,exp1,impl,st,NONE,msg) => (Values.REAL(rv1),_) &
+  rule	ceval (env,exp1,impl,st,NONE,msg) => (Values.REAL(rv1),_) &
         ceval (env,exp2,impl,st,NONE,msg) => (Values.REAL(rv2),_) &
 	real_div(rv1,rv2) => rva &
-	real_mul(rva,rv2) => rvb &
+	real_int(rva) => rvai & int_real(rvai) => rva' &
+	real_mul(rva',rv2) => rvb &
 	real_sub(rv1,rvb) => rvd
         --------------------------------------
         ceval_builtin_rem(env,[exp1,exp2],impl,st,msg) => (Values.REAL(rvd),st)
@@ -2616,7 +2621,8 @@ relation ceval_builtin_rem : (Env.Env,
         int_real ri => rv1 &
         ceval (env,exp2,impl,st,NONE,msg) => (Values.REAL(rv2),_) &
 	real_div(rv1,rv2) => rva &
-	real_mul(rva,rv2) => rvb &
+	real_int(rva) => rvai & int_real(rvai) => rva' &
+	real_mul(rva',rv2) => rvb &
 	real_sub(rv1,rvb) => rvd
          --------------------------------------
         ceval_builtin_rem(env,[exp1,exp2],impl,st,msg) => (Values.REAL(rvd),st)
@@ -2625,7 +2631,8 @@ relation ceval_builtin_rem : (Env.Env,
         ceval (env,exp2,impl,st,NONE,msg) => (Values.INTEGER(ri),_) &
         int_real ri => rv2 &
 	real_div(rv1,rv2) => rva &
-	real_mul(rva,rv2) => rvb &
+	real_int(rva) => rvai & int_real(rvai) => rva' &
+	real_mul(rva',rv2) => rvb &
 	real_sub(rv1,rvb) => rvd
         --------------------------------------
         ceval_builtin_rem(env,[exp1,exp2],impl,st,msg) => (Values.REAL(rvd),st)
@@ -2636,7 +2643,8 @@ relation ceval_builtin_rem : (Env.Env,
         int_real ri1 => rv1 &
 	int_real ri2 => rv2 &
 	real_div(rv1,rv2) => rva &
-	real_mul(rva,rv2) => rvb &
+	real_int(rva) => rvai & int_real(rvai) => rva' &
+	real_mul(rva',rv2) => rvb &
 	real_sub(rv1,rvb) => rvd &
 	real_int rvd => ri'
          --------------------------------------
@@ -2749,7 +2757,8 @@ relation ceval_generate_function_str : (Absyn.Path,
 	Debug.fprintln("ceval", "/*- ceval_generate_function_str starting*/") &
 	Lookup.lookup_class(env, path, false) => (cls, env') &
 	Debug.fprintln("ceval", "/*- ceval_generate_function_str instantiating*/") &
-	Inst.implicit_function_instantiation(env', Types.NOMOD, Prefix.NOPRE, [], cls, [], false) => (env'',d) &
+	Inst.implicit_function_instantiation(env', Types.NOMOD, Prefix.NOPRE, 
+					     Connect.empty_set, cls, [], false) => (env'',d) &
 	Debug.fprint("ceval", "/*- ceval_generate_function_str getting functions: ") &
 	SimCodegen.get_called_functions_in_function (path, DAE.DAE(d)) => calledfuncs &
 	Util.list_map(calledfuncs, Absyn.path_string) => debugfuncs &

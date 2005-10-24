@@ -71,20 +71,34 @@ module Connect :
   datatype Set = EQU of Exp.ComponentRef list
 	       | FLOW of (Exp.ComponentRef * Face) list
 
-  type Sets = Set list
   (** A connection set is represented using the `Set' type. *)
 
-  relation add_equ : (Sets, Exp.ComponentRef, Exp.ComponentRef) => Sets
-  relation add_array_equ : (Sets, Exp.ComponentRef, Exp.ComponentRef, int) => Sets
-  relation add_flow : (Sets,
-		       Exp.ComponentRef, Face,
-		       Exp.ComponentRef, Face) => Sets
-  relation print_sets : Sets => ()
-  relation equations : Sets => DAE.Element list
-  relation unconnected_flow_equations : (Sets, DAE.Element list, Env.Env,bool (* CallingScope*)) 
+  datatype Sets = SETS of Set list * (* connection_set *)
+		      Exp.ComponentRef list (* connect_refs - list of 
+					     * crefs in connect statements.*)
+
+(* The connection 'Sets' contains the connection set and a list of 
+ * component references occuring in connect statemens. The latter is 
+ * used only when evaluating the cardinality operator. It is passed -into-
+ * classes to be instantiated, while the 'Set list' is returned -from-
+ * instantiated classes. 
+ *)
+
+val empty_set : Sets
+
+relation add_equ : (Sets, Exp.ComponentRef, Exp.ComponentRef) => Sets
+relation add_array_equ : (Sets, Exp.ComponentRef, Exp.ComponentRef, int) => Sets
+relation add_flow : (Sets,
+		     Exp.ComponentRef, Face,
+		     Exp.ComponentRef, Face) => Sets
+relation print_sets : Sets => ()
+relation print_sets_str : Sets => string
+relation equations : Sets => DAE.Element list
+relation unconnected_flow_equations : (Sets, DAE.Element list, Env.Env,bool (* CallingScope*)) 
 	  => DAE.Element list
 end
 
+val empty_set = SETS([],[])
 
 (**
  ** - Adding
@@ -167,19 +181,19 @@ end
 
 relation equations : Sets => DAE.Element list =
 
-  axiom	equations [] => []
+  axiom	equations SETS([],_) => []
 
   rule	equ_equations cs => dae1 &
-	equations ss => dae2 &
+	equations SETS(ss,crs) => dae2 &
 	list_append(dae1,dae2) => dae
 	-----------------------------
-	equations EQU(cs)::ss => dae
+	equations SETS(EQU(cs)::ss,crs) => dae
 
   rule	flow_equations cs => dae1 &
-	equations ss => dae2 &
+	equations SETS(ss,crs) => dae2 &
 	list_append(dae1,dae2) => dae
 	-----------------------------
-	equations FLOW(cs)::ss => dae
+	equations SETS(FLOW(cs)::ss,crs) => dae
 
 end
 
@@ -276,15 +290,15 @@ relation find_equ_set : (Sets, Exp.ComponentRef) => Set =
 
   rule	new_equ_set c => s
 	------------------
-	find_equ_set([],c) => s
+	find_equ_set(SETS([],_),c) => s
 
   rule	find_in_set(s,c)
 	----------------
-	find_equ_set(s::_,c) => s
+	find_equ_set(SETS(s::_,_),c) => s
 
-  rule	find_equ_set(ss,c) => s
+  rule	find_equ_set(SETS(ss,crs),c) => s
 	-------------------
-	find_equ_set(_::ss,c) => s
+	find_equ_set(SETS(_::ss,crs),c) => s
 
 end	
 
@@ -299,15 +313,15 @@ relation find_flow_set : (Sets, Exp.ComponentRef, Face) => Set =
 
   rule	new_flow_set(c,d) => s
 	------------------
-	find_flow_set([],c,d) => s
+	find_flow_set(SETS([],_),c,d) => s
 
   rule	find_in_set(s,c)
 	----------------
-	find_flow_set(s::_,c,d) => s
+	find_flow_set(SETS(s::_,_),c,d) => s
 
-  rule	find_flow_set(ss,c,d) => s
+  rule	find_flow_set(SETS(ss,crs),c,d) => s
 	-------------------
-	find_flow_set(_::ss,c,d) => s
+	find_flow_set(SETS(_::ss,crs),c,d) => s
 
 end	
 
@@ -401,17 +415,19 @@ relation merge : (Sets, Set, Set) => Sets =
 
   rule	s1 = s2
 	-------
-	merge(ss,s1,s2) => ss
+	merge(SETS(ss,crs),s1,s2) => SETS(ss,crs)
 
   rule	list_append(cs1,cs2) => cs &
-	remove_set2(ss,s1,s2) => ss'
+	remove_set2(SETS(ss,crs),s1,s2) => SETS(ss',_)
 	----------------------------
-	merge(ss, s1 as EQU(cs1), s2 as EQU(cs2)) => EQU(cs)::ss'
+	merge(SETS(ss,crs), s1 as EQU(cs1), s2 as EQU(cs2)) 
+	  => SETS(EQU(cs)::ss',crs)
 
   rule	list_append(cs1,cs2) => cs &
-	remove_set2(ss,s1,s2) => ss'
+	remove_set2(SETS(ss,crs),s1,s2) => SETS(ss',_)
 	----------------------------
-	merge(ss, s1 as FLOW(cs1), s2 as FLOW(cs2)) => FLOW(cs)::ss'
+	merge(SETS(ss,crs), s1 as FLOW(cs1), s2 as FLOW(cs2)) 
+	  => SETS(FLOW(cs)::ss',crs)
 
 end
 
@@ -423,21 +439,21 @@ end
 
 relation remove_set2 : (Sets, Set, Set) => Sets =
 
-  axiom	remove_set2([],_,_) => []
+  axiom	remove_set2(SETS([],crs),_,_) => SETS([],crs)
 
   rule	s = s1 &
-	remove_set(ss,s2) => ss'
+	remove_set(SETS(ss,crs),s2) => ss'
 	------------------------
-	remove_set2(s::ss, s1, s2) => ss'
+	remove_set2(SETS(s::ss,crs), s1, s2) => ss'
 	
   rule	s = s2 &
-	remove_set(ss,s1) => ss'
+	remove_set(SETS(ss,crs),s1) => ss'
 	------------------------
-	remove_set2(s::ss, s1, s2) => ss'
+	remove_set2(SETS(s::ss,crs), s1, s2) => ss'
 	
-  rule	remove_set2(ss,s1,s2) => ss'
+  rule	remove_set2(SETS(ss,crs),s1,s2) => SETS(ss',_)
 	------------------------
-	remove_set2(s::ss, s1, s2) => s::ss'
+	remove_set2(SETS(s::ss,crs), s1, s2) => SETS(s::ss',crs)
 
 end
 
@@ -448,15 +464,15 @@ end
 
 relation remove_set : (Sets, Set) => Sets =
 
-  axiom	remove_set([],_) => []
+  axiom	remove_set(SETS([],crs),_) => SETS([],crs)
 
   rule	s = s1
       	------
-      	remove_set(s::ss, s1) => ss
+      	remove_set(SETS(s::ss,crs), s1) => SETS(ss,crs)
       
-  rule	remove_set(ss,s1) => ss'
+  rule	remove_set(SETS(ss,crs),s1) => SETS(ss',_)
       	------------------------
-      	remove_set(s::ss, s1) => s::ss'
+      	remove_set(SETS(s::ss,crs), s1) => SETS(s::ss',crs)
 	
 end
 
@@ -554,17 +570,17 @@ end
 
 relation get_all_flow_variables: Sets => Exp.ComponentRef list =
 
-  axiom	get_all_flow_variables [] => []
+  axiom	get_all_flow_variables SETS([],_) => []
 
   rule	Util.list_map(varlst,Util.tuple2_1) => res1 &
-	get_all_flow_variables(xs) => res2 &
+	get_all_flow_variables(SETS(xs,crs)) => res2 &
 	list_append(res1,res2) => res
 	---------------------------------- 
-	get_all_flow_variables(FLOW(varlst)::xs) => res 
+	get_all_flow_variables(SETS(FLOW(varlst)::xs,crs)) => res 
 
-  rule	get_all_flow_variables(xs) => res 
+  rule	get_all_flow_variables(SETS(xs,crs)) => res 
 	---------------------------------- 
-	get_all_flow_variables(EQU(res1)::xs) => res 
+	get_all_flow_variables(SETS(EQU(res1)::xs,crs)) => res 
 end
 
 (** relation: get_inner_flow_variables
@@ -574,17 +590,17 @@ end
 
 relation get_inner_flow_variables: Sets => Exp.ComponentRef list =
 
-  axiom	get_inner_flow_variables([]) => []
+  axiom	get_inner_flow_variables(SETS([],_)) => []
 
   rule	get_inner_flow_variables_2(vars) => res1 &
-	get_inner_flow_variables(xs) => res2 &
+	get_inner_flow_variables(SETS(xs,crs)) => res2 &
 	list_append(res1,res2) => res
 	---------------------------------- 
-	get_inner_flow_variables(FLOW(vars)::xs) => res 
+	get_inner_flow_variables(SETS(FLOW(vars)::xs,crs)) => res 
 
-  rule	get_inner_flow_variables(xs) => res
+  rule	get_inner_flow_variables(SETS(xs,crs)) => res
 	---------------------------------- 
-	get_inner_flow_variables(EQU(_)::xs) => res 
+	get_inner_flow_variables(SETS(EQU(_)::xs,crs)) => res 
 
   rule	(*Debug.fprint("failtrace","-get_inner_flow_variables failed\n")*)
 	----------------------------------
@@ -638,12 +654,12 @@ with "Debug.rml"
 
 relation print_sets : Sets => () =
 
-  axiom	print_sets []
+  axiom	print_sets SETS([],_)
 
   rule	print_set x &
-	print_sets xs
+	print_sets SETS(xs,crs)
 	------------
-	print_sets x::xs
+	print_sets SETS(x::xs,crs)
 
 end
 (**)
@@ -676,6 +692,63 @@ relation print_flow_ref : (Exp.ComponentRef * Face) => () =
 	print_flow_ref((c,OUTER))
 
 end
+
+(** relation: print_sets_str
+ **
+ ** Prints a description of a number of connection sets to a string
+ **)
+
+relation print_sets_str : Sets => string =
+
+
+
+  rule	Util.list_map(sets,print_set_str) => s1 &
+	Util.string_delimit_list(s1, ", ") => s1' &
+	print_set_crs_str crs => s2 &
+	Util.string_append_list(["SETS(\n  ",s1',",\n  ",s2,"\n)\n"]) => res
+	------------
+	print_sets_str SETS(sets,crs) => res
+end
+
+
+(**)
+relation print_set_str : Set => string =
+
+  rule	Util.list_map(cs, Exp.print_component_ref_str) => strs &
+	Util.string_delimit_list(strs,", ") => s1 &
+	Util.string_append_list([" non-flow set: { ",s1,"}"]) => res
+	----------------------------------------------------
+	print_set_str EQU(cs) => res
+
+  rule  Util.list_map(cs, print_flow_ref_str) => strs &
+	Util.string_delimit_list(strs,", ") => s1 &
+	Util.string_append_list([" flow set: { ",s1,"}"]) => res
+	----------------------------------------------------
+	print_set_str FLOW(cs) => res
+end
+relation print_flow_ref_str : (Exp.ComponentRef * Face) => string =
+
+  rule	Exp.print_component_ref_str c => s &
+	string_append(s, " INNER") => res
+	-----------
+	print_flow_ref_str((c,INNER))=> res
+
+  rule	Exp.print_component_ref_str c => s &
+	string_append(s, " OUTER") => res
+	-----------
+	print_flow_ref_str((c,OUTER)) => res
+
+end
+
+relation print_set_crs_str : Exp.ComponentRef list => string =
+
+  rule	Util.list_map(crs,Exp.print_component_ref_str) => c_strs &
+	Util.string_delimit_list(c_strs, ", ") => s &
+	Util.string_append_list([" connect crs: { ",s,"}"]) => res
+	----------------------------------------------------
+	print_set_crs_str crs => res
+end
+(**)
 
 (*!includecode*)
 

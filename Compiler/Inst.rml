@@ -370,7 +370,8 @@ relation instantiate_class : (SCode.Program, SCode.Path)
 	inst_class_decls(env,cdecls,path)=> (env',_) &
 	Lookup.lookup_class(env',path,true) 
 	  => (cdef as SCode.CLASS(n,_,_,_,_), env'') &
-	inst_class(env'', Types.NOMOD, Prefix.NOPRE, [], cdef, [], false(*impl*),TOP_CALL) 
+	inst_class(env'', Types.NOMOD, Prefix.NOPRE, Connect.empty_set, cdef,
+		   [], false(*impl*),TOP_CALL) 
 	  => (dae,env'', _, _, _) &
 	Absyn.path_string path => pathstr
 	--------------------------------------------
@@ -406,7 +407,8 @@ relation instantiate_class_implicit : (SCode.Program, SCode.Path)
 	inst_class_decls(env,cdecls,path)=> (env',_) &
 	Lookup.lookup_class(env',path,true) 
 	  => (cdef as SCode.CLASS(n,_,_,_,_), env'') &
-	implicit_instantiation(env'',Types.NOMOD,Prefix.NOPRE,[],cdef,[],false)
+	implicit_instantiation(env'',Types.NOMOD,Prefix.NOPRE,
+			       Connect.empty_set,cdef,[],false)
 	  => (env,dae) 
 	--------------------------------------------
 	instantiate_class_implicit(cdecls as _::_, path as Absyn.QUALIFIED(name,_)) 
@@ -427,7 +429,8 @@ relation inst_class_in_program: (Env, SCode.Program, SCode.Path )
 	  => (DAE.Element list, Env.Env) =
 
   rule	name = name2 &
-	inst_class(env, Types.NOMOD, Prefix.NOPRE, [], c, [], false(*impl*),TOP_CALL) 
+	inst_class(env, Types.NOMOD, Prefix.NOPRE, Connect.empty_set, 
+		   c, [], false(*impl*),TOP_CALL) 
 	  => (dae, env', _, _,_) 
 	-------------------------------------------------------------
 	inst_class_in_program(env,(c as SCode.CLASS(name,_,_,_,_))::cs,Absyn.IDENT(name2)) 
@@ -457,7 +460,8 @@ relation inst_class_in_program_implicit: (Env, SCode.Program, SCode.Path )
 	  => (DAE.Element list, Env.Env) =
 
   rule	name = name2 &
-	implicit_instantiation(env, Types.NOMOD, Prefix.NOPRE, [], c, [], false(*packimpl*)) 
+	implicit_instantiation(env, Types.NOMOD, Prefix.NOPRE, 
+			       Connect.empty_set, c, [], false(*packimpl*)) 
 	  => ( env',dae) 
 	-------------------------------------------------------------
 	inst_class_in_program_implicit(env,(c as SCode.CLASS(name,_,_,_,_))::cs,Absyn.IDENT(name2)) 
@@ -487,7 +491,8 @@ relation inst_class_decls:(Env, SCode.Program, SCode.Path)
 	  => ( Env.Env, DAE.Element list) =
 
   rule	not name = name2 &
-	inst_class_decl(env, Types.NOMOD, Prefix.NOPRE, [], c, [], false(*packimpl*)) 
+	inst_class_decl(env, Types.NOMOD, Prefix.NOPRE, Connect.empty_set, 
+			c, [], false(*packimpl*)) 
 	  => (env', dae1) &
 	inst_class_decls(env',cs,ref) => (env'', dae2) &
 	list_append(dae1,dae2) => dae
@@ -501,7 +506,8 @@ relation inst_class_decls:(Env, SCode.Program, SCode.Path)
 
   rule	name = name2 &      
 	(* How should be do here ??? *)
-	inst_class_decl(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false(*packimpl*)) 
+	inst_class_decl(env,Types.NOMOD,Prefix.NOPRE,Connect.empty_set,c,
+			[],false(*packimpl*)) 
 	  => (env',dae1) &
 	inst_class_decls(env',cs,ref) => (env'', dae2) &
 	list_append(dae1,dae2) => dae  
@@ -509,7 +515,8 @@ relation inst_class_decls:(Env, SCode.Program, SCode.Path)
 	inst_class_decls(env, (c as SCode.CLASS(name,_,_,_,_))::cs,ref as Absyn.QUALIFIED(name2,_)) => (env'',dae)
 
   rule	not name = name2 &      
-	inst_class_decl(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false(*packimpl*)) 
+	inst_class_decl(env,Types.NOMOD,Prefix.NOPRE, Connect.empty_set,c,
+			[],false(*packimpl*)) 
 	  => (env',dae1) &
 	inst_class_decls(env',cs,ref) => (env'', dae2) &
 	list_append(dae1,dae2) => dae  
@@ -585,14 +592,16 @@ relation inst_program : (Env, SCode.Program) => DAE.Element list =
 	Debug.fprint ("insttr", n) &
 	Debug.fprintln ("insttr", "") &
 	(* Env.extend_frame_c(env,c) => env' & *)
-	inst_class(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false(*packimp*),TOP_CALL) 
+	inst_class(env,Types.NOMOD,Prefix.NOPRE,Connect.empty_set,c,[],
+		   false(*packimp*),TOP_CALL) 
 	  => (dae,env',csets,_,_) 
 	-----------------------------
 	inst_program(env,[c as SCode.CLASS(n,_,_,_,_)])
 	  => [DAE.COMP(n,DAE.DAE(dae))]
 
   rule	Debug.fprintln ("insttr", "inst_program2") &
-	inst_class_decl(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false(*packimpl*)) 
+	inst_class_decl(env,Types.NOMOD,Prefix.NOPRE,Connect.empty_set,c,[],
+			false(*packimpl*)) 
 	  => (env',dae1) &
 	(* Env.extend_frame_c(env,c) => env' & *)
 	inst_program(env',cs) => dae2 &
@@ -616,7 +625,8 @@ relation inst_program_implicit : (Env, SCode.Program)
   rule	Debug.fprint ("insttr", "inst_program_implicit: ") &
 	Debug.fprint ("insttr", n) &
 	Debug.fprintln("insttr", "") &
-	implicit_instantiation(env,Types.NOMOD,Prefix.NOPRE,[],c,[],false(*packimpl*)) 
+	implicit_instantiation(env,Types.NOMOD,Prefix.NOPRE,Connect.empty_set,
+			       c,[],false(*packimpl*)) 
 	  => (env', dae1) &
 	inst_program_implicit(env',cs) => (dae2, env'') &
 	list_append(dae1,dae2) => dae
@@ -671,7 +681,7 @@ relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class,
 	mktype(typename,ci_state',tys) => ty
 	-------------------------------------------
 	inst_class(env, mod, pre, csets, c as SCode.CLASS(n,_,encflag,r,_),inst_dims,impl,callscope)
-	  => (dae, env''', [], ty, ci_state')
+	  => (dae, env''', csets', ty, ci_state')
 
   rule	Debug.fprint("failtrace", "- inst_class ") & 
 	Debug.fprint("failtrace",  n) &
@@ -701,22 +711,27 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 			 )
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
+	
 
-  axiom inst_class_in(env,mods,pre,csets,ci_state,
+  axiom inst_class_in(env,mods,pre,Connect.SETS(_,crs),ci_state,
                       c as SCode.CLASS("Real",_,_,_,_),_,_, impl,packimpl)
-          => ([] (* No DAE *), env, [], ci_state, [])
+          => ([] (* No DAE *), 
+	      env, 
+	      Connect.SETS([],crs) (* csets should be emtpy, but crs must be propagated to "next component" *), 
+	      ci_state, [])
+	
 	  
-  axiom inst_class_in(env,mods,pre,csets,ci_state,
+  axiom inst_class_in(env,mods,pre,Connect.SETS(_,crs),ci_state,
                       c as SCode.CLASS("Integer",_,_,_,_),_,_, impl,packimpl)
-          => ([] (* No DAE *), env, [], ci_state, [])
+          => ([] (* No DAE *), env, Connect.SETS([],crs), ci_state, [])
 	  
-  axiom inst_class_in(env,mods,pre,csets,ci_state,
+  axiom inst_class_in(env,mods,pre,Connect.SETS(_,crs),ci_state,
                       c as SCode.CLASS("String",_,_,_,_),_,_, impl,packimpl)
-          => ([] (* No DAE *), env, [], ci_state, [])
+          => ([] (* No DAE *), env, Connect.SETS([],crs), ci_state, [])
 	  
- axiom inst_class_in(env,mods,pre,csets,ci_state,
+ axiom inst_class_in(env,mods,pre,Connect.SETS(_,crs),ci_state,
                      c as SCode.CLASS("Boolean",_,_,_,_),_,_, impl,packimpl)
-         => ([] (* No DAE *), env, [], ci_state, [])
+         => ([] (* No DAE *), env, Connect.SETS([],crs), ci_state, [])
 
 	  (* Ignore functions if not implicit instantiation *)
   rule	SCode.is_function cls => true
@@ -725,8 +740,8 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	& Debug.fprint("insttr", clsname) 
 	& Debug.fprint("insttr", "\n") 
 	-----------------------------
-	inst_class_in(env,mods,pre,cset,ci_state, cls,_,_,impl as false,packimpl)
-	=> ([] (* No DAE *), env, [], ci_state, [])
+	inst_class_in(env,mods,pre,Connect.SETS(_,crs),ci_state, cls,_,_,impl as false,packimpl)
+	=> ([] (* No DAE *), env, Connect.SETS([],crs), ci_state, [])
 
   rule	(*print "inst_class_in" & print n & print "\n" &*)
 	SCode.class_name c => clsname
@@ -807,7 +822,8 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
 	(** This rule describes how to instantiate an explicit
 	 ** class definition *)
-  rule	ClassInf.trans(ci_state, ClassInf.NEWDEF) => ci_state1 &
+  rule 
+	ClassInf.trans(ci_state, ClassInf.NEWDEF) => ci_state1 &
 
 	classdef_elts(els) => cdefelts &
 	component_elts(els) => compelts &
@@ -847,6 +863,20 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	list_append(alg,alg2) => alg' &
 	list_append(initalg,initalg2) => initalg' &	
 
+	(* only keep inside connections with matching prefix for this class.
+	 * csets will remain unfiltered for other components in "outer class"*)
+	filter_connection_set_crefs(csets,pre) => csets_filtered &
+
+	(* Add connection crefs from equations to connection sets*)
+	 add_connection_crefs(csets,eqs') => csets &
+	 add_connection_crefs(csets_filtered,eqs') => csets_filtered &
+
+	(* Add filtered connection sets to env so ceval can reach it *)
+	add_connection_set_to_env(csets_filtered,env2) => env2 &
+
+	Env.print_env_path_str env => id &
+	Prefix.print_prefix_str pre => pre_str &
+
 	(* Add variables to env, wihtout type and binding, *)
 	(* which will be added later in inst_element_list  *)
 	(* (where update_variable is called) *)
@@ -855,8 +885,8 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  => env3 &
 	  (* Update the modifiers of elements to typed ones, needed for modifiers
 	   on components that are inherited. *)
-	update_compelts_mods(env3,pre,compelts',ci_state,impl)  
-	  => (compelts'',env4) &
+	update_compelts_mods(env3,pre,compelts',ci_state,csets,impl)  
+	  => (compelts'',env4,csets) &
 
 	(*3. Instantiate components *)
 	inst_element_list(env4, mods, pre, csets, ci_state1, compelts'', 
@@ -904,7 +934,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	list_append(initeqs,initeqs2) => initeqs' &
 	list_append(alg,alg2) => alg' &
 	list_append(initalg,initalg2) => initalg' &
-	
+
 	(* Add variables to env, wihtout type and binding, *)
 	(* which will be added later in inst_element_list  *)
 	(* (where update_variable is called) *)
@@ -968,6 +998,67 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_classdef(_,_,_,_,_,_,_,_,_,_,_) => fail
 
 end	
+
+(** relation: add_connection_set_to_env(ccets,env2) => env2 &	
+ **
+ **
+ **
+ **)
+relation add_connection_set_to_env:(Connect.Sets,Env.Env) 
+	  => Env.Env =
+
+axiom	add_connection_set_to_env(Connect.SETS(_,crs),Env.FRAME(n,bt1,bt2,imp,bc,_,enc)::fs) 
+	  => Env.FRAME(n,bt1,bt2,imp,bc,crs,enc)::fs
+end
+
+(** relation: add_connection_crefs
+ ** author: PA
+ **
+ ** This relation adds the connection component references from local
+ ** equations to the connection sets.
+**)
+relation add_connection_crefs: (Connect.Sets, SCode.Equation list) 
+	  => Connect.Sets =
+
+  axiom	add_connection_crefs(sets,[]) => sets
+
+  rule  Exp.to_exp_cref(cr1) => cr1' &
+	Exp.to_exp_cref(cr2) => cr2' &
+
+(*	Exp.print_component_ref_str cr1' => s1 &
+	Exp.print_component_ref_str cr2' => s2 &
+	print "Adding cr :" & print s1 & print " and cr: " & print s2 & 
+	print "\n" &  *)
+
+	list_append(crs,[cr1',cr2']) => crs' &
+	add_connection_crefs(Connect.SETS(sets,crs'),es) => sets'
+	-------------------------------
+	add_connection_crefs(Connect.SETS(sets,crs),
+			     SCode.EQUATION(SCode.EQ_CONNECT(cr1,cr2),_)::es) => sets'
+
+  rule	add_connection_crefs(sets,es) => sets'
+	-------------------------------
+	add_connection_crefs(sets, _::es) => sets'
+end
+
+(** relation: filter_connection_set_crefs
+ ** author: PA
+ **
+ ** This relation investigates Prefix and filters all connect_refs to only 
+ ** contain references starting with actual prefix.
+ **)
+relation filter_connection_set_crefs: (Connect.Sets, Prefix.Prefix) 
+	  => Connect.Sets =
+
+	  (* no Prexix, nothing to filter *)
+  axiom	filter_connection_set_crefs(s, Prefix.NOPRE)  => s
+
+  rule	Prefix.prefix_to_cref(pre) => cr &
+	Util.list_select_1_r(crs,cr,Exp.cref_prefix_of) => crs'
+	-------------------------
+	filter_connection_set_crefs(Connect.SETS(set,crs), pre) 
+	  => Connect.SETS(set,crs')
+end
 
 (** relation: partial_inst_classdef
  **
@@ -1046,19 +1137,22 @@ end
 
 relation update_compelts_mods: (Env.Env, Prefix.Prefix, 
 				(SCode.Element*Types.Mod) list,
-				ClassInf.State, bool (* impl *)) 
-	=> ((SCode.Element * Types.Mod) list, Env.Env) =
+				ClassInf.State,
+				Connect.Sets,
+				bool (* impl *)) 
+	=> ((SCode.Element * Types.Mod) list, Env.Env, Connect.Sets) =
 
-  axiom	update_compelts_mods(env,pre,[],_,_) =>([],env)
+  axiom	update_compelts_mods(env,pre,[],_,csets,_) =>([],env,csets)
 
   rule	Mod.unelab_mod(cmod) => umod &
 	get_cref_from_mod(umod) => crefs &
-	update_components_in_env(cmod,crefs,env,ci_state,impl) => env2 &
+	update_components_in_env(cmod,crefs,env,ci_state,csets,impl) 
+	  => (env2,csets) &
 	Mod.update_mod(env2,pre,cmod,impl) => cmod' &
-	update_compelts_mods(env2,pre,xs,ci_state,impl) => (res,env3)
+	update_compelts_mods(env2,pre,xs,ci_state,csets,impl) => (res,env3,csets)
 	-------------------
-	update_compelts_mods(env,pre,(comp,cmod)::xs,ci_state,impl) 
-	  => ((comp,cmod')::res,env3)
+	update_compelts_mods(env,pre,(comp,cmod)::xs,ci_state,csets,impl) 
+	  => ((comp,cmod')::res,env3,csets)
 end
 
 (** relation: get_option_arraydim
@@ -1850,7 +1944,7 @@ axiom	inst_element(env, mod, pre, csets, ci_state, (SCode.IMPORT(imp),_), instdi
 	remove_cref_from_crefs(crefs',owncref) => crefs'' &
 
 	get_derived_env(env,bc) => env &
-	update_components_in_env(mods,crefs'',env,ci_state,impl) => env2 &
+	update_components_in_env(mods,crefs'',env,ci_state,csets,impl) => (env2,csets) &
 
 	(* Update the untyped modifiers to typed ones, and extract class *)
 	(* and component modifiers again.*)
@@ -1872,10 +1966,10 @@ axiom	inst_element(env, mod, pre, csets, ci_state, (SCode.IMPORT(imp),_), instdi
  	Mod.merge(mod,m',env2,pre) => mod1 &
 	Mod.merge(cmod,mod1,env2,pre) => mod1' &
 
-	redeclare_type(mod1',comp,env2,pre,ci_state,impl) 
+	redeclare_type(mod1',comp,env2,pre,ci_state,csets,impl) 
 	  => (SCode.COMPONENT(n,final,repl,prot,
 			      attr as SCode.ATTR(ad,flow,acc,param,dir),
-			      t,m,bc,comment),mod',env2') &
+			      t,m,bc,comment),mod',env2',csets) &
 	
 	
 	get_derived_env(env,bc) => env' &
@@ -1964,8 +2058,8 @@ relation get_derived_env: (Env.Env, Absyn.Path option) => Env.Env =
 
   rule	Lookup.lookup_class(env,tp,true) => (_,env') 
 	---------------------------------------
-	get_derived_env(env as (Env.FRAME(id,cl,tps,imps,_,enc)::fs),SOME(tp)) 
-	  => Env.FRAME(id,cl,tps,imps,env',enc)::fs
+	get_derived_env(env as (Env.FRAME(id,cl,tps,imps,_,crs,enc)::fs),SOME(tp)) 
+	  => Env.FRAME(id,cl,tps,imps,env',crs,enc)::fs
 end
 
 (** relation: remove_cref_from_crefs
@@ -2004,43 +2098,45 @@ relation redeclare_type: (Types.Mod,
 			  Env.Env,
 			  Prefix.Prefix,
 			  ClassInf.State,
+			  Connect.Sets,
 			  bool (* Implicit instantation *)) 
-	  => (SCode.Element,Types.Mod,Env.Env) =
+	  => (SCode.Element,Types.Mod,Env.Env,Connect.Sets) =
 
   rule	n1=n2 &
 	get_cref_from_mod(mod) => crefs &
-	update_components_in_env(Types.NOMOD (* m *),crefs,env,ci_state,impl) => env' &
+	update_components_in_env(Types.NOMOD (* m *),crefs,env,ci_state,csets,impl) => (env',csets) &
 	Mod.elab_mod(env',pre,mod,impl) => m' &
 	Mod.elab_mod(env',pre,old_mod,impl) => old_m' &
 	Mod.merge(rmod,m',env',pre) => m'' &
 	Mod.merge(m'',old_m',env',pre) => m''' 
 	--------------------------------
 	redeclare_type ((m as Types.REDECL(_,((redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,mod,bc,comment)),rmod)::rest)),
-			SCode.COMPONENT(n2,false,repl2,prot2,_,t2,old_mod,_,_),env,pre,ci_state,impl) => (redecl,m''',env')
+			SCode.COMPONENT(n2,false,repl2,prot2,_,t2,old_mod,_,_),env,pre,ci_state,csets,impl) => (redecl,m''',env',csets)
 
   rule	not n1=n2 &
-	redeclare_type(Types.REDECL(redfin,rest),comp,env,pre,ci_state,impl) 
-	  => (newcomp,mod,env')
+	redeclare_type(Types.REDECL(redfin,rest),comp,env,pre,ci_state,csets,impl) 
+	  => (newcomp,mod,env',csets)
 	  -------------
 	redeclare_type (mod as Types.REDECL(redfin,
                                             ((redecl as SCode.COMPONENT(n1,final,repl,prot,_,t,_,bc,comment)),
                                              rmod)::rest),
-			comp as SCode.COMPONENT(n2,false,repl2,prot2,_,t2,_,_,comment2),env,pre,ci_state,impl)
-	  => (newcomp,mod,env')
+			comp as SCode.COMPONENT(n2,false,repl2,prot2,_,t2,_,_,comment2),env,pre,ci_state,csets,impl)
+	  => (newcomp,mod,env',csets)
 
-  rule	redeclare_type(Types.REDECL(redfin,rest),comp,env,pre,ci_state,impl) 
-	  => (newcomp,mod,env')
+  rule	redeclare_type(Types.REDECL(redfin,rest),comp,env,pre,ci_state,csets,impl) 
+	  => (newcomp,mod,env',csets)
 	  ----------------------------
-	redeclare_type(Types.REDECL(redfin,_::rest),comp,env,pre,ci_state,impl) 
-	  =>(newcomp,mod,env')
+	redeclare_type(Types.REDECL(redfin,_::rest),comp,env,pre,ci_state,csets,impl) 
+	  =>(newcomp,mod,env',csets)
 
-  axiom	redeclare_type(Types.REDECL(redfin,[]),comp,env,pre,ci_state,impl) => (comp,Types.NOMOD,env)
+  axiom	redeclare_type(Types.REDECL(redfin,[]),comp,env,pre,ci_state,csets,impl) => (comp,Types.NOMOD,env,csets)
 
-  axiom redeclare_type(mod,comp,env,pre,ci_state,impl) => (comp,mod,env)
+  axiom redeclare_type(mod,comp,env,pre,ci_state,csets,impl) 
+	  => (comp,mod,env,csets)
 
   rule	Debug.fprint("failtrace", "- redeclare_type failed\n")
 	------------------------------------------------------
-	redeclare_type(_,_,_,_,_,_) => fail
+	redeclare_type(_,_,_,_,_,_,_) => fail
 end
 
 
@@ -2237,7 +2333,7 @@ relation inst_var2 : (Env.Env,
 	Mod.mod_equation(mod) => SOME(Types.TYPED(e,_,p)) &  
 	(* Instantiate type of the component *)
 	inst_class(env,mod,pre,csets,cl,inst_dims,impl,INNER_CALL) 
-	  => (_,env',_,ty,st) &
+	  => (_,env',csets',ty,st) &
 	(* Make it an array type since we are not flattening *)
 	make_array_type(dims,ty) => ty' &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
@@ -2252,12 +2348,12 @@ relation inst_var2 : (Env.Env,
 	inst_var2(env,ci_state as
 		  ClassInf.FUNCTION(_),mod,pre,csets,n,cl,
                   attr,dims as _::_,idxs,inst_dims,impl,comment)
-          => (env',dae,csets,ty')
+          => (env',dae,csets',ty')
 
 	  (* Array vars without binding in functions , e.g. input Real x[:] *)
   rule	(* Do not flatten because it is a function *)
 	inst_class(env,mod,pre,csets,cl,inst_dims,impl,INNER_CALL) 
-	  => (_,env',_,ty,st) &
+	  => (_,env',csets,ty,st) &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
 	(* Do all dimensions... *)
 	inst_dim_exp_lst(dims,impl) => dims' &
@@ -2463,17 +2559,21 @@ relation update_components_in_env:(Types.Mod,
 				  Absyn.ComponentRef list,
 				  Env.Env, 
 				  ClassInf.State, 
+				  Connect.Sets,
 				  bool (* Implicit instantiation*)) 
-	=> Env.Env =
+	=> (Env.Env,Connect.Sets) =
 	
-  rule	update_component_in_env(mods,cr,env,ci_state,impl) => env' &
-	update_components_in_env(mods,rest,env',ci_state,impl) => env''
+  rule	update_component_in_env(mods,cr,env,ci_state,csets,impl) 
+	  => (env',csets) &
+	update_components_in_env(mods,rest,env',ci_state,csets,impl) 
+	  => (env'',csets)
 	-------------------------------------------
-	update_components_in_env(mods,cr::rest,env,ci_state,impl) => env'' 
+	update_components_in_env(mods,cr::rest,env,ci_state,csets,impl) 
+	  => (env'',csets)
 
   rule (*	Debug.fprint("decl", "update_components_in_env finished\n")*)
 	---------------
-	update_components_in_env(_,[],env,ci_state,impl) => env
+	update_components_in_env(_,[],env,ci_state,csets,impl) => (env,csets)
 end
 
 (** relation: update_component_in_env
@@ -2484,8 +2584,9 @@ end
  **)
 
 relation update_component_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, 
-				   ClassInf.State, bool) 
-	  => Env.Env =
+				   ClassInf.State, Connect.Sets,bool) 
+	  => (Env.Env,
+	      Connect.Sets) =
 
 	  (** Variables that have Element in Environment, i.e. no type 
 	   ** information are instnatiated here to get the type. **)	
@@ -2501,7 +2602,8 @@ relation update_component_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env,
  	get_cref_from_dim(ad) => crefs2 &
 	list_append(crefs,crefs2) => crefs' &
 	remove_cref_from_crefs(crefs',cref) => crefs'' &
-	update_components_in_env(mods,crefs'',env,ci_state,impl) => env2 &
+	update_components_in_env(mods,crefs'',env,ci_state,csets,impl) 
+	  => (env2,csets) &
 	(* Prefix does not matter, since we only update types in env, and does
 	   not make any dae elements, etc.. *)
 	Mod.elab_mod(env2,Prefix.NOPRE,m,impl) => m' &
@@ -2523,8 +2625,8 @@ relation update_component_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env,
 	elab_arraydim(env2,cref,ad,eq,impl,NONE) => dims &
 
 	(** Instantiate the component *)	
-	inst_var(cenv,ci_state, mod''', Prefix.NOPRE, [], n, cl, attr,
-		 dims, [], [], impl,NONE)
+	inst_var(cenv,ci_state, mod''', Prefix.NOPRE, csets, n, 
+		 cl, attr, dims, [], [], impl,NONE)
 	  => (compenv,dae1, csets', ty) &
 	(** The environment is extended with the new variable *)
 	(** binding. *)
@@ -2542,23 +2644,23 @@ relation update_component_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env,
 			   false,(*type info present*)
 			   compenv) => env' 
 	----------------------------------
-	update_component_in_env (mods,cref as Absyn.CREF_IDENT(id,subscr),env,ci_state, impl) => env'
+	update_component_in_env (mods,cref as Absyn.CREF_IDENT(id,subscr),env,ci_state, csets, impl) => (env',csets')
 
 	(* Variable with NONE element is allready instantiated.*)
   rule	Lookup.lookup_ident(env,id) => (ty,NONE,_) 
 	----------------------------------
-	update_component_in_env (mods,cref as Absyn.CREF_IDENT(id,subscr),env,ci_state, impl) => env
+	update_component_in_env (mods,cref as Absyn.CREF_IDENT(id,subscr),env,ci_state, csets, impl) => (env,csets)
 	
 	(** If first part of ident is a class, e.g StateSelect.None, nothing 
 	 ** to update **)	
   rule	Lookup.lookup_class(env,Absyn.IDENT(id),false) => (cl,cenv)
 	--------------------------------------------------------------------
-	update_component_in_env(mods, Absyn.CREF_QUAL(id,_,_),env,ci_state, impl) => env
+	update_component_in_env(mods, Absyn.CREF_QUAL(id,_,_),env,ci_state, csets, impl) => (env,csets)
 
 	(* Nothing to update. *)
   rule	Lookup.lookup_ident(env,id) => (ty,NONE,_) 
 	----------------------------------
-	update_component_in_env (mods, Absyn.CREF_QUAL(id,_,_),env,ci_state,impl) => env
+	update_component_in_env (mods, Absyn.CREF_QUAL(id,_,_),env,ci_state, csets, impl) => (env, csets)
 
 	(* For qualified names, e.g. a.b.c, instanitate component a *)
   rule	Lookup.lookup_ident(env,id) 
@@ -2569,10 +2671,12 @@ relation update_component_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env,
 	Lookup.lookup_class(env,t,false) => (cl,cenv) & 
 
 	get_cref_from_mod(m) => crefs &
- 	update_components_in_env(mods,crefs,env,ci_state,impl) => env2' &
+ 	update_components_in_env(mods,crefs,env,ci_state,csets,impl) 
+	  => (env2',csets) &
 	
 	get_cref_from_dim(ad) => crefs2 &
-	update_components_in_env(mods,crefs2,env2',ci_state,impl) => env2 &
+	update_components_in_env(mods,crefs2,env2',ci_state,csets,impl) 
+	  => (env2,csets) &
 	(* Prefix does not matter, since we only update types in env, and does
 	   not make any dae elements, etc.. *)
 	Mod.elab_mod(env2,Prefix.NOPRE,m,impl) => m' &
@@ -2593,8 +2697,8 @@ relation update_component_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env,
 	elab_arraydim(env2,owncref,ad,eq,impl,NONE) => dims &
 
 	(** Instantiate the component *)	
-	inst_var(cenv, ci_state, mod''', Prefix.NOPRE, [], n, cl, attr,
-		 dims, [], [], false,NONE)
+	inst_var(cenv, ci_state, mod''', Prefix.NOPRE, csets, n, 
+		 cl, attr, dims, [], [], false,NONE)
 	  => (compenv,dae1, csets', ty) &
 	(** The environment is extended with the new variable *)
 	(** binding. *)
@@ -2606,8 +2710,8 @@ relation update_component_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env,
 			   false,(*type info present*)
 			   compenv) => env' 
 	------------
-	update_component_in_env(mods, Absyn.CREF_QUAL(id,_,_),env,ci_state, impl) 
-	  => env'
+	update_component_in_env(mods, Absyn.CREF_QUAL(id,_,_),env,ci_state, csets, impl) 
+	  => (env',csets')
 
   rule 	Debug.fprint("failtrace", "-update_component_in_env failed, ident = ") &
 	Debug.fcallret("failtrace",Dump.print_component_ref_str, cref,"") => str &
@@ -2620,7 +2724,8 @@ relation update_component_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env,
 	Debug.fprint("failtrace",str3) &
 	Debug.fprint("failtrace","\n") 
 	------------------------------
-	update_component_in_env(mod,cref,env,ci_state,impl) => env
+	update_component_in_env(mod,cref,env,ci_state,csets,impl) 
+	  => (env,csets)
 end
 
 
@@ -2836,7 +2941,7 @@ relation inst_array : (Env.Env,
   rule	Mod.mod_equation(mod) => SOME(Types.TYPED(e,_,p)) &  (* Which has an 
 							  expression binding *)
 	inst_class(env,mod,pre,csets,cl,inst_dims,true,INNER_CALL) 
-	  => (_,env',_,ty,st) &
+	  => (_,env',csets,ty,st) &
 	(* Check their types... *)
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
 	Types.elab_type(ty) => ty' &
@@ -2846,7 +2951,7 @@ relation inst_array : (Env.Env,
 	inst_array(env,ci_state as ClassInf.FUNCTION(_),
                    mod,pre,csets,n,(cl,attr),i,
                    DIMEXP(_,_),dims,idxs,inst_dims,impl,comment)
-	  => (env',[dae],[],ty)
+	  => (env',[dae],csets,ty)
 
   rule	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl,comment)
 	  => (compenv,dae,csets,ty) 
@@ -2877,7 +2982,7 @@ relation inst_array : (Env.Env,
 	Util.list_flatten([dae1,dae2,[dae3]]) => dae
 	-----------------------------
 	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims,impl,comment)
-          => (env',dae,csets',ty)
+          => (env',dae,csets'',ty)
 
   rule	Mod.lookup_idx_modification(mod,i) => mod' &
 	inst_var2(env,ci_state,mod',pre,csets,n,cl,attr,dims,i::idxs,inst_dims,impl,comment)
@@ -3369,7 +3474,7 @@ relation implicit_instantiation : (Env.Env, Types.Mod, Prefix.Prefix,
  	Env.extend_frame_t(env, n, ty) => env'	&
 	make_fully_qualified (env, Absyn.IDENT(n)) => fpath &
 	let prot = false & 
-	inst_classdef (env, mod, pre, csets, ClassInf.UNKNOWN(n), parts, restr, 
+	inst_classdef (env, mod, pre, csets', ClassInf.UNKNOWN(n), parts, restr, 
 		       prot, inst_dims, true (*impl*), packimpl ) 
 	  =>(_, tempenv,_,_,_) &
 
@@ -3454,7 +3559,7 @@ relation implicit_function_instantiation : (Env.Env, Types.Mod, Prefix.Prefix,
 	Env.extend_frame_t(env, n, ty) => env'	&
         make_fully_qualified (env, Absyn.IDENT(n)) => fpath &
         let prot = false & (* how to get this? *)
- 	inst_classdef (env', mod, pre, csets, ClassInf.FUNCTION(n), parts, 
+ 	inst_classdef (env', mod, pre, csets', ClassInf.FUNCTION(n), parts, 
 		       restr, prot, inst_dims, true (*impl*), packimpl) 
 	  =>(_, tempenv,_,_,_) &
 	inst_ext_decl(tempenv, n, parts, true (*impl*) ) => extdecl 
@@ -3497,8 +3602,8 @@ end
 	   (* The function type can be determined without the body. *)
   rule	let stripped_class = SCode.CLASS(id,p,e,r,SCode.PARTS(elts,[],[],[],[],NONE)) &
 	implicit_function_instantiation(env,Types.NOMOD,
-					Prefix.NOPRE, [], stripped_class
-					, [], false) => (env',_)
+					Prefix.NOPRE, Connect.empty_set, 
+					stripped_class, [], false) => (env',_)
 	 --------------------------------------------------------
 	 implicit_function_type_instantiation(env,SCode.CLASS(id,p,e,r,SCode.PARTS(elts,_,_,_,_,_)))
 	 => env'
@@ -3521,7 +3626,8 @@ relation inst_overloaded_functions: (Env.Env, Absyn.Ident, Absyn.Path list)
 	 ** needed when deoverloading **)
   rule	Lookup.lookup_class(env,fn,true) 
 	  => (c as SCode.CLASS(id, _, encflag, SCode.R_FUNCTION,_),cenv) &
-	inst_class(cenv, Types.NOMOD, Prefix.NOPRE, [], c, [], true,INNER_CALL) 
+	inst_class(cenv, Types.NOMOD, Prefix.NOPRE, Connect.empty_set, c, 
+		   [], true,INNER_CALL) 
 	  => (dae, _, _, (Types.T_FUNCTION(args,tp),_), st) &
         make_fully_qualified (env, Absyn.IDENT(overloadname)) => fpath &
 	make_fully_qualified (cenv, Absyn.IDENT(id)) => ovlfpath &
@@ -5938,7 +6044,8 @@ relation inst_record_constructor_elt : (Env.Env,SCode.Element, bool (*impl*)) =>
 	let owncref = Absyn.CREF_IDENT(id,[]) &
 	elab_arraydim(env,owncref,dim,NONE,false,NONE) => dimexp &
 	Debug.fprint ("recconst", "calling inst_var\n") &
-	inst_var(cenv, ClassInf.FUNCTION(""),mod', Prefix.NOPRE, [], id, cl, attr,
+	inst_var(cenv, ClassInf.FUNCTION(""),mod', Prefix.NOPRE, 
+		 Connect.empty_set, id, cl, attr,
 		 dimexp, [], [], impl,comment) => (_,_, _, tp') &
 	Debug.fprint ("recconst", "Type of argument:") &
 	Debug.fcall ("recconst",Types.print_type,tp') &
