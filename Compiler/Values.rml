@@ -220,7 +220,7 @@ relation unparse_description:(Value list) => string =
   rule	unparse_description(xs) => s1 &
 	string_length sval => slen &
 	int_string slen => slenstr &
-	Util.string_append_list(["# s[ 1 ", slenstr, "\n"]) => str
+	Util.string_append_list(["# s! 1 ", slenstr, "\n"]) => str
 	-------------------------------
 	unparse_description(STRING(sval)::xs)=> str
 	

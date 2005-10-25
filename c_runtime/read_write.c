@@ -49,9 +49,20 @@ int read_type_description(FILE* file, type_description* desc)
       if ((c = fgetc(file)) == EOF) return 1;
       if (c == '!') /* scalar */
 	{
-	  desc->ndims = 0;
-	  desc->dim_size = 0;
-	  break;
+	  /* Scalar string */
+	  if (desc->type == 's') {
+	    if (fscanf(file,"%d",&desc->ndims) != 1) return 1;
+	    desc->dim_size = (int*)malloc(desc->ndims*sizeof(int));
+	    if (!desc->dim_size) return 1;
+	    if (fscanf(file,"%d",desc->dim_size) != 1) return 1;
+	    break;
+	  } 
+	  else {
+	    /* other scalars. */
+	    desc->ndims = 0;
+	    desc->dim_size = 0;
+	    break;
+	  }
 	}
       if (c != '[') return 1;
       /* now is an array dim description */
@@ -223,7 +234,7 @@ int read_modelica_string(FILE* file, modelica_string_t* str)
 
 int write_modelica_string(FILE* file, modelica_string_t* str)
 {
-  fprintf(file,"# s[ %d %d", 1, str->length);
+  fprintf(file,"# s! %d %d", 1, str->length);
   fprintf(file,"\n");
   fprintf(file,"%s\n",str->data);
   return 0;
