@@ -266,7 +266,7 @@ void doSocketCommunication(const string * scriptname)
     char* line = readline(">>> ");
     if ( line == 0 || strcmp(line,"quit()") == 0 ) {
       done =true;
-      if (line == 0)  { line = "quit()"; }
+      if (line == 0)  { line = strdup("quit()"); }
     }
     if (strcmp(line,"\n")!=0 && strcmp(line,"") != 0) { 
       add_history(line);
