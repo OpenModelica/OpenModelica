@@ -89,8 +89,15 @@ module Static :
   datatype Slot = SLOT of Types.FuncArg *  (* An argument to a function *)
 			  bool *	   (* True if the slot has been filled, *)
 					   (* i.e. argument has been given a value*)
-			  Exp.Exp option   (* Contain the elaborated expression *)
+			  Exp.Exp option * (* Contain the elaborated expression *)
                                            (* for the actual argument *)
+
+			  Types.ArrayDim list  (* dim_size - if argument is a 
+					    * 'foreach' argument this list is 
+					    * non-empty with the dimension 
+					    * sizes of the argument. 
+					    * See vectorized calls.
+					    *)
 
 
   (* Expression analysis *)
@@ -2093,26 +2100,6 @@ relation elab_builtin_der : (Env.Env, Absyn.Exp list, bool (*impl*))
 	elab_builtin_der(env,[exp as Absyn.CREF(cr)],impl) 
 	  => (Exp.CALL(Absyn.IDENT("der"),[exp'],false,true), Types.PROP((Types.T_REAL([]),NONE),Types.C_VAR))
 
-	  (* Temporary hack for vectors and matrices *)
-	(* vectors*)
-  rule	elab_exp(env,exp,impl,NONE) => (exp',Types.PROP(tt as (Types.T_ARRAY(dim, (Types.T_REAL([]),_)),_),Types.C_VAR),_)  &
-	cref_vectorize(exp',tt) => Exp.ARRAY(tp,scalar,e_lst) &
-	call_vectorize(Exp.CALL(Absyn.IDENT("der"),[], false,true),e_lst) 
-	  => e_lst'
-	----------------------------------
-	elab_builtin_der(env,[exp as Absyn.CREF(cr)],impl) 
-	  => (Exp.ARRAY(tp,scalar,e_lst'), Types.PROP(tt,Types.C_VAR))
-
-	  (* matrices *)
- rule	elab_exp(env,exp,impl,NONE) => (exp',Types.PROP(tt as (Types.T_ARRAY(dim1, (Types.T_ARRAY(dim2,(Types.T_REAL([]),_)),_)),_),Types.C_VAR),_)  &
-	cref_vectorize(exp',tt) => Exp.ARRAY(tp,scalar,e_lst) &
-	call_vectorize(Exp.CALL(Absyn.IDENT("der"),[], false,true),e_lst) 
-	  => e_lst'
-	----------------------------------
-	elab_builtin_der(env,[exp as Absyn.CREF(cr)],impl) 
-	  => (Exp.ARRAY(tp,scalar,e_lst'), Types.PROP(tt,Types.C_VAR))
-
-
 	  (* Constant expressions should fail *)
   rule	elab_exp(env,exp,impl,NONE) => (exp',Types.PROP((Types.T_REAL([]),_),c),_)  &
 	Print.print_error_buf "# Error, der operator applied to constant expression\n" 
@@ -3162,27 +3149,36 @@ relation elab_call_args : (Env.Env,
 	(* The constness of a function depends on the inputs. If all inputs are
 	 * constant the call itself is constant.
 	 *)
-	elab_types (env, args, typelist,impl) => (args', constlist, restype, functype) &
+	elab_types (env, args, typelist,impl) 
+	  => (args', constlist, restype, functype,vect_dims, slots) &
+
 	deoverload_funcname(fn,functype) => fn' &
 	is_tuple restype => tuple &
 	is_builtin_func fn' => builtin &
 	Util.list_reduce(constlist,Types.const_and) => const &
 	elab_consts(restype,const) => tyconst &
-	get_properties(restype,tyconst) => prop
+	get_properties(restype,tyconst) => prop &
+	vectorize_call(Exp.CALL(fn',args',tuple,builtin),restype,
+		       vect_dims,slots,prop) 
+	  => (call_exp,prop')
 	-----------------------------------------------
-	elab_call_args (env,fn,args,nargs,impl,st) => (Exp.CALL(fn',args',tuple,builtin), prop)
+	elab_call_args (env,fn,args,nargs,impl,st) => (call_exp, prop')
 
   rule	(* Rule above failed. Also consider koening lookup. *)
 	get_koening_function_types(env,fn,args,nargs,impl) => ktypelist &
-	elab_types (env, args, ktypelist,impl) => (args', constlist, restype, functype) &
+	elab_types (env, args, ktypelist,impl) 
+	  => (args', constlist, restype, functype,vect_dims,slots) &
 	deoverload_funcname(fn,functype) => fn' &
 	is_tuple restype => tuple &
 	is_builtin_func fn' => builtin &
 	Util.list_reduce(constlist,Types.const_and) => const &
 	elab_consts(restype,const) => tyconst &
-	get_properties(restype,tyconst) => prop
+	get_properties(restype,tyconst) => prop &
+	vectorize_call(Exp.CALL(fn',args',tuple,builtin),restype,
+		       vect_dims,slots,prop) 
+	  => (call_exp,prop')
 	-----------------------------------------------
-	elab_call_args (env,fn,args,nargs,impl,st) => (Exp.CALL(fn',args',tuple,builtin), prop)
+	elab_call_args (env,fn,args,nargs,impl,st) => (call_exp, prop)
 
 
 	(* no matching type found. *)
@@ -3204,14 +3200,196 @@ relation elab_call_args : (Env.Env,
 	-------------------------------------------------------------------
 	elab_call_args(env,fn,args,nargs,impl,st) => fail
 
-
-
-
   rule	(*elab_exp(env, e) => (e',Types.PROP(t,_)) &*)
 	Debug.fprint("failtrace", "- elab_call_args failed\n")
 	---------------------------------
 	elab_call_args(env,fn,args,nargs,impl,st) => fail
 
+end
+
+(** relation: vectorize_call
+ ** author: PA
+ **
+ ** Takes an expression and a list of array dimensions and the Slot list.
+ ** It will vectorize the expression over the dimension given as array dim
+ ** for the slots which have that dimension.
+ ** For example foo:(Real,Real[:])=> Real
+ ** foo(1:2,[1,2;3,4]) vectorizes with arraydim {2} to 
+ ** {foo(1,{1,2}),foo(2,{3,4})}
+ **)
+
+relation vectorize_call: (Exp.Exp, (* exp *)
+			  Types.Type, (* exp_type *)
+			  Types.ArrayDim list, 
+			  Slot list,
+			  Types.Properties) 
+	  => (Exp.Exp,Types.Properties) = 
+
+  axiom	vectorize_call(e,e_type,[],_,prop) => (e,prop)
+
+
+	(* Scalar expression, i.e function call *)
+  rule	Types.elab_type(e_type) => exp_type & 
+	vectorize_call_scalar(Exp.CALL(fn,args,tuple,builtin),
+			      exp_type,dim,slots) 
+	  => vect_exp &
+	vectorize_call(vect_exp,e_type,ad,slots,prop) 
+	  => (vect_exp',Types.PROP(tp,c)) &
+
+	Types.lift_array(tp,SOME(dim)) => tp'
+	------------------------------
+	vectorize_call(Exp.CALL(fn,args,tuple,builtin),e_type,
+		       Types.DIM(SOME(dim))::ad,slots, prop) 
+	  => (vect_exp',Types.PROP(tp',c))
+
+	  (* array expression of function calls *)
+  rule	Types.elab_type(e_type) => exp_type & 
+	vectorize_call_array(Exp.ARRAY(tp,scalar,expl),
+			      exp_type,dim,slots) 
+	  => vect_exp &
+
+	vectorize_call(vect_exp,e_type,ad,slots,prop) 
+	  => (vect_exp',Types.PROP(tp,c)) &
+	Types.lift_array(tp,SOME(dim)) => tp'
+	------------------------------
+	vectorize_call(Exp.ARRAY(tp,scalar,expl),e_type,
+		       Types.DIM(SOME(dim))::ad,slots, prop) 
+	  => (vect_exp',Types.PROP(tp',c))
+
+  rule	Debug.fprint("failtrace","-vectorize_call failed\n")
+	---------------------------
+	vectorize_call(_,_,_,_,_)=> fail
+end
+
+(** relation : vectorize_call_array
+ ** author: PA
+ **
+ ** Helper relation to vectorize_call, vectoriezes ARRAY expression to
+ ** an array of array expressions.
+ **)
+ relation vectorize_call_array:(Exp.Exp, 
+				Exp.Type,
+				int, (* cur_dim *)	
+				Slot list) => Exp.Exp =
+	 
+  rule	vectorize_call_array_2(expl,exp_tp,cur_dim,slots) => arr_expl &
+	Exp.type_builtin(exp_tp) => scalar' &
+	let res_exp = Exp.ARRAY(tp,scalar',arr_expl)
+	-----------------------------
+	vectorize_call_array(Exp.ARRAY(tp,scalar,expl),exp_tp,cur_dim,slots)
+	  => res_exp
+end
+
+(** relation: vectorize_call_array_2
+ ** author: PA
+ **
+ ** Helper relation to vectorize_call_array
+ **)
+
+relation vectorize_call_array_2: (Exp.Exp list, Exp.Type, int, Slot list) 
+ 	  => Exp.Exp list =
+
+  axiom	vectorize_call_array_2([],tp,cur_dim,slots) => []
+
+  rule	vectorize_call_array_3(e,e_tp,cur_dim,slots) => e' &
+	vectorize_call_array_2(es,e_tp,cur_dim,slots) => es'
+	-----------------------------------
+	vectorize_call_array_2(e::es,e_tp,cur_dim,slots) => e'::es'
+end
+
+(** relation: vectorize_call_array_3
+ ** author: PA
+ **
+ ** Helper relation to vectorize_call_array_2
+ **)
+
+relation vectorize_call_array_3:(Exp.Exp, 
+				 Exp.Type, 
+				 int, (* cur_dim *)
+				 Slot list) 
+	  => Exp.Exp =
+
+
+  rule	vectorize_call_scalar(e,e_tp,cur_dim,slots) => e'
+	-----------------------
+	vectorize_call_array_3(e as Exp.CALL(_,_,_,_),e_tp,cur_dim,slots) => e'
+
+  rule	vectorize_call_array(e,e_tp,cur_dim,slots) => e'
+	---------------------------
+	vectorize_call_array_3(e as Exp.ARRAY(_,_,_),e_tp,cur_dim,slots) => e'
+end
+
+(** relation: vectorize_call_scalar
+ ** author: PA
+ **
+ ** Helper relation to vectorize_call, vectorizes CALL expressions to 
+ ** array expressions.
+ **)
+
+relation vectorize_call_scalar:(Exp.Exp, 
+				Exp.Type,
+				int, (* cur_dim *)
+				Slot list) => Exp.Exp =
+
+  rule	vectorize_call_scalar_2(args,slots,1,dim,callexp) => expl &
+	Exp.type_builtin(e_type) => scalar &
+	let new_exp = Exp.ARRAY(e_type,scalar,expl)
+	-------------------
+	vectorize_call_scalar(callexp as Exp.CALL(fn,args,tuple,builtin),
+			      e_type,dim,slots)
+	  => new_exp
+
+  rule	Debug.fprint("failtrace","-vectorize_call_scalar failed\n")
+	-------------------------
+	vectorize_call_scalar(_,_,_,_) => fail
+end
+
+(** relation: vectorize_call_scalar_2
+ ** author: PA
+ **
+ ** Iterates through vectorized dimension an creates argument list according
+ ** to vectorized dimension in corresponding slot.
+**)
+relation vectorize_call_scalar_2: (Exp.Exp list, 
+				   Slot list, 
+				   int, (* cur_dim - current indx in dim *)
+				   int, (* dim - dimension size *)
+				   Exp.Exp) 
+	=> Exp.Exp list =
+	 
+  rule	int_le(cur_dim,dim) => true &
+	vectorize_call_scalar_3(expl,slots,cur_dim) => callargs &
+	int_add(cur_dim,1) => cur_dim' &
+	vectorize_call_scalar_2(expl,slots,cur_dim',dim,Exp.CALL(fn,args,t,b)) 
+	  => res
+	  ---------------------
+	vectorize_call_scalar_2(expl,slots,cur_dim,dim,Exp.CALL(fn,args,t,b))
+	  => Exp.CALL(fn,callargs,t,b)::res
+	  
+  axiom	vectorize_call_scalar_2(_,_,_,_,_) => []
+end
+
+(** relation: vectorize_call_scalar_3
+ ** author: PA
+ **
+ ** Helper relation to vectorize_call_scalar_2
+ **)
+relation vectorize_call_scalar_3: (Exp.Exp list, Slot list, int (* dim_indx *))
+	=> Exp.Exp list =
+
+  axiom	vectorize_call_scalar_3([],[],_) => [] 
+
+	(* scalar argument *)
+  rule	vectorize_call_scalar_3(es,ss,dim_indx) => res
+	----------------------------------------
+	vectorize_call_scalar_3(e::es,SLOT(_,_,_,[])::ss,dim_indx) => e::res
+
+	(* foreach argument *)
+  rule	vectorize_call_scalar_3(es,ss,dim_indx) => res &
+	Exp.simplify(Exp.ASUB(e,dim_indx)) => asub_exp
+	-----------------------------------
+	vectorize_call_scalar_3(e::es,SLOT(_,_,_,_::_)::ss,dim_indx) 
+	  => asub_exp::res
 end
 
 (** relation: deoverload_funcname
@@ -3254,39 +3432,99 @@ relation  elab_types:  (Env.Env,
 	  => (Exp.Exp list, 
 	      Types.Const list (*const*), 
 	      Types.Type(*result type*), 
-	      Types.Type(*function type*)) =
-
-	(* 
-	 We found nothing. This is an error. return to the calling
-	 function that writes an error message that makes sense (the
-	 name of the funtion etc). 
-	 *)
-	(* 
-	 If trest gets empty then we will return with a missmatch.
-	 and write an error message in the calling function. 
-	 *)
+	      Types.Type(*function type*),
+	      Types.ArrayDim list (* Vectorized dimensions*),
+	      Slot list (* slots, needed for vectorization *)
+	      ) =
 
 	(* We found a match.*)
-  rule	(*Debug.fprintln ("sei", "We try the elab_input") &
-	Debug.fprintln ("sei", "testing type:") &
-	Debug.fcall ("sei", Types.print_type,t) &*)
-	make_empty_slots(params) => slots &
-	elab_input_args(env, args, [], slots,impl ) => (args',newslots, clist) 
- (*       & Debug.fprintln ("sei", "We found a match." )*)
+  rule	make_empty_slots(params) => slots &
+	elab_input_args(env, args, [], slots,impl ) 
+	  => (args',newslots, clist) &
+	slots_vectorizable(newslots) => dims 
 	------------------
         elab_types(env, args, (t as (Types.T_FUNCTION(params,restype),_))::trest,impl)
-	  => (args', clist, restype, t)
+	  => (args', clist, restype, t, dims,newslots)
 
-	(* We did not found a match, try next. *)
-  rule 	(*Debug.fprintln ("sei", "The elab_input_args failed, try next.") &*)
-	elab_types(env, args, trest,impl) => (args',clist, restype,t) 
-        ------------------
-        elab_types(env, args, (Types.T_FUNCTION(params,restype),_)::trest,impl) 
-	  => (args', clist, restype,t)
+	(* We did not found a match, try next function type *)
+  rule	elab_types(env, args, trest,impl) 
+	  => (args',clist, restype,t,dims,slots) 
+        -------------------------------------------------------------
+        elab_types(env, args, (Types.T_FUNCTION(params,restype),_)::trest,impl)
+	  => (args', clist, restype,t,dims,slots)
 
   rule	Debug.fprintln("failtrace","- elab_types failed.") 
 	--------------
 	elab_types(env,_,_,_) => fail
+end
+
+(** relation: slots_vectorizable
+ ** author: PA
+ **
+ ** This relation checks all vectorized array dimensions in the slots and
+ ** confirms that they all are of same dimension,or no dimension, i.e. not
+ ** vectorized. The uniform vectorized array dimension is returned.
+ **)
+
+relation slots_vectorizable:(Slot list) => Types.ArrayDim list =
+
+  axiom	slots_vectorizable([]) => []
+
+  rule	same_slots_vectorizable(rest,ad) 
+	-------------------------------
+	slots_vectorizable(SLOT(_,_,_,ad as _::_)::rest) => ad
+
+  rule	slots_vectorizable(rest) => ad
+	----------------------------
+	slots_vectorizable(SLOT(_,_,_,[])::rest) => ad
+
+  rule	Debug.fprint("failtrace", "-slots_vectorizable failed\n")
+	-------------------------
+	slots_vectorizable(_) => fail
+end
+
+(** relation: same_slots_vectorizable
+ ** author: PA
+ ** 
+ ** This relation succeds if all slots in the list either has the array 
+ ** dimension as given by the second argument or no array dimension at all.
+ ** The array dimension must match both in dimension size and number of 
+ ** dimensions.
+ **)
+relation same_slots_vectorizable: (Slot list, Types.ArrayDim list) => () =
+
+  axiom	same_slots_vectorizable([],_) 
+
+	(* arraydim must match *)
+  rule	same_arraydim_lst(ad, slot_ad) &
+	same_slots_vectorizable(rest, ad)
+	---------------------------
+	same_slots_vectorizable(SLOT(_,_,_,slot_ad as (_::_))::rest, ad) 
+
+	(* empty arradim matches too *)
+  rule	same_slots_vectorizable(rest, ad)
+	---------------------------
+	same_slots_vectorizable(SLOT(_,_,_,[])::rest, ad)
+end
+
+(** relation: same_arraydim_lst
+ ** author: PA
+ **
+ **  Helper relation to same_slots_vectorizable. 
+ **)
+
+relation same_arraydim_lst: (Types.ArrayDim list, Types.ArrayDim list) => () =
+
+  axiom	same_arraydim_lst([],[])
+
+  rule	i1 = i2 &
+	same_arraydim_lst(ads1,ads2)
+	--------------------
+	same_arraydim_lst(Types.DIM(SOME(i1))::ads1,Types.DIM(SOME(i2))::ads2)
+
+  rule	same_arraydim_lst(ads1,ads2)
+	--------------------
+	same_arraydim_lst(Types.DIM(NONE)::ads1,Types.DIM(NONE)::ads2)
 end
 
 (** relation: get_properties
@@ -3510,9 +3748,6 @@ end
  ** `Types.Var'.
  * *)
 
-(* PR. env, input args from the function call, in arguments in the
- function_ definition. *)
-(* LS: inserted FuncArg *)
 (* PA: Positional arguments and named arguments are filled in the argument slots as:
  1. Positional arguments fill the first slots according to their position.
  2. Named arguments fill slots with the same name as the named argument.
@@ -3522,24 +3757,24 @@ relation elab_input_args : (Env.Env, Absyn.Exp list, Absyn.NamedArg list,
 			    Slot list, bool (* impl *) )
 	=> (Exp.Exp list, Slot list, Types.Const list (*const*)) =
 
-  rule	(*Debug.fprint ("sei","elab_input_args, positional arguments\n") &*)
-	funcarg_lst_from_slots(slots) => farg &
-	elab_positional_input_args(env,exp,farg,slots,impl) => (slots',clist1) &
+	  (* Fill slots with positional arguments*)
+  rule	funcarg_lst_from_slots(slots) => farg &
+ 	elab_positional_input_args(env,exp,farg,slots,impl) => (slots',clist1) &
+	(* recursive call fills named arguments *)
 	elab_input_args(env,[],narg,slots',impl) => (_,newslots,clist2) &
 	list_append(clist1,clist2) => clist &
-	exp_list_from_slots(newslots) => explst
+ 	exp_list_from_slots(newslots) => explst
 	----------------------------------------------------------------
-	elab_input_args(env,exp as _::_,narg,slots,impl) => (explst,newslots,clist)
+	elab_input_args(env,exp as _::_,narg,slots,impl) 
+	  => (explst,newslots,clist)
 
-  rule	(*Debug.fprint ("sei","elab_input_args, named arguments\n") &*)
-	funcarg_lst_from_slots(slots) => farg &
-	(*Debug.fprint ("sei","elab_input_args, got funcarg\n") &*)
+	(* Fill slots with named arguments *)
+  rule	funcarg_lst_from_slots(slots) => farg &
 	elab_named_input_args(env,narg,farg,slots,impl) => (newslots,clist) &
 	exp_list_from_slots(newslots) => newexp 
-	(*& Debug.fprint ("sei","elab_input_args, got expressions: ") &
- 	Debug.fprint_list ("sei",newexp,Exp.print_exp,", ")*)
 	------------------------------------------------------------
-	elab_input_args(env,[],narg as _::_,slots,impl) => (newexp,newslots,clist)
+	elab_input_args(env,[],narg as _::_,slots,impl) 
+	  => (newexp,newslots,clist)
 	
   axiom	elab_input_args(env,[],[],slots,impl) => ([],slots,[])
 	
@@ -3560,7 +3795,7 @@ relation make_empty_slots : (Types.FuncArg list) => Slot list =
 	
   rule	make_empty_slots(fs) => ss
 	--------------------------
-	make_empty_slots(fa::fs) => SLOT(fa,false,NONE)::ss
+	make_empty_slots(fa::fs) => SLOT(fa,false,NONE,[])::ss
 end
 
 (** relation: funcarg_lst_from_slots
@@ -3574,7 +3809,7 @@ relation funcarg_lst_from_slots : Slot list => Types.FuncArg list =
 
   rule	funcarg_lst_from_slots(xs) => fs
 	-------------------------------
-	funcarg_lst_from_slots(SLOT(fa,_,_)::xs) => fa::fs
+	funcarg_lst_from_slots(SLOT(fa,_,_,_)::xs) => fa::fs
 end 
 
 (** relation exp_list_from_slots
@@ -3588,11 +3823,11 @@ relation exp_list_from_slots: (Slot list ) => Exp.Exp list =
 	
   rule	exp_list_from_slots(xs) => lst
 	------------------------------
-	exp_list_from_slots(SLOT(_,_,SOME(e))::xs) => e::lst
+	exp_list_from_slots(SLOT(_,_,SOME(e),_)::xs) => e::lst
 
   rule	exp_list_from_slots(xs) => lst
 	------------------------------
-	exp_list_from_slots(SLOT(_,_,NONE)::xs) => lst
+	exp_list_from_slots(SLOT(_,_,NONE,_)::xs) => lst
 end
 
 (** relation: fill_default_slots
@@ -3606,46 +3841,48 @@ relation fill_default_slots: (Slot list , SCode.Class, Env.Env, bool (*impl*))
 	
   rule	fill_default_slots(xs,class,env,impl) => res
 	----------------------------
-	fill_default_slots ( SLOT(fa,true,e)::xs,class,env,impl) 
-	  => SLOT(fa,true,e)::res
+	fill_default_slots ( SLOT(fa,true,e,ds)::xs,class,env,impl) 
+	  => SLOT(fa,true,e,ds)::res
 
   rule	fill_default_slots(xs,class,env,impl) => res &
 	SCode.get_element_named(id,class) => SCode.COMPONENT(_,_,_,_,_,_,SCode.MOD(_,_,SOME(dexp)),_,_) &
 	elab_exp (env,dexp,impl,NONE) => (exp,Types.PROP(t,c1),_) &
 	Types.match_type(exp,t,tp) => (exp',_) 
 	-----------------------------------------------------------------------
-	fill_default_slots (SLOT((id,tp),false,e)::xs,class,env,impl) 
-	  => SLOT((id,tp),true,SOME(exp'))::res
+	fill_default_slots (SLOT((id,tp),false,e,ds)::xs,class,env,impl) 
+	  => SLOT((id,tp),true,SOME(exp'),ds)::res
 
   rule	fill_default_slots(xs,class,env,impl) => res &
 	Print.print_error_buf "#Error filling slot, id = " &
 	Print.print_error_buf id &
 	Print.print_error_buf "\n"
 	----------
-	fill_default_slots (SLOT((id,tp),false,e)::xs,class,env,impl) 
-	  => SLOT((id,tp),true,e)::xs
+	fill_default_slots (SLOT((id,tp),false,e,ds)::xs,class,env,impl) 
+	  => SLOT((id,tp),true,e,ds)::xs
 
   axiom	fill_default_slots([],_,_,_) => []
 end
 
-(** relation print_slots
+(** relation print_slots_str
  **
- ** prints the slots on Print buffer
+ ** prints the slots to a string
  **)
 
-relation print_slots: Slot list => () =
-  rule	Print.print_buf "SLOT(" &
-	Types.print_farg farg &
-	Print.print_buf  ", " &
-	Dump.print_select(filled,"filled","not filled") &
-	Print.print_buf ", " &
+relation print_slots_str: Slot list => string =
+
+  rule	Types.print_farg_str farg => farg_str &
+	Util.if(filled,"filled","not filled") => filled &
 	Dump.get_option_str(exp,Exp.print_exp_str) => str &
-	Print.print_buf str &
-	Print.print_buf ")\n" &
-	print_slots(xs)
+	Util.list_map(ds,Types.get_arraydim_str) => str_lst &
+	Util.string_delimit_list(str_lst,", ") => s &
+	Util.string_append_list(["SLOT(",farg_str,", ",filled,", ",str,", [",
+				 s,"])\n"]) => s1 &
+	print_slots_str(xs) => s2 &
+	string_append(s1,s2) => res
 	---------------
-	print_slots (SLOT(farg,filled,exp)::xs) => ()
-  axiom	print_slots([] ) => ()
+	print_slots_str (SLOT(farg,filled,exp,ds)::xs) => res
+
+  axiom	print_slots_str([] ) => ""
 end 
 
 (** relation: elab_positional_input_args
@@ -3653,6 +3890,7 @@ end
  ** This relation elaborates the positional input arguments of a function.
  ** A list of slots is filled from the beginning with types of each 
  ** positional argument.
+ ** 
  **)
 
 relation elab_positional_input_args : (Env.Env, Absyn.Exp list, 
@@ -3662,10 +3900,20 @@ relation elab_positional_input_args : (Env.Env, Absyn.Exp list,
 	  
   axiom	elab_positional_input_args(_, [], _, slots, impl) => (slots, [])
 	
+	(* Exact match *)
   rule	elab_exp(env, e,impl,NONE) => (e',Types.PROP(t, c1),_) &
 	Types.match_type(e', t, vt) => (e'',_) &
 	elab_positional_input_args(env, es, vs,slots,impl) => (slots',clist) &
-	fill_slot(farg, e'',slots') => newslots
+	fill_slot(farg, e'',[](* no vectorized dim*),slots') => newslots
+	-------------------------------------
+	elab_positional_input_args(env, e::es, (farg as (_,vt))::vs, slots, impl) 
+	    => (newslots, c1::clist)
+
+	(* check if vectorized argument *)
+  rule	elab_exp(env, e,impl,NONE) => (e',Types.PROP(t, c1),_) &
+	Types.vectorizable_type(e', t, vt) => (e'',_,ds) &
+	elab_positional_input_args(env, es, vs,slots,impl) => (slots',clist) &
+	fill_slot(farg, e'',ds,slots') => newslots
 	-------------------------------------
 	elab_positional_input_args(env, e::es, (farg as (_,vt))::vs, slots, impl) 
 	    => (newslots, c1::clist)
@@ -3685,14 +3933,17 @@ relation elab_named_input_args : (Env.Env, Absyn.NamedArg list,
 				  Types.FuncArg list, Slot list, bool (*impl*) ) 
 	=> (Slot list, Types.Const list (*const*)) =
 
-(*  rule	check_slots_filled(env,slots) 
-	----------------------------
-	elab_named_input_args(env,[],farg,slots) => ([],slots,true) *)
+(**  TODO: implement check_slots_filled.
+ 
+ ** rule	check_slots_filled(env,slots) 
+ **	----------------------------
+ **	elab_named_input_args(env,[],farg,slots) => ([],slots) 
+ **)
 
   rule	elab_exp(env, e,impl,NONE) => (e',Types.PROP(t, c1),_) &
 	find_named_arg_type(id,farg) => vt &
 	Types.match_type(e', t, vt) => (e'',_) &
-	fill_slot((id,vt), e'', slots) => slots' &
+	fill_slot((id,vt), e'', [], slots) => slots' &
 	elab_named_input_args(env, nas, farg ,slots',impl) => (newslots, clist)
 	---------------------
 	elab_named_input_args (env, Absyn.NAMEDARG(id,e)::nas,farg,slots,impl) 
@@ -3730,25 +3981,27 @@ end
  ** and setting the expression. The relation fails if the slot is allready set.
  **)
 
-relation fill_slot:(Types.FuncArg, Exp.Exp, Slot list) => Slot list =
+relation fill_slot:(Types.FuncArg, Exp.Exp, Types.ArrayDim list,Slot list) 
+	  => Slot list =
 	
   rule	fa1 = fa2
 	---------
-	fill_slot((fa1,_), exp,SLOT((fa2,b),false,_)::xs) => SLOT((fa2,b),true,SOME(exp))::xs
+	fill_slot((fa1,_), exp,ds, SLOT((fa2,b),false,_,_)::xs) 
+	  => SLOT((fa2,b),true,SOME(exp),ds)::xs
 
   rule	fa1 = fa2 &
 	Print.print_error_buf "#Error, slot in functional argument allready filled.\b" 
 	--------------------------------------------------------------
-	fill_slot((fa1,_),exp, SLOT((fa2,b),true,_)::xs) => fail
+	fill_slot((fa1,_),exp, ds, SLOT((fa2,b),true,_,_)::xs) => fail
 
   rule	not fa1 = fa2 &
-	fill_slot(farg,exp,xs) => newslots
+	fill_slot(farg,exp,ds,xs) => newslots
 	------------------------------
-	fill_slot((farg as (fa1,_)), exp,(s1 as SLOT((fa2,_),_,_))::xs) => s1::newslots
+	fill_slot((farg as (fa1,_)), exp,ds, (s1 as SLOT((fa2,_),_,_,_))::xs) => s1::newslots
 
   rule  Print.print_error_buf "#Error, slot not found in function type.\n"
 	---------------------------------------------------
-	fill_slot(_,_,_) => fail
+	fill_slot(_,_,_,_) => fail
 end
 
 

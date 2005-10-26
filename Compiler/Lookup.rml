@@ -912,7 +912,7 @@ relation lookup_functions_in_env: (Env.Env,Absyn.Path) => (Types.Type list) =
 
   rule	lookup_functions_in_frame(ht,httypes,env,id) => c1 &
 	lookup_functions_in_env(fs,iid) => c2 &
-	list_append (c1,c2) => reslist
+	list_append(c1,c2) => reslist
 	---------------------
 	lookup_functions_in_env(env as (Env.FRAME(sid,ht,httypes,_,_,_,_)::fs), iid as Absyn.IDENT(id)) => reslist
 

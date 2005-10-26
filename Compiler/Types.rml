@@ -195,8 +195,10 @@ list * Mod
   relation print_var : Var => ()
   relation print_binding : Binding => ()
   relation print_binding_str : Binding => string
+  relation get_arraydim_str: ArrayDim => string
   relation print_params : FuncArg list => () 
   relation print_farg: FuncArg => () 
+  relation print_farg_str: FuncArg => string
   relation make_function_type : (Absyn.Path, Var list) => Type
   relation make_enumeration_type: (Absyn.Path, Var list) => Type 
   relation is_parameter: Var => ()
@@ -233,6 +235,7 @@ list * Mod
   relation match_prop : (Exp.Exp, Properties, Properties) => Exp.Exp
   relation match_type : (Exp.Exp, Type, Type) => (Exp.Exp, Type) 
   relation match_type_list : (Exp.Exp, Type list, Type list) => (Exp.Exp, Type list) 
+  relation vectorizable_type : (Exp.Exp, Type, Type) => (Exp.Exp, Type, ArrayDim list) 
   relation type_convert : (Exp.Exp, Type, Type) => (Exp.Exp, Type) 
   relation type_convert_array : (Exp.Exp list, Type, Type) => Exp.Exp list 
   relation match_with_promote : (Properties, Properties, bool (* Allow Integer => Real *)) => Properties 
@@ -956,6 +959,15 @@ relation unlift_array : Type => Type =
 
 end
 
+(** relation: type_arraydim
+ **
+ ** If type is an array, return it array dimension
+ **)
+relation type_arraydim : Type => ArrayDim =
+
+  axiom	type_arraydim((T_ARRAY(dim,_),_)) => dim
+end
+
 (** relation: array_element_type
  **
  ** This relation turns an array into the element type
@@ -1354,6 +1366,20 @@ relation print_farg: FuncArg => () =
   rule	print_type ty & Print.print_error_buf " " & Print.print_error_buf n
 	-----------------------------------
 	print_farg ((n,ty))
+
+end
+
+(** relation: print_farg_str
+ **
+ ** Prints a function argument to a string
+ **)
+
+relation print_farg_str: FuncArg => string =
+
+  rule	unparse_type ty => s  &
+	Util.string_append_list([s," ",n]) => res
+	-----------------------------------
+	print_farg_str ((n,ty)) => res
 
 end
 
@@ -1829,7 +1855,8 @@ end
  ** converts the expression to the expected type if necessary.
  **)
 
-relation match_type : (Exp.Exp, Type, Type) => (Exp.Exp, Type) =
+relation match_type : (Exp.Exp(*exp*), Type (* exp_type *), Type (*expected*)) 
+	  => (Exp.Exp, Type) =
 
   rule	subtype(e_type, expected_type) => true 
 	--------------------------------------------
@@ -1863,6 +1890,33 @@ relation match_type_list : (Exp.Exp, Type list, Type list )
   rule	Debug.fprint("failtrace","- match_type_list failed\n") 
 	-----------------------------------------------------
 	match_type_list(e, t1::ts1, t2::ts2) => fail
+end
+
+(** relation: vectorizable_type
+ ** author: PA
+ **
+ ** This relation checks if a given type can be (converted and) vectorized to 
+ ** a expected type.
+ ** For instance and argument of type Integer[:] can be vectorized to an
+ ** argument type Real, using type coersion and vectorization of one dimension.
+ **)
+relation vectorizable_type : (Exp.Exp, (* exp *)
+			      Type, (* exp_type*)
+			      Type (* expected *)) 
+	  => (Exp.Exp, Type, ArrayDim list) =
+
+  rule	match_type(e,e_type,expected_type)
+	  =>(e',e_type')
+	--------------------------------
+	vectorizable_type(e,e_type,expected_type) 
+	  => (e',e_type',[])
+
+  rule	unlift_array(e_type) => e_type_elt &
+	vectorizable_type(e,e_type_elt,expected_type) 
+	  => (e',e_type',ds) &
+	type_arraydim(e_type) => ad
+	-------------------------------------
+	vectorizable_type(e,e_type,expected_type) => (e',e_type',ad::ds)
 end
 
 (** relation: type_convert

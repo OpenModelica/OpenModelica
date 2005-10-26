@@ -714,6 +714,18 @@ relation simplify : Exp => Exp =
 	-----------------
 	simplify (CAST(REAL,e)) => RCONST(rv)
 
+	(* cast of array *)
+  rule	simplify(e) => ARRAY(t,b,exps) &
+ 	Util.list_map_1(exps,add_cast,tp) => exps' &
+ 	simplify(ARRAY(t,b,exps')) => res
+	-----------------
+	simplify (CAST(tp,e)) => res
+	
+  rule	simplify(e) => MATRIX(t,n,exps) &
+	matrix_exp_map_1(exps,add_cast,tp) => exps' &
+	simplify(MATRIX(tp,n,exps')) => res
+	----------------------------------
+	simplify(CAST(tp,e)) => res
 
 	(* Array and Matrix stuff *)
 
@@ -804,6 +816,16 @@ relation simplify : Exp => Exp =
 
   axiom	simplify e => e
 
+end
+
+(** relation: add_cast
+ **
+ ** Adds a cast of a Type to an expression.
+ **)
+
+relation add_cast:(Exp, Type) => Exp =
+
+  axiom	add_cast(e,tp) => CAST(tp,e)
 end
 
 (** relation: simplify_binary_sort_constants
@@ -3389,6 +3411,12 @@ relation print_exp2_str : (Exp,int) => string =
 	---------------------------------------
 	print_exp2_str (CAST(REAL,e),_) => s
 
+  rule  type_string tp => str  &
+	print_exp_str e => s &
+	Util.string_append_list(["CAST(",str,", ",s,")"]) => res
+	---------------------------------------
+	print_exp2_str (CAST(tp,e),_) => res
+
   rule	let pri2 = 51 &
 	print_leftpar_str (pri1,pri2) => (s1, pri3) &
 	print_exp2_str (e,pri3) => s2 &
@@ -4882,4 +4910,39 @@ relation traverse_exp_matrix_2: ((Exp*bool) list,
 	------------------------------
 	traverse_exp_matrix_2((e,b)::rest,rel,e_arg) 
 	  => ( (e',b)::rest',e_arg'')
+end
+
+
+(** relation: matrix_exp_map_1
+ ** author: PA
+ ** 
+ ** Maps a relation, taking one extra argument over a MATRIX expression
+ ** list.
+**)
+
+relation matrix_exp_map_1:((Exp*bool) list list, (Exp, 'b) => Exp, 'b) 
+	  => (Exp*bool) list list =
+
+  axiom	matrix_exp_map_1([],_,_) => []
+
+  rule	matrix_exp_map_1_help(e,rel,arg) => e' &
+	matrix_exp_map_1(es,rel,arg) => es'
+	-----------------------------
+	matrix_exp_map_1(e::es,rel,arg) => e'::es'
+end
+
+(** relation: matrix_exp_map_1_help
+ **
+ ** Helper relation to matrix_exp_map_1.
+ **)
+
+relation matrix_exp_map_1_help:((Exp*bool) list, (Exp, 'b) => Exp, 'b) 
+	  => (Exp*bool) list =
+
+  axiom	matrix_exp_map_1_help([],_,_) => []
+
+  rule	rel(e,arg) => e' &
+	matrix_exp_map_1_help(es,rel,arg) => es' 
+	----------------------
+	matrix_exp_map_1_help((e,b)::es,rel,arg) => ((e',b)::es')
 end

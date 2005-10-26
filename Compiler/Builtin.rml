@@ -736,13 +736,6 @@ relation initial_env =
         Env.extend_frame_t(env, "change", real2bool)		   => env &
 	Env.extend_frame_t(env, "der", real2real)                  => env &
 	Env.extend_frame_t(env, "cardinality",anyconnector2int)    => env &
-        (* PA NOTE: Temporary hack to make der(vector) and der(matrix) work.
-	 * Once automatic vectorization of calls have been implemented
-	 * these should be removed *)
-				    
-	Env.extend_frame_t(env, "der", array1dimreal2array1dimreal)=> env &
-	Env.extend_frame_t(env, "der", array2dimreal2array2dimreal)=> env &
-	(* PA, end Temporary hack *)
 
 	(* non-differentiable functions *)
 	Env.extend_frame_t(env, "div", real_real2real)             => env &
