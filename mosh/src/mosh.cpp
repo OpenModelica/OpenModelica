@@ -152,11 +152,13 @@ void doCorbaCommunication(int argc, char **argv, const string *scriptname)
   char cd_cmd[MAXPATHLEN+6];
   getcwd(cd_buf,MAXPATHLEN);
   sprintf(cd_cmd,"cd(\"%s\")",cd_buf);
-  client ->sendExpression(cd_cmd);
+  char* res = client->sendExpression(cd_cmd);
+  CORBA::string_free(res);
 
   if (scriptname) { // Execute script and output return value 
     const char * str=("runScript(\""+*scriptname+"\")").c_str();
     char *res=client->sendExpression(str);
+    CORBA::string_free(res);
     cout << res << endl;
     return;
   }
@@ -176,14 +178,13 @@ void doCorbaCommunication(int argc, char **argv, const string *scriptname)
     char* line = readline(">>> ");
     if ( line == 0 || strcmp(line,"quit()") == 0 ) {
       done =true;
-      if (line == 0)  { line = "quit()"; }
+      if (line == 0)  { line = strdup("quit()"); }
     }
     if (strcmp(line,"\n")!=0 && strcmp(line,"") != 0) { 
       add_history(line);
       char *res =client->sendExpression(line);
       cout << res;
-      free(res);
-      // Should res be freed?
+      CORBA::string_free(res);
     }
     free(line);
   }
