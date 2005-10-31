@@ -92,6 +92,12 @@ module Absyn:
   (** Within statements *)
   datatype Within = WITHIN of Path | TOP
 
+
+  (** adrpo added 2005-10-29 **)
+  datatype Info = INFO of string * (* filename where the class is defined in *)
+                          int    * (* line number   *)
+                          int      (* column number *)
+
   (** - Classes *)
   (** A class definition consists of a name, a flag to indicate if this *)
   (** class is declared as `partial', the declared class restriction, *)
@@ -100,9 +106,9 @@ module Absyn:
 			  * bool		     (* Partial *)
 			  * bool		     (* Final *)
 			  * bool		     (* Encapsulated *)
-			  * Restriction	             (* Restricion *)
-			  * ClassDef		     (* Body *)
-			  * string		     (* File name class is defined in*)
+			  * Restriction           (* Restricion *)
+			  * ClassDef	     (* Body *)
+			  * Info		     (* File name the class is defined in + line no + column no *)
 
  
   (** The `ClassDef' type contains the definition part of a class *)
@@ -167,8 +173,7 @@ module Absyn:
 			      * InnerOuter	      (* inner/outer *)	     
 			      * Ident                 (* Element name *)
 			      * ElementSpec           (* Actual element specification*)
-			      * string                (* Source code file *)
-			      * int                   (* Line number *)
+			      * Info	         (* File name the class is defined in + line no + column no *)
 			      * ConstrainClass option (* only valid for classdef and component*)
 
   
@@ -800,7 +805,7 @@ end
 
 relation class_filename: Class => string =
 
-  axiom	class_filename (CLASS(_,_,_,_,_,_,filename)) => filename
+  axiom	class_filename (CLASS(_,_,_,_,_,_,INFO(filename,_,_))) => filename
 end
 
 (** relation class_filename
@@ -813,7 +818,7 @@ relation set_class_filename: (Class,string) => Class =
 
 
   axiom	set_class_filename(CLASS(n,p,f,e,r,body,_),filename)
-	=> CLASS(n,p,f,e,r,body,filename)
+	=> CLASS(n,p,f,e,r,body,INFO(filename,0,0))
 end
 
 

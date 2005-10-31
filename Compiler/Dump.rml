@@ -501,11 +501,17 @@ relation print_class: Absyn.Class => () =
 	print_class_restriction(r) &
 	Print.print_buf(", ") &
 	print_classdef(cdef) &
-	Print.print_buf(",\"") &
+	Print.print_buf(",Absyn.INFO(\"") &
 	Print.print_buf filename &
-	Print.print_buf("\")\n")
+	Print.print_buf("\", ") &
+	int_string line => s1 &
+    	Print.print_buf s1 &
+	Print.print_buf(", ") &
+	int_string col => s2 &
+    	Print.print_buf s2 &
+	Print.print_buf("))\n")
 	----------------------------------------
-	print_class(Absyn.CLASS(n,p,f,e,r,cdef,filename)) => ()
+	print_class(Absyn.CLASS(n,p,f,e,r,cdef,Absyn.INFO(filename,line,col))) => ()
 end
 
 (** relation: print_classdef
@@ -1114,14 +1120,17 @@ relation print_element: Absyn.Element => () =
 	Print.print_buf name &
 	Print.print_buf "\", " &
 	print_elementspec spec & 
-	Print.print_buf ", \"" &
+	Print.print_buf ", Absyn.INFO(\"" &
 	Print.print_buf filename &
 	Print.print_buf "\", " & 
 	int_string lineno => s1 &
     	Print.print_buf s1 &
-	Print.print_buf ",NONE)"
+	Print.print_buf ", " & 
+	int_string colno => s2 &
+    	Print.print_buf s2 &
+	Print.print_buf "), NONE)"
 	---------------------------
-	print_element (Absyn.ELEMENT(final,repl,inout,name,spec,filename,lineno,NONE))
+	print_element (Absyn.ELEMENT(final,repl,inout,name,spec,Absyn.INFO(filename,lineno,colno),NONE))
 
   rule	Print.print_buf "Absyn.ELEMENT(" & 
 	print_bool(final) &
@@ -1132,14 +1141,17 @@ relation print_element: Absyn.Element => () =
 	Print.print_buf name &
 	Print.print_buf "\", " &
 	print_elementspec spec & 
-	Print.print_buf ", \"" &
+	Print.print_buf ", Absyn.INFO(\"" &
 	Print.print_buf filename &
 	Print.print_buf "\", " & 
 	int_string lineno => s1 &
     	Print.print_buf s1 &
-	Print.print_buf "SOME(...))"
+	Print.print_buf ", " & 
+	int_string colno => s2 &
+    	Print.print_buf s2 &
+	Print.print_buf "), SOME(...))"
 	---------------------------
-	print_element (Absyn.ELEMENT(final,repl,inout,name,spec,filename,lineno,SOME(_)))
+	print_element (Absyn.ELEMENT(final,repl,inout,name,spec,Absyn.INFO(filename,lineno,colno),SOME(_)))
 
 end
 
@@ -1157,7 +1169,7 @@ relation unparse_element_str: (int, Absyn.Element) => string =
 	unparse_constrainclass_opt_str(constr) => s5 &
         Util.string_append_list([s4, s5, ";"]) => str
 	----------------------------
-	unparse_element_str(i, Absyn.ELEMENT(final,SOME(repl),inout,_,spec,filename,lineno,constr)) => str
+	unparse_element_str(i, Absyn.ELEMENT(final,SOME(repl),inout,_,spec,Absyn.INFO(filename,lineno,colno),constr)) => str
 
   rule	select_string(final, "final ", "") => s1 &
 	unparse_innerouter_str inout => s3 &
@@ -1165,7 +1177,7 @@ relation unparse_element_str: (int, Absyn.Element) => string =
 	unparse_constrainclass_opt_str(constr) => s5 &
         Util.string_append_list([s4,s5, ";"]) => str
 	----------------------------
-	unparse_element_str(i, Absyn.ELEMENT(final,NONE,inout,_,spec,filename,lineno,constr)) => str
+	unparse_element_str(i, Absyn.ELEMENT(final,NONE,inout,_,spec,Absyn.INFO(filename,lineno,colno),constr)) => str
 end
 
 (** relation: unparse_constrainclass_opt_str
