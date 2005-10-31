@@ -268,7 +268,10 @@ class_definition [bool final] returns [ void* ast ]
                 RML_PRIM_MKBOOL(e != 0), 
                 restr,
                 class_spec,
-                mk_scon((char*)(modelicafilename.c_str()))
+                Absyn__INFO(
+                  mk_scon((char*)(modelicafilename.c_str())), 
+                  mk_icon(i->getLine()),
+                  mk_icon(i->getColumn()))
             );                
         }
     ;
@@ -587,12 +590,18 @@ element returns [void* ast]
 		( e_spec = i_clause:import_clause
 			{                
 				ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__UNSPECIFIED,mk_scon("import"),
-                    e_spec,mk_scon((char*)(modelicafilename.c_str())),mk_icon(i_clause->getLine()),mk_none());
+                    e_spec, Absyn__INFO(
+                              mk_scon((char*)(modelicafilename.c_str())),
+                              mk_icon(i_clause->getLine()),
+                              mk_icon(i_clause->getColumn())),mk_none());
 			}
 		| e_spec = e_clause:extends_clause
 			{
 				ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__UNSPECIFIED,mk_scon("extends"),
-                    e_spec,mk_scon((char*)(modelicafilename.c_str())),mk_icon(e_clause->getLine()),mk_none());
+                    e_spec, Absyn__INFO(
+                              mk_scon((char*)(modelicafilename.c_str())),
+                              mk_icon(e_clause->getLine()),
+                              mk_icon(e_clause->getColumn())),mk_none());
 			}
 		| #(decl:DECLARATION 
                 (re:REDECLARE)? 
@@ -606,7 +615,10 @@ element returns [void* ast]
                                 keywords ? mk_some(keywords) : mk_none(),
                                 innerouter,
 								mk_scon("component"),e_spec,
-                                mk_scon((char*)(modelicafilename.c_str())),mk_icon(decl->getLine()),mk_none());
+                                Absyn__INFO(
+                                     mk_scon((char*)(modelicafilename.c_str())),
+                                     mk_icon(decl->getLine()),
+                                     mk_icon(decl->getColumn())),mk_none());
             
 						}
 					| r:REPLACEABLE 
@@ -618,7 +630,10 @@ element returns [void* ast]
 								keywords ? mk_some(keywords) : mk_none(),
 								innerouter,
 								mk_scon("replaceable_component"),e_spec,
-                                mk_scon((char*)(modelicafilename.c_str())),mk_icon(decl->getLine()),
+                                Absyn__INFO(
+                                    mk_scon((char*)(modelicafilename.c_str())),
+                                    mk_icon(decl->getLine()),
+                                    mk_icon(decl->getColumn())),
 								constr? mk_some(Absyn__CONSTRAINCLASS(constr, cmt? mk_some(cmt):mk_none())) : mk_none());
 						}
 					)
@@ -640,7 +655,11 @@ element returns [void* ast]
 								keywords ? mk_some(keywords) : mk_none(),
                                 innerouter,
                                 mk_scon("??"),
-                                ast,mk_scon((char*)(modelicafilename.c_str())),mk_icon(def->getLine()),mk_none());
+                                ast,
+                                Absyn__INFO(
+                                   mk_scon((char*)(modelicafilename.c_str())),
+                                   mk_icon(def->getLine()),
+                                   mk_icon(def->getColumn())),mk_none());
 
 						}
 					| 
@@ -657,7 +676,11 @@ element returns [void* ast]
 								keywords ? mk_some(keywords) : mk_none(),
                                 innerouter,
 								mk_scon("??"),
-								ast,mk_scon((char*)(modelicafilename.c_str())),mk_icon(def->getLine()),
+								ast,
+                                                                                      Absyn__INFO(
+                              mk_scon((char*)(modelicafilename.c_str())),
+                              mk_icon(def->getLine()),
+                              mk_icon(def->getColumn())),
                                 constr ? mk_some(Absyn__CONSTRAINCLASS(constr,cmt ? mk_some(cmt):mk_none())) : mk_none());
 						}
 					)
