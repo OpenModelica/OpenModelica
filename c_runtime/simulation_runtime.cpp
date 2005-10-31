@@ -446,7 +446,8 @@ bool edge(double& var)
 * suitable for plotting, etc.
 */
 
-void store_result(const char * filename, double*data,long numpoints, long nx, long ny)
+void store_result(const char * filename, double*data,long numpoints, 
+                  long nx, long ny)
 {
   ofstream f(filename);
   if (!f)

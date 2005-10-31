@@ -2454,6 +2454,12 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	      SOME(st))
 
   rule	elab_untyped_cref(env,cr,impl) => cr' &
+        (* this extracts the fileNamePrefix which is used when generating code and init-file*)
+        component_ref_to_path(cr') => classname &
+	Absyn.path_string(classname) => cname_str &
+    	get_optional_named_arg(env,SOME(st),impl,"fileNamePrefix",
+			       (Types.T_STRING([]),NONE),args,Exp.SCONST(cname_str))
+	  => filenameprefix &
 	let recordtype = 
 	((Types.T_COMPLEX(ClassInf.RECORD("SimulationObject")
 			,[Types.VAR("flatClass",
@@ -2472,10 +2478,10 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 			),NONE))
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("translateModel",_),
-			      [ Absyn.CREF(cr)],[],impl,
+			      [ Absyn.CREF(cr)],args,impl,
 			      SOME(st)) 
 	  => (Exp.CALL(Absyn.IDENT("translateModel"),
-		       [Exp.CREF(cr',Exp.OTHER)],
+		       [Exp.CREF(cr',Exp.OTHER),filenameprefix],
 		       false,
 		       true),
 	      Types.PROP(recordtype,Types.C_VAR),
@@ -2507,6 +2513,44 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	get_optional_named_arg(env,SOME(st),impl,"method",
 			       (Types.T_STRING([]),NONE),args,Exp.SCONST("dassl"))
 	  => method &
+          (* this extracts the fileNamePrefix which is used when generating code and init-file*)
+        component_ref_to_path(cr') => classname &
+	Absyn.path_string(classname) => cname_str &
+    	get_optional_named_arg(env,SOME(st),impl,"fileNamePrefix",
+			       (Types.T_STRING([]),NONE),args,Exp.SCONST(cname_str))
+	  => filenameprefix
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("buildModel",_),
+			      [ Absyn.CREF(cr)],args,impl,
+			      SOME(st))  
+	  => (Exp.CALL(Absyn.IDENT("buildModel"),
+		       [Exp.CREF(cr',Exp.OTHER),startTime,
+			stopTime,numberOfIntervals,method,filenameprefix], (* Fill in rest of defaults here*)
+		       false,
+		       true),
+              Types.PROP((Types.T_ARRAY(Types.DIM(SOME(2)), (Types.T_STRING([]),NONE)),NONE),
+		         Types.C_VAR),
+	      SOME(st))
+
+  rule	elab_untyped_cref(env,cr,impl) => cr' &
+	get_optional_named_arg(env,SOME(st),impl,"startTime",
+			       (Types.T_REAL([]),NONE),args,Exp.RCONST(0.0)) 
+	  => startTime &
+	get_optional_named_arg(env,SOME(st),impl,"stopTime",
+			       (Types.T_REAL([]),NONE),args,Exp.RCONST(1.0))
+	  => stopTime &
+	get_optional_named_arg(env,SOME(st),impl,"numberOfIntervals",
+			       (Types.T_INTEGER([]),NONE),args,Exp.ICONST(500))
+	  => numberOfIntervals &
+	get_optional_named_arg(env,SOME(st),impl,"method",
+			       (Types.T_STRING([]),NONE),args,Exp.SCONST("dassl"))
+	  => method &
+          (* this extracts the fileNamePrefix which is used when generating code and init-file*)
+        component_ref_to_path(cr') => classname &
+	Absyn.path_string(classname) => cname_str &
+	get_optional_named_arg(env,SOME(st),impl,"fileNamePrefix",
+			       (Types.T_STRING([]),NONE),args,Exp.SCONST(cname_str))
+	  => filenameprefix &
 	let recordtype = 
 	((Types.T_COMPLEX(ClassInf.RECORD("SimulationResult")
 			,[Types.VAR("resultFile",
@@ -2523,7 +2567,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 			      SOME(st)) 
 	  => (Exp.CALL(Absyn.IDENT("simulate"),
 		       [Exp.CREF(cr',Exp.OTHER),startTime,
-			stopTime,numberOfIntervals,method], (* Fill in rest of defaults here*)
+			stopTime,numberOfIntervals,method, filenameprefix],(* Fill in rest of defaults here*)
 		       false,
 		       true),
 	      Types.PROP(recordtype,Types.C_VAR),
