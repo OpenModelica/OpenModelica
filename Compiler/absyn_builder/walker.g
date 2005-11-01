@@ -253,7 +253,7 @@ class_definition [bool final] returns [ void* ast ]
             (e:ENCAPSULATED )? 
             (p:PARTIAL )?
             (ex:EXPANDABLE)?
-            restr = class_restriction
+            restr = info_position:class_restriction
             (i:IDENT)?
             class_spec = class_specifier
         )
@@ -270,8 +270,8 @@ class_definition [bool final] returns [ void* ast ]
                 class_spec,
                 Absyn__INFO(
                   mk_scon((char*)(modelicafilename.c_str())), 
-                  mk_icon(i->getLine()),
-                  mk_icon(i->getColumn()))
+                  mk_icon(info_position?info_position->getLine():0),
+                  mk_icon(info_position?info_position->getColumn():0))
             );                
         }
     ;
