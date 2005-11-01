@@ -35,6 +35,7 @@ int print_error_buf_impl(char *str)
 
   sprintf((char*)(errorBuf+strlen(errorBuf)),"%s",str);
   errorNfilled=strlen(errorBuf);
+  return 0;
 }
 
 RML_BEGIN_LABEL(Print__print_5ferror_5fbuf)

@@ -283,9 +283,8 @@ RML_BEGIN_LABEL(System__compile_5fc_5ffile)
   exename[strlen(str)-2]='\0';
 
   sprintf(command,"%s %s -o %s %s",cc,str,exename,cflags);
-  printf("compile using: %s\n",command);
+  //printf("compile using: %s\n",command);
   _putenv("GCC_EXEC_PREFIX="); 
-//  _putenv("MODELICAUSERCFLAGS=-Dfoo"); 
   tmp = getenv("MODELICAUSERCFLAGS");
   if (tmp == NULL || tmp[0] == '\0'  ) {
 	  _putenv("MODELICAUSERCFLAGS=  ");
@@ -554,50 +553,66 @@ void* read_one_value_from_file(FILE* file, type_description* desc)
     } else if (desc->type == 'r') {
       fscanf(file,"%e",&rval);
       res = (void*) Values__REAL(mk_rcon(rval));
-    } 
-  } 
-  else  /* Array value */
-  {
-    int currdim,el,i;
-    if (desc->type == 'r') {
-      /* Create array to hold inserted values, max dimension as size */
-      size = 1;
-      for (currdim=0;currdim < desc->ndims; currdim++) {
-	size *= desc->dim_size[currdim];
-      }
-      rval_arr = (float*)malloc(sizeof(float)*size);
-      if(rval_arr == NULL) {
-	return NULL;
-      }
-      /* Fill the array in reversed order */
-      for(i=size-1;i>=0;i--) {
-	fscanf(file,"%e",&rval_arr[i]);
-      }
-
-      next_realelt(NULL);
-      /* 1 is current dimension (start value) */
-      res =(void*) Values__ARRAY(generate_array('r',1,desc,(void*)rval_arr)); 
     }
-	
-    if (desc->type == 'i') {
-      int currdim,el,i;
-      /* Create array to hold inserted values, mult of dimensions as size */
-      size = 1;
-      for (currdim=0;currdim < desc->ndims; currdim++) {
-	size *= desc->dim_size[currdim];
-      }
-      ival_arr = (int*)malloc(sizeof(int)*size);
-      if(rval_arr==NULL) {
+  } else if (desc->ndims == 1 && desc->type == 's') { /* Scalar String */   
+    int i;
+    char* tmp;
+    tmp = malloc(sizeof(char)*(desc->dim_size[0]+1));
+    if (!tmp) return NULL;
+    for(i=0;i<desc->dim_size[0];i++) {
+      tmp[i] = fgetc(file);
+      if (tmp[i] == EOF) {
 	return NULL;
       }
-      /* Fill the array in reversed order */
-      for(i=size-1;i>=0;i--) {
-	fscanf(file,"%f",&ival_arr[i]);
-      }
-      next_intelt(NULL);
-      res = (void*) Values__ARRAY(generate_array('i',1,desc,(void*)ival_arr));	
-    }      
+    }
+    tmp[i]='\0';
+    res = (void*) Values__STRING(mk_scon(tmp));
   }
+  else  /* Array value */
+    {
+      int currdim,el,i;
+      if (desc->type == 'r') {
+	/* Create array to hold inserted values, max dimension as size */
+	size = 1;
+	for (currdim=0;currdim < desc->ndims; currdim++) {
+	  size *= desc->dim_size[currdim];
+	}
+	rval_arr = (float*)malloc(sizeof(float)*size);
+	if(rval_arr == NULL) {
+	  return NULL;
+	}
+	/* Fill the array in reversed order */
+	for(i=size-1;i>=0;i--) {
+	  fscanf(file,"%e",&rval_arr[i]);
+	}
+	
+	next_realelt(NULL);
+	/* 1 is current dimension (start value) */
+	res =(void*) Values__ARRAY(generate_array('r',1,desc,(void*)rval_arr)); 
+      }
+      
+      if (desc->type == 'i') {
+	int currdim,el,i;
+	/* Create array to hold inserted values, mult of dimensions as size */
+	size = 1;
+	for (currdim=0;currdim < desc->ndims; currdim++) {
+	  size *= desc->dim_size[currdim];
+	}
+	ival_arr = (int*)malloc(sizeof(int)*size);
+	if(rval_arr==NULL) {
+	  return NULL;
+	}
+	/* Fill the array in reversed order */
+	for(i=size-1;i>=0;i--) {
+	  fscanf(file,"%f",&ival_arr[i]);
+	}
+	next_intelt(NULL);
+	res = (void*) Values__ARRAY(generate_array('i',1,desc,(void*)ival_arr));	
+      }  
+      if (desc->type == 's') {
+	printf("Error, array of strings not impl. yet.\n");
+      }
+    }
   return res;
 }
 
@@ -618,12 +633,14 @@ RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
   /* Read the first value */
   stat = read_type_description(file,&desc);
   if (stat != 0) {
+    printf("Error reading values from file\n");
     RML_TAILCALLK(rmlFC);
   }
 
   while (stat == 0) { /* Loop for tuples. At the end of while, we try to read another description */
     res = read_one_value_from_file(file, &desc);
     if (res == NULL) {
+      printf("Error reading values from file2\n");
       RML_TAILCALLK(rmlFC);
     }
     lst = (void*)mk_cons(res, lst);

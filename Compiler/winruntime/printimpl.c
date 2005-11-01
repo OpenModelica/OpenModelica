@@ -1,53 +1,8 @@
-/*
-This file is part of OpenModelica.
-
-Copyright (c) 1998-2005, Linköpings universitet, Department of
-Computer and Information Science, PELAB
-
-All rights reserved.
-
-(The new BSD license, see also
-http://www.opensource.org/licenses/bsd-license.php)
-
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-* Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright
-  notice, this list of conditions and the following disclaimer in
-  the documentation and/or other materials provided with the
-  distribution.
-
-* Neither the name of Linköpings universitet nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-*/
 #include "rml.h"
 #include <stdio.h>
-#include <assert.h>
-#include <string.h>
-#include <stdlib.h>
-#include "../absyn_builder/yacclib.h"
 
 #define GROWTH_FACTOR 1.4  /* According to some roumours of buffer growth */
-#define INITIAL_BUFSIZE 4000000 /* Seems reasonable */
+#define INITIAL_BUFSIZE 4000 /* Seems reasonable */
 char *buf = NULL;
 char *errorBuf = NULL;
 
@@ -58,34 +13,40 @@ int errorNfilled=0;
 int errorCursize=0;
 
 int increase_buffer(void);
-void error_increase_buffer(void);
+int error_increase_buffer(void);
 void Print_5finit(void)
 {
 
 }
 
-
-void print_error_buf_impl(char *str)
+int print_error_buf_impl(char *str)
 {
   /*  printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str));*/
   
-  assert(str != NULL);
+  if (str == NULL) {
+    return -1;
+  }
   while (errorNfilled + strlen(str)+1 > errorCursize) {
-    error_increase_buffer();
+    if (error_increase_buffer() != 0) {
+      return -1;
+    }
     /* printf("increased -- cursize: %d, nfilled %d\n",cursize,nfilled);*/
   }
 
   sprintf((char*)(errorBuf+strlen(errorBuf)),"%s",str);
   errorNfilled=strlen(errorBuf);
+  return 0;
 }
 
 RML_BEGIN_LABEL(Print__print_5ferror_5fbuf)
 {
- char* str = RML_STRINGDATA(rmlA0);
- print_error_buf_impl(str);
-
+  char* str = RML_STRINGDATA(rmlA0);
+  if (print_error_buf_impl(str) != 0) {
+    RML_TAILCALLK(rmlFC);
+  }
+  
   /*  printf("%s",str);*/
-
+  
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -104,7 +65,9 @@ RML_END_LABEL
 RML_BEGIN_LABEL(Print__get_5ferror_5fstring)
 {
   if (errorBuf == 0) {
-    error_increase_buffer();
+    if(error_increase_buffer() != 0) {
+      RML_TAILCALLK(rmlFC);
+    }
   }
 
   rmlA0=(void*)mk_scon(errorBuf);
@@ -115,21 +78,20 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__print_5fbuf)
 {
-  long strl;	
   char* str = RML_STRINGDATA(rmlA0);
-
-  if (str == NULL) {
-	  	RML_TAILCALLK(rmlFC); 
-  }
-  strl = strlen(str);
-  while (nfilled + strl+1 > cursize) {
-	  if (!increase_buffer()) {
-		  RML_TAILCALLK(rmlFC);
-	  }
+  /*  printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str));*/
+    
+  while (nfilled + strlen(str)+1 > cursize) {
+    if(increase_buffer()!= 0) {
+        RML_TAILCALLK(rmlFC);
+    }
+    /* printf("increased -- cursize: %d, nfilled %d\n",cursize,nfilled);*/
   }
 
-  sprintf((char*)(buf+nfilled),"%s",str);
+  sprintf((char*)(buf+strlen(buf)),"%s",str);
   nfilled=strlen(buf);
+
+  /*  printf("%s",str);*/
 
   RML_TAILCALLK(rmlSC);
 }
@@ -149,7 +111,9 @@ RML_END_LABEL
 RML_BEGIN_LABEL(Print__get_5fstring)
 {
   if (buf == 0) {
-    increase_buffer();
+    if (increase_buffer() != 0) {
+      RML_TAILCALLK(rmlFC);
+    }
   }
 
   rmlA0=(void*)mk_scon(buf);
@@ -188,16 +152,12 @@ int increase_buffer(void)
 
   if (cursize == 0) {
     new_buf = (char*)malloc(INITIAL_BUFSIZE);
-	if (new_buf == NULL) {
-		return 0;
-	}
-	new_buf[0]='\0';
+    if (new_buf == NULL) { return -1; }
+    new_buf[0]='\0';
     cursize = INITIAL_BUFSIZE;
   } else {
     new_buf = (char*)malloc(new_size =(int) (cursize * GROWTH_FACTOR));
-	if (new_buf == NULL) {
-		return 0;
-	}
+    if (new_buf == NULL) { return -1; }
     memcpy(new_buf,buf,cursize);
     cursize = new_size;
   }
@@ -205,22 +165,22 @@ int increase_buffer(void)
     free(buf);
   }
   buf = new_buf;
-  return 1;
+  return 0;
 }
 
-void error_increase_buffer(void) 
+int error_increase_buffer(void) 
 {
   char * new_buf;
   int new_size;
 
   if (errorCursize == 0) {
     new_buf = (char*)malloc(INITIAL_BUFSIZE);
-    assert(new_buf != NULL);
+    if (new_buf == NULL) { return -1; }
     new_buf[0]='\0';
     errorCursize = INITIAL_BUFSIZE;
   } else {
     new_buf = (char*)malloc(new_size =(int) (errorCursize * GROWTH_FACTOR));
-    assert(new_buf != NULL);
+    if (new_buf == NULL) { return -1; }
     memcpy(new_buf,errorBuf,errorCursize);
     errorCursize = new_size;
   }
@@ -228,4 +188,5 @@ void error_increase_buffer(void)
     free(errorBuf);
   }
   errorBuf = new_buf;
+  return 0;
 }
