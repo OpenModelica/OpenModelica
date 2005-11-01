@@ -72,6 +72,8 @@ module Util :
   relation list_first: 'a list => 'a
   relation list_rest: 'a list => 'a list
   relation list_last: 'a list => 'a	  
+  relation list_cons: ('a list,'a) => 'a list
+  relation list_create: ('a) => 'a list
   relation list_strip_last: 'a list => 'a list	  
   relation list_flatten : 'a list list => 'a list
   relation list_append_elt : ('a,'a list) => 'a list
@@ -219,6 +221,28 @@ relation list_last: 'a list => 'a =
 	-----------------
 	list_last(_::rest) => a
 end
+
+(** relation: list_cons
+ **
+ ** Performs the cons operation, i.e. elt::list.
+ **)
+relation list_cons: ('a list,'a) => 'a list =
+
+  axiom	list_cons(lst,elt) => elt::lst
+
+end
+
+(** relation: list_create
+ **
+ ** Create a list from an element.
+ **)
+
+relation list_create: ('a) => 'a list =
+
+  axiom	list_create(a) => [a]
+
+end
+
 
 (** relation: list_strip_last
  ** Remove the last element of a list. If the list is the empty list, the relation 

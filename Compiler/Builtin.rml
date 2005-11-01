@@ -712,6 +712,17 @@ end
  **)
 relation initial_env =
 
+(* The following built in operators can not be described in
+  the type system, since they e.g. have arbitrary arguments, etc.
+
+ - fill
+ - cat
+
+ These operators are catched in the elab_builtin_handler, along with all 
+ others.
+*)
+
+
   rule	(*Debug.fprint ("insttr","Creating initial env.\n") &*)
 	Env.open_scope(Env.empty_env,false,NONE) => env &
 	Env.extend_frame_c(env, rl_type) => env &
@@ -1124,11 +1135,6 @@ relation initial_env =
 	Env.extend_frame_t(env, "array", n6real2arrayreal)           => env &
 	Env.extend_frame_t(env, "array", n7real2arrayreal)           => env &
 	Env.extend_frame_t(env, "array", n8real2arrayreal)           => env &
-
-(*	Fill is impossible to do with this scemen, because the type of the array is unkown during the compile time of omc.
-
-	Env.extend_frame_t(env, "fill", array2int) 		     => env &
-*)
 
 	Env.extend_frame_t(env, "linspace", int_int2vectorreal)	      => env &
 	Env.extend_frame_t(env, "min", int_int2int)			      => env &

@@ -193,12 +193,15 @@ end
   axiom ceval_builtin_handler "min" => ceval_builtin_min 
   axiom ceval_builtin_handler "rem" => ceval_builtin_rem
   axiom	ceval_builtin_handler "diagonal" => ceval_builtin_diagonal
+  axiom ceval_builtin_handler "transpose" => ceval_builtin_transpose	 
   axiom	ceval_builtin_handler "differentiate" => ceval_builtin_differentiate
   axiom	ceval_builtin_handler "simplify" => ceval_builtin_simplify
   axiom ceval_builtin_handler "sign" => ceval_builtin_sign
   axiom	ceval_builtin_handler "exp" => ceval_builtin_exp 
   axiom	ceval_builtin_handler "noEvent" => ceval_builtin_noevent
   axiom	ceval_builtin_handler "cardinality" => ceval_builtin_cardinality 
+  axiom	ceval_builtin_handler "cat" => ceval_builtin_cat
+  axiom ceval_builtin_handler "identity" => ceval_builtin_identity
 
   rule	Debug.fprint("ceval", "No ceval_builtin_handler found for: ") &
 	Debug.fprintln("ceval", id)
@@ -2105,7 +2108,112 @@ relation ceval_cardinality: (Env.Env, Exp.ComponentRef) => int =
 	ceval_cardinality(Env.FRAME(_,_,_,_,_,crs,_)::_,cr) => res
 end
 
+(** relation: ceval_builtin_cat
+ ** author: PA
+ ** 
+ ** Evaluates the cat operator, for matrix concatenation.
+ **)
 
+relation ceval_builtin_cat : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option, Msg) 
+	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
+          
+  rule	ceval (env,dim,impl,st,NONE,msg) => (Values.INTEGER(dim_int),_) &
+	ceval_list(env,matrices,impl,st,msg) => mat_lst &
+	ceval_cat(mat_lst,dim_int) => v
+	--------------------------------------
+	ceval_builtin_cat(env,dim::matrices,impl,st,msg) 
+	  => (v,st)
+end
+
+(** relation: ceval_builtin_identity
+ ** author: PA
+ ** 
+ ** Evaluates the cat operator, for matrix concatenation.
+ **)
+
+relation ceval_builtin_identity : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option, Msg) 
+	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
+          
+  rule	ceval (env,dim,impl,st,NONE,msg) => (Values.INTEGER(dim_int),_) &
+	int_add(dim_int,1) => dim_int' &
+	Util.list_fill(Exp.ICONST(1),dim_int) => expl &
+	
+	ceval_builtin_diagonal2(env,Exp.ARRAY(Exp.INT,true,expl),impl,st,dim_int',1, [],msg) 
+	  => retExp 
+	--------------------------------------
+	ceval_builtin_identity(env,[dim],impl,st,msg) 
+	  => (Values.ARRAY(retExp),st)
+end
+
+(** relation: ceval_cat
+ **
+ ** evaluates the cat operator given a list of array values and a 
+ ** concatenation dimension.
+ **)
+
+relation ceval_cat: (Values.Value list,
+		     int)
+		      => Values.Value =
+
+  rule	cat_dimension(v_lst,dim) => v_lst' 
+	---------------
+	ceval_cat(v_lst,dim) => Values.ARRAY(v_lst')
+
+end
+
+(** relation: cat_dimension
+ ** 
+ ** Helper relation to ceval_cat, concatenates a list arrays as
+ ** Values, given a dimension as integer.
+ **)
+
+relation cat_dimension: (Values.Value list, int) => Values.Value list =
+	
+	(* base case for first dimension *)
+  rule	Util.list_map(vlst,Values.array_values) => vlst_lst &
+	Util.list_flatten(vlst_lst) => v_lst'
+	-------------------------------------
+	cat_dimension(vlst,1) => v_lst'
+
+	(* higher dimensions *)
+  rule	Util.list_map(vlst,Values.array_values) => v_lst_lst &
+	int_sub(dim,1) => dim' &
+	cat_dimension_2(v_lst_lst,dim') => v_lst_lst' &
+	Util.list_map(v_lst_lst',Values.make_array) => v_lst' &
+	list_length(v_lst') => len &
+	ceval_builtin_transpose_2(v_lst',1,len) => v_lst'
+	----------------------
+	cat_dimension(vlst,dim)  => v_lst'
+end
+
+(** relation: cat_dimension_2
+ ** author: PA
+ **
+ ** Helper relation to cat_dimension.
+ **)
+
+relation cat_dimension_2: (Values.Value list list, int) 
+	  => Values.Value list list =
+
+  rule	Util.list_first(lst) => l_lst &
+	list_length(l_lst) => 1 &
+	Util.list_map(lst,Util.list_first) => first_lst &
+	cat_dimension(first_lst,dim) => first_lst' &
+	Util.list_map(first_lst',Util.list_create) => first_lst''
+	-----------------------------
+	cat_dimension_2(lst ,dim) => first_lst''
+
+  rule	Util.list_map(lst,Util.list_first) => first_lst &
+	Util.list_map(lst,Util.list_rest) => rest & 
+	cat_dimension(first_lst,dim) => first_lst' &
+	cat_dimension_2(rest,dim) => rest' &
+	Util.list_thread_map(rest',first_lst',Util.list_cons) => res
+	-----------------------------
+	cat_dimension_2(lst,dim) => res
+
+
+end
+	     
 (** relation: ceval_builtin_floor
  ** author: LP
  ** 
@@ -2984,6 +3092,53 @@ relation ceval_builtin_diagonal2 : (Env.Env,
 end
 
 
+(** relation ceval_builtin_transpose
+ **
+ ** This relation transposes the two first dimension of an array A.
+ *)
+
+relation ceval_builtin_transpose : (Env.Env, 
+				   Exp.Exp list, 
+				   bool, 
+				   Interactive.InteractiveSymbolTable option,
+				   Msg) 
+	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
+	   
+  rule  ceval (env,exp,impl,st,NONE,msg) => (Values.ARRAY(vlst),_) &
+	list_length(vlst) => dim1 &
+	ceval_builtin_transpose_2(vlst,1,dim1) => vlst' 
+	 --------------------------------------
+	 ceval_builtin_transpose(env,[exp],impl,st,msg) 
+	  => (Values.ARRAY(vlst'),st)
+	 
+	 
+  rule  Print.print_error_buf "#Error, could not evaulate transpose.\n"
+	 ---------------------------------------------------------
+	 ceval_builtin_transpose (_,_,_,_,MSG) => fail
+         
+ end
+
+(** relation: ceval_builtin_transpose_2
+ ** author: PA
+ **
+ ** Helper relation to ceval_builtin_transpose
+ **)
+
+relation ceval_builtin_transpose_2: (Values.Value list, 
+				    int (* index *),
+				    int) (* dim1 *)
+	  => Values.Value list =
+
+  rule	int_le(indx,dim1) => true &
+	Util.list_map_1(vlst,Values.nth_arrayelt,indx) => transposed_row &
+	int_add(indx,1) => indx' &
+	ceval_builtin_transpose_2(vlst,indx',dim1) => rest
+	---------------------------
+	ceval_builtin_transpose_2(vlst,indx,dim1) 
+	  => Values.ARRAY(transposed_row)::rest
+
+  axiom ceval_builtin_transpose_2(_,_,_) => []
+end
 
 (** relation: ceval_builtin_size_matrix
  **

@@ -406,16 +406,33 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	      Types.PROP((Types.T_ARRAY(Types.DIM(SOME(l)), t),NONE),
 		   const),st)
 	
-  rule	(* matrix expressions, e.g. [1,0;0,1] *)
+  rule	(* matrix expressions, e.g. [1,0;0,1] with elements of simple type.*)
 	elab_exp_list_list(env,es,impl,st) => (_, tps, _) &
 	Util.list_list_map(tps,Types.get_prop_type) => tps' &
 	Util.list_flatten(tps') => tps'' &
 	Types.contain_real(tps'') => havereal &
 	elab_matrix_semi (env,es,impl,st,havereal) => (es', Types.PROP(t,c), dim1,dim2,nmax) & 
+	Types.simple_type(t) &
 	Types.elab_type t => at
 	------------------------------------------------------------
 	elab_exp (env, Absyn.MATRIX(es),impl,st)
 	  => (Exp.MATRIX(at,nmax,es'),
+	      Types.PROP((Types.T_ARRAY(Types.DIM(SOME(dim1)),
+				 (Types.T_ARRAY(Types.DIM(SOME(dim2)), t),NONE)),NONE),
+		   c),st)
+
+  rule	(* matrix expressions, e.g. [1,0;0,1] with array elements. *)
+	elab_exp_list_list(env,es,impl,st) => (_, tps, _) &
+	Util.list_list_map(tps,Types.get_prop_type) => tps' &
+	Util.list_flatten(tps') => tps'' &
+	Types.contain_real(tps'') => havereal &
+	elab_matrix_semi (env,es,impl,st,havereal) => (es', Types.PROP(t,c), dim1,dim2,nmax) & 
+	not Types.simple_type(t) &
+	add_onesized_dimensions(es', tps,nmax) => es'' &
+	Types.elab_type t => at
+	------------------------------------------------------------
+	elab_exp (env, Absyn.MATRIX(es),impl,st)
+	  => (Exp.MATRIX(at,nmax,es''),
 	      Types.PROP((Types.T_ARRAY(Types.DIM(SOME(dim1)),
 				 (Types.T_ARRAY(Types.DIM(SOME(dim2)), t),NONE)),NONE),
 		   c),st)
@@ -1122,6 +1139,73 @@ relation elab_matrix_comma : (Env.Env, Absyn.Exp list, bool(*implicit inst.*)
   rule	(*Debug.fprint("failtrace","- elab_matrix_comma failed\n")*)
 	-------------------------------------
 	elab_matrix_comma (_,_,_,_,_) => fail
+end
+
+(** relation: add_onesized_dimensions
+ ** author: PA
+ **
+ ** Array concatenation along first and second dimension using matrix 
+ ** constructor will if necessary add 1-sized dimensions until each
+ ** element of the constructor have the same dimension maxn >= 2.
+ ** This relation adds array constructors to achieve this.
+ **)
+
+relation add_onesized_dimensions: ((Exp.Exp*bool) list list, 
+				   Types.Properties list list,
+				   int ) (* maxn*)
+	=> ((Exp.Exp*bool) list list) =
+
+  axiom	add_onesized_dimensions([],_,_) => []
+
+  rule	add_onesized_dimensions_row(e,t,maxn) => e' &
+	add_onesized_dimensions(es,ts,maxn) => es'
+	-------------------------------------
+	add_onesized_dimensions(e::es,t::ts,maxn) => e'::es'
+end
+
+(** relation: add_onesized_dimensions_row
+ ** author: PA
+ ** 
+ ** Helper relation to add_onesized_dimensions
+ **)
+relation add_onesized_dimensions_row:( (Exp.Exp*bool) list, 
+				      Types.Properties list,
+				      int) (* maxn *)
+	=> ((Exp.Exp*bool) list) =
+  axiom	add_onesized_dimensions_row([],_,_) => []
+
+  rule	add_onesized_dimensions_row(es,tps,maxn) => es' &
+	Types.ndims(tp) => cur_ndims &
+	int_sub(maxn,cur_ndims) => add_dims &
+	int_sub(add_dims,1) => add_dims' &
+	add_onesized_dimensions_exp(e,tp,add_dims') => e'
+	------------------------------------
+	add_onesized_dimensions_row((e,b)::es,Types.PROP(tp,c)::tps,maxn)
+	  => ((e',b)::es')
+end
+
+(** relation: add_onesized_dimensions_exp
+ ** author: PA
+ ** 
+ ** Adds onesized array dimensions to an expressions n times.
+**)
+relation add_onesized_dimensions_exp:(Exp.Exp,
+				      Types.Type,
+				      int)  (* n *)
+	  => Exp.Exp =
+
+  axiom	add_onesized_dimensions_exp(e,tp,-1) => e
+  axiom	add_onesized_dimensions_exp(e,tp,0) => e
+
+  rule	int_sub(n,1) => n' & 
+	Types.elab_type(tp) => e_tp &
+	Types.lift_array(tp,SOME(1)) => tp' &
+	Types.elab_type(tp') => e_tp' &
+	Exp.type_builtin(e_tp) => array &
+	add_onesized_dimensions_exp(e,tp',n') => e' 
+	---------------------------
+	add_onesized_dimensions_exp(e,tp,n) 
+	  => Exp.ARRAY(e_tp',array,[e'])
 end
 
 (** relation: elab_matrix_semi
@@ -2217,6 +2301,158 @@ relation elab_builtin_change : (Env.Env, Absyn.Exp list, bool (*impl*))
 	elab_builtin_change(env,[exp],impl) 
 	  => fail
 end
+
+(** relation: elab_builtin_cat
+ ** author: PA
+ **
+ ** This relation handles the built in cat operator.
+ **)
+		 
+relation elab_builtin_cat : (Env.Env, Absyn.Exp list, bool (*impl*)) 
+	  => (Exp.Exp, Types.Properties)	=
+
+  rule	elab_exp(env,dim,impl,NONE) 
+	  => (dim_exp,Types.PROP((Types.T_INTEGER(_),_),const1),_) &
+	elab_exp_list(env,matrices,impl,NONE) => (matrices',props,_) &
+	same_dimensions(props) => true &
+	elab_array_const(props) => const2 &
+	Types.const_and(const1,const2) => const &
+	let Types.PROP(result_type,_)::_ = props
+	----------------------------------
+	elab_builtin_cat(env,dim::matrices,impl) 
+	  => (Exp.CALL(Absyn.IDENT("cat"),dim_exp::matrices',false,true), 
+	      Types.PROP(result_type,const))
+
+  rule	elab_exp(env,dim,impl,NONE) 
+	  => (dim_exp,tp,_) &
+	  not let Types.PROP((Types.T_INTEGER(_),_),const1) = tp &
+	  Print.print_error_buf "# Error, first argument to cat must be an Integer.\n"
+	----------------------------------
+	elab_builtin_cat(env,dim::matrices,impl) 
+	  => fail
+
+  rule	elab_exp(env,dim,impl,NONE) 
+	  => (dim_exp,Types.PROP((Types.T_INTEGER(_),_),const1),_) &
+	elab_exp_list(env,matrices,impl,NONE) => (matrices',props,_) &
+	same_dimensions(props) => false &
+	Print.print_error_buf "# Error, all array arguments to cat operator must be of same dimension.\n"
+	----------------------------------
+	elab_builtin_cat(env,dim::matrices,impl) 
+	  => fail
+end
+
+(** relation: elab_builtin_identity
+ ** author: PA
+ **
+ ** This relation handles the built in identity operator.
+ **)
+		 
+relation elab_builtin_identity : (Env.Env, Absyn.Exp list, bool (*impl*)) 
+	  => (Exp.Exp, Types.Properties)	=
+
+  rule	elab_exp(env,dim,impl,NONE) 
+	  => (dim_exp,Types.PROP((Types.T_INTEGER(_),_),Types.C_CONST),_) &
+	Ceval.ceval(env,dim_exp,false,NONE,NONE,Ceval.MSG) 
+	  => (Values.INTEGER(size),_) 
+	----------------------------------
+	elab_builtin_identity(env,[dim],impl) 
+	  => (Exp.CALL(Absyn.IDENT("identity"),[dim_exp],false,true), 
+	      Types.PROP((Types.T_ARRAY(Types.DIM(SOME(size)),(Types.T_ARRAY(Types.DIM(SOME(size)),(Types.T_INTEGER([]),NONE)),NONE)),NONE),Types.C_CONST))
+
+  rule	elab_exp(env,dim,impl,NONE) 
+	  => (dim_exp,Types.PROP((Types.T_INTEGER(_),_),Types.C_PARAM),_) &
+	Ceval.ceval(env,dim_exp,false,NONE,NONE,Ceval.MSG) 
+	  => (Values.INTEGER(size),_)   
+	----------------------------------
+	elab_builtin_identity(env,[dim],impl) 
+	  => (Exp.CALL(Absyn.IDENT("identity"),[dim_exp],false,true), 
+	      Types.PROP((Types.T_ARRAY(Types.DIM(SOME(size)),(Types.T_ARRAY(Types.DIM(SOME(size)),(Types.T_INTEGER([]),NONE)),NONE)),NONE),Types.C_PARAM))
+
+  rule	elab_exp(env,dim,impl,NONE) 
+	  => (dim_exp,Types.PROP((Types.T_INTEGER(_),_),Types.C_VAR),_) 
+	----------------------------------
+	elab_builtin_identity(env,[dim],impl) 
+	  => (Exp.CALL(Absyn.IDENT("identity"),[dim_exp],false,true), 
+	      Types.PROP((Types.T_ARRAY(Types.DIM(NONE),(Types.T_ARRAY(Types.DIM(NONE),(Types.T_INTEGER([]),NONE)),NONE)),NONE),Types.C_VAR))
+
+  rule	print "-elab_builtin_identity failed\n" 
+	------------------------
+	elab_builtin_identity(env,[dim],impl) => fail
+end
+
+(** relation: elab_builtin_vector
+ ** author: PA
+ **
+ ** This relation handles the built in vector operator.
+ **)
+		 
+relation elab_builtin_vector : (Env.Env, Absyn.Exp list, bool (*impl*)) 
+	  => (Exp.Exp, Types.Properties)	=
+
+	  (* vector(scalar) = {scalar} *)
+  rule	elab_exp(env,e,impl,NONE) 
+	  => (exp,Types.PROP(tp,c),_) &
+	Types.simple_type(tp) &
+	Types.elab_type(tp) => tp' &
+	Types.lift_array(tp,SOME(1)) => arr_tp
+	----------------------------------
+	elab_builtin_vector(env,[e],impl) 
+	  => (Exp.ARRAY(tp',true,[exp]),Types.PROP(arr_tp,c))
+
+	  (* vector(array of scalars) = array of scalars *)
+  rule	elab_exp(env,e,impl,NONE) 
+	  => (Exp.ARRAY(etp,scalar,expl),Types.PROP(tp,c),_) &
+	Types.ndims(tp) => 1 
+	-------------------------------------
+	elab_builtin_vector(env,[e],impl)
+	  => (Exp.ARRAY(etp,scalar,expl),Types.PROP(tp,c))
+	  (* vector of multi dimensional array, at most one dim > 1 *)
+  rule	elab_exp(env,e,impl,NONE) 
+	  => (Exp.ARRAY(_,_,expl),Types.PROP(tp,c),_) &
+	  Types.array_element_type(tp) => tp' &
+	Types.elab_type(tp') => etp &
+	Types.get_dimension_sizes(tp) => dims &
+	  elab_builtin_vector_2(expl,dims) => expl'
+	-------------------------------------
+	elab_builtin_vector(env,[e],impl)
+	  => (Exp.ARRAY(etp,true,expl'),Types.PROP(tp,c))
+end
+
+(** relation: elab_builtin_vector_2
+ **
+ ** Helper relation to elab_builtin_vector.
+ **)
+
+relation elab_builtin_vector_2: (Exp.Exp list,int list) => Exp.Exp list =
+
+
+  rule	int_gt(dim,1) => true &
+	(*Util.list_map_1(dims,int_gt,1) => b_lst &
+	Util.bool_or_list(b_lst) => false &*)
+	elab_builtin_vector_3(expl) => expl' 
+	----------------------------------
+	elab_builtin_vector_2(expl,dim::dims) => expl'
+
+  rule	elab_builtin_vector_2(expl,dims) => expl'
+	----------------------------
+	elab_builtin_vector_2([Exp.ARRAY(_,_,expl)],dim::dims) => expl'
+end
+
+relation elab_builtin_vector_3: Exp.Exp list => Exp.Exp list =
+
+  axiom	elab_builtin_vector_3 ([]) => []
+
+  rule	elab_builtin_vector_3([expl]) => [e] &
+	elab_builtin_vector_3(es) => es
+	-------------------------------
+	elab_builtin_vector_3(Exp.ARRAY(_,_,[expl])::es) => e::es
+
+  rule	elab_builtin_vector_3(es) => es'
+	----------------------
+	elab_builtin_vector_3(e::es) => e::es' 
+end
+
+
 (** relation: elab_builtin_handler_generic
  **
  ** This relation dispatches the elaboration of special builtin operators by 
@@ -2273,6 +2509,9 @@ relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list, bool (*impl*
   axiom	elab_builtin_handler "der" => elab_builtin_der
   axiom	elab_builtin_handler "sample" => elab_builtin_sample
   axiom	elab_builtin_handler "change" => elab_builtin_change
+  axiom	elab_builtin_handler "cat" => elab_builtin_cat
+  axiom	elab_builtin_handler "identity" => elab_builtin_identity
+  axiom	elab_builtin_handler "vector" => elab_builtin_vector
 
   axiom	elab_builtin_handler "dymTableTimeIni" => elab_builtin_dymtabletimeini
 

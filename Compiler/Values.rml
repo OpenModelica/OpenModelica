@@ -82,7 +82,10 @@ with "Absyn.rml"
   relation mult_matrix: (Value list,Value list) => Value list
   relation div_arrayelt_scalar: (Value, Value list) => Value list
   relation intlist_to_value : int list => Value
+  relation array_values: Value => Value list 
+  relation make_array: Value list => Value	  
   relation is_array : Value => bool
+  relation nth_arrayelt: (Value,int) => Value
   relation write_to_file_as_args: (Value list,string) => ()
   relation type_convert: (Exp.Type, Exp.Type,Value list) => Value list
   relation unparse_values: (Value list) => string
@@ -136,6 +139,20 @@ relation is_array: Value => bool =
   axiom	is_array(BOOL(_)) => false
   axiom is_array(TUPLE(_)) => false
   axiom	is_array(ARRAY(_)) => true	
+end
+
+(** relation: nth_arrayelt
+ ** author: PA
+ **
+ ** Return the nth value of an array, indexed from 1..n
+ **)
+
+relation nth_arrayelt: (Value,int) => Value =
+
+  rule	int_sub(n,1) => n' &
+	list_nth(vlst,n') => res
+	--------------
+	nth_arrayelt(ARRAY(vlst),n) => res
 end
 
 (** relation: unparse_values
@@ -651,6 +668,28 @@ relation intlist_to_value : int list => Value =
   rule	intlist_to_value(lst) => ARRAY(res)
 	-----------------------------------
 	intlist_to_value(i::lst) => ARRAY(INTEGER(i)::res)
+end
+
+(** relation: array_values
+ ** 
+ ** Return the values of an array.
+ **)
+
+relation array_values: Value => Value list =
+
+  axiom	array_values(ARRAY(v_lst)) => v_lst
+
+end
+
+(** relation: make_array
+ **
+ ** Construct an array of a list of Values.
+ **)
+
+relation make_array: Value list => Value =
+
+  axiom	make_array(vlst) => ARRAY(vlst)
+
 end
 
 (** relation: val_string
