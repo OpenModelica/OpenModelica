@@ -151,7 +151,8 @@ module DAE:
   datatype ExternalDecl = EXTERNALDECL of Ident * (* external function name *)
 					  ExtArg list * (* parameters *)
 					  ExtArg * (* return type *)
-					  string (* language *)
+					  string * (* language *)
+					  Absyn.Annotation option (*e.g. Library *)	
 
 (** A DAElist is a list of Elements. Variables, equations, functions, 
  ** algorithms, etc. are all found in this list.
@@ -384,7 +385,7 @@ relation dump_ext_decl_str : ExternalDecl => string =
 	Util.string_append_list(["EXTERNALDECL(",id,", (",extargsstr,"), ",
 				 rettystr,", \"",lang,"\")"]) => str
 	-----------------------------------------------------------------------
-	dump_ext_decl_str EXTERNALDECL(id,extargs,retty,lang) => str
+	dump_ext_decl_str EXTERNALDECL(id,extargs,retty,lang,ann) => str
 end
 
 (** relation: dump_ext_arg_str
@@ -2660,7 +2661,7 @@ relation get_all_exps_element : Element => Exp.Exp list =
 	Util.list_flatten(expslist) => exps 
 	------------------------------------
 	get_all_exps_element EXTFUNCTION(path, DAE(elements), ty,
-					 EXTERNALDECL(fname, args, retarg, lang)) => exps
+					 EXTERNALDECL(fname, args, retarg, lang,ann)) => exps
 
   axiom	get_all_exps_element ASSERT(exp) => [exp]
 

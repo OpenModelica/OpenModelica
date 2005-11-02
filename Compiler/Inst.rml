@@ -3665,7 +3665,8 @@ relation inst_ext_decl: (Env.Env, Ident, SCode.ClassDef, bool (*impl*) ) => DAE.
 	inst_ext_get_fargs (env, extdecl,impl) => fargs &
 	inst_ext_get_rettype (env, extdecl,impl) => rettype &
 	inst_ext_get_lang (extdecl) => lang &
-	let daeextdecl = DAE.EXTERNALDECL(fname,fargs,rettype,lang)
+	inst_ext_get_annotation(extdecl) => ann &
+	let daeextdecl = DAE.EXTERNALDECL(fname,fargs,rettype,lang,ann)
 	-------------------------------------
 	inst_ext_decl (env, n, SCode.PARTS(_,_,_,_,_,SOME(extdecl)),impl) => daeextdecl
 
@@ -3675,7 +3676,8 @@ relation inst_ext_decl: (Env.Env, Ident, SCode.ClassDef, bool (*impl*) ) => DAE.
 	inst_ext_get_fargs (env, extdecl,impl) => fargs &
 	inst_ext_get_rettype (env, extdecl, impl) => rettype &
 	inst_ext_get_lang (extdecl) => lang &
-	let daeextdecl = DAE.EXTERNALDECL(fname,fargs,rettype,lang)
+	inst_ext_get_annotation(orgextdecl) => ann &
+	let daeextdecl = DAE.EXTERNALDECL(fname,fargs,rettype,lang,ann)
 	-------------------------------------
 	inst_ext_decl (env, n, SCode.PARTS(els,_,_,_,_,SOME(orgextdecl)),impl) => daeextdecl
 
@@ -3822,6 +3824,19 @@ relation inst_ext_get_fname : (Absyn.ExternalDecl, Ident) => Ident =
 
   axiom	inst_ext_get_fname (Absyn.EXTERNALDECL(SOME(id),_,_,_,_), fid) => id
   axiom	inst_ext_get_fname (Absyn.EXTERNALDECL(NONE,_,_,_,_), fid) => fid
+
+end
+
+(** relation: inst_ext_get_annotation
+ ** author: PA
+ **
+ ** Return the annotation associated with an external function declaration.
+ **)
+
+relation inst_ext_get_annotation: Absyn.ExternalDecl 
+	  => Absyn.Annotation option =
+
+  axiom	inst_ext_get_annotation(Absyn.EXTERNALDECL(_,_,_,_,ann)) => ann
 
 end
 

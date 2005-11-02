@@ -590,7 +590,7 @@ relation generate_function : DAE.Element => CFunction list =
   rule	generate_function_name fpath => fn_name_str &
 	string_append("_",fn_name_str) => fn_name_str &
 	Debug.fprintl ("cgtr", ["generating external function ", fn_name_str, "\n"]) &
-	let  DAE.EXTERNALDECL(extfnname,extargs,extretarg,lang) = extdecl &
+	let  DAE.EXTERNALDECL(extfnname,extargs,extretarg,lang,ann) = extdecl &
 
 	Debug.fprintln ("cgtrdumpdae1", "Dumping DAE:") &
 	Debug.fcall ("cgtrdumpdae1", DAE.dump2, DAE.DAE(orgdae)) &
@@ -1358,7 +1358,7 @@ relation generate_alloc_outvars_ext : (DAE.Element list, string,int, DAE.Externa
   axiom	generate_alloc_outvars_ext([],rv,tnr,extdecl) => (c_empty_function,tnr)
 
 
-  rule	let DAE.EXTERNALDECL(_,_,_,"C") = extdecl &
+  rule	let DAE.EXTERNALDECL(_,_,_,"C",_) = extdecl &
 	generate_alloc_outvar(var,rv,tnr) => (cfn1,tnr1) &
 	generate_alloc_outvars_ext(r,rv,tnr1,extdecl) => (cfn2,tnr2) &
 	c_merge_fn(cfn1,cfn2) => cfn
@@ -1368,7 +1368,7 @@ relation generate_alloc_outvars_ext : (DAE.Element list, string,int, DAE.Externa
 				rv,tnr,extdecl)
 	  => (cfn,tnr2)
 
-  rule	let DAE.EXTERNALDECL(_,_,_,"FORTRAN 77") = extdecl &
+  rule	let DAE.EXTERNALDECL(_,_,_,"FORTRAN 77",_) = extdecl &
 	generate_alloc_outvar_f77(var,rv,tnr) => (cfn1,tnr1) &
 	generate_alloc_outvars_ext(r,rv,tnr1,extdecl) => (cfn2,tnr2) &
 	c_merge_fn(cfn1,cfn2) => cfn
@@ -3436,7 +3436,7 @@ end
 	c_add_cleanups(cfn', ["return out;"]) => cfn
 	------------------------------------------------------
 	generate_external_wrapper_call(fnname,outvars,retstr,invars,
-				       extdecl as DAE.EXTERNALDECL(extfnname,extargs,extretarg,lang),bivars,(Types.T_FUNCTION(args,restype),_)) => cfn
+				       extdecl as DAE.EXTERNALDECL(extfnname,extargs,extretarg,lang,ann),bivars,(Types.T_FUNCTION(args,restype),_)) => cfn
 
   rule	Print.print_buf "#-- generate_external_wrapper_call failed\n"
 	----------------------------------------------------------------
@@ -3542,7 +3542,7 @@ relation generate_ext_call : (DAE.Element list, DAE.ExternalDecl, int) => (CFunc
 	generate_extcall_varcopy (outbiarglist, retarg, lang, tnr') => (argcopies,tnr'') &
 	c_merge_fns([argdecls,fcall,argcopies]) => extcall
 	-------------------------------------------------------------
-	generate_ext_call (vars, extdecl as DAE.EXTERNALDECL(n,arglist,retarg,lang), tnr) => (extcall,tnr'')
+	generate_ext_call (vars, extdecl as DAE.EXTERNALDECL(n,arglist,retarg,lang,ann), tnr) => (extcall,tnr'')
 
   rule	Print.print_buf "#-- generate_ext_call failed\n"
 	------------------------------------------------
