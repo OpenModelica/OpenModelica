@@ -1153,6 +1153,17 @@ with "Ceval.rml"
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) 
 	   => ("OK",SYMBOLTABLE(p',s',[],[],[]))
 
+
+   (* adrpo added 2005-01-03 *)
+   rule	  get_cref_info(cr,p) => resstr
+	 -----------------------
+	 evaluate_graphical_api(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("getCrefInfo",_),
+		 Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))],_
+	     ),
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
  end
 
  (** relation: is_parameter_element
@@ -1211,6 +1222,35 @@ with "Ceval.rml"
 	 get_class_env(p,p_class) => env''
 
  end
+
+ (** relation: get_cref_info
+  ** author: adrpo@ida
+  ** date  : 2005-11-03
+  ** Retrieves the Info attribute of a Class.
+  ** When parsing classes, the source file name + line no + columnno is added to the Class 
+  ** definition and to all Elements, see Absyn.Info. This relation retrieves the
+  ** Info contents.
+  **)
+
+ relation get_cref_info: (Absyn.ComponentRef, (* class *)
+			    Absyn.Program) => string =
+   rule	Absyn.cref_to_path(class) => p_class &
+	 get_pathed_class_in_program(p_class,p) => cdef &
+	 let Absyn.CLASS(id,_,_,_,_,_,Absyn.INFO(filename,line,col)) = cdef &
+            int_string(line) => str_line &
+            int_string(col)  => str_col &
+            string_append(filename,",") => s1 &
+            string_append(s1,str_line) => s2 &
+            string_append(s2,",") => s3 &
+            string_append(s3,str_col) => s4         
+	 ---------------------------------------------------
+	 get_cref_info(class,p) => s4
+
+ axiom	get_cref_info(_,_) => "Error"
+
+ end
+
+
 
  (** relation: get_source_file
   ** author: PA
