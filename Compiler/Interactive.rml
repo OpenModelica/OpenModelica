@@ -1011,6 +1011,16 @@ with "Ceval.rml"
 	     ),
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true",st)
 
+  rule	get_class_restriction(cr,p) => resstr 
+	 -----------------------
+	 evaluate_graphical_api(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("getClassRestriction",_),
+		 Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))],_
+	     ),
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+
    rule	is_primitive(cr,p) => b1 &
 	 Util.bool_string(b1) => resstr
 	 -----------------------
@@ -2882,6 +2892,23 @@ end
 	 --------------------------------------
    delete_class_from_list(cdef as Absyn.CLASS(name,_,_,_,_,_,_), x::xs) => x::res
  end
+
+(** relation: get_class_restriction
+ ** author: PA
+ **
+ ** Returns the class restriction of a class as a string.
+ **)
+
+relation get_class_restriction:(Absyn.ComponentRef,
+				Absyn.Program) => string =
+
+  rule	Absyn.cref_to_path(cr) => path &
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,restr,_,_) &
+	Dump.unparse_restriction_str(restr) => res &
+	Util.string_append_list(["\"",res,"\""]) => res'
+	----------------------------
+	get_class_restriction(cr,p) => res'
+end
 
 (** relation: is_type 
  **
