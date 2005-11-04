@@ -1574,9 +1574,9 @@ end
 	 Util.string_append_list([filenameprefix,".cpp"]) => filename &
 	 Util.string_append_list([filenameprefix,"_functions.cpp"]) => funcfilename &
 	 generate_makefilename(filenameprefix) => makefilename &
-         SimCodegen.generate_functions(p',dae,indexed_dlow',classname,funcfilename) &
+         SimCodegen.generate_functions(p',dae,indexed_dlow',classname,funcfilename) => libs &
 	 SimCodegen.generate_simulation_code(dae,indexed_dlow',ass1,ass2,m,mT,comps,classname,filename,funcfilename) &
-	 SimCodegen.generate_makefile(makefilename,filenameprefix) 
+	 SimCodegen.generate_makefile(makefilename,filenameprefix,libs) 
          (*	Util.string_append_list(["make -f ",cname_str, ".makefile\n"]) => s_call &
           *)
          ---------------------------------------------
@@ -2925,7 +2925,7 @@ relation ceval_generate_function_str : (Absyn.Path,
 	Util.string_append_list(["/*---FUNC: ", funcname, " ---*/\n\n"]) => funccom &
 	Print.print_buf funccom &
 	Debug.fprintln("ceval", "/* - ceval_generate_function_str generating functions */") &
-	Codegen.generate_functions(d') &
+	Codegen.generate_functions(d') => libs &
 	Print.get_string => thisfuncstr &
 	Util.list_append_elt(thisfuncstr, calledfuncsstrs) => calledfuncsstrs' &
 	Util.string_delimit_list(calledfuncsstrs', "\n\n") => resstr

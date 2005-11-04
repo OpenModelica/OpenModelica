@@ -122,6 +122,8 @@ module Interactive:
            
   relation get_top_classnames: (Absyn.Program) => string
   relation get_component_modification: Absyn.Element => string 
+  relation get_modification_value:(Absyn.ElementArg list, Absyn.ComponentRef)
+	  => Absyn.Modification
 
   relation add_to_public: (Absyn.Class, Absyn.ElementItem) => Absyn.Class 
 
@@ -471,6 +473,30 @@ with "Ceval.rml"
 
  relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) 
 	  =>  (string, InteractiveSymbolTable) = 
+
+   rule	set_component_properties(class,comp_ref,final,flow,protected,repl,
+				 variability,[dref1,dref2],causality,p) 
+	  => (resstr,p')
+	 --------------------------------------------
+	 evaluate_graphical_api(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("setComponentProperties",_),
+		 Absyn.FUNCTIONARGS([Absyn.CREF(class), 
+				     Absyn.CREF(comp_ref),
+				     Absyn.ARRAY([
+						  Absyn.BOOL(final),
+						  Absyn.BOOL(flow),
+						  Absyn.BOOL(protected),
+						  Absyn.BOOL(repl)]),
+				     Absyn.ARRAY([Absyn.STRING(variability)]),
+				     Absyn.ARRAY([Absyn.BOOL(dref1),
+						  Absyn.BOOL(dref2)]),
+				     Absyn.ARRAY([Absyn.STRING(causality)])
+				     ],[])))],_
+	     ), 
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) 
+	   => (resstr, SYMBOLTABLE(p',s,ic,iv,cf))
+
 
    rule	get_source_file(class,p) => resstr
 	 --------------------------------------------
@@ -1222,6 +1248,352 @@ with "Ceval.rml"
 	 get_class_env(p,p_class) => env''
 
  end
+
+(** relation: set_component_properties
+ **
+ ** Sets the following "properties" of a component.
+ ** - final 
+ ** - flow
+ ** - protected(true) or public(false)
+ ** - replaceable 
+ ** - variablity: "constant" or "discrete" or "parameter" or ""
+ ** - dynamic_ref: {inner, outer} - two boolean values.
+ ** - causality: "input" or "output" or ""
+ **)
+relation set_component_properties: (Absyn.ComponentRef, (* class *)
+				    Absyn.ComponentRef, (* component_ref *)
+				    bool, (* final = true *)
+				    bool, (* flow = true *)
+				    bool, (* protected = true, public=false *)
+				    bool,  (* replaceable = true *)
+				    string, (* variability *)
+				    bool list, (* dynamic_ref, two booleans *)
+				    string, (* causality *)
+				    
+				    Absyn.Program)
+	  => (string, Absyn.Program) =
+
+  rule	Absyn.cref_to_path(class) => p_class &
+	build_within(p_class) => within &
+	get_pathed_class_in_program(p_class,p) => cdef &
+	set_component_properties_in_class(cdef,varname,final,flow,prot,repl,
+					  variability,dyn_ref,causality) 
+	  => cdef' &
+	update_program(Absyn.PROGRAM([cdef'],within),p) => newp
+	-----------------------------------
+	set_component_properties(class,Absyn.CREF_IDENT(varname,_),
+				 final,flow,prot,repl,variability,
+				 dyn_ref,causality,p) 
+	  => ("Ok",newp) 
+
+  axiom	set_component_properties(_,_,_,_,_,_,_,_,_,p)  => ("Error",p) 
+end
+
+(** relation: set_component_properties_in_class
+ **
+ ** Helper relation to set_component_properties.
+ **)
+
+relation set_component_properties_in_class:( Absyn.Class,
+					    string, (* comp_name *)
+					    bool, (* final *)
+					    bool, (* flow *)
+					    bool, (* prot *)
+					    bool, (* repl *)
+					    string, (* variability *)
+					    bool list, (* dynamic_ref, two booleans *)
+					    string) (* causality *)
+	=> Absyn.Class =
+
+
+   rule	set_component_properties_in_classparts(parts,varname,final,flow,prot,repl,variability,dyn_ref,causality) 
+	   => parts'
+	   ---------------------------------------------------------
+	 set_component_properties_in_class(Absyn.CLASS(id,p,f,e,r,
+							Absyn.PARTS(parts,cmt),file_info),
+					   varname, final,flow,prot,repl,
+					   variability,dyn_ref,causality)
+	   => Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(parts',cmt),file_info)
+end
+
+ (** relation: set_component_properties_in_classparts
+  **
+  ** Helper relation to set_component_properties_in_class.
+  **)
+
+relation set_component_properties_in_classparts: (Absyn.ClassPart list, 
+						  Absyn.Ident, (* comp_name*)
+						  bool, (* final *)
+						  bool, (* flow *)
+						  bool, (* prot *)
+						  bool, (* repl *)
+						  string, (* variability *)
+						  bool list, (* dynamic_ref, two booleans *)
+						  string) (* causality *)
+	 => Absyn.ClassPart list =
+
+  axiom	set_component_properties_in_classparts([],_,_,_,_,_,_,_,_) => []
+
+	  (* public moved to protected *)
+  rule	get_public_list(parts) => publst &
+	get_element_contains_name(Absyn.CREF_IDENT(cr,[]),publst) 
+	  => Absyn.ELEMENTITEM(elt) &
+	set_component_properties_in_element(elt,cr,final,flow,repl,
+					    variability,dyn_ref,
+					    causality) => elt' &
+	delete_component_from_elementitems(cr,publst) => publst' &
+	get_protected_list(parts) => protlst &
+	list_append(protlst,[Absyn.ELEMENTITEM(elt')]) => protlst' &
+	replace_protected_list(parts,protlst') => parts' &
+	replace_public_list(parts',publst') => parts''
+	-----------------------------------
+	set_component_properties_in_classparts(parts,cr,final,flow,
+					       true (*protected*),
+					       repl,variability,dyn_ref,
+					       causality)
+	  => parts''
+
+	  (* protected moved to public *)
+  rule	get_protected_list(parts) => protlst &
+	get_element_contains_name(Absyn.CREF_IDENT(cr,[]),protlst) 
+	  => Absyn.ELEMENTITEM(elt) &
+	set_component_properties_in_element(elt,cr,final,flow,repl,
+					    variability,dyn_ref,
+					    causality) => elt' &
+	delete_component_from_elementitems(cr,protlst) => protlst' &
+	get_public_list(parts) => publst &
+	list_append(publst,[Absyn.ELEMENTITEM(elt')]) => publst' &
+	replace_public_list(parts,publst') => parts' &
+	replace_protected_list(parts',protlst') => parts''
+	-----------------------------------
+	set_component_properties_in_classparts(parts,cr,final,flow,
+					       false, (* public *)
+					       repl,
+					       variability,dyn_ref,
+					       causality)
+	  => parts''
+
+	  (* protected attr not changed. *)
+  rule	set_component_properties_in_classparts(rest,cr,final,flow,prot,repl,
+					       variability,dyn_ref,causality) 
+	  => rest &
+	  set_component_properties_in_elementitems(elts,cr,final,flow,repl,
+						   variability,dyn_ref,
+						   causality) 
+	  => elts' 	
+	-----------------------------------
+	set_component_properties_in_classparts(Absyn.PUBLIC(elts)::rest,cr,
+					       final,flow,prot,repl,
+					       variability,dyn_ref,causality)
+	  => Absyn.PUBLIC(elts')::rest
+
+	  (* protected attr not changed, 2. *)
+  rule	set_component_properties_in_classparts(rest,cr,final,flow,prot,repl,
+					       variability,dyn_ref,causality) 
+	  => rest &
+	  set_component_properties_in_elementitems(elts,cr,final,flow,repl,
+						   variability,dyn_ref,
+						   causality) 
+	  => elts' 	
+	-----------------------------------
+	set_component_properties_in_classparts(Absyn.PROTECTED(elts)::rest,cr,final,flow,prot,repl,variability,dyn_ref,causality)
+	  => Absyn.PROTECTED(elts')::rest
+
+	  (* protected attr not changed, 3. *)
+  rule	set_component_properties_in_classparts(rest,cr,final,flow,prot,repl,
+					       variability,dyn_ref,causality) 
+	  => rest'
+	-----------------------------------
+	set_component_properties_in_classparts(part::rest,cr,final,flow,prot,
+					       repl,
+					       variability,dyn_ref,causality)
+	  => part::rest'
+
+ end
+
+(** relation: set_component_properties_in_elementitems
+ **
+ ** Helper relation to set_component_properties_in_classparts.
+ **)
+
+relation set_component_properties_in_elementitems: (Absyn.ElementItem list,
+						    Absyn.Ident, (* comp_name*)
+						    bool, (* final *)
+						    bool, (* flow *)
+						    bool, (* repl *)
+						    string, (* variability *)
+						    bool list, (* dynamic_ref, two booleans *)
+						    string) (* causality *)
+							
+	 => Absyn.ElementItem list =
+
+  axiom	set_component_properties_in_elementitems([],_,_,_,_,_,_,_) => [] 
+
+   rule	set_component_properties_in_elementitems(rest,cr,final,flow,
+						 repl,va,dr,cau) 
+	   => res &
+	set_component_properties_in_element(elt,cr,final,flow,
+					    repl,va,dr,cau) => elt'
+	-------------------------------------------------
+	set_component_properties_in_elementitems(Absyn.ELEMENTITEM(elt)::rest,
+						 cr,final,flow,repl,va,dr,cau)
+	  => Absyn.ELEMENTITEM(elt')::res
+	  
+  rule	set_component_properties_in_elementitems(rest,cr,final,flow,repl,va,
+						 dr,cau)
+	  => res 
+	  -------------------------------------------------
+	set_component_properties_in_elementitems(elt::rest,
+						 cr,final,flow,repl,va,dr,cau)
+	  => elt::res
+ end
+
+
+(** relation: set_component_properties_in_element
+ ** 
+ ** Helper relation to e.g. set_component_properties_in_elementitems.
+**)
+
+relation set_component_properties_in_element: (Absyn.Element,
+					       Absyn.Ident,
+					       bool, (* final *)
+					       bool, (* flow *)
+					       bool, (* repl *)
+					       string, (* variability *)
+					       bool list, (* dynamic_ref, two booleans *)
+					       string) (* causality*)
+	=> Absyn.Element =
+
+  rule	set_redeclare_keyword_attributes(redeclkw,repl) => redeclkw' &
+	set_inner_outer_attributes(dr) => inout' &
+	set_component_properties_in_elementspec(spec,cr,flow,va,cau) => spec' 
+	-----------------------------------------
+	set_component_properties_in_element(Absyn.ELEMENT(_,redeclkw,inout,id,spec,info,constr),cr,final,flow,repl,va,dr,cau)
+	  => Absyn.ELEMENT(final,redeclkw',inout',id,spec',info,constr)
+end
+
+(** relation: set_redeclare_keyword_attributes
+ **
+ ** Sets The RedeclareKeywords of an Element given a boolean 'replaceable'.
+ **)
+
+relation set_redeclare_keyword_attributes: (Absyn.RedeclareKeywords option, 
+					    bool (* repl*))
+	=> Absyn.RedeclareKeywords option =
+
+(* false *)
+  axiom	set_redeclare_keyword_attributes(NONE,false) => NONE
+
+  axiom	set_redeclare_keyword_attributes(SOME(Absyn.REPLACEABLE),false) 
+	  => SOME(Absyn.REPLACEABLE)
+  axiom	set_redeclare_keyword_attributes(SOME(Absyn.REDECLARE_REPLACEABLE),false) 
+	  => SOME(Absyn.REPLACEABLE)
+  axiom	set_redeclare_keyword_attributes(SOME(Absyn.REDECLARE),false) => NONE
+
+(* true *)
+  axiom	set_redeclare_keyword_attributes(NONE,true) => SOME(Absyn.REDECLARE)
+  axiom	set_redeclare_keyword_attributes(SOME(Absyn.REDECLARE),true) 
+	  => SOME(Absyn.REDECLARE)
+  axiom	set_redeclare_keyword_attributes(SOME(REPLACEABLE),true) 
+	  => SOME(Absyn.REDECLARE_REPLACEABLE)
+  axiom	set_redeclare_keyword_attributes(SOME(Absyn.REDECLARE_REPLACEABLE),true) 
+	  => SOME(Absyn.REDECLARE_REPLACEABLE)
+end
+
+
+(** relation: set_inner_outer_attributes
+ **
+ **
+ ** Sets InnerOuter according to a list of two booleans, {inner, outer}.
+ **) 
+relation set_inner_outer_attributes: (bool list)
+	  => Absyn.InnerOuter =
+	  
+  axiom	set_inner_outer_attributes([false,false]) => Absyn.UNSPECIFIED
+  axiom	set_inner_outer_attributes([true,false]) => Absyn.INNER
+  axiom	set_inner_outer_attributes([false,true]) => Absyn.OUTER
+  axiom	set_inner_outer_attributes([true,true]) => Absyn.INNEROUTER
+end
+
+(** relation: set_component_properties_in_elementspec
+ **
+ ** Sets component attributes on an elements spec if identifier matches.
+ **)
+relation set_component_properties_in_elementspec: (Absyn.ElementSpec,
+						   Absyn.Ident,
+						   bool, (* flow *)
+						   string, (* variability*)
+						   string) (* causality *)
+	=> Absyn.ElementSpec =
+
+  rule	items_contain_compname(items,cr) &
+	set_element_attributes(attr,flow,va,cau) => attr' 
+	--------------------------------------
+	set_component_properties_in_elementspec(Absyn.COMPONENTS(attr,path,items),cr,flow,va,cau) => Absyn.COMPONENTS(attr',path,items)
+
+  axiom	set_component_properties_in_elementspec(spec,_,_,_,_) => spec
+end
+
+(** relation: items_contain_compname
+ **
+ ** Checks if a list of ElementItems contain a component named 'cr'.
+ **)
+relation items_contain_compname: (Absyn.ComponentItem list ,
+				  Absyn.Ident) => () =
+
+  rule	cr1 = cr2
+	-------------------------
+	items_contain_compname(Absyn.COMPONENTITEM(Absyn.COMPONENT(cr1,_,_),_,_)::_,cr2) => ()
+
+  rule	items_contain_compname(rest,cr) 
+	-------------------------
+	items_contain_compname(_::rest,cr) => ()
+end
+
+(** relation: set_element_attributes
+ **
+ ** Sets  attributes associated with ElementAttribues.
+ **)
+
+relation set_element_attributes: (Absyn.ElementAttributes,
+				  bool, (* flow *)
+				  string, (* variability *)
+				  string) (*causality *)
+	=> Absyn.ElementAttributes =
+	  
+  rule	set_element_variability(va) => va' &
+	set_element_causality(cau) => cau'
+	-------------
+	set_element_attributes(Absyn.ATTR(_,_,_,dim),
+			       flow,va,cau) 
+	  => Absyn.ATTR(flow, va',cau',dim)
+end
+
+(** relation set_element_variability 
+ **
+ ** Sets Variability according to string value.
+ **)
+relation set_element_variability: (string) => Absyn.Variability =
+
+  axiom	set_element_variability("") => Absyn.VAR
+
+  axiom	set_element_variability("discrete") => Absyn.DISCRETE
+  axiom	set_element_variability("parameter") => Absyn.PARAM
+  axiom	set_element_variability("constant") => Absyn.CONST
+
+end
+
+(** relation set_element_causality 
+ **
+ ** Sets Direction (causality) according to string value.
+ **)
+relation set_element_causality: (string) => Absyn.Direction =
+
+  axiom	set_element_causality("") => Absyn.BIDIR
+
+  axiom	set_element_causality("input") => Absyn.INPUT
+  axiom	set_element_causality("output") => Absyn.OUTPUT
+end
 
  (** relation: get_cref_info
   ** author: adrpo@ida
@@ -2714,7 +3086,23 @@ with "Ceval.rml"
   axiom	is_constant (_,_,_) => false
  end
 
-(** relation: get_component_contains_name
+(** relation: get_element_contains_name
+ **
+ ** Returns the element that has the component name given as argument.
+ **)
+relation get_element_contains_name: (Absyn.ComponentRef, Absyn.ElementItem list)
+	=> Absyn.ElementItem =
+
+  rule  get_components_contains_name(cr,[elt]) => _ 
+	---------------------------------
+	get_element_contains_name(cr,elt::_) => elt 
+
+  rule	get_element_contains_name(cr,rest) => res
+	-------------------------
+	get_element_contains_name(cr,_::rest) => res
+end 
+
+(** relation: get_components_contains_name
  **
  ** Return the ElementSpec containing the name given as argument from a list
  ** of ElementItems
@@ -5665,6 +6053,7 @@ end
   axiom	inner_outer_str (Absyn.INNER) =>  "\"inner\""
   axiom	inner_outer_str (Absyn.OUTER) => "\"outer\""
   axiom	inner_outer_str (Absyn.UNSPECIFIED) => "\"none\""
+  axiom	inner_outer_str (Absyn.INNEROUTER) => "\"innerouter\""
 end
 	
 (** relation: attr_flow_str
@@ -6075,6 +6464,7 @@ end
   **
   ** This relation replaces the `ElementItem' list in the `ClassPart' list, 
   ** and returns the updated list.
+  ** If no public list is available, one is created.
  **)
 
  relation replace_public_list: (Absyn.ClassPart list,Absyn.ElementItem list) 
@@ -6089,13 +6479,14 @@ end
 	 ---------------------------------
 	 replace_public_list(x::xs,new) => x::ys
 
-   axiom replace_public_list([],_) => []
+   axiom replace_public_list([],newpublist) => [Absyn.PUBLIC(newpublist)]
  end
 
-(** relation: replace_public_list
+(** relation: replace_protected_list
  **
  ** This relation replaces the `ElementItem' list in the `ClassPart' list, 
  ** and returns the updated list.
+ ** If no protected list is available, one is created.
  **)
 		 
  relation replace_protected_list: (Absyn.ClassPart list,
@@ -6111,7 +6502,7 @@ end
 	 ---------------------------------
 	 replace_protected_list(x::xs,new) => x::ys
 
-   axiom replace_protected_list([],_) => []
+   axiom replace_protected_list([],newprotlist) => [Absyn.PROTECTED(newprotlist)]
  end
 
 (** relation: delete_public_list

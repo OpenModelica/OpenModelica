@@ -1232,6 +1232,7 @@ relation string_delimit_list_no_empty : (string list, string) => string =
 	string_delimit_list_no_empty(lst,delim) => str
 end
 
+
 (** relation string_replace_char
  ** Takes a string and two chars and replaces the first char to 
  ** second char:

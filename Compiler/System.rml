@@ -82,6 +82,16 @@ relation trim: (string,string) => string
 
 relation strcmp: (string,string) => int
 
+(** relation: string_replace
+ **
+ ** Replaces all occurences of source with target in str.
+ **)
+
+relation string_replace:(string, (*str*)
+			string, (*source*)
+			string) (*target*)
+	  => string 
+
 (** relation: toupper
  **
  ** Convert string to upper case characters.

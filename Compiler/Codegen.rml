@@ -73,24 +73,29 @@ module Codegen :
     type Statement           = string
     type CleanupStatement    = string
     type ReturnTypeStruct    = string list
+    type Include	     = string
+    type Lib		     = string
 							  
     datatype CFunction = CFUNCTION of 
-							  ReturnType *
-							  FunctionName * 
-							  ReturnTypeStruct *
-							  (ArgumentDeclaration list) *
-							  (VariableDeclaration list) *
-							  (InitStatement       list) *
-							  (Statement           list) *
-							  (CleanupStatement    list)
+				  ReturnType *
+				  FunctionName * 
+				  ReturnTypeStruct *
+				  (ArgumentDeclaration list) *
+				  (VariableDeclaration list) *
+				  (InitStatement       list) *
+				  (Statement           list) *
+				  (CleanupStatement    list)
 		     | CEXTFUNCTION of
-							  ReturnType *
-							  FunctionName *
-							  ReturnTypeStruct *
-							  ArgumentDeclaration list							  
-  relation generate_functions : DAE.DAElist => ()
+				  ReturnType *
+				  FunctionName *
+				  ReturnTypeStruct *
+				  ArgumentDeclaration list *
+				  Include list *
+				  Lib list 
+
+  relation generate_functions : DAE.DAElist => (string list (*libs*))
   relation generate_function_bodies : DAE.DAElist => ()
-  relation generate_function_headers : DAE.DAElist => ()
+  relation generate_function_headers : DAE.DAElist => (string list (*libs*))
   relation generate_algorithm: (DAE.Element, int)
 	  => (CFunction, int) 
 	  
@@ -108,6 +113,8 @@ with "ModUtil.rml"
 with "Types.rml"
 with "Util.rml"
 with "Inst.rml"
+with "Interactive.rml"
+with "System.rml"
 
 (* ------------------------------------------------------------------------- *)
 
@@ -140,9 +147,11 @@ end
 relation c_make_function_decl: (ReturnType, 
 				FunctionName, 
 				ReturnTypeStruct, 
-				ArgumentDeclaration list) => CFunction =
+				ArgumentDeclaration list,
+				Include list,
+				Lib list) => CFunction =
 
-  axiom	c_make_function_decl(rt,fn,rts,ads) => CEXTFUNCTION(rt,fn,rts,ads)
+  axiom	c_make_function_decl(rt,fn,rts,ads,incl,libs) => CEXTFUNCTION(rt,fn,rts,ads,incl,libs)
 
 end
 
@@ -295,11 +304,50 @@ relation c_print_function : CFunction => () =
 (*	c_print_indented_list (rts,i0) => i1 & Print.print_buf "\n" & *)
 	c_print_indented (stmt_str,i0) => i2 & Print.print_buf "\n"
 	-----------------------------------------------------------
-	c_print_function CEXTFUNCTION(rt,fn,rts,ads)
+	c_print_function CEXTFUNCTION(rt,fn,rts,ads,_,_)
 
   rule	Print.print_buf "# c_print_function_failed\n"
 	-----------
 	c_print_function _
+end
+
+(** relation: c_print_function_includes
+ **
+ ** Prints the function declaration, i.e. the header information
+ ** of a CFunction list to the Print buffer.
+ **)
+
+relation c_print_function_includes : CFunction list => (string list (*libs *)) =
+
+  axiom	c_print_function_includes [] => []
+
+  rule	c_print_function_include(f) => libs1 &
+	c_print_function_includes(r) => libs2 &
+	list_append(libs1,libs2) => libs
+	---------------------
+	c_print_function_includes f::r => libs
+end
+
+(** relation: c_print_function_includes
+ **
+ ** Prints the includes for a function.
+ **)
+	   
+relation c_print_function_include : CFunction => (string list (*libs*)) =
+	
+  rule	Print.print_buf "#ifdef __cplusplus\n" & 
+ 	Print.print_buf "extern \"C\" {\n" &
+	Print.print_buf "#endif\n" & 
+ 	Util.string_delimit_list(includes,"\n") => str &
+	Print.print_buf str & Print.print_buf "\n" &
+	Print.print_buf "#ifdef __cplusplus\n" & 
+	Print.print_buf "}\n" &
+	Print.print_buf "#endif\n" 
+	------------------
+	c_print_function_include(CEXTFUNCTION(_,_,_,_,includes,libs)) => libs
+
+  axiom	c_print_function_include(_) => ([])
+
 end
 
 (** relation: c_print_function_headers
@@ -341,7 +389,7 @@ end
 	c_print_indented_list (rts,i0) => i1 & Print.print_buf "\n" &
 	c_print_indented (stmt_str,i1) => i2 & Print.print_buf "\n"
 	---------------------------------------------------
-	c_print_function_header CEXTFUNCTION(rt,fn,rts,ads)
+	c_print_function_header CEXTFUNCTION(rt,fn,rts,ads,_,_)
 
   rule	Print.print_buf "# c_print_function_header failed\n"
 	-----------
@@ -452,15 +500,15 @@ end
 (** relation: generate_functions
  **
  ** Generates code for all functions in a DAE and prints on
- ** Print buffer.
+ ** Print buffer. A list of libs for the external functions is returned.
  **)
 
-relation generate_functions : DAE.DAElist => () =
+relation generate_functions : DAE.DAElist => (string list (* libs*)) =
 
-  rule	generate_function_headers dae &
+  rule	generate_function_headers dae => libs &
 	generate_function_bodies dae
 	------------------------------
-	generate_functions (dae as DAE.DAE(elist))
+	generate_functions (dae as DAE.DAE(elist)) => libs
 
   rule	Print.print_buf "# generate_functions failed\n"
 	--------------------------------------
@@ -494,16 +542,17 @@ end
  ** Generates the headers of the functions in a DAE list.
  **)
 
-relation generate_function_headers : DAE.DAElist => () =
+relation generate_function_headers : DAE.DAElist => (string list) =
 
   rule	Debug.fprintln ("cgtr", "generate_function_headers") &
 	generate_functions_elist elist => cfns &
 	Print.print_buf "/* header part */\n" &
 	Print.print_buf "#include \"modelica.h\"\n" & (* FIXME: needed? *)
+	c_print_function_includes cfns => libs &
 	c_print_function_headers cfns &
 	Print.print_buf "\n"
 	------------------------------
-	generate_function_headers DAE.DAE(elist)
+	generate_function_headers DAE.DAE(elist) => libs
 
   rule	Print.print_buf "# generate_function_headers failed\n"
 	--------------------------------------
@@ -606,7 +655,9 @@ relation generate_function : DAE.Element => CFunction list =
 	generate_ext_return_type (extretarg) => retstr &
 	generate_ext_function_name (extfnname, lang) => extfnname' &
 	generate_ext_function_args (extargs, lang) => arg_strs &
-        c_make_function_decl(retstr,extfnname',struct_strs,arg_strs) => func_decl &
+	generate_ext_function_includes(ann) => (includes,libs) &
+        c_make_function_decl(retstr,extfnname',struct_strs,arg_strs,
+			     includes,libs) => func_decl &
 	generate_read_call_write_external(fn_name_str,outvars,retstructtype,invars,extdecl,bivars) => rcw_fn &
 	generate_external_wrapper_call(fn_name_str,outvars,retstructtype,invars,extdecl,bivars,tp) => ext_decl
 	-----------------------------------------------------------------------
@@ -624,6 +675,49 @@ relation generate_function : DAE.Element => CFunction list =
 	DAE.dump2 DAE.DAE([comp]) 
 	------------------------------------
 	generate_function comp => fail	
+end
+
+
+(** relation: generate_ext_function_includes
+ **
+ ** Collects the includes and libs for an external function by
+ ** investigating the annotation of an external function.
+ **)
+relation generate_ext_function_includes: (Absyn.Annotation option) => (string list, string list) =
+
+
+  rule	generate_ext_function_includes_libstr(eltarg) => libs &
+	generate_ext_function_includes_includestr(eltarg) => includes
+	---------------------------------------			    
+	generate_ext_function_includes(SOME(Absyn.ANNOTATION(eltarg)))
+	  => (includes,libs)
+
+  axiom	generate_ext_function_includes(NONE) => ([],[])
+end
+
+relation generate_ext_function_includes_libstr: (Absyn.ElementArg list) => string list =
+
+  rule	Interactive.get_modification_value(eltarg,
+					   Absyn.CREF_IDENT("Library",[]))
+	  => Absyn.CLASSMOD(_,SOME(Absyn.STRING(lib))) 
+	  (*System.string_replace(lib,"\\\"","\"") => lib'*)
+	  -------------------------
+	generate_ext_function_includes_libstr(eltarg) => [lib]
+
+  axiom	generate_ext_function_includes_libstr(_) => []
+end
+
+
+relation generate_ext_function_includes_includestr: (Absyn.ElementArg list) => string list =
+
+  rule	Interactive.get_modification_value(eltarg,
+					   Absyn.CREF_IDENT("Include",[]))
+	  => Absyn.CLASSMOD(_,SOME(Absyn.STRING(inc))) &
+	  System.string_replace(inc,"\\\"","\"") => inc'
+	  -------------------------
+	generate_ext_function_includes_includestr(eltarg) => [inc']
+
+  axiom	generate_ext_function_includes_includestr(eltarg) => []
 end
 
 

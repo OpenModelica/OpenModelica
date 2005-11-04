@@ -112,6 +112,127 @@ int set_cflags(char *str)
   return 0;
 }
 
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+
+
+/*
+* Description:
+*   Find and replace text within a string.
+*
+* Parameters:
+*   src  (in) - pointer to source string
+*   from (in) - pointer to search text
+*   to   (in) - pointer to replacement text
+*
+* Returns:
+*   Returns a pointer to dynamically-allocated memory containing string
+*   with occurences of the text pointed to by 'from' replaced by with the
+*   text pointed to by 'to'.
+*/
+char *replace(const char *src, const char *from, const char *to)
+{
+        /*
+        * Find out the lengths of the source string, text to replace, and
+        * the replacement text.
+        */
+        size_t size    = strlen(src) + 1;
+        size_t fromlen = strlen(from);
+        size_t tolen   = strlen(to);
+        /*
+        * Allocate the first chunk with enough for the original string.
+        */
+        char *value = malloc(size);
+        /*
+        * We need to return 'value', so let's make a copy to mess around with.
+        */
+        char *dst = value;
+        /*
+        * Before we begin, let's see if malloc was successful.
+        */
+        if ( value != NULL )
+        {
+                /*
+                * Loop until no matches are found.
+                */
+                for ( ;; )
+                {
+                        /*
+                        * Try to find the search text.
+                        */
+                        const char *match = strstr(src, from);
+                        if ( match != NULL )
+                        {
+                                /*
+                                * Found search text at location 'match'. :)
+                                * Find out how many characters to copy up to the 'match'.
+                                */
+                                size_t count = match - src;
+                                /*
+                                * We are going to realloc, and for that we will need a
+                                * temporary pointer for safe usage.
+                                */
+                                char *temp;
+                                /*
+                                * Calculate the total size the string will be after the
+                                * replacement is performed.
+                                */
+                                size += tolen - fromlen;
+                                /*
+                                * Attempt to realloc memory for the new size.
+                                */
+                                temp = realloc(value, size);
+                                if ( temp == NULL )
+                                {
+                                        /*
+                                        * Attempt to realloc failed. Free the previously malloc'd
+                                        * memory and return with our tail between our legs. :(
+                                        */
+                                        free(value);
+                                        return NULL;
+                                }
+                                /*
+                                * The call to realloc was successful. :) But we'll want to
+                                * return 'value' eventually, so let's point it to the memory
+                                * that we are now working with.
+                                */
+                                value = temp;
+                                /*
+                                * Copy from the source to the point where we matched. Then
+                                * move the source pointer ahead by the amount we copied. And
+                                * move the destination pointer ahead by the same amount.
+                                */
+                                memmove(dst, src, count);
+                                src += count;
+                                dst += count;
+                                /*
+                                * Now copy in the replacement text 'to' at the position of
+                                * the match. Adjust the source pointer by the text we replaced.
+                                * Adjust the destination pointer by the amount of replacement
+                                * text.
+                                */
+                                memmove(dst, to, tolen);
+                                src += fromlen;
+                                dst += tolen;
+                        }
+                        else /* No match found. */
+                        {
+                                /*
+                                * Copy any remaining part of the string. This includes the null
+                                * termination character.
+                                */
+                                strcpy(dst, src);
+                                break;
+                        }
+                }
+        }
+        return value;
+}
+
+
 void System_5finit(void)
 {
   set_cc("gcc");
@@ -250,6 +371,24 @@ RML_BEGIN_LABEL(System__strcmp)
   int res= strcmp(str,str2);
 
   rmlA0 = (void*) mk_icon(res);
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__string_5freplace)
+{
+  char *str = RML_STRINGDATA(rmlA0);
+  char *source = RML_STRINGDATA(rmlA1);
+  char *target = RML_STRINGDATA(rmlA2);
+  char * res=0;
+
+  res = replace(str,source,target);
+
+  if (res == NULL) {
+    RML_TAILCALLK(rmlFC);
+  }
+  rmlA0 = (void*) mk_scon(res);
 
   RML_TAILCALLK(rmlSC);
 }

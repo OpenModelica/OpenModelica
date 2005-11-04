@@ -3321,7 +3321,7 @@ relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Type
 	Debug.fprintln("sei", "generate_compiled_function: function instantiated") &
 	Print.clear_buf() &
 	ModUtil.string_prefix_params DAE.DAE(d) => d' &
-	Codegen.generate_functions(d') &
+	Codegen.generate_functions(d') => libs &
 	Debug.fprintln("sei", "generate_compiled_function: function generated") &
 	ModUtil.path_string2 (path,"_") => pathstr &	
 	string_append(pathstr,".c") => filename &

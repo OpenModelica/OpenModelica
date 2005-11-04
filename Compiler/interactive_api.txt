@@ -32,7 +32,12 @@ Function				Meaning
 saveModel(<string>,<cref>)		Saves the model (A1) in a file
 					given by a string (A0).
 
-loadFile(<string>)			Loads all models in the file.
+loadFile(<string>)			Loads all models in the file,
+					return true or false
+
+loadFileInteractive(<string>)		Loads all models in the file
+					and return all classes on top
+					level of that file.
 
 loadClass(<cref>)			Loads the model (A0) by looking up the 
 					correct file to load in $MODELICAPATH. 
@@ -191,6 +196,25 @@ existModel(<cref>)			Returns true if class exist in symbol table and has restric
 
 existPackage(<cref>)			Returns true if class exist in symbol table and has restriction
 					package, otherwise false.
+
+getComponents(class)			Return a list of all
+					components with associated
+					info...
+
+setComponentProperties(			Sets the component properties as:
+			<cref>,		class
+		       <cref>,		component name
+		       {<bool>,		final attribute	
+		        <bool>,		flow attribute
+			<bool>,		protected=true, public = false	
+			<bool>},	replaceable = true, otherwise false
+		       {<string>	variability,"constant",	"parameter" 
+					   "discrete" or ""
+			},
+			{<bool>,	inner prefix ( = true)
+			 <bool>},       outer prefix ( = true)
+			{<string>}	causality, "input" "output" or ""
+			)
 
 ERROR Handling
 ==============
