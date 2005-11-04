@@ -216,6 +216,13 @@ setComponentProperties(			Sets the component properties as:
 			{<string>}	causality, "input" "output" or ""
 			)
 
+getCrefInfo(cref)                         Returns the string "file,lineno,columno" with the
+                                          position info for the specified component reference
+                                          Example:
+                                          >>> getCrefInfo(Modelica.Electrical.Analog.Basic.Capacitor)
+                                          /cygdrive/c/dev/ModelicaLibrary//Modelica/Electrical/Analog/Basic.mo,249,3
+
+
 ERROR Handling
 ==============
 When an error occur in any of the functions above, the string
