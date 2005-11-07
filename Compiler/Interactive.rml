@@ -479,8 +479,92 @@ with "Ceval.rml"
 
 relation evaluate_graphical_api2: (InteractiveStmts, InteractiveSymbolTable) 
 	  =>  (string, InteractiveSymbolTable) = 
+  
 
-  rule	set_component_properties(class,comp_ref,final,flow,protected,repl,
+   rule	set_extends_modifier_value(class,Absyn.CREF_IDENT(ident,[]),
+				    subident,mod,p) 
+	   => (newp,resstr)
+	 --------------------------------------------
+	 evaluate_graphical_api2(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("setExtendsModifierValue",_),
+		 Absyn.FUNCTIONARGS([Absyn.CREF(class),
+				     Absyn.CREF(Absyn.CREF_QUAL(ident,_,subident)),
+				     Absyn.CODE(Absyn.C_MODIFICATION(mod))
+				     ],[])))],_
+	     ), 
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) 
+	   => (resstr,SYMBOLTABLE(newp,s,ic,iv,cf))			
+
+   rule	get_extends_modifier_names(class,ident,p) => resstr 
+	 --------------------------------------------  
+	 evaluate_graphical_api2(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("getExtendsModifierNames",_),
+		 Absyn.FUNCTIONARGS([Absyn.CREF(class),Absyn.CREF(ident)],[])))],_
+	     ),
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)			
+
+   rule	get_extends_modifier_value(class,Absyn.CREF_IDENT(ident,[]),subident,p) => resstr 
+	 --------------------------------------------
+	 evaluate_graphical_api2(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("getExtendsModifierValue",_),
+		 Absyn.FUNCTIONARGS([Absyn.CREF(class),Absyn.CREF(Absyn.CREF_QUAL(ident,_,subident))],[])))],_
+	     ),
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)			
+   rule	get_component_modifier_names(class,ident,p) => resstr 
+	 --------------------------------------------
+	 evaluate_graphical_api2(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("getComponentModifierNames",_),
+		 Absyn.FUNCTIONARGS([Absyn.CREF(class),Absyn.CREF(ident)],[])))],_
+	     ),
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)			
+
+   rule	get_component_modifier_value(class,Absyn.CREF_IDENT(ident,[]),subident,p) 
+	   => resstr 
+	 --------------------------------------------
+	 evaluate_graphical_api2(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("getComponentModifierValue",_),
+		 Absyn.FUNCTIONARGS([Absyn.CREF(class),Absyn.CREF(Absyn.CREF_QUAL(ident,_,subident))],[])))],_
+	     ),
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+   rule	get_parameter_value(class,Absyn.CREF_IDENT(ident,[]),p) => resstr 
+	 --------------------------------------------
+	 evaluate_graphical_api2(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("getComponentModifierValue",_),
+		 Absyn.FUNCTIONARGS([Absyn.CREF(class),Absyn.CREF(Absyn.CREF_IDENT(ident,_))],[])))],_
+	     ),
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+   rule	get_source_file(class,p) => resstr
+	 --------------------------------------------
+	 evaluate_graphical_api2(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("getSourceFile",_),
+		 Absyn.FUNCTIONARGS([Absyn.CREF(class)],[])))],_
+	     ), 
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) 
+	   => (resstr,st)
+
+   rule	set_source_file(class,filename,p) => (resstr,newp)
+	 --------------------------------------------
+	 evaluate_graphical_api2(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("setSourceFile",_),
+		 Absyn.FUNCTIONARGS([Absyn.CREF(class),
+				     Absyn.STRING(filename)
+				     ],[])))],_
+	     ), 
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) 
+	   => (resstr,SYMBOLTABLE(newp,s,ic,iv,cf))			
+
+  rule	Absyn.cref_to_path(class) => p_class &
+  set_component_properties(p_class,comp_ref,final,flow,protected,repl,
 				 variability,[dref1,dref2],causality,p) 
 	  => (resstr,p')
 	 --------------------------------------------
@@ -517,87 +601,6 @@ end
 	  =>  (string, InteractiveSymbolTable) = 
 
 
-   rule	get_source_file(class,p) => resstr
-	 --------------------------------------------
-	 evaluate_graphical_api(
-	     ISTMTS([IEXP(Absyn.CALL(
-		 Absyn.CREF_IDENT("getSourceFile",_),
-		 Absyn.FUNCTIONARGS([Absyn.CREF(class)],[])))],_
-	     ), 
-	     st as SYMBOLTABLE(p,s,ic,iv,cf)) 
-	   => (resstr,st)
-
-   rule	set_source_file(class,filename,p) => (resstr,newp)
-	 --------------------------------------------
-	 evaluate_graphical_api(
-	     ISTMTS([IEXP(Absyn.CALL(
-		 Absyn.CREF_IDENT("setSourceFile",_),
-		 Absyn.FUNCTIONARGS([Absyn.CREF(class),
-				     Absyn.STRING(filename)
-				     ],[])))],_
-	     ), 
-	     st as SYMBOLTABLE(p,s,ic,iv,cf)) 
-	   => (resstr,SYMBOLTABLE(newp,s,ic,iv,cf))			
-
-   rule	set_extends_modifier_value(class,Absyn.CREF_IDENT(ident,[]),
-				    subident,mod,p) 
-	   => (newp,resstr)
-	 --------------------------------------------
-	 evaluate_graphical_api(
-	     ISTMTS([IEXP(Absyn.CALL(
-		 Absyn.CREF_IDENT("setExtendsModifierValue",_),
-		 Absyn.FUNCTIONARGS([Absyn.CREF(class),
-				     Absyn.CREF(Absyn.CREF_QUAL(ident,_,subident)),
-				     Absyn.CODE(Absyn.C_MODIFICATION(mod))
-				     ],[])))],_
-	     ), 
-	     st as SYMBOLTABLE(p,s,ic,iv,cf)) 
-	   => (resstr,SYMBOLTABLE(newp,s,ic,iv,cf))			
-
-   rule	get_extends_modifier_names(class,ident,p) => resstr 
-	 --------------------------------------------  
-	 evaluate_graphical_api(
-	     ISTMTS([IEXP(Absyn.CALL(
-		 Absyn.CREF_IDENT("getExtendsModifierNames",_),
-		 Absyn.FUNCTIONARGS([Absyn.CREF(class),Absyn.CREF(ident)],[])))],_
-	     ),
-	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)			
-
-   rule	get_extends_modifier_value(class,Absyn.CREF_IDENT(ident,[]),subident,p) => resstr 
-	 --------------------------------------------
-	 evaluate_graphical_api(
-	     ISTMTS([IEXP(Absyn.CALL(
-		 Absyn.CREF_IDENT("getExtendsModifierValue",_),
-		 Absyn.FUNCTIONARGS([Absyn.CREF(class),Absyn.CREF(Absyn.CREF_QUAL(ident,_,subident))],[])))],_
-	     ),
-	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)			
-   rule	get_component_modifier_names(class,ident,p) => resstr 
-	 --------------------------------------------
-	 evaluate_graphical_api(
-	     ISTMTS([IEXP(Absyn.CALL(
-		 Absyn.CREF_IDENT("getComponentModifierNames",_),
-		 Absyn.FUNCTIONARGS([Absyn.CREF(class),Absyn.CREF(ident)],[])))],_
-	     ),
-	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)			
-
-   rule	get_component_modifier_value(class,Absyn.CREF_IDENT(ident,[]),subident,p) 
-	   => resstr 
-	 --------------------------------------------
-	 evaluate_graphical_api(
-	     ISTMTS([IEXP(Absyn.CALL(
-		 Absyn.CREF_IDENT("getComponentModifierValue",_),
-		 Absyn.FUNCTIONARGS([Absyn.CREF(class),Absyn.CREF(Absyn.CREF_QUAL(ident,_,subident))],[])))],_
-	     ),
-	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
-
-   rule	get_parameter_value(class,Absyn.CREF_IDENT(ident,[]),p) => resstr 
-	 --------------------------------------------
-	 evaluate_graphical_api(
-	     ISTMTS([IEXP(Absyn.CALL(
-		 Absyn.CREF_IDENT("getComponentModifierValue",_),
-		 Absyn.FUNCTIONARGS([Absyn.CREF(class),Absyn.CREF(Absyn.CREF_IDENT(ident,_))],[])))],_
-	     ),
-	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
    rule	(* expressions *)
 	 set_parameter_value(class,ident,exp,p) => (p',resstr)
@@ -1289,7 +1292,7 @@ end
  ** - dynamic_ref: {inner, outer} - two boolean values.
  ** - causality: "input" or "output" or ""
  **)
-relation set_component_properties: (Absyn.ComponentRef, (* class *)
+relation set_component_properties: (Absyn.Path, (* class *)
 				    Absyn.ComponentRef, (* component_ref *)
 				    bool, (* final = true *)
 				    bool, (* flow = true *)
@@ -1302,7 +1305,7 @@ relation set_component_properties: (Absyn.ComponentRef, (* class *)
 				    Absyn.Program)
 	  => (string, Absyn.Program) =
 
-  rule	Absyn.cref_to_path(class) => p_class &
+  rule	
 	build_within(p_class) => within &
 	get_pathed_class_in_program(p_class,p) => cdef &
 	set_component_properties_in_class(cdef,varname,final,flow,prot,repl,
@@ -1310,7 +1313,7 @@ relation set_component_properties: (Absyn.ComponentRef, (* class *)
 	  => cdef' &
 	update_program(Absyn.PROGRAM([cdef'],within),p) => newp
 	-----------------------------------
-	set_component_properties(class,Absyn.CREF_IDENT(varname,_),
+	set_component_properties(p_class,Absyn.CREF_IDENT(varname,_),
 				 final,flow,prot,repl,variability,
 				 dyn_ref,causality,p) 
 	  => ("Ok",newp) 
