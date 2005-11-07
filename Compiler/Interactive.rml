@@ -215,6 +215,10 @@ with "Ceval.rml"
 	 string_append(str,"\n") => str'
 	 ----------------------------------------------------
 	 evaluate2(stmts as ISTMTS([IEXP(Absyn.CALL(_,_))],_),st) => (str',newst)
+   rule	evaluate_graphical_api2(stmts,st) => (str,newst) &
+	 string_append(str,"\n") => str'
+	 ----------------------------------------------------
+	 evaluate2(stmts as ISTMTS([IEXP(Absyn.CALL(_,_))],_),st) => (str',newst)
 
    rule	evaluate_expr(exp,st) => (s1,newst) &
 	 string_append(s1,"\n") => str
@@ -466,19 +470,21 @@ with "Ceval.rml"
 
  end
 
- (** relation: evaluate_graphical_api
-  **
-  ** This relation evaluates all primitives in the graphical api.
-  **)
+(** relation: evaluate_graphical_api2
+ **
+ ** Second relation for evaluating graphical api. 
+ ** The reason for having two relation is that the generated c-code can
+ ** not be complied in Visual studio if the number of rules are large.
+ **)
 
- relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) 
+relation evaluate_graphical_api2: (InteractiveStmts, InteractiveSymbolTable) 
 	  =>  (string, InteractiveSymbolTable) = 
 
-   rule	set_component_properties(class,comp_ref,final,flow,protected,repl,
+  rule	set_component_properties(class,comp_ref,final,flow,protected,repl,
 				 variability,[dref1,dref2],causality,p) 
 	  => (resstr,p')
 	 --------------------------------------------
-	 evaluate_graphical_api(
+	 evaluate_graphical_api2(
 	     ISTMTS([IEXP(Absyn.CALL(
 		 Absyn.CREF_IDENT("setComponentProperties",_),
 		 Absyn.FUNCTIONARGS([Absyn.CREF(class), 
@@ -496,6 +502,19 @@ with "Ceval.rml"
 	     ), 
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) 
 	   => (resstr, SYMBOLTABLE(p',s,ic,iv,cf))
+
+end
+
+ (** relation: evaluate_graphical_api
+  **
+  ** This relation evaluates all primitives in the graphical api.
+  ** NOTE: Do NOT ADD more rules to this relation, instead add them
+  ** to evaluate_graphical_api2, since it wont compile in Visual Studio 
+  ** otherwise.
+  **)
+
+ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) 
+	  =>  (string, InteractiveSymbolTable) = 
 
 
    rule	get_source_file(class,p) => resstr
