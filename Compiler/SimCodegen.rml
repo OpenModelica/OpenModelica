@@ -941,12 +941,24 @@ end
  ** means an initial guess, and is not considered here.
  **)
 
-relation generate_initial_equations_from_start: DAELow.Var list => DAELow.Equation list =
+relation generate_initial_equations_from_start: DAELow.Var list 
+	  => DAELow.Equation list =
 
   axiom	generate_initial_equations_from_start ([]) => []
 	
 	(* add equations for variables with fixed = true*)
   rule	DAELow.var_fixed(attr,kind) => true &
+	generate_initial_equations_from_start(vars) => eqns 
+	--------------------------
+	generate_initial_equations_from_start(DAELow.VAR(cr,kind,_,_,_,_,_,SOME(startv),_,_,_,attr,_,_)::vars)
+	  => DAELow.EQUATION(Exp.CREF(cr,Exp.OTHER),startv)::eqns
+
+	  (*also add an equation for variables that have non-constant
+	   * expressions, e.g. parameter values, as start.
+	   NOTE: such start attributes can then not be changed in the text
+	   file, since the initial calc. will override those entries!
+	   *)
+  rule	Exp.is_const(startv) => false &
 	generate_initial_equations_from_start(vars) => eqns 
 	--------------------------
 	generate_initial_equations_from_start(DAELow.VAR(cr,kind,_,_,_,_,_,SOME(startv),_,_,_,attr,_,_)::vars)
