@@ -176,6 +176,7 @@ module DAE:
   relation dump_direction_str: VarDirection => string 
   relation dump_variable_attributes: (VariableAttributes option )=> ()
   relation dump_variable_attributes_str: (VariableAttributes option ) => string 
+  relation get_start_attr_string: (VariableAttributes option ) => string   
   relation get_matching_elements: (Element list, Element => () )  => Element list
   relation get_output_vars: Element list  => Element list
   relation get_bidir_vars: Element list  => Element list
@@ -837,6 +838,26 @@ relation dump_variable_attributes: VariableAttributes option => () =
         dump_variable_attributes(attr)
 
 
+end
+
+(** relation: get_start_attr_string
+ **
+ ** Return the start attribute as a string.
+ **)
+
+relation get_start_attr_string: (VariableAttributes option ) => string =
+
+  axiom	get_start_attr_string(NONE) => ""
+
+  rule	real_string(r) => s
+	-------------------
+	get_start_attr_string(SOME(VAR_ATTR_REAL(_,_,_,_,SOME(r),_,_,_))) => s
+	
+  rule	int_string(i) => s
+	-------------------
+	get_start_attr_string(SOME(VAR_ATTR_INT(_,_,SOME(i),_))) => s
+
+  axiom	get_start_attr_string(_) => ""
 end
 
 (** relation: string_to_string

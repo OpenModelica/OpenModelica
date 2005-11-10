@@ -897,6 +897,7 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
   rule  DAELow.var_list(vars) => vars_lst &
 	DAELow.equation_list(ie) => initial_eqns1 &
 	generate_initial_equations_from_start(vars_lst) => initial_eqns2 &
+	generate_initial_assignments_from_start(vars_lst) => start_assigns &
 	
 	list_append(initial_eqns1,initial_eqns2) => initial_eqns &
 	DAELow.list_equation(initial_eqns) => initial_eqns' &
@@ -924,6 +925,7 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
 				 "\n/*\n*/\nvoid initial_function(double *x, double *xd, double *y, double *p,\n",
                                  "                   int nx, int ny, int np)\n",
                                  "{\n",
+				 start_assigns,
                                  block_code,
                                  "\n}\n"]) => res 
         ----------------------------------
@@ -953,21 +955,40 @@ relation generate_initial_equations_from_start: DAELow.Var list
 	generate_initial_equations_from_start(DAELow.VAR(cr,kind,_,_,_,_,_,SOME(startv),_,_,_,attr,_,_)::vars)
 	  => DAELow.EQUATION(Exp.CREF(cr,Exp.OTHER),startv)::eqns
 
-	  (*also add an equation for variables that have non-constant
+  rule	generate_initial_equations_from_start(vars) => eqns 
+	--------------------------
+	generate_initial_equations_from_start(_::vars)
+	  => eqns
+end
+
+(** relation: generate_initial_assignments_from_start
+ **
+ **)
+
+relation generate_initial_assignments_from_start: DAELow.Var list 
+	  => string =
+
+  axiom	generate_initial_assignments_from_start ([]) => ""
+	
+
+	  (*also add an assignment for variables that have non-constant
 	   * expressions, e.g. parameter values, as start.
 	   NOTE: such start attributes can then not be changed in the text
 	   file, since the initial calc. will override those entries!
 	   *)
   rule	Exp.is_const(startv) => false &
-	generate_initial_equations_from_start(vars) => eqns 
+	generate_initial_assignments_from_start(vars) => strs &
+	Exp.print_component_ref_str(cr) => cr_str &
+	print_exp_cpp_str(startv) => startv_str &
+	Util.string_append_list([cr_str," = ",startv_str,";\n",strs]) => str
 	--------------------------
-	generate_initial_equations_from_start(DAELow.VAR(cr,kind,_,_,_,_,_,SOME(startv),_,_,_,attr,_,_)::vars)
-	  => DAELow.EQUATION(Exp.CREF(cr,Exp.OTHER),startv)::eqns
+	generate_initial_assignments_from_start(DAELow.VAR(cr,kind,_,_,_,_,_,SOME(startv),_,_,_,attr,_,_)::vars)
+	  => str
 
-  rule	generate_initial_equations_from_start(vars) => eqns 
+  rule	generate_initial_assignments_from_start(vars) => str
 	--------------------------
-	generate_initial_equations_from_start(_::vars)
-	  => eqns
+	generate_initial_assignments_from_start(_::vars)
+	  => str
 end
 
 (** relation generate_ode_code
