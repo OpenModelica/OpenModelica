@@ -2290,9 +2290,9 @@ relation generate_zero_crossing: (string,
 	  
   rule	
 	generate_zero_crossing2(zc,0,dae,dlow,ass1,ass2,blocks,helpVarInfo) => (zc_str,zc_eq_str) &
-	generate_ode_blocks(dlow,ass1,ass2,blocks) => (eqs_str,_) &
+	generate_ode_blocks(dlow,ass1,ass2,blocks) => (eqs_str,extra_funcs) &
          generate_helpvar_updates(helpVarInfo) => helpvarUpdateStr &
-	Util.string_append_list([
+	Util.string_append_list([extra_funcs,
 				 "\nint\nfunction_zeroCrossing(long *neqm, double *t, double *x, long *ng, double *gout,\n"
 				 ,"             double *rpar, long* ipar)\n"
 				 ,"{\n"
@@ -2577,9 +2577,10 @@ end
          
   rule	let func_header = "int\nfunctionDAE_output(double *t, double* x, double* xd, double* y, double* p)\n{\n" &
 	 let func_footer = "return 0;\n\n}\n" &
-	 build_solved_blocks(dae,dlow,ass1,ass2,blocks) => eqn_str_lst &
-	 generate_compute_removed_eqns(dlow) => eqn_str_lst2 &
-	 Util.list_flatten([[func_header],eqn_str_lst, eqn_str_lst2,
+	 (*build_solved_blocks(dae,dlow,ass1,ass2,blocks) => eqn_str_lst &*)
+	 generate_ode_blocks(dlow,ass1,ass2,blocks) => (body,extra_funcs) &
+	 generate_compute_removed_eqns(dlow) => body2 &
+	 Util.list_flatten([[extra_funcs],[func_header],[body], body2,
 			    [func_footer]]) => res &
          Util.string_append_list(res) => coutput 
          -------------------------------------------------------------
@@ -2614,78 +2615,6 @@ relation generate_compute_removed_eqns_2: DAELow.Equation list  => string list =
 	------------------------------
 	generate_compute_removed_eqns_2(DAELow.SOLVED_EQUATION(cr,exp)::rest)
 	  => s1::res
-end
-
-
-(** relation: build_solved_blocks
- **
- ** This relation generates code for blocks on solved form, i.e. 
- ** \dot{x} = f(x,y,t) 
- **)
-
-relation build_solved_blocks:(DAE.DAElist,
-			      DAELow.DAELow, 
-			      int vector, (* assignments1*)
-			      int vector, (* assignments2*)
-			      int list list (* list of blocks *)) 
-	  => string list =
-
-  axiom	build_solved_blocks(_,_,_,_,[]) => []
-	     
-  rule	(* for single equations *)
-	use_zerocrossing => true &
-	build_non_discrete_equation(dae,dlow,ass1,ass2,eqn) => eqn_str &
-	build_solved_blocks(dae,dlow,ass1,ass2,blocks) => res
-	-------------------------------------
-	build_solved_blocks(dae,dlow,ass1,ass2,(block as [eqn])::blocks) => eqn_str::res
-
-  rule	(* for single equations *)
-	use_zerocrossing => false &
-	build_equation(dae,dlow,ass1,ass2,eqn) => eqn_str &
-	build_solved_blocks(dae,dlow,ass1,ass2,blocks) => res
-	-------------------------------------
-	build_solved_blocks(dae,dlow,ass1,ass2,(block as [eqn])::blocks) => eqn_str::res
-	 
-
-  rule	(* for blocks *)
-	build_block(dae,dlow,ass1,ass1,block) => block_str &
-	build_solved_blocks(dae,dlow,ass1,ass2,blocks) => res
-	 ------------------
-	build_solved_blocks(dae,dlow,ass1,ass2,block::blocks) => block_str::res
-
-  rule	print "-build_solved_blocks failed\n" 
-	 -----------------
-	 build_solved_blocks(_,_,_,_,_) => fail
- end
-
-(** relation: build_block
- **
- ** This relation returns the code string for solving a block of variables 
- ** in the dae, i.e. a set of coupled equations.
- ** It is used both for state variables and algebraic variables.
-**)
-
-relation build_block: (DAE.DAElist,
-		       DAELow.DAELow, 
-		       int vector, (* assignments1 *)
-		       int vector, (* assignments2 *)
-		       int list) (* block of equations*)
-	  => string =
-
-  rule	all_same_algorithm(dlow,block) => true &
-	int_sub(e,1) => e' &
- 	DAELow.equation_nth(eqns,e') => DAELow.ALGORITHM(indx,inputs,outputs) &
-	array_nth(alg,indx) => alg &
-	Codegen.generate_algorithm(DAE.ALGORITHM(alg),1) 
-	  => (Codegen.CFUNCTION(_,_,_,_,_,_,stmt_strs,_),_) &
-	Util.string_delimit_list(stmt_strs,"\n") => res
-	---------------
-	build_block(dae,dlow as DAELow.DAELOW(_,_,eqns,_,_,alg,_),ass1,as2,block as e::_) 
-	  => res
-
-  rule	print "#Solving of equation systems not implemented yet.\n"
-	--------------------------
-	build_block(dae,dlow,ass1,ass2,block) => fail
 end
 
 (** relation: all_same_algorithm

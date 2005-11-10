@@ -1094,10 +1094,8 @@ end
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("typeOf"),[Exp.CREF(Exp.CREF_IDENT(varid,_),_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (Values.STRING(str),st)
 
-  rule	let newst = Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[])
-	 -------------------------------
-	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
-	  => (Values.BOOL(true),newst)
+axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
+	  => (Values.BOOL(true),Interactive.empty_symboltable)
 
   rule	let newst = Interactive.SYMBOLTABLE(p,fp,ic,[],cf)
 	 -------------------------------
@@ -1706,17 +1704,8 @@ relation build_model:(Env.Env,
         generate_makefilename(filenameprefix) => makefilename &
         (*	Util.string_append_list(["make -f ",cname_str, ".makefile\n"]) => s_call &
          *)
-        
-	System.path_delimiter => pd &
-	System.read_env("OPENMODELICAHOME") => omhome & 
-        win_citation() => cit &
-        Util.string_append_list([cit,omhome, pd, "Compiler", 
-                                 pd, "scripts", pd, "Compile ", 
-                                 makefilename," > output.log 2>&1",cit
-                                 ]) => s_call &
-        (*> output.log 2>&1 = redirect stderr to stdout and put it in output.log *)
-        
-	System.system_call(s_call) => 0 
+        compile_model(makefilename) 
+
         -------------------------------------------
         build_model(env,exp as Exp.CALL(Absyn.IDENT(_),
                                         [Exp.CREF(cr,_),
@@ -1728,6 +1717,36 @@ relation build_model:(Env.Env,
   rule Print.print_error_buf("# build_model failed\n")
         -----------------------------------------
         build_model(_,_,_,_) => fail
+end
+
+
+(** relation: compile_model
+ ** author: PA
+ **
+ ** Compiles a model given a makefilename, helper relation to build_model.
+ **)
+relation compile_model: (string) => () =
+	 
+  rule	System.path_delimiter => pd &
+	System.read_env("OPENMODELICAHOME") => omhome & 
+        win_citation() => cit &
+        Util.string_append_list([cit,omhome, pd, "Compiler", 
+                                 pd, "scripts", pd, "Compile ", 
+                                 makefilename," > output.log 2>&1",cit
+                                 ]) => s_call &
+        (*> output.log 2>&1 = redirect stderr to stdout and put it in output.log *)
+        
+	System.system_call(s_call) => 0 
+	--------------------------
+	compile_model(makefilename) => ()
+	
+	(* compilation failed\n *)
+  rule	System.read_file("output.log") => str &
+	Print.print_error_buf ("#Error building simulation code.\n buildlog:\n") &
+	Print.print_error_buf (str) &
+	Print.print_error_buf "\n" 
+	--------------------------
+	compile_model(makefile_name) => fail
 end
 
 (** relation: win_citation

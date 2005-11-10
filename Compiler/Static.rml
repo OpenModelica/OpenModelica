@@ -1979,7 +1979,7 @@ relation elab_builtin_differentiate : (Env.Env, Absyn.Exp list, bool (*impl*))
         Absyn.get_cref_from_exp(s2) => cref_list2 &
         list_append(cref_list1,cref_list2) => cref_list &
         absyn_cref_list_to_interactive_var_list(cref_list,
-                                                Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[]),
+                                                Interactive.empty_symboltable,
                                                 (Types.T_REAL([]),NONE)) => symbol_table &
         Interactive.build_env_from_symboltable(symbol_table) => gen_env &
         elab_exp (gen_env,s1,impl,NONE) => (s1', st,_) &
@@ -2008,7 +2008,7 @@ relation elab_builtin_simplify : (Env.Env, Absyn.Exp list, bool (*impl*))
         
   rule  Absyn.get_cref_from_exp(s1) => cref_list &
         absyn_cref_list_to_interactive_var_list(cref_list,
-                                                Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[]),
+                                                Interactive.empty_symboltable,
                                                 (Types.T_REAL([]),NONE)) => symbol_table &
         Interactive.build_env_from_symboltable(symbol_table) => gen_env &
         elab_exp (gen_env,s1,impl,NONE) => (s1', st,_)
@@ -2019,7 +2019,7 @@ relation elab_builtin_simplify : (Env.Env, Absyn.Exp list, bool (*impl*))
         
   rule  Absyn.get_cref_from_exp(s1) => cref_list &
         absyn_cref_list_to_interactive_var_list(cref_list,
-                                                Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[]),
+                                                Interactive.empty_symboltable,
                                                 (Types.T_INTEGER([]),NONE)) => symbol_table &
         Interactive.build_env_from_symboltable(symbol_table) => gen_env &
         elab_exp (gen_env,s1,impl,NONE) => (s1', st,_)

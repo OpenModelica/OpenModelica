@@ -84,6 +84,8 @@ module Interactive:
 						   InteractiveVariable list * (*List of variables with values*)  
   						   (Absyn.Path * Types.Type) list (* List of compiled functions, F.Q name + type*)
 
+val empty_symboltable : InteractiveSymbolTable
+
   relation evaluate: (InteractiveStmts, InteractiveSymbolTable, bool) 
 	  => (string,InteractiveSymbolTable) 
             (* this is exported due to the need of using several interactive modules *)
@@ -163,6 +165,10 @@ with "Print.rml"
 with "System.rml"
 with "ClassLoader.rml"
 with "Ceval.rml"
+
+
+val empty_symboltable = SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[IVAR("$echo",Values.BOOL(true),(Types.T_BOOL([]),NONE))],[])
+
  
  (** relation: evaluate
   **
@@ -371,6 +377,10 @@ end
  relation get_variable_list_str: (InteractiveVariable list) => string list =
 
    axiom	get_variable_list_str([]) => []
+
+   rule	get_variable_list_str(vs)=> res 
+	 ----------------------------
+	 get_variable_list_str(IVAR("$echo",_,_)::vs) => res
 
    rule	get_variable_list_str(vs)=> res 
 	 ----------------------------

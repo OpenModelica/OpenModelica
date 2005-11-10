@@ -346,7 +346,7 @@ relation translate_file : string list => () =
 	(* Modelica script file .mos *)
   rule	is_modelica_script_file(f) &
  	Parser.parseexp f => stmts &
-	Interactive.evaluate(stmts,Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[]),true) => (res,newst) &
+	Interactive.evaluate(stmts,Interactive.empty_symboltable,true) => (res,newst) &
 	print res
 	------------------------------
 	translate_file [f]
@@ -559,7 +559,7 @@ end
 relation interactivemode: string list => () =
 
   rule	Socket.waitforconnect 29500  => shandle &
-	server_loop (shandle, Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[])) => _
+	server_loop (shandle, Interactive.empty_symboltable) => _
 	-------------------
 	interactivemode _
 end
@@ -572,7 +572,7 @@ end
 relation interactivemode_corba: string list => () =
 
   rule	Corba.initialize &
-	server_loop_corba (Interactive.SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[],[])) => _
+	server_loop_corba (Interactive.empty_symboltable) => _
 	-------------------
 	interactivemode_corba _
 end
