@@ -93,7 +93,7 @@ relation add_flow : (Sets,
 		     Exp.ComponentRef, Face) => Sets
 relation print_sets : Sets => ()
 relation print_sets_str : Sets => string
-relation equations : Sets => DAE.Element list
+relation equations : (Sets) => DAE.Element list
 relation unconnected_flow_equations : (Sets, DAE.Element list, Env.Env,bool (* CallingScope*)) 
 	  => DAE.Element list
 end
@@ -179,21 +179,24 @@ end
  ** of equations.
  **)
 
-relation equations : Sets => DAE.Element list =
+relation equations : (Sets)
+	  => DAE.Element list =
 
-  axiom	equations SETS([],_) => []
+
+
+  axiom	equations( SETS([],_)) => []
 
   rule	equ_equations cs => dae1 &
-	equations SETS(ss,crs) => dae2 &
+	equations(SETS(ss,crs)) => dae2 &
 	list_append(dae1,dae2) => dae
 	-----------------------------
-	equations SETS(EQU(cs)::ss,crs) => dae
+	equations(SETS(EQU(cs)::ss,crs)) => dae
 
   rule	flow_equations cs => dae1 &
-	equations SETS(ss,crs) => dae2 &
+	equations(SETS(ss,crs)) => dae2 &
 	list_append(dae1,dae2) => dae
 	-----------------------------
-	equations SETS(FLOW(cs)::ss,crs) => dae
+	equations(SETS(FLOW(cs)::ss,crs)) => dae
 
 end
 

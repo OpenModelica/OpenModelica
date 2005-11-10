@@ -3204,6 +3204,18 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	      Types.PROP((Types.T_ENUMERATION(["never", "avoid", "default", "prefer", "always"],[]),NONE),Types.C_VAR),
 	      SOME(st))
 
+  rule	elab_exp(env,bool_exp,impl,SOME(st)) => (bool_exp',prop,st')
+	------------------------------------------------------------------
+	elab_call_interactive(env, Absyn.CREF_IDENT("echo",_),
+			      [ bool_exp],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("echo"),
+		       [bool_exp'],
+		       false,
+		       true),
+	      Types.PROP((Types.T_BOOL([]),NONE),Types.C_CONST),
+	      SOME(st))
+
 end
 (** relation: elab_variablenames
  ** This relation elaborates variablenames to Exp.Exp. A variablename can

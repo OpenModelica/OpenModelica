@@ -669,11 +669,11 @@ relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class,
   rule	Env.open_scope(env,encflag,SOME(n)) => env' &
 	ClassInf.start(r,n) => ci_state &
 	inst_class_in(env', mod, pre, csets, ci_state, c, false(*accesibility*), inst_dims, impl,false (*packimpl*))
-	  => (dae1, env''', csets', ci_state', tys) &
+	  => (dae1, env''', csets' as Connect.SETS(_,crs), ci_state', tys) &
 	make_fully_qualified(env,Absyn.IDENT(n)) => fq_class &
 	DAE.set_component_type(dae1,fq_class) => dae1' &
 	is_top_call(callscope) => callscope' &  
-	Connect.equations csets' => dae2 &
+	Connect.equations (csets') => dae2 &
 	Connect.unconnected_flow_equations (csets',dae1,env''', callscope') 
 	  => dae3 &
 	Util.list_flatten([dae1', dae2, dae3]) => dae &
@@ -681,7 +681,7 @@ relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class,
 	mktype(typename,ci_state',tys) => ty
 	-------------------------------------------
 	inst_class(env, mod, pre, csets, c as SCode.CLASS(n,_,encflag,r,_),inst_dims,impl,callscope)
-	  => (dae, env''', csets', ty, ci_state')
+	  => (dae, env''', Connect.SETS([],crs), ty, ci_state')
 
   rule	Debug.fprint("failtrace", "- inst_class ") & 
 	Debug.fprint("failtrace",  n) &
@@ -717,7 +717,7 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
                       c as SCode.CLASS("Real",_,_,_,_),_,_, impl,packimpl)
           => ([] (* No DAE *), 
 	      env, 
-	      Connect.SETS([],crs) (* csets should be emtpy, but crs must be propagated to "next component" *), 
+	     Connect.SETS([],crs) (* csets should be emtpy, but crs must be propagated to "next component" *), 
 	      ci_state, [])
 	
 	  
@@ -731,7 +731,7 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  
  axiom inst_class_in(env,mods,pre,Connect.SETS(_,crs),ci_state,
                      c as SCode.CLASS("Boolean",_,_,_,_),_,_, impl,packimpl)
-         => ([] (* No DAE *), env, Connect.SETS([],crs), ci_state, [])
+         => ([] (* No DAE *), env,Connect.SETS([],crs), ci_state, [])
 
 	  (* Ignore functions if not implicit instantiation *)
   rule	SCode.is_function cls => true

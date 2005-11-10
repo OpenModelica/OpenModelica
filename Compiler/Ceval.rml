@@ -1531,6 +1531,17 @@ end
 						   [Exp.CREF(cref,_),Exp.CREF(classname,_)], _, _),
 				     st,msg)
 	  => (v, st')
+
+  rule	ceval(env,bool_exp,true,SOME(st),NONE,msg) 
+	  => (v as Values.BOOL(bval),SOME(st')) &
+	Interactive.add_var_to_symboltable("$echo",v,
+					   (Types.T_BOOL([]),NONE),st')
+	    => st''
+	 ----------------------------------------------
+	 ceval_interactive_functions(env, Exp.CALL(Absyn.IDENT("echo"),
+						   [bool_exp], _, _),
+				     st,msg)
+	  => (v, st'')
  
 end
 
@@ -1873,9 +1884,7 @@ relation ceval_builtin_size : (Env.Env, Exp.Exp, Exp.Exp, bool,
 	 * which will determine dimension size.
 	 *)
 	Inst.elab_component_arraydim_from_env(env,cr) => dims &
-	print "got dims\n" &
 	ceval(env,dim,impl,st,NONE,msg) => (Values.INTEGER(dimv),st') &
-	print "cevaled\n" &
 	ceval_builtin_size_3(dims,dimv) => v2
 	------------------------------------
 	ceval_builtin_size(env,Exp.CREF(cr,tp),dim,impl as false,st,msg) 

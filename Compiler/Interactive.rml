@@ -169,33 +169,68 @@ with "Ceval.rml"
   ** This relation evaluates expressions feeded interactively to the compiler.
  **)
 
- relation evaluate: (InteractiveStmts, InteractiveSymbolTable, bool) 
+ relation evaluate: (InteractiveStmts, InteractiveSymbolTable, bool (*verbose*)) 
 	   => (string,InteractiveSymbolTable) =
 
-   rule	evaluate2(ISTMTS([x],true),st) => (res,newst)
+   rule	evaluate2(ISTMTS([x],verbose),st) => (res,newst) &
+	 get_echo(newst) => echo &
+	 select_resultstr(res,semicolon,verbose,echo) => res'
 	 ----------------------------
-	 evaluate (ISTMTS([x],true),st,false) => ("",newst)
+	 evaluate (ISTMTS([x],semicolon),st,verbose) => (res',newst)
 
-   rule	(* Verbose, semicolon off *)
-	 evaluate2(ISTMTS([x],false),st) => (res,newst)
-	 ----------------------------
-	 evaluate (ISTMTS([x],true),st,true) => (res,newst)
-
-   rule	evaluate2(ISTMTS([x],false),st) => (res,newst)
-	 ----------------------------
-	 evaluate (ISTMTS([x],false),st,verbose) => (res,newst)
-
-   rule	evaluate2(ISTMTS([x],sc),st) => (res,newst) &
-	 evaluate(ISTMTS(xs,sc),newst,false) => (res,newst') 
+   rule	evaluate2(ISTMTS([x],semicolon),st) => (res,newst) &
+	 get_echo(newst) => echo &
+	 select_resultstr(res,semicolon,verbose,echo) => res' &
+	 evaluate(ISTMTS(xs,semicolon),newst,verbose) => (res2,newst') &
+	 Util.string_append_list([res',res2]) => res''
 	 ------------------------------------------
-	 evaluate (ISTMTS(x::xs,sc),st,false) => (res,newst')
-
-   rule	evaluate2(ISTMTS([x],sc),st) => (res,newst) &
-	 evaluate(ISTMTS(xs,sc),newst,true) => (res2,newst') &
-	 Util.string_append_list([res,res2]) => res'
-	 ------------------------------------------
-	 evaluate (ISTMTS(x::xs,sc),st,true) => (res',newst')
+	 evaluate (ISTMTS(x::xs,semicolon),st,verbose) => (res'',newst')
  end
+
+(** relation: select_resultstr
+ **
+ ** Returns result string depending on three boolean variables
+ ** - semicolon
+ ** - verbose
+ ** - echo
+ **)
+
+relation select_resultstr: (string,
+			    bool, (* semicolon *)
+			    bool, (* verbose *)
+			    bool) (* echo *)
+	  => string =
+
+	(* echo off allways empty string *)
+  axiom	select_resultstr(str,_,_,false) => ""
+
+	(* .. verbose on allways return str *)
+  axiom	select_resultstr(str,_,true,_) => str 
+
+	(* ... semicolon, no resultstr *)
+  axiom	select_resultstr(str,true,_,_) => "" 
+
+  axiom	select_resultstr(str,false,_,_) => str
+end
+	
+
+(** relation: get_echo
+ **
+ ** Return echo variable, which determines if result should be printed or not.
+ **)
+
+relation get_echo: (InteractiveSymbolTable) => bool =
+
+  rule	build_env_from_symboltable(st) => env &	
+	 Ceval.ceval (env,Exp.CREF(Exp.CREF_IDENT("$echo",[]),
+				   Exp.BOOL),true,SOME(st),NONE,Ceval.MSG) 
+	  => (Values.BOOL(res),_)
+	----------------------
+	get_echo(st) => res	
+
+  axiom	get_echo(_) => true
+
+end
 
 (** relation: evaluate2
  **
@@ -1368,7 +1403,7 @@ relation set_component_properties_in_classparts: (Absyn.ClassPart list,
 
 	  (* public moved to protected *)
   rule	get_public_list(parts) => publst &
-	get_element_contains_name(Absyn.CREF_IDENT(cr,[]),publst) 
+	get_elementitem_contains_name(Absyn.CREF_IDENT(cr,[]),publst) 
 	  => Absyn.ELEMENTITEM(elt) &
 	set_component_properties_in_element(elt,cr,final,flow,repl,
 					    variability,dyn_ref,
@@ -1387,7 +1422,7 @@ relation set_component_properties_in_classparts: (Absyn.ClassPart list,
 
 	  (* protected moved to public *)
   rule	get_protected_list(parts) => protlst &
-	get_element_contains_name(Absyn.CREF_IDENT(cr,[]),protlst) 
+	get_elementitem_contains_name(Absyn.CREF_IDENT(cr,[]),protlst) 
 	  => Absyn.ELEMENTITEM(elt) &
 	set_component_properties_in_element(elt,cr,final,flow,repl,
 					    variability,dyn_ref,
@@ -3135,20 +3170,20 @@ end
   axiom	is_constant (_,_,_) => false
  end
 
-(** relation: get_element_contains_name
+(** relation: get_elementitem_contains_name
  **
  ** Returns the element that has the component name given as argument.
  **)
-relation get_element_contains_name: (Absyn.ComponentRef, Absyn.ElementItem list)
+relation get_elementitem_contains_name: (Absyn.ComponentRef, Absyn.ElementItem list)
 	=> Absyn.ElementItem =
 
   rule  get_components_contains_name(cr,[elt]) => _ 
 	---------------------------------
-	get_element_contains_name(cr,elt::_) => elt 
+	get_elementitem_contains_name(cr,elt::_) => elt 
 
-  rule	get_element_contains_name(cr,rest) => res
+  rule	get_elementitem_contains_name(cr,rest) => res
 	-------------------------
-	get_element_contains_name(cr,_::rest) => res
+	get_elementitem_contains_name(cr,_::rest) => res
 end 
 
 (** relation: get_components_contains_name
@@ -3167,6 +3202,25 @@ end
    rule	get_components_contains_name(cr,xs) => res
 	 -----------------------------------------
 	 get_components_contains_name (cr,x::xs) => res
+ end
+
+(** relation: get_element_contains_name
+ **
+ ** Return the Element containing the component name given as argument from
+ ** a list of ElementItems.
+ **)
+
+ relation get_element_contains_name: (Absyn.ComponentRef, 
+				      Absyn.ElementItem list) 
+	   => Absyn.Element =
+
+   rule	get_compitem_named(cr,ellst) => _
+	 -------------------
+	 get_element_contains_name (cr,Absyn.ELEMENTITEM(res as Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,ellst),_,_))::xs) => res
+
+   rule	get_element_contains_name(cr,xs) => res
+	 -----------------------------------------
+	 get_element_contains_name (cr,x::xs) => res
  end
 
 (** relation: get_compitem_named
@@ -3751,15 +3805,15 @@ end
 	 get_pathed_class_in_program(modelpath,p) => Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_) &
 	 get_pathed_class_in_program(modelpath,p') => cdef &
 	 get_public_list(parts) => publst &
-	 get_components_contains_name(Absyn.CREF_IDENT(name,[]),publst) 
-	   => Absyn.COMPONENTS(attr,tp,items) &
+	 get_element_contains_name(Absyn.CREF_IDENT(name,[]),publst) 
+	  => Absyn.ELEMENT(final,repl,inout,id,Absyn.COMPONENTS(attr,tp,items),info,constr) &
 	 get_compitem_named(Absyn.CREF_IDENT(name,[]),items) 
 	   => Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,mod),cond,ann) &
 	 annotation_list_to_absyn_comment(nargs,ann) => annotation &
 	 modification_to_absyn(nargs,mod) => modification &
-	 add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED,"",
+	 add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(final,repl,inout,id,
 	     Absyn.COMPONENTS(attr,tp,
-		 [Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),cond,annotation)]),Absyn.INFO("",0,0),NONE)))
+		 [Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),cond,annotation)]),info,constr)))
 	   => newcdef &	
 	 update_program(Absyn.PROGRAM([newcdef], Absyn.WITHIN(modelwithin)),p) => newp
 	 --------------------------
@@ -3773,20 +3827,21 @@ end
 	 get_pathed_class_in_program(modelpath,p) => Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_) &
 	 get_pathed_class_in_program(modelpath,p') => cdef &
 	 get_protected_list(parts) => protlst &
-	 get_components_contains_name(Absyn.CREF_IDENT(name,[]),protlst) 
-	   => Absyn.COMPONENTS(attr,tp,items) &
+	 get_element_contains_name(Absyn.CREF_IDENT(name,[]),protlst) 
+	  => Absyn.ELEMENT(final,repl,inout,id,Absyn.COMPONENTS(attr,tp,items),info,constr) &
 	 get_compitem_named(Absyn.CREF_IDENT(name,[]),items) 
 	   => Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,mod),cond,ann) &
 	 annotation_list_to_absyn_comment(nargs,ann) => annotation &
 	 modification_to_absyn(nargs,mod) => modification &
-	 add_to_protected(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED,"",
+	 add_to_protected(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(final,repl,
+							       inout,id,
 	     Absyn.COMPONENTS(attr,tp,
-		 [Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),cond,annotation)]),Absyn.INFO("",0,0),NONE)))
+		 [Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),cond,annotation)]),info,constr)))
 	   => newcdef &	
 	 update_program(Absyn.PROGRAM([newcdef], Absyn.WITHIN(modelwithin)),p) => newp
 	 --------------------------
 	 update_component( name,tp,model as Absyn.CREF_QUAL(_,_,_),nargs,p as Absyn.PROGRAM(_,w)) 
-	   => (newp, "true\n")
+	   => (newp, "true")
 
    rule	(* Updating a public component to model that resides on top level *)
 	 Absyn.cref_to_path(model) => modelpath &
@@ -3796,20 +3851,20 @@ end
 	 get_pathed_class_in_program(modelpath,p') => cdef &
 	 get_pathed_class_in_program(modelpath,p) => Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_) &
 	 get_public_list(parts) => publst &
-	 get_components_contains_name(Absyn.CREF_IDENT(name,[]),publst) 
-	   =>Absyn.COMPONENTS(attr,tp,items) &
+	 get_element_contains_name(Absyn.CREF_IDENT(name,[]),publst) 
+	  => Absyn.ELEMENT(final,repl,inout,id,Absyn.COMPONENTS(attr,tp,items),info,constr) &
 	 get_compitem_named(Absyn.CREF_IDENT(name,[]),items) 
 	   => Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,mod),cond,ann) &
 	 annotation_list_to_absyn_comment(nargs,ann) => annotation &
 	 modification_to_absyn(nargs,mod) => modification &
-	 add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED,"",
+	 add_to_public(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(final,repl,inout,id,
 	     Absyn.COMPONENTS(attr,tppath,
-		 [Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),cond,annotation)]),Absyn.INFO("",0,0),NONE))) 
+		 [Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),cond,annotation)]),info,constr))) 
 	   => newcdef &	
 	 update_program(Absyn.PROGRAM([newcdef], Absyn.TOP),p) => newp
 	 ------------------------------------------------
 	 update_component( name,tp,model as Absyn.CREF_IDENT(_,_),nargs,p as Absyn.PROGRAM(_,w)) 
-	   => (newp,"true\n")
+	   => (newp,"true")
 
    rule	(* Updating a protected component to model that resides on top level *)
 	 Absyn.cref_to_path(model) => modelpath &
@@ -3819,20 +3874,20 @@ end
 	 get_pathed_class_in_program(modelpath,p') => cdef &
 	 get_pathed_class_in_program(modelpath,p) => Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_) &
 	 get_protected_list(parts) => protlst &
-	 get_components_contains_name(Absyn.CREF_IDENT(name,[]),protlst) 
-	   =>Absyn.COMPONENTS(attr,tp,items) &
+	 get_element_contains_name(Absyn.CREF_IDENT(name,[]),protlst) 
+	  => Absyn.ELEMENT(final,repl,inout,id,Absyn.COMPONENTS(attr,tp,items),info,constr) &
 	 get_compitem_named(Absyn.CREF_IDENT(name,[]),items) 
 	   => Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,mod),cond,ann) &
 	 annotation_list_to_absyn_comment(nargs,ann) => annotation &
 	 modification_to_absyn(nargs,mod) => modification &
-	 add_to_protected(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED,"",
+	 add_to_protected(cdef,Absyn.ELEMENTITEM(Absyn.ELEMENT(final,repl,inout,id,
 	     Absyn.COMPONENTS(attr,tppath,
-		 [Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),cond,annotation)]),Absyn.INFO("",0,0),NONE))) 
+		 [Absyn.COMPONENTITEM(Absyn.COMPONENT(name,[],modification),cond,annotation)]),info,constr))) 
 	   => newcdef &	
 	 update_program(Absyn.PROGRAM([newcdef], Absyn.TOP),p) => newp
 	 ------------------------------------------------
 	 update_component( name,tp,model as Absyn.CREF_IDENT(_,_),nargs,p as Absyn.PROGRAM(_,w)) 
-	   => (newp,"true\n")
+	   => (newp,"true")
 
  end
 
