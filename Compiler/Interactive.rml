@@ -632,6 +632,15 @@ relation evaluate_graphical_api2: (InteractiveStmts, InteractiveSymbolTable)
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) 
 	   => (resstr, SYMBOLTABLE(p',s,ic,iv,cf))
 
+   (* adrpo added 2005-11-03 *)
+   rule	 get_elements_info(cr,p) => resstr 
+	 ---------------------------------
+	 evaluate_graphical_api2(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("getElementsInfo",_),
+		 Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))],_
+	     ),
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 end
 
  (** relation: evaluate_graphical_api
@@ -1257,7 +1266,7 @@ end
 	   => ("OK",SYMBOLTABLE(p',s',[],[],[]))
 
 
-   (* adrpo added 2005-01-03 *)
+   (* adrpo added 2005-11-03 *)
    rule	  get_cref_info(cr,p) => resstr
 	 -----------------------
 	 evaluate_graphical_api(
@@ -1699,6 +1708,163 @@ end
 
  end
 
+
+ (** relation: get_import_string
+  ** author: adrpo@ida
+  ** date  : 2005-11-11
+  ** helper relation to get_element_type 
+  **)
+relation get_import_string: (Absyn.Import) => string =
+
+  rule Absyn.path_string (path) => path_str &
+       Util.string_append_list(["kind=named, id=", id, ", path=", path_str]) => str 
+       ----------------------------------------------------------------------
+       get_import_string(Absyn.NAMED_IMPORT(id, path)) => str
+
+  rule Absyn.path_string (path) => path_str &
+       Util.string_append_list(["kind=qualified, path=", path_str]) => str 
+       ------------------------------------------------------------
+       get_import_string(Absyn.QUAL_IMPORT(path)) => str
+
+
+  rule Absyn.path_string (path) => path_str &
+       Util.string_append_list(["kind=unqualified, path=", path_str]) => str 
+       --------------------------------------------------------------
+       get_import_string(Absyn.UNQUAL_IMPORT(path)) => str
+end
+
+ (** relation: get_element_type
+  ** author: adrpo@ida
+  ** date  : 2005-11-11
+  ** helper relation to get_element_info 
+  **)
+relation get_element_type: (Absyn.ElementSpec) => string =
+
+  rule Absyn.restr_string (restr) => str_restriction &
+       int_string(line) => line_str &
+       int_string(col) => col_str &
+       Util.string_append_list(["elementtype=classdef, classname=", id, ", classrestriction=", str_restriction, 
+                                ", classfile=\"", file,"\", classline=", line_str,", classcolumn=", col_str]) => str 
+       -----------------------------------------------------------------------------------------------------------
+       get_element_type(Absyn.CLASSDEF(_, Absyn.CLASS(id, p, f, e, restr, _, Absyn.INFO(file, line, col)))) => str
+
+  rule Absyn.path_string (path) => path_str &
+       Util.string_append_list(["elementtype=extends, path=", path_str]) => str 
+       -----------------------------------------------------------------------
+       get_element_type(Absyn.EXTENDS(path, _)) => str
+
+  rule get_import_string(import) => import_str &     
+       Util.string_append_list(["elementtype=import, ",import_str]) => str 
+       -------------------------------------------------------------------
+       get_element_type(Absyn.IMPORT(import, _)) => str      
+
+  rule Absyn.path_string(path_type) => typename &
+       get_componentitems_name(lst) => names &
+       attr_flow_str(attr) => flow_str &
+       attr_variability_str(attr) => variability_str &
+       attr_direction_str(attr) => dir_str &
+       Util.string_delimit_list(names, ", ") => names_str &
+       Util.string_append_list(["elementtype=component, typename=", typename, ", names={", names_str, 
+                                "}, flow=", flow_str, ", variability=", variability_str,
+                                ", direction=", dir_str]) => str 
+       --------------------------------------------------------------------------------------
+       get_element_type(Absyn.COMPONENTS(attr, path_type, lst)) => str      
+
+end
+
+
+ (** relation: get_element_info
+  ** author: adrpo@ida
+  ** date  : 2005-11-11
+  ** helper relation to construct_element_info & get_elements_info 
+  **)
+relation get_element_info: (Absyn.ElementItem) => string =
+
+  rule Util.bool_string(f) => final &
+       keyword_replaceable(r) => r' &
+       Util.bool_string(r') => repl &
+       inner_outer_str(inout) => inout_str &
+       get_element_type(elementSpec) => element_str &
+       int_string(line) => line_str &
+       int_string(col)  => col_str &
+       Util.string_append_list(["elementfile=\"", file, "\", elementline=", line_str, ", elementcolumn=", col_str, 
+                                ", final=", final, ", replaceable=", repl, ", inout=", inout_str, ", ", element_str]) => str     
+       ---------------------------------------------------------------------------------------------------------------
+       get_element_info(Absyn.ELEMENTITEM(Absyn.ELEMENT(f, r, inout, id, elementSpec, info as Absyn.INFO(file, line, col), _))) => str
+
+  (* for annotations we don't care *)
+  axiom get_element_info(_) => "elementtype=annotation"
+
+end
+
+ (** relation: construct_elements_info
+  ** author: adrpo@ida
+  ** date  : 2005-11-11
+  ** helper relation to get_elements_info
+  **)
+relation construct_elements_info: (string (* "public" or "protected" *), Absyn.ElementItem list) => string =
+
+  rule (* Util.string_append_list(["{ elementvisibility=", visibility_str," }"]) => res *)
+       -----------------------------------------------------------------------------------
+       construct_elements_info(visibility_str, []) => ""
+
+  (* deal with the last element *)
+  rule get_element_info(current) => s1 &
+       Util.string_append_list(["{ elementvisibility=", visibility_str,", ", s1, " }"]) => element_str &
+       Util.string_append_list([element_str, "\n"]) => res
+       -------------------------------------------------------------
+       construct_elements_info(visibility_str, current::nil) => res
+
+  rule get_element_info(current) => s1 &
+       Util.string_append_list(["{ elementvisibility=", visibility_str,", ", s1, " }"]) => element_str &
+       construct_elements_info(visibility_str, rest) => s2 &
+       Util.string_append_list([element_str, ",\n", s2]) => res
+       -------------------------------------------------------------
+       construct_elements_info(visibility_str, current::rest) => res
+end
+
+
+ (** relation: append_non_empty_strings
+  ** author: adrpo@ida
+  ** date  : 2005-11-11
+  ** helper to get_elements_info
+  ** input: "", "", "," => ""
+  **        "some", "", "," => "some"
+  **        "some", "some", "," => "some, some" 
+  **)
+relation append_non_empty_strings : (string, string, string) => string =
+   axiom append_non_empty_strings("", "", _) => ""
+   axiom append_non_empty_strings(s1, "", _) => s1
+   axiom append_non_empty_strings("", s2, _) => s2
+
+   rule  Util.string_append_list([s1, delimiter, s2]) => str
+         ---------------------------------------------------
+         append_non_empty_strings(s1, s2, delimiter) => str
+end
+
+ (** relation: get_elements_info
+  ** author: adrpo@ida
+  ** date  : 2005-11-11
+  ** Retrieves the Info attribute of an element.
+  ** When parsing elements of the class composition, the source file name + line no + columnno is added to the Element 
+  ** and to the Class definition, see Absyn.Info. 
+  ** This relation retrieves the Info contents of the elements of a class.
+  **)
+ relation get_elements_info: (Absyn.ComponentRef, Absyn.Program) => string = 
+
+   rule	 Absyn.cref_to_path(model) => modelpath &
+	 get_pathed_class_in_program(modelpath,p) => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_),_) &
+	 get_public_list(parts) => public_elementitem_list &
+	 get_protected_list(parts) => protected_elementitem_list &
+	 construct_elements_info("public", public_elementitem_list) => public_str &
+ 	 construct_elements_info("protected", protected_elementitem_list) => protected_str &
+	 append_non_empty_strings(public_str, protected_str, ", ") => elements_str &
+            Util.string_append_list(["{ ", elements_str, " }"]) => str
+	 -----------------------------------------------------------------------------------
+	 get_elements_info(model,p) => str
+
+	 axiom get_elements_info(_,_) => "Error"
+ end
 
 
  (** relation: get_source_file
