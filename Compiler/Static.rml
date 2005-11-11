@@ -645,9 +645,6 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp, bool (*impl*) )
 	elab_graphics_exp (env,Absyn.IFEXP(e1,e2,e3,_),impl) => (e,prop)
 
 	(**  Function calls *)
-	(** PA. Only positional arguments are elaborated for now.*)
-	(** TODO: Implement elaboration of named arguments. *)
-
   rule	Dump.print_component_ref_str fn => fnstr &
 	elab_call(env,fn,args,nargs,true,NONE) => (e,prop,_) 
 	--------------------------------------
@@ -4140,7 +4137,7 @@ relation fill_default_slots: (Slot list , SCode.Class, Env.Env, bool (*impl*))
 	  => SLOT(fa,true,e,ds)::res
 
   rule	fill_default_slots(xs,class,env,impl) => res &
-	SCode.get_element_named(id,class) => SCode.COMPONENT(_,_,_,_,_,_,SCode.MOD(_,_,SOME(dexp)),_,_) &
+	SCode.get_element_named(id,class) => SCode.COMPONENT(_,_,_,_,_,_,SCode.MOD(_,_,_,SOME(dexp)),_,_) &
 	elab_exp (env,dexp,impl,NONE) => (exp,Types.PROP(t,c1),_) &
 	Types.match_type(exp,t,tp) => (exp',_) 
 	-----------------------------------------------------------------------

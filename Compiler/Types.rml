@@ -171,7 +171,7 @@ returns multiple arguments. *)
   datatype SubMod = NAMEMOD of Ident * Mod
 		  | IDXMOD of int 
 list * Mod
-  and Mod = MOD of bool (* final *) * (SubMod list) * EqMod option
+  and Mod = MOD of bool (* final *) * Absyn.Each * (SubMod list) * EqMod option
   	  | REDECL of bool (* final *) * (SCode.Element*Mod) list
 	  | NOMOD
 
@@ -378,7 +378,7 @@ end
 
 relation strip_submod: Mod => Mod =
 
-  axiom	strip_submod(MOD(f,subs,eq)) => MOD(f,[],eq)
+  axiom	strip_submod(MOD(f,each,subs,eq)) => MOD(f,each,[],eq)
 
   axiom	strip_submod(m) => m
 
@@ -411,35 +411,35 @@ end
 
 relation values_to_mods: (Values.Value list,Ident list) => Mod =
 
-  axiom	values_to_mods([],_) => MOD(false,[],NONE)
+  axiom	values_to_mods([],_) => MOD(false,Absyn.NON_EACH,[],NONE)
 
-  rule	values_to_mods(rest,ids) => MOD(_,res,_)
+  rule	values_to_mods(rest,ids) => MOD(_,_,res,_)
 	---------------------------------------
 	values_to_mods(Values.INTEGER(i)::rest,id::ids) 
-	  => MOD(false,NAMEMOD(id,MOD(false,[],SOME(TYPED(Exp.ICONST(i),SOME(Values.INTEGER(i)),PROP((T_INTEGER([]),NONE),C_VAR)))))::res,NONE)
+	  => MOD(false,Absyn.NON_EACH,NAMEMOD(id,MOD(false,Absyn.NON_EACH,[],SOME(TYPED(Exp.ICONST(i),SOME(Values.INTEGER(i)),PROP((T_INTEGER([]),NONE),C_VAR)))))::res,NONE)
 
-  rule	values_to_mods(rest,ids) => MOD(_,res,_)
+  rule	values_to_mods(rest,ids) => MOD(_,_,res,_)
 	---------------------------------------
 	values_to_mods(Values.REAL(r)::rest,id::ids) 
-	  => MOD(false,NAMEMOD(id,MOD(false,[],SOME(TYPED(Exp.RCONST(r),SOME(Values.REAL(r)),PROP((T_REAL([]),NONE),C_VAR)))))::res,NONE)
+	  => MOD(false,Absyn.NON_EACH,NAMEMOD(id,MOD(false,Absyn.NON_EACH,[],SOME(TYPED(Exp.RCONST(r),SOME(Values.REAL(r)),PROP((T_REAL([]),NONE),C_VAR)))))::res,NONE)
 
-  rule	values_to_mods(rest,ids) => MOD(_,res,_)
+  rule	values_to_mods(rest,ids) => MOD(_,_,res,_)
 	---------------------------------------
 	values_to_mods(Values.STRING(s)::rest,id::ids) 
-	  => MOD(false,NAMEMOD(id,MOD(false,[],SOME(TYPED(Exp.SCONST(s),SOME(Values.STRING(s)),PROP((T_STRING([]),NONE),C_VAR)))))::res,NONE)
+	  => MOD(false,Absyn.NON_EACH,NAMEMOD(id,MOD(false,Absyn.NON_EACH,[],SOME(TYPED(Exp.SCONST(s),SOME(Values.STRING(s)),PROP((T_STRING([]),NONE),C_VAR)))))::res,NONE)
 
-  rule	values_to_mods(rest,ids) => MOD(_,res,_)
+  rule	values_to_mods(rest,ids) => MOD(_,_,res,_)
 	---------------------------------------
 	values_to_mods(Values.BOOL(b)::rest,id::ids) 
-	  => MOD(false,NAMEMOD(id,MOD(false,[],SOME(TYPED(Exp.BCONST(b),SOME(Values.BOOL(b)),PROP((T_BOOL([]),NONE),C_VAR)))))::res,NONE)
+	  => MOD(false,Absyn.NON_EACH,NAMEMOD(id,MOD(false,Absyn.NON_EACH,[],SOME(TYPED(Exp.BCONST(b),SOME(Values.BOOL(b)),PROP((T_BOOL([]),NONE),C_VAR)))))::res,NONE)
 
-  rule	values_to_mods(rest,ids) => MOD(_,res,_) &
+  rule	values_to_mods(rest,ids) => MOD(_,_,res,_) &
 	values_to_record_constructor_call(cname,vals) => rec_call &
 	values_to_vars(vals,val_names) => varlst &
 	Absyn.path_string(cname) => cname_str 
 	----------------------------------------
 	values_to_mods(Values.RECORD(cname,vals,val_names)::rest,id::ids)
-	  => MOD(false,NAMEMOD(id,MOD(false,[],SOME(TYPED(rec_call,
+	  => MOD(false,Absyn.NON_EACH,NAMEMOD(id,MOD(false,Absyn.NON_EACH,[],SOME(TYPED(rec_call,
 							  SOME(Values.RECORD(cname,vals,val_names)),
 							  PROP((T_COMPLEX(ClassInf.RECORD(cname_str),varlst),NONE),C_VAR)))))::res,NONE)
 

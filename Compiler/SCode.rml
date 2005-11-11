@@ -79,7 +79,7 @@ module SCode :
 		   | R_PREDEFINED_ENUM
 							  
   (** - Modifications *)
-  datatype Mod = MOD of bool (* final *) * (SubMod list) * (Absyn.Exp option)
+  datatype Mod = MOD of bool (* final *) * Absyn.Each * (SubMod list) * (Absyn.Exp option)
   	       | REDECL of bool (* final *) * Element list
 	       | NOMOD
   datatype SubMod = NAMEMOD of Ident * Mod         (* A named component *)
@@ -197,7 +197,7 @@ module SCode :
 
   relation elaborate : Absyn.Program => Program
   relation elab_class: Absyn.Class => Class	
-  relation build_mod : (Absyn.Modification option, bool (* final *)) => Mod
+  relation build_mod : (Absyn.Modification option, bool (* final *),Absyn.Each) => Mod
   relation strip_submod: Mod => Mod
   relation get_element_named: (Ident, Class) => Element
   relation print_mod : Mod => ()
@@ -321,7 +321,7 @@ end
 
 relation elab_classdef: Absyn.ClassDef => ClassDef =
 
-  rule	build_mod(SOME(Absyn.CLASSMOD(a, NONE)), false) => mod
+  rule	build_mod(SOME(Absyn.CLASSMOD(a, NONE)), false,Absyn.NON_EACH) => mod
 	(* TODO: attributes of derived classes *)
 	------------------------------------------------
 	elab_classdef(Absyn.DERIVED(p,d,attr,a,cmt)) => DERIVED(p,d,mod)
@@ -351,7 +351,7 @@ relation elab_classdef: Absyn.ClassDef => ClassDef =
 	elab_classdef_initialequations parts => initeqs &
 	elab_classdef_algorithms parts => als &
 	elab_classdef_initialalgorithms parts => initals &
-	build_mod(SOME(Absyn.CLASSMOD(cmod, NONE)), false) => mod
+	build_mod(SOME(Absyn.CLASSMOD(cmod, NONE)), false,Absyn.NON_EACH) => mod
 	-------------------------------------
 	elab_classdef (Absyn.CLASS_EXTENDS(name,cmod,cmt,parts)) 
           => CLASS_EXTENDS(name,mod,els,eqs,initeqs,als,initals)
@@ -591,7 +591,7 @@ relation elab_elementspec: (bool,Absyn.RedeclareKeywords option,bool,Absyn.Eleme
                                         cl as Absyn.CLASS(n,pa,fi,e,re,de,file_info)))
 	  => [CLASSDEF(n,final,rp,CLASS(n,pa,e,re',de'),NONE)]
 
-  rule	build_mod(SOME(Absyn.CLASSMOD(args, NONE)), false) => mod &
+  rule	build_mod(SOME(Absyn.CLASSMOD(args, NONE)), false,Absyn.NON_EACH) => mod &
 	Absyn.path_string(n) => ns
 	--------------------------
 	elab_elementspec(final,repl,prot,Absyn.EXTENDS(n,args))
@@ -600,7 +600,7 @@ relation elab_elementspec: (bool,Absyn.RedeclareKeywords option,bool,Absyn.Eleme
   axiom	elab_elementspec(_,_,_,Absyn.COMPONENTS(_,_,[])) => []
 
   rule	elab_elementspec(final,repl,prot,Absyn.COMPONENTS(attr,t,xs)) => xs' &
-	build_mod(m,false) => mod &
+	build_mod(m,false,Absyn.NON_EACH) => mod &
 
 	(* PR. This adds the arraydimension that may be specified together with
 	 the type of the component.  *)
@@ -790,16 +790,18 @@ end
  ** argument flags whether the modification is `final'.
  **)
 
-relation build_mod : (Absyn.Modification option, bool (* final *)) => Mod =
+relation build_mod : (Absyn.Modification option, 
+		      bool, (* final *)
+		      Absyn.Each) => Mod =
 
-  axiom build_mod(NONE, _) => NOMOD
+  axiom build_mod(NONE, _,_) => NOMOD
 
-  axiom	build_mod(SOME(Absyn.CLASSMOD([], e as SOME(_))), final)
-	  => MOD(final,[],e)
+  axiom	build_mod(SOME(Absyn.CLASSMOD([], e as SOME(_))), final,each)
+	  => MOD(final,each,[],e)
 
   rule	build_args(l) => subs
 	---------------------------------
-	build_mod(SOME(Absyn.CLASSMOD(l,e)),final) => MOD(final,subs,e)
+	build_mod(SOME(Absyn.CLASSMOD(l,e)),final,each) => MOD(final,each,subs,e)
 
 end
 
@@ -812,7 +814,7 @@ end
 
 relation strip_submod: Mod => Mod =
 
-  axiom	strip_submod(MOD(f,subs,e)) => MOD(f,[],e)
+  axiom	strip_submod(MOD(f,each,subs,e)) => MOD(f,each,[],e)
 
   axiom	strip_submod(m) => m
 
@@ -830,7 +832,7 @@ relation build_args : (Absyn.ElementArg list) => SubMod list =
   axiom build_args [] => []
 
   rule	build_args xs => subs &
-	build_mod(mod,final) => mod' &
+	build_mod(mod,final,each) => mod' &
 	build_sub(cref,mod') => sub
 	----------------------
 	build_args((Absyn.MODIFICATION(final,each,cref,mod,cmt)::xs)) => (sub::subs)
@@ -861,14 +863,14 @@ relation build_sub : (Absyn.ComponentRef,Mod) => SubMod =
 	Print.print_error_buf str &
 	Print.print_error_buf "\n"
 	---------------------------------------
-	build_sub(c as Absyn.CREF_IDENT(_,_::_),MOD(_,_::_,_)) => fail
+	build_sub(c as Absyn.CREF_IDENT(_,_::_),MOD(_,_,_::_,_)) => fail
 
   rule	Print.print_error_buf "# Illegal modification of " &
 	Dump.print_component_ref_str c => str &
 	Print.print_error_buf str &
 	Print.print_error_buf "\n"
 	---------------------------------------
-	build_sub(c as Absyn.CREF_QUAL(_,_::_,_),MOD(_,_::_,_)) => fail
+	build_sub(c as Absyn.CREF_QUAL(_,_::_,_),MOD(_,_,_::_,_)) => fail
 	
 	(* Then the normal rules *)
 	
@@ -877,7 +879,7 @@ relation build_sub : (Absyn.ComponentRef,Mod) => SubMod =
 	build_sub(Absyn.CREF_IDENT(i,ss),mod) => NAMEMOD(i,mod')
 
   rule	build_sub(path,mod) => sub &
-	let mod = MOD(false,[sub],NONE) &
+	let mod = MOD(false,Absyn.NON_EACH,[sub],NONE) &
 	build_sub_sub(ss,mod) => mod'
 	--------------------------
 	build_sub(Absyn.CREF_QUAL(i,ss,path),mod) => NAMEMOD(i,mod')
@@ -894,7 +896,7 @@ end
 relation build_sub_sub : (Subscript list, Mod) => Mod =
 
   axiom	build_sub_sub ([], m) => m
-  axiom	build_sub_sub (l, m) => MOD(false,[IDXMOD(l,m)],NONE)
+  axiom	build_sub_sub (l, m) => MOD(false,Absyn.NON_EACH,[IDXMOD(l,m)],NONE)
 
 end
 
@@ -976,11 +978,12 @@ relation print_mod_str : Mod => string =
 	print_mod_str REDECL(b,elist) => res
 	
   rule	Util.if(final,"final","") => final_str &
+	Dump.unparse_each_str each => each_str &
 	print_subs1_str subs => subs_str &
 	print_eqmod_str ass => ass_str &
-	Util.string_append_list([final_str,subs_str,ass_str]) => res
+	Util.string_append_list([final_str,each_str,subs_str,ass_str]) => res
 	------------
-	print_mod_str MOD(final, subs, ass) => res
+	print_mod_str MOD(final,each, subs, ass) => res
 
   rule	Print.print_buf "#-- print_mod_str failed\n"
 	------------------------

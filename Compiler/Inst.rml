@@ -2253,7 +2253,7 @@ relation inst_var2 : (Env.Env,
 	  => dae3 & 
 	list_append(dae1',dae3) => dae 
 	--------------------------
-	inst_var2(env,ci_state,mod as Types.MOD(_,_,SOME(Types.TYPED(e,_,_))),
+	inst_var2(env,ci_state,mod as Types.MOD(_,_,_,SOME(Types.TYPED(e,_,_))),
                   pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt as SCode.CONST,dir),
 		 [],idxs,inst_dims,impl (*as false*),comment)
           => (env',dae,csets',ty)
@@ -2270,7 +2270,7 @@ relation inst_var2 : (Env.Env,
 	  => dae3 &  
 	list_append(dae1',dae3) => dae
 	--------------------------
-	inst_var2(env,ci_state,mod as Types.MOD(_,_,SOME(Types.TYPED(e,_,_))),pre,csets,n,cl,SCode.ATTR(_,flow,acc, vt as SCode.PARAM,dir),
+	inst_var2(env,ci_state,mod as Types.MOD(_,_,_,SOME(Types.TYPED(e,_,_))),pre,csets,n,cl,SCode.ATTR(_,flow,acc, vt as SCode.PARAM,dir),
 		 [],idxs,inst_dims,impl (*as false*),comment)
           => (env',dae,csets',ty)
 
@@ -2286,7 +2286,7 @@ relation inst_var2 : (Env.Env,
 	  => dae3 &  
 	list_append(dae1',dae3) => dae
 	--------------------------
-	inst_var2(env,ci_state,mod as Types.MOD(_,_,SOME(Types.TYPED(e,_,_))),pre,csets,n,cl,SCode.ATTR(_,flow,acc, vt as SCode.STRUCTPARAM,dir),
+	inst_var2(env,ci_state,mod as Types.MOD(_,_,_,SOME(Types.TYPED(e,_,_))),pre,csets,n,cl,SCode.ATTR(_,flow,acc, vt as SCode.STRUCTPARAM,dir),
 		 [],idxs,inst_dims,impl (*as false*),comment)
           => (env',dae,csets',ty)
 
@@ -2314,7 +2314,7 @@ relation inst_var2 : (Env.Env,
 	
         inst_start_binding_exp(mod,ty,idxs') => start &
 
-        inst_dae_variable_attributes(env,mod,ty,idxs') => dae_var_attr &
+        inst_dae_variable_attributes(env,mod,ty,[](*idxs'*)) => dae_var_attr &
 
         dae_declare(cr,ci_state,ty,SCode.ATTR([], flow, acc, vt, dir), NONE,
  		            inst_dims, start, dae_var_attr,comment) => dae3 & 
@@ -2490,11 +2490,11 @@ relation get_cref_from_mod: SCode.Mod => Absyn.ComponentRef list =
 	Absyn.get_cref_from_exp(e) => l2 &
 	list_append(l2,l1) => res
 	-------------------------
-	get_cref_from_mod(mod as SCode.MOD(_,submods,SOME(e))) => res
+	get_cref_from_mod(mod as SCode.MOD(_,_,submods,SOME(e))) => res
 
   rule	get_cref_from_submods(submods) => res
 	-------------------------------------
-	get_cref_from_mod(SCode.MOD(_,submods,NONE)) => res 
+	get_cref_from_mod(SCode.MOD(_,_,submods,NONE)) => res 
 	
   axiom	get_cref_from_mod(_) => []
 
@@ -5562,7 +5562,6 @@ relation inst_binding2: (Types.Mod,Types.Type,int list,string)
 
 	  (* Only one element in the index-list *)
   rule	Mod.lookup_idx_modification(mod,index) => mod2 &
-	
         Mod.mod_equation(mod2) => SOME(Types.TYPED(e,_,Types.PROP(ty2,_))) &
 	
         Types.match_type(e,ty2,etype) => (e',ty') 
@@ -5570,7 +5569,8 @@ relation inst_binding2: (Types.Mod,Types.Type,int list,string)
 	inst_binding2 (mod,etype,index::[],bind_name) => SOME(e')
  
 	(* Several elements in the index-list *)
-  rule	Mod.lookup_idx_modification(mod,index) => mod2 &
+	
+  rule	Mod.lookup_idx_modification( mod,index) => mod2 &
         inst_binding2(mod2,etype,res,bind_name) => result
 	---------------------------------------------------
 	inst_binding2 (mod,etype,index::res,bind_name) => result
@@ -5864,10 +5864,10 @@ relation inst_mod_equation : (Exp.ComponentRef, Types.Type, Mod, bool (*impl*) )
 	inst_eq_equation(Exp.CREF(cr,t),
 			 Types.PROP(ty1,Types.C_VAR), e,prop2,NON_INITIAL,impl) => dae
 	-----------------------------------------------
-	inst_mod_equation(cr,ty1, mod as Types.MOD(_,_,SOME(Types.TYPED(e,_,prop2))),impl)
+	inst_mod_equation(cr,ty1, mod as Types.MOD(_,_,_,SOME(Types.TYPED(e,_,prop2))),impl)
 	  => dae
 
-  axiom inst_mod_equation(_,_,Types.MOD(_,_,NONE),impl) => []
+  axiom inst_mod_equation(_,_,Types.MOD(_,_,_,NONE),impl) => []
   axiom inst_mod_equation(_,_,Types.NOMOD,impl) => []
   axiom	inst_mod_equation(_,_,Types.REDECL(_,_),impl) => []
 
@@ -5916,30 +5916,30 @@ relation make_binding : (Env.Env, SCode.Attributes, Types.Mod)
 
   axiom	make_binding (_,_,Types.NOMOD) => Types.UNBOUND
   axiom	make_binding (_,_,Types.REDECL(_,_)) => Types.UNBOUND
-  axiom	make_binding (_,_,Types.MOD(_,_,NONE)) => Types.UNBOUND
+  axiom	make_binding (_,_,Types.MOD(_,_,_,NONE)) => Types.UNBOUND
 
 (* Numerical values becoms VALBOUND *)
-  axiom	make_binding (env, _, Types.MOD(_,_,SOME(Types.TYPED(Exp.ICONST(i),_,_))))
+  axiom	make_binding (env, _, Types.MOD(_,_,_,SOME(Types.TYPED(Exp.ICONST(i),_,_))))
 	    => Types.VALBOUND(Values.INTEGER(i))
 	    
-  axiom make_binding (env, _, Types.MOD(_,_,SOME(Types.TYPED(Exp.RCONST(r),_,_))))
+  axiom make_binding (env, _, Types.MOD(_,_,_,SOME(Types.TYPED(Exp.RCONST(r),_,_))))
 	    => Types.VALBOUND(Values.REAL(r))
 	    
-  axiom	make_binding (env, _, Types.MOD(_,_,SOME(Types.TYPED(Exp.SCONST(s),_,_))))
+  axiom	make_binding (env, _, Types.MOD(_,_,_,SOME(Types.TYPED(Exp.SCONST(s),_,_))))
 	=> Types.VALBOUND(Values.STRING(s))
 	    
-  axiom	make_binding (env, _, Types.MOD(_,_,SOME(Types.TYPED(Exp.BCONST(b),_,_))))
+  axiom	make_binding (env, _, Types.MOD(_,_,_,SOME(Types.TYPED(Exp.BCONST(b),_,_))))
 	=> Types.VALBOUND(Values.BOOL(b))
 
 	(* Constant binding *)
-axiom  	make_binding (env, SCode.ATTR(_,_,_,SCode.CONST,_), Types.MOD(_,_,SOME(Types.TYPED(e,e_val,prop))))
+axiom  	make_binding (env, SCode.ATTR(_,_,_,SCode.CONST,_), Types.MOD(_,_,_,SOME(Types.TYPED(e,e_val,prop))))
 	  => Types.EQBOUND(e,e_val,Types.C_CONST)
 
 	(* default *)
 
   rule	Exp.simplify(e) => e' 
 	-------------------
-	make_binding (_,_, Types.MOD(_,_,
+	make_binding (_,_, Types.MOD(_,_,_,
 				     SOME(Types.TYPED(e,e_val,Types.PROP(t,c))))) 
 	  => Types.EQBOUND(e',e_val,c)
 

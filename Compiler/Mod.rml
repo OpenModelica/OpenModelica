@@ -109,8 +109,8 @@ relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod, bool (*impl*)) => Types.
 
   rule	elab_submods (env,pre,subs,impl) => subs'
 	------------------------------------
-	elab_mod (env,pre,m as SCode.MOD(final,subs,NONE),impl)
-	  => Types.MOD(final,subs',NONE)
+	elab_mod (env,pre,m as SCode.MOD(final,each,subs,NONE),impl)
+	  => Types.MOD(final,each,subs',NONE)
 	
   rule	elab_submods (env,pre,subs,impl) => subs' &
 	Static.elab_exp(env,e,impl,NONE) => (e',prop,_) &
@@ -120,8 +120,8 @@ relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod, bool (*impl*)) => Types.
 	 from outer modifications.. *)
 	Prefix.prefix_exp(env,e',pre) => e''
 	------------------------------------
-	elab_mod (env,pre,m as SCode.MOD(final,subs,SOME(e)),impl)
-	  => Types.MOD(final,subs',SOME(Types.TYPED(e'',e_val,prop)))
+	elab_mod (env,pre,m as SCode.MOD(final,each,subs,SOME(e)),impl)
+	  => Types.MOD(final,each,subs',SOME(Types.TYPED(e'',e_val,prop)))
 
   rule	Inst.add_nomod(elist) => elist' 
 	-------------------------------
@@ -163,20 +163,20 @@ relation unelab_mod: Types.Mod => SCode.Mod =
 	
   rule	unelab_submods (subs) => subs'
 	------------------------------------
-	unelab_mod (m as Types.MOD(final,subs,NONE))
-	  =>  SCode.MOD(final,subs',NONE)
+	unelab_mod (m as Types.MOD(final,each,subs,NONE))
+	  =>  SCode.MOD(final,each,subs',NONE)
 	  
   rule	unelab_submods (subs) => subs' 
 	------------------------------------
-	unelab_mod (m as Types.MOD(final,subs,SOME(Types.UNTYPED(e))))
-	  => SCode.MOD(final,subs',SOME(e))
+	unelab_mod (m as Types.MOD(final,each,subs,SOME(Types.UNTYPED(e))))
+	  => SCode.MOD(final,each,subs',SOME(e))
 	  
   rule	Exp.print_exp_str e => es &
 	unelab_submods (subs) => subs' &
 	Exp.unelab_exp(e) => e'
 	------------------------------------
-	unelab_mod (m as Types.MOD(final,subs,SOME(Types.TYPED(e,_,p))))
-	  => SCode.MOD(final,subs',SOME(e'))
+	unelab_mod (m as Types.MOD(final,each,subs,SOME(Types.TYPED(e,_,p))))
+	  => SCode.MOD(final,each,subs',SOME(e'))
 	  
   rule	Util.list_map(elist,Util.tuple2_1) => elist'
 	--------------------------------------------
@@ -246,19 +246,20 @@ relation update_mod: (Env.Env,Prefix.Prefix, Types.Mod, bool (*impl*)) => Types.
 	elab_mod_value(env,e') => e_val &
 	Prefix.prefix_exp(env,e',pre) => e'' &
 	Debug.fprint("updmod","Updated mod: ") &
-	Debug.fcall("updmod",print_mod ,Types.MOD(f, subs', SOME(Types.TYPED(e'', NONE,prop)))) 
+	Debug.fcall("updmod",print_mod ,Types.MOD(f, each, subs', SOME(Types.TYPED(e'', NONE,prop)))) 
 	-----------------
-	update_mod(env, pre, m as Types.MOD(f, subs, SOME(Types.UNTYPED(e))),impl)
-	  => Types.MOD(f, subs', SOME(Types.TYPED(e'',e_val, prop)))
+	update_mod(env, pre, m as Types.MOD(f, each, subs, SOME(Types.UNTYPED(e))),impl)
+	  => Types.MOD(f, each, subs', SOME(Types.TYPED(e'',e_val, prop)))
 
   rule	update_submods (env, pre, subs,impl) => subs' 
 	---------------------------------------
-	update_mod(env, pre, Types.MOD(f, subs, SOME(Types.TYPED(e, e_val, p))),impl) 
-	  => Types.MOD(f, subs', SOME(Types.TYPED(e,e_val, p)))
+	update_mod(env, pre, Types.MOD(f, each, subs, SOME(Types.TYPED(e, e_val, p))),impl) 
+	  => Types.MOD(f, each, subs', SOME(Types.TYPED(e,e_val, p)))
 
   rule	update_submods (env,pre,subs,impl) => subs' 	
 	-------------------------
-	update_mod(env, pre, Types.MOD(f, subs, NONE),impl) => Types.MOD(f,subs',NONE)
+	update_mod(env, pre, Types.MOD(f, each, subs, NONE),impl) 
+	  => Types.MOD(f,each,subs',NONE)
 
   rule	Print.print_buf "- update_mod failed\n mod:" &
 	print_mod m & Print.print_buf "\n" 
@@ -313,13 +314,13 @@ relation elab_untyped_mod: (SCode.Mod,Env.Env,Prefix.Prefix) => Types.Mod =
 
   rule	elab_untyped_submods (subs,env,pre) => subs'
 	------------------------------------
-	elab_untyped_mod (m as SCode.MOD(final,subs,NONE),env,pre)
-	  => Types.MOD(final,subs',NONE)
+	elab_untyped_mod (m as SCode.MOD(final,each,subs,NONE),env,pre)
+	  => Types.MOD(final,each,subs',NONE)
 	
   rule	elab_untyped_submods (subs,env,pre) => subs' 
 	------------------------------------
-	elab_untyped_mod (m as SCode.MOD(final,subs,SOME(e)),env,pre)
-	  => Types.MOD(final,subs',SOME(Types.UNTYPED(e)))
+	elab_untyped_mod (m as SCode.MOD(final,each,subs,SOME(e)),env,pre)
+	  => Types.MOD(final,each,subs',SOME(Types.UNTYPED(e)))
 
   rule	Inst.add_nomod(elist) => elist'
 	-----------------
@@ -470,14 +471,14 @@ relation expand_slice : (Exp.Exp list, Exp.Subscript list, int, Types.Mod)
   rule	Exp.simplify(Exp.ASUB(e,n)) => e' &
 	Types.unlift_array(t) => t' &
 	make_idxmods(Exp.INDEX(x)::ss,
-		     Types.MOD(final, [],
+		     Types.MOD(final,each, [],
 			 SOME(Types.TYPED(e',e_val,Types.PROP(t',const))))) => mods1 &
 	int_add(n, 1) => n' &
 	expand_slice(xs, ss, n', m) => mods2 &
 	list_append(mods1, mods2) => mods
 	---------------------------------
 	expand_slice(x::xs, ss, n,
-		     m as Types.MOD(final, [],
+		     m as Types.MOD(final,each, [],
 			      SOME(Types.TYPED(e,e_val,Types.PROP(t,const))))) => mods
 
   rule	Print.print_error_buf "# Illegal modification (" & print_mod mod & Print.print_buf ")\n"
@@ -597,7 +598,7 @@ relation lookup_comp_modification: (Types.Mod, Absyn.Ident) => Types.Mod =
 
   rule  lookup_comp_modification2(subs,n) => mod
 	-----------------------------------
-	lookup_comp_modification(Types.MOD(_,subs,_),n) => mod
+	lookup_comp_modification(Types.MOD(_,_,subs,_),n) => mod
 	
   rule	Print.print_buf "# Mod.lookup_comp_modification(" &
 	print_mod mod & Print.print_buf "," & Print.print_buf i &
@@ -644,17 +645,21 @@ relation lookup_idx_modification: (Types.Mod, int) => Types.Mod =
   axiom	lookup_idx_modification(Types.REDECL(_,_),_) => Types.NOMOD
 
   rule  lookup_idx_modification2(subs,NONE,idx) => (mod',subs') &
-	merge (Types.MOD(f,subs',NONE),mod',[],Prefix.NOPRE) => mod'' &
+	merge (Types.MOD(f,each,subs',NONE),mod',[],Prefix.NOPRE) => mod'' &
 
 	index_eqmod (eq,[idx]) => eq' &
-	merge (mod'',Types.MOD(false,[],eq'),[],Prefix.NOPRE) => mod'''
+	merge (mod'',Types.MOD(f,each,[],eq'),[],Prefix.NOPRE) => mod'''
+(*	& print "lookup_idx_modificaton input :" &
+	print_mod_str inmod => s & print s & print "\n" 
+	& print "lookup_idx_modificaton returns :" &
+	print_mod_str mod''' => s & print s & print "\n" *)
 	-----------------------------------
-	lookup_idx_modification(Types.MOD(f,subs,eq),idx) => mod'''
+	lookup_idx_modification(inmod as Types.MOD(f,each,subs,eq),idx) => mod'''
 	
   rule	Debug.fprint("failtrace","-lookup_idx_modification(") &
 	print_mod_str mod => str &
 	Debug.fprint("failtrace",str) &
-	Debug.fprint("failtrace",",") &
+	Debug.fprint("failtrace",", ") &
 	int_string idx => s & 
 	Debug.fprint("failtrace",s) &
 	Debug.fprint("failtrace",") failed\n") 
@@ -693,7 +698,13 @@ relation lookup_idx_modification2 : (Types.SubMod list, Types.EqMod option, int)
 	lookup_idx_modification2(Types.IDXMOD(x::xs,mod)::subs,eq,y)
 	  => (mod',subs')
 
-  rule  lookup_idx_modification2(xs,eq,idx) => (mod,xs')
+  rule	lookup_idx_modification3(nmod,y) => nmod' &
+	lookup_idx_modification2(subs,eq,y) => (mod',subs')
+	---------------------------------
+	lookup_idx_modification2(Types.NAMEMOD(name,nmod)::subs,eq,y)
+	  => (mod',Types.NAMEMOD(name,nmod')::subs')
+
+  rule  lookup_idx_modification2(xs,eq,idx) => (mod,xs') 
 	---------------------------------
 	lookup_idx_modification2(x::xs,eq,idx) => (mod,x::xs')
 
@@ -702,6 +713,29 @@ relation lookup_idx_modification2 : (Types.SubMod list, Types.EqMod option, int)
 	lookup_idx_modification2 (_,_,_) => fail
 
 end
+
+(** relation: lookup_idx_modification3
+ **
+ ** Helper relation to lookup_idx_modification2.
+ ** when looking up index of a named mod, e.g. y={1,2,3}, it should
+ ** subscript the expression {1,2,3} to corresponding index.
+**)
+relation lookup_idx_modification3: (Types.Mod, int (* indx *)) 
+	  => Types.Mod =
+
+  axiom lookup_idx_modification3(Types.NOMOD,_) => Types.NOMOD
+
+  axiom	lookup_idx_modification3(Types.REDECL(_,_),_) => Types.NOMOD
+
+  rule	index_eqmod (eq,[idx]) => eq' 
+	-----------------------------------
+	lookup_idx_modification3(Types.MOD(f,Absyn.NON_EACH,subs,eq),idx) 
+	  => Types.MOD(f,Absyn.NON_EACH,subs,eq')
+
+  axiom	lookup_idx_modification3(Types.MOD(f,Absyn.EACH,subs,eq),idx) 
+	  => Types.MOD(f,Absyn.EACH,subs,eq)
+end
+
 
 (** relation: index_eqmod
  **
@@ -720,10 +754,16 @@ relation index_eqmod : (Types.EqMod option, int list) => Types.EqMod option =
 
   rule	Types.unlift_array t => t' &
 	Exp.simplify Exp.ASUB(e,x) => exp &
-	index_eqmod (SOME(Types.TYPED(exp,e_val,Types.PROP(t',c))),xs) => e
+	Values.nth_arrayelt(e_val,x) => e_val' &
+	index_eqmod (SOME(Types.TYPED(exp,SOME(e_val'),Types.PROP(t',c))),xs) => e
 	------------------------------------------
-	index_eqmod (SOME(Types.TYPED(e,e_val,Types.PROP(t,c))),x::xs) => e
+	index_eqmod (SOME(Types.TYPED(e,SOME(e_val),Types.PROP(t,c))),x::xs) => e
 
+  rule	Types.unlift_array t => t' &
+	Exp.simplify Exp.ASUB(e,x) => exp &
+	index_eqmod (SOME(Types.TYPED(exp,NONE,Types.PROP(t',c))),xs) => e
+	------------------------------------------
+	index_eqmod (SOME(Types.TYPED(e,NONE,Types.PROP(t,c))),x::xs) => e
 end
 
 (**
@@ -762,15 +802,15 @@ relation merge : (Types.Mod, Types.Mod,Env.Env,Prefix.Prefix) => Types.Mod =
 	  => Types.REDECL(f1,[(SCode.COMPONENT(id1,f,r,p,attr,tp,SCode.NOMOD,bc,comment),m'')])
 	  
   axiom	merge(mod as Types.REDECL(f1,els as [(SCode.COMPONENT(id1,_,_,_,_,_,_,_,_),_)]),
-	      mods as Types.MOD(_,subs,_),env,pre) 
+	      mods as Types.MOD(_,_,subs,_),env,pre) 
 	(*luc_pop : this shoud return the first mod because it have been merged in merge_subs*)
 	=> mod
 
 		  
-  axiom	merge(Types.MOD(_,subs,_),
+  axiom	merge(Types.MOD(_,_,subs,_),
 	      Types.REDECL(f1,els as [(SCode.COMPONENT(id1,_,_,_,_,_,_,_,_),_)]),
 	      env,pre)
-	  => Types.MOD(false,Types.NAMEMOD(id1,Types.REDECL(f1,els))::subs,
+	  => Types.MOD(false,Absyn.NON_EACH,Types.NAMEMOD(id1,Types.REDECL(f1,els))::subs,
 		       NONE)
 
 	(* When modifiers are identical *)
@@ -780,13 +820,13 @@ relation merge : (Types.Mod, Types.Mod,Env.Env,Prefix.Prefix) => Types.Mod =
 
   rule  Print.print_buf "# trying to modify final element\n"
 	------------------------------------------
-	merge(_,m as Types.MOD(true,_,_),_,_) => fail
+	merge(_,m as Types.MOD(true,_,_,_),_,_) => fail
 
   rule  merge_subs(subs1, subs2, env, pre) => subs &
 	merge_eq(ass1, ass2) => ass
 	----------------------------
-	merge(Types.MOD(final,subs1,ass1), Types.MOD(false,subs2,ass2),env,pre)
-	  => Types.MOD(final,subs,ass)
+	merge(Types.MOD(final,each,subs1,ass1), Types.MOD(false,each2,subs2,ass2),env,pre)
+	  => Types.MOD(final,each,subs,ass)
 
  axiom	merge(outer,inner,_,_) => outer
 
@@ -865,7 +905,7 @@ relation mod_equation : Types.Mod => Types.EqMod option =
 
   axiom mod_equation Types.NOMOD => NONE
   axiom mod_equation Types.REDECL(_,_) => NONE
-  axiom mod_equation Types.MOD(_,_,e) => e
+  axiom mod_equation Types.MOD(_,_,_,e) => e
 
 end
 
@@ -900,7 +940,7 @@ relation print_mod_str : Types.Mod => string =
 	print_eqmod_str eq => s2 &
 	Util.string_append_list([final_str,s1',s2]) => str
 	--------------
-	print_mod_str Types.MOD(final, subs, eq) => str 
+	print_mod_str Types.MOD(final, each, subs, eq) => str 
 end
 
 (** relation: print_mod

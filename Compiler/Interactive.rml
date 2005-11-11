@@ -5732,7 +5732,7 @@ relation create_funcargs_from_elementargs: Absyn.ElementArg list
    axiom	get_componentitems_annotations_from_items ([],env) => []
 
   rule	Lookup.lookup_class(env,Absyn.IDENT("Placement"),false) => (c,env') &
-	 SCode.build_mod(SOME(Absyn.CLASSMOD(mod,NONE)),false) => mod' &
+	 SCode.build_mod(SOME(Absyn.CLASSMOD(mod,NONE)),false,Absyn.NON_EACH) => mod' &
 	 Mod.elab_mod(env',Prefix.NOPRE,mod',false) => mod'' &
 	 Inst.inst_class(env', mod'', Prefix.NOPRE, Connect.empty_set, c,
 		 	 [], false,Inst.TOP_CALL) 
@@ -5873,7 +5873,7 @@ relation get_component_annotation: Absyn.Element => string =
  relation get_annotation_string: (Absyn.Program,Absyn.Annotation) => string =
 
    rule	strip_graphics_modification(mod) => (stripmod,[Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)]) &
-	 SCode.build_mod(SOME(Absyn.CLASSMOD(stripmod,NONE)),false) => mod' &
+	 SCode.build_mod(SOME(Absyn.CLASSMOD(stripmod,NONE)),false,Absyn.NON_EACH) => mod' &
 
 	 SCode.elaborate(p) => p' &
 	 Inst.make_simple_env_from_program(p',Absyn.IDENT("Icon")) => env  & 
@@ -5899,7 +5899,7 @@ relation get_component_annotation: Absyn.Element => string =
 
 	 (* First line in the first rule above fails if return value from strip_graphics_modification doesn't match the rhs of => *)
    rule	strip_graphics_modification(mod) => (stripmod, gxmods) &
-	 SCode.build_mod(SOME(Absyn.CLASSMOD(stripmod,NONE)),false) => mod' &
+	 SCode.build_mod(SOME(Absyn.CLASSMOD(stripmod,NONE)),false,Absyn.NON_EACH) => mod' &
 	 SCode.elaborate(p) => p' &
 	 Inst.make_simple_env_from_program(p',Absyn.IDENT("Icon")) => env  & 
 	 get_class_in_program("Icon",p) => placementc &
@@ -5916,7 +5916,7 @@ relation get_component_annotation: Absyn.Element => string =
 
 
    rule	strip_graphics_modification(mod) => (stripmod,[Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)]) &
-	 SCode.build_mod(SOME(Absyn.CLASSMOD(stripmod,NONE)),false) => mod' &
+	 SCode.build_mod(SOME(Absyn.CLASSMOD(stripmod,NONE)),false,Absyn.NON_EACH) => mod' &
 	 SCode.elaborate(p) => p' &
 	 Inst.make_env_from_program(p',Absyn.IDENT("Diagram")) => env  & 
 	 get_class_in_program("Diagram",p) => placementc &
@@ -5939,7 +5939,7 @@ relation get_component_annotation: Absyn.Element => string =
 	 -----------------------------------
 	 get_annotation_string(p,Absyn.ANNOTATION([(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Diagram",_),SOME(Absyn.CLASSMOD(mod,_)),_))])) => totstr
 
-   rule	SCode.build_mod(SOME(Absyn.CLASSMOD(mod,NONE)),false) => mod' & 
+   rule	SCode.build_mod(SOME(Absyn.CLASSMOD(mod,NONE)),false,Absyn.NON_EACH) => mod' & 
 	 SCode.elaborate(p) => p' &
 	 Inst.make_env_from_program(p',Absyn.IDENT(anncname)) => env  & 
 	 get_class_in_program(anncname,p) => placementc &

@@ -1160,7 +1160,7 @@ relation build_record_constructor_result_elt: (SCode.Element list, SCode.Ident, 
   rule	build_record_constructor_result_mod(elts) => submodlst
 	-------------------------------------------------
 	build_record_constructor_result_elt (elts,id,env) 
-	    => SCode.COMPONENT("result",false,false,false,SCode.ATTR([],false,SCode.RW,SCode.VAR,Absyn.OUTPUT),Absyn.IDENT(id),SCode.MOD(false,submodlst,NONE),NONE,NONE)
+	    => SCode.COMPONENT("result",false,false,false,SCode.ATTR([],false,SCode.RW,SCode.VAR,Absyn.OUTPUT),Absyn.IDENT(id),SCode.MOD(false,Absyn.NON_EACH,submodlst,NONE),NONE,NONE)
 end
 	
 (** relation: build_record_constructor_result_mod
@@ -1180,7 +1180,7 @@ relation build_record_constructor_result_mod: (SCode.Element list)
   rule	build_record_constructor_result_mod(rest) => restmod
 	---------------------------------------------------
 	build_record_constructor_result_mod (SCode.COMPONENT(id,_,_,_,_,_,_,_,_)::rest) 
-	    => SCode.NAMEMOD("result",SCode.MOD(false,[SCode.NAMEMOD(id,SCode.MOD(false,[],SOME(Absyn.CREF(Absyn.CREF_IDENT(id,[])))))],NONE))::restmod
+	    => SCode.NAMEMOD("result",SCode.MOD(false,Absyn.NON_EACH,[SCode.NAMEMOD(id,SCode.MOD(false,Absyn.NON_EACH,[],SOME(Absyn.CREF(Absyn.CREF_IDENT(id,[])))))],NONE))::restmod
 
   axiom	build_record_constructor_result_mod([]) => []
 end

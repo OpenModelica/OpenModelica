@@ -106,6 +106,7 @@ module Dump:
   relation unparse_modification_str: Absyn.Modification => string 
   relation unparse_restriction_str : Absyn.Restriction => string
   relation unparse_comment_option: (Absyn.Comment option) => string
+  relation unparse_each_str: (Absyn.Each) => string
 
 end
 
