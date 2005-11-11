@@ -106,7 +106,7 @@ void initial_function(double*x, double *xd, double*y, double*p,
 		    int nx, int ny, int np); 
 
 // Adds a result to the simulation result data.
-void add_result(double *data, double time,double *nx, double *ndx, double *y,
+void add_result(double *data, double time,double *x, double *ndx, double *y,
 		long nx, long ny, long *actual_points);
 
 // stores the result on file.
