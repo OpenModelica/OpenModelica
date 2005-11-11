@@ -222,6 +222,36 @@ getCrefInfo(cref)                         Returns the string "file,lineno,column
                                           >>> getCrefInfo(Modelica.Electrical.Analog.Basic.Capacitor)
                                           /cygdrive/c/dev/ModelicaLibrary//Modelica/Electrical/Analog/Basic.mo,249,3
 
+getElementsInfo(cref)                     Returns all the elements in a class with the following format:
+                                          {attr1=value1, attr2=value2, .... }
+                                          In a class can be elements or annotations:
+                                          - annotations: { elementvisibility=public|protected, elementtype=annotation }
+                                          - elements:
+                                            + general attributes: 
+                                               { 
+                                                 elementvisibility=public|protected, 
+                                                 elementfile=file, 
+                                                 elementline=line, 
+                                                 elementcolumn=column,
+                                                 /* the next ones are exactly like in getComponents */
+                                                 final=true|false,
+                                                 replaceable=true|false,
+                                                 inout=inner|outer|innerouter|none
+                                                 elementtype=classdef|extends|import|component
+                                                 ... /* more here depending on the elementtype. read below */
+                                               }
+                                               /* depending on the elementtype some more attributes will follow here */
+                                               for classdef: classname=id, classrestriction=PACKAGE|..., classfile=file, classline=line, classcolumn=column
+                                               for extends: path=name
+                                               for import: kind=named|qualified|unqualified 
+                                                     + for named: id=id, path=name
+                                                     + for qualified: path=name
+                                                     + for unqualified: path=name
+                                               for component: typename=component_type, names={component_name, "comment"}, flow=true|false, 
+                                                              variability="unspecified"|"discrete"|"parameter"|"constant",
+                                                              direction="input"|"output"|"unspecified"
+                                               
+
 
 ERROR Handling
 ==============
