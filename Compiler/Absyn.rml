@@ -74,41 +74,42 @@ module Absyn:
    ** level in the source file, combined with a within statement that
    ** indicates the hieractical position of the program. 
    **)
-  datatype Program = PROGRAM of Class list (* List of classes *)
-				* Within (* Within statement *)
-		   | BEGIN_DEFINITION   of Path  (* For split definitions*)
-				* Restriction (* Class restriction *)
-				* bool (* Partial *)
-				* bool (* Encapsulated *)
-   		   | END_DEFINITION of Ident (* For split definitions *)
-		   | COMP_DEFINITION of ElementSpec (* For split definitions*)
-					* Path option (* insert into. 
+  datatype Program = PROGRAM of Class list (* classes ; List of classes *)
+				* Within (* within ; Within statement *)
+		   | BEGIN_DEFINITION   of Path  (* path ; For split definitions*)
+				* Restriction (* restriction ; Class restriction *)
+				* bool (* partial *)
+				* bool (* encapsulated *)
+   		   | END_DEFINITION of Ident (* name ; For split definitions *)
+		   | COMP_DEFINITION of ElementSpec (* element ; For split definitions*)
+					* Path option (* insertInto ;  
 						       Default, NONE *)
-		   | IMPORT_DEFINITION of ElementSpec(* For split definitions*)
-					* Path option (* insert into. 
+		   | IMPORT_DEFINITION of ElementSpec(* importElementFor split definitions*)
+					* Path option (* insertInto ;  
 						       Default, NONE *)
 
 
   (** Within statements *)
-  datatype Within = WITHIN of Path | TOP
+  datatype Within = WITHIN of Path (* path *)
+	| TOP
 
 
   (** adrpo added 2005-10-29 **)
   datatype Info = INFO of string * (* filename where the class is defined in *)
-                          int    * (* line number   *)
-                          int      (* column number *)
+                          int    * (* lineNumber   *)
+                          int      (* columnNumber *)
 
   (** - Classes *)
   (** A class definition consists of a name, a flag to indicate if this *)
   (** class is declared as `partial', the declared class restriction, *)
   (** and the body of the declaration. *)
-  datatype Class = CLASS of Ident		     (* Name *)
-			  * bool		     (* Partial *)
-			  * bool		     (* Final *)
-			  * bool		     (* Encapsulated *)
-			  * Restriction           (* Restricion *)
-			  * ClassDef	     (* Body *)
-			  * Info		     (* File name the class is defined in + line no + column no *)
+  datatype Class = CLASS of Ident		     (* name *)
+			  * bool		     (* partial *)
+			  * bool		     (* final *)
+			  * bool		     (* encapsulated *)
+			  * Restriction           (* restricion *)
+			  * ClassDef	     (* body *)
+			  * Info		     (* fileName ; FileName the class is defined in + line no + column no *)
 
  
   (** The `ClassDef' type contains the definition part of a class *)
@@ -117,34 +118,34 @@ module Absyn:
   (** is a definition derived from another class or an enumeration type. *)
   (** For a derived type, the  type contains the name of the derived class and an optional *)
   (** array dimension and a list of modifications. An enumeration type contains a list of *)
-  datatype ClassDef = PARTS of ClassPart list
-			       * string option	     (* string comment *)
-		    | DERIVED of Path
-			       * ArrayDim option     (* *)
-			       * ElementAttributes   
-			       * ElementArg list
+  datatype ClassDef = PARTS of ClassPart list        (* classParts *)
+			       * string option	     (* comment *)
+		    | DERIVED of Path                (* path *)
+			       * ArrayDim option     (* arrayDim*)
+			       * ElementAttributes   (* attributes *)
+			       * ElementArg list     (* arguments*)
 			       * Comment option	     (* comment *)
-		    | ENUMERATION of EnumDef   
+		    | ENUMERATION of EnumDef         (* enumLiterals*)
 				* Comment option     (* comment*)		
-	            | OVERLOAD of Path list (* function names *)
-				* Comment option
-		    | CLASS_EXTENDS of Ident
-				* ElementArg list  
+	            | OVERLOAD of Path list (* functionNames *)
+				* Comment option (* comment *)
+		    | CLASS_EXTENDS of Ident (* name ; class to extend *)
+				* ElementArg list  (* arguments*)
 				* string option (* comment *)
-				* ClassPart list 
-		    | PDER of Path * (* function name *)
-			      Ident list (* derived variables *)
+				* ClassPart list (* parts *)
+		    | PDER of Path * (* functionName *)
+			      Ident list (* vars ; derived variables *)
 				
 
    (** The definition of an enumeration is either a list of literals
     ** or a colon, ':', which defines a supertype of all enumerations **)
 
-  datatype EnumDef = ENUMLITERALS of EnumLiteral list
+  datatype EnumDef = ENUMLITERALS of EnumLiteral list (* enumLiterals *) 
  		   | ENUM_COLON
 
   (** EnumLiteral, which is a name in an enumeration and an optional
    Comment.*)
-  datatype EnumLiteral = ENUMLITERAL of Ident	     (* Literal *)
+  datatype EnumLiteral = ENUMLITERAL of Ident	     (* literal *)
 			 * Comment option	     (* comment *)
 
   (** A class definition contains several parts.  There are public and *)
@@ -152,33 +153,34 @@ module Absyn:
   (** clauses, collectively called elements.  There are also equation *)
   (** sections and algorithm sections. The EXTERNAL part is used only by functions *)
   (** which can be declared as external C or FORTRAN functions. *)
-  datatype ClassPart = PUBLIC of ElementItem list
-		     | PROTECTED of ElementItem list
-		     | EQUATIONS of EquationItem list
-		     | INITIALEQUATIONS of EquationItem list	
-		     | ALGORITHMS of AlgorithmItem list
-		     | INITIALALGORITHMS of AlgorithmItem list
-		     | EXTERNAL of ExternalDecl * Annotation option
+  datatype ClassPart = PUBLIC of ElementItem list (* contents *)
+		     | PROTECTED of ElementItem list (* contents *)
+		     | EQUATIONS of EquationItem list (* contents *)
+		     | INITIALEQUATIONS of EquationItem list (* contents *)	
+		     | ALGORITHMS of AlgorithmItem list (* contents *)
+		     | INITIALALGORITHMS of AlgorithmItem list (* contents *)
+		     | EXTERNAL of ExternalDecl (* externalDecl *)
+                                 * Annotation option (* annotation *)
 
   (** An element item is either an element or an annotation *)
-  datatype ElementItem = ELEMENTITEM of Element 
-		       | ANNOTATIONITEM of Annotation 
+  datatype ElementItem = ELEMENTITEM of Element (* element *)
+		       | ANNOTATIONITEM of Annotation (* annotation *)
 
 
 
   (** - Elements *)
   (* The basic element type in Modelica *)
   datatype Element = ELEMENT of bool		      (* final *)
-			      * RedeclareKeywords option (* replaceable, redeclare *)
-			      * InnerOuter	      (* inner/outer *)	     
-			      * Ident                 (* Element name *)
-			      * ElementSpec           (* Actual element specification*)
-			      * Info	         (* File name the class is defined in + line no + column no *)
-			      * ConstrainClass option (* only valid for classdef and component*)
+			      * RedeclareKeywords option (* redeclareKeywords ; replaceable, redeclare *)
+			      * InnerOuter	      (* innerOuter ; inner/outer *)	     
+			      * Ident                 (* name *)
+			      * ElementSpec           (* specification ; Actual element specification*)
+			      * Info	         (* info ; File name the class is defined in + line no + column no *)
+			      * ConstrainClass option (* constrainClass ; only valid for classdef and component*)
 
   
   (* Constraining type, must be extendes *)
-  datatype ConstrainClass = CONSTRAINCLASS of ElementSpec (* must be extends*)
+  datatype ConstrainClass = CONSTRAINCLASS of ElementSpec (* elementSpec ; must be extends*)
 					    * Comment option (* comment *)
 
   (** An element is something that occurs in a public or protected
@@ -192,76 +194,93 @@ module Absyn:
    ** `EXTENDS(IDENT("TwoPin"),[])'.
    **)
   datatype ElementSpec = CLASSDEF of bool	     (* replaceable *)
-				   * Class
-		       | EXTENDS of Path * ElementArg list
-		       | IMPORT of Import * Comment option
-		       | COMPONENTS of ElementAttributes (*1.1 contains Araydim also.*)
-				     * Path	     (* type name *)
-				     * ComponentItem list
+				   * Class           (* class *)
+		       | EXTENDS of Path (* path *)
+                                  * ElementArg list (* elementArg *)
+		       | IMPORT of Import (* import *)
+                                 * Comment option (* comment *)
+		       | COMPONENTS of ElementAttributes (* attributes*)
+				     * Path	     (* typeName *)
+				     * ComponentItem list (* components *)
   (** One of the keyword inner and outer CAN be given to reference an inner or
       outer component. Thus there are three disjoint possibilities. **)		     
   datatype InnerOuter = INNER | OUTER | INNEROUTER | UNSPECIFIED
 
   (* Import statements, different kinds  *) 				     
-  datatype Import = NAMED_IMPORT of Ident * Path
-		  | QUAL_IMPORT of Path
-		  | UNQUAL_IMPORT of Path
+  datatype Import = NAMED_IMPORT of Ident (* name *)
+                                  * Path (* path *)
+		  | QUAL_IMPORT of Path (* path *)
+		  | UNQUAL_IMPORT of Path (* path *)
 
   (* Collection of component and an optional comment *)
-  datatype ComponentItem = COMPONENTITEM of Component
-					  * ComponentCondition option
-					  * Comment option
+  datatype ComponentItem = COMPONENTITEM of Component (* component *)
+					  * ComponentCondition option (* condition *)
+					  * Comment option (* comment *)
 
 (* A componentItem can have a condition that must be fulfilled if
  ** the component should be instantiated.
  **)
  type ComponentCondition = Exp
   (* Some kind of Modelica entity (object or variable) *)
-  datatype Component = COMPONENT of Ident 	     (* component name *)
-				  * ArrayDim         (* Array dimensions, if any *) 
-				  * Modification option (* Optional modification *) 
+  datatype Component = COMPONENT of Ident 	     (* name *)
+				  * ArrayDim         (* arrayDim ; Array dimensions, if any *) 
+				  * Modification option (* modification ; Optional modification *) 
 
   (** Several component declarations can be grouped together in one *)
   (** `ElementSpec' by writing them on the same line in the source. *)
   (** This type contains the information specific to one component. *)
-  datatype EquationItem = EQUATIONITEM of Equation * Comment option
-			| EQUATIONITEMANN of Annotation 
+  datatype EquationItem = EQUATIONITEM of Equation (* equation *)
+                                        * Comment option (* comment *)
+			| EQUATIONITEMANN of Annotation (* annotation *)
 
   (** Info specific for an algorithm item. *)
-  datatype AlgorithmItem = ALGORITHMITEM  of Algorithm * Comment option
-			 |  ALGORITHMITEMANN of Annotation 
+  datatype AlgorithmItem = ALGORITHMITEM of Algorithm (* algorithm *)
+                                          * Comment option (* comment *)
+			 |  ALGORITHMITEMANN of Annotation (* annotation *)
 
   (* Information on one (kind) of equation, different constructors for different
      kinds of equations *)
-  datatype Equation = EQ_IF of Exp                     (* Conditional expression *)
-			     * EquationItem list	     (* true branch *)  
-			     * (Exp * EquationItem list) list (* elseif branches *)
-			     * EquationItem list	     (* else branch *)
-		    | EQ_EQUALS of Exp * Exp           (* Standard 2-side eqn*)
-		    | EQ_CONNECT of ComponentRef * ComponentRef (* Connect stmt *)
-		    | EQ_FOR of Ident * Exp * EquationItem list (* For-loops *)
-		    | EQ_WHEN_E of Exp  (* Condition *)
-				* EquationItem list (* Loop body *)
-				* (Exp * EquationItem list) list (* else when *)
-		    | EQ_NORETCALL of Ident * FunctionArgs	 (* fcalls without return value *)
+  datatype Equation = EQ_IF of Exp                     (* ifExp ; Conditional expression *)
+			     * EquationItem list	     (* equationTrueItems ; true branch *)  
+			     * (Exp * EquationItem list) list (* elseIfBranches *)
+			     * EquationItem list	     (* equationElseItems *)
+                    (* Standard 2-side eqn*)
+		    | EQ_EQUALS of Exp (* leftSide *)
+                                 * Exp (* rightSide *)          
+                    (* Connect stmt *)
+		    | EQ_CONNECT of ComponentRef (* connector1 *)
+                                  * ComponentRef (* connector2 *)
+		    | EQ_FOR of Ident (* forVariable *)
+                              * Exp   (* forExp *)
+                              * EquationItem list  (* forEquations *)
+		    | EQ_WHEN_E of Exp  (* whenExp *)
+				* EquationItem list (* whenEquations *)
+				* (Exp * EquationItem list) list (* elseWhenEquations *)
+		    | EQ_NORETCALL of Ident (* functionName *)
+                                    * FunctionArgs (* functionArgs; fcalls without return value *)
 
   (** The `Algorithm' type describes one algorithm statement in an *)
   (** algorithm section.  It does not describe a whole algorithm.  The *)
   (** reason this type is named like this is that the name of the *)
   (** grammar rule for algorithm statements is `algorithm'. *)
-  datatype Algorithm = ALG_ASSIGN of ComponentRef * Exp 
-		     | ALG_TUPLE_ASSIGN of Exp 		(*tuple*)  
-					* Exp 		(* value*) 	
-		     | ALG_IF of Exp
-			       * AlgorithmItem list	     (* true branch *)  
-			       * (Exp * AlgorithmItem list) list (* elseif *)
-			       * AlgorithmItem list	     (* else branch *)
-		     | ALG_FOR of Ident * Exp * AlgorithmItem list
-		     | ALG_WHILE of Exp * AlgorithmItem list
-		     | ALG_WHEN_A of Exp 
-					* AlgorithmItem list 
-					* (Exp * AlgorithmItem list) list (* elsewhen *)
-		     | ALG_NORETCALL of ComponentRef * FunctionArgs	   (* general fcalls without return value *)
+  datatype Algorithm = ALG_ASSIGN of ComponentRef (* assignComponent *)
+                                   * Exp (* value *)
+		     | ALG_TUPLE_ASSIGN of Exp (* tuple *)  
+					* Exp (* value *) 	
+		     | ALG_IF of Exp (* ifExp *)
+			       * AlgorithmItem list (* trueBranch *)  
+			       * (Exp * AlgorithmItem list) list (* elseIfAlgorithmBranch *)
+			       * AlgorithmItem list	     (* elseBranch *)
+		     | ALG_FOR of Ident (* forVariable *)
+                                * Exp (* forStmt *)
+                                * AlgorithmItem list (* forBody *)
+		     | ALG_WHILE of Exp (* whileStmt *)
+                                  * AlgorithmItem list (* whileBody *)
+		     | ALG_WHEN_A of Exp (* whenStmt *)
+				   * AlgorithmItem list (* whenBody *)
+				   * (Exp * AlgorithmItem list) list (* elseWhenAlgorithmBranch *)
+		     | ALG_NORETCALL of ComponentRef (* functionCall *) 
+                                      * FunctionArgs (* functionArgs; general fcalls without return value *)
 
 
   (** - Modifications *)
@@ -271,12 +290,16 @@ module Absyn:
   datatype Modification = CLASSMOD of ElementArg list * Exp option
 
   (* Wrapper for things that modify elements, modifications and redeclarations *)
-  datatype ElementArg = MODIFICATION of bool * Each * ComponentRef * Modification option * string option
-		      | REDECLARATION of bool * (* final *)
-					RedeclareKeywords * (* 'redeclare' 'replaceable' *)
-					Each * (* each keyword *)
-					ElementSpec * (* class definition or declaration *)
-					ConstrainClass option (* constraint *)
+  datatype ElementArg = MODIFICATION of bool (* finalItem *)
+                                      * Each (* each *)
+                                      * ComponentRef (* componentReg *)
+                                      * Modification option (* modification *)
+                                      * string option (* comment *)
+		      | REDECLARATION of bool (* finalItem *)
+				      * RedeclareKeywords  (* redeclareKeywords ; 'redeclare' 'replaceable' *)
+				      * Each (* each *)
+				      * ElementSpec (* elementSpec *)
+                                      * ConstrainClass option (* constrainClass ; class definition or declaration *)
 
 (* The keywords 'redeclare' and 'replacable' can be given in three different kombinations, each one by themself or the both combined. *)
   datatype RedeclareKeywords = REDECLARE | REPLACEABLE | REDECLARE_REPLACEABLE 
@@ -287,9 +310,9 @@ module Absyn:
 
   (** - Component attributes *)
   datatype ElementAttributes = ATTR of bool	(* flow *)
-			     	     * Variability (* parameter, constant etc. *)
-			     	     * Direction
-				     * ArrayDim  (*1.1*)
+			     	     * Variability (* variability ; parameter, constant etc. *)
+			     	     * Direction (* direction *)
+				     * ArrayDim  (* arrayDim *)
      
   (* Dete *) 
   datatype Variability = VAR | DISCRETE | PARAM | CONST
@@ -309,24 +332,51 @@ module Absyn:
 
   (** - Expressions *)
 
-  datatype Exp = INTEGER of int
-	       | REAL of real
-	       | CREF of ComponentRef
-	       | STRING of string
-	       | BOOL of bool
-	       | BINARY of Exp * Operator * Exp (* Binary operations, e.g. a*b *)
-	       | UNARY of Operator * Exp (* Unary operations, e.g. -(x) *)
-	       | LBINARY of Exp * Operator * Exp (* Logical binary operations: and, or *)
-	       | LUNARY of Operator * Exp (* Logical unary operations: not *)
-	       | RELATION of Exp * Operator * Exp (* Relations, e.g. a >= 0 *)
-	       | IFEXP of Exp * Exp * Exp * (Exp * Exp) list  (* If expressions *)
-	       | CALL of ComponentRef * FunctionArgs (* Function calls *)
-	       | ARRAY of Exp list (* Array construction using '{','}' or 'array' *)
-	       | MATRIX of Exp list list (* Matrix construction using '[', ']' *)
-	       | RANGE of Exp * Exp option * Exp (* Range expressions, e.g. 1:10 or 1:0.5:10 *)
-	       | TUPLE of Exp list  (* Tuples used in function calls returning several values *)
-	       | END (* array access operator for last element, e.g. a[end]:=1; *)
-	       | CODE of Code (* Modelica AST Code constructors *)
+  datatype Exp = INTEGER of int (* value *)
+	       | REAL of real (* value *)
+	       | CREF of ComponentRef (* componentReg *)
+	       | STRING of string (* value *)
+	       | BOOL of bool (* value *)
+               (* Binary operations, e.g. a*b *)
+	       | BINARY of Exp (* exp1 *)
+                         * Operator (* op *)
+                         * Exp (* exp2 *)
+               (* Unary operations, e.g. -(x) *)
+	       | UNARY of Operator (* op *)
+                        * Exp (* exp *)
+               (* Logical binary operations: and, or *)
+	       | LBINARY of Exp (* exp1 *)
+                          * Operator (* op *)
+                          * Exp (* exp2 *)
+               (* Logical unary operations: not *)
+	       | LUNARY of Operator (* op *)
+                         * Exp (* exp *)
+               (* Relations, e.g. a >= 0 *)	       
+               | RELATION of Exp (* exp1 *)
+                           * Operator (* op *)
+                           * Exp (* exp1 *)
+               (* If expressions *)
+	       | IFEXP of Exp (* ifExp *)
+                        * Exp (* trueBranch *)
+                        * Exp (* elseBranch *) 
+                        * (Exp * Exp) list (* elseIfBranch *)
+               (* Function calls *)
+	       | CALL of ComponentRef (* function *)
+                       * FunctionArgs (* functionArgs *)
+               (* Array construction using '{','}' or 'array' *)
+	       | ARRAY of Exp list (* array *)
+               (* Matrix construction using '[', ']' *)
+	       | MATRIX of Exp list list (* matrix *)
+               (* Range expressions, e.g. 1:10 or 1:0.5:10 *)
+	       | RANGE of Exp (* start *)
+                        * Exp option (* step *) 
+                        * Exp (* stop *)
+               (* Tuples used in function calls returning several values *)
+	       | TUPLE of Exp list (* expressions *)
+               (* array access operator for last element, e.g. a[end]:=1; *)
+	       | END
+               (* Modelica AST Code constructors *)
+	       | CODE of Code (* code *)
 
   (** The `Exp' datatype is the container of a Modelica expression. *)
 
@@ -339,12 +389,16 @@ module Absyn:
 		| C_MODIFICATION of Modification
   (** The 'Code' datatype is used for Meta-programming. It orgiginates from the Code quotation. *)
 
-  datatype FunctionArgs =  FUNCTIONARGS of Exp list * NamedArg list
-			| FOR_ITER_FARG of Exp * Ident * Exp
+  datatype FunctionArgs =  FUNCTIONARGS of Exp list (* args *)
+                                         * NamedArg list (* argNames *)
+			| FOR_ITER_FARG of Exp (* from *)
+                                         * Ident (* var *)
+                                         * Exp (* to *)
   (** The `FunctionArgs' datatype consists of a list of positional arguments *)
   (** followed by a list of named arguments (Modelica v2.0) *)
 							  
-  datatype NamedArg = NAMEDARG of Ident * Exp
+  datatype NamedArg = NAMEDARG of Ident (* argName *)
+                                * Exp (* argValue *)
   (** The `NamedArg' datatype consist of an Identifier for the argument and an expression *)
   (** giving the value of the argument *)
 
@@ -356,7 +410,7 @@ module Absyn:
   
   (** - Subscripts *)
   datatype Subscript = NOSUB
-		     | SUBSCRIPT of Exp
+		     | SUBSCRIPT of Exp (* subScript *)
   (** The `Subscript' datatype is used both in array declarations and *)
   (** component references.  This might seem strange, but it is *)
   (** inherited from the grammar.  The `NOSUB' constructor means that *)
@@ -365,11 +419,15 @@ module Absyn:
   (** whole dimension. *)
 
   (** - Component references and paths *)
-  datatype ComponentRef = CREF_QUAL of Ident * (Subscript list) * ComponentRef
-		    	| CREF_IDENT of Ident * (Subscript list)
+  datatype ComponentRef = CREF_QUAL of Ident (* name *)
+                                     * (Subscript list) (* subScripts *)
+                                     * ComponentRef (* componentRef *)
+		    	| CREF_IDENT of Ident (* name *)
+                                      * (Subscript list) (* subscripts *)
 
-  datatype Path = QUALIFIED of Ident * Path
-	      	| IDENT of Ident
+  datatype Path = QUALIFIED of Ident (* name *)
+                             * Path (* path *)
+	      	| IDENT of Ident (* name *)
   (** A component reference is the fully or partially qualified name of *)
   (** a component.  It is represented as a list of *)
   (** identifier--subscript pairs.  The type `Path', on the other hand, *)
@@ -401,21 +459,21 @@ module Absyn:
   (** assigned special restrictions. *)
 
   (** Annotation *)
-  datatype Annotation = ANNOTATION of ElementArg list
+  datatype Annotation = ANNOTATION of ElementArg list (* elementArgs *)
   (** An Annotation is a class_modification. *)
 
   (** Comment *)	
-  datatype Comment = COMMENT of Annotation option 	
-				* string option
+  datatype Comment = COMMENT of Annotation option (* annotation *)	
+				* string option (* comment *)
 
   (* ExternalDecl *)
   (* Declaration of an external function call *)
   datatype ExternalDecl = EXTERNALDECL of 
-				  Ident option  * (* The name of the external function *)
-				  string option * (* Lanugage of the external function *)
-				  ComponentRef option * (* ouput parameter as return value*)
-				  Exp list *(* only positional arguments, i.e. expression list*)
-				  Annotation option 
+				  Ident option (* funcName ; The name of the external function *)
+				* string option (* lang ; Lanugage of the external function *)
+				* ComponentRef option (* output ; ouput parameter as return value*)
+				* Exp list (* args ; only positional arguments, i.e. expression list*)
+				* Annotation option (* annotation *)
 				   		       
 
 
