@@ -457,6 +457,135 @@ relation generate_var_names_and_comments2:(DAELow.Var list,
               output_str,output_comments,num_output,(* output *)
               param_str,param_comments,num_param (* param *)) 
         
+  rule  (*generate INPUTS names*)
+        DAELow.is_var_on_top_level_and_input(var) => true &
+        generate_var_names_and_comments2(vs,
+                                         state_str,state_comments,num_state,(* state *)
+                                         derivative_str,derivative_comments,num_derivative,(* derivative *)
+                                         algvars_str,algvars_comments,num_algvars,(* algvars *)
+                                         input_str,input_comments,num_input,(* input *)
+                                         output_str,output_comments,num_output,(* output *)
+                                         param_str,param_comments,num_param (* param *)) 
+          => (state_str',state_comments',num_state',(* state *)
+              derivative_str',derivative_comments',num_derivative',(* derivative *)
+              algvars_str',algvars_comments',num_algvars',(* algvars *)
+              input_str',input_comments',num_input',(* input *)
+              output_str',output_comments',num_output',(* output *)
+              param_str',param_comments',num_param' (* param *)) &
+        
+        Util.string_append_list(["\"",origname,"\""]) => origname' &
+        Dump.unparse_comment_option(comment) => comment &
+        int_add(num_input',1) => num_input'' &
+        generate_empty_string(comment) => comment' &
+
+        Util.string_delimit_list_no_empty([origname',input_str'],", ") => input_str'' &
+        Util.string_delimit_list_no_empty([comment',input_comments'],", ") => input_comments'' 
+
+        -----------------------
+        generate_var_names_and_comments2((var as DAELow.VAR(cr,kind,dir,_,_,_,
+				                    _,value,indx,origname,_,dae_var_attr,comment,flow))::vs,
+                                         state_str,state_comments,num_state,(* state *)
+                                         derivative_str,derivative_comments,num_derivative,(* derivative *)
+                                         algvars_str,algvars_comments,num_algvars,(* algvars *)
+                                         input_str,input_comments,num_input,(* input *)
+                                         output_str,output_comments,num_output,(* output *)
+                                         param_str,param_comments,num_param (* param *))
+        
+          => (state_str',state_comments',num_state',(* state *)
+              derivative_str',derivative_comments',num_derivative',(* derivative *)
+              algvars_str',algvars_comments',num_algvars',(* algvars *)
+              input_str'',input_comments'',num_input'',(* input *)
+              output_str',output_comments',num_output',(* output *)
+              param_str',param_comments',num_param' (* param *)) 
+
+
+  rule  (*generate OUTPUT names*)
+         DAELow.is_var_on_top_level_and_output(var) => true &
+        generate_var_names_and_comments2(vs,
+                                         state_str,state_comments,num_state,(* state *)
+                                         derivative_str,derivative_comments,num_derivative,(* derivative *)
+                                         algvars_str,algvars_comments,num_algvars,(* algvars *)
+                                         input_str,input_comments,num_input,(* input *)
+                                         output_str,output_comments,num_output,(* output *)
+                                         param_str,param_comments,num_param (* param *)) 
+        => (state_str',state_comments',num_state',(* state *)
+            derivative_str',derivative_comments',num_derivative',(* derivative *)
+            algvars_str',algvars_comments',num_algvars',(* algvars *)
+            input_str',input_comments',num_input',(* input *)
+            output_str',output_comments',num_output',(* output *)
+            param_str',param_comments',num_param' (* param *)) &
+        
+        Util.string_append_list(["\"",origname,"\""]) => origname' &
+        Dump.unparse_comment_option(comment) => comment &
+        int_add(num_output',1) => num_output'' &
+        generate_empty_string(comment) => comment' &
+        
+        
+        Util.string_delimit_list_no_empty([origname',output_str'],", ") => output_str'' &
+        Util.string_delimit_list_no_empty([comment',output_comments'],", ") => output_comments'' 
+        -----------------------
+        generate_var_names_and_comments2((var as DAELow.VAR(cr,kind,dir,_,_,_,
+				                    _,value,indx,origname,_,dae_var_attr,comment,flow))::vs,
+                                         state_str,state_comments,num_state,(* state *)
+                                         derivative_str,derivative_comments,num_derivative,(* derivative *)
+                                         algvars_str,algvars_comments,num_algvars,(* algvars *)
+                                         input_str,input_comments,num_input,(* input *)
+                                         output_str,output_comments,num_output,(* output *)
+                                         param_str,param_comments,num_param (* param *))
+        
+          => (state_str',state_comments',num_state',(* state *)
+              derivative_str',derivative_comments',num_derivative',(* derivative *)
+              algvars_str',algvars_comments',num_algvars',(* algvars *)
+              input_str',input_comments',num_input',(* input *)
+              output_str'',output_comments'',num_output'',(* output *)
+              param_str',param_comments',num_param' (* param *)) 
+
+
+  rule  (*generate PARAM names*)
+        let kind_lst =  [DAELow.PARAM] &
+        let direction_lst = [DAE.INPUT,DAE.OUTPUT,DAE.BIDIR] &
+        Util.list_getmember(kind,kind_lst) => _ & (* if this fails then the var is not added to list*)
+        Util.list_getmember(dir,direction_lst) => _ & (* if this fails then the var is not added to list*)
+        
+        generate_var_names_and_comments2(vs,
+                                         state_str,state_comments,num_state,(* state *)
+                                         derivative_str,derivative_comments,num_derivative,(* derivative *)
+                                         algvars_str,algvars_comments,num_algvars,(* algvars *)
+                                         input_str,input_comments,num_input,(* input *)
+                                         output_str,output_comments,num_output,(* output *)
+                                         param_str,param_comments,num_param (* param *)) 
+          => (state_str',state_comments',num_state',(* state *)
+              derivative_str',derivative_comments',num_derivative',(* derivative *)
+              algvars_str',algvars_comments',num_algvars',(* algvars *)
+              input_str',input_comments',num_input',(* input *)
+              output_str',output_comments',num_output',(* output *)
+              param_str',param_comments',num_param' (* param *)) &
+        
+        Util.string_append_list(["\"",origname,"\""]) => origname' &
+        Dump.unparse_comment_option(comment) => comment &
+        int_add(num_param',1) => num_param'' &
+        generate_empty_string(comment) => comment' &
+        
+        Util.string_delimit_list_no_empty([origname',param_str'],", ") => param_str'' &
+        Util.string_delimit_list_no_empty([comment',param_comments'],", ") => param_comments'' 
+
+        -----------------------
+        generate_var_names_and_comments2(DAELow.VAR(cr,kind,dir,_,_,_,
+				                    _,value,indx,origname,_,dae_var_attr,comment,flow)::vs,
+                                         state_str,state_comments,num_state,(* state *)
+                                         derivative_str,derivative_comments,num_derivative,(* derivative *)
+                                         algvars_str,algvars_comments,num_algvars,(* algvars *)
+                                         input_str,input_comments,num_input,(* input *)
+                                         output_str,output_comments,num_output,(* output *)
+                                         param_str,param_comments,num_param (* param *))
+        
+          => (state_str',state_comments',num_state',(* state *)
+              derivative_str',derivative_comments',num_derivative',(* derivative *)
+              algvars_str',algvars_comments',num_algvars',(* algvars *)
+              input_str',input_comments',num_input',(* input *)
+              output_str',output_comments',num_output',(* output *)
+              param_str'',param_comments'',num_param'' (* param *)) 
+
  
   rule  (*generate STATE names*)
         (*generate DERIVATIVES names because the same combination of var_kind and direction*)
@@ -557,143 +686,6 @@ relation generate_var_names_and_comments2:(DAELow.Var list,
               input_str',input_comments',num_input',(* input *)
               output_str',output_comments',num_output',(* output *)
               param_str',param_comments',num_param' (* param *)) 
-
-  rule  (*generate INPUTS names*)
-        let kind_lst =  [DAELow.VARIABLE,DAELow.DISCRETE,DAELow.DUMMY_DER,DAELow.DUMMY_STATE,DAELow.DISCRETE] &
-        let direction_lst = [DAE.INPUT] &
-        Util.list_getmember(kind,kind_lst) => _ & (* if this fails then the var is not added to list*)
-        Util.list_getmember(dir,direction_lst) => _ & (* if this fails then the var is not added to list*)
-        
-        generate_var_names_and_comments2(vs,
-                                         state_str,state_comments,num_state,(* state *)
-                                         derivative_str,derivative_comments,num_derivative,(* derivative *)
-                                         algvars_str,algvars_comments,num_algvars,(* algvars *)
-                                         input_str,input_comments,num_input,(* input *)
-                                         output_str,output_comments,num_output,(* output *)
-                                         param_str,param_comments,num_param (* param *)) 
-          => (state_str',state_comments',num_state',(* state *)
-              derivative_str',derivative_comments',num_derivative',(* derivative *)
-              algvars_str',algvars_comments',num_algvars',(* algvars *)
-              input_str',input_comments',num_input',(* input *)
-              output_str',output_comments',num_output',(* output *)
-              param_str',param_comments',num_param' (* param *)) &
-        
-        Util.string_append_list(["\"",origname,"\""]) => origname' &
-        Dump.unparse_comment_option(comment) => comment &
-        int_add(num_input',1) => num_input'' &
-        generate_empty_string(comment) => comment' &
-
-        Util.string_delimit_list_no_empty([origname',input_str'],", ") => input_str'' &
-        Util.string_delimit_list_no_empty([comment',input_comments'],", ") => input_comments'' 
-
-        -----------------------
-        generate_var_names_and_comments2(DAELow.VAR(cr,kind,dir,_,_,_,
-				                    _,value,indx,origname,_,dae_var_attr,comment,flow)::vs,
-                                         state_str,state_comments,num_state,(* state *)
-                                         derivative_str,derivative_comments,num_derivative,(* derivative *)
-                                         algvars_str,algvars_comments,num_algvars,(* algvars *)
-                                         input_str,input_comments,num_input,(* input *)
-                                         output_str,output_comments,num_output,(* output *)
-                                         param_str,param_comments,num_param (* param *))
-        
-          => (state_str',state_comments',num_state',(* state *)
-              derivative_str',derivative_comments',num_derivative',(* derivative *)
-              algvars_str',algvars_comments',num_algvars',(* algvars *)
-              input_str'',input_comments'',num_input'',(* input *)
-              output_str',output_comments',num_output',(* output *)
-              param_str',param_comments',num_param' (* param *)) 
-
-
-  rule  (*generate OUTPUT names*)
-        let kind_lst =  [DAELow.VARIABLE,DAELow.DISCRETE,DAELow.DUMMY_DER,DAELow.DUMMY_STATE,DAELow.DISCRETE] &
-        let direction_lst = [DAE.OUTPUT] &
-        Util.list_getmember(kind,kind_lst) => _ & (* if this fails then the var is not added to list*)
-        Util.list_getmember(dir,direction_lst) => _ & (* if this fails then the var is not added to list*)
-        
-        generate_var_names_and_comments2(vs,
-                                         state_str,state_comments,num_state,(* state *)
-                                         derivative_str,derivative_comments,num_derivative,(* derivative *)
-                                         algvars_str,algvars_comments,num_algvars,(* algvars *)
-                                         input_str,input_comments,num_input,(* input *)
-                                         output_str,output_comments,num_output,(* output *)
-                                         param_str,param_comments,num_param (* param *)) 
-          => (state_str',state_comments',num_state',(* state *)
-              derivative_str',derivative_comments',num_derivative',(* derivative *)
-              algvars_str',algvars_comments',num_algvars',(* algvars *)
-              input_str',input_comments',num_input',(* input *)
-              output_str',output_comments',num_output',(* output *)
-              param_str',param_comments',num_param' (* param *)) &
-        
-        Util.string_append_list(["\"",origname,"\""]) => origname' &
-        Dump.unparse_comment_option(comment) => comment &
-        int_add(num_output',1) => num_output'' &
-        generate_empty_string(comment) => comment' &
-        
-
-        Util.string_delimit_list_no_empty([origname',output_str'],", ") => output_str'' &
-        Util.string_delimit_list_no_empty([comment',output_comments'],", ") => output_comments'' 
-        -----------------------
-        generate_var_names_and_comments2(DAELow.VAR(cr,kind,dir,_,_,_,
-				                    _,value,indx,origname,_,dae_var_attr,comment,flow)::vs,
-                                         state_str,state_comments,num_state,(* state *)
-                                         derivative_str,derivative_comments,num_derivative,(* derivative *)
-                                         algvars_str,algvars_comments,num_algvars,(* algvars *)
-                                         input_str,input_comments,num_input,(* input *)
-                                         output_str,output_comments,num_output,(* output *)
-                                         param_str,param_comments,num_param (* param *))
-        
-          => (state_str',state_comments',num_state',(* state *)
-              derivative_str',derivative_comments',num_derivative',(* derivative *)
-              algvars_str',algvars_comments',num_algvars',(* algvars *)
-              input_str',input_comments',num_input',(* input *)
-              output_str'',output_comments'',num_output'',(* output *)
-              param_str',param_comments',num_param' (* param *)) 
-
-
-  rule  (*generate PARAM names*)
-        let kind_lst =  [DAELow.PARAM] &
-        let direction_lst = [DAE.INPUT,DAE.OUTPUT,DAE.BIDIR] &
-        Util.list_getmember(kind,kind_lst) => _ & (* if this fails then the var is not added to list*)
-        Util.list_getmember(dir,direction_lst) => _ & (* if this fails then the var is not added to list*)
-        
-        generate_var_names_and_comments2(vs,
-                                         state_str,state_comments,num_state,(* state *)
-                                         derivative_str,derivative_comments,num_derivative,(* derivative *)
-                                         algvars_str,algvars_comments,num_algvars,(* algvars *)
-                                         input_str,input_comments,num_input,(* input *)
-                                         output_str,output_comments,num_output,(* output *)
-                                         param_str,param_comments,num_param (* param *)) 
-          => (state_str',state_comments',num_state',(* state *)
-              derivative_str',derivative_comments',num_derivative',(* derivative *)
-              algvars_str',algvars_comments',num_algvars',(* algvars *)
-              input_str',input_comments',num_input',(* input *)
-              output_str',output_comments',num_output',(* output *)
-              param_str',param_comments',num_param' (* param *)) &
-        
-        Util.string_append_list(["\"",origname,"\""]) => origname' &
-        Dump.unparse_comment_option(comment) => comment &
-        int_add(num_param',1) => num_param'' &
-        generate_empty_string(comment) => comment' &
-        
-        Util.string_delimit_list_no_empty([origname',param_str'],", ") => param_str'' &
-        Util.string_delimit_list_no_empty([comment',param_comments'],", ") => param_comments'' 
-
-        -----------------------
-        generate_var_names_and_comments2(DAELow.VAR(cr,kind,dir,_,_,_,
-				                    _,value,indx,origname,_,dae_var_attr,comment,flow)::vs,
-                                         state_str,state_comments,num_state,(* state *)
-                                         derivative_str,derivative_comments,num_derivative,(* derivative *)
-                                         algvars_str,algvars_comments,num_algvars,(* algvars *)
-                                         input_str,input_comments,num_input,(* input *)
-                                         output_str,output_comments,num_output,(* output *)
-                                         param_str,param_comments,num_param (* param *))
-        
-          => (state_str',state_comments',num_state',(* state *)
-              derivative_str',derivative_comments',num_derivative',(* derivative *)
-              algvars_str',algvars_comments',num_algvars',(* algvars *)
-              input_str',input_comments',num_input',(* input *)
-              output_str',output_comments',num_output',(* output *)
-              param_str'',param_comments'',num_param'' (* param *)) 
 
 
 

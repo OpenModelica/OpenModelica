@@ -1164,7 +1164,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 Util.string_append_list([cit,".", pd, executable, " -m ",
                                   method_str," >> output.log 2>&1",
                                   cit]) => sim_call &
-	 System.system_call(sim_call) => _ &
+	 System.system_call(sim_call) => 0 &
          
          Util.string_append_list([executable,"_res.plt"]) => result_file &
          
@@ -1739,6 +1739,7 @@ relation change_to_file_dir:(Absyn.ComponentRef, (* class *)
         Util.string_split_at_char(filename,pd') => filename' &
         Util.list_strip_last(filename') => dir &
         Util.string_delimit_list(dir,pd) => dir' &
+
         System.cd(dir') => 0
         ------------------------------
         change_to_file_dir(class,p) => ()
