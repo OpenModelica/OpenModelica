@@ -310,7 +310,8 @@ relation translate_file : string list => () =
 
 	& Debug.fprint ("info", "\n------------------------------------------------------------ \n")
 	& Debug.fprint ("info", "---instantiating\n")
-	& Inst.instantiate(p') => d'
+	& Inst.instantiate(p') => d'' 
+         & DAE.transform_if_eq_to_expr(d'') => d'
 	& Debug.fprint ("beforefixmodout", "Explicit part:\n")
 	& Debug.fcall ("beforefixmodout", DAE.dump_debug, d')
 (*	& Inst.instantiate_implicit(pfunc') => dimpl'

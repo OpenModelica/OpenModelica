@@ -163,6 +163,7 @@ module DAE:
   relation dump: DAElist => ()
   relation dump2: DAElist => ()
   relation dump_elements : Element list => () 
+  relation dump_elements_str : Element list => string
   relation dump_str: DAElist => string
   relation dump_debug: DAElist => ()
   relation dump_debug_element : Element => ()
@@ -200,7 +201,7 @@ module DAE:
   relation to_modelica_form: (DAElist) => DAElist
   relation get_named_function : (Absyn.Path, Element list) => Element list
   relation get_all_exps : Element list => Exp.Exp list
-
+  relation transform_if_eq_to_expr :  DAElist => DAElist
 end
 
 with "RTOpts.rml"
@@ -2735,5 +2736,65 @@ relation get_all_exps_extarg : ExtArg => Exp.Exp list =
   rule	Debug.fprintln("failtrace", "-- get_all_exps_extarg failed")
 	------------------------------------------------------------
 	get_all_exps_extarg _ => fail	     
+
+end
+
+(** relation: transform_if_eq_to_expr
+ ** transform all if equations to ordinary equations involving if-expressions
+ **)
+relation transform_if_eq_to_expr :  DAElist => DAElist =
+  
+  axiom	transform_if_eq_to_expr(DAE([])) => DAE([])
+
+  rule	transform_if_eq_to_expr(sublist) => sublist_result &
+         transform_if_eq_to_expr(DAE(rest)) => DAE(rest_result) &
+	let subresult = COMP(name,sublist_result) &
+         let result = DAE(subresult::rest_result)
+	--------------------------------------------------
+	transform_if_eq_to_expr(DAE((COMP(name,sublist))::rest)) => result
+
+  rule	transform_if_eq_to_expr(DAE(rest)) => DAE(res2) &
+	if_eq_to_expr(el) => res1 &
+	list_append(res1, res2) => res
+	--------------------------------------------------
+	transform_if_eq_to_expr(DAE(el::rest)) => DAE(res)
+  
+  rule	transform_if_eq_to_expr(DAE(rest)) => DAE(res) 
+	--------------------------------------------------
+	transform_if_eq_to_expr(DAE(el::rest)) => DAE(el::res)
+end
+
+(** relation: if_eq_to_expr
+ ** Transform one if-equation into equations involving if-expressions
+ **)
+relation if_eq_to_expr : Element => Element list =
+
+  rule	list_length(true_branch) => true_eq &
+	list_length(false_branch) => false_eq &
+	true_eq == false_eq => false &
+        Print.print_error_buf "# Error, different number of equations in the branches of the if equation.\n" 
+	--------------------------------------------------
+	if_eq_to_expr(IF_EQUATION(cond,true_branch,false_branch)) => []
+
+  rule   list_length(true_branch) => true_eq &
+	list_length(false_branch) => false_eq &
+	true_eq == false_eq => true &
+         make_equations_from_if(cond, true_branch, false_branch) => equations 
+	--------------------------------------------------
+	if_eq_to_expr(IF_EQUATION(cond,true_branch,false_branch)) => equations  
+
+  axiom	if_eq_to_expr(_) => fail
+end
+
+relation make_equations_from_if : (Exp.Exp, Element list, Element list) => (Element list) =
+
+  axiom	make_equations_from_if(_,[],[]) => []
+
+  rule	make_equations_from_if(cond,rest1,rest2) => rest_res &
+         let tb = Exp.BINARY(exp1,Exp.SUB(Exp.REAL),exp2) &
+	let fb = Exp.BINARY(exp3,Exp.SUB(Exp.REAL),exp4) &
+	let eq = EQUATION(Exp.RCONST(0.0),Exp.IFEXP(cond,tb,fb))
+	--------------------------------------------------
+	make_equations_from_if(cond, (EQUATION(exp1,exp2))::rest1, (EQUATION(exp3,exp4))::rest2) => eq::rest_res
 
 end
