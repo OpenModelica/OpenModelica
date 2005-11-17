@@ -1195,12 +1195,12 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 Util.string_append_list(["Simulation failed.\n",str,"\n"]) => res &
 	 let simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),[Values.STRING(res)],["resultFile"])
 	 ------------------------------------------------------------------
-	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("simulate"),[Exp.CREF(cr,_),starttime,stoptime,interval,method],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("simulate"),[Exp.CREF(cr,_),starttime,stoptime,interval,method,filenameprefix],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (simValue,st)
 
   rule	let simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),[Values.STRING("Simulation Failed. Environment variable OPENMODELICAHOME not set.")],["resultFile"])
 	 ------------------------------------------------------------------
-	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("simulate"),[Exp.CREF(cr,_),starttime,stoptime,interval,method],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("simulate"),[Exp.CREF(cr,_),starttime,stoptime,interval,method,filenameprefix],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (simValue,st)
 
   rule	Static.component_ref_to_path(cr) => path &
