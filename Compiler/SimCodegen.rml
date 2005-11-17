@@ -308,6 +308,9 @@ end
 	---------------------------
 	generate_global_data(class, dlow,no,ni,nh) => str
 	
+  rule	Print.print_error_buf "Internal Error, generate_global_data failed\n" 
+	 ---------------------
+	 generate_global_data(_,_,_,_,_) => fail
 end
 
 
@@ -796,6 +799,9 @@ relation generate_input_function_code:(DAELow.DAELow) => (string,int) =
 
         generate_input_function_code(DAELow.DAELOW(vars,knvars,eqns,se,ie,al,ev)) => (res,lst_lenght)
 
+  rule	Print.print_error_buf "Internal Error, generate_input_function_code failed\n" 
+	----------------------
+	generate_input_function_code(_) => fail
 end
 
 (** relation: generate_input_function_code2
@@ -848,6 +854,9 @@ relation generate_output_function_code:(DAELow.DAELow) => (string,int) =
         -------------------------------------
         generate_output_function_code(DAELow.DAELOW(vars,knvars,eqns,se,ie,al,ev)) => (res,lst_lenght)
 
+  rule	Print.print_error_buf "Internal Error, generate_output_function code failed\n"
+	-----------------------
+	generate_output_function_code(_) => fail
 end
 
 (** relation: generate_output_function_code2
@@ -1008,6 +1017,10 @@ relation generate_ode_code: (DAELow.DAELow,
 	Util.string_append_list([extra_funcs,cheader,block_code,cfooter]) => res
 	-------------------------------------------
 	generate_ode_code(dlow,comps,ass1,ass2,m,mt,class) => res
+
+  rule	Print.print_error_buf "Internal Error, generate_ode_code failed\n" 
+	-------------------------------
+	generate_ode_code(dlow,comps,ass1,ass2,m,mt,class) => fail
 end
 
 
@@ -1203,7 +1216,7 @@ relation generate_event_checking_code: (DAELow.DAELow,
 	-------------------------------------------
 	generate_event_checking_code(dlow,comps,ass1,ass2,m,mt,class) => (res, helpVarInfo)
 
-  rule	print "-generate_event_checking_code failed\n"
+  rule	Print.print_error_buf "Internal error, generate_event_checking_code failed\n"
 	----------------------------------------
 	generate_event_checking_code(_,_,_,_,_,_,_) => fail
 end
@@ -2330,7 +2343,7 @@ relation generate_zero_crossing: (string,
 	--------------------------------------------------
 	generate_zero_crossing(cname,dae,dlow as DAELow.DAELOW(_,_,_,_,_,_,DAELow.EVENT_INFO(_,zc)),ass1,ass2,blocks,helpVarInfo) => res
 
-  rule	print "-generate_zero_crossing failed\n"
+  rule	Print.print_error_buf "Internal Error, generate_zero_crossing failed\n"
 	----------------------------------------
 	generate_zero_crossing(_,_,_,_,_,_,_) => fail
 end
@@ -2443,7 +2456,7 @@ relation generate_when_clauses: (string,
 	--------------------------------------------------
 	generate_when_clauses(cname,dae,dlow as DAELow.DAELOW(_,_,_,_,_,_,DAELow.EVENT_INFO(wc,_)),ass1,ass2,blocks) => res
 
-  rule	print "-generate_when_clauses failed\n"
+  rule	Print.print_error_buf "Internal Error, generate_when_clauses failed\n"
 	----------------------------------------
 	generate_when_clauses(_,_,_,_,_,_) => fail
 end
@@ -2574,6 +2587,10 @@ relation generate_compute_residual_state:(string,
 	  => res
         -------------------------------------------------------------
         generate_compute_residual_state(cname,dae,dlow,ass1,ass2,blocks) => res
+
+  rule	Print.print_error_buf "Internal Error, generate_compute_residual_state failed\n" 
+	----------------------------
+	generate_compute_residual_state(cname,dae,dlow,ass1,ass2,blocks) => fail
 end
 
 
@@ -2600,6 +2617,10 @@ end
          Util.string_append_list(res) => coutput 
          -------------------------------------------------------------
          generate_compute_output(cname,dae,dlow,ass1,ass2,blocks) => coutput
+
+  rule	Print.print_error_buf "Internal Error, generate_compute_output failed\n" 
+	 -----------------
+	 generate_compute_output(_,_,_,_,_,_) => fail
  end
 
 (** relation: generate_compute_removed_eqns
