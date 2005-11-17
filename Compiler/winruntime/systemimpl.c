@@ -463,23 +463,6 @@ RML_BEGIN_LABEL(System__system_5fcall)
 {
 	int ret_val;
 	char* str = RML_STRINGDATA(rmlA0);
-	if (0 && str[0] == '\"') {
-		char longname[MAX_PATH];
-		char shortname[MAX_PATH];
-		char* endpos = strstr(&str[1],"\"");
-		char* tmp;
-		char* pathend;
-		char* mark;
-
-		for(pathend = endpos; pathend > str && *pathend != '\\'; pathend--);
-		
-		strncpy(longname,&str[1],pathend-str-1);
-		GetShortPathName(longname,shortname,MAX_PATH);
-		tmp = strdup(str);
-		sprintf(tmp,"%s%s",shortname,pathend);
-		mark = strstr(tmp, "\"");
-		if (mark) *mark = ' ';
-	}
 	ret_val	= system(str);
 	rmlA0	= (void*) mk_icon(ret_val);
 

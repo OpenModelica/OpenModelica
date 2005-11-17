@@ -1161,9 +1161,9 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
          
          win_citation() => cit &
 	 System.path_delimiter => pd &
-	 Util.string_append_list([cit,".", pd, executable, " -m ",
-                                  method_str," >> output.log 2>&1",
-                                  cit]) => sim_call &
+	 Util.string_append_list([cit,".", pd, executable,cit, " -m ",
+                                  method_str," >> output.log 2>&1"
+                                  ]) => sim_call &
 	 System.system_call(sim_call) => 0 &
          
          Util.string_append_list([executable,"_res.plt"]) => result_file &
@@ -1267,13 +1267,15 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	  => (Values.RECORD(_,[Values.STRING(filename)],_),_) &
 	   System.read_ptolemyplot_dataset(filename,vars'',0) => value &
 	 System.pwd() => pwd &
+        win_citation() => cit &
 	 System.read_env("OPENMODELICAHOME") => omhome &
+	 System.trim(omhome,"\"") => omhome' &
 	 System.path_delimiter => pd &
-	 Util.string_append_list([omhome,pd,"Compiler",pd,"scripts",pd,"doPlot"]) => plotCmd &
+	 Util.string_append_list([cit,omhome',pd,"Compiler",pd,"scripts",pd,"doPlot",cit]) => plotCmd &
 	 Util.string_append_list([pwd,pd,"tmpPlot.plt"]) => tmpPlotFile &
 	 Values.write_ptolemyplot_dataset(tmpPlotFile,value,vars'',"Plot by OpenModelica") 
 	  => res &
-	   Util.string_append_list([plotCmd, " \"", tmpPlotFile,"\""]) => call &			   
+	   Util.string_append_list([cit,plotCmd, " \"", tmpPlotFile,"\"",cit]) => call &			   
 	 System.system_call(call) => _
 	 ------------------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plot"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
@@ -1458,8 +1460,10 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	  => (Values.BOOL(false),st)
 
   rule	System.read_env("OPENMODELICAHOME") => omhome &
+	System.trim(omhome,"\"") => omhome' &
+	win_citation() => cit &  
          System.path_delimiter => pd &
-         Util.string_append_list([omhome,pd,"Compiler",pd,"helptext.txt"]) => filename &
+         Util.string_append_list([omhome',pd,"Compiler",pd,"helptext.txt"]) => filename &
 	 print filename & 
 	 System.read_file(filename) => str 
 	 --------------------------
@@ -1747,8 +1751,10 @@ relation change_to_file_dir:(Absyn.ComponentRef, (* class *)
 
   rule  (*model no saved! change to OPENMODELICAHOME/work *)
         System.read_env("OPENMODELICAHOME") => omhome &
+	System.trim(omhome,"\"") => omhome' &
         System.path_delimiter() => pd &
-        Util.string_append_list([omhome,pd,"work"]) => dir' &
+        win_citation() => cit &
+        Util.string_append_list([cit,omhome',pd,"work",cit]) => dir' &
         System.cd(dir') => 0
         -------------------------------
         change_to_file_dir(class,p) => ()
@@ -1768,10 +1774,11 @@ relation compile_model: (string) => () =
 	 
   rule	System.path_delimiter => pd &
 	System.read_env("OPENMODELICAHOME") => omhome & 
+	System.trim(omhome,"\"") => omhome' &
         win_citation() => cit &
-        Util.string_append_list([cit,omhome, pd, "Compiler", 
-                                 pd, "scripts", pd, "Compile ", 
-                                 makefilename," > output.log 2>&1",cit
+        Util.string_append_list([cit,omhome', pd, "Compiler", 
+                                 pd, "scripts", pd, "Compile",cit," ", 
+                                 makefilename," > output.log 2>&1"
                                  ]) => s_call &
         (*> output.log 2>&1 = redirect stderr to stdout and put it in output.log *)
         

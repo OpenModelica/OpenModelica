@@ -458,6 +458,7 @@ RML_BEGIN_LABEL(System__system_5fcall)
 {
   char* str = RML_STRINGDATA(rmlA0);
   int ret_val;
+  printf("calling: %s\n",str);
   ret_val = system(str);
 
   rmlA0 = (void*) mk_icon(ret_val);
