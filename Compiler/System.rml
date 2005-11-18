@@ -301,6 +301,47 @@ relation acos: real => real
 
 relation atan: real => real 
 
+(** relation: atan2
+ **
+ ** Arctan2 is not defined in rml.
+ **)
+
+relation atan2: (real,real) => real 
+
+(** relation: cosh
+ **
+ ** Cosh is not defined in rml.
+ **)
+
+relation cosh: real => real 
+
+(** relation: log
+ **
+ ** log is not defined in rml.
+ **)
+
+relation log: real => real 
+
+(** relation: log10
+ **
+ ** log10 is not defined in rml.
+ **)
+
+relation log10: real => real 
+
+(** relation: sinh
+ **
+ ** sinh is not defined in rml.
+ **)
+
+relation sinh: real => real 
+
+(** relation: tanh
+ **
+ ** tanh is not defined in rml.
+ **)
+
+relation tanh: real => real 
 
 (** relation get_classnames_for_simulation
  ** this returns a list of classnames that are in the

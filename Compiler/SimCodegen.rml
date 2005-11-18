@@ -2030,7 +2030,7 @@ relation generate_init_data2:(DAELow.DAELow,
 	array_list(nyarr3) => ny_lst &
 	array_list(nparr3) => np_lst &
 	Util.list_flatten([nx_lst,nxd_lst,ny_lst,np_lst]) => whole_lst &
-	Util.string_delimit_list(whole_lst,"\n") => res
+	Util.string_delimit_list_no_empty(whole_lst,"\n") => res
 	-----------------------------
 	generate_init_data2(DAELow.DAELOW(vars,knvars,_,_,initeqn,alg,_),nx,ny,np) => res
 
@@ -2339,6 +2339,15 @@ relation generate_zero_crossing2: (DAELow.ZeroCrossing list, int,
 	--------------------------------------------------
 	generate_zero_crossing2((zc as DAELow.ZERO_CROSSING(_,eql,_))::xs,
 				index,dae,dlow,ass1,ass2,blocks,helpVarInfo) => (res1,res2)
+
+  rule	dump_zero_crossing_str zc => zc_str &
+	Util.string_append_list(["Internal Error generating zero crossing :",
+				 zc_str,"\n"]) => res &
+	Print.print_error_buf res 
+	------------------------
+	generate_zero_crossing2((zc as DAELow.ZERO_CROSSING(_,eql,_))::xs,
+				index,dae,dlow,ass1,ass2,blocks,helpVarInfo) 
+	  => fail
 end
 
 
@@ -2356,6 +2365,12 @@ relation dump_zero_crossing_str: (DAELow.ZeroCrossing) => string =
 	Util.string_append_list(["Sample(*t,",e1_str,",",e2_str,")"]) => zc_str
 	----------------------------------------
 	dump_zero_crossing_str (DAELow.ZERO_CROSSING(Exp.CALL(Absyn.IDENT("sample"),[start,interval],_,_),_,_)) => zc_str
+
+  rule  print_exp_cpp_str(e) => e_str &
+	Util.string_append_list(["/*Unknown zero crossing: ",e_str," */"]) 
+	  => zc_str
+	-------------------
+	dump_zero_crossing_str (DAELow.ZERO_CROSSING(e,_,_)) => zc_str
 
 end
 
@@ -2381,6 +2396,10 @@ relation build_help_var_assignments: ( (int * Exp.Exp * int) list ) => string =
 	string_append(res1,res2) => res
 	--------------------------------------------------
 	build_help_var_assignments((helpVarIndex, e,_)::rest) => res
+
+  rule	Print.print_error_buf "Internal Error, build_help_var_assignments failed\n" 
+	--------------------------------------------------
+	build_help_var_assignments(_) => fail
 end
 
 relation print_zero_crossing_op_str: (Exp.Operator) => string =

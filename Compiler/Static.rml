@@ -3315,6 +3315,15 @@ relation generate_compiled_function: (Env.Env, Absyn.ComponentRef, Exp.Exp, Type
 	-----------------------------------------------
 	generate_compiled_function(env,fn,e,prop,SOME(st as Interactive.SYMBOLTABLE(p,_,_,_,cflist))) => SOME(st)
 
+	(* Don not compile if is "known" external function, e.g. math lib.*)
+  rule	Absyn.cref_to_path(fn) => path &
+	Lookup.lookup_class(env,path,false) => (cdef,env') &
+	let SCode.CLASS(fid,_,_,SCode.R_EXT_FUNCTION,SCode.PARTS(_,_,_,_,_,extdecl)) = cdef &
+	let SOME(Absyn.EXTERNALDECL(id,lan,out,args,_)) = extdecl &
+	Ceval.is_known_external_func(fid,id) 
+	----------------------------------	
+	generate_compiled_function(env,fn,e,prop,st) => st
+
   rule	Debug.fprintln("sei", "generate_compiled_function: start2") &
 	Absyn.cref_to_path(fn) => path &
 	is_function_in_cflist (cflist, path) => false &

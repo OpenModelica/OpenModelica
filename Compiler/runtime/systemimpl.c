@@ -967,6 +967,49 @@ RML_BEGIN_LABEL(System__atan)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__atan2)
+{
+  rmlA0 = rml_prim_mkreal(atan2(rml_prim_get_real(rmlA0),
+				rml_prim_get_real(rmlA1)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__cosh)
+{
+  rmlA0 = rml_prim_mkreal(cosh(rml_prim_get_real(rmlA0)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__log)
+{
+  rmlA0 = rml_prim_mkreal(log(rml_prim_get_real(rmlA0)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__log10)
+{
+  rmlA0 = rml_prim_mkreal(log10(rml_prim_get_real(rmlA0)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__sinh)
+{
+  rmlA0 = rml_prim_mkreal(sinh(rml_prim_get_real(rmlA0)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__tanh)
+{
+  rmlA0 = rml_prim_mkreal(tanh(rml_prim_get_real(rmlA0)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 float next_realelt(float *arr)
 {
   static int curpos;

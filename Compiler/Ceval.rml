@@ -91,7 +91,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 			       bool, (*impl*) 
 			       Msg)
 	  => Exp.Subscript list
-	    
+
+  relation is_known_external_func:( string, string option) => ()   
   end
 
 
@@ -319,49 +320,18 @@ end
 	  => (Values.REAL(resr),st'')
 
 
-	   
-	   (* FIXME: disabled calling of functions during ceval for now. Some
-	    * functions call other functions, which must be generated together in
-	    * order that compilation works  *)
-	 (*
-	  axiom	ceval (env, e as Exp.CALL(funcpath,expl,_,builtin as false),impl as false,st as NONE,_) => fail
-	  *)
-	 
-	 (* Call functions in non-interactive mode. *) 
+	   (* Call functions *) 
 	 (* FIXME: functions are always generated. Put back the check
 	  and write another rule for the false case that generates the function *)
   rule	ceval_list(env,expl,impl,st,msg) => vallst &
 	 ceval_call_function (env,e,vallst,msg) => newval
 	 -------------------------------------------------------
-	 ceval (env, e as Exp.CALL(funcpath,expl,_,builtin as false),impl as false,st as NONE,_,msg) => (newval,st)
-	 
-	 (*	ceval (env, e as Exp.CALL(funcpath,expl,_,_),false,st as SOME(Interactive.SYMBOLTABLE(_,_,_,_,cflist)),_) => (newval,st)
-	  *)
-	 
-	 
-	 (* FIXME: Fix this in order to allow calling of constant-marked function
-	  * calls. One should call the function as if we were in interactive
-	  * mode, and put the result instead of the function call *)
-	 
-	 (*	 
+	 ceval (env, e as Exp.CALL(funcpath,expl,_,builtin),impl,st,_,msg) 
+	  => (newval,st)
 
-	  rule	Print.print_buf "# Can't call builtin functions at compile time\n" &
-	  Print.print_buf "    expression: " & Exp.print_exp e & Print.print_buf "\n"
-	  -------------------------------------------------------
-	  ceval (env, e as Exp.CALL(_,_,_,builtin as true),impl as false,NONE,_) => fail
-	  *)
-	 
-  rule	Print.print_buf "# Can't call functions at compile time\n" &
-	Print.print_buf "    expression: " & Exp.print_exp e & Print.print_buf "\n"
-	 -------------------------------------------------------
-	 ceval (env, e as Exp.CALL(_,_,_,_),impl as false,NONE,_,MSG) => fail
 	 
   axiom	ceval (env, e as Exp.CALL(_,_,_,_),impl as false,NONE,_,NO_MSG) => fail
 	 
-  rule	(* Print.print_buf "implicit evaluation of function calls without symbol table, exp: " &
-	 Exp.print_exp e & Print.print_buf "\n" *)
-	 -------------------------------------------
-	 ceval(env, e as Exp.CALL(_,_,_,_),impl as true,NONE,_,_) => fail
 	 
   rule	ceval_interactive_functions(env,e,st,msg) => (value,st)
 	 -------------------------------------
@@ -720,7 +690,14 @@ relation ceval_call_function : (Env.Env,
 				Values.Value list, (* input parameter values*)
 				Msg) (* Should error messages be printed. *)
 				 => Values.Value (* resulting value *) =
-	
+	  (* External functions that are "known" should be evaluated without
+	   * compilation, e.g. all math functions *)
+  rule	ceval_known_external_funcs(env,funcpath,vallst,msg) => newval
+	-------------------------------------------------------
+	ceval_call_function (env, e as Exp.CALL(funcpath,expl,_,builtin), 
+			     vallst,msg) => newval
+
+
         (* Call functions in non-interactive mode. *) 
 	(* FIXME: functions are always generated. Put back the check
 	 and write another rule for the false case that generates the function *)
@@ -743,6 +720,130 @@ relation ceval_call_function : (Env.Env,
 	ceval_call_function (env,e,_,_) => fail
 	
 end
+
+
+(** relation: ceval_known_external_funcs
+ **
+ ** Evaluates external functions that are known, e.g. all math functions.
+ **)
+relation ceval_known_external_funcs: (Env.Env, 
+				      Absyn.Path, 
+				      Values.Value list,
+				      Msg) => Values.Value =
+
+  rule	Lookup.lookup_class(env,funcpath,false) => (cdef,env') &
+	let SCode.CLASS(fid,_,_,SCode.R_EXT_FUNCTION,SCode.PARTS(_,_,_,_,_,extdecl)) = cdef &
+	let SOME(Absyn.EXTERNALDECL(id,lan,out,args,_)) = extdecl &
+	is_known_external_func(fid,id) &
+	ceval_known_external_funcs2(fid,id,vals,msg) => res
+	-----------------------------
+	ceval_known_external_funcs(env,funcpath,vals,msg) => res
+end
+
+(** relation is_known_external_func
+ **
+ ** Succeds if external function name is "known", i.e. no compilation
+ ** required.
+**)
+
+relation is_known_external_func:( SCode.Ident, Absyn.Ident option) => () =
+
+  axiom	is_known_external_func("acos",SOME("acos"))
+  axiom	is_known_external_func("asin",SOME("asin"))
+  axiom	is_known_external_func("atan",SOME("atan"))
+  axiom	is_known_external_func("atan2",SOME("atan2"))
+  axiom	is_known_external_func("cos",SOME("cos"))
+  axiom	is_known_external_func("cosh",SOME("cosh"))
+  axiom	is_known_external_func("exp",SOME("exp"))
+  axiom	is_known_external_func("log",SOME("log"))
+  axiom	is_known_external_func("log10",SOME("log10"))
+  axiom	is_known_external_func("sin",SOME("sin"))
+  axiom	is_known_external_func("sinh",SOME("sinh"))
+  axiom	is_known_external_func("tan",SOME("tan"))
+  axiom	is_known_external_func("tanh",SOME("tanh"))
+end
+
+
+(** relation: ceval_known_external_funcs2
+ ** author: PA
+ **
+ ** Helper relation to ceval_known_external_funcs, does the evaluation.
+ **)
+
+relation ceval_known_external_funcs2: (SCode.Ident, 
+				       Absyn.Ident option,
+				       Values.Value list,
+				       Msg) => Values.Value =
+
+  rule	System.acos rv => rv' 
+	--------------------------
+	ceval_known_external_funcs2("acos",SOME("acos"),[Values.REAL(rv)],_) 
+	  => Values.REAL(rv')
+
+  rule	System.asin rv => rv' 
+	--------------------------
+	ceval_known_external_funcs2("asin",SOME("asin"),[Values.REAL(rv)],_) 
+	  => Values.REAL(rv')
+
+  rule	System.atan(rv) => rv' 
+	--------------------------
+	ceval_known_external_funcs2("atan",SOME("atan"),[Values.REAL(rv)],_) 
+	  => Values.REAL(rv')
+
+  rule	System.atan2(rv1,rv2) => rv' 
+	--------------------------
+	ceval_known_external_funcs2("atan2",SOME("atan2"),[Values.REAL(rv1),
+							   Values.REAL(rv2)
+							   ],_) 
+	  => Values.REAL(rv')
+
+  rule	real_cos(rv) => rv'
+	--------------------------
+	ceval_known_external_funcs2("cos",SOME("cos"),[Values.REAL(rv)],_) 
+	  => Values.REAL(rv')
+
+  rule	System.cosh(rv) => rv'
+	--------------------------
+	ceval_known_external_funcs2("cosh",SOME("cosh"),[Values.REAL(rv)],_) 
+	  => Values.REAL(rv')
+
+  rule	real_exp(rv) => rv'
+	--------------------------
+	ceval_known_external_funcs2("exp",SOME("exp"),[Values.REAL(rv)],_) 
+	  => Values.REAL(rv')
+
+  rule	System.log(rv) => rv' 
+	--------------------------
+	ceval_known_external_funcs2("log",SOME("log"),[Values.REAL(rv)],_) 
+	  => Values.REAL(rv')
+
+  rule	System.log10(rv) => rv' 
+	--------------------------
+	ceval_known_external_funcs2("log10",SOME("log10"),[Values.REAL(rv)],_) 
+	  => Values.REAL(rv')
+
+  rule	real_sin(rv) => rv'
+	--------------------------
+	ceval_known_external_funcs2("sin",SOME("sin"),[Values.REAL(rv)],_) 
+	  => Values.REAL(rv')
+
+  rule	System.sinh(rv) => rv'
+	--------------------------
+	ceval_known_external_funcs2("sinh",SOME("sinh"),[Values.REAL(rv)],_) 
+	  => Values.REAL(rv')
+
+  rule	real_sin rv => sv &
+	real_cos rv => cv &
+	real_div(sv,cv) => rv' 
+	--------------------------
+	ceval_known_external_funcs2("tan",SOME("tan"),[Values.REAL(rv)],_) 
+	  => Values.REAL(rv')
+
+  rule	System.tanh(rv) => rv' 
+	--------------------------
+	ceval_known_external_funcs2("tanh",SOME("tanh"),[Values.REAL(rv)],_) 
+	  => Values.REAL(rv')
+end       
 
 (** relation: ceval_function 
  ** 
