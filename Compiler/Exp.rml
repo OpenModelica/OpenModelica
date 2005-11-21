@@ -204,6 +204,8 @@ module Exp:
   relation path_to_cref : Absyn.Path => ComponentRef 
   relation cref_modelica_str : ComponentRef => string
   relation cref_last_ident : ComponentRef => Ident 
+  relation cref_last_subs: ComponentRef => Subscript list
+  relation cref_strip_last_subs: ComponentRef => ComponentRef
   relation cref_contained_in: (ComponentRef(*x*), ComponentRef(*y*))
 	  => bool
   relation cref_prefix_of: (ComponentRef (* x*), ComponentRef (*y*))
@@ -335,6 +337,34 @@ relation cref_last_ident : ComponentRef => Ident =
   rule	cref_last_ident(cr) => res
 	-------------------
 	cref_last_ident(CREF_QUAL(_,_,cr)) => res
+end
+
+(** relation: cref_last_subs
+ **
+ ** Return the last subscripts of a ComponentRef
+**)
+
+relation cref_last_subs: ComponentRef => Subscript list =
+
+  axiom	cref_last_subs(CREF_IDENT(id,subs)) => subs 
+
+  rule	cref_last_subs(cr) => res
+	---------------------
+	cref_last_subs(CREF_QUAL(_,_,cr)) => res
+end
+
+(** relation: cref_strip_last_subs
+ **
+ ** Strips the last subscripts of a ComponentRef
+**)
+
+relation cref_strip_last_subs: ComponentRef => ComponentRef =
+
+  axiom	cref_strip_last_subs(CREF_IDENT(id,subs)) => CREF_IDENT(id,[]) 
+
+  rule	cref_strip_last_subs(cr) => cr'
+	---------------------
+	cref_strip_last_subs(CREF_QUAL(id,s,cr)) => CREF_QUAL(id,s,cr')
 end
 
 (** relation: cref_contained_in

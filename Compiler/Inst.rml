@@ -5932,8 +5932,8 @@ relation make_binding : (Env.Env, SCode.Attributes, Types.Mod)
 	=> Types.VALBOUND(Values.BOOL(b))
 
 	(* Constant binding *)
-axiom  	make_binding (env, SCode.ATTR(_,_,_,SCode.CONST,_), Types.MOD(_,_,_,SOME(Types.TYPED(e,e_val,prop))))
-	  => Types.EQBOUND(e,e_val,Types.C_CONST)
+axiom  	make_binding (env, SCode.ATTR(_,_,_,SCode.CONST,_), Types.MOD(_,_,_,SOME(Types.TYPED(e,SOME(e_val),prop))))
+	  => Types.VALBOUND(e_val)
 
 	(* default *)
 
