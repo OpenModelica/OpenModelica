@@ -1304,7 +1304,9 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("simulate"),[Exp.CREF(cr,_),starttime,stoptime,interval,method,filenameprefix],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (simValue,st)
 
-  rule	Static.component_ref_to_path(cr) => path &
+  rule	Exp.unelab_cref(cr) => cr' &
+	 Interactive.exist_class(cr',p) => true &
+	 Static.component_ref_to_path(cr) => path &
 	 SCode.elaborate(p) => p' &
 	 Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
 	 Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
@@ -1312,6 +1314,13 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 -------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("instantiateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (Values.STRING(str),Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
+
+	   (* model does not exist *)
+  rule	Exp.unelab_cref(cr) => cr' &
+	 Interactive.exist_class(cr',p) => false 
+	 ----------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("instantiateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
+	  => (Values.STRING("Unknown model.\n"),Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
 
   rule	Static.component_ref_to_path(cr) => path &
 	 SCode.elaborate(p) => p' &
@@ -1677,6 +1686,8 @@ end
 	 Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(classname,dael,env)) 
 	  => ic' &
 	   DAELow.lower(dae) => dlow &
+	 Debug.fprint("bltdump","Lowered DAE:\n") &
+	 Debug.fcall("bltdump", DAELow.dump,dlow) &
 	 DAELow.incidence_matrix(dlow) => m &
 	 DAELow.transpose_matrix(m) => mT &
 	 DAELow.matching_algorithm(dlow,m,mT,(DAELow.INDEX_REDUCTION,DAELow.EXACT)) 
@@ -1684,6 +1695,11 @@ end
 	   DAELow.strong_components(m,mT,ass1,ass2) => (comps) &
 	 DAELow.translate_dae (dlow') => indexed_dlow &
 	 DAELow.calculate_values(indexed_dlow) => indexed_dlow' &
+	 Debug.fprint("bltdump","indexed DAE:\n") &
+	 Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) &
+	 Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT) &
+	 Debug.fcall("bltdump", DAELow.dump,indexed_dlow') &
+	 Debug.fcall("bltdump", DAELow.dump_matching, ass1) &
 	 Absyn.path_string(classname) => cname_str &
 	 Util.string_append_list([filenameprefix,".cpp"]) => filename &
 	 Util.string_append_list([filenameprefix,"_functions.cpp"]) => funcfilename &

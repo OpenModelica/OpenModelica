@@ -1274,6 +1274,8 @@ relation generate_ode_system: (DAELow.DAELow, int vector, int vector, int list)
 	
 	DAELow.calculate_jacobian(vars',eqns',m',mt') => jac &
 	DAELow.analyze_jacobian(subsystem_dae,jac) => jac_tp &
+	(*print "generating subsystem :" &
+	DAELow.dump subsystem_dae &*)
 	generate_ode_system2(subsystem_dae,jac,jac_tp) => (str,f1) &
 	DAELow.jacobian_type_str jac_tp => jac_tp_str &
 	Util.string_append_list(["/* system of equations of type ",jac_tp_str, "*/\n",

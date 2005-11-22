@@ -144,6 +144,8 @@ val empty_symboltable : InteractiveSymbolTable
         
   relation build_within: Absyn.Path => Absyn.Within
 
+  relation exist_class: (Absyn.ComponentRef, Absyn.Program) => bool
+
 end
 
 

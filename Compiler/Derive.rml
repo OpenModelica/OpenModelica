@@ -206,7 +206,9 @@ relation differentiate_exp_time: (Exp.Exp,DAELow.Variables) => Exp.Exp =
 
 
 
-  rule	print "Error. differentiating of function not impl. yet.\n" &
+  rule	Absyn.path_string(a) => str &
+	print "Error. differentiating of function (" & print str & 
+	print ") not impl yet.\n" &
 	Util.list_map_1(expl,differentiate_exp_time,tv) => expl' 
 	-------------------------------------------------
 	differentiate_exp_time(Exp.CALL(a,expl,b,c),tv) => Exp.CALL(a,expl',b,c)

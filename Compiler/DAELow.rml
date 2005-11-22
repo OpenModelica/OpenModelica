@@ -1196,7 +1196,7 @@ relation remove_simple_equations: (Variables, (* vars *)
   rule	VarTransform.empty_replacements() => repl &
 	remove_simple_equations2(eqns,vars,knvars,empty_bintree,states,repl) 
 	  => (eqns',seqns,movedvars',vartransf) &
- 	(*VarTransform.dump_replacements(vartransf) => () & *)
+ 	Debug.fcall("dumprepl",VarTransform.dump_replacements, vartransf) &
 	VarTransform.replace_equations(eqns',vartransf) => eqns'' &
 	VarTransform.replace_equations(seqns,vartransf) => seqns' &
 	move_variables(vars,knvars,movedvars')=> (vars',knvars') 
@@ -1244,9 +1244,11 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	simple_equation(e) => (cr1,cr2) &
         (* is the variable to be removed is output the do not remove it *)
         is_top_level_input_or_output(cr2,vars,knvars) => false &
-
 	typeof_equation(e) => t &
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
+	(* cr2 cannot be parameter or state*)
+	is_variable(cr2,vars,knvars) & not tree_get(states,cr2) => _ &
+
 	not VarTransform.get_replacement(repl,cr2) => _ &
 	tree_get(states,cr1) => _ &
 	VarTransform.add_replacement(repl,cr2,cr1) => repl' &
@@ -1261,9 +1263,11 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 	simple_equation(e) => (cr2,cr1) &
         (* is the variable to be removed is output the do not remove it *)
         is_top_level_input_or_output(cr2,vars,knvars) => false &
-
 	typeof_equation(e) => t &
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
+
+	(* cr2 cannot be parameter or state *)
+	is_variable(cr2,vars,knvars) & not tree_get(states,cr2) => _ &
 	not VarTransform.get_replacement(repl,cr2) => _ &
 	tree_get(states,cr1) => _ &
 	VarTransform.add_replacement(repl,cr2,cr1) => repl' &
@@ -1282,7 +1286,7 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
 	not VarTransform.get_replacement(repl,cr1) => _ &
-	is_variable(cr1,vars,knvars) &
+	is_variable(cr1,vars,knvars) & not tree_get(states,cr1) => _ &
 	not is_variable(cr2,vars,knvars) &
 	VarTransform.add_replacement(repl,cr1,cr2) => repl' &
 	tree_add(mvars,cr1,0) => mvars' &
@@ -1300,7 +1304,7 @@ relation remove_simple_equations2: (Equation list, (* all equations*)
 
 	VarTransform.apply_replacements(repl,cr1,cr2) => (cr1,cr2) &
 	not VarTransform.get_replacement(repl,cr1) => _ &
-	is_variable(cr1,vars,knvars) &
+	is_variable(cr1,vars,knvars) & not tree_get(states,cr1) => _ &
 	not is_variable(cr2,vars,knvars) &
 	VarTransform.add_replacement(repl,cr1,cr2) => repl' &
 	tree_add(mvars,cr1,0) => mvars' &
@@ -2781,8 +2785,9 @@ relation vararray_add:(VariableArray,Var) => VariableArray =
 	int_real(size) => rsize &
 	real_mul(rsize,0.4) => rexpandsize &
 	real_int(rexpandsize) => expandsize &
-	int_add(expandsize,size) => newsize &
-	Util.array_expand(expandsize,arr,NONE) => arr' &
+	int_max(expandsize,1) => expandsize' &
+	int_add(expandsize',size) => newsize &
+	Util.array_expand(expandsize',arr,NONE) => arr' &
 	n + 1 => n' &
 	array_setnth(arr',n,SOME(v)) => arr''
 	---------------------------------
@@ -4267,8 +4272,9 @@ relation equation_add: (EquationArray,Equation) => EquationArray =
 	int_real(size) => rsize &
 	real_mul(rsize,0.4) => rexpandsize &
 	real_int(rexpandsize) => expandsize &
-	int_add(expandsize,size) => newsize &
-	Util.array_expand(expandsize,arr,NONE) => arr' &
+	int_max(expandsize,1) => expandsize' &
+	int_add(expandsize',size) => newsize &
+	Util.array_expand(expandsize',arr,NONE) => arr' &
 	n + 1 => n' &
 	array_setnth(arr',n,SOME(e)) => arr''
 	-------------------------------
@@ -4277,7 +4283,7 @@ relation equation_add: (EquationArray,Equation) => EquationArray =
 
   rule	print "-equation_add failed\n" 
 	---------------------
-	equation_add(eqn,e) => fail
+	equation_add(EQUATION_ARRAY(n,size,arr),e) => fail
 end
 
 (** relation: equation_list
@@ -5111,6 +5117,7 @@ relation translate_dae: DAELow => DAELow =
 	list_equation(seqnsl'') => seqns' &
 	list_equation(ieqnsl'') => ieqns' &
 	let trans_dae = DAELOW(vars'',knvars'',eqns',seqns',ieqns',al'',EVENT_INFO(wc'',zc''))
+	& Debug.fcall("dumpindxdae",dump,trans_dae) 
 	------------------------------------
 	translate_dae(DAELOW(vars,knvars,eqns,seqns,ieqns,al,EVENT_INFO(wc,zc)))
 	  => trans_dae

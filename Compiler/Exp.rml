@@ -1404,6 +1404,12 @@ relation simplify_asub: (Exp, int) => Exp =
 	simplify_asub(BINARY(e1,DIV_ARRAY_SCALAR(t),e2),indx)
 	  => (BINARY(e1',DIV_ARRAY_SCALAR(t),e2'))
 
+	  (* arbitrary binary expressions *)
+  rule	simplify_asub(e1,indx) => e1' &
+	simplify_asub(e2,indx) => e2' 
+	-----------------------
+	simplify_asub(BINARY(e1,op,e2),indx) => BINARY(e1',op,e2')
+
   rule	simplify(ASUB(e,indx)) => e'
 	--------------------------------
 	simplify_asub(e as CREF(cr,t),indx) => e'
