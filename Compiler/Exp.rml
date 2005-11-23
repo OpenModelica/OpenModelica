@@ -1404,11 +1404,30 @@ relation simplify_asub: (Exp, int) => Exp =
 	simplify_asub(BINARY(e1,DIV_ARRAY_SCALAR(t),e2),indx)
 	  => (BINARY(e1',DIV_ARRAY_SCALAR(t),e2'))
 
-	  (* arbitrary binary expressions *)
   rule	simplify_asub(e1,indx) => e1' &
 	simplify_asub(e2,indx) => e2' 
+	----------------------------
+	simplify_asub(BINARY(e1,ADD_ARR(t),e2),indx)
+	  => (BINARY(e1',ADD_ARR(t),e2'))
+
+  rule	simplify_asub(e1,indx) => e1' &
+	simplify_asub(e2,indx) => e2' 
+	----------------------------
+	simplify_asub(BINARY(e1,SUB_ARR(t),e2),indx)
+	  => (BINARY(e1',SUB_ARR(t),e2'))
+
+
+  rule	int_sub (indx,1) => i' &
+	list_nth(exps,i') => exp
 	-----------------------
-	simplify_asub(BINARY(e1,op,e2),indx) => BINARY(e1',op,e2')
+	simplify_asub (ARRAY(t,b,exps),indx) => exp
+
+  rule	int_sub (indx,1) => i' &
+	list_nth(exps,i') => (expl) &
+	Util.split_tuple2_list(expl) => (expl',bls) &
+	Util.bool_and_list(bls) => b
+	-----------------------
+	simplify_asub( MATRIX(t,n,exps),indx) => ARRAY(t,b,expl')
 
   rule	simplify(ASUB(e,indx)) => e'
 	--------------------------------

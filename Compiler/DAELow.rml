@@ -356,6 +356,7 @@ relation lower: (DAE.DAElist) => DAELow =
 
   rule	states(lst,empty_bintree) => s &
 	lower2(lst,s,[]) => (vars,knvars,eqns,reqns,ieqns,algs,whenclauses)  &
+	add_dummy_state(vars,eqns) => (vars,eqns) &
 	list_reverse whenclauses => whenclauses' &
 	lower_algorithms(vars,algs) => algeqns &
 	list_append(algeqns,eqns) => eqns &
@@ -371,6 +372,31 @@ relation lower: (DAE.DAElist) => DAELow =
 	--------------------
 	lower(lst) 
 	  => DAELOW(vars',knvars,eqnarr,reqnarr,ieqnarr,algarr,EVENT_INFO(whenclauses',zero_crossings))
+end
+
+(** relation: add_dummy_state
+ **
+ ** In order for the solver to work correctly at least one state variable
+ ** must exist in the equation system. This relation therefore adds a 
+ ** dummy state variable and an equation for that variable.
+**)
+relation  add_dummy_state: (Variables, (* vars*)
+			    Equation list) (*eqns*) 
+	  => (Variables, 
+	      Equation list) =
+
+  rule	add_var(VAR(Exp.CREF_IDENT("$dummy",[]),STATE,DAE.BIDIR,DAE.REAL,
+		    NONE,NONE,[],NONE,-1,"$dummy",[],NONE,NONE,
+		    DAE.NON_CONNECTOR),vars) => vars' 
+	
+	-------------------
+	add_dummy_state(vars,eqns) 
+	  => (vars',
+	      EQUATION(Exp.CALL(Absyn.IDENT("der"),
+				[Exp.CREF(Exp.CREF_IDENT("$dummy",[]),Exp.REAL)],
+				false,
+				true),
+		       Exp.RCONST(0.0))::eqns)
 end
 
 (** relation: dump_zc_str
