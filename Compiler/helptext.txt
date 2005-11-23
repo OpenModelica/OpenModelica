@@ -6,10 +6,11 @@ up-arrow                      Get previously given command.
 down-arrow                    Get next command.
 
 <tab>                         Command completion of these builtin commands.
+                              Circulate through the commands by only using <tab>.
 
 cd() -                        Return the current directory
 
-cd(dir) -                     Change directory to the directory given as string.
+cd(dir) -                     Change directory to the directory given as a string.
                               Ex: cd("myModels/myLibrary")
 
 clear() -                     Clear everything.
@@ -28,6 +29,10 @@ list(modelname) -             Return a string containing the class definition of
                               the named class.
                               Ex: list(dcmotor)
 
+
+listVariables() -             Return a vector of the currently defined 
+                              variable names.
+
 loadFile(strFile) -           Load modelica file given as string argument.
                               Ex: loadFile("../myLibrary/myModels.mo")
 
@@ -36,8 +41,6 @@ loadModel(name) -             Load model, function, or package relative to $MODE
                               Ex: loadModel(Modelica.Electrical)
                               Note: if e.g. loadModel(Modelica) fails, you may have
                               MODELICAPATH pointing at the wrong location.
-
-listVariables() -             Return a vector of the currently defined variable names.
 
 
 plot(var) -                   Plot a variable from the most recently simulated model.
@@ -53,26 +56,26 @@ readFile(str) -               Load file given as string and return a string of t
 
 readSimulationResultSize(strFile) - 
                               Return the size of the record resulting from a simulation
-                              The size is read from the result file, given as a string
-                              Ex: readSimulationResultSize("dcmotor_res.plt");
+			            The size is read from the result file, given as a string
+                              Ex:  readSimulationResultSize("dcmotor_res.plt");
 
 readSimulationResult(strFile, variables, size) - 
                               Read the results of a simulation from a file named by
                               the string argument strFile. 
-                              Here size is the size of the resulting record and
-                              variables is a vector of the variables to investigate.
-                              Ex: readSimulationResult("dcmotor_res.plt",{R1.i,L1.v}, 10)
+			            Here size is the size of the resulting record and
+			            variables is a vector of the variables to investigate.
+                              Ex: readSimulationResult("dcmotor_res.plt", {R1.i,L1.v}, 10)
 
 runScript(strFile) -          Exectute script file (.mos) given as string argument.
                               Ex: runScript("simulation.mos")
 
 saveModel(strFile,modelname) - Save the model/class with name modelname in the
-                              file given by the string argument.
+                              file given by the strFile string argument.
 
 simulate(modelname[,startTime=<Real>][,stopTime=<Real>][,numberOfIntervals=<Integer>])
                               Translates a model and simulates it.
                               Ex: simulate(dcmotor)
-                              Ex: simulate(dcmotor,startTime=0, stopTime=10, 
+                              Ex: simulate(dcmotor,startTime=0, stopTime=10,
                                            numberOfIntervals=1000)
 
 system(str) -                 Execute str as a system(shell) command, return integer
@@ -80,11 +83,11 @@ system(str) -                 Execute str as a system(shell) command, return int
                               Ex: system("touch myFile")
 
 
-timing(expr) -                Evaluates expression and returns the number of seconds
-                              the evaluation took.
+timing(expr) -                Evaluates expression and returns the number of
+                              seconds the evaluation took.
                               Ex: timing(x*4711+5)
 
 typeOf(variable) -            Returns the type of the variable as a string.
                               Ex: typeOf(R1.v)
 
-
+quit()                        Leave OpenModelica and kill the process.
