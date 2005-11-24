@@ -1598,39 +1598,44 @@ relation set_component_properties_in_element: (Absyn.Element,
 					       string) (* causality*)
 	=> Absyn.Element =
 
-  rule	set_redeclare_keyword_attributes(redeclkw,repl) => redeclkw' &
+  rule	get_compitem_named(Absyn.CREF_IDENT(cr,[]),ellst) => _ &
+	set_replaceable_keyword_attributes(redeclkw,repl) => redeclkw' &
 	set_inner_outer_attributes(dr) => inout' &
 	set_component_properties_in_elementspec(spec,cr,flow,va,cau) => spec' 
 	-----------------------------------------
-	set_component_properties_in_element(Absyn.ELEMENT(_,redeclkw,inout,id,spec,info,constr),cr,final,flow,repl,va,dr,cau)
+	set_component_properties_in_element(Absyn.ELEMENT(_,redeclkw,inout,id,
+	  spec as Absyn.COMPONENTS(_,_,ellst),info,constr),cr,final,flow,repl,va,dr,cau)
 	  => Absyn.ELEMENT(final,redeclkw',inout',id,spec',info,constr)
+
+  axiom	set_component_properties_in_element(elt,cr,_,_,_,_,_,_) => elt
+
 end
 
-(** relation: set_redeclare_keyword_attributes
+(** relation: set_replaceable_keyword_attributes
  **
  ** Sets The RedeclareKeywords of an Element given a boolean 'replaceable'.
  **)
 
-relation set_redeclare_keyword_attributes: (Absyn.RedeclareKeywords option, 
+relation set_replaceable_keyword_attributes: (Absyn.RedeclareKeywords option, 
 					    bool (* repl*))
 	=> Absyn.RedeclareKeywords option =
 
 (* false *)
-  axiom	set_redeclare_keyword_attributes(NONE,false) => NONE
+  axiom	set_replaceable_keyword_attributes(NONE,false) => NONE
 
-  axiom	set_redeclare_keyword_attributes(SOME(Absyn.REPLACEABLE),false) 
-	  => SOME(Absyn.REPLACEABLE)
-  axiom	set_redeclare_keyword_attributes(SOME(Absyn.REDECLARE_REPLACEABLE),false) 
-	  => SOME(Absyn.REPLACEABLE)
-  axiom	set_redeclare_keyword_attributes(SOME(Absyn.REDECLARE),false) => NONE
+  axiom	set_replaceable_keyword_attributes(SOME(Absyn.REPLACEABLE),false) 
+	  => NONE
+  axiom	set_replaceable_keyword_attributes(SOME(Absyn.REDECLARE_REPLACEABLE),false) 
+	  => SOME(Absyn.REDECLARE)
+  axiom	set_replaceable_keyword_attributes(SOME(Absyn.REDECLARE),false) => SOME(Absyn.REDECLARE)
 
 (* true *)
-  axiom	set_redeclare_keyword_attributes(NONE,true) => SOME(Absyn.REDECLARE)
-  axiom	set_redeclare_keyword_attributes(SOME(Absyn.REDECLARE),true) 
-	  => SOME(Absyn.REDECLARE)
-  axiom	set_redeclare_keyword_attributes(SOME(REPLACEABLE),true) 
+  axiom	set_replaceable_keyword_attributes(NONE,true) => SOME(Absyn.REPLACEABLE)
+  axiom	set_replaceable_keyword_attributes(SOME(Absyn.REDECLARE),true) 
 	  => SOME(Absyn.REDECLARE_REPLACEABLE)
-  axiom	set_redeclare_keyword_attributes(SOME(Absyn.REDECLARE_REPLACEABLE),true) 
+  axiom	set_replaceable_keyword_attributes(SOME(Absyn.REPLACEABLE),true) 
+	  => SOME(Absyn.REPLACEABLE)
+  axiom	set_replaceable_keyword_attributes(SOME(Absyn.REDECLARE_REPLACEABLE),true) 
 	  => SOME(Absyn.REDECLARE_REPLACEABLE)
 end
 

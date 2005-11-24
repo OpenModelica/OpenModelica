@@ -945,10 +945,11 @@ end
 relation generate_initial_value_code:(DAELow.DAELow) => string =
 
   rule  DAELow.var_list(vars) => vars_lst &
+	DAELow.var_list(knvars) => knvars_lst &
 	DAELow.equation_list(ie) => initial_eqns1 &
 	generate_initial_equations_from_start(vars_lst) => initial_eqns2 &
 	generate_initial_assignments_from_start(vars_lst) => start_assigns &
-	
+	generate_parameter_assignments(knvars_lst) => param_assigns &
 	list_append(initial_eqns1,initial_eqns2) => initial_eqns &
 	DAELow.list_equation(initial_eqns) => initial_eqns' &
 	list_array([]) => arr &
@@ -976,6 +977,7 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
                                  "                   int nx, int ny, int np)\n",
                                  "{\n",
 				 start_assigns,
+				 param_assigns,
                                  block_code,
                                  "\n}\n"]) => res 
         ----------------------------------
@@ -984,6 +986,31 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
   axiom generate_initial_value_code(_) => ""
 
 end
+
+(** relation: generate_parameter_assignments
+ ** Generates code for the parameter settings that depends on other 
+ ** parameters (as expressions). For instance, parameter Real m=2*n+1;
+ ** Those are calculated once in the initial function.
+ **)
+
+relation generate_parameter_assignments: DAELow.Var list => string =
+
+  axiom	generate_parameter_assignments ([]) => ""
+
+
+  rule	Exp.print_component_ref_str(cr) => cr_str &
+	print_exp_cpp_str(e) => e_str &
+	generate_parameter_assignments(vs) => s2 &
+	Util.string_append_list([cr_str," = ",e_str,";\n",s2]) => res
+	--------------------------
+	generate_parameter_assignments(DAELow.VAR(cr,DAELow.PARAM,_,_,SOME(e),NONE,_,_,_,_,_,_,_,_)::vs) => res
+
+  rule	generate_parameter_assignments(vs) => res
+	--------------------------
+	generate_parameter_assignments(_::vs) => res
+
+end
+
 
 (** relation: generate_initial_equations_from_start
  **

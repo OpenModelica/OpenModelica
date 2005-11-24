@@ -175,11 +175,14 @@ relation make_assignment : (Exp.Exp, Types.Properties,
   rule	Types.get_prop_type lprop => lt &
 	Types.get_prop_type rprop => rt &
 	Types.equivtypes (lt,rt) => false &
-	Print.print_error_buf "# Type mismatch in assignment\n" &
-	Print.print_error_buf "    " & Exp.print_exp lhs &
- 	Print.print_error_buf " := " & Exp.print_exp rhs & Print.print_buf "\n" &
-	Print.print_error_buf "    " & Types.print_type lt &
- 	Print.print_error_buf " := " & Types.print_type rt & Print.print_buf "\n"
+	Exp.print_exp_str lhs => lhs_str &
+	Exp.print_exp_str rhs => rhs_str &
+	Types.unparse_type lt => lt_str &
+	Types.unparse_type rt => rt_str &
+	Util.string_append_list(["# Type mismatch in assignment\n",
+				"    " , lhs_str, " := ", rhs_str,
+				"of " , lt_str, " := ", rt_str,"\n"]) => res &
+	Print.print_error_buf res
 	-------------------------------------------
 	make_assignment (lhs,lprop,rhs,rprop,_) => fail
 

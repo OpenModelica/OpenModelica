@@ -193,11 +193,10 @@ relation differentiate_exp_time: (Exp.Exp,DAELow.Variables) => Exp.Exp =
 	-------------------------
 	differentiate_exp_time(Exp.RELATION(e1,rel,e2),tv) => Exp.RELATION(e1',rel,e2')
 	
-  rule	differentiate_exp_time(e1,tv) => e1' &
-	differentiate_exp_time(e2,tv) => e2' &
+  rule	differentiate_exp_time(e2,tv) => e2' &
 	differentiate_exp_time(e3,tv) => e3'
 	-------------------------
-	differentiate_exp_time(Exp.IFEXP(e1,e2,e3),tv) => Exp.IFEXP(e1',e2',e3')
+	differentiate_exp_time(Exp.IFEXP(e1,e2,e3),tv) => Exp.IFEXP(e1,e2',e3')
 
   rule	Util.list_map_1(expl,differentiate_exp_time,tv) => expl' 
 	-------------------------------------------------
@@ -208,10 +207,9 @@ relation differentiate_exp_time: (Exp.Exp,DAELow.Variables) => Exp.Exp =
 
   rule	Absyn.path_string(a) => str &
 	print "Error. differentiating of function (" & print str & 
-	print ") not impl yet.\n" &
-	Util.list_map_1(expl,differentiate_exp_time,tv) => expl' 
+	print ") not impl yet.\n"
 	-------------------------------------------------
-	differentiate_exp_time(Exp.CALL(a,expl,b,c),tv) => Exp.CALL(a,expl',b,c)
+	differentiate_exp_time(Exp.CALL(a,expl,b,c),tv) => fail
 	
   rule	Util.list_map_1(expl,differentiate_exp_time,tv) => expl' 
 	--------------------------------------------
