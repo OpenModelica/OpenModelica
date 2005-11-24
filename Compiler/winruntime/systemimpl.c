@@ -591,7 +591,9 @@ RML_BEGIN_LABEL(System__set_5fenv)
   char* envvalue = RML_STRINGDATA(rmlA1);
   int overwrite = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA2));
   int setenv_result = 0;
-  setenv_result = setenv(envname, envvalue, overwrite); 
+  char *temp = (char*)malloc(strlen(envname)+strlen(envvalue)+2);
+  sprintf(temp,"%s=%s", envname, envvalue);
+  setenv_result = _putenv(temp); 
   rmlA0 = (void*) mk_icon(setenv_result);
   RML_TAILCALLK(rmlSC);
 }
