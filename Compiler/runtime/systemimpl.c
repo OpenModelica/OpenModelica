@@ -24,6 +24,9 @@
 typedef int _file_select_func_type(const struct dirent *);
 typedef int _file_compar_func_type(const struct dirent **, const struct dirent **);
 
+
+
+
 void reallocdirents(struct dirent ***entries, 
 		    unsigned int oldsize, 
 		    unsigned int newsize) {
@@ -232,12 +235,13 @@ char *replace(const char *src, const char *from, const char *to)
         return value;
 }
 
-
 void System_5finit(void)
 {
   set_cc("gcc");
     
   set_cflags("-I$OPENMODELICAHOME/c_runtime -L$OPENMODELICAHOME/c_runtime -lc_runtime -lm $MODELICAUSERCFLAGS");
+  
+  
 }
 
 RML_BEGIN_LABEL(System__strtok)
@@ -1085,6 +1089,34 @@ RML_BEGIN_LABEL(System__set_5fclassnames_5ffor_5fsimulation)
   }
   memcpy(class_names_for_simulation,class_names,strlen(class_names)+1);
 
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+char* compile_command = NULL;
+
+RML_BEGIN_LABEL(System__set_5fcompile_5fcommand)
+{
+  char* command = RML_STRINGDATA(rmlA0);
+  if(compile_command)
+    free(compile_command);
+
+  compile_command = (char*)malloc(strlen(command)+1);
+  if (compile_command == NULL) {
+    RML_TAILCALLK(rmlFC);
+  }
+  memcpy(compile_command,command,strlen(command)+1);
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__get_5fcompile_5fcommand)
+{
+  if(compile_command)
+    rmlA0 = (void*) mk_scon(strdup(compile_command));
+  else
+    rmlA0 = (void*) mk_scon("");
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

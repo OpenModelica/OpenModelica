@@ -354,5 +354,15 @@ relation get_classnames_for_simulation: () => string
  ** this adds a classname to the simulation list
  **)
 relation set_classnames_for_simulation: string => ()
+
+(** relation set_compile_command 
+** this sets the compilecommand for compilation
+**)
+relation set_compile_command: (string) => ()
+
+(** relation get_compile_command 
+** this retrives the compilecommand for compilation
+**)
+relation get_compile_command: () => string
 end
 
