@@ -251,6 +251,12 @@ getElementsInfo(cref)                     Returns all the elements in a class wi
                                                               variability="unspecified"|"discrete"|"parameter"|"constant",
                                                               direction="input"|"output"|"unspecified"
                                                
+getEnvironmentVar("varname")      returns the contents of the "varname" environment variable
+                                  or error if the variable does not exist
+
+setEnvironmentVar("varname", "varvalue")      returns "Ok" if "varname" was set (overwritten) succesfully
+                                              or "error" if the variable set failed
+
 
 
 ERROR Handling

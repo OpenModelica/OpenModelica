@@ -570,6 +570,19 @@ RML_BEGIN_LABEL(System__read_5fenv)
 }
 RML_END_LABEL
 
+/* adrpo@ida added 2005-11-24 */
+RML_BEGIN_LABEL(System__set_5fenv)
+{
+  char* envname = RML_STRINGDATA(rmlA0);
+  char* envvalue = RML_STRINGDATA(rmlA1);
+  int overwrite = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA2));
+  int setenv_result = 0;
+  setenv_result = setenv(envname, envvalue, overwrite); 
+  rmlA0 = (void*) mk_icon(setenv_result);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 char *select_from_dir;
 
 int file_select_directories(const struct dirent *entry)

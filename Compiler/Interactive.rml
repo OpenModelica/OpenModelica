@@ -644,6 +644,49 @@ relation evaluate_graphical_api2: (InteractiveStmts, InteractiveSymbolTable)
 		 Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))],_
 	     ),
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+   (* adrpo added 2005-11-24 *)
+   rule	 System.read_env(name) => resstr 
+	 ---------------------------------
+	 evaluate_graphical_api2(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("getEnvironmentVar",_),
+		 Absyn.FUNCTIONARGS( [Absyn.STRING(name)] ,[])))],_
+	     ),
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+
+   (* adrpo added 2005-11-24 *)
+   rule	 not System.read_env(name) => resstr 
+	 ---------------------------------
+	 evaluate_graphical_api2(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("getEnvironmentVar",_),
+		 Absyn.FUNCTIONARGS( [Absyn.STRING(name)] ,[])))],_
+	     ),
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("error",st)
+
+   (* adrpo added 2005-11-24 *)
+   rule	 System.set_env(name, value, 1 (* overwrite*) ) => 0 
+	 --------------------------------------------------------
+	 evaluate_graphical_api2(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("setEnvironmentVar",_),
+		 Absyn.FUNCTIONARGS( [Absyn.STRING(name), Absyn.STRING(value)] ,[])))],_
+	     ),
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("Ok",st)
+
+   (* adrpo added 2005-11-24 *)
+   rule	 System.set_env(name, value, 1 (* overwrite*) ) => rest &
+            int_eq(rest, 0) => false    
+	 --------------------------------------------------------
+	 evaluate_graphical_api2(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("setEnvironmentVar",_),
+		 Absyn.FUNCTIONARGS( [Absyn.STRING(name), Absyn.STRING(value)] ,[])))],_
+	     ),
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("error",st)
+
 end
 
  (** relation: evaluate_graphical_api

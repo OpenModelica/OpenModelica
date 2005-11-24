@@ -214,6 +214,16 @@ relation modelicapath: () => string
 
 relation read_env: (string) => string
 
+(** 2005-11-24 adrpo@ida added
+ ** set_env
+ ** 
+ ** Sets the value of an environment variable.
+ ** If the environment variable is already 
+ ** set it will be overwritten if overwrite is 1 or not overwritten if overwrite is 0 
+ ** returns 0 if it succeeds and non-zero otherwise
+ **)
+relation set_env: (string (* variable *), string (* value *), int (* overwrite *) ) => int
+
 (** relation: sub_directories
  **
  ** Return a list of sub directory strings given a directory path.
