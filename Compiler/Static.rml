@@ -2917,6 +2917,16 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	      Types.PROP((Types.T_BOOL([]),NONE),Types.C_VAR),
 	      SOME(st))
 
+  axiom	elab_call_interactive(env, Absyn.CREF_IDENT("setCompileCommand",_),
+			      [ Absyn.STRING(str)],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("setCompileCommand"),
+		       [Exp.SCONST(str)],
+		       false,
+		       true),
+	      Types.PROP((Types.T_BOOL([]),NONE),Types.C_VAR),
+	      SOME(st))
+
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("setCompilerFlags",_),
 			      [ Absyn.STRING(str)],[],impl,
 			      SOME(st)) 

@@ -1240,7 +1240,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
                                       st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
           => (ret_val,st')(*(Values.STRING("The model have been translated"),st')*)
 
-  rule  System. set_compile_command(cmd)
+  rule  System.set_compile_command(cmd)
 	 -------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("setCompileCommand"),
                                                     [Exp.SCONST(cmd)],_,_),
