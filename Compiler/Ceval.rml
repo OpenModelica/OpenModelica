@@ -1422,11 +1422,13 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
  	  => (Values.STRING("Unknown error while plotting"),st)
 	   
 
-(*start plotparametric*)
 
-  rule	(* plotparametric *)
-	 Util.list_map(vars,Exp.print_exp_str) => vars' &
-	 (* Util.list_union_elt("time",vars') => vars'' & *)
+(* plotparametric *)
+
+(* The normal case when an array of at least two elements is given as an argument *)
+  rule	 Util.list_map(vars,Exp.print_exp_str) => vars' &
+	 list_length(vars') => length &
+	 int_gt(length,1) => true &
 	 ceval(env,Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",[]),Exp.OTHER),true,SOME(st),NONE,msg) 
 	  => (Values.RECORD(_,[Values.STRING(filename)],_),_) &
 	   System.read_ptolemyplot_dataset(filename,vars',0) => value &
@@ -1445,7 +1447,17 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plotParametric"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (Values.BOOL(true),st)
 
-  rule	(* Catch error reading simulation file. *)
+  rule	(* Catch error with less than two elements (=variables) in the array.
+           This means we cannot plot var2 as a function of var1 as var2 is missing*)
+	 Util.list_map(vars,Exp.print_exp_str) => vars' &
+	 list_length(vars') => length &
+	 int_lt(length,2) => true 
+	 ---------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plotParametric"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
+	  => (Values.STRING("Error: Less than two variables given to plotParametric."),st)
+
+
+  rule	(* Catch error reading simulation file.*)
 	 Util.list_map(vars,Exp.print_exp_str) => vars' &
 	 (*Util.list_union_elt("time",vars') => vars'' & *)
 	 ceval(env,Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",[]),Exp.OTHER),true,SOME(st),NONE,msg) 

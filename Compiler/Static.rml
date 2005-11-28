@@ -2881,20 +2881,11 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 	      Types.PROP((Types.T_BOOL([]),NONE),Types.C_VAR),
 	      SOME(st))
 
-(*plotParametric*)
-	
-  rule	elab_variablenames([cr]) => vars'
-	------------------------------------------------------------------
-	elab_call_interactive(env, Absyn.CREF_IDENT("plotParametric",_),
-			      [cr as Absyn.CREF(_)],[],impl,
-			      SOME(st)) 
-	  => (Exp.CALL(Absyn.IDENT("plotParametric"),
-		       [Exp.ARRAY(Exp.OTHER,false,vars')],
-		       false,
-		       true),
-	      Types.PROP((Types.T_BOOL([]),NONE),Types.C_VAR),
-	      SOME(st))
 
+
+(* PlotParametric is similar to plot but does not allow a single CREF as an 
+   argument as you are plotting at least one variable as a function of another.
+   Thus, plotParametric has to take an array as an argument.*)
   rule	elab_variablenames(vars) => vars'
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("plotParametric",_),
@@ -2906,9 +2897,6 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 		       true),
 	      Types.PROP((Types.T_BOOL([]),NONE),Types.C_VAR),
 	      SOME(st))
-
-(*plotParametric*)
-
 
   rule	elab_exp(env,exp,impl,SOME(st)) => (exp',prop,st')
 	------------------------------------------------------------------
