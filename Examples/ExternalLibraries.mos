@@ -1,0 +1,7 @@
+loadFile("ExternalLibraries.mo");
+system("gcc -c -o libExternalFunc1_ext.o ExternalFunc1.c");
+system("gcc -c -o libExternalFunc2.a ExternalFunc2.c");
+simulate(ExternalLibraries);
+
+
+
