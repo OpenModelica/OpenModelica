@@ -43,12 +43,18 @@ loadModel(name) -             Load model, function, or package relative to $MODE
                               MODELICAPATH pointing at the wrong location.
 
 
-plot(var) -                   Plot a variable from the most recently simulated model.
+plot(var) -                   Plot a variable relative to time from the most recently 
+                              simulated model.
                               Ex: plot(x)
 
-plot(vars) -                  Plot variables from the most recently simulated model
-                              given as a vector.
+plot(vars) -                  Plot variables given as a vector relative to time from 
+                              the most recently simulated model 
                               Ex: plot({x,y})
+
+plotParametric(vars) -        Plot variables relative to the first variable in the
+                              argument vector.
+                              Ex: plot({x,y,z })
+                              (Plotting y and z as functions of x)
 
 readFile(str) -               Load file given as string and return a string of the
                               file content.

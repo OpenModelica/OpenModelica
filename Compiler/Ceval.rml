@@ -1421,6 +1421,54 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
   axiom ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plot"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
  	  => (Values.STRING("Unknown error while plotting"),st)
 	   
+
+(*start plotparametric*)
+
+  rule	(* plotparametric *)
+	 Util.list_map(vars,Exp.print_exp_str) => vars' &
+	 (* Util.list_union_elt("time",vars') => vars'' & *)
+	 ceval(env,Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",[]),Exp.OTHER),true,SOME(st),NONE,msg) 
+	  => (Values.RECORD(_,[Values.STRING(filename)],_),_) &
+	   System.read_ptolemyplot_dataset(filename,vars',0) => value &
+	 System.pwd() => pwd &
+         win_citation() => cit &
+	 System.read_env("OPENMODELICAHOME") => omhome &
+	 System.trim(omhome,"\"") => omhome' &
+	 System.path_delimiter => pd &
+	 Util.string_append_list([cit,omhome',pd,"Compiler",pd,"scripts",pd,"doPlot",cit]) => plotCmd &
+	 Util.string_append_list([pwd,pd,"tmpPlot.plt"]) => tmpPlotFile &
+	 Values.write_ptolemyplot_dataset(tmpPlotFile,value,vars',"Plot by OpenModelica") 
+	  => res &
+	   Util.string_append_list([cit,plotCmd, " \"", tmpPlotFile,"\"",cit]) => call &			   
+	 System.system_call(call) => _
+	 ------------------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plotParametric"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
+	  => (Values.BOOL(true),st)
+
+  rule	(* Catch error reading simulation file. *)
+	 Util.list_map(vars,Exp.print_exp_str) => vars' &
+	 (*Util.list_union_elt("time",vars') => vars'' & *)
+	 ceval(env,Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",[]),Exp.OTHER),true,SOME(st),NONE,msg) 
+	  => (Values.RECORD(_,[Values.STRING(filename)],_),_) &
+	   not System.read_ptolemyplot_dataset(filename,vars',0) => _ 
+	 ---------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plotParametric"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
+	  => (Values.STRING("Error reading the simulation result."),st)
+	   
+  rule	(* Catch error reading simulation file. *)
+	 Util.list_map(vars,Exp.print_exp_str) => vars' &
+	 (*Util.list_union_elt("time",vars') => vars'' &*)
+	 not ceval(env,Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",[]),Exp.OTHER),true,SOME(st),NONE,NO_MSG) 
+	  => (_,_)
+	   ---------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plotParametric"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
+	  => (Values.STRING("No simulation result to plot."),st)
+
+  axiom ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plotParametric"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
+ 	  => (Values.STRING("Unknown error while plotting"),st)
+	   
+(*end plotparametric*)
+
   rule	System.time => t1 &
 	 ceval(env,exp,true,SOME(st),NONE,msg) => (value,SOME(st')) &   
 	 System.time => t2 &
