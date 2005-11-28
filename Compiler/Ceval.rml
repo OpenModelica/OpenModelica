@@ -1984,12 +1984,14 @@ relation compile_model: (string, string list) => () =
 	System.string_replace(omhome,"\"","") => omhome' &
         win_citation() => cit &
         System.pwd => cd_path &
+        string_append(fileprefix,".libs") => libsfilename &
         libs_to_string(libs) => libs_str &
+        System.write_file(libsfilename,libs_str) &
         Util.string_append_list([cit,omhome', pd, "Compiler", 
                                  pd, "scripts", pd, "Compile",cit," ", 
                                  (*"\"",cd_path,"\""," ",*)
-                                 fileprefix, " ",
-                                 libs_str
+                                 fileprefix (*,  " "
+				 ,libs_str*)
                                  ]) => s_call &
         (*> output.log 2>&1 = redirect stderr to stdout and put it in output.log *)
 (*         print s_call & print "<<<< 1\n" & *)
@@ -2002,10 +2004,12 @@ relation compile_model: (string, string list) => () =
         System.pwd => cd_path &
         win_citation() => cit &
         libs_to_string(libs) => libs_str &
+        string_append(fileprefix,".libs") => libsfilename &
+        libs_to_string(libs) => libs_str &
         Util.string_append_list([command," ", 
                                  (*cit,cd_path,cit," ",*)
-                                 fileprefix, " ",
-                                 libs_str
+                                 fileprefix (*, " " ,
+                                 libs_str *)
                                  ]) => s_call &
         (*> output.log 2>&1 = redirect stderr to stdout and put it in output.log *)
 (*         print s_call & print "<<<< 2\n" & *)

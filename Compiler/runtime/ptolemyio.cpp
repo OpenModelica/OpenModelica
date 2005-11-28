@@ -104,7 +104,7 @@ void print_error_buf_impl(char*str);
       stream.seekg(0); //Reset stream
       // Search to the correct position.
       stream.getline(buf,255);
-      while( string(buf).find(var) == string(buf).npos) {
+      while( string(buf).find(var) == string(buf).npos || strlen(buf) > var.length()) {
 	if (!stream.getline(buf,255)) {
 	  // if we reached end of file return..
 	  string str=string("variable ")+ vars[i]
