@@ -1969,7 +1969,7 @@ relation compile_model: (string, string list) => () =
   rule	System.get_compile_command => "" &
         System.path_delimiter => pd &
 	System.read_env("OPENMODELICAHOME") => omhome & 
-	System.trim(omhome,"\"") => omhome' &
+	System.string_replace(omhome,"\"","") => omhome' &
         win_citation() => cit &
         System.pwd => cd_path &
         libs_to_string(libs) => libs_str &
