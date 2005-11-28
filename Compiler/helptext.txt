@@ -51,11 +51,6 @@ plot(vars) -                  Plot variables given as a vector relative to time 
                               the most recently simulated model 
                               Ex: plot({x,y})
 
-plotParametric(vars) -        Plot variables relative to the first variable in the
-                              argument vector.
-                              Ex: plot({x,y,z })
-                              (Plotting y and z as functions of x)
-
 readFile(str) -               Load file given as string and return a string of the
                               file content.
                               Ex: readFile("myModel/myModelr.mo")
