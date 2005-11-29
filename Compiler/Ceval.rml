@@ -1424,8 +1424,8 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 
 
 (* plotparametric *)
-
-(* The normal case when an array of at least two elements is given as an argument *)
+(* This rule represents the normal case when an array of at least two elements 
+   is given as an argument *)
   rule	 Util.list_map(vars,Exp.print_exp_str) => vars' &
 	 list_length(vars') => length &
 	 int_gt(length,1) => true &
