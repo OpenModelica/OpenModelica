@@ -410,31 +410,19 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	elab_exp_list_list(env,es,impl,st) => (_, tps, _) &
 	Util.list_list_map(tps,Types.get_prop_type) => tps' &
 	Util.list_flatten(tps') => tps'' &
+	matrix_constr_max_dim(tps'') => nmax &
 	Types.contain_real(tps'') => havereal &
-	elab_matrix_semi (env,es,impl,st,havereal) => (es', Types.PROP(t,c), dim1,dim2,nmax) & 
-	Types.simple_type(t) &
-	Types.elab_type t => at
+	elab_matrix_semi (env,es,impl,st,havereal,nmax) 
+	  => (mexp, Types.PROP(t,c), dim1,dim2) &
+	Types.elab_type t => at &
+	elab_matrix_to_matrix_exp(mexp) => mexp' &
+	Types.unlift_array(t) => t' & (* All elts promoted to matrix,*)
+	Types.unlift_array(t') => t'' (* therefore unlifting *)
 	------------------------------------------------------------
 	elab_exp (env, Absyn.MATRIX(es),impl,st)
-	  => (Exp.MATRIX(at,nmax,es'),
+	  => (mexp',
 	      Types.PROP((Types.T_ARRAY(Types.DIM(SOME(dim1)),
-				 (Types.T_ARRAY(Types.DIM(SOME(dim2)), t),NONE)),NONE),
-		   c),st)
-
-  rule	(* matrix expressions, e.g. [1,0;0,1] with array elements. *)
-	elab_exp_list_list(env,es,impl,st) => (_, tps, _) &
-	Util.list_list_map(tps,Types.get_prop_type) => tps' &
-	Util.list_flatten(tps') => tps'' &
-	Types.contain_real(tps'') => havereal &
-	elab_matrix_semi (env,es,impl,st,havereal) => (es', Types.PROP(t,c), dim1,dim2,nmax) & 
-	not Types.simple_type(t) &
-	add_onesized_dimensions(es', tps,nmax) => es'' &
-	Types.elab_type t => at
-	------------------------------------------------------------
-	elab_exp (env, Absyn.MATRIX(es),impl,st)
-	  => (Exp.MATRIX(at,nmax,es''),
-	      Types.PROP((Types.T_ARRAY(Types.DIM(SOME(dim1)),
-				 (Types.T_ARRAY(Types.DIM(SOME(dim2)), t),NONE)),NONE),
+				 (Types.T_ARRAY(Types.DIM(SOME(dim2)), t''),NONE)),NONE),
 		   c),st)
 
   rule	(* Code expressions *)
@@ -449,6 +437,92 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	-----------------------------------------------------------
 	elab_exp(_,e,_,_) => fail
 end 
+
+(** relation: elab_matrix_get_dimensions
+ **
+ ** Helper relation to elab_exp (MATRIX). Calculates the dimensions of the
+ ** matrix by investigating the elaborated expression.
+ **)
+
+relation elab_matrix_get_dimensions: (Exp.Exp) => (int, int) =
+
+  rule	list_length(lst) => dim1 &
+	let Exp.ARRAY(_,_,lst2)::_ = lst &
+	list_length(lst2) => dim2 
+	------------------------
+	elab_matrix_get_dimensions(Exp.ARRAY(_,_,lst)) => (dim1,dim2)
+end
+
+(** relation: elab_matrix_to_matrix_exp
+ **
+ ** Convert an array expression (which is a matrix or higher dim.) to 
+ ** a matrix expression (using MATRIX).
+ **)
+relation elab_matrix_to_matrix_exp: (Exp.Exp) => Exp.Exp =
+
+  rule	elab_matrix_to_matrix_exp_2(expl) => mexpl &
+	list_length(mexpl) => dim
+	-----------------------------------
+	elab_matrix_to_matrix_exp(Exp.ARRAY(a,at,expl))
+	  => Exp.MATRIX(a,dim,mexpl)
+
+	  (* if fails, skip conversion, use generic array expression as is.*)
+  axiom	elab_matrix_to_matrix_exp(e) =>  e
+end
+
+(**relation: elab_matrix_to_matrix_exp_2
+ **
+ ** Helper relation to elab_matrix_to_matrix_exp
+ **)
+
+relation elab_matrix_to_matrix_exp_2: Exp.Exp list 
+	  => (Exp.Exp*bool) list list =
+
+  axiom	elab_matrix_to_matrix_exp_2([]) => []
+
+  rule	elab_matrix_to_matrix_exp_3(expl) => expl' &
+	elab_matrix_to_matrix_exp_2(es) => es'
+	--------------------------------------
+	elab_matrix_to_matrix_exp_2(Exp.ARRAY(a,at,expl)::es)
+	  => expl'::es'
+end
+
+relation elab_matrix_to_matrix_exp_3:(Exp.Exp list) => (Exp.Exp*bool) list =
+
+  axiom	elab_matrix_to_matrix_exp_3([]) => []
+
+  rule	Exp.typeof(e) => tp &
+	Exp.type_builtin(tp) => narray &
+	bool_not(narray) => array &
+	elab_matrix_to_matrix_exp_3(es) => es'
+	--------------------
+	elab_matrix_to_matrix_exp_3(e::es) 
+	  => ((e,array)::es')
+end
+
+(** relation: matrix_constr_max_dim
+ **
+ ** Helper relation to elab_exp (MATRIX).
+ ** Determines the maximum dimension of the array arguments to the matrix
+ ** constructor as.
+ ** max(2, ndims(A), ndims(B), ndims(C),..) for matrix constructor arguments
+ ** A, B, C, ...
+**)
+
+relation matrix_constr_max_dim: (Types.Type list) => int =
+
+axiom matrix_constr_max_dim([]) => 2
+
+  rule	Types.ndims(t) => tn &
+	matrix_constr_max_dim(ts) => tn2 &
+	int_max(tn,tn2) => res
+	-----------------------------
+	matrix_constr_max_dim(t::ts) => res
+
+  rule	Debug.fprint("failtrace","-matrix_constr_max_dim failed\n")
+	-----------------------
+	matrix_constr_max_dim(_) => fail
+end
 
 (** relation: add_for_loop_scope_const 
  **
@@ -707,14 +781,19 @@ relation elab_graphics_exp : (Env.Env, Absyn.Exp, bool (*impl*) )
   rule	elab_exp_list_list(env,es,impl,NONE) => (_, tps, _) &
 	Util.list_list_map(tps,Types.get_prop_type) => tps' &
 	Util.list_flatten(tps') => tps'' &
+	matrix_constr_max_dim(tps'') => nmax &
 	Types.contain_real(tps'') => havereal &
-	elab_matrix_semi (env,es,impl,NONE,havereal) => (es', Types.PROP(t,c), dim1,dim2,nmax) & 
-	Types.elab_type t => at
+	elab_matrix_semi (env,es,impl,NONE,havereal,nmax) 
+	  => (mexp, Types.PROP(t,c), dim1,dim2) & 
+	Types.elab_type t => at &
+	elab_matrix_to_matrix_exp(mexp) => mexp' &
+	Types.unlift_array(t) => t' &
+	Types.unlift_array(t') => t''
 	------------------------------------------------------------
 	elab_graphics_exp (env, Absyn.MATRIX(es),impl)
-	  => (Exp.MATRIX(at,nmax,es'),
+	  => (mexp,
 	      Types.PROP((Types.T_ARRAY(Types.DIM(SOME(dim1)),
-				 (Types.T_ARRAY(Types.DIM(SOME(dim2)), t),NONE)),NONE),
+				 (Types.T_ARRAY(Types.DIM(SOME(dim2)), t''),NONE)),NONE),
 		   c))
 
   rule	Print.print_error_buf "- elab_graphics_exp failed: " &
@@ -1106,104 +1185,222 @@ end
  ** It elaborates one matrix row of a matrix.
  **)
 
-relation elab_matrix_comma : (Env.Env, Absyn.Exp list, bool(*implicit inst.*)
-			      , Interactive.InteractiveSymbolTable option, bool (*have real*))
-	=> ((Exp.Exp*bool) list, Types.Properties, int, int) =
+relation elab_matrix_comma : (Env.Env, 
+			      Absyn.Exp list, 
+			      bool(*implicit inst.*),
+			      Interactive.InteractiveSymbolTable option, 
+			      bool (*have real*),
+			      int (* nmax *))
+	=> (Exp.Exp, 
+	    Types.Properties, 
+	    int, (* dim1 *) 
+	    int) (* dim2 *) =
 
 
-  rule	elab_exp (env,el,impl,st) => (el', Types.PROP(t,c),_) &
-	Types.ndims t => ndims &
-	int_max(2,ndims) => maxn &
-	int_gt(ndims,0) => array
+  rule	elab_exp (env,el,impl,st) => (el', prop as Types.PROP(t1,_), _) &
+	Types.ndims(t1) => t1_dim1 &
+	int_sub(nmax,t1_dim1) => nmax'' &
+        promote_exp(el',prop,nmax'') => (el'',prop as Types.PROP(t1',_)) &
+	Types.get_dimension_sizes(t1') => t1_dim1'::t1_dim2'::_ &
+	Types.is_prop_array(prop) => array &
+	Types.elab_type(t1) => at 
 	----------------------------------------
-	elab_matrix_comma (env,[el],impl,st,havereal) => ([(el',array)],Types.PROP(t,c),1,maxn)
+	elab_matrix_comma (env,[el],impl,st,havereal,nmax) 
+	  => (Exp.ARRAY(at,array,[el'']),prop,t1_dim1',t1_dim2')
 
 
-  rule	elab_exp (env,el,impl,st) => (el', Types.PROP(t1,c1),_) &
-	elab_matrix_comma(env,els,impl,st,havereal) => (els', Types.PROP(t2,c2), _,maxn2) &
-
-	Types.match_with_promote(Types.PROP(t1,c1),Types.PROP(t2,c2),havereal) => props &
-
-	list_length el::els => dim &
-
-	Types.ndims t1 => maxn1 &
-	int_max (maxn1,maxn2) => maxn &
-	int_gt(maxn1,0) => array
+  rule	elab_exp (env,el,impl,st) => (el', prop1 as Types.PROP(t1,_),_) &
+	Types.ndims(t1) => t1_ndims &
+	int_sub(nmax,t1_ndims) => nmax'' &
+	promote_exp(el',prop1,nmax'') => (el'',prop1' as Types.PROP(t1',_)) &
+	Types.get_dimension_sizes(t1') => t1_dim1'::t1_dim2'::_ &
+	Types.is_prop_array(prop1') => array &
+	elab_matrix_comma(env,els,impl,st,havereal,nmax) 
+	  => (Exp.ARRAY(at,a,els'), prop2, dim1,dim2) &
+	  (* comma between matrices => concatenation along second dimension *)
+	  int_add(t1_dim2',dim2) => dim2' &
+	Types.match_with_promote(prop1',prop2,havereal) => props &
+	list_length el::els => dim 
 	-------------------------------------
-	elab_matrix_comma (env,el::els,impl,st,havereal) 
-	  => ((el',array)::els',props,dim,maxn)
+	elab_matrix_comma (env,el::els,impl,st,havereal,nmax) 
+	  => (Exp.ARRAY(at,a,el''::els'),props,dim1,dim2')
 	  
-  rule	(*Debug.fprint("failtrace","- elab_matrix_comma failed\n")*)
+  rule	Debug.fprint("failtrace","- elab_matrix_comma failed\n")
 	-------------------------------------
-	elab_matrix_comma (_,_,_,_,_) => fail
+	elab_matrix_comma (_,_,_,_,_,_) => fail
 end
 
-(** relation: add_onesized_dimensions
+(** relation: elab_matrix_cat_one_exp
  ** author: PA
  **
- ** Array concatenation along first and second dimension using matrix 
- ** constructor will if necessary add 1-sized dimensions until each
- ** element of the constructor have the same dimension maxn >= 2.
- ** This relation adds array constructors to achieve this.
+ ** This relation takes an array expression of dimension >=3 and
+ ** concatenates each array element along the first dimension.
+ ** For instance
+ ** elab_matrix_cat_one( {[1,2;5,6], [3,4;7,8]}) => [1,2,3,4;5,6,7,8]
  **)
+relation elab_matrix_cat_two_exp: (Exp.Exp)
+	  => (Exp.Exp) =
 
-relation add_onesized_dimensions: ((Exp.Exp*bool) list list, 
-				   Types.Properties list list,
-				   int ) (* maxn*)
-	=> ((Exp.Exp*bool) list list) =
+  rule	elab_matrix_cat_two(expl) => res 
+	---------------------------------
+	elab_matrix_cat_two_exp(Exp.ARRAY(_,_,expl)) => res
 
-  axiom	add_onesized_dimensions([],_,_) => []
-
-  rule	add_onesized_dimensions_row(e,t,maxn) => e' &
-	add_onesized_dimensions(es,ts,maxn) => es'
-	-------------------------------------
-	add_onesized_dimensions(e::es,t::ts,maxn) => e'::es'
+  rule	Debug.fprint("failtrace","-elab_matrix_cat_one failed\n")
+	----------------------
+	elab_matrix_cat_two_exp(_) => fail
 end
 
-(** relation: add_onesized_dimensions_row
+(** relation: elab_matrix_cat_two
  ** author: PA
- ** 
- ** Helper relation to add_onesized_dimensions
- **)
-relation add_onesized_dimensions_row:( (Exp.Exp*bool) list, 
-				      Types.Properties list,
-				      int) (* maxn *)
-	=> ((Exp.Exp*bool) list) =
-  axiom	add_onesized_dimensions_row([],_,_) => []
-
-  rule	add_onesized_dimensions_row(es,tps,maxn) => es' &
-	Types.ndims(tp) => cur_ndims &
-	int_sub(maxn,cur_ndims) => add_dims &
-	int_sub(add_dims,1) => add_dims' &
-	add_onesized_dimensions_exp(e,tp,add_dims') => e'
-	------------------------------------
-	add_onesized_dimensions_row((e,b)::es,Types.PROP(tp,c)::tps,maxn)
-	  => ((e',b)::es')
-end
-
-(** relation: add_onesized_dimensions_exp
- ** author: PA
- ** 
- ** Adds onesized array dimensions to an expressions n times.
+ **
+ ** Concatenates a list of matrix(or higher dim) expressions along
+ ** the second dimension.
 **)
-relation add_onesized_dimensions_exp:(Exp.Exp,
-				      Types.Type,
-				      int)  (* n *)
-	  => Exp.Exp =
 
-  axiom	add_onesized_dimensions_exp(e,tp,-1) => e
-  axiom	add_onesized_dimensions_exp(e,tp,0) => e
+relation elab_matrix_cat_two: Exp.Exp list => Exp.Exp =
+  axiom	elab_matrix_cat_two([e]) => e
+
+  rule	elab_matrix_cat_two_2(e1,e2) => res
+	------------------------
+	elab_matrix_cat_two([e1,e2]) => res
+
+  rule	elab_matrix_cat_two(rest) => e2 &
+	elab_matrix_cat_two_2(e1,e2) => res
+	-------------------------
+	elab_matrix_cat_two(e1::rest) => res
+
+  axiom	elab_matrix_cat_two(expl) 
+	  => Exp.CALL(Absyn.IDENT("cat"),Exp.ICONST(2)::expl,false,true)
+end
+
+(** relation: elab_matrix_cat_two_2
+ **
+ ** Helper relation to elab_matrix_cat_two
+ ** Concatenates two array expressions that are matrices (or higher dimension)
+ ** along the first dimension (row).
+ **)
+
+relation elab_matrix_cat_two_2:(Exp.Exp, Exp.Exp) => Exp.Exp =
+
+  rule	elab_matrix_cat_two_3(expl1,expl2) => expl
+	-----------------------
+	elab_matrix_cat_two_2(Exp.ARRAY(a1,at1,expl1),Exp.ARRAY(a2,at2,expl2))
+	  => Exp.ARRAY(a1,at1,expl)
+end
+
+(** relation: elab_matrix_cat_two_3
+ **
+ ** Helper relation to elab_matrix_cat_two_2
+ **)
+
+relation elab_matrix_cat_two_3:(Exp.Exp list, Exp.Exp list) => Exp.Exp list =
+
+  axiom	elab_matrix_cat_two_3([],[]) => []
+
+  rule	list_append(expl1,expl2) => expl &
+	elab_matrix_cat_two_3(es1,es2) => es'
+	-------------------------------------
+	elab_matrix_cat_two_3(Exp.ARRAY(a1,at1,expl1)::es1,
+			      Exp.ARRAY(a2,at2,expl2)::es2)
+	=> Exp.ARRAY(a1,at1,expl)::es'
+
+end
+
+(** relation: elab_matrix_cat_one
+ ** author: PA
+ **
+ ** Concatenates a list of matrix(or higher dim) expressions along
+ ** the first dimension. 
+ ** i.e. elab_matrix_cat_one( { [1,2;3,4], [5,6;7,8] }) => [1,2;3,4;5,6;7,8] 
+**)
+
+relation elab_matrix_cat_one: (Exp.Exp list)
+	  => (Exp.Exp) =
+  axiom	elab_matrix_cat_one([e as Exp.ARRAY(a,at,expl)]) => e
+
+  rule	list_append(expl1,expl2) => expl
+	-------------------------------
+	elab_matrix_cat_one([Exp.ARRAY(a,at,expl1),Exp.ARRAY(_,_,expl2)])
+	=> (Exp.ARRAY(a,at,expl))
+
+  rule	elab_matrix_cat_one(es) => Exp.ARRAY(_,_,expl2) &
+	list_append(expl1,expl2) => expl
+	-------------------------------
+	elab_matrix_cat_one(Exp.ARRAY(a,at,expl1)::es)
+	=> (Exp.ARRAY(a,at,expl))
+
+  axiom	elab_matrix_cat_one(expl) 
+	  => Exp.CALL(Absyn.IDENT("cat"),Exp.ICONST(1)::expl,false,true)
+end
+
+(** relation: promote_exp
+ ** author: PA
+ ** 
+ ** Adds onesized array dimensions to an expressions n times to the right
+ ** of array dimensions.
+ ** For instance 
+ ** promote_exp( {1,2},1) => {{1},{2}}
+ ** promote_exp( {1,2},2) => { {{1}},{{2}} }
+ **)
+
+relation promote_exp:(Exp.Exp,
+		      Types.Properties,
+		      int)  (* n *)
+	  => (Exp.Exp, Types.Properties) =
+
+  axiom	promote_exp(e,prop,-1) => (e,prop)
+  axiom	promote_exp(e,prop,0) => (e,prop)
 
   rule	int_sub(n,1) => n' & 
 	Types.elab_type(tp) => e_tp &
-	Types.lift_array(tp,SOME(1)) => tp' &
+	Types.lift_array_right(tp,SOME(1)) => tp' &
 	Types.elab_type(tp') => e_tp' &
 	Exp.type_builtin(e_tp) => array &
-	add_onesized_dimensions_exp(e,tp',n') => e' 
+	promote_exp_2(e,(n,tp)) => e' &
+	promote_exp(e',Types.PROP(tp',c),n') => (e'',prop')
 	---------------------------
-	add_onesized_dimensions_exp(e,tp,n) 
-	  => Exp.ARRAY(e_tp',array,[e'])
+	promote_exp(e,Types.PROP(tp,c),n) 
+	  => (e'',prop')
+
 end
+
+(** relation: promote_exp_2
+ **
+ ** Helper relation to promote_exp, adds dimension to the right of
+ ** the expression.
+ **)
+
+relation promote_exp_2: (Exp.Exp,
+			 (int* Types.Type)) (* dim *)
+	  => Exp.Exp =
+
+
+  rule	int_sub(n,1) => n' &
+	Types.unlift_array(tp) => tp' &
+	Util.list_map_1(expl,promote_exp_2,(n',tp')) => expl'
+	------------------------
+	promote_exp_2(Exp.ARRAY(a,at,expl),(n,tp)) => Exp.ARRAY(a,at,expl')
+
+	(* scalars can be promoted from s to {s} *)
+  rule	Types.is_array(tp) => false &
+	Exp.typeof(e) => at 
+	--------------
+	promote_exp_2(e,(_,tp)) => Exp.ARRAY(at,true,[e])
+
+	(* arrays of one dimension can be promoted from a to {a} *)
+  rule	Exp.typeof(e) => at &
+	Types.is_array(tp2) => false 
+	--------------
+	promote_exp_2(e,(_,(Types.T_ARRAY(Types.DIM(SOME(1)),tp2),_))) 
+	  => Exp.ARRAY(at,true,[e])
+
+	(* fallback, use "builtin" operator promote *)
+  rule	Exp.print_exp_str(e) => es 
+	-------------
+	promote_exp_2(e,(n,tp)) 
+	  => Exp.CALL(Absyn.IDENT("promote"),[e,Exp.ICONST(n)],true,false)
+end
+
 
 (** relation: elab_matrix_semi
  **
@@ -1211,59 +1408,81 @@ end
  ** A row is elaborated with elab_matrix_comma.
  *)
 
-relation elab_matrix_semi : (Env.Env, Absyn.Exp list list, bool(*implicit inst.*), Interactive.InteractiveSymbolTable option, bool(*contain real*))
-	=> ((Exp.Exp*bool) list list, Types.Properties, int, int, int) =
+relation elab_matrix_semi : (Env.Env, 
+			     Absyn.Exp list list, 
+			     bool (*implicit inst.*), 
+			     Interactive.InteractiveSymbolTable option, 
+			     bool(*contain real*),
+			     int (* maxn *))
+	=> (Exp.Exp, Types.Properties, int, int) =
 	  
 
-  rule	elab_matrix_comma(env,el,impl,st,havereal) => (el', props, dim, maxn)
+  rule	elab_matrix_comma(env,el,impl,st,havereal,maxn) 
+	  => (el', props as Types.PROP(t,_), dim1,dim2) &
+	  Types.elab_type(t) => at &
+	Types.is_prop_array(props) => a &
+	elab_matrix_cat_two_exp(el') => el''
 	---------------------------------
-	elab_matrix_semi(env,[el],impl,st,havereal) => ([el'], props, 1, dim, maxn)
+	elab_matrix_semi(env,[el],impl,st,havereal,maxn) 
+	  => (el'', props, dim1, dim2 )
 
   rule	list_length(el::els) => dim &
-	elab_matrix_comma(env,el,impl,st,havereal) => (el',props1,dim1,maxn1) &
-	elab_matrix_semi(env,els,impl,st,havereal) => (els',props2,_,dim2,maxn2) &
-
-	dim1 = dim2 &
-			
-	Types.match_with_promote(props1,props2,havereal) => props &
-
-	int_max(maxn1,maxn2) => maxn
+	elab_matrix_comma(env,el,impl,st,havereal,maxn) 
+	  => (el',props1,dim1,dim2) &
+	elab_matrix_cat_two_exp(el') => el'' &
+	elab_matrix_semi(env,els,impl,st,havereal,maxn) 
+	  => (els',props2,dim1',dim2') &
+	elab_matrix_cat_one([el'',els']) => els'' &
+	(* semicoloned values a;b must have same no of columns *)
+	dim2 = dim2' &
+	(* number of rows added. *)
+	int_add(dim1,dim1') => dim1'' &
+	Types.match_with_promote(props1,props2,havereal) 
+	  => (props) 
 	--------------------
-	elab_matrix_semi(env,el::els,impl,st,havereal) => (el'::els',props,dim,dim1,maxn)
+	elab_matrix_semi(env,el::els,impl,st,havereal,maxn) 
+	  => (els'' ,props,dim1'',dim2)
 
-  rule	(*Debug.fprint("failtrace", "- elab_matrix_semi failed\n" )*)
+  rule	Debug.fprint("failtrace", "- elab_matrix_semi failed\n" )
 	-------------------
-	elab_matrix_semi(_,_,_,_,_) => fail
+	elab_matrix_semi(_,_,_,_,_,_) => fail
 
-	(**  Error messages *)
-(*
-  rule	Print.print_buf "- How the f*ck did you write an empty matrix?\n"
-	-------------------------------------------------------
-	elab_matrix_semi(_,[]) => fail
+	(*  Error messages *)
 
-  rule	elab_array(env,el) => (el',Types.PROP(t1,c1)) &
-	elab_matrix(env,els) => (els',t2,dim2,c2) &
+  rule	elab_matrix_comma(env,el,impl,st,havereal,maxn) 
+	  => (el',Types.PROP(t1,_),_,_) &
+	elab_matrix_semi(env,els,impl,st,havereal,maxn) 
+	  => (els',Types.PROP(t2,_),_,_) &
 	not t1 = t2 &
-	Print.print_buf "# Incompatible types in matrix rows\n" &
-	Print.print_buf "    [" & Dump.print_list(el,Dump.print_exp,",") &
-	Print.print_buf "] is a row of " & Types.print_type t1 & Print.print_buf "\n" &
-	Print.print_buf "    the rest of the matrix is of " &
-	Types.print_type t2 & Print.print_buf "\n"
+	Exp.print_list_str(el,Dump.print_exp_str,", ") => el_str &
+	Types.unparse_type t1 => t1_str &
+	Types.unparse_type t2 => t2_str &
+	Util.string_append_list(["# Incompatible types in matrix rows\n",
+				 "    [", el_str, "] is a row of ", 
+				 t1_str,"\n",
+				 "    the rest of the matrix is of ",
+				 t2_str, "\n"]) => str &
+	Print.print_error_buf str 
 	--------------------------------
-	elab_matrix_semi(env,el::els) => fail
+	elab_matrix_semi(env,el::els,impl,st,havereal,maxn) => fail
 
-  rule	list_length(el) => dim1 &
-	elab_matrix(env,els) => (els',t2,dim2,c2) &
+  rule	elab_matrix_comma(env,el,impl,st,havereal,maxn) 
+	  => (el',Types.PROP(t1,_),dim1,_) &
+	elab_matrix_semi(env,els,impl,st,havereal,maxn) 
+	  => (els',props2,_,dim2) &
 	not dim1 = dim2 &
-	Print.print_buf "# Incompatible row length in matrix expression\n" &
-	Print.print_buf "    [" & Dump.print_list(el,Dump.print_exp,",") &
-	Print.print_buf "] is a row of size " &
-	int_string dim1 => s & Print.print_buf s & Print.print_buf "\n" &
-	Print.print_buf "    the rest of the matrix rows are of size " &
-	int_string dim2 => s & Print.print_buf s & Print.print_buf "\n"
+	int_string dim1 => dim1_str &
+	int_string dim2 => dim2_str &
+	Exp.print_list_str(el,Dump.print_exp_str,", ") => el_str &
+	Util.string_append_list(["# Incompatible row length in matrix expression\n",
+				 "    [", el_str, "] is a row of size ",
+				 dim1_str,"\n",
+				 "    the rest of the matrix rows are of size ",
+				 dim2_str,"\n"]) => str &
+	Print.print_error_buf str
 	--------------------------------------------
-	elab_matrix_semi(env,el::els) => fail
-*)
+	elab_matrix_semi(env,el::els,impl,st,havereal,maxn) => fail
+
 end
 
 (** relation: elab_builtin_cardinality
@@ -2310,15 +2529,19 @@ relation elab_builtin_cat : (Env.Env, Absyn.Exp list, bool (*impl*))
 
   rule	elab_exp(env,dim,impl,NONE) 
 	  => (dim_exp,Types.PROP((Types.T_INTEGER(_),_),const1),_) &
+	Ceval.ceval(env,dim_exp,false,NONE,NONE,Ceval.MSG) 
+	  => (Values.INTEGER(dim),_) &
 	elab_exp_list(env,matrices,impl,NONE) => (matrices',props,_) &
 	same_dimensions(props) => true &
 	elab_array_const(props) => const2 &
-	Types.const_and(const1,const2) => const &
-	let Types.PROP(result_type,_)::_ = props
+	Types.const_and(const1,const2) => const & 
+	list_length(matrices') => num_matrices &
+	let Types.PROP(result_type,_)::_ = props &
+	elab_builtin_cat_2(result_type,dim,num_matrices) => result_type'
 	----------------------------------
 	elab_builtin_cat(env,dim::matrices,impl) 
 	  => (Exp.CALL(Absyn.IDENT("cat"),dim_exp::matrices',false,true), 
-	      Types.PROP(result_type,const))
+	      Types.PROP(result_type',const))
 
   rule	elab_exp(env,dim,impl,NONE) 
 	  => (dim_exp,tp,_) &
@@ -2336,6 +2559,30 @@ relation elab_builtin_cat : (Env.Env, Absyn.Exp list, bool (*impl*))
 	----------------------------------
 	elab_builtin_cat(env,dim::matrices,impl) 
 	  => fail
+end
+
+(** relation: elab_builtin_cat_2
+ **
+ ** Helper relation to elab_builtin_cat. Updates the result type given
+ ** the input type, number of matrices given to cat and dimension to concatenate
+ ** along.
+ **)
+
+relation elab_builtin_cat_2: (Types.Type, 
+			      int, (*dim*)
+			      int) (*num_args*)
+	=> Types.Type =
+
+  rule	int_mul(old_d,n_args) => new_d
+	------------------------------
+	elab_builtin_cat_2( (Types.T_ARRAY(Types.DIM(SOME(old_d)),tp),p), 1,n_args)
+	  => ((Types.T_ARRAY(Types.DIM(SOME(new_d)),tp),p))
+
+  rule	int_sub(n,1) => n' &
+	elab_builtin_cat_2(tp,n',n_args) => tp'
+	------------------------------
+	elab_builtin_cat_2( (Types.T_ARRAY(dim,tp),p), n,n_args)
+	  => ((Types.T_ARRAY(dim,tp'),p))
 end
 
 (** relation: elab_builtin_identity

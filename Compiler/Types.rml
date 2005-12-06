@@ -182,6 +182,7 @@ list * Mod
   relation subtype : (Type, Type) => bool
   relation lookup_component : (Type, Ident) => Var
   relation lift_array : (Type,int option) => Type
+  relation lift_array_right : (Type,int option) => Type
   relation unlift_array : Type => Type
   relation make_array: (Type, Absyn.ArrayDim) => Type
   relation array_element_type : Type => Type
@@ -946,6 +947,22 @@ relation lift_array : (Type,int option) => Type =
 	lift_array (ty,i) => ((T_ARRAY(DIM(i),ty),NONE))
 (* PR  axiom	lift_array (ty,i) => T_ARRAY(DIM(i),ty) *)
 
+end
+
+(** relation: lift_array_right
+ **
+ ** This relation adds an array dimension to "the right" of the passed type.
+ **)
+
+relation lift_array_right : (Type,int option) => Type =
+
+  rule  lift_array_right(ty,i) => ty'	
+	-------------------
+	lift_array_right ((T_ARRAY(dim,ty),path),i) 
+	  => ((T_ARRAY(dim,ty'),path))
+
+  axiom	lift_array_right ((ty,path),i) 
+	  => ((T_ARRAY(DIM(i),(ty,NONE)),path))
 end
 
 (** relation: unlift_array
@@ -2166,7 +2183,12 @@ end
 
 (** relation: match_with_promote
  **
- ** Similar to match_prop, but having a flag indicating that Integer to Real 
+ ** This relation is used for matching expressions in matrix construction, 
+ ** where automatic promotion is allowed. This means that array dimensions of 
+ ** size one (1) is added from the right to arrays of matrix construction until
+ ** all elements have the same dimension size (with a maximum of 2).
+ ** For instance, [1,{2}] becomes [1,2].
+ ** The relation also has a flag indicating that Integer to Real 
  ** conversion can be used.
  **)
 
@@ -2189,7 +2211,7 @@ relation match_with_promote : (Properties, Properties, bool (* Allow Integer => 
 
   rule	is_array t2 => false &
 	match_with_promote(PROP(t1,c1),PROP(t2,c2), havereal) => PROP(t,c)
-	-----
+	----------------------------
 	match_with_promote(PROP((T_ARRAY(DIM(SOME(1)),t1),p),c1),
 			   PROP(t2,c2), havereal)
 	  => PROP( (T_ARRAY(DIM(SOME(1)),t),p) ,c)

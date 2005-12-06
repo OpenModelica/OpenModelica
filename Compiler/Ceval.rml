@@ -226,6 +226,8 @@ end
   axiom	ceval_builtin_handler "cat" => ceval_builtin_cat
   axiom ceval_builtin_handler "identity" => ceval_builtin_identity
 
+  axiom ceval_builtin_handler "promote" => ceval_builtin_promote
+
   rule	Debug.fprint("ceval", "No ceval_builtin_handler found for: ") &
 	Debug.fprintln("ceval", id)
 	--------------------------
@@ -2463,6 +2465,40 @@ relation ceval_builtin_identity : (Env.Env, Exp.Exp list, bool, Interactive.Inte
 	  => (Values.ARRAY(retExp),st)
 end
 
+(** relation: ceval_builtin_promote
+ ** author: PA
+ ** 
+ ** Evaluates the internal promote operator, for promotion of arrays
+ **)
+
+relation ceval_builtin_promote : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option, Msg) 
+	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
+          
+  rule	ceval (env,arr,impl,st,NONE,msg) => (arr_val,_) &
+	ceval (env,dim,impl,st,NONE,msg) => (Values.INTEGER(dim_val),_) &
+	ceval_builtin_promote_2(arr_val,dim_val) => res
+	--------------------------------------
+	ceval_builtin_promote(env,[arr,dim],impl,st,msg) 
+	  => (res,st)
+end
+
+(** relation: ceval_builtin_promote_2
+ **
+ ** Helper relation to ceval_builtin_promote
+ **)
+relation ceval_builtin_promote_2: (Values.Value, 
+				   int)
+	=> Values.Value =
+
+  axiom	ceval_builtin_promote_2(v,0) => Values.ARRAY([v])
+
+  rule	int_sub(n,1) => n' &
+	Util.list_map_1(vs,ceval_builtin_promote_2,n') => vs'
+	------------------------
+        ceval_builtin_promote_2(Values.ARRAY(vs),n) => Values.ARRAY(vs')
+
+end
+
 (** relation: ceval_cat
  **
  ** evaluates the cat operator given a list of array values and a 
@@ -2498,7 +2534,8 @@ relation cat_dimension: (Values.Value list, int) => Values.Value list =
 	int_sub(dim,1) => dim' &
 	cat_dimension_2(v_lst_lst,dim') => v_lst_lst' &
 	Util.list_map(v_lst_lst',Values.make_array) => v_lst' &
-	list_length(v_lst') => len &
+	let Values.ARRAY(vlst2)::_ = v_lst' &
+	list_length(vlst2) => len &
 	ceval_builtin_transpose_2(v_lst',1,len) => v_lst'
 	----------------------
 	cat_dimension(vlst,dim)  => v_lst'
@@ -3423,7 +3460,8 @@ relation ceval_builtin_transpose : (Env.Env,
 	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
 	   
   rule  ceval (env,exp,impl,st,NONE,msg) => (Values.ARRAY(vlst),_) &
-	list_length(vlst) => dim1 &
+	let Values.ARRAY(vlst2)::_ = vlst &
+	list_length(vlst2) => dim1 &
 	ceval_builtin_transpose_2(vlst,1,dim1) => vlst' 
 	 --------------------------------------
 	 ceval_builtin_transpose(env,[exp],impl,st,msg) 

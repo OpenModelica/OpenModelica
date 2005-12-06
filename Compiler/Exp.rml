@@ -481,6 +481,8 @@ relation is_const: Exp => bool =
 
   axiom	is_const(BCONST(bval)) => true
 
+  axiom	is_const(SCONST(sval)) => true
+
   rule	is_const(e) => res
 	---------------------------
 	is_const(UNARY(op,e)) => res
