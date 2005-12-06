@@ -72,7 +72,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   with "Exp.rml"
   with "Interactive.rml"
   with "Values.rml"
-			
+  with "DAELow.rml"
+		
   datatype Msg = MSG	(* Give error message *)
 	     | NO_MSG   (* Do not give error message *)								   
                                                                                            (** Constant evaluation of expressions *)
@@ -93,10 +94,31 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	  => Exp.Subscript list
 
   relation is_known_external_func:( string, string option) => ()   
-  end
+          
+  relation build_model:(Env.Env, 
+		        Exp.Exp, (* component ref for model *)
+		        Interactive.InteractiveSymbolTable,
+                        Msg)
+          => (string, (*classname*)
+              string, (*method*)
+              Interactive.InteractiveSymbolTable, 
+              string) (*initfilename*) 
+          
+  relation translate_model: (Env.Env, 
+			     Exp.ComponentRef, (* component ref for model *)
+			     Interactive.InteractiveSymbolTable,
+                             Msg,
+                             Exp.Exp)
+          
+	  => (Values.Value, 
+              Interactive.InteractiveSymbolTable,
+              DAELow.DAELow,
+              string list (*libs *)) 
+	  
+
+ end
 
 
-with "DAELow.rml"
 with "SimCodegen.rml"
 with "Static.rml"
 with "Print.rml" 
@@ -1257,7 +1279,8 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
                                                             interval,
                                                             method,
                                                             filenameprefix],_,_),
-                                      st' as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
+                                      st' as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),
+                                      msg) 
 
 	  => (Values.ARRAY([Values.STRING(executable),
                             Values.STRING(initfilename)]),st)
@@ -1952,23 +1975,6 @@ relation change_to_file_dir:(Absyn.ComponentRef, (* class *)
 
 end
 
-(** relation:libs_to_string
- ** author: x02lucpo
- **
- ** makes a string list to "" if list is empty or \"lib1 lib2\" if some are present
- **)
-relation libs_to_string:(string list) => string =
-
-  axiom libs_to_string([]) => ""
-
-  rule  Util.string_delimit_list_no_empty(libs," ") => libs_str &
-        Util.string_append_list(["\"",libs_str,"\""]) => libs_str' 
-        -------------
-        libs_to_string(libs) => libs_str'
-
-
-end
-
 
 
 (** relation: compile_model
@@ -1985,7 +1991,7 @@ relation compile_model: (string, string list) => () =
         win_citation() => cit &
         System.pwd => cd_path &
         string_append(fileprefix,".libs") => libsfilename &
-        libs_to_string(libs) => libs_str &
+        Util.string_delimit_list(libs," ") => libs_str &
         System.write_file(libsfilename,libs_str) &
         Util.string_append_list([cit,omhome', pd, "Compiler", 
                                  pd, "scripts", pd, "Compile",cit," ", 
@@ -2003,9 +2009,9 @@ relation compile_model: (string, string list) => () =
         Util.is_empty_string(command) => false & (*needed when the above rule does not work*)
         System.pwd => cd_path &
         win_citation() => cit &
-        libs_to_string(libs) => libs_str &
+        Util.string_delimit_list(libs," ") => libs_str &
         string_append(fileprefix,".libs") => libsfilename &
-        libs_to_string(libs) => libs_str &
+        System.write_file(libsfilename,libs_str) &
         Util.string_append_list([command," ", 
                                  (*cit,cd_path,cit," ",*)
                                  fileprefix (*, " " ,
