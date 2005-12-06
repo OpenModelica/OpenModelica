@@ -2395,10 +2395,12 @@ end
 relation elab_builtin_der : (Env.Env, Absyn.Exp list, bool (*impl*)) 
 	  => (Exp.Exp, Types.Properties)	=
 
-  rule	elab_exp(env,exp,impl,NONE) => (exp',Types.PROP((Types.T_REAL([]),_),Types.C_VAR),_)  
-	----------------------------------
+	  (* use elab_call_args to also try vectorized calls *)
+  rule	elab_call_args(env,Absyn.IDENT("der"),[exp],[],impl,NONE)
+	  => (e,prop as Types.PROP(_,Types.C_VAR))
+	  ----------------------------------
 	elab_builtin_der(env,[exp as Absyn.CREF(cr)],impl) 
-	  => (Exp.CALL(Absyn.IDENT("der"),[exp'],false,true), Types.PROP((Types.T_REAL([]),NONE),Types.C_VAR))
+	  => (e, prop)
 
 	  (* Constant expressions should fail *)
   rule	elab_exp(env,exp,impl,NONE) => (exp',Types.PROP((Types.T_REAL([]),_),c),_)  &
@@ -2406,7 +2408,7 @@ relation elab_builtin_der : (Env.Env, Absyn.Exp list, bool (*impl*))
 	----------------------------------
 	elab_builtin_der(env,[exp as Absyn.CREF(cr)],impl) 
 	  => fail
-  rule	Print.print_error_buf "#Error, wrong type or wrong number of arguments to der operator in '\n" &
+  rule	Print.print_error_buf "# Error, wrong type or wrong number of arguments to der operator in '\n" &
 	Util.list_map(expl,Dump.print_exp_str) => lst &
 	Util.string_delimit_list(lst,", ") => s &
 	Util.string_append_list(["der(",s,")'.\n"]) => s &
@@ -3708,7 +3710,8 @@ relation elab_call_args : (Env.Env,
 	fill_default_slots(newslots,cl,env'',impl) => newslots2 &
 	exp_list_from_slots(newslots2) => args'' 
 	------------------------------------
-	elab_call_args(env,fn,args,nargs,impl,st) => (Exp.CALL(fn,args'',false (*tuple*),false (*builtin*)), prop)
+	elab_call_args(env,fn,args,nargs,impl,st) 
+	  => (Exp.CALL(fn,args'',false (*tuple*),false (*builtin*)), prop)
 
 
 	(* ..Other functions *)
