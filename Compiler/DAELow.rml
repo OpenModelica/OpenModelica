@@ -216,7 +216,7 @@ type MatchingOptions = (IndexReduction*EquationConstraints)
 
   relation dump_jacobian_str: ((int*int*Equation) list ) => string   
         
-  relation lower: (DAE.DAElist) => DAELow
+  relation lower: (DAE.DAElist,bool) => DAELow
 
   relation incidence_matrix: (DAELow) => IncidenceMatrix
  
@@ -352,11 +352,12 @@ val empty_bintree = TREENODE(NONE,NONE,NONE)
  ** array. Where adding a new equation can be done in O(1) time if space 
  ** is available.
  **)
-relation lower: (DAE.DAElist) => DAELow =
+relation lower: (DAE.DAElist,
+		 bool (* add_dummy_state*)) => DAELow =
 
   rule	states(lst,empty_bintree) => s &
 	lower2(lst,s,[]) => (vars,knvars,eqns,reqns,ieqns,algs,whenclauses)  &
-	add_dummy_state(vars,eqns) => (vars,eqns) &
+	add_dummy_state(vars,eqns,add_dummy) => (vars,eqns) &
 	list_reverse whenclauses => whenclauses' &
 	lower_algorithms(vars,algs) => algeqns &
 	list_append(algeqns,eqns) => eqns &
@@ -370,7 +371,7 @@ relation lower: (DAE.DAElist) => DAELow =
 	list_equation(ieqns) => ieqnarr &
 	list_array(algs) => algarr 
 	--------------------
-	lower(lst) 
+	lower(lst,add_dummy) 
 	  => DAELOW(vars',knvars,eqnarr,reqnarr,ieqnarr,algarr,EVENT_INFO(whenclauses',zero_crossings))
 end
 
@@ -381,16 +382,20 @@ end
  ** dummy state variable and an equation for that variable.
 **)
 relation  add_dummy_state: (Variables, (* vars*)
-			    Equation list) (*eqns*) 
+			    Equation list, (*eqns*) 
+			    bool)
 	  => (Variables, 
 	      Equation list) =
+ 
+  axiom	add_dummy_state(v,e,false) =>(v,e)
+
 
   rule	add_var(VAR(Exp.CREF_IDENT("$dummy",[]),STATE,DAE.BIDIR,DAE.REAL,
 		    NONE,NONE,[],NONE,-1,"$dummy",[],NONE,NONE,
 		    DAE.NON_CONNECTOR),vars) => vars' 
 	
 	-------------------
-	add_dummy_state(vars,eqns) 
+	add_dummy_state(vars,eqns,true) 
 	  => (vars',
 	      EQUATION(Exp.CALL(Absyn.IDENT("der"),
 				[Exp.CREF(Exp.CREF_IDENT("$dummy",[]),Exp.REAL)],

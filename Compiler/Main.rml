@@ -398,7 +398,7 @@ end
 relation optimize_dae: (SCode.Program, DAE.DAElist, DAE.DAElist, Absyn.Path) => () =
 
   rule	run_backend_q() => true
-	& DAELow.lower(dae) => dlow 
+	& DAELow.lower(dae,true(* add dummy state*)) => dlow 
 	& Debug.fcall("dumpdaelow", DAELow.dump, dlow) 
 	& DAELow.incidence_matrix(dlow) => m 
 	& DAELow.transpose_matrix(m) => mT 
