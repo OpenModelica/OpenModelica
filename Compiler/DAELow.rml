@@ -5855,11 +5855,13 @@ relation calculate_sizes: DAELow => (int, (* nx *)
 	var_list(vars) => varlst &
 	var_list(knvars) => knvarlst &
 	calculate_param_sizes(knvarlst) => np &
+        int_string(np) => np_str &
 	list_length zc => ng &
 	calculate_var_sizes(varlst,0,0) => (nx,ny) &
 	calculate_var_sizes(knvarlst,nx,ny) => (nx',ny')
 	-----------------------------------
-	calculate_sizes(DAELOW(vars,knvars,_,_,_,_,EVENT_INFO(wc,zc))) => (nx',ny',np,ng)
+	calculate_sizes(DAELOW(vars,knvars,_,_,_,_,EVENT_INFO(wc,zc))) => 
+        (nx',ny',np,ng)
 end
 
 (** relation: calculate_param_sizes
@@ -5872,15 +5874,17 @@ relation calculate_param_sizes:( Var list) => (int) =
 
   axiom	calculate_param_sizes([]) => 0
 
-  rule	calculate_param_sizes(vs) => s1 &
+  rule  calculate_param_sizes(vs) => s1 &
+        is_param(var) => true &
+        dump_vars([var]) &
 	int_add(s1,1) => s2 
 	------------------
-	calculate_param_sizes(VAR(_,PARAM,_,_,_,_,_,_,_,_,_,_,_,flow)::vs) 
+	calculate_param_sizes(var::vs) 
 	  => (s2)
 
   rule	calculate_param_sizes(vs) => s1 
 	------------------
-	calculate_param_sizes(VAR(_,_,_,_,_,_ ,_,_,_,_,_,_,_,flow)::vs) 
+	calculate_param_sizes(_::vs) 
 	  => (s1)
 end
 	
@@ -6524,8 +6528,7 @@ relation calculate_indexes2: (Var list,int,int,int,int,int)
 	  => (VAR(cr,PARAM,d,tp,b,value,dim,start,p,name,cl,dae_var_attr,comment,flow)::vars',
 	      x1,xd1,y1,p1,dummy1)
 
-  rule	int_add(p,1) => p' &
-	calculate_indexes2(vs,x,xd,y,p',dummy) => (vars',x1,xd1,y1,p1,dummy1)
+  rule  calculate_indexes2(vs,x,xd,y,p,dummy) => (vars',x1,xd1,y1,p1,dummy1)
 	----------------------------------------
 	calculate_indexes2(VAR(cr,CONST,d,tp,b,value,dim,start,_,name,cl,dae_var_attr,comment,flow)::vs,x,xd,y,p,dummy) 
 	  => (VAR(cr,CONST,d,tp,b,value,dim,start,p,name,cl,dae_var_attr,comment,flow)::vars',

@@ -221,7 +221,8 @@ end
  **)
  relation generate_global_data:(Absyn.Path,DAELow.DAELow,int,int,int) => string  =
 
-  rule	DAELow.calculate_sizes(dlow) => (nx,ny,np,ng) &
+  rule  (* DAELow.dump(dlow) & *)
+         DAELow.calculate_sizes(dlow) => (nx,ny,np,ng) &
 	filter_ng ng => ng' &
 	Absyn.path_string(class) => class_str &
 	int_string(nx) => nx_str &
@@ -314,7 +315,6 @@ end
 end
 
 
-
 (** relation: generate_var_names_and_comments
  **
  ** Generates an array of the original variable names.
@@ -332,19 +332,19 @@ relation generate_var_names_and_comments:(DAELow.DAELow,
 
         DAELow.var_list(vars) => var_lst &
 	DAELow.var_list(knvars) => knvar_lst &
-        array_create(nx,"") => state_arr &
-	array_create(nx,"") => derivative_arr &
-	array_create(ny,"") => algvar_arr &
+        array_create(nx,"\"state  ERROR\"") => state_arr &
+	array_create(nx,"\"derivative ERROR\"") => derivative_arr &
+	array_create(ny,"\"algvar ERROR\"") => algvar_arr &
 (* 	array_create(ni,"") => input_arr & *)
 (* 	array_create(no,"") => output_arr & *)
-	array_create(np,"") => param_arr &
+	array_create(np,"\"param ERROR\"") => param_arr &
 
-        array_create(nx,"") => state_comment_arr &
-	array_create(nx,"") => derivative_comment_arr &
-	array_create(ny,"") => algvar_comment_arr &
+        array_create(nx,"\" ERROR\"") => state_comment_arr &
+	array_create(nx,"\" ERROR\"") => derivative_comment_arr &
+	array_create(ny,"\" ERROR\"") => algvar_comment_arr &
 (* 	array_create(ni,"") => input_comment_arr & *)
 (* 	array_create(no,"") => output_comment_arr & *)
-	array_create(np,"") => param_comment_arr &
+	array_create(np,"\" ERROR\"") => param_comment_arr &
 
 
         generate_var_names_and_comments2(var_lst,
@@ -382,6 +382,19 @@ relation generate_var_names_and_comments:(DAELow.DAELow,
               output_arr,output_comment_arr,num_output'',(* output *)
               param_arr,param_comment_arr,num_param'') (* param *) &
            
+
+        (*****************************************)
+        (* TODO: CHECK THE RETURN TO BE THE SAME *)
+        (* INSTEAD OF SETTING WITH let           *)
+        (*****************************************)
+        let num_state'' = nx &
+        let num_derivative'' = nx &
+        let num_algvars'' = ny &
+        let num_output'' = no &
+        let num_input'' = ni &
+        let num_param'' = np &
+
+
         array_list(state_arr) => state_str' &
         array_list(derivative_arr) => derivative_str' &
         array_list(algvar_arr) => algvars_str' &
@@ -389,12 +402,12 @@ relation generate_var_names_and_comments:(DAELow.DAELow,
 (*         array_list(output_arr) => output_str' & *)
         array_list(param_arr) => param_str' &
       
-        Util.string_delimit_list_no_empty(state_str',", ") => state_str'' &
-        Util.string_delimit_list_no_empty(derivative_str',", ") => derivative_str'' &
-        Util.string_delimit_list_no_empty(algvars_str',", ") => algvars_str'' &
-        Util.string_delimit_list_no_empty(input_arr,", ") => input_str'' &
-        Util.string_delimit_list_no_empty(output_arr,", ") => output_str'' &
-        Util.string_delimit_list_no_empty(param_str',", ") => param_str'' &
+        Util.string_delimit_list(state_str',", ") => state_str'' &
+        Util.string_delimit_list(derivative_str',", ") => derivative_str'' &
+        Util.string_delimit_list(algvars_str',", ") => algvars_str'' &
+        Util.string_delimit_list(input_arr,", ") => input_str'' &
+        Util.string_delimit_list(output_arr,", ") => output_str'' &
+        Util.string_delimit_list(param_str',", ") => param_str'' &
        
         array_list(state_comment_arr) => state_comment_str' &
         array_list(derivative_comment_arr) => derivative_comment_str' &
@@ -403,15 +416,15 @@ relation generate_var_names_and_comments:(DAELow.DAELow,
 (*         array_list(output_comment_arr) => output_comment_str' & *)
         array_list(param_comment_arr) => param_comment_str' &
       
-        Util.string_delimit_list_no_empty(state_comment_str',", ") => state_comment_str'' &
-        Util.string_delimit_list_no_empty(derivative_comment_str',", ") => derivative_comment_str'' &
-        Util.string_delimit_list_no_empty(algvars_comment_str',", ") => algvars_comment_str'' &
-        Util.string_delimit_list_no_empty(input_comment_arr,", ") => input_comment_str'' &
-        Util.string_delimit_list_no_empty(output_comment_arr,", ") => output_comment_str'' &
-        Util.string_delimit_list_no_empty(param_comment_str',", ") => param_comment_str'' &
+        Util.string_delimit_list(state_comment_str',", ") => state_comment_str'' &
+        Util.string_delimit_list(derivative_comment_str',", ") => derivative_comment_str'' &
+        Util.string_delimit_list(algvars_comment_str',", ") => algvars_comment_str'' &
+        Util.string_delimit_list(input_comment_arr,", ") => input_comment_str'' &
+        Util.string_delimit_list(output_comment_arr,", ") => output_comment_str'' &
+        Util.string_delimit_list(param_comment_str',", ") => param_comment_str'' &
 
         (*this is for backwards-compatibility *)
-        Util.string_delimit_list_no_empty([state_str'',derivative_str'',algvars_str''],", ") => var_names &
+        Util.string_delimit_list([state_str'',derivative_str'',algvars_str''],", ") => var_names &
 
         int_add(num_state'',num_derivative'') => num_var_names &
         int_add(num_var_names,num_algvars'') => num_var_names' &
@@ -508,7 +521,7 @@ relation generate_var_names_and_comments2:(DAELow.Var list,
               output_str,output_comments,num_output,(* output *)
               param_str,param_comments,num_param (* param *)) 
         
-  rule  (*generate INPUTS names*)
+  rule  
         generate_var_names_and_comments2(vs,
                                          state_str,state_comments,num_state,(* state *)
                                          derivative_str,derivative_comments,num_derivative,(* derivative *)
