@@ -1313,8 +1313,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 					  ]
 				        ),NONE) &
 	 Interactive.add_var_to_symboltable("currentSimulationResult",simValue,simType,st) 
-	  => newst &
-	   Print.clear_error_buf()
+	  => newst 
 	 ------------------------------------------------------------------
 	 ceval_interactive_functions (env, exp as Exp.CALL(Absyn.IDENT("simulate"),
                                                     [Exp.CREF(cr,_),
@@ -1325,8 +1324,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
   rule	
 	 (* simulation fail for som other reason than OPENMODELICAHOME not being set.*)
 	 System.read_env("OPENMODELICAHOME") => omhome &
-	 Print.get_error_string() => str &
-	 Util.string_append_list(["Simulation failed.\n",str,"\n"]) => res &
+	 Util.string_append_list(["Simulation failed.\n"]) => res &
 	 let simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),[Values.STRING(res)],["resultFile"])
 	 ------------------------------------------------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("simulate"),[Exp.CREF(cr,_),starttime,stoptime,interval,method,filenameprefix],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
@@ -1814,7 +1812,7 @@ end
           => (Values.STRING("The model have been translated"),st,
               indexed_dlow', libs)
          
-  rule  Print.print_error_buf("# translate_model failed\n")
+  rule  (*Print.print_error_buf("# translate_model failed\n")*)
          ---------------------------------------------
          translate_model (env, cr,
                           st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),
@@ -1933,7 +1931,7 @@ relation build_model:(Env.Env,
                     msg) 
           => (filenameprefix,method_str,st,init_filename)
 
-  rule Print.print_error_buf("# build_model failed\n")
+  rule (*Print.print_error_buf("# build_model failed\n")*)
         -----------------------------------------
         build_model(_,_,_,_) => fail
 end
