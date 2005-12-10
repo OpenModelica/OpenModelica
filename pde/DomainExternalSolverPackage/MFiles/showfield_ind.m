@@ -14,4 +14,5 @@ ui=uindices(:,1);
 bi=bindices(:,1);
 z(ui)=valsu(:,1);
 z(bi)=valsb(:,1);
-trimesh(t,x,y,z);
+%trimesh(t,x,y,z);
+trisurf(t,x,y,z,'FaceColor','interp','EdgeColor','interp');

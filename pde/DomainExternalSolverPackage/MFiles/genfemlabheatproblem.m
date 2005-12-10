@@ -4,6 +4,7 @@ clear fem;
 [neweb,poly]=femlabdomainfix(v,e);
 
 [bctype,bcgval,bcqval,bcind]=readbc(bcfilename);
+bcqval=bcqval*c; % undo workaround for rheolef implementation bug
 %bcgroups=cell(size(bcind',1),1);
 %for i=1:size(neweb,1),
 %    bcgroups{neweb(i)}=[bcgroups{neweb(i)} i];

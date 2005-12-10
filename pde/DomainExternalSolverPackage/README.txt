@@ -38,8 +38,11 @@ like
 then run simulate in order that the mesh file is generated, and translate again
 to read in the mesh file. Then you should be able to simulate.
 
-Visualization in MATLAB:
 
+
+
+Visualization in MATLAB:
+------------------------
 Add the folder Applications/MFiles to matlab m-file path, e.g. by selecting
 File->Set Path in Matlab and adding a folder. Run following commands in matlab,
 while the current directory is Applications:
@@ -50,6 +53,12 @@ showfield_ind('MyGenericBoundaryPoissonTest.mat','pde.fd')
 showmesh('MyGenericBoundaryDiffusionTest.mat','pde.ddomain')
 showfieldt_ind('MyGenericBoundaryDiffusionTest.mat','pde.fd',timestep)
 showmesh('MyGenericBoundaryDiffusionTest.mat','pde.ddomain.mesh')
+
+
+colormap(jet) // hot, hsv
+trisurf(t,x,y,z,'FaceColor','interp','EdgeColor','interp')
+// interp, none, flat, black
+
 
 
 Troubleshooting
