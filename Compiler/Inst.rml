@@ -2371,12 +2371,12 @@ relation inst_var2 : (Env.Env,
 	inst_dim_exp (dim,impl) => dime &
 	list_append(inst_dims,[dime]) => inst_dims' &
 	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),1,dim,dims,idxs,inst_dims',impl,comment)
-	  => (compenv,dae, csets', ty) &
+	  => (compenv,dae, Connect.SETS(_,crs), ty) &
 	inst_dim_type dim => dimt &
 	Types.lift_array(ty,dimt) => ty' 
 	-------------------------------
 	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dim::dims,idxs,inst_dims,impl,comment)
-          => (compenv,dae,csets',ty')
+          => (compenv,dae,Connect.SETS([],crs),ty')
 
 (* Rules for instantation of function variables (e.g. input and output 
   parameters and protected variables) *)
@@ -5150,6 +5150,10 @@ relation inst_connect: (Connect.Sets, Env, Prefix,
 	  => (sets',dae)
 	---------------------------------
 	inst_connect(sets, env,pre,c1,c2,impl) => (sets',dae)
+
+  rule	Debug.fprint("failtrace","-inst_connect failed\n")
+	---------------------------------
+	inst_connect(_,_,_,_,_,_) => fail
 
 end
 

@@ -5876,7 +5876,6 @@ relation calculate_param_sizes:( Var list) => (int) =
 
   rule  calculate_param_sizes(vs) => s1 &
         is_param(var) => true &
-        dump_vars([var]) &
 	int_add(s1,1) => s2 
 	------------------
 	calculate_param_sizes(var::vs) 

@@ -5322,7 +5322,7 @@ relation value_type : Values.Value => Types.Type =
 end	
 
 
-(** relation: canon_cref
+(** relation: canon_cref2
  **
  ** This relation relates a `Exp.ComponentRef' to its canonical form,
  ** which is when all subscripts are evaluated to constant values.  If
@@ -5336,6 +5336,7 @@ relation canon_cref2  : (Env.Env, Exp.ComponentRef, int list, bool (*impl*) )
   rule	Ceval.ceval_subscripts (env,ss,sl,impl,Ceval.MSG) => ss'
 	--------------------------------
 	canon_cref2 (env, Exp.CREF_IDENT(n,ss),sl,impl) => Exp.CREF_IDENT(n,ss')
+
 end
 
 (** relation: canon_cref
@@ -5353,13 +5354,15 @@ relation canon_cref : (Env.Env, Exp.ComponentRef, bool (*impl*) )
 	--------------------------------
 	canon_cref (env, Exp.CREF_IDENT(n,ss),impl) => Exp.CREF_IDENT(n,ss')
 
-  rule	
-	Lookup.lookup_var (env,Exp.CREF_QUAL(n,[],c)) => (_,t,_) &
+  rule	Lookup.lookup_var (env,Exp.CREF_IDENT(n,[])) => (_,t,_) &
 	Types.get_dimension_sizes t => sl &
 	Ceval.ceval_subscripts (env,ss,sl,impl,Ceval.MSG) => ss' &
 	canon_cref2 (env,c,sl,impl) => c'
 	------------------------
 	canon_cref (env, Exp.CREF_QUAL(n,ss,c),impl) => Exp.CREF_QUAL(n,ss',c')
+  rule	Debug.fprint("failtrace","-canon_cref failed\n")
+	-----------------------
+	canon_cref(env,cr,_) => fail
 
 end
 

@@ -2547,10 +2547,21 @@ relation to_exp_cref_subs: Absyn.Subscript list => Subscript list =
 	to_exp_cref_subs(Absyn.SUBSCRIPT(Absyn.INTEGER(i))::xs) 
 	  => INDEX(ICONST(i))::xs'
 
-  rule	Print.print_error_buf "#Error elaborating TypeName." &
+	  (* Assumes index is INTEGER. TODO: what about if index
+	   * is an array? *)
+  rule	to_exp_cref(cr) => cr' &
 	to_exp_cref_subs(xs) => xs' 
 	---------------------------
-	to_exp_cref_subs(_::xs)  => xs'
+	to_exp_cref_subs(Absyn.SUBSCRIPT(Absyn.CREF(cr))::xs) 
+	  => INDEX(CREF(cr',INT))::xs'
+
+  rule	Dump.print_subscripts_str [e] => s &
+	Util.string_append_list(["#Error converting subscript: ",s," to Exp.\n"]) 
+	  => str &
+	  Print.print_error_buf str &
+	to_exp_cref_subs(xs) => xs' 
+	---------------------------
+	to_exp_cref_subs(e::xs)  => xs'
 end
 
 
