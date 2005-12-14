@@ -6,7 +6,7 @@
 
 extern "C" {
 #include "rml.h"
-#include "../values.h"
+#include "../Values.h"
 #include <stdio.h>
 #include "../absyn_builder/yacclib.h"
 #include <pthread.h>

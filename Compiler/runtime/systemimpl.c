@@ -5,7 +5,7 @@
 #include <sys/unistd.h>
 #include <sys/stat.h>
 #include "read_write.h"
-#include "../values.h"
+#include "../Values.h"
 #include <dirent.h>
 #include <time.h>
 #include <sys/param.h> /* MAXPATHLEN */

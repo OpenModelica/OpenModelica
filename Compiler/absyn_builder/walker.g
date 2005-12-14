@@ -1,7 +1,7 @@
 /*
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet, Department of
+Copyright (c) 1998-2005, Linkopings universitet, Department of
 Computer and Information Science, PELAB
 
 All rights reserved.
@@ -22,7 +22,7 @@ met:
   the documentation and/or other materials provided with the
   distribution.
 
-* Neither the name of Linköpings universitet nor the names of its
+* Neither the name of Linkopings universitet nor the names of its
   contributors may be used to endorse or promote products derived from
   this software without specific prior written permission.
 
@@ -55,8 +55,8 @@ header "post_include_hpp" {
 	#include <iostream>
     
 	#include "rml.h"
-	#include "../absyn.h"
-	#include "../interactive.h"
+	#include "../Absyn.h"
+	#include "../Interactive.h"
 	#include <stack>
 	#include <string>
 	#include "MyAST.h"
