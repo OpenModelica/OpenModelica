@@ -257,6 +257,11 @@ getEnvironmentVar("varname")      returns the contents of the "varname" environm
 setEnvironmentVar("varname", "varvalue")      returns "Ok" if "varname" was set (overwritten) succesfully
                                               or "error" if the variable set failed
 
+loadFileInteractiveQualified(<string>)		Loads all models in the file
+					and return all classes on top
+					level of that file qualified with
+                                                     the within statement path if it
+                                                     exists.
 
 
 ERROR Handling
