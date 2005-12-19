@@ -168,6 +168,7 @@ with "Print.rml"
 with "System.rml"
 with "ClassLoader.rml"
 with "Ceval.rml"
+with "Error.rml"
 
 
 val empty_symboltable = SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[IVAR("$echo",Values.BOOL(true),(Types.T_BOOL([]),NONE))],[])
@@ -324,7 +325,7 @@ end
    rule	build_env_from_symboltable(st) => env &
 	 Static.elab_exp(env,rexp,true,SOME(st)) => (srexp,rprop,SOME(st'))	&
 	 Types.get_prop_type rprop => ((Types.T_TUPLE(types),_)) &
-	 Util.list_map(crefexps, get_ident_from_crefexp) => idents &
+	 Util.list_map(crefexps, get_ident_from_tuple_crefexp) => idents &
 	 Ceval.ceval(env,srexp,true,SOME(st'),NONE,Ceval.MSG) 
 	  => (Values.TUPLE(values), SOME(st'')) &
 	 add_vars_to_symboltable(idents,values,types,st'') => newst
@@ -341,21 +342,19 @@ end
 	 evaluate_expr(stmt,st) => (str,st)
  end
 
-(** relation: get_ident_from_crefexp
+(** relation: get_ident_from_tuple_crefexp
  **
  ** Return the (first) identifier of a Component Reference in an expression.
  **)
 
- relation get_ident_from_crefexp : Absyn.Exp => Absyn.Ident =
+ relation get_ident_from_tuple_crefexp : Absyn.Exp => Absyn.Ident =
 
-   axiom	get_ident_from_crefexp Absyn.CREF(Absyn.CREF_IDENT(id, _)) => id
+   axiom get_ident_from_tuple_crefexp Absyn.CREF(Absyn.CREF_IDENT(id, _)) => id
 
-   rule	Print.print_error_buf "# Not a component reference in tuple assignment:\n# " &
-	 Dump.print_exp_str exp => str &
-	 Print.print_error_buf str &
-	 Print.print_error_buf "\n"
+  rule	Dump.print_exp_str exp => str &
+	 Error.add_message(Error.INVALID_TUPLE_CONTENT,[str])
 	 --------------------
-	 get_ident_from_crefexp exp => fail
+	 get_ident_from_tuple_crefexp exp => fail
  end
 
 (** relation: get_variable_names
@@ -3897,12 +3896,9 @@ end
 	 (Absyn.CLASS("Boolean",false,false,false,Absyn.R_PREDEFINED_BOOL,Absyn.PARTS([],NONE),Absyn.INFO("",0,0)), 
 	  Absyn.IDENT("Boolean"))
 
-   rule	Print.print_error_buf "#Error, lookup_classdef failed\n" &
-	 Absyn.path_string path => s1 &
+  rule	Absyn.path_string path => s1 &
 	 Absyn.path_string inpath => s2 &
-	 Print.print_error_buf s1 & Print.print_error_buf " in " & 
-	 Print.print_error_buf s2 &
-	 Print.print_error_buf "\n" 
+	 Error.add_message(Error.LOOKUP_ERROR,[s1,s2])
 	 ---------------------
 	 lookup_classdef(path,inpath,_) => fail
  end

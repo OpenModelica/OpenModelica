@@ -1,4 +1,4 @@
-// $ANTLR 2.7.4: flat_modelica_lexer.g -> flatmodelicaTokenTypes.txt$
+// $ANTLR 2.7.5 (20050213): flat_modelica_lexer.g -> flatmodelicaTokenTypes.txt$
 flatmodelica    // output token vocab name
 ALGORITHM="algorithm"=4
 AND="and"=5

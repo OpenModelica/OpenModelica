@@ -212,6 +212,7 @@ with "Util.rml"
 with "Ceval.rml"
 with "ModUtil.rml"
 with "Debug.rml"
+with "Error.rml"
 
 (** relation: dump
  **
@@ -2772,9 +2773,10 @@ relation if_eq_to_expr : Element => Element list =
   rule	list_length(true_branch) => true_eq &
 	list_length(false_branch) => false_eq &
 	true_eq == false_eq => false &
-        Print.print_error_buf "# Error, different number of equations in the branches of the if equation.\n" 
+	dump_equations_str([elt]) => elt_str &
+	Error.add_message(Error.DIFFERENT_NO_EQUATION_IF_BRANCHES,[elt_str])
 	--------------------------------------------------
-	if_eq_to_expr(IF_EQUATION(cond,true_branch,false_branch)) => []
+	if_eq_to_expr(elt as IF_EQUATION(cond,true_branch,false_branch)) => []
 
   rule   list_length(true_branch) => true_eq &
 	list_length(false_branch) => false_eq &

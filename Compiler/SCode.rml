@@ -222,6 +222,7 @@ with "Dump.rml"
 with "Debug.rml"
 with "Print.rml"
 with "Util.rml"
+with "Error.rml"
 
 (** relation: elaborate
  **
@@ -858,19 +859,17 @@ relation build_sub : (Absyn.ComponentRef,Mod) => SubMod =
 
 	(* First some rules to prevent bad modifications *)
 
-  rule	Print.print_error_buf "# Illegal modification of " & 
-	Dump.print_component_ref_str c  => str &
-	Print.print_error_buf str &
-	Print.print_error_buf "\n"
+  rule	Dump.print_component_ref_str c  => c_str &
+	print_mod_str(mod) => mod_str &
+	Error.add_message(Error.ILLEGAL_MODIFICATION,[mod_str,c_str])
 	---------------------------------------
-	build_sub(c as Absyn.CREF_IDENT(_,_::_),MOD(_,_,_::_,_)) => fail
+	build_sub(c as Absyn.CREF_IDENT(_,_::_),mod as MOD(_,_,_::_,_)) => fail
 
-  rule	Print.print_error_buf "# Illegal modification of " &
-	Dump.print_component_ref_str c => str &
-	Print.print_error_buf str &
-	Print.print_error_buf "\n"
+  rule	Dump.print_component_ref_str c  => c_str &
+	print_mod_str(mod) => mod_str &
+	Error.add_message(Error.ILLEGAL_MODIFICATION,[mod_str,c_str])
 	---------------------------------------
-	build_sub(c as Absyn.CREF_QUAL(_,_::_,_),MOD(_,_,_::_,_)) => fail
+	build_sub(c as Absyn.CREF_QUAL(_,_::_,_),mod as MOD(_,_,_::_,_)) => fail
 	
 	(* Then the normal rules *)
 	

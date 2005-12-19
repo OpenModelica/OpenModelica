@@ -337,6 +337,7 @@ with "Dump.rml"
 with "System.rml"
 with "VarTransform.rml"
 with "RTOpts.rml"
+with "Error.rml"
 
 val empty_bintree = TREENODE(NONE,NONE,NONE)
 
@@ -1954,15 +1955,15 @@ relation lower2: (DAE.DAElist, BinTree (* states *), WhenClause list)
 	lower2(DAE.DAE(DAE.COMP(_,dae)::xs),states,whenclauses) 
 	  => (vars,knvars,eqns,reqns,ieqns,algs,whenclauses'')
 
-  rule	Print.print_error_buf "#Error, if-equations not supported. Please rewrite as if-expressions\n"
+  rule	Error.add_message(Error.UNSUPPORTED_LANGUAGE_FEATURE,["if-equations","rewrite equations using if-expressions"])
 	---------------------
 	lower2 (DAE.DAE(DAE.IF_EQUATION(_,_,_)::xs),states,whenclauses) => fail
 
-  rule	Print.print_error_buf "#Error, if-equations not supported. Please rewrite as if-expressions\n"
-	---------------------
+  rule	Error.add_message(Error.UNSUPPORTED_LANGUAGE_FEATURE,["if-equations","rewrite equations using if-expressions"])
+	---------------------------------
 	lower2 (DAE.DAE(DAE.INITIAL_IF_EQUATION(_,_,_)::xs),states,whenclauses) => fail
 
-  rule	Print.print_error_buf "#Warning, Asserts are not supported/checked for.\n" &
+  rule	(*Print.print_error_buf "#Warning, Asserts are not supported/checked for.\n" &*)
 	lower2(DAE.DAE(xs),states,whenclauses) 
 	  => (v,kv,e,re,ie,al,whenclauses')
 
@@ -3478,24 +3479,18 @@ relation check_matching : (DAELow,MatchingOptions) => () =
 
   rule	equation_size(eqns) => esize &
 	int_lt(esize,vars_size) => true &
-	Print.print_error_buf "#Error, too few equations. Underdetermined system\n" &
 	int_string(esize) => esize_str &
 	int_string(vars_size) => vsize_str &
-	Print.print_error_buf "The model has " & Print.print_error_buf vsize_str &
-	Print.print_error_buf " variables and " & Print.print_error_buf esize_str &
-	Print.print_error_buf " equations\n" 
+	Error.add_message(Error.UNDERDET_EQN_SYSTEM,[vsize_str,esize_str])
  	------------------
 	check_matching(DAELOW(VARIABLES(_,_,_,_,vars_size),_,eqns,_,_,_,_),_) 
 	  => fail
 
   rule	equation_size(eqns) => esize &
 	int_gt(esize,vars_size) => true &
-	Print.print_error_buf "#Error, to many equations. Overdetermined system.\n" &
 	int_string(esize) => esize_str &
 	int_string(vars_size) => vsize_str &
-	Print.print_error_buf "The model has " & Print.print_error_buf vsize_str &
-	Print.print_error_buf " variables and " & Print.print_error_buf esize_str &
-	Print.print_error_buf " equations\n" 
+	Error.add_message(Error.OVERDET_EQN_SYSTEM,[vsize_str,esize_str])
 	------------------
 	check_matching(DAELOW(VARIABLES(_,_,_,_,vars_size),_,eqns,_,_,_,_),_) => fail
 
@@ -3687,12 +3682,51 @@ relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
 
   rule	(* When index reduction also fails, the model is structurally 
 	 singular. **)
-	print "Error, model singular. i=" &
-	int_string(i) => is & print is & print "\n" 
-	& DAEEXT.dump_marked_equations(nf) 
-	& DAEEXT.dump_marked_variables(nv)
-	------------------------------
+	DAEEXT.get_marked_eqns() => eqn_lst &
+	DAEEXT.get_marked_variables() => var_lst &
+	dump_marked_eqns(dae,eqn_lst) => eqn_str &
+	dump_marked_vars(dae,var_lst) => var_str &
+	Error.add_message(Error.STRUCT_SINGULAR_SYSTEM,[eqn_str,var_str])
+	---------------------------------------------------------------
  	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2,_) => fail
+end
+
+(** relation: dump_marked_eqns
+ ** author: PA
+ ** 
+ ** Dumps only the equations given as list of indexes to a string.
+ **)
+relation dump_marked_eqns: (DAELow, int list) => string =
+	
+	
+  axiom	dump_marked_eqns(_,[]) => ""
+
+  rule	dump_marked_eqns(dae,es) => s1 &
+	int_sub(e,1) => e' &
+	equation_nth(eqns,e') => eqn &
+	equation_str(eqn) => s2 &
+	Util.string_append_list([s2,";\n",s1]) => res
+	--------------------
+	dump_marked_eqns(dae as DAELOW(_,_,eqns,_,_,_,_),e::es) => res
+end
+
+(** relation: dump_marked_vars
+ ** author: PA
+ ** 
+ ** Dumps only the variable names given as list of indexes to a string.
+ **)
+relation dump_marked_vars: (DAELow, int list) => string =
+	
+	
+  axiom	dump_marked_vars(_,[]) => ""
+
+  rule	dump_marked_vars(dae,vs) => s1 &
+	int_sub(v,1) => v' &
+	get_var_at(vars,v') => VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,_)  &
+	Exp.print_component_ref_str(cr) => s2 &
+	Util.string_append_list([s2,", ",s1]) => res
+	--------------------
+	dump_marked_vars(dae as DAELOW(vars,_,_,_,_,_,_),v::vs) => res
 end
 
 (** relation: reduce_index_dummy_der

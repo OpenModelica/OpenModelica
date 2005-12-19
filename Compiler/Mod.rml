@@ -94,6 +94,7 @@ with "Static.rml"
 with "Values.rml"
 with "Util.rml"
 with "Ceval.rml"
+with "Error.rml"
 
 (** relation: elab_mod
  **
@@ -481,7 +482,8 @@ relation expand_slice : (Exp.Exp list, Exp.Subscript list, int, Types.Mod)
 		     m as Types.MOD(final,each, [],
 			      SOME(Types.TYPED(e,e_val,Types.PROP(t,const))))) => mods
 
-  rule	Print.print_error_buf "# Illegal modification (" & print_mod mod & Print.print_buf ")\n"
+  rule	print_mod_str(mod) => str &
+	Error.add_message(Error.ILLEGAL_SLICE_MOD,[str]) 
 	--------------------------------
 	expand_slice(_,_,_,mod) => fail
 

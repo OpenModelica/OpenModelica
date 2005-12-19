@@ -71,6 +71,7 @@ with "Absyn.rml"
 with "Util.rml"
 with "Print.rml" 
 with "Graphviz.rml" 
+with "Error.rml"
 
 (** relation: differentiate_equation_time
  **
@@ -177,9 +178,8 @@ relation differentiate_exp_time: (Exp.Exp,DAELow.Variables) => Exp.Exp =
 	differentiate_exp_time(Exp.UNARY(op,e),tv) => Exp.UNARY(op,e')
 
   rule	(* The derivative of logic expressions are non-existent *)
-	Print.print_error_buf "#Derivative of expression " &
-	Exp.print_exp_str e => e_str & Print.print_error_buf e_str & 
-	Print.print_error_buf " is non-existent\n" 
+	Exp.print_exp_str e => e_str &
+	Error.add_message(Error.NON_EXISTING_DERIVATIVE,[e_str])
 	-----------------------------
 	differentiate_exp_time(e as Exp.LBINARY(e1,op,e2),tv) 
 	  => fail
@@ -206,17 +206,16 @@ relation differentiate_exp_time: (Exp.Exp,DAELow.Variables) => Exp.Exp =
 
 
   rule	Absyn.path_string(a) => str &
-	print "Error. differentiating of function (" & print str & 
-	print ") not impl yet.\n"
+	string_append("differentiation of function ",str) => s1 &
+	Error.add_message(Error.UNSUPPORTED_LANGUAGE_FEATURE, [s1,"no suggestion"]) 
 	-------------------------------------------------
 	differentiate_exp_time(Exp.CALL(a,expl,b,c),tv) => fail
 	
   rule	Util.list_map_1(expl,differentiate_exp_time,tv) => expl' 
 	--------------------------------------------
 	differentiate_exp_time(Exp.ARRAY(tp,b,expl),tv) => Exp.ARRAY(tp,b,expl')
-
-  rule	Print.print_buf "differentiate_exp_time on MATRIX not impl.\n" &
-	print "differentiate_exp_time on MATRIX not impl.\n"
+	
+  rule	Error.add_message(Error.UNSUPPORTED_LANGUAGE_FEATURE, ["differentiation of matrix expressions","use nested vectors instead"]) 
 	---------------------------------------
 	differentiate_exp_time(e as Exp.MATRIX(_,_,_),_) => e
 	
@@ -424,9 +423,8 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
                         exp')
 
   rule	(* The derivative of logic expressions are non-existent *)
-	Print.print_error_buf "#Derivative of expression " &
-	Exp.print_exp_str e => e_str & Print.print_error_buf e_str & 
-	Print.print_error_buf " is non-existent\n" 
+	Exp.print_exp_str e => e_str &
+	Error.add_message(Error.NON_EXISTING_DERIVATIVE,[e_str])
 	-----------------------------
 	differentiate_exp(e as Exp.LBINARY(e1,op,e2),tv) 
 	  => fail

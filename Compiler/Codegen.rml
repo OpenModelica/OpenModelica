@@ -115,6 +115,8 @@ with "Util.rml"
 with "Inst.rml"
 with "Interactive.rml"
 with "System.rml"
+with "Error.rml"
+
 
 (* ------------------------------------------------------------------------- *)
 
@@ -735,9 +737,9 @@ relation generate_ext_function_name : (string, string) => string =
 	----------------------------------
 	generate_ext_function_name (name, "FORTRAN 77") => name'
 
-  rule	Print.print_error_buf "# Unknown language in external declaration\n"
+  rule	Error.add_message(Error.UNKNOWN_EXTERNAL_LANGUAGE,[ext_lang])
 	---------------------------------------------------------
-	generate_ext_function_name (_,_) => fail
+	generate_ext_function_name (_,ext_lang) => fail
 
 end	
 

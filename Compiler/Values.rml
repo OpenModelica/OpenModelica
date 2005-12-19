@@ -97,6 +97,7 @@ with "Print.rml"
 with "System.rml"
 with "Util.rml"
 with "Dump.rml"
+with "Error.rml"
 
 (** relation: type_convert
  **
@@ -596,14 +597,16 @@ end
 relation div_arrayelt_scalar: (Value, Value list) => Value list =
 
   rule	v1 = 0.0 &
-	Print.print_error_buf "# Error, division by zero.\n" 
+	unparse_values(vlst) => s2 &
+	Error.add_message(Error.DIVISION_BY_ZERO,["0.0",s2])
 	------------------------------------
-	div_arrayelt_scalar (sval as REAL(v1),_) => fail
+	div_arrayelt_scalar (sval as REAL(v1),vlst) => fail
 	
   rule	v1 = 0 &
-	Print.print_error_buf "# Error, division by zero.\n" 
+	unparse_values(vlst) => s2 &
+	Error.add_message(Error.DIVISION_BY_ZERO,["0",s2])
 	------------------------------------
-	div_arrayelt_scalar (sval as INTEGER(v1),_) => fail
+	div_arrayelt_scalar (sval as INTEGER(v1),vlst) => fail
 	
   rule	div_arrayelt_scalar(sval,vals) => r1 &
 	div_arrayelt_scalar(sval,rest) => r2

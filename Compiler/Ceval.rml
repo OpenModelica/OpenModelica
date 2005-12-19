@@ -141,6 +141,7 @@ with "Codegen.rml"
 with "ClassLoader.rml"
 with "Derive.rml"
 with "Connect.rml"
+with "Error.rml"
 
 
 
@@ -260,7 +261,7 @@ end
   axiom ceval (_,Exp.BCONST(x),_,st,_,_) => (Values.BOOL(x),st)
   axiom ceval (_,Exp.END,_,st,SOME(dim),_)  => (Values.INTEGER(dim), st)
 
-  rule	Print.print_error_buf "# 'end' cannot be used outside array subscript\n"
+  rule	Error.add_message(Error.END_ILLEGAL_USE_ERROR,[])
 	 --------------------------------------
 	 ceval (_,Exp.END,_,st,NONE,MSG) => fail
 
@@ -516,7 +517,9 @@ ceval (env, Exp.BINARY(lh, Exp.MUL_ARRAY_SCALAR(_), rh),impl,st,dim,msg)
   rule	ceval (env,lh,impl,st,dim,msg) => (Values.REAL(lhv),st') &
 	 ceval (env,rh,impl,st',dim,msg) => (Values.REAL(rhv),st'') &
 	 not real_div(lhv,rhv) => _ &
-	 Print.print_error_buf "#Error, division by zero.\n" 
+	 Exp.print_exp_str lh => lh_str &
+	 Exp.print_exp_str rh => rh_str &
+	 Error.add_message(Error.DIVISION_BY_ZERO,[lh_str,rh_str]) 
 	 -------------------------
 ceval (env, Exp.BINARY(lh, Exp.DIV(Exp.REAL), rh),impl,st,dim,msg) 
 	  => fail
@@ -1383,7 +1386,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResult"),[Exp.SCONST(filename),Exp.ARRAY(_,_,vars),size_expression],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (value,st)
 
-  rule	Print.print_error_buf "#Error reading simulation result. Check that filename and variablenames are correct.\n" 
+  rule	Error.add_message(Error.SCRIPT_READ_SIM_RES_ERROR,[])
 	 ------------------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResult"),[Exp.SCONST(filename),Exp.ARRAY(_,_,_),_],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => fail
@@ -1396,7 +1399,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResultSize"),[Exp.SCONST(filename)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (value,st)
 
-  rule	Print.print_error_buf "#Error reading simulation result when checking its size. Check that filename and variablenames are correct.\n" 
+  rule	Error.add_message(Error.SCRIPT_READ_SIM_RES_SIZE_ERROR,[])
 	 ------------------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResultSize"),[Exp.SCONST(filename)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => fail
@@ -1550,9 +1553,18 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readFile"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.STRING(str'),st)
 
   rule	Print.get_error_string() => str &
-	 Print.clear_error_buf()
+	Print.clear_error_buf()
 	 --------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("getErrorString"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.STRING(str),st)
+
+(* New error message implementation *)
+  rule	Error.print_messages_str() => str
+	 --------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("getMessagesString"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.STRING(str),st)
+
+  rule	Error.get_messages_str() => str
+	 --------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("getMessagesStringInternal"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.STRING(str),st)
 
   rule	System.read_file(str) => scriptstr &
 	 Parser.parsestringexp(scriptstr) => (istmts,msg) &
@@ -1590,8 +1602,8 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 
   rule	Static.component_ref_to_path(cr) => path &
 	 ModUtil.path_string(path) => pathstr &
-	 Util.string_append_list(["Class ",pathstr," not found in MODELICAPATH.\n"])=> str &
-	 Print.print_error_buf str
+
+	Error.add_message(Error.LOAD_MODEL_ERROR,[pathstr])
 	 ------------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.BOOL(false),st)
 
@@ -1627,6 +1639,16 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(filename),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (Values.BOOL(true),st)
 
+  rule	(*Error writing to file *)
+	 Static.component_ref_to_path(cr) => classpath &
+	 Interactive.get_pathed_class_in_program(classpath,p) => class &
+	 Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP)(*,true*)) => str &
+	 Error.add_message(Error.WRITING_FILE_ERROR, [name])
+	 --------------------------
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(name),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
+	  => (Values.BOOL(false),st)
+
+
   rule	Static.component_ref_to_path(cr) => classpath &
 	Interactive.get_contained_class_and_file(classpath,p) => (p',filename) &
 	Dump.unparse_str(p'(*,true*)) => str &
@@ -1644,18 +1666,11 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveAll"),[Exp.SCONST(filename)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (Values.BOOL(true),st)
 
-  rule	(*Error writing to file *)
-	 Static.component_ref_to_path(cr) => classpath &
-	 Interactive.get_pathed_class_in_program(classpath,p) => class &
-	 Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP)(*,true*)) => str &
-	 Print.print_error_buf "Error writing to file.\n" 
-	 --------------------------
-	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(name),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
-	  => (Values.BOOL(false),st)
 
   rule	(*Error writing to file *)
 	 Static.component_ref_to_path(cr) => classpath &
-	 Print.print_error_buf "Error unknown class.\n" 
+	 Absyn.path_string(classpath) => cname &
+	 Error.add_message(Error.LOOKUP_ERROR,[cname,"global"])
 	 --------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(name),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (Values.BOOL(false),st)
@@ -2028,9 +2043,7 @@ relation compile_model: (string, string list) => () =
   rule  Util.string_append_list([fileprefix,".log"]) => filename &
         System.regular_file_exist(filename) => 0 &
         System.read_file(filename) => str &
-	Print.print_error_buf ("#Error building simulation code.\n buildlog:\n") &
-	Print.print_error_buf (str) &
-	Print.print_error_buf "\n" 
+	Error.add_message(Error.SIMULATOR_BUILD_ERROR,[str])
 	--------------------------
 	compile_model(fileprefix,libs) => fail
  
@@ -2206,26 +2219,28 @@ relation ceval_builtin_size : (Env.Env, Exp.Exp, Exp.Exp, bool,
 	ceval_builtin_size(env,Exp.CREF(cr,tp),dim,impl as true,st,msg) => fail
 
   rule	(* If dimensions not known and impl=false, error message *)
-	  Lookup.lookup_var(env,cr) => (attr, tp, bind) &
-	  Types.dimensions_known(tp) => false &
-	  Print.print_error_buf "# Dimensions must be known when instantiating models\n"
-	  ------------------------------------
-	  ceval_builtin_size(env,Exp.CREF(cr,tp),dim,impl as false,st,MSG) => fail
+	Lookup.lookup_var(env,cr) => (attr, tp, bind) &
+	Types.dimensions_known(tp) => false &
+	Exp.print_component_ref_str(cr) => cr_str &
+	Exp.print_exp_str(dim) => dim_str &
+	Util.string_append_list(["size(",cr_str,", ",dim_str,")"]) => size_str &
+	Error.add_message(Error.DIMENSION_NOT_KNOWN,[size_str])
+	------------------------------------
+	ceval_builtin_size(env,Exp.CREF(cr,tp),dim,impl as false,st,MSG) => fail
+
   rule	Lookup.lookup_var(env,cr) => (attr, tp, bind) &
 	Types.dimensions_known(tp) => false 
 	------------------------
   	ceval_builtin_size(env,Exp.CREF(cr,tp),dim,impl as false,st,NO_MSG) => fail
 
   rule	(*For crefs without value binding*) 
-	  Lookup.lookup_var(env,cr) => (attr, tp, Types.UNBOUND) &
-	  Print.print_error_buf "# Value of cref not known when instantiating: "  &
-	  Exp.print_exp_str exp => expstr &
-	  Print.print_error_buf expstr &
-	  Print.print_error_buf "\n"
-	  ------------------------------------
-	  ceval_builtin_size(env,exp as Exp.CREF(cr,crtp),dim,impl as false,st,MSG) => fail
+	Lookup.lookup_var(env,cr) => (attr, tp, Types.UNBOUND) &
+	Exp.print_exp_str exp => expstr &
+ 	Error.add_message(Error.UNBOUND_VALUE,[expstr])
+	------------------------------------
+	ceval_builtin_size(env,exp as Exp.CREF(cr,crtp),dim,impl as false,st,MSG) => fail
 
-  rule	  Lookup.lookup_var(env,cr) => (attr, tp, Types.UNBOUND) 
+  rule	Lookup.lookup_var(env,cr) => (attr, tp, Types.UNBOUND) 
 	----------------------------------
 	ceval_builtin_size(env,exp as Exp.CREF(cr,crtp),dim,impl as false,st,NO_MSG) => fail
 
@@ -2626,7 +2641,7 @@ relation ceval_builtin_sqrt : (Env.Env, Exp.Exp list, bool, Interactive.Interact
 	  
   rule ceval (env,exp,impl,st,NONE,msg) => (Values.REAL(rv),_) &
         real_lt (rv,0.0) => true &
-        Print.print_error_buf "# sqrt - the input is negative\n" 
+	Error.add_message(Error.NEGATIVE_SQRT,[])
         --------------------------------------
         ceval_builtin_sqrt(env,[exp],impl,st,msg) => fail
         
@@ -2810,7 +2825,9 @@ relation ceval_builtin_div : (Env.Env,
         
   rule	ceval (env,exp2,impl,st,NONE,MSG) => (Values.REAL(rv2),_) &
         real_eq(rv2, 0.0) => true &
- 	Print.print_error_buf "#Error, division by zero.\n" 
+	Exp.print_exp_str(exp1) => exp1_str &
+	Exp.print_exp_str(exp2) => exp2_str & 
+	Error.add_message(Error.DIVISION_BY_ZERO,[exp1_str,exp2_str]) 
         --------------------------------------
         ceval_builtin_div(env,[exp1,exp2],impl,st,MSG) => fail
 	
@@ -2821,7 +2838,9 @@ relation ceval_builtin_div : (Env.Env,
 
   rule	ceval (env,exp2,impl,st,NONE,MSG) => (Values.INTEGER(ri2),_) &
         int_eq(ri2, 0) => true &
- 	Print.print_error_buf "#Error, division by zero.\n" 
+	Exp.print_exp_str(exp1) => lh_str &
+	Exp.print_exp_str(exp2) => rh_str &
+	Error.add_message(Error.DIVISION_BY_ZERO,[lh_str,rh_str]) 
         --------------------------------------
         ceval_builtin_div(env,[exp1,exp2],impl,st,MSG) => fail
         
@@ -2885,7 +2904,9 @@ relation ceval_builtin_mod : (Env.Env, Exp.Exp list, bool,
         
   rule  ceval (env,exp2,impl,st,NONE,MSG) => (Values.REAL(rv2),_) &
         real_eq(rv2, 0.0) => true &
- 	Print.print_error_buf "#Second argument in mod should be non-zero.\n" 
+	Exp.print_exp_str(exp1) => lhs_str &
+	Exp.print_exp_str(exp2) => rhs_str &
+	Error.add_message(Error.MODULO_BY_ZERO,[lhs_str,rhs_str]) 
         --------------------------------------
         ceval_builtin_mod(env,[exp1,exp2],impl,st,MSG) => fail
         
@@ -2896,7 +2917,9 @@ relation ceval_builtin_mod : (Env.Env, Exp.Exp list, bool,
 
   rule  ceval (env,exp2,impl,st,NONE,MSG) => (Values.INTEGER(ri2),_) &
         int_eq(ri2, 0) => true &
- 	Print.print_error_buf "#Second argument in mod should be non-zero.\n" 
+	Exp.print_exp_str(exp1) => lhs_str &
+	Exp.print_exp_str(exp2) => rhs_str &
+	Error.add_message(Error.MODULO_BY_ZERO,[lhs_str,rhs_str]) 
         --------------------------------------
         ceval_builtin_mod(env,[exp1,exp2],impl,st,MSG) => fail
         
@@ -3157,7 +3180,9 @@ relation ceval_builtin_rem : (Env.Env,
         
   rule	ceval (env,exp2,impl,st,NONE,MSG) => (Values.REAL(rv2),_) &
         real_eq(rv2, 0.0) => true &
- 	Print.print_error_buf "#Second argument in rem should be non-zero.\n" 
+	Exp.print_exp_str(exp1) => exp1_str &
+	Exp.print_exp_str(exp2) => exp2_str &
+	Error.add_message(Error.REM_ARG_ZERO,[exp1_str,exp2_str]) 
         --------------------------------------
         ceval_builtin_rem(env,[exp1,exp2],impl,st,MSG) => fail
          
@@ -3168,7 +3193,9 @@ relation ceval_builtin_rem : (Env.Env,
 
   rule	ceval (env,exp2,impl,st,NONE,MSG) => (Values.INTEGER(ri2),_) &
         int_eq(ri2, 0) => true &
- 	Print.print_error_buf "#Second argument in rem should be non-zero.\n" 
+	Exp.print_exp_str(exp1) => exp1_str &
+	Exp.print_exp_str(exp2) => exp2_str &
+	Error.add_message(Error.REM_ARG_ZERO,[exp1_str,exp2_str]) 
         --------------------------------------
         ceval_builtin_rem(env,[exp1,exp2],impl,st,MSG) => fail
         
@@ -3769,10 +3796,9 @@ relation ceval_cref : (Env.Env, Exp.ComponentRef, bool, (*impl*) Msg)
 	ceval_cref (env,c,impl,msg) => v 
 
   rule	not Lookup.lookup_var (env, c) => (_,_,_) &
-	Print.print_error_buf "# Variable  " &
+	Env.print_env_path_str(env) => scope_str &
 	Exp.print_component_ref_str c => str &
-	Print.print_error_buf str & 
-	Print.print_error_buf " not found.\n" 
+	Error.add_message(Error.LOOKUP_VARIABLE_ERROR,[str,scope_str])
 	-------------------------------------
 	ceval_cref (env,c,impl as false ,MSG) => fail
 
@@ -3781,9 +3807,9 @@ relation ceval_cref : (Env.Env, Exp.ComponentRef, bool, (*impl*) Msg)
 	ceval_cref (env,c,impl as false ,NO_MSG) => fail
 
 	 (* No binding found. *)
-  rule	Print.print_error_buf "# No constant binding for " &
-	Exp.print_component_ref_str c => str &
-	Print.print_error_buf str & Print.print_error_buf "\n" 
+  rule	Exp.print_component_ref_str c => str &
+	Env.print_env_path_str(env) => scope_str &
+	Error.add_message(Error.NO_CONSTANT_BINDING,[str,scope_str])
 	-------------------------------------
 	ceval_cref (env,c,impl as false, MSG) => fail
 	

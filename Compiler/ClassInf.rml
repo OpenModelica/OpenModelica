@@ -125,6 +125,7 @@ end
 
 with "Print.rml"
 with "Absyn.rml"
+with "Error.rml"
 
 (** - Printing *)
 (**)
@@ -282,9 +283,7 @@ relation trans : (State, Event) => State =
   axiom	trans(BLOCK(s),          NEWDEF) => BLOCK(s)
   axiom	trans(CONNECTOR(s),      NEWDEF) => CONNECTOR(s)
 
-  rule	Print.print_error_buf "# In class " & Print.print_error_buf s &
-	Print.print_error_buf "\n" &
-	Print.print_error_buf "# 'type' can only be derived from predefined types\n"
+  rule	Error.add_message(Error.TYPE_NOT_FROM_PREDEFINED,[s])
 	-----------------------------------------------
 	trans(TYPE(s),           NEWDEF) => fail
 
@@ -303,18 +302,13 @@ relation trans : (State, Event) => State =
   axiom	trans(IS_NEW(s),         FOUND_EQUATION) => HAS_EQUATIONS(s)
   axiom	trans(MODEL(s),          FOUND_EQUATION) => MODEL(s)
 
-  rule	Print.print_error_buf "# In class " &
-	Print.print_error_buf s & Print.print_error_buf "\n" &
-	Print.print_error_buf "# Equations not allowed in records\n"
+  rule	Error.add_message(Error.EQUATION_IN_RECORD,[s])
 	-----------------------------------------------
 	trans(RECORD(s),         FOUND_EQUATION) => fail
 
   axiom	trans(BLOCK(s),          FOUND_EQUATION) => BLOCK(s)
 
-  rule	Print.print_error_buf "# In class " &
-	Print.print_error_buf s &
-        Print.print_error_buf "\n" &
-	Print.print_error_buf "# Equations not allowed in connectors\n"
+  rule	Error.add_message(Error.EQUATION_IN_CONNECTOR,[s])
 	-----------------------------------------------
 	trans(CONNECTOR(s),      FOUND_EQUATION) => fail
 

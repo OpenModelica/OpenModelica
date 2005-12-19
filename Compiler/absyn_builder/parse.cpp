@@ -42,6 +42,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <iostream>
 #include <sstream>
+#include <list>
+#include <string>
 
 
 #include <fstream> 
@@ -63,13 +65,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "antlr/ASTFactory.hpp"
 #include "MyAST.h"
 
+#include "../runtime/errorext.h"
+
 using namespace std;
 string modelicafilename; // The filename for the parsed file.
 extern "C"
 {
 
-  extern int print_error_buf_impl(char *);
-  
+
 
 	int check_debug_flag(char const* strdata);
 
@@ -106,9 +109,13 @@ extern "C"
 		std::ifstream stream(filename);
 		if (!stream) 
 		{
-		  const char* msg = "Error opening file";
-		  std::cerr << msg << std::endl;
-		  print_error_buf_impl((char*)msg);
+		  std::list<std::string> tokens;
+		  tokens.push_back(std::string(filename));
+		  add_message(85, /* Error opening file,see Error.rml*/
+			      "TRANSLATION",
+			      "ERROR",
+			      "Error opening file %s",
+			      tokens);
 		  RML_TAILCALLK(rmlFC);
 		}
 		//bool debug = true;
@@ -168,52 +175,90 @@ extern "C"
 		  else {
 		    currentLex = lex;
 		  }
-		  stringstream str;
-		  str << "Syntax error on line " << currentLex->getLine()
-		      << " near :" << currentLex->getText() << std::endl;
-		  string msg = str.str();
-		  print_error_buf_impl((char*)msg.c_str());
+		  std::list<std::string> tokens;
+		  tokens.push_back(std::string(currentLex->getText()));
+		  add_source_message(1, /* syntax error, see Error.rml */
+				     "SYNTAX",
+				     "ERROR",
+				     "Syntax error near: %s",
+				     tokens,
+				     currentLex->getLine(),
+				     currentLex->getColumn(),
+				     filename);
 		  ast = mk_nil();
 		}
 		catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException &e) 
 		{
-		  stringstream str;
-		  str << "[" << filestring << ":" << e.getLine() << ":"
-		      << e.getColumn() << "]: error: " << e.getMessage()
-		      << std::endl;		  
-		  string msg = str.str();
-		  print_error_buf_impl((char*)msg.c_str());
+		  std::list<std::string> tokens;
+		  tokens.push_back(std::string(e.getMessage()));
+		  add_source_message(2, /* Grammar error, see Error.rml */
+				     "GRAMMAR",
+				     "ERROR",
+				     "Parse error: %s",
+				     tokens,
+				     e.getLine(),
+				     e.getColumn(),
+				     filename);
 		  ast = mk_nil();
 		}
 		catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamException &e) 
 		{
-		  stringstream str;
-		  str << "[" << filestring << ":" << flat_lex->getLine()
-		      << ":" << flat_lex->getColumn() 
-		      << "]: error: illegal token" << std::endl;
-		  string msg = str.str();
-		  print_error_buf_impl((char*)msg.c_str());
-			ast = mk_nil();
+		  std::list<std::string> tokens;
+		  tokens.push_back(std::string(e.getMessage()));
+		  add_source_message(2, /* Grammar error, see Error.rml */
+				     "GRAMMAR",
+				     "ERROR",
+				     "Parse error: %s",
+				     tokens,
+				     0,
+				     0,
+				     filename);
+		  ast = mk_nil();
 		}
 		catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e) 
 		{
-		  string msg = string("ANTLRException: ") + e.getMessage();
-		  print_error_buf_impl((char*)msg.c_str());
+		  std::list<std::string> tokens;
+		  tokens.push_back(std::string("while parsing:")+
+				   std::string(e.getMessage()));
+		  add_source_message(63, /* Internal error, see Error.rml */
+				     "TRANSLATION",
+				     "ERROR",
+				     "Internal error %s",
+				     tokens,
+				     0,
+				     0,
+				     filename);
 		  ast = mk_nil();
 		}
 		catch (std::exception &e) 
 		{
-		  string msg = string("Error while parsing:\n") + e.what();
-		  print_error_buf_impl((char*)msg.c_str());
+		  std::list<std::string> tokens;
+		  tokens.push_back(std::string("while parsing:"));
+		  add_source_message(63, /* Internal error, see Error.rml */
+				     "TRANSLATION",
+				     "ERROR",
+				     "Internal error %s",
+				     tokens,
+				     0,
+				     0,
+				     filename);
 		  ast = mk_nil();
 		}
 		catch (...) 
-		{
-		  string msg = string("Error while parsing");
-		  print_error_buf_impl((char*)msg.c_str());
-		  ast = mk_nil();
+		  {
+		    std::list<std::string> tokens;
+		    tokens.push_back(std::string("while parsing:"));
+		    add_source_message(63, /* Internal error, see Error.rml */
+				       "TRANSLATION",
+				       "ERROR",
+				       "Internal error %s",
+				       tokens,
+				       0,
+				     0,
+				       filename);
+		    ast = mk_nil();
 		}
-
+		
 		//Parsing complete
 		if (debug) 
 		{
@@ -522,7 +567,7 @@ extern "C"
 			rmlA1 = mk_scon((getStringHolder = get_string(stringStream)));
 		}
 		catch (...) 
-		{
+		  {
 			//std::cerr << "Error while parsing expression\n";
 			stringStream << "Error while parsing expression. Unknown exception in parse.cpp." << std::endl;
 			rmlA0 = mk_nil();

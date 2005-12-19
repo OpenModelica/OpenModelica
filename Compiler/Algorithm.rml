@@ -122,6 +122,7 @@ with "Util.rml"
 with "Print.rml"
 with "Dump.rml"
 with "Debug.rml"
+with "Error.rml"
 
 (** relation: make_assignment
  **
@@ -138,24 +139,25 @@ relation make_assignment : (Exp.Exp, Types.Properties,
 			    SCode.Accessibility) => Statement =
 
   rule	Types.prop_any_const (lprop) => Types.C_CONST &
-	Print.print_error_buf "# Trying to assign to constant component\n" &
-	Print.print_error_buf "    " & Exp.print_exp lhs &
- 	Print.print_error_buf " := " & Exp.print_exp rhs & Print.print_buf "\n"
+	Exp.print_exp_str lhs => lhs_str &
+ 	Exp.print_exp_str rhs => rhs_str &
+	Error.add_message(Error.ASSIGN_CONSTANT_ERROR,[lhs_str,rhs_str])
 	-------------------------------------------
 	make_assignment (lhs,lprop,rhs,rprop,_) => fail
 
   rule	Types.prop_any_const (lprop) => Types.C_PARAM &
-	Print.print_error_buf "# Trying to assign to parameter component\n" &
-	Print.print_error_buf "    " & Exp.print_exp lhs &
- 	Print.print_error_buf " := " & Exp.print_exp rhs & Print.print_buf "\n"
+	Exp.print_exp_str lhs => lhs_str &
+ 	Exp.print_exp_str rhs => rhs_str &
+	Error.add_message(Error.ASSIGN_PARAM_ERROR,[lhs_str,rhs_str])
 	-------------------------------------------
 	make_assignment (lhs,lprop,rhs,rprop,_) => fail
 
-  rule	Print.print_error_buf "# Can't assign to (readonly) " & Exp.print_exp e & Print.print_error_buf "\n"
+  rule	Exp.print_exp_str lhs => lhs_str &
+ 	Exp.print_exp_str rhs => rhs_str &
+	Error.add_message(Error.ASSIGN_READONLY_ERROR,[lhs_str,rhs_str])
 	---------------------------------------------------------
-	make_assignment(e,_,_,_, SCode.RO) => fail
+	make_assignment(lhs,_,rhs,_, SCode.RO) => fail
 
-	(* LS: Replaced "as Types.PROP(_,false)" from lhprop", by the first predicate *)
   rule	Types.prop_any_const (lhprop) => Types.C_VAR &
 	Types.match_prop(rhs, rhprop, lhprop) => rhs' &
 	Types.is_prop_array lhprop => false &
@@ -179,16 +181,15 @@ relation make_assignment : (Exp.Exp, Types.Properties,
 	Exp.print_exp_str rhs => rhs_str &
 	Types.unparse_type lt => lt_str &
 	Types.unparse_type rt => rt_str &
-	Util.string_append_list(["# Type mismatch in assignment\n",
-				"    " , lhs_str, " := ", rhs_str,
-				"of " , lt_str, " := ", rt_str,"\n"]) => res &
-	Print.print_error_buf res
+	Error.add_message(Error.ASSIGN_TYPE_MISMATCH_ERROR,
+			  [lhs_str,rhs_str,lt_str,rt_str]) 
 	-------------------------------------------
 	make_assignment (lhs,lprop,rhs,rprop,_) => fail
 
-  rule	Print.print_buf "- Algorithm.make_assignment failed\n" &
-	Print.print_buf "    " & Exp.print_exp lhs &
- 	Print.print_buf " := " & Exp.print_exp rhs & Print.print_buf "\n" 
+  rule	Print.print_error_buf "- Algorithm.make_assignment failed\n" &
+	Print.print_error_buf "    " & Exp.print_exp lhs &
+ 	Print.print_error_buf " := " & Exp.print_exp rhs & 
+	Print.print_error_buf "\n" 
 	---------------------------------------------
 	make_assignment (lhs, lprop, rhs, rprop, _) => fail
 
@@ -205,21 +206,21 @@ relation make_tuple_assignment : (Exp.Exp list, Types.Properties list,
 
   rule	Util.list_map(lprop, Types.prop_any_const) => bvals &
 	Util.list_reduce(bvals,Types.const_or) => Types.C_CONST &
-	Print.print_error_buf "# Trying to assign to constant component in tuple assignment\n" &
-	Print.print_error_buf "    " & 
-	Dump.print_list(lhs, Exp.print_exp, ", ") &
- 	Print.print_error_buf " := " & Exp.print_exp rhs &
-	Print.print_error_buf "\n"
+	Util.list_map(lhs,Exp.print_exp_str) => sl &
+	Util.string_delimit_list(sl,", ") => s &
+	Util.string_append_list(["(",s,")"]) => lhs_str &
+	Exp.print_exp_str(rhs) => rhs_str &
+	Error.add_message(Error.ASSIGN_CONSTANT_ERROR,[lhs_str,rhs_str])
 	-------------------------------------------
 	make_tuple_assignment (lhs,lprop,rhs,rprop) => fail
 
   rule	Util.list_map(lprop, Types.prop_any_const) => bvals &
 	Util.list_reduce(bvals,Types.const_or) => Types.C_PARAM &
-	Print.print_error_buf "# Trying to assign to parameter component in tuple assignment\n" &
-	Print.print_error_buf "    " & 
-	Dump.print_list(lhs, Exp.print_exp, ", ") &
- 	Print.print_error_buf " := " & Exp.print_exp rhs &
-	Print.print_error_buf "\n"
+	Util.list_map(lhs,Exp.print_exp_str) => sl &
+	Util.string_delimit_list(sl,", ") => s &
+	Util.string_append_list(["(",s,")"]) => lhs_str &
+	Exp.print_exp_str(rhs) => rhs_str &
+	Error.add_message(Error.ASSIGN_PARAM_ERROR,[lhs_str,rhs_str])
 	-------------------------------------------
 	make_tuple_assignment (lhs,lprop,rhs,rprop) => fail
 
@@ -292,10 +293,9 @@ relation make_if : (Exp.Exp,
 	-------------------------
 	make_if(e,Types.PROP((Types.T_BOOL(_),_),_),tb,eib,fb) => IF(e,tb,else)
 
-  rule	Print.print_error_buf "# Type error in if conditional (" &
-	Exp.print_exp e & Print.print_buf ")\n" &
-	Print.print_error_buf "    Expected Boolean, got " &
-	Types.print_type t & Print.print_error_buf "\n"
+  rule	Exp.print_exp_str e => e_str & 
+	Types.unparse_type t => t_str & 
+	Error.add_message(Error.IF_CONDITION_TYPE_ERROR,[e_str,t_str])
 	-------------------------------
 	make_if(e,Types.PROP(t,_),_,_,_) => fail
 
@@ -318,10 +318,9 @@ relation make_else : ((Exp.Exp * Types.Properties * Statement list) list,
 	make_else ((e,Types.PROP((Types.T_BOOL(_),_),_),b)::xs,fb)
 	  => ELSEIF(e,b,else)
 	
-  rule	Print.print_error_buf "# Type error in elseif conditional (" &
-	Exp.print_exp e & Print.print_error_buf ")\n" &
-	Print.print_error_buf "    Expected Boolean, got " &
-	Types.print_type t & Print.print_error_buf "\n"
+  rule	Exp.print_exp_str e => e_str & 
+	Types.unparse_type t => t_str & 
+	Error.add_message(Error.IF_CONDITION_TYPE_ERROR,[e_str,t_str])
 	-------------------------------
 	make_else((e,Types.PROP(t,_),_)::_,_) => fail
 
@@ -337,12 +336,11 @@ relation make_for : (Ident, Exp.Exp, Types.Properties,
 	-----------------------
 	make_for(i,e,Types.PROP((Types.T_ARRAY(_,t),_),_),stmts) => FOR(et,array,i,e,stmts)
 
-  rule	Print.print_error_buf "# Type error in for conditional.\n" &
-	Print.print_error_buf "    Expected array, got " &
-	Types.print_type t & Print.print_error_buf "\n"
+  rule	Exp.print_exp_str(e) => e_str &
+	Types.unparse_type t => t_str &
+	Error.add_message(Error.FOR_EXPRESSION_TYPE_ERROR,[e_str,t_str])
 	-------------------------------
-	make_for(_,_,Types.PROP(t,_),_) => fail
-
+	make_for(_,e,Types.PROP(t,_),_) => fail
 end
 
 (** relation: make_while 
@@ -352,11 +350,11 @@ relation make_while : (Exp.Exp, Types.Properties,
 
   axiom	make_while(e,Types.PROP((Types.T_BOOL(_),_),_),stmts) => WHILE(e,stmts)
 
-  rule	Print.print_error_buf "# Type error in while conditional.\n" &
-	Print.print_error_buf "    Expected Boolean, got " &
-	Types.print_type t & Print.print_error_buf "\n"
+  rule	Exp.print_exp_str(e) => e_str &
+	Types.unparse_type t => t_str &
+	Error.add_message(Error.WHILE_CONDITION_TYPE_ERROR,[e_str,t_str])
 	-------------------------------
-	make_while(_,Types.PROP(t,_),_) => fail
+	make_while(e,Types.PROP(t,_),_) => fail
 
 end
 
@@ -370,11 +368,11 @@ relation make_when_a : (Exp.Exp, Types.Properties,
   axiom	make_when_a(e,Types.PROP((Types.T_ARRAY(_,(Types.T_BOOL(_),_)),_),_),stmts) => WHEN(e,stmts)
 
 
-  rule	Print.print_error_buf "# Type error in when conditional.\n" &
-	Print.print_error_buf "    Expected Boolean scalar or vector, got " &
-	Types.print_type t & Print.print_error_buf "\n"
+  rule	Exp.print_exp_str e => e_str &
+	Types.unparse_type t => t_str &
+	Error.add_message(Error.WHEN_CONDITION_TYPE_ERROR,[e_str,t_str])
 	-------------------------------
-	make_when_a(_,Types.PROP(t,_),_) => fail
+	make_when_a(e,Types.PROP(t,_),_) => fail
 end
 
 (** relation: make_assert

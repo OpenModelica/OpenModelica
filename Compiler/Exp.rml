@@ -259,6 +259,7 @@ with "ModUtil.rml"
 with "Derive.rml"
 with "System.rml" 
 with "Dump.rml"
+with "Error.rml"
 
 val rconstone = RCONST(1.0)
 
@@ -2185,7 +2186,9 @@ relation simplify_binary : (Exp, Operator, Exp, Exp) => Exp =
 	simplify_binary (_, DIV(ty), e1, e2) =>  RCONST(0.0)
 
   rule	is_const_zero (e2) => true &
-        Print.print_error_buf "# Error, division by zero.\n" 
+	print_exp_str(e1) => s1 &
+	print_exp_str(e2) => s2 &
+	Error.add_message(Error.DIVISION_BY_ZERO,[s1,s2])
 	---------------------------
 	simplify_binary (_, DIV(ty), e1, e2) =>  fail
 

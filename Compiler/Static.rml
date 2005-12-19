@@ -163,6 +163,7 @@ with "Mod.rml"
 with "Prefix.rml"
 with "Ceval.rml"
 with "Connect.rml"
+with "Error.rml"
 
 (** relation: elab_exp_list
  **
@@ -1133,19 +1134,13 @@ relation elab_array2 : (Env.Env, Absyn.Exp list,
   rule	elab_exp (env,e,impl,st) => (e',Types.PROP(t1,c1),_) &
 	elab_array2 (env,es,impl,st) => (es',Types.PROP(t2,c2)) &
 	Types.equivtypes(t1,t2) => false &
-	Print.print_error_buf "# Incompatible types in array expression\n" &
-	Print.print_error_buf "  " & Dump.print_exp_str e => str  & 
-	Print.print_error_buf str &
-	Print.print_error_buf " is of type " &
- 	Types.unparse_type t1 => str  & 
-	Print.print_error_buf str &
-	Print.print_error_buf "\n  while the elements [" &
-        Util.list_map(es, Dump.print_exp_str)  => strs &
-	Util.string_delimit_list(strs,",") => str &	
-	Print.print_error_buf str &
-	Print.print_error_buf "] are of type " & Types.unparse_type t2 => str &
-	Print.print_error_buf str &
-	Print.print_error_buf "\n"
+	Dump.print_exp_str e => e_str  & 
+	Util.list_map(es, Dump.print_exp_str)  => strs &
+	Util.string_delimit_list(strs,",") => str &
+	Util.string_append_list(["[",str,"]"]) => elt_str &
+	Types.unparse_type t1 => t1_str &
+	Types.unparse_type t2 => t2_str &
+	Error.add_message(Error.TYPE_MISMATCH_ARRAY_EXP,[str,t1_str,elt_str,t2_str])
 	---------------------------------------------------------
 	elab_array2 (env,e::es,impl,st) => fail
 
@@ -1173,7 +1168,7 @@ relation elab_graphics_array : (Env.Env, Absyn.Exp list, bool (*impl*) )
 	---------------------------------
 	elab_graphics_array (env,e::es,impl) => (e'::es',Types.PROP(t1,c))
 
-  rule	Print.print_error_buf "- elab_graphics_array failed\n"
+  rule	Error.add_message(Error.INTERNAL_ERROR,["elab_graphics_array failed\n"])
 	-----------------------------
 	elab_graphics_array (_,_,impl) => fail
 
@@ -1457,12 +1452,7 @@ relation elab_matrix_semi : (Env.Env,
 	Exp.print_list_str(el,Dump.print_exp_str,", ") => el_str &
 	Types.unparse_type t1 => t1_str &
 	Types.unparse_type t2 => t2_str &
-	Util.string_append_list(["# Incompatible types in matrix rows\n",
-				 "    [", el_str, "] is a row of ", 
-				 t1_str,"\n",
-				 "    the rest of the matrix is of ",
-				 t2_str, "\n"]) => str &
-	Print.print_error_buf str 
+	Error.add_message(Error.TYPE_MISMATCH_MATRIX_EXP,[el_str,t1_str,t2_str])
 	--------------------------------
 	elab_matrix_semi(env,el::els,impl,st,havereal,maxn) => fail
 
@@ -1474,12 +1464,8 @@ relation elab_matrix_semi : (Env.Env,
 	int_string dim1 => dim1_str &
 	int_string dim2 => dim2_str &
 	Exp.print_list_str(el,Dump.print_exp_str,", ") => el_str &
-	Util.string_append_list(["# Incompatible row length in matrix expression\n",
-				 "    [", el_str, "] is a row of size ",
-				 dim1_str,"\n",
-				 "    the rest of the matrix rows are of size ",
-				 dim2_str,"\n"]) => str &
-	Print.print_error_buf str
+	Util.string_append_list(["[",el_str,"]"]) => el_str1 &
+	Error.add_message(Error.MATRIX_EXP_ROW_SIZE,[el_str1,dim1_str,dim2_str])
 	--------------------------------------------
 	elab_matrix_semi(env,el::els,impl,st,havereal,maxn) => fail
 
@@ -1593,7 +1579,7 @@ relation elab_builtin_fill_2 : (Env.Env, Exp.Exp, Types.Type, Values.Value list)
 	  => (Exp.ARRAY(at,a,arraylist), 
 	      Types.PROP((Types.T_ARRAY(Types.DIM(SOME(v)), ty),NONE), Types.C_CONST))
 	
-  rule	Print.print_error_buf "#-- elab_builtin_fill_2: Failed to elaborate fill()\n"
+  rule	Error.add_message(Error.INTERNAL_ERROR,["elab_builtin_fill_2 failed"])
 	-------------------------------------------------------------
 	elab_builtin_fill_2 (_,_,_,_) => fail
 
@@ -1671,13 +1657,16 @@ relation elab_builtin_pre : (Env.Env, Absyn.Exp list, bool (*impl*) )
 
   rule	elab_exp(env,exp,impl,NONE) => (exp,Types.PROP(tp,c),_) &
 	Types.basic_type(tp) => false &
-	Print.print_error_buf "#Error, operand of pre must be of built-in type.\n"
+	Exp.print_exp_str(exp) => s &
+	Error.add_message(Error.OPERAND_BUILTIN_TYPE,["pre",s])
 	------------------------------------
 	elab_builtin_pre(env,[exp],impl) => fail
 
-  rule	Print.print_error_buf "#Error, wrong type or wrong number of arguments to pre operator.\n"
+  rule	Exp.print_list_str(expl,Dump.print_exp_str,", ") => el_str &
+	Util.string_append_list(["pre(",el_str,")"]) => s &
+	Error.add_message(Error.WRONG_TYPE_OR_NO_OF_ARGS,[s])
 	------------------------------------
-	elab_builtin_pre(env,_,_) => fail
+	elab_builtin_pre(env,expl,_) => fail
 end
 
 (** relation: elab_builtin_initial
@@ -1693,7 +1682,7 @@ relation elab_builtin_initial : (Env.Env, Absyn.Exp list, bool (*impl*) )
 	  => (Exp.CALL(Absyn.IDENT("initial"),
 			   [],false,true), Types.PROP((Types.T_BOOL([]),NONE),Types.C_VAR))
 
-  rule	Print.print_error_buf "#Error, initial takes no arguments.\n"
+  rule	Error.add_message(Error.WRONG_TYPE_OR_NO_OF_ARGS,["initial takes no arguments"])
 	------------------
 	elab_builtin_initial(env,_,_) => fail
 end
@@ -1711,16 +1700,10 @@ relation elab_builtin_terminal : (Env.Env, Absyn.Exp list, bool (*impl*) )
 	  => (Exp.CALL(Absyn.IDENT("terminal"),
 			   [],false,true), Types.PROP((Types.T_BOOL([]),NONE),Types.C_VAR))
 
-  rule	Print.print_error_buf "#Error, terminal takes no arguments.\n"
+  rule	Error.add_message(Error.WRONG_TYPE_OR_NO_OF_ARGS,["terminal takes no arguments"])
 	------------------
 	elab_builtin_terminal(env,_,impl) 
-	  => (Exp.CALL(Absyn.IDENT("terminal"),
-			   [],false,true), Types.PROP((Types.T_BOOL([]),NONE),Types.C_VAR))
-
-  rule	Print.print_error_buf "#Error, terminal takes no arguments.\n"
-	------------------
-	elab_builtin_terminal(env,_,impl) => fail
-
+	  => fail
 end
 
 (** relation: elab_builtin_array
@@ -1755,7 +1738,7 @@ relation elab_builtin_array2: (Exp.Exp list, Types.Properties list)
 	=> (Exp.Exp list, Types.Properties) =
 
   rule	same_dimensions(tpl) => false &
-	Print.print_error_buf "#Error, different dimension sizes in arguments to array.\n"
+	Error.add_message(Error.DIFFERENT_DIM_SIZE_IN_ARGUMENTS,["array"])
 	------------------------
 	elab_builtin_array2(expl,tpl) => fail
 
@@ -2277,7 +2260,7 @@ relation absyn_cref_list_to_interactive_var_list: ( Absyn.ComponentRef list, Int
           => symbol_table''
         
 
-  rule  Print.print_error_buf("error in absyn_cref_list_to_interactive_var_list") 
+  rule  Debug.fprint("failtrace","-absyn_cref_list_to_interactive_var_list failed\n")
         --------------------------------------------
         absyn_cref_list_to_interactive_var_list(_,_,_) => fail
 end
@@ -2354,7 +2337,7 @@ relation elab_builtin_edge : (Env.Env, Absyn.Exp list, bool (*impl*))
 	elab_builtin_edge(env,[exp],impl) 
 	  => (exp'', Types.PROP((Types.T_BOOL([]),NONE),c))
 
-  rule	Print.print_error_buf "#Error, wrong type or wrong number of arguments to edge operator.\n"
+  rule	Error.add_message(Error.WRONG_TYPE_OR_NO_OF_ARGS,["edge"])
 	------------------------------------
 	elab_builtin_edge(env,_,_) => fail
 
@@ -2382,7 +2365,7 @@ relation elab_builtin_sign : (Env.Env, Absyn.Exp list, bool (*impl*))
 	elab_builtin_sign(env,[exp],impl) 
 	  => (exp'', Types.PROP((Types.T_BOOL([]),NONE),c))
 
-  rule	Print.print_error_buf "#Error, wrong type or wrong number of arguments to sign operator.\n"
+  rule	Error.add_message(Error.WRONG_TYPE_OR_NO_OF_ARGS,["sign"])
 	------------------------------------
 	elab_builtin_sign(env,_,_) => fail
 end
@@ -2404,15 +2387,14 @@ relation elab_builtin_der : (Env.Env, Absyn.Exp list, bool (*impl*))
 
 	  (* Constant expressions should fail *)
   rule	elab_exp(env,exp,impl,NONE) => (exp',Types.PROP((Types.T_REAL([]),_),c),_)  &
-	Print.print_error_buf "# Error, der operator applied to constant expression\n" 
+	Error.add_message(Error.DER_APPLIED_TO_CONST,[])
 	----------------------------------
 	elab_builtin_der(env,[exp as Absyn.CREF(cr)],impl) 
 	  => fail
-  rule	Print.print_error_buf "# Error, wrong type or wrong number of arguments to der operator in '\n" &
-	Util.list_map(expl,Dump.print_exp_str) => lst &
+  rule	Util.list_map(expl,Dump.print_exp_str) => lst &
 	Util.string_delimit_list(lst,", ") => s &
 	Util.string_append_list(["der(",s,")'.\n"]) => s &
-	Print.print_error_buf s
+	Error.add_message(Error.WRONG_TYPE_OR_NO_OF_ARGS,[s])
 	------------------------------------
 	elab_builtin_der(env,expl,_) => fail	
 end
@@ -2439,7 +2421,8 @@ end
   rule	elab_exp(env,start,impl,NONE) 
 	  => (start',Types.PROP(tp1,_),_)  &
 	  not Types.integer_or_real(tp1) &
-	Print.print_error_buf "#First argument to sample must be Integer or Real expression.\n"
+	 Error.add_message(Error.ARGUMENT_MUST_BE_INTEGER_OR_REAL,
+			   ["First","sample"])
 	----------------------------------
 	elab_builtin_sample(env,[start,interval],impl) 
 	  => fail
@@ -2447,7 +2430,9 @@ end
   rule	elab_exp(env,interval,impl,NONE) 
 	  => (start',Types.PROP(tp1,_),_)  &
 	  not Types.integer_or_real(tp1) &
-	Print.print_error_buf "#Second argument to sample must be Integer or Real expression.\n"
+	 Error.add_message(Error.ARGUMENT_MUST_BE_INTEGER_OR_REAL,
+			   ["Second","sample"])
+
 	----------------------------------
 	elab_builtin_sample(env,[start,interval],impl) 
 	  => fail
@@ -2501,7 +2486,8 @@ relation elab_builtin_change : (Env.Env, Absyn.Exp list, bool (*impl*))
 	  => (exp' as Exp.CREF(cr',_),Types.PROP(tp1,_),_) &
 	  Types.simple_type(tp1) &
 	Lookup.lookup_var(env,cr') => (Types.ATTR(_,_,_,_),_,_) &
-	Print.print_error_buf "#Error, operand to change is not a discrete variable\n" 
+	Error.add_message(Error.ARGUMENT_MUST_BE_DISCRETE_VAR,
+			  ["First","change"])
 	----------------------------------
 	elab_builtin_change(env,[exp as Absyn.CREF(cr)],impl) 
 	  => fail
@@ -2509,12 +2495,12 @@ relation elab_builtin_change : (Env.Env, Absyn.Exp list, bool (*impl*))
   rule	elab_exp(env,exp,impl,NONE) 
 	  => (exp',Types.PROP(tp1,_),_) &
 	  not Types.simple_type(tp1) &
-	Print.print_error_buf "#Error, operand to change is not a simple type\n" 
+	Error.add_message(Error.TYPE_MUST_BE_SIMPLE,["operand to change"])
 	----------------------------------
 	elab_builtin_change(env,[exp as Absyn.CREF(cr)],impl) 
 	  => fail
 
-  rule	Print.print_error_buf "#Error, operand to change is not a variable\n" 
+  rule	Error.add_message(Error.ARGUMENT_MUST_BE_VARIABLE,["First","change"])
 	----------------------------------
 	elab_builtin_change(env,[exp],impl) 
 	  => fail
@@ -2548,7 +2534,8 @@ relation elab_builtin_cat : (Env.Env, Absyn.Exp list, bool (*impl*))
   rule	elab_exp(env,dim,impl,NONE) 
 	  => (dim_exp,tp,_) &
 	  not let Types.PROP((Types.T_INTEGER(_),_),const1) = tp &
-	  Print.print_error_buf "# Error, first argument to cat must be an Integer.\n"
+	Error.add_message(Error.ARGUMENT_MUST_BE_INTEGER,
+			  ["First","cat"])
 	----------------------------------
 	elab_builtin_cat(env,dim::matrices,impl) 
 	  => fail
@@ -2557,7 +2544,11 @@ relation elab_builtin_cat : (Env.Env, Absyn.Exp list, bool (*impl*))
 	  => (dim_exp,Types.PROP((Types.T_INTEGER(_),_),const1),_) &
 	elab_exp_list(env,matrices,impl,NONE) => (matrices',props,_) &
 	same_dimensions(props) => false &
-	Print.print_error_buf "# Error, all array arguments to cat operator must be of same dimension.\n"
+	Util.list_map(dim::matrices,Dump.print_exp_str) => lst &
+	Util.string_delimit_list(lst,", ") => s &
+	Util.string_append_list(["cat(",s,")"]) => str &
+	Error.add_message(Error.DIFFERENT_DIM_SIZE_IN_ARGUMENTS,
+			  [str])
 	----------------------------------
 	elab_builtin_cat(env,dim::matrices,impl) 
 	  => fail
@@ -3274,6 +3265,26 @@ axiom	elab_call_interactive(env, Absyn.CREF_IDENT("listVariables",_),
 	      Types.PROP((Types.T_STRING([]),NONE),Types.C_VAR),
 	      SOME(st))
 
+  axiom	elab_call_interactive(env, Absyn.CREF_IDENT("getMessagesString",_),
+			      [],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("getMessagesString"),
+		       [],
+		       false,
+		       true),
+	      Types.PROP((Types.T_STRING([]),NONE),Types.C_VAR),
+	      SOME(st))
+
+  axiom	elab_call_interactive(env, Absyn.CREF_IDENT("getMessagesStringInternal",_),
+			      [],[],impl,
+			      SOME(st)) 
+	  => (Exp.CALL(Absyn.IDENT("getMessagesStringInternal"),
+		       [],
+		       false,
+		       true),
+	      Types.PROP((Types.T_STRING([]),NONE),Types.C_VAR),
+	      SOME(st))
+
   axiom	elab_call_interactive(env, Absyn.CREF_IDENT("runScript",_),
 			      [ Absyn.STRING(str)],[],impl,
 			      SOME(st)) 
@@ -3764,17 +3775,15 @@ relation elab_call_args : (Env.Env,
 	Util.list_map(typelist,Types.unparse_type) => t_lst &
 	Absyn.path_string fn => fn_str &
 	Util.string_delimit_list(t_lst,"\n -") => types_str &
-	Util.string_append_list(
-	   ["Error, no matching function found for ", fn_str,
-	    ", candidates are: \n -",types_str, ".\n"]) => str &
-	Print.print_error_buf str
+	Error.add_message(Error.NO_MATCHING_FUNCTION_FOUND,
+			  [fn_str,types_str])
 	-------------------------
 	elab_call_args(env,fn,args,nargs,impl,st) => fail
 
   rule	not Lookup.lookup_type(env,fn,false (*msg*)) => (_,_) &	
-	Print.print_error_buf "# Couldn't find function " & 
-	Absyn.path_string fn => s & Print.print_error_buf s &
-	Print.print_error_buf "\n" 
+	Env.print_env_path_str(env) => scope &
+	Absyn.path_string(fn) => fn_str &
+	Error.add_message(Error.LOOKUP_ERROR,[fn_str,scope])
 	-------------------------------------------------------------------
 	elab_call_args(env,fn,args,nargs,impl,st) => fail
 
@@ -4221,7 +4230,7 @@ end
 
 relation check_const : (Types.Type, Types.Const) => Types.TupleConst  =	
 	
-  rule	Print.print_error_buf("\n Error. No support for tuples built by tuples. Yet.") 
+  rule	Error.add_message(Error.INTERNAL_ERROR,["No suport for tuples built by tuples"])
 	-------------------------------
 	check_const ((Types.T_TUPLE(_),_), c) => fail
 
@@ -4305,14 +4314,13 @@ relation function_params : Types.Var list => (Types.FuncArg list,
 					 false,t,Types.UNBOUND)::vs)
 	  => (in, (n,t)::out)
 
-  rule	Print.print_error_buf "# Components in functions must be INPUT or OUTPUT\n" &
-	Print.print_error_buf "    component: " & 
-	Print.print_error_buf n & Print.print_error_buf "\n"
+  rule	Error.add_message(Error.FUNCTION_COMPS_MUST_HAVE_DIRECTION,
+			  [n])
 	----------------------------------------------
 	function_params((v as Types.VAR(n,Types.ATTR(_,_,_,Absyn.BIDIR),_,_,_))
 			::vs) => fail
 
-  rule	Print.print_error_buf "- function_params failed\n"
+  rule	Debug.fprint("failtrace","-function_params failed\n")
 	----------------------------------
 	function_params _ => fail
 
@@ -4431,9 +4439,7 @@ relation fill_default_slots: (Slot list , SCode.Class, Env.Env, bool (*impl*))
 	  => SLOT((id,tp),true,SOME(exp'),ds)::res
 
   rule	fill_default_slots(xs,class,env,impl) => res &
-	Print.print_error_buf "#Error filling slot, id = " &
-	Print.print_error_buf id &
-	Print.print_error_buf "\n"
+	Error.add_message(Error.INTERNAL_ERROR,[id])
 	----------
 	fill_default_slots (SLOT((id,tp),false,e,ds)::xs,class,env,impl) 
 	  => SLOT((id,tp),true,e,ds)::xs
@@ -4568,7 +4574,7 @@ relation fill_slot:(Types.FuncArg, Exp.Exp, Types.ArrayDim list,Slot list)
 	  => SLOT((fa2,b),true,SOME(exp),ds)::xs
 
   rule	fa1 = fa2 &
-	Print.print_error_buf "#Error, slot in functional argument allready filled.\b" 
+	Error.add_message(Error.FUNCTION_SLOT_ALLREADY_FILLED,[fa2])
 	--------------------------------------------------------------
 	fill_slot((fa1,_),exp, ds, SLOT((fa2,b),true,_,_)::xs) => fail
 
@@ -4577,9 +4583,9 @@ relation fill_slot:(Types.FuncArg, Exp.Exp, Types.ArrayDim list,Slot list)
 	------------------------------
 	fill_slot((farg as (fa1,_)), exp,ds, (s1 as SLOT((fa2,_),_,_,_))::xs) => s1::newslots
 
-  rule  Print.print_error_buf "#Error, slot not found in function type.\n"
+  rule  Error.add_message(Error.NO_SUCH_ARGUMENT,[fa])
 	---------------------------------------------------
-	fill_slot(_,_,_,_) => fail
+	fill_slot((fa,_),_,_,_) => fail
 end
 
 
@@ -4606,13 +4612,9 @@ relation elab_cref : (Env.Env, Absyn.ComponentRef, bool (*impl*) )
 
 
   rule	elab_cref_subs (env,c,impl) => (c', const) &
-	Print.print_error_buf "# Unknown component: " & 
 	Dump.print_component_ref_str c => s & 
-	Print.print_error_buf s &
-	Print.print_error_buf " in scope " &
-	Env.print_env_path_str env => str &
-	Print.print_error_buf str &
-	Print.print_error_buf "\n" 
+	Env.print_env_path_str env => scope &
+	Error.add_message(Error.LOOKUP_VARIABLE_ERROR,[s,scope])
 	-----------------------------------------------------
 	elab_cref(env, c,impl) => fail
 
@@ -4780,30 +4782,23 @@ relation elab_cref2 : (Env.Env,
 
 
 
-  rule	Print.print_error_buf "# Constant or parameter with a non-constant initializer\n" &
-	Print.print_error_buf "# component: " & 
-	Exp.print_component_ref_str cr => s & 
-	Print.print_error_buf " = " &
+  rule	Exp.print_component_ref_str cr => s & 
 	Exp.print_exp_str exp => str &
-	Print.print_error_buf str & Print.print_error_buf "\n"
+	Error.add_message(Error.CONSTANT_OR_PARAM_WITH_NONCONST_BINDING,
+			  [s,str])
 	------------------------------
 	elab_cref2 (_,cr,_, _,_,Types.EQBOUND(exp,_,Types.C_VAR)) => fail
 
 	(* constants without value produce error. *)
-  rule	Print.print_error_buf "# Constant without a value\n" &
-	Print.print_error_buf "# component: " & 
-	Exp.print_component_ref_str cr => s & 
-	Print.print_error_buf s &
-	Print.print_error_buf "\n" 
+  rule	Exp.print_component_ref_str cr => s & 
+	Env.print_env_path_str(env) => scope &
+	Error.add_message(Error.NO_CONSTANT_BINDING,[s,scope])
 	----------------------------------------------
 	elab_cref2 (env,cr,_,SCode.CONST,_,Types.UNBOUND) => fail
 
 	(* Parameters without value produce warning *)
-  rule	Print.print_error_buf "# Warning, Parameter without a value\n" &
-	Print.print_error_buf "# component: " & 
-	Exp.print_component_ref_str cr => s &
-	Print.print_error_buf s &
-	Print.print_error_buf "\n" &
+  rule	Exp.print_component_ref_str cr => s & 
+	Error.add_message(Error.UNBOUND_PARAMETER_WARNING,[s]) &
 	Types.elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr'
 	----------------------------------------------
@@ -5044,12 +5039,9 @@ relation elab_subscript_type : (Types.Type, Absyn.Exp, Exp.Exp)
   axiom	elab_subscript_type ((Types.T_ARRAY(_,(Types.T_INTEGER(_),_)),_),_,sub)
 	  => Exp.SLICE(sub)
 
-  rule	Print.print_error_buf "# Subscript is not an integer or integer array\n" &
-	Print.print_error_buf "    expression: " & Dump.print_exp_str e => s &
-	Print.print_error_buf s &
- 	Print.print_error_buf " :: " & Types.unparse_type t => s & 
-	Print.print_error_buf s &
-	Print.print_error_buf "\n"
+  rule	Dump.print_exp_str e => e_str &
+	Types.unparse_type t => t_str &
+	Error.add_message(Error.SUBSCRIPT_NOT_INT_OR_INT_ARRAY,[e_str,t_str])
 	------------------------------------------------------
 	elab_subscript_type (t,e,_) => fail
 
@@ -5164,32 +5156,19 @@ relation elab_ifexp : (Env.Env,
 		   e3,Types.PROP(t3,c3),impl,st) => (exp, Types.PROP(t2, c))
 
   rule	not t1 = ((Types.T_BOOL([]),NONE)) &
-	Print.print_error_buf "# conditional in if expression has to be boolean\n" &
-	Print.print_error_buf "    got type: " & 
-	Types.unparse_type t1 => s &
-	Print.print_error_buf "\n" &
-	Print.print_error_buf "    expression: " & 
-	Exp.print_exp_str e1 => s &
-	Print.print_error_buf s & 
-	Print.print_error_buf "\n"
+	Exp.print_exp_str e1 => e_str &
+	Types.unparse_type t1 => t_str &
+	Error.add_message(Error.IF_CONDITION_TYPE_ERROR,[e_str,t_str])
 	--------------------------------------------------------
 	elab_ifexp(env,e1,Types.PROP(t1,c1),e2,Types.PROP(t2,c2),e3,Types.PROP(t3,c3),impl,st) => fail
 
   rule	Types.equivtypes(t2,t3) => false &
-	Print.print_error_buf "# Type mismatch in if-expression\n" &
-	Print.print_error_buf "    true branch : " & 
-	Exp.print_exp_str e2  => s &
-	Print.print_error_buf s & 
- 	Print.print_error_buf " :: " & 
-	Types.unparse_type t2 => s & 
-	Print.print_error_buf s & 
-	Print.print_error_buf "\n" &
-	Print.print_error_buf "    false branch: " & 
-	Exp.print_exp_str e3 => s &
-	Print.print_error_buf s & 
- 	Print.print_error_buf " :: " & Types.unparse_type t3 => s &
-	Print.print_error_buf s & 
-	Print.print_buf "\n"
+	Exp.print_exp_str e2  => e1_str &
+	Types.unparse_type t2 => t1_str &
+	Exp.print_exp_str e3  => e2_str &
+	Types.unparse_type t3 => t2_str & 
+	Error.add_message(Error.TYPE_MISMATCH_IF_EXP,[e1_str,t1_str,
+						      e2_str,t2_str])
 	-----------------------------------------------
 	elab_ifexp(env,e1,Types.PROP((Types.T_BOOL(_),_),c1),
 		   e2,Types.PROP(t2,c2),e3,Types.PROP(t3,c3),impl,st) => fail
@@ -5262,10 +5241,7 @@ relation value_exp : Values.Value => Exp.Exp =
 	--------------------------------------------
 	value_exp (Values.TUPLE(vallist)) => Exp.TUPLE(explist)
 
-  rule	Print.print_error_buf "- value_exp failed: " &	
-	Values.val_string v => vs &
-	Print.print_error_buf vs &
-	Print.print_error_buf "\n"
+  rule	Error.add_message(Error.INTERNAL_ERROR,["value_exp failed"])
 	----------------------------
 	value_exp v => fail
 
@@ -5494,10 +5470,8 @@ relation deoverload : ((Exp.Operator * Types.Type list * Types.Type) list,
 	------------------------------
 	deoverload (_::xs, args, exp) => (op, args', rtype)
 
-  rule	Print.print_error_buf "# Can't resolve type of expression: " &
-	Dump.print_exp_str exp => s &
-	Print.print_error_buf s & 
-	Print.print_error_buf "\n"
+  rule	Dump.print_exp_str exp => s &
+	Error.add_message(Error.UNRESOLVABLE_TYPE,[s])
 	------------------------------
 	deoverload([], args, exp) => fail
 
@@ -5518,12 +5492,11 @@ relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Ty
 	-----------------------------
 	compute_return_type (Exp.ADD_ARR(_),[typ1,typ2],rtype) => typ1
 
-  rule	Print.print_error_buf "# +: Incompatible argument types " &
-	Types.unparse_type typ1 => s  &
-	Print.print_error_buf s & 
-	Print.print_error_buf ", " & Types.unparse_type typ2 => s &	
-	Print.print_error_buf s & 
-	Print.print_error_buf "\n"
+  rule	Types.unparse_type typ1 => t1_str & 	
+	Types.unparse_type typ2 => t2_str & 	
+	Error.add_message(Error.INCOMPATIBLE_TYPES,["vector addition",
+						    t1_str,
+						    t2_str])
 	----------------------
 	compute_return_type (Exp.ADD_ARR(_),[typ1,typ2],_) => fail
 
@@ -5535,12 +5508,12 @@ relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Ty
 	-----------------------------
 	compute_return_type (Exp.SUB_ARR(_),[typ1,typ2],rtype) => typ1
 
-  rule	Print.print_error_buf "# -: Incompatible argument types " &
-	Types.unparse_type typ1 => s & 
-	Print.print_error_buf s & 
-	Print.print_error_buf ", " & Types.unparse_type typ2 => s &	
-	Print.print_error_buf s & 
-	Print.print_error_buf "\n"
+  rule	
+	Types.unparse_type typ1 => t1_str & 	
+	Types.unparse_type typ2 => t2_str & 	
+	Error.add_message(Error.INCOMPATIBLE_TYPES,["vector subtraction",
+						    t1_str,
+						    t2_str])
 	----------------------
 	compute_return_type (Exp.SUB_ARR(_),[typ1,typ2],_) => fail
 
@@ -5556,14 +5529,11 @@ relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Ty
 			     [typ1,typ2],
 			     rtype) => rtype
 
-  rule	Print.print_error_buf "# *-: Incompatible argument types " &
-	Types.unparse_type typ1 => s & 	
-	Print.print_error_buf "ltype: " & 
-	Print.print_error_buf s & 
-	Types.unparse_type typ2 => s &
-	Print.print_error_buf "rtype: " & 
-	Print.print_error_buf s & 
-	Print.print_error_buf "\n"
+  rule	Types.unparse_type typ1 => t1_str & 	
+	Types.unparse_type typ2 => t2_str & 	
+	Error.add_message(Error.INCOMPATIBLE_TYPES,["scalar product",
+						    t1_str,
+						    t2_str])
 	----------------------
 	compute_return_type (Exp.MUL_SCALAR_PRODUCT(_),[typ1,typ2],rtype) => fail
 
@@ -5602,14 +5572,11 @@ relation compute_return_type : (Exp.Operator, Types.Type list, Types.Type) => Ty
 	-----------
 	compute_return_type (Exp.MUL_MATRIX_PRODUCT(_),[typ1,typ2],_) => rtype
 
-  rule	Print.print_error_buf "# *-----: Incompatible argument types " &
-	Types.unparse_type typ1 => s & 	
-	Print.print_error_buf "ltype: " & 
-	Print.print_error_buf s & 
-	Types.unparse_type typ2 => s &
-	Print.print_error_buf "rtype: " & 
-	Print.print_error_buf s & 
-	Print.print_error_buf "\n"	
+  rule	Types.unparse_type typ1 => t1_str & 	
+	Types.unparse_type typ2 => t2_str & 	
+	Error.add_message(Error.INCOMPATIBLE_TYPES,["matrix multiplication",
+						    t1_str,
+						    t2_str])
 	-----------------
 	compute_return_type (Exp.MUL_MATRIX_PRODUCT(_),[typ1,typ2],rtype) => fail
 
@@ -6088,9 +6055,10 @@ relation get_koening_function_types: (Env.Env, Absyn.Path, Absyn.Exp list,
 
   axiom	get_koening_function_types(env,fn as Absyn.IDENT(_),[],[],impl) => []
 	
-  rule	Print.print_error_buf "# Error, koening lookup of non-simple function name, " &
-	Absyn.path_string fn => fnstr & Print.print_error_buf fnstr & 
-	Print.print_error_buf "\n"
+  rule	Absyn.path_string fn => fnstr &
+	string_append("koening lookup of non-simple function name ",fnstr)
+	=> str &
+	Error.add_message(Error.INTERNAL_ERROR,[str])
 	-------------------
 	get_koening_function_types(env,fn as Absyn.QUALIFIED(_,_),_,_,impl) => fail
 

@@ -1536,15 +1536,9 @@ relation make_fargs_list: Var list => FuncArg list =
 
   axiom	make_fargs_list [] => []
 
-  rule	(*is_input_var v &*)
-	make_fargs_list vl => fargl
+  rule	make_fargs_list vl => fargl
 	------------------
 	make_fargs_list (VAR(n,attr,pr,ty,bnd) :: vl) => ((n,ty)::fargl)
-
-  rule	Print.print_error_buf "#-- Not an input var:" & Print.print_error_buf n
-	---------------------------------------
-	make_fargs_list (VAR(n,attr,pr,ty,bnd)::vl) => fail
-
 end
 
 (** relation: make_return_type

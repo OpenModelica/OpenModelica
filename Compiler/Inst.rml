@@ -210,6 +210,7 @@ with "Values.rml"
 with "Print.rml"
 with "System.rml"
 with "Ceval.rml"
+with "Error.rml"
 
 val for_scope_name = "$for loop scope$"	  
 (**
@@ -353,7 +354,7 @@ end
 relation instantiate_class : (SCode.Program, SCode.Path) 
 	  => (DAE.DAElist,Env.Env) =
 
-  rule	Print.print_error_buf "# Empty program\n"
+  rule	Error.add_message(Error.NO_CLASSES_LOADED,[])
 	------------------------------
 	instantiate_class([],cr) => fail
 
@@ -390,7 +391,7 @@ end
 relation instantiate_class_implicit : (SCode.Program, SCode.Path) 
 	  => (DAE.DAElist,Env.Env) =
 
-  rule	Print.print_error_buf "# Empty program\n"
+  rule	Error.add_message(Error.NO_CLASSES_LOADED,[])
 	------------------------------
 	instantiate_class_implicit([],cr) => fail
 
@@ -583,7 +584,7 @@ end
 
 relation inst_program : (Env, SCode.Program) => DAE.Element list =
 
-  rule	Print.print_error_buf "# Empty program\n"
+  rule	Error.add_message(Error.NO_CLASSES_LOADED,[])
 	------------------------------
 	inst_program(env,[]) => fail
 
@@ -661,8 +662,7 @@ relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class,
 
 	(* Classes with the keyword partial can not be instantiated.
 	 They can only be inherited *)  
-  rule	Print.print_error_buf "# Can't instantiate partial class " & 
-	Print.print_error_buf n & Print.print_error_buf "\n"
+  rule	Error.add_message(Error.INST_PARTIAL_CLASS,[n])
 	------------------------------------------------------	
 	inst_class(env,mod,pre, csets, SCode.CLASS(n,partial as true,_,_,_),_,impl as false,_) => fail
 
@@ -981,12 +981,8 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	not Lookup.lookup_class(env,cn,false) => (_,_) &
 	Absyn.path_string(cn) => cns &
-	Print.print_error_buf "# unknown class: " & 
-	Print.print_error_buf cns & 
-	Print.print_error_buf " in scope: " & 
-	Env.print_env_path_str env => str &
-	Print.print_error_buf str &
-	Print.print_error_buf "\n" 
+	Env.print_env_path_str env => scope_str &
+	Error.add_message(Error.LOOKUP_ERROR,[cns,scope_str]) 
 	----------------------------------------
 	inst_classdef(env,mods,pre,csets,ci_state,
 		      SCode.DERIVED(cn,ad,mod), re, prot, 
@@ -1114,12 +1110,8 @@ relation partial_inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	not Lookup.lookup_class(env,cn,false) => (_,_) &
 	Absyn.path_string(cn) => cns &
-	Print.print_error_buf "# unknown class: " & 
-	Print.print_error_buf cns & 
-	Print.print_error_buf " in scope: " & 
-	Env.print_env_path_str env => str &
-	Print.print_error_buf str &
-	Print.print_error_buf "\n" 
+	Env.print_env_path_str env => scope_str &
+	Error.add_message(Error.LOOKUP_ERROR,[cns,scope_str])
 	----------------------------------------
 	partial_inst_classdef(env,mods,pre,csets,ci_state,
 		      SCode.DERIVED(cn,ad,mod), re, prot, 
@@ -1239,10 +1231,9 @@ end
 	(* base class not found *)				
   rule	not Lookup.lookup_class(env, tp, true) 
 	  => (c as SCode.CLASS(cn,_,encf,r,_), cenv) &
-	Print.print_error_buf "#Error, base class " &
 	Absyn.path_string(tp) => s &
-	Print.print_error_buf s &			      
-	Print.print_error_buf " not found.\n" 			      
+	Env.print_env_path_str(env) => scope_str &
+	Error.add_message(Error.LOOKUP_BASECLASS_ERROR,[s,scope_str])
  	  ------------------------------------------------
 	inst_extends_list(env, mod, SCode.EXTENDS(tp,emod)::rest, ci_state, impl) 
 	  => fail
@@ -1856,9 +1847,7 @@ axiom	inst_element(env, mod, pre, csets, ci_state, (SCode.IMPORT(imp),_), instdi
 
   	  (* Illegal redeclarations *)
   rule	Lookup.lookup_ident_local(env,n) => (_,_,_,_) &
-	Print.print_error_buf "# Trying to redeclare the class " & 
-	Print.print_error_buf n &
-	Print.print_error_buf " as a variable\n" 
+	Error.add_message(Error.REDECLARE_CLASS_AS_VAR,[n]) 
 	------------------------
 	inst_element(env, mods, pre, csets, ci_state,
 		     (SCode.CLASSDEF(n,_,_,_,_),_),_,_,_)
@@ -1886,9 +1875,7 @@ axiom	inst_element(env, mod, pre, csets, ci_state, (SCode.IMPORT(imp),_), instdi
   rule	(* Redeclare of class definition, replaceable is false *)
 	Mod.lookup_modification_p(mods,Absyn.IDENT(n)) 
 	  => (classmod as Types.REDECL(final, [(SCode.CLASSDEF(n2,f2,repl2,cls2,_),_)])) &
-	Print.print_error_buf "# Trying to redeclare class " 
-	& Print.print_error_buf n &
-	Print.print_error_buf " but class not declared as replacable.\n" 
+	Error.add_message(Error.REDECLARE_NON_REPLACEABLE,[n])
 	-------------------------------------------------
 	inst_element(env, mods, pre, csets, ci_state, 
 		     (SCode.CLASSDEF(n,_,false,c,_),_),inst_dims,impl,packimpl)
@@ -2026,12 +2013,10 @@ axiom	inst_element(env, mod, pre, csets, ci_state, (SCode.IMPORT(imp),_), instdi
 	(**  Failure *)
   rule	not Lookup.lookup_class(env,t,false) => (cl,cenv) &
 	Absyn.path_string(t) => s &
-	Print.print_error_buf "# unknown class '" 
-	& Print.print_error_buf s &
-	Print.print_error_buf "' while instantiating " &
+	Env.print_env_path_str(env) => scope_str &
 	Prefix.prefix_add(n,[],pre) => pre' &
 	Prefix.print_prefix_str pre' => ns &
-	Print.print_error_buf ns & Print.print_error_buf "\n" 
+	Error.add_message(Error.LOOKUP_ERROR_COMPNAME,[s,scope_str,ns])
 (*	Debug.fcall ("instdb", Env.print_env, env) *)
 	--------------------------
 	inst_element(env,_,pre,csets,ci_state,
@@ -2807,13 +2792,14 @@ end
 relation inst_dim_exp : (DimExp, bool (*impl*) ) => Exp.Subscript =
 (* FIXME: Fix slicing, e.g. Exp.SLICE, for impl=true *)
 
-  rule	Print.print_error_buf "# Error, can not determine size of array.\n"
+  rule	Error.add_message(Error.DIMENSION_NOT_KNOWN,[";"])
 	-------------------------------------------
 	inst_dim_exp (DIMEXP(Exp.WHOLEDIM,_),impl as false) => fail
 
-  rule	Print.print_error_buf "# Error, can not determine size of array slice\n"
+  rule	Exp.print_exp_str(e) => s &
+	Error.add_message(Error.DIMENSION_NOT_KNOWN,[s])
 	-------------------------------------------
-	inst_dim_exp (DIMEXP(Exp.SLICE(_),_),impl as false) => fail
+	inst_dim_exp (DIMEXP(Exp.SLICE(e),_),impl as false) => fail
 
   axiom	inst_dim_exp (DIMEXP(e as Exp.WHOLEDIM,_),impl as true) => e
   axiom	inst_dim_exp (DIMINT(i),_) => Exp.INDEX(Exp.ICONST(i))
@@ -2860,26 +2846,18 @@ relation fix_direction : (DAE.Element list, Absyn.Direction)
 
 	  (** Error, component declared as input or output  when containing 
 	   ** variable that has prefix input. **)
-  rule	Print.print_error_buf "#Error, component declared as " & 
-	Dump.direction_symbol dir => str &
-	Print.print_error_buf str & 
-	Print.print_error_buf " when having the variable " & 
-	Exp.print_component_ref_str cr => str & 
-	Print.print_error_buf str &
-	Print.print_error_buf " declared as input\n"
+  rule	Dump.direction_symbol dir => s1 &
+	Exp.print_component_ref_str cr => s2 & 
+	Error.add_message(Error.COMPONENT_INPUT_OUTPUT_MISMATCH,[s1,s2])
  	-----------------------------
 	fix_direction (DAE.VAR(cr,vk,DAE.INPUT,t,e,id,start,flow,class,dae_var_attr,comment)::r,dir) 
 	  => fail
 
 	  (** Error, component declared as input or output  when containing 
 	   ** variable that has prefix output. **)
-  rule	Print.print_error_buf "#Error, component declared as " &
-	Dump.direction_symbol dir => str &
-	Print.print_error_buf str & 
-	Print.print_error_buf " when having the variable " & 
-	Exp.print_component_ref_str cr => str &
-	Print.print_error_buf str & 
-	Print.print_error_buf " declared as input\n"
+  rule	Dump.direction_symbol dir => s1 &
+	Exp.print_component_ref_str cr => s2 & 
+	Error.add_message(Error.COMPONENT_INPUT_OUTPUT_MISMATCH,[s1,s2])
  	-----------------------------
 	fix_direction (DAE.VAR(cr,vk,DAE.OUTPUT,t,e,id,start,flow,class,dae_var_attr,comment)::r,dir) 
 	  => fail
@@ -3102,18 +3080,10 @@ relation elab_arraydim : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim,
   rule	elab_arraydim_decl(env,cref,ad,impl,st) => dim1 &
 	elab_arraydim_type(t,ad) => dim2 &
 	not compatible_arraydim(dim1,dim2) => dim3 &
-	Print.print_error_buf "# Array dimension mismatch\n" &
-	Print.print_error_buf "    expression " & 
-	Exp.print_exp_str e => str &
-	Print.print_error_buf str &
-	Print.print_error_buf " has type " & 
-	Types.unparse_type t => str &
-	Print.print_error_buf str & 
-	Print.print_error_buf "\n" &
-	Print.print_error_buf "    expected array dimensions [" &
-	print_dim_str dim1 => str & 
-	Print.print_error_buf str &
-	Print.print_error_buf "]\n"
+	Exp.print_exp_str e => e_str &
+	Types.unparse_type t => t_str &
+	print_dim_str dim1 => dim_str & 
+	Error.add_message(Error.ARRAY_DIMENSION_MISMATCH,[e_str,t_str,dim_str])
 	---------------------------------
 	elab_arraydim(env,cref,ad,SOME(Types.TYPED(e,_,Types.PROP(t,_))),impl,st) => fail
 
@@ -3246,9 +3216,8 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, bool
   rule	Debug.fprintln("insttr", "elab_arraydim_decl5") &
 	Static.elab_exp(env, d,impl,st)
 	    => (e,Types.PROP((Types.T_INTEGER(_),_),Types.C_VAR),_) &  
-	Print.print_error_buf "#Error, non constant array dimension: " &
-        Dump.print_exp_str d => str & Print.print_error_buf str & 
-	Print.print_error_buf "\n"
+        Dump.print_exp_str d => str & 
+	Error.add_message(Error.DIMENSION_NOT_KNOWN,[str])  
 	-------------------------------------------
 	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(d)::ds,impl as false,st) 
 	  => fail
@@ -3271,18 +3240,13 @@ relation elab_arraydim_decl : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, bool
 
   rule	Static.elab_exp(env,d,impl,st)
 	  => (e,Types.PROP(t,_),_) &
-	Print.print_error_buf "# Array dimensions must be integer\n" &
-	Print.print_error_buf "    expression: " & 
-	Exp.print_exp_str e => str &
-	Print.print_error_buf str &
- 	Print.print_error_buf " (" & Types.unparse_type t  => str & 
-	Print.print_error_buf str &
-	Print.print_error_buf ")\n"
+	  Exp.print_exp_str e => e_str &
+	Types.unparse_type t  => t_str &
+	Error.add_message(Error.ARRAY_DIMENSION_INTEGER,[e_str,t_str])
 	-------------------------------------------------------
 	elab_arraydim_decl(env,cref,Absyn.SUBSCRIPT(d)::ds,impl,st) => fail
 
-  rule	Print.print_error_buf "elab_arraydim_decl failed\n" &
-	Debug.fprint("failtrace", "- elab_arraydim_decl failed\n")
+  rule	Debug.fprint("failtrace", "- elab_arraydim_decl failed\n")
 	-------------------------------------
 	elab_arraydim_decl(_,_,_,_,_) => fail     
 end
@@ -3956,10 +3920,9 @@ relation inst_ext_get_fargs_single : (Env.Env, Exp.Exp, Types.Properties)
 	inst_ext_get_fargs_single (env, Exp.CREF(cref,crty), Types.PROP(ty,cnst)) => DAE.EXTARG(cref,attr,ty)
 
   rule	not Lookup.lookup_var_local (env, cref) => (attr, ty, bnd) &
-	Print.print_buf "inst_ext_get_fargs_single lookup_var_local failed\n" &
 	Exp.print_component_ref_str cref => crefstr &
-	Util.string_append_list (["#-- Unknown component ", crefstr, " in external clause\n"]) => str &
-	Print.print_error_buf str
+	Env.print_env_path_str(env) => scope &
+	Error.add_message(Error.LOOKUP_VARIABLE_ERROR,[crefstr,scope])
 	--------------------------------------------------------
 	inst_ext_get_fargs_single (env, Exp.CREF(cref,crty), Types.PROP(ty,cnst)) => fail
 
@@ -4458,7 +4421,7 @@ rule	Static.elab_exp (env,e,impl,NONE) => (e',_,_) &
 	  => (e',Types.PROP((Types.T_ARRAY(Types.DIM(_),
 					   (Types.T_INTEGER(_),_)),_),
 			     Types.C_VAR),_) &
-	Print.print_error_buf "# Error: Non-constant iteration bounds not supported\n" 
+	Error.add_message(Error.UNSUPPORTED_LANGUAGE_FEATURE,["Non-constant iteration bounds","No suggestion"])
 	-----------------------------------------------------------
 	inst_equation_common(env,mod,pre,csets,ci_state,SCode.EQ_FOR(i,e,el),initial,impl)
 	  => fail
@@ -4631,17 +4594,13 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 
 
   rule	(* Types.equivtypes(t1,t2) => false & *)
-	Print.print_error_buf "# Illegal types in equation\n"&
-	Print.print_error_buf "    lhs: " & Exp.print_exp_str e1 => str &
-	Print.print_error_buf str &
-	Print.print_error_buf " :: " & 
-	Types.unparse_type t1 => str &	Print.print_error_buf str &
-	Print.print_error_buf "\n" &
-	Print.print_error_buf "    rhs: " & 
-	Exp.print_exp_str e2 => str &	Print.print_error_buf str &
-	Print.print_error_buf " :: " & 
-	Types.unparse_type t2  => str &	Print.print_error_buf str &
-	Print.print_error_buf "\n"
+	Exp.print_exp_str e1 => e1_str &
+	Types.unparse_type t1 => t1_str &
+	Exp.print_exp_str e2 => e2_str &
+	Types.unparse_type t2  => t2_str &
+	Util.string_append_list([e1_str,"=",e2_str]) => s1 &
+	Util.string_append_list([t1_str,"=",t2_str]) => s2 &
+	Error.add_message(Error.EQUATION_TYPE_MISMATCH_ERROR,[s1,s2])
 	----------
 	inst_eq_equation(e1,Types.PROP(t1,_), e2,Types.PROP(t2,_), initial,impl) => fail
 
@@ -4818,12 +4777,10 @@ relation inst_array_equation : (Exp.Exp, Exp.Exp,
 				Types.ArrayDim, Types.Type, Initial)
 	  => DAE.Element list =
 
-  rule	Print.print_error_buf "# Cannot instantiate equations with arrays of unknown size\n" &
-	Print.print_error_buf "    " & Exp.print_exp_str e1 => str  & 
-	Print.print_error_buf str &
-	Print.print_error_buf " = " & Exp.print_exp_str e2 => str &
-	Print.print_error_buf str &
-	Print.print_error_buf "\n"
+  rule  Exp.print_exp_str e1 => e1_str &
+	Exp.print_exp_str e1 => e2_str & 
+	Util.string_append_list([e1_str,"=",e2_str]) => s1 &
+	Error.add_message(Error.INST_ARRAY_EQ_UNKNOWN_SIZE,[s1])
 	----------
 	inst_array_equation(e1, e2, Types.DIM(NONE), t, initial) => fail
 
@@ -5046,7 +5003,8 @@ relation inst_statement : (Env, Absyn.Algorithm, bool (*impl*) ) => Algorithm.St
 	--------------------------------------------------------
 	inst_statement(env,Absyn.ALG_TUPLE_ASSIGN(Absyn.TUPLE(expl),e),impl) => stmt
 
-  rule	Print.print_error_buf "#Error, tuple assignment only allowed when rhs is function call.\n" 
+  rule	Dump.print_exp_str(e) => s &
+	Error.add_message(Error.TUPLE_ASSIGN_FUNCALL_ONLY,[s])
 	--------------------------------------------------------
 	inst_statement(env,Absyn.ALG_TUPLE_ASSIGN(Absyn.TUPLE(expl),e),impl) => fail
 
@@ -5172,10 +5130,8 @@ relation valid_connector : Types.Type => () =
 	---------------------------------------
 	valid_connector((Types.T_COMPLEX(state,_),_))
 
-  rule	Print.print_error_buf "# Can't connect objects of type " &
-	Types.unparse_type t => str &
-	Print.print_error_buf str &
- 	Print.print_buf "\n"
+  rule	Types.unparse_type t => str &
+	Error.add_message(Error.INVALID_CONNECTOR_TYPE,[str])
 	-------------------------------
 	valid_connector t => fail
 end
@@ -5193,24 +5149,17 @@ relation check_connect_types : (Exp.ComponentRef, Types.Type,
 				Types.Attributes) => () =
 
   rule	assert_different_faces(c1,c2) &
-	Print.print_error_buf "# Can't connect two input variables\n" &
-	Print.print_error_buf "    while connecting " & 
-	Exp.print_component_ref_str c1 => str &
-	Print.print_error_buf str &
-	Print.print_error_buf " to " & Exp.print_component_ref_str c2 => str &
-	Print.print_error_buf str &
-	Print.print_error_buf "\n unless one of them is inside connector and the other outside connector."
+	Exp.print_component_ref_str c1 => c1_str &
+	Exp.print_component_ref_str c2 => c2_str &
+	Error.add_message(Error.CONNECT_TWO_INPUTS, [c1_str,c2_str])
 	------------------------------------------------------
 	check_connect_types(c1,_,Types.ATTR(_,_,_,Absyn.INPUT),
 			    c2,_,Types.ATTR(_,_,_,Absyn.INPUT)) => fail
 
   rule	assert_different_faces(c1,c2) &
-	Print.print_error_buf "# Can't connect two output variables\n" &
-	Print.print_error_buf "    while connecting " & Exp.print_component_ref_str c1 => str &
-	Print.print_error_buf str &
-	Print.print_error_buf " to " & Exp.print_component_ref_str c2 => str & 
-	Print.print_error_buf str &
-	Print.print_error_buf "\n unless one of them is inside connector and the other outside connector."
+	Exp.print_component_ref_str c1 => c1_str &
+	Exp.print_component_ref_str c2 => c2_str &
+	Error.add_message(Error.CONNECT_TWO_OUTPUTS, [c1_str,c2_str])
 	------------------------------------------------------
 	check_connect_types(c1,_,Types.ATTR(_,_,_,Absyn.OUTPUT),
 			    c2,_,Types.ATTR(_,_,_,Absyn.OUTPUT)) => fail
@@ -5221,24 +5170,16 @@ relation check_connect_types : (Exp.ComponentRef, Types.Type,
 	check_connect_types(_,t1,Types.ATTR(flow1,_,_,_),
 			    _,t2,Types.ATTR(flow2,_,_,_))
 
-  rule	Print.print_error_buf "# Can't connect flow component " &
- 	Exp.print_component_ref_str c1 => str &
-	Print.print_error_buf str &
-	Print.print_error_buf " to non-flow component " &
- 	Exp.print_component_ref_str c2 => str &
-	Print.print_error_buf str &
-	Print.print_error_buf "\n"
+  rule	Exp.print_component_ref_str c1 => c1_str &
+ 	Exp.print_component_ref_str c2 => c2_str &
+	Error.add_message(Error.CONNECT_FLOW_TO_NONFLOW,[c1_str,c2_str])
 	------------------------------------------------------
 	check_connect_types(c1,_,Types.ATTR(true,_,_,_),
 			    c2,_,Types.ATTR(false,_,_,_)) => fail
 
-  rule	Print.print_error_buf "# Can't connect non-flow component " &
- 	Exp.print_component_ref_str c1 => str &
-	Print.print_error_buf str &
-	Print.print_error_buf " to flow component " &
- 	Exp.print_component_ref_str c2 => str & 
-	Print.print_error_buf str &
-	Print.print_error_buf "\n"
+  rule	Exp.print_component_ref_str c1 => c1_str &
+ 	Exp.print_component_ref_str c2 => c2_str &
+	Error.add_message(Error.CONNECT_FLOW_TO_NONFLOW,[c2_str,c1_str])
 	------------------------------------------------------
 	check_connect_types(c1,_,Types.ATTR(false,_,_,_),
 			    c2,_,Types.ATTR(true,_,_,_)) => fail
@@ -5363,17 +5304,9 @@ relation connect_components: (Connect.Sets,
 	
   rule	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
-	Print.print_error_buf "# Wrong type in connection\n"&
- 	Print.print_error_buf "  while making connectiion " &
-	Exp.print_component_ref_str c1 => str &
-	Print.print_error_buf str &
-	Print.print_error_buf " <-> " &
-	Exp.print_component_ref_str c2 => str & 
-	Print.print_error_buf str &
-	Print.print_error_buf "\n" &
-	Print.print_error_buf "  The type `" & Types.unparse_type t1 => str &
-	Print.print_error_buf str &
-	Print.print_error_buf "' is not allowed in connections\n"
+	Exp.print_component_ref_str c1 => c1_str &
+	Types.unparse_type t1 => t1_str &
+	Error.add_message(Error.INVALID_CONNECTOR_VARIABLE,[c1_str,t1_str])
 	----------------------------------------
 	connect_components(_,env,pre,c1,_,t1,c2,_,t2,_) => fail
 	
@@ -5708,9 +5641,7 @@ relation inst_bool_binding: (Env.Env, Types.Mod,int list,string) => bool option 
         -----------------------------------------
         inst_bool_binding(env,mod,index_list,bind_name) => NONE
 
-rule 	Print.print_error_buf "# Wrong type on " &
-	Print.print_error_buf bind_name &
-	Print.print_error_buf " expecting Boolean.\n"
+rule 	Error.add_message(Error.TYPE_ERROR,[bind_name,"Boolean"])
         -----------------------------------------
         inst_bool_binding(env,mod,index_list,bind_name) => fail
    
@@ -5740,9 +5671,7 @@ relation inst_real_binding: (Env.Env,Types.Mod,int list,string) => real option =
         -----------------------------------------
         inst_real_binding(env,mod,index_list,bind_name) => NONE
 
-  rule  Print.print_error_buf "# Wrong type on " &
-	Print.print_error_buf bind_name &
-	Print.print_error_buf " expecting Real.\n" 
+  rule  Error.add_message(Error.TYPE_ERROR,[bind_name,"Real"])
         -----------------------------------------
         inst_real_binding(env,mod,index_list,bind_name) => fail 
    
@@ -5773,9 +5702,7 @@ relation inst_int_binding: (Env.Env,Types.Mod,int list,string) => int option =
         inst_int_binding(env,mod,index_list,bind_name) => NONE
 
 
-  rule  Print.print_error_buf "# Wrong type on " &
-	Print.print_error_buf bind_name &
-	Print.print_error_buf " expecting Integer\n"
+  rule  Error.add_message(Error.TYPE_ERROR,[bind_name,"Integer"])
         -----------------------------------------
         inst_int_binding(env,mod,index_list,bind_name) => fail
    
@@ -5806,9 +5733,7 @@ relation inst_string_binding: (Env.Env,Types.Mod,int list,string) => string opti
         -----------------------------------------
         inst_string_binding(env,mod,index_list,bind_name) => NONE
 
-  rule	Print.print_error_buf "# Wrong type on " &
-	Print.print_error_buf bind_name &
-	Print.print_error_buf " expecting Integer\n"
+  rule	Error.add_message(Error.TYPE_ERROR,[bind_name,"String"])
         -----------------------------------------
         inst_string_binding(env,mod,index_list,bind_name) => fail
    
@@ -5827,9 +5752,7 @@ relation inst_enumeration_binding: (Env.Env,Types.Mod,int list,string)
         -----------------------------------------
         inst_enumeration_binding(env,mod,index_list,bind_name) => result
    
-  rule	Print.print_error_buf "# Wrong type on " &
-	Print.print_error_buf bind_name &
-	Print.print_error_buf " expecting enumeration type.\n"
+  rule	Error.add_message(Error.TYPE_ERROR,[bind_name,"enumeration type"])
         -----------------------------------------
         inst_enumeration_binding(env,mod,index_list,bind_name) => fail
    
@@ -5899,10 +5822,8 @@ relation check_prot : (bool, Types.Mod, Exp.ComponentRef) => () =
 	
   axiom check_prot(_,Types.NOMOD,_)
 
-  rule	Print.print_error_buf "# Trying to modify protected element " &
-	Exp.print_component_ref_str cref => str & 
-	Print.print_error_buf str &
-	Print.print_error_buf "\n"
+  rule	Exp.print_component_ref_str cref => str & 
+	Error.add_message(Error.MODIFY_PROTECTED,[str])
 	-----------------------------------------
 	check_prot(true,_,cref) => fail
 

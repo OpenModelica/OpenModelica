@@ -13,6 +13,7 @@ SRCRML= Absyn.rml \
 	Dump.rml \
 	DumpGraphviz.rml \
 	Env.rml \
+	Error.rml \
 	Exp.rml \
 	SCode.rml \
 	Graphviz.rml \
@@ -32,6 +33,6 @@ SRCRML= Absyn.rml \
 	VarTransform.rml
 
 ALLRML = $(SRCRML) DAEEXT.rml Print.rml RTOpts.rml System.rml Parser.rml \
-		TaskGraphExt.rml Corba.rml Socket.rml 
+		TaskGraphExt.rml Corba.rml Socket.rml ErrorExt.rml
 
 

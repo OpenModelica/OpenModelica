@@ -114,6 +114,7 @@ with "ModUtil.rml"
 with "VarTransform.rml"
 with "Dump.rml"
 with "Inst.rml"
+with "Error.rml"
 
 (** relation: generate_makefile
  **
@@ -190,8 +191,7 @@ relation generate_simulation_code: (DAE.DAElist,
 	generate_simulation_code(dae,dlow,ass1,ass2,m,mt,comps,class,filename,funcfilename) => ()
 
 
-  rule	print "-generate_simulation_code failed\n" &
-	Print.print_error_buf "# Generation of simulation code failed\n" 
+  rule	Error.add_message(Error.INTERNAL_ERROR, ["generate_simulation_code failed"])
 	-----------------------
 	generate_simulation_code(_,_,_,_,_,_,_,_,_,_) => fail
 end
@@ -309,7 +309,7 @@ end
 	---------------------------
 	generate_global_data(class, dlow,no,ni,nh) => str
 	
-  rule	Print.print_error_buf "Internal Error, generate_global_data failed\n" 
+  rule	Error.add_message(Error.INTERNAL_ERROR, ["generate_global_data failed"])
 	 ---------------------
 	 generate_global_data(_,_,_,_,_) => fail
 end
@@ -857,7 +857,7 @@ relation generate_input_function_code:(DAELow.DAELow) => (string,int) =
 
         generate_input_function_code(DAELow.DAELOW(vars,knvars,eqns,se,ie,al,ev)) => (res,lst_lenght)
 
-  rule	Print.print_error_buf "Internal Error, generate_input_function_code failed\n" 
+  rule	Error.add_message(Error.INTERNAL_ERROR, ["generate_input_function_code failed"])
 	----------------------
 	generate_input_function_code(_) => fail
 end
@@ -914,7 +914,7 @@ relation generate_output_function_code:(DAELow.DAELow) => (string,int) =
         generate_output_function_code(DAELow.DAELOW(vars,knvars,eqns,se,ie,al,ev)) 
           => (res,lst_lenght)
 
-  rule	Print.print_error_buf "Internal Error, generate_output_function code failed\n"
+  rule	Error.add_message(Error.INTERNAL_ERROR, ["generate_output_function_code failed"])
 	-----------------------
 	generate_output_function_code(_) => fail
 end
@@ -1105,7 +1105,7 @@ relation generate_ode_code: (DAELow.DAELow,
 	-------------------------------------------
 	generate_ode_code(dlow,comps,ass1,ass2,m,mt,class) => res
 
-  rule	Print.print_error_buf "Internal Error, generate_ode_code failed\n" 
+  rule	Error.add_message(Error.INTERNAL_ERROR, ["generate_ode_code failed"])
 	-------------------------------
 	generate_ode_code(dlow,comps,ass1,ass2,m,mt,class) => fail
 end
@@ -1303,7 +1303,7 @@ relation generate_event_checking_code: (DAELow.DAELow,
 	-------------------------------------------
 	generate_event_checking_code(dlow,comps,ass1,ass2,m,mt,class) => (res, helpVarInfo)
 
-  rule	Print.print_error_buf "Internal error, generate_event_checking_code failed\n"
+  rule	Error.add_message(Error.INTERNAL_ERROR, ["generate_event_checking_code failed"])
 	----------------------------------------
 	generate_event_checking_code(_,_,_,_,_,_,_) => fail
 end
@@ -1996,8 +1996,7 @@ relation generate_functions: (SCode.Program, (* Needed to instantiate functions*
 	  => libs
 
 
-  rule	print "-generate_functions failed\n" & 
-	Print.print_error_buf "# Generate functions failed\n" 
+  rule	Error.add_message(Error.INTERNAL_ERROR, ["generate_functions failed"])
 	-------------------------------------
 	generate_functions (_, _, _, _, _) => fail
 
@@ -2432,7 +2431,7 @@ relation generate_zero_crossing: (string,
 	--------------------------------------------------
 	generate_zero_crossing(cname,dae,dlow as DAELow.DAELOW(_,_,_,_,_,_,DAELow.EVENT_INFO(_,zc)),ass1,ass2,blocks,helpVarInfo) => res
 
-  rule	Print.print_error_buf "Internal Error, generate_zero_crossing failed\n"
+  rule	Error.add_message(Error.INTERNAL_ERROR, ["generate_zero_crossing failed"])
 	----------------------------------------
 	generate_zero_crossing(_,_,_,_,_,_,_) => fail
 end
@@ -2469,9 +2468,9 @@ relation generate_zero_crossing2: (DAELow.ZeroCrossing list, int,
 				index,dae,dlow,ass1,ass2,blocks,helpVarInfo) => (res1,res2)
 
   rule	dump_zero_crossing_str zc => zc_str &
-	Util.string_append_list(["Internal Error generating zero crossing :",
+	Util.string_append_list(["generating zero crossing :",
 				 zc_str,"\n"]) => res &
-	Print.print_error_buf res 
+	Error.add_message(Error.INTERNAL_ERROR, [res])
 	------------------------
 	generate_zero_crossing2((zc as DAELow.ZERO_CROSSING(_,eql,_))::xs,
 				index,dae,dlow,ass1,ass2,blocks,helpVarInfo) 
@@ -2525,7 +2524,7 @@ relation build_help_var_assignments: ( (int * Exp.Exp * int) list ) => string =
 	--------------------------------------------------
 	build_help_var_assignments((helpVarIndex, e,_)::rest) => res
 
-  rule	Print.print_error_buf "Internal Error, build_help_var_assignments failed\n" 
+  rule	Error.add_message(Error.INTERNAL_ERROR, ["build_help_var_assignments failed"])
 	--------------------------------------------------
 	build_help_var_assignments(_) => fail
 end
@@ -2564,7 +2563,7 @@ relation generate_when_clauses: (string,
 	--------------------------------------------------
 	generate_when_clauses(cname,dae,dlow as DAELow.DAELOW(_,_,_,_,_,_,DAELow.EVENT_INFO(wc,_)),ass1,ass2,blocks) => res
 
-  rule	Print.print_error_buf "Internal Error, generate_when_clauses failed\n"
+  rule	Error.add_message(Error.INTERNAL_ERROR, ["generate_when_clauses failed"])
 	----------------------------------------
 	generate_when_clauses(_,_,_,_,_,_) => fail
 end
@@ -2696,7 +2695,8 @@ relation generate_compute_residual_state:(string,
         -------------------------------------------------------------
         generate_compute_residual_state(cname,dae,dlow,ass1,ass2,blocks) => res
 
-  rule	Print.print_error_buf "Internal Error, generate_compute_residual_state failed\n" 
+  rule	Error.add_message(Error.INTERNAL_ERROR, ["generate_compute_residual_state"])
+
 	----------------------------
 	generate_compute_residual_state(cname,dae,dlow,ass1,ass2,blocks) => fail
 end
@@ -2726,7 +2726,7 @@ end
          -------------------------------------------------------------
          generate_compute_output(cname,dae,dlow,ass1,ass2,blocks) => coutput
 
-  rule	Print.print_error_buf "Internal Error, generate_compute_output failed\n" 
+  rule	Error.add_message(Error.INTERNAL_ERROR, ["generate_compute_output failed"])
 	 -----------------
 	 generate_compute_output(_,_,_,_,_,_) => fail
  end
@@ -3460,12 +3460,8 @@ relation get_called_functions_in_function : (Absyn.Path, DAE.DAElist) => Absyn.P
 
 	(* Don't fail here, ceval will generate the function later *)
   rule	DAE.get_named_function(path, elements) => [] &
-	Print.print_error_buf("Function not found: ") &
 	Absyn.path_string path => pathstr &	
-	Print.print_error_buf(pathstr) &
-	Print.print_error_buf("\n")
-	(*debug*) & Debug.fprint("info", "Function not found: ")
-	(*debug*) & Debug.fprintln("info", pathstr)
+	Error.add_message(Error.LOOKUP_ERROR,[pathstr,"global scope"])
 	---------------------------------------------------
 	get_called_functions_in_function (path,DAE.DAE(elements)) => []
 

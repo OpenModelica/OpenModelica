@@ -1,0 +1,863 @@
+(*
+This file is part of OpenModelica.
+
+Copyright (c) 1998-2005, Linköpings universitet, Department of
+Computer and Information Science, PELAB
+
+All rights reserved.
+
+(The new BSD license, see also
+http://www.opensource.org/licenses/bsd-license.php)
+
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+* Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in
+  the documentation and/or other materials provided with the
+  distribution.
+
+* Neither the name of Linköpings universitet nor the names of its
+  contributors may be used to endorse or promote products derived from
+  this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*)
+
+(**
+ ** file:	 Error.rml
+ ** module:      Error
+ ** description: Error handling
+ **
+ ** RCS: $Id$
+ **
+ ** This file contains the Error handling for the Compiler.
+ **  
+ **)
+
+module Error:
+
+	(* severity of message*)
+  datatype Severity =  ERROR (* Error when tool can not succed in translation*)
+		    | WARNING (* Warning when tool succeds but with warning *)
+		    | NOTIFICATION (* Additional information to user, e.g. what
+				    * actions tool has taken to succed in translation*)
+
+  datatype MessageType = 
+		SYNTAX  		(* syntax errors *)
+		| GRAMMAR 		(* grammar errors *)
+		| TRANSLATION		(* instantiation errors: up to
+					 flat modelica*)
+		| SYMBOLIC		(* Symbolic manipulation error,
+					 simcodegen, up to .exe file*)
+		| SIMULATION           (* Runtime simulation error *)
+		| SCRIPTING		(* runtime scripting /interpretation error*)
+
+type ErrorID = int   (* Unique error id. Must be defined in XXX, used to 
+			  look up message string.*)
+
+type MessageTokens = string list  (* "Tokens" to insert into message at 
+				   * positions identified by 
+				   * - %s for string 
+				   * - %l for line no.
+				   * - %c for col. no.
+				   *)
+
+with "Absyn.rml"
+(** Relations *)
+
+(** adds a message without source file reference*)
+relation add_message: ( ErrorID,MessageTokens) => () 
+
+(** adds a message with source file reference*)
+relation add_source_message: ( ErrorID,MessageTokens, Absyn.Info) => () 
+
+
+(** Relations for pretty printing. *)
+
+
+(* Returns all messages in a formatted string *)
+relation print_messages_str: () => string
+
+(* Returns all messages as a list of strings, one for each message.*)
+relation print_messages_str_lst:() => string list 
+
+(* Returns all messages as a list of strings, one for each message.
+ Filters out messages of certain type.
+ *)
+relation print_messages_str_lst_type: (MessageType) => (string list) 
+
+
+(* Returns all messages as a list of strings, one for each message.
+ Filters out messages of certain severity
+ *)
+relation print_messages_str_lst_severity: (Severity) => (string list) 
+
+
+(** Relations for interactive comm. These returns the messages as an array 
+ ** of strings, suitable for sending to clients like model editor, MDT, etc.
+*) 
+
+relation get_messages_str: () => string
+
+relation get_messages_str_type: (MessageType) => (string) 
+
+relation get_messages_str_severity: (Severity) => (string) 
+
+
+
+(** Error messages *)
+
+
+val SYNTAX_ERROR : ErrorID (* syntax errors*)
+
+val GRAMMATIC_ERROR : ErrorID (* parser errors *)
+
+val LOOKUP_ERROR : ErrorID (* generic lookup error *)
+
+val LOOKUP_ERROR_COMPNAME : ErrorID (* lookup while instantiating component*)
+
+val LOOKUP_VARIABLE_ERROR : ErrorID (* lookup while instantiating component*)
+
+val LOOKUP_BASECLASS_ERROR : ErrorID (* lookup baseclass error *)
+
+val ASSIGN_CONSTANT_ERROR : ErrorID (* assigning to a constant component*)
+
+val ASSIGN_PARAM_ERROR : ErrorID (* assigning to a parameter component*)
+
+val ASSIGN_READONLY_ERROR : ErrorID (* assigning to a readonly component *)
+
+val ASSIGN_TYPE_MISMATCH_ERROR : ErrorID (* type mismatch in assignment *)
+
+val IF_CONDITION_TYPE_ERROR : ErrorID (* Type error in if conditional *)
+
+val FOR_EXPRESSION_TYPE_ERROR : ErrorID (* Type error in for expressions *)
+
+val WHILE_CONDITION_TYPE_ERROR : ErrorID (* type error in while condition *)
+
+val WHEN_CONDITION_TYPE_ERROR : ErrorID (* type error in when conditional *)
+
+val END_ILLEGAL_USE_ERROR : ErrorID (* Illegal use of 'end' *)
+
+val DIVISION_BY_ZERO : ErrorID (* Division by zero in expressions *)
+
+val MODULO_BY_ZERO : ErrorID (* Division by zero in expressions *)
+
+val REM_ARG_ZERO : ErrorID (* Division by zero in expressions *)
+
+val SCRIPT_READ_SIM_RES_ERROR : ErrorID (* Error readim simulation result *)
+
+val SCRIPT_READ_SIM_RES_SIZE_ERROR : ErrorID (* Error reading simulation result size*)
+
+val LOAD_MODEL_ERROR : ErrorID (* Error loading model from MODELICAPATH *)
+
+val WRITING_FILE_ERROR : ErrorID (* Error writing to file.*)
+
+val SIMULATOR_BUILD_ERROR : ErrorID (* Error building simulator (.exe) *)
+
+val DIMENSION_NOT_KNOWN : ErrorID (* Dimension must be constant or parameter exp*)
+
+val UNBOUND_VALUE : ErrorID (* Variable has no value *)
+
+val NEGATIVE_SQRT : ErrorID (* Negative value to sqrt *)
+
+val NO_CONSTANT_BINDING : ErrorID (* No constant binding of param or const *)
+
+val TYPE_NOT_FROM_PREDEFINED : ErrorID (* type used for non-predefined type *)
+
+val EQUATION_IN_RECORD : ErrorID (* Equations in record *)
+
+val EQUATION_IN_CONNECTOR : ErrorID (* Equations in connector *)
+
+val UNKNOWN_EXTERNAL_LANGUAGE : ErrorID (* Unknown language in external func. *)
+val DIFFERENT_NO_EQUATION_IF_BRANCHES : ErrorID (* different # eqns in if branches*)
+
+val UNDERDET_EQN_SYSTEM : ErrorID (* Underdetermined equation system *)
+
+val OVERDET_EQN_SYSTEM : ErrorID (* Overdetermined equation system *)
+
+val STRUCT_SINGULAR_SYSTEM : ErrorID (* structurally singular eqn. system *)
+
+val UNSUPPORTED_LANGUAGE_FEATURE : ErrorID (* Unsupported langauge feature*)
+
+val NON_EXISTING_DERIVATIVE : ErrorID (* Derivative non-existent *)
+
+val NO_CLASSES_LOADED : ErrorID (* No classes loaded, empty program *)
+
+val INST_PARTIAL_CLASS : ErrorID (* Trying to instantiate partial class *)
+
+val REDECLARE_CLASS_AS_VAR : ErrorID (* Trying to redeclare class as var *)
+
+val REDECLARE_NON_REPLACEABLE : ErrorID (*Trying to redeclare non-replaceable *)
+val COMPONENT_INPUT_OUTPUT_MISMATCH : ErrorID (* mismatch in component direction *)
+val ARRAY_DIMENSION_MISMATCH : ErrorID (* Array dimension mismatch *)
+
+val ARRAY_DIMENSION_INTEGER : ErrorID (* Array dimension must be Integer *)
+
+val  EQUATION_TYPE_MISMATCH_ERROR : ErrorID (* Equation type mismatch *)
+
+val INST_ARRAY_EQ_UNKNOWN_SIZE : ErrorID (* array equation unknown size *)
+
+val TUPLE_ASSIGN_FUNCALL_ONLY : ErrorID (* tuple assignment only with rhs funcall*)
+
+val INVALID_CONNECTOR_TYPE : ErrorID (* Invalid connector type *)
+
+val CONNECT_TWO_INPUTS : ErrorID (* connecting two input vars *)
+
+val CONNECT_TWO_OUTPUTS : ErrorID (* connecting two output vars *)
+
+val CONNECT_FLOW_TO_NONFLOW : ErrorID (* connecting flow to non-flow *)
+
+val INVALID_CONNECTOR_VARIABLE : ErrorID (* invalid connector variable type*)
+
+val TYPE_ERROR : ErrorID (* generic type error *)
+
+val MODIFY_PROTECTED : ErrorID (* modify protected elt *)
+
+val INVALID_TUPLE_CONTENT : ErrorID (* Tuple contain crefs only *)
+
+val IMPORT_PACKAGES_ONLY : ErrorID (* Import packages only *)
+
+val IMPORT_SEVERAL_NAMES : ErrorID (* Importing of several identical names *)
+
+val LOOKUP_TYPE_FOUND_COMP : ErrorID (* Found component when searching for type*)
+
+val LOOKUP_ENCAPSULATED_RESTRICTION_VIOLATION : ErrorID (* Violated lookup restriction to encapsulated elements only *)
+
+val REFERENCE_PROTECTED : ErrorID (* Referencing protected elt. *)
+
+val ILLEGAL_SLICE_MOD : ErrorID (* Illegal slice modification *)
+
+val ILLEGAL_MODIFICATION : ErrorID (* generic Illegal modification *)
+
+val INTERNAL_ERROR : ErrorID (* Internal error *)
+
+val TYPE_MISMATCH_ARRAY_EXP : ErrorID (* type mismatch in array expression *)
+
+val TYPE_MISMATCH_MATRIX_EXP: ErrorID (* type mismatch in matrix expression rows*)
+
+val MATRIX_EXP_ROW_SIZE : ErrorID (* different row sizes of matrice rows*)
+
+val OPERAND_BUILTIN_TYPE : ErrorID (* operator that expects buitin type *)
+
+val WRONG_TYPE_OR_NO_OF_ARGS : ErrorID (*wrong type or number of arguments *)
+
+val DIFFERENT_DIM_SIZE_IN_ARGUMENTS : ErrorID (* Different dimesion sizes in arguments *)
+
+val DER_APPLIED_TO_CONST : ErrorID (* Der operator applied to constant expr. *)
+
+val ARGUMENT_MUST_BE_INTEGER_OR_REAL : ErrorID (* nth argument must be Integer or Real *)
+val ARGUMENT_MUST_BE_INTEGER : ErrorID (* nth argument must be Integer *)
+
+val ARGUMENT_MUST_BE_DISCRETE_VAR : ErrorID (* nth argument must be discrete var *)
+
+val TYPE_MUST_BE_SIMPLE : ErrorID (* Type must be simple type *)
+
+val ARGUMENT_MUST_BE_VARIABLE : ErrorID (*argument must be variable *)
+
+val NO_MATCHING_FUNCTION_FOUND : ErrorID (* No matching function found *)
+
+val FUNCTION_COMPS_MUST_HAVE_DIRECTION : ErrorID (* Function comps must be input/output *)
+
+val FUNCTION_SLOT_ALLREADY_FILLED : ErrorID (* Function slot allready filled *)
+
+val NO_SUCH_ARGUMENT : ErrorID (* No such argument to function *)
+
+val CONSTANT_OR_PARAM_WITH_NONCONST_BINDING : ErrorID (* Constant/param with non constant initializer*)
+
+val SUBSCRIPT_NOT_INT_OR_INT_ARRAY : ErrorID (*subscript must be integer *)
+
+val TYPE_MISMATCH_IF_EXP : ErrorID (* type mismatch in if-exp branches *)
+
+val UNRESOLVABLE_TYPE : ErrorID (* unresolvable type *)
+
+val INCOMPATIBLE_TYPES : ErrorID (* incompatible types  *)
+
+val ERROR_OPENING_FILE : ErrorID (* Error opening file *)
+
+(** Warning messages *)
+
+val UNBOUND_PARAMETER_WARNING : ErrorID (* parameter without a value *)
+
+(** Notification messages *)
+
+val INDEX_REDUCTION_NOTIFICATION : ErrorID   (* when indexreduction is performed *)
+
+end (* module *)
+
+val SYNTAX_ERROR = 1
+
+val GRAMMATIC_ERROR = 2
+
+val LOOKUP_ERROR = 3
+
+val LOOKUP_ERROR_COMPNAME = 4 
+
+val LOOKUP_VARIABLE_ERROR = 5
+
+val ASSIGN_CONSTANT_ERROR = 6
+
+val ASSIGN_PARAM_ERROR = 7
+
+val ASSIGN_READONLY_ERROR = 8
+
+val ASSIGN_TYPE_MISMATCH_ERROR = 9
+
+val IF_CONDITION_TYPE_ERROR = 10
+
+val FOR_EXPRESSION_TYPE_ERROR = 11
+
+val WHEN_CONDITION_TYPE_ERROR = 12
+
+val WHILE_CONDITION_TYPE_ERROR = 13 
+
+val END_ILLEGAL_USE_ERROR = 14
+
+val DIVISION_BY_ZERO = 15
+
+val MODULO_BY_ZERO = 16
+
+val REM_ARG_ZERO = 17
+
+val SCRIPT_READ_SIM_RES_ERROR = 18
+
+val SCRIPT_READ_SIM_RES_SIZE_ERROR = 19
+
+val LOAD_MODEL_ERROR = 20
+
+val WRITING_FILE_ERROR = 21
+
+val SIMULATOR_BUILD_ERROR = 22
+
+val DIMENSION_NOT_KNOWN = 23
+
+val UNBOUND_VALUE = 24
+
+val NEGATIVE_SQRT = 25
+
+val NO_CONSTANT_BINDING = 26
+
+val TYPE_NOT_FROM_PREDEFINED = 27
+
+val EQUATION_IN_RECORD = 28
+
+val EQUATION_IN_CONNECTOR = 29
+
+val UNKNOWN_EXTERNAL_LANGUAGE = 30
+
+val DIFFERENT_NO_EQUATION_IF_BRANCHES = 31
+
+val UNDERDET_EQN_SYSTEM = 32
+
+val OVERDET_EQN_SYSTEM = 33 
+
+val STRUCT_SINGULAR_SYSTEM = 34
+
+val UNSUPPORTED_LANGUAGE_FEATURE = 35
+
+val NON_EXISTING_DERIVATIVE = 36
+
+val NO_CLASSES_LOADED = 37
+
+val INST_PARTIAL_CLASS = 38
+
+val LOOKUP_BASECLASS_ERROR = 39
+
+val REDECLARE_CLASS_AS_VAR = 40
+
+val REDECLARE_NON_REPLACEABLE = 41
+
+val COMPONENT_INPUT_OUTPUT_MISMATCH = 42
+
+val ARRAY_DIMENSION_MISMATCH = 43
+
+val ARRAY_DIMENSION_INTEGER = 44 
+
+val  EQUATION_TYPE_MISMATCH_ERROR = 45
+
+val INST_ARRAY_EQ_UNKNOWN_SIZE = 46
+
+val TUPLE_ASSIGN_FUNCALL_ONLY = 47
+
+val INVALID_CONNECTOR_TYPE = 48
+
+val CONNECT_TWO_INPUTS = 49
+
+val CONNECT_TWO_OUTPUTS = 50
+
+val CONNECT_FLOW_TO_NONFLOW = 51
+
+val INVALID_CONNECTOR_VARIABLE = 52
+
+val TYPE_ERROR = 53
+
+val MODIFY_PROTECTED = 54
+
+val INVALID_TUPLE_CONTENT = 55
+
+val IMPORT_PACKAGES_ONLY = 56
+
+val IMPORT_SEVERAL_NAMES = 57 
+
+val LOOKUP_TYPE_FOUND_COMP = 58
+
+val LOOKUP_ENCAPSULATED_RESTRICTION_VIOLATION = 59
+
+val REFERENCE_PROTECTED = 60
+
+val ILLEGAL_SLICE_MOD = 61 
+
+val ILLEGAL_MODIFICATION = 62
+
+val INTERNAL_ERROR = 63 
+
+val TYPE_MISMATCH_ARRAY_EXP = 64
+
+val TYPE_MISMATCH_MATRIX_EXP = 65
+
+val MATRIX_EXP_ROW_SIZE = 66
+
+val OPERAND_BUILTIN_TYPE = 67
+
+val WRONG_TYPE_OR_NO_OF_ARGS = 68
+
+val DIFFERENT_DIM_SIZE_IN_ARGUMENTS = 69
+
+val DER_APPLIED_TO_CONST = 70
+
+val ARGUMENT_MUST_BE_INTEGER_OR_REAL = 71 
+
+val ARGUMENT_MUST_BE_INTEGER = 72
+
+val ARGUMENT_MUST_BE_DISCRETE_VAR = 73
+
+val TYPE_MUST_BE_SIMPLE = 74
+
+val ARGUMENT_MUST_BE_VARIABLE = 75
+
+val NO_MATCHING_FUNCTION_FOUND = 76
+
+val FUNCTION_COMPS_MUST_HAVE_DIRECTION = 77
+
+val FUNCTION_SLOT_ALLREADY_FILLED = 78
+
+val NO_SUCH_ARGUMENT = 79
+
+val CONSTANT_OR_PARAM_WITH_NONCONST_BINDING = 80
+
+val SUBSCRIPT_NOT_INT_OR_INT_ARRAY = 81
+
+val TYPE_MISMATCH_IF_EXP = 82
+
+val UNRESOLVABLE_TYPE = 83
+
+val INCOMPATIBLE_TYPES = 84
+
+val ERROR_OPENING_FILE = 85
+
+val UNBOUND_PARAMETER_WARNING = 500
+
+val INDEX_REDUCTION_NOTIFICATION = 1000
+
+val ErrorTable =
+[ 
+ (* Errors *)
+ (SYNTAX_ERROR, SYNTAX,	ERROR,				"Syntax error near: %s"),
+ (GRAMMATIC_ERROR, GRAMMAR, ERROR,			"error: %s"),
+ (LOOKUP_ERROR, TRANSLATION, ERROR, 			"Class %s not found in scope %s."),
+
+ (LOOKUP_ERROR_COMPNAME, TRANSLATION, ERROR, 		"Class %s not found in scope %s while instantiating %s."),
+
+(LOOKUP_VARIABLE_ERROR, TRANSLATION, ERROR,		"Variable %s not found in scope %s\n"),
+
+(LOOKUP_BASECLASS_ERROR, TRANSLATION,ERROR,		"Base class %s not found in scope %s"),
+ 
+ (ASSIGN_CONSTANT_ERROR, TRANSLATION, ERROR,		"Trying to assign to constant component in %s := %s"),
+ (ASSIGN_PARAM_ERROR, TRANSLATION, ERROR,		"Trying to assign to parameter component in %s := %s"),
+ (ASSIGN_READONLY_ERROR, TRANSLATION, ERROR,		"Trying to assign to readonly component in %s := %s"),
+ (ASSIGN_TYPE_MISMATCH_ERROR, TRANSLATION, ERROR,	"Type mismatch in assignment in %s := %s of %s := %s"),
+ (IF_CONDITION_TYPE_ERROR, TRANSLATION, ERROR,		"Type error in conditional ( %s). Expected Boolean, got %s."),
+ (FOR_EXPRESSION_TYPE_ERROR, TRANSLATION, ERROR,	"Type error in for expression (%s). Expected array got %s."),
+ (WHILE_CONDITION_TYPE_ERROR, TRANSLATION, ERROR,	"Type error in while conditional (%s). Expected Boolean got %s."),
+(WHEN_CONDITION_TYPE_ERROR, TRANSLATION, ERROR,		"Type error in when conditional (%s). Expected Boolean scalar or vector, got %s."),
+(END_ILLEGAL_USE_ERROR, TRANSLATION, ERROR,		"'end' can not be used outside array subscripts."),
+(DIVISION_BY_ZERO, TRANSLATION, ERROR,			"Division by zero in %s / %s"),
+(MODULO_BY_ZERO, TRANSLATION, ERROR,			"Modulo by zero in mod(%s,%s)"),
+(REM_ARG_ZERO, TRANSLATION, ERROR,			"Second argument in rem is zero in rem(%s,%s)"), 
+(SCRIPT_READ_SIM_RES_ERROR, SCRIPTING, ERROR,		"Error reading simulation result."),
+(SCRIPT_READ_SIM_RES_SIZE_ERROR, SCRIPTING, ERROR,	"Error reading simulation result size"),
+(LOAD_MODEL_ERROR, TRANSLATION, ERROR,			"Class %s not found in MODELICAPATH"),
+(WRITING_FILE_ERROR, SCRIPTING, ERROR,			"Error writing to file %s."),
+(SIMULATOR_BUILD_ERROR, TRANSLATION, ERROR,		"Error building simulator. Buildlog: %s"),
+(DIMENSION_NOT_KNOWN, TRANSLATION, ERROR,		"Dimensions must be parameter or constant expression (in %s)."),
+
+(UNBOUND_VALUE, TRANSLATION, ERROR,			"Variable %s has no bound value."),
+
+(NEGATIVE_SQRT, TRANSLATION, ERROR,			"Error, negative value as argument to sqrt."),
+
+(NO_CONSTANT_BINDING, TRANSLATION, ERROR,		"No constant binding for variable %s in scope %s."),
+
+(TYPE_NOT_FROM_PREDEFINED, TRANSLATION, ERROR,		"In class %s, class restriction 'type' can only be derived from predefined types."),
+
+(EQUATION_IN_RECORD, TRANSLATION, ERROR,		"In class %s, equations not allowed in records"),
+
+(EQUATION_IN_CONNECTOR, TRANSLATION, ERROR,		"In class %s, equations not allowed in connectors"),
+
+(UNKNOWN_EXTERNAL_LANGUAGE, TRANSLATION, ERROR,		"Unknown external language %s in external function declaration"),
+
+(DIFFERENT_NO_EQUATION_IF_BRANCHES, TRANSLATION, ERROR,	"Different number of equations in the branches of the if equation: %s"),
+
+
+(UNSUPPORTED_LANGUAGE_FEATURE, TRANSLATION, ERROR,	"The language feature %s is not supported. Suggested workaroung: %s"), 
+
+(UNDERDET_EQN_SYSTEM, SYMBOLIC, ERROR,			"Too few equations, underdetermined system. The model has %s variables and %s equations"),
+
+(OVERDET_EQN_SYSTEM, SYMBOLIC, ERROR,			"Too many equations, overdetermined system. The model has %s variables and %s equations"),
+
+(STRUCT_SINGULAR_SYSTEM, SYMBOLIC, ERROR,		"Model is structurally singular, error found sorting equations %s for variables %s"),
+
+(NON_EXISTING_DERIVATIVE, SYMBOLIC, ERROR,		"Derivative of expression %s is non-existent"),
+
+(NO_CLASSES_LOADED, TRANSLATION, ERROR,			"No classes are loaded."),
+
+(INST_PARTIAL_CLASS, TRANSLATION, ERROR,		"Illegal to instantiate partial class %s"),
+
+(REDECLARE_CLASS_AS_VAR, TRANSLATION, ERROR,		"Trying to redeclare the class %s as a variable"),
+
+(REDECLARE_NON_REPLACEABLE, TRANSLATION, ERROR,		"Trying to redeclare class %s but class not declared as repleacable"),
+
+(COMPONENT_INPUT_OUTPUT_MISMATCH, TRANSLATION, ERROR,	"Component declared as %s when having the variable % declared as input"),
+
+(ARRAY_DIMENSION_MISMATCH, TRANSLATION, ERROR,		"Array dimension mismatch, expression %s has type %s, expected array dimensions [%s]"),
+
+(ARRAY_DIMENSION_INTEGER, TRANSLATION, ERROR,		"Array dimension must be integer expression in %s which has type %s"),
+
+(EQUATION_TYPE_MISMATCH_ERROR, TRANSLATION, ERROR,	"Type mismatch in equation %s of type %s"),
+
+(INST_ARRAY_EQ_UNKNOWN_SIZE, TRANSLATION, ERROR,	"Array equation has unknown size in %s"),
+
+(TUPLE_ASSIGN_FUNCALL_ONLY, TRANSLATION, ERROR,		"Tuple assignment only allowed when rhs is function call (in %s)"),
+
+(INVALID_CONNECTOR_TYPE, TRANSLATION, ERROR,		"Cannot connect objects of type %, not a connector."),
+
+(CONNECT_TWO_INPUTS, TRANSLATION, ERROR,		"Cannot connect two input variables while connecting %s to %s unless one of them is inside and the other outside connector."),
+
+(CONNECT_TWO_OUTPUTS, TRANSLATION, ERROR,		"Cannot connect two output variables while connecting %s to %s unless one of them is inside and the other outside connector."),
+
+(CONNECT_FLOW_TO_NONFLOW, TRANSLATION, ERROR,		"Cannot connect flow component %s to non-flow component %s"),
+
+(INVALID_CONNECTOR_VARIABLE, TRANSLATION, ERROR,	"The type of variable %s (%s) is not allowed in connectors"),
+
+(TYPE_ERROR, TRANSLATION, ERROR,			"Wrong type on %s, expected %s"),
+
+(MODIFY_PROTECTED, TRANSLATION, ERROR,			"Trying to modify protected element %s"),
+
+(INVALID_TUPLE_CONTENT, TRANSLATION, ERROR,		"Tuple %s  must contain component references only"),
+
+(IMPORT_PACKAGES_ONLY, TRANSLATION, ERROR,		"%s is not a package, imports is only allowed for packages."),
+
+(IMPORT_SEVERAL_NAMES, TRANSLATION, ERROR,		"% found in several unqualified import statements."),
+
+(LOOKUP_TYPE_FOUND_COMP, TRANSLATION, ERROR,		"Found a component with same name when looking for type %s"),
+
+(LOOKUP_ENCAPSULATED_RESTRICTION_VIOLATION, TRANSLATION, ERROR, "Lookup is restricted to encapsulated elements only, violated in %s"),
+
+(REFERENCE_PROTECTED, TRANSLATION, ERROR,		"Referencing protected element %s is not allowed"),
+
+(ILLEGAL_SLICE_MOD, TRANSLATION, ERROR,			"Illegal slice modification %s"),
+
+(ILLEGAL_MODIFICATION, TRANSLATION, ERROR,		"Illegal modification %s (of %s)"),
+
+(INTERNAL_ERROR, TRANSLATION, ERROR,			"Internal error %s"),
+
+(TYPE_MISMATCH_ARRAY_EXP, TRANSLATION, ERROR,		"Type mismatch in array expression. %s is of type %s while the elements %s are of type %s"),
+
+(TYPE_MISMATCH_MATRIX_EXP, TRANSLATION, ERROR,		"Type mismatch in matrix rows. %s is a row of %s, the rest of the matrix is of type %s"),
+
+(MATRIX_EXP_ROW_SIZE, TRANSLATION, ERROR,		"Incompatible row length in matrix expression. %s is a row of size %s, the rest of the matrix rows are of size %s"),
+
+(OPERAND_BUILTIN_TYPE, TRANSLATION, ERROR,		"Operand of %s must be builtin-type in %s"),
+
+(WRONG_TYPE_OR_NO_OF_ARGS, TRANSLATION, ERROR,		"Wrong tyep or wrong number of arguments to %s"),	
+
+(DIFFERENT_DIM_SIZE_IN_ARGUMENTS, TRANSLATION, ERROR,	"Different dimension sizes in arguments to %s"),
+
+(DER_APPLIED_TO_CONST, TRANSLATION, ERROR,		"der operator applied to constant expression"),
+
+(ARGUMENT_MUST_BE_INTEGER_OR_REAL, TRANSLATION, ERROR,	"%s argument to %s must be Integer or Real expression"),
+
+(ARGUMENT_MUST_BE_INTEGER, TRANSLATION, ERROR,	"%s argument to %s must be Integer expression"),
+
+(ARGUMENT_MUST_BE_DISCRETE_VAR, TRANSLATION, ERROR,		"%s argument to %s must be discrete variable"),
+
+(TYPE_MUST_BE_SIMPLE, TRANSLATION, ERROR,			"Type in % must be simple type"),
+
+(ARGUMENT_MUST_BE_VARIABLE, TRANSLATION, ERROR,			"%s argument to %s must be a variable"),
+
+(NO_MATCHING_FUNCTION_FOUND, TRANSLATION, ERROR,		"No matching function found for %s, candidates are %s"),
+
+(FUNCTION_COMPS_MUST_HAVE_DIRECTION, TRANSLATION, ERROR,	"Component %s in function is neither input nor output"),
+
+(FUNCTION_SLOT_ALLREADY_FILLED, TRANSLATION, ERROR,		"Slot %s allready filled"),
+
+(NO_SUCH_ARGUMENT, TRANSLATION, ERROR,				"No such argument %s"),
+
+(CONSTANT_OR_PARAM_WITH_NONCONST_BINDING, TRANSLATION, ERROR,	"%s is a constant or parameter with a non-constant initializer %s"),
+
+(SUBSCRIPT_NOT_INT_OR_INT_ARRAY, TRANSLATION, ERROR,		"Subscript is not an integer or integer array in %s whis is of type %s"),
+
+(TYPE_MISMATCH_IF_EXP, TRANSLATION, ERROR,			"Type mismatch in if-expression, true branch: %s has type %s,  false branch: %s has type %s"),
+
+(UNRESOLVABLE_TYPE, TRANSLATION, ERROR,				"Cannot resolve type of expression %s"),
+
+(INCOMPATIBLE_TYPES, TRANSLATION, ERROR,			"Incompatible argument types to operation %s, left type: %s, right type: %s"),
+
+(ERROR_OPENING_FILE,TRANSLATION, ERROR,				"Error opening file %s"),
+
+ (* WARNING		 *)
+ (UNBOUND_PARAMETER_WARNING, TRANSLATION, WARNING,	"Warning, parameter %s has no value."),
+
+
+
+
+ (* Notification *)
+ (INDEX_REDUCTION_NOTIFICATION, SYMBOLIC, NOTIFICATION,	"Notification, differentiated equation %s to %s for index reduction.")
+]
+
+
+with "ErrorExt.rml"
+with "Util.rml"
+with "Print.rml"
+
+
+(* Implementation of Relations *)
+
+
+
+(** relation: add_message
+ **
+ ** Adds a message given ID and tokens. The rest of the info
+ ** is looked up in the message table.
+**)
+relation add_message: ( ErrorID,MessageTokens) => () =
+
+  rule	lookup_message(error_id) => (msg_type, severity, msg) &
+	message_type_str(msg_type) => msg_type_str &
+	severity_str(severity) => severity_str &
+	ErrorExt.add_message(error_id,msg_type_str,severity_str,msg,tokens)
+	---------------------------
+	add_message(error_id,tokens) => ()
+	
+  rule	not lookup_message(error_id) => (_,_,_) &
+	Print.print_error_buf "#Internal error, error message with id " &
+	int_string(error_id) => id_str &
+	Print.print_error_buf id_str & 
+	Print.print_error_buf " not defined.\n"
+	-----------------
+	add_message(error_id,tokens) => fail
+end
+
+
+(** relation: add_source_message
+ **
+ ** Adds a message given ID, tokens and source file info.
+ ** The rest of the info is looked up in the message table.
+**)
+
+relation add_source_message: ( ErrorID,MessageTokens, Absyn.Info) => () =
+
+  rule	lookup_message(error_id) => (msg_type, severity, msg) &
+	message_type_str(msg_type) => msg_type_str &
+	severity_str(severity) => severity_str &
+	ErrorExt.add_source_message(error_id,msg_type_str,severity_str,
+				    line,col,file,
+				    msg,tokens )
+	---------------------------
+	add_source_message(error_id,tokens,Absyn.INFO(file,line,col)) => ()
+	
+  rule	not lookup_message(error_id) => (_,_,_) &
+	Print.print_error_buf "#Internal error, error message with id " &
+	int_string(error_id) => id_str &
+	Print.print_error_buf id_str & 
+	Print.print_error_buf " not defined.\n"
+	-----------------
+	add_source_message(error_id,tokens,sinfo) => fail
+
+end
+
+
+(** Relations for pretty printing. *)
+
+
+(** relation: print_messages_str
+ **
+ ** Prints messages to a string.
+ **)
+
+relation print_messages_str: () => string =
+
+  rule	ErrorExt.print_messages_str() => res
+	--------------------
+	print_messages_str() => res
+
+end
+
+
+(** relation: print_messages_str
+ **
+ ** Returns all messages as a list of strings, one for each message.
+ **)
+
+relation print_messages_str_lst:() => string list =
+
+  axiom	print_messages_str_lst() => ["Not impl. yet"]
+
+end
+
+(** relation: print_messages_str_lst_type
+ **
+ **  Returns all messages as a list of strings, one for each message.
+ **  Filters out messages of certain type.
+ **)
+
+relation print_messages_str_lst_type: (MessageType) => (string list) =
+
+  axiom	print_messages_str_lst_type(_) => ["Not impl. yet"]
+
+end
+
+(** relation: print_messages_str_lst_severity
+ ** 
+ **  Returns all messages as a list of strings, one for each message.
+ ** Filters out messages of certain severity
+**)
+
+relation print_messages_str_lst_severity: (Severity) => (string list) =
+
+  axiom	print_messages_str_lst_severity(_) => ["Not impl. yet"]
+end
+
+(** Relations for interactive comm. These returns the messages as an array 
+ ** of strings, suitable for sending to clients like model editor, MDT, etc.
+*) 
+
+(** relation get_messages_str
+ **
+ ** Return all messages in a matrix format, vector of strings for each 
+ ** message, written out as a string.
+ **)
+relation get_messages_str: () => string =
+
+  rule	ErrorExt.get_messages_str() => res
+	--------------------------------
+	get_messages_str() => res
+
+end
+
+(** relation get_messages_str_type
+ **
+ ** Return all messages in a matrix format, vector of strings for each 
+ ** message, written out as a string.
+ ** Filtered by a specific MessageType.
+ **)
+relation get_messages_str_type: (MessageType) => (string) =
+
+  axiom	get_messages_str_type(_) => "not impl yet."
+
+end
+
+(** relation get_messages_str_severity
+ **
+ ** Return all messages in a matrix format, vector of strings for each 
+ ** message, written out as a string.
+ ** Filtered by a specific MessageType.
+ **)
+relation get_messages_str_severity: (Severity) => (string) =
+
+  axiom	get_messages_str_severity(_) => "not impl yet."
+end
+
+(* Private Relations*)
+
+(** relation: lookup_message
+ **
+ ** Finds a message given ErrorID by looking in the message list.
+ **)
+
+relation lookup_message: (ErrorID) => (MessageType, Severity, string) =
+
+  rule	lookup_message2(ErrorTable,error_id) => (msg_tp,severity,msg) 
+	------------------------
+	lookup_message(error_id) => (msg_tp,severity,msg) 
+end
+
+relation lookup_message2: ((ErrorID*MessageType*Severity*string) list,ErrorID) 
+	  => (MessageType, Severity, string) =
+
+  rule	id1 = id2
+	---------------------------
+	lookup_message2((id1,msg_type,severity,msg)::_,id2)  
+	  => (msg_type,severity,msg)
+
+  rule	lookup_message2(rest,id) => (msg_type,severity,msg)
+	---------------------------
+	lookup_message2(_::rest,id)  
+	  => (msg_type,severity,msg)
+end
+
+(** relation: message_type_str
+ **
+ ** Converts a MessageType to a string.
+ **)
+
+relation message_type_str:(MessageType) => string =
+
+  axiom	message_type_str(SYNTAX) => "SYNTAX"
+ axiom	message_type_str(GRAMMAR) => "GRAMMAR"
+ axiom	message_type_str(TRANSLATION) => "TRANSLATION"
+ axiom	message_type_str(SYMBOLIC) => "SYMBOLIC"
+ axiom	message_type_str(SIMULATION) => "SIMULATION"
+  axiom	message_type_str(SCRIPTING) => "SCRIPTING"
+end
+
+(** relation: severity_str
+ **
+ ** Converts a Severity to a string.
+ **)
+
+relation severity_str:(Severity) => string =
+  axiom	severity_str(ERROR) => "ERROR"
+  axiom	severity_str(WARNING) => "WARNING"
+  axiom	severity_str(NOTIFICATION) => "NOTIFICATION"	
+end
+
+(** relation: info_str
+ **
+ ** Converts a Absyn.Info to a string.
+ **)
+
+relation info_str:(Absyn.Info) => string =
+
+  rule	int_string(line) => line_str &
+	int_string(col) => col_str &
+	Util.string_append_list(["{",filename,", ",line_str,", ",
+				 col_str,"}"]) => res
+	-----------------------
+	info_str(Absyn.INFO(filename,line,col)) => res
+end
+
