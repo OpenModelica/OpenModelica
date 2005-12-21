@@ -254,7 +254,7 @@ end
          Util.string_append_list(["char* getName( double* ",param_in_getName_function,")\n",
                                   "{\n",
                                   get_name_function_ifs_str,
-                                  "\n  return "";\n}\n"]) => get_name_function &
+                                  "\n  return \"\";\n}\n"]) => get_name_function &
          
 	 Util.string_append_list(["\n",
 				  "#define NHELP ", nh_str, "\n",
@@ -337,14 +337,6 @@ end
   rule	Error.add_message(Error.INTERNAL_ERROR, ["generate_global_data failed"])
 	 ---------------------
 	 generate_global_data(_,_,_,_,_) => fail
-end
-
-relation generate_macros:() => string
-        
-  rule  
-        ----------------------------
-        generate_macros() => str
-     
 end
 
 
