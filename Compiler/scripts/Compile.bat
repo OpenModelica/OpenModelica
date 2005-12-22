@@ -7,4 +7,4 @@ popd
 mingw32-make -f %1.makefile >%1.log 2<&1
 set RESULT=%ERRORLEVEL%
 set PATH=%OLDPATH%
-rem exit %RESULT%
+exit %RESULT%
