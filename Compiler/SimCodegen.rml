@@ -354,7 +354,8 @@ end
 **)
 relation generate_macros:() => string =
         
-  rule  Util.string_append_list(["#define DIVISION(a,b) (b != 0) ? a / b : a / division_error(b)\n",
+  rule  Util.string_append_list(["#define DIVISION(a,b) ((b != 0) ? a / b : a / division_error(b))\n",
+                                 "\n",
                                  "\n",
                                  "int encounteredDivisionByZero = 0;\n",
                                  "double division_error(double b)\n",
@@ -3342,7 +3343,7 @@ end
 
   rule	Exp.binop_priority op => pri2 &
 	 Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
-	 print_exp2_str (e1,pri3) => s2 & 
+	 print_exp2_str (e1,pri3) => s2 &
 	 print_exp2_str (e2,pri2) => s3 &
 	 Exp.print_rightpar_str (pri1,pri2) => s4 &
 	 string_append (s1, s2) => s &
