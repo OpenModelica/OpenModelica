@@ -255,7 +255,7 @@ end
                                   "{\n",
                                   get_name_function_ifs_str,
                                   "\n  return \"\";\n}\n"]) => get_name_function &
-         
+         generate_macros() => macros_str &
 	 Util.string_append_list(["\n",
 				  "#define NHELP ", nh_str, "\n",
 				  "#define NG ",ng_str,"\n",
@@ -330,7 +330,15 @@ end
                                  comments,"\n"]
 				 )  => str1 &
          (* this is done here and not in the above Util.string_append_list VC7.1 cannot compile too complicated c-programs *)
-         Util.string_append_list([str1,get_name_function,"\n"]) => str
+         Util.string_append_list([str1,
+                                  (*this is removed for now *)
+(*                                   "typedef struct equation {\n", *)
+(*                                   "  char* equation;\n", *)
+(*                                   "  char* fileName;\n", *)
+(*                                   "  int   lineNumber;\n", *)
+(*                                   "} equation;\n", *)
+                                  macros_str,"\n",
+                                  get_name_function,"\n"]) => str
 	---------------------------
 	generate_global_data(class, dlow,no,ni,nh) => str
 	
@@ -339,8 +347,28 @@ end
 	 generate_global_data(_,_,_,_,_) => fail
 end
 
-
-
+(**
+**relation generate_macros
+**generates the macros that are used in the code
+**author: x02lucpo
+**)
+relation generate_macros:() => string =
+        
+  rule  Util.string_append_list(["#define DIVISION(a,b) (b != 0) ? a / b : division_error(b)\n",
+                                 "\n",
+                                 "int encounteredDivisionByZero = 0;\n",
+                                 "double division_error(double b)\n",
+                                 "{\n",
+                                 "  if(!encounteredDivisionByZero){\n",
+                                 "    fprintf(stderr,\"ERROR: Division by zero.\\n\");\n", 
+                                 "    encounteredDivisionByZero = 1;\n",
+                                 "   }",
+                                 "   return b;\n",
+                                 "}\n"
+                                 ]) => retString
+        -----------------------
+        generate_macros => retString
+end
 (** relation: generate_var_names_and_comments
  **
  ** Generates an array of the original variable names.
@@ -959,7 +987,7 @@ relation generate_input_function_code:(DAELow.DAELow) => (string,int) =
         Util.list_select(res1,Util.is_not_empty_string) => res1' &
         list_length(res1') => lst_lenght &
         Util.string_delimit_list_no_empty(res1',"\n  ") => res1' &
-        Util.string_append_list(["\n/*\n*/\nvoid input_function(double *in_x,double *x, double *xd, double *y, double *p,\n",
+        Util.string_append_list(["\n/*\n*/\nint input_function(double *in_x,double *x, double *xd, double *y, double *p,\n",
                                  "                   int nx, int ny, int np)\n",
                                  "{\n  ",
                                  res1',
@@ -1016,7 +1044,7 @@ relation generate_output_function_code:(DAELow.DAELow) => (string,int) =
         Util.list_select(res1,Util.is_not_empty_string) => res1' &
         list_length(res1') => lst_lenght &
         Util.string_delimit_list_no_empty(res1',"\n  ") => res1' &
-        Util.string_append_list(["\n/*\n*/\nvoid output_function(double *out_x,double *x, double *xd, double *y, double *p,\n",
+        Util.string_append_list(["\n/*\n*/\nint output_function(double *out_x,double *x, double *xd, double *y, double *p,\n",
                                  "                   int nx, int ny, int np)\n",
                                  "{\n  ",
                                  res1',
@@ -1097,7 +1125,7 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
 	generate_ode_blocks(initial_dae',ass1,ass2,blocks)
 	  => (block_code,extra_funcs) &
         Util.string_append_list([extra_funcs,
-				 "\n/*\n*/\nvoid initial_function(double *x, double *xd, double *y, double *p,\n",
+				 "\n/*\n*/\nint initial_function(double *x, double *xd, double *y, double *p,\n",
                                  "                   int nx, int ny, int np)\n",
                                  "{\n",
 				 start_assigns,
@@ -1107,8 +1135,15 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
         ----------------------------------
         generate_initial_value_code(DAELow.DAELOW(vars,knvars,eqns,se,ie,al,ev)) => res
         
-  axiom generate_initial_value_code(_) => ""
-
+  rule  Util.string_append_list([ "\n/*\n*/\nint initial_function(double *x, double *xd, double *y, double *p,\n",
+                                 "                   int nx, int ny, int np)\n",
+                                 "{\n",
+                                 "  fprintf(stdcout,\"WARNING: Initial functions could not be generated\\n\");\n",
+                                 "\n}\n"]) => res 
+        
+        ----------------------------------
+        generate_initial_value_code(_) => res
+        
 end
 
 (** relation: generate_parameter_assignments
@@ -1409,7 +1444,7 @@ relation generate_event_checking_code: (DAELow.DAELow,
   rule	use_zerocrossing => usezc &
 	build_when_condition_checks(dlow,comps) => (check_code, helpVarInfo) & 
 	Util.if(usezc,check_code,"") => check_code' &
-	Util.string_append_list(["void\ncheckForDiscreteVarChanges(double *t)\n{\n",
+	Util.string_append_list(["int checkForDiscreteVarChanges(double *t)\n{\n",
 				 check_code', "}\n"]) => res
 	-------------------------------------------
 	generate_event_checking_code(dlow,comps,ass1,ass2,m,mt,class) => (res, helpVarInfo)
@@ -1428,7 +1463,7 @@ relation generate_ode_header: () => string =
 	
   rule	Util.string_append_list(
 	[
-	 "void functionODE(double *x, double *xd, double *y, double *p, \n",
+	 "int functionODE(double *x, double *xd, double *y, double *p, \n",
 	 "                  int nx, int ny, int np, double *t)\n",
 	 "{\n"
 	 ]) => res
@@ -1589,7 +1624,7 @@ relation generate_ode_system2_nonlinear_residuals:  (Exp.ComponentRef list,
 	tick() => id &
 	int_string(id) => str_id &
 	list_length(eqns) => eqn_size & int_string(eqn_size) => size_str &
-	Util.string_append_list(["void residualFunc",str_id,
+	Util.string_append_list(["int residualFunc",str_id,
 				 "(int* n, double* xloc, double*res, int* iflag)\n",
 				 "{\n",
 				 s1,
@@ -2520,20 +2555,20 @@ relation generate_zero_crossing: (string,
 	generate_ode_blocks(dlow,ass1,ass2,blocks) => (eqs_str,extra_funcs) &
          generate_helpvar_updates(helpVarInfo) => helpvarUpdateStr &
 	Util.string_append_list([extra_funcs,
-				 "\nint\nfunction_zeroCrossing(long *neqm, double *t, double *x, long *ng, double *gout,\n"
+				 "\n\nint function_zeroCrossing(long *neqm, double *t, double *x, long *ng, double *gout,\n"
 				 ,"             double *rpar, long* ipar)\n"
 				 ,"{\n"
 				 ,   zc_str
 				 ,"  return 0;\n"
 				 ,"}\n\n"
-				 ,"void\nhandleZeroCrossing(long index, double *t)\n"
+				 ,"int handleZeroCrossing(long index, double *t)\n"
 				 ,"{\n"
 				 ,"  switch(index) {\n"
 				 ,   zc_eq_str
 				 ,"  default: break;\n"
 				 ,"  }\n"
 				 ,"}\n\n"
-				 ,"void function_updateDependents(double *t)\n"
+				 ,"int function_updateDependents(double *t)\n"
 				 ,"{\n"
 				 ,   eqs_str
 				 ,   helpvarUpdateStr
@@ -2663,7 +2698,7 @@ relation generate_when_clauses: (string,
   rule	
 	generate_when_clauses2(wc,0,dae,dlow,ass1,ass2,blocks) => when_str &
 	Util.string_append_list([
-				 "void\nfunction_when(int i, double *t)\n"
+				 "\nint function_when(int i, double *t)\n"
 				 ,"{\n"
 				 ,"  switch(i) {\n"
 				 ,     when_str
@@ -2801,7 +2836,7 @@ relation generate_compute_residual_state:(string,
   rule	
         build_residual_blocks(dae,dlow,ass1,ass2,blocks) => eqn_str_list &
         Util.string_append_list(eqn_str_list) => cstate &
-        Util.string_append_list(["int\nfunctionDAE_res(double *t, double *x, double *xd, double *delta, long int *ires, double *rpar, long int* ipar)\n{\n",cstate,TAB,"return 0;\n\n}\n"]) 
+        Util.string_append_list(["\nint functionDAE_res(double *t, double *x, double *xd, double *delta, long int *ires, double *rpar, long int* ipar)\n{\n",cstate,TAB,"return 0;\n\n}\n"]) 
 	  => res
         -------------------------------------------------------------
         generate_compute_residual_state(cname,dae,dlow,ass1,ass2,blocks) => res
@@ -2826,7 +2861,7 @@ end
                                    int vector, 
                                    int list list) => string =
          
-  rule	let func_header = "int\nfunctionDAE_output(double *t, double* x, double* xd, double* y, double* p)\n{\n" &
+  rule	let func_header = "\nint functionDAE_output(double *t, double* x, double* xd, double* y, double* p)\n{\n" &
 	 let func_footer = "return 0;\n\n}\n" &
 	 (*build_solved_blocks(dae,dlow,ass1,ass2,blocks) => eqn_str_lst &*)
 	 generate_ode_blocks(dlow,ass1,ass2,blocks) => (body,extra_funcs) &
@@ -3304,6 +3339,20 @@ end
 	 string_append (res, s4) => res'
 	 ------------------------
 	 print_exp2_str (Exp.BINARY(e1, (op as Exp.POW(_)), e2),pri1) => res'
+
+  rule	Exp.binop_priority op => pri2 &
+	 Exp.print_leftpar_str (pri1,pri2) => (s1, pri3) &
+	 print_exp2_str (e1,pri3) => s2 & 
+	 print_exp2_str (e2,pri2) => s3 &
+	 Exp.print_rightpar_str (pri1,pri2) => s4 &
+	 string_append (s1, s2) => s &
+         string_append("DIVISION(",s) => s' &
+         string_append(s',",") => s'' &
+         string_append(s'',s3) => s''' &
+         string_append(s''',")") => res &
+	 string_append (res, s4) => res'
+	 ------------------------
+	 print_exp2_str (Exp.BINARY(e1, (op as Exp.DIV(_)), e2),pri1) => res'
 
   rule	Exp.binop_symbol(op) => sym &
  	 Exp.binop_priority op => pri2 &
