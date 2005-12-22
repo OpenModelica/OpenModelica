@@ -354,7 +354,7 @@ end
 **)
 relation generate_macros:() => string =
         
-  rule  Util.string_append_list(["#define DIVISION(a,b) (b != 0) ? a / b : division_error(b)\n",
+  rule  Util.string_append_list(["#define DIVISION(a,b) (b != 0) ? a / b : a / division_error(b)\n",
                                  "\n",
                                  "int encounteredDivisionByZero = 0;\n",
                                  "double division_error(double b)\n",
