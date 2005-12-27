@@ -69,6 +69,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 module Util :
   relation if : (bool,'a,'a) => 'a
   relation list_fill: ('a ,int) => 'a list
+  relation list_int_range: (int) => int list 
   relation list_first: 'a list => 'a
   relation list_rest: 'a list => 'a list
   relation list_last: 'a list => 'a	  
@@ -100,7 +101,7 @@ module Util :
 	  => ('a * 'b) list list
   relation list_select:('a list, 'a => bool) => 'a list
   relation list_select_1:('a list,'b, ('a,'b) => bool) => 'a list
-relation list_select_1_r:('a list,'b, ('b,'a) => bool) => 'a list 
+  relation list_select_1_r:('a list,'b, ('b,'a) => bool) => 'a list 
   relation list_position: (''a, ''a list)  => int
   relation list_getmember: (''a, ''a list) => ''a
   relation list_deletemember: (''a list,''a) => ''a list
@@ -184,6 +185,29 @@ relation list_fill: ('a ,int) => 'a list =
 	list_fill(a,n') => res
 	----------------------
 	list_fill (a,n) => a::res
+end
+
+(** relation: list_int_range
+ ** Returns a list of n integers from 1 to N.
+ ** For example,
+ ** list_int_range(3) => [1,2,3]
+**)
+relation list_int_range: (int) => int list =
+
+  rule	list_int_range2(1,n) => res
+	-------------------
+	list_int_range(n) => res
+end
+
+relation list_int_range2:(int,int) => int list =
+
+  rule	int_lt(i,n) => true &
+	int_add(i,1) => i' &
+	list_int_range2(i',n) => res
+	----------------------
+	list_int_range2 (i,n) => i::res
+
+  axiom	list_int_range2 (i,n) => [i]
 end
 
 (** relation: list_first 

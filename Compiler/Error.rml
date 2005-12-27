@@ -68,8 +68,8 @@ module Error:
 		| SIMULATION           (* Runtime simulation error *)
 		| SCRIPTING		(* runtime scripting /interpretation error*)
 
-type ErrorID = int   (* Unique error id. Must be defined in XXX, used to 
-			  look up message string.*)
+type ErrorID = int   (* Unique error id. Used to 
+			  look up message string and type and severity *)
 
 type MessageTokens = string list  (* "Tokens" to insert into message at 
 				   * positions identified by 

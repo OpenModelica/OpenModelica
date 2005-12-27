@@ -233,7 +233,7 @@ list * Mod
   relation bool_const: (bool) => Const
 
   relation elab_type : Type => Exp.Type
-  relation match_prop : (Exp.Exp, Properties, Properties) => Exp.Exp
+  relation match_prop : (Exp.Exp, Properties, Properties) => (Exp.Exp,Properties)
   relation match_type : (Exp.Exp, Type, Type) => (Exp.Exp, Type) 
   relation match_type_list : (Exp.Exp, Type list, Type list) => (Exp.Exp, Type list) 
   relation vectorizable_type : (Exp.Exp, Type, Type) => (Exp.Exp, Type, ArrayDim list) 
@@ -1845,17 +1845,20 @@ end
  **
  **)
 
-relation match_prop : (Exp.Exp, Properties, Properties) => Exp.Exp =
+relation match_prop : (Exp.Exp, Properties, Properties) => (Exp.Exp, Properties) =
 
   rule	Debug.print "Debug: match prop." &
-	match_type(e, gt, et) => (e',_)
+	match_type(e, gt, et) => (e',t') &
+	const_and(c1,c2) => c
 	---------------------------
-	match_prop(e, PROP(gt,_), PROP(et,_)) => e'
+	match_prop(e, PROP(gt,c1), PROP(et,c2)) => (e',PROP(t',c))
 
   rule	Debug.print "\nDebug: match prop (PROP TUPLE). " &
-	match_type(e, gt, et) => (e',_)
+	match_type(e, gt, et) => (e',t') &
+	const_tuple_and(c1,c2) => c
 	---------------------------
-	match_prop(e, PROP_TUPLE(gt,_), PROP_TUPLE(et,_)) => e'
+	match_prop(e, PROP_TUPLE(gt,c1), PROP_TUPLE(et,c2)) 
+	  => (e',PROP_TUPLE(t',c))
 
 end
 
@@ -2259,6 +2262,18 @@ relation const_and: (Const, Const) => Const =
 
   axiom	const_and(_,_) => C_VAR
 end
+
+(** relation: const_tuple_and
+ **
+ ** Returns the 'and' operator of two TupleConst's
+ ** For now, returns first tuple.
+ **)
+
+relation const_tuple_and: (TupleConst, TupleConst) => TupleConst =
+
+axiom const_tuple_and(c1,c2) => c1 
+end 
+
 
 (** relation: const_or
  **

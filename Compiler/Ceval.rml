@@ -1251,7 +1251,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 Inst.instantiate_class(p',path) => (dae',env)  &
           DAE.transform_if_eq_to_expr(dae') => (dae as DAE.DAE(dael)) &
 	 Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
-	 DAELow.lower(dae,false (* no dummy state*)) => (daelow as DAELow.DAELOW(vars,_,eqnarr,_,_,_,_)) &
+	 DAELow.lower(dae,false (* no dummy state*)) => (daelow as DAELow.DAELOW(vars,_,eqnarr,_,_,_,_,_)) &
 	 DAELow.incidence_matrix(daelow) => m &
 	 DAELow.transpose_matrix(m) => mt &
 	 DAELow.calculate_jacobian(vars,eqnarr,m,mt) => jac &
@@ -1552,8 +1552,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 --------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readFile"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.STRING(str'),st)
 
-  rule	Print.get_error_string() => str &
-	Print.clear_error_buf()
+  rule	Error.print_messages_str() => str
 	 --------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("getErrorString"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.STRING(str),st)
 

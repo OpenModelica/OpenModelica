@@ -342,7 +342,7 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	elab_call(env,fn,args,nargs,impl,st) => (e,prop,st') &
 	Types.prop_all_const prop => c &
 	ceval_if_constant(e,prop,c,impl,env) => (e',prop') &
-	 Debug.fprintln("sei", "elab_exp CALL done")
+	 Debug.fprintln("sei", "elab_exp CALL done") 
 	--------------------------------------
 	elab_exp (env,Absyn.CALL(fn,Absyn.FUNCTIONARGS(args,nargs)),impl,st) 
 		=> (e',prop',st')
@@ -1765,7 +1765,7 @@ relation elab_builtin_array3: (Exp.Exp list, Types.Properties list,
 	=> (Exp.Exp list, Types.Properties) =
   axiom	elab_builtin_array3([],[],tp) => ([],tp)
 
-  rule	Types.match_prop(e1,t1,tp) => e1' &
+  rule	Types.match_prop(e1,t1,tp) => (e1',_) &
 	elab_builtin_array3(expl,tpl,tp) => (expl',_)
 	----------------------------------------
 	elab_builtin_array3(e1::expl,t1::tpl,tp) => (e1'::expl', t1)

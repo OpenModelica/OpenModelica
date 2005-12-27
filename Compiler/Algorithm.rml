@@ -159,7 +159,7 @@ relation make_assignment : (Exp.Exp, Types.Properties,
 	make_assignment(lhs,_,rhs,_, SCode.RO) => fail
 
   rule	Types.prop_any_const (lhprop) => Types.C_VAR &
-	Types.match_prop(rhs, rhprop, lhprop) => rhs' &
+	Types.match_prop(rhs, rhprop, lhprop) => (rhs',_) &
 	Types.is_prop_array lhprop => false &
 	get_prop_exp_type lhprop => t
 	----------------------------------------------
@@ -167,7 +167,7 @@ relation make_assignment : (Exp.Exp, Types.Properties,
 			rhs, rhprop, _) => ASSIGN(t,c,rhs')
 
   rule	Types.prop_any_const (lhprop) => Types.C_VAR &
-	Types.match_prop(rhs, rhprop, lhprop) => rhs' &
+	Types.match_prop(rhs, rhprop, lhprop) => (rhs',_) &
 	Types.is_prop_array lhprop => true &
 	get_prop_exp_type lhprop => t
 	----------------------------------------------

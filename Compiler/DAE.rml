@@ -96,7 +96,8 @@ module DAE:
 
 		   | DEFINE of Exp.ComponentRef * Exp.Exp
 		   | INITIALDEFINE of Exp.ComponentRef * Exp.Exp
-		   | EQUATION of Exp.Exp * Exp.Exp
+		   | EQUATION of Exp.Exp * Exp.Exp (* Scalar equation *)
+		   | ARRAY_EQUATION of int list (* dimension sizes*) * Exp.Exp * Exp.Exp (* array equation*)			
 		   | WHEN_EQUATION of Exp.Exp        (* Condition *) *
 		                      Element list   (* Equations *) *
 		                      Element option (* Elsewhen should be of type WHEN_EQUATION*)
@@ -603,6 +604,17 @@ relation dump_equations_str: Element list => string =
 	string_append(s5,s6) => str
 	-------------------------------
 	dump_equations_str( EQUATION(e1,e2)::xs) => str
+
+  rule	Exp.print_exp_str e1 => s1 &
+	string_append("  ",s1) => s2 &
+	string_append(s2," = ") => s3 &
+	Exp.print_exp_str e2  => s4 &
+	string_append(s3,s4) => s4' &
+	string_append(s4',";\n") => s5 &
+	dump_equations_str(xs) => s6 &
+	string_append(s5,s6) => str
+	-------------------------------
+	dump_equations_str( ARRAY_EQUATION(_,e1,e2)::xs) => str
 	
   rule	Exp.print_component_ref_str c => s1 &
 	string_append("  ",s1) => s2 &

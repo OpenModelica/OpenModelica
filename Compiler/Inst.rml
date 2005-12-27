@@ -2323,7 +2323,7 @@ relation inst_var2 : (Env.Env,
 	make_array_type(dims,ty) => ty' &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
 	Types.elab_type(ty') => ty'' &
-	Types.match_prop(e,Types.PROP(ty',Types.C_VAR),p) => e' &
+	Types.match_prop(e,Types.PROP(ty',Types.C_VAR),p) => (e',_) &
 	(* Put the mod equation in the dae so that code will be generated *)
 	make_dae_equation(Exp.CREF(cr,ty''),e',NON_INITIAL) => daeeq &
 
@@ -2923,7 +2923,7 @@ relation inst_array : (Env.Env,
 	(* Check their types... *)
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
 	Types.elab_type(ty) => ty' &
-	Types.match_prop(e,Types.PROP(ty,Types.C_VAR),p) => e' &
+	Types.match_prop(e,Types.PROP(ty,Types.C_VAR),p) => (e',_) &
 	make_dae_equation(Exp.CREF(cr,ty'),e',NON_INITIAL) => dae 
 	---------------------------------------------------
 	inst_array(env,ci_state as ClassInf.FUNCTION(_),
@@ -4533,8 +4533,8 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 	(* This rule is matched first, if it fail the next rule is matched.
 	 *)
   rule	(*Debug.print("\ninst_eq_equation (match e1) PROP, PROP") &*)
-	Types.match_prop(e1, p1, p2) => e1' &
-	inst_eq_equation_2(e1', e2, t2, initial) => dae 
+	Types.match_prop(e1, p1, p2) => (e1',Types.PROP(t',_)) &
+	inst_eq_equation_2(e1', e2, t', initial) => dae 
 
 	------------------------------------------
 	inst_eq_equation(e1,p1 as Types.PROP(t1,_),
@@ -4543,9 +4543,9 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 
 	(* If it fails then this rule is matched. *)
   rule	(*Debug.print("\ninst_eq_equation (match e2) PROP, PROP") &*)
-	Types.match_prop(e2, p2, p1) => e2'&
+	Types.match_prop(e2, p2, p1) => (e2',Types.PROP(t',_))&
 (*	Debug.print("\n Second rule of relation_ inst_eq_equation ") &*)
-	inst_eq_equation_2(e1, e2', t1, initial) => dae 
+	inst_eq_equation_2(e1, e2', t', initial) => dae 
 (*	& Debug.print("\n Second rule complete. ") *)
 	------------------------------------------
 	inst_eq_equation(e1,p1 as Types.PROP(t1,_),
@@ -4554,9 +4554,9 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 
   rule	(* Debug.print("\ninst_eq_equation(e1) PROP_TUPLE, PROP_TUPLE") &*)
 	(*Exp.print_exp (e1) & *)
-	Types.match_prop(e1, p1, p2) => e1' &
+	Types.match_prop(e1, p1, p2) => (e1',Types.PROP_TUPLE(t',_)) &
 	(*Exp.print_exp (e1') & *)
-	inst_eq_equation_2(e1', e2, t2, initial) => dae 
+	inst_eq_equation_2(e1', e2, t', initial) => dae 
 	------------------------------------------
 	inst_eq_equation(e1,p1 as Types.PROP_TUPLE(t1,_),
 			 e2,p2 as Types.PROP_TUPLE(t2,_), initial,impl)
@@ -4565,9 +4565,9 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 	(* PR. *)	
   rule	(*Debug.print("\ninst_eq_equation(e2) PROP_TUPLE, PROP_TUPLE") &
 	Debug.print "\n About to do a static match e2. " &*)
-	Types.match_prop(e2, p2, p1) => e2'&
+	Types.match_prop(e2, p2, p1) => (e2',Types.PROP_TUPLE(t',_))&
 (*	Debug.print("\n Second rule of relation_ inst_eq_equation ") &*)
-	inst_eq_equation_2(e1, e2', t1, initial) => dae 
+	inst_eq_equation_2(e1, e2', t', initial) => dae 
 (*	& Debug.print("\n Second rule complete. ") *)
 	------------------------------------------
 	inst_eq_equation(e1,p1 as Types.PROP_TUPLE(t1,_),
@@ -4606,7 +4606,7 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 
 
 (* No match. *)
-  rule	Print.print_error_buf "# No match in inst_eq_equation\n" &
+(*  rule	Print.print_error_buf "# No match in inst_eq_equation\n" &
 	Print.print_error_buf "    lhs: " & Exp.print_exp_str e1 => str &
 	Print.print_error_buf str &
 	Print.print_error_buf " :: " & 
@@ -4618,7 +4618,7 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 	Types.print_prop_str p2  => str & Print.print_error_buf str &
 	Print.print_error_buf "\n"
 	---------------------------------	
-	inst_eq_equation(e1,p1,e2,p2,initial,impl) => fail
+	inst_eq_equation(e1,p1,e2,p2,initial,impl) => fail*)
 end
 
 (** relation: inst_eq_equation_2
@@ -4655,30 +4655,25 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	---------------------------------------
 	inst_eq_equation_2(Exp.CREF(cr,t),e2,(Types.T_ENUMERATION(_,_),_),initial) => [dae]
 
-
-  rule	(*RTOpts.split_arrays => true &*)
-	Exp.contain_functioncall(e1) => false &
-	Exp.contain_functioncall(e2) => false &
-(*	 For debugging.*)
-(*	Print.print_buf "  Array equation: " &
-	Exp.print_exp e1 & Print.print_buf " = " &
-	Exp.print_exp e2 & Print.print_buf "\n" & *)
-	inst_array_equation(e1,e2,ad,t,initial) => dae
+	(* arrays with function calls => array equations *)
+  rule	Exp.contain_functioncall(e1) => b1 &
+	Exp.contain_functioncall(e2) => b2 &
+	Types.get_dimension_sizes(t) => ds &
+	bool_or(b1,b2) => true 
 	-----------------------------------------
-	inst_eq_equation_2(e1,e2,(Types.T_ARRAY(ad,t),_),initial) => dae
+	inst_eq_equation_2(e1,e2,t as (Types.T_ARRAY(_,_),_),initial) 
+	  => [DAE.ARRAY_EQUATION(ds,e1,e2)]
 
+	(* arrays that are splitted *)
+  rule	inst_array_equation(e1, e2, ad, t, initial) => dae
+	-----------------------------------------
+	inst_eq_equation_2(e1,e2,(Types.T_ARRAY(ad,t),_),initial) 
+	  => dae
 
-	(* PR. The muliple outputs from functions is outputed as is. *)
-
+	(* tuples *)
   rule	make_dae_equation (e1,e2,initial) => dae 
 	----------------------------------------
 	inst_eq_equation_2 (e1,e2,(Types.T_TUPLE(_),_),initial) => [dae]
-
-
-  rule	(*RTOpts.split_arrays => false &*)
-	make_dae_equation (e1, e2, initial) => dae
-	-----------------------------------------
-	inst_eq_equation_2(e1,e2,(Types.T_ARRAY(ad,t),_),initial) => [dae]
 
   axiom	inst_eq_equation_2(e1, e2, (Types.T_COMPLEX(_,[]),_), initial) => []
 
@@ -4769,12 +4764,13 @@ end
 
 (** relation: inst_array_equation
  **
- ** This checks the array size and uses `inst_array_el_eq' to create
- ** equations for each array element.
+ ** This checks the array size and creates an array equation in DAE.
  **)
 
 relation inst_array_equation : (Exp.Exp, Exp.Exp,
-				Types.ArrayDim, Types.Type, Initial)
+				Types.ArrayDim, 
+				Types.Type, (* array elt type *)
+				Initial)
 	  => DAE.Element list =
 
   rule  Exp.print_exp_str e1 => e1_str &
@@ -4800,7 +4796,12 @@ end
  ** arrays and generates an equation for each pair of elements.
  **)
 
-relation inst_array_el_eq : (Exp.Exp, Exp.Exp, Types.Type, int, int, Initial)
+relation inst_array_el_eq : (Exp.Exp, (* lhs *)
+			     Exp.Exp, (* rhs *)
+			     Types.Type, (* elt type *)
+			     int,(* iterator *)
+			     int, (* dim size *)
+			     Initial)
 	  => DAE.Element list =
 
   rule	int_le(i,sz) => true &
