@@ -91,7 +91,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                                        
 
   datatype Equation = EQUATION of Exp.Exp * Exp.Exp (* scalar*)
-		      | ARRAY_EQUATION of int  (* index in arrayequations*) 
+		      | ARRAY_EQUATION of int  (* index in arrayequations 0..n-1*) 
 					  * Exp.Exp list (* CREF or der(CREF) *)
 		      | SOLVED_EQUATION of Exp.ComponentRef * Exp.Exp
 		      | RESIDUAL_EQUATION of Exp.Exp (* not present from front end *)
@@ -204,6 +204,7 @@ datatype EquationArray = EQUATION_ARRAY of int * (* no. elements *)
 			| JAC_NONLINEAR (* If jacobian contains variables that are solved for,
 				     * means that a nonlinear system of equations needs to be
 				     * solved *)
+			| JAC_NO_ANALYTIC (* No analytic jacobian available *)
 
 datatype IndexReduction = INDEX_REDUCTION (* Use index reduction during matching*)
 			| NO_INDEX_REDUCTION (* do not use index reduction during matching *)
@@ -220,7 +221,7 @@ type MatchingOptions = (IndexReduction*EquationConstraints)
   relation dump_vars: Var list => ()
   relation dump_eqns: Equation list => () 
 
-  relation dump_jacobian_str: ((int*int*Equation) list ) => string   
+  relation dump_jacobian_str: ((int*int*Equation) list option) => string   
         
   relation lower: (DAE.DAElist,bool) => DAELow
 
@@ -264,11 +265,12 @@ type MatchingOptions = (IndexReduction*EquationConstraints)
 
   relation calculate_jacobian: (Variables, 
 				EquationArray, 
+				MultiDimEquation array,
 				IncidenceMatrix,
 				IncidenceMatrixT) 
-	  => ((int * int * Equation) list)
+	  => ((int * int * Equation) list option)
 
-  relation analyze_jacobian:(DAELow, (int * int * Equation) list) => JacobianType
+  relation analyze_jacobian:(DAELow, (int * int * Equation) list option) => JacobianType
   relation jacobian_type_str: JacobianType => string
 
   relation states: (DAE.DAElist,BinTree) => BinTree
@@ -1151,12 +1153,14 @@ end
  ** Dumps the sparse jacobian.
  ** Uses the variables to determine size of Jacobian matrix.
  **)
-relation dump_jacobian_str: ((int*int*Equation) list ) => string =
+relation dump_jacobian_str: ((int*int*Equation) list option ) => string =
 
   rule	dump_jacobian_str2(eqns) => res &
 	Util.string_delimit_list(res,", ") => res'
 	------------------
-	dump_jacobian_str(eqns) => res'
+	dump_jacobian_str(SOME(eqns)) => res'
+
+  axiom	dump_jacobian_str(NONE) => "No analytic jacobian available\n"
 end
 
 (** relation: dump_jacobian_str2
@@ -2313,18 +2317,19 @@ end
 	-----------------------------------------------
 	states_and_vars_exp(Exp.CALL(_,expl,_,_),vars) => res
 	
-  rule	print "states_and_vars exp ARRAY not impl. yet" 
+  rule	Util.list_map_1(expl,states_and_vars_exp,vars) => lst &
+	Util.list_list_union_p(lst,Exp.exp_equal) => res
 	-----------------------
-	states_and_vars_exp(Exp.ARRAY(_,_,expl),vars) => []
+	states_and_vars_exp(Exp.ARRAY(_,_,expl),vars) => res
 
-  rule	Print.print_buf "states_and_vars_exp on MATRIX not impl.\n" &
-	print "states_and_vars_exp on MATRIX not impl.\n"
+  rule	states_and_vars_matrix_exp(mexp,vars) => res
 	---------------------------------------
-	states_and_vars_exp(Exp.MATRIX(_,_,_),vars) => []
+	states_and_vars_exp(Exp.MATRIX(_,_,mexp),vars) => res
 	
-  rule	print "not impl. yet." 
+  rule	Util.list_map_1(expl,states_and_vars_exp,vars) => lst &
+	Util.list_list_union_p(lst,Exp.exp_equal) => res
 	-----------------------
-	states_and_vars_exp(Exp.TUPLE(expl),vars) => []
+	states_and_vars_exp(Exp.TUPLE(expl),vars) => res
 
   rule	states_and_vars_exp(e,vars) => res
 	-----------------------
@@ -2343,6 +2348,21 @@ end
   axiom	states_and_vars_exp(_,_) => []
 end
 
+(** relation: states_and_vars_matrix_exp
+ **
+ **)
+relation states_and_vars_matrix_exp:((Exp.Exp*bool) list list,
+				     Variables) => Exp.Exp list =
+
+  axiom	states_and_vars_matrix_exp([],_) => []
+
+  rule	Util.list_map(expl,Util.tuple2_1) => expl' &
+	Util.list_map_1(expl',states_and_vars_exp,vars) => lst &
+	states_and_vars_matrix_exp(ms,vars) => ms' &
+	Util.list_list_union_p(ms'::lst,Exp.exp_equal) => res
+	---------------------
+	states_and_vars_matrix_exp(expl::ms,vars) => res
+end
 
 (** relation: lower_eqn
  **
@@ -3239,10 +3259,6 @@ relation get_array_var:( Exp.ComponentRef, Variables) => (Var list, int list) =
 	-----------------------------
 	get_array_var(cr,vars as VARIABLES(hashvec,oldhashvec,varr,bsize,n)) 
 	  => (vs,indxs)
-
-  rule	Debug.fprint("failtrace","-get_array_var failed\n")
-	--------------------
-	get_array_var(_,_) => fail
 end
 
 (** relation: get_array_var2
@@ -3289,9 +3305,7 @@ relation get_array_var2: (DAE.InstDims, (* array_inst_dims *)
 	get_array_var2([Exp.INDEX(Exp.ICONST(i1)),
 			Exp.INDEX(Exp.ICONST(i2))],arr_cr,vars) 
 	  => (vs',indxs')
-  rule	Debug.fprint("failtrace","-get_array_var2 failed\n")
-	----------------------
-	get_array_var2(_,_,_) => fail
+
 end
 
 (** relation: susbscript_2d_combinations
@@ -5882,20 +5896,22 @@ end
  ** of equations.
 **)
 
-relation analyze_jacobian:(DAELow, (int * int * Equation) list) 
+relation analyze_jacobian:(DAELow, (int * int * Equation) list option) 
 	  => JacobianType =
 
   rule	jacobian_constant(jac) => true &
 	rhs_constant(daelow) => true
 	-------------------------------
-	analyze_jacobian(daelow,jac) => JAC_CONSTANT
+	analyze_jacobian(daelow,SOME(jac)) => JAC_CONSTANT
 
   rule	jacobian_nonlinear(daelow,jac) => true
 	-----------------------
-	analyze_jacobian(daelow,jac) => JAC_NONLINEAR
+	analyze_jacobian(daelow,SOME(jac)) => JAC_NONLINEAR
 
-  axiom	analyze_jacobian(daelow,jac) => JAC_TIME_VARYING
+  axiom	analyze_jacobian(daelow,SOME(jac)) => JAC_TIME_VARYING
 
+  axiom	analyze_jacobian(daelow,NONE) => JAC_NO_ANALYTIC
+      
 end
 
 (** relation: rhs_constant
@@ -6125,20 +6141,20 @@ end
  **)
 relation calculate_jacobian: (Variables, 
 			      EquationArray, 
+			      MultiDimEquation array,
 			      IncidenceMatrix,
 			      IncidenceMatrixT) 
-	  => ((int * int * Equation) list) =
+	  => ((int * int * Equation) list option) =
 
   rule	equation_list(eqns) => eqn_lst &
 	Util.list_map(eqn_lst,equation_to_residual_form) => eqn_lst' &
-	calculate_jacobian_rows(eqn_lst',vars,m,mt) => jac &
+	calculate_jacobian_rows(eqn_lst',vars,ae,m,mt) => SOME(jac) &
 	list_reverse(jac) => jac' 
 	-----------------------------
-	calculate_jacobian(vars, eqns,m,mt) => jac'
+	calculate_jacobian(vars, eqns,ae,m,mt) => SOME(jac')
 
-  rule	print "calculate_jacobian failed\n" 
-	--------------------
-	calculate_jacobian(_,_,_,_) => fail
+	(* no analythic jacobian available*)
+  axiom	calculate_jacobian(_,_,_,_,_) => NONE
 end
 
 (** relation: calculate_jacobian_rows
@@ -6153,12 +6169,13 @@ end
  **)
 
 relation calculate_jacobian_rows:(Equation list, Variables, 
+				  MultiDimEquation array,
 				 IncidenceMatrix, IncidenceMatrixT) 
-	  => ((int * int * Equation) list) =
+	  => ((int * int * Equation) list option) =
 
-  rule	calculate_jacobian_rows2(eqns,vars,m,mt,1) => res
+  rule	calculate_jacobian_rows2(eqns,vars,ae,m,mt,1) => res
 	--------------------------
-	calculate_jacobian_rows(eqns,vars,m,mt) => res 
+	calculate_jacobian_rows(eqns,vars,ae,m,mt) => res 
 end
 
 (** relation: calculate_jacobian_rows2
@@ -6168,16 +6185,17 @@ end
  **)
 
 relation calculate_jacobian_rows2:(Equation list, Variables, 
+				   MultiDimEquation array,
 				 IncidenceMatrix, IncidenceMatrixT, int)
-	  => ((int * int * Equation) list) =
-  axiom	calculate_jacobian_rows2([],_,_,_,_) => []
+	  => ((int * int * Equation) list option) =
+  axiom	calculate_jacobian_rows2([],_,_,_,_,_) => SOME([])
 
   rule	eqn_indx + 1 => eqn_indx' &
-	calculate_jacobian_rows2(eqns,vars,m,mt,eqn_indx') => l1 &
-	calculate_jacobian_row(eqn,vars,m,mt,eqn_indx) => l2 &
+	calculate_jacobian_rows2(eqns,vars,ae,m,mt,eqn_indx') => SOME(l1) &
+	calculate_jacobian_row(eqn,vars,ae,m,mt,eqn_indx) => SOME(l2) &
 	list_append(l1,l2) => res
 	-------------------------
-	calculate_jacobian_rows2(eqn::eqns,vars,m,mt,eqn_indx) => res
+	calculate_jacobian_rows2(eqn::eqns,vars,ae,m,mt,eqn_indx) => SOME(res)
 end
 
 (** relation: calculate_jacobian_row
@@ -6188,22 +6206,41 @@ end
 
 relation calculate_jacobian_row: (Equation, 
 				  Variables,
+				  MultiDimEquation array,
 				  IncidenceMatrix,
 				  IncidenceMatrixT,
 				  int (* eqn index *)) 
-	  => ((int * int * Equation) list) =
+	  => ((int * int * Equation) list option) =
 
+	  (* residual equations *)
   rule	vars_in_eqn(m,eqn_indx) => var_indxs &
 	(* Remove duplicates and get in correct order: acsending index *)
 	Util.list_union_p(var_indxs,[],int_eq) => var_indxs' &
 	list_reverse(var_indxs') => var_indxs'' &
-	calculate_jacobian_row2(e,vars,eqn_indx,var_indxs'') => eqns 
+	calculate_jacobian_row2(e,vars,eqn_indx,var_indxs'') => SOME(eqns)
 	----------------------------------------------
-	calculate_jacobian_row(RESIDUAL_EQUATION(e),vars,m,mt,eqn_indx) => eqns
+	calculate_jacobian_row(RESIDUAL_EQUATION(e),vars,ae,m,mt,eqn_indx) 
+	  => SOME(eqns)
+
+	(* algorithms give no jacobian *)
+  axiom	calculate_jacobian_row(ALGORITHM(indx,in,out),vars,ae,m,mt,eqn_indx) 
+	  => NONE
+
+	(* array equations *)
+  rule	array_nth(ae,indx) => MULTIDIM_EQUATION(ds,e1,e2) & 
+	let new_exp = Exp.BINARY(e1,Exp.SUB(Exp.REAL),e2) &
+	vars_in_eqn(m,eqn_indx) => var_indxs &
+	(* Remove duplicates and get in correct order: acsending index *)
+	Util.list_union_p(var_indxs,[],int_eq) => var_indxs' &
+	list_reverse(var_indxs') => var_indxs'' &
+	calculate_jacobian_row2(new_exp,vars,eqn_indx,var_indxs'') => SOME(eqns)
+	----------------------------------------------
+	calculate_jacobian_row(ARRAY_EQUATION(indx,expl),vars,ae,m,mt,eqn_indx) => SOME(eqns)
+
 
   rule	print "calculate_jacobian_row failed\n" 
 	--------------------------------------
-	calculate_jacobian_row(_,_,_,_,_) => fail
+	calculate_jacobian_row(_,_,_,_,_,_) => fail
 end
 
 (** relation: make_residual_eqn
@@ -6228,18 +6265,18 @@ relation calculate_jacobian_row2: (Exp.Exp,
 				   Variables,
 				   int, (* equation index *)
 				   int list) (* var indexes *)
-	  => ((int* int* Equation) list) =
+	  => ((int* int* Equation) list option) =
 
-  axiom	calculate_jacobian_row2(e,_,_,[]) => []
+  axiom	calculate_jacobian_row2(e,_,_,[]) => SOME([])
 
   rule	get_var_at(vars,vindx) => v &
 	var_cref(v) => cr &
 	Derive.differentiate_exp(e,cr) => e' &
 	Exp.simplify(e') => e'' &
-	calculate_jacobian_row2(e,vars,eqn_indx,vindxs) => es
+	calculate_jacobian_row2(e,vars,eqn_indx,vindxs) => SOME(es)
 	-----------------------------------
 	calculate_jacobian_row2(e,vars,eqn_indx,vindx::vindxs) 
-	  => ((eqn_indx,vindx,RESIDUAL_EQUATION(e''))::es)
+	  => (SOME((eqn_indx,vindx,RESIDUAL_EQUATION(e''))::es))
 end
 
 (** relation: residual_exp
@@ -6401,14 +6438,14 @@ end
 (** relation: replace_variables
  ** author: PA
  **
- ** Transforms the equations, given two lists with source and target
- ** expressions
+ ** Transforms the equations (incl. algorithms and array eqns), 
+ ** given two lists with source and target expressions
  **) 
 
-relation replace_variables: (Equation list, 
+relation replace_variables: (Equation list, (* equations*)
 			     Exp.Exp list, (* source list *)
 			     Exp.Exp list) (* target list *)
-	  => (Equation list) =
+	  => Equation list =
 	
   axiom	replace_variables ([],_,_) => []
 	
@@ -6416,7 +6453,8 @@ relation replace_variables: (Equation list,
 	Exp.replace_exp_list(e2,s,t) => (e2',_) &
 	replace_variables(es,s,t) => es'
 	---------------------------------------
-	replace_variables(EQUATION(e1,e2)::es,s,t) => EQUATION(e1',e2')::es'
+	replace_variables(EQUATION(e1,e2)::es,s,t) 
+	  => EQUATION(e1',e2')::es'
 
 
   rule	Exp.replace_exp_list(Exp.CREF(cr,Exp.OTHER),s,t) 
@@ -6425,23 +6463,28 @@ relation replace_variables: (Equation list,
 	replace_variables(es,s,t) => es'
 	---------------------------------------
 	replace_variables(SOLVED_EQUATION(cr,e1)::es,s,t) 
-	  => SOLVED_EQUATION(cr',e1')::es' 
+	  => SOLVED_EQUATION(cr',e1')::es'
 
   rule	let e1 = Exp.CREF(cr,Exp.OTHER) &
 	Exp.replace_exp_list(e1,s,t) => (e1' as Exp.CREF(cr',_),_) &
 	Exp.replace_exp_list(e2,s,t) => (e2',_) &
 	replace_variables(es,s,t) => es'
 	---------------------------------------
-	replace_variables(WHEN_EQUATION(WHEN_EQ(i,cr,e2))::es,s,t) => WHEN_EQUATION(WHEN_EQ(i,cr',e2'))::es'
+	replace_variables(WHEN_EQUATION(WHEN_EQ(i,cr,e2))::es,s,t) 
+	  => WHEN_EQUATION(WHEN_EQ(i,cr',e2'))::es'
 
-  rule	(* TODO: we need to replace variables in algorithms too,
-	 * or disallow removal of simple equations that can be found
-	 * in algorithms and also simple equations
-	 **)
-	replace_variables(es,s,t) => es'
+	  (* algorithms are replaced separately in translate_dae_replace *)
+  rule	replace_variables(es,s,t) => es'
  	---------------------------------------
  	replace_variables(ALGORITHM(indx,inputs,outputs)::es,s,t) 
  	  => ALGORITHM(indx,inputs,outputs)::es'
+
+	  (* array eqns are replaced separatedly in translate_dae_replace*)
+  rule	replace_variables(es,s,t) => es'
+ 	---------------------------------------
+ 	replace_variables(ARRAY_EQUATION(indx,expl)::es,s,t) 
+ 	  => ARRAY_EQUATION(indx,expl)::es'
+
 
   rule	print "-replace_variables failed\n" 
 	------------------
@@ -7548,13 +7591,38 @@ relation get_all_exps : DAELow => Exp.Exp list =
 	get_all_exps_eqns eqns => exps3 &
 	get_all_exps_eqns reqns => exps4 &
 	get_all_exps_eqns ieqns => exps5 &
+	get_all_exps_array_eqns ae => exps6 &
 	array_list algs => alglst &
 	Util.list_map(alglst, Algorithm.get_all_exps) => explist6 &
-	list_append([exps1, exps2, exps3, exps4, exps5],explist6) => explist &
+	list_append([exps1, exps2, exps3, exps4, exps5,exps6],explist6) => explist &
 	Util.list_flatten(explist) => exps
 	---------------------------------------------------------------------	
 	get_all_exps (DAELOW(vars1,vars2,eqns,reqns,ieqns,ae,algs,_)) => exps
 
+end
+
+(** relation: get_all_exps_array_eqns
+ ** author: PA
+ **
+ ** Returns all expressions in array equations
+ **)
+relation get_all_exps_array_eqns: (MultiDimEquation array) => Exp.Exp list =
+
+  rule	array_list(arr) => lst &
+	Util.list_map(lst,get_all_exps_array_eqn) => llst &
+	Util.list_flatten(llst) => res
+	-------------------------------
+	get_all_exps_array_eqns(arr) => res
+end
+
+(** relation: get_all_exps_array_eqn
+ ** author: PA
+ **
+ ** Helper relation to get_all_exps_array_eqns
+ **)
+relation get_all_exps_array_eqn: MultiDimEquation => Exp.Exp list =
+
+  axiom	get_all_exps_array_eqn(MULTIDIM_EQUATION(_,e1,e2)) => [e1,e2]
 end
 
 

@@ -166,6 +166,8 @@ module Util :
                                        string)(*error_msg to error_buf if fail*) => ()
   relation strncmp: (string, string, int) => bool
   relation charlistcompare: (char list, char list, int) => bool
+
+  relation tick_str:() => string
 end
 
 with "System.rml"
@@ -1298,13 +1300,11 @@ relation string_replace_char2 : (char list, char, char) => char list =
 
 end
 
-
-
- 
 (** relation string_split_at_char
  ** Takes a string and a char and split the string at the char
  ** example: string_split_at_char("hej.b.c",#".") => ["hej,"b","c"]
  **)      
+
 relation string_split_at_char : (string, char) => string list =
  
   rule  string_list(str) => chrList &
@@ -1658,4 +1658,18 @@ relation strncmp: (string,string,int)=>bool =
 	-------------------------------------
 	strncmp (s1,s2,n) => true
 	axiom strncmp(_,_,_) => false
+end
+
+(** relation: tick_str
+ ** author: PA
+ **
+ ** Returns tick as a string, i.e. an unique number.
+ **)
+
+relation tick_str:() => string =
+
+  rule	tick() => i &
+	int_string(i) => s 
+	------------------
+	tick_str() => s
 end

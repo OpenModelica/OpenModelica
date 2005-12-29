@@ -61,7 +61,7 @@ module Codegen :
 						      
     with "DAE.rml"
     with "Print.rml"
-							  
+    with "Exp.rml"
 							  
     type Ident = string
 							  
@@ -98,7 +98,22 @@ module Codegen :
   relation generate_function_headers : DAE.DAElist => (string list (*libs*))
   relation generate_algorithm: (DAE.Element, int)
 	  => (CFunction, int) 
-	  
+  relation generate_expression : (Exp.Exp, int) => (CFunction,string,int)
+
+  relation c_add_statements : (CFunction, Statement list) => CFunction 
+  relation c_add_inits : (CFunction, InitStatement list) => CFunction 
+  relation c_add_variables : (CFunction, VariableDeclaration list) => CFunction
+  relation c_merge_fns : CFunction list => CFunction
+
+  relation c_make_function : (ReturnType,
+			    FunctionName,
+			    ReturnTypeStruct,
+			    ArgumentDeclaration list)
+	  => CFunction
+  relation c_print_functions_str: CFunction list => string 
+  relation c_print_statements: CFunction => string 
+	
+  val c_empty_function : CFunction
 end
 
 
@@ -108,7 +123,6 @@ with "Debug.rml"
 with "Absyn.rml"
 with "Algorithm.rml"
 with "ClassInf.rml"
-with "Exp.rml"
 with "ModUtil.rml"
 with "Types.rml"
 with "Util.rml"
@@ -264,6 +278,23 @@ relation c_move_statements_to_inits : CFunction => CFunction =
 	  => CFUNCTION(rt,fn,rts,ad,vd,is',[],cl)
 end
 
+(** relation: c_print_functions_str 
+ **
+ ** Prints CFunction list to a string
+ **)
+relation c_print_functions_str: CFunction list => string =
+
+
+  rule	Print.get_string() => s &
+	Print.clear_buf()  &
+	c_print_functions(fs) &
+	Print.get_string()  => res &
+	Print.clear_buf() &
+	Print.print_buf s 
+	---------------------
+	c_print_functions_str(fs) => res
+end
+
 (** relation: c_print_functions
  **
  ** Prints CFunction list to Print buffer.
@@ -277,6 +308,19 @@ end
 	c_print_functions(r)
 	---------------------
 	c_print_functions f::r
+end
+
+(** relation: c_print_statements
+ **
+ ** Only prints the statements of a function to a string
+ **)
+relation c_print_statements: CFunction => string =
+
+
+  rule	c_print_indented_list_str (st,2)  => (i5,str) &
+	string_append(str,"\n") => res
+	---------------------
+	c_print_statements CFUNCTION(rt,fn,rts,ad,vd,is,st,cl) => res
 end
 
 (** relation: c_print_function
@@ -435,6 +479,41 @@ relation c_print_indented : (string, int) => int =
 	c_print_indented (str,i) => i'
 end 
 
+(** relation: c_print_indented_list_str
+ **
+ ** Helper relation. 
+ **)
+ 
+ relation c_print_indented_list_str : (string list, 
+				   int) (* indentation level *)
+	  => (int,string) = (* updated indentation level*)
+	
+  axiom c_print_indented_list_str ([],i) => (i,"")
+
+  rule	c_print_indented_str(f,i) => (i',s1) &
+	 c_print_indented_list_str(r,i') => (i'',s2) &
+	 Util.string_append_list([s1,"\n",s2]) => res
+	 -----------------
+	 c_print_indented_list_str(f::r,i) => (i'',res)
+	 
+end
+
+(** relation: c_print_indented_str
+ **
+ ** See c_print_indented
+ **)
+
+relation c_print_indented_str : (string, int) => (int,string) =
+
+  rule	string_list str => strl &
+	c_next_level(strl,i) => i' &
+	c_this_level(strl,i) => it &
+	c_print_indent_str it => it_str &
+	string_append(it_str,str) => res
+	-----------
+	c_print_indented_str (str,i) => (i',res)
+end 
+
 (** relation c_next_level
  **
  ** Helper relation to c_print_indented. 
@@ -496,6 +575,21 @@ relation c_print_indent : int => () =
 	c_print_indent i'
 	----------------
 	c_print_indent i
+
+end
+
+(** relation c_print_indent_str
+ **
+ ** Helper relation to c_print_indented_str. 
+ **)
+relation c_print_indent_str : int => string =
+
+  axiom c_print_indent_str 0 => ""
+
+  rule	Util.list_fill(" ",i) => lst &
+	Util.string_append_list(lst) => res
+	----------------
+	c_print_indent_str i => res
 
 end
 
@@ -2385,7 +2479,7 @@ relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 	Util.if(a,"&","") => scalar_ref &
 	string_append(", ",scalar_ref) => scalar_delimit &
 	Util.string_delimit_list (vars1, scalar_delimit) => args_str &
-	Util.string_append_list ["array_",scalar,array_type_str,"(&",
+	Util.string_append_list ["array_alloc_",scalar,array_type_str,"(&",
 				 tvar,", ",nvars_str,", ",
 				 scalar_ref,args_str,");"
 				 ] => stmt &

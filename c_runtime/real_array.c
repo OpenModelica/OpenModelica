@@ -238,6 +238,21 @@ void copy_real_array_data(real_array_t* source, real_array_t* dest)
   
 }
 
+void copy_real_array_data_mem(real_array_t* source, modelica_real* dest)
+{
+  size_t i;
+  size_t nr_of_elements;
+
+  assert(real_array_ok(source));
+
+  nr_of_elements = real_array_nr_of_elements(source);
+
+  for (i = 0; i < nr_of_elements; ++i)
+  {
+      dest[i] = source->data[i];
+  }
+}
+
 void copy_real_array(real_array_t* source, real_array_t* dest)
 {
   clone_real_array_spec (source, dest);
@@ -483,11 +498,15 @@ void indexed_assign_real_array(real_array_t* source,
 }
 
 /*
-
- a := b[1:3];
-
-*/
-
+ * function: index_real_array
+ *
+ * Returns an subscript of the source array in the destination array.
+ * Assumes that both source array and destination array is properly
+ * allocated.
+ *
+ * a := b[1:3];
+ *
+ */
 
 void index_real_array(real_array_t* source, 
 		      index_spec_t* source_spec, 
@@ -544,6 +563,17 @@ void index_real_array(real_array_t* source,
     restore_memory_state(mem_state);
   
 }
+
+/* 
+ * function: index_alloc_real_array
+ *
+ * Returns an subscript of the source array in the destination array
+ * in the same manner as index_real_array, except that the destination
+ * array is allocated.
+ * 
+ *
+ * a := b[1:3];
+ */
 
 void index_alloc_real_array(real_array_t* source, 
 			       index_spec_t* source_spec, 
@@ -619,12 +649,37 @@ void array_alloc_real_array(real_array_t* dest,int n,real_array_t* first,...)
 
 void array_scalar_real_array(real_array_t* dest,int n,m_real first,...)
 {
-
+  int i;
+  va_list ap;
+  assert(real_array_ok(dest));
+  assert(dest->ndims == 1);
+  assert(dest->dim_size[0] == n);
+  put_real_element(first,0,dest);
+  va_start(ap,first);      
+  for (i = 0; i < n; ++i)
+    {
+      put_real_element(va_arg(ap,m_real),i,dest);
+    }
+  va_end(ap);
 }
+
+/* array_alloc_scalar_real_array
+ *
+ * Creates(incl allocation) an array from scalar elements.
+ */
 
 void array_alloc_scalar_real_array(real_array_t* dest,int n,m_real first,...)
 {
-
+  int i;
+  va_list ap;
+  simple_alloc_1d_real_array(dest,n);
+  va_start(ap,first);      
+  put_real_element(first,0,dest);
+  for (i = 1; i < n; ++i)
+    {
+      put_real_element(va_arg(ap,m_real),i,dest);
+    }
+  va_end(ap);
 }
 
 m_real* real_array_element_addr1(real_array_t* source,int ndims,int dim1)

@@ -19,6 +19,12 @@
 
 */
 
+/* File: simulation_runtime.h
+ *
+ * Description: This file is a C++ header file for the simulation runtime.
+ * It contains solver functions and other simulation runtime specific functions
+ */
+
 #ifndef _SIMULATION_RUNTIME_H
 #define _SIMULATION_RUNTIME_H
 
@@ -51,7 +57,7 @@ extern "C" {
 	       long *ng,
 	       long *jroot
 	       );
-}
+} // extern "C"
 
 inline void read_commented_value( ifstream &f, double *res);
 inline void read_commented_value( ifstream &f, int *res);
@@ -62,25 +68,25 @@ void read_input(int argc, char **argv,
 		double *start, double *stop,
 		double *step);
 
-extern double h[];
-extern double x[];
-extern double xd[];
-extern double dummy_delta[];
-extern double y[];
-extern double p[];
-extern long jroot[];
+extern double* h;
+extern double* x;
+extern double* xd;
+extern double* dummy_delta;
+extern double* y;
+extern double* p;
+extern long* jroot;
 extern long liw;
 extern long lrw;
-extern double rwork[];
-extern long iwork[];
+extern double* rwork;
+extern long* iwork;
 extern long nhelp,nx,ny,np,ng;
 extern char *model_name;
-extern char *varnames[];
+extern char** varnames;
 
 int 
 function_zeroCrossing(long *neqm, double *t, double *x, long *ng, double *gout, double *rpar, long* ipar);
 
-void
+int
 handleZeroCrossing(long index, double* t);
 
 // function for calculating ouput values 
@@ -91,18 +97,19 @@ functionDAE_output(double *t, double *x, double *xprimne, double *y, double* p);
 int
 functionDAE_res(double *t, double *x, double *xprime, double *delta, long int *ires, double *rpar, long int* ipar);
 
-void
+int
 function_when(int i, double *t);
-void
+
+int
 function_updateDependents(double *t);
 
 // function for calculating states on explicit ODE form
-void functionODE(double *x, double *xd, double *y, double *p, 
+int functionODE(double *x, double *xd, double *y, double *p, 
 		 int nx, int ny, int np, double *t);
 
 // function for calculate initial values from initial equations
 // and fixed start attibutes
-void initial_function(double*x, double *xd, double*y, double*p,
+int initial_function(double*x, double *xd, double*y, double*p,
 		    int nx, int ny, int np); 
 
 // Adds a result to the simulation result data.
@@ -116,7 +123,7 @@ void store_result(const char * filename, double*data,
 // euler numerical solver
 void euler ( double *x, double *xd, double *y, double *p, double *data,
 	     int nx, int ny, int np, double *time, double *step,
-	     void (*f)(double*,// x
+	     int (*f)(double*,// x
 		       double*,// xd
 		       double*,// y
 		       double*,// p
@@ -125,9 +132,22 @@ void euler ( double *x, double *xd, double *y, double *p, double *data,
 void saveall();
 void save(double & var);
 double pre(double & var);
+bool edge(double& var);
 
 void CheckForNewEvents(double *t);
 void StartEventIteration(double *t);
 void StateEventHandler(long jroot[], double *t);
+
+void AddEvent(long);
+
+extern long* zeroCrossingEnabled;
+
+double Less(double a,double b);
+double LessEq(double a,double b);
+double Greater(double a,double b);
+double GreaterEq(double a,double b);
+#define ZEROCROSSING(ind,exp) gout[ind] = (zeroCrossingEnabled[ind])?double(zeroCrossingEnabled[ind])*exp:1.0
+#define noEvent(arg) arg
+
 
 #endif

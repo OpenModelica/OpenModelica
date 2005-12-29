@@ -62,6 +62,9 @@ void clone_real_array_spec(real_array_t* source, real_array_t* dest);
 /* Copy real data*/
 void copy_real_array_data(real_array_t* source, real_array_t* dest);
 
+/* Copy real data given memory ptr*/
+void copy_real_array_data_mem(real_array_t* source, modelica_real* dest);
+
 /* Copy real array*/
 void copy_real_array(real_array_t* source, real_array_t* dest);
 
@@ -110,9 +113,11 @@ void simple_index_real_array2(real_array_t* source,
 				       int, int, 
 				       real_array_t* dest);
 
+/* array(A,B,C) for arrays A,B,C */
 void array_real_array(real_array_t* dest,int n,real_array_t* first,...);
 void array_alloc_real_array(real_array_t* dest,int n,real_array_t* first,...);
 
+/* array(s1,s2,s3)  for scalars s1,s2,s3 */
 void array_scalar_real_array(real_array_t* dest,int n,m_real first,...);
 void array_alloc_scalar_real_array(real_array_t* dest,int n,m_real first,...);
 

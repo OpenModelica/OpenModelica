@@ -225,7 +225,7 @@ int euler_main(int argc,char** argv) {
 
 void euler ( double *x, double *xd, double *y, double *p, double *data,
 	     int nx, int ny, int np, double *time, double *step,
-	     void (*f)(double*,// x
+	     int (*f)(double*,// x
 		       double*,// xd
 		       double*,// y
 		       double*,// p

@@ -1251,10 +1251,10 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 Inst.instantiate_class(p',path) => (dae',env)  &
           DAE.transform_if_eq_to_expr(dae') => (dae as DAE.DAE(dael)) &
 	 Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(path,dael,env)) => ic' &
-	 DAELow.lower(dae,false (* no dummy state*)) => (daelow as DAELow.DAELOW(vars,_,eqnarr,_,_,_,_,_)) &
+	 DAELow.lower(dae,false (* no dummy state*)) => (daelow as DAELow.DAELOW(vars,_,eqnarr,_,_,ae,_,_)) &
 	 DAELow.incidence_matrix(daelow) => m &
 	 DAELow.transpose_matrix(m) => mt &
-	 DAELow.calculate_jacobian(vars,eqnarr,m,mt) => jac &
+	 DAELow.calculate_jacobian(vars,eqnarr,ae,m,mt) => jac &
 	 DAELow.dump_jacobian_str(jac) => res 
 	 -------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("jacobian"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 

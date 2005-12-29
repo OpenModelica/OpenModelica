@@ -206,6 +206,7 @@ module Exp:
   relation cref_last_ident : ComponentRef => Ident 
   relation cref_last_subs: ComponentRef => Subscript list
   relation cref_strip_last_subs: ComponentRef => ComponentRef
+  relation cref_strip_last_subs_stringified: ComponentRef => ComponentRef
   relation cref_contained_in: (ComponentRef(*x*), ComponentRef(*y*))
 	  => bool
   relation cref_prefix_of: (ComponentRef (* x*), ComponentRef (*y*))
@@ -366,6 +367,24 @@ relation cref_strip_last_subs: ComponentRef => ComponentRef =
   rule	cref_strip_last_subs(cr) => cr'
 	---------------------
 	cref_strip_last_subs(CREF_QUAL(id,s,cr)) => CREF_QUAL(id,s,cr')
+end
+
+(** relation cref_strip_last_subs_stringified
+ ** author: PA
+ **
+ ** Same as cref_strip_last_subs but works on a stringified component ref
+ ** instead.
+ **)
+relation cref_strip_last_subs_stringified: ComponentRef => ComponentRef =
+
+  rule	Util.string_split_at_char(id,#"[") => lst &
+	Util.list_strip_last(lst) => lst' &
+	Util.string_delimit_list(lst',"[") => id' 
+	--------------------------------------
+	cref_strip_last_subs_stringified(CREF_IDENT(id,[])) 
+	  => CREF_IDENT(id',[]) 
+
+  axiom	cref_strip_last_subs_stringified(cr) => cr 
 end
 
 (** relation: cref_contained_in
@@ -3908,7 +3927,9 @@ end
 (** relation: stringify_component_ref
  **
  ** Translates a ComponentRef into a CREF_IDENT by putting the string
- ** representation of the ComponentRef into it. See also stringigy_crefs.
+ ** representation of the ComponentRef into it.
+ ** 
+ ** See also stringigy_crefs.
  **)
 
 relation stringify_component_ref: ComponentRef => ComponentRef =

@@ -19,28 +19,26 @@
 
 */
 
+/* File: modelica.h
+ * Description: This is the C header file for the C code generated from 
+ * Modelica. It includes e.g. the C object representation of the builtin types
+ * and arrays, etc.
+ */
+
 #ifndef MODELICA_H_
 #define MODELICA_H_
-
-
-#include "modelica_string.h"
 
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-
+#include "modelica_string.h"
 #include "memory_pool.h"
 #include "index_spec.h"
 
 #include "string_array.h"
 #include "boolean_array.h"
-
-
-#if defined(__cplusplus)
-}
-#endif
 
 #include "real_array.h"
 #include "integer_array.h"
@@ -48,15 +46,9 @@ extern "C" {
 #include "utility.h"
 
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 #include <assert.h>
 #include "read_write.h"
 #include "matrix.h"
-
-
 
 
 typedef real_array_t real_array;
@@ -69,21 +61,6 @@ typedef modelica_integer size_integer_array_rettype;
 typedef modelica_real cos_rettype;
 #if defined(__cplusplus)
 }
-
-double pre(double&);
-void   save(double&);
-void   saveall();
-bool   edge(double&);
 #endif
-void AddEvent(long);
-
-extern long* zeroCrossingEnabled;
-
-double Less(double a,double b);
-double LessEq(double a,double b);
-double Greater(double a,double b);
-double GreaterEq(double a,double b);
-#define ZEROCROSSING(ind,exp) gout[ind] = (zeroCrossingEnabled[ind])?double(zeroCrossingEnabled[ind])*exp:1.0
-#define noEvent(arg) arg
 
 #endif
