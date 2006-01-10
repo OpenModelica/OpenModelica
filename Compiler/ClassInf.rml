@@ -113,11 +113,13 @@ module ClassInf :
   
   (* Succeeds if state is FUNCTION *)
   relation is_function: State => ()
+  relation is_connector: State => ()
 
   relation matching_state : (State, State list) => bool
 
   (* Debug relation *)
   relation print_state : State => ()
+  relation print_state_str : State => string
   relation get_state_name : State => string
 
 end
@@ -138,6 +140,30 @@ with "Error.rml"
 (*!ignorecode*)
 
 (** relation: print_state *)
+
+relation print_state_str : State => string =
+
+  axiom	print_state_str UNKNOWN(s) => "unknown"
+  axiom	print_state_str MODEL(s) => "model"
+  axiom	print_state_str RECORD(s)=> "record"
+
+  axiom	print_state_str BLOCK(s) => "block"
+
+  axiom	print_state_str CONNECTOR(s) => "connector"
+  axiom	print_state_str TYPE(s) => "type"
+  axiom	print_state_str PACKAGE(s) => "package"
+
+  axiom	print_state_str FUNCTION(s) => "function"
+  axiom	print_state_str TYPE_INTEGER(s) => "Integer"
+  axiom	print_state_str TYPE_REAL(s) => "Real"
+
+  axiom	print_state_str TYPE_STRING(s) => "String"
+  axiom	print_state_str TYPE_BOOL(s) => "Boolean"
+
+  axiom	print_state_str IS_NEW(s) => "new def"
+  axiom	print_state_str HAS_EQUATIONS(s) => "has eqn"
+
+end
 
 relation print_state : State => () =
 
@@ -435,5 +461,14 @@ end
 
 relation is_function: State => () =
   axiom is_function FUNCTION(_) => ()
+end
+
+(** relation: is_connector
+ **
+ ** Fails for states that are not CONNECTOR.
+ **)
+
+relation is_connector: State => () =
+  axiom is_connector CONNECTOR(_) => ()
 end
 

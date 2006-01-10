@@ -1187,7 +1187,7 @@ relation generate_simple_type : Types.Type => string =
   rule	string_append ("const ", n) => n' &
 	string_append (n', "&") => n''
 	------------------------------
-	generate_simple_type((Types.T_COMPLEX (ClassInf.RECORD(n),_),_)) => n''
+	generate_simple_type((Types.T_COMPLEX (ClassInf.RECORD(n),_,_),_)) => n''
 
   rule	Types.array_element_type t => t' &
 	array_type_string t' => t_str

@@ -164,7 +164,7 @@ relation lookup_type: (Env.Env,Absyn.Path,bool (* msg flag *))
 	Inst.inst_class_in(env2, Types.NOMOD, Prefix.NOPRE, 
 			   Connect.empty_set, ci_state, c, false, [], 
 			   true,false (*true*)) 
-	  => (_,env'',_,cistate1,_) &
+	  => (_,env'',_,cistate1,_,_) &
         not ClassInf.valid(cistate1, SCode.R_PACKAGE)  &  
 	(* Has to do additional check for encapsulated classes, see rule below *)
 	lookup_type_in_class(env'', c, path, true) => (t, env''') 
@@ -179,7 +179,7 @@ relation lookup_type: (Env.Env,Absyn.Path,bool (* msg flag *))
 	Inst.inst_class_in(env2, Types.NOMOD, Prefix.NOPRE, 
 			   Connect.empty_set, ci_state, c, false, [], 
 			   true,false(*true*))
-	  => (_, env'', _, cistate1, _) &
+	  => (_, env'', _, cistate1, _,_) &
         ClassInf.valid(cistate1, SCode.R_PACKAGE)  &  
 	(* Has NOT to do additional check for encapsulated classes, see rule above *)
 	lookup_type_in_class(env'', c, path, false) => (c', env''') 
@@ -464,7 +464,7 @@ relation lookup_unqualified_imported_var_in_frame: (Env.Item list,
 	ClassInf.start(restr, id) => ci_state &
 	Inst.inst_class_in(env2, Types.NOMOD, Prefix.NOPRE, Connect.empty_set,
 			   ci_state, c, false, [],false,false) 
-	  => (_,f::_,_,_,_) &
+	  => (_,f::_,_,_,_,_) &
 	lookup_var_in_packages([f],Exp.CREF_IDENT(ident,[])) => (attr,ty,bind)  & 
 	more_lookup_unqualified_imported_var_in_frame(fs, env, ident) => more &
 	bool_not more => unique
@@ -767,7 +767,7 @@ relation lookup_var_in_packages : (Env.Env, Exp.ComponentRef)
 	Inst.inst_class_in (env3,Types.NOMOD,Prefix.NOPRE,
 			    Connect.empty_set,ci_state,c,false,[],
 			    false,false) 
-	  => (_,env5,_,_,types) &
+	  => (_,env5,_,_,types,_) &
 	lookup_var_in_packages(env5,id2) => (attr,ty,bind) 
 	--------------------------------------------------
 	lookup_var_in_packages (env, Exp.CREF_QUAL(id1, [], id2 as Exp.CREF_IDENT(_,_))) => (attr,ty,bind)
@@ -779,7 +779,7 @@ relation lookup_var_in_packages : (Env.Env, Exp.ComponentRef)
 	Inst.inst_class_in (env3,Types.NOMOD,Prefix.NOPRE,
 			    Connect.empty_set,ci_state,c,false,[],
 			    true,false) 
-	  => (_,env5,_,_,types) &
+	  => (_,env5,_,_,types,_) &
 	lookup_var_in_packages(env5,cref) => (attr,ty,bind) 
 	--------------------------------------------------
 	lookup_var_in_packages (env, Exp.CREF_QUAL(id, [], cref)) => (attr,ty,bind)
@@ -918,7 +918,7 @@ relation lookup_functions_in_env: (Env.Env,Absyn.Path) => (Types.Type list) =
 	Inst.inst_class_in(env2, Types.NOMOD, Prefix.NOPRE, 
 			   Connect.empty_set, ci_state, c, false, 
 			   [], true,false) 
-	  => (_,env'',_,cistate1,_) &
+	  => (_,env'',_,cistate1,_,_) &
 	  lookup_functions_in_env(env'',path) => reslist
 	-------------------------------
 	lookup_functions_in_env(env as (Env.FRAME(sid,ht,httypes,_,_,_,_)::fs), iid as Absyn.QUALIFIED(pack,path)) 
@@ -953,7 +953,7 @@ end
 relation create_generic_builtin_functions: (Env.Env, string (* function_name*)) => Types.Type list =
 
 	(* cardinality *)
-  axiom	create_generic_builtin_functions(env,"cardinality") => [ (Types.T_FUNCTION([("x",(Types.T_COMPLEX(ClassInf.CONNECTOR("$$"),[]),NONE))],(Types.T_INTEGER([]),NONE)),NONE) ]
+  axiom	create_generic_builtin_functions(env,"cardinality") => [ (Types.T_FUNCTION([("x",(Types.T_COMPLEX(ClassInf.CONNECTOR("$$"),[],NONE),NONE))],(Types.T_INTEGER([]),NONE)),NONE) ]
 
 end
 
@@ -1335,7 +1335,7 @@ relation lookup_type_in_class: (Env.Env, SCode.Class, Absyn.Path, bool)
 	Inst.inst_class_in(env2, Types.NOMOD, Prefix.NOPRE, 
 			   Connect.empty_set, ci_state, c, false, [], 
 			   true,false) 
-	  => (_,env3,_,_,_) &
+	  => (_,env3,_,_,_,_) &
   	lookup_type_in_class (env3, c, p1, false) => (t, env5)
 	-------------------------------------------
 	lookup_type_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),true) => (t, env5)
@@ -1362,7 +1362,7 @@ relation lookup_type_in_class: (Env.Env, SCode.Class, Absyn.Path, bool)
 
 	Inst.inst_class_in(env2,Types.NOMOD,Prefix.NOPRE,
 			   Connect.empty_set,ci_state,c,false,[],true,false) 
-	  => (_,env4,_,_,_) &
+	  => (_,env4,_,_,_,_) &
   	lookup_type_in_class (env4,c,p1,false) => (t, env5)
 	-------------------------------------------
 	lookup_type_in_class (env, cdef, Absyn.QUALIFIED(c1,p1),false) => (t, env5)

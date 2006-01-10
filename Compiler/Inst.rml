@@ -165,7 +165,7 @@ module Inst:
 			   bool(*implicit inst*),
 			   bool(* function implicit inst*))
 	  => ( DAE.Element list, Env.Env, Connect.Sets, 
-	      ClassInf.State, Types.Var list)
+	      ClassInf.State, Types.Var list, Types.Type option)
 
   relation partial_inst_class_in: ( Env.Env, Types.Mod, Prefix.Prefix, 
 			   Connect.Sets, ClassInf.State,
@@ -178,7 +178,7 @@ module Inst:
 	    
   relation inst_record_constructor_elt : (Env.Env, SCode.Element, bool (*impl*)) 
 	 => (Types.Var)
-  relation mktype : (Absyn.Path, ClassInf.State,Types.Var list) => Types.Type
+  relation mktype : (Absyn.Path, ClassInf.State,Types.Var list, Types.Type option) => Types.Type
 
   relation init_vars_modelica_output : DAE.Element list => DAE.Element list
 
@@ -669,7 +669,8 @@ relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class,
   rule	Env.open_scope(env,encflag,SOME(n)) => env' &
 	ClassInf.start(r,n) => ci_state &
 	inst_class_in(env', mod, pre, csets, ci_state, c, false(*accesibility*), inst_dims, impl,false (*packimpl*))
-	  => (dae1, env''', csets' as Connect.SETS(_,crs), ci_state', tys) &
+	  => (dae1, env''', csets' as Connect.SETS(_,crs), ci_state', 
+	      tys,bc_ty) &
 	make_fully_qualified(env,Absyn.IDENT(n)) => fq_class &
 	DAE.set_component_type(dae1,fq_class) => dae1' &
 	is_top_call(callscope) => callscope' &  
@@ -678,7 +679,12 @@ relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class,
 	  => dae3 &
 	Util.list_flatten([dae1', dae2, dae3]) => dae &
 	make_fully_qualified(env, Absyn.IDENT(n)) => typename &
-	mktype(typename,ci_state',tys) => ty
+
+	mktype(typename,ci_state',tys,bc_ty) => ty 
+(*	& print "inst class " & print n & print " type =" & 
+	Types.unparse_type ty => s &
+	print s & print " state =" & ClassInf.print_state_str ci_state' => s2 & 
+	print s2 & print "\n" *)
 	-------------------------------------------
 	inst_class(env, mod, pre, csets, c as SCode.CLASS(n,_,encflag,r,_),inst_dims,impl,callscope)
 	  => (dae, env''', Connect.SETS([],crs), ty, ci_state')
@@ -688,6 +694,50 @@ relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class,
 	Debug.fprint("failtrace", " failed\n") 
 	-----------------------------------------------------
 	inst_class(_,_,_,_,SCode.CLASS(n,_,_,_,_),_,impl,_) => fail
+	
+end
+
+(** relation: inst_class_basictype
+ ** author: PA
+ **
+ ** This relation instantiates a basictype class, e.g. Real, Integer, Real[2],
+ ** etc. This relation has the same functionality as inst_class except that
+ ** it will create array types when needed. (inst_class never creates array 
+ ** types). This is needed because this relation is used to instantiate classes
+ ** extending from basic types. See inst_basictype_baseclass. 
+ ** NOTE: This relation should only be called from inst_basictype_baseclass.
+ ** This is new functionality in Modelica v 2.2.
+ **)
+
+relation inst_class_basictype : (Env, Mod, Prefix, Connect.Sets, SCode.Class, 
+		       InstDims,bool (*impl*) ,CallingScope)
+	  => (DAE.Element list, Env.Env, Connect.Sets, 
+	      Types.Type, ClassInf.State) =
+
+  rule	Env.open_scope(env,encflag,SOME(n)) => env' &
+	ClassInf.start(r,n) => ci_state &
+	inst_class_in(env', mod, pre, csets, ci_state, c, false(*accesibility*), inst_dims, impl,false (*packimpl*))
+	  => (dae1, env''', csets' as Connect.SETS(_,crs), ci_state', 
+	      tys,bc_ty) &
+	make_fully_qualified(env,Absyn.IDENT(n)) => fq_class &
+	DAE.set_component_type(dae1,fq_class) => dae1' &
+	is_top_call(callscope) => callscope' &  
+	Connect.equations (csets') => dae2 &
+	Connect.unconnected_flow_equations (csets',dae1,env''', callscope') 
+	  => dae3 &
+	Util.list_flatten([dae1', dae2, dae3]) => dae &
+	make_fully_qualified(env, Absyn.IDENT(n)) => typename &
+
+	mktype_with_arrays(typename,ci_state',tys,bc_ty) => ty 
+	-------------------------------------------
+	inst_class_basictype(env, mod, pre, csets, c as SCode.CLASS(n,_,encflag,r,_),inst_dims,impl,callscope)
+	  => (dae, env''', Connect.SETS([],crs), ty, ci_state')
+
+  rule	Debug.fprint("failtrace", "- inst_class_basictype ") & 
+	Debug.fprint("failtrace",  n) &
+	Debug.fprint("failtrace", " failed\n") 
+	-----------------------------------------------------
+	inst_class_basictype(_,_,_,_,SCode.CLASS(n,_,_,_,_),_,impl,_) => fail
 	
 end
 
@@ -710,28 +760,30 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 			 bool (* implicit function (ls:package?) instantiation *)
 			 )
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
-	      Types.Var list) =
+	      Types.Var list,
+	      Types.Type option (*basictype baseclass*)) =
 	
-
-  axiom inst_class_in(env,mods,pre,Connect.SETS(_,crs),ci_state,
-                      c as SCode.CLASS("Real",_,_,_,_),_,_, impl,packimpl)
+  rule	array_basictype_baseclass(inst_dims,(Types.T_REAL([]),NONE)) => bc
+	----------------------------
+	inst_class_in(env,mods,pre,Connect.SETS(_,crs),ci_state,
+                      c as SCode.CLASS("Real",_,_,_,_),_,inst_dims, impl,packimpl)
           => ([] (* No DAE *), 
 	      env, 
 	     Connect.SETS([],crs) (* csets should be emtpy, but crs must be propagated to "next component" *), 
-	      ci_state, [])
+	      ci_state, [],bc)
 	
 	  
   axiom inst_class_in(env,mods,pre,Connect.SETS(_,crs),ci_state,
                       c as SCode.CLASS("Integer",_,_,_,_),_,_, impl,packimpl)
-          => ([] (* No DAE *), env, Connect.SETS([],crs), ci_state, [])
+          => ([] (* No DAE *), env, Connect.SETS([],crs), ci_state, [],NONE)
 	  
   axiom inst_class_in(env,mods,pre,Connect.SETS(_,crs),ci_state,
                       c as SCode.CLASS("String",_,_,_,_),_,_, impl,packimpl)
-          => ([] (* No DAE *), env, Connect.SETS([],crs), ci_state, [])
+          => ([] (* No DAE *), env, Connect.SETS([],crs), ci_state, [],NONE)
 	  
  axiom inst_class_in(env,mods,pre,Connect.SETS(_,crs),ci_state,
                      c as SCode.CLASS("Boolean",_,_,_,_),_,_, impl,packimpl)
-         => ([] (* No DAE *), env,Connect.SETS([],crs), ci_state, [])
+         => ([] (* No DAE *), env,Connect.SETS([],crs), ci_state, [],NONE)
 
 	  (* Ignore functions if not implicit instantiation *)
   rule	SCode.is_function cls => true
@@ -741,7 +793,7 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	& Debug.fprint("insttr", "\n") 
 	-----------------------------
 	inst_class_in(env,mods,pre,Connect.SETS(_,crs),ci_state, cls,_,_,impl as false,packimpl)
-	=> ([] (* No DAE *), env, Connect.SETS([],crs), ci_state, [])
+	=> ([] (* No DAE *), env, Connect.SETS([],crs), ci_state, [],NONE)
 
   rule	(*print "inst_class_in" & print n & print "\n" &*)
 	SCode.class_name c => clsname
@@ -751,16 +803,61 @@ relation inst_class_in: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	& Debug.fprint("insttr", clsname) 
 	& Debug.fprint("insttr", "\n") &
 	inst_classdef(env,mods,pre,csets,ci_state,d,r,prot,inst_dims,impl,packimpl)
-	  => (l,env', csets', ci_state', tys)  
+	  => (l,env', csets', ci_state', tys,bc)  
 	-------------------------------------
 	inst_class_in(env,mods,pre,csets,ci_state,
 		      c as SCode.CLASS(n,_,_,r,d), prot, inst_dims,
 		      impl,packimpl)
-	  => (l,env', csets', ci_state', tys)
+	  => (l,env', csets', ci_state', tys,bc)
 
   rule  Debug.fprint("failtrace", "- inst_class_in failed\n")
 	----------------------------------
 	inst_class_in(_,_,_,csets,_,_,_,_,_,_) => fail
+
+end
+
+(** relation: 
+ ** author: PA
+ **
+ **)
+relation array_basictype_baseclass: (InstDims,Types.Type) 
+	  => Types.Type option =
+  axiom	array_basictype_baseclass ([],tp) => NONE 
+
+  rule	instdims_int_opt_list(inst_dims) => lst &
+	array_basictype_baseclass2(lst,tp) => tp'
+	----------------------------
+	array_basictype_baseclass(inst_dims,tp) => SOME(tp')
+end
+
+(** relation: 
+ ** author: PA
+ **
+ **)
+
+relation instdims_int_opt_list: (InstDims) => int option list =
+
+  axiom	instdims_int_opt_list([]) => []
+
+  rule	instdims_int_opt_list(ss) => res
+	-----------------
+	instdims_int_opt_list(Exp.INDEX(Exp.ICONST(i))::ss) => SOME(i)::res
+end
+
+(** relation: 
+ ** author: PA
+ **
+ **)
+
+relation array_basictype_baseclass2: (int option list, Types.Type) 
+	  => Types.Type =
+
+  axiom	array_basictype_baseclass2([],tp) => tp
+
+  rule	Types.lift_array(tp,i) => tp' &
+	array_basictype_baseclass2(is,tp') => res
+	-------------------
+	array_basictype_baseclass2(i::is,tp) => res
 
 end
 
@@ -818,7 +915,34 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 			 SCode.ClassDef, SCode.Restriction, bool,InstDims,
 			 bool (*implicit inst*), bool (* implicit package inst*) )
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
-	      Types.Var list) =
+	      Types.Var list, Types.Type option (*basictype baseclass*)) =
+
+	(** This rule describes how to instantiate a class definition
+	 ** that extends a basic type.*)
+
+  rule	classdef_elts(els) => cdefelts &
+	component_elts(els) => compelts (*should be empty, checked in inst_basic type below*) &
+	extends_elts(els) => extendselts &
+	
+	(* 1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)*)
+	add_classdefs_to_env(env,cdefelts,impl) => env1 &
+
+	(* instantiate CDEFS so redeclares are carried out *)
+	add_nomod(cdefelts) => cdefelts' &
+	update_compelts_mods(env1,pre,cdefelts',ci_state,csets,impl)
+	  => (cdefelts'',env2,csets) &
+	inst_element_list(env2, mods, pre, csets, ci_state, cdefelts'', 
+			  inst_dims, impl, packimpl)
+	  => (dae1,env3, csets1, ci_state1, tys) &
+	  
+ 	inst_basictype_baseclass(env3,extendselts,compelts,mods,inst_dims) 
+	  => bc
+	------------------------------------------------------
+	inst_classdef(env,mods,pre, csets, ci_state,
+		      SCode.PARTS(els,eqs,initeqs,alg,initalg,_), re, prot, 
+		      inst_dims, impl, packimpl as false)
+	  => ([], env, Connect.empty_set, ci_state, [],bc)
+
 
 	(** This rule describes how to instantiate an explicit
 	 ** class definition *)
@@ -908,7 +1032,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_classdef(env,mods,pre, csets, ci_state,
 		      SCode.PARTS(els,eqs,initeqs,alg,initalg,_), re, prot, 
 		      inst_dims, impl, packimpl as false)
-	  => (dae, env5, csets5, ci_state6, tys)
+	  => (dae, env5, csets5, ci_state6, tys,NONE (* no basictype bc*))
 
 	(** This rule describes how to instantiate an explicit
 	 ** class definition *)
@@ -949,7 +1073,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_classdef(env, mods, pre, csets, ci_state,
 		      SCode.PARTS(els,eqs,initeqs,alg,initalg,_), re, prot, 
 		      inst_dims, impl, true(*packimpl*))
-	  => (dae1, env4, csets1, ci_state2, tys)
+	  => (dae1, env4, csets1, ci_state2, tys,NONE)
 
 
 	(** This rule describes how to instantiate a derived class *)
@@ -964,16 +1088,25 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	(* merge modifiers *)
 	Mod.merge(mods,m,cenv'',pre) => mods' &
 	Mod.merge(mods',mod',cenv'',pre) => mods'' &
-	(* instantate class in opened scope.*)
-	inst_class_in(cenv'', mods'', pre, csets, new_ci_state, c,prot,inst_dims,impl,false(*packimpl*))
-	  => (dae, env'', csets', ci_state', tys) &
+
+	(* instantiate array dimensions *)
+	Mod.mod_equation mods'' => eq &
+	elab_arraydim_opt(cenv'',Absyn.CREF_IDENT("",[]), (* owncref not valid here*)
+		      ad,eq,impl,NONE) => dims &
+	inst_dim_exp_lst(dims,impl) => inst_dims2 &
+	list_append(inst_dims,inst_dims2) => inst_dims' &
+
+	(* instantiate class in opened scope.*)
+	inst_class_in(cenv'', mods'', pre, csets, new_ci_state, c,prot,
+		      inst_dims',impl,false(*packimpl*))
+	  => (dae, env'', csets', ci_state', tys,bc) &
 	(* Check for restriction violations *)
 	ClassInf.assert_valid(ci_state', re)
 	----------------------------------------
 	inst_classdef(env, mods, pre, csets, ci_state,
 		      SCode.DERIVED(cn,ad,mod), re, prot, 
 		      inst_dims, impl, packimpl)
-	  => (dae, env'', csets', ci_state', tys)
+	  => (dae, env'', csets', ci_state', tys,bc)
 
 	(** If the class is derived from a class that can not be *)
 	(** found in the environment, this rule prints an error *)
@@ -989,16 +1122,77 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 		      inst_dims, impl, packimpl)
 	  => fail
 	
-  rule	Debug.fprint("failtrace", "- inst_classdef failed\n")
+  rule	Debug.fprint("failtrace", "- inst_classdef failed\n class :") &
+	Env.print_env_path_str(env) => s &
+	Debug.fprint("failtrace", s) &
+	Debug.fprint("failtrace", "\n")
 	----------------------------------
-	inst_classdef(_,_,_,_,_,_,_,_,_,_,_) => fail
+	inst_classdef(env,_,_,_,_,_,_,_,_,_,_) => fail
 
 end	
 
-(** relation: add_connection_set_to_env(ccets,env2) => env2 &	
+(** relation: inst_basictype_baseclass
  **
+ ** This relation finds the type of classes that extends a basic type.
+ ** For instance,
+ ** connector RealSignal
+ **   extends SignalType;
+ ** replaceable type SignalType = Real;
+ ** end RealSignal;
  **
+ ** Such classes can not have any other components, and can only inherit one 
+ ** basic type.
+ **)
+
+relation inst_basictype_baseclass:(Env.Env,
+				   SCode.Element list,
+				   SCode.Element list, Types.Mod,
+				   InstDims) 
+	  => Types.Type option =
+	  
+  rule	Mod.elab_mod(env,Prefix.NOPRE,mod,true(* impl*)) => m' &
+	Mod.merge(mods,m',env,Prefix.NOPRE) => m'' &
+	Lookup.lookup_class(env,path,true) => (cdef,cenv) &
+ 
+	(*SCode.print_class_str cdef => str &
+	print "classdef :" & print str & print "\n" &
+	Mod.print_mod_str(m'') => s &
+	print "mod  = "& print s & print "\n" &*)
+
+	inst_class_basictype(env,m'',Prefix.NOPRE,Connect.empty_set,cdef,inst_dims,false (*impl*),INNER_CALL) 
+	=>(dae,env',_,ty,st) &
+
+	Types.basic_type(ty) => b1 & 
+	Types.array_type(ty) => b2 &
+	bool_or(b1,b2) => true 
+	--------------------------
+	inst_basictype_baseclass(env,[SCode.EXTENDS(path,mod)],[],mods,
+				 inst_dims) 
+	  => SOME(ty)
+
+	(* Inherits baseclass -and- has components *)
+  rule	Mod.elab_mod(env,Prefix.NOPRE,mod,true(* impl*)) => m' &
+	Lookup.lookup_class(env,path,true) => (cdef,cenv) &
+	inst_class(cenv,m',Prefix.NOPRE,Connect.empty_set,cdef,inst_dims,false (*impl*),INNER_CALL) 
+	=>(dae,env',_,ty,st) &
+	Types.basic_type(ty) => b1 &
+	Types.array_type(ty) => b2 &
+	bool_or(b1,b2) => true &
+	Env.print_env_path_str(env) => classname &
+	Error.add_message(Error.INHERIT_BASIC_WITH_COMPS,[classname])
+	--------------------------
+	inst_basictype_baseclass(env,[SCode.EXTENDS(path,mod)],_::_,mods,
+				 inst_dims) => fail
+
+	(* TODO: check that not extending several base classes.*)
+
+end
+
+
+(** relation: add_connection_set_to_env
  **
+ ** Adds the connection set to the environment such that Ceval can reach it.
+ ** It is required to evaluate cardinality
  **)
 relation add_connection_set_to_env:(Connect.Sets,Env.Env) 
 	  => Env.Env =
@@ -2164,10 +2358,10 @@ relation inst_var : (Env.Env,
 	  => (dims' as _::_) &
 	inst_var2(env,ci_state,mod,pre,csets,n,cl,attr,dims',idxs,inst_dims,impl,comment) 
 	  => (compenv,dae,csets',ty') &
-	  make_array_type(dims',ty') => ty 
+	make_array_type(dims',ty') => ty 
 	--------------------------
 	inst_var(env,ci_state,mod,pre,csets,n,
-                 cl as SCode.CLASS(id,_,_,SCode.R_TYPE,_),
+                 cl as SCode.CLASS(id,_,_,(*SCode.R_TYPE*)_,_),
                  attr,dims,idxs,inst_dims,impl,comment)
           => (compenv,dae,csets',ty)
 
@@ -2433,10 +2627,6 @@ relation get_usertype_dimensions:(Env.Env, Types.Mod, Prefix.Prefix,
 				SCode.CLASS(id,_,_,SCode.R_TYPE,
 					    SCode.DERIVED(cn,ad,mod)),dims,impl) 
 	  => res
-
-  rule	Debug.fprint("failtrace", "- get_usertype_dimensions failed\n")
-	--------------
-	get_usertype_dimensions(_,_,_,_,_,_) => fail
 end
 
 (** relation: get_cref_from_mod
@@ -3037,6 +3227,25 @@ relation make_dimexp_from_int: int => DimExp =
 
 end
 
+(** relation: elab_arraydim_opt
+ **
+ ** Same functionality as elab_arraydim, but takes an optional arraydim.
+ ** In case of NONE, empty DimExp list is returned.
+ **)
+
+relation elab_arraydim_opt : (Env.Env, Absyn.ComponentRef, 
+			      Absyn.ArrayDim option, (* optional arraydim*)
+			  Types.EqMod option, bool (*impl *), 
+			  Interactive.InteractiveSymbolTable option)
+	  => DimExp list =
+
+  rule	elab_arraydim(env,owncref,ad,eq,impl,st) => res
+	-----------------------
+	elab_arraydim_opt(env,owncref,SOME(ad),eq,impl,st) => res
+
+  axiom	elab_arraydim_opt(env,owncref,NONE,eq,impl,st) => []
+end
+
 
 (** relation: elab_arraydim
  **
@@ -3440,7 +3649,7 @@ relation implicit_instantiation : (Env.Env, Types.Mod, Prefix.Prefix,
 	let prot = false & 
 	inst_classdef (env, mod, pre, csets', ClassInf.UNKNOWN(n), parts, restr, 
 		       prot, inst_dims, true (*impl*), packimpl ) 
-	  =>(_, tempenv,_,_,_) &
+	  =>(_, tempenv,_,_,_,_) &
 
 	inst_ext_decl(tempenv, n, parts, true (*impl*) ) => extdecl
 	--------------------------------------
@@ -3525,7 +3734,7 @@ relation implicit_function_instantiation : (Env.Env, Types.Mod, Prefix.Prefix,
         let prot = false & (* how to get this? *)
  	inst_classdef (env', mod, pre, csets', ClassInf.FUNCTION(n), parts, 
 		       restr, prot, inst_dims, true (*impl*), packimpl) 
-	  =>(_, tempenv,_,_,_) &
+	  =>(_, tempenv,_,_,_,_) &
 	inst_ext_decl(tempenv, n, parts, true (*impl*) ) => extdecl 
 	--------------------------------------
 	implicit_function_instantiation(env, mod, pre, csets,
@@ -4140,8 +4349,75 @@ relation dae_declare4 : (Exp.ComponentRef, Types.Type, DAE.Flow, DAE.VarKind,
 		      inst_dims,start,dae_var_attr,comment)
 	  => [DAE.VAR(vn, kind, dir, DAE.ENUMERATION(l), e, inst_dims,start,fl,[],dae_var_attr,comment)]
 
+	  (* instantiation of complex type extending from basic type*)
+  rule	dae_declare4(vn,tp,fl,kind,dir,e,inst_dims,start,dae_var_attr,comment)
+	  => dae
+ 	----------------------------
+	dae_declare4(vn, (Types.T_COMPLEX(ci,[],SOME(tp)),_),fl,kind,dir,e,
+		     inst_dims,start,dae_var_attr,comment) => dae
+
+	(*test*)
+  rule	dae_declare4(vn,tp,fl,kind,dir,e,inst_dims,start,dae_var_attr,comment) => dae
+	--------------------------------
+	dae_declare4(vn,(Types.T_ARRAY(Types.DIM(SOME(dim)),tp),_),fl,kind,dir,e,
+		     inst_dims,start,dae_var_attr,comment) => dae
+
+(*  rule	dae_declare4_array(dim,1,vn,tp,fl,kind,dir,e,inst_dims,start,dae_var_attr,comment) => dae
+	--------------------------------
+	dae_declare4(vn,(Types.T_ARRAY(Types.DIM(SOME(dim)),tp),_),fl,kind,dir,e,
+		     inst_dims,start,dae_var_attr,comment) => dae*)
+	
+  rule	Exp.print_component_ref_str(vn) => s &
+	Error.add_message(Error.DIMENSION_NOT_KNOWN,[s])
+	--------------------------------
+	dae_declare4(vn,(Types.T_ARRAY(Types.DIM(NONE),tp),_),fl,kind,dir,e,
+		     inst_dims,start,dae_var_attr,comment) => fail
+
   axiom	dae_declare4 (c,ty,_,_,_,_,_,_,_,_) => []
 
+end
+
+(** relation: dae_declare4_array
+ ** author: PA
+ **
+ ** Helper relation to dae_declare4. Handles declaration of array variables
+ ** of basic types.
+ ** Even though some of these are caught in inst_array, this relation
+ ** is required for e.g. classes (T_COMPLEX types) extending from basic types.
+ ** while array_var handles e.g. arrays of components (models, records, etc.)
+ **)
+
+relation dae_declare4_array: (int,
+			      int,
+			      Exp.ComponentRef, 
+			      Types.Type (* arr elt type*), DAE.Flow, 
+			      DAE.VarKind,
+			      DAE.VarDirection, Exp.Exp option, InstDims, 
+			      DAE.StartValue,DAE.VariableAttributes option,
+                              Absyn.Comment option)
+	  => DAE.Element list =
+	  (* array[0] gives no element*)
+  axiom	dae_declare4_array(0,_,_,_,_,_,_,_,_,_,_,_) => []
+
+  rule	int_gt(indx,dim) => true 
+	--------------------
+	dae_declare4_array(dim,indx,_,_,_,_,_,_,_,_,_,_) => []
+	
+  rule	Exp.subscript_cref(vn,[Exp.INDEX(Exp.ICONST(indx))]) => vn' &
+	int_add(indx,1) => indx' &
+	dae_declare4(vn',tp,fl,kind,dir,e,inst_dims,start,dae_var_attr,comment)
+	  => dae1 &
+	dae_declare4_array(dim,indx',vn,tp,fl,kind,dir,e,inst_dims,start,
+			     dae_var_attr,comment) => dae2 &
+	list_append(dae1,dae2) => dae
+	-----------------------------
+	dae_declare4_array(dim,indx,vn,tp,fl,kind,dir,e,
+			   inst_dims,start,dae_var_attr,comment) => dae
+
+  rule	Debug.fprint("failtrace","-dae_declare4_array failed\n")
+	-----------------------
+	dae_declare4_array(_,_,_,_,_,_,_,_,_,_,_,_) => fail
+     
 end
 
 (** relation inst_equation
@@ -4675,17 +4951,17 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	----------------------------------------
 	inst_eq_equation_2 (e1,e2,(Types.T_TUPLE(_),_),initial) => [dae]
 
-  axiom	inst_eq_equation_2(e1, e2, (Types.T_COMPLEX(_,[]),_), initial) => []
+  axiom	inst_eq_equation_2(e1, e2, (Types.T_COMPLEX(_,[],_),_), initial) => []
 
   rule	Exp.extend_cref(c1,n,[]) => c1' &
 	Exp.extend_cref(c2,n,[]) => c2' &
 	inst_eq_equation_2(Exp.CREF(c1',t1), Exp.CREF(c2',t2), t, initial) => dae1 &
 	inst_eq_equation_2(Exp.CREF(c1,t1), Exp.CREF(c2,t2),
-			   (Types.T_COMPLEX(cs,vs),p), initial) => dae2 &
+			   (Types.T_COMPLEX(cs,vs,bc),p), initial) => dae2 &
 	list_append(dae1, dae2) => dae
 	------------------------------
 	inst_eq_equation_2(Exp.CREF(c1,t1), Exp.CREF(c2,t2),
-			   (Types.T_COMPLEX(cs,Types.VAR(n,_,_,t,_)::vs),p), initial) => dae
+			   (Types.T_COMPLEX(cs,Types.VAR(n,_,_,t,_)::vs,bc),p), initial) => dae
 
 	(** When the type of the expressions is a complex type, and *)
 	(** the left-hand side of the equation is not a component *)
@@ -4708,7 +4984,7 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	list_append(decl, DAE.DEFINE(n, e1)::dae1) => dae
 	-------------------------------------------------------------
 	inst_eq_equation_2(e1, e2 as Exp.CREF(_,_),
-			   t as (Types.T_COMPLEX(_,_),_), initial) => dae
+			   t as (Types.T_COMPLEX(_,_,_),_), initial) => dae
 
 	(** When the right-hand side is not a component reference a *)
 	(** similar trick is applied.  This also catched the case *)
@@ -4720,7 +4996,7 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	inst_eq_equation_2(e1, Exp.CREF(n,Exp.OTHER), t, initial) => dae1 &
 	list_append(decl, DAE.DEFINE(n, e2)::dae1) => dae
 	-------------------------------------------------------------
-	inst_eq_equation_2(e1, e2, t as (Types.T_COMPLEX(_,_),_), initial) => dae
+	inst_eq_equation_2(e1, e2, t as (Types.T_COMPLEX(_,_,_),_), initial) => dae
 
   rule	Debug.fprint("failtrace", "- inst_eq_equation_2 failed\n exp1=") &
 	Debug.fcall("failtrace",Exp.print_exp, e1) &
@@ -5129,7 +5405,11 @@ relation valid_connector : Types.Type => () =
 
   rule	ClassInf.valid(state,SCode.R_CONNECTOR)
 	---------------------------------------
-	valid_connector((Types.T_COMPLEX(state,_),_))
+	valid_connector((Types.T_COMPLEX(state,_,_),_))
+
+  rule	valid_connector(tp)
+	---------------------------------------
+	valid_connector((Types.T_ARRAY(_,tp),_))
 
   rule	Types.unparse_type t => str &
 	Error.add_message(Error.INVALID_CONNECTOR_TYPE,[str])
@@ -5228,7 +5508,7 @@ relation connect_components: (Connect.Sets,
 			      Prefix,
 			      Exp.ComponentRef, Connect.Face, Types.Type,
 			      Exp.ComponentRef, Connect.Face, Types.Type,
-			      bool) 
+			      bool (*flow *)) 
 	  => (Connect.Sets, DAE.Element list) =
 	  	
 	(**  Flow type, must be a subtype of Real *)
@@ -5292,14 +5572,22 @@ relation connect_components: (Connect.Sets,
 			   c2,f2, (Types.T_ARRAY(Types.DIM(SOME(dim2)),t2),_),false) 
 	  => (sets',[])
 
+	(**  Complex types extending basetype *)
+
+  rule	connect_components(sets,env,pre,c1,f1,bc_tp1,c2,f2,bc_tp2,flow) => (sets',dae)
+	----------------------------------------
+	connect_components(sets,env,pre,c1,f1, (Types.T_COMPLEX(_,l1,SOME(bc_tp1)),_),
+			   c2,f2, (Types.T_COMPLEX(_,l2,SOME(bc_tp2)),_),flow) 
+	  => (sets',dae)
+
 	(**  Complex types *)
 
   rule	Prefix.prefix_cref(pre, c1) => c1' &
 	Prefix.prefix_cref(pre, c2) => c2' &
 	connect_vars(sets,env,c1',f1,l1,c2',f2,l2) => (sets',dae)
 	----------------------------------------
-	connect_components(sets,env,pre,c1,f1, (Types.T_COMPLEX(_,l1),_),
-			   c2,f2, (Types.T_COMPLEX(_,l2),_),_) => (sets',dae)
+	connect_components(sets,env,pre,c1,f1, (Types.T_COMPLEX(_,l1,_),_),
+			   c2,f2, (Types.T_COMPLEX(_,l2,_),_),_) => (sets',dae)
 	
 	(**  Error *)
 	
@@ -5309,6 +5597,10 @@ relation connect_components: (Connect.Sets,
 	Types.unparse_type t1 => t1_str &
 	Error.add_message(Error.INVALID_CONNECTOR_VARIABLE,[c1_str,t1_str])
 	----------------------------------------
+	connect_components(_,env,pre,c1,_,t1,c2,_,t2,_) => fail
+
+  rule	print "-connect_components failed\n" 
+	-----------------------------
 	connect_components(_,env,pre,c1,_,t1,c2,_,t2,_) => fail
 	
 end
@@ -5355,27 +5647,36 @@ end
  ** built.
  **)
 
-relation mktype : (Absyn.Path, ClassInf.State,Types.Var list) => Types.Type =
-	
-  rule	get_opt_path(p) => somep
-	-----------------------
-	mktype(p,ClassInf.TYPE_INTEGER(_),v) => ((Types.T_INTEGER(v),somep))
+relation mktype : (Absyn.Path, 
+		   ClassInf.State,
+		   Types.Var list, 
+		   Types.Type option) 
+	  => Types.Type =
+
+(*  rule	Types.is_array(tp) => true &
+	not ClassInf.is_connector(ci) 
+	-----------------
+	mktype(p,ci,vs,SOME(tp)) => tp*)
 
   rule	get_opt_path(p) => somep
 	-----------------------
-	mktype(p,ClassInf.TYPE_REAL(_),v)    => ((Types.T_REAL(v),somep))
+	mktype(p,ClassInf.TYPE_INTEGER(_),v,_) => ((Types.T_INTEGER(v),somep))
 
   rule	get_opt_path(p) => somep
 	-----------------------
-	mktype(p,ClassInf.TYPE_STRING(_),v)  => ((Types.T_STRING(v),somep))
+	mktype(p,ClassInf.TYPE_REAL(_),v,_)    => ((Types.T_REAL(v),somep))
 
   rule	get_opt_path(p) => somep
 	-----------------------
-	mktype(p,ClassInf.TYPE_BOOL(_),v)    => ((Types.T_BOOL(v),somep))
+	mktype(p,ClassInf.TYPE_STRING(_),v,_)  => ((Types.T_STRING(v),somep))
 
   rule	get_opt_path(p) => somep
 	-----------------------
-	mktype(p,ClassInf.TYPE_ENUM(_),_)    => ((Types.T_ENUM,somep))
+	mktype(p,ClassInf.TYPE_BOOL(_),v,_)    => ((Types.T_BOOL(v),somep))
+
+  rule	get_opt_path(p) => somep
+	-----------------------
+	mktype(p,ClassInf.TYPE_ENUM(_),_,_)    => ((Types.T_ENUM,somep))
 
 	(* Insert function type construction here
 	   after checking input/output arguments? 
@@ -5383,18 +5684,75 @@ relation mktype : (Absyn.Path, ClassInf.State,Types.Var list) => Types.Type =
 
   rule	Types.make_function_type (p,vl) => functype
 	--------------------------
-	mktype(p,st as ClassInf.FUNCTION(name), vl) => functype
+	mktype(p,st as ClassInf.FUNCTION(name), vl,_) => functype
 
   rule	Types.make_enumeration_type (p,v1) => enumtype
 	--------------------------------------------
-	mktype(p,ClassInf.ENUMERATION(name),v1) => enumtype
+	mktype(p,ClassInf.ENUMERATION(name),v1,_) => enumtype
 
   rule	get_opt_path(p) => somep
 	-----------------------
-	mktype(p,st,l) => ((Types.T_COMPLEX(st,l),somep))
+	mktype(p,st,l,bc) => ((Types.T_COMPLEX(st,l,bc),somep))
 
 end
 
+(** relation: mktype_with_arrays
+ ** author: PA
+ **
+ ** This relation is similar to mktype with the exception
+ ** that it will create array types based on the last argument,
+ ** which indicates wheter the class extends from a basictype.
+ ** It is used only in the inst_class_basictype relation.
+ **)
+
+relation mktype_with_arrays : (Absyn.Path, 
+		   ClassInf.State,
+		   Types.Var list, 
+		   Types.Type option) 
+	  => Types.Type =
+
+  rule	Types.is_array(tp) => true &
+	not ClassInf.is_connector(ci) 
+	-----------------
+	mktype_with_arrays(p,ci,vs,SOME(tp)) => tp
+
+  rule	get_opt_path(p) => somep
+	-----------------------
+	mktype_with_arrays(p,ClassInf.TYPE_INTEGER(_),v,_) => ((Types.T_INTEGER(v),somep))
+
+  rule	get_opt_path(p) => somep
+	-----------------------
+	mktype_with_arrays(p,ClassInf.TYPE_REAL(_),v,_)    => ((Types.T_REAL(v),somep))
+
+  rule	get_opt_path(p) => somep
+	-----------------------
+	mktype_with_arrays(p,ClassInf.TYPE_STRING(_),v,_)  => ((Types.T_STRING(v),somep))
+
+  rule	get_opt_path(p) => somep
+	-----------------------
+	mktype_with_arrays(p,ClassInf.TYPE_BOOL(_),v,_)    => ((Types.T_BOOL(v),somep))
+
+  rule	get_opt_path(p) => somep
+	-----------------------
+	mktype_with_arrays(p,ClassInf.TYPE_ENUM(_),_,_)    => ((Types.T_ENUM,somep))
+
+	(* Insert function type construction here
+	   after checking input/output arguments? 
+	   see Types.rml T_FUNCTION *)
+
+  rule	Types.make_function_type (p,vl) => functype
+	--------------------------
+	mktype_with_arrays(p,st as ClassInf.FUNCTION(name), vl,_) => functype
+
+  rule	Types.make_enumeration_type (p,v1) => enumtype
+	--------------------------------------------
+	mktype_with_arrays(p,ClassInf.ENUMERATION(name),v1,_) => enumtype
+
+  rule	get_opt_path(p) => somep
+	-----------------------
+	mktype_with_arrays(p,st,l,bc) => ((Types.T_COMPLEX(st,l,bc),somep))
+
+end
 
 (** relation: get_opt_path
  ** 

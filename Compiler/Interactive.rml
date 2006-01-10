@@ -3767,7 +3767,7 @@ end
 	 add_var_to_varlist(
 			    "scope",
 			    newscope',
-			    ((Types.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),[]),NONE)),
+			    ((Types.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),[],NONE),NONE)),
 			    vars)
 	   => vars'
 	 -------------------------------------------------------------
@@ -3778,7 +3778,7 @@ end
 	 add_var_to_varlist(
 			    "scope",
 			    newscope',
-			    ((Types.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),[]),NONE)),
+			    ((Types.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),[],NONE),NONE)),
 			    vars)
 	   => vars'
 	 -----------
@@ -3795,7 +3795,7 @@ end
 	 add_var_to_varlist(
 			    "scope",
 			    newscope',
-			    ((Types.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),[]),NONE)),
+			    ((Types.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),[],NONE),NONE)),
 			    vars)
 	   => vars'
 	 ----------------------

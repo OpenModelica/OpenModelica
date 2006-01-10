@@ -205,6 +205,7 @@ module SCode :
   relation print_element : Element => ()
   relation print_element_str : Element => string 
   relation equation_str : EEquation => string
+  relation print_class_str: Class => string
   relation print_element_list : Element list => ()	  
   relation print_restr: Restriction => ()
   relation restr_string : Restriction => string 
@@ -1165,7 +1166,8 @@ relation print_element_str : Element => string =
 	----------------------------------------
 	print_element_str COMPONENT(n,final,repl,prot,ATTR(_,_,_,var,_),typath,mod,SOME(path),comment) => res
 
-  rule	Util.string_append_list(["CLASSDEF(",n,")"]) => res
+  rule	print_class_str(cl) => str &
+	Util.string_append_list(["CLASSDEF(",n,",...,",str,")"]) => res
 	---------------------------------------
 	print_element_str CLASSDEF(n,final,repl,cl,NONE) => res
 
@@ -1179,6 +1181,37 @@ relation print_element_str : Element => string =
 
   axiom	print_element_str(IMPORT(_)) => "IMPORT(_)"
 end	
+
+relation print_class_str: Class => string =
+
+  rule	print_classdef_str(def) => s &
+	Util.string_append_list(["CLASS(",id,",_,_,_,",s,")"]) => res
+	----------------------
+	print_class_str(CLASS(id,p,en,rest,def)) => res
+end
+
+relation print_classdef_str: (ClassDef) => string =
+
+  rule	Util.list_map(elts,print_element_str) => elts_str &
+	Util.string_delimit_list(elts_str,",\n") => s1 &
+	Util.string_append_list(["PARTS(",s1,",_,_,_,_,_)"]) => res
+	-----------------
+	print_classdef_str(PARTS(elts,eqns,ieqns,alg,ial,ext)) => res
+
+  rule	Absyn.path_string(path) => s1 & 
+	Dump.print_arraydim_str(ad) => s2 &
+	print_mod_str(mod) => s3 &
+	Util.string_append_list(["DERIVED(",s1,",",s2,",",s3,")"]) => res
+	-----------------
+	print_classdef_str(DERIVED(path,SOME(ad),mod)) => res
+
+  rule	Absyn.path_string(path) => s1 & 
+	print_mod_str(mod) => s3 &
+	Util.string_append_list(["DERIVED(",s1,",NONE,",s3,")"]) => res
+	-----------------
+	print_classdef_str(DERIVED(path,NONE,mod)) => res
+end
+
 
 (** relation: variability_string
  **

@@ -1313,7 +1313,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 							       SCode.VAR,
 							       Absyn.BIDIR),
 				                    false, (Types.T_STRING([]),NONE), Types.UNBOUND)
-					  ]
+					  ],NONE
 				        ),NONE) &
 	 Interactive.add_var_to_symboltable("currentSimulationResult",simValue,simType,st) 
 	  => newst 
@@ -2099,7 +2099,7 @@ relation get_builtin_attribute: (Exp.ComponentRef, Exp.ComponentRef, string,
 	  ClassInf.start(r,n) => ci_state &
 	  Inst.inst_class_in(env3, Types.NOMOD, Prefix.NOPRE, Connect.empty_set, ci_state, 
 			     c, false, [], false, false)
-	  => (dae1, env4, csets', ci_state', tys) &
+	  => (dae1, env4, csets', ci_state', tys,_) &
 	    Exp.join_crefs(cref,Exp.CREF_IDENT("stateSelect",[])) => cref' &
 	  Lookup.lookup_var(env4,cref') => (attr,ty,Types.EQBOUND(exp,_,_)) &
 	  Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(classname',dae1,env4)) => ic' &
@@ -2128,7 +2128,7 @@ relation get_builtin_attribute: (Exp.ComponentRef, Exp.ComponentRef, string,
 	  Inst.inst_class_in(env3, Types.NOMOD, Prefix.NOPRE, 
 			     Connect.empty_set, ci_state, 
 			     c, false, [], false, false)
-	  => (dae1, env4, csets', ci_state', tys) &
+	  => (dae1, env4, csets', ci_state', tys,_) &
 	    Exp.join_crefs(cref,Exp.CREF_IDENT(attribute,[])) => cref' &
 	  Lookup.lookup_var(env4,cref') => (attr,ty,Types.VALBOUND(v)) &
 	  Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(classname',dae1,env4)) => ic' 

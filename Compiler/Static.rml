@@ -616,25 +616,25 @@ end
 relation elab_code_type: (Env.Env, Absyn.Code) => Types.Type =
 
   axiom	elab_code_type(env, Absyn.C_TYPENAME(_)) 
-	  => ((Types.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),[]),NONE))
+	  => ((Types.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),[],NONE),NONE))
 
   axiom	elab_code_type(env, Absyn.C_VARIABLENAME(_)) 
-	  => ((Types.T_COMPLEX(ClassInf.UNKNOWN("VariableName"),[]),NONE))
+	  => ((Types.T_COMPLEX(ClassInf.UNKNOWN("VariableName"),[],NONE),NONE))
 
   axiom	elab_code_type(env, Absyn.C_EQUATIONSECTION(_,_))
-	  => ((Types.T_COMPLEX(ClassInf.UNKNOWN("EquationSection"),[]),NONE))
+	  => ((Types.T_COMPLEX(ClassInf.UNKNOWN("EquationSection"),[],NONE),NONE))
 
   axiom	elab_code_type(env, Absyn.C_ALGORITHMSECTION(_,_)) 
-	  => ((Types.T_COMPLEX(ClassInf.UNKNOWN("AlgorithmSection"),[]),NONE))
+	  => ((Types.T_COMPLEX(ClassInf.UNKNOWN("AlgorithmSection"),[],NONE),NONE))
 
   axiom	elab_code_type(env, Absyn.C_ELEMENT(_)) 
-	  => ((Types.T_COMPLEX(ClassInf.UNKNOWN("Element"),[]),NONE))
+	  => ((Types.T_COMPLEX(ClassInf.UNKNOWN("Element"),[],NONE),NONE))
 	  
   axiom	elab_code_type(env, Absyn.C_EXPRESSION(_)) 
-	  => ((Types.T_COMPLEX(ClassInf.UNKNOWN("Expression"),[]),NONE))
+	  => ((Types.T_COMPLEX(ClassInf.UNKNOWN("Expression"),[],NONE),NONE))
 
   axiom	elab_code_type(env, Absyn.C_MODIFICATION(_)) 
-	  => ((Types.T_COMPLEX(ClassInf.UNKNOWN("Modification"),[]),NONE))
+	  => ((Types.T_COMPLEX(ClassInf.UNKNOWN("Modification"),[],NONE),NONE))
 
 end
 
@@ -2950,7 +2950,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 					       SCode.VAR,
 					       Absyn.BIDIR),
 				    false, (Types.T_STRING([]),NONE), Types.UNBOUND)
-			  ]
+			  ],NONE
 			),NONE))
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("translateModel",_),
@@ -3035,7 +3035,7 @@ relation elab_call_interactive : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Ab
 					       SCode.VAR,
 					       Absyn.BIDIR),
 				    false, (Types.T_STRING([]),NONE), Types.UNBOUND)
-			  ]
+			  ],NONE
 			),NONE)) 
 	------------------------------------------------------------------
 	elab_call_interactive(env, Absyn.CREF_IDENT("simulate",_),
@@ -3711,7 +3711,7 @@ relation elab_call_args : (Env.Env,
 	=> (Exp.Exp, Types.Properties) =
 
 	  (* Record constructors, user defined or implicit *)	
-  rule	Lookup.lookup_type(env,fn,true) => (t as (Types.T_FUNCTION(fargs,outtype as (Types.T_COMPLEX(ClassInf.RECORD(_),_),_)),_),env') &
+  rule	Lookup.lookup_type(env,fn,true) => (t as (Types.T_FUNCTION(fargs,outtype as (Types.T_COMPLEX(ClassInf.RECORD(_),_,_),_)),_),env') &
 	make_empty_slots(fargs) => slots &
 	elab_input_args(env,args,nargs,slots,impl) => (args',newslots, constlist) &
 	Util.list_reduce(constlist,Types.const_and) => const &
@@ -5277,7 +5277,7 @@ relation value_type : Values.Value => Types.Type =
   rule	Types.values_to_vars(vl,ids) => vars &
 	Absyn.path_string(cname) => cname_str
 	---------------------------------------
-	value_type Values.RECORD(cname,vl,ids) => ((Types.T_COMPLEX(ClassInf.RECORD(cname_str),vars),NONE))
+	value_type Values.RECORD(cname,vl,ids) => ((Types.T_COMPLEX(ClassInf.RECORD(cname_str),vars,bc),NONE))
 
   rule	Print.print_error_buf "- value_type failed: " &	
 	Values.val_string v => vs &
@@ -5471,7 +5471,15 @@ relation deoverload : ((Exp.Operator * Types.Type list * Types.Type) list,
 	deoverload (_::xs, args, exp) => (op, args', rtype)
 
   rule	Dump.print_exp_str exp => s &
-	Error.add_message(Error.UNRESOLVABLE_TYPE,[s])
+	Util.list_map(args,Util.tuple2_1) => exps &
+	Util.list_map(args,Util.tuple2_2) => tps &
+	Util.list_map(exps,Exp.print_exp_str) => exps_str &
+	Util.string_delimit_list(exps_str,", ") => estr &
+	Util.list_map(tps,Types.unparse_type) => tps_str &
+	Util.string_delimit_list(tps_str,", ") => tpsstr &
+	Util.string_append_list([s," (expressions :",estr," types: ",
+				 tpsstr,")"])=> s &
+	Error.add_message(Error.UNRESOLVABLE_TYPE,[s]) 
 	------------------------------
 	deoverload([], args, exp) => fail
 

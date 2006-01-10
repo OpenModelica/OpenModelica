@@ -124,7 +124,7 @@ relation add_equ : (Sets, Exp.ComponentRef, Exp.ComponentRef) => Sets =
 
   rule	find_equ_set(ss,r1) => s1 &
 	find_equ_set(ss,r2) => s2 &
-	merge(ss,s1,s2) => ss'
+	merge(ss,s1,s2) => ss' 
 	----------------------
 	add_equ(ss,r1,r2) => ss'
 	

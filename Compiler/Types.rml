@@ -102,7 +102,8 @@ module Types :
 		| T_ENUMERATION of string list * Var list
 		| T_ARRAY of ArrayDim * Type
 		| T_COMPLEX of ClassInf.State		  (* The type of. a class *)
-			     * Var list
+			     * Var list (* The variables of a complex type*)
+			     * Type option (* A complex type can be a subtype of another (primitive) type (through extends). In that case the varlist is empty*)
 		| T_FUNCTION of FuncArg list 
 			     * Type			  (* Only single-result *)
 		| T_TUPLE of Type list			  (* For functions returning 
@@ -178,6 +179,7 @@ list * Mod
 
   (** - Exported relations *)
   relation basic_type : Type => bool
+  relation array_type: Type => bool
   relation equivtypes : (Type, Type) => bool
   relation subtype : (Type, Type) => bool
   relation lookup_component : (Type, Ident) => Var
@@ -249,6 +251,7 @@ list * Mod
 
   relation integer_or_real: Type => () 
   relation simple_type: Type => () 
+
   relation discrete_type: Type => () 
 end
 
@@ -442,7 +445,7 @@ relation values_to_mods: (Values.Value list,Ident list) => Mod =
 	values_to_mods(Values.RECORD(cname,vals,val_names)::rest,id::ids)
 	  => MOD(false,Absyn.NON_EACH,NAMEMOD(id,MOD(false,Absyn.NON_EACH,[],SOME(TYPED(rec_call,
 							  SOME(Values.RECORD(cname,vals,val_names)),
-							  PROP((T_COMPLEX(ClassInf.RECORD(cname_str),varlst),NONE),C_VAR)))))::res,NONE)
+							  PROP((T_COMPLEX(ClassInf.RECORD(cname_str),varlst,NONE),NONE),C_VAR)))))::res,NONE)
 
   rule	Debug.fprint("failtrace","-values_to_mods failed for value: ") &
 	Values.val_string(v) => vs & 
@@ -517,7 +520,7 @@ relation type_of_value: (Values.Value) => Type =
   rule	values_to_vars (vl, ids) => vars &
 	Absyn.path_string(cname) => cname_str
 	---------------------------------------
-	type_of_value Values.RECORD(cname,vl,ids) => ((T_COMPLEX(ClassInf.RECORD(cname_str),vars),NONE))
+	type_of_value Values.RECORD(cname,vl,ids) => ((T_COMPLEX(ClassInf.RECORD(cname_str),vars,NONE),NONE))
 
   rule	Debug.fprint("failtrace","-type_of_values failed: ") &
 	Values.val_string v => vs &
@@ -541,8 +544,20 @@ relation basic_type : Type => bool =
   axiom	basic_type( (T_BOOL(_),_) ) => true
   axiom	basic_type( (T_ENUM,_) ) => true
   axiom	basic_type( (T_ARRAY(_,_),_) ) => false
-  axiom	basic_type( (T_COMPLEX(_,_),_) ) => false
+  axiom	basic_type( (T_COMPLEX(_,_,_),_) ) => false
   axiom	basic_type( (T_ENUMERATION(_,_),_) ) => false
+end
+
+(** relation: array_type
+ **
+ ** Test whether a type is an array type.
+ **)
+
+relation array_type : Type => bool =
+
+  axiom	array_type( (T_ARRAY(_,_),_) ) => true
+
+  axiom	array_type(_) => false
 end
 
 (** relation: equivtypes
@@ -601,7 +616,15 @@ relation subtype : (Type, Type) => bool =
 	
   rule	subtype_varlist(els1, els2) => true
 	-----------------------------------
-	subtype((T_COMPLEX(st1,els1),_), (T_COMPLEX(st2,els2),_)) => true
+	subtype((T_COMPLEX(st1,els1,bc1),_), (T_COMPLEX(st2,els2,bc2),_)) 
+	  => true
+
+	  (* A complex type that extends a basic type is checked 
+	   * against the baseclass basic type *)
+  rule	subtype(tp,tp2) => res
+	-----------------------------------
+	subtype((T_COMPLEX(st1,els1,SOME(tp)),_), tp2) 
+	  => res
         
 	(* PR. Check of tuples, similar to complex. Just that
 	     identifier name do not have to be checked. Only types are
@@ -703,12 +726,12 @@ relation lookup_component : (Type, Ident) => Var =
 
   rule  lookup_component2(cs, id) => v
 	------------------------------
-	lookup_component((T_COMPLEX(st,cs),_), id) => v
+	lookup_component((T_COMPLEX(st,cs,bc),_), id) => v
 
   rule	lookup_component2(cs,id) => VAR(n,attr,prot,ty,bnd) &
 	let ty' = ((T_ARRAY(dim,ty),NONE))
 	-----------------------------
-	lookup_component((T_ARRAY(dim,(T_COMPLEX(st,cs),_)),_), id) 
+	lookup_component((T_ARRAY(dim,(T_COMPLEX(st,cs,bc),_)),_), id) 
 	  => VAR(n,attr,prot,ty',bnd)
 
   rule	(*Print.print_buf "- Looking up " &
@@ -1031,11 +1054,20 @@ relation unparse_type: Type => string =
 	Util.string_append_list(["record ",name,"\n",vstr,"end record;"]) 
 	  => res
 	---------------------------
-	unparse_type((t as T_COMPLEX(ClassInf.RECORD(name),vs),_))=> res
+	unparse_type((t as T_COMPLEX(ClassInf.RECORD(name),vs,bc),_))=> res
 
-  rule	ClassInf.get_state_name(ci_state) => res
+  rule	ClassInf.get_state_name(ci_state) => res &
+	ClassInf.print_state_str(ci_state) => st_str &
+	unparse_type(bc_tp) => bc_tp_str &
+	Util.string_append_list([res," ",st_str, " bc:",bc_tp_str]) => res
 	--------------------------------------
-	unparse_type((T_COMPLEX(ci_state,vs),_)) => res
+	unparse_type((T_COMPLEX(ci_state,vs,SOME(bc_tp)),_)) => res
+
+  rule	ClassInf.get_state_name(ci_state) => res &
+	ClassInf.print_state_str(ci_state) => st_str &
+	Util.string_append_list([res," ",st_str]) => res
+	--------------------------------------
+	unparse_type((T_COMPLEX(ci_state,vs,NONE),_)) => res
 
   rule  Util.list_map(params, unparse_param) => paramstrs &	
 	Util.string_delimit_list(paramstrs, ", ") => paramstr &
@@ -1150,7 +1182,7 @@ relation print_type : Type => () =
 	Dump.print_list(vars, print_var, ", ") &
 	Print.print_error_buf ")" 
 	-----------------
-	print_type((T_COMPLEX(st,vars),_))
+	print_type((T_COMPLEX(st,vars,bc),_))
 
   rule	Print.print_error_buf "array[" & print_arraydim dim & Print.print_error_buf "] of " &
 	print_type t & Print.print_error_buf ")" 
@@ -1661,7 +1693,7 @@ relation get_type_name: Type => string =
 
   rule	ClassInf.get_state_name st => n
 	-------------------------------
-	get_type_name((T_COMPLEX(st, _),_)) => n
+	get_type_name((T_COMPLEX(st, _,_),_)) => n
 
   rule	flatten_array_type arrayty => (ty, dims) &
 	Util.list_map(dims, int_string) => dimstrs &
@@ -2409,7 +2441,7 @@ relation get_all_exps_tt : TType => Exp.Exp list =
 
   rule	get_all_exps_vars vars => exps
 	---------------------------------------------
-	get_all_exps_tt T_COMPLEX(cinf, vars) => exps
+	get_all_exps_tt T_COMPLEX(cinf, vars,bc) => exps
 
   rule	Util.list_map(fargs, get_funcarg_type) => tys &
 	Util.list_map(tys, get_all_exps) => explists &
