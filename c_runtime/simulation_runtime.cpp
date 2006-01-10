@@ -625,7 +625,7 @@ void StateEventHandler(long* jroot, double *t)
   emit();
 }
 
-void
+int
 checkForDiscreteVarChanges(double *t);
 void AddEvent(long);
 

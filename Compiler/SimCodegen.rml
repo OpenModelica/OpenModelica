@@ -325,20 +325,10 @@ end
 				 "double *in_y = &in_ybuf[0];\n",
 				 "#else\n",
 				 "double *in_y;\n",
-                                 "#endif\n",
-				 "long iworkbuf[20+NX];\n",
+                                  "#endif\n",
+				  "long iworkbuf[20+NX];\n",
 				  "long *iwork=&iworkbuf[0];\n",
-				 "long liw = 20+NX;\n", 
-				 "long lrw = 50+(MAXORD+4)*NX+NX*NX+3*NG;\n",
-				 "long nx = NX; // STATES\n",
-				 "long ny = NY; // ALGVARS\n",
-				 "long np = NP; // PARAMETERS\n",
-				 "long ng = NG; \n",
-				 "long no = NO; // OUTPUTVARS\n",
-				 "long ni = NI; // INPUTVARS \n",
-				 "long nhelp = NHELP;\n",
-				 "char *model_name=\"",class_str,
-				 "\";\n",
+				  ";\n",
 				 varnames,"\n",
                                  varnames_old,"// this is generated for compatibility with openmodelica simulation_runtime","\n",
 				  "char** varnames=&varnamesbuf[0];\n",
@@ -352,6 +342,16 @@ end
 (*                                   "  char* fileName;\n", *)
 (*                                   "  int   lineNumber;\n", *)
 (*                                   "} equation;\n", *)
+				 "long liw = 20+NX;\n", 
+				 "long lrw = 50+(MAXORD+4)*NX+NX*NX+3*NG;\n",
+				 "long nx = NX; // STATES\n",
+				 "long ny = NY; // ALGVARS\n",
+				 "long np = NP; // PARAMETERS\n",
+				 "long ng = NG; \n",
+				 "long no = NO; // OUTPUTVARS\n",
+				 "long ni = NI; // INPUTVARS \n",
+				 "long nhelp = NHELP;\n",
+				 "char *model_name=\"",class_str,"\";\n",
                                   macros_str,"\n",
                                   get_name_function,"\n"]) => str
 	---------------------------
@@ -1008,6 +1008,7 @@ relation generate_input_function_code:(DAELow.DAELow) => (string,int) =
                                  "                   int nx, int ny, int np)\n",
                                  "{\n  ",
                                  res1',
+                                 "return 0;\n",
                                  "\n}\n"]) => res
         -------------------------------------
 
@@ -1065,6 +1066,7 @@ relation generate_output_function_code:(DAELow.DAELow) => (string,int) =
                                  "                   int nx, int ny, int np)\n",
                                  "{\n  ",
                                  res1',
+                                 "return 0;\n",
                                  "\n}\n"]) => res
         -------------------------------------
         generate_output_function_code(DAELow.DAELOW(vars,knvars,eqns,se,ie,ae,al,ev)) 
@@ -1150,8 +1152,10 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
 							       "int nx",
 							       "int ny",
 							       "int np"])
-	  => init_func &
-	  Codegen.c_merge_fns([init_func,start_assigns,param_assigns,block_code]) => res &
+	  => init_func' &
+
+	  Codegen.c_add_cleanups(init_func', ["return 0;"]) => init_func &
+        Codegen.c_merge_fns([init_func,start_assigns,param_assigns,block_code]) => res &
 	list_append(extra_funcs,[res]) => all_funcs &
 	Codegen.c_print_functions_str(all_funcs) => str
 
@@ -1165,7 +1169,8 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
 							     "int nx",
 							     "int ny",
 							     "int np"])
-	  => init_func &
+	  => init_func' &
+	  Codegen.c_add_cleanups(init_func', ["return 0;"]) => init_func &
 	Codegen.c_print_functions_str([init_func]) => str
         ----------------------------------
         generate_initial_value_code(_) => str        
@@ -1280,7 +1285,8 @@ relation generate_ode_code: (DAELow.DAELow,
 							"int nx",
 							"int ny", 
 							"int np", 
-							"double *t"]) => func &
+							"double *t"]) => func' &
+	  Codegen.c_add_cleanups(func', ["return 0;"]) => func &
 	Codegen.c_merge_fns([func,block_code]) => func' &
 	Codegen.c_print_functions_str([func']) => ode_func_str &
 	Codegen.c_print_functions_str(extra_funcs) => extra_funcs_str &
@@ -1482,7 +1488,9 @@ relation generate_event_checking_code: (DAELow.DAELow,
 	build_when_condition_checks(dlow,comps) => (check_code, helpVarInfo) & 
 	Util.if(usezc,check_code,"") => check_code' &
 	Util.string_append_list(["int checkForDiscreteVarChanges(double *t)\n{\n",
-				 check_code', "}\n"]) => res
+				 check_code', 
+                                 "return 0;\n",
+                                 "}\n"]) => res
 	-------------------------------------------
 	generate_event_checking_code(dlow,comps,ass1,ass2,m,mt,class) => (res, helpVarInfo)
 
@@ -1735,7 +1743,8 @@ relation generate_ode_system2_nonlinear_residuals:  (Exp.ComponentRef list,
 						    "double* xloca",
 						    "double* res",
 						    "int* iflag"]
-				)=> res_func &
+				)=> res_func' &
+	Codegen.c_add_cleanups(res_func', ["return 0;"]) => res_func &
 	Codegen.c_merge_fns([res_func,s1]) => func &
 
 	generate_ode_system2_nonlinear_setvector(crs,0) => f2 &
@@ -2684,8 +2693,9 @@ relation generate_zero_crossing: (string,
 	generate_ode_blocks(dlow,ass1,ass2,blocks) => (cfunc,extra_funcs) &
 	Codegen.c_print_functions_str(extra_funcs) => extra_funcs_str &
 	Codegen.c_make_function("int","function_updateDependents",[],
-				["double*t"]) => cfunc0 &
-	Codegen.c_merge_fns([cfunc0,cfunc]) => cfunc' &
+				["double*t"]) => cfunc0' &
+	Codegen.c_add_cleanups(cfunc0', ["return 0;"]) => cfunc0 &
+        Codegen.c_merge_fns([cfunc0,cfunc]) => cfunc' &
 	generate_helpvar_updates(helpVarInfo) => helpvarUpdateStr &
 	Codegen.c_add_statements(cfunc',[helpvarUpdateStr]) => cfunc'' &
 	Codegen.c_print_functions_str([cfunc'']) => updatedep_func_str &
@@ -2702,6 +2712,7 @@ relation generate_zero_crossing: (string,
 				 ,   zc_eq_str
 				 ,"  default: break;\n"
 				 ,"  }\n"
+                                 ,"return 0;\n"
 				 ,"}\n\n"
 				 , updatedep_func_str
 				 ]) => res
@@ -2835,6 +2846,7 @@ relation generate_when_clauses: (string,
 				 ,     when_str
 				 ,"  default: break;\n"
 				 ,"  }\n"
+                                 ,"return 0;\n"
 				 ,"}\n"
 				 ]) => res
 	--------------------------------------------------
@@ -2997,7 +3009,8 @@ end
 							       "double* xd", 
 							       "double* y", 
 							       "double* p"])
-	  => cfunc &
+	  => cfunc' &
+	   Codegen.c_add_cleanups(cfunc', ["return 0;"]) => cfunc &
 	 (*build_solved_blocks(dae,dlow,ass1,ass2,blocks) => eqn_str_lst &*)
 	 generate_ode_blocks(dlow,ass1,ass2,blocks) => (body,extra_funcs) &
 	 generate_compute_removed_eqns(dlow) => stmts2 &
@@ -3480,8 +3493,8 @@ end
 	 print_exp2_str (e1,pri3) => s2 &
 	 print_exp2_str (e2,pri2) => s3 &
 	 Exp.print_rightpar_str (pri1,pri2) => s4 &
-	 string_append (s1, s2) => s &
-         string_append("DIVISION(",s) => s' &
+	 string_append ("DIVISION(", s2) => s &
+         string_append(s1,s) => s' &
          string_append(s',",") => s'' &
          string_append(s'',s3) => s''' &
          string_append(s''',")") => res &

@@ -28,9 +28,11 @@
 #ifndef _SIMULATION_RUNTIME_H
 #define _SIMULATION_RUNTIME_H
 
-using namespace std;
+
 #include <fstream>
 #include <iostream>
+
+using namespace std;
 
 #define DDASRT ddasrt_
 

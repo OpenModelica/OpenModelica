@@ -114,6 +114,9 @@ module Codegen :
   relation c_print_statements: CFunction => string 
 	
   val c_empty_function : CFunction
+
+  relation c_add_cleanups : (CFunction, CleanupStatement list) => CFunction 
+
 end
 
 
