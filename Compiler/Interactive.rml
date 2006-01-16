@@ -53,6 +53,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **)
 
 module Interactive:
+
   with "Absyn.rml"
   with "SCode.rml" 
   with "DAE.rml" 							  
@@ -60,32 +61,40 @@ module Interactive:
   with "Values.rml"
   with "Env.rml"
 
-(** An Statement given in the interactive environment can either be 
- ** an Algorithm statement or an expression.
- **)
+  (** An Statement given in the interactive environment can either be 
+   ** an Algorithm statement or an expression.
+   **)
+  (* - Interactive Statement *)
+  datatype InteractiveStmt = IALG of Absyn.AlgorithmItem (* algItem *)
+			   | IEXP of Absyn.Exp (* exp *)
 
-  datatype InteractiveStmt = IALG of Absyn.AlgorithmItem
-			   | IEXP of Absyn.Exp
-(** Several interactive statements is used in Modelicasc scripts.**)
-  datatype InteractiveStmts = ISTMTS of InteractiveStmt list * 
-					bool (* true if output result == no semicolon*)
-							  
-  datatype InstantiatedClass =  INSTCLASS of Absyn.Path * (* The F.Q.name of the inst:ed class*)
-					     DAE.Element list (* The list of DAE elements *)
-						* Env.Env  (* The env of the inst:ed class*)
+  (** Several interactive statements are used in Modelica scripts.**)
+  (* - Interactive Statements *)
+  datatype InteractiveStmts = ISTMTS of InteractiveStmt list (* interactiveStmtLst *)
+                                     *  bool (* semicolon ; true if output result == no semicolon *)
 
-  datatype InteractiveVariable = IVAR of Absyn.Ident * (* The variable identifier *)
-					 Values.Value *  (* The value *)
-					 Types.Type  (* The type of the expression *)
+  (* - Instantiated Class *)
+  datatype InstantiatedClass =  INSTCLASS of Absyn.Path (* qualName ;  The F.Q.name of the inst:ed class*)
+                                          *  DAE.Element list (* daeElementLst ; The list of DAE elements *)
+                                          *  Env.Env  (* env ; The env of the inst:ed class*)
 
-  datatype InteractiveSymbolTable = SYMBOLTABLE of Absyn.Program * (*The ast*)
-						   SCode.Program * (* The exploded ast *)
-						   InstantiatedClass list * (* List of instantiated classes*)
-						   InteractiveVariable list * (*List of variables with values*)  
-  						   (Absyn.Path * Types.Type) list (* List of compiled functions, F.Q name + type*)
+  (* - Interactive Variable *)
+  datatype InteractiveVariable = IVAR of Absyn.Ident  (* varIdent ; The variable identifier *)
+                                       * Values.Value (* value ; The value *)
+                                       * Types.Type   (* type ; The type of the expression *)
 
-val empty_symboltable : InteractiveSymbolTable
+  (* - Interactive Symbol Table *)
+  datatype InteractiveSymbolTable = SYMBOLTABLE of Absyn.Program                  (* ast ; The ast *)
+                                                 * SCode.Program                  (* explodedAst ; The exploded ast *)
+                                                 * InstantiatedClass list         (* instClsLst ;  List of instantiated classes *)
+                                                 * InteractiveVariable list       (* lstVarVal ; List of variables with values *)  
+                                                 * (Absyn.Path * Types.Type) list (* compiledFunctions ; List of compiled functions, F.Q name + type *)
 
+  (* - Empty Interactive Symbol Table *)
+  val empty_symboltable : InteractiveSymbolTable
+
+
+  (* Exported Relations *)
   relation evaluate: (InteractiveStmts, InteractiveSymbolTable, bool) 
 	  => (string,InteractiveSymbolTable) 
             (* this is exported due to the need of using several interactive modules *)
@@ -171,15 +180,19 @@ with "Ceval.rml"
 with "Error.rml"
 
 
+(* - Empty Interactive Symbol Table *)
 val empty_symboltable = SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[IVAR("$echo",Values.BOOL(true),(Types.T_BOOL([]),NONE))],[])
 
- 
- (** relation: evaluate
-  **
-  ** This relation evaluates expressions feeded interactively to the compiler.
- **)
 
- relation evaluate: (InteractiveStmts, InteractiveSymbolTable, bool (*verbose*)) 
+
+(** relation: evaluate
+ **
+ ** This relation evaluates expressions feeded interactively to the compiler.
+ **
+ ** inputs:   (InteractiveStmts, InteractiveSymbolTable, bool /* verbose */) 
+ ** outputs:  (string, InteractiveSymbolTable) 
+ **)
+ relation evaluate: (InteractiveStmts, InteractiveSymbolTable, bool) 
 	   => (string,InteractiveSymbolTable) =
 
    rule	evaluate2(ISTMTS([x],verbose),st) => (res,newst) &
@@ -197,22 +210,29 @@ val empty_symboltable = SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[IVAR("$ec
 	 evaluate (ISTMTS(x::xs,semicolon),st,verbose) => (res'',newst')
  end
 
+
 (** relation: select_resultstr
  **
  ** Returns result string depending on three boolean variables
  ** - semicolon
  ** - verbose
  ** - echo
+ ** 
+ ** inputs:  (string,
+              bool, /* semicolon */
+              bool, /* verbose */
+              bool  /* echo */)
+ ** outputs:  string
  **)
-
 relation select_resultstr: (string,
-			    bool, (* semicolon *)
-			    bool, (* verbose *)
-			    bool) (* echo *)
+			    bool, 
+			    bool, 
+			    bool) 
 	  => string =
 
-	(* echo off allways empty string *)
-  axiom	select_resultstr(str,_,_,false) => ""
+	
+  axiom	(* echo off allways empty string *)
+           select_resultstr(str,_,_,false) => ""
 
 	(* .. verbose on allways return str *)
   axiom	select_resultstr(str,_,true,_) => str 
@@ -222,13 +242,12 @@ relation select_resultstr: (string,
 
   axiom	select_resultstr(str,false,_,_) => str
 end
-	
+
 
 (** relation: get_echo
  **
  ** Return echo variable, which determines if result should be printed or not.
  **)
-
 relation get_echo: (InteractiveSymbolTable) => bool =
 
   rule	build_env_from_symboltable(st) => env &	
@@ -242,11 +261,11 @@ relation get_echo: (InteractiveSymbolTable) => bool =
 
 end
 
+
 (** relation: evaluate2
  **
  ** Helper relation to evaluate.
  **)
-
  relation evaluate2:  (InteractiveStmts, InteractiveSymbolTable) 
 	  => (string,InteractiveSymbolTable) =
 
@@ -279,7 +298,6 @@ end
   ** This relation takes an 'InteractiveStmt´ and a symboltable and 
   ** evaluates the expression using Staticexp.
   **)
-
  relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
 	 (string,InteractiveSymbolTable) =
 
@@ -290,8 +308,6 @@ end
 	 Values.val_string value =>  str
 	 -------------------------------
 	 evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => (str,st'')
-
-
 
    rule	build_env_from_symboltable(st) => env &	
 	 Static.elab_exp(env,cond,true,SOME(st)) 
@@ -342,11 +358,11 @@ end
 	 evaluate_expr(stmt,st) => (str,st)
  end
 
+
 (** relation: get_ident_from_tuple_crefexp
  **
  ** Return the (first) identifier of a Component Reference in an expression.
  **)
-
  relation get_ident_from_tuple_crefexp : Absyn.Exp => Absyn.Ident =
 
    axiom get_ident_from_tuple_crefexp Absyn.CREF(Absyn.CREF_IDENT(id, _)) => id
@@ -357,11 +373,11 @@ end
 	 get_ident_from_tuple_crefexp exp => fail
  end
 
+
 (** relation: get_variable_names
  **
  ** Return a string containing a comma separated list of variables.
 **)
-
  relation get_variable_names: (InteractiveVariable list) => string =
 
    rule	get_variable_list_str(vars) => strlst &
@@ -371,11 +387,11 @@ end
 	 get_variable_names(vars) => res
  end
 
+
 (** relation: get_variable_list_str
  **
  ** Helper relation to get_variable_names
  **)
-
  relation get_variable_list_str: (InteractiveVariable list) => string list =
 
    axiom	get_variable_list_str([]) => []
@@ -389,14 +405,14 @@ end
 	 get_variable_list_str(IVAR(p,_,_)::vs) => p::res
  end
 
+
 (** relation: get_type_of_variables
-**
+ **
  ** Return the type of an interactive variable, given a list of variables 
  ** and a variable identifier.
  **)
+ relation get_type_of_variable: (Absyn.Ident, InteractiveVariable list) => Types.Type =
 
- relation get_type_of_variable: (Absyn.Ident, InteractiveVariable list) 
-	  => Types.Type =
    axiom get_type_of_variable(id,[]) => fail
 
    rule	varid = id
@@ -409,12 +425,12 @@ end
 	 get_type_of_variable (varid,IVAR(id,_,_)::rest) => tp 
  end
 
+
 (** relation: add_vars_to_symboltable
  **
  ** Add a list of variables to the interactive symboltable given names, 
  ** values and types.
  **)
-
  relation add_vars_to_symboltable: (Absyn.Ident list, Values.Value list,
 				    Types.Type list, InteractiveSymbolTable) 
 	   => InteractiveSymbolTable =
@@ -432,7 +448,6 @@ end
  **
  ** Helper relation to add_vars_to_symboltable.
  **)
-
  relation add_var_to_symboltable: (Absyn.Ident, Values.Value, Types.Type,InteractiveSymbolTable) 
 	   => InteractiveSymbolTable =
 
@@ -442,11 +457,11 @@ end
 	   => SYMBOLTABLE(p,sp,id,vars',cf)
  end
 
+
 (** relation: add_var_to_varlist
  **
  ** Helper relation to add_var_to_symboltable
  **)
-
  relation add_var_to_varlist: (Absyn.Ident, Values.Value, Types.Type,
 			       InteractiveVariable list) 
 	   => InteractiveVariable list =
@@ -464,13 +479,13 @@ end
    axiom	add_var_to_varlist(ident,v,t,[]) => [IVAR(ident,v,t)]
  end
 
+
  (** relation: build_env_from_symboltable
   ** author: PA
   ** 
   ** Builds an environment from a symboltable by adding all interactive variables
   ** and their bindings to the environment.
   **)
-
  relation build_env_from_symboltable: (InteractiveSymbolTable) => Env.Env =
 
    rule	SCode.elaborate(p) => p' &
@@ -480,11 +495,11 @@ end
 	 build_env_from_symboltable(SYMBOLTABLE(p,sp,ic,vars,cf)) => env'
  end
 
+
 (** relation: add_vars_to_env
  **
  ** Helper relation to build_env_from_symboltable.
  **)
-
  relation add_vars_to_env: (InteractiveVariable list, Env.Env) => Env.Env =
 
    rule	Lookup.lookup_var (env,Exp.CREF_IDENT(id,[])) => (_,_,_) &
@@ -517,13 +532,14 @@ end
 
  end
 
+
 (** relation: evaluate_graphical_api2
  **
  ** Second relation for evaluating graphical api. 
  ** The reason for having two relation is that the generated c-code can
  ** not be complied in Visual studio if the number of rules are large.
+ ** This was actually fixed in the latest version of RML!
  **)
-
 relation evaluate_graphical_api2: (InteractiveStmts, InteractiveSymbolTable) 
 	  =>  (string, InteractiveSymbolTable) = 
   
@@ -726,6 +742,7 @@ relation evaluate_graphical_api2: (InteractiveStmts, InteractiveSymbolTable)
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("error",st)
 end
 
+
  (** relation: evaluate_graphical_api
   **
   ** This relation evaluates all primitives in the graphical api.
@@ -733,10 +750,8 @@ end
   ** to evaluate_graphical_api2, since it wont compile in Visual Studio 
   ** otherwise.
   **)
-
  relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable) 
 	  =>  (string, InteractiveSymbolTable) = 
-
 
 
    rule	(* expressions *)
@@ -846,8 +861,7 @@ end
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true",newst)
 
 
-   rule  
-         System.regular_file_exist(name) => 0 &
+   rule    System.regular_file_exist(name) => 0 &
 	 Parser.parse(name) => p1 &
 	 update_program(p1,p) => newp &
 	 get_top_classnames(p1) => top_names_str
@@ -1368,7 +1382,6 @@ end
   ** Returns true if Element is a component of variability parameter, 
   ** false otherwise.
  **)
-
  relation is_parameter_element: (Absyn.Element) => bool =
 
    axiom	is_parameter_element( Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(Absyn.ATTR(_,Absyn.PARAM,_,_),_,_),_,_)) => true
@@ -1376,12 +1389,16 @@ end
    axiom	is_parameter_element(_) => false
  end
 
+
  (** relation: get_parameter_names
   **
   ** Retrieves the names of all parameters in the class 
+  **
+  ** inputs:  (Absyn.ComponentRef, /* class */
+               Absyn.Program)
+  ** outputs:  string 
   **)
-
- relation get_parameter_names: (Absyn.ComponentRef, (* class *)
+ relation get_parameter_names: (Absyn.ComponentRef, 
 				Absyn.Program) => string =
 
    rule	Absyn.cref_to_path(class) => p_class &
@@ -1398,6 +1415,7 @@ end
 
  axiom	get_parameter_names(_,_) => "Error"
  end
+
 
  (** relation: get_class_env
   **
@@ -1420,6 +1438,7 @@ end
 
  end
 
+
 (** relation: set_component_properties
  **
  ** Sets the following "properties" of a component.
@@ -1430,17 +1449,28 @@ end
  ** - variablity: "constant" or "discrete" or "parameter" or ""
  ** - dynamic_ref: {inner, outer} - two boolean values.
  ** - causality: "input" or "output" or ""
+ **
+ ** inputs:  (Absyn.Path, /* class */
+              Absyn.ComponentRef, /* component_ref */
+              bool, /* final = true */
+              bool, /* flow = true */
+              bool, /* protected = true, public=false */
+              bool,  /* replaceable = true */
+              string, /* variability */
+              bool list, /* dynamic_ref, two booleans */
+              string, /* causality */
+              Absyn.Program)
+ ** outputs: (string, Absyn.Program) 
  **)
-relation set_component_properties: (Absyn.Path, (* class *)
-				    Absyn.ComponentRef, (* component_ref *)
-				    bool, (* final = true *)
-				    bool, (* flow = true *)
-				    bool, (* protected = true, public=false *)
-				    bool,  (* replaceable = true *)
-				    string, (* variability *)
-				    bool list, (* dynamic_ref, two booleans *)
-				    string, (* causality *)
-				    
+relation set_component_properties: (Absyn.Path, 
+				    Absyn.ComponentRef, 
+				    bool, 
+				    bool, 
+				    bool, 
+				    bool, 
+				    string, 
+				    bool list, 
+				    string, 
 				    Absyn.Program)
 	  => (string, Absyn.Program) =
 
@@ -1460,20 +1490,31 @@ relation set_component_properties: (Absyn.Path, (* class *)
   axiom	set_component_properties(_,_,_,_,_,_,_,_,_,p)  => ("Error",p) 
 end
 
+
 (** relation: set_component_properties_in_class
  **
  ** Helper relation to set_component_properties.
+ **
+ ** inputs:  (Absyn.Class,
+              string, /* comp_name */
+              bool, /* final */
+              bool, /* flow */
+              bool, /* prot */
+              bool, /* repl */
+              string, /* variability */
+              bool list, /* dynamic_ref, two booleans */
+              string) /* causality */
+ ** outputs: Absyn.Class 
  **)
-
 relation set_component_properties_in_class:( Absyn.Class,
-					    string, (* comp_name *)
-					    bool, (* final *)
-					    bool, (* flow *)
-					    bool, (* prot *)
-					    bool, (* repl *)
-					    string, (* variability *)
-					    bool list, (* dynamic_ref, two booleans *)
-					    string) (* causality *)
+					    string, 
+					    bool, 
+					    bool, 
+					    bool, 
+					    bool, 
+					    string, 
+					    bool list, 
+					    string) 
 	=> Absyn.Class =
 
 
@@ -1487,20 +1528,31 @@ relation set_component_properties_in_class:( Absyn.Class,
 	   => Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(parts',cmt),file_info)
 end
 
+
  (** relation: set_component_properties_in_classparts
   **
   ** Helper relation to set_component_properties_in_class.
+  **
+  ** inputs: (Absyn.ClassPart list, 
+              Absyn.Ident, /* comp_name */
+              bool, /* final */
+              bool, /* flow */
+              bool, /* prot */
+              bool, /* repl */
+              string, /* variability */
+              bool list, /* dynamic_ref, two booleans */
+              string) /* causality */
+  ** outputs: Absyn.ClassPart list
   **)
-
 relation set_component_properties_in_classparts: (Absyn.ClassPart list, 
-						  Absyn.Ident, (* comp_name*)
-						  bool, (* final *)
-						  bool, (* flow *)
-						  bool, (* prot *)
-						  bool, (* repl *)
-						  string, (* variability *)
-						  bool list, (* dynamic_ref, two booleans *)
-						  string) (* causality *)
+						  Absyn.Ident,
+						  bool,
+						  bool,
+						  bool,
+						  bool,
+						  string,
+						  bool list,
+						  string)
 	 => Absyn.ClassPart list =
 
   axiom	set_component_properties_in_classparts([],_,_,_,_,_,_,_,_) => []
@@ -1582,19 +1634,29 @@ relation set_component_properties_in_classparts: (Absyn.ClassPart list,
 
  end
 
+
 (** relation: set_component_properties_in_elementitems
  **
  ** Helper relation to set_component_properties_in_classparts.
+ **
+ ** inputs:  (Absyn.ElementItem list,
+              Absyn.Ident, /* comp_name */
+              bool, /* final */
+              bool, /* flow */
+              bool, /* repl */
+              string, /* variability */
+              bool list, /* dynamic_ref, two booleans */
+              string) /* causality */
+ ** outputs:  Absyn.ElementItem list
  **)
-
 relation set_component_properties_in_elementitems: (Absyn.ElementItem list,
-						    Absyn.Ident, (* comp_name*)
-						    bool, (* final *)
-						    bool, (* flow *)
-						    bool, (* repl *)
-						    string, (* variability *)
-						    bool list, (* dynamic_ref, two booleans *)
-						    string) (* causality *)
+						    Absyn.Ident,
+						    bool,
+						    bool,
+						    bool,
+						    string,
+						    bool list,
+						    string)
 							
 	 => Absyn.ElementItem list =
 
@@ -1623,16 +1685,25 @@ relation set_component_properties_in_elementitems: (Absyn.ElementItem list,
 (** relation: set_component_properties_in_element
  ** 
  ** Helper relation to e.g. set_component_properties_in_elementitems.
-**)
-
+ **
+ ** inputs:  (Absyn.Element,
+              Absyn.Ident,
+              bool, /* final */
+              bool, /* flow */
+              bool, /* repl */
+              string, /* variability */
+              bool list, /* dynamic_ref, two booleans */
+              string) /* causality */
+ ** outputs: Absyn.Element
+ **)
 relation set_component_properties_in_element: (Absyn.Element,
 					       Absyn.Ident,
-					       bool, (* final *)
-					       bool, (* flow *)
-					       bool, (* repl *)
-					       string, (* variability *)
-					       bool list, (* dynamic_ref, two booleans *)
-					       string) (* causality*)
+					       bool,
+					       bool,
+					       bool,
+					       string,
+					       bool list,
+					       string)
 	=> Absyn.Element =
 
   rule	get_compitem_named(Absyn.CREF_IDENT(cr,[]),ellst) => _ &
@@ -1648,14 +1719,19 @@ relation set_component_properties_in_element: (Absyn.Element,
 
 end
 
+
 (** relation: set_replaceable_keyword_attributes
  **
  ** Sets The RedeclareKeywords of an Element given a boolean 'replaceable'.
+ **
+ ** inputs:  (Absyn.RedeclareKeywords option, 
+              bool /* repl */)
+ ** outputs: Absyn.RedeclareKeywords option =
  **)
-
 relation set_replaceable_keyword_attributes: (Absyn.RedeclareKeywords option, 
-					    bool (* repl*))
+					    bool)
 	=> Absyn.RedeclareKeywords option =
+
 
 (* false *)
   axiom	set_replaceable_keyword_attributes(NONE,false) => NONE
@@ -1691,15 +1767,23 @@ relation set_inner_outer_attributes: (bool list)
   axiom	set_inner_outer_attributes([true,true]) => Absyn.INNEROUTER
 end
 
+
 (** relation: set_component_properties_in_elementspec
  **
  ** Sets component attributes on an elements spec if identifier matches.
+ ** 
+ ** inputs:  (Absyn.ElementSpec,
+              Absyn.Ident,
+              bool, /* flow */
+              string, /* variability */
+              string) /* causality */
+ ** outputs:  Absyn.ElementSpec
  **)
 relation set_component_properties_in_elementspec: (Absyn.ElementSpec,
 						   Absyn.Ident,
-						   bool, (* flow *)
-						   string, (* variability*)
-						   string) (* causality *)
+						   bool, 
+						   string, 
+						   string) 
 	=> Absyn.ElementSpec =
 
   rule	items_contain_compname(items,cr) &
@@ -1710,12 +1794,12 @@ relation set_component_properties_in_elementspec: (Absyn.ElementSpec,
   axiom	set_component_properties_in_elementspec(spec,_,_,_,_) => spec
 end
 
+
 (** relation: items_contain_compname
  **
  ** Checks if a list of ElementItems contain a component named 'cr'.
  **)
-relation items_contain_compname: (Absyn.ComponentItem list ,
-				  Absyn.Ident) => () =
+relation items_contain_compname: (Absyn.ComponentItem list, Absyn.Ident) => () =
 
   rule	cr1 = cr2
 	-------------------------
@@ -1726,15 +1810,21 @@ relation items_contain_compname: (Absyn.ComponentItem list ,
 	items_contain_compname(_::rest,cr) => ()
 end
 
+
 (** relation: set_element_attributes
  **
  ** Sets  attributes associated with ElementAttribues.
+ **
+ ** inputs: (Absyn.ElementAttributes,
+             bool, /* flow */
+             string, /* variability */
+             string) /*causality */
+ ** outputs: Absyn.ElementAttributes
  **)
-
 relation set_element_attributes: (Absyn.ElementAttributes,
-				  bool, (* flow *)
-				  string, (* variability *)
-				  string) (*causality *)
+				  bool,
+				  string,
+				  string)
 	=> Absyn.ElementAttributes =
 	  
   rule	set_element_variability(va) => va' &
@@ -1744,6 +1834,7 @@ relation set_element_attributes: (Absyn.ElementAttributes,
 			       flow,va,cau) 
 	  => Absyn.ATTR(flow, va',cau',dim)
 end
+
 
 (** relation set_element_variability 
  **
@@ -1759,6 +1850,7 @@ relation set_element_variability: (string) => Absyn.Variability =
 
 end
 
+
 (** relation set_element_causality 
  **
  ** Sets Direction (causality) according to string value.
@@ -1771,6 +1863,7 @@ relation set_element_causality: (string) => Absyn.Direction =
   axiom	set_element_causality("output") => Absyn.OUTPUT
 end
 
+
  (** relation: get_cref_info
   ** author: adrpo@ida
   ** date  : 2005-11-03
@@ -1778,9 +1871,12 @@ end
   ** When parsing classes, the source file name + line no + columnno is added to the Class 
   ** definition and to all Elements, see Absyn.Info. This relation retrieves the
   ** Info contents.
+  ** 
+  ** inputs:   (Absyn.ComponentRef, /* class */
+                Absyn.Program) 
+  ** outputs:   string
   **)
-
- relation get_cref_info: (Absyn.ComponentRef, (* class *)
+ relation get_cref_info: (Absyn.ComponentRef,
 			    Absyn.Program) => string =
    rule	Absyn.cref_to_path(class) => p_class &
 	 get_pathed_class_in_program(p_class,p) => cdef &
@@ -1794,7 +1890,7 @@ end
 	 ---------------------------------------------------
 	 get_cref_info(class,p) => s4
 
- axiom	get_cref_info(_,_) => "Error"
+   axiom	get_cref_info(_,_) => "Error"
 
  end
 
@@ -1822,6 +1918,7 @@ relation get_import_string: (Absyn.Import) => string =
        --------------------------------------------------------------
        get_import_string(Absyn.UNQUAL_IMPORT(path)) => str
 end
+
 
  (** relation: get_element_type
   ** author: adrpo@ida
@@ -1887,12 +1984,16 @@ relation get_element_info: (Absyn.ElementItem) => string =
 
 end
 
+
  (** relation: construct_elements_info
   ** author: adrpo@ida
   ** date  : 2005-11-11
   ** helper relation to get_elements_info
+  **
+  ** inputs:  (string /* "public" or "protected" */, Absyn.ElementItem list) 
+  ** outputs:  string
   **)
-relation construct_elements_info: (string (* "public" or "protected" *), Absyn.ElementItem list) => string =
+relation construct_elements_info: (string, Absyn.ElementItem list) => string =
 
   rule (* Util.string_append_list(["{ elementvisibility=", visibility_str," }"]) => res *)
        -----------------------------------------------------------------------------------
@@ -1923,6 +2024,7 @@ end
   **        "some", "some", "," => "some, some" 
   **)
 relation append_non_empty_strings : (string, string, string) => string =
+
    axiom append_non_empty_strings("", "", _) => ""
    axiom append_non_empty_strings(s1, "", _) => s1
    axiom append_non_empty_strings("", s2, _) => s2
@@ -1931,6 +2033,7 @@ relation append_non_empty_strings : (string, string, string) => string =
          ---------------------------------------------------
          append_non_empty_strings(s1, s2, delimiter) => str
 end
+
 
  (** relation: get_elements_info
   ** author: adrpo@ida
@@ -1964,10 +2067,14 @@ end
   ** When parsing classes, the source file name is added to the Class 
   ** definition and to all Elements, see Absyn. This relation retrieves the
   ** source file of the Class.
+  ** 
+  ** inputs:  (Absyn.ComponentRef, /* class */
+               Absyn.Program)
+  ** outputs: string
   **)
-
  relation get_source_file: (Absyn.ComponentRef, (* class *)
 			    Absyn.Program) => string =
+
    rule	Absyn.cref_to_path(class) => p_class &
 	 get_pathed_class_in_program(p_class,p) => cdef &
 	 Absyn.class_filename(cdef) => filename
@@ -1978,19 +2085,23 @@ end
 
  end
 
+
  (** relation: set_source_file
   ** author: PA
   **
   ** Sets the source file of a Class. Is for instance used
   ** when adding a new class to an aldready stored package.
   ** The class should then have the same file as the package.
+  **
+  ** inputs:   (Absyn.ComponentRef, /* class */
+                string, /* filename */
+                Absyn.Program) 
+  ** outputs: (string, Absyn.Program)
   **)
-
- relation set_source_file: (Absyn.ComponentRef, (* class *)
-			    string, (* filename *)
+ relation set_source_file: (Absyn.ComponentRef,
+			    string,
 			    Absyn.Program) 
-	   => (string,
-	       Absyn.Program) =
+	   => (string, Absyn.Program) =
 
    rule	Absyn.cref_to_path(class) => p_class &
 	 get_pathed_class_in_program(p_class,p) => cdef &
@@ -2003,6 +2114,7 @@ end
    axiom	set_source_file(_,_,p) => ("Error" ,p)
  end
 
+
  (** relation: set_extends_modifier_value
   **
   ** This relation sets the submodifier value of an extends clause in a Class.
@@ -2010,11 +2122,17 @@ end
   ** model test extends A(p1=3,p2(z=3)); end test;
   ** setExtendsModifierValue(test,A,p1,Code(=4)) => OK
   ** => model test extends A(p1=4,p2(z=3)); end test;
+  **
+  ** inputs:   (Absyn.ComponentRef, /* class */
+                Absyn.ComponentRef, /* inherit class */
+                Absyn.ComponentRef, /* subident */
+                Absyn.Modification,
+                Absyn.Program)
+  ** outputs:  (Absyn.Program,string)
   **)
-
- relation set_extends_modifier_value: (Absyn.ComponentRef, (* class *)
-				       Absyn.ComponentRef, (* inherit class*)
-				       Absyn.ComponentRef, (* subident*)
+ relation set_extends_modifier_value: (Absyn.ComponentRef, 
+				       Absyn.ComponentRef,
+				       Absyn.ComponentRef,
 				       Absyn.Modification,
 				       Absyn.Program)
 	 => (Absyn.Program,string)  =
@@ -2034,19 +2152,27 @@ end
    axiom	set_extends_modifier_value(_,_,_,_,p) => (p,"Error")
  end
 
+
  (** relation: set_extends_submodifier_in_class
   ** author: PA
   **
   ** Sets a modifier of an extends clause for a given subcomponent.
   ** For instance, 
   ** extends A(b=4); // b is subcomponent
+  **
+  ** inputs:  (Absyn.Class, 
+               Absyn.Path, /* inherit_name */
+               Absyn.ComponentRef, /* submodifier */
+               Absyn.Modification,
+               Env.Env)
+  ** outputs: Absyn.Class
   **)
-
  relation set_extends_submodifier_in_class:(Absyn.Class, 
-					    Absyn.Path, (* inherit_name*)
-					    Absyn.ComponentRef, (* submodifier*)
+					    Absyn.Path, 
+					    Absyn.ComponentRef,
 					    Absyn.Modification,
 					    Env.Env) => Absyn.Class =
+
    rule	set_extends_submodifier_in_classparts(parts,inherit_name,submod,mod,env) 
 	   => parts'
 	   ---------------------------------------------------------
@@ -2056,17 +2182,25 @@ end
 	   => Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(parts',cmt),file_info)
  end
 
+
  (** relation: set_extends_submodifier_in_classparts
   **
   ** Helper relation to set_extends_submodifier_in_class
+  ** 
+  ** inputs:   (Absyn.ClassPart list, 
+                Absyn.Path, /* inherit_name */
+                Absyn.ComponentRef, /* submodifier */
+                Absyn.Modification,
+                Env.Env)
+  ** outputs:  Absyn.ClassPart list
   **)
-
  relation set_extends_submodifier_in_classparts: (Absyn.ClassPart list, 
-						  Absyn.Path, (* inherit_name*)
-						  Absyn.ComponentRef, (* submodifier*)
+						  Absyn.Path, 
+						  Absyn.ComponentRef,
 						  Absyn.Modification,
 						  Env.Env)
 	   => Absyn.ClassPart list =
+
    axiom	set_extends_submodifier_in_classparts([],_,_,_,_) => []
 
    rule	set_extends_submodifier_in_classparts(rest,inherit,submod,mod,env) 
@@ -2092,14 +2226,21 @@ end
 	   => (elt::res)
  end
 
+
  (** relation: set_extends_submodifier_in_elementitems
   **
   ** Helper relation to set_extends_submodifier_in_classparts
+  **
+  ** inputs:  (Absyn.ElementItem list,
+               Absyn.Path, /* inherit_name */
+               Absyn.ComponentRef, /* submodifier */
+               Absyn.Modification,
+               Env.Env)
+  ** outputs:  Absyn.ElementItem list
   **)
-
  relation set_extends_submodifier_in_elementitems:(Absyn.ElementItem list,
-						   Absyn.Path,(*inherit_name*)
-						   Absyn.ComponentRef, (*submodifier*)
+						   Absyn.Path,
+						   Absyn.ComponentRef,
 						   Absyn.Modification,
 						   Env.Env)
 	 => Absyn.ElementItem list =
@@ -2120,14 +2261,21 @@ end
 	   => elt::res
  end
 
+
  (** relation: set_extends_submodifier_in_element
   **
   ** Helper relation to set_extends_submodifier_in_elementitems
+  ** 
+  ** inputs: (Absyn.Element, 
+              Absyn.Path, /* inherit_name */
+              Absyn.ComponentRef, /* submodifier */
+              Absyn.Modification,
+              Env.Env)
+  ** outputs:  Absyn.Element
   **)
-
  relation set_extends_submodifier_in_element: (Absyn.Element, 
-					       Absyn.Path,(*inherit_name*)
-					       Absyn.ComponentRef, (*submodifier*)
+					       Absyn.Path,
+					       Absyn.ComponentRef,
 					       Absyn.Modification,
 					       Env.Env)
 	   => Absyn.Element =
@@ -2147,17 +2295,23 @@ end
    axiom	set_extends_submodifier_in_element(elt,_,_,_,_) => elt
  end
 
+
  (** relation: get_extends_modifier_value
   **
   ** Return the submodifier value of an extends clause
   ** for instance,
   ** model test extends A(p1=3,p2(z=3)); end test;
   ** getExtendsModifierValue(test,A,p1) => =3
- **)
-
- relation get_extends_modifier_value:(Absyn.ComponentRef, (*class *)
-				      Absyn.ComponentRef, (* ident*)
-				      Absyn.ComponentRef, (* subident*)
+  ** 
+  ** inputs:  (Absyn.ComponentRef, /* class */
+               Absyn.ComponentRef, /* ident */
+               Absyn.ComponentRef, /* subident */
+               Absyn.Program) 
+  ** outputs:  string 
+  **)
+ relation get_extends_modifier_value:(Absyn.ComponentRef, 
+				      Absyn.ComponentRef,
+				      Absyn.ComponentRef,
 				      Absyn.Program) 
 	   => string =
 
@@ -2178,11 +2332,11 @@ end
    axiom	get_extends_modifier_value(_,_,_,_) => "Error"
  end
 
+
  (** relation: make_extends_fully_qualified
   **
   ** Makes an EXTENDS ElementSpec having a fully qualified extends path.
   **)
-
  relation make_extends_fully_qualified: (Absyn.ElementSpec, Env.Env) 
 	   => Absyn.ElementSpec =
 
@@ -2192,16 +2346,21 @@ end
 	   => Absyn.EXTENDS(path',earg)
  end
 
+
  (** relation: get_extends_modifier_names
   **
   ** Return the modifier names of a modification on an extends clause.
   ** For instance,
   ** model test extends A(p1=3,p2(z=3)); end test;
   ** getExtendsModifierNames(test,A) => {p1,p2}
+  **
+  ** inputs:  (Absyn.ComponentRef, /* class */
+               Absyn.ComponentRef, /* inherited class */
+               Absyn.Program) 
+  ** outputs: (string)
   **)
-
- relation get_extends_modifier_names: (Absyn.ComponentRef, (* class *)
-				       Absyn.ComponentRef, (* inherited class *)
+ relation get_extends_modifier_names: (Absyn.ComponentRef, 
+				       Absyn.ComponentRef,
 				       Absyn.Program) 
 	 => (string) =
 
@@ -2222,12 +2381,12 @@ end
 
  end
 
+
  (** relation extends_elementspec_name
   **
   ** Returns true if elementspec of EXTENDS has the name given as path, 
   ** false otherwise.
   **)
-
  relation extends_elementspec_named: (Absyn.ElementSpec, 
 				      Absyn.Path) 
 	   => bool  =
@@ -2237,21 +2396,21 @@ end
 	 extends_elementspec_named(Absyn.EXTENDS(extpath,_),path) => res
  end
 
+
  (** relation extends_name
   **
   ** Return the class name of an EXTENDS element spec.
   **)
-
  relation extends_name: (Absyn.ElementSpec) => Absyn.Path =
 
    axiom  extends_name (Absyn.EXTENDS(path,_)) => path	
  end
 
+
  (** relation: get_extends_elementspec_in_class
   **
   ** Retrieve all ElementSpec of a class that are EXTENDS.
   **)
-
  relation get_extends_elementspec_in_class: (Absyn.Class) 
 	   => Absyn.ElementSpec list =
 
@@ -2262,11 +2421,11 @@ end
    axiom	get_extends_elementspec_in_class(_) => []
  end
 
+
 (** relation: get_extends_elementspec_in_classparts
  **
  ** Helper relation to get_extends_elementspec_in_class.
  **)
-
  relation get_extends_elementspec_in_classparts:(Absyn.ClassPart list) 
 	   => Absyn.ElementSpec list = 
 
@@ -2298,17 +2457,18 @@ end
 	   => (res)
  end
 
+
 (** relation: get_extends_elementspec_in_elementitems
  **
  ** Helper relation to get_extends_elementspec_in_classparts.
  **)
-
  relation get_extends_elementspec_in_elementitems: (Absyn.ElementItem list) 
 	 => Absyn.ElementSpec list =
+
    axiom	get_extends_elementspec_in_elementitems([]) => [] 
 
    rule	(* Bug in RML. If the two premisses below are in swapped order
-	  * the compiler enters infinite loop (but no stack overflow) *)
+	 * the compiler enters infinite loop (but no stack overflow) *)
 	 get_extends_elementspec_in_element(elt) => elt &
 	 get_extends_elementspec_in_elementitems(rest) 
 	   => res 
@@ -2323,25 +2483,33 @@ end
 	   => res
  end
 
+
 (** relation: get_extends_elementspec_in_element
  **
  ** Helper relation to get_extends_elementspec_in_elementitems.
-**)
-	    
+**)	    
  relation get_extends_elementspec_in_element:(Absyn.Element) 
 	   => Absyn.ElementSpec =
 
    axiom	get_extends_elementspec_in_element(Absyn.ELEMENT(_,_,_,_,ext as Absyn.EXTENDS(_,_),_,_)) => ext
+
  end
+
 
  (** relation: set_component_modifier
   **
   ** Sets a submodifier of a component.
+  ** 
+  ** inputs:   (Absyn.ComponentRef, /* class */
+                Absyn.ComponentRef, /* variable name */
+                Absyn.ComponentRef, /* submodifier name */
+                Absyn.Modification, 
+                Absyn.Program)
+  ** outputs: (Absyn.Program, string)
   **)
-
- relation set_component_modifier: (Absyn.ComponentRef, (* class *)
-				   Absyn.ComponentRef, (* variable name *)
-				   Absyn.ComponentRef, (* submodifier name*)
+ relation set_component_modifier: (Absyn.ComponentRef,
+				   Absyn.ComponentRef,
+				   Absyn.ComponentRef,
 				   Absyn.Modification, 
 				   Absyn.Program)
 	   => (Absyn.Program, string) =
@@ -2363,11 +2531,16 @@ end
  (** relation: set_component_submodifier_in_class
   **
   ** Sets a sub modifier on a component in a class.
+  **
+  ** inputs: (Absyn.Class, 
+              Absyn.Ident, /* component name */
+              Absyn.ComponentRef, /* subvariable path */
+              Absyn.Modification)
+  ** outputs: Absyn.Class
   **)
-
  relation set_component_submodifier_in_class: (Absyn.Class, 
-					       Absyn.Ident, (* component name*)
-					       Absyn.ComponentRef,(*subvariable path*)
+					       Absyn.Ident,
+					       Absyn.ComponentRef,
 					       Absyn.Modification)
 	   => Absyn.Class =
 
@@ -2380,14 +2553,20 @@ end
 	   => Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(parts',cmt),file_info)
  end
 
+
  (** relation: set_component_submodifier_in_classparts
   **
   ** Helper relation to set_component_submodifier_in_class
+  ** 
+  ** inputs:  (Absyn.ClassPart list, 
+               Absyn.Ident, /* component name */
+               Absyn.ComponentRef, /* subvariable path */
+               Absyn.Modification)
+  ** outputs:  Absyn.ClassPart list
   **)
-
  relation set_component_submodifier_in_classparts: (Absyn.ClassPart list, 
-						    Absyn.Ident, (* component name*)
-						    Absyn.ComponentRef, (* subvariable path*)
+						    Absyn.Ident, 
+						    Absyn.ComponentRef,
 						    Absyn.Modification)
 	 => Absyn.ClassPart list =
 
@@ -2416,14 +2595,20 @@ end
 	   => (elt::res)
  end
 
+
  (** relation: set_component_submodifier_in_elementitems
   **
   ** Helper relation to set_component_submodifier_in_classparts
+  ** 
+  ** inputs: (Absyn.ElementItem list,
+              Absyn.Ident, /* component name */
+              Absyn.ComponentRef, /* subvariable path */
+              Absyn.Modification)
+  ** outputs: Absyn.ElementItem list
   **)
-
  relation set_component_submodifier_in_elementitems:(Absyn.ElementItem list,
-						     Absyn.Ident, (* component name*)
-						     Absyn.ComponentRef, (* subvariable path*)
+						     Absyn.Ident,
+						     Absyn.ComponentRef,
 						     Absyn.Modification)
 	 => Absyn.ElementItem list =
 
@@ -2443,14 +2628,20 @@ end
 	   => elt::res
  end
 
+
  (** relation: set_component_submodifier_in_element
   **
   ** Helper relation to set_component_submodifier_in_elementitems
+  **
+  ** inputs: (Absyn.Element, 
+              Absyn.Ident, /* component name */
+              Absyn.ComponentRef, /* submodifier path */
+              Absyn.Modification)
+  ** outputs: Absyn.Element
   **)
-
  relation set_component_submodifier_in_element: (Absyn.Element, 
-						 Absyn.Ident, (* component name*)
-						 Absyn.ComponentRef, (* submodifier path*)
+						 Absyn.Ident, 
+						 Absyn.ComponentRef,
 						 Absyn.Modification)
 	 => Absyn.Element =
 
@@ -2463,14 +2654,20 @@ end
    axiom	set_component_submodifier_in_element(elt,_,_,_) => elt
  end
 
+
  (** relation: set_component_submodifier_in_compitems
   **
   ** Helper relation to set_component_submodifier_in_element
+  ** 
+  ** inputs:  (Absyn.ComponentItem list,
+               Absyn.Ident, /* component name */
+               Absyn.ComponentRef, /* submodifier path */
+               Absyn.Modification)
+  ** outputs: (Absyn.ComponentItem list)
   **)
-
  relation set_component_submodifier_in_compitems:(Absyn.ComponentItem list,
-						  Absyn.Ident, (* component name*)
-						  Absyn.ComponentRef, (* submodifier path*)
+						  Absyn.Ident, 
+						  Absyn.ComponentRef,
 						  Absyn.Modification)
 	 => (Absyn.ComponentItem list) =
 
@@ -2520,18 +2717,24 @@ end
 	 set_component_submodifier_in_compitems(_,_,_,_) => fail
  end
 
+
  (** relation: set_submodifier_in_elementargs
   **
   ** Helper relation to set_component_submodifier_in_compitems
+  ** 
+  ** inputs:  (Absyn.ElementArg list,
+               Absyn.ComponentRef, /* subcomponent name */
+               Absyn.Modification)
+  ** outputs:  Absyn.ElementArg list
   **)
-
  relation set_submodifier_in_elementargs: (Absyn.ElementArg list,
-					   Absyn.ComponentRef, (* subcomponent name*)
+					   Absyn.ComponentRef,
 					   Absyn.Modification)
 	   => Absyn.ElementArg list =
 
-	 (* empty list, add as new modifier *)
-   axiom	set_submodifier_in_elementargs([],cref ,mod) 
+	 
+   axiom	(* empty list, add as new modifier *)
+           set_submodifier_in_elementargs([],cref ,mod) 
 	   => [Absyn.MODIFICATION(false,Absyn.NON_EACH,cref,SOME(mod),NONE)]
 
    rule	name = submodident
@@ -2565,6 +2768,7 @@ end
 	 set_submodifier_in_elementargs(_,_,_) => fail
  end
 
+
  (** relation: get_component_modifier_value(class,ident,subident,p) => resstr 
   **
   ** Returns the modifier value of component ident for modifier subident.
@@ -2573,11 +2777,16 @@ end
   **  B b1(a1(p1=0,p2=0));
   ** end A;
   ** getComponentModifierValues(A,b1,a1) => Code((p1=0,p2=0))
- **)
-
- relation get_component_modifier_value: (Absyn.ComponentRef, (* class *)
-					 Absyn.ComponentRef, (* variable name *)
-					 Absyn.ComponentRef, (* submodifier name*)
+  **
+  ** inputs:  (Absyn.ComponentRef, /* class */
+               Absyn.ComponentRef, /* variable name */
+               Absyn.ComponentRef, /* submodifier name */
+               Absyn.Program)
+  ** outputs: string
+  **)
+ relation get_component_modifier_value: (Absyn.ComponentRef, 
+					 Absyn.ComponentRef, 
+					 Absyn.ComponentRef, 
 					 Absyn.Program)
 	 => string =
 
@@ -2598,12 +2807,12 @@ end
 
  end
 
+
  (** relation: get_modification_value
   **
   ** Helper relation to get_component_modifier_value
   ** Investigates modifications to find submodifier.
- **)
-
+  **)
  relation get_modification_value:(Absyn.ElementArg list, Absyn.ComponentRef) 
 	   => Absyn.Modification =
 
@@ -2623,13 +2832,18 @@ end
 	 get_modification_value (_::rest,name) => mod
  end
 
+
  (** relation: get_component_modifier_names
   **
-  ** Return the modifiernames of a component, i.e. Foo f( ) 
- **)
-
- relation get_component_modifier_names: (Absyn.ComponentRef, (* class *)
-					 Absyn.ComponentRef, (* variable name *)
+  ** Return the modifiernames of a component, i.e. Foo f( )
+  **
+  ** inputs:  (Absyn.ComponentRef, /* class */
+               Absyn.ComponentRef, /* variable name */
+               Absyn.Program) 
+  ** outputs:  string
+  **)
+ relation get_component_modifier_names: (Absyn.ComponentRef, 
+					 Absyn.ComponentRef,
 					 Absyn.Program) 
 	 => string =
 
@@ -2650,11 +2864,11 @@ end
    axiom	get_component_modifier_names(_,_,_) => "{}"
  end
 
+
 (** relation: get_modification_names
  **
  ** Helper relation to get_component_modifier_names
  **)
-
  relation get_modification_names:(Absyn.ElementArg list) 
 	   => string list  =
 
@@ -2687,13 +2901,18 @@ end
 	   => names
  end
 
+
  (** relation: get_parameter_value
   **
   ** Returns the value of a parameter in a class.
- **)
-
- relation get_parameter_value: (Absyn.ComponentRef, (* class *)
-			       Absyn.ComponentRef, (* variable name *)
+  **
+  ** inputs: (Absyn.ComponentRef, /* class */
+              Absyn.ComponentRef, /* variable name */
+              Absyn.Program)
+  ** outputs: string
+  **)
+ relation get_parameter_value: (Absyn.ComponentRef,
+			       Absyn.ComponentRef,
 				Absyn.Program) => string =
 
    rule	Absyn.cref_to_path(class) => p_class &
@@ -2712,11 +2931,11 @@ end
    axiom	get_parameter_value(_,_,_) => "Error"
  end
 
+
  (** relation: get_variable_binding_in_componenitem
   **
   ** Retrieve the variable binding from an ComponentItem
   **)
-
  relation get_variable_binding_in_componentitem: (Absyn.ComponentItem) 
 	   => Absyn.Exp =
 
@@ -2724,14 +2943,20 @@ end
 								   Absyn.COMPONENT(_,_,SOME(Absyn.CLASSMOD(_,SOME(e)))),_,_)) => e
  end
 
+
  (** relation: set_parameter_value
   **
   ** Sets the parameter value of a class and returns the updated program.
+  **
+  ** inputs:  (Absyn.ComponentRef, /* class */
+               Absyn.ComponentRef, /* ident */
+               Absyn.Exp,          /* exp */
+               Absyn.Program) 
+  ** outputs: (Absyn.Program,string) 
   **)
-
- relation set_parameter_value:(Absyn.ComponentRef, (*class*)
-			      Absyn.ComponentRef, (*ident*)
-			      Absyn.Exp,		 (* exp*)
+ relation set_parameter_value:(Absyn.ComponentRef,
+			      Absyn.ComponentRef,
+			      Absyn.Exp,
 			      Absyn.Program) 
 	   => (Absyn.Program,string)	=
 
@@ -2747,12 +2972,12 @@ end
    axiom	set_parameter_value(_,_,_,p) => (p,"Error")
  end
 
+
  (** relation: set_variable_binding_in_class
   **
   ** Takes a class and an identifier and value an sets the variable binding to 
   ** the passed expression.
   **)
-
  relation set_variable_binding_in_class:(Absyn.Class,Absyn.Ident,Absyn.Exp) 
 	   => (Absyn.Class) =
 
@@ -2763,12 +2988,12 @@ end
 	   => Absyn.CLASS(id,p,f,e,r,Absyn.PARTS(parts',cmt),file_info)
  end
 
+
  (** relation: set_variable_binding_in_classparts
   **
   ** Sets a binding of a variable in a ClassPart list, named by the passed 
   ** argument.
   **)
-
  relation set_variable_binding_in_classparts: (Absyn.ClassPart list, Absyn.Ident, 
 					       Absyn.Exp)	
 	   => Absyn.ClassPart list =
@@ -2793,11 +3018,11 @@ end
 	   => (elt::res)
  end
 
+
  (** relation: set_variable_binding_in_elementitems
   **
   ** Sets a variable binding in a list of ElementItems
- **)
-
+  **)
  relation set_variable_binding_in_elementitems: (Absyn.ElementItem list, Absyn.Ident,
 						 Absyn.Exp) 
 	   => Absyn.ElementItem list =
@@ -2816,11 +3041,11 @@ end
 	   => elt::res
  end
 
+
  (** relation: set_variable_binding_in_element
   **
   ** Sets a variable binding in an Element.
   **)
-
  relation set_variable_binding_in_element: (Absyn.Element, Absyn.Ident, 
 					    Absyn.Exp)
 	 => Absyn.Element =
@@ -2833,11 +3058,11 @@ end
    axiom	set_variable_binding_in_element(elt,id,exp) => elt
  end
 
+
  (** relation: set_variable_binding_in_compitems
   **
   ** Sets a variable binding in a ComponentItem list
   **)
-
  relation set_variable_binding_in_compitems: (Absyn.ComponentItem list, 
 					      Absyn.Ident,
 					      Absyn.Exp) 
@@ -2865,11 +3090,11 @@ end
 	   => item::res							      
  end
 
+
  (** relation: build_within
   **
   ** From a fully qualified model name, build a suitable within clause
- **)
-
+  **)
  relation build_within: Absyn.Path => Absyn.Within =
 
    axiom	build_within(Absyn.IDENT(_)) => Absyn.TOP
@@ -2878,6 +3103,7 @@ end
 	 -------------------------------------
 	 build_within(path) => Absyn.WITHIN(w_path)
  end
+
 
  (** relation: componentitem_named
   **
@@ -2893,28 +3119,29 @@ end
    axiom	componentitem_named(_,_) => false
  end
 
+
  (**  relation: get_componentitem_name
   **
   ** Returns the name of a ComponentItem
   **)
-
  relation get_componentitem_name: Absyn.ComponentItem => Absyn.Ident =
 
    axiom	get_componentitem_name(Absyn.COMPONENTITEM(Absyn.COMPONENT(id,_,_),_,_)) => id
  end
+
 
  (** relation: get_componentitems_in_element
   **
   ** Retrieves the ComponentItems of a component Element.
   ** If Element is not a component, empty list is returned.
   **)
-
  relation get_componentitems_in_element:(Absyn.Element) => Absyn.ComponentItem list =
 
    axiom	get_componentitems_in_element(Absyn.ELEMENT(_,_,_,_,Absyn.COMPONENTS(_,_,l),_,_)) 
 				       => l 
    axiom	get_componentitems_in_element(_) => []
  end
+
 
  (** relation: rename_class
   **
@@ -2923,11 +3150,15 @@ end
   ** program is updated to the new name. The relation does not allow a 
   ** renaming that will move the class to antoher package. To do this, the 
   ** class must be copied.
+  **
+  ** inputs:  (Absyn.Program, 
+               Absyn.ComponentRef, /* old class as qualified name */
+               Absyn.ComponentRef) /* new class, as identifier */
+  ** outputs:  Absyn.Program
   **)
-
  relation rename_class: (Absyn.Program, 
-			 Absyn.ComponentRef, (* old class as qualified name*)
-			 Absyn.ComponentRef) (* new class, as identifier *)
+			 Absyn.ComponentRef, 
+			 Absyn.ComponentRef) 
 	   => Absyn.Program =
 
    rule	(* class in package *)
@@ -2939,11 +3170,11 @@ end
 	   => p'
  end
 
+
  (** relation: rename_class_visitor
   **
   ** This visitor renames a class given a new name
   **)
-
  relation rename_class_visitor: ((Absyn.Class* Absyn.Path option *(Absyn.Path*string)))
 	   => ((Absyn.Class*Absyn.Path option *(Absyn.Path*string))) =
 
@@ -2964,14 +3195,20 @@ end
   ** to each class. The relation takes the Absyn.Class, Absyn.Path option 
   ** and an additional argument and returns an updated class and the 
   ** additional values. The Absyn.Path option contains the path to the class
-  ** that is traversed
+  ** that is traversed.
+  **
+  ** inputs:  (Absyn.Program, 
+               Absyn.Path option,
+               ((Absyn.Class * Absyn.Path option * 'a) => (Absyn.Class * Absyn.Path option * 'a)),  /* rel-ation to apply */
+			      'a, /* extra value passed to re-lation */
+			      bool) /* true = traverse protected elements */
+  ** outputs: (Absyn.Program *  Absyn.Path option * 'a)
   **)
-
   relation traverse_classes: (Absyn.Program, 
 			     Absyn.Path option,
-			      ((Absyn.Class * Absyn.Path option * 'a) => (Absyn.Class * Absyn.Path option * 'a)),  (* rel-ation to apply*)
-			      'a, (* extra value passed to re-lation*)
-			      bool) (* true = traverse protected elements*)
+			      ((Absyn.Class * Absyn.Path option * 'a) => (Absyn.Class * Absyn.Path option * 'a)),
+			      'a, 
+			      bool)
 	   => (Absyn.Program *  Absyn.Path option * 'a) =
 
    rule	traverse_classes2(lst,pa,visitor,args,traverse_prot) => ((lst',pa',args'))
@@ -2980,16 +3217,23 @@ end
 	   => ((Absyn.PROGRAM(lst',within),pa',args'))
  end
 
+
  (** relation: traverse_classes2
   **
   ** Helper relation to traverse_classes.
+  **
+  ** inputs: (Absyn.Class list,
+              Absyn.Path option,
+              ((Absyn.Class * Absyn.Path option * 'a) => (Absyn.Class *  Absyn.Path option *'a)),  /* rel-ation to apply */
+	   'a, /* extra value passed to re-lation */
+	   bool) /* true = traverse protected elements */
+  ** outputs: (Absyn.Class list * Absyn.Path option * 'a)
   **)
-
  relation traverse_classes2:(Absyn.Class list,
 			     Absyn.Path option,
-  ((Absyn.Class * Absyn.Path option * 'a) => (Absyn.Class *  Absyn.Path option *'a)),  (* rel-ation to apply*)
-			      'a, (* extra value passed to re-lation*)
-			      bool) (* true = traverse protected elements*)
+  ((Absyn.Class * Absyn.Path option * 'a) => (Absyn.Class *  Absyn.Path option *'a)),  
+			      'a, 
+			      bool)
 	   => (Absyn.Class list * Absyn.Path option * 'a) =
 
    axiom	traverse_classes2([],pa,visitor,args,_) => (([],pa,args))
@@ -3006,19 +3250,25 @@ end
 	 traverse_classes2(_,_,_,_,_) => fail
  end
 
+
  (** relation: traverse_inner_class
   **
   ** Helper relation to traverse_classes2. This relation traverses all 
   ** inner classes of a class.
+  ** 
+  ** inputs:  (Absyn.Class, /* class to traverse inner classes in */
+               Absyn.Path option,
+               ((Absyn.Class * Absyn.Path option * 'a) => (Absyn.Class *  Absyn.Path option *'a)), /* visitor rlation */
+               'a /* extra argument */,
+               bool ) /* true = traverse protected elts */
+  ** outputs: (Absyn.Class * Absyn.Path option * 'a)
   **)
-
-  relation traverse_inner_class:(Absyn.Class, (* class to traverse inner classes in *)
+  relation traverse_inner_class:(Absyn.Class, 
 				 Absyn.Path option,
-				 ((Absyn.Class * Absyn.Path option * 'a) => (Absyn.Class *  Absyn.Path option *'a)), (* visitor rlation*)
-				  'a (* extra argument *),
-				 bool ) (* true = traverse protected elts *)
+				 ((Absyn.Class * Absyn.Path option * 'a) => (Absyn.Class *  Absyn.Path option *'a)),
+				  'a,
+				 bool )
 	   => (Absyn.Class * Absyn.Path option * 'a) =
-
 
    rule  Absyn.join_paths(pa,Absyn.IDENT(name))  => tmp_pa &
 	  traverse_inner_class_parts(parts,SOME(tmp_pa),visitor,args,visit_prot) => ((parts',pa',args'))
@@ -3041,16 +3291,23 @@ end
 
  end
 
+
  (** relation: traverse_inner_class_parts
   **
   ** Helper relation to traverse_inner_class
+  **
+  ** inputs:  (Absyn.ClassPart list,
+               Absyn.Path option,
+               ((Absyn.Class * Absyn.Path option * 'a) => (Absyn.Class *  Absyn.Path option *'a)), /* visitor */
+               'a,
+               bool) /* true = visit protected elements */
+  ** outputs: (Absyn.ClassPart list * Absyn.Path option * 'a)
   **)
-
  relation traverse_inner_class_parts: (Absyn.ClassPart list,
 				       Absyn.Path option,
-				       ((Absyn.Class * Absyn.Path option * 'a) => (Absyn.Class *  Absyn.Path option *'a)), (* visitor*)
+				       ((Absyn.Class * Absyn.Path option * 'a) => (Absyn.Class *  Absyn.Path option *'a)),
 				       'a,
-				       bool) (* true = visit protected elements*)
+				       bool)
 	 => (Absyn.ClassPart list * Absyn.Path option * 'a) =
 
    axiom	traverse_inner_class_parts([],pa,_,args,_) => (([],pa,args))
@@ -3073,16 +3330,23 @@ end
 	   => ((part::parts',pa',args'))
  end
 
+
  (** relation traverse_inner_class_elements
   **
   ** Helper relation to traverse_inner_class_parts.
+  ** 
+  ** inputs:  (Absyn.ElementItem list,
+               Absyn.Path option,
+               ((Absyn.Class * Absyn.Path option * 'a) => (Absyn.Class * Absyn.Path option * 'a)), /* visitor */
+               'a,
+               bool)  /* visit protected elts */
+  ** outputs: (Absyn.ElementItem list * Absyn.Path option * 'a)
   **)
-
  relation traverse_inner_class_elements:(Absyn.ElementItem list,
 				       Absyn.Path option,
-				       ((Absyn.Class * Absyn.Path option * 'a) => (Absyn.Class * Absyn.Path option * 'a)), (* visitor*)
+				       ((Absyn.Class * Absyn.Path option * 'a) => (Absyn.Class * Absyn.Path option * 'a)),
 				       'a,
-					 bool)  (* visit protected elts *)
+				        bool)
 	   => (Absyn.ElementItem list * Absyn.Path option * 'a) =
 
    axiom	traverse_inner_class_elements([],pa,_,args,_) => (([],pa,args))
@@ -3104,16 +3368,23 @@ end
 	   => ((elt::elts',pa',args'))
  end
 
+
  (** relation: traverse_inner_class_elementspec
   **
   ** Helper relation to traverse_inner_class_elements
+  **
+  ** inputs:  (Absyn.ElementSpec,
+               Absyn.Path option,
+               ((Absyn.Class * Absyn.Path option * 'a) => (Absyn.Class * Absyn.Path option *  'a)), /* visitor */
+               'a,
+               bool) /* visit protected elts */
+  ** outputs: (Absyn.ElementSpec * Absyn.Path option * 'a)
   **)
-
  relation traverse_inner_class_elementspec: ( Absyn.ElementSpec,
 				       Absyn.Path option,
-					     ((Absyn.Class * Absyn.Path option * 'a) => (Absyn.Class * Absyn.Path option *  'a)), (* visitor*)
+					     ((Absyn.Class * Absyn.Path option * 'a) => (Absyn.Class * Absyn.Path option *  'a)),
 					     'a,
-					     bool) (* visit protected elts *)
+					     bool)
 	   => (Absyn.ElementSpec * Absyn.Path option * 'a) =
 
    rule	visitor((class,pa,args)) => ((class',pa',args')) &
@@ -3126,13 +3397,13 @@ end
 
  end
 
+
  (** relation: is_primitive 
   **
   ** This relation takes a component reference and a program. 
   ** It returns the true if the refrenced type is a primitive type, otherwise 
   ** it returns false.
  **)
-
  relation is_primitive: (Absyn.ComponentRef, Absyn.Program) => bool =
 
    rule	Absyn.cref_to_path(cr) => path &
@@ -3148,7 +3419,6 @@ end
    axiom	is_primitive(Absyn.CREF_IDENT("Boolean",_),_) => true
    axiom	is_primitive(_,_) => false
  end
-
 
 
  (** relation: delete_class
@@ -3191,16 +3461,17 @@ end
    axiom	delete_class(_, p) => ("false",p)	
  end
 
+
 (** relation: delete_class_from_list
  **
  ** Helper relation to delete_class.
  **)
-
  relation delete_class_from_list: (Absyn.Class, Absyn.Class list)
 	  => Absyn.Class list =
 
-	 (* Empty list *)
-   axiom	 delete_class_from_list(_,[]) => []
+	 
+   axiom	 (* Empty list *)
+            delete_class_from_list(_,[]) => []
 
    rule name = name2
 	 -------------------------------------------------------------------------------------------
@@ -3216,12 +3487,12 @@ end
    delete_class_from_list(cdef as Absyn.CLASS(name,_,_,_,_,_,_), x::xs) => x::res
  end
 
+
 (** relation: get_class_restriction
  ** author: PA
  **
  ** Returns the class restriction of a class as a string.
  **)
-
 relation get_class_restriction:(Absyn.ComponentRef,
 				Absyn.Program) => string =
 
@@ -3233,13 +3504,13 @@ relation get_class_restriction:(Absyn.ComponentRef,
 	get_class_restriction(cr,p) => res'
 end
 
+
 (** relation: is_type 
  **
  ** This relation takes a component reference and a program. 
  ** It returns true if the refrenced class has the restriction "type", 
  ** otherwise it returns false.
  **)
-
  relation is_type: (Absyn.ComponentRef, Absyn.Program) => bool =
 
    rule	Absyn.cref_to_path(cr) => path &
@@ -3250,13 +3521,13 @@ end
    axiom	is_type(cr,p) => false
  end
 
+
  (** relation: is_connector
   **
   ** This relation takes a component reference and a program. 
   ** It returns true if the refrenced class has the restriction "connector", 
   ** otherwise it returns false.
- **)
-
+  **)
  relation is_connector: (Absyn.ComponentRef, Absyn.Program) => bool =
 
    rule	Absyn.cref_to_path(cr) => path &
@@ -3267,13 +3538,13 @@ end
    axiom	is_connector(cr,p) => false
  end
 
+
  (** relation: is_model
   **
   ** This relation takes a component reference and a program. 
   ** It returns true if the refrenced class has the restriction "model", 
   ** otherwise it returns false.
- **)
-
+  **)
  relation is_model: (Absyn.ComponentRef, Absyn.Program) => bool =
 
    rule	Absyn.cref_to_path(cr) => path &
@@ -3284,13 +3555,13 @@ end
    axiom	is_model(cr,p) => false
  end
 
+
  (** relation: is_record
   **
   ** This relation takes a component reference and a program. 
   ** It returns true if the refrenced class has the restriction "record", 
   ** otherwise it returns false.
- **)
-
+  **)
  relation is_record: (Absyn.ComponentRef, Absyn.Program) => bool =
 
    rule	Absyn.cref_to_path(cr) => path &
@@ -3301,13 +3572,13 @@ end
    axiom	is_record(cr,p) => false
  end
 
+
  (** relation: is_block
   **
   ** This relation takes a component reference and a program. 
   ** It returns true if the refrenced class has the restriction "block", 
   ** otherwise it returns false.
- **)
-
+  **)
  relation is_block: (Absyn.ComponentRef, Absyn.Program) => bool =
 
    rule	Absyn.cref_to_path(cr) => path &
@@ -3318,12 +3589,12 @@ end
    axiom	is_block(cr,p) => false
  end
 
+
  (** relation: is_function
   ** This relation takes a component reference and a program. 
   ** It returns true if the refrenced class has the restriction "function", 
   ** otherwise it returns false.
- **)
-
+  **)
  relation is_function: (Absyn.ComponentRef, Absyn.Program) => bool =
 
    rule	Absyn.cref_to_path(cr) => path &
@@ -3339,8 +3610,7 @@ end
   ** This relation takes a component reference and a program. 
   ** It returns true if the refrenced class has the restriction "package", otherwise it returns 
   ** false.
- **)
-
+  **)
  relation is_package: (Absyn.ComponentRef, Absyn.Program) => bool =
 
    rule	Absyn.cref_to_path(cr) => path &
@@ -3351,13 +3621,13 @@ end
    axiom	is_package(cr,p) => false
  end
 
+
  (** relation: is_class
   **
   ** This relation takes a component reference and a program. 
   ** It returns true if the refrenced class has the restriction "class", 
   ** otherwise it returns  false.
- **)
-
+  **)
  relation is_class: (Absyn.ComponentRef, Absyn.Program) => bool =
 
    rule	Absyn.cref_to_path(cr) => path &
@@ -3373,8 +3643,7 @@ end
   **
   ** This relation takes a class and a component reference and a program
   ** and returns true if the component referenced is a parameter.
- **)
-
+  **)
  relation is_parameter: (Absyn.ComponentRef, Absyn.ComponentRef, 
 			 Absyn.Program) 
 	  => bool =
@@ -3389,12 +3658,12 @@ end
    axiom	is_parameter (_,_,_) => false
  end
 
+
  (** relation: is_protected
   **
   ** This relation takes a class and a component reference and a program
   ** and returns true if the component referenced is in a protected section.
- **)
-
+  **)
  relation is_protected: (Absyn.ComponentRef, Absyn.ComponentRef, 
 			 Absyn.Program) 
 	  => bool =
@@ -3416,12 +3685,12 @@ end
    axiom	is_protected (_,_,_) => false
  end
 
+
  (** relation: is_constant
   **
   ** This relation takes a class and a component reference and a program
   ** and returns true if the component referenced is a constant.
- **)
-
+  **)
  relation is_constant: (Absyn.ComponentRef, Absyn.ComponentRef, 
 			Absyn.Program) 
 	  => bool =
@@ -3435,6 +3704,7 @@ end
 
   axiom	is_constant (_,_,_) => false
  end
+
 
 (** relation: get_elementitem_contains_name
  **
@@ -3452,12 +3722,12 @@ relation get_elementitem_contains_name: (Absyn.ComponentRef, Absyn.ElementItem l
 	get_elementitem_contains_name(cr,_::rest) => res
 end 
 
+
 (** relation: get_components_contains_name
  **
  ** Return the ElementSpec containing the name given as argument from a list
  ** of ElementItems
  **)
-
  relation get_components_contains_name: (Absyn.ComponentRef, Absyn.ElementItem list) 
 	   => Absyn.ElementSpec =
 
@@ -3470,12 +3740,12 @@ end
 	 get_components_contains_name (cr,x::xs) => res
  end
 
+
 (** relation: get_element_contains_name
  **
  ** Return the Element containing the component name given as argument from
  ** a list of ElementItems.
  **)
-
  relation get_element_contains_name: (Absyn.ComponentRef, 
 				      Absyn.ElementItem list) 
 	   => Absyn.Element =
@@ -3489,11 +3759,11 @@ end
 	 get_element_contains_name (cr,x::xs) => res
  end
 
+
 (** relation: get_compitem_named
  **
  ** Helper relation to get_components_contains_name.
  **)
-
  relation get_compitem_named: (Absyn.ComponentRef, Absyn.ComponentItem list)
 	   => Absyn.ComponentItem =
 
@@ -3506,13 +3776,13 @@ end
 	 get_compitem_named(cr, x::xs) => res
  end
 
+
  (** relation: exist_class
   **
   ** This relation takes a component reference and a program. 
   ** It returns true if the refrenced class exists in the symbol table, 
   ** otherwise it returns false.
- **)
-
+  **)
  relation exist_class: (Absyn.ComponentRef, Absyn.Program) => bool =
 
    rule	Absyn.cref_to_path(cr) => path &
@@ -3523,13 +3793,13 @@ end
    axiom	exist_class(cr,p) => false
  end
 
+
 (** relation: is_primitive_class
  **
  ** Return true of a class is a primitive class, i.e. one of the builtin 
-** classes or the 'type' restricted class. It also checks derived classes
-** using short class definition.
-**)
-
+ ** classes or the 'type' restricted class. It also checks derived classes
+ ** using short class definition.
+ **)
  relation is_primitive_class: (Absyn.Class,Absyn.Program) => bool =
 
    axiom	is_primitive_class(Absyn.CLASS(_,_,_,_,Absyn.R_PREDEFINED_INT,_,_),_) => true
@@ -3546,11 +3816,11 @@ end
 
  end
 
- (** relation: remove_compiled_functions
- **
-  ** A Compiled function should be removed if its definition is updated.
- **)
 
+ (** relation: remove_compiled_functions
+  **
+  ** A Compiled function should be removed if its definition is updated.
+  **)
  relation remove_compiled_functions: (Absyn.Program, (Absyn.Path * Types.Type) list)
 	     => (Absyn.Path * Types.Type) list =
    rule	remove_cf(id,cfs) => cfs'
@@ -3559,11 +3829,11 @@ end
    axiom	remove_compiled_functions(_,cfs) => cfs
  end
 
+
 (** relation: remove_cf
  **
  ** Helper relation to remove_compiled_functions.
  **)
-
  relation remove_cf: (Absyn.Ident, (Absyn.Path * Types.Type) list)
 	     => (Absyn.Path * Types.Type) list =
 
@@ -3579,13 +3849,13 @@ end
 	 remove_cf(id1,(Absyn.IDENT(id2),t)::rest) => ((Absyn.IDENT(id2),t)::res)
  end
 
+
  (** relation: update_program
   **
   ** This relation takes an old program (second argument), i.e. the old 
   ** symboltable, and a new program (first argument), i.e. a new set of
   ** classes and updates the old program with the definitions in the new one.
   **)     
-
  relation update_program: (Absyn.Program,Absyn.Program) => Absyn.Program =
 
   axiom	update_program (Absyn.PROGRAM([],_),prg) => prg
@@ -3749,13 +4019,13 @@ end
    axiom	add_scope(p,_) => p
  end
 
+
  (** relation: update_scope
   ** This relation takes a PROGRAM and updates the variable scope to according
   ** to the value of program:
   ** 1. BEGIN_DEFINITION ident appends ident to scope
   ** 2. END_DEFINITION ident removes ident from scope
  **)
-
  relation update_scope: (Absyn.Program, InteractiveVariable list) 
 	   => InteractiveVariable list =
 
@@ -3811,11 +4081,11 @@ end
   axiom update_scope(_,vars) => vars
  end
 
+
 (** relation: remove_var_from_varlist
  **
  ** Helper relation to update_scope.
 **)
-
  relation remove_var_from_varlist: (Absyn.Ident,InteractiveVariable list) 
 	 => InteractiveVariable list =
 
@@ -3832,12 +4102,12 @@ end
 	   => v::rest'
  end
 
+
 (** relation: get_variable_value
  **
  ** Return the value of an interactive variable from a list of 
  ** InteractiveVariable.
  **)
-
  relation get_variable_value: (Absyn.Ident, InteractiveVariable list) => 
 	 (Values.Value) =
 
@@ -3857,8 +4127,7 @@ end
   ** This relation takes a Path of a class to lookup and a Path as a 
   ** starting point for the lookup rules and a Program.
   ** It returns the Class definition and the complete Path to the class.
- **)
-
+  **)
  relation lookup_classdef: (Absyn.Path, Absyn.Path, Absyn.Program) 
 	  => (Absyn.Class, Absyn.Path) =
 
@@ -3903,6 +4172,7 @@ end
 	 lookup_classdef(path,inpath,_) => fail
  end
 
+
  (** relation: delete_component
   **
   ** This relation deletes a component from a class given the name of the 
@@ -3911,7 +4181,6 @@ end
   **
   ** Both public and protected lists are searched.
   **)
-
  relation delete_component: (string, Absyn.ComponentRef, Absyn.Program) 
 	  => (Absyn.Program ,string) =
 
@@ -3938,6 +4207,7 @@ end
    axiom	delete_component(_,_,p) => (p,"false\n") 
  end
 
+
  (** relation: delete_component_from_class
   **
   ** This relation deletes a component from a class given the name of the component instance, and a 'Class'.
@@ -3947,8 +4217,9 @@ end
  relation delete_component_from_class: (string, Absyn.Class)
 	  => Absyn.Class =
 
-	 (* Search in public list *)
-   rule	get_public_list(parts) => publst &
+	 
+   rule	 (* Search in public list *)
+	 get_public_list(parts) => publst &
 	 delete_component_from_elementitems(name,publst) => publst2 &
 	 list_length(publst2) => l2 &
 	 list_length(publst) => l1 &
@@ -3972,13 +4243,14 @@ end
 	 => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt),file_info)
  end	
 
+
 (** relation: delete_component_from_elementitems
  **
  ** Helper relation to delete_component_from_class.
-**)
-
+ **)
  relation delete_component_from_elementitems: (string, Absyn.ElementItem list) 
 	   => Absyn.ElementItem list =
+
    axiom	 delete_component_from_elementitems (_,[]) => []
 
    rule	name = name2 
@@ -3995,9 +4267,11 @@ end
 	 delete_component_from_elementitems(name,x::xs) => x::res 
  end
 
+
  (** relation add_component
   **
-  ** This relation takes:  arg1 - string giving the instancename, 
+  ** This relation takes:  
+  ** arg1 - string giving the instancename, 
   ** arg2 - `ComponentRef' giving the component type
   ** arg3 - ComponentRef giving the model to instantiate the component within,
   ** arg4 - `NamedArg' list of annotations 
@@ -4006,19 +4280,18 @@ end
   ** inserted, and a string "OK" for success. If the insertion fails, a
   ** suitable error string is given along with the input Program.
   **)
-
  relation add_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,
 			  Absyn.NamedArg list, Absyn.Program) 
 	  => (Absyn.Program ,string) =
 
-   rule	Absyn.cref_to_path(model) => modelpath &
+   rule	 Absyn.cref_to_path(model) => modelpath &
 	 not get_pathed_class_in_program(modelpath,p) => _
 	 ---------------------------------
 	 add_component (name,tp,model,nargs,p) => (p,"false\n") 
 
 
 	 (* Adding component to model that resides inside package *)
-   rule	Absyn.cref_to_path(model) => modelpath &
+   rule	 Absyn.cref_to_path(model) => modelpath &
 	 Absyn.strip_last(modelpath) => modelwithin &
 	 get_pathed_class_in_program(modelpath,p) => cdef &
 	 Absyn.cref_to_path(tp) => tppath &
@@ -4032,7 +4305,7 @@ end
 	 add_component( name,tp,model as Absyn.CREF_QUAL(_,_,_),nargs,p as Absyn.PROGRAM(_,w)) => (newp,"Ok\n")
 
 	 (* Adding component to model that resides on top level *)
-   rule	Absyn.cref_to_path(model) => modelpath &
+   rule	 Absyn.cref_to_path(model) => modelpath &
 	 get_pathed_class_in_program(modelpath,p) => cdef &
 	 Absyn.cref_to_path(tp) => tppath &
 	 annotation_list_to_absyn_comment(nargs,NONE) => annotation &
@@ -4048,6 +4321,7 @@ end
 
  end
 
+
  (** relation: update_component
   **
   ** This relation updates a component in a class. The reason for having 
@@ -4055,7 +4329,6 @@ end
   ** all optional arguments must be present to the add_component relation 
   ** in order to get the same component attributes,etc. as previous. 
   **) 
-
  relation update_component: (string, Absyn.ComponentRef,Absyn.ComponentRef,
 			     Absyn.NamedArg list,
 			     Absyn.Program) 
@@ -4154,13 +4427,13 @@ end
 
  end
 
+
  (** relation:add_class_annotation 
   **
   ** This relation takes a `ComponentRef' and an `Exp' expression and a 
   ** `Program' and adds the expression as a annotation to the specified 
   ** model in the program, returning the updated program.
- **)
-
+  **)
  relation add_class_annotation:(Absyn.ComponentRef,Absyn.NamedArg list,
 				Absyn.Program) 
 	  => Absyn.Program =
@@ -4183,11 +4456,11 @@ end
 	 add_class_annotation(model as Absyn.CREF_IDENT(_,_),nargs,p) => newp
  end
 
+
  (** relation: add_class_annotation_to_class
   *
   * This relation adds an annotation on element level to a `Class´.
   **)
-
  relation add_class_annotation_to_class: ( Absyn.Class, Absyn.NamedArg list) 
 	   => Absyn.Class =
 
@@ -4210,12 +4483,12 @@ end
 	 => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt),file_info)
  end
 
+
  (** relation: replace_element_annotation_in_elements
   *
   * This relation takes an element list and replaces the first annotation 
   ** with the one given as argument.
   **)
-
  relation replace_element_annotation_in_elements: (Absyn.ElementItem list,
 						   Absyn.Annotation)
 	   => Absyn.ElementItem list =
@@ -4231,12 +4504,12 @@ end
    axiom	replace_element_annotation_in_elements([],_) => []
  end
 
+
  (** relation: get_element_annotation_in_elements
   **
   ** This relation retrieves the forst Annotation among the elements 
   ** taken as argument
   **)
-
  relation get_element_annotation_in_elements: (Absyn.ElementItem list) 
 	   => Absyn.ElementItem =
 
@@ -4247,6 +4520,7 @@ end
 	 get_element_annotation_in_elements(_::xs) => a
  end
 
+
  (** relation: merge_annotations
   **
   ** This relation takes an old annotation as first argument and a new 
@@ -4256,7 +4530,6 @@ end
   ** merge_annotations(annotation(x=1,y=2),annotation(x=3)) 
   ** => annotation(x=3,y=2)
   **)
-
  relation merge_annotations:(Absyn.Annotation, Absyn.Annotation) 
 	  => Absyn.Annotation =
 
@@ -4279,14 +4552,14 @@ end
    axiom	merge_annotations(Absyn.ANNOTATION([]),a) => a
  end
 
+
  (** relation: remove_modification_in_elementargs
   **
   ** This relation removes the class modification named by the second argument.
   ** If no such class modification is found the relation fails.
   ** Currently, only identifiers are allowed as class modifiers, 
   ** i.e. a(...) and not a.b(...)
- **)
-
+  **)
  relation remove_modification_in_elementargs:(Absyn.ElementArg list, 
 					      Absyn.ComponentRef )
 	 => Absyn.ElementArg list = 
@@ -4317,11 +4590,12 @@ end
 	   => m::res 
  end
 
+
 (** relation: get_inheritance_count
  **
  ** This relation takes a `ComponentRef' and a `Program' and returns the 
  ** number of inherited classes in the class referenced by the 
-  ** `ComponentRef'.
+ ** `ComponentRef'.
  **)
 relation get_inheritance_count: (Absyn.ComponentRef,Absyn.Program) => int = 
 
@@ -4334,6 +4608,7 @@ relation get_inheritance_count: (Absyn.ComponentRef,Absyn.Program) => int =
 
   axiom	get_inheritance_count (_,_) => 0
 end
+
 
 (** relation: get_inheritance_count
  ** This relation takes a `ComponentRef' and a `Program' and returns the 
@@ -4355,11 +4630,11 @@ relation get_nth_inherited_class: (Absyn.ComponentRef,int,Absyn.Program)
   axiom	get_nth_inherited_class (_,_,_) => "Error"
  end
 
+
 (** relation: get_nth_inherited_class2
  **
  ** Helper relation to get_nth_inherited_class.
  **)
-
  relation get_nth_inherited_class2: (SCode.Class, Absyn.Class,int, Env.Env) 
 	   => string =
 
@@ -4388,6 +4663,7 @@ relation get_nth_inherited_class: (Absyn.ComponentRef,int,Absyn.Program)
 	   => str
  end
 
+
  (** relation: get_component_count
   **
   ** This relation takes a `ComponentRef' and a `Program' and returns the 
@@ -4402,12 +4678,12 @@ relation get_component_count: (Absyn.ComponentRef,Absyn.Program) => int =
 	get_component_count( model,p) => count
  end
 
+
  (** relation: count_components
   **
   ** This relation takes a `Class' and returns the number of components 
   ** in that class
- **)
-
+  **)
  relation count_components: Absyn.Class => int =
 
    rule	count_components Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file_info) => c1 &
@@ -4431,11 +4707,11 @@ relation get_component_count: (Absyn.ComponentRef,Absyn.Program) => int =
    axiom count_components Absyn.CLASS(a,b,c,d,e,Absyn.DERIVED(_,_,_,_,_),_) => -1
  end
 
+
 (** relation: count_components_in_elts
  **
  ** Helper relation to count_components
- **)
- 
+ **) 
  relation count_components_in_elts: Absyn.ElementItem list => int =
 
    rule	count_components_in_elts(lst) => c1 &
@@ -4451,13 +4727,13 @@ relation get_component_count: (Absyn.ComponentRef,Absyn.Program) => int =
    axiom	count_components_in_elts([]) => 0
  end
 
+
  (** relation: get_nth_component
   **
   ** This relation takes a `ComponentRef', a `Program' and an int and 
   ** returns a comma separated string of names containing the name, type 
   ** and comment of that component.
   **)
-
  relation get_nth_component: (Absyn.ComponentRef,Absyn.Program, int) 
 	  => string = 
 
@@ -4474,11 +4750,11 @@ relation get_component_count: (Absyn.ComponentRef,Absyn.Program) => int =
 	 axiom get_nth_component(_,_,_) => "Error"
  end
 
+
 (** relation: get_nth_component2
  **
  ** Helper relation to get_nth_component.
  **)
-
  relation get_nth_component2: (SCode.Class,Absyn.Class, int, Env.Env) 
 	   => string =
 
@@ -4500,12 +4776,12 @@ relation get_component_count: (Absyn.ComponentRef,Absyn.Program) => int =
 
  end
 
+
  (** relation: get_components
   **
   ** This relation takes a `ComponentRef', a `Program' and an int and  returns 
   ** a list of all components, as returned by get_nth_component.
   **)
-
  relation get_components: (Absyn.ComponentRef,Absyn.Program) => string = 
 
    rule	Absyn.cref_to_path(model) => modelpath &
@@ -4540,7 +4816,6 @@ relation get_component_count: (Absyn.ComponentRef,Absyn.Program) => int =
   ** be in the same order as get_components relations, i.e. first public 
   ** components then protected ones.
   **)
-
  relation get_component_annotations: (Absyn.ComponentRef,
 				       Absyn.Program) 
 	   => string = 
@@ -4559,13 +4834,13 @@ relation get_component_count: (Absyn.ComponentRef,Absyn.Program) => int =
 	 axiom get_component_annotations(_,_) => "Error"
  end
 
+
  (** relation: get_nth_component_annotation
   **
   ** This relation takes a `ComponentRef', a `Program' and an int and  
   ** returns a comma separated string of values corresponding to the flat 
   ** record for component annotations.
   **)
-
  relation get_nth_component_annotation: (Absyn.ComponentRef,Absyn.Program,int) 
 	  => string = 
 
@@ -4581,10 +4856,11 @@ relation get_component_count: (Absyn.ComponentRef,Absyn.Program) => int =
 	 axiom get_nth_component_annotation(_,_,_) => "Error"
  end
 
+
 (** relation: get_nth_component_modification
  **
  ** This relation takes a `ComponentRef', a `Program' and an int and 
-  ** returns a comma separated string of values corresponding to the 
+ ** returns a comma separated string of values corresponding to the 
  ** flat record for component annotations.
  **)
 relation get_nth_component_modification: (Absyn.ComponentRef,Absyn.Program, int) 
@@ -4601,13 +4877,13 @@ relation get_nth_component_modification: (Absyn.ComponentRef,Absyn.Program, int)
 	 axiom get_nth_component_modification(_,_,_) => "Error"
 end
 
+
 (** relation: get_connection_count
  **
  ** This relation takes a `ComponentRef' and a `Program' and returns a 
  ** string containing the number of connections in the model identified by 
  ** the `ComponentRef'.
  **)
-
 relation get_connection_count: (Absyn.ComponentRef, Absyn.Program) => string =
 	
   rule	Absyn.cref_to_path(model) => modelpath &
@@ -4620,12 +4896,12 @@ relation get_connection_count: (Absyn.ComponentRef, Absyn.Program) => string =
   axiom get_connection_count(_,_) => "Error"
 end
 
+
 (** relation: get_nth_connection
  **
  ** This relation takes a `ComponentRef' and a `Program' and an int and 
  ** returns a comma separated string for the nth connection, e.g. "R1.n,C.p".
- **)
-		 
+ **)		 
 relation get_nth_connection: (Absyn.ComponentRef, Absyn.Program, int) 
 	  => string =
 
@@ -4639,15 +4915,22 @@ relation get_nth_connection: (Absyn.ComponentRef, Absyn.Program, int)
   axiom get_nth_connection(_,_,_) => "Error"
 end
 
+
 (** relation: add_connection
  **
  ** Adds a connect equation to the model, i..e connect(c1,c2)
+ **
+ ** inputs: (Absyn.ComponentRef, /* model name */
+             Absyn.ComponentRef, /* c1 */
+             Absyn.ComponentRef, /* c2 */
+             Absyn.NamedArg list, /* annotations */
+             Absyn.Program) => 
+ ** outputs: (string, Absyn.Program)
  **)
-
- relation add_connection: (Absyn.ComponentRef, (* model name *)
-			   Absyn.ComponentRef, (* c1 *)
-			   Absyn.ComponentRef, (* c2 *)
-			   Absyn.NamedArg list, (* annotations *)
+ relation add_connection: (Absyn.ComponentRef, 
+			   Absyn.ComponentRef, 
+			   Absyn.ComponentRef, 
+			   Absyn.NamedArg list,
 			   Absyn.Program) => 
 	 (string, Absyn.Program) =
 
@@ -4688,14 +4971,20 @@ end
 	 add_connection(model as Absyn.CREF_QUAL(_,_,_),c1,c2,nargs,p as Absyn.PROGRAM(_,w)) => ("Ok",newp)	
  end
 
+
 (** relation: delete_connection
  **
- ** Deleted the connection connect(c1,c2) from a model.
+ ** Delete the connection connect(c1,c2) from a model.
+ **
+ ** inputs:  (Absyn.ComponentRef, /* model name */
+              Absyn.ComponentRef, /* c1 */
+              Absyn.ComponentRef, /* c2 */
+              Absyn.Program)
+ ** outputs:  (string,Absyn.Program) 
  **)
-
- relation delete_connection: (Absyn.ComponentRef, (* model name*)
-			      Absyn.ComponentRef, (* c1 *)
-			      Absyn.ComponentRef, (* c2 *)
+ relation delete_connection: (Absyn.ComponentRef, 
+			      Absyn.ComponentRef, 
+			      Absyn.ComponentRef, 
 			      Absyn.Program)
 	   => (string,Absyn.Program) =
 
@@ -4717,11 +5006,11 @@ end
    axiom	delete_connection(model,c1,c2,p as Absyn.PROGRAM(_,w)) => ("Error",p)	
  end
 
+
 (** relation: delete_equation_in_class
  **
  ** Helper relation to delete_connection.
  **)
-
  relation delete_equation_in_class: (Absyn.Class, 
 				     Absyn.ComponentRef, 
 				     Absyn.ComponentRef)
@@ -4735,6 +5024,11 @@ end
 	   => Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt),file_info)
  end
 
+
+(** relation: delete_equation_in_eqlist
+ **
+ ** Helper relation to delete_connection.
+ **)
  relation delete_equation_in_eqlist: (Absyn.EquationItem list, Absyn.ComponentRef,Absyn.ComponentRef) => Absyn.EquationItem list =
 
    axiom	delete_equation_in_eqlist([],_,_) => []
@@ -4753,13 +5047,13 @@ end
 	 delete_equation_in_eqlist(x::xs,c1,c2) => x::res
  end
 
+
 (** relation: get_nth_connection_annotation
  **
  ** This relation takes a `ComponentRef' and a `Program' and an int and 
  ** returns a comma separated string  of values for the annotation of the 
  ** nth connection.
  **)
-
 relation get_nth_connection_annotation: (Absyn.ComponentRef,Absyn.Program,int) 
 	  => string =
 	
@@ -4775,24 +5069,28 @@ relation get_nth_connection_annotation: (Absyn.ComponentRef,Absyn.Program,int)
   axiom	get_nth_connection_annotation(_,_,_) => "{}"
 end
 
+
 (** relation: get_connector_count
  **
  ** This relation takes a ComponentRef and a Program and returns the number
  ** of connector components in the class given by the classname in the 
  ** ComponentRef. A partial instantiation of the inheritance structure is 
  ** performed in order to find all connectors of the class.
+ **
+ ** inputs:  (/* Env.Env, */ Absyn.ComponentRef, 
+              Absyn.Program) 
+ ** outputs: string
  **)
-
-relation get_connector_count: ((* Env.Env, *) Absyn.ComponentRef, 
-			       Absyn.Program) 
+relation get_connector_count: (Absyn.ComponentRef, 
+                               Absyn.Program) 
 	  => string =
-	 (** A complete instantiation is far too expensive. Instead we only 
-	  ** look through the components of the class for types declared using 
-	  ** the "connector" restricted class keyword. We also look in
-	  ** base classes  (recursively)  
-	  **)
 
-  rule	Absyn.cref_to_path(model) => modelpath &
+  rule	(** A complete instantiation is far too expensive. Instead we only 
+	 ** look through the components of the class for types declared using 
+	 ** the "connector" restricted class keyword. We also look in
+	 ** base classes  (recursively)  
+	 **)
+	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
 	count_public_connectors(modelpath,p,cdef) => count &
 	int_string(count) => countstr
@@ -4802,12 +5100,12 @@ relation get_connector_count: ((* Env.Env, *) Absyn.ComponentRef,
   axiom get_connector_count(_,_) => "Error"
 end
 
+
 (** relation: get_nth_connector
  ** This relation takes a ComponentRef and a Program and an int and returns 
  ** a string with the name of the nth
  ** connector component in the class given by ComponentRef in the Program.
- **)
-		 
+ **)		 
  relation get_nth_connector: (Absyn.ComponentRef, Absyn.Program, int) 
 	  => string =
 
@@ -4823,13 +5121,13 @@ end
    axiom get_nth_connector(_,_,_) => "Error"
  end
 
+
  (** relation: get_nth_connector
   **
   ** This relation takes a ComponentRef and a Program and an int and returns 
   ** a string with the name of the nth connectors icon annotation in the 
   ** class given by ComponentRef in the Program.
   **)
-
 relation get_nth_connector_icon_annotation: (Absyn.ComponentRef, 
 					     Absyn.Program, int) 
 	  => string =
@@ -4844,10 +5142,11 @@ relation get_nth_connector_icon_annotation: (Absyn.ComponentRef,
    axiom get_nth_connector_icon_annotation(_,_,_) => "Error"	
  end
 
+
 (** relation: get_diagram_annotation
  **
  ** This relation takes a Path and a Program and returns a comma separated 
- **  string of values for the diagram annotation for the class named by the 
+ ** string of values for the diagram annotation for the class named by the 
  ** first argument.
  **)
 relation get_diagram_annotation: (Absyn.Path, Absyn.Program) => string =
@@ -4860,12 +5159,12 @@ relation get_diagram_annotation: (Absyn.Path, Absyn.Program) => string =
   axiom	get_diagram_annotation(_,_) => "get_diagram_annotation failed!"
 end
 
+
 (** relation: get_icon_annotation
  ** This relation takes a Path and a Program and returns a comma separated
  ** string of values for the icon annotation for the class named by the 
  ** first argument. 	
  **)
-
  relation get_icon_annotation: (Absyn.Path, Absyn.Program) => string =
 
     rule	get_pathed_class_in_program(modelpath,p) => cdef &
@@ -4875,12 +5174,12 @@ end
    axiom get_icon_annotation(_,_) => ""
  end
 
+
  (** relation: get_packages_in_path
   **
   ** This relation takes a Path and a Program and returns a list of the 
   ** names of the packages found in the Path.
- **)
-
+  **)
  relation get_packages_in_path: (Absyn.Path,Absyn.Program) => string =
 
    rule	get_pathed_class_in_program(modelpath,p) => cdef &
@@ -4892,12 +5191,12 @@ end
    axiom	 get_packages_in_path(_,_) => "Error"
  end
 
+
  (** relation: get_top_packages 
   **
   ** This relation takes a Path and a Program and returns a list of the 
   ** names of the packages found in the Path.
   **)
-
  relation get_top_packages: (Absyn.Program) => string =
 
    rule	get_top_packages_in_program(p) => strlist &
@@ -4910,11 +5209,11 @@ end
    axiom	get_top_packages(_) => "Error"
  end
 
+
 (** relation: get_top_packages_in_program
  **
  ** Helper relation to get_top_packages.
  **)
-
  relation get_top_packages_in_program: Absyn.Program => string list =
 
    axiom	get_top_packages_in_program Absyn.PROGRAM([],_) => []
@@ -4927,6 +5226,7 @@ end
 	 ------------------------------------------
 	 get_top_packages_in_program (Absyn.PROGRAM(_::rest,w)) => res
  end
+
 
  (** relation: get_packages_in_class
   **
@@ -4948,11 +5248,11 @@ end
 	 get_packages_in_class(inmodel,p,Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(path,_,_,_,_),_)) => res
  end
 
+
 (** relation: get_packages_in_parts
  **
  ** Helper relation to get_packages_in_class.
  **)
-
  relation get_packages_in_parts:(Absyn.ClassPart list ) => string list =
 
   axiom	get_packages_in_parts [] => []
@@ -4968,11 +5268,11 @@ end
 	 get_packages_in_parts(_::rest) => res
  end
 
+
 (** relation: get_packages_in_elts
  **
  ** Helper relation to get_packages_in_parts.
-**)
-
+ **)
 relation get_packages_in_elts: (Absyn.ElementItem list) => string list =
    axiom	 get_packages_in_elts [] => []
 
@@ -4985,11 +5285,11 @@ relation get_packages_in_elts: (Absyn.ElementItem list) => string list =
 	 get_packages_in_elts (_::rest) => res
 end
 
+
 (** relation: get_classnames_in_path
  **
  ** Return a comma separated list of classes in a given Path.
  **)
-
 relation get_classnames_in_path: (Absyn.Path,Absyn.Program) 
 	  => string =
 
@@ -5003,12 +5303,12 @@ relation get_classnames_in_path: (Absyn.Path,Absyn.Program)
   axiom	get_classnames_in_path(_,_) => "Error"
  end
 
+
  (** relation: get_top_classnames
   **
   ** This relation takes a Path and a Program and returns a list of
   ** the names of the packages found at the top scope.
   **)
-
  relation get_top_classnames: (Absyn.Program) => string =
 
   rule	get_top_classnames_in_program(p) => strlist &
@@ -5021,11 +5321,11 @@ relation get_classnames_in_path: (Absyn.Path,Absyn.Program)
   axiom	get_top_classnames(_) => "Error"
  end
 
+
 (** relation: get_top_classnames_in_program
  **
  ** Helper relation to get_top_classnames.
  **)
-
 relation get_top_classnames_in_program: Absyn.Program => string list =
 
   axiom	get_top_classnames_in_program Absyn.PROGRAM([],_) => []
@@ -5038,6 +5338,7 @@ relation get_top_classnames_in_program: Absyn.Program => string list =
 	------------------------------------------
 	get_top_classnames_in_program (Absyn.PROGRAM(_::rest,w)) => res
 end
+
 
 (* adrpo added 2005-12-16 *)
  (** relation: get_top_qualified_classnames
@@ -5058,12 +5359,12 @@ end
   axiom	get_top_qualified_classnames(_) => "Error"
  end
 
+
 (* adrpo added 2005-12-16 *)
 (** relation: get_top_qualified_classnames_in_program
  **
  ** Helper relation to get_top_qualified_classnames.
  **)
-
 relation get_top_qualified_classnames_in_program: Absyn.Program => string list =
 
   axiom	get_top_qualified_classnames_in_program Absyn.PROGRAM([],_) => []
@@ -5079,12 +5380,12 @@ relation get_top_qualified_classnames_in_program: Absyn.Program => string list =
 		get_top_qualified_classnames_in_program (Absyn.PROGRAM(_::rest,w)) => res
 end
 
+
 (* adrpo added 2005-12-16 *)
 (** relation: get_qualified
  **
  ** Helper relation to get_top_qualified_classnames_in_program.
  **)
-
 relation get_qualified: (string, Absyn.Within) => string =
 
   axiom	get_qualified(id, Absyn.TOP) => id
@@ -5104,7 +5405,6 @@ end
   ** It returns a string containing comma separated package names found 
   ** in the class definition.
   **)
-
  relation get_classnames_in_class:(Absyn.Path, Absyn.Program, Absyn.Class) 
 	  => string =
 
@@ -5119,11 +5419,11 @@ end
 	 get_classnames_in_class(inmodel,p,Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(path,_,_,_,_),_)) => res
  end
 
+
 (** relation: get_classnames_in_parts
  ** 
  ** Helper relation to get_classnames_in_class.
  **)
-
 relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
 
    axiom	get_classnames_in_parts [] => []
@@ -5139,11 +5439,11 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
 	 get_classnames_in_parts(_::rest) => res
  end
 
+
 (** relation: get_classnames_in_elts
  **
  ** Helper relation to get_classnames_in_parts.
  **)
-
  relation get_classnames_in_elts: (Absyn.ElementItem list) 
 	  => string list =
   
@@ -5164,7 +5464,6 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
   ** This relation gets all base classes of a class, NOT Recursive.
   ** It uses the environment to get the fully qualified names of the classes.
   **)
-
  relation get_base_classes : (Absyn.Class, Env.Env) 
 	   => Absyn.ComponentRef list =
 
@@ -5176,11 +5475,11 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
   axiom	get_base_classes (_,_) => []
  end
 
+
 (** relation: get_base_classes_from_parts
  **
  ** Helper relation to get_base_classes.
-**)
-
+ **)
  relation get_base_classes_from_parts: (Absyn.ClassPart list, Env.Env) 
 	   => Absyn.ComponentRef list =
 
@@ -5197,11 +5496,11 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
    axiom	get_base_classes_from_parts([], env) => []
  end
 
+
 (** relation: get_base_classes_from_elts
  **
  ** Helper relation to get_base_classes_from_parts.
  **)
-
  relation get_base_classes_from_elts : (Absyn.ElementItem list, Env.Env) 
 	   => Absyn.ComponentRef list =
 
@@ -5232,11 +5531,11 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
 	 get_base_classes_from_elts (_::rest, env) => cl
  end
 
+
  (** relation: count_base_classes
   **
   ** This relation counts the number of base classes of a class
   **)
-
  relation count_base_classes : (Absyn.Class) 
 	   => int =
 
@@ -5248,11 +5547,11 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
    axiom	count_base_classes (_) => 0
  end
 
+
 (** relation: count_base_classes_from_parts
  **
  ** Helper relation to count_base_classes.
  **)
-
  relation count_base_classes_from_parts: (Absyn.ClassPart list) 
 	   => int =
 
@@ -5269,11 +5568,11 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
    axiom	count_base_classes_from_parts([]) => 0
  end
 
+
 (** relation: count_base_classes_from_elts
  **
  ** Helper relation to count_base_classes_from_parts.
  **)
-
  relation count_base_classes_from_elts : (Absyn.ElementItem list) 
 	   => int =
 
@@ -5291,15 +5590,16 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
 	 count_base_classes_from_elts (_::rest) => cl
  end
 
+
 (** relation: get_icon_annotation_in_class
  **
  ** Helper relation to get_icon_annotation.
-**)
-
+ **)
  relation get_icon_annotation_in_class : (Absyn.Class) => string =
 
-	 (* class definitions *)
-   rule	get_icon_annotation_from_parts(parts) => annlst &
+	
+   rule	 (* class definitions *)
+	 get_icon_annotation_from_parts(parts) => annlst &
 	 get_icon_annotation_str(annlst) => s1 &
 	 string_append("{",s1) => s2 &
 	 string_append(s2,"}") => str 
@@ -5315,11 +5615,11 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
 	 get_icon_annotation_in_class (Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(_,_,_,_,SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_))),_)) => str 
  end
 
+
 (** relation: get_icon_annotation_from_parts
  **
  ** Helper relation to get_icon_annotation_in_class.
-**)
-
+ **)
  relation get_icon_annotation_from_parts: Absyn.ClassPart list 
 	   => Absyn.ElementArg list =
 
@@ -5354,11 +5654,11 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
 	 get_icon_annotation_from_parts(_::rest) => res
  end
 
+
 (** relation: get_icon_annotation_from_elts
  **
  ** Helper relation to get_icon_annotation_from_parts.
  **)
-
  relation get_icon_annotation_from_elts: (Absyn.ElementItem list) 
 	   => Absyn.ElementArg list =
 
@@ -5372,11 +5672,11 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
 	   => res
  end
 
+
 (** relation: contain_icon_annotation
  ** 
  ** Helper relation to get_icon_annotation_from_elts.
  **)
-
  relation contain_icon_annotation: Absyn.ElementArg list => () =
 
    axiom	contain_icon_annotation(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Icon",_),_,_)::_) => ()
@@ -5386,11 +5686,11 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
 	 contain_icon_annotation(_::lst) 
  end
 
+
 (** relation: get_icon_annotation_from_eqns
  **
  ** Helper relation to get_icon_annotation_from_parts.
  **)
-
  relation get_icon_annotation_from_eqns: (Absyn.EquationItem list) 
 	   => Absyn.ElementArg list =
 
@@ -5406,11 +5706,11 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
 	 get_icon_annotation_from_eqns(_::rest) => res
  end
 
+
 (** relation: get_icon_annotation_from_algs
  **
  ** Helper relation to get_icon_annotation_from_parts
  **)
-
  relation get_icon_annotation_from_algs: Absyn.AlgorithmItem list 
 	   => Absyn.ElementArg list =
 
@@ -5425,11 +5725,11 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
 	 get_icon_annotation_from_algs(_::rest) => res
  end
 
+
 (** relation: get_icon_annotation_str
  **
  ** Helper relation to get_icon_annotation_in_class.
  **)
-
  relation get_icon_annotation_str: (Absyn.ElementArg list) => string =
 
   rule	get_annotation_string (Icon_program,Absyn.ANNOTATION([ann])) => str 
@@ -5441,16 +5741,16 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
 	 get_icon_annotation_str( _::xs) => str
  end
 
+
 (** relation: get_diagram_annotation_in_class
  **
  ** Retrieve the diagram annotation as a string from the class passed as 
  ** argument.
  **)
-
  relation get_diagram_annotation_in_class : (Absyn.Class) => string =
-
-	(* class def. *)
-   rule	get_public_list(parts) => publst &
+	
+   rule	 (* class def. *)
+	 get_public_list(parts) => publst &
 	 get_protected_list(parts) => protlst &
 	 list_append(publst,protlst) => lst &
 	 get_diagram_annotation_in_elementitemlist(lst) => str
@@ -5464,7 +5764,14 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
 
  end
 
+
+(** relation: get_diagram_annotation_in_elementitemlist
+ **
+ ** Retrieve the diagram annotation from an element item list passed as
+ ** argument.
+ **)
  relation get_diagram_annotation_in_elementitemlist: (Absyn.ElementItem list) => string =
+
    axiom	get_diagram_annotation_in_elementitemlist [] => ""
 
    rule	get_diagram_annotation_str(annlst) => s1 &
@@ -5478,11 +5785,11 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
 	 get_diagram_annotation_in_elementitemlist(_::xs) => str
  end
 
+
 (** relation: get_diagram_annotation_str
  **
  ** Helper relation to get_diagram_anonotation_in_elementitemlist.
  **)
-
  relation get_diagram_annotation_str: (Absyn.ElementArg list) => string =
 
   rule	get_annotation_string (Diagram_program,Absyn.ANNOTATION([ann])) => str 
@@ -5494,38 +5801,38 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
 	 get_diagram_annotation_str( _::xs) => str
  end
 
+
 (** relation: get_nth_public_connector_str
  **
  ** Helper relation to get_nth_connector.
  **)
-
  relation get_nth_public_connector_str: (Absyn.Path, Absyn.Class, Absyn.Program,  int) => (string,Absyn.Path) =
 
    rule	get_nth_connector_str (p, modelpath, elt, n) => (str,tp)
-	 ------------------------------------------
-	 get_nth_public_connector_str (modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,_),_), p, n)  
+	------------------------------------------
+	get_nth_public_connector_str (modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,_),_), p, n)  
 	   => (str,tp)
 
 	 (** The rule above failed, count the number of connectors in the first public list, subtract the number 
 	  ** and try the rest of the list **)
    rule	count_public_connectors (modelpath,p,Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([Absyn.PUBLIC(elt)],cmt),file_info)) => c1 &
-	 int_sub(n,c1) => c2 &
-	 get_nth_public_connector_str(modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file_info),p,c2) => (str,tp)
-	 --------------------------------------------------
-	 get_nth_public_connector_str(modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,cmt),file_info), p, n) => (str,tp)
+	int_sub(n,c1) => c2 &
+	get_nth_public_connector_str(modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file_info),p,c2) => (str,tp)
+	--------------------------------------------------
+	get_nth_public_connector_str(modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(Absyn.PUBLIC(elt)::lst,cmt),file_info), p, n) => (str,tp)
 
    rule	get_nth_public_connector_str (modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(lst,cmt),file_info), p, n) => (str,tp)
-	 -----------------------------------------------------
-	 get_nth_public_connector_str (modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(_::lst,cmt),file_info), p, n) => (str,tp)
+	-----------------------------------------------------
+	get_nth_public_connector_str (modelpath, Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(_::lst,cmt),file_info), p, n) => (str,tp)
 
  end
+
 
  (** relation: get_nth_connector_str
   **
   ** This relation takes an ElementItem list and an int and  returns the name of the nth connector component
   ** in that list. 
   **)
-
  relation get_nth_connector_str: (Absyn.Program, Absyn.Path, Absyn.ElementItem list
 				  ,int)
 	   => (string, Absyn.Path) =
@@ -5565,12 +5872,12 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
    axiom	get_nth_connector_str(p,modelpath,[],n) => fail
  end
 
+
 (** relation: get_nth_compname
  ** 
  ** Returns the nth component name from a list of ComponentItem's.
  ** Index is from 1..n.
  **)
-
  relation get_nth_compname: (Absyn.ComponentItem list, int) => string =
 
    axiom	get_nth_compname (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,_,_),_,_)::lst,1) => id
@@ -5582,9 +5889,10 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
    axiom	get_nth_compname ([],_) => fail
  end
 
+
 (** relation: count_public_connectors
- **  This relation takes a Class and counts the number of connector 
-  ** components in the class. This also includes counting in inherited classes.
+ ** This relation takes a Class and counts the number of connector 
+ ** components in the class. This also includes counting in inherited classes.
  **)
  relation count_public_connectors: (Absyn.Path, Absyn.Program, Absyn.Class) 
 	  => int =
@@ -5608,12 +5916,12 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
 	 count_public_connectors (modelpath,p,Absyn.CLASS(a,b,c,d,e,Absyn.DERIVED(cname,_,_,_,_),_)) => res
  end
 
+
 (** relation: count_connectors
  **
  ** This relation takes a Path to the current model and a ElementItem list 
  ** and returns the number of connector components in that list.
  **)
-
  relation count_connectors: (Absyn.Path,Absyn.Program,Absyn.ElementItem list) 
 	  => int =
 
@@ -5640,14 +5948,14 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
    axiom	count_connectors(_, _, []) => 0
  end
 
+
  (** relation: get_connection_annotation_str
   **
   ** This relation takes an `EquationItem' and returns a comma separated 
   ** string of values  from the flat record of a connection annotation that 
   ** is found in the `EquationItem'.
   **)
-
-relation get_connection_annotation_str: Absyn.EquationItem => string =
+ relation get_connection_annotation_str: Absyn.EquationItem => string =
 
    rule	create_funcargs_from_elementargs(elts) => fargs &
 	 SCode.elaborate(Line_program) => p' &
@@ -5663,13 +5971,14 @@ relation get_connection_annotation_str: Absyn.EquationItem => string =
    axiom	get_connection_annotation_str(Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(_,_),NONE)) => fail
 
 end
+
+
 (** relation: create_functionargs_from_elementargs
  **
- **  Trasform an ElementArg list to function argments. This is used when
+ ** Trasform an ElementArg list to function argments. This is used when
  ** translating a graphical annotation to a record constructor.
  **)
-
-relation create_funcargs_from_elementargs: Absyn.ElementArg list 
+ relation create_funcargs_from_elementargs: Absyn.ElementArg list 
 	  => Absyn.FunctionArgs =
 
    axiom	create_funcargs_from_elementargs([]) => Absyn.FUNCTIONARGS([],[])
@@ -5686,11 +5995,11 @@ relation create_funcargs_from_elementargs: Absyn.ElementArg list
  end
 
 
- (**relation: get_nth_connectionitem_in_class
+ (** relation: get_nth_connectionitem_in_class
   **
   ** This relation takes a `Class' and  an int ane returns the nth 
   ** `EquationItem' containing a connect statement in that class.
- **)
+  **)
  relation get_nth_connectionitem_in_class: (Absyn.Class, int) => Absyn.EquationItem =
 
    rule	get_nth_connectionitem_in_classparts(parts,n) => eq
@@ -5698,12 +6007,12 @@ relation create_funcargs_from_elementargs: Absyn.ElementArg list
 	 get_nth_connectionitem_in_class ( Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_),n) => eq
  end
 
-(**relation: get_nth_connectionitem_in_classparts
+
+(** relation: get_nth_connectionitem_in_classparts
  **
  ** This relation takes a `ClassPart' list and an int and returns 
  ** the nth connections as an `EquationItem'.
  **)
-
  relation get_nth_connectionitem_in_classparts: (Absyn.ClassPart list, int) => Absyn.EquationItem =
 
    rule	get_nth_connectionitem_in_equations(e,n) => eq
@@ -5724,13 +6033,13 @@ relation create_funcargs_from_elementargs: Absyn.ElementArg list
 
  end
 
+
  (** relation: get_nth_connection_in_equations
   **
   ** This relation takes  an `Equation' list and an int and 
   ** returns the nth connection as an `Equation'. If the number is 
   ** larger than the number of connections in the list, the relation fails.
- **)
-
+  **)
  relation get_nth_connectionitem_in_equations: (Absyn.EquationItem list, int) => Absyn.EquationItem =
 
  axiom	get_nth_connectionitem_in_equations ((eq as Absyn.EQUATIONITEM((Absyn.EQ_CONNECT(_,_)),_))::xs,1) => eq
@@ -5753,7 +6062,6 @@ relation create_funcargs_from_elementargs: Absyn.ElementArg list
   ** returns a comma separated string of componentreferences, e.g "R1.n,C.p" 
   ** for  connect(R1.n,C.p).
   **)
-
  relation get_connection_str:  Absyn.Equation => string =
 
   rule	Absyn.cref_to_path cr1 => p1 &
@@ -5766,12 +6074,12 @@ relation create_funcargs_from_elementargs: Absyn.ElementArg list
 	 get_connection_str Absyn.EQ_CONNECT(cr1,cr2) => str
  end 
 
+
 (** relation: count_connections
  **
  ** This relation takes a `Class' and returns an int with the number of 
  ** connections in the `Class'.
- **)
-		 
+ **)		 
  relation count_connections: Absyn.Class => int =
 
   rule	count_connections_in_classparts(parts) => count
@@ -5780,12 +6088,12 @@ relation create_funcargs_from_elementargs: Absyn.ElementArg list
 	  => count
  end
 
+
  (** relation: count_connections_in_classparts
   **
   ** This relation takes a `ClassPart' list and returns an int with the 
   ** number of connections in that list.
   **)
-
  relation count_connections_in_classparts: Absyn.ClassPart list => int =
 
    rule	count_connections_in_equations(eqlist) => r1 &
@@ -5801,12 +6109,12 @@ relation create_funcargs_from_elementargs: Absyn.ElementArg list
 	 axiom count_connections_in_classparts([]) => 0
  end
 
+
  (** relation: count_connections_in_equations
   **
   ** This relation takes an `Equation' list and returns  an int 
   ** with the number of connect statements in that list.
- **)
-
+  **)
  relation count_connections_in_equations: Absyn.EquationItem list => int =
 
    rule	count_connections_in_equations(xs) => r1 &
@@ -5821,11 +6129,11 @@ relation create_funcargs_from_elementargs: Absyn.ElementArg list
    axiom	count_connections_in_equations([]) => 0
  end
 
+
 (** relation: get_component_annotations_from_elts
  **
  ** Helper relation to get_component_annotations.
  **)
-
  relation get_component_annotations_from_elts: (Absyn.Element list) 
 	  => string =
 
@@ -5837,11 +6145,11 @@ relation create_funcargs_from_elementargs: Absyn.ElementArg list
 	 get_component_annotations_from_elts(comps) => res'
  end
 
+
 (** relation: get_componentitems_annotations
  **
  ** Helper relation to get_component_annotations_from_elts
- **)
-		   
+ **)		   
  relation get_componentitems_annotations: (Absyn.Element list, Env.Env) 
 	   => string list =
 
@@ -5865,11 +6173,11 @@ relation create_funcargs_from_elementargs: Absyn.ElementArg list
 	 get_componentitems_annotations(_::rest,env) => res
  end
 
+
 (** relation: get_componentitems_annotations_from_items
  **
  ** Helper relation to get_componentitems_annotations.
  **)
-
  relation get_componentitems_annotations_from_items: (Absyn.ComponentItem list,
 					   Env.Env) 
 	   => string list =
@@ -5902,14 +6210,14 @@ relation create_funcargs_from_elementargs: Absyn.ElementArg list
 
  end
 
+
 (** relation: get_component_annotation
  **
  ** This relation takes an `Element' and returns a comma separated string 
  ** of values corresponding to the flat record for a component annotation. 
  ** If several components are declared within the eleement, a list of values
  ** is given for each of them.
- **)
- 
+ **) 
 relation get_component_annotation: Absyn.Element => string =
 
    rule	get_componentitems_annotation(lst) => str
@@ -5918,11 +6226,11 @@ relation get_component_annotation: Absyn.Element => string =
 	 axiom get_component_annotation _ => ""
  end 
 
+
 (** relation: get_componentitems_annotation
  **
  ** Helper relation to get_component_annotation.
-**)
-
+ **)
  relation get_componentitems_annotation: Absyn.ComponentItem list => string =
 
    rule	get_annotation_string(Placement_program, Absyn.ANNOTATION(mod)) => s1 &
@@ -5958,11 +6266,12 @@ relation get_component_annotation: Absyn.Element => string =
 	 get_componentitems_annotation ([Absyn.COMPONENTITEM(_,_,NONE)]) => res
  end
 
+
  (** relation: get_component_modification
   **
   ** This relation takes an `Element' and returns a comma separated list of 
   ** Code expression for the modification of the component.
- **)
+  **)
  relation get_component_modification: Absyn.Element => string =
 
    rule	get_componentitems_modification(lst) => str
@@ -5971,11 +6280,11 @@ relation get_component_annotation: Absyn.Element => string =
 	 axiom get_component_modification _ => ""
  end
 
+
 (** relation: get_componentitems_modification
  **
  ** Helper relation to get_component_modification.
  **)
-
  relation get_componentitems_modification: Absyn.ComponentItem list => string =
 
    rule	Dump.print_exp_str Absyn.CODE(Absyn.C_MODIFICATION(mod)) => s1 &
@@ -6013,11 +6322,10 @@ relation get_component_annotation: Absyn.Element => string =
   ** handled specially because Modelica does not have the possibility to store 
   ** polymorphic values (e.g. different record classes with the same baseclass)
   ** in for instance an array.
- **)
-
+  **)
  relation get_annotation_string: (Absyn.Program,Absyn.Annotation) => string =
 
-   rule	strip_graphics_modification(mod) => (stripmod,[Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)]) &
+   rule	 strip_graphics_modification(mod) => (stripmod,[Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)]) &
 	 SCode.build_mod(SOME(Absyn.CLASSMOD(stripmod,NONE)),false,Absyn.NON_EACH) => mod' &
 
 	 SCode.elaborate(p) => p' &
@@ -6043,7 +6351,7 @@ relation get_component_annotation: Absyn.Element => string =
 	 get_annotation_string(p,Absyn.ANNOTATION([(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Icon",_),SOME(Absyn.CLASSMOD(mod,_)),_))])) => totstr
 
 	 (* First line in the first rule above fails if return value from strip_graphics_modification doesn't match the rhs of => *)
-   rule	strip_graphics_modification(mod) => (stripmod, gxmods) &
+   rule	 strip_graphics_modification(mod) => (stripmod, gxmods) &
 	 SCode.build_mod(SOME(Absyn.CLASSMOD(stripmod,NONE)),false,Absyn.NON_EACH) => mod' &
 	 SCode.elaborate(p) => p' &
 	 Inst.make_simple_env_from_program(p',Absyn.IDENT("Icon")) => env  & 
@@ -6060,7 +6368,7 @@ relation get_component_annotation: Absyn.Element => string =
 	 get_annotation_string(p,Absyn.ANNOTATION([(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Icon",_),SOME(Absyn.CLASSMOD(mod,_)),_))])) => str
 
 
-   rule	strip_graphics_modification(mod) => (stripmod,[Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)]) &
+   rule	 strip_graphics_modification(mod) => (stripmod,[Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(_,SOME(graphicexp))),_)]) &
 	 SCode.build_mod(SOME(Absyn.CLASSMOD(stripmod,NONE)),false,Absyn.NON_EACH) => mod' &
 	 SCode.elaborate(p) => p' &
 	 Inst.make_env_from_program(p',Absyn.IDENT("Diagram")) => env  & 
@@ -6084,7 +6392,7 @@ relation get_component_annotation: Absyn.Element => string =
 	 -----------------------------------
 	 get_annotation_string(p,Absyn.ANNOTATION([(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Diagram",_),SOME(Absyn.CLASSMOD(mod,_)),_))])) => totstr
 
-   rule	SCode.build_mod(SOME(Absyn.CLASSMOD(mod,NONE)),false,Absyn.NON_EACH) => mod' & 
+   rule	 SCode.build_mod(SOME(Absyn.CLASSMOD(mod,NONE)),false,Absyn.NON_EACH) => mod' & 
 	 SCode.elaborate(p) => p' &
 	 Inst.make_env_from_program(p',Absyn.IDENT(anncname)) => env  & 
 	 get_class_in_program(anncname,p) => placementc &
@@ -6099,18 +6407,18 @@ relation get_component_annotation: Absyn.Element => string =
 	 -----------------------------------------
 	 get_annotation_string(p, Absyn.ANNOTATION([(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT(anncname,_),SOME(Absyn.CLASSMOD(mod,_)),_))])) => str
 
-   rule	Print.print_buf "get_annotation_string failed!\n"
+   rule	 Print.print_buf "get_annotation_string failed!\n"
 	 ---------------------------------------
 	 get_annotation_string(_,_) => fail
  end
+
 
  (** relation: strip_graphics_modification
   ** 
   ** This relation strips out the `graphics' modification from an ElementArg 
   ** list and return two lists, one with the other modifications and the 
   ** second with the `graphics' modification
- **)
-
+  **)
  relation strip_graphics_modification: (Absyn.ElementArg list) => (Absyn.ElementArg list, Absyn.ElementArg list) =
 
    axiom	strip_graphics_modification((mod as Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("graphics",_),_,_))::rest) => (rest, [mod])
@@ -6126,7 +6434,7 @@ relation get_component_annotation: Absyn.Element => string =
  (** relation: get_components_in_class
   ** 
   ** Both public and protected lists are searched.
- **)
+  **)
 relation get_components_in_class: (Absyn.Class) => Absyn.Element list =
 
   axiom	 get_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt),_)) => []
@@ -6148,10 +6456,11 @@ relation get_components_in_class: (Absyn.Class) => Absyn.Element list =
   axiom	get_components_in_class(_) => []
  end
 
+
  (** relation: get_public_components_in_class
   ** 
   ** Public lists are searched.
- **)
+  **)
 relation get_public_components_in_class: (Absyn.Class) => Absyn.Element list =
 
   axiom	 get_public_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt),_)) => []
@@ -6171,10 +6480,11 @@ relation get_public_components_in_class: (Absyn.Class) => Absyn.Element list =
   axiom	get_public_components_in_class(_) => []
  end
 
+
  (** relation: get_protected_components_in_class
   ** 
   ** Protected lists are searched.
- **)
+  **)
 relation get_protected_components_in_class: (Absyn.Class) => Absyn.Element list =
 
   axiom	 get_protected_components_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt),_)) => []
@@ -6194,11 +6504,11 @@ relation get_protected_components_in_class: (Absyn.Class) => Absyn.Element list 
   axiom	get_protected_components_in_class(_) => []
  end
 
+
 (** relation: get_components_in_elementitems
  **
  ** Helper relation to get_components_in_class.
- **)
-		   
+ **)		   
  relation get_components_in_elementitems: (Absyn.ElementItem list) 
 	   => Absyn.Element list =
 
@@ -6214,11 +6524,11 @@ relation get_protected_components_in_class: (Absyn.Class) => Absyn.Element list 
 	 get_components_in_elementitems(_::rest) => res
 end
 
+
 (** relation: get_nth_component_in_class
  **
  ** Returns the nth Component of a class. Indexed from 1..n.
  **)
-
 relation get_nth_component_in_class:  (Absyn.Class,int) => Absyn.Element =
 
    rule	count_components_in_elts(elt) => count &
@@ -6261,11 +6571,11 @@ relation get_nth_component_in_class:  (Absyn.Class,int) => Absyn.Element =
 
  end
 
+
  (** relation: get_elementitems_in_class
   ** 
   ** Both public and protected lists are searched.
- **)
-
+  **)
  relation get_elementitems_in_class: (Absyn.Class) => Absyn.ElementItem list =
 
    axiom	 get_elementitems_in_class (Absyn.CLASS(a,b,c,d,e,Absyn.PARTS([],cmt),_)) => []
@@ -6285,12 +6595,12 @@ relation get_nth_component_in_class:  (Absyn.Class,int) => Absyn.Element =
    axiom get_elementitems_in_class(_) => []
  end
 
+
  (** relation: get_nth_component_in_elementintems 
   **
   ** This relation takes an `ElementItem' list and and integer and returns 
   ** the nth component in the list, indexed from 1..n.
- **)
-
+  **)
  relation get_nth_component_in_elementitems: (Absyn.ElementItem list, int) 
 	   => Absyn.Element =
 
@@ -6319,11 +6629,11 @@ relation get_nth_component_in_class:  (Absyn.Class,int) => Absyn.Element =
   axiom	get_nth_component_in_elementitems([],_) => fail
  end
 
+
 (** relation: get_components_info
  **
  ** Helper relation to get_components.
  ** Return all the info as a comma separated list of values.
-
  ** get_component_info => {{name, type, comment, access, final, flow, 
  ** replaceable, variability,innerouter,vardirection},..}
  ** where access is one of: "public", "protected"
@@ -6334,10 +6644,14 @@ relation get_nth_component_in_class:  (Absyn.Class,int) => Absyn.Element =
  **  or "unspecified"
  ** where innerouter is one of: "inner", "outer", ("innerouter") or "none"
  ** where vardirection is one of: "input", "output" or "unspecified".
+ **
+ ** inputs:  (Absyn.Element list,
+              string, /* "public" or "protected" */
+              Env.Env)
+ ** outputs:  string
  **)
-
  relation get_components_info: (Absyn.Element list,
-				string, (* "public" or "protected" *)
+				string, 
 				Env.Env)
 	  => string =
 
@@ -6349,14 +6663,20 @@ relation get_nth_component_in_class:  (Absyn.Class,int) => Absyn.Element =
   axiom	get_components_info(_,_,_) => ""
  end
 
+
 (** relation: get_components_info2
  **
  ** Helper relation to get_components_info
+ **
+ ** inputs: (Absyn.Element list, 
+             string, /* "public" or "protected" */
+             Env.Env)  
+ ** outputs: string list 
  **)
-
  relation get_components_info2: (Absyn.Element list, 
-				 string, (* "public" or "protected" *)
+				 string,
 				 Env.Env) => string list =
+
    axiom	get_components_info2([],_,_) => []
 
    rule	get_component_info(elt,access,env) => lst1 &
@@ -6366,19 +6686,25 @@ relation get_nth_component_in_class:  (Absyn.Class,int) => Absyn.Element =
 	 get_components_info2(elt::rest,access,env) => res
  end
 
+
  (** relation: get_component_info
   **
   ** This relation takes an `Element' and returns a list of strings 
   ** of comma separated values of the 
-  **  type and name and comment, and attributes of  of the component, 
+  ** type and name and comment, and attributes of  of the component, 
   ** If Element is not a component, the empty string is returned
- **)
+  **
+  ** inputs: (Absyn.Element,
+              string, /* "public" or "protected" */
+              Env.Env) 
+  ** outputs: string list
+  **)
  relation get_component_info: (Absyn.Element,
-			       string, (* "public" or "protected" *)
+			       string,
 			       Env.Env) 
 	   => string list =
 
-   rule	Lookup.lookup_class(env,p,true) => (c,env') &
+   rule	 Lookup.lookup_class(env,p,true) => (c,env') &
 	 Env.get_env_path(env') => SOME(envpath) &
 	 Absyn.path_last_ident(p) => tpname &
 	 Absyn.join_paths(envpath,Absyn.IDENT(tpname)) => p' &
@@ -6398,7 +6724,7 @@ relation get_nth_component_in_class:  (Absyn.Class,int) => Absyn.Element =
 	 --------------------------------------
 	 get_component_info(Absyn.ELEMENT(f,r,inout,_,Absyn.COMPONENTS(attr,p,lst),_,_),access,env) => lst'
 
-	 rule	Absyn.path_string(p) => typename &
+   rule	 Absyn.path_string(p) => typename &
 	 get_componentitems_name(lst) => names &
 	 prefix_typename(typename,names) => lst &
 	 Util.bool_string(f) => final &
@@ -6414,18 +6740,18 @@ relation get_nth_component_in_class:  (Absyn.Class,int) => Absyn.Element =
 	 -------------------------------------------
 	 get_component_info(Absyn.ELEMENT(f,r,inout,_,Absyn.COMPONENTS(attr,p,lst),_,_),access,env) => lst'
 
-	 axiom	get_component_info(_,_,env) => []
+   axiom	 get_component_info(_,_,env) => []
 
-   rule	print "get_component_info failed\n"
+   rule	 print "get_component_info failed\n"
 	 -------------------------------------------
 	 get_component_info(_,_,_) => fail
  end
+
 
 (** relation: keyword_replaceable 
  **
  ** Returns true if RedeclareKeywords contains replaceable.
  **)
-
 relation keyword_replaceable: Absyn.RedeclareKeywords option => bool =
 
   axiom	keyword_replaceable(SOME(Absyn.REPLACEABLE)) => true
@@ -6434,6 +6760,7 @@ relation keyword_replaceable: Absyn.RedeclareKeywords option => bool =
 
 end
 
+
  (** relation: get_component_info_old
   **
   ** This relation takes an `Element' and returns a list of strings 
@@ -6441,7 +6768,7 @@ end
   **  type and name and comment of the component, e.g. 'Resistor,R1, "comment"' 
   ** or 'Resistor,R1,"comment1",R2,"comment2"'
   ** If Element is not a component, the empty string is returned
- **)
+  **)
  relation get_component_info_old: (Absyn.Element,
 			       Env.Env) 
 	   => string list =
@@ -6469,6 +6796,7 @@ end
 	 get_component_info_old(_,_) => fail
  end
 
+
 (** relation: inner_outer_str
  **
  ** Helper relation to get_component_info, retrieve the inner outer string.
@@ -6480,13 +6808,13 @@ end
   axiom	inner_outer_str (Absyn.UNSPECIFIED) => "\"none\""
   axiom	inner_outer_str (Absyn.INNEROUTER) => "\"innerouter\""
 end
+
 	
 (** relation: attr_flow_str
  **
  ** Helper relation to get_component_info, retrieve flow attribite as bool 
  ** string.
  **)
-
  relation attr_flow_str: (Absyn.ElementAttributes) => string =
 	 
   rule	Util.bool_string(f) => res
@@ -6494,12 +6822,12 @@ end
 	 attr_flow_str(Absyn.ATTR(f,_,_,_)) => res
  end
 
+
 (** relation: attr_variability_str
  **
  ** Helper relation to get_component_info, retrieve variability as a 
  ** string.
- **)
-		   
+ **)		   
  relation attr_variability_str: (Absyn.ElementAttributes) => string =
 
   axiom	attr_variability_str(Absyn.ATTR(_,Absyn.VAR,_,_)) => "\"unspecified\""
@@ -6510,13 +6838,13 @@ end
   axiom	attr_variability_str(Absyn.ATTR(_,Absyn.CONST,_,_)) 
 	  => "\"constant\""
  end
-	
+
+
 (** relation: attr_direction_str
  **
  ** Helper relation to get_component_info, retrieve direction as a 
  ** string.
- **)
-		   
+ **)		   
  relation attr_direction_str: (Absyn.ElementAttributes) => string =
 
   axiom	attr_direction_str(Absyn.ATTR(_,_,Absyn.INPUT,_)) => "\"input\""
@@ -6527,12 +6855,10 @@ end
 
 
 (** relation: suffix_infos
-**
+ **
  ** Helper relation to get_component_info. Add suffix info to 
  ** element names, etc.
- **)
-		   
-		   
+ **)	   
  relation suffix_infos: (string list ,string) => string list =
 
   axiom	suffix_infos ([],_) => []
@@ -6543,13 +6869,14 @@ end
 	 suffix_infos(str::rest,suffix) => str'::res 
  end
 
+
 (** relation: prefix_typename 
  **
  ** Helper relation to get_component_info. Add a prefix typename to each
  ** string in the list.
  **)
-
  relation prefix_typename: (string, string list) => string list =
+
    axiom	prefix_typename (_,[]) => []
 
    rule	prefix_typename(tp,rest) => res &
@@ -6564,8 +6891,7 @@ end
   ** This relation takes a `ComponentItems' list and returns a 
   ** comma separated list of all
   ** component names and comments (if any).
- **)
-
+  **)
  relation get_componentitems_name: Absyn.ComponentItem list => string list =
 
    rule	string_append(c1,",") => s1 &
@@ -6593,14 +6919,15 @@ end
 	 get_componentitems_name([Absyn.COMPONENTITEM(Absyn.COMPONENT(c1,_,_),_,_)]) => [res]
 
   axiom	get_componentitems_name([_]) => []
+
  end
+
 
  (** relation: add_to_public
   **
   ** This relation takes a 'Class' definition and adds an `ElementItem' to the first public list in the class.
   ** If no public list is available in the class one is created.
   **)
-
  relation add_to_public: (Absyn.Class, Absyn.ElementItem) => Absyn.Class = 
 
    rule	get_public_list(parts) => publst &
@@ -6617,13 +6944,13 @@ end
 
  end
 
+
  (** relation: add_to_protected
   **
   ** This relation takes a 'Class' definition and adds an `ElementItem' to 
   ** the first protected list in the class.
   ** If no protected list is available in the class one is created.
   **)
-
  relation add_to_protected: (Absyn.Class, Absyn.ElementItem) => Absyn.Class = 
 
    rule	get_protected_list(parts) => protlst &
@@ -6640,12 +6967,12 @@ end
 
  end
 
+
  (** relation: add_to_equation
   ** This relation takes a 'Class' definition and adds an `EquationItem' to 
   ** the first equation list in the class.
   ** If no public list is available in the class one is created.
   **)
-
  relation add_to_equation: (Absyn.Class, Absyn.EquationItem) => Absyn.Class = 
 
    rule	get_equation_list(parts) => eqlst &
@@ -6671,7 +6998,6 @@ end
   ** definition at the top level in the program by the class definition of 
   ** the `Class'.
   **)
-
  relation replace_class_in_program: (Absyn.Class, Absyn.Program) => Absyn.Program =
    axiom replace_class_in_program(c, Absyn.PROGRAM([],w)) => Absyn.PROGRAM([c],w)
    rule	name1 = name2
@@ -6694,13 +7020,13 @@ end
 	 replace_class_in_program(c,p) => fail
  end
 
+
  (** relation: insert_class_in_program 
   **
   ** This relation inserts the class into the Program at the scope given by the
   ** within argument. If the class referenced by the within argument is not 
   ** defined, the relation prints an error message and fails.
   **)
-
  relation insert_class_in_program: (Absyn.Class, Absyn.Within, Absyn.Program) => Absyn.Program =
 
    rule	get_class_in_program(n1,p) => c2 &
@@ -6721,6 +7047,7 @@ end
 	 insert_class_in_program(c1 as Absyn.CLASS(name,_,_,_,_,_,_),w,p) => fail	
  end
 
+
  (** relation: insert_class_in_class
   ** 
   ** This relation takes a class to update (the first argument)  and an inner 
@@ -6729,7 +7056,6 @@ end
   ** pointing inside the class (including the class itself in the reference), 
   ** and updates the class with the inner class.
   **)
-
  relation insert_class_in_class: (Absyn.Class, Absyn.Within, Absyn.Class) 
 	  => Absyn.Class =
 
@@ -6749,23 +7075,23 @@ end
 	 insert_class_in_class(_,_,_) => fail
  end
 
+
  (** relation: get_first_ident_from_path
   **
   ** This relation takes a `Path` as argument and returns the first `Ident' 
   ** of the path.
   **)
-
  relation get_first_ident_from_path: Absyn.Path => Absyn.Ident =
       axiom get_first_ident_from_path (Absyn.IDENT(name)) => name
       axiom get_first_ident_from_path (Absyn.QUALIFIED(name,path)) => name
  end
+
 
  (** relation: remove_inner_class 
   **
   ** This relation takes two class definitions. The first one is the local 
   ** class that should be removed from the second one.
   **)
-
  relation remove_inner_class: (Absyn.Class, Absyn.Class) => Absyn.Class =
 
    rule	get_public_list(parts) => publst &
@@ -6780,12 +7106,12 @@ end
 	 remove_inner_class (_,_) => fail
  end
 
+
  (** relation: remove_class_in_elementitemlist
   **
   ** This relation takes an Element list and a Class and returns a modified 
   ** element list where the class definition of the class is removed.
   **)
-
  relation remove_class_in_elementitemlist: (Absyn.ElementItem list, Absyn.Class) => Absyn.ElementItem list =
 
    rule	remove_class_in_elementitemlist(xs,c) => res
@@ -6811,12 +7137,12 @@ end
    axiom	 remove_class_in_elementitemlist([],c) => [Absyn.ELEMENTITEM(Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED,"",Absyn.CLASSDEF(false,c),Absyn.INFO("",0,0),NONE))]
  end
 
+
 (** relation: replace_inner_class 
  **
  ** This relation takes two class definitions. The first one is 
  ** inserted/replaced as a local class inside the second one.
  **)
-
  relation replace_inner_class: (Absyn.Class, Absyn.Class) => Absyn.Class =
 
    rule	get_public_list(parts) => publst &
@@ -6830,12 +7156,12 @@ end
 	 replace_inner_class (_,_) => fail
  end
 
+
 (** relation: replace_class_in_elementitemlist
  **
  ** This relation takes an Element list and a Class and returns a modified 
  ** element list where the class definition of the class is updated or added.
  **)
-
  relation replace_class_in_elementitemlist: (Absyn.ElementItem list, 
 					     Absyn.Class) 
 	  => Absyn.ElementItem list =
@@ -6863,12 +7189,12 @@ end
    axiom	 replace_class_in_elementitemlist([],c) => [Absyn.ELEMENTITEM(Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED,"",Absyn.CLASSDEF(false,c),Absyn.INFO("",0,0),NONE))]
  end
 
+
 (** relation: get_inner_class
  **
  ** This relation takes a class name and a class and return the inner class 
  ** definition having that name.
  **)
-
  relation get_inner_class: (Absyn.Class, Absyn.Ident) => Absyn.Class =
    rule	get_public_list(parts) => publst &
 	 get_class_from_elementitemlist(publst,name) => c1
@@ -6885,13 +7211,13 @@ end
 	 get_inner_class (c,name) => fail
  end
 
+
  (** relation: replace_public_list
   **
   ** This relation replaces the `ElementItem' list in the `ClassPart' list, 
   ** and returns the updated list.
   ** If no public list is available, one is created.
- **)
-
+  **)
  relation replace_public_list: (Absyn.ClassPart list,Absyn.ElementItem list) 
 	  => Absyn.ClassPart list =
 
@@ -6907,13 +7233,13 @@ end
    axiom replace_public_list([],newpublist) => [Absyn.PUBLIC(newpublist)]
  end
 
+
 (** relation: replace_protected_list
  **
  ** This relation replaces the `ElementItem' list in the `ClassPart' list, 
  ** and returns the updated list.
  ** If no protected list is available, one is created.
- **)
-		 
+ **)		 
  relation replace_protected_list: (Absyn.ClassPart list,
 				   Absyn.ElementItem list) 
 	  => Absyn.ClassPart list =
@@ -6930,13 +7256,14 @@ end
    axiom replace_protected_list([],newprotlist) => [Absyn.PROTECTED(newprotlist)]
  end
 
+
 (** relation: delete_public_list
  **
  ** Deletes all PULIC classparts from the list.
  **)
-
  relation delete_public_list:(Absyn.ClassPart list) 
 	   => Absyn.ClassPart list =
+
    axiom	delete_public_list([]) => []
 
    rule	delete_public_list(xs) => res
@@ -6948,13 +7275,14 @@ end
 	 delete_public_list(x::xs) => x::res
  end
 
+
 (** relation: delete_protected_list
-**
+ **
  ** Deletes all PROTECTED classparts from the list.
  **)
-
  relation delete_protected_list:(Absyn.ClassPart list) 
 	   => Absyn.ClassPart list =
+
    axiom	delete_protected_list([]) => []
 
    rule	delete_protected_list(xs) => res
@@ -6970,8 +7298,7 @@ end
   **
   ** This relation replaces the `EquationItem' list in the `ClassPart' list, 
   ** and returns the updated list.
- *)
-
+  **)
  relation replace_equation_list: (Absyn.ClassPart list,
 				  Absyn.EquationItem list) 
 	  => Absyn.ClassPart list =
@@ -6986,12 +7313,12 @@ end
    axiom replace_equation_list([],_) => []
  end
 
+
 (** relation: get_public_list
  **
  ** This relation takes a ClassPart List and returns an appended list of 
  ** all public lists.
- **)
-		 
+ **)		 
  relation get_public_list: Absyn.ClassPart list => Absyn.ElementItem list =
 
   axiom	get_public_list([]) => []
@@ -7007,11 +7334,11 @@ end
 
  end
 
+
  (** relation: get_protected_list
   ** This relation takes a ClassPart List and returns an appended list of 
   ** all protected lists.
- **)
-
+  **)
  relation get_protected_list: Absyn.ClassPart list => Absyn.ElementItem list =
 
    axiom	get_protected_list([]) => []
@@ -7026,12 +7353,12 @@ end
 	 get_protected_list(x::xs) => ys
  end
 
+
 (** relation: get_equation_list
  **
  ** This relation takes a ClassPart List and returns the first EquationItem 
  ** list of the class.
- **)
-		 
+ **)		 
  relation get_equation_list: Absyn.ClassPart list => Absyn.EquationItem list =
 
    axiom get_equation_list Absyn.EQUATIONS(lst)::rest => lst
@@ -7049,7 +7376,6 @@ end
  ** This relation takes an ElementItem list and an Ident and returns the 
  ** class definition among the element list having that identifier.
  **)
-
  relation get_class_from_elementitemlist: (Absyn.ElementItem list, 
 					   Absyn.Ident) 
 	  => Absyn.Class =
@@ -7074,12 +7400,12 @@ end
    axiom	 get_class_from_elementitemlist([],_) => fail
  end
 
+
 (** relation: class_in_program
  **
  ** This relation takes a name and a Program and returns true if the name 
  ** exists as a top class in the program.
  **)
-
  relation class_in_program:(string,Absyn.Program) => bool = 
 
    axiom class_in_program (str,Absyn.PROGRAM([],_)) => false
@@ -7093,13 +7419,11 @@ end
  end
 
 
-
 (** relation: get_pathed_class_in_program
  **
  ** This relation takes a `Path' and a `Program` and retrieves the class 
  ** definition referenced by the `Path' from the `Program'.
  **)
-
  relation get_pathed_class_in_program: (Absyn.Path, Absyn.Program) 
 	  => Absyn.Class =
 
@@ -7114,11 +7438,11 @@ end
 	 get_pathed_class_in_program (path as Absyn.QUALIFIED(c1,prest),p as Absyn.PROGRAM(_,w)) => res
  end
 
+
 (** relation: get_classes_in_class
  ** This relation takes a `Class' definition and returns a list of local 
  ** `Class' definitions of that class.
- **)
-		 
+ **)		 
  relation get_classes_in_class: (Absyn.Path, Absyn.Program,Absyn.Class) 
 	  => Absyn.Class list =
 
@@ -7132,11 +7456,11 @@ end
 	 get_classes_in_class(modelpath,p,Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(path,_,_,_,_),_)) => res
  end
 
+
 (** relation: get_classes_in_parts
  **
  ** Helper relation to get_classes_in_class.
  **)
-
  relation get_classes_in_parts: Absyn.ClassPart list => Absyn.Class list =
 
    axiom	 get_classes_in_parts [] => []	
@@ -7158,11 +7482,11 @@ end
 	 get_classes_in_parts(_::rest) => res
  end
 
+
 (** relation: get_classes_in_elts
  **
  ** Helper relation to get_classes_in_parts.
  **)
-
  relation get_classes_in_elts: Absyn.ElementItem list => Absyn.Class list =
 
    axiom	get_classes_in_elts [] => []
@@ -7177,13 +7501,13 @@ end
 	     => res
  end
 
+
  (** relation: get_class_in_program
   **
   ** This relation takes a Path and a Program and returns the class with 
   ** the name `Path'.
   ** If that class does not exist, the relation fail
- **)
-
+  **)
  relation get_class_in_program:(string, Absyn.Program) => Absyn.Class = 
 
    axiom get_class_in_program (str,Absyn.PROGRAM([],_)) => fail
@@ -7198,6 +7522,7 @@ end
 	 get_class_in_program (str, Absyn.PROGRAM((c1 as Absyn.CLASS(c1name,_,_,_,_,_,_))::p,w)) => c1
  end
 
+
  (** relation: modification_to_absyn
   **
   ** This relation takes a list of `NamedArg' and returns an absyn 
@@ -7210,7 +7535,6 @@ end
   ** e.g. AST x = ASTModification(redeclare R2 r, x=4.2); // new datatype AST
   **					 // new constructor operator ASTModification
   **)
-
  relation modification_to_absyn: (Absyn.NamedArg list,
 				  Absyn.Modification option) 
 	   => Absyn.Modification option =
@@ -7222,11 +7546,11 @@ end
    axiom	modification_to_absyn(nargs,oldmod) => oldmod
  end
 
+
 (** relation: modification_to_absyn2
  **
  ** Helper relation to modification_to_absyn.
  **)
-
  relation modification_to_absyn2: (Absyn.NamedArg list ) 
 	   => Absyn.Modification option =
 
@@ -7244,6 +7568,7 @@ end
 	 modification_to_absyn2(x::xs) => res
  end
 
+
  (** relation: annotation_list_to_absyn_comment
   **
   ** This relation takes a list of `NamedArg' and returns an absyn Comment.
@@ -7251,7 +7576,6 @@ end
   ** is converted to SOME(COMMENT(ANNOTATION(Placement(...),
   **					      SOME("stringcomment")))) 
   **)
-
  relation annotation_list_to_absyn_comment: (Absyn.NamedArg list,
 					      Absyn.Comment option) 
 	   => Absyn.Comment option =
@@ -7263,42 +7587,44 @@ end
    axiom	annotation_list_to_absyn_comment(nargs,oldann) => oldann
  end
 
+
 (** relation: annotation_list_to_absyn_comment2
  **
  ** Helper relation to annotation_list_to_absyn_comment2.
  **)
-
  relation annotation_list_to_absyn_comment2: (Absyn.NamedArg list) 
 	  => Absyn.Comment option =
-	   (*special case for empty string *)
-   rule	annotation_list_to_absyn(nargs) => Absyn.ANNOTATION([]) &
+	
+   rule	 (*special case for empty string *)
+	 annotation_list_to_absyn(nargs) => Absyn.ANNOTATION([]) &
 	 comment_to_absyn(nargs) => SOME("")
 	 ----------------------------------
 	 annotation_list_to_absyn_comment2(nargs) => NONE
 
-   rule	annotation_list_to_absyn(nargs) => Absyn.ANNOTATION([]) &
+   rule	 annotation_list_to_absyn(nargs) => Absyn.ANNOTATION([]) &
 	 comment_to_absyn(nargs) => SOME(strcmt)
 	 ----------------------------------
 	 annotation_list_to_absyn_comment2(nargs) => SOME(Absyn.COMMENT(NONE,SOME(strcmt)))
 
-   rule	annotation_list_to_absyn(nargs) => Absyn.ANNOTATION([]) &
+   rule	 annotation_list_to_absyn(nargs) => Absyn.ANNOTATION([]) &
 	 comment_to_absyn(nargs) => NONE
 	 ----------------------------------
 	 annotation_list_to_absyn_comment2(nargs) => NONE
 
-   rule	annotation_list_to_absyn(nargs) => annotation &
+   rule	 annotation_list_to_absyn(nargs) => annotation &
 	 comment_to_absyn(nargs) => strcmt
 	 ----------------------------------
 	 annotation_list_to_absyn_comment2(nargs) => SOME(Absyn.COMMENT(SOME(annotation),strcmt))
 
    axiom annotation_list_to_absyn_comment2(_) => NONE
+
  end
+
 
 (** relation: comment_to_absyn
  **
  ** Helper relation to annotation_list_to_absyn_comment2.
  **)
-
  relation comment_to_absyn: (Absyn.NamedArg list) => string option =
 
    axiom	comment_to_absyn(Absyn.NAMEDARG("comment",Absyn.STRING(str))::_) 
@@ -7311,14 +7637,15 @@ end
    axiom	comment_to_absyn(_) => NONE
  end
 
+
 (** relation: annotation_list_to_absyn
  **
  ** This relation takes a list of `NamedArg' and returns an absyn `Annotation'.
  ** for instance [annotation = Placement( ...) ] is converted to 
  ** ANNOTATION(Placement(...)) 
  **)
-
  relation annotation_list_to_absyn: (Absyn.NamedArg list) => Absyn.Annotation =
+
   axiom annotation_list_to_absyn( [] ) => Absyn.ANNOTATION([])
 
    rule	record_constructor_to_modification(e) => eltarg
@@ -7330,23 +7657,23 @@ end
 	 annotation_list_to_absyn(a::al) => annres
  end
 
+
  (** relation:record_constructor_to_modification
   **
   ** This relation takes a record constructor expression and translates it 
   ** into a `ElementArg'. Since modifications must be named, only named 
   ** arguments are treated in the record constructor.
   **)
-
  relation record_constructor_to_modification: (Absyn.Exp ) 
 	  => Absyn.ElementArg =
 
-   rule	(* Covers the case annotate=Diagram(x=1,y=2) *)
+   rule	 (* Covers the case annotate=Diagram(x=1,y=2) *)
 	 Util.list_map(nargs,namedarg_to_modification) => eltarglst &
 	 let res = Absyn.MODIFICATION(false,Absyn.NON_EACH,cr,SOME(Absyn.CLASSMOD(eltarglst,NONE)),NONE)
 	 -----------------------------------
 	 record_constructor_to_modification(Absyn.CALL(cr,Absyn.FUNCTIONARGS([],nargs))) => res	
 
-   rule	(* Covers the case annotate=Diagram(SOMETHING(x=1,y=2)) *)
+   rule	 (* Covers the case annotate=Diagram(SOMETHING(x=1,y=2)) *)
 	 Util.list_map(nargs,namedarg_to_modification) => eltarglst &
 	 record_constructor_to_modification(e) => emod &
 	 let res = Absyn.MODIFICATION(false, Absyn.NON_EACH,
@@ -7356,17 +7683,17 @@ end
 						       Absyn.FUNCTIONARGS([e as Absyn.CALL(_,_)],nargs))) => res	
 
 
-   rule	Print.print_buf "record_constructor_to_modification failed, exp=" & 
+   rule	 Print.print_buf "record_constructor_to_modification failed, exp=" & 
 	 Absyn.print_absyn_exp e & Print.print_buf "\n" 
 	 -------------------------
 	 record_constructor_to_modification(e) => fail
  end
 
+
 (** relation: namedarg_to_modification
  **
  ** This relation takes a `NamedArg' and translates it into a `ElementArg'.
- **)
-		 
+ **)		 
  relation namedarg_to_modification: (Absyn.NamedArg) => Absyn.ElementArg = 
 	 
   rule	record_constructor_to_modification(c) => Absyn.MODIFICATION(_,_,_,SOME(Absyn.CLASSMOD(elts,_)),NONE) &
@@ -7384,12 +7711,12 @@ end
 	 namedarg_to_modification(_) => fail
  end
 
+
  (** relation: add_instantiated_class
   **
   ** This relation adds an instantiated class to the list of instantiated 
   ** classes. If the class path already exists, the class is replaced. 
   **)
-
   relation add_instantiated_class: (InstantiatedClass list, InstantiatedClass) 
 	  => InstantiatedClass list =
 
@@ -7407,12 +7734,12 @@ end
 	   => x::res
  end
 
+
 (** relation: get_instantiated_class
  **
  ** This relation get an instantiated class from the list of instantiated 
  ** classes.
- **)
-		 
+ **)		 
  relation get_instantiated_class: (InstantiatedClass list, Absyn.Path) 
 	  => InstantiatedClass =
 
@@ -7428,20 +7755,25 @@ end
 	   => res
  end
 
+
  (** relation: get_contained_class_and_file
   ** author: PA
   ** 
   ** Returns the package or class in which the model is saved and the file 
-  **  name it is saved in. This is used to save a model in a package when the 
+  ** name it is saved in. This is used to save a model in a package when the 
   ** whole package is saved in a file.
+  **
+  ** inputs:   (Absyn.Path, 
+                Absyn.Program)
+  ** outputs:  (Absyn.Program,
+                string) /* filename */
   **)
+ relation get_contained_class_and_file: (Absyn.Path,
+					 Absyn.Program)
+	   => (Absyn.Program, 
+	       string) = 
 
- relation get_contained_class_and_file: (Absyn.Path, (* class name*)
-					 Absyn.Program) (* program*)
-	   => (Absyn.Program, (* package as a program*)
-	       string) = (* filename *)
-
-   rule	get_pathed_class_in_program(classname,p) => cdef &
+   rule	 get_pathed_class_in_program(classname,p) => cdef &
 	 Absyn.class_filename(cdef) => filename &
 	 get_surrounding_package(classname,p) => p' &
 	 remove_inner_diff_filed_classes(p') => p''
@@ -7449,14 +7781,17 @@ end
 	 get_contained_class_and_file(classname,p) => (p'',filename)
  end
 
+
  (** relation remove_inner_diff_filed_classes
   ** author: PA
   **
   ** Removes all inner classes that have different file name than the class 
   ** itself. The filename of the class is passed as argument.
+  **
+  ** inputs: (Absyn.Program) /* package as program. */
+  ** outputs: Absyn.Program =
   **)
-
- relation remove_inner_diff_filed_classes: (Absyn.Program) (* package as program. *)
+ relation remove_inner_diff_filed_classes: (Absyn.Program)
 	   => Absyn.Program =
 
    rule	Util.list_map(classlst,remove_inner_diff_filed_class) => classlst'
@@ -7465,13 +7800,13 @@ end
 	   =>  Absyn.PROGRAM(classlst',within)
  end
 
+
  (** relation: remove_inner_diff_filed_class
   ** author: PA
   ** 
   ** Helper relation to remove_inner_diff_filed_classes, removes all local classes in class
   ** that does not have the same filename as the class iteself.
- **)
-
+  **)
  relation remove_inner_diff_filed_class: (Absyn.Class) => Absyn.Class =
 
 
@@ -7483,16 +7818,20 @@ end
 	     => Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(parts2,cmt),file_info)
  end
 
+
 (** relation: remove_class_diff_filed_in_elementitemlist
  ** author: PA 
  **
  ** This relation takes an Element list and a filename and returns a 
  ** modified element list where the elements not stored in filename are 
  ** removed.
+ **
+ ** inputs: (Absyn.ElementItem list, 
+             string /* filename */)
+ ** outputs: Absyn.ElementItem list 
  **)
-		 
  relation remove_class_diff_filed_in_elementitemlist: (Absyn.ElementItem list, 
-					    string)  (* filename *)
+					    string)
 	   => Absyn.ElementItem list =
 
    rule	(* annotations are kept *)
@@ -7525,7 +7864,6 @@ end
   ** This relation investigates the surrounding packages and returns the outermost package
   ** that has the same filename as the class
   **)
-
  relation get_surrounding_package: (Absyn.Path, Absyn.Program) => Absyn.Program =
 
    rule	get_pathed_class_in_program(classpath,p) => cdef &
@@ -7547,8 +7885,7 @@ end
  end
 
 
-(* AST for the builtin graphical classes *)
-
+ (* AST for the builtin graphical classes *)
  val Graphics_program = Absyn.PROGRAM([
  Absyn.CLASS("LinePattern", false, false, false, Absyn.R_TYPE, Absyn.ENUMERATION(Absyn.ENUMLITERALS([Absyn.ENUMLITERAL("None",NONE), Absyn.ENUMLITERAL("Solid",NONE), Absyn.ENUMLITERAL("Dash",NONE), Absyn.ENUMLITERAL("Dot",NONE), Absyn.ENUMLITERAL("DashDot",NONE), Absyn.ENUMLITERAL("DashDot",NONE), Absyn.ENUMLITERAL("DashDotDot",NONE)]), NONE),Absyn.INFO("graphics.mo",0,0))
  , Absyn.CLASS("Arrow", false, false, false, Absyn.R_TYPE, Absyn.ENUMERATION(Absyn.ENUMLITERALS([Absyn.ENUMLITERAL("None",NONE), Absyn.ENUMLITERAL("Open",NONE), Absyn.ENUMLITERAL("Filled",NONE), Absyn.ENUMLITERAL("Filled",NONE), Absyn.ENUMLITERAL("Half",NONE)]), NONE),Absyn.INFO("graphics.mo",0,0))
@@ -7566,7 +7903,6 @@ end
 
 
  val Icon_program = 
-
 Absyn.PROGRAM([
 Absyn.CLASS("GraphicItem", false, false, false, Absyn.R_RECORD, Absyn.PARTS([Absyn.PUBLIC([Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Boolean"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("visible",[], SOME(Absyn.CLASSMOD([], SOME(Absyn.BOOL(true))))),NONE, NONE)]), Absyn.INFO("icon.mo", 1, 0),NONE))])], NONE),Absyn.INFO("icon.mo",0,0))
 , Absyn.CLASS("CoordinateSystem", false, false, false, Absyn.R_RECORD, Absyn.PARTS([Absyn.PUBLIC([Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Real"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("extent",[Absyn.SUBSCRIPT(Absyn.INTEGER(2)),Absyn.SUBSCRIPT(Absyn.INTEGER(2))], NONE),NONE, NONE)]), Absyn.INFO("icon.mo", 1, 0),NONE))])], NONE),Absyn.INFO("icon.mo",0,0))
@@ -7585,6 +7921,7 @@ Absyn.CLASS("GraphicItem", false, false, false, Absyn.R_RECORD, Absyn.PARTS([Abs
 , Absyn.CLASS("test", false, false, false, Absyn.R_MODEL, Absyn.PARTS([Absyn.PUBLIC([])], NONE),Absyn.INFO("icon.mo",0,0))
 , Absyn.CLASS("test", false, false, false, Absyn.R_MODEL, Absyn.PARTS([Absyn.PUBLIC([])], NONE),Absyn.INFO("icon.mo",0,0))
 ],Absyn.TOP)
+
 
  val Diagram_program = Absyn.PROGRAM([
 Absyn.CLASS("GraphicItem", false, false, false, Absyn.R_RECORD, Absyn.PARTS([Absyn.PUBLIC([Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Boolean"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("visible",[], SOME(Absyn.CLASSMOD([], SOME(Absyn.BOOL(true))))),NONE, NONE)]), Absyn.INFO("diagram.mo", 1 ,0),NONE))])], NONE),Absyn.INFO("diagram.mo",0,0))
@@ -7611,6 +7948,7 @@ Absyn.CLASS("GraphicItem", false, false, false, Absyn.R_RECORD, Absyn.PARTS([Abs
  , Absyn.CLASS("Line", false, false, false, Absyn.R_RECORD, Absyn.PARTS([Absyn.PUBLIC([Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Boolean"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("visible",[], SOME(Absyn.CLASSMOD([], SOME(Absyn.BOOL(true))))),NONE, NONE)]), Absyn.INFO("line.mo", 1, 0),NONE)), Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Real"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("points",[Absyn.NOSUB,Absyn.SUBSCRIPT(Absyn.INTEGER(2))], NONE),NONE, NONE)]), Absyn.INFO("line.mo", 1, 0),NONE)), Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Integer"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("color",[Absyn.SUBSCRIPT(Absyn.INTEGER(3))], SOME(Absyn.CLASSMOD([], SOME(Absyn.ARRAY([Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)]))))),NONE, NONE)]), Absyn.INFO("line.mo", 1, 0),NONE)), Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("LinePattern"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("pattern",[], SOME(Absyn.CLASSMOD([], SOME(Absyn.CREF(Absyn.CREF_QUAL("LinePattern", [],Absyn.CREF_IDENT("Solid", []))))))), NONE,NONE)]), Absyn.INFO("line.mo", 1, 0),NONE)), Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Real"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("thickness",[], SOME(Absyn.CLASSMOD([], SOME(Absyn.REAL(0.25))))),NONE, NONE)]), Absyn.INFO("line.mo", 1, 0),NONE)), Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Arrow"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("arrow",[Absyn.SUBSCRIPT(Absyn.INTEGER(2))], SOME(Absyn.CLASSMOD([], SOME(Absyn.ARRAY([Absyn.CREF(Absyn.CREF_QUAL("Arrow", [],Absyn.CREF_IDENT("None", []))),Absyn.CREF(Absyn.CREF_QUAL("Arrow", [],Absyn.CREF_IDENT("None", [])))]))))), NONE,NONE)]), Absyn.INFO("line.mo", 1, 0),NONE)), Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Real"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("arrowSize",[], SOME(Absyn.CLASSMOD([], SOME(Absyn.REAL(3.0))))), NONE,NONE)]), Absyn.INFO("line.mo", 1, 0),NONE)), Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Boolean"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("smooth",[], SOME(Absyn.CLASSMOD([], SOME(Absyn.BOOL(false))))), NONE,NONE)]), Absyn.INFO("line.mo", 1, 0),NONE))])], NONE),Absyn.INFO("line.mo",0,0))
  , Absyn.CLASS("test", false, false, false, Absyn.R_MODEL, Absyn.PARTS([Absyn.PUBLIC([])], NONE),Absyn.INFO("line.mo",0,0))
  ],Absyn.TOP)
+
 
  val Placement_program = Absyn.PROGRAM([
 Absyn.CLASS("Transformation", false, false, false, Absyn.R_RECORD, Absyn.PARTS([Absyn.PUBLIC([Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Real"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("x",[], SOME(Absyn.CLASSMOD([], SOME(Absyn.REAL(0.0))))),NONE, NONE)]), Absyn.INFO("placement.mo", 2, 0),NONE)), Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Real"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("y",[], SOME(Absyn.CLASSMOD([], SOME(Absyn.REAL(0.0))))),NONE, NONE)]), Absyn.INFO("placement.mo", 2, 0),NONE)), Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Real"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("scale",[], SOME(Absyn.CLASSMOD([], SOME(Absyn.REAL(1.0))))),NONE, NONE)]), Absyn.INFO("placement.mo", 2, 0),NONE)), Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Real"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("aspectRatio",[], SOME(Absyn.CLASSMOD([], SOME(Absyn.REAL(1.0))))),NONE, NONE)]), Absyn.INFO("placement.mo", 2, 0),NONE)), Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Boolean"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("flipHorizontal",[], SOME(Absyn.CLASSMOD([], SOME(Absyn.BOOL(false))))),NONE, NONE)]), Absyn.INFO("placement.mo", 2, 0),NONE)), Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Boolean"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("flipVertical",[], SOME(Absyn.CLASSMOD([], SOME(Absyn.BOOL(false))))),NONE, NONE)]), Absyn.INFO("placement.mo", 2, 0),NONE)), Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Real"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("rotation",[], SOME(Absyn.CLASSMOD([], SOME(Absyn.REAL(0.0))))),NONE, NONE)]), Absyn.INFO("placement.mo", 2, 0),NONE))])], NONE),Absyn.INFO("placement.mo",0,0))

@@ -771,9 +771,12 @@ end
  **
  ** Succeds if external function name is "known", i.e. no compilation
  ** required.
-**)
+ **
+ ** inputs:  (SCode.Ident /* string */, Absyn.Ident option /* string option */) 
+ ** outputs: ()
+ **)
 
-relation is_known_external_func:( SCode.Ident, Absyn.Ident option) => () =
+relation is_known_external_func:(string, string option) => () =
 
   axiom	is_known_external_func("acos",SOME("acos"))
   axiom	is_known_external_func("asin",SOME("asin"))

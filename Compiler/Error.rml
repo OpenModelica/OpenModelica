@@ -663,8 +663,8 @@ relation add_message: ( ErrorID,MessageTokens) => () =
 
   rule	lookup_message(error_id) => (msg_type, severity, msg) &
 	message_type_str(msg_type) => msg_type_str &
-	severity_str(severity) => severity_str &
-	ErrorExt.add_message(error_id,msg_type_str,severity_str,msg,tokens)
+	severity_str(severity) => severity_string &
+	ErrorExt.add_message(error_id,msg_type_str,severity_string,msg,tokens)
 	---------------------------
 	add_message(error_id,tokens) => ()
 	
@@ -688,8 +688,8 @@ relation add_source_message: ( ErrorID,MessageTokens, Absyn.Info) => () =
 
   rule	lookup_message(error_id) => (msg_type, severity, msg) &
 	message_type_str(msg_type) => msg_type_str &
-	severity_str(severity) => severity_str &
-	ErrorExt.add_source_message(error_id,msg_type_str,severity_str,
+	severity_str(severity) => severity_string &
+	ErrorExt.add_source_message(error_id,msg_type_str,severity_string,
 				    line,col,file,
 				    msg,tokens )
 	---------------------------

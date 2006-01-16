@@ -76,6 +76,17 @@ module Inst:
   with "Types.rml"
   with "Absyn.rml"
 
+(**
+ ** These type aliases are introduced to make the code a little more
+ ** readable.
+ **)
+  type Prefix = Prefix.Prefix 
+  type Mod = Types.Mod
+  type Ident = Exp.Ident
+  type Env = Env.Env
+
+
+
   (* Calling scope is used to determine when unconnected flow variables 
    * should be set to zero. *)
   datatype CallingScope = TOP_CALL | INNER_CALL
@@ -141,58 +152,58 @@ module Inst:
   relation instantiate: SCode.Program => DAE.DAElist
   relation instantiate_implicit: SCode.Program => DAE.DAElist
   
-  relation make_binding : (Env.Env, SCode.Attributes, Types.Mod)
+  relation make_binding : (Env, SCode.Attributes, Mod)
 	  => Types.Binding
 
-  relation instantiate_class : (SCode.Program,SCode.Path) => (DAE.DAElist,Env.Env)
-  relation instantiate_class_implicit : (SCode.Program,SCode.Path) => (DAE.DAElist,Env.Env)
+  relation instantiate_class : (SCode.Program,SCode.Path) => (DAE.DAElist,Env)
+  relation instantiate_class_implicit : (SCode.Program,SCode.Path) => (DAE.DAElist,Env)
 
-  relation make_env_from_program: (SCode.Program,SCode.Path) => Env.Env 
-  relation make_simple_env_from_program: (SCode.Program,SCode.Path) => Env.Env 
+  relation make_env_from_program: (SCode.Program,SCode.Path) => Env 
+  relation make_simple_env_from_program: (SCode.Program,SCode.Path) => Env 
 
-  relation inst_class: ( Env.Env, Types.Mod, Prefix.Prefix, 
+  relation inst_class: ( Env, Mod, Prefix, 
 			Connect.Sets, SCode.Class, InstDims,bool (*impl*),CallingScope)
-	  => ( DAE.Element list, Env.Env, Connect.Sets, Types.Type, ClassInf.State)
+	  => ( DAE.Element list, Env, Connect.Sets, Types.Type, ClassInf.State)
 
 
-  relation inst_class_decl : ( Env.Env, Types.Mod, Prefix.Prefix,
+  relation inst_class_decl : ( Env, Mod, Prefix,
 			      Connect.Sets, SCode.Class, InstDims, bool (*packimpl?*))
-	  => ( Env.Env, DAE.Element list)
+	  => ( Env, DAE.Element list)
 
-  relation inst_class_in: ( Env.Env, Types.Mod, Prefix.Prefix, 
+  relation inst_class_in: ( Env, Mod, Prefix, 
 			   Connect.Sets, ClassInf.State,
 			   SCode.Class, bool, InstDims, 
 			   bool(*implicit inst*),
 			   bool(* function implicit inst*))
-	  => ( DAE.Element list, Env.Env, Connect.Sets, 
+	  => ( DAE.Element list, Env, Connect.Sets, 
 	      ClassInf.State, Types.Var list, Types.Type option)
 
-  relation partial_inst_class_in: ( Env.Env, Types.Mod, Prefix.Prefix, 
-			   Connect.Sets, ClassInf.State,
-			   SCode.Class, bool, InstDims)
-	  => (Env.Env, ClassInf.State)
 
-  relation implicit_instantiation : (Env.Env, Types.Mod, Prefix.Prefix,
+  relation partial_inst_class_in: (Env, Mod, Prefix, Connect.Sets, 
+				 ClassInf.State, SCode.Class, bool, InstDims)
+	  => (Env, ClassInf.State) 
+
+  relation implicit_instantiation : (Env, Mod, Prefix,
 				     Connect.Sets, SCode.Class,InstDims, bool)
-	  => (Env.Env, DAE.Element list)
+	  => (Env, DAE.Element list)
 	    
-  relation inst_record_constructor_elt : (Env.Env, SCode.Element, bool (*impl*)) 
+  relation inst_record_constructor_elt : (Env, SCode.Element, bool (*impl*)) 
 	 => (Types.Var)
   relation mktype : (Absyn.Path, ClassInf.State,Types.Var list, Types.Type option) => Types.Type
 
   relation init_vars_modelica_output : DAE.Element list => DAE.Element list
 
   relation new_ident : () => Exp.ComponentRef
-  relation implicit_function_instantiation : ( Env.Env, Types.Mod, 
-					      Prefix.Prefix, Connect.Sets, SCode.Class,
+  relation implicit_function_instantiation : ( Env, Mod, 
+					      Prefix, Connect.Sets, SCode.Class,
 					      InstDims, bool)
-	  => ( Env.Env, DAE.Element list)
- relation implicit_function_type_instantiation:(Env.Env, SCode.Class)
-	  => (Env.Env)
-  relation make_fully_qualified : (Env.Env, Absyn.Path) => Absyn.Path
-  relation add_nomod: SCode.Element list => (SCode.Element*Types.Mod) list
+	  => ( Env, DAE.Element list)
+ relation implicit_function_type_instantiation:(Env, SCode.Class)
+	  => (Env)
+  relation make_fully_qualified : (Env, Absyn.Path) => Absyn.Path
+  relation add_nomod: SCode.Element list => (SCode.Element*Mod) list
 
-  relation elab_component_arraydim_from_env: (Env.Env, Exp.ComponentRef) => DimExp list
+  relation elab_component_arraydim_from_env: (Env, Exp.ComponentRef) => DimExp list
 
 end
 
@@ -213,16 +224,6 @@ with "Ceval.rml"
 with "Error.rml"
 
 val for_scope_name = "$for loop scope$"	  
-(**
- ** These type aliases are introduced to make the code a little more
- ** readable.
- **)
-
-type Prefix = Prefix.Prefix
-type Mod = Types.Mod
-type Ident = Exp.Ident
-type Env = Env.Env
-
 
 (** relation: print_dims
  ** 
@@ -352,7 +353,7 @@ end
  **)
 
 relation instantiate_class : (SCode.Program, SCode.Path) 
-	  => (DAE.DAElist,Env.Env) =
+	  => (DAE.DAElist,Env) =
 
   rule	Error.add_message(Error.NO_CLASSES_LOADED,[])
 	------------------------------
@@ -389,7 +390,7 @@ end
  **)
 
 relation instantiate_class_implicit : (SCode.Program, SCode.Path) 
-	  => (DAE.DAElist,Env.Env) =
+	  => (DAE.DAElist,Env) =
 
   rule	Error.add_message(Error.NO_CLASSES_LOADED,[])
 	------------------------------
@@ -427,7 +428,7 @@ end
  **)
 
 relation inst_class_in_program: (Env, SCode.Program, SCode.Path ) 
-	  => (DAE.Element list, Env.Env) =
+	  => (DAE.Element list, Env) =
 
   rule	name = name2 &
 	inst_class(env, Types.NOMOD, Prefix.NOPRE, Connect.empty_set, 
@@ -458,7 +459,7 @@ end
  **)
 
 relation inst_class_in_program_implicit: (Env, SCode.Program, SCode.Path ) 
-	  => (DAE.Element list, Env.Env) =
+	  => (DAE.Element list, Env) =
 
   rule	name = name2 &
 	implicit_instantiation(env, Types.NOMOD, Prefix.NOPRE, 
@@ -489,7 +490,7 @@ end
  **)
 
 relation inst_class_decls:(Env, SCode.Program, SCode.Path) 
-	  => ( Env.Env, DAE.Element list) =
+	  => ( Env, DAE.Element list) =
 
   rule	not name = name2 &
 	inst_class_decl(env, Types.NOMOD, Prefix.NOPRE, Connect.empty_set, 
@@ -539,7 +540,7 @@ end
  ** excluding the class in A1.
 **)
 
-relation make_env_from_program: (SCode.Program,SCode.Path) => Env.Env = 
+relation make_env_from_program: (SCode.Program,SCode.Path) => Env = 
   rule	Builtin.initial_env => env &
 	add_program_to_env(env,prog,c) => env'
 	--------------------------------
@@ -553,7 +554,7 @@ end
  ** See Builtin.simple_initial_env.
  **)
 
-relation make_simple_env_from_program: (SCode.Program,SCode.Path) => Env.Env = 
+relation make_simple_env_from_program: (SCode.Program,SCode.Path) => Env = 
   rule	Builtin.simple_initial_env => env &
 	add_program_to_env(env,prog,c) => env'
 	--------------------------------
@@ -565,7 +566,7 @@ end
  ** Adds all classes in a Program to the environment.
  **)
 
-relation add_program_to_env: (Env.Env,SCode.Program,SCode.Path) => Env.Env =
+relation add_program_to_env: (Env,SCode.Program,SCode.Path) => Env =
   rule	inst_class_decls(env,p,path) => (env' ,_) 
 	-----------------------------------------
 	add_program_to_env (env,p,path) => env'
@@ -657,7 +658,7 @@ end
 
 relation inst_class : (Env, Mod, Prefix, Connect.Sets, SCode.Class, 
 		       InstDims,bool (*impl*) ,CallingScope)
-	  => (DAE.Element list, Env.Env, Connect.Sets, 
+	  => (DAE.Element list, Env, Connect.Sets, 
 	      Types.Type, ClassInf.State) =
 
 	(* Classes with the keyword partial can not be instantiated.
@@ -711,7 +712,7 @@ end
 
 relation inst_class_basictype : (Env, Mod, Prefix, Connect.Sets, SCode.Class, 
 		       InstDims,bool (*impl*) ,CallingScope)
-	  => (DAE.Element list, Env.Env, Connect.Sets, 
+	  => (DAE.Element list, Env, Connect.Sets, 
 	      Types.Type, ClassInf.State) =
 
   rule	Env.open_scope(env,encflag,SOME(n)) => env' &
@@ -973,7 +974,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	   The modifier (n=n) will be untypes when B is instantiated and the variable n can not be 
 	   found, since the component b is instantiated in env of B.
 	   Solution:
-	   Redesign inst_extends_list to return (SCode.Element, Types.Mod) list and
+	   Redesign inst_extends_list to return (SCode.Element, Mod) list and
 	   convert other component elements to the same format, such that inst_element can 
 	   handle the new format uniformely.
 	   *)
@@ -1144,9 +1145,9 @@ end
  ** basic type.
  **)
 
-relation inst_basictype_baseclass:(Env.Env,
+relation inst_basictype_baseclass:(Env,
 				   SCode.Element list,
-				   SCode.Element list, Types.Mod,
+				   SCode.Element list, Mod,
 				   InstDims) 
 	  => Types.Type option =
 	  
@@ -1194,8 +1195,8 @@ end
  ** Adds the connection set to the environment such that Ceval can reach it.
  ** It is required to evaluate cardinality
  **)
-relation add_connection_set_to_env:(Connect.Sets,Env.Env) 
-	  => Env.Env =
+relation add_connection_set_to_env:(Connect.Sets,Env) 
+	  => Env =
 
 axiom	add_connection_set_to_env(Connect.SETS(_,crs),Env.FRAME(n,bt1,bt2,imp,bc,_,enc)::fs) 
 	  => Env.FRAME(n,bt1,bt2,imp,bc,crs,enc)::fs
@@ -1237,7 +1238,7 @@ end
  ** This relation investigates Prefix and filters all connect_refs to only 
  ** contain references starting with actual prefix.
  **)
-relation filter_connection_set_crefs: (Connect.Sets, Prefix.Prefix) 
+relation filter_connection_set_crefs: (Connect.Sets, Prefix) 
 	  => Connect.Sets =
 
 	  (* no Prexix, nothing to filter *)
@@ -1321,12 +1322,12 @@ end
  ** fully instantiate a component.
  **)
 
-relation update_compelts_mods: (Env.Env, Prefix.Prefix, 
-				(SCode.Element*Types.Mod) list,
+relation update_compelts_mods: (Env, Prefix, 
+				(SCode.Element*Mod) list,
 				ClassInf.State,
 				Connect.Sets,
 				bool (* impl *)) 
-	=> ((SCode.Element * Types.Mod) list, Env.Env, Connect.Sets) =
+	=> ((SCode.Element * Mod) list, Env, Connect.Sets) =
 
   axiom	update_compelts_mods(env,pre,[],_,csets,_) =>([],env,csets)
 
@@ -1363,10 +1364,10 @@ end
  ** and algorithms.
 **)
 	    
- relation inst_extends_list:(Env.Env, Types.Mod, SCode.Element list, 
+ relation inst_extends_list:(Env, Mod, SCode.Element list, 
 			     ClassInf.State, bool (* impl *))
-	  => (Env.Env, Types.Mod, 
-	      (SCode.Element * Types.Mod) list,  (* inherited components *)
+	  => (Env, Mod, 
+	      (SCode.Element * Mod) list,  (* inherited components *)
 	      SCode.Equation list,		 (* inherited equations *)
 	      SCode.Equation list,		 (* inherited initial equations *)
 	      SCode.Algorithm list,		 (* inherited algorithms *)
@@ -1528,12 +1529,12 @@ end
 (** relation: add_nomod 
  **
  ** This relation takes an SCode.Element list and tranforms it into a 
- ** (SCode.Element* Types.Mod) list by inserting Types.NOMOD for each element.
+ ** (SCode.Element* Mod) list by inserting Types.NOMOD for each element.
  ** Used to transform elements into a uniform list 
  ** combined from inherited elements and ordinary elements.
  **)
 
-relation add_nomod: SCode.Element list => (SCode.Element*Types.Mod) list =
+relation add_nomod: SCode.Element list => (SCode.Element*Mod) list =
 
   axiom	add_nomod [] => []
 
@@ -1556,8 +1557,8 @@ end
  ** from B for which 'modifiers' should be applied to.
  **)
 
-relation update_components: ((SCode.Element*Types.Mod) list, Types.Mod,Env.Env)
-	  => (SCode.Element*Types.Mod) list =
+relation update_components: ((SCode.Element*Mod) list, Mod,Env)
+	  => (SCode.Element*Mod) list =
 
   axiom	update_components([],_,_) => []
 
@@ -1616,8 +1617,8 @@ end
  ** derived class parts are fetched.
  **)
 
-relation inst_derived_classes: 	(Env.Env, Types.Mod, SCode.Class, bool) =>
-	  (Env.Env, SCode.Element list, SCode.Equation list, 
+relation inst_derived_classes: 	(Env, Mod, SCode.Class, bool) =>
+	  (Env, SCode.Element list, SCode.Equation list, 
 	   SCode.Equation list, SCode.Algorithm list, SCode.Algorithm list) =
 	
   rule   no_import_elements elt => elt' 
@@ -1660,7 +1661,7 @@ end
  **)
 
 relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			    (SCode.Element*Types.Mod) list, InstDims, bool(*impl*), bool(*packimpl*))
+			    (SCode.Element*Mod) list, InstDims, bool(*impl*), bool(*packimpl*))
 	    => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 		Types.Var list) =
 	
@@ -1780,7 +1781,7 @@ end
 
 relation is_structural_parameter: (SCode.Variability, (* components variability*)
 				   Absyn.ComponentRef, (* component name *)
-				   (SCode.Element*Types.Mod) list, (* all elements *)		 
+				   (SCode.Element*Mod) list, (* all elements *)		 
 				   SCode.Equation list) (* equations *)
 	=> bool =
 
@@ -1855,8 +1856,8 @@ end
 
 relation add_components_to_env : (Env, Mod, Prefix, Connect.Sets, 
 				  ClassInf.State,
-				  (SCode.Element*Types.Mod) list, (* iterated list of elements*)
-				  (SCode.Element*Types.Mod) list, (* all elements *)
+				  (SCode.Element*Mod) list, (* iterated list of elements*)
+				  (SCode.Element*Mod) list, (* all elements *)
 				  SCode.Equation list, (* equations *)
 				  InstDims, 
 				  bool (* implicit inst. *))
@@ -1924,7 +1925,7 @@ end
  **)
 relation add_components_to_env2 : (Env, Mod, Prefix, Connect.Sets, 
 				   ClassInf.State,
-				   (SCode.Element*Types.Mod) list, 
+				   (SCode.Element*Mod) list, 
 				   InstDims, bool (* impl *))
 	    => (Env) =
 
@@ -1970,7 +1971,7 @@ end
  ** parameters.
  **)
 
-relation get_crefs_from_compdims: ((SCode.Element*Types.Mod) list) 
+relation get_crefs_from_compdims: ((SCode.Element*Mod) list) 
 	  => Absyn.ComponentRef list =
 
   axiom	get_crefs_from_compdims([]) => []
@@ -2018,7 +2019,7 @@ end
  **)
 
 relation inst_element : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
-			 (SCode.Element*Types.Mod), InstDims, bool, bool)
+			 (SCode.Element*Mod), InstDims, bool, bool)
 	  => (DAE.Element list, Env, Connect.Sets, ClassInf.State,
 	      Types.Var list) =
 
@@ -2231,7 +2232,7 @@ end
  ** It is used when instantiating a component defined in a baseclass.
 **)
 
-relation get_derived_env: (Env.Env, Absyn.Path option) => Env.Env =
+relation get_derived_env: (Env, Absyn.Path option) => Env =
 
   axiom	get_derived_env(env,NONE) => env
 
@@ -2272,14 +2273,14 @@ end
  ** element is returned
 **)
 
-relation redeclare_type: (Types.Mod, 
+relation redeclare_type: (Mod, 
 			  SCode.Element,
-			  Env.Env,
-			  Prefix.Prefix,
+			  Env,
+			  Prefix,
 			  ClassInf.State,
 			  Connect.Sets,
 			  bool (* Implicit instantation *)) 
-	  => (SCode.Element,Types.Mod,Env.Env,Connect.Sets) =
+	  => (SCode.Element,Mod,Env,Connect.Sets) =
 
   rule	n1=n2 &
 	get_cref_from_mod(mod) => crefs &
@@ -2330,10 +2331,10 @@ end
  ** handled by inst_var2 (using inst_array)
  **)
 
-relation inst_var : (Env.Env,
+relation inst_var : (Env,
 		     ClassInf.State,
-		     Types.Mod,
-		     Prefix.Prefix,
+		     Mod,
+		     Prefix,
 		     Connect.Sets,
 		     Ident,
 		     SCode.Class,
@@ -2343,7 +2344,7 @@ relation inst_var : (Env.Env,
 		     InstDims,
 		     bool (*impl*),
                      Absyn.Comment option)
-	  => (Env.Env, (* component environment *)
+	  => (Env, (* component environment *)
 	      DAE.Element list, (* dae elements for component *)
 	      Connect.Sets,
 	      Types.Type) =
@@ -2379,10 +2380,10 @@ end
  ** Helper relation to inst_var, does the main work.
  **)
 
-relation inst_var2 : (Env.Env,
+relation inst_var2 : (Env,
 		      ClassInf.State,
-		      Types.Mod,
-		      Prefix.Prefix,
+		      Mod,
+		      Prefix,
 		      Connect.Sets,
 		      Ident,
 		      SCode.Class,
@@ -2395,7 +2396,7 @@ relation inst_var2 : (Env.Env,
 			    not always find dimensional sizes. e.g. 
 			    input Real x[:]; *)
 		      Absyn.Comment option)
-	  => (Env.Env, (* component environement *)
+	  => (Env, (* component environement *)
 	      DAE.Element list,
 	      Connect.Sets,
 	      Types.Type) =
@@ -2602,7 +2603,7 @@ end
  ** has one dimension of size 3.
  **)
 
-relation get_usertype_dimensions:(Env.Env, Types.Mod, Prefix.Prefix, 
+relation get_usertype_dimensions:(Env, Mod, Prefix, 
 				  SCode.Class,
 				  InstDims, bool (*impl*) )
 	  => (DimExp list) =
@@ -2730,13 +2731,13 @@ end
  ** components can use it when they are instantiated.
  **)
 
-relation update_components_in_env:(Types.Mod,
+relation update_components_in_env:(Mod,
 				  Absyn.ComponentRef list,
-				  Env.Env, 
+				  Env, 
 				  ClassInf.State, 
 				  Connect.Sets,
 				  bool (* Implicit instantiation*)) 
-	=> (Env.Env,Connect.Sets) =
+	=> (Env,Connect.Sets) =
 	
   rule	update_component_in_env(mods,cr,env,ci_state,csets,impl) 
 	  => (env',csets) &
@@ -2758,9 +2759,9 @@ end
  ** Does the work for one variable.
  **)
 
-relation update_component_in_env: (Types.Mod,Absyn.ComponentRef, Env.Env, 
+relation update_component_in_env: (Mod,Absyn.ComponentRef, Env, 
 				   ClassInf.State, Connect.Sets,bool) 
-	  => (Env.Env,
+	  => (Env,
 	      Connect.Sets) =
 
 	  (** Variables that have Element in Environment, i.e. no type 
@@ -2915,8 +2916,8 @@ end
 
 relation check_structural_param_binding: (SCode.Variability, 
 					  Types.Binding, 
-					  Env.Env)
-	=> (Env.Env, Types.Binding) =
+					  Env)
+	=> (Env, Types.Binding) =
 
 	  (** collect varnames from binding and make them structural. Also 
 	   ** make sure that binding has constant = true.
@@ -2938,7 +2939,7 @@ end
  ** structural parameter.
  **)
 
-relation make_structural_in_env:(Exp.ComponentRef,Env.Env) => Env.Env =
+relation make_structural_in_env:(Exp.ComponentRef,Env) => Env =
 
   axiom	make_structural_in_env(_,env) => env 
 
@@ -3086,10 +3087,10 @@ end
  ** element separately.
  **)
 
-relation inst_array : (Env.Env,
+relation inst_array : (Env,
 		       ClassInf.State,
-		       Types.Mod,
-		       Prefix.Prefix,
+		       Mod,
+		       Prefix,
 		       Connect.Sets,
 		       Ident,
 		       (SCode.Class*SCode.Attributes),
@@ -3100,7 +3101,7 @@ relation inst_array : (Env.Env,
 		       InstDims,
 		       bool,
 		       Absyn.Comment option)
-	  => (Env.Env, (* component environment *)
+	  => (Env, (* component environment *)
 	      DAE.Element list, 
 	      Connect.Sets, 
 	      Types.Type) =
@@ -3180,7 +3181,7 @@ end
  ** Used when components have submodifiers (on e.g. attributes) using size 
  ** to find dimensions of component.
  **)
-relation elab_component_arraydim_from_env: (Env.Env, Exp.ComponentRef) 
+relation elab_component_arraydim_from_env: (Env, Exp.ComponentRef) 
 	  => DimExp list =
 
   rule	Lookup.lookup_ident(env,id) 
@@ -3206,7 +3207,7 @@ end
  ** (Types.EqMod) and not the component declaration.
  **)
 
-relation elab_component_arraydim_from_env_2:( Types.EqMod,Env.Env) 
+relation elab_component_arraydim_from_env_2:( Types.EqMod,Env) 
 	  => DimExp list =
 
   rule	Types.get_dimension_sizes(t) => lst &
@@ -3233,7 +3234,7 @@ end
  ** In case of NONE, empty DimExp list is returned.
  **)
 
-relation elab_arraydim_opt : (Env.Env, Absyn.ComponentRef, 
+relation elab_arraydim_opt : (Env, Absyn.ComponentRef, 
 			      Absyn.ArrayDim option, (* optional arraydim*)
 			  Types.EqMod option, bool (*impl *), 
 			  Interactive.InteractiveSymbolTable option)
@@ -3262,7 +3263,7 @@ end
  ** check that that the dimension sizes are compatible and complete.
  **)
 
-relation elab_arraydim : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, 
+relation elab_arraydim : (Env, Absyn.ComponentRef, Absyn.ArrayDim, 
 			  Types.EqMod option, bool (*impl *), 
 			  Interactive.InteractiveSymbolTable option)
 	  => DimExp list =
@@ -3393,7 +3394,7 @@ end
  ** contain `NONE'.
  **)
 
-relation elab_arraydim_decl : (Env.Env, Absyn.ComponentRef, Absyn.ArrayDim, bool, Interactive.InteractiveSymbolTable option)
+relation elab_arraydim_decl : (Env, Absyn.ComponentRef, Absyn.ArrayDim, bool, Interactive.InteractiveSymbolTable option)
 	    => (DimExp option) list =
 
   axiom	elab_arraydim_decl(_,_,[],_,_) => []
@@ -3600,9 +3601,9 @@ end
  ** anything else.
  **)
 
-relation inst_class_decl : (Env.Env, Types.Mod, Prefix.Prefix,
+relation inst_class_decl : (Env, Mod, Prefix,
 			    Connect.Sets, SCode.Class,InstDims, bool (*packimpl*) )
-	  => (Env.Env, DAE.Element list) =
+	  => (Env, DAE.Element list) =
 
   rule	Env.extend_frame_c(env,c) => env' &
 	implicit_instantiation(env',Types.NOMOD,pre,csets,c,inst_dims,packimpl) 
@@ -3625,9 +3626,9 @@ end
  ** same name as the class name.
  **)
 
-relation implicit_instantiation : (Env.Env, Types.Mod, Prefix.Prefix,
+relation implicit_instantiation : (Env, Mod, Prefix,
 				   Connect.Sets, SCode.Class,InstDims, bool (*packimpl*) )
-	  => (Env.Env, DAE.Element list) =
+	  => (Env, DAE.Element list) =
 
 	  (* Implicit instantiation of functions *)
   rule	inst_class(env, mod, pre, csets, c, inst_dims, true (*impl*),INNER_CALL)
@@ -3682,7 +3683,7 @@ end
  ** Modelica.Electrical.Analog.Basic.Resistor
  **)
 
-relation make_fully_qualified : (Env.Env, Absyn.Path) => Absyn.Path =
+relation make_fully_qualified : (Env, Absyn.Path) => Absyn.Path =
 
   rule	Env.get_env_path env => NONE
 	----------------------------
@@ -3711,9 +3712,9 @@ end
  ** ordinary class.
  **)
 
-relation implicit_function_instantiation : (Env.Env, Types.Mod, Prefix.Prefix,
+relation implicit_function_instantiation : (Env, Mod, Prefix,
 				   Connect.Sets, SCode.Class,InstDims, bool)
-	  => (Env.Env, DAE.Element list) =
+	  => (Env, DAE.Element list) =
 
   rule	inst_class(env, mod, pre, csets, c, inst_dims, true,INNER_CALL) 
 	  => (dae, _, csets', ty, st) &
@@ -3769,8 +3770,8 @@ end
  ** functions, where the function body contain a call to the function itself.
  **)
 
- relation implicit_function_type_instantiation:(Env.Env, SCode.Class)
-	  => (Env.Env) =
+ relation implicit_function_type_instantiation:(Env, SCode.Class)
+	  => (Env) =
 
 	   (* The function type can be determined without the body. *)
   rule	let stripped_class = SCode.CLASS(id,p,e,r,SCode.PARTS(elts,[],[],[],[],NONE)) &
@@ -3790,8 +3791,8 @@ end
  ** overloaded name. It also creates dae elements for the functions. 
 **)
 
-relation inst_overloaded_functions: (Env.Env, Absyn.Ident, Absyn.Path list)
-	=> (Env.Env, DAE.Element list) =
+relation inst_overloaded_functions: (Env, Absyn.Ident, Absyn.Path list)
+	=> (Env, DAE.Element list) =
 
   axiom	inst_overloaded_functions(env,_,[]) => (env, [])
 
@@ -3831,7 +3832,7 @@ end
  ** will be void. 
  **)
 
-relation inst_ext_decl: (Env.Env, Ident, SCode.ClassDef, bool (*impl*) ) => DAE.ExternalDecl =
+relation inst_ext_decl: (Env, Ident, SCode.ClassDef, bool (*impl*) ) => DAE.ExternalDecl =
 	
   rule	is_ext_explicit_call (extdecl) &
 	inst_ext_get_fname (extdecl, n) => fname &
@@ -4034,7 +4035,7 @@ end
  ** ordinary  Static.elab_exp for other expressions.
  **)
 
-relation elab_exp_list_ext : (Env.Env, Absyn.Exp list, bool,
+relation elab_exp_list_ext : (Env, Absyn.Exp list, bool,
 			      Interactive.InteractiveSymbolTable option) =>
 	(Exp.Exp list, Types.Properties list, Interactive.InteractiveSymbolTable option) =
 
@@ -4055,7 +4056,7 @@ end
  ** ordinary Static.elab_exp for other expressions.
  **)
 
-relation elab_exp_ext : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTable option)
+relation elab_exp_ext : (Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTable option)
 	    => (Exp.Exp, Types.Properties,Interactive.InteractiveSymbolTable option) =
 
 	  (* special case for  size*)
@@ -4085,7 +4086,7 @@ end
  ** declaration.
  **)
 
-relation inst_ext_get_fargs : (Env.Env, Absyn.ExternalDecl, bool (*impl*) ) => DAE.ExtArg list =
+relation inst_ext_get_fargs : (Env, Absyn.ExternalDecl, bool (*impl*) ) => DAE.ExtArg list =
 
   rule	elab_exp_list_ext (env, absexps, impl, NONE) => (exps,props,_) &
 	inst_ext_get_fargs2 (env, exps, props) => extargs	
@@ -4104,7 +4105,7 @@ end
  ** Helper relation to inst_ext_get_fargs
  **)
 
-relation inst_ext_get_fargs2 : (Env.Env, Exp.Exp list, Types.Properties list) 
+relation inst_ext_get_fargs2 : (Env, Exp.Exp list, Types.Properties list) 
 	  => DAE.ExtArg list =
 
   axiom	inst_ext_get_fargs2 (_,[],_) => []
@@ -4121,7 +4122,7 @@ end
  ** Helper relation to inst_ext_get_fargs2, does the work for one argument.
  **)
 
-relation inst_ext_get_fargs_single : (Env.Env, Exp.Exp, Types.Properties) 
+relation inst_ext_get_fargs_single : (Env, Exp.Exp, Types.Properties) 
 	  => DAE.ExtArg =
 
   rule	Lookup.lookup_var_local (env, cref) => (attr, ty, bnd) 
@@ -4155,7 +4156,7 @@ end
  ** Instantiates the return type of an external declaration.
  **)
 
-relation inst_ext_get_rettype : (Env.Env, Absyn.ExternalDecl, bool (*impl*) ) 
+relation inst_ext_get_rettype : (Env, Absyn.ExternalDecl, bool (*impl*) ) 
 	  => DAE.ExtArg =
 
   axiom	inst_ext_get_rettype (_, Absyn.EXTERNALDECL(_,_,NONE,_,_),_) => DAE.NOEXTARG
@@ -4752,7 +4753,7 @@ end
  ** The name of the scope is for_scope_name, defined as a value.
  **)
 
-relation add_for_loop_scope : (Env.Env, Ident, Types.Type) => Env.Env =
+relation add_for_loop_scope : (Env, Ident, Types.Type) => Env =
 
   rule	Env.open_scope (env,false,SOME(for_scope_name)) => env' &
 	Env.extend_frame_v(env',
@@ -4775,7 +4776,7 @@ end
  ** 
  ** Succeeds if a variable is a parameter.
  **)
-relation is_parameter : (Exp.ComponentRef, Env.Env) => () =
+relation is_parameter : (Exp.ComponentRef, Env) => () =
 
   rule	(*Env.print_env env &*)
 	Lookup.lookup_var (env, cr) 
@@ -5339,7 +5340,7 @@ end
  ** This relation helps `inst_statement' to handle `elseif' parts.
  **)
 
-relation inst_elseifs : (Env.Env, (Absyn.Exp * Absyn.AlgorithmItem list) list, bool (*impl*) )
+relation inst_elseifs : (Env, (Absyn.Exp * Absyn.AlgorithmItem list) list, bool (*impl*) )
 	=> (Exp.Exp * Types.Properties * Algorithm.Statement list) list =
 
   axiom	inst_elseifs (env,[],impl) => []
@@ -5504,7 +5505,7 @@ end
  **)
 
 relation connect_components: (Connect.Sets,
-			      Env.Env,
+			      Env,
 			      Prefix,
 			      Exp.ComponentRef, Connect.Face, Types.Type,
 			      Exp.ComponentRef, Connect.Face, Types.Type,
@@ -5613,7 +5614,7 @@ end
  **)
 
 relation connect_vars : (Connect.Sets, 
-			 Env.Env,
+			 Env,
 			 Exp.ComponentRef, Connect.Face, Types.Var list,
 			 Exp.ComponentRef, Connect.Face, Types.Var list)
 	  => (Connect.Sets, DAE.Element list) =
@@ -5821,7 +5822,7 @@ end
  ** Arg 3 is the index list for the element: for T0[1,2] is {1,2} 
  **
  **)
-relation inst_binding: (Types.Mod,Types.Type,int list,string) 
+relation inst_binding: (Mod,Types.Type,int list,string) 
 	  => Exp.Exp option =
 
           (* No subscript/index *)
@@ -5853,7 +5854,7 @@ end
  ** Help-relation to inst_binding
  **)
 
-relation inst_binding2: (Types.Mod,Types.Type,int list,string) 
+relation inst_binding2: (Mod,Types.Type,int list,string) 
 	  => Exp.Exp option  =
 
 	  (* Only one element in the index-list *)
@@ -5894,7 +5895,7 @@ end
  ** Arg 3 is the index list for the element: for T0[1,2] is {1,2} 
  **)
 
-relation inst_start_binding_exp: (Types.Mod,Types.Type,int list) 
+relation inst_start_binding_exp: (Mod,Types.Type,int list) 
 	  => DAE.StartValue =
      
   rule inst_binding(mod,etype,index_list,"start") => result
@@ -5909,7 +5910,7 @@ end
  ** somtimes a varible does not contain the variable-attr.
  **)
 
-relation inst_dae_variable_attributes: (Env.Env,Types.Mod,Types.Type,int list) 
+relation inst_dae_variable_attributes: (Env,Mod,Types.Type,int list) 
 	  => DAE.VariableAttributes option =
 
 	  (* Real *)
@@ -5982,7 +5983,7 @@ end
  ** difference between parameters and variables
  **)
 
-relation inst_bool_binding: (Env.Env, Types.Mod,int list,string) => bool option =
+relation inst_bool_binding: (Env, Mod,int list,string) => bool option =
      
   rule inst_binding(mod,(Types.T_BOOL([]),NONE),index_list,bind_name) 
 	  => SOME(e) &
@@ -6012,7 +6013,7 @@ end
  ** instantiates a real binding and retrieves the value.
  **)
 
-relation inst_real_binding: (Env.Env,Types.Mod,int list,string) => real option =
+relation inst_real_binding: (Env,Mod,int list,string) => real option =
 
   rule inst_binding(mod,(Types.T_REAL([]),NONE),index_list,bind_name) 
 	  => SOME(e) &
@@ -6042,7 +6043,7 @@ end
  ** instantiates an int binding and retrieves the value.
  **)
 
-relation inst_int_binding: (Env.Env,Types.Mod,int list,string) => int option =
+relation inst_int_binding: (Env,Mod,int list,string) => int option =
      
   rule inst_binding(mod,(Types.T_INTEGER([]),NONE),index_list,bind_name) 
 	  => SOME(e) &
@@ -6073,7 +6074,7 @@ end
  ** instantiates a string binding and retrieves the value.
  **)
 
-relation inst_string_binding: (Env.Env,Types.Mod,int list,string) => string option =
+relation inst_string_binding: (Env,Mod,int list,string) => string option =
      
   rule inst_binding(mod,(Types.T_STRING([]),NONE),index_list,bind_name) 
 	  => SOME(e) &
@@ -6103,7 +6104,7 @@ end
  **
  ** instantiates a enumeration binding and retrieves the value.
  **)
-relation inst_enumeration_binding: (Env.Env,Types.Mod,int list,string) 
+relation inst_enumeration_binding: (Env,Mod,int list,string) 
 	  => Exp.Exp option =
      
   rule inst_binding(mod,(Types.T_ENUMERATION([],[]),NONE),index_list,bind_name) 
@@ -6175,7 +6176,7 @@ end
  ** modified.
  **)
 
-relation check_prot : (bool, Types.Mod, Exp.ComponentRef) => () =
+relation check_prot : (bool, Mod, Exp.ComponentRef) => () =
 
   axiom	check_prot(false,_,cref)
 	
@@ -6195,7 +6196,7 @@ end
  **
  **)
 
-relation make_binding : (Env.Env, SCode.Attributes, Types.Mod)
+relation make_binding : (Env, SCode.Attributes, Mod)
 	  => Types.Binding =
 
   axiom	make_binding (_,_,Types.NOMOD) => Types.UNBOUND
@@ -6333,7 +6334,7 @@ end
  ** E.g if the element is Real x; the resulting Var is "input Real x;"
  **)
 
-relation inst_record_constructor_elt : (Env.Env,SCode.Element, bool (*impl*)) =>
+relation inst_record_constructor_elt : (Env,SCode.Element, bool (*impl*)) =>
 	Types.Var =
 	  
   rule	Debug.fprint ("recconst", "inst_record_constructor_elt called\n") &

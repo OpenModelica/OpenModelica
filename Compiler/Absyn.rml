@@ -95,9 +95,9 @@ module Absyn:
 
 
   (** adrpo added 2005-10-29 **)
-  datatype Info = INFO of string * (* filename where the class is defined in *)
-                          int    * (* lineNumber   *)
-                          int      (* columnNumber *)
+  datatype Info = INFO of string (* filename where the class is defined in *)
+                        * int    (* lineNumber   *)
+                        * int    (* columnNumber *)
 
   (** - Classes *)
   (** A class definition consists of a name, a flag to indicate if this *)
@@ -109,7 +109,7 @@ module Absyn:
 			  * bool		     (* encapsulated *)
 			  * Restriction           (* restricion *)
 			  * ClassDef	     (* body *)
-			  * Info		     (* fileName ; FileName the class is defined in + line no + column no *)
+			  * Info		     (* info ; FileName the class is defined in + line no + column no *)
 
  
   (** The `ClassDef' type contains the definition part of a class *)
@@ -133,13 +133,12 @@ module Absyn:
 				* ElementArg list  (* arguments*)
 				* string option (* comment *)
 				* ClassPart list (* parts *)
-		    | PDER of Path * (* functionName *)
-			      Ident list (* vars ; derived variables *)
+		    | PDER of Path (* functionName *)
+			 * Ident list (* vars ; derived variables *)
 				
 
    (** The definition of an enumeration is either a list of literals
     ** or a colon, ':', which defines a supertype of all enumerations **)
-
   datatype EnumDef = ENUMLITERALS of EnumLiteral list (* enumLiterals *) 
  		   | ENUM_COLON
 
@@ -166,8 +165,6 @@ module Absyn:
   datatype ElementItem = ELEMENTITEM of Element (* element *)
 		       | ANNOTATIONITEM of Annotation (* annotation *)
 
-
-
   (** - Elements *)
   (* The basic element type in Modelica *)
   datatype Element = ELEMENT of bool		      (* final *)
@@ -179,7 +176,7 @@ module Absyn:
 			      * ConstrainClass option (* constrainClass ; only valid for classdef and component*)
 
   
-  (* Constraining type, must be extendes *)
+  (* Constraining type, must be extends *)
   datatype ConstrainClass = CONSTRAINCLASS of ElementSpec (* elementSpec ; must be extends*)
 					    * Comment option (* comment *)
 
@@ -202,6 +199,7 @@ module Absyn:
 		       | COMPONENTS of ElementAttributes (* attributes*)
 				     * Path	     (* typeName *)
 				     * ComponentItem list (* components *)
+
   (** One of the keyword inner and outer CAN be given to reference an inner or
       outer component. Thus there are three disjoint possibilities. **)		     
   datatype InnerOuter = INNER | OUTER | INNEROUTER | UNSPECIFIED
@@ -221,6 +219,7 @@ module Absyn:
  ** the component should be instantiated.
  **)
  type ComponentCondition = Exp
+
   (* Some kind of Modelica entity (object or variable) *)
   datatype Component = COMPONENT of Ident 	     (* name *)
 				  * ArrayDim         (* arrayDim ; Array dimensions, if any *) 
@@ -283,10 +282,11 @@ module Absyn:
                                       * FunctionArgs (* functionArgs; general fcalls without return value *)
 
 
-  (** - Modifications *)
+
   (** Modifications are described by the `Modification' type.  There *)
   (** are two forms of modifications: redeclarations and component *)
   (** modifications. *)
+  (** - Modifications *)
   datatype Modification = CLASSMOD of ElementArg list * Exp option
 
   (* Wrapper for things that modify elements, modifications and redeclarations *)
@@ -301,11 +301,11 @@ module Absyn:
 				      * ElementSpec (* elementSpec *)
                                       * ConstrainClass option (* constrainClass ; class definition or declaration *)
 
-(* The keywords 'redeclare' and 'replacable' can be given in three different kombinations, each one by themself or the both combined. *)
+  (* The keywords 'redeclare' and 'replacable' can be given in three different kombinations, each one by themself or the both combined. *)
   datatype RedeclareKeywords = REDECLARE | REPLACEABLE | REDECLARE_REPLACEABLE 
 
-  (** - Each attribute *)
   (** The each keyword can be present in both MODIFICATION's and REDECLARATION's. *)
+  (** - Each attribute *)
   datatype Each = EACH | NON_EACH
 
   (** - Component attributes *)
@@ -314,24 +314,26 @@ module Absyn:
 			     	     * Direction (* direction *)
 				     * ArrayDim  (* arrayDim *)
      
-  (* Dete *) 
+  (* Variability *) 
   datatype Variability = VAR | DISCRETE | PARAM | CONST
 
 
+  (* Direction *)
   datatype Direction = INPUT | OUTPUT | BIDIR
+
   (** Component attributes are *)
   (** properties of components which are applied by type prefixes. *)
   (** As an example, declaring a component as `input Real x;' will *)
   (** give the attributes `ATTR([],false,VAR,INPUT)'. *)
-
-  (** - Array dimensions *)
-  type ArrayDim = Subscript list
   (** Components in Modelica can be scalar or arrays with one or more *)
   (** dimensions. This datatype is used to indicate the dimensionality *)
   (** of a component or a type definition. *)
+  (** - Array dimensions *)
+  type ArrayDim = Subscript list
 
+
+  (** The `Exp' datatype is the container of a Modelica expression. *)
   (** - Expressions *)
-
   datatype Exp = INTEGER of int (* value *)
 	       | REAL of real (* value *)
 	       | CREF of ComponentRef (* componentReg *)
@@ -354,7 +356,7 @@ module Absyn:
                (* Relations, e.g. a >= 0 *)	       
                | RELATION of Exp (* exp1 *)
                            * Operator (* op *)
-                           * Exp (* exp1 *)
+                           * Exp (* exp2 *)
                (* If expressions *)
 	       | IFEXP of Exp (* ifExp *)
                         * Exp (* trueBranch *)
@@ -364,7 +366,7 @@ module Absyn:
 	       | CALL of ComponentRef (* function *)
                        * FunctionArgs (* functionArgs *)
                (* Array construction using '{','}' or 'array' *)
-	       | ARRAY of Exp list (* array *)
+	       | ARRAY of Exp list (* arrayExp *)
                (* Matrix construction using '[', ']' *)
 	       | MATRIX of Exp list list (* matrix *)
                (* Range expressions, e.g. 1:10 or 1:0.5:10 *)
@@ -375,11 +377,9 @@ module Absyn:
 	       | TUPLE of Exp list (* expressions *)
                (* array access operator for last element, e.g. a[end]:=1; *)
 	       | END
-               (* Modelica AST Code constructors *)
-	       | CODE of Code (* code *)
+	       | CODE of Code (* code ;  Modelica AST Code constructors  *)
 
-  (** The `Exp' datatype is the container of a Modelica expression. *)
-
+  (** The 'Code' datatype is used for Meta-programming. It orgiginates from the Code quotation. *)
   datatype Code = C_TYPENAME of Path 
 		| C_VARIABLENAME of ComponentRef 
 		| C_EQUATIONSECTION of bool * EquationItem list 
@@ -387,37 +387,43 @@ module Absyn:
 		| C_ELEMENT of Element 
 		| C_EXPRESSION of Exp 
 		| C_MODIFICATION of Modification
-  (** The 'Code' datatype is used for Meta-programming. It orgiginates from the Code quotation. *)
 
+
+  (** The `FunctionArgs' datatype consists of a list of positional arguments *)
+  (** followed by a list of named arguments (Modelica v2.0) *)							  
   datatype FunctionArgs =  FUNCTIONARGS of Exp list (* args *)
                                          * NamedArg list (* argNames *)
 			| FOR_ITER_FARG of Exp (* from *)
                                          * Ident (* var *)
                                          * Exp (* to *)
-  (** The `FunctionArgs' datatype consists of a list of positional arguments *)
-  (** followed by a list of named arguments (Modelica v2.0) *)
-							  
-  datatype NamedArg = NAMEDARG of Ident (* argName *)
-                                * Exp (* argValue *)
+
   (** The `NamedArg' datatype consist of an Identifier for the argument and an expression *)
   (** giving the value of the argument *)
+  datatype NamedArg = NAMEDARG of Ident (* argName *)
+                                * Exp (* argValue *)
 
+  (* Expression operators *)
   datatype Operator = ADD   | SUB    | MUL     | DIV       | POW
 		    | UPLUS | UMINUS
 		    | AND   | OR
 		    | NOT
 		    | LESS  | LESSEQ | GREATER | GREATEREQ | EQUAL | NEQUAL
-  
-  (** - Subscripts *)
-  datatype Subscript = NOSUB
-		     | SUBSCRIPT of Exp (* subScript *)
+
+
   (** The `Subscript' datatype is used both in array declarations and *)
   (** component references.  This might seem strange, but it is *)
   (** inherited from the grammar.  The `NOSUB' constructor means that *)
   (** the dimension size is undefined when used in a declaration, and *)
   (** when it is used in a component reference it means a slice of the *)
-  (** whole dimension. *)
+  (** whole dimension. *)  
+  (** - Subscripts *)
+  datatype Subscript = NOSUB
+		     | SUBSCRIPT of Exp (* subScript *)
 
+
+  (** A component reference is the fully or partially qualified name of *)
+  (** a component.  It is represented as a list of *)
+  (** identifier--subscript pairs.  *)
   (** - Component references and paths *)
   datatype ComponentRef = CREF_QUAL of Ident (* name *)
                                      * (Subscript list) (* subScripts *)
@@ -425,15 +431,21 @@ module Absyn:
 		    	| CREF_IDENT of Ident (* name *)
                                       * (Subscript list) (* subscripts *)
 
+  (** The type `Path', on the other hand, *)
+  (** is used to store references to class names, or names inside *)
+  (** class definitions. *)	      	
   datatype Path = QUALIFIED of Ident (* name *)
                              * Path (* path *)
 	      	| IDENT of Ident (* name *)
-  (** A component reference is the fully or partially qualified name of *)
-  (** a component.  It is represented as a list of *)
-  (** identifier--subscript pairs.  The type `Path', on the other hand, *)
-  (** is used to store references to class names, or names inside *)
-  (** class definitions. *)
-	      	
+
+
+  (** These constructors each correspond to a different kind of class *)
+  (** declaration in Modelica, except the last four, which are used *)
+  (** for the predefined types.  The parser assigns each class *)
+  (** declaration one of the restrictions, and the actual class *)
+  (** definition is checked for conformance during translation.  The *)
+  (** predefined types are created in the `Builtin' module and are *)
+  (** assigned special restrictions. *)
   (** - Restrictions *)
   datatype Restriction = R_CLASS
 		       | R_MODEL
@@ -450,26 +462,19 @@ module Absyn:
 		       | R_PREDEFINED_STRING
 		       | R_PREDEFINED_BOOL
 		       | R_PREDEFINED_ENUM
-  (** These constructors each correspond to a different kind of class *)
-  (** declaration in Modelica, except the last four, which are used *)
-  (** for the predefined types.  The parser assigns each class *)
-  (** declaration one of the restrictions, and the actual class *)
-  (** definition is checked for conformance during translation.  The *)
-  (** predefined types are created in the `Builtin' module and are *)
-  (** assigned special restrictions. *)
 
-  (** Annotation *)
-  datatype Annotation = ANNOTATION of ElementArg list (* elementArgs *)
   (** An Annotation is a class_modification. *)
+  (** - Annotation *)
+  datatype Annotation = ANNOTATION of ElementArg list (* elementArgs *)
+
 
   (** Comment *)	
   datatype Comment = COMMENT of Annotation option (* annotation *)	
 				* string option (* comment *)
 
-  (* ExternalDecl *)
   (* Declaration of an external function call *)
-  datatype ExternalDecl = EXTERNALDECL of 
-				  Ident option (* funcName ; The name of the external function *)
+  (* - ExternalDecl *)
+  datatype ExternalDecl = EXTERNALDECL of    Ident option (* funcName ; The name of the external function *)
 				* string option (* lang ; Lanugage of the external function *)
 				* ComponentRef option (* output ; ouput parameter as return value*)
 				* Exp list (* args ; only positional arguments, i.e. expression list*)
@@ -504,11 +509,11 @@ end
 
 (** From here down, only absyn helper functions should be present. 
  Thus,no actual absyn datatype definitions. *)
-
 with "Debug.rml"
 with "Dump.rml"
 with "Util.rml"
 with "Print.rml"
+
 
 (** relation: element_spec_name
  **
@@ -527,11 +532,11 @@ relation element_spec_name : ElementSpec => Ident =
 
 end
 
+
 (** relation: path_string
  **
  ** This relation simply converts a `Path' to a `string'.
  **)
-
 relation path_string: Path => string =
 
   rule	path_string2 (path, ".") => s
@@ -553,6 +558,7 @@ relation opt_path_string: Path option => string =
 	opt_path_string(SOME(p)) => str
 end
 
+
 (** relation: 
  **
  ** Helper relation to path_string
@@ -569,6 +575,7 @@ relation path_string2: (Path, string) => string =
 	
 end
 
+
 (** relation: path_last_ident
  **
  ** Returns the last ident (After last dot) in a paht
@@ -583,6 +590,7 @@ relation path_last_ident : Path => Ident =
 
 end
 
+
 (** relation: path_first_ident
  **
  ** Returns the last ident (After last dot) in a paht
@@ -593,6 +601,7 @@ relation path_first_ident : Path => Ident =
 	
   axiom	path_first_ident(IDENT(n)) => n
 end
+
 
 (** relation: get_cref_from_exp
  **
@@ -680,6 +689,7 @@ relation get_cref_from_exp: ( Exp ) => ComponentRef list =
 
 end
 
+
 (** relation: get_cref_from_farg
  ** 
  ** Returns the flattened list of all component references 
@@ -697,6 +707,7 @@ relation get_cref_from_farg: (FunctionArgs) => ComponentRef list =
 
 end
 
+
 (** relation: get_cref_from_narg
  ** 
  ** Returns the flattened list of all component references 
@@ -708,6 +719,7 @@ relation get_cref_from_narg: (NamedArg) => ComponentRef list =
 	-----------------------------
 	get_cref_from_narg(NAMEDARG(_,exp)) => res
 end
+
 
 (** relation: join_paths
  **
@@ -722,7 +734,8 @@ relation join_paths: (Path, Path) => (Path) =
 	join_paths(QUALIFIED(str,p),p2) => QUALIFIED(str,p')
 end
 
-(** relation: join_paths
+
+(** relation: path_append_list
  ** author Lucian
  ** This relation joins a path list
  **)
@@ -739,8 +752,6 @@ relation path_append_list: (Path list) => (Path) =
 
 end
         
-        
-
 
 (** relation: strip_last
  **
@@ -775,6 +786,7 @@ relation cref_to_path : ComponentRef => Path =
 
 end
 
+
 (** relation: path_to_cref
  **
  ** This relation converts a Path to a ComponentRef.
@@ -788,7 +800,11 @@ relation path_to_cref : Path => ComponentRef =
 	path_to_cref QUALIFIED(i,p) => CREF_QUAL(i,[],c)
 end
 
-
+(** relation: join_crefs
+ **
+ ** This relation joins two ComponentRefs.
+ ** 
+ **)
 relation join_crefs : (ComponentRef, ComponentRef) => ComponentRef =
 
   axiom	join_crefs ( CREF_IDENT(id,sub),cr2) => CREF_QUAL(id,sub,cr2)
@@ -797,6 +813,7 @@ relation join_crefs : (ComponentRef, ComponentRef) => ComponentRef =
 	------------------------
 	join_crefs (CREF_QUAL(id,sub,cr),cr2) => CREF_QUAL(id,sub,cr')
 end 
+
 
 (** relation: cref_get_first
  **
@@ -809,6 +826,7 @@ relation cref_get_first : ComponentRef => ComponentRef =
   axiom	cref_get_first(CREF_QUAL(i,_,_)) => CREF_IDENT(i,[])
 
 end
+
 
 (** relation: restr_string
  ** 
@@ -831,6 +849,7 @@ relation restr_string : Restriction => string =
 
 end
 
+
 (** relation: print_restr
  **
  ** This is a utility relation for printing a `Restriction'.  The code
@@ -844,6 +863,7 @@ relation print_restr : Restriction => () =
 	print_restr restr
 end
 
+
 (** relation: last_classname
  **
  ** Returns the path (=namse) of the last class in a program
@@ -855,31 +875,29 @@ relation last_classname: Program => Path =
 	last_classname(PROGRAM(lst,_)) => IDENT(id)
 end
 
+
 (** relation class_filename
  ** author: PA
  **
  ** Retrieves the filename where the class is stored.
  **)
-
 relation class_filename: Class => string =
 
   axiom	class_filename (CLASS(_,_,_,_,_,_,INFO(filename,_,_))) => filename
 end
 
-(** relation class_filename
+
+(** relation set_class_filename
  ** author: PA
  **
  ** Sets the filename where the class is stored.
  **)
-
 relation set_class_filename: (Class,string) => Class =
 
 
   axiom	set_class_filename(CLASS(n,p,f,e,r,body,_),filename)
 	=> CLASS(n,p,f,e,r,body,INFO(filename,0,0))
 end
-
-
 
 
 (** relation: print_absyn_exp 
@@ -905,6 +923,7 @@ relation print_absyn_exp : Exp => () =
 	print_absyn_exp (_)
 end
 
+
 (** relation: cref_equal
  **
  ** Checks if the name of a ComponentRef is equal to the name of 
@@ -924,6 +943,8 @@ relation cref_equal: (ComponentRef, ComponentRef) =>  bool =
 
   axiom	cref_equal(_,_) => false
 end
+
+
 (** relation is_package_restriction
  ** checks if the provided parameter is a package or not
  **) 

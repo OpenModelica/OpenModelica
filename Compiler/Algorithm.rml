@@ -123,6 +123,7 @@ with "Print.rml"
 with "Dump.rml"
 with "Debug.rml"
 with "Error.rml"
+with "Absyn.rml"
 
 (** relation: make_assignment
  **
