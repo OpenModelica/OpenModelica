@@ -89,113 +89,74 @@ void set_cflags(char *str)
 *   Find and replace text within a string.
 *
 * Parameters:
-*   src  (in) - pointer to source string
-*   from (in) - pointer to search text
-*   to   (in) - pointer to replacement text
+*   source_src  (in) - pointer to source string
+*   search_str (in) - pointer to search text
+*   replace_str   (in) - pointer to replacement text
 *
 * Returns:
 *   Returns a pointer to dynamically-allocated memory containing string
-*   with occurences of the text pointed to by 'from' replaced by with the
-*   text pointed to by 'to'.
+*   with occurences of the text pointed to by 'search_str' replaced by with the
+*   text pointed to by 'replace_str'.
 */
-char *replace(const char *src, const char *from, const char *to)
+
+char* _replace(char* source_str,char* search_str,char* replace_str)
 {
-        /*
-        * Find out the lengths of the source string, text to replace, and
-        * the replacement text.
-        */
-        size_t size    = strlen(src) + 1;
-        size_t fromlen = strlen(from);
-        size_t tolen   = strlen(to);
-        /*
-        * Allocate the first chunk with enough for the original string.
-        */
-        char *value = malloc(size);
-        /*
-        * We need to return 'value', so let's make a copy to mess around with.
-        */
-        char *dst = value;
-        /*
-        * Before we begin, let's see if malloc was successful.
-        */
-        if ( value != NULL )
+  char *ostr, *nstr = NULL, *pdest = "";
+  int length, nlen;
+  unsigned int nstr_allocated;
+  unsigned int ostr_allocated;
+  
+  if(!source_str || !search_str || !replace_str){
+    printf("Not enough arguments\n");
+    return NULL;
+  }
+  ostr_allocated = sizeof(char) * (strlen(source_str)+1);
+  ostr = malloc( sizeof(char) * (strlen(source_str)+1));
+  if(!ostr){
+    printf("Insufficient memory available\n");
+    return NULL;
+  }
+  strcpy(ostr, source_str);
+
+  while(pdest)
+    {
+      pdest = strstr( ostr, search_str );
+      length = (int)(pdest - ostr);
+
+      if ( pdest != NULL )
         {
-                /*
-                * Loop until no matches are found.
-                */
-                for ( ;; )
-                {
-                        /*
-                        * Try to find the search text.
-                        */
-                        const char *match = strstr(src, from);
-                        if ( match != NULL )
-                        {
-                                /*
-                                * Found search text at location 'match'. :)
-                                * Find out how many characters to copy up to the 'match'.
-                                */
-                                size_t count = match - src;
-                                /*
-                                * We are going to realloc, and for that we will need a
-                                * temporary pointer for safe usage.
-                                */
-                                char *temp;
-                                /*
-                                * Calculate the total size the string will be after the
-                                * replacement is performed.
-                                */
-                                size += tolen - fromlen;
-                                /*
-                                * Attempt to realloc memory for the new size.
-                                */
-                                temp = realloc(value, size);
-                                if ( temp == NULL )
-                                {
-                                        /*
-                                        * Attempt to realloc failed. Free the previously malloc'd
-                                        * memory and return with our tail between our legs. :(
-                                        */
-                                        free(value);
-                                        return NULL;
-                                }
-                                /*
-                                * The call to realloc was successful. :) But we'll want to
-                                * return 'value' eventually, so let's point it to the memory
-                                * that we are now working with.
-                                */
-                                value = temp;
-                                /*
-                                * Copy from the source to the point where we matched. Then
-                                * move the source pointer ahead by the amount we copied. And
-                                * move the destination pointer ahead by the same amount.
-                                */
-                                memmove(dst, src, count);
-                                src += count;
-                                dst += count;
-                                /*
-                                * Now copy in the replacement text 'to' at the position of
-                                * the match. Adjust the source pointer by the text we replaced.
-                                * Adjust the destination pointer by the amount of replacement
-                                * text.
-                                */
-                                memmove(dst, to, tolen);
-                                src += fromlen;
-                                dst += tolen;
-                        }
-                        else /* No match found. */
-                        {
-                                /*
-                                * Copy any remaining part of the string. This includes the null
-                                * termination character.
-                                */
-                                strcpy(dst, src);
-                                break;
-                        }
-                }
+          ostr[length]='\0';
+          nlen = strlen(ostr)+strlen(replace_str)+strlen( strchr(ostr,0)+strlen(search_str) )+1;
+          if( !nstr || /* _msize( nstr ) */ nstr_allocated < sizeof(char) * nlen){
+            nstr_allocated = sizeof(char) * nlen;
+            nstr = malloc( sizeof(char) * nlen );
+          }
+          if(!nstr){
+            printf("Insufficient memory available\n");
+            return NULL;
+          }
+
+          strcpy(nstr, ostr);
+          strcat(nstr, replace_str);
+          strcat(nstr, strchr(ostr,0)+strlen(search_str));
+
+          if( /* _msize(ostr) */ ostr_allocated < sizeof(char)*strlen(nstr)+1 ){
+            ostr_allocated = sizeof(char)*strlen(nstr)+1;
+            ostr = malloc(sizeof(char)*strlen(nstr)+1 );
+          }
+          if(!ostr){
+            printf("Insufficient memory available\n");
+            return NULL;
+          }
+          strcpy(ostr, nstr);
         }
-        return value;
+    }
+  if(nstr)
+    free(nstr);
+  return ostr;
 }
+
+ 
 
 void System_5finit(void)
 {
@@ -377,18 +338,19 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__string_5freplace)
 {
-  char *str = RML_STRINGDATA(rmlA0);
-  char *source = RML_STRINGDATA(rmlA1);
-  char *target = RML_STRINGDATA(rmlA2);
+  char *str = /* strdup( */RML_STRINGDATA(rmlA0)/* ) */;
+  char *source = /* strdup( */RML_STRINGDATA(rmlA1)/* ) */;
+  char *target =/*  strdup( */RML_STRINGDATA(rmlA2)/* ) */;
   char * res=0;
-
-  res = replace(str,source,target);
-
+/*   printf("in '%s' replace '%s' with '%s'\n",str,source,target); */
+  res = _replace(str,source,target);
   if (res == NULL) {
+/*      printf("res == NULL\n");  */
     RML_TAILCALLK(rmlFC);
   }
   rmlA0 = (void*) mk_scon(res);
-
+/*   printf("Replace result: '%s'\n",res); */
+  free(res);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -866,9 +828,10 @@ RML_BEGIN_LABEL(System__hash)
 {
   char *str = RML_STRINGDATA(rmlA0);
   int res=0,i=0;
-  while( str[i])
+  while( str[i]){
     res+=(int)str[i++];
-      
+  }
+
   rmlA0 = (void*) mk_icon(res);
   RML_TAILCALLK(rmlSC);
 }

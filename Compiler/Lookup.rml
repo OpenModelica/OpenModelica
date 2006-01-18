@@ -282,17 +282,17 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 	lookup_class(env, p as Absyn.QUALIFIED(pack,path), msgflag) 
 	  => (c', env5)
 
-  rule	(*print "-lookup_class failed\n" &
+  rule	print "-lookup_class failed\n" &
  	Absyn.path_string path => s & 
-	Env.print_env env &
-	Print.get_string => str & print "Env: " & print str & print "\n" 
-	Print.print_buf "#Error, class " & Print.print_buf s & 
-	Print.print_buf " not found.\n" &
+(* 	Env.print_env env & *)
+(* 	Print.get_string => str & print "Env: " & print str & print "\n" & *)
+(* 	Print.print_buf "#Error, class " & Print.print_buf s &  *)
+(* 	Print.print_buf " not found.\n" & *)
 	Debug.fprint("failtrace", "- lookup_class failed\n  - looked for ") &
  	Debug.fprint("failtrace",  s) &
 	Debug.fprint("failtrace", "\n env:") &
 	Debug.fcall("failtrace", Env.print_env, env) &
-	Debug.fprint("failtrace", "\n") *)
+	Debug.fprint("failtrace", "\n")
 	--------------
 	lookup_class(env,path,true)=> fail 
 end

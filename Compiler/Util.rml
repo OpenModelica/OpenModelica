@@ -66,7 +66,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ** which returns a list of n elements of a certain type.
  **)
 
-module Util :
+ module Util :
+   
+  datatype ReplacePattern = REPLACEPATTERN of string * (* from string (ie "." *)
+                                              string  (* to string (ie "$p") *)
+                                                        (*))*)
+                                                                        
+                                                                        
   relation if : (bool,'a,'a) => 'a
   relation list_fill: ('a ,int) => 'a list
   relation list_int_range: (int) => int list 
@@ -127,7 +133,7 @@ module Util :
   relation array_n_copy:(''a array (*src*), ''a array (*dst*), int (*n*)) 
 	  => ''a array
 
-  relation tuple2_1 : ('a * 'b) => 'a
+  relation tuple2_1 : ('a * 'b) => 'a 
   relation tuple2_2 : ('a * 'b) => 'b
 
   relation split_tuple2_list : ('a * 'b) list => ('a list, 'b list)
@@ -137,6 +143,8 @@ module Util :
   relation string_delimit_list_no_empty : (string list, string) => string
   relation string_replace_char : (string, char, char) => string
   relation string_split_at_char : (string, char) => string list 
+  relation modelica_string_to_c_str : string => string
+  relation c_str_to_modelica_string : string => string
   relation is_empty_string : string => bool 
   relation is_not_empty_string : string => bool 
 
@@ -169,6 +177,12 @@ module Util :
 
   relation tick_str:() => string
 end
+
+val replaceStringPatterns = [REPLACEPATTERN(".","$point"),
+                             REPLACEPATTERN("[","$leftBracket"),
+                             REPLACEPATTERN("]","$rightBracket")]
+
+
 
 with "System.rml"
 with "Print.rml"
@@ -1342,6 +1356,59 @@ relation string_split_at_char2 : (char list, char,char list) => string list  =
         ---------------------------------
         string_split_at_char2(strList,_,_) => fail
 
+end
+
+(**relation modelica_string_to_c_str
+ **this replaces symbols that are illegal in C to legal symbols
+ **see replaceStringPatterns to see the format. (example: "." becomes "$p")
+ ** author: x02lucpo
+ **)
+relation modelica_string_to_c_str : string => string =
+
+  rule  modelica_string_to_c_str1(str,replaceStringPatterns) => res_str
+        ----------------------------------
+        modelica_string_to_c_str(str)  => res_str
+
+end
+
+relation modelica_string_to_c_str1 : (string, ReplacePattern list) => string =
+        
+  axiom modelica_string_to_c_str1(str,[]) => str
+
+  rule  modelica_string_to_c_str1(str,res) => str' &
+        System.string_replace(str',from,to) => res_str
+        ----------------------------
+        modelica_string_to_c_str1(str,REPLACEPATTERN(from,to)::res) => res_str
+
+  rule  print "-modelica_string_to_c_str1 failed\n" 
+        ----------------------------
+        modelica_string_to_c_str1(_,_) => fail
+
+       
+end
+
+(**relation c_str_to_modelica_string
+ **this replaces symbols that have been replace to correct value for modelica string
+ **see replaceStringPatterns to see the format. (example: "$p" becomes ".")
+ ** author: x02lucpo
+ **)
+relation c_str_to_modelica_string : string => string =
+
+  rule c_str_to_modelica_string1(str,replaceStringPatterns) => res_str
+        ----------------------------------
+        c_str_to_modelica_string(str)  => res_str
+
+end
+
+relation c_str_to_modelica_string1 : (string, ReplacePattern list) => string =
+        
+  axiom c_str_to_modelica_string1(str,[]) => str
+
+  rule  c_str_to_modelica_string1(str,res) => str' &
+        System.string_replace(str',to,from) => res_str
+        ----------------------------
+        c_str_to_modelica_string1(str,REPLACEPATTERN(from,to)::res) => res_str
+        
 end
 
 (** relation bool_or_list

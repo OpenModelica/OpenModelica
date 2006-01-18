@@ -1791,21 +1791,21 @@ end
          
   rule  extract_file_prefix(env,fileprefix,st,msg) => filenameprefix &
          Static.component_ref_to_path(cr) => classname &
-	 SCode.elaborate(p) => p' &
-	 Inst.instantiate_class(p',classname) => (dae', env) &
-	 DAE.transform_if_eq_to_expr(dae') => (dae as DAE.DAE(dael)) &
-	 Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(classname,dael,env)) 
+         SCode.elaborate(p) => p' &
+         Inst.instantiate_class(p',classname) => (dae', env) &
+         DAE.transform_if_eq_to_expr(dae') => (dae as DAE.DAE(dael)) &
+         Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(classname,dael,env)) 
 	  => ic' &
-	   DAELow.lower(dae,true) => dlow &
-	 Debug.fprint("bltdump","Lowered DAE:\n") &
-	 Debug.fcall("bltdump", DAELow.dump,dlow) &
-	 DAELow.incidence_matrix(dlow) => m &
+           DAELow.lower(dae,true) => dlow &
+         Debug.fprint("bltdump","Lowered DAE:\n") &
+         Debug.fcall("bltdump", DAELow.dump,dlow) &
+         DAELow.incidence_matrix(dlow) => m &
 	 DAELow.transpose_matrix(m) => mT &
 	 DAELow.matching_algorithm(dlow,m,mT,(DAELow.INDEX_REDUCTION,DAELow.EXACT)) 
 	  => (ass1,ass2,dlow',m,mT) &
-	   DAELow.strong_components(m,mT,ass1,ass2) => (comps) &
-	 DAELow.translate_dae (dlow') => indexed_dlow &
-	 DAELow.calculate_values(indexed_dlow) => indexed_dlow' &
+           DAELow.strong_components(m,mT,ass1,ass2) => (comps) &
+         DAELow.translate_dae (dlow') => indexed_dlow &
+         DAELow.calculate_values(indexed_dlow) => indexed_dlow' &
 	 Debug.fprint("bltdump","indexed DAE:\n") &
 	 Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) &
 	 Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT) &
@@ -1918,19 +1918,19 @@ relation build_model:(Env.Env,
 		      Exp.Exp, (* component ref for model *)
 		      Interactive.InteractiveSymbolTable,
                       Msg)
-        => (string, (*classname*)
-            string, (*method*)
-            Interactive.InteractiveSymbolTable, 
-            string) (*initfilename*)  =
+          => (string, (*classname*)
+              string, (*method*)
+              Interactive.InteractiveSymbolTable, 
+              string) (*initfilename*)  =
 
-  rule  translate_model(env,cr,st',msg,fileprefix) => (ret_val, st,indexed_dlow',libs) &
+  rule   translate_model(env,cr,st',msg,fileprefix) => (ret_val, st,indexed_dlow',libs) &
         Static.component_ref_to_path(cr) => classname &
 	Absyn.path_string(classname) => cname_str &
         
         Exp.unelab_cref(cr) => a_cref &
         change_to_file_dir(a_cref,p) &
         calculate_simulation_settings(env,exp,st,msg,cname_str) => (init_filename,starttime_r,
-                                                                     stoptime_r,stepsize_r,method_str) &
+                                                                    stoptime_r,stepsize_r,method_str) &
         
 	SimCodegen.generate_init_data(indexed_dlow',classname,init_filename,
 				      starttime_r,stoptime_r,stepsize_r) &

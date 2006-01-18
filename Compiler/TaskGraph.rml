@@ -64,6 +64,7 @@ module TaskGraph:
   with "DAELow.rml"
   relation build_taskgraph: (DAELow.DAELow, int vector, int vector, int list list) => ()
 
+
 end
 
 with "TaskGraphExt.rml"
@@ -270,7 +271,14 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	list_nth(varlst,v') => DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flow) &
 (*	print "solving for state\n" &*)
 	int_string(indx) => indxs &
-	Util.string_append_list(["xd[",indxs,"]"]) => id &
+
+
+(* 	Util.string_append_list(["xd[",indxs,"]"]) => id & *)
+        Exp.print_component_ref_str(cr) => name &
+        Util.modelica_string_to_c_str(name) => c_name &
+        Util.string_append_list([DAELow.derivative_name_prefix,c_name]) => id &
+
+
 	let cr' = Exp.CREF_IDENT(id,[]) &
 	let varexp = Exp.CREF(cr',Exp.REAL) &
 	Exp.solve(e1,e2,varexp) => expr &
@@ -304,7 +312,17 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	DAELow.var_list(vars) => varlst &
 	list_nth(varlst,v') => DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,_,indx,origname,_,dae_var_attr,_,flow) &
 	int_string(indx) => indxs &
-	Util.string_append_list(["xd[",indxs,"]"]) => id &
+
+
+
+(* 	Util.string_append_list(["xd[",indxs,"]"]) => id & *)
+        Exp.print_component_ref_str(cr) => name &
+        Util.modelica_string_to_c_str(name) => c_name &
+        Util.string_append_list([DAELow.derivative_name_prefix,c_name]) => id &
+
+
+
+
 	let cr' = Exp.CREF_IDENT(id,[]) &
 	let varexp = Exp.CREF(cr',Exp.REAL) &
 	not Exp.solve(e1,e2,varexp) => _ &
