@@ -215,6 +215,7 @@ module SCode :
   relation is_parameter_or_const: Variability => bool
   relation is_function : Class => bool
   relation class_name : Class => string
+  relation class_set_partial: (Class,bool) => Class 
 
 end
 
@@ -1312,3 +1313,14 @@ relation class_name : Class => string =
 
 end
 
+(** relation: class_set_partial
+ ** author: PA
+ **
+ ** Sets the partial attribute of a Class
+ **)
+
+relation class_set_partial: (Class,bool) => Class =
+
+  axiom	class_set_partial(CLASS(id,_,enc,restr,def),partial)
+	  => CLASS(id,partial,enc,restr,def)
+end

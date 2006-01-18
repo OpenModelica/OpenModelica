@@ -717,7 +717,8 @@ relation inst_class_basictype : (Env, Mod, Prefix, Connect.Sets, SCode.Class,
 
   rule	Env.open_scope(env,encflag,SOME(n)) => env' &
 	ClassInf.start(r,n) => ci_state &
-	inst_class_in(env', mod, pre, csets, ci_state, c, false(*accesibility*), inst_dims, impl,false (*packimpl*))
+	SCode.class_set_partial(c,false) => c' &
+	inst_class_in(env', mod, pre, csets, ci_state, c', false(*accesibility*), inst_dims, impl,false (*packimpl*))
 	  => (dae1, env''', csets' as Connect.SETS(_,crs), ci_state', 
 	      tys,bc_ty) &
 	make_fully_qualified(env,Absyn.IDENT(n)) => fq_class &
@@ -741,6 +742,8 @@ relation inst_class_basictype : (Env, Mod, Prefix, Connect.Sets, SCode.Class,
 	inst_class_basictype(_,_,_,_,SCode.CLASS(n,_,_,_,_),_,impl,_) => fail
 	
 end
+
+
 
 (** relation: inst_class_in
  **
@@ -923,7 +926,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 
   rule	classdef_elts(els) => cdefelts &
 	component_elts(els) => compelts (*should be empty, checked in inst_basic type below*) &
-	extends_elts(els) => extendselts &
+	extends_elts(els) => (extendselts as _::_)  &
 	
 	(* 1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)*)
 	add_classdefs_to_env(env,cdefelts,impl) => env1 &

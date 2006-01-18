@@ -2673,18 +2673,10 @@ end
 
    axiom	set_component_submodifier_in_compitems([],_,_,_) => []
 
-   rule	(* for "empty" modifications*)
-	 varname = id 
-	 ---------------------------------------
-	 set_component_submodifier_in_compitems(
-			   Absyn.COMPONENTITEM(
-			    Absyn.COMPONENT(id,dim,_),cond,cmt)::rest,
-						varname,submodpath,Absyn.CLASSMOD([],NONE))
-	   => (Absyn.COMPONENTITEM(
-				   Absyn.COMPONENT(id,dim,NONE),cond,cmt)::rest)
 
    rule	varname = id &
-	 set_submodifier_in_elementargs(args,submodpath,mod) => args'
+	 set_submodifier_in_elementargs(args,submodpath,mod) => args' &
+	 create_opt_modification_from_eltargs(args') => optmod
 	 ---------------------------------------
 	 set_component_submodifier_in_compitems(
 			   Absyn.COMPONENTITEM(
@@ -2693,9 +2685,7 @@ end
 								expopt))),cond,cmt)::rest,
 						varname,submodpath,mod)
 	   => (Absyn.COMPONENTITEM(
-		 Absyn.COMPONENT(id,dim,
-				 SOME(Absyn.CLASSMOD(args',
-						     expopt))),cond,cmt)::rest)
+		 Absyn.COMPONENT(id,dim,optmod),cond,cmt)::rest)
 
    rule	varname = id 
 	 ----------------------------
@@ -2717,6 +2707,19 @@ end
 	 set_component_submodifier_in_compitems(_,_,_,_) => fail
  end
 
+(** relation: create_opt_modification_from_eltargs
+ **
+ ** Creates an Modification option from an ElementArg list.
+ ** If list is empty, NONE is created.
+**)
+
+relation create_opt_modification_from_eltargs: Absyn.ElementArg list =>
+	Absyn.Modification option =
+
+  axiom	create_opt_modification_from_eltargs([]) => NONE
+
+  axiom	create_opt_modification_from_eltargs(args) => SOME(Absyn.CLASSMOD(args,NONE))
+end
 
  (** relation: set_submodifier_in_elementargs
   **
@@ -2737,6 +2740,14 @@ end
            set_submodifier_in_elementargs([],cref ,mod) 
 	   => [Absyn.MODIFICATION(false,Absyn.NON_EACH,cref,SOME(mod),NONE)]
 
+
+	   (* empty modification, remove MODIFICATION *)
+   rule	name = submodident
+	  ----------------------
+	 set_submodifier_in_elementargs(Absyn.MODIFICATION(f,each,Absyn.CREF_IDENT(name,idx),_,cmt)::rest,Absyn.CREF_IDENT(submodident,_),mod as Absyn.CLASSMOD([],NONE)) 
+	   => rest
+
+	   (* update modification*)
    rule	name = submodident
 	  ----------------------
 	 set_submodifier_in_elementargs(Absyn.MODIFICATION(f,each,Absyn.CREF_IDENT(name,idx),_,cmt)::rest,Absyn.CREF_IDENT(submodident,_),mod) 
