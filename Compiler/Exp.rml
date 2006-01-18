@@ -199,6 +199,7 @@ module Exp:
 
   relation print_list : ('a list, 'a => (), string) => ()
   relation cref_equal : (ComponentRef, ComponentRef) => bool
+  relation cref_equal_return : (ComponentRef, ComponentRef) => ComponentRef
   relation cref_str : ComponentRef => string
   relation cref_to_path : ComponentRef => Absyn.Path
   relation path_to_cref : Absyn.Path => ComponentRef 
@@ -250,6 +251,9 @@ module Exp:
 			  'a) (* extra value passed to re-lation*)
 	  => (Exp *  'a) 
 
+  relation nth_array_exp: (Exp,int) => Exp
+  relation exp_add: (Exp,Exp) => Exp
+  relation exp_cref: (Exp) => ComponentRef
 end
 
 
@@ -642,6 +646,20 @@ relation cref_equal : (ComponentRef, ComponentRef) => bool =
 
 end
 
+(** relation: cref_equal_return
+ ** author: PA
+ **
+ ** Checks if two crefs are equal and if so returns the cref,
+ ** otherwise fail.
+ **)
+
+relation cref_equal_return : (ComponentRef, ComponentRef) => ComponentRef =
+
+  rule	cref_equal(cr,cr2) => true
+	-------
+	cref_equal_return (cr,cr2) => cr
+end
+
 (** relation: subscript_equal
  ** 
  ** Returns true if two subscript lists are equal.
@@ -826,7 +844,12 @@ relation simplify : Exp => Exp =
 	----------------------------------
 	simplify (exp as UNARY(op, e1)) => e
 
+	(* binary array and matrix expressions *)
+  rule	simplify_binary_array(e1,op,e2) => e'
+	------------------
+	simplify ( exp as BINARY(e1,op,e2)) => e'
 
+	(* binary scalar simplifications*)
   rule	simplify e1 => e1' &
 	simplify e2 => e2' &
 	let exp' = BINARY(e1', op, e2') &
@@ -868,6 +891,243 @@ relation simplify : Exp => Exp =
 
   axiom	simplify e => e
 
+end
+
+(** relation: simplify_binary_array
+ **
+ ** Simplifies binary array expressions, e.g. matrix multiplication, etc.
+ **)
+
+relation simplify_binary_array:(Exp,Operator,Exp) => Exp =
+
+  rule	simplify_matrix_product(e1,e2) => e'
+	--------------------------------
+	simplify_binary_array(e1,MUL_MATRIX_PRODUCT(tp),e2) => e'
+	
+  rule	typeof(e1) => tp &
+
+	simplify_vector_binary(e1,ADD(tp),e2) => res
+	------------------------
+	simplify_binary_array(e1,ADD_ARR(_),e2) => res
+
+  rule	typeof(e1) => tp &
+	simplify_vector_binary(e1,SUB(tp),e2) => res
+	------------------------
+	simplify_binary_array(e1,SUB_ARR(_),e2) => res
+
+  rule	typeof(s1) => tp &
+	simplify_vector_scalar(s1,MUL(tp),a1) => res
+	------------------------
+	simplify_binary_array(s1,MUL_SCALAR_ARRAY(tp),a1) => res
+
+  rule	typeof(s1) => tp &
+	simplify_vector_scalar(s1,MUL(tp),a1) => res
+	------------------------
+	simplify_binary_array(a1,MUL_ARRAY_SCALAR(tp),s1) => res
+
+  rule	typeof(s1) => tp &
+	simplify_vector_scalar(s1,DIV(tp),a1) => res
+	------------------------
+	simplify_binary_array(a1,DIV_ARRAY_SCALAR(tp),s1) => res
+ 
+  rule	simplify_scalar_product(e1,e2) => res
+	-------------------
+	simplify_binary_array(e1,MUL_SCALAR_PRODUCT(tp),e2) => res
+
+  rule	simplify_scalar_product(e1,e2) => res 
+	-------------------
+	simplify_binary_array(e1,MUL_MATRIX_PRODUCT(tp),e2) => res
+end
+
+(** relation: simplify_scalar_product
+ ** author: PA
+ ** 
+ ** Simplifies scalar product: v1*v2, M * v1 and v1 * M 
+ ** for vectors v1,v2 and matrix M.
+**)
+
+relation simplify_scalar_product: (Exp, Exp) => Exp =
+
+	(* v1 * v2 *)
+  rule	Util.list_thread_map(expl1,expl2,exp_mul) => expl &
+	Util.list_reduce(expl,exp_add) => exp
+	--------------------------
+	simplify_scalar_product(ARRAY(tp1,sc1,expl1),ARRAY(tp2,sc2,expl2))
+	  => exp
+
+  rule	simplify_scalar_product_matrix_vector(expl1,expl2) => expl'
+	-------------------------
+	simplify_scalar_product(MATRIX(tp,size1,expl1),ARRAY(tp2,sc,expl2))
+	  => ARRAY(tp2,sc,expl')
+
+  rule	simplify_scalar_product_vector_matrix(expl1,expl2) => expl'
+	-------------------------
+	simplify_scalar_product(ARRAY(tp1,sc,expl1),MATRIX(tp2,size,expl2))
+	  => ARRAY(tp2,sc,expl')
+end
+
+(** relation: simplify_scalar_product_matrix_vector
+ **
+ ** 
+ ** Simplifies scalar product of matrix * vector.
+**)
+
+relation simplify_scalar_product_matrix_vector: ((Exp * bool) list list,
+						 Exp list ) 
+	  => Exp list =
+
+  axiom	simplify_scalar_product_matrix_vector([],_)=> []
+
+  rule	Util.list_map(row,Util.tuple2_1) => row' &
+	Util.list_thread_map(row',v1,exp_mul) => expl &
+	Util.list_reduce(expl,exp_add) => exp & 
+	simplify_scalar_product_matrix_vector(rows,v1) => res
+	------------------------
+	simplify_scalar_product_matrix_vector(row::rows,v1)
+	  => exp::res
+end
+
+(** relation: simplify_scalar_product_vector_matrix
+ **
+ ** 
+ ** Simplifies scalar product of vector * matrix 
+**)
+
+relation simplify_scalar_product_vector_matrix: (Exp list,
+						 (Exp * bool) list list) 
+	  => Exp list =
+
+  axiom	simplify_scalar_product_vector_matrix([],_)=> []
+
+  rule	Util.list_map(row,Util.tuple2_1) => row' &
+	Util.list_thread_map(v1,row',exp_mul) => expl &
+	Util.list_reduce(expl,exp_add) => exp &
+	simplify_scalar_product_vector_matrix(v1,rows) => res
+	------------------------
+	simplify_scalar_product_vector_matrix(v1,row::rows)
+	  => exp::res
+end
+
+(** relation: simplify_vector_scalar
+ **
+ ** Simplifies vector scalar operations.
+**)
+
+relation simplify_vector_scalar: (Exp, (* scalar*)
+				 Operator, (* resulting operator *)
+				 Exp) (* array *)
+	  => Exp =
+
+  axiom	simplify_vector_scalar(s1,op,ARRAY(tp,sc,[e1])) => ARRAY(tp,sc,[BINARY(s1,op,e1)])
+
+  rule	simplify_vector_scalar(s1,op,ARRAY(tp,sc,es)) => ARRAY(_,_,es') 
+	-----------------------------------
+	simplify_vector_scalar(s1,op,ARRAY(tp,sc,e1::es))
+	  => ARRAY(tp,sc,BINARY(s1,op,e1)::es')
+end
+
+(** relation: simlify_binary_array
+ ** author: PA
+ **
+ ** Simplifies vector addition and subtraction
+**)
+relation simplify_vector_binary:(Exp, 
+				Operator(* resulting operator*), 
+				Exp) => Exp =
+
+  axiom	simplify_vector_binary(ARRAY(tp1,scalar1,[e1]),
+			       op,
+			       ARRAY(tp2,scalar2,[e2]))
+	  => ARRAY(tp1,scalar1,[BINARY(e1,op,e2)])
+	  
+  rule	simplify_vector_binary(ARRAY(tp1,scalar1,es1),op,
+			       ARRAY(tp2,scalar2,es2))
+	  => ARRAY(_,_,es')
+	-------------------------
+	simplify_vector_binary(ARRAY(tp1,scalar1,e1::es1),op,
+			       ARRAY(tp2,scalar2,e2::es2))
+	=> ARRAY(tp1,scalar1,BINARY(e1,op,e2)::es')
+	      
+end
+
+(** relation: simplify_matrix_product
+ ** author: PA
+ ** 
+ ** Simplifies matrix products A * B for matrices A and B.
+**)
+
+relation simplify_matrix_product: (Exp(* A *),
+				   Exp(* B *)) 
+ => Exp =
+
+  rule	simplify_matrix_product2(expl1,expl2) => expl'
+	----------------
+	simplify_matrix_product(MATRIX(tp1,size1,expl1),MATRIX(tp2,size2,expl2))
+	  => MATRIX(tp1,size1,expl')
+end
+
+(** relation: simplify_matrix_product2
+ ** author: PA
+ ** 
+ ** Helper relation to simplify_matrix_product.
+ **)
+
+relation simplify_matrix_product2: ((Exp*bool) list list, (Exp*bool) list list) 
+	  => (Exp * bool) list list =
+
+  rule	simplify_matrix_product3(e1lst,m2) => res1 &
+	simplify_matrix_product2(rest1,m2) => res2
+	-----------------------
+	simplify_matrix_product2(e1lst::rest1,m2) => res1::res2
+
+  axiom	simplify_matrix_product2([],_) => []
+
+end
+
+(** relation: simplify_matrix_product3
+ ** author: PA
+ **
+ ** Helper relation to simplify_matrix_product2. Extract each column at
+ ** a time from the second matrix to calculate vector products with the first
+ ** argument.
+ **)
+
+relation simplify_matrix_product3: ((Exp*bool) list, (Exp*bool) list list) 
+	  => (Exp*bool) list =
+
+  axiom	simplify_matrix_product3([],_) => []
+
+  rule	Util.list_map(mat,Util.list_first)=> first_col &
+	Util.list_map(mat,Util.list_rest)=> mat' &
+	simplify_matrix_product4(expl,first_col) => e' &
+	typeof(e') => tp & type_builtin(tp) => builtin &
+	simplify_matrix_product3(expl,mat') => es
+	------------------------------
+	simplify_matrix_product3(expl, mat) => ((e',builtin)::es)
+
+  axiom	simplify_matrix_product3(_,_) => []
+end
+
+(** relation simplify_matrix_product4 
+ ** author: PA
+ **
+ ** Helper relation to simplify_matrix3, performs a scalar mult of vectors
+ **)
+relation simplify_matrix_product4: ((Exp*bool) list, (Exp*bool) list) => Exp =
+
+  rule	typeof(e1) => tp
+	--------------------
+	simplify_matrix_product4([(e1,_)],[(e2,_)]) 
+	  => BINARY(e1,MUL(tp),e2)
+
+  rule	simplify_matrix_product4(es1,es2) => e &
+	typeof(e) => tp &
+	simplify(BINARY(BINARY(e1,MUL(tp),e2),
+		    ADD(tp),
+		    e)) => res
+	---------------------------
+	simplify_matrix_product4((e1,_)::es1,(e2,_)::es2) 
+	  => res
 end
 
 (** relation: add_cast
@@ -4828,6 +5088,57 @@ relation get_function_calls : Exp => Exp list =
 	get_function_calls(SIZE(e1,e2)) => res
 
  axiom	get_function_calls(_) => []
+
+end
+
+(** relation: nth_array_exp
+ ** author: PA
+ **
+ ** Returns the nth expression of an array expression.
+ **)
+
+
+relation nth_array_exp: (Exp,int) => Exp =
+
+  rule	list_nth(expl,indx) => e
+	-------------------
+	nth_array_exp(ARRAY(_,_,expl),indx) => e
+end
+
+(** relation: exp_add
+ ** author: PA
+ ** 
+ ** Adds two scalar expressions.
+ **)
+ 
+relation exp_add: (Exp,Exp) => Exp =
+
+  rule	typeof(e1) => tp & type_builtin(tp) => true 
+	------------------------------------
+	exp_add(e1,e2) => BINARY(e1,ADD(tp),e2)
+end
+
+(** relation: exp_mul
+ ** author: PA
+ ** 
+ ** Multiplies two scalar expressions.
+ **)
+ 
+relation exp_mul: (Exp,Exp) => Exp =
+
+  rule	typeof(e1) => tp & type_builtin(tp) => true 
+	------------------------------------
+	exp_mul(e1,e2) => BINARY(e1,MUL(tp),e2)
+end
+
+(** relation: exp_cref
+ **
+ ** Returns the componentref is exp is a CREF,
+ **)
+
+relation exp_cref: (Exp) => ComponentRef =
+
+  axiom	exp_cref(CREF(cr,_)) => cr
 
 end
 

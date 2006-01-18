@@ -201,6 +201,7 @@ module Types :
   relation print_binding : Binding => ()
   relation print_binding_str : Binding => string
   relation get_arraydim_str: ArrayDim => string
+  relation arraydim_int: ArrayDim => int 	  
   relation print_params : FuncArg list => () 
   relation print_farg: FuncArg => () 
   relation print_farg_str: FuncArg => string
@@ -1250,7 +1251,16 @@ relation get_arraydim_str: ArrayDim => string =
 
 end
 
+(** relation: arraydim_int
+ **
+ ** Return the dimension of an ArrayDim
+ **)
 
+relation arraydim_int: ArrayDim => int =
+
+  axiom	arraydim_int DIM(SOME(i)) => i
+
+end
 (** relation: print_params
  ** 
  ** Prints function arguments to the Print buffer.

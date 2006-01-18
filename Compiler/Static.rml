@@ -203,16 +203,24 @@ end
 (** relation: ceval_if_constant
  **
  ** This relation calls Ceval.ceval if the Constant parameter indicates
- ** C_CONST.
+ ** C_CONST. If not constant, it also tries to simplify the expression using
+ ** Exp.simplify
  **)
 
 relation ceval_if_constant: (Exp.Exp, Types.Properties, Types.Const, bool (* impl *), Env.Env) 
 	  => (Exp.Exp, Types.Properties) =
 
-  axiom	ceval_if_constant(e,prop,Types.C_VAR,_,_) => (e, prop)
-  axiom	ceval_if_constant(e,prop,Types.C_PARAM,_,_) => (e, prop)
+  rule	Exp.simplify(e) => e'
+	---------------------
+	ceval_if_constant(e,prop,Types.C_VAR,_,_) => (e', prop)
 
-  axiom	ceval_if_constant(e,prop,Types.C_CONST ,impl as true,_) => (e, prop)	
+  rule	Exp.simplify(e) => e'
+	---------------------
+	ceval_if_constant(e,prop,Types.C_PARAM,_,_) => (e', prop)
+
+  rule	Exp.simplify(e) => e'
+	---------------------
+	ceval_if_constant(e,prop,Types.C_CONST ,impl as true,_) => (e', prop)	
 
   rule	Ceval.ceval(env,e,impl,NONE,NONE,Ceval.MSG) => (v,_) &
 	value_exp(v) => e' &
@@ -226,7 +234,9 @@ relation ceval_if_constant: (Exp.Exp, Types.Properties, Types.Const, bool (* imp
 	---------------------------------
 	ceval_if_constant(e,prop as Types.PROP_TUPLE(_,c),Types.C_CONST,impl (*as false*),env) => (e',Types.PROP_TUPLE(vt,c))
 
-  axiom	ceval_if_constant(e,prop,const,impl,env) => (e,prop)
+  rule	Exp.simplify(e) => e'
+	---------------------
+	ceval_if_constant(e,prop,const,impl,env) => (e',prop)
 
 end
 
@@ -272,7 +282,8 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 	deoverload (ops, [(e1',t1),(e2',t2)], exp) => (op',[e1'',e2''],rtype) &
 	replace_operator_with_fcall(Exp.BINARY(e1'',op',e2''),c) => exp' &
 	let prop = Types.PROP(rtype,c) &
-	ceval_if_constant(exp',prop,c,impl,env) => (exp'',prop')
+	ceval_if_constant(exp',prop,c,impl,env) => (exp'',prop') 
+	
 	---------------------------------------------
 	elab_exp (env,exp as Absyn.BINARY(e1,op,e2),impl,st)
 	  => (exp'',prop',st'')
@@ -1593,7 +1604,30 @@ end
 
 relation elab_builtin_transpose : (Env.Env, Absyn.Exp list, bool (*impl*) ) 
 	  => (Exp.Exp, Types.Properties) =
+	  (* try symbolically transpose the ARRAY expression*)
+  rule	elab_exp (env,matexp,impl,NONE) 
+	  => (Exp.ARRAY(tp,sc,expl), Types.PROP((Types.T_ARRAY(d1,(Types.T_ARRAY(d2,eltp),_)),_),_),_) &
+	  Types.arraydim_int(d1) => dim1 &
+	print "calling elab builtin_transpose2\n" &
+	elab_builtin_transpose2(expl,1,dim1) => exp'' &
+	print "elab builtin_transpose2 done\n" &
+	let newtp = ((Types.T_ARRAY(d2,(Types.T_ARRAY(d1,eltp),NONE)),NONE)) &
+	let prop = Types.PROP(newtp,Types.C_VAR)
+	------------------------------------
+	elab_builtin_transpose (env, [matexp], impl) 
+	  => (Exp.ARRAY(tp,sc,exp''), prop)
 
+	  (* try symbolically transpose the MATRIX expression*)
+  rule	elab_exp (env,matexp,impl,NONE) 
+	  => (Exp.MATRIX(tp,sc,expl), Types.PROP((Types.T_ARRAY(d1,(Types.T_ARRAY(d2,eltp),_)),_),_),_) &
+	Types.arraydim_int(d1) => dim1 &
+	elab_builtin_transpose3(expl,1,dim1) => exp'' &
+	let newtp = ((Types.T_ARRAY(d2,(Types.T_ARRAY(d1,eltp),NONE)),NONE)) &
+	let prop = Types.PROP(newtp,Types.C_VAR)
+	------------------------------------
+	elab_builtin_transpose (env, [matexp], impl) 
+	  => (Exp.MATRIX(tp,sc,exp''), prop)
+	(* .. otherwise create transpose call*)
   rule	elab_exp (env,matexp,impl,NONE) 
 	  => (exp', Types.PROP((Types.T_ARRAY(d1,(Types.T_ARRAY(d2,eltp),_)),_),_),_) &
 	let newtp = ((Types.T_ARRAY(d2,(Types.T_ARRAY(d1,eltp),NONE)),NONE)) &
@@ -1602,6 +1636,52 @@ relation elab_builtin_transpose : (Env.Env, Absyn.Exp list, bool (*impl*) )
 	let prop = Types.PROP(newtp,Types.C_VAR)
 	------------------------------------
 	elab_builtin_transpose (env, [matexp], impl) => (exp, prop)
+end
+
+(** relation: elab_builtin_transpose2
+ ** author: PA
+ **
+ ** Helper relation to elab_builtin_transpose. Tries to symbolically transpose
+ ** a matrix expression in ARRAY form.
+ **)
+relation elab_builtin_transpose2: (Exp.Exp list,int,int) => Exp.Exp list =
+
+  rule	int_le(indx,dim1) => true &
+	Util.list_map_1(elst,Exp.nth_array_exp,indx) => e::es &
+	Exp.typeof(e) => tp &
+	int_add(indx,1) => indx' &
+	elab_builtin_transpose2(elst,indx',dim1) => rest
+	----------------------
+	elab_builtin_transpose2(elst,indx,dim1)
+	  => Exp.ARRAY(tp,false,e::es)::rest
+
+  axiom	elab_builtin_transpose2(_,_,_) => []
+
+end
+
+(** relation: elab_builtin_transpose3
+ ** author: PA
+ **
+ ** Helper relation to elab_builtin_transpose. Tries to symbolically transpose
+ ** a MATRIX expression list
+ **)
+relation elab_builtin_transpose3: ((Exp.Exp*bool) list list,int,int) 
+	  => (Exp.Exp*bool) list list =
+
+  rule	int_le(indx,dim1) => true &
+	int_sub(indx,1) => lindx &
+	Util.list_map_1(elst,list_nth,lindx) => e::es &
+	Util.tuple2_1(e) => e' &
+	Exp.typeof(e') => tp &
+	int_add(indx,1) => indx' &
+	elab_builtin_transpose3(elst,indx',dim1) => rest &
+	list_append([e::es],rest) => res
+	----------------------
+	elab_builtin_transpose3(elst,indx,dim1)
+	  => res
+
+  axiom	elab_builtin_transpose3(_,_,_) => []
+
 end
 
 (** relation: build_exp_list
@@ -2149,6 +2229,16 @@ end
 relation elab_builtin_diagonal : (Env.Env, Absyn.Exp list, bool (*impl*)) 
 	  => (Exp.Exp, Types.Properties)	=
 
+
+  rule	elab_exp(env,v1,impl,NONE) 
+	  => (Exp.ARRAY(tp,sc,expl),Types.PROP((Types.T_ARRAY(dim as Types.DIM(SOME(dimension)),
+							      arrType),NONE),c),_) &
+	elab_builtin_diagonal2(expl) => res
+	--------------------------
+	elab_builtin_diagonal(env,[v1],impl) 
+	  => (res, Types.PROP((Types.T_ARRAY(dim,(Types.T_ARRAY(dim,arrType),NONE)),NONE),c))
+
+
   rule	elab_exp (env,s1,impl,NONE) 
 	  => (s1', Types.PROP((Types.T_ARRAY(dim as Types.DIM(SOME(dimension)),
                                              arrType),NONE),c),_)
@@ -2163,6 +2253,43 @@ relation elab_builtin_diagonal : (Env.Env, Absyn.Exp list, bool (*impl*))
 	---------------------------------------------------------
 	elab_builtin_diagonal (_,_,_) => fail
 	
+end
+
+(** relation: elab_builtin_diagonal2
+ ** author: PA
+ **
+ ** Tries to symbolically simplify diagonal.
+ ** For instance diagonal({a,b}) => [a,0;0,b]
+ **)
+
+relation elab_builtin_diagonal2: Exp.Exp list => Exp.Exp =
+	
+  rule	list_length(expl) => dim &
+	elab_builtin_diagonal3(expl,0,dim) => res
+	---------------------
+	elab_builtin_diagonal2(expl) => res
+end
+
+relation elab_builtin_diagonal3: (Exp.Exp list, int, int) => Exp.Exp =
+
+  rule	Exp.typeof(e) => tp & Exp.type_builtin(tp) => sc &
+	Util.list_fill(sc,dim) => scs &
+	Util.list_fill(Exp.ICONST(0),dim) => expl &
+	Util.list_replaceat(e,indx,expl) => expl' &
+	Util.list_thread_tuple(expl',scs) => row
+	--------------------
+	elab_builtin_diagonal3([e],indx,dim) => Exp.MATRIX(tp,dim,[row])
+
+  rule	int_add(indx,1) => indx' &
+	elab_builtin_diagonal3(es,indx',dim) => Exp.MATRIX(tp,mdim,rows) &
+
+	Exp.typeof(e) => tp & Exp.type_builtin(tp) => sc &
+	Util.list_fill(sc,dim) => scs &
+	Util.list_fill(Exp.ICONST(0),dim) => expl &
+	Util.list_replaceat(e,indx,expl) => expl' &
+	Util.list_thread_tuple(expl',scs) => row
+	--------------------
+	elab_builtin_diagonal3(e::es,indx,dim) => Exp.MATRIX(tp,mdim,row::rows)
 end
 
 (** relation: elab_builtin_differentiate
@@ -2617,6 +2744,36 @@ relation elab_builtin_identity : (Env.Env, Absyn.Exp list, bool (*impl*))
 	elab_builtin_identity(env,[dim],impl) => fail
 end
 
+(** relation: elab_builtin_
+ ** author: PA
+ **
+ ** This relation handles the built in scalar operator.
+ ** For example, scalar({1}) => 1 or scalar([a]) => a
+ **)
+		 
+relation elab_builtin_scalar : (Env.Env, Absyn.Exp list, bool (*impl*)) 
+	  => (Exp.Exp, Types.Properties)	=
+
+	  (* scalar({a}) => a *)
+  rule	elab_exp(env,e,impl,NONE) 
+	  => (Exp.ARRAY(_,_,[e]),Types.PROP(tp,c),_) &
+	Types.unlift_array(tp) => scalar_tp &
+	Types.simple_type(scalar_tp) 
+	----------------------------------
+	elab_builtin_scalar(env,[e],impl) 
+	  => (e,Types.PROP(scalar_tp,c))
+
+	  (* scalar([a]) => a *)
+  rule	elab_exp(env,e,impl,NONE) 
+	  => (Exp.MATRIX(_,_,[[(e,_)]]),Types.PROP(tp,c),_) &
+	Types.unlift_array(tp) => tp' &
+	Types.unlift_array(tp') => scalar_tp &
+	Types.simple_type(scalar_tp) 
+	----------------------------------
+	elab_builtin_scalar(env,[e],impl) 
+	  => (e,Types.PROP(scalar_tp,c))
+end
+
 (** relation: elab_builtin_vector
  ** author: PA
  **
@@ -2749,6 +2906,7 @@ relation elab_builtin_handler : Ident => ((Env.Env, Absyn.Exp list, bool (*impl*
   axiom	elab_builtin_handler "cat" => elab_builtin_cat
   axiom	elab_builtin_handler "identity" => elab_builtin_identity
   axiom	elab_builtin_handler "vector" => elab_builtin_vector
+  axiom	elab_builtin_handler "scalar" => elab_builtin_scalar
 
   axiom	elab_builtin_handler "dymTableTimeIni" => elab_builtin_dymtabletimeini
 
@@ -4698,16 +4856,18 @@ relation elab_cref2 : (Env.Env,
 	  => (Exp.CREF(cr,t'),Types.C_VAR,acc)
 
   rule	Types.elab_type tt => t &
-	fill_cref_subscripts (cr,tt) => cr'
+	fill_cref_subscripts (cr,tt) => cr' &
+	cref_vectorize(Exp.CREF(cr',t),tt) => e  (* PA: added2006-01-11 *)
 	-----------------------------------
 	elab_cref2 (_,cr, acc, SCode.VAR, tt,_) 
-	  => (Exp.CREF(cr',t),Types.C_VAR, acc)
+	  => (e,Types.C_VAR, acc)
 
   rule	Types.elab_type tt => t &
-	fill_cref_subscripts (cr,tt) => cr'
+	fill_cref_subscripts (cr,tt) => cr' &
+	cref_vectorize(Exp.CREF(cr',t),tt) => e
 	-----------------------------------
 	elab_cref2 (_,cr, acc, SCode.DISCRETE,tt,_)
-	  =>(Exp.CREF(cr',t),Types.C_VAR,acc)
+	  =>(e,Types.C_VAR,acc)
 
   rule	value_exp v => e &
 	Types.type_of_value(v) => et &
@@ -4825,12 +4985,17 @@ end
 
 relation cref_vectorize: (Exp.Exp,Types.Type) => Exp.Exp =
 
-
-  rule	create_cref_array_2d(cr,1,ds,ds2,exptp,t) => e
+	(* matrix sizes > 4 is not vectorized *)
+  rule	int_lt(ds,4) => b1 &
+	int_lt(ds2,4) => b2 &
+	bool_and(b1,b2) => true &
+ 	create_cref_array_2d(cr,1,ds,ds2,exptp,t) => e 
 	-----------------------------------
-	cref_vectorize(Exp.CREF(cr,exptp),(Types.T_ARRAY(Types.DIM(SOME(ds)),(Types.T_ARRAY(Types.DIM(SOME(ds2)),t),_)),_)) =>  e
+	cref_vectorize(Exp.CREF(cr,exptp),(Types.T_ARRAY(Types.DIM(SOME(ds)),t as (Types.T_ARRAY(Types.DIM(SOME(ds2)),_),_)),_)) =>  e
 
-  rule	create_cref_array(cr,1,ds,exptp,t) => e
+	(* vectorsizes > 4 is not vectorized *)
+  rule	int_lt(ds,4) => true &
+	create_cref_array(cr,1,ds,exptp,t) => e 
 	-----------------------------------
 	cref_vectorize(Exp.CREF(cr,exptp),(Types.T_ARRAY(Types.DIM(SOME(ds)),t),_)) =>  e
 
@@ -4880,7 +5045,29 @@ relation create_cref_array: (Exp.ComponentRef,
 	------------------------
 	create_cref_array(cr,indx,ds,et,t) => Exp.ARRAY(et,false,[])
 
+
+	(* for crefs with wholedim *)
   rule	int_add(indx,1) => indx' &
+	create_cref_array(cr,indx',ds,et,t) => Exp.ARRAY(_,_,expl) &
+	Exp.cref_last_subs(cr) => [Exp.WHOLEDIM] & 
+	Exp.cref_strip_last_subs(cr) => cr' &
+	Exp.subscript_cref(cr',[Exp.INDEX(Exp.ICONST(indx))]) => cr' &
+	cref_vectorize(Exp.CREF(cr',et),t) => e'
+	------------------------
+	create_cref_array(cr,indx,ds,et,t) => Exp.ARRAY(et,false,e'::expl)
+
+	(* no subscript *)
+  rule	int_add(indx,1) => indx' &
+	Exp.cref_last_subs(cr) => [] &
+	create_cref_array(cr,indx',ds,et,t) => Exp.ARRAY(_,_,expl) &
+	Exp.subscript_cref(cr,[Exp.INDEX(Exp.ICONST(indx))]) => cr' &
+	cref_vectorize(Exp.CREF(cr',et),t) => e'
+	------------------------
+	create_cref_array(cr,indx,ds,et,t) => Exp.ARRAY(et,false,e'::expl)
+
+	(* index *)
+  rule	int_add(indx,1) => indx' &
+	Exp.cref_last_subs(cr) => Exp.INDEX(_)::_ & 
 	create_cref_array(cr,indx',ds,et,t) => Exp.ARRAY(_,_,expl) &
 	Exp.subscript_cref(cr,[Exp.INDEX(Exp.ICONST(indx))]) => cr' &
 	cref_vectorize(Exp.CREF(cr',et),t) => e'
@@ -4907,14 +5094,17 @@ relation create_cref_array_2d: (Exp.ComponentRef,
 
   rule	int_gt(indx,ds) => true
 	------------------------
-	create_cref_array_2d(cr,indx,ds,ds2,et,t) => Exp.ARRAY(et,false,[])
+	create_cref_array_2d(cr,indx,ds,ds2,et,t) => Exp.MATRIX(et,0,[])
 
   rule	int_add(indx,1) => indx' &
-	create_cref_array(cr,indx',ds,et,t) => Exp.ARRAY(_,_,expl) &
+	create_cref_array_2d(cr,indx',ds,ds2,et,t) => Exp.MATRIX(_,_,ms) &
 	Exp.subscript_cref(cr,[Exp.INDEX(Exp.ICONST(indx))]) => cr' &
-	cref_vectorize(Exp.CREF(cr',et),t) => e'
+	cref_vectorize(Exp.CREF(cr',et),t) => Exp.ARRAY(tp,sc,expl) &
+	Util.list_fill(sc,ds2) => scs &
+	Util.list_thread_tuple(expl,scs) => row 
 	------------------------
-	create_cref_array_2d(cr,indx,ds,ds2,et,t) => Exp.ARRAY(et,false,e'::expl)
+	create_cref_array_2d(cr,indx,ds,ds2,et,t) 
+	  => Exp.MATRIX(et,ds,row::ms)
 
   rule	Debug.fprint("failtrace","create_cref_array failed\n")
 	------------------------

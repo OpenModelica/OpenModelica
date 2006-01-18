@@ -4883,7 +4883,8 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 
 
 (* No match. *)
-(*  rule	Print.print_error_buf "# No match in inst_eq_equation\n" &
+  (*rule	print "No match in inst_eq_equation\n" &
+	Print.print_error_buf "# No match in inst_eq_equation\n" &
 	Print.print_error_buf "    lhs: " & Exp.print_exp_str e1 => str &
 	Print.print_error_buf str &
 	Print.print_error_buf " :: " & 
@@ -4894,7 +4895,7 @@ relation inst_eq_equation : (Exp.Exp, Types.Properties,
 	Print.print_error_buf " :: " & 
 	Types.print_prop_str p2  => str & Print.print_error_buf str &
 	Print.print_error_buf "\n"
-	---------------------------------	
+	---------------------------------      
 	inst_eq_equation(e1,p1,e2,p2,initial,impl) => fail*)
 end
 
@@ -4951,6 +4952,12 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
   rule	make_dae_equation (e1,e2,initial) => dae 
 	----------------------------------------
 	inst_eq_equation_2 (e1,e2,(Types.T_TUPLE(_),_),initial) => [dae]
+
+	(* Complex types extending basic type *)
+  rule	inst_eq_equation_2(e1,e2,bc,initial) => dae
+	-----------------------------
+	inst_eq_equation_2(e1,e2,(Types.T_COMPLEX(_,[],SOME(bc)),_),initial) 
+	  => dae
 
   axiom	inst_eq_equation_2(e1, e2, (Types.T_COMPLEX(_,[],_),_), initial) => []
 

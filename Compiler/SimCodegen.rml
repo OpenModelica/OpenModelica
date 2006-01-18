@@ -739,7 +739,7 @@ end
          
   rule  DAELow.is_var_on_top_level_and_input(var) => true &
          Util.string_append_list(["\"",origname,"\""]) => name' &
-         Dump.unparse_comment_option(comment) => comment &
+         Dump.unparse_comment_option_no_annotation(comment) => comment &
          int_add(n_vars,1) => n_vars' &
          generate_empty_string(comment) => comment' &
          generate_getname_function_if(cr,n_vars,input_names) => if_str
@@ -781,7 +781,7 @@ relation generate_var_names_and_comments_outputs:(DAELow.Var, (* the variable to
                                                                            
   rule  DAELow.is_var_on_top_level_and_output(var) => true &
         Util.string_append_list(["\"",origname,"\""]) => name' &
-        Dump.unparse_comment_option(comment) => comment &
+        Dump.unparse_comment_option_no_annotation(comment) => comment &
         int_add(n_vars,1) => n_vars' &
         generate_empty_string(comment) => comment' &
         generate_getname_function_if(cr,n_vars,output_names) => if_str
@@ -824,7 +824,7 @@ end
                          DAELow.DUMMY_DER,DAELow.DUMMY_STATE] &
         Util.list_getmember(kind,kind_lst) => _ & (* if this fails then the var is not added to list*)
         Util.string_append_list(["\"",origname,"\""]) => name' &
-        Dump.unparse_comment_option(comment) => comment &
+        Dump.unparse_comment_option_no_annotation(comment) => comment &
         int_add(n_vars,1) => n_vars' &
         generate_empty_string(comment) => comment' &
         array_setnth(name_arr,indx,name') => name_arr' &
@@ -867,7 +867,7 @@ relation generate_var_names_and_comments_params:(DAELow.Var, (* the variable to 
                                                                            
   rule  DAELow.is_param(var) => true &
         Util.string_append_list(["\"",origname,"\""]) => name' &
-        Dump.unparse_comment_option(comment) => comment &
+        Dump.unparse_comment_option_no_annotation(comment) => comment &
         int_add(n_vars,1) => n_vars' &
         generate_empty_string(comment) => comment' &
         array_setnth(name_arr,indx,name') => name_arr' &
@@ -916,7 +916,7 @@ end
          Util.string_append_list(["\"",origname,"\""]) => name' &
          change_name_for_derivative(origname) => der_origname' &
          Util.string_append_list(["\"",der_origname',"\""]) => der_name' &
-         Dump.unparse_comment_option(comment) => comment &
+         Dump.unparse_comment_option_no_annotation(comment) => comment &
          int_add(n_vars,1) => n_vars' &
          generate_empty_string(comment) => comment' &
          array_setnth(name_arr,indx,name') => name_arr' &
@@ -1692,12 +1692,33 @@ relation generate_single_array_eqn_code2:(Exp.ComponentRef, (* origname*)
 	Exp.print_component_ref_str(eltcr) => s1 &
 	Codegen.generate_expression(e1,2)
  	  => (cfunc,s2,_) &
-	Util.string_append_list(["copy_real_array_data_mem(",s1,", &",s2,");"]) => stmt &
+	Util.string_append_list(["copy_real_array_data_mem(&",s1,", &",s2,");"]) => stmt &
 	Codegen.c_add_statements(cfunc,[stmt]) => func'
 	----------------------------
 	generate_single_array_eqn_code2(cr,eltcr,e1 ,e2 as Exp.CREF(cr2,_)) 
 	  => (func',[])
 
+	  (* array of crefs, {v[1],v[2],...v[n]} *)
+  rule	get_vectorized_cref_from_exp(e2) => cr2 & 
+	Exp.print_component_ref_str(eltcr) => s1 &
+	Codegen.generate_expression(e1,2)
+ 	  => (cfunc,s2,_) &
+	Util.string_append_list(["copy_real_array_data_mem(&",s1,", &",s2,");"]) => stmt &
+	Codegen.c_add_statements(cfunc,[stmt]) => func'
+	----------------------------
+	generate_single_array_eqn_code2(cr,eltcr,e1 ,e2 ) 
+	  => (func',[])
+
+	  (* array of crefs, {v[1],v[2],...v[n]} *)
+  rule	get_vectorized_cref_from_exp(e1) => cr2 & 
+	Exp.print_component_ref_str(eltcr) => s1 &
+	Codegen.generate_expression(e2,2)
+ 	  => (cfunc,s2,_) &
+	Util.string_append_list(["copy_real_array_data_mem(&",s2,", &",s1,");"]) => stmt &
+	Codegen.c_add_statements(cfunc,[stmt]) => func'
+	----------------------------
+	generate_single_array_eqn_code2(cr,eltcr,e1 ,e2 ) 
+	  => (func',[])
 
   rule	Exp.print_exp_str(e1) => s1 &
 	Exp.print_exp_str(e2) => s2 &
@@ -1710,6 +1731,25 @@ relation generate_single_array_eqn_code2:(Exp.ComponentRef, (* origname*)
 	generate_single_array_eqn_code2(cr,eltcr,e1,e2) => fail
 end
 
+(** relation: get_vectorized_cref_from_exp 
+ ** author: PA
+ **
+ ** Returns the component ref v if expression is on form
+ **  {v[1],v[2],...v[n]}  for some n.
+ ** TODO: implement for 2D as well.
+**)
+
+relation get_vectorized_cref_from_exp: Exp.Exp => Exp.ComponentRef =
+
+  rule	Util.list_map(expl,Exp.exp_cref) => (crefs as cr::_) & 
+	Util.list_map(crefs,Exp.cref_strip_last_subs_stringified) => crefs' &
+	Util.list_map(crefs', Exp.print_component_ref_str) => strs &
+	Util.string_delimit_list(strs,",") => s &
+	Util.list_reduce(crefs',Exp.cref_equal_return) => _
+	--------------------------------
+	get_vectorized_cref_from_exp(Exp.ARRAY(_,_,expl)) => cr
+
+end
 
 (** relation: single_array_equation
  ** author: PA

@@ -106,6 +106,7 @@ module Dump:
   relation unparse_modification_str: Absyn.Modification => string 
   relation unparse_restriction_str : Absyn.Restriction => string
   relation unparse_comment_option: (Absyn.Comment option) => string
+  relation unparse_comment_option_no_annotation: (Absyn.Comment option) => string
   relation unparse_each_str: (Absyn.Each) => string
 
 end
@@ -309,6 +310,20 @@ relation unparse_comment_option: (Absyn.Comment option) => string =
 	---------------------------------------------
 	unparse_comment_option(SOME(Absyn.COMMENT(annopt,NONE))) => str
 	
+end
+
+(** relation: unparse_comment_option_no_annotation
+ **
+ ** Prettyprints a Comment without printing the annotation part.
+ **)
+
+relation unparse_comment_option_no_annotation: (Absyn.Comment option) => string =
+  rule	Util.string_append_list([" \"",cmt,"\""]) => str
+	---------------------------------------------
+	unparse_comment_option_no_annotation(SOME(Absyn.COMMENT(_,SOME(cmt)))) 
+	  => str
+ 
+	axiom unparse_comment_option_no_annotation(_) => ""
 end
 
 (** relation: dump_comment_option
