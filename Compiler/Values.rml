@@ -75,7 +75,6 @@ with "Absyn.rml"
   relation print_val : Value => ()
   relation add_elementwise_arrayelt: (Value list, Value list) => Value list
   relation sub_elementwise_arrayelt: (Value list, Value list) => Value list
-  relation value_neg: (Value ) => Value
   relation sum_arrayelt: (Value list) => Value	  
   relation mult_scalar_arrayelt: (Value, Value list) => Value list
   relation mult_scalar_product: (Value list, Value list) => Value
@@ -90,6 +89,8 @@ with "Absyn.rml"
   relation type_convert: (Exp.Type, Exp.Type,Value list) => Value list
   relation unparse_values: (Value list) => string
   relation reverse_matrix: (Value ) => Value
+  relation value_neg: (Value) => Value 
+  relation exp_value: Exp.Exp => Value 
   relation write_ptolemyplot_dataset: (string,Value,string list,string) => int
 end
 
@@ -403,6 +404,20 @@ relation sub_elementwise_arrayelt: (Value list, Value list) => Value list =
   axiom	sub_elementwise_arrayelt([],[]) => []
 end
 
+(** relation: exp_value
+ **
+ ** Returns the value of constant expressions in Exp.Exp
+ **)
+relation exp_value: Exp.Exp => Value =
+
+  axiom	exp_value Exp.ICONST(i) => INTEGER(i)
+
+  axiom	exp_value Exp.RCONST(i) => REAL(i)
+
+  axiom	exp_value Exp.SCONST(i) => STRING(i)
+  axiom	exp_value Exp.BCONST(i) => BOOL(i)
+end
+
 (** relation: value_neg
  ** author: PA
  **
@@ -417,6 +432,10 @@ relation value_neg: (Value) => Value =
   rule	int_neg(i) => i' 
 	---------------------
 	value_neg(INTEGER(i)) => INTEGER(i')
+
+  rule	Util.list_map(vlst,value_neg) => vlst' 
+	---------------------
+	value_neg ARRAY(vlst) => ARRAY(vlst)
 end
 
 (** relation: sum_arrayelt
@@ -860,6 +879,8 @@ relation unparse_ptolemy_set_2: (Value,Value) => string =
 	----------------------------------------------------
 	unparse_ptolemy_set_2 (ARRAY(v1::v1s),ARRAY(v2::v2s)) => res'
 end
+
+
 (** relation: reverse_matrix
  ** 
  ** Reverses each line and each row of a matrix.

@@ -537,7 +537,8 @@ relation dump_elements_str : Element list => string =
 	Dump.select_string(noeq,"","equation\n") => eqstr &
 	Dump.select_string(noalg,"","algorithm\n") => algstr &
 
-	Util.string_append_list([s1,initeqstr,s2,initalgstr,s4,eqstr,s3,algstr,s5]) => str
+	Util.string_append_list([s1,initeqstr,s2,
+				 initalgstr,s4,eqstr,s3,algstr,s5]) => str
 	---------------------------
 	dump_elements_str l => str
 
@@ -685,7 +686,7 @@ relation dump_initialequations_str: Element list => string =
 	Exp.print_exp_str e2  => s4 &
 	string_append(s3,s4) => s4' &
 	string_append(s4',";\n") => s5 &
-	dump_equations_str(xs) => s6 &
+	dump_initialequations_str(xs) => s6 &
 	string_append(s5,s6) => str
 	-------------------------------
 	dump_initialequations_str( INITIALEQUATION(e1,e2)::xs) => str

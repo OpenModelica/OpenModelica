@@ -1941,7 +1941,7 @@ relation elab_builtin_max : (Env.Env, Absyn.Exp list, bool (*impl*))
 	(* max(vector) *)
   rule	elab_exp (env,arrexp,impl,NONE) 
 	  => (arrexp', Types.PROP(ty, c),_) &
-	  Types.array_element_type(ty) => elt_ty
+	  Types.array_element_type(ty) => elt_ty 
 	-------------------------------------------------------
 	elab_builtin_max(env, [arrexp],impl) => (Exp.CALL(Absyn.IDENT("max"),[arrexp'],false,true),Types.PROP(elt_ty,c))
 	
@@ -4878,16 +4878,16 @@ relation elab_cref2 : (Env.Env,
 
   rule	Types.elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr' &
-	cref_vectorize(Exp.CREF(cr',t),tt) => e'
+	cref_vectorize(Exp.CREF(cr',t),tt) => e' 
 	-----------------------------------
   	elab_cref2 (env,cr,acc,SCode.PARAM,tt, Types.VALBOUND(v)) 
 	  => (e',Types.C_PARAM,acc)
 
-  rule	Types.elab_type tt => t &
+ (* rule	Types.elab_type tt => t &
 	fill_cref_subscripts (cr,tt) => cr' &
 	value_exp v => e'
 	----------------
-  	elab_cref2 (env,cr,acc,SCode.STRUCTPARAM,tt, Types.VALBOUND(v)) => (e',Types.C_PARAM,acc)
+  	elab_cref2 (env,cr,acc,SCode.STRUCTPARAM,tt, Types.VALBOUND(v)) => (e',Types.C_PARAM,acc)*)
 
   rule	(* Constants with equal binings should be constant, i.e. true
 	 but const is passed on, allowing constants to have wrong bindings

@@ -3951,11 +3951,11 @@ relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT,
 	--------------------------
 	matching_algorithm(dae,m,mt,match_opts) => (vec1,vec2,dae,m,mt)
 	
-  rule	(*Print.print_error_buf "#Error, matching failed\n" &*)
+(*  rule	(*Print.print_error_buf "#Error, matching failed\n" &*)
 	list_vector([]) => v1 & 
 	list_vector([]) => v2 
 	------------------------
-	matching_algorithm(dae,m,mt,indx_red) => (v1,v2,dae,m,mt)
+	matching_algorithm(dae,m,mt,indx_red) => (v1,v2,dae,m,mt)*)
 	
 end
 

@@ -142,6 +142,7 @@ with "ClassLoader.rml"
 with "Derive.rml"
 with "Connect.rml"
 with "Error.rml"
+with "ErrorExt.rml"
 
 
 
@@ -509,7 +510,7 @@ ceval (env, Exp.BINARY(lh, Exp.MUL_ARRAY_SCALAR(_), rh),impl,st,dim,msg)
 	   
   rule	ceval (env,lh,impl,st,dim,msg) => (Values.REAL(lhv),st') &
 	 ceval (env,rh,impl,st',dim,msg) => (Values.REAL(rhv),st'') &
-	 real_div(lhv, rhv) => div
+	 real_div(lhv, rhv) => div 
 	 -------------------------
 	 ceval (env, Exp.BINARY(lh, Exp.DIV(Exp.REAL), rh),impl,st,dim,msg) 
 	  => (Values.REAL(div),st'')
@@ -531,11 +532,6 @@ ceval (env, Exp.BINARY(lh, Exp.DIV(Exp.REAL), rh),impl,st,dim,msg)
 	 ceval (env, Exp.BINARY(lh, Exp.MUL(Exp.INT), rh),impl,st,dim,msg)
 	  => (Values.INTEGER(sum),st'')
 	  (**)
-  rule	ceval (env,exp,impl,st,dim,msg) => (Values.REAL(x),st') &
-	 real_neg (x) => x'
-	 ---------------------
-	 ceval (env, Exp.UNARY(Exp.UMINUS(Exp.REAL), exp),impl,st,dim,msg)
-	  => (Values.REAL(x'),st')
 
 	   (* unary minus of array*)
   rule	ceval (env,exp,impl,st,dim,msg) => (Values.ARRAY(arr),st') &
@@ -543,25 +539,18 @@ ceval (env, Exp.BINARY(lh, Exp.DIV(Exp.REAL), rh),impl,st,dim,msg)
 	 ---------------------
 	 ceval (env, Exp.UNARY(Exp.UMINUS_ARR(_), exp),impl,st,dim,msg)
 	  => (Values.ARRAY(arr'),st')
-
 	   
-  rule	ceval (env,exp,impl,st,dim,msg) => (Values.INTEGER(x),st') &
-	 int_neg (x) => x'
+  rule	ceval (env,exp,impl,st,dim,msg) => (v,st') &
+	 Values.value_neg (v) => v'
 	 ---------------------
-	 ceval (env, Exp.UNARY(Exp.UMINUS(Exp.INT), exp),impl,st,dim,msg)
-	  => (Values.INTEGER(x'),st')
-	   (**)
-  rule	ceval (env,exp,impl,st,dim,msg) => (Values.REAL(x),st') &
-	 real_neg (x) => x'
-	 ---------------------
-	 ceval (env, Exp.UNARY(Exp.UPLUS(Exp.REAL), exp),impl,st,dim,msg)
-	  => (Values.REAL(x'),st')
+	 ceval (env, Exp.UNARY(Exp.UMINUS(_), exp),impl,st,dim,msg)
+	  => (v',st')
+	 
 	   
-  rule	ceval (env,exp,impl,st,dim,msg) => (Values.INTEGER(x),st') &
-	 int_neg (x) => x'
+  rule	ceval (env,exp,impl,st,dim,msg) => (v,st') 
 	 ---------------------
-	 ceval (env, Exp.UNARY(Exp.UPLUS(Exp.INT), exp),impl,st,dim,msg)
-	  => (Values.INTEGER(x'),st')
+	 ceval (env, Exp.UNARY(Exp.UPLUS(_), exp),impl,st,dim,msg)
+	  => (v,st')
 	   
 	   (**  Logical *)
 	 
@@ -694,6 +683,7 @@ ceval (env, Exp.BINARY(lh, Exp.DIV(Exp.REAL), rh),impl,st,dim,msg)
            (*   ceval can apparently fa-il and that is ok, catched by other rules...*)
   rule	Debug.fprint("failtrace", "- ceval failed: ")
 	 & Exp.print_exp_str e => str 
+
 	 & Debug.fprint("failtrace",str) 
 	 & Debug.fprint("failtrace", "\n")
 	 (*& Debug.fprint("failtrace", " Env:" )
@@ -1914,7 +1904,7 @@ end
 **
 **translates and builds the model through the compiler script
 **)
-relation build_model:(Env.Env, 
+relation build_model:(Env.Env,  
 		      Exp.Exp, (* component ref for model *)
 		      Interactive.InteractiveSymbolTable,
                       Msg)
@@ -2943,12 +2933,12 @@ relation ceval_builtin_max : (Env.Env, Exp.Exp list, bool,
 			      Msg) 
 	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
 	           
-  rule  ceval (env,arr,impl,st,NONE,msg) => (v,_) &
+  rule	ceval (env,arr,impl,st,NONE,msg) => (v,_) &
 	ceval_builtin_max2(v) => (v')
         --------------------------------------
         ceval_builtin_max(env,[arr],impl,st,msg) => (v',st)
 
-  rule  ceval (env,s1,impl,st,NONE,msg) => (Values.INTEGER(i1),_) &
+  rule	ceval (env,s1,impl,st,NONE,msg) => (Values.INTEGER(i1),_) &
 	ceval (env,s2,impl,st,NONE,msg) => (Values.INTEGER(i2),_) &
 	int_max(i1,i2) => i
         --------------------------------------
@@ -2959,6 +2949,7 @@ relation ceval_builtin_max : (Env.Env, Exp.Exp list, bool,
 	real_max(r1,r2) => r
         --------------------------------------
         ceval_builtin_max(env,[s1,s2],impl,st,msg) => (Values.REAL(r),st)
+
 end
 
 
@@ -2995,6 +2986,10 @@ relation ceval_builtin_max2 : (Values.Value) => (Values.Value) =
 
   axiom	ceval_builtin_max2(Values.REAL(i))
 	  => (Values.REAL(i))
+
+  rule	print "ceval_builtin_max2 failed\n" 
+	------------------------
+	ceval_builtin_max2(_)=>fail
 end
 
 (** relation: ceval_builtin_min
@@ -3814,6 +3809,10 @@ relation ceval_cref : (Env.Env, Exp.ComponentRef, bool, (*impl*) Msg)
 	Error.add_message(Error.NO_CONSTANT_BINDING,[str,scope_str])
 	-------------------------------------
 	ceval_cref (env,c,impl as false, MSG) => fail
+
+(*  rule	print "ceval_cref failed\n" 
+	---------------
+	ceval_cref(_,_,_,_) => fail*)
 	
 end 
 
@@ -3909,18 +3908,21 @@ relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,
 	Exp.cref_last_subs(cr) => subsc &
 	Lookup.lookup_var(env,cr'(*Exp.CREF_IDENT(id,[])*))  => (_,tp,_) &
 	Types.get_dimension_sizes(tp) => sizelst &
+
 	ceval (env,exp,impl,NONE,NONE,msg) => (v,_) &
 	ceval_subscript_value(env,subsc,v,sizelst,impl,msg) => res
 	------------------------
 	ceval_cref_binding (env,cr(*Exp.CREF_IDENT(id,subsc)*),Types.EQBOUND(exp,_,Types.C_PARAM),impl,msg) 
 	  => res
 	  
-  rule	Debug.fprint("ceval", "#- ceval_cref__binding failed (nonconstant EQBOUND(") &
+  rule	
+	Debug.fprint("ceval", "#- ceval_cref__binding failed (nonconstant EQBOUND(") &
 	Exp.print_exp_str exp => expstr &
 	Debug.fprint("ceval", expstr) &
 	Debug.fprintln("ceval", "))") 
 	--------------------------------
 	ceval_cref_binding (env,_,Types.EQBOUND(exp,_,Types.C_VAR),impl,MSG) => fail
+
 
   rule	Exp.print_component_ref_str e1  => s1 &
 	Exp.print_exp_str exp => s2 &
@@ -3928,7 +3930,6 @@ relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,
 	Debug.fprint("failtrace", str) 
 	----------------------
 	ceval_cref_binding(_,e1,Types.EQBOUND(exp,_,_),_,_) => fail
-	
 end
 
 (** relation: ceval_subscript_value
