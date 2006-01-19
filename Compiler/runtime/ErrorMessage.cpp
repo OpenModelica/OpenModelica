@@ -117,10 +117,11 @@ std::string ErrorMessage::getFullMessage()
   std::string message_text= getMessage();
 
   std::stringstream strbuf;
-
+  
   strbuf << "{\"" << message_text << "\", \"" <<
     messageType_ << "\", \"" <<
     severity_ << "\", \"" <<
-    errorID_ << "\"}" << std::ends;
+    errorID_ <<  "\"}" << std::ends;
+
   return strbuf.str();
 }

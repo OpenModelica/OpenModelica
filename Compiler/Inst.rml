@@ -152,7 +152,7 @@ module Inst:
   relation instantiate: SCode.Program => DAE.DAElist
   relation instantiate_implicit: SCode.Program => DAE.DAElist
   
-  relation make_binding : (Env, SCode.Attributes, Mod,Types.Type)
+  relation make_binding : (Env, SCode.Attributes, Mod)
 	  => Types.Binding
 
   relation instantiate_class : (SCode.Program,SCode.Path) => (DAE.DAElist,Env)
@@ -1177,8 +1177,7 @@ relation inst_basictype_baseclass:(Env,
 	(* Inherits baseclass -and- has components *)
   rule	Mod.elab_mod(env,Prefix.NOPRE,mod,true(* impl*)) => m' &
 	Lookup.lookup_class(env,path,true) => (cdef,cenv) &
-	SCode.class_set_partial(cdef,false) => cdef' &
-	inst_class(cenv,m',Prefix.NOPRE,Connect.empty_set,cdef',inst_dims,false (*impl*),INNER_CALL) 
+	inst_class(cenv,m',Prefix.NOPRE,Connect.empty_set,cdef,inst_dims,false (*impl*),INNER_CALL) 
 	=>(dae,env',_,ty,st) &
 	Types.basic_type(ty) => b1 &
 	Types.array_type(ty) => b2 &
@@ -1683,6 +1682,18 @@ relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_element_list(env, mod, pre, csets, ci_state, el::els, inst_dims, impl, packimpl)
 	  => (dae, env'', csets'', ci_state'', tys)
 
+  rule  (*if inst_element fails then try to instantiate the other to get more error messages*)
+        not inst_element(env,mod,pre,csets,ci_state,el,inst_dims,impl, packimpl)
+	  => (dae1,env',csets',ci_state',tys1) &
+          print "inst_element failed" &
+	inst_element_list(env,mod,pre,csets,ci_state,els,inst_dims,impl,packimpl)
+	  => (dae2,env'',csets'',ci_state'',tys2) 
+	(* list_append(tys1, tys2) => tys & *)
+(* 	list_append(dae1, dae2) => dae  *)
+	------------------------------
+	inst_element_list(env, mod, pre, csets, ci_state, el::els, inst_dims, impl, packimpl)
+	  => (dae2, env'', csets'', ci_state'', tys2)
+
   rule	Debug.fprint("failtrace", "- inst_element_list failed\n")
 	------------------------------------
 	inst_element_list(_,_,_,_,_,els,_,_,_) => fail
@@ -2181,7 +2192,7 @@ axiom	inst_element(env, mod, pre, csets, ci_state, (SCode.IMPORT(imp),_), instdi
 	 ** binding. 
 	 **)
 
-	make_binding (env2',attr,mod',ty) => binding &
+	make_binding (env2',attr,mod') => binding &
 	(* true in update_frame means the variable is now instantiated. *)
 	
 	let new_var = Types.VAR(n,Types.ATTR(flow,acc,param,dir),
@@ -2810,7 +2821,7 @@ relation update_component_in_env: (Mod,Absyn.ComponentRef, Env,
 	  => (compenv,dae1, csets', ty) &
 	(** The environment is extended with the new variable *)
 	(** binding. *)
-	make_binding (env2,attr,mod''',ty) => binding &
+	make_binding (env2,attr,mod''') => binding &
 
 	(** Check if binding makes other variables into structural parameters
 	 ** For example input Integer n=p;
@@ -2883,7 +2894,7 @@ relation update_component_in_env: (Mod,Absyn.ComponentRef, Env,
 	(** The environment is extended with the new variable *)
 	(** binding. *)
 
-	make_binding (env2,attr,mod''',ty) => binding &
+	make_binding (env2,attr,mod''') => binding &
 
 	Env.update_frame_v(env2,Types.VAR(n,Types.ATTR(flow,acc,param,dir),
 					 prot,ty,binding),
@@ -3151,11 +3162,8 @@ relation inst_array : (Env,
 	(* Make the equation containing the functioncall *)
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
 	Types.elab_type(arrty) => arrty' &
-	(* if parameter, add equation to initial eqn *)
-	attr_is_param(attr) => b &
-	Util.if(b,INITIAL,NON_INITIAL) => eqn_place &
-	make_dae_equation(Exp.CREF(cr,arrty'),e,eqn_place) => dae3 &
- 	Util.list_flatten([dae1,dae2,[dae3]]) => dae
+	make_dae_equation(Exp.CREF(cr,arrty'),e,NON_INITIAL) => dae3 &
+	Util.list_flatten([dae1,dae2,[dae3]]) => dae
 	-----------------------------
 	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims,impl,comment)
           => (env',dae,csets'',ty)
@@ -3166,6 +3174,7 @@ relation inst_array : (Env,
 	int_add(i,1) => i' &
 	inst_array(env,ci_state,mod,pre,csets',n,(cl,attr),i',DIMINT(stop),dims,idxs,inst_dims,impl,comment)
 	  => (_,dae2, csets'',_) &
+
 	list_append(dae1,dae2) => dae
 	-----------------------------
 	inst_array(env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMINT(stop),dims,idxs,inst_dims,impl,comment)
@@ -3177,18 +3186,6 @@ relation inst_array : (Env,
 	--------------------------------------------------
 	inst_array(_,_,_,_,_,n,(_,_),_,_,_,_,_,_,_) => fail
 	
-end
-
-(** relation: attr_is_param
- **
- ** Returns true if attributes contain PARAM
-**)
-
-relation attr_is_param: SCode.Attributes => bool =
-
-  axiom	attr_is_param SCode.ATTR(_,_,_,SCode.PARAM,_) => true
-  axiom	attr_is_param _ => false
-
 end
 
 (** relation elab_component_arraydim_from_env
@@ -4249,8 +4246,7 @@ relation dae_declare : (Exp.ComponentRef,
 	dae_declare (vn, ci_state,ty, SCode.ATTR(_,flow,_,par,dir), e, inst_dims,start,dae_var_attr,comment) 
 	  => dae
 
-  rule	print "dae_declare failed\n" &
-	Debug.fprint("failtrace", "- dae_declare failed\n")
+  rule	Debug.fprint("failtrace", "- dae_declare failed\n")
 	------------------------------
 	dae_declare(_,_,_,_,_,_,_,_,_) => fail
 
@@ -4382,6 +4378,11 @@ relation dae_declare4 : (Exp.ComponentRef, Types.Type, DAE.Flow, DAE.VarKind,
 	dae_declare4(vn,(Types.T_ARRAY(Types.DIM(SOME(dim)),tp),_),fl,kind,dir,e,
 		     inst_dims,start,dae_var_attr,comment) => dae
 
+(*  rule	dae_declare4_array(dim,1,vn,tp,fl,kind,dir,e,inst_dims,start,dae_var_attr,comment) => dae
+	--------------------------------
+	dae_declare4(vn,(Types.T_ARRAY(Types.DIM(SOME(dim)),tp),_),fl,kind,dir,e,
+		     inst_dims,start,dae_var_attr,comment) => dae*)
+	
   rule	Exp.print_component_ref_str(vn) => s &
 	Error.add_message(Error.DIMENSION_NOT_KNOWN,[s])
 	--------------------------------
@@ -4390,6 +4391,49 @@ relation dae_declare4 : (Exp.ComponentRef, Types.Type, DAE.Flow, DAE.VarKind,
 
   axiom	dae_declare4 (c,ty,_,_,_,_,_,_,_,_) => []
 
+end
+
+(** relation: dae_declare4_array
+ ** author: PA
+ **
+ ** Helper relation to dae_declare4. Handles declaration of array variables
+ ** of basic types.
+ ** Even though some of these are caught in inst_array, this relation
+ ** is required for e.g. classes (T_COMPLEX types) extending from basic types.
+ ** while array_var handles e.g. arrays of components (models, records, etc.)
+ **)
+
+relation dae_declare4_array: (int,
+			      int,
+			      Exp.ComponentRef, 
+			      Types.Type (* arr elt type*), DAE.Flow, 
+			      DAE.VarKind,
+			      DAE.VarDirection, Exp.Exp option, InstDims, 
+			      DAE.StartValue,DAE.VariableAttributes option,
+                              Absyn.Comment option)
+	  => DAE.Element list =
+	  (* array[0] gives no element*)
+  axiom	dae_declare4_array(0,_,_,_,_,_,_,_,_,_,_,_) => []
+
+  rule	int_gt(indx,dim) => true 
+	--------------------
+	dae_declare4_array(dim,indx,_,_,_,_,_,_,_,_,_,_) => []
+	
+  rule	Exp.subscript_cref(vn,[Exp.INDEX(Exp.ICONST(indx))]) => vn' &
+	int_add(indx,1) => indx' &
+	dae_declare4(vn',tp,fl,kind,dir,e,inst_dims,start,dae_var_attr,comment)
+	  => dae1 &
+	dae_declare4_array(dim,indx',vn,tp,fl,kind,dir,e,inst_dims,start,
+			     dae_var_attr,comment) => dae2 &
+	list_append(dae1,dae2) => dae
+	-----------------------------
+	dae_declare4_array(dim,indx,vn,tp,fl,kind,dir,e,
+			   inst_dims,start,dae_var_attr,comment) => dae
+
+  rule	Debug.fprint("failtrace","-dae_declare4_array failed\n")
+	-----------------------
+	dae_declare4_array(_,_,_,_,_,_,_,_,_,_,_,_) => fail
+     
 end
 
 (** relation inst_equation
@@ -6174,35 +6218,28 @@ end
  **
  **)
 
-relation make_binding : (Env, SCode.Attributes, Mod,Types.Type)
+relation make_binding : (Env, SCode.Attributes, Mod)
 	  => Types.Binding =
 
-  axiom	make_binding (_,_,Types.NOMOD,tp) => Types.UNBOUND
-  axiom	make_binding (_,_,Types.REDECL(_,_),tp) => Types.UNBOUND
-  axiom	make_binding (_,_,Types.MOD(_,_,_,NONE),tp) => Types.UNBOUND
+  axiom	make_binding (_,_,Types.NOMOD) => Types.UNBOUND
+  axiom	make_binding (_,_,Types.REDECL(_,_)) => Types.UNBOUND
+  axiom	make_binding (_,_,Types.MOD(_,_,_,NONE)) => Types.UNBOUND
 
-	(* numerical values*)
-  rule	Types.match_type(e,e_tp,tp) => (e',_) &
-	Ceval.ceval(env,e',false,NONE,NONE,Ceval.NO_MSG) => (v,_)
-	------------------------------
-	make_binding (env, _, Types.MOD(_,_,_,SOME(Types.TYPED(e,_,Types.PROP(e_tp,_)))),tp)
-	    => Types.VALBOUND(v)
-
-(* Numerical values becomes VALBOUND *)
-  axiom	make_binding (env, _, Types.MOD(_,_,_,SOME(Types.TYPED(Exp.ICONST(i),_,_))),tp)
+(* Numerical values becoms VALBOUND *)
+  axiom	make_binding (env, _, Types.MOD(_,_,_,SOME(Types.TYPED(Exp.ICONST(i),_,_))))
 	    => Types.VALBOUND(Values.INTEGER(i))
 	    
-  axiom make_binding (env, _, Types.MOD(_,_,_,SOME(Types.TYPED(Exp.RCONST(r),_,_))),tp)
+  axiom make_binding (env, _, Types.MOD(_,_,_,SOME(Types.TYPED(Exp.RCONST(r),_,_))))
 	    => Types.VALBOUND(Values.REAL(r))
 	    
-  axiom	make_binding (env, _, Types.MOD(_,_,_,SOME(Types.TYPED(Exp.SCONST(s),_,_))),tp)
+  axiom	make_binding (env, _, Types.MOD(_,_,_,SOME(Types.TYPED(Exp.SCONST(s),_,_))))
 	=> Types.VALBOUND(Values.STRING(s))
 	    
-  axiom	make_binding (env, _, Types.MOD(_,_,_,SOME(Types.TYPED(Exp.BCONST(b),_,_))),tp)
+  axiom	make_binding (env, _, Types.MOD(_,_,_,SOME(Types.TYPED(Exp.BCONST(b),_,_))))
 	=> Types.VALBOUND(Values.BOOL(b))
 
 	(* Constant binding *)
-axiom  	make_binding (env, SCode.ATTR(_,_,_,SCode.CONST,_), Types.MOD(_,_,_,SOME(Types.TYPED(e,SOME(e_val),prop))),tp)
+axiom  	make_binding (env, SCode.ATTR(_,_,_,SCode.CONST,_), Types.MOD(_,_,_,SOME(Types.TYPED(e,SOME(e_val),prop))))
 	  => Types.VALBOUND(e_val)
 
 	(* default *)
@@ -6210,12 +6247,12 @@ axiom  	make_binding (env, SCode.ATTR(_,_,_,SCode.CONST,_), Types.MOD(_,_,_,SOME
   rule	Exp.simplify(e) => e' 
 	-------------------
 	make_binding (_,_, Types.MOD(_,_,_,
-				     SOME(Types.TYPED(e,e_val,Types.PROP(t,c)))),tp) 
+				     SOME(Types.TYPED(e,e_val,Types.PROP(t,c))))) 
 	  => Types.EQBOUND(e',e_val,c)
 
   rule	Debug.fprint("failtrace", "- make_binding failed\n")
 	-------------------------------
-	make_binding(_,_,_,_) => fail
+	make_binding(_,_,_) => fail
 
 end
 
@@ -6336,7 +6373,7 @@ relation inst_record_constructor_elt : (Env,SCode.Element, bool (*impl*)) =>
 	Debug.fcall ("recconst",Types.print_type,tp') &
 	Debug.fprint ("recconst","\nMod=") &
 	Debug.fcall ("recconst",Mod.print_mod,mod') &
-	make_binding(env,attr,mod',tp') => bind
+	make_binding(env,attr,mod') => bind
 	---------------------------------------
 	inst_record_constructor_elt (env,
 				     SCode.COMPONENT(id,_,repl,prot,
