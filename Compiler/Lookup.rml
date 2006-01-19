@@ -221,20 +221,20 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 
 	(* Builtin classes Integer, Real, String, Boolean can not be overridden
 	 search top environment directly. *)
-  rule	is_primitive(path) => true &
+  rule	 is_primitive(path) => true &
 	Env.top_frame(env) => f &
-	lookup_class_in_frame(f,[f],id,msg) => (c,env) 
+	 lookup_class_in_frame(f,[f],id,msg) => (c,env) 
 	-----------------------------------
 	lookup_class(env,path as Absyn.IDENT(id),msg) => (c,env)
 
-  rule	is_primitive(path) => true &
+  rule	 is_primitive(path) => true &
 	print "ERROR, primitive class not found on top env: "&
 	Env.print_env_str(env) => s &
-	print s 
+	 print s 
 	-------------------------------
 	lookup_class(env,path,msg) => fail
 
-  rule	lookup_class_in_env(env,path,msgflag) 
+  rule	 lookup_class_in_env(env,path,msgflag) 
 	  => (c as SCode.CLASS(id,_,encflag,restr,_), env') 
 	--------------------------------------
 	lookup_class(env, path as Absyn.IDENT(name),msgflag) 
@@ -243,17 +243,17 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 
   rule	(* If we search for A1.A2....An.x while in scope A1.A2...An
 	 , just search for x. Must do like this to ensure finite recursion *)
-	Env.get_env_path(env) => SOME(ep) &
+	 Env.get_env_path(env) => SOME(ep) &
 	Absyn.strip_last(p) => packp & 
 	ModUtil.path_equal(ep,packp) => true &
 	Absyn.path_last_ident(p) => id &
-	lookup_class(env,Absyn.IDENT(id),msgflag) => (c,env')
+	 lookup_class(env,Absyn.IDENT(id),msgflag) => (c,env')
 	--------------------------------------
 	lookup_class(env, p as Absyn.QUALIFIED(_,_),msgflag) 
 	  => (c, env')
 
 	  (* Qualified name in non package*)
-  rule	lookup_class(env,Absyn.IDENT(pack),msgflag) 
+  rule	 lookup_class(env,Absyn.IDENT(pack),msgflag) 
 	  => (c as SCode.CLASS(id,_,encflag,restr,_),env') &
 	Env.open_scope(env',encflag,SOME(id)) => env2 &
 	ClassInf.start(restr,id) => ci_state &
@@ -262,13 +262,13 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 	  => (env'',cistate1) &
         not ClassInf.valid(cistate1,SCode.R_PACKAGE)  &  (* Has to do additional check for encapsulated classes, see rule below *)
 
-	lookup_class(env'',path,msgflag) => (c',env''')
+	 lookup_class(env'',path,msgflag) => (c',env''')
 	--------------------------------------
 	lookup_class(env, p as Absyn.QUALIFIED(pack,path),msgflag) 
 	  => (c', env''')
 
 	  (* Qualified names in package*)
-  rule	lookup_class(env,Absyn.IDENT(pack),msgflag) 
+  rule	 lookup_class(env,Absyn.IDENT(pack),msgflag) 
 	  => (c as SCode.CLASS(id,_,encflag,restr,_),env1) &
 	Env.open_scope(env1,encflag,SOME(id)) => env2 &
 	ClassInf.start(restr,id) => ci_state &
@@ -276,14 +276,15 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 	Inst.partial_inst_class_in(env2,Types.NOMOD,Prefix.NOPRE,
 				   Connect.empty_set,ci_state,c,false,[]) 
 	  => (env4,cistate1) &
-        ClassInf.valid(cistate1,SCode.R_PACKAGE)  &  (* Has NOT to do additional check for encapsulated classes, see rule above *)
+         ClassInf.valid(cistate1,SCode.R_PACKAGE)  &  (* Has NOT to do additional check for encapsulated classes, see rule above *)
 	  lookup_class(env4,path,msgflag) => (c',env5)
 	--------------------------------------
 	lookup_class(env, p as Absyn.QUALIFIED(pack,path), msgflag) 
 	  => (c', env5)
 
-  rule	print "-lookup_class failed\n" &
+  rule	print "-lookup_class failed " &
  	Absyn.path_string path => s & 
+        print s & print "\n" &
 (* 	Env.print_env env & *)
 (* 	Print.get_string => str & print "Env: " & print str & print "\n" & *)
 (* 	Print.print_buf "#Error, class " & Print.print_buf s &  *)
@@ -1245,7 +1246,6 @@ relation is_in_builtin_env: Absyn.Path => bool =
 	-------------------------------------------------------
 	is_in_builtin_env(path) => fail
 end
-
 (** relation: lookup_class_in_env
  ** 
  ** Helper relation to lookup_class. Searches the environment for the class.
@@ -1255,38 +1255,38 @@ relation lookup_class_in_env: (Env.Env,Absyn.Path,bool)
 	  => (SCode.Class, Env.Env) =
 
   rule	(*print "looking in env for " & print id &*)
-	lookup_class_in_frame(frame,frame::fs,id,msg) => (c,env')  
+	  lookup_class_in_frame(frame,frame::fs,id,msg) => (c,env')  
 	---------------------
 	lookup_class_in_env(env as (frame::fs),Absyn.IDENT(id),msg)
 	    => (c,env')
 	
   rule	(* Special case if looking up the class that -is- encapsulated. That must be allowed. *)
-        id = sid &
+         id = sid &
 	lookup_class_in_env(fs,aid,true) => (c,env)
 	---------------------
 	lookup_class_in_env(env as Env.FRAME(SOME(sid),_,_,_,_,_,true)::fs, aid as Absyn.IDENT(id),_) 
 	  => (c,env)
 
-  rule	Builtin.initial_env() => i_env & 
+  rule	 Builtin.initial_env() => i_env & 
         not lookup_class_in_env(  i_env, aid,false)=>(_,_) &
 	Env.print_env_path_str(env) => scope &
-	Error.add_message(Error.LOOKUP_ERROR,[id,scope])
+	 Error.add_message(Error.LOOKUP_ERROR,[id,scope])
 	---------------------
 	lookup_class_in_env(env as Env.FRAME(SOME(sid),_,_,_,_,_,true)::fs, aid as Absyn.IDENT(id),true) => fail
 
-  rule	Builtin.initial_env() => i_env & 
+  rule	 Builtin.initial_env() => i_env & 
         not lookup_class_in_env(  i_env, aid,false)=>(_,_)
 	---------------------
 	lookup_class_in_env(Env.FRAME(sid,_,_,_,_,_,true)::fs, 
 			    aid as Absyn.IDENT(id),false) => fail
 
- rule	Builtin.initial_env() => i_env & 
+ rule	 Builtin.initial_env() => i_env & 
         lookup_class_in_env(  i_env, aid,msgflag)=> (c,env')
        	---------------------------------------------------
 	lookup_class_in_env(Env.FRAME(sid,_,_,_,_,_,true)::fs, 
 			    aid as Absyn.IDENT(id),msgflag ) => (c,env')
 
-  rule	lookup_class_in_env(fs,id,msgflag) => (c, env')
+  rule	 lookup_class_in_env(fs,id,msgflag) => (c, env')
 	-----------------------------------------------
 	lookup_class_in_env((f as Env.FRAME(sid,_,_,_,_,_,false))::fs,
 			    id ,msgflag ) 
@@ -1593,6 +1593,19 @@ relation assert_package : SCode.Class => () =
   axiom	assert_package SCode.CLASS(_,_,_,SCode.R_PACKAGE,_)
 
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -5163,7 +5163,7 @@ relation get_nth_connector_icon_annotation: (Absyn.ComponentRef,
 relation get_diagram_annotation: (Absyn.Path, Absyn.Program) => string =
 	 
    rule	get_pathed_class_in_program (modelpath,p) => cdef &
-	 get_diagram_annotation_in_class(cdef) => str
+	get_diagram_annotation_in_class(cdef) => str
 	 ---------------------------
 	 get_diagram_annotation(modelpath,p) => str
 	 
@@ -5773,6 +5773,7 @@ relation get_classnames_in_parts:(Absyn.ClassPart list ) => string list =
 	----------------------------
 	get_diagram_annotation_in_class (Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(_,_,_,_,SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_))),_)) => res
 
+  axiom get_diagram_annotation_in_class (_) => ""
  end
 
 
@@ -6097,6 +6098,8 @@ end
 	 -----------------------------------------------
 	 count_connections Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_) 
 	  => count
+
+  axiom  count_connections Absyn.CLASS(_,_,_,_,_,Absyn.DERIVED(_,_,_,_,_),_) => 0
  end
 
 
@@ -7447,6 +7450,11 @@ end
 	 get_pathed_class_in_program(prest,Absyn.PROGRAM(classes,w)) => res
 	 ------------------------------------------------------------
 	 get_pathed_class_in_program (path as Absyn.QUALIFIED(c1,prest),p as Absyn.PROGRAM(_,w)) => res
+
+  rule  print "-get_pathed_class_in_program failed\n"
+	 ---------------------------------
+	 get_pathed_class_in_program (_,_) => fail
+         
  end
 
 
@@ -7965,3 +7973,5 @@ Absyn.CLASS("GraphicItem", false, false, false, Absyn.R_RECORD, Absyn.PARTS([Abs
 Absyn.CLASS("Transformation", false, false, false, Absyn.R_RECORD, Absyn.PARTS([Absyn.PUBLIC([Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Real"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("x",[], SOME(Absyn.CLASSMOD([], SOME(Absyn.REAL(0.0))))),NONE, NONE)]), Absyn.INFO("placement.mo", 2, 0),NONE)), Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Real"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("y",[], SOME(Absyn.CLASSMOD([], SOME(Absyn.REAL(0.0))))),NONE, NONE)]), Absyn.INFO("placement.mo", 2, 0),NONE)), Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Real"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("scale",[], SOME(Absyn.CLASSMOD([], SOME(Absyn.REAL(1.0))))),NONE, NONE)]), Absyn.INFO("placement.mo", 2, 0),NONE)), Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Real"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("aspectRatio",[], SOME(Absyn.CLASSMOD([], SOME(Absyn.REAL(1.0))))),NONE, NONE)]), Absyn.INFO("placement.mo", 2, 0),NONE)), Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Boolean"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("flipHorizontal",[], SOME(Absyn.CLASSMOD([], SOME(Absyn.BOOL(false))))),NONE, NONE)]), Absyn.INFO("placement.mo", 2, 0),NONE)), Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Boolean"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("flipVertical",[], SOME(Absyn.CLASSMOD([], SOME(Absyn.BOOL(false))))),NONE, NONE)]), Absyn.INFO("placement.mo", 2, 0),NONE)), Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Real"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("rotation",[], SOME(Absyn.CLASSMOD([], SOME(Absyn.REAL(0.0))))),NONE, NONE)]), Absyn.INFO("placement.mo", 2, 0),NONE))])], NONE),Absyn.INFO("placement.mo",0,0))
 , Absyn.CLASS("Placement", false, false, false, Absyn.R_RECORD, Absyn.PARTS([Absyn.PUBLIC([Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Boolean"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("visible",[], SOME(Absyn.CLASSMOD([], SOME(Absyn.BOOL(true))))),NONE, NONE)]), Absyn.INFO("placement.mo", 2, 0),NONE)), Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Transformation"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("transformation",[], NONE),NONE, NONE)]), Absyn.INFO("placement.mo", 2, 0),NONE)), Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE, Absyn.UNSPECIFIED , "component", Absyn.COMPONENTS(Absyn.ATTR(false, Absyn.VAR, Absyn.BIDIR, []),Absyn.IDENT("Transformation"),[Absyn.COMPONENTITEM(Absyn.COMPONENT("iconTransformation",[], NONE),NONE, NONE)]), Absyn.INFO("placement.mo", 2, 0),NONE))])], NONE),Absyn.INFO("placement.mo",0,0))
 ],Absyn.TOP)
+
+
