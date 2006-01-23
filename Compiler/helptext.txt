@@ -2,99 +2,107 @@ OpenModelica Builtin Commands
 ------------------------------
 Exit Mosh/Winmosh by pressing Ctrl-d
 
-up-arrow                      Get previously given command.
-down-arrow                    Get next command.
+ up-arrow                      
+          Get previously given command.
+ down-arrow                    
+          Get next command.
+          
+ <tab>                         
+          Command completion of these builtin commands.
+          Circulate through the commands by only using <tab>.           
+          
+ cd()                         
+          Return the current directory
+          
+ cd(dir)                      
+          Change directory to the directory given as a string.
+          Ex: cd("myModels/myLibrary")
+          
+ clear() 
+          Clear everything.
+          
+ clearVariables() 
+          Clear the variables.
+          
+ help() 
+          Print this helptext (returned as a string).
 
-<tab>                         Command completion of these builtin commands.
-                              Circulate through the commands by only using <tab>.
+ instantiateModel(modelname) 
+          Instantiates a model/class and returns a string
+          containing the flat class definition.
+          Ex: instantiateModel(dcmotor)
+ list() 
+          Return a string containing all class definitions.
+          
+ list(modelname) 
+          Return a string containing the class definition of
+          the named class. Ex: list(dcmotor)
+          
+ listVariables() 
+          Return a vector of the currently defined variable names.
 
-cd() -                        Return the current directory
+ loadFile(strFile) 
+          Load modelica file given as string argument.
+          Ex: loadFile("../myLibrary/myModels.mo")
 
-cd(dir) -                     Change directory to the directory given as a string.
-                              Ex: cd("myModels/myLibrary")
+ loadModel(name) 
+          Load model, function, or package relative to $MODELICAPATH.
+          Ex: loadModel(Modelica.Electrical)
+          Note: if e.g. loadModel(Modelica) fails, you may have
+          MODELICAPATH pointing at the wrong location.
 
-clear() -                     Clear everything.
+ plot(var)
+          Plot a variable relative to time from the most recently 
+          simulated model. Ex: plot(x)
 
-clearVariables() -            Clear the variables.
+ plot(vars) 
+          Plot variables given as a vector relative to time from 
+          the most recently simulated model 
+          Ex: plot({x,y})
 
-help() -                      Print this helptext (returned as a string).
-
-instantiateModel(modelname) - Instantiates a model/class and returns a string
-                              containing the flat class definition.
-                              Ex: instantiateModel(dcmotor)
-
-list() -                      Return a string containing all class definitions.
-
-list(modelname) -             Return a string containing the class definition of
-                              the named class.
-                              Ex: list(dcmotor)
-
-
-listVariables() -             Return a vector of the currently defined 
-                              variable names.
-
-loadFile(strFile) -           Load modelica file given as string argument.
-                              Ex: loadFile("../myLibrary/myModels.mo")
-
-
-loadModel(name) -             Load model, function, or package relative to $MODELICAPATH.
-                              Ex: loadModel(Modelica.Electrical)
-                              Note: if e.g. loadModel(Modelica) fails, you may have
-                              MODELICAPATH pointing at the wrong location.
-
-
-plot(var) -                   Plot a variable relative to time from the most recently 
-                              simulated model.
-                              Ex: plot(x)
-
-plot(vars) -                  Plot variables given as a vector relative to time from 
-                              the most recently simulated model 
-                              Ex: plot({x,y})
-
-plotParametric(vars) -        Plot variables given as a vector from 
-                              the most recently simulated model,
-                              relative to the first variable given.
-                              Ex: plotParametric({x,y})
+ plotParametric(vars) 
+          Plot variables given as a vector from the most recently simulated 
+          model, relative to the first variable given. Ex: plotParametric({x,y})
 			          
+ readFile(str) 
+          Load file given as string and return a string of the file content.
+          Ex: readFile("myModel/myModelr.mo")
 
-readFile(str) -               Load file given as string and return a string of the
-                              file content.
-                              Ex: readFile("myModel/myModelr.mo")
+ readSimulationResultSize(strFile) 
+          Return the size of the record resulting from a simulation. The size
+          is read from the result file, given as a string
+          Ex:  readSimulationResultSize("dcmotor_res.plt");
 
-readSimulationResultSize(strFile) - 
-                              Return the size of the record resulting from a simulation
-			            The size is read from the result file, given as a string
-                              Ex:  readSimulationResultSize("dcmotor_res.plt");
+ readSimulationResult(strFile, variables, size) 
+          Read the results of a simulation from a file named by the string 
+          argument strFile. Here size is the size of the resulting record and
+	      variables is a vector of the variables to investigate.
+          Ex: readSimulationResult("dcmotor_res.plt", {R1.i,L1.v}, 10)
 
-readSimulationResult(strFile, variables, size) - 
-                              Read the results of a simulation from a file named by
-                              the string argument strFile. 
-			            Here size is the size of the resulting record and
-			            variables is a vector of the variables to investigate.
-                              Ex: readSimulationResult("dcmotor_res.plt", {R1.i,L1.v}, 10)
+ runScript(strFile) 
+          Exectute script file (.mos) given as string argument.
+          Ex: runScript("simulation.mos")
 
-runScript(strFile) -          Exectute script file (.mos) given as string argument.
-                              Ex: runScript("simulation.mos")
+ saveModel(strFile,modelname) 
+          Save the model/class with name modelname in the file given by the
+          strFile string argument.
 
-saveModel(strFile,modelname) - Save the model/class with name modelname in the
-                              file given by the strFile string argument.
+ simulate(modelname[,startTime=<Real>]
+          [,stopTime=<Real>][,numberOfIntervals=<Integer>])
+          Translates a model and simulates it.
+          Ex: simulate(dcmotor)
+          Ex: simulate(dcmotor,startTime=0, stopTime=10, numberOfIntervals=1000)
 
-simulate(modelname[,startTime=<Real>][,stopTime=<Real>][,numberOfIntervals=<Integer>])
-                              Translates a model and simulates it.
-                              Ex: simulate(dcmotor)
-                              Ex: simulate(dcmotor,startTime=0, stopTime=10,
-                                           numberOfIntervals=1000)
+ system(str) 
+          Execute str as a system(shell) command, return integer success value.
+          Ex: system("touch myFile")
 
-system(str) -                 Execute str as a system(shell) command, return integer
-                              success value.
-                              Ex: system("touch myFile")
+ timing(expr) 
+          Evaluates expression and returns the number of seconds the evaluation 
+          took. Ex: timing(x*4711+5)
 
+ typeOf(variable) 
+          Returns the type of the variable as a string. Ex: typeOf(R1.v)
 
-timing(expr) -                Evaluates expression and returns the number of
-                              seconds the evaluation took.
-                              Ex: timing(x*4711+5)
-
-typeOf(variable) -            Returns the type of the variable as a string.
-                              Ex: typeOf(R1.v)
-
-quit()                        Leave OpenModelica and kill the process.
+ quit()                       
+          Leave OpenModelica and kill the process.
