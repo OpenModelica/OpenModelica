@@ -65,7 +65,6 @@ module Builtin:
   val int_type  : SCode.Class
   val str_type  : SCode.Class
   val bool_type : SCode.Class
-
   val real_type : SCode.Class
 
   relation initial_env : () => Env.Env
@@ -75,7 +74,7 @@ end
 
 
 
-(**)
+(* protected imports *)
 with "Types.rml"
 with "ClassInf.rml"
 with "Debug.rml"
@@ -86,7 +85,6 @@ with "Print.rml"
  ** These are the primitive types that are used to build the types
  ** `Real', `Integer' etc. 
  **)
-
 val rl_type = SCode.CLASS("RealType",false,false,SCode.R_PREDEFINED_REAL,
 			  SCode.PARTS([],[],[],[],[],NONE))
 val int_type = SCode.CLASS("IntegerType",false,false,SCode.R_PREDEFINED_INT,
@@ -181,6 +179,8 @@ val boolean_start = SCode.COMPONENT("start",true,false,false,
 			      Absyn.IDENT("BooleanType"),
 			      SCode.MOD(false,Absyn.NON_EACH,[],SOME(Absyn.BOOL(false))),NONE,NONE)
 
+ 
+(* Should be true for variables *)
 val fixed = SCode.COMPONENT("fixed",true,false,false,
 			      SCode.ATTR([],
 					 false,
@@ -189,7 +189,7 @@ val fixed = SCode.COMPONENT("fixed",true,false,false,
 					 Absyn.BIDIR),
 			      Absyn.IDENT("BooleanType"),
 			      SCode.MOD(false,Absyn.NON_EACH,[],SOME(Absyn.BOOL(false))),NONE,NONE) 
-					(* Should be true for variables*)
+
 
 val nominal = SCode.COMPONENT("nominal",true,false,false,
 			      SCode.ATTR([],
@@ -221,12 +221,12 @@ val state_select_comps =
  SCode.COMPONENT("always",true,false,false,SCode.ATTR([],false,SCode.RO,SCode.CONST,Absyn.BIDIR),Absyn.IDENT("EnumType"),SCode.NOMOD,NONE,NONE)
 ]
 
+(* The State Select Type *)
 val state_select_type = 
 SCode.CLASS("StateSelect",false,false,SCode.R_ENUMERATION,SCode.PARTS(state_select_comps,[],[],[],[],NONE))
 
 
 (** - The `Real' type *)
-
 val real_type =
 SCode.CLASS("Real",false,false,SCode.R_PREDEFINED_REAL,
 	    SCode.PARTS
@@ -236,8 +236,8 @@ SCode.CLASS("Real",false,false,SCode.R_PREDEFINED_REAL,
 	     [],
 	     [],NONE))
 
-(** - The `Integer' type *)
 
+(** - The `Integer' type *)
 val integer_type =
 SCode.CLASS("Integer",false,false,SCode.R_PREDEFINED_INT,
 	    SCode.PARTS
@@ -247,8 +247,8 @@ SCode.CLASS("Integer",false,false,SCode.R_PREDEFINED_INT,
 	     [],
 	     [],NONE))
 
-(** - The `String' type *)
 
+(** - The `String' type *)
 val string_type =
 SCode.CLASS("String",false,false,SCode.R_PREDEFINED_STRING,
 	    SCode.PARTS
@@ -258,8 +258,8 @@ SCode.CLASS("String",false,false,SCode.R_PREDEFINED_STRING,
 	     [],
 	     [],NONE))
 
-(** - The `Boolean' type *)
 
+(** - The `Boolean' type *)
 val boolean_type =
 SCode.CLASS("Boolean",false,false,SCode.R_PREDEFINED_BOOL,
 	    SCode.PARTS
@@ -269,14 +269,14 @@ SCode.CLASS("Boolean",false,false,SCode.R_PREDEFINED_BOOL,
 	     [],
 	     [],NONE))
 
-(** - The `time' variable *)
 
+(** - The `time' variable *)
 val time_var =
 Types.VAR("time", Types.ATTR(false, SCode.RO, SCode.VAR, Absyn.BIDIR),
 	  false, (Types.T_REAL([]),NONE), Types.UNBOUND)
 
-(** - Some assorted function types *)
 
+(** - Some assorted function types *)
 val nil2real = (Types.T_FUNCTION([],
 				(Types.T_REAL([]),NONE)),NONE)
 
@@ -614,7 +614,7 @@ val array1dimreal2array3dimreal= (Types.T_FUNCTION([("x",(Types.T_ARRAY(Types.DI
 
 
 
-(* T_ARRAY is apperantly not constant. To bad! *)
+(* T_ARRAY is appearently not constant. To bad! *)
 val array2real= (Types.T_FUNCTION([("x",(Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER([]),NONE)),NONE))], (Types.T_INTEGER([]),NONE)),NONE)
 		
 (* Legal syntax: val array2one= (Types.T_FUNCTION([("x",(Types.T_ARRAY(1,(Types.T_REAL([]),NONE)),NONE))], TYPES.T_INTEGER) *)
@@ -677,7 +677,6 @@ val array_array2int
 
 
 (** - Initial environment *)
-
 (** relation: simple_initial_env
  ** 
  ** The initial environment where instantiation takes place is built
@@ -704,24 +703,21 @@ relation simple_initial_env =
  	simple_initial_env () => env
 end
 
+
 (** relation: initial_env
  ** 
  ** The initial environment where instantiation takes place is built
  ** up using this relation.  It creates an empty environment and adds
  ** all the built-in definitions to it.
+ ** NOTE:
+    The following built in operators can not be described in
+    the type system, since they e.g. have arbitrary arguments, etc.
+	- fill
+	- cat
+    These operators are catched in the elab_builtin_handler, along with all 
+    others.
  **)
 relation initial_env =
-
-(* The following built in operators can not be described in
-  the type system, since they e.g. have arbitrary arguments, etc.
-
- - fill
- - cat
-
- These operators are catched in the elab_builtin_handler, along with all 
- others.
-*)
-
 
   rule	(*Debug.fprint ("insttr","Creating initial env.\n") &*)
 	Env.open_scope(Env.empty_env,false,NONE) => env &

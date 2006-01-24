@@ -76,7 +76,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 		
   datatype Msg = MSG	(* Give error message *)
 	     | NO_MSG   (* Do not give error message *)								   
-                                                                                           (** Constant evaluation of expressions *)
+
+
+  (** Constant evaluation of expressions *)
   relation ceval : (Env.Env, Exp.Exp, bool (*implicit*) ,
 		    Interactive.InteractiveSymbolTable option, 
 		    int option, (* dimensions *) 
@@ -151,16 +153,22 @@ with "ErrorExt.rml"
  ** Helper for ceval. Parts for builtin calls are moved here, for readability.
  ** See ceval for documentation.
  **
+ ** inputs: (Env.Env, Exp.Exp, bool /* impl */,
+			  Interactive.InteractiveSymbolTable option, 
+			  int option,
+			  Msg) 
+ ** outputs: (Values.Value, Interactive.InteractiveSymbolTable option)
+ ** 
+ ** NOTE:    It's ok if ceval_builtin fails. Just means the call wasn't a builtin function 
  **)
-relation ceval_builtin : (Env.Env, Exp.Exp, bool (*impl*),
+relation ceval_builtin : (Env.Env, Exp.Exp, bool,
 			  Interactive.InteractiveSymbolTable option, 
 			  int option,
 			  Msg) 
 	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
 
-	  (* Handle size separately *)
-	
-  rule	ceval_builtin_size(env,exp,dim,impl,st,msg) => (v,st)
+  rule	(* Handle size separately *)
+	ceval_builtin_size(env,exp,dim,impl,st,msg) => (v,st)
 	-----------------------------------------
 	ceval_builtin (env,Exp.SIZE(exp,SOME(dim)),impl,st,_,msg) => (v,st) 	
 
@@ -171,16 +179,15 @@ relation ceval_builtin : (Env.Env, Exp.Exp, bool (*impl*),
   rule	ceval_builtin_handler id => handler &
 	handler(env,args,impl,st,msg) => (v,st)
 	-----------------------------------------
-	ceval_builtin (env,Exp.CALL(Absyn.IDENT(id),args,_,builtin (*as true*)),impl,st,_,msg) => (v,st)
+	ceval_builtin (env,Exp.CALL(Absyn.IDENT(id),args,_,builtin (* buildin: as true *)),impl,st,_,msg) => (v,st)
 
   rule	ceval_list(env,expl,impl,st,msg) => vallst &
 	ceval_call_function (env,e,vallst,msg) => newval
 	-------------------------------------------------------
 	ceval_builtin (env, e as Exp.CALL(funcpath,expl,_,builtin as true),impl,st as NONE,_,msg) => (newval,st)
 
-        (* It's ok if ceval_builtin fails. Just means the call wasn't a builtin function *)
-	
 end
+
 
 (** relation: ceval_builtin_handler
  **
@@ -188,18 +195,24 @@ end
  ** relation that evaluates that particular relation.
  ** It takes an identifier as input and returns a relation that evaluates that
  ** function or operator.
+ **
+ ** inputs: Absyn.Ident  /* operator/function name */
+ ** outputs: ((Env.Env, 
+		Exp.Exp list, 
+		bool, 
+		Interactive.InteractiveSymbolTable option,
+		Msg) => (Values.Value, Interactive.InteractiveSymbolTable option))
+ **
+ ** NOTE:   size handled specially. see ceval_builtin:
+            removed: axiom	ceval_builtin_handler "size" => ceval_builtin_size
  **)
-
- relation ceval_builtin_handler : Absyn.Ident  (* operator/function name *)
+ relation ceval_builtin_handler : Absyn.Ident  
 	  =>  ((Env.Env, 
 		Exp.Exp list, 
 		bool, 
 		Interactive.InteractiveSymbolTable option,
 		Msg)
-	       
 	       => (Values.Value, Interactive.InteractiveSymbolTable option)) =
-           (* size handled specially. see ceval_builtin *)
-        (* axiom	ceval_builtin_handler "size" => ceval_builtin_size *)
 
   axiom ceval_builtin_handler "floor" => ceval_builtin_floor
   axiom ceval_builtin_handler "ceil" => ceval_builtin_ceil
@@ -249,8 +262,14 @@ end
  ** calls are evaluated.
  **
  ** The last argument is an optional dimension.
+ ** 
+ ** inputs: (Env.Env, Exp.Exp, bool /* impl */,
+			Interactive.InteractiveSymbolTable option, 
+			int option,
+			Msg) 
+ ** outputs: (Values.Value, Interactive.InteractiveSymbolTable option)
  **)
- relation ceval : (Env.Env, Exp.Exp, bool (*impl*),
+ relation ceval : (Env.Env, Exp.Exp, bool,
 		   Interactive.InteractiveSymbolTable option, 
 		   int option,
 		   Msg) 
@@ -306,11 +325,9 @@ end
 	 ---------------------------
 	 ceval (env,Exp.CREF(c,_),impl,st,_,msg) => (v,st) 
 
-
   rule	ceval_builtin (env, exp, impl, st, dim,msg) => (v, st')
 	 ---------------------------------------------------
 	 ceval (env,exp,impl,st,dim,msg) => (v,st') 	
-
 
   rule	ceval (env,lh,impl,st,dim,msg) => (Values.INTEGER(lhv),st') & 
  	 ceval (env,rh,impl,st',dim,msg) => (Values.INTEGER(rhv),st'') & 
@@ -345,8 +362,7 @@ end
  	 ceval (env, Exp.BINARY(lh, Exp.POW(Exp.REAL), rh),impl,st,dim,msg) 
 	  => (Values.REAL(resr),st'')
 
-
-	   (* Call functions *) 
+	 (* Call functions *) 
 	 (* FIXME: functions are always generated. Put back the check
 	  and write another rule for the false case that generates the function *)
   rule	ceval_list(env,expl,impl,st,msg) => vallst &
@@ -354,11 +370,9 @@ end
 	 -------------------------------------------------------
 	 ceval (env, e as Exp.CALL(funcpath,expl,_,builtin),impl,st,_,msg) 
 	  => (newval,st)
-
 	 
   axiom	ceval (env, e as Exp.CALL(_,_,_,_),impl as false,NONE,_,NO_MSG) => fail
-	 
-	 
+	 	 
   rule	ceval_interactive_functions(env,e,st,msg) => (value,st)
 	 -------------------------------------
 	 ceval (env, e as Exp.CALL(_,_,_,_),impl as true, SOME(st),_,msg) 
@@ -385,7 +399,6 @@ end
 	 ceval (env, e as Exp.CALL(func,expl,_,_),impl as true,st as SOME(Interactive.SYMBOLTABLE(p,_,_,_,cflist)),_,msg) => (newval,st)
 	 
 	 (** Strings **)
-	 
   rule  ceval (env, lh, impl,st, NONE,msg) => (Values.STRING(lhv),_) &
 	ceval (env, rh, impl,st,NONE,msg) => (Values.STRING(rhv),_) &
 	 string_append(lhv,rhv) => str
@@ -394,7 +407,6 @@ end
 	  => (Values.STRING(str),st)
 	   
 	   (**  Numerical *)
-	 
   rule	ceval (env, lh, impl,st,dim,msg) => (Values.REAL(lhv),st') &
 	 ceval (env, rh, impl,st',dim,msg) => (Values.REAL(rhv),st'') &
 	 real_add(lhv, rhv) => sum
@@ -486,6 +498,7 @@ ceval (env, Exp.BINARY(lh, Exp.MUL_ARRAY_SCALAR(_), rh),impl,st,dim,msg)
 	 ------------------------
 	 ceval (env, Exp.BINARY(lh, Exp.ADD(Exp.INT), rh),impl,st,dim,msg) 
 	  => (Values.INTEGER(sum),st'')
+
 	   (**)
   rule	ceval (env,lh,impl,st,dim,msg) => (Values.REAL(lhv),st') &
 	 ceval (env,rh,impl,st',dim,msg) => (Values.REAL(rhv),st'') &
@@ -500,6 +513,7 @@ ceval (env, Exp.BINARY(lh, Exp.MUL_ARRAY_SCALAR(_), rh),impl,st,dim,msg)
 	 ------------------------
 	 ceval (env, Exp.BINARY(lh, Exp.SUB(Exp.INT), rh),impl,st,dim,msg)
 	  => (Values.INTEGER(sum),st'') 
+
 	   (**)
   rule	ceval (env,lh,impl,st,dim,msg) => (Values.REAL(lhv),st') &
 	 ceval (env,rh,impl,st',dim,msg) => (Values.REAL(rhv),st'') &
@@ -531,9 +545,9 @@ ceval (env, Exp.BINARY(lh, Exp.DIV(Exp.REAL), rh),impl,st,dim,msg)
 	 ------------------------
 	 ceval (env, Exp.BINARY(lh, Exp.MUL(Exp.INT), rh),impl,st,dim,msg)
 	  => (Values.INTEGER(sum),st'')
-	  (**)
 
-	   (* unary minus of array*)
+	  (**)
+	  (* unary minus of array*)
   rule	ceval (env,exp,impl,st,dim,msg) => (Values.ARRAY(arr),st') &
 	Util.list_map(arr,Values.value_neg) => arr'
 	 ---------------------
@@ -545,15 +559,13 @@ ceval (env, Exp.BINARY(lh, Exp.DIV(Exp.REAL), rh),impl,st,dim,msg)
 	 ---------------------
 	 ceval (env, Exp.UNARY(Exp.UMINUS(_), exp),impl,st,dim,msg)
 	  => (v',st')
-	 
-	   
+	  
   rule	ceval (env,exp,impl,st,dim,msg) => (v,st') 
 	 ---------------------
 	 ceval (env, Exp.UNARY(Exp.UPLUS(_), exp),impl,st,dim,msg)
 	  => (v,st')
 	   
 	   (**  Logical *)
-	 
   rule	ceval (env,lh,impl,st,dim,msg) => (Values.BOOL(lhv),st') &
 	 ceval (env,rh,impl,st',dim,msg) => (Values.BOOL(rhv),st'') &
 	 bool_and(lhv, rhv) => x
@@ -575,7 +587,6 @@ ceval (env, Exp.BINARY(lh, Exp.DIV(Exp.REAL), rh),impl,st,dim,msg)
 	  => (Values.BOOL(b'),st')
 	 
 	 (**  Relations *)
-	 
   rule	ceval (env,lhs,impl,st,dim,msg) => (lhs',st') &
 	 ceval (env,rhs,impl,st',dim,msg) => (rhs',st'') &
 	 ceval_relation (lhs',relop,rhs') => v
@@ -584,7 +595,6 @@ ceval (env, Exp.BINARY(lh, Exp.DIV(Exp.REAL), rh),impl,st,dim,msg)
 	  => (v, st'')
 	 
 	 (**)
-	 
   rule	ceval (env,start,impl,st,dim,msg) => (Values.INTEGER(start'),st') &
 	 ceval (env,stop,impl,st',dim,msg) => (Values.INTEGER(stop'),st'') &
 	 ceval_range(start', 1, stop') => arr
@@ -658,6 +668,7 @@ ceval (env, Exp.BINARY(lh, Exp.DIV(Exp.REAL), rh),impl,st,dim,msg)
 	 ------------------------------------
 	 ceval (env, Exp.IFEXP(b,e1,e2),impl,st,dim,msg) 
 	  => (v,st'')
+
   rule	(* Ifexp, false branch *)
 	 ceval (env,b,impl,st,dim,msg) => (Values.BOOL(false),st') &
 	 ceval (env,e2,impl,st',dim,msg) => (v,st'')
@@ -672,13 +683,16 @@ ceval (env, Exp.BINARY(lh, Exp.DIV(Exp.REAL), rh),impl,st,dim,msg)
 	 -----------------------
 	 ceval (env, Exp.ASUB(e,indx),impl,st,dim,msg) => (v,st')
 	 
+        (* (v,st) *)
   rule	Print.print_buf "#-- ceval reduction\n"
 	 ---------------------------------------
 	 ceval (env, Exp.REDUCTION(p,exp,iter,iterexp),impl,st,dim,MSG)
-	  => fail (* (v,st) *)
+	  => fail 
 	   
+        (* (v,st) *)
   axiom	ceval (env, Exp.REDUCTION(p,exp,iter,iterexp),impl,st,dim,NO_MSG)
-	  => fail (* (v,st) *)
+	  => fail 
+
 
            (*   ceval can apparently fa-il and that is ok, catched by other rules...*)
   rule	Debug.fprint("failtrace", "- ceval failed: ")
@@ -700,20 +714,25 @@ end
  ** They are currently evaluated by generating code for the function and
  ** then write input to file and execute the generated code. Finally, the
  ** result is read back from file and returned.
+ ** 
+ ** inputs:(Env.Env, 
+			Exp.Exp, /* the call expression*/
+			Values.Value list, /* input parameter values*/
+			Msg) /* Should error messages be printed. */
+ ** outputs: Values.Value /* resulting value */
  **)
- 
 relation ceval_call_function : (Env.Env, 
-				Exp.Exp, (* the call expression*)
-				Values.Value list, (* input parameter values*)
-				Msg) (* Should error messages be printed. *)
-				 => Values.Value (* resulting value *) =
-	  (* External functions that are "known" should be evaluated without
-	   * compilation, e.g. all math functions *)
+				Exp.Exp, 
+				Values.Value list, 
+				Msg) 
+				 => Values.Value =
+
+	(* External functions that are "known" should be evaluated without
+	 * compilation, e.g. all math functions *)
   rule	ceval_known_external_funcs(env,funcpath,vallst,msg) => newval
 	-------------------------------------------------------
 	ceval_call_function (env, e as Exp.CALL(funcpath,expl,_,builtin), 
 			     vallst,msg) => newval
-
 
         (* Call functions in non-interactive mode. *) 
 	(* FIXME: functions are always generated. Put back the check
@@ -757,15 +776,18 @@ relation ceval_known_external_funcs: (Env.Env,
 	ceval_known_external_funcs(env,funcpath,vals,msg) => res
 end
 
+
 (** relation is_known_external_func
  **
  ** Succeds if external function name is "known", i.e. no compilation
  ** required.
  **
+ ** NOTE:    adrpo changed the inputs to not include SCode and Absyn in the
+             public impots
+ **
  ** inputs:  (SCode.Ident /* string */, Absyn.Ident option /* string option */) 
  ** outputs: ()
  **)
-
 relation is_known_external_func:(string, string option) => () =
 
   axiom	is_known_external_func("acos",SOME("acos"))
@@ -789,7 +811,6 @@ end
  **
  ** Helper relation to ceval_known_external_funcs, does the evaluation.
  **)
-
 relation ceval_known_external_funcs2: (SCode.Ident, 
 				       Absyn.Ident option,
 				       Values.Value list,
@@ -865,13 +886,18 @@ relation ceval_known_external_funcs2: (SCode.Ident,
 	  => Values.REAL(rv')
 end       
 
+
 (** relation: ceval_function 
  ** 
  ** For constant evaluation of functions returning a single value. For now only
  ** record constructors.
+ ** 
+ ** inputs: (Env.Env, Absyn.Path, Values.Value list, 
+			  bool /*impl*/, Msg ) 
+ ** outputs: Values.Value =
  **)
 relation ceval_function: (Env.Env, Absyn.Path, Values.Value list, 
-			  bool, (*impl*) Msg ) 
+			  bool, Msg ) 
 	  => Values.Value =
 
 	  (* For record constructors *)
@@ -902,9 +928,15 @@ end
  ** 
  ** Example: y = Code(1 + x)
  **          2 + 5 * ( x + Eval(y) )  =>   2 + 5 * ( x + 1 + x )
+ **
+ ** inputs:  (Env.Env, Absyn.Exp, 
+			  bool /* impl */, 
+			  Interactive.InteractiveSymbolTable option,
+			  Msg)
+ ** outputs: Absyn.Exp 
  **)
  relation ceval_ast_exp: (Env.Env, Absyn.Exp, 
-			  bool (*impl*), 
+			  bool, 
 			  Interactive.InteractiveSymbolTable option,
 			  Msg)
 	  => Absyn.Exp =
@@ -995,14 +1027,21 @@ end
   axiom	ceval_ast_exp(env,e as Absyn.CODE(_),_,_,msg) => e
  end
 
+
 (** relation: ceval_ast_exp_list
  ** 
  ** List version of ceval_ast_exp
+ ** 
+ ** inputs: (Env.Env, Absyn.Exp list, 
+			 bool /* impl */ , Interactive.InteractiveSymbolTable option,
+			 Msg) 
+ ** outputs: (Absyn.Exp list)
  **)
 relation ceval_ast_exp_list: (Env.Env, Absyn.Exp list, 
-			      bool (*impl*) , Interactive.InteractiveSymbolTable option,
+			      bool, Interactive.InteractiveSymbolTable option,
 			      Msg) 
 	  => (Absyn.Exp list) =
+
   axiom	ceval_ast_exp_list (env, [],_,_,msg) => []
 
   rule	ceval_ast_exp(env,e,impl,st,msg) => e' &
@@ -1012,11 +1051,17 @@ relation ceval_ast_exp_list: (Env.Env, Absyn.Exp list,
 	  => e::res
 end
 
+
 (** relation: ceval_ast_exp_list_list
  ** 
+ ** inputs: (Env.Env, Absyn.Exp list list, 
+			 bool /* impl */, 
+			 Interactive.InteractiveSymbolTable option,
+			 Msg) 
+ ** outputs: (Absyn.Exp list list)
  **)
 relation ceval_ast_exp_list_list: (Env.Env, Absyn.Exp list list, 
-			           bool (*impl*), 
+			           bool, 
 				   Interactive.InteractiveSymbolTable option,
 				   Msg)
 	  => (Absyn.Exp list list) =
@@ -1029,6 +1074,7 @@ relation ceval_ast_exp_list_list: (Env.Env, Absyn.Exp list list,
 	ceval_ast_exp_list_list(env,e::es,impl,st,msg) 
 	  => e::res
 end
+
 
 (** relation: ceval_ast_expexp_list
  **
@@ -1050,14 +1096,20 @@ relation ceval_ast_expexp_list: (Env.Env, (Absyn.Exp*Absyn.Exp) list,
 	  => ((e1',e2')::res)
 end
 
+
 (** relation: ceval_ast_elt
  **
  ** Evaluates an ast constructor for Element nodes, e.g. 
  ** Code(parameter Real x=1;)
+ **
+ ** inputs:  (Env.Env, Absyn.Element, 
+			 bool /* impl */, 
+			 Interactive.InteractiveSymbolTable option,
+			 Msg)
+ ** outputs: (Absyn.Element)
  **)
-
 relation ceval_ast_elt: (Env.Env, Absyn.Element, 
-			 bool (*impl*), 
+			 bool, 
 			 Interactive.InteractiveSymbolTable option,
 			 Msg)
 	  => (Absyn.Element) =
@@ -1069,15 +1121,23 @@ relation ceval_ast_elt: (Env.Env, Absyn.Element,
 	  => (Absyn.ELEMENT(f,r,io,id,Absyn.COMPONENTS(attr,tp,citems'),Absyn.INFO(file,line,column),c))
 end
 
+
 (** relation: ceval_ast_citems
  **
  ** Helper relation to ceval_ast_elt.
+ **
+ ** inputs: (Env.Env, Absyn.ComponentItem list, 
+			 bool /* impl */, 
+			 Interactive.InteractiveSymbolTable option,
+			 Msg)
+ ** outputs: Absyn.ComponentItem list
  **)
 relation ceval_ast_citems: (Env.Env, Absyn.ComponentItem list, 
-			    bool (*impl*), 
+			    bool, 
 			    Interactive.InteractiveSymbolTable option,
 			    Msg)
 	  => Absyn.ComponentItem list =
+
   axiom	ceval_ast_citems(_,[],_,_,msg) => []
 
   rule	ceval_ast_citems(env,xs,impl,st,msg) => res &
@@ -1094,11 +1154,16 @@ relation ceval_ast_citems: (Env.Env, Absyn.ComponentItem list,
 	ceval_ast_citems(env,x::xs,impl,st,msg) => x::res
 end
 
+
 (** relation: ceval_ast_modopt
  **
+ ** inputs:  (Env.Env, Absyn.Modification option,
+			  bool /* impl */, Interactive.InteractiveSymbolTable option,
+			  Msg)
+ ** outputs: Absyn.Modification option
  **)
 relation ceval_ast_modopt: (Env.Env, Absyn.Modification option,
-			    bool (*impl*), Interactive.InteractiveSymbolTable option,
+			    bool, Interactive.InteractiveSymbolTable option,
 			    Msg)
 	  => Absyn.Modification option	=
 
@@ -1110,13 +1175,20 @@ relation ceval_ast_modopt: (Env.Env, Absyn.Modification option,
 	
 end
 
+
 (** relation: ceval_ast_modification
  **
  ** This relation evaluates Eval(variable) inside an AST Modification  and replaces 
  ** the Eval operator with the value of the variable if it has a type "Expression"
+ **
+ ** inputs:  (Env.Env, Absyn.Modification, 
+		      bool /* impl */, 
+			  Interactive.InteractiveSymbolTable option,
+			  Msg)
+ ** outputs: (Absyn.Modification)
  **)
  relation ceval_ast_modification: (Env.Env, Absyn.Modification, 
-				   bool (*impl*), 
+				   bool, 
 				   Interactive.InteractiveSymbolTable option,
 				   Msg)
 	  => (Absyn.Modification) =
@@ -1133,11 +1205,11 @@ end
 	  => (Absyn.CLASSMOD(eltargs',NONE))
  end
 
+
 (** relation: ceval_ast_eltargs
  **
  ** Helper relation to ceval_ast_modification.
  **)
-
  relation ceval_ast_eltargs: (Env.Env, Absyn.ElementArg list,
 			      bool, 
 			      Interactive.InteractiveSymbolTable option,
@@ -1161,15 +1233,23 @@ end
 	  => m::res
  end
 
+
 (** relation: ceval_ast_arraydim
  **
- ** Helper relation to ceva_ast_citems*)
-
+ ** Helper relation to ceva_ast_citems
+ **
+ ** inputs:  (Env.Env, Absyn.ArrayDim, 
+			  bool /* impl */, 
+			  Interactive.InteractiveSymbolTable option,
+			  Msg)
+ ** outputs: (Absyn.ArrayDim) 
+ **)
  relation ceval_ast_arraydim: (Env.Env, Absyn.ArrayDim, 
-			       bool (*impl*), 
+			       bool, 
 			       Interactive.InteractiveSymbolTable option,
 			       Msg)
 	  => (Absyn.ArrayDim) =
+
   axiom	ceval_ast_arraydim (env,[],_,_,msg) => []
 
   rule	ceval_ast_arraydim(env,xs,impl,st,msg) => res
@@ -1184,17 +1264,23 @@ end
 	  => Absyn.SUBSCRIPT(e)::res
  end
 
+
 (* relation ceval_interactive_functions
  **
  ** This relation evaluates the functions defined in the interactive 
  ** environment.
+ **
+ ** inputs:  (Env.Env, 
+			  Exp.Exp, /* exp to evaluate */
+			  Interactive.InteractiveSymbolTable,
+			  Msg)
+ ** outputs: (Values.Value, Interactive.InteractiveSymbolTable)
  *)
  relation ceval_interactive_functions: (Env.Env, 
-					Exp.Exp, (* exp to evaluate *)
+					Exp.Exp, 
 					Interactive.InteractiveSymbolTable,
 					Msg)
 	  => (Values.Value, Interactive.InteractiveSymbolTable) =
-
 
   rule	Static.component_ref_to_path(cr) => path &
 	 SCode.elaborate(p) => p' &
@@ -1318,7 +1404,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	  => (simValue,newst)
 	   
   rule	
-	 (* simulation fail for som other reason than OPENMODELICAHOME not being set.*)
+	 (* simulation fail for some other reason than OPENMODELICAHOME not being set.*)
 	 System.read_env("OPENMODELICAHOME") => omhome &
 	 Util.string_append_list(["Simulation failed.\n"]) => res &
 	 let simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),[Values.STRING(res)],["resultFile"])
@@ -1367,7 +1453,6 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 		    Msg)
 	  => (Values.Value, Interactive.InteractiveSymbolTable option)
 *)
-
   rule	 ceval(env,size_expression,true,SOME(st),NONE,msg) => 
 	    (size_value as Values.INTEGER(size),SOME(st)) &
 	 Util.list_map(vars,Exp.print_exp_str) => vars' &
@@ -1440,8 +1525,6 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
   axiom ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plot"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
  	  => (Values.STRING("Unknown error while plotting"),st)
 	   
-
-
 (* plotparametric *)
 (* This rule represents the normal case when an array of at least two elements 
    is given as an argument *)
@@ -1755,6 +1838,10 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
  
 end
 
+
+(**relation generate_makefilename
+ **
+ **)
 relation generate_makefilename:(string) => string =
         
   rule  Util.string_append_list([filenameprefix,".makefile"]) => makefilename 
@@ -1763,13 +1850,24 @@ relation generate_makefilename:(string) => string =
         
 end
 
+
 (**relation translate_model
  **author: x02lucpo
  **
  **translates a model into cpp code and writes also a makefile 
+ **
+ ** inputs:  (Env.Env, 
+			  Exp.ComponentRef, /* component ref for model */
+			  Interactive.InteractiveSymbolTable,
+              Msg,
+              Exp.Exp)
+ ** outputs:  (Values.Value, 
+              Interactive.InteractiveSymbolTable,
+              DAELow.DAELow,
+              string list /*libs */)
  **)
  relation translate_model: (Env.Env, 
-			    Exp.ComponentRef, (* component ref for model *)
+			    Exp.ComponentRef, 
 			    Interactive.InteractiveSymbolTable,
                             Msg,
                             Exp.Exp)
@@ -1777,7 +1875,7 @@ end
 	  => (Values.Value, 
               Interactive.InteractiveSymbolTable,
               DAELow.DAELow,
-              string list (*libs *)) =
+              string list) =
          
   rule  extract_file_prefix(env,fileprefix,st,msg) => filenameprefix &
          Static.component_ref_to_path(cr) => classname &
@@ -1829,6 +1927,7 @@ end
 
 end
 
+
 (** relation extract_file_prefix
  ** author: x02lucpo
  **
@@ -1854,20 +1953,31 @@ relation extract_file_prefix:(Env.Env,
         extract_file_prefix(_,_,_,_) => fail
 end
 
+
 (**relation calculate_simulation_settings
  **author: x02lucpo
  **
  **calculates the start,end,interval,stepsize, method and init_file_name
-**)
+ **
+ ** inputs:  (Env.Env,Exp.Exp,
+			  Interactive.InteractiveSymbolTable,
+              Msg,
+              string)
+ ** outputs:  (string/* filename */,
+              real, /* start time*/
+              real, /* stop time */
+              real, /* step size */
+              string /* method*/) 
+ **)
 relation calculate_simulation_settings: (Env.Env,Exp.Exp,
 					 Interactive.InteractiveSymbolTable,
                                          Msg,
                                          string)
-          => (string(* filename *),
-              real, (* start time*)
-              real, (* stop time *)
-              real, (* step size *)
-              string (* method*))  =
+          => (string,
+              real, 
+              real, 
+              real, 
+              string)  =
 
   rule  ceval(env,filenameprefix,true,SOME(st),NONE,msg) 
 	  => (Values.STRING(prefix_str),SOME(st)) &
@@ -1899,19 +2009,29 @@ relation calculate_simulation_settings: (Env.Env,Exp.Exp,
 
 end
 
+
 (**relation build_model
 **author: x02lucpo
 **
 **translates and builds the model through the compiler script
+**
+** inputs: (Env.Env,  
+		    Exp.Exp, /* component ref for model */
+		    Interactive.InteractiveSymbolTable,
+            Msg)
+** outputs: (string, /*classname*/
+             string, /*method*/
+             Interactive.InteractiveSymbolTable, 
+             string) /*initfilename*/
 **)
 relation build_model:(Env.Env,  
-		      Exp.Exp, (* component ref for model *)
+		      Exp.Exp, 
 		      Interactive.InteractiveSymbolTable,
                       Msg)
-          => (string, (*classname*)
-              string, (*method*)
+          => (string, 
+              string, 
               Interactive.InteractiveSymbolTable, 
-              string) (*initfilename*)  =
+              string) =
 
   rule   translate_model(env,cr,st',msg,fileprefix) => (ret_val, st,indexed_dlow',libs) &
         Static.component_ref_to_path(cr) => classname &
@@ -1943,13 +2063,18 @@ relation build_model:(Env.Env,
         build_model(_,_,_,_) => fail
 end
 
+
 (** relation: change_to_file_dir
  ** author: x02lucpo
  **
  ** CHANges to the dir where class-file (.mo) is saved or 
  ** OPENMODELICAHOMe/work if not saved
+ **
+ ** inputs: (Absyn.ComponentRef, /* class */
+			    Absyn.Program) 
+ ** outputs: ()
  **)
-relation change_to_file_dir:(Absyn.ComponentRef, (* class *)
+relation change_to_file_dir:(Absyn.ComponentRef,
 			    Absyn.Program) => () =
 
   rule  (* change to the saved files directory *)
@@ -1981,7 +2106,6 @@ relation change_to_file_dir:(Absyn.ComponentRef, (* class *)
   axiom change_to_file_dir(_,_) => ()
 
 end
-
 
 
 (** relation: compile_model
@@ -2044,6 +2168,7 @@ relation compile_model: (string, string list) => () =
 	compile_model(fileprefix,libs) => fail
 end
 
+
 (** relation: win_citation
  ** author: PA
  **
@@ -2052,7 +2177,6 @@ end
  **)
 relation win_citation: () => string =
 
-
   rule	System.platform => "WIN32"
 	-------------------
 	win_citation () => "\""
@@ -2060,14 +2184,12 @@ relation win_citation: () => string =
   axiom	win_citation() => ""
 end
 
-	
 
 (** relation: get_builtin_attribute
  **
  ** Retrieves a builtin attribute of a variable in a class by instantiating 
  ** the class and retrieving the attribute value from the flat variable.
  **)
- 
 relation get_builtin_attribute: (Exp.ComponentRef, Exp.ComponentRef, string,
 				   Interactive.InteractiveSymbolTable) 
 	  => (Values.Value, Interactive.InteractiveSymbolTable) =
@@ -2134,11 +2256,16 @@ relation get_builtin_attribute: (Exp.ComponentRef, Exp.ComponentRef, string,
 (** relation: ceval_matrixelt
  **
  ** Evaluates the expression of a matrix constructor, e.g. [1,2;3,4]
+ **
+ ** signature: (Env.Env,
+			  (Exp.Exp*bool) list list, /* matrix constr. elts*/
+			  bool, /*impl*/ 
+			  Msg) 
+	  => Values.Value list
  **)
-
 relation ceval_matrixelt:(Env.Env,
-			  (Exp.Exp*bool) list list, (* matrix constr. elts*)
-			  bool, (*impl*) 
+			  (Exp.Exp*bool) list list,
+			  bool, 
 			  Msg) 
 	  => Values.Value list =
 	  
@@ -2150,12 +2277,15 @@ relation ceval_matrixelt:(Env.Env,
   axiom	ceval_matrixelt(_,[],_,msg) => []
 end
 
+
 (** relation: ceval_matrixeltrow
  **
  ** Helper relation to ceval_matrixelt
-**)
-
-relation ceval_matrixeltrow:(Env.Env, (Exp.Exp*bool) list, bool, (*impl*) 
+ **
+ ** signature: (Env.Env, (Exp.Exp*bool) list, bool, /*impl*/ 
+			     Msg) => Values.Value
+ **)
+relation ceval_matrixeltrow:(Env.Env, (Exp.Exp*bool) list, bool, 
 			     Msg) => Values.Value =
 	
   rule	ceval (env,e,impl,NONE,NONE,msg) => (res,_) &
@@ -2167,11 +2297,11 @@ relation ceval_matrixeltrow:(Env.Env, (Exp.Exp*bool) list, bool, (*impl*)
 	
 end
 
+
 (** relation: ceval_builtin_size
  **
  ** Evaluates the size operator.
  **)
-
 relation ceval_builtin_size : (Env.Env, Exp.Exp, Exp.Exp, bool, 
 			       Interactive.InteractiveSymbolTable option,
 			       Msg) 
@@ -2274,11 +2404,11 @@ relation ceval_builtin_size : (Env.Env, Exp.Exp, Exp.Exp, bool,
 	  ceval_builtin_size(env,exp,dim,impl,st,MSG) => fail
   end
 
+
 (** relation: ceval_bultin_size_2
  ** 
  ** Helper relation to ceval_builtin_size
  **)
-
 relation ceval_builtin_size_2 : (Values.Value, int) => (Values.Value) =
 	
   rule	list_length(lst) => dim
@@ -2302,7 +2432,6 @@ end
  ** Helper relation to ceval_builtin_size. Used when recursive definition
  ** (attribute modifiers using size) is used.
 **)
-
 relation ceval_builtin_size_3: (Inst.DimExp list, int ) => Values.Value =
 
   rule	n - 1 => n' &
@@ -2321,12 +2450,12 @@ relation ceval_builtin_size_3: (Inst.DimExp list, int ) => Values.Value =
 	ceval_builtin_size_3(dims,n) => fail*)
 end
 
+
 (** relation: ceval_builtin_abs
  ** author: LP
  ** 
  ** Evaluates the abs operator.
  **)
-
 relation ceval_builtin_abs : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option, Msg) 
 	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
             
@@ -2341,12 +2470,12 @@ relation ceval_builtin_abs : (Env.Env, Exp.Exp list, bool, Interactive.Interacti
 	ceval_builtin_abs(env,[exp],impl,st,msg) => (Values.INTEGER(iv),st)
 end
 
+
 (** relation: ceval_builtin_sign
  ** author: PA
  ** 
  ** Evaluates the sign operator.
  **)
-
 relation ceval_builtin_sign : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option, Msg) 
 	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
             
@@ -2369,12 +2498,12 @@ relation ceval_builtin_sign : (Env.Env, Exp.Exp list, bool, Interactive.Interact
 	ceval_builtin_sign(env,[exp],impl,st,msg) => (Values.INTEGER(iv'),st)
 end
 
+
 (** relation: ceval_builtin_exp
  ** author: PA
  ** 
  ** Evaluates the exp function
  **)
-
 relation ceval_builtin_exp : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option, Msg) 
 	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
             
@@ -2385,6 +2514,7 @@ relation ceval_builtin_exp : (Env.Env, Exp.Exp list, bool, Interactive.Interacti
 
 end
 
+
 (** relation: ceval_builtin_noevent
  ** author: PA
  ** 
@@ -2392,7 +2522,6 @@ end
  ** considered, so evaluation will simply remove the operator and evaluate the
  ** operand.
  **)
-
 relation ceval_builtin_noevent : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option, Msg) 
 	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
             
@@ -2402,6 +2531,7 @@ relation ceval_builtin_noevent : (Env.Env, Exp.Exp list, bool, Interactive.Inter
 
 end
 
+
 (** relation: ceval_builtin_cardinality
  ** author: PA
  ** 
@@ -2409,7 +2539,6 @@ end
  ** instance is its number of (inside and outside) connections, i.e. 
  ** number of occurences in connect equations.
  **)
-
 relation ceval_builtin_cardinality : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option, Msg) 
 	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
           
@@ -2418,6 +2547,7 @@ relation ceval_builtin_cardinality : (Env.Env, Exp.Exp list, bool, Interactive.I
 	ceval_builtin_cardinality(env,[Exp.CREF(cr,_)],impl,st,msg) 
 	  => (Values.INTEGER(cnt),st)
 end
+
 
 (** relation: ceval_cardinality 
  ** author: PA
@@ -2433,12 +2563,12 @@ relation ceval_cardinality: (Env.Env, Exp.ComponentRef) => int =
 	ceval_cardinality(Env.FRAME(_,_,_,_,_,crs,_)::_,cr) => res
 end
 
+
 (** relation: ceval_builtin_cat
  ** author: PA
  ** 
  ** Evaluates the cat operator, for matrix concatenation.
  **)
-
 relation ceval_builtin_cat : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option, Msg) 
 	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
           
@@ -2450,12 +2580,12 @@ relation ceval_builtin_cat : (Env.Env, Exp.Exp list, bool, Interactive.Interacti
 	  => (v,st)
 end
 
+
 (** relation: ceval_builtin_identity
  ** author: PA
  ** 
  ** Evaluates the cat operator, for matrix concatenation.
  **)
-
 relation ceval_builtin_identity : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option, Msg) 
 	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
           
@@ -2475,7 +2605,6 @@ end
  ** 
  ** Evaluates the internal promote operator, for promotion of arrays
  **)
-
 relation ceval_builtin_promote : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option, Msg) 
 	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
           
@@ -2486,6 +2615,7 @@ relation ceval_builtin_promote : (Env.Env, Exp.Exp list, bool, Interactive.Inter
 	ceval_builtin_promote(env,[arr,dim],impl,st,msg) 
 	  => (res,st)
 end
+
 
 (** relation: ceval_builtin_promote_2
  **
@@ -2504,12 +2634,12 @@ relation ceval_builtin_promote_2: (Values.Value,
 
 end
 
+
 (** relation: ceval_cat
  **
  ** evaluates the cat operator given a list of array values and a 
  ** concatenation dimension.
  **)
-
 relation ceval_cat: (Values.Value list,
 		     int)
 		      => Values.Value =
@@ -2520,12 +2650,12 @@ relation ceval_cat: (Values.Value list,
 
 end
 
+
 (** relation: cat_dimension
  ** 
  ** Helper relation to ceval_cat, concatenates a list arrays as
  ** Values, given a dimension as integer.
  **)
-
 relation cat_dimension: (Values.Value list, int) => Values.Value list =
 	
 	(* base case for first dimension *)
@@ -2546,12 +2676,12 @@ relation cat_dimension: (Values.Value list, int) => Values.Value list =
 	cat_dimension(vlst,dim)  => v_lst'
 end
 
+
 (** relation: cat_dimension_2
  ** author: PA
  **
  ** Helper relation to cat_dimension.
  **)
-
 relation cat_dimension_2: (Values.Value list list, int) 
 	  => Values.Value list list =
 
@@ -2573,13 +2703,13 @@ relation cat_dimension_2: (Values.Value list list, int)
 
 
 end
-	     
+	
+
 (** relation: ceval_builtin_floor
  ** author: LP
  ** 
  ** evaluates the floor operator.
  **)
-
 relation ceval_builtin_floor : (Env.Env, 
 				Exp.Exp list, 
 				bool, 
@@ -2592,6 +2722,7 @@ relation ceval_builtin_floor : (Env.Env,
         --------------------------------------
         ceval_builtin_floor(env,[exp],impl,st,msg) => (Values.REAL(rv'),st)
 end
+
 
 (** relation ceval_builtin_ceil
  ** author: LP
@@ -2622,12 +2753,12 @@ relation ceval_builtin_ceil : (Env.Env,
         ceval_builtin_ceil(env,[exp],impl,st,msg) => (Values.REAL(rv''),st)
 end
 
+
 (** relation: ceval_builtin_sqrt
  ** author: LP
  ** 
  ** Evaluates the builtin sqrt operator.
  **)
-
 relation ceval_builtin_sqrt : (Env.Env, Exp.Exp list, bool, Interactive.InteractiveSymbolTable option,Msg) 
 	  => (Values.Value, Interactive.InteractiveSymbolTable option) =
 	  
@@ -2644,12 +2775,12 @@ relation ceval_builtin_sqrt : (Env.Env, Exp.Exp list, bool, Interactive.Interact
 	
 end
 
+
 (** relation ceval_builtin_sin
  ** author: LP
  **
  ** Evaluates the builtin sin function.
  **)
-
 relation ceval_builtin_sin : (Env.Env, 
 			      Exp.Exp list, 
 			      bool, 
@@ -2664,12 +2795,12 @@ relation ceval_builtin_sin : (Env.Env,
 	
 end
 
+
 (** relation ceval_builtin_cos
  ** author: LP
  **
  ** Evaluates the builtin cos function.
- **)
-	    
+ **)	    
 relation ceval_builtin_cos : (Env.Env, 
 			      Exp.Exp list, 
 			      bool, 
@@ -2684,12 +2815,12 @@ relation ceval_builtin_cos : (Env.Env,
         
 end
 
+
 (** relation ceval_builtin_tan
  ** author: LP
  **
  ** Evaluates the builtin tan function.
  **)
-
 relation ceval_builtin_tan : (Env.Env, 
 			      Exp.Exp list, 
 			      bool, 
@@ -2707,12 +2838,12 @@ relation ceval_builtin_tan : (Env.Env,
 	ceval_builtin_tan(env,[exp],impl,st,msg) => (Values.REAL(rv'),st)
 end
 
+
 (** relation ceval_builtin_asin
  ** author: PA
  **
  ** Evaluates the builtin asin function.
  **)
-
 relation ceval_builtin_asin : (Env.Env, 
 			      Exp.Exp list, 
 			      bool, 
@@ -2727,12 +2858,12 @@ relation ceval_builtin_asin : (Env.Env,
 	
 end
 
+
 (** relation ceval_builtin_acos
  ** author: PA
  **
  ** Evaluates the builtin acos function.
- **)
-	    
+ **)	    
 relation ceval_builtin_acos : (Env.Env, 
 			      Exp.Exp list, 
 			      bool, 
@@ -2747,12 +2878,12 @@ relation ceval_builtin_acos : (Env.Env,
         
 end
 
+
 (** relation ceval_builtin_atan
  ** author: PA
  **
  ** Evaluates the builtin atan function.
  **)
-
 relation ceval_builtin_atan : (Env.Env, 
 			      Exp.Exp list, 
 			      bool, 
@@ -2774,7 +2905,6 @@ end
  **
  ** Evaluates the builtin div operator.
  **)
-
 relation ceval_builtin_div : (Env.Env, 
 			      Exp.Exp list, 
 			      bool, 
@@ -2842,12 +2972,12 @@ relation ceval_builtin_div : (Env.Env,
         ceval_builtin_div(env,[exp1,exp2],impl,st,NO_MSG) => fail
 end
 
+
 (** relation ceval_builtin_mod
  ** author: LP
  **
  ** Evaluates the builtin mod operator.
  **)
-
 relation ceval_builtin_mod : (Env.Env, Exp.Exp list, bool, 
 			      Interactive.InteractiveSymbolTable option,
 			      Msg) 
@@ -2927,7 +3057,6 @@ end
  **
  ** Evaluates the builtin max function.
  **)
-
 relation ceval_builtin_max : (Env.Env, Exp.Exp list, bool, 
 			      Interactive.InteractiveSymbolTable option,
 			      Msg) 
@@ -2957,7 +3086,6 @@ end
  **
  ** Helper relation to ceval_builtin_max.
  **)
-
 relation ceval_builtin_max2 : (Values.Value) => (Values.Value) =
 
   rule	ceval_builtin_max2(v1)
@@ -2992,12 +3120,12 @@ relation ceval_builtin_max2 : (Values.Value) => (Values.Value) =
 	ceval_builtin_max2(_)=>fail
 end
 
+
 (** relation: ceval_builtin_min
  ** author: PA
  **
  ** Constant evaluation of builtin min function.
  **)
-
 relation ceval_builtin_min : (Env.Env, 
 			      Exp.Exp list, 
 			      bool, 
@@ -3023,11 +3151,11 @@ relation ceval_builtin_min : (Env.Env,
         ceval_builtin_min(env,[s1,s2],impl,st,msg) => (Values.REAL(r),st)
 end
 
+
 (** relation: ceval_builtin_min2
  **
  ** Helper relation to ceval_builtin_min.
  **)
-
 relation ceval_builtin_min2 : (Values.Value) => (Values.Value) =
 
   rule	ceval_builtin_min2(v1) => (Values.INTEGER(i1)) &
@@ -3057,12 +3185,12 @@ relation ceval_builtin_min2 : (Values.Value) => (Values.Value) =
 	  => (Values.REAL(i))
 end
 
+
 (** relation ceval_builtin_differentiate
  ** author: LP
  ** 
  ** This relation differentiates an equation: x^2 + x => 2x + 1
- **)
-		 
+ **)		 
  relation ceval_builtin_differentiate : (Env.Env, 
 					 Exp.Exp list, 
 					 bool, 
@@ -3088,12 +3216,12 @@ end
 	 ceval_builtin_differentiate (_,_,_,st,msg) => fail
  end
 
+
 (* relation ceval_builtin_simplify
  ** author: LP
  **
  ** this relation simplifies an equation: x^2 + x => 2x + 1
  *)
-
  relation ceval_builtin_simplify : (Env.Env, 
 				    Exp.Exp list, 
 				    bool, 
@@ -3120,12 +3248,12 @@ end
          
  end
 
+
 (** relation ceval_builtin_rem
  ** author: LP
  **
  ** Evaluates the builtin rem operator
  **)
-
 relation ceval_builtin_rem : (Env.Env, 
 			      Exp.Exp list, 
 			      bool, 
@@ -3208,7 +3336,6 @@ end
  **
  ** Evaluates the builtin integer operator
  **)
-
 relation ceval_builtin_integer : (Env.Env, Exp.Exp list, bool, 
 				  Interactive.InteractiveSymbolTable option,
 				  Msg) 
@@ -3222,12 +3349,12 @@ relation ceval_builtin_integer : (Env.Env, Exp.Exp list, bool,
          
  end
 
+
 (** relation: ceval_generate_function
  ** 
  **
  ** Generates code for a given function name.
- **)
-	    
+ **)    
 relation ceval_generate_function : (Env.Env, Absyn.Path) => () =
 	
   rule	Debug.fprintln("ceval", "/*- ceval_generate_function starting*/") &
@@ -3263,13 +3390,13 @@ relation ceval_generate_function : (Env.Env, Absyn.Path) => () =
 	ceval_generate_function(_,_) => fail
 end
 
+
 (** relation: ceval_generate_function_str
  **
  ** Generates a function with the given path, and all functions that are called
  **  within that function. The string list contains names of functions already
  ** generated, which won't be generated again 
  **)
-
 relation ceval_generate_function_str : (Absyn.Path, 
 					Env.Env, 
 					Absyn.Path list) 
@@ -3316,11 +3443,11 @@ relation ceval_generate_function_str : (Absyn.Path,
 
 end
 
+
 (** relation: ceval_generate_function_str_list
  **
  ** Generates code for several functions.
  **)
-
 relation ceval_generate_function_str_list : (Absyn.Path list, 
 					     Env.Env, 
 					     Absyn.Path list) 
@@ -3335,14 +3462,12 @@ relation ceval_generate_function_str_list : (Absyn.Path list,
 end
 
 
-
 (** relation ceval_builtin_diagonal
  **
  ** This relation generates a matrix[n,n] (A) of the vector {a,b,...,n}
  ** where the diagonal of A is the vector {a,b,...,n}
  ** ie A[1,1] == a, A[2,2] == b ...
  *)
-
 relation ceval_builtin_diagonal : (Env.Env, 
 				   Exp.Exp list, 
 				   bool, 
@@ -3372,19 +3497,29 @@ relation ceval_builtin_diagonal : (Env.Env,
          
  end
 
+
 (** relation: ceval_builtin_diagonal2
  ** 
  **  This is a help relation that is calling itself recursively to 
  **  generate the a nxn matrix with some special diagonal elements. 
  ** see ceval_builtin_diagonal 
+ **
+ ** signature : (Env.Env, 
+				    Exp.Exp, 
+				    bool, 
+				    Interactive.InteractiveSymbolTable option, 
+				    int, /* matrix dimension */
+				    int,  /* row */
+				    Values.Value list,
+				    Msg) 
+	  =>  Values.Value list 
  **)
-
 relation ceval_builtin_diagonal2 : (Env.Env, 
 				    Exp.Exp, 
 				    bool, 
 				    Interactive.InteractiveSymbolTable option, 
-				    int, (* matrix dimension *)
-				    int,  (* row *)
+				    int, 
+				    int,  
 				    Values.Value list,
 				    Msg) 
 	  =>  Values.Value list =
@@ -3473,7 +3608,6 @@ end
  **
  ** This relation transposes the two first dimension of an array A.
  *)
-
 relation ceval_builtin_transpose : (Env.Env, 
 				   Exp.Exp list, 
 				   bool, 
@@ -3500,11 +3634,15 @@ relation ceval_builtin_transpose : (Env.Env,
  ** author: PA
  **
  ** Helper relation to ceval_builtin_transpose
+ **
+ ** signature: (Values.Value list, 
+				    int /* index */,
+				    int) /* dim1 */
+	  => Values.Value list 
  **)
-
 relation ceval_builtin_transpose_2: (Values.Value list, 
-				    int (* index *),
-				    int) (* dim1 *)
+				    int,
+				    int)
 	  => Values.Value list =
 
   rule	int_le(indx,dim1) => true &
@@ -3517,6 +3655,7 @@ relation ceval_builtin_transpose_2: (Values.Value list,
 
   axiom ceval_builtin_transpose_2(_,_,_) => []
 end
+
 
 (** relation: ceval_builtin_size_matrix
  **
@@ -3546,11 +3685,11 @@ relation ceval_builtin_size_matrix : (Env.Env,
 	  => (v,st)
 end
 
+
 (** relation: ceval_relation
  **
  ** Performs the relation check and gives a boolean result.
  **)
-
  relation ceval_relation : (Values.Value, Exp.Operator, Values.Value)
  	  => Values.Value =
 
@@ -3559,7 +3698,6 @@ end
 	 ceval_relation (v1, Exp.GREATER(t), v2) => v
 
 	 (**  Integers *)
-
   rule	int_lt (i1,i2) => b
 	 -------------------
 	 ceval_relation (Values.INTEGER(i1),
@@ -3589,7 +3727,6 @@ end
 			 Values.INTEGER(i2)) => Values.BOOL(b)
 
 	 (**  Reals *)
-
   rule	real_lt (i1,i2) => b
 	 -------------------
 	 ceval_relation (Values.REAL(i1),
@@ -3621,8 +3758,6 @@ end
 			 Values.REAL(i2)) => Values.BOOL(b)
 
 	 (* Booleans *)
-
-
   rule	(* b1 != b2  == (b1 and not b2) or (not b1 and b2) *)
 	 bool_not b1 => nb1 &
 	 bool_not b2 => nb2 &
@@ -3660,14 +3795,15 @@ end
 	 
 end
 
+
 (** relation: ceval_range
  **
  ** This re-lation evaluates a range expression.  It only handles integers.
- **)
-		 
+ **)		 
 relation ceval_range : (int, int, int) => Values.Value list =
 	
-  rule	int_eq(start,stop) => true (* e.g. 1:1 => {1} *)
+  rule	(* e.g. 1:1 => {1} *)
+	int_eq(start,stop) => true 
 	------------------
 	ceval_range(start,_,stop) => [Values.INTEGER(start)]
 	
@@ -3688,11 +3824,11 @@ relation ceval_range : (int, int, int) => Values.Value list =
 	
 end
 
+
 (** relation: ceval_range2
  **
  ** Helper relation to ceval_range.
  **)
-
 relation ceval_range2: (int,int,int) => Values.Value list =
 	
   rule	int_gt(start,stop) => true
@@ -3711,11 +3847,11 @@ end
 (** relation: ceval_range_real
  **
  ** This relation evaluates a range expression.  It only handles reals
- **)
-		 
+ **)		 
  relation ceval_range_real : (real, real, real) => Values.Value list =
 	 
-  rule	real_eq(start,stop) => true (* e.g. 1:1 => {1} *)
+  rule	(* e.g. 1:1 => {1} *)
+	 real_eq(start,stop) => true 
 	 ------------------
 	 ceval_range_real(start,_,stop) => [Values.REAL(start)]
 	 
@@ -3735,11 +3871,11 @@ end
 	 ceval_range_real (j,d,k) => res
   end
 
+
 (** relation: ceval_range_real2
  **
  ** Helper relation to ceval_range_real.
  **)
-
 relation ceval_range_real2 : (real, real, real) => Values.Value list =
 	
   rule	real_gt(start,stop) => true
@@ -3753,11 +3889,11 @@ relation ceval_range_real2 : (real, real, real) => Values.Value list =
 	  ceval_range_real2 (start, step, stop) => Values.REAL(start)::l
   end
 
+
 (** relation: ceval_list
  **
  ** This relation does a constant evaluation on a number of expressions.
  **)
-
  relation ceval_list : (Env.Env, 
 			Exp.Exp list, 
 			bool, 
@@ -3778,12 +3914,16 @@ relation ceval_range_real2 : (real, real, real) => Values.Value list =
 
  end
 
+
 (** relation: ceval_cref
  **
  ** Evaluates ComponentRef, i.e. variables, by looking up variables in the
  ** environment.
+ **
+ ** signature: (Env.Env, Exp.ComponentRef, bool, /*impl*/ Msg) 
+	  => Values.Value
  **)
-relation ceval_cref : (Env.Env, Exp.ComponentRef, bool, (*impl*) Msg) 
+relation ceval_cref : (Env.Env, Exp.ComponentRef, bool, Msg) 
 	  => Values.Value =
 
 	  (* Search in env for binding. *)
@@ -3816,15 +3956,21 @@ relation ceval_cref : (Env.Env, Exp.ComponentRef, bool, (*impl*) Msg)
 	
 end 
 
+
 (** relation: ceval_cref_binding
  **
  ** Helper relation to ceval_cref. Evaluates varaibles by evaluating 
  ** their bindings.
+ **
+ ** signature: ceval_cref_binding : (Env.Env, Exp.ComponentRef,
+			       Types.Binding, 
+			       bool, /*impl*/
+			       Msg) 
+	  => Values.Value
  **)
-
 relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,
 			       Types.Binding, 
-			       bool, (*impl*) 
+			       bool,  
 			       Msg) 
 	  => Values.Value =
 	  
@@ -3932,17 +4078,25 @@ relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,
 	ceval_cref_binding(_,e1,Types.EQBOUND(exp,_,_),_,_) => fail
 end
 
+
 (** relation: ceval_subscript_value
  **
  ** Helper relation to ceval_cref_binding, applies subscrupts to array values
  ** to extract array elements.
- **)
-
-relation ceval_subscript_value: (Env.Env,
-				 Exp.Subscript list, (* subscript to extract*)
+ **
+ ** signature: (Env.Env,
+				 Exp.Subscript list, /* subscript to extract*/
 				 Values.Value, 
-				 int list, (* dimension sizes *)
-				 bool, (*impl*)
+				 int list, /* dimension sizes */
+				 bool, /*impl*/
+				 Msg) 
+	  => Values.Value
+ **)
+relation ceval_subscript_value: (Env.Env,
+				 Exp.Subscript list, 
+				 Values.Value, 
+				 int list, 
+				 bool, 
 				 Msg) 
 	  => Values.Value =
 
@@ -3961,15 +4115,20 @@ relation ceval_subscript_value: (Env.Env,
 	ceval_subscript_value(_,_,_,_,_,_) => fail
 end
 
+
 (** relation: ceval_subscripts
  **
  ** This relation relates a list of subscripts to their canonical
  ** forms, which is when all expressions are evaluated to constant
  ** values.
+ **
+ ** signature: (Env.Env, Exp.Subscript list, int list, 
+			     bool, /*impl*/
+			     Msg)
+	  => Exp.Subscript list
  **)
-
 relation ceval_subscripts : (Env.Env, Exp.Subscript list, int list, 
-			     bool, (*impl*) 
+			     bool,  
 			     Msg)
 	  => Exp.Subscript list =
 	  
@@ -3986,10 +4145,13 @@ end
  **
  ** This relation relates a subscript to its canonical forms, which is
  ** when all expressions are evaluated to constant values.
+ **
+ ** signature: (Env.Env, Exp.Subscript, int, 
+			    bool, /*impl*/ 
+			    Msg) => Exp.Subscript
  **)
-
 relation ceval_subscript : (Env.Env, Exp.Subscript, int, 
-			    bool, (*impl*) 
+			    bool,  
 			    Msg) => Exp.Subscript =
 	
   axiom	ceval_subscript (env, Exp.WHOLEDIM,_,_,_) => Exp.WHOLEDIM

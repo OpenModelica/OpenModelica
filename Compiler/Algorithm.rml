@@ -65,7 +65,7 @@ module Algorithm:
 
   type Ident = string
 
-  (** The `Algorithm' type corresponds to a whole algorithm secion. *)
+  (** The `Algorithm' type corresponds to a whole algorithm section. *)
   (** It is simple a list of algorithm statements. *)
   datatype Algorithm = ALGORITHM of Statement list
 
@@ -258,6 +258,7 @@ relation get_prop_exp_type : Types.Properties => Exp.Type =
 
 end
 
+
 (** relation: get_type_exp_type
  **
  ** Returns the expression type for a given Type module type. Used only by
@@ -277,6 +278,7 @@ relation get_type_exp_type : Types.Type => Exp.Type =
   axiom	get_type_exp_type( (_,_) ) => Exp.OTHER (*was fail but records must be handled somehow *)
 
 end
+
 
 (** relation: make_if
  **
@@ -302,6 +304,7 @@ relation make_if : (Exp.Exp,
 
 end
 
+
 (** relation: make_else
  **
  ** 
@@ -309,8 +312,9 @@ end
 relation make_else : ((Exp.Exp * Types.Properties * Statement list) list,
 		      Statement list) => Else =
 
-	(** This removes empty else branches *)
-  axiom	make_else ([],[]) => NOELSE
+	
+  axiom	(** This removes empty else branches *)
+        make_else ([],[]) => NOELSE
 
   axiom	make_else ([],fb) => ELSE(fb)
 
@@ -326,6 +330,7 @@ relation make_else : ((Exp.Exp * Types.Properties * Statement list) list,
 	make_else((e,Types.PROP(t,_),_)::_,_) => fail
 
 end
+
 
 (** relation: make_for 
  **)
@@ -344,6 +349,7 @@ relation make_for : (Ident, Exp.Exp, Types.Properties,
 	make_for(_,e,Types.PROP(t,_),_) => fail
 end
 
+
 (** relation: make_while 
  **)
 relation make_while : (Exp.Exp, Types.Properties,
@@ -358,6 +364,7 @@ relation make_while : (Exp.Exp, Types.Properties,
 	make_while(e,Types.PROP(t,_),_) => fail
 
 end
+
 
 (** relation: make_when_a
  **)
@@ -376,12 +383,19 @@ relation make_when_a : (Exp.Exp, Types.Properties,
 	make_when_a(e,Types.PROP(t,_),_) => fail
 end
 
+
 (** relation: make_assert
  **
- ** Creates an assert statenebt from two expressions.
+ ** Creates an assert statement from two expressions.
+ **
+ ** inputs: (Exp.Exp, /* condition */
+		     Exp.Exp, /* message */
+		     Types.Properties, 
+		     Types.Properties) 
+ ** outputs: Statement
  **)
-relation make_assert: (Exp.Exp, (* condition *)
-		       Exp.Exp, (* message *)
+relation make_assert: (Exp.Exp, 
+		       Exp.Exp, 
 		       Types.Properties, 
 		       Types.Properties) 
 	  => Statement =
@@ -400,6 +414,7 @@ relation make_assert: (Exp.Exp, (* condition *)
 	 *)
 end 
 
+
 (** relation: get_all_exps
  ** 
  ** This relation goes through the Algorithm structure and finds all the
@@ -413,12 +428,12 @@ relation get_all_exps : Algorithm => Exp.Exp list =
 
 end
 
+
 (** relation: get_all_exps_stmts
  ** 
  ** This relation takes a list of statements and returns all expressions
  ** in all statements.
  **)
-
 relation get_all_exps_stmts : Statement list => Exp.Exp list=
 
   rule	Util.list_map(stmts, get_all_exps_stmt) => expslist &
@@ -432,7 +447,6 @@ end
  **
  ** Returns all expressions in a statement.
  **)
-
 relation get_all_exps_stmt : Statement => Exp.Exp list =
 
   rule	cref_to_exp cr => crexp
@@ -446,7 +460,6 @@ relation get_all_exps_stmt : Statement => Exp.Exp list =
   rule	cref_to_exp cr => crexp
 	-----------------------
 	get_all_exps_stmt ASSIGN_ARR(expty, cr, exp) => [crexp,exp]
-
 
   rule	get_all_exps_stmts stmts => exps1 &
 	get_all_exps_else else => elseexps &
@@ -474,11 +487,11 @@ relation get_all_exps_stmt : Statement => Exp.Exp list =
 
 end
 
+
 (** relation: get_all_exps_else
  **
  ** Helper relation to get_all_exps_stmt.
  **)
-
 relation get_all_exps_else : Else => Exp.Exp list =
 
   axiom	get_all_exps_else NOELSE => []
@@ -495,12 +508,12 @@ relation get_all_exps_else : Else => Exp.Exp list =
 
 end
 
+
 (** relation: cref_to_exp
  **
  ** Creates an expression from a componentref.
  ** The type of the expression will become Exp.OTHER.
  **)
-
 relation cref_to_exp : Exp.ComponentRef => Exp.Exp =
 
   axiom	cref_to_exp cref => Exp.CREF(cref, Exp.OTHER)
