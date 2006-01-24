@@ -1167,6 +1167,13 @@ end
 	     ),
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
+  axiom	evaluate_graphical_api(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("getClassNames",_),
+		 Absyn.FUNCTIONARGS(_,_)))],_
+	     ),
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("{}",st)
+
    rule	System.get_classnames_for_simulation => resstr
 	 -----------------------
 	 evaluate_graphical_api(
@@ -6201,7 +6208,8 @@ end
   rule	Lookup.lookup_class(env,Absyn.IDENT("Placement"),false) => (c,env') &
 	 SCode.build_mod(SOME(Absyn.CLASSMOD(mod,NONE)),false,Absyn.NON_EACH) => mod' &
 	 Mod.elab_mod(env',Prefix.NOPRE,mod',false) => mod'' &
-	 Inst.inst_class(env', mod'', Prefix.NOPRE, Connect.empty_set, c,
+	 SCode.class_set_partial(c,false) => c' &
+	 Inst.inst_class(env', mod'', Prefix.NOPRE, Connect.empty_set, c',
 		 	 [], false,Inst.TOP_CALL) 
  	  => (dae, _, cs, t, state) &
 	 (* Put bindings of variables as expressions inside variable elements of the dae instead of equations *)

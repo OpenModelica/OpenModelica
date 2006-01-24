@@ -74,5 +74,9 @@ relation add_source_message:(Error.ErrorID,
 
 relation print_messages_str:() => string
 relation get_messages_str:() => string
+
+relation error_off:() => () 
+
+relation error_on:() => ()
 end
  

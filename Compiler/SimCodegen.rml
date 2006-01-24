@@ -1174,9 +1174,11 @@ end
 
 relation generate_initial_value_code:(DAELow.DAELow) => string =
 
+
+	(* with initial equations *)
   rule  DAELow.var_list(vars) => vars_lst &
 	DAELow.var_list(knvars) => knvars_lst &
-	DAELow.equation_list(ie) => initial_eqns1 &
+	DAELow.equation_list(ie) => (initial_eqns1 as _::_)  &
 	generate_initial_equations_from_start(vars_lst) => initial_eqns2 &
 
 	generate_initial_assignments_from_start(vars_lst) => start_assigns &
@@ -1220,6 +1222,30 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
 
         ----------------------------------
         generate_initial_value_code(DAELow.DAELOW(vars,knvars,eqns,se,ie,ae,al,ev)) => str
+
+	(* without initial equations *)
+  rule  DAELow.var_list(vars) => vars_lst &
+	DAELow.var_list(knvars) => knvars_lst &
+	DAELow.equation_list(ie) => [] &
+	generate_initial_equations_from_start(vars_lst) => initial_eqns2 &
+
+	generate_initial_assignments_from_start(vars_lst) => start_assigns &
+	generate_parameter_assignments(knvars_lst) => param_assigns &
+
+	Codegen.c_make_function("int","initial_function",[],["double *x",
+							       "double *xd", 
+							       "double *y",
+							       "double *p",
+							       "int nx",
+							       "int ny",
+							       "int np"])
+	  => init_func' &
+
+	  Codegen.c_add_cleanups(init_func', ["return 0;"]) => init_func &
+        Codegen.c_merge_fns([init_func,start_assigns,param_assigns]) => res &
+	Codegen.c_print_functions_str([res]) => str
+        ----------------------------------
+        generate_initial_value_code(DAELow.DAELOW(vars,knvars,eqns,se,ie,ae,al,ev)) => str
         
   rule  Codegen.c_make_function("int","initial_function",[],["double *x",
 							     "double *xd", 
@@ -1250,7 +1276,7 @@ relation generate_parameter_assignments: DAELow.Var list => CFunction =
 	print_exp_cpp_str(e) => e_str &
 	generate_parameter_assignments(vs) => func &
 	Util.string_append_list([cr_str," = ",e_str,";"]) => stmt &
-	Codegen.c_add_statements(func,[stmt]) => func'
+	Codegen.c_add_statements(func,[stmt]) => func' 
 	--------------------------
 	generate_parameter_assignments(DAELow.VAR(cr,DAELow.PARAM,_,_,SOME(e),NONE,_,_,_,_,_,_,_,_)::vs) => func'
 

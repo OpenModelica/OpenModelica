@@ -129,7 +129,10 @@ relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod, bool (*impl*)) => Types.
 	elab_mod (env, pre, m as SCode.REDECL(final, elist),impl) 
 	  =>  Types.REDECL(final, elist')
 
-  rule	Debug.fprint("failtrace", "#-- elab_mod failed\n")
+  rule	Debug.fprint("failtrace", "#-- elab_mod ") &
+ 	SCode.print_mod_str(mod) => str & 
+	Debug.fprint("failtrace", str) &
+	Debug.fprint("failtrace", " failed\n" )
 	-------------------------------------------------
 	elab_mod (_,pre,mod,impl) => fail 
 end
@@ -328,9 +331,9 @@ relation elab_untyped_mod: (SCode.Mod,Env.Env,Prefix.Prefix) => Types.Mod =
 	elab_untyped_mod (m as SCode.REDECL(final, elist),env,pre) 
 	  =>  Types.REDECL(final, elist')
 
-  rule	Print.print_buf "#-- elab_untyped_mod failed:\n" &
-	SCode.print_mod mod &
-	Print.print_buf "\n"
+  rule	print "- elab_untyped_mod " &
+	SCode.print_mod_str mod => s & print s  &
+	print " failed\n"
 	----------
 	elab_untyped_mod (mod,env,pre) => fail
 end

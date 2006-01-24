@@ -234,7 +234,9 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 	-------------------------------
 	lookup_class(env,path,msg) => fail
 
-  rule	 lookup_class_in_env(env,path,msgflag) 
+  rule	(*print "lookup_class " & print name  & print "\nenv:" &*)
+	(*Env.print_env_str env => s & print s & print "\n" &*)
+	lookup_class_in_env(env,path,msgflag) 
 	  => (c as SCode.CLASS(id,_,encflag,restr,_), env') 
 	--------------------------------------
 	lookup_class(env, path as Absyn.IDENT(name),msgflag) 
@@ -282,9 +284,10 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 	lookup_class(env, p as Absyn.QUALIFIED(pack,path), msgflag) 
 	  => (c', env5)
 
-  rule	print "-lookup_class failed " &
+  rule	(*print "-lookup_class failed " &*)
  	Absyn.path_string path => s & 
-        print s & print "\n" &
+        (*print s & print "\n" &*)
+(*	Env.print_env_str env => s & print s & print "\n" &*)
 (* 	Env.print_env env & *)
 (* 	Print.get_string => str & print "Env: " & print str & print "\n" & *)
 (* 	Print.print_buf "#Error, class " & Print.print_buf s &  *)
@@ -1251,14 +1254,20 @@ end
  ** Helper relation to lookup_class. Searches the environment for the class.
  **)
 
-relation lookup_class_in_env: (Env.Env,Absyn.Path,bool) 
+relation lookup_class_in_env: (Env.Env,Absyn.Path,bool (* msg*)) 
 	  => (SCode.Class, Env.Env) =
 
-  rule	(*print "looking in env for " & print id &*)
+  rule	(*print "looking in env for " & print id & print "\n" &*)
 	  lookup_class_in_frame(frame,frame::fs,id,msg) => (c,env')  
 	---------------------
 	lookup_class_in_env(env as (frame::fs),Absyn.IDENT(id),msg)
 	    => (c,env')
+
+  rule	(* Special case if looking up the class that -is- encapsulated. That must be allowed. *)
+	lookup_class_in_env(fs,aid,true) => (c,env)
+	---------------------
+	lookup_class_in_env(env as Env.FRAME(NONE,_,_,_,_,_,true)::fs, aid as Absyn.IDENT(id),_) 
+	  => (c,env)
 	
   rule	(* Special case if looking up the class that -is- encapsulated. That must be allowed. *)
          id = sid &
@@ -1266,27 +1275,27 @@ relation lookup_class_in_env: (Env.Env,Absyn.Path,bool)
 	---------------------
 	lookup_class_in_env(env as Env.FRAME(SOME(sid),_,_,_,_,_,true)::fs, aid as Absyn.IDENT(id),_) 
 	  => (c,env)
-
-  rule	 Builtin.initial_env() => i_env & 
+	  
+  rule	Builtin.initial_env() => i_env & 
         not lookup_class_in_env(  i_env, aid,false)=>(_,_) &
 	Env.print_env_path_str(env) => scope &
 	 Error.add_message(Error.LOOKUP_ERROR,[id,scope])
 	---------------------
 	lookup_class_in_env(env as Env.FRAME(SOME(sid),_,_,_,_,_,true)::fs, aid as Absyn.IDENT(id),true) => fail
 
-  rule	 Builtin.initial_env() => i_env & 
+  rule	Builtin.initial_env() => i_env & 
         not lookup_class_in_env(  i_env, aid,false)=>(_,_)
 	---------------------
 	lookup_class_in_env(Env.FRAME(sid,_,_,_,_,_,true)::fs, 
 			    aid as Absyn.IDENT(id),false) => fail
 
- rule	 Builtin.initial_env() => i_env & 
+  rule	Builtin.initial_env() => i_env & 
         lookup_class_in_env(  i_env, aid,msgflag)=> (c,env')
        	---------------------------------------------------
 	lookup_class_in_env(Env.FRAME(sid,_,_,_,_,_,true)::fs, 
 			    aid as Absyn.IDENT(id),msgflag ) => (c,env')
 
-  rule	 lookup_class_in_env(fs,id,msgflag) => (c, env')
+  rule	lookup_class_in_env(fs,id,msgflag) => (c, env')
 	-----------------------------------------------
 	lookup_class_in_env((f as Env.FRAME(sid,_,_,_,_,_,false))::fs,
 			    id ,msgflag ) 
@@ -1386,8 +1395,9 @@ relation lookup_class_in_frame: (Env.Frame,Env.Env,
 
 
   rule	(*print "looking for class " & print id & print " in frame\n" &*)
+	
 	Env.tree_get(ht,id,Env.myhash) => Env.CLASS(c,env) 
-	(*& print "found " & print id & print "\n" *)
+(*	& print "found " & print id & print "\n" *)
 	---------------------------------------------------------
 	lookup_class_in_frame(Env.FRAME(sid,ht,_,_,_,_,_),totenv,id,_) 
 	  => (c, totenv)

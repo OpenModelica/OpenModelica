@@ -78,6 +78,7 @@ with "TaskGraph.rml"
 with "TaskGraphExt.rml" 
 with "SimCodegen.rml"
 with "ErrorExt.rml"
+with "Error.rml"
 
 (** relation: server_loop
  **

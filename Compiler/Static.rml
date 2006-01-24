@@ -445,9 +445,12 @@ relation elab_exp : (Env.Env, Absyn.Exp, bool, Interactive.InteractiveSymbolTabl
 
   rule	Debug.fprint("failtrace", "- elab_exp failed: ") & 
 	Debug.fcallret("failtrace", Dump.print_exp_str, e, "") => expstr & 
-	Debug.fprintln("failtrace", expstr) 
+	Debug.fprintln("failtrace", expstr) & 
+	Debug.fprint("failtrace", "\n env : ") & 
+	Debug.fcallret("failtrace", Env.print_env_str, env, "") => envstr & 
+	Debug.fprintln("failtrace", envstr) 
 	-----------------------------------------------------------
-	elab_exp(_,e,_,_) => fail
+	elab_exp(env,e,_,_) => fail
 end 
 
 (** relation: elab_matrix_get_dimensions
@@ -4596,8 +4599,8 @@ relation fill_default_slots: (Slot list , SCode.Class, Env.Env, bool (*impl*))
 	fill_default_slots (SLOT((id,tp),false,e,ds)::xs,class,env,impl) 
 	  => SLOT((id,tp),true,SOME(exp'),ds)::res
 
-  rule	fill_default_slots(xs,class,env,impl) => res &
-	Error.add_message(Error.INTERNAL_ERROR,[id])
+  rule	fill_default_slots(xs,class,env,impl) => res 
+	(*Error.add_message(Error.INTERNAL_ERROR,[id])*)
 	----------
 	fill_default_slots (SLOT((id,tp),false,e,ds)::xs,class,env,impl) 
 	  => SLOT((id,tp),true,e,ds)::xs

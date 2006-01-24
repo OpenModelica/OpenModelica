@@ -45,6 +45,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using namespace std;
 
+// if error_on is true, message is added, otherwise not.
+bool error_on=true;
+
 #include "ErrorMessage.hpp"
 
   queue<ErrorMessage> errorMessageQueue; // Global variable of all error messages.
@@ -107,6 +110,18 @@ extern "C"
     while(!errorMessageQueue.empty()) errorMessageQueue.pop();
   }
 
+  RML_BEGIN_LABEL(ErrorExt__error_5fon)
+  {
+    error_on = true;
+    RML_TAILCALLK(rmlSC);
+  }
+
+  RML_BEGIN_LABEL(ErrorExt__error_5foff)
+  {
+    error_on = false;
+    RML_TAILCALLK(rmlSC);
+  }
+
   RML_BEGIN_LABEL(ErrorExt__add_5fmessage)
   {
 
@@ -116,13 +131,13 @@ extern "C"
     char* message = RML_STRINGDATA(rmlA3);
     void* tokenlst = rmlA4;
     std::list<std::string> tokens;
-    
-    while(RML_GETHDR(tokenlst) != RML_NILHDR) {
-      tokens.push_back(string(RML_STRINGDATA(RML_CAR(tokenlst))));
-      tokenlst=RML_CDR(tokenlst);
+    if (error_on) {
+      while(RML_GETHDR(tokenlst) != RML_NILHDR) {
+	tokens.push_back(string(RML_STRINGDATA(RML_CAR(tokenlst))));
+	tokenlst=RML_CDR(tokenlst);
+      }
+      add_message(errorID,tp,severity,message,tokens);
     }
-    add_message(errorID,tp,severity,message,tokens);
-    
     RML_TAILCALLK(rmlSC);
   } 
   RML_END_LABEL
@@ -139,13 +154,15 @@ extern "C"
     void* tokenlst = rmlA4;
     std::list<std::string> tokens;
     
-    while(RML_GETHDR(tokenlst) != RML_NILHDR) {
-      tokens.push_back(string(RML_STRINGDATA(RML_CAR(tokenlst))));
-      tokenlst=RML_CDR(tokenlst);
+    if (error_on) {
+      while(RML_GETHDR(tokenlst) != RML_NILHDR) {
+	tokens.push_back(string(RML_STRINGDATA(RML_CAR(tokenlst))));
+	tokenlst=RML_CDR(tokenlst);
+      }
+      
+      add_source_message(errorID,tp,severity,message,tokens,line,col,filename);
     }
-
-    add_source_message(errorID,tp,severity,message,tokens,line,col,filename);
-    RML_TAILCALLK(rmlSC);
+    RML_TAILCALLK(rmlSC); 
   } 
   RML_END_LABEL
 
