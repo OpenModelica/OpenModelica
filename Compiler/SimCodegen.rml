@@ -560,7 +560,7 @@ end
 relation generate_c_decl_for_string_array:(string,string,int) => string =
         
   rule  int_eq(number_of_strings,0) => true &
-        Util.string_append_list(["char* ",array_name,"[0];\n"]) => res
+        Util.string_append_list(["char* ",array_name," = NULL;\n"]) => res
         -----------------------------------
         generate_c_decl_for_string_array(array_name,_,number_of_strings) => res
         
@@ -3548,11 +3548,14 @@ end
 
 (**relation define_string_to_modelica_string
  **removes the $... from the string and replace the DAELow.derivative_name_prefix to "der"
+ ** removes the """ and replaces with "\"" (in case of nestled divisions)
  ** author x02lucpo
  **)
 relation define_string_to_modelica_string : (string) => string =
 
-  rule  Util.c_str_to_modelica_string(part_eqn) => part_eqn1 &
+  rule  Util.c_str_to_modelica_string(part_eqn) => part_eqn0 &
+        (* replace """ with ""  *)
+        System.string_replace(part_eqn0,"\"","") => part_eqn1 &
         (*replace derivative prefix with der*)
         System.string_replace(part_eqn1,DAELow.derivative_name_prefix,"der") => part_eqn2 &
         (*replace $$ with ##. this is to be able to replace $ with ""*)
@@ -3575,9 +3578,11 @@ relation generate_division_macro:(string, (* nominator *)
                                  string) (* denominator *)
           => string =
 
-  rule  Util.string_append_list(["\"",s1,"/",s2,"\""]) => part_eqn &
+  rule  Util.string_append_list([s1,"/",s2]) => part_eqn &
+        (* print "befor: " & print part_eqn & print "\n" & *)
         define_string_to_modelica_string(part_eqn) => part_eqn' &
-        Util.string_append_list(["DIVISION(", s1,",",s2,",",part_eqn',")"]) => res 
+        (* print "after: " & print part_eqn' & print "\n" & *)
+        Util.string_append_list(["DIVISION(", s1,",",s2,",\"",part_eqn',"\")"]) => res 
         
         ----------------------------
         generate_division_macro(s1,s2) => res
