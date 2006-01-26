@@ -626,8 +626,21 @@ relation evaluate_graphical_api2: (InteractiveStmts, InteractiveSymbolTable)
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) 
 	   => (resstr,SYMBOLTABLE(newp,s,ic,iv,cf))			
 
+  rule	set_component_comment(class,comp_ref,cmt,p) => (resstr,newp)
+	----------------------------
+	 evaluate_graphical_api2(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("setComponentComment",_),
+		 Absyn.FUNCTIONARGS([Absyn.CREF(class), 
+				     Absyn.CREF(comp_ref),
+				     Absyn.STRING(cmt)
+				     ],[])))],_
+	     ), 
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) 
+	   => (resstr, SYMBOLTABLE(newp,s,ic,iv,cf))
+
   rule	Absyn.cref_to_path(class) => p_class &
-  set_component_properties(p_class,comp_ref,final,flow,protected,repl,
+	set_component_properties(p_class,comp_ref,final,flow,protected,repl,
 				 variability,[dref1,dref2],causality,p) 
 	  => (resstr,p')
 	 --------------------------------------------
@@ -1043,6 +1056,16 @@ end
 	     ),
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
+   rule	set_connection_comment(cr,cr1,cr2,cmt,p) => (newp,resstr)
+	 -----------------------
+	 evaluate_graphical_api(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("setConnectionComment",_),
+		 Absyn.FUNCTIONARGS([Absyn.CREF(cr),Absyn.CREF(cr1),Absyn.CREF(cr2),Absyn.STRING(cmt)],_)))],_
+	     ),
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) 
+	  => (resstr,SYMBOLTABLE(newp,s,ic,iv,cf))
+
    rule	add_connection(cr,c1,c2,nargs,p) => (resstr,newp) 
 	 -----------------------
 	 evaluate_graphical_api(
@@ -1191,6 +1214,25 @@ end
 		 Absyn.FUNCTIONARGS([Absyn.STRING(str)],_)))],_
 	     ),
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true",st)
+
+  rule	 get_class_information(cr,p) => resstr
+	 -----------------------
+	 evaluate_graphical_api(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("getClassInformation",_),
+		 Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))],_
+	     ),
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+
+  rule	 set_class_comment(class,str,p) => (p',resstr)
+	 -----------------------
+	 evaluate_graphical_api(
+	     ISTMTS([IEXP(Absyn.CALL(
+		 Absyn.CREF_IDENT("setClassComment",_),
+		 Absyn.FUNCTIONARGS([Absyn.CREF(class),Absyn.STRING(str)],_)))],_
+	     ),
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) 
+	  => (resstr,SYMBOLTABLE(p',s,ic,iv,cf))
 
   rule	get_class_restriction(cr,p) => resstr 
 	 -----------------------
@@ -3505,6 +3547,161 @@ end
    delete_class_from_list(cdef as Absyn.CLASS(name,_,_,_,_,_,_), x::xs) => x::res
  end
 
+(** relation: set_class_comment
+ ** author: PA
+ **
+ ** Sets the class comment.
+ **)
+relation set_class_comment:(Absyn.ComponentRef,string,Absyn.Program) 
+	  => (Absyn.Program, string) =
+
+
+  rule	Absyn.cref_to_path(class) => p_class &
+	build_within(p_class) => within &
+	get_pathed_class_in_program(p_class,p) => cdef &
+	set_class_comment_in_class(cdef,str) => cdef' &
+	 update_program(Absyn.PROGRAM([cdef'],within),p) => newp
+	------------------
+	set_class_comment(class,str,p) 
+	  => (newp,"Ok")
+
+  axiom	set_class_comment(_,_,p) => (p,"Error")
+end
+
+(** relation: set_class_comment_in_class
+ ** author: PA
+ ** 
+ ** Helper relation to set_class_comment
+ **)
+
+relation set_class_comment_in_class: (Absyn.Class,string) => Absyn.Class =
+
+  rule	set_class_comment_in_classdef(cdef,cmt) => cdef' 
+	------------------
+	set_class_comment_in_class(Absyn.CLASS(id,p,f,e,r,cdef,info),cmt)
+	=> Absyn.CLASS(id,p,f,e,r,cdef',info)
+end
+
+(** relation: set_class_comment_in_classdef
+ ** author: PA
+ ** 
+ ** Helper relation to set_class_comment_in_class
+ **)
+
+relation set_class_comment_in_classdef:(Absyn.ClassDef,string) 
+	  => Absyn.ClassDef =
+  axiom	set_class_comment_in_classdef(Absyn.PARTS(p,_),"") => Absyn.PARTS(p,NONE)
+
+  axiom	set_class_comment_in_classdef(Absyn.PARTS(p,_),cmt) => Absyn.PARTS(p,SOME(cmt))
+
+  rule	set_class_comment_in_comment_opt(cmt,strcmt) => cmt' 
+	---------------
+	set_class_comment_in_classdef(Absyn.DERIVED(p,ad,attr,arg,cmt),strcmt)
+	  => Absyn.DERIVED(p,ad,attr,arg,cmt') 
+
+  rule	set_class_comment_in_comment_opt(cmt,strcmt) => cmt' 
+	---------------
+	set_class_comment_in_classdef(Absyn.ENUMERATION(edef,cmt),strcmt)
+	  => Absyn.ENUMERATION(edef,cmt')
+
+  rule	set_class_comment_in_comment_opt(cmt,strcmt) => cmt' 
+	---------------
+	set_class_comment_in_classdef(Absyn.OVERLOAD(plst,cmt),strcmt)
+	  => Absyn.OVERLOAD(plst,cmt')
+
+  axiom	set_class_comment_in_classdef(Absyn.CLASS_EXTENDS(id,args,_,p),"")
+	  => Absyn.CLASS_EXTENDS(id,args,NONE,p)
+
+  axiom	set_class_comment_in_classdef(Absyn.CLASS_EXTENDS(id,args,_,p),cmt)
+	  => Absyn.CLASS_EXTENDS(id,args,SOME(cmt),p)
+
+  axiom	set_class_comment_in_classdef(c,_) => c
+
+end
+
+(** relation: set_class_comment_in_comment_opt
+ ** author: PA
+ ** 
+ ** Sets the string comment in an Comment option.
+ **)
+
+relation set_class_comment_in_comment_opt: (Absyn.Comment option, string) 
+	  => Absyn.Comment option =
+
+axiom	set_class_comment_in_comment_opt(SOME(Absyn.COMMENT(ann,_)),"") 
+	  => SOME(Absyn.COMMENT(ann,NONE))
+
+  axiom	set_class_comment_in_comment_opt(SOME(Absyn.COMMENT(ann,_)),cmt) 
+	  => SOME(Absyn.COMMENT(ann,SOME(cmt)))
+
+  axiom	set_class_comment_in_comment_opt(NONE,cmt) 
+	  => SOME(Absyn.COMMENT(NONE,SOME(cmt)))
+end
+
+(** relation: get_class_information
+ ** author: PA
+ **
+ ** Returns the class restriction, class comment and source file of a class.
+ **)
+
+relation get_class_information:(Absyn.ComponentRef,
+				Absyn.Program) => string =
+
+  rule	Absyn.cref_to_path(cr) => path &
+	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,restr,cdef,Absyn.INFO(file,_,_)) &
+	Dump.unparse_restriction_str(restr) => res &
+	get_class_comment(cdef) => cmt &
+	Util.string_append_list(["{\"",res,"\", ",cmt,", \"",file,"\"}"]) => res'
+	----------------------------
+	get_class_information(cr,p) => res'
+end
+
+(** relation: get_class_comment
+ ** author: PA
+ **
+ ** Returns the class comment of a Absyn.ClassDef
+ **)
+
+relation get_class_comment: Absyn.ClassDef => string =
+
+  rule	get_class_comment2(cdef) => s &
+	Util.string_append_list(["\"",s,"\""]) => res
+	-------------------
+	get_class_comment(cdef) => res
+
+end
+
+(** relation: get_class_comment2
+ ** 
+ ** Helper relation to get_class_comment.
+ **)
+
+relation get_class_comment2: Absyn.ClassDef => string =
+
+  axiom	get_class_comment2(Absyn.PARTS(_,SOME(str))) => str
+
+  rule	get_string_comment2(cmt) => res
+	-----------------------------
+	get_class_comment2(Absyn.DERIVED(_,_,_,_,cmt)) => res 
+	
+  rule	get_string_comment2(cmt) => res
+	-----------------------------
+	get_class_comment2(Absyn.ENUMERATION(_,cmt)) => res 
+
+  rule	get_string_comment2(cmt) => res
+	-----------------------------
+	get_class_comment2(Absyn.ENUMERATION(_,cmt)) => res 
+
+  rule	get_string_comment2(cmt) => res
+	-----------------------------
+	get_class_comment2(Absyn.OVERLOAD(_,cmt)) => res 
+
+  axiom	get_class_comment2(Absyn.CLASS_EXTENDS(_,_,SOME(str),_)) => str 
+
+
+  axiom	get_class_comment2(_) => ""
+
+end
 
 (** relation: get_class_restriction
  ** author: PA
@@ -4925,14 +5122,36 @@ relation get_nth_connection: (Absyn.ComponentRef, Absyn.Program, int)
 
    rule	Absyn.cref_to_path(model) => modelpath &
 	get_pathed_class_in_program(modelpath,p) => cdef &
-	get_nth_connectionitem_in_class(cdef,n) => Absyn.EQUATIONITEM(eq,_) &
-	get_connection_str eq => str
+	get_nth_connectionitem_in_class(cdef,n) => Absyn.EQUATIONITEM(eq,cmt) &
+	get_string_comment(cmt) => str2 &
+	get_connection_str eq => str &
+	Util.string_append_list(["{",str,", ",str2,"}"]) => res
 	----------------------------
-	get_nth_connection (model,p,n) => str
+	get_nth_connection (model,p,n) => str (* res when Daniels changed in MOE*) 
 	
   axiom get_nth_connection(_,_,_) => "Error"
 end
 
+
+(** relation: get_string_comment
+ **
+ ** Returns the string comment or empty string from a Comment option.
+ **)
+
+relation get_string_comment:( Absyn.Comment option) => string =
+
+  rule	get_string_comment2(cmt) => s &
+	Util.string_append_list(["\"",s,"\""]) => res
+	-----------------
+	get_string_comment(cmt) => res
+end
+
+relation get_string_comment2: ( Absyn.Comment option) => string =
+
+  axiom	get_string_comment2(SOME(Absyn.COMMENT(_,SOME(str)))) => str 
+
+  axiom	get_string_comment2(_) => ""
+end
 
 (** relation: add_connection
  **
@@ -5064,6 +5283,250 @@ end
 	 ------------------------------------
 	 delete_equation_in_eqlist(x::xs,c1,c2) => x::res
  end
+
+(** relation: set_component_comment
+ ** author :PA
+ **
+ ** Sets the component commment given by class name and ComponentRef.
+ **)
+ relation set_component_comment: (Absyn.ComponentRef,
+				  Absyn.ComponentRef,
+				  string,
+				  Absyn.Program)
+	  => (string, Absyn.Program) =
+
+  rule	Absyn.cref_to_path(class) => p_class &
+	build_within(p_class) => within &
+	get_pathed_class_in_program(p_class,p) => cdef &
+	set_component_comment_in_class(cdef,cr1,cmt) => cdef' &
+	update_program(Absyn.PROGRAM([cdef'],within),p) => newp
+	----------------------------------------
+	set_component_comment(class,cr1,cmt,p) => ("Ok",newp)
+
+  axiom	set_component_comment(class,cr1,cmt,p) => ("Error",p)
+
+end
+
+(** relation: set_component_comment_in_class
+ ** author: PA
+ ** 
+ ** Helper relation to set_component_comment. 
+ **)
+
+relation set_component_comment_in_class: (Absyn.Class, 
+					   Absyn.ComponentRef,
+					   string) 
+	  => Absyn.Class =
+
+
+  rule	set_component_comment_in_parts(parts,cr1,cmt) => parts'
+	-------------------------------
+	set_component_comment_in_class(Absyn.CLASS(name,p,f,e,restr,
+						    Absyn.PARTS(parts,pcmt),info),
+					cr1,cmt)
+	  => Absyn.CLASS(name,p,f,e,restr,Absyn.PARTS(parts',pcmt),info)
+	  
+end
+
+(** relation: set_component_comment_in_parts
+ ** author: PA
+ ** 
+ ** Helper relation to set_component_comment_in_class.
+ **)
+
+relation set_component_comment_in_parts:(Absyn.ClassPart list,
+					   Absyn.ComponentRef,
+					   string)
+	  => Absyn.ClassPart list =
+
+  rule	set_component_comment_in_elementitems(elts,cr1,cmt) => elts' 
+	-----------------------------------------------
+	set_component_comment_in_parts(Absyn.PUBLIC(elts)::xs,cr1,cmt)
+	  => Absyn.PUBLIC(elts')::xs
+
+	  (* rule above failed *)
+  rule	set_component_comment_in_parts(xs,cr1,cmt) => xs'
+	-------------------------------
+	set_component_comment_in_parts(Absyn.PUBLIC(e)::xs,cr1,cmt)
+	  => (Absyn.PUBLIC(e)::xs')
+
+  rule	set_component_comment_in_elementitems(elts,cr1,cmt) => elts' 
+	-----------------------------------------------
+	set_component_comment_in_parts(Absyn.PUBLIC(elts)::xs,cr1,cmt)
+	  => Absyn.PROTECTED(elts')::xs
+
+	  (* rule above failed *)
+  rule	set_component_comment_in_parts(xs,cr1,cmt) => xs'
+	-------------------------------
+	set_component_comment_in_parts(Absyn.PUBLIC(e)::xs,cr1,cmt)
+	  => (Absyn.PROTECTED(e)::xs')
+
+  rule	set_component_comment_in_parts(xs,cr1,cmt) => xs'
+	-------------------------------------------
+	set_component_comment_in_parts(p::xs,cr1,cmt) => p::xs'
+end
+
+(** relation: set_component_comment_in_elementitems
+ ** author: PA
+ ** 
+ ** Helper relation to set_component_parts. 
+ **)
+relation set_component_comment_in_elementitems: (Absyn.ElementItem list,
+						 Absyn.ComponentRef,
+						 string)
+	=> Absyn.ElementItem list =
+ 
+  rule	set_component_comment_in_elementspec(spec,cr1,cmt) => spec'
+	----------------------
+	set_component_comment_in_elementitems(Absyn.ELEMENTITEM(Absyn.ELEMENT(f,r,inout,n,spec,info,constr))::es,cr1,cmt) 
+	  => Absyn.ELEMENTITEM(Absyn.ELEMENT(f,r,inout,n,spec',info,constr))::es
+
+  rule	set_component_comment_in_elementitems(es,cr1,cmt) => es'
+	----------------------
+	set_component_comment_in_elementitems(e::es,cr1,cmt) 
+	  => e::es'
+end
+
+(** relation: set_component_comment_in_elementspec
+ ** author: PA
+ ** 
+ ** Helper relation to set_component_elementitems. 
+ **)
+relation set_component_comment_in_elementspec: (Absyn.ElementSpec,
+						 Absyn.ComponentRef,
+						 string) 
+	=> Absyn.ElementSpec =
+
+  rule	set_component_comment_in_compitems(citems,cr,cmt) => citems' 
+	-----------------------------
+	set_component_comment_in_elementspec(Absyn.COMPONENTS(attr,tp,citems)
+					     ,cr,cmt) 
+	  => Absyn.COMPONENTS(attr,tp,citems')
+end
+
+(** relation: set_component_comment_in_compitems
+ ** author: PA
+ ** 
+ ** Helper relation to set_component_elementspec. 
+ **)
+
+relation set_component_comment_in_compitems: (Absyn.ComponentItem list,
+					      Absyn.ComponentRef,
+					      string) 
+	  => Absyn.ComponentItem list =
+
+  rule	Absyn.cref_equal(Absyn.CREF_IDENT(id,[]),cr) => true &
+	set_class_comment_in_comment_opt(compcmt,cmt) => compcmt'
+	--------------------------
+	set_component_comment_in_compitems(Absyn.COMPONENTITEM(Absyn.COMPONENT(id,ad,mod),cond,compcmt)::cs,cr,cmt)
+	  => Absyn.COMPONENTITEM(Absyn.COMPONENT(id,ad,mod),cond,compcmt')::cs
+
+  rule	set_component_comment_in_compitems(cs,cr,cmt) => cs' 
+	--------------------------
+	set_component_comment_in_compitems(c::cs,cr,cmt)
+	  => c::cs'
+end
+
+
+(** relation: set_connection_comment
+ ** author: PA
+ **
+ ** Sets the nth connection comment.
+ **)
+
+relation set_connection_comment: (Absyn.ComponentRef, 
+				  Absyn.ComponentRef,
+				  Absyn.ComponentRef, 
+				  string, 
+				  Absyn.Program)
+	  => (Absyn.Program, string) =
+
+  rule	Absyn.cref_to_path(class) => p_class &
+	build_within(p_class) => within &
+	get_pathed_class_in_program(p_class,p) => cdef &
+	set_connection_comment_in_class(cdef,cr1,cr2,cmt) => cdef' &
+	update_program(Absyn.PROGRAM([cdef'],within),p) => newp
+	-----------------------------
+	set_connection_comment(class,cr1,cr2,cmt,p)
+	  => (newp,"Ok")
+	
+  axiom	set_connection_comment(_,_,_,_,p) => (p,"Error")
+
+end
+
+(** relation: set_connection_comment_in_class
+ ** author: PA
+ **
+ ** Sets a connection comment in a Absyn.Class given two Absyn,ComponentRef
+ **)
+relation set_connection_comment_in_class: (Absyn.Class, 
+					   Absyn.ComponentRef,
+					   Absyn.ComponentRef, 
+					   string) 
+	  => Absyn.Class =
+
+
+  rule	set_connection_comment_in_parts(parts,cr1,cr2,cmt) => parts'
+	-------------------------------
+	set_connection_comment_in_class(Absyn.CLASS(name,p,f,e,restr,
+						    Absyn.PARTS(parts,pcmt),info),
+					cr1,cr2,cmt)
+	  => Absyn.CLASS(name,p,f,e,restr,Absyn.PARTS(parts',pcmt),info)
+	  
+end
+
+(** relation: set_connection_comment_in_parts
+ ** author: PA
+ **
+ ** Helper relation to set_connection_comment_in_class.
+ **)
+
+relation set_connection_comment_in_parts:(Absyn.ClassPart list,
+					   Absyn.ComponentRef,
+					   Absyn.ComponentRef,  
+					   string)
+	  => Absyn.ClassPart list =
+
+  rule	set_connection_comment_in_equations(e,cr1,cr2,cmt) => e' 
+	-----------------------------------------------
+	set_connection_comment_in_parts(Absyn.EQUATIONS(e)::xs,cr1,cr2,cmt)
+	  => Absyn.EQUATIONS(e')::xs
+
+	  (* rule above failed *)
+  rule	set_connection_comment_in_parts(xs,cr1,cr2,cmt) => xs'
+	-------------------------------
+	set_connection_comment_in_parts(Absyn.EQUATIONS(e)::xs,cr1,cr2,cmt)
+	  => (Absyn.EQUATIONS(e)::xs')
+
+  rule	set_connection_comment_in_parts(xs,cr1,cr2,cmt) => xs'
+	-------------------------------------------
+	set_connection_comment_in_parts(p::xs,cr1,cr2,cmt) => p::xs'
+end
+
+(** relation: set_connection_comment_in_equations
+ ** author: PA
+ **
+ ** Helper relation to set_connection_comment_in_parts
+ **)
+
+relation set_connection_comment_in_equations: (Absyn.EquationItem list , 
+					       Absyn.ComponentRef,
+					       Absyn.ComponentRef,
+					       string) 
+	  => Absyn.EquationItem list =
+
+  rule	Absyn.cref_equal(cr1,c1) => true &
+	Absyn.cref_equal(cr2,c2) => true &
+	set_class_comment_in_comment_opt(eqcmt,cmt) => eqcmt' 
+	---------------------------------------------
+	set_connection_comment_in_equations(Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),eqcmt)::es,cr1,cr2,cmt)
+	  => Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),eqcmt')::es
+
+  rule	set_connection_comment_in_equations(es,cr1,cr2,cmt) => es' 
+	---------------------------------------------
+	set_connection_comment_in_equations(e::es,cr1,cr2,cmt)
+	  => e::es'
+end
 
 
 (** relation: get_nth_connection_annotation
