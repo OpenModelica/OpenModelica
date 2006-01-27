@@ -222,7 +222,7 @@ relation lookup_class: (Env.Env, Absyn.Path, bool) => (SCode.Class, Env.Env) =
 	(* Builtin classes Integer, Real, String, Boolean can not be overridden
 	 search top environment directly. *)
   rule	 is_primitive(path) => true &
-	Env.top_frame(env) => f &
+	 Env.top_frame(env) => f &
 	 lookup_class_in_frame(f,[f],id,msg) => (c,env) 
 	-----------------------------------
 	lookup_class(env,path as Absyn.IDENT(id),msg) => (c,env)
@@ -1258,43 +1258,42 @@ relation lookup_class_in_env: (Env.Env,Absyn.Path,bool (* msg*))
 	  => (SCode.Class, Env.Env) =
 
   rule	(*print "looking in env for " & print id & print "\n" &*)
-	  lookup_class_in_frame(frame,frame::fs,id,msg) => (c,env')  
+	lookup_class_in_frame(frame,frame::fs,id,msg) => (c,env')  
 	---------------------
 	lookup_class_in_env(env as (frame::fs),Absyn.IDENT(id),msg)
 	    => (c,env')
 
-  rule	(* Special case if looking up the class that -is- encapsulated. That must be allowed. *)
-	lookup_class_in_env(fs,aid,true) => (c,env)
-	---------------------
-	lookup_class_in_env(env as Env.FRAME(NONE,_,_,_,_,_,true)::fs, aid as Absyn.IDENT(id),_) 
-	  => (c,env)
-	
   rule	(* Special case if looking up the class that -is- encapsulated. That must be allowed. *)
          id = sid &
 	lookup_class_in_env(fs,aid,true) => (c,env)
 	---------------------
 	lookup_class_in_env(env as Env.FRAME(SOME(sid),_,_,_,_,_,true)::fs, aid as Absyn.IDENT(id),_) 
 	  => (c,env)
-	  
-  rule	Builtin.initial_env() => i_env & 
-        not lookup_class_in_env(  i_env, aid,false)=>(_,_) &
+
+	  (* lookup stops at encapsulated classes except for builtin
+	   * scope, if not found in builtin scope, error *)
+  rule	Builtin.initial_env() => i_env &
+        not lookup_class_in_env(i_env, aid,false)=>(_,_) &
 	Env.print_env_path_str(env) => scope &
 	 Error.add_message(Error.LOOKUP_ERROR,[id,scope])
 	---------------------
 	lookup_class_in_env(env as Env.FRAME(SOME(sid),_,_,_,_,_,true)::fs, aid as Absyn.IDENT(id),true) => fail
 
-  rule	Builtin.initial_env() => i_env & 
-        not lookup_class_in_env(  i_env, aid,false)=>(_,_)
+	(* no error msg if msg = false *)
+  rule	Builtin.initial_env() => i_env &
+        not lookup_class_in_env(i_env, aid,false)=>(_,_)
 	---------------------
 	lookup_class_in_env(Env.FRAME(sid,_,_,_,_,_,true)::fs, 
 			    aid as Absyn.IDENT(id),false) => fail
 
-  rule	Builtin.initial_env() => i_env & 
-        lookup_class_in_env(  i_env, aid,msgflag)=> (c,env')
-       	---------------------------------------------------
-	lookup_class_in_env(Env.FRAME(sid,_,_,_,_,_,true)::fs, 
+	(* lookup stops at encapsulated classes, except for builtin scope *)
+  rule	Builtin.initial_env() => i_env &
+        lookup_class_in_env(i_env, aid,msgflag)=> (c,env')
+        ---------------------------------------------------
+ 	lookup_class_in_env(Env.FRAME(sid,_,_,_,_,_,true)::fs, 
 			    aid as Absyn.IDENT(id),msgflag ) => (c,env')
 
+	(* if not found and not encapsulated, look in next enclosing scope*)
   rule	lookup_class_in_env(fs,id,msgflag) => (c, env')
 	-----------------------------------------------
 	lookup_class_in_env((f as Env.FRAME(sid,_,_,_,_,_,false))::fs,
@@ -1409,9 +1408,11 @@ relation lookup_class_in_frame: (Env.Frame,Env.Env,
 	lookup_class_in_frame(Env.FRAME(sid,ht,_,_,_,_,_),_,id,true) => fail
 
 	(* Search base classes *)
-  rule	lookup_class(bcframes,Absyn.IDENT(name),false) => (c,env)
+  rule	(*print "Searching baseclasses for " & print name & print "\n" & 
+	Env.print_env_str bcframes => s & print "env:" & print s & print "\n" &*)
+	lookup_class(bcframes,Absyn.IDENT(name),false) => (c,env)
 	--------------------------------------------------------
-	lookup_class_in_frame(Env.FRAME(_,_,_,_,bcframes,_,_),totenv, name,_) 
+	lookup_class_in_frame(Env.FRAME(_,_,_,_,bcframes as _::_ ,_,_),totenv, name,_) 
 	  => (c, env)
 
   rule	lookup_qualified_imported_class_in_frame(items,totenv,name) 

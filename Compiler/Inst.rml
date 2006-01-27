@@ -968,10 +968,6 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_extends_list(env1, mods, extendselts, ci_state,impl)
 	  => (env2, emods, extcomps, eqs2, initeqs2, alg2, initalg2) &
 
-	(* Add inherited classdefinitions to env*)
-	classdef_elts2(extcomps) => inherited_classdefs &
- 	add_classdefs_to_env(env2,inherited_classdefs,impl) => env2 &
-
 	  (* Problem. Modifiers on inherited components are unelabed, loosing their 
 	   type information. This will not work, since the modifier type can not always be found.
 	   for instance. 
@@ -1141,6 +1137,17 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	inst_classdef(env,_,_,_,_,_,_,_,_,_,_) => fail
 
 end	
+
+relation print_extcomps: (SCode.Element * Mod) list  => () =
+
+  axiom	print_extcomps([]) 
+
+  rule	SCode.print_element_str el => s &
+	print s & print "\n" &
+	print_extcomps(els)
+	------------------
+	print_extcomps((el,mod)::els) => ()
+end
 
 (** relation: inst_basictype_baseclass
  **
@@ -1689,7 +1696,7 @@ relation inst_element_list : (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	    => ([], env, csets, ci_state, [])
 
 	(* most work done in inst_element. *)
-  rule  inst_element(env,mod,pre,csets,ci_state,el,inst_dims,impl, packimpl)
+  rule	inst_element(env,mod,pre,csets,ci_state,el,inst_dims,impl, packimpl)
 	  => (dae1,env',csets',ci_state',tys1) &
 	inst_element_list(env',mod,pre,csets',ci_state',els,inst_dims,impl,packimpl)
 	  => (dae2,env'',csets'',ci_state'',tys2) &
@@ -2275,10 +2282,24 @@ relation get_derived_env: (Env, Absyn.Path option) => Env =
 
   axiom	get_derived_env(env,NONE) => env
 
-  rule	Lookup.lookup_class(env,tp,true) => (_,env') 
+	(* Base classes are fully qualified names, search from top scope*)
+	(* This is needed since the environment can be encapsulated, but
+	 * inherited classes are not affected by this and therefore should
+	 * search from top scope directly. *)
+  rule	Env.top_frame(env) => top_frame &
+ 	Lookup.lookup_class([top_frame],tp,true) 
+	  => (c as SCode.CLASS(cn2,_,enc2,r,_), cenv) &
+	Env.open_scope(cenv,enc2,SOME(cn2)) => cenv'' &
+	ClassInf.start(r, cn2) => new_ci_state &
+	partial_inst_class_in(cenv'', Types.NOMOD, Prefix.NOPRE, Connect.empty_set, new_ci_state, c,false,[])
+	  =>  (env'',new_ci_state')
 	---------------------------------------
 	get_derived_env(env as (Env.FRAME(id,cl,tps,imps,_,crs,enc)::fs),SOME(tp)) 
-	  => Env.FRAME(id,cl,tps,imps,env',crs,enc)::fs
+	  => Env.FRAME(id,cl,tps,imps,env'',crs,enc)::fs
+
+  rule	Debug.fprint("failtrace","-get_derived_env failed\n" )
+	---------------------
+	get_derived_env(_,_) => fail
 end
 
 (** relation: remove_cref_from_crefs
