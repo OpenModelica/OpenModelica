@@ -8,9 +8,8 @@
 
 
 ifdef USE_CORBA
- CORBAOBJ = $(srcdir)/runtime/corbaimpl.o $(srcdir)/runtime/omc_communication_impl.o \
-	 $(srcdir)/runtime/omc_communication.o 
- CORBALIB = -L$(CORBAHOME)/lib -lmico -lcrypto -lssl
+ CORBAOBJ = $(srcdir)/runtime/corbaimpl.o $(srcdir)/runtime/omc_communication_impl.o $(srcdir)/runtime/omc_communication.o 
+ CORBALIB = 
 else
  CORBAOBJ = $(srcdir)/runtime/corbaimpl_stub.o
  CORBALIB =
