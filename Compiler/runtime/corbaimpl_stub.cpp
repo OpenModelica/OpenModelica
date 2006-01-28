@@ -1,4 +1,10 @@
 
+#ifdef __MINGW32__
+
+#include "../winruntime/corbaimpl_stub.cpp"
+
+#else
+
 extern "C" {
 #include "rml.h"
 #include "../values.h"
@@ -54,3 +60,5 @@ RML_BEGIN_LABEL(Corba__close)
 }
 RML_END_LABEL
 }
+
+#endif /* MINGW32 */

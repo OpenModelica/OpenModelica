@@ -1,3 +1,10 @@
+
+#ifdef __MINGW32__
+
+#include "../winruntime/systemimpl.c"
+
+#else
+
 #include "rml.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -1093,3 +1100,5 @@ RML_BEGIN_LABEL(System__get_5fcompile_5fcommand)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+#endif /* MINGW32 */

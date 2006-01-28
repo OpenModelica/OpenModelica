@@ -1,3 +1,10 @@
+
+#ifdef __MINGW32__
+
+#include "../winruntime/omc_communication_impl.cpp"
+
+#else 
+
 #include "omc_communication_impl.h"
 
 extern "C" {
@@ -67,3 +74,4 @@ char* OmcCommunication_impl::sendClass( const char* expr )
 
 }
 
+#endif /* MINGW32 */

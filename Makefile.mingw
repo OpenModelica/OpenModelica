@@ -32,6 +32,7 @@ clean:
 	(cd modelica_parser/src; $(MAKE) -f Makefile clean)
 	(cd flat_modelica_parser/src; $(MAKE) -f Makefile clean)
 
+
 .PRECIOUS: Makefile
 
 Makefile: Makefile.in

@@ -1,3 +1,12 @@
+
+#ifdef __MINGW32__
+
+#include "../winruntime/socketimpl.c"
+
+#else /* *********************************** UNIX IMPLEMENTATION ***********************************/
+
+
+
 #include "rml.h"
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -153,3 +162,5 @@ RML_BEGIN_LABEL(Socket__cleanup)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+#endif /* MING32 */

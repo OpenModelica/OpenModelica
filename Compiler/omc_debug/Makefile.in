@@ -26,16 +26,23 @@ top_builddir = ../..
 
 include $(srcdir)/Makefile.common
 
+ifeq ($(OSTYP),$(OS_MSYS))
+	LIBSOCKET=
+	CORBALIB=-L$(CORBAHOME)/lib -lmico -lwsock32
+else
+	CORBALIB=-L$(CORBAHOME)/lib -lmico -lcrypto -lssl -lpthread -lreadline
+endif
+
+ifdef USE_CORBA
+ CORBALIBS=$(CORBALIB)
+else
+ CORBALIBS= 
+endif
+
+LDFLAGS = -lm -L$(RMLHOME)/lib/plain -lrml_g $(ANTLR_LIBP) -lantlr $(LIBSOCKET) $(CORBALIBS) 
 
 PROG = omcd
 RML	= @rmlc_bin@ -g -Wc,-O3 -Wr,-East,-Ecps,-Efol
-LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml_g -lm -lantlr $(LIBSOCKET) $(CORBALIB) -lm -lpthread -lreadline
-
-#PROG = omc
-#RML	= @rmlc_bin@ -Wc,-O3
-#LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr $(LIBSOCKET) $(CORBALIB) -lm -lpthread 
-
-
 
 SUBDIRS	= $(srcdir)/runtime $(srcdir)/absyn_builder $(srcdir)/modpar
 

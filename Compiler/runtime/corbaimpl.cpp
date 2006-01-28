@@ -1,3 +1,10 @@
+
+#ifdef __MINGW32__
+
+#include "../winruntime/corbaimpl.cpp"
+
+#else
+
 #include "omc_communication.h"
 #include "omc_communication_impl.h"
 
@@ -157,3 +164,5 @@ RML_BEGIN_LABEL(Corba__close)
 }
 RML_END_LABEL
 }
+
+#endif /* MINGW32 */

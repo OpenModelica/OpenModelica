@@ -10,7 +10,12 @@ ANTLR_HOME = @antlrhome@
 
 ANTLR_INCP = -I@antlrinc@
 ANTLR_LIBP = -L@antlrlib@
+OSTYP=$(OSTYPE)
+OS_MSYS=msys
 LIBSOCKET = @LIBSOCKET@
+
+USE_CORBA = @USE_CORBA@
+CORBAHOME = @CORBAHOME@
 
 SHELL	= /bin/sh
 CC	= gcc
@@ -18,22 +23,31 @@ CFLAGS	= $(USE_CORBA)
 RMLHOME	= @rmlhome@
 RMLINC  = -I$(RMLHOME)/include/plain
 
-USE_CORBA = @USE_CORBA@
-CORBAHOME = @CORBAHOME@
-
 srcdir = ..
 top_builddir = ../..
-
 include $(srcdir)/Makefile.common
 
+ifeq ($(OSTYP),$(OS_MSYS))
+	LIBSOCKET=
+	CORBALIB=-L$(CORBAHOME)/lib -lmico -lwsock32
+else
+	CORBALIB=-L$(CORBAHOME)/lib -lmico -lcrypto -lssl -lpthread
+endif
 
-#PROG = omcd
-#RML	= @rmlc_bin@ -g -Wc,-O3 -Wr,-East,-Ecps,-Efol
-#LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml_g -lm -lantlr $(LIBSOCKET) $(CORBALIB) -lm -lpthread -lreadline
+ifdef USE_CORBA
+ CORBALIBS=$(CORBALIB)
+else
+ CORBALIBS= 
+endif
+
+LDFLAGS = -lm -L$(RMLHOME)/lib/plain -lrml $(ANTLR_LIBP) -lantlr $(LIBSOCKET) $(CORBALIBS) 
+
+
+
 
 PROG = omc
 RML	= @rmlc_bin@ -Wc,-O3
-LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr $(LIBSOCKET) $(CORBALIB) -lm -lpthread 
+
 
 
 
