@@ -5,6 +5,8 @@ CFLAGS = -g -Wall -ansi -pedantic -I../mosh/src/
 CPPFLAGS = $(CFLAGS)
 FFLAGS  = -O
 # P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.
+OSTYP = $(OSTYPE)
+OS_MSYS=msys
 
 FSRCS = daux.f \
           ddasrt.f \
@@ -39,7 +41,12 @@ libsim.a : $(SIMOBJS)
 	$(AR) $@ $(SIMOBJS)
 
 libf2c.a :
-	cd libf2c && $(MAKE) -f makefile.u 
+ifeq ($(OSTYP),$(OS_MSYS))
+	cd libf2c && $(MAKE) -f makefile.mingw
+else
+	cd libf2c && $(MAKE) -f makefile.u
+endif
+
 
 clean :
 	cd ./libf2c && $(MAKE) -f makefile.u clean
