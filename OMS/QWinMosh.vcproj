@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="7.10"
+	Name="OMS"
+	ProjectGUID="{B79AA7D4-B09D-4507-ABCE-D0619ADD8943}"
+	Keyword="Qt4VSv1.0">
+	<Platforms>
+		<Platform
+			Name="Win32"/>
+	</Platforms>
+	<Configurations>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories=".\GeneratedFiles\Release;.\GeneratedFiles;&quot;$(MODELICAHOME)&quot;;&quot;$(MICOHOME)\include&quot;;&quot;$(QTHOME)\include&quot;"
+				PreprocessorDefinitions="WIN32"
+				RuntimeLibrary="2"
+				DebugInformationFormat="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="qtmain.lib QtCore4.lib QtGui4.lib mico2311.lib"
+				OutputFile="$(OutDir)\OMS.exe"
+				AdditionalLibraryDirectories="&quot;$(QTHOME)\lib&quot;;&quot;$(MICOHOME)\win32-bin\lib&quot;"
+				GenerateDebugInformation="FALSE"
+				SubSystem="2"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories=".\GeneratedFiles\Debug;.\GeneratedFiles;&quot;$(MODELICAHOME)&quot;;&quot;$(MICOHOME)\include&quot;;&quot;$(QTHOME)\include&quot;"
+				PreprocessorDefinitions="WIN32;QT_DEBUG"
+				RuntimeLibrary="3"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="qtmaind.lib QtCored4.lib QtGuid4.lib mico2311.lib"
+				OutputFile="$(OutDir)\OMS.exe"
+				AdditionalLibraryDirectories="&quot;$(QTHOME)\lib&quot;;&quot;$(MICOHOME)\win32-bin\lib&quot;"
+				GenerateDebugInformation="TRUE"
+				SubSystem="2"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<Filter
+			Name="Source Files"
+			Filter="cpp;cxx;c;def"
+			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
+			<File
+				RelativePath=".\main.cpp">
+			</File>
+			<File
+				RelativePath=".\omc_communication.cc">
+			</File>
+			<File
+				RelativePath=".\omc_communicator.cpp">
+			</File>
+			<File
+				RelativePath=".\omcinteractiveenvironment.cpp">
+			</File>
+			<File
+				RelativePath=".\oms.cpp">
+			</File>
+		</Filter>
+		<Filter
+			Name="Header Files"
+			Filter="h"
+			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
+			<File
+				RelativePath=".\inputcelldelegate.h">
+			</File>
+			<File
+				RelativePath=".\omc_communicator.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing omc_communicator.h..."
+						CommandLine="$(QTDIR)\bin\moc.exe -I -I$(QTDIR)\include -I.\GeneratedFiles\Release -I$(QTDIR)\include\QtCore -I$(QTDIR)\include\QtGui &quot;.\omc_communicator.h&quot; -o &quot;GeneratedFiles\Release\moc_omc_communicator.cpp&quot;
+"
+						AdditionalDependencies="$(QTDIR)\bin\moc.exe;.\omc_communicator.h"
+						Outputs="&quot;GeneratedFiles\Release\moc_omc_communicator.cpp&quot;"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing omc_communicator.h..."
+						CommandLine="$(QTDIR)\bin\moc.exe -I.\GeneratedFiles\Debug;&quot;$(QTHOME)\include&quot; &quot;.\omc_communicator.h&quot; -o &quot;GeneratedFiles\Debug\moc_omc_communicator.cpp&quot;
+"
+						AdditionalDependencies="$(QTDIR)\bin\moc.exe;.\omc_communicator.h"
+						Outputs="&quot;GeneratedFiles\Debug\moc_omc_communicator.cpp&quot;"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\omcinteractiveenvironment.h">
+			</File>
+			<File
+				RelativePath=".\oms.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing oms.h..."
+						CommandLine="$(QTDIR)\bin\moc.exe -DWIN32 -I.\GeneratedFiles\Release;.\GeneratedFiles;&quot;$(MODELICAHOME)&quot;;&quot;$(MICOHOME)\include&quot;;&quot;$(QTHOME)\include&quot; &quot;.\oms.h&quot; -o &quot;GeneratedFiles\Release\moc_oms.cpp&quot;
+"
+						AdditionalDependencies="$(QTDIR)\bin\moc.exe;.\oms.h"
+						Outputs="&quot;GeneratedFiles\Release\moc_oms.cpp&quot;"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing oms.h..."
+						CommandLine="$(QTDIR)\bin\moc.exe -DWIN32 -DQT_DEBUG -I.\GeneratedFiles\Debug;.\GeneratedFiles;&quot;$(MODELICAHOME)&quot;;&quot;$(MICOHOME)\include&quot;;&quot;$(QTHOME)\include&quot; &quot;.\oms.h&quot; -o &quot;GeneratedFiles\Debug\moc_oms.cpp&quot;
+"
+						AdditionalDependencies="$(QTDIR)\bin\moc.exe;.\oms.h"
+						Outputs="&quot;GeneratedFiles\Debug\moc_oms.cpp&quot;"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\otherdlg.h">
+			</File>
+			<File
+				RelativePath=".\resource.h">
+			</File>
+		</Filter>
+		<Filter
+			Name="Resource Files"
+			Filter="qrc;*"
+			UniqueIdentifier="{D9D6E242-F8AF-46E4-B9FD-80ECBC20BA3E}"
+			ParseFiles="FALSE">
+			<File
+				RelativePath=".\Resources\clear.bmp">
+			</File>
+			<File
+				RelativePath=".\Resources\copy.bmp">
+			</File>
+			<File
+				RelativePath=".\Resources\cut.bmp">
+			</File>
+			<File
+				RelativePath=".\Resources\help.bmp">
+			</File>
+			<File
+				RelativePath=".\Resources\OMS.bmp">
+			</File>
+			<File
+				RelativePath=".\Resources\OMS.ico">
+			</File>
+			<File
+				RelativePath=".\oms.qrc">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Compiling Qt resource file: .\oms.qrc..."
+						CommandLine="&quot;$(QTDIR)\bin\rcc.exe&quot; -name &quot;oms&quot; -no-compress &quot;.\oms.qrc&quot; -o &quot;GeneratedFiles\qrc_oms.cpp&quot;
+"
+						AdditionalDependencies="$(QTDIR)\bin\rcc.exe;Resources\OMS.bmp;Resources\OMS.ico;Resources\clear.bmp;Resources\copy.bmp;Resources\cut.bmp;Resources\help.bmp;Resources\paste.bmp;Resources\print.bmp;Resources\start.bmp;Resources\stop.bmp"
+						Outputs="&quot;GeneratedFiles\qrc_oms.cpp&quot;"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Compiling Qt resource file: .\oms.qrc..."
+						CommandLine="&quot;$(QTDIR)\bin\rcc.exe&quot; -name &quot;oms&quot; -no-compress &quot;.\oms.qrc&quot; -o &quot;GeneratedFiles\qrc_oms.cpp&quot;
+"
+						AdditionalDependencies="$(QTDIR)\bin\rcc.exe;Resources\OMS.bmp;Resources\OMS.ico;Resources\clear.bmp;Resources\copy.bmp;Resources\cut.bmp;Resources\help.bmp;Resources\paste.bmp;Resources\print.bmp;Resources\start.bmp;Resources\stop.bmp"
+						Outputs="&quot;GeneratedFiles\qrc_oms.cpp&quot;"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\Resources\paste.bmp">
+			</File>
+			<File
+				RelativePath=".\Resources\print.bmp">
+			</File>
+			<File
+				RelativePath=".\Resources\start.bmp">
+			</File>
+			<File
+				RelativePath=".\Resources\stop.bmp">
+			</File>
+			<File
+				RelativePath=".\Resources\winmosh.bmp">
+			</File>
+			<File
+				RelativePath=".\Resources\WinMosh.ico">
+			</File>
+		</Filter>
+		<Filter
+			Name="Generated Files"
+			Filter="moc;h;cpp"
+			UniqueIdentifier="{71ED8ED8-ACB9-4CE9-BBE1-E00B30144E11}">
+			<File
+				RelativePath=".\generatedfiles\debug\moc_omc_communicator.cpp">
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\generatedfiles\release\moc_omc_communicator.cpp">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\GeneratedFiles\debug\moc_oms.cpp">
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\GeneratedFiles\release\moc_oms.cpp">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\GeneratedFiles\qrc_oms.cpp">
+			</File>
+			<File
+				RelativePath=".\GeneratedFiles\ui_OtherDlg.h">
+			</File>
+		</Filter>
+		<File
+			RelativePath=".\OtherDlg.ui">
+			<FileConfiguration
+				Name="Release|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Uic&apos;ing OtherDlg.ui..."
+					CommandLine="&quot;$(QTDIR)\bin\uic.exe&quot; -o &quot;GeneratedFiles\ui_OtherDlg.h&quot; &quot;.\OtherDlg.ui&quot;
+"
+					AdditionalDependencies="$(QTDIR)\bin\uic.exe"
+					Outputs="&quot;GeneratedFiles\ui_OtherDlg.h&quot;"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Debug|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Uic&apos;ing OtherDlg.ui..."
+					CommandLine="&quot;$(QTDIR)\bin\uic.exe&quot; -o &quot;GeneratedFiles\ui_OtherDlg.h&quot; &quot;.\OtherDlg.ui&quot;
+"
+					AdditionalDependencies="$(QTDIR)\bin\uic.exe"
+					Outputs="&quot;GeneratedFiles\ui_OtherDlg.h&quot;"/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\res.rc">
+		</File>
+	</Files>
+	<Globals>
+		<Global
+			Name="QtVersion"
+			Value="Qt-4.0.1"/>
+	</Globals>
+</VisualStudioProject>
