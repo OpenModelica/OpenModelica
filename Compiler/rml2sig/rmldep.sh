@@ -9,12 +9,12 @@
 mydir="`dirname $0`"
 
 if [ ! "$#" -eq 1 ]; then
-  echo "Usage: $0 <file>.mo";
+  echo "Usage: $0 <file>.(mo|rml)";
   exit;
 fi
 
 tmp_file="$1.$$"
-if [ "mo" = $(OMC_BUILD_FROM) ]; then
+if [ "mo" = "${OMC_BUILD_FROM}" ]; then
  sig_file="`basename "$1" ".mo"`.rsig"
 else
  sig_file="`basename "$1" ".rml"`.rsig"
