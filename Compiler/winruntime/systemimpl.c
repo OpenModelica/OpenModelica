@@ -791,7 +791,11 @@ RML_BEGIN_LABEL(System__read_5fptolemyplot_5fdataset)
   if (rmlA0 == NULL) {
     RML_TAILCALLK(rmlFC);
   }
+#ifdef FIX_JAVA_NAMES
+  rml_prim_once(Values__reverseMatrix);
+#else
   rml_prim_once(Values__reverse_5fmatrix);
+#endif
 
   RML_TAILCALLK(rmlSC);
 }   
