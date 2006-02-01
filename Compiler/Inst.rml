@@ -1271,7 +1271,8 @@ relation filter_connection_set_crefs: (Connect.Sets, Prefix)
 	  (* no Prexix, nothing to filter *)
   axiom	filter_connection_set_crefs(s, Prefix.NOPRE)  => s
 
-  rule	Prefix.prefix_to_cref(pre) => cr &
+  rule	Prefix.prefix_first(pre) => first_pre &
+	Prefix.prefix_to_cref(first_pre) => cr &
 	Util.list_select_1_r(crs,cr,Exp.cref_prefix_of) => crs'
 	-------------------------
 	filter_connection_set_crefs(Connect.SETS(set,crs), pre) 

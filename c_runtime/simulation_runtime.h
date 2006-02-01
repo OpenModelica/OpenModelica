@@ -84,6 +84,7 @@ extern long* iwork;
 extern long nhelp,nx,ny,np,ng;
 extern char *model_name;
 extern char** varnames;
+extern int init;
 
 int 
 function_zeroCrossing(long *neqm, double *t, double *x, long *ng, double *gout, double *rpar, long* ipar);
@@ -151,5 +152,8 @@ double GreaterEq(double a,double b);
 #define ZEROCROSSING(ind,exp) gout[ind] = (zeroCrossingEnabled[ind])?double(zeroCrossingEnabled[ind])*exp:1.0
 #define noEvent(arg) arg
 
+#define MODELICA_ASSERT(cond,msg) do { if ((cond)) { printf(msg); \
+exit(-1);} } while(0)
+#define initial() init
 
 #endif

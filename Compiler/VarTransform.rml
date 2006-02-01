@@ -107,6 +107,7 @@ end
 with "System.rml" 
 with "Util.rml" 
 with "Algorithm.rml"
+with "Debug.rml"
 
 (** relation: apply_replacements
  **
@@ -245,8 +246,16 @@ relation add_replacement: (VariableReplacements,
 	-----------------------
 	add_replacement(repl as REPLACEMENTS(bt,invbt),src,dst) 
 	  => fail
-
+	  
   rule	make_transitive(repl,src,dst) => (REPLACEMENTS(bt,invbt),src',dst') &
+	
+	Exp.print_component_ref_str(src) => s1 &
+	Exp.print_component_ref_str(dst) => s2 &
+	Exp.print_component_ref_str(src') => s3 &
+	Exp.print_component_ref_str(dst') => s4 &
+	Util.string_append_list(["add_replacement(",s1,", ",s2,") -> add_replacement(",s3,", ",s4,")\n"]) => s &	
+	Debug.fprint("addrepl",s) &
+
 	tree_add(bt,src',dst') => bt' &
 	add_replacement_inv(invbt,src',dst') => invbt' 
 	---------------------------
@@ -445,10 +454,10 @@ relation replace_exp:(Exp.Exp,VariableReplacements) => Exp.Exp =
 	replace_exp(Exp.ARRAY(tp,c,expl),repl) 
 	  => Exp.ARRAY(tp,c,expl')
 
-  rule	print "replace_exp for matrix not impl." 
+  rule	replace_exp_matrix(expl,repl) => expl' 
 	-----------------------------------------------
-	replace_exp(Exp.MATRIX(a,b,c),repl) 
-	  => Exp.MATRIX(a,b,c)
+	replace_exp(Exp.MATRIX(t,b,expl),repl) 
+	  => Exp.MATRIX(t,b,expl')
 
   rule	replace_exp(e1,repl) => e1' &
 	replace_exp(e2,repl) => e2' 
@@ -501,6 +510,40 @@ relation replace_exp:(Exp.Exp,VariableReplacements) => Exp.Exp =
 	  => Exp.REDUCTION(p,e',id,r')
 
  axiom	replace_exp(e,repl) => e
+end
+
+(** relation: replace_exp_matrix
+ ** author: PA
+ **
+ ** Helper relation to replace_exp, traverses Matrix expression list.
+ **)
+
+relation replace_exp_matrix: ( (Exp.Exp*bool) list list, VariableReplacements) 
+	  => ((Exp.Exp* bool) list list) =
+
+  axiom	replace_exp_matrix([],repl) => ([])
+
+  rule	replace_exp_matrix2(e,repl) => (e') &
+	replace_exp_matrix(es,repl) => (es') 
+	---------------------
+	replace_exp_matrix(e::es,repl) => (e'::es')
+end
+
+(** relation: replace_exp_matrix2
+ ** author: PA
+ **
+ ** Helper relation to replace_exp_matrix
+ **)
+
+relation replace_exp_matrix2: ((Exp.Exp*bool) list,VariableReplacements) 
+	  => ((Exp.Exp*bool)  list) =
+
+  axiom	replace_exp_matrix2([],_) => ([])
+
+  rule	replace_exp_matrix2(es,repl) => (es') &
+	replace_exp(e,repl) => (e') 
+	---------------
+	replace_exp_matrix2((e,b)::es,repl) => ((e',b)::es')
 end
 
 (** relation: bintree_to_list

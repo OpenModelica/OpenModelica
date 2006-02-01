@@ -123,7 +123,16 @@ relation differentiate_exp_time: (Exp.Exp,DAELow.Variables) => Exp.Exp =
   axiom	differentiate_exp_time(Exp.RCONST(_),_) => Exp.RCONST(0.0)
   axiom	differentiate_exp_time(Exp.CREF(Exp.CREF_IDENT("time",[]),tp),_) 
 	  => Exp.RCONST(1.0)
-	  
+
+	  (* special rule for DUMMY_STATES, they become DUMMY_DER *)
+  rule	DAELow.get_var(cr,timevars) => ([DAELow.VAR(cr,DAELow.DUMMY_STATE,_,_,_,_,_,_,_,_,_,_,_,_)],_) &
+	Exp.print_component_ref_str(cr) => cr_str &
+	string_append("der_",cr_str) => cr_str' 
+	--------------------------------
+	differentiate_exp_time(e as Exp.CREF(cr,tp),timevars) 
+	  => Exp.CREF(Exp.CREF_IDENT(cr_str',[]),Exp.REAL)
+
+
   rule	DAELow.get_var(cr,timevars) => (_,_)
 	--------------------------------
 	differentiate_exp_time(e as Exp.CREF(cr,tp),timevars) 

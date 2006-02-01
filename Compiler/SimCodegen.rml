@@ -98,7 +98,7 @@ module SimCodegen:
   relation get_called_functions_in_function : (Absyn.Path, DAE.DAElist) => Absyn.Path list
   relation print_exp_opt_str_if_const:(Exp.Exp option) => string 
   relation change_name_for_derivative:(string) => string 
-	  
+  relation define_string_to_modelica_string : (string) => string	  
 end
 
 type CFunction = Codegen.CFunction
@@ -1204,8 +1204,8 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
 	DAELow.matching_algorithm(initial_dae',m',mT',(DAELow.NO_INDEX_REDUCTION,DAELow.ALLOW_UNDERCONSTRAINED)) 
 	  => (ass1,ass2,initial_dae',m,mT) &
 	DAELow.strong_components(m',mT',ass1,ass2) => blocks &
-	generate_ode_blocks(initial_dae',ass1,ass2,blocks)
-	  => (block_code,extra_funcs) &
+	generate_ode_blocks(initial_dae',ass1,ass2,blocks,0)
+	  => (block_code,_,extra_funcs) &
 	Codegen.c_make_function("int","initial_function",[],["double *x",
 							       "double *xd", 
 							       "double *y",
@@ -1215,7 +1215,7 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
 							       "int np"])
 	  => init_func' &
 
-	  Codegen.c_add_cleanups(init_func', ["return 0;"]) => init_func &
+	Codegen.c_add_cleanups(init_func', ["return 0;"]) => init_func &
         Codegen.c_merge_fns([init_func,start_assigns,param_assigns,block_code]) => res &
 	list_append(extra_funcs,[res]) => all_funcs &
 	Codegen.c_print_functions_str(all_funcs) => str
@@ -1361,8 +1361,8 @@ relation generate_ode_code: (DAELow.DAELow,
   rule	Absyn.path_string(class) => cname &
         DAELow.generate_state_partition(comps,dlow,ass1,ass2,m,mt) 
 	  => (blt_states,blt_no_states) &
-	generate_ode_blocks(dlow,ass1,ass2,blt_states) 
-	  => (block_code, extra_funcs) &
+	generate_ode_blocks(dlow,ass1,ass2,blt_states,0) 
+	  => (block_code,_, extra_funcs) &
 	Codegen.c_make_function("int","functionODE",[],["double *x",
 							"double *xd", 
 							"double *y",
@@ -1590,33 +1590,36 @@ end
  ** Generates the simulation code for the ode code.
  ** 
 **)
-relation generate_ode_blocks:(DAELow.DAELow, int vector, int vector, int list list) 
+relation generate_ode_blocks:(DAELow.DAELow, 
+			      int vector, int vector, int list list,
+			      int (* cg var_id*)) 
 	  => (CFunction, (* block code*)
+	      int (* cg var_id*),
 	      CFunction list) (* extra functions code*) =
 
-  axiom	generate_ode_blocks(_,_,_,[]) => (Codegen.c_empty_function,[])
+  axiom	generate_ode_blocks(_,_,_,[],cg_id) => (Codegen.c_empty_function,cg_id,[])
 
   rule	(* For system of equations *)
-	generate_ode_system(dae,ass1,ass2,block) => (s1,f1)  &
-	generate_ode_blocks(dae,ass1,ass2,blocks) => (s2,f2) &
+	generate_ode_system(dae,ass1,ass2,block,cg_id) => (s1,cg_id',f1)  &
+	generate_ode_blocks(dae,ass1,ass2,blocks,cg_id') => (s2,cg_id'',f2) &
 	Codegen.c_merge_fns([s1,s2]) => res &
 	list_append(f1,f2) => res2
 	-------------------------------------
-	generate_ode_blocks(dae,ass1,ass2,(block as (_::_::_))::blocks) 
-	  => (res,res2)
+	generate_ode_blocks(dae,ass1,ass2,(block as (_::_::_))::blocks,cg_id) 
+	  => (res,cg_id'',res2)
 	
   rule	(* for single equations *)
-	generate_ode_equation(dae,ass1,ass2,eqn) => (s1,f1) &
-	generate_ode_blocks(dae,ass1,ass2,blocks) => (s2,f2) &
+	generate_ode_equation(dae,ass1,ass2,eqn,cg_id) => (s1,cg_id',f1) &
+	generate_ode_blocks(dae,ass1,ass2,blocks,cg_id') => (s2,cg_id'',f2) &
 	Codegen.c_merge_fns([s1,s2]) => res &
 	list_append(f1,f2) => res2
 	-------------------------------------
-	generate_ode_blocks(dae,ass1,ass2,(block as [eqn])::blocks) 
-	  => (res,res2)
+	generate_ode_blocks(dae,ass1,ass2,(block as [eqn])::blocks,cg_id) 
+	  => (res,cg_id'',res2)
 
-  rule	print "-generate_ode_blocks failed\n" 
+  rule	Debug.fprint("failtrace", "-generate_ode_blocks failed\n" )
 	-----------------
-	generate_ode_blocks(_,_,_,_) => fail
+	generate_ode_blocks(_,_,_,_,_) => fail
 end
 
 (** relation: generate_ode_system
@@ -1624,8 +1627,10 @@ end
  **
  ** Generates code for a subsystem of equations, both linear and non-linear.
  **)
-relation generate_ode_system: (DAELow.DAELow, int vector, int vector, int list) 
+relation generate_ode_system: (DAELow.DAELow, int vector, int vector, int list,
+			       int (*cg var_id*)) 
 	  => (CFunction, (* system code *)
+	      int, (* cg var_id*)
 	      CFunction list) = (* extra function code*) 
 
   rule	(** extract the variables and equations of the block.*)
@@ -1635,7 +1640,6 @@ relation generate_ode_system: (DAELow.DAELow, int vector, int vector, int list)
 	DAELow.list_var(var_lst') => vars' &
 	DAELow.list_equation(eqn_lst) => eqns' &
 	let subsystem_dae = DAELow.DAELOW(vars',knvars(* not used*),eqns',se,ie,ae,al,ev) &
-	
 	DAELow.incidence_matrix(subsystem_dae) => m &
 	DAELow.abs_incidence_matrix(m) => m' &
 	DAELow.transpose_matrix(m') => mt' &
@@ -1645,10 +1649,14 @@ relation generate_ode_system: (DAELow.DAELow, int vector, int vector, int list)
 	DAELow.analyze_jacobian(subsystem_dae,jac) => jac_tp &
 	(*print "generating subsystem :" &
 	DAELow.dump subsystem_dae &*)
-	generate_ode_system2(subsystem_dae,jac,jac_tp) => (s1,f1) 
+	generate_ode_system2(subsystem_dae,jac,jac_tp,cg_id) => (s1,cg_id',f1) 
 	-------------------------
-	generate_ode_system(daelow as DAELow.DAELOW(vars,knvars,eqns,se,ie,ae,al,ev),ass1,ass2,block) 
-	  => (s1,f1)
+	generate_ode_system(daelow as DAELow.DAELOW(vars,knvars,eqns,se,ie,ae,al,ev),ass1,ass2,block,cg_id) 
+	  => (s1,cg_id',f1)
+
+  rule	Debug.fprint("failtrace", "-generate_ode_system failed\n" )
+	-----------------
+	generate_ode_system(_,_,_,_,_) => fail
 end
 
 (** relation: generate_ode_system2
@@ -1659,57 +1667,66 @@ end
  **)
 relation generate_ode_system2: (DAELow.DAELow, (* the daelow for the subsystem*)
 				(int * int * DAELow.Equation) list option, (* jacobian *)
-				DAELow.JacobianType) (* Type of jacobian, constant,etc.*)
+				DAELow.JacobianType,(* Type of jacobian, constant,etc.*)
+				int) (* cg var_id *)
 	=> (CFunction, (* system code *)
+	    int, (* cg var_id*)
 	    CFunction list) =  (* extra functions code *)
 
 
 	(* A single array equation*)
 
   rule	single_array_equation(dae) &
-	generate_single_array_eqn_code(dae,jac) => (s1,f1)
+	generate_single_array_eqn_code(dae,jac,cg_id) => (s1,cg_id',f1)
 	-----------------------
-	generate_ode_system2(dae,jac,jac_tp) => (s1,f1)
+	generate_ode_system2(dae,jac,jac_tp,cg_id) => (s1,cg_id',f1)
 
 	  (* constant jacobians. Linear system of equations (A x = b) where
 	   A and b are constants. *)
   rule	DAELow.equation_size(eqn) => eqn_size &
 	(* NOTE: Not impl. yet, use time_varying... *)
-	generate_ode_system2(d,SOME(jac),DAELow.JAC_TIME_VARYING) => (s1,f1)
+	generate_ode_system2(d,SOME(jac),DAELow.JAC_TIME_VARYING,cg_id) 
+	  => (s1,cg_id',f1)
 	------------------------------
  	generate_ode_system2(d as DAELow.DAELOW(v,kv,eqn,_,_,_,_,_),SOME(jac),
-			     DAELow.JAC_CONSTANT) => (s1,f1)
+			     DAELow.JAC_CONSTANT,cg_id) => (s1,cg_id',f1)
 	
 
 	(* Time varying jacobian. Linear system of equations that needs to 
 	 * be solved during runtime. *)
   rule	DAELow.equation_size(eqn) => eqn_size &
-	generate_ode_system2_declaration(eqn_size) => s1 &
-	generate_ode_system2_populate_Ab(jac,v,eqn) => s2 &
-	generate_ode_system2_solve_call(eqn_size) => s3 &
-	generate_ode_system2_collect_results(v) => s4 &
+	tick() => unique_id &
+	generate_ode_system2_declaration(eqn_size,unique_id,cg_id) 
+	  => (s1,cg_id1) &
+	generate_ode_system2_populate_Ab(jac,v,eqn,unique_id,cg_id1) 
+	  => (s2,cg_id2) &
+	generate_ode_system2_solve_call(eqn_size,unique_id,cg_id2) 
+	  => (s3,cg_id3) &
+	generate_ode_system2_collect_results(v,unique_id,cg_id3) 
+	  => (s4,cg_id4) &
 	Codegen.c_merge_fns([s1,s2,s3,s4]) => s
 	--------------------
-	generate_ode_system2(d as DAELow.DAELOW(v,kv,eqn,_,_,_,_,_),SOME(jac),DAELow.JAC_TIME_VARYING) => (s,[])
+	generate_ode_system2(d as DAELow.DAELOW(v,kv,eqn,_,_,_,_,_),SOME(jac),DAELow.JAC_TIME_VARYING,cg_id) => (s,cg_id4,[])
 
 	(* Time varying nonlinear jacobian. Non-linear system of equations*)
   rule	DAELow.equation_list(eqn) => eqn_lst &
 	DAELow.var_list(v) => var_lst &
 	Util.list_map(var_lst,DAELow.var_cref) => crefs &
-	generate_ode_system2_nonlinear_residuals(crefs,eqn_lst) => (s1,f1) 
+	generate_ode_system2_nonlinear_residuals(crefs,eqn_lst,cg_id) 
+	  => (s1,cg_id',f1) 
 	------------------------------------------------------
-	generate_ode_system2(DAELow.DAELOW(v,kv,eqn,_,_,_,_,_),SOME(jac),DAELow.JAC_NONLINEAR) 
-	  => (s1,f1)
+	generate_ode_system2(DAELow.DAELOW(v,kv,eqn,_,_,_,_,_),SOME(jac),DAELow.JAC_NONLINEAR,cg_id) 
+	  => (s1,cg_id',f1)
 
   rule	print "no analytic jacobian available!\n" 
 	---------
-	generate_ode_system2(_,NONE,_) => fail
+	generate_ode_system2(_,NONE,_,_) => fail
 
   rule	print "-generate_ode_system2 failed,dae = " &
 	DAELow.dump dae &
 	DAELow.dump_jacobian_str SOME(jac) => s & print "\nJac=" & print s & print "\n"
 	-------------------------
-	generate_ode_system2(dae,SOME(jac),_) => fail
+	generate_ode_system2(dae,SOME(jac),_,_) => fail
 end
 
 (** relation: generate_single_array_eqn_code
@@ -1718,8 +1735,10 @@ end
  ** Generates code for a system consisting of a  single array equation.
  **)
 relation generate_single_array_eqn_code: (DAELow.DAELow, 
-					  (int * int * DAELow.Equation) list option) 
+					  (int * int * DAELow.Equation) list option,
+					  int (* cg var_id*)) 
 	  => (CFunction (* eqn code*),
+	      int (* cg var_id*),
 	      CFunction list (* extra functions*) ) =
 	
   rule	DAELow.equation_list(eqns) => DAELow.ARRAY_EQUATION(indx,_)::_ &
@@ -1727,14 +1746,14 @@ relation generate_single_array_eqn_code: (DAELow.DAELow,
 	DAELow.var_list(vars) => varlst &
 	Util.list_last(varlst) => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_,_,_,_) &
 	Exp.cref_strip_last_subs_stringified(Exp.CREF_IDENT(origname,[])) => cr' &
-	generate_single_array_eqn_code2(cr',cr,e1,e2) => (s1,f1)
+	generate_single_array_eqn_code2(cr',cr,e1,e2,cg_id) => (s1,cg_id',f1)
 	---------------------
-	generate_single_array_eqn_code(DAELow.DAELOW(vars,knvars,eqns,se,ie,ae,al,ev),jac)
-	=> (s1,f1)
+	generate_single_array_eqn_code(DAELow.DAELOW(vars,knvars,eqns,se,ie,ae,al,ev),jac,cg_id)
+	=> (s1,cg_id',f1)
 	
   rule	Error.add_message(Error.INTERNAL_ERROR,["array equations currently only supported on form v = functioncall(...)"])
 	-----------------------
-	generate_single_array_eqn_code(_,_) => fail
+	generate_single_array_eqn_code(_,_,_) => fail
 end
 
 (** relation generate_single_array_eqn_code2
@@ -1747,50 +1766,51 @@ end
 relation generate_single_array_eqn_code2:(Exp.ComponentRef, (* origname*)
 					  Exp.ComponentRef, (* firsteltname*)
 					  Exp.Exp (* lhs*),
-					  Exp.Exp (* rhs*)) 
-	  => (CFunction, CFunction list) =
+					  Exp.Exp (* rhs*),
+					  int (*cg var_id *)) 
+	  => (CFunction, int(*cg var_id*) ,CFunction list) =
 
   rule	Exp.cref_equal(cr,cr2) => true &
 	Exp.print_component_ref_str(eltcr) => s1 &
- 	Codegen.generate_expression(e2,2) 
-	  => (cfunc,s2,_) &
+ 	Codegen.generate_expression(e2,cg_id) 
+	  => (cfunc,s2,cg_id') &
 	Util.string_append_list(["copy_real_array_data_mem(&",s2,", &",s1,");"]) => stmt &
 	Codegen.c_add_statements(cfunc,[stmt]) => func'
 	----------------------------
-	generate_single_array_eqn_code2(cr,eltcr,e1 as Exp.CREF(cr2,_),e2) 
-	  => (func',[])
+	generate_single_array_eqn_code2(cr,eltcr,e1 as Exp.CREF(cr2,_),e2,cg_id) 
+	  => (func',cg_id',[])
 
   rule	Exp.cref_equal(cr,cr2) => true &
 	Exp.print_component_ref_str(eltcr) => s1 &
-	Codegen.generate_expression(e1,2)
- 	  => (cfunc,s2,_) &
+	Codegen.generate_expression(e1,cg_id)
+ 	  => (cfunc,s2,cg_id') &
 	Util.string_append_list(["copy_real_array_data_mem(&",s1,", &",s2,");"]) => stmt &
 	Codegen.c_add_statements(cfunc,[stmt]) => func'
 	----------------------------
-	generate_single_array_eqn_code2(cr,eltcr,e1 ,e2 as Exp.CREF(cr2,_)) 
-	  => (func',[])
+	generate_single_array_eqn_code2(cr,eltcr,e1 ,e2 as Exp.CREF(cr2,_),cg_id) 
+	  => (func',cg_id',[])
 
 	  (* array of crefs, {v[1],v[2],...v[n]} *)
   rule	get_vectorized_cref_from_exp(e2) => cr2 & 
 	Exp.print_component_ref_str(eltcr) => s1 &
-	Codegen.generate_expression(e1,2)
- 	  => (cfunc,s2,_) &
+	Codegen.generate_expression(e1,cg_id)
+ 	  => (cfunc,s2,cg_id') &
 	Util.string_append_list(["copy_real_array_data_mem(&",s1,", &",s2,");"]) => stmt &
 	Codegen.c_add_statements(cfunc,[stmt]) => func'
 	----------------------------
-	generate_single_array_eqn_code2(cr,eltcr,e1 ,e2 ) 
-	  => (func',[])
+	generate_single_array_eqn_code2(cr,eltcr,e1 ,e2, cg_id) 
+	  => (func',cg_id',[])
 
 	  (* array of crefs, {v[1],v[2],...v[n]} *)
   rule	get_vectorized_cref_from_exp(e1) => cr2 & 
 	Exp.print_component_ref_str(eltcr) => s1 &
-	Codegen.generate_expression(e2,2)
- 	  => (cfunc,s2,_) &
+	Codegen.generate_expression(e2,cg_id)
+ 	  => (cfunc,s2,cg_id') &
 	Util.string_append_list(["copy_real_array_data_mem(&",s2,", &",s1,");"]) => stmt &
 	Codegen.c_add_statements(cfunc,[stmt]) => func'
 	----------------------------
-	generate_single_array_eqn_code2(cr,eltcr,e1 ,e2 ) 
-	  => (func',[])
+	generate_single_array_eqn_code2(cr,eltcr,e1 ,e2,cg_id ) 
+	  => (func',cg_id',[])
 
   rule	Exp.print_exp_str(e1) => s1 &
 	Exp.print_exp_str(e2) => s2 &
@@ -1800,7 +1820,7 @@ relation generate_single_array_eqn_code2:(Exp.ComponentRef, (* origname*)
 				 ,", ",s4,", ",s1,", ",s2,") failed\n"]) => s &
 	print s 
 	-------------------------------
-	generate_single_array_eqn_code2(cr,eltcr,e1,e2) => fail
+	generate_single_array_eqn_code2(cr,eltcr,e1,e2,_) => fail
 end
 
 (** relation: get_vectorized_cref_from_exp 
@@ -1854,12 +1874,14 @@ end
  **)
 
 relation generate_ode_system2_nonlinear_residuals:  (Exp.ComponentRef list,
-						     DAELow.Equation list) 
+						     DAELow.Equation list,
+						     int) (* cg var_id*)
 	  => (CFunction, (* solve code *)
+	      int, (* cg var_id *)
 	      CFunction list) = (* extra functions: residual func*)
 
   rule	make_residual_replacements(crs) => repl &
-	generate_ode_system2_nonlinear_residuals2(eqns,0,repl) => s1 &
+	generate_ode_system2_nonlinear_residuals2(eqns,0,repl,cg_id) => (s1,cg_id1) &
 	tick() => id &
 	int_string(id) => str_id &
 	list_length(eqns) => eqn_size & int_string(eqn_size) => size_str &
@@ -1872,9 +1894,12 @@ relation generate_ode_system2_nonlinear_residuals:  (Exp.ComponentRef list,
 	Codegen.c_add_cleanups(res_func', ["return 0;"]) => res_func &
 	Codegen.c_merge_fns([res_func,s1]) => func &
 
-	generate_ode_system2_nonlinear_setvector(crs,0) => f2 &
-	generate_ode_system2_nonlinear_call(str_id) => f3 &
-	generate_ode_system2_nonlinear_store_results(crs,0) => f4 &
+	generate_ode_system2_nonlinear_setvector(crs,0,cg_id1) 
+	  => (f2,cg_id2) &
+	generate_ode_system2_nonlinear_call(str_id,cg_id2) 
+	  => (f3,cg_id3) &
+	generate_ode_system2_nonlinear_store_results(crs,0,cg_id3) 
+	  => (f4,cg_id4) &
 	Util.string_append_list(["start_nonlinear_system(",size_str,");"]) 
 	  => start_stmt &
 	let end_stmt = "end_nonlinear_system();" &
@@ -1882,12 +1907,12 @@ relation generate_ode_system2_nonlinear_residuals:  (Exp.ComponentRef list,
 	Codegen.c_add_statements(Codegen.c_empty_function,[end_stmt]) => f5 &
 	Codegen.c_merge_fns([f1,f2,f3,f4,f5]) => res
 	-----------------------------------------------------------
-	generate_ode_system2_nonlinear_residuals(crs,eqns) 
-	  => (res,[func])
+	generate_ode_system2_nonlinear_residuals(crs,eqns,cg_id) 
+	  => (res,cg_id4,[func])
 
   rule	print "generate_ode_system2_nonlinear_residuals failed\n" 
 	-----------------------------------------------------------
-	generate_ode_system2_nonlinear_residuals(crs,eqns) 
+	generate_ode_system2_nonlinear_residuals(crs,eqns,cg_id) 
 	  => fail
 end
 
@@ -1939,21 +1964,24 @@ end
  **)
 
 relation generate_ode_system2_nonlinear_setvector: (Exp.ComponentRef list,
-						    int (* index iterator *)) 
-	  => CFunction =
+						    int (* index iterator *),
+						    int (* cg var_id*)) 
+	  => (CFunction,int (*cg var_id*)) =
 
-  axiom	generate_ode_system2_nonlinear_setvector([],_) 
-	  => Codegen.c_empty_function
+  axiom	generate_ode_system2_nonlinear_setvector([],_,cg_id) 
+	  => (Codegen.c_empty_function,cg_id)
 
   rule  Exp.print_component_ref_str(cr) => cr_str &
 	int_string(indx) => indx_str &
 	indx + 1 => indx' &
-	generate_ode_system2_nonlinear_setvector(crs,indx') => func &
-	Util.string_append_list(["nls_x[",indx_str,"] = ",cr_str,";"]) => stmt &
-	Codegen.c_add_statements(func,[stmt]) => func'
+	generate_ode_system2_nonlinear_setvector(crs,indx',cg_id) 
+	  => (func,cg_id') &
+	  Util.string_append_list(["nls_x[",indx_str,"] = ",cr_str,";"])
+	  => stmt &
+	  Codegen.c_add_statements(func,[stmt]) => func'
 	----------------------------------------
-	generate_ode_system2_nonlinear_setvector(cr::crs,indx) 
-	  => func'
+	generate_ode_system2_nonlinear_setvector(cr::crs,indx,cg_id) 
+	  => (func',cg_id')
 end
 
 (** relation: generate_ode_system2_nonlinear_call
@@ -1961,9 +1989,10 @@ end
  **
  ** Generates the call to the nonlinear equation solver.
  **)
-
-relation generate_ode_system2_nonlinear_call: (string (* residual func id *)) 
-	  => CFunction =
+	    
+relation generate_ode_system2_nonlinear_call: (string (* residual func id *),
+					       int (* cg var_id*)) 
+	  => (CFunction,int (* cg var_id*)) =
 
   rule	Util.string_append_list(["hybrd_(residualFunc",func_id,
 				 ",&n, nls_x,nls_fvec,&xtol,&maxfev,&ml,&mu,",
@@ -1983,7 +2012,7 @@ relation generate_ode_system2_nonlinear_call: (string (* residual func id *))
 	Codegen.c_add_statements(Codegen.c_empty_function,
 				 [stmt]) => func
 	---------------------------
-	generate_ode_system2_nonlinear_call(func_id) => func
+	generate_ode_system2_nonlinear_call(func_id,cg_id) => (func,cg_id)
 end
 
 
@@ -1994,20 +2023,24 @@ end
  ** system.
 **)
 	    
-relation generate_ode_system2_nonlinear_store_results: (Exp.ComponentRef list, int)
-	=> CFunction =
-  axiom	generate_ode_system2_nonlinear_store_results([],_) 
-	  => Codegen.c_empty_function
+relation generate_ode_system2_nonlinear_store_results: (Exp.ComponentRef list,
+							int (*indx*),
+							int (*cg var_id*))
+	=> (CFunction,int (* cg var_id*)) =
+  axiom	generate_ode_system2_nonlinear_store_results([],_,cg_id) 
+	  => (Codegen.c_empty_function,cg_id)
 
   rule	Exp.print_component_ref_str(cr) => cr_str &
 	int_string(indx) => indx_str &
 	indx + 1 => indx' &
-	generate_ode_system2_nonlinear_store_results(crs,indx') => func &
+	generate_ode_system2_nonlinear_store_results(crs,indx',cg_id) 
+	      => (func,cg_id') &
 	Util.string_append_list([cr_str," = nls_x[",indx_str,"];"]) 
 	  => stmt &
 	  Codegen.c_add_statements(func,[stmt]) => func'
 	--------------------------------
-	generate_ode_system2_nonlinear_store_results(cr::crs,indx) =>  func'
+	generate_ode_system2_nonlinear_store_results(cr::crs,indx,cg_id) 
+	      =>  (func',cg_id')
 end
 
 
@@ -2019,38 +2052,44 @@ end
 
 relation generate_ode_system2_nonlinear_residuals2: (DAELow.Equation list, 
 						     int, (* index iterator*) 
-						     VarTransform.VariableReplacements)
-	  => CFunction =
+						     VarTransform.VariableReplacements,
+						     int (* cg var_id*))
+	  => (CFunction,int (* cg var_id*)) =
 
-  axiom	generate_ode_system2_nonlinear_residuals2([],_,_) 
-	  => Codegen.c_empty_function
+  axiom	generate_ode_system2_nonlinear_residuals2([],_,_,cg_id) 
+	  => (Codegen.c_empty_function,cg_id)
 
   rule	Exp.typeof(e1) => tp &
 	let res_exp = Exp.BINARY(e1,Exp.SUB(tp),e2) &
 	Exp.simplify(res_exp) => res_exp' &
 	VarTransform.replace_exp(res_exp',repl) => res_exp'' &
-        print_exp_cpp_str(res_exp'') => exp_str &
-	int_string(indx) => indx_str &
+	Codegen.generate_expression(res_exp'',cg_id) => (exp_func,var,cg_id') &
+     	int_string(indx) => indx_str &
 	indx + 1 => indx' &
-	generate_ode_system2_nonlinear_residuals2(rest,indx',repl) => cfunc &
-	Util.string_append_list([TAB,"res[",indx_str,"] = ",exp_str, ";"])
+	generate_ode_system2_nonlinear_residuals2(rest,indx',repl,cg_id') 
+	      => (cfunc,cg_id'') &
+	Util.string_append_list([TAB,"res[",indx_str,"] = ",var, ";"])
 	  => stmt &
-	  Codegen.c_add_statements(cfunc,[stmt]) => cfunc' 
+	Codegen.c_add_statements(exp_func,[stmt]) => exp_func' &
+	Codegen.c_merge_fns([exp_func',cfunc]) => cfunc'      
 	-----------------------
-	generate_ode_system2_nonlinear_residuals2(DAELow.EQUATION(e1,e2)::rest,indx,repl) 
-	  => cfunc'
+	generate_ode_system2_nonlinear_residuals2(DAELow.EQUATION(e1,e2)::rest,indx,repl,cg_id) 
+	  => (cfunc',cg_id'')
 
   rule	Exp.simplify(e) => res_exp' &
 	VarTransform.replace_exp(res_exp',repl) => res_exp'' &
-        print_exp_cpp_str(res_exp'') => exp_str &
+	Codegen.generate_expression(res_exp'',cg_id) => (exp_func,var,cg_id') &
 	int_string(indx) => indx_str &
 	indx + 1 => indx' &
-	generate_ode_system2_nonlinear_residuals2(rest,indx',repl) => cfunc &
-	Util.string_append_list(["res[",indx_str,"] = ",exp_str, ";"])=> stmt &
-	Codegen.c_add_statements(cfunc,[stmt]) => cfunc' 
+	generate_ode_system2_nonlinear_residuals2(rest,indx',repl,cg_id') 
+	      => (cfunc,cg_id'') &
+	Util.string_append_list([TAB,"res[",indx_str,"] = ",var, ";"])
+	  => stmt &
+	  Codegen.c_add_statements(exp_func,[stmt]) => exp_func' &
+	Codegen.c_merge_fns([exp_func',cfunc]) => cfunc'      
 	-----------------------
-	generate_ode_system2_nonlinear_residuals2(DAELow.RESIDUAL_EQUATION(e)::rest,indx,repl) 
-	  => cfunc'
+	generate_ode_system2_nonlinear_residuals2(DAELow.RESIDUAL_EQUATION(e)::rest,indx,repl,cg_id) 
+	  => (cfunc',cg_id'')
 end
 
 
@@ -2059,19 +2098,25 @@ end
  ** 
  ** Generates code for the declaration of A and b when
  ** solving linear systems of equations.
+ ** inputs: (size: int, unique_id: int)
+ ** outputs: (fcn : CFunction)
  **)
 
-relation generate_ode_system2_declaration: (int) => CFunction =
+relation generate_ode_system2_declaration: (int (*size*)
+					    ,int (* unique_id*)
+					    ,int(* cg var_id*)) => 
+	      (CFunction, int (*cg var_id*)) =
 
   rule	int_string(size) => size_str &
-	Util.string_append_list(["declare_matrix(A,",size_str,",",
+	int_string(unique_id) => id_str &
+	Util.string_append_list(["declare_matrix(A",id_str,",",size_str,",",
 				 size_str,");"]) => stmt1 &
- 	Util.string_append_list(["declare_vector(b,",size_str,");"])
+ 	Util.string_append_list(["declare_vector(b",id_str,",",size_str,");"])
 	  => stmt2 &
 	  Codegen.c_add_variables(Codegen.c_empty_function,[stmt1,stmt2]) 
 	  => res
 	-----------------------
-	generate_ode_system2_declaration(size)  => res
+	generate_ode_system2_declaration(size,unique_id,cg_id)  => (res,cg_id)
 end
 
 (** relation: generate_ode_system2_populate_Ab
@@ -2079,18 +2124,28 @@ end
  ** 
  ** Generates code for the population of A and b when
  ** solving linear system of equations.
- **)
+ ** inputs: ( jac : (int * int * DAELow.Equation) list, 
+ **           vars: DAELow.Variables,
+ ** 	      eqns: DAELow.EquationArray 
+ **	      unique_id : int)
+ ** outputs: cfn : CFunction
+ **)         
 	    
 relation generate_ode_system2_populate_Ab:((int * int * DAELow.Equation) list,
 					   DAELow.Variables,
-					   DAELow.EquationArray)
-	  => CFunction =
+					   DAELow.EquationArray,
+					   int (*unique_id*),
+					   int(* cg var_id*))
+	  => (CFunction, int(*cg var_id*)) =
 
-  rule	generate_ode_system2_populate_A(jac,vars,eqns) => s1 &
-	generate_ode_system2_populate_b(jac,vars,eqns) => s2 &
+  rule	generate_ode_system2_populate_A(jac,vars,eqns,unique_id,cg_id) 
+	      => (s1,cg_id1) &
+	generate_ode_system2_populate_b(jac,vars,eqns,unique_id,cg_id1) 
+	      => (s2,cg_id2) &
 	Codegen.c_merge_fns([s1,s2]) => res
 	---------------------------
-	generate_ode_system2_populate_Ab(jac,vars,eqns) => res
+	generate_ode_system2_populate_Ab(jac,vars,eqns,unique_id,cg_id) 
+	      => (res,cg_id2)
 end
 
 (** relation: generate_ode_system2_populate_A
@@ -2098,17 +2153,28 @@ end
  ** 
  ** Generates code for the population of A 
  ** solving linear system of equations.
+ ** inputs ( jac : (int * int * DAELow.Equation) list, 
+ **           vars: DAELow.Variables,
+ ** 	      eqns: DAELow.EquationArray 
+ **	      unique_id : int
+ **	      cg_var_id : int)
+ ** outputs: (cfn : CFunction 
+ **	      cg_var_id : int)
  **)
 relation generate_ode_system2_populate_A:((int * int * DAELow.Equation) list,
 					   DAELow.Variables,
-					   DAELow.EquationArray)
-	  => CFunction =
+					   DAELow.EquationArray,
+					  int, 
+					  int)
+	  => (CFunction,int) =
 
 
   rule	DAELow.equation_size(eqns) => n_rows &
-	generate_ode_system2_populate_A2(jac,vars,eqns,n_rows) => res
+	generate_ode_system2_populate_A2(jac,vars,eqns,n_rows,unique_id,cg_id)
+	      => (res,cg_id)
 	-----------------------------
-	generate_ode_system2_populate_A(jac,vars,eqns) => res
+	generate_ode_system2_populate_A(jac,vars,eqns,unique_id,cg_id) 
+	  => (res,cg_id)
 
 end
 
@@ -2119,25 +2185,33 @@ end
  **)
 
 relation generate_ode_system2_populate_A2:((int * int * DAELow.Equation) list,
-					  DAELow.Variables,
-					  DAELow.EquationArray,
-					  int) (* n rows *)
-	  => CFunction =
+					   DAELow.Variables,
+					   DAELow.EquationArray,
+					   int,(* n rows *)
+					   int, (* unique_id*)
+					   int) (* cg var_id*)
+	  => (CFunction,int (*cg var_id*)) =
 
-  axiom	generate_ode_system2_populate_A2([],_,_,_) => Codegen.c_empty_function
+  axiom	generate_ode_system2_populate_A2([],_,_,_,unique_id,cg_id)
+	      => (Codegen.c_empty_function,cg_id)
 
   rule  r - 1 => r' &
 	c - 1 => c' &
 	int_string(r') => rs &
 	int_string(c') => rc &
 	int_string(n_rows) => n_rows_str &
-	print_exp_cpp_str(exp) => es &
-	generate_ode_system2_populate_A(jac,vars,eqn) => cfunc &
-	Util.string_append_list(["set_matrix_elt(A,",rs,", ",rc,", ",
-				 n_rows_str,", ",es,");"]) => stmt &
-	Codegen.c_add_statements(cfunc,[stmt]) => cfunc'
+	int_string(unique_id) => id_str &
+        Codegen.generate_expression(exp,cg_id) => (cfunc1,var,cg_id') &
+
+	generate_ode_system2_populate_A(jac,vars,eqn,unique_id,cg_id') 
+	  => (cfunc,cg_id'') &
+	Util.string_append_list(["set_matrix_elt(A",id_str,",",rs,", ",rc,", ",
+				 n_rows_str,", ",var,");"]) => stmt &
+	Codegen.c_add_statements(cfunc1,[stmt]) => cfunc1' &
+	Codegen.c_merge_fns([cfunc1',cfunc]) => cfunc'
 	--------------------------------------------------------------
-	generate_ode_system2_populate_A2((r,c,DAELow.RESIDUAL_EQUATION(exp))::jac,vars,eqn,n_rows) => cfunc'
+	generate_ode_system2_populate_A2((r,c,DAELow.RESIDUAL_EQUATION(exp))::jac,vars,eqn,n_rows,unique_id,cg_id) 
+	  => (cfunc',cg_id'')
 end
 
 (** relation: generate_ode_system2_populate_b
@@ -2149,13 +2223,17 @@ end
 
 relation generate_ode_system2_populate_b: ((int * int * DAELow.Equation) list,
 					   DAELow.Variables,
-					   DAELow.EquationArray)
-	  => CFunction =
+					   DAELow.EquationArray,
+					   int, (* unique_id*)
+					   int (* cg var_id*))
+	  => (CFunction, int (*cg var_id*)) =
 
   rule	DAELow.equation_list(eqns) => eqn_lst &
-	generate_ode_system2_populate_b2(eqn_lst,vars,0) => res
+	generate_ode_system2_populate_b2(eqn_lst,vars,0,unique_id,cg_id) 
+	  => (res,cg_id')
 	--------------------------------
-	generate_ode_system2_populate_b(jac,vars,eqns) => res
+	generate_ode_system2_populate_b(jac,vars,eqns,unique_id,cg_id) 
+	  => (res,cg_id')
 end
 
 (** relation: generate_ode_system2_populate_b2
@@ -2165,10 +2243,13 @@ end
 
 relation generate_ode_system2_populate_b2: (DAELow.Equation list,
 					    DAELow.Variables,
-					    int (* index iterator*)) 
-	  => CFunction =
+					    int (* index iterator*),
+					    int (*unique_id*),
+					    int (* cg var_id*))
+	  => (CFunction, int (* cg var_id*)) =
 
-  axiom	generate_ode_system2_populate_b2([],_,_) => Codegen.c_empty_function
+  axiom	generate_ode_system2_populate_b2([],_,_,_,cg_id) => 
+	(Codegen.c_empty_function,cg_id)
 
 
   rule	Exp.typeof(e1) => tp &
@@ -2176,16 +2257,19 @@ relation generate_ode_system2_populate_b2: (DAELow.Equation list,
 	DAELow.get_eqnsys_rhs_exp(new_exp,v) => rhs_exp &
 	let rhs_exp' = Exp.UNARY(Exp.UMINUS(tp),rhs_exp) &
 	Exp.simplify(rhs_exp') => rhs_exp'' &
-	print_exp_cpp_str(rhs_exp'') => rhs_str &
+	Codegen.generate_expression(rhs_exp'',cg_id) => (exp_func,var,cg_id') &
 	int_string(index) => index_str &
+	int_string(unique_id) => id_str &
 	index + 1 => index'  &
-	generate_ode_system2_populate_b2(rest,v,index') => cfunc &
-	Util.string_append_list(["set_vector_elt(b,",index_str,
-				 ", ",rhs_str, ");"]) => stmt &
-	Codegen.c_add_statements(cfunc,[stmt]) => cfunc'
+	generate_ode_system2_populate_b2(rest,v,index',unique_id,cg_id') 
+	  => (cfunc,cg_id'') &
+	Util.string_append_list(["set_vector_elt(b",id_str,",",index_str,
+				 ", ",var, ");"]) => stmt &
+	Codegen.c_add_statements(exp_func,[stmt]) => exp_func' &
+	Codegen.c_merge_fns([exp_func',cfunc]) => cfunc' 
 	--------------------------------------------------------
-	generate_ode_system2_populate_b2(DAELow.EQUATION(e1,e2)::rest,v,index) 
-	  => cfunc' 
+	generate_ode_system2_populate_b2(DAELow.EQUATION(e1,e2)::rest,v,index,unique_id,cg_id) 
+	  => (cfunc',cg_id'')
 end
 
 
@@ -2196,17 +2280,23 @@ end
  ** a linear system of equations.
  **)
 
-relation generate_ode_system2_solve_call:(int (* size of system *)) 
-	  => CFunction =
+relation generate_ode_system2_solve_call:(int (* size of system *),
+					  int (* unique_id*),
+					  int (* cg var_id*)
+					  ) 
+	  => (CFunction, int (*cg var_id*)) =
 
 
   rule	int_string(eqn_size) => size_str &
-	Util.string_append_list(["solve_linear_equation_system(A,b,",
-				 size_str,");"]) 
- 	  => stmt &
+	int_string(unique_id) => id_str &
+	Util.string_append_list(["solve_linear_equation_system(A",
+				 id_str,",b",id_str,",",
+ 				 size_str,");"]) 
+  	  => stmt &
 	Codegen.c_add_statements(Codegen.c_empty_function,[stmt]) => cfunc
 	---------------------------
-	generate_ode_system2_solve_call(eqn_size) => cfunc
+	generate_ode_system2_solve_call(eqn_size,unique_id,cg_id) 
+	  => (cfunc,cg_id)
 end
 
 (** relation: generate_ode_system2_collect_results
@@ -2216,35 +2306,42 @@ end
  ** a linear system of equations into the affected variables .
  **)
 
-relation generate_ode_system2_collect_results:(DAELow.Variables) 
-	  => CFunction =
+relation generate_ode_system2_collect_results:(DAELow.Variables,
+					       int(*unique_id*),
+					       int (*cg var_id*)) 
+	  => (CFunction,int (*cg var_id*)) =
 
   rule	DAELow.var_list(vars) => var_lst &
 	list_reverse(var_lst) => var_lst' &
 	Util.list_map(var_lst,DAELow.var_cref) => crefs &
 	Util.list_map(crefs,Exp.print_component_ref_str) => strs &
-	generate_ode_system2_collect_results2(strs,0) => res
+	generate_ode_system2_collect_results2(strs,0,unique_id) => res
 	-------------------------------
-	generate_ode_system2_collect_results(vars) => res
+	generate_ode_system2_collect_results(vars,unique_id,cg_id) => (res,cg_id)
 end
 (** relation: generate_ode_system2_collect_results2
  ** author: PA
  ** 
  ** Helper relation to generate_ode_system2_collect_results
 **)
-relation generate_ode_system2_collect_results2: (string list,int)
+relation generate_ode_system2_collect_results2: (string list,
+						 int(*indx*),
+						 int (* inique_id*))
 	  => CFunction =
 	  
-  axiom	generate_ode_system2_collect_results2([],_) => Codegen.c_empty_function
+  axiom	generate_ode_system2_collect_results2([],_,_) 
+	  => Codegen.c_empty_function
 	
   rule	index + 1 => index' &
-	generate_ode_system2_collect_results2(strs,index') => cfunc &
+	generate_ode_system2_collect_results2(strs,index',unique_id) => cfunc &
 	int_string(index) => index_str &
-	Util.string_append_list([str," = get_vector_elt(b,",index_str,");"])
+	int_string(unique_id) => id_str &
+	Util.string_append_list([str," = get_vector_elt(b",id_str,",",index_str,");"])
 	=> stmt &
 	  Codegen.c_add_statements(cfunc,[stmt]) => cfunc' 
 	----------------------
-	generate_ode_system2_collect_results2(str::strs,index) => cfunc'    
+	generate_ode_system2_collect_results2(str::strs,index,unique_id) 
+	  => cfunc'    
 end
 
 (** relation transform_x_to_xd
@@ -2309,8 +2406,10 @@ end
 relation generate_ode_equation: (DAELow.DAELow, 
 				 int vector, (*assignements 1 *)
 				 int vector, (* assignements 2 *)
-				 int) (* equation number*)
+				 int, (* equation number*)
+				 int) (* cg var_id *)
 	  => (CFunction, (* equation code *)
+	      int, (* cg var_id *)
 	      CFunction list) = (* extra functions *)
 
   rule	(* Solving for non-states *)
@@ -2321,13 +2420,13 @@ relation generate_ode_equation: (DAELow.DAELow,
 	is_non_state kind &
 	let varexp = Exp.CREF(cr,Exp.REAL) &
 	Exp.solve(e1,e2,varexp) => expr &
-	print_exp_cpp_str(expr) => expr_str &
+	Codegen.generate_expression(expr,cg_id) => (exp_func,var,cg_id') &
 	Exp.print_component_ref_str(cr) => cr_str &
-	Util.string_append_list([cr_str," = ",expr_str,";"]) => stmt &
-	Codegen.c_add_statements(Codegen.c_empty_function,[stmt]) => res
+	Util.string_append_list([cr_str," = ",var,";"]) => stmt &
+	Codegen.c_add_statements(exp_func,[stmt]) => res
 	-----------------------
-	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_,_),ass1,ass2,e) 
-	  => (res,[])
+	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_,_),ass1,ass2,e,cg_id) 
+	  => (res,cg_id',[])
 
   rule	(* Solving the state s means solving for der(s) *)
 	get_equation_and_solved_var(e,eqns,vars,ass2) 
@@ -2335,7 +2434,6 @@ relation generate_ode_equation: (DAELow.DAELow,
 	      DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flow)) &
 	int_string(indx) => indxs &
 
-(* 	Util.string_append_list(["xd[",indxs,"]"]) => id & *)
         Exp.print_component_ref_str(cr) => name &
         Util.modelica_string_to_c_str(name) => c_name &
         Util.string_append_list([DAELow.derivative_name_prefix,c_name]) => id &
@@ -2343,13 +2441,13 @@ relation generate_ode_equation: (DAELow.DAELow,
 	let cr' = Exp.CREF_IDENT(id,[]) &
 	let varexp = Exp.CREF(cr',Exp.REAL) &
 	Exp.solve(e1,e2,varexp) => expr &
-	print_exp_cpp_str(expr) => expr_str &
+	Codegen.generate_expression(expr,cg_id) => (exp_func,var,cg_id') &
 	Exp.print_component_ref_str(cr') => cr_str &
-	Util.string_append_list([cr_str," = ",expr_str,";"]) => stmt &
-	Codegen.c_add_statements(Codegen.c_empty_function,[stmt]) => res
+	Util.string_append_list([cr_str," = ",var,";"]) => stmt &
+	Codegen.c_add_statements(exp_func,[stmt]) => res
 	----------------------------
-	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_,_),ass1,ass2,e) 
-	  => (res,[])
+	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_,_),ass1,ass2,e,cg_id) 
+	  => (res,cg_id',[])
 
 	(* state nonlinear *)
   rule	get_equation_and_solved_var(e,eqns,vars,ass2) 
@@ -2365,18 +2463,33 @@ relation generate_ode_equation: (DAELow.DAELow,
 	let cr' = Exp.CREF_IDENT(id,[]) &
 	let varexp = Exp.CREF(cr',Exp.REAL) &
 	not Exp.solve(e1,e2,varexp) => _ &
-	generate_ode_system2_nonlinear_residuals([cr'],[eqn])
-	  => (res,f1)
+	generate_ode_system2_nonlinear_residuals([cr'],[eqn],cg_id)
+	  => (res,cg_id',f1)
 	-------------------------------------
-	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_,_),ass1,ass2,e) 
-	  => (res,f1)
+	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_,_),ass1,ass2,e,cg_id) 
+	  => (res,cg_id',f1)
 
 	(* When equations ignored *)
   rule	get_equation_and_solved_var(e,eqns,vars,ass2) 
 	  => (DAELow.WHEN_EQUATION(_),_) 
 	-------------------------------------
-	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_,_),ass1,ass2,e)
-	  => (Codegen.c_empty_function,[])
+	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_,_),ass1,ass2,e,cg_id)
+	  => (Codegen.c_empty_function,cg_id,[])
+
+
+
+  rule	Debug.fprint("failtrace","-generate_ode_equation failed\n") &
+ 	get_equation_and_solved_var(e,eqns,vars,ass2) 
+	  => (eqn as DAELow.EQUATION(e1,e2),
+	      DAELow.VAR(cr,_,_,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flow)) &
+	DAELow.equation_str(eqn) => s1 &
+	Exp.print_component_ref_str(cr) =>s2 &
+	Util.string_append_list(["trying to solve ",s2," from eqn: ",s1,"\n"])
+	  => s &
+	Debug.fprint("failtrace",s)
+	----------------------
+	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_,_),ass1,ass2,e,cg_id) 
+	  => fail
 end
 
 (** relation: generate_nonlinear_equations
@@ -2791,7 +2904,7 @@ relation dump_when_clause_str: (DAELow.WhenClause) => string =
 end
 
 (** relation: generate_helpvar_updates
- ** Gerates code for updateing help variables
+ ** Gerates code for updating help variables
  **)
 relation generate_helpvar_updates: ((int (*helpvar index*) * 
 				     Exp.Exp (*binding expression*) * 
@@ -2828,8 +2941,10 @@ relation generate_zero_crossing: (string,
 	  => string =
 	  
   rule	
-	generate_zero_crossing2(zc,0,dae,dlow,ass1,ass2,blocks,helpVarInfo) => (zc_str,zc_eq_str) &
-	generate_ode_blocks(dlow,ass1,ass2,blocks) => (cfunc,extra_funcs) &
+	generate_zero_crossing2(zc,0,dae,dlow,ass1,ass2,blocks,helpVarInfo,0,0) 
+	  => (func_zc,_,func_handle_zc,_) &
+
+	generate_ode_blocks(dlow,ass1,ass2,blocks,0) => (cfunc,_,extra_funcs) &
 	Codegen.c_print_functions_str(extra_funcs) => extra_funcs_str &
 	Codegen.c_make_function("int","function_updateDependents",[],
 				["double*t"]) => cfunc0' &
@@ -2837,23 +2952,24 @@ relation generate_zero_crossing: (string,
         Codegen.c_merge_fns([cfunc0,cfunc]) => cfunc' &
 	generate_helpvar_updates(helpVarInfo) => helpvarUpdateStr &
 	Codegen.c_add_statements(cfunc',[helpvarUpdateStr]) => cfunc'' &
-	Codegen.c_print_functions_str([cfunc'']) => updatedep_func_str &
+	Codegen.c_make_function("int","function_zeroCrossing",[],["long *neqm", "double *t", 
+								  "double *x", "long *ng", 
+								  "double *gout","double *rpar",
+								  "long* ipar"]) => func_zc0 &
+	Codegen.c_make_function("int","handleZeroCrossing",[],["long index","double *t"]) 
+	  => func_handle_zc0 &
+	
+	Codegen.c_prepend_statements(func_handle_zc0,["switch(index) {"]) => func_handle_zc0' &
+	Codegen.c_add_cleanups(func_handle_zc0',["default: break;",
+						   "}"]) => func_handle_zc0'' &
+	Codegen.c_add_cleanups(func_handle_zc0'',["return 0;"]) => func_handle_zc0''' &
+	Codegen.c_add_cleanups(func_zc0,["return 0;"]) => func_zc0' &
+
+	Codegen.c_merge_fns([func_zc0',func_zc]) => func_zc' &
+	Codegen.c_merge_fns([func_handle_zc0''',func_handle_zc]) => func_handle_zc' &
+	Codegen.c_print_functions_str([func_zc',func_handle_zc',cfunc'']) => func_str &
 	Util.string_append_list([extra_funcs_str,
-				 "\n\nint function_zeroCrossing(long *neqm, double *t, double *x, long *ng, double *gout,\n"
-				 ,"             double *rpar, long* ipar)\n"
-				 ,"{\n"
-				 ,   zc_str
-				 ,"  return 0;\n"
-				 ,"}\n\n"
-				 ,"int handleZeroCrossing(long index, double *t)\n"
-				 ,"{\n"
-				 ,"  switch(index) {\n"
-				 ,   zc_eq_str
-				 ,"  default: break;\n"
-				 ,"  }\n"
-                                 ,"return 0;\n"
-				 ,"}\n\n"
-				 , updatedep_func_str
+				 func_str
 				 ]) => res
 	--------------------------------------------------
 	generate_zero_crossing(cname,dae,dlow as DAELow.DAELOW(_,_,_,_,_,_,_,DAELow.EVENT_INFO(_,zc)),ass1,ass2,blocks,helpVarInfo) => res
@@ -2872,27 +2988,42 @@ relation generate_zero_crossing2: (DAELow.ZeroCrossing list, int,
 				 int vector, (* assignments1 *) 
 				 int vector, (* assignments2 *)
 				 int list list, (* blocks *) 
-				   (int * Exp.Exp * int) list )
-	  => (string,string) =
+				   (int * Exp.Exp * int) list,
+				   int, (* cg var_id1*)
+				   int) (* cg_var_id2 *)
+	  => (CFunction,int,CFunction,int) =
 
-  axiom	generate_zero_crossing2([],_,_,_,_,_,_,_) => ("","")
+  axiom	generate_zero_crossing2([],_,_,_,_,_,_,_,cg_id1,cg_id2) 
+	  => (Codegen.c_empty_function,cg_id1,Codegen.c_empty_function,cg_id2)
 
   rule	use_zerocrossing => false 
 	----------------------------------------
-	generate_zero_crossing2(_,_,_,_,_,_,_,_) => ("","")
+	generate_zero_crossing2(_,_,_,_,_,_,_,_,cg_id1,cg_id2) 
+	  => (Codegen.c_empty_function,cg_id1,Codegen.c_empty_function,cg_id2)
 
-  rule   dump_zero_crossing_str zc => zc_str &
+  rule  dump_zero_crossing_str zc => zc_str &
 	int_string index => index_str &
 	index + 1 => index' &
-	generate_zero_crossing2(xs,index',dae,dlow,ass1,ass2,blocks,helpVarInfo) => (rest1,rest2) &
-	Util.string_append_list(["  ZEROCROSSING(",index_str, ",",zc_str,");\n",rest1]) => res1 &
-         Util.list_select_1(helpVarInfo,(index,dlow),isZeroCrossingAffectingHelpVar) => usedHelpVars &
- 	build_zero_crossing_eqns (dae,dlow,ass1,ass2,eql) => zc_eq_str &
-         build_help_var_assignments (usedHelpVars) => help_var_str &
-	Util.string_append_list(["  case ", index_str, ":\n", zc_eq_str, help_var_str,"    break;\n",rest2]) => res2
+	generate_zero_crossing2(xs,index',dae,dlow,ass1,ass2,blocks,helpVarInfo,cg_id1,cg_id2) 
+	  => (cfunc1,cg_id1',cfunc2,cg_id2') &
+	Util.string_append_list(["ZEROCROSSING(",index_str, ",",zc_str,");\n"]) 
+	  => stmt1 &
+        Util.list_select_1(helpVarInfo,(index,dlow),isZeroCrossingAffectingHelpVar)
+	  => usedHelpVars &
+ 	build_zero_crossing_eqns (dae,dlow,ass1,ass2,eql,cg_id2') 
+	  => (Codegen.CFUNCTION(rettp,fn,retrec,arg,vars,init,stmts,cleanups),cg_id2'') &
+	Util.string_append_list(["case ", index_str, ":\n"]) => case_stmt &
+	let stmts' = case_stmt::stmts &
+        build_help_var_assignments (usedHelpVars) => help_var_str &
+	list_append(stmts',[help_var_str,"break;"]) => stmts'' &
+	let cfunc2' = Codegen.CFUNCTION(rettp,fn,retrec,arg,vars,init,stmts'',cleanups) &
+	Codegen.c_merge_fns([cfunc2',cfunc2]) => cfunc2'' &
+	Codegen.c_prepend_statements(cfunc1,[stmt1]) => cfunc1' 
 	--------------------------------------------------
 	generate_zero_crossing2((zc as DAELow.ZERO_CROSSING(_,eql,_))::xs,
-				index,dae,dlow,ass1,ass2,blocks,helpVarInfo) => (res1,res2)
+				index,dae,dlow,ass1,ass2,blocks,
+				helpVarInfo,cg_id1,cg_id2) 
+	  => (cfunc1',cg_id1',cfunc2'',cg_id2'')
 
   rule	dump_zero_crossing_str zc => zc_str &
 	Util.string_append_list(["generating zero crossing :",
@@ -2900,7 +3031,8 @@ relation generate_zero_crossing2: (DAELow.ZeroCrossing list, int,
 	Error.add_message(Error.INTERNAL_ERROR, [res])
 	------------------------
 	generate_zero_crossing2((zc as DAELow.ZERO_CROSSING(_,eql,_))::xs,
-				index,dae,dlow,ass1,ass2,blocks,helpVarInfo) 
+				index,dae,dlow,ass1,ass2,blocks,
+				helpVarInfo,cg_id1,cg_id2) 
 	  => fail
 end
 
@@ -2976,18 +3108,13 @@ relation generate_when_clauses: (string,
 				 int list list) (* blocks *) 
 	  => string =
 	  
-  rule	
-	generate_when_clauses2(wc,0,dae,dlow,ass1,ass2,blocks) => when_str &
-	Util.string_append_list([
-				 "\nint function_when(int i, double *t)\n"
-				 ,"{\n"
-				 ,"  switch(i) {\n"
-				 ,     when_str
-				 ,"  default: break;\n"
-				 ,"  }\n"
-                                 ,"return 0;\n"
-				 ,"}\n"
-				 ]) => res
+  rule	generate_when_clauses2(wc,0,dae,dlow,ass1,ass2,blocks) => when_fcn &
+	Codegen.c_make_function("int","function_when",[],["int i","double *t"]) => when_fcn0 &
+	Codegen.c_merge_fns([when_fcn0,when_fcn]) => when_fcn' &
+	Codegen.c_prepend_statements(when_fcn',["switch(i) {"]) => when_fcn'' &
+	Codegen.c_add_statements(when_fcn'',["default: break;","}"]) => when_fcn3 &
+	Codegen.c_add_cleanups(when_fcn3,["return 0;"]) => when_fcn4 &
+	Codegen.c_print_functions_str([when_fcn4]) => res
 	--------------------------------------------------
 	generate_when_clauses(cname,dae,dlow as DAELow.DAELOW(_,_,_,_,_,_,_,DAELow.EVENT_INFO(wc,_)),ass1,ass2,blocks) => res
 
@@ -3002,9 +3129,9 @@ relation generate_when_clauses2: (DAELow.WhenClause list, int,
 				 int vector, (* assignments1 *) 
 				 int vector, (* assignments2 *)
 				 int list list) (* blocks *) 
-	  => string =
+	  => CFunction =
 
-  axiom	generate_when_clauses2([],_,_,_,_,_,_) => ""
+  axiom	generate_when_clauses2([],_,_,_,_,_,_) => Codegen.c_empty_function
 
   rule  dump_when_clause_str wc => wc_str &
 	Exp.get_cref_from_exp(cond) => cond_cref_list &
@@ -3017,14 +3144,17 @@ relation generate_when_clauses2: (DAELow.WhenClause list, int,
 	Util.list_map(reinit,build_reinit_str) => reinit_str &
 	Util.string_append_list(reinit_str) => reinit_str' &
 	int_string index => index_str &
-	build_when_blocks(dae,dlow,ass1,ass2,blocks,index) => when_str &
+	build_when_blocks(dae,dlow,ass1,ass2,blocks,index) => when_fcn &
+	Codegen.c_print_statements(when_fcn) => when_str &
+	Util.string_append_list([" case ",index_str, ": //",wc_str]) => case_stmt &
+	Codegen.c_prepend_statements(when_fcn,[case_stmt]) => when_fcn' &
+	Codegen.c_add_statements(when_fcn',[reinit_str',"break;"]) => when_fcn'' &
 	index + 1 => index' &
-	generate_when_clauses2(xs,index',dae,dlow,ass1,ass2,blocks) => rest &
-	Util.string_append_list(["  case ",index_str, ": //",wc_str,
-				 when_str,reinit_str',(*save_cond_str,*)"    break;\n",rest]) => res 
+ 	generate_when_clauses2(xs,index',dae,dlow,ass1,ass2,blocks) => when_fcn2 &
+	Codegen.c_merge_fns([when_fcn'',when_fcn2]) => when_fcn'''
 	--------------------------------------------------
 	generate_when_clauses2((wc as DAELow.WHEN_CLAUSE(cond,reinit))::xs,
-			       index,dae,dlow,ass1,ass2,blocks) => res
+			       index,dae,dlow,ass1,ass2,blocks) => when_fcn'''
 end
 
 relation build_reinit_str : (DAELow.ReinitStatement) => string =
@@ -3041,35 +3171,48 @@ end
  **
  ** Helper relation to build_when_clauses.
  **)
-relation build_when_blocks : (DAE.DAElist,DAELow.DAELow, int vector, int vector, int list list, int) => string =
+relation build_when_blocks : (DAE.DAElist,DAELow.DAELow, int vector, int vector, int list list, int) => CFunction =
 
-  axiom build_when_blocks(_,_,_,_,[],_) => ""
+  axiom build_when_blocks(_,_,_,_,[],_) => Codegen.c_empty_function
 
-  rule	build_when_equation(dae,dlow,ass1,ass2,eqn,index) => eqn_str &
-	build_when_blocks(dae,dlow,ass1,ass2,blocks,index) => eqn_str2 &
-	string_append(eqn_str, eqn_str2) => res
+  rule	build_when_equation(dae,dlow,ass1,ass2,eqn,index) => cfn1 &
+	build_when_blocks(dae,dlow,ass1,ass2,blocks,index) => cfn2 &
+	Codegen.c_merge_fns([cfn1,cfn2]) => cfn
 	----------------------------------------
-	build_when_blocks(dae,dlow,ass1,ass2,(block as [eqn])::blocks,index) => res
+	build_when_blocks(dae,dlow,ass1,ass2,(block as [eqn])::blocks,index) 
+	  => cfn
 
-  axiom build_when_blocks(_,_,_,_,_,_) => ""
+  axiom build_when_blocks(_,_,_,_,_,_) => Codegen.c_empty_function
 end
 
-relation build_zero_crossing_eqns : (DAE.DAElist,DAELow.DAELow, int vector, int vector, int list) => string =
+(** relation: build_zero_crossing_eqns
+ ** author: haklu?
+ **
+ ** Helper rerlation to generate_zero_crossing2. Generates code for each
+ ** zero crossing.
+ **)
 
-  axiom build_zero_crossing_eqns(_,_,_,_,[]) => ""
+relation build_zero_crossing_eqns : (DAE.DAElist,DAELow.DAELow, int vector, int vector, int list,int (* cg var_id*)) => (CFunction,int(*cg var_id*))  =
 
-  rule	build_equation(dae,dlow,ass1,ass2,eqn) => eqn_str &
+  axiom build_zero_crossing_eqns(_,_,_,_,[],cg_id) 
+	  => (Codegen.c_empty_function,cg_id)
+
+  rule	build_equation(dae,dlow,ass1,ass2,eqn,cg_id) => (cfn2,cg_id') &
 	eqn - 1 => eqn' &
          vector_nth(ass2,eqn') => v &
 	v - 1 => v' &
 	DAELow.vararray_nth(vararr,v') => (DAELow.VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,_)) &  
 	Exp.print_component_ref_str(cr) => cr_str &
-	build_zero_crossing_eqns(dae,dlow,ass1,ass2,rest) => eqn_str2 &
-	Util.string_append_list(["    save(",cr_str,");\n","  ",eqn_str, eqn_str2]) => res
+	build_zero_crossing_eqns(dae,dlow,ass1,ass2,rest,cg_id') 
+	  => (cfn3,cg_id'') &
+ 	Util.string_append_list(["save(",cr_str,");"]) => stmt &
+ 	Codegen.c_add_statements(Codegen.c_empty_function,[stmt]) => cfn1 &
+	Codegen.c_merge_fns([cfn1,cfn2,cfn3]) => cfn
 	----------------------------------------
-	build_zero_crossing_eqns(dae,dlow as DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,_,_,_,_,_,_),ass1,ass2,eqn::rest) => res
+	build_zero_crossing_eqns(dae,dlow as DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,_,_,_,_,_,_),ass1,ass2,eqn::rest,cg_id) => (cfn,cg_id'')
 
-  axiom build_zero_crossing_eqns(_,_,_,_,_) => ""
+  axiom build_zero_crossing_eqns(_,_,_,_,_,cg_id) 
+	  => (Codegen.c_empty_function,cg_id)
 end
 
 (** relation: build_when_equation
@@ -3083,7 +3226,7 @@ relation build_when_equation: (DAE.DAElist,
 			       int vector, (* assignments2*)
 			       int, (* equation no. *)
 			       int
-			       ) => string =
+			       ) => CFunction =
 
   rule	int_sub(e,1) => e' &
 	DAELow.equation_nth(eqns,e') => DAELow.WHEN_EQUATION(DAELow.WHEN_EQ(wc_ind,cr,expr)) &
@@ -3092,12 +3235,13 @@ relation build_when_equation: (DAE.DAElist,
 	int_sub(v,1) => v' &
 	DAELow.vararray_nth(vararr,v') => (va as DAELow.VAR(cr,kind,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flow)) &  
          Exp.print_component_ref_str(cr) => assignedVar &
-	build_assignment(dae,cr,expr,origname) => assignment_string &
-	Util.string_append_list(["    save(",assignedVar,");\n  ", assignment_string]) => assignment_string'
+	build_assignment(dae,cr,expr,origname,0) => (cfn,_) &
+	Util.string_append_list(["save(",assignedVar,");\n"]) => save_stmt &
+	Codegen.c_add_statements(cfn,[save_stmt]) => cfn
 	------------------------------------------------------------
-	build_when_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e,index) => assignment_string'
+	build_when_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e,index) => cfn
 
-  axiom	build_when_equation(_,_,_,_,_,_) => ""
+  axiom	build_when_equation(_,_,_,_,_,_) => Codegen.c_empty_function
 end
 	
 
@@ -3116,10 +3260,14 @@ relation generate_compute_residual_state:(string,
 	  => string =
           
   rule	
-        build_residual_blocks(dae,dlow,ass1,ass2,blocks) => eqn_str_list &
-        Util.string_append_list(eqn_str_list) => cstate &
-        Util.string_append_list(["\nint functionDAE_res(double *t, double *x, double *xd, double *delta, long int *ires, double *rpar, long int* ipar)\n{\n",cstate,TAB,"return 0;\n\n}\n"]) 
-	  => res
+        build_residual_blocks(dae,dlow,ass1,ass2,blocks,0) => (cfn2,_) &
+	Codegen.c_make_function("int","functionDAE_res",[],
+				["double *t","double *x", "double *xd", 
+				 "double *delta", "long int *ires", 
+				 "double *rpar", "long int* ipar"]) => cfn1 &
+	Codegen.c_merge_fns([cfn1,cfn2]) => cfn &
+	Codegen.c_add_cleanups(cfn,["return 0;"]) => cfn' &
+	Codegen.c_print_functions_str([cfn']) => res
         -------------------------------------------------------------
         generate_compute_residual_state(cname,dae,dlow,ass1,ass2,blocks) => res
 
@@ -3151,7 +3299,7 @@ end
 	  => cfunc' &
 	   Codegen.c_add_cleanups(cfunc', ["return 0;"]) => cfunc &
 	 (*build_solved_blocks(dae,dlow,ass1,ass2,blocks) => eqn_str_lst &*)
-	 generate_ode_blocks(dlow,ass1,ass2,blocks) => (body,extra_funcs) &
+	 generate_ode_blocks(dlow,ass1,ass2,blocks,0) => (body,_,extra_funcs) &
 	 generate_compute_removed_eqns(dlow) => stmts2 &
 	 Codegen.c_merge_fns([cfunc,body]) => cfunc' &
 	 Codegen.c_add_statements(cfunc',stmts2) => cfunc'' &
@@ -3243,22 +3391,6 @@ relation all_same_algorithm2:(DAELow.DAELow,
 
 end
 
-
-relation build_non_discrete_equation:(DAE.DAElist, DAELow.DAELow, int vector, int vector, int) => string =
-
-  rule	int_sub(e,1) => e' &
-	vector_nth(ass2,e') => v &
-	int_sub(v,1) => v' &
-	DAELow.vararray_nth(vararr,v') => (DAELow.VAR(_,kind,_,_,_,_,_,_,_,_,_,_,_,_)) &  
-	DAELow.is_discrete kind 
-	--------------------------------
-	build_non_discrete_equation(_,DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,_,_,_,_,_,_),_,ass2,e) => ""
-      
-  rule	build_equation(dae,dlow,ass1,ass2,eqn) => str
-	----------------------------------------
-	build_non_discrete_equation(dae,dlow,ass1,ass2,eqn) => str
-end
-
 (** relation build_equation 
  **
  ** This returns the code string for a specific equation in the dae.
@@ -3269,8 +3401,9 @@ relation build_equation:(DAE.DAElist,
 			 DAELow.DAELow, 
 			 int vector, (* assignments1*)
 			 int vector, (* assignments2*)
-			 int) (* equation no*)
-	  => string =
+			 int, (* equation no*)
+			 int) (* cg var_id *)
+	  => (CFunction,int (* cg var_id*)) =
 	     
   rule  (* Solving for non-states *)
 	int_sub(e,1) => e' &
@@ -3282,9 +3415,9 @@ relation build_equation:(DAE.DAElist,
 	let varexp = Exp.CREF(cr,Exp.REAL) &
 	Exp.solve(e1,e2,varexp) => expr &
         Exp.simplify(expr) => simplify_exp &
-	build_assignment(dae,cr,simplify_exp,origname)  => assigment_string
+	build_assignment(dae,cr,simplify_exp,origname,cg_id)  => (cfn,cg_id')
 	--------------------------------
-	build_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e) => assigment_string	
+	build_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e,cg_id) => (cfn,cg_id')
         
 	
   rule	(* Solving the state s means solving for der(s) *)
@@ -3297,9 +3430,9 @@ relation build_equation:(DAE.DAElist,
 	let new_varexp = Exp.CREF(cr,Exp.REAL) &
 	Exp.solve(e1,e2,new_varexp) => expr &
         Exp.simplify(expr) => simplify_exp &
-	build_assignment(dae,cr ,simplify_exp,origname)  => assigment_string
+	build_assignment(dae,cr ,simplify_exp,origname,cg_id)  => (cfn,cg_id')
 	--------------------------------
-	build_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e) => assigment_string 
+	build_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e,cg_id) => (cfn,cg_id')
 	
   rule	(* probably, solved failed in rule above. This means that we have 
 	 a non-linear equation. *)
@@ -3312,22 +3445,21 @@ relation build_equation:(DAE.DAElist,
 	not Exp.solve(e1,e2,varexp) => _ &
 	print "nonlinear equation not implemented yet\n" 
 	--------------------------------
-	build_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e) => fail
+	build_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e,cg_id) => fail
 
   rule	(* Algorithms *)
 	(* Each algorithm should only be genated once.*)
 	int_sub(e,1) => e' &
  	DAELow.equation_nth(eqns,e') => DAELow.ALGORITHM(indx,inputs,outputs) &
 	array_nth(algs,indx) => alg &
-	Codegen.generate_algorithm(DAE.ALGORITHM(alg),1) 
-	  => (Codegen.CFUNCTION(_,_,_,_,_,_,stmt_strs,_),_) &
-	Util.string_delimit_list(stmt_strs,"\n") => res
+	Codegen.generate_algorithm(DAE.ALGORITHM(alg),cg_id) 
+	  => (cfn,cg_id') 
 	-------------------------
-	build_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,algs,_),ass1,ass2,e) => res 
+	build_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,algs,_),ass1,ass2,e,cg_id) => (cfn,cg_id')
         
-  rule	print "-build_equation failed\n" 
+  rule	Debug.fprint("failtrace","-build_equation failed\n")
 	--------------------------------
-	build_equation(_,_,_,_,_) => "//build_equation failed\n" 
+	build_equation(_,_,_,_,_,_) => fail
 end
 
 (** relation: build_residual_blocks
@@ -3339,27 +3471,35 @@ end
  relation build_residual_blocks:(DAE.DAElist,DAELow.DAELow, 
 				 int vector, (* ass1 *)
 				 int vector, (* ass2 *)
-				 int list list) (* blocks *)
-	  => string list =
+				 int list list,(* blocks *)
+				 int) (* cg var_iter *)
+	  => (CFunction,int(*cg var_iter*)) =
 
-  axiom	build_residual_blocks(_,_,_,_,[]) => []
+  axiom	build_residual_blocks(_,_,_,_,[],cg_var) => (Codegen.c_empty_function,cg_var)
 	 
   rule	(* For system of equations *) 
-	 build_residual_system(dae,dlow,ass1,ass2,block) => eqn_str &
-	 build_residual_blocks(dae,dlow,ass1,ass2,blocks) => res 
+	 build_residual_system(dae,dlow,ass1,ass2,block,cg_id) 
+	  => (cfn1,cg_id') &
+	 build_residual_blocks(dae,dlow,ass1,ass2,blocks,cg_id') 
+	  => (cfn2,cg_id'') &
+	 Codegen.c_merge_fns([cfn1,cfn2])=> cfn
 	 -------------------------------------
-	 build_residual_blocks(dae,dlow,ass1,ass2,(block as (_::_::_))::blocks) 
-	  => eqn_str::res
+	 build_residual_blocks(dae,dlow,ass1,ass2,(block as (_::_::_))::blocks,cg_id) 
+	  => (cfn,cg_id'')
 	 
   rule	(* for single equations *)
-	 build_residual_equation(dae,dlow,ass1,ass2,eqn) => eqn_str &
-	 build_residual_blocks(dae,dlow,ass1,ass2,blocks) => res
+	 build_residual_equation(dae,dlow,ass1,ass2,eqn,cg_id) 
+	  => (cfn1,cg_id') &
+	 build_residual_blocks(dae,dlow,ass1,ass2,blocks,cg_id') 
+	  => (cfn2,cg_id'') &
+	 Codegen.c_merge_fns([cfn1,cfn2]) => cfn
 	 -------------------------------------
-	 build_residual_blocks(dae,dlow,ass1,ass2,(block as [eqn])::blocks) => eqn_str::res
+	 build_residual_blocks(dae,dlow,ass1,ass2,(block as [eqn])::blocks,cg_id) 
+	  => (cfn,cg_id'')
 
   rule	print "-build_residual_blocks failed\n" 
 	 -----------------
-	 build_residual_blocks(_,_,_,_,_) => fail
+	 build_residual_blocks(_,_,_,_,_,_) => fail
  end
 
 (** relation build_residual_system
@@ -3369,19 +3509,20 @@ end
 **)
 
 relation build_residual_system: (DAE.DAElist,
-				   DAELow.DAELow, 
-				   int vector, (* assignments1*)
-				   int vector, (* assignments2*)
-				   int list (* equation no. *)
-				   ) => string =
+				 DAELow.DAELow, 
+				 int vector, (* assignments1*)
+				 int vector, (* assignments2*)
+				 int list, (* equation no. *)
+				 int (* cg var_iter*)
+				   ) => (CFunction,int (*cg var_iter*)) =
 
-  axiom	build_residual_system(_,_,_,_,[]) => ""
+  axiom	build_residual_system(_,_,_,_,[],cg_id) => (Codegen.c_empty_function,cg_id)
 
-  rule	build_residual_equation(dae,dlow,ass1,ass2,eqn) => s1 &
-	build_residual_system(dae,dlow,ass1,ass2,eqns) => s2 &
-	string_append(s1,s2) => str
+  rule	build_residual_equation(dae,dlow,ass1,ass2,eqn,cg_id) => (cfn1,cg_id') &
+	build_residual_system(dae,dlow,ass1,ass2,eqns,cg_id') => (cfn2,cg_id'') &
+	Codegen.c_merge_fns([cfn1,cfn2])=> cfn
 	---------------------------------------------
-	build_residual_system(dae,dlow,ass1,ass2,eqn::eqns) => str
+	build_residual_system(dae,dlow,ass1,ass2,eqn::eqns,cg_id) => (cfn,cg_id'')
 end
 
 
@@ -3395,8 +3536,10 @@ end
 				   DAELow.DAELow, 
 				   int vector, (* assignments1*)
 				   int vector, (* assignments2*)
-				   int (* equation no. *)
-				   ) => string =
+				   int, (* equation no. *)
+				   int (* cg var_id*)
+				   
+				   ) => (CFunction,int (*cg var_id*)) =
 	 
   rule  (* Do not output equations for discrete variables here *)
 	 int_sub(e,1) => e' &
@@ -3405,7 +3548,7 @@ end
 	 DAELow.vararray_nth(vararr,v') => (DAELow.VAR(_,kind,_,_,_,_,_,_,_,_,_,_,_,flow)) &  
 	 DAELow.is_discrete kind 
 	 --------------------------------
-	 build_residual_equation(_,DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,_,_,_,_,_,_),_,ass2,e) => ""	
+	 build_residual_equation(_,DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,_,_,_,_,_,_),_,ass2,e,cg_id) => (Codegen.c_empty_function,cg_id)
          
   rule  (* Solving for non-states *)
 	 int_sub(e,1) => e' &
@@ -3418,9 +3561,9 @@ end
 	 let varexp = Exp.CREF(cr,Exp.REAL) &
 	 Exp.solve(e1,e2,varexp) => expr &
          Exp.simplify(expr) => simplify_exp &
-	 build_assignment(dae,cr,simplify_exp,origname)  => assigment_string
+	 build_assignment(dae,cr,simplify_exp,origname,cg_id)  => (cfn,cg_id')
 	 --------------------------------
-	 build_residual_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e) => assigment_string	
+	 build_residual_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e,cg_id) => (cfn,cg_id')
          
 	 
   rule  (* Solving the state s, caluate residual form. *) 
@@ -3436,15 +3579,16 @@ end
 	 (* Use array named 'delta' for residuals *)
 	 Util.string_append_list(["delta[",indx_str,"]"]) => cr_str &
 	 let new_cr = Exp.CREF_IDENT(cr_str,[]) &
-	 build_assignment(dae,new_cr,simplify_exp,origname)  => assigment_string
+	 build_assignment(dae,new_cr,simplify_exp,origname,cg_id)  => (cfn,cg_id')
 	 --------------------------------
-	 build_residual_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e) => assigment_string 
+	 build_residual_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e,cg_id) => (cfn,cg_id')
 	 
   rule	(* when-equations are not part of the residual equations *)
         int_sub(e,1) => e' &
 	DAELow.equation_nth(eqns,e') => DAELow.WHEN_EQUATION(e) 
 	--------------------------------
-	build_residual_equation(_,DAELow.DAELOW(_,_,eqns,_,_,_,_,_),_,_,e) => ""
+	build_residual_equation(_,DAELow.DAELOW(_,_,eqns,_,_,_,_,_),_,_,e,cg_id) 
+	  => (Codegen.c_empty_function,cg_id)
 
   rule	int_sub(e,1) => e' &
 	DAELow.equation_nth(eqns,e') => DAELow.EQUATION(e1,e2) &
@@ -3455,13 +3599,13 @@ end
 	not Exp.solve(e1,e2,varexp) => _ &
 	print "nonlinear equation not implemented yet\n" 
 	--------------------------------
-	build_residual_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e) => fail
+	build_residual_equation(dae,DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e,cg_id) => fail
          
 
-  rule  print "-build_residual_equation failed\n" 
+  rule  Debug.fprint("failtrace","-build_residual_equation failed\n")
 	--------------------------------
-	build_residual_equation(_,_,_,_,_) 
-	  => "//build_residual_equation failed\n" 
+	build_residual_equation(_,_,_,_,_,_) 
+	  => fail
 end
 
 (** relation build_assignment 
@@ -3473,29 +3617,32 @@ end
 relation build_assignment: (DAE.DAElist,
 			    Exp.ComponentRef, (* varname *)
 			    Exp.Exp, (*expression*) 
-			    string) (* orig. name*) 
-	  => string =
+			    string, (* orig. name*) 
+			    int) (* cg var_id *)
+	  => (CFunction,int (*cg var_id *)) =
 
   rule  Exp.print_component_ref_str(cr) => cr_str &	
-        print_exp_cpp_str(exp) => exp_str &
-        Util.string_append_list(["  ",cr_str, " = ", exp_str, ";\n"]) => eqn_str 
+	Codegen.generate_expression(exp,cg_id) => (cfn,var,cg_id') &
+        Util.string_append_list([cr_str, " = ", var, ";\n"]) => stmt &
+	Codegen.c_add_statements(cfn,[stmt]) => cfn
 	-------------------------------------------------------------------------
-	build_assignment(dae as DAE.DAE(elements),cr,exp as Exp.CALL(path,args,tuple as false,builtin),origname) => eqn_str
+	build_assignment(dae as DAE.DAE(elements),cr,exp as Exp.CALL(path,args,tuple as false,builtin),origname,cg_id) => (cfn,cg_id')
 
 
   rule  print "-simcodegen: build_assignment: Tuple return values from functions not implemented\n"
 	--------------------------------------------------------------------------
-	build_assignment(dae,cr,exp as Exp.CALL(path,args,tuple as true,builtin),origname) => fail
+	build_assignment(dae,cr,exp as Exp.CALL(path,args,tuple as true,builtin),origname,cg_id) => fail
 	  
   rule  Exp.print_component_ref_str(cr) => cr_str &
-        print_exp_cpp_str(exp) => exp_str & 
-        Util.string_append_list(["  ",cr_str, " = ", exp_str, ";\n"]) => eqn_str 
+	Codegen.generate_expression(exp,cg_id) => (cfn,var,cg_id') &
+        Util.string_append_list([cr_str, " = ", var, ";\n"]) => stmt &
+	Codegen.c_add_statements(cfn,[stmt]) => cfn
         --------------------------------
-	build_assignment(dae,cr,exp,origname) => eqn_str
+	build_assignment(dae,cr,exp,origname,cg_id) => (cfn,cg_id')
         
   rule	print "-build_assignment failed\n" 
 	------------------------
-	build_assignment(dae,cr,exp,origname) => fail
+	build_assignment(dae,cr,exp,origname,cg_id) => fail
 end
 
 

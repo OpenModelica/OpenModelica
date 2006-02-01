@@ -251,6 +251,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   relation dump: DAELow => ()
   relation dump_vars: Var list => ()
   relation dump_eqns: Equation list => () 
+  relation equation_str: Equation => string
 
   relation dump_jacobian_str: ((int*int*Equation) list option) => string   
         
@@ -378,6 +379,7 @@ with "System.rml"
 with "VarTransform.rml"
 with "RTOpts.rml"
 with "Error.rml"
+with "SimCodegen.rml"
 
 val empty_bintree = TREENODE(NONE,NONE,NONE)
 val derivative_name_prefix = "$derivative"
@@ -558,9 +560,9 @@ relation find_zero_crossings2 : (Variables, Equation list, int, WhenClause list,
        
   axiom	find_zero_crossings2 (v, [], _, [], _) => ([])
 
-  rule	find_zero_crossings3(e1) => rellst1 &
+  rule	find_zero_crossings3(e1,v) => rellst1 &
 	make_zero_crossings(rellst1, [eq_count], []) => zc1 &
-	find_zero_crossings3(e2) => rellst2 &
+	find_zero_crossings3(e2,v) => rellst2 &
 	make_zero_crossings(rellst2, [eq_count], []) => zc2 &
 	eq_count + 1 => eq_count' &
 	find_zero_crossings2 (v,xs,eq_count',[],0) => zc3 &
@@ -577,7 +579,7 @@ relation find_zero_crossings2 : (Variables, Equation list, int, WhenClause list,
 
   rule	wc_count + 1 => wc_count' &
 	find_zero_crossings2 (v,el,eq_count,xs,wc_count') => (res1) &
-	find_zero_crossings3(e) => rel &
+	find_zero_crossings3(e,v) => rel &
 	make_zero_crossings(rel,[],[wc_count]) => res2 &
 	list_append(res1,res2) => res
 	----------------------------------------
@@ -589,26 +591,165 @@ end
  **
  ** Collects zero crossings 
  **)
-relation collect_zero_crossings: (Exp.Exp *  Exp.Exp list) 
-	  => (Exp.Exp * Exp.Exp list) =
+relation collect_zero_crossings: ((Exp.Exp *  (Exp.Exp list * Variables))) 
+	  => ((Exp.Exp *  (Exp.Exp list * Variables))) =
 
-  axiom	collect_zero_crossings( ((e as Exp.CALL(Absyn.IDENT("noEvent"),_,_,_)),_) ) => ((e,[])) 
+  axiom	collect_zero_crossings( ((e as Exp.CALL(Absyn.IDENT("noEvent"),_,_,_)),(_,vars)) ) => ((e,([],vars))) 
 
-  axiom	collect_zero_crossings( ((e as Exp.CALL(Absyn.IDENT("sample"),_,_,_)),zeroCrossings) ) => ((e,e::zeroCrossings))
+  axiom	collect_zero_crossings( ((e as Exp.CALL(Absyn.IDENT("sample"),_,_,_)),(zeroCrossings,vars)) ) => ((e,(e::zeroCrossings,vars)))
 
-  axiom	collect_zero_crossings( ((e as Exp.RELATION(_,_,_)),zeroCrossings)  )=> 
-			       ((e,e::zeroCrossings))
+	(* relation with discrete expressions generate no zerocrossing*)
+  rule	is_discrete_exp(e1,vars) => true &
+	is_discrete_exp(e2,vars) => true 
+	------------------
+	collect_zero_crossings( ((e as Exp.RELATION(e1,op,e2)),(zeroCrossings,vars))  )
+	  => ((e,(zeroCrossings,vars)))
+		     
+        (* All other relations generate zerocrossing.*)
+axiom	collect_zero_crossings( ((e as Exp.RELATION(e1,op,e2)),(zeroCrossings,vars))  )=> 
+			       ((e,(e::zeroCrossings,vars)))
 
   rule	--------------------------------------------------
-	collect_zero_crossings( ((e as Exp.ARRAY(_,_,[])),zeroCrossings)) => ((e,zeroCrossings))
+	collect_zero_crossings( ((e as Exp.ARRAY(_,_,[])),(zeroCrossings,vars))) => ((e,(zeroCrossings,vars)))
 
-  rule	Exp.traverse_exp(e, collect_zero_crossings, zeroCrossings) => ((_,zeroCrossings')) &
-        collect_zero_crossings( (Exp.ARRAY(tp,scalar,el),zeroCrossings) ) => ((e',zeroCrossings'')) &
+  rule	Exp.traverse_exp(e, collect_zero_crossings, (zeroCrossings,vars)) => ((_,(zeroCrossings',vars))) &
+        collect_zero_crossings( (Exp.ARRAY(tp,scalar,el),(zeroCrossings,vars)) ) => ((e',(zeroCrossings'',vars))) &
 	list_append(zeroCrossings',zeroCrossings'') => zeroCrossings'''
 	--------------------------------------------------
-	collect_zero_crossings( ((Exp.ARRAY(tp,scalar,e::el)),zeroCrossings)) => ((e,zeroCrossings'''))
+	collect_zero_crossings( ((Exp.ARRAY(tp,scalar,e::el)),(zeroCrossings,vars))) => ((e,(zeroCrossings''',vars)))
 
-  axiom	collect_zero_crossings((e,zeroCrossings)) => ((e,zeroCrossings))
+  axiom	collect_zero_crossings((e,(zeroCrossings,vars))) => ((e,(zeroCrossings,vars)))
+end
+
+(** relation: is_kind_discrete
+ **
+ ** Returns true if VarKind is discrete.
+ **)
+
+relation is_kind_discrete: VarKind => bool =
+
+  axiom	is_kind_discrete(DISCRETE) => true 
+  axiom	is_kind_discrete(PARAM) => true 
+  axiom	is_kind_discrete(CONST) => true 
+
+  axiom	is_kind_discrete(_) => false
+end
+
+(** relation: is_discrete_exp
+ **
+** Returns true if expression is a discrete expression.
+ **)
+
+relation is_discrete_exp: (Exp.Exp, Variables) => bool =
+
+  axiom	is_discrete_exp(Exp.ICONST(_),vars) => true
+  axiom	is_discrete_exp(Exp.RCONST(_),vars) => true
+  axiom	is_discrete_exp(Exp.SCONST(_),vars) => true
+  axiom	is_discrete_exp(Exp.BCONST(_),vars) => true
+
+
+  rule	get_var(cr,vars) => (VAR(cr,kind,dir,vartype,bind,value,dims,start,ind,
+			     orig,clname,attr,comment,flow)::_,_) &
+	is_kind_discrete(kind) => res
+	-----------------
+	is_discrete_exp(Exp.CREF(cr,_),vars) => res
+
+  rule	is_discrete_exp(e1,vars) => b1 &
+	is_discrete_exp(e2,vars) => b2 &
+	bool_or(b1,b2) => res
+	-----------------------
+	is_discrete_exp(Exp.BINARY(e1,op,e2),vars) => res
+
+  rule	is_discrete_exp(e1,vars) => b1 &
+	is_discrete_exp(e2,vars) => b2 &
+	bool_or(b1,b2) => res
+	-----------------------
+	is_discrete_exp(Exp.LBINARY(e1,op,e2),vars) => res
+
+  rule	is_discrete_exp(e,vars) => res
+	-----------------------
+	is_discrete_exp(Exp.UNARY(op,e),vars) => res
+
+  rule	is_discrete_exp(e,vars) => res
+	-----------------------
+	is_discrete_exp(Exp.LUNARY(op,e),vars) => res
+
+  rule	is_discrete_exp(e1,vars) => b1 &
+	is_discrete_exp(e2,vars) => b2 &
+	bool_or(b1,b2) => res
+	-----------------------
+	is_discrete_exp(Exp.RELATION(e1,op,e2),vars) => res
+
+  rule	is_discrete_exp(e1,vars) => b1 &
+	is_discrete_exp(e2,vars) => b2 &
+	is_discrete_exp(e3,vars) => b3 &
+	Util.bool_or_list([b1,b2,b3]) => res
+	--------------------
+	is_discrete_exp(Exp.IFEXP(e1,e2,e3),vars) => res
+
+  axiom	is_discrete_exp(Exp.CALL(Absyn.IDENT("pre"),_,_,_),vars) => true 
+	
+  rule	Util.list_map_1(expl,is_discrete_exp,vars) => blst &
+	Util.bool_or_list(blst) => res
+	---------------------------
+	is_discrete_exp(Exp.CALL(_,expl,_,_),vars) => res
+
+  rule	Util.list_map_1(expl,is_discrete_exp,vars) => blst &
+	Util.bool_or_list(blst) => res
+	------------
+	is_discrete_exp(Exp.ARRAY(tp,_,expl),vars) => res
+
+  rule	Util.list_flatten(expl) => expl' &
+	Util.list_map(expl',Util.tuple2_1) => expl'' &
+	Util.list_map_1(expl'',is_discrete_exp,vars) => blst &
+	Util.bool_or_list(blst) => res
+	------------
+	is_discrete_exp(Exp.MATRIX(tp,_,expl),vars) => res
+
+  rule	is_discrete_exp(e1,vars) => b1 &
+	is_discrete_exp(e2,vars) => b2 &
+	is_discrete_exp(e3,vars) => b3 &
+	Util.bool_or_list([b1,b2,b3]) => res
+	--------------------
+	is_discrete_exp(Exp.RANGE(tp,e1,SOME(e2),e3),vars) => res
+
+  rule	is_discrete_exp(e1,vars) => b1 &
+	is_discrete_exp(e2,vars) => b2 &
+	bool_or(b1,b2) => res
+	--------------------
+	is_discrete_exp(Exp.RANGE(tp,e1,NONE,e2),vars) => res
+
+  rule	Util.list_map_1(expl,is_discrete_exp,vars) => blst &
+	Util.bool_or_list(blst) => res
+	------------
+	is_discrete_exp(Exp.TUPLE(expl),vars) => res
+
+  rule	is_discrete_exp(e1,vars) => res
+	------------
+	is_discrete_exp(Exp.CAST(tp,e1),vars) => res
+
+  rule	is_discrete_exp(e,vars) => res
+	-------------------------
+	is_discrete_exp(Exp.ASUB(e,_),vars) => res
+
+  rule	is_discrete_exp(e1,vars) => b1 &
+	is_discrete_exp(e2,vars) => b2 &
+	bool_or(b1,b2) => res
+	--------------------
+	is_discrete_exp(Exp.SIZE(e1,SOME(e2)),vars) => res
+
+  rule	is_discrete_exp(e1,vars) => res
+	------------------
+	is_discrete_exp(Exp.SIZE(e1,NONE),vars) => res
+
+  rule	is_discrete_exp(e1,vars) => b1 &
+	is_discrete_exp(e2,vars) => b2 &
+	bool_or(b1,b2) => res
+	--------------------------
+	is_discrete_exp(Exp.REDUCTION(_,e1,_,e2),vars) => res
+
+  axiom	is_discrete_exp(_,vars) => false
+
 end
 
 
@@ -616,11 +757,12 @@ end
  **
  ** Helper function to find_zero_crossing.
  **)
-relation find_zero_crossings3: (Exp.Exp) => (Exp.Exp list) =
+relation find_zero_crossings3: (Exp.Exp,Variables) => (Exp.Exp list) =
   
-  rule	Exp.traverse_exp(e,collect_zero_crossings,[]) => ((_,zeroCrossings))
+  rule	Exp.traverse_exp(e,collect_zero_crossings,([],vars)) 
+	  => ((_,(zeroCrossings,_)))
 	--------------------------------------------------
-	find_zero_crossings3(e) => zeroCrossings
+	find_zero_crossings3(e,vars) => zeroCrossings
 end
 
 
@@ -1788,12 +1930,13 @@ relation dump_vars2: (Var list,int) => () =
 	Util.string_delimit_list(paths_lst,", ") => path_str &
         Dump.unparse_comment_option(comment) => comment_str &
 	print "= " & Exp.print_exp_str e => s & print s & print(" ") & print(path_str) & 
-        print "  " & print comment_str &
+        (*print "  " & print comment_str &
         
         print " former: " & print old_name &
-	int_string(indx) => indx_str & print " indx = " & print indx_str &
-	int_add(varno,1) => varno' & print ",\n" &
-    	DAE.dump_variable_attributes(dae_var_attr) &
+	int_string(indx) => indx_str & print " indx = " & print indx_str &*)
+	int_add(varno,1) => varno' & 
+	print "\n" &
+    	(*DAE.dump_variable_attributes(dae_var_attr) &*)
         dump_vars2(xs,varno') 
 	    -------------
 	dump_vars2(VAR(cr,kind,dir,_,SOME(e),_,_,_,indx,old_name,paths,dae_var_attr,comment,flow)::xs,varno)
@@ -1806,11 +1949,12 @@ relation dump_vars2: (Var list,int) => () =
 	Util.string_delimit_list(path_strs, ", ") => path_str &
         Dump.unparse_comment_option(comment) => comment_str &
 	print str & print ":" & dump_kind kind & print(" ") & print(path_str) & 
-        print " former: " & print old_name &
+        (*print " former: " & print old_name &
 	int_string(indx) => indx_str & print " indx = " & print indx_str &
 	DAE.dump_variable_attributes(dae_var_attr) &
         print "  " & print comment_str & 
-        print ",\n" &
+        print ",\n" &*)
+	print "\n" &
 	int_add(varno,1) => varno' &
  	dump_vars2(xs,varno') 
 	-------------
@@ -1935,10 +2079,9 @@ relation states_exp: (Exp.Exp,BinTree) => BinTree =
 	----------------------------------------
 	states_exp(Exp.ARRAY(_,_,expl),bt) => bt
 
-  rule	Print.print_buf "states_exp on MATRIX not impl.\n" &
-	print "states_exp on MATRIX not impl.\n"
+  rule	states_exp_matrix(m,bt) => bt
 	---------------------------------------
-	states_exp(Exp.MATRIX(_,_,_),bt) => bt
+	states_exp(Exp.MATRIX(_,_,m),bt) => bt
 	
   rule	Util.list_fold(expl,states_exp,bt) => bt 
 	----------------------------------------
@@ -1960,6 +2103,24 @@ relation states_exp: (Exp.Exp,BinTree) => BinTree =
   axiom	states_exp(_,bt) => bt
 end
 
+(** relation: states_exp_matrix
+ ** author: PA
+ ** 
+ ** Helper relation to states_exp. Deals with matrix exp list.
+ **)
+
+relation states_exp_matrix: ((Exp.Exp * bool) list list, BinTree) => BinTree =
+
+  rule	Util.list_list_map(expl,Util.tuple2_1) => expl' &
+	Util.list_flatten(expl') => expl'' &
+	Util.list_fold(expl'',states_exp,bt) => bt 
+	---------------------
+	states_exp_matrix(expl,bt) => bt
+
+  rule	Debug.fprint("failtrace","-states_exp_matrix failed\n")
+	-------------------------
+	states_exp_matrix(_,_) => fail
+end
 
 (** relation: lower_when_eqn
  **
@@ -2970,10 +3131,11 @@ relation incidence_row_exp: (Exp.Exp, Variables )
 	-------------------------
 	incidence_row_exp(Exp.RELATION(e1,_,e2),vars) => res
 	
-  rule	incidence_row_exp(e1,vars) => s1 &
-	incidence_row_exp(e2,vars) => s2 &
-	incidence_row_exp(e3,vars) => s3 &
-	Util.list_flatten([s1,s2,s3]) => res
+	(* if expressions. The conditional is not investigated since
+	 * variables are not solved from within conditions*)
+  rule	incidence_row_exp(e2,vars) => s2 &
+ 	incidence_row_exp(e3,vars) => s3 &
+	list_append(s2,s3) => res
 	-------------------------
 	incidence_row_exp(Exp.IFEXP(e1,e2,e3),vars) => res
 
@@ -2986,6 +3148,10 @@ relation incidence_row_exp: (Exp.Exp, Variables )
 	--------------------------------
 	incidence_row_exp(Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(cr,_)],_,_),vars) 
 	  => []
+
+	  (* pre(v) is considered a known variable*)
+  axiom	incidence_row_exp(Exp.CALL(Absyn.IDENT("pre"),[Exp.CREF(cr,_)],_,_),vars)
+ 	=> []
 
   rule	Util.list_map_1(expl,incidence_row_exp,vars) => lst &
 	Util.list_flatten(lst) => res
@@ -4288,6 +4454,7 @@ relation reduce_index_dummy_der: (DAELow,
 	states_in_eqns(eqns,dae,m,mt) => (states,stateindx) &
 	differentiate_eqns(dae,m,mt,nv,nf,eqns) 
 	  => (dae,m,mt,nv,nf,deqns) &	
+
 	select_dummy_state(states,stateindx,dae,m,mt) => (state,stateno) & 
 (*		Exp.print_component_ref_str state => statestr &
 	 print "Choosen dummy state: " & print statestr & print "\n" &*)
@@ -4298,7 +4465,7 @@ relation reduce_index_dummy_der: (DAELow,
 	  equations having the dummy derivative *)
 	replace_dummy_der(state,dummy_der,dae,m,mt,changedeqns) => (dae,m,mt) &
 	make_algebraic(dae,state) => dae &
-	update_incidence_matrix(dae,m,mt,changedeqns) => (m,mt) 
+	update_incidence_matrix(dae,m,mt,changedeqns) => (m,mt)  
 	---------------------------------------------
 	reduce_index_dummy_der(dae,m,mt,nv,nf,i) 
 	  => (dae,m,mt)

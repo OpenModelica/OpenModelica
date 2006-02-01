@@ -180,7 +180,8 @@ end
 
 val replaceStringPatterns = [REPLACEPATTERN(".","$point"),
                              REPLACEPATTERN("[","$leftBracket"),
-                             REPLACEPATTERN("]","$rightBracket")]
+                             REPLACEPATTERN("]","$rightBracket"),
+			     REPLACEPATTERN(",","$comma")]
 
 
 

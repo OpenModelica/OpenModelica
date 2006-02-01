@@ -101,6 +101,7 @@ module Codegen :
   relation generate_expression : (Exp.Exp, int) => (CFunction,string,int)
 
   relation c_add_statements : (CFunction, Statement list) => CFunction 
+  relation c_prepend_statements : (CFunction, Statement list) => CFunction 
   relation c_add_inits : (CFunction, InitStatement list) => CFunction 
   relation c_add_variables : (CFunction, VariableDeclaration list) => CFunction
   relation c_merge_fns : CFunction list => CFunction
@@ -200,6 +201,18 @@ relation c_add_inits : (CFunction, InitStatement list) => CFunction =
 	c_add_inits (CFUNCTION(rt,fn,rts,ads,vd,is,st,cl),nis)
 			 => CFUNCTION(rt,fn,rts,ads,vd,is',st,cl)
 
+end
+
+(** relation: c_add_statements
+ ** 
+ ** Prepends statements to a CFunction.
+ **)
+relation c_prepend_statements : (CFunction, Statement list) => CFunction =
+
+  rule	list_append(nst,st) => st'
+	--------------------------
+	c_prepend_statements (CFUNCTION(rt,fn,rts,ads,vd,is,st,cl),nst)
+			 => CFUNCTION(rt,fn,rts,ads,vd,is,st',cl)
 end
 
 (** relation: c_add_statements
@@ -334,7 +347,7 @@ end
 relation c_print_function : CFunction => () =
  
  rule	Util.string_delimit_list(ad,", ") => args_str &
-	Util.string_append_list [rt," ",fn,"(",args_str,") {"] => stmt_str &
+	Util.string_append_list [rt," ",fn,"(",args_str,")\n{"] => stmt_str &
 	
 	let i0 = 0 &
 (*	c_print_indented_list (rts,i0) => i1 & Print.print_buf "\n" & *)
@@ -355,7 +368,7 @@ relation c_print_function : CFunction => () =
 	-----------------------------------------------------------
 	c_print_function CEXTFUNCTION(rt,fn,rts,ads,_,_)
 
-  rule	Print.print_buf "# c_print_function_failed\n"
+  rule	Debug.fprint("failtrace", "# c_print_function_failed\n")
 	-----------
 	c_print_function _
 end
@@ -440,7 +453,7 @@ end
 	---------------------------------------------------
 	c_print_function_header CEXTFUNCTION(rt,fn,rts,ads,_,_)
 
-  rule	Print.print_buf "# c_print_function_header failed\n"
+  rule	Debug.fprint("failtrace", "# c_print_function_header failed\n")
 	-----------
 	c_print_function_header _
 end
@@ -609,7 +622,7 @@ relation generate_functions : DAE.DAElist => (string list (* libs*)) =
 	------------------------------
 	generate_functions (dae as DAE.DAE(elist)) => libs
 
-  rule	Print.print_buf "# generate_functions failed\n"
+  rule	Debug.fprint("failtrace", "# generate_functions failed\n")
 	--------------------------------------
 	generate_functions _  => fail
 
@@ -630,7 +643,7 @@ relation generate_function_bodies : DAE.DAElist => () =
 	------------------------------
 	generate_function_bodies DAE.DAE(elist)
 
-  rule	Print.print_buf "# generate_function_bodies failed\n"
+  rule	Debug.fprint("failtrace", "# generate_function_bodies failed\n")
 	--------------------------------------
 	generate_function_bodies _  => fail
 
@@ -653,7 +666,7 @@ relation generate_function_headers : DAE.DAElist => (string list) =
 	------------------------------
 	generate_function_headers DAE.DAE(elist) => libs
 
-  rule	Print.print_buf "# generate_function_headers failed\n"
+  rule	Debug.fprint("failtrace", "# generate_function_headers failed\n")
 	--------------------------------------
 	generate_function_headers _  => fail
 
@@ -770,8 +783,7 @@ relation generate_function : DAE.Element => CFunction list =
 	----------------------
 	generate_function DAE.COMP(n, DAE.DAE(daelist)) => cfns
 
-  rule	Print.print_buf "# generate_function failed\n" &
-	DAE.dump2 DAE.DAE([comp]) 
+  rule	Debug.fprint("failtrace","-generate_function failed\n")
 	------------------------------------
 	generate_function comp => fail	
 end
@@ -964,9 +976,7 @@ relation is_array : DAE.Element => bool =
 	-----------------------------------
 	is_array (el as DAE.VAR(cr,vk,vd,ty,_,_::_,st,fl,cl,dae_var_attr,comment)) => true
 
-  rule	Print.print_buf "#-- is_array failed\n" &
-	Print.print_buf "#-- Not a var?" &
-	DAE.dump2 DAE.DAE([el])
+  rule	Debug.fprint("failtrace","-is_array failed\n") 
 	--------------------------
 	is_array el => fail
 
@@ -1065,8 +1075,7 @@ relation generate_type : Types.Type => string =
   axiom	generate_type((Types.T_BOOL(_),_)) => "modelica_boolean"
 
 
-  rule	Print.print_buf "#-- generate_type failed: " &
-	Types.print_type ty & Print.print_buf "\n"
+  rule	Debug.fprint("failtrace","#-- generate_type failed\n")
 	--------------------------------
 	generate_type ty => fail
 
@@ -1087,8 +1096,7 @@ relation generate_type_external : Types.Type => string =
 	--------------------------------
 	generate_type_external((Types.T_ARRAY(dim,ty),_)) => str
 
-  rule	Print.print_buf "#-- generate_type_external failed: " &
-	Types.print_type ty & Print.print_buf "\n"
+  rule	Debug.fprint("failtrace","#-- generate_type_external failed\n")
 	--------------------------------
 	generate_type_external ty => fail
 
@@ -1194,9 +1202,7 @@ relation generate_simple_type : Types.Type => string =
 	-----------------------
 	generate_simple_type (t as (Types.T_ARRAY(_,_),_)) => t_str
 
-  rule	Print.print_buf "#--generate_simple_type failed " &
-	Types.print_type ty & 
-	Print.print_buf "\n"
+  rule	Debug.fprint("failtrace", "#--generate_simple_type failed\n")
 	--------------------------------------
 	generate_simple_type ty => fail
 end
@@ -1245,8 +1251,7 @@ relation generate_ext_function_args : (DAE.ExtArg list, string) => string list =
 	------------------------------------------------------------
 	generate_ext_function_args (extargs, "FORTRAN 77") => arg_strs
 
-  rule	Print.print_buf "#-- Unknown external language declaration\n" &
-	Print.print_buf lang
+  rule	Debug.fprint("failtrace","-generate_ext_function_args failed")
 	--------------------
 	generate_ext_function_args (_,lang) => fail
 
@@ -1300,7 +1305,7 @@ relation generate_ext_arg_type : (Types.Attributes, Types.Type) => string =
 	--------------------------------------------------------
 	generate_ext_arg_type (_, ty) => str
 
-  rule	Print.print_buf "#-- generate_ext_arg_type failed\n"
+  rule	Debug.fprint("failtrace", "#-- generate_ext_arg_type failed\n")
 	----------------------------------------------------
 	generate_ext_arg_type (_,_) => fail
 
@@ -1330,7 +1335,7 @@ relation generate_ext_function_arg : DAE.ExtArg => string =
 	--------------------------------
 	generate_ext_function_arg DAE.EXTARGSIZE(cr,_,_,exp) => res
 
-  rule	Print.print_buf "#-- generate_ext_function_arg failed\n"
+  rule	Debug.fprint("failtrace", "#-- generate_ext_function_arg failed\n")
 	----------------------------------------------------
 	generate_ext_function_arg (_) => fail
 
@@ -1367,7 +1372,7 @@ relation generate_ext_arg_type_f77 : (Types.Attributes, Types.Type) => string =
 	--------------------------------
 	generate_ext_arg_type_f77 (attr, ty) => str
 
-  rule	Print.print_buf "#-- generate_ext_arg_type_f77 failed\n"
+  rule	Debug.fprint("failtrace", "#-- generate_ext_arg_type_f77 failed\n")
 	----------------------------------------------------
 	generate_ext_arg_type_f77 (_,_) => fail
 
@@ -1393,7 +1398,7 @@ relation generate_ext_function_arg_f77 : DAE.ExtArg => string =
 
   axiom	generate_ext_function_arg_f77 DAE.EXTARGSIZE(_,_,_,_) => "int const *"
 
-  rule	Print.print_buf "#-- generate_ext_function_arg failed\n"
+  rule	Debug.fprint("failtrace","-generate_ext_function_arg_f77 failed\n")
 	----------------------------------------------------
 	generate_ext_function_arg_f77 (_) => fail
 
@@ -1412,7 +1417,7 @@ relation generate_ext_return_type : DAE.ExtArg => string =
 
   axiom generate_ext_return_type DAE.NOEXTARG => "void"
 
-  rule	Print.print_buf "#-- generate_ext_return_type failed\n" 
+  rule	Debug.fprint("failtrace","-generate_ext_return_type failed\n")
 	--------------------------------------------------------
 	generate_ext_return_type _ => fail
 end
@@ -1631,10 +1636,7 @@ relation generate_size_subscripts : (string, Exp.Subscript list,int)
 	generate_size_subscripts (id, Exp.INDEX(e)::r, tnr)
 	  => (cfn, var1::vars2, tnr2)
 
-  rule	Print.print_buf "# generate_size_subscripts failed\n" & 
-	Util.string_append_list ([" - ", id, "["]) => s &
-	Print.print_buf s &
-	Dump.print_list(subs,Exp.print_subscript,", ") & Print.print_buf "]\n"
+  rule	Debug.fprint("failtrace", "# generate_size_subscripts failed\n")
 	----------------------------------------------------------------------
 	generate_size_subscripts(id,subs,_) => fail
 
@@ -1666,7 +1668,7 @@ relation generate_alloc_array_f77 : (string , Types.Type) => CFunction =
 	generate_alloc_array_f77 (crefstr, ty) => cfn
 
 
-  rule	Print.print_buf "#-- generate_alloc_array_f77 failed\n"
+  rule	Debug.fprint("failtrace","#-- generate_alloc_array_f77 failed\n")
 	-------------------------------------------------------
 	generate_alloc_array_f77 (_,_) => fail
 
@@ -1899,13 +1901,27 @@ relation generate_algorithm_statement : (Algorithm.Statement, int)
 	generate_algorithm_statement (Algorithm.WHILE(e,stmts),tnr) 
 	  => (cfn,tnr3)
 
-  rule	Print.print_buf "# when statement not implemented\n"
+  rule	Debug.fprint("failtrace","# when statement not implemented\n")
 	-------------------------
 	generate_algorithm_statement (Algorithm.WHEN(_,_),_) => fail
 
-  rule	Print.print_buf "# generate_algorithm_statement failed\n"
+  rule	Debug.fprint("failtrace","# tuple assign statement not implemented\n")
 	-------------------------
-	generate_algorithm_statement (_,_) => fail
+	generate_algorithm_statement (Algorithm.TUPLE_ASSIGN(_,_,_),_) => fail
+
+  rule	generate_expression(e1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(e2,tnr1) => (cfn2,var2,tnr2) &
+	Util.string_append_list(["MODELICA_ASSERT(",var1,", ",var2,");"]) => stmt &
+	c_add_statements(cfn2,[stmt]) => cfn2' &
+	c_merge_fns([cfn1,cfn2']) => cfn 
+	-------------------------
+	generate_algorithm_statement (Algorithm.ASSERT(e1,e2),tnr) 
+	  => (cfn,tnr2)
+
+
+  rule	Debug.fprint("failtrace", "# generate_algorithm_statement failed\n")
+	-------------------------
+	generate_algorithm_statement (stmt,_) => fail
 
 end
 
@@ -1936,7 +1952,7 @@ relation generate_range_expressions : (Exp.Exp, int)
 	generate_range_expressions(Exp.RANGE(t,e1,SOME(e2),e3),tnr) 
 	  => (cfn,var1,var2,var3,tnr3)
 
-  rule	Print.print_buf "# generate_range_expressions failed\n"
+  rule	Debug.fprint("failtrace", "# generate_range_expressions failed\n")
 	-----------------------
 	generate_range_expressions(_,_) => fail
 
@@ -1969,7 +1985,7 @@ relation generate_else : (Algorithm.Else, int) => (CFunction, int) =
 	--------
 	generate_else (Algorithm.ELSE(stmts),tnr) => (cfn,tnr)
 
-  rule	Print.print_buf "# generate_else failed\n"
+  rule	Debug.fprint("failtrace", "-generate_else failed\n")
 	---------------
 	generate_else (_,_) => fail
 end
@@ -1998,7 +2014,7 @@ relation generate_vars : (DAE.Element list,DAE.Element => (),int)
 	--------------------
 	generate_vars (first :: rest,verify,tnr)  => (cfn,tnr2) 
 
-  rule	Print.print_buf "# generate_vars failed\n"
+  rule	Debug.fprint("failtrace", "# generate_vars failed\n")
 	---------------------------------
 	generate_vars (_,_,_) => fail
 	
@@ -2029,7 +2045,7 @@ relation generate_var_decls : (DAE.Element list,DAE.Element => (),int)
 	--------------------
 	generate_var_decls (first :: rest,verify,tnr)  => (cfn,tnr2) 
 
-  rule	Print.print_buf "# generate_var_decls failed\n"
+  rule	Debug.fprint("failtrace", "# generate_var_decls failed\n")
 	---------------------------------
 	generate_var_decls (_,_,_) => fail
 	
@@ -2061,7 +2077,7 @@ relation generate_var_inits : (DAE.Element list, (* elements*)
 	--------------------
 	generate_var_inits (first::rest,verify,tnr,pre)  => (cfn,tnr2) 
 
-  rule	Print.print_buf "# generate_var_inits failed\n"
+  rule	Debug.fprint("failtrace", "# generate_var_inits failed\n")
 	---------------------------------
 	generate_var_inits (_,_,_,_) => fail
 	
@@ -2139,8 +2155,7 @@ relation generate_var : (DAE.Element,int)
 				    inst_dims,start,flow,class,dae_var_attr,comment),tnr) 
 	  => (cfn'',tnr1)
 	
-  rule	Print.print_buf "# generate_var failed\n  " &
-	DAE.dump_debug_element e & Print.print_buf "\n"
+  rule	Debug.fprint("failtrace","-generate_var failed\n") 
 	-----------------------------------
 	generate_var (e,_) => fail
 end
@@ -2177,8 +2192,7 @@ relation generate_var_decl : (DAE.Element,int) => (CFunction,int) =
 	  => (cfn,tnr1)
 
 	
-  rule	Print.print_buf "# generate_var_decl failed\n  " &
-	DAE.dump_debug_element e & Print.print_buf "\n"
+  rule	Debug.fprint("failtrace", "# generate_var_decl failed\n")
 	-----------------------------------
 	generate_var_decl (e,_) => fail
 end
@@ -2212,8 +2226,7 @@ relation generate_var_init : (DAE.Element,int,string) => (CFunction,int) =
 	  => (cfn,tnr1)
 
 	
-  rule	Print.print_buf "# generate_var_init failed\n  " &
-	DAE.dump_debug_element e & Print.print_buf "\n"
+  rule	Debug.fprint("failtrace", "# generate_var_init failed\n")
 	-----------------------------------
 	generate_var_init (e,_,_) => fail
 end
@@ -2424,6 +2437,7 @@ relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 	generate_expression(Exp.IFEXP(e,then,else),tnr) 
 	  => (cfn,var,tnr3)
 
+	  (* non-tuple calls *)
   rule	generate_expressions(args,tnr) => (cfn1,vars1,tnr1) &
 	generate_return_type fn => ret_type &
 	generate_function_name fn => fn_name &
@@ -2431,7 +2445,8 @@ relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 	c_add_variables(cfn1,[tdecl]) => cfn2 &
 		
 	Util.string_delimit_list(vars1,", ") => args_str &
-	Util.string_append_list([tvar," = _",fn_name,"(", args_str,");"])
+	Util.if(builtin,"","_") => underscore & (* builtin fcns no underscore*)
+	Util.string_append_list([tvar," = ",underscore,fn_name,"(", args_str,");"])
 	  => stmt &
 
 	c_add_statements(cfn2,[stmt]) => cfn &
@@ -2442,6 +2457,7 @@ relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 	generate_expression(Exp.CALL(fn,args,false,builtin),tnr) 
 	  => (cfn,var,tnr2)
 
+	  (* tuple calls *)
   rule	generate_expressions(args,tnr) => (cfn1,vars1,tnr1) &
 	generate_return_type fn => ret_type &
 	generate_function_name fn => fn_name &
@@ -2468,7 +2484,7 @@ relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 	generate_expression(Exp.SIZE(crexp as Exp.CREF(cr,ty), SOME(dim)), tnr)
 	  => (cfn,tvar,tnr2)
 
-  rule	Print.print_buf "#-- Codegen.generate_expression: size(X) not implemented"
+  rule	Debug.fprint("failtrace","#-- Codegen.generate_expression: size(X) not implemented")
 	--------------------------------------------------------------------------
 	generate_expression(Exp.SIZE(cr, NONE), tnr) => fail
 
@@ -2523,7 +2539,7 @@ relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 	-------------------------
 	generate_expression(Exp.RANGE(t,e1,SOME(e2),e3),tnr) => (cfn,tvar,tnr4)
 
-  rule	Print.print_buf "# Codegen.generate_expression: tuple not implemented\n"
+  rule	Debug.fprint("failtrace", "# Codegen.generate_expression: tuple not implemented\n")
 	-------------------------
 	generate_expression(Exp.TUPLE(_),_) => fail
 
@@ -2537,7 +2553,7 @@ relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 	-------------------------------------
 	generate_expression(Exp.CAST(Exp.REAL,e),tnr) => (cfn,var',tnr')
 
-  rule	Print.print_buf "# Codegen.generate_expression: asub not implemented\n"
+  rule	Debug.fprint("failtrace", "# Codegen.generate_expression: asub not implemented\n")
 	-------------------------
 	generate_expression(Exp.ASUB(_,_),_) => fail
 
@@ -2583,7 +2599,7 @@ relation generate_unary : (Exp.Operator, Exp.Exp, int)
 	------------------------
 	generate_unary (Exp.UPLUS_ARR(Exp.INT), e, tnr) => (cfn, var, tnr')
 
-  rule	Print.print_buf "# unary minus for arrays not implemented\n"
+  rule	Debug.fprint("failtrace", "# unary minus for arrays not implemented\n")
 	------------------------
 	generate_unary (Exp.UMINUS_ARR(_), _, _) => fail
 end
@@ -2637,11 +2653,11 @@ relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------------------------------
 	generate_binary(e1,Exp.POW(_),e2,tnr) => (cfn,var,tnr2)
 
-  rule	Print.print_buf "# Unary minus in binary expression (internal error)"
+  rule	Debug.fprint("failtrace", "# Unary minus in binary expression (internal error)")
 	-------------------------
 	generate_binary(_,Exp.UMINUS(_),_,_) => fail
 	
-  rule	Print.print_buf "# Unary plus in binary expression (internal error)"
+  rule	Debug.fprint("failtrace", "# Unary plus in binary expression (internal error)")
 	-------------------------
 	generate_binary(_,Exp.UPLUS(_),_,_) => fail
 		
@@ -2807,19 +2823,19 @@ relation generate_binary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	generate_binary(e1,Exp.DIV_ARRAY_SCALAR(Exp.INT),e2, tnr) 
 	  => (cfn,var,tnr3)
 
-  rule	Print.print_buf "# div_array_scalar FAILING BECAUSE IT SUX\n"
+  rule	Debug.fprint("failtrace", "# div_array_scalar FAILING BECAUSE IT SUX\n")
 	-------------------------
 	generate_binary(_,Exp.DIV_ARRAY_SCALAR(_),_,_) => fail
 
-  rule	Print.print_buf "# pow_array not implemented\n"
+  rule	Debug.fprint("failtrace", "# pow_array not implemented\n")
 	-------------------------
 	generate_binary(_,Exp.POW_ARR(_),_,_) => fail
 
-  rule	Print.print_buf "# div_array_scalar not implemented\n"
+  rule	Debug.fprint("failtrace", "# div_array_scalar not implemented\n")
 	-------------------------
 	generate_binary(_,Exp.DIV_ARRAY_SCALAR(_),_,_) => fail
 
-  rule	Print.print_buf "# generate_binary failed\n"
+  rule	Debug.fprint("failtrace", "# generate_binary failed\n")
 	-------------------------
 	generate_binary(_,_,_,_) => fail
 end
@@ -2897,7 +2913,7 @@ relation generate_scalar_lhs_cref : (Exp.Type, Exp.ComponentRef, int)
 	generate_scalar_lhs_cref(t,Exp.CREF_IDENT(id,idx),tnr)
 	  => (cfn1,cref1,tnr1)
   
-  rule	Print.print_buf "# generate_scalar_lhs_cref failed\n"
+  rule	Debug.fprint("failtrace", "# generate_scalar_lhs_cref failed\n")
 	-----------------------------
 	generate_scalar_lhs_cref(_,_,_) => fail
 
@@ -3038,7 +3054,7 @@ relation generate_index_spec : (Exp.Subscript list, int)
 	---------------------------------------------
 	generate_index_spec (subs, tnr) => (cfn,spec,tnr2)
 
-  rule	Print.print_buf "# generate_index_spec failed\n"
+  rule	Debug.fprint("failtrace", "# generate_index_spec failed\n")
 	-----------------------------
 	generate_index_spec(_,_) => fail
 
@@ -3063,7 +3079,7 @@ relation generate_indices_array : (Exp.Subscript list, int)
 	---------
 	generate_indices_array (f::r, tnr) => (cfn,idxs,idxsizes,tnr2)
 
-  rule	Print.print_buf "# generate_indices_array failed\n"
+  rule	Debug.fprint("failtrace", "# generate_indices_array failed\n")
 	-----------------------------
 	generate_indices_array(_,_) => fail
 
@@ -3087,7 +3103,7 @@ relation generate_indices : (Exp.Subscript list, int)
 	---------
 	generate_indices (f::r, tnr) => (cfn,idxs,tnr2)
 
-  rule	Print.print_buf "# generate_indices failed\n"
+  rule	Debug.fprint("failtrace", "# generate_indices failed\n")
 	-----------------------------
 	generate_indices(_,_) => fail
 
@@ -3115,7 +3131,7 @@ relation generate_index_array : (Exp.Subscript, int)
 	  => (c_empty_function,idx,idxsize,tnr)
 
 	  
-  rule	Print.print_buf "# generate_index_array failed\n"
+  rule	Debug.fprint("failtrace", "# generate_index_array failed\n")
 	-----------------------------
 	generate_index_array(_,_) => fail
 
@@ -3133,7 +3149,7 @@ relation generate_index : (Exp.Subscript, int)
 	------------------------------------
 	generate_index(Exp.INDEX(e), tnr) => (cfn,var1,tnr1)
 
-  rule	Print.print_buf "# generate_index failed\n"
+  rule	Debug.fprint("failtrace", "# generate_index failed\n")
 	-----------------------------
 	generate_index(_,_) => fail
 
@@ -3200,7 +3216,7 @@ relation generate_lbinary : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	generate_lbinary (e1,Exp.OR,e2,tnr) => (cfn, var, tnr2)
 
 
-  rule	Print.print_buf "# generate_lbinary failed\n"
+  rule	Debug.fprint("failtrace", "# generate_lbinary failed\n")
 	-----------------------------
 	generate_lbinary (_,_,_,_) => fail
 
@@ -3225,7 +3241,7 @@ relation generate_lunary : (Exp.Operator, Exp.Exp, int)
 	generate_lunary (Exp.NOT,e,tnr) => (cfn1, var, tnr1)
 
 
-  rule	Print.print_buf "# generate_lbinary failed\n"
+  rule	Debug.fprint("failtrace", "# generate_lbinary failed\n")
 	-----------------------------
 	generate_lunary (_,_,_) => fail
 
@@ -3251,7 +3267,7 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------
 	generate_relation (e1,Exp.LESS(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
 
-  rule	Print.print_buf "# string comparison not supported\n"
+  rule	Print.print_error_buf "# string comparison not supported\n"
 	-------
 	generate_relation (e1,Exp.LESS(Exp.STRING),e2,tnr) => fail
 
@@ -3276,7 +3292,7 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------
 	generate_relation (e1,Exp.GREATER(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
 
-  rule	Print.print_buf "# string comparison not supported\n"
+  rule	Print.print_error_buf "# string comparison not supported\n"
 	-------
 	generate_relation (e1,Exp.GREATER(Exp.STRING),e2,tnr) => fail
 
@@ -3301,7 +3317,7 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------
 	generate_relation (e1,Exp.LESSEQ(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
 
-  rule	Print.print_buf "# string comparison not supported\n"
+  rule	Print.print_error_buf "# string comparison not supported\n"
 	-------
 	generate_relation (e1,Exp.LESSEQ(Exp.STRING),e2,tnr) => fail
 
@@ -3326,7 +3342,7 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------
 	generate_relation (e1,Exp.GREATEREQ(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
 
-  rule	Print.print_buf "# string comparison not supported\n"
+  rule	Print.print_error_buf "# string comparison not supported\n"
 	-------
 	generate_relation (e1,Exp.GREATEREQ(Exp.STRING),e2,tnr) => fail
 
@@ -3363,7 +3379,7 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------
 	generate_relation (e1,Exp.EQUAL(Exp.INT),e2,tnr) => (cfn, var, tnr2)
 
-  rule	Print.print_buf "# Reals can't be compared with ==\n"
+  rule	Print.print_error_buf "# Reals can't be compared with ==\n"
 	-------
 	generate_relation (e1,Exp.EQUAL(Exp.REAL),e2,tnr) => fail
 
@@ -3375,7 +3391,7 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------
 	generate_relation (e1,Exp.NEQUAL(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
 
-  rule	Print.print_buf "# string comparison not supported\n"
+  rule	Print.print_error_buf "# string comparison not supported\n"
 	-------
 	generate_relation (e1,Exp.NEQUAL(Exp.STRING),e2,tnr) => fail
 
@@ -3386,12 +3402,12 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------
 	generate_relation (e1,Exp.NEQUAL(Exp.INT),e2,tnr) => (cfn, var, tnr2)
 
-  rule	Print.print_buf "# Reals can't be compared with <>\n"
+  rule	Debug.fprint("failtrace", "# Reals can't be compared with <>\n")
 	-------
 	generate_relation (e1,Exp.NEQUAL(Exp.REAL),e2,tnr) => fail
 
 
-  rule	Print.print_buf "# generate_relation failed\n"
+  rule	Debug.fprint("failtrace", "# generate_relation failed\n")
 	-----------------------------
 	generate_relation (_,_,_,_) => fail
 
@@ -3631,7 +3647,7 @@ end
 	generate_external_wrapper_call(fnname,outvars,retstr,invars,
 				       extdecl as DAE.EXTERNALDECL(extfnname,extargs,extretarg,lang,ann),bivars,(Types.T_FUNCTION(args,restype),_)) => cfn
 
-  rule	Print.print_buf "#-- generate_external_wrapper_call failed\n"
+  rule	Debug.fprint("failtrace", "#-- generate_external_wrapper_call failed\n")
 	----------------------------------------------------------------
 	generate_external_wrapper_call (_,_,_,_,_,_,_) => fail
 
@@ -3711,7 +3727,7 @@ relation generate_read_call_write_external : (string, (* function name *)
 	------------------------------------------------------
 	generate_read_call_write_external(fnname,outvars,retstr,invars,extdecl,bivars) => cfn
 
-  rule	Print.print_buf "#-- generate_read_call_write_external failed\n"
+  rule	Debug.fprint("failtrace", "#-- generate_read_call_write_external failed\n")
 	----------------------------------------------------------------
 	generate_read_call_write_external (_,_,_,_,_,_) => fail
 
@@ -3737,7 +3753,7 @@ relation generate_ext_call : (DAE.Element list, DAE.ExternalDecl, int) => (CFunc
 	-------------------------------------------------------------
 	generate_ext_call (vars, extdecl as DAE.EXTERNALDECL(n,arglist,retarg,lang,ann), tnr) => (extcall,tnr'')
 
-  rule	Print.print_buf "#-- generate_ext_call failed\n"
+  rule	Debug.fprint("failtrace", "#-- generate_ext_call failed\n")
 	------------------------------------------------
 	generate_ext_call (_,_,_) => fail
 end
@@ -3761,7 +3777,7 @@ relation generate_extcall_vardecls : (DAE.Element list, DAE.ExtArg list,
 	-----------------------------------------------------------------
 	generate_extcall_vardecls (vars, args, retarg, "FORTRAN 77",tnr) => (res, args', tnr'')
 
-  rule	Print.print_buf "#-- generate_extcall_vardecls failed\n"
+  rule	Debug.fprint("failtrace", "#-- generate_extcall_vardecls failed\n")
 	-------------------------------------------------------
 	generate_extcall_vardecls (_,_,_,_,_) => fail
 
@@ -3814,7 +3830,7 @@ relation generate_extcall_vardecls2 : (DAE.ExtArg list, DAE.ExtArg) => CFunction
 	---------------------------------------------
 	generate_extcall_vardecls2 (var::rest, retarg) => res
 
-  rule	Print.print_buf "#-- generate_extcall_vardecls2 failed\n"
+  rule	Debug.fprint("failtrace", "#-- generate_extcall_vardecls2 failed\n")
 	-------------------------------------------------------
 	generate_extcall_vardecls2 (_,_) => fail
 
@@ -3900,7 +3916,7 @@ relation generate_extcall_vardecl : DAE.ExtArg => CFunction =
   axiom	generate_extcall_vardecl DAE.EXTARGSIZE(_,_,_,_) => c_empty_function
 
 
-  rule	Print.print_buf "#-- generate_extcall_vardecl failed\n"
+  rule	Debug.fprint("failtrace", "#-- generate_extcall_vardecl failed\n")
 	-------------------------------------------------------
 	generate_extcall_vardecl _ => fail
 
@@ -3927,7 +3943,7 @@ relation generate_extcall_vardecls2_f77 : (DAE.ExtArg list, DAE.ExtArg, int)
 	---------------------------------------------
 	generate_extcall_vardecls2_f77 (var::rest, retarg, tnr) => (res, var'::varr, tnr'')
 
-  rule	Print.print_buf "#-- generate_extcall_vardecls2_f77 failed\n"
+  rule	Debug.fprint("failtrace","#-- generate_extcall_vardecls2_f77 failed\n")
 	-------------------------------------------------------
 	generate_extcall_vardecls2_f77 (_,_,_) => fail
 
@@ -3946,9 +3962,7 @@ relation generate_c_to_f77_converter : Types.Type => string =
 	---------------------------------------------------------------------
 	generate_c_to_f77_converter (ty as (Types.T_ARRAY(_,_),_)) => str
 
-  rule	Print.print_buf "#-- generate_c_to_f77_converter failed\n" &
-	Print.print_buf "#-- Not an array?\n" &
-	Types.print_type ty
+  rule	Debug.fprint("failtrace", "#-- generate_c_to_f77_converter failed\n")
 	---------------------------------------------
 	generate_c_to_f77_converter ty => fail
 
@@ -3967,8 +3981,7 @@ relation generate_f77_to_c_converter : Types.Type => string =
 	---------------------------------------------------------------------
 	generate_f77_to_c_converter (ty as (Types.T_ARRAY(_,_),_)) => str
 
-  rule	Print.print_buf "#-- generate_f77_to_c_converter failed\n" &
-	Print.print_buf "#-- Not an array?\n"
+  rule	Debug.fprint("failtrace", "#-- generate_f77_to_c_converter failed\n")
 	---------------------------------------------
 	generate_f77_to_c_converter _ => fail
 
@@ -4087,9 +4100,7 @@ relation generate_extcall_vardecl_f77 : (DAE.ExtArg,int) => (CFunction, DAE.ExtA
 	generate_extcall_vardecl_f77 (arg, tnr)  => (res, newarg, tnr')
 
 
-  rule	Print.print_buf "#-- generate_extcall_vardecl_f77 failed\n#-- " &
-	DAE.dump_ext_arg_str arg => argstr &
-	Print.print_buf argstr & Print.print_buf "\n"
+  rule	Debug.fprint("failtrace","#-- generate_extcall_vardecl_f77 failed\n")
 	-------------------------------------------------------
 	generate_extcall_vardecl_f77 (arg,_) => fail
 
@@ -4120,7 +4131,7 @@ relation generate_ext_call_fcall : (Ident, DAE.ExtArg list,
 	---------------------------------------------
 	generate_ext_call_fcall (fnname, args, DAE.EXTARG(cr,_,ty), lang) => res
 
-  rule	Print.print_buf "#-- generate_ext_call_fcall failed\n"
+  rule	Debug.fprint("failtrace", "#-- generate_ext_call_fcall failed\n")
 	------------------------------------------------------
 	generate_ext_call_fcall (_,_,_,_) => fail
 
@@ -4145,7 +4156,7 @@ relation generate_ext_call_fcall2 : (Ident, DAE.ExtArg list, string) => string =
 	-----------------------------------------------
 	generate_ext_call_fcall2 (n, args, "FORTRAN 77") => res
 
-  rule	Print.print_buf "#-- generate_ext_call_fcall2 failed\n"
+  rule	Debug.fprint("failtrace", "#-- generate_ext_call_fcall2 failed\n")
 	------------------------------------------------------
 	generate_ext_call_fcall2 (_,_,_) => fail
 
@@ -4211,9 +4222,7 @@ relation generate_ext_call_fcall_arg : DAE.ExtArg => string =
 	generate_ext_call_fcall_arg (arg as DAE.EXTARGSIZE(_,_,_,_)) => str
 
 
-  rule	Print.print_buf "#-- generate_ext_call_fcall_arg failed\n" &
-	DAE.dump_ext_arg_str arg => str &
-	Print.print_buf str & Print.print_buf "\n"
+  rule	Debug.fprint("failtrace", "#-- generate_ext_call_fcall_arg failed\n")
 	----------------------------------------------------------
 	generate_ext_call_fcall_arg arg => fail
 
@@ -4292,10 +4301,7 @@ relation generate_ext_call_fcall_arg_f77 : DAE.ExtArg => string =
 	generate_ext_call_fcall_arg_f77 DAE.EXTARGSIZE(cref, attr, ty, dim) => res
 
 
-  rule	Print.print_buf "#-- generate_ext_call_fcall_arg_f77 failed\n#-- " &
-	DAE.dump_ext_arg_str arg => str &
-	Print.print_buf str &
-	Print.print_buf "\n"
+  rule	Debug.fprint("failtrace", "#-- generate_ext_call_fcall_arg_f77 failed\n")
 	----------------------------------------------------------
 	generate_ext_call_fcall_arg_f77 arg => fail
 
@@ -4324,7 +4330,7 @@ relation generate_array_size_call : DAE.ExtArg => string =
 	-----------------------------
 	generate_array_size_call DAE.EXTARGSIZE(cr, attr, ty, dim) => str
 
-  rule	Print.print_buf "#-- generate_array_size_call failed\n#-- Not a DAE.EXTARGSIZE?\n"
+  rule	Debug.fprint("failtrace", "#-- generate_array_size_call failed\n#-- Not a DAE.EXTARGSIZE?\n")
 	----------------------------------------------------------------------------------
 	generate_array_size_call _ => fail
 	
@@ -4353,7 +4359,7 @@ relation generate_ext_array_size_call : DAE.ExtArg => string =
 	-----------------------------
 	generate_ext_array_size_call DAE.EXTARGSIZE(cr, attr, ty, dim) => str
 
-  rule	Print.print_buf "#-- generate_array_size_call failed\n#-- Not a DAE.EXTARGSIZE?\n"
+  rule  Debug.fprint("failtrace","#-- generate_array_size_call failed\n#-- Not a DAE.EXTARGSIZE?\n")
 	----------------------------------------------------------------------------------
 	generate_ext_array_size_call _ => fail
 	
@@ -4432,7 +4438,7 @@ relation generate_extcall_varcopy : (DAE.ExtArg list,
 	--------------------------------------------------
 	generate_extcall_varcopy (var::rest, retarg, lang as "FORTRAN 77", tnr) => (res,tnr')
 
-  rule	Print.print_buf "#-- generate_extcall_varcopy failed\n"
+  rule	Debug.fprint("failtrace", "#-- generate_extcall_varcopy failed\n")
 	-------------------------------------------------------
 	generate_extcall_varcopy (_,_,_,_) => fail
 
@@ -4463,7 +4469,7 @@ relation generate_extcall_varcopy_single : DAE.ExtArg => CFunction =
 
   axiom	generate_extcall_varcopy_single DAE.EXTARG(cref, attr, ty) => c_empty_function
 
-  rule	Print.print_buf "#-- generate_extcall_varcopy_single failed\n"
+  rule	Debug.fprint("failtrace", "#-- generate_extcall_varcopy_single failed\n")
 	-------------------------------------------------------
 	generate_extcall_varcopy_single _ => fail
 
@@ -4528,7 +4534,7 @@ relation generate_extcall_varcopy_single_f77 : DAE.ExtArg => CFunction =
 
   axiom	generate_extcall_varcopy_single_f77 DAE.EXTARG(cref, attr, ty) => c_empty_function
 
-  rule	Print.print_buf "#-- generate_extcall_varcopy_single_f77 failed\n"
+  rule	Debug.fprint("failtrace", "#-- generate_extcall_varcopy_single_f77 failed\n")
 	-------------------------------------------------------
 	generate_extcall_varcopy_single_f77 _ => fail
 

@@ -265,6 +265,7 @@ with "Derive.rml"
 with "System.rml" 
 with "Dump.rml"
 with "Error.rml"
+with "Debug.rml"
 
 val rconstone = RCONST(1.0)
 
@@ -3063,7 +3064,7 @@ relation print_exp2 : (Exp,int) => () =
 	Print.print_buf " then " & print_exp2(t,0) &
 	Print.print_buf " else " & print_exp2(f,0)
 	----------------------------
-	print_exp2(IFEXP(c,t,f),_)
+	print_exp2(IFEXP(c,t,f),pri1)
 
   rule	Absyn.path_string(fcn) => fs &
 	Print.print_buf fs & Print.print_buf "(" & print_list(args,print_exp,",") & Print.print_buf ")"
@@ -3675,13 +3676,9 @@ relation print_exp2_str : (Exp,int) => string =
   rule	print_exp2_str(c,0) => ifstr &
 	print_exp2_str(t,0) => thenstr &
 	print_exp2_str(f,0) => elsestr &
-	string_append ("if ", ifstr) => s &
-	string_append (s, " then ") => s' &
-	string_append (s', thenstr) => s'' &
-	string_append (s'', " else ") => s''' &
-	string_append (s''', elsestr) => s''''
+	Util.string_append_list(["if ", ifstr," then ",thenstr," else ",elsestr]) => res
 	----------------------------
-	print_exp2_str(IFEXP(c,t,f),_) => s''''
+	print_exp2_str(IFEXP(c,t,f),_) => res
 
   rule	Absyn.path_string(fcn) => fs &
 	print_list_str(args,print_exp_str,",") => argstr &
@@ -4120,10 +4117,10 @@ relation replace_exp: (Exp (*expr*), Exp(* source expr*),Exp(*target expr*))
 	replace_exp(ARRAY(tp,c,expl),source,target) 
 	  => (ARRAY(tp,c,expl'),cnt')
 
-  rule	print "replace_exp for matrix not impl." 
+  rule	replace_exp_matrix(expl,source,target) => (expl',cnt)
 	-----------------------------------------------
-	replace_exp(MATRIX(a,b,c),source,target) 
-	  => (MATRIX(a,b,c),0)
+	replace_exp(MATRIX(t,b,expl),source,target) 
+	  => (MATRIX(t,b,expl'),cnt)
 
   rule	replace_exp(e1,source,target) => (e1',c1) &
 	replace_exp(e2,source,target) => (e2',c2) &
@@ -4182,6 +4179,45 @@ relation replace_exp: (Exp (*expr*), Exp(* source expr*),Exp(*target expr*))
 	  => (REDUCTION(p,e',id,r'),c)
 
  axiom	replace_exp(e,s,_) => (e,0)
+end
+
+(** relation: replace_exp_matrix
+ ** author: PA
+ **
+ ** Helper relation to replace_exp, traverses Matrix expression list.
+ **)
+
+relation replace_exp_matrix: ( (Exp*bool) list list, Exp, Exp) => ((Exp* bool) list list,int) =
+
+  axiom	replace_exp_matrix([],str,dst) => ([],0)
+
+  rule	replace_exp_matrix2(e,src,dst) => (e',c1) &
+	replace_exp_matrix(es,src,dst) => (es',c2) &
+	int_add(c1,c2) => c
+	---------------------
+	replace_exp_matrix(e::es,src,dst) => (e'::es',c)
+
+  rule	Debug.fprint("failtrace","-replace_exp_matrix failed\n")
+	----------------------
+	replace_exp_matrix(_,_,_) => fail
+end
+
+(** relation: replace_exp_matrix2
+ ** author: PA
+ **
+ ** Helper relation to replace_exp_matrix
+ **)
+
+relation replace_exp_matrix2: ((Exp*bool) list, Exp, Exp) 
+	  => ((Exp*bool)  list,int) =
+
+  axiom	replace_exp_matrix2([],_,_) => ([],0)
+
+  rule	replace_exp_matrix2(es,src,dst) => (es',c1) &
+	replace_exp(e,src,dst) => (e',c2) &
+	int_add(c1,c2) => c
+	---------------
+	replace_exp_matrix2((e,b)::es,src,dst) => ((e',b)::es',c)
 end
 
 (** relation: stringify_component_ref
@@ -4255,9 +4291,9 @@ relation stringify_crefs: Exp => Exp =
 	-----------------------
 	stringify_crefs(ARRAY(t,b,expl)) => ARRAY(t,b,expl')
 	
-  rule	print "stringify_crefs on MATRIX not impl. yet\n"
+  rule	stringify_crefs_matrix(expl) => expl'
 	-----------------------
-	stringify_crefs(e as MATRIX(t,b,expl)) => e
+	stringify_crefs(e as MATRIX(t,b,expl)) => MATRIX(t,b,expl')
 
   rule	stringify_crefs(e1) => e1' &
 	stringify_crefs(e2) => e2' &
@@ -4302,6 +4338,40 @@ relation stringify_crefs: Exp => Exp =
   axiom	stringify_crefs END => END
   axiom	stringify_crefs (e) => e
 end
+
+(** relation: stringify_crefs_matrix
+ ** author: PA
+ **
+ ** Helper relation to stringify_crefs. Handles matrix expresion list.
+ **)
+
+relation stringify_crefs_matrix: (Exp * bool) list list 
+	  => (Exp * bool) list list = 
+
+  axiom	stringify_crefs_matrix([]) => []
+
+  rule	stringify_crefs_matrix2(e) => e' &
+	stringify_crefs_matrix(es) => es' 
+	-----------------
+	stringify_crefs_matrix(e::es) => e'::es'
+end
+
+(** relation: stringify_crefs_matrix2
+ ** author: PA
+ **
+ ** Helper relation to stringify_crefs_matrix
+ **)
+
+relation stringify_crefs_matrix2: (Exp * bool) list 
+	  => (Exp * bool)  list = 
+  axiom	stringify_crefs_matrix2([]) => []
+
+  rule	stringify_crefs(e) => e' &
+	stringify_crefs_matrix2(es) => es' 
+	---------------------------
+	stringify_crefs_matrix2((e,b)::es) => ((e',b)::es')
+end
+
 
 (** relation: dump_exp_graphviz
  **
@@ -4686,13 +4756,8 @@ relation solve : (Exp, (* lhs *)
 	-------------------------------------
 	solve (lhs,rhs, cr as CREF(_,_)) => res'
 	
-  rule	Print.print_buf "solve failed: Not an equation or trying to solve for\n" &
-	Print.print_buf "a non-component-reference, or a non-linear equation:\n" &
-	print_exp e1 &
-	Print.print_buf "\n" &
-	print_exp e2 &
-	Print.print_buf "\n"
-        ----------------------------------
+  rule	Debug.fprint("failtrace", "solve failed\n")
+        ---------------------------
 	solve (e1, e2, e3) => fail
 end
 
@@ -4829,6 +4894,13 @@ relation exp_contains : (Exp, Exp) => bool =
 	----------------------------
 	exp_contains (ARRAY(_,_,explist),cr) => res
 
+  rule	Util.list_flatten(expl) => expl' &
+	Util.list_map(expl',Util.tuple2_1) => expl'' &
+	Util.list_map_1(expl'', exp_contains,cr) => reslist &
+	Util.bool_or_list reslist => res
+	----------------------------
+	exp_contains (MATRIX(_,_,expl),cr) => res
+
   rule	cref_equal (cr1, cr2) => res
 	---------------------------
 	exp_contains (c1 as CREF(cr1,_), c2 as CREF(cr2,_)) => res
@@ -4866,6 +4938,14 @@ relation exp_contains : (Exp, Exp) => bool =
 	---------------------------------------------
 	exp_contains (IFEXP(c,t,f), cr as CREF(_,_)) => res
 
+
+	(* pre(v) does not contain variable v *)
+  axiom	exp_contains (CALL(Absyn.IDENT("pre"), [cref],_,_), cr) => false
+
+	(* special rule for no arguments*)
+  axiom	exp_contains(CALL(_,[],_,_),_) => false 
+
+	(* general case for arguments *)
   rule	Util.list_map_1 (args, exp_contains, cr) => reslist &
 	Util.bool_or_list reslist => res
 	--------------------------------
@@ -4884,12 +4964,10 @@ relation exp_contains : (Exp, Exp) => bool =
 	---------------------------------------
 	exp_contains (ASUB(e,i), cr as CREF(_,_)) => res
 
-
-  rule	Print.print_buf "exp_contains failed: When looking for \"" &
-	print_exp  cr &
-	Print.print_buf "\" in \"" &
-	print_exp  e &
-	Print.print_buf "\n"
+  rule	Debug.fprint("failtrace","-exp_contains failed\n") &
+	print_exp_str e => s & 
+	Util.string_append_list(["exp = ",s, "\n"]) => str &
+	Debug.fprint("failtrace",str) 
         ----------------------------------
 	exp_contains (e, cr) => fail
 end
@@ -4954,9 +5032,12 @@ relation get_cref_from_exp: ( Exp ) => ComponentRef list =
 	--------------------------------------------
 	get_cref_from_exp(ARRAY(_,_,expl)) => res
 
-  rule	print "get_cref_from_exp MATRIX not impl. yet\n" 
+  rule  Util.list_flatten(expl) => expl' &
+	Util.list_map(expl',Util.tuple2_1) => expl'' &
+	Util.list_map(expl'',get_cref_from_exp) => res1 &
+	Util.list_flatten(res1) => res
 	----------------
-	get_cref_from_exp(MATRIX(_,_,_)) => []
+	get_cref_from_exp(MATRIX(_,_,expl)) => res
 
   rule	get_cref_from_exp(e1) => l1 &
 	get_cref_from_exp(e2) => l2 &

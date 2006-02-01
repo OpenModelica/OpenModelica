@@ -69,6 +69,9 @@ module Prefix:
 			   Prefix (* next prefix *)
 
   relation prefix_add : (Exp.Ident, int list, Prefix) => Prefix
+
+  relation prefix_last:(Prefix) => Prefix 
+  relation prefix_first:(Prefix) => Prefix 
   relation prefix_to_cref : Prefix => Exp.ComponentRef
   relation prefix_cref : (Prefix, Exp.ComponentRef) => Exp.ComponentRef
   relation prefix_cref_list : (Prefix, Exp.ComponentRef list) =>
@@ -145,6 +148,26 @@ relation prefix_add : (Exp.Ident, int list, Prefix) => Prefix =
 
   axiom prefix_add(i,s,p) => PRE(i,s,p)
 
+end
+
+relation prefix_first:(Prefix) => Prefix = 
+
+  axiom	prefix_first(PRE(a,b,c)) => PRE(a,b,NOPRE)
+
+end
+
+(** relation: prefix_last
+ **
+ ** Returns the last NONPRE Prefix of a prefix
+**)
+
+relation prefix_last: Prefix => Prefix =
+
+  axiom	prefix_last(p as PRE(_,_,NOPRE)) => p
+
+  rule	prefix_last(p) => res
+	-----------------------
+	prefix_last(PRE(_,_,p)) => res
 end
 
 (** relation: prefix_path

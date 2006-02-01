@@ -59,6 +59,10 @@ typedef modelica_integer size_real_array_rettype;
 typedef modelica_integer size_integer_array_rettype;
 
 typedef modelica_real cos_rettype;
+typedef modelica_real sin_rettype;
+typedef modelica_real pre_rettype;
+typedef modelica_real edge_rettype;
+typedef modelica_real initial_rettype;
 #if defined(__cplusplus)
 }
 #endif

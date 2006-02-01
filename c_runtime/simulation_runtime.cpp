@@ -38,6 +38,8 @@ long numpoints; // the number of points allocated for in data array
 long actual_points=0; // the number of actual points saved
 double t;
 
+int init; 
+
 double* h_saved;
 double* x_saved;
 double* xd_saved;
@@ -93,7 +95,6 @@ double Sample(double t, double start ,double interval)
 
 double sample(double start ,double interval)
 {
-  double sloop = 4.0/interval;
   int count = int((t - start) / interval);
   if (t < (start-interval*0.25)) return 0;
   if (( t-start-count*interval) < 0) return 0;
@@ -193,8 +194,10 @@ int euler_main(int argc,char** argv) {
   
   // Calculate initial values from (fixed) start attributes and intial equation
   // sections
+  init=1;
   initial_function(x,xd,y,p,nx,ny,np);
-  
+  init=0;
+
   int npts_per_result=int((stop-start)/(step*(numpoints-2)));
   long actual_points =0 ; // the number of actual points saved
   int pt=0;
