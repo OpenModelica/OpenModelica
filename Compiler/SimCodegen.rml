@@ -59,8 +59,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ** RCS: $Id$
  **
  **)
-
-
 module SimCodegen:
 
   with "DAE.rml"
@@ -139,7 +137,6 @@ with "Error.rml"
  ** This relation generates a makefile for the simulation code.
  ** It uses OPENMODELICAHOME as a reference to find c_runtime with libraries.
  **)
-
 relation generate_makefile: (string, (*filename*)
 			     string, (* classname *)
 			     string list (* libs *)
@@ -169,7 +166,6 @@ end
  ** g(\dot{x},x,y,t) = 0.
  ** and on explicit ode form, \dot{x}=f(x,y,t)
  **)
-
 relation generate_simulation_code: (DAE.DAElist,
 				  DAELow.DAELow, 		      
 				  int vector, (* ass1 *)
@@ -370,10 +366,10 @@ relation generate_global_bufs: () => string =
 end
 
 (**
-**relation generate_macros
-**generates the macros that are used in the code
-**author: x02lucpo
-**)
+ **relation generate_macros
+ **generates the macros that are used in the code
+ **author: x02lucpo
+ **)
 relation generate_macros:() => string =
         
   rule  Util.string_append_list(["#define DIVISION(a,b,c) ((b != 0) ? a / b : a / division_error(b,c))\n",
@@ -399,7 +395,6 @@ end
  **
  ** Generates an array of the original variable names.
  **)
-
 relation generate_var_names_and_comments:(DAELow.DAELow,
                                           int, (*nx*) 
                                           int, (*ny*)
@@ -577,7 +572,6 @@ end
  **
  ** Helper relation to generate_var_names_and_comments2
  **)
-                   
  relation generate_var_names_and_comments2:(DAELow.Var list, 
                                             (*names,comments,numberof*)
                                             string array,string array,int,(* state*)
@@ -740,7 +734,6 @@ end
  ** Checks and generates a comment and input for a input variable
  ** author x02lucpo
  **)
-
  relation generate_var_names_and_comments_inputs:(DAELow.Var, (* the variable to checked *)
                                                   string list,
                                                   string list,
@@ -1037,8 +1030,7 @@ end
  **
  ** This relation adds citation chars to an empty string. Non empty strings
  ** are returned as is.
-**)
-		 
+ **)	 
 relation generate_empty_string: (string) => string =
 
   axiom	generate_empty_string("") => "\"\""
@@ -1054,8 +1046,7 @@ end
  **
  **  Generates the input_function for all the variables
  **  that are INPUT and on top model
-**)
-
+ **)
 relation generate_input_function_code:(DAELow.DAELow) => (string,int) = 
 
   rule  DAELow.var_list(knvars) => knvars_lst &
@@ -1082,7 +1073,6 @@ end
  **
  ** Helper relation to generate_input_function_code
  **)
-
 relation generate_input_function_code2:(DAELow.Var list,int) => string list =
 
   axiom  generate_input_function_code2([],int) => []
@@ -1110,8 +1100,7 @@ end
  **
  **  Generates the output_function for all the variables
  **  that are OUTPUT and on top model
-**)
-
+ **)
 relation generate_output_function_code:(DAELow.DAELow) => (string,int) = 
 
   rule  DAELow.var_list(knvars) => knvars_lst &
@@ -1140,7 +1129,6 @@ end
  **
  ** Helper relation to generate_output_function_code
  **)
-
 relation generate_output_function_code2:(DAELow.Var list,int) => string list =
 
   axiom  generate_output_function_code2([],int) => []
@@ -1171,7 +1159,6 @@ end
  ** Information is gathered from the start and fixed attributes of variables
  ** and from initial equations.
  **)
-
 relation generate_initial_value_code:(DAELow.DAELow) => string =
 
 
@@ -1266,7 +1253,6 @@ end
  ** parameters (as expressions). For instance, parameter Real m=2*n+1;
  ** Those are calculated once in the initial function.
  **)
-
 relation generate_parameter_assignments: DAELow.Var list => CFunction =
 
   axiom	generate_parameter_assignments ([]) => Codegen.c_empty_function
@@ -1294,7 +1280,6 @@ end
  ** fixed set to true is converted by this relation. Fixed set to false
  ** means an initial guess, and is not considered here.
  **)
-
 relation generate_initial_equations_from_start: DAELow.Var list 
 	  => DAELow.Equation list =
 
@@ -1316,7 +1301,6 @@ end
 (** relation: generate_initial_assignments_from_start
  **
  **)
-
 relation generate_initial_assignments_from_start: DAELow.Var list 
 	  => CFunction =
 
@@ -1349,7 +1333,7 @@ end
  ** Outputs simulation code from a DAELow. 
  ** The state calculations are generated on explicit ode form: 
  ** \dot{x} := f(x,y,t)
-**)
+ **)
 relation generate_ode_code: (DAELow.DAELow, 
 			     int list list, (* components*)
 			     int vector, (* ass1 *)
@@ -1557,7 +1541,7 @@ end
 
 (** relation:  generate_event_checking_code
  ** 
-**)
+ **)
 relation generate_event_checking_code: (DAELow.DAELow, 
 			     int list list, (* components*)
 			     int vector, (* ass1 *)
@@ -1589,7 +1573,7 @@ end
  **
  ** Generates the simulation code for the ode code.
  ** 
-**)
+ **)
 relation generate_ode_blocks:(DAELow.DAELow, 
 			      int vector, int vector, int list list,
 			      int (* cg var_id*)) 
@@ -1762,7 +1746,6 @@ end
  ** Helper relation to generate_single_array_eqn_code. 
  ** Currenlty solves only solved equation on form v = foo(...)
  **)
-		   
 relation generate_single_array_eqn_code2:(Exp.ComponentRef, (* origname*)
 					  Exp.ComponentRef, (* firsteltname*)
 					  Exp.Exp (* lhs*),
@@ -1829,8 +1812,7 @@ end
  ** Returns the component ref v if expression is on form
  **  {v[1],v[2],...v[n]}  for some n.
  ** TODO: implement for 2D as well.
-**)
-
+ **)
 relation get_vectorized_cref_from_exp: Exp.Exp => Exp.ComponentRef =
 
   rule	Util.list_map(expl,Exp.exp_cref) => (crefs as cr::_) & 
@@ -1848,7 +1830,6 @@ end
  ** 
  ** Checks if a dae (subsystem) consists of a single array equation.
  **)
-
 relation single_array_equation: DAELow.DAELow => () =
 
   rule	DAELow.equation_list(eqnarr) => eqn_lst &
@@ -1872,7 +1853,6 @@ end
  **
  ** Generates residual statements for nonlinear equation systems.
  **)
-
 relation generate_ode_system2_nonlinear_residuals:  (Exp.ComponentRef list,
 						     DAELow.Equation list,
 						     int) (* cg var_id*)
@@ -1923,7 +1903,6 @@ end
  ** nonlinear equation system. They should be replaced by x[index], i.e.
  ** an unique index in the x vector.
  **)
-
 relation make_residual_replacements:(Exp.ComponentRef list) => 
 	VarTransform.VariableReplacements =
 
@@ -1938,7 +1917,6 @@ end
  ** 
  ** Helper relation to make_residual_replacements
  **)
-
 relation make_residual_replacements2:(VarTransform.VariableReplacements,
 				      Exp.ComponentRef list,
 				      int) => 
@@ -1962,7 +1940,6 @@ end
  ** Generates code for setting the values for the x vector when solving 
  ** nonlinear equation systems.
  **)
-
 relation generate_ode_system2_nonlinear_setvector: (Exp.ComponentRef list,
 						    int (* index iterator *),
 						    int (* cg var_id*)) 
@@ -1989,11 +1966,9 @@ end
  **
  ** Generates the call to the nonlinear equation solver.
  **)
-	    
 relation generate_ode_system2_nonlinear_call: (string (* residual func id *),
 					       int (* cg var_id*)) 
 	  => (CFunction,int (* cg var_id*)) =
-
   rule	Util.string_append_list(["hybrd_(residualFunc",func_id,
 				 ",&n, nls_x,nls_fvec,&xtol,&maxfev,&ml,&mu,",
 				 "&epsfcn,\n",TAB,TAB,"nls_diag,&mode,&factor,&nprint,",
@@ -2021,8 +1996,7 @@ end
  ** 
  ** Generates the storing of the results of the solution to a nonlinear equation
  ** system.
-**)
-	    
+ **)    
 relation generate_ode_system2_nonlinear_store_results: (Exp.ComponentRef list,
 							int (*indx*),
 							int (*cg var_id*))
@@ -2049,7 +2023,6 @@ end
  ** 
  ** Helper relation to generate_ode_system2_nonlinear_residuals
  **)
-
 relation generate_ode_system2_nonlinear_residuals2: (DAELow.Equation list, 
 						     int, (* index iterator*) 
 						     VarTransform.VariableReplacements,
@@ -2101,7 +2074,6 @@ end
  ** inputs: (size: int, unique_id: int)
  ** outputs: (fcn : CFunction)
  **)
-
 relation generate_ode_system2_declaration: (int (*size*)
 					    ,int (* unique_id*)
 					    ,int(* cg var_id*)) => 
@@ -2130,7 +2102,6 @@ end
  **	      unique_id : int)
  ** outputs: cfn : CFunction
  **)         
-	    
 relation generate_ode_system2_populate_Ab:((int * int * DAELow.Equation) list,
 					   DAELow.Variables,
 					   DAELow.EquationArray,
@@ -2183,7 +2154,6 @@ end
  **
  ** Helper relation to generate_ode_system2_populate_A
  **)
-
 relation generate_ode_system2_populate_A2:((int * int * DAELow.Equation) list,
 					   DAELow.Variables,
 					   DAELow.EquationArray,
@@ -2220,7 +2190,6 @@ end
  ** Generates code for the population of A 
  ** solving linear system of equations.
  **)
-
 relation generate_ode_system2_populate_b: ((int * int * DAELow.Equation) list,
 					   DAELow.Variables,
 					   DAELow.EquationArray,
@@ -2240,7 +2209,6 @@ end
  ** author: PA
  ** Helper relation to generate_ode_system2_populate_b
  **)
-
 relation generate_ode_system2_populate_b2: (DAELow.Equation list,
 					    DAELow.Variables,
 					    int (* index iterator*),
@@ -2279,7 +2247,6 @@ end
  ** Generates code for the call, including setup, for solving
  ** a linear system of equations.
  **)
-
 relation generate_ode_system2_solve_call:(int (* size of system *),
 					  int (* unique_id*),
 					  int (* cg var_id*)
@@ -2305,7 +2272,6 @@ end
  ** Generates the code for storing the result of solving
  ** a linear system of equations into the affected variables .
  **)
-
 relation generate_ode_system2_collect_results:(DAELow.Variables,
 					       int(*unique_id*),
 					       int (*cg var_id*)) 
@@ -2319,11 +2285,12 @@ relation generate_ode_system2_collect_results:(DAELow.Variables,
 	-------------------------------
 	generate_ode_system2_collect_results(vars,unique_id,cg_id) => (res,cg_id)
 end
+
 (** relation: generate_ode_system2_collect_results2
  ** author: PA
  ** 
  ** Helper relation to generate_ode_system2_collect_results
-**)
+ **)
 relation generate_ode_system2_collect_results2: (string list,
 						 int(*indx*),
 						 int (* inique_id*))
@@ -2349,7 +2316,6 @@ end
  ** this relation transforms x variables (in the state vector)
  ** to corresponding xd variable (in the derivatives vector)
  **)
-
 relation transform_x_to_xd: DAELow.Var => DAELow.Var =
 
   rule	int_string(index) => index_str &
@@ -2402,7 +2368,6 @@ end
  **  Generates code for a single equation for the ode code generation, see
  ** genrerate_ode_code.
  **)
-
 relation generate_ode_equation: (DAELow.DAELow, 
 				 int vector, (*assignements 1 *)
 				 int vector, (* assignements 2 *)
@@ -2497,7 +2462,6 @@ end
  ** 
  ** This relation generates a nonlinear system of equations.
  **)
-
 relation generate_nonlinear_equations: (Exp.ComponentRef list, (* variables *)
 				     Exp.Exp list) (* residuals *)
 	=> string =
@@ -2509,7 +2473,7 @@ end
  **
  ** Finds the called functions in daelow and generates code for them
  ** from the given DAE. Hence, the functions must exist in the DAE.Element list.
-**)
+ **)
 relation generate_functions: (SCode.Program, (* Needed to instantiate functions*)
 			      DAE.DAElist, 
 			      DAELow.DAELow, 
@@ -2543,7 +2507,6 @@ end
  **
  ** Helper relation to generate_functions.
  **)
-
 relation generate_functions_2: (SCode.Program, Absyn.Path list) 
 	  => DAE.Element list =
   rule	generate_functions_3(p,paths,paths) => dae
@@ -2598,7 +2561,6 @@ end
  ** path list.
  **
  **)
-
 relation append_nonpresent_paths:(Absyn.Path list, (* paths to append*)
 				  Absyn.Path list, (* all paths *)
 				  Absyn.Path list) (* iterated paths *)
@@ -2630,7 +2592,6 @@ end
  ** This relation generates initial values for the simulation
  ** by investigating values of variables.
  **)
-
 relation generate_init_data: (DAELow.DAELow, Absyn.Path(* classname *), 
 			      string(* filename *),
 			      real, (* start time*)
@@ -2722,8 +2683,7 @@ end
  ** string array depending on the type of the variable.
  ** For instance, state variables write their start value to the
  ** x array at given index.
-**)
-
+ **)
 relation generate_init_data3:(DAELow.Var list,
 			      string array, (* state strings *)
 			      string array, (* derivative strings*)
@@ -2807,7 +2767,6 @@ end
  **
  ** Helper relation to generate_init_data3.
  **)
-
 relation print_exp_opt_str_if_const:(Exp.Exp option) => string =
        
   rule  Exp.is_const(e) => true &
@@ -2826,7 +2785,6 @@ end
  ** Helper relation to generate_init_data2
  ** Traverses parameters.
  **)
-
 relation generate_init_data4: (DAELow.Var list, 
 			       string array,
 			       string array,
@@ -2878,7 +2836,6 @@ end
  **
  ** Prints when clauses to a string.
  **)
-
 relation dump_when_clauses_str: (DAELow.WhenClause list) => string =
 
   axiom	dump_when_clauses_str [] => ""
@@ -3036,7 +2993,6 @@ relation generate_zero_crossing2: (DAELow.ZeroCrossing list, int,
 	  => fail
 end
 
-
 relation dump_zero_crossing_str: (DAELow.ZeroCrossing) => string =
 
   rule	print_exp_cpp_str(e1) => e1_str &
@@ -3099,7 +3055,6 @@ end
  **
  ** Generate code for when clauses.
  **)
-
 relation generate_when_clauses: (string,
 				 DAE.DAElist,
 				 DAELow.DAELow,
@@ -3219,7 +3174,6 @@ end
  **
  ** Helper relation to build_when_blocks.
  **)
-
 relation build_when_equation: (DAE.DAElist,
 			       DAELow.DAELow, 
 			       int vector, (* assignments1*)
@@ -3250,7 +3204,6 @@ end
  ** This relation generates the code for the calculation of the 
  ** state variables on residual form. Called from generate_simulation_code.
  **)
-
 relation generate_compute_residual_state:(string,
 					  DAE.DAElist,
 					  DAELow.DAELow,
@@ -3283,7 +3236,6 @@ end
  ** This relation generates the code for the calculation of the output
  ** variables.
  **)
-
  relation generate_compute_output:(string,
 				   DAE.DAElist,
                                    DAELow.DAELow,
@@ -3345,8 +3297,7 @@ end
 (** relation: all_same_algorithm
  **
  ** Checks that a block consists only of one algorithm in different -nodes-
-**)
-
+ **)
 relation all_same_algorithm: (DAELow.DAELow,
 			      int list) (* blocks*)
 	  => bool =
@@ -3368,7 +3319,6 @@ end
  ** Helper relation to all_same_algorithm. Checks all equations in the block
  ** and returns true if they all are algorithms with the same index. 
  **)
-
 relation all_same_algorithm2:(DAELow.DAELow, 
 			      int list, (* block *)
 			      int (* alg. index*)) => bool =
@@ -3396,7 +3346,6 @@ end
  ** This returns the code string for a specific equation in the dae.
  ** It is used both for state variables and regular variables
  **)
-
 relation build_equation:(DAE.DAElist, 
 			 DAELow.DAELow, 
 			 int vector, (* assignments1*)
@@ -3467,7 +3416,6 @@ end
  ** This relation generates code for blocks on residual form, i.e.
  ** g(\dot{x},x,y,t) = 0
  **)
-
  relation build_residual_blocks:(DAE.DAElist,DAELow.DAELow, 
 				 int vector, (* ass1 *)
 				 int vector, (* ass2 *)
@@ -3506,8 +3454,7 @@ end
  **
  ** A system of equations on residual form is still only an output of each
  ** residual equation. The numerical solver will solve the system.
-**)
-
+ **)
 relation build_residual_system: (DAE.DAElist,
 				 DAELow.DAELow, 
 				 int vector, (* assignments1*)
@@ -3531,8 +3478,7 @@ end
  ** This relation generates code on residual form for one equation.
  ** It is used both for state variables and algebraic variables.
  **)
-
- relation build_residual_equation:(DAE.DAElist,
+relation build_residual_equation:(DAE.DAElist,
 				   DAELow.DAELow, 
 				   int vector, (* assignments1*)
 				   int vector, (* assignments2*)
@@ -3613,7 +3559,6 @@ end
  ** This relation takes a ComponentRef(cr) and an expression(exp)
  ** and makes a C++ assignment: cr = exp;
  **)
-
 relation build_assignment: (DAE.DAElist,
 			    Exp.ComponentRef, (* varname *)
 			    Exp.Exp, (*expression*) 
@@ -3650,8 +3595,7 @@ end
  **
  ** This relation prints a complete expression on a C/C++ format.
  **)
-
- relation print_exp_cpp_str : Exp.Exp => string =
+relation print_exp_cpp_str : Exp.Exp => string =
          
   rule  print_exp2_str (e,0) => s
 	--------------------
@@ -3663,17 +3607,18 @@ end
  **
  ** Helper relation to print_exp2_str
  **)
-
 relation lbinop_symbol : Exp.Operator => string =
+
   axiom	lbinop_symbol(Exp.AND) => " && "
+
   axiom	lbinop_symbol(Exp.OR) => " || "
+
 end
 
 (** relation: lunaryop_symbol
  **
  ** Helper relation to print_exp2_str
  **)
-
 relation lunaryop_symbol : Exp.Operator => string =
   axiom	lunaryop_symbol(Exp.NOT) => " !"
 end
@@ -3682,7 +3627,6 @@ end
  **
  ** Helper relation to print_exp2_str
  **)
-
 relation relop_symbol : Exp.Operator => string =
   axiom	relop_symbol(Exp.LESS(_))       => " < "
   axiom	relop_symbol(Exp.LESSEQ(_))     => " <= "
@@ -3738,13 +3682,11 @@ end
 (** relation: print_exp2_str
  ** Helper relation to print_exp_str
  **)
-
- relation print_exp2_str : (Exp.Exp,int) => string =
+relation print_exp2_str : (Exp.Exp,int) => string =
 
   rule  print "# equation contain undefined symbols"
         --------------------------
         print_exp2_str(Exp.END,_) => fail
-         
          
   rule  int_string(x) => s
 	 ----------------------------
@@ -4039,7 +3981,6 @@ end
  ** Converts Exp.ComponentRef, i.e. variables, to Modelica friendly variables.
  ** This means that dots are converted to underscore, etc.
  **)
-
 relation cref_modelica_str : Exp.ComponentRef => string =
 
   rule  Util.string_replace_char(s,#".",#"_") => res' &
@@ -4062,7 +4003,6 @@ end
  ** Goes through the DAELow structure, finds all function calls and returns 
  ** them in a list. Removes duplicates.
  **)
-
 relation get_called_functions : (DAE.DAElist, DAELow.DAELow) => Absyn.Path list =
 
   rule	DAELow.get_all_exps dlow => explist &
@@ -4140,7 +4080,6 @@ end
  **
  ** Retrive the function name from a CALL expression.
  **)
-
 relation get_call_path : Exp.Exp => Absyn.Path =
 
   axiom	get_call_path Exp.CALL(path,_,_,_) => path
@@ -4150,8 +4089,7 @@ end
 (** relation: remove_duplicate_paths
  **
  ** Removed duplicate Paths in a list of Path.
-**)
-
+ **)
 relation remove_duplicate_paths : Absyn.Path list => Absyn.Path list =
 
   axiom	remove_duplicate_paths [] => []
@@ -4169,7 +4107,6 @@ end
  **
  ** Helper relation to remove_duplicate_paths.
  **)
-
 relation remove_path_from_list : (Absyn.Path list, Absyn.Path) => Absyn.Path list =
 
   axiom	remove_path_from_list ([],_) => []
@@ -4184,7 +4121,6 @@ relation remove_path_from_list : (Absyn.Path list, Absyn.Path) => Absyn.Path lis
 	-----------------------------------------
 	remove_path_from_list (first::rest, path) => first::res
 
-
 end
 
 relation use_zerocrossing: () => bool =
@@ -4195,9 +4131,6 @@ relation use_zerocrossing: () => bool =
 	use_zerocrossing () => res'
 
 end
-
-
-
 
 relation generate_equation_order:(int list list) 
 	  => (int list) =

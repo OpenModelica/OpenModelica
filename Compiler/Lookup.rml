@@ -56,7 +56,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ** lookup_type - to find types (e.g. functions, types, etc.)
  ** lookup_var - to find a variable in the instance hierarchy.
  **)
-
 module Lookup:
 
   with "ClassInf.rml"
@@ -107,9 +106,8 @@ with "Error.rml"
  ** The names are supplied as a path, and if the path is qualified, a
  ** variable named as the first part of the path is searched for, and the
  ** name is looked for in it.
- **)
-
-(** relation: lookup_type
+ **
+ ** relation: lookup_type
  ** 
  ** This relation finds a specified type in the environment. 
  ** If it finds a function instead, this will be implicitly instantiated 
@@ -122,8 +120,7 @@ relation lookup_type: (Env.Env,Absyn.Path,bool (* msg flag *))
 	  => (Types.Type, Env.Env) =
 
 	(* Lookup of simple names *)
-  rule	
-	(*Debug.fprint ("lotype","lookup_type(") &
+  rule	(*Debug.fprint ("lotype","lookup_type(") &
 	Debug.fcall ("lotype",Env.print_env, env) &
 	Debug.fprint ("lotype",", ") & 
 	Debug.fcall ("lotype",Dump.print_path,path) &
@@ -198,7 +195,7 @@ end
  **
  ** Returns true if classname is any of the builtin classes:
  ** Real, Integer, String, Boolean
-**)
+ **)
 relation is_primitive: Absyn.Path => bool =
 
   axiom	is_primitive(Absyn.IDENT("Integer")) => true
@@ -306,7 +303,6 @@ end
  ** This relation looks up imported class names on the qualified form: 
  ** import A.B;
  **)
-
 relation lookup_qualified_imported_class_in_env:(Env.Env, Env.Env,
 						 Absyn.Path) 
 	  => (SCode.Class, Env.Env) =
@@ -423,7 +419,6 @@ end
  ** Helper relation for lookup_unqualified_imported_var_in_frame. Returns 
  ** true if there are unqualified imports that matches a sought constant.
  **)
-
 relation more_lookup_unqualified_imported_var_in_frame: (Env.Item list, 
 							 Env.Env, 
 							 SCode.Ident)
@@ -453,7 +448,6 @@ end
  ** 
  ** Find a variable from an unqualified import locally in a frame
  **)
-
 relation lookup_unqualified_imported_var_in_frame: (Env.Item list, 
 						    Env.Env, 
 						    SCode.Ident)
@@ -489,7 +483,6 @@ end
  ** 
  ** Helper relation to lookup_qualified_imported_class_in_env.
  **)
-
 relation lookup_qualified_imported_class_in_frame: ( Env.Item list,Env.Env,
 						    SCode.Ident)
 	    => (SCode.Class, Env.Env) =
@@ -566,7 +559,6 @@ end
  ** 
  ** Helper relation for lookup_unqualified_imported_class_in_frame
  **)
-
 relation more_lookup_unqualified_imported_class_in_frame: (Env.Item list,
 							   Env.Env, 
 							   SCode.Ident)
@@ -595,7 +587,6 @@ end
  ** 
  ** Finds a class from an unqualified import locally in a frame
  **)
-
 relation lookup_unqualified_imported_class_in_frame: (Env.Item list, 
 						      Env.Env, 
 						      SCode.Ident)
@@ -631,7 +622,6 @@ end
  ** Searches for a record constructor implicitly 
  ** defined by a record class.
  **)
-
 relation lookup_record_constructor_class: (Env.Env,Absyn.Path) 
 	  => (SCode.Class, Env.Env) =
 
@@ -647,7 +637,6 @@ end
  ** Then it determines the full path for the type, such that it can be 
  ** looked up from any environment.
  **)
-
 relation complete_path: (Env.Env, Absyn.Path) => Absyn.Path =
 
   rule	(* Class found on top level. Nothing to complete. *)
@@ -733,7 +722,6 @@ end
  **
  ** Helper relation to lookup_var. Searches the frames for variables.
  **)
-
 relation lookup_var_internal : (Env.Env,Exp.ComponentRef)
 	  => (Types.Attributes, Types.Type, Types.Binding) =
 
@@ -759,7 +747,6 @@ end
  ** Arg1: The environment to search in
  ** Arg2: The variable to search for
  **)
-
 relation lookup_var_in_packages : (Env.Env, Exp.ComponentRef) 
 	  => (Types.Attributes, Types.Type, Types.Binding) =
 
@@ -967,7 +954,6 @@ end
 
 (** relation: lookup_type_in_env
  ** 
- **
  **)
 relation lookup_type_in_env: (Env.Env,Absyn.Path) => (Types.Type,Env.Env) =
 
@@ -1115,7 +1101,6 @@ end
  ** Creates the record constructor class, i.e. a function, from the record
  ** class given as argument.
  **)
-
 relation build_record_constructor_class :(SCode.Class (* record class *), 
 					  Env.Env) 
 	  => SCode.Class (* function class *) =
@@ -1132,7 +1117,6 @@ end
  ** Helper relation to build_record_constructor_class. Creates the elements
  ** of the function class.
  **)
-
 relation build_record_constructor_elts: (SCode.Element list, Env.Env) 
 	  => SCode.Element list =
 
@@ -1167,7 +1151,6 @@ end
  **      end foo;
  **  => modifier list become 'result.x=x, result.y=y'
  **)
-
 relation build_record_constructor_result_mod: (SCode.Element list) 
 	  => SCode.SubMod list =
 	
@@ -1185,7 +1168,6 @@ end
  ** of a record and builds a list of variables of the record used for 
  ** constructing a record constructor function.
  **)
-
 relation build_record_constructor_varlst : (SCode.Class,Env.Env) 
 	  => Types.Var list =
 
@@ -1208,7 +1190,6 @@ end
  ** 
  ** Helper relation to build_record_constructor_varlst
  **)
-
 relation build_varlst_from_elts: (SCode.Element list,Env.Env ) 
 => Types.Var list =
 
@@ -1232,7 +1213,6 @@ end
  **
  ** Returns true if function can be found in the builtin environment.
  **)
-
 relation is_in_builtin_env: Absyn.Path => bool =
 
   rule	Builtin.initial_env() => i_env &
@@ -1253,7 +1233,6 @@ end
  ** 
  ** Helper relation to lookup_class. Searches the environment for the class.
  **)
-
 relation lookup_class_in_env: (Env.Env,Absyn.Path,bool (* msg*)) 
 	  => (SCode.Class, Env.Env) =
 
@@ -1387,7 +1366,6 @@ end
  ** 
  ** Search for a class within one frame. 
  **)
-
 relation lookup_class_in_frame: (Env.Frame,Env.Env,
 				 SCode.Ident,bool)
 	  => (SCode.Class, Env.Env) =
@@ -1524,7 +1502,6 @@ end
  ** Searches for the rest of a qualified variable when first part of
  ** variable name has been found.
  **)
-
 relation lookup_in_var: (Types.Type, Exp.ComponentRef)
 	  => (Types.Attributes,Types.Type,Types.Binding) =
 

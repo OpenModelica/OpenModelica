@@ -81,8 +81,8 @@ with "Util.rml"
  **
  * This relation is used for debug printing. 
  *)
-
 relation print: string => () =
+
    (* Debug output.
 	Takes a lot of time during runtime. Hangs
 
@@ -111,7 +111,6 @@ end
  ** 
  ** Flag controlled debugging 
  **)
-
 relation fprint: (string, string) => () =
 
   rule	RTOpts.debug_flag (flag) => true &
@@ -127,7 +126,6 @@ end
  ** 
  ** Flag controlled debugging, printing with newline.
  **)
-
 relation fprintln: (string, string) => () =
 
   rule	RTOpts.debug_flag (flag) => true &
@@ -144,7 +142,6 @@ end
  **
  ** flag controlled debugging, printing of string list.
  **)
-
 relation fprintl: (string, string list) => () =
 
   rule	RTOpts.debug_flag (flag) => true &
@@ -161,7 +158,6 @@ end
  ** 
  ** Flag controlled calling of the given relation (2nd arg) 
  **)
-
 relation fcall: (string, 'a => (), 'a) => () =
 
   rule	RTOpts.debug_flag (flag) => true &
@@ -177,7 +173,6 @@ end
  **
  ** Flag controlled calling of given relation  (2nd arg) 
  **)
-
 relation fcall0: (string, () => ()) => () =
 
   rule	RTOpts.debug_flag (flag) => true &
@@ -210,7 +205,6 @@ end
  **
  ** bool controlled calling of relation.
  **)
-
 relation bcall: (bool, 'a => (), 'a) => () =
 
   rule	func(str)
@@ -225,7 +219,6 @@ end
  **
  ** bool controlled calling of relation.
  **)
-
 relation bcall_2: (bool, ('a,'b) => (), 'a,'b) => () =
 
   rule	func(a,b)
@@ -241,7 +234,6 @@ end
  ** Call the given function (2nd arg) if the flag given in 1st arg is 
  ** NOT set 
  **)
-
 relation notfcall: (string, 'a => (), 'a) => () =
 
   rule	RTOpts.debug_flag (flag) => false &
@@ -258,7 +250,6 @@ end
  **  If flag is set, print the elements in the list, using the passed
  ** relation.
  **)
-
 relation fprint_list: (string, 'a list, 'a => (), string) => () =
 
   rule	RTOpts.debug_flag (flag) => true &
@@ -275,7 +266,6 @@ end
  **  If flag is set, print the elements in the list, using the passed
  ** relation.
  **)
-
 relation print_list : ('a list, 'a => (), string) => () =
 
   axiom	print_list([],_,_)

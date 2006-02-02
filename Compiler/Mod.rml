@@ -57,7 +57,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ** circular dependencies.
  **
  **)
-
 module Mod:
 
   with "Absyn.rml"
@@ -138,13 +137,12 @@ relation elab_mod : (Env.Env, Prefix.Prefix, SCode.Mod, bool (*impl*)) => Types.
 end
 
 (** relation: elab_mod_value
-** author: PA
+ ** author: PA
  **
  ** Helper relation to elab_mod. Builds values from modifier expressions
  ** if possible.
  ** Tries to Constant evaluate an expressions an create a Value option for it.
  **)
-
 relation elab_mod_value: (Env.Env, Exp.Exp) => Values.Value option =
 
 	(* If ceval fails, it should not print error messages. *)
@@ -160,7 +158,6 @@ end
  **
  ** Transforms Mod back to SCode.Mod, loosing type information.
  **)
-
 relation unelab_mod: Types.Mod => SCode.Mod =
 	
   axiom	unelab_mod (Types.NOMOD) => SCode.NOMOD
@@ -197,7 +194,6 @@ end
  **
  ** Helper relation to unelab_mod.
  **)
-
 relation unelab_submods : ( Types.SubMod list)
 	  => SCode.SubMod list =
 	  
@@ -214,7 +210,6 @@ end
  **
  ** This relation unelaborates on a submodification.
  **)
-		 
 relation unelab_submod : (Types.SubMod) => SCode.SubMod list =
 	
   rule	unelab_mod (m) => m'
@@ -311,7 +306,6 @@ end
  ** to be converted to Mod.
  ** Notice that the correct type information must be updated later on.
  **)
-
 relation elab_untyped_mod: (SCode.Mod,Env.Env,Prefix.Prefix) => Types.Mod =
 
   axiom	elab_untyped_mod (SCode.NOMOD,_,_) => Types.NOMOD
@@ -343,7 +337,6 @@ end
  ** This relation helps `elab_mod' by recusively elaborating on a list
  ** of submodifications.
  **)
-
 relation elab_submods : (Env.Env, Prefix.Prefix, SCode.SubMod list, bool (*impl*))
 	  => Types.SubMod list =
 
@@ -362,7 +355,6 @@ end
  ** This relation elaborates on a submodification, turning an
  ** `SCode.SubMod' into one or more `Types.SubMod's.
  **)
-
 relation elab_submod : (Env.Env, Prefix.Prefix, SCode.SubMod, bool (*impl*)) => Types.SubMod list =
 
   rule	elab_mod (env,pre,m,impl) => m'
@@ -382,7 +374,6 @@ end
  ** This relation helps `elab_untyped_mod' by recusively elaborating on a list
  ** of submodifications.
  **)
-
 relation elab_untyped_submods : (SCode.SubMod list,Env.Env,Prefix.Prefix)
 	  => Types.SubMod list =
 
@@ -400,7 +391,6 @@ end
  ** This relation elaborates on a submodification, turning an
  ** `SCode.SubMod' into one or more `Types.SubMod's, wihtout type information.
  **)
-
 relation elab_untyped_submod : (SCode.SubMod,Env.Env,Prefix.Prefix) 
 	  => Types.SubMod list =
 
@@ -420,7 +410,6 @@ end
  ** From a list of list of integers, this relation creates a list of
  ** sub-modifications of the `IDXMOD' variety.
  **)
-
 relation make_idxmods : (Exp.Subscript list, Types.Mod) => Types.SubMod list =
 
   axiom	make_idxmods([Exp.INDEX(Exp.ICONST(x))],m) => [Types.IDXMOD([x],m)]
@@ -446,7 +435,6 @@ end
  ** This relation adds a subscript to each `Types.IDXMOD' in a list of
  ** submodifications.
  **)
-
 relation prefix_idxmods : (Types.SubMod list, int) => Types.SubMod list =
 
   axiom	prefix_idxmods([],_) => []
@@ -464,7 +452,6 @@ end
  ** example, `x[2:3] = y' is changed into `x[2] = y[1]' and
  ** `x[3] = y[2]'.
  **)
-
 relation expand_slice : (Exp.Exp list, Exp.Subscript list, int, Types.Mod)
 	  => Types.SubMod list =
 
@@ -500,7 +487,6 @@ end
  ** list with that integer as head and the second list as tail. All
  ** resulting lists are collected in a list and returned.
  **)
-
 relation expand_list : (Values.Value list, int list list) => int list list =
 
   axiom	expand_list([],_) => []
@@ -521,7 +507,6 @@ end
  ** This relation repeatedly calls `insert_submod' to incrementally
  ** insert several sub-modifications.
  **)
-
 relation insert_submods : (Types.SubMod list, Types.SubMod list, 
 			   Env.Env, Prefix.Prefix) 
 	  => Types.SubMod list =
@@ -541,7 +526,6 @@ end
  ** This relation inserts a `SubMod' into a list of unique `SubMod's,
  ** while keeping the uniqueness, merging the submod if necessary.
  **)
-
 relation insert_submod : (Types.SubMod, Types.SubMod list,
 			  Env.Env, Prefix.Prefix) 
 	  => Types.SubMod list =
@@ -573,7 +557,6 @@ end
  ** This relation extracts a modification from inside another
  ** modification, using a name to look up submodifications.
  **)
-
 relation lookup_modification_p: (Types.Mod,Absyn.Path) => Types.Mod =
 
   rule	lookup_comp_modification (m,n) => mod
@@ -594,7 +577,6 @@ end
  **
  ** This relation is used to look up an identifier in a modification.
  **)
-
 relation lookup_comp_modification: (Types.Mod, Absyn.Ident) => Types.Mod =
 
   axiom lookup_comp_modification(Types.NOMOD,_) => Types.NOMOD
@@ -618,7 +600,6 @@ end
  ** 
  ** This relation is just a helper to `lookup_comp_modification'.
  **)
-
 relation lookup_comp_modification2 : (Types.SubMod list,Absyn.Ident) => Types.Mod =
 
   axiom lookup_comp_modification2([],_) => Types.NOMOD
@@ -642,7 +623,6 @@ end
  ** This relation extracts modifications to an array element, using an
  ** integer to index the modification.
  **)
-
 relation lookup_idx_modification: (Types.Mod, int) => Types.Mod =
 
   axiom lookup_idx_modification(Types.NOMOD,_) => Types.NOMOD
@@ -677,7 +657,6 @@ end
  **
  ** This relation does part of the job for `lookup_idx_modification'.
  **)
-
 relation lookup_idx_modification2 : (Types.SubMod list, Types.EqMod option, int)
 	  => (Types.Mod, Types.SubMod list) =
 
@@ -724,7 +703,7 @@ end
  ** Helper relation to lookup_idx_modification2.
  ** when looking up index of a named mod, e.g. y={1,2,3}, it should
  ** subscript the expression {1,2,3} to corresponding index.
-**)
+ **)
 relation lookup_idx_modification3: (Types.Mod, int (* indx *)) 
 	  => Types.Mod =
 
@@ -750,7 +729,6 @@ end
  ** This expression will be expanded to produce one equation
  ** expression per array component.
  **)
-
 relation index_eqmod : (Types.EqMod option, int list) => Types.EqMod option =
 
   axiom	index_eqmod (NONE,_) => NONE
@@ -779,14 +757,12 @@ end
  ** argument is the "outer" modification that should take precedence over
  ** the "inner" modifications.
  **
- **)
-
-(** relation: merge
+ **
+ ** relation: merge
  ** 
  ** This relation merges to modificiations into one.  The first
  ** modifications takes precedence over the second.
  **)
-
 relation merge : (Types.Mod, Types.Mod,Env.Env,Prefix.Prefix) => Types.Mod =
 
   axiom merge(Types.NOMOD,Types.NOMOD,_,_) => Types.NOMOD
@@ -841,7 +817,6 @@ end
  ** 
  ** This relation merges to list of `Types.SubMod's.
  **)
-
 relation merge_subs : (Types.SubMod list, Types.SubMod list, Env.Env, Prefix.Prefix)
 	  => Types.SubMod list =
 
@@ -861,7 +836,6 @@ end
  ** there is one with the same name,  it is kept and the one `Types.SubMod'
  ** given in the second argument is discarded.
  **)
-
 relation merge_subs2 : (Types.SubMod list, Types.SubMod, Env.Env, Prefix.Prefix)
 	  => (Types.SubMod list, Types.SubMod) =
 
@@ -890,7 +864,6 @@ end
  ** The outer modification, given in the first argument, takes
  ** precedence over the inner modifications.
  **)
-
 relation merge_eq : (Types.EqMod option, Types.EqMod option) => Types.EqMod option =
 
 	(* Outer assignments take precedence *)
@@ -905,7 +878,6 @@ end
  ** 
  ** This relation simply extracts the equation part of a modification.
  **)
-
 relation mod_equation : Types.Mod => Types.EqMod option =
 
   axiom mod_equation Types.NOMOD => NONE
@@ -924,7 +896,6 @@ end
  **
  ** The relations are excluded from the report for brevity.
  **)
-
 relation print_mod_str : Types.Mod => string =
 
   axiom	print_mod_str(Types.NOMOD) => "()"
@@ -952,7 +923,6 @@ end
  **
  ** Print a modifier on the Print buffer.
  **)
-
 relation print_mod : Types.Mod => () =
 
 rule	print_mod_str(m) => str &
@@ -965,7 +935,6 @@ end
  **
  ** Helper relation to print_mod_str
  **)
-
 relation print_subs1_str : Types.SubMod list => string list =
 
   axiom print_subs1_str [] => []
@@ -981,7 +950,6 @@ end
  **
  ** Helper relation to print_subs1_str
  **)
-
 relation print_sub_str : Types.SubMod => string =
 
   rule  print_mod_str mod => mod_str &
@@ -1000,7 +968,6 @@ end
  **
  ** Helper relation to print_sub_str
  **)
-
 relation print_subscripts_str : int list => string =
 
 axiom	print_subscripts_str([]) => "[]"
@@ -1017,7 +984,6 @@ end
  **
  ** Helper relation to print_subscripts_str
  **)
-
 relation print_subscripts2_str : int list => string =
 
   axiom	print_subscripts2_str([]) => ""
@@ -1033,7 +999,6 @@ end
  ** 
  ** Helper relation to print_mod_str
  **)
-
 relation print_eqmod_str : Types.EqMod option => string =
 
   axiom print_eqmod_str NONE => ""

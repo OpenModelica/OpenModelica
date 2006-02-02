@@ -107,12 +107,14 @@ module ClassInf :
    ** use this class definition as a connector.
    **)
    relation valid : (State, SCode.Restriction) => ()
+
   (* `assert_valid' is identical to 'valid'.  The only difference is *)
   (* that it prints an error message when it fails. *)
   relation assert_valid : (State, SCode.Restriction) => ()
   
   (* Succeeds if state is FUNCTION *)
   relation is_function: State => ()
+
   relation is_connector: State => ()
 
   relation matching_state : (State, State list) => bool
@@ -136,17 +138,11 @@ with "Error.rml"
  **
  ** The code is excluded from the report.
  **)
-
-(*!ignorecode*)
-
-(** relation: print_state *)
-
 relation print_state_str : State => string =
 
   axiom	print_state_str UNKNOWN(s) => "unknown"
   axiom	print_state_str MODEL(s) => "model"
   axiom	print_state_str RECORD(s)=> "record"
-
   axiom	print_state_str BLOCK(s) => "block"
 
   axiom	print_state_str CONNECTOR(s) => "connector"
@@ -159,7 +155,6 @@ relation print_state_str : State => string =
 
   axiom	print_state_str TYPE_STRING(s) => "String"
   axiom	print_state_str TYPE_BOOL(s) => "Boolean"
-
   axiom	print_state_str IS_NEW(s) => "new def"
   axiom	print_state_str HAS_EQUATIONS(s) => "has eqn"
 
@@ -229,7 +224,6 @@ end
  ** 
  ** Returns the classname of the state.
  **)
-
 relation get_state_name : State => string =
 
   axiom	get_state_name UNKNOWN(s)	=> s
@@ -251,7 +245,6 @@ end
 
 
 (** relation: print_event *)
-
 relation print_event : Event => () =
 
   rule	Print.print_buf "FOUND_EQUATION"
@@ -268,11 +261,9 @@ end
 
 (** - Transitions *)
 
-(** relation: start
- **
- ** This is the  state machine initialization relation.
+(** 
+ ** This is the state machine initialization relation.
  **)
-
 relation start : (SCode.Restriction, string) => State =
 
   axiom	start (SCode.R_CLASS, s) 	       => UNKNOWN(s)
@@ -298,7 +289,6 @@ end
  ** This is the state machine transition relation.  It describes the
  ** transitions between states at different events.
  **)
-
 relation trans : (State, Event) => State =
 
 	(** Event `NEWDEF' *)
@@ -359,7 +349,6 @@ end
  ** restriction using this relation to find out if it is an error to
  ** use this class definition as a connector.
  **)
-
 relation valid : (State, SCode.Restriction) => () =
 
   axiom	valid(UNKNOWN(s), _)
@@ -403,7 +392,6 @@ end
  ** This relation has the same semantical meaning as the relation
  ** `valid'.  However, it prints an error message when it fails.
  **)
-
 relation assert_valid : (State, SCode.Restriction) => () =
 
   rule	valid(st,re)
@@ -427,7 +415,6 @@ end
  ** Finds a State in the list that matches the state given as first argument.
  ** NOTE: Currently not used anywhere.
  **)
-
 relation matching_state : (State, State list) => bool =
 	
   axiom	matching_state (st, []) => false
@@ -458,7 +445,6 @@ end
  **
  ** Fails for states that are not FUNCTION.
  **)
-
 relation is_function: State => () =
   axiom is_function FUNCTION(_) => ()
 end
@@ -467,7 +453,6 @@ end
  **
  ** Fails for states that are not CONNECTOR.
  **)
-
 relation is_connector: State => () =
   axiom is_connector CONNECTOR(_) => ()
 end

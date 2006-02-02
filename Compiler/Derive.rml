@@ -59,6 +59,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 module Derive:
   with "DAELow.rml"
   with "Exp.rml"
+
   relation differentiate_equation_time: (DAELow.Equation,
 				    DAELow.Variables) (* all time varying variables *)
 	  => DAELow.Equation
@@ -77,7 +78,6 @@ with "Error.rml"
  **
  ** Differentiates an equation with respect to the time variable.
  **)
-
 relation differentiate_equation_time: (DAELow.Equation,
 				  DAELow.Variables) (* time varying variables *)
 	  => DAELow.Equation =
@@ -116,7 +116,6 @@ end
  ** gives
  ** differentiate_exp_time('x+y=5*PI', [x,y]) => der(x)+der(y)=0
  **)
-
 relation differentiate_exp_time: (Exp.Exp,DAELow.Variables) => Exp.Exp =
 
   axiom	differentiate_exp_time(Exp.ICONST(_),_) => Exp.RCONST(0.0)
@@ -254,11 +253,11 @@ end
 
 (** relation: differenatiate_exp
  **
- ** This relation differentiates expressions with respect to a given variable, given as second argument.
+ ** This relation differentiates expressions with respect to a given variable, 
+ ** given as second argument.
  ** For example.
  ** differentiate_exp('2*x*y+2*x+y',x) => 2*x+2
  **)
-		 
 relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
         
   axiom	differentiate_exp(Exp.ICONST(_),_) => Exp.RCONST(0.0)
@@ -313,7 +312,6 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
 	differentiate_exp(Exp.BINARY((e1),Exp.POW(tp),e2),tv) 
 	  => exp (* ax^(a-1) *)
 	  
-
   rule	(* der(e)^x => x*der(e,2)*der(e)^(x-1)*)
         Exp.cref_equal (cr, tv) => true &
         Exp.exp_contains(e2,Exp.CREF(tv,tp)) => false &
@@ -348,7 +346,6 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
 				   Exp.BINARY(e1,Exp.MUL(tp),e2')),
 			Exp.DIV(tp),
 			Exp.BINARY(e2,Exp.MUL(tp),e2))
-
 
   rule	differentiate_exp(e,tv) => e' 
 	-----------------------------

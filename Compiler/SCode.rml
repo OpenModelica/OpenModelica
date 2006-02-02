@@ -53,7 +53,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **
  ** The SCode representaion is used as input to the Inst module
  **)
-
 module SCode :
 
   with "Absyn.rml"
@@ -79,20 +78,25 @@ module SCode :
 		   | R_PREDEFINED_ENUM
 							  
   (** - Modifications *)
-  datatype Mod = MOD of bool (* final *) * Absyn.Each * (SubMod list) * (Absyn.Exp option)
+  datatype Mod = MOD of bool (* final *) 
+		      * Absyn.Each 
+                      * (SubMod list) 
+                      * (Absyn.Exp option)
   	       | REDECL of bool (* final *) * Element list
 	       | NOMOD
-  datatype SubMod = NAMEMOD of Ident * Mod         (* A named component *)
-		  | IDXMOD of Subscript list * Mod (* An array element *)
+
   (** Modifications are represented in an more structured way than in 
    ** the `Absyn' module.  Modifications using qualified names
    ** (such as in `x.y =  z') are normalized (to `x(y = z)').  And a
    ** special case when arrays are subscripted in a modification.
    **)
+  datatype SubMod = NAMEMOD of Ident * Mod         (* A named component *)
+		  | IDXMOD of Subscript list * Mod (* An array element *)
 
   (** - Programs *)
-  type Program = Class list
   (** As in the AST, a program is simply a list of class definitions. *)
+  type Program = Class list
+
 
   (** - Classes *)
   datatype Class = CLASS of Ident		(* Name *)
@@ -101,6 +105,9 @@ module SCode :
 			  * Restriction	        (* Restricion *)
 			  * ClassDef		(* Parts *)
 
+  (** The major difference between these types and their `Absyn' *)
+  (** counterparts is that the `PARTS' constructor contains separate *)
+  (** lists for elements, equations and algorithms. *)
   datatype ClassDef = PARTS of Element list
 			     * Equation list
 			     * Equation list    (* InitialEquation *)
@@ -120,17 +127,16 @@ module SCode :
 				* Equation list 
 				* Algorithm list
 				* Algorithm list
-		    | PDER of Absyn.Path *    (* function name *)
-			      Ident list (* derived variables *)					 
-							 
-  (** The major difference between these types and their `Absyn' *)
-  (** counterparts is that the `PARTS' constructor contains separate *)
-  (** lists for elements, equations and algorithms. *)
-
+		    | PDER of Absyn.Path     (* function name *)
+			    * Ident list (* derived variables *)				      
 
   (* - Equations *)
   datatype Equation = EQUATION of EEquation
 				  * Absyn.Path option (*baseclassname if in bclass*)
+
+  (** These are almost identical to the `Absyn' versions.  In `EQ_IF', *)
+  (** the `elseif' branches are represented as normal `else' branches *)
+  (** with a single `if' statement in them. *)
   datatype EEquation = EQ_IF of Absyn.Exp	(* conditional *)
 			     * EEquation list	(* true branch *)  
 			     * EEquation list	(* false branch *)
@@ -143,19 +149,21 @@ module SCode :
                       | EQ_REINIT of Absyn.ComponentRef * (* state variable *) 
 				   Absyn.Exp (* the new value *)         
 
-
-  (** These are almost identical to the `Absyn' versions.  In `EQ_IF', *)
-  (** the `elseif' branches are represented as normal `else' branches *)
-  (** with a single `if' statement in them. *)
-
   (** - Algorithms *)
-  datatype Algorithm = ALGORITHM of Absyn.Algorithm list
-				    * Absyn.Path option (* baseclass name if in baseclass*)
   (** The `Absyn' module uses the terminology from the grammar, where *)
   (** `algorithm' means an algorithmic statement.  But here, *)
   (** `Algorithm' means a whole algorithm section. *)
+  datatype Algorithm = ALGORITHM of Absyn.Algorithm list
+				    * Absyn.Path option (* baseclass name if in baseclass*)
 
   (** - Elements *)
+  (** There are four types of elements in a declaration, represented *)
+  (** by the constructors `EXTENDS' (for `extends' clauses), *)
+  (** `CLASSDEF' (for local class definitions)  `COMPONENT' (for *)
+  (** local variables). and `IMPORT' (for `import' clauses) *)
+  (** The baseclass name is initially NONE in the translation, and
+   ** if an element is inherited from a base class it is filled in during the
+   ** instantiation process. *)
   datatype Element = EXTENDS of  Path * Mod
 		   | CLASSDEF of Ident		(* name *)
 			       * bool		(* final *)
@@ -173,14 +181,6 @@ module SCode :
 			        * Path option   (* baseclass name if in baseclass*)
                                 * Absyn.Comment option (* this if for extraction comments and annotations from Absyn *)
 
-  (** There are four types of elements in a declaration, represented *)
-  (** by the constructors `EXTENDS' (for `extends' clauses), *)
-  (** `CLASSDEF' (for local class definitions)  `COMPONENT' (for *)
-  (** local variables). and `IMPORT' (for `import' clauses) *)
-  (** The baseclass name is initially NONE in the translation, and
-   ** if an element is inherited from a base class it is filled in during the
-   ** instantiation process. *)
-
   (** - Attributes *)
   datatype Attributes = ATTR of Absyn.ArrayDim
 			      * bool		(* flow *)
@@ -190,10 +190,11 @@ module SCode :
 
   datatype Variability = VAR | DISCRETE | PARAM | STRUCTPARAM | CONST 
 
+  (** These are attributes that apply to a declared component. *)
   datatype Accessibility = RW	(* read/write *)
 			 | RO	(* read-only *)
 			 | WO	(* write-only (not used) *)
-  (** These are attributes that apply to a declared component. *)
+
 
   relation elaborate : Absyn.Program => Program
   relation elab_class: Absyn.Class => Class	
@@ -231,7 +232,6 @@ with "Error.rml"
  ** This relation takes an `Absyn.Program' and constructs a `Program'
  ** from it.
  **)
-
 relation elaborate : Absyn.Program => Program =
 
   axiom	elaborate(Absyn.PROGRAM([],_)) => []
@@ -250,7 +250,6 @@ end
  **
  ** This relations converts an `Absyn.Class' to a `Class'.
  **)
-
 relation elab_class: Absyn.Class => Class =
 
   rule  elab_classdef d => d' &
@@ -264,7 +263,6 @@ end
  **
  ** Convert a class restriction.
  **)
-
 relation elab_restriction: (Absyn.Class, Absyn.Restriction) => Restriction =
 
   rule	contain_external_func_decl(d) => true 
@@ -297,7 +295,6 @@ end
  **
  ** Returns true if Class contains an external function declaration.
  **)
-
 relation contain_external_func_decl:(Absyn.Class) => bool =
 	
   axiom	contain_external_func_decl(Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(Absyn.EXTERNAL(_,_)::_,_),_)) => true
@@ -317,11 +314,9 @@ end
  ** lists for elements, equations and algorithms, which are mixed in
  ** the input.
  **)
-
 (** LS: Divided the elab_classdef into separate relations for
  ** collecting the different parts
  **)
-
 relation elab_classdef: Absyn.ClassDef => ClassDef =
 
   rule	build_mod(SOME(Absyn.CLASSMOD(a, NONE)), false,Absyn.NON_EACH) => mod
@@ -366,7 +361,6 @@ end
  **
  ** Convert an EnumLiteral list to an Ident list. Comments are lost.
  **)
-
 relation elab_enumlist:(Absyn.EnumLiteral list) => Ident list =
 
   axiom	elab_enumlist([]) => []
@@ -380,7 +374,6 @@ end
  **
  ** Convert an Absyn.ClassPart list to an Element list.
  **)
-
 relation elab_classdef_elements: Absyn.ClassPart list => Element list =
 
   axiom	elab_classdef_elements [] => []
@@ -410,7 +403,6 @@ end
  **
  ** Convert an Absyn.ClassPart list to an Equation list.
  **)
-
 relation elab_classdef_equations: Absyn.ClassPart list => Equation list = 
 
   axiom	elab_classdef_equations [] => []
@@ -432,7 +424,6 @@ end
  **
  ** Convert an Absyn.ClassPart list to an initial Equation list.
  **)
-
 relation elab_classdef_initialequations: Absyn.ClassPart list => Equation list = 
 
   axiom	elab_classdef_initialequations [] => []
@@ -455,7 +446,6 @@ end
  **
  ** Convert an Absyn.ClassPart list to an Algorithm list.
  **)
-
 relation elab_classdef_algorithms: Absyn.ClassPart list => Algorithm list =
 
   axiom	elab_classdef_algorithms [] => []
@@ -479,7 +469,6 @@ end
  **
  ** Convert an Absyn.ClassPart list to an initial Algorithm list.
  **)
-
 relation elab_classdef_initialalgorithms: Absyn.ClassPart list 
 	  => Algorithm list =
 
@@ -505,7 +494,6 @@ end
  ** Convert an Absyn.AlgorithmItem list to an Absyn.Algorithm list.
  ** Comments are lost.
  **)
-
 relation elab_classdef_algorithmitems: Absyn.AlgorithmItem list 
 	  => Absyn.Algorithm list =
 
@@ -526,7 +514,6 @@ end
  ** The list should only contain one external declaration, so pick the first 
  ** one.
  **)
-
 relation elab_classdef_externaldecls: (Absyn.ClassPart list) => Absyn.ExternalDecl option =
 
   axiom	elab_classdef_externaldecls(Absyn.EXTERNAL(decl,_)::_) => SOME(decl)
@@ -545,7 +532,6 @@ end
  ** pretected. Annotations are not elaborated, i.e. they are removed when
  ** converting to SCode.
  **)
-
 relation elab_eitemlist : (Absyn.ElementItem list, bool) => Element list =
 
   axiom	elab_eitemlist([],_) => []
@@ -568,7 +554,6 @@ end
  ** at once, and those are separated to several declarations in the
  ** result.
  **)
-
 relation elab_element : (Absyn.Element, bool) => Element list =
 
   rule	elab_elementspec(f,repl,prot,s) => es
@@ -583,7 +568,6 @@ end
  ** `Element's.  The boolean arguments say if the element is final and
  ** protected, respectively.
  **)
-
 relation elab_elementspec: (bool,Absyn.RedeclareKeywords option,bool,Absyn.ElementSpec) => Element list =
 
   rule	elab_classdef(de) => de' &
@@ -635,7 +619,7 @@ end
 (** relation: elab_variability
  **
  ** Converts an Absyn.Variability to Variability.
-**)
+ **)
 relation elab_variability: Absyn.Variability => Variability =
 
   axiom elab_variability(Absyn.VAR) => VAR
@@ -651,7 +635,6 @@ end
  ** `Equations's, by applying the `elab_equation' relation to each
  ** equation.
  **)
-
 relation elab_equations : Absyn.EquationItem list => Equation list =
 
   axiom	elab_equations [] => []
@@ -670,8 +653,7 @@ end
 (** relation: elab_e_equations
  **
  ** Helper relation to elab_equations
-**)
-
+ **)
 relation elab_e_equations : Absyn.EquationItem list => EEquation list =
 
   axiom	elab_e_equations [] => []
@@ -745,7 +727,6 @@ end
  ** exception.  `If' clauses are translated so that the SCode only
  ** contains simple `if'-`else' constructs, and no `elseif'.
  **)
-
 (* PR Arrays seem to keep their Absyn.rml structure. *)
 relation elab_equation : Absyn.Equation => EEquation =
 
@@ -792,7 +773,6 @@ end
  ** Builds an `SCode.Mod' from an `Absyn.Modification'.  The boolean
  ** argument flags whether the modification is `final'.
  **)
-
 relation build_mod : (Absyn.Modification option, 
 		      bool, (* final *)
 		      Absyn.Each) => Mod =
@@ -814,7 +794,6 @@ end
  **
  ** Removes all submodifiers from the Mod.
  **)
-
 relation strip_submod: Mod => Mod =
 
   axiom	strip_submod(MOD(f,each,subs,e)) => MOD(f,each,[],e)
@@ -829,7 +808,6 @@ end
  **
  ** Adding elaborate for the elementspec in the redeclaration
  **)
-
 relation build_args : (Absyn.ElementArg list) => SubMod list =
 
   axiom build_args [] => []
@@ -856,7 +834,6 @@ end
  ** This relation converts a `ComponentRef' into a number of nested
  ** `SUBMOD's.
  **)
-
 relation build_sub : (Absyn.ComponentRef,Mod) => SubMod =
 
 	(* First some rules to prevent bad modifications *)
@@ -893,7 +870,6 @@ end
  ** indexed in the modification, so that only one or a limitied number
  ** of array elements should be modified.
  **)
-
 relation build_sub_sub : (Subscript list, Mod) => Mod =
 
   axiom	build_sub_sub ([], m) => m
@@ -906,7 +882,6 @@ end
  ** Return the Element with the name given as first argument from
  ** the Class.
  **)
-
 relation get_element_named: (Ident, Class) => Element =
 	
   rule	get_element_named_from_elts(id,elts) => elt
@@ -918,7 +893,6 @@ end
  **
  ** Helper relation to get_element_named.
  **)
-
 relation get_element_named_from_elts: (Ident, Element list) => Element =
 
   rule	not id1 = id2 &
@@ -950,9 +924,6 @@ end
  ** This relation prints a modification.  The code is excluded from
  ** the report for brevity.
  **)
-
-(*!ignorecode*)
-
 relation print_mod: Mod => () =
 
   rule	print_mod_str m => s &
@@ -965,7 +936,6 @@ end
  **
  ** Prints Mod to a string.
  **)
-
 relation print_mod_str : Mod => string =
 
   axiom	print_mod_str(NOMOD) => "NOMOD"
@@ -996,7 +966,6 @@ end
  **
  ** Prints Restriction to a string.
  **)
-
 relation restr_string : Restriction => string =
 
   axiom restr_string R_CLASS			=> "CLASS"
@@ -1018,7 +987,6 @@ end
  **
  ** Prints Restriction to the Print buffer.
  **)
-
 relation print_restr : Restriction => () =
 
   rule	restr_string restr => str &
@@ -1031,7 +999,6 @@ end
  **
  ** Prints "final" to the Print buffer.
  **)
-
 relation print_final : bool => () =
 
   axiom print_final false
@@ -1046,7 +1013,6 @@ end
  ** 
  ** Prints a SubMod list to a string.
  **)
-
 relation print_subs_str : SubMod list => string =
 
   axiom print_subs_str [] => ""
@@ -1080,8 +1046,7 @@ end
 (** relation: print_subs1_str
  **
  ** Helper relation to print_subs_str.
-**)
-
+ **)
 relation print_subs1_str : SubMod list => string =
 
   axiom print_subs1_str [] => ""
@@ -1099,7 +1064,6 @@ end
  **
  ** Helper relation to print_mod_str.
  **)
-
 relation print_eqmod_str : Absyn.Exp option => string =
 
   axiom print_eqmod_str NONE => ""
@@ -1115,7 +1079,6 @@ end
  **
  ** Print Element list to Print buffer.
  **)
-
 relation print_element_list : Element list => () =
 
   axiom	print_element_list([]) => ()
@@ -1130,7 +1093,6 @@ end
  **
  ** Print Element to Print buffer.
  **)
-
 relation print_element : Element => () =
 
   rule	print_element_str elt => str &
@@ -1143,7 +1105,6 @@ end
  **
  ** Print Element to a string.
  **)
-
 relation print_element_str : Element => string =
 
   rule	Absyn.path_string path => str &
@@ -1218,7 +1179,6 @@ end
  **
  ** Print Variability to a string.
  **)
-
 relation variability_string: Variability => string =
   axiom	variability_string(VAR) => "VAR"
   axiom	variability_string(DISCRETE) => "DISCRETE"
@@ -1231,7 +1191,6 @@ end
  **
  ** Returns true if Variability indicates a parameter or constant.
  **)
-
 relation is_parameter_or_const: Variability => bool =
 
   axiom	is_parameter_or_const (VAR) => false
@@ -1250,7 +1209,6 @@ end
  **
  ** Counts the number of ClassParts of a Class.
  **)
-
 relation count_parts: Class => int =
 
   rule	list_length(elts) => res
@@ -1265,7 +1223,6 @@ end
  **
  ** Return a string list of all component names of a class.
  **)
-
 relation component_names: Class => string list =
 
   rule	component_names_from_elts(elts) => res
@@ -1278,7 +1235,6 @@ end
  **
  ** Helper relation to component_names.
  **)
-
 relation component_names_from_elts:(Element list) => string list =
 
   axiom	component_names_from_elts([]) => []
@@ -1291,8 +1247,7 @@ end
 (** relation: is_function
  **
  ** Return true if Class is a function.
-**)
- 
+ **)
 relation is_function : Class => bool =
 
   axiom	is_function CLASS(n,_,_,R_FUNCTION,def) => true
@@ -1305,7 +1260,6 @@ end
  **
  ** Returns the class name of a Class.
  **)
-
 relation class_name : Class => string =
 
   axiom	class_name CLASS(n,_,_,_,_) => n
@@ -1318,7 +1272,6 @@ end
  **
  ** Sets the partial attribute of a Class
  **)
-
 relation class_set_partial: (Class,bool) => Class =
 
   axiom	class_set_partial(CLASS(id,_,enc,restr,def),partial)

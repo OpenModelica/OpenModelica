@@ -112,23 +112,16 @@ module Dump:
 end
 
 
-
-
-(*!ignorecode*)
-
 with "ClassInf.rml"
 with "RTOpts.rml"
 with "Print.rml"
 with "Util.rml"
 with "Debug.rml"
 
-(* Relations *)
-
 (** relation: dump
  **
  ** Prints a program, i.e. the whole AST, to the Print buffer.
  **)
-
 relation dump : Absyn.Program => () =
 		
   rule	Print.print_buf "Absyn.PROGRAM([\n" &
@@ -144,7 +137,6 @@ end
  ** 
  ** Prettyprints the Program, i.e. the whole AST, to a string.
  **)
-
 relation unparse_str : Absyn.Program => string =
 	
   axiom	unparse_str Absyn.PROGRAM([],_) => ""
@@ -163,7 +155,6 @@ end
  **
  ** Prettyprints a list of classes
  **)
-
 relation unparse_class_list: (int, Absyn.Class list) => string =
 
   axiom	unparse_class_list(_,[]) => ""
@@ -179,7 +170,6 @@ end
  **
  ** Prettyprints a within statement.
  **)
-
 relation unparse_within: (int, Absyn.Within) => string =
 
   axiom unparse_within (_, Absyn.TOP) => ""
@@ -212,7 +202,6 @@ end
  **
  ** Prettyprints a Class.
  **)
-	    
 relation unparse_class_str: (int, Absyn.Class,string,string,string) => string =
 	
   rule	indent_str(i) => is &
@@ -296,10 +285,9 @@ end
  **
  ** Prettyprints a Comment.
  **)
-
 relation unparse_comment_option: (Absyn.Comment option) => string =
 
-	axiom unparse_comment_option(NONE) => ""
+  axiom unparse_comment_option(NONE) => ""
 	
   rule	unparse_annotation_option(0,annopt) => s1 &
 	Util.string_append_list([" \"",cmt,"\"", s1]) => str
@@ -316,8 +304,8 @@ end
  **
  ** Prettyprints a Comment without printing the annotation part.
  **)
-
 relation unparse_comment_option_no_annotation: (Absyn.Comment option) => string =
+
   rule	Util.string_append_list([" \"",cmt,"\""]) => str
 	---------------------------------------------
 	unparse_comment_option_no_annotation(SOME(Absyn.COMMENT(_,SOME(cmt)))) 
@@ -330,7 +318,6 @@ end
  **
  ** Prints a Comment to the Print buffer.
  **)
-
 relation dump_comment_option: (Absyn.Comment option) => () =
 
   rule	Print.print_buf "NONE"
@@ -356,7 +343,6 @@ end
  **
  ** Dumps an annotation option to the Print buffer.
  **)
-
 relation dump_annotation_option: (Absyn.Annotation option) => () =	
 
   rule	Print.print_buf "NONE" 
@@ -376,7 +362,6 @@ end
  ** Prettyprints enumeration literals, each consisting of an identifier
  ** and an optional comment.
  **)
-
 relation unparse_enumliterals : Absyn.EnumLiteral list => string =
 	
   axiom	unparse_enumliterals([]) => ""
@@ -400,7 +385,6 @@ end
  ** Prints enumeration literals, each consisting of an identifier
  ** and an optional comment to the Print buffer.
  **)
-
 relation print_enumliterals : Absyn.EnumLiteral list => () =
 
   rule	Print.print_buf "[" &
@@ -414,7 +398,6 @@ end
  **
  ** Helper relation to print_enumliterals
  **)
-
 relation print_enumliterals2 : Absyn.EnumLiteral list => () =
 
   axiom	print_enumliterals2([]) => ()
@@ -445,7 +428,6 @@ end
  **
  ** Prettyprints the class restriction.
  **)
-
 relation unparse_restriction_str : Absyn.Restriction => string =
 	
   axiom	unparse_restriction_str Absyn.R_CLASS			=> "class"
@@ -468,8 +450,8 @@ end
  **
  ** Dumps an interactive statement to the Print buffer.
  **)
-
 relation dump_istmt : Interactive.InteractiveStmts => () =
+
   rule	Print.print_buf ("IALG(") &
 	print_algorithmitem(alg) => () &
 	Print.print_buf ")\n" 
@@ -503,7 +485,6 @@ end
  **
  ** Dumps a Class to the Print buffer.
  **)
-
 relation print_class: Absyn.Class => () =
 	
   rule	Print.print_buf("Absyn.CLASS(\"") &
@@ -535,7 +516,6 @@ end
  **
  ** Prints a ClassDef to the Print buffer.
  **)
-
 relation print_classdef: Absyn.ClassDef => () =
 	
   rule	Print.print_buf "Absyn.PARTS([" &
@@ -584,7 +564,6 @@ end
  **
  ** Prints the class restriction to the Print buffer.
  *)
-
 relation print_class_restriction: Absyn.Restriction => () =
 
   rule	Print.print_buf "Absyn.R_CLASS" 
@@ -647,15 +626,14 @@ relation print_class_restriction: Absyn.Restriction => () =
 	-----------------------
 	print_class_restriction Absyn.R_PREDEFINED_ENUM
 
-
   axiom	print_class_restriction _
+
 end
 
 (** relation: print_class_modification
  **
  ** Prints a class modification to a print buffer.
  **)
-
 relation print_class_modification =
 
   axiom	print_class_modification([])
@@ -670,7 +648,6 @@ end
  **
  ** Prettyprints a class modification to a string.
  **)
-
 relation unparse_class_modification_str: Absyn.Modification => string =
 
   axiom	unparse_class_modification_str(Absyn.CLASSMOD([],_)) => ""
@@ -692,7 +669,6 @@ end
  **
  ** Prints an ElementArg to the Print buffer.
  **)
-
 relation print_element_arg =
 	
   rule	Print.print_buf "Absyn.MODIFICATION(" &
@@ -722,7 +698,6 @@ end
  **
  ** Prettyprints an ElementArg to a string.
  **)
-
 relation unparse_element_arg_str: (Absyn.ElementArg) => string =
 	
   rule	unparse_each_str ( each ) => s1 &
@@ -749,8 +724,7 @@ end
  ** 
  ** Prettyprints the redeclare keywords, i.e 'replaceable' and 'redeclare'
  **)
-
- relation unparse_redeclarekeywords: Absyn.RedeclareKeywords => string =
+relation unparse_redeclarekeywords: Absyn.RedeclareKeywords => string =
 
   axiom	unparse_redeclarekeywords Absyn.REDECLARE => "redeclare "
   axiom	unparse_redeclarekeywords Absyn.REPLACEABLE => "replaceable "
@@ -761,7 +735,6 @@ end
  **
  ** Prettyprints the each keyword.
  **)
-
 relation unparse_each_str: (Absyn.Each) => string =
 
   axiom	unparse_each_str(Absyn.EACH) => "each "
@@ -783,11 +756,11 @@ relation dump_each: (Absyn.Each) => () =
 	------------------
 	dump_each(Absyn.NON_EACH)
 end
+
 (** relation: print_class_part
  **
  ** Prints the ClassPart to the Print buffer.
  **)
-				
 relation print_class_part: Absyn.ClassPart => () =
 
   rule	Print.print_buf "Absyn.PUBLIC(" & 
@@ -836,7 +809,6 @@ end
  **
  ** Prints an external declaration to the Print buffer.
  **)
-
 relation print_external_decl : Absyn.ExternalDecl => () =
 
   rule	get_option_str (id, identity) => idstr &
@@ -863,7 +835,6 @@ end
  **
  ** Prettyprints a ClassPart list to a string.
  **)
-
 relation unparse_class_part_str_lst: (int, Absyn.ClassPart list,bool) 
 	  => string =
 
@@ -878,12 +849,12 @@ end
 
 relation unparse_class_part_str: (int, Absyn.ClassPart,bool) => string =
 
-axiom	unparse_class_part_str(i, Absyn.PUBLIC([]),_) => ""
-axiom	unparse_class_part_str(i, Absyn.PROTECTED([]),_) => ""
-axiom	unparse_class_part_str(i, Absyn.EQUATIONS([]),_) => ""
-axiom	unparse_class_part_str(i, Absyn.INITIALEQUATIONS([]),_) => ""
-axiom	unparse_class_part_str(i, Absyn.ALGORITHMS([]),_) => ""
-axiom	unparse_class_part_str(i, Absyn.INITIALALGORITHMS([]),_) => ""
+  axiom	unparse_class_part_str(i, Absyn.PUBLIC([]),_) => ""
+  axiom	unparse_class_part_str(i, Absyn.PROTECTED([]),_) => ""
+  axiom	unparse_class_part_str(i, Absyn.EQUATIONS([]),_) => ""
+  axiom	unparse_class_part_str(i, Absyn.INITIALEQUATIONS([]),_) => ""
+  axiom	unparse_class_part_str(i, Absyn.ALGORITHMS([]),_) => ""
+  axiom	unparse_class_part_str(i, Absyn.INITIALALGORITHMS([]),_) => ""
 
   rule	unparse_elementitem_str_lst(i,el) => s1 &
 	int_sub(i,1) => i' &
@@ -971,7 +942,6 @@ end
  **
  ** Prettyprints the external function language string to a string.
  **)
-
 relation get_extlang_str: (string option) => string =
 	
   axiom	get_extlang_str(NONE) => ""
@@ -985,7 +955,6 @@ end
  **
  ** Print a list of ElementItems to the Print buffer.
  **)
-
 relation print_elementitems: Absyn.ElementItem list => () =
 
   rule	Print.print_buf "[" &
@@ -999,7 +968,6 @@ end
  ** 
  ** Helper relation to print_elementitems
  **)
-
 relation print_elementitems2: Absyn.ElementItem list => () =
 
   axiom print_elementitems2 [] => ()
@@ -1038,8 +1006,7 @@ end
 (** relation: print_annotation
  **
  ** Prints an annotation to the Print buffer.
-**)
-
+ **)
 relation print_annotation: Absyn.Annotation => () =	
   rule	Print.print_buf "ANNOTATION(" &
 	print_modification Absyn.CLASSMOD(mod,NONE) &
@@ -1052,7 +1019,6 @@ end
  **
  ** Prettyprints a list of ElementItem to a string.
  **)
-
 relation unparse_elementitem_str_lst: (int(* indent*), Absyn.ElementItem list) => string =
 
   axiom	unparse_elementitem_str_lst(_, []) => ""
@@ -1068,7 +1034,6 @@ end
  **
  ** Prettyprints and ElementItem.
  **)
-
 relation unparse_elementitem_str: (int(* indent*), Absyn.ElementItem) 
 	  => string =
 
@@ -1087,8 +1052,6 @@ end
  **
  ** Prettyprint an annotation and a semicolon if annoation present.
  **)
-
-
 relation unparse_annotation_option_semi: (int, Absyn.Annotation option) 
 	  => string =	
 
@@ -1104,7 +1067,6 @@ end
  **
  ** Prettyprint an annotation.
  **)
-
 relation unparse_annotation_option: (int, Absyn.Annotation option) => string =	
   rule	unparse_class_modification_str Absyn.CLASSMOD(mod,NONE) => s1 &
 	string_append(" annotation",s1) => s2 &
@@ -1125,7 +1087,6 @@ end
  **
  ** Prints an Element to the Print buffer.
  **)
-
 relation print_element: Absyn.Element => () =
 	
   rule	Print.print_buf "Absyn.ELEMENT(" & 
@@ -1176,7 +1137,6 @@ end
  **
  ** Prettyprints and Element to a string.
  **)
-
 relation unparse_element_str: (int, Absyn.Element) => string = 
 
   rule	select_string(final, "final ", "") => s1 &
@@ -1202,7 +1162,6 @@ end
  **
  ** This relation prettyprints a ConstrainClass option to a string.
  **)
-
 relation unparse_constrainclass_opt_str: (Absyn.ConstrainClass option) 
 	  => string =
 
@@ -1218,7 +1177,6 @@ end
  **
  ** This relation prettyprints a ConstrainClass to a string.
  **)
-
 relation unparse_constrainclass_str: (Absyn.ConstrainClass) => string =
 
   rule	unparse_elementspec_str(0,spec,"","","") => s1 &
@@ -1233,7 +1191,6 @@ end
  **
  ** Prints the inner or outer keyword to the Print buffer.
  **)
-
 relation print_innerouter: Absyn.InnerOuter => () =
    rule Print.print_buf "Absyn.INNER"
 	----------------------------
@@ -1256,7 +1213,6 @@ end
  **
  ** Prettyprints the inner or outer keyword to a string.
  **)
-
 relation unparse_innerouter_str: Absyn.InnerOuter => string =
 	
   axiom	unparse_innerouter_str(Absyn.INNER) => "inner "
@@ -1272,7 +1228,6 @@ end
  **
  ** Prints the ElementSpec to the Print buffer.
  **)
-
 relation print_elementspec: Absyn.ElementSpec => () =
 	
   rule	Print.print_buf "Absyn.CLASSDEF(" & 
@@ -1282,7 +1237,6 @@ relation print_elementspec: Absyn.ElementSpec => () =
 	Print.print_buf ")"
 	-------------------------
 	print_elementspec(Absyn.CLASSDEF(repl,cl))
-	
 	
   rule	Print.print_buf "Absyn.EXTENDS(" & 
 	dump_path p & Print.print_buf ", [" &
@@ -1315,7 +1269,6 @@ end
  **
  ** Prettyprints the ElementSpec to a string.
  **)
-
 relation unparse_elementspec_str: (int,(*indent*) 
 				   Absyn.ElementSpec,
 				   string,
@@ -1367,7 +1320,6 @@ end
  **
  ** Prints an Import to the Print buffer.
  **)
-
 relation print_import : Absyn.Import => () =
 
   rule	Print.print_buf i & Print.print_buf " = " &
@@ -1389,7 +1341,6 @@ end
  **
  ** Prettyprints an Import to a string.
  **)
-
 relation unparse_import_str : Absyn.Import => string =
 
   rule	string_append(i," = ") => s1 &
@@ -1412,7 +1363,6 @@ end
  **
  ** Prints ElementAttributes to the Print buffer.
  **)
-
 relation print_elementattr: Absyn.ElementAttributes => () =
 
   rule	Print.print_buf "Absyn.ATTR(" &
@@ -1439,7 +1389,6 @@ end
  **
  ** Prettyprints ElementAttributes to a string.
  **)
-
 relation unparse_elementattr_str: Absyn.ElementAttributes => string =
 
   rule	
@@ -1460,7 +1409,6 @@ end
  **
  ** Prettyprints the arraydimension in ElementAttributes to a string.
  **)
-
 relation unparse_arraydim_in_attr: Absyn.ElementAttributes => string =
 
   rule	print_arraydim_str(adim) => str
@@ -1474,7 +1422,6 @@ end
  ** 
  ** Returns a string for the Variability.
  **)
-
 relation variability_symbol: Absyn.Variability => string =
 
   axiom variability_symbol(Absyn.VAR) => "Absyn.VAR"
@@ -1488,7 +1435,6 @@ end
  ** 
  ** Returns a string for the direction.
  **)
-
 relation direction_symbol: Absyn.Direction => string =
 
   axiom direction_symbol(Absyn.BIDIR) => "Absyn.BIDIR"
@@ -1501,7 +1447,6 @@ end
  **
  ** Returns a prettyprinted string of variability.
  **)
-
 relation unparse_variability_symbol_str: Absyn.Variability => string =
 
   axiom unparse_variability_symbol_str(Absyn.VAR) => ""
@@ -1515,7 +1460,6 @@ end
  **
  ** Returns a prettyprinted string of direction.
  **)
-
 relation unparse_direction_symbol_str: Absyn.Direction => string =
 
   axiom unparse_direction_symbol_str(Absyn.BIDIR) => ""
@@ -1528,7 +1472,6 @@ end
  **
  ** Prints a Component to the Print buffer.
  **)
-
 relation print_component: Absyn.Component => () =
 
   rule	Print.print_buf "Absyn.COMPONENT(\"" &
@@ -1547,7 +1490,6 @@ end
  **
  ** Prints a ComponentItem to the Print buffer.
  **)
-
 relation print_componentitem: Absyn.ComponentItem => () =
 
   rule	Print.print_buf "Absyn.COMPONENTITEM(" &
@@ -1563,7 +1505,6 @@ end
  **
  ** Prettyprints a Component to a string.
  **)
-
 relation unparse_component_str: Absyn.Component => string =
 
   rule	print_arraydim_str a => s1 &
@@ -1578,7 +1519,6 @@ end
  **
  ** Prettyprints a ComponentItem to a string.
  **)
-
 relation unparse_componentitem_str: Absyn.ComponentItem => string =
 
   rule	unparse_component_str c => s1 &
@@ -1593,7 +1533,6 @@ end
  **
  ** Prints a ComponentCondition option to a string.
  **)
-
 relation unparse_component_condition: Absyn.ComponentCondition option 
 	  => string =
 
@@ -1609,7 +1548,6 @@ end
  **
  ** Prints an ArrayDim option to the Print buffer.
  **)
-
 relation print_arraydim_opt: Absyn.ArrayDim option => () =
 	
   rule	Print.print_buf "NONE"
@@ -1627,7 +1565,6 @@ end
  **
  ** Prints an ArrayDim to the Print buffer.
  **)
-
 relation print_arraydim: Absyn.ArrayDim => () =
 
   rule	print_subscripts(s)
@@ -1640,7 +1577,6 @@ end
  **
  ** Prettyprints an ArrayDim to a string.
  **)
-
 relation print_arraydim_str: Absyn.ArrayDim => string =
 
   rule	print_subscripts_str (s) => str
@@ -1653,7 +1589,6 @@ end
  **
  ** Prints an Subscript to the Print buffer.
  **)
-
 relation print_subscript: Absyn.Subscript => () =
 
   rule	Print.print_buf "Absyn.NOSUB"
@@ -1672,7 +1607,6 @@ end
  **
  ** Prettyprints an Subscript to a string.
  **)
-
 relation print_subscript_str: Absyn.Subscript => string =
 
   axiom	print_subscript_str (Absyn.NOSUB) => ":"
@@ -1687,7 +1621,6 @@ end
  ** 
  ** Prints a Modification option to the Print buffer.
  **)
-
 relation print_opt_modification: Absyn.Modification option => () =
 
   rule	Print.print_buf "SOME(" &
@@ -1703,7 +1636,6 @@ end
  ** 
  ** Prints a Modification to the Print buffer.
  **)
-
 relation print_modification: Absyn.Modification => () =
 	
   rule	Print.print_buf "Absyn.CLASSMOD([" &
@@ -1724,7 +1656,6 @@ end
  **
  ** Helper relaton to print_modification.
  **)
-
 relation print_mod1: Absyn.ElementArg list => () =
 
   axiom	print_mod1 []
@@ -1741,7 +1672,6 @@ end
  **
  ** Helper relaton to print_mod1
  **)
-
 relation print_mod2 : Absyn.Exp option => () =
 
   rule	Print.print_buf "NONE"
@@ -1759,7 +1689,6 @@ end
  **
  ** Prettyprints a Modification option to a string.
  **)
-
 relation unparse_opt_modification_str: Absyn.Modification option => string =
 
   rule	unparse_modification_str(opt) => str
@@ -1773,7 +1702,6 @@ end
  **
  ** Prettyprints a Modification to a string.
  **)
-
 relation unparse_modification_str: Absyn.Modification => string =
 	(* Special case for empty modifications *)
   axiom	unparse_modification_str(Absyn.CLASSMOD([],NONE)) => "()"
@@ -1793,7 +1721,6 @@ end
  **
  ** Helper relation to unparse_modification_str
  **)
-
 relation unparse_mod1_str: Absyn.ElementArg list => string =
 
   axiom	unparse_mod1_str [] => ""
@@ -1809,7 +1736,6 @@ end
  **
  ** Helper relation to unparse_mod1_str
  **)
-
 relation unparse_mod2_str : Absyn.Exp option => string =
 
   axiom	unparse_mod2_str NONE => ""
@@ -1826,7 +1752,6 @@ end
  **
  ** Prints an Equation to the Print buffer.
  **)
-
 relation print_equation: Absyn.Equation => () =
 	
 
@@ -1862,7 +1787,6 @@ end
  **
  ** Prints and EquationItem to the Print buffer.
  **)
-
 relation print_equationitem: Absyn.EquationItem => () =
   rule	Print.print_buf "EQUATIONITEM(" &
 	print_equation eq &
@@ -1879,7 +1803,6 @@ end
  **
  ** Prettyprints an Equation to a string.
  **)
-
 relation unparse_equation_str: (int, Absyn.Equation) => string =
 	
   rule	print_exp_str(e) => s1 &
@@ -1945,7 +1868,6 @@ end
  **
  ** Prettyprints and EquationItem list to a string.
  **)
-
 relation unparse_equationitem_str_lst: (int (* indent *), 
 					Absyn.EquationItem list, 
 					string) 
@@ -1964,10 +1886,9 @@ end
  **
  ** Prettyprints an EquationItem to a string.
  **)
-
 relation unparse_equationitem_str: (int, Absyn.EquationItem) => string =
-  rule	
-	unparse_equation_str (i, eq) => s1 &
+
+  rule	unparse_equation_str (i, eq) => s1 &
 	unparse_comment_option(optcmt) => s2 &
 	string_append(s1,s2) => str
 	---------------------------
@@ -1982,7 +1903,6 @@ end
  **
  ** Prints an Elseif branch to the Print buffer.
  **)
-	
 relation print_eq_elseif : (Absyn.Exp * Absyn.EquationItem list) => () =
 	
   rule	Print.print_buf " ELSEIF " & print_exp e & Print.print_buf " THEN " &
@@ -1995,7 +1915,6 @@ end
  **
  ** Prettyprints an elseif branch to a string.
  **)
-
 relation unparse_eq_elseif_str_lst: (int, (Absyn.Exp * Absyn.EquationItem list) list, string) => string =
 	
   axiom	 unparse_eq_elseif_str_lst(_,[],_) => ""
@@ -2022,7 +1941,6 @@ end
  **
  ** Helper relation to unparse_eq_elseif_str_lst
  **)
-
 relation unparse_eq_elseif_str : (int, (Absyn.Exp * Absyn.EquationItem list)) => string =
 	    
   rule	print_exp_str e => s1 &
@@ -2040,7 +1958,6 @@ end
  **
  ** Prints an AlgorithmItem to the Print buffer.
  **)
-
 relation print_algorithmitem: Absyn.AlgorithmItem => () =
 
   rule	Print.print_buf "ALGORITHMITEM(" &
@@ -2058,7 +1975,6 @@ end
  **
  ** Prints an Algorithm to the Print buffer.
  **)
-
 relation print_algorithm: Absyn.Algorithm => () =
 	
   rule	Print.print_buf "ALG_ASSIGN(" & print_component_ref cr &
@@ -2108,7 +2024,6 @@ end
  **
  ** Prettyprints an AlgorithmItem list to a string.
  **)
-
 relation unparse_algorithm_str_lst: (int, Absyn.AlgorithmItem list,string)
 	  => string =
 
@@ -2125,7 +2040,6 @@ end
  ** 
  ** Helper relation to unparse_algorithm_str
  **)
-
 relation unparse_algorithm_str: (int, Absyn.AlgorithmItem) => string =
 	
 	(* ALG_ASSIGN *)
@@ -2198,7 +2112,6 @@ relation unparse_algorithm_str: (int, Absyn.AlgorithmItem) => string =
 	-----------------------------------------------
 	unparse_algorithm_str(i, Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(cr,fargs),optcmt)) => str
 
-
   rule	unparse_annotation_option(i, SOME(ann)) => str &
 	string_append(str,";") => str'
 	------------------------------------------
@@ -2214,7 +2127,6 @@ end
  **
  ** Unparses an elsewhen branch in an algorithm to a string.
  **)
-
 relation unparse_alg_elsewhen_str_lst: (int,(Absyn.Exp * Absyn.AlgorithmItem list) list) => string =
 
   axiom	unparse_alg_elsewhen_str_lst (_,[]) => ""
@@ -2240,7 +2152,6 @@ end
  **
  ** Helper relation to unparse_alg_elsewhen_str_lst
  **)
-
 relation unparse_alg_elsewhen_str: (int, (Absyn.Exp * Absyn.AlgorithmItem list)) => string =
 	
   rule	indent_str(i) => is &
@@ -2255,7 +2166,6 @@ end
  **
  ** Prettyprints an equation elsewhen branch to a string.
  **)
-
 relation unparse_eq_elsewhen_str_lst: (int,(Absyn.Exp * Absyn.EquationItem list) list) => string =
 
   axiom	unparse_eq_elsewhen_str_lst (_,[]) => ""
@@ -2281,7 +2191,6 @@ end
  **
  ** Helper relation to unparse_eq_elsewhen_str_lst
  **)
-
 relation unparse_eq_elsewhen_str: (int, (Absyn.Exp * Absyn.EquationItem list)) => string =
 	
   rule	indent_str(i) => is &
@@ -2296,7 +2205,6 @@ end
  **
  ** Prints an algorithm elseif branch to the Print buffer.
  **)
-
 relation print_alg_elseif : (Absyn.Exp * Absyn.AlgorithmItem list) => () =
 
   rule	Print.print_buf " ELSEIF " & print_exp e & Print.print_buf " THEN " &
@@ -2310,7 +2218,6 @@ end
  **
  ** Prettyprints an algorithm elseif branch to a string.
  **)
-
 relation unparse_alg_elseif_str_lst: (int, (Absyn.Exp * Absyn.AlgorithmItem list) list, string) => string =
 	
   axiom	 unparse_alg_elseif_str_lst(_,[],_) => ""
@@ -2326,7 +2233,6 @@ end
  **
  ** Helper relation to unparse_alg_elseif_str_lst
  **)
-
 relation unparse_alg_elseif_str : (int,(Absyn.Exp * Absyn.AlgorithmItem list)) => string =
 
   rule  print_exp_str e => s1 &
@@ -2344,7 +2250,6 @@ end
  *
  * Print a `ComponentRef' to the Print buffer.
  *)
-
 relation print_component_ref : Absyn.ComponentRef => () =
 
   rule	Print.print_buf "Absyn.CREF_IDENT(\"" &
@@ -2370,7 +2275,6 @@ end
  **
  ** Prints a Subscript to the Print buffer.
  **)
-
 relation print_subscripts : Absyn.Subscript list => () =
 
   rule	Print.print_buf "[]" 
@@ -2387,7 +2291,6 @@ end
  *
  * Print a `ComponentRef' and return as a string.
  *)
-
 relation print_component_ref_str : Absyn.ComponentRef => string =
 
   rule	print_subscripts_str subs => subsstr &
@@ -2408,7 +2311,6 @@ end
  **
  ** Prettyprint a Subscript list to a string.
  **)
-
 relation print_subscripts_str : Absyn.Subscript list => string =
 
   axiom	print_subscripts_str [] => ""
@@ -2425,7 +2327,6 @@ end
  *
  * Print a `Path'.
  *)
-
 relation print_path : Absyn.Path => () =
 
   rule	Absyn.path_string p => s & Print.print_buf s
@@ -2437,7 +2338,6 @@ end
  **
  ** Dumps path to the Print buffer
  **)
-		    
 relation dump_path: Absyn.Path => () =
 
   rule	Print.print_buf("Absyn.IDENT(\"") &
@@ -2459,7 +2359,6 @@ end
  *
  * Print a `Path'.
  *)
-
 relation print_path_str : Absyn.Path => string =
 
   rule	Absyn.path_string p => s
@@ -2474,7 +2373,6 @@ end
  *
  * This relation prints a complete expression to the Print buffer.
  *)
-
 relation print_exp : Absyn.Exp => () =
 	
   rule	int_string(x) => s & 
@@ -2620,7 +2518,6 @@ end
  **
  ** Prints FunctionArgs to Print buffer.
  **)
-
 relation print_function_args: Absyn.FunctionArgs => () =
 	
   rule  Print.print_buf "FUNCTIONARGS(" &
@@ -2646,7 +2543,6 @@ end
  **
  ** Prettyprint FunctionArgs to a string.
  **)
-
 relation print_function_args_str: Absyn.FunctionArgs => string =
 	
   rule	(* Both positional and named arguments *)
@@ -2679,7 +2575,6 @@ end
  **
  ** Print NamedArg to the Print buffer.
  **)
-
 relation print_named_arg: Absyn.NamedArg => () =
 
   rule	Print.print_buf ident &
@@ -2693,7 +2588,6 @@ end
  **
  ** Prettyprint NamedArg to a string.
  **)
-
 relation print_named_arg_str: Absyn.NamedArg => string =
   rule	string_append(ident,"=") => s1 &
 	print_exp_str(e) => s2 &
@@ -2706,7 +2600,6 @@ end
  **
  ** Print an Expression list to the Print buffer.
  **)
-
 relation print_row : Absyn.Exp list => () =
 
   rule	print_list_debug("print_row",es, print_exp, ",")
@@ -2722,7 +2615,6 @@ end
 * This relation is used to output parenthesis when needed. eg 3*(1+2) should output 3*(1+2) 
 * and not 3*1+2
  *)
-
 relation exp_priority: Absyn.Exp => int =
 
   axiom	exp_priority(Absyn.INTEGER(_)) => 0
@@ -2774,7 +2666,6 @@ end
  ** Adds parentheisis to a string if expression and parent expression 
  ** priorities requires it.
  **)
-
 relation parenthesize: (string, 
 			int, (*expressuion prio*)
 			int (*parent expr prio*)
@@ -2792,7 +2683,6 @@ end
  *
  * This relation prints a complete expression.
  *)
-
 relation print_exp_str : Absyn.Exp => string =
 	
   rule	int_string(x) => s
@@ -2958,7 +2848,6 @@ end
  **
  **  Prettyprint Code to a string.
  **)
-
 relation print_code_str: Absyn.Code => string =
 	
   rule	print_path_str p => s
@@ -2998,8 +2887,7 @@ end
 (** relation: print_eleseif_str
  **
  ** Prettyprint elseif to a string
- **)
-			       
+ **)	       
 relation print_elseif_str: (Absyn.Exp * Absyn.Exp) list => string =
   axiom print_elseif_str ([]) => ""
 
@@ -3015,7 +2903,6 @@ end
  **
  ** Prettyprint a list of expressions to a string.
  **)
-
 relation print_row_str : Absyn.Exp list => string =
 
   rule	print_list_str (es, print_exp_str, ",") => s
@@ -3029,7 +2916,6 @@ end
  ** Same as print_list, except it returns a string
  ** instead of printing
  **)
-
 relation print_list_str : ('a list, 'a => string, string) => string =
 
   axiom	print_list_str ([],_,_) => ""
@@ -3052,7 +2938,6 @@ end
  *
  * Make a string describing different operators.
  *)
-
 relation op_symbol : Absyn.Operator => string =
   axiom	op_symbol(Absyn.ADD) => " + "
   axiom	op_symbol(Absyn.SUB) => " - "
@@ -3081,7 +2966,6 @@ end
  *
  * Make a string describing different operators.
  *)
-
 relation dump_op_symbol : Absyn.Operator => string =
   axiom	dump_op_symbol(Absyn.ADD) => "Absyn.ADD"
   axiom	dump_op_symbol(Absyn.SUB) => "Absyn.SUB"
@@ -3115,7 +2999,6 @@ end
  **
  ** Select one of the two strings depending on boolean value.
  **)
-
 relation select_string: (bool,string,string) => string =
 
   axiom	select_string(true,a,b) => a
@@ -3128,7 +3011,6 @@ end
  ** Select one of the two string depending on boolean value 
  ** and print it on the Print buffer.
  **)
-
 relation print_select: (bool,string,string) => () =
 
   rule	select_string(f,yes,no) => res &
@@ -3142,7 +3024,6 @@ end
  **
  ** Prints an option value given a print relation.
  **)
-
 relation print_option : (('a option),('a => ())) => () =
 
   rule	Print.print_buf "NONE" 
@@ -3160,7 +3041,6 @@ end
  **
  ** Prints a list of values given a print relation and a caller string.
  **)
-
 relation print_list_debug : (string, 'a list, 'a => (), string) => () =
 
   rule	Debug.fprintln ("dumptr", "print_list_debug-1")
@@ -3188,7 +3068,6 @@ end
  **
  ** Prints a list of values given a print relation.
  **)
-
 relation print_list : ('a list, 'a => (), string) => () =
 
   axiom	print_list([],_,_)
@@ -3209,7 +3088,6 @@ end
  ** Append strings from a list of values output with a relation converting
  ** a value to a string. 
  **)
-
 relation get_string_list : ('a list, 'a => string, string) => string =
 
   axiom	get_string_list ([],_,_) => ""
@@ -3231,7 +3109,6 @@ end
  **
  ** Print a bool value to the Print buffer
  **)
-
 relation print_bool : bool => () =
 
   rule	print_select (b, "true", "false")
@@ -3245,7 +3122,6 @@ end
  ** Retrieve the string from a string option.
  ** If NONE return empty string.
  **)
-
 relation get_option_str: ('a option, 'a => string) => string =
   rule  r (a) => str
 	------------
@@ -3259,7 +3135,6 @@ end
  ** Get option string value using a relation translating the value to a string
  ** and concatenate with an additional suffix string.
  **)
-
 relation get_option_with_concat_str: ('a option, 
 				      'a => string,
 				      string) (* suffix *)
@@ -3314,7 +3189,6 @@ end
 **
 ** Prints a bool to a string.
 **)
-
 relation print_bool_str : bool => string =
 
   rule	select_string (b, "true", "false") => s
@@ -3322,12 +3196,12 @@ relation print_bool_str : bool => string =
 	print_bool_str b => s
 
 end
+
 (** relation: indent_str
  ** 
  ** Creates an indentation string, i.e. whitespaces, given and indentation 
  ** level.
  **)
-
 relation indent_str: (int) => string =
   axiom	indent_str(0) => ""
 

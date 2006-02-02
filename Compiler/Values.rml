@@ -54,10 +54,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ** The code is excluded from the report, since they convey no
  ** semantic information.
  **)
-
 module Values :
 with "Exp.rml"
 with "Absyn.rml"
+
   datatype Value = INTEGER of int
 		 | REAL of real
 		 | STRING of string
@@ -65,9 +65,9 @@ with "Absyn.rml"
 		 | ENUM of string
 		 | ARRAY of Value list
 		 | TUPLE of Value list 
-		 | RECORD of Absyn.Path * (* record name *)
-			     Value list * (* orderd set of values *)
-			     Exp.Ident list(* comp names for each value*)
+		 | RECORD of Absyn.Path (* record name *)
+			   * Value list (* orderd set of values *)
+			   * Exp.Ident list(* comp names for each value*)
 		 | CODE of Absyn.Code
 		(* A record consist of value * Ident pairs *)
 
@@ -104,7 +104,6 @@ with "Error.rml"
  **
  ** Apply type conversion on a list of Values
  **)
-
 relation type_convert: (Exp.Type, Exp.Type, Value list) => Value list =
 
   axiom type_convert(_,_,[]) => []
@@ -133,7 +132,6 @@ end
  **
  ** Return true if Value is an array.
  **)
-
 relation is_array: Value => bool = 
   axiom	is_array(INTEGER(_)) => false
   axiom	is_array(REAL(_)) => false
@@ -148,7 +146,6 @@ end
  **
  ** Return the nth value of an array, indexed from 1..n
  **)
-
 relation nth_arrayelt: (Value,int) => Value =
 
   rule	int_sub(n,1) => n' &
@@ -161,7 +158,6 @@ end
  **
  ** Prints a list of Value to a string.
  **)
-
 relation unparse_values: (Value list) => string =
 
   rule	unparse_description([v]) => s1 &
@@ -172,6 +168,7 @@ relation unparse_values: (Value list) => string =
 	unparse_values(v::vallst) => str
 
   axiom	unparse_values([]) => ""
+
 end
 
 (** relation: unparse_value_numbers
@@ -179,7 +176,6 @@ end
  ** Helper relation to unparse_values. 
  ** Prints all the numbers of the values.
  **)
-
 relation unparse_value_numbers: (Value list) => string =
 
   rule	unparse_value_numbers(lst) => s1 &
@@ -223,7 +219,6 @@ end
  ** Helper relation to unparse_values. Creates a description string
  ** for the type of the value.
  **)
-
 relation unparse_description:(Value list) => string =
 
   rule	unparse_description(xs) => s1 &
@@ -257,7 +252,6 @@ end
  **
  ** Helper relation to unparse_description.
  **)
-
 relation unparse_array_description:(Value list) => string  =
 
   rule	unparse_prim_type (lst) => pt &
@@ -271,30 +265,31 @@ relation unparse_array_description:(Value list) => string  =
 	string_append(s5,s6) => str
 	------------------
 	unparse_array_description(lst) => str
+
 end
 
 (** relation: unparse_prim_type
  **
  ** Helper relation to unparse_array_description.
  **)
-
 relation unparse_prim_type: (Value list) => string =
 
   rule	unparse_prim_type(elts) => res
 	------------------------------
 	unparse_prim_type(ARRAY(elts)::_) => res
+
   axiom	unparse_prim_type(INTEGER(_)::_) => "i"
   axiom	unparse_prim_type(REAL(_)::_) => "r"
   axiom	unparse_prim_type(STRING(_)::_) => "s"
   axiom	unparse_prim_type(BOOL(_)::_) => "b"
   axiom	unparse_prim_type(_) => "error"
+
 end
 
 (** relation: unparse_num_dims
  **
  ** Helper relation to unparse_array_description.
  **)
-
 relation unparse_num_dims: (Value list) => int =
 	
   rule	unparse_num_dims(vals) => i1 &
@@ -303,13 +298,13 @@ relation unparse_num_dims: (Value list) => int =
 	unparse_num_dims(ARRAY(vals)::_) => res
 
   axiom	unparse_num_dims(_) => 1
+
 end
 
 (** relation: unparse_dim_sizes
  **
  ** Helper relation to unparse_array_description.
  **)
-
 relation unparse_dim_sizes: (Value list) => string =
 
   rule	list_length(lst) => i1 &
@@ -324,6 +319,7 @@ relation unparse_dim_sizes: (Value list) => string =
 	int_string(len) => res 
 	----------------------
 	unparse_dim_sizes(lst) => res
+
 end
 
 (** relation: write_to_file_as_args
@@ -332,20 +328,19 @@ end
  ** writing the formal input arguments of a function call to a file before
  ** executing the function.
  **)
-
 relation write_to_file_as_args: (Value list,string) => () =
 	
   rule	unparse_values(vallst) => str &
 	System.write_file(filename,str) 
 	-------------------------------
 	write_to_file_as_args(vallst,filename)
+
 end
 
 (** relation: add_elementwise_arrayelt
  **
  ** Perform elementwise addition of two arrays.
  **)
-
 relation add_elementwise_arrayelt: (Value list, Value list) => Value list =
 	
   rule	add_elementwise_arrayelt(v1lst,v2lst) => reslst &
@@ -380,7 +375,6 @@ end
  **
  ** Perform element subtraction of two arrays of values
  **)
-
 relation sub_elementwise_arrayelt: (Value list, Value list) => Value list =
 	
   rule	sub_elementwise_arrayelt(v1lst,v2lst) => reslst &
@@ -442,7 +436,6 @@ end
  **
  ** Calculate the sum of a list of Values.
  **)
-
 relation sum_arrayelt: (Value list) => Value =
 
   axiom	sum_arrayelt([INTEGER(v1)]) => INTEGER(v1)
@@ -472,7 +465,6 @@ end
  **
  ** Multiply a scalar with an list of Values, i.e. array.
  **)
-
 relation mult_scalar_arrayelt: (Value, Value list) => Value list =
 
   rule	mult_scalar_arrayelt(sval,vals) => r1 &
@@ -509,7 +501,6 @@ end
  **
  ** Calculate the scalar product of two vectors / arrays.
  **)
-
 relation mult_scalar_product: (Value list, Value list) => Value =
 	
   rule	int_mul(v1,v2) => r1 &
@@ -595,7 +586,6 @@ end
  ** Calculate a matrix multiplication of two matrices, i.e. two dimensional 
  ** arrays.
  **)
-
 relation mult_matrix: (Value list,Value list) => Value list =
 	
   rule	mult_scalar_product(v1lst,m2) => res1 &
@@ -611,8 +601,6 @@ end
  **
  ** Divide each array element with a scalar.
  **)
-
-
 relation div_arrayelt_scalar: (Value, Value list) => Value list =
 
   rule	v1 = 0.0 &
@@ -666,7 +654,6 @@ end
  ** first column of the matrix, i.e. for each sub list it removes the first 
  ** element. Returning both the stripped column and the resulting matrix.
  **)
-
 relation matrix_strip_first_column: Value list => (Value,Value list) =
 
   rule	matrix_strip_first_column(rest) => (ARRAY(resl),resl2)
@@ -682,7 +669,6 @@ end
  ** Takes a list of integers and builds a Value from it, i.e. an
  ** array of integers.
  **)
-
 relation intlist_to_value : int list => Value =
 
   axiom	intlist_to_value([]) => ARRAY([])
@@ -696,7 +682,6 @@ end
  ** 
  ** Return the values of an array.
  **)
-
 relation array_values: Value => Value list =
 
   axiom	array_values(ARRAY(v_lst)) => v_lst
@@ -707,7 +692,6 @@ end
  **
  ** Construct an array of a list of Values.
  **)
-
 relation make_array: Value list => Value =
 
   axiom	make_array(vlst) => ARRAY(vlst)
@@ -718,7 +702,6 @@ end
  **
  ** This relation returns a textual representation of a value.
  **)
-
 relation val_string : Value => string =
 
   rule	int_string n => s
@@ -791,7 +774,6 @@ end
  ** This relation returns a textual representation of a list of
  ** values, separating each value with a comman.
  **)
-
 relation val_list_string : Value list => string =
 
   axiom	val_list_string [] => ""
@@ -819,11 +801,10 @@ end
  ** The first column of the dataset matrix should be the time variable.
  ** The message string will be displayed in the plot window of ptplot.
  **)
-
 relation write_ptolemyplot_dataset: (string, (* filename *)
 				     Value, (* values *)
 				     string list, (* Variable names *)
-				     string ) (* message string *) 
+				     string (* message string *) )
 	  => int =
 
   rule	unparse_ptolemy_values(time,rest,varnames) => datasets &
@@ -839,7 +820,6 @@ end
  **
  ** Helper relation to write_ptolemyplot_dataset.
  **)
-
 relation unparse_ptolemy_values: (Value, Value list,string list) => string =
   axiom	unparse_ptolemy_values(_,[],_) => ""
 
@@ -854,7 +834,6 @@ end
  **
  ** Helper relation to unparse_ptolemy_values.
  **)
-
 relation unparse_ptolemy_set: (Value, Value, string) => string =
 	
   rule	unparse_ptolemy_set_2(v1,v2) => str &
@@ -867,7 +846,6 @@ end
  ** 
  ** Helper relation to unparse_ptolemy_set
  **)
-
 relation unparse_ptolemy_set_2: (Value,Value) => string =
 
   axiom	unparse_ptolemy_set_2 (ARRAY([]),ARRAY([])) => ""
@@ -886,7 +864,6 @@ end
  ** Reverses each line and each row of a matrix.
  ** Implementation reverses all dimensions...
  **)
-
 relation reverse_matrix: Value => Value =
 
   rule	Util.list_map(lst,reverse_matrix) => lst' &
@@ -902,7 +879,6 @@ end
  **
  ** This relation prints a value.
  **)
-
 relation print_val : Value => () =
 
   rule	val_string v => s &

@@ -390,7 +390,7 @@ module Absyn:
 
 
   (** The `FunctionArgs' datatype consists of a list of positional arguments *)
-  (** followed by a list of named arguments (Modelica v2.0) *)							  
+  (** followed by a list of named arguments (Modelica v2.0) *)
   datatype FunctionArgs =  FUNCTIONARGS of Exp list (* args *)
                                          * NamedArg list (* argNames *)
 			| FOR_ITER_FARG of Exp (* from *)

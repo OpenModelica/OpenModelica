@@ -68,11 +68,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
  module Util :
    
-  datatype ReplacePattern = REPLACEPATTERN of string * (* from string (ie "." *)
-                                              string  (* to string (ie "$p") *)
+  datatype ReplacePattern = REPLACEPATTERN of string (* from string (ie "." *)
+                                            * string  (* to string (ie "$p") *)
                                                         (*))*)
-                                                                        
-                                                                        
+
   relation if : (bool,'a,'a) => 'a
   relation list_fill: ('a ,int) => 'a list
   relation list_int_range: (int) => int list 
@@ -170,8 +169,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   relation write_file_or_error_msg:(string,(*filename*)
                                     string(*the string to be written*)) => ()
 
-  relation system_call_with_error_msg:(string,(*command*)
-                                       string)(*error_msg to error_buf if fail*) => ()
+  relation system_call_with_error_msg:(string (*command*),
+                                       string (*error_msg to error_buf if fail*)) => ()
   relation strncmp: (string, string, int) => bool
   relation charlistcompare: (char list, char list, int) => bool
 
@@ -193,7 +192,7 @@ with "Print.rml"
  ** Returns a list of n elements of type 'a.
  ** For example,
  ** list_fill("foo",3) => ["foo","foo","foo"]
-**)
+ **)
 relation list_fill: ('a ,int) => 'a list =
 
   axiom	list_fill (a,1) => [a]
@@ -208,7 +207,7 @@ end
  ** Returns a list of n integers from 1 to N.
  ** For example,
  ** list_int_range(3) => [1,2,3]
-**)
+ **)
 relation list_int_range: (int) => int list =
 
   rule	list_int_range2(1,n) => res
@@ -231,7 +230,7 @@ end
  ** Returns the first element of a list
  ** For example,
  ** list_first([3,5,7,11,13]) => 3
- *)
+ **)
 relation list_first: 'a list => 'a =	
 
   axiom	list_first(x::_) => x
@@ -277,13 +276,11 @@ end
  **
  ** Create a list from an element.
  **)
-
 relation list_create: ('a) => 'a list =
 
   axiom	list_create(a) => [a]
 
 end
-
 
 (** relation: list_strip_last
  ** Remove the last element of a list. If the list is the empty list, the relation 
@@ -358,7 +355,7 @@ end
  ** relation split_real_string (real) => (string,string)  returns the string value at 
  ** each side of the decimal point.
  ** list_map__2([1.5,2.01,3.1415], split_real_string) => (["1","2","3"],["5","01","1415"])
-**)
+ **)
 relation list_map__2 : ('a list, 'a => ('b,'c)) => ('b list,'c list) =
 
   axiom	list_map__2 ([],_) => ([],[])
@@ -368,7 +365,6 @@ relation list_map__2 : ('a list, 'a => ('b,'c)) => ('b list,'c list) =
 	-------------------
 	list_map__2 (f::r,fn) => (f1'::r1',f2'::r2')
 end
-
 
 (** relation list_map_1
  ** Takes a list and a relation over the list plus an extra argument sent to the relation.
@@ -466,7 +462,7 @@ end
  ** relation foo(int,string,string) => (string,string) concatenates each string with 
  ** itself n times. foo(2,"a",b") => ("aa","bb")
  ** list_map_2_2 ([2,3],foo,"a","b") => [("aa","bb"),("aa","bbb")]
-**)
+ **)
 relation list_map_2_2: ('a list, ('a, 'b,'c) => ('d,'e), 'b,'c) => ('d * 'e) list =
 
   axiom	list_map_2_2 ([],_,_,_) => []
@@ -518,7 +514,7 @@ end
  ** For example,
  ** list_fold([1,2,3],int_add,2) =>  8
  ** int_add(1,2) => 3, int_add(2,3) => 5, int_add(3,5) => 8 
-**)
+ **)
 relation list_fold: ('a list, ('a,'b)=> 'b, 'b) => 'b =
 
   axiom	list_fold([],r,b) => b
@@ -578,7 +574,6 @@ relation list_thread : ('a list, 'a list) => 'a list =
 
 end
 
-
 (** relation: list_thread_map
  ** Takes two lists and a relation and threads and maps the elements of the two lists
  ** creating a new list.
@@ -611,7 +606,6 @@ relation list_thread_tuple : ('a list, 'b list) => ('a * 'b) list =
 
 end
 
-
 (** relation: list_list_thread_tuple
  ** Takes two list of lists as arguments and produces a list of lists of a two tuple
  ** of the element types of each list.
@@ -634,7 +628,7 @@ end
  ** This relation retrieves all elements of a list for which
  ** the passed relation evaluates to true. The elements that evaluates to false 
  ** are thus removed from the list.
-**)
+ **)
 relation list_select: ('a list, 'a => bool) => 'a list =
 
 
@@ -699,6 +693,7 @@ relation list_position =
 	-----------------------
 	list_position(x, ys) => n
 end
+
 (** helper relation to list_position **)
 relation list_pos =
   rule	x = y
@@ -796,7 +791,7 @@ end
  ** For example,
  ** list_union_elt(1,[2,3]) => [1,2,3]
  ** list_union_elt(0,[0,1,2]) => [0,1,2]
-**)
+ **)
 relation list_union_elt: (''a , ''a list) => ''a list =
 
   rule	list_getmember(x,lst) => _ 
@@ -813,7 +808,7 @@ end
  ** without duplicates.
  ** For example,
  ** list_union([0,1],[2,1]) => [0,1,2]
-**)
+ **)
 relation list_union:  (''a list, ''a list) => ''a list =
 	
   axiom	list_union([],res) => res
@@ -1002,7 +997,6 @@ relation list_replaceat_with_fill: (''a, int, ''a list,''a) => ''a list =
 	list_replaceat_with_fill(_,p,_,_) => fail
 end
 
-
 (** relation: list_reduce
  ** Takes a list and a relation operating on two elements of the list.
  ** The relation performs a reduction of the lists to a single value using the relation.
@@ -1076,7 +1070,7 @@ end
 (** relation array_n_copy
  ** Copeis n elements in src array into dest array
  ** The relation fails if all elements can not be fit into dest array.
-**)
+ **)
 relation array_n_copy:(''a array (*src*), ''a array (*dst*), int (*n*)) 
 	  => ''a array =
 
@@ -1106,8 +1100,10 @@ relation array_copy:(''a array (*src*),  ''a array (*dst*)) => ''a array =
 	-----------------------
 	array_copy(src,dst) => dst'
 end
-relation array_copy2: (''a array (*src*),  ''a array (*dst*),int (*current pos*)) 
+
+relation array_copy2: (''a array (*src*), ''a array (*dst*), int (*current pos*)) 
 	  => ''a array =
+
   axiom	array_copy2(src,dst,-1) => dst
 
   rule	array_nth(src,pos) => elt &
@@ -1210,8 +1206,7 @@ end
  ** consecutive strings in a list. But it also count the lists and inserts a second string delimiter
  ** when the counter is reached. This can be used when for instance outputting large lists of values
  ** and a newline is needed after ten or so items.
-**)
-
+ **)
 relation string_delimit_list_2sep : (string list, string,string,int) => string =
 
   rule	string_delimit_list_2sep2(str,sep1,sep2,n,0) => res
@@ -1219,17 +1214,16 @@ relation string_delimit_list_2sep : (string list, string,string,int) => string =
 	string_delimit_list_2sep(str,sep1,sep2,n) => res
 end
 
-
 (** relation: string_delimit_list_2sep2
  ** author: PA
  **
  ** Helper relation to string_delimit_list_2sep
  **)
-
 relation string_delimit_list_2sep2: (string list, string, string, int,int (* iterator*)) 
 	  => string =
 
   axiom	string_delimit_list_2sep2([],_,_,_,_) => "" 
+
   axiom	string_delimit_list_2sep2([s],_,_,_,_) => s 
 
   rule	(* special case for first element*)
@@ -1258,7 +1252,6 @@ relation string_delimit_list_2sep2: (string list, string, string, int,int (* ite
 	string_delimit_list_2sep2(_,_,_,_,_) => fail
 end
 
-
 (** relation string_delimit_list_no_empty
  ** Takes a list of strings and a string delimiter and appends all list elements with
  ** the string delimiter inserted between elements.
@@ -1272,7 +1265,6 @@ relation string_delimit_list_no_empty : (string list, string) => string =
 	---------------------------
 	string_delimit_list_no_empty(lst,delim) => str
 end
-
 
 (** relation string_replace_char
  ** Takes a string and two chars and replaces the first char to 
@@ -1319,7 +1311,6 @@ end
  ** Takes a string and a char and split the string at the char
  ** example: string_split_at_char("hej.b.c",#".") => ["hej,"b","c"]
  **)      
-
 relation string_split_at_char : (string, char) => string list =
  
   rule  string_list(str) => chrList &
@@ -1452,8 +1443,6 @@ relation bool_and_list: bool list => bool =
   	bool_and_list(b::rest) => res
 end
 
-
-
 (** relation: bool_string
  ** Takes a boolean value and returns a string representation of the boolean value.
  ** For example,
@@ -1463,7 +1452,6 @@ relation bool_string: bool => string =
   axiom	bool_string true => "true"
   axiom	bool_string false => "false"
 end
-
 
 (** relation: string_equal
  ** Takes two strings and returns true if the strings are equal
@@ -1503,7 +1491,8 @@ relation list_matching: ('a list, 'a => () )  => 'a list =
 end	
 
 (** relation: apply_option
- ** Takes an option value and a relation over the value. It returns in another option value, resulting 
+ ** Takes an option value and a relation over the value. 
+ ** It returns in another option value, resulting 
  ** from the application of the relation on the value.
  ** For example,
  ** apply_option(SOME(1), int_string) => SOME("1")
@@ -1518,18 +1507,17 @@ relation apply_option : ('a option,'a => 'b) => 'b option =
 	apply_option( SOME(a),rel) => SOME(b)
 end
 
-(* relation make_option
+(** relation make_option
  ** Makes a value into value option, using SOME(value) 
-**)
+ **)
 relation make_option: 'a => 'a option =
 
 	axiom make_option(v) => SOME(v)
 end
 
-
 (** relation: string_option
  ** author: PA
-**
+ **
  ** Returns string value or empty string from string option.
  **)
 relation string_option: string option => string =
@@ -1545,7 +1533,6 @@ end
  ** list_split([1,2,5,7],2) => ([1,2],[5,7])
  **)
 relation list_split : ('a list, int) => ('a list, 'a list) =
-
 
   axiom list_split(a,0) => ([],a)
   
@@ -1607,6 +1594,7 @@ end
 relation option_to_list: 'a option => 'a list =
 
   axiom	option_to_list NONE => []
+
   axiom	option_to_list SOME(e) => [e]
 
 end
@@ -1618,6 +1606,7 @@ end
 relation flatten_option: ('a option, 'a) => 'a =
 
   axiom	flatten_option (NONE,n) => n
+
   axiom	flatten_option (SOME(c),n) => c
 
 end
@@ -1626,22 +1615,24 @@ end
  **
  ** Returns true if string is the empty string.
  **)
-
 relation is_empty_string : string => bool =
 
   axiom is_empty_string "" => true
+
   axiom is_empty_string _ => false
+
 end
 
 (** relation: is_not_empty_string
  **
  ** Returns true if string is not the empty string.
  **)
-
 relation is_not_empty_string : string => bool =
 
   axiom is_not_empty_string "" => false
+
   axiom is_not_empty_string _ => true
+
 end
 
 (** relation: write_file_or_error_msg
@@ -1688,8 +1679,7 @@ end
  **
  ** Compares two char lists up to the nth potision and
  ** returns true if they are equal.
- **)
-        
+ **)        
 relation charlistcompare: (char list, char list, int) => bool =
 
   rule	a = b
@@ -1707,6 +1697,7 @@ relation charlistcompare: (char list, char list, int) => bool =
 	charlistcompare(a::l1,b::l2,n) => true
 	
   axiom	charlistcompare(_,_,_) => false
+
 end
 
 (** relation: strncmp
@@ -1714,8 +1705,8 @@ end
  ** Comparse two strings up to the nth character
  ** Returns true if they are equal.
  **)
-
 relation strncmp: (string,string,int)=>bool =
+
   rule	string_list(s1) => clst1 &
 	string_list(s2) => clst2 &
 	string_length(s1) => s1len &
@@ -1733,7 +1724,6 @@ end
  **
  ** Returns tick as a string, i.e. an unique number.
  **)
-
 relation tick_str:() => string =
 
   rule	tick() => i &

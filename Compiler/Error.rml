@@ -112,7 +112,6 @@ relation print_messages_str_lst_severity: (Severity) => (string list)
 (** Relations for interactive comm. These returns the messages as an array 
  ** of strings, suitable for sending to clients like model editor, MDT, etc.
 *) 
-
 relation get_messages_str: () => string
 
 relation get_messages_str_type: (MessageType) => (string) 
@@ -658,7 +657,7 @@ with "Print.rml"
  **
  ** Adds a message given ID and tokens. The rest of the info
  ** is looked up in the message table.
-**)
+ **)
 relation add_message: ( ErrorID,MessageTokens) => () =
 
   rule	lookup_message(error_id) => (msg_type, severity, msg) &
@@ -682,8 +681,7 @@ end
  **
  ** Adds a message given ID, tokens and source file info.
  ** The rest of the info is looked up in the message table.
-**)
-
+ **)
 relation add_source_message: ( ErrorID,MessageTokens, Absyn.Info) => () =
 
   rule	lookup_message(error_id) => (msg_type, severity, msg) &
@@ -713,7 +711,6 @@ end
  **
  ** Prints messages to a string.
  **)
-
 relation print_messages_str: () => string =
 
   rule	ErrorExt.print_messages_str() => res
@@ -727,7 +724,6 @@ end
  **
  ** Returns all messages as a list of strings, one for each message.
  **)
-
 relation print_messages_str_lst:() => string list =
 
   axiom	print_messages_str_lst() => ["Not impl. yet"]
@@ -739,7 +735,6 @@ end
  **  Returns all messages as a list of strings, one for each message.
  **  Filters out messages of certain type.
  **)
-
 relation print_messages_str_lst_type: (MessageType) => (string list) =
 
   axiom	print_messages_str_lst_type(_) => ["Not impl. yet"]
@@ -750,8 +745,7 @@ end
  ** 
  **  Returns all messages as a list of strings, one for each message.
  ** Filters out messages of certain severity
-**)
-
+ **)
 relation print_messages_str_lst_severity: (Severity) => (string list) =
 
   axiom	print_messages_str_lst_severity(_) => ["Not impl. yet"]
@@ -803,7 +797,6 @@ end
  **
  ** Finds a message given ErrorID by looking in the message list.
  **)
-
 relation lookup_message: (ErrorID) => (MessageType, Severity, string) =
 
   rule	lookup_message2(ErrorTable,error_id) => (msg_tp,severity,msg) 
@@ -829,7 +822,6 @@ end
  **
  ** Converts a MessageType to a string.
  **)
-
 relation message_type_str:(MessageType) => string =
 
   axiom	message_type_str(SYNTAX) => "SYNTAX"
@@ -844,7 +836,6 @@ end
  **
  ** Converts a Severity to a string.
  **)
-
 relation severity_str:(Severity) => string =
   axiom	severity_str(ERROR) => "ERROR"
   axiom	severity_str(WARNING) => "WARNING"
@@ -855,7 +846,6 @@ end
  **
  ** Converts a Absyn.Info to a string.
  **)
-
 relation info_str:(Absyn.Info) => string =
 
   rule	int_string(line) => line_str &
@@ -865,4 +855,3 @@ relation info_str:(Absyn.Info) => string =
 	-----------------------
 	info_str(Absyn.INFO(filename,line,col)) => res
 end
-

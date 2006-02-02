@@ -51,7 +51,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ** or starts a server loop communicating through CORBA or sockets
  ** (The Win32 implementation only implements CORBA)
  **)
-
 module Main:
 	relation main: string list => ()
 end
@@ -84,8 +83,7 @@ with "Error.rml"
  **
  ** This relation is the main loop of the server listening to a port
  ** which recieves modelica expressions,  
-**)
-
+ **)
 relation server_loop: (int,Interactive.InteractiveSymbolTable)  => Interactive.InteractiveSymbolTable =
 
   rule	Socket.handlerequest shandle => str &
@@ -160,15 +158,12 @@ relation make_debug_result : (string, string) => string =
 	make_debug_result (flagstr, res) => res'
 end
 
-
-
 (** relation handle_command
  **
  ** This relation handles the commands in form of strings send to the server
  ** If the command is quit, the relation returns false, otherwise it sends 
  ** the string to the parse relation and returns true.
-**)
-
+ **)
 relation handle_command: (string,Interactive.InteractiveSymbolTable)  => 
 	(bool, string, Interactive.InteractiveSymbolTable) =
 
@@ -232,8 +227,8 @@ end
  **
  ** Succeeds if filename ends with .mo or .mof
  **)
-
 relation is_modelica_file: string => () =
+
   rule	System.strtok(filename,".") => lst &
 	list_reverse(lst) => last::_ &
 	last = "mo"
@@ -252,7 +247,6 @@ end
  **
  ** Succeeds if filename ends with .mof
  **)
-
 relation is_flat_modelica_file: string => () =
 
   rule	System.strtok(filename,".") => lst &
@@ -266,7 +260,6 @@ end
  **
  ** Succeeds if filname end with .mos
  **)
-
 relation is_modelica_script_file: string => () =
 
   rule	System.strtok(filename,".") => lst &
@@ -296,7 +289,6 @@ end
  ** This relation invokes the translator on a source file.  The
  ** argument should be a list with a single file name.
  **)
-
 relation translate_file : string list => () =
 
 	(* A Modelica file .mo *)
@@ -401,7 +393,6 @@ end
  ** 
  ** Run the backend. Used for both parallization and for normal execution.
  **)
-
 relation optimize_dae: (SCode.Program, DAE.DAElist, DAE.DAElist, Absyn.Path) => () =
 
   rule	run_backend_q() => true
@@ -439,7 +430,6 @@ end
  **
  ** The automatic paralellzation module.
  **)
-
 relation modpar: (DAELow.DAELow, int vector, int vector, int list list) => () =
 
   rule	(* If modpar not enabled, nproc = 0, return *) 
@@ -486,7 +476,6 @@ end
  **
  ** Genereates simulation code using the SimCodegen module
  **)
-
 relation simcodegen: (Absyn.Path, (* classname *)
 		      SCode.Program,
 		      DAE.DAElist, 
@@ -531,7 +520,6 @@ end
  **
  ** Returns true if parallelization should be run.
  **)
-
 relation run_modpar_q: () => bool =
 	
   rule	RTOpts.no_proc() => n &
@@ -545,7 +533,6 @@ end
  ** Transform the dae, replacing dots with underscore in variables and 
  ** equations.
  **)
-
 relation fix_modelica_output : DAE.DAElist => DAE.DAElist =
 
   rule	RTOpts.modelica_output => true &
@@ -563,7 +550,6 @@ end
  **
  ** Initiate the interactive mode using socket communication.
  **)
-
 relation interactivemode: string list => () =
 
   rule	Socket.waitforconnect 29500  => shandle &
@@ -576,7 +562,6 @@ end
  **
  ** Initiate the interactive mode using corba communication.
  **)
-	
 relation interactivemode_corba: string list => () =
 
   rule	Corba.initialize &
@@ -588,8 +573,9 @@ end
 (** relation: server_loop_corba
  **
  ** This relation is the main loop of the server for a CORBA impl.
-**)
-relation server_loop_corba: (Interactive.InteractiveSymbolTable)  => Interactive.InteractiveSymbolTable =
+ **)
+relation server_loop_corba: (Interactive.InteractiveSymbolTable)  => 
+	Interactive.InteractiveSymbolTable =
 
   rule	Corba.wait_for_command() => str &
 	Print.clear_buf & 
@@ -616,7 +602,6 @@ end
  ** This is the main relation that the RML runtime system calls to
  ** start the translation.
  **)
-
 relation main : string list => () =
 
   rule	RTOpts.args args => args' &

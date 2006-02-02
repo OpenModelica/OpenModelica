@@ -51,30 +51,28 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 (** 
  ** This module contain a Binary tree representation of variable replacements
  ** along with some relations for performing replacements of variables in equations
-**)
-
+ **)
 module VarTransform:
  with "Exp.rml"
  with "DAELow.rml"
 
 
  datatype VariableReplacements = REPLACEMENTS of
-				BinTree * (* src -> dst, used for replacing *)
-				BinTree2 (* dst->src, used for lookup to make 
+				BinTree (* src -> dst, used for replacing *)
+			      * BinTree2 (* dst->src, used for lookup to make 
 					  rules transitive. A destination can 
 					  have several sources, therefore 
 					  another BinTree *)
 
- datatype BinTree = TREENODE of TreeValue option * (* Value *)
-				BinTree option * (* left subtree *)
-				BinTree option (* right subtree *)
+ datatype BinTree = TREENODE of TreeValue option (* Value *)
+			      * BinTree option (* left subtree *)
+			      * BinTree option (* right subtree *)
 
- datatype BinTree2 = TREENODE2 of TreeValue2 option * (* Value *)
-				BinTree2 option * (* left subtree *)
-				BinTree2 option (* right subtree *)
+ datatype BinTree2 = TREENODE2 of TreeValue2 option (* Value *)
+			      * BinTree2 option (* left subtree *)
+			      * BinTree2 option (* right subtree *)
 
 (* Each node in the binary tree can have a value associated with it.*)
-
   datatype TreeValue = TREEVALUE of Key (* Key *)
 				* Value (* Value *)
 
@@ -130,7 +128,6 @@ end
  **
  ** Returns an empty set of replacement rules
  **)
-
 relation empty_replacements:()=> VariableReplacements =
 
   axiom	 empty_replacements() => REPLACEMENTS(TREENODE(NONE,NONE,NONE),
@@ -143,7 +140,6 @@ end
  ** and applies the replacements on all equations.
  ** The relation returns the updated list of equations
  **)
-
 relation replace_equations:(DAELow.Equation list,VariableReplacements) 
 	  => DAELow.Equation list =
 
@@ -183,7 +179,6 @@ end
  **
  ** Helper relation to replace_equations
  **)
-
 relation replace_equations_stmts: (Algorithm.Statement list, VariableReplacements) 
 	  => Algorithm.Statement list =
   axiom	replace_equations_stmts ([],_) => []
@@ -206,7 +201,6 @@ end
  ** 
  ** Prints the variable replacements on form var1 -> var2
  **)
-
 relation dump_replacements: (VariableReplacements) => () =
 
   rule	
@@ -234,14 +228,12 @@ end
  ** the rule a->b is updated to a->c. This is done using the make_transitive
  ** relation.
  **)
-	    
 relation add_replacement: (VariableReplacements,
 			   Exp.ComponentRef, (* source *) 
-			   Exp.ComponentRef) (* dest *)
+			   Exp.ComponentRef (* dest *) )
 	  => VariableReplacements =
 
-  rule	(** if rule a->b exists, fail
-	 **)
+  rule	(** if rule a->b exists, fail **)
 	tree_get(bt,src) => olddst 
 	-----------------------
 	add_replacement(repl as REPLACEMENTS(bt,invbt),src,dst) 
@@ -273,7 +265,6 @@ end
  ** Adds the inverse rule of a replacement to the second binary tree
  ** of VariableReplacements.
  **)
-
 relation add_replacement_inv: (BinTree2, Exp.ComponentRef, Exp.ComponentRef)
 	=> BinTree2 =
 
@@ -300,14 +291,13 @@ end
  ** For example, if we have the rule a->b and a new rule c->a it is changed to c->b.
  ** Also, if we have a rule a->b and a new rule b->c then the -old- rule a->b is changed
  ** to a->c
-**)
-
+ **)
 relation make_transitive: (VariableReplacements,	(* replacement rules *)
 			   Exp.ComponentRef,		(*src*) 
-			   Exp.ComponentRef)		(*dst*)
+			   Exp.ComponentRef		(*dst*) )
 	  => (VariableReplacements,			(* updated replacement rules *)
-	      Exp.ComponentRef,		(* src*) 
-	      Exp.ComponentRef) =	(* updated dst *)   
+	      Exp.ComponentRef,(* src*) 
+	      Exp.ComponentRef (* updated dst *) ) =	   
 
   rule	make_transitive1(repl,src,dst) => (repl',src',dst') &
 	make_transitive2(repl',src',dst') => (repl'',src'',dst'') 
@@ -319,7 +309,6 @@ end
  **
  ** helper relation to make_transitive
  **)
-
 relation make_transitive1: (VariableReplacements,	(* replacement rules *)
 			   Exp.ComponentRef,		(*src*) 
 			   Exp.ComponentRef)		(*dst*)
@@ -340,13 +329,13 @@ end
 (** relation: make_transitive2
  **
  ** Helper relation to make_transitive
-**)
+ **)
 relation make_transitive2: (VariableReplacements,	(* replacement rules *)
 			   Exp.ComponentRef,		(*src*) 
-			   Exp.ComponentRef)		(*dst*)
+			   Exp.ComponentRef		(*dst*) )
 	  => (VariableReplacements,			(* updated replacement rules *)
-	      Exp.ComponentRef,		(* src*) 
-	      Exp.ComponentRef) =	(* updated dst *)   
+	      Exp.ComponentRef,(* src*) 
+	      Exp.ComponentRef (* updated dst *) ) =	
 	
   rule	(* If dst has own replacement rule, change to its destintation and recurse *)
 	tree_get(bt,dst) => newdst &
@@ -355,16 +344,16 @@ relation make_transitive2: (VariableReplacements,	(* replacement rules *)
 	make_transitive2(repl as REPLACEMENTS(bt,invbt),src,dst) 
 	  => (repl',src',dst')
 
-	  (* dst has no own replacement, return *)
+  (* dst has no own replacement, return *)
   axiom	make_transitive2(repl,src,dst) => (repl,src,dst)
+
 end
 
 (** relation: add_replacements
  **
  ** Adding of several replacements at once with common destination.
  ** Uses add_replacement
-**)
-
+ **)
 relation add_replacements: (VariableReplacements, Exp.ComponentRef list, Exp.ComponentRef) 
 	  => VariableReplacements =
 
@@ -385,7 +374,6 @@ end
  ** Retrives a replacement variable given a set of replacement rules and a 
  ** source variable.
  **)
-
 relation get_replacement:(VariableReplacements, Exp.ComponentRef) 
 	  => Exp.ComponentRef =
 
@@ -400,7 +388,6 @@ end
  ** and replaces all variables in the expression using 
  ** the replacement rules.
  **)
-
 relation replace_exp:(Exp.Exp,VariableReplacements) => Exp.Exp =
 	 
   rule	get_replacement(repl,cr) => cr' 
@@ -551,8 +538,7 @@ end
  ** This relation takes a BinTree and transform it into a list
  ** representation, i.e. two lists of keys and values
  **)
-
- relation bintree_to_explist: (BinTree) => (Exp.Exp list, Exp.Exp list) =
+relation bintree_to_explist: (BinTree) => (Exp.Exp list, Exp.Exp list) =
 
   rule	bintree_to_explist2(bt,[],[]) => (klst,vlst) 
 	------------------------------------------
@@ -563,7 +549,6 @@ end
  **
  ** helper relation to bintree_to_list
  **)
-
 relation bintree_to_explist2: (BinTree,Exp.Exp list,Exp.Exp list ) 
 	  => (Exp.Exp list, Exp.Exp list) =
 
@@ -585,7 +570,6 @@ end
  **
  ** helper relation to bintree_to_list
  **)
-
 relation bintree_to_explist_opt: (BinTree option, Exp.Exp list, Exp.Exp list) 
 	  => (Exp.Exp list, Exp.Exp list) =
 
@@ -601,8 +585,7 @@ end
  ** Copied from generic implementation. Changed that no hashrelation is passed
  ** since a string can not be uniquely mapped to an int. Therefore we need to 
  ** compare two strings to get a unique ordering.
-**)
-
+ **)
 relation tree_get: (BinTree, Key) => Value =
  
  rule	Exp.print_component_ref_str(rkey) => rkeystr &
@@ -642,8 +625,7 @@ end
  ** Copied from generic implementation. Changed that no hashrelation is passed
  ** since a string (ComponentRef) can not be uniquely mapped to an int. 
  ** Therefore we need to compare two strings to get a unique ordering.
-**)
-
+ **)
 relation tree_add: (BinTree, Key, Value) => (BinTree) =
 
   axiom	tree_add (TREENODE(NONE,NONE,NONE),key,value) 
@@ -707,8 +689,7 @@ relation tree_add: (BinTree, Key, Value) => (BinTree) =
  ** Copied from generic implementation. Changed that no hashrelation is passed
  ** since a string can not be uniquely mapped to an int. Therefore we need 
  ** to compare two strings to get a unique ordering.
-**)
-
+ **)
 relation tree_get2: (BinTree2, Key) => Value2 =
  
  rule	Exp.print_component_ref_str(rkey) => rkeystr &
@@ -748,8 +729,7 @@ end
  ** Copied from generic implementation. Changed that no hashrelation is passed
  ** since a string (ComponentRef) can not be uniquely mapped to an int.
  ** Therefore we need to compare two strings to get a unique ordering.
-**)
-
+ **)
 relation tree_add2: (BinTree2, Key, Value2) => (BinTree2) =
 
   axiom	tree_add2 (TREENODE2(NONE,NONE,NONE),key,value) 

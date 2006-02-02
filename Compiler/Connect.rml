@@ -64,18 +64,13 @@ module Connect :
   with "DAE.rml"
   with "Env.rml"
 
-  datatype Face = INNER | OUTER
   (** This type indicates whether a connector is an inner or an outer
    ** connector.  *)
-
-  datatype Set = EQU of Exp.ComponentRef list
-	       | FLOW of (Exp.ComponentRef * Face) list
+  datatype Face = INNER | OUTER
 
   (** A connection set is represented using the `Set' type. *)
-
-  datatype Sets = SETS of Set list * (* connection_set *)
-		      Exp.ComponentRef list (* connect_refs - list of 
-					     * crefs in connect statements.*)
+  datatype Set = EQU of Exp.ComponentRef list
+	       | FLOW of (Exp.ComponentRef * Face) list
 
 (* The connection 'Sets' contains the connection set and a list of 
  * component references occuring in connect statemens. The latter is 
@@ -83,6 +78,9 @@ module Connect :
  * classes to be instantiated, while the 'Set list' is returned -from-
  * instantiated classes. 
  *)
+  datatype Sets = SETS of Set list * (* connection_set *)
+		      Exp.ComponentRef list (* connect_refs - list of 
+					     * crefs in connect statements.*)
 
 val empty_set : Sets
 
@@ -100,7 +98,10 @@ end
 
 val empty_set = SETS([],[])
 
-(**
+(** relation: add_equ
+ **
+ ** Adds an equal equation, see explaining text above.
+ **
  ** - Adding
  **
  ** The two relations `add_eq' and `add_flow' addes a variable to a
@@ -114,12 +115,6 @@ val empty_set = SETS([],[])
  ** If the connection sets containing the two components are not the
  ** same, they are merged.
  **)
-
-(** relation: add_equ
- **
- ** Adds an equal equation, see explaining text above.
- **)
-
 relation add_equ : (Sets, Exp.ComponentRef, Exp.ComponentRef) => Sets =
 
   rule	find_equ_set(ss,r1) => s1 &
@@ -134,7 +129,6 @@ end
  ** 
  ** Adds an flow equation, see add_equ above.
  **)
-
 relation add_flow : (Sets, Exp.ComponentRef, Face, Exp.ComponentRef, Face)
 	  => Sets =
 
@@ -152,7 +146,6 @@ end
  ** For connecting two arrays, an equal equation for each index should 
  ** be generated.
  **)
-
 relation add_array_equ : (Sets, Exp.ComponentRef, Exp.ComponentRef, int) => Sets =
 
   axiom	add_array_equ(s,_,_,0) => s
@@ -178,11 +171,8 @@ end
  ** From a number of connection sets, this relation generates a list
  ** of equations.
  **)
-
 relation equations : (Sets)
 	  => DAE.Element list =
-
-
 
   axiom	equations( SETS([],_)) => []
 
@@ -209,7 +199,6 @@ end
  ** For example, if the set contains the components `x', `y.a' and
  ** `z.b', the equations generated will me `x = y.a' and `y.a = z.b'.
  **)
-
 relation equ_equations : Exp.ComponentRef list => DAE.Element list =
 
   axiom	equ_equations [_] => []
@@ -231,7 +220,6 @@ end
  ** (some of which will be negated), and the returns the equation
  ** where this sum is equal to 0.0.
  **)
-
 relation flow_equations : (Exp.ComponentRef * Face) list => DAE.Element list =
 
   rule	flow_sum cs => sum
@@ -247,7 +235,6 @@ end
  ** sum, it is passed to `sign_flow' which will negate all outer
  ** connectors.
  **)
-
 relation flow_sum : (Exp.ComponentRef * Face) list => Exp.Exp =
 
   rule	sign_flow(c,f) => exp
@@ -268,7 +255,6 @@ end
  ** the component reference, but if it is `OUTER', the expression is
  ** negated.
  **)
-
 relation sign_flow : (Exp.ComponentRef, Face) => Exp.Exp =
 
   axiom	sign_flow (c,INNER) => Exp.CREF(c,Exp.OTHER)
@@ -288,7 +274,6 @@ end
  ** component named by the second argument.  If no such set is found,
  ** a new set is created.
  **)
-
 relation find_equ_set : (Sets, Exp.ComponentRef) => Set =
 
   rule	new_equ_set c => s
@@ -311,7 +296,6 @@ end
  ** component named by the second argument.  If no such set is found,
  ** a new set is created.
  **)
-
 relation find_flow_set : (Sets, Exp.ComponentRef, Face) => Set =
 
   rule	new_flow_set(c,d) => s
@@ -333,7 +317,6 @@ end
  ** This relation checks if a componet already appears in a given
  ** connection set.
  **)
-
 relation find_in_set : (Set, Exp.ComponentRef) => () =
 
   rule	find_in_set_equ(cs,c)
@@ -351,7 +334,6 @@ end
  ** This is a version of `find_in_set' which is specialized on
  ** non-flow connection sets
  **)
-
 relation find_in_set_equ : (Exp.ComponentRef list, Exp.ComponentRef) => () =
 
   rule	Static.eq_cref(c1,c2)
@@ -369,7 +351,6 @@ end
  ** This is a version of `find_in_set' which is specialized on
  ** flow connection sets
  **)
-
 relation find_in_set_flow : ((Exp.ComponentRef * Face) list, Exp.ComponentRef)
 	  => () =
 
@@ -388,7 +369,6 @@ end
  ** This relation creates a new non-flow connection set containing
  ** only the given component.
  **)
-
 relation new_equ_set : Exp.ComponentRef => Set =
 
   axiom	new_equ_set c => EQU([c])
@@ -400,7 +380,6 @@ end
  ** This relation creates a new-flow connection set containing only
  ** the given component.
  **)
-
 relation new_flow_set : (Exp.ComponentRef, Face) => Set =
 
   axiom	new_flow_set(c,d) => FLOW([(c,d)])
@@ -413,7 +392,6 @@ end
  ** The result of merging two connection sets is the intersection of
  ** the two sets.
  **)
-
 relation merge : (Sets, Set, Set) => Sets =
 
   rule	s1 = s2
@@ -439,7 +417,6 @@ end
  ** This relation removes the two sets given in the second and third
  ** argument from the collection of sets given in the first argument.
  **)
-
 relation remove_set2 : (Sets, Set, Set) => Sets =
 
   axiom	remove_set2(SETS([],crs),_,_) => SETS([],crs)
@@ -464,7 +441,6 @@ end
  **
  ** This relation removes one set from a list of sets.
  **)
-
 relation remove_set : (Sets, Set) => Sets =
 
   axiom	remove_set(SETS([],crs),_) => SETS([],crs)
@@ -488,7 +464,6 @@ end
  ** these are connected or not. This is only known in the preceding recursive 
  ** call. However, the top call must generate for both inner and outer 
  ** connectors, hence the last argument, true for top call*)
-
 relation unconnected_flow_equations : (Sets, DAE.Element list, Env.Env,bool) => DAE.Element list =
 
   rule	(* if outermost call look at both inner and outer unconnected connectors *)
@@ -518,7 +493,6 @@ end
  **
  ** Removes all the variables in the second list from the first list.
  **)
-
 relation remove_variables: (Exp.ComponentRef list, (* vars*)
 			    Exp.ComponentRef list) (* remove *)
 	  => Exp.ComponentRef list =
@@ -534,7 +508,6 @@ end
  **
  ** Removes a variable from a list of variables.
  **)
-
 relation remove_variable: (Exp.ComponentRef, Exp.ComponentRef list) 
 	  => Exp.ComponentRef list =
 
@@ -553,8 +526,7 @@ end
  **
  ** Unconnected flow variables should be set to zero. This relation 
  ** generates equations setting each variable in the list to zero.
-**)
-
+ **)
 relation generate_zeroflow_equations: Exp.ComponentRef list 
 	  => DAE.Element list =
   axiom	generate_zeroflow_equations ([]) => []
@@ -570,7 +542,6 @@ end
  ** 
  ** Return a list of all flow variables from the connection sets.
  **)
-
 relation get_all_flow_variables: Sets => Exp.ComponentRef list =
 
   axiom	get_all_flow_variables SETS([],_) => []
@@ -590,7 +561,6 @@ end
  **
  ** Get all flow variables that are inner variables from the Sets.
  **)
-
 relation get_inner_flow_variables: Sets => Exp.ComponentRef list =
 
   axiom	get_inner_flow_variables(SETS([],_)) => []
@@ -614,7 +584,6 @@ end
  **
  ** Help relation to get_inner_flow_variables.
  **)
-
 relation get_inner_flow_variables_2: (Exp.ComponentRef * Face) list 
 	  => Exp.ComponentRef list =
 
@@ -642,8 +611,6 @@ end
  ** for brevity.
  **)
 
-(*!ignorecode*)
-
 with "Dump.rml"
 with "Print.rml"
 with "Util.rml"
@@ -654,7 +621,6 @@ with "Debug.rml"
  ** Prints a description of a number of connection sets to the
  ** standard output.
  **)
-
 relation print_sets : Sets => () =
 
   axiom	print_sets SETS([],_)
@@ -665,7 +631,7 @@ relation print_sets : Sets => () =
 	print_sets SETS(x::xs,crs)
 
 end
-(**)
+
 relation print_set : Set => () =
 
   rule	Print.print_buf " non-flow set: { " &
@@ -681,7 +647,7 @@ relation print_set : Set => () =
 	print_set FLOW(cs)
 
 end
-(**)
+
 relation print_flow_ref : (Exp.ComponentRef * Face) => () =
 
   rule	Exp.print_component_ref c &
@@ -700,7 +666,6 @@ end
  **
  ** Prints a description of a number of connection sets to a string
  **)
-
 relation print_sets_str : Sets => string =
 
 
@@ -713,8 +678,6 @@ relation print_sets_str : Sets => string =
 	print_sets_str SETS(sets,crs) => res
 end
 
-
-(**)
 relation print_set_str : Set => string =
 
   rule	Util.list_map(cs, Exp.print_component_ref_str) => strs &
@@ -729,6 +692,7 @@ relation print_set_str : Set => string =
 	----------------------------------------------------
 	print_set_str FLOW(cs) => res
 end
+
 relation print_flow_ref_str : (Exp.ComponentRef * Face) => string =
 
   rule	Exp.print_component_ref_str c => s &
@@ -751,7 +715,4 @@ relation print_set_crs_str : Exp.ComponentRef list => string =
 	----------------------------------------------------
 	print_set_crs_str crs => res
 end
-(**)
-
-(*!includecode*)
 

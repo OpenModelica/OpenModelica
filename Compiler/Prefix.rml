@@ -54,7 +54,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ** fully qualified name is a.b.c.x. 
  **
  **)
-
 module Prefix:
 
   with "Absyn.rml"
@@ -62,11 +61,11 @@ module Prefix:
   with "Env.rml"
   with "Lookup.rml"
 
-	(* A 'Prefix' has a name an a list of constant valued subscripts. **)
+  (* A 'Prefix' has a name an a list of constant valued subscripts. **)
   datatype Prefix = NOPRE
-		  | PRE of string * (* prefix name *) 
-			   int list * (* subscripts *)
-			   Prefix (* next prefix *)
+		  | PRE of string (* prefix name *) 
+			   * int list (* subscripts *)
+			   * Prefix (* next prefix *)
 
   relation prefix_add : (Exp.Ident, int list, Prefix) => Prefix
 
@@ -93,7 +92,6 @@ with "Print.rml"
  ** 
  ** Prints a Prefix to a string.
  **)
-
 relation print_prefix_str : Prefix => string =
 
   axiom	print_prefix_str NOPRE => "<NOPRE>"
@@ -123,7 +121,6 @@ end
  **
  ** Prints a prefix to the Print buffer.
  **)
-
 relation print_prefix : Prefix => () =
 
 
@@ -143,7 +140,6 @@ end
  ** prefixes components are stored in the opposite order from the
  ** normal order used when displaying them.
  **)
-
 relation prefix_add : (Exp.Ident, int list, Prefix) => Prefix =
 
   axiom prefix_add(i,s,p) => PRE(i,s,p)
@@ -175,7 +171,6 @@ end
  ** Prefix a `Path' variable by adding the supplied prefix to it and
  ** returning a new `Path'.
  **)
-
 relation prefix_path: (Absyn.Path,Prefix) => Absyn.Path =
 
   axiom	prefix_path(p,NOPRE) => p
@@ -190,7 +185,6 @@ end
  **
  ** Convert a Prefix to a `Path'
  **)
-
 relation prefix_to_path: Prefix => Absyn.Path =
 
   rule	Print.print_buf "#-- Error: Cannot convert empty prefix to a path\n"
@@ -212,7 +206,6 @@ end
  **
  ** LS: Changed to call prefix_to_cref which is more general now
  **)
-
 relation prefix_cref : (Prefix, Exp.ComponentRef) => Exp.ComponentRef =
 
   rule	prefix_to_cref2 (pre, SOME(cref)) => cref'
@@ -226,7 +219,6 @@ end
  **
  ** Convert a prefix to a component reference.
  **)
-
 relation prefix_to_cref : Prefix => Exp.ComponentRef =
 
   rule	prefix_to_cref2 (pre, NONE) => cref'
@@ -242,7 +234,6 @@ end
  ** component reference is an error because a component reference cannot be
  ** empty
  **)
-
 relation prefix_to_cref2 : (Prefix, Exp.ComponentRef option) => Exp.ComponentRef =
 
   rule	Print.print_buf "#-- Cannot convert empty prefix to component reference\n"
@@ -269,7 +260,6 @@ end
  ** Add the supplied prefix to all component references in an
  ** expression.
  **)
-
 relation prefix_exp : (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
 
   axiom	prefix_exp(_,e as Exp.ICONST(_),_) => e
@@ -382,7 +372,6 @@ end
  ** This relation prefixes a list of expressions using the
  ** `prefix_exp' relation.
  **)
-
 relation prefix_exp_list: (Env.Env,Exp.Exp list,Prefix) => Exp.Exp list =
 
   axiom	prefix_exp_list(_,[],_) => []
@@ -399,7 +388,6 @@ end
  ** This relation prefixes a list of component references using the
  ** `prefix_cref relation.
  **)
-
 relation prefix_cref_list: (Prefix, Exp.ComponentRef list) => Exp.ComponentRef list =
 
   axiom	prefix_cref_list(_, []) => []

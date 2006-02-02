@@ -54,8 +54,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ** $Id$
  **
  **)
-
-
 module Parser:
   with "Absyn.rml"
   with "Interactive.rml"
@@ -64,28 +62,26 @@ module Parser:
  **
  ** Takes a filename and parses it as a Modelica program.
  **)
- relation parse: string => Absyn.Program
+relation parse: string => Absyn.Program
 
 (** relation: parseexp
  **
  ** Takes a filename and parses it as expressions/Modelica script.
  **)
-
- relation parseexp: string => Interactive.InteractiveStmts
+relation parseexp: string => Interactive.InteractiveStmts
 
 (** relation: parsestring
  **
  ** Parse a string, return Program and error message string.
  ** Always succeeds, string contains "Ok" or error message.
  **)
-
- relation parsestring: string => (Absyn.Program, string) 
+relation parsestring: string => (Absyn.Program, string) 
 	  
 (** relation: parsestringexp
  ** Parse a string as expression. Return InteractiveStmts and error message.
  ** Always succeeds, string contains "Ok" or error message 
  **)
- relation parsestringexp: string => (Interactive.InteractiveStmts, string)  
+relation parsestringexp: string => (Interactive.InteractiveStmts, string)  
 
 end
 

@@ -54,8 +54,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ** rml utilities, for example finding elements in lists.
  ** 
  **)
-
-
 module ModUtil :
 
   with "Absyn.rml"
@@ -89,6 +87,7 @@ relation string_prefix_component_refs : (string, (Exp.ComponentRef, 'b)
 	----------------------------------------------
 	string_prefix_component_refs (str, r, rarg, e::rest) => e'::res
 end
+
 relation string_prefix_component_ref : (string, (Exp.ComponentRef, 'b) 
 					=> (), 'b, Exp.Exp) 
 	  => Exp.Exp =
@@ -188,6 +187,7 @@ relation string_prefix_component_ref : (string, (Exp.ComponentRef, 'b)
   axiom	string_prefix_component_ref (str, r, rarg, e) => e
 
 end
+
 relation string_prefix_component_refs_list : 
 	(string, (Exp.ComponentRef, 'b) => (), 'b, Exp.Exp list list) => Exp.Exp list list =
 
@@ -199,6 +199,7 @@ relation string_prefix_component_refs_list :
 	string_prefix_component_refs_list (str, r, rarg, el::rest) => el'::res
 
 end
+
 relation string_prefix_cref : (string, Exp.ComponentRef) 
 	  => Exp.ComponentRef =
 
@@ -212,6 +213,7 @@ relation string_prefix_cref : (string, Exp.ComponentRef)
 	  => Exp.CREF_QUAL(s', si, cr)
 
 end
+
 relation string_prefix_elements : (string, DAE.Element list, DAE.Element list) 
 	  => DAE.Element list =
 
@@ -223,6 +225,7 @@ relation string_prefix_elements : (string, DAE.Element list, DAE.Element list)
 	string_prefix_elements (str, dae, el::rest) => el'::res
 
 end
+
 relation string_prefix_element : (string, DAE.Element list, DAE.Element) 
 	  => DAE.Element =
 
@@ -268,6 +271,7 @@ relation string_prefix_element : (string, DAE.Element list, DAE.Element)
   axiom	string_prefix_element (str, dae, e) => e
 
 end
+
 relation is_parameter_daelist : (Exp.ComponentRef, DAE.Element list) => () =
 
   rule	Exp.cref_equal (cr, crv) => true
@@ -283,6 +287,7 @@ relation is_parameter_daelist : (Exp.ComponentRef, DAE.Element list) => () =
 	is_parameter_daelist (cr, e::rest)
 
 end
+
 relation string_prefix_params : DAE.DAElist => DAE.DAElist =
 
   rule	string_prefix_elements ("params->", dae, dae) => dae'
@@ -295,7 +300,6 @@ end
  **
  ** Prints a Path option to a string.
  **)
-
 relation opt_path_string: Absyn.Path option => string =
 
   axiom	opt_path_string(NONE) => ""
@@ -309,7 +313,6 @@ end
  **
  ** Prints a Path to a string.
  **)
-
 relation path_string: Absyn.Path => string =
 
   rule	RTOpts.modelica_output => true &
@@ -328,7 +331,6 @@ end
  **
  ** Helper relation to path_string.
  **)
-
 relation path_string2: (Absyn.Path, string) => string =
 
   axiom	path_string2(Absyn.IDENT(s),_) => s
@@ -345,7 +347,6 @@ end
  **
  ** Returns true if two paths are equal.
  **)
-
 relation path_equal : (Absyn.Path, Absyn.Path) => bool =
 
   rule	id1 = id2 

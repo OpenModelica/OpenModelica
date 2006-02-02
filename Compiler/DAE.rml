@@ -74,6 +74,7 @@ module DAE:
   datatype VarKind = VARIABLE | DISCRETE | PARAM | CONST
 
   datatype Type = REAL | INT | BOOL | STRING | ENUM | ENUMERATION of string list
+
  (** The Flow of a variable indicates if it is a Flow variable or not, or if
   ** it is not a connector variable at all.*)
   datatype Flow = FLOW | NON_FLOW | NON_CONNECTOR
@@ -97,16 +98,18 @@ module DAE:
 		   | DEFINE of Exp.ComponentRef * Exp.Exp
 		   | INITIALDEFINE of Exp.ComponentRef * Exp.Exp
 		   | EQUATION of Exp.Exp * Exp.Exp (* Scalar equation *)
-		   | ARRAY_EQUATION of int list (* dimension sizes*) * Exp.Exp * Exp.Exp (* array equation*)			
-		   | WHEN_EQUATION of Exp.Exp        (* Condition *) *
-		                      Element list   (* Equations *) *
-		                      Element option (* Elsewhen should be of type WHEN_EQUATION*)
-		   | IF_EQUATION   of Exp.Exp      (* Condition *) *
-		                      Element list (* Equations of true branch*) *
-		                      Element list (* Equations of false branch*)
-		   | INITIAL_IF_EQUATION   of Exp.Exp      (* Condition *) *
-		                      Element list (* Equations of true branch*) *
-		                      Element list (* Equations of false branch*)
+		   | ARRAY_EQUATION of int list (* dimension sizes*) 
+                                       * Exp.Exp 
+                                       * Exp.Exp (* array equation*)			
+		   | WHEN_EQUATION of Exp.Exp        (* Condition *) 
+		                    * Element list   (* Equations *)
+		                    * Element option (* Elsewhen should be of type WHEN_EQUATION*)
+		   | IF_EQUATION   of Exp.Exp      (* Condition *)
+		                    * Element list (* Equations of true branch*) 
+		                    * Element list (* Equations of false branch*)
+		   | INITIAL_IF_EQUATION   of Exp.Exp      (* Condition *) 
+		                    * Element list (* Equations of true branch*) 
+		                    * Element list (* Equations of false branch*)
 		   | INITIALEQUATION of Exp.Exp * Exp.Exp
 		   | ALGORITHM of Algorithm.Algorithm
 		   | INITIALALGORITHM of Algorithm.Algorithm
@@ -118,27 +121,27 @@ module DAE:
 	           | ASSERT of Exp.Exp
                    | REINIT of Exp.ComponentRef * Exp.Exp
 
-  datatype VariableAttributes = VAR_ATTR_REAL of string option * (* quantity *)
-             string option *(* unit *)
-             string option *(* displayUnit *)
-             (real option * real option) * (* min , max *)
-             real option * (* Initial value *)
-             bool option * (* fixed - true: default for parameter/constant, false - default for other variables *)
-             real  option * (* nominal *)
-             StateSelect option 
-            | VAR_ATTR_INT of string option * (* quantity *)
-             (int option * int option ) * (* min , max *)
-             int option * (* Initial value *)
-             bool option   (* fixed - true: default for parameter/constant, false - default for other variables *)
-            | VAR_ATTR_BOOL of string option * (* quantity *)
-             bool option * (* Initial value *)
-             bool option   (* fixed - true: default for parameter/constant, false - default for other variables *)
-            | VAR_ATTR_STRING of string option  * (* quantity *)
-             string option   (* Initial value *)
-            | VAR_ATTR_ENUMERATION of string option * (* quantity *)
-             (Exp.Exp option * Exp.Exp option) * (* min , max *)
-              Exp.Exp option * (*start*)
-              bool option   (* fixed - true: default for parameter/constant, false - default for other variables *)
+  datatype VariableAttributes = VAR_ATTR_REAL of string option (* quantity *)
+             * string option (* unit *)
+             * string option (* displayUnit *)
+             * (real option * real option) (* min , max *)
+             * real option (* Initial value *)
+             * bool option (* fixed - true: default for parameter/constant, false - default for other variables *)
+             * real  option (* nominal *)
+             * StateSelect option 
+            | VAR_ATTR_INT of string option (* quantity *)
+             * (int option * int option ) (* min , max *)
+             * int option (* Initial value *)
+             * bool option   (* fixed - true: default for parameter/constant, false - default for other variables *)
+            | VAR_ATTR_BOOL of string option (* quantity *)
+             * bool option (* Initial value *)
+             * bool option   (* fixed - true: default for parameter/constant, false - default for other variables *)
+            | VAR_ATTR_STRING of string option (* quantity *)
+             * string option   (* Initial value *)
+            | VAR_ATTR_ENUMERATION of string option (* quantity *)
+             * (Exp.Exp option * Exp.Exp option) (* min , max *)
+             * Exp.Exp option (*start*)
+             * bool option   (* fixed - true: default for parameter/constant, false - default for other variables *)
             
 
 
@@ -157,9 +160,8 @@ module DAE:
 
 (** A DAElist is a list of Elements. Variables, equations, functions, 
  ** algorithms, etc. are all found in this list.
-**)
+ **)
   datatype DAElist = DAE of Element list
-
 
   relation dump: DAElist => ()
   relation dump2: DAElist => ()
@@ -219,7 +221,6 @@ with "Error.rml"
  **
  ** This relation prints the DAE in the standard output format.
  **)
-
 relation dump : DAElist => () =
 	
   rule	Util.list_map_0 (daelist, dump_function) &
@@ -232,8 +233,8 @@ end
  **
  ** Helper relation to dump
  **)
-
 relation dump2: DAElist => () =
+
   rule	Print.print_buf "VAR(" &
 	Exp.print_component_ref cr &
 	Print.print_buf "=" &
@@ -254,7 +255,7 @@ relation dump2: DAElist => () =
 	(* 	dump_start_value start & *)
         Dump.unparse_comment_option(comment) => comment_str &
         print "  comment:" & print comment_str & print ",\n " &
-    dump_variable_attributes dae_var_attr &
+        dump_variable_attributes dae_var_attr &
 
 	Print.print_buf ")\n" &
 	dump2 (DAE(xs))
@@ -348,7 +349,6 @@ end
  **
  ** Dumps the StartValue for a variable.
  **)
-
 relation dump_start_value: StartValue => () =
 
   rule	Print.print_buf("(start=") &
@@ -365,7 +365,6 @@ end
  **
  ** Dumps the start value for a variable to a string.
  **)
-
 relation dump_start_value_str: StartValue => string =
 
   rule	Exp.print_exp_str e => s &
@@ -381,7 +380,6 @@ end
  **
  ** Dumps the external declaration to a string.
  **)
-
 relation dump_ext_decl_str : ExternalDecl => string = 
 
   rule	Dump.get_string_list (extargs, dump_ext_arg_str, ",") => extargsstr &
@@ -396,7 +394,6 @@ end
  **
  ** Helper relation to dump_ext_decl_str
  **)
-
 relation dump_ext_arg_str : ExtArg => string = 
 
   axiom	dump_ext_arg_str NOEXTARG => "void"
@@ -424,7 +421,7 @@ end
 (** relation: dump_str
  ** 
  ** This relation prints the DAE to a string.
-**)
+ **)
 relation dump_str : DAElist => string =
 
   rule	Util.list_map(daelist,dump_function_str) => flist &
@@ -440,7 +437,6 @@ end
  **
  ** Dumps Component elements.
  **)
-
 relation dump_comp_element : Element => () =
 	
   rule	RTOpts.modelica_output => false &	
@@ -465,8 +461,7 @@ end
 (** relation: dump_comp_element_str
  **
  ** Dumps components to a string.
-**)
-
+ **)
 relation dump_comp_element_str : Element => string =
 	
   rule	RTOpts.modelica_output => false &
@@ -492,7 +487,6 @@ relation dump_comp_element_str : Element => string =
 	dump_comp_element_str COMP(n,DAE(l)) => str
 
 (* LS: for non-COMPS, which are only FUNCTIONS at the moment *)
-
   axiom	dump_comp_element_str _ => ""
 
 end
@@ -501,8 +495,8 @@ end
  **
  ** Dump elements. 
  **)
-
 relation dump_elements : Element list => () =
+
  rule	dump_vars l &
 	Print.print_buf "initial equation\n" &
 	Util.list_map_0(l, dump_initialequation) &
@@ -520,7 +514,6 @@ end
  **
  ** Dump elements to a string
  **)
-
 relation dump_elements_str : Element list => string =
 
   rule	dump_vars_str l => s1 &
@@ -548,7 +541,6 @@ end
  **
  ** Dump algorithms to a string.
  **)
-
 relation dump_algorithms_str: Element list => string = 
 	
   rule	Dump.get_string_list(stmts,pp_statement_str,"") => s1 &
@@ -570,7 +562,6 @@ end
  **
  ** Dump initialalgorithms to a string.
  **)
-
 relation dump_initialalgorithms_str: Element list => string = 
 	
   rule	Dump.get_string_list(stmts,pp_statement_str,"") => s1 &
@@ -592,7 +583,6 @@ end
  **
  ** Dump equations to a string.
  **)
-
 relation dump_equations_str: Element list => string =
 
   rule	Exp.print_exp_str e1 => s1 &
@@ -677,7 +667,6 @@ end
  **
  ** Dump initial equations to a string.
  **)
-
 relation dump_initialequations_str: Element list => string =
 
   rule	Exp.print_exp_str e1 => s1 &
@@ -736,7 +725,6 @@ end
  **
  ** Dump variables to a string.
  **)
-
 relation dump_vars_str: Element list => string =
 	
   axiom	dump_vars_str [] => ""
@@ -753,7 +741,6 @@ end
  **
  ** Dump VarKind.
  **)
-
 relation dump_kind =
 
   rule	Print.print_buf " constant  "
@@ -778,7 +765,6 @@ end
  **
  ** Dump VarKind to a string.
  **)
-
 relation dump_kind_str: VarKind => string =
 
   axiom	dump_kind_str CONST => "constant "
@@ -793,7 +779,6 @@ end
  **
  ** Dump VarDirection.
  **)
-
 relation dump_direction =
 
   rule	Print.print_buf " input  "
@@ -813,8 +798,7 @@ end
 (** relation: dump_direction_str
  **
  ** Dump VarDirection to a string
-**)
-
+ **)
 relation dump_direction_str: VarDirection => string =
 
   axiom	dump_direction_str INPUT => "input "
@@ -829,7 +813,6 @@ end
  **
  ** Dump StateSelect to a string.
  **)
-
 relation dump_stateSelect_str: StateSelect => string =
 
   axiom dump_stateSelect_str(NEVER) => "StateSelect.never"
@@ -844,7 +827,6 @@ end
  **
  ** Dump VariableAttributes option.
  **)
-
 relation dump_variable_attributes: VariableAttributes option => () =
  
   rule  dump_variable_attributes_str attr => res &
@@ -859,7 +841,6 @@ end
  **
  ** Return the start attribute as a string.
  **)
-
 relation get_start_attr_string: (VariableAttributes option ) => string =
 
   axiom	get_start_attr_string(NONE) => ""
@@ -879,7 +860,6 @@ end
  **
  ** Convert a string to a Modelica string, enclosed in citation marks.
  **)
-
 relation string_to_string: string => string =
   rule  Util.string_append_list(["\"",str,"\""]) => str'
         -----------------------------
@@ -890,7 +870,6 @@ end
  **
  ** Dump VariableAttributes option to a string.
  **)
-
 relation dump_variable_attributes_str: VariableAttributes option => string =
  
   rule  Dump.get_option_with_concat_str(quant,string_to_string,"quantity = ") => quantity &
@@ -1010,7 +989,6 @@ end
  **
  ** Dump Type.
  **)
-
 relation dump_type =
 
   rule	Print.print_buf "Integer "
@@ -1044,7 +1022,6 @@ end
  **
  ** Dump Type to a string.
  **)
-
 relation dump_type_str =
 
   axiom	dump_type_str INT => "Integer " 
@@ -1068,7 +1045,6 @@ end
  **
  ** Dump Var.
  **)
-
 relation dump_var : Element => () =
 	
   rule	dump_kind kind & dump_direction dir & dump_type typ &
@@ -1105,7 +1081,6 @@ end
  **
  ** Dump var to a string.
  **)
-
 relation dump_var_str : Element => string =
 	
   rule	dump_kind_str kind => s1 & 
@@ -1128,7 +1103,7 @@ relation dump_var_str : Element => string =
 	Exp.print_exp_str e => s5 & 
 (* 	dump_start_value_str start => s6 & *)
         dump_comment_option_str(comment) => comment_str &
-    dump_variable_attributes_str dae_var_attr => s6 &
+        dump_variable_attributes_str dae_var_attr => s6 &
 (*	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
 	Util.string_delimit_list(classstrlst, ", ") => classstr & *)
 	Util.string_append_list([s1, s2, s3, s4, " = ", s5, s6,comment_str,";\n"] )
@@ -1144,7 +1119,6 @@ end
  **
  ** Dump Comment option to a string.
  **)
-
 relation dump_comment_option_str : (Absyn.Comment option) => string =
 
   axiom dump_comment_option_str(NONE) => ""
@@ -1161,7 +1135,6 @@ end
  **
  ** Dump Comment option.
  **)
-
 relation dump_comment_option : (Absyn.Comment option) => () =
 
   rule  dump_comment_option_str(comment) => str &
@@ -1175,7 +1148,6 @@ end
  **
  ** Dump equation.
  **)
-
 relation dump_equation : Element => () =
 	
   rule	Print.print_buf "  " & Exp.print_exp e1 &
@@ -1201,7 +1173,6 @@ end
  **
  ** Dump initial equation.
  **)
-
 relation dump_initialequation : Element => () =
 	
   rule	Print.print_buf "  " & Exp.print_exp e1 &
@@ -1222,7 +1193,6 @@ end
  **
  ** Dump equation to a string.
  **)
-
 relation dump_equation_str : Element => string =
 	
   rule	
@@ -1257,7 +1227,6 @@ end
  **
  ** Dump algorithm.
  **)
-
 relation dump_algorithm : Element => () =
 
   rule	Print.print_buf "algorithm\n" &
@@ -1273,7 +1242,6 @@ end
  **
  ** Dump initial algorithm.
  **)
-
 relation dump_initialalgorithm : Element => () =
 
   rule	Print.print_buf "initial algorithm\n" &
@@ -1289,7 +1257,6 @@ end
  **
  ** Dump algorithm to a string
  **)
-
 relation dump_algorithm_str : Element => string =
 
   rule	Dump.get_string_list(stmts,pp_statement_str,"") => s1 &
@@ -1305,7 +1272,6 @@ end
  **
  ** Dump initial algorithm to a string
  **)
-
 relation dump_initialalgorithm_str : Element => string =
 
   rule	Dump.get_string_list(stmts,pp_statement_str,"") => s1 &
@@ -1361,7 +1327,6 @@ end
  **
  ** Prettyprint an algorithm statement
  **)
-
 relation pp_statement : Algorithm.Statement => () =
 
   rule	pp_stmt (alg,2)
@@ -1374,7 +1339,6 @@ end
  **
  ** Prettyprint an algorithm statement to a string.
  **)
-
 relation pp_statement_str : Algorithm.Statement => string =
 
   rule	pp_stmt_str (alg,2) => str
@@ -1387,7 +1351,6 @@ end
  **
  ** Helper relation to pp_statement.
  **)
-
 relation pp_stmt : (Algorithm.Statement, int) => () =
 
   rule	indent i &
@@ -1462,7 +1425,6 @@ end
  **
  ** Helper relation to pp_statement_str
  **)
-
 relation pp_stmt_str : (Algorithm.Statement, int) => string =
 
   rule	indent_str i => s1 &
@@ -1563,7 +1525,6 @@ end
  **
  ** Helper relation to pp_stmt
  **)
-
 relation pp_stmt_list : (Algorithm.Statement list, int) => () =
 
   axiom	pp_stmt_list ([],_)
@@ -1578,7 +1539,6 @@ end
  **
  ** Helper relation to pp_stmt_str
  **)
-
 relation pp_stmt_list_str : (Algorithm.Statement list, int) => string =
 
   axiom	pp_stmt_list_str ([],_) => ""
@@ -1594,7 +1554,6 @@ end
  **
  ** Helper relation to pp_stmt
  **)
-
 relation pp_else : (Algorithm.Else, int) => () =
 
   axiom	pp_else (Algorithm.NOELSE, _)
@@ -1620,7 +1579,6 @@ end
  **
  ** Helper relation to pp_else_str
  **)
-
 relation pp_else_str : (Algorithm.Else, int) => string =
 
   axiom	pp_else_str (Algorithm.NOELSE, _) => ""
@@ -1652,7 +1610,6 @@ end
  **
  ** Print an indentation, given an indent level.
  **)
-
 relation indent : int => () =
 
   axiom indent 0
@@ -1667,7 +1624,6 @@ end
  **
  ** Print an indentation to a string, given an indent level.
  **)
-
 relation indent_str : int => string =
 
   axiom indent_str 0 => ""
@@ -1720,7 +1676,6 @@ end
  **
  ** Retrieve all output variables from an Element list.
  **)
-
 relation get_output_vars: Element list  => Element list =
 	
   rule	get_matching_elements(vl, is_output_var) => vl'
@@ -1772,7 +1727,6 @@ end
  ** inserts the type name into each Var (variable) of the dae.
  ** This type name is the origin of the variable.
  **)
-
 relation set_component_type: (Element list,Absyn.Path) => Element list =
 
   axiom	set_component_type ([],_) => []
@@ -1816,7 +1770,6 @@ end
  **
  ** Succeeds if Element is an input variable.
  **)
-
 relation is_input_var: Element => () =
 
   axiom	is_input_var VAR(n, VARIABLE, INPUT, ty,  _, _, _, _,_,_,_)
@@ -1851,7 +1804,6 @@ end
  **
  ** Succeeds if Element is an algorithm.
  **)
-
 relation is_algorithm : Element => () =
 
   axiom is_algorithm ALGORITHM(_)
@@ -1863,7 +1815,6 @@ end
  **
  ** Succeeds if Element is not a function.
  **)
-
 relation is_function : Element => () =
 
   axiom is_function FUNCTION(_,_,_)
@@ -1877,7 +1828,6 @@ end
  paranthesised way
 
 ********************************)
-
 relation dump_debug : DAElist => () =
 
   rule	Print.print_buf "DAE(" & dump_debug_elist elist & Print.print_buf ")"
@@ -1890,7 +1840,6 @@ end
  **
  ** Helper relation to dump_debug.
  **)
-
 relation dump_debug_elist : Element list => () =
 
   axiom dump_debug_elist []
@@ -1906,7 +1855,6 @@ end
  **
  ** Dump element using parenthesis.
  **)
-
 relation dump_debug_element : Element => () =
 
   rule	Print.print_buf "VAR(" &
@@ -2000,7 +1948,6 @@ end
  ** Search for an element for which the relation passed as second 
  ** argument succeds. If no element is found return NONE.
  **)
-
 relation find_element : (Element list, Element => ()) => Element option =
 
   axiom	find_element ([],_) => NONE
@@ -2021,7 +1968,6 @@ end
  Graphviz relations to visualize 
  the dae
 ***************************)
-
 relation dump_graphviz : DAElist => () =
 
   rule	build_graphviz dae => r &
@@ -2034,8 +1980,7 @@ end
 (** relation: build_graphviz
  **
  ** Builds the graphviz node from a dae list.
-**)
-
+ **)
 relation build_graphviz : DAElist => Graphviz.Node =
 
   rule	get_matching_elements (els, is_var) => vars &
@@ -2052,7 +1997,6 @@ end
  **
  ** Helper relation to build_graphviz.
  **)
-
 relation build_gr_list : Element list => Graphviz.Node list =
 
   axiom build_gr_list [] => []
@@ -2068,7 +2012,6 @@ end
  **
  ** Helper relation to build_graphviz.
  **)
-
 relation build_gr_vars : Element list => Graphviz.Node list =
 
   axiom build_gr_vars [] => []
@@ -2083,7 +2026,6 @@ end
  **
  ** Helper relation to build_graphviz.
  **)
-
 relation build_gr_strlist : ('a list, 'a => string, int) => (string list, 'a list) =
 
   axiom	build_gr_strlist ([], _, _) => ([],[])
@@ -2105,7 +2047,6 @@ end
  **
  ** Helper relation to build_graphviz.
  **)
-
 relation build_gr_var_str : Element => string =
 
   rule	Exp.print_component_ref_str cr => str
@@ -2125,7 +2066,6 @@ end
  **
  ** Prints an expression to a string suitable for graphviz.
  **)
-
 relation print_exp_str_special : (Exp.Exp) => string =
 
   rule	string_append ("\\\"", s) => s' &
@@ -2143,7 +2083,6 @@ end
  **
  ** Builds a Graphviz.Node from an element.
  **)
-
 relation build_gr_element : Element => Graphviz.Node =
 
 
@@ -2218,7 +2157,6 @@ end
  **
  ** Return all variables from an Element list.
  **)
-
 relation get_variable_list: Element list  => Element list =
 
   rule	get_variable_list lst => res
@@ -2237,7 +2175,6 @@ end
  **
  ** Retrive the bindings from a list of Elements and output to a string.
  **)
-
 relation get_bindings_str: Element list  => string =
 	
   rule	Exp.print_exp_str e => expstr &
@@ -2276,7 +2213,6 @@ end
  **
  ** Retrive the flow variables of an Element list.
  **)
-
 relation get_flow_variables: Element list => Exp.ComponentRef list =
 
   axiom get_flow_variables([]) => []
@@ -2343,7 +2279,6 @@ end
  **
  ** Transforms all variables from a.b.c to a_b_c, etc
  **)
-
 relation to_modelica_form: (DAElist) => DAElist =
 
   rule	to_modelica_form_elts(elts) => elts'
@@ -2356,7 +2291,6 @@ end
  **
  ** Helper relation to to_modelica_form.
  **)
-
 relation to_modelica_form_elts: (Element list) => Element list =
 
 	axiom to_modelica_form_elts([]) => []
@@ -2469,7 +2403,6 @@ end
  **
  ** Helper relation to to_mdelica_form_elts.
  **)
-
 relation to_modelica_form_exp_opt: Exp.Exp option => Exp.Exp option =
 
   rule	to_modelica_form_exp(e) => e'
@@ -2483,7 +2416,6 @@ end
  **
  ** Helper relation to to_modelica_form_elts.
  **)
-
 relation to_modelica_form_cref: Exp.ComponentRef => Exp.ComponentRef =
 
   rule	Exp.print_component_ref_str(cr) => str &
@@ -2496,7 +2428,6 @@ end
  **
  ** Helper relation to to_modelica_form_elts.
  **)
-
 relation to_modelica_form_exp: (Exp.Exp) => Exp.Exp =
 
   rule	to_modelica_form_cref(cr) => cr'
@@ -2613,7 +2544,6 @@ end
  **
  ** Makes an expression from a ComponentRef.
  **)
-
 relation cref_to_exp : Exp.ComponentRef => Exp.Exp =
 
   axiom	cref_to_exp cref => Exp.CREF(cref, Exp.OTHER)

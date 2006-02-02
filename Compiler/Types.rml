@@ -56,7 +56,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ** `Absyn.ArrayDim'.  However, the only things used from those
  ** modules are constants that could be moved to their own modules.
  **)
-
 module Types :
 
   with "ClassInf.rml"
@@ -84,7 +83,7 @@ module Types :
   (* - Binding *)
   datatype Binding = UNBOUND
 		   | EQBOUND of Exp.Exp (* exp *)
-                                   * Values.Value option (* evaluatedExp; evaluated exp*)
+                           * Values.Value option (* evaluatedExp; evaluated exp*)
 			   * Const (* constant *)
 		   | VALBOUND of Values.Value (* valBound *)
 
@@ -121,7 +120,6 @@ module Types :
   (* - Function Argument *)
   type FuncArg = Ident * Type
 
-
   (** The degree of constantness of an expression is determined by the Const 
    ** datatype. Variables declared as 'constant' will get C_CONST constantness.
    ** Variables declared as 'parameter' will get C_PARAM constantness and
@@ -132,13 +130,11 @@ module Types :
 		   C_PARAM | (* 'parameter's, evaluated if structural *)
 		   C_VAR     (* not constants, never evaluated *)
 
-
   (* A tuple is added to the Types. This is used by functions whom returns multiple arguments. *)
   (* Used by split_props  *)
   (* - Tuple constants *)
   datatype TupleConst = CONST of Const |
 		   TUPLE_CONST  of TupleConst list (* tupleConstLst *)
-
 
   (** P.R 1.1 for multiple return arguments from functions, 
    ** one constant flag for each return argument. 
@@ -177,7 +173,6 @@ module Types :
   datatype Mod = MOD of bool (* final *) * Absyn.Each * (SubMod list) * EqMod option
   	  | REDECL of bool (* final *) * (SCode.Element*Mod) list
 	  | NOMOD
-
 
   (** - Exported relations *)
   relation basic_type : Type => bool
@@ -258,7 +253,6 @@ module Types :
   relation discrete_type: Type => () 
 end
 
-
 with "Dump.rml"
 with "Debug.rml"
 with "Print.rml"
@@ -279,7 +273,6 @@ relation discrete_type: Type => () =
   axiom	discrete_type((T_ENUMERATION(_,_),_)) => ()
 end
 
-
 (** relation: simple_type
  ** author: PA
  ** 
@@ -293,7 +286,6 @@ relation simple_type: Type => () =
   axiom	simple_type((T_BOOL(_),_)) => ()
 end
 
-
 (** relation: integer_or_real 
  ** author: PA
  ** 
@@ -304,7 +296,6 @@ relation integer_or_real: Type => () =
   axiom	integer_or_real((T_REAL(_),_)) => ()
   axiom	integer_or_real((T_INTEGER(_),_)) => ()
 end
-
 
 (** relation: is_array
  **
@@ -317,7 +308,6 @@ relation is_array : Type => bool =
 
 end
 
-
 (** relation: is_string
  **
  ** Return true if Type is the builtin String type.
@@ -328,7 +318,6 @@ relation is_string : Type => bool =
   axiom	is_string ((_,_)) => false
 
 end
-
 
 (** relation: is_array_or_string
  **
@@ -344,10 +333,10 @@ relation is_array_or_string : Type => bool =
 	-------------------
 	is_array_or_string ty => true
 
-  rule -----------------	is_array_or_string _ => false
+  rule  -----------------	
+	is_array_or_string _ => false
 
 end
-
 
 (** relation: ndims
  **
@@ -362,7 +351,6 @@ relation ndims : Type => int =
 
   axiom ndims( (_,_) ) => 0
 end
-
 
 (** relation: dimensions_known
  **
@@ -379,7 +367,6 @@ relation dimensions_known: Type => bool =
 	dimensions_known(tp) => true
 end
 
-
 (** relation: strip_submod
  ** author: PA
  ** 
@@ -392,7 +379,6 @@ relation strip_submod: Mod => Mod =
   axiom	strip_submod(m) => m
 
 end
-
 
 (** relation: get_dimension_sizes
  ** 
@@ -407,7 +393,6 @@ relation get_dimension_sizes: Type => int list =
   axiom	get_dimension_sizes((_,_)) => []
 
 end
-
 
 (** relation: values_to_mods
  ** author: PA
@@ -460,7 +445,6 @@ relation values_to_mods: (Values.Value list,Ident list) => Mod =
 	values_to_mods(v::_,_) => fail
 end
 
-
 (** relation: values_to_record_constructor_call
  ** 
  ** This relation transforms a list of values and an Absyn.Path to a function call
@@ -474,7 +458,6 @@ relation values_to_record_constructor_call:(Absyn.Path, Values.Value list)
 	values_to_record_constructor_call(funcname,values) 
 	  => Exp.CALL(funcname,expl,false,false)
 end
-
 
 (** relation values_to_vars
  ** 
@@ -496,7 +479,6 @@ relation values_to_vars:(Values.Value list,Exp.Ident list) => Var list =
 	-------------------------
 	values_to_vars(_,_) => fail
 end
-
 	
 (** relation: type_of_value
  ** author: PA
@@ -536,7 +518,6 @@ relation type_of_value: (Values.Value) => Type =
 
 end
 
-
 (** relation: basic_type
  **
  ** Test whether a type is one of the builtin types.
@@ -553,7 +534,6 @@ relation basic_type : Type => bool =
   axiom	basic_type( (T_ENUMERATION(_,_),_) ) => false
 end
 
-
 (** relation: array_type
  **
  ** Test whether a type is an array type.
@@ -564,7 +544,6 @@ relation array_type : Type => bool =
 
   axiom	array_type(_) => false
 end
-
 
 (** relation: equivtypes
  **
@@ -583,7 +562,6 @@ relation equivtypes : (Type, Type) => bool =
   axiom	equivtypes(t1, t2) => false
 
 end
-
 
 (** relation: subtype
  **
@@ -641,7 +619,6 @@ relation subtype : (Type, Type) => bool =
   axiom subtype(t1,t2) => false
 
 (* What? If not subtye should return false. Doesn't mean no matching rule
-
   rule	Debug.fprint ("tytr", "subtype: no matching subtype rule.\n") &
 	Debug.fcall ("tytr", print_type, t1) &
 	Debug.fprint ("tytr", " <> ") &
@@ -652,7 +629,6 @@ relation subtype : (Type, Type) => bool =
 *)
 
 end
-
 
 (** PR. relation: subtype_typelist
  **
@@ -673,7 +649,6 @@ relation subtype_typelist: (Type list,Type list) => bool =
 
 
 end
-
 
 (** relation: subtype_varlist
  **
@@ -698,7 +673,6 @@ relation subtype_varlist : (Var list, Var list) => bool =
 
 end
 
-
 (** relation: varlist_lookup
  **
  ** Given a list of `Var' and a name, this relation finds any `Var'
@@ -715,7 +689,6 @@ relation varlist_lookup : (Var list, Ident) => Var =
 	varlist_lookup(v::vs, name) => v
 
 end
-
 
 (** relation: lookup_component
  **
@@ -745,7 +718,6 @@ relation lookup_component : (Type, Ident) => Var =
 	lookup_component(_, id) => fail
 
 end
-
 
 (** relation: lookup_in_builtin
  **
@@ -778,8 +750,7 @@ relation lookup_in_builtin : (Type,Ident) => Var =
 	-------------------------------
 	lookup_in_builtin((T_BOOL(cs),_),id) => v
 
-(*	
-  axiom	lookup_in_builtin(T_REAL,"quantity")
+(*axiom	lookup_in_builtin(T_REAL,"quantity")
 	  => VAR("quantity",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
 		 false, T_STRING, VALBOUND(Values.STRING("")))
@@ -814,6 +785,7 @@ relation lookup_in_builtin : (Type,Ident) => Var =
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
 		 false, T_BOOL, UNBOUND) (* Needs to be set to true/false higher up the call chain
 					  depending on variability of instance*)
+
   axiom	lookup_in_builtin((T_REAL(_),_),"enable")
 	  => VAR("enable",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
@@ -824,12 +796,12 @@ relation lookup_in_builtin : (Type,Ident) => Var =
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
 		 false, (T_REAL([]),NONE), UNBOUND)
 
+ (* optimized away looking up the builtin enumeration type 'stateSelect' *)
   axiom	lookup_in_builtin((T_REAL(_),_),"stateSelect")
 	  => VAR("stateSelect",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
 		 false, (T_ENUMERATION(["never","avoid","default","prefer","always"]),NONE),
 		 VALBOUND(Values.ENUM("default")))
-		 (* optimized away looking up the builtin enumeration type 'stateSelect' *)
 
 	(* Integer *)
   axiom	lookup_in_builtin((T_INTEGER(_),_),"quantity")
@@ -852,11 +824,13 @@ relation lookup_in_builtin : (Type,Ident) => Var =
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
 		 false, (T_REAL([]),NONE), VALBOUND(Values.INTEGER(0)))
 
+(* Needs to be set to true/false higher up the call chain
+  depending on variability of instance*)
   axiom	lookup_in_builtin((T_INTEGER(_),_),"fixed")
 	  => VAR("fixed",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, (T_BOOL([]),NONE), UNBOUND) (* Needs to be set to true/false higher up the call chain
-					  depending on variability of instance*)
+		 false, (T_BOOL([]),NONE), UNBOUND) 
+
   axiom	lookup_in_builtin((T_INTEGER(_),_),"enable")
 	  => VAR("enable",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
@@ -873,11 +847,13 @@ relation lookup_in_builtin : (Type,Ident) => Var =
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
 		 false, (T_BOOL([]),NONE), VALBOUND(Values.BOOL(false)))
 
+(* Needs to be set to true/false higher up the call chain
+  depending on variability of instance*)
   axiom	lookup_in_builtin((T_BOOL(_),_),"fixed")
 	  => VAR("fixed",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, (T_BOOL([]),NONE), UNBOUND) (* Needs to be set to true/false higher up the call chain
-					  depending on variability of instance*)
+		 false, (T_BOOL([]),NONE), UNBOUND) 
+
   axiom	lookup_in_builtin((T_BOOL(_),_),"enable")
 	  => VAR("enable",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
@@ -905,27 +881,34 @@ relation lookup_in_builtin : (Type,Ident) => Var =
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
 		 false, (T_STRING([]),NONE),VALBOUND(Values.STRING("")))
 
+(* Should be bound to the first element of
+  T_ENUMERATION list higher up in the call chain *)
   axiom	lookup_in_builtin((T_ENUM,_),"min")
 	  => VAR("min",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, (T_ENUM,NONE), UNBOUND) (* Should be bound to the first element of
-					  T_ENUMERATION list higher up in the call chain *)
+		 false, (T_ENUM,NONE), UNBOUND) 
+
+(* Should be bound to the last element of 
+  T_ENUMERATION list higher up in the call chain *)
   axiom	lookup_in_builtin((T_ENUM,_),"max")
 	  => VAR("max",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, (T_ENUM,NONE), UNBOUND) (* Should be bound to the last element of 
-					  T_ENUMERATION list higher up in the call chain *)
+		 false, (T_ENUM,NONE), UNBOUND) 
+
+(* Should be bound to the last element of 
+  T_ENUMERATION list higher up in the call chain *)
   axiom	lookup_in_builtin((T_ENUM,_),"start")
 	  => VAR("start",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, (T_BOOL([]),NONE), UNBOUND) (* Should be bound to the last element of 
-					  T_ENUMERATION list higher up in the call chain *)
+		 false, (T_BOOL([]),NONE), UNBOUND) 
 
+(* Needs to be set to true/false higher up the call chain
+  depending on variability of instance*)
   axiom	lookup_in_builtin((T_ENUM,_),"fixed")
 	  => VAR("fixed",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
-		 false, (T_BOOL([]),NONE), UNBOUND) (* Needs to be set to true/false higher up the call chain
-					  depending on variability of instance*)
+		 false, (T_BOOL([]),NONE), UNBOUND) 
+
   axiom	lookup_in_builtin((T_ENUM,_),"enable")
 	  => VAR("enable",
 		 ATTR(false, SCode.RW, SCode.PARAM, Absyn.BIDIR),
@@ -970,9 +953,10 @@ end
  **)
 relation lift_array : (Type,int option) => Type =
 
-  rule	(*print("\nDebug: lifts the array.") 
-*)	-------------------
+  rule	(*print("\nDebug: lifts the array.") *)
+	-------------------
 	lift_array (ty,i) => ((T_ARRAY(DIM(i),ty),NONE))
+
 (* PR  axiom	lift_array (ty,i) => T_ARRAY(DIM(i),ty) *)
 
 end
@@ -1034,7 +1018,7 @@ end
 (** relation: unparse_type
  **
  ** This relation prints a Modelica type as a piece of Modelica code.
-**)
+ **)
 relation unparse_type: Type => string =
 
   axiom	unparse_type((T_INTEGER(_),_)) =>  "Integer"
@@ -1097,7 +1081,6 @@ relation unparse_type: Type => string =
 
 end	
 
-
 (** relation: unparse_const
  **
  ** This relation prints a Const as a string.
@@ -1109,7 +1092,6 @@ relation unparse_const : Const => string =
   axiom	unparse_const C_VAR => "C_VAR"
 
 end
-
 
 (** relation: unparse_tupleconst
  **
@@ -1136,7 +1118,6 @@ end
  ** the type is not one of the primitive types, it simply prints
  ** `composite'.  The actual code is expluded from the report.
  **)
-(*!ignorecode*)
 relation print_type : Type => () =
 
   rule	Print.print_error_buf "Integer" 
@@ -1219,7 +1200,6 @@ relation print_type : Type => () =
 
 end
 
-
 (** relation: print_arraydim
  **
  ** Prints an ArrayDim to the Print buffer.
@@ -1233,7 +1213,6 @@ relation print_arraydim: ArrayDim => () =
 	print_arraydim ad
 
 end
-
 
 (** relation: get_arraydim_str
  **
@@ -1255,12 +1234,12 @@ end
  **
  ** Return the dimension of an ArrayDim
  **)
-
 relation arraydim_int: ArrayDim => int =
 
   axiom	arraydim_int DIM(SOME(i)) => i
 
 end
+
 (** relation: print_params
  ** 
  ** Prints function arguments to the Print buffer.
@@ -1280,7 +1259,6 @@ relation print_params : FuncArg list => () =
 
 end
 
-
 (** relation: unparse_var
  **
  ** Prints a variable to a string.
@@ -1293,7 +1271,6 @@ relation unparse_var: Var => string =
 	unparse_var VAR(n, attr, prot, typ, bind) => res
 end
 
-
 (** relation: unparse_param
  **
  ** Prints a function argument to a string.
@@ -1305,7 +1282,6 @@ relation unparse_param: FuncArg => string =
 	----------------------------
 	unparse_param ((id, ty)) => res
 end
-
 
 (** relation: print_var
  ** author: LS
@@ -1323,7 +1299,6 @@ relation print_var : Var => () =
 	print_var VAR(n, ATTR(_,_,var,_), prot, typ, bind)
 
 end
-
 
 (** relation: print_binding
  ** author: LS
@@ -1349,7 +1324,6 @@ relation print_binding : Binding => () =
 	print_binding VALBOUND (v)
 
 end
-
 
 (** relation: pritn_binding_str
  **
@@ -1379,7 +1353,6 @@ relation print_binding_str : Binding => string =
 
 end
 
-
 (** relation: make_function_type
  ** author: LS 
  **
@@ -1406,7 +1379,6 @@ relation make_function_type: (Absyn.Path, Var list) => Type =
 
 end
 
-
 (** relation: make_enumeration_type
  **
  ** Creates an enumeration type from a name and a list of variables.
@@ -1421,7 +1393,6 @@ relation make_enumeration_type: (Absyn.Path, Var list) => Type =
   axiom	make_enumeration_type(p,[]) => ((T_ENUMERATION([],[]),SOME(p)))
 end
 
-
 (** relation: print_farg
  **
  ** Prints a function argument to the Print buffer.
@@ -1433,7 +1404,6 @@ relation print_farg: FuncArg => () =
 	print_farg ((n,ty))
 
 end
-
 
 (** relation: print_farg_str
  **
@@ -1448,7 +1418,6 @@ relation print_farg_str: FuncArg => string =
 
 end
 
-
 (** relation: get_input_vars
  ** author: LS
  ** 
@@ -1460,7 +1429,6 @@ relation get_input_vars: Var list  => Var list =
 	---------------------------------
 	get_input_vars vl => vl'
 end
-
 
 (** relation: get_output_vars
  ** author: LS
@@ -1474,7 +1442,6 @@ relation get_output_vars: Var list  => Var list =
 	get_output_vars vl => vl'
 end
 
-
 (** relation: get_classname
  **
  ** Return the classname from a type.
@@ -1484,7 +1451,6 @@ relation get_classname: (Type) => Absyn.Path =
   axiom	get_classname((_,SOME(p))) => p
 
 end
-
 
 (** relation get_vars
  ** author: LS 
@@ -1508,12 +1474,11 @@ relation get_vars: (Var list, Var => () )  => Var list =
 
 end	
 
-
 (** relation: is_input_var
  ** author: LS
  ** 
  ** Succeds if variable is an input variable.
-**)
+ **)
 relation is_input_var: Var => () =
 
   (* LS: false means not protected, hence we ignore protected variables *)
@@ -1523,12 +1488,11 @@ relation is_input_var: Var => () =
 
 end
 
-
 (** relation: is_output_var
  ** author: LS
  ** 
  ** Succeds if variable is an output variable.
-**)
+ **)
 relation is_output_var: Var => () =
 
   (* LS: false means not protected, hence we ignore protected variables *)
@@ -1537,7 +1501,6 @@ relation is_output_var: Var => () =
 	is_output_var VAR(n, attr, false, ty, bnd)
 
 end
-
 
 (** relation: is_input_attr
  ** 
@@ -1550,7 +1513,6 @@ relation is_input_attr : Attributes => bool =
 
 end
 
-
 (** relation: is_output_attr
  ** 
  ** Returns true if the Attributes of a variable indicates
@@ -1562,7 +1524,6 @@ relation is_output_attr : Attributes => bool =
 
 end
 
-
 (** relation: is_bidir_attr
  **
  ** Returns true if the Attributes of a variable indicates that the variable
@@ -1573,7 +1534,6 @@ relation is_bidir_attr : Attributes => bool =
   axiom	is_bidir_attr ATTR(_,_,_,Absyn.BIDIR) => true
 
 end
-
 
 (** relation: make_fargs_list
  ** author: LS 
@@ -1588,7 +1548,6 @@ relation make_fargs_list: Var list => FuncArg list =
 	------------------
 	make_fargs_list (VAR(n,attr,pr,ty,bnd) :: vl) => ((n,ty)::fargl)
 end
-
 
 (** relation: make_return_type
  ** author: LS 
@@ -1611,7 +1570,6 @@ relation make_return_type: Var list => Type =
 
 end
 
-
 (** relation: make_return_type_single
  ** author: LS 
  **
@@ -1622,7 +1580,6 @@ relation make_return_type_single: Var => Type =
   axiom	make_return_type_single VAR(n,attr,pr,ty,bnd) => ty
 
 end
-
 
 (** relation: make_return_type_tuple
  ** author: LS
@@ -1640,7 +1597,6 @@ relation make_return_type_tuple: (Var list) => Type list =
 
 end
 
-
 (** relation: is_parameter
  ** author: LS 
  **
@@ -1652,7 +1608,6 @@ relation is_parameter: Var => () =
   axiom	is_parameter VAR(n, ATTR(fl, ac, SCode.PARAM, dir), false, ty, bnd)
 
 end
-
 
 (** relation: contain_real
  ** 
@@ -1675,7 +1630,6 @@ relation contain_real: Type list => bool =
   axiom	contain_real(_)=> false
 end
 
-
 (** relation: flatten_array_type
  **
  ** Returns the element type of a Type and the list of dimensions of the type.
@@ -1694,7 +1648,6 @@ relation flatten_array_type : Type => (Type, int list) =
   axiom	flatten_array_type ty => (ty, [])
 
 end
-
 
 (** relation: get_type_name
  **
@@ -1724,7 +1677,6 @@ relation get_type_name: Type => string =
 
 end
 
-
 (** relation: prop_all_const
  ** author: LS
  ** 
@@ -1745,7 +1697,6 @@ relation prop_all_const: Properties => Const =
 	prop_all_const prop => fail
 end
 
-
 (** relation: prop_any_const
  ** author: LS
  ** 
@@ -1765,7 +1716,6 @@ relation prop_any_const: Properties => Const =
 	---------------------------------------------------------------
 	prop_any_const prop => fail
 end
-
 
 (** relation: prop_tuple_any_const
  ** author: LS
@@ -1805,7 +1755,6 @@ relation prop_tuple_any_const: TupleConst => Const =
 	prop_tuple_any_const const => fail
 end
 
-
 (** relation: prop_tuple_all_const
  ** author: LS 
  **
@@ -1840,7 +1789,6 @@ relation prop_tuple_all_const: TupleConst => Const =
 
 end
 
-
 (** relation: is_prop_array
  **
  ** Return true if properties contain an array type.
@@ -1854,7 +1802,6 @@ relation is_prop_array : Properties => bool =
 
 end
 
-
 (** relation: get_prop_type
  ** author: LS
  **
@@ -1866,7 +1813,6 @@ relation get_prop_type: Properties => Type =
   axiom	get_prop_type PROP_TUPLE(ty,_) => ty
 
 end
-
 
 (** relation: elab_type
  ** author: ??
@@ -1889,7 +1835,6 @@ relation elab_type : Type => Exp.Type =
   axiom	elab_type((_,_)) => Exp.OTHER
 
 end
-
 
 (** relation: match_prop
  **
@@ -1916,7 +1861,6 @@ relation match_prop : (Exp.Exp, Properties, Properties) => (Exp.Exp, Properties)
 
 end
 
-
 (** relation: match_type
  **
  ** This relation matches an expression with an expected type, and
@@ -1938,7 +1882,6 @@ relation match_type : (Exp.Exp, Type, Type) => (Exp.Exp, Type) =
 	match_type(e, e_type, expected_type) => (e',e_type')
 end
 
-
 (** relation: match_type_list
  **
  ** This relation matches a list of types, with a list of other types.
@@ -1959,7 +1902,6 @@ relation match_type_list : (Exp.Exp, Type list, Type list )
 	-----------------------------------------------------
 	match_type_list(e, t1::ts1, t2::ts2) => fail
 end
-
 
 (** relation: vectorizable_type
  ** author: PA
@@ -1986,7 +1928,6 @@ relation vectorizable_type : (Exp.Exp, Type, Type) => (Exp.Exp, Type, ArrayDim l
 	-------------------------------------
 	vectorizable_type(e,e_type,expected_type) => (e',e_type',ad::ds)
 end
-
 
 (** relation: type_convert
  **
@@ -2147,7 +2088,6 @@ relation type_convert : (Exp.Exp, Type, Type) => (Exp.Exp, Type) =
 	type_convert (_,t1,t2) => fail 
 end
 
-
 (** relation: type_convert_array
  **
  ** Helper relation to type_convert. Handles array expressions.
@@ -2172,7 +2112,6 @@ relation type_convert_array : (Exp.Exp list, Type, Type) => Exp.Exp list =
 	type_convert_array (e::_,t1,t2) => fail *)
 
 end
-
 
 (** relation: type_convert_matrix
  **
@@ -2199,7 +2138,6 @@ relation type_convert_matrix : ((Exp.Exp*bool) list list, Type, Type)
 
 end
 
-
 (** relation: type_convert_matrix_row
  **
  ** Helper relation to type_convert_matrix.
@@ -2214,7 +2152,6 @@ relation type_convert_matrix_row: ((Exp.Exp*bool) list , Type, Type)
 	---------------------------------
 	type_convert_matrix_row((exp,_)::rest,t1,t2 )=> ((exp',a)::rest)
 end
-
 
 (** relation: type_convert_list
  **
@@ -2231,7 +2168,6 @@ relation type_convert_list : (Exp.Exp list, Type list, Type list)
 	type_convert_list (first::rest, ty1::ty1rest, ty2::ty2rest) => (first'::rest',ty'::tyrest')
 
 end
-
 
 (** relation: match_with_promote
  **
@@ -2300,7 +2236,6 @@ relation match_with_promote : (Properties, Properties, bool (* Allow Integer => 
 	  => PROP((T_REAL([]),p2),c)
 end
 
-
 (** relation: const_and
  **
  ** Returns the 'and' operator of two Const's. I.e. C_CONST iff. both are 
@@ -2317,7 +2252,6 @@ relation const_and: (Const, Const) => Const =
   axiom	const_and(_,_) => C_VAR
 end
 
-
 (** relation: const_tuple_and
  **
  ** Returns the 'and' operator of two TupleConst's
@@ -2327,7 +2261,6 @@ relation const_tuple_and: (TupleConst, TupleConst) => TupleConst =
 
 axiom const_tuple_and(c1,c2) => c1 
 end 
-
 
 (** relation: const_or
  **
@@ -2345,7 +2278,6 @@ relation const_or: (Const, Const) => Const =
   axiom	const_or(_,_) => C_VAR
 end
 
-
 (** relation: bool_const
  ** author: PA
  **
@@ -2359,7 +2291,6 @@ relation bool_const: (bool) => Const =
   axiom	bool_const(true) => C_CONST
 
 end
-
 
 (** relation: print_prop_str
  **
@@ -2380,7 +2311,6 @@ relation print_prop_str: Properties => string =
 	print_prop_str PROP_TUPLE(ty,const) => res
 end
 
-
 (** relation: print_prop
  **
  ** Print the Properties to the Print buffer.
@@ -2393,12 +2323,11 @@ relation print_prop : Properties => () =
 	print_prop (p) => ()
 end
 
-
 (** relation: flow_variables
  **
  ** This relation retrieves all variables names that are flow variables, and 
  ** prepends the prefix given as an 'Exp.ComponentRef'
-**)
+ **)
 relation flow_variables: (Var list, Exp.ComponentRef) => Exp.ComponentRef list =
 
   axiom	flow_variables([],_) => []
@@ -2413,7 +2342,6 @@ relation flow_variables: (Var list, Exp.ComponentRef) => Exp.ComponentRef list =
 	flow_variables(_::vs,cr) => res
 end
 
-
 (** relation: get_all_exps
  ** 
  ** This relation goes through the Type structure and finds all the
@@ -2426,7 +2354,6 @@ relation get_all_exps : Type => Exp.Exp list =
 	get_all_exps ((ttype, pathopt)) => exps
 
 end
-
 
 (** relation: get_all_exps_tt
  ** 
@@ -2481,7 +2408,6 @@ relation get_all_exps_tt : TType => Exp.Exp list =
 
 end
 
-
 (** relation: get_all_exps_vars
  **
  ** Helper relation to get_all_exps_tt.
@@ -2494,7 +2420,6 @@ relation get_all_exps_vars : Var list => Exp.Exp list =
 	get_all_exps_vars vars => exps
 	
 end
-
 
 (** relation: get_all_exps_var
  **
@@ -2509,7 +2434,6 @@ relation get_all_exps_var : Var => Exp.Exp list =
 	get_all_exps_var VAR(id,attr,prot,ty,bnd) => exps
 	
 end
-
 
 (** relation: get_all_exps_binding
  **
@@ -2528,7 +2452,6 @@ relation get_all_exps_binding : Binding => Exp.Exp list =
 	get_all_exps_binding _ => fail
 
 end
-
 
 (** relation: get_funcarg_type
  **

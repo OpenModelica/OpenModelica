@@ -58,12 +58,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ** The module uses 'TaskGraphExt' for the task graph datastructure itself, which
  ** is implemented using Boost Graph Library in C++
  *)
-
 module TaskGraph:
   with "Exp.rml"
   with "DAELow.rml"
   relation build_taskgraph: (DAELow.DAELow, int vector, int vector, int list list) => ()
-
 
 end
 
@@ -107,7 +105,7 @@ end
  * This relation traverses the DAE and calls external relations to build 
  * the initialization values for the DAE
  * This is implemented in C++ as a set of vectors
-**)
+ **)
 relation build_inits:(DAELow.DAELow) => () =
 
   rule	DAELow.vararray_list(vararr) => vars &
@@ -116,6 +114,7 @@ relation build_inits:(DAELow.DAELow) => () =
 	build_inits2(kvars)
 	--------------------
 	build_inits(DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),DAELow.VARIABLES(_,_,kvararr,_,_),_,_,_,_,_,_)) => ()
+
 end
 
 
@@ -231,7 +230,9 @@ end
 relation is_non_state: DAELow.VarKind => () =
 
   axiom	is_non_state (DAELow.VARIABLE) => ()
+
   axiom	is_non_state (DAELow.DUMMY_DER) => ()
+
   axiom	is_non_state (DAELow.DUMMY_STATE) => ()
 end
 
@@ -259,7 +260,6 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	build_assignment(cr,expr,origname)  => ()
 	--------------------------------
 	build_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_,_),ass1,ass2,e)	
-
 
   rule	(* Solving the state s means solving for der(s) *)
 	int_sub(e,1) => e' &
@@ -313,15 +313,10 @@ relation build_equation:(DAELow.DAELow, int vector, int vector, int) => () =
 	list_nth(varlst,v') => DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,_,indx,origname,_,dae_var_attr,_,flow) &
 	int_string(indx) => indxs &
 
-
-
 (* 	Util.string_append_list(["xd[",indxs,"]"]) => id & *)
         Exp.print_component_ref_str(cr) => name &
         Util.modelica_string_to_c_str(name) => c_name &
         Util.string_append_list([DAELow.derivative_name_prefix,c_name]) => id &
-
-
-
 
 	let cr' = Exp.CREF_IDENT(id,[]) &
 	let varexp = Exp.CREF(cr',Exp.REAL) &
@@ -354,7 +349,6 @@ end
 (** relation: build_nonlinear_equations
  ** builds task graph for solving non-linear equations
  **)
-
 relation build_nonlinear_equations: (Exp.Exp list, (* variables *)
 				     Exp.Exp list) (* residuals *)
 	=> () =
@@ -373,6 +367,7 @@ relation build_nonlinear_equations: (Exp.Exp list, (* variables *)
   rule	print "build_nonlinear_equatins failed\n" 
 	-----------------------------------------
 	build_nonlinear_equations(vars,residuals) => fail
+
 end
 
 (** relation: build_residual_code
@@ -391,6 +386,7 @@ relation build_residual_code:(Exp.Exp list, (* vars *)
   rule	print "build_residual_code failed\n" 
 	--------------------------
 	build_residual_code(_,_) => fail
+
 end
 
 (** relation: make_residual_replacements
@@ -571,7 +567,6 @@ relation add_variable: (DAELow.Var,int) => () =
 	------------------------------------
 	add_variable(DAELow.VAR(cf,_,_,_,_, _,_,_,_,name,_,dae_var_attr,comment,flow),start)
 end
-
 		     
 relation build_assignment: (Exp.ComponentRef, (* varname *)
 			    Exp.Exp, (*expression*) 

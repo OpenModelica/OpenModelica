@@ -53,8 +53,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ** RCS: $Id$
  **
  **)
-
-
 module Graphviz:
 
   type Type = string
@@ -97,7 +95,6 @@ val box = ATTR("shape","box")
  **
  ** Dumps a Graphviz Node on stdout.
  **)
-
 relation dump : Node => () =
 	
   rule	print "graph AST {\n" &
@@ -113,7 +110,6 @@ end
  **
  ** Dumps a node to a string.
  **)
-
 relation dump_node : Node => Ident =
 	
   rule	nodename typ => nm &
@@ -141,8 +137,7 @@ end
 (** relation: make_label
  **
  ** Creates a label from a list of strings.
-**)
-
+ **)
 relation make_label: string list => string =
 
   rule	make_label_req(sl) => s0 &
@@ -157,7 +152,6 @@ end
  **
  ** Helper relation to make_label
  **)
-
 relation make_label_req: string list => string =
 
   axiom	make_label_req [s] => s
@@ -179,7 +173,6 @@ end
  **
  ** Helper relation to dump_node
  **)
-
 relation dump_children : (Ident, Children) => () =
 
   axiom dump_children (_, []) => ()
@@ -196,7 +189,7 @@ end
  **
  ** Creates a unique node name, 
  ** changed use of str as part of nodename, since it may contain spaces
- *)
+ **)
 relation nodename : string => string =
 
   rule	tick => i & int_string i => is & string_append("GVNOD",is) => s
@@ -209,7 +202,6 @@ end
  **
  ** Prints an edge between two nodes.
  **)
-
 relation print_edge : (Ident, Ident) => () =
 
   rule	make_edge(n1,n2) => str &
@@ -222,8 +214,7 @@ end
 (** relation: make_edge
  **
  ** Creates a string representing an edge between two nodes.
-**)
-
+ **)
 relation make_edge : (Ident, Ident) => string =
 
   rule	string_append(n1, " -- ") => s &
@@ -238,7 +229,6 @@ end
  **
  ** Creates string from a node.
  **)
-
 relation make_node : (Ident, Attributes) => string =
 
   rule	make_attr attr => s &
@@ -253,7 +243,6 @@ end
  **
  ** Creates a string from an Attribute list.
  **)
-
 relation make_attr : Attribute list => string = 
 
   rule	make_attr_req l => res &
@@ -268,7 +257,6 @@ end
  **
  ** Helper relation to make_attr_req.
  **)
-
 relation make_attr_req : Attribute list => string =
 
   rule	string_append(name,"=") => s &

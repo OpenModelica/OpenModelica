@@ -64,14 +64,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 module Corba:
 (** relation initialize:
  ** Initializes the CORBA communication 
-**)
+ **)
   relation initialize: () => ()
+
 (** 
  ** relation wait_for_command
  ** A blocking relation, waiting for incomming commands.
  ** (will lock)
-**)
+ **)
   relation wait_for_command: () => string
+
 (** 
  ** Sends a reply from the incomming message returned by wait_for_command.
  ** MUST be issued after a wait_for_command has been issued. (will unlock)
@@ -79,4 +81,5 @@ module Corba:
   relation sendreply: (string) => ()
 
   relation close: () => ()
+
 end	  
