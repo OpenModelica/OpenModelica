@@ -1,0 +1,114 @@
+<!DOCTYPE OMCCommand>
+
+<!--	<command name="cd($0)">									-->
+<!--		<field name="$0">dir</field>							-->
+<!--		<helptext>...help about command...</helptext>			-->
+<!--	</command>													-->
+
+<!--	HINT: Every field specified by $ followed by an integer, 	-->
+<!--	for example $1,	can be selected in the program to make 		-->
+<!--	editing easier for the user.The field name must start with	-->
+<!--	the integer 0, followed by 1, and the next 2... and so on.	-->
+<!--	The fields will be selected in the same order as the field	-->
+<!-- 	names, starting with 0.						-->
+
+<commands>
+	<command name="cd()">
+		<helptext>Return the current directory.</helptext>
+	</command>
+	<command name="cd($0)">
+		<field name="$0">dir</field>
+		<helptext>Change directory to the directory given as a string. Ex: cd("myModels/myLibrary").</helptext>
+	</command>
+	<command name="clear()">
+		<helptext>Clear everything.</helptext>
+	</command>
+	<command name="clearVariables()">
+		<helptext>Clear the variables.</helptext>
+	</command>
+	<command name="help()">
+		<helptext>Print this helptext (returned as a string).</helptext>
+	</command>
+	<command name="instantiateModel($0)">
+		<field name="$0">modelname</field>
+		<helptext>Instantiates a model/class and returns a string containing the flat class definition. Ex: instantiateModel(dcmotor).</helptext>
+	</command>
+	<command name="list()">
+		<helptext>Return a string containing all class definitions.</helptext>
+	</command>
+	<command name="list($0)">
+		<field name="$0">modelname</field>
+		<helptext>Return a string containing the class definition of the named class. Ex: list(dcmotor).</helptext>
+	</command>
+	<command name="listVariables()">
+		<helptext>Return a vector of the currently defined variable names.</helptext>
+	</command>
+	<command name="loadFile($0)">
+		<field name="$0">strFile</field>
+		<helptext>Load modelica file given as string argument. Ex: loadFile("../myLibrary/myModels.mo").</helptext>
+	</command>
+	<command name="loadModel($0)">
+		<field name="$0">name</field>
+		<helptext>Load model, function, or package relative to $MODELICAPATH. Ex: loadModel(Modelica.Electrical). Note: if e.g. loadModel(Modelica) fails, you may have MODELICAPATH pointing at the wrong location.</helptext>
+	</command>
+	<command name="plot($0)">
+		<field name="$0">var</field>
+		<helptext>Plot a variable from the most recently simulated model. Ex: plot(x).</helptext>
+	</command>
+	<command name="plot($0)">
+		<field name="$0">vars</field>
+		<helptext>Plot variables from the most recently simulated model given as a vector. Ex: plot({x,y}).</helptext>
+	</command>
+	<command name="readFile($0)">
+		<field name="$0">str</field>
+		<helptext>Load file given as string and return a string of the file content. Ex: readFile("myModel/myModelr.mo").</helptext>
+	</command>
+	<command name="readSimulationResultSize($0)">
+		<field name="$0">strFile</field>
+		<helptext>Return the size of the record resulting from a simulation. The size is read from the result file, given as a string. Ex:  readSimulationResultSize("dcmotor_res.plt").</helptext>
+	</command>
+	<command name="readSimulationResult($0, $1, $2)">
+		<field name="$0">strFile</field>
+		<field name="$1">variables</field>
+		<field name="$2">size</field>
+		<helptext>Read the results of a simulation from a file named by the string argument strFile. Here size is the size of the resulting record and variables is a vector of the variables to investigate. Ex: readSimulationResult("dcmotor_res.plt", {R1.i,L1.v}, 10).</helptext>
+	</command>
+	<command name="runScript($0)">
+		<field name="$0">strFile</field>
+		<helptext>Exectute script file (.mos) given as string argument. Ex: runScript("simulation.mos").</helptext>
+	</command>
+	<command name="saveModel($0, $1)">
+		<field name="$0">strFile</field>
+		<field name="$1">modelname</field>
+		<helptext>Save the model/class with name modelname in the file given by the strFile string argument.</helptext>
+	</command>
+	<command name="simulate($0, startTime=$1, stopTime=$2, numberOfIntervals=$3)">
+		<field name="$0">modelname</field>
+		<field name="$1">&lt;Real></field>
+		<field name="$2">&lt;Real></field>
+		<field name="$3">&lt;Integer></field>
+		<helptext>Translates a model and simulates it. Ex: simulate(dcmotor). Ex: simulate(dcmotor,startTime=0, stopTime=10, numberOfIntervals=1000).</helptext>
+	</command>
+	<command name="system($0)">
+		<field name="$0">str</field>
+		<helptext>Execute str as a system(shell) command, return integer success value. Ex: system("touch myFile").</helptext>
+	</command>
+	<command name="timing($0)">
+		<field name="$0">expr</field>
+		<helptext>Evaluates expression and returns the number of seconds the evaluation took. Ex: timing(x*4711+5).</helptext>
+	</command>
+	<command name="typeOf($0)">
+		<field name="$0">variable</field>
+		<helptext>Returns the type of the variable as a string. Ex: typeOf(R1.v).</helptext>
+	</command>
+	<command name="quit()">
+		<helptext>Leave OpenModelica and kill the process.</helptext>
+	</command>
+	<command name="class $0">
+		<field name="$0">name</field>
+	</command>
+	<command name="model $0">
+		<field name="$0">name</field>
+	</command>
+	<command name="equation"></command>
+</commands>

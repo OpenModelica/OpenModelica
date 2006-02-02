@@ -1,0 +1,828 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="7.10"
+	Name="OMNotebookQT4"
+	ProjectGUID="{259725BE-54D2-3C8D-A8A8-4CF7BD839D28}">
+	<Platforms>
+		<Platform
+			Name="Win32"/>
+	</Platforms>
+	<Configurations>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="."
+			IntermediateDirectory="Release\"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="-Zm200 -w34100 -w34189"
+				Optimization="1"
+				AdditionalIncludeDirectories="&quot;$(QNBHOME)\NotebookParser&quot;;&quot;$(MODELICAHOME)&quot;;&quot;$(MICOHOME)\include&quot;;&quot;$(ANTLRHOME)\lib\cpp&quot;;.;&quot;$(QTHOME)\include&quot;;&quot;$(QTHOME)\include\QtGui&quot;;&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;;QT_NO_DEBUG"
+				GeneratePreprocessedFile="0"
+				MinimalRebuild="FALSE"
+				ExceptionHandling="TRUE"
+				RuntimeLibrary="2"
+				BufferSecurityCheck="FALSE"
+				RuntimeTypeInfo="TRUE"
+				AssemblerListingLocation="Release\"
+				ObjectFile="Release\"
+				ProgramDataBaseFileName=".\"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				IgnoreImportLibrary="TRUE"
+				AdditionalDependencies="qtmain.lib QtCore4.lib QtGui4.lib QtXml4.lib NotebookParser.lib mico2311.lib antlr.lib msvcprt.lib msvcrt.lib"
+				OutputFile="Release\\OMNotebookQT4.exe"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="&quot;$(QNBHOME)\antlr\Release&quot;;&quot;$(QNBHOME)\NotebookParser\Release&quot;;&quot;$(QTHOME)\lib&quot;;&quot;$(MICOHOME)\win32-bin\lib&quot;"
+				IgnoreDefaultLibraryNames=""
+				DelayLoadDLLs=""
+				GenerateDebugInformation="FALSE"
+				ProgramDatabaseFile=""
+				SubSystem="2"
+				StackReserveSize="4000000"/>
+			<Tool
+				Name="VCMIDLTool"
+				WarningLevel="0"
+				DefaultCharType="0"
+				EnableErrorChecks="1"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="."
+			IntermediateDirectory="Debug\"
+			ConfigurationType="1"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions="-Zm200 -w34100 -w34189"
+				Optimization="1"
+				AdditionalIncludeDirectories="&quot;$(QNBHOME)\NotebookParser&quot;;&quot;$(MODELICAHOME)&quot;;&quot;$(MICOHOME)\include&quot;;&quot;$(ANTLRHOME)\lib\cpp&quot;;.;&quot;$(QTHOME)\include&quot;;&quot;$(QTHOME)\include\QtGui&quot;;&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot;;$(NOINHERIT)"
+				PreprocessorDefinitions="WIN32;QT_DEBUG"
+				GeneratePreprocessedFile="0"
+				MinimalRebuild="TRUE"
+				ExceptionHandling="TRUE"
+				RuntimeLibrary="3"
+				BufferSecurityCheck="FALSE"
+				TreatWChar_tAsBuiltInType="FALSE"
+				RuntimeTypeInfo="TRUE"
+				AssemblerListingLocation="Debug\"
+				ObjectFile="Debug\"
+				ProgramDataBaseFileName=".\"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				IgnoreImportLibrary="TRUE"
+				AdditionalDependencies="qtmaind.lib QtCored4.lib QtGuid4.lib QtXmld4.lib antlr.lib NotebookParser.lib mico2311.lib"
+				OutputFile="Debug\\OMNotebookOT4.exe"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="&quot;$(QNBHOME)\antlr\Debug&quot;;&quot;$(MICOHOME)\win32-bin\lib&quot;;&quot;$(QNBHOME)\NotebookParser\Debug&quot;;&quot;$(QTHOME)\lib&quot;"
+				IgnoreDefaultLibraryNames=""
+				DelayLoadDLLs=""
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile=""
+				SubSystem="1"
+				HeapReserveSize="0"
+				StackReserveSize="4000000"
+				StackCommitSize="0"/>
+			<Tool
+				Name="VCMIDLTool"
+				WarningLevel="0"
+				DefaultCharType="0"
+				EnableErrorChecks="1"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<Filter
+			Name="Source Files"
+			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
+			<File
+				RelativePath="cell.cpp">
+			</File>
+			<File
+				RelativePath="cellapplication.cpp">
+			</File>
+			<File
+				RelativePath="cellcommandcenter.cpp">
+			</File>
+			<File
+				RelativePath="cellcommands.cpp">
+			</File>
+			<File
+				RelativePath="cellcursor.cpp">
+			</File>
+			<File
+				RelativePath="celldocument.cpp">
+			</File>
+			<File
+				RelativePath="cellfactory.cpp">
+			</File>
+			<File
+				RelativePath="cellgroup.cpp">
+			</File>
+			<File
+				RelativePath="cellparserfactory.cpp">
+			</File>
+			<File
+				RelativePath=".\commandcompletion.cpp">
+			</File>
+			<File
+				RelativePath=".\highlighterthread.cpp">
+			</File>
+			<File
+				RelativePath="inputcell.cpp">
+			</File>
+			<File
+				RelativePath="notebook.cpp">
+			</File>
+			<File
+				RelativePath="notebookparser.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\[anders]\[ exjobb ]\modelica_omc\omc_communication.cc">
+			</File>
+			<File
+				RelativePath=".\omc_communicator.cpp">
+			</File>
+			<File
+				RelativePath=".\omcinteractiveenvironment.cpp">
+			</File>
+			<File
+				RelativePath=".\openmodelicahighlighter.cpp">
+			</File>
+			<File
+				RelativePath=".\printervisitor.cpp">
+			</File>
+			<File
+				RelativePath=".\puretextvisitor.cpp">
+			</File>
+			<File
+				RelativePath="qtapp.cpp">
+			</File>
+			<File
+				RelativePath=".\res.rc">
+			</File>
+			<File
+				RelativePath="serializingvisitor.cpp">
+			</File>
+			<File
+				RelativePath="stylesheet.cpp">
+			</File>
+			<File
+				RelativePath="textcell.cpp">
+			</File>
+			<File
+				RelativePath=".\textcursorcommands.cpp">
+			</File>
+			<File
+				RelativePath="treeview.cpp">
+			</File>
+			<File
+				RelativePath=".\updategroupcellvisitor.cpp">
+			</File>
+			<File
+				RelativePath=".\updatelinkvisitor.cpp">
+			</File>
+			<File
+				RelativePath="xmlparser.cpp">
+			</File>
+		</Filter>
+		<Filter
+			Name="Header Files"
+			Filter="h;hpp;hxx;hm;inl">
+			<File
+				RelativePath="application.h">
+			</File>
+			<File
+				RelativePath="cell.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing cell.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe cell.h -o moc_cell.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_cell.cpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing cell.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe cell.h -o moc_cell.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_cell.cpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="cellapplication.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing cellapplication.h..."
+						CommandLine="$(QTDIR)\bin\moc.exe cellapplication.h -o moc_cellapplication.cpp
+"
+						AdditionalDependencies="$(QTDIR)\bin\moc.exe"
+						Outputs="moc_cellapplication.cpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing cellapplication.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe cellapplication.h -o moc_cellapplication.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_cellapplication.cpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="cellcommandcenter.h">
+			</File>
+			<File
+				RelativePath="cellcommands.h">
+			</File>
+			<File
+				RelativePath="cellcursor.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing cellcursor.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe cellcursor.h -o moc_cellcursor.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_cellcursor.cpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing cellcursor.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe cellcursor.h -o moc_cellcursor.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_cellcursor.cpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="celldocument.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing celldocument.h..."
+						CommandLine="$(QTDIR)\bin\moc.exe celldocument.h -o moc_celldocument.cpp
+"
+						AdditionalDependencies="$(QTDIR)\bin\moc.exe"
+						Outputs="moc_celldocument.cpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing celldocument.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe celldocument.h -o moc_celldocument.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_celldocument.cpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\celldocumentview.h">
+			</File>
+			<File
+				RelativePath="cellfactory.h">
+			</File>
+			<File
+				RelativePath="cellgroup.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing cellgroup.h..."
+						CommandLine="$(QTDIR)\bin\moc.exe cellgroup.h -o moc_cellgroup.cpp
+"
+						AdditionalDependencies="$(QTDIR)\bin\moc.exe"
+						Outputs="moc_cellgroup.cpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing cellgroup.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe cellgroup.h -o moc_cellgroup.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_cellgroup.cpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\cellstyle.h">
+			</File>
+			<File
+				RelativePath="command.h">
+			</File>
+			<File
+				RelativePath="commandcenter.h">
+			</File>
+			<File
+				RelativePath=".\commandcompletion.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing commandcompletion.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe commandcompletion.h -o moc_commandcompletion.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_commandcompletion.cpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing commandcompletion.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe commandcompletion.h -o moc_commandcompletion.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_commandcompletion.cpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\commandunit.h">
+			</File>
+			<File
+				RelativePath="cursorcommands.h">
+			</File>
+			<File
+				RelativePath=".\cursorposvisitor.h">
+			</File>
+			<File
+				RelativePath="document.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing document.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe document.h -o moc_document.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_document.cpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing document.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe document.h -o moc_document.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_document.cpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="documentview.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing documentview.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe documentview.h -o moc_documentview.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_documentview.cpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing documentview.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe documentview.h -o moc_documentview.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_documentview.cpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="factory.h">
+			</File>
+			<File
+				RelativePath=".\highlighterthread.h">
+			</File>
+			<File
+				RelativePath=".\imagesizedlg.h">
+			</File>
+			<File
+				RelativePath="inputcell.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing inputcell.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe inputcell.h -o moc_inputcell.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_inputcell.cpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing inputcell.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe inputcell.h -o moc_inputcell.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_inputcell.cpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="inputcelldelegate.h">
+			</File>
+			<File
+				RelativePath=".\nbparser.h">
+			</File>
+			<File
+				RelativePath="notebook.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing notebook.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe notebook.h -o moc_notebook.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_notebook.cpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing notebook.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe notebook.h -o moc_notebook.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_notebook.cpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="notebookcommands.h">
+			</File>
+			<File
+				RelativePath="notebookparser.h">
+			</File>
+			<File
+				RelativePath=".\omc_communicator.hpp">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing omc_communicator.hpp..."
+						CommandLine="$(QTHOME)\bin\moc.exe omc_communicator.hpp -o moc_omc_communicator.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_omc_communicator.cpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing omc_communicator.hpp..."
+						CommandLine="$(QTHOME)\bin\moc.exe omc_communicator.hpp -o moc_omc_communicator.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_omc_communicator.cpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\omcinteractiveenvironment.h">
+			</File>
+			<File
+				RelativePath=".\openmodelicahighlighter.h">
+			</File>
+			<File
+				RelativePath=".\otherdlg.h">
+			</File>
+			<File
+				RelativePath="parserfactory.h">
+			</File>
+			<File
+				RelativePath=".\printervisitor.h">
+			</File>
+			<File
+				RelativePath=".\puretextvisitor.h">
+			</File>
+			<File
+				RelativePath=".\removehighlightervisitor.h">
+			</File>
+			<File
+				RelativePath=".\resource.h">
+			</File>
+			<File
+				RelativePath=".\resource1.h">
+			</File>
+			<File
+				RelativePath=".\rule.h">
+			</File>
+			<File
+				RelativePath="serializingvisitor.h">
+			</File>
+			<File
+				RelativePath=".\stripstring.h">
+			</File>
+			<File
+				RelativePath="stylesheet.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing stylesheet.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe stylesheet.h -o moc_stylesheet.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_stylesheet.cpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing stylesheet.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe stylesheet.h -o moc_stylesheet.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_stylesheet.cpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="syntaxhighlighter.h">
+			</File>
+			<File
+				RelativePath="textcell.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing textcell.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe textcell.h -o moc_textcell.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_textcell.cpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing textcell.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe textcell.h -o moc_textcell.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_textcell.cpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\textcursorcommands.h">
+			</File>
+			<File
+				RelativePath="treeview.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing treeview.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe treeview.h -o moc_treeview.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_treeview.cpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing treeview.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe treeview.h -o moc_treeview.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_treeview.cpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\updategroupcellvisitor.h">
+			</File>
+			<File
+				RelativePath=".\updatelinkvisitor.h">
+			</File>
+			<File
+				RelativePath="visitor.h">
+			</File>
+			<File
+				RelativePath=".\xmlnodename.h">
+			</File>
+			<File
+				RelativePath="xmlparser.h">
+			</File>
+		</Filter>
+		<Filter
+			Name="Generated MOC Files"
+			Filter="cpp;c;cxx;moc">
+			<File
+				RelativePath="moc_cell.cpp">
+			</File>
+			<File
+				RelativePath="moc_cellapplication.cpp">
+			</File>
+			<File
+				RelativePath="moc_cellcursor.cpp">
+			</File>
+			<File
+				RelativePath="moc_celldocument.cpp">
+			</File>
+			<File
+				RelativePath="moc_cellgroup.cpp">
+			</File>
+			<File
+				RelativePath=".\moc_commandcompletion.cpp">
+			</File>
+			<File
+				RelativePath="moc_document.cpp">
+			</File>
+			<File
+				RelativePath="moc_documentview.cpp">
+			</File>
+			<File
+				RelativePath="moc_inputcell.cpp">
+			</File>
+			<File
+				RelativePath="moc_notebook.cpp">
+			</File>
+			<File
+				RelativePath=".\moc_omc_communicator.cpp">
+			</File>
+			<File
+				RelativePath="moc_stylesheet.cpp">
+			</File>
+			<File
+				RelativePath="moc_textcell.cpp">
+			</File>
+			<File
+				RelativePath="moc_treeview.cpp">
+			</File>
+			<File
+				RelativePath=".\ui_imagesizedlg.h">
+			</File>
+			<File
+				RelativePath=".\ui_otherdlg.h">
+			</File>
+		</Filter>
+		<Filter
+			Name="Form Files"
+			Filter="">
+			<File
+				RelativePath=".\ImageSizeDlg.ui">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Uic&apos;ing ImageSizeDlg.ui..."
+						CommandLine="$(QTHOME)\bin\uic.exe -o ui_imagesizedlg.h ImageSizeDlg.ui
+"
+						AdditionalDependencies="$(QTHOME)\bin\uic.exe"
+						Outputs="ui_imagesizedlg.h"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Uic&apos;ing ImageSizeDlg.ui..."
+						CommandLine="$(QTHOME)\bin\uic.exe -o ui_imagesizedlg.h ImageSizeDlg.ui
+"
+						AdditionalDependencies="$(QTHOME)\bin\uic.exe"
+						Outputs="ui_imagesizedlg.h"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\OtherDlg.ui">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Uic&apos;ing OtherDlg.ui..."
+						CommandLine="$(QTHOME)\bin\uic.exe -o ui_otherdlg.h OtherDlg.ui
+"
+						AdditionalDependencies="$(QTHOME)\bin\uic.exe"
+						Outputs="ui_otherdlg.h"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Uic&apos;ing OtherDlg.ui..."
+						CommandLine="$(QTHOME)\bin\uic.exe -o ui_otherdlg.h OtherDlg.ui
+"
+						AdditionalDependencies="$(QTHOME)\bin\uic.exe"
+						Outputs="ui_otherdlg.h"/>
+				</FileConfiguration>
+			</File>
+		</Filter>
+		<Filter
+			Name="Resource Files"
+			Filter="qrc;*"
+			UniqueIdentifier="{D9D6E242-F8AF-46E4-B9FD-80ECBC20BA3E}"
+			ParseFiles="FALSE">
+			<File
+				RelativePath=".\omnotebook_png.png">
+			</File>
+		</Filter>
+		<Filter
+			Name="Generated Files"
+			Filter="moc;h;cpp"
+			UniqueIdentifier="{71ED8ED8-ACB9-4CE9-BBE1-E00B30144E11}">
+			<File
+				RelativePath=".\generatedfiles\qrc_res_qt.cpp">
+			</File>
+		</Filter>
+		<File
+			RelativePath=".\omnotebook_icon.ico">
+		</File>
+		<File
+			RelativePath=".\res_qt.qrc">
+			<FileConfiguration
+				Name="Release|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Compiling Qt resource file: .\res_qt.qrc..."
+					CommandLine="&quot;$(QTDIR)\bin\rcc.exe&quot; -name &quot;res_qt&quot; -no-compress &quot;.\res_qt.qrc&quot; -o &quot;GeneratedFiles\qrc_res_qt.cpp&quot;
+"
+					AdditionalDependencies="$(QTDIR)\bin\rcc.exe;omnotebook_png.png"
+					Outputs="&quot;GeneratedFiles\qrc_res_qt.cpp&quot;"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Debug|Win32">
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Compiling Qt resource file: .\res_qt.qrc..."
+					CommandLine="&quot;$(QTDIR)\bin\rcc.exe&quot; -name &quot;res_qt&quot; -no-compress &quot;.\res_qt.qrc&quot; -o &quot;GeneratedFiles\qrc_res_qt.cpp&quot;
+"
+					AdditionalDependencies="$(QTDIR)\bin\rcc.exe;omnotebook_png.png"
+					Outputs="&quot;GeneratedFiles\qrc_res_qt.cpp&quot;"/>
+			</FileConfiguration>
+		</File>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

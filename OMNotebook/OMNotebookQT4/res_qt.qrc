@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/" >
+        <file>omnotebook_png.png</file>
+    </qresource>
+</RCC>

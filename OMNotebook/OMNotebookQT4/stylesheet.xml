@@ -1,0 +1,126 @@
+<!DOCTYPE StyleDoc>
+
+<!--	<style name="Title">										-->
+<!--		<border value="0" margin="20" padding="5"/>				-->
+<!--		<alignment value="left" vertical="baseline"/>			-->
+<!--		<font>													-->
+<!--			<family>Arial</family>								-->
+<!--			<size>36</size>										-->
+<!--			<weight>99</weight>									-->
+<!--			<stretch>unstretched</stretch>						-->
+<!--			<italic/>											-->
+<!--			<strikeout/>										-->
+<!--			<underline/>										-->
+<!--			<overline/>											-->
+<!--			<color red="0" green="0" blue="255"/>				-->
+<!--		</font>													-->
+<!--	</style>													-->
+
+<!--	IMPORTANT: The styles "Input" och "Output" are needed for the		-->
+<!--	inputcell and should not be removed. The styles for the inputcell	-->
+<!--	are hardcoded and can not be changed by the user.			-->
+
+<stylesheet>
+	<style name="Title">
+		<border value="0" margin="10" padding="0"/>
+		<alignment value="left" vertical="baseline"/>		
+		<font>
+			<family>Arial</family>
+			<size>38</size>
+			<weight>bold</weight>
+		</font>
+	</style>
+	<style name="Author">
+		<border value="0" margin="5" padding="0"/>
+		<font>
+			<family>Arial</family>
+			<size>14</size>
+			<italic/>
+		</font>
+	</style>
+	<style name="Subtitle">
+		<border value="0" margin="5" padding="0"/>
+		<alignment value="left"/>
+		<font>
+			<family>Arial</family>
+			<size>24</size>
+			<italic/>
+		</font>		
+	</style>
+	<style name="Subsubtitle">
+		<border value="0" margin="5" padding="0"/>
+		<alignment value="left"/>
+		<font>
+			<family>Arial</family>
+			<size>16</size>
+			<italic/>
+		</font>
+	</style>
+	<style name="Section">
+		<border value="0" margin="10" padding="0"/>
+		<alignment value="left"/>
+		<font>
+			<family>Times</family>
+			<size>18</size>
+			<weight>bold</weight>
+			<stretch>expanded</stretch>
+		</font>
+	</style>
+	<style name="Subsection">
+		<border value="0" margin="10" padding="0"/>
+		<alignment value="left"/>
+		<font>
+			<family>Times</family>
+			<size>14</size>
+			<weight>bold</weight>
+		</font>
+	</style>
+	<style name="Subsubsection">
+		<border margin="10"/>
+		<font>
+			<family>Times</family>
+			<size>12</size>
+			<weight>bold</weight>
+		</font>
+	</style>
+	<style name="Text">
+		<border value="0" margin="5" padding="0"/>
+		<alignment value="left"/>
+		<font>
+			<family>Times New Roman</family>
+			<size>12</size>
+			<weight>normal</weight>
+		</font>
+	</style>
+	<style name="Input">
+		<border margin="5"/>
+		<alignment value="left"/>
+		<font>
+			<family>Courier New</family>
+			<size>12</size>
+			<weight>normal</weight>
+		</font>
+	</style>
+	<style name="Output">
+		<border margin="5"/>
+		<alignment value="left"/>
+		<font>
+			<family>Courier New</family>
+			<size>12</size>
+			<weight>normal</weight>
+		</font>
+	</style>
+	<style name="AF-Test">
+		<border value="2" margin="10" padding="15"/>
+		<alignment value="left" vertical="baseline"/>
+		<font>
+			<family>Verdana</family>
+			<size>16</size>
+			<weight>88</weight>
+			<stretch>expanded</stretch>
+			<italic/>
+			<underline/>
+			<color red="10" green="25" blue="220"/>
+		</font>
+	</style>			
+</stylesheet>
