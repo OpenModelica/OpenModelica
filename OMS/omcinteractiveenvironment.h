@@ -63,6 +63,7 @@ namespace IAEX
 
       virtual QString getResult();
       virtual void evalExpression(QString &expr);
+	  virtual void closeConnection();	// Added 2006-02-02 AF
    private:
       OmcCommunicator &comm_;
       QString result_;

@@ -169,6 +169,8 @@ bool OmcCommunicator::isConnected() const
 */
 void OmcCommunicator::closeConnection()
 {
+	// 2006-02-02 AF, added this code:
+	omc_ = 0;
 }
 
 
@@ -183,7 +185,10 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 {
 	if (!omc_) {
 		//throw OmcError(fnCall);
-		cerr << "OmcError(" << fnCall.toStdString() << ")" << endl;
+
+		// 2006-02-02 AF, Added throw exception
+		string msg = string("OMC-ERROR in function call: ") + fnCall.toStdString();
+		throw exception( msg.c_str() );
 	}
 
 	QString returnString;
@@ -196,16 +201,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 		{
 			if( fnCall != "quit()" && fnCall != "quit();" )
 			{
-				int result(QMessageBox::critical(0, tr("Communication Error"),
-					tr("<NOBR><B>The Modelica kernel is not responding.</B>"), tr("Try Again"), tr("Abort")));
-				qApp->processEvents();
-				if (result == 1) {
-					QMessageBox::critical(0, tr("Communication Error"),
-						tr("<NOBR><B>Connection to the Modelica kernel lost.</B><BR><BR>The editor has to be restarted.", "Quit"));
-					qApp->processEvents();
-					//throw OmcConnectionLost();
-					cerr << "OmcConnectionLost()" << endl;
-				}
+				throw exception("NOT RESPONDING");
 			}
 			else
 				break;

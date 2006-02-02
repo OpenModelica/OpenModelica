@@ -613,7 +613,18 @@ void OMS::returnPressed()
 	// send command to OMC
 	if( delegate_ )
 	{
-		delegate_->evalExpression( commandText );
+		// 2006-02-02 AF, Added try-catch
+		try
+		{
+			delegate_->evalExpression( commandText );
+		}
+		catch( exception &e )
+		{
+			exceptionInEval(e);
+			return;
+		}
+
+		// get result
 		QString res = delegate_->getResult();
 			
 		if( res.isEmpty() )
@@ -622,12 +633,20 @@ void OMS::returnPressed()
 			cursor_.insertText( "\n" + res + "\n" );
 
 		// get Error text
-		delegate_->evalExpression( QString("getErrorString()") );
+		try
+		{
+			delegate_->evalExpression( QString("getErrorString()") );
+		}
+		catch( exception &e )
+		{
+			exceptionInEval(e);
+			return;
+		}
 		QString error = delegate_->getResult();
 		if( error.size() > 2 )
 		{
 			QTextCursor errorCursor = moshError_->textCursor();
-			errorCursor.insertText( error.mid( 1, error.size() - 3 ) + "\n" );
+			errorCursor.insertText( error.mid( 0, error.size() - 1 ) + "\n" );
 		}
 	}
 	else
@@ -638,6 +657,38 @@ void OMS::returnPressed()
 
 	// add new command line
 	addCommandLine();
+}
+
+void OMS::exceptionInEval(exception &e)
+{
+	if( string(e.what()) == string("NOT RESPONDING") )
+	{
+		int result = QMessageBox::critical( 0, tr("Communication Error"),
+			tr("<B>OMC is not responding. Do you want to restart OMC?</B>"), 
+			QMessageBox::Yes | QMessageBox::Default,
+			QMessageBox::No );
+
+		if( result == QMessageBox::No )
+		{
+			exit();
+		}
+		else
+		{
+			delegate_->closeConnection();
+			delete delegate_;
+			delegate_ = 0;
+			if( startServer() )
+			{
+				prevCommand();
+				returnPressed();
+			}
+		}
+	}
+	else
+	{
+		QMessageBox::critical( 0, tr("Communication with OMC error"),
+			e.what() );
+	}
 }
 
 void OMS::insertNewline()
@@ -915,15 +966,16 @@ void OMS::print()
 	// TODO: Implement print
 }
 
-void OMS::startServer()
+bool OMS::startServer()
 {
+	bool omcNowStarted = false;
+
 	if( delegate_ == 0 )
 	{
-
-		bool omcNowStarted = false;
 		try
 		{
 			delegate_ = new IAEX::OmcInteractiveEnvironment();
+			omcNowStarted = true;
 		}
 		catch( exception &e )
 		{
@@ -976,6 +1028,8 @@ void OMS::startServer()
 		if( omcNowStarted )
 			delegate_ = new IAEX::OmcInteractiveEnvironment();
 	}
+
+	return omcNowStarted;
 }
 
 void OMS::stopServer()

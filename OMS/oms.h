@@ -105,7 +105,7 @@ public slots:
 	void viewStatusbar();
 	void aboutOMS();
 	void print();
-	void startServer();
+	bool startServer();
 	void stopServer();
 	void clear();
 
@@ -115,6 +115,7 @@ private:
 	void createAction();
 	void createMenu();
 	void createToolbar();
+	void exceptionInEval(exception &e);
 	void addCommandLine();
 	void selectCommandLine();
 	QStringList getFunctionNames(QString);

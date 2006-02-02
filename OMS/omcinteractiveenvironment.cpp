@@ -80,6 +80,19 @@ namespace IAEX
    
    void OmcInteractiveEnvironment::evalExpression(QString &expr)
    {
-	 result_ = comm_.callOmc(expr);
+		// 2006-02-02 AF, Added try-catch
+		try
+		{
+			result_ = comm_.callOmc(expr);
+		}
+		catch( exception &e )
+		{
+			throw e;	
+		}
 	}
+
+   void OmcInteractiveEnvironment::closeConnection()
+   {
+	   comm_.closeConnection();
+   }
 }

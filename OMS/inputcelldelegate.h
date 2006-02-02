@@ -70,6 +70,7 @@ namespace IAEX
    public:
       virtual QString getResult() = 0;
       virtual void evalExpression(QString &expr) = 0;
+	  virtual void closeConnection() = 0;	// Added 2006-02-02 AF
    };
 
 }
