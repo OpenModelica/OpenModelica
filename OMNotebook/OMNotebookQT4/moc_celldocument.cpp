@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'celldocument.h'
 **
-** Created: ti 24. jan 12:19:48 2006
+** Created: fr 3. feb 15:36:38 2006
 **      by: The Qt Meta Object Compiler version 58 (Qt 4.0.1)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -22,7 +22,7 @@ static const uint qt_meta_data_IAEX__CellDocument[] = {
        1,       // revision
        0,       // classname
        0,    0, // classinfo
-      15,   10, // methods
+      16,   10, // methods
        0,    0, // properties
        0,    0, // enums/sets
 
@@ -41,9 +41,10 @@ static const uint qt_meta_data_IAEX__CellDocument[] = {
      218,  208,   19,   19, 0x0a,
      261,   19,   19,   19, 0x0a,
      290,  278,   19,   19, 0x0a,
-     320,  316,   19,   19, 0x0a,
-     356,  345,   19,   19, 0x0a,
-     386,  384,   19,   19, 0x0a,
+     316,  278,   19,   19, 0x0a,
+     352,  348,   19,   19, 0x0a,
+     388,  377,   19,   19, 0x0a,
+     418,  416,   19,   19, 0x0a,
 
        0        // eod
 };
@@ -53,9 +54,9 @@ static const char qt_meta_stringdata_IAEX__CellDocument[] = {
     "viewExpression(bool)\0contentChanged()\0toggleMainTreeView()\0editable\0"
     "setEditable(bool)\0cursorChangedPosition()\0updateScrollArea()\0changed\0"
     "setChanged(bool)\0selected,\0selectedACell(Cell*,Qt::KeyboardModifiers)\0"
-    "clearSelection()\0clickedCell\0mouseClickedOnCell(Cell*)\0url\0"
-    "linkClicked(const QUrl*)\0aCell,open\0cursorMoveAfter(Cell*,bool)\0b\0"
-    "showHTML(bool)\0"
+    "clearSelection()\0clickedCell\0mouseClickedOnCell(Cell*)\0"
+    "mouseClickedOnCellOutput(Cell*)\0url\0linkClicked(const QUrl*)\0"
+    "aCell,open\0cursorMoveAfter(Cell*,bool)\0b\0showHTML(bool)\0"
 };
 
 const QMetaObject IAEX::CellDocument::staticMetaObject = {
@@ -95,11 +96,12 @@ int IAEX::CellDocument::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
         case 9: selectedACell(*(Cell**)_a[1],*(Qt::KeyboardModifiers*)_a[2]); break;
         case 10: clearSelection(); break;
         case 11: mouseClickedOnCell(*(Cell**)_a[1]); break;
-        case 12: linkClicked(*(const QUrl**)_a[1]); break;
-        case 13: cursorMoveAfter(*(Cell**)_a[1],*(bool*)_a[2]); break;
-        case 14: showHTML(*(bool*)_a[1]); break;
+        case 12: mouseClickedOnCellOutput(*(Cell**)_a[1]); break;
+        case 13: linkClicked(*(const QUrl**)_a[1]); break;
+        case 14: cursorMoveAfter(*(Cell**)_a[1],*(bool*)_a[2]); break;
+        case 15: showHTML(*(bool*)_a[1]); break;
         }
-        _id -= 15;
+        _id -= 16;
     }
     return _id;
 }

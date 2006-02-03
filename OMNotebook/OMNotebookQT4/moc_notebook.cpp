@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'notebook.h'
 **
-** Created: fr 27. jan 11:08:11 2006
+** Created: fr 3. feb 15:19:15 2006
 **      by: The Qt Meta Object Compiler version 58 (Qt 4.0.1)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -22,7 +22,7 @@ static const uint qt_meta_data_IAEX__NotebookWindow[] = {
        1,       // revision
        0,       // classname
        0,    0, // classinfo
-      52,   10, // methods
+      59,   10, // methods
        0,    0, // properties
        0,    0, // enums/sets
 
@@ -32,75 +32,84 @@ static const uint qt_meta_data_IAEX__NotebookWindow[] = {
       54,   21,   21,   21, 0x0a,
       71,   21,   21,   21, 0x0a,
       88,   21,   21,   21, 0x0a,
-     109,   21,   21,   21, 0x0a,
-     130,   21,   21,   21, 0x0a,
-     154,   21,   21,   21, 0x0a,
-     176,   21,   21,   21, 0x0a,
-     202,   21,   21,   21, 0x0a,
-     232,   21,   21,   21, 0x0a,
-     251,   21,   21,   21, 0x0a,
-     270,   21,   21,   21, 0x0a,
-     290,   21,   21,   21, 0x0a,
-     309,   21,   21,   21, 0x0a,
-     329,   21,   21,   21, 0x08,
-     348,  339,   21,   21, 0x08,
-     366,   21,   21,   21, 0x28,
-     377,   21,   21,   21, 0x08,
-     395,  389,   21,   21, 0x08,
-     420,   21,   21,   21, 0x08,
-     438,   21,   21,   21, 0x08,
-     447,   21,   21,   21, 0x08,
-     454,   21,   21,   21, 0x08,
-     471,   21,   21,   21, 0x08,
-     479,   21,   21,   21, 0x08,
-     499,  492,   21,   21, 0x08,
-     521,   21,   21,   21, 0x08,
-     535,  492,   21,   21, 0x08,
-     556,  492,   21,   21, 0x08,
-     581,  492,   21,   21, 0x08,
-     606,  492,   21,   21, 0x08,
-     634,  492,   21,   21, 0x08,
-     660,  492,   21,   21, 0x08,
-     690,  492,   21,   21, 0x08,
-     724,  492,   21,   21, 0x08,
-     747,  492,   21,   21, 0x08,
-     770,  492,   21,   21, 0x08,
-     794,  492,   21,   21, 0x08,
-     817,   21,   21,   21, 0x08,
-     831,   21,   21,   21, 0x08,
-     844,   21,   21,   21, 0x08,
-     858,   21,   21,   21, 0x08,
-     869,   21,   21,   21, 0x08,
-     885,   21,   21,   21, 0x08,
-     905,   21,   21,   21, 0x08,
-     915,   21,   21,   21, 0x08,
-     926,   21,   21,   21, 0x08,
-     938,   21,   21,   21, 0x08,
-     953,   21,   21,   21, 0x08,
-     970,   21,   21,   21, 0x08,
-     989,   21,   21,   21, 0x08,
+     105,   21,   21,   21, 0x0a,
+     126,   21,   21,   21, 0x0a,
+     147,   21,   21,   21, 0x0a,
+     171,   21,   21,   21, 0x0a,
+     193,   21,   21,   21, 0x0a,
+     219,   21,   21,   21, 0x0a,
+     249,   21,   21,   21, 0x0a,
+     268,   21,   21,   21, 0x0a,
+     287,   21,   21,   21, 0x0a,
+     307,   21,   21,   21, 0x0a,
+     326,   21,   21,   21, 0x0a,
+     346,   21,   21,   21, 0x08,
+     365,  356,   21,   21, 0x08,
+     383,   21,   21,   21, 0x28,
+     394,   21,   21,   21, 0x08,
+     412,  406,   21,   21, 0x08,
+     437,   21,   21,   21, 0x08,
+     455,   21,   21,   21, 0x08,
+     466,   21,   21,   21, 0x08,
+     475,   21,   21,   21, 0x08,
+     482,   21,   21,   21, 0x08,
+     499,   21,   21,   21, 0x08,
+     507,   21,   21,   21, 0x08,
+     527,  520,   21,   21, 0x08,
+     549,   21,   21,   21, 0x08,
+     563,  520,   21,   21, 0x08,
+     584,  520,   21,   21, 0x08,
+     609,  520,   21,   21, 0x08,
+     634,  520,   21,   21, 0x08,
+     662,  520,   21,   21, 0x08,
+     688,  520,   21,   21, 0x08,
+     718,  520,   21,   21, 0x08,
+     752,  520,   21,   21, 0x08,
+     775,  520,   21,   21, 0x08,
+     798,  520,   21,   21, 0x08,
+     822,  520,   21,   21, 0x08,
+     845,   21,   21,   21, 0x08,
+     856,   21,   21,   21, 0x08,
+     867,   21,   21,   21, 0x08,
+     877,   21,   21,   21, 0x08,
+     888,   21,   21,   21, 0x08,
+     900,   21,   21,   21, 0x08,
+     914,   21,   21,   21, 0x08,
+     927,   21,   21,   21, 0x08,
+     941,   21,   21,   21, 0x08,
+     952,   21,   21,   21, 0x08,
+     968,   21,   21,   21, 0x08,
+     988,   21,   21,   21, 0x08,
+     998,   21,   21,   21, 0x08,
+    1009,   21,   21,   21, 0x08,
+    1021,   21,   21,   21, 0x08,
+    1036,   21,   21,   21, 0x08,
+    1053,   21,   21,   21, 0x08,
+    1072,   21,   21,   21, 0x08,
 
        0        // eod
 };
 
 static const char qt_meta_stringdata_IAEX__NotebookWindow[] = {
     "IAEX::NotebookWindow\0\0updateMenus()\0updateStyleMenu()\0"
-    "updateEditMenu()\0updateFontMenu()\0updateFontFaceMenu()\0"
-    "updateFontSizeMenu()\0updateFontStretchMenu()\0updateFontColorMenu()\0"
-    "updateTextAlignmentMenu()\0updateVerticalAlignmentMenu()\0"
-    "updateBorderMenu()\0updateMarginMenu()\0updatePaddingMenu()\0"
-    "updateWindowMenu()\0updateWindowTitle()\0newFile()\0filename\0"
-    "openFile(QString)\0openFile()\0closeFile()\0event\0"
-    "closeEvent(QCloseEvent*)\0aboutQTNotebook()\0saveas()\0save()\0"
-    "quitOMNotebook()\0print()\0selectFont()\0action\0changeStyle(QAction*)\0"
-    "changeStyle()\0changeFont(QAction*)\0changeFontFace(QAction*)\0"
-    "changeFontSize(QAction*)\0changeFontStretch(QAction*)\0"
-    "changeFontColor(QAction*)\0changeTextAlignment(QAction*)\0"
-    "changeVerticalAlignment(QAction*)\0changeBorder(QAction*)\0"
-    "changeMargin(QAction*)\0changePadding(QAction*)\0changeWindow(QAction*)\0"
-    "insertImage()\0insertLink()\0openOldFile()\0pureText()\0createNewCell()\0"
-    "deleteCurrentCell()\0cutCell()\0copyCell()\0pasteCell()\0moveCursorUp()\0"
-    "moveCursorDown()\0groupCellsAction()\0inputCellsAction()\0"
+    "updateEditMenu()\0updateCellMenu()\0updateFontMenu()\0"
+    "updateFontFaceMenu()\0updateFontSizeMenu()\0updateFontStretchMenu()\0"
+    "updateFontColorMenu()\0updateTextAlignmentMenu()\0"
+    "updateVerticalAlignmentMenu()\0updateBorderMenu()\0updateMarginMenu()\0"
+    "updatePaddingMenu()\0updateWindowMenu()\0updateWindowTitle()\0newFile()\0"
+    "filename\0openFile(QString)\0openFile()\0closeFile()\0event\0"
+    "closeEvent(QCloseEvent*)\0aboutQTNotebook()\0helpText()\0saveas()\0"
+    "save()\0quitOMNotebook()\0print()\0selectFont()\0action\0"
+    "changeStyle(QAction*)\0changeStyle()\0changeFont(QAction*)\0"
+    "changeFontFace(QAction*)\0changeFontSize(QAction*)\0"
+    "changeFontStretch(QAction*)\0changeFontColor(QAction*)\0"
+    "changeTextAlignment(QAction*)\0changeVerticalAlignment(QAction*)\0"
+    "changeBorder(QAction*)\0changeMargin(QAction*)\0changePadding(QAction*)\0"
+    "changeWindow(QAction*)\0undoEdit()\0redoEdit()\0cutEdit()\0copyEdit()\0"
+    "pasteEdit()\0insertImage()\0insertLink()\0openOldFile()\0pureText()\0"
+    "createNewCell()\0deleteCurrentCell()\0cutCell()\0copyCell()\0"
+    "pasteCell()\0moveCursorUp()\0moveCursorDown()\0groupCellsAction()\0"
+    "inputCellsAction()\0"
 };
 
 const QMetaObject IAEX::NotebookWindow::staticMetaObject = {
@@ -131,57 +140,64 @@ int IAEX::NotebookWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
         case 0: updateMenus(); break;
         case 1: updateStyleMenu(); break;
         case 2: updateEditMenu(); break;
-        case 3: updateFontMenu(); break;
-        case 4: updateFontFaceMenu(); break;
-        case 5: updateFontSizeMenu(); break;
-        case 6: updateFontStretchMenu(); break;
-        case 7: updateFontColorMenu(); break;
-        case 8: updateTextAlignmentMenu(); break;
-        case 9: updateVerticalAlignmentMenu(); break;
-        case 10: updateBorderMenu(); break;
-        case 11: updateMarginMenu(); break;
-        case 12: updatePaddingMenu(); break;
-        case 13: updateWindowMenu(); break;
-        case 14: updateWindowTitle(); break;
-        case 15: newFile(); break;
-        case 16: openFile(*(QString*)_a[1]); break;
-        case 17: openFile(); break;
-        case 18: closeFile(); break;
-        case 19: closeEvent(*(QCloseEvent**)_a[1]); break;
-        case 20: aboutQTNotebook(); break;
-        case 21: saveas(); break;
-        case 22: save(); break;
-        case 23: quitOMNotebook(); break;
-        case 24: print(); break;
-        case 25: selectFont(); break;
-        case 26: changeStyle(*(QAction**)_a[1]); break;
-        case 27: changeStyle(); break;
-        case 28: changeFont(*(QAction**)_a[1]); break;
-        case 29: changeFontFace(*(QAction**)_a[1]); break;
-        case 30: changeFontSize(*(QAction**)_a[1]); break;
-        case 31: changeFontStretch(*(QAction**)_a[1]); break;
-        case 32: changeFontColor(*(QAction**)_a[1]); break;
-        case 33: changeTextAlignment(*(QAction**)_a[1]); break;
-        case 34: changeVerticalAlignment(*(QAction**)_a[1]); break;
-        case 35: changeBorder(*(QAction**)_a[1]); break;
-        case 36: changeMargin(*(QAction**)_a[1]); break;
-        case 37: changePadding(*(QAction**)_a[1]); break;
-        case 38: changeWindow(*(QAction**)_a[1]); break;
-        case 39: insertImage(); break;
-        case 40: insertLink(); break;
-        case 41: openOldFile(); break;
-        case 42: pureText(); break;
-        case 43: createNewCell(); break;
-        case 44: deleteCurrentCell(); break;
-        case 45: cutCell(); break;
-        case 46: copyCell(); break;
-        case 47: pasteCell(); break;
-        case 48: moveCursorUp(); break;
-        case 49: moveCursorDown(); break;
-        case 50: groupCellsAction(); break;
-        case 51: inputCellsAction(); break;
+        case 3: updateCellMenu(); break;
+        case 4: updateFontMenu(); break;
+        case 5: updateFontFaceMenu(); break;
+        case 6: updateFontSizeMenu(); break;
+        case 7: updateFontStretchMenu(); break;
+        case 8: updateFontColorMenu(); break;
+        case 9: updateTextAlignmentMenu(); break;
+        case 10: updateVerticalAlignmentMenu(); break;
+        case 11: updateBorderMenu(); break;
+        case 12: updateMarginMenu(); break;
+        case 13: updatePaddingMenu(); break;
+        case 14: updateWindowMenu(); break;
+        case 15: updateWindowTitle(); break;
+        case 16: newFile(); break;
+        case 17: openFile(*(QString*)_a[1]); break;
+        case 18: openFile(); break;
+        case 19: closeFile(); break;
+        case 20: closeEvent(*(QCloseEvent**)_a[1]); break;
+        case 21: aboutQTNotebook(); break;
+        case 22: helpText(); break;
+        case 23: saveas(); break;
+        case 24: save(); break;
+        case 25: quitOMNotebook(); break;
+        case 26: print(); break;
+        case 27: selectFont(); break;
+        case 28: changeStyle(*(QAction**)_a[1]); break;
+        case 29: changeStyle(); break;
+        case 30: changeFont(*(QAction**)_a[1]); break;
+        case 31: changeFontFace(*(QAction**)_a[1]); break;
+        case 32: changeFontSize(*(QAction**)_a[1]); break;
+        case 33: changeFontStretch(*(QAction**)_a[1]); break;
+        case 34: changeFontColor(*(QAction**)_a[1]); break;
+        case 35: changeTextAlignment(*(QAction**)_a[1]); break;
+        case 36: changeVerticalAlignment(*(QAction**)_a[1]); break;
+        case 37: changeBorder(*(QAction**)_a[1]); break;
+        case 38: changeMargin(*(QAction**)_a[1]); break;
+        case 39: changePadding(*(QAction**)_a[1]); break;
+        case 40: changeWindow(*(QAction**)_a[1]); break;
+        case 41: undoEdit(); break;
+        case 42: redoEdit(); break;
+        case 43: cutEdit(); break;
+        case 44: copyEdit(); break;
+        case 45: pasteEdit(); break;
+        case 46: insertImage(); break;
+        case 47: insertLink(); break;
+        case 48: openOldFile(); break;
+        case 49: pureText(); break;
+        case 50: createNewCell(); break;
+        case 51: deleteCurrentCell(); break;
+        case 52: cutCell(); break;
+        case 53: copyCell(); break;
+        case 54: pasteCell(); break;
+        case 55: moveCursorUp(); break;
+        case 56: moveCursorDown(); break;
+        case 57: groupCellsAction(); break;
+        case 58: inputCellsAction(); break;
         }
-        _id -= 52;
+        _id -= 59;
     }
     return _id;
 }

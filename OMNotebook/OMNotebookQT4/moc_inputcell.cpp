@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'inputcell.h'
 **
-** Created: ti 31. jan 11:17:16 2006
+** Created: fr 3. feb 16:00:33 2006
 **      by: The Qt Meta Object Compiler version 58 (Qt 4.0.1)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -22,46 +22,50 @@ static const uint qt_meta_data_IAEX__InputCell[] = {
        1,       // revision
        0,       // classname
        0,    0, // classinfo
-      20,   10, // methods
+      23,   10, // methods
        0,    0, // properties
        0,    0, // enums/sets
 
  // signals: signature, parameters, type, tag, flags
       17,   16,   16,   16, 0x05,
       31,   16,   16,   16, 0x05,
+      49,   16,   16,   16, 0x05,
 
  // slots: signature, parameters, type, tag, flags
-      49,   16,   16,   16, 0x0a,
-      56,   16,   16,   16, 0x0a,
-      66,   16,   16,   16, 0x0a,
-      80,   16,   16,   16, 0x0a,
-      92,   16,   16,   16, 0x0a,
-     105,   16,   16,   16, 0x0a,
-     127,  122,   16,   16, 0x0a,
-     149,  144,   16,   16, 0x0a,
-     177,  170,   16,   16, 0x0a,
-     200,  144,   16,   16, 0x0a,
-     237,  227,   16,   16, 0x0a,
-     261,  255,   16,   16, 0x0a,
-     290,  281,   16,   16, 0x0a,
-     318,  308,   16,   16, 0x0a,
-     344,  337,   16,   16, 0x0a,
-     366,  360,   16,   16, 0x0a,
-     381,   16,   16,   16, 0x08,
-     400,   16,   16,   16, 0x08,
+      70,   16,   16,   16, 0x0a,
+      77,   16,   16,   16, 0x0a,
+      87,   16,   16,   16, 0x0a,
+     101,   16,   16,   16, 0x0a,
+     113,   16,   16,   16, 0x0a,
+     126,   16,   16,   16, 0x0a,
+     145,   16,   16,   16, 0x0a,
+     167,  162,   16,   16, 0x0a,
+     189,  184,   16,   16, 0x0a,
+     217,  210,   16,   16, 0x0a,
+     240,  184,   16,   16, 0x0a,
+     277,  267,   16,   16, 0x0a,
+     301,  295,   16,   16, 0x0a,
+     330,  321,   16,   16, 0x0a,
+     358,  348,   16,   16, 0x0a,
+     384,  377,   16,   16, 0x0a,
+     406,  400,   16,   16, 0x0a,
+     421,  400,   16,   16, 0x0a,
+     442,   16,   16,   16, 0x08,
+     461,   16,   16,   16, 0x08,
 
        0        // eod
 };
 
 static const char qt_meta_stringdata_IAEX__InputCell[] = {
-    "IAEX::InputCell\0\0textChanged()\0textChanged(bool)\0eval()\0command()\0"
-    "nextCommand()\0nextField()\0clickEvent()\0contentChanged()\0text\0"
+    "IAEX::InputCell\0\0textChanged()\0textChanged(bool)\0"
+    "clickedOutput(Cell*)\0eval()\0command()\0nextCommand()\0nextField()\0"
+    "clickEvent()\0clickEventOutput()\0contentChanged()\0text\0"
     "setText(QString)\0html\0setTextHtml(QString)\0output\0"
     "setTextOutput(QString)\0setTextOutputHtml(QString)\0stylename\0"
     "setStyle(QString)\0style\0setStyle(CellStyle)\0readonly\0"
     "setReadOnly(bool)\0evaluated\0setEvaluated(bool)\0closed\0"
-    "setClosed(bool)\0focus\0setFocus(bool)\0addToHighlighter()\0"
-    "charFormatChanged(QTextCharFormat)\0"
+    "setClosed(bool)\0focus\0setFocus(bool)\0setFocusOutput(bool)\0"
+    "addToHighlighter()\0charFormatChanged(QTextCharFormat)\0"
 };
 
 const QMetaObject IAEX::InputCell::staticMetaObject = {
@@ -91,26 +95,29 @@ int IAEX::InputCell::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
         switch (_id) {
         case 0: textChanged(); break;
         case 1: textChanged(*(bool*)_a[1]); break;
-        case 2: eval(); break;
-        case 3: command(); break;
-        case 4: nextCommand(); break;
-        case 5: nextField(); break;
-        case 6: clickEvent(); break;
-        case 7: contentChanged(); break;
-        case 8: setText(*(QString*)_a[1]); break;
-        case 9: setTextHtml(*(QString*)_a[1]); break;
-        case 10: setTextOutput(*(QString*)_a[1]); break;
-        case 11: setTextOutputHtml(*(QString*)_a[1]); break;
-        case 12: setStyle(*(QString*)_a[1]); break;
-        case 13: setStyle(*(CellStyle*)_a[1]); break;
-        case 14: setReadOnly(*(bool*)_a[1]); break;
-        case 15: setEvaluated(*(bool*)_a[1]); break;
-        case 16: setClosed(*(bool*)_a[1]); break;
-        case 17: setFocus(*(bool*)_a[1]); break;
-        case 18: addToHighlighter(); break;
-        case 19: charFormatChanged(*(QTextCharFormat*)_a[1]); break;
+        case 2: clickedOutput(*(Cell**)_a[1]); break;
+        case 3: eval(); break;
+        case 4: command(); break;
+        case 5: nextCommand(); break;
+        case 6: nextField(); break;
+        case 7: clickEvent(); break;
+        case 8: clickEventOutput(); break;
+        case 9: contentChanged(); break;
+        case 10: setText(*(QString*)_a[1]); break;
+        case 11: setTextHtml(*(QString*)_a[1]); break;
+        case 12: setTextOutput(*(QString*)_a[1]); break;
+        case 13: setTextOutputHtml(*(QString*)_a[1]); break;
+        case 14: setStyle(*(QString*)_a[1]); break;
+        case 15: setStyle(*(CellStyle*)_a[1]); break;
+        case 16: setReadOnly(*(bool*)_a[1]); break;
+        case 17: setEvaluated(*(bool*)_a[1]); break;
+        case 18: setClosed(*(bool*)_a[1]); break;
+        case 19: setFocus(*(bool*)_a[1]); break;
+        case 20: setFocusOutput(*(bool*)_a[1]); break;
+        case 21: addToHighlighter(); break;
+        case 22: charFormatChanged(*(QTextCharFormat*)_a[1]); break;
         }
-        _id -= 20;
+        _id -= 23;
     }
     return _id;
 }
@@ -126,6 +133,13 @@ void IAEX::InputCell::textChanged(bool _t1)
 {
     void *_a[] = { 0, (void*)&_t1 };
     QMetaObject::activate(this, &staticMetaObject, 1, _a);
+}
+
+// SIGNAL 2
+void IAEX::InputCell::clickedOutput(Cell * _t1)
+{
+    void *_a[] = { 0, (void*)&_t1 };
+    QMetaObject::activate(this, &staticMetaObject, 2, _a);
 }
 static const uint qt_meta_data_IAEX__MyTextEdit[] = {
 

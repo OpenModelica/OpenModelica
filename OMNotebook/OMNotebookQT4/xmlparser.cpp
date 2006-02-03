@@ -358,6 +358,7 @@ namespace IAEX
 
 		// go through all children in text cell/element
 		QDomNode node = element.firstChild();
+		QString text;
 		while( !node.isNull() )
 		{
 			QDomElement e = node.toElement();
@@ -365,7 +366,7 @@ namespace IAEX
 			{
 				if( e.tagName() == XML_TEXT )
 				{
-					textcell->setTextHtml( e.text() );
+					text = e.text();
 				}
 				else if( e.tagName() == XML_RULE )
 				{
@@ -385,6 +386,10 @@ namespace IAEX
 
 			node = node.nextSibling();
 		}
+
+		// set style, before set text, so all rules are applied to the style
+		textcell->setStyle( textcell->style() );
+		textcell->setTextHtml( text );
 
 		parent->addChild( textcell );
 	}
@@ -411,6 +416,7 @@ namespace IAEX
 		Cell *inputcell = factory_->createCell( style, parent );
 
 		// go through all children in input cell/element
+		QString text;
 		QDomNode node = element.firstChild();
 		while( !node.isNull() )
 		{
@@ -419,7 +425,7 @@ namespace IAEX
 			{
 				if( e.tagName() == XML_INPUTPART )
 				{
-					inputcell->setText( e.text() );
+					text = e.text();
 				}
 				else if( e.tagName() == XML_OUTPUTPART )
 				{
@@ -448,6 +454,10 @@ namespace IAEX
 
 			node = node.nextSibling();
 		}
+
+		// set style, before set text, so all rules are applied to the style
+		inputcell->setStyle( inputcell->style() );
+		inputcell->setText( text );
 
 		// 2006-01-17 AF, check if the inputcell is open or closed
 		QString closed = element.attribute( XML_CLOSED, XML_FALSE );

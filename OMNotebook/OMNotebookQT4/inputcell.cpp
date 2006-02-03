@@ -53,6 +53,10 @@ licence: http://www.trolltech.com/products/qt/licensing.html
  * \brief Describes a inputcell.
  */
 
+#ifdef WIN32
+#include "windows.h"
+#endif
+
 //STD Headers
 #include <exception>
 #include <stdexcept>
@@ -79,6 +83,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "stylesheet.h"
 #include "commandcompletion.h"
 #include "highlighterthread.h"
+#include "omcinteractiveenvironment.h"
 
 
 
@@ -434,7 +439,7 @@ namespace IAEX
 		connect( output_, SIGNAL( textChanged() ),
 			this, SLOT(contentChanged()));
 		connect( output_, SIGNAL( clickOnCell() ),
-			this, SLOT( clickEvent() ));
+			this, SLOT( clickEventOutput() ));
 		connect( output_, SIGNAL( wheelMove(QWheelEvent*) ),
 			this, SLOT( wheelEvent(QWheelEvent*) ));
 
@@ -537,6 +542,19 @@ namespace IAEX
 	QTextEdit *InputCell::textEdit()
 	{
 		return input_;
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-02-03
+	 *
+	 * \brief Return the output texteditor
+	 *
+	 * \return Texteditor for the output part of the inputcell
+	 */
+	QTextEdit* InputCell::textEditOutput()
+	{
+		return output_;
 	}
 
 	/*! 
@@ -781,10 +799,36 @@ namespace IAEX
 	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 */
+	void InputCell::setFocus(const bool focus)
+	{
+		if(focus)
+			input_->setFocus();
+	}
+	
+	/*!
+	 * \author Anders Fernström
+	 */
+	void InputCell::setFocusOutput(const bool focus)
+	{
+		if(focus)
+			output_->setFocus();
+	}
+
+	/*!
+	 * \author Ingemar Axelsson and Anders Fernström
+	 */
 	void InputCell::clickEvent()
 	{
 		//if( input_->isReadOnly() )
 			emit clicked(this);
+	}
+
+	/*!
+	 * \author Anders Fernström
+	 */
+	void InputCell::clickEventOutput()
+	{
+		emit clickedOutput(this);
 	}
 
 	/*!
@@ -898,6 +942,7 @@ namespace IAEX
 		}
 	}
 
+
 	/*! 
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2005-11-23 (update)
@@ -939,7 +984,16 @@ namespace IAEX
 					dir.remove( imagename );
 			}
 
-			delegate()->evalExpression( expr );
+			// 2006-02-02 AF, Added try-catch
+			try
+			{
+				delegate()->evalExpression( expr );
+			}
+			catch( exception &e )
+			{
+				exceptionInEval(e);
+				return;
+			}
 
 			// 2005-11-24 AF, added check to see if the user wants to quit
 			if( 0 == expr.indexOf( "quit()", 0, Qt::CaseInsensitive ))
@@ -949,7 +1003,18 @@ namespace IAEX
 
 			// get the result
 			QString res = delegate()->getResult();
-			QString error = delegate()->getError();
+			QString error;
+			
+			// 2006-02-02 AF, Added try-catch
+			try
+			{
+				error = delegate()->getError();
+			}
+			catch( exception &e )
+			{
+				exceptionInEval(e);
+				return;
+			}
 
 			// if the expression is a plot command and the is no errors
 			// in the result, find the image and insert it into the 
@@ -980,7 +1045,7 @@ namespace IAEX
 							output_->textCursor().insertImage( imageformat );
 						}
 						else
-							output_->setPlainText( "[Error] Unable to read plot image \"" + imagename + "\"" );
+							output_->setPlainText( "[Error] Unable to read plot image \"" + imagename + "\". Please retry." );
 
 						break;
 					}
@@ -1021,6 +1086,87 @@ namespace IAEX
 
 	/*! 
 	 * \author Anders Fernström
+	 * \date 2006-02-02
+	 *
+	 *\brief Method for handleing exceptions in eval()
+	 */
+	void InputCell::exceptionInEval(exception &e)
+	{
+		if( string(e.what()) == string("NOT RESPONDING") )
+		{
+			int result = QMessageBox::critical( 0, tr("Communication Error"),
+				tr("<B>OMC is not responding. Do you want to restart OMC?</B>"), 
+				QMessageBox::Yes | QMessageBox::Default,
+				QMessageBox::No );
+
+			if( result == QMessageBox::No )
+			{
+				QMessageBox::critical( 0, tr("Communication Error"),
+					tr("<B>All windows will be closed!</B>") );
+				qApp->closeAllWindows();
+			}
+			else
+			{
+				delegate_->closeConnection();
+				//delete delegate_;
+				//delegate_ = 0;
+				
+				// restart OMC
+				try
+				{
+					new OmcInteractiveEnvironment();
+				}
+				catch( exception &e )
+				{
+#ifdef WIN32
+					try
+					{
+						STARTUPINFO startinfo;
+						PROCESS_INFORMATION procinfo;
+						memset(&startinfo, 0, sizeof(startinfo));
+						memset(&procinfo, 0, sizeof(procinfo));
+						startinfo.cb = sizeof(STARTUPINFO);
+						startinfo.wShowWindow = SW_MINIMIZE;
+						startinfo.dwFlags = STARTF_USESHOWWINDOW;
+
+						string parameter = "\"omc.exe\" +d=interactiveCorba";
+						char *pParameter = new char[parameter.size() + 1];
+						const char *cpParameter = parameter.c_str();
+						strcpy(pParameter, cpParameter);
+
+						bool flag = CreateProcess(NULL,pParameter,NULL,NULL,FALSE,CREATE_NEW_CONSOLE,NULL,NULL,&startinfo,&procinfo);
+
+						Sleep(2000);
+
+						if( !flag )
+							throw std::exception("Unable to start OMC");
+					}
+					catch( exception &e )
+					{
+						QString msg = e.what();
+						msg += "\nWas unable to start OMC!";
+						QMessageBox::warning( 0, "Error", msg, "OK" );
+					}
+#else
+					QString msg = e.what();
+					msg += "\nOMC not started!";
+					QMessageBox::warning( 0, "Error", msg, "OK" );
+#endif
+				}
+
+				delegate_->reconnect();
+				eval();
+			}
+		}
+		else
+		{
+			QMessageBox::warning( 0, tr("Communication with OMC error"),
+				e.what() );
+	}
+	}
+
+	/*! 
+	 * \author Anders Fernström
 	 * \date 2005-12-15
 	 *
 	 *\brief Get/Insert the command that match the last word in the 
@@ -1028,7 +1174,6 @@ namespace IAEX
 	 */
 	void InputCell::command()
 	{
-		qDebug("Command");
 		CommandCompletion *commandcompletion = CommandCompletion::instance( "commands.xml" );
 		QTextCursor cursor = input_->textCursor();
 		
@@ -1116,6 +1261,7 @@ namespace IAEX
 			contentChanged();
 		}
 	}
+
 
 
 
@@ -1213,11 +1359,8 @@ namespace IAEX
 
 
 
-	void InputCell::setFocus(const bool focus)
-	{
-		if(focus)
-			input_->setFocus();
-	}
+	
+
 
 	void InputCell::mouseDoubleClickEvent(QMouseEvent *)
 	{

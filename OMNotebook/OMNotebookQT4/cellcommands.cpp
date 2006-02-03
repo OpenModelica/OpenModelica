@@ -106,7 +106,10 @@ namespace IAEX
 
 			// 2005-11-21 AF, Added check if the current cell is a
 			// inputcell, set style to 'text' insted.
-			if( style.name() == "input" || style.name() == "Input" || style.name() == "ModelicaInput" )
+			// 2006-02-03 AF, added check if the current cell is a 
+			// groupcell
+			if( style.name() == "input" || style.name() == "Input" || style.name() == "ModelicaInput" ||
+				style.name() == "cellgroup" )
 				cursor->addBefore(fac->createCell( "Text" ));
 			else
 				cursor->addBefore(fac->createCell(style.name()));

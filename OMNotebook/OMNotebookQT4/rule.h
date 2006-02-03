@@ -85,6 +85,11 @@ namespace IAEX
       {
 	 return value_;
       }
+
+	  void setValue( value_t val )
+	  {
+		value_ = val;
+	  }
       
    private:
       attribute_t attribute_;

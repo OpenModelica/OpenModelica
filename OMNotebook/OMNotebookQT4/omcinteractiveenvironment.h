@@ -64,10 +64,12 @@ namespace IAEX
       virtual QString getResult();
 	  virtual QString getError();					// Added 2006-02-02 AF
       virtual void evalExpression(QString &expr);
+	  virtual void closeConnection();				// Added 2006-02-02 AF
+	  virtual void reconnect();						// Added 2006-02-02 AF
+
    private:
       OmcCommunicator &comm_;
       QString result_;
-	  QString error_;
    };
 }
 #endif

@@ -278,7 +278,22 @@ namespace IAEX
 		QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
 
 		if( editor )
+		{
 			editor->setAlignment( (Qt::Alignment)alignment_ );
+
+			// create a rule for the alignment
+			Rule *rule;
+			if( (Qt::Alignment)alignment_ == Qt::AlignLeft )
+				rule = new Rule( "TextAlignment", "Left" );
+			else if( (Qt::Alignment)alignment_ == Qt::AlignRight )
+				rule = new Rule( "TextAlignment", "Right" );
+			else if( (Qt::Alignment)alignment_ == Qt::AlignHCenter )
+				rule = new Rule( "TextAlignment", "Center" );
+			else if( (Qt::Alignment)alignment_ == Qt::AlignJustify )
+				rule = new Rule( "TextAlignment", "Justify" );
+				
+			document()->getCursor()->currentCell()->addRule( rule );
+		}
 	}
 
 
@@ -324,6 +339,12 @@ namespace IAEX
 			QTextFrameFormat format = editor->document()->rootFrame()->frameFormat();
 			format.setMargin( margin_ );
 			editor->document()->rootFrame()->setFrameFormat( format );
+
+			// create a rule for the margin
+			QString ruleValue;
+			ruleValue.setNum( margin_ );
+			Rule *rule = new Rule( "OMNotebook_Margin", ruleValue );
+			document()->getCursor()->currentCell()->addRule( rule );
 		}
 	}
 
@@ -347,6 +368,12 @@ namespace IAEX
 			QTextFrameFormat format = editor->document()->rootFrame()->frameFormat();
 			format.setPadding( padding_ );
 			editor->document()->rootFrame()->setFrameFormat( format );
+
+			// create a rule for the padding
+			QString ruleValue;
+			ruleValue.setNum( padding_ );
+			Rule *rule = new Rule( "OMNotebook_Padding", ruleValue );
+			document()->getCursor()->currentCell()->addRule( rule );
 		}
 	}
 
@@ -370,6 +397,12 @@ namespace IAEX
 			QTextFrameFormat format = editor->document()->rootFrame()->frameFormat();
 			format.setBorder( border_ );
 			editor->document()->rootFrame()->setFrameFormat( format );
+
+			// create a rule for the border
+			QString ruleValue;
+			ruleValue.setNum( border_ );
+			Rule *rule = new Rule( "OMNotebook_Border", ruleValue );
+			document()->getCursor()->currentCell()->addRule( rule );
 		}
 	}
 

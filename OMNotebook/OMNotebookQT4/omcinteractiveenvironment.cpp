@@ -81,11 +81,21 @@ namespace IAEX
 	// Added 2006-02-02 AF
 	QString OmcInteractiveEnvironment::getError()
 	{
-		QString error = comm_.callOmc( "getErrorString()" );
+		QString error;
+
+		try
+		{
+			error = comm_.callOmc( "getErrorString()" );
+		}
+		catch( exception &e )
+		{
+			throw e;
+		}
+		 
 
 		if( error.size() > 2 )
 		{
-			error = QString( "OMC-ERROR: " ) + error_;
+			error = QString( "OMC-ERROR: " ) + error;
 		}
 		else
 			error.clear();
@@ -95,6 +105,32 @@ namespace IAEX
 
 	void OmcInteractiveEnvironment::evalExpression(QString &expr)
 	{
-		result_ = comm_.callOmc(expr);
+		// 2006-02-02 AF, Added try-catch
+		try
+		{
+			result_ = comm_.callOmc(expr);
+		}
+		catch( exception &e )
+		{
+			throw e;	
+		}
+	}
+
+	// 2006-02-02 AF
+	void OmcInteractiveEnvironment::closeConnection()
+	{
+		comm_.closeConnection();
+	}
+
+	void OmcInteractiveEnvironment::reconnect()
+	{
+		//Communicate with Omc.
+		if(!comm_.isConnected())
+		{
+			if(!comm_.establishConnection())
+			{
+				throw runtime_error("OmcInteractiveEnvironment(): No connection to Omc established");
+			}
+		}
 	}
 }

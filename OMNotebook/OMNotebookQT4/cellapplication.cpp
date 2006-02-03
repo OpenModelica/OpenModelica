@@ -133,13 +133,13 @@ namespace IAEX
 			{
 				QString msg = e.what();
 				msg += "\nWas unable to start OMC! Closeing OMNotebook!";
-				QMessageBox::warning( 0, "Error", msg, "OK" );
+				QMessageBox::critical( 0, "Error", msg, "OK" );
 				std::exit(-1);
 			}
 #else
 			QString msg = e.what();
 			msg += "\nOMC not started! Closeing OMNotebook!";
-			QMessageBox::warning( 0, "Error", msg, "OK" );
+			QMessageBox::critical( 0, "Error", msg, "OK" );
 			std::exit(-1);
 #endif
 		}
@@ -424,17 +424,17 @@ namespace IAEX
 			// correct size. Ugly way!
 			v->resize( 810, 610 );
 
-			// 2005-11-30 AF, apply hide() and show() to closed groupcells 
-			// childs in the documentview
-			UpdateGroupcellVisitor visitor;
-			v->document()->runVisitor( visitor );
-
 			// 2006-01-17 AF, when the document have been opened, set the
 			// changed variable to false.
 			v->document()->setChanged( false );
 
 			// 2006-01-31 AF, show window again
 			v->showNormal();
+
+			// 2005-11-30 AF, apply hide() and show() to closed groupcells 
+			// childs in the documentview
+			UpdateGroupcellVisitor visitor;
+			v->document()->runVisitor( visitor );
 		}
 		catch( exception &e )
 		{

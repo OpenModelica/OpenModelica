@@ -85,11 +85,12 @@ namespace IAEX
 		virtual ~InputCell();
 
 		QString text();
-		QString textHtml();					// Added 2005-10-27 AF
-		virtual QString textOutput();		// Added 2005-11-23 AF
-		virtual QString textOutputHtml();	// Added 2005-11-23 AF
-		virtual QTextCursor textCursor();	// Added 2005-10-27 AF
-		virtual QTextEdit* textEdit();		// Added 2006-01-05 AF
+		QString textHtml();						// Added 2005-10-27 AF
+		virtual QString textOutput();			// Added 2005-11-23 AF
+		virtual QString textOutputHtml();		// Added 2005-11-23 AF
+		virtual QTextCursor textCursor();		// Added 2005-10-27 AF
+		virtual QTextEdit* textEdit();			// Added 2006-01-05 AF
+		virtual QTextEdit* textEditOutput();	// Added 2006-02-03 AF
 		virtual void viewExpression(const bool){} 
 
 		virtual void addCellWidgets();
@@ -106,6 +107,7 @@ namespace IAEX
 	signals:
 		void textChanged();
 		void textChanged( bool );
+		void clickedOutput( Cell* );					// Added 2006-02-03 AF
 
 	public slots:
 		void eval();
@@ -113,6 +115,7 @@ namespace IAEX
 		void nextCommand();								// Added 2005-12-15 AF
 		void nextField();								// Added 2005-12-15 AF
 		void clickEvent();
+		void clickEventOutput();						// Added 2006-02-03 AF
 		void contentChanged();
 		void setText(QString text);
 		void setTextHtml(QString html);					// Added 2005-11-01 AF
@@ -124,6 +127,7 @@ namespace IAEX
 		void setEvaluated(const bool evaluated);		// Added 2006-01-16 AF
 		void setClosed(const bool closed);
 		virtual void setFocus(const bool focus);
+		virtual void setFocusOutput(const bool focus);	// Added 2006-02-03 AF
 		
 		
 
@@ -142,6 +146,7 @@ namespace IAEX
 	private:
 		void createInputCell();
 		void createOutputCell();
+		void exceptionInEval(exception &e);
 
 		bool evaluated_;
 		bool closed_;

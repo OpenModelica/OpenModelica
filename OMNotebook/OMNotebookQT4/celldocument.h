@@ -157,6 +157,7 @@ namespace IAEX
 		void selectedACell(Cell *selected, Qt::KeyboardModifiers);
 		void clearSelection();
 		void mouseClickedOnCell(Cell *clickedCell);
+		void mouseClickedOnCellOutput(Cell *clickedCell); //Added 2006-02-03
 		void linkClicked(const QUrl *url);
 		virtual void cursorMoveAfter(Cell *aCell, const bool open);
 		void showHTML(bool b);

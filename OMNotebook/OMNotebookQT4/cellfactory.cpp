@@ -125,6 +125,8 @@ namespace IAEX
 				doc_, SLOT(selectedACell(Cell*,Qt::KeyboardModifiers)));
 			QObject::connect(text, SIGNAL(clicked(Cell *)),
 				doc_, SLOT(mouseClickedOnCell(Cell*)));
+			QObject::connect(text, SIGNAL(clickedOutput(Cell *)),
+				doc_, SLOT(mouseClickedOnCellOutput(Cell*)));
 			
 			// 2005-11-29 AF
 			QObject::connect( text, SIGNAL( textChanged() ),

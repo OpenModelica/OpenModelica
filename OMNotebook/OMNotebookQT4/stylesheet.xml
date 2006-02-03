@@ -57,7 +57,7 @@
 		</font>
 	</style>
 	<style name="Section">
-		<border value="0" margin="10" padding="0"/>
+		<border value="0" margin="5" padding="0"/>
 		<alignment value="left"/>
 		<font>
 			<family>Times</family>
@@ -67,7 +67,7 @@
 		</font>
 	</style>
 	<style name="Subsection">
-		<border value="0" margin="10" padding="0"/>
+		<border value="0" margin="5" padding="0"/>
 		<alignment value="left"/>
 		<font>
 			<family>Times</family>
@@ -76,7 +76,7 @@
 		</font>
 	</style>
 	<style name="Subsubsection">
-		<border margin="10"/>
+		<border margin="5"/>
 		<font>
 			<family>Times</family>
 			<size>12</size>
@@ -97,7 +97,7 @@
 		<alignment value="left"/>
 		<font>
 			<family>Courier New</family>
-			<size>12</size>
+			<size>11</size>
 			<weight>normal</weight>
 		</font>
 	</style>
@@ -106,7 +106,7 @@
 		<alignment value="left"/>
 		<font>
 			<family>Courier New</family>
-			<size>12</size>
+			<size>11</size>
 			<weight>normal</weight>
 		</font>
 	</style>

@@ -770,13 +770,9 @@ namespace IAEX
 		emit contentChanged();
 	}
 
-
-
-
-
-	// ***************************************************************
-
-
+	/*! 
+	 * \author Ingemar Axelsson
+	 */
 	void CellDocument::mouseClickedOnCell(Cell *clickedCell)
 	{
 		//Deselect all selection
@@ -807,8 +803,61 @@ namespace IAEX
 		clickedCell->setFocus(true);
 
 		emit cursorChanged();
-		//qDebug("Clicked on cell");
 	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-02-03
+	 *
+	 * \brief set focus on output part in inputcell
+	 */
+	void CellDocument::mouseClickedOnCellOutput(Cell *clickedCell)
+	{
+		clearSelection();
+
+		//Remove focus from old cell.
+		if(getCursor()->currentCell()->isClosed())
+		{
+			getCursor()->currentCell()->child()->setReadOnly(true);
+			getCursor()->currentCell()->child()->setFocus(false);
+		}
+		else
+		{
+			getCursor()->currentCell()->setReadOnly(true);
+		}
+
+		//Add focus to the cell clicked on.
+		if(clickedCell->parentCell()->isClosed())
+		{
+			getCursor()->moveAfter(clickedCell->parentCell());
+		}
+		else
+		{
+			getCursor()->moveAfter(clickedCell); //Results in bus error why?
+		}
+
+		if( typeid(InputCell) == typeid(*clickedCell) )
+		{
+			InputCell *inputcell = dynamic_cast<InputCell*>(clickedCell);
+			inputcell->setReadOnly(false);
+			inputcell->setFocusOutput(true);
+		}
+		else
+		{
+			clickedCell->setReadOnly(false);
+			clickedCell->setFocus(true);
+		}
+
+		emit cursorChanged();
+	}
+
+
+
+	// ***************************************************************
+
+
+
+
 
 	/*! What to do when a link is clicked?
 	*/

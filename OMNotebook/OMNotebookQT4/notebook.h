@@ -95,6 +95,7 @@ namespace IAEX
 		void updateMenus();						// Added 2005-11-07 AF
 		void updateStyleMenu();
 		void updateEditMenu();					// Added 2005-11-02 AF
+		void updateCellMenu();					// Added 2006-02-03 AF
 		void updateFontMenu();					// Added 2005-11-03 AF
 		void updateFontFaceMenu();				// Added 2005-11-03 AF
 		void updateFontSizeMenu();				// Added 2005-11-04 AF
@@ -118,6 +119,7 @@ namespace IAEX
 		void closeFile();
 		void closeEvent( QCloseEvent *event );			// Added 2006-01-19 AF
 		void aboutQTNotebook();
+		void helpText();								// Added 2006-02-03 AF
 		void saveas();
 		void save();
 		void quitOMNotebook();							// Added 2006-01-18 AF
@@ -136,6 +138,12 @@ namespace IAEX
 		void changeMargin(QAction *action);				// Added 2005-11-07 AF
 		void changePadding(QAction *action);			// Added 2005-11-07 AF
 		void changeWindow(QAction *action);				// Added 2006-01-27 AF
+
+		void undoEdit();				// Added 2006-02-03 AF
+		void redoEdit();				// Added 2006-02-03 AF
+		void cutEdit();					// Added 2006-02-03 AF
+		void copyEdit();				// Added 2006-02-03 AF
+		void pasteEdit();				// Added 2006-02-03 AF
 		
 		void insertImage();				// Added 2005-11-18 AF
 		void insertLink();				// Added 2005-12-05 AF
@@ -214,6 +222,9 @@ namespace IAEX
 
 		QAction *undoAction;
 		QAction *redoAction;
+		QAction *cutAction;
+		QAction *copyAction;
+		QAction *pasteAction;
 		QAction *searchAction;
 		QAction *showExprAction;
 
@@ -229,6 +240,7 @@ namespace IAEX
 		QAction *inputAction;
 
 		QAction *aboutAction;
+		QAction *helpAction;
 
 		QAction *facePlain;
 		QAction *faceBold;

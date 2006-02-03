@@ -258,9 +258,14 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Ingemar Axelsson
+	 * \author Ingemar Axelsson and Anders Fernström
+	 * \date 2006-02-03 AF
 	 *
 	 * \brief Adds a rule to the cell 
+	 *
+	 *
+	 * 2006-02-03 AF, check and see if rule already existes, if it dose 
+	 * only replace the value
 	 *
 	 * \param r The rule that will be added
 	 *
@@ -273,6 +278,7 @@ namespace IAEX
 	{
 		// TODO: DEBUG code: Remove when doing release,
 		// just a check to find new rules
+		
 		/*
 		QRegExp expression( "InitializationCell|CellTags|FontSlant|TextAlignment|TextJustification|FontSize|FontWeight|FontFamily|PageWidth" );
 		if( 0 > r->attribute().indexOf( expression ))
@@ -307,11 +313,28 @@ namespace IAEX
 			}
 		}
 		*/
+		
 
 
 
 		// *** THE REAL FUNCTION ***
-		rules_.push_back(r);
+
+		// check if rule already existes
+		bool found = false;
+		rules_t::iterator iter = rules_.begin();
+		while( iter != rules_.end() )
+		{
+			if( 0 == (*iter)->attribute().indexOf( r->attribute(), 0, Qt::CaseInsensitive ) )
+			{
+				found = true;
+				(*iter)->setValue( r->value() );
+				break;
+			}
+			++iter;
+		}
+
+		if( !found )
+			rules_.push_back(r);
 	}
 
 
@@ -340,7 +363,9 @@ namespace IAEX
 				else if( (*current)->value() == "Right" )
 					style_.setAlignment( Qt::AlignRight );
 				else if( (*current)->value() == "Center" )
-					style_.setAlignment( Qt::AlignCenter );
+					style_.setAlignment( Qt::AlignHCenter );
+				else if( (*current)->value() == "Justify" )
+					style_.setAlignment( Qt::AlignJustify );
 			}
 			else if( (*current)->attribute() == "TextJustification" )
 			{
@@ -373,6 +398,39 @@ namespace IAEX
 			else if( (*current)->attribute() == "CellTags" )
 			{
 				celltag_ = (*current)->value();
+			}
+			else if( (*current)->attribute() == "OMNotebook_Margin" )
+			{
+				bool ok;
+				int value = (*current)->value().toInt(&ok);
+					
+				if(ok)
+				{
+					if( value > 0 )
+						style_.textFrameFormat()->setMargin( value );
+				}
+			}
+			else if( (*current)->attribute() == "OMNotebook_Padding" )
+			{
+				bool ok;
+				int value = (*current)->value().toInt(&ok);
+					
+				if(ok)
+				{
+					if( value > 0 )
+						style_.textFrameFormat()->setPadding( value );
+				}
+			}
+			else if( (*current)->attribute() == "OMNotebook_Border" )
+			{
+				bool ok;
+				int value = (*current)->value().toInt(&ok);
+					
+				if(ok)
+				{
+					if( value > 0 )
+						style_.textFrameFormat()->setBorder( value );
+				}
 			}
 
 			++current;

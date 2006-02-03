@@ -62,6 +62,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtCore/QTimer>
 #include <QtGui/QAction>
 #include <QtGui/QApplication>
+#include <QtGui/QClipboard>
 #include <QtGui/QColorDialog>
 #include <QtGui/QFileDialog>
 #include <QtGui/QFontDatabase>
@@ -254,6 +255,9 @@ namespace IAEX
 
 		delete undoAction;
 		delete redoAction;
+		delete cutAction;
+		delete copyAction;
+		delete pasteAction;
 		delete searchAction;
 		delete showExprAction;
 
@@ -269,6 +273,7 @@ namespace IAEX
 		delete inputAction;
 
 		delete aboutAction;
+		delete helpAction;
 
 		delete facePlain;
 		delete faceBold;
@@ -460,26 +465,52 @@ namespace IAEX
 
 	/*! 
 	 * \author Anders Fernström
-	 * \date 2005-10-07 (update)
+	 * \date 2006-02-03 (update)
 	 *
 	 * \brief Method for creating edit nemu.
 	 *
-	 * Remade the function when porting to QT4.
+	 * 2005-10-07 AF, Remade the function when porting to QT4.
+	 * 2006-02-03 AF, Made undo, redo, cut, copy and paste actions for the editor
 	 */
 	void NotebookWindow::createEditMenu()
 	{
 		// 2005-10-07 AF, Porting, replaced this
 		//QAction *undoAction = new QAction("Undo", "&Undo", 0, this, "undoaction");
 		undoAction = new QAction( tr("&Undo"), this);
+		undoAction->setShortcut( tr("Ctrl+Z") );
 		undoAction->setStatusTip( tr("Undo last action") );
-		undoAction->setEnabled(false);
+		connect( undoAction, SIGNAL( triggered() ),
+			this, SLOT( undoEdit() ));
 
 		// 2005-10-07 AF, Porting, replaced this
 		//QAction *redoAction = new QAction("Redo", "&Redo", 0, this, "redoaction");
 		redoAction = new QAction( tr("&Redo"), this);
+		redoAction->setShortcut( tr("Ctrl+Y") );
 		redoAction->setStatusTip( tr("Redo last action") );
-		redoAction->setEnabled(false);
+		connect( redoAction, SIGNAL( triggered() ),
+			this, SLOT( redoEdit() ));
 
+		// CUT
+		cutAction = new QAction( tr("Cu&t"), this);
+		cutAction->setShortcut( tr("Ctrl+X") );
+		cutAction->setStatusTip( tr("Cut selected text") );
+		connect( cutAction, SIGNAL( triggered() ),
+			this, SLOT( cutEdit() ));
+
+		// COPY
+		copyAction = new QAction( tr("&Copy"), this);
+		copyAction->setShortcut( tr("Ctrl+C") );
+		copyAction->setStatusTip( tr("Copy selected text") );
+		connect( copyAction, SIGNAL( triggered() ),
+			this, SLOT( copyEdit() ));
+
+		// PASTE
+		pasteAction = new QAction( tr("&Paste"), this);
+		pasteAction->setShortcut( tr("Ctrl+V") );
+		pasteAction->setStatusTip( tr("Paste text from clipboard") );
+		connect( pasteAction, SIGNAL( triggered() ),
+			this, SLOT( pasteEdit() ));
+		
 		// 2005-10-07 AF, Porting, replaced this
 		//QAction *searchAction = new QAction("Search", "&Search", 0, this, "search");
 		searchAction = new QAction( tr("&Search"), this);
@@ -496,11 +527,17 @@ namespace IAEX
 		connect(showExprAction, SIGNAL(toggled(bool)), subject_, SLOT(showHTML(bool)));
 
 		// 2005-10-07 AF, Porting, new code for creating menu
+		// 2006-02-03 AF, removed SEARCH from menu, 
+		// because they havn't been implemented yet.
 		editMenu = menuBar()->addMenu( tr("&Edit") );
 		editMenu->addAction( undoAction );
 		editMenu->addAction( redoAction );
 		editMenu->addSeparator();
-		editMenu->addAction( searchAction );
+		editMenu->addAction( cutAction );
+		editMenu->addAction( copyAction );
+		editMenu->addAction( pasteAction );
+		editMenu->addSeparator();
+		//editMenu->addAction( searchAction );
 		editMenu->addAction( showExprAction );
 
 
@@ -570,6 +607,14 @@ namespace IAEX
 		connect(inputAction, SIGNAL(triggered()), this, SLOT(inputCellsAction()));
 
 		// 2005-10-07 AF, Porting, replaced this
+		//QAction *groupAction = new QAction("Group Cells", "&Group cells", CTRL+SHIFT+Key_G, this, "groupcells");
+		//QObject::connect(groupAction, SIGNAL(activated()), this, SLOT(groupCellsAction()));
+		groupAction = new QAction( tr("&Groupcell"), this);
+		groupAction->setShortcut( tr("Ctrl+Shift+G") );
+		groupAction->setStatusTip( tr("Groupcell") );
+		connect(groupAction, SIGNAL(triggered()), this, SLOT(groupCellsAction()));
+
+		// 2005-10-07 AF, Porting, replaced this
 		//QAction *deleteCellAction = new QAction("Delete cell", "&Delete Cell", CTRL+SHIFT+Key_D, this, "deletecell");
 		//QObject::connect(deleteCellAction, SIGNAL(activated()), this, SLOT(deleteCurrentCell()));
 		deleteCellAction = new QAction( tr("&Delete Cell"), this);
@@ -600,10 +645,14 @@ namespace IAEX
 		cellMenu->addSeparator();
 		cellMenu->addAction( addCellAction );
 		cellMenu->addAction( inputAction );
+		cellMenu->addAction( groupAction );
 		cellMenu->addAction( deleteCellAction );
 		cellMenu->addSeparator();
 		cellMenu->addAction( nextCellAction );
 		cellMenu->addAction( previousCellAction );
+
+		QObject::connect(cellMenu, SIGNAL(aboutToShow()),
+			this, SLOT(updateCellMenu()));
 
 
 		/* Old menu code //AF
@@ -1238,21 +1287,6 @@ namespace IAEX
 		// END: Padding
 
 
-
-
-		// 2005-10-07 AF, Porting, replaced this
-		//QAction *groupAction = new QAction("Group Cells", "&Group cells", CTRL+SHIFT+Key_G, this, "groupcells");
-		//QObject::connect(groupAction, SIGNAL(activated()), this, SLOT(groupCellsAction()));
-		groupAction = new QAction( tr("&Groupcell"), this);
-		groupAction->setShortcut( tr("Ctrl+Shift+G") );
-		groupAction->setStatusTip( tr("Groupcell") );
-		connect(groupAction, SIGNAL(triggered()), this, SLOT(groupCellsAction()));
-
-		// 2005-10-07 AF, Porting, new code for creating menu
-		formatMenu->addSeparator();
-		formatMenu->addAction( groupAction );
-
-
 		/* Old menu code //AF
 		menuBar()->insertItem("&Format", formatMenu);
 		stylesgroup->addTo(formatMenu);
@@ -1316,24 +1350,34 @@ namespace IAEX
 
 	/*! 
 	 * \author Anders Fernström
-	 * \date 2005-10-07 (update)
+	 * \date 2006-02-03 (update)
 	 *
 	 * \brief Method for creating about nemu.
 	 *
-	 * Remade the function when porting to QT4.
+	 * 2005-10-07 AF, Remade the function when porting to QT4.
+	 * 2006-02-03 AF, added help action.
 	 */
 	void NotebookWindow::createAboutMenu()
 	{
 		// 2005-10-07 AF, Porting, replaced this
 		//QAction *aboutAction = new QAction("About", "&About", 0, this, "about");
 		//QObject::connect(aboutAction, SIGNAL(activated()), this, SLOT(aboutQTNotebook()));
-		aboutAction = new QAction( tr("&About"), this);
+		aboutAction = new QAction( tr("&About OMNotebook"), this );
 		aboutAction->setStatusTip( tr("Display OMNotebook's About dialog") );
 		connect(aboutAction, SIGNAL(triggered()), this, SLOT(aboutQTNotebook()));
+
+		// 2006-02-03 AF, Added a help action
+		helpAction = new QAction( tr("&Help Text"), this );
+		helpAction->setShortcut( tr("F1") );
+		helpAction->setStatusTip( tr("Open help document") );
+		connect( helpAction, SIGNAL( triggered() ),
+			this, SLOT( helpText() ));
+
 
 		// 2005-10-07 AF, Porting, new code for creating menu
 		aboutMenu = menuBar()->addMenu( tr("&Help") );
 		aboutMenu->addAction( aboutAction );	
+		aboutMenu->addAction( helpAction );
 
 		/* Old menu code //AF
 		aboutMenu = new Q3PopupMenu(this);
@@ -1441,12 +1485,75 @@ namespace IAEX
 	/*! 
 	 * \author Anders Fernström
 	 * \date 2005-11-02
+	 * \date 2006-02-03 (update)
 	 *
 	 * \brief Method for updating the edit menu
+	 *
+	 * 2006-02-03 AF, check if undo/redo is available
 	 */
 	void NotebookWindow::updateEditMenu()
 	{
+		QTextEdit *editor = subject_->getCursor()->currentCell()->textEdit();
+		if( editor )
+		{
+			// undo
+			if( editor->document()->isUndoAvailable() )
+				undoAction->setEnabled( true );
+			else
+				undoAction->setEnabled( false );
+
+			// redo
+			if( editor->document()->isRedoAvailable() )
+				redoAction->setEnabled( true );
+			else
+				redoAction->setEnabled( false );
+
+			// cut & copy
+			if( editor->textCursor().hasSelection() )
+			{
+				cutAction->setEnabled( true );
+				copyAction->setEnabled( true );
+			}
+			else
+			{
+				cutAction->setEnabled( false );
+				copyAction->setEnabled( false );
+			}
+
+			// paste
+			if( !qApp->clipboard()->text().isEmpty() )
+				pasteAction->setEnabled( true );
+			else
+				pasteAction->setEnabled( false );
+		}
+		else
+		{
+			undoAction->setEnabled( false );
+			redoAction->setEnabled( false );
+			cutAction->setEnabled( false );
+			copyAction->setEnabled( false );
+			pasteAction->setEnabled( false );
+		}
+
 		showExprAction->setChecked( subject_->getCursor()->currentCell()->isViewExpression() );
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-02-03
+	 *
+	 * \brief Method for updating the cell menu
+	 */
+	void NotebookWindow::updateCellMenu()
+	{
+		Cell *cell = subject_->getCursor()->currentCell();
+		if( cell )
+		{
+			if( cell->treeView()->isHidden() )
+				groupAction->setEnabled( false );
+			else
+				groupAction->setEnabled( true );
+		}
 	}
 
 	/*! 
@@ -2025,9 +2132,38 @@ namespace IAEX
 	{
 		QString abouttext = QString("OMNotebook version 2.0 (for OpenModelica v1.3.1)\r\n") + 
 			QString("Copyright 2004-2006, PELAB, Linkoping Univerity\r\n\r\n") + 
-			QString("Created by Ingemar Axelsson (2004-2005) and Anders Fernström (2005-2006), part of there final thesis.");
+			QString("Created by Ingemar Axelsson (2004-2005) and Anders Fernström (2005-2006) part of their final theses.");
 
 		QMessageBox::about( this, "OMNotebook", abouttext );
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-02-03
+	 *
+	 * \brief open the help document, if it exists
+	 */
+	void NotebookWindow::helpText()
+	{
+		try
+		{
+			QDir dir;
+			if( dir.exists( "OMNotebookHelp.onb" ) )
+			{
+				application()->commandCenter()->executeCommand(
+					new OpenFileCommand( "OMNotebookHelp.onb" ));
+			}
+			else
+			{
+				QString msg = QString( "Could not find the help doucment: OMNotebookHelp.onb in path: " ) + dir.path();
+				QMessageBox::warning( 0, "Warning", msg, "OK" );
+			}
+		}
+		catch(exception &e)
+		{
+			QString msg = QString("In HelpText(), Exception: \n") + e.what();
+			QMessageBox::warning( 0, "Warning", msg, "OK" );
+		}
 	}
 
 	/*! 
@@ -2577,6 +2713,102 @@ namespace IAEX
 
 	/*! 
 	 * \author Anders Fernström
+	 * \date 2006-02-03
+	 *
+	 * \brief Method for doing undo on text
+	 */
+	void NotebookWindow::undoEdit()
+	{
+		QTextEdit *editor = subject_->getCursor()->currentCell()->textEdit();
+		if( editor )
+		{
+			editor->document()->undo();
+		}
+	}
+	
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-02-03
+	 *
+	 * \brief Method for doing redo on text
+	 */
+	void NotebookWindow::redoEdit()
+	{
+		QTextEdit *editor = subject_->getCursor()->currentCell()->textEdit();
+		if( editor )
+		{
+			editor->document()->redo();
+		}
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-02-03
+	 *
+	 * \brief Method for cuting text
+	 */
+	void NotebookWindow::cutEdit()
+	{
+		QTextEdit *editor = subject_->getCursor()->currentCell()->textEdit();
+		if( editor )
+		{
+			editor->cut();
+		}
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-02-03
+	 *
+	 * \brief Method for copying text
+	 */
+	void NotebookWindow::copyEdit()
+	{
+		Cell *cell = subject_->getCursor()->currentCell();
+		if( cell )
+		{
+			if( typeid(InputCell) == typeid(*cell) )
+			{
+				InputCell *inputcell = dynamic_cast<InputCell*>(cell);
+				if( inputcell->textEditOutput()->hasFocus() && 
+					inputcell->isEvaluated() )
+				{
+					inputcell->textEditOutput()->copy();
+				}
+				else
+					inputcell->textEdit()->copy();
+			}
+			else
+			{
+				QTextEdit *editor = cell->textEdit();
+				if( editor )
+				{
+					editor->copy();
+				}
+			}
+		}
+
+
+		
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-02-03
+	 *
+	 * \brief Method for pasteing text
+	 */
+	void NotebookWindow::pasteEdit()
+	{
+		QTextEdit *editor = subject_->getCursor()->currentCell()->textEdit();
+		if( editor )
+		{
+			editor->paste();
+		}
+	}
+
+	/*! 
+	 * \author Anders Fernström
 	 * \date 2005-11-18
 	 *
 	 * \brief Method for inserting an image into the cell
@@ -2770,8 +3002,20 @@ namespace IAEX
 	 */
 	void NotebookWindow::groupCellsAction()
 	{
-		subject_->executeCommand(new MakeGroupCellCommand());
-		subject_->updateScrollArea();
+		Cell *cell = subject_->getCursor()->currentCell();
+		if( cell )
+		{
+			if( cell->treeView()->isHidden() )
+			{
+				QMessageBox::information( 0, "Can make groupcell",
+					"A textcell or inputcell must first be added, before a groupcell can be done" );
+			}
+			else
+			{
+				subject_->executeCommand(new MakeGroupCellCommand());
+				subject_->updateScrollArea();
+			}
+		}
 	}
 
 	/*!

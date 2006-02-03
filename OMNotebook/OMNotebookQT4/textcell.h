@@ -91,7 +91,6 @@ namespace IAEX
 		virtual bool isEditable();
 		virtual void viewExpression(const bool expr);
 
-
 	signals:
 		void textChanged();
 		void textChanged( bool );
