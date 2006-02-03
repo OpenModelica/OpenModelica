@@ -2813,6 +2813,8 @@ relation type_string : Type => string =
   axiom	type_string BOOL => "BOOL"
   axiom	type_string STRING => "STRING"
 
+  axiom	type_string OTHER => "OTHER"
+
 end
 
 (** relation: print_component_ref

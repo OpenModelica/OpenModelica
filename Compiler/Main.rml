@@ -14,7 +14,7 @@ Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
 met:
 
-* Redistributions of source code must retain the above copyright
+* Redistributions of source code must retain the above copyright  
   notice, this list of conditions and the following disclaimer.
 
 * Redistributions in binary form must reproduce the above copyright
@@ -411,7 +411,7 @@ relation optimize_dae: (SCode.Program, DAE.DAElist, DAE.DAElist, Absyn.Path) => 
 	& DAELow.strong_components(m,mT,v1,v2) => (comps) 
 	& modpar(dlow',v1,v2,comps) 
 	& simcodegen(classname,p,daeimpl,dlow',v1,v2,m,mT,comps)
-(*	& DAELow.dump_components(comps) *)
+	& Debug.fcall("bltdump",DAELow.dump_components,comps) 
 	-----------------------
 	optimize_dae(p,dae,daeimpl,classname) => ()
 

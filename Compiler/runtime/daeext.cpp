@@ -57,6 +57,7 @@ extern "C"
 
 
   std::set<int> e_mark;
+  std::set<int> differentiated_mark;
   std::set<int> v_mark;
 
 
@@ -88,7 +89,7 @@ extern "C"
     RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
-  
+
   RML_BEGIN_LABEL(DAEEXT__v_5fmark)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
@@ -120,6 +121,25 @@ extern "C"
     std::set<int>::iterator it;
     rmlA0 = mk_nil();
     for (it=e_mark.begin(); it != e_mark.end(); it++) {
+      rmlA0 = mk_cons(mk_icon(*it),rmlA0);
+    }
+    RML_TAILCALLK(rmlSC);
+  }
+  RML_END_LABEL
+
+  RML_BEGIN_LABEL(DAEEXT__mark_5fdifferentiated)
+  {
+    int i = RML_UNTAGFIXNUM(rmlA0);
+    differentiated_mark.insert(differentiated_mark.begin(),i);
+    RML_TAILCALLK(rmlSC);
+  }
+  RML_END_LABEL
+
+  RML_BEGIN_LABEL(DAEEXT__get_5fdifferentiated_5feqns)
+  {
+    std::set<int>::iterator it;
+    rmlA0 = mk_nil();
+    for (it=differentiated_mark.begin(); it != differentiated_mark.end(); it++) {
       rmlA0 = mk_cons(mk_icon(*it),rmlA0);
     }
     RML_TAILCALLK(rmlSC);

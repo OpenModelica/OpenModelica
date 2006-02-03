@@ -5120,7 +5120,7 @@ relation get_nth_connection: (Absyn.ComponentRef, Absyn.Program, int)
 	get_connection_str eq => str &
 	Util.string_append_list(["{",str,", ",str2,"}"]) => res
 	----------------------------
-	get_nth_connection (model,p,n) => str (* res when Daniels changed in MOE*) 
+	get_nth_connection (model,p,n) => res
 	
   axiom get_nth_connection(_,_,_) => "Error"
 end
@@ -5182,8 +5182,8 @@ relation add_connection: (Absyn.ComponentRef,
 
    rule	Absyn.cref_to_path(model) => modelpath &
 	 get_pathed_class_in_program(modelpath,p) => cdef &
-	 annotation_list_to_absyn(nargs) => annotation &
-	 add_to_equation(cdef,Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),SOME(Absyn.COMMENT(SOME(annotation),NONE)))) 
+	 annotation_list_to_absyn_comment(nargs,NONE) => cmt &
+	 add_to_equation(cdef,Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),cmt))
 	   => newcdef &
 	 update_program(Absyn.PROGRAM([newcdef],w),p)=> newp
 	 ---------------------------------------------------
@@ -5192,8 +5192,8 @@ relation add_connection: (Absyn.ComponentRef,
    rule	Absyn.cref_to_path(model) => modelpath &
 	 get_pathed_class_in_program(modelpath,p) => cdef &
 	 Absyn.strip_last(modelpath) => package &
-	 annotation_list_to_absyn(nargs) => annotation &
-	 add_to_equation(cdef,Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),SOME(Absyn.COMMENT(SOME(annotation),NONE)))) 
+	 annotation_list_to_absyn_comment(nargs,NONE) => cmt &
+	 add_to_equation(cdef,Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),cmt)) 
 	   => newcdef &
 	 update_program(Absyn.PROGRAM([newcdef],Absyn.WITHIN(package)),p)=> newp
 	 ---------------------------------------------------
@@ -8103,7 +8103,9 @@ end
  **)
 relation comment_to_absyn: (Absyn.NamedArg list) => string option =
 
-   axiom	comment_to_absyn(Absyn.NAMEDARG("comment",Absyn.STRING(str))::_) 
+  rule	not str = "" 
+	------------------------
+	comment_to_absyn(Absyn.NAMEDARG("comment",Absyn.STRING(str))::_) 
 	   => SOME(str)
 
    rule	comment_to_absyn(rest) => res

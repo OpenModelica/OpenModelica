@@ -339,6 +339,7 @@ void print_real_matrix(real_array_t* source)
 
   if (source->ndims == 2)
     {
+      printf("%d X %d matrix:\n",source->dim_size[0],source->dim_size[1]);
       for (i = 0; i < source->dim_size[0];++i)
 	{
 	  for (j = 0; j < source->dim_size[1];++j)
@@ -349,6 +350,9 @@ void print_real_matrix(real_array_t* source)
 	  printf("\n");
 	}
     }
+  else {
+    printf("array with %d dimensions\n",source->ndims);
+  }
 }
 
 
@@ -707,13 +711,103 @@ m_real* real_array_element_addr(real_array_t* source,int ndims,...)
 
 void cat_real_array(int k, real_array_t* dest,  int n, real_array_t* first,...)
 {
-  assert(0 && "Not implemented yet");
-}
-void cat_alloc_real_array(int k, real_array_t* dest, int n, real_array_t* first,...)
-{
-  assert(0 && "Not implemented yet");
+    assert(0 && "Not implemented yet");
 }
 
+
+/* help function to e.g. cat_alloc_real_array.
+ * Checks that all arrays have the same number of dimensions and same 
+ ** dimension sizes  for all sizes except for dimension k.
+ */
+void check_dim_sizes_except(int k, real_array_t **elts,int n) 
+{
+  int i,curdim,dimsize;
+  int k_loc = k-1;
+  int ndims = elts[0]->ndims;
+  for (i=1; i< n ; i++) {
+    assert(elts[i]->ndims == ndims && "Not same number of dimensions");
+  }
+  for (curdim = 0; curdim < ndims; curdim++) {
+    if (curdim != k_loc) {
+      dimsize = elts[0]->dim_size[curdim];
+      for(i=1; i<n ; i++) {
+	assert(dimsize == elts[i]->dim_size[curdim]&&"Dimensions size not same");
+      }
+    }
+  }
+
+}
+
+
+/* function: cat_alloc_real_array
+ *
+ * Concatenates n real arrays along the k:th dimension.
+ * Only works for 2 dimensional arrays.
+ */
+void cat_alloc_real_array(int k, real_array_t* dest, int n, real_array_t* first,...)
+{
+  va_list ap; int i;
+  int new_k_dim_size;
+  real_array_t **elts=malloc(sizeof(real_array_t*)*n);
+  assert(elts);
+  /* collect all array ptrs to simplify traversal.*/
+  va_start(ap,first);
+  elts[0] = first;
+  for (i=1; i < n ; i++) {
+    elts[i] = va_arg(ap,real_array_t*);
+  }
+  va_end(ap);
+
+  /* calculate new k:th dim size.*/
+  new_k_dim_size = 0;
+  for(i=0;i < n; i++) {
+    assert(elts[i]->ndims >= k);
+    new_k_dim_size += elts[i]->dim_size[k-1];
+  }
+  check_dim_sizes_except(k,elts,n);
+  
+  /* concatenation along first dimension */
+  /* cat(1,[1,2;3,4],[5,6;7,8]) => [1,2;3,4;5,6;7,8]*/
+  if (k == 1) {
+    int r,c,j;
+    int dim_size_2 = elts[0]->dim_size[1];
+    dest->data=real_alloc(dim_size_2*new_k_dim_size);
+    dest->dim_size = size_alloc(2);
+    dest->dim_size[0]=new_k_dim_size;
+    dest->dim_size[1]=dim_size_2;
+    dest->ndims = 2;
+
+    for(i=0,j=0; i < n ; i++) {
+      for(r=0; r < elts[i]->dim_size[0];r++) {
+	for(c=0; c < elts[i]->dim_size[1];c++) {
+	  dest->data[j++]=elts[i]->data[c+r*elts[i]->dim_size[1]];
+	}
+      }
+    }
+  } /* concatenation along second dimension */
+  /* cat(2,[1,2;3,4],[5,6;7,8]) => [1,2,5,6;3,4,7,8]*/
+  else if (k == 2) {
+    int r,c,j;
+    int dim_size_1 = elts[0]->dim_size[0];
+    dest->data=real_alloc(dim_size_1*new_k_dim_size);
+    dest->dim_size = size_alloc(2);
+    dest->dim_size[0]=dim_size_1;
+    dest->dim_size[1]=new_k_dim_size;
+    dest->ndims = 2;
+
+    for(r=0,j=0; r < elts[0]->dim_size[0];r++) {
+      for(i=0; i < n ; i++) {
+	for(c=0; c < elts[i]->dim_size[1];c++) {
+	  dest->data[j++]=elts[i]->data[c+r*elts[i]->dim_size[1]];
+	}
+      }
+    }
+  } else {
+    assert(0&&"Only concatenation dimension 1 and 2 supported");
+  } 
+  
+  free(elts);
+}
 
 void range_alloc_real_array(m_real start, m_real stop, m_real inc, real_array_t* dest)
 {
@@ -1024,6 +1118,11 @@ void promote_real_array(real_array_t* a, int n,real_array_t* dest)
     }
 }
 
+/* function: promote_scalar_real_array
+ *
+ * promotes a scalar value to an n dimensional array.
+ */
+
 void promote_scalar_real_array(double s,int n,real_array_t* dest)
 {
   size_t i;
@@ -1032,10 +1131,14 @@ void promote_scalar_real_array(double s,int n,real_array_t* dest)
   
   /* Alloc size */
   dest->dim_size = size_alloc(n);
+  
   /*Alloc data */
   dest->data = real_alloc(1);
 
+  
+  dest->ndims = n;
   dest->data[0] = s;
+
   for (i = 0; i < n; ++i)
     {
       dest->dim_size[i] = 1;

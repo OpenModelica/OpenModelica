@@ -4881,7 +4881,8 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	dae_declare(n,ClassInf.UNKNOWN(""), t, SCode.ATTR([], false, SCode.RW,
 				     SCode.VAR, Absyn.BIDIR), NONE,[],NONE,NONE,NONE)
 	  => decl &
-	inst_eq_equation_2(Exp.CREF(n,Exp.OTHER), e2, t, initial) => dae1 &
+	  Exp.typeof(e2) => tp &
+	inst_eq_equation_2(Exp.CREF(n,tp), e2, t, initial) => dae1 &
 	list_append(decl, DAE.DEFINE(n, e1)::dae1) => dae
 	-------------------------------------------------------------
 	inst_eq_equation_2(e1, e2 as Exp.CREF(_,_),
@@ -4894,7 +4895,8 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	dae_declare(n, ClassInf.UNKNOWN(""),t, SCode.ATTR([], false, SCode.RW,
 				     SCode.VAR, Absyn.BIDIR), NONE,[],NONE,NONE,NONE)
 	  => decl &
-	inst_eq_equation_2(e1, Exp.CREF(n,Exp.OTHER), t, initial) => dae1 &
+	Exp.typeof(e2) => tp &
+	inst_eq_equation_2(e1, Exp.CREF(n,tp), t, initial) => dae1 &
 	list_append(decl, DAE.DEFINE(n, e2)::dae1) => dae
 	-------------------------------------------------------------
 	inst_eq_equation_2(e1, e2, t as (Types.T_COMPLEX(_,_,_),_), initial) => dae

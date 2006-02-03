@@ -43,7 +43,7 @@ for (int i=0;i<nelts;i++) v[i]=0.0;
 #define set_vector_elt(v,i,value) v[i]=value
 #define get_vector_elt(v,i) v[i]
 
-#define solve_linear_equation_system(A,b,size) do { long int n=size; \
+#define solve_linear_equation_system(A,b,size,id) do { long int n=size; \
 long int nrhs=1; /* number of righthand sides*/\
 long int lda=n /* Leading dimension of A */; long int ldb=n; /* Leading dimension of b*/\
 long int * ipiv=new long int[n]; /* Pivott indices */ \
@@ -52,10 +52,10 @@ for(int i=0; i<n; i++) ipiv[i] = 0; \
 long int info; /* output */ \
 dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
  if (info < 0) { \
-   printf("Error solving linear system of equations. Argument %d illegal.\n",info); \
+   printf("Error solving linear system of equations (no. %d). Argument %d illegal.\n",id,info); \
  } \
  else if (info > 0) { \
-   printf("Error sovling linear system of equations, system is singular.\n"); \
+   printf("Error sovling linear system of equations (no. %d), system is singular.\n",id); \
  } \
 } while (0) /* (no trailing ; ) */ 
 

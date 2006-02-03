@@ -6,8 +6,13 @@
 	</projects>
 	<buildSpec>
 		<buildCommand>
-			<name>org.modelica.mdt.syntaxChecker</name>
+			<name>org.eclipse.ui.externaltools.ExternalToolBuilder</name>
+			<triggers>full,incremental,</triggers>
 			<arguments>
+				<dictionary>
+					<key>LaunchConfigHandle</key>
+					<value>&lt;project&gt;/.externalToolBuilders/org.modelica.mdt.syntaxChecker.launch</value>
+				</dictionary>
 			</arguments>
 		</buildCommand>
 		<buildCommand>

@@ -2475,9 +2475,10 @@ relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 	generate_expression(Exp.ASUB(_,_),_) => fail
 
   
-  rule	(*Debug.fprintln("failtrace","# generate_expression failed") &
-	Debug.fcall("failtrace",Exp.print_exp,e) &
-	Debug.fprintln("failtrace","")*)
+  rule	Debug.fprintln("failtrace","# generate_expression failed") &
+	Exp.print_exp_str e => s &
+	Debug.fprintln("failtrace",s) &
+	Debug.fprintln("failtrace","")
 	----------------
 	generate_expression(e,_) => fail
 end
@@ -2507,6 +2508,11 @@ relation generate_unary : (Exp.Operator, Exp.Exp, int)
 	------------------------
 	generate_unary (Exp.UMINUS(Exp.INT), e, tnr) => (cfn, var', tnr')
 
+  rule	generate_expression(e,tnr) => (cfn,var,tnr') &
+	Util.string_append_list ["(-",var,")"] => var'
+	------------------------
+	generate_unary (Exp.UMINUS(Exp.OTHER), e, tnr) => (cfn, var', tnr')
+
   rule	generate_expression(e,tnr) => (cfn,var,tnr')
 	------------------------
 	generate_unary (Exp.UPLUS_ARR(Exp.REAL), e, tnr) => (cfn, var, tnr')
@@ -2518,6 +2524,18 @@ relation generate_unary : (Exp.Operator, Exp.Exp, int)
   rule	Debug.fprint("failtrace", "# unary minus for arrays not implemented\n")
 	------------------------
 	generate_unary (Exp.UMINUS_ARR(_), _, _) => fail
+
+  rule	Debug.fprint("failtrace","-generate_unary failed\n")  &
+	Exp.type_string(tp) => s &
+	Debug.fprint("failtrace"," tp = ")  &
+	Debug.fprint("failtrace",s ) &
+	Debug.fprint("failtrace","\n" ) 
+	----------------------------
+	generate_unary(Exp.UMINUS(tp),_,_) => fail
+
+  rule	Debug.fprint("failtrace","-generate_unary failed\n") 
+	----------------------------
+	generate_unary(_,_,_) => fail
 end
 
 (** relation:  generate_binary
@@ -3440,7 +3458,7 @@ relation generate_matrix_expression : (Exp.Type,(Exp.Exp*bool), int, int)
 	Util.if(b,"&","") => sc_ref &
 	Util.string_append_list(["promote_",scalar,array_type_str,"(",
 				 sc_ref,var1,
-				 ", ",maxn_str,", &",tvar,");"]) => stmt &
+				 ", 2, &",tvar,");"]) => stmt &
 	c_add_variables(cfn1,[tdecl]) => cfn' &
 	c_add_statements(cfn',[stmt]) => cfn
 	---------------------------------

@@ -95,6 +95,21 @@ relation e_mark: (int) => () (*  *)
 
   relation get_marked_eqns:() => int list 
 
+(** relation: get_differentiated_eqns
+ **
+ ** returns all i for which e_diff(i) == true
+ **)
+
+  relation get_differentiated_eqns:() => int list 
+
+(** relation: mark_differentiated
+ **
+ ** Marks an equation as differentiated. 
+ **)
+
+relation mark_differentiated: (int) => () 
+
+
 (** relation: get_marked_variables
  **
  ** returns all i for which v_mark(i) == true

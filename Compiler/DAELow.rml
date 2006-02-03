@@ -4445,14 +4445,13 @@ relation reduce_index_dummy_der: (DAELow,
 				IncidenceMatrixT) =
 	
   rule	DAEEXT.get_marked_eqns() => eqns &
+	DAEEXT.get_differentiated_eqns => diff_eqns &
+	Util.list_setdifference_p(eqns,diff_eqns,int_eq) => eqns' &
 
-(*	Util.list_map(eqns,int_string) => es &
-	Util.string_delimit_list(es,", ") => es' &
-	print "marked equations " & print es' & print "\n" &*)
 	(* Collect the states in the equations that are singular, i.e. composing
 	 a constraint between states.*)
-	states_in_eqns(eqns,dae,m,mt) => (states,stateindx) &
-	differentiate_eqns(dae,m,mt,nv,nf,eqns) 
+	states_in_eqns(eqns',dae,m,mt) => (states,stateindx) &
+	differentiate_eqns(dae,m,mt,nv,nf,eqns') 
 	  => (dae,m,mt,nv,nf,deqns) &	
 
 	select_dummy_state(states,stateindx,dae,m,mt) => (state,stateno) & 
@@ -5087,6 +5086,8 @@ relation differentiate_eqns: (DAELow,
 	Debug.fprint("bltdump", "\n") &
 	equation_add(eqns,eqn') => eqns' &
 	equation_size(eqns') => leneqns & (* length gives index of new equation *)
+	(* Mark equation as differentiated so it won't be differentiated again*)
+	DAEEXT.mark_differentiated(e) &
 	differentiate_eqns(DAELOW(v,kv,eqns',seqns,ie,ae,al,wc),m,mt,nv,nf,es) 
 	  => (dae,m,mt,nv,nf,reqns)
 	  ----------------------------
@@ -6519,6 +6520,10 @@ rule  	Exp.terms(exp) => term_lst &
 	Exp.simplify(new_exp) => res
 	----------------------------
 	get_eqnsys_rhs_exp(exp,vars) => res
+
+  rule	Debug.fprint("failtrace","-get_eqnsys_rhs_exp failed\n")
+	-------------------
+	get_eqnsys_rhs_exp(_,_) => fail
 end
 
 
@@ -8353,8 +8358,13 @@ relation get_all_exps_eqn : Equation => Exp.Exp list =
 
   axiom	get_all_exps_eqn EQUATION(e1, e2) => [e1, e2]
   axiom	get_all_exps_eqn ARRAY_EQUATION(_,expl) => expl
-  axiom	get_all_exps_eqn SOLVED_EQUATION(cr, e) => [Exp.CREF(cr,Exp.OTHER),e]
-  axiom	get_all_exps_eqn WHEN_EQUATION(WHEN_EQ(_,cr, e)) => [Exp.CREF(cr,Exp.OTHER),e]
+
+  rule	Exp.typeof(e) => tp 
+	-------------------
+	get_all_exps_eqn SOLVED_EQUATION(cr, e) => [Exp.CREF(cr,tp),e]
+  rule	Exp.typeof(e) => tp
+	------------------------
+  	get_all_exps_eqn WHEN_EQUATION(WHEN_EQ(_,cr, e)) => [Exp.CREF(cr,tp),e]
 
   rule	list_append(e1, e2) => exps
 	---------------------------------

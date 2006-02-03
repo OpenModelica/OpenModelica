@@ -291,8 +291,8 @@ int dassl_main(int argc, char **argv)
 
   // Calculate initial values from (fixed) start attributes and intial equation
   // sections
+  init=1;
   initial_function(x,xd,y,p,nx,ny,np);
-  
   t=start;
   tout = newTime(t, step); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
 
@@ -300,8 +300,9 @@ int dassl_main(int argc, char **argv)
   saveall();
   emit();
   calcEnabledZeroCrossings();
-
+  init=0;
   DDASRT(functionDAE_res, &nx,   &t, x, xd, &tout, info,&rtol, &atol, &idid,rwork,&lrw, iwork, &liw, y, &ipar, dummyJacobianDASSL, function_zeroCrossing, &ng, jroot);
+
   info[0] = 1;
 
   functionDAE_res(&t,x,xd,dummy_delta,0,0,0); // Since residual function calculates 
