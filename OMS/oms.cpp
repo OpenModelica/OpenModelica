@@ -248,7 +248,7 @@ OMS::OMS( QWidget* parent )
 
 	// windows stuff
 	resize( 800, 600 );
-	setWindowTitle( tr("OMS - OpenModelica Shell") );
+	setWindowTitle( tr("OMShell - OpenModelica Shell") );
 	setWindowIcon( QIcon(":/Resources/OMS.bmp") );
 	statusBar()->showMessage( tr("Ready") );
 
@@ -258,7 +258,7 @@ OMS::OMS( QWidget* parent )
 	// sett start message
 	cursor_.insertText( "OpenModelica 1.3.2\n" );
 	cursor_.insertText( "Copyright 2002-2006, PELAB, Linkoping University\n\n" );
-	cursor_.insertText( "To get help on using OMS and OpenModelica, type \"help()\" and press enter.\n" );
+	cursor_.insertText( "To get help on using OMShell and OpenModelica, type \"help()\" and press enter.\n" );
 
 
 	// add function names for code completion
@@ -458,7 +458,7 @@ void OMS::createAction()
 	connect( viewStatusbar_, SIGNAL( triggered() ),
 		this, SLOT( viewStatusbar() ));
 
-	aboutOMS_ = new QAction( QIcon(":/Resources/help.bmp"), tr("&About OMS"), this );
+	aboutOMS_ = new QAction( QIcon(":/Resources/help.bmp"), tr("&About OMShell"), this );
 	aboutOMS_->setStatusTip( tr("Display program information, version number and copyright") );
 	connect( aboutOMS_, SIGNAL( triggered() ),
 		this, SLOT( aboutOMS() ));
@@ -956,8 +956,8 @@ void OMS::viewStatusbar()
 
 void OMS::aboutOMS()
 {
-	QMessageBox::about(this, "About OMS",
-		QString("OMS v1.0 (for OpenModelica v1.3.2)\n") + 
+	QMessageBox::about(this, "About OMShell",
+		QString("OMShell v1.1 (for OpenModelica v1.3.2)\n") + 
 		QString("Copyright PELAB (c) 2006") );
 }
 
@@ -1047,9 +1047,9 @@ void OMS::clear()
 	moshEdit_->setFontPointSize( fontSize_ );
 
 	cursor_ = moshEdit_->textCursor();
-	cursor_.insertText( "Open Source Modelica 1.3.1\n" );
-	cursor_.insertText( "Copyright 2002, PELAB, Linkoping University\n\n" );
-	cursor_.insertText( "To get help on using Mosh and OpenModelica, type \"help()\" and press enter.\n" );
+	cursor_.insertText( "OpenModelica 1.3.2\n" );
+	cursor_.insertText( "Copyright 2002-2006, PELAB, Linkoping University\n\n" );
+	cursor_.insertText( "To get help on using OMShell and OpenModelica, type \"help()\" and press enter.\n" );
 
 	addCommandLine();
 
