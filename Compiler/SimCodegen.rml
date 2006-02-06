@@ -1505,11 +1505,13 @@ relation add_missing_equations: (int, int list) => int list =
 	--------------------------------------------------
 	add_missing_equations(n,lst) => lst'
 
-
+	(* missing equations must be added in correct order,
+	 required in building when_condiriont_cheks4*)
   rule	n - 1 => n' &
-	add_missing_equations(n',n::lst) => lst' 
+	add_missing_equations(n',lst) => lst' &
+	list_append(lst',[n]) => lst'' 
 	--------------------------------------------------
-	add_missing_equations(n,lst) => lst'
+	add_missing_equations(n,lst) => lst''
 end
 
 
@@ -1867,12 +1869,11 @@ relation generate_ode_system2_nonlinear_residuals:  (Exp.ComponentRef list,
 	int_string(id) => str_id &
 	list_length(eqns) => eqn_size & int_string(eqn_size) => size_str &
 	string_append("residualFunc",str_id) => func_name &
-	Codegen.c_make_function("int",func_name,[],["int *n",
-						    "double* xloca",
+	Codegen.c_make_function("void",func_name,[],["int *n",
+						    "double* xloc",
 						    "double* res",
 						    "int* iflag"]
-				)=> res_func' &
-	Codegen.c_add_cleanups(res_func', ["return 0;"]) => res_func &
+				)=> res_func &
 	Codegen.c_merge_fns([res_func,s1]) => func &
 
 	generate_ode_system2_nonlinear_setvector(crs,0,cg_id1) 

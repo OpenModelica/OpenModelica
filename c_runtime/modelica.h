@@ -63,6 +63,9 @@ typedef modelica_real sin_rettype;
 typedef modelica_real pre_rettype;
 typedef modelica_real edge_rettype;
 typedef modelica_real initial_rettype;
+typedef modelica_real exp_rettype;
+
+
 #if defined(__cplusplus)
 }
 #endif

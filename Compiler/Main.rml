@@ -409,9 +409,10 @@ relation optimize_dae: (SCode.Program, DAE.DAElist, DAE.DAElist, Absyn.Path) => 
 	& Debug.fcall("bltdump", DAELow.dump,dlow')
 	& Debug.fcall("bltdump", DAELow.dump_matching, v1)
 	& DAELow.strong_components(m,mT,v1,v2) => (comps) 
+	& Debug.fcall("bltdump",DAELow.dump_components,comps) 
 	& modpar(dlow',v1,v2,comps) 
 	& simcodegen(classname,p,daeimpl,dlow',v1,v2,m,mT,comps)
-	& Debug.fcall("bltdump",DAELow.dump_components,comps) 
+
 	-----------------------
 	optimize_dae(p,dae,daeimpl,classname) => ()
 
