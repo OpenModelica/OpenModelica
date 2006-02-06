@@ -688,10 +688,10 @@ relation add_source_message: ( ErrorID,MessageTokens, Absyn.Info) => () =
 	message_type_str(msg_type) => msg_type_str &
 	severity_str(severity) => severity_string &
 	ErrorExt.add_source_message(error_id,msg_type_str,severity_string,
-				    line,col,file,
+				    sline,scol,eline,ecol,isReadOnly,file,
 				    msg,tokens )
 	---------------------------
-	add_source_message(error_id,tokens,Absyn.INFO(file,line,col)) => ()
+	add_source_message(error_id,tokens,Absyn.INFO(file,isReadOnly,sline,scol,eline,ecol)) => ()
 	
   rule	not lookup_message(error_id) => (_,_,_) &
 	Print.print_error_buf "#Internal error, error message with id " &
@@ -842,16 +842,34 @@ relation severity_str:(Severity) => string =
   axiom	severity_str(NOTIFICATION) => "NOTIFICATION"	
 end
 
+
+(** relation select_string
+ ** author: adrpo, 2006-02-05
+ ** selects first string is bool is true otherwise the second string
+ **)
+relation select_string: (bool, string, string) => string =
+
+	axiom select_string(true,s1,_) => s1
+	axiom select_string(false,_,s2) => s2
+	
+end
+
+
 (** relation: info_str
  **
  ** Converts a Absyn.Info to a string.
+ ** adrpo changed 2006-02-05 to match the new Absyn.INFO specification
+ ** 
  **)
 relation info_str:(Absyn.Info) => string =
 
-  rule	int_string(line) => line_str &
-	int_string(col) => col_str &
-	Util.string_append_list(["{",filename,", ",line_str,", ",
-				 col_str,"}"]) => res
-	-----------------------
-	info_str(Absyn.INFO(filename,line,col)) => res
+  rule	select_string(isReadOnly,"readonly","writable") => s1 &
+  	int_string(sline) => sline_str &
+	int_string(scol) => scol_str &
+	int_string(eline) => eline_str &
+	int_string(ecol) => ecol_str &	
+	Util.string_append_list(["{",filename,", ", s1, ",", sline_str,", ",
+				 scol_str,", ", eline_str, ", ", ecol_str, "}"]) => res
+	----------------------------------
+	info_str(Absyn.INFO(filename,isReadOnly,sline,scol,eline,ecol)) => res
 end

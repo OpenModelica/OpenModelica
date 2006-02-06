@@ -184,6 +184,9 @@ extern "C"
 				     tokens,
 				     currentLex->getLine(),
 				     currentLex->getColumn(),
+				     currentLex->getLine(),
+				     currentLex->getColumn(),
+				     false,
 				     filename);
 		  ast = mk_nil();
 		}
@@ -198,6 +201,9 @@ extern "C"
 				     tokens,
 				     e.getLine(),
 				     e.getColumn(),
+				     e.getLine(),
+				     e.getColumn(),
+				     false,
 				     filename);
 		  ast = mk_nil();
 		}
@@ -212,6 +218,9 @@ extern "C"
 				     tokens,
 				     0,
 				     0,
+				     0,
+				     0,
+				     false,
 				     filename);
 		  ast = mk_nil();
 		}
@@ -227,6 +236,9 @@ extern "C"
 				     tokens,
 				     0,
 				     0,
+				     0,
+				     0,
+				     false,
 				     filename);
 		  ast = mk_nil();
 		}
@@ -241,6 +253,9 @@ extern "C"
 				     tokens,
 				     0,
 				     0,
+				     0,
+				     0,
+				     false,
 				     filename);
 		  ast = mk_nil();
 		}
@@ -254,7 +269,10 @@ extern "C"
 				       "Internal error %s",
 				       tokens,
 				       0,
-				     0,
+				       0,
+				       0,
+				       0,
+				       false,
 				       filename);
 		    ast = mk_nil();
 		}

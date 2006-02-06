@@ -18,8 +18,11 @@ public:
 	       std::string severity, 
 	       std::string message,
 	       std::list<std::string> &tokens,
-	       long lineNo,
-	       long columnNo,
+	       long startLineNo,
+	       long startColumnNo,
+	       long endLineNo,
+	       long endColumnNo,
+	       bool isReadOnly,	       
 	       std::string filename);
 
   long getID() { return errorID_; };
@@ -34,10 +37,15 @@ public:
   // Returns the complete message in string format corresponding to a Modeica vector.
   std::string getFullMessage();
 
-  long getLineNo() { return lineNo_; };
-
-  long getColumnNo() { return lineNo_; };
-
+  long getLineNo() { return startLineNo_; };
+  long getColumnNo() { return startColumnNo_; };
+  /* adrpo added these new ones */
+  long getStartLineNo() { return startLineNo_; };
+  long getStartColumnNo() { return startColumnNo_; };
+  long getEndLineNo() { return endLineNo_; };
+  long getEndColumnNo() { return endColumnNo_; };
+  bool getIsFileReadOnly() { return isReadOnly_; };
+  std::string getFileName() { return filename_; };
 private:
   long errorID_;
   std::string messageType_;
@@ -45,8 +53,12 @@ private:
   std::string message_;
   std::list<std::string> tokens_;
   
-  long lineNo_;
-  long columnNo_;
+  /* adrpo 2006-02-05 changed the ones below */
+  long startLineNo_;
+  long startColumnNo_;
+  long endLineNo_;
+  long endColumnNo_;
+  bool isReadOnly_;
   std::string filename_;
 
 };

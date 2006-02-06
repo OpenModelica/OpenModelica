@@ -51,14 +51,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 		   char* severity,
 		   char* message,
 		   std::list<std::string> tokens);
+		   
   void add_source_message(int errorID,
 			  char* type,
 			  char* severity,
 			  char* message,
 			  std::list<std::string> tokens,
-			  int line,
-			  int col,
+			  int startLine,
+			  int startCol,
+			  int endLine,
+			  int endCol,
+			  bool isReadOnly,
 			  char* filename);
-
 
 #endif

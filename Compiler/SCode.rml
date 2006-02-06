@@ -558,7 +558,7 @@ relation elab_element : (Absyn.Element, bool) => Element list =
 
   rule	elab_elementspec(f,repl,prot,s) => es
 	--------------------------------
-	elab_element(Absyn.ELEMENT(f,repl,_,_,s,Absyn.INFO(_,line,_),_), prot) => es
+	elab_element(Absyn.ELEMENT(f,repl,_,_,s,info,_), prot) => es
 
 end
 

@@ -39,6 +39,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/*
+ * Adrian Pop, adrpo@ida.liu.se, changed the 
+ * info field and added more position information.
+ * look into Absyn.(rml|mo) for more information: search for: Info|INFO
+ * Absyn__INFO(file, isReadOnly, startLine, startColumn, endLine, endColumn)
+ **/
+
 header "post_include_hpp" {
 	#define null 0
 
@@ -253,9 +260,9 @@ class_definition [bool final] returns [ void* ast ]
             (e:ENCAPSULATED )? 
             (p:PARTIAL )?
             (ex:EXPANDABLE)?
-            restr = info_position:class_restriction
+            restr = info_position1:class_restriction
             (i:IDENT)?
-            class_spec = class_specifier
+            class_spec = info_position2:class_specifier
         )
         {   
             if (ex && restr == Absyn__R_5fCONNECTOR ) {
@@ -269,9 +276,13 @@ class_definition [bool final] returns [ void* ast ]
                 restr,
                 class_spec,
                 Absyn__INFO(
-                  mk_scon((char*)(modelicafilename.c_str())), 
-                  mk_icon(info_position?info_position->getLine():0),
-                  mk_icon(info_position?info_position->getColumn():0))
+                  mk_scon((char*)(modelicafilename.c_str())),
+                  RML_PRIM_MKBOOL(0), /* false */ 
+                  mk_icon(info_position1?info_position1->getLine():0),
+                  mk_icon(info_position1?info_position1->getColumn():0),
+                  mk_icon(info_position2?info_position2->getLine():0),
+                  mk_icon(info_position2?info_position2->getColumn():0)
+                  )
             );                
         }
     ;
@@ -592,16 +603,24 @@ element returns [void* ast]
 				ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__UNSPECIFIED,mk_scon("import"),
                     e_spec, Absyn__INFO(
                               mk_scon((char*)(modelicafilename.c_str())),
+                              RML_PRIM_MKBOOL(0), /* false */
                               mk_icon(i_clause->getLine()),
-                              mk_icon(i_clause->getColumn())),mk_none());
+                              mk_icon(i_clause->getColumn()),
+                              mk_icon(i_clause->getLine()),
+                              mk_icon(i_clause->getColumn())
+                              ),mk_none());
 			}
 		| e_spec = e_clause:extends_clause
 			{
 				ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__UNSPECIFIED,mk_scon("extends"),
                     e_spec, Absyn__INFO(
                               mk_scon((char*)(modelicafilename.c_str())),
+                              RML_PRIM_MKBOOL(0), /* false */
                               mk_icon(e_clause->getLine()),
-                              mk_icon(e_clause->getColumn())),mk_none());
+                              mk_icon(e_clause->getColumn()),
+                              mk_icon(e_clause->getLine()),
+                              mk_icon(e_clause->getColumn())
+                              ),mk_none());
 			}
 		| #(decl:DECLARATION 
                 (re:REDECLARE)? 
@@ -616,9 +635,13 @@ element returns [void* ast]
                                 innerouter,
 								mk_scon("component"),e_spec,
                                 Absyn__INFO(
-                                     mk_scon((char*)(modelicafilename.c_str())),
-                                     mk_icon(decl->getLine()),
-                                     mk_icon(decl->getColumn())),mk_none());
+                        			  mk_scon((char*)(modelicafilename.c_str())),
+		                              RML_FALSE,
+		                              mk_icon(decl->getLine()),
+		                              mk_icon(decl->getColumn()),
+		                              mk_icon(decl->getLine()),
+		                              mk_icon(decl->getColumn())
+                                     ),mk_none());
             
 						}
 					| r:REPLACEABLE 
@@ -632,8 +655,12 @@ element returns [void* ast]
 								mk_scon("replaceable_component"),e_spec,
                                 Absyn__INFO(
                                     mk_scon((char*)(modelicafilename.c_str())),
-                                    mk_icon(decl->getLine()),
-                                    mk_icon(decl->getColumn())),
+	                                RML_FALSE,
+	                                mk_icon(decl->getLine()),
+	                                mk_icon(decl->getColumn()),
+	                                mk_icon(decl->getLine()),
+	                                mk_icon(decl->getColumn())
+                                    ),
 								constr? mk_some(Absyn__CONSTRAINCLASS(constr, cmt? mk_some(cmt):mk_none())) : mk_none());
 						}
 					)
@@ -658,8 +685,12 @@ element returns [void* ast]
                                 ast,
                                 Absyn__INFO(
                                    mk_scon((char*)(modelicafilename.c_str())),
-                                   mk_icon(def->getLine()),
-                                   mk_icon(def->getColumn())),mk_none());
+	                               RML_FALSE,
+	                               mk_icon(def->getLine()),
+	                               mk_icon(def->getColumn()),
+	                               mk_icon(def->getLine()),
+	                               mk_icon(def->getColumn())
+                                   ),mk_none());
 
 						}
 					| 
@@ -677,10 +708,14 @@ element returns [void* ast]
                                 innerouter,
 								mk_scon("??"),
 								ast,
-                                                                                      Absyn__INFO(
+                          Absyn__INFO(
                               mk_scon((char*)(modelicafilename.c_str())),
+                              RML_FALSE,
                               mk_icon(def->getLine()),
-                              mk_icon(def->getColumn())),
+                              mk_icon(def->getColumn()),
+                              mk_icon(def->getLine()),
+                              mk_icon(def->getColumn())
+                              ),
                                 constr ? mk_some(Absyn__CONSTRAINCLASS(constr,cmt ? mk_some(cmt):mk_none())) : mk_none());
 						}
 					)

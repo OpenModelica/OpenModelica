@@ -108,7 +108,8 @@ module Dump:
   relation unparse_comment_option: (Absyn.Comment option) => string
   relation unparse_comment_option_no_annotation: (Absyn.Comment option) => string
   relation unparse_each_str: (Absyn.Each) => string
-
+  relation print_info:(Absyn.Info) => ()
+  relation unparse_info_str:(Absyn.Info) => string  
 end
 
 
@@ -481,9 +482,63 @@ relation dump_istmt : Interactive.InteractiveStmts => () =
   axiom	dump_istmt(_) => ()
 end
 
+(** relation: print_info
+ **
+ ** Dumps an Info to the Print buffer.
+ ** author: adrpo, 2006-02-05
+ **)
+relation print_info: Absyn.Info => () =
+
+	rule	Print.print_buf("Absyn.INFO(\"") &
+			Print.print_buf filename &
+			Print.print_buf("\", ") &
+			print_bool(isReadOnly) &
+			Print.print_buf(", ") &	
+			int_string sline => s1 &
+		    Print.print_buf s1 &
+			Print.print_buf(", ") &
+			int_string scol => s2 &
+		    Print.print_buf s2 &
+			Print.print_buf(", ") &	
+			int_string eline => s3 &
+		    Print.print_buf s3 &
+			Print.print_buf(", ") &
+			int_string ecol => s4 &
+		    Print.print_buf s4 &
+			Print.print_buf(")")
+			-----------------------------------------------------------------
+			print_info(Absyn.INFO(filename,isReadOnly,sline,scol,eline,ecol)) => ()
+end
+
+(** relation: unparse_info_str
+ **
+ ** Translates Info to a string representation
+ ** author: adrpo, 2006-02-05
+ **)
+relation unparse_info_str: Absyn.Info => string =
+
+	rule	select_string(isReadOnly,"readonly","writable") => s1 &
+			int_string sline => s2 &
+			int_string scol => s3 &
+			int_string eline => s4 &
+			int_string ecol => s5 &
+		    Util.string_append_list(
+		    		   ["Absyn.INFO(\"", 
+		                filename, "\", ", 
+		                s1, ", ", 
+		                s2, ", ", 
+		                s3, ", ", 
+		                s4, ", ", 
+		                s5, ")\n"]) => str
+			------------------------------------------------------------------------
+			unparse_info_str(Absyn.INFO(filename,isReadOnly,sline,scol,eline,ecol)) => str
+			
+end
+
 (** relation: print_class
  **
  ** Dumps a Class to the Print buffer.
+ ** changed by adrpo, 2006-02-05 to use print_info.
  **)
 relation print_class: Absyn.Class => () =
 	
@@ -499,17 +554,11 @@ relation print_class: Absyn.Class => () =
 	print_class_restriction(r) &
 	Print.print_buf(", ") &
 	print_classdef(cdef) &
-	Print.print_buf(",Absyn.INFO(\"") &
-	Print.print_buf filename &
-	Print.print_buf("\", ") &
-	int_string line => s1 &
-    	Print.print_buf s1 &
 	Print.print_buf(", ") &
-	int_string col => s2 &
-    	Print.print_buf s2 &
-	Print.print_buf("))\n")
+	print_info(info) &
+	Print.print_buf(")\n")
 	----------------------------------------
-	print_class(Absyn.CLASS(n,p,f,e,r,cdef,Absyn.INFO(filename,line,col))) => ()
+	print_class(Absyn.CLASS(n,p,f,e,r,cdef,info)) => ()
 end
 
 (** relation: print_classdef
@@ -1086,6 +1135,7 @@ end
 (** relation: print_element
  **
  ** Prints an Element to the Print buffer.
+ ** changed by adrpo, 2006-02-06 to use print_info and dump Absyn.TEXT also 
  **)
 relation print_element: Absyn.Element => () =
 	
@@ -1098,17 +1148,11 @@ relation print_element: Absyn.Element => () =
 	Print.print_buf name &
 	Print.print_buf "\", " &
 	print_elementspec spec & 
-	Print.print_buf ", Absyn.INFO(\"" &
-	Print.print_buf filename &
-	Print.print_buf "\", " & 
-	int_string lineno => s1 &
-    	Print.print_buf s1 &
-	Print.print_buf ", " & 
-	int_string colno => s2 &
-    	Print.print_buf s2 &
+	Print.print_buf ", " &
+	print_info info &
 	Print.print_buf "), NONE)"
 	---------------------------
-	print_element (Absyn.ELEMENT(final,repl,inout,name,spec,Absyn.INFO(filename,lineno,colno),NONE))
+	print_element (Absyn.ELEMENT(final,repl,inout,name,spec,info,NONE))
 
   rule	Print.print_buf "Absyn.ELEMENT(" & 
 	print_bool(final) &
@@ -1119,23 +1163,40 @@ relation print_element: Absyn.Element => () =
 	Print.print_buf name &
 	Print.print_buf "\", " &
 	print_elementspec spec & 
-	Print.print_buf ", Absyn.INFO(\"" &
-	Print.print_buf filename &
-	Print.print_buf "\", " & 
-	int_string lineno => s1 &
-    	Print.print_buf s1 &
-	Print.print_buf ", " & 
-	int_string colno => s2 &
-    	Print.print_buf s2 &
-	Print.print_buf "), SOME(...))"
+	Print.print_buf ", " &
+	print_info info &
+	Print.print_buf ", SOME(...))"
 	---------------------------
-	print_element (Absyn.ELEMENT(final,repl,inout,name,spec,Absyn.INFO(filename,lineno,colno),SOME(_)))
+	print_element (Absyn.ELEMENT(final,repl,inout,name,spec,info,SOME(_)))
+	
+  rule	Print.print_buf "Absyn.TEXT(" & 
+	Print.print_buf "SOME(\"" &
+	Print.print_buf name &
+	Print.print_buf "\"), \"" &
+	Print.print_buf text &
+	Print.print_buf "\", " &
+	print_info info &
+	Print.print_buf ")"
+	---------------------------
+	print_element (Absyn.TEXT(SOME(name), text, info))	
+	
+  rule	Print.print_buf "Absyn.TEXT(" & 
+	Print.print_buf "NONE, \"" &
+	Print.print_buf text &
+	Print.print_buf "\", " &
+	print_info info &
+	Print.print_buf ")"
+	---------------------------
+	print_element (Absyn.TEXT(NONE, text, info))	
 
 end
 
 (** relation: unparse_element_str
  **
  ** Prettyprints and Element to a string.
+ ** changed by adrpo 2006-02-05 to print also Absyn.TEXT as a comment
+ ** TODO?? - should we also dump info as a comment for an element??
+ **        - should we dump Absyn.TEXT as an Annotation Item??
  **)
 relation unparse_element_str: (int, Absyn.Element) => string = 
 
@@ -1144,9 +1205,9 @@ relation unparse_element_str: (int, Absyn.Element) => string =
 	unparse_innerouter_str inout => s3 &
 	unparse_elementspec_str(i, spec,s1,s2,s3) => s4 &	
 	unparse_constrainclass_opt_str(constr) => s5 &
-        Util.string_append_list([s4, s5, ";"]) => str
+    Util.string_append_list([s4, s5, ";"]) => str
 	----------------------------
-	unparse_element_str(i, Absyn.ELEMENT(final,SOME(repl),inout,_,spec,Absyn.INFO(filename,lineno,colno),constr)) => str
+	unparse_element_str(i, Absyn.ELEMENT(final,SOME(repl),inout,_,spec,info,constr)) => str
 
   rule	select_string(final, "final ", "") => s1 &
 	unparse_innerouter_str inout => s3 &
@@ -1154,7 +1215,18 @@ relation unparse_element_str: (int, Absyn.Element) => string =
 	unparse_constrainclass_opt_str(constr) => s5 &
         Util.string_append_list([s4,s5, ";"]) => str
 	----------------------------
-	unparse_element_str(i, Absyn.ELEMENT(final,NONE,inout,_,spec,Absyn.INFO(filename,lineno,colno),constr)) => str
+	unparse_element_str(i, Absyn.ELEMENT(final,NONE,inout,_,spec,info,constr)) => str
+
+  rule	unparse_info_str(info) => s1 &
+  		Util.string_append_list(["/* Absyn.TEXT(SOME(\"",name,"\"), \"",text,"\", ", s1, "); */"]) => str
+	----------------------------
+	unparse_element_str(i, Absyn.TEXT(SOME(name),text,info)) => str
+
+  rule	unparse_info_str(info) => s1 &
+  		Util.string_append_list(["/* Absyn.TEXT(NONE, \"",text,"\", ", s1, "); */"]) => str
+	----------------------------
+	unparse_element_str(i, Absyn.TEXT(NONE,text,info)) => str
+	
 end
 
 (** relation: unparse_constrainclass_opt_str

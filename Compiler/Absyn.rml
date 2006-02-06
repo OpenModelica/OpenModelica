@@ -94,10 +94,13 @@ module Absyn:
 	| TOP
 
 
-  (** adrpo added 2005-10-29 **)
-  datatype Info = INFO of string (* filename where the class is defined in *)
-                        * int    (* lineNumber   *)
-                        * int    (* columnNumber *)
+  (** adrpo added 2005-10-29, changed 2006-02-05 **)
+  datatype Info = INFO of string (* fileName where the class is defined in *)
+                        * bool   (* isReadOnly : (true|false). Should be true for libraries *)
+                        * int    (* lineNumberStart   *)
+                        * int    (* columnNumberStart *)
+                        * int    (* lineNumberEnd   *)
+                        * int    (* columnNumberEnd *)
 
   (** - Classes *)
   (** A class definition consists of a name, a flag to indicate if this *)
@@ -109,7 +112,10 @@ module Absyn:
 			  * bool		     (* encapsulated *)
 			  * Restriction           (* restricion *)
 			  * ClassDef	     (* body *)
-			  * Info		     (* info ; FileName the class is defined in + line no + column no *)
+			  * Info		     (* info ; FileName the class is defined in + 
+			                               isReadOnly bool + 
+			                               start line no + start column no +
+			                               end line no + end column no *)
 
  
   (** The `ClassDef' type contains the definition part of a class *)
@@ -168,12 +174,17 @@ module Absyn:
   (** - Elements *)
   (* The basic element type in Modelica *)
   datatype Element = ELEMENT of bool		      (* final *)
-			      * RedeclareKeywords option (* redeclareKeywords ; replaceable, redeclare *)
-			      * InnerOuter	      (* innerOuter ; inner/outer *)	     
-			      * Ident                 (* name *)
-			      * ElementSpec           (* specification ; Actual element specification*)
-			      * Info	         (* info ; File name the class is defined in + line no + column no *)
-			      * ConstrainClass option (* constrainClass ; only valid for classdef and component*)
+			        * RedeclareKeywords option (* redeclareKeywords ; replaceable, redeclare *)
+			        * InnerOuter	      (* innerOuter ; inner/outer *)	     
+			        * Ident                 (* name *)
+			        * ElementSpec           (* specification ; Actual element specification*)
+			        * Info	         (* info ; File name the class is defined in + line no + column no *)
+			        * ConstrainClass option (* constrainClass ; only valid for classdef and component*)
+			       | TEXT of Ident option (* optName : optional name of text, e.g. model with syntax error.
+			                                 We need the name to be able to browse it...*)
+                          *  string        (* text *)
+                          *  Info          (* info : filename, readonly bool, start and stop position of text *)
+			      
 
   
   (* Constraining type, must be extends *)
@@ -883,7 +894,7 @@ end
  **)
 relation class_filename: Class => string =
 
-  axiom	class_filename (CLASS(_,_,_,_,_,_,INFO(filename,_,_))) => filename
+  axiom	class_filename (CLASS(_,_,_,_,_,_,INFO(filename,_,_,_,_,_))) => filename
 end
 
 
@@ -896,7 +907,7 @@ relation set_class_filename: (Class,string) => Class =
 
 
   axiom	set_class_filename(CLASS(n,p,f,e,r,body,_),filename)
-	=> CLASS(n,p,f,e,r,body,INFO(filename,0,0))
+	=> CLASS(n,p,f,e,r,body,INFO(filename,false,0,0,0,0))
 end
 
 

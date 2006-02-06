@@ -65,8 +65,11 @@ relation add_message:(Error.ErrorID,
 relation add_source_message:(Error.ErrorID,
 			     string, (* messageType*)
 			     string, (* severity*)
-			     int,    (* line*)
-			     int,     (* col*)
+			     int,    (* sline*)
+			     int,     (* scol*)
+			     int,    (* eline*)
+			     int,     (* ecol*)
+			     bool,     (* isReadOnly filename *)			     			     
 			     string,  (* filename*)
 			     string, (*message*)
 			     string list) (* tokens*)
@@ -78,5 +81,6 @@ relation get_messages_str:() => string
 relation error_off:() => () 
 
 relation error_on:() => ()
+
 end
  
