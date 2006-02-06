@@ -67,7 +67,10 @@ extern RML_FORWARD_LABEL(DAEEXT__set_5fv);
 #define DAEEXT__setV DAEEXT__set_5fv
 extern RML_FORWARD_LABEL(DAEEXT__get_5fv);
 #define DAEEXT__getV DAEEXT__get_5fv
-
+extern RML_FORWARD_LABEL(DAEEXT__get_5fdifferentiated_5feqns);
+#define DAEEXT__getDifferentiatedEqns DAEEXT__get_5fdifferentiated_5feqns
+extern RML_FORWARD_LABEL(DAEEXT__mark_5fdifferentiated);
+#define DAEEXT__markDifferentiated DAEEXT__mark_5fdifferentiated
 /* from: errorext.cpp  */
 
 extern RML_FORWARD_LABEL(ErrorExt__add_5fmessage);
