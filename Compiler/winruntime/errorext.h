@@ -58,8 +58,11 @@ extern "C" {
 			  char* severity,
 			  char* message,
 			  std::list<std::string> tokens,
-			  int line,
-			  int col,
+			  int startLine,
+			  int startCol,
+			  int endLine,
+			  int endCol,
+			  bool isReadOnly,
 			  char* filename);
 
 #ifdef __cplusplus

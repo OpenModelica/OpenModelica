@@ -61,7 +61,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       tokens_(tokens)
 							      
 {
-
+  startLineNo_ = 0; 
+  startColumnNo_ = 0;
+  endLineNo_ = 0; 
+  endColumnNo_ = 0;  
+  isReadOnly_ = false;
+  filename_ = std::string("");
 }
 
 ErrorMessage::ErrorMessage(long errorID,
@@ -69,22 +74,31 @@ ErrorMessage::ErrorMessage(long errorID,
 			   std::string severity,
 			   std::string message,
 			   std::list<std::string> &tokens,
-			   long lineNo,
-			   long columnNo,
+			   long startLineNo,
+			   long startColumnNo,
+			   long endLineNo,
+			   long endColumnNo,
+			   bool isReadOnly,
 			   std::string filename) 
     :
     errorID_(errorID),
     messageType_(type),
     severity_(severity),
-    lineNo_(lineNo),
-    columnNo_(columnNo),
+    startLineNo_(startLineNo),
+    startColumnNo_(startColumnNo),
+    endLineNo_(endLineNo),
+    endColumnNo_(endColumnNo),
+    isReadOnly_(isReadOnly),
+    filename_(filename),
     message_(message),
     tokens_(tokens)
   
 {
 }
 
-
+/* 
+ * adrpo, 2006-02-05 changed position handling
+ */
 const std::string ErrorMessage::getMessage() 
 {
   std::string fullMessage = message_;
@@ -92,9 +106,28 @@ const std::string ErrorMessage::getMessage()
   std::string::size_type str_pos;
   for (tok=tokens_.begin(); tok != tokens_.end(); tok++) {
     str_pos=fullMessage.find("%s");
-    fullMessage.replace(str_pos,2,*tok);
+    if (str_pos < fullMessage.size()) 
+    {
+      fullMessage.replace(str_pos,2,*tok);
+    }
+    else 
+    {
+      std::cerr << "Internal error in error handling, no %s left to replace "<< *tok << " with." << std::endl;
+    }
   }
-  return fullMessage;
+  std::stringstream str;
+  str << "["<< filename_ << ":" << startLineNo_ << ":" << startColumnNo_ << "-" << 
+  endLineNo_ << ":" << endColumnNo_ << ":" << (isReadOnly_?"readonly":"writable") << "]: ";
+  std::string positionInfo = str.str();
+  if (filename_ == "" && startLineNo_ == 0 && startColumnNo_ == 0 && 
+      endLineNo_ == 0 && endColumnNo_ == 0 /*&& isReadOnly_ == false*/) 
+  {
+    return fullMessage;
+  } 
+  else 
+  {
+    return positionInfo + fullMessage;
+  }
 }
 
 const std::string ErrorMessage::getFullMessage()

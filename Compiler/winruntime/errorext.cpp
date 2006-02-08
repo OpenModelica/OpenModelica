@@ -76,8 +76,11 @@ bool error_on=true;
 			  char* severity,
 			  char* message,
 			  std::list<std::string> tokens,
-			  int line,
-			  int col,
+			  int startLine,
+			  int startCol,
+			  int endLine,
+			  int endCol,
+			  bool isReadOnly,
 			  char* filename)
   {
     ErrorMessage msg((long)errorID,
@@ -85,8 +88,11 @@ bool error_on=true;
 		     std::string(severity),
 		     std::string(message),
 		     tokens,
-		     (long)line,
-		     (long)col,
+		     (long)startLine,
+		     (long)startCol,
+		     (long)endLine,
+		     (long)endCol,
+		     isReadOnly,
 		     std::string(filename));
     if (errorMessageQueue.empty() || 
 	(!errorMessageQueue.empty() && errorMessageQueue.front().getFullMessage() != msg.getFullMessage())) {
@@ -148,11 +154,14 @@ extern "C"
     int errorID = RML_UNTAGFIXNUM(rmlA0);
     char* tp = RML_STRINGDATA(rmlA1);
     char* severity = RML_STRINGDATA(rmlA2);
-    int line = RML_UNTAGFIXNUM(rmlA3);
-    int col = RML_UNTAGFIXNUM(rmlA4);
-    char* filename = RML_STRINGDATA(rmlA5);
-    char* message = RML_STRINGDATA(rmlA6);
-    void* tokenlst = rmlA4;
+    int sline = RML_UNTAGFIXNUM(rmlA3);
+    int scol = RML_UNTAGFIXNUM(rmlA4);
+    int eline = RML_UNTAGFIXNUM(rmlA5);
+    int ecol = RML_UNTAGFIXNUM(rmlA6);
+    bool isReadOnly = RML_UNTAGFIXNUM(rmlA7)?true:false;    
+    char* filename = RML_STRINGDATA(rmlA8);
+    char* message = RML_STRINGDATA(rmlA9);
+    void* tokenlst = rmlA10;
     std::list<std::string> tokens;
     
     if (error_on) {
@@ -161,9 +170,9 @@ extern "C"
 	tokenlst=RML_CDR(tokenlst);
       }
       
-      add_source_message(errorID,tp,severity,message,tokens,line,col,filename);
+      add_source_message(errorID,tp,severity,message,tokens,sline,scol,eline,ecol,isReadOnly,filename);
     }
-    RML_TAILCALLK(rmlSC);
+    RML_TAILCALLK(rmlSC); 
   } 
   RML_END_LABEL
 
