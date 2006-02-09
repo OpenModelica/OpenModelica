@@ -2057,7 +2057,7 @@ relation get_element_info: (Absyn.ElementItem) => string =
        select_string(isReadOnly, "readonly","writable") => readonly_str &
        Util.string_append_list(["elementfile=\"", file, "\", readonly=\"",readonly_str,
        						    "\", elementStartLine=", sline_str, ", elementStartColumn=", scol_str, 
-       						    "\", elementEndLine=", eline_str, ", elementEndColumn=", ecol_str, 
+       						    ", elementEndLine=", eline_str, ", elementEndColumn=", ecol_str, 
                                 ", final=", final, ", replaceable=", repl, ", inout=", inout_str, ", ", element_str]) => str     
        ---------------------------------------------------------------------------------------------------------------
        get_element_info(Absyn.ELEMENTITEM(Absyn.ELEMENT(f, r, inout, id, elementSpec, 
