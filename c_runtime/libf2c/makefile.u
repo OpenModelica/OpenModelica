@@ -178,9 +178,12 @@ xwsne.o:	fio.h
 xwsne.o:	lio.h
 xwsne.o:	fmt.h
 
+# x05andre, 2006-01-27
+# Always call the generated file "a.exe", since it's not certain that
+# the file will be called that on other OS'es than Windows.
 arith.h: arithchk.c
-	$(CC) $(CFLAGS) -DNO_FPINIT arithchk.c -lm ||\
-	 $(CC) -DNO_LONG_LONG $(CFLAGS) -DNO_FPINIT arithchk.c -lm
+	$(CC) $(CFLAGS) -DNO_FPINIT arithchk.c -lm -o a.exe ||\
+	 $(CC) -DNO_LONG_LONG $(CFLAGS) -DNO_FPINIT arithchk.c -lm -o a.exe
 	./a.exe >arith.h
 	rm -f a.exe arithchk.o
 
