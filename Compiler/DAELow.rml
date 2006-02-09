@@ -247,6 +247,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   type MatchingOptions = (IndexReduction*EquationConstraints)
 
  
+  datatype Block = EQN_BLOCK of int list  (* normal block of one or more eqns*)
+		| COND_EQN_BLOCK of 
+		     int list   (* block of equations*)
+		     * Exp.Exp  (* conditional block *)
+		     * int      (* index 0..n-1 in assignment list*)
+												     
   (* Exported relations *)
   relation dump: DAELow => ()
   relation dump_vars: Var list => ()
@@ -263,29 +269,32 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	  
   relation abs_incidence_matrix: IncidenceMatrix => IncidenceMatrix
 		  
-  relation dump_incidence_matrix: IncidenceMatrix => ()
+  relation dump_incidence_matrix: IncidenceMatrix list => ()
 
-  relation dump_incidence_matrix_t: IncidenceMatrixT => ()
+  relation dump_incidence_matrix_t: IncidenceMatrixT list => ()
 
-  relation dump_matching: (int vector) => () 
+  relation dump_matching: (int vector list) => () 
 	  
   relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT,MatchingOptions) 
-	  => (int vector,(* var solved in eqn*) 
-	      int vector, (* eqn solves var *) 
+	  => (int vector list,(* var solved in eqn*) 
+	      int vector list, (* eqn solves var *) 
+	      Exp.ComponentRef list, 
 	      DAELow,
-	      IncidenceMatrix, 
-	      IncidenceMatrixT)
+	      IncidenceMatrix list, 
+	      IncidenceMatrixT list)
 
-  relation strong_components: (IncidenceMatrix, IncidenceMatrixT,
-			       int vector, int vector) => 
-	  (int list list )
+  relation strong_components: (IncidenceMatrix list, IncidenceMatrixT list,
+			       int vector list, int vector list,
+			       Exp.ComponentRef list) => 
+	  (Block list)
 
-  relation generate_state_partition:(int list list,DAELow,
-				     int vector,int vector,
-				     IncidenceMatrix,IncidenceMatrixT) 
-	  => (int list list, int list list) 
+  relation generate_state_partition:(Block list,DAELow,
+				     int vector list,int vector list,
+				     IncidenceMatrix list,
+				     IncidenceMatrixT list) 
+	  => (Block list, Block list) 
 
-  relation dump_components: (int list list) => ()
+  relation dump_components: (Block list) => ()
 
   relation translate_dae: DAELow => DAELow 
   relation calculate_values: DAELow => DAELow	  
@@ -359,7 +368,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   relation get_when_equation_expr : WhenEquation => (Exp.ComponentRef, Exp.Exp) 
   relation get_zero_crossing_indices_from_when_clause: (DAELow, int) => (int list) 
   relation simple_equation: (Equation) => (Exp.ComponentRef, Exp.ComponentRef)
-
+  relation evaluate_if_branch: (DAELow, Exp.ComponentRef, int list) => (DAELow,DAELow)
 end (* End Module *)
 
 
@@ -612,7 +621,7 @@ axiom	collect_zero_crossings( ((e as Exp.RELATION(e1,op,e2)),(zeroCrossings,vars
   rule	--------------------------------------------------
 	collect_zero_crossings( ((e as Exp.ARRAY(_,_,[])),(zeroCrossings,vars))) => ((e,(zeroCrossings,vars)))
 
-  rule	Exp.traverse_exp(e, collect_zero_crossings, (zeroCrossings,vars)) => ((_,(zeroCrossings',vars))) &
+  rule	Exp.traverse_exp(e, collect_zero_crossings,NONE, (zeroCrossings,vars)) => ((_,(zeroCrossings',vars))) &
         collect_zero_crossings( (Exp.ARRAY(tp,scalar,el),(zeroCrossings,vars)) ) => ((e',(zeroCrossings'',vars))) &
 	list_append(zeroCrossings',zeroCrossings'') => zeroCrossings'''
 	--------------------------------------------------
@@ -759,7 +768,7 @@ end
  **)
 relation find_zero_crossings3: (Exp.Exp,Variables) => (Exp.Exp list) =
   
-  rule	Exp.traverse_exp(e,collect_zero_crossings,([],vars)) 
+  rule	Exp.traverse_exp(e,collect_zero_crossings,NONE,([],vars)) 
 	  => ((_,(zeroCrossings,_)))
 	--------------------------------------------------
 	find_zero_crossings3(e,vars) => zeroCrossings
@@ -901,21 +910,23 @@ end
  ** The result is a split of the blocks into two lists.
  ** inputs: (blocks: int list list, 
              daeLow: DAELow, 
-             assignments1: int vector, 
-             assignments2: int vector,
-             incidenceMatrix: IncidenceMatrix, 
-             incidenceMatrixT: IncidenceMatrixT)
- ** outputs: (dynamicBlocks: int list list, outputBlocks: int list list)
+             assignments1: int vector list, 
+             assignments2: int vector list,
+             incidenceMatrix: IncidenceMatrix list, 
+             incidenceMatrixT: IncidenceMatrixT list)
+ ** outputs: (dynamicBlocks: Block list, outputBlocks: Block list)
  **) 
-relation generate_state_partition:(int list list, 
+relation generate_state_partition:(Block list, 
                                    DAELow, 
-                                   int vector,
-			   int vector,
-			   IncidenceMatrix, IncidenceMatrixT) => 
- (int list list, int list list) =
+                                   int vector list,
+				   int vector list,
+				   IncidenceMatrix list, 
+				   IncidenceMatrixT list) 
+	  =>  (Block list, Block list) =
         
   rule	(*equation_size(e) => size &*)
-	vector_length(ass1) => size &
+	Util.list_first(ass1) => ass1_first &
+	vector_length(ass1_first) => size &
 	array_create(size,0) => arr &
 	mark_state_equations(dae,arr,m,mt,ass1,ass2) => arr' &
 	split_blocks(blt,arr) => (blt_states,blt_no_states)
@@ -936,8 +947,8 @@ end
  ** inputs:  (blocks: int list list, marks: int array) 
  ** outputs: (dynamic: int list list, output: int list list)
  **)
-relation split_blocks:(int list list, int array) 
-                   => (int list list, int list list) =
+relation split_blocks:(Block list, int array) 
+                   => (Block list, Block list) =
 
   axiom	split_blocks([],_) => ([], [])
 
@@ -958,21 +969,34 @@ end
  **
  ** Return true if the block contains a variable that is marked
  **)
-relation block_is_dynamic: (int list, int array) => bool =
+relation block_is_dynamic: (Block, int array) => bool =
 
-  axiom	block_is_dynamic([],_) => false
+  axiom	block_is_dynamic(EQN_BLOCK([]),_) => false
 	
   rule	int_sub(x,1) => x' &
 	array_nth(arr,x') => 0 &
-	block_is_dynamic(xs,arr) => res 
+	block_is_dynamic(EQN_BLOCK(xs),arr) => res 
 	---------------------
-	block_is_dynamic(x::xs,arr) => res
+	block_is_dynamic(EQN_BLOCK(x::xs),arr) => res
 
   rule	int_sub(x,1) => x' &
 	array_nth(arr,x') => mark_value &
 	int_ne(mark_value,0) => true
 	---------------------
-	block_is_dynamic(x::xs,arr) => true
+	block_is_dynamic(EQN_BLOCK(x::xs),arr) => true
+
+  rule	int_sub(x,1) => x' &
+	array_nth(arr,x') => 0 &
+	block_is_dynamic(EQN_BLOCK(xs),arr) => res 
+	---------------------
+	block_is_dynamic(COND_EQN_BLOCK(x::xs,_,_),arr) => res
+
+  rule	int_sub(x,1) => x' &
+	array_nth(arr,x') => mark_value &
+	int_ne(mark_value,0) => true
+	---------------------
+	block_is_dynamic(COND_EQN_BLOCK(x::xs,_,_),arr) => true
+
 end
 
 
@@ -994,10 +1018,10 @@ end
  **)
 relation mark_state_equations:(DAELow, 
                                int array,
-                               IncidenceMatrix,
-                               IncidenceMatrixT,
-                               int vector,
-                               int vector)
+                               IncidenceMatrix list,
+                               IncidenceMatrixT list,
+                               int vector list,
+                               int vector list)
 	  => int array = 
 
   rule	var_list(v) => v_lst &
@@ -1023,17 +1047,17 @@ end
  **)
 relation mark_state_equation: (Var, (DAELow * 
 				     int array * 
-				     IncidenceMatrix * IncidenceMatrixT *
-				     int vector * int vector) 
+				     IncidenceMatrix list * IncidenceMatrixT list *
+				     int vector list * int vector list) 
 			       ) => ((DAELow *
 				     int array *
-				     IncidenceMatrix *
-				     IncidenceMatrixT *
-				     int vector *
-				     int vector)) =
+				     IncidenceMatrix  list*
+				     IncidenceMatrixT list *
+				     int vector list *
+				     int vector list)) =
   rule	get_var(cr,vars) => (_,v_indxs) &
 	Util.list_map_1(v_indxs,int_sub,1) => v_indxs' &
-	Util.list_map_1r(v_indxs',vector_nth,a1) => eqns &
+	mark_state_equation_find_eqns(v_indxs',a1) => eqns &
 	mark_state_equation2(eqns,(arr,m,mt,a1,a2)) => ((arr',m,mt,a1,a2))
 	--------------------
 	mark_state_equation(VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,flow), 
@@ -1053,7 +1077,6 @@ relation mark_state_equation: (Var, (DAELow *
 
   rule	get_var(cr,vars) => (_,[v_indx]) &
 	int_sub(v_indx,1) => v_indx' &
-	not vector_nth(a1,v_indx') => eqn &
 	print "mark_state_equation index ="  &
 	int_string v_indx => str & print str & 
 	print ", failed\n" 
@@ -1061,6 +1084,24 @@ relation mark_state_equation: (Var, (DAELow *
 	mark_state_equation(VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,flow),
 			    (dae as DAELOW(vars,_,_,_,_,_,_,_),
 			     arr,m,mt,a1,a2)) => fail
+end
+
+(** relation: mark_state_equation_find_eqns
+ ** author: PA
+ **
+ * Helper relation to mark_state_equation. Traverses all assignments and
+ ** find equations that varaibles are defined in.
+ **)
+relation mark_state_equation_find_eqns: (int list,int vector list) 
+	  => int list =
+
+  axiom	mark_state_equation_find_eqns(_,[]) => []
+
+  rule	Util.list_map_1r(v_indxs,vector_nth,a1) => eqns &
+	mark_state_equation_find_eqns(v_indxs,a1_lst) => eqns2 &
+	list_append(eqns,eqns2) => res
+	---------------------
+	mark_state_equation_find_eqns(v_indxs,a1::a1_lst) => res
 end
 
 
@@ -1074,11 +1115,11 @@ end
 	      int vector * int vector))
  **)
 relation mark_state_equation2: (int list, 
-                                (int array * IncidenceMatrix * 
-                                 IncidenceMatrixT * int vector * int vector)) 
+                                (int array * IncidenceMatrix list * 
+                                 IncidenceMatrixT list * int vector list * int vector list)) 
 	  => ((int array *  
-	       IncidenceMatrix * IncidenceMatrixT *
-	       int vector * int vector)) =
+	       IncidenceMatrix list * IncidenceMatrixT list *
+	       int vector list * int vector list)) =
 	
   axiom	mark_state_equation2([],(marks,m,mt,a1,a2)) => ((marks,m,mt,a1,a2))
 
@@ -1126,12 +1167,13 @@ end
  ** Similar to reachable_nodes, but follows edges in backward direction
  ** I.e. what equations/variables needs to be solved to solve this one.
  **)
-relation inv_reachable_nodes:(int, IncidenceMatrix, IncidenceMatrixT, 
-			      int vector, int vector) 
+relation inv_reachable_nodes:(int, IncidenceMatrix list, IncidenceMatrixT list, 
+			      int vector list, int vector list) 
 	  => int list =
 
   rule	int_sub(e,1) => eqn' &
-	array_nth(m,eqn') => var_lst &
+	Util.list_map_1(m,array_nth,eqn') => var_llst &
+	Util.list_list_union(var_llst) => var_lst &
 	remove_negative(var_lst) => var_lst' &
 	inv_reachable_nodes2(var_lst',a1) => lst
 	---------------------
@@ -1148,19 +1190,20 @@ end
 (** relation: inv_reachable_nodes2
  **
  ** Helper relation to inv_reachable_nodes
- ** inputs:  (variables: int list, assignments1: int vector)
+ ** inputs:  (variables: int list, assignments1: int vector list)
  ** outputs: int list
  **)
-relation inv_reachable_nodes2:(int list, int vector) => int list  =
+relation inv_reachable_nodes2:(int list, int vector list) => int list  =
 
   axiom	inv_reachable_nodes2([],_) => []
 
-  rule	inv_reachable_nodes2(vs,a1) => eqns &
+  rule	inv_reachable_nodes2(vs,a1_lst) => eqns &
 	int_sub(v,1) => v' &
 	(* Which equation is variable solved in? *)
-	vector_nth(a1,v') => eqn 
+	Util.list_map_1(a1_lst,vector_nth,v') => eqn_lst &
+	list_append(eqn_lst,eqns) => res
 	----------------------
-	inv_reachable_nodes2(v::vs,a1) => eqn::eqns
+	inv_reachable_nodes2(v::vs,a1_lst) => res
 
   rule	print "-inv_reachable_nodes2 failed\n" 
 	-------------------
@@ -3949,7 +3992,21 @@ end
  **
  ** Prints the incidence matrix on stdout.
  **)
-relation dump_incidence_matrix: IncidenceMatrix => () =
+relation dump_incidence_matrix: IncidenceMatrix list => () =
+
+
+  rule	Util.list_map_0(lst,dump_incidence_matrix1) => ()
+	------------------------------
+	dump_incidence_matrix(lst)
+end
+
+(** relation: dump_incidence_matrix1
+ ** author: PA
+ **
+ ** Helper relation to dump_incidence_matrix 
+ **)
+
+relation dump_incidence_matrix1: IncidenceMatrix => () =
 
   rule	print "Incidence Matrix (row == equation)\n" &
 	print "====================================\n" &
@@ -3959,7 +4016,7 @@ relation dump_incidence_matrix: IncidenceMatrix => () =
 	array_list(m) => m' &
 	dump_incidence_matrix2(m') 
 	-------------------------
-	dump_incidence_matrix(m) => ()
+	dump_incidence_matrix1(m) => ()
 end 
 
 
@@ -3968,7 +4025,20 @@ end
  **
  ** Prints the transposed incidence matrix on stdout.
  **)
-relation dump_incidence_matrix_t: IncidenceMatrix => () =
+relation dump_incidence_matrix_t: IncidenceMatrix list => () =
+
+  rule	Util.list_map_0(lst,dump_incidence_matrix_t1) => ()
+	----------------------------
+	dump_incidence_matrix_t(lst)
+end
+
+(** relation: dump_incidence_matrix_t1
+ ** author: PA
+ **
+ ** Helper relation to dump_incidence_matrix_t
+ **)
+
+relation dump_incidence_matrix_t1: IncidenceMatrix => () =
 
   rule	print "Transpose Incidence Matrix (row == var)\n" &
 	print "=====================================\n" &
@@ -3978,7 +4048,7 @@ relation dump_incidence_matrix_t: IncidenceMatrix => () =
 	array_list(m) => m' &
 	dump_incidence_matrix2(m') 
 	-------------------------
-	dump_incidence_matrix_t(m) => ()
+	dump_incidence_matrix_t1(m) => ()
 end 
 
 	
@@ -4022,8 +4092,21 @@ end
  **
  ** prints the matching information on stdout.
  **)
-relation dump_matching: (int vector) => () =
+
+relation dump_matching: (int vector list) => () =
+
+  rule	Util.list_map_0(lst,dump_matching1) => ()
+	-----------------
+	dump_matching (lst) => ()
+end
+
+(** relation: dump_matching1
+ ** author: PA
+ **
+ ** Helper relation to dump_matching.
+ **)
 	
+relation dump_matching1: (int vector) => () =
   rule	print "Matching\n" &
 	print "========\n" &
 	vector_length(v) => len &
@@ -4031,9 +4114,8 @@ relation dump_matching: (int vector) => () =
 	print len_str & print " variables and equations\n" &
 	dump_matching2(v,0) 
 	-------------------
-	dump_matching(v) 
+	dump_matching1(v) 
 end
-
 
 (** relation: dump_matching2
  ** author: PA
@@ -4080,24 +4162,147 @@ end
  ** algorithm is run. 
  ** This relation returns the updated DAE in case of index reduction has 
  ** added equations and variables, and the incidence matrix. The variable
- ** assignments is returned as a vector of variable indices, as well as its
- ** inverse, i.e. which equation a variable is solved in as a vector of 
- ** equation indices.
+ ** assignments is returned as a list of  vectors of variable indices, as 
+ ** well as its  inverse, i.e. which equation a variable is solved in as 
+ ** a vector of  equation indices. Normally the list has only one element, the 
+ ** incidence matrix for the system. If structural if equations are present, 
+ ** several incidence matrices can be returned. The number of matrices returned
+ ** is as many as the number of assignments returned.
+ **
+ ** The assignments are returned in a list, which normally
+ ** only has one element. But if if-expressions give different matching 
+ ** depending on boolean variables, serveral matchings are returned, hence a 
+ ** list. These boolean variables are returned as a list of ComponentRefs.
  ** MatchingOptions contain options given to the algorithm.
  **   - if index reduction should be used or not.
  **   - if the equation system is allowed to be under constrained or not 
  **     which is used when generating code for initial equations.
  **
  ** inputs:  (DAELow,IncidenceMatrix, IncidenceMatrixT, MatchingOptions) 
- ** outputs: (int vector /* vector of equation indices */ , 
-              int vector /* vector of variable indices */,
-              DAELow,IncidenceMatrix, IncidenceMatrixT) 
+ ** outputs: (int vector list /* list of vector of equation indices */ , 
+              int vector list /* list of vector of variable indices */,
+	      Exp.ComponentRef list, /* list of if equation boolean vars*/
+              DAELow,IncidenceMatrix list, IncidenceMatrixT list) 
  **)		 
 relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT,
 			      MatchingOptions) 
+	  => (int vector list,
+	      int vector list,
+	      Exp.ComponentRef list, 
+	      DAELow,
+	      IncidenceMatrix list, IncidenceMatrixT list) =
+
+  rule	(* no structural if equations *)
+	structural_if_equations(dae) => struct_if_eqns &
+	structural_if_variables(struct_if_eqns) => (crefs as []) &
+	check_matching(dae,match_opts) &  	
+	array_length(m) => nvars &
+	array_length(mt) => neqns &
+	int_string(nvars) => ns &
+	int_string(neqns) => ne &
+	int_gt(nvars,0) => true &
+	int_gt(neqns,0) => true &
+	int_add(nvars,nvars) => memsize &
+	assignments_create(nvars,memsize,0) => assign1 &
+	assignments_create(nvars,memsize,0) => assign2 &
+	matching_algorithm2(dae,m,mt,nvars,neqns,1,assign1,assign2,match_opts) 
+	  => (ass1, ass2,dae,m,mt) &
+
+	assignments_vector(ass1) => vec1 &
+	assignments_vector(ass2) => vec2 
+	--------------------------
+	matching_algorithm(dae,m,mt,match_opts) 
+	  => ([vec1],[vec2],crefs,dae,[m], [mt])
+
+  rule	(* with structural if equations *)
+	structural_if_equations(dae) => struct_if_eqns &
+	structural_if_variables(struct_if_eqns) => crefs &
+	structural_if_eqn_indices(struct_if_eqns) => if_eqns &
+	matching_algorithm_structural_if(dae,crefs,if_eqns,m,mt,match_opts) => (vec1_lst,vec2_lst,dae,m_lst,mt_lst)
+
+	--------------------------
+	matching_algorithm(dae,m,mt,match_opts) 
+	  => (vec1_lst,vec2_lst,crefs,dae,m_lst,mt_lst)
+
+  rule	Debug.fprint("failtrace","-matching_algorithm failed\n")
+	------------------------
+	matching_algorithm(dae,m,mt,indx_red) => fail
+	
+end
+
+(** relation: matching_algorithm_structural_if
+ ** author: PA
+ **
+ ** This relation calls the matching algoritm with the dae simplified for 
+ ** each boolean value given in the variable list. This means that structural
+ ** if expressions are evaluated for all branches and the matching is performed
+ ** for each branch.
+ **)
+
+relation matching_algorithm_structural_if:(DAELow, 
+					   Exp.ComponentRef list,
+					   int list list,
+					   IncidenceMatrix, 
+					  IncidenceMatrixT,
+					  MatchingOptions)
+	  => (int vector list,
+	      int vector list,
+	      DAELow,
+	      IncidenceMatrix list, 
+	      IncidenceMatrixT list) =
+
+  axiom	matching_algorithm_structural_if(dae,[],_,m,mt,match_opts) 
+	  => ([],[],dae,[],[])
+
+  rule	evaluate_if_branch(dae,cref,e_indx) => (dae_true, dae_false) &
+	
+(*	print "evaluated if branch ,true_dae :" &
+	dump dae_true &
+	print "false dae:" &
+	dump dae_false &*)
+
+
+	(* we must clone incidence matrices since we use them in two places*)
+	incidence_matrix_clone(m) => m2 &
+	incidence_matrix_clone(mt) => mt2 &
+	update_incidence_matrix(dae_true,m,mt,e_indx) => (true_m,true_mt) &
+	update_incidence_matrix(dae_false,m2,mt2,e_indx) => (false_m,false_mt)&
+	matching_algorithm_structural_if2(dae_true,true_m,true_mt,match_opts) 
+	  => (vec11,vec21,dae_true',true_m,true_mt) &
+	matching_algorithm_structural_if2(dae_false,false_m,false_mt,match_opts)
+	  => (vec12,vec22,dae_false,false_m,false_mt) &
+	matching_algorithm_structural_if(dae,crefs,e_indx_lst,m,mt,match_opts)
+	  => (vec1_lst,vec2_lst,dae,m_lst,mt_lst)
+	----------------------
+	matching_algorithm_structural_if(dae,cref::crefs,e_indx::e_indx_lst,m,mt,match_opts) 
+	  => (vec11   :: vec12    :: vec1_lst,
+	      vec21   :: vec22    :: vec2_lst,
+	      dae,
+	      true_m  :: false_m  :: m_lst,
+	      true_mt :: false_mt :: mt_lst)
+
+
+  rule	Debug.fprint("failtrace","-matching_algorithm_structural_if failed\n")
+	----------------------------
+	matching_algorithm_structural_if(dae,crefs,e_indx_lst,m,mt,match_opts)
+	  => fail
+end
+
+(** relation: matching_algorithm_structural_if2
+ **
+ ** Helper relation to matching_algorithm_structural_if
+ **)
+
+relation matching_algorithm_structural_if2: (DAELow, 
+					     IncidenceMatrix, 
+					     IncidenceMatrixT,
+					     MatchingOptions)
 	  => (int vector,
 	      int vector,
-	      DAELow,IncidenceMatrix, IncidenceMatrixT) =
+	      DAELow,
+	      IncidenceMatrix, 
+	      IncidenceMatrixT) =
+
 
   rule	check_matching(dae,match_opts) &  	
 	array_length(m) => nvars &
@@ -4114,17 +4319,123 @@ relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT,
 
 	assignments_vector(ass1) => vec1 &
 	assignments_vector(ass2) => vec2 
-	--------------------------
-	matching_algorithm(dae,m,mt,match_opts) => (vec1,vec2,dae,m,mt)
-	
-(*  rule	(*Print.print_error_buf "#Error, matching failed\n" &*)
-	list_vector([]) => v1 & 
-	list_vector([]) => v2 
-	------------------------
-	matching_algorithm(dae,m,mt,indx_red) => (v1,v2,dae,m,mt)*)
-	
+	----------------------------------
+	matching_algorithm_structural_if2(dae,m,mt,match_opts)
+	  => (vec1,vec2,dae,m,mt)
 end
 
+
+(** relation: evaluate_if_branch:
+ ** author: PA
+ **
+ ** This relation evaluates the boolean variable given as argument
+ ** and returns two DAELows with evaluated equations. one for boolean = true
+ ** and one for boolean = false.
+ ** A list of affected equations are given so that the whole dae is not 
+ ** required to traverse.
+ **)
+
+relation evaluate_if_branch: (DAELow, Exp.ComponentRef, int list) => (DAELow,DAELow) =
+
+	(* a single equation index*)
+  rule	int_sub(e,1) => e' &
+	equation_nth(eqns,e') => eqn &
+	equation_replace_exp(eqn,Exp.CREF(cr,Exp.OTHER),Exp.BCONST(true))  
+	  => true_eqn &
+	equation_replace_exp(eqn,Exp.CREF(cr,Exp.OTHER),Exp.BCONST(false))
+	  => false_eqn &
+	  equations_clone(eqns) => eqns1 &  
+	equations_clone(eqns) => eqns2 &  
+	equation_setnth(eqns1,e',true_eqn) => true_eqns &
+	equation_setnth(eqns2,e',false_eqn) => false_eqns 
+	--------------------------------
+	evaluate_if_branch(DAELOW(v,kv,eqns,se,ie,ae,al,ei),cr,[e]) 
+	  => (DAELOW(v,kv,true_eqns,se,ie,ae,al,ei), 
+	      DAELOW(v,kv,false_eqns,se,ie,ae,al,ei))
+	
+	(* several equation indices *)
+  rule	int_sub(e,1) => e' &
+	equation_nth(eqns,e') => eqn &
+	equation_replace_exp(eqn,Exp.CREF(cr,Exp.OTHER),Exp.BCONST(true))  
+	  => true_eqn &
+
+	equation_replace_exp(eqn,Exp.CREF(cr,Exp.OTHER),Exp.BCONST(false))
+	  => false_eqn &
+	evaluate_if_branch(DAELOW(v,kv,eqns,se,ie,ae,al,ei),cr,es) 
+	  => (DAELOW(v1,kv1,true_eqns,se1,ie1,ae1,al1,ei1), 
+	      DAELOW(v2,kv2,false_eqns,se2,ie2,ae2,al2,ei2)) &
+	equation_setnth(true_eqns,e',true_eqn) => true_eqns' &
+	equation_setnth(false_eqns,e',false_eqn) => false_eqns' 
+	--------------------------------
+	evaluate_if_branch(DAELOW(v,kv,eqns,se,ie,ae,al,ei),cr,e::es) 
+	  => (DAELOW(v1,kv1,true_eqns',se1,ie1,ae1,al1,ei1), 
+	      DAELOW(v2,kv2,false_eqns',se2,ie2,ae2,al2,ei2))
+
+  rule	Debug.fprint("failtrace","-evaluate_if_branch failed\n")
+	---------------------
+	evaluate_if_branch(_,_,_) => fail
+end
+
+(** relation: incidence_matrix_clone
+ **
+ ** Clones an incidence matrix. This is required since IncidenceMatrix is an
+ ** array and those can have destructive updates. So if you want to set
+ ** an array element and at the same time keep the old array you will first
+ ** have to clone the array.
+ **)
+
+relation incidence_matrix_clone: (IncidenceMatrix) => IncidenceMatrix =
+
+  rule	array_list(m) => m_lst &
+	list_array(m_lst) => m'
+	------------------------
+	incidence_matrix_clone(m)=> m'
+end
+
+(** relation: equations_clone
+ **
+ ** Clones an EquationArray  This is required since EquationAray is an
+ ** array and those can have destructive updates. So if you want to set
+ ** an array element and at the same time keep the old array you will first
+ ** have to clone the array.
+ **)
+
+relation equations_clone:( EquationArray) => EquationArray =
+
+  rule	equation_list(eqns) => eqn_lst &
+	list_equation(eqn_lst) => res
+	--------------------------
+	equations_clone(eqns) => res
+end
+
+
+(** relation equation_replace_exp
+ **
+ ** Replaces expression in an Equation.
+**)
+
+relation equation_replace_exp:(Equation, Exp.Exp, Exp.Exp) => Equation =
+
+  rule	Exp.replace_exp(e1,src,dst) => (e1',_) &
+	Exp.replace_exp(e2,src,dst) => (e2',_) &
+	Exp.simplify(e1') => e1'' &
+	Exp.simplify(e2') => e2'' 
+	---------------------------
+	equation_replace_exp(EQUATION(e1,e2),src,dst) => EQUATION(e1'',e2'')
+
+  rule	Exp.replace_exp(e1,src,dst) => (e1',_) &
+	Exp.simplify(e1') => e1''
+	---------------------------
+	equation_replace_exp(RESIDUAL_EQUATION(e1),src,dst) 
+	  => RESIDUAL_EQUATION(e1'')
+
+  rule	Exp.replace_exp(e,src,dst) => (e',_) &
+	Exp.simplify(e') => e'' &
+	Exp.replace_exp(Exp.CREF(cr,Exp.OTHER),src,dst) => (Exp.CREF(cr',_),_) 
+	---------------------------
+	equation_replace_exp(SOLVED_EQUATION(cr,e),src,dst) 
+	  => SOLVED_EQUATION(cr',e'')
+end
 
 (** relation: check_matching
  ** author: PA
@@ -5559,7 +5870,8 @@ end
  ** outputs: (Assignments,	/* updated ass1 */
               Assignments)	/* updated ass2 */ 
  **)
-relation assign: (int, int, Assignments, Assignments) => (Assignments, Assignments) =
+relation assign: (int, int, Assignments, Assignments) 
+	  => (Assignments, Assignments) =
 
   rule	(*print "assign " & int_string v => vs &
 	int_string e => es & print vs & print " to eqn " &
@@ -5655,24 +5967,301 @@ end
  ** assignments and the incidence matrix as input and identifies strong 
  ** components, i.e. subsystems of equations.
  **
- ** inputs:  (IncidenceMatrix, IncidenceMatrixT, int vector, int vector)
+ ** inputs:  (IncidenceMatrix, IncidenceMatrixT, int vector, int vector,
+ ** 	      Exp.ComponentRef list /* ifconditions*/)
  ** outputs: (int list list /* list of components */ )
  **)
-relation strong_components: (IncidenceMatrix, IncidenceMatrixT,
-			     int vector, int vector) => 
-	(int list list ) =
+relation strong_components: (IncidenceMatrix list, IncidenceMatrixT list,
+			     int vector list, int vector list,
+			     Exp.ComponentRef list) => 
+	(Block list) =
+
+  rule	strong_components_lst(m_lst,mt_lst,ass1_lst,ass2_lst) => all_blocks &
+	merge_blocks(all_blocks,ifconds,ass2_lst) => blocks &
+	calculate_cond_blocks_indices(blocks) => blocks'
+	-----------------------------
+	strong_components(m_lst,mt_lst,ass1_lst,ass2_lst,ifconds) => blocks'
+
+  rule	Debug.fprint("failtrace","-strong_components failed\n")
+	---------------------------
+	strong_components(m_lst,mt_lst,ass1_lst,ass2_lst,ifconds) => fail
+end
+
+(** relation: calculate_cond_blocks_indices
+ ** author: PA
+ **
+ ** Calculates indices on conditional blocks, ranging from 0 to n-1.
+ **)
+
+relation calculate_cond_blocks_indices: (Block list) => Block list =
+
+  rule	calculate_cond_blocks_indices2(blocks,0) => blocks'
+	-------------------------
+	calculate_cond_blocks_indices(blocks) => blocks'
+end
+
+(** relation: calculate_cond_blocks_indices2
+ ** author: PA
+ **
+ ** Helper relation to calculate_cond_blocks_indices.
+ **)
+
+relation calculate_cond_blocks_indices2:(Block list, int) 
+	  => Block list =
+
+  axiom	calculate_cond_blocks_indices2([],_) => []
+
+	(* TODO: Only works for one boolean variable. For more 
+	 * booleans we need the list of boolean variables here..*)
+  rule	indx + 1 => indx' &
+	indx % 2 => indx1 &
+	calculate_cond_blocks_indices2(blocks,indx') => blocks'
+	----------------------------
+	calculate_cond_blocks_indices2(COND_EQN_BLOCK(e,c,_)::blocks,indx)
+	  => COND_EQN_BLOCK(e,c,indx1)::blocks'
+
+  rule	calculate_cond_blocks_indices2(blocks,indx) => blocks'
+	----------------------------
+	calculate_cond_blocks_indices2(block::blocks,indx)
+	  => block::blocks'
+end
+
+(** relation: merge_blocks
+ ** author: PA
+ **
+ ** This relation merges several list of blocks
+**)
+relation merge_blocks: (Block list list,Exp.ComponentRef list, 
+			int vector list (* assignments2*)) => Block list =
+
+  axiom	merge_blocks([]::_,_,_) => []
+	
+  rule	merge_blocks_first(all_blocks,ifconds,ass2_lst) => (first,rest) &
+	merge_blocks(rest,ifconds,ass2_lst) => rest' &
+	list_append(first,rest') => res
+	-----------------------------
+	merge_blocks(all_blocks,ifconds,ass2_lst) => res
+end
+
+(** relation: merge_blocks_first
+ ** author: PA
+ **
+ ** Helper relation to merge_blocks. Extracts the first block from all
+ ** list elements and merges them.
+ **)
+
+relation merge_blocks_first: (Block list list, 
+			      Exp.ComponentRef list,
+			      int vector list (* assignments2*))
+	  => (Block list,Block list list) =
+
+  rule	Util.list_map(all_blocks,Util.list_first) => first_blocks &
+	merge_blocks2(first_blocks,if_conds,ass2_lst) => block &
+	Util.list_map(all_blocks,Util.list_rest) => rest 
+	------------------------------------------------
+	merge_blocks_first(all_blocks,if_conds,ass2_lst) => (block,rest)
+
+  rule	Debug.fprint("failtrace","-merge_blocks_first failed\n")
+	------------------------------------------------
+	merge_blocks_first(all_blocks,if_conds,ass2_lst) => fail
+end
+
+(** relation: merge_blocks2
+ ** author: PA
+ **
+ ** Helper relation to merge_blocks_first. Blocks that are identical are
+ ** merged. Otherwise, conditional blocks are made.
+ **)
+
+relation merge_blocks2: (Block list, 
+			 Exp.ComponentRef list,
+			 int vector list (* assignments2*)) => Block list =
+
+	(* all blocks identical, same variable solved in each block. *)
+  rule	Util.list_reduce(blocks,block_equal) => block  &
+	merge_blocks2_same_var_solved(blocks,ass2_lst) => true
+	-------------------------
+	merge_blocks2(blocks,if_conds,ass2_lst) => [block]
+	
+	(* blocks not identical, create conditional blocks*)
+  rule	merge_blocks3(blocks,if_conds) => res
+	-----------------------------
+	merge_blocks2(blocks,if_conds,ass2_lst) => res
+
+  rule	Debug.fprint("failtrace","-merge_blocks2 failed\n")
+	-------------------
+	merge_blocks2(_,_,_) => fail
+end
+
+(** relation: merge_blocks2_same_var_solved
+ **
+ **  This relation checks that the same variables are solved in all different
+ ** equation blocks. If not the relation returns false.
+ **)
+
+relation merge_blocks2_same_var_solved: (Block list, int vector list)
+	=> bool =
+
+  rule	Util.list_thread_map(blocks,ass2_lst,block_get_solved_vars) => vars &
+	Util.list_reduce(vars,vars_equal) => vars
+	-----------------------
+	merge_blocks2_same_var_solved(blocks,ass2_lst) => true 
+
+  axiom	merge_blocks2_same_var_solved(_,_) => false
+end
+
+(** relation: vars_equal
+ **
+ ** Helper relation to e.g. merge_blocks2_same_var_solved
+ ** Succeds if two variable lists are equal and returns the first
+ ** of them if so. Otherwise it fails.
+**)
+
+relation vars_equal: (int list,int list) => int list =
+
+  axiom	vars_equal([],[]) => [] 
+     
+  rule	int_eq(v1,v2) => true &
+	vars_equal(vs1,vs2) => vs
+	-------------------------
+	vars_equal(v1::vs1,v2::vs2) => v1::vs
+end
+
+
+(** relation block_get_solved_vars
+ ** author: PA
+ ** 
+ ** For a given block and assignments, find the variables solved in that block.
+ **)
+
+relation block_get_solved_vars: (Block, int vector  (*assignments2*)) 
+	  => int list =
+
+  axiom	block_get_solved_vars(EQN_BLOCK([]),_) => [] 
+	
+  rule	int_sub(e,1) => e' &
+	vector_nth(ass2,e') => v &
+	block_get_solved_vars(EQN_BLOCK(eqns),ass2) => v_lst 
+	-------------------------------
+	block_get_solved_vars(EQN_BLOCK(e::eqns),ass2) => v::v_lst
+end
+
+(** relation: merge_blocks3
+ ** author: PA
+ ** 
+ ** Merges blocks that are not equal.
+ **)
+
+relation merge_blocks3: (Block list, Exp.ComponentRef list) => Block list =
+
+  axiom	merge_blocks3([],[]) => []
+
+	(* one boolean *)
+  rule  Exp.print_component_ref_str cr => cr_str &
+	Util.modelica_string_to_c_str cr_str => cr_str' &
+	string_append("$",cr_str') => cr_str'' &
+	let cr' = Exp.CREF_IDENT(cr_str'',[]) &
+	let cond_b1 = COND_EQN_BLOCK(b1,Exp.CREF(cr',Exp.BOOL),0) &
+	let cond_b2 = COND_EQN_BLOCK(b2,Exp.LUNARY(Exp.NOT,
+						   Exp.CREF(cr',Exp.BOOL)),0)
+	-------------------------------
+	merge_blocks3([EQN_BLOCK(b1),EQN_BLOCK(b2)],[cr]) => [cond_b1,cond_b2]
+	
+	(* several booleans*)
+  rule	Exp.print_component_ref_str cr => cr_str &
+	Util.modelica_string_to_c_str cr_str => cr_str' &
+	string_append("$",cr_str') => cr_str'' &
+	let cr' = Exp.CREF_IDENT(cr_str'',[]) &
+	let cond_b1 = COND_EQN_BLOCK(b1,Exp.CREF(cr',Exp.BOOL),0) &
+	let cond_b2 = COND_EQN_BLOCK(b2,Exp.LUNARY(Exp.NOT,
+						   Exp.CREF(cr',Exp.BOOL)),0) &
+	merge_blocks3(blocks,crs) => rest
+	-------------------------------
+	merge_blocks3(EQN_BLOCK(b1)::EQN_BLOCK(b2)::blocks,cr::crs) 
+	  => cond_b1::cond_b2::rest
+end
+
+(** relation: block_equal
+ ** author: PA
+ **
+ ** Returns first block if two Block's are equal, otherwise fails
+ **)
+
+relation block_equal: (Block, Block) => Block =
+
+	(* equation blocks *)
+  rule	Util.list_thread_map(lst1,lst2,int_eq) => blst &
+	Util.bool_and_list(blst) => true
+	-------------------
+	block_equal(EQN_BLOCK(lst1),EQN_BLOCK(lst2)) => EQN_BLOCK(lst1)
+
+	(* conditional equation blocks*)
+  rule	Util.list_thread_map(lst1,lst2,int_eq) => blst &
+	Exp.exp_equal(e1,e2) => b &
+	Util.bool_and_list(b::blst) => true
+	-------------------
+	block_equal(COND_EQN_BLOCK(lst1,e1,indx1),COND_EQN_BLOCK(lst2,e2,_)) 
+	  => COND_EQN_BLOCK(lst1,e1,indx1)
+
+end
+
+
+(* relation: strong_components_lst
+ **
+ ** Helper relation to strong_components, traverses each list elements
+ ** and calls strong components algorithm.
+ ** Returns a list of list of blocks, one block list for each "system".
+ **)
+
+relation strong_components_lst:(IncidenceMatrix list, IncidenceMatrixT list,
+				int vector list, int vector list) => 
+	(Block list list) =
+
+  axiom	strong_components_lst([],[],[],[]) =>([])
+
+  rule	strong_components2(m,mt,ass1,ass2) => blocks &
+	strong_components_lst(m_lst,mt_lst,ass1_lst,ass2_lst) => all_blocks
+	---------------------------
+	strong_components_lst(m::m_lst,mt::mt_lst,ass1::ass1_lst,ass2::ass2_lst)
+	  => blocks::all_blocks
+end
+
+(** relation: strong_components2
+ **
+ ** Helper relation to strong_components_lst, Calls strong_connect, the actual
+ **algorithm, for a  "system".
+ **)
+
+relation strong_components2: (IncidenceMatrix, IncidenceMatrixT,
+			      int vector,
+			      int vector) => (Block list) =
 
   rule	array_length(m) => n &
 	DAEEXT.init_lowlink(n) &
 	DAEEXT.init_number(n) &
 	strong_connect_main(m,mt,ass1,ass2,n,0,1,[],[]) 
-	  => (i,stack,comps) 
+	  => (i,stack,comps) &
+	to_eqn_blocks(comps) => comps'
 	-----------------------------------
-	strong_components(m,mt,ass1,ass2) => (comps)
+	strong_components2(m,mt,ass1,ass2) => (comps')
 
-  rule	Debug.fprint("failtrace", "strong_components failed\n")
+  rule	Debug.fprint("failtrace", "strong_components2 failed\n")
 	----------------------------------
-	strong_components(_,_,_,_) => fail
+	strong_components2(_,_,_,_) => fail
+end
+
+(** relation: to_eqn_blocks
+ ** author: PA
+ **
+ ** Convert a int list list to Block list.
+ **)
+relation to_eqn_blocks: int list list => Block list =
+
+  axiom	to_eqn_blocks([]) => []
+
+  rule	to_eqn_blocks(bs) => res
+	-------------------
+	to_eqn_blocks(b::bs) => EQN_BLOCK(b)::res
 end
 
 
@@ -5968,7 +6557,7 @@ end
  **
  ** Prints the blocks of the BLT sorting on stdout.
  **)
-relation dump_components: (int list list) => () =
+relation dump_components: (Block list) => () =
 
   rule	print "Blocks\n" &
 	print "=======\n" &
@@ -5983,7 +6572,7 @@ end
  **
  ** Helper relation to dump_components.
  **)
-relation dump_components2: (int list list,int) => () =
+relation dump_components2: (Block list,int) => () =
 
   axiom	dump_components2([],_) => ()
 	
@@ -5995,9 +6584,19 @@ relation dump_components2: (int list list,int) => () =
 	& int_add(i,1) => i' &
 	dump_components2(lst,i') 
 	---------------------
-	dump_components2(l::lst,i) 
-end
+	dump_components2(EQN_BLOCK(l)::lst,i) 
 
+  rule	Exp.print_exp_str(cond) => s &
+	DAEEXT.get_lowlink(i) => ni &
+	print "if " & print s & print  " {" & 
+	Util.list_map(l,int_string) => ls &
+	Util.string_delimit_list(ls,", ") =>  s &
+	print s & print "}\n" 
+	& int_add(i,1) => i' &
+	dump_components2(lst,i') 
+	---------------------
+	dump_components2(COND_EQN_BLOCK(l,cond,indx)::lst,i) 
+end
 
 (** relation: translate_dae
  ** author: PA
@@ -6012,6 +6611,7 @@ end
  ** 
  **  The equations are updated with the new variable names.
  **)
+
 relation translate_dae: DAELow => DAELow =
 	
   rule   var_list(vars) => varlst &
@@ -8459,10 +9059,335 @@ relation get_zero_crossing_indices_from_when_clause2: (ZeroCrossing list, int, i
 end
 
 
+(** relation: dump_structural_if_conditions
+ ** author: PA
+ **
+ ** Dups structual if conditiions to stdout.
+ **)
+
+ relation dump_structural_if_conditions: (Exp.Exp* int) list list  => () =
+
+  rule Util.list_map_0(expl,dump_structural_if_conditions2) => ()
+	 -------------------
+	 dump_structural_if_conditions(expl) => ()
+
+end
+
+ relation dump_structural_if_conditions2: (Exp.Exp* int) list  => () =
+
+  axiom	dump_structural_if_conditions2([]) => ()
+
+  rule	Exp.print_exp_str(e) => s1 &
+	int_string(e_indx) => s2 &
+	Util.string_append_list(["if cond ",s1," in eqn:",s2,"\n"]) => s &
+	print s &
+	dump_structural_if_conditions2(es)
+	-----------------
+	dump_structural_if_conditions2((e,e_indx)::es) => ()
+
+end
+
+(** relation: structural_if_variables
+ ** author: PA
+ ** 
+ ** Returns the list of boolean variables that are involved in structural
+ ** if equations and need to be evaluated to produce several systems which
+ ** are sent to the matching algorithm.
+ **)
+
+relation structural_if_variables: (Exp.Exp* int) list list 
+	  => Exp.ComponentRef list =
+	
+  rule	Util.list_map(expl,Util.list_first) => expl1 &
+	Util.list_map(expl1,Util.tuple2_1) => expl2 &
+	Util.list_map(expl2,structural_if_variables_exp) => res
+	--------------------------
+	structural_if_variables(expl) => res
+end
+
+relation structural_if_variables_exp: (Exp.Exp) => Exp.ComponentRef =
+
+  axiom	structural_if_variables_exp(Exp.IFEXP(Exp.CREF(cr,_),_,_)) => cr
+
+end
+
+(** relation: structural_if_eqn_indices
+ ** author: PA
+ ** 
+ ** Returns the list of equation indices that are involved in structural
+ ** if equations
+ **)
+
+relation structural_if_eqn_indices: (Exp.Exp* int) list list 
+	  => int list list =
+	
+  rule	Util.list_list_map(expl,Util.tuple2_2) => res
+	--------------------------
+	structural_if_eqn_indices(expl) => res
+end
 
 
+(** relation: structural_if_equations
+ ** author: PA
+ **
+ ** This relation returns all if expressions with the same if-condition 
+ ** in two or more
+ ** equations that has different variables sets in different branches.
+ ** Such equation sets must be solved for all combinations of the values of 
+ ** the boolean conditions and will potentially give different matching results
+**)
+relation structural_if_equations: (DAELow) => (Exp.Exp* int) list list =
+	 
+  rule	collect_if_conditions(daelow) => lst &
+	structural_if_equations2(lst) => lst1 &
+	structural_if_equations_split_groups(lst1) => groups  &
+	structural_if_equations3(groups) => res 
+	----------------------
+	structural_if_equations(daelow) => res
+end
+
+(** relation: structural_if_equations3
+ ** author: PA
+ **
+ ** Filters out if equations that have different cref sets in different 
+ ** branches.
+ **)
+relation structural_if_equations3: (Exp.Exp* int) list list => (Exp.Exp* int) list list =
+
+  axiom	structural_if_equations3([]) => []
+
+  rule	structural_if_equations4(group) => group' &
+	structural_if_equations3(groups) => groups'
+	--------------------------
+	structural_if_equations3(group::groups) => group'::groups 
+
+	(* filter out group *)
+  rule	structural_if_equations3(groups) => groups'
+	--------------------------
+	structural_if_equations3(group::groups) => groups'
+end
 
 
+(** relation structural_if_equations4
+ ** 
+ ** Helper relation to structural_if_equations3
+ ** Filters out one group of if-expressions.
+**)
+
+relation structural_if_equations4:(Exp.Exp* int) list 
+	  => (Exp.Exp* int) list  = 
+
+
+  rule	Util.list_map(elst,structural_if_different_cref_branches) => blst &
+	Util.bool_or_list(blst) => true
+	-----------------------------
+	structural_if_equations4(elst) => elst
+end
+
+(** relation structural_if_different_cref_branches
+ ** author: PA
+ **
+ ** Returns true if the different branches of the (possible nested) IFEXP
+ ** contains different cref sets
+ **)
+
+relation structural_if_different_cref_branches:(Exp.Exp * int) => bool =
+
+  rule	Exp.ifexp_get_branches(e) => elst &
+	Util.list_map(elst,Exp.get_cref_from_exp) => cref_llst &
+	(* The set difference between all cref lists is empty *)
+	Util.list_reduce_1(cref_llst,Util.list_setdifference_p,Exp.cref_equal)
+	  => []
+	----------------------------
+	structural_if_different_cref_branches((e,_)) => false
+
+  axiom	structural_if_different_cref_branches(_) => true
+
+end
+
+
+(** relation structural_if_equations_split_groups
+ ** author: PA
+ **
+ ** Splits the ifexpression list into groups. All ifexpressions with the same
+ ** condition belong to the same group.
+ **)
+relation structural_if_equations_split_groups:(Exp.Exp* int) list 
+	  => (Exp.Exp* int) list list =
+
+  axiom	structural_if_equations_split_groups ([]) => []
+
+  rule	structural_if_equations_split_groups(es) => es' &
+	structural_if_equations_insert_in_group(e,es') => res
+	---------------------------
+	structural_if_equations_split_groups(e::es) => res
+end
+
+
+(** relation structural_if_equations_insert_in_group
+ ** author: PA
+ **
+ ** Helper relation to structural_if_equations_split_groups.
+ **)
+
+relation structural_if_equations_insert_in_group:((Exp.Exp*int), 
+						 (Exp.Exp* int) list list) 
+	  => (Exp.Exp* int) list list =
+
+  axiom	structural_if_equations_insert_in_group(e,[]) => [[e]]
+
+	(* insert into this group*)
+  rule	Exp.exp_equal(cond,cond2) => true 
+	------------------------------
+	structural_if_equations_insert_in_group((e as Exp.IFEXP(cond,_,_),
+						 e_indx),
+						((e2 as Exp.IFEXP(cond2,_,_),e2_indx)::es)::es2)
+	  => (((e,e_indx)::((e2,e2_indx)::es))::es2)
+
+	  (* insert into following groups.*)
+  rule	structural_if_equations_insert_in_group(e,groups) => groups'
+	------------------------------
+	structural_if_equations_insert_in_group(e,
+						(group::groups))
+	  => group::groups'
+end
+
+
+(** relation: structural_if_equations2
+ ** author: PA
+ **
+ ** Filters out tuples that have same condition in two or more equations.
+ **)
+
+relation structural_if_equations2:((Exp.Exp * int) list) 
+	  => ((Exp.Exp * int) list) =
+
+  axiom	structural_if_equations2([]) => []
+
+	(* If condition exist in more eqns *)
+  rule	structural_if_equations_exist_several(c,e_indx,es) => (es1' as _::_) &
+	structural_if_equations2(es) => es' &
+	list_append(es1',es') => es''
+	------------------------------
+	structural_if_equations2((e as Exp.IFEXP(c,_,_),e_indx)::es)
+	  => ((e,e_indx)::es'')
+
+	  (* otherwise remove it *)
+  rule	structural_if_equations2(es) => es'
+	------------------------------
+	structural_if_equations2((e as Exp.IFEXP(c,_,_),e_indx)::es) 
+	  => es'
+end
+
+(** relation: structural_if_equations_exist_several
+ ** author: PA
+ ** 
+ ** returns a list of condition expressions that exist in list with 
+ ** different equation index but same condition expression.
+ **)
+
+relation structural_if_equations_exist_several: (Exp.Exp, int, 
+						 (Exp.Exp * int) list) 
+	  => ((Exp.Exp * int) list) =
+
+  axiom	structural_if_equations_exist_several(cond,e_indx,[]) => []
+	
+	(* Succed if conditions same and e_index different *)
+  rule	not e_indx = e_indx2 &
+	Exp.exp_equal(cond,c2) => true  &
+	structural_if_equations_exist_several(cond,e_indx,es) => es' 
+	---------------------
+	structural_if_equations_exist_several(cond,e_indx,(e as Exp.IFEXP(c2,_,_),e_indx2)::es) 
+	  => ((e,e_indx2)::es')
+
+	  (* check rest*)
+  rule	structural_if_equations_exist_several(cond,e_indx,es) => res
+	----------------------------
+	structural_if_equations_exist_several(cond,e_indx,_::es) => res
+
+end
+
+(** relation: collect_if_conditions
+ ** author: PA
+ **
+ ** This relation collects all if expressions (IFEXP) from the equations and
+ ** return a tuple with the expressions and its corresponding equation index.
+ ** inputs: 
+ **)
+
+relation collect_if_conditions: (DAELow) => (Exp.Exp*int) list =
+
+  rule	equation_list(eqn) => eqn_lst &
+	collect_if_conditions2(eqn_lst,1) => res
+	--------------------------
+	collect_if_conditions(DAELOW(v,kn,eqn,reqn,ieqn,arreqn,algs,event))
+	
+	  => res
+end
+
+(** relation: collect_if_conditions2
+ ** author: PA
+ **
+ ** Helper relation to collect_if_conditions.
+ **)
+
+relation collect_if_conditions2:(Equation list,int) => (Exp.Exp * int) list =
+
+  axiom	collect_if_conditions2([],_) => []
+
+  rule	collect_if_conditions3(e,e_indx) => l1 &
+	int_add(e_indx,1) => e_indx' &
+	collect_if_conditions2(es,e_indx') => l2 &
+	list_append(l1,l2) => res
+	---------------------
+	collect_if_conditions2(e::es,e_indx) => res
+end
+
+(** relatin: collect_if_condition3
+ ** author: PA
+ **
+ ** Helper relation to collect_if_condition2. Collects if expressions from a 
+ ** single equation given its index.
+ **)
+
+relation collect_if_conditions3: (Equation, int) => (Exp.Exp * int) list =
+
+	(* EQUATION*)
+  rule	Exp.get_ifexp(e1) => l1 &
+	Exp.get_ifexp(e2) => l2 &
+	list_append(l1,l2) => lst1 &
+	list_length(lst1) => len &
+	Util.list_fill(e_indx,len) => lst2 &
+	Util.list_thread_tuple(lst1,lst2) => res
+	--------------------
+	collect_if_conditions3(EQUATION(e1,e2),e_indx) => res
+	
+	(* TODO: ARRAY_EQUATION*)
+  rule	Debug.fprint("failtrace", "-collect_if_condition3 ARRAY_EQUATION not impl.\n")
+	--------------------------
+	 collect_if_conditions3(ARRAY_EQUATION(_,_),_) =>  []
+
+  rule	Exp.get_ifexp(e) => lst1 &
+	list_length(lst1) => len &
+	Util.list_fill(e_indx,len) => lst2 &
+	Util.list_thread_tuple(lst1,lst2) => res
+	-------------------
+	collect_if_conditions3(SOLVED_EQUATION(cr,e),e_indx) => res
+
+  rule	Exp.get_ifexp(e) => lst1 &
+	list_length(lst1) => len &
+	Util.list_fill(e_indx,len) => lst2 &
+	Util.list_thread_tuple(lst1,lst2) => res
+	----------------------------------------
+	collect_if_conditions3(RESIDUAL_EQUATION(e),e_indx) => res
+
+	(* TODO: ARRAY_EQUATION*)
+  rule	print "collect_if_condition3 ALGORITHM not impl.\n"
+	--------------------------
+	collect_if_conditions3(ALGORITHM(_,_,_),_) =>  []
+
+  axiom	collect_if_conditions3(WHEN_EQUATION(_),_) => []
+end
 
 
 

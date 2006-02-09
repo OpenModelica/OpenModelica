@@ -1893,21 +1893,22 @@ end
          DAELow.incidence_matrix(dlow) => m &
 	 DAELow.transpose_matrix(m) => mT &
 	 DAELow.matching_algorithm(dlow,m,mT,(DAELow.INDEX_REDUCTION,DAELow.EXACT)) 
-	  => (ass1,ass2,dlow',m,mT) &
-           DAELow.strong_components(m,mT,ass1,ass2) => (comps) &
+	  => (ass1_lst,ass2_lst,ifconds,dlow',m_lst,mT_lst) &
+         DAELow.strong_components(m_lst,mT_lst,ass1_lst,ass2_lst,ifconds) 
+	  => (comps) &
          DAELow.translate_dae (dlow') => indexed_dlow &
          DAELow.calculate_values(indexed_dlow) => indexed_dlow' &
 	 Debug.fprint("bltdump","indexed DAE:\n") &
-	 Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) &
-	 Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT) &
+	 Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m_lst) &
+	 Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT_lst) &
 	 Debug.fcall("bltdump", DAELow.dump,indexed_dlow') &
-	 Debug.fcall("bltdump", DAELow.dump_matching, ass1) &
+	 Debug.fcall("bltdump", DAELow.dump_matching, ass1_lst) &
 	 Absyn.path_string(classname) => cname_str &
 	 Util.string_append_list([filenameprefix,".cpp"]) => filename &
 	 Util.string_append_list([filenameprefix,"_functions.cpp"]) => funcfilename &
 	 generate_makefilename(filenameprefix) => makefilename &
          SimCodegen.generate_functions(p',dae,indexed_dlow',classname,funcfilename) => libs &
-	 SimCodegen.generate_simulation_code(dae,indexed_dlow',ass1,ass2,m,mT,comps,classname,filename,funcfilename) &
+	 SimCodegen.generate_simulation_code(dae,indexed_dlow',ass1_lst,ass2_lst,m_lst,mT_lst,comps,classname,filename,funcfilename) &
 	 SimCodegen.generate_makefile(makefilename,filenameprefix,libs) 
          (*	Util.string_append_list(["make -f ",cname_str, ".makefile\n"]) => s_call &
           *)

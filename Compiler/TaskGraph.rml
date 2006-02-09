@@ -61,7 +61,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 module TaskGraph:
   with "Exp.rml"
   with "DAELow.rml"
-  relation build_taskgraph: (DAELow.DAELow, int vector, int vector, int list list) => ()
+  relation build_taskgraph: (DAELow.DAELow, int vector list, int vector list, 
+			     DAELow.Block list) => ()
 
 end
 
@@ -74,7 +75,10 @@ with "Print.rml"
 with "VarTransform.rml"
 with "SimCodegen.rml"
 
-relation build_taskgraph: (DAELow.DAELow,  int vector, int vector, int list list) => () =
+relation build_taskgraph: (DAELow.DAELow,  
+			   int vector list, 
+			   int vector list, 
+			   DAELow.Block list) => () =
 
   rule	print "starting buildtaskgraph\n" &
 	TaskGraphExt.new_task("start") => starttask &
@@ -206,21 +210,24 @@ rule	add_variable(v,start) &
 	add_variables(v::vs,start) => ()
 end
 
-relation build_blocks:(DAELow.DAELow, int vector, int vector, int list list) => () =
+relation build_blocks:(DAELow.DAELow, 
+		       int vector list, 
+		       int vector list, 
+		       DAELow.Block list) => () =
 
   axiom	build_blocks(_,_,_,[]) => ()
 
   rule	(* For system of equations *)
 	build_system(dae,ass1,ass2,block) &
-	build_blocks(dae,ass1,ass2,blocks)
+	build_blocks(dae,ass1_lst,ass2_lst,blocks)
 	-------------------------------------
-	build_blocks(dae,ass1,ass2,(block as (_::_::_))::blocks)
+	build_blocks(dae,ass1_lst as ass1::_,ass2_lst as ass2::_,(DAELow.EQN_BLOCK(block))::blocks)
 	
   rule	(* for single equations *)
 	build_equation(dae,ass1,ass2,eqn) &
-	build_blocks(dae,ass1,ass2,blocks)
+	build_blocks(dae,ass1_lst,ass2_lst,blocks)
 	-------------------------------------
-	build_blocks(dae,ass1,ass2,(block as [eqn])::blocks)
+	build_blocks(dae,ass1_lst as ass1::_, ass2_lst as ass2::_,DAELow.EQN_BLOCK([eqn])::blocks)
 
   rule	print "-build_blocks failed\n" 
 	-----------------

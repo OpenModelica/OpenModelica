@@ -400,18 +400,19 @@ relation optimize_dae: (SCode.Program, DAE.DAElist, DAE.DAElist, Absyn.Path) => 
 	& Debug.fcall("dumpdaelow", DAELow.dump, dlow) 
 	& DAELow.incidence_matrix(dlow) => m 
 	& DAELow.transpose_matrix(m) => mT 
-	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
-	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT) 
+	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, [m]) 
+	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, [mT]) 
 	& DAELow.matching_algorithm(dlow,m,mT,(DAELow.INDEX_REDUCTION,DAELow.EXACT)) 
-	  => (v1,v2,dlow',m,mT) 
-	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m) 
-	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT) 
+	  => (v1_lst,v2_lst,ifconds,dlow',m_lst,mT_lst) 
+	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix, m_lst) 
+	& Debug.fcall("bltdump", DAELow.dump_incidence_matrix_t, mT_lst) 
 	& Debug.fcall("bltdump", DAELow.dump,dlow')
-	& Debug.fcall("bltdump", DAELow.dump_matching, v1)
-	& DAELow.strong_components(m,mT,v1,v2) => (comps) 
+	& Debug.fcall("bltdump", DAELow.dump_matching, v1_lst)
+	& DAELow.strong_components(m_lst,mT_lst,v1_lst,v2_lst,ifconds) 
+	  => (comps) 
 	& Debug.fcall("bltdump",DAELow.dump_components,comps) 
-	& modpar(dlow',v1,v2,comps) 
-	& simcodegen(classname,p,daeimpl,dlow',v1,v2,m,mT,comps)
+	& modpar(dlow',v1_lst,v2_lst,comps) 
+	& simcodegen(classname,p,daeimpl,dlow',v1_lst,v2_lst,m_lst,mT_lst,comps)
 
 	-----------------------
 	optimize_dae(p,dae,daeimpl,classname) => ()
@@ -431,7 +432,9 @@ end
  **
  ** The automatic paralellzation module.
  **)
-relation modpar: (DAELow.DAELow, int vector, int vector, int list list) => () =
+relation modpar: (DAELow.DAELow, int vector list, int vector list,
+		  DAELow.Block list) 
+	  => () =
 
   rule	(* If modpar not enabled, nproc = 0, return *) 
 	RTOpts.no_proc() => n &
@@ -481,11 +484,11 @@ relation simcodegen: (Absyn.Path, (* classname *)
 		      SCode.Program,
 		      DAE.DAElist, 
 		      DAELow.DAELow, 
-		      int vector, (* ass1 *)
-		      int vector, (* ass2 *)
-		      DAELow.IncidenceMatrix,
-		      DAELow.IncidenceMatrixT,
-		      int list list) (* blocks *)
+		      int vector list, (* ass1 *)
+		      int vector list, (* ass2 *)
+		      DAELow.IncidenceMatrix list,
+		      DAELow.IncidenceMatrixT list,
+		      DAELow.Block list) (* blocks *)
 	  => () =
 
   rule	RTOpts.simulation_cg() => true &

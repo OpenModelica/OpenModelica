@@ -233,8 +233,10 @@ module Exp:
   relation get_cref_from_exp: (Exp) => ComponentRef list	 
   relation typeof: (Exp) => Type 
   relation type_builtin: (Type) => bool
-  relation get_function_calls_list : Exp list => Exp list
+  relation get_function_calls_list : Exp list => Exp list	  
   relation get_function_calls : Exp  => Exp list
+  relation get_ifexp : Exp => Exp list
+  relation ifexp_get_branches : Exp => Exp list
   relation type_string : Type => string
 
   relation factors: Exp => Exp list 
@@ -248,12 +250,17 @@ module Exp:
 
   relation traverse_exp: (Exp, 
 			  ((Exp * 'a) => (Exp * 'a)),  (* rel-ation to apply*)
+			  ((Exp ) => (bool)) option,  (* if true, traverse children, if NONE, traverse all children.*)
 			  'a) (* extra value passed to re-lation*)
 	  => (Exp *  'a) 
+
 
   relation nth_array_exp: (Exp,int) => Exp
   relation exp_add: (Exp,Exp) => Exp
   relation exp_cref: (Exp) => ComponentRef
+	  
+  relation is_cref: (Exp) => bool
+
 end
 
 
@@ -858,6 +865,19 @@ relation simplify : Exp => Exp =
 	----------------------------------------
 	simplify (exp as LBINARY(e1, op, e2)) => e
 
+	(* true condition *)
+  rule	simplify(e1) => BCONST(true) &
+	simplify(e2) => e2' 
+	-----------------------
+	simplify (IFEXP(e1,e2,e3)) 
+	  => e2' 
+
+	(* false condition *)
+  rule	simplify(e1) => BCONST(false) &
+	simplify(e3) => e3' 
+	-----------------------
+	simplify (IFEXP(e1,e2,e3)) 
+	  => e3' 
 
   rule	simplify(e1) => e1' &
 	simplify(e2) => e2' &
@@ -5074,6 +5094,80 @@ relation get_function_calls : Exp => Exp list =
 
 end
 
+(** relation: ifexp_get_branches
+ ** author PA
+ ** 
+ ** Returns all branches of an if expression. It also checks nested if 
+ ** expressions.
+ **)
+
+relation ifexp_get_branches : Exp => Exp list =
+
+	(* both branches contain nested IFEXPs*)
+  rule	ifexp_get_branches(e1) => lst1 &
+	ifexp_get_branches(e2) => lst2 &
+	list_append(lst1,lst2) => res
+	------------------------
+	ifexp_get_branches(IFEXP(c,e1,e2)) => res
+
+	(* true branch contain nested IFEXPs*)
+  rule	ifexp_get_branches(e1) => lst
+	---------------------------------
+	ifexp_get_branches(IFEXP(c,e1,e2)) => e2::lst 
+
+	(* false branch contain nested IFEXPs*)
+  rule	ifexp_get_branches(e2) => lst
+	---------------------------------
+	ifexp_get_branches(IFEXP(c,e1,e2)) => e1::lst 
+	
+  axiom	ifexp_get_branches(IFEXP(c,e1,e2)) => [e1,e2]
+
+end
+
+(** relation: get_ifexp
+ **
+ ** Return all IFEXP expressions from an expression. Nested IFEXPS are 
+ ** returned as one.
+**)
+	    
+relation get_ifexp : Exp => Exp list =
+
+  rule	traverse_exp(e,get_ifexp2,SOME(ifexp_t_children),[]) => ((_,res))
+	-----------------------
+	get_ifexp(e) => res
+end
+
+(** relation: ifexp_t_children
+** author: PA
+ **
+ ** Helper relation to get_ifexp. Makes sure that children of IFEXP:s are
+ ** not traversed.
+ **)
+
+relation ifexp_t_children: (Exp) => (bool) =
+
+	(* do not traverse children of IFEXP *)
+axiom	ifexp_t_children(IFEXP(_,_,_)) => false
+
+  axiom	ifexp_t_children(_) => true 
+
+end
+
+(** relation: get_ifexp2
+ **
+ ** Helper relation to get_ifexp
+ **)
+
+relation get_ifexp2: ((Exp*Exp list)) => ((Exp*Exp list)) =
+
+
+  axiom	get_ifexp2((e as IFEXP(_,_,_),expl)) => ((e,e::expl))
+
+  axiom	get_ifexp2((e,expl)) => ((e,expl))
+
+end
+
+
 (** relation: nth_array_exp
  ** author: PA
  **
@@ -5122,6 +5216,20 @@ relation exp_cref: (Exp) => ComponentRef =
 
 end
 
+(** relation: is_cref
+ **
+ ** Returns true if Exp is a CREF,
+ **)
+relation is_cref: (Exp) => bool =
+
+  axiom	is_cref(CREF(cr,_)) => true
+	
+  axiom	is_cref(_) => false
+
+end
+
+
+
 (** relation traverse_exp
  **
  ** Traverses all subexpressions of an expression.
@@ -5129,131 +5237,187 @@ end
  **)
 relation traverse_exp: (Exp, 
 			 ((Exp * 'a) => (Exp * 'a)),  (* rel-ation to apply*)
+			((Exp ) => (bool)) option,  (* if true, traverse children, if NONE, traverse all children.*)
 			 'a) (* extra value passed to re-lation*)
 	  => (Exp *  'a) =
 	   
 	   (* unary *)
-  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
+  rule	call_t_children(t_children,e) => true &
+	traverse_exp(e1,rel,t_children,ext_arg) => ((e1',ext_arg')) &
 	 rel((e,ext_arg')) => ((UNARY(op',_),ext_arg''))
 	 -----------------------------------
-	 traverse_exp(e as UNARY(op,e1),rel,ext_arg) 
+	 traverse_exp(e as UNARY(op,e1),rel,t_children,ext_arg) 
 	  => ((UNARY(op',e1'),ext_arg''))
 	   
 	   (* binary *)
-  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
-	 traverse_exp(e2,rel,ext_arg') => ((e2',ext_arg'')) &
+  rule	call_t_children(t_children,e) => true &
+	traverse_exp(e1,rel,t_children,ext_arg) => ((e1',ext_arg')) &
+	 traverse_exp(e2,rel,t_children,ext_arg') => ((e2',ext_arg'')) &
 	 rel((e,ext_arg'')) => ((BINARY(_,op',_),ext_arg'''))
 	 ----------------------------------------------
-	 traverse_exp(e as BINARY(e1,op,e2),rel,ext_arg) 
+	 traverse_exp(e as BINARY(e1,op,e2),rel,t_children,ext_arg) 
 	  => ((BINARY(e1',op',e2'),ext_arg'''))
 	   
 	   (* logic unary *)
-  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
+  rule	call_t_children(t_children,e) => true &
+	traverse_exp(e1,rel,t_children,ext_arg) => ((e1',ext_arg')) &
 	 rel((e,ext_arg')) => ((LUNARY(op',_),ext_arg''))
  	 -----------------------------------
-	 traverse_exp(e as LUNARY(op,e1),rel,ext_arg) 
+	 traverse_exp(e as LUNARY(op,e1),rel,t_children,ext_arg) 
 	  => ((LUNARY(op',e1'),ext_arg''))
 	   
 	   (* logic binary *)
-  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
-	 traverse_exp(e2,rel,ext_arg') => ((e2',ext_arg'')) &
+  rule	call_t_children(t_children,e) => true &
+	traverse_exp(e1,rel,t_children,ext_arg) => ((e1',ext_arg')) &
+	 traverse_exp(e2,rel,t_children,ext_arg') => ((e2',ext_arg'')) &
 	 rel((e,ext_arg'')) => ((LBINARY(_,op',_),ext_arg'''))
 	 ----------------------------------------------
-	 traverse_exp(e as LBINARY(e1,op,e2),rel,ext_arg) 
+	 traverse_exp(e as LBINARY(e1,op,e2),rel,t_children,ext_arg) 
 	  => ((LBINARY(e1',op',e2'),ext_arg'''))
 	   
 	   (* RELATION *)
-  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
-	traverse_exp(e2,rel,ext_arg') => ((e2',ext_arg'')) &
+  rule	call_t_children(t_children,e) => true &
+	traverse_exp(e1,rel,t_children,ext_arg) => ((e1',ext_arg')) &
+	traverse_exp(e2,rel,t_children,ext_arg') => ((e2',ext_arg'')) &
 	 rel((e,ext_arg'')) => ((RELATION(_,op',_),ext_arg'''))
 	 ----------------------------------------------
-	 traverse_exp(e as RELATION(e1,op,e2),rel,ext_arg) 
+	 traverse_exp(e as RELATION(e1,op,e2),rel,t_children,ext_arg) 
 	  => ((RELATION(e1',op',e2'),ext_arg'''))
 
 	  (* if expression *)
-  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
-	traverse_exp(e2,rel,ext_arg') => ((e2',ext_arg'')) &
-	traverse_exp(e3,rel,ext_arg'') => ((e3',ext_arg''')) &
+  rule	call_t_children(t_children,e) => true &
+	traverse_exp(e1,rel,t_children,ext_arg) => ((e1',ext_arg')) &
+	traverse_exp(e2,rel,t_children,ext_arg') => ((e2',ext_arg'')) &
+	traverse_exp(e3,rel,t_children,ext_arg'') => ((e3',ext_arg''')) &
 	 rel((e,ext_arg''')) => ((e',ext_arg''''))
 	----------------------------------------------
-	traverse_exp(e as IFEXP(e1,e2,e3),rel,ext_arg) 
+	traverse_exp(e as IFEXP(e1,e2,e3),rel,t_children,ext_arg) 
 	  => ((IFEXP(e1',e2',e3'),ext_arg''''))
 
-  rule	Util.list_fold_map(expl,rel,ext_arg) =>(expl',ext_arg') &
+  rule	call_t_children(t_children,e) => true &
+	traverse_exp_list(expl,rel,t_children,ext_arg) => (expl',ext_arg') &
 	 rel((e,ext_arg')) => ((CALL(fn',_,t',b'),ext_arg''))
 	----------------------------------------------
-	traverse_exp(e as CALL(fn,expl,t,b),rel,ext_arg) 
+	traverse_exp(e as CALL(fn,expl,t,b),rel,t_children,ext_arg) 
 	  => ((CALL(fn',expl',t',b'),ext_arg''))
 
-  rule	Util.list_fold_map(expl,rel,ext_arg) =>(expl',ext_arg') &
+  rule	call_t_children(t_children,e) => true &
+	traverse_exp_list(expl,rel,t_children,ext_arg) => (expl',ext_arg') &
 	 rel((e,ext_arg')) => ((ARRAY(tp',scalar',_),ext_arg''))
 	----------------------------------------------
-	traverse_exp(e as ARRAY(tp,scalar,expl),rel,ext_arg) 
+	traverse_exp(e as ARRAY(tp,scalar,expl),rel,t_children,ext_arg) 
 	  => ((ARRAY(tp',scalar',expl'),ext_arg''))
 
-  rule	traverse_exp_matrix(expl,rel,ext_arg) => (expl',ext_arg') &
+  rule	call_t_children(t_children,e) => true &
+	traverse_exp_matrix(expl,rel,t_children,ext_arg) => (expl',ext_arg') &
 	 rel((e,ext_arg')) => ((MATRIX(tp',scalar',_),ext_arg''))
 	----------------------------------------------
-	traverse_exp(e as MATRIX(tp,scalar,expl),rel,ext_arg) 
+	traverse_exp(e as MATRIX(tp,scalar,expl),rel,t_children,ext_arg) 
 	  => ((MATRIX(tp,scalar,expl'),ext_arg''))
 
-  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
-	traverse_exp(e2,rel,ext_arg') => ((e2',ext_arg'')) &
+  rule	call_t_children(t_children,e) => true &
+	traverse_exp(e1,rel,t_children,ext_arg) => ((e1',ext_arg')) &
+	traverse_exp(e2,rel,t_children,ext_arg') => ((e2',ext_arg'')) &
 	 rel((e,ext_arg'')) => ((RANGE(tp',_,_,_),ext_arg'''))
 	----------------------------------------------
-	traverse_exp(e as RANGE(tp,e1,NONE,e2),rel,ext_arg) 
+	traverse_exp(e as RANGE(tp,e1,NONE,e2),rel,t_children,ext_arg) 
 	  => ((RANGE(tp',e1',NONE,e2'),ext_arg'''))
 
-  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
-	traverse_exp(e2,rel,ext_arg') => ((e2',ext_arg''))  &
-	traverse_exp(e3,rel,ext_arg'') => ((e3',ext_arg''')) &
+  rule	call_t_children(t_children,e) => true &
+	traverse_exp(e1,rel,t_children,ext_arg) => ((e1',ext_arg')) &
+	traverse_exp(e2,rel,t_children,ext_arg') => ((e2',ext_arg''))  &
+	traverse_exp(e3,rel,t_children,ext_arg'') => ((e3',ext_arg''')) &
 	 rel((e,ext_arg''')) => ((RANGE(tp',_,_,_),ext_arg''''))
 	----------------------------------------------
-	traverse_exp(e as RANGE(tp,e1,SOME(e2),e3),rel,ext_arg) 
+	traverse_exp(e as RANGE(tp,e1,SOME(e2),e3),rel,t_children,ext_arg) 
 	  => ((RANGE(tp',e1',SOME(e3),e2'),ext_arg''''))
 
-  rule	Util.list_fold_map(expl,rel,ext_arg) => (expl',ext_arg') &
+  rule	call_t_children(t_children,e) => true &
+	traverse_exp_list(expl,rel,t_children,ext_arg) => (expl',ext_arg') &
 	 rel((e,ext_arg')) => ((e',ext_arg''))
 	----------------------------------------------
-	traverse_exp(e as TUPLE(expl),rel,ext_arg) 
+	traverse_exp(e as TUPLE(expl),rel,t_children,ext_arg) 
 	  => ((TUPLE(expl'),ext_arg''))
 
-  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
+  rule	call_t_children(t_children,e) => true &
+	traverse_exp(e1,rel,t_children,ext_arg) => ((e1',ext_arg')) &
 	 rel((e,ext_arg')) => ((CAST(tp',_),ext_arg''))
 	----------------------------------------------
-	traverse_exp(e as CAST(tp,e1),rel,ext_arg) 
+	traverse_exp(e as CAST(tp,e1),rel,t_children,ext_arg) 
 	  => ((CAST(tp,e1'),ext_arg''))
 
-  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
+  rule	call_t_children(t_children,e) => true &
+	traverse_exp(e1,rel,t_children,ext_arg) => ((e1',ext_arg')) &
 	rel((e,ext_arg')) => ((ASUB(_,i'),ext_arg''))
 	----------------------------------------------
-	traverse_exp(e as ASUB(e1,i),rel,ext_arg) 
+	traverse_exp(e as ASUB(e1,i),rel,t_children,ext_arg) 
 	  => ((ASUB(e1',i'),ext_arg''))
 
-  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
+  rule	call_t_children(t_children,e) => true &
+	traverse_exp(e1,rel,t_children,ext_arg) => ((e1',ext_arg')) &
 	rel((e,ext_arg')) => ((e',ext_arg''))
 	----------------------------------------------
-	traverse_exp(e as SIZE(e1,NONE),rel,ext_arg)
+	traverse_exp(e as SIZE(e1,NONE),rel,t_children,ext_arg)
 	  => ((SIZE(e1',NONE),ext_arg''))
 
-  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
-	traverse_exp(e2,rel,ext_arg') => ((e2',ext_arg'')) &
+  rule	call_t_children(t_children,e) => true &
+	traverse_exp(e1,rel,t_children,ext_arg) => ((e1',ext_arg')) &
+	traverse_exp(e2,rel,t_children,ext_arg') => ((e2',ext_arg'')) &
 	rel((e,ext_arg'')) => ((e',ext_arg'''))
 	----------------------------------------------
-	traverse_exp(e as SIZE(e1,SOME(e2)),rel,ext_arg) 
+	traverse_exp(e as SIZE(e1,SOME(e2)),rel,t_children,ext_arg) 
 	  => ((SIZE(e1',SOME(e2')),ext_arg'''))
 
-  rule	traverse_exp(e1,rel,ext_arg) => ((e1',ext_arg')) &
-	traverse_exp(e2,rel,ext_arg') => ((e2',ext_arg'')) &
+  rule	call_t_children(t_children,e) => true &
+	traverse_exp(e1,rel,t_children,ext_arg) => ((e1',ext_arg')) &
+	traverse_exp(e2,rel,t_children,ext_arg') => ((e2',ext_arg'')) &
 	 rel((e,ext_arg'')) => ((REDUCTION(path',_,id',_),ext_arg'''))
 	 ------------------------
-	 traverse_exp(e as REDUCTION(path,e1,id,e2),rel,ext_arg)
+	 traverse_exp(e as REDUCTION(path,e1,id,e2),rel,t_children,ext_arg)
 	  => ((REDUCTION(path',e1',id',e2'),ext_arg'''))
 
   rule	rel((e,ext_arg)) => ((e',ext_arg'))
 	-----------------------
-	traverse_exp(e,rel,ext_arg) => ((e',ext_arg'))
+	traverse_exp(e,rel,t_children,ext_arg) => ((e',ext_arg'))
 end
+
+(** relation: traverse_exp_list
+ ** author: PA
+ ** 
+ ** Helper relation to traverse_exp
+ **)
+
+relation traverse_exp_list: (Exp list,
+			     ((Exp * 'a) => (Exp * 'a)),  (* rel-ation to apply*)
+			     ((Exp ) => (bool)) option,  (* if true, traverse children, if NONE, traverse all children.*)
+			     'a) (* extra value passed to re-lation*)
+	  => (Exp list ,  'a) =
+
+  axiom	traverse_exp_list([],_,_,ext_arg) => ([],ext_arg)
+
+  rule	traverse_exp(e,rel,t_children,ext_arg) => ((e',ext_arg')) &
+	traverse_exp_list(es,rel,t_children,ext_arg') => (es',ext_arg'')
+	-------------------------------
+	traverse_exp_list(e::es,rel,t_children,ext_arg) 
+	  => (e'::es',ext_arg'')
+end 
+
+(** relation: call_t_children
+ ** author: PA
+ **
+ ** Calls the passed relation is SOME to check if children of the expression
+ ** should be traversed and return its boolean value. If NONE, return true,
+ ** I.e. no relation => always traverse children.
+ **)
+relation call_t_children:  (((Exp ) => (bool)) option,Exp) => bool =
+
+  axiom	call_t_children(NONE,_) => true
+
+  rule	check(e) => res
+	------------------
+	call_t_children(SOME(check),e) => res
+end
+ 
 
 (** relation: traverse_exp_matrix
  ** author: PA
@@ -5262,15 +5426,16 @@ end
  **)
 relation traverse_exp_matrix:((Exp*bool) list list, 
 			      ((Exp * 'a) => (Exp * 'a)),
+			      ((Exp ) => (bool)) option,
 			      'a) 
 	  => ((Exp*bool) list list,'a) =
 	  
-  axiom	traverse_exp_matrix([],rel,e_arg) => ([],e_arg)
+  axiom	traverse_exp_matrix([],rel,t_children,e_arg) => ([],e_arg)
 	
-  rule	traverse_exp_matrix_2(row,rel,e_arg) => (row',e_arg') &
-	traverse_exp_matrix(rows,rel,e_arg') => (rows',e_arg'')
+  rule	traverse_exp_matrix_2(row,rel,t_children,e_arg) => (row',e_arg') &
+	traverse_exp_matrix(rows,rel,t_children,e_arg') => (rows',e_arg'')
 	----------------
-	traverse_exp_matrix(row::rows,rel,e_arg) 
+	traverse_exp_matrix(row::rows,rel,t_children,e_arg) 
 	  => (row'::rows',e_arg'')
 end
 
@@ -5281,15 +5446,16 @@ end
  **)
 relation traverse_exp_matrix_2: ((Exp*bool) list, 
 				  ((Exp * 'a) => (Exp * 'a)),
+				 ((Exp ) => (bool)) option,
 				  'a) 
 	  => ((Exp*bool) list,'a) = 
 
-  axiom	traverse_exp_matrix_2([],_,e_arg) => ([],e_arg)
+  axiom	traverse_exp_matrix_2([],_,_,e_arg) => ([],e_arg)
 
-  rule	traverse_exp(e,rel,e_arg) => ((e',e_arg')) &
-	traverse_exp_matrix_2(rest,rel,e_arg') => (rest',e_arg'')
+  rule	traverse_exp(e,rel,t_children,e_arg) => ((e',e_arg')) &
+	traverse_exp_matrix_2(rest,rel,t_children,e_arg') => (rest',e_arg'')
 	------------------------------
-	traverse_exp_matrix_2((e,b)::rest,rel,e_arg) 
+	traverse_exp_matrix_2((e,b)::rest,rel,t_children,e_arg) 
 	  => ( (e',b)::rest',e_arg'')
 end
 
