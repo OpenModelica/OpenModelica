@@ -230,9 +230,12 @@ getElementsInfo(cref)                     Returns all the elements in a class wi
                                             + general attributes: 
                                                { 
                                                  elementvisibility=public|protected, 
-                                                 elementfile=file, 
-                                                 elementline=line, 
-                                                 elementcolumn=column,
+                                                 elementfile=file,
+                                                 elementreadonly="readonly"|"writable", 
+                                                 elementStartLine=startline, 
+                                                 elementStartColumn=startcolumn,
+                                                 elementEndLine=endline, 
+                                                 elementEndColumn=endcolumn,
                                                  /* the next ones are exactly like in getComponents */
                                                  final=true|false,
                                                  replaceable=true|false,
@@ -241,7 +244,15 @@ getElementsInfo(cref)                     Returns all the elements in a class wi
                                                  ... /* more here depending on the elementtype. read below */
                                                }
                                                /* depending on the elementtype some more attributes will follow here */
-                                               for classdef: classname=id, classrestriction=PACKAGE|..., classfile=file, classline=line, classcolumn=column
+                                               for classdef: 
+                                                 classname=id, 
+                                                 classrestriction=PACKAGE|..., 
+                                                 classfile=file, 
+                                                 classreadonly="readonly"|"writable", 
+                                                 classStartLine=startline, 
+                                                 classStartColumn=startcolumn
+                                                 classEndLine=endline, 
+                                                 classEndColumn=endcolumn
                                                for extends: path=name
                                                for import: kind=named|qualified|unqualified 
                                                      + for named: id=id, path=name

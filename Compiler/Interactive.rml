@@ -2005,7 +2005,7 @@ relation get_element_type: (Absyn.ElementSpec) => string =
        int_string(ecol) => ecol_str &
        select_string(isReadOnly,"readonly","writable") => readonly_str &
        Util.string_append_list(["elementtype=classdef, classname=", id, ", classrestriction=", str_restriction, 
-                                ", classfile=\"", file,"\", readonly=\"", readonly_str, 
+                                ", classfile=\"", file,"\", classreadonly=\"", readonly_str, 
                                 "\", classStartLine=", sline_str,", classStartColumn=", scol_str,
                                 ", classEndLine=", eline_str,", classEndColumn=", ecol_str
                                 ]) => str 
@@ -2055,7 +2055,7 @@ relation get_element_info: (Absyn.ElementItem) => string =
        int_string(eline) => eline_str &
        int_string(ecol)  => ecol_str &
        select_string(isReadOnly, "readonly","writable") => readonly_str &
-       Util.string_append_list(["elementfile=\"", file, "\", readonly=\"",readonly_str,
+       Util.string_append_list(["elementfile=\"", file, "\", elementreadonly=\"",readonly_str,
        						    "\", elementStartLine=", sline_str, ", elementStartColumn=", scol_str, 
        						    ", elementEndLine=", eline_str, ", elementEndColumn=", ecol_str, 
                                 ", final=", final, ", replaceable=", repl, ", inout=", inout_str, ", ", element_str]) => str     
