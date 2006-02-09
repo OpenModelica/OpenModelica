@@ -1659,7 +1659,7 @@ relation simplify_asub: (Exp, int) => Exp =
 	simplify(e2) => e2' 
 	----------------------------
 	simplify_asub(BINARY(e1,DIV_ARRAY_SCALAR(t),e2),indx)
-	  => (BINARY(e1',DIV_ARRAY_SCALAR(t),e2'))
+	  => (BINARY(e1',DIV(t),e2'))
 
   rule	simplify_asub(e1,indx) => e1' &
 	simplify_asub(e2,indx) => e2' 
