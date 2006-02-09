@@ -49,6 +49,10 @@ header "post_include_hpp" {
 
 #define null 0
 #include "MyAST.h"
+
+#include "../../Compiler/runtime/errorext.h"
+
+#include "../../Compiler/runtime/error_reporting.h"
 }
 
 options {

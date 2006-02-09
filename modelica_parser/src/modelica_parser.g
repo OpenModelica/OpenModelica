@@ -3,7 +3,12 @@ header "post_include_hpp" {
 #define null 0
 #include "MyAST.h"
 
+#include "../../Compiler/runtime/errorext.h"
+
+#include "../../Compiler/runtime/error_reporting.h"
+
 typedef ANTLR_USE_NAMESPACE(antlr)ASTRefCount<MyAST> RefMyAST;
+
 }
 
 options {
@@ -119,6 +124,7 @@ stored_definition :
 			}
 
 			;
+
 
 within_clause :
   				WITHIN^ (name_path)?
@@ -253,6 +259,23 @@ external_function_call :
 element_list :
 		((element | annotation ) SEMICOLON!)*
 		;
+        exception
+        catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
+        {
+          BEFORE_SYNC;
+
+          // Sync to {PUBLIC, PROTECTED, EQUATION, ALGORITHM, EXTERNAL, END}
+          while(LA(1) != PUBLIC && LA(1) != PROTECTED && LA(1) != EQUATION && LA(1) != ALGORITHM && LA(1) != EXTERNAL && LA(1) != END)
+          {
+            if(LA(1) == EOF_)
+            {
+              throw ANTLR_USE_NAMESPACE(antlr)RecognitionException("unexpected end of file", modelicafilename, LT(1)->getLine(), LT(1)->getColumn());
+            }
+            consume();
+          }
+
+          AFTER_SYNC;
+        }
 
 element :
 			ic:import_clause
@@ -277,6 +300,23 @@ element :
 			}
 		}
 		;
+        exception
+        catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
+        {
+          BEFORE_SYNC;
+
+          // Sync to SEMICOLON
+          while(LA(1) != SEMICOLON)
+          {
+            if(LA(1) == EOF_)
+            {
+              throw ANTLR_USE_NAMESPACE(antlr)RecognitionException("unexpected end of file", modelicafilename, LT(1)->getLine(), LT(1)->getColumn());
+            }
+            consume();
+          }
+
+          AFTER_SYNC;
+        }
 
 import_clause : 
 		IMPORT^ (explicit_import_name | implicit_import_name) comment
@@ -442,6 +482,24 @@ equation_annotation_list :
 		|
 		( equation SEMICOLON! | annotation SEMICOLON!) equation_annotation_list
 		; 
+        exception
+        catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
+        {
+          BEFORE_SYNC;
+
+          // Sync to {END, EQUATION, ALGORITHM, INITIAL, PROTECTED, PUBLIC}
+          while(LA(1) != END && LA(1) != EQUATION && LA(1) != ALGORITHM && LA(1) != INITIAL
+                && LA(1) != PROTECTED && LA(1) != PUBLIC)
+          {
+            if(LA(1) == EOF_)
+            {
+              throw ANTLR_USE_NAMESPACE(antlr)RecognitionException("unexpected end of file", modelicafilename, LT(1)->getLine(), LT(1)->getColumn());
+            }
+            consume();
+          }
+
+          AFTER_SYNC;
+        }
 
 algorithm_clause :
 		ALGORITHM^
@@ -449,6 +507,25 @@ algorithm_clause :
 		|annotation SEMICOLON!
 		)*
 		;
+        exception
+        catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
+        {
+          BEFORE_SYNC;
+
+          // Sync to {END, EQUATION, ALGORITHM, INITIAL, PROTECTED, PUBLIC}
+          while(LA(1) != END && LA(1) != EQUATION && LA(1) != ALGORITHM && LA(1) != INITIAL
+                && LA(1) != PROTECTED && LA(1) != PUBLIC)
+          {
+            if(LA(1) == EOF_)
+            {
+              throw ANTLR_USE_NAMESPACE(antlr)RecognitionException("unexpected end of file", modelicafilename, LT(1)->getLine(), LT(1)->getColumn());
+            }
+            consume();
+          }
+
+          AFTER_SYNC;
+        }
+
 initial_algorithm_clause :
 		{ LA(2)==ALGORITHM}?
 		INITIAL! ALGORITHM^
@@ -459,8 +536,26 @@ initial_algorithm_clause :
 	            #initial_algorithm_clause = #([INITIAL_ALGORITHM,"INTIAL_ALGORITHM"], #initial_algorithm_clause);
 		}
 		;
+        exception
+        catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
+        {
+          BEFORE_SYNC;
+
+          // Sync to {END, EQUATION, ALGORITHM, INITIAL, PROTECTED, PUBLIC}
+          while(LA(1) != END && LA(1) != EQUATION && LA(1) != ALGORITHM && LA(1) != INITIAL
+                && LA(1) != PROTECTED && LA(1) != PUBLIC)
+          {
+            if(LA(1) == EOF_)
+            {
+              throw ANTLR_USE_NAMESPACE(antlr)RecognitionException("unexpected end of file", modelicafilename, LT(1)->getLine(), LT(1)->getColumn());
+            }
+            consume();
+          }
+
+          AFTER_SYNC;
+        }
+
 equation :
-        
 		(   (simple_expression EQUALS) => equality_equation
 		|	conditional_equation_e
 		|	for_clause_e
@@ -473,6 +568,23 @@ equation :
         }
 		comment
 		;
+        exception
+        catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
+        {
+          BEFORE_SYNC;
+
+          // Sync to SEMICOLON
+          while(LA(1) != SEMICOLON)
+          {
+            if(LA(1) == EOF_)
+            {
+              throw ANTLR_USE_NAMESPACE(antlr)RecognitionException("unexpected end of file", modelicafilename, LT(1)->getLine(), LT(1)->getColumn());
+            }
+            consume();
+          }
+
+          AFTER_SYNC;
+        }
 
 algorithm :
 		( assign_clause_a
@@ -487,6 +599,23 @@ algorithm :
             #algorithm = #([ALGORITHM_STATEMENT,"ALGORITHM_STATEMENT"], #algorithm);
         }
 		;
+        exception
+        catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
+        {
+          BEFORE_SYNC;
+
+          // Sync to SEMICOLON
+          while(LA(1) != SEMICOLON)
+          {
+            if(LA(1) == EOF_)
+            {
+              throw ANTLR_USE_NAMESPACE(antlr)RecognitionException("unexpected end of file", modelicafilename, LT(1)->getLine(), LT(1)->getColumn());
+            }
+            consume();
+          }
+
+          AFTER_SYNC;
+        }
 
 assign_clause_a : component_reference	( ASSIGN^ expression | function_call );
 
