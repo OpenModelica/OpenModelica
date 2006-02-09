@@ -44,9 +44,14 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 ------------------------------------------------------------------------------------
 */
+#ifdef WIN32
+#include "windows.h"
+#endif
 
 #include <exception>
 #include <stdexcept>
+
+#include <QtGui/QMessageBox>
 
 #include "omcinteractiveenvironment.h"
 
@@ -95,4 +100,69 @@ namespace IAEX
    {
 	   comm_.closeConnection();
    }
+
+   	void OmcInteractiveEnvironment::reconnect()
+	{
+		//Communicate with Omc.
+		if(!comm_.isConnected())
+		{
+			if(!comm_.establishConnection())
+			{
+				throw runtime_error("OmcInteractiveEnvironment(): No connection to Omc established");
+			}
+		}
+	}
+
+	bool OmcInteractiveEnvironment::startDelegate()
+	{
+		// if not connected and can not establish connection, 
+		// try to start OMC
+		if( !comm_.isConnected() && !comm_.establishConnection() )
+		{
+			return  OmcInteractiveEnvironment::startOMC();
+		}
+		else
+			return false;
+	}
+
+	bool OmcInteractiveEnvironment::startOMC()
+	{
+		bool flag = false;
+
+		#ifdef WIN32
+		try
+		{
+			STARTUPINFO startinfo;
+			PROCESS_INFORMATION procinfo;
+			memset(&startinfo, 0, sizeof(startinfo));
+			memset(&procinfo, 0, sizeof(procinfo));
+			startinfo.cb = sizeof(STARTUPINFO);
+			startinfo.wShowWindow = SW_MINIMIZE;
+			startinfo.dwFlags = STARTF_USESHOWWINDOW;
+
+			string parameter = "\"omc.exe\" +d=interactiveCorba";
+			char *pParameter = new char[parameter.size() + 1];
+			const char *cpParameter = parameter.c_str();
+			strcpy(pParameter, cpParameter);
+
+			flag = CreateProcess(NULL,pParameter,NULL,NULL,FALSE,CREATE_NEW_CONSOLE,NULL,NULL,&startinfo,&procinfo);
+
+			Sleep(1000);
+
+			if( !flag )
+				throw std::exception("Was unable to start OMC");
+		}
+		catch( exception &e )
+		{
+			QString msg = e.what();
+			QMessageBox::warning( 0, "Error", msg, "OK" );
+		}
+		#else
+		QString msg = e.what();
+		msg += "\nOMC not started!";
+		QMessageBox::warning( 0, "Error", msg, "OK" );
+		#endif
+
+		return flag;
+	}
 }

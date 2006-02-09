@@ -55,18 +55,22 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 namespace IAEX
 {
-   class OmcInteractiveEnvironment : public InputCellDelegate
-   {
-   public:
-      OmcInteractiveEnvironment();
-      virtual ~OmcInteractiveEnvironment();
+	class OmcInteractiveEnvironment : public InputCellDelegate
+	{
+	public:
+		OmcInteractiveEnvironment();
+		virtual ~OmcInteractiveEnvironment();
 
-      virtual QString getResult();
-      virtual void evalExpression(QString &expr);
-	  virtual void closeConnection();	// Added 2006-02-02 AF
-   private:
-      OmcCommunicator &comm_;
-      QString result_;
-   };
+		virtual QString getResult();
+		virtual void evalExpression(QString &expr);
+		virtual void closeConnection();				// Added 2006-02-02 AF
+		virtual void reconnect();					// Added 2006-02-09 AF
+		virtual bool startDelegate();				// Added 2006-02-09 AF
+		static bool startOMC();						// Added 2006-02-09 AF
+
+	private:
+		OmcCommunicator &comm_;
+		QString result_;
+	};
 }
 #endif

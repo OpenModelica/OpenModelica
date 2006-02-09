@@ -109,6 +109,9 @@ public slots:
 	void stopServer();
 	void clear();
 
+private slots:
+	void closeEvent( QCloseEvent *event );		// Added 2006-02-09 AF
+
 private:
 	void createMoshEdit();
 	void createMoshError();

@@ -299,15 +299,6 @@ OMS::OMS( QWidget* parent )
 
 OMS::~OMS()
 {
-	try 
-	{
-		if( delegate_ )
-			delegate_->evalExpression( QString("quit()") );
-	}
-	catch(exception e) 
-	{}
-
-
 	delete mainFrame_;
 	delete delegate_;
 	delete commands_;
@@ -661,33 +652,41 @@ void OMS::returnPressed()
 
 void OMS::exceptionInEval(exception &e)
 {
-	if( string(e.what()) == string("NOT RESPONDING") )
+	// 2006-0-09 AF, try to reconnect to OMC first.
+	try
 	{
-		int result = QMessageBox::critical( 0, tr("Communication Error"),
-			tr("<B>OMC is not responding. Do you want to restart OMC?</B>"), 
+		delegate_->closeConnection();
+		delegate_->reconnect();
+		returnPressed();
+	}
+	catch( exception &e )
+	{
+		// unable to reconnect, ask if user want to restart omc.
+		QString msg = QString( e.what() ) + "\n\nUnable to reconnect with OMC. Do you want to restart OMC?";
+		int result = QMessageBox::critical( 0, tr("Communication Error with OMC"),
+			msg, 
 			QMessageBox::Yes | QMessageBox::Default,
 			QMessageBox::No );
 
-		if( result == QMessageBox::No )
-		{
-			exit();
-		}
-		else
+		if( result == QMessageBox::Yes )
 		{
 			delegate_->closeConnection();
-			delete delegate_;
-			delegate_ = 0;
-			if( startServer() )
+			if( delegate_->startDelegate() )
 			{
-				prevCommand();
-				returnPressed();
+				//delegate_->closeConnection();
+				try
+				{
+					delegate_->reconnect();
+					returnPressed();
+				}
+				catch( exception &e )
+				{
+					QMessageBox::critical( 0, tr("Communication Error"),
+						tr("<B>Unable to communication correctlly with OMC. OMShell will therefore close.</B>") );
+					exit();
+				}
 			}
 		}
-	}
-	else
-	{
-		QMessageBox::critical( 0, tr("Communication with OMC error"),
-			e.what() );
 	}
 }
 
@@ -893,6 +892,27 @@ void OMS::loadModelicaLibrary()
 
 void OMS::exit()
 {
+	// check if omc is running, if so: ask if it is ok that omc also closes.
+	try 
+	{
+		delegate_->closeConnection();
+		delegate_->reconnect();
+		
+		int result = QMessageBox::question( 0, tr("Close OMC"),
+			"OK to quit running OpenModelica Compiler process at exit?", 
+			QMessageBox::Yes | QMessageBox::Default,
+			QMessageBox::No );
+
+		if( result == QMessageBox::Yes )
+		{
+			stopServer();
+		}
+	}
+	catch(exception e) 
+	{}
+	
+
+
 	emit emitQuit();
 }
 
@@ -979,50 +999,13 @@ bool OMS::startServer()
 		}
 		catch( exception &e )
 		{
-
-	#ifdef WIN32
-
-			try
+			if( !IAEX::OmcInteractiveEnvironment::startOMC() )
 			{
-				STARTUPINFO startinfo;
-				PROCESS_INFORMATION procinfo;
-				memset(&startinfo, 0, sizeof(startinfo));
-				memset(&procinfo, 0, sizeof(procinfo));
-				startinfo.cb = sizeof(STARTUPINFO);
-				startinfo.wShowWindow = SW_MINIMIZE;
-				startinfo.dwFlags = STARTF_USESHOWWINDOW;
-				
-				string parameter = "\"omc.exe\" +d=interactiveCorba";
-				char *pParameter = new char[parameter.size() + 1];
-				const char *cpParameter = parameter.c_str();
-				strcpy(pParameter, cpParameter);
-
-				bool flag = CreateProcess(NULL,pParameter,NULL,NULL,FALSE,CREATE_NEW_CONSOLE,NULL,NULL,&startinfo,&procinfo);
-
-				Sleep(2000);
-
-				if( !flag )
-					throw std::exception("Unable to start OMC");
-				else
-					omcNowStarted = true;
+				QMessageBox::critical( 0, "OMC Error", "Was unable to start OMC, therefore OMShell will close." );
+				exit();
 			}
-			catch( exception &e )
-			{
-				QString msg = e.what();
-				msg += "\nWas unable to start OMC! Closeing OMS!";
-				QMessageBox::warning( 0, "Error", msg, "OK" );
-				std::exit(-1);
-			}
-
-	#else
-
-			QString msg = e.what();
-			msg += "\nOMC not started! Closeing OMS!";
-			QMessageBox::warning( 0, "Error", msg, "OK" );
-			std::exit(-1);
-
-	#endif
-
+			else
+				omcNowStarted = true;
 		}
 
 		if( omcNowStarted )
@@ -1034,7 +1017,8 @@ bool OMS::startServer()
 
 void OMS::stopServer()
 {
-	// TODO: Implement stop server
+	if( delegate_ )
+		delegate_->evalExpression( QString("quit()") );
 }
 
 void OMS::clear()
@@ -1067,4 +1051,8 @@ void OMS::clear()
 	moshError_->setFontPointSize( fontSize_ );
 }
 
+void OMS::closeEvent( QCloseEvent *event )
+{
+	exit();
+}
 
