@@ -555,7 +555,7 @@ end
 relation generate_c_decl_for_string_array:(string,string,int) => string =
         
   rule  int_eq(number_of_strings,0) => true &
-        Util.string_append_list(["char* ",array_name," = NULL;\n"]) => res
+        Util.string_append_list(["char* ",array_name,"[1] = {\"\"};\n"]) => res
         -----------------------------------
         generate_c_decl_for_string_array(array_name,_,number_of_strings) => res
         
