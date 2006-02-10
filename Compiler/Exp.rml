@@ -1647,13 +1647,13 @@ relation simplify_asub: (Exp, int) => Exp =
 	simplify(e1) => e1' 
 	----------------------------
 	simplify_asub(BINARY(e1,MUL_SCALAR_ARRAY(t),e2),indx)
-	  => (BINARY(e1',MUL_SCALAR_ARRAY(t),e2'))
+	  => (BINARY(e1',MUL(t),e2'))
 
   rule	simplify_asub(e1,indx) => e1' &
 	simplify(e2) => e2' 
 	----------------------------
 	simplify_asub(BINARY(e1,MUL_ARRAY_SCALAR(t),e2),indx)
-	  => (BINARY(e1',MUL_ARRAY_SCALAR(t),e2'))
+	  => (BINARY(e1',MUL(t),e2'))
 
   rule	simplify_asub(e1,indx) => e1' &
 	simplify(e2) => e2' 
