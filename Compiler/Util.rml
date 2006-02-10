@@ -125,7 +125,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   relation list_list_union_p:  (''a list list, (''a,''a) => bool) => ''a list 
 	  
   relation list_reduce: ('a list, ('a,'a) => 'a) => 'a
-  relation list_reduce_1: ('a list, ('a,'a,'b) => 'a,'b) => 'a
 	      
   relation array_replaceat_with_fill: (''a, int, ''a array,''a) => ''a array 
   relation array_expand: (int, ''a array,''a) => ''a array 
@@ -195,11 +194,6 @@ with "Print.rml"
  ** list_fill("foo",3) => ["foo","foo","foo"]
  **)
 relation list_fill: ('a ,int) => 'a list =
-
-  rule	(* trick to make res have type 'a list*)
-	list_rest([a]) => res 
-	-------------
-	list_fill(a,0) => res
 
   axiom	list_fill (a,1) => [a]
 
@@ -1021,26 +1015,6 @@ relation list_reduce: ('a list, ('a,'a) => 'a) => 'a =
 	r(res1,res2) => res
 	-------------------
 	list_reduce(a::b::(xs as _::_),r) => res
-end
-
-(** relation: list_reduce_1
- ** author: PA
- **
- ** Similar to list_reduce but for a relation taking a third argument.
- **)
-relation list_reduce_1: ('a list, ('a,'a,'b) => 'a,'b) => 'a =
-
-  axiom	 list_reduce_1([e],r,c) => e
-
-  rule	r(a,b,c) => res
-	-------------
-	list_reduce_1([a,b],r,c) => res
-
-  rule	r(a,b,c) => res1 &
-	list_reduce_1(xs,r,c) => res2 &
-	r(res1,res2,c) => res
-	-------------------
-	list_reduce_1(a::b::(xs as _::_),r,c) => res
 end
 
 (** relation: array_replaceat_with_fill
