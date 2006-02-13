@@ -254,17 +254,19 @@ class_definition [bool final] returns [ void* ast ]
 {
     void* restr = 0;
     void* class_spec = 0;
+    RefMyAST classDef;
 }
     :
-        #(CLASS_DEFINITION 
+        #(cd:CLASS_DEFINITION 
             (e:ENCAPSULATED )? 
             (p:PARTIAL )?
             (ex:EXPANDABLE)?
-            restr = info_position1:class_restriction
+            restr = class_restriction
             (i:IDENT)?
-            class_spec = info_position2:class_specifier
+            class_spec = class_specifier
         )
         {   
+            classDef = cd;
             if (ex && restr == Absyn__R_5fCONNECTOR ) {
                 restr = Absyn__R_5fEXP_5fCONNECTOR;
             }
@@ -278,10 +280,10 @@ class_definition [bool final] returns [ void* ast ]
                 Absyn__INFO(
                   mk_scon((char*)(modelicafilename.c_str())),
                   RML_PRIM_MKBOOL(0), /* false */ 
-                  mk_icon(info_position1?info_position1->getLine():0),
-                  mk_icon(info_position1?info_position1->getColumn():0),
-                  mk_icon(info_position2?info_position2->getLine():0),
-                  mk_icon(info_position2?info_position2->getColumn():0)
+                  mk_icon(classDef?classDef->getLine():0),
+                  mk_icon(classDef?classDef->getColumn():0),
+                  mk_icon(classDef?classDef->getEndLine():0),
+                  mk_icon(classDef?classDef->getEndColumn():0)
                   )
             );                
         }
@@ -606,8 +608,8 @@ element returns [void* ast]
                               RML_PRIM_MKBOOL(0), /* false */
                               mk_icon(i_clause->getLine()),
                               mk_icon(i_clause->getColumn()),
-                              mk_icon(i_clause->getLine()),
-                              mk_icon(i_clause->getColumn())
+                              mk_icon(i_clause->getEndLine()),
+                              mk_icon(i_clause->getEndColumn())
                               ),mk_none());
 			}
 		| e_spec = e_clause:extends_clause
@@ -618,8 +620,8 @@ element returns [void* ast]
                               RML_PRIM_MKBOOL(0), /* false */
                               mk_icon(e_clause->getLine()),
                               mk_icon(e_clause->getColumn()),
-                              mk_icon(e_clause->getLine()),
-                              mk_icon(e_clause->getColumn())
+                              mk_icon(e_clause->getEndLine()),
+                              mk_icon(e_clause->getEndColumn())
                               ),mk_none());
 			}
 		| #(decl:DECLARATION 
@@ -639,8 +641,8 @@ element returns [void* ast]
 		                              RML_FALSE,
 		                              mk_icon(decl->getLine()),
 		                              mk_icon(decl->getColumn()),
-		                              mk_icon(decl->getLine()),
-		                              mk_icon(decl->getColumn())
+		                              mk_icon(decl->getEndLine()),
+		                              mk_icon(decl->getEndColumn())
                                      ),mk_none());
             
 						}
@@ -658,8 +660,8 @@ element returns [void* ast]
 	                                RML_FALSE,
 	                                mk_icon(decl->getLine()),
 	                                mk_icon(decl->getColumn()),
-	                                mk_icon(decl->getLine()),
-	                                mk_icon(decl->getColumn())
+	                                mk_icon(decl->getEndLine()),
+	                                mk_icon(decl->getEndColumn())
                                     ),
 								constr? mk_some(Absyn__CONSTRAINCLASS(constr, cmt? mk_some(cmt):mk_none())) : mk_none());
 						}
@@ -688,8 +690,8 @@ element returns [void* ast]
 	                               RML_FALSE,
 	                               mk_icon(def->getLine()),
 	                               mk_icon(def->getColumn()),
-	                               mk_icon(def->getLine()),
-	                               mk_icon(def->getColumn())
+	                               mk_icon(def->getEndLine()),
+	                               mk_icon(def->getEndColumn())
                                    ),mk_none());
 
 						}
@@ -713,8 +715,8 @@ element returns [void* ast]
                               RML_FALSE,
                               mk_icon(def->getLine()),
                               mk_icon(def->getColumn()),
-                              mk_icon(def->getLine()),
-                              mk_icon(def->getColumn())
+	                      mk_icon(def->getEndLine()),
+	                      mk_icon(def->getEndColumn())
                               ),
                                 constr ? mk_some(Absyn__CONSTRAINCLASS(constr,cmt ? mk_some(cmt):mk_none())) : mk_none());
 						}

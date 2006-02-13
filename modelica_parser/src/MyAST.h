@@ -17,11 +17,13 @@ public:
    // copy constructor
    MyAST( const MyAST& other )
 	: CommonAST(other)
-	, line(other.line), column(other.column)
+	, line(other.line), column(other.column), 
+	  endline(other.endline), 
+	  endcolumn(other.endcolumn)
 	{
 	}
    // Default constructor
-   MyAST( void ) : CommonAST(), line(0), column(0) {}
+   MyAST( void ) : CommonAST(), line(0), column(0), endline(0), endcolumn(0) {}
    virtual ~MyAST( void ) {}
 
    // get the line number of the node (or try to derive it from the child node
@@ -60,8 +62,50 @@ public:
    {
       column = c;
    }
+   
+   /* Adrian Pop, 2006-02-13 added endline, endcolumn */
 
-	/** the initialize methods are called by the tree building constructs
+   virtual int getEndLine( void ) const
+   {
+      // most of the time the line number is not set if the node is a
+      // imaginary one. Usually this means it has a child. Refer to the
+      // child line number. Of course this could be extended a bit.
+      if ( endline != 0 ) return endline; 
+      if( getNextSibling() )
+      {
+      	return ( RefMyAST(getNextSibling())->getLine() );
+      }
+      else if (getFirstChild()) return ( RefMyAST(getFirstChild())->getLine() );
+      return 0;
+   }
+
+
+   virtual void setEndLine( int l )
+   {
+      if (l != 0) endline = l;
+   }
+
+   // get the line number of the node (or try to derive it from the child node
+   virtual int getEndColumn( void ) const
+   {
+      // most of the time the line number is not set if the node is a
+      // imaginary one. Usually this means it has a child. Refer to the
+      // child line number. Of course this could be extended a bit.
+      if ( endcolumn != 0 ) return endcolumn;       
+      if( getNextSibling() )
+      {
+      	return ( RefMyAST(getNextSibling())->getColumn() );
+      }
+      else if (getFirstChild()) return ( RefMyAST(getFirstChild())->getColumn() );
+      return 0;
+   }
+
+   virtual void setEndColumn( int c )
+   {
+      if (c != 0) endcolumn = c;
+   }
+
+    /** the initialize methods are called by the tree building constructs
     * depending on which version is called the line number is filled in.
     * e.g. a bit depending on how the node is constructed it will have the
     * line number filled in or not (imaginary nodes!).
@@ -69,22 +113,21 @@ public:
    virtual void initialize(int t, const ANTLR_USE_NAMESPACE(std)string& txt)
    {
       CommonAST::initialize(t,txt);
-      line = 0;
-	  column = 0;
+      line = 0; column = 0;
    }
 
    virtual void initialize( ANTLR_USE_NAMESPACE(antlr)RefToken t )
    {
-      CommonAST::initialize(t);
-      line = t->getLine();
-	  column = t->getColumn();
+      	CommonAST::initialize(t);
+      	line = t->getLine();
+	column = t->getColumn();
    }
 
    virtual void initialize( RefMyAST ast )
    {
       CommonAST::initialize(ANTLR_USE_NAMESPACE(antlr)RefAST(ast));
       line = ast->getLine();
-	  line = ast->getColumn();
+      column = ast->getColumn();
    }
    // for convenience will also work without
    void addChild( RefMyAST c )
@@ -108,6 +151,8 @@ public:
 private:
    int line;
    int column;
+   int endline;
+   int endcolumn;
 };
 
 #endif

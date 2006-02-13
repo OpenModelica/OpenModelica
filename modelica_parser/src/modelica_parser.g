@@ -116,13 +116,25 @@ stored_definition :
         |
 // End handle split models.
 			(within_clause SEMICOLON!)?
-			((FINAL)? class_definition SEMICOLON!)* 
+			((FINAL)? cd:class_definition s:SEMICOLON!
+			{
+			  /* adrpo, fix the end of this AST node */
+			  if(#cd != NULL) 
+			  {
+            		  	/*
+            		  	std::cout << (#cd)->toString() << std::endl;				
+            		  	std::cout << s->getLine() << ":" << s->getColumn() << std::endl;
+            		  	*/				
+				RefMyAST(#cd)->setEndLine(s->getLine());
+				RefMyAST(#cd)->setEndColumn(s->getColumn());
+			   }							
+			}
+			)* 
 			EOF!
 			{
 				#stored_definition = #([STORED_DEFINITION,"STORED_DEFINITION"],
 				#stored_definition);
 			}
-
 			;
 
 
@@ -257,7 +269,30 @@ external_function_call :
 		;
 
 element_list :
-		((element | annotation ) SEMICOLON!)*
+		((e:element | a:annotation ) s:SEMICOLON!
+		{		
+		   /* adrpo, fix the end of this AST node */
+		   if (#e)
+		   {
+    		  	/*
+    		  	std::cout << (#e)->toString() << std::endl;				
+    		  	std::cout << s->getLine() << ":" << s->getColumn() << std::endl;
+    		  	*/
+			RefMyAST(#e)->setEndLine(s->getLine());
+			RefMyAST(#e)->setEndColumn(s->getColumn());		   	
+		   	if (#e->getFirstChild())
+		   	{
+		   	   /*
+    		  	   std::cout << (#e->getFirstChild())->toString() << std::endl;				
+    		  	   std::cout << s->getLine() << ":" << s->getColumn() << std::endl;
+    		  	   */
+			   RefMyAST(#e->getFirstChild())->setEndLine(s->getLine());
+			   RefMyAST(#e->getFirstChild())->setEndColumn(s->getColumn());		   	
+		        }		   
+		   }
+		   
+		}
+		)*
 		;
         exception
         catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]

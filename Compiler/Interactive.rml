@@ -3825,19 +3825,19 @@ relation get_cref_info: (Absyn.ComponentRef, Absyn.Program) => string =
             int_string(scol)  => str_scol &
             int_string(eline) => str_eline &
             int_string(ecol)  => str_ecol &
-            string_append(filename,",") => s1 &
+            string_append(filename,",") => s &
             select_string(isReadOnly,"readonly","writable") => str_readonly &
-            string_append(s1,str_readonly) => s1 &
-            string_append(s1,",") => s1 &
-            string_append(s1,str_sline) => s2 &
-            string_append(s2,",") => s3 &
-            string_append(s3,str_scol) => s4 &         
-            string_append(s4,",") => s5 &
-            string_append(s5,str_eline) => s6 &
-            string_append(s6,",") => s7 &
-            string_append(s7,str_ecol) => s8         
-	 ---------------------------------------------------
-	 get_cref_info(class,p) => s4
+            string_append(s,str_readonly) => s &
+            string_append(s,",") => s &
+            string_append(s,str_sline) => s &
+            string_append(s,",") => s &
+            string_append(s,str_scol) => s &         
+            string_append(s,",") => s &
+            string_append(s,str_eline) => s &
+            string_append(s,",") => s &
+            string_append(s,str_ecol) => s         
+			---------------------------------------------------
+			get_cref_info(class,p) => s
 
    axiom	get_cref_info(_,_) => "Error"
 
@@ -3882,11 +3882,7 @@ relation get_element_type: (Absyn.ElementSpec) => string =
        int_string(eline) => eline_str &
        int_string(ecol) => ecol_str &
        select_string(isReadOnly,"readonly","writable") => readonly_str &
-       Util.string_append_list(["elementtype=classdef, classname=", id, ", classrestriction=", str_restriction, 
-                                ", classfile=\"", file,"\", classreadonly=\"", readonly_str, 
-                                "\", classStartLine=", sline_str,", classStartColumn=", scol_str,
-                                ", classEndLine=", eline_str,", classEndColumn=", ecol_str
-                                ]) => str 
+       Util.string_append_list(["elementtype=classdef, classname=", id, ", classrestriction=", str_restriction]) => str 
        -----------------------------------------------------------------------------------------------------------
        get_element_type(Absyn.CLASSDEF(_, Absyn.CLASS(id, p, f, e, restr, _, 
        		Absyn.INFO(file, isReadOnly, sline, scol, eline, ecol)))) => str
@@ -4018,6 +4014,14 @@ relation get_elements_info: (Absyn.ComponentRef, Absyn.Program) => string =
             Util.string_append_list(["{ ", elements_str, " }"]) => str
 	 -----------------------------------------------------------------------------------
 	 get_elements_info(model,p) => str
+
+
+   rule	 Absyn.cref_to_path(model) => modelpath &
+		 get_pathed_class_in_program(modelpath,p) => Absyn.CLASS(i,p,f,e,r,_,_)
+		 (* there are no elements in DERIVED, ENUMERATION, OVERLOAD, CLASS_EXTENDS and PDER
+		    maybe later we can give info about that also *)
+		 -----------------------------------------------------------------------------------
+		 get_elements_info(model,p) => "{ }"
 
 	 axiom get_elements_info(_,_) => "Error"
 end

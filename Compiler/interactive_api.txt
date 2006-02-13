@@ -220,7 +220,7 @@ getCrefInfo(cref)                         Returns the string "file,lineno,column
                                           position info for the specified component reference
                                           Example:
                                           >>> getCrefInfo(Modelica.Electrical.Analog.Basic.Capacitor)
-                                          /cygdrive/c/dev/ModelicaLibrary//Modelica/Electrical/Analog/Basic.mo,249,3
+                                          /cygdrive/c/dev/ModelicaLibrary//Modelica/Electrical/Analog/Basic.mo,249,3,250,10
 
 getElementsInfo(cref)                     Returns all the elements in a class with the following format:
                                           {attr1=value1, attr2=value2, .... }
@@ -246,13 +246,7 @@ getElementsInfo(cref)                     Returns all the elements in a class wi
                                                /* depending on the elementtype some more attributes will follow here */
                                                for classdef: 
                                                  classname=id, 
-                                                 classrestriction=PACKAGE|..., 
-                                                 classfile=file, 
-                                                 classreadonly="readonly"|"writable", 
-                                                 classStartLine=startline, 
-                                                 classStartColumn=startcolumn
-                                                 classEndLine=endline, 
-                                                 classEndColumn=endcolumn
+                                                 classrestriction=PACKAGE|...
                                                for extends: path=name
                                                for import: kind=named|qualified|unqualified 
                                                      + for named: id=id, path=name
@@ -261,6 +255,7 @@ getElementsInfo(cref)                     Returns all the elements in a class wi
                                                for component: typename=component_type, names={component_name, "comment"}, flow=true|false, 
                                                               variability="unspecified"|"discrete"|"parameter"|"constant",
                                                               direction="input"|"output"|"unspecified"
+                                               now for classes with no parts returns "{ }" instead of "Error"
                                                
 getEnvironmentVar("varname")      returns the contents of the "varname" environment variable
                                   or error if the variable does not exist
