@@ -1472,6 +1472,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable)
            
   rule	(* class in package *)
          extract_all_components(p) => comps &
+
          Absyn.cref_to_path(class) => class_path &
          let comp_repsrules = COMPONENTREPLACEMENTRULES([COMPONENTREPLACEMENT(class_path,cref1,cref2)],1) &
          get_componentreplacementsrules(comps,comp_repsrules,0) => comp_reps 
@@ -1512,7 +1513,7 @@ end
                           new_comp )
 	   => p'
 
-  rule  print "-rename_component_visitor failed" 
+  rule  print "-rename_component failed" 
          ------------------------
          rename_component(_,_,_,_) => fail
 
@@ -1557,13 +1558,21 @@ relation rename_component_visitor: ((Absyn.Class* Absyn.Path option *(ComponentR
 	  => ((Absyn.Class*Absyn.Path option *(ComponentReplacement)))
           =
 
-  rule  Absyn.path_last_ident(class_id) => id2 &
-	 id = id2 & (*  this is the class with the component *)
+  rule  Absyn.join_paths(pa,Absyn.IDENT(id)) => path' &
+        ModUtil.path_equal(class_id,path') => true &
          rename_component_in_class(class, old_comp, new_comp) => class' 
 	 ----------------
-	 rename_component_visitor((class as Absyn.CLASS(id,a,b,c,d,e,file_info),pa,
+	 rename_component_visitor((class as Absyn.CLASS(id,a,b,c,d,e,file_info),SOME(pa),
                                    (COMPONENTREPLACEMENT(class_id,old_comp,new_comp))))
-	  => ((class',pa,(COMPONENTREPLACEMENT(class_id,old_comp,new_comp))))
+	  => ((class',SOME(pa),(COMPONENTREPLACEMENT(class_id,old_comp,new_comp))))
+           
+  rule  let path' = Absyn.IDENT(id) &
+        ModUtil.path_equal(class_id,path') => true &
+        rename_component_in_class(class, old_comp, new_comp) => class' 
+	 ----------------
+	 rename_component_visitor((class as Absyn.CLASS(id,a,b,c,d,e,file_info),NONE,
+                                   (COMPONENTREPLACEMENT(class_id,old_comp,new_comp))))
+	  => ((class',NONE,(COMPONENTREPLACEMENT(class_id,old_comp,new_comp))))
            
   axiom  rename_component_visitor((class,pa,args)) => ((class,pa,args))
 
@@ -1626,43 +1635,58 @@ relation rename_component_in_parts:(Absyn.ClassPart list,
         rename_component_in_parts([],_,_) => []
 
   rule  rename_component_in_parts(res,old_comp,new_comp) => res' &
-        rename_component_in_elements(elements,old_comp,new_comp) => elements' 
+        rename_component_in_elements(elements,old_comp,new_comp) => elements'
         --------------------------------------
-        rename_component_in_parts(Absyn.PUBLIC(elements)::res,old_comp,new_comp) => Absyn.PUBLIC(elements')::res'
+        rename_component_in_parts(Absyn.PUBLIC(elements)::res,old_comp,new_comp)
+          => Absyn.PUBLIC(elements')::res'
 
   rule  rename_component_in_parts(res,old_comp,new_comp) => res' &
-        rename_component_in_elements(elements,old_comp,new_comp) => elements' 
+        rename_component_in_elements(elements,old_comp,new_comp) => elements'
         --------------------------------------
-        rename_component_in_parts(Absyn.PROTECTED(elements)::res,old_comp,new_comp) => Absyn.PROTECTED(elements')::res'
+        rename_component_in_parts(Absyn.PROTECTED(elements)::res,old_comp,new_comp)
+          => Absyn.PROTECTED(elements')::res'
 
   rule  rename_component_in_parts(res,old_comp,new_comp) => res' &
-        rename_component_in_equations(equations,old_comp,new_comp) => equations' 
+        rename_component_in_equation_list(equations,old_comp,new_comp) => equations' 
         --------------------------------------
-        rename_component_in_parts(Absyn.EQUATIONS(equations)::res,old_comp,new_comp) => Absyn.EQUATIONS(equations')::res'
+        rename_component_in_parts(Absyn.EQUATIONS(equations)::res,old_comp,new_comp) => 
+        Absyn.EQUATIONS(equations')::res'
 
   rule  rename_component_in_parts(res,old_comp,new_comp) => res' &
-        rename_component_in_equations(equations,old_comp,new_comp) => equations' 
+        rename_component_in_equation_list(equations,old_comp,new_comp) => equations'
         --------------------------------------
-        rename_component_in_parts(Absyn.INITIALEQUATIONS(equations)::res,old_comp,new_comp) => Absyn.INITIALEQUATIONS(equations')::res'
+        rename_component_in_parts(Absyn.INITIALEQUATIONS(equations)::res,old_comp,new_comp) =>
+        Absyn.INITIALEQUATIONS(equations')::res'
 
   rule  rename_component_in_parts(res,old_comp,new_comp) => res' &
-        rename_component_in_algorithms(algorithms,old_comp,new_comp) => algorithms' 
+        rename_component_in_algorithms(algorithms,old_comp,new_comp) => algorithms'
         --------------------------------------
-        rename_component_in_parts(Absyn.ALGORITHMS(algorithms)::res,old_comp,new_comp) => Absyn.ALGORITHMS(algorithms')::res'
+        rename_component_in_parts(Absyn.ALGORITHMS(algorithms)::res,old_comp,new_comp)
+          => Absyn.ALGORITHMS(algorithms')::res'
  
   rule  rename_component_in_parts(res,old_comp,new_comp) => res' &
-        rename_component_in_algorithms(algorithms,old_comp,new_comp) => algorithms' 
+        rename_component_in_algorithms(algorithms,old_comp,new_comp) => algorithms'
         --------------------------------------
-        rename_component_in_parts(Absyn.INITIALALGORITHMS(algorithms)::res,old_comp,new_comp) => Absyn.INITIALALGORITHMS(algorithms')::res'
+        rename_component_in_parts(Absyn.INITIALALGORITHMS(algorithms)::res,old_comp,new_comp)
+          => Absyn.INITIALALGORITHMS(algorithms')::res'
 
   rule  rename_component_in_parts(res,old_comp,new_comp) => res' &
-        rename_component_in_external_decl(external_decl,old_comp,new_comp) => external_decl' 
+        rename_component_in_external_decl(external_decl,old_comp,new_comp) => external_decl'
         --------------------------------------
-        rename_component_in_parts(Absyn.EXTERNAL(external_decl,ano)::res,old_comp,new_comp) => Absyn.EXTERNAL(external_decl',ano)::res'
+        rename_component_in_parts(Absyn.EXTERNAL(external_decl,ano)::res,old_comp,new_comp)
+          => Absyn.EXTERNAL(external_decl',ano)::res'
+
+  rule  rename_component_in_parts(res,old_comp,new_comp) => res' &
+        --------------------------------------
+        rename_component_in_parts(a::res,old_comp,new_comp) => a::res'
  end
 
 (** 
  ** author: x02lucpo
+  rule  rename_component_in_parts(res,old_comp,new_comp) => res' &
+        rename_component_in_external_decl(external_decl,old_comp,new_comp) => external_decl' 
+        --------------------------------------
+        rename_component_in_parts(Absyn.EXTERNAL(external_decl,ano)::res,old_comp,new_comp) => Absyn.EXTERNAL(external_decl',ano)::res'
  **
  ** helper relation to rename_component_visitor
  **)
@@ -1713,8 +1737,8 @@ relation rename_component_in_element_spec:(Absyn.ElementSpec,
 
   rule 
         -----------------------------------
-        rename_component_in_element_spec(Absyn.COMPONENTS(attr,path,comps),old_comp,new_comp) 
-          => Absyn.COMPONENTS(attr,path,comps)
+        rename_component_in_element_spec(elementspec,old_comp,new_comp) 
+          => elementspec
 
 
 end
@@ -1736,10 +1760,11 @@ relation rename_component_in_componentitems:(Absyn.ComponentItem list ,
         rename_component_in_componentitems([],_,_) => []
 
 
-  rule  (* Util.string_append_list(["1 orig: ",name, " ",old_comp," ", new_comp,"\n"]) => lalala & print lalala & *)
-        Absyn.cref_to_path(old_comp) => old_comp_path & 
+  rule  Absyn.cref_to_path(old_comp) => old_comp_path & 
         Absyn.path_string(old_comp_path) => old_comp_string &
+
         name = old_comp_string &
+
         Absyn.cref_to_path(new_comp) => new_comp_path & 
         Absyn.path_string(new_comp_path) => new_comp_string &
         rename_component_in_componentitems(res,old_comp,new_comp) => res' &
@@ -1766,25 +1791,26 @@ end
  **)
                    
 
-relation rename_component_in_equations:(Absyn.EquationItem list,
+relation rename_component_in_equation_list:(Absyn.EquationItem list,
                                        Absyn.ComponentRef, (* the old name for the component *)
                                        Absyn.ComponentRef) =>
         Absyn.EquationItem list =
 
   rule  
         -------------------------------------
-        rename_component_in_equations([],_,_) => []
+        rename_component_in_equation_list([],_,_) => []
 
-  rule  rename_component_in_equations(res,old_comp,new_comp) => res' &
+  rule  rename_component_in_equation_list(res,old_comp,new_comp) => res' &
         rename_component_in_equation(equation,old_comp,new_comp) => equation' 
         -------------------------------------
-        rename_component_in_equations((Absyn.EQUATIONITEM(equation,cmt))
-                                      ::res,old_comp,new_comp) => Absyn.EQUATIONITEM(equation',cmt)::res'
+        rename_component_in_equation_list((Absyn.EQUATIONITEM(equation,cmt))
+                                      ::res,old_comp,new_comp) 
+          => Absyn.EQUATIONITEM(equation',cmt)::res'
         
-  rule  rename_component_in_equations(res,old_comp,new_comp) => res' &
+  rule  rename_component_in_equation_list(res,old_comp,new_comp) => res' &
         let equation' = equation 
         -------------------------------------
-        rename_component_in_equations(equation::res,old_comp,new_comp) => equation'::res'
+        rename_component_in_equation_list(equation::res,old_comp,new_comp) => equation'::res'
 
 end
 
@@ -1804,10 +1830,11 @@ relation rename_component_in_exp_equationitem_list:((Absyn.Exp * Absyn.EquationI
   axiom  rename_component_in_exp_equationitem_list([],_,_) => []
 
   rule  rename_component_in_exp(exp1,old_comp,new_comp) => exp1' &
-        rename_component_in_equations(eqn_item,old_comp,new_comp) => eqn_item' &
+        rename_component_in_equation_list(eqn_item,old_comp,new_comp) => eqn_item' &
         rename_component_in_exp_equationitem_list(res,old_comp,new_comp) => res'
         ------------------------------
-        rename_component_in_exp_equationitem_list((exp1,eqn_item)::res,old_comp,new_comp) => ((exp1',eqn_item')::res')
+        rename_component_in_exp_equationitem_list((exp1,eqn_item)::res,old_comp,new_comp)
+          => ((exp1',eqn_item')::res')
 
   rule  print "-rename_component_in_exp_equationitem_list failed\n"
         -------------------------------
@@ -1830,9 +1857,9 @@ relation rename_component_in_equation:(Absyn.Equation,
         Absyn.Equation =
 
   rule  rename_component_in_exp(exp,old_comp,new_comp) => exp' &
-        rename_component_in_equations(true_items,old_comp,new_comp) => true_items' &
+        rename_component_in_equation_list(true_items,old_comp,new_comp) => true_items' &
         rename_component_in_exp_equationitem_list(exp_elseifs,old_comp,new_comp) => exp_elseifs' &
-        rename_component_in_equations(elses,old_comp,new_comp) => elses' 
+        rename_component_in_equation_list(elses,old_comp,new_comp) => elses' 
         -------------------------
         rename_component_in_equation(Absyn.EQ_IF(exp,true_items,exp_elseifs,elses),
                                      old_comp,new_comp) 
@@ -1848,7 +1875,6 @@ relation rename_component_in_equation:(Absyn.Equation,
           
   rule  replace_start_in_component_ref(cref1,old_comp,new_comp) => cref1' &
         replace_start_in_component_ref(cref2,old_comp,new_comp) => cref2' 
-        
         (* print "-rename_component_in_equation EQ_CONNECT not implemented yet\n" *)
         -------------------------
         rename_component_in_equation(Absyn.EQ_CONNECT(cref1, cref2),
@@ -1856,7 +1882,7 @@ relation rename_component_in_equation:(Absyn.Equation,
           => Absyn.EQ_CONNECT(cref1',cref2')
 
   rule  rename_component_in_exp(exp,old_comp,new_comp) => exp' &
-        rename_component_in_equations(equations,old_comp,new_comp) => equations' 
+        rename_component_in_equation_list(equations,old_comp,new_comp) => equations' &
         
         -------------------------
         rename_component_in_equation(Absyn.EQ_FOR(ident,exp,equations),
@@ -1864,7 +1890,7 @@ relation rename_component_in_equation:(Absyn.Equation,
           => Absyn.EQ_FOR(ident,exp',equations')
 
   rule  rename_component_in_exp(exp,old_comp,new_comp) => exp' &
-        rename_component_in_equations(equations,old_comp,new_comp) => equations' &
+        rename_component_in_equation_list(equations,old_comp,new_comp) => equations' &
         rename_component_in_exp_equationitem_list(exp_equations,old_comp,new_comp) => exp_equations'
         -------------------------
         rename_component_in_equation(Absyn.EQ_WHEN_E(exp,equations,exp_equations),
@@ -2101,7 +2127,7 @@ relation rename_component_in_code:(Absyn.Code,
         rename_component_in_code(Absyn.C_VARIABLENAME(cr),old_comp,new_comp) 
           => Absyn.C_VARIABLENAME(cr')
 
-  rule  rename_component_in_equations(eqn_items,old_comp,new_comp) => eqn_items'
+  rule  rename_component_in_equation_list(eqn_items,old_comp,new_comp) => eqn_items'
         ------------------------
         rename_component_in_code(Absyn.C_EQUATIONSECTION(b,eqn_items),old_comp,new_comp) 
           => Absyn.C_EQUATIONSECTION(b,eqn_items')
@@ -2248,6 +2274,9 @@ relation rename_component_in_exp:(Absyn.Exp,
         -----------------------------
         rename_component_in_exp(Absyn.CODE(code),old_comp,new_comp) => Absyn.CODE(code')
 
+  rule  print "-rename_component_in_exp failed\n"
+        ------------------------
+        rename_component_in_exp(_,old_comp,new_comp) => fail
 end
 
 
@@ -2440,9 +2469,27 @@ relation rename_component_in_external_decl:(Absyn.ExternalDecl,
 
 end
 
+           
+relation replace_start_in_component_ref:(Absyn.ComponentRef,Absyn.ComponentRef,Absyn.ComponentRef) 
+        => Absyn.ComponentRef =
+
+  rule 
+       (*  Dump.print_component_ref_str(cr1) => cref_str_tmp & print " " & print cref_str_tmp & *)
+(*         Dump.print_component_ref_str(cr2) => cref_str_tmp & print " " & print cref_str_tmp & *)
+(*         Dump.print_component_ref_str(cr3) => cref_str_tmp & print " " & print cref_str_tmp & *)
+        replace_start_in_component_ref2(cr1,cr2,cr3) => res &
+       (*  Dump.print_component_ref_str(res) => cref_str_tmp & print " res " & print cref_str_tmp & *)
+(*         print "\n"  *)
+        ---------------------------
+        replace_start_in_component_ref(cr1,
+                                       cr2,
+                                       cr3) => res
+
+end
 
 
-(**relation replace_start_in_component_ref 
+
+(**relation replace_start_in_component_ref2 
  ** author x02lucpo
  **
  ** this replace the start of a ComponentRef with another
@@ -2455,29 +2502,31 @@ end
  **    WARNING! WARNING! WARNING! WARNING! WARNING! WARNING! 
  **)
            
-relation replace_start_in_component_ref:(Absyn.ComponentRef,Absyn.ComponentRef,Absyn.ComponentRef) 
+relation replace_start_in_component_ref2:(Absyn.ComponentRef,Absyn.ComponentRef,Absyn.ComponentRef) 
         => Absyn.ComponentRef =
 
   rule  id = id2
         ---------------------------
-        replace_start_in_component_ref(Absyn.CREF_IDENT(id,_),
+        replace_start_in_component_ref2(Absyn.CREF_IDENT(id,_),
                                        Absyn.CREF_IDENT(id2,_),
-                                       res) => res
+                                       res as Absyn.CREF_IDENT(id3,_)) => res
 
   rule  id = id2
         ---------------------------
-        replace_start_in_component_ref(Absyn.CREF_QUAL(id,a,cr1),
+        replace_start_in_component_ref2(Absyn.CREF_QUAL(id,a,cr1),
                                        Absyn.CREF_IDENT(id2,_),
                                        Absyn.CREF_IDENT(id3,_)) => Absyn.CREF_QUAL(id3,a,cr1)
          
-  rule  id = id2 &
-        replace_start_in_component_ref(cr1,cr2,cr3) => cr
+  rule   id = id2 &
+        replace_start_in_component_ref2(cr1,cr2,cr3) => cr
         ---------------------------
-        replace_start_in_component_ref(Absyn.CREF_QUAL(id,a,cr1),
+        replace_start_in_component_ref2(Absyn.CREF_QUAL(id,a,cr1),
                                        Absyn.CREF_QUAL(id2,_,cr2),
                                        Absyn.CREF_QUAL(id3,_,cr3)) => Absyn.CREF_QUAL(id3,a,cr)
         
-  axiom replace_start_in_component_ref(orig_cr,_,_) => orig_cr
+  rule
+        ---------------------
+        replace_start_in_component_ref2(orig_cr,_,_) => orig_cr
 end
 
 (**  relation get_componentreplacementsrules
@@ -2928,19 +2977,12 @@ end
  relation extract_all_components:(Absyn.Program)
         => Components =
 
-  rule  System.time() => start_time &
-        SCode.elaborate(p) => p' &
+  rule  SCode.elaborate(p) => p' &
 	Inst.make_env_from_program(p',Absyn.IDENT("")) => env &
         traverse_classes(p,NONE,extract_all_components_visitor,
                          (COMPONENTS([],0),p),
-			 true (* traverse protected*)) => ((p',_,(comps,p))) &
-
-
-        System.time() => end_time &
-        real_sub(end_time,start_time) => total_time &
-        real_string(total_time) => total_time_str &
-
-         print "time for travers class and comp-list: " & print total_time_str & print "\n"
+			 true (* traverse protected*)) => ((p',_,(comps,p))) 
+        
         -----------------------------------
         extract_all_components(p) => comps
         
@@ -3127,10 +3169,10 @@ relation extract_components_from_elementspec:(Absyn.Path, (*the QUALIFIED path f
         extract_components_from_elementspec(pa,Absyn.EXTENDS(path',_),comps,env) => comps'
 
 
-  rule  extract_components_from_class(class,pa,comps,env) => comps'
-        -------------------------------
-        extract_components_from_elementspec(pa,Absyn.CLASSDEF(_,class),
-                                            comps,env) => comps'
+(*   rule  extract_components_from_class(class,pa,comps,env) => comps' *)
+(*         ------------------------------- *)
+(*         extract_components_from_elementspec(pa,Absyn.CLASSDEF(_,class), *)
+(*                                             comps,env) => comps' *)
 
   rule  
         -------------------------------
@@ -5216,7 +5258,7 @@ relation traverse_classes2:(Absyn.Class list,
    axiom	traverse_classes2([],pa,visitor,args,_) => (([],pa,args))
 
    rule	visitor((class,pa,args)) => ((class',pa',args')) &
-	 traverse_inner_class(class,pa,visitor,args',traverse_prot) => ((class'',pa'',args'')) &
+	 traverse_inner_class(class',pa,visitor,args',traverse_prot) => ((class'',pa'',args'')) &
 	 traverse_classes2(classes,pa,visitor,args'',traverse_prot) => ((classes',pa''',args'''))
 	 ------------------------
 	 traverse_classes2(class::classes,pa,visitor,args,traverse_prot)
