@@ -1474,7 +1474,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable)
          extract_all_components(p) => comps &
          Absyn.cref_to_path(class) => class_path &
          let comp_repsrules = COMPONENTREPLACEMENTRULES([COMPONENTREPLACEMENT(class_path,cref1,cref2)],1) &
-         get_componentreplacementsrules(comps,comp_repsrules,0) => comp_reps &
+         get_componentreplacementsrules(comps,comp_repsrules,0) => comp_reps 
          ----------------------------
          extract_all_componentreplacements(p,class,cref1,cref2) => comp_reps
          
@@ -1839,7 +1839,7 @@ relation rename_component_in_equation:(Absyn.Equation,
           => Absyn.EQ_IF(exp',true_items',exp_elseifs',elses')
 
   rule  rename_component_in_exp(exp1,old_comp,new_comp) => exp1' &
-        rename_component_in_exp(exp2,old_comp,new_comp) => exp2' &
+        rename_component_in_exp(exp2,old_comp,new_comp) => exp2' 
         -------------------------
         rename_component_in_equation(Absyn.EQ_EQUALS(exp1, exp2),
                                      old_comp,new_comp)
@@ -1856,7 +1856,7 @@ relation rename_component_in_equation:(Absyn.Equation,
           => Absyn.EQ_CONNECT(cref1',cref2')
 
   rule  rename_component_in_exp(exp,old_comp,new_comp) => exp' &
-        rename_component_in_equations(equations,old_comp,new_comp) => equations' &
+        rename_component_in_equations(equations,old_comp,new_comp) => equations' 
         
         -------------------------
         rename_component_in_equation(Absyn.EQ_FOR(ident,exp,equations),
@@ -2326,7 +2326,7 @@ relation rename_component_in_algorithm:(Absyn.Algorithm,
 
   rule  rename_component_in_exp(exp,old_comp,new_comp) => exp' &
         rename_component_in_algorithms(algs,old_comp,new_comp) => algs' &
-        rename_component_in_exp_algoritms_list(exp_algs_list,old_comp,new_comp) => exp_algs_list' &
+        rename_component_in_exp_algoritms_list(exp_algs_list,old_comp,new_comp) => exp_algs_list' 
         ---------------------------
         rename_component_in_algorithm(Absyn.ALG_WHEN_A(exp,algs,exp_algs_list),old_comp,new_comp)
           => Absyn.ALG_WHEN_A(exp',algs',exp_algs_list')
@@ -2379,7 +2379,7 @@ relation rename_component_in_function_args:(Absyn.FunctionArgs,
         Absyn.FunctionArgs =
 
   rule  rename_component_in_exp_list(exps,old_comp,new_comp) => exps' &
-        rename_component_in_namedArgs(namedArg,old_comp,new_comp) => namedArg' &
+        rename_component_in_namedArgs(namedArg,old_comp,new_comp) => namedArg' 
         -------------------------
         rename_component_in_function_args(Absyn.FUNCTIONARGS(exps,namedArg),old_comp,new_comp)
           => Absyn.FUNCTIONARGS(exps',namedArg')
@@ -2410,7 +2410,7 @@ relation rename_component_in_namedArgs:(Absyn.NamedArg list,
   axiom rename_component_in_namedArgs([],_,_) => []
 
   rule  rename_component_in_exp(exp,old_comp,new_comp) => exp' &
-        rename_component_in_namedArgs(res,old_comp,new_comp) => res' &
+        rename_component_in_namedArgs(res,old_comp,new_comp) => res' 
         ------------------------
         rename_component_in_namedArgs(Absyn.NAMEDARG(id,exp)::res,old_comp,new_comp)
           => Absyn.NAMEDARG(id,exp')::res'
@@ -2564,7 +2564,7 @@ relation make_componentsReplacementRules_from_components:(Components,
         let comp_rep = COMPONENTREPLACEMENT(path_class,cr_from',cr_to') &
         rest_components(comps) => res &
         make_componentsReplacementRules_from_components(res,cr_from,cr_to) => comps' &
-        join_componentReplacementRules(comps',COMPONENTREPLACEMENTRULES([comp_rep],1)) => comp_reps_res &
+        join_componentReplacementRules(comps',COMPONENTREPLACEMENTRULES([comp_rep],1)) => comp_reps_res 
         ----------------------------------
         make_componentsReplacementRules_from_components(comps,cr_from,cr_to) => comp_reps_res
 
@@ -2573,7 +2573,7 @@ relation make_componentsReplacementRules_from_components:(Components,
         let comp_rep = COMPONENTREPLACEMENT(path_class,cr_from,cr_to) &
         rest_components(comps) => res &
         make_componentsReplacementRules_from_components(res,cr_from,cr_to) => comps' &
-        join_componentReplacementRules(comps',COMPONENTREPLACEMENTRULES([comp_rep],1)) => comp_reps_res &
+        join_componentReplacementRules(comps',COMPONENTREPLACEMENTRULES([comp_rep],1)) => comp_reps_res 
         ----------------------------------
         make_componentsReplacementRules_from_components(comps,cr_from,cr_to) => comp_reps_res
 
@@ -2702,7 +2702,7 @@ relation get_dependency_on_class:(Components,Absyn.Path)
         dump_components_to_string(comps_types2) => str & print "---------DEPENDENCIES----------\n" & print str & print "===================\n" & 
 
  
-        join_components(comps_types,comps_types2) => comps2 &
+        join_components(comps_types,comps_types2) => comps2 
         ------------------------
         get_dependency_on_class(comps,path) => comps2
 
