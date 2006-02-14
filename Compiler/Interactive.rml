@@ -3924,7 +3924,9 @@ relation get_element_type: (Absyn.ElementSpec) => string =
        int_string(eline) => eline_str &
        int_string(ecol) => ecol_str &
        select_string(isReadOnly,"readonly","writable") => readonly_str &
-       Util.string_append_list(["elementtype=classdef, classname=", id, ", classrestriction=", str_restriction]) => str 
+       Util.string_append_list(["elementtype=classdef, classname=", id, ", classrestriction=", str_restriction,
+	   ", classfilename=",file,", classStartLine=",sline_str,", classStartColumn=",scol_str,", classEndLine=",eline_str,
+	   ", classEndColumn=",ecol_str]) => str 
        -----------------------------------------------------------------------------------------------------------
        get_element_type(Absyn.CLASSDEF(_, Absyn.CLASS(id, p, f, e, restr, _, 
        		Absyn.INFO(file, isReadOnly, sline, scol, eline, ecol)))) => str
