@@ -108,6 +108,7 @@ module Interactive:
   datatype ComponentReplacement = COMPONENTREPLACEMENT of Absyn.Path         (* which class contain the old cref *)
                                                        * Absyn.ComponentRef  (* the old cref *)
                                                        * Absyn.ComponentRef  (* the new cref *)
+
   datatype ComponentReplacementRules = COMPONENTREPLACEMENTRULES of ComponentReplacement list
                                                                  * int (* the number of rules *)
 
@@ -1430,14 +1431,14 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable)
 	     ),
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("OK",SYMBOLTABLE(p',s',[],[],[]))
 
-  rule  rename_component(p,cname,from_ident,to_ident) => p' 
+  rule  rename_component(p,cname,from_ident,to_ident) => (res_str,p')
 	 -----------------------
 	 evaluate_graphical_api(
 	     ISTMTS([IEXP(Absyn.CALL(
 		 Absyn.CREF_IDENT("renameComponent",_),
 		 Absyn.FUNCTIONARGS([Absyn.CREF(cname),Absyn.CREF(from_ident),Absyn.CREF(to_ident)],_)))],_
 	     ),
-	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("OK",SYMBOLTABLE(p',s,[],[],[]))
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (res_str,SYMBOLTABLE(p',s,[],[],[]))
 
 
 
@@ -1499,25 +1500,57 @@ end
 			     Absyn.ComponentRef, 
 			     Absyn.ComponentRef,
                              Absyn.ComponentRef ) 
-	   => Absyn.Program =
+	   => (string, Absyn.Program) =
 
    rule	(* class in package *)
 	 Absyn.cref_to_path(class) => class_path &
   
          extract_all_componentreplacements(p,class,old_comp,new_comp) => comp_reps &
-         rename_component_from_componentreplacements(p,comp_reps) => p' 
+         rename_component_from_componentreplacements(p,comp_reps) => p' &
+         extract_renamed_classes_as_string_list(comp_reps) => paths &
+         Util.string_delimit_list(paths,",") => paths' &
+         Util.string_append_list(["{",paths',"}"]) => paths''
 	 ------------------------
 	 rename_component(p,
                           class ,
                           old_comp ,
                           new_comp )
-	   => p'
+	   => (paths'',p')
 
-  rule  print "-rename_component failed" 
+  rule  Debug.fprint("failtrace",  "rename_component failed\n")
          ------------------------
-         rename_component(_,_,_,_) => fail
+         rename_component(p,_,_,_) => ("error",p) 
 
  end
+
+(** relation extract_renamed_classes_as_string_list
+ ** author: x02lucpo
+ **
+ ** this iterates through the Componentreplacementrules and returns the string list
+ ** with all the changed classes
+ **)
+relation extract_renamed_classes_as_string_list:(ComponentReplacementRules)
+        => string list =
+
+  rule  empty_componentReplacementRules(comp_reps) => true
+        ---------------------------
+        extract_renamed_classes_as_string_list(comp_reps) => []
+
+  rule  first_componentReplacement(comp_reps) => COMPONENTREPLACEMENT(path,_,_) &
+        Absyn.path_string(path) => path_str &
+        rest_componentReplacementRules(comp_reps) => res &
+        extract_renamed_classes_as_string_list(res) => res' &
+        Util.list_union([path_str],res') => res''
+        --------------------------
+        extract_renamed_classes_as_string_list(comp_reps) => res''
+
+        
+  rule  print "-extract_renamed_classes_as_string_list failed\n"
+        ---------------------------
+        extract_renamed_classes_as_string_list(_) => fail
+
+end
+
 
 (** relation rename_component_from_componentreplacements
  ** author: x02lucpo
