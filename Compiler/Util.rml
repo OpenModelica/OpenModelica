@@ -175,6 +175,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   relation charlistcompare: (char list, char list, int) => bool
 
   relation tick_str:() => string
+  relation get_absolute_directory_and_file:(string) => (string,string) 
+        
 end
 
 val replaceStringPatterns = [REPLACEPATTERN(".","$point"),
@@ -186,6 +188,7 @@ val replaceStringPatterns = [REPLACEPATTERN(".","$point"),
 
 with "System.rml"
 with "Print.rml"
+with "Debug.rml"
 
 
 (** relation: list_fill
@@ -254,6 +257,8 @@ end
  ** list_last([]) => fail
  **)
 relation list_last: 'a list => 'a =
+
+  axiom	list_last [] => fail
 
   axiom	list_last [a] => a
 	
@@ -1731,3 +1736,43 @@ relation tick_str:() => string =
 	------------------
 	tick_str() => s
 end
+
+(** relation get_absolute_directory_and_file
+ ** author: x02lucpo
+ **
+ ** splits the filepath in directory and filename
+ ** ("c:\programs\file.mo") => ("c:\programs","file.mo")
+ ** ("..\work\file.mo") => ("c:\openmodelica123\work\", "file.mo")
+ **)
+
+relation get_absolute_directory_and_file:(string) => (string,string) =
+
+  rule  System.path_delimiter() => pd &
+        string_list(pd) => pd_chr::[] &
+        (*same dir only filename as param*) 
+        string_split_at_char(file,pd_chr) => list_path::[] &
+        System.pwd() => res 
+        -------------------------
+        get_absolute_directory_and_file(file) => (res,list_path)
+
+  rule   System.path_delimiter() => pd &
+        string_list(pd) => pd_chr::[] &
+        string_split_at_char(file,pd_chr) => list_path &
+        list_last(list_path) => file_path &
+        list_strip_last(list_path) => list_path' &
+        string_delimit_list(list_path',pd) => dir_path &
+        System.pwd() => current_dir &
+        
+        System.cd(dir_path) => 0 &
+        System.pwd() => res &
+        System.cd(current_dir) => 0
+        -------------------------
+        get_absolute_directory_and_file(file) => (res,file_path)
+
+  rule   Debug.fprint("failtrace",  "-get_absolute_directory_and_file  failed")
+        -------------------------
+        get_absolute_directory_and_file(name) => fail
+
+end
+
+

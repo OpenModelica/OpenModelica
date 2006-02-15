@@ -112,7 +112,6 @@ module Interactive:
   datatype ComponentReplacementRules = COMPONENTREPLACEMENTRULES of ComponentReplacement list
                                                                  * int (* the number of rules *)
 
-
   (* Exported Relations *)
   relation evaluate: (InteractiveStmts, InteractiveSymbolTable, bool) 
 	  => (string,InteractiveSymbolTable) 
@@ -736,9 +735,10 @@ relation evaluate_graphical_api2: (InteractiveStmts, InteractiveSymbolTable)
 
    (* adrpo added 2005-12-16 *)	     
    rule  
-         System.regular_file_exist(name) => 0 &
-	 Parser.parse(name) => p1 &
-	 update_program(p1,p) => newp &
+(*          System.regular_file_exist(name) => 0 & *)
+(* 	 Parser.parse(name) => p1 & *)
+        ClassLoader.load_file(name) => p1 &
+ 	update_program(p1,p) => newp & 
 	 get_top_qualified_classnames(p1) => top_names_str
 	 ---------------------------------------------------
 	 evaluate_graphical_api2(
@@ -867,9 +867,9 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable)
    rule	Absyn.cref_to_path(path) => path' &
 	 Absyn.path_last_ident(path') => name &
 	 Absyn.strip_last(path') => wpath &
-	 update_program(
-	     Absyn.PROGRAM([Absyn.CLASS(name,false,false,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])],NONE),Absyn.INFO("",false,0,0,0,0))],Absyn.WITHIN(wpath)),p) => newp &
-	 let newst = SYMBOLTABLE(newp,s,ic,iv,cf)
+	update_program(
+	               Absyn.PROGRAM([Absyn.CLASS(name,false,false,false,Absyn.R_MODEL,Absyn.PARTS([Absyn.PUBLIC([])],NONE),Absyn.INFO("",false,0,0,0,0))],Absyn.WITHIN(wpath)),p) => newp &
+	let newst = SYMBOLTABLE(newp,s,ic,iv,cf)
 	 ---------------------------------------------------
 	 evaluate_graphical_api(
 	     ISTMTS([IEXP(Absyn.CALL(
@@ -893,9 +893,10 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable)
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true",newst)
 
 
-   rule    System.regular_file_exist(name) => 0 &
-	 Parser.parse(name) => p1 &
-	 update_program(p1,p) => newp &
+   rule  (*   System.regular_file_exist(name) => 0 & *)
+(* 	 Parser.parse(name) => p1 & *)
+        ClassLoader.load_file(name) => p1 &
+        update_program(p1,p) => newp & 
 	 get_top_classnames(p1) => top_names_str
 	 ---------------------------------------------------
 	 evaluate_graphical_api(

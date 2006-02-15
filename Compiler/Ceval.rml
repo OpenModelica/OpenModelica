@@ -1676,7 +1676,8 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 Print.get_string => str &
 	 let newst = Interactive.SYMBOLTABLE(p', sp, [], iv, cf)
 	 ------------------------------
-	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.BOOL(true),newst)
+         ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.BOOL(true),newst)
+
 	 
   rule	Static.component_ref_to_path(cr) => path &
 	 ModUtil.path_string(path) => pathstr &
@@ -1687,13 +1688,19 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 
 	    (* loadModel failed *)
   axiom	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.BOOL(false),st)
+ 
 
-  rule  System.regular_file_exist(name) => 0 &
-         Parser.parse(name) => p1 &
-	 Interactive.update_program(p1,p) => newp
+
+  rule  (* System.regular_file_exist(name) => 0 & *)
+(*          Parser.parse(name) => p1 & *)
+         ClassLoader.load_file(name) => p1 &
+         Interactive.update_program(p1,p) => newp 
 	 --------------------------
-	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),[Exp.SCONST(name)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg)
-	  => (Values.BOOL(true),Interactive.SYMBOLTABLE(newp,sp,[],iv,cf))
+	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),
+                                                    [Exp.SCONST(name)],_,_),
+                                      st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg)
+	  => (Values.BOOL(true),Interactive.SYMBOLTABLE(newp,sp,ic,iv,cf))
+          (* (Values.BOOL(true),Interactive.SYMBOLTABLE(newp,sp,[],iv,cf)) *)
 
        (** it the rule above have failed then check if file exists **)
         (* without this omc crashes *)

@@ -46,10 +46,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **
  ** RCS: $Id$
  **
- ** This module loads classes from $MODELICAPATH. It exports only one
- ** relation: the load_class relation. It is currently (2004-09-27) 
- ** only used by Ceval.rml when using the "loadclass" function in 
- ** the interactive environment.
+ ** This module loads classes from $MODELICAPATH. It exports two
+ ** relations: 
+ ** load_class relation 
+ ** load_file relation
  ** 
  **)
 
@@ -57,6 +57,7 @@ module ClassLoader:
   with "Absyn.rml"
 
   relation load_class: (Absyn.Path, string) => (Absyn.Program) 
+  relation load_file:(string) => (Absyn.Program) 
 
 end
 
@@ -320,4 +321,68 @@ relation load_subpackage_files: (string list, string, Absyn.Within, Absyn.Progra
 	load_subpackage_files(_,_,_,_) => fail
 end
 
+
+
+(** relation load_file
+ ** author: x02lucpo
+ **
+ ** load the file or the directory structure if the file is a
+ ** package.mo
+ **)
+
+relation load_file:(string) 
+        => (Absyn.Program) =
+
+  rule  System.regular_file_exist(name) => 0 &
+        Util.get_absolute_directory_and_file(name) => (dir,"package.mo") &
+        Parser.parse(name) => p1' &
+        System.path_delimiter() => pd &
+        Util.string_append_list([dir,pd,".."])=> dir' &
+        load_model_from_each_class(p1',dir') => p1 
+        -----------------------------------
+	load_file (name)
+	  => p1
+
+  rule  System.regular_file_exist(name) => 0 &
+        Util.get_absolute_directory_and_file(name) => (dir,filename) &
+        Parser.parse(name) => p1 
+        -----------------------------------
+	load_file (name)
+	  => p1
+
+  rule	Debug.fprint("failtrace", "load_file failed\n")
+	-------------------
+	load_file(_) => fail
+
+
+
+end
+ 
+(** relation load_model_from_each_class
+ ** author: x02lucpo
+ **
+ ** helper relation to load_file
+ **)
+
+relation load_model_from_each_class:(Absyn.Program,string) 
+          => Absyn.Program =
+
+          
+  axiom load_model_from_each_class(Absyn.PROGRAM([],a),_) => Absyn.PROGRAM([],a)
+
+  rule  let path = Absyn.IDENT(id) &
+	load_class(path, dir) => pnew &
+        load_model_from_each_class(Absyn.PROGRAM(res,a),dir) => p_res &
+	Interactive.update_program(pnew,p_res) => p' &
+        ---------------------------
+        load_model_from_each_class(Absyn.PROGRAM(Absyn.CLASS(id,_,_,_,_,_,_)::res,
+                                                 a),
+                                   dir) => p'
+
+  rule  Debug.fprint("failtrace",  "-load_model_from_each_class failed\n")
+        ---------------------------
+        load_model_from_each_class(_,_) => fail
+
+        
+end
 
