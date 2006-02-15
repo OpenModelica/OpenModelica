@@ -2859,8 +2859,8 @@ end
 
 (** relation: elab_call_builtin
  **
- ** This relation elaborates on builtin operators, by calling the builtin 
- ** handler to retrieve the correct relation to call.
+ ** This relation elaborates on builtin operators (such as "pre", "der" etc.), 
+ ** by calling the builtin handler to retrieve the correct relation to call.
  **)
 relation elab_call_builtin : (Env.Env, Absyn.ComponentRef, Absyn.Exp list, bool (*impl*) )
 	=> (Exp.Exp, Types.Properties) =
@@ -2893,16 +2893,15 @@ relation elab_call : (Env.Env, Absyn.ComponentRef, Absyn.Exp list,Absyn.NamedArg
 
 	  (** LS: Check if a builtin function call, e.g. size()
 	      and calculate if so **)
-  rule	(* Elaborate interactive function calls *)
+  rule	(* Elaborate interactive function calls, such as simulate(), plot() etc. *)
 	elab_call_interactive(env,fn,args,nargs,impl,st) => (e,prop,st)
 	-------------------------------------------------------
 	elab_call(env,fn,args,nargs,impl,st) => (e,prop,st)
 
-  rule	(* PA. Built in functions have only possitional arguments *)
+  rule	(* Built in functions (e.g. "pre", "der"), have only possitional arguments *)
 	elab_call_builtin (env, fn, args, impl) => (e,prop)
 	---------------------------------------------
 	elab_call (env,fn,args,nargs,impl,st) => (e,prop,st)
-
 
 	(* Interactive mode *)
   rule	Debug.fprintln ("sei", "elab_call 3") &

@@ -71,7 +71,7 @@ module Interactive:
   (** Several interactive statements are used in Modelica scripts.**)
   (* - Interactive Statements *)
   datatype InteractiveStmts = ISTMTS of InteractiveStmt list (* interactiveStmtLst *)
-                                     *  bool (* semicolon ; true if output result == no semicolon *)
+                                     *  bool (* semicolon; true = statement ending with a semicolon. The result will not be shown in the interactive environment. *)
 
   (* - Instantiated Class *)
   datatype InstantiatedClass =  INSTCLASS of Absyn.Path (* qualName ;  The F.Q.name of the inst:ed class*)
@@ -116,8 +116,11 @@ module Interactive:
   relation evaluate: (InteractiveStmts, InteractiveSymbolTable, bool) 
 	  => (string,InteractiveSymbolTable) 
             (* this is exported due to the need of using several interactive modules *)
-  relation evaluate2:  (InteractiveStmts, InteractiveSymbolTable) => (string,InteractiveSymbolTable)
 
+  relation type_check_function: (Absyn.Program, InteractiveSymbolTable) => ()            
+  relation evaluate2:  (InteractiveStmts, InteractiveSymbolTable) => (string,InteractiveSymbolTable)
+  
+  
   relation update_program: (Absyn.Program,Absyn.Program) => Absyn.Program
   relation update_scope: (Absyn.Program, InteractiveVariable list) => InteractiveVariable list
   relation add_component: (string,Absyn.ComponentRef,Absyn.ComponentRef,Absyn.NamedArg list, Absyn.Program) => (Absyn.Program,string)
@@ -196,6 +199,7 @@ with "System.rml"
 with "ClassLoader.rml"
 with "Ceval.rml"
 with "Error.rml"
+with "ErrorExt.rml"
 
 
 (* - Empty Interactive Symbol Table *)
@@ -205,18 +209,23 @@ val empty_symboltable = SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[IVAR("$ec
 
 (** relation: evaluate
  **
- ** This relation evaluates expressions feeded interactively to the compiler.
+ ** This relation evaluates expressions or statements feed interactively to the compiler.
  **
  ** inputs:   (InteractiveStmts, InteractiveSymbolTable, bool /* verbose */) 
- ** outputs:  (string, InteractiveSymbolTable) 
+ ** outputs:   string:  
+ **                    The resulting string after evaluation. If an error has occurred, this string
+ **                    will be empty. The error messages can be retrieved by calling print_messages_str()
+ **                    in Error.rml.
+ **            InteractiveSymbolTable 
  **)
  relation evaluate: (InteractiveStmts, InteractiveSymbolTable, bool) 
 	   => (string,InteractiveSymbolTable) =
 
+            	   
    rule	evaluate2(ISTMTS([x],verbose),st) => (res,newst) &
 	 get_echo(newst) => echo &
 	 select_resultstr(res,semicolon,verbose,echo) => res'
-	 ----------------------------
+	 -----------------------------------------------------------
 	 evaluate (ISTMTS([x],semicolon),st,verbose) => (res',newst)
 
    rule	evaluate2(ISTMTS([x],semicolon),st) => (res,newst) &
@@ -224,7 +233,7 @@ val empty_symboltable = SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[IVAR("$ec
 	 select_resultstr(res,semicolon,verbose,echo) => res' &
 	 evaluate(ISTMTS(xs,semicolon),newst,verbose) => (res2,newst') &
 	 Util.string_append_list([res',res2]) => res''
-	 ------------------------------------------
+	 ---------------------------------------------------------------
 	 evaluate (ISTMTS(x::xs,semicolon),st,verbose) => (res'',newst')
  end
 
@@ -280,6 +289,44 @@ relation get_echo: (InteractiveSymbolTable) => bool =
 end
 
 
+(** relation: type_check_function
+ **
+ ** Type check a function. 
+ ** The relation will fail iff a function has illegally typed. Errors are handled
+ ** using side effects in Error.rml
+ **)
+relation type_check_function: (Absyn.Program, InteractiveSymbolTable) => () =
+
+
+        (* Do not typecheck the following *)
+  axiom	type_check_function(Absyn.BEGIN_DEFINITION(_,_,_,_),_) => ()
+  axiom type_check_function(Absyn.END_DEFINITION(_),_) => ()
+  axiom type_check_function(Absyn.COMP_DEFINITION(_,_),_) => ()
+  axiom type_check_function(Absyn.IMPORT_DEFINITION(_,_),_) => ()
+
+  	(* If it is not a function, return succeess *)    
+  rule 	not restriction = Absyn.R_FUNCTION
+  	-------------------------------------------------------
+  	type_check_function(Absyn.PROGRAM([Absyn.CLASS(_,_,_,_,restriction,_,_)],_), st) => ()
+  
+	(* Type check the function *)  	
+  rule 	build_env_from_symboltable(st) => env &
+        SCode.elab_class(absyn_class) => scode_class  &
+	Inst.implicit_function_instantiation(env, Types.NOMOD, Prefix.NOPRE, 
+        	Connect.empty_set, scode_class, [], false) => (env', d)
+  	-------------------------------------------------------
+  	type_check_function(Absyn.PROGRAM([absyn_class],_), st) => ()
+  
+  	(* Recursively go through all classes *)
+  rule 	list_length(class_list) => len & (* avoid recurs forever *)
+  	not len = 1 &
+        type_check_function(Absyn.PROGRAM([cls],w), st) &
+        type_check_function(Absyn.PROGRAM(morecls,w), st)
+  	-------------------------------------------------------
+  	type_check_function(Absyn.PROGRAM(class_list as cls::morecls,w), st) => ()    	
+end
+
+
 (** relation: evaluate2
  **
  ** Helper relation to evaluate.
@@ -287,45 +334,48 @@ end
  relation evaluate2:  (InteractiveStmts, InteractiveSymbolTable) 
 	  => (string,InteractiveSymbolTable) =
 
-   rule	get_variable_names(vars) => vars &
-	 string_append(vars,"\n") => str
-	 --------------------------
-	 evaluate2(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("listVariables",_),Absyn.FUNCTIONARGS([],[])))],_),st as SYMBOLTABLE(_,_,_,vars,_))
-	   => (str,st)
+  rule	get_variable_names(vars) => vars &
+	string_append(vars,"\n") => str
+	--------------------------
+	evaluate2(ISTMTS([IEXP(Absyn.CALL(Absyn.CREF_IDENT("listVariables",_),Absyn.FUNCTIONARGS([],[])))],_),st as SYMBOLTABLE(_,_,_,vars,_))
+	  => (str,st)
 
-   rule	evaluate_graphical_api(stmts,st) => (str,newst) &
-	 string_append(str,"\n") => str'
-	 ----------------------------------------------------
-	 evaluate2(stmts as ISTMTS([IEXP(Absyn.CALL(_,_))],_),st) => (str',newst)
-   rule	evaluate_graphical_api2(stmts,st) => (str,newst) &
-	 string_append(str,"\n") => str'
-	 ----------------------------------------------------
-	 evaluate2(stmts as ISTMTS([IEXP(Absyn.CALL(_,_))],_),st) => (str',newst)
+  rule	evaluate_graphical_api(stmts,st) => (str,newst) &
+	string_append(str,"\n") => str'
+	----------------------------------------------------
+	evaluate2(stmts as ISTMTS([IEXP(Absyn.CALL(_,_))],_),st) => (str',newst)
 
-   rule	evaluate_expr(exp,st) => (s1,newst) &
-	 string_append(s1,"\n") => str
-	 ------------------------------------------------------
-	 evaluate2(stmts as ISTMTS([exp],_),st) => (str,newst)
+  rule	evaluate_graphical_api2(stmts,st) => (str,newst) &
+	string_append(str,"\n") => str'
+	----------------------------------------------------
+	evaluate2(stmts as ISTMTS([IEXP(Absyn.CALL(_,_))],_),st) => (str',newst)
 
-   axiom	evaluate2(_,st) => ("Not implemented yet\n",st)
+
+	(* Evaluate algorithm statements in  evaluate_alg_stmt() *)
+  rule  evaluate_alg_stmt(algitem, st) => (str, st') &
+ 	string_append(str,"\n") => str' 
+        ---------------------------------------------------------
+        evaluate2(ISTMTS([IALG(algitem as Absyn.ALGORITHMITEM(_,_))], outres), st) => (str', st')
+
+	(* Evaluate expressions in evaluate_expr_to_str() *)
+  rule	evaluate_expr_to_str(exp,st) => (str, st') & 
+   	string_append(str,"\n") => str' 
+	------------------------------------------------------
+	evaluate2(stmts as ISTMTS([IEXP(exp)],_),st) => (str',st')
+	
  end
+  
 
 
- (** relation: evaluate_expr
+ (** relation: evaluate_alg_stmt
   **
-  ** This relation takes an 'InteractiveStmt´ and a symboltable and 
-  ** evaluates the expression using Staticexp.
+  ** This relation takes an 'AlgorithmItem', i.e. a statement located in an 
+  ** algorithm section, and a symboltable as input arguments. The statements 
+  ** are recursivly evalutated and a new interactive symbol table is returned.
   **)
- relation evaluate_expr: (InteractiveStmt, InteractiveSymbolTable) =>
+relation evaluate_alg_stmt: (Absyn.AlgorithmItem, InteractiveSymbolTable) =>
 	 (string,InteractiveSymbolTable) =
 
-   rule	build_env_from_symboltable(st) => env &	
-	 Static.elab_exp(env,exp,true,SOME(st)) => (sexp,prop,SOME(st')) &
-	 Ceval.ceval (env,sexp,true,SOME(st'),NONE,Ceval.MSG) 
-	  => (value,SOME(st'')) &
-	 Values.val_string value =>  str
-	 -------------------------------
-	 evaluate_expr(IEXP(exp),st as SYMBOLTABLE(p,_,_,_,_)) => (str,st'')
 
    rule	build_env_from_symboltable(st) => env &	
 	 Static.elab_exp(env,cond,true,SOME(st)) 
@@ -333,8 +383,9 @@ end
 	 Ceval.ceval (env,econd,true,SOME(st'),NONE,Ceval.MSG) 
 	   => (Values.BOOL(true),SOME(st'')) 
 	 -----------------------------------------------
-	 evaluate_expr(IALG(Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("assert",_),Absyn.FUNCTIONARGS([cond,msg],_)),_)),st as SYMBOLTABLE(p,_,_,_,_))
+	 evaluate_alg_stmt(Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("assert",_),Absyn.FUNCTIONARGS([cond,msg],_)),_),st as SYMBOLTABLE(p,_,_,_,_))
 	     => ("", st'')
+
 
    rule	build_env_from_symboltable(st) => env &	
 	 Static.elab_exp(env,msg,true,SOME(st)) 
@@ -342,7 +393,7 @@ end
 	 Ceval.ceval (env,msg',true,SOME(st'),NONE,Ceval.MSG) 
 	   => (Values.STRING(str),SOME(st'')) 
 	 -----------------------------------------------
-	 evaluate_expr(IALG(Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("assert",_),Absyn.FUNCTIONARGS([cond,msg],_)),_)),st as SYMBOLTABLE(p,_,_,_,_))
+	 evaluate_alg_stmt(Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("assert",_),Absyn.FUNCTIONARGS([cond,msg],_)),_),st as SYMBOLTABLE(p,_,_,_,_))
 	     => (str, st'')
 
    rule	build_env_from_symboltable(st) => env &
@@ -352,7 +403,7 @@ end
 	 Values.val_string value =>  str &
 	 add_var_to_symboltable(ident,value,t,st'') => newst	
 	 -----------------------------------------------
-	 evaluate_expr(IALG(Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF_IDENT(ident,[]),exp),_)),st as SYMBOLTABLE(p,_,_,_,_)) 
+	 evaluate_alg_stmt(Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF_IDENT(ident,[]),exp),_),st as SYMBOLTABLE(p,_,_,_,_)) 
 	     => (str, newst)
 
 	(* Since expressions cannot be tuples an empty string is returned *)
@@ -364,18 +415,179 @@ end
 	  => (Values.TUPLE(values), SOME(st'')) &
 	 add_vars_to_symboltable(idents,values,types,st'') => newst
 	 -----------------------------------------------
-	 evaluate_expr(IALG(Absyn.ALGORITHMITEM(Absyn.ALG_TUPLE_ASSIGN(Absyn.TUPLE(crefexps),rexp),_)),st as SYMBOLTABLE(p,_,_,_,_)) 
+	 evaluate_alg_stmt(Absyn.ALGORITHMITEM(Absyn.ALG_TUPLE_ASSIGN(Absyn.TUPLE(crefexps),rexp),_),st as SYMBOLTABLE(p,_,_,_,_)) 
 	     => ("", newst)
 
-   rule	Print.get_error_string() => s1 & Print.clear_error_buf() 
-	 & string_append("Error evaluating expr.\n",s1) => str &
-	 Debug.fprint ("failtrace", "#-- evaluate_expr failed:") &
-	 Debug.fcall ("failtrace", Dump.dump_istmt, ISTMTS([stmt], true)) &
-	 Debug.fprintln ("failtrace", "\n")
-	 -----------------------------
-	 evaluate_expr(stmt,st) => (str,st)
+    	(* IF-statement *)
+    rule let cond1 = (exp,algitemlist) &
+         let cond2 = cond1::elseifexpitemlist &
+         list_append(cond2, [(Absyn.BOOL(true),elseitemlist)]) => cond3 &
+         evaluate_if_statement_lst(cond3, st) => st'
+         ---------------------------------------------------------------------------------------
+         evaluate_alg_stmt(Absyn.ALGORITHMITEM(Absyn.ALG_IF(exp, algitemlist, elseifexpitemlist, 
+         elseitemlist),_), st) => ("", st')
+
+    	(* WHILE-statement *)
+    rule evaluate_expr(exp, st) => (value, st') &
+    	 evaluate_while_stmt(value, exp, algitemlist, st') => st''
+         ---------------------------------------------------------------------------------------
+         evaluate_alg_stmt(Absyn.ALGORITHMITEM(Absyn.ALG_WHILE(exp, algitemlist),_), st) => ("", st'')
+         
+
+end
+
+(** relation: evaluate_while_stmt
+ ** 
+ ** Recursively evaluates the while statement. Note that it is tail-recursive, so we should result
+ ** in a iterative implementation.
+ **)
+relation evaluate_while_stmt: (Values.Value, Absyn.Exp, Absyn.AlgorithmItem list, InteractiveSymbolTable) 
+	=> InteractiveSymbolTable =
+  
+  axiom  evaluate_while_stmt(Values.BOOL(false),_,_,st) => st
+
+  rule   evaluate_alg_stmt_lst(algitemlst, st) => st' & 
+  	 evaluate_expr(exp, st') => (value, st'') &
+  	 evaluate_while_stmt(value, exp, algitemlst, st'') => st'''
+        -----------------------------------------------------------------------------------
+         evaluate_while_stmt(Values.BOOL(true),exp,algitemlst, st) => st'''
+           
+         (* Report type error *)
+  rule   string_repres_of_expr(exp,st) => estr &
+  	 Types.type_of_value(value) => vtype &
+  	 Types.unparse_type vtype => tstr & 
+  	 Error.add_message(Error.WHILE_CONDITION_TYPE_ERROR,[estr,tstr])
+  	-------------------------------------------------------------       
+     	 evaluate_while_stmt(value,exp,_,st) => fail
+end
+
+
+(** relation: evaluate_part_of_if_statement
+ **  
+ ** Evaluates one part of a if statement, i.e. one "case". If the condition is true, the algorithm items
+ ** associated with this condition are evaluated. The first argument returned is set to true if the 
+ ** condition was evaluated to true. Fails if the value is not a boolean.
+ ** Note that we are sending the expression as an value, so that it does not need to be evaluated twice.
+ 
+ **)
+relation evaluate_part_of_if_statement: (Values.Value, Absyn.Exp, Absyn.AlgorithmItem list, 
+	(Absyn.Exp * Absyn.AlgorithmItem list) list, InteractiveSymbolTable) => InteractiveSymbolTable =
+  
+  rule   exp_val = true &
+         evaluate_alg_stmt_lst(algitemlst, st) => st'
+        -----------------------------------------------------------------------------------
+         evaluate_part_of_if_statement(Values.BOOL(exp_val),_,algitemlst, _, st) => st'
+         
+  rule   exp_val = false &
+         evaluate_if_statement_lst(algrest, st) => st'
+        -----------------------------------------------------------------------------------
+         evaluate_part_of_if_statement(Values.BOOL(exp_val),_,algitemlst, algrest, st) => st'
+  
+         (* Report type error *)
+  rule   string_repres_of_expr(exp,st) => estr &
+  	 Types.type_of_value(value) => vtype &
+  	 Types.unparse_type vtype => tstr & 
+  	 Error.add_message(Error.IF_CONDITION_TYPE_ERROR,[estr,tstr])
+  	-------------------------------------------------------------       
+     	 evaluate_part_of_if_statement(value,exp,_,_,st) => fail
+end
+
+(** relation: evaluate_if_statement_lst
+ **  
+ ** Evaluates all parts of a if statement (i.e. a list of exp * statements)
+ **)
+relation evaluate_if_statement_lst: ((Absyn.Exp * Absyn.AlgorithmItem list) list, InteractiveSymbolTable) =>
+  InteractiveSymbolTable =
+  
+   axiom evaluate_if_statement_lst([], st) => st
+  
+   rule	 evaluate_expr(exp, st) => (value, st') &
+	 evaluate_part_of_if_statement(value, exp, algitemlst, algrest, st') => st''
+    	-----------------------------------------------
+    	 evaluate_if_statement_lst((exp,algitemlst)::algrest, st) => st'' 
+end
+
+
+ (** relation: evaluate_alg_stmt_lst
+  **  
+  ** Evaluates a list of algorithm statements
+  **)
+relation evaluate_alg_stmt_lst: (Absyn.AlgorithmItem list, InteractiveSymbolTable) =>
+  InteractiveSymbolTable =
+  
+   axiom evaluate_alg_stmt_lst([], st) => st
+  
+   rule	 evaluate_alg_stmt(algitem, st) => (_,st') &
+    	 evaluate_alg_stmt_lst(algrest, st') => st''
+    	-----------------------------------------------------
+    	 evaluate_alg_stmt_lst(algitem::algrest, st) => st'' 
+end
+
+
+
+ (** relation: evaluate_expr
+  **
+  ** Evaluates an expression and returns its value. 
+  ** We need to return the symbol table, since the command loadFile()
+  ** reads in data to the interactive environment.
+  ** Note that this relation may fail.
+  **
+  ** Input:  Absyn.Exp - Expression to be evaluated
+  **         InteractiveSymbolTable - The symbol table
+  ** Output: Values.Value - Resulting value of the expression
+  **)
+
+ relation evaluate_expr: (Absyn.Exp, InteractiveSymbolTable) => 
+ 	(Values.Value, InteractiveSymbolTable) =
+
+  rule	build_env_from_symboltable(st) => env &	
+   	Static.elab_exp(env,exp,true,SOME(st)) => (sexp,prop,SOME(st')) &
+	Ceval.ceval (env,sexp,true,SOME(st'),NONE,Ceval.MSG) => (value,SOME(st'')) 
+	--------------------------------------------------------------
+	evaluate_expr(exp,st as SYMBOLTABLE(p,_,_,_,_)) => (value,st'')
  end
 
+ 
+ 
+ (** relation: string_repres_of_expr
+  **
+  ** This relation returns a string representation of an expression. For example expression
+  ** 33+22 will result in "55" and expression: "my" + "string" will result in  ""my"+"string"". 
+  **)
+relation string_repres_of_expr: (Absyn.Exp, InteractiveSymbolTable) => string =
+
+  rule	build_env_from_symboltable(st) => env &	
+   	Static.elab_exp(env,exp,true,SOME(st)) => (sexp,prop,SOME(st')) &
+   	Exp.print_exp_str sexp => estr 
+	--------------------------------------------------------------
+	string_repres_of_expr(exp,st) => estr
+end
+ 
+ 
+ (** relation: evaluate_expr_to_str
+  **
+  ** This relation is similar to evaluate_expr, with the difference that it returns a string
+  ** and that it never fails. If the expression contain errors, an empty string will be returned
+  ** and the errors will be stated using Error.rml
+  **
+  ** Input:  Absyn.Exp - Expression to be evaluated
+  **         InteractiveSymbolTable - The symbol table
+  ** Output: string - The resulting value represented as a string
+  **)
+
+ relation evaluate_expr_to_str: (Absyn.Exp, InteractiveSymbolTable) => 
+ 	(string, InteractiveSymbolTable) =
+
+  rule	evaluate_expr(exp, st) => (value, st') &
+	Values.val_string value =>  str
+	-----------------------------------
+	evaluate_expr_to_str(exp,st) => (str, st')
+
+  axiom evaluate_expr_to_str(_,st) => ("", st) 
+
+end
+
+ 
 
 (** relation: get_ident_from_tuple_crefexp
  **
@@ -1710,7 +1922,7 @@ relation rename_component_in_parts:(Absyn.ClassPart list,
         rename_component_in_parts(Absyn.EXTERNAL(external_decl,ano)::res,old_comp,new_comp)
           => Absyn.EXTERNAL(external_decl',ano)::res'
 
-  rule  rename_component_in_parts(res,old_comp,new_comp) => res' &
+  rule  rename_component_in_parts(res,old_comp,new_comp) => res' 
         --------------------------------------
         rename_component_in_parts(a::res,old_comp,new_comp) => a::res'
  end
@@ -1916,7 +2128,7 @@ relation rename_component_in_equation:(Absyn.Equation,
           => Absyn.EQ_CONNECT(cref1',cref2')
 
   rule  rename_component_in_exp(exp,old_comp,new_comp) => exp' &
-        rename_component_in_equation_list(equations,old_comp,new_comp) => equations' &
+        rename_component_in_equation_list(equations,old_comp,new_comp) => equations' 
         
         -------------------------
         rename_component_in_equation(Absyn.EQ_FOR(ident,exp,equations),
@@ -2511,7 +2723,7 @@ relation replace_start_in_component_ref:(Absyn.ComponentRef,Absyn.ComponentRef,A
        (*  Dump.print_component_ref_str(cr1) => cref_str_tmp & print " " & print cref_str_tmp & *)
 (*         Dump.print_component_ref_str(cr2) => cref_str_tmp & print " " & print cref_str_tmp & *)
 (*         Dump.print_component_ref_str(cr3) => cref_str_tmp & print " " & print cref_str_tmp & *)
-        replace_start_in_component_ref2(cr1,cr2,cr3) => res &
+        replace_start_in_component_ref2(cr1,cr2,cr3) => res 
        (*  Dump.print_component_ref_str(res) => cref_str_tmp & print " res " & print cref_str_tmp & *)
 (*         print "\n"  *)
         ---------------------------

@@ -108,6 +108,8 @@ module Dump:
   relation unparse_comment_option: (Absyn.Comment option) => string
   relation unparse_comment_option_no_annotation: (Absyn.Comment option) => string
   relation unparse_each_str: (Absyn.Each) => string
+  relation stdout: () => ()
+
   relation print_info:(Absyn.Info) => ()
   relation unparse_info_str:(Absyn.Info) => string  
 end
@@ -3284,3 +3286,19 @@ relation indent_str: (int) => string =
 	--------------------
 	indent_str(i) => res
 end
+
+(** relation: stdout
+ **
+ ** Prints the text sent to the print buffer (Print.rml) to stdout (i.e. 
+ ** using RML standard print). After printing, the print buffer is cleared.
+ **)
+relation stdout: () => () =
+
+  rule 	Print.get_string() => str &
+        print str &
+        Print.clear_buf()
+        ------------------------
+        stdout() => ()
+end 
+
+

@@ -373,7 +373,7 @@ relation load_model_from_each_class:(Absyn.Program,string)
   rule  let path = Absyn.IDENT(id) &
 	load_class(path, dir) => pnew &
         load_model_from_each_class(Absyn.PROGRAM(res,a),dir) => p_res &
-	Interactive.update_program(pnew,p_res) => p' &
+	Interactive.update_program(pnew,p_res) => p' 
         ---------------------------
         load_model_from_each_class(Absyn.PROGRAM(Absyn.CLASS(id,_,_,_,_,_,_)::res,
                                                  a),

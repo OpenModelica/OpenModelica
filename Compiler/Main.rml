@@ -171,12 +171,14 @@ relation handle_command: (string,Interactive.InteractiveSymbolTable)  =>
 	-------------------------------
 	handle_command (str, isymb) => (false,"Ok\n",isymb)
 	
-  rule	(*check_classdef str => true &*)
-	Debug.fcall0 ("dump", Print.clear_buf) &
+	(* Add a class or function to the interactive symbol table.
+	   If it is a function, type check it. *)
+  rule	Debug.fcall0 ("dump", Print.clear_buf) &
 	Debug.fcall0 ("dumpgraphviz", Print.clear_buf) &
 	Debug.fprint ("dump","\nTrying to parse class definition...\n") &
 	Parser.parsestring(str) => (p,msg) & (* Always succeeds, check msg for errors *)
-	msg = "Ok" &
+	msg = "Ok" &  (* fails here if the string is not "Ok" *)
+	Interactive.type_check_function(p, isymb) &  
 	Interactive.add_scope(p,vars) => p' &
 	Interactive.update_scope(p,vars) => vars' &
 	Interactive.update_program (p',iprog) => newprog &
@@ -184,21 +186,22 @@ relation handle_command: (string,Interactive.InteractiveSymbolTable)  =>
  	Debug.fprint ("dump", "\n--------------- Parsed program ---------------\n") &
 	Debug.fcall ("dumpgraphviz", DumpGraphviz.dump, newprog) &
 	Debug.fcall ("dump", Dump.dump, newprog) &
-	make_debug_result("dump", msg) => res' &
+	make_debug_result("dump", "Ok") => res' &
 	make_debug_result("dumpgraphviz", res') => res
 	----------------------------------------------
-	handle_command (str, Interactive.SYMBOLTABLE(iprog,a,b,vars,cf)) => 
+	handle_command (str, isymb as Interactive.SYMBOLTABLE(iprog,a,b,vars,cf)) => 
 	(true, res, Interactive.SYMBOLTABLE(newprog,a,b,vars',cf'))
-
+	
+	(* Interactively evaluate an algorithm statement or expression *)
   rule	Debug.fcall0 ("dump", Print.clear_buf) &
 	Debug.fcall0 ("dumpgraphviz", Print.clear_buf) &
 	Debug.fprint ("dump","\nNot a class definition, trying expresion parser\n") &
 	Parser.parsestringexp str => (exp,msg) & (* always succeeds, check msg for errors *)
 	msg = "Ok" &
-	Interactive.evaluate(exp,isymb,false) => (resultstr,newisymb) &
+	Interactive.evaluate(exp,isymb,false) => (evalstr,newisymb) &
 	Debug.fprint ("dump", "\n--------------- Parsed expression ---------------\n") &
 	Debug.fcall ("dump", Dump.dump_istmt, exp) &
-	make_debug_result("dump", resultstr) => res' &
+	make_debug_result("dump", evalstr) => res' &
 	make_debug_result("dumpgraphviz", res') => res
 	--------------------------------------------------
 	handle_command (str, isymb) => (true, res, newisymb)
