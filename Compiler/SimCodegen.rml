@@ -1612,7 +1612,29 @@ end
 (** relation: generate_ode_system
  ** author: PA
  **
- ** Generates code for a subsystem of equations, both linear and non-linear.
+ ** Generates code for a subsystem of equations, both linear and non-linear 
+ ** and mixed systems with both discrete and continuous variables.
+ ** 
+ ** A linear system can be written as A x = b
+ ** where A is a n by n matrix and b is a vector of size n.
+ ** Such a system can for instance be solved by gaussian elimination or by
+ ** using numerical methods in LAPACK.
+ **
+ ** A non-linear system of equations is solved by the hybrd function. To solve
+ ** the system a function that calculates the residuals of the equations must 
+ ** be given. The hybrd function also needs to calcutate the dierivatives of 
+ ** the equation system, i.e. the jacobian. Currently this is performed 
+ ** numerically, but it could also be done analytically for systems which
+ ** have an analytic jacobian.
+ **
+ ** A mixed system of equations contain both continuous and discrete time
+ ** variables. Such system is solved by first guessing values on the 
+ ** discrete time variables (e.g. based on previous values). Then the 
+ ** continous time variables are solved. Finally, the discrete variables
+ ** are checked to see if they fullfill the constraints of the system 
+ ** equations. If not, a fixed point iteration over the possible values of 
+ **  the discrete variables are made.
+ ** Note that a mixed system can also be linear or non-linear.
  **)
 relation generate_ode_system: (DAELow.DAELow, int vector, int vector, int list,
 			       int (*cg var_id*)) 
@@ -1620,6 +1642,31 @@ relation generate_ode_system: (DAELow.DAELow, int vector, int vector, int list,
 	      int, (* cg var_id*)
 	      CFunction list) = (* extra function code*) 
 
+	(* Mixed system of equations*)
+  rule	Util.list_map_3_2(block,get_equation_and_solved_var,eqns,vars,ass2) 
+	  => (eqn_lst,var_lst) &
+	is_mixed_system(var_lst) => true &
+	split_mixed_equations(eqn_lst,var_lst) => (cont_eqn,cont_var,
+						   disc_eqn,disc_var) &
+	DAELow.list_var(cont_var) => vars' &
+
+	DAELow.list_equation(cont_eqn) => eqns' &
+	let cont_subsystem_dae = DAELow.DAELOW(vars',knvars,eqns',se,ie,ae,al,ev) &
+	DAELow.incidence_matrix(cont_subsystem_dae) => m &
+	DAELow.abs_incidence_matrix(m) => m' &
+	DAELow.transpose_matrix(m') => mt' &
+	(* calculate jacobian. If constant, linear system of equations. Otherwise nonlinear *)
+	
+	DAELow.calculate_jacobian(vars',eqns',ae,m',mt') => jac &
+	DAELow.analyze_jacobian(cont_subsystem_dae,jac) => jac_tp &
+
+	generate_ode_system2(cont_subsystem_dae,jac,jac_tp,cg_id) 
+	  => (s2,cg_id',f1) 
+	------------------------
+	generate_ode_system(daelow as DAELow.DAELOW(vars,knvars,eqns,se,ie,ae,al,ev),ass1,ass2,block,cg_id) 
+	  => (s2,cg_id',f1)
+
+	  (* continuous system of equations *)
   rule	(** extract the variables and equations of the block.*)
 	Util.list_map_3_2(block,get_equation_and_solved_var,eqns,vars,ass2) 
 	  => (eqn_lst,var_lst) &
@@ -1645,6 +1692,415 @@ relation generate_ode_system: (DAELow.DAELow, int vector, int vector, int list,
 	-----------------
 	generate_ode_system(_,_,_,_,_) => fail
 end
+
+
+(**relation: generate_mixed_header
+ ** author: PA
+ **
+ ** Generates the header code for a mixed system.
+ **)
+relation generate_mixed_header:(DAELow.Equation list (* continous eqns*),
+				DAELow.Var list (* continuous vars*),
+				DAELow.Equation list (* discrete eqns*),
+				DAELow.Var list (* discrete vars*), 
+				int (* cg var_id *))
+	=> (CFunction, int (* cg var_id *)) =
+
+  rule	list_length(disc_vars) => len &
+	int_string(len) => len_str &
+	Util.string_append_list(["mixed_equation_system(",len_str,");"]) 
+	  => stmt &
+	generate_mixed_discrete_possible_values(cont_eqns,cont_vars,disc_eqns,disc_vars,cg_id) => (cfn1,cg_id') &
+	Codegen.c_add_statements(Codegen.c_empty_function,[stmt]) => cfcn  &
+	Codegen.c_merge_fns([cfcn,cfn1]) => cfcn'
+	--------------------------
+	generate_mixed_header(cont_eqns,cont_vars,disc_eqns,disc_vars,cg_id)
+	  => (cfcn',cg_id')
+end
+
+(** relation 
+
+
+**)
+relation generate_mixed_discrete_possible_values:
+	(DAELow.Equation list (* continous eqns*),
+	 DAELow.Var list (* continuous vars*),
+	 DAELow.Equation list (* discrete eqns*),
+	 DAELow.Var list (* discrete vars*), 
+	 int (* cg var_id *))
+	  => (CFunction, int (* cg var_id *)) =
+	  
+  rule	mixed_collect_relations(cont_e,disc_e) => rels &
+	generate_mixed_discrete_possible_values2(rels,disc_v,cg_id) 
+	  => (values,value_dims) & 
+	generate_mixed_discrete_combination_values(values) 
+	  => values' &
+	  Util.list_flatten(values') => values'' &
+	Util.list_map(value_dims,int_string) => ss &
+	Util.string_delimit_list(ss,", ") => s &
+	Util.string_delimit_list(values'',", ") => s2 &
+	list_length(disc_v) => disc_len &
+	int_string(disc_len) => disc_len_str &
+	list_length(values'') => values_len &
+	int_string(values_len) => values_len_str & 
+	Util.string_append_list(["double values[",values_len_str,"]={",s2,"};"]) 
+	  => stmt1 &
+	Util.string_append_list(["int value_dims[",disc_len_str,"]={",s,"};"]) 
+	  => stmt2 &
+	  Codegen.c_add_statements(Codegen.c_empty_function,
+				   [stmt1,stmt2]) => cfn'
+	---------------------------
+	generate_mixed_discrete_possible_values(cont_e,cont_v,disc_e,disc_v,
+						cg_id)
+	  => (cfn',cg_id)
+
+  rule	print "generate_mixed_discrete_possible_values failed\n" 
+	--------------------
+	generate_mixed_discrete_possible_values(_,_,_,_,_) => fail
+end
+
+(** relation: mixed_collect_relations
+ ** author: PA
+ ** 
+ ** 
+ **)
+
+relation mixed_collect_relations: (DAELow.Equation list (* continous eqns*),
+				   DAELow.Equation list (* discrete eqns*))
+	=> (Exp.Exp list) =
+
+  rule	mixed_collect_relations2(c_eqn) => l1 &
+	mixed_collect_relations2(d_eqn) => l2 &
+	list_append(l1,l2) => res
+	----------------------
+	mixed_collect_relations(c_eqn,d_eqn) => res
+end
+
+(** relation: mixed_collect_relations2
+ ** author: PA
+ **
+ ** Helper relation to mixed_collect_relations.
+ **)
+
+relation mixed_collect_relations2:(DAELow.Equation list) => Exp.Exp list =
+
+  axiom	mixed_collect_relations2([]) => []
+
+  rule	Exp.get_relations(e1) => l1 &
+	Exp.get_relations(e2) => l2 &
+	mixed_collect_relations2(es) => l3 &
+	Util.list_flatten([l1,l2,l3]) => res
+	----------------------
+	mixed_collect_relations2(DAELow.EQUATION(e1,e2)::es) => res
+
+  rule	Exp.get_relations(e1) => l1 &
+	mixed_collect_relations2(es) => l2 &
+	list_append(l1,l2) => res
+	----------------------
+	mixed_collect_relations2(DAELow.SOLVED_EQUATION(cr,e1)::es) => res
+
+  axiom	mixed_collect_relations2(_) => []
+
+end
+
+(** relation generate_mixed_discrete_combination_values
+ ** author: PA
+ **
+ ** Generates all combinations of the values given as argument
+**)
+
+relation generate_mixed_discrete_combination_values:(string list list (* values *))
+	  => (string list list) =
+	
+  axiom	generate_mixed_discrete_combination_values([value]) 
+	  => [value]
+
+  rule	generate_mixed_discrete_combination_values(values) => values' &
+	generate_mixed_discrete_combination_values2(value,values') 
+	  => values'' &
+	Util.list_strip_last(values'') => values''' 
+	---------------------------------------
+	generate_mixed_discrete_combination_values(value::values) 
+	  => values'''
+end
+
+(** relation generate_mixed_discrete_combination_values2
+ ** author: PA
+ ** 
+ ** Helper relation to generate_mixed_discrete_combination_values.
+ ** Insert a list of values producing all combinations with given list of list
+ ** of values.
+ **)
+relation generate_mixed_discrete_combination_values2: (string list, 
+						       string list list)
+	  => string list list =
+
+  axiom	generate_mixed_discrete_combination_values2(v,[]) => [v] 
+
+  axiom	generate_mixed_discrete_combination_values2([],lst) => lst
+
+  rule	Util.list_list_map_1(lst,Util.list_make_2,s) => lst1 &
+	Util.list_flatten(lst1) => lst1' &
+	generate_mixed_discrete_combination_values2(ss,lst) => lst2 &
+	list_append(lst1',lst2) => res
+	---------------------------------
+	generate_mixed_discrete_combination_values2(s::ss,lst) => res
+end
+
+(** relation: generate_mixed_discrete_possible_values2
+ **
+ ** Helper relation to generate_mixed_discrete_possible_values.
+ **)
+
+relation generate_mixed_discrete_possible_values2: (Exp.Exp list,
+						    DAELow.Var list (* discrete vars*),
+						    int (* cg var_id*))
+	  => (string list list (* values *),
+	      int list (* value dimension*))=
+
+  axiom	generate_mixed_discrete_possible_values2(_,[],cg_id) 
+	  => ([],[])
+
+	  (* booleans, generate true (1.0) and false (0.0) *)
+  rule	DAELow.var_type(v) => DAE.BOOL &
+	generate_mixed_discrete_possible_values2(rels,vs,cg_id) 
+	  => (values,dims) 
+	  ----------------------------
+	generate_mixed_discrete_possible_values2(rels,v::vs,cg_id)
+	=> (["1.0","0.0"]::values,2::dims)
+
+  rule	DAELow.var_type(v) => DAE.INT &
+	Error.add_message(Error.INTERNAL_ERROR,["Mixed system of equations with dicrete variables of type Integer not supported. Try to rewrite using Boolean variables."])
+	----------------------------
+	generate_mixed_discrete_possible_values2(rels,v::vs,_)
+	=> fail
+
+end
+
+(**relation: generate_mixed_footer
+ ** author: PA
+ **
+ ** Generates the header code for a mixed system.
+ **)
+relation generate_mixed_footer:(DAELow.Equation list (* continous eqns*),
+				DAELow.Var list (* continuous vars*),
+				DAELow.Equation list (* discrete eqns*),
+				DAELow.Var list (* discrete vars*), 
+				int (* cg var_id *))
+	=> (CFunction, int (* cg var_id *)) =
+
+  rule	list_length(disc_vars) => len &
+	int_string(len) => len_str &
+	Util.string_append_list(["mixed_equation_system_end(",len_str,");"]) 
+	  => stmt &
+	Codegen.c_add_statements(Codegen.c_empty_function,[stmt]) => cfcn  
+	--------------------------
+	generate_mixed_footer(cont_eqns,cont_vars,disc_eqns,disc_vars,cg_id)
+	  => (cfcn,cg_id)
+end
+
+(** relation: generate_mixed_system_store_discrete
+ ** author: PA
+ ** 
+ ** Stores all discrete variables in discrite_loc variable.
+ **)
+
+relation generate_mixed_system_store_discrete: (DAELow.Var list,
+						int, (* indx *)
+					       int (* cg var_id*))
+	=> (Codegen.CFunction, int (* cg var_id*), 
+	    Codegen.CFunction list) =
+
+
+  axiom	generate_mixed_system_store_discrete([],_,cg_id) 
+	  => (Codegen.c_empty_function, cg_id, []) 
+
+  rule	indx + 1 => indx' &
+	generate_mixed_system_store_discrete(vs,indx',cg_id) 
+	  => (cfn,cg_id',funcs) &
+	DAELow.var_cref(v) => cr &
+	int_string(indx) => indx_str &
+	Exp.print_component_ref_str(cr) => cr_str &
+	Util.string_append_list(["discrete_loc[",indx_str,"] = ",cr_str,";"]) => stmt &
+	Codegen.c_add_statements(cfn,[stmt]) => cfn' 
+	-----------------------------------
+	generate_mixed_system_store_discrete(v::vs,indx,cg_id)
+	  => (cfn',cg_id',funcs)
+
+  rule	print "generate_mixed_system_store_discrete failed\n" 
+	-------------------------------
+	generate_mixed_system_store_discrete(_,_,cg_id)
+	  => fail
+end
+
+(** relation: generate_mixed_system_discrete_part_check
+ ** author: PA
+ ** 
+ ** Generates check of the discrete parts.
+ **)
+
+relation generate_mixed_system_discrete_part_check: (DAELow.Equation list,
+					       DAELow.Var list,
+					       int (* cg var_id*))
+	=> (Codegen.CFunction, int (* cg var_id*), 
+	    Codegen.CFunction list) =
+
+  rule	generate_mixed_system_discrete_part_check2(eqn,var,0,cg_id) 
+	  => (cfn,cg_id,funcs) &
+	  list_length(eqn) => len &
+	int_string(len) => len_str &
+	Util.list_map(var,DAELow.var_cref) => crefs &
+	Util.list_map(crefs,Exp.print_component_ref_str) => strs &
+	Util.list_map_1r(strs,string_append,"&") => strs2 &
+	Util.string_delimit_list(strs2,", ") => ptrs_str &
+	Util.string_append_list(["check_discrete_values(",len_str,",{",
+				 ptrs_str,"});"]) 
+ 	  => stmt &
+	  Codegen.c_add_statements(cfn,[stmt]) => cfn' 
+	-------------------------
+	generate_mixed_system_discrete_part_check(eqn,var,cg_id)
+	  => (cfn',cg_id,funcs) 
+end
+
+relation generate_mixed_system_discrete_part_check2: (DAELow.Equation list,
+						      DAELow.Var list,
+						      int (* index*),
+						      int (* cg var_id*))
+	  => (Codegen.CFunction, int (* cg var_id*), 
+	      Codegen.CFunction list) =
+
+  axiom	generate_mixed_system_discrete_part_check2([],_,_,cg_id) 
+	  => (Codegen.c_empty_function, cg_id, []) 
+
+  rule	indx + 1 => indx' &
+	generate_mixed_system_discrete_part_check2(eqns,vs,indx',cg_id) 
+	  => (cfn,cg_id',funcs) &
+	DAELow.var_cref(v) => cr &
+	let varexp = Exp.CREF(cr,Exp.REAL) &
+	Exp.solve(e1,e2,varexp) => expr &
+	Codegen.generate_expression(expr,cg_id) => (exp_func,var,cg_id') &
+	int_string(indx) => indx_str &
+	Exp.print_component_ref_str cr => cr_str &
+	Util.string_append_list([cr_str," = ",var,";"]) => stmt &
+	Util.string_append_list(["discrete_loc2[",indx_str,"] = ",cr_str,";"])
+	  => stmt2 &
+	Codegen.c_add_statements(exp_func,[stmt,stmt2]) => exp_func' &
+	Codegen.c_merge_fns([exp_func',cfn]) => cfn' 
+	-----------------------------------
+	generate_mixed_system_discrete_part_check2(DAELow.EQUATION(e1,e2)::eqns,v::vs,indx,cg_id)
+	  => (cfn',cg_id',funcs)
+
+  rule	print "generate_mixed_system_discrete_part_check2 failed\n" 
+	-------------------------------
+	generate_mixed_system_discrete_part_check2(_,_,_,cg_id)
+	  => fail
+end
+
+
+(** relation: split_mixed_equations
+ ** author: PA
+ ** 
+ ** Splits the equation of a mixed equation system into its continuous and
+ ** discrete parts
+ **)
+
+relation split_mixed_equations: (DAELow.Equation list, DAELow.Var list) 
+	  => (DAELow.Equation list, (* continous eqns*)
+	      DAELow.Var list, (* continuous vars*)
+	      DAELow.Equation list (* discrete eqns*),
+	      DAELow.Var list (* discrete vars*)) =
+
+  axiom	split_mixed_equations([],[]) => ([],[],[],[]) 
+
+	(* discrete eqn*)
+  rule	has_discrete_var([v]) => true  &
+	split_mixed_equations(eqns,vs) => (cont_e,cont_v,disc_e,disc_v)
+	-------------------------------------
+	split_mixed_equations(eqn::eqns,v::vs) => (cont_e,cont_v,
+						   eqn::disc_e,v::disc_v)
+	
+	(* continuous eqn*)
+  rule	split_mixed_equations(eqns,vs) => (cont_e,cont_v,disc_e,disc_v)
+	-------------------------------------
+	split_mixed_equations(eqn::eqns,v::vs) => (eqn::cont_e,v::cont_v,
+						   disc_e,disc_v)
+
+  rule	print "split_mixed_equations failed\n" 
+	-------------------
+	split_mixed_equations(_,_) => fail
+end
+
+(** relation: is_mixed_system
+ ** author: PA
+ ** 
+ ** Returns true if the list of variables if an equation system contains
+ ** both discrete and continuous variables.
+ **)
+relation is_mixed_system: DAELow.Var list => bool =
+
+  rule	has_discrete_var(vs) => true &
+	has_continous_var(vs) => true
+	---------------------
+	is_mixed_system(vs) => true
+
+  axiom	is_mixed_system(_) => false
+end
+
+(** relation: has_discrete_var
+ ** author: PA
+ **
+ ** Helper relation to is_mixed_system. Returns true if var list contains 
+ ** discrete time variable.
+ **)
+
+relation has_discrete_var: (DAELow.Var list) => bool =
+
+  axiom	has_discrete_var(DAELow.VAR(cr,DAELow.DISCRETE,_,_,_,_,_,_,_,_,_,_,_,_)::_) 
+	  => true
+
+  axiom	has_discrete_var(DAELow.VAR(cr,_,_,DAE.INT,_,_,_,_,_,_,_,_,_,_)::_) 
+	  => true
+  axiom	has_discrete_var(DAELow.VAR(cr,_,_,DAE.BOOL,_,_,_,_,_,_,_,_,_,_)::_) 
+	  => true
+
+  rule	has_discrete_var(vs) => res
+	--------------------------------------
+	has_discrete_var(v::vs) 
+	  => res
+
+  axiom	has_discrete_var([]) => false
+end
+
+(** relation: has_continous_var
+ ** author: PA
+ **
+ ** Helper relation to is_mixed_system. Returns true if var list contains 
+ ** discrete time variable.
+ **)
+
+relation has_continous_var: (DAELow.Var list) => bool =
+
+  axiom	has_continous_var(DAELow.VAR(cr,DAELow.VARIABLE,_,_,_,_,_,_,_,_,_,_,_,_)::_) 
+	  => true
+
+  axiom has_continous_var(DAELow.VAR(cr,DAELow.STATE,_,_,_,_,_,_,_,_,_,_,_,_)::_) 
+	  => true
+
+  axiom	has_continous_var(DAELow.VAR(cr,DAELow.DUMMY_DER,_,_,_,_,_,_,_,_,_,_,_,_)::_) 
+	  => true
+
+  axiom	has_continous_var(DAELow.VAR(cr,DAELow.DUMMY_STATE,_,_,_,_,_,_,_,_,_,_,_,_)::_) 
+	  => true
+
+  rule	has_continous_var(vs) => res
+	--------------------------------------
+	has_continous_var(v::vs) 
+	  => res
+
+  axiom	has_continous_var([]) => false
+end
+
+
 
 (** relation: generate_ode_system2
  ** author: PA
@@ -2430,6 +2886,17 @@ relation generate_ode_equation: (DAELow.DAELow,
 	      int, (* cg var_id *)
 	      CFunction list) = (* extra functions *)
 
+
+	(* discrete equations not considered if event-code is produced *)
+  rule	use_zerocrossing => true &
+	get_equation_and_solved_var(e,eqns,vars,ass2) 
+	  => (DAELow.EQUATION(e1,e2), v) &
+	  has_discrete_var([v]) => true
+	---------------------	
+	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_,_),ass1,ass2,e,cg_id) 
+	  => (Codegen.c_empty_function,cg_id,[])
+
+	  
   rule	(* Solving for non-states *)
 	
 	get_equation_and_solved_var(e,eqns,vars,ass2) 
@@ -3011,6 +3478,7 @@ relation generate_zero_crossing2: (DAELow.ZeroCrossing list, int,
 	generate_zero_crossing2(_,_,_,_,_,_,_,_,cg_id1,cg_id2) 
 	  => (Codegen.c_empty_function,cg_id1,Codegen.c_empty_function,cg_id2)
 
+	
   rule  dump_zero_crossing_str zc => zc_str &
 	int_string index => index_str &
 	index + 1 => index' &
@@ -3020,7 +3488,7 @@ relation generate_zero_crossing2: (DAELow.ZeroCrossing list, int,
 	  => stmt1 &
         Util.list_select_1(helpVarInfo,(index,dlow),isZeroCrossingAffectingHelpVar)
 	  => usedHelpVars &
- 	build_zero_crossing_eqns (dae,dlow,ass1,ass2,eql,cg_id2') 
+ 	build_zero_crossing_eqns (dae,dlow,ass1,ass2,eql,blocks,cg_id2') 
 	  => (Codegen.CFUNCTION(rettp,fn,retrec,arg,vars,init,stmts,cleanups),cg_id2'') &
 	Util.string_append_list(["case ", index_str, ":\n"]) => case_stmt &
 	let stmts' = case_stmt::stmts &
@@ -3045,6 +3513,59 @@ relation generate_zero_crossing2: (DAELow.ZeroCrossing list, int,
 				helpVarInfo,cg_id1,cg_id2) 
 	  => fail
 end
+
+(** relation: is_part_of_mixed_system
+ **
+ ** Helper relation to generate_zero_crossing2,
+ ** returns true if any equation in the equation list of a 
+ ** zero-crossing is part of a mixed system.
+ **)
+
+relation is_part_of_mixed_system:(DAELow.DAELow,
+				  int (* equation *),
+				  int list list (* blocks*),
+				  int vector (* ass2*))
+	  => bool =
+
+  rule	DAELow.get_equation_block(e,blocks) => block &
+	Util.list_map_3_2(block,get_equation_and_solved_var,eqns,vars,ass2) 
+	  => (eqn_lst,var_lst) &
+	is_mixed_system(var_lst) => res
+	--------------------------------
+	is_part_of_mixed_system(dae as DAELow.DAELOW(vars,_,eqns,_,_,_,_,_),e,blocks,ass2) => res
+
+  axiom	is_part_of_mixed_system(_,_,_,_) => false
+end
+
+(** relation: get_zc_mixed_system
+ **
+ ** Helper relation to generate_zero_crossing2,
+ ** returns true if any equation in the equation list of a 
+ ** zero-crossing is part of a mixed system.
+ **)
+
+relation get_zc_mixed_system:(DAELow.DAELow,
+				  int  (* equation *),
+				  int list list (* blocks*),
+				  int vector (* ass2*))
+	  => int list =
+
+  rule	DAELow.get_equation_block(e,blocks) => block &
+	Util.list_map_3_2(block,get_equation_and_solved_var,eqns,vars,ass2) 
+	  => (eqn_lst,var_lst) &
+	is_mixed_system(var_lst) => true 
+	--------------------------------
+	get_zc_mixed_system(dae as DAELow.DAELOW(vars,_,eqns,_,_,_,_,_),
+			    e,blocks,ass2) 
+	  => block
+
+end
+
+(** relation: dump_zero_crossing_str
+** author: 
+ **
+ ** Dumps a ZeroCrossing to a sting. Useful for debugging.
+ **)
 
 relation dump_zero_crossing_str: (DAELow.ZeroCrossing) => string =
 
@@ -3206,26 +3727,78 @@ end
  ** zero crossing.
  **)
 
-relation build_zero_crossing_eqns : (DAE.DAElist,DAELow.DAELow, int vector, int vector, int list,int (* cg var_id*)) => (CFunction,int(*cg var_id*))  =
+relation build_zero_crossing_eqns : (DAE.DAElist,
+				     DAELow.DAELow, 
+				     int vector(*ass1*), 
+				     int vector(*ass2*), 
+				     int list(*eqns*),
+				     int list list (* blocks*),
+				     int (* cg var_id*)) => (CFunction,int(*cg var_id*))  =
 
-  axiom build_zero_crossing_eqns(_,_,_,_,[],cg_id) 
+  axiom build_zero_crossing_eqns(_,_,_,_,[],_,cg_id) 
 	  => (Codegen.c_empty_function,cg_id)
 
+	  (* Zero crossing for mixed system*)
+  rule	is_part_of_mixed_system(dlow,eqn,blocks,ass2) => true &
+	get_zc_mixed_system(dlow,eqn,blocks,ass2) => block &
+
+	Util.list_map_3_2(block,get_equation_and_solved_var,eqns,vars,ass2) 
+	  => (eqn_lst,var_lst) &
+	is_mixed_system(var_lst) => true &
+	split_mixed_equations(eqn_lst,var_lst) => (cont_eqn,cont_var,
+						   disc_eqn,disc_var) &
+	DAELow.list_var(cont_var) => vars' &
+
+	DAELow.list_equation(cont_eqn) => eqns' &
+	let cont_subsystem_dae = DAELow.DAELOW(vars',knvars,eqns',se,ie,ae,al,ev) &
+	DAELow.incidence_matrix(cont_subsystem_dae) => m &
+	DAELow.abs_incidence_matrix(m) => m' &
+	DAELow.transpose_matrix(m') => mt' &
+	(* calculate jacobian. If constant, linear system of equations. Otherwise nonlinear *)
+	
+	DAELow.calculate_jacobian(vars',eqns',ae,m',mt') => jac &
+	DAELow.analyze_jacobian(cont_subsystem_dae,jac) => jac_tp &
+
+	generate_mixed_header(cont_eqn,cont_var,disc_eqn,disc_var,cg_id)
+	  => (s0,cg_id1) &
+	generate_ode_system2(cont_subsystem_dae,jac,jac_tp,cg_id1) 
+	  => (Codegen.CFUNCTION(rettp,fn,retrec,arg,vars,init,stmts,cleanups),cg_id2,_) &
+	  (* initialization of e.g. matrices for linsys must be done in each
+	   * iteration, create new scope and put them first.*)
+	  Util.list_flatten([["{"],vars,stmts,["}"]]) => stmts' &
+	let s2' = Codegen.CFUNCTION(rettp,fn,retrec,arg,[],init,stmts',cleanups) &
+	generate_mixed_footer(cont_eqn,cont_var,disc_eqn,disc_var,cg_id2)
+	  => (s4,cg_id3) &
+	generate_mixed_system_discrete_part_check(disc_eqn,disc_var,cg_id3)
+	  => (s3,cg_id4,_) &
+	generate_mixed_system_store_discrete(disc_var,0,cg_id4) 
+	  => (s1,cg_id5,_) &
+	
+	Codegen.c_merge_fns([s0,s1,s2',s3,s4]) => cfn   
+	----------------------------------------
+	build_zero_crossing_eqns(dae,
+				 dlow as DAELow.DAELOW(vars,knvars,eqns,se,ie,ae,al,ev),
+				 ass1,ass2,eqn::rest,blocks,cg_id) 
+	  => (cfn,cg_id5)
+
+	(* Zero crossing for single equation*)
   rule	build_equation(dae,dlow,ass1,ass2,eqn,cg_id) => (cfn2,cg_id') &
 	eqn - 1 => eqn' &
          vector_nth(ass2,eqn') => v &
 	v - 1 => v' &
 	DAELow.vararray_nth(vararr,v') => (DAELow.VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,_)) &  
 	Exp.print_component_ref_str(cr) => cr_str &
-	build_zero_crossing_eqns(dae,dlow,ass1,ass2,rest,cg_id') 
+	build_zero_crossing_eqns(dae,dlow,ass1,ass2,rest,blocks,cg_id') 
 	  => (cfn3,cg_id'') &
  	Util.string_append_list(["save(",cr_str,");"]) => stmt &
  	Codegen.c_add_statements(Codegen.c_empty_function,[stmt]) => cfn1 &
 	Codegen.c_merge_fns([cfn1,cfn2,cfn3]) => cfn
 	----------------------------------------
-	build_zero_crossing_eqns(dae,dlow as DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,_,_,_,_,_,_),ass1,ass2,eqn::rest,cg_id) => (cfn,cg_id'')
+	build_zero_crossing_eqns(dae,dlow as DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,_,_,_,_,_,_),
+				 ass1,ass2,eqn::rest,blocks,cg_id) 
+	  => (cfn,cg_id'')
 
-  axiom build_zero_crossing_eqns(_,_,_,_,_,cg_id) 
+  axiom build_zero_crossing_eqns(_,_,_,_,_,_,cg_id) 
 	  => (Codegen.c_empty_function,cg_id)
 end
 
@@ -3500,8 +4073,8 @@ relation build_non_discrete_equation:(DAE.DAElist, DAELow.DAELow, int vector, in
   rule	int_sub(e,1) => e' &
 	vector_nth(ass2,e') => v &
 	int_sub(v,1) => v' &
-	DAELow.vararray_nth(vararr,v') => (DAELow.VAR(_,kind,_,_,_,_,_,_,_,_,_,_,_,_)) &  
-	DAELow.is_discrete kind 
+	DAELow.vararray_nth(vararr,v') => (v) &  
+	has_discrete_var([v]) => true 
 	--------------------------------
 	build_non_discrete_equation(_,DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,_,_,_,_,_,_),_,ass2,e,cg_id) => (Codegen.c_empty_function,cg_id)
       
@@ -3622,8 +4195,8 @@ relation build_residual_equation:(DAE.DAElist,
 	 int_sub(e,1) => e' &
 	 vector_nth(ass2,e') => v &
 	 int_sub(v,1) => v' &
-	 DAELow.vararray_nth(vararr,v') => (DAELow.VAR(_,kind,_,_,_,_,_,_,_,_,_,_,_,flow)) &  
-	 DAELow.is_discrete kind 
+	 DAELow.vararray_nth(vararr,v') => (v) &  
+	 has_discrete_var([v]) => true 
 	 --------------------------------
 	 build_residual_equation(_,DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,_,_,_,_,_,_),_,ass2,e,cg_id) => (Codegen.c_empty_function,cg_id)
          

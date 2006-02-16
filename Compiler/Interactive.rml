@@ -3327,7 +3327,7 @@ relation extract_components_from_classdef:(Absyn.Path, (*the QUALIFIED path for 
         ----------------------------
         extract_components_from_classdef(pa,Absyn.DERIVED(path,_,_,elementargs,_),comps,env) => comps'
 
-  rule  extract_components_from_classparts(pa,parts,comps,env) => comps' &
+  rule  extract_components_from_classparts(pa,parts,comps,env) => comps' 
         ----------------------------
         extract_components_from_classdef(pa,Absyn.CLASS_EXTENDS(id_ex,elementarg,_,parts),comps,env) => comps'
 
@@ -5654,7 +5654,7 @@ relation rename_class_in_parts:(Absyn.ClassPart list,
         rename_class_in_parts(Absyn.PROTECTED(elements)::res,old_comp,new_comp,env)
           => Absyn.PROTECTED(elements')::res'
 
-  rule  rename_class_in_parts(res,old_comp,new_comp,env) => res' &
+  rule  rename_class_in_parts(res,old_comp,new_comp,env) => res' 
         --------------------------------------
         rename_class_in_parts(a::res,old_comp,new_comp,env) => a::res'
  end

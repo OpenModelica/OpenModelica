@@ -319,7 +319,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   relation var_list: (Variables) => Var list 
   relation list_var: (Var list ) => Variables
 
-  relation var_cref: (Var) => Exp.ComponentRef 
+  relation var_cref: (Var) => Exp.ComponentRef
+  relation var_type: (Var) => DAE.Type
   relation var_orig_name: (Var) => string 
   relation var_index: (Var) => int
   relation var_nominal: (Var) => real
@@ -339,6 +340,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   relation residual_exp: (Equation) => Exp.Exp
 
   relation get_eqnsys_rhs_exp: (Exp.Exp, Variables) => Exp.Exp 
+
+  relation get_equation_block: (int, int list list) => int list
 
   relation vararray_nth:(VariableArray, int) => Var 
   relation vararray_setnth:(VariableArray, int, Var) => VariableArray 
@@ -1292,6 +1295,17 @@ end
 relation var_cref: (Var) => Exp.ComponentRef =
 
   axiom	var_cref(VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,flow)) => cr
+
+end
+
+(** relation: var_type
+ ** author: PA
+ **
+ ** extracts the type of a variable.
+ **)
+relation var_type: (Var) => DAE.Type =
+
+  axiom	var_type(VAR(_,_,_,tp,_,_,_,_,_,_,_,_,_,_)) => tp
 
 end
 
@@ -3131,11 +3145,11 @@ relation incidence_row_exp: (Exp.Exp, Variables )
 	-------------------------
 	incidence_row_exp(Exp.RELATION(e1,_,e2),vars) => res
 	
-	(* if expressions. The conditional is not investigated since
-	 * variables are not solved from within conditions*)
-  rule	incidence_row_exp(e2,vars) => s2 &
+	(* if expressions.*)
+  rule	incidence_row_exp(e1,vars) => s1 &
+	incidence_row_exp(e2,vars) => s2 &
  	incidence_row_exp(e3,vars) => s3 &
-	list_append(s2,s3) => res
+	Util.list_flatten([s1,s2,s3]) => res
 	-------------------------
 	incidence_row_exp(Exp.IFEXP(e1,e2,e3),vars) => res
 
@@ -6524,6 +6538,23 @@ rule  	Exp.terms(exp) => term_lst &
   rule	Debug.fprint("failtrace","-get_eqnsys_rhs_exp failed\n")
 	-------------------
 	get_eqnsys_rhs_exp(_,_) => fail
+end
+
+(** relation: get_equation_block
+ ** author: PA
+ **  
+ ** Returns the block the equation belongs to.
+ **)
+
+relation get_equation_block: (int, int list list) => int list =
+
+  rule	list_member(e,block) => true 
+	-------------------------
+	get_equation_block(e,block::blocks) => block
+
+  rule	get_equation_block(e,blocks) => res
+	-------------------------
+	get_equation_block(e,block::blocks) => res
 end
 
 

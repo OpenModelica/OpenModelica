@@ -85,4 +85,36 @@ double nls_fjac[size*size]
 
 #define end_nonlinear_system() } do {} while(0)
 
+
+#define mixed_equation_system(size) do { \
+int found_solution = 0; \
+int cur_value_indx=0; \
+do { \
+double discrete_loc[size]; \
+double discrete_loc2[size];
+
+#define mixed_equation_system_end(size)    } while (!found_solution); \
+ } while(0)
+
+#define check_discrete_values(size,ptrs) do {int i; \
+double* loc_ptrs[size]=ptrs; \
+if (!found_solution) { \
+found_solution = 1; \
+for (i=0; i < size; i++) { \
+if ((discrete_loc[i] - discrete_loc2[i]) > 1e-12) {\
+found_solution=0;\
+}\
+ }\
+if (!found_solution ) { \
+cur_value_indx++; \
+/*printf("iterating mixed system, i=%d\n",cur_value_indx);*/ \
+/* try next set of values*/ \
+for (i=0; i < size; i++) { \
+ *loc_ptrs[i]=values[cur_value_indx*size+i];  \
+/*printf("Setting new value for disc[%d] = %f\n",i,values[cur_value_indx*size+i]);*/ \
+} \
+} \
+} \
+} while(0)
+
 #endif

@@ -137,16 +137,20 @@ inline void calcEnabledZeroCrossings()
       zeroCrossingEnabled[i] = -1;
     else
       zeroCrossingEnabled[i] = 0;
-    //    cout << "e[" << i << "]=" << zeroCrossingEnabled[i] << endl;
+    //cout << "e[" << i << "]=" << zeroCrossingEnabled[i] << endl;
   }
 }
 
-void emit()
+int emit()
 {
-  if (actual_points < maxpoints)
+  if (actual_points < maxpoints) {
     add_result(data,t,x,xd,y,nx,ny,&actual_points);
-  else
-    cout << "To many points" << endl;
+    return 0;
+  }
+  else {
+    cout << "Too many points" << endl;
+    return -1;
+  }
 }
 
 int euler_main(int, char **);
@@ -298,7 +302,7 @@ int dassl_main(int argc, char **argv)
 
   function_updateDependents(&t);
   saveall();
-  emit();
+  if(emit()) { printf("Error, not enough space to save data"); return -1; }
   calcEnabledZeroCrossings();
   init=0;
   DDASRT(functionDAE_res, &nx,   &t, x, xd, &tout, info,&rtol, &atol, &idid,rwork,&lrw, iwork, &liw, y, &ipar, dummyJacobianDASSL, function_zeroCrossing, &ng, jroot);
@@ -312,9 +316,31 @@ int dassl_main(int argc, char **argv)
   tout += step;
   while(t<stop && idid>0) {
     // TODO: check here if time event has been reached.
+
+
+
     while (idid == 4) {
-      emit();
+      if (emit()) {printf("Too many points\n");
+	idid = -99; break;}
       saveall();
+      
+    // Make a tiny step so we are sure that crossings have really occured.
+      info[0]=1;
+      tout=t+1.0e-6;
+      {
+	long *tmp_jroot =(long *) malloc(sizeof(long)*ng);
+	int i;
+	for (i=0;i<ng;i++) {
+	  tmp_jroot[i]=jroot[i];
+	}
+	DDASRT(functionDAE_res, &nx,   &t, x, xd, &tout, info,&rtol, &atol, 
+	       &idid,rwork,&lrw, iwork, &liw, y, &ipar, dummyJacobianDASSL, 
+	       function_zeroCrossing, &ng, jroot);
+	for (i=0;i<ng;i++) {
+	  jroot[i]=tmp_jroot[i];
+	}
+      } // end tiny step
+      
       calcEnabledZeroCrossings();
       StateEventHandler(jroot, &t);
       CheckForNewEvents(&t);
@@ -336,7 +362,9 @@ int dassl_main(int argc, char **argv)
       info[0] = 1;
     }
     
-    emit();
+    if(emit()) {
+      printf("Error, could not save data. Not enought space.\n"); 
+    }
     saveall();
     tout = newTime(t,step); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
     calcEnabledZeroCrossings();
@@ -345,7 +373,9 @@ int dassl_main(int argc, char **argv)
 					      // alg vars too.
     functionDAE_output(&t,x,xd,y,p);  // descrete variables should probably be seperated so that the can be emited before and after the event.    
   }  
-  emit();
+  if(emit()) {
+      printf("Error, could not save data. Not enought space.\n"); 
+  }
   if (idid < 0 ) {
     cerr << "Error, simulation stopped at time: " << t << endl;
     cerr << "Result written to file." << endl;

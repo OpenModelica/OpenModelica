@@ -74,6 +74,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   relation if : (bool,'a,'a) => 'a
   relation list_fill: ('a ,int) => 'a list
+  relation list_make_2: ('a ,'a) => 'a list
   relation list_int_range: (int) => int list 
   relation list_first: 'a list => 'a
   relation list_rest: 'a list => 'a list
@@ -98,6 +99,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   relation list_fold_map: ('a list, ('a*'b) => ('a*'b), 'b) => ('a list,'b)
 
   relation list_list_map : ('a list list, 'a => 'b) => 'b list list 
+  relation list_list_map_1 : ('a list list, ('a,'b) => 'c,'b) => 'c list list 
   relation list_list_reverse: ('a list list) => 'a list list
   relation list_thread : ('a list, 'a list) => 'a list
   relation list_thread_map : ('a list, 'b list, ('a,'b) => 'c) => 'c list
@@ -204,6 +206,17 @@ relation list_fill: ('a ,int) => 'a list =
 	list_fill(a,n') => res
 	----------------------
 	list_fill (a,n) => a::res
+end
+
+(** relation list_make_2
+ **
+ ** Takes two arguments of same type and returns a list containing the two.
+ **)
+
+relation list_make_2: ('a ,'a) => 'a list =
+
+  axiom	list_make_2(a,b) => [a,b]
+
 end
 
 (** relation: list_int_range
@@ -509,6 +522,22 @@ relation list_list_map : ('a list list, 'a => 'b) => 'b list list =
 	list_list_map(r,fn) => r'
 	-------------------
 	list_list_map (f::r,fn) => f'::r'
+
+end
+
+(** relation list_list_map_1
+ ** author: PA
+ ** similar to list_list_map but for relations taking two arguments.
+ ** The second argument is passed as an extra argument.
+ **)
+relation list_list_map_1 : ('a list list, ('a,'b) => 'c,'b) => 'c list list =
+	
+  axiom	list_list_map_1 ([],_,_) => []
+
+  rule	list_map_1(f,fn,e) => f' &
+	list_list_map_1(r,fn,e) => r'
+	-------------------
+	list_list_map_1 (f::r,fn,e) => f'::r'
 
 end
 
