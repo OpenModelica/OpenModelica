@@ -1634,7 +1634,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable)
    rule	(** For now, renaming a class clears all caches... **)
 	 (* Substantial analysis required to find out what to keep in cache
 	  ** and what must be thrown out *)
-	 rename_class(p,old_cname,new_cname) => p'  &
+	 rename_class(p,old_cname,new_cname) => (res,p')  &
 	 SCode.elaborate(p') => s'
 	 -----------------------
 	 evaluate_graphical_api(
@@ -1642,7 +1642,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable)
 		 Absyn.CREF_IDENT("renameClass",_),
 		 Absyn.FUNCTIONARGS([Absyn.CREF(old_cname), Absyn.CREF(new_cname)],_)))],_
 	     ),
-	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("OK",SYMBOLTABLE(p',s',[],[],[]))
+	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (res,SYMBOLTABLE(p',s',[],[],[]))
 
   rule  rename_component(p,cname,from_ident,to_ident) => (res_str,p')
 	 -----------------------
@@ -1929,10 +1929,6 @@ relation rename_component_in_parts:(Absyn.ClassPart list,
 
 (** 
  ** author: x02lucpo
-  rule  rename_component_in_parts(res,old_comp,new_comp) => res' &
-        rename_component_in_external_decl(external_decl,old_comp,new_comp) => external_decl' 
-        --------------------------------------
-        rename_component_in_parts(Absyn.EXTERNAL(external_decl,ano)::res,old_comp,new_comp) => Absyn.EXTERNAL(external_decl',ano)::res'
  **
  ** helper relation to rename_component_visitor
  **)
@@ -2709,17 +2705,30 @@ relation rename_component_in_external_decl:(Absyn.ExternalDecl,
         Absyn.ExternalDecl =
 
 
-  rule  let external' = external 
+  rule  print "-rename_component_in_external_decl not implemented yet\n" &
+        let external' = external 
         -------------------------------------
         rename_component_in_external_decl(external,old_comp,new_comp) => external'
 
 end
 
-           
-relation replace_start_in_component_ref:(Absyn.ComponentRef,Absyn.ComponentRef,Absyn.ComponentRef) 
-        => Absyn.ComponentRef =
 
-  rule 
+(**relation replace_start_in_component_ref
+ ** author x02lucpo
+ **
+ ** this replace the start of a ComponentRef with another
+ ** ie: (a.b.c.d, a.b, c.f) => c.f.c.d
+ **    (a.b.c.d, d.c, c.f) => a.b.c.d
+ **    WARNING! WARNING! WARNING! WARNING! WARNING! WARNING! 
+ **    WARNING! WARNING! WARNING! WARNING! WARNING! WARNING! 
+ **    (a.b.c.d, a.b, c.f.r) => a.b.c.d
+ **    WARNING! WARNING! WARNING! WARNING! WARNING! WARNING! 
+ **    WARNING! WARNING! WARNING! WARNING! WARNING! WARNING! 
+ **)
+relation replace_start_in_component_ref:(Absyn.ComponentRef,Absyn.ComponentRef,Absyn.ComponentRef) 
+          => Absyn.ComponentRef =
+          
+  rule  
        (*  Dump.print_component_ref_str(cr1) => cref_str_tmp & print " " & print cref_str_tmp & *)
 (*         Dump.print_component_ref_str(cr2) => cref_str_tmp & print " " & print cref_str_tmp & *)
 (*         Dump.print_component_ref_str(cr3) => cref_str_tmp & print " " & print cref_str_tmp & *)
@@ -3312,14 +3321,15 @@ relation extract_components_from_classdef:(Absyn.Path, (*the QUALIFIED path for 
         ----------------------------
         extract_components_from_classdef(pa,Absyn.PARTS(parts,_),comps,env) => comps'
 
-  rule   let comps' = comps
-         & print "extract_components_from_classdef for DERIVED not implemented yet\n" 
+  rule   
+        extract_components_from_elementargs(pa,elementargs,comps,env) => comps'
+(*          & print "extract_components_from_classdef for DERIVED not implemented yet\n"  *)
         ----------------------------
-        extract_components_from_classdef(pa,Absyn.DERIVED(path,_,_,_,_),comps,env) => comps'
+        extract_components_from_classdef(pa,Absyn.DERIVED(path,_,_,elementargs,_),comps,env) => comps'
 
-  rule  extract_components_from_classparts(pa,parts,comps,env) => comps' 
+  rule  extract_components_from_classparts(pa,parts,comps,env) => comps' &
         ----------------------------
-        extract_components_from_classdef(pa,Absyn.CLASS_EXTENDS(id_ex,_,_,parts),comps,env) => comps'
+        extract_components_from_classdef(pa,Absyn.CLASS_EXTENDS(id_ex,elementarg,_,parts),comps,env) => comps'
 
   rule  
         ----------------------------
@@ -3410,9 +3420,10 @@ relation extract_components_from_elementspec:(Absyn.Path, (*the QUALIFIED path f
         Lookup.lookup_class(env,path',false) => (_,cenv) &
         Inst.make_fully_qualified(cenv,path') => path &
         let comp = EXTENDSITEM(pa,path) & 
-         add_component_to_components(comp,comps) => comps' 
+         add_component_to_components(comp,comps) => comps' &
+        extract_components_from_elementargs(pa,elementargs,comps',env) => comps''
         -------------------------------
-        extract_components_from_elementspec(pa,Absyn.EXTENDS(path',_),comps,env) => comps'
+        extract_components_from_elementspec(pa,Absyn.EXTENDS(path',elementargs),comps,env) => comps''
 
 
 (*   rule  extract_components_from_class(class,pa,comps,env) => comps' *)
@@ -3425,6 +3436,7 @@ relation extract_components_from_elementspec:(Absyn.Path, (*the QUALIFIED path f
         extract_components_from_elementspec(_,_,comps,env) => comps
 
 end
+
 
 
 (** 
@@ -3445,16 +3457,66 @@ relation extract_components_from_componentitems:(Absyn.Path, (*the QUALIFIED pat
 
   rule  extract_components_from_componentitems(pa,path,res,comps,env) => comps' &
         let comp = Absyn.CREF_IDENT(id,[]) &
-        add_component_to_components(COMPONENTITEM(pa,path,comp),comps') => comps''
+        add_component_to_components(COMPONENTITEM(pa,path,comp),comps') => comps'' &
+        extract_components_from_modification_option(pa,mod_opt,comps'',env) => comps'''
         ------------------------------- 
         extract_components_from_componentitems(pa,
                                                path,
-                                               Absyn.COMPONENTITEM(Absyn.COMPONENT(id,_,_),_,_)::res,
-                                               comps,env) => comps''
+                                               Absyn.COMPONENTITEM(Absyn.COMPONENT(id,_,mod_opt),_,_)::res,
+                                               comps,env) => comps'''
 
   rule  print "-extract_components_from_componentitems failed\n"
         -------------------------------
         extract_components_from_componentitems(_,_,_,_,env) => fail
+
+end
+
+relation extract_components_from_elementargs:(Absyn.Path, (*the QUALIFIED path for the class*)
+                                              Absyn.ElementArg list,
+                                              Components,
+                                              Env.Env)
+          => Components =
+
+  axiom  extract_components_from_elementargs(pa,[],comps,env) => comps
+
+  rule  extract_components_from_elementspec(pa,elementspec,comps,env) => comps' &
+        extract_components_from_elementspec(pa,elementspec2,comps',env) => comps'' &
+        extract_components_from_elementargs(pa,res,comps'',env) => comps'''
+        ------------------------------
+        extract_components_from_elementargs(pa,Absyn.REDECLARATION(_,_,_,elementspec,SOME(Absyn.CONSTRAINCLASS(elementspec2,_)))::res,
+                                           comps,env)
+          => comps'''
+
+  rule  extract_components_from_elementspec(pa,elementspec,comps,env) => comps'  &
+        extract_components_from_elementargs(pa,res,comps',env) => comps''
+        ------------------------------
+        extract_components_from_elementargs(pa,Absyn.REDECLARATION(_,_,_,elementspec,SOME(constrainclass))::res,
+                                           comps,env) => comps''
+
+  rule  extract_components_from_modification_option(pa,mod_opt,comps,env) => comps' &
+        extract_components_from_elementargs(pa,res,comps',env) => comps''
+        ------------------------------
+        extract_components_from_elementargs(pa,Absyn.MODIFICATION(_,_,_,mod_opt,_)::res,
+                                           comps,env)
+          => comps''
+
+  rule  extract_components_from_elementargs(pa,res,comps,env) => comps'
+        --------------------------------        
+        extract_components_from_elementargs(pa,a::res,comps,env) => comps'
+
+end
+
+relation extract_components_from_modification_option:(Absyn.Path, (*the QUALIFIED path for the class*)
+                                              Absyn.Modification option,
+                                              Components,
+                                              Env.Env)
+          => Components =
+
+  axiom extract_components_from_modification_option(pa,NONE,comps,env) => comps
+        
+  rule  extract_components_from_elementargs(pa,elementargs,comps,env) => comps'
+        -----------------
+        extract_components_from_modification_option(pa,SOME(Absyn.CLASSMOD(elementargs,_)),comps,env) => comps'
 
 end
 
@@ -5419,22 +5481,44 @@ end
   ** class must be copied.
   **
   ** inputs:  (Absyn.Program, 
-               Absyn.ComponentRef, /* old class as qualified name */
-               Absyn.ComponentRef) /* new class, as identifier */
+               Absyn.ComponentRef, /* old class as qualified name A.B.C */
+               Absyn.ComponentRef) /* new class, as identifier D */
   ** outputs:  Absyn.Program
   **)
 relation rename_class: (Absyn.Program, 
 			 Absyn.ComponentRef, 
 			 Absyn.ComponentRef) 
-	   => Absyn.Program =
+	   => (string, Absyn.Program) =
 
    rule	(* class in package *)
-	 Absyn.cref_to_path(old_class) => old_path &
-	 traverse_classes(p,NONE,rename_class_visitor,(old_path,new_name),
-			  true (* traverse protected*)) => ((p',_,_))
-	 ------------------------
-	 rename_class(p,old_class as Absyn.CREF_QUAL(_,_,_),Absyn.CREF_IDENT(new_name,_))
-	   => p'
+	Absyn.cref_to_path(new_name) => new_path &
+        Absyn.path_string(new_path) => tmp_str & print tmp_str & print "\n" 
+        (*the path is qualified so it cannot be renamed*)
+	------------------------
+	rename_class(p,old_class,new_name as Absyn.CREF_QUAL(_,_,_))
+	  => ("error",p)
+
+  rule	(* class in package *)
+	Absyn.cref_to_path(old_class) => old_path &
+	Absyn.cref_to_path(new_name) => new_path &
+        
+	traverse_classes(p,NONE,rename_class_visitor,(old_path,new_path,p),
+			 true (* traverse protected*)) => ((p',_,_))
+	------------------------
+	rename_class(p,old_class as Absyn.CREF_IDENT(_,_),new_name)
+	  => ("OK",p')
+
+  rule	(* class in package *)
+	Absyn.cref_to_path(old_class) => old_path &
+	Absyn.cref_to_path(new_name) => new_path' &
+        Absyn.strip_last(old_path) => old_path_no_last &
+        Absyn.join_paths(old_path_no_last,new_path') => new_path &
+
+	traverse_classes(p,NONE,rename_class_visitor,(old_path,new_path,p),
+			 true (* traverse protected*)) => ((p',_,_))
+	------------------------
+	rename_class(p,old_class as Absyn.CREF_QUAL(_,_,_),new_name)
+	  => ("OK",p')
 end
 
 
@@ -5442,16 +5526,297 @@ end
   **
   ** This visitor renames a class given a new name
   **)
-relation rename_class_visitor: ((Absyn.Class* Absyn.Path option *(Absyn.Path*string)))
-	   => ((Absyn.Class*Absyn.Path option *(Absyn.Path*string))) =
+relation rename_class_visitor: ((Absyn.Class* Absyn.Path option *(Absyn.Path*Absyn.Path*Absyn.Program)))
+	   => ((Absyn.Class*Absyn.Path option *(Absyn.Path*Absyn.Path*Absyn.Program))) =
 
-   rule	Absyn.path_last_ident(old_class) => id2 &
-	 id = id2 
-	 ----------------
-	 rename_class_visitor((Absyn.CLASS(id,a,b,c,d,e,file_info),pa,(old_class,new_name)))
-	   => ((Absyn.CLASS(new_name,a,b,c,d,e,file_info),pa,(old_class,new_name)))
+      
 
-   axiom	rename_class_visitor((class,pa,args)) => ((class,pa,args))
+  rule  Absyn.join_paths(pa,Absyn.IDENT(id)) => path' &
+        ModUtil.path_equal(old_class_path,path') => true &
+        Absyn.path_last_ident(new_class_path) => new_name 
+	----------------
+	rename_class_visitor((Absyn.CLASS(id,a,b,c,d,e,file_info),SOME(pa),
+                              (old_class_path,new_class_path,p)))
+	  => ((Absyn.CLASS(new_name,a,b,c,d,e,file_info),SOME(pa),
+               (old_class_path,new_class_path,p)))
+          
+  rule  let path' = Absyn.IDENT(id) &
+        ModUtil.path_equal(old_class_path,path') => true &
+        Absyn.path_last_ident(new_class_path) => new_name
+	----------------
+	rename_class_visitor((Absyn.CLASS(id,a,b,c,d,e,file_info),NONE,
+                              (old_class_path,new_class_path,p)))
+	  => ((Absyn.CLASS(new_name,a,b,c,d,e,file_info),NONE,
+               (old_class_path,new_class_path,p)))
+          
+  rule  Absyn.join_paths(pa,Absyn.IDENT(id)) => path' &
+        get_class_env(p,path') => cenv &
+        rename_class_in_class(class,old_class_path,new_class_path,cenv) => class'
+	----------------
+	rename_class_visitor((class as Absyn.CLASS(id,a,b,c,d,e,file_info),SOME(pa),
+                              (old_class_path,new_class_path,p)))
+	  => ((class',SOME(pa),(old_class_path,new_class_path,p)))
+          
+  rule  let path' = Absyn.IDENT(id) &
+        get_class_env(p,path') => cenv &
+        rename_class_in_class(class,old_class_path,new_class_path,cenv) => class'
+	----------------
+	rename_class_visitor((class as Absyn.CLASS(id,a,b,c,d,e,file_info),NONE,
+                              (old_class_path,new_class_path,p)))
+	  => ((class',NONE,(old_class_path,new_class_path,p)))
+
+  axiom  rename_class_visitor((class,pa,args)) => ((class,pa,args))
+
+end
+
+
+(** 
+ ** author: x02lucpo
+ **
+ ** helper relation to rename_class_visitor
+ **)
+                   
+ relation rename_class_in_class: (Absyn.Class, (*the class with the component*)
+                                  Absyn.Path, (* the old name for the component *)
+                                  Absyn.Path,
+                                        Env.Env) => Absyn.Class =
+         
+  rule  rename_class_in_parts(parts,old_comp,new_comp,env) => parts'
+        -------------------------------
+        rename_class_in_class(Absyn.CLASS(id,partial,final,encapsulated,restriction,
+                                             Absyn.PARTS(parts,a),
+                                              file_info),
+                                  old_comp,new_comp,env) 
+          => Absyn.CLASS(id,partial,final,encapsulated,restriction,
+                         Absyn.PARTS(parts',a),
+                         file_info)
+        
+
+  rule  rename_class_in_parts(parts,old_comp,new_comp,env) => parts'
+        -------------------------------
+        rename_class_in_class(Absyn.CLASS(id,partial,final,encapsulated,restriction,
+                                             Absyn.CLASS_EXTENDS(a,b,c,parts),
+                                              file_info),
+                                  old_comp,new_comp,env) 
+          =>  Absyn.CLASS(id,partial,final,encapsulated,restriction,
+                          Absyn.CLASS_EXTENDS(a,b,c,parts'),
+                          file_info)
+        
+  rule  Lookup.lookup_class(env,path',false) => (SCode.CLASS(id,_,_,_,_),cenv) &
+        let path' = Absyn.IDENT(id) &
+        Inst.make_fully_qualified(cenv,path') => path &
+        ModUtil.path_equal(path,old_comp) => true &
+        change_last_ident(path',new_comp) => new_path
+    
+        -------------------------------
+         rename_class_in_class(Absyn.CLASS(id,partial,final,encapsulated,restriction,
+                                           Absyn.DERIVED(path',a,b,elementarg,co),
+                                              file_info),
+                                  old_comp,new_comp,env) 
+          =>  Absyn.CLASS(id,partial,final,encapsulated,restriction,
+                          Absyn.DERIVED(new_path,a,b,elementarg,co),
+                          file_info)
+        
+        
+  rule  
+        -------------------------------
+        rename_class_in_class(class,
+                                  old_comp,new_comp,env) => class
+
+end
+
+(** 
+ ** author: x02lucpo
+ **
+ ** helper relation to rename_class_visitor
+ **)
+                   
+
+relation rename_class_in_parts:(Absyn.ClassPart list,
+                                Absyn.Path, (* the old name for the component *)
+                                Absyn.Path,
+                                Env.Env) =>
+        Absyn.ClassPart list =
+        
+  rule  
+        --------------------------------------
+        rename_class_in_parts([],_,_,env) => []
+
+  rule  rename_class_in_parts(res,old_comp,new_comp,env) => res' &
+        rename_class_in_elements(elements,old_comp,new_comp,env) => elements'
+        --------------------------------------
+        rename_class_in_parts(Absyn.PUBLIC(elements)::res,old_comp,new_comp,env)
+          => Absyn.PUBLIC(elements')::res'
+
+  rule  rename_class_in_parts(res,old_comp,new_comp,env) => res' &
+        rename_class_in_elements(elements,old_comp,new_comp,env) => elements'
+        --------------------------------------
+        rename_class_in_parts(Absyn.PROTECTED(elements)::res,old_comp,new_comp,env)
+          => Absyn.PROTECTED(elements')::res'
+
+  rule  rename_class_in_parts(res,old_comp,new_comp,env) => res' &
+        --------------------------------------
+        rename_class_in_parts(a::res,old_comp,new_comp,env) => a::res'
+ end
+
+(** 
+ ** author: x02lucpo
+ **
+ ** helper relation to rename_class_visitor
+ **)
+                   
+
+relation rename_class_in_elements:(Absyn.ElementItem list,
+                                       Absyn.Path, (* the old name for the component *)
+                                   Absyn.Path,
+                                        Env.Env) =>
+        Absyn.ElementItem list =
+
+  rule  
+        -------------------------------------
+        rename_class_in_elements([],_,_,_) => []
+
+  rule  rename_class_in_elements(res,old_comp,new_comp,env) => res' &
+        rename_class_in_element_spec(elementspec,old_comp,new_comp,env) => elementspec' &
+        let element' = Absyn.ELEMENTITEM(Absyn.ELEMENT(final,redeclare,inner_outer,name,elementspec',info,constraint))
+        -------------------------------------
+        rename_class_in_elements((element as Absyn.ELEMENTITEM(Absyn.ELEMENT(final,redeclare,inner_outer,name,elementspec,info,constraint)))
+                                     ::res,old_comp,new_comp,env) => element'::res'
+
+
+  rule  rename_class_in_elements(res,old_comp,new_comp,env) => res' &
+        let element' = element 
+        -------------------------------------
+        rename_class_in_elements(element::res,old_comp,new_comp,env) => element'::res'
+
+
+end
+
+(** 
+ ** author: x02lucpo
+ **
+ ** helper relation to rename_class_visitor
+ **)
+                   
+
+relation rename_class_in_element_spec:(Absyn.ElementSpec,      
+                                           Absyn.Path, (* the old name for the component *)
+                                          Absyn.Path,
+                                        Env.Env) =>
+        Absyn.ElementSpec =
+
+  rule Lookup.lookup_class(env,path',false) => (SCode.CLASS(id,_,_,_,_),cenv) &
+        let path' = Absyn.IDENT(id) &
+        Inst.make_fully_qualified(cenv,path') => path &
+        ModUtil.path_equal(path,old_comp) => true &
+        change_last_ident(path',new_comp) => new_path
+        -------------------------------
+        rename_class_in_element_spec(Absyn.COMPONENTS(a,path',comp_items),old_comp,new_comp,env) 
+          => Absyn.COMPONENTS(a,new_path,comp_items)
+
+  rule  (* print "rename_class_in_element_spec Absyn.EXTENDS(path,_) not implemented yet" *)
+        
+        Lookup.lookup_class(env,path',false) => (_,cenv) &
+        Inst.make_fully_qualified(cenv,path') => path &
+         ModUtil.path_equal(path,old_comp) => true &
+        change_last_ident(path',new_comp) => new_path
+       -------------------------------
+        rename_class_in_element_spec(Absyn.EXTENDS(path',a),old_comp,new_comp,env) 
+          => Absyn.EXTENDS(new_path,a)
+
+  rule  (* print "rename_class_in_element_spec Absyn.EXTENDS(path,_) not implemented yet" *)
+        rename_class_in_import(import,old_comp,new_comp,env) => import'
+        -------------------------------
+        rename_class_in_element_spec(Absyn.IMPORT(import,a),old_comp,new_comp,env) 
+          => Absyn.IMPORT(import',a)
+
+
+  rule  
+        -------------------------------
+        rename_class_in_element_spec(a,_,comps,env) => a
+
+
+end
+
+(** 
+ ** author: x02lucpo
+ **
+ ** helper relation to rename_class_visitor
+ **)
+                   
+
+
+relation rename_class_in_import:(Absyn.Import,      
+                                           Absyn.Path, (* the old name for the component *)
+                                          Absyn.Path,
+                                        Env.Env) =>
+        Absyn.Import =
+
+  rule  Lookup.lookup_class(env,path',false) => (_,cenv) &
+        Inst.make_fully_qualified(cenv,path') => path &
+        ModUtil.path_equal(path,old_comp) => true &
+        change_last_ident(path',new_comp) => new_path
+        --------------------------
+        rename_class_in_import(Absyn.NAMED_IMPORT(id,path'),old_comp,new_comp,env) 
+          => Absyn.NAMED_IMPORT(id,new_path)
+
+
+  rule  Lookup.lookup_class(env,path',false) => (_,cenv) &
+        Inst.make_fully_qualified(cenv,path') => path &
+        ModUtil.path_equal(path,old_comp) => true &
+        change_last_ident(path',new_comp) => new_path
+        --------------------------
+        rename_class_in_import(Absyn.QUAL_IMPORT(path'),old_comp,new_comp,env) 
+          => Absyn.QUAL_IMPORT(new_path)
+
+  rule  Lookup.lookup_class(env,path',false) => (_,cenv) &
+        Inst.make_fully_qualified(cenv,path') => path &
+        ModUtil.path_equal(path,old_comp) => true &
+        change_last_ident(path',new_comp) => new_path
+        --------------------------
+        rename_class_in_import(Absyn.NAMED_IMPORT(id,path'),old_comp,new_comp,env) 
+          => Absyn.UNQUAL_IMPORT(new_path)
+
+  rule  
+        --------------------------
+        rename_class_in_import(import,old_comp,new_comp,env) 
+          => import
+
+
+end
+
+(** relation change_last_ident
+ ** author: x02lucpo
+ **
+ ** chages the last ident of the first path to the last path ident ie:
+ ** (A.B.CC,C.DD) => (A.B.DD)
+ **)
+
+relation change_last_ident:(Absyn.Path,
+                            Absyn.Path)
+          => Absyn.Path =
+
+  axiom change_last_ident(Absyn.IDENT(a),Absyn.IDENT(b)) 
+          => Absyn.IDENT(b)
+
+  rule  Absyn.path_last_ident(b) => b' 
+        -------------------------
+        change_last_ident(a as Absyn.IDENT(_),b as Absyn.QUALIFIED(_,_)) 
+          => Absyn.IDENT(b')
+
+  rule  Absyn.strip_last(a) => a' &
+        Absyn.join_paths(a',b) => res
+        -------------------------
+        change_last_ident(a as Absyn.QUALIFIED(_,_),b as Absyn.IDENT(_)) 
+          => res
+
+  rule  Absyn.strip_last(a) => a' &
+        Absyn.path_last_ident(b) => b' &
+        Absyn.join_paths(a',Absyn.IDENT(b')) => res
+        -------------------------
+        change_last_ident(a as Absyn.QUALIFIED(_,_),b as Absyn.QUALIFIED(_,_)) 
+          => res
+
 
 end
 
