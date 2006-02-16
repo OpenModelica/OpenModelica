@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -68,6 +68,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 class QColor;
 class QFrame;
 class QImage;
+class QUrl;
 
 class CellStyle;
 
@@ -112,7 +113,8 @@ namespace IAEX
 		virtual QString getFilename() = 0;
 		virtual void setFilename( QString filename ) = 0;	//AF
 		virtual void setSaved( bool saved ) = 0;			//AF
-		virtual void setChanged( bool changed ) = 0;		// 2006-01-17 AF
+		virtual void setChanged( bool changed ) = 0;		// Added 2006-01-17 AF
+		virtual void hoverOverUrl( const QUrl &link ) = 0;	// Added 2006-02-10 AF
 
 		//Cursor operations
 		virtual CellCursor *getCursor() = 0;
@@ -126,6 +128,10 @@ namespace IAEX
 		virtual void cursorPasteCell() = 0;
 		virtual void cursorChangeStyle(CellStyle style) = 0;	// Changed 2005-10-28 AF
 
+		//TextCursor operations, added 2006-02-07 AF
+		virtual void textcursorCutText() = 0;
+		virtual void textcursorCopyText() = 0;
+		virtual void textcursorPasteText() = 0;
 		//TextCursor operations, added 2005-11-03 AF
 		virtual void textcursorChangeFontFamily( QString family ) = 0;
 		virtual void textcursorChangeFontFace( int face ) = 0;

@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -52,10 +52,6 @@ licence: http://www.trolltech.com/products/qt/licensing.html
  *
  * \brief Describes a inputcell.
  */
-
-#ifdef WIN32
-#include "windows.h"
-#endif
 
 //STD Headers
 #include <exception>
@@ -577,9 +573,9 @@ namespace IAEX
 		// 2005-12-16 AF, block signals
 		input_->document()->blockSignals(true);
 	
-		// 2005-10-04 AF, added som code to replace/remove
+		// 2005-10-04 AF, added some code to replace/remove
 		QString tmp = text.replace("<br>", "\n");
-		tmp.remove( "&nbsp;" );
+		tmp.replace( "&nbsp;&nbsp;&nbsp;&nbsp;", "\t" );
 
 		// 2005-12-08 AF, remove any <span style tag
 		QRegExp spanEnd( "</span>" );
@@ -969,7 +965,7 @@ namespace IAEX
 
 		// Only the text, no html tags. /AF
 		QString expr = input_->toPlainText();
-		expr = expr.simplified();
+		//expr = expr.simplified();
 
 		if(hasDelegate())
 		{
@@ -992,13 +988,18 @@ namespace IAEX
 			catch( exception &e )
 			{
 				exceptionInEval(e);
+				input_->blockSignals(false);
+				output_->blockSignals(false);
 				return;
 			}
 
 			// 2005-11-24 AF, added check to see if the user wants to quit
-			if( 0 == expr.indexOf( "quit()", 0, Qt::CaseInsensitive ))
+			if( 0 == expr.indexOf( "quit()", 0, Qt::CaseSensitive ))
 			{
 				qApp->closeAllWindows();
+				input_->blockSignals(false);
+				output_->blockSignals(false);
+				return;
 			}
 
 			// get the result
@@ -1006,6 +1007,7 @@ namespace IAEX
 			QString error;
 			
 			// 2006-02-02 AF, Added try-catch
+			/* Remove this temporary
 			try
 			{
 				error = delegate()->getError();
@@ -1013,8 +1015,10 @@ namespace IAEX
 			catch( exception &e )
 			{
 				exceptionInEval(e);
+				input_->blockSignals(false);
+				output_->blockSignals(false);
 				return;
-			}
+			}*/
 
 			// if the expression is a plot command and the is no errors
 			// in the result, find the image and insert it into the 
@@ -1025,6 +1029,7 @@ namespace IAEX
 				output_->update();
 
 				int sleepTime = 1;
+				bool firstTry = true;
 				while( true )
 				{
 					if( dir.exists( imagename ))
@@ -1041,13 +1046,26 @@ namespace IAEX
 							imageformat.setWidth( image->width() );
 							imageformat.setName( newname );
 
-							output_->setPlainText("");
-							output_->textCursor().insertImage( imageformat );
+							// 2006-02-13 AF, set {Plot} first in output
+							output_->setPlainText("{Plot}\n");
+							QTextCursor outCursor = output_->textCursor();
+							outCursor.movePosition( QTextCursor::End );
+							outCursor.insertImage( imageformat );
+							break;
 						}
 						else
-							output_->setPlainText( "[Error] Unable to read plot image \"" + imagename + "\". Please retry." );
-
-						break;
+						{
+							if( firstTry )
+							{
+								firstTry = false;
+								delete image;
+							}
+							else
+							{
+								output_->setPlainText( "[Error] Unable to read plot image \"" + imagename + "\". Please retry." );
+								break;
+							}
+						}
 					}
 
 					if( sleepTime > 25 )
@@ -1082,87 +1100,55 @@ namespace IAEX
 		input_->blockSignals(false);
 		output_->blockSignals(false);
 		contentChanged();
+
+		//Emit that the text have changed
+		emit textChanged(true);
 	}
 
 	/*! 
 	 * \author Anders Fernström
 	 * \date 2006-02-02
+	 * \date 2006-02-09 (update)
 	 *
 	 *\brief Method for handleing exceptions in eval()
 	 */
 	void InputCell::exceptionInEval(exception &e)
 	{
-		if( string(e.what()) == string("NOT RESPONDING") )
+		// 2006-0-09 AF, try to reconnect to OMC first.
+		try
 		{
-			int result = QMessageBox::critical( 0, tr("Communication Error"),
-				tr("<B>OMC is not responding. Do you want to restart OMC?</B>"), 
+			delegate_->closeConnection();
+			delegate_->reconnect();
+			eval();
+		}
+		catch( exception &e )
+		{
+			// unable to reconnect, ask if user want to restart omc.
+			QString msg = QString( e.what() ) + "\n\nUnable to reconnect with OMC. Do you want to restart OMC?";
+			int result = QMessageBox::critical( 0, tr("Communication Error with OMC"),
+				msg, 
 				QMessageBox::Yes | QMessageBox::Default,
 				QMessageBox::No );
 
-			if( result == QMessageBox::No )
-			{
-				QMessageBox::critical( 0, tr("Communication Error"),
-					tr("<B>All windows will be closed!</B>") );
-				qApp->closeAllWindows();
-			}
-			else
+			if( result == QMessageBox::Yes )
 			{
 				delegate_->closeConnection();
-				//delete delegate_;
-				//delegate_ = 0;
-				
-				// restart OMC
-				try
+				if( delegate_->startDelegate() )
 				{
-					new OmcInteractiveEnvironment();
-				}
-				catch( exception &e )
-				{
-#ifdef WIN32
+					//delegate_->closeConnection();
 					try
 					{
-						STARTUPINFO startinfo;
-						PROCESS_INFORMATION procinfo;
-						memset(&startinfo, 0, sizeof(startinfo));
-						memset(&procinfo, 0, sizeof(procinfo));
-						startinfo.cb = sizeof(STARTUPINFO);
-						startinfo.wShowWindow = SW_MINIMIZE;
-						startinfo.dwFlags = STARTF_USESHOWWINDOW;
-
-						string parameter = "\"omc.exe\" +d=interactiveCorba";
-						char *pParameter = new char[parameter.size() + 1];
-						const char *cpParameter = parameter.c_str();
-						strcpy(pParameter, cpParameter);
-
-						bool flag = CreateProcess(NULL,pParameter,NULL,NULL,FALSE,CREATE_NEW_CONSOLE,NULL,NULL,&startinfo,&procinfo);
-
-						Sleep(2000);
-
-						if( !flag )
-							throw std::exception("Unable to start OMC");
+						delegate_->reconnect();
+						eval();
 					}
 					catch( exception &e )
 					{
-						QString msg = e.what();
-						msg += "\nWas unable to start OMC!";
-						QMessageBox::warning( 0, "Error", msg, "OK" );
+						QMessageBox::critical( 0, tr("Communication Error"),
+							tr("<B>Unable to communication correctlly with OMC.</B>") );
 					}
-#else
-					QString msg = e.what();
-					msg += "\nOMC not started!";
-					QMessageBox::warning( 0, "Error", msg, "OK" );
-#endif
 				}
-
-				delegate_->reconnect();
-				eval();
 			}
 		}
-		else
-		{
-			QMessageBox::warning( 0, tr("Communication with OMC error"),
-				e.what() );
-	}
 	}
 
 	/*! 

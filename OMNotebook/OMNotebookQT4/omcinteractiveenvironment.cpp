@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -45,9 +45,18 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
+#ifdef WIN32
+#include "windows.h"
+#endif
+
+//STD Headers
 #include <exception>
 #include <stdexcept>
 
+//QT Headers
+#include <QtGui/QMessageBox>
+
+//IAEX Headers
 #include "omcinteractiveenvironment.h"
 
 using namespace std;
@@ -78,7 +87,12 @@ namespace IAEX
 		return result_;
 	}
 
-	// Added 2006-02-02 AF
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-02-02
+	 *
+	 *\brief Method for get error message from OMC
+	 */
 	QString OmcInteractiveEnvironment::getError()
 	{
 		QString error;
@@ -95,7 +109,7 @@ namespace IAEX
 
 		if( error.size() > 2 )
 		{
-			error = QString( "OMC-ERROR: " ) + error;
+			error = QString( "OMC-ERROR: \n" ) + error;
 		}
 		else
 			error.clear();
@@ -103,6 +117,14 @@ namespace IAEX
 		return error;
 	}
 
+	/*! 
+	 * \author Ingemar Axelsson and Anders Fernström
+	 * \date 2006-02-02 (update)
+	 *
+	 *\brief Method for evaluationg expressions
+	 *
+	 * 2006-02-02 AF, Added try-catch statement
+	 */
 	void OmcInteractiveEnvironment::evalExpression(QString &expr)
 	{
 		// 2006-02-02 AF, Added try-catch
@@ -116,12 +138,23 @@ namespace IAEX
 		}
 	}
 
-	// 2006-02-02 AF
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-02-02
+	 *
+	 *\brief Method for closing connection to OMC
+	 */
 	void OmcInteractiveEnvironment::closeConnection()
 	{
 		comm_.closeConnection();
 	}
 
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-02-02
+	 *
+	 *\brief Method for closing reconnection to OMC
+	 */
 	void OmcInteractiveEnvironment::reconnect()
 	{
 		//Communicate with Omc.
@@ -132,5 +165,70 @@ namespace IAEX
 				throw runtime_error("OmcInteractiveEnvironment(): No connection to Omc established");
 			}
 		}
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-02-09
+	 *
+	 *\brief Method for starting OMC
+	 */
+	bool OmcInteractiveEnvironment::startDelegate()
+	{
+		// if not connected and can not establish connection, 
+		// try to start OMC
+		if( !comm_.isConnected() && !comm_.establishConnection() )
+		{
+			return  OmcInteractiveEnvironment::startOMC();
+		}
+		else
+			return false;
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-02-09
+	 *
+	 *\brief Ststic method for starting OMC
+	 */
+	bool OmcInteractiveEnvironment::startOMC()
+	{
+		bool flag = false;
+
+		#ifdef WIN32
+		try
+		{
+			STARTUPINFO startinfo;
+			PROCESS_INFORMATION procinfo;
+			memset(&startinfo, 0, sizeof(startinfo));
+			memset(&procinfo, 0, sizeof(procinfo));
+			startinfo.cb = sizeof(STARTUPINFO);
+			startinfo.wShowWindow = SW_MINIMIZE;
+			startinfo.dwFlags = STARTF_USESHOWWINDOW;
+
+			string parameter = "\"omc.exe\" +d=interactiveCorba";
+			char *pParameter = new char[parameter.size() + 1];
+			const char *cpParameter = parameter.c_str();
+			strcpy(pParameter, cpParameter);
+
+			flag = CreateProcess(NULL,pParameter,NULL,NULL,FALSE,CREATE_NEW_CONSOLE,NULL,NULL,&startinfo,&procinfo);
+
+			Sleep(1000);
+
+			if( !flag )
+				throw std::exception("Was unable to start OMC");
+		}
+		catch( exception &e )
+		{
+			QString msg = e.what();
+			QMessageBox::warning( 0, "Error", msg, "OK" );
+		}
+		#else
+		QString msg = e.what();
+		msg += "\nOMC not started!";
+		QMessageBox::warning( 0, "Error", msg, "OK" );
+		#endif
+
+		return flag;
 	}
 }

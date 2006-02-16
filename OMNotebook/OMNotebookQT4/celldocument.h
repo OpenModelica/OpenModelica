@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -109,6 +109,10 @@ namespace IAEX
 		virtual void cursorPasteCell();
 		virtual void cursorChangeStyle(CellStyle style);	// Changed 2005-10-28 AF
 
+		//TextCursor operations, added 2006-02-07 AF
+		virtual void textcursorCutText();
+		virtual void textcursorCopyText();
+		virtual void textcursorPasteText();
 		//TextCursor operations, added 2005-11-03 AF
 		virtual void textcursorChangeFontFamily( QString family );
 		virtual void textcursorChangeFontFace( int face );
@@ -153,7 +157,8 @@ namespace IAEX
 		void setEditable(bool editable);
 		void cursorChangedPosition();
 		void updateScrollArea();				// Added 2005-11-29 AF
-		void setChanged( bool changed );		// 2006-01-17 AF
+		void setChanged( bool changed );		// Added 2006-01-17 AF
+		void hoverOverUrl( const QUrl &link );	// Added 2006-02-10 AF
 		void selectedACell(Cell *selected, Qt::KeyboardModifiers);
 		void clearSelection();
 		void mouseClickedOnCell(Cell *clickedCell);
@@ -168,6 +173,7 @@ namespace IAEX
 		void cursorChanged();
 		void viewExpression(const bool);
 		void contentChanged();				// Added 2005-11-29 AF
+		void hoverOverFile( QString );		// Added 2006-02-10 AF
 
 	protected:
 		void setWorkspace(Cell *newWorkspace);

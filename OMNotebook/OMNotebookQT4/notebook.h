@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -108,6 +108,7 @@ namespace IAEX
 		void updatePaddingMenu();				// Added 2005-11-07 AF
 		void updateWindowMenu();				// Added 2006-01-27 AF
 		void updateWindowTitle();				// Added 2006-01-17 AF
+		void setStatusMessage( QString msg );	// Added 2006-02-10 AF
 
 	protected:
 		void keyPressEvent(QKeyEvent *event);
@@ -170,6 +171,7 @@ namespace IAEX
 		void createAboutMenu();
 
 		bool cellEditable();			//Added 2005-11-11 AF
+		void evalCells();				//Added 2006-02-14 AF
 		void createSavingTimer();
 
 	private:
@@ -326,7 +328,9 @@ namespace IAEX
 		QString filename_;
 
 		QTimer *savingTimer_;
-		map<QString, QAction*> styles_;      
+		map<QString, QAction*> styles_;   
+
+		bool closing_;		// Added 2006-0-09 AF
 	};
 }
 #endif

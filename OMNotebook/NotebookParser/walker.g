@@ -338,6 +338,16 @@ exprheader [result_t &result]
                 }
                 //result.second.push_back(*i);
             }
+            
+            
+            // 2006-02-10 AF, Add '#' to filename. Links should have '#'
+            // for specifing internel references. For example internal 
+            // referenses for a link;
+            // HTML link: Dir/filename.html#ChaperSeven
+            // filename looks like: Dir/filename.htmlChapterSeven
+            // have to insert # symbol
+            filename = StripString::fixFilename( filename );
+            
 
             result.first << "<a href=\"" << filename << "\">" 
                          << buttonTitle.first.str() << "</a>";
@@ -349,7 +359,7 @@ exprheader [result_t &result]
             result_t filename(filenameoutput);
             rules_t filenameRules;
         }
-        #(FILENAME      expr[dir] (expr[filename])* (rule[filenameRules])*)
+        #(FILENAME      expr[dir] (expr[filename])* (rule[filenameRules])* )
         {
             //Delete strange newline in directory string.
             string d = dir.first.str();
@@ -389,6 +399,9 @@ exprheader [result_t &result]
 		}
     | #(ROWBOX        expr[result] (expr[result])* (rule[rules])*)
     | #(FORMBOX       expr[result] (expr[result])* (rule[rules])*)
+    | #(TAGBOX        expr[result] (expr[result])* (rule[rules])*)
+    | #(COUNTERBOX    expr[result] (expr[result])* (rule[rules])*)
+    | #(ADJUSTMENTBOX expr[result] (expr[result])* (rule[rules])*)
     | #(SUBSUPERSCRIPTBOX expr[result] (expr[result])* (rule[rules])*)
     | #(UNDERSCRIPTBOX expr[result] (expr[result])* (rule[rules])*)
     | #(OVERSCRIPTBOX expr[result] (expr[result])* (rule[rules])*)
@@ -397,6 +410,7 @@ exprheader [result_t &result]
     | #(SQRTBOX       expr[result] (expr[result])* (rule[rules])*)
     | #(RADICALBOX    expr[result] (expr[result])* (rule[rules])*)
     | #(GRAYLEVEL     expr[result] (expr[result])* (rule[rules])*)
+    | #(STYLEDATA     expr[result] (expr[result])* (rule[rules])*)
     | #(NOT_MATH_OLEDATE expr[result] (expr[result])* (rule[rules])*)
     ;
 
@@ -468,6 +482,22 @@ value returns [string value]
         {
             value = string(centerval->getText());
         }
+    | smallerval:VALUESMALLER
+        {
+            value = string(smallerval->getText());
+        }
+    | inherited:INHERITED
+        {
+		    value = string(inherited->getText());
+		}
+	| paperwidth:PAPERWIDTH
+	    {
+	        value = string(paperwidth->getText());
+	    }
+	| windowwidth:WINDOWWIDTH
+	    {
+	        value = string(windowwidth->getText());
+	    }
     | tradform:TRADITIONALFORM
         {
             //value = string(tradform->getText()); 
@@ -484,6 +514,10 @@ value returns [string value]
         {
             //value = string(outputform->getText()); 
         }
+    | defaultinputformattype:DEFAULTINPUTFORMATTYPE
+        {
+            value = string(defaultinputformattype->getText());
+        }
     | automatic:AUTOMATIC
         {
             //value = string(automatic->getText()); 
@@ -495,6 +529,10 @@ value returns [string value]
     | nullsym:NULLSYM
         {
             value = string(nullsym->getText());
+        }
+    | allsym:ALLSYM
+        {
+            value = string(allsym->getText());
         }
     ;
 
@@ -543,9 +581,53 @@ attribute returns [string value]
         {
             value = string(pagewidth->getText());
         }
+    | pageheaders:PAGEHEADERS
+        {
+            value = string(pageheaders->getText());
+        }
+    | pageheaderlines:PAGEHEADERLINES
+        {
+            value = string(pageheaderlines->getText());
+        }
+    | pagefooters:PAGEFOOTERS
+        {
+            value = string(pagefooters->getText());
+        }
+    | pagefooterlines:PAGEFOOTERLINES
+        {
+            value = string(pagefooterlines->getText());
+        }
+    | pagebreakbelow:PAGEBREAKBELOW
+        {
+            value = string(pagebreakbelow->getText());
+        }
+    | pagebreakwithin:PAGEBREAKWITHIN
+        {
+            value = string(pagebreakwithin->getText());
+        }
+    | boxmargins:BOXMARGINS
+        {
+            value = string(boxmargins->getText());
+        }
+    | boxbaselineshift:BOXBASELINESHIFT
+        {
+            value = string(boxbaselineshift->getText());
+        }
+    | linespacing:LINESPACING
+        {
+            value = string(linespacing->getText());
+        }
+    | hyphenation:HYPHENATION
+        {
+            value = string(hyphenation->getText());
+        }
     | activetoken:ACTIVE_TOKEN
         {
             value = string(activetoken->getText());
+        }
+    | evaluatable:EVALUATABLE
+        {
+            value = string(evaluatable->getText());
         }
     | buttonfunction:BUTTONFUNCTION
         {
@@ -567,6 +649,10 @@ attribute returns [string value]
         {
             value = string(characterencoding->getText());
         }
+    | showstringcharacters:SHOWSTRINGCHARACTERS
+        {
+            value = string(showstringcharacters->getText());
+        }
     | screenrectangle:SCREENRECTANGLE
         {
             value = string(screenrectangle->getText());
@@ -574,6 +660,50 @@ attribute returns [string value]
     | autogeneratedpackage:AUTOGENERATEDPACKAGE
         {
             value = string(autogeneratedpackage->getText());
+        }
+    | autoitalicwords:AUTOITALICWORDS
+        {
+            value = string(autoitalicwords->getText());
+        }
+    | inputautoreplacements:INPUTAUTOREPLACEMENTS
+        {
+            value = string(inputautoreplacements->getText());
+        }
+    | scriptminsize:SCRIPTMINSIZE
+        {
+            value = string(scriptminsize->getText());
+        }
+    | stylemenulisting:STYLEMEMULISTING
+        {
+            value = string(stylemenulisting->getText());
+        }
+    | counterincrements:COUNTERINCREMENTS
+        {
+            value = string(counterincrements->getText());
+        }
+    | counterassignments:COUNTERASSIGNMENTS
+        {
+            value = string(counterassignments->getText());
+        }
+    | privateevaloptions:PRIVATEEVALOPTIONS
+        {
+            value = string(privateevaloptions->getText());
+        }
+    | grouppagewithin:GROUPPAGEBREAKWITHIN
+        {
+            value = string(grouppagewithin->getText());
+        }
+    | defaultformattype:DEFAULTFORMATTYPE
+        {
+            value = string(defaultformattype->getText());
+        }
+    | numbermarks:NUMBERMARKS
+        {
+            value = string(numbermarks->getText());
+        }
+    | linebreakadjustments:LINEBREAKADJUSTMENTS
+        {
+            value = string(linebreakadjustments->getText());
         }
     | celltags:CELLTAGS
         {
@@ -583,13 +713,57 @@ attribute returns [string value]
         {
             value = string(cellframe->getText());
         }
+    | cellframecolor:CELLFRAMECOLOR
+        {
+            value = string(cellframecolor->getText());
+        }
+    | cellframelabels:CELLFRAMELABELS
+        {
+            value = string(cellframelabels->getText());
+        }
+    | cellframemargins:CELLFRAMEMARGINS
+        {
+            value = string(cellframemargins->getText());
+        }
+    | cellframelabelmargins:CELLFRAMELABELMARGINS
+        {
+            value = string(cellframelabelmargins->getText());
+        }
+    | celllabelmargins:CELLLABRLMARGINS
+        {
+            value = string(celllabelmargins->getText());
+        }
+    | celllabelpositioning:CELLLABELPOSITIONING
+        {
+            value = string(celllabelpositioning->getText());
+        }
+    | cellmargins:CELLMARGINS
+        {
+		    value = string(cellmargins->getText());
+		}
+	| celldingbat:CELLDINGBAT
+	    {
+	        value = string(celldingbat->getText());
+	    }
+	| cellhorizontalscrolling:CELLHORIZONTALSCROLL
+	    {
+	        value = string(cellhorizontalscrolling->getText());
+	    }
     | cellgenerated:CELLGENERATED
         {
-           value = string(cellgenerated->getText());
+            value = string(cellgenerated->getText());
         }
     | cellshowbracket:SHOWCELLBRACKET
         {
-           value = string(cellshowbracket->getText());
+            value = string(cellshowbracket->getText());
+        }
+    | cellshowlabel:SHOWCELLLABEL
+        {
+            value = string(cellshowlabel->getText());
+        }
+    | cellbracketoptions:CELLBRACKETOPT
+        {
+            value = string(cellbracketoptions->getText());
         }
     | editable:EDITABLE     
         {
@@ -598,6 +772,10 @@ attribute returns [string value]
     | background:BACKGROUND   
         {
             value = string(background->getText());
+        }
+    | cellgroupingrules:CELLGROUPINGRULES
+        {
+            value = string(cellgroupingrules->getText());
         }
     | windowsize:WINDOWSIZE     
         {
@@ -642,6 +820,22 @@ attribute returns [string value]
     | frontendversion:FRONTENDVERSION 
         {
             value = string(frontendversion->getText());
+        }
+    | screenstyleenv:SCREENSTYLEENV
+        {
+            value = string(screenstyleenv->getText());
+        }
+    | printingstyleenv:PRINTINGSTYLEENV
+        {
+            value = string(printingstyleenv->getText());
+        }
+    | printingoptions:PRINTINGOPTIONS
+        {
+            value = string(printingoptions->getText());
+        }
+    | privatefontoption:PRIVATEFONTOPTIONS
+        {
+            value = string(privatefontoption->getText());
         }
     | magnification:MAGNIFICATION 
         {

@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -146,7 +146,7 @@ namespace IAEX
 	private:
 		void createInputCell();
 		void createOutputCell();
-		void exceptionInEval(exception &e);
+		void exceptionInEval(exception &e);					// Added 2006-02-02 AF
 
 		bool evaluated_;
 		bool closed_;

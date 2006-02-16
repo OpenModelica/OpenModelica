@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -65,10 +65,97 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 //IAEX Headers
 #include "textcursorcommands.h"
 #include "cellcursor.h"
+#include "inputcell.h"
 
 
 namespace IAEX
 {
+	/*! 
+     * \class TextCursorCutText
+	 * \author Anders Fernström
+	 * \date 2006-02-07
+     *
+     * \brief Command for cuting text
+     */
+	void TextCursorCutText::execute()
+	{
+		Cell *cell = document()->getCursor()->currentCell();
+		if( cell )
+		{
+			if( typeid(InputCell) == typeid(*cell) )
+			{
+				InputCell *inputcell = dynamic_cast<InputCell*>(cell);
+				if( inputcell->textEditOutput()->hasFocus() && 
+					inputcell->isEvaluated() )
+				{
+					inputcell->textEditOutput()->copy();
+				}
+				else
+					inputcell->textEdit()->cut();
+			}
+			else
+			{
+				QTextEdit *editor = cell->textEdit();
+				if( editor )
+				{
+					editor->cut();
+				}
+			}
+		}
+	}
+
+
+	/*! 
+     * \class TextCursorCopyText
+	 * \author Anders Fernström
+	 * \date 2006-02-07
+     *
+     * \brief Command for copying text
+     */
+	void TextCursorCopyText::execute()
+	{
+		Cell *cell = document()->getCursor()->currentCell();
+		if( cell )
+		{
+			if( typeid(InputCell) == typeid(*cell) )
+			{
+				InputCell *inputcell = dynamic_cast<InputCell*>(cell);
+				if( inputcell->textEditOutput()->hasFocus() && 
+					inputcell->isEvaluated() )
+				{
+					inputcell->textEditOutput()->copy();
+				}
+				else
+					inputcell->textEdit()->copy();
+			}
+			else
+			{
+				QTextEdit *editor = cell->textEdit();
+				if( editor )
+				{
+					editor->copy();
+				}
+			}
+		}
+	}
+
+
+	/*! 
+     * \class TextCursorCopyText
+	 * \author Anders Fernström
+	 * \date 2006-02-07
+     *
+     * \brief Command for pasting text
+     */
+	void TextCursorPasteText::execute()
+	{
+		QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();
+		if( editor )
+		{
+			editor->paste();
+		}
+	}
+
 
 	/*! 
      * \class TextCursorChangeFontFamily

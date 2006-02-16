@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -73,6 +73,8 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "updatelinkvisitor.h"
 #include "printervisitor.h"
 #include "xmlparser.h"
+#include "inputcell.h"
+#include "cellgroup.h"
 
 
 using namespace std;
@@ -376,6 +378,67 @@ namespace IAEX
 
 	private:
 		QString filename_;
+		Document *doc_;
+	};
+
+
+	/*! 
+	 * \class EvalSelectedCells
+	 * \author Anders Fernström
+	 * \date 2006-02-14
+	 *
+	 * Eval all inputcells in the vector of selected cells
+	 */
+	class EvalSelectedCells : public Command
+	{
+	public:
+		EvalSelectedCells( Document *doc )
+			:doc_(doc){}
+		virtual ~EvalSelectedCells(){}
+		void execute()
+		{
+			try
+			{
+				vector<Cell *> cells = doc_->getSelection();
+			
+				vector<Cell *>::iterator c_iter = cells.begin();
+				while( c_iter != cells.end() )
+				{
+					evalCell( (*c_iter) );
+					++c_iter;
+				}
+
+				doc_->setChanged( true );
+			}
+			catch(exception &e)
+			{
+				string str = string("EvalSelectedCells(), Exception: ") + e.what();
+				throw exception( str.c_str() );
+			}			
+		}
+
+	private:
+		evalCell( Cell *cell )
+		{
+			if( typeid( InputCell ) == typeid( *cell ) )
+			{
+				InputCell *inputcell = dynamic_cast<InputCell *>(cell);
+				inputcell->eval();
+			}
+			else if( typeid( CellGroup ) == typeid( *cell ) )
+			{
+				if( cell->hasChilds() )
+				{
+					Cell *child = cell->child();
+					while( child != 0 )
+					{
+						evalCell( child );
+						child = child->next();
+					}
+				}
+			}
+		}
+
 		Document *doc_;
 	};
 

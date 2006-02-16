@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -74,7 +74,7 @@ namespace IAEX
 	/*! 
 	 * \class CellApplication
 	 * \author Ingemar Axelsson and Anders Fernström
-	 * \date 2006-01-09 (update)
+	 * \date 2006-02-13 (update)
 	 *
 	 * \brief Implements the application interface. This class is the
 	 * main controller of the program.
@@ -92,56 +92,36 @@ namespace IAEX
 	 * the styles are loaded from the beginning.
 	 * 2006-01-09 AF, added a new highlight thread with the
 	 * 'openmodelicahighlighter' as the highlighter that should be used.
+	 * 2006-02-09 AF, code for starting omc have been moved to the
+	 * omc interactive environment.
+	 * 2006-02-13 AF, create temp dir
 	 */
 	CellApplication::CellApplication(int &argc, char **argv)
 		: QObject()
 	{  
+		// 2006-02-13 AF, create temp dir
+		QDir dir;
+		if( !dir.exists( "OMNoteboook_tempfiles" ) )
+			dir.mkdir( "OMNoteboook_tempfiles" );
+
+
 		app_ = new QApplication(argc, argv);
 
 		// 2005-10-25 AF, added a check if omc is running, otherwise
 		// try to start it
+		// 2006-02-09 AF, Start of OMC have been moved to omcineractice-
+		// environment
 		try
 		{
 			new OmcInteractiveEnvironment();
 		}
 		catch( exception &e )
 		{
-#ifdef WIN32
-			try
+			if( !OmcInteractiveEnvironment::startOMC() )
 			{
-				STARTUPINFO startinfo;
-				PROCESS_INFORMATION procinfo;
-				memset(&startinfo, 0, sizeof(startinfo));
-				memset(&procinfo, 0, sizeof(procinfo));
-				startinfo.cb = sizeof(STARTUPINFO);
-				startinfo.wShowWindow = SW_MINIMIZE;
-				startinfo.dwFlags = STARTF_USESHOWWINDOW;
-
-				string parameter = "\"omc.exe\" +d=interactiveCorba";
-				char *pParameter = new char[parameter.size() + 1];
-				const char *cpParameter = parameter.c_str();
-				strcpy(pParameter, cpParameter);
-
-				bool flag = CreateProcess(NULL,pParameter,NULL,NULL,FALSE,CREATE_NEW_CONSOLE,NULL,NULL,&startinfo,&procinfo);
-
-				Sleep(2000);
-
-				if( !flag )
-					throw std::exception("Unable to start OMC");
+				QMessageBox::critical( 0, "OMC Error", "Was unable to start OMC, therefore OMNotebook will close." );
+				exit( -1 );
 			}
-			catch( exception &e )
-			{
-				QString msg = e.what();
-				msg += "\nWas unable to start OMC! Closeing OMNotebook!";
-				QMessageBox::critical( 0, "Error", msg, "OK" );
-				std::exit(-1);
-			}
-#else
-			QString msg = e.what();
-			msg += "\nOMC not started! Closeing OMNotebook!";
-			QMessageBox::critical( 0, "Error", msg, "OK" );
-			std::exit(-1);
-#endif
 		}
 
 		// when last window closed, the applicaiton should quit also
@@ -200,16 +180,16 @@ namespace IAEX
  
 		//open(QString("WelcomeToOMNotebook.onb"));
 		// 2006-02-02 AF, open DrModelica from the begining - release stuff
-		QDir dir;
+		/*QDir dir;
 		if( dir.exists( "DrModelica/DrModelica.nb" ))
 			open(QString("DrModelica/DrModelica.nb")); 
-		else
+		else*/
 			open(QString::null);
 	}
 
 	/*! 
 	 * \author Anders Fernström and Ingemar Axelsson
-	 * \date 2006-01-16 (update)
+	 * \date 2006-02-13 (update)
 	 *
 	 * \brief Class destructor
 	 *
@@ -218,6 +198,9 @@ namespace IAEX
 	 * if it is running
 	 * 2006-01-16 AF, Go Through remove list and remove all temporary 
 	 * files.
+	 * 2006-02-09 AF, moved code for quiting omc to notebook windows
+	 * closeEvent handler
+	 * 2006-02-13 AF, remove temp dir
 	 */
 	CellApplication::~CellApplication()
 	{
@@ -225,18 +208,7 @@ namespace IAEX
 		HighlighterThread *thread = HighlighterThread::instance();
 		thread->exit();
 
-		// 2005-11-24 AF,
-		// check if omc server is still runing, if its runing -> send quit() command
-		try
-		{
-			OmcInteractiveEnvironment *omc = new OmcInteractiveEnvironment();
-			omc->evalExpression( QString("quit()") );
-			//omc->getResult();
-			//delete omc;
-		}
-		catch( exception &e )
-		{ 
-		}
+		// 2006-02-09 AF, moved code for quiting omc to the notebook windos
 
 		// 2006-01-16 AF, remove temporary files
 		QDir dir;
@@ -248,6 +220,9 @@ namespace IAEX
 				QMessageBox::warning( 0, "Warning", msg, "OK" );
 			}
 		}
+
+		// 2006-02-13 AF, remove temp dir
+		dir.rmdir( "OMNoteboook_tempfiles" );
 	}
 
 	/*! 
@@ -272,6 +247,7 @@ namespace IAEX
 	 * \date 2006-01-12 (update)
 	 *
 	 * 2006-01-12 AF, added so any images in the cell are copied.
+	 * 2006-02-13 AF, removed code for copy image
 	 *
 	 * \todo Create a pasteboard class as a Singleton that should be
 	 * used instead of having a singleton inside the application class.
@@ -280,6 +256,9 @@ namespace IAEX
 	 */
 	void CellApplication::addToPasteboard(Cell *c)
 	{
+		/*
+		// 2006-02-13 AF, DON'T KNOW IF I NEED TO COPY IMAGE
+
 		// 2006-01-12 AF, copy any images in the cell
 		QString html = c->textHtml();
 		if( typeid(InputCell) == typeid( (*c) ))
@@ -310,7 +289,11 @@ namespace IAEX
 
 					if( !image.isNull() )
 					{
-						QImageWriter writer( newImagename, "png" );
+						// 2006-02-13 AF, store images in temp dir
+						QDir dir;
+						dir.setPath( dir.absolutePath() + "/OMNoteboook_tempfiles" );
+
+						QImageWriter writer( dir.absolutePath() + "/" + newImagename, "png" );
 						writer.setDescription( "Temporary OMNotebook image" );
 						writer.setQuality( 100 );
 						writer.write( image );
@@ -340,6 +323,8 @@ namespace IAEX
 			c->setTextHtml( html );
 			pasteboard_.push_back(c);
 		}
+		*/
+		pasteboard_.push_back(c);
 	}
 
 	/*!
@@ -498,6 +483,4 @@ namespace IAEX
 				++dv_iter;
 		}
 	}
-
-
 }

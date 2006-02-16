@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -98,9 +98,9 @@ namespace IAEX
 			
 			if( 0 <= msg.indexOf( "OpenFileCommand()", 0, Qt::CaseInsensitive ))
 			{
-				msg += QString("\r\n\r\nIf you trying to open an old ") + 
+				msg += QString("\r\n\r\nIf you are trying to open an old ") + 
 					QString("OMNotebook file, use menu 'File->Import->") + 
-					QString("Old OMNotebook file' insted.");
+					QString("Old OMNotebook file' instead.");
 			}
 
 			// display message box

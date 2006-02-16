@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -71,7 +71,7 @@ namespace IAEX
 
 	public:
 		CursorPosVisitor()
-			: count_(true), closed_(false), position_(0)
+			: count_(true), closed_(false), position_(0), closedCell_(0)
 		{}
 		virtual ~CursorPosVisitor(){}
 		virtual int position(){ return position_; }
@@ -83,16 +83,20 @@ namespace IAEX
 		{
 			if( count_ )
 				if( node->isClosed() )
+				{
 					closed_ = true;
+					closedCell_ = node;
+				}
 		}
 		virtual void visitCellGroupNodeAfter(CellGroup *node)
 		{
 			if( count_ )
 			{
-				if( closed_ )
+				if( closed_ && closedCell_ == node )
 				{
 					position_ += node->height();
 					closed_ = false;
+					closedCell_ = 0;
 				}
 			}
 		}
@@ -124,6 +128,7 @@ namespace IAEX
 		bool count_;
 		bool closed_;
 		int position_;
+		CellGroup *closedCell_;
 	};
 }
 #endif

@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -310,6 +310,39 @@ public:
 	
 		// go to the end of the style="" part
 		return str.find( "\">", 0 );
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-02-10
+	 *
+	 * \brief Add # symbol to filenames for links.
+	 *
+	 * HTML link look like: Dir/filename.html#ChaperSeven
+     * The notebook parser returns: Dir/filename.htmlChapterSeven
+     * have to insert # symbol
+	 */ 
+	static string fixFilename( string filename )
+	{
+		string::size_type index = filename.find( ".nb" );
+
+		// didn't found '.nb', assume that it is an internal doc link
+		// and add '#' first in the filename
+		if( index == string::npos )
+		{
+			filename = string("#") + filename;
+			return filename;
+		}
+
+		// found .nb
+		if( index + 4 < filename.length() )
+		{
+			// have some text behide the fileending. Add # symbol
+			filename.insert( index + 3, "#" );
+			return filename;
+		}
+		else
+			return filename;
 	}
 
 };

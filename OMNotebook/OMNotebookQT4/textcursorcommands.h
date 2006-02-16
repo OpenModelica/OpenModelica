@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -65,6 +65,37 @@ using namespace std;
 
 namespace IAEX
 {
+	// Added 2006-02-07 AF
+	class TextCursorCutText : public Command
+	{
+	public:
+		TextCursorCutText(){}
+		virtual ~TextCursorCutText(){}
+		virtual QString commandName(){ return QString("TextCursorCutText"); }
+		void execute();
+	};
+
+	// Added 2006-02-07 AF
+	class TextCursorCopyText : public Command
+	{
+	public:
+		TextCursorCopyText(){}
+		virtual ~TextCursorCopyText(){}
+		virtual QString commandName(){ return QString("TextCursorCopyText"); }
+		void execute();
+	};
+
+
+	// Added 2006-02-07 AF
+	class TextCursorPasteText : public Command
+	{
+	public:
+		TextCursorPasteText(){}
+		virtual ~TextCursorPasteText(){}
+		virtual QString commandName(){ return QString("TextCursorPasteText"); }
+		void execute();
+	};
+
 	class TextCursorChangeFontFamily : public Command
 	{
 	public:

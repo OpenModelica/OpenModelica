@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -90,6 +90,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "stylesheet.h"
 #include "xmlparser.h"
 #include "removehighlightervisitor.h"
+#include "omcinteractiveenvironment.h"
 
 using namespace std;
 
@@ -148,6 +149,7 @@ namespace IAEX
 		: DocumentView(parent),
 		subject_(subject),
 		filename_(filename),
+		closing_(false),
 		app_( subject->application() ) //AF
 	{
 		if( filename_ != QString::null )
@@ -174,6 +176,8 @@ namespace IAEX
 			this, SLOT( updateMenus() ));
 		connect( subject_, SIGNAL( contentChanged() ),
 			this, SLOT( updateWindowTitle() ));
+		connect( subject_, SIGNAL( hoverOverFile(QString) ),
+			this, SLOT( setStatusMessage(QString) ));
 
 		updateWindowTitle();
 		update();
@@ -1398,6 +1402,18 @@ namespace IAEX
 	}
 
 	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-02-14
+	 *
+	 * \brief eval all selected cell
+	 */
+	void NotebookWindow::evalCells()
+	{
+		application()->commandCenter()->executeCommand(
+			new EvalSelectedCells( subject_ ));
+	}
+
+	/*! 
 	 * \author Ingemar Axelsson
 	 */
 	void NotebookWindow::createSavingTimer()
@@ -1508,11 +1524,38 @@ namespace IAEX
 			else
 				redoAction->setEnabled( false );
 
-			// cut & copy
-			if( editor->textCursor().hasSelection() )
+			// cut & copy (special fall för input)
+			Cell *cell = document()->getCursor()->currentCell();
+			if( cell )
 			{
-				cutAction->setEnabled( true );
-				copyAction->setEnabled( true );
+				QTextCursor in_cursor;
+
+				if( typeid(InputCell) == typeid(*cell) )
+				{
+					InputCell *inputcell = dynamic_cast<InputCell*>(cell);
+					if( inputcell->textEditOutput()->hasFocus() && 
+						inputcell->isEvaluated() )
+					{
+						in_cursor = inputcell->textEditOutput()->textCursor();
+					}
+					else
+						in_cursor = inputcell->textEdit()->textCursor();
+				}
+				else
+				{
+					in_cursor = editor->textCursor();
+				}
+
+				if( in_cursor.hasSelection() )
+				{
+					cutAction->setEnabled( true );
+					copyAction->setEnabled( true );
+				}
+				else
+				{
+					cutAction->setEnabled( false );
+					copyAction->setEnabled( false );
+				}
 			}
 			else
 			{
@@ -1918,6 +1961,23 @@ namespace IAEX
 		setWindowTitle( title );
 	}
 
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-02-10
+	 *
+	 * \brief Set the status message to msg, if msg is empty the default
+	 * status message 'Ready' is set.
+	 *
+	 * \param msg A QString containing the status message
+	 */
+	void NotebookWindow::setStatusMessage( QString msg )
+	{
+		if( msg.isEmpty() )
+			statusBar()->showMessage("Ready");
+		else
+			statusBar()->showMessage( msg );
+	}
+
 	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 *
@@ -1934,6 +1994,12 @@ namespace IAEX
 			}
 			else
 				QMainWindow::keyPressEvent(event);
+		}
+		// 2006-02-14 AF, check id 'Shift+Enter'
+		else if( event->modifiers() == Qt::ShiftModifier &&
+			( event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return ))
+		{
+			evalCells();
 		}
 	}
 
@@ -2098,7 +2164,7 @@ namespace IAEX
 	 */
 	void NotebookWindow::closeEvent( QCloseEvent *event )
 	{
-		QString filename = QFileInfo( filename_ ).fileName();
+		QString filename = QFileInfo( subject_->getFilename() ).fileName();
 		filename.remove( "\n" );
 
 		// if no name, set name to '(untitled)'
@@ -2120,6 +2186,29 @@ namespace IAEX
 			else
 				save();
 		}
+
+
+		// 2006-02-09 AF, if last window, ask if OMC also should be closed
+		if( application()->documentViewList().size() == 1 || closing_ )
+		{
+			try
+			{
+				OmcInteractiveEnvironment *omc = new OmcInteractiveEnvironment();
+
+				int result = QMessageBox::question( 0, tr("Close OMC"),
+					"OK to quit running OpenModelica Compiler process at exit?\n(Answer No if other OMShell/OMNotebook/Graphic editor is still running)", 
+					QMessageBox::Yes | QMessageBox::Default,
+					QMessageBox::No );
+
+				if( result == QMessageBox::Yes )
+				{
+					omc->evalExpression( QString("quit()") );
+				}
+			}
+			catch( exception &e )
+			{ 
+			}
+		}
 	}
 
 	/*! 
@@ -2130,9 +2219,9 @@ namespace IAEX
 	 */
 	void NotebookWindow::aboutQTNotebook()
 	{
-		QString abouttext = QString("OMNotebook version 2.0 (for OpenModelica v1.3.1)\r\n") + 
-			QString("Copyright 2004-2006, PELAB, Linkoping Univerity\r\n\r\n") + 
-			QString("Created by Ingemar Axelsson (2004-2005) and Anders Fernström (2005-2006) part of their final theses.");
+		QString abouttext = QString("OMNotebook version 2.0 (for OpenModelica v1.3.2)\r\n") + 
+			QString("Copyright 2004-2006, PELAB, Linkoping University\r\n\r\n") + 
+			QString("Created by Ingemar Axelsson (2004-2005) and Anders Fernström (2005-2006) as part of their final theses.");
 
 		QMessageBox::about( this, "OMNotebook", abouttext );
 	}
@@ -2242,6 +2331,7 @@ namespace IAEX
 	 */
 	void NotebookWindow::quitOMNotebook()
 	{
+		closing_ = true;
 		qApp->closeAllWindows();
 	}
 
@@ -2708,7 +2798,10 @@ namespace IAEX
 	void NotebookWindow::changeWindow(QAction *action)
 	{
 		if( !windows_[action]->isActiveWindow() )
+		{
 			windows_[action]->activateWindow();
+			windows_[action]->showNormal();
+		}
 	}
 
 	/*! 
@@ -2749,11 +2842,7 @@ namespace IAEX
 	 */
 	void NotebookWindow::cutEdit()
 	{
-		QTextEdit *editor = subject_->getCursor()->currentCell()->textEdit();
-		if( editor )
-		{
-			editor->cut();
-		}
+		subject_->textcursorCutText();
 	}
 
 	/*! 
@@ -2764,32 +2853,7 @@ namespace IAEX
 	 */
 	void NotebookWindow::copyEdit()
 	{
-		Cell *cell = subject_->getCursor()->currentCell();
-		if( cell )
-		{
-			if( typeid(InputCell) == typeid(*cell) )
-			{
-				InputCell *inputcell = dynamic_cast<InputCell*>(cell);
-				if( inputcell->textEditOutput()->hasFocus() && 
-					inputcell->isEvaluated() )
-				{
-					inputcell->textEditOutput()->copy();
-				}
-				else
-					inputcell->textEdit()->copy();
-			}
-			else
-			{
-				QTextEdit *editor = cell->textEdit();
-				if( editor )
-				{
-					editor->copy();
-				}
-			}
-		}
-
-
-		
+		subject_->textcursorCopyText();
 	}
 
 	/*! 
@@ -2800,11 +2864,7 @@ namespace IAEX
 	 */
 	void NotebookWindow::pasteEdit()
 	{
-		QTextEdit *editor = subject_->getCursor()->currentCell()->textEdit();
-		if( editor )
-		{
-			editor->paste();
-		}
+		subject_->textcursorPasteText();
 	}
 
 	/*! 

@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -80,7 +80,7 @@ namespace IAEX
 	 * \brief The class constructor
 	 */
 	PrinterVisitor::PrinterVisitor( QTextDocument* doc )
-		: doc_(doc)
+		: doc_(doc), ignore_(false), firstChild_(true), closedCell_(0)
 	{
 	}
 
@@ -101,18 +101,38 @@ namespace IAEX
 
 	// GROUPCELL
 	void PrinterVisitor::visitCellGroupNodeBefore(CellGroup *node)
-	{}
+	{
+		if( node->isClosed() )
+		{
+			ignore_ = true;
+			firstChild_ = true;
+			closedCell_ = node;
+		}
+	}
 
-	void PrinterVisitor::visitCellGroupNodeAfter(CellGroup *)
-	{}
+	void PrinterVisitor::visitCellGroupNodeAfter(CellGroup *node)
+	{
+		if( ignore_ && closedCell_ == node )
+		{
+			ignore_ = false;
+			firstChild_ = false;
+			closedCell_ = 0;
+		}
+	}
 
 	// TEXTCELL
 	void PrinterVisitor::visitTextCellNodeBefore(TextCell *node)
 	{
-		QString html = doc_->toHtml();
-		html += "<br><br>" + node->textHtml();
-		html.remove( "file:///" );
-		doc_->setHtml( html );
+		if( !ignore_ || firstChild_ )
+		{
+			QString html = doc_->toHtml();
+			html += "<br><br>" + node->textHtml();
+			html.remove( "file:///" );
+			doc_->setHtml( html );
+
+			if( firstChild_ )
+				firstChild_ = false;
+		}
 	}
 
 	void PrinterVisitor::visitTextCellNodeAfter(TextCell *)
@@ -121,10 +141,16 @@ namespace IAEX
 	//INPUTCELL
 	void PrinterVisitor::visitInputCellNodeBefore(InputCell *node)
 	{
-		QString html = doc_->toHtml();
-		html += "<br><br>" + node->textHtml() + "<br>" + node->textOutputHtml();
-		html.remove( "file:///" );
-		doc_->setHtml( html );
+		if( !ignore_ || firstChild_ )
+		{
+			QString html = doc_->toHtml();
+			html += "<br><br>" + node->textHtml() + "<br>" + node->textOutputHtml();
+			html.remove( "file:///" );
+			doc_->setHtml( html );
+
+			if( firstChild_ )
+				firstChild_ = false;
+		}
 	}
 
 	void PrinterVisitor::visitInputCellNodeAfter(InputCell *)

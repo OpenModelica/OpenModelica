@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -269,6 +269,9 @@ namespace IAEX
 			this, SLOT( charFormatChanged(const QTextCharFormat &) ));
 		connect( text_, SIGNAL( textChanged() ),
 			this, SLOT( textChangedInternal() ));
+		// 2006-02-10 AF, new...
+		connect( text_, SIGNAL( highlighted(const QUrl &) ),
+			this, SLOT( hoverOverLink(const QUrl &) ));
 		
 		contentChanged();
 	}
@@ -347,7 +350,7 @@ namespace IAEX
 	{
 		// check if the text contains html code, if so - set the 
 		// text with correct function.
-		QRegExp expression( "<b>|<B>|</b>|</B>|<br>|<BR>|</a>|</A>|<sup>|<SUP>|</sup>|</SUP>|<sub>|<SUP>|</sub>|</SUB>|<span|<SPAN|</span>|</SPAN>" );
+		QRegExp expression( "&nbsp;|<b>|<B>|</b>|</B>|<br>|<BR>|</a>|</A>|<sup>|<SUP>|</sup>|</SUP>|<sub>|<SUP>|</sub>|</SUB>|<span|<SPAN|</span>|</SPAN>" );
 		QRegExp expressionTag( "<.*" );
 		if( 0 <= text.indexOf( expression ))
 		{
@@ -465,8 +468,12 @@ namespace IAEX
 	{
 		Cell::setStyle( style );
 
-		// select all the text
-		text_->selectAll();
+		// select all the text,
+		// don't do it if the text contains an image, qt krasches if a 
+		// cell contains starts with a image and the entier cell is 
+		// selected.
+		if( text_->toHtml().indexOf( "file:///", 0) < 0 )
+			text_->selectAll();
 
 		// set the new style settings
 		text_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
@@ -561,6 +568,19 @@ namespace IAEX
 		// add a little extra, just in case /AF
 		setHeight( height + 5 );		
 		emit textChanged();
+	}
+
+	/*!
+	 * \author Anders Fernström
+	 * \date 2006-02-10
+	 */
+	void TextCell::hoverOverLink(const QUrl &link)
+	{
+		if( oldHoverLink_ != (link.path() + link.fragment()) )
+		{
+			oldHoverLink_ = link.path() + link.fragment();
+			emit hoverOverUrl( link );
+		}
 	}
 
 	/*! 

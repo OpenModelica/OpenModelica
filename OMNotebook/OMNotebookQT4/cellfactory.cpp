@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -183,6 +183,10 @@ namespace IAEX
 			// 2006-01-17 AF
 			QObject::connect( text, SIGNAL( textChanged(bool) ),
 				doc_, SLOT( setChanged(bool) ));
+
+			// 2006-02-10 AF
+			QObject::connect( text, SIGNAL( hoverOverUrl(const QUrl &) ),
+				doc_, SLOT( hoverOverUrl(const QUrl &) ));
 
 			return text; 
 		}

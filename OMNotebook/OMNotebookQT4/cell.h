@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -123,7 +123,7 @@ namespace IAEX
 		virtual QString textHtml(){return QString::null;}	// Added 2005-10-27 AF
 		virtual QTextCursor textCursor();					// Added 2005-10-27 AF
 		virtual QTextEdit* textEdit(){return 0;}			// Added 2005-10-27 AF
-		virtual void viewExpression(const bool){}; 
+		virtual void viewExpression(const bool){};
 
 		//Cellgroup interface.
 		virtual void addChild(Cell *){}

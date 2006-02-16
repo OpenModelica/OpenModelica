@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -187,8 +187,7 @@ namespace IAEX
 			setStyle( style );
 		else
 		{
-			QString msg = "Cant set style, style name is not valid";
-			QMessageBox::warning( 0, "Warning", msg, "OK" );
+			cout << "Can't set style, style name: " << stylename.toStdString() << " is not valid" << endl;
 		}
 	}
 
@@ -259,13 +258,14 @@ namespace IAEX
 
 	/*! 
 	 * \author Ingemar Axelsson and Anders Fernström
-	 * \date 2006-02-03 AF
+	 * \date 2006-02-09 (update)
 	 *
 	 * \brief Adds a rule to the cell 
 	 *
 	 *
 	 * 2006-02-03 AF, check and see if rule already existes, if it dose 
 	 * only replace the value
+	 * 2006-02-09 AF, ignore some types of rules
 	 *
 	 * \param r The rule that will be added
 	 *
@@ -278,9 +278,7 @@ namespace IAEX
 	{
 		// TODO: DEBUG code: Remove when doing release,
 		// just a check to find new rules
-		
-		/*
-		QRegExp expression( "InitializationCell|CellTags|FontSlant|TextAlignment|TextJustification|FontSize|FontWeight|FontFamily|PageWidth" );
+		QRegExp expression( "InitializationCell|CellTags|FontSlant|TextAlignment|TextJustification|FontSize|FontWeight|FontFamily|PageWidth|CellMargins|CellDingbat|ImageSize|ImageMargins|ImageRegion" );
 		if( 0 > r->attribute().indexOf( expression ))
 		{
 			cout << "[NEW] Rule <" << r->attribute().toStdString() << "> <" << r->value().toStdString() << ">" << endl;
@@ -312,29 +310,37 @@ namespace IAEX
 					cout << "[NEW] Rule Value <FontWeight>, VALUE: " << r->value().toStdString() << endl;
 			}
 		}
-		*/
+		
 		
 
 
 
 		// *** THE REAL FUNCTION ***
 
-		// check if rule already existes
-		bool found = false;
-		rules_t::iterator iter = rules_.begin();
-		while( iter != rules_.end() )
-		{
-			if( 0 == (*iter)->attribute().indexOf( r->attribute(), 0, Qt::CaseInsensitive ) )
-			{
-				found = true;
-				(*iter)->setValue( r->value() );
-				break;
-			}
-			++iter;
-		}
 
-		if( !found )
-			rules_.push_back(r);
+		// 2006-02-09 AF, ignore some rules. This rules are not added
+		// to the cell
+		QRegExp ignoreRules( "PageWidth|CellMargins|CellDingbat|ImageSize|ImageMargins|ImageRegion" );
+
+		if( 0 > r->attribute().indexOf( ignoreRules ) )
+		{
+			// check if rule already existes
+			bool found = false;
+			rules_t::iterator iter = rules_.begin();
+			while( iter != rules_.end() )
+			{
+				if( 0 == (*iter)->attribute().indexOf( r->attribute(), 0, Qt::CaseInsensitive ) )
+				{
+					found = true;
+					(*iter)->setValue( r->value() );
+					break;
+				}
+				++iter;
+			}
+
+			if( !found )
+				rules_.push_back(r);
+		}
 	}
 
 

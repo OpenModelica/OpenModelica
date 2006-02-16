@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -69,6 +69,23 @@ using namespace IAEX;
 
 /*!
  */
+
+
+
+
+/*
+#include <QTextEdit>
+
+int main(int argc, char *argv[])
+{
+        QApplication app(argc, argv);
+
+        QTextEdit *edit = new QTextEdit(0);
+        edit->setHtml("<img src='test.png'/>");
+        edit->show();
+        return app.exec();
+}
+*/
 
 int main(int argc, char **argv)
 {	 

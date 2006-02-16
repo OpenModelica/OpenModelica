@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -257,7 +257,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 			if( 0 != fnCall.indexOf( "quit()", 0, Qt::CaseInsensitive ))
 			{
 				// 2006-02-02 AF, Added throw exception
-				throw exception("NOT RESPONDING");
+				throw exception("OMC is not responding");
 			}
 			else
 				break;

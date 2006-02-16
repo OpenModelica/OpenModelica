@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -408,6 +408,39 @@ namespace IAEX
 
 	/*! 
 	 * \author Anders Fernström
+	 * \date 2006-02-07
+	 *
+	 * \brief Cut text
+	 */
+	void CellDocument::textcursorCutText()
+	{
+		executeCommand( new TextCursorCutText() );
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-02-07
+	 *
+	 * \brief Copy text
+	 */
+	void CellDocument::textcursorCopyText()
+	{
+		executeCommand( new TextCursorCopyText() );
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-02-07
+	 *
+	 * \brief Paste text
+	 */
+	void CellDocument::textcursorPasteText()
+	{
+		executeCommand( new TextCursorPasteText() );
+	}
+
+	/*! 
+	 * \author Anders Fernström
 	 * \date 2005-11-03
 	 *
 	 * \brief Change the font family on the selected text, if
@@ -558,7 +591,7 @@ namespace IAEX
 	/*! 
 	 * \author Anders Fernström
 	 * \date 2005-11-18
-	 * \date 2005-12-12 (update)
+	 * \date 2006-02-13 (update)
 	 *
 	 * \brief Add image to the document
 	 *
@@ -567,6 +600,8 @@ namespace IAEX
 	 * the name of the file.
 	 *
 	 * 2005-12-12 AF, Added 'file:///(path)/' to very image name
+	 * 2006-02-13 AF, All images are added in the sub dir 
+	 * 'OMNotebook_tempfiles'.
 	 *
 	 * \param image A pointer to the images that should be added
 	 * \return the filename of the saved image
@@ -575,6 +610,10 @@ namespace IAEX
 	{
 		// first find a correct temp filename
 		QDir dir;
+
+		// 2006-02-13 AF, store images in temp dir
+		dir.setPath( dir.absolutePath() + "/OMNoteboook_tempfiles" );
+
 		QString name;
 		while( true )
 		{
@@ -585,14 +624,14 @@ namespace IAEX
 				break;
 		}
 
+		name = dir.absolutePath() + "/" + name;
+
 		// save the image temporary to the harddrive
 		QImageWriter writer( name, "png" );
 		writer.setDescription( "Temporary OMNotebook image" );
 		writer.setQuality( 100 );
 		writer.write( *image );
 		
-		// 2005-12-12 AF, Added path to image name
-		name = dir.absolutePath() + "/" + name;
 		images_[ name ] = image;
 
 		// 2005-12-12 AF, Add file:/// to filename
@@ -771,6 +810,38 @@ namespace IAEX
 	}
 
 	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-02-10
+	 */
+	void CellDocument::hoverOverUrl( const QUrl &link )
+	{
+		QString filelink = link.path();
+
+		if( !link.fragment().isEmpty() )
+			filelink += QString("#") + link.fragment();
+
+		if( !filelink.isEmpty() && !link.path().isEmpty() )
+		{
+			if( filename_.isEmpty() || filename_.isEmpty() )
+			{
+				// replace '\' with '/' in the link path
+				filelink.replace( "\\", "/" );
+
+				QDir dir;
+				filelink = dir.absolutePath() + "/" + filelink; 	
+			}
+			else
+			{
+				// replace '\' with '/' in the link path
+				filelink.replace( "\\", "/" );
+				filelink = QFileInfo(filename_).absolutePath() + "/" + filelink; 	
+			}
+		}
+		
+        emit hoverOverFile( filelink );
+	}
+
+	/*! 
 	 * \author Ingemar Axelsson
 	 */
 	void CellDocument::mouseClickedOnCell(Cell *clickedCell)
@@ -851,6 +922,50 @@ namespace IAEX
 		emit cursorChanged();
 	}
 
+	/*! 
+	 * \author Anders Fernström and Ingemar Axelsson
+	 * \date 2006-02-10 (update)
+	 *
+	 * \brief open a new document
+	 *
+	 * 2005-12-05 AF, check if filename exists, otherwise use work dir 
+	 * 2006-02-10 AF, check if link path and fragment exists
+	 */
+	void CellDocument::linkClicked(const QUrl *link)
+	{ 
+		// 2006-02-10 AF, check if path is empty
+		if( !link->path().isEmpty() )
+		{
+			// 2005-12-05 AF, check if filename exists, otherwise use work dir
+			if( filename_.isEmpty() || filename_.isEmpty() )
+			{
+				// replace '\' with '/' in the link path
+				QString linkpath = link->path();
+				linkpath.replace( "\\", "/" );
+
+				QDir dir;
+				executeCommand(new OpenFileCommand( dir.absolutePath() + "/" + linkpath )); 	
+			}
+			else
+			{
+				// replace '\' with '/' in the link path
+				QString linkpath = link->path();
+				linkpath.replace( "\\", "/" );
+
+				executeCommand(new OpenFileCommand( QFileInfo(filename_).absolutePath() + "/" + linkpath )); 	
+			}
+		}
+
+
+		// 2006-02-10 AF, check if there is a link fragment
+		if( !link->fragment().isEmpty() )
+		{
+			//should handel internal document links in some way
+
+		}
+	}
+
+
 
 
 	// ***************************************************************
@@ -859,35 +974,7 @@ namespace IAEX
 
 
 
-	/*! What to do when a link is clicked?
-	*/
-	void CellDocument::linkClicked(const QUrl *link)
-	{   
-		//executeCommand(new OpenFileCommand(link->path()));
-
-		// 2005-10-25 AF, temp fix so links works correctly, links are
-		// relative the location of the current document
-		// PORT >> executeCommand(new OpenFileCommand( QFileInfo(filename_).dirPath() + "/" + link->path() )); 
-
-		// 2005-12-05 AFm check if filename exists, otherwise use work dir
-		if( filename_.isEmpty() || filename_.isEmpty() )
-		{
-			// replace '\' with '/' in the link path
-			QString linkpath = link->path();
-			linkpath.replace( "\\", "/" );
-
-			QDir dir;
-			executeCommand(new OpenFileCommand( dir.absolutePath() + "/" + linkpath )); 	
-		}
-		else
-		{
-			// replace '\' with '/' in the link path
-			QString linkpath = link->path();
-			linkpath.replace( "\\", "/" );
-
-			executeCommand(new OpenFileCommand( QFileInfo(filename_).absolutePath() + "/" + linkpath )); 	
-		}
-	}
+	
 
 	/*!
 	* Problem with the eventfilter. Should be listening to the

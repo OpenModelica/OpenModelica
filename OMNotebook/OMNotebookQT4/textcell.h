@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -94,6 +94,7 @@ namespace IAEX
 	signals:
 		void textChanged();
 		void textChanged( bool );
+		void hoverOverUrl( const QUrl &link );				// Added 2006-02-10 AF
 
 	public slots:
 		void clickEvent();
@@ -107,6 +108,7 @@ namespace IAEX
 
 	protected slots:
 		void contentChanged();
+		void hoverOverLink(const QUrl &link);				// Added 2006-02-10 AF
 		void openLinkInternal(const QUrl *url);
 		void textChangedInternal();
 		void charFormatChanged(const QTextCharFormat &);	// Added 2006-01-17 AF
@@ -117,6 +119,8 @@ namespace IAEX
 	private:
 		void createTextWidget();
 		QTextBrowser *text_;
+
+		QString oldHoverLink_;								// Added 2006-02-10 AF
 	};
 
 	//***************************************************

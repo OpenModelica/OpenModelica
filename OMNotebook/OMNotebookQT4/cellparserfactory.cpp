@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -89,7 +89,7 @@ namespace IAEX
       }
       else
       {
-		 throw exception("Can only open files ending with .onb or .nb,\n(can open old OMNotebooks file that ends whit .xml)");
+		 throw exception("Can only open files ending with .onb or .nb,\n(can open old OMNotebooks file that ends with .xml)");
       }
    }
 };

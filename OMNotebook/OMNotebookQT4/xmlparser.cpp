@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet,
+Copyright (c) 1998-2006, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -358,7 +358,6 @@ namespace IAEX
 
 		// go through all children in text cell/element
 		QDomNode node = element.firstChild();
-		QString text;
 		while( !node.isNull() )
 		{
 			QDomElement e = node.toElement();
@@ -366,7 +365,7 @@ namespace IAEX
 			{
 				if( e.tagName() == XML_TEXT )
 				{
-					text = e.text();
+					textcell->setTextHtml( e.text() );
 				}
 				else if( e.tagName() == XML_RULE )
 				{
@@ -388,8 +387,9 @@ namespace IAEX
 		}
 
 		// set style, before set text, so all rules are applied to the style
+		QString html = textcell->textHtml();
 		textcell->setStyle( textcell->style() );
-		textcell->setTextHtml( text );
+		textcell->setTextHtml( html );
 
 		parent->addChild( textcell );
 	}
@@ -426,6 +426,7 @@ namespace IAEX
 				if( e.tagName() == XML_INPUTPART )
 				{
 					text = e.text();
+					inputcell->setText( text );
 				}
 				else if( e.tagName() == XML_OUTPUTPART )
 				{

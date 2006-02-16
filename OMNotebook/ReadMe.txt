@@ -31,8 +31,8 @@ This environment variables are needed:
 		  for example "C:\antlr\antlr-2.7.4",
 		  > used like "$(ANTLRHOME)\lib\cpp".
 
-> QTDIR		: Should point at the home folder for Qt, 
-		  for example "C:\Qt\3.3.5".
+> QTHOME	: Should point at the home folder for Qt, 
+		  for example "C:\Qt\4.0.1".
 
 > MICOHOME	: Should point at the folder containing Mico Corba
 		  for example "C:\Program\mico",
@@ -40,7 +40,7 @@ This environment variables are needed:
 
 > MODELICAHOME	: Should point at the home folder containing c++ files for 
                   corba communication with OMC, 
-		  for example "C:\Program\modelica\Omc\winruntime",
+		  for example "C:\Program\modelica_omc",
 		  > used like "$(MODELICAHOME)".
 
 
