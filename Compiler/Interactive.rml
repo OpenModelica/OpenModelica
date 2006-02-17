@@ -3235,8 +3235,8 @@ end
   rule  SCode.elaborate(p) => p' &
 	Inst.make_env_from_program(p',Absyn.IDENT("")) => env &
         traverse_classes(p,NONE,extract_all_components_visitor,
-                         (COMPONENTS([],0),p),
-			 true (* traverse protected*)) => ((p',_,(comps,p))) 
+                         (COMPONENTS([],0),p,env),
+			 true (* traverse protected*)) => ((p',_,(comps,p,env))) 
         
         -----------------------------------
         extract_all_components(p) => comps
@@ -3253,28 +3253,28 @@ end
  ** from all classes
  **)
             
- relation extract_all_components_visitor:((Absyn.Class* Absyn.Path option *(Components*Absyn.Program)))
-	  => ((Absyn.Class*Absyn.Path option *(Components*Absyn.Program))) =
+ relation extract_all_components_visitor:((Absyn.Class* Absyn.Path option *(Components*Absyn.Program*Env.Env)))
+	  => ((Absyn.Class*Absyn.Path option *(Components*Absyn.Program*Env.Env))) =
           (*)))*)
         
         
   rule  
 
         Absyn.join_paths(pa,Absyn.IDENT(id)) => path' &
-        get_class_env(p,path') => cenv &
+        get_class_env_no_elaboration(p,path',env) => cenv &
         Inst.make_fully_qualified(cenv,path') => pa' &
         extract_components_from_class(class,pa',comps,cenv) => comps'
 	----------------
-	extract_all_components_visitor((class as Absyn.CLASS(id,a,b,c,d,e,file_info),SOME(pa),(comps,p)))
-	  => ((class,SOME(pa),(comps',p)))
+	extract_all_components_visitor((class as Absyn.CLASS(id,a,b,c,d,e,file_info),SOME(pa),(comps,p,env)))
+	  => ((class,SOME(pa),(comps',p,env)))
           
   rule  let path' = Absyn.IDENT(id) &
-        get_class_env(p,path') => cenv &
+        get_class_env_no_elaboration(p,path',env) => cenv &
         Inst.make_fully_qualified(cenv,path') => pa' &
         extract_components_from_class(class,pa',comps,cenv) => comps'
 	----------------
-	extract_all_components_visitor((class as Absyn.CLASS(id,a,b,c,d,e,file_info),NONE,(comps,p)))
-	  => ((class,NONE,(comps',p)))
+	extract_all_components_visitor((class as Absyn.CLASS(id,a,b,c,d,e,file_info),NONE,(comps,p,env)))
+	  => ((class,NONE,(comps',p,env)))
           
 
 end
@@ -3711,6 +3711,28 @@ relation get_class_env: (Absyn.Program, Absyn.Path) => Env.Env =
 	   => (env'',_)
 	 ---------------------
 	 get_class_env(p,p_class) => env''
+
+end
+ (**relation: get_class_env_no_elaboration
+  **
+  ** Retrieves the environment of the class, including the frame of the class
+  ** itself by partially instantiating it.
+  **)
+relation get_class_env_no_elaboration: (Absyn.Program, 
+                                        Absyn.Path, 
+                                        Env.Env (*SCode.elaborate(p) => p'& Inst.make_env_from_program(p',Absyn.IDENT("")) => env *)
+                                        ) 
+          => Env.Env =
+
+
+   rule	 Lookup.lookup_class(env,p_class,false) 
+	   => (cl as SCode.CLASS(id,_,encflag,restr,_),env') &
+	 Env.open_scope(env',encflag,SOME(id)) => env2 &
+	 ClassInf.start(restr,id) => ci_state &
+	 Inst.partial_inst_class_in(env2,Types.NOMOD,Prefix.NOPRE,Connect.empty_set,ci_state,cl,false,[]) 
+	   => (env'',_)
+	 ---------------------
+	 get_class_env_no_elaboration(p,p_class,env) => env''
 
 end
 
