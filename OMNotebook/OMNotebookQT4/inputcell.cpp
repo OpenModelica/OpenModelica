@@ -972,6 +972,17 @@ namespace IAEX
 			QDir dir;
 			QString imagename = "omc_tmp_plot.png";
 
+			// 2006-02-17 AF, 
+			evaluated_ = true;
+			setClosed(false);
+
+			// 2006-02-17 AF, set text '{evaluation expression}" during
+			// evaluation of expressiuon
+			output_->setPlainText( "{evaluating expression}" );
+			output_->update();
+			QCoreApplication::processEvents();
+
+
 			// remove plot.png if it already exist, don't want any
 			// old plot.
 			if( isPlot() )
@@ -1025,8 +1036,9 @@ namespace IAEX
 			// output part of the cell.
 			if( isPlot() && error.isEmpty() )
 			{	
-				output_->setPlainText( "creating plot..." );
+				output_->setPlainText( "{creating plot}" );
 				output_->update();
+				QCoreApplication::processEvents();
 
 				int sleepTime = 1;
 				bool firstTry = true;
@@ -1092,8 +1104,6 @@ namespace IAEX
 			}
 
 			++numEvals_;
-			evaluated_ = true;
-			setClosed(false);
 			dir.remove( imagename );
 		}
 

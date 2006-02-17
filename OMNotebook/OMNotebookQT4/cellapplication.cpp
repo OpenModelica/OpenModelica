@@ -180,8 +180,7 @@ namespace IAEX
  
 		//open(QString("WelcomeToOMNotebook.onb"));
 		// 2006-02-02 AF, open DrModelica from the begining - release stuff
-		/*QDir dir;
-		if( dir.exists( "DrModelica/DrModelica.nb" ))
+		/*/if( dir.exists( "DrModelica/DrModelica.nb" ))
 			open(QString("DrModelica/DrModelica.nb")); 
 		else*/
 			open(QString::null);
