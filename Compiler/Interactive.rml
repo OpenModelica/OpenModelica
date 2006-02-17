@@ -4226,19 +4226,6 @@ end
   **)
 relation get_element_type: (Absyn.ElementSpec) => string =
 
-  rule Absyn.restr_string (restr) => str_restriction &
-       int_string(sline) => sline_str &
-       int_string(scol) => scol_str &
-       int_string(eline) => eline_str &
-       int_string(ecol) => ecol_str &
-       select_string(isReadOnly,"readonly","writable") => readonly_str &
-       Util.string_append_list(["elementtype=classdef, classname=", id, ", classrestriction=", str_restriction,
-	   ", classfilename=",file,", classStartLine=",sline_str,", classStartColumn=",scol_str,", classEndLine=",eline_str,
-	   ", classEndColumn=",ecol_str]) => str 
-       -----------------------------------------------------------------------------------------------------------
-       get_element_type(Absyn.CLASSDEF(_, Absyn.CLASS(id, p, f, e, restr, _, 
-       		Absyn.INFO(file, isReadOnly, sline, scol, eline, ecol)))) => str
-
   rule Absyn.path_string (path) => path_str &
        Util.string_append_list(["elementtype=extends, path=", path_str]) => str 
        -----------------------------------------------------------------------
@@ -4271,7 +4258,31 @@ end
   **)
 relation get_element_info: (Absyn.ElementItem) => string =
 
+       (* ok, first see if is a classdef *)
   rule Util.bool_string(f) => final &
+       keyword_replaceable(r) => r' &
+       Util.bool_string(r') => repl &
+       inner_outer_str(inout) => inout_str &
+	   (* compile the classdef string *)
+	   Absyn.restr_string (restr) => str_restriction &
+       Util.string_append_list(["elementtype=classdef, classname=", id, ", classrestriction=", str_restriction]) 
+		=> element_str & 
+       int_string(sline) => sline_str &
+       int_string(scol)  => scol_str &
+       int_string(eline) => eline_str &
+       int_string(ecol)  => ecol_str &
+       select_string(isReadOnly, "readonly","writable") => readonly_str &
+       Util.string_append_list(["elementfile=\"", file, "\", elementreadonly=\"",readonly_str,
+       						    "\", elementStartLine=", sline_str, ", elementStartColumn=", scol_str, 
+       						    ", elementEndLine=", eline_str, ", elementEndColumn=", ecol_str, 
+                                ", final=", final, ", replaceable=", repl, ", inout=", inout_str, ", ", element_str]) => str
+       ---------------------------------------------------------------------------------------------------------------
+       get_element_info(Absyn.ELEMENTITEM(Absyn.ELEMENT(f, r, inout, _, 
+			Absyn.CLASSDEF(_, Absyn.CLASS(id, p, fi, e, restr, _, 
+       			Absyn.INFO(file, isReadOnly, sline, scol, eline, ecol))), _, _))) => str
+
+     (* if is not a classdef, just follow the normal stuff *)
+rule Util.bool_string(f) => final &
        keyword_replaceable(r) => r' &
        Util.bool_string(r') => repl &
        inner_outer_str(inout) => inout_str &
