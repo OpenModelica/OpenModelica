@@ -66,7 +66,7 @@ typedef modelica_real initial_rettype;
 typedef modelica_real exp_rettype;
 typedef modelica_real noEvent_rettype;
 typedef modelica_real sqrt_rettype;
-
+typedef modelica_real abs_rettype;
 
 #if defined(__cplusplus)
 }
