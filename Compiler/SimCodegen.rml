@@ -1811,17 +1811,30 @@ end
 
 relation generate_mixed_discrete_combination_values:(string list list (* values *))
 	  => (string list list) =
-	
+
   axiom	generate_mixed_discrete_combination_values([value]) 
 	  => [value]
 
-  rule	generate_mixed_discrete_combination_values(values) => values' &
+  rule	generate_mixed_discrete_combination_values1(values) => values'(* &
+	Util.list_strip_last(values') => values''*)
+	--------------------------
+	generate_mixed_discrete_combination_values(values) => values'
+end
+
+relation generate_mixed_discrete_combination_values1:(string list list (* values *))
+	  => (string list list) =
+	
+  rule	Util.list_map(value,Util.list_create) => value' 
+	---------------------------
+	generate_mixed_discrete_combination_values1([value]) 
+	  => value'
+
+  rule	generate_mixed_discrete_combination_values1(values) => values' &
 	generate_mixed_discrete_combination_values2(value,values') 
-	  => values'' &
-	Util.list_strip_last(values'') => values''' 
+	  => values'' 
 	---------------------------------------
-	generate_mixed_discrete_combination_values(value::values) 
-	  => values'''
+	generate_mixed_discrete_combination_values1(value::values) 
+	  => values''
 end
 
 (** relation generate_mixed_discrete_combination_values2
@@ -1835,16 +1848,21 @@ relation generate_mixed_discrete_combination_values2: (string list,
 						       string list list)
 	  => string list list =
 
-  axiom	generate_mixed_discrete_combination_values2(v,[]) => [v] 
+  axiom	generate_mixed_discrete_combination_values2([],lst) => []
 
-  axiom	generate_mixed_discrete_combination_values2([],lst) => lst
+	
+  rule	Util.list_map_1(lst,Util.list_cons,s) => lst' &
+	generate_mixed_discrete_combination_values2(ss,lst) => lst2 &
+	list_append(lst',lst2) => res
+	---------------------------------
+	generate_mixed_discrete_combination_values2(s::ss,lst) => res
 
-  rule	Util.list_list_map_1(lst,Util.list_make_2,s) => lst1 &
+(*  rule	Util.list_list_map_1(lst,Util.list_make_2,s) => lst1 &
 	Util.list_flatten(lst1) => lst1' &
 	generate_mixed_discrete_combination_values2(ss,lst) => lst2 &
 	list_append(lst1',lst2) => res
 	---------------------------------
-	generate_mixed_discrete_combination_values2(s::ss,lst) => res
+	generate_mixed_discrete_combination_values2(s::ss,lst) => res*)
 end
 
 (** relation: generate_mixed_discrete_possible_values2
