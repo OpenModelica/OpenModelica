@@ -1372,6 +1372,21 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	  => (Values.ARRAY([Values.STRING(executable),
                             Values.STRING(initfilename)]),st)
            
+  rule  (* failing build_model *)
+         -------------------------------
+	 ceval_interactive_functions (env, exp as Exp.CALL(Absyn.IDENT("buildModel"),
+                                                           [Exp.CREF(cr,_),
+                                                            starttime,
+                                                            stoptime,
+                                                            interval,
+                                                            method,
+                                                            filenameprefix],_,_),
+                                      st' as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),
+                                      msg) 
+
+	  => (Values.ARRAY([Values.STRING(""),
+                            Values.STRING("")]),st')
+           
 
   rule  (* FIXME: Should ceval be called with impl=true here? *)
          (* Build and simulate model *)
