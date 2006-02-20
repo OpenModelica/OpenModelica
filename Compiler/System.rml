@@ -184,7 +184,7 @@ relation pwd: () => string
  ** Returns the content of the MODELCIAPATH environment variable.
  **)
 
-relation modelicapath: () => string
+(* relation modelicapath: () => string *)
 
 (** read_env
  **
@@ -329,15 +329,7 @@ relation get_classnames_for_simulation: () => string
  **)
 relation set_classnames_for_simulation: string => ()
 
-(** relation set_compile_command 
- ** this sets the compilecommand for compilation
- **)
-relation set_compile_command: (string) => ()
 
-(** relation get_compile_command 
- ** this retrives the compilecommand for compilation
- **)
-relation get_compile_command: () => string
 
 end
 

@@ -33,6 +33,7 @@ SRCRML= Absyn.rml \
 	VarTransform.rml
 
 ALLRML = $(SRCRML) DAEEXT.rml Print.rml RTOpts.rml System.rml Parser.rml \
-		TaskGraphExt.rml Corba.rml Socket.rml ErrorExt.rml
+		TaskGraphExt.rml Corba.rml Socket.rml ErrorExt.rml  Settings.rml
+
 
 

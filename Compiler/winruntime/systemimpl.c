@@ -523,16 +523,16 @@ RML_BEGIN_LABEL(System__read_5ffile)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__modelicapath)
-{
-  char *path = getenv("MODELICAPATH");
-  if (path == NULL) 
-      RML_TAILCALLK(rmlFC);
+/* RML_BEGIN_LABEL(System__modelicapath) */
+/* { */
+/*   char *path = getenv("MODELICAPATH"); */
+/*   if (path == NULL)  */
+/*       RML_TAILCALLK(rmlFC); */
   
-  rmlA0 = (void*) mk_scon(path);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
+/*   rmlA0 = (void*) mk_scon(path); */
+/*   RML_TAILCALLK(rmlSC); */
+/* } */
+/* RML_END_LABEL */
 
 RML_BEGIN_LABEL(System__read_5fenv)
 {
@@ -1065,29 +1065,3 @@ RML_BEGIN_LABEL(System__set_5fclassnames_5ffor_5fsimulation)
 }
 RML_END_LABEL
 
-char* compile_command = NULL;
-RML_BEGIN_LABEL(System__set_5fcompile_5fcommand)
-{
-  char* command = RML_STRINGDATA(rmlA0);
-  if(compile_command)
-    free(compile_command);
-
-  compile_command = (char*)malloc(strlen(command)+1);
-  if (compile_command == NULL) {
-    RML_TAILCALLK(rmlFC);
-  }
-  memcpy(compile_command,command,strlen(command)+1);
-
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__get_5fcompile_5fcommand)
-{
-  if(compile_command)
-    rmlA0 = (void*) mk_scon(strdup(compile_command));
-  else
-    rmlA0 = (void*) mk_scon("");
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL

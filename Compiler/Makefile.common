@@ -21,7 +21,7 @@ RTOBJ   = $(srcdir)/runtime/systemimpl.o $(srcdir)/../c_runtime/libc_runtime.a \
 	$(srcdir)/runtime/printimpl.o $(srcdir)/runtime/ptolemyio.o \
 	$(srcdir)/runtime/errorext.o $(srcdir)/runtime/ErrorMessage.o \
 	$(srcdir)/runtime/daeext.o $(CORBAOBJ) \
-	$(srcdir)/modpar/libmodpar.a
+	$(srcdir)/modpar/libmodpar.a $(srcdir)/runtime/settingsimpl.o
 
 SRCRML= Absyn.rml \
 	Algorithm.rml \
@@ -55,10 +55,10 @@ SRCRML= Absyn.rml \
 	TaskGraph.rml \
 	Util.rml \
 	Values.rml \
-	VarTransform.rml
+	VarTransform.rml 
 
 ALLRML = $(SRCRML) DAEEXT.rml Print.rml RTOpts.rml System.rml Parser.rml \
-		TaskGraphExt.rml Corba.rml Socket.rml ErrorExt.rml
+		TaskGraphExt.rml Corba.rml Socket.rml ErrorExt.rml Settings.rml
 
 SRCC=	$(SRCRML:.rml=.c)
 SRCH=	$(SRCRML:.rml=.h)

@@ -33,7 +33,7 @@ CC	= gcc
 IDL	= idl 
 CFLAGS	+= -I$(RMLINCLUDE) -I../../c_runtime -I../ $(CORBAINCL)
 CXXFLAGS = $(CFLAGS)
-SRC	= rtopts.c socketimpl.c printimpl.c systemimpl.c 
+SRC	= rtopts.c socketimpl.c printimpl.c systemimpl.c settingsimpl.c
 CPPSRC  = ptolemyio.cpp daeext.cpp ErrorMessage.cpp errorext.cpp $(CORBASRC)
 OBJ     = $(SRC:.c=.o) $(CPPSRC:.cpp=.o) $(CPPSRC:.cc=.o)
 
