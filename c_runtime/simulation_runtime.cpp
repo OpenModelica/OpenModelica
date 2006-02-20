@@ -301,6 +301,8 @@ int dassl_main(int argc, char **argv)
   tout = newTime(t, step); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
 
   function_updateDependents(&t);
+
+  functionDAE_output(&t,x,xd,y,p);
   saveall();
   if(emit()) { printf("Error, not enough space to save data"); return -1; }
   calcEnabledZeroCrossings();

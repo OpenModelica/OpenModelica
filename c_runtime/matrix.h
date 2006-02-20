@@ -96,8 +96,7 @@ double discrete_loc2[size];
 #define mixed_equation_system_end(size)    } while (!found_solution); \
  } while(0)
 
-#define check_discrete_values(size,ptrs) do {int i; \
-double* loc_ptrs[size]=ptrs; \
+#define check_discrete_values(size) do {int i; \
 if (!found_solution) { \
 found_solution = 1; \
 for (i=0; i < size; i++) { \

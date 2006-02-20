@@ -137,6 +137,9 @@ void save(double & var);
 double pre(double & var);
 bool edge(double& var);
 
+double Sample(double t, double start ,double interval);
+double sample(double start ,double interval);
+
 void CheckForNewEvents(double *t);
 void StartEventIteration(double *t);
 void StateEventHandler(long jroot[], double *t);
