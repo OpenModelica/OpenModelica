@@ -947,10 +947,9 @@ relation evaluate_graphical_api2: (InteractiveStmts, InteractiveSymbolTable)
 
    (* adrpo added 2005-12-16 *)	     
    rule  
-(*          System.regular_file_exist(name) => 0 & *)
-(* 	 Parser.parse(name) => p1 & *)
-        ClassLoader.load_file(name) => p1 &
- 	update_program(p1,p) => newp & 
+         System.regular_file_exist(name) => 0 &
+	 Parser.parse(name) => p1 &
+	 update_program(p1,p) => newp &
 	 get_top_qualified_classnames(p1) => top_names_str
 	 ---------------------------------------------------
 	 evaluate_graphical_api2(
