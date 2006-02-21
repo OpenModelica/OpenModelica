@@ -2684,6 +2684,10 @@ relation unelab_exp : Exp => Absyn.Exp =
   rule	unelab_cref(cr) => cr'
 	----------------
 	unelab_exp(CREF(cr,t))=> Absyn.CREF(cr')
+
+  rule	Util.list_map(expl,unelab_exp) => expl' 
+	---------------------------
+	unelab_exp(ARRAY(tp,b,expl)) => Absyn.ARRAY(expl')
 end
 
 (** relation: unelab_cref

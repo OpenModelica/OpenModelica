@@ -185,7 +185,8 @@ relation unelab_mod: Types.Mod => SCode.Mod =
 	  =>  SCode.REDECL(final, elist')
 	  
   rule	Print.print_buf "#-- elab_untyped_mod failed:\n" &
-	print "- unelab_mod failed\n" 
+	print "- unelab_mod failed :" &
+	print_mod_str(mod) => s & print s & print "\n" 
 	----------
 	unelab_mod (mod) => fail
 end
