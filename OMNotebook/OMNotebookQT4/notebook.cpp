@@ -278,6 +278,7 @@ namespace IAEX
 
 		delete aboutAction;
 		delete helpAction;
+		delete aboutQtAction;
 
 		delete facePlain;
 		delete faceBold;
@@ -1377,10 +1378,18 @@ namespace IAEX
 		connect( helpAction, SIGNAL( triggered() ),
 			this, SLOT( helpText() ));
 
+		// 2006-02-21 AF, Added a about qt action
+		aboutQtAction = new QAction( tr("About &Qt"), this );
+		aboutQtAction->setStatusTip( tr("Display information about Qt") );
+		connect( aboutQtAction, SIGNAL( triggered() ),
+			this, SLOT( aboutQT() ));
+
 
 		// 2005-10-07 AF, Porting, new code for creating menu
 		aboutMenu = menuBar()->addMenu( tr("&Help") );
 		aboutMenu->addAction( aboutAction );	
+		aboutMenu->addAction( aboutQtAction );
+		aboutMenu->addSeparator();
 		aboutMenu->addAction( helpAction );
 
 		/* Old menu code //AF
@@ -2224,6 +2233,17 @@ namespace IAEX
 			QString("Created by Ingemar Axelsson (2004-2005) and Anders Fernström (2005-2006) as part of their final theses.");
 
 		QMessageBox::about( this, "OMNotebook", abouttext );
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 *
+	 * \brief display an ABOUT message box with information about
+	 * Qt.
+	 */
+	void NotebookWindow::aboutQT()
+	{
+		QMessageBox::aboutQt( this );
 	}
 
 	/*! 

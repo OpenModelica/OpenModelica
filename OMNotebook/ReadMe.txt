@@ -7,8 +7,12 @@ Antlr and its code library is needed to create the files for the projects parser
 Version 2.7.5 of antlr dosen't work correctly with this project. 
 
 QT
-Qt version 4 has to be installed to compile the project. Qt version 4.0 works
-fine with the project.
+Qt version 4 has to be installed to compile the project. Currently version 4.1,
+open source is used. Version 4.1 open soure don't have any support for visual
+studio, but a patch can be downloaded from sourceforge.net that allows you to
+compile qt to be used together with visual studio. For more information about
+this patch: http://sourceforge.net/projects/qtwin/
+
 
 MICO CORBA
 Mico Corba is needed to communicate with OMC. Currently the project is using
@@ -32,7 +36,7 @@ This environment variables are needed:
 		  > used like "$(ANTLRHOME)\lib\cpp".
 
 > QTHOME	: Should point at the home folder for Qt, 
-		  for example "C:\Qt\4.0.1".
+		  for example "C:\Qt\qt-win-opensource-src-4.1.0".
 
 > MICOHOME	: Should point at the folder containing Mico Corba
 		  for example "C:\Program\mico",

@@ -120,6 +120,7 @@ namespace IAEX
 		void closeFile();
 		void closeEvent( QCloseEvent *event );			// Added 2006-01-19 AF
 		void aboutQTNotebook();
+		void aboutQT();									// Added 2006-02-21 AF
 		void helpText();								// Added 2006-02-03 AF
 		void saveas();
 		void save();
@@ -242,7 +243,8 @@ namespace IAEX
 		QAction *inputAction;
 
 		QAction *aboutAction;
-		QAction *helpAction;
+		QAction *helpAction;				// Added 2006-02-03 AF
+		QAction *aboutQtAction;				// Added 2006-02-21 AF
 
 		QAction *facePlain;
 		QAction *faceBold;

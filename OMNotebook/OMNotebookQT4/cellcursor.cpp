@@ -502,7 +502,9 @@ namespace IAEX
 		palette.setColor(this->backgroundRole(), QColor(0,0,0));
 		this->setPalette(palette);
 
-		painter.setPen(QPen(black,1, SolidLine));
+		// changed from 1 to 3, don\t know way, but something must have
+		// changed between qt 4 and qt 4.1
+		painter.setPen(QPen(black,3, SolidLine));
 
 		QWidget::paintEvent(event);
 
