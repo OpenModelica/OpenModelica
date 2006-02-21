@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/" >
+        <file>Resources\OMS.bmp</file>
+        <file>Resources\OMS.ico</file>
+        <file>Resources\clear.bmp</file>
+        <file>Resources\copy.bmp</file>
+        <file>Resources\cut.bmp</file>
+        <file>Resources\help.bmp</file>
+        <file>Resources\paste.bmp</file>
+        <file>Resources\print.bmp</file>
+        <file>Resources\start.bmp</file>
+        <file>Resources\stop.bmp</file>
+    </qresource>
+</RCC>
