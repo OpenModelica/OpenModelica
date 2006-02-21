@@ -472,7 +472,8 @@ namespace IAEX
 		// don't do it if the text contains an image, qt krasches if a 
 		// cell contains starts with a image and the entier cell is 
 		// selected.
-		if( text_->toHtml().indexOf( "file:///", 0) < 0 )
+		// ignore this in version 4.1. of QT
+		//if( text_->toHtml().indexOf( "file:///", 0) < 0 )
 			text_->selectAll();
 
 		// set the new style settings
