@@ -1251,9 +1251,14 @@ relation dump: DAELow => () =
 	int_string(eqnlen) => eqnlen_str &
 	print eqnlen_str & print ")\n" &
 	print "=========\n" &
-	dump_eqns ieqnsl  
+	dump_eqns ieqnsl   &
+	print "Zero Crossings :\n"&
+	print "===============\n" &
+	Util.list_map(zc,dump_zc_str) => ss &
+	Util.string_delimit_list(ss,",\n") => s &
+	print s & print "\n" 
 	-----------------
-	dump(DAELOW(vars1,vars2,eqns,reqns,ieqns,ae,algs,eventinfo))
+	dump(DAELOW(vars1,vars2,eqns,reqns,ieqns,ae,algs,EVENT_INFO(_,zc)))
 end
 
 

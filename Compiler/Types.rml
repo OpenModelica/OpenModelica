@@ -608,6 +608,13 @@ relation subtype : (Type, Type) => bool =
 	-----------------------------------
 	subtype((T_COMPLEX(st1,els1,SOME(tp)),_), tp2) 
 	  => res
+
+	  (* A complex type that extends a basic type is checked 
+	   * against the baseclass basic type *)
+  rule	subtype(tp1,tp2) => res
+	-----------------------------------
+	subtype(tp1,(T_COMPLEX(st1,els1,SOME(tp2)),_)) 
+	  => res
         
 	(* PR. Check of tuples, similar to complex. Just that
 	     identifier name do not have to be checked. Only types are

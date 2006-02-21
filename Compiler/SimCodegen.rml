@@ -1722,7 +1722,6 @@ end
 
 (** relation 
 
-
 **)
 relation generate_mixed_discrete_possible_values:
 	(DAELow.Equation list (* continous eqns*),
@@ -1973,10 +1972,12 @@ relation generate_mixed_system_discrete_part_check: (DAELow.Equation list,
 	Util.list_map(crefs,Exp.print_component_ref_str) => strs &
 	Util.list_map_1r(strs,string_append,"&") => strs2 &
 	Util.string_delimit_list(strs2,", ") => ptrs_str &
-	Util.string_append_list(["check_discrete_values(",len_str,",{",
-				 ptrs_str,"});"]) 
- 	  => stmt &
-	  Codegen.c_add_statements(cfn,[stmt]) => cfn' 
+	Util.string_append_list(["double *loc_ptrs[",len_str,"]={",
+				 ptrs_str,"};"]) 
+	  => stmt1 &
+	Util.string_append_list(["check_discrete_values(",len_str,");"])
+ 	  => stmt2 &
+	  Codegen.c_add_statements(cfn,["{",stmt1,stmt2,"}"]) => cfn' 
 	-------------------------
 	generate_mixed_system_discrete_part_check(eqn,var,cg_id)
 	  => (cfn',cg_id,funcs) 
@@ -1998,7 +1999,7 @@ relation generate_mixed_system_discrete_part_check2: (DAELow.Equation list,
 	DAELow.var_cref(v) => cr &
 	let varexp = Exp.CREF(cr,Exp.REAL) &
 	Exp.solve(e1,e2,varexp) => expr &
-	Codegen.generate_expression(expr,cg_id) => (exp_func,var,cg_id') &
+	Codegen.generate_expression(expr,cg_id') => (exp_func,var,cg_id'') &
 	int_string(indx) => indx_str &
 	Exp.print_component_ref_str cr => cr_str &
 	Util.string_append_list([cr_str," = ",var,";"]) => stmt &
@@ -2008,7 +2009,7 @@ relation generate_mixed_system_discrete_part_check2: (DAELow.Equation list,
 	Codegen.c_merge_fns([exp_func',cfn]) => cfn' 
 	-----------------------------------
 	generate_mixed_system_discrete_part_check2(DAELow.EQUATION(e1,e2)::eqns,v::vs,indx,cg_id)
-	  => (cfn',cg_id',funcs)
+	  => (cfn',cg_id'',funcs)
 
   rule	print "generate_mixed_system_discrete_part_check2 failed\n" 
 	-------------------------------
@@ -3762,11 +3763,20 @@ relation build_zero_crossing_eqns : (DAE.DAElist,
   rule	is_part_of_mixed_system(dlow,eqn,blocks,ass2) => true &
 	get_zc_mixed_system(dlow,eqn,blocks,ass2) => block &
 
+	eqn - 1 => eqn' &
+         vector_nth(ass2,eqn') => v &
+	DAELow.get_var_at(vars,v) => (DAELow.VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,_)) &  
+	Exp.print_component_ref_str(cr) => cr_str & 
+	Util.string_append_list(["save(",cr_str,");"]) => save_stmt &
+
 	Util.list_map_3_2(block,get_equation_and_solved_var,eqns,vars,ass2) 
 	  => (eqn_lst,var_lst) &
 	is_mixed_system(var_lst) => true &
 	split_mixed_equations(eqn_lst,var_lst) => (cont_eqn,cont_var,
 						   disc_eqn,disc_var) &
+
+	(*dump_mixed_system(cont_eqn,cont_var,disc_eqn,disc_var) &*)
+
 	DAELow.list_var(cont_var) => vars' &
 
 	DAELow.list_equation(cont_eqn) => eqns' &
@@ -3781,6 +3791,7 @@ relation build_zero_crossing_eqns : (DAE.DAElist,
 
 	generate_mixed_header(cont_eqn,cont_var,disc_eqn,disc_var,cg_id)
 	  => (s0,cg_id1) &
+	Codegen.c_prepend_statements(s0,[save_stmt]) => s0 &
 	generate_ode_system2(cont_subsystem_dae,jac,jac_tp,cg_id1) 
 	  => (Codegen.CFUNCTION(rettp,fn,retrec,arg,vars,init,stmts,cleanups),cg_id2,_) &
 	  (* initialization of e.g. matrices for linsys must be done in each
@@ -3793,20 +3804,20 @@ relation build_zero_crossing_eqns : (DAE.DAElist,
 	  => (s3,cg_id4,_) &
 	generate_mixed_system_store_discrete(disc_var,0,cg_id4) 
 	  => (s1,cg_id5,_) &
-	
-	Codegen.c_merge_fns([s0,s1,s2',s3,s4]) => cfn   
+	build_zero_crossing_eqns(dae,dlow,ass1,ass2,rest,blocks,cg_id5) 
+	  => (cfn3,cg_id6) &
+	Codegen.c_merge_fns([s0,s1,s2',s3,s4,cfn3]) => cfn   
 	----------------------------------------
 	build_zero_crossing_eqns(dae,
 				 dlow as DAELow.DAELOW(vars,knvars,eqns,se,ie,ae,al,ev),
 				 ass1,ass2,eqn::rest,blocks,cg_id) 
-	  => (cfn,cg_id5)
+	  => (cfn,cg_id6)
 
 	(* Zero crossing for single equation*)
   rule	build_equation(dae,dlow,ass1,ass2,eqn,cg_id) => (cfn2,cg_id') &
 	eqn - 1 => eqn' &
          vector_nth(ass2,eqn') => v &
-	v - 1 => v' &
-	DAELow.vararray_nth(vararr,v') => (DAELow.VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,_)) &  
+	DAELow.get_var_at(vars,v) => (DAELow.VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,_)) &  
 	Exp.print_component_ref_str(cr) => cr_str &
 	build_zero_crossing_eqns(dae,dlow,ass1,ass2,rest,blocks,cg_id') 
 	  => (cfn3,cg_id'') &
@@ -3814,12 +3825,38 @@ relation build_zero_crossing_eqns : (DAE.DAElist,
  	Codegen.c_add_statements(Codegen.c_empty_function,[stmt]) => cfn1 &
 	Codegen.c_merge_fns([cfn1,cfn2,cfn3]) => cfn
 	----------------------------------------
-	build_zero_crossing_eqns(dae,dlow as DAELow.DAELOW(DAELow.VARIABLES(_,_,vararr,_,_),_,_,_,_,_,_,_),
+	build_zero_crossing_eqns(dae,dlow as DAELow.DAELOW(vars,_,_,_,_,_,_,_),
 				 ass1,ass2,eqn::rest,blocks,cg_id) 
 	  => (cfn,cg_id'')
 
   axiom build_zero_crossing_eqns(_,_,_,_,_,_,cg_id) 
 	  => (Codegen.c_empty_function,cg_id)
+end
+
+(** relation: dump_mixed_system
+**
+ ** dumps a mixed system of equations on stdout.
+ **)
+relation dump_mixed_system: (DAELow.Equation list, (* continous eqns*)
+	      DAELow.Var list, (* continuous vars*)
+	      DAELow.Equation list (* discrete eqns*),
+	      DAELow.Var list (* discrete vars*)) => ()=
+
+
+  rule	print "Mixed system\n" &
+	print "============\n" &
+	print "  continous eqns:\n" &
+        DAELow.dump_eqns(c_e) &
+	print "  continous vars:\n" &
+	DAELow.dump_vars(c_v)  &
+	print "  discrete eqns:\n" &
+        DAELow.dump_eqns(d_e) &
+	print "  discret vars:\n" &
+	DAELow.dump_vars(d_v)  &
+	print "\n" 
+	---------------------
+	dump_mixed_system(c_e,c_v,d_e,d_v) => ()
+
 end
 
 (** relation: build_when_equation

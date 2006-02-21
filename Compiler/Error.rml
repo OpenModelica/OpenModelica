@@ -143,6 +143,8 @@ val ASSIGN_READONLY_ERROR : ErrorID (* assigning to a readonly component *)
 
 val ASSIGN_TYPE_MISMATCH_ERROR : ErrorID (* type mismatch in assignment *)
 
+val MODIFIER_TYPE_MISMATCH_ERROR : ErrorID (* type mismatch in modifier *)
+
 val IF_CONDITION_TYPE_ERROR : ErrorID (* Type error in if conditional *)
 
 val FOR_EXPRESSION_TYPE_ERROR : ErrorID (* Type error in for expressions *)
@@ -473,6 +475,8 @@ val ERROR_OPENING_FILE = 85
 
 val INHERIT_BASIC_WITH_COMPS = 86
 
+val MODIFIER_TYPE_MISMATCH_ERROR = 87
+
 val UNBOUND_PARAMETER_WARNING = 500
 
 val INDEX_REDUCTION_NOTIFICATION = 1000
@@ -633,6 +637,9 @@ val ErrorTable =
 (ERROR_OPENING_FILE,TRANSLATION, ERROR,				"Error opening file %s"),
 
 (INHERIT_BASIC_WITH_COMPS,TRANSLATION, ERROR,			"Class %s inherits primary type but has components"),
+
+(MODIFIER_TYPE_MISMATCH_ERROR, TRANSLATION, ERROR,		"Type mismatch in modifier, expected type %s, got modifier %s of type %s"),
+
  (* WARNING		 *)
  (UNBOUND_PARAMETER_WARNING, TRANSLATION, WARNING,	"Warning, parameter %s has no value."),
 

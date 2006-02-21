@@ -911,6 +911,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  
  	inst_basictype_baseclass(env3,extendselts,compelts,mods,inst_dims) 
 	  => bc
+	 & ErrorExt.error_on() 
 	------------------------------------------------------
 	inst_classdef(env,mods,pre, csets, ci_state,
 		      SCode.PARTS(els,eqs,initeqs,alg,initalg,_), re, prot, 
@@ -1137,11 +1138,6 @@ relation inst_basictype_baseclass:(Env,
 
 	Mod.merge(mods,m',env,Prefix.NOPRE) => m'' &
 	Lookup.lookup_class(env,path,true) => (cdef,cenv) &
- 
-(*	SCode.print_class_str cdef => str &
-	print "classdef :" & print str & print "\n" &
-	Mod.print_mod_str(m') => s &
-	print "mod  = "& print s & print "\n" &*)
 
 	inst_class_basictype(env,m'',Prefix.NOPRE,Connect.empty_set,cdef,inst_dims,false (*impl*),INNER_CALL) 
 	=>(dae,env',_,ty,st) &
@@ -6074,29 +6070,31 @@ relation make_binding : (Env, SCode.Attributes, Mod,Types.Type)
 	make_binding (env, _, Types.MOD(_,_,_,SOME(Types.TYPED(e,_,Types.PROP(e_tp,_)))),tp)
 	    => Types.VALBOUND(v)
 
-(* Numerical values becomes VALBOUND *)
-  axiom	make_binding (env, _, Types.MOD(_,_,_,SOME(Types.TYPED(Exp.ICONST(i),_,_))),tp)
-	    => Types.VALBOUND(Values.INTEGER(i))
-	    
-  axiom make_binding (env, _, Types.MOD(_,_,_,SOME(Types.TYPED(Exp.RCONST(r),_,_))),tp)
-	    => Types.VALBOUND(Values.REAL(r))
-	    
-  axiom	make_binding (env, _, Types.MOD(_,_,_,SOME(Types.TYPED(Exp.SCONST(s),_,_))),tp)
-	=> Types.VALBOUND(Values.STRING(s))
-	    
-  axiom	make_binding (env, _, Types.MOD(_,_,_,SOME(Types.TYPED(Exp.BCONST(b),_,_))),tp)
-	=> Types.VALBOUND(Values.BOOL(b))
-
-	(* Constant binding *)
-axiom  	make_binding (env, SCode.ATTR(_,_,_,SCode.CONST,_), Types.MOD(_,_,_,SOME(Types.TYPED(e,SOME(e_val),prop))),tp)
-	  => Types.VALBOUND(e_val)
-
 	(* default *)
-  rule	Exp.simplify(e) => e' 
+  rule	Types.match_type(e,e_tp,tp) => (e',_) &
+	Exp.simplify(e') => e' 
 	-------------------
 	make_binding (_,_, Types.MOD(_,_,_,
-				     SOME(Types.TYPED(e,e_val,Types.PROP(t,c)))),tp) 
+				     SOME(Types.TYPED(e,e_val,Types.PROP(e_tp,c)))),tp) 
 	  => Types.EQBOUND(e',e_val,c)
+
+  rule	Types.match_type(e,e_tp,tp) => (e',_) 
+	-------------------
+	make_binding (_,_, Types.MOD(_,_,_,
+				     SOME(Types.TYPED(e,e_val,Types.PROP(e_tp,c)))),tp) 
+	  => Types.EQBOUND(e',e_val,c)
+
+  rule	not Types.match_type(e,e_tp,tp) => (_,_) &
+	Types.unparse_type(e_tp) => e_tp_str &
+	Types.unparse_type(tp) => tp_str &
+	Exp.print_exp_str(e) => e_str &
+	string_append("=",e_str) => e_str' &
+	Error.add_message(Error.MODIFIER_TYPE_MISMATCH_ERROR,[tp_str,e_str',
+							      e_tp_str]) 
+	--------------------------
+	make_binding (_,_, Types.MOD(_,_,_,
+				     SOME(Types.TYPED(e,e_val,Types.PROP(e_tp,c)))),tp) 
+	  => fail
 
   rule	Debug.fprint("failtrace", "- make_binding failed\n")
 	-------------------------------
