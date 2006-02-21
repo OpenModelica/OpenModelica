@@ -952,7 +952,7 @@ relation elab_array : (Env.Env, Absyn.Exp list,
 	  => (Exp.Exp list, Types.Properties) =
 
 	  (* array contains mixed Integer and Real types *)
-  rule	elab_array_has_mixed_int_reals(env,expl,impl,st) &       
+  rule	elab_array_has_mixed_int_reals(env,expl,impl,st) &
 	elab_array_real(env,expl,impl,st) => (expl',prop)
 	-------------
 	elab_array(env,expl,impl,st) => (expl',prop)
@@ -987,7 +987,8 @@ relation elab_array_has_int: (Env.Env, Absyn.Exp list,
 			      Interactive.InteractiveSymbolTable  option)
 	  => () =
 
-  rule	elab_exp(env,e,impl,st) => (e',Types.PROP((Types.T_INTEGER([]),_),_),_)
+  rule	elab_exp(env,e,impl,st) => (e',Types.PROP(tp,_),_) &
+	Types.array_element_type(tp) => ((Types.T_INTEGER([]),_))
 	-----------------------------
 	elab_array_has_int(env,e::expl,impl,st)
 
@@ -1006,7 +1007,8 @@ relation elab_array_has_real: (Env.Env, Absyn.Exp list,
 			      Interactive.InteractiveSymbolTable  option)
 	  => () =
 
-  rule	elab_exp(env,e,impl,st) => (e',Types.PROP((Types.T_REAL([]),_),_),_)
+  rule	elab_exp(env,e,impl,st) => (e',Types.PROP(tp,_),_) &
+	Types.array_element_type(tp) => ((Types.T_INTEGER([]),_))
 	-----------------------------
 	elab_array_has_real(env,e::expl,impl,st)
 
@@ -1028,12 +1030,18 @@ relation elab_array_real : (Env.Env, Absyn.Exp list,
 	   ** and type_convert all expressions to that type *)
   rule	elab_exp_list(env,expl,impl,st) => (expl',props,_) &
 	elab_array_first_props_real(props) => real_tp &
+	Types.unparse_type(real_tp)=> s &
 	elab_array_const(props) => const &
 	Util.list_map(props,Types.get_prop_type) => types &
 	elab_array_real2(expl',types,real_tp) => (expl'',real_tp')
 	-----------------------
 	elab_array_real(env,expl,impl,st) 
 	  => (expl'',Types.PROP(real_tp',const))
+
+  rule	Debug.fprint("failtrace","-elab_array_real failed\n")
+	-----------------------
+	elab_array_real(env,expl,impl,st) 
+	  => fail
 end
 
 (** relation: elab_array_first_props_real
@@ -1044,9 +1052,9 @@ end
  **)
 relation elab_array_first_props_real: Types.Properties list => Types.Type =
 
-  rule	Types.array_element_type(tp) => (tp' as (Types.T_REAL(_),_))
+  rule	Types.array_element_type(tp) => ((Types.T_REAL(_),_))
 	-----------------------------------
-	elab_array_first_props_real(Types.PROP(tp,_)::_) => tp'
+	elab_array_first_props_real(Types.PROP(tp,_)::_) => tp
 
   rule	elab_array_first_props_real(rest) => tp 
 	-----------------------------------
@@ -1094,6 +1102,15 @@ relation elab_array_real2: (Exp.Exp list, (* expl *)
 	------------------------------------
 	elab_array_real2(e::es,t::ts,to_type) 
 	  => (e'::res,res_type)
+
+  rule	print "elab_array_real2 failed\n" &
+	Exp.print_exp_str e => s & Types.unparse_type(t) => s2 &
+	print "exp = " & print s & print " type:" & print s2 & print "\n" &
+	Types.unparse_type to_type => s3 &
+	print " to type :" & print s3 & print "\n" 
+	------------------------------------
+	elab_array_real2(e::es,t::ts,to_type) 
+	  => fail
 end
 
 
