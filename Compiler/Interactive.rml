@@ -7445,7 +7445,7 @@ relation get_nth_inherited_class: (Absyn.ComponentRef,int,Absyn.Program)
   rule	
 	
 	-------------------------
-	get_nth_inherited_class(model,n,p)
+	get_nth_inherited_class(model,n,p) => "Error"
 	
   axiom	get_nth_inherited_class (_,_,_) => "Error"
 end
