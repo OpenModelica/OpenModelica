@@ -3137,10 +3137,12 @@ relation generate_init_data: (DAELow.DAELow, Absyn.Path(* classname *),
 			      string(* filename *),
 			      real, (* start time*)
 			      real, (* stop time *)
-			      real) (* step size *)
+			      real) (* íntervals *)
 	  => () =
 
-   rule	real_string(start) => start_str &
+  rule  real_sub(stop,start) => delta_time &
+	real_div(delta_time,intervals) => step &
+	real_string(start) => start_str &
 	real_string(stop) => stop_str &
 	real_string(step) => step_str &
  	DAELow.calculate_sizes(dlow) => (nx,ny,np,_) &
@@ -3157,7 +3159,7 @@ relation generate_init_data: (DAELow.DAELow, Absyn.Path(* classname *),
  				 init_str]) => str &
  	System.write_file(filename,str) 
  	--------------------------
- 	generate_init_data(dlow,class,filename,start,stop,step)
+ 	generate_init_data(dlow,class,filename,start,stop,intervals)
 
   rule	print "-generate_init_data failed\n"
  	------------------------------------
