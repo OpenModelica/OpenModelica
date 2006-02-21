@@ -7442,14 +7442,79 @@ relation get_nth_inherited_class: (Absyn.ComponentRef,int,Absyn.Program)
 	 get_nth_inherited_class( model,n,p) => str
 
 	(* if above fails, baseclass not defined. return its name*)
-  rule	
-	
+  rule	Absyn.cref_to_path(model) => modelpath &
+	get_pathed_class_in_program(modelpath,p) => cdef & 
+	get_extends_in_class(cdef) => extends &
+	int_sub(n,1) => n' &
+	list_nth(extends,n') => Absyn.EXTENDS(path,_) &
+	Absyn.path_string(path) => s 
 	-------------------------
-	get_nth_inherited_class(model,n,p) => "Error"
+	get_nth_inherited_class(model,n,p) => s
 	
   axiom	get_nth_inherited_class (_,_,_) => "Error"
 end
 
+(** relation: get_extends_in_class
+ **
+ ** Returns all ElementSpec of EXTENDS in a class.
+ **)
+
+relation get_extends_in_class: Absyn.Class => Absyn.ElementSpec list =
+
+  rule	get_extends_in_parts(parts) => res
+	-----------------------
+	get_extends_in_class(Absyn.CLASS(n,p,f,e,r,Absyn.PARTS(parts,_),_))
+	  => res
+end
+
+(** relation: get_extends_in_parts
+ ** author: PA
+ **
+ ** Helper relation to get_extends_in_class.
+ **)
+
+relation get_extends_in_parts: Absyn.ClassPart list => Absyn.ElementSpec list =
+
+  axiom	get_extends_in_parts [] => []
+
+  rule	get_extends_in_parts(parts) => l1 &
+	get_extends_in_elementitems(elts) => l2 &
+	list_append(l1,l2) => res
+	----------------
+	get_extends_in_parts( Absyn.PUBLIC(elts)::parts) => res
+
+  rule	get_extends_in_parts(parts) => l1 &
+	get_extends_in_elementitems(elts) => l2 &
+	list_append(l1,l2) => res
+	----------------
+	get_extends_in_parts( Absyn.PROTECTED(elts)::parts) => res
+	
+  rule	get_extends_in_parts(parts) => res
+	----------------
+	get_extends_in_parts( _::parts) => res
+end
+
+(** relation: get_extends_in_elementitems
+ ** author: PA
+ **
+ ** Helper relation to get_extends_in_parts.
+ **)
+
+relation get_extends_in_elementitems: Absyn.ElementItem list 
+	  => Absyn.ElementSpec list =
+
+  axiom	get_extends_in_elementitems([]) => []
+
+  rule	get_extends_in_elementitems(es) => res
+	-----------------------
+	get_extends_in_elementitems(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,_,e as Absyn.EXTENDS(_,_),_,_))::es)
+	=> e::res
+
+  rule	get_extends_in_elementitems(es) => res
+	-----------------------
+	get_extends_in_elementitems(_::es)
+	=> res
+end
 
 (**relation: get_nth_inherited_class2
  **
