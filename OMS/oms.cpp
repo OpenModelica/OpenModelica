@@ -256,9 +256,9 @@ OMS::OMS( QWidget* parent )
 		qApp, SLOT( quit() ));
 
 	// sett start message
-	cursor_.insertText( "OpenModelica 1.3.2\n" );
-	cursor_.insertText( "Copyright 2002-2006, PELAB, Linkoping University\n\n" );
-	cursor_.insertText( "To get help on using OMShell and OpenModelica, type \"help()\" and press enter.\n" );
+	cursor_.insertText( "OpenModelica 1.3.2\n", textFormat_ );
+	cursor_.insertText( "Copyright 2002-2006, PELAB, Linkoping University\n\n", textFormat_ );
+	cursor_.insertText( "To get help on using OMShell and OpenModelica, type \"help()\" and press enter.\n", textFormat_ );
 
 
 	// add function names for code completion
@@ -318,6 +318,7 @@ OMS::~OMS()
 	delete viewToolbar_;
 	delete viewStatusbar_;
 	delete aboutOMS_;
+	delete aboutQT_;
 	delete print_;
 	delete startServer_;
 	delete stopServer_;
@@ -347,6 +348,8 @@ void OMS::createMoshEdit()
 	moshEdit_->setFontFamily( "Courier New" );
 	moshEdit_->setFontWeight( QFont::Normal );
 	moshEdit_->setFontPointSize( fontSize_ );
+
+	textFormat_ = moshEdit_->currentCharFormat();
 
 	connect( moshEdit_, SIGNAL( returnPressed() ), 
 		this, SLOT( returnPressed() ));
@@ -454,6 +457,12 @@ void OMS::createAction()
 	connect( aboutOMS_, SIGNAL( triggered() ),
 		this, SLOT( aboutOMS() ));
 
+	// Added 2006-02-21 AF
+	aboutQT_ = new QAction( tr("About &Qt"), this );
+	aboutQT_->setStatusTip( tr("Display information about Qt") );
+	connect( aboutQT_, SIGNAL( triggered() ),
+		this, SLOT( aboutQT() ));
+
 	print_ = new QAction( QIcon(":/Resources/print.bmp"), tr("&Print"), this );
 	print_->setShortcut( tr("Ctrl+P") );
 	print_->setStatusTip( tr("Print the contents in the input window") );
@@ -507,6 +516,7 @@ void OMS::createMenu()
 	viewMenu_->addAction( viewStatusbar_ );
 
 	helpMenu_->addAction( aboutOMS_ );
+	helpMenu_->addAction( aboutQT_ );
 }
 
 void OMS::createToolbar()
@@ -619,9 +629,9 @@ void OMS::returnPressed()
 		QString res = delegate_->getResult();
 			
 		if( res.isEmpty() )
-			cursor_.insertText( "\n" );
+			cursor_.insertText( "\n", textFormat_ );
 		else
-			cursor_.insertText( "\n" + res + "\n" );
+			cursor_.insertText( "\n" + res + "\n", textFormat_ );
 
 		// get Error text
 		try
@@ -643,7 +653,7 @@ void OMS::returnPressed()
 	else
 	{
 		QTextCursor cursor = moshError_->textCursor();
-		cursor.insertText("[ERROR] No OMC serer started\n");
+		cursor.insertText("[ERROR] No OMC serer started\n" );
 	}
 
 	// add new command line
@@ -979,6 +989,11 @@ void OMS::aboutOMS()
 	QMessageBox::about(this, "About OMShell",
 		QString("OMShell v1.1 (for OpenModelica v1.3.2)\n") + 
 		QString("Copyright PELAB (c) 2006") );
+}
+
+void OMS::aboutQT()
+{
+	QMessageBox::aboutQt( this );
 }
 
 void OMS::print()

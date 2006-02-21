@@ -26,7 +26,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="qtmain.lib QtCore4.lib QtGui4.lib mico2311.lib"
-				OutputFile="$(OutDir)\OMS.exe"
+				OutputFile="$(OutDir)\OMShell.exe"
 				AdditionalLibraryDirectories="&quot;$(QTHOME)\lib&quot;;&quot;$(MICOHOME)\win32-bin\lib&quot;"
 				GenerateDebugInformation="FALSE"
 				SubSystem="2"/>
@@ -68,7 +68,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="qtmaind.lib QtCored4.lib QtGuid4.lib mico2311.lib"
-				OutputFile="$(OutDir)\OMS.exe"
+				OutputFile="$(OutDir)\OMShell.exe"
 				AdditionalLibraryDirectories="&quot;$(QTHOME)\lib&quot;;&quot;$(MICOHOME)\win32-bin\lib&quot;"
 				GenerateDebugInformation="TRUE"
 				SubSystem="2"/>
@@ -131,9 +131,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Moc&apos;ing omc_communicator.h..."
-						CommandLine="$(QTDIR)\bin\moc.exe -I -I$(QTDIR)\include -I.\GeneratedFiles\Release -I$(QTDIR)\include\QtCore -I$(QTDIR)\include\QtGui &quot;.\omc_communicator.h&quot; -o &quot;GeneratedFiles\Release\moc_omc_communicator.cpp&quot;
+						CommandLine="$(QTHOME)\bin\moc.exe -I -I$(QTDIR)\include -I.\GeneratedFiles\Release -I$(QTDIR)\include\QtCore -I$(QTDIR)\include\QtGui &quot;.\omc_communicator.h&quot; -o &quot;GeneratedFiles\Release\moc_omc_communicator.cpp&quot;
 "
-						AdditionalDependencies="$(QTDIR)\bin\moc.exe;.\omc_communicator.h"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe;.\omc_communicator.h"
 						Outputs="&quot;GeneratedFiles\Release\moc_omc_communicator.cpp&quot;"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -141,9 +141,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Moc&apos;ing omc_communicator.h..."
-						CommandLine="$(QTDIR)\bin\moc.exe -I.\GeneratedFiles\Debug;&quot;$(QTHOME)\include&quot; &quot;.\omc_communicator.h&quot; -o &quot;GeneratedFiles\Debug\moc_omc_communicator.cpp&quot;
+						CommandLine="$(QTHOME)\bin\moc.exe -I.\GeneratedFiles\Debug;&quot;$(QTHOME)\include&quot; &quot;.\omc_communicator.h&quot; -o &quot;GeneratedFiles\Debug\moc_omc_communicator.cpp&quot;
 "
-						AdditionalDependencies="$(QTDIR)\bin\moc.exe;.\omc_communicator.h"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe;.\omc_communicator.h"
 						Outputs="&quot;GeneratedFiles\Debug\moc_omc_communicator.cpp&quot;"/>
 				</FileConfiguration>
 			</File>
@@ -157,9 +157,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Moc&apos;ing oms.h..."
-						CommandLine="$(QTDIR)\bin\moc.exe -DWIN32 -I.\GeneratedFiles\Release;.\GeneratedFiles;&quot;$(MODELICAHOME)&quot;;&quot;$(MICOHOME)\include&quot;;&quot;$(QTHOME)\include&quot; &quot;.\oms.h&quot; -o &quot;GeneratedFiles\Release\moc_oms.cpp&quot;
+						CommandLine="$(QTHOME)\bin\moc.exe -DWIN32 -I.\GeneratedFiles\Release;.\GeneratedFiles;&quot;$(MODELICAHOME)&quot;;&quot;$(MICOHOME)\include&quot;;&quot;$(QTHOME)\include&quot; &quot;.\oms.h&quot; -o &quot;GeneratedFiles\Release\moc_oms.cpp&quot;
 "
-						AdditionalDependencies="$(QTDIR)\bin\moc.exe;.\oms.h"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe;.\oms.h"
 						Outputs="&quot;GeneratedFiles\Release\moc_oms.cpp&quot;"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -167,9 +167,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Moc&apos;ing oms.h..."
-						CommandLine="$(QTDIR)\bin\moc.exe -DWIN32 -DQT_DEBUG -I.\GeneratedFiles\Debug;.\GeneratedFiles;&quot;$(MODELICAHOME)&quot;;&quot;$(MICOHOME)\include&quot;;&quot;$(QTHOME)\include&quot; &quot;.\oms.h&quot; -o &quot;GeneratedFiles\Debug\moc_oms.cpp&quot;
+						CommandLine="$(QTHOME)\bin\moc.exe -DWIN32 -DQT_DEBUG -I.\GeneratedFiles\Debug;.\GeneratedFiles;&quot;$(MODELICAHOME)&quot;;&quot;$(MICOHOME)\include&quot;;&quot;$(QTHOME)\include&quot; &quot;.\oms.h&quot; -o &quot;GeneratedFiles\Debug\moc_oms.cpp&quot;
 "
-						AdditionalDependencies="$(QTDIR)\bin\moc.exe;.\oms.h"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe;.\oms.h"
 						Outputs="&quot;GeneratedFiles\Debug\moc_oms.cpp&quot;"/>
 				</FileConfiguration>
 			</File>
@@ -250,6 +250,22 @@
 			Filter="moc;h;cpp"
 			UniqueIdentifier="{71ED8ED8-ACB9-4CE9-BBE1-E00B30144E11}">
 			<File
+				RelativePath=".\generatedfiles\debug\moc_omc_communicator.cpp">
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath=".\generatedfiles\release\moc_omc_communicator.cpp">
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -259,7 +275,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\generatedfiles\debug\moc_omc_communicator.cpp">
+				RelativePath=".\GeneratedFiles\debug\moc_oms.cpp">
 				<FileConfiguration
 					Name="Release|Win32"
 					ExcludedFromBuild="TRUE">
@@ -286,22 +302,6 @@
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\GeneratedFiles\debug\moc_oms.cpp">
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
 				</FileConfiguration>
 			</File>
 			<File

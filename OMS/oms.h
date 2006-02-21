@@ -104,6 +104,7 @@ public slots:
 	void viewToolbar();
 	void viewStatusbar();
 	void aboutOMS();
+	void aboutQT();					// Added 2006-02-21 AF
 	void print();
 	bool startServer();
 	void stopServer();
@@ -156,6 +157,7 @@ private:
 	QAction* viewToolbar_;
 	QAction* viewStatusbar_;
 	QAction* aboutOMS_;
+	QAction* aboutQT_;				// Added 2006-02-21 AF
 	QAction* print_;
 	QAction* startServer_;
 	QAction* stopServer_;
