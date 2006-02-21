@@ -8019,13 +8019,13 @@ relation set_component_comment_in_parts:(Absyn.ClassPart list,
 
   rule	set_component_comment_in_elementitems(elts,cr1,cmt) => elts' 
 	-----------------------------------------------
-	set_component_comment_in_parts(Absyn.PUBLIC(elts)::xs,cr1,cmt)
+	set_component_comment_in_parts(Absyn.PROTECTED(elts)::xs,cr1,cmt)
 	  => Absyn.PROTECTED(elts')::xs
 
 	  (* rule above failed *)
   rule	set_component_comment_in_parts(xs,cr1,cmt) => xs'
 	-------------------------------
-	set_component_comment_in_parts(Absyn.PUBLIC(e)::xs,cr1,cmt)
+	set_component_comment_in_parts(Absyn.PROTECTED(e)::xs,cr1,cmt)
 	  => (Absyn.PROTECTED(e)::xs')
 
   rule	set_component_comment_in_parts(xs,cr1,cmt) => xs'
