@@ -2354,6 +2354,12 @@ relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 	generate_expression(Exp.IFEXP(e,then,else),tnr) 
 	  => (cfn,var,tnr3)
 
+	  (* some buitlin functions that are e.g. overloaded*)
+  rule	generate_builtin_function(e,tnr) => (cfn,var,tnr2)
+	-------------------------
+	generate_expression(e as Exp.CALL(fn,args,false,builtin),tnr) 
+	  => (cfn,var,tnr2)
+
 	  (* non-tuple calls *)
   rule	generate_expressions(args,tnr) => (cfn1,vars1,tnr1) &
 	generate_return_type fn => ret_type &
@@ -2482,6 +2488,50 @@ relation generate_expression : (Exp.Exp, int) => (CFunction,string,int) =
 	----------------
 	generate_expression(e,_) => fail
 end
+
+
+(** relation: generate_builtin_function
+ ** author: PA
+ **
+ ** Generates code for some specific builtin functions.
+ **)
+
+relation generate_builtin_function: (Exp.Exp,int) => (CFunction,string,int) =
+
+	(* max(v), v is vector *)
+  rule	Exp.typeof(arg) => tp &
+	exp_type_str(tp,true) => tp_str &
+	exp_type_str(tp,false) => tp_str2 &
+	generate_expression(arg,tnr) => (cfn1,var1,tnr1) &
+	string_append("max_",tp_str) => fn_name &
+	generate_temp_decl(tp_str2,tnr1) => (tdecl,tvar,tnr2) &
+	c_add_variables(cfn1,[tdecl]) => cfn2 &
+	Util.string_append_list([tvar," = ",fn_name,"(&", var1,");"])
+	  => stmt &
+	c_add_statements(cfn2,[stmt]) => cfn 
+	-----------------------
+	generate_builtin_function( Exp.CALL(Absyn.IDENT("max"),[arg],false,true),tnr)  
+	  => (cfn,tvar,tnr2)
+
+	  (* max (a,b) a, b scalars*)
+  rule	Exp.typeof(s1) => tp &
+	exp_type_str(tp,false) => tp_str &
+	generate_expression(s1,tnr) => (cfn1,var1,tnr1) &
+	generate_expression(s2,tnr1) => (cfn1,var2,tnr2) &
+	generate_temp_decl(tp_str,tnr2) => (tdecl,tvar,tnr3) &
+	c_add_variables(cfn1,[tdecl]) => cfn2 &
+	Util.string_append_list([tvar," = max(", var1,",",var2,");"])
+	  => stmt &
+	c_add_statements(cfn2,[stmt]) => cfn 
+	-----------------------
+	generate_builtin_function( Exp.CALL(Absyn.IDENT("max"),[s1,s2],false,true),tnr)  
+	  => (cfn,tvar,tnr3)
+
+
+end
+
+
+
 
 (** relation: generate_unary
  ** 

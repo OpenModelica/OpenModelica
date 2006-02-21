@@ -7440,6 +7440,12 @@ relation get_nth_inherited_class: (Absyn.ComponentRef,int,Absyn.Program)
 	   get_nth_inherited_class2(c,cdef,n,env') => str 
 	 -------------------------------------------------
 	 get_nth_inherited_class( model,n,p) => str
+
+	(* if above fails, baseclass not defined. return its name*)
+  rule	
+	
+	-------------------------
+	get_nth_inherited_class(model,n,p)
 	
   axiom	get_nth_inherited_class (_,_,_) => "Error"
 end

@@ -1168,10 +1168,11 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
   rule  DAELow.var_list(vars) => vars_lst &
 	DAELow.var_list(knvars) => knvars_lst &
 	DAELow.equation_list(ie) => (initial_eqns1 as _::_)  &
-	generate_initial_equations_from_start(vars_lst) => initial_eqns2 &
-
-	generate_initial_assignments_from_start(vars_lst) => start_assigns &
-	generate_parameter_assignments(knvars_lst) => param_assigns &
+	generate_initial_equations_from_start(vars_lst)  => initial_eqns2 &
+	generate_initial_assignments_from_start(vars_lst,0) 
+	  => (start_assigns,cg_id) &
+	generate_parameter_assignments(knvars_lst,cg_id) 
+	  => (param_assigns,cg_id') &
 	list_append(initial_eqns1,initial_eqns2) => initial_eqns &
 	DAELow.list_equation(initial_eqns) => initial_eqns' &
 	list_array([]) => arr &
@@ -1193,7 +1194,7 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
 	DAELow.matching_algorithm(initial_dae',m',mT',(DAELow.NO_INDEX_REDUCTION,DAELow.ALLOW_UNDERCONSTRAINED)) 
 	  => (ass1,ass2,initial_dae',m,mT) &
 	DAELow.strong_components(m',mT',ass1,ass2) => blocks &
-	generate_ode_blocks(initial_dae',ass1,ass2,blocks,0)
+	generate_ode_blocks(initial_dae',ass1,ass2,blocks,cg_id')
 	  => (block_code,_,extra_funcs) &
 	Codegen.c_make_function("int","initial_function",[],["double *x",
 							       "double *xd", 
@@ -1216,11 +1217,12 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
   rule  DAELow.var_list(vars) => vars_lst &
 	DAELow.var_list(knvars) => knvars_lst &
 	DAELow.equation_list(ie) => [] &
-	generate_initial_equations_from_start(vars_lst) => initial_eqns2 &
-
-	generate_initial_assignments_from_start(vars_lst) => start_assigns &
-	generate_parameter_assignments(knvars_lst) => param_assigns &
-
+	generate_initial_equations_from_start(vars_lst) 
+	  => initial_eqns2 &
+	generate_initial_assignments_from_start(vars_lst,0) 
+	  => (start_assigns, cg_id) &
+	generate_parameter_assignments(knvars_lst,cg_id) => 
+	(param_assigns,cg_id') &
 	Codegen.c_make_function("int","initial_function",[],["double *x",
 							       "double *xd", 
 							       "double *y",
@@ -1255,22 +1257,30 @@ end
  ** parameters (as expressions). For instance, parameter Real m=2*n+1;
  ** Those are calculated once in the initial function.
  **)
-relation generate_parameter_assignments: DAELow.Var list => CFunction =
+relation generate_parameter_assignments: (DAELow.Var list,
+					  int (* cg_id *)) => 
+	(CFunction,
+	 int (*cg var_id *))=
 
-  axiom	generate_parameter_assignments ([]) => Codegen.c_empty_function
+  axiom	generate_parameter_assignments ([],cg_id) => 
+	(Codegen.c_empty_function,cg_id)
 
 
-  rule	Exp.print_component_ref_str(cr) => cr_str &
-	print_exp_cpp_str(e) => e_str &
-	generate_parameter_assignments(vs) => func &
+  rule	Exp.is_const(e) => false &
+	Exp.print_component_ref_str(cr) => cr_str &
+	Codegen.generate_expression(e,cg_id) 
+	  => (exp_func,e_str,cg_id') &
+	generate_parameter_assignments(vs,cg_id') => (func,cg_id'') &
 	Util.string_append_list([cr_str," = ",e_str,";"]) => stmt &
-	Codegen.c_add_statements(func,[stmt]) => func' 
+	Codegen.c_add_statements(func,[stmt]) => func' &
+	Codegen.c_merge_fns([exp_func,func']) => func''
 	--------------------------
-	generate_parameter_assignments(DAELow.VAR(cr,DAELow.PARAM,_,_,SOME(e),NONE,_,_,_,_,_,_,_,_)::vs) => func'
+	generate_parameter_assignments(DAELow.VAR(cr,DAELow.PARAM,_,_,SOME(e),_,_,_,_,_,_,_,_,_)::vs,cg_id) 
+	  => (func'',cg_id'')
 
-  rule	generate_parameter_assignments(vs) => func
+  rule	generate_parameter_assignments(vs,cg_id) => (func,cg_id')
 	--------------------------
-	generate_parameter_assignments(_::vs) => func
+	generate_parameter_assignments(_::vs,cg_id) => (func,cg_id')
 
 end
 
@@ -1303,11 +1313,13 @@ end
 (** relation: generate_initial_assignments_from_start
  **
  **)
-relation generate_initial_assignments_from_start: DAELow.Var list 
-	  => CFunction =
+relation generate_initial_assignments_from_start: (DAELow.Var list,
+						   int (* cg var_id*))
+	  => (CFunction,
+	      int (*cg var_id *))=
 
-  axiom	generate_initial_assignments_from_start ([]) 
-	  => Codegen.c_empty_function
+  axiom	generate_initial_assignments_from_start ([],cg_id) 
+	  => (Codegen.c_empty_function,cg_id)
 	
 
 	  (*also add an assignment for variables that have non-constant
@@ -1316,19 +1328,21 @@ relation generate_initial_assignments_from_start: DAELow.Var list
 	   file, since the initial calc. will override those entries!
 	   *)
   rule	Exp.is_const(startv) => false &
-	generate_initial_assignments_from_start(vars) => func &
+	generate_initial_assignments_from_start(vars,cg_id) => (func,cg_id') &
 	Exp.print_component_ref_str(cr) => cr_str &
-	print_exp_cpp_str(startv) => startv_str &
+	Codegen.generate_expression(startv,cg_id') 
+	  => (exp_func,startv_str,cg_id'') &
 	Util.string_append_list([cr_str," = ",startv_str,";"]) => stmt &
-	Codegen.c_add_statements(func,[stmt]) => func'
+	Codegen.c_add_statements(func,[stmt]) => func' &
+	Codegen.c_merge_fns([exp_func,func']) => func''
 	--------------------------
-	generate_initial_assignments_from_start(DAELow.VAR(cr,kind,_,_,_,_,_,SOME(startv),_,_,_,attr,_,_)::vars)
-	  => func'
+	generate_initial_assignments_from_start(DAELow.VAR(cr,kind,_,_,_,_,_,SOME(startv),_,_,_,attr,_,_)::vars,cg_id)
+	  => (func'',cg_id'')
 
-  rule	generate_initial_assignments_from_start(vars) => func
+  rule	generate_initial_assignments_from_start(vars,cg_id) => (func,cg_id')
 	--------------------------
-	generate_initial_assignments_from_start(_::vars)
-	  => func
+	generate_initial_assignments_from_start(_::vars,cg_id)
+	  => (func,cg_id')
 end
 
 (** relation generate_ode_code
@@ -1586,7 +1600,8 @@ relation generate_ode_blocks:(DAELow.DAELow,
 	      int (* cg var_id*),
 	      CFunction list) (* extra functions code*) =
 
-  axiom	generate_ode_blocks(_,_,_,[],cg_id) => (Codegen.c_empty_function,cg_id,[])
+  axiom	generate_ode_blocks(_,_,_,[],cg_id) 
+	  => (Codegen.c_empty_function,cg_id,[])
 
   rule	(* For system of equations *)
 	generate_ode_system(dae,ass1,ass2,block,cg_id) => (s1,cg_id',f1)  &
@@ -3442,7 +3457,7 @@ relation generate_zero_crossing: (string,
 	  
   rule	
 	generate_zero_crossing2(zc,0,dae,dlow,ass1,ass2,blocks,helpVarInfo,0,0) 
-	  => (func_zc,_,func_handle_zc,_) &
+	  => (func_zc,cg_id1,func_handle_zc,cg_id2) &
 
 	generate_ode_blocks(dlow,ass1,ass2,blocks,0) => (cfunc,_,extra_funcs) &
 	Codegen.c_print_functions_str(extra_funcs) => extra_funcs_str &

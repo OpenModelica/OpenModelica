@@ -44,6 +44,48 @@ int real_array_ok(real_array_t* a)
 }
 
 
+/* help function to e.g. array_alloc_real_array
+ * Checks that all arrays have the same number of dimensions and same 
+ ** dimension sizes.
+ */
+void check_dim_sizes(real_array_t **elts,int n) 
+{
+  int i,curdim,dimsize;
+  int ndims = elts[0]->ndims;
+  for (i=1; i< n ; i++) {
+    assert(elts[i]->ndims == ndims && "Not same number of dimensions");
+  }
+  for (curdim = 0; curdim < ndims; curdim++) {
+    dimsize = elts[0]->dim_size[curdim];
+    for(i=1; i<n ; i++) {
+      assert(dimsize == elts[i]->dim_size[curdim]&&"Dimensions size not same");
+    }
+  }
+}
+
+/* help function to e.g. cat_alloc_real_array.
+ * Checks that all arrays have the same number of dimensions and same 
+ ** dimension sizes  for all sizes except for dimension k.
+ */
+void check_dim_sizes_except(int k, real_array_t **elts,int n) 
+{
+  int i,curdim,dimsize;
+  int k_loc = k-1;
+  int ndims = elts[0]->ndims;
+  for (i=1; i< n ; i++) {
+    assert(elts[i]->ndims == ndims && "Not same number of dimensions");
+  }
+  for (curdim = 0; curdim < ndims; curdim++) {
+    if (curdim != k_loc) {
+      dimsize = elts[0]->dim_size[curdim];
+      for(i=1; i<n ; i++) {
+	assert(dimsize == elts[i]->dim_size[curdim]&&"Dimensions size not same");
+      }
+    }
+  }
+
+}
+
 int real_array_shape_eq(real_array_t* a, real_array_t* b)
 {
     int i;
@@ -648,7 +690,41 @@ void array_real_array(real_array_t* dest,int n,real_array_t* first,...)
 
 void array_alloc_real_array(real_array_t* dest,int n,real_array_t* first,...)
 {
+  int i,j,c,m; 
+  va_list ap;
+  
+  real_array_t **elts=malloc(sizeof(real_array_t*)*n);
+  assert(elts);
+  /* collect all array ptrs to simplify traversal.*/
+  va_start(ap,first);
+  elts[0] = first;
+  for (i=1; i < n ; i++) {
+    elts[i] = va_arg(ap,real_array_t*);
+  }
+  va_end(ap);
 
+  check_dim_sizes(elts,n);
+
+  if (first->ndims == 1) {
+    alloc_real_array(dest,2,n,first->dim_size[0]);
+  } else if (first->ndims == 2) {
+    alloc_real_array(dest,3,n,first->dim_size[0],first->dim_size[1]);
+  } else if (first->ndims == 3) {
+    alloc_real_array(dest,4,n,first->dim_size[0],first->dim_size[1],
+		     first->dim_size[2]);
+  } else if (first->ndims == 4) {
+    alloc_real_array(dest,5,n,first->dim_size[0],first->dim_size[1],
+		     first->dim_size[2],first->dim_size[3]);
+  } else {
+    assert(0 && "Dimension size > 4 not impl. yet");
+  }
+  
+  for (i=0,c=0; i < n ; i++) {
+    m = real_array_nr_of_elements(elts[i]);
+    for(j=0; j<m; j++) {
+      dest->data[c++]=elts[i]->data[j];
+    }
+  }
 }
 
 void array_scalar_real_array(real_array_t* dest,int n,m_real first,...)
@@ -712,30 +788,6 @@ m_real* real_array_element_addr(real_array_t* source,int ndims,...)
 void cat_real_array(int k, real_array_t* dest,  int n, real_array_t* first,...)
 {
     assert(0 && "Not implemented yet");
-}
-
-
-/* help function to e.g. cat_alloc_real_array.
- * Checks that all arrays have the same number of dimensions and same 
- ** dimension sizes  for all sizes except for dimension k.
- */
-void check_dim_sizes_except(int k, real_array_t **elts,int n) 
-{
-  int i,curdim,dimsize;
-  int k_loc = k-1;
-  int ndims = elts[0]->ndims;
-  for (i=1; i< n ; i++) {
-    assert(elts[i]->ndims == ndims && "Not same number of dimensions");
-  }
-  for (curdim = 0; curdim < ndims; curdim++) {
-    if (curdim != k_loc) {
-      dimsize = elts[0]->dim_size[curdim];
-      for(i=1; i<n ; i++) {
-	assert(dimsize == elts[i]->dim_size[curdim]&&"Dimensions size not same");
-      }
-    }
-  }
-
 }
 
 
