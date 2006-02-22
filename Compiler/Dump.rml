@@ -96,6 +96,7 @@ module Dump:
   relation select_string: (bool,string,string) => string
   relation get_string_list : ('a list, 'a => string, string) => string
   relation get_option_str: ('a option, 'a => string) => string 
+  relation get_option_str_default: ('a option, 'a => string,string) => string 
   relation get_option_with_concat_str: ('a option, 'a => string,string) => string 
   relation unparse_annotation_option: (int, Absyn.Annotation option) => string 
   relation unparse_within: (int, Absyn.Within) => string 
@@ -3202,6 +3203,19 @@ relation get_option_str: ('a option, 'a => string) => string =
 	get_option_str (SOME(a),r) => str
 
   axiom	get_option_str(NONE,_) => ""
+end
+
+(** relation get_option_str_default
+ **
+ ** Retrieve the string from a string option.
+ ** If NONE return default string.
+ **)
+relation get_option_str_default: ('a option, 'a => string,string) => string =
+  rule  r (a) => str
+	------------
+	get_option_str_default (SOME(a),r,_) => str
+
+  axiom	get_option_str_default(NONE,_,def) => def
 end
 
 (** relation: get_option_with_concat_str

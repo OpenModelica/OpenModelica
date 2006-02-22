@@ -2171,6 +2171,9 @@ relation dim_string : Exp.Subscript => string =
 	-------------------
 	dim_string e => ":"
 
+  rule	print "dim_string failed\n"
+	------------------
+	dim_string(_) => fail
 end
 
 (** relation: is_var_q
@@ -2923,7 +2926,7 @@ relation generate_rhs_cref : (Exp.ComponentRef, Exp.Type, int)
 	generate_array_rhs_cref(cref_str,crt,subs,tnr) => (cfn,var,tnr')
 	--------------------------------------
 	generate_rhs_cref (cref, crt, tnr) => (cfn,var,tnr')
-
+	
 end
 
 (** relation: subs_to_scalar
@@ -2987,6 +2990,11 @@ relation generate_scalar_rhs_cref : (string, Exp.Type,Exp.Subscript list, int)
 	--------------------
 	generate_scalar_rhs_cref (cref_str,crt,subs,tnr) 
 	  => (cfn1,cref1,tnr1)
+
+  rule	Debug.fprint("failtrace","-generate_scalar_rhs_cref failed\n")
+	--------------------
+	generate_scalar_rhs_cref (cref_str,crt,subs,tnr) 
+	  => fail
 end
 
 (** relation: generate_array_rhs_cref
@@ -3093,7 +3101,7 @@ relation generate_index_array : (Exp.Subscript, int)
 
   rule	generate_expression(e,tnr) => (cfn,var1,tnr1) &
 	Util.string_append_list(["make_index_array(1, ",var1,")"]) => idx &
-	let idxsize = "(0)"
+	let idxsize = "(1)"
 	------------------------------------
 	generate_index_array(Exp.INDEX(e), tnr) 
 	  => (cfn,idx,idxsize,tnr1)
@@ -3104,7 +3112,18 @@ relation generate_index_array : (Exp.Subscript, int)
 	generate_index_array(Exp.WHOLEDIM, tnr) 
 	  => (c_empty_function,idx,idxsize,tnr)
 
-	  
+  rule	generate_expression(e,tnr) => (cfn,var1,tnr1) &
+	generate_temp_decl("modelica_integer",tnr1) => (decl,tvar,tnr2) &
+	Util.string_append_list([tvar,"=size_of_dimension_integer_array(",var1,
+				 ",1);"]) => stmt &
+	c_add_statements(cfn,[stmt]) => cfn' &
+	c_add_variables(cfn',[decl]) => cfn'' &
+	Util.string_append_list(["integer_array_make_index_array(&",var1,")"]) => idx &
+	let idxsize = tvar 
+	-------------------
+	generate_index_array(Exp.SLICE(e), tnr) 
+	  => (cfn'',idx,idxsize,tnr2)
+
   rule	Debug.fprint("failtrace", "# generate_index_array failed\n")
 	-----------------------------
 	generate_index_array(_,_) => fail

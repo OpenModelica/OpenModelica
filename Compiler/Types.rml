@@ -1038,8 +1038,9 @@ relation unparse_type: Type => string =
 	-----------------
 	unparse_type((T_ENUMERATION(l,_),_)) =>  str
 
-  rule  flatten_array_type t => (ty, dimlst) &
-	Util.list_map(dimlst,int_string) => dimlststr &
+  rule  flatten_array_type_opt t => (ty, dimlst) &
+	Util.list_map_2(dimlst,Dump.get_option_str_default,int_string,":") 
+	  => dimlststr &
 	list_reverse(dimlststr) => dimlststr' &
 	unparse_type ty => tys &
 	Util.string_delimit_list(dimlststr',", ") => dims &
@@ -1653,6 +1654,27 @@ relation flatten_array_type : Type => (Type, int list) =
   	flatten_array_type((T_ARRAY(DIM(SOME(dim)), ty),_)) => (ty', dimlist')
 
   axiom	flatten_array_type ty => (ty, [])
+
+end
+
+
+(** relation: flatten_array_type_opt
+ **
+ ** Returns the element type of a Type and the list of dimensions of the type.
+ ** If dimension is ':' NONE is returned.
+ **)
+relation flatten_array_type_opt : Type => (Type, int option list) =
+
+  rule	flatten_array_type_opt ty => (ty', dimlist')
+	--------------------------------------
+  	flatten_array_type_opt((T_ARRAY(DIM(NONE),ty), _)) => (ty', NONE::dimlist')
+
+  rule	flatten_array_type_opt ty => (ty', dimlist) &
+	list_append (dimlist,[SOME(dim)]) => dimlist'
+	--------------------------------------
+  	flatten_array_type_opt((T_ARRAY(DIM(SOME(dim)), ty),_)) => (ty', dimlist')
+
+  axiom	flatten_array_type_opt ty => (ty, [])
 
 end
 

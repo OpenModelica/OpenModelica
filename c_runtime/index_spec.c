@@ -65,6 +65,18 @@ void alloc_index_spec(index_spec_t* s)
 	}
     }
 }
+/*
+ * create_index_spec
+ *
+ * Creates a subscript, i.e. index_spec_t from the arguments.
+ * nridx - number of indixes.
+ * Each index consist of a size and a pointer to indixes.
+ *
+ * For instance to create the indexes in a[1,{2,3}] you
+ * write:
+ * int tmp1[1]={1}; int tmp2[2]={2,3};
+ * create_index_spec(&dest,2,1,&tmp1,2,&tmp2);
+ */
 
 void create_index_spec(index_spec_t* dest, int nridx, ...)
 { 
@@ -85,6 +97,11 @@ void create_index_spec(index_spec_t* dest, int nridx, ...)
   
 }
 
+/* make_index_array
+ *
+ * Creates an integer array of indices to be used by e.g.
+ * create_index_spec above.
+ */
 int* make_index_array(int nridx,...)
 {
   int i;

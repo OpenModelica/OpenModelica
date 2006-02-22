@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdarg.h>
+
 int integer_array_ok(integer_array_t* a)
 {
     int i;
@@ -1320,6 +1321,18 @@ void skew_integer_array(integer_array_t* x,integer_array_t* dest)
   dest->data[6] = 0;
 }
 
+/* integer_array_make_index_array
+ *
+ * Creates an integer array if indices to be used by e.g.
+ ** create_index_spec defined in index_spec.c
+ */
+
+int* integer_array_make_index_array(integer_array_t *arr)
+{ 
+  return arr->data;
+}
+
+
 void clone_reverse_integer_array_spec(integer_array_t* source, integer_array_t* dest)
 {
   int i;
@@ -1360,3 +1373,4 @@ void convert_alloc_integer_array_from_f77(integer_array_t* a, integer_array_t* d
   }
   transpose_integer_array (a,dest);
  }
+

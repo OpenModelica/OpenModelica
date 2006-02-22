@@ -2165,7 +2165,6 @@ axiom	inst_element(env, mod, pre, csets, ci_state, (SCode.IMPORT(imp),_), instdi
 	
 	let new_var = Types.VAR(n,Types.ATTR(flow,acc,param,dir),
 					 prot,ty,binding) &
-     
 	Env.update_frame_v(env2',new_var,
 			   true,(*type info present*)
 			   compenv) => env' 
@@ -2407,6 +2406,45 @@ relation inst_var2 : (Env,
 	 ** equations.
 	 **)
         (** Rules for normal instantiation, will resolv dimensional sizes, etc. *)
+	  (* Array vars with binding in functions,e.g. input Real x[:]=Y *)
+  rule	(* Do not flatten because it is a function *)
+	inst_dim_exp_lst (dims,impl) => dims' &
+	(* get the equation modification *)
+	Mod.mod_equation(mod) => SOME(Types.TYPED(e,_,p)) &  
+	(* Instantiate type of the component *)
+	inst_class(env,mod,pre,csets,cl,inst_dims,impl,INNER_CALL) 
+	  => (_,env',csets',ty,st) &
+	(* Make it an array type since we are not flattening *)
+	make_array_type(dims,ty) => ty' &
+	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
+	Types.elab_type(ty') => ty'' &
+	Types.match_prop(e,Types.PROP(ty',Types.C_VAR),p) => (e',_) &
+	(* Put the mod equation in the dae so that code will be generated *)
+	make_dae_equation(Exp.CREF(cr,ty''),e',NON_INITIAL) => daeeq &
+
+	dae_declare(cr,ci_state,ty,attr,NONE,dims',NONE,NONE,comment) => dae1 &
+	list_append (dae1, [daeeq]) => dae
+	-------------------------------
+	inst_var2(env,ci_state as
+		  ClassInf.FUNCTION(_),mod,pre,csets,n,cl,
+                  attr,dims as _::_,idxs,inst_dims,impl,comment)
+          => (env',dae,csets',ty')
+
+	  (* Array vars without binding in functions , e.g. input Real x[:] *)
+  rule	(* Do not flatten because it is a function *)
+	inst_class(env,mod,pre,csets,cl,inst_dims,impl,INNER_CALL) 
+	  => (_,env',csets,ty,st) &
+	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
+	(* Do all dimensions... *)
+	inst_dim_exp_lst(dims,impl) => dims' &
+	dae_declare(cr,ci_state,ty,attr,NONE,dims',NONE,NONE,comment) => dae &
+	make_array_type(dims,ty) => arrty 
+	-------------------------------
+	inst_var2(env,ci_state as ClassInf.FUNCTION(_),mod,pre,csets,
+                  n,cl,attr,dims as _::_,idxs,inst_dims,impl,comment)
+          => (env',dae,csets,arrty)
+
+
 	(* Constants *)
   rule	list_reverse idxs => idxs' &
 	Prefix.prefix_add(n,idxs',pre) => pre' &
@@ -2495,44 +2533,6 @@ relation inst_var2 : (Env,
 	inst_var2(env,ci_state,mod,pre,csets,n,cl,SCode.ATTR(_,flow,acc,vt,dir),
 		  [],idxs,inst_dims,impl,comment)
           => (env',dae,csets',ty)
-
-	  (* Array vars with binding in functions,e.g. input Real x[:]=Y *)
-  rule	(* Do not flatten because it is a function *)
-	inst_dim_exp_lst (dims,impl) => dims' &
-	(* get the equation modification *)
-	Mod.mod_equation(mod) => SOME(Types.TYPED(e,_,p)) &  
-	(* Instantiate type of the component *)
-	inst_class(env,mod,pre,csets,cl,inst_dims,impl,INNER_CALL) 
-	  => (_,env',csets',ty,st) &
-	(* Make it an array type since we are not flattening *)
-	make_array_type(dims,ty) => ty' &
-	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
-	Types.elab_type(ty') => ty'' &
-	Types.match_prop(e,Types.PROP(ty',Types.C_VAR),p) => (e',_) &
-	(* Put the mod equation in the dae so that code will be generated *)
-	make_dae_equation(Exp.CREF(cr,ty''),e',NON_INITIAL) => daeeq &
-
-	dae_declare(cr,ci_state,ty,attr,NONE,dims',NONE,NONE,comment) => dae1 &
-	list_append (dae1, [daeeq]) => dae
-	-------------------------------
-	inst_var2(env,ci_state as
-		  ClassInf.FUNCTION(_),mod,pre,csets,n,cl,
-                  attr,dims as _::_,idxs,inst_dims,impl,comment)
-          => (env',dae,csets',ty')
-
-	  (* Array vars without binding in functions , e.g. input Real x[:] *)
-  rule	(* Do not flatten because it is a function *)
-	inst_class(env,mod,pre,csets,cl,inst_dims,impl,INNER_CALL) 
-	  => (_,env',csets,ty,st) &
-	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,[])) => cr &
-	(* Do all dimensions... *)
-	inst_dim_exp_lst(dims,impl) => dims' &
-	dae_declare(cr,ci_state,ty,attr,NONE,dims',NONE,NONE,comment) => dae &
-	make_array_type(dims,ty) => arrty 
-	-------------------------------
-	inst_var2(env,ci_state as ClassInf.FUNCTION(_),mod,pre,csets,
-                  n,cl,attr,dims as _::_,idxs,inst_dims,impl,comment)
-          => (env',dae,csets,arrty)
 	  
 
 	  (* FIXME: make a similar rule: if implicit=true and we fail to flatten, we should leave it unflattened *)
@@ -2796,7 +2796,6 @@ relation update_component_in_env: (Mod,Absyn.ComponentRef, Env,
 	 ** one.
 	 **)
 	check_structural_param_binding(param,binding,env2) => (env2',binding') &
-
 	Env.update_frame_v(env2',Types.VAR(n,Types.ATTR(flow,acc,param,dir),
 					 prot,ty,binding'),
 			   false,(*type info present*)
@@ -3324,6 +3323,8 @@ rule	Exp.print_subscript_str x => s1 &
 	Util.string_append_list([s1,",",s2]) => res
 	------------------------------------------------
 	print_dim_str SOME(DIMEXP(x,_))::xs => res
+
+  axiom	print_dim_str(_) => "" 
 
 end
 

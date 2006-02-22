@@ -493,17 +493,18 @@ relation elab_matrix_to_matrix_exp_2: Exp.Exp list
 	  => expl'::es'
 end
 
-relation elab_matrix_to_matrix_exp_3:(Exp.Exp list) => (Exp.Exp*bool) list =
+relation elab_matrix_to_matrix_exp_3:(Exp.Exp list) 
+	  => (Exp.Exp*bool) list =
 
   axiom	elab_matrix_to_matrix_exp_3([]) => []
 
   rule	Exp.typeof(e) => tp &
-	Exp.type_builtin(tp) => narray &
-	bool_not(narray) => array &
+	Exp.type_builtin(tp) => scalar &
+	Util.bool_string(scalar) => s &
 	elab_matrix_to_matrix_exp_3(es) => es'
 	--------------------
 	elab_matrix_to_matrix_exp_3(e::es) 
-	  => ((e,array)::es')
+	  => ((e,scalar)::es')
 end
 
 (** relation: matrix_constr_max_dim
@@ -1226,13 +1227,13 @@ relation elab_matrix_comma : (Env.Env,
 	elab_matrix_comma (_,_,_,_,_,_) => fail
 end
 
-(** relation: elab_matrix_cat_one_exp
+(** relation: elab_matrix_cat_two_exp
  ** author: PA
  **
  ** This relation takes an array expression of dimension >=3 and
- ** concatenates each array element along the first dimension.
+ ** concatenates each array element along the second dimension.
  ** For instance
- ** elab_matrix_cat_one( {[1,2;5,6], [3,4;7,8]}) => [1,2,3,4;5,6,7,8]
+ ** elab_matrix_cat_two( {[1,2;5,6], [3,4;7,8]}) => [1,2,3,4;5,6,7,8]
  **)
 relation elab_matrix_cat_two_exp: (Exp.Exp)
 	  => (Exp.Exp) =
@@ -4924,7 +4925,8 @@ relation cref_vectorize: (Exp.Exp,Types.Type) => Exp.Exp =
 	cref_vectorize(Exp.CREF(cr,exptp),(Types.T_ARRAY(Types.DIM(SOME(ds)),t as (Types.T_ARRAY(Types.DIM(SOME(ds2)),_),_)),_)) =>  e
 
 	(* vectorsizes > 4 is not vectorized *)
-  rule	int_lt(ds,4) => true &
+  rule	Types.is_array(t) => false &
+	int_lt(ds,4) => true &
 	create_cref_array(cr,1,ds,exptp,t) => e 
 	-----------------------------------
 	cref_vectorize(Exp.CREF(cr,exptp),(Types.T_ARRAY(Types.DIM(SOME(ds)),t),_)) =>  e
