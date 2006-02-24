@@ -1445,7 +1445,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable)
 		 Absyn.FUNCTIONARGS([Absyn.STRING(str)],_)))],_
 	     ),
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true",st)
-
+	     
   rule	 get_class_information(cr,p) => resstr
 	 -----------------------
 	 evaluate_graphical_api(
@@ -1652,16 +1652,24 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable)
 	     ),
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (res_str,SYMBOLTABLE(p',s,[],[],[]))
 
-
-
-   (* adrpo added 2005-11-03 *)
-   rule	  get_cref_info(cr,p) => resstr
-	 -----------------------
-	 evaluate_graphical_api(
-	     ISTMTS([IEXP(Absyn.CALL(
-		 Absyn.CREF_IDENT("getCrefInfo",_),Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))],_
-	     ),
-	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+   		 (* adrpo added 2005-11-03 *)
+   rule	 get_cref_info(cr,p) => resstr
+		 -----------------------
+		 evaluate_graphical_api(
+		     ISTMTS([IEXP(Absyn.CALL(
+			 Absyn.CREF_IDENT("getCrefInfo",_),Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))],_
+		     ),
+		     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
+	     
+         (* added by adrpo, 2006-02-24 *)
+  rule	 get_class_attributes(cr,p) => resstr
+		 -----------------------
+		 evaluate_graphical_api(
+		     ISTMTS([IEXP(Absyn.CALL(
+			 Absyn.CREF_IDENT("getClassAttributes",_),
+			 Absyn.FUNCTIONARGS([Absyn.CREF(cr)],_)))],_
+		     ),
+		     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
  end
 
@@ -6242,18 +6250,77 @@ end
 (**relation: get_class_information
  ** author: PA
  **
- ** Returns the class restriction, class comment and source file of a class.
+ ** Returns all the possible class information.
+ ** changed by adrpo 2006-02-24 to return more info and in a different format:
+ ** {"restriction","name","comment","filename.mo",{bool,bool,bool},{"readonly|writable",int,int,int,int}}
+ ** if you like more named attributes, use getClassAttributes API which uses get_class_attributes relation
  **)
 relation get_class_information:(Absyn.ComponentRef,
 				Absyn.Program) => string =
 
   rule	Absyn.cref_to_path(cr) => path &
-	get_pathed_class_in_program(path,p) => Absyn.CLASS(_,_,_,_,restr,cdef,Absyn.INFO(file,_,_,_,_,_)) &
-	Dump.unparse_restriction_str(restr) => res &
-	get_class_comment(cdef) => cmt &
-	Util.string_append_list(["{\"",res,"\", ",cmt,", \"",file,"\"}"]) => res'
-	----------------------------
-	get_class_information(cr,p) => res'
+		get_pathed_class_in_program(path,p) => 
+			Absyn.CLASS(name,partial,final,encapsulated,restr,cdef,Absyn.INFO(file,isReadOnly,sl,sc,el,ec)) &
+		(* handling boolean attributes of the class *)
+		Util.bool_string(partial) => strPartial &
+		Util.bool_string(final) => strFinal &
+		Util.bool_string(encapsulated) => strEncapsulated &
+		(* handling restriction *)		
+		Dump.unparse_restriction_str(restr) => res & 
+		(* handling class comment from the definition *)	
+		get_class_comment(cdef) => cmt &
+		(* handling positional information *)
+	    select_string(isReadOnly,"readonly","writable") => str_readonly &	
+        int_string(sl) => str_sline &
+        int_string(sc) => str_scol &
+        int_string(el) => str_eline &
+        int_string(ec) => str_ecol &
+        (* composing the final returned string *)
+		Util.string_append_list(["{\"",res,"\",\"",name,"\",",cmt,",\"", file, 
+			"\",{", strPartial,",",strFinal,",",strEncapsulated,"},{\"", 
+			str_readonly,"\",",str_sline,",",str_scol,",",str_eline,",",str_ecol,"}}"]) => res'		
+		----------------------------
+		get_class_information(cr,p) => res'
+end
+
+
+(**relation: get_class_attributes
+ ** author: Adrian Pop, 2006-02-24
+ **
+ ** Returns all the possible class information in this format:
+ ** { name="Ident", partial=(true|false), final=(true|false),
+ **   encapsulated=(true|false), restriction="PACKAGE|CLASS|..",
+ **   comment="comment", file="filename.mo",  readonly="(readonly|writable)",  
+ **   startLine=number,  startColumn=number,
+ **   endLine=number, endColumn=number }
+ **)
+relation get_class_attributes:(Absyn.ComponentRef, Absyn.Program) => string =
+
+  rule	Absyn.cref_to_path(cr) => path &
+		get_pathed_class_in_program(path,p) => 
+			Absyn.CLASS(name,partial,final,encapsulated,restr,cdef,Absyn.INFO(file,isReadOnly,sl,sc,el,ec)) &
+		(* handling boolean attributes of the class *)
+		Util.bool_string(partial) => strPartial &
+		Util.bool_string(final) => strFinal &
+		Util.bool_string(encapsulated) => strEncapsulated &
+		(* handling restriction *)		
+		Absyn.restr_string restr => res & 
+		(* handling class comment from the definition *)	
+		get_class_comment(cdef) => cmt &
+		(* handling positional information *)
+	    select_string(isReadOnly,"readonly","writable") => str_readonly &	
+        int_string(sl) => str_sline &
+        int_string(sc) => str_scol &
+        int_string(el) => str_eline &
+        int_string(ec) => str_ecol &
+        (* composing the final returned string *)
+		Util.string_append_list(["{name=\"",name, "\", partial=",strPartial,", final=",strFinal,
+			", encapsulated=", strEncapsulated, ", restriction=", res, ", comment=", cmt, 
+			", file=\"", file, "\", readonly=\"", str_readonly, 
+			"\", startLine=", str_sline, ", startColumn=", str_scol,
+			", endLine=", str_eline, ", endColumn=", str_ecol, "}"]) => res'
+		----------------------------
+		get_class_attributes(cr,p) => res'
 end
 
 (**relation: get_class_comment
