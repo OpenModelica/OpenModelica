@@ -113,6 +113,7 @@ int functionODE(double *x, double *xd, double *y, double *p,
 // function for calculate initial values from initial equations
 // and fixed start attibutes
 int initial_function(double*x, double *xd, double*y, double*p,
+		     double *t,
 		    int nx, int ny, int np); 
 
 // Adds a result to the simulation result data.

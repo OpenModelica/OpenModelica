@@ -263,6 +263,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	  
   relation abs_incidence_matrix: IncidenceMatrix => IncidenceMatrix
 		  
+  relation vars_incidence_matrix: IncidenceMatrix => int list 
+
   relation dump_incidence_matrix: IncidenceMatrix => ()
 
   relation dump_incidence_matrix_t: IncidenceMatrixT => ()
@@ -310,6 +312,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   relation make_all_states_algebraic: DAELow => DAELow 
 
   relation get_var: (Exp.ComponentRef, Variables) => (Var list, int list)
+  relation vars_size: Variables => int 
   relation get_var_using_name: (string, Variables) => (Var,int) 
   relation add_var: (Var, Variables) => Variables
   relation get_var_at:(Variables,int) => (Var)
@@ -3919,6 +3922,20 @@ relation abs_incidence_matrix: IncidenceMatrix => IncidenceMatrix =
 	abs_incidence_matrix(m) => res
 end
 
+(** relation: vars_incidence_matrix
+ ** author: PA
+ ** Return all variable indices in the incidence matrix, i.e.
+ ** all elements of the matrix.
+ **)
+
+relation vars_incidence_matrix: IncidenceMatrix => int list  =
+
+  rule	array_list(m) => mlst &
+	Util.list_flatten(mlst) => res
+	--------------------------
+	vars_incidence_matrix(m) => res
+end
+
 
 (* relation: transpose_row
  ** author: PA
@@ -4125,6 +4142,9 @@ relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT,
 	int_string(neqns) => ne &
 	int_gt(nvars,0) => true &
 	int_gt(neqns,0) => true &
+
+	(* Worst case, all eqns are differentiated once.
+	 * Create nvars*2 assignment elements *)       
 	int_add(nvars,nvars) => memsize &
 	assignments_create(nvars,memsize,0) => assign1 &
 	assignments_create(nvars,memsize,0) => assign2 &
@@ -4134,7 +4154,9 @@ relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT,
 	assignments_vector(ass1) => vec1 &
 	assignments_vector(ass2) => vec2 
 	--------------------------
-	matching_algorithm(dae,m,mt,match_opts) => (vec1,vec2,dae,m,mt)
+	matching_algorithm(dae as DAELOW(vars,_,eqns,_,_,_,_,_)
+			   ,m,mt,match_opts) 
+	  => (vec1,vec2,dae,m,mt)
 	
 (*  rule	(*Print.print_error_buf "#Error, matching failed\n" &*)
 	list_vector([]) => v1 & 
@@ -5225,10 +5247,11 @@ end
 (** relation: equation_size
  ** author: PA
  **
- ** Returns the number of equations in an EquationArray.
- ** Note: This is not corresponding to the number of equations in a system,
- ** since both algorithms and array equations can count as more than one.
- ** For counting the number of equations in the system, use equation_size.
+ ** Returns the number of equations in an EquationArray, which
+ ** corresponds to the number of equations in a system.
+ ** NOTE: Array equations and algorithms are represented several times
+ ** in the array so the number of elements of the array corresponds to 
+ ** the equation system size.
  **)
 relation equation_size:(EquationArray) => int =
 
@@ -5236,14 +5259,15 @@ relation equation_size:(EquationArray) => int =
 end
 
 
-(** relation: variable_size
+
+(** relation: vars_size
  ** author: PA
  **
  ** Returns the number of variables
  **)
-relation variable_size:(Variables) => int =
+relation vars_size:(Variables) => int =
 
-  axiom	variable_size(VARIABLES(_,_,_,_,n)) => n 
+  axiom	vars_size(VARIABLES(_,_,_,_,n)) => n 
 end
 
 

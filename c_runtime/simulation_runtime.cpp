@@ -199,7 +199,7 @@ int euler_main(int argc,char** argv) {
   // Calculate initial values from (fixed) start attributes and intial equation
   // sections
   init=1;
-  initial_function(x,xd,y,p,nx,ny,np);
+  initial_function(x,xd,y,p,&t,nx,ny,np);
   init=0;
 
   int npts_per_result=int((stop-start)/(step*(numpoints-2)));
@@ -296,7 +296,7 @@ int dassl_main(int argc, char **argv)
   // Calculate initial values from (fixed) start attributes and intial equation
   // sections
   init=1;
-  initial_function(x,xd,y,p,nx,ny,np);
+  initial_function(x,xd,y,p,&t,nx,ny,np);
   t=start;
   tout = newTime(t, step); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
 

@@ -188,12 +188,13 @@ relation generate_simulation_code: (DAE.DAElist,
 	  => (c_eventchecking, helpVarInfo) & 
 	  list_length helpVarInfo => n_h &
         generate_global_data(class,dlow,n_o,n_i,n_h) => cglobal &  
-        generate_compute_output(cname,dae,dlow,ass1,ass2,blt_no_states) 
+     	  generate_compute_output(cname,dae,dlow,ass1,ass2,blt_no_states) 
 	  => coutput &
-          generate_compute_residual_state(cname,dae,dlow,ass1,ass2,blt_states) 
+        	 generate_compute_residual_state(cname,dae,dlow,ass1,ass2,blt_states) 
 	  => cstate &
-	  generate_ode_code(dlow,blt_states,ass1,ass2,m,mt,class) => c_ode &
+		 generate_ode_code(dlow,blt_states,ass1,ass2,m,mt,class) => c_ode &
 	generate_initial_value_code(dlow) => s_code &
+
 	generate_when_clauses(cname,dae,dlow,ass1,ass2,comps) => cwhen &
 	generate_zero_crossing(cname,dae,dlow,ass1,ass2,comps,helpVarInfo) => czerocross & 
 	Util.string_append_list(["//Simulation code for ",cname,
@@ -1175,34 +1176,53 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
 	  => (param_assigns,cg_id') &
 	list_append(initial_eqns1,initial_eqns2) => initial_eqns &
 	DAELow.list_equation(initial_eqns) => initial_eqns' &
+
 	list_array([]) => arr &
 	list_array([]) => arr2 &
 	let empty_eqn = DAELow.EQUATION_ARRAY(0,0,arr) &
 
 	let initial_dae = DAELow.DAELOW(vars,knvars,initial_eqns',empty_eqn,empty_eqn,arr2,al,ev) &
+       
+
 	(* States are no longer special, they are just a variable that 
 	 * needs an initial value. *)
-	DAELow.make_all_states_algebraic(initial_dae) => initial_dae' &
+	DAELow.make_all_states_algebraic(initial_dae) 
+	  => (initial_dae' as DAELow.DAELOW(v,kv,e,re,ie,ae,al,ev)) &
+
  	DAELow.incidence_matrix(initial_dae') => m &
+
+	(* Collect only variables part of the initial equations*)
+	DAELow.vars_incidence_matrix(m) => v_indx_lst &
+	Util.list_map_1r(v_indx_lst,DAELow.get_var_at,v) => varlst &
+	DAELow.list_var(varlst) => vars' &
+	DAELow.var_list(v) => allvars &
+	DAELow.var_list(kv) => knvars1 &
+	(* Make all other variables known*)
+	Util.list_setdifference_p(allvars,varlst,DAELow.var_equal) => knvars2 &
+	list_append(knvars1,knvars2) => knvars &
+	DAELow.list_var(knvars) => knvars' &
+	
+	let new_initial_dae = DAELow.DAELOW(vars',knvars',e,re,ie,ae,al,ev) &
+ 	DAELow.incidence_matrix(new_initial_dae) => m &
  	DAELow.transpose_matrix(m) => mT &
 	(* once dae has been translated, state or not should not matter *)
 	DAELow.abs_incidence_matrix(m) => m' &
 	DAELow.abs_incidence_matrix(mT) => mT' &
-	(*DAELow.dump initial_dae' &
-	DAELow.dump_incidence_matrix m' &*)
+
 	(* index reduction for intitial equations makes no sense.. *)
-	DAELow.matching_algorithm(initial_dae',m',mT',(DAELow.NO_INDEX_REDUCTION,DAELow.ALLOW_UNDERCONSTRAINED)) 
+	DAELow.matching_algorithm(new_initial_dae,m',mT',(DAELow.NO_INDEX_REDUCTION,DAELow.ALLOW_UNDERCONSTRAINED)) 
 	  => (ass1,ass2,initial_dae',m,mT) &
 	DAELow.strong_components(m',mT',ass1,ass2) => blocks &
-	generate_ode_blocks(initial_dae',ass1,ass2,blocks,cg_id')
+	generate_ode_blocks(new_initial_dae,ass1,ass2,blocks,cg_id')
 	  => (block_code,_,extra_funcs) &
 	Codegen.c_make_function("int","initial_function",[],["double *x",
-							       "double *xd", 
-							       "double *y",
-							       "double *p",
-							       "int nx",
-							       "int ny",
-							       "int np"])
+							     "double *xd", 
+							     "double *y",
+							     "double *p",
+							     "double *t",
+							     "int nx",
+							     "int ny",
+							     "int np"])
 	  => init_func' &
 
 	Codegen.c_add_cleanups(init_func', ["return 0;"]) => init_func &
@@ -1227,6 +1247,7 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
 							       "double *xd", 
 							       "double *y",
 							       "double *p",
+							       "double *t",
 							       "int nx",
 							       "int ny",
 							       "int np"])
@@ -1242,6 +1263,7 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
 							     "double *xd", 
 							     "double *y",
 							     "double *p",
+							     "double *t",
 							     "int nx",
 							     "int ny",
 							     "int np"])
