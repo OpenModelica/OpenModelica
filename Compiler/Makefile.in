@@ -45,9 +45,9 @@ SUBDIRS	= runtime absyn_builder modpar
 #all : debug 
 all : release
 
-debug:	$(PROGD) $(SRCRDB)
+debug:	$(PROGD)$(EXEEXT) $(SRCRDB)
 
-release: $(PROG)
+release: $(PROG)$(EXEEXT)
 
 $(SRCRDB): %.rdb: omc_debug/%.rdb 
 	cp $< $@
@@ -57,11 +57,11 @@ $(SRCRDB): %.rdb: omc_debug/%.rdb
 #		cp omc_debug/$$x .; \
 #	done
 
-$(PROG): omc_release
-	cp omc_release/$(PROG)$(EXEEXT) .
+$(PROG)$(EXEEXT): omc_release
+	cp omc_release/$(PROG)$(EXEEXT) $(top_builddir)/.
 
-$(PROGD): omc_debug
-	cp omc_debug/$(PROGD)$(EXEEXT) .
+$(PROGD)$(EXEEXT): omc_debug
+	cp omc_debug/$(PROGD)$(EXEEXT) $(top_builddir)/.
 
 omc_release:
 	(cd omc_release && $(MAKE))
@@ -76,9 +76,6 @@ omc_debug:
 
 vctarget: 
 	@(cd omc_release ; $(MAKE) vctarget)
-
-
-
 
 
 test:
@@ -99,7 +96,7 @@ clean:
 	done
 	(cd omc_release; $(MAKE) clean)
 	-$(RM) -f $(SRCH)
-	-$(RM) -f $(PROG)$(EXEEXT)
+	-$(RM) -f $(top_builddir)/$(PROG)$(EXEEXT)
 
 dclean:
 	@for d in $(SUBDIRS); do \
@@ -108,7 +105,7 @@ dclean:
 	(cd omc_debug; $(MAKE) clean)
 	-$(RM) -f $(SRCRDB)
 	-$(RM) -f $(SRCH)
-	-$(RM) -f $(PROGD)$(EXEEXT)
+	-$(RM) -f $(top_builddir)/$(PROGD)$(EXEEXT)
 
 
 reallyclean:
@@ -117,7 +114,7 @@ reallyclean:
 	done
 	(cd omc_release; $(MAKE) reallyclean)
 	-$(RM) -f $(SRCH)
-	-$(RM) -f $(PROG)$(EXEEXT)
+	-$(RM) -f $(top_builddir)/$(PROG)$(EXEEXT)
 
 dreallyclean: 
 	@for d in $(SUBDIRS); do \
@@ -126,7 +123,7 @@ dreallyclean:
 	(cd omc_debug; $(MAKE) reallyclean)
 	-$(RM) -f $(SRCRDB)
 	-$(RM) -f $(SRCH)
-	-$(RM) -f $(PROGD)$(EXEEXT)
+	-$(RM) -f $(top_builddir)/$(PROGD)$(EXEEXT)
 
 report:
 	@(cd report ; $(MAKE))

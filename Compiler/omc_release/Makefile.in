@@ -23,6 +23,8 @@ CFLAGS	= $(USE_CORBA)
 RMLHOME	= @rmlhome@
 RMLINC  = -I$(RMLHOME)/include/plain
 
+EXEEXT  = @EXEEXT@
+
 srcdir = ..
 top_builddir = ../..
 include $(srcdir)/Makefile.common
@@ -88,8 +90,8 @@ vctarget: $(SRCC) absyn_subdir
 absyn_subdir:
 	@(cd $(srcdir)/absyn_builder ; $(MAKE) vctarget)
 
-$(PROG): $(SRCO) $(AST) $(RTOBJ)
-	g++ -o $(PROG) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS)
+$(PROG)$(EXEEXT): $(SRCO) $(AST) $(RTOBJ)
+	g++ -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS)
 
 subdirs: $(SRCHSRCDIR)
 	@for d in $(SUBDIRS); do \
@@ -101,10 +103,10 @@ clean:
 		(cd $$d ; $(MAKE) clean) \
 	done
 	(cd $(srcdir) && $(RM) $(SRCH))
-	$(RM) $(SRCO) $(SRCC) $(SRCH) $(PROG) *~
+	$(RM) $(SRCO) $(SRCC) $(SRCH) $(PROG)$(EXEEXT) *~
 
 reallyclean: clean
-	$(RM) $(ALLRML) $(ALLRML:.rml=.sig)  $(SRCRDB) $(PROG)
+	$(RM) $(ALLRML) $(ALLRML:.rml=.sig)  $(SRCRDB) $(PROG)$(EXEEXT)
 
 # don't remove these files after intermediate build steps
 .PRECIOUS: Makefile $(ALLRML)
