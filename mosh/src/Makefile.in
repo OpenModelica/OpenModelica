@@ -1,5 +1,6 @@
 
 top_builddir=../..
+builddir=$(top_builddir)/build/bin
 
 CC=gcc
 CXX=g++
@@ -44,7 +45,7 @@ LIBS = -lantlr -lmodelica_parser -lreadline -ltermcap  $(CORBALIB) -lm -lpthread
 
 OBJS += mosh.o options.o
 
-PROG = mosh
+PROG = OMShell
 
 all: release
 
@@ -53,14 +54,14 @@ release: $(PROG)$(EXEEXT)
 
 $(PROG)$(EXEEXT) : $(OBJS) 
 	$(CXX) -o $(PROG)$(EXEEXT) $(OBJS) $(CORBAOBJS) $(LINKFLAGS) $(LIBS)
-	cp $(PROG)$(EXEEXT) $(top_builddir)/.
+	cp $(PROG)$(EXEEXT) $(builddir)/.
 
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c $<
 
 
 clean:
-	-rm -f *.o *~ core *.core $(PROG)$(EXEEXT) $(top_builddir)/$(PROG)$(EXEEXT)
+	-rm -f *.o *~ core *.core $(PROG)$(EXEEXT) $(builddir)/$(PROG)$(EXEEXT)
 
 
 mosh.o : mosh.cpp 
