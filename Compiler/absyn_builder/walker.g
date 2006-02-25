@@ -82,7 +82,8 @@ options {
     ASTLabelType = "RefMyAST";
     buildAST = true;
     importVocab = modelica_parser;
-    k = 2;
+    /* Adrian Pop fixed for antlr-2.7.6 (k can be only 1 for tree parsers): k = 2; to: */
+    k = 1;
     defaultErrorHandler = false;
 }
 

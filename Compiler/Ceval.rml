@@ -1422,7 +1422,8 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
          
          win_citation() => cit &
 	 System.path_delimiter => pd &
-	 Util.string_append_list([cit,".", pd, executable,cit, " -m ",
+	 string_append(executable,".exe") => executableSuffixedExe &
+	 Util.string_append_list([cit,".", pd, executableSuffixedExe, cit, " -m ",
                                   method_str," >> output.log 2>&1"
                                   ]) => sim_call &
 	 System.system_call(sim_call) => 0 &
