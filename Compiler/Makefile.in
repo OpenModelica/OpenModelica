@@ -8,6 +8,7 @@
 
 srcdir= .
 top_builddir= ..
+builddir=$(top_builddir)/build/bin
 
 ANTLR_HOME = @antlrhome@
 EXEEXT = @EXEEXT@
@@ -58,10 +59,10 @@ $(SRCRDB): %.rdb: omc_debug/%.rdb
 #	done
 
 $(PROG)$(EXEEXT): omc_release
-	cp omc_release/$(PROG)$(EXEEXT) $(top_builddir)/.
+	cp omc_release/$(PROG)$(EXEEXT) $(builddir)/.
 
 $(PROGD)$(EXEEXT): omc_debug
-	cp omc_debug/$(PROGD)$(EXEEXT) $(top_builddir)/.
+	cp omc_debug/$(PROGD)$(EXEEXT) $(builddir)/.
 
 omc_release:
 	(cd omc_release && $(MAKE))
@@ -96,7 +97,7 @@ clean:
 	done
 	(cd omc_release; $(MAKE) clean)
 	-$(RM) -f $(SRCH)
-	-$(RM) -f $(top_builddir)/$(PROG)$(EXEEXT)
+	-$(RM) -f $(builddir)/$(PROG)$(EXEEXT)
 
 dclean:
 	@for d in $(SUBDIRS); do \
@@ -105,7 +106,7 @@ dclean:
 	(cd omc_debug; $(MAKE) clean)
 	-$(RM) -f $(SRCRDB)
 	-$(RM) -f $(SRCH)
-	-$(RM) -f $(top_builddir)/$(PROGD)$(EXEEXT)
+	-$(RM) -f $(builddir)/$(PROGD)$(EXEEXT)
 
 
 reallyclean:
@@ -114,7 +115,7 @@ reallyclean:
 	done
 	(cd omc_release; $(MAKE) reallyclean)
 	-$(RM) -f $(SRCH)
-	-$(RM) -f $(top_builddir)/$(PROG)$(EXEEXT)
+	-$(RM) -f $(builddir)/$(PROG)$(EXEEXT)
 
 dreallyclean: 
 	@for d in $(SUBDIRS); do \
@@ -123,7 +124,7 @@ dreallyclean:
 	(cd omc_debug; $(MAKE) reallyclean)
 	-$(RM) -f $(SRCRDB)
 	-$(RM) -f $(SRCH)
-	-$(RM) -f $(top_builddir)/$(PROGD)$(EXEEXT)
+	-$(RM) -f $(builddir)/$(PROGD)$(EXEEXT)
 
 report:
 	@(cd report ; $(MAKE))
