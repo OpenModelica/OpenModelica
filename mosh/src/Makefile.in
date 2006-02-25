@@ -1,3 +1,6 @@
+
+top_builddir=../..
+
 CC=gcc
 CXX=g++
 
@@ -6,19 +9,21 @@ ANTLR_HOME = @antlrhome@
 ANTLR_INCP = -I@antlrinc@
 ANTLR_LIBP = -L@antlrlib@
 
-PARSE_INCP = -I../../modelica_parser/src
-PARSE_LIBP = -L../../modelica_parser/src
+PARSE_INCP = -I$(top_builddir)/modelica_parser/src
+PARSE_LIBP = -L$(top_builddir)/modelica_parser/src
 
 READLINE_INCP = -I@readlineinc@
 READLINE_LIBP = -L@readlinelib@
+
+EXEEXT=@EXEEXT@
 
 USE_CORBA = @USE_CORBA@
 CORBAHOME = @CORBAHOME@
 
 ifdef USE_CORBA
-  CORBAIMPL = -I../../Compiler/runtime
-  CORBAOBJS = ../../Compiler/runtime/omc_communication.o \
-	../../Compiler/runtime/omc_communication_impl.o
+  CORBAIMPL = -I$(top_builddir)/Compiler/runtime
+  CORBAOBJS = $(top_builddir)/Compiler/runtime/omc_communication.o \
+	$(top_builddir)/Compiler/runtime/omc_communication_impl.o
   CORBALIB = -L$(CORBAHOME)/lib -lmico -lssl -lcrypto
   CORBAINC = -I$(CORBAHOME)/include
 else
@@ -39,23 +44,31 @@ LIBS = -lantlr -lmodelica_parser -lreadline -ltermcap  $(CORBALIB) -lm -lpthread
 
 OBJS += mosh.o options.o
 
+PROG = mosh
 
-all : mosh
+all: release
 
 
-mosh : $(OBJS) 
-	$(CXX) -o $@ $(OBJS) $(CORBAOBJS) $(LINKFLAGS) $(LIBS)
+release: $(PROG)$(EXEEXT) 
+
+$(PROG)$(EXEEXT) : $(OBJS) 
+	$(CXX) -o $(PROG)$(EXEEXT) $(OBJS) $(CORBAOBJS) $(LINKFLAGS) $(LIBS)
+	cp $(PROG)$(EXEEXT) $(top_builddir)/.
 
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c $<
 
 
 clean:
-	-rm -f *.o *~ core *.core mosh 
+	-rm -f *.o *~ core *.core $(PROG)$(EXEEXT) $(top_builddir)/$(PROG)$(EXEEXT)
 
 
 mosh.o : mosh.cpp 
 options.o: options.cpp
 
 
+.PRECIOUS: Makefile
+
+Makefile: Makefile.in
+	$(top_builddir)/config.status Makefile
 

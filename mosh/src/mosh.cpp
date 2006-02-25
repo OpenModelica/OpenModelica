@@ -103,16 +103,15 @@ int main(int argc, char* argv[])
     cout << "Using corba communication" << endl;
   }  
   if(!scriptname) {
-    cout << "Open Source Modelica 1.3" << endl
-	 << "Copyright 2002, PELAB, Linkoping University" << endl << endl
+    cout << "Open Source Modelica 1.3.2" << endl
+	 << "Copyright 1997-2006, PELAB, Linkoping University" << endl << endl
 	 << "To get help on using Mosh and OpenModelica, type \"help()\" and press enter" << endl;
   }
   if (corba_comm) {
     if (!noserv) {
       // Starting background server using corba
-      char systemstr[255];
-      sprintf(systemstr,"omc +d=interactiveCorba > %s/error.log 2>&1 &",
-	      omhome);
+      char systemstr[1024];
+      sprintf(systemstr, "%s/omc +d=interactiveCorba > %s/error.log 2>&1 &", omhome, omhome);
       int res = system(systemstr);
       if (!scriptname)
 	cout << "Started server using:"<< systemstr << "\n res = " << res << endl;
@@ -121,9 +120,9 @@ int main(int argc, char* argv[])
   } else {
     if (!noserv) {
      // Starting background server using corba
-      char systemstr[255];
-      sprintf(systemstr,"omc +d=interactive > %s/error.log 2>&1 &",
-	      omhome);
+      char systemstr[1024];
+      sprintf(systemstr,"%s/omc +d=interactive > %s/error.log 2>&1 &",
+	      omhome, omhome);
       int res = system(systemstr);
       if (!scriptname)
 	cout << "Started server using:"<< systemstr << "\n res = " << res << endl;
