@@ -1,6 +1,10 @@
 
 top_builddir=../..
-builddir=$(top_builddir)/build/bin
+builddir_bin=$(top_builddir)/build/bin
+builddir_lib=$(top_builddir)/build/lib
+builddir_inc=$(top_builddir)/build/include
+builddir_doc=$(top_builddir)/build/doc
+
 
 CC=gcc
 CXX=g++
@@ -54,14 +58,14 @@ release: $(PROG)$(EXEEXT)
 
 $(PROG)$(EXEEXT) : $(OBJS) 
 	$(CXX) -o $(PROG)$(EXEEXT) $(OBJS) $(CORBAOBJS) $(LINKFLAGS) $(LIBS)
-	cp $(PROG)$(EXEEXT) $(builddir)/.
+	cp $(PROG)$(EXEEXT) $(builddir_bin)/
 
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c $<
 
 
 clean:
-	-rm -f *.o *~ core *.core $(PROG)$(EXEEXT) $(builddir)/$(PROG)$(EXEEXT)
+	-rm -f *.o *~ core *.core $(PROG)$(EXEEXT) $(builddir_bin)/$(PROG)$(EXEEXT)
 
 
 mosh.o : mosh.cpp 
