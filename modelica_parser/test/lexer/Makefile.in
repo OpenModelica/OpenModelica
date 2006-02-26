@@ -1,3 +1,10 @@
+top_builddir= ../..
+builddir_bin=$(top_builddir)/build/bin
+builddir_lib=$(top_builddir)/build/lib
+builddir_inc=$(top_builddir)/build/include
+builddir_doc=$(top_builddir)/build/doc
+
+
 CC=gcc
 CXX=g++
 
@@ -6,8 +13,8 @@ ANTLR_HOME = @antlrhome@
 ANTLR_INCP = -I@antlrinc@
 ANTLR_LIBP = -L@antlrlib@
 
-PARSE_INCP = -I../../src
-PARSE_LIBP = -L../../src
+PARSE_INCP = -I$(top_builddir)/src
+PARSE_LIBP = -L$(top_builddir)/src
 
 INCP = $(ANTLR_INCP) $(PARSE_INCP)
 LIBP = $(ANTLR_LIBP) $(PARSE_LIBP)
@@ -18,7 +25,7 @@ LINKFLAGS = $(LIBP)
 
 LIBS = -lantlr -lmodelica_parser
 
-PARSER_OBJS = ../../src/modelica_parser.o ../../src/modelica_lexer.o ../../src/token_names.o ../../src/parse_tree_dumper.o
+PARSER_OBJS = $(top_builddir)/src/modelica_parser.o $(top_builddir)/src/modelica_lexer.o $(top_builddir)/src/token_names.o $(top_builddir)/src/parse_tree_dumper.o
 OBJS = test_lexer.o $(PARSER_OBJS)
 
 ANTLR = java -cp $(ANTLR_HOME) antlr.Tool
@@ -26,20 +33,20 @@ ANTLR = java -cp $(ANTLR_HOME) antlr.Tool
 all : parser test_lexer modelicaTokenTypes.txt
 
 parser:
-	cd ../../src; $(MAKE) -f Makefile
+	cd $(top_builddir)/src; $(MAKE) -f Makefile
 
 test_lexer : $(OBJS) 
 	$(CXX) -o $@ $(OBJS) $(LINKFLAGS) $(LIBS) 
 
 
 
-modelicaTokenTypes.txt : ../../src/modelicaTokenTypes.txt
-	cp ../../src/modelicaTokenTypes.txt .
+modelicaTokenTypes.txt : $(top_builddir)/src/modelicaTokenTypes.txt
+	cp $(top_builddir)/src/modelicaTokenTypes.txt .
 
 clean:
 	-rm -f *.o modelicaTokenTypes.txt *~ test_lexer
 
 
-test_lexer.o : test_lexer.cpp ../../src/modelica_lexer.hpp ../../src/token_names.hpp
+test_lexer.o : test_lexer.cpp $(top_builddir)/src/modelica_lexer.hpp $(top_builddir)/src/token_names.hpp
 
 

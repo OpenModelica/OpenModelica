@@ -1,11 +1,17 @@
 # -*- Mode: Makefile -*-
 
-OMC=../omc
+top_builddir=../..
+builddir_bin=$(top_builddir)/build/bin
+builddir_lib=$(top_builddir)/build/lib
+builddir_inc=$(top_builddir)/build/include
+builddir_doc=$(top_builddir)/build/doc
+
+OMC=$(builddir_bin)/omc
 CC=gcc
 
-CFLAGS= -Wall -ansi -pedantic -I../../c_runtime
+CFLAGS= -Wall -ansi -pedantic -I$(builddir_inc)
 
-LDFLAGS= -L../../c_runtime 
+LDFLAGS= -L$(builddir_lib)
 
 CDIR = csrc
 ODIR = obj

@@ -136,7 +136,9 @@ with "Settings.rml"
 (** relation: generate_makefile
  **
  ** This relation generates a makefile for the simulation code.
- ** It uses OPENMODELICAHOME as a reference to find c_runtime with libraries.
+ ** It uses:
+ **  - OPENMODELICAHOME/include as a reference to includes and
+ **  - OPENMODELICAHOME/lib as a reference to library files 
  **)
 relation generate_makefile: (string, (*filename*)
 			     string, (* classname *)
@@ -151,8 +153,8 @@ relation generate_makefile: (string, (*filename*)
 				 cname,": ",cpp_file, "\n",
 				 "\t $(CXX) -o ",cname,".exe ", (* ".exe" is needed for a class that is in a package. *) 
                                  cpp_file, 
-		                 " -L",omhome,"/c_runtime/",
-				 " -I",omhome,"/c_runtime/ ",
+		                 " -L",omhome,"/lib/",
+				 " -I",omhome,"/include/ ",
 				 " -lsim -lg2c -lc_runtime ",libs', "\n"
 				 ]) => str &
 	System.write_file(filename,str) 

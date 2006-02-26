@@ -27,7 +27,12 @@ EXEEXT  = @EXEEXT@
 
 srcdir = ..
 top_builddir = ../..
+builddir_bin=$(top_builddir)/build/bin
+builddir_lib=$(top_builddir)/build/lib
+builddir_inc=$(top_builddir)/build/include
+builddir_doc=$(top_builddir)/build/doc
 include $(srcdir)/Makefile.common
+
 
 ifeq ($(OSTYP),$(OS_MSYS))
 	LIBSOCKET=
@@ -90,7 +95,7 @@ vctarget: $(SRCC) absyn_subdir
 absyn_subdir:
 	@(cd $(srcdir)/absyn_builder ; $(MAKE) vctarget)
 
-$(PROG)$(EXEEXT): $(SRCO) $(AST) $(RTOBJ)
+$(PROG): $(SRCO) $(AST) $(RTOBJ)
 	g++ -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS)
 
 subdirs: $(SRCHSRCDIR)

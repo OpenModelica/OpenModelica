@@ -1,11 +1,35 @@
 .PHONY : all omc omcd debug release mosh clean
 
 top_builddir = .
+builddir_bin=$(top_builddir)/build/bin
+builddir_lib=$(top_builddir)/build/lib
+builddir_inc=$(top_builddir)/build/include
+builddir_doc=$(top_builddir)/build/doc
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+libdir = @libdir@
+includedir = @includedir@
+datadir = @datadir@
+
+INSTALL_BINDIR     = ${bindir}
+INSTALL_LIBDIR     = ${libdir}
+INSTALL_INCLUDEDIR = ${includedir}
+INSTALL_DATADIR    = ${datadir}
+INSTALL_DOCDIR     = ${INSTALL_DATADIR}/omc/doc
 
 #all : debug
-all : release 
+all : mkbuilddirs release 
 
-debug: omcd
+mkbuilddirs: 
+	mkdir -p $(builddir_bin)
+	mkdir -p $(builddir_lib)
+	mkdir -p $(builddir_inc)
+	mkdir -p $(builddir_doc)
+	mkdir -p $(builddir_doc)/testmodels
+
+debug: omcd 
 
 release: omc
 
@@ -13,11 +37,17 @@ omcd:
 	(cd c_runtime; $(MAKE) -f Makefile)
 	(cd Compiler/rml2sig; $(MAKE) -f Makefile)
 	(cd Compiler; $(MAKE) -f Makefile debug)
+	(cp -p doc/*.pdf $(builddir_doc)/)
+	(cp -p Examples/*.* $(builddir_doc)/testmodels/)
+
 
 omc:	
 	(cd c_runtime; $(MAKE) -f Makefile)
 	(cd Compiler/rml2sig; $(MAKE) -f Makefile)
 	(cd Compiler; $(MAKE) -f Makefile release)
+	(cp doc/*.pdf $(builddir_doc)/)
+	(cp -p Examples/*.* $(builddir_doc)/testmodels/)
+
 mosh:
 	(cd mosh/src; $(MAKE) -f Makefile)
 
@@ -31,6 +61,33 @@ clean:
 	(cd mosh/src; $(MAKE) -f Makefile clean)
 	(cd modelica_parser/src; $(MAKE) -f Makefile clean)
 	(cd flat_modelica_parser/src; $(MAKE) -f Makefile clean)
+	(rm -f $(builddir_doc)/*.pdf)
+	(rm -f $(builddir_doc)/testmodels/*.*)
+
+${INSTALL_BINDIR}:
+	mkdir -p ${INSTALL_BINDIR}
+
+${INSTALL_LIBDIR}:
+	mkdir -p ${INSTALL_LIBDIR}
+
+${INSTALL_INCLUDEDIR}:
+	mkdir -p ${INSTALL_INCLUDEDIR}
+
+${INSTALL_DOCDIR}:
+	mkdir -p ${INSTALL_DOCDIR}
+	mkdir -p ${INSTALL_DOCDIR}/testmodels
+
+install: ${INSTALL_BINDIR} ${INSTALL_LIBDIR} ${INSTALL_INCLUDEDIR} ${INSTALL_DOCDIR}
+	echo Installing OpenModelica...
+	echo Installing build/bin/* to ${INSTALL_BINDIR} ...
+	cp -p build/bin/* ${INSTALL_BINDIR}
+	echo Installing build/lib/* to ${INSTALL_LIBDIR} ...
+	cp -p build/lib/* ${INSTALL_LIBDIR}
+	echo Installing build/include/* to ${INSTALL_INCLUDEDIR} ...
+	cp -p build/include/* ${INSTALL_INCLUDEDIR}
+	echo Installing build/doc/* to ${INSTALL_DOCDIR} ...
+	cp -Rp build/doc/* ${INSTALL_DOCDIR}
+
 
 .PRECIOUS: Makefile
 

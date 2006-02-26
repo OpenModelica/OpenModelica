@@ -8,7 +8,10 @@
 
 srcdir= .
 top_builddir= ..
-builddir=$(top_builddir)/build/bin
+builddir_bin=$(top_builddir)/build/bin
+builddir_lib=$(top_builddir)/build/lib
+builddir_inc=$(top_builddir)/build/include
+builddir_doc=$(top_builddir)/build/doc
 
 ANTLR_HOME = @antlrhome@
 EXEEXT = @EXEEXT@
@@ -36,6 +39,9 @@ include Makefile.common
 PROG = omc
 PROGD = omcd
 
+SCRIPT_FILES = Compile Compile.bat doPlot doPlot.bat
+DOC_FILES = omc_helptext.txt omc_interactive_api.txt
+
 #SUBDIRS= ast runtime
 SUBDIRS	= runtime absyn_builder modpar
 
@@ -46,31 +52,61 @@ SUBDIRS	= runtime absyn_builder modpar
 #all : debug 
 all : release
 
-debug:	$(PROGD)$(EXEEXT) $(SRCRDB)
+debug:	$(PROGD) dinstall
 
-release: $(PROG)$(EXEEXT)
+release: $(PROG) install
 
 $(SRCRDB): %.rdb: omc_debug/%.rdb 
 	cp $< $@
 
 #	@for x in $(SRCRDB); do \
-#		echo $$x;
+#		echo $$x;\
 #		cp omc_debug/$$x .; \
 #	done
 
-$(PROG)$(EXEEXT): omc_release
-	cp omc_release/$(PROG)$(EXEEXT) $(builddir)/.
+$(PROG): omc_release
+	cp omc_release/$(PROG)$(EXEEXT) $(builddir_bin)/
 
-$(PROGD)$(EXEEXT): omc_debug
-	cp omc_debug/$(PROGD)$(EXEEXT) $(builddir)/.
+$(PROGD): omc_debug
+	cp omc_debug/$(PROGD)$(EXEEXT) $(builddir_bin)/
+
+install_doc:
+	for x in $(DOC_FILES); do \
+		echo Copying $$x into $(builddir_doc); \
+		cp doc/$$x $(builddir_doc)/; \
+	done
+	
+install_scripts:
+	for x in $(SCRIPT_FILES); do \
+		echo Copying $$x into $(builddir_bin); \
+		cp scripts/$$x $(builddir_bin)/; \
+	done
+
+
+install: install_doc install_scripts
+	echo Copying $(PROG)$(EXEEXT) into $(builddir_bin)
+	cp omc_release/$(PROG)$(EXEEXT) $(builddir_bin)/
+	echo Copying needed helpfiles....
+	for x in $(DOC_FILES); do \
+		echo Copying $$x into $(builddir_bin) where omc expects it...; \
+		cp doc/$$x $(builddir_bin)/; \
+	done
+
+dinstall: install_doc install_scripts $(SRCRDB)
+	cp *.rdb $(builddir_bin)/
+	echo Copying $(PROGD)$(EXEEXT) into $(builddir_bin)
+	cp omc_debug/$(PROGD)$(EXEEXT) $(builddir_bin)/
+	echo Copying needed helpfiles....
+	for x in $(DOC_FILES); do \
+		echo Copying $$x into $(builddir_bin) where omc expects it...; \
+		cp doc/$$x $(builddir_bin)/; \
+	done
 
 omc_release:
 	(cd omc_release && $(MAKE))
 
 omc_debug:
 	(cd omc_debug && $(MAKE))
-
-
 
 #vctarget:
 #	@(cd omc_debug ; $(MAKE) vctarget)
@@ -80,7 +116,7 @@ vctarget:
 
 
 test:
-	@(cd ../testsuite ; $(MAKE))
+	@(cd $(top_builddir)/testsuite ; $(MAKE))
 
 
 #ast/libast.a:
@@ -97,7 +133,9 @@ clean:
 	done
 	(cd omc_release; $(MAKE) clean)
 	-$(RM) -f $(SRCH)
-	-$(RM) -f $(builddir)/$(PROG)$(EXEEXT)
+	-$(RM) -f $(builddir_bin)/$(PROG)$(EXEEXT)
+	-cd $(builddir_bin) && rm -f $(SCRIPT_FILES) && rm -f $(DOC_FILES)
+	-cd $(builddir_doc) && rm -f $(DOC_FILES)	
 
 dclean:
 	@for d in $(SUBDIRS); do \
@@ -107,7 +145,8 @@ dclean:
 	-$(RM) -f $(SRCRDB)
 	-$(RM) -f $(SRCH)
 	-$(RM) -f $(builddir)/$(PROGD)$(EXEEXT)
-
+	-cd $(builddir_bin) && rm -f $(SCRIPTS_FILES) && rm -f $(DOC_FILES)
+	-cd $(builddir_doc) && rm -f $(DOC_FILES)
 
 reallyclean:
 	@for d in $(SUBDIRS); do \

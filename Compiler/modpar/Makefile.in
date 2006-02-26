@@ -1,5 +1,10 @@
 srcdir= .
 top_builddir= ../..
+builddir_bin=$(top_builddir)/build/bin
+builddir_lib=$(top_builddir)/build/lib
+builddir_inc=$(top_builddir)/build/include
+builddir_doc=$(top_builddir)/build/doc
+
 
 BOOST_HOME = @BOOSTHOME@
 RMLINCLUDE = @rmlinc@
@@ -22,10 +27,11 @@ else
 OBJECTS = TaskGraphExt_stub.o
 endif
 all: libmodpar.a
+
 libmodpar.a: $(OBJECTS)
 	ar -r $@ $(OBJECTS)
 
-INCFLAGS =-I$(RMLINCLUDE) -I$(BOOST_HOME) -I../../mosh/src
+INCFLAGS =-I$(RMLINCLUDE) -I$(BOOST_HOME) -I$(top_builddir)/mosh/src
 
 CFLAGS = $(INCFLAGS) -g -Wall -DUNIX=1
 CXXFLAGS = $(CFLAGS)

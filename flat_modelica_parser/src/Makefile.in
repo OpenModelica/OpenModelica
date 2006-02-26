@@ -1,8 +1,16 @@
+
+top_builddir= ../..
+builddir_bin=$(top_builddir)/build/bin
+builddir_lib=$(top_builddir)/build/lib
+builddir_inc=$(top_builddir)/build/include
+builddir_doc=$(top_builddir)/build/doc
+
+
 CC=gcc
 CXX=g++
 AR=ar -r
 
-MODELICA_PARSER=../../modelica_parser/src
+MODELICA_PARSER=$(top_builddir)/modelica_parser/src
 
 ANTLR_HOME=@antlrhome@
 
@@ -69,7 +77,7 @@ flat_modelica_lexer.o:flat_modelica_lexer.cpp flat_modelica_lexer.hpp
 flat_modelica_parser.o:flat_modelica_parser.cpp flat_modelica_parser.hpp
 #token_names.o:token_names.cpp
 parse_tree_dumper.o: 
-	cd $(MODELICA_PARSER) ; make ; cd ../../flat_modelica_parser/src
+	cd $(MODELICA_PARSER) ; make ; cd $(top_builddir)/flat_modelica_parser/src
 
 
 #parse_tree_dumper.cpp: parse_tree_dumper.cpp

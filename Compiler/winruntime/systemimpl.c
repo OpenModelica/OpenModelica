@@ -165,7 +165,7 @@ void System_5finit(void)
 	char* omhome;
 	char* mingwpath;
 	set_cc("gcc");
-	set_cflags("-I%OPENMODELICAHOME%\\c_runtime -L%OPENMODELICAHOME%\\c_runtime -lc_runtime %MODELICAUSERCFLAGS%");
+	set_cflags("-I%OPENMODELICAHOME%\\include -L%OPENMODELICAHOME%\\lib -lc_runtime %MODELICAUSERCFLAGS%");
 	path = getenv("PATH");
 	omhome = getenv("OPENMODELICAHOME");
 	if (omhome) {

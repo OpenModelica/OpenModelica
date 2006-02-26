@@ -251,7 +251,7 @@ exec 6>&1
 #
 # Initializations.
 #
-ac_default_prefix=/usr/local
+ac_default_prefix=./install
 ac_config_libobj_dir=.
 cross_compiling=no
 subdirs=

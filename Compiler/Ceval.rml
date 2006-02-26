@@ -1539,7 +1539,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 Settings.get_installation_directory_path => omhome &
 	 System.trim(omhome,"\"") => omhome' &
 	 System.path_delimiter => pd &
-	 Util.string_append_list([cit,omhome',pd,"Compiler",pd,"scripts",pd,"doPlot",cit]) => plotCmd &
+	 Util.string_append_list([cit,omhome',pd,"bin",pd,"doPlot",cit]) => plotCmd &
 	 Util.string_append_list([pwd,pd,"tmpPlot.plt"]) => tmpPlotFile &
 	 Values.write_ptolemyplot_dataset(tmpPlotFile,value,vars'',"Plot by OpenModelica") 
 	  => res &
@@ -1585,7 +1585,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 Settings.get_installation_directory_path => omhome &
 	 System.trim(omhome,"\"") => omhome' &
 	 System.path_delimiter => pd &
-	 Util.string_append_list([cit,omhome',pd,"Compiler",pd,"scripts",pd,"doPlot",cit]) => plotCmd &
+	 Util.string_append_list([cit,omhome',pd,"bin",pd,"doPlot",cit]) => plotCmd &
 	 Util.string_append_list([pwd,pd,"tmpPlot.plt"]) => tmpPlotFile &
 	 Values.write_ptolemyplot_dataset(tmpPlotFile,value,vars',"Plot by OpenModelica") 
 	  => res &
@@ -1807,7 +1807,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	System.trim(omhome,"\"") => omhome' &
 	win_citation() => cit &  
          System.path_delimiter => pd &
-         Util.string_append_list([omhome',pd,"Compiler",pd,"helptext.txt"]) => filename &
+         Util.string_append_list([omhome',pd,"bin",pd,"omc_helptext.txt"]) => filename &
 	 print filename & 
 	 System.read_file(filename) => str 
 	 --------------------------
@@ -2176,8 +2176,7 @@ relation compile_model: (string, string list) => () =
         string_append(fileprefix,".libs") => libsfilename &
         Util.string_delimit_list(libs," ") => libs_str &
         System.write_file(libsfilename,libs_str) &
-        Util.string_append_list([cit,omhome', pd, "Compiler", 
-                                 pd, "scripts", pd, "Compile",cit," ", 
+        Util.string_append_list([cit,omhome', pd, "bin", pd, "Compile",cit," ", 
                                  (*"\"",cd_path,"\""," ",*)
                                  fileprefix (*,  " "
 				 ,libs_str*)

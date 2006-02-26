@@ -1,3 +1,11 @@
+
+top_builddir= ../..
+builddir_bin=$(top_builddir)/build/bin
+builddir_lib=$(top_builddir)/build/lib
+builddir_inc=$(top_builddir)/build/include
+builddir_doc=$(top_builddir)/build/doc
+
+
 CC=gcc
 CXX=g++
 
@@ -9,11 +17,11 @@ ANTLR_LIBP = -L@antlrlib@
 RML_HOME =  @rmlhome@
 RML_INCP = -I@rmlinc@
 
-FLAT_PARSE_HOME = ../../flat_modelica_parser
+FLAT_PARSE_HOME = $(top_builddir)/flat_modelica_parser
 FLAT_PARSE_INCP = -I$(FLAT_PARSE_HOME)/src
 FLAT_PARSE_LIBP = -L$(FLAT_PARSE_HOME)/src
 
-PARSE_HOME = ../../modelica_parser
+PARSE_HOME = $(top_builddir)/modelica_parser
 PARSE_INCP = -I$(PARSE_HOME)/src
 PARSE_LIBP = -L$(PARSE_HOME)/src
 

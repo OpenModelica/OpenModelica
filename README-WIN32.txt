@@ -70,7 +70,7 @@ to compile it under a UNIX systems.
     C:\code\omc\trunk\Compiler\VC7\Release
 
 13. Set the following system environment variable (see item 8):
-     OPENMODELICAHOME=C:\code\omc\trunk\
+     OPENMODELICAHOME=C:\code\omc\trunk\build\
     This is the main path used by the compiler to located runtime files etc.
 
 14. Unzip the file C:\code\omc\trunk\Compiler\VC7\Setup\mingw.tar.gz to
@@ -167,14 +167,14 @@ under C:\code\omc\trunk\testsuite. To be able to run this testsuite,
 the cygwin environment must be installed. Do the following to 
 execute the test suite:
 1. Install cygwin from www.cygwin.org 
-2. Set up the cygwin path to the compiler directory in omc, i.e.
-   /code/omc/trunk/Compiler
+2. Set up the cygwin path to the build directory in omc, i.e.
+   /code/omc/trunk/build/bin
 3. The omc.exe we have build must be copied to the compiler directory.
    Copy the following two files:
       C:\code\omc\trunk\Compiler\VC7\Release\omc.exe
       C:\code\mico\win32-bin\mico2311.dll
    to 
-      C:\code\omc\trunk\Compiler
+      C:\code\omc\trunk\build\bin
 4. Go to folder /trunc/testsuite/ and run "make".
 
 
