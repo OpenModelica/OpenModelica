@@ -39,7 +39,7 @@ include Makefile.common
 PROG = omc
 PROGD = omcd
 
-SCRIPT_FILES = Compile Compile.bat doPlot doPlot.bat
+SCRIPT_FILES = Compile Compile.bat doPlot doPlot.bat doPlot.Linux
 DOC_FILES = omc_helptext.txt omc_interactive_api.txt
 
 #SUBDIRS= ast runtime
