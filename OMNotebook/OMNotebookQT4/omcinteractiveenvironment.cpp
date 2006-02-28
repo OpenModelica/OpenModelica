@@ -54,6 +54,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <stdexcept>
 
 //QT Headers
+#include <QtCore/QDir>
 #include <QtGui/QMessageBox>
 
 //IAEX Headers
@@ -208,7 +209,25 @@ namespace IAEX
 				throw std::exception( "Could not find environment variable OPENMODELICAHOME" );
 
 			// location of omc in openmodelica folder
-			drmodelica += "\\bin\\";
+			QDir dir;
+			if( dir.exists( QString(drmodelica.c_str()) + "\\bin\\omc.exe" ) )
+				drmodelica += "\\bin\\";
+			else if( dir.exists( QString(drmodelica.c_str()) + "\\omc.exe" ) )
+				drmodelica;
+			else if( dir.exists( "omc.exe" ))
+				drmodelica = "";
+			else
+			{
+				string msg = "Unable to find omc.exe, searched in:\n" +
+					drmodelica + "\\bin\\\n" +
+					drmodelica + "\n" +
+					dir.absolutePath().toStdString();
+
+				throw std::exception( msg.c_str() );
+			}
+			
+
+
 
 
 			STARTUPINFO startinfo;

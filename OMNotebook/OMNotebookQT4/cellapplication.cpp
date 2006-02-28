@@ -196,9 +196,12 @@ namespace IAEX
 
 		if( dir.exists( drmodelica ))
 			open(drmodelica);
+		else if( dir.exists( "DrModelica/DrModelica.nb" ))
+			open( "DrModelica/DrModelica.nb" );
 		else
 		{
-			cout << "Unable to find: " << drmodelica.toStdString() << endl;
+			cout << "Unable to find (1): " << drmodelica.toStdString() << endl;
+			cout << "Unable to find (2): DrModelica/DrModelica.nb" << endl;
 			open(QString::null);
 		}
 	}
