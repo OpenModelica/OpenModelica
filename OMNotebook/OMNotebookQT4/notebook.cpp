@@ -2358,8 +2358,11 @@ namespace IAEX
 	/*!
 	 * \author Anders Fernström
 	 * \date 2005-12-19
+	 * \date 2006-02-23 (update)
 	 *
 	 * \brief Open printdialog and print the document
+	 *
+	 * 2006-02-23 AF, display message box after printing is done.
 	 */
 	void NotebookWindow::print()
 	{
@@ -2375,6 +2378,19 @@ namespace IAEX
 
 			//currentEditor->document()->print(&printer);
 		}
+
+		// 2006-02-23 AF, display message box after printing document
+		QString title = QFileInfo( subject_->getFilename() ).fileName();
+		title.remove( "\n" );
+		if( title.isEmpty() )
+			title = "(untitled)";
+
+		QString msg = QString( "The document " ) + title +
+			QString( " have been printed on " ) +
+			printer.printerName() + QString( "." );
+		QMessageBox::information( 0, "Document printed", msg, "OK" );
+
+
 		delete dlg;
 	}
 

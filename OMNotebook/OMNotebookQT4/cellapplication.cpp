@@ -180,10 +180,27 @@ namespace IAEX
  
 		//open(QString("WelcomeToOMNotebook.onb"));
 		// 2006-02-02 AF, open DrModelica from the begining - release stuff
-		/*if( dir.exists( "DrModelica/DrModelica.nb" ))
-			open(QString("DrModelica/DrModelica.nb")); 
-		else*/
+		// 2006-02-27 AF, use environment variable to find DrModelica
+		QString drmodelica( getenv( "OPENMODELICAHOME" ) );
+		if( drmodelica.isEmpty() )
+		{
+			cout << "Could not find environment variable OPENMODELICAHOME" << endl;
 			open(QString::null);
+			return;
+		}
+		
+		if( drmodelica.endsWith("/") || drmodelica.endsWith( "\\") )
+			drmodelica += "DrModelica/DrModelica.nb";
+		else
+			drmodelica += "/DrModelica/DrModelica.nb";
+
+		if( dir.exists( drmodelica ))
+			open(drmodelica);
+		else
+		{
+			cout << "Unable to find: " << drmodelica.toStdString() << endl;
+			open(QString::null);
+		}
 	}
 
 	/*! 

@@ -188,8 +188,12 @@ namespace IAEX
 	/*! 
 	 * \author Anders Fernström
 	 * \date 2006-02-09
+	 * \date 2006-02-28 (update)
 	 *
 	 *\brief Ststic method for starting OMC
+	 *
+	 * 2006-02-28 AF, added code so the environment variable OPENMODELICAHOME
+	 * is used to locate omc.exe.
 	 */
 	bool OmcInteractiveEnvironment::startOMC()
 	{
@@ -198,6 +202,15 @@ namespace IAEX
 		#ifdef WIN32
 		try
 		{
+			// 2006-02-28 AF, use environment varable to find omc.exe
+			string drmodelica( getenv( "OPENMODELICAHOME" ) );
+			if( drmodelica.empty() )
+				throw std::exception( "Could not find environment variable OPENMODELICAHOME" );
+
+			// location of omc in openmodelica folder
+			drmodelica += "\\bin\\";
+
+
 			STARTUPINFO startinfo;
 			PROCESS_INFORMATION procinfo;
 			memset(&startinfo, 0, sizeof(startinfo));
@@ -206,7 +219,8 @@ namespace IAEX
 			startinfo.wShowWindow = SW_MINIMIZE;
 			startinfo.dwFlags = STARTF_USESHOWWINDOW;
 
-			string parameter = "\"omc.exe\" +d=interactiveCorba";
+			//string parameter = "\"omc.exe\" +d=interactiveCorba";
+			string parameter = "\"" + drmodelica + "omc.exe\" +d=interactiveCorba";
 			char *pParameter = new char[parameter.size() + 1];
 			const char *cpParameter = parameter.c_str();
 			strcpy(pParameter, cpParameter);

@@ -64,7 +64,8 @@ namespace IAEX
       :QWidget(parent), 
        selected_(false), 
        closed_(false),
-       selectedColor_(QColor(0,0,255))
+       //selectedColor_(QColor(0,0,255))
+	   selectedColor_(QColor(160,160,160))
    {
       setFixedWidth(10);
       setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding));
@@ -135,17 +136,15 @@ namespace IAEX
 
 		if(selected_)
 		{
-			QPalette palette;
-		    palette.setColor(this->backgroundRole(), selectedColor());
-			this->setPalette(palette);
+			painter.setPen( QPen( QBrush( selectedColor() ), 10 ));
+			painter.drawRect( this->rect() );
 
-			painter.setPen(QPen(Qt::yellow, 1, Qt::SolidLine));
+			painter.setPen(QPen( QBrush( QColor(160,0,0) ), 1, Qt::SolidLine));
 		}
 		else
 		{
-			QPalette palette;
-		    palette.setColor(this->backgroundRole(), backgroundColor());
-			this->setPalette(palette);
+			painter.setPen( QPen( QBrush( backgroundColor() ), 10 ));
+			painter.drawRect( this->rect() );
 
 			painter.setPen(QPen(Qt::black,1, Qt::SolidLine));
 		}
@@ -190,17 +189,15 @@ namespace IAEX
 		//Selected or not selected
 		if(selected())
 		{
-			QPalette palette;
-		    palette.setColor(backgroundRole(), selectedColor());
-			setPalette(palette);
+			painter.setPen( QPen( QBrush( selectedColor() ), 10 ));
+			painter.drawRect( this->rect() );
 
-			painter.setPen(QPen(Qt::yellow, 1, Qt::SolidLine));
+			painter.setPen(QPen( QBrush( QColor(160,0,0) ), 1, Qt::SolidLine));
 		}
 		else
 		{
-			QPalette palette;
-		    palette.setColor(backgroundRole(), backgroundColor());
-			setPalette(palette);
+			painter.setPen( QPen( QBrush( backgroundColor() ), 10 ));
+			painter.drawRect( this->rect() );
 			
 			painter.setPen(QPen(Qt::black,1, Qt::SolidLine));
 		}
