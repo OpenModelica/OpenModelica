@@ -1,16 +1,7 @@
 
-#ifdef __MINGW32__
-
-#include "../winruntime/corbaimpl_stub.cpp"
-
-#else
 
 extern "C" {
 #include "rml.h"
-#include "../values.h"
-#include <stdio.h>
-#include "../absyn_builder/yacclib.h"
-#include <pthread.h>
 }
 
 #include <cstdlib>
@@ -60,5 +51,3 @@ RML_BEGIN_LABEL(Corba__close)
 }
 RML_END_LABEL
 }
-
-#endif /* MINGW32 */

@@ -47,7 +47,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
-#include "../values.h"
+#include "../Values.h"
 #include "../absyn_builder/yacclib.h"
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>

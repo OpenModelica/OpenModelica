@@ -45,7 +45,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 extern "C" {
 #include "rml.h"
-#include "../values.h"
+#include "../Values.h"
 #include <stdio.h>
 #include "../absyn_builder/yacclib.h"
 //#include <pthread.h>
