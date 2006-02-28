@@ -132,6 +132,14 @@ namespace IAEX
 		#ifdef WIN32
 		try
 		{
+			// 2006-02-28 AF, use environment varable to find omc.exe
+			string OMCPath( getenv( "OPENMODELICAHOME" ) );
+			if( OMCPath.empty() )
+				throw std::exception( "Could not find environment variable OPENMODELICAHOME" );
+
+			// location of omc in openmodelica folder
+			OMCPath += "\\bin\\";
+
 			STARTUPINFO startinfo;
 			PROCESS_INFORMATION procinfo;
 			memset(&startinfo, 0, sizeof(startinfo));
@@ -140,7 +148,8 @@ namespace IAEX
 			startinfo.wShowWindow = SW_MINIMIZE;
 			startinfo.dwFlags = STARTF_USESHOWWINDOW;
 
-			string parameter = "\"omc.exe\" +d=interactiveCorba";
+			//string parameter = "\"omc.exe\" +d=interactiveCorba";
+			string parameter = "\"" + OMCPath + "omc.exe\" +d=interactiveCorba";
 			char *pParameter = new char[parameter.size() + 1];
 			const char *cpParameter = parameter.c_str();
 			strcpy(pParameter, cpParameter);
