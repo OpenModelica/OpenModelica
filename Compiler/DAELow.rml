@@ -242,9 +242,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 						      have a solution *)
 			    |  EXACT		      (*exact as many equations
 						       as variables *)
+  datatype EquationReduction = REMOVE_SIMPLE_EQN | (* removes simple equation after index reduction*)
+												     KEEP_SIMPLE_EQN (* does not remove simple equations after index reduction*)
 
   (* - Matching Options *)
-  type MatchingOptions = (IndexReduction*EquationConstraints)
+  type MatchingOptions = (IndexReduction*EquationConstraints*EquationReduction)
 
  
   (* Exported relations *)
@@ -324,6 +326,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   relation var_cref: (Var) => Exp.ComponentRef
   relation var_type: (Var) => DAE.Type
+  relation var_kind: (Var) => VarKind
   relation var_orig_name: (Var) => string 
   relation var_index: (Var) => int
   relation var_nominal: (Var) => real
@@ -416,8 +419,8 @@ relation lower: (DAE.DAElist, bool) => DAELow =
 	lower_multidimeqns(vars,aeqns) => multidimeqns &
 	list_append(algeqns,eqns) => eqns &
 	list_append(multidimeqns,eqns) => eqns &
-	remove_simple_equations(vars,knvars,eqns,reqns,s) 
-	  => (vars,knvars,eqns,reqns) & 
+	remove_simple_equations(vars,knvars,eqns,reqns,ieqns,s) 
+	  => (vars,knvars,eqns,reqns,ieqns) & 
 	detect_implicit_discrete(vars, eqns) => vars' &
 	sort_eqn(eqns) => eqns' &
 	find_zero_crossings(vars',eqns',whenclauses') => (zero_crossings) &
@@ -1317,6 +1320,17 @@ relation var_type: (Var) => DAE.Type =
 
 end
 
+(** relation: var_kind
+ ** author: PA
+ **
+ ** extracts the kind of a variable.
+ **)
+relation var_kind: (Var) => VarKind =
+
+  axiom	var_kind(VAR(_,kind,_,_,_,_,_,_,_,_,_,_,_,_)) => kind
+
+end
+
 
 (** relation: var_orig_name
  ** author: PA
@@ -1507,15 +1521,19 @@ end
               knownVars: Variables,
               eqns: Equation list,
               simpleEqns: Equation list,
+	      initEqns : Equatoin list,
               binTree: BinTree) 
- ** outputs: (Variables, Variables, Equation list, Equation list)
+ ** outputs: (Variables, Variables, Equation list, Equation list
+ **	      Equation list)
  **)
 relation remove_simple_equations: (Variables,
                                    Variables,
                                    Equation list,
                                    Equation list,
+				   Equation list,
                                    BinTree) 
-	=> (Variables, Variables, Equation list, Equation list) =
+	=> (Variables, Variables, Equation list, Equation list, 
+	    Equation list) =
 
   rule	VarTransform.empty_replacements() => repl &
 	remove_simple_equations2(eqns,vars,knvars,empty_bintree,states,repl) 
@@ -1523,16 +1541,124 @@ relation remove_simple_equations: (Variables,
  	Debug.fcall("dumprepl",VarTransform.dump_replacements, vartransf) &
 	VarTransform.replace_equations(eqns',vartransf) => eqns'' &
 	VarTransform.replace_equations(seqns,vartransf) => seqns' &
-	move_variables(vars,knvars,movedvars')=> (vars',knvars') 
+	VarTransform.replace_equations(ieqns,vartransf) => ieqns' &
+	move_variables(vars,knvars,movedvars')=> (vars',knvars') &
 
+	rename_derivatives(eqns'') => eqns''' &
+	rename_derivatives(seqns') => seqns'' & 
+	rename_derivatives(ieqns') => ieqns'' &
+	
+	list_append(seqns'',reqns) => seqns''' 
 	(*& print_vars_statistics(vars',knvars')*)
 	-------------------------------------
-	remove_simple_equations(vars,knvars,eqns,reqns,states) 
-	  => (vars',knvars',eqns'',seqns')
+	remove_simple_equations(vars,knvars,eqns,reqns,ieqns,states) 
+	  => (vars',knvars',eqns''',seqns''',ieqns'')
 
   rule	print "-remove_simple_equations failed\n"  
 	------------------------
-	remove_simple_equations(_,_,_,_,_) => fail
+	remove_simple_equations(_,_,_,_,_,_) => fail
+end
+
+(** relation: rename_derivatives
+ ** author: PA
+ **
+ ** Renames $DER$x to der(x) for all equations given as argument.
+ **
+ **)
+
+relation rename_derivatives: Equation list => Equation list =
+
+  axiom	rename_derivatives([]) => []
+
+  rule	Exp.traverse_exp(e1,rename_derivatives_exp,"$DER$") 
+	  => ((e1',_)) &
+	Exp.traverse_exp(e2,rename_derivatives_exp,"$DER$") 
+	  => ((e2',_)) &
+	  rename_derivatives(es) => es' 
+	---------------------------
+	rename_derivatives(EQUATION(e1,e2)::es) 
+	  => (EQUATION(e1',e2')::es')
+
+  rule	Exp.traverse_exp(e1,rename_derivatives_exp,"$DER$") 
+	  => ((e1',_)) &
+	rename_derivatives(es) => es' 
+	---------------------------
+	rename_derivatives(SOLVED_EQUATION(cr1,e1)::es) 
+	  => SOLVED_EQUATION(cr1,e1')::es'
+
+  rule	rename_derivatives(es) => es' 
+	---------------------------
+	rename_derivatives(e::es) 
+	  => e::es'
+end
+
+(** relation rename_derivatives_exp
+ ** 
+ ** Renames "$derivative$x" to der(x)
+**)
+
+relation rename_derivatives_exp: ((Exp.Exp* string)) =>((Exp.Exp* string)) =
+
+  rule	string_length(str) => slen &
+	Util.strncmp(str,id,slen) => true &
+	System.string_replace(id,str,"") => id' 
+	--------------------------------
+	rename_derivatives_exp((Exp.CREF(Exp.CREF_IDENT(id,s),tp),str))
+	  => ((Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(Exp.CREF_IDENT(id',s),tp)],false,true),str))
+
+  axiom	rename_derivatives_exp(((e,str))) => ((e,str))
+
+end
+
+(** relation: rename_derivatives_2
+ ** author: PA
+ **
+ ** Renames der(x) to $DER$x for all equations given as argument.
+ **
+ **)
+
+relation rename_derivatives_2: Equation list => Equation list =
+
+  axiom	rename_derivatives_2([]) => []
+
+  rule	Exp.traverse_exp(e1,rename_derivatives_exp_2,"$DER$") 
+	  => ((e1',_)) &
+	  Exp.traverse_exp(e2,rename_derivatives_exp_2,"$DER$") 
+	  => ((e2',_)) &
+	  rename_derivatives_2(es) => es' 
+	---------------------------
+	rename_derivatives_2(EQUATION(e1,e2)::es) 
+	  => (EQUATION(e1',e2')::es')
+	  
+  rule	Exp.traverse_exp(e1,rename_derivatives_exp_2,"$DER$") 
+	  => ((e1',_)) &
+	  rename_derivatives_2(es) => es' 
+	---------------------------
+	rename_derivatives_2(SOLVED_EQUATION(cr1,e1)::es) 
+	  => SOLVED_EQUATION(cr1,e1')::es'
+	  
+  rule	rename_derivatives_2(es) => es' 
+	---------------------------
+	rename_derivatives_2(e::es) 
+	  => e::es'
+end
+
+(** relation rename_derivatives_exp
+ ** 
+ ** Renames  der(x) to "$DER$x"
+**)
+
+relation rename_derivatives_exp_2: ((Exp.Exp* string)) =>((Exp.Exp* string)) =
+
+  rule	Exp.print_component_ref_str(cr) => id &
+	string_append(str,id) => id' &
+	let cr' = Exp.CREF_IDENT(id',[])
+	--------------------------------
+	rename_derivatives_exp_2(((Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(cr,tp)],false,true),str)))
+	  => ((Exp.CREF(cr',tp),str))
+				 
+  axiom	rename_derivatives_exp_2(((e,str))) => ((e,str))
+
 end
 
 
@@ -1683,7 +1809,7 @@ relation remove_simple_equations2: (Equation list,
 	is_variable(cr2,vars,knvars) &
 	VarTransform.add_replacement(repl,cr1,cr2) => repl' & 
 	tree_add(mvars,cr1,0) => mvars' &
-		remove_simple_equations2(eqns,vars,knvars,mvars',states,repl') 
+	remove_simple_equations2(eqns,vars,knvars,mvars',states,repl') 
 	  => (eqns',seqns',mvars'',repl'')
 	--------------------------------------------------
 	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
@@ -1691,12 +1817,11 @@ relation remove_simple_equations2: (Equation list,
 
   rule	(* Not a simple variable, check rest*)
 	remove_simple_equations2(eqns,vars,knvars,mvars,states,repl) 
-	  => (eqns',seqns',mvars',repl')
+	  => (eqns',seqns',mvars',repl') 
 	--------------------------------------------------
 	remove_simple_equations2(e::eqns,vars,knvars,mvars,states,repl) 
 	  => (e::eqns',seqns',mvars',repl')
 end 
-
 
 (** relation is_top_level_input_or_output
  ** author: LP
@@ -1867,9 +1992,26 @@ relation is_variable: (Exp.ComponentRef, Variables, Variables) => () =
 	------------------------------------------------------
 	is_variable(cr,vars,_) => ()
 
+  rule	get_var(cr,vars) => (VAR(_,DUMMY_STATE,_,_,_,_,_,_,_,_,_,_,_,flow)::_,_)
+	---------------------------------------------------------
+	is_variable(cr,vars,_) => ()
+
+  rule	get_var(cr,vars) => (VAR(_,DUMMY_DER,_,_,_,_,_,_,_,_,_,_,_,flow)::_,_)
+	---------------------------------------------------------
+	is_variable(cr,vars,_) => ()
+
   rule	get_var(cr,knvars) => (VAR(_,VARIABLE,_,_,_,_,_,_,_,_,_,_,_,flow)::_,_)
 	-----------------------------------------------------------
 	is_variable(cr,_,knvars) => ()
+
+  rule	get_var(cr,knvars) => (VAR(_,DUMMY_STATE,_,_,_,_,_,_,_,_,_,_,_,flow)::_,_)
+	---------------------------------------------------------
+	is_variable(cr,_,knvars) => ()
+
+  rule	get_var(cr,knvars) => (VAR(_,DUMMY_DER,_,_,_,_,_,_,_,_,_,_,_,flow)::_,_)
+	---------------------------------------------------------
+	is_variable(cr,_,knvars) => ()
+
 end
 
 
@@ -2051,6 +2193,51 @@ relation states: (DAE.DAElist,BinTree) => BinTree =
 	states(DAE.DAE(_::xs),bt) => bt
 end
 
+
+(** relation: states_daelow
+ ** author: PA
+ **
+ ** Returns a BinTree of all states in the DAELow
+ ** This relation is used in matching algorithm.
+ **)
+relation states_daelow: (DAELow) => BinTree =
+
+  rule	var_list(v) => v_lst &
+	states_daelow2(v_lst,empty_bintree) => bt 
+	---------------------
+	states_daelow(DAELOW(v,kn,e,re,ia,ae,al,ev)) => bt
+
+end
+
+(** relation: states_daelow2
+ ** author: PA
+ **
+ ** Helper relation to states_daelow.
+ **)
+
+relation states_daelow2:(Var list, BinTree) => BinTree =
+
+  axiom	states_daelow2([],bt) => bt 
+
+  rule	var_kind(v) => STATE &
+	var_cref(v) => cr &
+	tree_add(bt,cr,0) => bt &
+	states_daelow2(vs,bt) => bt
+	---------------------
+	states_daelow2(v::vs,bt) => bt
+
+  rule	var_kind(v) => DUMMY_STATE &
+	var_cref(v) => cr &
+	tree_add(bt,cr,0) => bt &
+	states_daelow2(vs,bt) => bt
+	---------------------
+	states_daelow2(v::vs,bt) => bt
+
+  rule	states_daelow2(vs,bt) => bt
+	---------------------
+	states_daelow2(v::vs,bt) => bt
+
+end
 
 (** relation: states_exp
  **
@@ -4149,15 +4336,66 @@ relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT,
 	assignments_create(nvars,memsize,0) => assign1 &
 	assignments_create(nvars,memsize,0) => assign2 &
 	matching_algorithm2(dae,m,mt,nvars,neqns,1,assign1,assign2,match_opts) 
+	  => (ass1, ass2,dae as DAELOW(v,kv,e,re,ie,ae,al,ev),m,mt) &
+
+	states_daelow(dae) => s &
+	equation_list(e) => e_lst &
+	equation_list(re) => re_lst &
+	equation_list(ie) => ie_lst &
+	remove_simple_equations(v,kv,e_lst,re_lst,ie_lst,s) 
+	  => (v',kv',e_lst',re_lst',ie_lst') &
+(*	  let v' = v & let kv' = kv & let e_lst' = e_lst & let ie_lst'=ie_lst &
+	let re_lst'= re_lst &*)
+
+	list_equation(e_lst') => e' &
+	list_equation(re_lst') => re' &
+	list_equation(ie_lst') => ie' &
+	let dae' = DAELOW(v',kv',e',re',ie',ae,al,ev) &
+
+	(* Rerun matching to get updated assignments and incidence matrices*)
+	(* TODO: instead of rerunning: find out which equations are removed
+	 * and remove those from assignments and incidence matrix.
+	 *)
+	incidence_matrix(dae') => m' &
+	transpose_matrix(m') => mt' &
+
+	array_length(m') => nvars &
+	array_length(mt') => neqns &
+	int_add(nvars,nvars) => memsize &
+	assignments_create(nvars,memsize,0) => assign1 &
+	assignments_create(nvars,memsize,0) => assign2 &
+	matching_algorithm2(dae',m',mt',nvars,neqns,1,assign1,assign2,match_opts) 
+	  => (ass1, ass2,dae'',m,mt) &
+	assignments_vector(ass1) => vec1 &
+	assignments_vector(ass2) => vec2 
+	--------------------------
+	matching_algorithm(dae as DAELOW(vars,_,eqns,_,_,_,_,_)
+			   ,m,mt,match_opts as (_,_,REMOVE_SIMPLE_EQN)) 
+	  => (vec1,vec2,dae'',m,mt)
+	
+  rule	check_matching(dae,match_opts) &  	
+	array_length(m) => nvars &
+	array_length(mt) => neqns &
+	int_string(nvars) => ns &
+	int_string(neqns) => ne &
+	int_gt(nvars,0) => true &
+	int_gt(neqns,0) => true &
+
+	(* Worst case, all eqns are differentiated once.
+	 * Create nvars*2 assignment elements *)       
+	int_add(nvars,nvars) => memsize &
+	assignments_create(nvars,memsize,0) => assign1 &
+	assignments_create(nvars,memsize,0) => assign2 &
+	matching_algorithm2(dae,m,mt,nvars,neqns,1,assign1,assign2,match_opts) 
 	  => (ass1, ass2,dae,m,mt) &
 
 	assignments_vector(ass1) => vec1 &
 	assignments_vector(ass2) => vec2 
 	--------------------------
 	matching_algorithm(dae as DAELOW(vars,_,eqns,_,_,_,_,_)
-			   ,m,mt,match_opts) 
+			   ,m,mt,match_opts as (_,_,KEEP_SIMPLE_EQN)) 
 	  => (vec1,vec2,dae,m,mt)
-	
+
 (*  rule	(*Print.print_error_buf "#Error, matching failed\n" &*)
 	list_vector([]) => v1 & 
 	list_vector([]) => v2 
@@ -4177,7 +4415,7 @@ end
  ** check is performed.
  **)
 relation check_matching : (DAELow,MatchingOptions) => () =
-  axiom	check_matching(_,(_,ALLOW_UNDERCONSTRAINED)) => ()
+  axiom	check_matching(_,(_,ALLOW_UNDERCONSTRAINED,_)) => ()
 	
   rule	equation_size(eqns) => esize &
 	int_eq(esize,vars_size) => true 
@@ -4404,10 +4642,11 @@ relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
 	assignments_expand(ass1,nvd) => ass1' &
 	assignments_expand(ass2,nvd) => ass2' &
 	matching_algorithm2(dae,m,mt,nv',nf',i,ass1',ass2',
-			    (INDEX_REDUCTION,eq_cons))
+			    (INDEX_REDUCTION,eq_cons,r_simple))
 	  => (ass1'',ass2'',dae,m,mt)
 	------------------------
-	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2,(INDEX_REDUCTION,eq_cons)) 
+	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2,
+			    (INDEX_REDUCTION,eq_cons,r_simple)) 
 	  => (ass1'',ass2'',dae,m,mt)
 
   rule	(* When index reduction also fails, the model is structurally 
@@ -4496,8 +4735,13 @@ relation reduce_index_dummy_der: (DAELow,
 	  => (dae,m,mt,nv,nf,deqns) &	
 
 	select_dummy_state(states,stateindx,dae,m,mt) => (state,stateno) & 
-(*		Exp.print_component_ref_str state => statestr &
-	 print "Choosen dummy state: " & print statestr & print "\n" &*)
+
+	propagate_dummy_initial_equations(dae,eqns',state,stateno) => dae &
+	print "propagated dae:\n" &
+	dump dae &
+
+		Exp.print_component_ref_str state => statestr &
+	 print "Choosen dummy state: " & print statestr & print "\n" &
 	new_dummy_var(state,dae) => (dummy_der,dae) &
 	eqns_for_var_with_states(mt,stateno) => reqns &
 	Util.list_union_p(deqns,reqns,int_eq) => changedeqns &
@@ -4524,6 +4768,296 @@ relation reduce_index_dummy_der: (DAELow,
 	reduce_index_dummy_der(_,_,_,_,_,_) => fail
 end
 
+(** relation: propagate_dummy_initial_equations
+ ** author: PA
+ **
+ ** This relation takes a list of equations that are differentiated
+ ** and the chosen dummy state. It checks if an initial equation exist
+ ** for the dummy state and propagates this equation to the other state
+ ** among the selected equations.
+ ** For instance, having the equations
+ ** s1 = b;
+ ** b=2*c;
+ ** c = s2
+ ** and the dummy state s2 with an initial equation s2 = 1;
+ ** gives a new initial equation s1 = 2*1;
+ **)
+
+relation propagate_dummy_initial_equations: (DAELow, 
+				    int list (*eqns*),
+				    Exp.ComponentRef (* dummy state*),
+				    int) 
+	  => DAELow =
+
+  rule	equation_list(ie) => ie_lst &
+
+	equation_list(e) => e_lst &
+				 
+	rename_derivatives_2(e_lst) => e_lst' &
+	list_equation(e_lst') => e' &
+	
+	propagate_dummy_initial_equations2(ie_lst,DAELOW(v,kv,e',se,ie,ae,al,ei),eqns,dummy,dummy_no) 
+	  => ie_lst' &
+	  list_equation(ie_lst') => ie'
+	------------------------------
+	propagate_dummy_initial_equations(dae as DAELOW(v,kv,e,se,ie,ae,al,ei),
+				 eqns,
+				 dummy,
+				 dummy_no)
+	  => DAELOW(v,kv,e,se,ie',ae,al,ei)
+
+  rule	Debug.fprint("failtrace", "propagate_dummy_initial_equations failed\n")
+	--------------------------------------------------
+	propagate_dummy_initial_equations(dae,_,_,_) => dae
+end				    
+
+(** relation: propagate_dummy_initial_equations2
+ ** author: PA
+ ** 
+ ** Helper relation to propagate_dummy_initial_equations.
+ **)
+
+relation propagate_dummy_initial_equations2: (Equation list,
+				     DAELow,
+				     int list,
+				     Exp.ComponentRef,
+				     int) 
+	  => Equation list =
+
+  axiom	propagate_dummy_initial_equations2([],_,_,_,_) => []
+
+  rule	is_initial_dummy_eqn(e,dummy) => (cr,exp) &
+	propagate_dummy_initial_equation(cr,exp,dae,eqns) => new_ieqn
+	------------------------------------
+	propagate_dummy_initial_equations2(e::es,dae,eqns,dummy,dummy_no)
+	  => e::new_ieqn::es
+
+  rule	propagate_dummy_initial_equations2(es,dae,eqns,dummy,dummy_no) 
+	  => es'
+	------------------------------------
+	propagate_dummy_initial_equations2(e::es,dae,eqns,dummy,dummy_no)
+	  => e::es'
+end
+
+(** relation: is_initial_dummy_eqn
+ ** author: PA
+ **
+ ** Helper relation to propagate_dummy_initial_equations2.
+ ** Determines if an initial equation assigns to a dummy variable.
+ **)
+
+relation is_initial_dummy_eqn: (Equation,Exp.ComponentRef) => 
+	(Exp.ComponentRef,Exp.Exp) =
+
+  rule	Exp.cref_equal(cr1,cr) => true &
+	Exp.get_cref_from_exp(e2) => crs &
+	not Util.list_getmember_p(cr,crs,Exp.cref_equal) => _
+	------------------------------
+	is_initial_dummy_eqn(EQUATION(Exp.CREF(cr1,_),e2),cr) => (cr1,e2)
+
+  rule	Exp.cref_equal(cr1,cr) => true &
+	Exp.get_cref_from_exp(e2) => crs &
+	not Util.list_getmember_p(cr,crs,Exp.cref_equal) => _
+	------------------------------
+	is_initial_dummy_eqn(EQUATION(e2,Exp.CREF(cr1,_)),cr) => (cr1,e2)
+end
+
+(** relation: propagate_dummy_initial_equation
+ ** author: PA
+ **
+ ** Propagates an initial equation on a dummy state to a proper state instead.
+ **)
+
+relation propagate_dummy_initial_equation:(Exp.ComponentRef, (* dummy var*)
+					   Exp.Exp, (* initial value*)
+					   DAELow,
+					   int list) 
+	  => Equation =
+
+  rule	Util.list_map_1(eqns,int_sub,1) => eqns' &
+	Util.list_map_1r(eqns',equation_nth,e) => eqn_lst &
+	propagate_eqns(cr,eqn_lst,dae) => (cr,exp')
+	--------------------------------
+	propagate_dummy_initial_equation(cr,exp,dae as DAELOW(_,_,e,_,_,_,_,_),
+					 eqns)
+	  => EQUATION(Exp.CREF(cr,Exp.REAL),exp')
+
+  rule	Debug.fprint("failtrace", "propagate_dummy_initial_equation failed\n")
+	-------------------
+	propagate_dummy_initial_equation(_,_,dae,_) => fail
+end
+
+(** relation: propagate_eqns
+ ** author: PA
+ **
+ ** Helper relation to propagate_dummy_initial_equation.
+ ** Given a dummy state and a list of equations find the propagated
+ ** initial equation on a solved form: cr = expr.
+ **)
+
+relation propagate_eqns: (Exp.ComponentRef, Equation list,DAELow) 
+	  => (Exp.ComponentRef, Exp.Exp) =
+
+  rule	find_cref_equation(cr,eqns) => (eqn,eqns') &
+	propagate_eqn(eqn,eqns') => (eqn' as EQUATION(e1,e2),eqns'') &
+	find_selected_state(cr,eqn',dae) => cr2 &
+	let varexp = Exp.CREF(cr2,Exp.REAL) &
+	Exp.solve(e1,e2,varexp) => expr 
+	------------------------------
+	propagate_eqns(cr,eqns,dae) => (cr2,expr)
+end
+
+(** relation: find_cref_equation
+ ** author: PA
+ ** 
+ ** Finds the equation that contains cref as cref = expr 
+**)
+
+relation find_cref_equation: (Exp.ComponentRef, Equation list) 
+	=> (Equation, Equation list) =
+	  (* cr = exp *)
+  rule	Exp.cref_equal(cr,cr2) => true &
+	Exp.get_cref_from_exp(exp) => crs &
+	not Util.list_getmember_p(cr,crs,Exp.cref_equal) => _
+	--------------------------
+	find_cref_equation(cr,[e as EQUATION(Exp.CREF(cr2,_),exp)]) 
+	  => (e,[])
+	  (* exp = cr *)
+  rule	Exp.cref_equal(cr,cr2) => true &
+	Exp.get_cref_from_exp(exp) => crs &
+	not Util.list_getmember_p(cr,crs,Exp.cref_equal) => _
+	--------------------------
+	find_cref_equation(cr,[e as EQUATION(exp,Exp.CREF(cr2,_))]) 
+	  => (e,[])
+
+	  (* cr = exp *)
+  rule	Exp.cref_equal(cr,cr2) => true &
+	Exp.get_cref_from_exp(exp) => crs &
+	not Util.list_getmember_p(cr,crs,Exp.cref_equal) => _
+	--------------------------
+	find_cref_equation(cr,(e as EQUATION(Exp.CREF(cr2,_),exp))::es) 
+	  => (e,es)
+
+	  (* exp = cr *)
+  rule	Exp.cref_equal(cr,cr2) => true &
+	Exp.get_cref_from_exp(exp) => crs &
+	not Util.list_getmember_p(cr,crs,Exp.cref_equal) => _
+	--------------------------
+	find_cref_equation(cr,(e as EQUATION(exp,Exp.CREF(cr2,_)))::es) 
+	  => (e,es)
+
+  rule	find_cref_equation(cr,es) => (e',es')
+	--------------------------
+	find_cref_equation(cr,e::es) => (e',e::es')
+end
+
+(** relation: propagate_eqn
+ **
+ ** Takes an equation and a list of equations and substitutes
+ ** variables "defined" from the other equations in the single equation
+ ** 
+ ** For instance propagate_eqn( a=b, {b=2*c,a=d*3}) => d*3=2*c
+**)
+
+relation propagate_eqn:(Equation,Equation list) => (Equation,Equation list) =
+
+  axiom	propagate_eqn(e,[]) => (e,[])
+
+  rule	Exp.get_cref_from_exp(e1) => crs1 &
+	Exp.get_cref_from_exp(e2) => crs2 &
+ 	list_append(crs1,crs2) => crs &
+	propagate_cref_eqns(crs,e,eqns) => (eqn,eqns) &
+	propagate_eqn(eqn,eqns) => (eqn',eqns')
+ 	-----------------------------
+	propagate_eqn(e as EQUATION(e1,e2),eqns) => (eqn',eqns')
+
+end
+
+(** relation: propagate_cref_eqns
+ ** author: PA
+ **
+ ** Helper relation to propagate_eqn.
+ **)
+
+relation propagate_cref_eqns:(Exp.ComponentRef list,
+ 			 Equation,
+			 Equation list) 
+ 	  => (Equation, Equation list) =
+
+  axiom	propagate_cref_eqns([],e,eqns) => (e,eqns)
+
+  rule	find_cref_equation(cr,eqns) => (eqn,eqns) &
+	find_cref_expr(cr,eqn) => exp &
+	Exp.replace_exp(e1,Exp.CREF(cr,Exp.REAL),exp) => (e1',_) &
+	Exp.replace_exp(e2,Exp.CREF(cr,Exp.REAL),exp) => (e2',_) &
+	propagate_cref_eqns(crs,EQUATION(e1',e2'),eqns) => (eqn',eqns')
+ 	----------------------------------
+	propagate_cref_eqns(cr::crs,EQUATION(e1,e2),eqns) 
+	  => (eqn',eqns')
+
+  rule	propagate_cref_eqns(crs,eqn,eqns) => (eqn',eqns')
+ 	----------------------------------
+	propagate_cref_eqns(cr::crs,eqn,eqns) 
+	  => (eqn',eqns')
+end
+
+(** relation: find_cref_expr
+ ** author: PA
+ **
+ ** Finds the expression in an equation cr = expr 
+ **)
+
+relation find_cref_expr:(Exp.ComponentRef, Equation) => Exp.Exp =
+
+  rule	Exp.cref_equal(cr,cr2) => true 
+	-------------------------
+	find_cref_expr(cr,EQUATION(Exp.CREF(cr2,_),e2)) => e2
+
+rule	Exp.cref_equal(cr,cr2) => true 
+	-------------------------
+  	find_cref_expr(cr,EQUATION(e2,Exp.CREF(cr2,_))) => e2
+
+end
+
+
+(** relation: find_selected_state
+ ** author: PA
+ **
+ ** Finds the selected state from a constraint equation.
+ ** E.g. s1 = p*s2 for dummy state s1 will return s2.
+ **)
+
+relation find_selected_state: (Exp.ComponentRef,Equation, DAELow)
+	  => (Exp.ComponentRef) =
+
+  rule	Exp.get_cref_from_exp(e1) => crs1 & 
+	Exp.get_cref_from_exp(e2) => crs2 &
+	list_append(crs1,crs2) => crs &
+	Util.list_deletemember_p(crs,cr,Exp.cref_equal) => crs' &
+	find_selected_state2(crs',v) => cr
+	--------------------------------
+	find_selected_state(cr,EQUATION(e1,e2),DAELOW(v,kn,e,se,ie,ae,alg,ei))
+	=> cr
+end
+
+(** relation: find_selected_state2
+ **
+ ** Returns the first state from the list of ComponentRefs.
+ **)
+
+relation find_selected_state2:(Exp.ComponentRef list, Variables) 
+	  => Exp.ComponentRef =
+
+  rule	get_var(cr,vars) => (v::_,_) &
+	var_kind(v) => STATE 
+	--------------------
+	find_selected_state2(cr::crs,vars) => cr
+
+  rule	find_selected_state2(crs,vars) => cr
+	--------------------
+	find_selected_state2(cr::crs,vars) => cr
+end
+	
 
 (** relation: update_incidence_matrix
  ** author: PA
@@ -5006,6 +5540,50 @@ relation select_dummy_state: (Exp.ComponentRef list,
 	select_dummy_state([],_,_,_,_) => fail
 end
 
+(** relation: calculate_dummy_state_priority
+ **
+ ** Calculates a priority for dummy state candidates.
+ ** The state with lowest priority number is selected as a dummy
+ ** variable.
+ **
+ ** Heuristic parameters:
+ ** 1. States that has an initial condition is given pentalty 10.
+ ** 2. Equation s1= p * s2 with states s1 and s2 gives penalty 1 for state s1.
+ ** 
+ ** The heuristic parameters are summed to get the priority number.
+ **)
+
+ relation calculate_dummy_state_priorities:(Exp.ComponentRef list, 
+					  int list, 
+					  DAELow, 
+					  IncidenceMatrix,
+					  IncidenceMatrixT) => 
+	 ((Exp.ComponentRef (*candidates*)*
+	  int (* candidate indices *)*
+	  int (* priorities *)) list) =
+
+  axiom	calculate_dummy_state_priorities([],[],_,_,_) => []
+
+  rule	calculate_dummy_state_priority(cr,indx,dae,m,mt) => (cr,indx,prio) &
+	 calculate_dummy_state_priorities(crs,indxs,dae,m,mt) => res
+	 --------------------------
+	 calculate_dummy_state_priorities(cr::crs,indx::indxs,dae,m,mt)
+	  => ((cr,indx,prio)::res)
+end
+
+relation calculate_dummy_state_priority:(Exp.ComponentRef, 
+					 int, 
+					 DAELow, 
+					 IncidenceMatrix,
+					 IncidenceMatrixT)
+	  => (Exp.ComponentRef, int, int) =
+
+
+  rule	
+	-------------------------
+	calculate_dummy_state_priority(cr,indx,dae,m,mt) => (cr,indx,0)
+end
+	 
 
 (** relation: states_in_eqns
  ** author: PA
@@ -5116,13 +5694,13 @@ relation differentiate_eqns: (DAELow,
 	Derive.differentiate_equation_time(eqn,v) => eqn' &
 	(* update equation row in IncidenceMatrix *)	
 	Debug.fprint("bltdump", "High index problem, differentiated equation: " )&
-(*	print "differentiated equation " &*)
+	print "differentiated equation " &
 	equation_str eqn => str & 
-(*	print str & print "\n" &*)
+	print str & print "\n" &
 	Debug.fprint("bltdump", str) &
 	Debug.fprint("bltdump", " to ") & 
 	equation_str eqn' => str &
-(*	print " to " & print str &  print "\n" &*)
+	print " to " & print str &  print "\n" &
 	Debug.fprint("bltdump",str) & 
 	Debug.fprint("bltdump", "\n") &
 	equation_add(eqns,eqn') => eqns' &

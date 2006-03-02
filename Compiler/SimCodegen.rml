@@ -1178,14 +1178,12 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
 	  => (param_assigns,cg_id') &
 	list_append(initial_eqns1,initial_eqns2) => initial_eqns &
 	DAELow.list_equation(initial_eqns) => initial_eqns' &
-
 	list_array([]) => arr &
 	list_array([]) => arr2 &
 	let empty_eqn = DAELow.EQUATION_ARRAY(0,0,arr) &
 
 	let initial_dae = DAELow.DAELOW(vars,knvars,initial_eqns',empty_eqn,empty_eqn,arr2,al,ev) &
        
-
 	(* States are no longer special, they are just a variable that 
 	 * needs an initial value. *)
 	DAELow.make_all_states_algebraic(initial_dae) 
@@ -1205,14 +1203,17 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
 	DAELow.list_var(knvars) => knvars' &
 	
 	let new_initial_dae = DAELow.DAELOW(vars',knvars',e,re,ie,ae,al,ev) &
+
  	DAELow.incidence_matrix(new_initial_dae) => m &
  	DAELow.transpose_matrix(m) => mT &
 	(* once dae has been translated, state or not should not matter *)
 	DAELow.abs_incidence_matrix(m) => m' &
 	DAELow.abs_incidence_matrix(mT) => mT' &
 
-	(* index reduction for intitial equations makes no sense.. *)
-	DAELow.matching_algorithm(new_initial_dae,m',mT',(DAELow.NO_INDEX_REDUCTION,DAELow.ALLOW_UNDERCONSTRAINED)) 
+	(* index reduction for intitial equations makes no sense.. 
+	 * Do not remove simple equations for initial equations.
+	 *)
+	DAELow.matching_algorithm(new_initial_dae,m',mT',(DAELow.NO_INDEX_REDUCTION,DAELow.ALLOW_UNDERCONSTRAINED, DAELow.KEEP_SIMPLE_EQN)) 
 	  => (ass1,ass2,initial_dae',m,mT) &
 	DAELow.strong_components(m',mT',ass1,ass2) => blocks &
 	generate_ode_blocks(new_initial_dae,ass1,ass2,blocks,cg_id')
@@ -1233,7 +1234,7 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
 	Codegen.c_print_functions_str(all_funcs) => str
 
         ----------------------------------
-        generate_initial_value_code(DAELow.DAELOW(vars,knvars,eqns,se,ie,ae,al,ev)) => str
+        generate_initial_value_code(indae as DAELow.DAELOW(vars,knvars,eqns,se,ie,ae,al,ev)) => str
 
 	(* without initial equations *)
   rule  DAELow.var_list(vars) => vars_lst &

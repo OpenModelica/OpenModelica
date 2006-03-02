@@ -1942,7 +1942,9 @@ end
          Debug.fcall("bltdump", DAELow.dump,dlow) &
          DAELow.incidence_matrix(dlow) => m &
 	 DAELow.transpose_matrix(m) => mT &
-	 DAELow.matching_algorithm(dlow,m,mT,(DAELow.INDEX_REDUCTION,DAELow.EXACT)) 
+	 DAELow.matching_algorithm(dlow,m,mT,
+				   (DAELow.INDEX_REDUCTION,DAELow.EXACT,
+				    DAELow.REMOVE_SIMPLE_EQN)) 
 	  => (ass1,ass2,dlow',m,mT) &
            DAELow.strong_components(m,mT,ass1,ass2) => (comps) &
          DAELow.translate_dae (dlow') => indexed_dlow &
