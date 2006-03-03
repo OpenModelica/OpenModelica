@@ -320,13 +320,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   relation get_var_at:(Variables,int) => (Var)
   relation exists_var: (Exp.ComponentRef, Variables) => bool 
   relation set_var_kind: (Var, VarKind) => Var 
-  relation var_fixed: (DAE.VariableAttributes option,VarKind) => bool
   relation var_list: (Variables) => Var list 
   relation list_var: (Var list ) => Variables
 
   relation var_cref: (Var) => Exp.ComponentRef
   relation var_type: (Var) => DAE.Type
   relation var_kind: (Var) => VarKind
+  relation var_fixed: (Var) => bool 
   relation var_orig_name: (Var) => string 
   relation var_index: (Var) => int
   relation var_nominal: (Var) => real
@@ -448,8 +448,9 @@ relation  add_dummy_state: (Variables, Equation list, bool) => (Variables, Equat
   axiom	add_dummy_state(v,e,false) =>(v,e)
 
 
+	(* TODO::The dummy variable must be fixed **)
   rule	add_var(VAR(Exp.CREF_IDENT("$dummy",[]),STATE,DAE.BIDIR,DAE.REAL,
-		    NONE,NONE,[],NONE,-1,"$dummy",[],NONE,NONE,
+		    NONE,NONE,[],NONE,-1,"$dummy",[],SOME(DAE.VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,SOME(true),NONE,NONE)),NONE,
 		    DAE.NON_CONNECTOR),vars) => vars' 
 	
 	-------------------
@@ -1366,6 +1367,38 @@ relation var_nominal: (Var) => real =
 
   axiom	var_nominal(VAR(_,_,_,_,_,_,_,_,_,_,_,SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,_,SOME(nominal),_)),_,flow))
 	  => nominal
+end
+
+(** relation: var_fixed
+ ** author: PA
+ **
+ ** Extacts the fixed attribute of a variable. 
+ ** The default fixed value is used if not found. Default is true for parameters
+ ** (and constants) and false for variables.
+ **)
+
+relation var_fixed: (Var) => bool =
+
+  axiom	var_fixed(VAR(_,_,_,_,_,_,_,_,_,_,_,SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,SOME(fixed),_,_)),_,_))
+	  => fixed
+
+  axiom	var_fixed(VAR(_,_,_,_,_,_,_,_,_,_,_,SOME(DAE.VAR_ATTR_INT(_,_,_,SOME(fixed))),_,_)) => fixed 
+
+  axiom	var_fixed(VAR(_,_,_,_,_,_,_,_,_,_,_,SOME(DAE.VAR_ATTR_BOOL(_,_,SOME(fixed))),_,_)) => fixed 
+  axiom	var_fixed(VAR(_,_,_,_,_,_,_,_,_,_,_,SOME(DAE.VAR_ATTR_ENUMERATION(_,_,_,SOME(fixed))),_,_)) => fixed 
+
+	(* param is fixed*)
+  rule	var_kind(v) => PARAM
+	--------------------
+	var_fixed(v) => true
+
+	(* states are by default fixed.*)
+  rule	var_kind(v) => STATE
+	---------------------
+	var_fixed(v) => true
+	
+	(* rest defaults to false *)
+  axiom	var_fixed(_) => false
 end
 
 
@@ -3932,42 +3965,6 @@ relation set_var_kind: (Var, VarKind) => Var =
 end
 
 
-(** relation: var_fixed
- **
- ** Returns the value of the fixed attribute. If not defined in attributes,
- ** inspect varkind to find default values.
- **)
-relation var_fixed: (DAE.VariableAttributes option, VarKind) => bool =
-
-  axiom	var_fixed(NONE,PARAM) => true 
-  axiom	var_fixed(NONE,CONST) => true 
-  axiom	var_fixed(NONE,_) => false
-
-  axiom	var_fixed(SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,SOME(fixed),_,_)),_)
-	  => fixed
-  axiom	var_fixed(SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,NONE,_,_)),_)
-	  => false
-
-  axiom	var_fixed(SOME(DAE.VAR_ATTR_INT(_,_,_,SOME(fixed))),_)
-	  => fixed
-
-  axiom	var_fixed(SOME(DAE.VAR_ATTR_INT(_,_,_,NONE)),_)
-	  => false
-
-  axiom	var_fixed(SOME(DAE.VAR_ATTR_BOOL(_,_,SOME(fixed))),_)
-	  => fixed
-
-  axiom	var_fixed(SOME(DAE.VAR_ATTR_BOOL(_,_,NONE)),_)
-	  => false
-
-  axiom	var_fixed(SOME(DAE.VAR_ATTR_ENUMERATION(_,_,_,SOME(fixed))),_)
-	  => fixed
-
-  axiom	var_fixed(SOME(DAE.VAR_ATTR_ENUMERATION(_,_,_,NONE)),_)
-	  => false
-end
-
-
 (** relation: get_var3
  ** author: PA
  **
@@ -4737,11 +4734,8 @@ relation reduce_index_dummy_der: (DAELow,
 	select_dummy_state(states,stateindx,dae,m,mt) => (state,stateno) & 
 
 	propagate_dummy_initial_equations(dae,eqns',state,stateno) => dae &
-	print "propagated dae:\n" &
-	dump dae &
-
-		Exp.print_component_ref_str state => statestr &
-	 print "Choosen dummy state: " & print statestr & print "\n" &
+	(*Exp.print_component_ref_str state => statestr &
+	 print "Choosen dummy state: " & print statestr & print "\n" &*)
 	new_dummy_var(state,dae) => (dummy_der,dae) &
 	eqns_for_var_with_states(mt,stateno) => reqns &
 	Util.list_union_p(deqns,reqns,int_eq) => changedeqns &
@@ -5694,13 +5688,13 @@ relation differentiate_eqns: (DAELow,
 	Derive.differentiate_equation_time(eqn,v) => eqn' &
 	(* update equation row in IncidenceMatrix *)	
 	Debug.fprint("bltdump", "High index problem, differentiated equation: " )&
-	print "differentiated equation " &
+(*	print "differentiated equation " &*)
 	equation_str eqn => str & 
-	print str & print "\n" &
+(*	print str & print "\n" &*)
 	Debug.fprint("bltdump", str) &
 	Debug.fprint("bltdump", " to ") & 
 	equation_str eqn' => str &
-	print " to " & print str &  print "\n" &
+(*	print " to " & print str &  print "\n" &*)
 	Debug.fprint("bltdump",str) & 
 	Debug.fprint("bltdump", "\n") &
 	equation_add(eqns,eqn') => eqns' &
@@ -7558,9 +7552,9 @@ relation equation_to_residual_form:(Equation) => Equation =
   axiom	equation_to_residual_form(e as ALGORITHM(_,_,_)) => e
   axiom	equation_to_residual_form(e as ARRAY_EQUATION(_,_)) => e
 
-  rule	print "equation_to_residual_form failed\n" 
+  rule	Debug.fprint("failtrace","equation_to_residual_form failed\n")
 	--------------------------
-	equation_to_residual_form(_) => fail
+	equation_to_residual_form(e) => fail
 end
 
 

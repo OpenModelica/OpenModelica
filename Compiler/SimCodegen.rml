@@ -189,13 +189,15 @@ relation generate_simulation_code: (DAE.DAElist,
 	generate_event_checking_code(dlow,blt_states,ass1,ass2,m,mt,class) 
 	  => (c_eventchecking, helpVarInfo) & 
 	  list_length helpVarInfo => n_h &
-        generate_global_data(class,dlow,n_o,n_i,n_h) => cglobal &  
+	generate_initial_value_code2(dlow) => (s_code2,nres) &
+        generate_global_data(class,dlow,n_o,n_i,n_h,nres) => cglobal &  
      	  generate_compute_output(cname,dae,dlow,ass1,ass2,blt_no_states) 
 	  => coutput &
-        	 generate_compute_residual_state(cname,dae,dlow,ass1,ass2,blt_states) 
+         generate_compute_residual_state(cname,dae,dlow,ass1,ass2,blt_states) 
 	  => cstate &
-		 generate_ode_code(dlow,blt_states,ass1,ass2,m,mt,class) => c_ode &
+	generate_ode_code(dlow,blt_states,ass1,ass2,m,mt,class) => c_ode &
 	generate_initial_value_code(dlow) => s_code &
+
 
 	generate_when_clauses(cname,dae,dlow,ass1,ass2,comps) => cwhen &
 	generate_zero_crossing(cname,dae,dlow,ass1,ass2,comps,helpVarInfo) => czerocross & 
@@ -205,7 +207,7 @@ relation generate_simulation_code: (DAE.DAElist,
 				 "\n#include \"simulation_runtime.h\"\n",
 				 "\n#include \"",funcfilename,"\"\n",
 				 cglobal,coutput,in_str,out_str,cstate,czerocross,cwhen,
-				 c_ode,s_code,c_eventchecking]) => res &
+				 c_ode,s_code,s_code2,c_eventchecking]) => res &
 	System.write_file(filename,res) 
 	---------------------------------------------------------------------
 	generate_simulation_code(dae,dlow,ass1,ass2,m,mt,comps,class,filename,funcfilename) => ()
@@ -238,8 +240,10 @@ end
  ** arg3 an int which shows the number of output variables on top level
  ** arg4 an int which shows the number of input variables on top level
  ** arg5 an int which shows the number of help variables
+ ** arg5 integer - number of residuals in initialization function.
  **)
- relation generate_global_data:(Absyn.Path,DAELow.DAELow,int,int,int) => string  =
+ relation generate_global_data:(Absyn.Path,DAELow.DAELow,int,int,int,int) 
+	  => string  =
 
   rule  (* DAELow.dump(dlow) & *) 
          DAELow.calculate_sizes(dlow) => (nx,ny,np,ng) &
@@ -252,8 +256,12 @@ end
         int_string(no) => no_str &
         int_string(ni) => ni_str &
         int_string(nh) => nh_str &
+	 int_string(nres) => nres_str &
          
  	 generate_var_names_and_comments(dlow,nx,ny,ni,no,np) => c_code &
+	 
+	 generate_fixed_vector(dlow,nx,ny,np) => (c_code2_str) &
+	 
          
          Util.string_delimit_list(c_code,"\n") => c_code_str &
          generate_macros() => macros_str &
@@ -266,6 +274,7 @@ end
 				 "#define NP ",np_str," // number of paramters\n",
 				 "#define NO ",no_str," // number of outputvar on topmodel\n",
 				 "#define NI ",ni_str," // number of inputvar on topmodel\n",
+				  "#define NR ",nres_str," // number of residuals for initialialization function\n",
 				 "#define MAXORD 5\n",
 				 "#define time (*t)\n",
 				 "\n",
@@ -273,6 +282,7 @@ end
 				 "char *model_name=\"",class_str,
 				 "\";\n",
                                   c_code_str,
+				  c_code2_str,
                                   "\n"]
 				 )  => str1 &
          (* this is done here and not in the above Util.string_append_list VC7.1 cannot compile too complicated c-programs *)
@@ -285,11 +295,145 @@ end
 (*                                   "} equation;\n", *)
                                   macros_str,"\n"]) => str
 	---------------------------
-	generate_global_data(class, dlow,no,ni,nh) => str
+	generate_global_data(class, dlow,no,ni,nh,nres) => str
 	
   rule	Error.add_message(Error.INTERNAL_ERROR, ["generate_global_data failed"])
 	 ---------------------
-	 generate_global_data(_,_,_,_,_) => fail
+	 generate_global_data(_,_,_,_,_,_) => fail
+end
+
+(** relation: generate_fixed_vector
+ **
+ ** Generates a vector, fixed[nx+nx+ny+np] where the fixed attribute is stored
+ ** It is collected for states, derivatives, variables and parameters.
+ **)
+
+relation generate_fixed_vector:(DAELow.DAELow, int (*nx*),
+			       int (* ny *),
+			       int (*np *))
+	=> string =
+
+  rule	Util.list_reduce([nx,nx,ny,np],int_add) => arr_size  &
+	array_create(arr_size,"0/*default*/") => str_arr &
+	generate_fixed_vector2(dae,str_arr,nx,ny,np) => str_arr' &
+	array_list(str_arr') => str_lst &
+	Util.string_delimit_list(str_lst,", ") => str &
+	Util.string_append_list(["char fixed[NX+NX+NY+NP]={",str,"};"]) 
+	  => res
+	-----------------------------------
+	generate_fixed_vector(dae,nx,ny,np) => res
+rule	print "generate_fixed_vector failed\n" 
+	-----------------------------------
+	generate_fixed_vector(dae,nx,ny,np) => fail
+end
+
+(** relation: generate_fixed_vector2
+ ** author: PA
+ **
+ ** Helper relation to generate_fixed_vector
+ **)
+
+relation generate_fixed_vector2: (DAELow.DAELow,
+				  string array,
+				  int (*nx*),
+				  int (*ny*),
+				  int (*np*)) 
+	  => string array =
+
+  rule	DAELow.var_list(v) => v_lst &
+	DAELow.var_list(kv) => kv_lst &
+	generate_fixed_vector3(v_lst,str_arr,nx,ny,np) => str_arr' &
+	generate_fixed_vector3(kv_lst,str_arr',nx,ny,np) => str_arr''
+	-------------------------
+	generate_fixed_vector2(DAELow.DAELOW(v,kv,_,_,_,_,_,_),str_arr,
+			       nx,ny,np)
+	  => str_arr''
+end
+
+(** relation: generate_fixed_vector3
+ ** author: PA
+ **
+ ** Helper relation to generate_fixed_vector2
+ **)
+
+relation generate_fixed_vector3: (DAELow.Var list, 
+				  string array, 
+				  int (*nx*),
+				  int (*ny*), 
+				  int (*np*))
+	=> (string array) =
+
+  axiom	generate_fixed_vector3([],str_arr,_,_,_) => str_arr
+
+	(* skip constants*)
+  rule	DAELow.var_kind(v) => DAELow.CONST &
+	generate_fixed_vector3(vs,str_arr,nx,ny,np) => str_arr'
+	-------------------------
+	generate_fixed_vector3(v::vs,str_arr,nx,ny,np) => str_arr'
+	
+  rule	DAELow.var_kind(v) => kind &
+	DAELow.var_index(v) => indx &
+	calc_fixed_offset(kind,nx,ny,np) => off &
+	int_add(off,indx) => indx' &
+	DAELow.var_fixed(v) => b &
+	Util.if(b,"1", "0") => value &
+	array_setnth(str_arr,indx',value) => str_arr' &
+	generate_fixed_vector3(vs,str_arr',nx,ny,np) => str_arr''
+	-------------------------
+	generate_fixed_vector3(v::vs,str_arr,nx,ny,np) => str_arr''
+
+  rule	print "generate_fixed_vector3 failed\n" 
+	-------------------------
+	generate_fixed_vector3(v::vs,str_arr,nx,ny,np) => fail
+end
+
+(** relation: calc_fixed_offset
+ ** author: PA
+ **
+ ** Calculates the offset for a fixed attribute int the fixed vector.
+ ** The attributes are stored in this order:
+ ** {states, derivatives, alg. vars, parameters}.
+ **)
+
+relation calc_fixed_offset: (DAELow.VarKind, int (* nx*),
+			     int (*ny*),
+			     int (*np*))
+	=> int =
+
+	  (* states offset: 0 *)
+  axiom	calc_fixed_offset(DAELow.STATE,_,_,_) => 0 
+
+	(* algebraic variables offset: 2*nx *)
+  rule	int_add(nx,nx) => offset
+	------------------------
+	calc_fixed_offset(DAELow.VARIABLE,nx,ny,np) => offset
+	(* algebraic variables offset: 2*nx *)
+  rule	int_add(nx,nx) => offset
+	------------------------
+	calc_fixed_offset(DAELow.DUMMY_DER,nx,ny,np) => offset
+ 	(* algebraic variables offset: 2*nx *)
+  rule	int_add(nx,nx) => offset
+	------------------------
+	calc_fixed_offset(DAELow.DUMMY_STATE,nx,ny,np) => offset
+
+ 	(* algebraic variables offset: 2*nx *)
+  rule	int_add(nx,nx) => offset
+	------------------------
+	calc_fixed_offset(DAELow.DISCRETE,nx,ny,np) => offset
+
+	(* parameter offset: 2*nx+ny *)
+  rule	Util.list_reduce([nx,nx,ny],int_add) => offset
+	------------------------
+	calc_fixed_offset(DAELow.PARAM,nx,ny,np) => offset
+
+	(* constant offset: 2*nx+ny NOTE: should not happend *)
+  rule	Util.list_reduce([nx,nx,ny],int_add) => offset
+	------------------------
+	calc_fixed_offset(DAELow.CONST,nx,ny,np) => offset
+
+  rule	print "calc_fixed_offset failed\n" 
+	--------------------
+	calc_fixed_offset(_,_,_,_) => fail
 end
 
 
@@ -341,6 +485,12 @@ relation generate_global_bufs: () => string =
 				 "#else\n",
 				 "double *out_y;\n",
                                  "#endif\n",
+                                 "#if NR > 0\n",
+				 "double xinit_res_buf[NR];  // INIT. RESIDUALS\n",
+				 "double *xinit_res = &xinit_res_buf[0];\n",
+                                 "#else\n",
+				 "double *xinit_res;\n",
+				 "#endif\n",
                                  "#if NG > 0\n",
 				 "long jrootbuf[NG];\n",
 				 "long *jroot = &jrootbuf[0];\n",
@@ -1157,6 +1307,91 @@ relation generate_output_function_code2:(DAELow.Var list,int) => string list =
 
 end
 
+(** relation: generate_initial_value_code2
+ **
+ ** This relation generates initial value code according to the new 
+ ** approach. It will be a replacement for generate_initial_value_code
+ ** once it is stable.
+ **)
+relation generate_initial_value_code2:(DAELow.DAELow) => (string(* code*),
+							  int (*n res*)) =
+
+  rule  
+	Codegen.c_make_function("int","initial_residual",[],["double *res",
+							     "double *x",
+							     "double *xd", 
+							     "double *y",
+							     "double *p",
+							     "double *t",
+							     "int nx",
+							     "int ny",
+							     "int np"])
+	  => init_func' &
+	
+	DAELow.var_list(vars) => vars_lst &
+	DAELow.var_list(knvars) => knvars_lst &
+	DAELow.equation_list(eqns) => eqns_lst &
+	DAELow.equation_list(se) => se_lst &
+	DAELow.equation_list(ie) => ie_lst &
+
+	(* equations from start values with fixed = true *)
+	generate_initial_equations_from_start(vars_lst)  => ie2_lst &
+
+	(* calculate total size*)
+	list_length(eqns_lst) => n1 &
+	list_length(se_lst) => n2 & 
+	list_length(ie_lst) => n3 &
+	list_length(ie2_lst) => n4 &
+	Util.list_reduce([n1,n2,n3,n4],int_add) => n &
+	int_string(n) => n_str &
+
+	(* equations to residual form*)
+	Util.list_map(eqns_lst,DAELow.equation_to_residual_form) => eqns_lst &
+	Util.list_map(se_lst,DAELow.equation_to_residual_form) => se_lst &
+	Util.list_map(ie_lst,DAELow.equation_to_residual_form) => ie_lst&
+	Util.list_map(ie2_lst,DAELow.equation_to_residual_form) => ie2_lst &
+
+	(* Generate statements for residual elements*)
+	generate_initial_residual_eqn(eqns_lst,0) => (f1,cg_id) &
+	generate_initial_residual_eqn(se_lst,cg_id) => (f2,cg_id) &
+	generate_initial_residual_eqn(ie_lst,cg_id) => (f3,cg_id) &
+	generate_initial_residual_eqn(ie2_lst,cg_id) => (f4,cg_id) &
+	(* merge all parts toghether*)
+	Codegen.c_merge_fns([init_func',f1,f2,f3,f4]) => cfunc &
+	Codegen.c_add_variables(cfunc,["int i=0;"]) => cfunc &
+	Codegen.c_add_cleanups(cfunc,["return 0;"]) => cfunc &
+	Codegen.c_print_functions_str([cfunc]) => str
+	------------------------------
+	generate_initial_value_code2(dae as DAELow.DAELOW(vars,knvars,eqns,se,ie,ae,al,ev))
+	  => (str,n)
+
+
+  axiom	generate_initial_value_code2(_) => ("/* generate_initial_value_code2 failed */",0)
+
+end
+
+(** relation generate_initial_residual_eqn
+ **
+ ** Helper relation to generate_initial_value_code2
+ ** Generates code on residual form for a list of equations.
+**)
+
+relation generate_initial_residual_eqn: (DAELow.Equation list, 
+					  int (*cg var_id*)) 
+	  => (CFunction, 
+	      int(*cg var_id*)) =
+
+  axiom	generate_initial_residual_eqn([],cg_id) 
+	  => (Codegen.c_empty_function,cg_id)
+  rule	Codegen.generate_expression(e,cg_id) => (cfunc,var,cg_id) &
+	Util.string_append_list(["res[i++] = ", var,";"]) => assign &
+	Codegen.c_add_statements(cfunc,[assign]) => cfunc &
+	generate_initial_residual_eqn(es,cg_id) => (cfunc2,cg_id) &
+	Codegen.c_merge_fns([cfunc,cfunc2]) => cfn
+	---------------------
+	generate_initial_residual_eqn(DAELow.RESIDUAL_EQUATION(e)::es,cg_id)
+	  => (cfn,cg_id)
+end
 
 (** relation: generate_initial_value_code
  **
@@ -1204,6 +1439,8 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
 	
 	let new_initial_dae = DAELow.DAELOW(vars',knvars',e,re,ie,ae,al,ev) &
 
+	print "new_initial_dae: \n" &
+	DAELow.dump new_initial_dae &
  	DAELow.incidence_matrix(new_initial_dae) => m &
  	DAELow.transpose_matrix(m) => mT &
 	(* once dae has been translated, state or not should not matter *)
@@ -1255,8 +1492,7 @@ relation generate_initial_value_code:(DAELow.DAELow) => string =
 							       "int ny",
 							       "int np"])
 	  => init_func' &
-
-	  Codegen.c_add_cleanups(init_func', ["return 0;"]) => init_func &
+	Codegen.c_add_cleanups(init_func', ["return 0;"]) => init_func &
         Codegen.c_merge_fns([init_func,start_assigns,param_assigns]) => res &
 	Codegen.c_print_functions_str([res]) => str
         ----------------------------------
@@ -1323,10 +1559,10 @@ relation generate_initial_equations_from_start: DAELow.Var list
   axiom	generate_initial_equations_from_start ([]) => []
 	
 	(* add equations for variables with fixed = true*)
-  rule	DAELow.var_fixed(attr,kind) => true &
+  rule	DAELow.var_fixed(v) => true &
 	generate_initial_equations_from_start(vars) => eqns 
 	--------------------------
-	generate_initial_equations_from_start(DAELow.VAR(cr,kind,_,_,_,_,_,SOME(startv),_,_,_,attr,_,_)::vars)
+	generate_initial_equations_from_start((v as DAELow.VAR(cr,kind,_,_,_,_,_,SOME(startv),_,_,_,attr,_,_))::vars)
 	  => DAELow.EQUATION(Exp.CREF(cr,Exp.OTHER),startv)::eqns
 
   rule	generate_initial_equations_from_start(vars) => eqns 
