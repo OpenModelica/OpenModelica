@@ -135,6 +135,13 @@ namespace IAEX
 	 */
 
 
+	// 2006-03-01 AF, Open, Save, Image and Link dir
+	QString NotebookWindow::openDir_ = QString::null;
+	QString NotebookWindow::saveDir_ = QString::null;
+	QString NotebookWindow::imageDir_ = QString::null;
+	QString NotebookWindow::linkDir_ = QString::null;
+
+
 	/*! 
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2006-01-17 (update)
@@ -180,6 +187,7 @@ namespace IAEX
 			this, SLOT( setStatusMessage(QString) ));
 
 		updateWindowTitle();
+		updateChapterCounters();
 		update();
 	}
 
@@ -1489,7 +1497,7 @@ namespace IAEX
 	 */
 	void NotebookWindow::updateStyleMenu()
 	{
-		CellStyle style = subject_->getCursor()->currentCell()->style();      
+		CellStyle style = *subject_->getCursor()->currentCell()->style();      
 		map<QString, QAction*>::iterator cs = styles_.find(style.name());
 
 		if(cs != styles_.end())
@@ -1972,6 +1980,18 @@ namespace IAEX
 
 	/*! 
 	 * \author Anders Fernström
+	 * \date 2006-03-02
+	 *
+	 * \brief Method for updateing the chapter counters
+	 */
+	void NotebookWindow::updateChapterCounters()
+	{
+		application()->commandCenter()->executeCommand(
+			new UpdateChapterCounters( subject_ ));
+	}
+
+	/*! 
+	 * \author Anders Fernström
 	 * \date 2006-02-10
 	 *
 	 * \brief Set the status message to msg, if msg is empty the default
@@ -2116,7 +2136,7 @@ namespace IAEX
 				filename_ = QFileDialog::getOpenFileName(
 					this,
 					"OMNotebook -- File Open",
-					QString::null,
+					openDir_,
 					"Notebooks (*.onb *.nb)" );
 			}
 			else
@@ -2126,6 +2146,9 @@ namespace IAEX
 
 			if(!filename_.isEmpty())
 			{
+				// 2006-03-01 AF, Update openDir_
+				openDir_ = QFileInfo( filename_ ).absolutePath();
+
 				application()->commandCenter()->executeCommand(new OpenFileCommand(filename_));
 			}
 			else
@@ -2295,7 +2318,7 @@ namespace IAEX
 		QString filename = QFileDialog::getSaveFileName(
 			this,
 			"Choose a filename to save under",
-			QString::null,
+			saveDir_,
 			"OpenModelica Notebooks (*.onb)");
 
 		if(!filename.isEmpty())
@@ -2313,6 +2336,9 @@ namespace IAEX
 
 			filename_ = filename;
 			statusBar()->showMessage("Ready");
+
+			// 2006-03-01 AF, Update saveDir_
+			saveDir_ = QFileInfo( filename_ ).absolutePath();
 
 			// 2005-09-22 AF, update window title
 			updateWindowTitle();
@@ -2373,23 +2399,25 @@ namespace IAEX
 		QPrintDialog *dlg = new QPrintDialog(&printer, this);
 		if( dlg->exec() == QDialog::Accepted )
 		{
+			// 2006-03-03 AF, make sure that chapter numbers are updated
+			updateChapterCounters();
+
 			application()->commandCenter()->executeCommand(
 				new PrintDocumentCommand(subject_, &printer));
 
 			//currentEditor->document()->print(&printer);
+
+			// 2006-02-23 AF, display message box after printing document
+			QString title = QFileInfo( subject_->getFilename() ).fileName();
+			title.remove( "\n" );
+			if( title.isEmpty() )
+				title = "(untitled)";
+
+			QString msg = QString( "The document " ) + title +
+				QString( " have been printed on " ) +
+				printer.printerName() + QString( "." );
+			QMessageBox::information( 0, "Document printed", msg, "OK" );
 		}
-
-		// 2006-02-23 AF, display message box after printing document
-		QString title = QFileInfo( subject_->getFilename() ).fileName();
-		title.remove( "\n" );
-		if( title.isEmpty() )
-			title = "(untitled)";
-
-		QString msg = QString( "The document " ) + title +
-			QString( " have been printed on " ) +
-			printer.printerName() + QString( "." );
-		QMessageBox::information( 0, "Document printed", msg, "OK" );
-
 
 		delete dlg;
 	}
@@ -2450,6 +2478,8 @@ namespace IAEX
 			QString msg = "Not a valid style name: " + action->text();
 			QMessageBox::warning( 0, "Warning", msg, "OK" );			
 		}
+
+		updateChapterCounters();
 	}
 
 	/*! 
@@ -2471,6 +2501,8 @@ namespace IAEX
 					subject_->cursorChangeStyle( style );
 			}
 		}
+
+		updateChapterCounters();
 	}
 
 	/*! 
@@ -2921,7 +2953,7 @@ namespace IAEX
 		imageformat += ")";
 
 		QString filepath = QFileDialog::getOpenFileName(
-			this, "Insert Image - Select Image", QString::null,
+			this, "Insert Image - Select Image", imageDir_,
 			imageformat );
 
 		if( !filepath.isNull() )
@@ -2939,6 +2971,9 @@ namespace IAEX
 						cout << "Not a valid image size" << endl;
 				}
 			}
+
+			// 2006-03-01 AF, Update imageDir_
+			imageDir_ = QFileInfo( filepath ).absolutePath();
 		}
 	}
 
@@ -2960,11 +2995,16 @@ namespace IAEX
 			if( cursor.hasSelection() )
 			{
 				QString filepath = QFileDialog::getOpenFileName(
-				this, "Insert Link - Select Document", QString::null,
+				this, "Insert Link - Select Document", linkDir_,
 				"Notebooks (*.onb *.nb)" );
 
 				if( !filepath.isNull() )
+				{
+					// 2006-03-01 AF, Update linkDir_
+					linkDir_ = QFileInfo( filepath ).absolutePath();
+
 					subject_->textcursorInsertLink( filepath );
+				}
 			}
 			else
 			{
@@ -2988,11 +3028,14 @@ namespace IAEX
 			QString filename = QFileDialog::getOpenFileName(
 				this,
 				"OMNotebook -- Open old OMNotebook file",
-				QString::null,
+				openDir_,
 				"Old OMNotebook (*.xml)" );
 
 			if( !filename.isEmpty() )
 			{
+				// 2006-03-01 AF, Update openDir_
+				openDir_ = QFileInfo( filename ).absolutePath();
+
 				application()->commandCenter()->executeCommand(
 					new OpenOldFileCommand( filename, READMODE_OLD ));
 			}
@@ -3017,7 +3060,7 @@ namespace IAEX
 		QString filename = QFileDialog::getSaveFileName(
 			this,
 			"Choose a filename to export text to",
-			QString::null,
+			saveDir_,
 			"Textfile (*.txt)");
 
 		if( !filename.isEmpty() )
@@ -3027,6 +3070,12 @@ namespace IAEX
 				qDebug( ".txt not found" );
 				filename.append( ".txt" );
 			}
+
+			// 2006-03-01 AF, Update saveDir_
+			saveDir_ = QFileInfo( filename_ ).absolutePath();
+
+			// 2006-03-03 AF, make sure that chapter numbers are updated
+			updateChapterCounters();
 
 			application()->commandCenter()->executeCommand(
 				new ExportToPureText(subject_, filename) );
@@ -3039,6 +3088,7 @@ namespace IAEX
 	void NotebookWindow::createNewCell()
 	{
 		subject_->cursorAddCell();
+		updateChapterCounters();
 	}
 
 	/*! 
@@ -3047,6 +3097,7 @@ namespace IAEX
 	void NotebookWindow::deleteCurrentCell()
 	{
 		subject_->cursorDeleteCell();
+		updateChapterCounters();
 	}
 
 	/*! 
@@ -3055,6 +3106,7 @@ namespace IAEX
 	void NotebookWindow::cutCell()
 	{
 		subject_->cursorCutCell();
+		updateChapterCounters();
 	}
 
 	/*! 
@@ -3071,6 +3123,7 @@ namespace IAEX
 	void NotebookWindow::pasteCell()
 	{
 		subject_->cursorPasteCell();
+		updateChapterCounters();
 	}
 
 	/*! 
@@ -3125,6 +3178,7 @@ namespace IAEX
 	{
 		subject_->executeCommand(new CreateNewCellCommand("Input"));
 		subject_->updateScrollArea();
+		updateChapterCounters();
 	}
 	
 	

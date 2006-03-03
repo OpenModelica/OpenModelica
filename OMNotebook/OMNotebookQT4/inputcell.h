@@ -123,6 +123,9 @@ namespace IAEX
 		virtual void setTextOutputHtml(QString html);	// Added 2005-11-23 AF
 		void setStyle(const QString &stylename);		// Changed 2005-10-28 AF
 		void setStyle(CellStyle style);					// Changed 2005-10-27 AF
+		void setChapterCounter(QString number);			// Added 2006-03-02 AF
+		QString ChapterCounter();						// Added 2006-03-02 AF
+		QString ChapterCounterHtml();					// Added 2006-03-03 AF
 		void setReadOnly(const bool readonly);			// Added 2005-11-01 AF
 		void setEvaluated(const bool evaluated);		// Added 2006-01-16 AF
 		void setClosed(const bool closed);
@@ -146,14 +149,18 @@ namespace IAEX
 	private:
 		void createInputCell();
 		void createOutputCell();
+		void createChapterCounter();
 		void exceptionInEval(exception &e);					// Added 2006-02-02 AF
 
+	private:
 		bool evaluated_;
 		bool closed_;
 		static int numEvals_;
 
 		QTextBrowser *input_;
 		QTextBrowser *output_;
+		QTextBrowser *chaptercounter_;
+
 		InputCellDelegate *delegate_;
 		//SyntaxHighlighter *syntaxHighlighter_;
 

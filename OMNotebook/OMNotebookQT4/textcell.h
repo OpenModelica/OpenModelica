@@ -99,10 +99,13 @@ namespace IAEX
 	public slots:
 		void clickEvent();
 		void setText(QString text);
-		void setText(QString text, QTextCharFormat format);	// Added 2005-10-28 AF
-		void setTextHtml(QString html);						// Added 2005-10-28 AF
-		void setStyle(const QString &stylename);			// Changed 2005-10-28 AF
-		void setStyle(CellStyle style);						// Changed 2005-10-28 AF
+		void setText(QString text, QTextCharFormat format);		// Added 2005-10-28 AF
+		void setTextHtml(QString html);							// Added 2005-10-28 AF
+		void setStyle(const QString &stylename);				// Changed 2005-10-28 AF
+		void setStyle(CellStyle style);							// Changed 2005-10-28 AF
+		void setChapterCounter(QString number);					// Added 2006-03-02 AF
+		QString ChapterCounter();								// Added 2006-03-02 AF
+		QString ChapterCounterHtml();							// Added 2006-03-03 AF
 		void setReadOnly(const bool readonly);
 		virtual void setFocus(const bool focus);
 
@@ -118,7 +121,11 @@ namespace IAEX
 
 	private:
 		void createTextWidget();
+		void createChapterCounter();
+
+	private:
 		QTextBrowser *text_;
+		QTextBrowser *chaptercounter_;						// Added 2006-03-02 AF
 
 		QString oldHoverLink_;								// Added 2006-02-10 AF
 	};

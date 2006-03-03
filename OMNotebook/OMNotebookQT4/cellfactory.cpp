@@ -119,7 +119,12 @@ namespace IAEX
 				QMessageBox::warning( 0, "Warrning", e.what(), "OK" );
 			}
 
-			text->setDelegate(new OmcInteractiveEnvironment());
+			try
+			{
+				text->setDelegate(new OmcInteractiveEnvironment());
+			}
+			catch( exception e )
+			{}
 
 			QObject::connect(text, SIGNAL(cellselected(Cell *,Qt::KeyboardModifiers)),
 				doc_, SLOT(selectedACell(Cell*,Qt::KeyboardModifiers)));

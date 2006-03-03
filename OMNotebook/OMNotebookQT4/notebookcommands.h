@@ -72,6 +72,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "puretextvisitor.h"
 #include "updatelinkvisitor.h"
 #include "printervisitor.h"
+#include "chaptercountervisitor.h"
 #include "xmlparser.h"
 #include "inputcell.h"
 #include "cellgroup.h"
@@ -439,6 +440,37 @@ namespace IAEX
 			}
 		}
 
+		Document *doc_;
+	};
+
+	/*! 
+	 * \class UpdateChapterCounters
+	 * \author Anders Fernström
+	 * \date 2006-03-02
+	 *
+	 * Updates all chapter counter in a documetn
+	 */
+	class UpdateChapterCounters : public Command
+	{
+	public:
+		UpdateChapterCounters( Document *doc )
+			:doc_(doc){}
+		virtual ~UpdateChapterCounters(){}
+		void execute()
+		{
+			try
+			{
+				ChapterCounterVisitor visitor;
+				doc_->runVisitor( visitor );
+			}
+			catch(exception &e)
+			{
+				string str = string("UpdateChapterCounters(), Exception: ") + e.what();
+				throw exception( str.c_str() );
+			}			
+		}
+
+	private:
 		Document *doc_;
 	};
 

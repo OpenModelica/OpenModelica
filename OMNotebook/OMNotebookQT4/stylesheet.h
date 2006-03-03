@@ -89,9 +89,10 @@ namespace IAEX
 	protected:
 		void initializeStyle();
 		void traverseStyleSettings(QDomNode p, CellStyle *item) const;
-		void parseBorderTag(QDomElement f, CellStyle *item) const;
-		void parseAlignmentTag(QDomElement f, CellStyle *item) const;
-		void parseFontTag(QDomElement f, CellStyle *item) const;
+		void parseBorderTag(QDomElement element, CellStyle *item) const;
+		void parseAlignmentTag(QDomElement element, CellStyle *item) const;
+		void parseFontTag(QDomElement element, CellStyle *item) const;
+		void parseChapterLevelTag(QDomElement element, CellStyle *item) const;
 
 	private:
 		Stylesheet(const QString &filename);

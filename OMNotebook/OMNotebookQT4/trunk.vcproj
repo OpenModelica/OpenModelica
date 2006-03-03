@@ -48,7 +48,7 @@
 				GenerateDebugInformation="FALSE"
 				ProgramDatabaseFile=""
 				SubSystem="2"
-				StackReserveSize="4000000"/>
+				StackReserveSize="6000000"/>
 			<Tool
 				Name="VCMIDLTool"
 				WarningLevel="0"
@@ -115,7 +115,7 @@
 				ProgramDatabaseFile=""
 				SubSystem="1"
 				HeapReserveSize="0"
-				StackReserveSize="4000000"
+				StackReserveSize="6000000"
 				StackCommitSize="0"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -175,6 +175,9 @@
 			</File>
 			<File
 				RelativePath="cellparserfactory.cpp">
+			</File>
+			<File
+				RelativePath=".\chaptercountervisitor.cpp">
 			</File>
 			<File
 				RelativePath=".\commandcompletion.cpp">
@@ -276,9 +279,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Moc&apos;ing cellapplication.h..."
-						CommandLine="$(QTDIR)\bin\moc.exe cellapplication.h -o moc_cellapplication.cpp
+						CommandLine="$(QTHOME)\bin\moc.exe cellapplication.h -o moc_cellapplication.cpp
 "
-						AdditionalDependencies="$(QTDIR)\bin\moc.exe"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
 						Outputs="moc_cellapplication.cpp"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -328,9 +331,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Moc&apos;ing celldocument.h..."
-						CommandLine="$(QTDIR)\bin\moc.exe celldocument.h -o moc_celldocument.cpp
+						CommandLine="$(QTHOME)\bin\moc.exe celldocument.h -o moc_celldocument.cpp
 "
-						AdditionalDependencies="$(QTDIR)\bin\moc.exe"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
 						Outputs="moc_celldocument.cpp"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -357,9 +360,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Moc&apos;ing cellgroup.h..."
-						CommandLine="$(QTDIR)\bin\moc.exe cellgroup.h -o moc_cellgroup.cpp
+						CommandLine="$(QTHOME)\bin\moc.exe cellgroup.h -o moc_cellgroup.cpp
 "
-						AdditionalDependencies="$(QTDIR)\bin\moc.exe"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
 						Outputs="moc_cellgroup.cpp"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -375,6 +378,9 @@
 			</File>
 			<File
 				RelativePath=".\cellstyle.h">
+			</File>
+			<File
+				RelativePath=".\chaptercountervisitor.h">
 			</File>
 			<File
 				RelativePath="command.h">
@@ -787,6 +793,9 @@
 			<File
 				RelativePath=".\omnotebook_png.png">
 			</File>
+			<File
+				RelativePath=".\res_qt.qrc">
+			</File>
 		</Filter>
 		<Filter
 			Name="Generated Files"
@@ -798,29 +807,6 @@
 		</Filter>
 		<File
 			RelativePath=".\omnotebook_icon.ico">
-		</File>
-		<File
-			RelativePath=".\res_qt.qrc">
-			<FileConfiguration
-				Name="Release|Win32">
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Compiling Qt resource file: .\res_qt.qrc..."
-					CommandLine="&quot;$(QTDIR)\bin\rcc.exe&quot; -name &quot;res_qt&quot; -no-compress &quot;.\res_qt.qrc&quot; -o &quot;GeneratedFiles\qrc_res_qt.cpp&quot;
-"
-					AdditionalDependencies="$(QTDIR)\bin\rcc.exe;omnotebook_png.png"
-					Outputs="&quot;GeneratedFiles\qrc_res_qt.cpp&quot;"/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Debug|Win32">
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Compiling Qt resource file: .\res_qt.qrc..."
-					CommandLine="&quot;$(QTDIR)\bin\rcc.exe&quot; -name &quot;res_qt&quot; -no-compress &quot;.\res_qt.qrc&quot; -o &quot;GeneratedFiles\qrc_res_qt.cpp&quot;
-"
-					AdditionalDependencies="$(QTDIR)\bin\rcc.exe;omnotebook_png.png"
-					Outputs="&quot;GeneratedFiles\qrc_res_qt.cpp&quot;"/>
-			</FileConfiguration>
 		</File>
 	</Files>
 	<Globals>

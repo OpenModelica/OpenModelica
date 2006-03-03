@@ -388,7 +388,7 @@ namespace IAEX
 
 		// set style, before set text, so all rules are applied to the style
 		QString html = textcell->textHtml();
-		textcell->setStyle( textcell->style() );
+		textcell->setStyle( *textcell->style() );
 		textcell->setTextHtml( html );
 
 		parent->addChild( textcell );
@@ -457,7 +457,7 @@ namespace IAEX
 		}
 
 		// set style, before set text, so all rules are applied to the style
-		inputcell->setStyle( inputcell->style() );
+		inputcell->setStyle( *inputcell->style() );
 		inputcell->setText( text );
 
 		// 2006-01-17 AF, check if the inputcell is open or closed

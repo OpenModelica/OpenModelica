@@ -46,33 +46,28 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 */
 
 /*! 
- * \file puretextvisitor.cpp
+ * \file chaptercountervisitor.cpp
  * \author Anders Fernström
  */
 
-// QT Headers
-#include <QtCore/QFile>
-#include <QtCore/QTextStream>
+//STD Headers
+#include <exception>
 
 //IAEX Headers
-#include "puretextvisitor.h"
+#include "chaptercountervisitor.h"
 #include "cellgroup.h"
 #include "textcell.h"
 #include "inputcell.h"
 #include "cellcursor.h"
-#include "celldocument.h"
 
 
 namespace IAEX
 {
 	/*! 
-	 * \class PureTextVisitor
-	 * \date 2005-11-21
+	 * \class ChapterCounterVisitor
+	 * \date 2006-03-02
 	 *
-	 * \brief Export contents in a document to a file as pure text
-	 *
-	 * Traverses the cellstructure and export the text inside textcells
-	 * and inputcells to a file, as pure/plain text.
+	 * \brief Update the chapter counters in the document
 	 */
 
 	/*! 
@@ -80,9 +75,10 @@ namespace IAEX
 	 *
 	 * \brief The class constructor
 	 */
-	PureTextVisitor::PureTextVisitor(QFile *file)
+	ChapterCounterVisitor::ChapterCounterVisitor()
 	{
-		ts_ = new QTextStream( file );
+		for( int i = 0; i < COUNTERS; ++i )
+			counters_[i] = 0;
 	}
 
 	/*! 
@@ -90,89 +86,101 @@ namespace IAEX
 	 *
 	 * \brief The class deconstructor
 	 */
-	PureTextVisitor::~PureTextVisitor()
-	{
-		delete ts_;
-	}
-
-	// CELL
-	void PureTextVisitor::visitCellNodeBefore(Cell *)
+	ChapterCounterVisitor::~ChapterCounterVisitor()
 	{}
 
-	void PureTextVisitor::visitCellNodeAfter(Cell *)
+	// CELL
+	void ChapterCounterVisitor::visitCellNodeBefore(Cell *)
+	{}
+
+	void ChapterCounterVisitor::visitCellNodeAfter(Cell *)
 	{}
 
 	// GROUPCELL
-	void PureTextVisitor::visitCellGroupNodeBefore(CellGroup *node)
+	void ChapterCounterVisitor::visitCellGroupNodeBefore(CellGroup *node)
 	{}
 
-	void PureTextVisitor::visitCellGroupNodeAfter(CellGroup *)
+	void ChapterCounterVisitor::visitCellGroupNodeAfter(CellGroup *)
 	{}
 
 	// TEXTCELL
-	void PureTextVisitor::visitTextCellNodeBefore(TextCell *node)
+	void ChapterCounterVisitor::visitTextCellNodeBefore(TextCell *node)
 	{
-		node->viewExpression(false);
-
-		// remove img tag before exporting
-		int pos = 0;
-		QString html = node->textHtml();
-		while( true )
+		int level = node->style()->chapterLevel();
+		if( level > 0 && level <= COUNTERS )
 		{
-			int start = html.indexOf( "<img src=", pos, Qt::CaseInsensitive );
-			if( 0 <= start )
+			// Add on chapter couner
+			counters_[ level - 1 ]++;
+
+			QString counter;
+			QString number;
+			for( int i = 0; i < level; ++i )
 			{
-				int end = html.indexOf( "/>", start, Qt::CaseInsensitive );
-				if( 0 <= end )
-				{
-					html.remove( start, (end - start) + 2 );
-					pos = start;
-				}
-				else
-					break;
+				number.setNum( counters_[i] );
+
+				if( !counter.isEmpty() )
+					counter += ".";
+
+				counter += number;
 			}
-			else
-				break;
+
+			// reset all counters avter counter[level]
+			for( int i = level; i < COUNTERS; ++i )
+				counters_[i] = 0;
+
+			node->setChapterCounter( counter );
 		}
-		QTextEdit tmp;
-		tmp.setHtml( html );
-
-		// 2006-03-03 AF, export chapter counter
-		if( !node->ChapterCounter().isNull() )
-			(*ts_) << node->ChapterCounter() << QString(" ");
-
-		(*ts_) << tmp.toPlainText();
-		(*ts_) << "\r\n\r\n\r\n";
+		else
+		{
+			// clear chapter counter
+			node->setChapterCounter( "" );
+		}
 	}
 
-	void PureTextVisitor::visitTextCellNodeAfter(TextCell *)
+	void ChapterCounterVisitor::visitTextCellNodeAfter(TextCell *)
 	{}
 
 	//INPUTCELL
-	void PureTextVisitor::visitInputCellNodeBefore(InputCell *node)
+	void ChapterCounterVisitor::visitInputCellNodeBefore(InputCell *node)
 	{
-		// 2006-03-03 AF, export chapter counter
-		if( !node->ChapterCounter().isNull() )
-			(*ts_) << node->ChapterCounter() << QString(" ");
-
-		(*ts_) << node->text();
-		(*ts_) << QString( "\r\n\r\n" );
-
-		// 2006-03-03 AF, export output if not an image
-		if( node->textOutputHtml().indexOf( "<img src=", 0, Qt::CaseInsensitive ) < 0 )
+		int level = node->style()->chapterLevel();
+		if( level > 0 && level <= COUNTERS )
 		{
-			(*ts_) << node->textOutput();
-			(*ts_) << QString( "\r\n\r\n\r\n" );
+			// Add on chapter couner
+			counters_[ level - 1 ]++;
+
+			QString counter;
+			QString number;
+			for( int i = 0; i < level; ++i )
+			{
+				number.setNum( counters_[i] );
+
+				if( !counter.isEmpty() )
+					counter += ".";
+
+				counter += number;
+			}
+
+			// reset all counters avter counter[level]
+			for( int i = level; i < COUNTERS; ++i )
+				counters_[i] = 0;
+
+			node->setChapterCounter( counter );
+		}
+		else
+		{
+			// clear chapter counter
+			node->setChapterCounter( "" );
 		}
 	}
 
-	void PureTextVisitor::visitInputCellNodeAfter(InputCell *)
+	void ChapterCounterVisitor::visitInputCellNodeAfter(InputCell *)
 	{}
 
 	//CELLCURSOR
-	void PureTextVisitor::visitCellCursorNodeBefore(CellCursor *)
+	void ChapterCounterVisitor::visitCellCursorNodeBefore(CellCursor *)
 	{}      
 
-	void PureTextVisitor::visitCellCursorNodeAfter(CellCursor *)
+	void ChapterCounterVisitor::visitCellCursorNodeAfter(CellCursor *)
 	{}
 } 

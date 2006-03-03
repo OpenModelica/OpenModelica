@@ -423,10 +423,11 @@ namespace IAEX
 		
 		// FUNCTION NAME
 		// 2006-01-14 AF, added: der
+		// 2006-03-01 AF, removed sign, added sin
 		mappings_.insert( QString("\\b(a(bs|nalysisType)|c(ardinality|hange|eil|ross)|d(e(lay|der)") + 
 			"|i(v|agonal))|edge|f(ill|loor)|i(dentity|n(itial|teger))|linspace|ma(trix|x)|min|mod|n(dims" +
-			"|oEvent)|o(nes|uterProduct)|pr(e|o(duct|mote))|re(init|m)|s(amle|calar|i(gn|ze)|kew" +
-            "|qrt|um|ymmetric)|t(erminal|ranspose)|vector|zeros)|(der)\\b", 
+			"|oEvent)|o(nes|uterProduct)|pr(e|o(duct|mote))|re(init|m)|s(amle|calar|i(n|ze)|kew" +
+            "|qrt|um|ymmetric)|t(erminal|ranspose)|vector|zeros|der)\\b", 
 			functionNameFormat_ );
 
 		// CONSTANT

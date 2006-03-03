@@ -84,9 +84,9 @@ namespace IAEX
 			CellStyle style;
 
 			if(cursor->currentCell()->hasChilds())
-				style = cursor->currentCell()->child()->style();
+				style = *cursor->currentCell()->child()->style();
 			else
-				style = cursor->currentCell()->style();
+				style = *cursor->currentCell()->style();
 
 			
 			//This does not work.
@@ -333,7 +333,7 @@ namespace IAEX
 		Factory *fac = document()->cellFactory();
 
 		// 2005-10-28 AF, changed style from QString to CellStyle
-		CellStyle style = cell->style();
+		CellStyle style = *cell->style();
 
 		//Create a new cell.
 		if(cursor->currentCell()->isClosed())

@@ -146,7 +146,7 @@ namespace IAEX{
 	 *
 	 * \return The cells style
 	 */
-	CellStyle CellGroup::style()
+	CellStyle *CellGroup::style()
 	{
 		if(closed_)
 			return child()->style();
@@ -154,7 +154,7 @@ namespace IAEX{
 		{
 			CellStyle tmp;
 			tmp.setName( "cellgroup" );
-			return tmp;
+			return &tmp;
 		}
 	}
 

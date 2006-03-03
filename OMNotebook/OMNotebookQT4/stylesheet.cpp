@@ -182,7 +182,7 @@ namespace IAEX
 	 * \author Anders Fernström
 	 * \date 2005-10-26
 	 *
-	 * \brief Returns all the CellStyle names.
+	 * \brief Returns all the CellStyle names of the visible styles
 	 * \return A vector with all CellStyle names
 	 */
 	vector<QString> Stylesheet::getAvailableStyleNames() const
@@ -198,6 +198,7 @@ namespace IAEX
 	 * attributes:
 	 *	- style
 	 *		> name [attribute, {string}]
+	 *		> visible [attribute, {"true", "false"}]
 	 *	- border
 	 *		> value [attribute, {integer}]		//border thickness
 	 *		> margin [attribute, {integer}]
@@ -218,6 +219,7 @@ namespace IAEX
 	 *			> red [attribute, {integer <0-255>}]
 	 *			> green [attribute, {integer <0-255>}]
 	 *			> blue [attribute, {integer <0-255>}]
+	 *	- chapter [{string}]
 	 *
 	 * Read the stylesheet file if something is unclear.
 	 */
@@ -246,11 +248,20 @@ namespace IAEX
 					CellStyle style;
 					style.setName( e.attribute( "name" ));
 
+					// get visibility
+					if( e.attribute( "visible", "true" ).indexOf( "false", 0, Qt::CaseInsensitive ) < 0 )
+                        style.setVisible( true );
+					else
+						style.setVisible( false );
+
 					QDomNode node = e.firstChild();
 					traverseStyleSettings(node, &style);
 
 					styles_.insert( style.name(), style );
-					styleNames_.push_back( style.name() );
+
+					// 2006-03-02 AF, only add styles that are visible
+					if( style.visible() )
+						styleNames_.push_back( style.name() );
 				}
 			}
 			n = n.nextSibling();
@@ -278,6 +289,8 @@ namespace IAEX
 				parseAlignmentTag( element, item );
 			else if( element.tagName() == "font" )
 				parseFontTag( element, item );
+			else if( element.tagName() == "chapterlevel" )
+				parseChapterLevelTag( element, item );
 			else
 				cout << "Tag not known" << element.tagName().toStdString();
 
@@ -486,5 +499,22 @@ namespace IAEX
 
 			fontNode = fontNode.nextSibling();
 		}
+	}
+
+	/*
+	 * \author Anders Fernström
+	 * \date 2006-03-02
+	 *
+	 * \brief Parse the CHAPTERLEVEL tag
+	 */
+	void Stylesheet::parseChapterLevelTag(QDomElement element, 
+		CellStyle *item) const
+	{
+		bool ok;
+		
+		// Level
+		int level = element.text().toInt(&ok);
+		if(ok)
+			item->setChapterLevel( level );
 	}
 }

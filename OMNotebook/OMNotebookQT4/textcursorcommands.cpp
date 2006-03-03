@@ -380,6 +380,9 @@ namespace IAEX
 				rule = new Rule( "TextAlignment", "Justify" );
 				
 			document()->getCursor()->currentCell()->addRule( rule );
+
+			// update the cells style
+			document()->getCursor()->currentCell()->style()->setAlignment( alignment_ );
 		}
 	}
 
@@ -432,6 +435,9 @@ namespace IAEX
 			ruleValue.setNum( margin_ );
 			Rule *rule = new Rule( "OMNotebook_Margin", ruleValue );
 			document()->getCursor()->currentCell()->addRule( rule );
+
+			// update the cells style
+			document()->getCursor()->currentCell()->style()->textFrameFormat()->setMargin( margin_ );
 		}
 	}
 
@@ -461,6 +467,9 @@ namespace IAEX
 			ruleValue.setNum( padding_ );
 			Rule *rule = new Rule( "OMNotebook_Padding", ruleValue );
 			document()->getCursor()->currentCell()->addRule( rule );
+
+			// update the cells style
+			document()->getCursor()->currentCell()->style()->textFrameFormat()->setPadding( padding_ );
 		}
 	}
 
@@ -490,6 +499,9 @@ namespace IAEX
 			ruleValue.setNum( border_ );
 			Rule *rule = new Rule( "OMNotebook_Border", ruleValue );
 			document()->getCursor()->currentCell()->addRule( rule );
+
+			// update the cells style
+			document()->getCursor()->currentCell()->style()->textFrameFormat()->setBorder( border_ );
 		}
 	}
 
@@ -520,7 +532,7 @@ namespace IAEX
 						// save text settings and set them after image have been inserted
 						QTextCharFormat format = cursor.charFormat();
 						if( editor->toPlainText().isEmpty() )
-							format = *document()->getCursor()->currentCell()->style().textCharFormat();
+							format = *document()->getCursor()->currentCell()->style()->textCharFormat();
 												
 						QTextImageFormat imageformat;
 						imageformat.merge( format );

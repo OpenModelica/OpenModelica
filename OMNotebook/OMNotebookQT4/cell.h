@@ -148,7 +148,7 @@ namespace IAEX
 
 		//Properties
 		const QColor backgroundColor() const;       
-		virtual CellStyle style();					// Changed 2005-10-27 AF
+		virtual CellStyle *style();					// Changed 2005-10-27 AF
 		QString cellTag();							// Added 2006-01-16 AF
 		virtual rules_t rules() const;
 		QWidget *mainWidget();
@@ -160,14 +160,14 @@ namespace IAEX
 	public slots:
 		virtual void addRule(Rule *r);
 		virtual void setText(QString text){}
-		virtual void setText(QString text, QTextCharFormat format){}	// Added 2005-10-27 AF
-		virtual void setTextHtml(QString html){}						// Added 2005-10-27 AF
-		virtual void setStyle(const QString &stylename);				// Changed 2005-10-28 AF
-		virtual void setStyle(CellStyle style);							// Changed 2005-10-27 AF
-		void setCellTag(QString tagname);								// Added 2006-01-16 AF
+		virtual void setText(QString text, QTextCharFormat format){}			// Added 2005-10-27 AF
+		virtual void setTextHtml(QString html){}								// Added 2005-10-27 AF
+		virtual void setStyle(const QString &stylename);						// Changed 2005-10-28 AF
+		virtual void setStyle(CellStyle style);									// Changed 2005-10-27 AF
+		void setCellTag(QString tagname);										// Added 2006-01-16 AF
 		virtual void setReadOnly(const bool){}
 		virtual void setFocus(const bool focus) = 0;
-		virtual void applyLinksToText(){}								// Added 2005-11-09 AF
+		virtual void applyLinksToText(){}										// Added 2005-11-09 AF
 
 		virtual void setBackgroundColor(const QColor color);
 		virtual void setSelected(const bool selected);
@@ -180,6 +180,7 @@ namespace IAEX
 		void setLabel(QLabel *label);
 		void setTreeWidget(TreeView *newTreeWidget);
 		void setMainWidget(QWidget *newWidget);
+		void addChapterCounter(QWidget *counter);		// Added 2006-02-03 AF
 
 	signals:
 		void clicked(Cell*);

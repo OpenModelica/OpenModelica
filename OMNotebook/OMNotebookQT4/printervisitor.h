@@ -58,7 +58,8 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "document.h"
 
 // forward declaration
-class QTextDocument;
+class QTextEdit;
+class QTextTable;
 
 
 using namespace std;
@@ -87,10 +88,13 @@ namespace IAEX
 		virtual void visitCellCursorNodeAfter(CellCursor *cursor);
 
 	private:
-		QTextDocument *doc_;
+		QTextEdit *printEditor_;
+		QTextTable *table_;
 		bool ignore_;
 		bool firstChild_;
 		CellGroup *closedCell_;
+
+		int currentTableRow_;
 	};
 }
 #endif

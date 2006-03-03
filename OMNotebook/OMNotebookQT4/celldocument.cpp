@@ -710,7 +710,7 @@ namespace IAEX
 	/*! 
 	 * \author Anders Fernström
 	 * \date 2005-11-29
-	 * \date 2005-12-08 (update)
+	 * \date 2006-03-03 (update)
 	 *
 	 * \brief Update the scrollarea so the correct area is displayed
 	 *
@@ -718,6 +718,8 @@ namespace IAEX
 	 * some large bugs. Didn't calculate cells position correct, becuase
 	 * qt:s layout system reset position to 0 in every groupcell and
 	 * layout are probobly not set correctly.
+	 * 2006-03-03 AF, ignore move if the cursor it at the end of the 
+	 * document
 	 */
 	void CellDocument::updateScrollArea()
 	{
@@ -755,6 +757,12 @@ namespace IAEX
 					if( height > (scrollBottom-scrollTop) )
 					{
 						// cell so big that it span over entire viewarea
+						return;
+					}
+					// END OF DOCUMENT
+					else if( scrollBottom > (scroll_->widget()->height() - 10 ))
+					{
+						// 2006-03-03 AF, ignore if cursor at end of document
 						return;
 					}
 					// UP

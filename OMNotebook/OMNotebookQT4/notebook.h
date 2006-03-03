@@ -108,6 +108,7 @@ namespace IAEX
 		void updatePaddingMenu();				// Added 2005-11-07 AF
 		void updateWindowMenu();				// Added 2006-01-27 AF
 		void updateWindowTitle();				// Added 2006-01-17 AF
+		void updateChapterCounters();			// Added 2006-03-02 AF
 		void setStatusMessage( QString msg );	// Added 2006-02-10 AF
 
 	protected:
@@ -332,7 +333,12 @@ namespace IAEX
 		QTimer *savingTimer_;
 		map<QString, QAction*> styles_;   
 
-		bool closing_;		// Added 2006-0-09 AF
+		bool closing_;				// Added 2006-02-09 AF
+
+		static QString openDir_;	// Added 2006-03-01 AF
+		static QString saveDir_;	// Added 2006-03-01 AF
+		static QString imageDir_;	// Added 2006-03-01 AF
+		static QString linkDir_;	// Added 2006-03-01 AF
 	};
 }
 #endif

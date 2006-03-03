@@ -161,7 +161,7 @@ namespace IAEX
 		node->viewExpression(false);
 
 		// Add style setting to textcell element
-		textcell.setAttribute( XML_STYLE, node->style().name() );
+		textcell.setAttribute( XML_STYLE, node->style()->name() );
 
 		// Create an text element and append an text node to the element
 		QDomElement textelement = domdoc_.createElement( XML_TEXT );
@@ -202,7 +202,7 @@ namespace IAEX
 		QDomElement inputcell = domdoc_.createElement( XML_INPUTCELL );
 
 		// Add style setting to inputcell element
-		inputcell.setAttribute( XML_STYLE, node->style().name() );
+		inputcell.setAttribute( XML_STYLE, node->style()->name() );
 
 		// Add close setting to inputcell element
 		if( node->isClosed() )

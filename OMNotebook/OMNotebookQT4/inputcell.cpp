@@ -67,7 +67,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtGui/QMouseEvent>
 #include <QtGui/QGridLayout>
 #include <QtGui/QKeyEvent>
-#include <QtGui/QLineEdit>
+#include <QtGui/QLabel>
 #include <QtGui/QMessageBox>
 #include <QtGui/QResizeEvent>
 #include <QtGui/QFrame>
@@ -310,7 +310,7 @@ namespace IAEX
 		createInputCell();
 		createOutputCell();
 
-		setBackgroundColor(QColor(200,200,255));  
+		//setBackgroundColor(QColor(200,200,255));  
 	}
 
 	/*! 
@@ -348,7 +348,7 @@ namespace IAEX
 
 	/*! 
 	 * \author Anders Fernström and Ingemar Axelsson
-	 * \date 2005-12-15 (update)
+	 * \date 2006-03-02 (update)
 	 *
 	 * \brief Creates the QTextEdit for the input part of the 
 	 * inputcell
@@ -359,17 +359,21 @@ namespace IAEX
 	 * commandcompletion, but also for eval. invoking eval have moved
 	 * from the eventfilter on this cell to the reimplemented key event
 	 * handler in the editor
+	 * 2006-03-02 AF, Added call to createChapterCounter();
 	 */
 	void InputCell::createInputCell()
 	{
 		input_ = new MyTextEdit( mainWidget() );
 		layout_->addWidget( input_, 1, 1 );
 
+		// 2006-03-02 AF, Add a chapter counter
+		createChapterCounter();
+
 		//input_->setReadOnly( false );
 		input_->setReadOnly( true );
 		input_->setUndoRedoEnabled( true );
 		//input_->setFrameStyle( QFrame::NoFrame );
-		input_->setFrameShape( QFrame::Panel );
+		input_->setFrameShape( QFrame::Box );
 		input_->setAutoFormatting( QTextEdit::AutoNone );
 
 		input_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
@@ -425,7 +429,8 @@ namespace IAEX
 		layout_->addWidget( output_, 2, 1 );
 
 		output_->setReadOnly( true );
-		output_->setFrameShape( QFrame::Panel );
+		//output_->setFrameShape( QFrame::Panel );
+		output_->setFrameShape( QFrame::Box );
 		output_->setAutoFormatting( QTextEdit::AutoNone );
 
 		output_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
@@ -457,6 +462,30 @@ namespace IAEX
 		}
 
 		output_->hide();
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-03-02
+	 *
+	 * \brief Creates the chapter counter
+	 */
+	void InputCell::createChapterCounter()
+	{
+		chaptercounter_ = new MyTextEdit(this);
+		chaptercounter_->setFrameStyle( QFrame::NoFrame );
+		chaptercounter_->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding));
+		chaptercounter_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+		chaptercounter_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+		chaptercounter_->setContextMenuPolicy( Qt::NoContextMenu );
+
+		chaptercounter_->setFixedWidth(75);
+		chaptercounter_->setReadOnly( true );
+
+		connect( chaptercounter_, SIGNAL( clickOnCell() ),
+			this, SLOT( clickEvent() ));
+
+		addChapterCounter( chaptercounter_ );
 	}
 
 	/*! 
@@ -575,7 +604,7 @@ namespace IAEX
 	
 		// 2005-10-04 AF, added some code to replace/remove
 		QString tmp = text.replace("<br>", "\n");
-		tmp.replace( "&nbsp;&nbsp;&nbsp;&nbsp;", "\t" );
+		tmp.replace( "&nbsp;&nbsp;&nbsp;&nbsp;", "&nbsp;" );
 
 		// 2005-12-08 AF, remove any <span style tag
 		QRegExp spanEnd( "</span>" );
@@ -606,8 +635,9 @@ namespace IAEX
 
 		// 2005-12-16 AF, unblock signals and tell highlighter to highlight
 		input_->document()->blockSignals(false);
-		input_->document()->setHtml( input_->toHtml() );
-		input_->document()->rootFrame()->setFrameFormat( (*style().textFrameFormat()) );
+		//input_->document()->setHtml( input_->toHtml() );
+		input_->document()->setPlainText( input_->toPlainText() );
+		input_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
 
 		contentChanged();
 	}
@@ -626,7 +656,7 @@ namespace IAEX
 	void InputCell::setTextHtml(QString html)
 	{
 		input_->setHtml( html );
-		setStyle( style() );
+		setStyle( style_ );
 
 		contentChanged();
 	}
@@ -694,7 +724,7 @@ namespace IAEX
 	/*! 
 	 * \author Anders Fernström
 	 * \date 2005-10-27
-	 * \date 2005-11-03 (update)
+	 * \date 2006-03-02 (update)
 	 *
 	 * \brief Set cell style
 	 *
@@ -703,6 +733,7 @@ namespace IAEX
 	 *
 	 * 2005-11-03 AF, updated so the text is selected when the style
 	 * is changed, after the text is unselected.
+	 * 2006-03-02 AF, set chapter style
 	 *
 	 * \param style The cell style that is to be applyed to the cell
 	 */
@@ -724,6 +755,22 @@ namespace IAEX
 			QTextCursor cursor(	input_->textCursor() );
 			cursor.clearSelection();
 			input_->setTextCursor( cursor );
+
+			// 2006-03-02 AF, set chapter counter style
+			chaptercounter_->selectAll();
+			chaptercounter_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
+
+			QTextFrameFormat format = chaptercounter_->document()->rootFrame()->frameFormat();
+			format.setMargin( style_.textFrameFormat()->margin() + 
+			style_.textFrameFormat()->border() + 
+			style_.textFrameFormat()->padding()	);
+			chaptercounter_->document()->rootFrame()->setFrameFormat( format );
+
+			chaptercounter_->setAlignment( (Qt::AlignmentFlag)Qt::AlignRight );
+
+			cursor = chaptercounter_->textCursor();
+			cursor.clearSelection();
+			chaptercounter_->setTextCursor( cursor );
 		}
 		else
 		{
@@ -731,24 +778,81 @@ namespace IAEX
 		}
 	}
 
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-03-02
+	 *
+	 * \brief set the chapter counter
+	 */
+	void InputCell::setChapterCounter( QString number )
+	{
+		chaptercounter_->selectAll();
+		chaptercounter_->setPlainText( number );
+		chaptercounter_->setAlignment( (Qt::AlignmentFlag)Qt::AlignRight );
+		QTextFrameFormat format = chaptercounter_->document()->rootFrame()->frameFormat();
+		format.setMargin( style_.textFrameFormat()->margin() + 
+			style_.textFrameFormat()->border() + 
+			style_.textFrameFormat()->padding()	);
+		chaptercounter_->document()->rootFrame()->setFrameFormat( format );
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-03-02
+	 *
+	 * \brief return the value of the chapter counter, as plain text. 
+	 * Returns null if the counter is empty
+	 */
+	QString InputCell::ChapterCounter()
+	{
+		if( chaptercounter_->toPlainText().isEmpty() )
+			return QString::null;
+
+		return chaptercounter_->toPlainText();
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-03-03
+	 *
+	 * \brief return the value of the chapter counter, as html code. 
+	 * Returns null if the counter is empty
+	 */
+	QString InputCell::ChapterCounterHtml()
+	{
+		if( chaptercounter_->toPlainText().isEmpty() )
+			return QString::null;
+
+		return chaptercounter_->toHtml();
+	}
+
 	/*!
 	 * \author Anders Fernström
 	 * \date 2005-11-01
+	 * \date 2006-03-02 (update)
 	 *
 	 * \breif Set readonly value on the texteditor
 	 *
 	 * \param readonly The boolean value of readonly property
+	 *
+	 * 2006-03-02 AF, clear text selection in chapter counter
 	 */
 	void InputCell::setReadOnly(const bool readonly)
 	{
 		if( readonly )
 		{
-			QTextCursor cursor1 = input_->textCursor();
-			QTextCursor cursor2 = output_->textCursor();
-			cursor1.clearSelection();
-			cursor2.clearSelection();
-			input_->setTextCursor( cursor1 );
-			output_->setTextCursor( cursor2 );
+			QTextCursor cursor = input_->textCursor();
+			cursor.clearSelection();
+			input_->setTextCursor( cursor );
+
+			cursor = output_->textCursor();
+			cursor.clearSelection();
+			output_->setTextCursor( cursor );
+
+			// 2006-03-02 AF, clear selection in chapter counter
+			cursor = chaptercounter_->textCursor();
+			cursor.clearSelection();
+			chaptercounter_->setTextCursor( cursor );
 		}
 
 		input_->setReadOnly(readonly);
@@ -844,7 +948,7 @@ namespace IAEX
 			height = 30;
 
 		// add a little extra, just in case /AF
-		input_->setMinimumHeight( height + 5 );
+		input_->setMinimumHeight( height + 3 );
 
 		if( evaluated_ && !closed_ )
 		{	
@@ -857,7 +961,8 @@ namespace IAEX
 			height += outHeight;
 		}
 
-		setHeight( height );
+		// add a little extra, just in case
+		setHeight( height + 3 );
 		emit textChanged();
 	}
 
@@ -1062,12 +1167,11 @@ namespace IAEX
 							imageformat.setWidth( image->width() );
 							imageformat.setName( newname );
 
-							// 2006-02-13 AF, set {Plot} first in output
 							output_->selectAll();
-							output_->textCursor().insertText( "{Plot - Generated by PtPlot}" );
+							//output_->textCursor().insertText( "{Plot - Generated by PtPlot}" );
 							//output_->setPlainText("{Plot}\n");
 							QTextCursor outCursor = output_->textCursor();
-							outCursor.movePosition( QTextCursor::End );
+							//outCursor.movePosition( QTextCursor::End );
 							outCursor.insertImage( imageformat );
 							break;
 						}
@@ -1259,15 +1363,15 @@ namespace IAEX
 	 */
 	void InputCell::charFormatChanged(const QTextCharFormat &)
 	{
-		if( input_->toPlainText().isEmpty() )
-		{
+		//if( input_->toPlainText().isEmpty() )
+		//{
 			input_->blockSignals( true );
-			input_->setAlignment( (Qt::AlignmentFlag)style().alignment() );
-			input_->mergeCurrentCharFormat( (*style().textCharFormat()) );
-			input_->document()->rootFrame()->setFrameFormat( (*style().textFrameFormat()) );
+			input_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
+			input_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
+			input_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
 			input_->blockSignals( false );
 			contentChanged();
-		}
+		//}
 	}
 
 

@@ -67,13 +67,17 @@ namespace IAEX
 	 * \class CellStyle
 	 * \author Anders Fernström
 	 * \date 2005-10-26
-	 * \date 2005-11-15 (update)
+	 * \date 2006-03-02 (update)
 	 * 
 	 * \brief A class that store the different styleoptions that 
 	 * can be changed in a cell.
 	 *
 	 * 2005-11-10 AF, Added some default values in the constructor
 	 * 2005-11-15 AF, Added some more default values
+	 * 2006-03-02 AF, Added a variable and functions that allows the
+	 * style to be hidden from the style menu
+	 * 2006-03-02 AF, Added a variable and functions that holds the 
+	 * styles chapter level, if any
 	 */
 	class CellStyle
 	{
@@ -89,6 +93,12 @@ namespace IAEX
 			textFormat_.setFontPointSize( 12 );
 
 			textFormat_.setForeground( QBrush( QColor(0,0,0) ));
+	
+			// 2006-03-02 AF, defalut visibliity
+			visible_ = true;
+
+			// 2006-03-02 AF, defalut chapter level
+			chapterLevel_ = 0;
 		}
 		virtual ~CellStyle(){}
 
@@ -96,17 +106,24 @@ namespace IAEX
 		QTextCharFormat* textCharFormat(){ return &textFormat_; }
 		QTextFrameFormat* textFrameFormat(){ return &frameFormat_; }
 		int alignment(){ return alignment_; }
+		bool visible(){ return visible_; }					// Added 2006-03-02 AF
+		int chapterLevel(){ return chapterLevel_; }			// Added 2006-03-02 AF
 
 		void setName( QString name ){ name_ = name; }
 		void setTextCharFormat( QTextCharFormat format ){ textFormat_ = format; }
 		void setTextFrameFormat( QTextFrameFormat format ){ frameFormat_ = format; }
 		void setAlignment( int alignment ){ alignment_ = alignment; }
+		void setVisible( bool visible ){ visible_ = visible; }			// Added 2006-03-02 AF
+		void setChapterLevel( int level ){ chapterLevel_ = level; }		// Added 2006-03-02 AF
 
 	private:
 		QString name_;
 		QTextCharFormat textFormat_;
         QTextFrameFormat frameFormat_;
 		int alignment_;
+
+		bool visible_;						// Added 2006-03-02 AF
+		int chapterLevel_;					// Added 2006-03-02 AF
 	};
 }
 

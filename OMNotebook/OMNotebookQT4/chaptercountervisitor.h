@@ -46,83 +46,46 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 */
 
 /*! 
- * \file cellgroup.h
- * \author Ingemar Axelsson and Anders Fernström
- *
+ * \file chaptercountervisitor.h
+ * \author Anders Fernström
  */
 
-#ifndef CELLGROUP_H
-#define CELLGROUP_H
+#ifndef CHAPTERCOUNTERVISITOR_H
+#define CHAPTERCOUNTERVISITOR_H
 
-//STD Headers
-#include <vector>
-#include <list>
-
-//QT Headers
-#include <QtGui/QWidget>
-#include <QtGui/QLayout>
-//Added by qt3to4:
-#include <QtGui/QMouseEvent>
-#include <QtGui/QGridLayout>
+#define COUNTERS	10			// 10 levels should be enough
 
 //IAEX Headers
-#include "cell.h"
 #include "visitor.h"
-
-using namespace std;
-using namespace IAEX;
-
-namespace IAEX{
-
-	class CellGroup : public Cell
-	{	
-		Q_OBJECT
-
-	public: 
-		CellGroup(QWidget *parent=0);
-		virtual ~CellGroup();
-
-		virtual void viewExpression(const bool){}; 
-
-		//Traversals implementation
-		virtual void accept(Visitor &v);
-
-		//Datastructure implementation.
-		virtual void addChild(Cell *newCell);
-		virtual void removeChild(Cell *aCell);
-
-		virtual void addCellWidget(Cell *newCell);
-		virtual void addCellWidgets();
-		virtual void removeCellWidgets();
-
-		int height();
-		CellStyle *style();								// Changed 2005-10-28
-		virtual QString text(){return QString::null;}
-
-		void closeChildCells();							// Added 2005-11-30 AF
-
-		//Flag
-		bool isClosed() const;
-		bool isEditable();								// Added 2005-10-28 AF
+#include "document.h"
 
 
-	public slots:	
-		virtual void setStyle( CellStyle style );		// Changed 2005-10-28 AF
-		void setClosed(const bool closed);
-		virtual void setFocus(const bool focus);
+namespace IAEX
+{
+	class ChapterCounterVisitor : public Visitor 
+	{
 
-	protected:
-		void mouseDoubleClickEvent(QMouseEvent *event);
+	public:
+		ChapterCounterVisitor();
+		virtual ~ChapterCounterVisitor();
 
-	protected slots:
-		void adjustHeight();
+		virtual void visitCellNodeBefore(Cell *node);
+		virtual void visitCellNodeAfter(Cell *node);
+
+		virtual void visitCellGroupNodeBefore(CellGroup *node);
+		virtual void visitCellGroupNodeAfter(CellGroup *node);
+
+		virtual void visitTextCellNodeBefore(TextCell *node);
+		virtual void visitTextCellNodeAfter(TextCell *node);
+
+		virtual void visitInputCellNodeBefore(InputCell *node);
+		virtual void visitInputCellNodeAfter(InputCell *node);
+
+		virtual void visitCellCursorNodeBefore(CellCursor *cursor);      
+		virtual void visitCellCursorNodeAfter(CellCursor *cursor);
 
 	private:
-		bool closed_;
-
-		QWidget *main_;
-		QGridLayout *layout_;
-		unsigned long newIndex_;
+		int counters_[COUNTERS];		
 	};
 }
 #endif

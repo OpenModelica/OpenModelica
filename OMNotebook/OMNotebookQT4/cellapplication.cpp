@@ -119,8 +119,8 @@ namespace IAEX
 		{
 			if( !OmcInteractiveEnvironment::startOMC() )
 			{
-				QMessageBox::critical( 0, "OMC Error", "Was unable to start OMC, therefore OMNotebook will close." );
-				exit( -1 );
+				QMessageBox::critical( 0, "OMC Error", "Was unable to start OMC, OMNotebook will therefore be unable to evaluate Modelica expressions." );
+				//exit( -1 );
 			}
 		}
 

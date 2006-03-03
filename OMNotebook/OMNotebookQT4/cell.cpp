@@ -144,7 +144,7 @@ namespace IAEX
 		// PORT >> setBackgroundMode(Qt::PaletteBase);
 		setBackgroundRole( QPalette::Base );
 		setTreeWidget(new TreeView(this));
-		setStyle( c.style() ); // Added 2005-10-27 AF
+		setStyle( *c.style() ); // Added 2005-10-27 AF
 
 
 		QPalette palette;
@@ -213,9 +213,9 @@ namespace IAEX
 	*
 	* \return current cell style
 	*/
-	CellStyle Cell::style()
+	CellStyle *Cell::style()
 	{
-		return style_;
+		return &style_;
 	}
 
 	/*!
@@ -278,7 +278,7 @@ namespace IAEX
 	{
 		// TODO: DEBUG code: Remove when doing release,
 		// just a check to find new rules
-		QRegExp expression( "InitializationCell|CellTags|FontSlant|TextAlignment|TextJustification|FontSize|FontWeight|FontFamily|PageWidth|CellMargins|CellDingbat|ImageSize|ImageMargins|ImageRegion" );
+		QRegExp expression( "InitializationCell|CellTags|FontSlant|TextAlignment|TextJustification|FontSize|FontWeight|FontFamily|PageWidth|CellMargins|CellDingbat|ImageSize|ImageMargins|ImageRegion|OMNotebook_Margin|OMNotebook_Padding|OMNotebook_Border" );
 		if( 0 > r->attribute().indexOf( expression ))
 		{
 			cout << "[NEW] Rule <" << r->attribute().toStdString() << "> <" << r->value().toStdString() << ">" << endl;
@@ -475,7 +475,20 @@ namespace IAEX
 		}
 	}
 
-
+	/*!
+	 * \author Anders Fernström
+	 * \date 2006-03-02
+	 *
+	 * \brief Update the cell layout with a chapter counter
+	 */
+	void Cell::addChapterCounter(QWidget *counter)
+	{
+		mainlayout_->removeWidget( mainWidget_ );
+		mainlayout_->removeWidget( treeView_ );
+		mainlayout_->addWidget( counter, 1, 1 );
+		mainlayout_->addWidget( mainWidget_, 1, 2 );
+		mainlayout_->addWidget( treeView_, 1, 3, Qt::AlignTop );
+	}
 
 
 

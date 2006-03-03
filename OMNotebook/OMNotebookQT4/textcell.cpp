@@ -66,6 +66,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtGui/QApplication>
 #include <QtGui/QStatusBar>
 #include <QtGui/QFrame>
+#include <QtGui/QLabel>
 #include <QtGui/QTextDocumentFragment>
 #include <QtGui/QTextFrame>
 #include <QtGui/QResizeEvent>
@@ -217,7 +218,7 @@ namespace IAEX
 		: Cell(t)
 	{
 		setText(t.text());
-		setStyle(t.style());
+		setStyle(*t.style());
 	}
 
 	/*! 
@@ -233,18 +234,23 @@ namespace IAEX
 
 	/*! 
 	 * \author Anders Fernström and Ingemar Axelsson
-	 * \date 2005-10-28 (update)
+	 * \date 2006-03-02 (update)
 	 *
 	 * \brief Creates the QTextBrowser for the text inside the 
 	 * cell
 	 *
 	 * Large part of this function was changes due to porting
 	 * to QT4 (changes from Q3TextBrowser to QTextBrowser). /AF
+	 *
+	 * 2006-03-02 AF, Added call to createChapterCounter();
 	 */
 	void TextCell::createTextWidget()
 	{
 		text_ = new MyTextBrowser(this);
 		setMainWidget(text_);
+
+		// 2006-03-02 AF, Add a chapter counter
+		createChapterCounter();
 
 		text_->setReadOnly( true );
 		text_->setUndoRedoEnabled( true );
@@ -274,6 +280,30 @@ namespace IAEX
 			this, SLOT( hoverOverLink(const QUrl &) ));
 		
 		contentChanged();
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-03-02
+	 *
+	 * \brief Creates the chapter counter
+	 */
+	void TextCell::createChapterCounter()
+	{
+		chaptercounter_ = new MyTextBrowser(this);
+		chaptercounter_->setFrameStyle( QFrame::NoFrame );
+		chaptercounter_->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding));
+		chaptercounter_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+		chaptercounter_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+		chaptercounter_->setContextMenuPolicy( Qt::NoContextMenu );
+		
+		chaptercounter_->setFixedWidth(75);
+		chaptercounter_->setReadOnly( true );
+
+		connect( chaptercounter_, SIGNAL( clickOnCell() ),
+			this, SLOT( clickEvent() ));
+
+		addChapterCounter( chaptercounter_ );
 	}
 
 	/*! 
@@ -357,13 +387,13 @@ namespace IAEX
 			// 2005-12-06 AF, ugly way to get the style, when inserting
 			// text containg some html tags.
 			text_->setPlainText( "TMP_OMNOTEBOOK" );
-			setStyle( style() );
+			setStyle( *style() );
 			QString html = text_->toHtml();
 			int pos = html.indexOf( "TMP_OMNOTEBOOK", 0, Qt::CaseInsensitive );
 			html.replace( pos, 14, text );
 			text_->setHtml( html );
 			text_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
-			text_->document()->rootFrame()->setFrameFormat( (*style().textFrameFormat()) );
+			text_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
 			
 			//setTextHtml( text );
 		}
@@ -373,14 +403,14 @@ namespace IAEX
 			qDebug( text.toStdString().c_str() );
 
 			text_->setPlainText( text );
-			setStyle( style() );
+			setStyle( style_ );
 
 			contentChanged();
 		}
 		else
 		{
 			text_->setPlainText( text );
-			setStyle( style() );
+			setStyle( style_ );
 
 			contentChanged();
 		}
@@ -423,7 +453,7 @@ namespace IAEX
 	void TextCell::setTextHtml(QString html)
 	{
 		text_->setHtml( html );
-		text_->document()->rootFrame()->setFrameFormat( (*style().textFrameFormat()) );
+		text_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
 
 		contentChanged();
 		text_->setUndoRedoEnabled( true );
@@ -445,7 +475,7 @@ namespace IAEX
 	/*! 
 	 * \author Anders Fernström
 	 * \date 2005-10-28
-	 * \date 2006-01-17 (update)
+	 * \date 2006-03-02 (update)
 	 *
 	 * \brief Set cell style
 	 *
@@ -457,6 +487,7 @@ namespace IAEX
 	 * correctly
 	 * 2006-01-17 AF, removed trick to make sure the links are displaed
 	 * correctly
+	 * 2006-03-02 AF, set chapter style
 	 *
 	 * \todo right now all the text inside the cell is changed, when
 	 * changing style. Text that have been changed from the cells 
@@ -477,9 +508,9 @@ namespace IAEX
 			text_->selectAll();
 
 		// set the new style settings
-		text_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
 		text_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
 		text_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
+		text_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
 		
 		// unselect the text, reset cursor position
 		QTextCursor cursor(	text_->textCursor() );
@@ -494,16 +525,81 @@ namespace IAEX
 		//if( !text_->toPlainText().isEmpty() )
 		//	text_->setHtml( text_->toHtml() );
 
+
+		// 2006-03-02 AF, set chapter counter style
+		chaptercounter_->selectAll();
+		chaptercounter_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
+
+		QTextFrameFormat format = chaptercounter_->document()->rootFrame()->frameFormat();
+		format.setMargin( style_.textFrameFormat()->margin() + 
+			style_.textFrameFormat()->border() + 
+			style_.textFrameFormat()->padding()	);
+		chaptercounter_->document()->rootFrame()->setFrameFormat( format );
+
+		chaptercounter_->setAlignment( (Qt::AlignmentFlag)Qt::AlignRight );
+
+		cursor = chaptercounter_->textCursor();
+		cursor.clearSelection();
+		chaptercounter_->setTextCursor( cursor );
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-03-02
+	 *
+	 * \brief set the chapter counter
+	 */
+	void TextCell::setChapterCounter( QString number )
+	{
+		chaptercounter_->selectAll();
+		chaptercounter_->setPlainText( number );
+		chaptercounter_->setAlignment( (Qt::AlignmentFlag)Qt::AlignRight );
+		QTextFrameFormat format = chaptercounter_->document()->rootFrame()->frameFormat();
+		format.setMargin( style_.textFrameFormat()->margin() + 
+			style_.textFrameFormat()->border() + 
+			style_.textFrameFormat()->padding()	);
+		chaptercounter_->document()->rootFrame()->setFrameFormat( format );
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-03-02
+	 *
+	 * \brief return the value of the chapter counter, as plain text. 
+	 * Returns null if the counter is empty
+	 */
+	QString TextCell::ChapterCounter()
+	{
+		if( chaptercounter_->toPlainText().isEmpty() )
+			return QString::null;
+
+		return chaptercounter_->toPlainText();
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-03-03
+	 *
+	 * \brief return the value of the chapter counter, as html code. 
+	 * Returns null if the counter is empty
+	 */
+	QString TextCell::ChapterCounterHtml()
+	{
+		if( chaptercounter_->toPlainText().isEmpty() )
+			return QString::null;
+
+		return chaptercounter_->toHtml();
 	}
 
 	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
-	 * \date 2005-11-01 (update)
+	 * \date 2006-03-02 (update)
 	 *
 	 * \breif Set readonly value on the texteditor
 	 *
 	 * 2005-10-31 AF, removed the change in framstyle, looks better now
 	 * 2005-11-01 AF, clear text selection when text edit is set to readonly
+	 * 2006-03-02 AF, clear text selection in chapter counter
 	 *
 	 * \param readonly The boolean value of readonly property
 	 */
@@ -514,6 +610,11 @@ namespace IAEX
 			QTextCursor cursor = text_->textCursor();
 			cursor.clearSelection();
 			text_->setTextCursor( cursor );
+
+			// 2006-03-02 AF, clear selection in chapter counter
+			cursor = chaptercounter_->textCursor();
+			cursor.clearSelection();
+			chaptercounter_->setTextCursor( cursor );
 		}
 
 		text_->setReadOnly(readonly);
@@ -616,9 +717,9 @@ namespace IAEX
 		if( text_->toPlainText().isEmpty() )
 		{
 			text_->blockSignals( true );
-			text_->setAlignment( (Qt::AlignmentFlag)style().alignment() );
-			text_->mergeCurrentCharFormat( (*style().textCharFormat()) );
-			text_->document()->rootFrame()->setFrameFormat( (*style().textFrameFormat()) );
+			text_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
+			text_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
+			text_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
 			text_->blockSignals( false );
 			contentChanged();
 		}
@@ -660,7 +761,7 @@ namespace IAEX
 			if( expr )
 			{
 				viewexpression_ = true;
-				text_->setCurrentCharFormat( *style().textCharFormat() );
+				text_->setCurrentCharFormat( *style_.textCharFormat() );
 				text_->setPlainText( text_->toHtml() );
 
 				QPalette palette;
@@ -672,7 +773,7 @@ namespace IAEX
 			{
 				viewexpression_ = false;
 				text_->setHtml( text_->toPlainText() );
-				text_->document()->rootFrame()->setFrameFormat( (*style().textFrameFormat()) );
+				text_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
 
 				QPalette palette;
 				palette.setColor( text_->backgroundRole(), 
