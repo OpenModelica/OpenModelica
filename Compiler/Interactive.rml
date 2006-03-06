@@ -5578,7 +5578,7 @@ relation rename_class_visitor: ((Absyn.Class* Absyn.Path option *(Absyn.Path*Abs
   rule  Absyn.join_paths(pa,Absyn.IDENT(id)) => path' &
         ModUtil.path_equal(old_class_path,path') => true &
         Absyn.path_last_ident(new_class_path) => new_name &
-        Absyn.path_string(path') => path_str 
+        Absyn.path_string(new_class_path) => path_str 
 	----------------
 	rename_class_visitor((Absyn.CLASS(id,a,b,c,d,e,file_info),SOME(pa),
                               (old_class_path,new_class_path,p,path_str_lst)))
@@ -5588,7 +5588,7 @@ relation rename_class_visitor: ((Absyn.Class* Absyn.Path option *(Absyn.Path*Abs
   rule  let path' = Absyn.IDENT(id) &
         ModUtil.path_equal(old_class_path,path') => true &
         Absyn.path_last_ident(new_class_path) => new_name &
-        Absyn.path_string(path') => path_str 
+        Absyn.path_string(new_class_path) => path_str 
 	----------------
 	rename_class_visitor((Absyn.CLASS(id,a,b,c,d,e,file_info),NONE,
                               (old_class_path,new_class_path,p,path_str_lst)))
