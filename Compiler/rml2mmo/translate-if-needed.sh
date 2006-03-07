@@ -10,8 +10,9 @@ then
 fi
 for rml_file in $RMLFILES
 do
-    for mo_file in $MO_FILES
+    for mo_file in $MOFILES
     do
+	#echo Testing if $rml_file is newer than $mo_file
 	if [ "$rml_file" -nt "$mo_file" ]
 	then 
 	    cd ./rml2mmo
@@ -22,4 +23,4 @@ do
 done
 cd ./rml2mmo
 echo GOOD
-exit 
+exit 0
