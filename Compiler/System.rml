@@ -70,6 +70,15 @@ relation remove_first_and_last_char: (string) => string
  **)
 relation trim: (string,string) => string 
 
+(** relation trim_char
+ ** 
+ **
+ ** removes the character from the begining and end of the string
+ ** (".....s..d.f.g....",'.') => s..d.f.g
+ ** this is faster than trim(string,string)
+ **)
+ relation trim_char: (string,char) => string 
+
  (** relation: strcmp
   **
   ** The strcmp function in libc.

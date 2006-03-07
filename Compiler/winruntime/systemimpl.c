@@ -323,6 +323,38 @@ RML_BEGIN_LABEL(System__trim)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__trim_5fchar)
+{
+  char* str = RML_STRINGDATA(rmlA0);
+  char  char_to_be_trimmed = (char)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA1));
+  int length=strlen(str);
+  int start_pos = 0;
+  int end_pos = length - 1;
+  char* res;
+  while(start_pos < end_pos){
+    if(str[start_pos] == char_to_be_trimmed)
+      start_pos++;
+    if(str[end_pos] == char_to_be_trimmed)
+      end_pos--;
+    if(str[start_pos] != char_to_be_trimmed && str[end_pos] != char_to_be_trimmed)
+      break;
+  }
+  if(end_pos > start_pos){
+    res= (char*)malloc(end_pos - start_pos +1);
+    strncpy(res,&str[start_pos],end_pos - start_pos + 1);
+    res[end_pos - start_pos + 1] = '\0';
+    rmlA0 = (void*) mk_scon(res);
+    free(res);
+    RML_TAILCALLK(rmlSC);
+    
+  }else{
+    rmlA0 = (void*) mk_scon("");
+    RML_TAILCALLK(rmlSC);
+  }
+}
+RML_END_LABEL
+
+
 
 RML_BEGIN_LABEL(System__strcmp)
 {
