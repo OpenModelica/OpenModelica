@@ -200,6 +200,8 @@ extern RML_FORWARD_LABEL(System__set_5fcompile_5fcommand);
 #define System__setCompileCommand System__set_5fcompile_5fcommand
 extern RML_FORWARD_LABEL(System__get_5fcompile_5fcommand);
 #define System__getCompileCommand System__get_5fcompile_5fcommand
+extern RML_FORWARD_LABEL(System__trim_5fchar);
+#define System__trimChar System__trim_5fchar
 
 /* taskgraphext.c */
 extern RML_FORWARD_LABEL(TaskGraphExt__new_5ftask);
