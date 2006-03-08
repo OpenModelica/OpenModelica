@@ -2167,7 +2167,7 @@ relation dump_vars2: (Var list,int) => () =
     	(*DAE.dump_variable_attributes(dae_var_attr) &*)
         dump_vars2(xs,varno') 
 	    -------------
-	dump_vars2(VAR(cr,kind,dir,_,SOME(e),_,_,_,indx,old_name,paths,dae_var_attr,comment,flow)::xs,varno)
+	dump_vars2((v as VAR(cr,kind,dir,_,SOME(e),_,_,_,indx,old_name,paths,dae_var_attr,comment,flow))::xs,varno)
 
   rule  int_string (varno) => varnostr &
 	print varnostr & print ": " &
@@ -2186,7 +2186,7 @@ relation dump_vars2: (Var list,int) => () =
 	int_add(varno,1) => varno' &
  	dump_vars2(xs,varno') 
 	-------------
-	dump_vars2(VAR(cr,kind,dir,_,NONE,_,_,_,indx,old_name,paths,dae_var_attr,comment,flow)::xs,varno)
+	dump_vars2((v as VAR(cr,kind,dir,_,NONE,_,_,_,indx,old_name,paths,dae_var_attr,comment,flow))::xs,varno)
 end 
 
 
@@ -4820,6 +4820,7 @@ relation propagate_dummy_fixed_attribute: (DAELow,
   rule	Util.list_map_1(eqns,int_sub,1) => eqns' &
 	Util.list_map_1r(eqns',equation_nth,e) => eqns_lst &
 	equations_crefs(eqns_lst) => crefs &
+	Util.list_deletemember_p(crefs,dummy,Exp.cref_equal) => crefs &
 	find_state(vars,crefs) => state &
 	get_var(dummy,vars) => ([v],[indx]) &
 	var_fixed(v) => dummy_fixed &
