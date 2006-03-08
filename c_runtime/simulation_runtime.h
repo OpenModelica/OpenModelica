@@ -32,7 +32,42 @@
 #include <fstream>
 #include <iostream>
 
+
 using namespace std;
+
+//BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+extern "C" {
+	void  newuoa_(
+	long *nz,
+	long *NPT,
+	double *z,
+	double *RHOBEG,
+	double *RHOEND,
+	long *IPRINT,
+	long *MAXFUN,
+	double *W,
+	void (*leastSquare) (long *nz, double *z, double *funcValue)
+	);
+} // extern C
+
+extern "C" {
+	void  nelmead_(
+	   double *z,
+	   double *STEP,
+	   long *nz,
+	   double *funcValue,
+	   long *MAXF,
+	   long *IPRINT,
+	   double *STOPCR,
+	   long *NLOOP,
+	   long *IQUAD,
+	   double *SIMP,
+	   double *VAR,
+	   void (*leastSquare) (long *nz, double *z, double *funcValue), 
+	   long *IFAULT);
+} // extern "C"
+//BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+
 
 #define DDASRT ddasrt_
 
@@ -81,7 +116,7 @@ extern long liw;
 extern long lrw;
 extern double* rwork;
 extern long* iwork;
-extern long nhelp,nx,ny,np,ng;
+extern long nhelp,nx,ny,np,ng,nr;
 extern char *model_name;
 extern char** varnames;
 extern int init;
@@ -115,6 +150,16 @@ int functionODE(double *x, double *xd, double *y, double *p,
 int initial_function(double*x, double *xd, double*y, double*p,
 		     double *t,
 		    int nx, int ny, int np); 
+
+//BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB//
+// function for calculate residual values for the initial equations
+// and fixed start attibutes
+extern char init_fixed[];
+extern double *init_res;
+int initial_residual(double*x, double *xd, double*y, double*p,
+		     double *t,
+		    int nx, int ny, int np, double *res, int nr); 
+//BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB//
 
 // Adds a result to the simulation result data.
 void add_result(double *data, double time,double *x, double *ndx, double *y,

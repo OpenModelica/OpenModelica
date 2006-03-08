@@ -14,22 +14,29 @@ OSTYP = $(OSTYPE)
 OS_MSYS=msys
 
 FSRCS = daux.f \
-          ddasrt.f \
-          ddassl.f \
-          dlamch.f \
-          dlinpk.f \
-          lsame.f \
-          dogleg.f \
-          dpmpar.f \
-	  enorm.f \
-	  fdjac1.f \
+    ddasrt.f \
+    ddassl.f \
+    dlamch.f \
+    dlinpk.f \
+    lsame.f \
+    dogleg.f \
+    dpmpar.f \
+	enorm.f \
+	fdjac1.f \
 	hybrd1.f \
-	  hybrd.f \
-	  hybrj.f \
-	  qform.f \
-	  qrfac.f \
-	  r1mpyq.f \
-	  r1updt.f 
+	hybrd.f \
+	hybrj.f \
+	qform.f \
+	qrfac.f \
+	r1mpyq.f \
+	r1updt.f \
+	nelmead.f \
+	newuoa.f \
+	newuob.f \
+	biglag.f \
+	bigden.f \
+	trsapp.f \
+	update.f
 
 FOBJS = $(patsubst %.f,%.o,$(FSRCS))
 

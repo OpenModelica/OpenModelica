@@ -2455,9 +2455,9 @@ relation inst_var2 : (Env,
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
 	(*inst_mod_equation(cr,ty,mod) => dae2 &*)
 
-
+        inst_dae_variable_attributes(env,mod,ty,[]) => dae_var_attr &
 	dae_declare(cr,ci_state,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e), 
-		    inst_dims,NONE,NONE,comment)
+		    inst_dims,NONE,dae_var_attr,comment)
 	  => dae3 & 
 	list_append(dae1',dae3) => dae 
 	--------------------------
@@ -2474,7 +2474,8 @@ relation inst_var2 : (Env,
 	fix_direction(dae1,dir) => dae1' &
 	Exp.int_subscripts idxs' => subs &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
-	dae_declare(cr,ci_state,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e),inst_dims,NONE,NONE,comment)
+        inst_dae_variable_attributes(env,mod,ty,[]) => dae_var_attr &
+	dae_declare(cr,ci_state,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e),inst_dims,NONE,dae_var_attr,comment)
 	  => dae3 &  
 	list_append(dae1',dae3) => dae
 	--------------------------
@@ -2490,7 +2491,8 @@ relation inst_var2 : (Env,
 	fix_direction(dae1,dir) => dae1' &
 	Exp.int_subscripts idxs' => subs &
 	Prefix.prefix_cref(pre,Exp.CREF_IDENT(n,subs)) => cr &
-	dae_declare(cr,ci_state,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e),inst_dims,NONE,NONE,comment)
+        inst_dae_variable_attributes(env,mod,ty,[]) => dae_var_attr &
+	dae_declare(cr,ci_state,ty,SCode.ATTR([], flow, acc, vt, dir), SOME(e),inst_dims,NONE,dae_var_attr,comment)
 	  => dae3 &  
 	list_append(dae1',dae3) => dae
 	--------------------------
@@ -4824,12 +4826,15 @@ relation inst_eq_equation_2 : (Exp.Exp, Exp.Exp, Types.Type, Initial)
 	inst_eq_equation_2(Exp.CREF(cr,t),e2,(Types.T_ENUMERATION(_,_),_),initial) => [dae]
 
 	(* arrays with function calls => array equations *)
-  rule	Exp.contain_functioncall(e1) => b1 &
-	Exp.contain_functioncall(e2) => b2 &
-	Types.get_dimension_sizes(t) => ds &
-	bool_or(b1,b2) => true 
+  rule	Types.get_dimension_sizes(t) => ds 
 	-----------------------------------------
-	inst_eq_equation_2(e1,e2,t as (Types.T_ARRAY(_,_),_),initial) 
+	inst_eq_equation_2(e1,e2 as Exp.CALL(_,_,_,_),t as (Types.T_ARRAY(_,_),_),initial) 
+	  => [DAE.ARRAY_EQUATION(ds,e1,e2)]
+
+	(* arrays with function calls => array equations *)
+  rule	Types.get_dimension_sizes(t) => ds 
+	-----------------------------------------
+	inst_eq_equation_2(e1 as Exp.CALL(_,_,_,_),e2,t as (Types.T_ARRAY(_,_),_),initial) 
 	  => [DAE.ARRAY_EQUATION(ds,e1,e2)]
 
 	(* arrays that are splitted *)

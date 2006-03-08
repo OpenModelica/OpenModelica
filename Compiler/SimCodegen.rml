@@ -374,6 +374,7 @@ relation generate_fixed_vector3: (DAELow.Var list,
 	
   rule	DAELow.var_kind(v) => kind &
 	DAELow.var_index(v) => indx &
+	int_ge(indx,0) => true &
 	calc_fixed_offset(kind,nx,ny,np) => off &
 	int_add(off,indx) => indx' &
 	DAELow.var_fixed(v) => b &
@@ -487,10 +488,10 @@ relation generate_global_bufs: () => string =
 				 "double *out_y;\n",
                                  "#endif\n",
                                  "#if NR > 0\n",
-				 "double xinit_res_buf[NR];  // INIT. RESIDUALS\n",
-				 "double *xinit_res = &xinit_res_buf[0];\n",
+				 "double init_res_buf[NR];  // INIT. RESIDUALS\n",
+				 "double *init_res = &init_res_buf[0];\n",
                                  "#else\n",
-				 "double *xinit_res;\n",
+				 "double *init_res;\n",
 				 "#endif\n",
                                  "#if NG > 0\n",
 				 "long jrootbuf[NG];\n",
@@ -513,6 +514,7 @@ relation generate_global_bufs: () => string =
 				 "long nx = NX; // STATES\n",
 				 "long ny = NY; // ALGVARS\n",
 				 "long np = NP; // PARAMETERS\n",
+				 "long nr = NR; // NO. OF INIT. RESIDUALS\n",
 				 "long ng = NG; \n",
 				 "long no = NO; // OUTPUTVARS\n",
 				 "long ni = NI; // INPUTVARS \n",
@@ -1318,15 +1320,16 @@ relation generate_initial_value_code2:(DAELow.DAELow) => (string(* code*),
 							  int (*n res*)) =
 
   rule  
-	Codegen.c_make_function("int","initial_residual",[],["double *res",
-							     "double *x",
+	Codegen.c_make_function("int","initial_residual",[],["double *x",
 							     "double *xd", 
 							     "double *y",
 							     "double *p",
 							     "double *t",
 							     "int nx",
 							     "int ny",
-							     "int np"])
+							     "int np",
+							     "double *res",
+							     "int nr"])
 	  => init_func' &
 	
 	DAELow.var_list(vars) => vars_lst &
@@ -1334,7 +1337,7 @@ relation generate_initial_value_code2:(DAELow.DAELow) => (string(* code*),
 	DAELow.equation_list(eqns) => eqns_lst &
 	DAELow.equation_list(se) => se_lst &
 	DAELow.equation_list(ie) => ie_lst &
-
+	
 	(* equations from start values with fixed = true *)
 	generate_initial_equations_from_start(vars_lst)  => ie2_lst &
 
@@ -1357,6 +1360,7 @@ relation generate_initial_value_code2:(DAELow.DAELow) => (string(* code*),
 	generate_initial_residual_eqn(se_lst,cg_id) => (f2,cg_id) &
 	generate_initial_residual_eqn(ie_lst,cg_id) => (f3,cg_id) &
 	generate_initial_residual_eqn(ie2_lst,cg_id) => (f4,cg_id) &
+
 	(* merge all parts toghether*)
 	Codegen.c_merge_fns([init_func',f1,f2,f3,f4]) => cfunc &
 	Codegen.c_add_variables(cfunc,["int i=0;"]) => cfunc &
@@ -1384,6 +1388,7 @@ relation generate_initial_residual_eqn: (DAELow.Equation list,
 
   axiom	generate_initial_residual_eqn([],cg_id) 
 	  => (Codegen.c_empty_function,cg_id)
+
   rule	Codegen.generate_expression(e,cg_id) => (cfunc,var,cg_id) &
 	Util.string_append_list(["res[i++] = ", var,";"]) => assign &
 	Codegen.c_add_statements(cfunc,[assign]) => cfunc &
@@ -1391,6 +1396,11 @@ relation generate_initial_residual_eqn: (DAELow.Equation list,
 	Codegen.c_merge_fns([cfunc,cfunc2]) => cfn
 	---------------------
 	generate_initial_residual_eqn(DAELow.RESIDUAL_EQUATION(e)::es,cg_id)
+	  => (cfn,cg_id)
+
+  rule	generate_initial_residual_eqn(es,cg_id) => (cfn, cg_id) 
+	---------------------
+	generate_initial_residual_eqn(_::es,cg_id)
 	  => (cfn,cg_id)
 end
 
@@ -3252,6 +3262,20 @@ relation generate_ode_equation: (DAELow.DAELow,
 	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_,_),ass1,ass2,e,cg_id) 
 	  => (res,cg_id',f1)
 
+	  (* non-state non-linear *)
+  rule	get_equation_and_solved_var(e,eqns,vars,ass2) 
+	  => (eqn as DAELow.EQUATION(e1,e2),
+	      DAELow.VAR(cr,kind,_,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flow)) &
+	is_non_state kind &
+	int_string(indx) => indxs &
+	let varexp = Exp.CREF(cr,Exp.REAL) &
+	not Exp.solve(e1,e2,varexp) => _ &
+	generate_ode_system2_nonlinear_residuals([cr],[eqn],cg_id)
+	  => (res,cg_id',f1)
+	-------------------------------------
+	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_,_),ass1,ass2,e,cg_id) 
+	  => (res,cg_id',f1)
+
 	(* When equations ignored *)
   rule	get_equation_and_solved_var(e,eqns,vars,ass2) 
 	  => (DAELow.WHEN_EQUATION(_),_) 
@@ -3629,14 +3653,15 @@ relation generate_init_data4: (DAELow.Var list,
 			    nxarr,nxdarr,nyarr,nparr)
 	  => (nxarr,nxdarr,nyarr,nparr)
 
-  rule	(* Parameters without value binding. Should normally not happen *)
-	Util.string_append_list(["0.0  // ",origname]) => str &
+  rule	(* Parameters without value binding. Investigate if it has start value*)
+	print_exp_opt_str_if_const(start) => v &
+	Util.string_append_list([v," // ",origname]) => str &
 	array_setnth(nparr,indx,str) => nparr &
 	generate_init_data4(rest,nxarr,nxdarr,nyarr,nparr) 
 	=> (nxarr,nxdarr,nyarr,nparr) 
 	--------------------
 	generate_init_data4(DAELow.VAR(_,DAELow.PARAM,_,_,_,NONE,_,
-				_,indx,origname,_,dae_var_attr,comment,flow)::rest,
+				start,indx,origname,_,dae_var_attr,comment,flow)::rest,
 			    nxarr,nxdarr,nyarr,nparr)
 	  => (nxarr,nxdarr,nyarr,nparr)
 

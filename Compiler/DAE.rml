@@ -1106,7 +1106,7 @@ relation dump_var_str : Element => string =
         dump_variable_attributes_str dae_var_attr => s6 &
 (*	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
 	Util.string_delimit_list(classstrlst, ", ") => classstr & *)
-	Util.string_append_list([s1, s2, s3, s4, " = ", s5, s6,comment_str,";\n"] )
+	Util.string_append_list([s1, s2, s3, s4,s6, " = ", s5, comment_str,";\n"] )
 	  => str
 	--------------------------------------
 	dump_var_str VAR(id, kind, dir, typ, SOME(e),_,start,flow,classlst,dae_var_attr,comment) => str

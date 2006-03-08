@@ -351,36 +351,72 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
 	-----------------------------
 	differentiate_exp(Exp.UNARY(op,e),tv) => Exp.UNARY(op,e')
 
-  rule  Exp.exp_contains(exp,Exp.CREF(tv,Exp.REAL)) => true &
+	(* der(tanh(x)) = der(x) / cosh(x) *)
+  rule	is_tanh(fname) &
+	Exp.exp_contains(exp,Exp.CREF(tv,Exp.REAL)) => true &
         differentiate_exp(exp,tv) => exp' 
         -------------------------------------------------
-	differentiate_exp(Exp.CALL(Absyn.IDENT("sin"),exp::[],b,c),tv) 
+	differentiate_exp(Exp.CALL(fname,exp::[],b,c),tv) 
+	  => Exp.BINARY(exp',
+			Exp.DIV(Exp.REAL),
+			Exp.CALL(Absyn.IDENT("cosh"),[exp],b,c))
+
+	(* der(cosh(x)) => der(x)*sinh(x) *)
+  rule  is_cosh(fname) &
+	Exp.exp_contains(exp,Exp.CREF(tv,Exp.REAL)) => true &
+        differentiate_exp(exp,tv) => exp' 
+        -------------------------------------------------
+	differentiate_exp(Exp.CALL(fname,exp::[],b,c),tv) 
+	  => Exp.BINARY(exp',
+			Exp.MUL(Exp.REAL),
+			Exp.CALL(Absyn.IDENT("sinh"),[exp],b,c))
+
+	(* der(sinh(x)) => der(x)*sinh(x) *)
+  rule  is_sinh(fname) &
+	Exp.exp_contains(exp,Exp.CREF(tv,Exp.REAL)) => true &
+        differentiate_exp(exp,tv) => exp' 
+        -------------------------------------------------
+	differentiate_exp(Exp.CALL(fname,exp::[],b,c),tv) 
+	  => Exp.BINARY(exp',
+			Exp.MUL(Exp.REAL),
+			Exp.CALL(Absyn.IDENT("cosh"),[exp],b,c))
+
+
+	(* sin(x) *)
+  rule  is_sin(fname) &
+	Exp.exp_contains(exp,Exp.CREF(tv,Exp.REAL)) => true &
+        differentiate_exp(exp,tv) => exp' 
+        -------------------------------------------------
+	differentiate_exp(Exp.CALL(fname,exp::[],b,c),tv) 
 	  => Exp.BINARY(Exp.CALL(Absyn.IDENT("cos"),[exp],b,c),
                         Exp.MUL(Exp.REAL),
                         exp')
 
-  rule  Exp.exp_contains(exp,Exp.CREF(tv,Exp.REAL)) => true &
+  rule  is_cos(fname) &
+	Exp.exp_contains(exp,Exp.CREF(tv,Exp.REAL)) => true &
         differentiate_exp(exp,tv) => exp' 
         -------------------------------------------------
-	differentiate_exp(Exp.CALL(Absyn.IDENT("cos"),exp::[],b,c),tv) 
+	differentiate_exp(Exp.CALL(fname,exp::[],b,c),tv) 
 	  => Exp.BINARY(Exp.UNARY(Exp.UMINUS(Exp.REAL),Exp.CALL(Absyn.IDENT("sin"),[exp],b,c)),
                         Exp.MUL(Exp.REAL),
                         exp')
 
   rule  (* exp(x) => x' * exp(x) *)
+	is_exp(fname) &
         Exp.exp_contains(exp,Exp.CREF(tv,Exp.REAL)) => true &
         differentiate_exp(exp,tv) => exp' 
         -------------------------------------------------
-	differentiate_exp(Exp.CALL(Absyn.IDENT("exp"),exp::[],b,c),tv) 
-	  => Exp.BINARY(Exp.CALL(Absyn.IDENT("exp"),exp::[],b,c),
+	differentiate_exp(Exp.CALL(fname,exp::[],b,c),tv) 
+	  => Exp.BINARY(Exp.CALL(fname,exp::[],b,c),
                         Exp.MUL(Exp.REAL),
                         exp')
  
   rule  (* log(x) => x' * 1/x *)
+	is_log(fname) &
         Exp.exp_contains(exp,Exp.CREF(tv,Exp.REAL)) => true &
         differentiate_exp(exp,tv) => exp' 
         -------------------------------------------------
-	differentiate_exp(Exp.CALL(Absyn.IDENT("log"),exp::[],b,c),tv) 
+	differentiate_exp(Exp.CALL(fname,exp::[],b,c),tv) 
 	  => Exp.BINARY(exp',
                         Exp.MUL(Exp.REAL),
                         Exp.BINARY(Exp.RCONST(1.0),
@@ -388,10 +424,11 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
                                    exp))
 
   rule  (* log10(x) => x'*1/(x*log(10)) *)
+	is_log10(fname) &
         Exp.exp_contains(exp,Exp.CREF(tv,Exp.REAL)) => true &
         differentiate_exp(exp,tv) => exp' 
         -------------------------------------------------
-	differentiate_exp(Exp.CALL(Absyn.IDENT("log10"),exp::[],b,c),tv) 
+	differentiate_exp(Exp.CALL(fname,exp::[],b,c),tv) 
 	  => Exp.BINARY(exp',
                         Exp.MUL(Exp.REAL),
                         Exp.BINARY(Exp.RCONST(1.0),
@@ -402,10 +439,11 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
 
 
   rule  (* sqrt(x) => 1(2 * sqrt(x)) * der(x) *)
+	is_sqrt(fname) &
         Exp.exp_contains(exp,Exp.CREF(tv,Exp.REAL)) => true &
         differentiate_exp(exp,tv) => exp' 
         -------------------------------------------------
-	differentiate_exp(Exp.CALL(Absyn.IDENT("sqrt"),exp::[],b,c),tv) 
+	differentiate_exp(Exp.CALL(fname,exp::[],b,c),tv) 
 	  => Exp.BINARY(Exp.BINARY(Exp.RCONST(1.0),
                                    Exp.DIV(Exp.REAL),
                                    Exp.BINARY(Exp.RCONST(2.0),
@@ -416,10 +454,11 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
         
 
   rule  (* tan x => 1/((cos x)^2) *)
+	is_tan(fname) &
         Exp.exp_contains(exp,Exp.CREF(tv,Exp.REAL)) => true &
         differentiate_exp(exp,tv) => exp' 
         -------------------------------------------------
-	differentiate_exp(Exp.CALL(Absyn.IDENT("tan"),exp::[],b,c),tv) 
+	differentiate_exp(Exp.CALL(fname,exp::[],b,c),tv) 
 	  => Exp.BINARY(Exp.BINARY(Exp.RCONST(1.0),
                                    Exp.DIV(Exp.REAL),
                                    Exp.BINARY(Exp.CALL(Absyn.IDENT("cos"),[exp],b,c),
@@ -503,5 +542,72 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
 	
 end
 
+relation is_tanh: Absyn.Path => () =
 
+  axiom	is_tanh(Absyn.IDENT("tanh")) =>
 
+  axiom	is_tanh(Absyn.QUALIFIED("Modelica",Absyn.QUALIFIED("Math",Absyn.IDENT("tanh")))) => ()
+end
+
+relation is_cosh: Absyn.Path => () =
+
+  axiom	is_cosh(Absyn.IDENT("cosh")) =>
+
+  axiom	is_cosh(Absyn.QUALIFIED("Modelica",Absyn.QUALIFIED("Math",Absyn.IDENT("cosh")))) => ()
+end
+
+relation is_sinh: Absyn.Path => () =
+
+  axiom	is_sinh(Absyn.IDENT("sinh")) =>
+
+  axiom	is_sinh(Absyn.QUALIFIED("Modelica",Absyn.QUALIFIED("Math",Absyn.IDENT("sinh")))) => ()
+end
+
+relation is_sin: Absyn.Path => () =
+
+  axiom	is_sin(Absyn.IDENT("sin")) =>
+
+  axiom	is_sin(Absyn.QUALIFIED("Modelica",Absyn.QUALIFIED("Math",Absyn.IDENT("sin")))) => ()
+end
+
+relation is_cos: Absyn.Path => () =
+
+  axiom	is_cos(Absyn.IDENT("cos")) =>
+
+  axiom	is_cos(Absyn.QUALIFIED("Modelica",Absyn.QUALIFIED("Math",Absyn.IDENT("cos")))) => ()
+end
+
+relation is_exp: Absyn.Path => () =
+
+  axiom	is_exp(Absyn.IDENT("exp")) =>
+
+  axiom	is_exp(Absyn.QUALIFIED("Modelica",Absyn.QUALIFIED("Math",Absyn.IDENT("exp")))) => ()
+end
+
+relation is_log: Absyn.Path => () =
+
+  axiom	is_log(Absyn.IDENT("log")) =>
+
+  axiom	is_log(Absyn.QUALIFIED("Modelica",Absyn.QUALIFIED("Math",Absyn.IDENT("log")))) => ()
+end
+
+relation is_log10: Absyn.Path => () =
+
+  axiom	is_log10(Absyn.IDENT("log10")) =>
+
+  axiom	is_log10(Absyn.QUALIFIED("Modelica",Absyn.QUALIFIED("Math",Absyn.IDENT("log10")))) => ()
+end
+
+relation is_sqrt: Absyn.Path => () =
+
+  axiom	is_sqrt(Absyn.IDENT("sqrt")) =>
+
+  axiom	is_sqrt(Absyn.QUALIFIED("Modelica",Absyn.QUALIFIED("Math",Absyn.IDENT("sqrt")))) => ()
+end
+
+relation is_tan: Absyn.Path => () =
+
+  axiom	is_tan(Absyn.IDENT("tan")) =>
+
+  axiom	is_tan(Absyn.QUALIFIED("Modelica",Absyn.QUALIFIED("Math",Absyn.IDENT("tan")))) => ()
+end

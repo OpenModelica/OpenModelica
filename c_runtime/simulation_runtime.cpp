@@ -39,6 +39,7 @@ long actual_points=0; // the number of actual points saved
 double t;
 
 int init; 
+int sim_verbose;
 
 double* h_saved;
 double* x_saved;
@@ -158,7 +159,9 @@ int dassl_main(int, char **);
 
 int main(int argc, char**argv) 
 {
-
+  /* verbose flag is set : -v */
+  sim_verbose = (int)flagSet("v",argc,argv);
+  
   /* the main method identifies which solver to use and then calls 
      respecive solver main function*/
   if (!getFlagValue("m",argc,argv)) {
@@ -246,6 +249,200 @@ void euler ( double *x, double *xd, double *y, double *p, double *data,
   }
 }
 
+double *static_y;
+
+//BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+void leastSquare(long *nz, double *z, double *funcValue)
+{
+  int ind, indAct, indz, indy;
+  for (ind=0, indAct=0, indz=0; ind<nx; ind++)
+  	if (init_fixed[indAct++]==0)
+      x[ind] = z[indz++];
+
+  for (ind=0,indAct=2*nx+ny; ind<np; ind++)
+    if (init_fixed[indAct++]==0)
+      p[ind] = z[indz++];
+
+  functionODE(x,xd,y,p,nx,ny,np,&t);
+  functionDAE_output(&t,x,xd,y,p);
+
+  for (ind=0,indy=0,indAct=2*nx; ind<ny; ind++)
+    if (init_fixed[indAct++]==1)
+    	y[ind] = static_y[indy++];
+
+  initial_residual(x, xd, y, p, &t, nx, ny,  np, init_res,  nr);  
+
+  for (ind=0, *funcValue=0; ind<nr; ind++)
+    *funcValue += init_res[ind]*init_res[ind];	
+}
+
+/** function reportResidualValue
+ **
+ ** Returns -1 if residual is non-zero and prints appropriate error message.
+ **/
+
+int reportResidualValue(double funcValue)
+{
+  if (funcValue > 1e-16) {
+    std::cerr << "Error in initialization. System of initial equations are not consistent." << std::endl;
+    std::cerr << "(Least Square function value is " << funcValue << ")" << std::endl;
+    return -1;
+  }
+  return 0;
+}
+
+/** function: simplex_initialization.
+ **
+ ** This function performs initialization by using the simplex algorithm.
+ ** This does not require a jacobian for the residuals.
+ **/
+
+int simplex_initialization(double* x, double* xd, double* y, double* p, double *t, double *z,
+			   int nx, int ny, int np, int nr,long nz)
+{
+  int ind;
+  double funcValue;
+  double *STEP=(double*) malloc(nz*sizeof(double));
+  double *VAR=(double*) malloc(nz*sizeof(double));
+
+  /* Start with stepping .5 in each direction. */
+  for (ind=0;ind<nz;ind++)
+    STEP[ind]=.5;
+    
+   double STOPCR,SIMP;
+   long IPRINT, NLOOP,IQUAD,IFAULT,MAXF;
+//C  Set max. no. of function evaluations = 5000, print every 100.
+ 
+      MAXF = 50000;
+      IPRINT = sim_verbose? 100 : -1;
+ 
+//C  Set value for stopping criterion.   Stopping occurs when the
+//C  standard deviation of the values of the objective function at
+//C  the points of the current simplex < stopcr.
+ 
+      STOPCR = 1.e-3;
+      NLOOP = 6000;//2*nz;
+ 
+//C  Fit a quadratic surface to be sure a minimum has been found.
+ 
+      IQUAD = 0;
+ 
+//C  As function value is being evaluated in DOUBLE PRECISION, it
+//C  should be accurate to about 15 decimals.   If we set simp = 1.d-6,
+//C  we should get about 9 dec. digits accuracy in fitting the surface.
+ 
+      SIMP = 1.e-6;
+//C  Now call NELMEAD to do the work.
+  nelmead_(z,STEP,&nz,&funcValue,&MAXF,&IPRINT,&STOPCR,
+           &NLOOP,&IQUAD,&SIMP,VAR,leastSquare,&IFAULT);
+  if (IFAULT == 1) { 
+    printf("Error in initialization. Solver iterated %d times without finding a solution\n",(int)MAXF);
+    return -1;
+  } else if(IFAULT == 2 ) {
+    printf("Error in initialization. Inconsistent initial conditions.\n");
+    return -1;
+  } else if (IFAULT == 3) {
+    printf("Error in initialization. Number of initial values to calculate < 1\n");
+    return -1;
+  } else if (IFAULT == 4) {
+    printf("Error in initialization. Internal error, NLOOP < 1.\n");
+    return -1;
+  }
+  return reportResidualValue(funcValue);
+}
+
+/** function: newuoa_initialization
+ ** 
+ ** This function performs initialization using the newuoa function, which is 
+ ** a trust region method that forms quadratic models by interpolation.
+ **/
+
+int newuoa_initialization(double* x, double* xd, double* y, double* p, double *t, double *z,
+			  int nx, int ny, int np, int nr,long nz)
+{
+  long IPRINT = sim_verbose? 2 : 0;
+  long MAXFUN=50000;
+  double RHOEND=1.0e-6;
+  double RHOBEG=10; // This should be about one tenth of the greatest
+		    // expected value of a variable. Perhaps the nominal 
+		    // value can be used for this.
+  long NPT = 2*nz+1;
+  double *W = new double[(NPT+13)*(NPT+nz)+3*nz*(nz+3)/2];
+  newuoa_(&nz,&NPT,z,&RHOBEG,&RHOEND,&IPRINT,&MAXFUN,W,leastSquare);
+
+  // Calculate the residual to verify that equations are consistent.
+  double funcValue;
+  leastSquare(&nz,z,&funcValue);
+
+  return reportResidualValue(funcValue);
+}
+
+/* function: initialize
+ *
+ * Perform initialization of the problem. It reads the global variable
+ * init_fixed to find out which variables are fixed.
+ * It uses the generated function initial_residual, which calcualtes the 
+ * residual of all equations (both continuous time eqns and initial eqns).
+ */
+
+int initialize(double* x, double* xd, double* y, double* p, double *t,
+	       int nx, int ny, int np, int nr, const std::string*method)
+{
+  long nz;
+  int ind, indAct, indz, indy, n_static_y;
+  std::string init_method;
+
+  if (method == NULL) { 
+    init_method = std::string("newuoa");
+  } else {
+    init_method = *method;
+  }
+
+  for (ind=0, nz=0; ind<nx; ind++)
+   	 if (init_fixed[ind]==0)
+  	   nz++;
+  for (ind=2*nx+ny; ind<2*nx+ny+np; ind++)
+   	 if (init_fixed[ind]==0)
+  	   nz++;
+  for (ind=2*nx, n_static_y=0; ind<2*nx+ny; ind++)
+   	 if (init_fixed[ind]==1) 
+  	   n_static_y++;
+  if (n_static_y>0) static_y = new double[n_static_y];
+
+  // No initial values to calculate.
+  if (nz ==  0) { return 0;} 
+
+  double *z=(double*) malloc(nz*sizeof(double));
+  if(z == NULL) {return -1;}
+  /* Fill z with the non-fixed variables from x, xd, y and p*/
+  for (ind=0, indAct=0, indz=0; ind<nx; ind++)
+    {
+      if (init_fixed[indAct++]==0)
+	{
+	  z[indz++] = x[ind];
+	}
+  }
+  for (ind=0,indy=0,indAct=2*nx; ind<ny; ind++)
+    {
+      if (init_fixed[indAct++]==1)
+	{
+	  static_y[indy++] = y[ind];
+	}
+    }
+  
+  if (init_method == std::string("simplex")) {
+    return simplex_initialization(x,xd,y,p,t,z,nx,ny,np,nr,nz);
+  } else if (init_method == std::string("newuoa")) { // Better name ?
+    return newuoa_initialization(x,xd,y,p,t,z,nx,ny,np,nr,nz);
+  } else {
+    std::cerr << "unrecognized option -im " << init_method << std::endl;
+    std::cerr << "current options are: simplex or newuoa" << std::endl;
+    return -1;
+  }
+
+  return 0;
+}
+
 
 /* The main function for the dassl solver*/
 int dassl_main(int argc, char **argv) 
@@ -261,6 +458,7 @@ int dassl_main(int argc, char **argv)
   double rtol = 1.0e-5;
   double atol = 1.0e-5;
   long idid = 0;
+  const std::string *init_method = getFlagValue("im",argc,argv);
 
   //double rpar = 0.0;
   long ipar = 0;
@@ -283,7 +481,7 @@ int dassl_main(int argc, char **argv)
   read_input(argc,argv,x,xd,y,p,nx,ny,np,&start,&stop,&step);
   
   numpoints = long((stop-start)/step)+2;
-
+ 
   // load default initial values.
   gout = new double[ng];
   h_saved = new double[nhelp];  
@@ -296,10 +494,13 @@ int dassl_main(int argc, char **argv)
   // Calculate initial values from (fixed) start attributes and intial equation
   // sections
   init=1;
-  initial_function(x,xd,y,p,&t,nx,ny,np);
+  if (initialize(x,xd,y,p,&t,nx,ny,np,nr,init_method)) {
+    printf("Error in initialization. Storing results and exiting.\n");
+    goto exit;
+  }
   t=start;
   tout = newTime(t, step); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
-
+ 
   function_updateDependents(&t);
 
   functionDAE_output(&t,x,xd,y,p);
@@ -374,7 +575,9 @@ int dassl_main(int argc, char **argv)
     functionDAE_res(&t,x,xd,dummy_delta,0,0,0); // Since residual function calculates 
 					      // alg vars too.
     functionDAE_output(&t,x,xd,y,p);  // descrete variables should probably be seperated so that the can be emited before and after the event.    
-  }  
+  } // end while
+
+ exit:
   if(emit()) {
       printf("Error, could not save data. Not enought space.\n"); 
   }
@@ -402,6 +605,7 @@ int dassl_main(int argc, char **argv)
 
   return status;
 }
+
 
 void saveall()
 {

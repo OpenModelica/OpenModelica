@@ -2184,7 +2184,7 @@ relation compile_model: (string, string list) => () =
 				 ,libs_str*)
                                  ]) => s_call &
         (*> output.log 2>&1 = redirect stderr to stdout and put it in output.log *)
-        print s_call & print "\n" &
+        (*print s_call & print "\n" &*)
 	System.system_call(s_call) => 0 
 	--------------------------
 	compile_model(fileprefix, libs) => ()

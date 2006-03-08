@@ -320,6 +320,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   relation get_var_at:(Variables,int) => (Var)
   relation exists_var: (Exp.ComponentRef, Variables) => bool 
   relation set_var_kind: (Var, VarKind) => Var 
+  relation set_var_fixed: (Var, bool) => Var 
   relation var_list: (Variables) => Var list 
   relation list_var: (Var list ) => Variables
 
@@ -1367,6 +1368,36 @@ relation var_nominal: (Var) => real =
 
   axiom	var_nominal(VAR(_,_,_,_,_,_,_,_,_,_,_,SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,_,SOME(nominal),_)),_,flow))
 	  => nominal
+end
+
+(** relation: set_var_fixed
+ ** author: PA
+ **
+ ** Sets the fixed attribute of a variable. 
+ **)
+
+relation set_var_fixed: (Var, bool) => Var =
+
+  axiom	set_var_fixed(VAR(a,b,c,d,e,f,g,h,i,j,k,SOME(DAE.VAR_ATTR_REAL(l,m,n,o,p,_,q,r)),s,t),fixed)
+	  => VAR(a,b,c,d,e,f,g,h,i,j,k,SOME(DAE.VAR_ATTR_REAL(l,m,n,o,p,SOME(fixed),q,r)),s,t)
+  axiom	set_var_fixed(VAR(a,b,c,d,e,f,g,h,i,j,k,SOME(DAE.VAR_ATTR_INT(l,m,n,_)),o,p),fixed) 
+	  => VAR(a,b,c,d,e,f,g,h,i,j,k,SOME(DAE.VAR_ATTR_INT(l,m,n,SOME(fixed))),o,p)
+	  
+  axiom	set_var_fixed(VAR(a,b,c,d,e,f,g,h,i,j,k,SOME(DAE.VAR_ATTR_BOOL(l,m,_)),n,o),fixed) 
+	  => VAR(a,b,c,d,e,f,g,h,i,j,k,SOME(DAE.VAR_ATTR_BOOL(l,m,SOME(fixed))),n,o)
+  axiom	set_var_fixed(VAR(a,b,c,d,e,f,g,h,i,j,k,SOME(DAE.VAR_ATTR_ENUMERATION(l,m,n,_)),o,p),fixed) 
+	  => VAR(a,b,c,d,e,f,g,h,i,j,k,SOME(DAE.VAR_ATTR_ENUMERATION(l,m,n,SOME(fixed))),o,p)
+	  
+  axiom	set_var_fixed(VAR(a,b,c,DAE.REAL,f,g,h,i,j,k,l,NONE,m,n),fixed)
+	  => VAR(a,b,c,DAE.REAL,f,g,h,i,j,k,l,SOME(DAE.VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,SOME(fixed),NONE,NONE)),m,n)
+	  
+  axiom	set_var_fixed(VAR(a,b,c,DAE.INT,f,g,h,i,j,k,l,NONE,m,n),fixed)
+	  => VAR(a,b,c,DAE.REAL,f,g,h,i,j,k,l,SOME(DAE.VAR_ATTR_INT(NONE,(NONE,NONE),NONE,SOME(fixed))),m,n)
+		 
+  axiom	set_var_fixed(VAR(a,b,c,DAE.BOOL,f,g,h,i,j,k,l,NONE,m,n),fixed)
+	  => VAR(a,b,c,DAE.REAL,f,g,h,i,j,k,l,SOME(DAE.VAR_ATTR_BOOL(NONE,NONE,SOME(fixed))),m,n)
+  axiom	set_var_fixed(VAR(a,b,c,DAE.ENUM,f,g,h,i,j,k,l,NONE,m,n),fixed)
+	  => VAR(a,b,c,DAE.REAL,f,g,h,i,j,k,l,SOME(DAE.VAR_ATTR_ENUMERATION(NONE,(NONE,NONE),NONE,SOME(fixed))),m,n)
 end
 
 (** relation: var_fixed
@@ -4733,7 +4764,7 @@ relation reduce_index_dummy_der: (DAELow,
 
 	select_dummy_state(states,stateindx,dae,m,mt) => (state,stateno) & 
 
-	propagate_dummy_initial_equations(dae,eqns',state,stateno) => dae &
+	propagate_dummy_fixed_attribute(dae,eqns',state,stateno) => dae &
 	(*Exp.print_component_ref_str state => statestr &
 	 print "Choosen dummy state: " & print statestr & print "\n" &*)
 	new_dummy_var(state,dae) => (dummy_der,dae) &
@@ -4762,296 +4793,124 @@ relation reduce_index_dummy_der: (DAELow,
 	reduce_index_dummy_der(_,_,_,_,_,_) => fail
 end
 
-(** relation: propagate_dummy_initial_equations
+(** relation: propagate_dummy_fixed_attribute
  ** author: PA
  **
  ** This relation takes a list of equations that are differentiated
- ** and the chosen dummy state. It checks if an initial equation exist
- ** for the dummy state and propagates this equation to the other state
- ** among the selected equations.
- ** For instance, having the equations
+ ** and the chosen dummy state.
+ ** The fixed attribute of the selected dummy state is propagated to 
+ ** the other state. This must be done since the dummy state becomes 
+ ** an algebraic state which has fixed = false by default.
+ ** For example cosider the equations:
  ** s1 = b;
  ** b=2*c;
- ** c = s2
- ** and the dummy state s2 with an initial equation s2 = 1;
- ** gives a new initial equation s1 = 2*1;
+ ** c = s2;
+ ** if s2 is selected as dummy derivative and s2 has an initial equation
+ ** i.e. fixed should be false for the state s2 (which is set by the user),
+ ** this fixed value has to be propagated to s1 when s2 becomes a dummy 
+ ** state.
  **)
 
-relation propagate_dummy_initial_equations: (DAELow, 
+relation propagate_dummy_fixed_attribute: (DAELow, 
 				    int list (*eqns*),
 				    Exp.ComponentRef (* dummy state*),
 				    int) 
 	  => DAELow =
 
-  rule	equation_list(ie) => ie_lst &
-
-	equation_list(e) => e_lst &
-				 
-	rename_derivatives_2(e_lst) => e_lst' &
-	list_equation(e_lst') => e' &
-	
-	propagate_dummy_initial_equations2(ie_lst,DAELOW(v,kv,e',se,ie,ae,al,ei),eqns,dummy,dummy_no) 
-	  => ie_lst' &
-	  list_equation(ie_lst') => ie'
+  rule	Util.list_map_1(eqns,int_sub,1) => eqns' &
+	Util.list_map_1r(eqns',equation_nth,e) => eqns_lst &
+	equations_crefs(eqns_lst) => crefs &
+	find_state(vars,crefs) => state &
+	get_var(dummy,vars) => ([v],[indx]) &
+	var_fixed(v) => dummy_fixed &
+	get_var(state,vars) => ([v'],[indx']) &
+	set_var_fixed(v',dummy_fixed) => v'' &
+	add_var(v'',vars) => vars' 	 
 	------------------------------
-	propagate_dummy_initial_equations(dae as DAELOW(v,kv,e,se,ie,ae,al,ei),
+	propagate_dummy_fixed_attribute(dae as DAELOW(vars,kv,e,se,ie,ae,al,ei),
 				 eqns,
 				 dummy,
 				 dummy_no)
-	  => DAELOW(v,kv,e,se,ie',ae,al,ei)
+	  => DAELOW(vars',kv,e,se,ie,ae,al,ei)
 
   rule	Debug.fprint("failtrace", "propagate_dummy_initial_equations failed\n")
 	--------------------------------------------------
-	propagate_dummy_initial_equations(dae,_,_,_) => dae
+	propagate_dummy_fixed_attribute(dae,_,_,_) => dae
 end				    
 
-(** relation: propagate_dummy_initial_equations2
- ** author: PA
- ** 
- ** Helper relation to propagate_dummy_initial_equations.
- **)
-
-relation propagate_dummy_initial_equations2: (Equation list,
-				     DAELow,
-				     int list,
-				     Exp.ComponentRef,
-				     int) 
-	  => Equation list =
-
-  axiom	propagate_dummy_initial_equations2([],_,_,_,_) => []
-
-  rule	is_initial_dummy_eqn(e,dummy) => (cr,exp) &
-	propagate_dummy_initial_equation(cr,exp,dae,eqns) => new_ieqn
-	------------------------------------
-	propagate_dummy_initial_equations2(e::es,dae,eqns,dummy,dummy_no)
-	  => e::new_ieqn::es
-
-  rule	propagate_dummy_initial_equations2(es,dae,eqns,dummy,dummy_no) 
-	  => es'
-	------------------------------------
-	propagate_dummy_initial_equations2(e::es,dae,eqns,dummy,dummy_no)
-	  => e::es'
-end
-
-(** relation: is_initial_dummy_eqn
+(** relation: find_state
  ** author: PA
  **
- ** Helper relation to propagate_dummy_initial_equations2.
- ** Determines if an initial equation assigns to a dummy variable.
+ ** Returns the first state from a list of component references.
  **)
 
-relation is_initial_dummy_eqn: (Equation,Exp.ComponentRef) => 
-	(Exp.ComponentRef,Exp.Exp) =
 
-  rule	Exp.cref_equal(cr1,cr) => true &
-	Exp.get_cref_from_exp(e2) => crs &
-	not Util.list_getmember_p(cr,crs,Exp.cref_equal) => _
-	------------------------------
-	is_initial_dummy_eqn(EQUATION(Exp.CREF(cr1,_),e2),cr) => (cr1,e2)
-
-  rule	Exp.cref_equal(cr1,cr) => true &
-	Exp.get_cref_from_exp(e2) => crs &
-	not Util.list_getmember_p(cr,crs,Exp.cref_equal) => _
-	------------------------------
-	is_initial_dummy_eqn(EQUATION(e2,Exp.CREF(cr1,_)),cr) => (cr1,e2)
-end
-
-(** relation: propagate_dummy_initial_equation
- ** author: PA
- **
- ** Propagates an initial equation on a dummy state to a proper state instead.
- **)
-
-relation propagate_dummy_initial_equation:(Exp.ComponentRef, (* dummy var*)
-					   Exp.Exp, (* initial value*)
-					   DAELow,
-					   int list) 
-	  => Equation =
-
-  rule	Util.list_map_1(eqns,int_sub,1) => eqns' &
-	Util.list_map_1r(eqns',equation_nth,e) => eqn_lst &
-	propagate_eqns(cr,eqn_lst,dae) => (cr,exp')
-	--------------------------------
-	propagate_dummy_initial_equation(cr,exp,dae as DAELOW(_,_,e,_,_,_,_,_),
-					 eqns)
-	  => EQUATION(Exp.CREF(cr,Exp.REAL),exp')
-
-  rule	Debug.fprint("failtrace", "propagate_dummy_initial_equation failed\n")
-	-------------------
-	propagate_dummy_initial_equation(_,_,dae,_) => fail
-end
-
-(** relation: propagate_eqns
- ** author: PA
- **
- ** Helper relation to propagate_dummy_initial_equation.
- ** Given a dummy state and a list of equations find the propagated
- ** initial equation on a solved form: cr = expr.
- **)
-
-relation propagate_eqns: (Exp.ComponentRef, Equation list,DAELow) 
-	  => (Exp.ComponentRef, Exp.Exp) =
-
-  rule	find_cref_equation(cr,eqns) => (eqn,eqns') &
-	propagate_eqn(eqn,eqns') => (eqn' as EQUATION(e1,e2),eqns'') &
-	find_selected_state(cr,eqn',dae) => cr2 &
-	let varexp = Exp.CREF(cr2,Exp.REAL) &
-	Exp.solve(e1,e2,varexp) => expr 
-	------------------------------
-	propagate_eqns(cr,eqns,dae) => (cr2,expr)
-end
-
-(** relation: find_cref_equation
- ** author: PA
- ** 
- ** Finds the equation that contains cref as cref = expr 
-**)
-
-relation find_cref_equation: (Exp.ComponentRef, Equation list) 
-	=> (Equation, Equation list) =
-	  (* cr = exp *)
-  rule	Exp.cref_equal(cr,cr2) => true &
-	Exp.get_cref_from_exp(exp) => crs &
-	not Util.list_getmember_p(cr,crs,Exp.cref_equal) => _
-	--------------------------
-	find_cref_equation(cr,[e as EQUATION(Exp.CREF(cr2,_),exp)]) 
-	  => (e,[])
-	  (* exp = cr *)
-  rule	Exp.cref_equal(cr,cr2) => true &
-	Exp.get_cref_from_exp(exp) => crs &
-	not Util.list_getmember_p(cr,crs,Exp.cref_equal) => _
-	--------------------------
-	find_cref_equation(cr,[e as EQUATION(exp,Exp.CREF(cr2,_))]) 
-	  => (e,[])
-
-	  (* cr = exp *)
-  rule	Exp.cref_equal(cr,cr2) => true &
-	Exp.get_cref_from_exp(exp) => crs &
-	not Util.list_getmember_p(cr,crs,Exp.cref_equal) => _
-	--------------------------
-	find_cref_equation(cr,(e as EQUATION(Exp.CREF(cr2,_),exp))::es) 
-	  => (e,es)
-
-	  (* exp = cr *)
-  rule	Exp.cref_equal(cr,cr2) => true &
-	Exp.get_cref_from_exp(exp) => crs &
-	not Util.list_getmember_p(cr,crs,Exp.cref_equal) => _
-	--------------------------
-	find_cref_equation(cr,(e as EQUATION(exp,Exp.CREF(cr2,_)))::es) 
-	  => (e,es)
-
-  rule	find_cref_equation(cr,es) => (e',es')
-	--------------------------
-	find_cref_equation(cr,e::es) => (e',e::es')
-end
-
-(** relation: propagate_eqn
- **
- ** Takes an equation and a list of equations and substitutes
- ** variables "defined" from the other equations in the single equation
- ** 
- ** For instance propagate_eqn( a=b, {b=2*c,a=d*3}) => d*3=2*c
-**)
-
-relation propagate_eqn:(Equation,Equation list) => (Equation,Equation list) =
-
-  axiom	propagate_eqn(e,[]) => (e,[])
-
-  rule	Exp.get_cref_from_exp(e1) => crs1 &
-	Exp.get_cref_from_exp(e2) => crs2 &
- 	list_append(crs1,crs2) => crs &
-	propagate_cref_eqns(crs,e,eqns) => (eqn,eqns) &
-	propagate_eqn(eqn,eqns) => (eqn',eqns')
- 	-----------------------------
-	propagate_eqn(e as EQUATION(e1,e2),eqns) => (eqn',eqns')
-
-end
-
-(** relation: propagate_cref_eqns
- ** author: PA
- **
- ** Helper relation to propagate_eqn.
- **)
-
-relation propagate_cref_eqns:(Exp.ComponentRef list,
- 			 Equation,
-			 Equation list) 
- 	  => (Equation, Equation list) =
-
-  axiom	propagate_cref_eqns([],e,eqns) => (e,eqns)
-
-  rule	find_cref_equation(cr,eqns) => (eqn,eqns) &
-	find_cref_expr(cr,eqn) => exp &
-	Exp.replace_exp(e1,Exp.CREF(cr,Exp.REAL),exp) => (e1',_) &
-	Exp.replace_exp(e2,Exp.CREF(cr,Exp.REAL),exp) => (e2',_) &
-	propagate_cref_eqns(crs,EQUATION(e1',e2'),eqns) => (eqn',eqns')
- 	----------------------------------
-	propagate_cref_eqns(cr::crs,EQUATION(e1,e2),eqns) 
-	  => (eqn',eqns')
-
-  rule	propagate_cref_eqns(crs,eqn,eqns) => (eqn',eqns')
- 	----------------------------------
-	propagate_cref_eqns(cr::crs,eqn,eqns) 
-	  => (eqn',eqns')
-end
-
-(** relation: find_cref_expr
- ** author: PA
- **
- ** Finds the expression in an equation cr = expr 
- **)
-
-relation find_cref_expr:(Exp.ComponentRef, Equation) => Exp.Exp =
-
-  rule	Exp.cref_equal(cr,cr2) => true 
-	-------------------------
-	find_cref_expr(cr,EQUATION(Exp.CREF(cr2,_),e2)) => e2
-
-rule	Exp.cref_equal(cr,cr2) => true 
-	-------------------------
-  	find_cref_expr(cr,EQUATION(e2,Exp.CREF(cr2,_))) => e2
-
-end
-
-
-(** relation: find_selected_state
- ** author: PA
- **
- ** Finds the selected state from a constraint equation.
- ** E.g. s1 = p*s2 for dummy state s1 will return s2.
- **)
-
-relation find_selected_state: (Exp.ComponentRef,Equation, DAELow)
-	  => (Exp.ComponentRef) =
-
-  rule	Exp.get_cref_from_exp(e1) => crs1 & 
-	Exp.get_cref_from_exp(e2) => crs2 &
-	list_append(crs1,crs2) => crs &
-	Util.list_deletemember_p(crs,cr,Exp.cref_equal) => crs' &
-	find_selected_state2(crs',v) => cr
-	--------------------------------
-	find_selected_state(cr,EQUATION(e1,e2),DAELOW(v,kn,e,se,ie,ae,alg,ei))
-	=> cr
-end
-
-(** relation: find_selected_state2
- **
- ** Returns the first state from the list of ComponentRefs.
- **)
-
-relation find_selected_state2:(Exp.ComponentRef list, Variables) 
-	  => Exp.ComponentRef =
+relation find_state: (Variables, Exp.ComponentRef list)  => Exp.ComponentRef =
 
   rule	get_var(cr,vars) => (v::_,_) &
 	var_kind(v) => STATE 
-	--------------------
-	find_selected_state2(cr::crs,vars) => cr
+	----------------------
+	find_state(vars,cr::crs) => cr
 
-  rule	find_selected_state2(crs,vars) => cr
-	--------------------
-	find_selected_state2(cr::crs,vars) => cr
+  rule	find_state(vars,crs) => cr
+	----------------------
+	find_state(vars,cr::crs) => cr
 end
-	
+
+
+(** relation: equations_crefs
+ ** author: PA
+ **
+ ** From a list of equations return all occuring variables/component 
+ ** references.
+ **)
+
+relation equations_crefs: (Equation list) => Exp.ComponentRef list =
+
+  axiom	equations_crefs([]) => []
+
+  rule	equations_crefs(es) => crs1 &
+	Exp.get_cref_from_exp(e1) => crs2 &
+	Exp.get_cref_from_exp(e2) => crs3 &
+	Util.list_flatten([crs1,crs2,crs3]) => crs
+	---------------------
+	equations_crefs(EQUATION(e1,e2)::es) => crs
+
+  rule	equations_crefs(es) => crs1 &
+	Exp.get_cref_from_exp(e1) => crs2 &
+	list_append(crs1,crs2) => crs 
+	---------------------
+	equations_crefs(RESIDUAL_EQUATION(e1)::es) => crs
+
+  rule	equations_crefs(es) => crs1 &
+	Exp.get_cref_from_exp(e1) => crs2 &
+	list_append(crs1,crs2) => crs 
+	---------------------
+	equations_crefs(SOLVED_EQUATION(cr,e1)::es) => cr::crs
+
+  rule	equations_crefs(es) => crs1 &
+	Util.list_map(expl,Exp.get_cref_from_exp) => crs2 &
+	Util.list_flatten(crs2) => crs2' &
+	list_append(crs1,crs2') => crs 
+	---------------------
+	equations_crefs(ARRAY_EQUATION(indx,expl)::es) => crs
+
+  rule	equations_crefs(es) => crs1 &
+	Util.list_map(expl1,Exp.get_cref_from_exp) => crs2 &
+	Util.list_map(expl2,Exp.get_cref_from_exp) => crs3 &
+	Util.list_flatten(crs2) => crs2' &
+	Util.list_flatten(crs3) => crs3' &
+	Util.list_flatten([crs1,crs2',crs3']) => crs
+	---------------------
+	equations_crefs(ALGORITHM(indx,expl1,expl2)::es) => crs
+
+  rule	equations_crefs(es) => crs1 & 
+	Exp.get_cref_from_exp(e) => crs2 &
+	list_append(crs1,crs2) => crs
+	---------------------
+	equations_crefs(WHEN_EQUATION(WHEN_EQ(indx,cr,e))::es) => cr::crs
+end
+
 
 (** relation: update_incidence_matrix
  ** author: PA
@@ -7551,6 +7410,7 @@ relation equation_to_residual_form:(Equation) => Equation =
   axiom	equation_to_residual_form(e as RESIDUAL_EQUATION(_)) => e
   axiom	equation_to_residual_form(e as ALGORITHM(_,_,_)) => e
   axiom	equation_to_residual_form(e as ARRAY_EQUATION(_,_)) => e
+  axiom	equation_to_residual_form(e as WHEN_EQUATION(_)) => e
 
   rule	Debug.fprint("failtrace","equation_to_residual_form failed\n")
 	--------------------------

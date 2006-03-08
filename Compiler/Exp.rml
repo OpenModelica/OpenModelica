@@ -756,7 +756,6 @@ end
  **)
 relation simplify : Exp => Exp =
 
-
   axiom	simplify (CAST(REAL,RCONST(v))) => RCONST(v)
 
   rule	simplify(e) => ICONST(v) &
@@ -883,7 +882,6 @@ relation simplify_binary_array:(Exp,Operator,Exp) => Exp =
 	simplify_binary_array(e1,MUL_MATRIX_PRODUCT(tp),e2) => e'
 	
   rule	typeof(e1) => tp &
-
 	simplify_vector_binary(e1,ADD(tp),e2) => res
 	------------------------
 	simplify_binary_array(e1,ADD_ARR(_),e2) => res
@@ -894,7 +892,7 @@ relation simplify_binary_array:(Exp,Operator,Exp) => Exp =
 	simplify_binary_array(e1,SUB_ARR(_),e2) => res
 
   rule	typeof(s1) => tp &
-	simplify_vector_scalar(s1,MUL(tp),a1) => res
+	simplify_vector_scalar(s1,MUL(tp),a1) => res 
 	------------------------
 	simplify_binary_array(s1,MUL_SCALAR_ARRAY(tp),a1) => res
 
@@ -1624,16 +1622,18 @@ relation simplify_asub: (Exp, int) => Exp =
 	  => BINARY(e1',SUB_ARR(t),e2')
       
   rule	simplify_asub(e2,indx) => e2' &
-	simplify(e1) => e1' 
+	simplify(e1) => e1' &
+	simplify_asub_operator(e2',MUL(t),MUL_SCALAR_ARRAY(t)) => op
 	----------------------------
 	simplify_asub(BINARY(e1,MUL_SCALAR_ARRAY(t),e2),indx)
-	  => (BINARY(e1',MUL(t),e2'))
+	  => (BINARY(e1',op,e2'))
 
   rule	simplify_asub(e1,indx) => e1' &
-	simplify(e2) => e2' 
+	simplify(e2) => e2' &
+	simplify_asub_operator(e2',MUL(t),MUL_SCALAR_ARRAY(t)) => op
 	----------------------------
 	simplify_asub(BINARY(e1,MUL_ARRAY_SCALAR(t),e2),indx)
-	  => (BINARY(e1',MUL(t),e2'))
+	  => (BINARY(e1',op,e2'))
 
   rule	simplify_asub(e1,indx) => e1' &
 	simplify(e2) => e2' 
@@ -1669,6 +1669,17 @@ relation simplify_asub: (Exp, int) => Exp =
   rule	simplify(ASUB(e,indx)) => e'
 	--------------------------------
 	simplify_asub(e as CREF(cr,t),indx) => e'
+end
+
+
+relation simplify_asub_operator:(Exp,Operator,Operator) => Operator =
+
+  axiom	simplify_asub_operator(ARRAY(_,_,_),sop,aop) => aop
+
+  axiom	simplify_asub_operator(MATRIX(_,_,_),sop,aop) => aop
+  axiom	simplify_asub_operator(RANGE(_,_,_,_),sop,aop) => aop
+
+  axiom	simplify_asub_operator(_,sop,aop) => sop
 
 end
 
