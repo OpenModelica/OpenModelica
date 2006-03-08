@@ -319,7 +319,7 @@ relation generate_fixed_vector:(DAELow.DAELow, int (*nx*),
 	generate_fixed_vector2(dae,str_arr,nx,ny,np) => str_arr' &
 	array_list(str_arr') => str_lst &
 	Util.string_delimit_list(str_lst,", ") => str &
-	Util.string_append_list(["char fixed[NX+NX+NY+NP]={",str,"};"]) 
+	Util.string_append_list(["char init_fixed[NX+NX+NY+NP]={",str,"};"]) 
 	  => res
 	-----------------------------------
 	generate_fixed_vector(dae,nx,ny,np) => res
