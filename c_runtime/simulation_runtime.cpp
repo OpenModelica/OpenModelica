@@ -251,7 +251,6 @@ void euler ( double *x, double *xd, double *y, double *p, double *data,
 
 double *static_y;
 
-//BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
 void leastSquare(long *nz, double *z, double *funcValue)
 {
   int ind, indAct, indz, indy;
