@@ -6286,28 +6286,28 @@ relation get_class_information:(Absyn.ComponentRef,
 				Absyn.Program) => string =
 
   rule	Absyn.cref_to_path(cr) => path &
-		get_pathed_class_in_program(path,p) => 
-			Absyn.CLASS(name,partial,final,encapsulated,restr,cdef,Absyn.INFO(file,isReadOnly,sl,sc,el,ec)) &
-		(* handling boolean attributes of the class *)
-		Util.bool_string(partial) => strPartial &
-		Util.bool_string(final) => strFinal &
-		Util.bool_string(encapsulated) => strEncapsulated &
-		(* handling restriction *)		
-		Dump.unparse_restriction_str(restr) => res & 
-		(* handling class comment from the definition *)	
-		get_class_comment(cdef) => cmt &
-		(* handling positional information *)
-	    select_string(isReadOnly,"readonly","writable") => str_readonly &	
+	get_pathed_class_in_program(path,p) => 
+	Absyn.CLASS(name,partial,final,encapsulated,restr,cdef,Absyn.INFO(file,isReadOnly,sl,sc,el,ec)) &
+	(* handling boolean attributes of the class *)
+	Util.bool_string(partial) => strPartial &
+	Util.bool_string(final) => strFinal &
+	Util.bool_string(encapsulated) => strEncapsulated &
+	(* handling restriction *)		
+	Dump.unparse_restriction_str(restr) => res & 
+	(* handling class comment from the definition *)	
+	get_class_comment(cdef) => cmt &
+	(* handling positional information *)
+	select_string(isReadOnly,"readonly","writable") => str_readonly &	
         int_string(sl) => str_sline &
         int_string(sc) => str_scol &
         int_string(el) => str_eline &
         int_string(ec) => str_ecol &
         (* composing the final returned string *)
-		Util.string_append_list(["{\"",res,"\",\"",name,"\",",cmt,",\"", file, 
-			"\",{", strPartial,",",strFinal,",",strEncapsulated,"},{\"", 
-			str_readonly,"\",",str_sline,",",str_scol,",",str_eline,",",str_ecol,"}}"]) => res'		
-		----------------------------
-		get_class_information(cr,p) => res'
+	Util.string_append_list(["{\"",res,"\",",cmt,",\"", file, 
+				 "\",{", strPartial,",",strFinal,",",strEncapsulated,"},{\"", 
+				 str_readonly,"\",",str_sline,",",str_scol,",",str_eline,",",str_ecol,"}}"]) => res'		
+	----------------------------
+	get_class_information(cr,p) => res'
 end
 
 
