@@ -95,6 +95,13 @@ extern "C"
   }
   RML_END_LABEL
 
+  RML_BEGIN_LABEL(DAEEXT__clear_5fdifferentiated)
+  {
+    differentiated_mark.clear();
+    RML_TAILCALLK(rmlSC);
+  }
+  RML_END_LABEL
+
   RML_BEGIN_LABEL(DAEEXT__get_5fdifferentiated_5feqns)
   {
     std::set<int>::iterator it;

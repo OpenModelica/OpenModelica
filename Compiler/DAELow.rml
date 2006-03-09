@@ -4350,7 +4350,8 @@ relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT,
 	      int vector,
 	      DAELow,IncidenceMatrix, IncidenceMatrixT) =
 
-  rule	check_matching(dae,match_opts) &  	
+  rule	DAEEXT.clear_differentiated() &
+	check_matching(dae,match_opts) &  	
 	array_length(m) => nvars &
 	array_length(mt) => neqns &
 	int_string(nvars) => ns &

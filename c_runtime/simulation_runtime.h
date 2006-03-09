@@ -35,7 +35,6 @@
 
 using namespace std;
 
-//BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
 extern "C" {
 	void  newuoa_(
 	long *nz,
@@ -66,8 +65,6 @@ extern "C" {
 	   void (*leastSquare) (long *nz, double *z, double *funcValue), 
 	   long *IFAULT);
 } // extern "C"
-//BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
-
 
 #define DDASRT ddasrt_
 
@@ -151,7 +148,6 @@ int initial_function(double*x, double *xd, double*y, double*p,
 		     double *t,
 		    int nx, int ny, int np); 
 
-//BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB//
 // function for calculate residual values for the initial equations
 // and fixed start attibutes
 extern char init_fixed[];
@@ -159,7 +155,7 @@ extern double *init_res;
 int initial_residual(double*x, double *xd, double*y, double*p,
 		     double *t,
 		    int nx, int ny, int np, double *res, int nr); 
-//BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB//
+
 
 // Adds a result to the simulation result data.
 void add_result(double *data, double time,double *x, double *ndx, double *y,

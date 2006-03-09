@@ -102,6 +102,13 @@ relation e_mark: (int) => () (*  *)
 
   relation get_differentiated_eqns:() => int list 
 
+(** relation: clear_differentiated
+ **
+ ** Marks an equation as differentiated. 
+ **)
+
+relation clear_differentiated: () => () 
+
 (** relation: mark_differentiated
  **
  ** Marks an equation as differentiated. 
