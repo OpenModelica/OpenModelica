@@ -1,22 +1,5 @@
 (*
-   Copyright PELAB, Linkoping University
-   
-   This file is part of Open Source Modelica (OSM).
-
-    OSM is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    OSM is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenModelica; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
+   Copyright 2005, Adrian Pop, adrpo@ida.liu.se and PELAB, Linköping University
 *)
 
 (**
@@ -32,7 +15,7 @@
  ** for printing the AST.
  **  
  ** absyn.rml's constructors are primarily used by the walker 
- ** (Compiler/absyn_builder/walker.g) which takes an ANTLR internal syntax tree and
+ ** (modeq/absyn_builder/walker.g) which takes an ANTLR internal syntax tree and
  ** converts it into an RML abstract syntax tree.
  **
  ** When the AST has been built, it is normaly used by explode.rml in order to
@@ -46,6 +29,12 @@
 
 module Absyn:
 							  
+  datatype Info = INFO of string * (* file *)
+			  int *    (* startline *)
+			  int *    (* startcolumn *)
+                          int *    (* endline *)
+                          int      (* endcolumn *)
+
   (** An identifier, for example a variable name *)
   type Ident = string
 
@@ -67,7 +56,7 @@ module Absyn:
 		   | IMPORT_DEFINITION of ElementSpec(* For split definitions*)
 					* Path option (* insert into. 
 						       Default, NONE *)
-		   | RML_FILE of Ident * RMLInterface list * RMLDefs list
+		   | RML_FILE of RMLIdent * RMLInterface list * RMLDefs list * string list
 
 
   (** Within statements *)
@@ -92,16 +81,26 @@ module Absyn:
   (** For a derived type, the  type contains the name of the derived class and an optional *)
   (** array dimension and a list of modifications. An enumeration type contains a list of *)
   datatype ClassDef = PARTS of ClassPart list
-			       * string option	     (* string comment *)
-		    | DERIVED of Path
-			       * ArrayDim option     (* *)
-			       * ElementAttributes   
-			       * ElementArg list
-			       * Comment option	     (* comment *)
-		    | ENUMERATION of EnumLiteral list   
-				* Comment option     (* comment*)		
-	            | OVERLOAD of Path list (* function names *)
-				* Comment option
+			       			 * string option	   (* string comment *)
+					| DERIVED of TypeSpec          (* Type *) 
+						* ElementAttributes     (* ElementAttributes *)
+						* ElementArg list
+						* Comment option	     (* comment *)
+					| ENUMERATION of EnumLiteral list   
+						* Comment option     (* comment*)		
+					| OVERLOAD of Path list (* function names *)
+						* Comment option
+
+  (* 
+		type X = option<Type>            -> option type
+		type O = list<Type>              -> list type
+		type Y = record<Type,Type,Type>  -> tuple type
+		type Z = Tree<Type>              -> uniontype with replaceable type variables
+		type K = TypeSpec[:]             -> Array<TypeSpec>
+  *)   
+  (* arrays: TypeSpec[:] are represented as Array<TypeSpec> *)
+  datatype TypeSpec = TPATH of Path  
+					| TCOMPLEX of Path * TypeSpec list 
 
   (** EnumLiteral, which is a name in an enumeration and an optional
    Comment.*)
@@ -157,8 +156,8 @@ module Absyn:
 				   * Class
 		       | EXTENDS of Path * ElementArg list
 		       | IMPORT of Import * Comment option
-		       | COMPONENTS of ElementAttributes (*1.1 contains Araydim also.*)
-				     * Path	     (* type name *)
+		       | COMPONENTS of ElementAttributes     (* ElementAttributes *)
+		             * TypeSpec (* Type *)
 				     * ComponentItem list
   (** One of the keyword inner and outer CAN be given to reference an inner or
       outer component. Thus there are three disjoint possibilities. **)		     
@@ -201,6 +200,13 @@ module Absyn:
 				* EquationItem list (* Loop body *)
 				* (Exp * EquationItem list) list (* else when *)
 		    | EQ_NORETCALL of Ident * FunctionArgs	 (* fcalls without return value *)
+		(* RML goals *)
+		    | EQ_LET of Pattern * Exp    (* let pat = exp *)
+		    | EQ_STRUCTEQUAL of Ident * Exp    (* ident = exp *)
+		    | EQ_FAILURE of Equation list    (* not goal or not (g1 & g2 & g3) *)
+		    | EQ_CALL of Path *          (* the name of the function to call, ex: eval Absyn.dump etc *)
+			         FunctionArgs *  (* parameters *)
+				 Pattern         (* result pattern *)
 
   (** The `Algorithm' type describes one algorithm statement in an *)
   (** algorithm section.  It does not describe a whole algorithm.  The *)
@@ -219,6 +225,28 @@ module Absyn:
 					* AlgorithmItem list 
 					* (Exp * AlgorithmItem list) list (* elsewhen *)
 		     | ALG_NORETCALL of ComponentRef * FunctionArgs	   (* general fcalls without return value *)
+	             | ALG_MATCH of ComponentRef list * (* option result := match ... end match *)
+				    Exp * (* match expression of *)
+				    ElementItem list *(* local decls *)
+                                    Case list (* case list + else in the end with pat = [] *)
+                     | ALG_SIMPLEMATCH of EquationItem list
+
+  datatype Case = CASE of Pattern list * (* patterns to be matched *) 
+					 ElementItem list * (* local decls *)
+					 ClassPart * (* equations [] for no equations: axioms /change to Equations*)
+					 Exp *(* to result *)
+                                         Comment option *(*the comment*)
+										 Comment option   (* the end comment, before ----- in rml *)
+
+  (** Modelica+ Patterns **)
+  datatype Pattern = MWILDpat  (* from RMLPAT_WILDCARD *)
+			| MLITpat of Exp   (* from RMLPAT_LITERAL of RMLLiteral *)
+			| MCONpat of Path  (* from RMLLONGID of Ident * Ident *)
+			| MSTRUCTpat of Path option * Pattern list (* from RMLPAT_STRUCT of RMLIdent option * RMLPattern list *)
+			| MBINDpat of Ident * Pattern (* from RMLPAT_AS of Ident * RMLPattern *)
+			| MIDENTpat of Ident * Pattern  (* from RMLPAT_IDENT Ident *) 
+			| MNAMEDpat of Ident * Pattern  (* for named arguments in patterns *)
+
 
 
   (** - Modifications *)
@@ -238,9 +266,8 @@ module Absyn:
 
   (** - Component attributes *)
   datatype ElementAttributes = ATTR of bool	(* flow *)
-			     	     * Variability (* parameter, constant etc. *)
-			     	     * Direction
-				     * ArrayDim  (*1.1*)
+						     	     * Variability (* parameter, constant etc. *)
+						     	     * Direction
      
   (* Dete *) 
   datatype Variability = VAR | DISCRETE | PARAM | CONST
@@ -272,11 +299,7 @@ module Absyn:
 	       | RELATION of Exp * Operator * Exp (* Relations, e.g. a >= 0 *)
 	       | IFEXP of Exp * Exp * Exp * (Exp * Exp) list  (* If expressions *)
 	       | CALL of ComponentRef * FunctionArgs (* Function calls *)
-(*	       | ARRAY of Exp list *)
-
-(*P.R		ARRAY consists of an vector of the dimension sizes and an vector consiting of the vector data.*)	
-	       | ARRAY of Exp list
-
+	       | ARRAY of Exp list (* ARRAY consists of an vector of the dimension sizes and an vector with the data.*)
 	       | MATRIX of Exp list list
 	       | RANGE of Exp * Exp option * Exp (* Range expressions, e.g. 1:10 or 1:0.5:10 *)
 	       | TUPLE of Exp list (*PR.*) (* Tuples used in function calls returning several values *)
@@ -285,8 +308,10 @@ module Absyn:
 	       | RMLCALL of RMLIdent * Exp list
                | RMLCONS of Exp * Exp
                | RMLNIL
-               | RMLLIT of RMLLiteral (* FIXME in parser! *)
-
+               | RMLLIST of Exp list (*addedfor []*)
+               | RMLLIT of RMLLiteral (* FIXED *)
+	       | RML_REFERENCE of RMLIdent
+               | MSTRUCTURAL of Path option * Exp list (* returned from match exps *)
   (** The `Exp' datatype is the container of a Modelica expression. *)
 
   datatype Code = C_TYPENAME of Path 
@@ -309,9 +334,12 @@ module Absyn:
 
   datatype Operator = ADD   | SUB    | MUL     | DIV       | POW
 		    | UPLUS | UMINUS
+                    | RADD   | RSUB    | RMUL     | RDIV   
+		    | RUPLUS | RUMINUS
 		    | AND   | OR
 		    | NOT
 		    | LESS  | LESSEQ | GREATER | GREATEREQ | EQUAL | NEQUAL
+		    | RLESS  | RLESSEQ | RGREATER | RGREATEREQ | REQUAL | RNEQUAL
   
   (** - Subscripts *)
   datatype Subscript = NOSUB
@@ -345,11 +373,9 @@ module Absyn:
 		       | R_PACKAGE
 		       | R_FUNCTION
 		       | R_ENUMERATION	
-		       | R_PREDEFINED_INT
-		       | R_PREDEFINED_REAL
-		       | R_PREDEFINED_STRING
-		       | R_PREDEFINED_BOOL
-		       | R_PREDEFINED_ENUM
+               | R_UNIONTYPE
+			   | R_TYPE_GENERATED
+
   (** These constructors each correspond to a different kind of class *)
   (** declaration in Modelica, except the last four, which are used *)
   (** for the predefined types.  The parser assigns each class *)
@@ -375,57 +401,61 @@ module Absyn:
 
 
   (* RML Stuff - work in progress *)
-  datatype RMLDatatype = DATATYPE of Ident * DTMember list
+  datatype RMLDatatype = DATATYPE of RMLType list * RMLIdent * DTMember list
 
-  datatype RMLDecl = RELATION_INTERFACE of Ident * RMLSignature
-		   | DATATYPEDECL of RMLDatatype list
-		   | TYPE of Ident * RMLType
-		   | WITH of string
-                   | VALINTERFACE of Ident * RMLType
-                   | VALDEF of Ident * Exp
-                   | RELATION_DEFINITION of Ident * RMLSignature * RMLRule list
+  datatype RMLDecl = RELATION_INTERFACE of RMLIdent * RMLType (*changed*)
+				   | DATATYPEDECL of RMLDatatype * string list
+		           | TYPE of RMLIdent * RMLType * string list
+		           | WITH of string * string list
+                   | VALINTERFACE of RMLIdent * RMLType * string list
+                   | VALDEF of RMLIdent * Exp * string list
+                   | RELATION_DEFINITION of RMLIdent * RMLType option * RMLRule list * string list
                    | RMLDECLCOMMENT of string
+
+  datatype RMLComment = RMLCOMMENT of string (*use instead of string ?*)
 
   type RMLInterface = RMLDecl
   type RMLDefs      = RMLDecl
 
-  datatype RMLSignature = CALLSIGN of RMLType * RMLType
+  datatype RMLSignature = CALLSIGN of RMLType list * RMLType list 
 
-  datatype RMLType = RMLTYPE_INT
-                   | RMLTYPE_STRING
-                   | RMLTYPE_REAL
-		   | RMLTYPE_LIST of RMLType
+  datatype RMLType = RMLTYPE_INT 
+                   | RMLTYPE_STRING 
+                   | RMLTYPE_REAL  
+                   | RMLTYPE_TYCONS of RMLType list * RMLIdent 
                    | RMLTYPE_SIGNATURE of RMLSignature
-                   | RMLTYPE_TUPLE of RMLType list
-                   | RMLTYPE_TYVAR of RMLIdent
-                   | RMLTYPE_USERDEFINED of RMLIdent
+                   | RMLTYPE_TUPLE of RMLType list 
+                   | RMLTYPE_TYVAR of RMLIdent 
+                   | RMLTYPE_USERDEFINED of RMLIdent 
 
-  datatype RMLRule = RMLRULE of Ident *
-                                RMLPattern list *
-                                RMLGoal *
-                                RMLResult
+  datatype RMLRule = RMLRULE of RMLIdent *
+                                RMLPattern * 
+                                RMLGoal option*
+                                RMLResult *
+                                string list *
+								string list
 
-  datatype RMLResult = RMLNoResult
-                     | RMLResultExp of Exp list
-                     | RMLResultFail
+  datatype RMLResult = RMLNoResult of string list
+                     | RMLResultExp of Exp list * string list 
+                     | RMLResultFail of string list
 
-  datatype RMLGoal = RMLGOAL_NOT of RMLGoal
-		   | RMLGOAL_AND of RMLGoal * RMLGoal
-                   | RMLGOAL_PAT of RMLPattern
-		   | RMLGOAL_LET of RMLPattern * Exp
-                   | RMLGOAL_EQUAL of Exp * Exp
-                   | RMLGOAL_RELATION of RMLIdent * Exp list * RMLPattern
-
-  datatype RMLPattern = RMLPAT_CALL of RMLIdent * RMLPattern list
-                      | RMLPAT_WILDCARD
+  datatype RMLGoal = RMLGOAL_NOT of RMLGoal 
+				   | RMLGOAL_AND of RMLGoal * RMLGoal 
+                   | RMLGOAL_PAT of RMLPattern 
+				   | RMLGOAL_LET of RMLPattern * Exp * string list
+                   | RMLGOAL_EQUAL of RMLIdent * Exp * string list 
+                   | RMLGOAL_RELATION of RMLIdent * Exp list * RMLPattern option * string list 
+          
+  datatype RMLPattern = RMLPAT_WILDCARD
                       | RMLPAT_LITERAL of RMLLiteral
                       | RMLPAT_IDENT of RMLIdent
-                      | RMLPAT_AS of Ident * RMLPattern
+                      | RMLPAT_AS of RMLIdent * RMLPattern
                       | RMLPAT_CONS of RMLPattern * RMLPattern
-                      | RMLPAT_STRUCT of RMLPattern list
+                      | RMLPAT_STRUCT of RMLIdent option * RMLPattern list
                       | RMLPAT_NIL
+                      | RMLPAT_LIST of RMLPattern list (*added for []-lists *)
 
-  datatype RMLIdent   = RMLSHORTID of Ident
+  datatype RMLIdent   = RMLSHORTID of Ident * Info
                       | RMLLONGID of Ident * Ident
 
   datatype RMLLiteral = RMLLIT_INTEGER of int
@@ -433,7 +463,82 @@ module Absyn:
                       | RMLLIT_REAL of real
                       | RMLLIT_CHAR of int
 
-  datatype DTMember = DTCONS of Ident * RMLType list
+
+  datatype DTMember = DTCONS of RMLIdent * RMLType list * string list list
+
+  (* start line/column end line/column *)
+  datatype RMLDbRange = RMLDB_RANGE of int * int * int * int
+
+  datatype RMLDbElement = RMLDB_VAR of string * (* filename *)
+                                       RMLIdent * (* var name *)
+                     			       RMLDbRange * (* actual position *)
+                                       RMLDbRange * (* scope *)
+                                       RMLIdent     * (* relation name *)
+    				                   RMLType      (* type *)
+                        | RMLDB_REL of string * (* filename *)
+                                       RMLIdent *      (* relation name *)
+				                       RMLDbRange *  (* relation ident position *)
+				                       RMLType      (* relation type *)
+                        | RMLDB_TY  of string * (* filename *)
+                                       RMLIdent * (* type name *)
+                                       RMLDbRange    (* type position *)
+                        | RMLDB_CTOR of string * (* filename *)
+                                        RMLIdent *   (* constructor name *)
+                                        RMLDbRange * (* position *)
+                                        RMLType    (* type *) 
+
+  datatype RMLDb = RMLDB of RMLDbElement list
+
+  datatype Transformed = TRANSFORMED of string * (* filename *)
+                                        Program  (* the ast  *)
+
+  (* relations *)
+  relation path_string: Path => string 
+  relation path_string2: (Path, string) => string 
+  relation getWithDefinitions: Program => string list 
+end
 
 
+relation path_string: Path => string =
+
+  rule	path_string2 (path, ".") => s
+		-----------------------------
+		path_string path => s
+end
+
+relation path_string2: (Path, string) => string =
+
+  axiom	path_string2(IDENT(s),_) => s
+  
+  rule	path_string2(n,str) => ns &
+		string_append(s,str) => s1 &
+		string_append(s1,ns) => ss
+		-------------------------------------
+		path_string2(QUALIFIED(s,n), str) => ss
+end
+
+relation getWithStr: RMLDecl list => string list =
+
+  rule getWithStr(rest) => strlst &
+       list_append([str], strlst) => strlist
+       --------------------------------------
+	   getWithStr(WITH(str, _)::rest) => strlist
+
+  rule getWithStr(rest) => strlst 
+       -----------------------------
+	   getWithStr(_::rest) => strlst
+
+  axiom getWithStr([]) => []
+
+end 
+
+relation getWithDefinitions: Program => string list =
+   
+   rule getWithStr(interfacelist) => interfaceWiths &
+		getWithStr(deflist) => defWiths &
+		list_append(interfaceWiths, defWiths) => withList
+		-----------------------------------------------------------------------------------
+		getWithDefinitions(RML_FILE(moduleid, interfacelist, deflist, strlist)) => withList 
+
+   axiom getWithDefinitions(_) => []
 end

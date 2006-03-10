@@ -4,12 +4,16 @@
 #include <errno.h>
 #include "rml.h"
  
+
+extern void rmlLexerInit(void);
+
+char* yyThisFileName;
+
 /* Provide error reporting function for yacc */
- 
 yyerror(char *s)
 {
   extern int yylineno;
-  fprintf(stderr,"Error: bad syntax on line %d.\n",yylineno);
+  fprintf(stderr,"Error: bad syntax\n%s:%d Error:%s\n", yyThisFileName, yylineno, s);
 }
  
 /* The yacc parser will deposit the syntax tree here */
@@ -44,16 +48,27 @@ RML_BEGIN_LABEL(ScanParse__debug_5foff)
 }
 RML_END_LABEL
 
+
 /* The glue function */ 
 RML_BEGIN_LABEL(ScanParse__scanparse)
 {
     void *a0 = rmlA0;
-    if( !freopen(RML_STRINGDATA(a0), "r", stdin) ) 
+    char* fileStr = RML_STRINGDATA(a0);
+    yyThisFileName = (char*)malloc(strlen(fileStr)+1);
+
+    strcpy(yyThisFileName, fileStr);
+	/* printf("Parsing: %s\n", fileStr); */
+
+    if( !freopen(fileStr, "r", stdin) ) 
 	{
 		fprintf(stderr, "freopen %s failed: %s\n",
 		RML_STRINGDATA(a0), strerror(errno));
 		RML_TAILCALLK(rmlFC);
     }
+
+	/* reinit the damn lexer */
+	rmlLexerInit();
+	/* parse the damn stuff */
     if( yyparse() != 0 )  
 	{
 		fprintf(stderr,"Fatal: parsing failed!\n");
@@ -63,3 +78,5 @@ RML_BEGIN_LABEL(ScanParse__scanparse)
 	RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+

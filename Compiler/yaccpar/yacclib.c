@@ -29,7 +29,7 @@ void print_icon(FILE *fp, void *icon)
 
 void print_rcon(FILE *fp, void *rcon)
 {
-  //fprintf(fp, "%.15g", rml_prim_get_real(rcon));
+  fprintf(fp, "%.15g", rml_prim_get_real(rcon));
 }
 
 void print_scon(FILE *fp, void *scon)
@@ -45,8 +45,8 @@ void *mk_icon(int i)
 void *mk_rcon(double d)
 {
     struct rml_real *p = alloc_words(RML_SIZE_DBL/RML_SIZE_INT + 1);
-    //rml_prim_set_real(p, d);
-    //p->header = RML_REALHDR;
+    rml_prim_set_real(p, d);
+    p->header = RML_REALHDR;
     return RML_TAGPTR(p);
 }
 
