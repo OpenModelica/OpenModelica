@@ -1,0 +1,40 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+	EndGlobalSection
+	GlobalSection(SolutionItems) = postSolution
+		..\absyn.rml = ..\absyn.rml
+		..\ascii.txt = ..\ascii.txt
+		..\defs.h = ..\defs.h
+		..\dictionary.rml = ..\dictionary.rml
+		..\external.c = ..\external.c
+		..\external.rml = ..\external.rml
+		..\lexer.c = ..\lexer.c
+		..\loadprogramdb.c = ..\loadprogramdb.c
+		..\loadprogramdb.rml = ..\loadprogramdb.rml
+		..\lookup.rml = ..\lookup.rml
+		..\main.rml = ..\main.rml
+		..\Makefile = ..\Makefile
+		..\moddump.rml = ..\moddump.rml
+		..\modrefactor.rml = ..\modrefactor.rml
+		..\parser.output = ..\parser.output
+		..\parser.y = ..\parser.y
+		..\print.rml = ..\print.rml
+		..\rml-db-parse.y = ..\rml-db-parse.y
+		..\rml-db-scan.l = ..\rml-db-scan.l
+		..\rmldump.rml = ..\rmldump.rml
+		..\rmlrefactor.rml = ..\rmlrefactor.rml
+		..\rmltomod.rml = ..\rmltomod.rml
+		..\scanparse.c = ..\scanparse.c
+		..\scanparse.rml = ..\scanparse.rml
+		..\util.rml = ..\util.rml
+		..\yacclib.c = ..\yacclib.c
+		..\yacclib.h = ..\yacclib.h
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

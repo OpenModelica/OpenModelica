@@ -1,0 +1,371 @@
+(*
+   Copyright 2005, Adrian Pop, adrpo@ida.liu.se 
+*)
+
+module Main:
+
+  with "absyn.rml"
+  with "scanparse.rml"
+  with "rmldump.rml"
+  with "rmlrefactor.rml"
+  with "rmltomod.rml"
+  with "modrefactor.rml"
+  with "modrefactortypes.rml" 
+  with "moddump.rml"
+  with "loadprogramdb.rml"
+  with "util.rml"
+  with "external.rml"
+  with "lookup.rml"
+  with "dictionary.rml"
+
+  relation main: string list => ()
+end
+
+relation main: string list => () = 
+
+  rule  collect_flags(args) => flags &
+        collect_files(args) => files &
+		transform(files, flags) 
+		------------------------------
+		main (args) 
+end
+
+relation collect_flags: string list => string list =
+
+	axiom collect_flags([]) => []
+
+	rule External.startsWith(maybeFlag, "-") => true &
+		 collect_flags(rest) => flagList &
+		 list_append([maybeFlag], flagList) => res
+		 -----------------------------------------
+		 collect_flags(maybeFlag::rest) => res
+
+	rule External.startsWith(maybeFlag, "-") => false &
+		 collect_flags(rest) => flagList 
+		 -----------------------------------------
+		 collect_flags(maybeFlag::rest) => flagList
+
+end
+
+relation collect_files: string list => string list =
+
+	axiom collect_files([]) => []
+
+	rule External.startsWith(maybeFile, "-") => false &
+		 collect_files(rest) => fileList &
+		 list_append([maybeFile], fileList) => res
+		 -----------------------------------------
+		 collect_files(maybeFile::rest) => res
+
+	rule External.startsWith(maybeFile, "-") => true &
+		 collect_files(rest) => fileList 
+		 -----------------------------------------
+		 collect_files(maybeFile::rest) => fileList
+
+end
+
+relation get_pdb =
+
+  rule	RMLToMod.is_external(ast) => false &
+		LoadProgramDB.parse(file_rdb) => pdb &
+		let Absyn.RMLDB(entries) = pdb 
+		----------------------------------
+		get_pdb(file_rdb,ast) => entries
+
+  axiom	get_pdb(_,_) => []
+	
+end
+
+relation transformFile: (string, string list) => Absyn.Transformed =
+
+  (* filename = path/file.ext *)
+  rule 	print "Transforming: " & print filename & print "\n" &
+		Util.getPath(filename) => path &
+		Util.getFile(filename) => file &
+		string_append(file, ".rdb") => file_rdb &
+		string_append(file, ".rml") => file_rml &
+		(*
+		string_append(path, file_rml) => filename_rml &
+		string_append(path, file_rdb) => filename_rdb & 
+		*)
+		flag_debugparse(flags) &
+		ScanParse.scanparse(file_rml) => ast &
+		get_pdb(file_rdb,ast) => entries &	
+		flag_printdatabase(flags,entries) => &
+		flag_debugast(flags,ast) &	
+		flag_rmlunparse(flags,ast) &
+		flag_refactor(flags,ast) &
+		rml2mod(flags, ast, entries) => astMetaModelica &
+        string_append(path, file) => pathFile
+		-------------------------------------------------------------------------------
+		transformFile (filename, flags) => Absyn.TRANSFORMED(pathFile, astMetaModelica)
+
+end
+
+relation transformFiles: (string list, string list) => Absyn.Transformed list = 
+
+  rule 	transformFile(file, flags) => transformed &
+		(* 
+        print "Writing: " &
+		dumpFiles([transformed],"-nap-none") &
+        print "\n" &
+		*)
+        transformFiles(files, flags) => transformedFiles &
+		list_append([transformed], transformedFiles) => result
+		-----------------------------------------------------
+		transformFiles (file::files, flags) => result
+
+  axiom transformFiles([],_) => []
+
+end
+
+
+relation transform: (string list, string list) => () = 
+
+  rule 	transformFiles(files, flags) => transformedFiles &
+		ModRefactor.transform(transformedFiles, flags) => refactoredFiles &	
+		Util.get_flag_value(flags,"-napSuffix") => NONE &
+        print "Writing: " &
+		dumpFiles(refactoredFiles,"") &
+        print "\n"
+		---------------------------------------------------------------
+		transform (files, flags) 
+end
+
+relation dumpFiles =
+
+  rule 	string_append(file,suffix) => file &
+		flag_modelicaunparse(ast, file) &
+        dumpFiles(rest, suffix) 
+		----------------------------------------------
+		dumpFiles (Absyn.TRANSFORMED(file, ast)::rest, suffix) 
+
+  axiom dumpFiles([], suffix) 
+
+end
+
+relation rml2mod =
+
+  rule	Util.is_flag_set(args,"-notransform") => false &
+	    Util.is_flag_set(args,"-nt") => false &
+	    (*bool_or(b1,true) => true &*)
+	    get_troptions(args) => toptions &
+		RMLToMod.transform(ast,entries,toptions) => modast 
+		--------------------------------------------------
+		rml2mod(args, ast, entries) => modast
+
+  axiom	rml2mod(_,_,_) => Absyn.PROGRAM([],Absyn.TOP)
+
+end
+
+relation flag_modelicaunparse =
+
+  rule 	ModDump.unparse_str(modAst) => str &
+		string_append(filename, ".mo") => fileMetaModelica &
+		print "[" & print fileMetaModelica & print "] " &
+		External.write_file(fileMetaModelica, str) 
+		--------------------------------------------------------
+		flag_modelicaunparse(modAst, filename) 
+
+  axiom	flag_modelicaunparse(_,_)
+
+end
+
+
+(*Flag for printing the database*)
+relation flag_printdatabase =
+
+  rule	Util.is_flag_set(args,"-printdatabase") => b1 &
+		Util.is_flag_set(args,"-pdb") => b2 &
+		bool_or(b1,b2) => true &
+		print_pdb(entries) =>  
+		-------------------------------
+		flag_printdatabase(args,entries) 
+  
+  axiom	flag_printdatabase(args,entries)
+
+end
+
+
+(*Flag for debuging the parser*)
+relation flag_debugparse =
+
+  rule	Util.is_flag_set(args,"-debugparse") => b1 &
+		Util.is_flag_set(args,"-dp") => b2 &
+		bool_or(b1,b2) => true &
+		ScanParse.debug_on() 
+		-------------------------------
+		flag_debugparse(args) 
+  
+  axiom	flag_debugparse(args)
+
+end
+
+(*Flag for debuging the ast*)
+relation flag_debugast =
+
+  rule	Util.is_flag_set(args,"-debugast") => b1 &
+		Util.is_flag_set(args,"-da") => b2 &
+		bool_or(b1,b2) => true &
+		RML.debug_print("ast", ast) 
+		-------------------------------
+		flag_debugast(args,ast) 
+  
+  axiom	flag_debugast(args,ast) 
+
+end
+
+relation flag_rmlunparse =
+  
+  rule	Util.is_flag_set(args,"-unparserml") => b1 & 
+		Util.is_flag_set(args,"-ur") => b2 &
+		bool_or(b1,b2) => true &
+		RMLDump.dump ast 
+		--------------------------------------
+		flag_rmlunparse(args,ast) 
+
+  axiom	flag_rmlunparse(_,_)
+
+end
+
+
+relation flag_refactor =
+
+  rule	Util.is_flag_set(args,"-refactor") => b1 &
+		Util.is_flag_set(args,"-rf") => b2 &
+		bool_or(b1,b2) => true &
+		do_refactor(args,ast) 
+		-------------------------
+		flag_refactor(args,ast) 
+
+  axiom flag_refactor(args,ast)
+
+end
+
+
+relation get_troptions =
+
+  rule	Util.get_flag_value(options,"-ip") => SOME(iprefix)
+		--------------------------------------------------------------
+		get_troptions(options)  => [RMLToMod.IMP_PREFIX([iprefix])]
+
+  axiom get_troptions(options) => []
+end
+
+relation is_flag =
+
+  rule	External.startsWith(s, "-") => true
+		-----------------------------------
+		is_flag(s) => true
+  
+  axiom is_flag(_) => false	
+
+end
+
+relation pr_el=
+	
+  rule	print file & print " variable " & 
+		RMLDump.print_id(id) & 
+		print " in relation: " & 
+		RMLDump.print_id(rel_name) & 
+		print " has type: " & 
+		dump_type(ty) &
+		int_string(sline) => ssline & int_string(eline) => seline &		   
+		print "  scope: (sline:" & print ssline & print ", eline:" & print seline & print ")" &		   
+		print "\n"
+        --------------------------------------------------
+		pr_el(Absyn.RMLDB_VAR(file, id, _, Absyn.RMLDB_RANGE(sline,scol,eline,ecol),rel_name,ty))
+
+   rule print file & print " relation " & 
+		RMLDump.print_id(id) & 
+		print " has type: " & 
+		dump_type(ty) & 
+		print "\n"
+        --------------------------------------------------
+		pr_el(Absyn.RMLDB_REL(file, id, _,ty))
+
+   rule print file & print " constructor " & 
+		RMLDump.print_id(id) & 
+		print " has type: " & 
+		dump_type(ty) & 
+		print "\n"
+        --------------------------------------------------
+		pr_el(Absyn.RMLDB_CTOR(file, id, _,ty))
+
+
+  rule	
+		---------
+		pr_el(_)
+end
+
+relation dump_type =
+
+(*  rule	print "(t) " & RMLDump.dump_type(ty)
+			--------------------------------
+			dump_type(Absyn.RMLTYPE_TUPLE(ty::[])) *)
+
+  rule	RMLDump.dump_type(ty)
+		--------------------------------
+		dump_type(ty) 
+
+end
+
+relation print_pdb =
+  rule	pr_el head & print_pdb(rest)   
+		--------------------------------- 
+		print_pdb(head::rest)
+  
+  axiom	print_pdb([])
+end
+
+
+
+(*perform a refactor*)
+relation do_refactor =
+
+  rule	print "Illegal refactor.\n" 
+		----------------------
+		do_refactor([],ast) 
+
+  rule	last = "-rf" &
+		print "Wrong format. e.g, refactor type id1 id2\n"
+		----------------------------------
+		do_refactor(last::[],ast) 
+	
+  rule	not last = "-rf" & 
+		print "Illegal refactor.\n" 
+ 		---------------------
+		do_refactor(last::[],ast) 
+
+  rule	first = "-rf" &
+		refactor(rtype,id1,id2,ast)
+		---------------------
+		do_refactor(first::rtype::id1::id2::rest,ast) => ()
+
+
+  rule	first = "-rf" &
+		print "Wrong format\n"
+		------------------
+		do_refactor(first::rest,ast) 
+
+  rule	not first = "-rf" &
+		do_refactor(rest,ast) 
+		--------------------
+		do_refactor(first::rest,ast) 
+ 
+end
+
+relation refactor =
+
+  rule	rtype = "id" &
+		RMLRefactor.refactor(ast,RMLRefactor.RENAME_ID(id1,id2)) => rast &
+		RMLDump.dump(rast)
+		-------------------------------------------------------
+		refactor(rtype,id1,id2,ast)
+  
+  rule	print "Unsupported refactor: "&  print rtype & print  "\n"
+		----------------------------
+		refactor(rtype,_,_,_)
+
+end
+

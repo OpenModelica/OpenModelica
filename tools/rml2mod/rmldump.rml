@@ -1,0 +1,712 @@
+module RMLDump:
+  with "absyn.rml"	
+
+  relation dump: Absyn.Program => ()
+  relation print_id: Absyn.RMLIdent => ()
+  relation dump_type: Absyn.RMLType => ()	  
+end
+
+
+relation print_id =
+  rule  print name
+	----------------
+	print_id(Absyn.RMLSHORTID(name,info)) => ()
+
+   		
+  rule  print prefix & print "." & print name
+	----------------------
+	print_id(Absyn.RMLLONGID(prefix,name)) => ()
+end
+
+(*well this isn't used actually*)
+relation print_operator =
+  rule  print "+"
+	-------------------
+	print_operator(Absyn.ADD) => ()
+
+  rule  print "-"
+	-------------------
+	print_operator(Absyn.SUB) => ()
+
+  rule  print "*"
+	-------------------
+	print_operator(Absyn.MUL) => ()
+
+  rule  print "/"
+	-------------------
+	print_operator(Absyn.DIV) => ()
+
+  rule  print "-"
+	------------------
+	print_operator(Absyn.UMINUS) => ()
+end
+
+relation print_literal =
+
+  rule  print "\"" &
+		string_length(s) => l &
+		print_handle_escape(s,0,l) &
+		print "\""	
+		--------------------------
+		print_literal(Absyn.RMLLIT_STRING(s)) => ()
+
+  rule  int_string(i) => s & print s
+		--------------------------
+		print_literal(Absyn.RMLLIT_INTEGER(i)) => ()
+
+  rule  real_string(r) => s & print s 
+		-------------------------
+		print_literal(Absyn.RMLLIT_REAL(r)) => ()
+
+  rule  int_string_char(i) => s &
+		print "#" & 
+		print "\"" & 
+		print s & 
+		print "\"" 
+		-------------------------
+		print_literal(Absyn.RMLLIT_CHAR(i)) => ()
+
+
+  (* RMLLIT_CHAR ? *)
+end
+
+relation print_handle_escape =
+
+  rule  int_ge(i,l) => true
+	--------------------
+	print_handle_escape(s,i,l)
+
+  rule	string_nth(s,i) => c1 &
+	char_int(c1) => n &
+	int_eq(n,10) => true & (* if \n  *)
+	print "\\n" &
+	int_add(i,1) => ic &
+	print_handle_escape(s,ic,l)
+	--------------------
+	print_handle_escape(s,i,l) 
+
+ rule	string_nth(s,i) => c1 &
+	char_int(c1) => n &
+	int_eq(n,9) => true & (* if \t  *)
+	print "\\t" &
+	int_add(i,1) => ic &
+	print_handle_escape(s,ic,l)
+	--------------------
+	print_handle_escape(s,i,l) 
+  
+  rule	string_nth(s,i) => c1 &
+	char_int(c1) => n &
+	int_eq(n,8) => true & (* if \b  *)
+	print "\\b" &
+	int_add(i,1) => ic &
+	print_handle_escape(s,ic,l)
+	--------------------
+	print_handle_escape(s,i,l) 
+
+ 
+rule	string_nth(s,i) => c1 &
+	char_int(c1) => n &
+	int_eq(n,34) => true & (* if \"  *)
+	print "\\\"" &
+	int_add(i,1) => ic &
+	print_handle_escape(s,ic,l)
+	--------------------
+	print_handle_escape(s,i,l) 
+
+  rule	string_nth_string_char(s,i) => ss &
+		print ss &
+		int_add(i,1) => ic &
+		print_handle_escape(s,ic,l)
+		--------------------
+		print_handle_escape(s,i,l)
+	
+	
+end
+
+relation dump_expression_list =
+  rule  dump_expression(last)
+	-----------------------------
+	dump_expression_list(last :: []) => () 
+
+  rule  dump_expression(first) &
+	print ", " &
+	dump_expression_list(rest)
+	------------------------------
+	dump_expression_list(first :: rest) => ()
+
+  rule  print ""
+	------------------------------
+	dump_expression_list([]) => () 
+
+end 
+
+
+relation dump_expression =
+  rule  print_id(id) &
+        print "(" &
+        dump_expression_list(args) &
+        print ")"
+	----------------------------
+	dump_expression(Absyn.RMLCALL(id,args)) => ()
+
+  rule  print_id(id) 
+	--------------
+	dump_expression(Absyn.RML_REFERENCE(id)) => ()		
+
+  rule	print "[" & dump_expression_list(exp_list) & print "]"
+	-------------------------------------------
+	dump_expression(Absyn.RMLLIST(exp_list)) => ()
+
+  rule  dump_expression(left) &
+	print " :: " &
+	dump_expression(right)
+	----------------------------
+	dump_expression(Absyn.RMLCONS(left,right)) => ()
+
+  rule  dump_expression(left) &
+        print_operator(op) &
+        dump_expression(right)
+	-------------------------------
+	dump_expression(Absyn.BINARY(left,op,right)) => ()
+
+  rule  print_operator(op) &
+        dump_expression(exp)
+	-------------------------------
+	dump_expression(Absyn.UNARY(op,exp)) => ()
+
+  rule  print "(" &
+	dump_expression_list(exp_lst) &
+	print ")" 
+        ---------------------------------
+	dump_expression(Absyn.TUPLE(exp_lst)) => ()
+
+  rule 	print_literal lit
+	--------------------------------
+	dump_expression(Absyn.RMLLIT(lit)) => ()
+
+(*remove*)
+  rule  print "(ERROR)"
+	------------------------------
+	dump_expression(Absyn.RMLNIL) => ()
+
+
+  rule 	RML.debug_print("Exp?", x) & 
+        print "Expression uknown.."	
+	--------------------------
+	dump_expression(x)
+	
+end
+
+relation dump_pattern_list =
+  rule  dump_pattern(last)
+	------------------------
+	dump_pattern_list(last :: []) => ()
+
+  rule  dump_pattern(first) &
+	print ", " &
+	dump_pattern_list(rest)
+	----------------------------
+	dump_pattern_list(first :: rest) => ()
+
+  rule  print ""
+	------------------------------
+	dump_pattern_list([]) => ()
+end
+
+
+relation dump_pattern =
+  rule  print_id(id) & print " as " & dump_pattern(pat)
+	-----------------------------
+	dump_pattern(Absyn.RMLPAT_AS(id,pat)) => ()
+
+  rule  dump_pattern(first) & print " :: " & dump_pattern(rest)
+	------------------------------
+	dump_pattern(Absyn.RMLPAT_CONS(first,rest)) => ()
+
+  rule  print "(" &
+	dump_pattern_list(list) &
+	print ")"
+	------------------------------
+	dump_pattern(Absyn.RMLPAT_STRUCT(NONE,list)) => ()
+
+  rule  print_id(id) &
+	print "(" &
+	dump_pattern_list(patlist) &
+	print ")"
+	-----------------------------
+	dump_pattern(Absyn.RMLPAT_STRUCT(SOME(id),patlist)) => ()
+
+  rule  print "()"
+	-----------------------------
+	dump_pattern(Absyn.RMLPAT_NIL) => ()
+
+  rule  print "[" & dump_pattern_list(patlist) & print "]"
+	----------------------------
+	dump_pattern(Absyn.RMLPAT_LIST(patlist)) => ()
+
+  rule  print_id(id)
+	-----------------------------
+	dump_pattern(Absyn.RMLPAT_IDENT(id)) => ()
+
+  rule  print "_"
+	------------------------------
+	dump_pattern(Absyn.RMLPAT_WILDCARD) => ()
+
+  rule  print_literal(lit)
+	------------------------------
+	dump_pattern(Absyn.RMLPAT_LITERAL(lit)) => ()
+
+  rule  print("unknown pattern")
+	-----------------------
+	dump_pattern(x) => ()
+
+end
+
+
+relation dump_goal =
+  rule  print "not " &
+	dump_goal(goal)
+	------------------
+	dump_goal(Absyn.RMLGOAL_NOT(goal)) => ()
+
+  rule  dump_goal(leftgoal) &
+	print " &\n        " &
+	dump_goal(rightgoal)
+	------------------
+	dump_goal(Absyn.RMLGOAL_AND(leftgoal,rightgoal)) => ()
+
+  rule  dump_pattern(pat)
+	------------------
+	dump_goal(Absyn.RMLGOAL_PAT(pat)) => () (*remove!*)
+
+  rule	print "let " &
+        dump_pattern(pat) &
+	print " = " &
+	dump_expression(exp) &
+	dump_commentr(comments) 
+	------------------------
+	dump_goal(Absyn.RMLGOAL_LET(pat,exp,comments)) => ()
+
+  rule	print_id(id) & (*changed from exp to id*)
+	print " = " &
+	dump_expression(rightexp) &
+	dump_commentr(comments) 
+	------------------------
+	dump_goal(Absyn.RMLGOAL_EQUAL(id,rightexp,comments)) => ()
+
+  rule	print_id(id) &
+        print "(" &
+	dump_expression_list(args) &
+	print ")" &
+	dump_commentr(comments) 
+	------------------------
+	dump_goal(Absyn.RMLGOAL_RELATION(id,args,NONE,comments)) => ()
+
+
+  rule	print_id(id) &
+        print "(" &
+	dump_expression_list(args) &
+	print ")" &
+	print " => " &
+	dump_pattern(pat) &
+	dump_commentr(comments) 
+	------------------------
+	dump_goal(Absyn.RMLGOAL_RELATION(id,args,SOME(pat),comments)) => ()
+
+end
+
+
+relation dump_result =
+  rule	print " => fail" &
+ 	dump_comment(comments)
+	---------------------
+	dump_result(Absyn.RMLResultFail(comments)) => ()
+
+  rule	print "" &
+	dump_comment(comments)
+	---------------------
+	dump_result(Absyn.RMLNoResult(comments)) => ()
+
+  rule  print " => " &
+	dump_expression(last) &
+	dump_comment(comments)
+	----------------------
+	dump_result(Absyn.RMLResultExp(last::[],comments)) => ()
+
+  rule  print " => " &
+	print "(" &
+	dump_expression_list(list) &
+	print ")" &
+	dump_comment(comments)
+	----------------------
+	dump_result(Absyn.RMLResultExp(list,comments)) => ()
+
+
+end
+
+
+relation dump_rule =
+  rule  dump_comment(comment) &
+	print "  rule  " &
+        dump_goal(goal) &
+		dump_comment(cend) & 
+        print "\n\t-------------------------------\n\t" &
+	print_id(id) &
+	dump_pattern(patlist) &
+	dump_result(result) &
+        print "\n"
+	-------------------------------------------
+	dump_rule(Absyn.RMLRULE(id,patlist,SOME(goal),result,comment, cend)) => ()
+
+	
+  rule	dump_comment(comment) &
+	print "  axiom " & dump_comment(cend) &
+	print_id(id) &
+	dump_pattern(patlist) &
+	dump_result(result) &
+        print "\n"
+	------------------------------------------
+	dump_rule(Absyn.RMLRULE(id,patlist,NONE,result,comment,cend)) => () 
+
+end
+
+
+
+
+relation dump_rule_list =
+  rule  print ""
+	----------------------------
+	dump_rule_list([]) => () 
+
+  rule  dump_rule(last)
+	----------------------------
+	dump_rule_list(last :: []) 
+
+  rule  dump_rule(first) &
+	print "\n" &
+	dump_rule_list(rest)
+	----------------------------
+	dump_rule_list(first :: rest) => ()
+end
+
+
+relation dump_type_tuple =
+  rule  dump_type(last) (*& dump_commentr(com) *)
+	-------------------------------
+	dump_type_tuple(last :: [],com) => ()
+
+  rule  dump_type(first) (*& dump_commentr(fcom)*) & 
+	print " * " & 
+	dump_type_tuple(rest,fcom)
+	-------------------------------
+	dump_type_tuple(first :: rest,fcom) => ()
+
+end
+
+relation dump_iotype_list =
+  rule 	dump_type(last) &
+	print")"
+	-----------
+	dump_iotype_list(last :: []) => ()
+
+  rule	dump_type(first) &
+	print"," &
+	dump_iotype_list(rest)
+	----------------------
+	dump_iotype_list(first :: rest) => ()
+end
+
+relation dump_iotype =
+  rule	dump_type(last)
+	---------------
+	dump_iotype(last :: []) => ()
+	
+  rule	print "()"
+	---------------------
+	dump_iotype([]) => ()
+ 
+  rule	print "(" &
+	dump_iotype_list(x)
+	------------------------
+	dump_iotype(x) => ()
+end
+
+relation dump_tyvar_list =
+
+  axiom	dump_tyvar_list([]) => ()
+
+  rule 	dump_type(last) 
+	-----------
+	dump_tyvar_list(last :: []) => ()
+
+  rule	dump_type(first) &
+	print " " &
+	dump_tyvar_list(rest)
+	----------------------
+	dump_tyvar_list(first :: rest) => ()
+end
+
+
+relation dump_type =
+  rule  print "int"
+	------------------------
+	dump_type(Absyn.RMLTYPE_INT) => ()
+
+  rule  print "real"
+	------------------------
+	dump_type(Absyn.RMLTYPE_REAL) => ()
+
+  rule  print "string"
+	------------------------
+	dump_type(Absyn.RMLTYPE_STRING) => ()
+
+  rule  print "(" &
+	dump_iotype(intype) &
+	print " => " &
+	dump_iotype(outtype) &
+	print ")"
+	------------------------
+	dump_type(Absyn.RMLTYPE_SIGNATURE(Absyn.CALLSIGN(intype,outtype))) => ()
+
+  rule  print "(" & 	
+	dump_type_tuple(typelist,[]) &
+	print ")" 
+	------------------------
+	dump_type(Absyn.RMLTYPE_TUPLE(typelist)) => ()
+
+  rule	dump_type(last) &
+	print " " &
+	print_id(id) 
+	----------------------------
+	dump_type(Absyn.RMLTYPE_TYCONS(last::[],id)) => ()
+
+  rule	print_id(id) 
+	----------------------------
+	dump_type(Absyn.RMLTYPE_TYCONS([],id)) => ()
+ 		   
+
+  rule  print_id(id) 
+ 	------------------------
+	dump_type(Absyn.RMLTYPE_TYVAR(id)) => ()
+
+  rule  print_id(id) 
+	-------------------------
+	dump_type(Absyn.RMLTYPE_USERDEFINED(id)) => ()
+
+  rule 	print "unsupported type"
+	-------------------------
+	dump_type(_) => ()
+
+end
+
+
+relation dump_comment =
+
+  axiom	dump_comment([])
+
+  rule  print "(* " &
+        print first &
+	print "*)\n" &
+	dump_comment(rest)
+	--------------------------------------
+	dump_comment(first::rest) => ()
+
+
+end
+
+relation dump_commentr =
+
+  axiom	dump_commentr([])
+
+  rule  print " (* " &
+        print first &
+	print "*)" &
+	dump_commentr(rest)
+	--------------------------------------
+	dump_commentr(first::rest) => ()
+
+
+end
+
+relation dump_dtmember =
+  rule	print_id(id) &
+	dump_commentr(comments) 
+	-------------------
+	dump_dtmember(Absyn.DTCONS(id,[],comments::res)) 
+	
+
+  rule  print_id(id) &
+	print " of " &
+	dump_type_tuple(typelist,comments) 
+	(*RML.debug_print("  comments",comments) *)
+	(*dump_commentr(comments)*) 
+	--------------------------
+	dump_dtmember(Absyn.DTCONS(id,typelist,comments))
+
+
+end
+
+
+relation dump_dtmember_list =
+  rule  dump_dtmember(last)
+	-----------------------------
+	dump_dtmember_list(last :: []) => () 
+
+  rule  dump_dtmember(first) &
+	print "\n\t\t| " &
+	dump_dtmember_list(rest)
+	-----------------------------
+	dump_dtmember_list(first :: rest) => ()
+
+(*  rule  print "empty" can it ever be empty?? 
+	-----------------------
+	dump_dtmember_list([]) => () *)	
+end
+
+
+relation dump_decl_signature =
+  rule 	dump_iotype(intype) & 
+	print " => " &
+	dump_iotype(outtype) 	
+	----------------------------
+	dump_decl_signature(Absyn.RMLTYPE_SIGNATURE(Absyn.CALLSIGN(intype,outtype))) => () 
+
+
+end
+
+relation dump_rmldecl =
+  rule  print "  relation " &
+	print_id(id) &
+	print ": " &
+	dump_decl_signature(sign) & 
+        print "\n"
+	----------------------
+	dump_rmldecl(Absyn.RELATION_INTERFACE(id,sign)) => ()
+
+
+  rule  dump_comment(com) &
+	print "relation " &
+	print_id(id) &
+	print ": " &
+	dump_decl_signature(sign) & 
+	print " =\n" &
+	dump_rule_list(rules) &
+	print "end\n\n"
+	--------------------------------
+	dump_rmldecl(Absyn.RELATION_DEFINITION(id,SOME(sign),rules,com)) => ()
+
+  rule  print "relation " &
+	print_id(id) &
+	print " =\n" &
+	dump_rule_list(rules) &
+	print "end\n\n"
+	--------------------------------
+	dump_rmldecl(Absyn.RELATION_DEFINITION(id,NONE,rules,com)) => ()
+
+
+  rule	dump_comment(comments) &
+	print "  datatype " &
+        dump_tyvar_list(type_list) &
+        print " " &
+	print_id(id) &
+	print " = " &
+	dump_dtmember_list(dtmlist) &
+	print "\n\n" 
+        --------------------------
+	dump_rmldecl(Absyn.DATATYPEDECL(Absyn.DATATYPE(type_list,id,dtmlist),comments)) => ()
+
+  rule  dump_comment(com) &
+	print "  type " &
+	print_id(id) &
+	print " = " &
+	dump_type(rtype) &
+	print "\n\n"
+	----------------------------
+	dump_rmldecl(Absyn.TYPE(id,rtype,com)) => ()
+
+  rule  dump_comment(com) &
+	print "  with " &
+	print_literal(Absyn.RMLLIT_STRING(s)) &
+	print "\n\n"
+	-------------------------------
+	dump_rmldecl(Absyn.WITH(s,com))
+
+  rule  dump_comment(com) &
+	print "  val " &
+	print_id(id) &
+	print ": " &
+	dump_type(rtype) &
+	print "\n\n"
+	-------------------------------
+	dump_rmldecl(Absyn.VALINTERFACE(id,rtype,com)) => ()
+
+  rule	dump_comment(com) &
+	print "val " &
+	print_id(id) &
+	print " = " &
+	dump_expression(exp) &
+	print "\n\n"
+	--------------------------------
+	dump_rmldecl(Absyn.VALDEF(id,exp,com)) => ()
+
+  rule  print "\n" 
+	(*dump_comment(s)*)
+	--------------------------------
+	dump_rmldecl(Absyn.RMLDECLCOMMENT(s)) => ()
+
+  rule print "NO RML ??"	
+       ----------------------
+	dump_rmldecl(_) => ()
+end
+
+
+relation dump_rmldecl_list =
+  rule 	dump_rmldecl(last) 
+	---------------------------
+	dump_rmldecl_list(last::[]) => () 
+	
+  rule 	dump_rmldecl(first) &
+	print "\n" &
+	dump_rmldecl_list(rest) 		
+	-----------------------
+	dump_rmldecl_list(first::rest) => ()
+  
+  rule  print ""
+	-----------
+	dump_rmldecl_list([]) => () 
+
+end
+
+
+relation dump_interfaces =
+  rule  dump_rmldecl_list(x)
+	---------------------------
+	dump_interfaces(x) => ()
+ 
+end
+
+
+relation dump_definitions =
+  rule  dump_rmldecl_list(x)
+	---------------------------
+	dump_definitions (x) => ()
+
+end
+ 
+
+relation dump =
+  rule  dump_comment(comment) &
+	print "module " &
+        print_id(id) &
+        print ":\n" &
+        dump_interfaces(iflist) & 
+        print "end\n\n" &
+        dump_definitions(deflist) & 
+        print "\n"
+	---------------------------
+	dump(Absyn.RML_FILE(id,iflist,deflist,comment)) => ()
+
+  rule  print "(* Non-RML *)\n"
+	---------------------
+	dump(_) => () 
+end

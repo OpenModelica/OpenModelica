@@ -1,0 +1,652 @@
+(*
+   Copyright 2005-2006, Adrian Pop, adrpo@ida.liu.se 
+*)
+
+(**
+ ** file:	 modrefactor.rml
+ ** module:      ModRefactor
+ ** description: refactoring of MetaModelica code
+ **
+ ** adrpo@ida
+ **
+ **)
+
+module ModRefactor:
+  
+  with "absyn.rml"
+  with "dictionary.rml"
+  with "lookup.rml"
+  with "external.rml"
+
+
+  datatype carry = C of Absyn.Transformed list * string list * Lookup.pkg Dictionary.dict * string * string
+
+  relation transform: (Absyn.Transformed list, string list) => Absyn.Transformed list
+
+end
+
+with "modrefactortypes.rml"
+with "util.rml"
+with "moddump.rml"
+(* Relations *)
+
+relation transform : (Absyn.Transformed list, string list)  => Absyn.Transformed list =
+	
+  axiom	transform([], _) => []
+	
+  rule	print "Building dictionaries for: " & 
+		buildDictionary(Dictionary.emptyDict, files) => dict &
+		print "\n" &
+	    transformFiles(files, C(files, flags, dict, "", "")) => napFiles &
+	    ModRefactorTypes.transformFiles(napFiles, C(files, flags, dict, "", "")) =>  res
+		---------------------------------------------------------------------------------
+		transform(files, flags) => res
+end
+
+relation buildDictionary =
+
+	axiom buildDictionary(dict, []) => dict
+
+	rule print file & print " " &
+	     Lookup.traverseProgram(dict, program) => newDict &
+		 buildDictionary(newDict, rest) => newNewDict 
+		 ---------------------------------------------------------------------------
+		 buildDictionary(dict, Absyn.TRANSFORMED(file, program)::rest) => newNewDict
+
+end
+
+relation transformFiles = 
+
+	axiom transformFiles([], _) => []
+
+	rule transformProgram(program, junk) => transProgram &
+		 transformFiles(rest, junk) => transformedFiles &
+		 list_append([Absyn.TRANSFORMED(file, transProgram)], transformedFiles) => res
+		 -----------------------------------------------------------------------------
+		 transformFiles(Absyn.TRANSFORMED(file, program)::rest, junk) => res
+
+end
+
+relation transformProgram = 
+
+	axiom transformProgram(Absyn.PROGRAM([],x), junk) => Absyn.PROGRAM([],x)
+
+	rule transformPackage(pkg, junk) => trPkg 
+		 -------------------------------------------------------------------------------
+		 transformProgram(Absyn.PROGRAM([pkg],w), junk) => Absyn.PROGRAM([trPkg], w)
+
+	rule print "MetaModelica accepts only a top package that includes everything!\n" 
+		 ---------------------------------------------------------------------------
+		 transformProgram(_, _) => fail
+end
+
+
+(*
+ * We're intrested only in CLASS, MODEL, PACKAGE, FUNCTION
+ *)
+relation filter: Absyn.Restriction => bool =
+  axiom filter (R_CLASS)     => true
+  axiom filter (R_MODEL)     => true
+  axiom filter (R_PACKAGE)   => true
+  axiom filter (R_FUNCTION)  => true
+  axiom filter (_)           => false
+end
+
+relation transformPackage =
+
+rule	(* print "Transforming the package\n" & *)
+		Util.list_map1(transformPart, parts, C(x,y,dict,n,z)) => trParts		
+		----------------------------------------------------------------------------------
+		transformPackage(
+		Absyn.CLASS(n,p,f,e,r as Absyn.R_PACKAGE,Absyn.PARTS(parts,optcmt)), C(x,y,dict,_,z)) => 
+		Absyn.CLASS(n,p,f,e,r,Absyn.PARTS(trParts, optcmt))
+
+  axiom transformPackage(x, junk) => x
+
+end 
+
+relation transformClass =
+
+rule	filter(r) => true & 
+        (* print "Transforming parts\n" & *)
+		Util.list_map1(transformPart, parts, C(x,y,d,z,n)) => trParts		
+		----------------------------------------------------------------------------------
+		transformClass(Absyn.CLASS(n,p,f,e,r,Absyn.PARTS(parts,optcmt)), C(x,y,d,z,w)) => 
+		Absyn.CLASS(n,p,f,e,r,Absyn.PARTS(trParts, optcmt))
+
+  axiom transformClass(x, junk) => x    
+
+end 
+				
+relation transformPart =
+
+  rule  Util.list_map1(transformElementItem, els, junk) => trEls
+        --------------------------------------------------------------
+		transformPart(Absyn.PUBLIC(els), junk) => Absyn.PUBLIC(trEls)
+
+  rule  Util.list_map1(transformElementItem, els, junk) => trEls
+        --------------------------------------------------------------------
+		transformPart(Absyn.PROTECTED(els), junk) => Absyn.PROTECTED(trEls)
+
+  rule  Util.list_map1(transformEquationItem, eqs, junk) => trEqs
+		--------------------------------------------------------------------
+		transformPart(Absyn.EQUATIONS(eqs), junk) => Absyn.EQUATIONS(trEqs)
+
+  rule	Util.list_map1(transformEquationItem, eqs, junk) => trEqs
+		----------------------------------------------------------------------------------
+		transformPart(Absyn.INITIALEQUATIONS(eqs), junk) => Absyn.INITIALEQUATIONS(trEqs)
+	
+  rule	Util.list_map1(transformAlgorithmItem, algs, junk) => trAlgs
+		-----------------------------------------------------------------------
+		transformPart(Absyn.ALGORITHMS(algs), junk) => Absyn.ALGORITHMS(trAlgs)
+
+  rule	Util.list_map1(transformAlgorithmItem, algs, junk) => trAlgs
+		--------------------------------------------------------------------------------------
+		transformPart(Absyn.INITIALALGORITHMS(algs), junk) => Absyn.INITIALALGORITHMS(trAlgs)
+
+  axiom transformPart(x, junk) => x
+
+end
+
+relation transformElementItem =
+
+  rule	transformElement(e, junk) => newElement
+		---------------------------------------------------------------------------------
+		transformElementItem(Absyn.ELEMENTITEM(e), junk) => Absyn.ELEMENTITEM(newElement)
+
+  axiom transformElementItem(x, _) => x
+	
+end
+
+
+relation transformElement =
+
+  rule	transformClass(cls, junk) => newClass
+        ----------------------------------------------------------------------------------------
+		transformElement(Absyn.ELEMENT(a,b,c,d,Absyn.CLASSDEF(e, cls), f, g, h), junk) => 
+		Absyn.ELEMENT(a,b,c,d,Absyn.CLASSDEF(e, newClass), f, g, h)
+
+  axiom transformElement(x, junk) => x
+
+end
+
+(* Equations & Algorithms *)	
+
+relation transformEquationItem =
+
+  rule	(* print "Transforming equations\n" & *)
+        transformEquation(eq, junk) => eqTr
+		-------------------------------------------------------------------------------------
+		transformEquationItem(Absyn.EQUATIONITEM(eq, c), junk) => Absyn.EQUATIONITEM(eqTr, c)
+	
+  axiom transformEquationItem(x, junk) => x
+
+end
+
+relation transformAlgorithmItem =
+
+  rule	(* print "Transforming algorithms\n" & *)
+        transformAlgorithm(alg, junk) => algTr
+		------------------------------------------------------------------------------------------
+		transformAlgorithmItem(Absyn.ALGORITHMITEM(alg, c), junk) => Absyn.ALGORITHMITEM(algTr, c)
+	
+  axiom transformAlgorithmItem(x, junk) => x
+
+end
+
+relation lookup = 
+
+  rule	(* lookup the package *)
+		Dictionary.search(pkgDict,  pkgName) => SOME(Lookup.D(dataDict)) &
+		Dictionary.search(dataDict, name)    => v
+		-------------------------------------------------------------------------
+		lookup(C(_,_,pkgDict,_,_), Absyn.QUALIFIED(pkgName,Absyn.IDENT(name))) => v
+
+  rule	(* lookup the package *)
+		Dictionary.search(pkgDict,  currentPkg) => SOME(Lookup.D(dataDict)) &
+		Dictionary.search(dataDict, name)    => v
+		---------------------------------------------------------------------
+		lookup(C(_,_,pkgDict,currentPkg,_), Absyn.IDENT(name)) => v
+
+  rule  (* print "Not found\n" & debug_print("Path",path) *)
+        ----------------------------------------------------
+        lookup(_,path) => NONE
+
+end
+
+relation transformEquation =
+
+  rule	transformPattern(pat, junk) => newPat 
+		--------------------------------------------------------------------------
+		transformEquation(Absyn.EQ_LET(pat,exp), junk) => Absyn.EQ_LET(newPat, exp)
+
+end
+
+(* Algorithm clauses *)
+
+relation transformAlgorithm =
+ 
+  rule	(* print "Transforming ALG_MATCH\n" & *)
+        transformCases(clist, junk) => newCases 
+		----------------------------------------------------------------
+		transformAlgorithm(Absyn.ALG_MATCH(x,exp,eilist,clist), junk) => 
+		Absyn.ALG_MATCH(x,exp,eilist,newCases)
+
+  axiom transformAlgorithm(x, junk) => x
+  (*
+  rule	print "ALG_ASSIGN(" & print_component_ref cr &
+		print " := " & print_exp(exp) & print ")"
+		-------------------------------------------
+		transformAlgorithm(Absyn.ALG_ASSIGN(cr,exp))
+	
+  rule	print "ALG_TUPLE_ASSIGN(" & print_exp(e1) &
+		print " := " & print_exp(e2) & print ")"
+		-------------------------------------------
+		transformAlgorithm(Absyn.ALG_TUPLE_ASSIGN(e1,e2))
+
+  rule	print "IF (" & print_exp(e) & print ") THEN " &
+		print_list_debug("transformAlgorithm",tb, transformAlgorithmitem, ";") &
+		print_list_debug("transformAlgorithm",eb, print_alg_elseif, " ") &
+		print " ELSE " & print_list_debug("transformAlgorithm",fb, transformAlgorithmitem, ";")
+		----------------------------------------------------
+		transformAlgorithm(Absyn.ALG_IF(e,tb,eb,fb))
+	
+  rule	print "FOR " & print i & print " in " & print_exp(e) &
+		print " {" & print_list_debug("transformAlgorithm",el, transformAlgorithmitem, ";") & print "}"
+		----------------------------------------------------------
+		transformAlgorithm Absyn.ALG_FOR(i,e,el)
+	
+  rule	print "WHILE " & print_exp(e) &
+		print " {" & print_list_debug("transformAlgorithm",al, transformAlgorithmitem, ";") & print "}"
+		----------------------------------------------------------
+		transformAlgorithm Absyn.ALG_WHILE(e,al)
+	
+  rule	print "WHEN_A " & print_exp(e) &
+	print " {" & print_list_debug("transformAlgorithm",al, transformAlgorithmitem, ";") & print "}"
+	----------------------------------------------------------
+	transformAlgorithm Absyn.ALG_WHEN_A(e,al,el)
+	
+  rule	print " ** UNKNOWN ALGORITHM CLAUSE ** "
+	--------------------------------
+	transformAlgorithm(_)
+*)	
+end
+
+relation transformCase =
+
+  rule	transformPatterns(pl,junk) => newPats &
+        transformPart(cp, junk) => newCp 
+		------------------------------------------------------------------------------------
+		transformCase(Absyn.CASE(pl,el,cp,exp,com,endcom),junk as C(_,_,d,pkg,currentScopeName)) => 
+		Absyn.CASE(newPats,el,newCp,exp,com,endcom)
+
+end
+
+relation transformCases =
+
+  axiom	transformCases([], junk) => []
+
+  rule	transformCase(first, junk) => newCase &
+		transformCases(rest, junk) => newCases &
+		list_append([newCase],newCases) => res
+		--------------------------------------
+		transformCases(first::rest, junk) => res
+
+end
+
+relation transformPatterns = 
+
+  axiom	transformPatterns([], junk) => []
+
+  rule	transformPattern(first, junk) => newPat &
+		transformPatterns(rest, junk) => newPats &
+		list_append([newPat], newPats) => res
+		-----------------------------------------------
+		transformPatterns(first::rest, junk) => res
+
+end
+
+
+relation transformPattern =
+
+  (* only deal with structural and bind pats *)
+  rule	lookup(junk, path) => SOME(Lookup.CTOR(names)) &
+		transformPatterns(pats,junk) => pats &
+        transformPatsToNAP(pats, names, junk) => newPats 
+        -------------------------------------------------------------------
+		transformPattern(Absyn.MSTRUCTpat(SOME(path),pats), junk) => 
+		Absyn.MSTRUCTpat(SOME(path),newPats)
+
+  rule	transformPattern(pat, junk) => newPat 
+		--------------------------------------------------------------------------
+		transformPattern(Absyn.MBINDpat(id,pat), junk) => Absyn.MBINDpat(id,newPat)
+
+  rule	transformPatterns(pats, junk) => newPats 
+		------------------------------------------------------
+		transformPattern(Absyn.MSTRUCTpat(NONE,pats), junk) => 
+		Absyn.MSTRUCTpat(NONE,newPats)
+
+  rule	transformPatterns(pats, junk) => newPats
+		---------------------------------------------------------------------------
+		transformPattern(Absyn.MSTRUCTpat(SOME(Absyn.IDENT("list")),pats), junk) => 
+		Absyn.MSTRUCTpat(SOME(Absyn.IDENT("list")),newPats)
+
+  rule	transformPattern(leftpat, junk) => lpNew &
+		transformPattern(rightpat, junk) => rpNew 
+		-------------------------------------------------------------------------------------------
+		transformPattern(Absyn.MSTRUCTpat(SOME(Absyn.IDENT("cons")),leftpat::rightpat::[]),junk) => 
+		Absyn.MSTRUCTpat(SOME(Absyn.IDENT("cons")),lpNew::rpNew::[])
+
+  axiom transformPattern(x, junk) => x
+
+end
+
+relation pr =
+
+  axiom pr([]) 
+
+  rule	print s1 
+		-----------------
+        pr(s1::nil)
+
+  rule	print s1 & print ", " &
+        pr(xs) 
+		----------
+        pr(s1::xs)
+
+end
+
+
+relation print_signature =
+   
+  rule	print "CTOR(" &
+        pr names &
+		print ")"
+		-----------------------------------
+		print_signature(Lookup.CTOR(names))
+
+  rule	print "FUNC(" &
+        pr inNames &
+		print " => " &
+        pr outNames &
+		print ")"
+		-----------------------------------------------
+		print_signature(Lookup.FUNC(inNames, outNames))
+
+end
+
+(* this refactors the patterns conforming to the flags
+ * 
+ *)
+
+relation makeNAP =
+  
+  rule	Util.is_flag_set(flags, "-napAll") => true &
+		makeAllNAP(pats, names) => newPats
+		-------------------------------------------------
+		makeNAP(pats, names, C(_,flags,_,_,_)) => newPats
+
+  rule	Util.get_flag_value(flags, "-napNrPos") => SOME(nrStr) &
+		string_int(nrStr) => nrInt &
+		makeFirstPosNAP(pats, names, nrInt) => newPats
+		-------------------------------------------------
+		makeNAP(pats, names, C(_,flags,_,_,_)) => newPats
+
+  rule	Util.get_flag_value(flags, "-napWildTotalRatio") => SOME(ratioStr) &
+		External.string_real(ratioStr) => ratioReal &
+		real_string(ratioReal) => strRatio &
+		makeWildTotalRatioNAP(pats, names, ratioReal) => newPats
+		---------------------------------------------------------
+		makeNAP(pats, names, C(_,flags,_,_,_)) => newPats
+
+  (* this is the default *)
+  default
+  rule  (* makeAllNAP(pats, names) => newPats *)
+		-----------------------------------------------
+		makeNAP(pats, names, C(_,flags,_,_,_)) => pats (* newPats *)
+
+end
+
+(* tanslate all the patterns to patterns with named arguments 
+ * skiping the wild patterns. if all are wilds then one named is done
+ *)
+relation makeAllNAP =
+  
+  axiom makeAllNAP([],[]) => []
+
+  rule	makeAllNAPReally(pat::pats, name::names) => newPats &
+		list_length(newPats) => len &
+		len == 0 => true (* this means all were wilds *)  
+		-----------------------------------------------------------------
+		makeAllNAP(pat::pats,name::names) => [Absyn.MNAMEDpat(name, pat)]
+
+  rule	makeAllNAPReally(pats, names) => newPats
+		------------------------------------------------
+		makeAllNAP(pats, names) => newPats
+
+end
+
+relation makeAllNAPReally =
+  
+  axiom makeAllNAPReally([],[]) => []
+
+  rule	makeAllNAPReally(rest1, rest2) => lst 
+		------------------------------------------------
+		makeAllNAPReally(Absyn.MWILDpat::rest1,hd2::rest2) => lst
+
+  rule	makeAllNAPReally(rest1, rest2) => lst &
+        list_append([Absyn.MNAMEDpat(hd2,hd1)],lst) => res 
+		------------------------------------------------
+		makeAllNAPReally(hd1::rest1,hd2::rest2) => res
+
+end
+
+(* tanslate all the patterns to patterns with named arguments 
+ * skiping the wild patterns but keeping the first nr of pats
+ * as positional
+ *)
+relation makeFirstPosNAP =
+
+  rule  (* skip nr from both lists *)
+		Util.split_list_at(pats,  nr) => (plst1,plst2) &
+		Util.split_list_at(names, nr) => (nlst1,nlst2) &
+		(*
+		list_length(pats) => length &
+		debug_print("length", length) &
+		debug_print("nr", nr) &
+		debug_print("names",names) &
+		debug_print("nlst1",nlst1) &
+		debug_print("nlst2",nlst2) &
+		*)
+		makeAllNAP(plst2,nlst2) => pnamed &
+		list_append(plst1, pnamed) => newPats
+		-------------------------------------------
+		makeFirstPosNAP(pats, names, nr) => newPats
+
+  (* if we failed, just return the positional pats *)
+  axiom makeFirstPosNAP(pats, names, nr) => pats
+
+end
+
+(* tanslate all the patterns to patterns with named arguments 
+ * skiping the wild patterns IF (nr of wild pats/total nr of pats) >= ratio
+ *)
+relation makeWildTotalRatioNAP =
+  
+  rule  list_length(pats) => nrTotal &
+		getWildNr(pats) => nrWild &
+		int_real(nrTotal) => nrTotalReal &
+		int_real(nrWild) => nrWildReal &
+		nrWildReal /. nrTotalReal => fraction &
+		real_string(fraction) => str &
+		(* print "Fraction:" & print str & print "\n" & *)
+		fraction >=. ratio => true &
+		makeAllNAP(pats, names) => newPats &
+		----------------------------------------------------
+		makeWildTotalRatioNAP(pats, names, ratio) => newPats
+
+  (* if we failed, just return the positional pats *)
+  axiom makeWildTotalRatioNAP(pats, names, ratio) => pats
+
+end
+
+relation getWildNr =
+  
+  axiom getWildNr([]) => 0
+
+  rule	getWildNr(rest) => nr &
+		nr + 1 => nr
+		--------------------------------------
+		getWildNr(Absyn.MWILDpat::rest) => nr
+
+  rule	getWildNr(rest) => nr &
+  		nr + 1 => nr
+		--------------------------------------------------------
+		getWildNr(Absyn.MBINDpat(_,Absyn.MWILDpat)::rest) => nr
+
+  rule	getWildNr(rest) => nr 
+		--------------------------------------------------------
+		getWildNr(_::rest) => nr
+
+end
+
+
+relation transformPatsToNAP =
+
+  rule	list_length(pats)  => lenPats &
+		list_length(names) => lenNames &
+		(*
+        ModDump.unparse_pattern_list(pats) => patstr &
+        print "Pattern before:" & print patstr & print "=(" & pr names & print ")\n" &
+		int_string(lenPats) => slp & int_string(lenNames) => sln &
+		print "Length " & print slp & print "?=?" & print sln & print "\n" &
+		*)
+		int_eq(lenPats,lenNames) => true &
+		makeNAP(pats,names,junk) => newPats
+		(*
+		ModDump.unparse_pattern_list(newPats) => patstr &
+        print "Pattern after:" & print patstr & print "=(" & pr names & print ")\n" 
+		*)
+		-------------------------------------------------------------------
+		transformPatsToNAP(pats,names,junk) => newPats
+
+  (* one pattern with a lot of components *)
+  rule	transformPatsToNAP(pats,names,junk) => newPats
+		---------------------------------------------------------------
+		transformPatsToNAP([Absyn.MSTRUCTpat(NONE,pats)],names,junk) => 
+		[Absyn.MSTRUCTpat(NONE,newPats)]
+
+  axiom transformPatsToNAP(x,names,junk) => x
+
+end
+
+relation transformPatToNAP =
+
+  (* CLASS(_,_...) *)
+  rule	transformPatsToNAP(pats, names, junk) => newPats
+        -------------------------------------------------------------------
+		transformPatToNAP(Absyn.MSTRUCTpat(SOME(path),pats), names, junk) => 
+		Absyn.MSTRUCTpat(SOME(path),newPats)
+
+  rule	transformPatsToNAP(pats, names, junk) => newPats
+		------------------------------------------------------------
+		transformPatToNAP(Absyn.MSTRUCTpat(NONE,pats),names,junk) => 
+		Absyn.MSTRUCTpat(NONE,newPats)
+
+  axiom transformPatToNAP(x,sig,junk) => x
+
+end
+
+
+relation makeNAFARGS =
+  
+  rule	Util.is_flag_set(flags, "-nafargsAll") => true &
+		makeAllNAFARGS(exps, names) => (newExps, newNArgs)
+		----------------------------------------------------------------
+		makeNAFARGS(exps, names, C(_,flags,_,_,_)) => (newExps,newNArgs)
+
+  rule	Util.get_flag_value(flags, "-nafargsNrPos") => SOME(nrStr) &
+		string_int(nrStr) => nrInt &
+		makeFirstPosNAFARGS(exps, names, nrInt) => (newExps,newNArgs)
+		----------------------------------------------------------------
+		makeNAFARGS(exps, names, C(_,flags,_,_,_)) => (newExps,newNArgs)
+
+  (* this is the default *)
+  default
+  rule  makeAllNAFARGS(exps, names) => (newExps,newNArgs)
+		----------------------------------------------------------------
+		makeNAFARGS(exps, names, C(_,flags,_,_,_)) => (newExps,newNArgs)
+
+end
+
+(* tanslate all the function arguments to function arguments with named arguments 
+ * skiping the wild function arguments. if all are wilds then one named is done
+ *)
+relation makeAllNAFARGS =
+  
+  axiom makeAllNAFARGS([],[]) => ([],[])
+
+  rule	makeAllNAFARGSReally(exps, names) => (newExps,newNArgs)
+		-------------------------------------------------------
+		makeAllNAFARGS(exps, names) => (newExps,newNArgs)
+
+end
+
+relation makeAllNAFARGSReally =
+  
+  axiom makeAllNAFARGSReally([],[]) => ([],[])
+
+  rule	makeAllNAFARGSReally(rest1, rest2) => (lst1,lst2) &
+        list_append([Absyn.NAMEDARG(hd2,hd1)],lst2) => res 
+		---------------------------------------------------------
+		makeAllNAFARGSReally(hd1::rest1,hd2::rest2) => (lst1,res)
+
+end
+
+(* tanslate all the function arguments to function arguments with named arguments 
+ * skiping the wild function arguments but keeping the first nr of exps
+ * as positional
+ *)
+relation makeFirstPosNAFARGS =
+
+  rule  (* skip nr from both lists *)
+		Util.split_list_at(exps,  nr) => (plst1,plst2) &
+		Util.split_list_at(names, nr) => (nlst1,nlst2) &
+		(*
+		list_length(exps) => length &
+		debug_print("length", length) &
+		debug_print("nr", nr) &
+		debug_print("names",names) &
+		debug_print("nlst1",nlst1) &
+		debug_print("nlst2",nlst2) &
+		*)
+		makeAllNAFARGS(plst2,nlst2) => (ppos,pnamed) &
+		-------------------------------------------------------
+		makeFirstPosNAFARGS(exps, names, nr) => (plst1, pnamed)
+
+  (* if we failed, just return the positional exps *)
+  axiom makeFirstPosNAFARGS(exps, names, nr) => (exps,[])
+
+end
+
+relation transformFargsToNAFARGS =
+
+  (* all are positional *)
+  rule	list_length(exps)  => lenExps &
+		list_length(names) => lenNames &
+		int_eq(lenExps,lenNames) => true &
+		makeNAFARGS(exps,names,junk) => (newExps, newNArgs)
+		-----------------------------------------------------------------
+		transformFargsToNAFARGS(Absyn.FUNCTIONARGS(exps,[]),names,junk) => 
+		Absyn.FUNCTIONARGS(newExps,newNArgs)
+
+  (* all are named - nothing to do *)
+  axiom transformFargsToNAFARGS(x as Absyn.FUNCTIONARGS([],named),names,junk) => x
+
+  (* blended positional with named - leave them like that *)
+  axiom transformFargsToNAFARGS(x as Absyn.FUNCTIONARGS(exps,named),names,junk) => x
+
+  axiom transformFargsToNAFARGS(x,names,junk) => x
+
+end
+

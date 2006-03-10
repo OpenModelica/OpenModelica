@@ -1,0 +1,3242 @@
+(*
+   Copyright 2005, Adrian Pop, adrpo@ida.liu.se and PELAB, Linköping University
+*)
+
+module RMLToMod:
+  with "absyn.rml"	
+  with "dictionary.rml"
+  with "rmldump.rml"
+  with "util.rml"
+
+  datatype TypeVarsElement = VTELEMENT of Absyn.RMLType * Absyn.Ident list 
+
+  datatype AlternativeTypeNames = ATYPES of Absyn.Ident * Absyn.Ident * bool
+
+  datatype TransOptions  = IMP_PREFIX of string list 
+						 | DUMMY_GENERATION 
+
+  datatype programDb = PDB of Absyn.RMLDbElement list * 
+                              Absyn.RMLDbElement Dictionary.dict
+
+  datatype select = INT | DEF | BOTH
+
+  relation transform: (Absyn.Program,Absyn.RMLDbElement list,TransOptions list) => Absyn.Program
+
+  relation is_external: (Absyn.Program) => bool
+
+end
+
+with "external.rml"
+(*Reserved Modelica+MetaModelica keywords.*)
+val modelica_keywords = [ 
+"algorithm","annotation","as",
+"block",
+"case","class","connect","connector","constant",
+"discrete",
+"each","else","elseif","elsewhen","encapsulated","end", "enumeration","equation","extends","external",
+(*"false",*)"final","flow","for","function",
+"if","import","in","initial","inner","input",
+"list","loop","local",
+"model","match","matchcontinue",
+"not",
+"or","outer","output","overload",
+"package","parameter","partial","protected","public",
+"record","redeclare","replaceable","relation",
+"then",(*"true",*)"tuple","type",
+"uniontype",
+"when","while","within"]
+(* not starting with: g,h,k,q,s,v *)
+
+val tuple_String = "Tpl"
+val list_String = "Lst"
+val option_String = "Opt"
+val vector_String = "Vec"
+val array_String = "Arr"
+
+
+relation escape_modkeywords =
+
+  rule	External.startsWith(id,"g") => false &
+		External.startsWith(id,"h") => false &
+		External.startsWith(id,"k") => false &
+		External.startsWith(id,"q") => false &
+		External.startsWith(id,"s") => false &
+		External.startsWith(id,"v") => false &
+        string_length(id) => len &
+        int_gt(len,12) => false &
+		int_lt(len,2) => false &
+		is_unique(id,modelica_keywords) => false &
+		string_append(id,"_") => id'
+		----------------------------
+		escape_modkeywords(id) => id'
+
+  axiom	escape_modkeywords(id) => id
+
+end
+
+(********************************************************
+
+ Relations to get special values and constructs  from RML
+ and build them correctly.
+
+*********************************************************)
+
+relation identName =
+
+  axiom identName(Absyn.RMLSHORTID(name,info)) => name
+
+  rule	string_append(".",name) => name' &
+		string_append(prefix,name') => qualified_name
+		---------------------------------------------------------
+		identName(Absyn.RMLLONGID(prefix,name)) => qualified_name
+
+end
+
+
+(** 
+ Help relations to get id from special constructs in RML
+ and to build special id in modelica. *)
+
+relation get_rml_id =
+  rule	transform_id_handle_quotes(name,0,0) => mname &      
+		escape_modkeywords(mname) => mname'
+		---------------------------------------------
+		get_rml_id(Absyn.RMLSHORTID(name,info),b) => mname'
+
+  rule	transform_id_handle_quotes(name,0,0) => mname &
+		escape_modkeywords(mname) => mname' &
+		string_append("_",mname') => mname'' &
+		string_append(prefix,mname'') => mname''' 
+		---------------------------------------------
+		get_rml_id(Absyn.RMLLONGID(prefix,name),true) => mname'''
+
+  rule	transform_id_handle_quotes(name,0,0) => mname & 
+		escape_modkeywords(mname) => mname'
+		---------------------------------------------
+		get_rml_id(Absyn.RMLLONGID(prefix,name),false) => mname'
+
+end
+
+(* TODO!! FIXME!! ADD ALL HERE! *)
+relation fixRMLBuiltinsName =
+
+ axiom fixRMLBuiltinsName("vector_nth") => "arrayNth"
+ axiom fixRMLBuiltinsName(x) => x
+
+end
+
+relation fixRMLbuiltins = 
+  
+  rule not prefix = "RML"
+       -------------------------------------------------------
+       fixRMLbuiltins(x as Absyn.RMLLONGID(prefix,name)) => x
+
+  rule prefix = "RML" &
+       fixRMLBuiltinsName(name) => name
+       ----------------------------------------------------------------------------------
+       fixRMLbuiltins(x as Absyn.RMLLONGID(prefix,name)) => Absyn.RMLLONGID(prefix,name)
+
+  rule fixRMLBuiltinsName(name) => name
+       ----------------------------------------------------------------------------------
+       fixRMLbuiltins(x as Absyn.RMLSHORTID(name,info)) => Absyn.RMLSHORTID(name, info)
+
+end
+
+relation get_rml_id2 =
+
+  rule	transform_id_handle_quotes(name,0,0) => mname &
+		escape_modkeywords(mname) => mname'
+		---------------------------------------------
+		get_rml_id2(Absyn.RMLSHORTID(name,info)) => mname'
+
+  rule	transform_id_handle_quotes(name,0,0) => mname &
+		escape_modkeywords(mname) => mname' &
+		string_append(".",mname') => mname'' &
+		string_append(prefix,mname'') => mname''' 
+		---------------------------------------------
+		get_rml_id2(Absyn.RMLLONGID(prefix,name)) => mname'''
+
+end
+
+relation transform_id_java =
+
+  rule	External.toJavaName(name) => java_name
+		-------------------------------------------------
+		transform_id_java(Absyn.RMLSHORTID(name,info)) => 
+		Absyn.RMLSHORTID(java_name,info)
+
+  rule	External.toJavaName(name) => java_name 
+		---------------------------------------------
+		transform_id_java(Absyn.RMLLONGID(prefix,name)) => 
+		Absyn.RMLLONGID(prefix,java_name)
+
+end
+
+relation get_tyvar_id =
+
+  rule	transform_tyvar(name,id) => name' &
+		transform_id_handle_quotes(name',0,0) => mname
+		---------------------------------------------
+		get_tyvar_id(Absyn.RMLSHORTID(name,info),id) => mname
+		
+end
+
+relation transform_path_java =
+
+  rule	External.toJavaName(mname) => java_name
+		---------------------------------------------------------------
+		transform_path_java(Absyn.IDENT(mname)) => Absyn.IDENT(java_name)
+
+   		
+  rule	External.toJavaName(mname) => java_name
+ 		-----------------------------------------------------------------
+		transform_path_java(Absyn.QUALIFIED(mprefix,Absyn.IDENT(mname))) =>
+		Absyn.QUALIFIED(mprefix,Absyn.IDENT(java_name))
+end
+
+
+relation transform_id =
+
+  rule	transform_id_handle_quotes(name,0,0) => mname &
+		escape_modkeywords(mname) => mname'
+		------------------------------------------------
+		transform_id(Absyn.RMLSHORTID(name,info)) => Absyn.IDENT(mname')
+
+   		
+  rule	transform_id_handle_quotes(prefix,0,0) => mprefix &	
+		transform_id_handle_quotes(name,0,0) => mname &
+		escape_modkeywords(mname) => mname'
+ 		----------------------------------------------
+		transform_id(Absyn.RMLLONGID(prefix,name)) => 
+		Absyn.QUALIFIED(mprefix,Absyn.IDENT(mname'))
+
+end
+
+relation transform_id_handle_quotes =
+
+  rule	string_length(s) => l &
+		int_ge(i,l) => true &
+		int_ge(q,1) => true &
+		int_string(q) => sq &
+		string_append("_",sq) => mstr 
+		------------------------------
+		transform_id_handle_quotes(s,i,q) => mstr
+
+  rule  string_length(s) => l &
+		int_ge(i,l) => true
+		--------------------
+		transform_id_handle_quotes(s,i,q) => ""
+
+  rule	string_nth_string_char(s,i) => "'" &
+		int_add(q,1) => qc &
+		int_add(i,1) => ic &
+		transform_id_handle_quotes(s,ic,qc) => str 
+		--------------------
+		transform_id_handle_quotes(s,i,q) => str
+
+  rule	int_ge(q,1) => true &
+		int_add(i,1) => ic &
+		string_nth_string_char(s,i) => ss &
+		transform_id_handle_quotes(s,ic,0) => str &
+		int_string(q) => sq &
+		string_append(sq,"_") => mq &
+		string_append(mq,ss) => mq' &
+		string_append(mq',str) => mstr 
+		------------------------------
+		transform_id_handle_quotes(s,i,q) => mstr
+	
+  rule	string_nth_string_char(s,i) => ss &
+		int_add(i,1) => ic &
+		transform_id_handle_quotes(s,ic,q) => str &
+		string_append(ss,str) => tstr
+		--------------------
+		transform_id_handle_quotes(s,i,q) => tstr
+end
+
+relation to_lowercase : (int,string) => string =
+
+  rule  External.toJavaName(str) => res
+		-------------------------------
+		to_lowercase(_, str) => res
+end
+
+(*special thing..ugly*)
+relation add_v_if_tyvar =
+
+  rule	string_append("V",id) => id'
+		----------------------------
+		add_v_if_tyvar(id,Absyn.RMLTYPE_TYVAR(_)) => id
+
+  axiom	add_v_if_tyvar(id,_) => id
+
+end
+
+
+relation transform_tyvar =
+
+  rule	string_length(id) => len &
+		External.substring(id, 1, len) => id' & (* take out the ' from 'a *)
+		string_append("Type_",id') => id''
+		-------------------------
+		transform_tyvar(id,"") => id''
+
+  rule	string_length(id) => len &
+		External.substring(id, 1, len) => id' & (* take out the ' from 'a *)
+		string_append("Type_",id') => id''
+		-------------------------
+		transform_tyvar(id,_) => id''
+
+end
+
+relation get_binop =
+
+  axiom	get_binop("int_add") => Absyn.ADD
+  axiom	get_binop("int_sub") => Absyn.SUB
+  axiom	get_binop("int_mul") => Absyn.MUL
+  axiom	get_binop("int_div") => Absyn.DIV
+
+  axiom	get_binop("real_add") => Absyn.RADD
+  axiom	get_binop("real_sub") => Absyn.RSUB
+  axiom	get_binop("real_mul") => Absyn.RMUL
+  axiom	get_binop("real_div") => Absyn.RDIV
+
+  axiom	get_binop("intAdd") => Absyn.ADD
+  axiom	get_binop("intSub") => Absyn.SUB
+  axiom	get_binop("intMul") => Absyn.MUL
+  axiom	get_binop("intDiv") => Absyn.DIV
+
+  axiom	get_binop("realAdd") => Absyn.RADD
+  axiom	get_binop("realSub") => Absyn.RSUB
+  axiom	get_binop("realMul") => Absyn.RMUL
+  axiom	get_binop("realDiv") => Absyn.RDIV
+
+
+end
+
+relation get_relop =
+
+  axiom	get_relop("int_lt") => Absyn.LESS
+  axiom	get_relop("int_le") => Absyn.LESSEQ
+  axiom	get_relop("int_ne") => Absyn.NEQUAL
+  axiom	get_relop("int_eq") => Absyn.EQUAL
+  axiom	get_relop("int_gt") => Absyn.GREATER
+  axiom	get_relop("int_ge") => Absyn.GREATEREQ
+
+  axiom	get_relop("real_lt") => Absyn.RLESS
+  axiom	get_relop("real_le") => Absyn.RLESSEQ
+  axiom	get_relop("real_ne") => Absyn.RNEQUAL
+  axiom	get_relop("real_eq") => Absyn.REQUAL
+  axiom	get_relop("real_gt") => Absyn.RGREATER
+  axiom	get_relop("real_ge") => Absyn.RGREATEREQ
+
+  axiom	get_relop("intLt") => Absyn.LESS
+  axiom	get_relop("intLe") => Absyn.LESSEQ
+  axiom	get_relop("intNe") => Absyn.NEQUAL
+  axiom	get_relop("intEq") => Absyn.EQUAL
+  axiom	get_relop("intGt") => Absyn.GREATER
+  axiom	get_relop("intGe") => Absyn.GREATEREQ
+
+  axiom	get_relop("realLt") => Absyn.RLESS
+  axiom	get_relop("realLe") => Absyn.RLESSEQ
+  axiom	get_relop("realNe") => Absyn.RNEQUAL
+  axiom	get_relop("realEq") => Absyn.REQUAL
+  axiom	get_relop("realGt") => Absyn.RGREATER
+  axiom	get_relop("realGe") => Absyn.RGREATEREQ
+
+end
+
+relation get_bool =
+
+  rule	External.strcmp(id,"true") => 0
+		--------------------------------
+		get_bool(id) => Absyn.BOOL(true) 
+
+  rule	External.strcmp(id,"false") => 0
+		---------------------------------
+		get_bool(id) => Absyn.BOOL(false) 
+
+end
+
+relation get_unop =
+
+  axiom	get_unop("int_neg") => Absyn.UMINUS	
+  axiom get_unop("real_neg") => Absyn.RUMINUS	
+
+  axiom	get_unop("intNeg") => Absyn.UMINUS	
+  axiom get_unop("realNeg") => Absyn.RUMINUS	
+
+end
+
+(*special help relation*)
+relation getiffalse : (string,bool) => string =
+
+  axiom	getiffalse(s,false) => s
+
+  axiom	getiffalse(s,_) => ""
+
+end
+
+relation get_specialtypetuple_id =
+
+  axiom	get_specialtypetuple_id([],alttypes_db,_) => ""
+
+  rule	get_specialtype_id(first,"",alttypes_db,b_ei) => (fid,b) &
+		get_specialtypetuple_id(rest,alttypes_db,b_ei) => rid &
+		string_append(fid,rid) => tid 
+		--------------------------------------
+		get_specialtypetuple_id(first::rest,alttypes_db,b_ei) => tid
+
+end
+
+
+relation get_specialtype_id =
+
+  rule	get_specialtypetuple_id(intype,alttypes_db,false) => iid &
+		get_specialtypetuple_id(outtype,alttypes_db,false) => uid &
+		string_append(iid,"To") => str1 &
+		string_append(str1,uid) => str2 &
+		string_append("FuncType",str2) => rid &
+		get_alternative_typeid(rid,alttypes_db,b_ei) => (cid,b)
+		-------------------------
+		get_specialtype_id(Absyn.RMLTYPE_SIGNATURE(Absyn.CALLSIGN(intype,outtype)),id,alttypes_db,b_ei) =>
+		(cid,b)
+
+ rule	get_rml_id(nid,true) => mid &
+		transform_typeid(mid,false) => cid &
+		string_append(cid,id) => tid &
+		get_specialtype_id(last,cid,alttypes_db,b_ei) => (fid,_) &
+		string_append(fid,id) => fid' &
+		get_alternative_typeid(fid',alttypes_db,b_ei) => (aid,b) 
+		-------------------------------------------
+		get_specialtype_id(Absyn.RMLTYPE_TYCONS(last::[],nid),id,alttypes_db,b_ei) =>
+		(aid,b)
+
+  rule	get_tyvar_id(nid,id) => cid &	
+		string_append(cid,id) => tid &
+		get_alternative_typeid(tid,alttypes_db,b_ei) => (aid,b) 
+		-------------------------------
+		get_specialtype_id(Absyn.RMLTYPE_TYVAR(nid),id,alttypes_db,b_ei) =>
+		(aid,b)
+
+  rule	get_rml_id(nid,true) => mid &
+		transform_typeid(mid,false) => cid &  
+		get_alternative_typeid(cid,alttypes_db,b_ei) => (cid',_) &
+		string_append(cid',id) => tid &
+		get_alternative_typeid(tid,alttypes_db,b_ei) => (aid,b) 
+		-------------------------------
+		get_specialtype_id(Absyn.RMLTYPE_USERDEFINED(nid),id,alttypes_db,b_ei) =>
+		(aid,b)
+
+  rule	get_specialtypetuple_id(typelist,alttypes_db,b_ei) => tid &
+		string_append(tuple_String,tid) => fid &
+		get_alternative_typeid(fid,alttypes_db,b_ei) => (aid,_) &
+		string_append(aid,id) => cid' & 
+		get_alternative_typeid(cid',alttypes_db,b_ei) => (aid',b) 
+		-------------------------------
+		get_specialtype_id(Absyn.RMLTYPE_TUPLE(typelist),id,alttypes_db,b_ei) =>
+		(aid',b)
+
+  rule	get_rml_id(nid,true) => mid &
+		transform_typeid(mid,false) => cid &	
+		get_alternative_typeid(cid,alttypes_db,b_ei) => (aid,b) &
+		string_append(aid,id) => tid 
+		-------------------------------
+		get_specialtype_id(Absyn.RMLTYPE_TYCONS([],nid),id,alttypes_db,b_ei) =>
+		(tid,b)
+
+end
+
+relation get_record_id =
+
+  rule	get_rml_id(id,true) => mid &
+		transform_typeid(mid,false) => cid &
+		get_alternative_typeid(cid,alttypes_db,b_ei) => (aid,true)
+		-------------------------------
+		get_record_id(Absyn.RMLTYPE_USERDEFINED(id),alttypes_db,b_ei) =>
+		Absyn.TPATH(Absyn.IDENT(aid))
+
+  rule	get_rml_id2(id) => mid &
+		transform_typeid(mid,false) => cid 
+		-------------------------------
+		get_record_id(Absyn.RMLTYPE_USERDEFINED(id),alttypes_db,b_ei) =>
+		Absyn.TPATH(Absyn.IDENT(cid))
+
+
+  rule	get_specialtype_id(ttype,"",alttypes_db,b_ei) => (ttype_id,_) 
+		-------------------------------
+		get_record_id(ttype,alttypes_db,b_ei) =>
+		Absyn.TPATH(Absyn.IDENT(ttype_id))
+
+end
+
+relation get_valtype_id =
+
+  rule	get_rml_id(id,true) => mid &
+		transform_typeid(mid,false) => cid &
+		get_alternative_typeid(cid,alttypes_db,b_ei) => (aid,true)
+		-------------------------------
+		get_valtype_id(Absyn.RMLTYPE_USERDEFINED(id),alttypes_db,b_ei) => aid
+
+  rule	get_rml_id2(id) => mid &
+		transform_typeid(mid,false) => cid 
+		-------------------------------
+		get_valtype_id(Absyn.RMLTYPE_USERDEFINED(id),alttypes_db,b_ei) => cid
+
+
+  rule	get_specialtype_id(ttype,"",alttypes_db,b_ei) => (ttype_id,_) 
+		-------------------------------
+		get_valtype_id(ttype,alttypes_db,b_ei) => ttype_id
+
+end
+
+(**
+ Relations to get the types that builds special constructions like
+ lists,vectors,records,option..*)
+
+relation is_unique =
+
+  rule	list_member(id, list) => b &
+		(*
+		print "\nUnique:" &
+		print id &
+		print "?\n" & 
+		RML.debug_print("list", list) &
+		print "\n" &
+			*)
+		bool_not(b) => a
+		-------------------
+		is_unique(id,list) =>  a
+
+  axiom  is_unique(_, _) => false
+end
+
+relation is_unique_list =
+
+  axiom	is_unique_list([]) => true
+	
+  rule	is_unique(first,rest) => false
+		------------------------------
+		is_unique_list(first::rest) => false
+
+  rule	is_unique_list(rest) => b
+		------------------------------
+		is_unique_list(_::rest) => b
+
+end
+
+relation get_specialtypes_lst =
+
+  axiom get_specialtypes_lst([],alttypes_db,_,fc) => ([],alttypes_db,fc) 
+
+  rule	get_specialtypes(first,alttypes_db,b_ei,NONE,fc) => (ftypes,alttypes_db',fc') &
+		get_specialtypes_lst(rest,alttypes_db',b_ei,fc') => (rtypes,alttypes_db'',fc'') &
+		list_append(ftypes,rtypes) => type_list 
+		-----------------------------------------
+		get_specialtypes_lst(first::rest,alttypes_db,b_ei,fc) => (type_list,alttypes_db'',fc'')
+  
+end
+
+
+relation get_specialtypes =
+
+  rule	transform_decl_signature(sign,alttypes_db,false) => (in_out_spec,in_out_decl,il,ol,alttypes_db') &
+		get_specialtype_id(sign,"",alttypes_db,b_ei) => (type_id,false) &
+		(*make a shorter but unique funcname*)
+		int_add(fc,1) => fc' &
+		int_string(fc') => sfc &
+		string_append("FuncType",sfc) => utype_id &
+		create_class_parts(utype_id,Absyn.R_FUNCTION,true,[Absyn.PUBLIC(in_out_decl),
+								Absyn.PUBLIC(in_out_spec)],[],true) => class &
+		create_standard_elementitem(Absyn.CLASSDEF(false,class)) => elementitem
+		-----------------------------------------------
+		get_specialtypes(sign,alttypes_db,b_ei,com,fc) => 
+		([elementitem],ATYPES(type_id,utype_id,true)::alttypes_db,fc')
+
+  rule	get_specialtype_id(tyvar,"",alttypes_db,b_ei) => (type_id,false) &
+        get_specialtype("replaceable",type_id,com) => derived &
+        create_class_parts(type_id,Absyn.R_TYPE,false,[],[],true) => class &
+        create_replaceable_elementitem(Absyn.CLASSDEF(true,class)) => specialtypes 
+       	---------------------------------------------
+		get_specialtypes(tyvar as Absyn.RMLTYPE_TYVAR(lid),alttypes_db,b_ei,com,fc) =>
+        ([specialtypes],ATYPES(type_id,type_id,true)::alttypes_db,fc) 
+
+  rule	get_rml_id(id,true) => mid &
+        transform_typeid(mid,false) => cmid &
+		transform_typeid(mid,true) => mid' &
+        get_rml_id(lid,true) => spec_id &
+		transform_typeid(spec_id,false) => tspec_id &
+		get_alternative_typeid(tspec_id,alttypes_db,b_ei) => (tspec_id',_) &
+		string_append(tspec_id',cmid) => type_id &
+		string_append(tspec_id,cmid) => type_id' &
+		get_alternative_typeid(type_id,alttypes_db,b_ei) => (_,false) &
+		get_rml_id2(lid) => spec_id' &
+        transform_typeid(spec_id',false) => spec_id'' &
+		get_alternative_typeid(spec_id'',alttypes_db,b_ei) => (spec_id''',_) &	
+        get_specialtype(mid',spec_id''',com) => derived &
+        create_class(type_id,Absyn.R_TYPE_GENERATED,derived) => class &
+        create_standard_elementitem(Absyn.CLASSDEF(false,class)) => specialtypes 
+       	---------------------------------------------
+		get_specialtypes(Absyn.RMLTYPE_TYCONS(Absyn.RMLTYPE_USERDEFINED(lid)::[],id),alttypes_db,b_ei,com,fc) =>
+        ([specialtypes],ATYPES(type_id,type_id,true)::alttypes_db,fc) 
+
+  rule	get_rml_id(id,true) => mid &	
+		transform_typeid(mid,false) => cmid &
+		transform_typeid(mid,true) => mid' &
+		get_specialtype_id(last,"",alttypes_db,b_ei) => (spec_id',b) &
+		add_v_if_tyvar(spec_id',last) => spec_id &
+		string_append(spec_id,cmid) => type_id &	
+		get_alternative_typeid(type_id,alttypes_db,b_ei) => (_,false) &	
+		get_specialtype(mid',spec_id',NONE) => derived &
+		create_class(type_id,Absyn.R_TYPE_GENERATED,derived) => class &
+		create_standard_elementitem(Absyn.CLASSDEF(false,class)) => elementitem &
+		get_specialtypes(last,ATYPES(type_id,type_id,true)::alttypes_db,b_ei,com,fc) => (elast,alttypes_db',_) &
+		list_append(elast,[elementitem]) => specialtypes 
+		---------------------------------------------
+		get_specialtypes(Absyn.RMLTYPE_TYCONS(last::[],id),alttypes_db,b_ei,com,fc) =>
+		(specialtypes,alttypes_db',fc)
+	
+  rule	get_specialtypes_lst(typelist,alttypes_db,b_ei,0) => (specialtypes_sub,alttypes_db',_) &
+      	get_specialtypetuple_id(typelist,alttypes_db',b_ei) => tuple_id &
+		string_append(tuple_String,tuple_id) => type_id &
+		get_alternative_typeid(type_id,alttypes_db',b_ei) => (_,false) &
+		get_specialtype_record(typelist,alttypes_db',b_ei,com) => derived &
+		create_class(type_id,Absyn.R_TYPE_GENERATED,derived) => class &
+		create_standard_elementitem(Absyn.CLASSDEF(false,class)) => elementitem &
+		list_append(specialtypes_sub,[elementitem]) => specialtypes 
+		---------------------------------------------
+		get_specialtypes(Absyn.RMLTYPE_TUPLE(typelist),alttypes_db,b_ei,com,fc) =>
+		(specialtypes,ATYPES(type_id,type_id,true)::alttypes_db',fc)
+
+  axiom get_specialtypes(_,altypes_db,_,_,fc) =>
+		([],altypes_db,fc)
+
+end
+
+relation get_specialtype =
+
+  rule  is_unique(spec_type,["Vector","Array"]) => false
+		-------------------------------
+        get_specialtype(spec_type,spec_id,com) =>
+		Absyn.DERIVED(
+			Absyn.TCOMPLEX(
+				Absyn.IDENT("Array"),
+				[Absyn.TPATH(Absyn.IDENT(spec_id))]),
+			Absyn.ATTR(false,Absyn.VAR,Absyn.BIDIR),
+		    [],com)
+
+  rule  External.strcmp(spec_type, "replaceable") => 0
+		----------------------------------------------
+        get_specialtype(spec_type,spec_id,com) =>
+		Absyn.DERIVED(
+			Absyn.TPATH(Absyn.IDENT(spec_id)),
+			Absyn.ATTR(false,Absyn.VAR,Absyn.BIDIR),
+		    [],com)
+
+  rule	
+		---------------------------
+		get_specialtype(spec_type,spec_id,com) =>
+		Absyn.DERIVED(
+			Absyn.TCOMPLEX(
+				Absyn.IDENT(spec_type),
+				[Absyn.TPATH(Absyn.IDENT(spec_id))]),
+				Absyn.ATTR(false,Absyn.VAR,Absyn.BIDIR),
+				[],
+				com)
+
+end
+
+relation get_record_ides = 
+
+  axiom get_record_ides([],_,_) => []
+       
+  rule	(*get_specialtype_id(first,"",alttypes_db,b_ei) => (frid,_) &*)
+		get_record_id(first,alttypes_db,b_ei) => frid &
+		get_record_ides(rest,alttypes_db,b_ei) => rrid
+		-----------------------------------------------------------
+		get_record_ides(first::rest,alttypes_db,b_ei) => frid::rrid
+end
+
+relation get_specialtype_record =
+
+  rule	get_record_ides(typelist,alttypes_db,b_ei) => pathlist
+		--------------------------------------------------------
+		get_specialtype_record(typelist,alttypes_db,b_ei,com) => 
+		Absyn.DERIVED(
+			Absyn.TCOMPLEX(Absyn.IDENT("tuple"),pathlist),
+		    Absyn.ATTR(false,Absyn.VAR,Absyn.BIDIR),[],com)
+
+end
+
+
+relation get_import_name =
+
+  rule	string_length(s) => i &
+		get_module_name(s,0,i,"") => name
+		---------------------------------
+		get_import_name(s) => name
+
+end
+
+relation getClasses =
+
+  rule getClasses(rest) => classes
+       ---------------------------
+       getClasses(
+       		Absyn.ELEMENTITEM(
+       			Absyn.ELEMENT(_,_,_,_,
+       				Absyn.CLASSDEF(_,class),_,_,_))::rest) =>  class::classes
+
+  axiom getClasses([]) => []
+  
+end
+
+
+relation get_module_name =
+
+  rule  int_ge(i,l) => true
+		--------------------
+		get_module_name(s,i,l,ns) => ""
+
+  rule	string_nth_string_char(s,i) => "."
+		----------------------------------
+		get_module_name(s,i,l,ns) => ns 
+
+  rule	int_add(i,1) => ic &
+		string_nth_string_char(s,i) => ss &
+		string_append(ns,ss) => nstr &
+		get_module_name(s,ic,l,nstr) => str	      
+		-----------------------------------
+		get_module_name(s,i,l,ns) => str
+		
+end
+
+(**
+ ** Relations to get the signature from the pdb.
+ **)
+
+relation get_decl_signature : (Absyn.RMLIdent,programDb,Absyn.RMLType option) => Absyn.RMLType =
+
+  axiom	get_decl_signature(_,_,SOME(sign)) => sign
+
+  rule	identName(id) => mid &
+		Dictionary.search(dict, mid) => SOME(x) &
+		add_decl_signature(id,x) => signature
+		------------------------------------------------------
+		get_decl_signature(id ,PDB(_, dict),NONE) => signature
+
+  axiom get_decl_signature(id,PDB(_, dict),NONE) => Absyn.RMLTYPE_SIGNATURE(Absyn.CALLSIGN([],[]))
+
+end
+
+relation add_decl_signature =
+
+  rule	check_filenames(dbfilename,filename) => true &
+		External.strcmp(relname, dbrel) => 0 &
+		int_ge(ls,dbls) => true &
+		int_ge(dble,ls) => true 
+		-----------------------------------------------
+		add_decl_signature(
+			Absyn.RMLSHORTID(relname, Absyn.INFO(filename,ls,cs,le,ce)),
+			Absyn.RMLDB_REL(dbfilename, Absyn.RMLSHORTID(dbrel,_),
+			Absyn.RMLDB_RANGE(dbls,dbcs,dble,dbce),
+			sign)) => sign
+
+end
+
+
+(**********************************************
+
+ Special handling for creation and lookup 
+ of variables and their types.(localdeclarations)
+
+***********************************************)
+
+relation check_filenames =
+
+  rule	string_length(f1) => l1 &
+		string_length(f2) => l2 &
+		int_ge(l2,l1) => true &
+		int_sub(l2,l1) => start  &
+		External.endsWith(f2,f1) => true
+		----------------------------------
+		check_filenames(f1,f2) => true
+	
+  axiom	check_filenames(_,_) => false
+
+end
+
+relation compare_filenames =
+
+  rule	string_length(f1) => max &
+		int_ge(i,max) => true
+		-----------------------------
+		compare_filenames(f1,f2,i,s) => true
+
+  rule	int_add(i,1) => ic &
+		string_nth_string_char(f1,i)  => s1 &
+		int_add(i,st) => is &
+		string_nth_string_char(f2,is) => s2 &
+		External.strcmp(s1, s2) => 0 &
+		compare_filenames(f1,f2,ic,st) => true
+		--------------------------------------
+		compare_filenames(f1,f2,i,st) => true
+
+  axiom compare_filenames(_,_,_,_) => false	
+  
+end
+
+
+relation get_var_type =
+
+  rule	check_filenames(dbfilename,filename) => true &
+		External.strcmp(varname,dbvar) => 0 &
+		int_ge(ls,dbls) => true &
+		int_ge(dble,ls) => true &
+		transform_id_handle_quotes(varname,0,0) => varname' &
+		escape_modkeywords(varname') => varname'' 
+		-------------------------------------------------------------------------
+		get_var_type(Absyn.RMLSHORTID(varname, Absyn.INFO(filename,ls,cs,le,ce)),
+					Absyn.RMLDB_VAR(
+						dbfilename,Absyn.RMLSHORTID(dbvar,_),_,
+						Absyn.RMLDB_RANGE(dbls,dbcs,dble,dbce),_,
+						the_type)) 
+		=> (the_type,varname'')
+
+end 
+
+
+relation is_defined_different_type =
+
+  axiom is_defined_different_type(_,_,[]) => false
+
+  rule	not the_type = c_type &
+		is_unique(var,varlist) => false
+		---------------------------
+		is_defined_different_type(var,the_type,VTELEMENT(c_type,varlist)::_) => true
+
+  rule	is_defined_different_type(var,the_type,rest) => b
+		--------------------------------------------------
+		is_defined_different_type(var,the_type,_::rest) => b
+
+end
+
+relation add_decl =
+
+  axiom	add_decl(var,the_type,[]) => [VTELEMENT(the_type,[var])]
+
+  rule	the_type = c_type &
+		is_unique(var,varlist) => true &
+		list_append(varlist,[var]) => varlist' 	
+		---------------------------------------------------------
+		add_decl(var,the_type,VTELEMENT(c_type,varlist)::rest) =>
+		VTELEMENT(c_type,varlist')::rest
+ 	
+  rule	the_type = c_type 
+		-----------------------------------------------------------
+		add_decl(_,the_type,decl as VTELEMENT(c_type,_)::_) => decl
+ 
+  rule	add_decl(var,the_type,rdecl) => rdecl' 
+		----------------------------------------------------
+		add_decl(var,the_type,fdecl::rdecl) => fdecl::rdecl'
+		
+end
+
+relation add_type =
+
+  axiom	add_type(the_type,[]) => [VTELEMENT(the_type,[])]
+
+  rule	the_type = c_type 
+		---------------------------------------------------------
+		add_type(the_type,decl as VTELEMENT(c_type,_)::_) => decl
+
+ rule	add_type(the_type,rdecl) => rdecl' 
+		------------------------------------------------
+		add_type(the_type,fdecl::rdecl) => fdecl::rdecl'
+
+end
+
+relation check_pdb =
+
+  axiom	check_pdb(rmlident,decl_db,ldecl_db,PDB([],dict)) => (decl_db,ldecl_db)
+
+  rule	get_var_type(rmlident,fpdb) => (the_type,varname) &
+		is_defined_different_type(varname,the_type,decl_db) => true &
+		add_decl(varname,the_type,ldecl_db) => ldecl_db' &
+		add_type(the_type,decl_db) => decl_db'
+		------------------------------------------------------------------------------
+		check_pdb(rmlident,decl_db,ldecl_db,PDB(fpdb::_,dict)) => (decl_db',ldecl_db')
+
+  rule	get_var_type(rmlident,fpdb) => (the_type,varname) &
+		add_decl(varname,the_type,decl_db) => decl_db' 
+		-----------------------------------------------------------------------------
+		check_pdb(rmlident,decl_db,ldecl_db,PDB(fpdb::_,dict)) => (decl_db',ldecl_db)
+
+  rule	check_pdb(rmlident,decl_db,ldecl_db,PDB(rpdb, dict)) => (decl_db',ldecl_db')
+		------------------------------------------------------------------------------
+		check_pdb(rmlident,decl_db,ldecl_db,PDB(_::rpdb,dict)) => (decl_db',ldecl_db')
+
+end
+
+relation update_decl_db =
+
+  axiom	update_decl_db([],decl_db,ldecl_db,pdb) => (decl_db,ldecl_db)
+
+  rule	check_pdb(first,decl_db,ldecl_db,pdb) => (decl_db',ldecl_db') &
+		update_decl_db(rest,decl_db',ldecl_db',pdb) => (decl_db'',ldecl_db'')
+		--------------------------------------------------------------------
+		update_decl_db(first::rest,decl_db,ldecl_db,pdb) => (decl_db'',ldecl_db'')
+	
+end
+
+
+
+relation get_alternative_typeid =
+
+  axiom	get_alternative_typeid(the_typeid,[],_) => (the_typeid,false)
+
+  rule	the_typeid = ctype_id &
+		bool_or(bool_ext,b_ei) => true 
+		------------------------
+		get_alternative_typeid(the_typeid,ATYPES(ctype_id,alt_typeid,b_ei)::_,bool_ext) => (alt_typeid,true)
+
+  rule	get_alternative_typeid(the_typeid,rest,b_ei) => (a_typeid,b)
+		-----------------------------
+		get_alternative_typeid(the_typeid,_::rest,b_ei) => (a_typeid,b)
+	
+end
+
+relation create_local_decl =
+
+  axiom	create_local_decl([],_) => []
+
+  rule	create_local_decl(rest,alttypes_db) => reitems 
+		--------------------------------------------
+		create_local_decl(VTELEMENT(the_type,[])::rest,alttypes_db) =>
+		reitems
+
+  rule	transform_type(var_lst,the_type,NONE,Absyn.BIDIR,alttypes_db,true) => eitems &
+		create_local_decl(rest,alttypes_db) => reitems 
+		--------------------------------------------
+		create_local_decl(VTELEMENT(the_type,var_lst)::rest,alttypes_db) =>
+		eitems::reitems
+end
+
+relation create_specialtypes : 
+	(TypeVarsElement list, AlternativeTypeNames list,bool) => 
+	(Absyn.ElementItem list,AlternativeTypeNames list) =
+
+  axiom	create_specialtypes([],a,_) => ([],a)
+
+  rule	(*is_unique(the_type,uniques) => true &*)
+		get_specialtypes(the_type,alttypes_db,b_ei,NONE,0) => (special_types,alttypes_db',_) &
+		create_specialtypes(rest,alttypes_db',b_ei) => (rspecial_types,alttypes_db'') &
+		list_append(special_types,rspecial_types) => special_types'
+		---------------------------------------------------------------------------------------------------
+		create_specialtypes(VTELEMENT(the_type,_)::rest,alttypes_db,b_ei) => (special_types',alttypes_db'')
+
+  rule  create_specialtypes(rest,alttypes_db,b_ei) => (special_types,alttypes_db')
+		-----------------------------------------------------------------------------
+		create_specialtypes(_::rest,alttypes_db,b_ei) => (special_types,alttypes_db')
+
+
+end
+
+
+(*********************************************************
+
+ Help relations to create structures in the modelica-ast.
+
+**********************************************************)
+
+relation create_classdef =
+
+  rule	create_class_parts(id,restriction,false,classparts,com,b) => class
+		-------------------------------------------------------------------------------
+		create_classdef(id,restriction,classparts,com,b) => Absyn.CLASSDEF(false,class)
+
+end
+
+
+relation get_dummyoption =
+
+  axiom get_dummyoption([]) => false
+
+  axiom	get_dummyoption(DUMMY_GENERATION::_) => true 
+	
+  rule	get_dummyoption(rest) => b
+		----------------------------
+		get_dummyoption(_::rest) => b
+
+end
+
+relation get_imp_option =
+
+  axiom	get_imp_option([],_) => fail
+
+  rule	get_prefix(plist,name) =>  prefix
+		---------------------------------------------------
+		get_imp_option(IMP_PREFIX(plist)::_,name) => prefix
+
+  rule	get_imp_option(rest,name) => prefix
+		--------------------------------------
+		get_imp_option(_::rest,name) => prefix	
+
+end
+
+relation get_prefix =
+
+  axiom	get_prefix([],name) => Absyn.IDENT(name)
+
+  rule	get_prefix(rpr,name) => rpr'
+		------------------------------------------------------
+		get_prefix(fpr::rpr,name) => Absyn.QUALIFIED(fpr,rpr')
+
+end
+
+relation create_import = 
+
+  rule	get_imp_option(toptions,name) => prefix
+		----------------------------------
+		create_import(name,com,toptions) =>
+		Absyn.IMPORT(Absyn.QUAL_IMPORT(prefix),com)
+	  
+  (* default prefix*)
+  axiom	create_import(name,com,_) =>
+		Absyn.IMPORT(Absyn.QUAL_IMPORT(
+						Absyn.QUALIFIED("OpenModelica",
+								Absyn.QUALIFIED("Compiler",
+										Absyn.IDENT(name))))
+				,com)
+end
+
+
+relation create_class_parts = 
+
+  rule	get_comment(com,b) => mcom
+		----------------------------------------------------------------------------
+		create_class_parts(id,restriction,partial,classparts,com,b) =>
+		Absyn.CLASS(id,partial,false,false,restriction,Absyn.PARTS(classparts,mcom))
+
+end
+ 
+relation create_class =
+
+  axiom create_class(id,restriction,classdef) =>
+		Absyn.CLASS(id,false,false,false,restriction,classdef)
+
+end
+
+relation create_elementitem_list =
+
+  axiom	create_elementitem_list([]) => []
+	
+  rule	create_standard_elementitem(Absyn.CLASSDEF(false,first)) => efirst &
+		create_elementitem_list(rest) => erest 
+		--------------------------------------------------------------------
+		create_elementitem_list(first::rest) =>	efirst::erest
+
+end
+
+relation create_standard_elementitem =
+
+  axiom create_standard_elementitem(elementspec) =>
+		Absyn.ELEMENTITEM(
+			Absyn.ELEMENT(false, false, Absyn.UNSPECIFIED, "?", elementspec, "NoFile",0,NONE))	            	
+end
+
+relation create_replaceable_elementitem =
+
+  axiom create_replaceable_elementitem(elementspec) =>
+		Absyn.ELEMENTITEM(
+		Absyn.ELEMENT(false,true,Absyn.UNSPECIFIED,"?",elementspec,"NoFile",0,NONE))	            	
+
+end
+
+
+relation create_standard_algorithmitem =
+
+  axiom create_standard_algorithmitem(algorithm) =>	Absyn.ALGORITHMITEM(algorithm,NONE)
+
+end
+
+(*
+relation create_algorithm_inputs =
+
+  rule	int_ge(i,max) => true
+		-----------------------
+		create_algorithm_inputs(i,max,lst) => []
+
+  rule	int_add(i,1) => ic &
+		int_string(ic) => istr &
+		string_append("inValue",istr)  => str &	
+		create_algorithm_inputs(ic,max,lst) => mlst &
+		list_append([Absyn.CREF(Absyn.CREF_IDENT(str,[]))],mlst) => nlst 
+		---------------------------------------------
+		create_algorithm_inputs(i,max,lst) => nlst
+
+
+end
+*)
+
+(*
+relation create_algorithm_outputs =
+
+  rule	int_ge(i,max) => true
+		-----------------------
+		create_algorithm_outputs(i,max,lst) => []
+
+  rule	int_add(i,1) => ic &
+		int_string(ic) => istr &
+		string_append("outValue",istr)  => str &	
+		create_algorithm_outputs(ic,max,lst) => mlst &
+		list_append([Absyn.CREF_IDENT(str,[])],mlst) => nlst 
+		---------------------------------------------
+		create_algorithm_outputs(i,max,lst) => nlst
+
+
+end
+*)
+
+relation create_algorithm_inputs =
+
+  axiom	create_algorithm_inputs([],false) => [Absyn.BOOL(true)]
+
+  axiom	create_algorithm_inputs([],true) => []
+
+  rule	create_algorithm_inputs(rest_inputs,true) => rest_inputs'
+		----------------------------------------------------------
+		create_algorithm_inputs(first_input::rest_inputs,b) =>
+		Absyn.CREF(Absyn.CREF_IDENT(first_input,[]))::rest_inputs'
+
+end
+
+relation create_algorithm_outputs =
+
+  axiom	create_algorithm_outputs([]) => []
+
+  rule	create_algorithm_outputs(rest_outputs) => rest_outputs'
+		-------------------------------------------------------
+		create_algorithm_outputs(first_output::rest_outputs) =>
+		Absyn.CREF_IDENT(first_output,[])::rest_outputs'
+
+end
+
+
+relation create_algorithm_match =
+
+  rule	create_algorithm_inputs(inlist,true) => input_list &
+		create_algorithm_outputs(outlist) => output 
+		----------------------------------------------------------
+		create_algorithm_match(inlist,outlist,eilist,case_list) =>
+		Absyn.ALG_MATCH(output,
+				Absyn.TUPLE(input_list),eilist,case_list)
+
+
+end
+
+
+relation create_algorithm_simplematch =
+
+  axiom	create_algorithm_simplematch(equations) =>
+		Absyn.ALG_SIMPLEMATCH(equations)
+
+end
+
+
+(*exps is optional expression to init the variable with*)
+relation create_components_init =
+
+  rule	create_componentitems(var_lst,SOME(Absyn.CLASSMOD([],SOME(exp))),com) => cilist &
+		create_components_lst(cilist,the_type,var,dir) => components 
+		------------------------------------------------------
+		create_components_init(var_lst,the_type,var,dir,exp,com) => components
+
+end
+
+relation create_components =
+
+  rule	create_componentitems(var_lst,NONE,com) => cilist &
+		create_components_lst(cilist,the_type,Absyn.VAR,dir) => components 
+		------------------------------------------------------
+		create_components(var_lst,the_type,dir,com) => components
+
+end
+
+
+relation create_components_lst =
+
+  axiom	create_components_lst(component_items,the_type,var,dir) =>
+		Absyn.COMPONENTS(Absyn.ATTR(false,var,dir),
+			Absyn.TPATH(Absyn.IDENT(the_type)),component_items)
+
+end
+
+relation create_componentitem =
+
+  rule	escape_modkeywords(var) => var'
+        --------------------------------------------------------
+		create_componentitem(var,exp,com) => 
+			Absyn.COMPONENTITEM(Absyn.COMPONENT(var',[],exp),com)
+			
+end
+
+relation create_componentitems =
+
+  axiom	create_componentitems([],_,_) => []
+
+  rule	create_componentitem(fvar,exp,com) => ci &
+		create_componentitems(rest,exp,com) => cilst 
+		-------------------------------------------------------
+		create_componentitems(fvar::rest,exp,com)  => ci::cilst
+
+end
+ 
+relation create_standard_equationitem =
+
+  axiom create_standard_equationitem(equation,comment) =>
+		Absyn.EQUATIONITEM(equation,comment)
+
+end
+
+
+
+relation create_functionargs =
+
+  axiom	create_functionargs(exp_list,name_list) => 
+  			Absyn.FUNCTIONARGS(exp_list,name_list)
+
+end
+
+relation create_type =
+
+  axiom	create_type(the_type,com) =>
+		Absyn.DERIVED(
+			Absyn.TPATH(Absyn.IDENT(the_type)), 
+			Absyn.ATTR(false,Absyn.VAR,Absyn.BIDIR),[],com)
+
+end
+
+relation create_cref =
+
+  axiom create_cref(id) => Absyn.CREF_IDENT(id,[])
+
+end
+
+relation create_cref_sub =
+
+  axiom create_cref_sub(id,sub) => Absyn.CREF_IDENT(id,sub)
+
+end
+
+relation create_exp_cref =
+
+  rule	create_cref_sub(id,sub) => cref
+		-----------------------------
+		create_exp_cref(id,sub) => Absyn.CREF(cref) 
+
+end
+
+
+(***************************************************
+
+  Transformation relations.
+
+****************************************************)
+
+
+(*possible to do some kind mapping?*)
+relation transform_typeid =
+
+  axiom	transform_typeid("int",_) => "Integer"
+
+  axiom	transform_typeid("real",_) => "Real"
+
+  axiom	transform_typeid("bool",_) => "Boolean"
+
+  axiom	transform_typeid("string",_) => "String"
+
+  axiom	transform_typeid("char",_) => "String"
+
+  axiom	transform_typeid("array",_) => "Array"
+
+  axiom	transform_typeid("option",_) => "Option"
+
+  axiom	transform_typeid("vector",_) => "Array"
+
+  rule	is_unique(id,["list","list_"]) => false
+		-----------------------------------------
+		transform_typeid(id,false) => list_String
+
+  rule	is_unique(id,["list","list_"]) => false
+		---------------------------------------
+		transform_typeid(id,true) => "list"
+
+  axiom transform_typeid(id,_) => id
+
+end
+
+relation transform_literal =
+
+  rule	int_string_char(i) => s
+		----------------------------------------------------------
+		transform_literal(Absyn.RMLLIT_CHAR(i)) => Absyn.STRING(s)
+
+  rule	string_length(s) => l &
+		transform_handle_escape(s,0,l) => ts
+		-------------------------------------------------------------
+		transform_literal(Absyn.RMLLIT_STRING(s)) => Absyn.STRING(ts)
+
+  axiom	transform_literal(Absyn.RMLLIT_INTEGER(i)) => Absyn.INTEGER(i)
+
+  axiom	transform_literal(Absyn.RMLLIT_REAL(r)) => Absyn.REAL(r)
+
+end
+
+
+relation transform_handle_escape =
+
+  rule  External.strrplall(s, "\\", "\\\\") => s &
+		External.strrplall(s,"\"","\\\"") => s &
+		External.strrplall(s, "\n", "\\n") => s &
+		External.strrplall(s, "\t", "\\t") => s &
+		External.strrplall(s, "\b", "\\b") => s 
+		-----------------------------------------
+		transform_handle_escape(s,_,_) => s
+
+(*
+  rule  int_ge(i,l) => true
+		--------------------
+		transform_handle_escape(s,i,l) => ""
+
+  rule	string_nth(s,i) => c1 &
+		char_int(c1) => n &
+		int_eq(n,10) => true & (* if \n  *)
+		int_add(i,1) => ic &
+		transform_handle_escape(s,ic,l) => str &
+		string_append("\\n",str) => tstr
+		--------------------
+		transform_handle_escape(s,i,l) => tstr 
+
+ rule	string_nth(s,i) => c1 &
+		char_int(c1) => n &
+		int_eq(n,9) => true & (* if \t  *)
+		int_add(i,1) => ic &
+		transform_handle_escape(s,ic,l) => str &
+		string_append("\\t",str) => tstr
+		--------------------
+		transform_handle_escape(s,i,l) => tstr
+  
+  rule	string_nth(s,i) => c1 &
+		char_int(c1) => n &
+		int_eq(n,8) => true & (* if \b  *)
+		int_add(i,1) => ic &
+		transform_handle_escape(s,ic,l) => str &
+		string_append("\\b",str) => tstr
+		--------------------
+		transform_handle_escape(s,i,l) => tstr
+
+ rule	string_nth(s,i) => c1 &
+		char_int(c1) => n & 
+		int_eq(n,34) => true & (* if \"  *)
+		int_add(i,1) => ic &
+		transform_handle_escape(s,ic,l) => str &
+		string_append("\"",str) => tstr &
+		string_append("\\",tstr) => tstr'
+		--------------------
+		transform_handle_escape(s,i,l) => tstr'
+
+ rule	string_nth(s,i) => c1 &
+		char_int(c1) => n & 
+		int_eq(n,92) => true & (* if \\  *)
+		int_add(i,1) => ic &
+		transform_handle_escape(s,ic,l) => str &
+		string_append("\\",str) => tstr &
+		string_append("\\",tstr) => tstr'
+		--------------------
+		transform_handle_escape(s,i,l) => tstr'
+ 
+  rule	string_nth_string_char(s,i) => ss &
+		int_add(i,1) => ic &
+		transform_handle_escape(s,ic,l) => str &
+		string_append(ss,str) => tstr
+		--------------------
+		transform_handle_escape(s,i,l) => tstr
+*)	
+	
+end
+
+
+relation transform_expression_list =
+
+  axiom	transform_expression_list([],_) => [] 
+
+  rule  transform_expression(last,pdb) => mlast
+		---------------------------------------
+		transform_expression_list(last :: [],pdb) => 
+		mlast :: []
+
+  rule  transform_expression(first,pdb) => mfirst &
+		transform_expression_list(rest,pdb) => mrest
+		------------------------------
+		transform_expression_list(first :: rest,pdb) => 
+		mfirst :: mrest
+
+end 
+
+
+relation is_constructor =
+
+  rule	Dictionary.search(dict, mid) => SOME(Absyn.RMLDB_CTOR(_,_,_,_))
+		-----------------------------------------------------------------
+		is_constructor(mid,PDB(_, dict)) => true
+
+  axiom is_constructor(mid,PDB(_, dict)) => false
+
+end
+
+relation is_function =
+
+  rule	Dictionary.search(dict, mid) => SOME(Absyn.RMLDB_REL(_,_,_,_)) 
+		-----------------------------------------------------------------
+		is_function(mid,PDB(_, dict)) => true
+
+  rule  
+		---------------------------------------
+        is_function(mid,PDB(_, dict)) => false
+
+end
+
+
+relation is_signature =
+
+	axiom is_signature(Absyn.RMLTYPE_SIGNATURE(_)) => true
+	axiom is_signature(_) => false
+	
+end
+
+relation is_variable =
+
+
+	rule check_pdb(id,[],[],pdb) => (decl,_) &
+		 (*
+		 debug_print("id", id) &		 
+		 debug_print("decl", decl) & 
+		 *)
+		 let VTELEMENT(the_type,mids)::_ = decl &
+		 is_signature(the_type) => true
+	     -------------------------------
+	     is_variable(id, pdb) => false
+
+	rule check_pdb(id,[],[],pdb) => (decl,_) &
+		 let VTELEMENT(the_type,mids)::_ = decl &
+		 is_signature(the_type) => false
+	     -------------------------------
+	     is_variable(id, pdb) => true	     
+	     
+
+end
+
+
+relation is_val =
+
+  rule	Dictionary.search(dict, mid) => SOME(Absyn.RMLDB_VAR(_,_,_,_,_,_))
+		-----------------------------------------------------------------
+		is_val(mid,PDB(_, dict)) => true
+
+  axiom is_val(mid,PDB(_, dict)) => false
+
+end
+
+relation transform_expression =
+ 
+  rule  transform_id(id) => path & 
+        transform_expression_list(args,pdb) => exp_list  
+		--------------------------------------
+		transform_expression(Absyn.RMLCALL(id,args),pdb) => 
+		Absyn.MSTRUCTURAL(SOME(path),exp_list) 
+
+
+  rule	get_rml_id2(id) => mid &
+		is_constructor(mid,pdb) => true 
+		---------------------------
+		transform_expression(Absyn.RML_REFERENCE(id),pdb) => 
+		Absyn.MSTRUCTURAL(SOME(Absyn.IDENT(mid)),[])
+ 		
+  rule	get_rml_id2(id) => mid &
+		is_val(mid, pdb) => true &
+		transform_id_java(id) => id_java &
+		get_rml_id2(id_java) => mid &
+		create_cref(mid) => cref 
+		---------------------------
+		transform_expression(Absyn.RML_REFERENCE(id),pdb) => 
+		Absyn.CREF(cref)
+		
+  rule	get_rml_id2(id) => mid &
+		is_variable(id, pdb) => true &
+		create_cref(mid) => cref 
+		---------------------------
+		transform_expression(Absyn.RML_REFERENCE(id),pdb) => 
+		Absyn.CREF(cref)				
+		
+  rule	get_rml_id2(id) => mid &
+		is_function(mid, pdb) => true &
+		transform_id_java(id) => id_java &
+		get_rml_id2(id_java) => mid &
+		create_cref(mid) => cref 
+		---------------------------
+		transform_expression(Absyn.RML_REFERENCE(id),pdb) => 
+		Absyn.CREF(cref)
+		
+ rule	get_rml_id2(id) => "nil" 
+		---------------------------
+		transform_expression(Absyn.RML_REFERENCE(id),pdb) => 
+		Absyn.MSTRUCTURAL(SOME(Absyn.IDENT("list")),[]) 
+	
+  rule	fixRMLbuiltins(id) => id &
+		get_rml_id2(id) => mid &
+		create_cref(mid) => cref 
+		-------------------------
+		transform_expression(Absyn.RML_REFERENCE(id),_) => 
+		Absyn.CREF(cref) (*fix should be CREF_QUAL*)
+
+  rule	transform_expression_list(exp_list,pdb) => mexp_list
+		-------------------------------------------
+		transform_expression(Absyn.RMLLIST(exp_list),pdb) => 
+		Absyn.MSTRUCTURAL(SOME(Absyn.IDENT("list")),mexp_list)
+
+  rule  transform_expression(left,pdb) => mleft &
+		transform_expression(right,pdb) => mright 
+		(*list_append(mleft,mright) => mexp*)
+		----------------------------
+		transform_expression(Absyn.RMLCONS(left,right),pdb) => 
+		Absyn.MSTRUCTURAL(SOME(Absyn.IDENT("cons")),[mleft,mright])
+
+  rule  transform_expression(left,pdb) => mexp_left &
+		transform_expression(right,pdb) => mexp_right
+		------------------------------------
+		transform_expression(Absyn.BINARY(left,op,right),pdb) => 
+		Absyn.BINARY(mexp_left,op,mexp_right)
+
+  rule	transform_expression(exp,pdb) => mexp
+		---------------------------------
+		transform_expression(Absyn.UNARY(op,exp),pdb) => 
+		Absyn.UNARY(op,mexp)
+
+  rule 	transform_literal(lit) => mexp
+		--------------------------------
+		transform_expression(Absyn.RMLLIT(lit),_) => mexp
+
+  axiom	transform_expression(Absyn.RMLNIL,_) => 
+		Absyn.MSTRUCTURAL(NONE,[])
+
+  rule	transform_expression_list(exp_list,pdb) => mexp_list 
+		----------------------------------------
+		transform_expression(Absyn.TUPLE(exp_list),pdb) =>
+		Absyn.MSTRUCTURAL(NONE,mexp_list)
+
+  rule 	RML.debug_print("Exp?", x) & 
+        print "Expression unknown.."	
+		--------------------------
+		transform_expression(x,_) => x
+	
+end 
+
+
+relation transform_pattern_list =
+
+  rule  transform_pattern(first,pdb) => (mfirst,ifirst) &
+		transform_pattern_list(rest,pdb) => (mrest,irest) &
+		list_append(ifirst,irest) => ids
+		----------------------------
+		transform_pattern_list(first :: rest,pdb) => 
+		(mfirst :: mrest,ids)	     
+
+ axiom	transform_pattern_list([],_) => ([],[])
+
+end
+
+relation transform_rulepattern =
+
+  axiom	transform_rulepattern(Absyn.RMLPAT_STRUCT(NONE,[]),pdb) => 
+        (Absyn.MSTRUCTpat(NONE,[]), []) (* (Absyn.MLITpat(Absyn.BOOL(true)),[]) *)
+
+  rule	transform_pattern(pat,pdb) => (mpat,ids)
+		-------------------------------------------
+		transform_rulepattern(pat,pdb) => (mpat,ids)
+
+end
+
+relation transform_pattern =
+
+  rule  get_rml_id(id,true) => mid &
+		transform_pattern(pat,pdb) => (mpat,ids) 
+		-------------------------------------------------
+		transform_pattern(Absyn.RMLPAT_AS(id,pat),pdb) => 
+		(Absyn.MBINDpat(mid,mpat),id::ids)
+
+  rule  transform_pattern(first,pdb) => (mfirst,ids1) & 
+		transform_pattern(rest,pdb) => (mrest,ids2) &
+		list_append(ids1,ids2) => ids
+		------------------------------
+		transform_pattern(Absyn.RMLPAT_CONS(first,rest),pdb) => 
+		(Absyn.MSTRUCTpat(SOME(Absyn.IDENT("cons")),[mfirst,mrest]), ids)
+
+  rule	transform_pattern_list(list,pdb) => (mpat_list,ids) 
+ 		------------------------------
+		transform_pattern(Absyn.RMLPAT_LIST(list),pdb) => 
+		(Absyn.MSTRUCTpat(SOME(Absyn.IDENT("list")),mpat_list),ids) 
+
+  rule	transform_pattern_list(list,pdb) => (mpat_list,ids)
+ 		------------------------------
+		transform_pattern(Absyn.RMLPAT_STRUCT(NONE,list),pdb) => 
+		(Absyn.MSTRUCTpat(NONE,mpat_list),ids) 
+
+  axiom	transform_pattern(Absyn.RMLPAT_NIL,_) => 
+		(Absyn.MSTRUCTpat(NONE,[]),[])
+
+  rule  transform_id(id) => mid &
+		transform_pattern_list(patlist,pdb) => (mpat_list,ids)
+		-----------------------------
+		transform_pattern(Absyn.RMLPAT_STRUCT(SOME(id),patlist),pdb) => 
+		(Absyn.MSTRUCTpat(SOME(mid),mpat_list),ids)
+
+  rule	get_rml_id2(id) => mid &
+		transform_id(id) => mid' &
+		is_constructor(mid,pdb) => true 
+		-------------------------------
+		transform_pattern(Absyn.RMLPAT_IDENT(id),pdb) => 
+		(Absyn.MSTRUCTpat(SOME(mid'),[]),[]) 
+
+  rule	get_rml_id2(id) => mid &
+		is_val(mid,pdb) => true &
+		transform_id_java(id) => mid &
+		get_rml_id2(mid) => mid'
+		---------------------------------
+		transform_pattern(Absyn.RMLPAT_IDENT(id),pdb) => 
+		(Absyn.MIDENTpat(mid',Absyn.MSTRUCTpat(NONE,[])),[id]) 
+		
+  rule	get_rml_id2(id) => "nil"
+		-----------------------
+		transform_pattern(Absyn.RMLPAT_IDENT(id),_) => 
+       	(Absyn.MSTRUCTpat(SOME(Absyn.IDENT("list")),[]),[]) 
+  
+  rule	get_rml_id2(id) => mid 
+		-----------------------------------------------------
+		transform_pattern(Absyn.RMLPAT_IDENT(id),_) => 
+		(Absyn.MIDENTpat(mid,Absyn.MSTRUCTpat(NONE,[])),[id]) 
+
+  axiom	transform_pattern(Absyn.RMLPAT_WILDCARD,_) => 
+        (Absyn.MWILDpat,[])
+
+  rule  transform_literal(lit) => mexp
+ 		------------------------------
+		transform_pattern(Absyn.RMLPAT_LITERAL(lit),_) => 
+		(Absyn.MLITpat(mexp),[])
+
+end 
+
+
+relation transform_goals =
+
+  rule  transform_goal(leftgoal,pdb) => (eqleft,ids1,com) &
+		transform_comment(com,false) => mcom &
+		create_standard_equationitem(eqleft,mcom) => eqitem_left &
+		transform_goals(rightgoal,res,pdb) => (restei,ids2,specres,com') &
+		list_append(ids1,ids2) => ids
+		------------------
+		transform_goals(Absyn.RMLGOAL_AND(leftgoal,rightgoal),res,pdb) => 
+		(eqitem_left :: restei,ids,specres,com')	
+
+  rule	transform_goal(goal,pdb) => (equ,ids,com1) &
+		let Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_IDENT(mid,_)),resexp) = equ &
+		get_rml_id(id,true) => mid2 &
+		External.strcmp(mid,mid2) => 0 &
+		list_append(com1,com2) => com
+		-----------------------------
+		transform_goals(goal,Absyn.RMLResultExp(Absyn.RML_REFERENCE(id)::[],com2),pdb) =>
+		([],[],SOME(resexp),com)
+	
+  rule	transform_goal(goal,pdb) => (equation,ids,com) &
+		transform_comment(com,false) => mcom &
+		create_standard_equationitem(equation,mcom) => eqitem
+		-----------------------
+		transform_goals(goal,res,pdb) =>
+		([eqitem],ids,NONE,[])
+
+end
+
+relation transform_goal =
+
+  rule	transform_goal(goal,pdb) => (equation,ids,com)
+		------------------
+		transform_goal(Absyn.RMLGOAL_NOT(goal),pdb) => 
+		(Absyn.EQ_FAILURE([equation]),ids,com)
+
+  rule	transform_pattern(pat,pdb) => (mpat,ids) &
+		transform_expression(exp,pdb) => mexp 
+		------------------------
+		transform_goal(Absyn.RMLGOAL_LET(pat,exp,com),pdb) => 
+		(Absyn.EQ_LET(mpat,mexp),ids,com)
+
+  rule	get_rml_id(id,true) => mid &
+		transform_expression(rightexp,pdb) => rmexp 
+		-----------------------------------------
+		transform_goal(Absyn.RMLGOAL_EQUAL(id,rightexp,com),pdb) =>
+		(Absyn.EQ_STRUCTEQUAL(mid,rmexp),[],com)
+
+  rule	transform_id_java(id) => id &
+		get_rml_id2(id) => mid &
+		transform_expression_list(args,pdb) => margs &
+		create_functionargs(margs,[]) => fargs 
+		------------------------
+		transform_goal(Absyn.RMLGOAL_RELATION(id,args,NONE,com),pdb) => 
+		(Absyn.EQ_NORETCALL(mid,fargs),[],com)
+
+  rule	transform_id_java(id) => id &
+		get_rml_id2(id) => mid &
+		transform_expression_list(args,pdb) => margs &
+		create_functionargs(margs,[]) => fargs 
+		------------------------
+		transform_goal(Absyn.RMLGOAL_RELATION(id,args,SOME(Absyn.RMLPAT_STRUCT(NONE,[])),com),pdb) => 
+		(Absyn.EQ_NORETCALL(mid,fargs),[],com)
+
+  rule	transform_pattern(pat,pdb) => (mpat,ids) &
+		transform_special_relation(id,args,mpat,pdb) => equation 
+		------------------------------------------------
+		transform_goal(Absyn.RMLGOAL_RELATION(id,args,SOME(pat),com),pdb) => 
+		(equation,ids,com)
+
+  rule	transform_id(id) => path &
+		transform_path_java(path) => java_path &
+		transform_expression_list(args,pdb) => margs &
+		create_functionargs(margs,[]) => fargs &
+		transform_pattern(pat,pdb) => (mpat,ids) 
+		----------------------------------------
+		transform_goal(Absyn.RMLGOAL_RELATION(id,args,SOME(pat),com),pdb) => 
+		(Absyn.EQ_CALL(java_path,fargs,mpat),ids,com)
+		
+end
+
+
+relation transform_special_relation =
+
+  rule	get_rml_id(id,true) => rid &
+		get_binop(rid) => binop & (* also tests if rid is an binop *)
+		transform_expression(left,pdb) => mleft &
+		transform_expression(right,pdb) => mright &
+		create_exp_cref(mid,[]) => cref
+		-----------------------------------------
+		transform_special_relation(id,left::right::[],Absyn.MIDENTpat(mid,_),pdb) =>
+		Absyn.EQ_EQUALS(cref,Absyn.BINARY(mleft,binop,mright))
+
+  rule	get_rml_id(id,true) => rid &
+		get_relop(rid) => relop & (*also tests if rid is an relnop *)
+		get_bool(mid) => b & (* is compared with "true"|"false" *)
+		transform_expression(left,pdb) => mleft &
+		transform_expression(right,pdb) => mright 
+		-----------------------------------------
+		transform_special_relation(id,left::right::[],Absyn.MIDENTpat(mid,_),pdb) =>
+		Absyn.EQ_EQUALS(Absyn.LBINARY(mleft,relop,mright),b)
+	
+  rule	get_rml_id(id,true) => rid &
+		get_relop(rid) => relop & (*also tests if rid is an relnop*) (*is an assignment of bool variable*)
+ 		transform_expression(left,pdb) => mleft & 
+		transform_expression(right,pdb) => mright & (*RELATION* instead of LBINARY*)
+		create_exp_cref(mid,[]) => cref
+		-----------------------------------------
+		transform_special_relation(id,left::right::[],Absyn.MIDENTpat(mid,_),pdb) =>
+		Absyn.EQ_EQUALS(cref,Absyn.LBINARY(mleft,relop,mright))
+
+  rule	get_rml_id(id,true) => rid &
+		get_unop(rid) => unop & (*also tests if exp rid an unop*)
+		transform_expression(exp,pdb) => mexp &
+		create_exp_cref(mid,[]) => cref
+		-----------------------------------------
+		transform_special_relation(id,exp::[],Absyn.MIDENTpat(mid,_),pdb) =>
+		Absyn.EQ_EQUALS(cref,Absyn.UNARY(unop,mexp))
+
+  rule	get_rml_id(id,true) => rid &
+		transform_array_vector(rid,args,pat,pdb) => eq 
+		---------------------------------------------------------------------------
+		transform_special_relation(id,args,pat as Absyn.MIDENTpat(mid,_),pdb) => eq
+
+  rule	get_rml_id(id,true) => rid &
+		transform_char_to_stringChar(rid,args,pat,pdb) => eq &
+		---------------------------------------------------------------------------
+		transform_special_relation(id,args,pat,pdb) => eq
+
+end
+
+
+(*simplify!*)
+relation transform_array_vector =
+
+
+  rule	is_unique(va_nth,["array_nth","vector_nth"]) => false &
+		transform_expression(exp,pdb) => mexp &
+		get_rml_id(va_id,true) => va_id' &
+		create_exp_cref(mid,[]) => cref
+		----------------------------
+		transform_array_vector(va_nth,Absyn.RML_REFERENCE(va_id)::exp::[],
+					Absyn.MIDENTpat(mid,_),pdb) =>
+		Absyn.EQ_EQUALS(cref,
+				Absyn.CREF(Absyn.CREF_IDENT(va_id',
+								[Absyn.SUBSCRIPT(Absyn.BINARY(mexp,
+											Absyn.ADD,
+											Absyn.INTEGER(1)))])))
+
+  rule	transform_expression(exp,pdb) => mexp &
+		get_rml_id(vec_id,true) => vec_id' &
+		create_exp_cref(mid,[]) => cref
+		----------------------------
+		transform_array_vector("array_get",Absyn.RML_REFERENCE(vec_id)::exp::[],
+					Absyn.MIDENTpat(mid,_),pdb) =>
+		Absyn.EQ_EQUALS(cref,
+				Absyn.CREF(Absyn.CREF_IDENT(vec_id',
+								[Absyn.SUBSCRIPT(mexp)])))
+
+  rule	transform_expression(exp,pdb) => mexp &
+		get_rml_id(vec_id,true) => vec_id' &
+		create_exp_cref(mid,[]) => cref
+		----------------------------
+		transform_array_vector("vector_get",Absyn.RML_REFERENCE(vec_id)::exp::[],
+					Absyn.MIDENTpat(mid,_),pdb) =>
+		Absyn.EQ_EQUALS(cref,
+				Absyn.CREF(Absyn.CREF_IDENT(vec_id',
+								[Absyn.SUBSCRIPT(mexp)])))
+
+
+  rule	transform_expression(exp,pdb) => mexp &
+		transform_expression(el,pdb) => mel &
+		get_rml_id(vec_id,true) => vec_id' &
+		create_functionargs([Absyn.CREF(Absyn.CREF_IDENT(vec_id',[])),
+					Absyn.BINARY(mexp,
+						Absyn.ADD,
+						Absyn.INTEGER(1)),
+					mel],[]) => fargs 
+		----------------------------
+		transform_array_vector("array_setnth",Absyn.RML_REFERENCE(vec_id)::exp::el::[],mpat,pdb) =>
+		Absyn.EQ_CALL(Absyn.IDENT("arrayUpdate"),fargs ,mpat)
+	
+ rule	transform_expression(exp,pdb) => mexp &
+		transform_expression(el,pdb) => mel &
+		get_rml_id(vec_id,true) => vec_id' &
+		create_functionargs([Absyn.CREF(Absyn.CREF_IDENT(vec_id',[]))],[]) => cpargs &
+		create_functionargs([Absyn.CALL(Absyn.CREF_IDENT("array_copy",[]),
+						cpargs),
+					Absyn.BINARY(mexp,
+						Absyn.ADD,
+						Absyn.INTEGER(1)),
+					mel],[]) => fargs 
+		----------------------------
+		transform_array_vector("vector_setnth",Absyn.RML_REFERENCE(vec_id)::exp::el::[],mpat,pdb) =>
+		Absyn.EQ_CALL(Absyn.IDENT("arrayUpdate"),fargs ,mpat)
+
+ rule	transform_expression(exp,pdb) => mexp &
+		transform_expression(el,pdb) => mel &
+		get_rml_id(vec_id,true) => vec_id' &
+		create_functionargs([Absyn.CREF(Absyn.CREF_IDENT(vec_id',[]))],[]) => cpargs &
+		create_functionargs([Absyn.CALL(Absyn.CREF_IDENT("array_copy",[]),
+						cpargs),
+					mexp,
+					mel],[]) => fargs 
+		----------------------------
+		transform_array_vector("vector_update",Absyn.RML_REFERENCE(vec_id)::exp::el::[],mpat,pdb) =>
+		Absyn.EQ_CALL(Absyn.IDENT("arrayUpdate"),fargs ,mpat)
+
+  rule	transform_expression(exp,pdb) => mexp &
+		create_functionargs([mexp],[]) => fargs 
+		-------------------------------------------------------------
+		transform_array_vector("array_vector",exp::[],mpat,pdb) =>
+		Absyn.EQ_CALL(Absyn.IDENT("array_copy"), fargs, mpat)
+
+  rule	transform_expression(exp,pdb) => mexp &
+		create_functionargs([mexp],[]) => fargs 
+		-------------------------------------------------------------
+		transform_array_vector("vector_array",exp::[],mpat,pdb) =>
+		Absyn.EQ_CALL(Absyn.IDENT("array_copy"), fargs, mpat)
+
+  rule	is_unique(va_cr,["vector_create","array_create"]) => false &
+		transform_expression(exp,pdb) => mexp &
+		transform_expression(el,pdb) => mel &
+		create_functionargs([mel,mexp],[]) => fargs 
+		-------------------------------------------------------------
+		transform_array_vector(va_cr,exp::el::[],mpat,pdb) =>
+		Absyn.EQ_CALL(Absyn.IDENT("fill"),fargs ,mpat)
+
+  (* list_vector(var) *)
+  rule	get_rml_id(list_id,true) => list_id' &
+		create_functionargs([Absyn.CREF(Absyn.CREF_IDENT(list_id',[]))],[]) => fargs 
+		----------------------------------------------------------------------------
+		transform_array_vector("list_vector",Absyn.RML_REFERENCE(list_id)::exp::el::[],mpat,pdb) =>
+		Absyn.EQ_CALL(Absyn.IDENT("list_array"),fargs ,mpat)
+
+  (* list_vector([actual list]) *)
+  rule	transform_expression(exp,pdb) => mexp &
+		create_functionargs([mexp],[]) => fargs 
+		----------------------------
+		transform_array_vector("list_vector",exp::[],mpat,pdb) =>
+		Absyn.EQ_CALL(Absyn.IDENT("list_array"),fargs ,mpat)
+
+  rule	get_rml_id(vec_id,true) => vec_id' &
+		create_functionargs([Absyn.CREF(Absyn.CREF_IDENT(vec_id',[]))],[]) => fargs 
+		----------------------------
+		transform_array_vector("vector_list",Absyn.RML_REFERENCE(vec_id)::[],mpat,pdb) =>
+		Absyn.EQ_CALL(Absyn.IDENT("list_array"),fargs ,mpat)
+
+  rule	get_rml_id(vec_id,true) => vec_id' &
+		create_functionargs([Absyn.CREF(Absyn.CREF_IDENT(vec_id',[]))],[]) => fargs 
+		----------------------------
+		transform_array_vector("vector_length",Absyn.RML_REFERENCE(vec_id)::[],mpat,pdb) =>
+		Absyn.EQ_CALL(Absyn.IDENT("array_length"),fargs ,mpat)
+
+end
+
+(* in MetaModelica there is no char type, chage that to string_char (which are strings of size 1) *)
+relation transform_char_to_stringChar =
+
+  rule	transform_expression(exp,pdb) => mexp &
+		transform_expression(el,pdb) => mel &
+		get_rml_id(str_id,true) => str_id' &
+		create_functionargs([Absyn.CREF(Absyn.CREF_IDENT(str_id',[])),
+					Absyn.BINARY(mexp,
+						Absyn.ADD,
+						Absyn.INTEGER(1)),
+					mel],[]) => fargs 
+		----------------------------
+		transform_char_to_stringChar("string_setnth",Absyn.RML_REFERENCE(str_id)::exp::el::[],mpat,pdb) =>
+		Absyn.EQ_CALL(Absyn.IDENT("string_update_string_char"),fargs ,mpat)
+
+  rule	transform_expression(exp,pdb) => mexp &
+		transform_expression(el,pdb) => mel &
+		get_rml_id(str_id,true) => str_id' &
+		create_functionargs([Absyn.CREF(Absyn.CREF_IDENT(str_id',[])),mel,mexp],[]) => fargs 
+		----------------------------
+		transform_char_to_stringChar("string_setnth",Absyn.RML_REFERENCE(str_id)::exp::el::[],mpat,pdb) =>
+		Absyn.EQ_CALL(Absyn.IDENT("string_update_string_char"),fargs ,mpat)
+
+  (* listString(var) *)
+  rule	get_rml_id(lst_id,true) => lst_id' &
+		create_functionargs([Absyn.CREF(Absyn.CREF_IDENT(lst_id',[]))],[]) => fargs 
+		----------------------------
+		transform_char_to_stringChar("listString",Absyn.RML_REFERENCE(lst_id)::[],mpat,pdb) =>
+		Absyn.EQ_CALL(Absyn.IDENT("stringCharListString"),fargs ,mpat)
+
+  (* list_string([list]) *)
+  rule	transform_expression(exp,pdb) => mexp &	
+		create_functionargs([mexp],[]) => fargs 
+		----------------------------
+		transform_char_to_stringChar("listString",exp::[],mpat,pdb) =>
+		Absyn.EQ_CALL(Absyn.IDENT("stringCharListString"),fargs ,mpat)
+
+  (* list_string(var) *)
+  rule	get_rml_id(lst_id,true) => lst_id' &
+		create_functionargs([Absyn.CREF(Absyn.CREF_IDENT(lst_id',[]))],[]) => fargs 
+		----------------------------
+		transform_char_to_stringChar("list_string",Absyn.RML_REFERENCE(lst_id)::[],mpat,pdb) =>
+		Absyn.EQ_CALL(Absyn.IDENT("string_char_list_string"),fargs ,mpat)
+
+  (* list_string([list]) *)
+  rule	transform_expression(exp,pdb) => mexp &	
+		create_functionargs([mexp],[]) => fargs 
+		----------------------------
+		transform_char_to_stringChar("list_string",exp::[],mpat,pdb) =>
+		Absyn.EQ_CALL(Absyn.IDENT("string_char_list_string"),fargs ,mpat)
+
+  rule	get_rml_id(str_id,true) => str_id' &
+		create_functionargs([Absyn.CREF(Absyn.CREF_IDENT(str_id',[]))],[]) => fargs 
+		----------------------------
+		transform_char_to_stringChar("stringList",Absyn.RML_REFERENCE(str_id)::[],mpat,pdb) =>
+		Absyn.EQ_CALL(Absyn.IDENT("stringListStringChar"),fargs ,mpat)
+
+  rule	get_rml_id(str_id,true) => str_id' &
+		create_functionargs([Absyn.CREF(Absyn.CREF_IDENT(str_id',[]))],[]) => fargs 
+		----------------------------
+		transform_char_to_stringChar("string_list",Absyn.RML_REFERENCE(str_id)::[],mpat,pdb) =>
+		Absyn.EQ_CALL(Absyn.IDENT("string_list_string_char"),fargs ,mpat)
+
+  (* int_char(var) -> int_string_char(var) *)
+  rule	get_rml_id(int_id,true) => int_id' &
+		create_functionargs([Absyn.CREF(Absyn.CREF_IDENT(int_id',[]))],[]) => fargs 
+		-------------------------------------------
+		transform_char_to_stringChar("int_char",Absyn.RML_REFERENCE(int_id)::[],mpat,pdb) =>
+		Absyn.EQ_CALL(Absyn.IDENT("int_string_char"),fargs ,mpat)
+
+  (* int_char(integer) -> int_string_char(integer) *)
+  rule	transform_expression(exp,pdb) => mexp &	
+		create_functionargs([mexp],[]) => fargs
+		-------------------------------------------
+		transform_char_to_stringChar("int_char",exp::[],mpat,pdb) =>
+		Absyn.EQ_CALL(Absyn.IDENT("int_string_char"),fargs ,mpat)
+
+  (* char_int(var) -> string_char_int(var) *)
+  rule	get_rml_id(int_id,true) => int_id' &
+		create_functionargs([Absyn.CREF(Absyn.CREF_IDENT(int_id',[]))],[]) => fargs 
+		-------------------------------------------
+		transform_char_to_stringChar("char_int",Absyn.RML_REFERENCE(int_id)::[],mpat,pdb) =>
+		Absyn.EQ_CALL(Absyn.IDENT("string_char_int"),fargs ,mpat)
+
+  (* int_char(integer) -> int_string_char(integer) *)
+  rule	transform_expression(exp,pdb) => mexp &	
+		create_functionargs([mexp],[]) => fargs 
+		-------------------------------------------
+		transform_char_to_stringChar("char_int",exp::[],mpat,pdb) =>
+		Absyn.EQ_CALL(Absyn.IDENT("string_char_int"),fargs ,mpat)
+
+end
+
+
+relation transform_result =
+
+  axiom	transform_result(res,SOME(specres),_,_) => (specres,[])
+
+  axiom	transform_result(Absyn.RMLResultFail(comments),_,_,_) => 
+        (Absyn.MSTRUCTURAL(SOME(Absyn.IDENT("fail")),[]),comments)
+
+  axiom	transform_result(Absyn.RMLNoResult(comments),_,_,false) => 
+		(Absyn.MSTRUCTURAL(NONE,[]),comments)
+
+  axiom	transform_result(Absyn.RMLNoResult(comments),_,_,true) => 
+        (Absyn.BOOL(true),comments)
+
+  axiom	transform_result(Absyn.RMLResultExp([],comments),_,_,false) => 
+		(Absyn.MSTRUCTURAL(NONE,[]),comments)
+
+  axiom	transform_result(Absyn.RMLResultExp([],comments),_,_,true) => 
+        (Absyn.BOOL(true),comments) 
+
+  rule	transform_expression(last,pdb) => exp
+		---------------------------------
+		transform_result(Absyn.RMLResultExp((last as Absyn.TUPLE(exp_list))::[],comments),_,pdb,_) =>
+		(Absyn.TUPLE(exp::[]),comments)
+
+  rule	transform_expression(last,pdb) => exp
+		---------------------------------
+		transform_result(Absyn.RMLResultExp(last::[],comments),_,pdb,_) =>
+		(exp,comments)
+
+  rule	transform_expression_list(list,pdb) => exp_list
+		----------------------
+		transform_result(Absyn.RMLResultExp(list,comments),_,pdb,_) => 
+			(Absyn.TUPLE(exp_list),comments)
+
+end
+
+
+relation transform_rule =
+  rule	transform_goals(goal,result,pdb) => (equation_item_list,rml_idents1,specres,speccom) &
+	(*	RML.debug_print("rml_idents goals", rml_idents1) & print "  \n" &*)
+      		transform_rulepattern(pattern,pdb) => (mpattern,rml_idents2) &
+	(*	RML.debug_print("rml_idents pattern", rml_idents2) & print "  \n\n" &*)
+		get_dummyoption(troptions) => b_dummy &
+			transform_result(result,specres,pdb,b_dummy) => (cresult,rcom) &
+		list_append(rml_idents1,rml_idents2) => rml_idents & 
+		update_decl_db(rml_idents,decl_db,[],pdb) => (decl_db',ldecl_db) &
+		create_local_decl(ldecl_db,alttypes_db) => local_decl &
+		list_append(comment,rcom) => comment' &
+		list_append(comment',speccom) => comment'' &
+		transform_comment(comment'',false) => mcomment &
+		transform_comment(cend, false) => mendcomment
+      	-------------------------------------------
+		transform_rule(Absyn.RMLRULE(id,pattern,SOME(goal),result,comment,cend),decl_db,pdb,alttypes_db,troptions) => 
+			(Absyn.CASE([mpattern],local_decl,Absyn.EQUATIONS(equation_item_list),cresult,mcomment,mendcomment),
+		 decl_db')
+  
+	
+  rule	transform_rulepattern(pattern,pdb) => (mpattern,rml_idents) &
+	(*	RML.debug_print("rml_idents pattern", rml_idents) & print "  \n" &*)
+		get_dummyoption(troptions) => b_dummy &
+		transform_result(result,NONE,pdb,b_dummy) => (cresult,rcom) &
+		update_decl_db(rml_idents,decl_db,[],pdb) => (decl_db',ldecl_db) &
+		create_local_decl(ldecl_db,alttypes_db) => local_decl &
+		list_append(comment,rcom) => comment' &
+		transform_comment(comment',false) => mcomment &
+		transform_comment(cend, false) => mendcomment
+		------------------------------------------
+		transform_rule(Absyn.RMLRULE(id,pattern,NONE,result,comment,cend),decl_db,pdb,alttypes_db,troptions) => 
+			(Absyn.CASE([mpattern],local_decl,Absyn.EQUATIONS([]),cresult,mcomment,mendcomment),
+		decl_db')
+
+end
+
+
+relation transform_rule_list =
+  axiom	transform_rule_list([],decl_db,_,_,_) => ([],decl_db)
+
+  rule  transform_rule(first,decl_db,pdb,alttypes_db,troptions) => (firstc,decl_db') &
+		transform_rule_list(rest,decl_db',pdb,alttypes_db,troptions) => (restc,decl_db'') 
+		-----------------------------------------------------------------------
+		transform_rule_list(first :: rest,decl_db,pdb,alttypes_db,troptions) => 
+		(firstc :: restc,decl_db'')
+end
+
+(*
+relation transform_type_tuple =
+  
+  axiom transform_type_tuple(name,i,[],d,_,a) => []
+*)
+(*  rule	int_add(i,1) => ic &
+			int_string(ic) => istr &
+			string_append(name,istr) => cname &
+			transform_comment(com,false) => com' &
+			transform_type([cname],last,com',dir,alttypes_db) => lastei
+			-------------------------------
+			transform_type_tuple(name,i,last :: [],dir,com::rcom,alttypes_db) => 
+			lastei :: [] *)
+(*
+  rule  int_add(i,1) => ic &
+        int_string(ic) => istr &
+		string_append(name,istr) => cname &
+		transform_comment(com,false) => com' &
+		transform_type([cname],first,com',dir,alttypes_db,false) => firstei &
+		transform_type_tuple(name,ic,rest,dir,rcom,alttypes_db) => restei
+		-------------------------------
+		transform_type_tuple(name,i,first :: rest,dir,com::rcom,alttypes_db) => 
+		firstei :: restei
+
+  rule  int_add(i,1) => ic &
+        int_string(ic) => istr &
+		string_append(name,istr) => cname &
+		transform_type([cname],first,NONE,dir,alttypes_db,false) => firstei &
+		transform_type_tuple(name,ic,rest,dir,com,alttypes_db) => restei
+		-------------------------------
+		transform_type_tuple(name,i,first :: rest,dir,com,alttypes_db) => 
+		firstei :: restei
+
+end
+*)
+
+(* adrpo added *)
+relation check_lst_members =
+
+   axiom check_lst_members([], _) => false
+
+   rule list_member(start, lst_chars) => bvalue1 &
+        check_lst_members(rest, lst_chars) => bvalue2 &
+        bool_or(bvalue1, bvalue2) => bresult
+        ------------------------------------------------------------
+        check_lst_members(start::rest, lst_chars) => bresult
+end
+
+
+relation literal_keywords =
+  axiom literal_keywords("false") => "false_"
+  axiom literal_keywords("true") => "true_"
+  axiom literal_keywords(x) => x
+end
+
+relation get_commentname : (string,string list,string,int) => string =
+
+  (* adrpo added *)
+  rule	External.trim(com) => str &
+        string_length(str) => slen &
+        int_gt(slen, 0) => false &
+		External.toJavaName(other) => id1 &
+		literal_keywords(id1) => id2 &
+		escape_modkeywords(id2) => id3 
+		-------------------------------------------
+		get_commentname(_,com::_,other,i) => id3
+
+  rule	External.trim(com) => str &
+        string_length(str) => slen &
+        int_gt(slen, 0) => true &
+		External.getFirstIdent(str) => id1 &
+		External.toJavaName(id1) => id2 &
+		literal_keywords(id2) => id3 &
+		escape_modkeywords(id3) => id4 
+		-------------------------------
+		get_commentname(_,com::_,other,i) => id4
+
+  (*
+  rule	int_ge(i,15) => true 
+        ------------------------------------------------
+		get_commentname(newname,com::[],other,i) => other
+
+
+  (* adrpo addded, check if there are special chars in the comment *)
+  rule  External.getFirstIdent(com) => com &
+        string_list(com) => lst_chars &
+        check_lst_members([#".", #"-", #"/"], lst_chars) => true           
+		--------------------------------------------------
+		get_commentname(_,com::[],other,_) => other
+
+  rule	string_length(com) => l &
+		int_ge(i,l) => true &
+		to_lowercase(0,newname) => newname'
+		----------------------------------------------------
+		get_commentname(newname,com::[],other,i) => newname'
+
+  rule	string_length(com) => l &
+		int_add(i,1) => i' &
+		int_ge(i',l) => true &
+		string_nth_string_char(com,i) => " " &
+		to_lowercase(0,newname) => newname' 
+		------------------------
+		get_commentname(newname,com::[],other,i) => newname'
+
+
+  rule	string_nth_string_char(com,0) => " " &
+		get_commentname("",com::[],other,1) => newname' 
+		--------------------------------------------------
+		get_commentname(newname,com::[],other,0) => newname'
+	
+  rule	string_nth_string_char(com,i) => " " 
+		--------------------------------------------------
+		get_commentname(newname,com::[],other,i) => other
+
+  rule	string_nth_string_char(com,i) => ss &
+		int_add(i,1) => ic &
+		string_append(newname,ss) => newname' &
+		get_commentname(newname',com::[],other,ic) => newname''
+		--------------------------------------------------
+		get_commentname(newname,com::[],other,i) => newname''
+*)
+  rule  External.toJavaName(other) => id1 &
+		literal_keywords(id1) => id2 &
+		escape_modkeywords(id2) => id3 
+        -----------------------------------
+        get_commentname(_,_,other,_) => id3
+
+end
+
+relation transform_tupletype : (int,string list,string list,string list list, Absyn.Direction,bool) =>
+	(Absyn.ElementItem list, string list)=
+
+  axiom	transform_tupletype(i,[],[],_,_,_) => ([],[])
+	
+  rule	int_add(i,1) => ic &
+        int_string(ic) => istr &
+		getiffalse(istr,b_unique) => istr' &
+        string_append(cname,istr') => cname' &
+		transform_comment(fcom,false) => fcom' &
+		create_components([cname'],spec_id,dir,fcom') => components &
+		create_standard_elementitem(components) => firstei &	
+		transform_tupletype(ic,rest_names,rest_spec_id,rcom,dir,b_unique) => (restei,restnames)	
+		---------------------------------------------------------------------------
+		transform_tupletype(i,cname::rest_names,spec_id::rest_spec_id,fcom::rcom,dir,b_unique) => 
+		(firstei::restei,cname'::restnames)
+
+  rule	int_add(i,1) => ic &
+        int_string(ic) => istr &
+		getiffalse(istr,b_unique) => istr' &
+        string_append(cname,istr') => cname' &
+		create_components([cname'],spec_id,dir,NONE) => components &
+		create_standard_elementitem(components) => firstei &	
+		transform_tupletype(ic,rest_names,rest_spec_id,com,dir,b_unique) => (restei,restnames)	
+		---------------------------------------------------------------------------
+		transform_tupletype(i,cname::rest_names,spec_id::rest_spec_id,com,dir,b_unique) => 
+		(firstei::restei,cname'::restnames)
+end
+
+relation print_first=
+
+rule print x
+     -----------------
+     print_first(x::_) 
+
+rule print "_EMPTY_"
+     -----------------
+     print_first([]) 
+
+rule print "_WIERD_"
+     -----------------
+     print_first([]) 
+
+end
+
+relation get_tupletypeids =
+  
+  axiom	get_tupletypeids(name,i,[],_,_,_) => ([],[])
+	
+  rule	get_rml_id2(id) => mid &
+		transform_typeid(mid,false) => spec_id &  
+		get_rml_id(id,false) => mid' &
+		transform_typeid(mid',false) => spec_id' &  
+		int_add(i,1) => ic &
+       	string_append(name,spec_id') => cname &
+		get_commentname("",fcom,cname,0) => cname'' &
+		(*
+		print "C[" & print_first(fcom) & print "] & N[" & print cname & print "] --> " &
+		print cname'' & print "\n" &
+		to_lowercase(0,cname') => cname'' &
+		*)
+        get_tupletypeids(name,ic,rest_types,rcom,alttypes_db,b_ei) => (restei,nrest)	
+		---------------------------------------------------------------------------
+		get_tupletypeids(name,i,Absyn.RMLTYPE_USERDEFINED(id)::rest_types,fcom::rcom,alttypes_db,b_ei) => 
+		(spec_id::restei,cname''::nrest)
+
+  rule	get_specialtype_id(first_type,"",alttypes_db,b_ei) => (spec_id,_) &
+		int_add(i,1) => ic &
+        string_append(name,spec_id) => cname &
+		get_commentname("",fcom,cname,0) => cname'' &
+		(*
+		print "C[" & print_first(fcom) & print "] & N[" & print cname & print "] --> " &
+		print cname'' & print "\n" &
+		to_lowercase(0,cname') => cname'' &
+		*)
+       	get_tupletypeids(name,ic,rest_types,rcom,alttypes_db,b_ei) => (restei,nrest)	
+		---------------------------------------------------------------------------
+		get_tupletypeids(name,i,first_type::rest_types,fcom::rcom,alttypes_db,b_ei) => 
+		(spec_id::restei,cname''::nrest)
+
+ rule	get_rml_id2(id) => mid &
+		transform_typeid(mid,false) => spec_id &  
+		get_rml_id(id,false) => mid' &
+		transform_typeid(mid',false) => spec_id' &  
+		int_add(i,1) => ic &
+       	string_append(name,spec_id') => cname &
+		to_lowercase(0,cname) => cname' &
+        get_tupletypeids(name,ic,rest_types,com,alttypes_db,b_ei) => (restei,nrest)	
+		---------------------------------------------------------------------------
+		get_tupletypeids(name,i,Absyn.RMLTYPE_USERDEFINED(id)::rest_types,com,alttypes_db,b_ei) => 
+		(spec_id::restei,cname'::nrest)
+
+  rule	get_specialtype_id(first_type,"",alttypes_db,b_ei) => (spec_id,_) &
+		int_add(i,1) => ic &
+        string_append(name,spec_id) => cname &
+		to_lowercase(0,cname) => cname' &
+       	get_tupletypeids(name,ic,rest_types,com,alttypes_db,b_ei) => (restei,nrest)	
+		---------------------------------------------------------------------------
+		get_tupletypeids(name,i,first_type::rest_types,com,alttypes_db,b_ei) => 
+		(spec_id::restei,cname'::nrest)
+
+end
+
+
+relation transform_iotype =
+
+  axiom	transform_iotype(i,[],[],_,_) => ([],[])
+	
+  rule	int_add(i,1) => ic &
+        int_string(ic) => istr &
+		getiffalse(istr,b_unique) => istr' &
+        string_append(cname,istr') => cname' &
+		create_components([cname'],spec_id,dir,NONE) => components &
+		create_standard_elementitem(components) => firstei &	
+		transform_iotype(ic,rest_names,rest_spec_id,dir,b_unique) => (restei,restnames)	
+		---------------------------------------------------------------------------
+		transform_iotype(i,cname::rest_names,spec_id::rest_spec_id,dir,b_unique) => 
+		(firstei::restei,cname'::restnames)
+end
+
+
+
+relation get_iotypeids =
+
+  axiom	get_iotypeids("out",0,[],_,_) =>
+	(["Boolean"],["dummy"])
+  
+  axiom	get_iotypeids(name,i,[],_,_) => ([],[])
+	
+  rule	get_rml_id2(id) => mid &
+		transform_typeid(mid,false) => spec_id &  
+		get_rml_id(id,false) => mid' &
+		transform_typeid(mid',false) => spec_id' &  
+		int_add(i,1) => ic &
+       	string_append(name,spec_id') => cname &
+		to_lowercase(0,cname) => cname' &
+        get_iotypeids(name,ic,rest_types,alttypes_db,b_ei) => (restei,nrest)	
+		---------------------------------------------------------------------------
+		get_iotypeids(name,i,Absyn.RMLTYPE_USERDEFINED(id)::rest_types,alttypes_db,b_ei) => 
+		(spec_id::restei,cname'::nrest)
+
+  rule	get_specialtype_id(first_type,"",alttypes_db,b_ei) => (spec_id,_) &
+		int_add(i,1) => ic &
+        string_append(name,spec_id) => cname &
+		to_lowercase(0,cname) => cname' &
+       	get_iotypeids(name,ic,rest_types,alttypes_db,b_ei) => (restei,nrest)	
+		---------------------------------------------------------------------------
+		get_iotypeids(name,i,first_type::rest_types,alttypes_db,b_ei) => 
+		(spec_id::restei,cname'::nrest)
+
+end
+
+
+relation transform_type =
+
+  rule	get_rml_id2(id) => mid &
+		transform_typeid(mid,false) => cid &  
+		get_alternative_typeid(cid,alttypes_db,b_ext) => (spec_id,_) &
+		create_components(var_lst,spec_id,dir,com) => components &
+		create_standard_elementitem(components) => elementitem
+		-------------------------------
+		transform_type(var_lst,Absyn.RMLTYPE_USERDEFINED(id),com,dir,alttypes_db,b_ext) =>
+		elementitem
+
+  rule	get_specialtype_id(the_type,"",alttypes_db,b_ext) => (spec_id,_) &
+		create_components(var_lst,spec_id,dir,com) => components &
+		create_standard_elementitem(components) => elementitem
+		--------------------------------------------------
+		transform_type(var_lst,the_type,com,dir,alttypes_db,b_ext) => elementitem 
+
+  rule	create_components(var_lst,"dummy",dir,com) => components &
+		create_standard_elementitem(components) => elementitem
+		------------------------- 
+		transform_type(var_lst,_,com,dir,a,b_ext) => elementitem
+end
+
+
+relation transform_dtmember =
+
+  rule	get_rml_id(id,true) => mid &
+		create_classdef(mid,Absyn.R_RECORD,[Absyn.PUBLIC([])],comments,false) => classdef &
+		create_standard_elementitem(classdef) => elementitem
+		-------------------
+		transform_dtmember(Absyn.DTCONS(id,[],comments::_),alttypes_db) =>
+		(elementitem,[],alttypes_db)
+	
+
+  rule  get_specialtypes_lst(typelist,alttypes_db,false,0) => (special_types,alttypes_db',_) &
+		get_tupletypeids("",0,typelist,comments,alttypes_db,false) => (specids,typelist') &
+		is_unique_list(specids) => b1 &   (* check first to see if unique comments *)
+		is_unique_list(typelist') => b2 &
+		bool_or(b1,b2) => bi &
+		transform_tupletype(0,typelist',specids,comments,Absyn.BIDIR,bi) => (components,_) & 
+		(*transform_type_tuple("x",0,typelist,Absyn.BIDIR,comments,alttypes_db') => components &	*)
+		get_rml_id(id,true) => mid &
+		create_classdef(mid,Absyn.R_RECORD,[Absyn.PUBLIC(components)],[],false) => classdef &
+		create_standard_elementitem(classdef) => elementitem
+		---------------------------
+		transform_dtmember(Absyn.DTCONS(id,typelist,comments),alttypes_db) => (elementitem,special_types,alttypes_db')
+
+end
+
+
+relation transform_dtmember_list =
+  rule  transform_dtmember(last,alttypes_db) => (lastrecord,lspec,alttypes_db')
+		-----------------------------
+		transform_dtmember_list(last :: [],alttypes_db) => 
+		(lastrecord::[],lspec,alttypes_db')
+
+  rule  transform_dtmember(first,alttypes_db) => (firstrecord,fspec,alttypes_db') &
+        transform_dtmember_list(rest,alttypes_db') => (restrecord,rspec,alttypes_db'') &
+        list_append(fspec,rspec) => type_list
+		-----------------------------
+		transform_dtmember_list(first :: rest,alttypes_db) => 
+		(firstrecord::restrecord,type_list,alttypes_db'')
+end
+
+
+(*a little special relation to see if we need dummy or not*)
+relation need_dummy =
+  axiom	need_dummy(false,[]) => -1
+
+  axiom need_dummy(_,_) => 0
+end
+
+
+relation transform_decl_signature =
+
+  rule	get_specialtypes_lst(intypes,alttypes_db,false,0) => (inspecial,alttypes_db',_) &
+		get_specialtypes_lst(outtypes,alttypes_db',false,0) =>(outspecial, alttypes_db'',_) &
+		get_iotypeids("in",0,intypes,alttypes_db'',false) => (inspecids,inlist) &
+		is_unique_list(inlist) => bi &
+		transform_iotype(0,inlist,inspecids,Absyn.INPUT,bi) => (mintypes,inlist') & 
+		need_dummy(b_dummy,outtypes) => ic &
+		get_iotypeids("out",ic,outtypes,alttypes_db'',false) => (outspecids,outlist) &
+		is_unique_list(outlist) => bo &
+		transform_iotype(0,outlist,outspecids,Absyn.OUTPUT,bo) => (mouttypes,outlist') &
+		list_append(inspecial,outspecial) => inout_special &
+		list_append(mintypes,mouttypes) => inout_types 
+		----------------------------
+		transform_decl_signature(Absyn.RMLTYPE_SIGNATURE(Absyn.CALLSIGN(intypes,outtypes)),alttypes_db,b_dummy) =>
+		(inout_special,inout_types,inlist',outlist',alttypes_db'')
+
+end 
+
+relation get_simplelist =
+
+  axiom get_simplelist([],_,_) => ([],[])
+
+  rule	get_rml_id(id,true) => id' &
+		is_constructor(id',pdb) => false &
+		not id' = "nil" &
+		get_simplelist(rest,outtypes_rest,pdb) => (rest',eitems)
+		----------------------------
+		get_simplelist(Absyn.RML_REFERENCE(id)::rest,_::outtypes_rest,pdb) => (id'::rest',eitems)
+ 
+  rule	get_iotypeids("out",0,[outtype],[],false) => (_,outtypeid::_) &
+		get_simplelist(rest,outtypes_rest,pdb) => (rest',eqitems) &
+		transform_expression(exp,pdb) => mexp &
+		create_cref(outtypeid) => cref &
+		let eqitem = Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(cref),mexp),NONE) &
+		list_append(eqitems,[eqitem]) => eqitems' 
+		----------------------------
+		get_simplelist(exp::rest,outtype::outtypes_rest,pdb) => (outtypeid::rest',eqitems')
+
+  rule	get_iotypeids("out",0,[outtype],[],false) => (_,outtypeid::_) &
+		transform_expression(exp,pdb) => mexp &
+		create_cref(outtypeid) => cref &
+		let eqitem = Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(cref),mexp),NONE)
+		----------------------------
+		get_simplelist([exp as Absyn.TUPLE(explst)],[outtype],pdb) => ([outtypeid],[eqitem])
+
+  axiom	get_simplelist(_,_,_) => ([],[])
+
+
+end
+
+relation get_simplereslist =
+
+  axiom	get_simplereslist(Absyn.RMLResultExp([],com),_,_) => ([],[])
+
+  axiom	get_simplereslist(Absyn.RMLNoResult(com),_,_) => ([],[])
+
+	(*we have a simple name that can be used as output variable*)
+  rule	get_rml_id(id,true) => id' &
+		is_constructor(id',pdb) => false &
+		not id' = "nil" 
+		--------------------------
+		get_simplereslist(Absyn.RMLResultExp(Absyn.RML_REFERENCE(id)::[],com),_,pdb) => ([id'],[])
+
+	(*we have more then one output results but just one output *)
+  rule	get_simplelist(x,[outtype],pdb) => (reslist,eitems)
+		---------------------------------------------------
+		get_simplereslist(Absyn.RMLResultExp(x as Absyn.TUPLE(explist)::[],com),[outtype],pdb) => (reslist,eitems)
+
+	(*we have more then one output*)
+  rule	get_simplelist(explist,outtypes,pdb) => (reslist,eitems)
+		---------------------------------------------------
+		get_simplereslist(Absyn.RMLResultExp(Absyn.TUPLE(explist)::[],com),outtypes,pdb) => (reslist,eitems)
+
+	(*ordinary output, can also be used in simplecase*)
+  rule	get_iotypeids("out",0,[outtype],[],false) => (_,outtypeid::_) &
+		transform_expression(exp,pdb) => mexp &
+		transform_comment(com,false) => mcom &
+		create_cref(outtypeid) => cref &
+		let eqitem = Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(cref),mexp),mcom)  
+		------------------------------------------------------------
+		get_simplereslist(Absyn.RMLResultExp(exp::[],com),outtype::[],pdb) => ([outtypeid],[eqitem])
+
+
+end
+
+relation getif_simplepatlist =
+
+  axiom getif_simplepatlist([],_) => ([],true)
+
+  rule	get_rml_id(id,true) => id' & (*check so it's not a constructor, in res too*)
+		get_rml_id2(id) => cid &
+		is_constructor(cid,pdb) => false &
+		not id' = "nil" &
+		getif_simplepatlist(rest,pdb) => (rest',b)
+		----------------------------
+		getif_simplepatlist(Absyn.RMLPAT_IDENT(id)::rest,pdb) => (id'::rest',b)
+ 
+  axiom	getif_simplepatlist(_,_) => ([],false)
+
+end
+
+
+relation getif_simpleinlist =
+
+ 
+  rule	get_rml_id(id,true) => id'  &
+		get_rml_id2(id) => cid &
+		is_constructor(cid,pdb) => false &
+		not id' = "nil" 
+		----------------------------
+		getif_simpleinlist(Absyn.RMLPAT_IDENT(id),pdb) => ([id'],true)
+
+  rule	getif_simplepatlist(patlist,pdb) => (rest',b)
+		----------------------------
+		getif_simpleinlist(Absyn.RMLPAT_STRUCT(NONE,patlist),pdb) => (rest',b)
+ 
+  axiom	getif_simpleinlist(_,_) => ([],false)
+
+
+end
+
+
+relation remove_ids =
+
+  axiom	remove_ids(_,[]) => []
+
+  rule	is_unique(varname,id_list) => false &
+		remove_ids(id_list,rest) => rest'
+		--------------------------------------------------------------
+		remove_ids(id_list,Absyn.RMLSHORTID(varname,_)::rest) =>
+		rest'
+
+  rule	remove_ids(id_list,rest) => rest'
+		-----------------------------------
+		remove_ids(id_list,id::rest) => id::rest'
+
+
+end
+
+relation getif_simplecase =
+
+  rule	getif_simpleinlist(pattern,pdb) => (simplelist,true) &
+		get_simplereslist(result,outtypes,pdb) => (reslist,eqres) &
+		transform_goals(goals,Absyn.RMLNoResult([]),pdb) => (eqitems,ids,_,_) &
+		get_specialtypes_lst(intypes,alttypes_db,false,0) => (inspecial,alttypes_db',_) &
+		get_specialtypes_lst(outtypes,alttypes_db',false,0) => (outspecial,alttypes_db'',_) &
+		remove_ids(simplelist,ids) => locals &	
+		remove_ids(reslist,locals) => locals' &
+		update_decl_db(locals',[],[],pdb) => (decl_db,_) &
+		create_specialtypes(decl_db,alttypes_db'',true) => (special_types,alttypes_db''') &
+		create_local_decl(decl_db,alttypes_db''') => local_decl &
+		get_iotypeids("",0,intypes,alttypes_db''',false) => (inspecids,_) &
+		transform_iotype(0,simplelist,inspecids,Absyn.INPUT,true) => (mintypes,_) & 
+		is_unique_list(reslist) => bei &
+		get_iotypeids("",0,outtypes,alttypes_db''',false) => (outspecids,_) &
+		transform_iotype(0,reslist,outspecids,Absyn.OUTPUT,bei) => (mouttypes,_) & 
+		transform_goals(goals,Absyn.RMLNoResult([]),pdb) => (eqitems,ids,_,_) &
+		list_append(eqitems,eqres) => eqitems' &
+		list_append(inspecial,outspecial) => inout_special &
+		list_append(mintypes,mouttypes) => inout_types &
+		list_append(inout_special,special_types) => special_types' &
+		list_append(special_types',local_decl) => spec_n_locals
+		-------------------------------------------------------
+		getif_simplecase(Absyn.RMLRULE(id,pattern,SOME(goals),result,comment,cend)::[],
+				Absyn.RMLTYPE_SIGNATURE(Absyn.CALLSIGN(intypes,outtypes)),
+				alttypes_db,pdb) =>  
+		(inout_types,spec_n_locals,eqitems',alttypes_db''')
+
+
+end
+
+relation get_pub_or_pro =
+
+  rule	Dictionary.search(pub_pdb, id) => SOME(BOTH) 
+        (* only definition is present, make protected *)
+		-------------------------------------------
+		get_pub_or_pro(id,eitems,pub_pdb) => Absyn.PUBLIC(eitems)
+
+  axiom	get_pub_or_pro(_,eitems,_) => Absyn.PROTECTED(eitems)
+
+end
+
+relation create_pubclasspart =
+
+  axiom	create_pubclasspart(eitems,true) => Absyn.PUBLIC(eitems) 
+
+  axiom	create_pubclasspart(eitems,false) => Absyn.PROTECTED(eitems) 
+
+end
+
+val ext_C = Absyn.EXTERNAL(Absyn.EXTERNALDECL(NONE,SOME("C"),NONE,[]),NONE)
+
+relation transform_rmldecl =
+
+  (* external module *)
+  rule  transform_decl_signature(sign,alttypes_db,false) => (in_out_spec,in_out_decl,il,ol,alttypes_db') &
+		transform_id_java(id) => id_java &
+		get_rml_id(id_java,true) => mid &
+		create_class_parts(mid,Absyn.R_FUNCTION,false,[Absyn.PUBLIC(in_out_decl),
+							Absyn.PUBLIC(in_out_spec),ext_C],[],true) => class &
+		create_elementitem_list([class]) => eitemlist &
+		create_pubclasspart(eitemlist,true) => class &
+		insertIntOrDef(pub_db, mid, INT) => pub_db 
+		-----------------------------------------------------------------------------------
+		transform_rmldecl(Absyn.RELATION_INTERFACE(id,sign),PDB([],_),alttypes_db,v,pub_db,_,_) => 
+		([class],alttypes_db,v,pub_db)
+
+  (* relation interface *)
+  rule	transform_id_java(id) => id_java & 
+		get_rml_id(id_java,true) => mid  &
+		insertIntOrDef(pub_db, mid, INT) => pub_db 
+		----------------------------------------------------------------------
+		transform_rmldecl(Absyn.RELATION_INTERFACE(id,_),_,alttypes_db,v,pub_db,_,_) => 
+		([],alttypes_db,v,pub_db)
+
+  (* relation definition *)
+  rule	get_decl_signature(id,pdb,sign) => sign' &
+		getif_simplecase(rules,sign',alttypes_db,pdb) => (in_out_decl,spec_n_locals,equations,alttype_db') &
+		create_algorithm_simplematch(equations) => algorithm &
+		create_standard_algorithmitem(algorithm) => ai &
+		transform_id_java(id) => java_id &
+		get_rml_id(java_id,true) => mid &
+		(* replace relation id from comment with java name of the id *)
+		identName(id) => id_name &
+		identName(java_id) => java_id_name &
+		Util.list_map2(External.strrpl,com,id_name,java_id_name) => com &
+		create_class_parts(mid,Absyn.R_FUNCTION,false,[Absyn.PUBLIC(in_out_decl),Absyn.PUBLIC(spec_n_locals),
+							Absyn.ALGORITHMS([ai])],com,true) => class &
+		create_elementitem_list([class]) => eitemlist &
+		insertIntOrDef(pub_db, mid, DEF) => pub_db & 
+		get_pub_or_pro(mid,eitemlist,pub_db) => classpart &
+		(*
+		debug_print("id", id) &		
+		debug_print("sign", sign) &
+		debug_print("sign'", sign') &
+		debug_print("Comments", com ) &
+		*)
+		----------------------------------------------------------------------------------------------------
+		transform_rmldecl(Absyn.RELATION_DEFINITION(id,sign,rules,com),pdb,alttypes_db,v,pub_db,_,_) => 
+		([classpart],alttypes_db,v,pub_db) 
+
+  (* relation definition *)
+  rule  get_decl_signature(id,pdb,sign) => sign' &
+		get_dummyoption(troptions) => b_dummy &
+		transform_decl_signature(sign',alttypes_db,b_dummy) => (in_out_spec,in_out_decl,ilist,olist,alttypes_db') &
+		transform_rule_list(rules,[],pdb,alttypes_db',troptions) => (case_list,local_decl_db) & 
+		create_specialtypes(local_decl_db,alttypes_db',true) => (special_types,alttypes_db'') &
+		create_local_decl(local_decl_db,alttypes_db'') => local_decl &
+	(*        RML.debug_print("\n alt db ", alttypes_db'') & print "  \n" & *)
+	(*        RML.debug_print("\n alt db ", local_decl_db) & print "  \n" & *)
+	(*	list_length(local_decl_db) => ll & int_string(ll) => s & print "legnth" & print s & print "\n\n" & *)
+		list_append(special_types,local_decl) => spec_n_local_decl &
+        create_algorithm_match(ilist,olist,spec_n_local_decl,case_list) => algorithm &
+		create_standard_algorithmitem(algorithm) => ai &
+		transform_id_java(id) => java_id &
+		get_rml_id(java_id,true) => mid &		   
+		(* replace relation id from comment with java name of the id *)
+		identName(id) => id_name &
+		identName(java_id) => java_id_name &
+		Util.list_map2(External.strrpl,com,id_name,java_id_name) => com &
+		create_class_parts(mid,Absyn.R_FUNCTION,false,[Absyn.PUBLIC(in_out_decl),
+							Absyn.PUBLIC(in_out_spec),Absyn.ALGORITHMS([ai])],com,true) => class &
+		create_elementitem_list([class]) => eitemlist &
+		insertIntOrDef(pub_db, mid, DEF) => pub_db & 
+		get_pub_or_pro(mid,eitemlist,pub_db) => classpart &
+		(*
+		debug_print("id", id) &		
+		debug_print("sign", sign) &
+		debug_print("sign'", sign') &
+		debug_print("Comments", com ) &
+		*)
+		----------------------------------------------------------------------------------------------------
+		transform_rmldecl(Absyn.RELATION_DEFINITION(id,sign,rules,com),pdb,alttypes_db,v,pub_db,troptions,_) => 
+		([classpart],alttypes_db,v,pub_db)
+
+  
+  rule	transform_dtmember_list(dtmlist,alttypes_db) => (recorddef,typedef,alttypes_db') &        
+		get_rml_id(id,true) => mid &		   
+		create_class_parts(mid,Absyn.R_UNIONTYPE,false,[Absyn.PUBLIC(recorddef)],com,true) => class &		   
+		create_elementitem_list([class]) => eitemlist &
+		list_append(typedef,eitemlist) => eitemlist' &
+		create_pubclasspart(eitemlist',pub) => classpart
+		-------------------------------------------------------------------------
+		transform_rmldecl(Absyn.DATATYPEDECL(Absyn.DATATYPE(type_list,id,dtmlist),com),pdb,alttypes_db,v,p,_,pub) => 
+			([classpart],alttypes_db',v,p)
+
+  rule 	get_rml_id(id,true) => mid &
+		transform_typeid(mid,false) => cid &
+		get_rml_id2(id) => mid' &
+		transform_typeid(mid',false) => cid' &
+		transform_comment(com,true) => com' &
+		create_type(cid',com') => derived &
+		get_rml_id(type_id,true) => mtype_id &		   
+        create_class(mtype_id,Absyn.R_TYPE,derived) => class &
+		list_append([ATYPES(cid,mtype_id,false)],alttypes_db) => alttypes_db' &
+		create_elementitem_list([class]) => eitemlist &
+		create_pubclasspart(eitemlist,pub) => classpart
+		----------------------------
+        transform_rmldecl(Absyn.TYPE(type_id,
+				      Absyn.RMLTYPE_USERDEFINED(id),com)
+			   ,pdb,alttypes_db,v,p,_,pub) 
+		  => ([classpart],alttypes_db',v,p)	
+
+
+  rule 	get_specialtypes(x, alttypes_db,false,NONE,0) => (_,alttypes_db',_) &
+		let f::alttypes_db'' = alttypes_db' & (*remove the first *)
+		transform_comment(com,true) => com' &
+		get_specialtypes(x, [],false,com',0) => (special_types,_,_) &
+		get_specialtype_id(x,"",alttypes_db,false) => (spec_type_id,_) & 
+		getClasses(special_types) => classes &
+		get_rml_id(type_id,true) => mtype_id &	
+		(* now take the last one in the classes and fix so that it has mtype_id as ident *)
+		list_reverse(classes) => rclasses &
+		let first::rest = rclasses &
+		let Absyn.CLASS(classident, partial, final, encapsulated, restriction, classdef) = first &
+		let fixed = 
+			Absyn.CLASS(
+				mtype_id, 
+				partial, 
+				final, 
+				encapsulated, 
+				Absyn.R_TYPE (* restriction *), 
+				classdef) &
+		let rfixed_classes = fixed::rest &
+		list_reverse(rfixed_classes) => classes &
+		list_append([ATYPES(spec_type_id,mtype_id,false)],alttypes_db'') => alttypes_db''' &
+		create_elementitem_list(classes) => eitemlist &
+		create_pubclasspart(eitemlist,pub) => classpart
+		----------------------------
+        transform_rmldecl(Absyn.TYPE(type_id,x,com),pdb,alttypes_db,v,p,_,pub) 
+		  => ([classpart],alttypes_db''',v,p)
+		   
+  rule  get_import_name(s) => import_name &
+		transform_comment(com,true) => com' &
+		create_import(import_name,com',troptions) => import &		   
+		create_standard_elementitem(import) => eitem &
+		create_pubclasspart([eitem],pub) => classpart	
+		---------------------------------------------------------------------------------
+		transform_rmldecl(Absyn.WITH(s,com),_,a,v,p,troptions,pub) => ([classpart],a,v,p)
+
+
+  (* fix the type of the constant *)
+  rule	(* debug_print("valinterface", v) & *)
+  		transform_id_java(id) => id_java &
+		get_rml_id(id_java,true) => mid  &
+		get_specialtypes(rtype,alttypes_db,false,NONE,0) => (eitems,alttypes_db',_) &
+		get_specialtype_id(rtype,"",alttypes_db,false) => (valtype_id,true) &
+		(* print "VALINT TYPE:" & print valtype_id & print "\n" & *)
+		list_append(valtypes_db,[ATYPES(mid,valtype_id,true)]) => valtypes_db' &
+		get_pub_or_pro(mid, eitems, p) => classpart &
+		insertIntOrDef(p, mid, INT) => p 
+		(*debug_print("classpart", v)*)
+		(*transform_type([mid],rtype,Absyn.BIDIR,a) => eitem*) 
+     	-------------------------------
+		transform_rmldecl(v as Absyn.VALINTERFACE(id,rtype,com),_,alttypes_db,valtypes_db,p,_,pub) => 
+		([classpart],alttypes_db',valtypes_db',p)
+
+  rule	(* debug_print("valinterface", v) & *)
+  		transform_id_java(id) => id_java &
+		get_rml_id(id_java,true) => mid  &
+		get_specialtypes(rtype,alttypes_db,false,NONE,0) => (eitems,alttypes_db',_) &
+		get_valtype_id(rtype,alttypes_db,false) => valtype_id &
+		(* print "VALINT TYPE:" & print valtype_id & print "\n" & *)
+		list_append(valtypes_db,[ATYPES(mid,valtype_id,true)]) => valtypes_db' &
+		get_pub_or_pro(mid, eitems, p) => classpart &
+		insertIntOrDef(p, mid, INT) => p 
+		(*debug_print("classpart", v)*)
+		(*transform_type([mid],rtype,Absyn.BIDIR,a) => eitem*) 
+     	-------------------------------
+		transform_rmldecl(v as Absyn.VALINTERFACE(id,rtype,com),_,alttypes_db,valtypes_db,p,_,pub) => 
+		([classpart],alttypes_db',valtypes_db',p)
+
+  (* fix the type of the constant *)
+  rule	(* debug_print("valdef1", v) & *)
+		transform_id_java(id) => id_java &
+		get_rml_id(id_java,true) => mid &
+		get_alternative_typeid(mid,valtypes_db,true) => (valtype_id,true) &
+		transform_expression(exp,pdb) => mexp &
+		transform_comment(com,true) => com' &
+		create_components_init([mid],valtype_id,Absyn.CONST,Absyn.BIDIR,mexp,com') => component &
+		create_standard_elementitem(component) => eitem &
+		insertIntOrDef(p, mid, DEF) => p &
+		get_pub_or_pro(mid, [eitem], p) => classpart 
+		--------------------------------
+		transform_rmldecl(v as Absyn.VALDEF(id,exp,com),pdb,a,valtypes_db,p,_,pub) => 
+		([classpart],a,valtypes_db,p)
+
+  (* fix the type of the constant *)	
+  rule	(* debug_print("valdef2", v) & *)
+		transform_id_java(id) => id_java &
+		get_rml_id(id_java,true) => mid &
+		check_pdb(id,[],[],pdb) => (decl,_) &
+		let VTELEMENT(the_type,mids)::_ = decl &
+		get_specialtypes(the_type,alttypes_db,false,NONE,0) => (eitems,alttypes_db',_) &
+		get_specialtype_id(the_type,"",alttypes_db,false) => (valtype_id,true) &
+		transform_expression(exp,pdb) => mexp &
+		transform_comment(com,true) => com' &
+		create_components_init([mid],valtype_id,Absyn.CONST,Absyn.BIDIR,mexp,com') => component &
+		create_standard_elementitem(component) => eitem &
+		list_append(eitems,[eitem]) => eitems' &
+		insertIntOrDef(p, mid, DEF) => p &
+		get_pub_or_pro(mid, eitems', p) => classpart 
+		--------------------------------
+		transform_rmldecl(v as Absyn.VALDEF(id,exp,com),pdb,alttypes_db,valtypes_db,p,_,pub) => 
+		([classpart],alttypes_db',valtypes_db,p)
+
+  rule	(* debug_print("valdef3", v) & *)
+  		transform_id_java(id) => id_java &
+		get_rml_id(id_java,true) => mid  &
+		check_pdb(id,[],[],pdb) => (decl,_) &
+		let VTELEMENT(the_type,mids)::_ = decl &
+		get_specialtypes(the_type,alttypes_db,false,NONE,0) => (eitems,alttypes_db',_) &
+		get_valtype_id(the_type,alttypes_db,false) => valtype_id &
+        transform_expression(exp,pdb) => mexp &
+		transform_comment(com,true) => com' &
+		create_components_init([mid],valtype_id,Absyn.CONST,Absyn.BIDIR,mexp,com') => component &
+		create_standard_elementitem(component) => eitem &
+		list_append(eitems,[eitem]) => eitems' &
+		insertIntOrDef(p, mid, DEF) => p &
+		get_pub_or_pro(mid, eitems', p) => classpart 
+     	-------------------------------
+		transform_rmldecl(v as Absyn.VALDEF(id,exp,com),pdb,alttypes_db,valtypes_db,p,_,pub) => 
+		([classpart],alttypes_db',valtypes_db,p)
+
+  axiom	transform_rmldecl(_,_,a,v,p,_,_) => ([],a,v,p)
+
+end
+
+relation string_sub =
+	
+  rule	string_length(s) => l &
+		int_gt(i,l) => b2 &
+		int_gt(e,l) => b1 &
+		bool_or(b1,b2) => true
+		--------------
+		string_sub(i,e,s) => fail
+
+
+  rule	int_ge(i,e) => true
+		--------------
+		string_sub(i,e,s) => ""
+
+  rule	string_nth_string_char(s,i) => ss &
+		int_add(i,1) => ic &
+		string_sub(ic,e,s) => str &
+		string_append(ss,str) => str'
+		--------------------
+		string_sub(i,e,s) => str'
+	
+end 
+
+
+(* make more general *)
+(* 
+ rpl " "* with " " 
+ rpl "*" with "" 
+*)
+relation remove_symbols =
+
+  rule	string_length(s) => l &
+		int_ge(i,l) => true
+		-----------------------
+		remove_symbols(s,i) => ("",i)
+
+  rule	string_nth_string_char(s,i) => " " &
+		int_add(i,1) => ic &
+		remove_symbols(s,ic) => (str,ic') &
+		string_append(" ",str) => str' 
+		---------------------------------
+		remove_symbols(s,i) => (str',ic')
+
+  rule	string_nth_string_char(s,i) => "*" &
+		int_add(i,1) => ic &
+		remove_symbols(s,ic) => (str,ic') 
+		---------------------------------
+		remove_symbols(s,i) => (str,ic')
+
+ rule	string_nth_string_char(s,0) => ss 
+		-----------------------------
+		remove_symbols(s,0) => (ss,1)
+
+
+  axiom	remove_symbols(s,i) => ("",i)
+
+end
+
+(* 
+ this relation does this:
+   rpl " with \" 
+   rpl [ with { 
+   rpl ] with } 
+   rpl " relation" with " function" 
+   if s[0]=" " then remove_symbols 
+   remove_symbols 
+   if \10 <cr> then remove_symbols (actually \n* => "") 
+   rpl "relation" with "function"
+   rpl " "$ with $
+   rpl "*"$ with $
+ *)
+(* adrpo replaced the below one with this one based on external shit,
+ * much faster:
+ * gets as input a string and a starting point
+ *)
+relation transform_comment_handle_dq =
+	
+  rule	External.strrplall(s,"\"","\\\"") => s &
+        External.strrplall(s,"\\\\\"","\\\"") => s &
+		External.strrplall(s,"[","{") => s &
+		External.strrplall(s,"]","}") => s &
+		External.strrplall(s,"relation","function") => s &
+		External.strrplall(s,"/*","/-") => s &
+		External.strrplall(s,"*/","-/") => s &
+		External.strrplall(s,"*","") => s &
+		External.strrplall(s,"/-","/*") => s &
+		External.strrplall(s,"-/","*/") => s &
+		External.trimstring(s," ") => s 
+        ---------------------------------------
+		transform_comment_handle_dq(s,i) => s
+end
+
+(*
+relation transform_comment_handle_dq =
+	
+  rule	string_length(s) => l &
+		int_ge(i,l) => true
+		--------------------
+		transform_comment_handle_dq(s,i) => ""
+	
+  rule	string_length(s) => l &
+		int_sub(l,1) => l' &
+		int_ge(i,l') => true &
+		string_nth_string_char(s,i) => ss &
+		list_member(ss,[" ","*"]) => true  
+		--------------------
+		transform_comment_handle_dq(s,i) => "" 
+
+  (* adrpo added: if \" then leave it like that *)
+  rule	string_nth(s,i) => c1 &
+		char_int(c1) => n1 &
+		int_eq(n1,92) => true &
+		int_add(i,1) => ic &
+		string_nth(s,ic) => c2 &
+		char_int(c2) => n2 &
+		int_eq(n2,34) => true &	
+		list_string([c1,c2]) => ss &
+		transform_comment_handle_dq(s,ic) => str 
+		------------------------------------------
+		transform_comment_handle_dq(s,i) => str
+
+  rule	string_nth(s,i) => c1 &
+		char_int(c1) => n &
+		int_eq(n,34) => true & (* \" *) 
+		int_string(n) => s2 &
+		int_add(i,1) => ic &	
+		list_string([c1]) => ss &
+		transform_comment_handle_dq(s,ic) => str &
+		string_append(ss,str) => str' &
+		string_append("\\",str') => str''
+		--------------------
+		transform_comment_handle_dq(s,i) => str''
+ 
+  rule	string_nth_string_char(s,i) => "[" &
+		int_add(i,1) => ic &	
+		transform_comment_handle_dq(s,ic) => str &
+		string_append("{",str) => str' 
+		--------------------
+		transform_comment_handle_dq(s,i) => str'
+
+  rule	string_nth_string_char(s,i) => "]" &
+		int_add(i,1) => ic &	
+		transform_comment_handle_dq(s,ic) => str &
+		string_append("}",str) => str' 
+		--------------------
+		transform_comment_handle_dq(s,i) => str'
+
+  rule	int_add(i,9) => e &
+		string_sub(i,e,s) => str &
+		str = " relation" &
+		transform_comment_handle_dq(s,e) => str &
+		string_append(" function",str) => str'
+		-------------------------------------
+		transform_comment_handle_dq(s,i) => str'
+
+  rule	string_nth_string_char(s,0) => " " &	
+        remove_symbols(s,1) => (str,ic) & 		 	
+		transform_comment_handle_dq(s,ic) => str' &
+		string_append(str,str') => str''
+		--------------------------------------------
+		transform_comment_handle_dq(s,0) => str''
+
+  rule	remove_symbols(s,0) => (str,ic) & 
+		int_add(ic,1) => ic' &
+		transform_comment_handle_dq(s,ic) => str' &
+		string_append(str,str') => str''
+		--------------------------------------------
+		transform_comment_handle_dq(s,0) => str''
+
+  rule	string_nth(s,i) => c1 & 
+		list_string([c1]) => ss &
+		char_int(c1) => n &
+		int_eq(n,10) => true &
+		int_add(i,1) => i' &		
+        remove_symbols(s,i') => (str,ic) & 		 	
+		transform_comment_handle_dq(s,ic) => str' &
+		string_append(str,str') => str'' &
+		string_append("\n",str'') => str'''		
+		--------------------------------------------
+		transform_comment_handle_dq(s,i) => str'''
+
+  rule	int_add(0,8) => e &
+		string_sub(0,e,s) => str &
+		str = "relation" &
+		transform_comment_handle_dq(s,e) => str &
+		string_append("function",str) => str'
+		-------------------------------------
+		transform_comment_handle_dq(s,0) => str'
+
+  rule	string_nth_string_char(s,i) => ss &
+		int_add(i,1) => ic &
+		transform_comment_handle_dq(s,ic) => str &
+		string_append(ss,str) => str'
+		--------------------
+		transform_comment_handle_dq(s,i) => str'
+
+end
+*)
+
+relation get_comments =
+
+  axiom	get_comments([],s) => ""
+
+  rule 	transform_comment_handle_dq(last,0) => last' 
+		------------------------------
+		get_comments(last::[],s) => last'
+
+  rule	get_comments(rest,s) => crest &
+		transform_comment_handle_dq(first,0) => first' &
+		string_append(first',s) => first'' &
+		string_append(first'',crest) => comments	
+		---------------------------
+		get_comments(first::rest,s) => comments 
+
+end
+
+relation get_comment =
+	
+  axiom	get_comment([],_) => NONE
+
+  rule	get_comments(x,"\n  ") => x'
+		--------------------
+		get_comment(x,true) => SOME(x')
+
+
+  rule	get_comments(x," ") => x'
+		--------------------
+		get_comment(x,false) => SOME(x')
+
+end
+
+relation transform_comment =
+
+  axiom	transform_comment([],_) => NONE
+
+  rule	get_comments(comments,"\n") => mcomments
+		-----------------------------------
+		transform_comment(comments,true) => SOME(Absyn.COMMENT(NONE,SOME(mcomments)))
+	
+  rule	get_comments(comments," ") => mcomments
+		-----------------------------------
+		transform_comment(comments,false) => SOME(Absyn.COMMENT(NONE,SOME(mcomments)))
+
+end
+
+
+relation transform_rmldecl_list =
+	
+  rule 	transform_rmldecl(first,pdb,a,v,p,to,pp) => (cp_first,a',v',p') &
+		transform_rmldecl_list(rest,pdb,a',v',p',to,pp) => (cp_rest,a'',v'',p'') &
+		list_append(cp_first,cp_rest) => cp
+		-----------------------
+		transform_rmldecl_list(first::rest,pdb,a,v,p,to,pp) => (cp,a'',v'',p'')
+  
+  axiom	transform_rmldecl_list([],_,a,v,p,to,pp) => ([],a,v,p) 
+
+end
+
+
+relation transform_interfaces =
+  rule  transform_rmldecl_list(x,pdb,a,v,p,to,true) => (cp,a',v',p')
+		---------------------------
+		transform_interfaces(x,pdb,a,v,p,to) => (cp,a',v',p') 
+end
+
+
+relation transform_definitions =
+	rule  transform_rmldecl_list(x,pdb,a,v,p,to,false) => (cp,a',v',p')
+		  ---------------------------
+		  transform_definitions (x,pdb,a,v,p,to) => (cp,a',v',p')
+end
+ 
+relation transform_module =
+
+ (*this is probably an external module*)
+  rule  transform_interfaces(iflist,pdb,[],[],Dictionary.emptyDict,toptions) => (cp,_,_,_) &
+        get_rml_id(id,true) => mid &
+        create_class_parts(mid,Absyn.R_PACKAGE,false,cp,comment,true) => class
+        ---------------------------
+        transform_module(Absyn.RML_FILE(id,iflist,[],comment),pdb,toptions) => 
+        Absyn.PROGRAM([class],Absyn.TOP)  
+
+
+  rule	transform_interfaces(iflist,pdb,[],[],Dictionary.emptyDict,toptions) => (cp1,alttypes_db,valtypes_db,pub_db) &
+		transform_definitions(deflist,pdb,alttypes_db,valtypes_db,pub_db,toptions) => (cp2,_,_,_) &
+		list_append(cp1,cp2) => cp &
+		get_rml_id(id,true) => mid &
+		create_class_parts(mid,Absyn.R_PACKAGE,false,cp,comment,true) => class
+        ---------------------------
+        transform_module(Absyn.RML_FILE(id,iflist,deflist,comment),pdb,toptions) => 
+        Absyn.PROGRAM([class],Absyn.TOP)  
+
+  rule  print "(* Non-Supported transformation *)\n"
+		---------------------
+		transform_module(ast,pdb,toptions) => ast 
+
+end
+
+relation is_external =
+
+  axiom	is_external(Absyn.RML_FILE(_,_,[],_) ) => true 
+	
+  axiom	is_external(_) => false 
+	
+end
+
+(* sees if the value is there: value = INT | DEF | BOTH
+ * 1. if not ads value,
+ * 2. if the same, leaves the dictionary the same 
+ * 3. if is different then it sets the value to  
+ *)
+relation insertIntOrDef = 
+
+   rule (* identName(id) => key & *)
+		Dictionary.search(d, key) => NONE & (* not there, let's go *)
+		Dictionary.insert(d, key, v) => newDict 
+        ---------------------------------------
+		insertIntOrDef(d, key, v) => newDict
+
+   rule (* identName(id) => key & *)
+		Dictionary.search(d, key) => SOME(x) & (* there, same value, leave untouched *)
+		v = x
+        ---------------------------------------
+		insertIntOrDef(d, key, v) => d
+
+   rule (* identName(id) => key & *)
+		Dictionary.search(d, key) => SOME(x) & (* there, different value, set both *)
+		not v = x &
+		Dictionary.update(d, key, BOTH) => newDict 
+        ------------------------------------------
+		insertIntOrDef(d, key, v) => newDict
+
+end
+
+relation generateDictionary = 
+
+axiom generateDictionary(d, []) => d
+
+rule identName(dbRelId) => key &
+     (* print "KF[" & print key & print "]" & *)
+ 	 Dictionary.insert(d, key, x) => d' &
+	 generateDictionary(d', rest) => newDict 
+	 ------------------------------------------------------------------------------------------
+	 generateDictionary(d, (x as Absyn.RMLDB_REL(file,dbRelId,_,_))::rest) 
+	 => newDict
+
+rule identName(dbValId) => key &
+     (* print "KV[" & print key & print "]" & *)
+	 Dictionary.insert(d, key, x) => d' &
+	 generateDictionary(d', rest) => newDict 
+	 --------------------------------------------
+	 generateDictionary(d, (x as Absyn.RMLDB_VAR(file,dbValId,_,_,Absyn.RMLSHORTID("_VL_",_),_))::rest) 
+	 => newDict
+
+rule identName(dbTyId) => key &
+     (* print "KT[" & print key & print "]" & *)
+     Dictionary.insert(d, key, x) => d' &
+	 generateDictionary(d', rest) => newDict 
+	 --------------------------------------------
+	 generateDictionary(d, (x as Absyn.RMLDB_TY(file,dbTyId,_))::rest)  
+	 => newDict
+
+rule identName(dbCtorId) => key &
+     (* print "KC[" & print key & print "]" & *)
+     Dictionary.insert(d, key, x) => d' &
+	 generateDictionary(d', rest) => newDict 
+	 --------------------------------------------
+	 generateDictionary(d, (x as Absyn.RMLDB_CTOR(file,dbCtorId,_,_))::rest)  
+	 => newDict
+
+rule generateDictionary(d, rest) => d_res
+	 ---------------------------------------
+	 generateDictionary(d, x::rest) => d_res
+
+end
+
+relation transform =
+
+  rule  (* print "RMLToMod.transform\n" & *)
+        generateDictionary(Dictionary.emptyDict, pdb) => dict &
+		(* Dictionary.show(dict) & *)
+        transform_module(ast, PDB(pdb, dict), toptions) => astNew
+		-----------------------------------------------------------
+		transform(ast,pdb,toptions) => astNew 
+
+end

@@ -1,0 +1,454 @@
+module RMLRefactor:
+  with "absyn.rml"	
+  
+  datatype RMLRefactor = RENAME_ID of Absyn.Ident * Absyn.Ident
+		       | RENAME_RELATION of Absyn.Ident * Absyn.Ident
+		       | RENAME_VARIABLE of Absyn.Ident * Absyn.Ident
+	               | RENAME_CONTRUCTOR of Absyn.Ident * Absyn.Ident 
+
+
+  relation refactor: (Absyn.Program,RMLRefactor) => Absyn.Program
+end
+
+
+relation refactor_id =
+  rule  name = old
+	----------------
+	refactor_id(Absyn.RMLSHORTID(name,info),old,new) => 
+	Absyn.RMLSHORTID(new,info)
+
+  rule  name = old 
+	----------------------
+	refactor_id(Absyn.RMLLONGID(prefix,name),old,new) => 
+	Absyn.RMLLONGID(prefix,new)
+ 
+(*HERE!  rule 	id = old
+       	-------------
+	refactor_id(string(id),old,new) => 
+	new
+*)
+  axiom refactor_id(ast,old,new) => ast
+end	  
+
+relation refactor_string =
+
+ 
+  rule 	id = old
+       	-------------
+		refactor_string(id,old,new) => 	new
+ 
+  axiom	refactor_string(x,old,new) => x
+
+end
+
+ 
+relation refactor_expression_list =
+  rule  refactor_expression(last,refactor) => rlast
+	-----------------------------
+	refactor_expression_list(last :: [],refactor) => 
+	rlast :: []
+
+  rule  refactor_expression(first,refactor) => rfirst &
+	refactor_expression_list(rest,refactor) => rrest
+	------------------------------
+	refactor_expression_list(first :: rest,refactor) => 
+	rfirst :: rrest
+
+ axiom	refactor_expression_list([],refactor) => []
+end 
+
+
+relation refactor_expression =
+  rule  refactor_id(id,old,new) => rid &
+        refactor_expression_list(args,RENAME_ID(old,new)) => rargs
+	----------------------------
+	refactor_expression(Absyn.RMLCALL(id,args),RENAME_ID(old,new)) => 
+	Absyn.RMLCALL(rid,rargs)
+
+  rule  refactor_id(id,old,new) => rid 
+	-------------------------------
+	refactor_expression(Absyn.RML_REFERENCE(id),RENAME_ID(old,new)) => 
+	Absyn.RML_REFERENCE(rid)
+
+  rule	refactor_expression_list(exp_list,refactor) => rexp_list
+	-------------------------------------------
+	refactor_expression(Absyn.RMLLIST(exp_list),refactor) => 
+	Absyn.RMLLIST(rexp_list)
+
+  rule  refactor_expression(left,refactor) => rleft &
+	refactor_expression(right,refactor) => rright
+	----------------------------
+	refactor_expression(Absyn.RMLCONS(left,right),refactor) => 
+	Absyn.RMLCONS(rleft,rright)
+
+  rule  refactor_expression(left,refactor) => rleft & 
+        refactor_expression(right,refactor) => rright
+	-------------------------------
+	refactor_expression(Absyn.BINARY(left,op,right),refactor) => 
+	Absyn.BINARY(rleft,op,rright)
+
+  rule	refactor_expression(exp,refactor) => rexp
+	-------------------------------
+	refactor_expression(Absyn.UNARY(op,exp),refactor) => 
+	Absyn.UNARY(op,rexp)
+
+  axiom refactor_expression(ast,refactor) => ast
+
+  (* Debug *)
+(*  rule  refactor_expression(first) &
+        print ", " &
+        refactor_expression(rest)
+	------------------------
+	refactor_expression(Absyn.ARRAY(first::rest)) => () *)
+end
+
+relation refactor_pattern_list =
+  rule  refactor_pattern(last,refactor) => rlast
+	------------------------
+	refactor_pattern_list(last :: [],refactor) => 
+	rlast :: []
+
+  rule  refactor_pattern(first,refactor) => rfirst &
+	refactor_pattern_list(rest,refactor) => rrest
+	----------------------------
+	refactor_pattern_list(first :: rest,refactor) => 
+	rfirst :: rrest
+
+  axiom	refactor_pattern_list([],refactor) => []
+end
+
+
+relation refactor_pattern =
+  rule  refactor_id(id,old,new) => rid & 
+	refactor_pattern(pat,RENAME_ID(old,new)) => rpat
+	-----------------------------
+	refactor_pattern(Absyn.RMLPAT_AS(id,pat),RENAME_ID(old,new)) => 
+	Absyn.RMLPAT_AS(rid,rpat)
+
+  rule  refactor_pattern(first,refactor) => rfirst & 
+	refactor_pattern(rest,refactor) => rrest
+	------------------------------
+	refactor_pattern(Absyn.RMLPAT_CONS(first,rest),refactor) => 
+	Absyn.RMLPAT_CONS(rfirst,rrest)
+
+  rule 	refactor_pattern_list(list,refactor) => rlist 
+	------------------------------
+	refactor_pattern(Absyn.RMLPAT_STRUCT(NONE,list),refactor) => 
+	Absyn.RMLPAT_STRUCT(NONE,rlist)
+
+  rule  refactor_id(id,old,new) => rid &
+	refactor_pattern_list(patlist,RENAME_ID(old,new)) => rpatlist 
+	-----------------------------
+	refactor_pattern(Absyn.RMLPAT_STRUCT(SOME(id),patlist),RENAME_ID(old,new)) => 
+	Absyn.RMLPAT_STRUCT(SOME(rid),rpatlist)
+
+  rule  refactor_id(id,old,new) => rid
+	-----------------------------
+	refactor_pattern(Absyn.RMLPAT_IDENT(id),RENAME_ID(old,new)) => 
+	Absyn.RMLPAT_IDENT(rid)
+
+  axiom	refactor_pattern(ast,refactor) => ast
+
+end
+
+
+relation refactor_goal =
+  rule 	refactor_goal(goal,refactor) => rgoal
+	------------------
+	refactor_goal(Absyn.RMLGOAL_NOT(goal),refactor) =>
+	Absyn.RMLGOAL_NOT(rgoal)
+
+  rule  refactor_goal(leftgoal,refactor) => rleftgoal &
+	refactor_goal(rightgoal,refactor) => rrightgoal
+	------------------
+	refactor_goal(Absyn.RMLGOAL_AND(leftgoal,rightgoal),refactor) => 
+	Absyn.RMLGOAL_AND(rleftgoal,rrightgoal)
+
+  rule  refactor_pattern(pat,refactor) => rpat
+	------------------
+	refactor_goal(Absyn.RMLGOAL_PAT(pat),refactor) => 
+	Absyn.RMLGOAL_PAT(rpat)
+
+  rule	refactor_pattern(pat,refactor) => rpat &
+	refactor_expression(exp,refactor) => rexp
+	------------------------
+	refactor_goal(Absyn.RMLGOAL_LET(pat,exp,com),refactor) => 
+	Absyn.RMLGOAL_LET(rpat,rexp,com)
+
+  rule  refactor_id(id,old,new) => rid &
+	refactor_expression(rightexp,RENAME_ID(old,new)) => rrightexp
+	------------------------
+	refactor_goal(Absyn.RMLGOAL_EQUAL(id,rightexp,com),RENAME_ID(old,new)) =>
+	Absyn.RMLGOAL_EQUAL(rid,rrightexp,com) 
+
+  rule  refactor_id(id,old,new) => rid &
+	refactor_expression_list(args,RENAME_ID(old,new)) => rargs &
+	refactor_pattern(pat,RENAME_ID(old,new)) => rpat
+	------------------------
+	refactor_goal(Absyn.RMLGOAL_RELATION(id,args,SOME(pat),com),RENAME_ID(old,new)) => 
+        Absyn.RMLGOAL_RELATION(rid,rargs,SOME(rpat),com)
+
+  rule  refactor_id(id,old,new) => rid &
+	refactor_expression_list(args,RENAME_ID(old,new)) => rargs 
+	------------------------
+	refactor_goal(Absyn.RMLGOAL_RELATION(id,args,NONE,com),RENAME_ID(old,new)) => 
+        Absyn.RMLGOAL_RELATION(rid,rargs,NONE,com)
+end
+
+
+relation refactor_result =
+
+  rule	refactor_expression_list(list,refactor) => rlist
+	----------------------
+	refactor_result(Absyn.RMLResultExp(list,com),refactor) => 
+        Absyn.RMLResultExp(rlist,com)   
+
+  axiom refactor_result(ast,refactor) => ast
+end
+
+
+relation refactor_rule =
+
+  rule	refactor_id(id,old,new) => rid & 
+	refactor_goal(goal,RENAME_ID(old,new)) => rgoal &
+	refactor_pattern(pat,RENAME_ID(old,new)) => rpat &
+        refactor_result(result,RENAME_ID(old,new)) => rresult
+	-------------------------------------------
+	refactor_rule(Absyn.RMLRULE(id,pat,SOME(goal),result,comment,cend),RENAME_ID(old,new)) => 
+        Absyn.RMLRULE(rid,rpat,SOME(rgoal),rresult,comment,cend)
+
+  rule	refactor_id(id,old,new) => rid &
+ 	refactor_pattern(pat,RENAME_ID(old,new)) => rpat &
+        refactor_result(result,RENAME_ID(old,new)) => rresult
+	-------------------------------------------
+	refactor_rule(Absyn.RMLRULE(id,pat,NONE,result,comment,cend),RENAME_ID(old,new)) => 
+        Absyn.RMLRULE(rid,rpat,NONE,rresult,comment,cend)
+end
+
+
+relation refactor_rule_list =
+  rule  
+	----------------------------
+	refactor_rule_list([],refactor) => []
+
+  rule  refactor_rule(last,refactor) => rlast
+	----------------------------
+	refactor_rule_list(last :: [],refactor) => rlast::[]
+
+  rule  refactor_rule(first,refactor) => rfirst &
+	refactor_rule_list(rest,refactor) => rrest
+	----------------------------
+	refactor_rule_list(first :: rest,refactor) => rfirst::rrest
+end
+
+
+relation refactor_type_tuple =
+  rule  refactor_type(last,refactor) => rlast
+	-------------------------------
+	refactor_type_tuple(last :: [],refactor) => 
+        rlast::[]
+
+  rule  refactor_type(first,refactor) => rfirst &
+	refactor_type_tuple(rest,refactor) => rrest
+	-------------------------------
+	refactor_type_tuple(first :: rest,refactor) => 
+        rfirst::rrest
+end 
+
+relation refactor_type_list =
+  rule 	refactor_type(last,refactor) => rlast 
+	-----------
+	refactor_type_list(last :: [],refactor) => 
+	rlast :: []
+
+  rule	refactor_type(first,refactor) => rfirst &
+	refactor_type_list(rest,refactor) => rrest
+	----------------------
+	refactor_type_list(first :: rest,refactor) => 
+	rfirst :: rrest
+
+  axiom refactor_type_list([],refactor) => []
+end
+
+
+relation refactor_type =
+
+(*  rule  refactor_type(rtype) &
+	print "list"
+	------------------------
+	refactor_type(Absyn.RMLTYPE_LIST(rtype)) => ()
+*)
+  rule  refactor_type_list(intype,refactor) => rintype &
+	refactor_type_list(outtype,refactor) => routtype
+	------------------------
+	refactor_type(Absyn.RMLTYPE_SIGNATURE(Absyn.CALLSIGN(intype,outtype)),refactor) =>
+	Absyn.RMLTYPE_SIGNATURE(Absyn.CALLSIGN(rintype,routtype))
+
+
+  rule  refactor_type_tuple(typelist,refactor) => rtypelist
+	------------------------
+	refactor_type(Absyn.RMLTYPE_TUPLE(typelist),refactor) => 
+	Absyn.RMLTYPE_TUPLE(rtypelist) 
+
+  rule	refactor_type(last,RENAME_ID(old,new)) => rlast &
+	refactor_id(id,old,new) => rid
+	----------------------------
+	refactor_type(Absyn.RMLTYPE_TYCONS(last::[],id),RENAME_ID(old,new)) => 
+	Absyn.RMLTYPE_TYCONS(rlast::[],rid)
+
+  rule	refactor_id(id,old,new) => rid
+	----------------------------
+	refactor_type(Absyn.RMLTYPE_TYCONS([],id),RENAME_ID(old,new)) => 
+	Absyn.RMLTYPE_TYCONS([],rid)
+
+  rule  refactor_id(id,old,new) => rid
+	------------------------
+	refactor_type(Absyn.RMLTYPE_TYVAR(id),RENAME_ID(old,new)) => 
+	Absyn.RMLTYPE_TYVAR(rid)
+
+  rule  refactor_id(id,old,new) => rid
+	-------------------------
+	refactor_type(Absyn.RMLTYPE_USERDEFINED(id),RENAME_ID(old,new)) => 
+        Absyn.RMLTYPE_USERDEFINED(rid)
+
+  axiom refactor_type(ast,refactor) => ast
+
+end 
+
+(*
+relation refactor_comment =
+  rule  print " " &
+        print s &
+	print "\n"
+	--------------------------------------
+	refactor_comment(s) => ()
+end 
+*)
+
+relation refactor_dtmember =
+  rule	refactor_id(id,old,new) => rid &
+	refactor_type_tuple(typelist,ref) => rtypelist
+	----------------------------------------------
+	refactor_dtmember(Absyn.DTCONS(id,typelist,com),ref as RENAME_ID(old,new)) =>
+        Absyn.DTCONS(rid,rtypelist,com)
+end
+
+
+relation refactor_dtmember_list =
+  rule  refactor_dtmember(last,refactor) => rlast
+	-----------------------------
+	refactor_dtmember_list(last :: [],refactor) =>
+        rlast::[]
+
+  rule  refactor_dtmember(first,refactor) => rfirst &
+	refactor_dtmember_list(rest,refactor) => rrest
+	-----------------------------
+	refactor_dtmember_list(first :: rest,refactor) => 
+        rfirst::rrest
+end
+
+relation refactor_datatype_list =
+
+ rule 	refactor_id(id,old,new) => rid &
+        refactor_dtmember_list(dtmlist,ref) => rdtmlist
+	---------------------------
+	refactor_datatype_list(Absyn.DATATYPE(type_list,id,dtmlist),ref as RENAME_ID(old,new)) =>
+	Absyn.DATATYPE(type_list,rid,rdtmlist)
+end
+
+
+relation refactor_decl_signature =
+
+  rule  refactor_type_list(intype,refactor) => rintype &
+	refactor_type_list(outtype,refactor) => routtype
+	------------------------
+	refactor_decl_signature(Absyn.RMLTYPE_SIGNATURE(Absyn.CALLSIGN(intype,outtype)),refactor) =>
+	Absyn.RMLTYPE_SIGNATURE(Absyn.CALLSIGN(rintype,routtype))
+
+end
+
+ 
+relation refactor_rmldecl =
+  rule 	refactor_decl_signature(sign,ref) => rsign & 
+        refactor_id(id,old,new) => refid
+        ----------------------
+	refactor_rmldecl(Absyn.RELATION_INTERFACE(id,sign),ref as RENAME_ID(old,new)) =>
+	Absyn.RELATION_INTERFACE(refid,rsign)	
+
+  rule	refactor_decl_signature(sign,ref) => rsign &
+	refactor_id(id,old,new) => refid &
+	refactor_rule_list(rules,RENAME_ID(old,new)) => rrules
+	--------------------------------
+	refactor_rmldecl(Absyn.RELATION_DEFINITION(id,SOME(sign),rules,com),ref as RENAME_ID(old,new)) => 
+	Absyn.RELATION_DEFINITION(refid,SOME(rsign),rrules,com)
+
+
+  rule	refactor_id(id,old,new) => refid &
+	refactor_rule_list(rules,RENAME_ID(old,new)) => rrules
+	--------------------------------
+	refactor_rmldecl(Absyn.RELATION_DEFINITION(id,NONE,rules,com),ref as RENAME_ID(old,new)) => 
+	Absyn.RELATION_DEFINITION(refid,NONE,rrules,com)
+
+  rule	refactor_datatype_list(dtype,refactor) => rdtype
+        --------------------------
+        refactor_rmldecl(Absyn.DATATYPEDECL(dtype,com),refactor) => 
+        Absyn.DATATYPEDECL(rdtype,com) 
+ 
+  rule  refactor_id(id,old,new) => rid
+        ----------------------------
+        refactor_rmldecl(Absyn.TYPE(id,ntype,com),RENAME_ID(old,new)) =>
+        Absyn.TYPE(rid,ntype,com)
+
+
+  axiom refactor_rmldecl(ast,ref) => ast
+end
+
+
+(* can list be handled like this *)
+
+
+relation refactor_rmldecl_list =
+
+ axiom	refactor_rmldecl_list([],refactor) => []
+
+ rule 	refactor_rmldecl(last,refactor) => rlast 
+	---------------------------
+	refactor_rmldecl_list(last::[],refactor) => rlast::[]
+	
+ rule 	refactor_rmldecl(first,refactor) => rfirst &
+	refactor_rmldecl_list(rest,refactor) => rrest
+	-----------------------
+	refactor_rmldecl_list(first::rest,refactor) => rfirst::rrest
+
+end
+
+
+relation refactor_interfaces =
+  rule  refactor_rmldecl_list(x,refactor) => rdecl_list
+	---------------------------
+	refactor_interfaces(x,refactor) => rdecl_list
+end
+
+
+relation refactor_definitions =
+  rule  refactor_rmldecl_list(x,refactor) => rdecl_list
+	---------------------------
+	refactor_definitions(x,refactor) => rdecl_list
+end
+
+
+
+relation refactor =
+	
+  rule	refactor_interfaces(iflist,refactor) => riflist & 
+        refactor_definitions(deflist,refactor) => rdeflist  
+	---------------------------
+	refactor(Absyn.RML_FILE(id,iflist,deflist,comment),refactor) => 
+	Absyn.RML_FILE(id,riflist,rdeflist,comment)
+
+  rule  print "(* Non-RML or unsupported refactor*)\n"
+	---------------------
+	refactor(ast,refactor) => ast
+ 
+  	
+end

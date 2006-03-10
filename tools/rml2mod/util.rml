@@ -1,0 +1,346 @@
+module Util:
+
+  with "external.rml"
+
+  relation string_append_list: string list => string
+  relation fprint: (string, string) => () 
+  relation fprintln: (string, string) => () 
+  relation fprintl: (string, string list) => () 
+  relation make_string : string list => string 
+  relation dummy: () => bool
+  relation string_split_at_char: (string, char) => string list
+  relation getPath: string => string
+  relation getFile: string => string
+  relation listStartsWith: (''a list, ''a list) => bool 
+  relation startsWith: (string, string) => bool 
+  relation list_map:  ('a => 'b, 'a list) => 'b list
+  relation list_map1: (('a, 'c) => 'b, 'a list, 'c) => 'b list
+  relation list_map2: (('a, 'c, 'd) => 'b, 'a list, 'c, 'd) => 'b list
+  relation is_flag_set: (string list, string) => bool
+  relation get_flag_value: (string list, string) => string option
+  relation dump_chars: (int, int) => ()
+  relation split_list_at:('a list, int) => ('a list, 'a list)
+
+end
+
+
+relation string_append_list : string list => string =
+	
+  axiom string_append_list [] => ""
+
+  axiom	string_append_list [f] => f
+
+  rule	string_append_list r => r' &
+	string_append(f,r') => str
+	---------------------------
+	string_append_list f::r => str
+end
+
+
+relation fprint: (string, string) => () =
+
+  rule	dummy => true & 
+	print str
+	-------------------
+	fprint (flag, str)
+
+  axiom	fprint (_,_)
+
+end
+
+
+relation fprintln: (string, string) => () =
+
+  rule	dummy => true & 
+	print str &
+	print "\n"
+	-------------------
+	fprintln (flag, str)
+
+  axiom	fprintln (_,_)
+
+end
+
+
+relation fprintl: (string, string list) => () =
+
+  rule	dummy => true & 
+	make_string strlist => str &
+	print str
+	-------------------
+	fprintl (flag, strlist)
+
+  axiom	fprintl (_,_)
+
+end
+
+relation make_string : string list => string =
+
+  axiom	make_string [] => ""
+
+  rule	make_string rest => res &
+	string_append (first, res) => res'
+	----------------------------------
+	make_string first::rest => res'
+
+end
+
+relation dummy =
+
+	
+  axiom	dummy => false
+end
+
+
+
+
+(** relation string_split_at_char
+ ** Takes a string and a char and split the string at the char
+ ** example: string_split_at_char("hej.b.c",#".") => ["hej,"b","c"]
+ **)      
+relation string_split_at_char : (string, char) => string list =
+ 
+  rule  string_list(str) => chrList &
+        string_split_at_char2(chrList,chr,[]) => stringList
+        -------------------------------
+        string_split_at_char(str, chr) => stringList
+
+  rule  (*print "string_split_at_char failed\n"*)
+        ---------------------------------
+        string_split_at_char(strList,_) => [strList]
+end
+
+relation string_split_at_char2 : (char list, char, char list) => string list  =
+
+  rule  list_reverse(chr_rest) => chr_rest' &
+        list_string(chr_rest') => res
+        ---------------------------------
+        string_split_at_char2([],_,chr_rest) => [res]
+
+  rule  firstChar = chr &
+        (* this is needed because it returns the reversed list *)
+        list_reverse(chr_rest) => chrList &
+        list_string(chrList) => res &
+        string_split_at_char2(rest,chr,[]) => res_str
+        ---------------------------------
+        string_split_at_char2(firstChar::rest,chr,chr_rest) => res::res_str
+
+  rule  not firstChar = chr &
+        string_split_at_char2(rest,chr,firstChar::chr_rest) => res
+        ---------------------------------
+        string_split_at_char2(firstChar::rest,chr,chr_rest) => res 
+
+  rule  print "string_split_at_char2 failed\n"
+        ------------------------------------------
+        string_split_at_char2(strList,_,_) => fail
+
+end
+
+relation string_append_list_delimited : (string list, string) => string =
+	
+  axiom string_append_list_delimited ([], _) => ""
+
+  rule  string_append(f, delimiter) => fstr
+        ----------------------------------------------------
+	    string_append_list_delimited([f], delimiter) => fstr
+
+  rule	string_append_list_delimited(r, delimiter) => r' &
+		string_append(f, delimiter) => fstr &
+		string_append(fstr, r') => str
+		----------------------------------------------------
+		string_append_list_delimited(f::r, delimiter) => str
+
+end
+
+
+relation getPath: string => string =
+
+   rule string_split_at_char(filename, #"/") => list_str &
+        list_reverse(list_str) => revlist_str &
+		let h::rest = revlist_str &
+		list_reverse(rest) => lst_str &
+		string_append_list_delimited(lst_str, "/") => strpath
+        -----------------------------------------------------
+        getPath(filename) => strpath
+    
+	axiom getPath(_) => ""
+end
+
+(* from file.ext returns file *)
+relation getFile: string => string =
+
+   rule string_split_at_char(filename, #".") => list_str &
+		let h::rest = list_str 
+        -----------------------------------------------------
+        getFile(filename) => h
+    
+	axiom getFile(x) => x
+end
+
+relation listStartsWith: (''a list, ''a list) => bool =
+
+  rule l1 = l2 &
+       listStartsWith(rest1, rest2) => b &
+	   bool_and(true, b) => bres
+       --------------------------------------------
+       listStartsWith(l1::rest1, l2::rest2) => bres
+   
+  rule not l1 = l2
+       ---------------------------------------------
+       listStartsWith(l1::rest1, l2::rest2) => false
+
+  axiom listStartsWith(_, []) => true
+  axiom listStartsWith([], _) => false
+
+end
+
+relation startsWith: (string, string) => bool =
+
+	rule string_list(s1) => s1lst &
+	     string_list(s2) => s2lst &
+		 listStartsWith(s1lst, s2lst) => bres		 
+	     ------------------------------------
+		 startsWith(s1, s2) => bres
+
+end
+
+
+relation list_map: ('a => 'b, 'a list) => 'b list =
+
+  axiom	list_map(_, []) => []
+	
+  rule	func(hd) => hdTr &
+		list_map(func, rest) => trRest &
+		list_append([hdTr], trRest) => res
+		------------------------------------------
+		list_map(func, hd::rest) => res
+end
+
+relation list_map1: (('a, 'c) => 'b, 'a list, 'c) => 'b list =
+
+  axiom	list_map1(_, [], p) => []
+	
+  rule	func(hd, p) => hdTr &
+		list_map1(func, rest, p) => trRest &
+		list_append([hdTr], trRest) => res
+		-----------------------------------
+		list_map1(func, hd::rest, p) => res
+end
+
+relation list_map2: (('a, 'c, 'd) => 'b, 'a list, 'c, 'd) => 'b list =
+
+  axiom	list_map2(_, [], p, k) => []
+	
+  rule	func(hd, p, k) => hdTr &
+		list_map2(func, rest, p, k) => trRest &
+		list_append([hdTr], trRest) => res
+		-----------------------------------
+		list_map2(func, hd::rest, p, k) => res
+end
+
+relation is_flag_set =
+
+  axiom is_flag_set([], opt) => false
+
+  rule	External.startsWith(arg, opt) => b1 &
+		is_flag_set(args, opt) => b2 &
+		bool_or(b1, b2) => b
+		--------------------------------------
+		is_flag_set(arg::args,opt) => b 
+
+end
+
+(* flags are like this:
+ * -flag or -flag=value
+ * this returns SOME("") or SOME(value) or NONE
+ *)
+relation get_flag_value =
+
+  axiom get_flag_value([], opt) => NONE
+
+  rule	External.startsWith(arg, opt) => true &
+		External.strcmp(arg, opt) => 0 (* equal *)
+		----------------------------------------
+		get_flag_value(arg::args,opt) => SOME("") 
+
+  rule	External.startsWith(arg, opt) => true & 
+		External.strcmp(opt,arg) => non_zero & (* non equal *)
+		string_length(arg) => len & (* len of the argument *)
+		string_length(opt) => index & (* should point to "=" *)
+		int_add(index,1) => index &
+		int_lt(index,len) => true &
+		External.substring(arg,index,len) => value
+		--------------------------------------------
+		get_flag_value(arg::args,opt) => SOME(value) 
+
+  rule	External.startsWith(arg, opt) => true & 
+		External.strcmp(arg, opt) => non_zero & (* non equal *)
+		string_length(arg) => len & (* len of the argument *)
+		string_length(opt) => index & (* should point to "=" *)
+		int_add(index,1) => index &
+		int_lt(index,len) => false (* no value *)
+		-----------------------------------------
+		get_flag_value(arg::args,opt) => SOME("") 
+
+  rule	External.startsWith(arg, opt) => false &
+		get_flag_value(args, opt) => x
+		----------------------------------
+		get_flag_value(arg::args,opt) => x 
+
+end
+
+relation dump_chars =
+
+  rule	int_ge(i,l) => true
+		-------------------
+		dump_chars(i,l)
+	
+  rule	int_string_char(i) => s &
+		int_string(i) => is &
+		print "(" &
+		print is &
+		print " : " &
+		print s &
+		print ")\n" &
+		int_add(i,1) => ic &
+		dump_chars(ic,l)
+		--------------------
+		dump_chars(i,l)
+	
+end
+
+relation list_first:('a list,int) => ('a list) =
+
+  axiom list_first([], _) => []
+
+  axiom list_first(_, 0) => []
+
+  rule  whereIndex > 0 => true &
+		whereIndex - 1 => whereIndex &
+		list_first(rest, whereIndex) => lst &
+		list_append([hd],lst) => res
+        ---------------------------------------
+		list_first(hd::rest, whereIndex) => res
+
+end
+
+
+relation split_list_at:('a list, int) => ('a list, 'a list) =
+
+  rule  list_length(lst) => len &
+		whereIndex >= len => true
+        -------------------------------------------
+        split_list_at(lst, whereIndex) => (lst, [])
+
+  rule  list_length(lst) => len &
+		whereIndex >= len => false &
+		len - whereIndex => whereIndexFromLast &
+		list_first(lst, whereIndex) => lst1 &
+		list_reverse(lst) => lst_reverse &
+		list_first(lst_reverse, whereIndexFromLast) => lst2		
+        ---------------------------------------------------
+        split_list_at(lst, whereIndex) => (lst1, lst2)
+
+end
+
+
