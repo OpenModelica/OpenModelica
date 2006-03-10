@@ -1,6 +1,0 @@
-(* file exp1.rml *)
-module exp1:
-  with "absyn.rml"
-  datatype Exp   =  RCONST of  real
-                 |  ADDop    of  Exp * Exp
-end
