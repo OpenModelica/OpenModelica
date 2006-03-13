@@ -6,6 +6,7 @@
 # Changed by Adrian Pop, adrpo@ida.liu.se, 2006-02-02
 #
 
+date
 mydir="`dirname $0`"
 
 if [ ! "$#" -eq 1 ]; then
@@ -21,19 +22,19 @@ else
 fi
 
 if [ ! -f $sig_file ]; then
-   # echo "Sig file does not exist...";
+  echo "Sig file does not exist...";
   rml -fdump-interface $1 > $sig_file;
 else 
-  # echo "Generates tmp sig."
+  echo "Generates tmp sig."
   rml -fdump-interface $1 > $tmp_file
-  # echo "Diffing"
+  echo "Diffing"
   diff $tmp_file $sig_file > /dev/null
   if [ $? -eq 0 ]; then
-    # echo "Same files"
+    echo "Interface is the same"
     rm $tmp_file
   else
-    # echo "Interface changed"
+    echo "Interface has changed"
     \mv $tmp_file $sig_file
   fi
 fi
-
+date
