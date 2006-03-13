@@ -210,15 +210,17 @@ with "Algorithm.rml"
 with "Builtin.rml"
 with "Dump.rml"
 with "Lookup.rml"
-with "ModUtil.rml"
-with "RTOpts.rml"
 with "Static.rml"
 with "Values.rml"
 with "Print.rml"
-with "System.rml"
 with "Ceval.rml"
 with "Error.rml"
 with "ErrorExt.rml"
+(* adrpo -- not used
+with "System.rml"
+with "RTOpts.rml"
+with "ModUtil.rml"
+*)
 
 val for_scope_name = "$for loop scope$"	  
 

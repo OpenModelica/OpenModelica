@@ -87,13 +87,13 @@ end
 
 with "Dump.rml"
 with "Debug.rml"
-with "Print.rml"
 with "Inst.rml"
 with "Static.rml"
 with "Values.rml"
 with "Util.rml"
 with "Ceval.rml"
 with "Error.rml"
+with "Print.rml"
 
 (** relation: elab_mod
  **

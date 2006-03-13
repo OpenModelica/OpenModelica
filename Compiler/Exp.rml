@@ -262,10 +262,12 @@ with "Util.rml"
 with "Print.rml"
 with "ModUtil.rml"
 with "Derive.rml"
-with "System.rml" 
 with "Dump.rml"
 with "Error.rml"
 with "Debug.rml"
+(* adrpo -- not used
+with "System.rml" 
+*)
 
 val rconstone = RCONST(1.0)
 

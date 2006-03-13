@@ -15,9 +15,9 @@ fi
 
 tmp_file="$1.$$"
 if [ "mo" = "${OMC_BUILD_FROM}" ]; then
- sig_file="`basename "$1" ".mo"`.rsig"
+ sig_file="`basename "$1" ".mo"`.sig"
 else
- sig_file="`basename "$1" ".rml"`.rsig"
+ sig_file="`basename "$1" ".rml"`.sig"
 fi
 
 if [ ! -f $sig_file ]; then

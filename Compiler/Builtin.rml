@@ -77,8 +77,10 @@ end
 (* protected imports *)
 with "Types.rml"
 with "ClassInf.rml"
+(* adrpo -- not used
 with "Debug.rml"
 with "Print.rml"
+*)
 
 (** - The primitive types 
  **

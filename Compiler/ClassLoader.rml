@@ -62,14 +62,16 @@ module ClassLoader:
 end
 
 with "System.rml"
-with "Lookup.rml"
 with "Interactive.rml"
 with "Util.rml"
 with "Parser.rml"
 with "Print.rml"
+with "Debug.rml"
+(* adrpo -- not used
+with "Lookup.rml"
 with "Env.rml"
 with "Dump.rml"
-with "Debug.rml"
+*)
 
 (** relation: load_class
  ** This relation takes a 'Path' and the $MODELICAPATH as a string

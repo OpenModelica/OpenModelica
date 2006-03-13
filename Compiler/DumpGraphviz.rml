@@ -53,8 +53,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 module DumpGraphviz:
 
   with "Absyn.rml"
-  with "Debug.rml"
   with "Graphviz.rml"
+(* adrpo -- not used
+  with "Debug.rml"
+*)
 
   type Ident = string
   type Node = Graphviz.Node
@@ -64,10 +66,10 @@ module DumpGraphviz:
 end
 
 
-
-
-with "ClassInf.rml"
 with "Dump.rml"
+(* adrpo -- not used
+with "ClassInf.rml"
+*)
 
 (* Relations *)
 

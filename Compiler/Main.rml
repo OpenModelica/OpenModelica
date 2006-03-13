@@ -56,7 +56,6 @@ module Main:
 end
 
 with "Absyn.rml"
-with "ModUtil.rml"
 with "Parser.rml"
 with "Dump.rml"
 with "DumpGraphviz.rml"
@@ -67,7 +66,6 @@ with "Inst.rml"
 with "Interactive.rml"
 with "RTOpts.rml"
 with "Debug.rml"
-with "Codegen.rml"
 with "Socket.rml"
 with "Print.rml"
 with "Corba.rml"
@@ -78,6 +76,10 @@ with "TaskGraphExt.rml"
 with "SimCodegen.rml"
 with "ErrorExt.rml"
 with "Error.rml"
+(* adrpo -- not used
+with "ModUtil.rml"
+with "Codegen.rml"
+*)
 
 (** relation: server_loop
  **

@@ -120,10 +120,12 @@ end
 
 with "Util.rml"
 with "Print.rml"
-with "Dump.rml"
 with "Debug.rml"
 with "Error.rml"
+(* adrpo -- not used
 with "Absyn.rml"
+with "Dump.rml" 
+*)
 
 (** relation: make_assignment
  **

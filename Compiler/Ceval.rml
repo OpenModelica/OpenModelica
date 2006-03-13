@@ -144,9 +144,11 @@ with "ClassLoader.rml"
 with "Derive.rml"
 with "Connect.rml"
 with "Error.rml"
-with "ErrorExt.rml"
 with "Settings.rml"
 
+(* adrpo -- not used
+with "ErrorExt.rml"
+*)
 
 (** relation: ceval_builtin
  **

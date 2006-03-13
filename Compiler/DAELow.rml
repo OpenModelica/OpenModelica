@@ -387,9 +387,11 @@ with "SCode.rml"
 with "Dump.rml"
 with "System.rml"
 with "VarTransform.rml"
-with "RTOpts.rml"
 with "Error.rml"
+(* adrpo -- not used
 with "SimCodegen.rml"
+with "RTOpts.rml"
+*)
 
 val empty_bintree = TREENODE(NONE,NONE,NONE)
 val derivative_name_prefix = "$derivative"

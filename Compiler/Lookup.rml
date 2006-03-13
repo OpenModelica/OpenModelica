@@ -84,20 +84,21 @@ module Lookup:
 
 end
 
-with "Parser.rml"
 with "Debug.rml"
-with "Dump.rml"
 with "Inst.rml"
 with "Mod.rml"
 with "Prefix.rml"
-with "Print.rml"
 with "Builtin.rml"
-with "Util.rml"
 with "ModUtil.rml"
 with "Static.rml"
 with "Connect.rml"
 with "Error.rml"
-
+(* adrpo -- not used
+with "Util.rml"
+with "Print.rml"
+with "Parser.rml"
+with "Dump.rml"
+*)
 
 (**
  ** - Lookup relations

@@ -521,9 +521,11 @@ end
 (** From here down, only absyn helper functions should be present. 
  Thus,no actual absyn datatype definitions. *)
 with "Debug.rml"
-with "Dump.rml"
 with "Util.rml"
 with "Print.rml"
+(* adrpo -- not used
+with "Dump.rml"
+*)
 
 
 (** relation: element_spec_name

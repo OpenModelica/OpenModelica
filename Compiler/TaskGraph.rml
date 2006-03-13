@@ -70,9 +70,11 @@ with "Util.rml"
 with "Absyn.rml"
 with "DAE.rml"
 with "Values.rml"
-with "Print.rml"
 with "VarTransform.rml"
 with "SimCodegen.rml"
+(* adrpo -- not used
+with "Print.rml"
+*)
 
 relation build_taskgraph: (DAELow.DAELow,  int vector, int vector, int list list) => () =
 

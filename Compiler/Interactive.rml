@@ -182,7 +182,6 @@ end
 with "Connect.rml"
 with "Dump.rml"
 with "Debug.rml"
-with "RTOpts.rml"
 with "Util.rml"
 with "Parser.rml"
 with "Prefix.rml"
@@ -193,14 +192,16 @@ with "Exp.rml"
 with "Inst.rml"
 with "Static.rml"							  
 with "ModUtil.rml"
-with "Codegen.rml"
 with "Print.rml"
 with "System.rml"
 with "ClassLoader.rml"
 with "Ceval.rml"
 with "Error.rml"
+(* adrpo -- not used
+with "RTOpts.rml"
+with "Codegen.rml"
 with "ErrorExt.rml"
-
+*)
 
 (* - Empty Interactive Symbol Table *)
 val empty_symboltable = SYMBOLTABLE(Absyn.PROGRAM([],Absyn.TOP),[],[],[IVAR("$echo",Values.BOOL(true),(Types.T_BOOL([]),NONE))],[])

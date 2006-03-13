@@ -116,11 +116,13 @@ module Dump:
 end
 
 
-with "ClassInf.rml"
-with "RTOpts.rml"
 with "Print.rml"
 with "Util.rml"
 with "Debug.rml"
+(* adrpo -- not used
+with "RTOpts.rml"
+with "ClassInf.rml"
+*)
 
 (** relation: dump
  **

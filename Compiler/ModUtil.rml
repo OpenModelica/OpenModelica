@@ -74,7 +74,9 @@ end
 
 with "RTOpts.rml"
 with "Util.rml"
+(* adrpo -- not used
 with "Print.rml"
+*)
 
 relation string_prefix_component_refs : (string, (Exp.ComponentRef, 'b) 
 					 => (), 'b, Exp.Exp list) 

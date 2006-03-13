@@ -128,8 +128,10 @@ end
 
 
 with "Print.rml"
-with "Absyn.rml"
 with "Error.rml"
+(* adrpo -- not used
+with "Absyn.rml"
+*)
 
 (** - Printing *)
 (**)

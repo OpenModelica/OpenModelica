@@ -121,9 +121,7 @@ module Codegen :
 end
 
 
-with "Dump.rml"
 with "Debug.rml"
-
 with "Absyn.rml"
 with "Algorithm.rml"
 with "ClassInf.rml"
@@ -134,6 +132,9 @@ with "Inst.rml"
 with "Interactive.rml"
 with "System.rml"
 with "Error.rml"
+(* adrpo -- not used
+with "Dump.rml"
+*)
 
 
 (* ------------------------------------------------------------------------- *)
