@@ -9,31 +9,31 @@
 
 <settings>
 	<type>
-		<foreground red="255" green="0" blue="0"/>
+		<foreground red="0" green="0" blue="0"/>
 		<bold/>
 	</type>
  	<keyword>
- 		<foreground red="255" green="0" blue="0"/>
+ 		<foreground red="0" green="0" blue="0"/>
 		<bold/>
 	</keyword>
  	<functionName>
- 		<foreground red="255" green="0" blue="0"/>
+ 		<foreground red="0" green="0" blue="0"/>
 		<bold/>
 	</functionName>
  	<constant>
- 		<foreground red="255" green="0" blue="0"/>
+ 		<foreground red="0" green="0" blue="0"/>
 		<bold/>
 	</constant>
  	<warning>
- 		<foreground red="255" green="0" blue="0"/>
+ 		<foreground red="0" green="0" blue="0"/>
 		<bold/>
 	</warning>
  	<builtIn>
- 		<foreground red="255" green="0" blue="0"/>
+ 		<foreground red="0" green="0" blue="0"/>
 		<bold/>
 	</builtIn>
  	<variableName>
- 		<foreground red="255" green="0" blue="0"/>
+ 		<foreground red="0" green="0" blue="0"/>
 		<bold/>
 	</variableName>
  	<string>

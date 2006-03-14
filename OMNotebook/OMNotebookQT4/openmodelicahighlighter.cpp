@@ -417,18 +417,26 @@ namespace IAEX
 			typeFormat_ );
 		
 		// KEYWORD
-		mappings_.insert( QString("\\b(a(lgorithm|nd)|e(lse(if|when)?|quation|xtends)|for") +
-			"|i(f|mport|n)|loop|not|or|p(rotected|ublic)|then|w(h(en|ile)|ithin))\\b", 
+		// 2006-03-14 AF, added: expandable, enumeration
+		mappings_.insert( QString("\\b(a(lgorithm|nd)|for|i(f|mport|n)|loop|not|or") +
+			"|e(lse(if|when)?|quation|numeration|x(tends|pandable))|then" +
+			"|p(rotected|ublic)|w(h(en|ile)|ithin))\\b", 
 			keywordFormat_ );
 		
 		// FUNCTION NAME
 		// 2006-01-14 AF, added: der
 		// 2006-03-01 AF, removed sign, added sin
-		mappings_.insert( QString("\\b(a(bs|nalysisType)|c(ardinality|hange|eil|ross)|d(e(lay|der)") + 
+		// 2006-03-14 AF, change function name totaly
+		mappings_.insert( QString("\\b(der|pre|initial|reinit)\\b"), 
+			functionNameFormat_ );
+
+		/*
+		mappings_.insert( QString("\\b(a(bs|nalysisType)|c(ardinality|hange|eil|ross)|d(e(lay|r)") + 
 			"|i(v|agonal))|edge|f(ill|loor)|i(dentity|n(itial|teger))|linspace|ma(trix|x)|min|mod|n(dims" +
 			"|oEvent)|o(nes|uterProduct)|pr(e|o(duct|mote))|re(init|m)|s(amle|calar|i(n|ze)|kew" +
-            "|qrt|um|ymmetric)|t(erminal|ranspose)|vector|zeros|der)\\b", 
+            "|qrt|um|ymmetric)|t(erminal|ranspose)|vector|zeros)\\b", 
 			functionNameFormat_ );
+			*/
 
 		// CONSTANT
 		mappings_.insert( "\\b(false|true)\\b", 

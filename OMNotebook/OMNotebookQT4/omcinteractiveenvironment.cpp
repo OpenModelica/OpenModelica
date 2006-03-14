@@ -45,16 +45,13 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-#ifdef WIN32
-#include "windows.h"
-#endif
-
 //STD Headers
 #include <exception>
 #include <stdexcept>
 
 //QT Headers
 #include <QtCore/QDir>
+#include <QtCore/QProcess>
 #include <QtGui/QMessageBox>
 
 //IAEX Headers
@@ -189,18 +186,18 @@ namespace IAEX
 	/*! 
 	 * \author Anders Fernström
 	 * \date 2006-02-09
-	 * \date 2006-02-28 (update)
+	 * \date 2006-03-14 (update)
 	 *
 	 *\brief Ststic method for starting OMC
 	 *
 	 * 2006-02-28 AF, added code so the environment variable OPENMODELICAHOME
 	 * is used to locate omc.exe.
+	 * 2006-03-14 AF, changed so omnotebook uses qt to start omc
 	 */
 	bool OmcInteractiveEnvironment::startOMC()
 	{
 		bool flag = false;
 
-		#ifdef WIN32
 		try
 		{
 			// 2006-02-28 AF, use environment varable to find omc.exe
@@ -218,7 +215,7 @@ namespace IAEX
 				drmodelica = "";
 			else
 			{
-				string msg = "Unable to find omc.exe, searched in:\n" +
+				string msg = "Unable to find OMC, searched in:\n" +
 					drmodelica + "\\bin\\\n" +
 					drmodelica + "\n" +
 					dir.absolutePath().toStdString();
@@ -227,9 +224,29 @@ namespace IAEX
 			}
 			
 
+			// 2006-03-14 AF, set omc loaction and parameters
+			QString omc;
+			#ifdef WIN32
+				omc = QString( drmodelica.c_str() ) + "omc.exe";
+			#else
+				omc = QString( drmodelica.c_str() ) + "omc";
+			#endif
+			
+			QStringList parameters;
+			parameters << "+d=interactiveCorba";
+
+			// 2006-03-14 AF, create qt process
+			QProcess *omcProcess = new QProcess();
+		
+			// 2006-03-14 AF, start omc
+			omcProcess->start( omc, parameters );
+			if( QProcess::Running == omcProcess->state() )
+				flag = true;
+			else
+				flag = false;
 
 
-
+/*
 			STARTUPINFO startinfo;
 			PROCESS_INFORMATION procinfo;
 			memset(&startinfo, 0, sizeof(startinfo));
@@ -250,17 +267,14 @@ namespace IAEX
 
 			if( !flag )
 				throw std::exception("Was unable to start OMC");
+
+				*/
 		}
 		catch( exception &e )
 		{
 			QString msg = e.what();
 			QMessageBox::warning( 0, "Error", msg, "OK" );
-		}
-		#else
-		QString msg = e.what();
-		msg += "\nOMC not started!";
-		QMessageBox::warning( 0, "Error", msg, "OK" );
-		#endif
+		}	
 
 		return flag;
 	}

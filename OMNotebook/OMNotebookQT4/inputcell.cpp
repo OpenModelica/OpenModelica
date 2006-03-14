@@ -1261,6 +1261,10 @@ namespace IAEX
 				delegate_->closeConnection();
 				if( delegate_->startDelegate() )
 				{
+					// 2006-03-14 AF, wait before trying to reconnect, 
+					// give OMC time to start up
+					SleeperThread::msleep( 1000 );
+ 
 					//delegate_->closeConnection();
 					try
 					{
