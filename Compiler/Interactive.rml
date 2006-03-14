@@ -6279,8 +6279,8 @@ end
  ** author: PA
  **
  ** Returns all the possible class information.
- ** changed by adrpo 2006-02-24 to return more info and in a different format:
- ** {"restriction","name","comment","filename.mo",{bool,bool,bool},{"readonly|writable",int,int,int,int}}
+ ** changed by adrpo 2006-02-24 (latest 2006-03-14) to return more info and in a different format:
+ ** {"restriction","comment","filename.mo",{bool,bool,bool},{"readonly|writable",int,int,int,int}}
  ** if you like more named attributes, use getClassAttributes API which uses get_class_attributes relation
  **)
 relation get_class_information:(Absyn.ComponentRef,
@@ -6304,7 +6304,7 @@ relation get_class_information:(Absyn.ComponentRef,
         int_string(el) => str_eline &
         int_string(ec) => str_ecol &
         (* composing the final returned string *)
-	Util.string_append_list(["{\"",res,"\",\"",name,"\",",cmt,",\"", file, 
+	Util.string_append_list(["{\"",res,"\",",cmt,",\"", file, 
 				 "\",{", strPartial,",",strFinal,",",strEncapsulated,"},{\"", 
 				 str_readonly,"\",",str_sline,",",str_scol,",",str_eline,",",str_ecol,"}}"]) => res'		
 	----------------------------
