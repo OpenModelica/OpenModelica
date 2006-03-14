@@ -6304,7 +6304,7 @@ relation get_class_information:(Absyn.ComponentRef,
         int_string(el) => str_eline &
         int_string(ec) => str_ecol &
         (* composing the final returned string *)
-	Util.string_append_list(["{\"",res,"\",",name,"\",",cmt,",\"", file, 
+	Util.string_append_list(["{\"",res,"\",\"",name,"\",",cmt,",\"", file, 
 				 "\",{", strPartial,",",strFinal,",",strEncapsulated,"},{\"", 
 				 str_readonly,"\",",str_sline,",",str_scol,",",str_eline,",",str_ecol,"}}"]) => res'		
 	----------------------------

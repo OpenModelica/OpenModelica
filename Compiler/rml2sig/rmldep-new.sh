@@ -9,6 +9,12 @@
 date
 mydir="`dirname $0`"
 
+if [ -z "${OMDEV}" ]; then
+  RML=rml
+else
+  RML=${OMDEV}/tools/rml/bin/rml
+fi
+
 if [ ! "$#" -eq 1 ]; then
   echo "Usage: $0 <file>.(mo|rml)";
   exit;
@@ -23,10 +29,10 @@ fi
 
 if [ ! -f $sig_file ]; then
   echo "Sig file does not exist...";
-  rml -fdump-interface $1 > $sig_file;
+  ${RML} -fdump-interface $1 > $sig_file;
 else 
   echo "Generates tmp sig."
-  rml -fdump-interface $1 > $tmp_file
+  ${RML} -fdump-interface $1 > $tmp_file
   echo "Diffing"
   diff $tmp_file $sig_file > /dev/null
   if [ $? -eq 0 ]; then
