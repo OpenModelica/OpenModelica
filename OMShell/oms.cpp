@@ -62,6 +62,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 //QT Headers
 #include <QtCore/QStringList>
+#include <QtCore/QThread>
 #include <QtGui/QAction>
 #include <QtGui/QApplication>
 #include <QtGui/QFileDialog>
@@ -85,6 +86,18 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 
 using namespace std;
+
+//A small trick to get access to protected function in QThread.
+class SleeperThread : public QThread
+{
+public:
+	static void msleep(unsigned long msecs)
+	{
+		QThread::msleep(msecs);
+	}
+};
+
+// ******************************************************
 
 MyTextEdit::MyTextEdit( QWidget* parent )
 	: QTextEdit( parent )
@@ -683,6 +696,10 @@ void OMS::exceptionInEval(exception &e)
 			delegate_->closeConnection();
 			if( delegate_->startDelegate() )
 			{
+				// 2006-03-14 AF, wait before trying to reconnect, 
+				// give OMC time to start up
+				SleeperThread::msleep( 1000 );
+
 				//delegate_->closeConnection();
 				try
 				{
@@ -1020,7 +1037,13 @@ bool OMS::startServer()
 				exit();
 			}
 			else
+			{
+				// 2006-03-14 AF, wait before trying to reconnect, 
+				// give OMC time to start up
+				SleeperThread::msleep( 1000 );
+
 				omcNowStarted = true;
+			}
 		}
 
 		if( omcNowStarted )

@@ -44,14 +44,12 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 ------------------------------------------------------------------------------------
 */
-#ifdef WIN32
-#include "windows.h"
-#endif
 
 #include <exception>
 #include <stdexcept>
 
 #include <QtCore/QDir>
+#include <QtCore/QProcess>
 #include <QtGui/QMessageBox>
 
 #include "omcinteractiveenvironment.h"
@@ -130,7 +128,6 @@ namespace IAEX
 	{
 		bool flag = false;
 
-		#ifdef WIN32
 		try
 		{
 			// 2006-02-28 AF, use environment varable to find omc.exe
@@ -148,7 +145,7 @@ namespace IAEX
 				OMCPath = "";
 			else
 			{
-				string msg = "Unable to find omc.exe, searched in:\n" +
+				string msg = "Unable to find OMC, searched in:\n" +
 					OMCPath + "\\bin\\\n" +
 					OMCPath + "\n" +
 					dir.absolutePath().toStdString();
@@ -156,37 +153,34 @@ namespace IAEX
 				throw std::exception( msg.c_str() );
 			}
 
-			STARTUPINFO startinfo;
-			PROCESS_INFORMATION procinfo;
-			memset(&startinfo, 0, sizeof(startinfo));
-			memset(&procinfo, 0, sizeof(procinfo));
-			startinfo.cb = sizeof(STARTUPINFO);
-			startinfo.wShowWindow = SW_MINIMIZE;
-			startinfo.dwFlags = STARTF_USESHOWWINDOW;
+			// 2006-03-14 AF, set omc loaction and parameters
+			QString omc;
+			#ifdef WIN32
+				omc = QString( OMCPath.c_str() ) + "omc.exe";
+			#else
+				omc = QString( OMCPath.c_str() ) + "omc";
+			#endif
+			
+			QStringList parameters;
+			parameters << "+d=interactiveCorba";
 
-			//string parameter = "\"omc.exe\" +d=interactiveCorba";
-			string parameter = "\"" + OMCPath + "omc.exe\" +d=interactiveCorba";
-			char *pParameter = new char[parameter.size() + 1];
-			const char *cpParameter = parameter.c_str();
-			strcpy(pParameter, cpParameter);
+			// 2006-03-14 AF, create qt process
+			QProcess *omcProcess = new QProcess();
+		
+			// 2006-03-14 AF, start omc
+			omcProcess->start( omc, parameters );
+			if( QProcess::Running == omcProcess->state() )
+				flag = true;
+			else
+				flag = false;
 
-			flag = CreateProcess(NULL,pParameter,NULL,NULL,FALSE,CREATE_NEW_CONSOLE,NULL,NULL,&startinfo,&procinfo);
-
-			Sleep(1000);
-
-			if( !flag )
-				throw std::exception("Was unable to start OMC");
+			
 		}
 		catch( exception &e )
 		{
 			QString msg = e.what();
 			QMessageBox::warning( 0, "Error", msg, "OK" );
 		}
-		#else
-		QString msg = e.what();
-		msg += "\nOMC not started!";
-		QMessageBox::warning( 0, "Error", msg, "OK" );
-		#endif
 
 		return flag;
 	}
