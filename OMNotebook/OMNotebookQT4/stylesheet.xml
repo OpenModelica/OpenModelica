@@ -69,6 +69,16 @@
 		</font>
 		<chapterlevel>1</chapterlevel>
 	</style>
+	<style name="Section (no numbers)">
+		<border value="0" margin="5" padding="0"/>
+		<alignment value="left"/>
+		<font>
+			<family>Times</family>
+			<size>18</size>
+			<weight>bold</weight>
+			<stretch>expanded</stretch>
+		</font>
+	</style>
 	<style name="Subsection">
 		<border value="0" margin="5" padding="0"/>
 		<alignment value="left"/>
@@ -79,6 +89,15 @@
 		</font>
 		<chapterlevel>2</chapterlevel>
 	</style>
+	<style name="Subsection (no numbers)">
+		<border value="0" margin="5" padding="0"/>
+		<alignment value="left"/>
+		<font>
+			<family>Times</family>
+			<size>14</size>
+			<weight>bold</weight>
+		</font>
+	</style>	
 	<style name="Subsubsection">
 		<border margin="5"/>
 		<font>
@@ -88,6 +107,14 @@
 		</font>
 		<chapterlevel>3</chapterlevel>
 	</style>
+	<style name="Subsubsection (no numbers)">
+		<border margin="5"/>
+		<font>
+			<family>Times</family>
+			<size>12</size>
+			<weight>bold</weight>
+		</font>
+	</style>	
 	<style name="Text">
 		<border value="0" margin="5" padding="0"/>
 		<alignment value="left"/>
