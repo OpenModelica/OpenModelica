@@ -189,10 +189,10 @@ relation make_assignment : (Exp.Exp, Types.Properties,
 	-------------------------------------------
 	make_assignment (lhs,lprop,rhs,rprop,_) => fail
 
-  rule	Print.print_error_buf "- Algorithm.make_assignment failed\n" &
-	Print.print_error_buf "    " & Exp.print_exp lhs &
- 	Print.print_error_buf " := " & Exp.print_exp rhs & 
-	Print.print_error_buf "\n" 
+  rule	Print.printErrorBuf "- Algorithm.make_assignment failed\n" &
+	Print.printErrorBuf "    " & Exp.print_exp lhs &
+ 	Print.printErrorBuf " := " & Exp.print_exp rhs & 
+	Print.printErrorBuf "\n" 
 	---------------------------------------------
 	make_assignment (lhs, lprop, rhs, rprop, _) => fail
 
@@ -408,9 +408,9 @@ relation make_assert: (Exp.Exp,
 	  (* RML does not handle the pattern below T_BOOL(_), hence we need to
 	     implement this differently. *) 
 	(*  rule	not let T_BOOL(_) = condt &  
-	 Print.print_buf "# Type error in assert condition.\n" &
-	 Print.print_buf " Expected Boolean, got " &
-	 Types.print_type condt & Print.print_buf "\n"
+	 Print.printBuf "# Type error in assert condition.\n" &
+	 Print.printBuf " Expected Boolean, got " &
+	 Types.print_type condt & Print.printBuf "\n"
 	 --------------------------------------------
 	 make_assert(_,_,Types.PROP(condt,_),_) => fail 
 	 *)

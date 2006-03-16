@@ -1667,7 +1667,7 @@ relation rename_derivatives_exp: ((Exp.Exp* string)) =>((Exp.Exp* string)) =
 
   rule	string_length(str) => slen &
 	Util.strncmp(str,id,slen) => true &
-	System.string_replace(id,str,"") => id' 
+	System.stringReplace(id,str,"") => id' 
 	--------------------------------
 	rename_derivatives_exp((Exp.CREF(Exp.CREF_IDENT(id,s),tp),str))
 	  => ((Exp.CALL(Absyn.IDENT("der"),[Exp.CREF(Exp.CREF_IDENT(id',s),tp)],false,true),str))
@@ -4352,7 +4352,7 @@ relation matching_algorithm: (DAELow,IncidenceMatrix, IncidenceMatrixT,
 	      int vector,
 	      DAELow,IncidenceMatrix, IncidenceMatrixT) =
 
-  rule	DAEEXT.clear_differentiated() &
+  rule	DAEEXT.clearDifferentiated() &
 	check_matching(dae,match_opts) &  	
 	array_length(m) => nvars &
 	array_length(mt) => neqns &
@@ -4628,14 +4628,14 @@ relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
 	       IncidenceMatrixT) =
 	  
   rule	int_eq(nv,i) => true &
-	DAEEXT.init_marks(nv,nf) &(* eMark(i)=vMark(i)=false *)
+	DAEEXT.initMarks(nv,nf) &(* eMark(i)=vMark(i)=false *)
 	path_found(m,mt,i,ass1,ass2) => (ass1',ass2')  (* exit loop *)
 	---------------------------------------------
 	matching_algorithm2(dae,m,mt,nv,nf,i,ass1,ass2,_) 
 	  => (ass1',ass2',dae,m,mt)
 
   rule	int_add(i,1) => i' &
-	DAEEXT.init_marks(nv,nf) &(* eMark(i)=vMark(i)=false *)
+	DAEEXT.initMarks(nv,nf) &(* eMark(i)=vMark(i)=false *)
 	path_found(m,mt,i,ass1,ass2) => (ass1',ass2') & 
 	matching_algorithm2(dae,m,mt,nv,nf,i',ass1',ass2',match_opts) 
 	  => (ass1'',ass2'',dae,m,mt)
@@ -4682,8 +4682,8 @@ relation matching_algorithm2: (DAELow,IncidenceMatrix, IncidenceMatrixT
 
   rule	(* When index reduction also fails, the model is structurally 
 	 singular. **)
-	DAEEXT.get_marked_eqns() => eqn_lst &
-	DAEEXT.get_marked_variables() => var_lst &
+	DAEEXT.getMarkedEqns() => eqn_lst &
+	DAEEXT.getMarkedVariables() => var_lst &
 	dump_marked_eqns(dae,eqn_lst) => eqn_str &
 	dump_marked_vars(dae,var_lst) => var_str &
 	Error.add_message(Error.STRUCT_SINGULAR_SYSTEM,[eqn_str,var_str])
@@ -4755,8 +4755,8 @@ relation reduce_index_dummy_der: (DAELow,
 				IncidenceMatrix, 
 				IncidenceMatrixT) =
 	
-  rule	DAEEXT.get_marked_eqns() => eqns &
-	DAEEXT.get_differentiated_eqns => diff_eqns &
+  rule	DAEEXT.getMarkedEqns() => eqns &
+	DAEEXT.getDifferentiatedEqns => diff_eqns &
 	Util.list_setdifference_p(eqns,diff_eqns,int_eq) => eqns' &
 
 	(* Collect the states in the equations that are singular, i.e. composing
@@ -4782,7 +4782,7 @@ relation reduce_index_dummy_der: (DAELow,
 	reduce_index_dummy_der(dae,m,mt,nv,nf,i) 
 	  => (dae,m,mt)
 
-  rule	DAEEXT.get_marked_eqns() => eqns &
+  rule	DAEEXT.getMarkedEqns() => eqns &
 	Util.list_map(eqns,int_string) => es &
 	Util.string_delimit_list(es,", ") => es' &
 	states_in_eqns(eqns,dae,m,mt) => ([],_) &
@@ -5563,7 +5563,7 @@ relation differentiate_eqns: (DAELow,
 	equation_add(eqns,eqn') => eqns' &
 	equation_size(eqns') => leneqns & (* length gives index of new equation *)
 	(* Mark equation as differentiated so it won't be differentiated again*)
-	DAEEXT.mark_differentiated(e) &
+	DAEEXT.markDifferentiated(e) &
 	differentiate_eqns(DAELOW(v,kv,eqns',seqns,ie,ae,al,wc),m,mt,nv,nf,es) 
 	  => (dae,m,mt,nv,nf,reqns)
 	  ----------------------------
@@ -5776,7 +5776,7 @@ relation add_marked_vars:(DAELow,
 	
   rule	(* TODO remove variable from dae and m,mt and add der{variable} instead*)
 	int_add(nv,1) => nv' &
-	DAEEXT.set_v(v,nv') &
+	DAEEXT.setV(v,nv') &
 	
 	add_marked_vars(dae,m,nt,nv',nf,vs) => (dae,m,mt,nv,nf)
 	-------------------------------------------------------
@@ -5799,7 +5799,7 @@ relation path_found: (IncidenceMatrix, IncidenceMatrixT, int, Assignments, Assig
                   => (Assignments, Assignments) =
 
 
-  rule	DAEEXT.e_mark(i) (* Side effect *) &
+  rule	DAEEXT.eMark(i) (* Side effect *) &
 	assign_one_in_eqn(m,mt,i,ass1,ass2) => (ass1',ass2')
 	------------
 	path_found(m,mt,i,ass1,ass2) => (ass1',ass2')
@@ -6084,7 +6084,7 @@ end
 **)
 relation is_not_v_marked: int => () =
 
-  rule	DAEEXT.get_v_mark(i) => false
+  rule	DAEEXT.getVMark(i) => false
 	------------------
 	is_not_v_marked(i)
 end
@@ -6110,7 +6110,7 @@ relation forall_unmarked_vars_in_eqn_body: (IncidenceMatrix, IncidenceMatrixT
 					    , Assignments)  
 	  => (Assignments, Assignments) =
 
-  rule	DAEEXT.v_mark(v) &
+  rule	DAEEXT.vMark(v) &
 	get_assigned(v,ass1,ass2) => assarg &
 	path_found(m,mt,assarg,ass1,ass2) => (ass1',ass2') &
 	assign(v,i,ass1',ass2') => (ass1'',ass2'')
@@ -6118,7 +6118,7 @@ relation forall_unmarked_vars_in_eqn_body: (IncidenceMatrix, IncidenceMatrixT
 	forall_unmarked_vars_in_eqn_body(m,mt,i,vars as (v::vs),ass1,ass2) 
 	  => (ass1'',ass2'')
 	
-  rule	DAEEXT.v_mark(v) &
+  rule	DAEEXT.vMark(v) &
 	forall_unmarked_vars_in_eqn_body(m,mt,i,vs,ass1,ass2) => (ass1',ass2')
 	--------------------------------------------------------------------
 	forall_unmarked_vars_in_eqn_body(m,mt,i,vars as (v::vs),ass1,ass2)
@@ -6141,8 +6141,8 @@ relation strong_components: (IncidenceMatrix, IncidenceMatrixT,
 	(int list list ) =
 
   rule	array_length(m) => n &
-	DAEEXT.init_lowlink(n) &
-	DAEEXT.init_number(n) &
+	DAEEXT.initLowLink(n) &
+	DAEEXT.initNumber(n) &
 	strong_connect_main(m,mt,ass1,ass2,n,0,1,[],[]) 
 	  => (i,stack,comps) 
 	-----------------------------------
@@ -6188,7 +6188,7 @@ relation strong_connect_main:(IncidenceMatrix,
 	strong_connect_main(m,mt,a1,a2,n,i,w,stack,comp) 
 	  => (i,stack,comp)
 	
-  rule	DAEEXT.get_number(w) => 0 &
+  rule	DAEEXT.getNumber(w) => 0 &
 	strong_connect(m,mt,a1,a2,i,w,stack,comps)
 	  =>(i,stack',comps) &
 	int_add(w,1) => w' &
@@ -6198,7 +6198,7 @@ relation strong_connect_main:(IncidenceMatrix,
 	strong_connect_main(m,mt,a1,a2,n,i,w,stack,comps)
 	  => (i,stack'',comps)
 
-  rule	DAEEXT.get_number(w) => num &
+  rule	DAEEXT.getNumber(w) => num &
 	int_eq(num,0) => false &
 	int_add(w,1) => w' &
 	strong_connect_main(m,mt,a1,a2,n,i,w',stack,comps)
@@ -6231,8 +6231,8 @@ relation strong_connect: (IncidenceMatrix,
   rule	int_add(i,1) => i' &
 (*	set_number(number,v,i') => number' &
 	set_lowlink(lowlink,v,i') => lowlink' &*)
-	DAEEXT.set_number(v,i') &
-	DAEEXT.set_lowlink(v,i') &
+	DAEEXT.setNumber(v,i') &
+	DAEEXT.setLowLink(v,i') &
 	let stack' = v::stack & 
 	reachable_nodes(v,m,mt,a1,a2) => eqns &
 	iterate_reachable_nodes(eqns,m,mt,a1,a2,i',v,stack',comps)
@@ -6321,26 +6321,26 @@ relation iterate_reachable_nodes: (int list,
 				   int list list) 
 	  => (int, int list, int list list) =
 	
-  rule	DAEEXT.get_number(w) => 0 &
+  rule	DAEEXT.getNumber(w) => 0 &
 	strong_connect(m,mt,a1,a2,i,w,stack,comps) 
 	  => (i,stack,comps') &
-	DAEEXT.get_lowlink(v) => lv &
-	DAEEXT.get_lowlink(w) => lw &
+	DAEEXT.getLowLink(v) => lv &
+	DAEEXT.getLowLink(w) => lw &
 	int_min(lv,lw) => minv &
-	DAEEXT.set_lowlink(v,minv) &
+	DAEEXT.setLowLink(v,minv) &
 	iterate_reachable_nodes(ws,m,mt,a1,a2,i,v,stack,comps') 
 	  => (i,stack,comps'')
 	  ----------------------------
 	iterate_reachable_nodes(w::ws,m,mt,a1,a2,i,v,stack,comps) 
 	  => (i, stack,comps'')
 	  
-  rule	DAEEXT.get_number(w) => nw &
-	DAEEXT.get_number(v) => nv &
+  rule	DAEEXT.getNumber(w) => nw &
+	DAEEXT.getNumber(v) => nv &
 	int_lt(nw,nv) => true &
 	list_member(w,stack) => true &
-	DAEEXT.get_lowlink(w) => lowlinkw &
+	DAEEXT.getLowLink(w) => lowlinkw &
 	int_min(nw,lowlinkw) => minv &
-	DAEEXT.set_lowlink(v,minv) &
+	DAEEXT.setLowLink(v,minv) &
 	iterate_reachable_nodes(ws,m,mt,a1,a2,i,v,stack,comps) 
 	  => (i,stack,comps')
 	  -----------------------
@@ -6394,8 +6394,8 @@ relation check_root: (IncidenceMatrix,
 	      int list, 
 	      int list) =
 
-  rule	DAEEXT.get_lowlink(v) => lv &
-	DAEEXT.get_number(v) => nv &
+  rule	DAEEXT.getLowLink(v) => lv &
+	DAEEXT.getNumber(v) => nv &
 	int_eq(lv,nv) => true &
 	check_stack(m,mt,a1,a2,i,v,stack,[])
 	=> (i,stack',comps) 
@@ -6427,8 +6427,8 @@ relation check_stack: (IncidenceMatrix,
 		       int list) 		     
 	  => (int, int list, int list) =
 
-  rule	DAEEXT.get_number(top) => topn &
-	DAEEXT.get_number(v) => vn &
+  rule	DAEEXT.getNumber(top) => topn &
+	DAEEXT.getNumber(v) => vn &
 	int_ge(topn,vn) => true &
 	check_stack(m,mt,a1,a2,i,v,rest,comp) 
 	  => (i,stack',comp') 
@@ -6465,7 +6465,7 @@ relation dump_components2: (int list list,int) => () =
 
   axiom	dump_components2([],_) => ()
 	
-  rule	DAEEXT.get_lowlink(i) => ni &
+  rule	DAEEXT.getLowLink(i) => ni &
 	print "{" & 
 	Util.list_map(l,int_string) => ls &
 	Util.string_delimit_list(ls,", ") =>  s &
@@ -7643,13 +7643,13 @@ relation add_variables_to_env: (Var list, Env.Env) => Env.Env =
 	-------------------------------------------
 	add_variables_to_env(VAR(Exp.CREF_IDENT(crn,_),a,b,t,NONE,_,d,f,g,h,i,dae_var_attr,comment,flow)::rest,env) => env''
 
-  rule	Print.print_buf "Warning, skipping a variable qualified:" &
+  rule	Print.printBuf "Warning, skipping a variable qualified:" &
 	Exp.print_component_ref cr &
 	add_variables_to_env(rest,env) => env'
 	------------------
 	add_variables_to_env(VAR(cr as Exp.CREF_QUAL(_,_,_),_,_,_,_,_,_,_,_,_,_,_,_,flow)::rest,env) => env'
 
-  rule	Print.print_buf "Warning, skipping a variable :" &
+  rule	Print.printBuf "Warning, skipping a variable :" &
 	add_variables_to_env(rest,env) => env'
 	------------------
 	add_variables_to_env(_::rest,env) => env'
@@ -7674,8 +7674,8 @@ relation update_variables:(Var list, Env.Env) => Var list =
 
   rule	update_variables(rest,env) => rest' &
 	not Ceval.ceval(env,e,false,NONE,NONE,Ceval.NO_MSG) => (_,_) &
-	Print.print_buf "Warning, ceval failed for parameter: " &
-	Exp.print_component_ref cr & Print.print_buf "\n" 
+	Print.printBuf "Warning, ceval failed for parameter: " &
+	Exp.print_component_ref cr & Print.printBuf "\n" 
 	-----------------------------------
 	update_variables(VAR(cr,a,b,c,SOME(e),v,d,f,g,h,i,dae_var_attr,comment,flow)::rest,env)
 	  => (VAR(cr,a,b,c,SOME(e),v,d,f,g,h,i,dae_var_attr,comment,flow)::rest')

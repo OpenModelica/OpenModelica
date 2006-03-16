@@ -125,7 +125,7 @@ relation print_prefix : Prefix => () =
 
 
   rule	print_prefix_str p => s &
-	Print.print_buf s
+	Print.printBuf s
 	------------------------------
 	print_prefix p
 
@@ -187,7 +187,7 @@ end
  **)
 relation prefix_to_path: Prefix => Absyn.Path =
 
-  rule	Print.print_buf "#-- Error: Cannot convert empty prefix to a path\n"
+  rule	Print.printBuf "#-- Error: Cannot convert empty prefix to a path\n"
 	---------------------------------------------------------
 	prefix_to_path NOPRE => fail
 
@@ -236,7 +236,7 @@ end
  **)
 relation prefix_to_cref2 : (Prefix, Exp.ComponentRef option) => Exp.ComponentRef =
 
-  rule	Print.print_buf "#-- Cannot convert empty prefix to component reference\n"
+  rule	Print.printBuf "#-- Cannot convert empty prefix to component reference\n"
 	----------------------------------------------------------------
 	prefix_to_cref2 (NOPRE, NONE) => fail
 
@@ -360,8 +360,8 @@ relation prefix_exp : (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
 	-------------------------------------
 	prefix_exp(env,Exp.REDUCTION(fcn,exp,id,iterexp), p) => Exp.REDUCTION(fcn,exp',id,iterexp')
 
-  rule	Print.print_buf "- prefix_exp failed\n" &
-	Print.print_buf "  expression: " & Exp.print_exp e & Print.print_buf "\n"
+  rule	Print.printBuf "- prefix_exp failed\n" &
+	Print.printBuf "  expression: " & Exp.print_exp e & Print.printBuf "\n"
 	-----------------------------------------------------
 	prefix_exp(_,e,_) => fail
 

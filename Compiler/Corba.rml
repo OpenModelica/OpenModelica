@@ -68,11 +68,11 @@ module Corba:
   relation initialize: () => ()
 
 (** 
- ** relation wait_for_command
+ ** relation waitForCommand
  ** A blocking relation, waiting for incomming commands.
  ** (will lock)
  **)
-  relation wait_for_command: () => string
+  relation waitForCommand: () => string
 
 (** 
  ** Sends a reply from the incomming message returned by wait_for_command.

@@ -539,7 +539,7 @@ relation element_spec_name : ElementSpec => Ident =
 
   axiom element_spec_name COMPONENTS(_,_,[COMPONENTITEM(COMPONENT(n,_,_),_,_)]) => n
 
-  rule  Print.print_buf "# element_spec_name EXTENDS\n"
+  rule  Print.printBuf "# element_spec_name EXTENDS\n"
 	-------------------------------------
 	element_spec_name EXTENDS(_,_) => fail
 
@@ -696,7 +696,7 @@ relation get_cref_from_exp: ( Exp ) => ComponentRef list =
 	get_cref_from_exp(RANGE(e1,NONE,e2)) => res
 	    
   rule	(*Util.list_map(expl,get_cref_from_exp) => res*)
-	Print.print_buf "Not implemented yet\n" 
+	Print.printBuf "Not implemented yet\n" 
 	------------------
 	get_cref_from_exp(TUPLE(expl)) => []
 
@@ -871,7 +871,7 @@ end
 relation print_restr : Restriction => () =
 
   rule	restr_string restr => str &
-	Print.print_buf str
+	Print.printBuf str
 	----------------
 	print_restr restr
 end

@@ -913,7 +913,7 @@ relation inst_classdef: (Env, Mod, Prefix, Connect.Sets, ClassInf.State,
 	  
  	inst_basictype_baseclass(env3,extendselts,compelts,mods,inst_dims) 
 	  => bc
-	 & ErrorExt.error_on() 
+	 & ErrorExt.errorOn() 
 	------------------------------------------------------
 	inst_classdef(env,mods,pre, csets, ci_state,
 		      SCode.PARTS(els,eqs,initeqs,alg,initalg,_), re, prot, 
@@ -1135,7 +1135,7 @@ relation inst_basictype_baseclass:(Env,
 				   InstDims) 
 	  => Types.Type option =
 	  
-  rule	ErrorExt.error_off() &
+  rule	ErrorExt.errorOff() &
 	Mod.elab_mod(env,Prefix.NOPRE,mod,true(* impl*)) => m' &
 
 	Mod.merge(mods,m',env,Prefix.NOPRE) => m'' &
@@ -1153,7 +1153,7 @@ relation inst_basictype_baseclass:(Env,
 	  => SOME(ty)
 
 	(* Inherits baseclass -and- has components *)
-  rule	ErrorExt.error_off() &
+  rule	ErrorExt.errorOff() &
 	Mod.elab_mod(env,Prefix.NOPRE,mod,true(* impl*)) => m' &
 	Lookup.lookup_class(env,path,true) => (cdef,cenv) &
 	SCode.class_set_partial(cdef,false) => cdef' &
@@ -1163,13 +1163,13 @@ relation inst_basictype_baseclass:(Env,
 	Types.array_type(ty) => b2 &
 	bool_or(b1,b2) => true &
 	Env.print_env_path_str(env) => classname &
-	ErrorExt.error_on() &
+	ErrorExt.errorOn() &
 	Error.add_message(Error.INHERIT_BASIC_WITH_COMPS,[classname])
 	--------------------------
 	inst_basictype_baseclass(env,[SCode.EXTENDS(path,mod)],_::_,mods,
 				 inst_dims) => fail
 
-  rule	ErrorExt.error_on()
+  rule	ErrorExt.errorOn()
 	-------------------
 	inst_basictype_baseclass(env,_,_,mods,
 				 inst_dims) => fail
@@ -3146,7 +3146,7 @@ relation inst_array : (Env,
           => (env',dae,csets'',ty)
 
   rule	Debug.fprint("failtrace", "- inst_array failed: ") &
-	Debug.fcall("failtrace", Print.print_buf,  n) &
+	Debug.fcall("failtrace", Print.printBuf,  n) &
 	Debug.fprint("failtrace", "\n") 
 	--------------------------------------------------
 	inst_array(_,_,_,_,_,n,(_,_),_,_,_,_,_,_,_) => fail
@@ -3339,7 +3339,7 @@ end
 relation print_dim : (DimExp option) list => () =
 
   rule	print_dim_str(dims) => str &
-	Print.print_buf str 
+	Print.printBuf str 
 	-----------------
 	print_dim (dims) => ()
 
@@ -3351,7 +3351,7 @@ end
  **)
 relation print_dim2 : DimExp  list => () =
 
-  rule	int_string x => s & Print.print_buf s
+  rule	int_string x => s & Print.printBuf s
 	---------------------------
 	print_dim2 [DIMINT(x)]
 
@@ -3359,11 +3359,11 @@ relation print_dim2 : DimExp  list => () =
 	---------------------------
 	print_dim2 [DIMEXP(x,_)]
 
-  rule	int_string x => s & Print.print_buf s & Print.print_buf "," & print_dim2 xs
+  rule	int_string x => s & Print.printBuf s & Print.printBuf "," & print_dim2 xs
 	------------------------------------------------
 	print_dim2 DIMINT(x)::xs
 
-rule	Exp.print_subscript x & Print.print_buf "," & print_dim2 xs
+rule	Exp.print_subscript x & Print.printBuf "," & print_dim2 xs
 	------------------------------------------------
 	print_dim2 DIMEXP(x,_)::xs
   axiom	print_dim2[] => ()
@@ -3521,7 +3521,7 @@ relation compatible_arraydim : ((DimExp option) list,(DimExp option) list)
 	compatible_arraydim (NONE::xs,NONE::ys) 
 	  => DIMEXP(Exp.WHOLEDIM,NONE)::l
 
-  rule	Print.print_buf "-compatible_arraydim failed\n" &
+  rule	Print.printBuf "-compatible_arraydim failed\n" &
 	Debug.fprint("failtrace", "- compatible_arraydim failed\n")
 	--------------------------------------
 	compatible_arraydim (_,_) => fail
@@ -5754,7 +5754,7 @@ relation inst_binding2: (Mod,Types.Type,int list,string)
 	---------------------------------------------------
 	inst_binding2 (mod,etype,index::res,bind_name) => NONE
 
-  rule  (*Print.print_buf("inst_binding2 failed\n")*)
+  rule  (*Print.printBuf("inst_binding2 failed\n")*)
         ---------------------------------------------------
 	inst_binding2 (_,_,_,_) => fail
 	

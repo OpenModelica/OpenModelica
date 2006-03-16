@@ -1402,7 +1402,7 @@ relation modelica_string_to_c_str1 : (string, ReplacePattern list) => string =
   axiom modelica_string_to_c_str1(str,[]) => str
 
   rule  modelica_string_to_c_str1(str,res) => str' &
-        System.string_replace(str',from,to) => res_str
+        System.stringReplace(str',from,to) => res_str
         ----------------------------
         modelica_string_to_c_str1(str,REPLACEPATTERN(from,to)::res) => res_str
 
@@ -1431,7 +1431,7 @@ relation c_str_to_modelica_string1 : (string, ReplacePattern list) => string =
   axiom c_str_to_modelica_string1(str,[]) => str
 
   rule  c_str_to_modelica_string1(str,res) => str' &
-        System.string_replace(str',to,from) => res_str
+        System.stringReplace(str',to,from) => res_str
         ----------------------------
         c_str_to_modelica_string1(str,REPLACEPATTERN(from,to)::res) => res_str
         
@@ -1679,31 +1679,31 @@ relation write_file_or_error_msg:(string,(*filename*)
                                      string(*the string to be written*)
                                      ) => () =
 
-  rule  System.write_file(filename,str) 
+  rule  System.writeFile(filename,str) 
         --------------------------
         write_file_or_error_msg(filename,str) 
         
   rule  string_append_list(["# Cannot write to file: ",
                             filename,
                             "."]) => error_str &
-        Print.print_error_buf(error_str)
+        Print.printErrorBuf(error_str)
         --------------------------
         write_file_or_error_msg(filename,str) 
 
 end
    
-(** this relation executes a command with System.system_call 
- ** if System.system_call does not return 0 then the msg is outputed to
+(** this relation executes a command with System.systemCall 
+ ** if System.systemCall does not return 0 then the msg is outputed to
  ** error_buf and the relation fails
  **)
 relation system_call_with_error_msg:(string,(*command*)
                                      string)(*error_msg to error_buf if fail*) => () =
 
-  rule  System.system_call(s_call) => 0
+  rule  System.systemCall(s_call) => 0
         ------------------------------
         system_call_with_error_msg(s_call,_) 
 
-  rule  Print.print_error_buf(e_msg) 
+  rule  Print.printErrorBuf(e_msg) 
         ------------------------------
         system_call_with_error_msg(_,e_msg) => fail
 
@@ -1776,7 +1776,7 @@ end
 
 relation get_absolute_directory_and_file:(string) => (string,string) =
 
-  rule  System.path_delimiter() => pd &
+  rule  System.pathDelimiter() => pd &
         string_list(pd) => pd_chr::[] &
         (*same dir only filename as param*) 
         string_split_at_char(file,pd_chr) => list_path::[] &
@@ -1784,7 +1784,7 @@ relation get_absolute_directory_and_file:(string) => (string,string) =
         -------------------------
         get_absolute_directory_and_file(file) => (res,list_path)
 
-  rule   System.path_delimiter() => pd &
+  rule   System.pathDelimiter() => pd &
         string_list(pd) => pd_chr::[] &
         string_split_at_char(file,pd_chr) => list_path &
         list_last(list_path) => file_path &

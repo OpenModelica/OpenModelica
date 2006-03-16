@@ -1,3 +1,43 @@
+/*
+This file is part of OpenModelica.
+
+Copyright (c) 1998-2005, Linköpings universitet, Department of
+Computer and Information Science, PELAB
+
+All rights reserved.
+
+(The new BSD license, see also
+http://www.opensource.org/licenses/bsd-license.php)
+
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+* Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in
+  the documentation and/or other materials provided with the
+  distribution.
+
+* Neither the name of Linköpings universitet nor the names of its
+  contributors may be used to endorse or promote products derived from
+  this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 #include <stdio.h>
 #include "rml.h"
@@ -225,21 +265,21 @@ RML_BEGIN_LABEL(RTOpts__typeinfo)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(RTOpts__split_5farrays)
+RML_BEGIN_LABEL(RTOpts__splitArrays)
 {
   rmlA0 = RML_PRIM_MKBOOL(split_arrays);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(RTOpts__modelica_5foutput)
+RML_BEGIN_LABEL(RTOpts__modelicaOutput)
 {
   rmlA0 = RML_PRIM_MKBOOL(modelica_output);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(RTOpts__params_5fstruct)
+RML_BEGIN_LABEL(RTOpts__paramsStruct)
 {
   rmlA0 = RML_PRIM_MKBOOL(params_struct);
   RML_TAILCALLK(rmlSC);
@@ -253,7 +293,7 @@ RML_BEGIN_LABEL(RTOpts__silent)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(RTOpts__debug_5fflag)
+RML_BEGIN_LABEL(RTOpts__debugFlag)
 {
     void *str = rmlA0;
     char *strdata = RML_STRINGDATA(str);
@@ -288,7 +328,7 @@ RML_BEGIN_LABEL(RTOpts__debug_5fflag)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(RTOpts__no_5fproc)
+RML_BEGIN_LABEL(RTOpts__noProc)
 {
   rmlA0 = (void*)mk_icon(nproc);
   RML_TAILCALLK(rmlSC);
@@ -309,7 +349,7 @@ RML_BEGIN_LABEL(RTOpts__bandwidth)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(RTOpts__simulation_5fcg)
+RML_BEGIN_LABEL(RTOpts__simulationCg)
 {
   rmlA0 = RML_PRIM_MKBOOL(simulation_cg);
   RML_TAILCALLK(rmlSC);

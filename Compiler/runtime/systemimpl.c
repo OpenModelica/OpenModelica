@@ -260,7 +260,7 @@ RML_BEGIN_LABEL(System__toupper)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__remove_5ffirst_5fand_5flast_5fchar)
+RML_BEGIN_LABEL(System__removeFirstAndLastChar)
 {
   char *str = RML_STRINGDATA(rmlA0);
   char *res = "";
@@ -335,10 +335,10 @@ RML_BEGIN_LABEL(System__trim)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__trim_5fchar)
+RML_BEGIN_LABEL(System__trimChar)
 {
   char* str = RML_STRINGDATA(rmlA0);
-  char  char_to_be_trimmed = (char)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA1));
+  char  char_to_be_trimmed = (char)RML_STRINGDATA(rmlA1)[0];
   int length=strlen(str);
   int start_pos = 0;
   int end_pos = length - 1;
@@ -379,7 +379,7 @@ RML_BEGIN_LABEL(System__strcmp)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__string_5freplace)
+RML_BEGIN_LABEL(System__stringReplace)
 {
   char *str = RML_STRINGDATA(rmlA0);
   char *source = RML_STRINGDATA(rmlA1);
@@ -397,7 +397,7 @@ RML_BEGIN_LABEL(System__string_5freplace)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__compile_5fc_5ffile)
+RML_BEGIN_LABEL(System__compileCFile)
 {
   char* str = RML_STRINGDATA(rmlA0);
   char command[255];
@@ -421,7 +421,7 @@ RML_BEGIN_LABEL(System__compile_5fc_5ffile)
 }
 RML_END_LABEL 
 
-RML_BEGIN_LABEL(System__set_5fc_5fcompiler)
+RML_BEGIN_LABEL(System__setCCompiler)
 {
   char* str = RML_STRINGDATA(rmlA0);
   if(set_cc(str))  { 
@@ -432,7 +432,7 @@ RML_BEGIN_LABEL(System__set_5fc_5fcompiler)
 RML_END_LABEL
 
 
-RML_BEGIN_LABEL(System__set_5fc_5fflags)
+RML_BEGIN_LABEL(System__setCFlags)
 {
   char* str = RML_STRINGDATA(rmlA0);
   if (set_cflags(str)) {
@@ -442,7 +442,7 @@ RML_BEGIN_LABEL(System__set_5fc_5fflags)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__execute_5ffunction)
+RML_BEGIN_LABEL(System__executeFunction)
 {
   char* str = RML_STRINGDATA(rmlA0);
   char command[255];
@@ -457,7 +457,7 @@ RML_BEGIN_LABEL(System__execute_5ffunction)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__system_5fcall)
+RML_BEGIN_LABEL(System__systemCall)
 {
   char* str = RML_STRINGDATA(rmlA0);
   int ret_val;
@@ -492,7 +492,7 @@ RML_BEGIN_LABEL(System__pwd)
 RML_END_LABEL
 
 
-RML_BEGIN_LABEL(System__write_5ffile)
+RML_BEGIN_LABEL(System__writeFile)
 {
   char* data = RML_STRINGDATA(rmlA1);
   char* filename = RML_STRINGDATA(rmlA0);
@@ -507,7 +507,7 @@ RML_BEGIN_LABEL(System__write_5ffile)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__read_5ffile)
+RML_BEGIN_LABEL(System__readFile)
 {
   char* filename = RML_STRINGDATA(rmlA0);
   char* buf;
@@ -555,7 +555,7 @@ RML_END_LABEL
 /* } */
 /* RML_END_LABEL */
 
-RML_BEGIN_LABEL(System__read_5fenv)
+RML_BEGIN_LABEL(System__readEnv)
 {
   char* envname = RML_STRINGDATA(rmlA0);
   char *envvalue = getenv(envname);
@@ -570,7 +570,7 @@ RML_BEGIN_LABEL(System__read_5fenv)
 RML_END_LABEL
 
 /* adrpo@ida added 2005-11-24 */
-RML_BEGIN_LABEL(System__set_5fenv)
+RML_BEGIN_LABEL(System__setEnv)
 {
   char* envname = RML_STRINGDATA(rmlA0);
   char* envvalue = RML_STRINGDATA(rmlA1);
@@ -604,7 +604,7 @@ int file_select_directories(const struct dirent *entry)
 }
 
 
-RML_BEGIN_LABEL(System__sub_5fdirectories)
+RML_BEGIN_LABEL(System__subDirectories)
 {
   int i,count;
   void *res;
@@ -647,7 +647,7 @@ int file_select_mo(const struct dirent *entry)
   }
 }
 
-RML_BEGIN_LABEL(System__mo_5ffiles)
+RML_BEGIN_LABEL(System__moFiles)
 {
   int i,count;
   void *res;
@@ -750,7 +750,7 @@ void* read_one_value_from_file(FILE* file, type_description* desc)
   return res;
 }
 
-RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
+RML_BEGIN_LABEL(System__readValuesFromFile)
 {
   int stat=0;
   int varcount=0;
@@ -798,7 +798,7 @@ RML_BEGIN_LABEL(System__read_5fvalues_5ffrom_5ffile)
 }   
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__read_5fptolemyplot_5fdataset)
+RML_BEGIN_LABEL(System__readPtolemyplotDataset)
 {
   int i,size;
   char **vars;
@@ -819,17 +819,14 @@ RML_BEGIN_LABEL(System__read_5fptolemyplot_5fdataset)
   if (rmlA0 == NULL) {
     RML_TAILCALLK(rmlFC);
   }
-#ifdef FIX_JAVA_NAMES
+  
   rml_prim_once(Values__reverseMatrix);
-#else
-  rml_prim_once(Values__reverse_5fmatrix);
-#endif
 
   RML_TAILCALLK(rmlSC);
 }   
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__read_5fptolemyplot_5fdataset_5fsize)
+RML_BEGIN_LABEL(System__readPtolemyplotDatasetSize)
 {
   int size;
   char* filename = RML_STRINGDATA(rmlA0);
@@ -846,7 +843,7 @@ RML_BEGIN_LABEL(System__read_5fptolemyplot_5fdataset_5fsize)
 RML_END_LABEL
 
 
-RML_BEGIN_LABEL(System__write_5fptolemyplot_5fdataset)
+RML_BEGIN_LABEL(System__writePtolemyplotDataset)
 {
   char *filename = RML_STRINGDATA(rmlA0);
   void *value = rmlA1;
@@ -884,7 +881,7 @@ RML_BEGIN_LABEL(System__hash)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__path_5fdelimiter)
+RML_BEGIN_LABEL(System__pathDelimiter)
 {
   rmlA0 = (void*) mk_scon("/");
 
@@ -892,7 +889,7 @@ RML_BEGIN_LABEL(System__path_5fdelimiter)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__group_5fdelimiter)
+RML_BEGIN_LABEL(System__groupDelimiter)
 {
   rmlA0 = (void*) mk_scon(":");
 
@@ -900,7 +897,7 @@ RML_BEGIN_LABEL(System__group_5fdelimiter)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__directory_5fexist)
+RML_BEGIN_LABEL(System__directoryExists)
 {
   char* str = RML_STRINGDATA(rmlA0);
   int ret_val;
@@ -922,7 +919,7 @@ RML_BEGIN_LABEL(System__directory_5fexist)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__regular_5ffile_5fexist)
+RML_BEGIN_LABEL(System__regularFileExists)
 {
   char* str = RML_STRINGDATA(rmlA0);
   int ret_val;
@@ -1083,7 +1080,7 @@ void * generate_array(char type, int curdim, type_description *desc, void *data)
 
 
 char* class_names_for_simulation = NULL;
-RML_BEGIN_LABEL(System__get_5fclassnames_5ffor_5fsimulation)
+RML_BEGIN_LABEL(System__getClassnamesForSimulation)
 {
   if(class_names_for_simulation)
     rmlA0 = (void*) mk_scon(strdup(class_names_for_simulation));
@@ -1093,7 +1090,7 @@ RML_BEGIN_LABEL(System__get_5fclassnames_5ffor_5fsimulation)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__set_5fclassnames_5ffor_5fsimulation)
+RML_BEGIN_LABEL(System__setClassnamesForSimulation)
 {
   char* class_names = RML_STRINGDATA(rmlA0);
   if(class_names_for_simulation)

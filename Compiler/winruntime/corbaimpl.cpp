@@ -155,7 +155,7 @@ DWORD WINAPI runOrb(void* arg) {
 }
 
 
-RML_BEGIN_LABEL(Corba__wait_5ffor_5fcommand)
+RML_BEGIN_LABEL(Corba__waitForCommand)
 {
   while (WAIT_OBJECT_0 != WaitForSingleObject(omc_client_request_event,INFINITE) );
   

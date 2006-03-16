@@ -292,12 +292,12 @@ end
  **)
 relation c_print_functions_str: CFunction list => string =
 
-  rule	Print.get_string() => s &
-	Print.clear_buf()  &
+  rule	Print.getString() => s &
+	Print.clearBuf()  &
 	c_print_functions(fs) &
-	Print.get_string()  => res &
-	Print.clear_buf() &
-	Print.print_buf s 
+	Print.getString()  => res &
+	Print.clearBuf() &
+	Print.printBuf s 
 	---------------------
 	c_print_functions_str(fs) => res
 end
@@ -338,21 +338,21 @@ relation c_print_function : CFunction => () =
 	Util.string_append_list [rt," ",fn,"(",args_str,")\n{"] => stmt_str &
 	
 	let i0 = 0 &
-(*	c_print_indented_list (rts,i0) => i1 & Print.print_buf "\n" & *)
-	c_print_indented (stmt_str,i0) => i2 & Print.print_buf "\n" &
-	c_print_indented_list (vd,i2)  => i3 & Print.print_buf "\n" &
-	c_print_indented_list (is,i3)  => i4 & Print.print_buf "\n" &
-	c_print_indented_list (st,i4)  => i5 & Print.print_buf "\n" &
-	c_print_indented_list (cl,i5)  => i6 & Print.print_buf "\n" &
-	c_print_indented      ("}",i6) => i7 & Print.print_buf "\n"
+(*	c_print_indented_list (rts,i0) => i1 & Print.printBuf "\n" & *)
+	c_print_indented (stmt_str,i0) => i2 & Print.printBuf "\n" &
+	c_print_indented_list (vd,i2)  => i3 & Print.printBuf "\n" &
+	c_print_indented_list (is,i3)  => i4 & Print.printBuf "\n" &
+	c_print_indented_list (st,i4)  => i5 & Print.printBuf "\n" &
+	c_print_indented_list (cl,i5)  => i6 & Print.printBuf "\n" &
+	c_print_indented      ("}",i6) => i7 & Print.printBuf "\n"
 	-----------------------------------------------------------
 	c_print_function CFUNCTION(rt,fn,rts,ad,vd,is,st,cl)
 
   rule	Util.string_delimit_list(ads,", ") => args_str &
 	Util.string_append_list ["extern ", rt," ",fn,"(",args_str,");\n"] => stmt_str &
 	let i0 = 0 &
-(*	c_print_indented_list (rts,i0) => i1 & Print.print_buf "\n" & *)
-	c_print_indented (stmt_str,i0) => i2 & Print.print_buf "\n"
+(*	c_print_indented_list (rts,i0) => i1 & Print.printBuf "\n" & *)
+	c_print_indented (stmt_str,i0) => i2 & Print.printBuf "\n"
 	-----------------------------------------------------------
 	c_print_function CEXTFUNCTION(rt,fn,rts,ads,_,_)
 
@@ -383,14 +383,14 @@ end
  **)   
 relation c_print_function_include : CFunction => (string list (*libs*)) =
 	
-  rule	Print.print_buf "#ifdef __cplusplus\n" & 
- 	Print.print_buf "extern \"C\" {\n" &
-	Print.print_buf "#endif\n" & 
+  rule	Print.printBuf "#ifdef __cplusplus\n" & 
+ 	Print.printBuf "extern \"C\" {\n" &
+	Print.printBuf "#endif\n" & 
  	Util.string_delimit_list(includes,"\n") => str &
-	Print.print_buf str & Print.print_buf "\n" &
-	Print.print_buf "#ifdef __cplusplus\n" & 
-	Print.print_buf "}\n" &
-	Print.print_buf "#endif\n" 
+	Print.printBuf str & Print.printBuf "\n" &
+	Print.printBuf "#ifdef __cplusplus\n" & 
+	Print.printBuf "}\n" &
+	Print.printBuf "#endif\n" 
 	------------------
 	c_print_function_include(CEXTFUNCTION(_,_,_,_,includes,libs)) => libs
 
@@ -424,16 +424,16 @@ relation c_print_function_header : CFunction => () =
 	Util.string_append_list [rt," ",fn,"(",args_str,");"] => stmt_str &
 	
 	let i0 = 0 &
-	c_print_indented_list (rts,i0) => i1 & Print.print_buf "\n" &
-	c_print_indented (stmt_str,i1) => i2 & Print.print_buf "\n"
+	c_print_indented_list (rts,i0) => i1 & Print.printBuf "\n" &
+	c_print_indented (stmt_str,i1) => i2 & Print.printBuf "\n"
 	-----------------------------------------------------------
 	c_print_function_header CFUNCTION(rt,fn,rts,ad,vd,is,st,cl)
 
   rule	Util.string_delimit_list(ads,", ") => args_str &
 	Util.string_append_list ["extern ", rt," ",fn,"(",args_str,");\n"] => stmt_str &
 	let i0 = 0 &
-	c_print_indented_list (rts,i0) => i1 & Print.print_buf "\n" &
-	c_print_indented (stmt_str,i1) => i2 & Print.print_buf "\n"
+	c_print_indented_list (rts,i0) => i1 & Print.printBuf "\n" &
+	c_print_indented (stmt_str,i1) => i2 & Print.printBuf "\n"
 	---------------------------------------------------
 	c_print_function_header CEXTFUNCTION(rt,fn,rts,ads,_,_)
 
@@ -452,7 +452,7 @@ relation c_print_indented_list : (string list,
 	
   axiom c_print_indented_list ([],i) => i
 
-  rule	c_print_indented(f,i) => i' & Print.print_buf "\n" &
+  rule	c_print_indented(f,i) => i' & Print.printBuf "\n" &
 	 c_print_indented_list(r,i') => i''
 	 -----------------
 	 c_print_indented_list(f::r,i) => i''
@@ -471,7 +471,7 @@ relation c_print_indented : (string, int) => int =
 	c_next_level(strl,i) => i' &
 	c_this_level(strl,i) => it &
 	c_print_indent it &
-	Print.print_buf str 
+	Print.printBuf str 
 	-----------
 	c_print_indented (str,i) => i'
 end 
@@ -562,7 +562,7 @@ relation c_print_indent : int => () =
 
   axiom c_print_indent 0
 
-  rule	Print.print_buf " " &
+  rule	Print.printBuf " " &
 	int_sub(i,1) => i' &
 	c_print_indent i'
 	----------------
@@ -611,9 +611,9 @@ relation generate_function_bodies : DAE.DAElist => () =
 
   rule	Debug.fprintln ("cgtr", "generate_function_bodies") &
 	generate_functions_elist elist => cfns &
-	Print.print_buf "\n/* body part */\n" &
+	Print.printBuf "\n/* body part */\n" &
 	c_print_functions cfns &
-	Print.print_buf "\n"
+	Print.printBuf "\n"
 	------------------------------
 	generate_function_bodies DAE.DAE(elist)
 
@@ -631,11 +631,11 @@ relation generate_function_headers : DAE.DAElist => (string list) =
 
   rule	Debug.fprintln ("cgtr", "generate_function_headers") &
 	generate_functions_elist elist => cfns &
-	Print.print_buf "/* header part */\n" &
-	Print.print_buf "#include \"modelica.h\"\n" & (* FIXME: needed? *)
+	Print.printBuf "/* header part */\n" &
+	Print.printBuf "#include \"modelica.h\"\n" & (* FIXME: needed? *)
 	c_print_function_includes cfns => libs &
 	c_print_function_headers cfns &
-	Print.print_buf "\n"
+	Print.printBuf "\n"
 	------------------------------
 	generate_function_headers DAE.DAE(elist) => libs
 
@@ -781,7 +781,7 @@ relation generate_ext_function_includes_libstr: (Absyn.ElementArg list) => strin
   rule	Interactive.get_modification_value(eltarg,
 					   Absyn.CREF_IDENT("Library",[]))
 	  => Absyn.CLASSMOD(_,SOME(Absyn.STRING(lib))) 
-	  (*System.string_replace(lib,"\\\"","\"") => lib'*)
+	  (*System.stringReplace(lib,"\\\"","\"") => lib'*)
 	  -------------------------
 	generate_ext_function_includes_libstr(eltarg) => [lib]
 
@@ -793,7 +793,7 @@ relation generate_ext_function_includes_includestr: (Absyn.ElementArg list) => s
   rule	Interactive.get_modification_value(eltarg,
 					   Absyn.CREF_IDENT("Include",[]))
 	  => Absyn.CLASSMOD(_,SOME(Absyn.STRING(inc))) &
-	  System.string_replace(inc,"\\\"","\"") => inc'
+	  System.stringReplace(inc,"\\\"","\"") => inc'
 	  -------------------------
 	generate_ext_function_includes_includestr(eltarg) => [inc']
 
@@ -2061,8 +2061,8 @@ relation generate_var : (DAE.Element,int)
 	c_add_variables(cfn1,[decl_str]) => cfn' &
 	c_add_inits(cfn',[alloc_str]) => cfn'' &
 	Util.if (is_a,cfn'',cfn') => cfn &
-	Print.print_buf "# default value not implemented yet: " &
-	Exp.print_exp e & Print.print_buf "\n"
+	Print.printBuf "# default value not implemented yet: " &
+	Exp.print_exp e & Print.printBuf "\n"
 	-----------
 	generate_var(var as DAE.VAR(id, vk, vd, typ, SOME(e),inst_dims,start,flow,class,dae_var_attr,comment),tnr) 
 	  => (cfn,tnr1)
@@ -2076,8 +2076,8 @@ relation generate_var : (DAE.Element,int)
 	c_add_variables(cfn,[decl_str]) => cfn' &
 	Util.string_append_list([cref_str," = ",var,";"]) => init_stmt &
 	c_add_inits(cfn',[init_stmt]) => cfn'' &
-	Print.print_buf "# default value not implemented yet: " &
-	Exp.print_exp e & Print.print_buf "\n"
+	Print.printBuf "# default value not implemented yet: " &
+	Exp.print_exp e & Print.printBuf "\n"
 	-----------
 	generate_var(var as DAE.VAR(id, vk, vd, typ, SOME(e),
 				    inst_dims,start,flow,class,dae_var_attr,comment),tnr) 
@@ -3256,7 +3256,7 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------
 	generate_relation (e1,Exp.LESS(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
 
-  rule	Print.print_error_buf "# string comparison not supported\n"
+  rule	Print.printErrorBuf "# string comparison not supported\n"
 	-------
 	generate_relation (e1,Exp.LESS(Exp.STRING),e2,tnr) => fail
 
@@ -3281,7 +3281,7 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------
 	generate_relation (e1,Exp.GREATER(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
 
-  rule	Print.print_error_buf "# string comparison not supported\n"
+  rule	Print.printErrorBuf "# string comparison not supported\n"
 	-------
 	generate_relation (e1,Exp.GREATER(Exp.STRING),e2,tnr) => fail
 
@@ -3306,7 +3306,7 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------
 	generate_relation (e1,Exp.LESSEQ(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
 
-  rule	Print.print_error_buf "# string comparison not supported\n"
+  rule	Print.printErrorBuf "# string comparison not supported\n"
 	-------
 	generate_relation (e1,Exp.LESSEQ(Exp.STRING),e2,tnr) => fail
 
@@ -3331,7 +3331,7 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------
 	generate_relation (e1,Exp.GREATEREQ(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
 
-  rule	Print.print_error_buf "# string comparison not supported\n"
+  rule	Print.printErrorBuf "# string comparison not supported\n"
 	-------
 	generate_relation (e1,Exp.GREATEREQ(Exp.STRING),e2,tnr) => fail
 
@@ -3357,7 +3357,7 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------
 	generate_relation (e1,Exp.EQUAL(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
 
-  rule	Print.print_buf "# string comparison not supported\n"
+  rule	Print.printBuf "# string comparison not supported\n"
 	-------
 	generate_relation (e1,Exp.EQUAL(Exp.STRING),e2,tnr) => fail
 
@@ -3368,7 +3368,7 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------
 	generate_relation (e1,Exp.EQUAL(Exp.INT),e2,tnr) => (cfn, var, tnr2)
 
-  rule	Print.print_error_buf "# Reals can't be compared with ==\n"
+  rule	Print.printErrorBuf "# Reals can't be compared with ==\n"
 	-------
 	generate_relation (e1,Exp.EQUAL(Exp.REAL),e2,tnr) => fail
 
@@ -3380,7 +3380,7 @@ relation generate_relation : (Exp.Exp, Exp.Operator, Exp.Exp, int)
 	-------
 	generate_relation (e1,Exp.NEQUAL(Exp.BOOL),e2,tnr) => (cfn, var, tnr2)
 
-  rule	Print.print_error_buf "# string comparison not supported\n"
+  rule	Print.printErrorBuf "# string comparison not supported\n"
 	-------
 	generate_relation (e1,Exp.NEQUAL(Exp.STRING),e2,tnr) => fail
 

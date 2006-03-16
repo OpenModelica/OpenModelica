@@ -38,7 +38,7 @@ int print_error_buf_impl(char *str)
   return 0;
 }
 
-RML_BEGIN_LABEL(Print__print_5ferror_5fbuf)
+RML_BEGIN_LABEL(Print__printErrorBuf)
 {
   char* str = RML_STRINGDATA(rmlA0);
   if (print_error_buf_impl(str) != 0) {
@@ -51,7 +51,7 @@ RML_BEGIN_LABEL(Print__print_5ferror_5fbuf)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(Print__clear_5ferror_5fbuf)
+RML_BEGIN_LABEL(Print__clearErrorBuf)
 {
   errorNfilled=0;
   if (errorBuf != 0) {
@@ -62,7 +62,7 @@ RML_BEGIN_LABEL(Print__clear_5ferror_5fbuf)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(Print__get_5ferror_5fstring)
+RML_BEGIN_LABEL(Print__getErrorString)
 {
   if (errorBuf == 0) {
     if(error_increase_buffer() != 0) {
@@ -76,7 +76,7 @@ RML_BEGIN_LABEL(Print__get_5ferror_5fstring)
 RML_END_LABEL
 
 
-RML_BEGIN_LABEL(Print__print_5fbuf)
+RML_BEGIN_LABEL(Print__printBuf)
 {
   char* str = RML_STRINGDATA(rmlA0);
   /*  printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str));*/
@@ -97,7 +97,7 @@ RML_BEGIN_LABEL(Print__print_5fbuf)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(Print__clear_5fbuf)
+RML_BEGIN_LABEL(Print__clearBuf)
 {
   nfilled=0;
   if (buf != 0) {
@@ -108,7 +108,7 @@ RML_BEGIN_LABEL(Print__clear_5fbuf)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(Print__get_5fstring)
+RML_BEGIN_LABEL(Print__getString)
 {
   if (buf == 0) {
     if (increase_buffer() != 0) {
@@ -121,7 +121,7 @@ RML_BEGIN_LABEL(Print__get_5fstring)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(Print__write_5fbuf)
+RML_BEGIN_LABEL(Print__writeBuf)
 {
   char * filename = RML_STRINGDATA(rmlA0);
   FILE * file;

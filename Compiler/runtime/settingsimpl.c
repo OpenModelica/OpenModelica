@@ -16,7 +16,7 @@ void Settings_5finit(void)
   
 }
 
-RML_BEGIN_LABEL(Settings__set_5fcompile_5fcommand)
+RML_BEGIN_LABEL(Settings__setCompileCommand)
 {
   char* command = RML_STRINGDATA(rmlA0);
   if(compileCommand)
@@ -32,7 +32,7 @@ RML_BEGIN_LABEL(Settings__set_5fcompile_5fcommand)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(Settings__get_5fcompile_5fcommand)
+RML_BEGIN_LABEL(Settings__getCompileCommand)
 {
   if(compileCommand)
     rmlA0 = (void*) mk_scon(strdup(compileCommand));
@@ -42,7 +42,7 @@ RML_BEGIN_LABEL(Settings__get_5fcompile_5fcommand)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(Settings__set_5ftemp_5fdirectory_5fpath)
+RML_BEGIN_LABEL(Settings__setTempDirectoryPath)
 {
   char* command = RML_STRINGDATA(rmlA0);
   if(tempDirectoryPath)
@@ -58,7 +58,7 @@ RML_BEGIN_LABEL(Settings__set_5ftemp_5fdirectory_5fpath)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(Settings__get_5ftemp_5fdirectory_5fpath)
+RML_BEGIN_LABEL(Settings__getTempDirectoryPath)
 {
   if(tempDirectoryPath)
     rmlA0 = (void*) mk_scon(strdup(tempDirectoryPath));
@@ -68,7 +68,7 @@ RML_BEGIN_LABEL(Settings__get_5ftemp_5fdirectory_5fpath)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(Settings__set_5finstallation_5fdirectory_5fpath)
+RML_BEGIN_LABEL(Settings__setInstallationDirectoryPath)
 {
   char* command = RML_STRINGDATA(rmlA0);
   if(installationDirectoryPath)
@@ -84,7 +84,7 @@ RML_BEGIN_LABEL(Settings__set_5finstallation_5fdirectory_5fpath)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(Settings__get_5finstallation_5fdirectory_5fpath)
+RML_BEGIN_LABEL(Settings__getInstallationDirectoryPath)
 {
   if(installationDirectoryPath)
     rmlA0 = (void*) mk_scon(strdup(installationDirectoryPath));
@@ -101,7 +101,7 @@ RML_BEGIN_LABEL(Settings__get_5finstallation_5fdirectory_5fpath)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(Settings__set_5fplot_5fcommand)
+RML_BEGIN_LABEL(Settings__setPlotCommand)
 {
   char* command = RML_STRINGDATA(rmlA0);
   if(plotCommand)
@@ -117,7 +117,7 @@ RML_BEGIN_LABEL(Settings__set_5fplot_5fcommand)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(Settings__get_5fplot_5fcommand)
+RML_BEGIN_LABEL(Settings__getPlotCommand)
 {
   if(plotCommand)
     rmlA0 = (void*) mk_scon(strdup(plotCommand));
@@ -127,7 +127,7 @@ RML_BEGIN_LABEL(Settings__get_5fplot_5fcommand)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(Settings__set_5fmodelica_5fpath)
+RML_BEGIN_LABEL(Settings__setModelicaPath)
 {
   char* command = RML_STRINGDATA(rmlA0);
   if(modelicaPath)
@@ -143,7 +143,7 @@ RML_BEGIN_LABEL(Settings__set_5fmodelica_5fpath)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(Settings__get_5fmodelica_5fpath)
+RML_BEGIN_LABEL(Settings__getModelicaPath)
 {
   if(modelicaPath)
     rmlA0 = (void*) mk_scon(strdup(modelicaPath));
@@ -160,7 +160,7 @@ RML_BEGIN_LABEL(Settings__get_5fmodelica_5fpath)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(Settings__dump_5fsettings)
+RML_BEGIN_LABEL(Settings__dumpSettings)
 {
   if(compileCommand) 
     printf("compile command: %s\n",compileCommand);

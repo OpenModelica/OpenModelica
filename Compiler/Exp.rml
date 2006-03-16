@@ -2784,7 +2784,7 @@ relation to_exp_cref_subs: Absyn.Subscript list => Subscript list =
   rule	Dump.print_subscripts_str [e] => s &
 	Util.string_append_list(["#Error converting subscript: ",s," to Exp.\n"]) 
 	  => str &
-	  Print.print_error_buf str &
+	  Print.printErrorBuf str &
 	to_exp_cref_subs(xs) => xs' 
 	---------------------------
 	to_exp_cref_subs(e::xs)  => xs'
@@ -2845,16 +2845,16 @@ relation print_component_ref : ComponentRef => () =
 	print_component_ref CREF_IDENT(s,subs)
 
 	(* Does not handle names with underscores *)
-  rule	RTOpts.modelica_output => true &
+  rule	RTOpts.modelicaOutput => true &
 	print_component_ref2 (s,subs) &
-	Print.print_buf "__" &
+	Print.printBuf "__" &
 	print_component_ref cr
 	---------------------
 	print_component_ref CREF_QUAL(s,subs,cr)
 
-  rule	RTOpts.modelica_output => false &
+  rule	RTOpts.modelicaOutput => false &
 	print_component_ref2 (s,subs) &
-	Print.print_buf "." &
+	Print.printBuf "." &
 	print_component_ref cr
 	---------------------
 	print_component_ref CREF_QUAL(s,subs,cr)
@@ -2867,19 +2867,19 @@ end
  **)
 relation print_component_ref2 =
 
-  rule	Print.print_buf s
+  rule	Print.printBuf s
 	-------
 	print_component_ref2 (s,[])
 
-  rule	RTOpts.modelica_output => true &
-	Print.print_buf s &
-	Print.print_buf "_L" & print_list(l,print_subscript,",") & Print.print_buf "_R"
+  rule	RTOpts.modelicaOutput => true &
+	Print.printBuf s &
+	Print.printBuf "_L" & print_list(l,print_subscript,",") & Print.printBuf "_R"
 	-------------------------------------------------------
 	print_component_ref2 (s,l)
 
-  rule	RTOpts.modelica_output => false &
-	Print.print_buf s &
-	Print.print_buf "[" & print_list(l,print_subscript,",") & Print.print_buf "]"
+  rule	RTOpts.modelicaOutput => false &
+	Print.printBuf s &
+	Print.printBuf "[" & print_list(l,print_subscript,",") & Print.printBuf "]"
 	-------------------------------------------------------
 	print_component_ref2 (s,l)
 
@@ -2891,7 +2891,7 @@ end
  **)
 relation print_subscript: Subscript => () =
 	
-  rule	Print.print_buf ":"
+  rule	Print.printBuf ":"
 	---------
 	print_subscript(WHOLEDIM)
 	
@@ -2923,23 +2923,23 @@ end
  **)
 relation print_exp2 : (Exp,int) => () =
 	
-  rule	int_string(x) => s & Print.print_buf s
+  rule	int_string(x) => s & Print.printBuf s
 	----------------------------
 	print_exp2(ICONST(x),_)
 
-  rule	real_string(x) => s & Print.print_buf s
+  rule	real_string(x) => s & Print.printBuf s
 	-----------------------------
 	print_exp2(RCONST(x),_)
 
-  rule	Print.print_buf "\"" & Print.print_buf s & Print.print_buf "\""
+  rule	Print.printBuf "\"" & Print.printBuf s & Print.printBuf "\""
 	---------------------------------
 	print_exp2(SCONST(s),_)
 
-  rule	Print.print_buf "false"
+  rule	Print.printBuf "false"
 	-------------
 	print_exp2(BCONST(false),_)
 
-  rule	Print.print_buf "true"
+  rule	Print.printBuf "true"
 	-------------
 	print_exp2(BCONST(true),_)
 
@@ -2951,7 +2951,7 @@ relation print_exp2 : (Exp,int) => () =
  	binop_priority op => pri2' &
 	int_add (pri2', 1) => pri2 & (* binary minus have higher priority than itself *)
 	print_leftpar(pri1,pri2) => pri3 &
-	print_exp2 (e1,pri3) & Print.print_buf sym & print_exp2 (e2,pri2) &
+	print_exp2 (e1,pri3) & Print.printBuf sym & print_exp2 (e2,pri2) &
 	print_rightpar(pri1,pri2)
 	------------------------
 	print_exp2(BINARY(e1, op as SUB(ty), e2 as BINARY(e21, SUB(ty2), e22)),pri1)
@@ -2959,7 +2959,7 @@ relation print_exp2 : (Exp,int) => () =
   rule	binop_symbol(op) => sym &
  	binop_priority op => pri2 &
 	print_leftpar(pri1,pri2) => pri3 &
-	print_exp2 (e1,pri3) & Print.print_buf sym & print_exp2 (e2,pri2) &
+	print_exp2 (e1,pri3) & Print.printBuf sym & print_exp2 (e2,pri2) &
 	print_rightpar(pri1,pri2)
 	------------------------
 	print_exp2(BINARY(e1, op, e2),pri1)
@@ -2967,7 +2967,7 @@ relation print_exp2 : (Exp,int) => () =
   rule	unaryop_symbol(op) => sym &
 	unaryop_priority(op) => pri2 &
 	print_leftpar(pri1,pri2) => pri3 &
-	Print.print_buf sym & print_exp2 (e,pri3) &
+	Print.printBuf sym & print_exp2 (e,pri3) &
 	print_rightpar(pri1,pri2)
 	----------------------------
 	print_exp2(UNARY(op, e),pri1)
@@ -2975,7 +2975,7 @@ relation print_exp2 : (Exp,int) => () =
   rule	lbinop_symbol(op) => sym &
 	lbinop_priority(op) => pri2 &
 	print_leftpar(pri1,pri2) => pri3 &
-	print_exp2 (e1,pri3) & Print.print_buf sym & print_exp2 (e2,pri2) &
+	print_exp2 (e1,pri3) & Print.printBuf sym & print_exp2 (e2,pri2) &
 	print_rightpar(pri1,pri2)
 	----------------------------------------------------------------
 	print_exp2(LBINARY(e1, op, e2),pri1)
@@ -2983,7 +2983,7 @@ relation print_exp2 : (Exp,int) => () =
   rule	lunaryop_symbol(op) => sym &
  	lunaryop_priority(op) => pri2 &
 	print_leftpar(pri1,pri2) => pri3 &
- 	Print.print_buf sym & print_exp2 (e,pri3) &
+ 	Print.printBuf sym & print_exp2 (e,pri3) &
 	print_rightpar(pri1,pri2)
 	---------------------------------------------------
 	print_exp2(LUNARY(op, e),pri1)
@@ -2991,71 +2991,71 @@ relation print_exp2 : (Exp,int) => () =
   rule	relop_symbol(op) => sym &
  	relop_priority(op) => pri2 &
 	print_leftpar(pri1,pri2) => pri3 &
- 	print_exp2(e1,pri3) & Print.print_buf sym & print_exp2(e2,pri2) &
+ 	print_exp2(e1,pri3) & Print.printBuf sym & print_exp2(e2,pri2) &
 	print_rightpar(pri1,pri2)
 	-----------------------------------------------------------------
 	print_exp2(RELATION(e1, op, e2),pri1)
 
-  rule	Print.print_buf "if " & print_exp2(c,0) &
-	Print.print_buf " then " & print_exp2(t,0) &
-	Print.print_buf " else " & print_exp2(f,0)
+  rule	Print.printBuf "if " & print_exp2(c,0) &
+	Print.printBuf " then " & print_exp2(t,0) &
+	Print.printBuf " else " & print_exp2(f,0)
 	----------------------------
 	print_exp2(IFEXP(c,t,f),pri1)
 
   rule	Absyn.path_string(fcn) => fs &
-	Print.print_buf fs & Print.print_buf "(" & print_list(args,print_exp,",") & Print.print_buf ")"
+	Print.printBuf fs & Print.printBuf "(" & print_list(args,print_exp,",") & Print.printBuf ")"
 	---------------------------------------------
 	print_exp2(CALL(fcn, args,_,_),_)
 
-  rule	(* Print.print_buf "This an array: " & *)
-	Print.print_buf "{" &
+  rule	(* Print.printBuf "This an array: " & *)
+	Print.printBuf "{" &
 	print_list(es, print_exp, ",") &
-	Print.print_buf "}"
+	Print.printBuf "}"
 	---------
 	print_exp2 (ARRAY(_,_,es),_)
 
 	(*PR.*)
-  rule	Print.print_buf "(" &
+  rule	Print.printBuf "(" &
 	print_list(es, print_exp, ",") &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	---------
 	print_exp2 (TUPLE(es),_)
 	
-  rule	Print.print_buf "<matrix>[" &
+  rule	Print.printBuf "<matrix>[" &
 	print_list(es, print_row, ";") &
-	Print.print_buf "]"
+	Print.printBuf "]"
 	---------
 	print_exp2 (MATRIX(_,_,es),_)
 
   rule	let pri2 = 41 &
 	print_leftpar(pri1,pri2) => pri3 &
-	print_exp2 (start,pri3) & Print.print_buf ":" & print_exp2 (stop,pri3) &
+	print_exp2 (start,pri3) & Print.printBuf ":" & print_exp2 (stop,pri3) &
  	print_rightpar(pri1,pri2)
 	-------------------------------------------------------------
 	print_exp2 (RANGE(_,start,NONE,stop),pri1)
 
   rule	let pri2 = 41 &
 	print_leftpar(pri1,pri2) => pri3 &
-	print_exp2 (start,pri3) & Print.print_buf ":" &
-	print_exp2 (step,pri3) & Print.print_buf ":" &
+	print_exp2 (start,pri3) & Print.printBuf ":" &
+	print_exp2 (step,pri3) & Print.printBuf ":" &
  	print_exp2 (stop,pri3) &
  	print_rightpar(pri1,pri2)
 	-------------------------
 	print_exp2 (RANGE(_,start,SOME(step),stop),pri1)
 
-  rule	RTOpts.modelica_output => false &
+  rule	RTOpts.modelicaOutput => false &
 	int_real(i) => r &
 	real_string(r) => rstr &
-	Print.print_buf rstr
+	Print.printBuf rstr
 	---------------------------------------
 	print_exp2 (CAST(REAL,ICONST(i)),_)
 
-  rule	RTOpts.modelica_output => false &
-	Print.print_buf "Real(" & print_exp e & Print.print_buf ")"
+  rule	RTOpts.modelicaOutput => false &
+	Print.printBuf "Real(" & print_exp e & Print.printBuf ")"
 	---------------------------------------
 	print_exp2 (CAST(REAL,e),_)
 
-  rule	RTOpts.modelica_output => true &
+  rule	RTOpts.modelicaOutput => true &
 	print_exp e
 	---------------------------------------
 	print_exp2 (CAST(REAL,e),_)
@@ -3064,27 +3064,27 @@ relation print_exp2 : (Exp,int) => () =
 	print_leftpar(pri1,pri2) => pri3 &
 	print_exp2 (e,pri3) &
  	print_rightpar(pri1,pri2) &
- 	Print.print_buf "<asub>[" &
- 	int_string i => s & Print.print_buf s & Print.print_buf "]"
+ 	Print.printBuf "<asub>[" &
+ 	int_string i => s & Print.printBuf s & Print.printBuf "]"
 	---------------------------------------
 	print_exp2 (ASUB(e,i),pri1)
 
   rule	print_exp_str e => str &
-	Print.print_buf str
+	Print.printBuf str
 	-------------
 	print_exp2 (e as SIZE(cr,SOME(dim)),_)
 
   rule	print_exp_str e => str &
-	Print.print_buf str
+	Print.printBuf str
 	-------------
 	print_exp2 (e as SIZE(cr,NONE),_)
 
   rule	print_exp_str e => str &
-	Print.print_buf str
+	Print.printBuf str
 	-----------------------------
 	print_exp2 (e as REDUCTION(fcn,exp,i,iterexp),_)
 
-  rule	Print.print_buf "#UNKNOWN EXPRESSION# ----eee "
+  rule	Print.printBuf "#UNKNOWN EXPRESSION# ----eee "
         ----------------------------------
 	print_exp2 (_,_)
 
@@ -3096,7 +3096,7 @@ end
  **)
 relation print_leftpar : (int(* prio1 *),int (* prio2 *)) => int =
 
-  rule	int_gt(x,y) => true & Print.print_buf "("
+  rule	int_gt(x,y) => true & Print.printBuf "("
 	-----------------------
 	print_leftpar(x,y) => 0
 
@@ -3110,7 +3110,7 @@ end
  **)
 relation print_rightpar : (int (* prio1 *),int (* prio2 *)) => () =
 
-  rule	int_gt(x,y) => true & Print.print_buf ")"
+  rule	int_gt(x,y) => true & Print.printBuf ")"
 	-----------------------
 	print_rightpar(x,y)
 
@@ -3343,7 +3343,7 @@ relation print_list : ('a list, 'a => (), string) => () =
 	------------------
 	print_list([h],r,_)
 
-  rule	r(h) & Print.print_buf sep & print_list(t,r,sep)
+  rule	r(h) & Print.printBuf sep & print_list(t,r,sep)
 	-------------------------------------
 	print_list(h::t,r,sep)
 
@@ -3387,7 +3387,7 @@ relation print_component_ref_str : ComponentRef => string =
 	print_component_ref_str CREF_IDENT(s,subs) => str
 
 	(* Does not handle names with underscores *)
-  rule	RTOpts.modelica_output => true &
+  rule	RTOpts.modelicaOutput => true &
 	print_component_ref2_str (s,subs) => str &
 	print_component_ref_str cr => strrest &
 	string_append (str, "__") => str' &
@@ -3395,7 +3395,7 @@ relation print_component_ref_str : ComponentRef => string =
 	---------------------
 	print_component_ref_str CREF_QUAL(s,subs,cr) => str''
 
-  rule	RTOpts.modelica_output => false &
+  rule	RTOpts.modelicaOutput => false &
 	print_component_ref2_str (s,subs) => str &
 	print_component_ref_str cr => strrest &
 	string_append (str, ".") => str' &
@@ -3413,7 +3413,7 @@ relation print_component_ref2_str : (Ident, Subscript list) => string =
 
   axiom	print_component_ref2_str (s,[]) => s
 
-  rule	RTOpts.modelica_output => true &
+  rule	RTOpts.modelicaOutput => true &
 	print_list_str (l, print_subscript_str, ",") => str &
 	string_append (s, "_L") => str' &
 	string_append (str', str) => str'' &
@@ -3421,7 +3421,7 @@ relation print_component_ref2_str : (Ident, Subscript list) => string =
 	-------------------------------------------------------
 	print_component_ref2_str (s,l) => str'''
 
-  rule	RTOpts.modelica_output => false &
+  rule	RTOpts.modelicaOutput => false &
 	print_list_str (l, print_subscript_str, ",") => str &
 	string_append (s, "[") => str' &
 	string_append (str', str) => str'' &
@@ -3647,27 +3647,27 @@ relation print_exp2_str : (Exp,int) => string =
 	-------------------------------------
 	print_exp2_str (RANGE(_,start,SOME(step),stop),pri1) => s'''''
 
-  rule	RTOpts.modelica_output => false &
+  rule	RTOpts.modelicaOutput => false &
 	int_real ival => rval &
 	real_string rval => res
 	---------------------------------------
 	print_exp2_str (CAST(REAL,ICONST(ival)),_) => res
 
-  rule	RTOpts.modelica_output => false &
+  rule	RTOpts.modelicaOutput => false &
 	int_real ival => rval &
 	real_string rval => res &
 	string_append("-",res) => res2
 	---------------------------------------
 	print_exp2_str (CAST(REAL,UNARY(UMINUS(_),ICONST(ival))),_) => res2
 
-  rule	RTOpts.modelica_output => false &
+  rule	RTOpts.modelicaOutput => false &
 	print_exp_str e => s & 
 	string_append ("Real(", s) => s' &
 	string_append (s', ")") => s''
 	---------------------------------------
 	print_exp2_str (CAST(REAL,e),_) => s''
 
-  rule	RTOpts.modelica_output => true &
+  rule	RTOpts.modelicaOutput => true &
 	print_exp_str e => s
 	---------------------------------------
 	print_exp2_str (CAST(REAL,e),_) => s
@@ -4702,9 +4702,9 @@ relation solve2 : ( Exp (*e1*), Exp (*e2*), Exp(*e3*)) => Exp =
 	simplify (rhs) => rhs' 
 	(*
 	& dump_exp_graphviz lhs => lhsnode 
-	& Print.print_buf "------------------ LHS -----------------\n"
+	& Print.printBuf "------------------ LHS -----------------\n"
 	& Graphviz.dump lhsnode
-	& Print.print_buf "------------------ /LHS -----------------\n"
+	& Print.printBuf "------------------ /LHS -----------------\n"
 	 *)
 	---------------------------------------
 	solve2 (e1, e2, crexp as CREF(cr,_)) => rhs'
@@ -4714,16 +4714,16 @@ relation solve2 : ( Exp (*e1*), Exp (*e2*), Exp(*e3*)) => Exp =
 	Derive.differentiate_exp (lhs, cr) => lhsder &
 	simplify lhsder => lhsder' &
 	exp_contains (lhsder', crexp) => true &
-	Print.print_buf "solve2 failed: Not linear: " &
+	Print.printBuf "solve2 failed: Not linear: " &
 	print_exp e1 &
-	Print.print_buf " = " &
+	Print.printBuf " = " &
 	print_exp e2 &
-	Print.print_buf "\nsolving for: " &
+	Print.printBuf "\nsolving for: " &
 	print_exp crexp &
-	Print.print_buf "\n" &
-       Print.print_buf "derivative: " &
+	Print.printBuf "\n" &
+       Print.printBuf "derivative: " &
 	print_exp lhsder & 
-	Print.print_buf "\n" 
+	Print.printBuf "\n" 
 	---------------------------------------
 	solve2 (e1, e2, crexp as CREF(cr,_)) => fail
 
@@ -4732,15 +4732,15 @@ relation solve2 : ( Exp (*e1*), Exp (*e2*), Exp(*e3*)) => Exp =
   rule	let lhs = BINARY(e1, SUB(REAL), e2) &
 	Derive.differentiate_exp (lhs, cr) => lhsder &
 	simplify lhsder => lhsder' &
-	Print.print_buf "solve2 failed: " &
+	Print.printBuf "solve2 failed: " &
 	print_exp e1 &
-	Print.print_buf " = " &
+	Print.printBuf " = " &
 	print_exp e2 &
-	Print.print_buf "\nsolving for: " &
+	Print.printBuf "\nsolving for: " &
 	print_exp crexp &
-	Print.print_buf "\nDerivative :" &
+	Print.printBuf "\nDerivative :" &
 	print_exp lhsder' & 
-	Print.print_buf "\n"
+	Print.printBuf "\n"
 	
         ----------------------------------
 	solve2 (e1, e2, crexp as CREF(cr,_)) => fail
@@ -4786,11 +4786,11 @@ relation get_terms_containing_x : (Exp, Exp) => (Exp, Exp) =
 	-----------------------------------
 	get_terms_containing_x (e, cr as CREF(_,_)) => (xt, nonxt)
 
-  rule	Print.print_buf "get_terms_containing_x failed: " &
+  rule	Print.printBuf "get_terms_containing_x failed: " &
 	print_exp e &
-	Print.print_buf "\nsolving for: " &
+	Print.printBuf "\nsolving for: " &
 	print_exp cr &
-	Print.print_buf "\n"
+	Print.printBuf "\n"
         ----------------------------------
 	get_terms_containing_x (e, cr) => fail
 
@@ -4975,7 +4975,7 @@ relation get_cref_from_exp: ( Exp ) => ComponentRef list =
 	get_cref_from_exp(RANGE(_,e1,NONE,e2)) => res
 	    
   rule	(*Util.list_map(expl,get_cref_from_exp) => res*)
-	Print.print_buf "Not implemented yet\n" 
+	Print.printBuf "Not implemented yet\n" 
 	------------------
 	get_cref_from_exp(TUPLE(expl)) => []
 

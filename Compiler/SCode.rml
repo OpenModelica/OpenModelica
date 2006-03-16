@@ -927,7 +927,7 @@ end
 relation print_mod: Mod => () =
 
   rule	print_mod_str m => s &
-	Print.print_buf s 
+	Print.printBuf s 
 	--------------
 	print_mod m => ()
 end 
@@ -940,7 +940,7 @@ relation print_mod_str : Mod => string =
 
   axiom	print_mod_str(NOMOD) => "NOMOD"
 
-  rule	Print.print_buf "redeclare(" & 
+  rule	Print.printBuf "redeclare(" & 
 	Util.if(b,"final","") => final_str &
 	Util.list_map(elist,print_element_str) => strs &
 	Util.string_delimit_list(strs,",") => str &
@@ -956,7 +956,7 @@ relation print_mod_str : Mod => string =
 	------------
 	print_mod_str MOD(final,each, subs, ass) => res
 
-  rule	Print.print_buf "#-- print_mod_str failed\n"
+  rule	Print.printBuf "#-- print_mod_str failed\n"
 	------------------------
 	print_mod_str _ => fail
 
@@ -990,7 +990,7 @@ end
 relation print_restr : Restriction => () =
 
   rule	restr_string restr => str &
-	Print.print_buf str
+	Print.printBuf str
 	----------------
 	print_restr restr
 end
@@ -1003,7 +1003,7 @@ relation print_final : bool => () =
 
   axiom print_final false
 
-  rule	Print.print_buf " final "
+  rule	Print.printBuf " final "
 	--------------
        print_final true
 
@@ -1017,7 +1017,7 @@ relation print_subs_str : SubMod list => string =
 
   axiom print_subs_str [] => ""
 
-  rule	Print.print_buf n & print_mod_str mod => s &
+  rule	Print.printBuf n & print_mod_str mod => s &
 	string_append(n,s) => res
 	-----------------------
 	print_subs_str [NAMEMOD(n,mod)] => res
@@ -1051,9 +1051,9 @@ relation print_subs1_str : SubMod list => string =
 
   axiom print_subs1_str [] => ""
 
-  rule	Print.print_buf "(" &
+  rule	Print.printBuf "(" &
 	print_subs_str l => s &
-	Print.print_buf ")" &
+	Print.printBuf ")" &
 	Util.string_append_list(["(",s,")"]) => res
 	-----------
 	print_subs1_str l => res
@@ -1096,7 +1096,7 @@ end
 relation print_element : Element => () =
 
   rule	print_element_str elt => str &
-	Print.print_buf str
+	Print.printBuf str
 	----------------
 	print_element(elt) => ()
 end

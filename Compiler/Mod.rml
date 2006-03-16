@@ -184,7 +184,7 @@ relation unelab_mod: Types.Mod => SCode.Mod =
 	unelab_mod (m as Types.REDECL(final, elist)) 
 	  =>  SCode.REDECL(final, elist')
 	  
-  rule	Print.print_buf "#-- elab_untyped_mod failed:\n" &
+  rule	Print.printBuf "#-- elab_untyped_mod failed:\n" &
 	print "- unelab_mod failed :" &
 	print_mod_str(mod) => s & print s & print "\n" 
 	----------
@@ -261,8 +261,8 @@ relation update_mod: (Env.Env,Prefix.Prefix, Types.Mod, bool (*impl*)) => Types.
 	update_mod(env, pre, Types.MOD(f, each, subs, NONE),impl) 
 	  => Types.MOD(f,each,subs',NONE)
 
-  rule	Print.print_buf "- update_mod failed\n mod:" &
-	print_mod m & Print.print_buf "\n" 
+  rule	Print.printBuf "- update_mod failed\n mod:" &
+	print_mod m & Print.printBuf "\n" 
 	--------------
 	update_mod(env,pre,m,impl) => fail
 end
@@ -289,7 +289,7 @@ relation update_submod : (Env.Env, Prefix.Prefix, Types.SubMod, bool (*impl*))
   rule	(*Static.elab_subscripts (env,ss) => (ss',true) &*)
 	update_mod (env,pre,m,impl) => m' &
 	make_idxmods ([],m') => smods &
-	Print.print_buf "#Error, not implemented updating of IDXMOD yet\n"
+	Print.printBuf "#Error, not implemented updating of IDXMOD yet\n"
 	(* Need to store untyped IDXMOD list in mods such that we can elab *)
 	(* the index here *)
 	---------------------------
@@ -420,12 +420,12 @@ relation make_idxmods : (Exp.Subscript list, Types.Mod) => Types.SubMod list =
 	--------------------------------
 	make_idxmods(Exp.INDEX(Exp.ICONST(x))::xs, m) => mods'
 
-  rule	Print.print_buf "= expand_slice\n" &
+  rule	Print.printBuf "= expand_slice\n" &
 	expand_slice(x, xs, 1, m) => mods
 	---------------------------
 	make_idxmods(Exp.SLICE(Exp.ARRAY(_,_,x))::xs, m) => mods
 
-  rule	Print.print_buf "# Sorry, [:] slices are not handled in modifications\n"
+  rule	Print.printBuf "# Sorry, [:] slices are not handled in modifications\n"
 	--------------------------------------------------------------
 	make_idxmods(Exp.WHOLEDIM::xs, m) => fail
 	
@@ -569,7 +569,7 @@ relation lookup_modification_p: (Types.Mod,Absyn.Path) => Types.Mod =
 	-------------------------------------
 	lookup_modification_p (m,Absyn.QUALIFIED(n,p)) => mod'
 
-  rule	Print.print_buf "- lookup_modification_p failed\n" 
+  rule	Print.printBuf "- lookup_modification_p failed\n" 
 	-----------------------
 	lookup_modification_p(_,_) => fail
 end
@@ -588,9 +588,9 @@ relation lookup_comp_modification: (Types.Mod, Absyn.Ident) => Types.Mod =
 	-----------------------------------
 	lookup_comp_modification(Types.MOD(_,_,subs,_),n) => mod
 	
-  rule	Print.print_buf "# Mod.lookup_comp_modification(" &
-	print_mod mod & Print.print_buf "," & Print.print_buf i &
-	Print.print_buf ") failed\n" &
+  rule	Print.printBuf "# Mod.lookup_comp_modification(" &
+	print_mod mod & Print.printBuf "," & Print.printBuf i &
+	Print.printBuf ") failed\n" &
 	print "- lookup_comp_modification failed\n" 
 	--------------------
 	lookup_comp_modification(mod,i) => fail
@@ -613,7 +613,7 @@ relation lookup_comp_modification2 : (Types.SubMod list,Absyn.Ident) => Types.Mo
 	---------------------------------
 	lookup_comp_modification2(x::xs,n) => mod
 
-  rule	Print.print_buf "- lookup_comp_modification2 failed\n"
+  rule	Print.printBuf "- lookup_comp_modification2 failed\n"
 	---------------------------------------
 	lookup_comp_modification2 (_,_) => fail
 
@@ -693,7 +693,7 @@ relation lookup_idx_modification2 : (Types.SubMod list, Types.EqMod option, int)
 	---------------------------------
 	lookup_idx_modification2(x::xs,eq,idx) => (mod,x::xs')
 
-  rule	Print.print_buf "- lookup_idx_modification2 failed\n"
+  rule	Print.printBuf "- lookup_idx_modification2 failed\n"
 	---------------------------------------
 	lookup_idx_modification2 (_,_,_) => fail
 
@@ -800,7 +800,7 @@ relation merge : (Types.Mod, Types.Mod,Env.Env,Prefix.Prefix) => Types.Mod =
 	-----------------------------------------
 	merge(outer,inner,_,_) => outer
 
-  rule  Print.print_buf "# trying to modify final element\n"
+  rule  Print.printBuf "# trying to modify final element\n"
 	------------------------------------------
 	merge(_,m as Types.MOD(true,_,_,_),_,_) => fail
 
@@ -901,12 +901,12 @@ relation print_mod_str : Types.Mod => string =
 
   axiom	print_mod_str(Types.NOMOD) => "()"
 
-  rule  Print.print_buf "(redeclare(" &
+  rule  Print.printBuf "(redeclare(" &
 	Util.list_map(elist,Util.tuple2_1)=> elist' &
 	Util.if(final,"final","") => final_str &
 	Util.list_map(elist',SCode.print_element_str) => str_lst &
 	Util.string_delimit_list(str_lst,", ") => str &
-	Print.print_buf "))" &
+	Print.printBuf "))" &
 	Util.string_append_list(["(redeclare(",final_str,str,"))"]) => res
 	------------------------------
 	print_mod_str Types.REDECL(final,elist) => res
@@ -927,7 +927,7 @@ end
 relation print_mod : Types.Mod => () =
 
 rule	print_mod_str(m) => str &
-	Print.print_buf str 
+	Print.printBuf str 
 	-------------------
 	print_mod (m) => ()
 end
@@ -973,7 +973,7 @@ relation print_subscripts_str : int list => string =
 
 axiom	print_subscripts_str([]) => "[]"
 
-  rule	Print.print_buf "[" &
+  rule	Print.printBuf "[" &
 	int_string x => s & 
 	print_subscripts2_str xs => str  &
 	Util.string_append_list(["[",s,str,"]"]) => res
@@ -989,7 +989,7 @@ relation print_subscripts2_str : int list => string =
 
   axiom	print_subscripts2_str([]) => ""
 
-  rule	Print.print_buf "," & int_string x => s &
+  rule	Print.printBuf "," & int_string x => s &
 	print_subscripts2_str(xs) => str &
 	Util.string_append_list([",",s,str]) => res
 	-----------------------

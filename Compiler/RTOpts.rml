@@ -66,36 +66,36 @@ module RTOpts:
  **)
   relation typeinfo : () => bool
 
-(** relation: split_arrays
+(** relation: splitArrays
  ** 
  ** Returns true if the split_arrays flag is set.
  **)
-  relation split_arrays : () => bool
+  relation splitArrays : () => bool
 
-(** relation: params_struct
+(** relation: paramsStruct
  ** 
  ** Returns true if the params_struct flag is set.
  **)
-  relation params_struct : () => bool
+  relation paramsStruct : () => bool
 
-(** relation: modelica_output
+(** relation: modelicaOutput
  ** 
  ** Returns true if the modelica_output flag is set.
  **)
-  relation modelica_output : () => bool
+  relation modelicaOutput : () => bool
 
-(** relation: debug_flag
+(** relation: debugFlag
  ** 
  ** Returns true if the debug_flag flag is set.
  **)
-  relation debug_flag : string => bool
+  relation debugFlag : string => bool
 
-(** relation: no_proc
+(** relation: noProc
  ** 
  ** Returns the number of processors specified at the command line for
  ** automatic parallelization.
  **)
-  relation no_proc: () => int 
+  relation noProc: () => int 
 
 (** relation: latency
  ** 
@@ -111,12 +111,12 @@ module RTOpts:
  **)
   relation bandwidth: () => real	  
 
-(** relation: simulation_cg
+(** relation: simulationCg
  ** 
  ** Returns true if simulation code generation should be performed,
  ** i.e. the +s flag is in the command arguments.
  **)
-  relation simulation_cg: () => bool
+  relation simulationCg: () => bool
 
 (** relation: silent
  ** 

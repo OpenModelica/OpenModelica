@@ -30,7 +30,7 @@ RML_BEGIN_LABEL(Corba__initialize)
 RML_END_LABEL
 
 
-RML_BEGIN_LABEL(Corba__wait_5ffor_5fcommand)
+RML_BEGIN_LABEL(Corba__waitForCommand)
 {
   errmsg();
   RML_TAILCALLK(rmlFC);

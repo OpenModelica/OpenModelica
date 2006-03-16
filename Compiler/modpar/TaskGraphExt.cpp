@@ -72,7 +72,7 @@ extern int nproc;
   {
   }
   
-  RML_BEGIN_LABEL(TaskGraphExt__new_5ftask)
+  RML_BEGIN_LABEL(TaskGraphExt__newTask)
   {
     char *str = RML_STRINGDATA(rmlA0); 
     static int nextID=0; // Give unique id to each task.
@@ -89,7 +89,7 @@ extern int nproc;
   } 
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(TaskGraphExt__add_5fedge)
+  RML_BEGIN_LABEL(TaskGraphExt__addEdge)
   {
     int parent = RML_UNTAGFIXNUM(rmlA0);
     int child = RML_UNTAGFIXNUM(rmlA1);
@@ -120,7 +120,7 @@ extern int nproc;
   } 
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(TaskGraphExt__get_5ftask)
+  RML_BEGIN_LABEL(TaskGraphExt__getTask)
   {
     char *str = strdup(RML_STRINGDATA(rmlA0)); 
     
@@ -136,7 +136,7 @@ extern int nproc;
   } 
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(TaskGraphExt__store_5fresult)
+  RML_BEGIN_LABEL(TaskGraphExt__storeResult)
   {
     char *str = strdup(RML_STRINGDATA(rmlA0)); 
     int task = RML_UNTAGFIXNUM(rmlA1);
@@ -164,7 +164,7 @@ extern int nproc;
   } 
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(TaskGraphExt__dump_5fgraph)
+  RML_BEGIN_LABEL(TaskGraphExt__dumpGraph)
   {
     char *filename = RML_STRINGDATA(rmlA0); 
     ofstream file(filename);
@@ -177,7 +177,7 @@ extern int nproc;
   } 
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(TaskGraphExt__dump_5fmerged_5fgraph)
+  RML_BEGIN_LABEL(TaskGraphExt__dumpMergedGraph)
   {
     char *filename = RML_STRINGDATA(rmlA0); 
     ofstream file(filename);
@@ -190,7 +190,7 @@ extern int nproc;
   } 
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(TaskGraphExt__register_5fstartstop)
+  RML_BEGIN_LABEL(TaskGraphExt__registerStartStop)
   {
     int start = RML_UNTAGFIXNUM(rmlA0);
     int stop = RML_UNTAGFIXNUM(rmlA1);
@@ -208,14 +208,14 @@ extern int nproc;
   } 
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(TaskGraphExt__get_5fstarttask)
+  RML_BEGIN_LABEL(TaskGraphExt__getStartTask)
   {
     rmlA0 = (void*)mk_icon(getTaskID(start_task,&taskgraph));
     RML_TAILCALLK(rmlSC);
   } 
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(TaskGraphExt__get_5fstoptask)
+  RML_BEGIN_LABEL(TaskGraphExt__getStopTask)
   {
     rmlA0 = (void*)mk_icon(getTaskID(stop_task,&taskgraph));
     RML_TAILCALLK(rmlSC);
@@ -223,7 +223,7 @@ extern int nproc;
   RML_END_LABEL
 
 
-  RML_BEGIN_LABEL(TaskGraphExt__merge_5ftasks)
+  RML_BEGIN_LABEL(TaskGraphExt__mergeTasks)
   {
     double l = rml_prim_get_real(rmlA0); 
     double b = rml_prim_get_real(rmlA1); 
@@ -243,7 +243,7 @@ extern int nproc;
   } 
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(TaskGraphExt__set_5fexeccost)
+  RML_BEGIN_LABEL(TaskGraphExt__setExecCost)
   {
     int taskID = RML_UNTAGFIXNUM(rmlA0);
     double cost = rml_prim_get_real(rmlA1); 
@@ -253,7 +253,7 @@ extern int nproc;
   } 
   RML_END_LABEL  
 
-  RML_BEGIN_LABEL(TaskGraphExt__set_5fcommcost)
+  RML_BEGIN_LABEL(TaskGraphExt__setCommCost)
   {
     int p = RML_UNTAGFIXNUM(rmlA0);
     int c = RML_UNTAGFIXNUM(rmlA1);
@@ -288,7 +288,7 @@ extern int nproc;
   } 
   RML_END_LABEL  
 
-  RML_BEGIN_LABEL(TaskGraphExt__generate_5fcode)
+  RML_BEGIN_LABEL(TaskGraphExt__generateCode)
   {
     int nx = RML_UNTAGFIXNUM(rmlA0);
     int ny = RML_UNTAGFIXNUM(rmlA1);
@@ -306,7 +306,7 @@ extern int nproc;
   RML_END_LABEL  
 
 
-  RML_BEGIN_LABEL(TaskGraphExt__add_5finitvar)
+  RML_BEGIN_LABEL(TaskGraphExt__addInitVar)
   {
     int indx = RML_UNTAGFIXNUM(rmlA0);
     char *value = RML_STRINGDATA(rmlA1); 
@@ -319,7 +319,7 @@ extern int nproc;
   } 
   RML_END_LABEL  
 
-  RML_BEGIN_LABEL(TaskGraphExt__add_5finitstate)
+  RML_BEGIN_LABEL(TaskGraphExt__addInitState)
   {
     int indx = RML_UNTAGFIXNUM(rmlA0);
     char *value = RML_STRINGDATA(rmlA1); 
@@ -332,7 +332,7 @@ extern int nproc;
   } 
   RML_END_LABEL  
 
-  RML_BEGIN_LABEL(TaskGraphExt__add_5finitparam)
+  RML_BEGIN_LABEL(TaskGraphExt__addInitParam)
   {
     int indx = RML_UNTAGFIXNUM(rmlA0);
     char *value = RML_STRINGDATA(rmlA1);
@@ -345,7 +345,7 @@ extern int nproc;
   } 
   RML_END_LABEL  
 
-  RML_BEGIN_LABEL(TaskGraphExt__set_5ftasktype)
+  RML_BEGIN_LABEL(TaskGraphExt__setTaskType)
   {
     int taskID = RML_UNTAGFIXNUM(rmlA0);
     int type = RML_UNTAGFIXNUM(rmlA1); 

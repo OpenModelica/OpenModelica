@@ -1,43 +1,3 @@
-/*
-This file is part of OpenModelica.
-
-Copyright (c) 1998-2005, Linköpings universitet, Department of
-Computer and Information Science, PELAB
-
-All rights reserved.
-
-(The new BSD license, see also
-http://www.opensource.org/licenses/bsd-license.php)
-
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-* Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright
-  notice, this list of conditions and the following disclaimer in
-  the documentation and/or other materials provided with the
-  distribution.
-
-* Neither the name of Linköpings universitet nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
 #include <iostream>
 #include <fstream>
 #include <map>
@@ -70,7 +30,7 @@ extern "C"
   {
   }
   
-  RML_BEGIN_LABEL(DAEEXT__init_5fmarks)
+  RML_BEGIN_LABEL(DAEEXT__initMarks)
   {
 
     int nvars = RML_UNTAGFIXNUM(rmlA0);
@@ -82,15 +42,15 @@ extern "C"
   } 
   RML_END_LABEL
   
-  RML_BEGIN_LABEL(DAEEXT__e_5fmark)
+  RML_BEGIN_LABEL(DAEEXT__eMark)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     e_mark.insert(e_mark.begin(),i);
     RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
-
-  RML_BEGIN_LABEL(DAEEXT__v_5fmark)
+  
+  RML_BEGIN_LABEL(DAEEXT__vMark)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     v_mark.insert(v_mark.begin(),i);
@@ -98,7 +58,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__get_5fv_5fmark)
+  RML_BEGIN_LABEL(DAEEXT__getVMark)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
 
@@ -107,7 +67,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__get_5fe_5fmark)
+  RML_BEGIN_LABEL(DAEEXT__getEMark)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     //cout << "get_e_mark[" << i << "] == " << e_mark[i-1] << endl;
@@ -116,7 +76,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__get_5fmarked_5feqns)
+  RML_BEGIN_LABEL(DAEEXT__getMarkedEqns)
   {
     std::set<int>::iterator it;
     rmlA0 = mk_nil();
@@ -127,7 +87,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__mark_5fdifferentiated)
+  RML_BEGIN_LABEL(DAEEXT__markDifferentiated)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     differentiated_mark.insert(differentiated_mark.begin(),i);
@@ -135,14 +95,14 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__clear_5fdifferentiated)
+  RML_BEGIN_LABEL(DAEEXT__clearDifferentiated)
   {
     differentiated_mark.clear();
     RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__get_5fdifferentiated_5feqns)
+  RML_BEGIN_LABEL(DAEEXT__getDifferentiatedEqns)
   {
     std::set<int>::iterator it;
     rmlA0 = mk_nil();
@@ -153,7 +113,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__get_5fmarked_5fvariables)
+  RML_BEGIN_LABEL(DAEEXT__getMarkedVariables)
   {
     std::set<int>::iterator it;
     rmlA0 = mk_nil();
@@ -164,7 +124,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__init_5flowlink)
+  RML_BEGIN_LABEL(DAEEXT__initLowLink)
   {
     int nvars = RML_UNTAGFIXNUM(rmlA0);
     //cout << "init lowlink n= " << nvars << endl;
@@ -177,7 +137,7 @@ extern "C"
   } 
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__init_5fnumber)
+  RML_BEGIN_LABEL(DAEEXT__initNumber)
   {
     int nvars = RML_UNTAGFIXNUM(rmlA0);
     //cout << "init number n= " << nvars << endl;
@@ -190,7 +150,7 @@ extern "C"
   } 
   RML_END_LABEL
   
-  RML_BEGIN_LABEL(DAEEXT__set_5flowlink)
+  RML_BEGIN_LABEL(DAEEXT__setLowLink)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     int val = RML_UNTAGFIXNUM(rmlA1);
@@ -199,7 +159,7 @@ extern "C"
   }
   RML_END_LABEL
   
-  RML_BEGIN_LABEL(DAEEXT__set_5fnumber)
+  RML_BEGIN_LABEL(DAEEXT__setNumber)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     int val = RML_UNTAGFIXNUM(rmlA1);
@@ -208,7 +168,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__get_5fnumber)
+  RML_BEGIN_LABEL(DAEEXT__getNumber)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     rmlA0 = (void*)mk_icon(number[i-1]);
@@ -216,7 +176,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__get_5flowlink)
+  RML_BEGIN_LABEL(DAEEXT__getLowLink)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     rmlA0 = (void*)mk_icon(lowlink[i-1]);
@@ -225,7 +185,7 @@ extern "C"
   RML_END_LABEL
 
 
-  RML_BEGIN_LABEL(DAEEXT__dump_5fmarked_5fequations)
+  RML_BEGIN_LABEL(DAEEXT__dumpMarkedEquations)
   {
     int nvars = RML_UNTAGFIXNUM(rmlA0);
     cout << "marked equations" << endl
@@ -237,7 +197,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__dump_5fmarked_5fvariables)
+  RML_BEGIN_LABEL(DAEEXT__dumpMarkedVariables)
   {
     int nvars = RML_UNTAGFIXNUM(rmlA0);
     cout << "marked variables" << endl
@@ -249,7 +209,22 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__init_5fv)
+/*
+  RML_BEGIN_LABEL(DAEEXT__vectorSetnth)
+  {
+    void* vec = rmlA0;
+    int pos = RML_UNTAGFIXNUM(rmlA1);
+    int val = RML_UNTAGFIXNUM(rmlA2);
+    if ( pos >= RML_HDRSLOTS(RML_GETHDR(vec)) ) {
+      RML_TAILCALLK(rmlFC);
+    }
+    ((int*)RML_STRUCTDATA(vec))[pos]=val;
+    RML_TAILCALLK(rmlSC);
+  }
+  RML_END_LABEL
+*/
+
+  RML_BEGIN_LABEL(DAEEXT__initV)
   {
     int size = RML_UNTAGFIXNUM(rmlA1);
     v.reserve(size);
@@ -257,7 +232,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__init_5ff)
+  RML_BEGIN_LABEL(DAEEXT__initF)
   {
     int size = RML_UNTAGFIXNUM(rmlA1);
     f.reserve(size);
@@ -265,7 +240,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__set_5ff)
+  RML_BEGIN_LABEL(DAEEXT__setF)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     int val = RML_UNTAGFIXNUM(rmlA1);
@@ -275,7 +250,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__get_5ff)
+  RML_BEGIN_LABEL(DAEEXT__getF)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     assert(i <= f.size());
@@ -284,7 +259,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__set_5fv)
+  RML_BEGIN_LABEL(DAEEXT__setV)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     int val = RML_UNTAGFIXNUM(rmlA1);
@@ -294,7 +269,7 @@ extern "C"
   }
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(DAEEXT__get_5fv)
+  RML_BEGIN_LABEL(DAEEXT__getV)
   {
     int i = RML_UNTAGFIXNUM(rmlA0);
     assert(i <= v.size());

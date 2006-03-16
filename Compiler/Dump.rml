@@ -130,11 +130,11 @@ with "ClassInf.rml"
  **)
 relation dump : Absyn.Program => () =
 		
-  rule	Print.print_buf "Absyn.PROGRAM([\n" &
+  rule	Print.printBuf "Absyn.PROGRAM([\n" &
 	print_list(cs, print_class, ", ") &
-	Print.print_buf "]," &
+	Print.printBuf "]," &
 	dump_within(w) &
-	Print.print_buf(")\n")
+	Print.printBuf(")\n")
 	------------------------
 	dump Absyn.PROGRAM(cs,w) => ()
 end
@@ -193,13 +193,13 @@ end
  **)
 relation dump_within:(Absyn.Within) => () =
 
-  rule	Print.print_buf "Absyn.TOP"
+  rule	Print.printBuf "Absyn.TOP"
 	-----------------
 	dump_within(Absyn.TOP) 
 
-  rule	Print.print_buf ("Absyn.WITHIN(") & 
+  rule	Print.printBuf ("Absyn.WITHIN(") & 
 	dump_path p &
-	Print.print_buf "\n"
+	Print.printBuf "\n"
 	-------------------
 	dump_within(Absyn.WITHIN(p))
 end
@@ -326,21 +326,21 @@ end
  **)
 relation dump_comment_option: (Absyn.Comment option) => () =
 
-  rule	Print.print_buf "NONE"
+  rule	Print.printBuf "NONE"
 	------------------------
 	dump_comment_option(NONE) => ()
 	
-  rule	Print.print_buf "SOME(Absyn.COMMENT(" &
+  rule	Print.printBuf "SOME(Absyn.COMMENT(" &
 	dump_annotation_option(annopt) => () &
 	Util.string_append_list(["SOME(\"",cmt,
 				 "\")))"]) => str &
- 	Print.print_buf str 
+ 	Print.printBuf str 
 	---------------------------------------------
 	dump_comment_option(SOME(Absyn.COMMENT(annopt,SOME(cmt)))) => ()
 	
-  rule	Print.print_buf "SOME(Absyn.COMMENT(" &
+  rule	Print.printBuf "SOME(Absyn.COMMENT(" &
 	dump_annotation_option(annopt) => () &
-	Print.print_buf ",NONE))" 			 
+	Print.printBuf ",NONE))" 			 
 	---------------------------------------------
 	dump_comment_option(SOME(Absyn.COMMENT(annopt,NONE))) => ()	
 end
@@ -351,13 +351,13 @@ end
  **)
 relation dump_annotation_option: (Absyn.Annotation option) => () =	
 
-  rule	Print.print_buf "NONE" 
+  rule	Print.printBuf "NONE" 
 	-------------------------
 	dump_annotation_option(NONE)
 
-  rule	Print.print_buf "SOME(Absyn.ANNOTATION(" &
+  rule	Print.printBuf "SOME(Absyn.ANNOTATION(" &
 	print_mod1 mod &
-	Print.print_buf "))" 
+	Print.printBuf "))" 
 	----------------------------
 	dump_annotation_option(SOME(Absyn.ANNOTATION(mod))) => ()
 
@@ -393,9 +393,9 @@ end
  **)
 relation print_enumliterals : Absyn.EnumLiteral list => () =
 
-  rule	Print.print_buf "[" &
+  rule	Print.printBuf "[" &
 	print_enumliterals2(lst) &
-	Print.print_buf "]" 
+	Print.printBuf "]" 
 	------------------------
 	print_enumliterals (lst) =>  ()
 end
@@ -408,24 +408,24 @@ relation print_enumliterals2 : Absyn.EnumLiteral list => () =
 
   axiom	print_enumliterals2([]) => ()
 	
-  rule	Print.print_buf "Absyn.ENUMLITERAL(\"" &
-	Print.print_buf str &
-	Print.print_buf "\"," &
+  rule	Print.printBuf "Absyn.ENUMLITERAL(\"" &
+	Print.printBuf str &
+	Print.printBuf "\"," &
 	dump_comment_option(optcmt) &
-	Print.print_buf "), " &
+	Print.printBuf "), " &
 	print_enumliterals2(a::b) 
 	---------------------------
 	print_enumliterals2(Absyn.ENUMLITERAL(str,optcmt)::a::b) => ()
 	
-  rule	Print.print_buf "Absyn.ENUMLITERAL(\"" &
-	Print.print_buf str &
-	Print.print_buf "\"," &
+  rule	Print.printBuf "Absyn.ENUMLITERAL(\"" &
+	Print.printBuf str &
+	Print.printBuf "\"," &
 	dump_comment_option(optcmt) &
-	Print.print_buf "), Absyn.ENUMLITERAL(\"" &
-	Print.print_buf str2 &
-	Print.print_buf "\"," &
+	Print.printBuf "), Absyn.ENUMLITERAL(\"" &
+	Print.printBuf str2 &
+	Print.printBuf "\"," &
 	dump_comment_option(optcmt2) &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	---------------------------
 	print_enumliterals2([Absyn.ENUMLITERAL(str,optcmt),Absyn.ENUMLITERAL(str2,optcmt2)]) => ()
 end
@@ -458,28 +458,28 @@ end
  **)
 relation dump_istmt : Interactive.InteractiveStmts => () =
 
-  rule	Print.print_buf ("IALG(") &
+  rule	Print.printBuf ("IALG(") &
 	print_algorithmitem(alg) => () &
-	Print.print_buf ")\n" 
+	Print.printBuf ")\n" 
 	--------------------------
 	dump_istmt(Interactive.ISTMTS([Interactive.IALG(alg)],_)) => ()
 	
-  rule	Print.print_buf ("IEXP(") &
+  rule	Print.printBuf ("IEXP(") &
 	print_exp(expr) &
-	Print.print_buf ")\n" 
+	Print.printBuf ")\n" 
 	----------------------
 	dump_istmt(Interactive.ISTMTS([Interactive.IEXP(expr)],_)) => ()
 	
-  rule Print.print_buf "IALG(" &
+  rule Print.printBuf "IALG(" &
 	print_algorithmitem(alg) => () &
-	Print.print_buf "," &
+	Print.printBuf "," &
 	dump_istmt(Interactive.ISTMTS(l,sc)) => ()
 	--------------------------
 	dump_istmt(Interactive.ISTMTS(Interactive.IALG(alg)::l,sc)) => ()
 	
-  rule Print.print_buf "IEXP(" &
+  rule Print.printBuf "IEXP(" &
 	print_exp(expr) => () &
-	Print.print_buf "," &
+	Print.printBuf "," &
 	dump_istmt(Interactive.ISTMTS(l,sc)) => ()
 	--------------------------
 	dump_istmt(Interactive.ISTMTS(Interactive.IEXP(expr)::l,sc)) => ()
@@ -494,23 +494,23 @@ end
  **)
 relation print_info: Absyn.Info => () =
 
-	rule	Print.print_buf("Absyn.INFO(\"") &
-			Print.print_buf filename &
-			Print.print_buf("\", ") &
+	rule	Print.printBuf("Absyn.INFO(\"") &
+			Print.printBuf filename &
+			Print.printBuf("\", ") &
 			print_bool(isReadOnly) &
-			Print.print_buf(", ") &	
+			Print.printBuf(", ") &	
 			int_string sline => s1 &
-		    Print.print_buf s1 &
-			Print.print_buf(", ") &
+		    Print.printBuf s1 &
+			Print.printBuf(", ") &
 			int_string scol => s2 &
-		    Print.print_buf s2 &
-			Print.print_buf(", ") &	
+		    Print.printBuf s2 &
+			Print.printBuf(", ") &	
 			int_string eline => s3 &
-		    Print.print_buf s3 &
-			Print.print_buf(", ") &
+		    Print.printBuf s3 &
+			Print.printBuf(", ") &
 			int_string ecol => s4 &
-		    Print.print_buf s4 &
-			Print.print_buf(")")
+		    Print.printBuf s4 &
+			Print.printBuf(")")
 			-----------------------------------------------------------------
 			print_info(Absyn.INFO(filename,isReadOnly,sline,scol,eline,ecol)) => ()
 end
@@ -547,21 +547,21 @@ end
  **)
 relation print_class: Absyn.Class => () =
 	
-  rule	Print.print_buf("Absyn.CLASS(\"") &
-	Print.print_buf n &
-	Print.print_buf("\", ") &
+  rule	Print.printBuf("Absyn.CLASS(\"") &
+	Print.printBuf n &
+	Print.printBuf("\", ") &
 	print_bool(p) &
-	Print.print_buf(", ") &
+	Print.printBuf(", ") &
 	print_bool(f) &
-	Print.print_buf(", ") &
+	Print.printBuf(", ") &
 	print_bool(e) &
-	Print.print_buf(", ") &
+	Print.printBuf(", ") &
 	print_class_restriction(r) &
-	Print.print_buf(", ") &
+	Print.printBuf(", ") &
 	print_classdef(cdef) &
-	Print.print_buf(", ") &
+	Print.printBuf(", ") &
 	print_info(info) &
-	Print.print_buf(")\n")
+	Print.printBuf(")\n")
 	----------------------------------------
 	print_class(Absyn.CLASS(n,p,f,e,r,cdef,info)) => ()
 end
@@ -572,44 +572,44 @@ end
  **)
 relation print_classdef: Absyn.ClassDef => () =
 	
-  rule	Print.print_buf "Absyn.PARTS([" &
+  rule	Print.printBuf "Absyn.PARTS([" &
 	print_list_debug("print_classdef",parts, print_class_part, ", ") &
-	Print.print_buf "], " &
+	Print.printBuf "], " &
 	print_string_comment_option comment  &
-	Print.print_buf ")" 
+	Print.printBuf ")" 
 	----------------------------
 	print_classdef(Absyn.PARTS(parts,comment))
 
-  rule	Print.print_buf "Absyn.DERIVED(" &
+  rule	Print.printBuf "Absyn.DERIVED(" &
 	dump_path(path) &
-	Print.print_buf ", " &
+	Print.printBuf ", " &
 	print_arraydim_opt(arrdim) &
-	Print.print_buf ", " &
+	Print.printBuf ", " &
 	print_elementattr(attr) &
-	Print.print_buf ",[" &
+	Print.printBuf ",[" &
 	print_list(earg,print_element_arg,",") &
-	Print.print_buf "], " &
+	Print.printBuf "], " &
 	unparse_comment_option comment => s &
-	Print.print_buf s &
-	Print.print_buf ")" 
+	Print.printBuf s &
+	Print.printBuf ")" 
 	----------------------------
 	print_classdef(Absyn.DERIVED(path,arrdim,attr,earg,comment))
 
-  rule	Print.print_buf "Absyn.ENUMERATION(" &
+  rule	Print.printBuf "Absyn.ENUMERATION(" &
 	print_enumliterals (enumlst) &
-	Print.print_buf ", " &
+	Print.printBuf ", " &
 	dump_comment_option comment  &
-	Print.print_buf ")" 
+	Print.printBuf ")" 
 	----------------------------
 	print_classdef(Absyn.ENUMERATION(Absyn.ENUMLITERALS(enumlst), comment))
 
-  rule	Print.print_buf "Absyn.ENUMERATION( :, " &
+  rule	Print.printBuf "Absyn.ENUMERATION( :, " &
 	dump_comment_option comment  &
-	Print.print_buf ")" 
+	Print.printBuf ")" 
 	----------------------------
 	print_classdef(Absyn.ENUMERATION(Absyn.ENUM_COLON, comment))
 
-  rule	Print.print_buf "Absyn.OVERLOAD( fill in )"
+  rule	Print.printBuf "Absyn.OVERLOAD( fill in )"
  	------------------------
  	print_classdef(Absyn.OVERLOAD(_,_))
 end
@@ -620,63 +620,63 @@ end
  *)
 relation print_class_restriction: Absyn.Restriction => () =
 
-  rule	Print.print_buf "Absyn.R_CLASS" 
+  rule	Print.printBuf "Absyn.R_CLASS" 
 	-----------------------
 	print_class_restriction Absyn.R_CLASS
 
-  rule	Print.print_buf "Absyn.R_MODEL" 
+  rule	Print.printBuf "Absyn.R_MODEL" 
 	-----------------------
 	print_class_restriction Absyn.R_MODEL
 
-  rule	Print.print_buf "Absyn.R_RECORD" 
+  rule	Print.printBuf "Absyn.R_RECORD" 
 	-----------------------
 	print_class_restriction Absyn.R_RECORD
 
-  rule	Print.print_buf "Absyn.R_BLOCK" 
+  rule	Print.printBuf "Absyn.R_BLOCK" 
 	-----------------------
 	print_class_restriction Absyn.R_BLOCK
 
-  rule	Print.print_buf "Absyn.R_CONNECTOR" 
+  rule	Print.printBuf "Absyn.R_CONNECTOR" 
 	-----------------------
 	print_class_restriction Absyn.R_CONNECTOR
 
-  rule	Print.print_buf "Absyn.R_EXP_CONNECTOR" 
+  rule	Print.printBuf "Absyn.R_EXP_CONNECTOR" 
 	-----------------------
 	print_class_restriction Absyn.R_EXP_CONNECTOR
 
-  rule	Print.print_buf "Absyn.R_TYPE" 
+  rule	Print.printBuf "Absyn.R_TYPE" 
 	-----------------------
 	print_class_restriction Absyn.R_TYPE
 
-  rule	Print.print_buf "Absyn.R_PACKAGE" 
+  rule	Print.printBuf "Absyn.R_PACKAGE" 
 	-----------------------
 	print_class_restriction Absyn.R_PACKAGE
 
-  rule	Print.print_buf "Absyn.R_FUNCTION" 
+  rule	Print.printBuf "Absyn.R_FUNCTION" 
 	-----------------------
 	print_class_restriction Absyn.R_FUNCTION
 
-  rule	Print.print_buf "Absyn.R_ENUMERATION" 
+  rule	Print.printBuf "Absyn.R_ENUMERATION" 
 	-----------------------
 	print_class_restriction Absyn.R_ENUMERATION
 
-  rule	Print.print_buf "Absyn.R_PREDEFINED_INT" 
+  rule	Print.printBuf "Absyn.R_PREDEFINED_INT" 
 	-----------------------
 	print_class_restriction Absyn.R_PREDEFINED_INT
 
-  rule	Print.print_buf "Absyn.R_PREDEFINED_REAL" 
+  rule	Print.printBuf "Absyn.R_PREDEFINED_REAL" 
 	-----------------------
 	print_class_restriction Absyn.R_PREDEFINED_REAL
 
-  rule	Print.print_buf "Absyn.R_PREDEFINED_STRING" 
+  rule	Print.printBuf "Absyn.R_PREDEFINED_STRING" 
 	-----------------------
 	print_class_restriction Absyn.R_PREDEFINED_STRING
 
-  rule	Print.print_buf "Absyn.R_PREDEFINED_BOOL" 
+  rule	Print.printBuf "Absyn.R_PREDEFINED_BOOL" 
 	-----------------------
 	print_class_restriction Absyn.R_PREDEFINED_BOOL
 
-  rule	Print.print_buf "Absyn.R_PREDEFINED_ENUM" 
+  rule	Print.printBuf "Absyn.R_PREDEFINED_ENUM" 
 	-----------------------
 	print_class_restriction Absyn.R_PREDEFINED_ENUM
 
@@ -692,7 +692,7 @@ relation print_class_modification =
 
   axiom	print_class_modification([])
 	
-  rule	Print.print_buf "(" & print_list_debug("print_class_modification",l,print_element_arg,",") & Print.print_buf ")"
+  rule	Print.printBuf "(" & print_list_debug("print_class_modification",l,print_element_arg,",") & Print.printBuf ")"
 	---------------------------------------------------------
 	print_class_modification(l)
 	
@@ -725,24 +725,24 @@ end
  **)
 relation print_element_arg =
 	
-  rule	Print.print_buf "Absyn.MODIFICATION(" &
+  rule	Print.printBuf "Absyn.MODIFICATION(" &
 	print_bool(f)  &
-	Print.print_buf ", " &
+	Print.printBuf ", " &
 	dump_each each &
-	Print.print_buf ", " &
+	Print.printBuf ", " &
 	print_component_ref(r) &
-	Print.print_buf ", " &
+	Print.printBuf ", " &
 	print_opt_modification(optm) &
-	Print.print_buf ", " &
+	Print.printBuf ", " &
 	print_string_comment_option optcmt &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	-------------------------------------------
 	print_element_arg(Absyn.MODIFICATION(f,each,r,optm,optcmt))
 
-  rule	Print.print_buf "Absyn.REDECLARATION(" &
+  rule	Print.printBuf "Absyn.REDECLARATION(" &
 	print_bool(f) &
 	print_elementspec spec &
-	Print.print_buf ",_)"
+	Print.printBuf ",_)"
 	-------------------------------------------
 	print_element_arg(Absyn.REDECLARATION(f,keywords,each,spec,_))
 
@@ -802,11 +802,11 @@ end
  **)
 relation dump_each: (Absyn.Each) => () =
 
-  rule	Print.print_buf "Absyn.EACH"
+  rule	Print.printBuf "Absyn.EACH"
 	--------------------------
 	dump_each(Absyn.EACH) 
 
-  rule	Print.print_buf "Absyn.NON_EACH"
+  rule	Print.printBuf "Absyn.NON_EACH"
 	------------------
 	dump_each(Absyn.NON_EACH)
 end
@@ -817,43 +817,43 @@ end
  **)
 relation print_class_part: Absyn.ClassPart => () =
 
-  rule	Print.print_buf "Absyn.PUBLIC(" & 
-	print_elementitems(el) & Print.print_buf ")"
+  rule	Print.printBuf "Absyn.PUBLIC(" & 
+	print_elementitems(el) & Print.printBuf ")"
 	-----------------------------------------------
 	print_class_part(Absyn.PUBLIC(el))
 	
-  rule	Print.print_buf "Absyn.PROTECTED(" & 
-	print_elementitems(el) & Print.print_buf ")"
+  rule	Print.printBuf "Absyn.PROTECTED(" & 
+	print_elementitems(el) & Print.printBuf ")"
 	---------------------------------------
 	print_class_part(Absyn.PROTECTED(el))
 	
-  rule	Print.print_buf "Absyn.EQUATIONS([" &
+  rule	Print.printBuf "Absyn.EQUATIONS([" &
 	print_list(eqs,print_equationitem,", ") &
-	Print.print_buf "])"
+	Print.printBuf "])"
 	--------------------------------------
 	print_class_part(Absyn.EQUATIONS(eqs))
 
-  rule	Print.print_buf "Absyn.INITIALEQUATIONS([" &
+  rule	Print.printBuf "Absyn.INITIALEQUATIONS([" &
 	print_list(eqs,print_equationitem, ", ") &
-	Print.print_buf "])"
+	Print.printBuf "])"
 	--------------------------------------
 	print_class_part(Absyn.INITIALEQUATIONS(eqs))
 	
-  rule	Print.print_buf "Absyn.ALGORITHMS(" &
+  rule	Print.printBuf "Absyn.ALGORITHMS(" &
 	print_list(algs,print_algorithmitem, ", ") &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	--------------------------------------
 	print_class_part(Absyn.ALGORITHMS(algs))
 
-  rule	Print.print_buf "Absyn.INITIALALGORITHMS([" &
+  rule	Print.printBuf "Absyn.INITIALALGORITHMS([" &
 	print_list(algs,print_algorithmitem,", ") &
-	Print.print_buf "])"
+	Print.printBuf "])"
 	--------------------------------------
 	print_class_part(Absyn.INITIALALGORITHMS(algs))
 
-  rule	Print.print_buf "Absyn.EXTERNAL(" &
+  rule	Print.printBuf "Absyn.EXTERNAL(" &
 	print_external_decl (edecl) &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	-------------------
 	print_class_part(Absyn.EXTERNAL(edecl,_))
 
@@ -870,7 +870,7 @@ relation print_external_decl : Absyn.ExternalDecl => () =
 	print_list_str(exps,print_exp_str,",") => expstr &
 	Util.string_append_list([idstr, ", ", crefstr, ", (",
 				 expstr, ")"]) => str &
-	Print.print_buf str
+	Print.printBuf str
 	-------------------
 	print_external_decl Absyn.EXTERNALDECL(id, NONE, cref, exps,_)
 
@@ -879,7 +879,7 @@ relation print_external_decl : Absyn.ExternalDecl => () =
 	print_list_str(exps,print_exp_str,",") => expstr &
 	Util.string_append_list([idstr, ", \"", lang, "\", ", crefstr, ", (",
 				 expstr, ")"]) => str &
-	Print.print_buf str
+	Print.printBuf str
 	-------------------
 	print_external_decl Absyn.EXTERNALDECL(id, SOME(lang), cref, exps,_)
 
@@ -1011,9 +1011,9 @@ end
  **)
 relation print_elementitems: Absyn.ElementItem list => () =
 
-  rule	Print.print_buf "[" &
+  rule	Print.printBuf "[" &
 	print_elementitems2 (elts) &
-	Print.print_buf "]" 
+	Print.printBuf "]" 
 	------------------
 	print_elementitems elts => ()
 end
@@ -1026,33 +1026,33 @@ relation print_elementitems2: Absyn.ElementItem list => () =
 
   axiom print_elementitems2 [] => ()
 
-  rule  Print.print_buf "Absyn.ELEMENTITEM(" &
+  rule  Print.printBuf "Absyn.ELEMENTITEM(" &
 	print_element e &
-	Print.print_buf ")" 
+	Print.printBuf ")" 
 	---------------
 	print_elementitems2[ Absyn.ELEMENTITEM(e)]
 
-  rule	Print.print_buf "Absyn.ANNOTATIONITEM(" &
+  rule	Print.printBuf "Absyn.ANNOTATIONITEM(" &
 	print_annotation a &
-	Print.print_buf ")" 
+	Print.printBuf ")" 
 	------------------
 	print_elementitems2([Absyn.ANNOTATIONITEM(a)])
 	
-  rule	Print.print_buf "Absyn.ELEMENTITEM(" &
+  rule	Print.printBuf "Absyn.ELEMENTITEM(" &
 	print_element e &
-	Print.print_buf "), " &
+	Print.printBuf "), " &
 	print_elementitems2 els
 	---------------
 	print_elementitems2 Absyn.ELEMENTITEM(e)::els 
 
-  rule	Print.print_buf "Absyn.ANNOTATIONITEM(" &
+  rule	Print.printBuf "Absyn.ANNOTATIONITEM(" &
 	print_annotation a &
-	Print.print_buf "), " &
+	Print.printBuf "), " &
 	print_elementitems2 els
 	------------------
 	print_elementitems2 Absyn.ANNOTATIONITEM(a)::els
 
-  rule	Print.print_buf "Error print_elementitems\n"
+  rule	Print.printBuf "Error print_elementitems\n"
 	--------------
 	print_elementitems2 _ 
 end
@@ -1062,9 +1062,9 @@ end
  ** Prints an annotation to the Print buffer.
  **)
 relation print_annotation: Absyn.Annotation => () =	
-  rule	Print.print_buf "ANNOTATION(" &
+  rule	Print.printBuf "ANNOTATION(" &
 	print_modification Absyn.CLASSMOD(mod,NONE) &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	---------
 	print_annotation(Absyn.ANNOTATION(mod))
 end
@@ -1144,53 +1144,53 @@ end
  **)
 relation print_element: Absyn.Element => () =
 	
-  rule	Print.print_buf "Absyn.ELEMENT(" & 
+  rule	Print.printBuf "Absyn.ELEMENT(" & 
 	print_bool(final) &
-	Print.print_buf ", _" &
-	Print.print_buf ", " &
+	Print.printBuf ", _" &
+	Print.printBuf ", " &
 	print_innerouter inout &
-	Print.print_buf ", \"" &
-	Print.print_buf name &
-	Print.print_buf "\", " &
+	Print.printBuf ", \"" &
+	Print.printBuf name &
+	Print.printBuf "\", " &
 	print_elementspec spec & 
-	Print.print_buf ", " &
+	Print.printBuf ", " &
 	print_info info &
-	Print.print_buf "), NONE)"
+	Print.printBuf "), NONE)"
 	---------------------------
 	print_element (Absyn.ELEMENT(final,repl,inout,name,spec,info,NONE))
 
-  rule	Print.print_buf "Absyn.ELEMENT(" & 
+  rule	Print.printBuf "Absyn.ELEMENT(" & 
 	print_bool(final) &
-	Print.print_buf ", _" &
-	Print.print_buf ", " &
+	Print.printBuf ", _" &
+	Print.printBuf ", " &
 	print_innerouter inout &
-	Print.print_buf ", \"" &
-	Print.print_buf name &
-	Print.print_buf "\", " &
+	Print.printBuf ", \"" &
+	Print.printBuf name &
+	Print.printBuf "\", " &
 	print_elementspec spec & 
-	Print.print_buf ", " &
+	Print.printBuf ", " &
 	print_info info &
-	Print.print_buf ", SOME(...))"
+	Print.printBuf ", SOME(...))"
 	---------------------------
 	print_element (Absyn.ELEMENT(final,repl,inout,name,spec,info,SOME(_)))
 	
-  rule	Print.print_buf "Absyn.TEXT(" & 
-	Print.print_buf "SOME(\"" &
-	Print.print_buf name &
-	Print.print_buf "\"), \"" &
-	Print.print_buf text &
-	Print.print_buf "\", " &
+  rule	Print.printBuf "Absyn.TEXT(" & 
+	Print.printBuf "SOME(\"" &
+	Print.printBuf name &
+	Print.printBuf "\"), \"" &
+	Print.printBuf text &
+	Print.printBuf "\", " &
 	print_info info &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	---------------------------
 	print_element (Absyn.TEXT(SOME(name), text, info))	
 	
-  rule	Print.print_buf "Absyn.TEXT(" & 
-	Print.print_buf "NONE, \"" &
-	Print.print_buf text &
-	Print.print_buf "\", " &
+  rule	Print.printBuf "Absyn.TEXT(" & 
+	Print.printBuf "NONE, \"" &
+	Print.printBuf text &
+	Print.printBuf "\", " &
 	print_info info &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	---------------------------
 	print_element (Absyn.TEXT(NONE, text, info))	
 
@@ -1269,19 +1269,19 @@ end
  ** Prints the inner or outer keyword to the Print buffer.
  **)
 relation print_innerouter: Absyn.InnerOuter => () =
-   rule Print.print_buf "Absyn.INNER"
+   rule Print.printBuf "Absyn.INNER"
 	----------------------------
 	print_innerouter(Absyn.INNER)
 
-   rule Print.print_buf "Absyn.OUTER"
+   rule Print.printBuf "Absyn.OUTER"
         ----------------------------
         print_innerouter(Absyn.OUTER)
 
-   rule Print.print_buf "Absyn.INNEROUTER "
+   rule Print.printBuf "Absyn.INNEROUTER "
         ----------------------------------
         print_innerouter(Absyn.INNEROUTER)
 
-   rule Print.print_buf "Absyn.UNSPECIFIED "
+   rule Print.printBuf "Absyn.UNSPECIFIED "
         ----------------------------------
         print_innerouter(Absyn.UNSPECIFIED)
 end
@@ -1307,36 +1307,36 @@ end
  **)
 relation print_elementspec: Absyn.ElementSpec => () =
 	
-  rule	Print.print_buf "Absyn.CLASSDEF(" & 
+  rule	Print.printBuf "Absyn.CLASSDEF(" & 
 	print_bool(repl) &
-	Print.print_buf ", " &
+	Print.printBuf ", " &
 	print_class cl & 
-	Print.print_buf ")"
+	Print.printBuf ")"
 	-------------------------
 	print_elementspec(Absyn.CLASSDEF(repl,cl))
 	
-  rule	Print.print_buf "Absyn.EXTENDS(" & 
-	dump_path p & Print.print_buf ", [" &
+  rule	Print.printBuf "Absyn.EXTENDS(" & 
+	dump_path p & Print.printBuf ", [" &
 	print_list_debug("print_elementspec",l,print_element_arg,",") & 
-	Print.print_buf "])"
+	Print.printBuf "])"
 	------------------------------------------
 	print_elementspec(Absyn.EXTENDS(p,l))
 
-  rule	Print.print_buf "Absyn.COMPONENTS(" &
-	print_elementattr(attr) & Print.print_buf "," &
-	dump_path(t) & Print.print_buf ",[" &
+  rule	Print.printBuf "Absyn.COMPONENTS(" &
+	print_elementattr(attr) & Print.printBuf "," &
+	dump_path(t) & Print.printBuf ",[" &
 	print_list_debug("print_elementspec",cs, print_componentitem, ",") &
-	Print.print_buf "])"
+	Print.printBuf "])"
 	------------------------------------------
 	print_elementspec(Absyn.COMPONENTS(attr,t,cs))
 	
-  rule	Print.print_buf "Absyn.IMPORT(" &
+  rule	Print.printBuf "Absyn.IMPORT(" &
 	print_import i &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	--------
 	print_elementspec(Absyn.IMPORT(i,_))
 
-  rule	Print.print_buf " ##ERROR## "
+  rule	Print.printBuf " ##ERROR## "
 	-------------------
 	print_elementspec(_)
 
@@ -1388,7 +1388,7 @@ relation unparse_elementspec_str: (int,(*indent*)
 	----------------------------
 	unparse_elementspec_str(indent, Absyn.IMPORT(i,_),f,r,io) => str
 
-  rule	Print.print_buf " ##ERROR## "
+  rule	Print.printBuf " ##ERROR## "
 	-------------------
 	unparse_elementspec_str(_,_,_,_,_) => ""
 end
@@ -1399,7 +1399,7 @@ end
  **)
 relation print_import : Absyn.Import => () =
 
-  rule	Print.print_buf i & Print.print_buf " = " &
+  rule	Print.printBuf i & Print.printBuf " = " &
 	print_path p
 	-----------------------
 	print_import(Absyn.NAMED_IMPORT(i,p))
@@ -1408,7 +1408,7 @@ relation print_import : Absyn.Import => () =
 	-------------
 	print_import(Absyn.QUAL_IMPORT(p))
 
-  rule	print_path p & Print.print_buf ".*"
+  rule	print_path p & Print.printBuf ".*"
 	--------------------------
 	print_import(Absyn.UNQUAL_IMPORT(p))
 		     
@@ -1442,21 +1442,21 @@ end
  **)
 relation print_elementattr: Absyn.ElementAttributes => () =
 
-  rule	Print.print_buf "Absyn.ATTR(" &
+  rule	Print.printBuf "Absyn.ATTR(" &
 	print_bool(fl) &
-	Print.print_buf ", " &	
+	Print.printBuf ", " &	
 	variability_symbol(var) => vs &
-	Print.print_buf vs &
-	Print.print_buf ", " &	
+	Print.printBuf vs &
+	Print.printBuf ", " &	
 	direction_symbol(dir) => ds &
-	Print.print_buf ds &
-	Print.print_buf ", " &	
+	Print.printBuf ds &
+	Print.printBuf ", " &	
 	print_arraydim adim &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	-----------------------------------
 	print_elementattr(Absyn.ATTR(fl,var,dir,adim))
 
-  rule	Print.print_buf " ##ERROR## print_elementattr"
+  rule	Print.printBuf " ##ERROR## print_elementattr"
 	-------------------
 	print_elementattr(_)
 
@@ -1476,7 +1476,7 @@ relation unparse_elementattr_str: Absyn.ElementAttributes => string =
 	------------------------------------------
 	unparse_elementattr_str(Absyn.ATTR(fl,var,dir,adim)) => str
 
-  rule	Print.print_buf " ##ERROR## unparse_elementattr_str"
+  rule	Print.printBuf " ##ERROR## unparse_elementattr_str"
 	-------------------
 	unparse_elementattr_str(_) => ""
 
@@ -1551,13 +1551,13 @@ end
  **)
 relation print_component: Absyn.Component => () =
 
-  rule	Print.print_buf "Absyn.COMPONENT(\"" &
-	Print.print_buf n &
-	Print.print_buf "\"," &
+  rule	Print.printBuf "Absyn.COMPONENT(\"" &
+	Print.printBuf n &
+	Print.printBuf "\"," &
 	print_arraydim a &
-	Print.print_buf ", " &
+	Print.printBuf ", " &
 	print_option(m,print_modification) &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	------------------------------------------
 	print_component(Absyn.COMPONENT(n,a,m))
 
@@ -1569,11 +1569,11 @@ end
  **)
 relation print_componentitem: Absyn.ComponentItem => () =
 
-  rule	Print.print_buf "Absyn.COMPONENTITEM(" &
+  rule	Print.printBuf "Absyn.COMPONENTITEM(" &
 	print_component c &	
-	Print.print_buf ", " &
+	Print.printBuf ", " &
 	dump_comment_option optcmt &
-	Print.print_buf ")" 
+	Print.printBuf ")" 
 	------------------------------------------
 	print_componentitem(Absyn.COMPONENTITEM(c,optcond,optcmt))
 end
@@ -1627,13 +1627,13 @@ end
  **)
 relation print_arraydim_opt: Absyn.ArrayDim option => () =
 	
-  rule	Print.print_buf "NONE"
+  rule	Print.printBuf "NONE"
 	------------------------
 	print_arraydim_opt( NONE) 
 
-  rule	Print.print_buf "SOME(" &
+  rule	Print.printBuf "SOME(" &
 	print_subscripts(s) &
-	Print.print_buf ")" 
+	Print.printBuf ")" 
 	-------------------
 	print_arraydim_opt(SOME(s))
 end
@@ -1668,13 +1668,13 @@ end
  **)
 relation print_subscript: Absyn.Subscript => () =
 
-  rule	Print.print_buf "Absyn.NOSUB"
+  rule	Print.printBuf "Absyn.NOSUB"
 	---------
 	print_subscript(Absyn.NOSUB)
 
-  rule	Print.print_buf "Absyn.SUBSCRIPT(" &
+  rule	Print.printBuf "Absyn.SUBSCRIPT(" &
 	print_exp(e1) &
-	Print.print_buf ")" 
+	Print.printBuf ")" 
 	----------
 	print_subscript(Absyn.SUBSCRIPT(e1))
 
@@ -1700,9 +1700,9 @@ end
  **)
 relation print_opt_modification: Absyn.Modification option => () =
 
-  rule	Print.print_buf "SOME(" &
+  rule	Print.printBuf "SOME(" &
 	print_modification(m) &
-	Print.print_buf ")" 
+	Print.printBuf ")" 
 	----------------------
 	print_opt_modification(SOME(m)) => ()
 
@@ -1715,15 +1715,15 @@ end
  **)
 relation print_modification: Absyn.Modification => () =
 	
-  rule	Print.print_buf "Absyn.CLASSMOD([" &
+  rule	Print.printBuf "Absyn.CLASSMOD([" &
 	print_mod1 l & 
-	Print.print_buf "], " &
+	Print.printBuf "], " &
 	print_mod2 e &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	-------------------------
 	print_modification(Absyn.CLASSMOD(l, e))
 	
-  rule	Print.print_buf "( ** MODIFICATION ** )"
+  rule	Print.printBuf "( ** MODIFICATION ** )"
 	-------------
 	print_modification(_)
 	
@@ -1737,9 +1737,9 @@ relation print_mod1: Absyn.ElementArg list => () =
 
   axiom	print_mod1 []
 
-  rule	Print.print_buf "(" &
+  rule	Print.printBuf "(" &
 	print_list_debug("print_mod1",l,print_element_arg,",") &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	------------------------------------
 	print_mod1 l
 
@@ -1751,12 +1751,12 @@ end
  **)
 relation print_mod2 : Absyn.Exp option => () =
 
-  rule	Print.print_buf "NONE"
+  rule	Print.printBuf "NONE"
 	-----------------
 	print_mod2 NONE
 
-  rule	Print.print_buf "SOME(" & print_exp(e) &
-	Print.print_buf ")" 
+  rule	Print.printBuf "SOME(" & print_exp(e) &
+	Print.printBuf ")" 
 	-------------------------
 	print_mod2 SOME(e)
 
@@ -1789,7 +1789,7 @@ relation unparse_modification_str: Absyn.Modification => string =
 	-------------------------
 	unparse_modification_str(Absyn.CLASSMOD(l, e)) => str
 	
-  rule	Print.print_buf " Failure MODIFICATION \n"
+  rule	Print.printBuf " Failure MODIFICATION \n"
 	-------------
 	unparse_modification_str(_) => ""	
 end
@@ -1832,29 +1832,29 @@ end
 relation print_equation: Absyn.Equation => () =
 	
 
-  rule	Print.print_buf "IF (" & print_exp(e) & Print.print_buf ") THEN " &
+  rule	Print.printBuf "IF (" & print_exp(e) & Print.printBuf ") THEN " &
 	print_list_debug("print_equation",tb, print_equationitem, ";") &
 	print_list_debug("print_equation",eb, print_eq_elseif, " ") &
-	Print.print_buf " ELSE " & print_list_debug("print_equation",fb, print_equationitem, ";")
+	Print.printBuf " ELSE " & print_list_debug("print_equation",fb, print_equationitem, ";")
 	----------------------------------------------------
 	print_equation(Absyn.EQ_IF(e,tb,eb,fb))
 	
-  rule	Print.print_buf "EQ_EQUALS(" & print_exp(e1) & Print.print_buf "," &
-	print_exp(e2) & Print.print_buf ")"
+  rule	Print.printBuf "EQ_EQUALS(" & print_exp(e1) & Print.printBuf "," &
+	print_exp(e2) & Print.printBuf ")"
 	-------------------------------------------
 	print_equation(Absyn.EQ_EQUALS(e1,e2))
 	
-  rule	Print.print_buf "EQ_CONNECT(" & print_component_ref(e1) & Print.print_buf "," &
-	print_component_ref(e2) & Print.print_buf ")"
+  rule	Print.printBuf "EQ_CONNECT(" & print_component_ref(e1) & Print.printBuf "," &
+	print_component_ref(e2) & Print.printBuf ")"
 	-------------------------------------------
 	print_equation(Absyn.EQ_CONNECT(e1,e2))
 	
-  rule	Print.print_buf "FOR " & Print.print_buf i & Print.print_buf " in " & print_exp(e) &
-	Print.print_buf " {" & print_list_debug("print_equation",el, print_equationitem, ";") & Print.print_buf "}"
+  rule	Print.printBuf "FOR " & Print.printBuf i & Print.printBuf " in " & print_exp(e) &
+	Print.printBuf " {" & print_list_debug("print_equation",el, print_equationitem, ";") & Print.printBuf "}"
 	----------------------------------------------------------
 	print_equation Absyn.EQ_FOR(i,e,el)
 	
-  rule	Print.print_buf " ** UNKNOWN EQUATION ** "
+  rule	Print.printBuf " ** UNKNOWN EQUATION ** "
 	--------------------------------
 	print_equation(_)
 	
@@ -1865,13 +1865,13 @@ end
  ** Prints and EquationItem to the Print buffer.
  **)
 relation print_equationitem: Absyn.EquationItem => () =
-  rule	Print.print_buf "EQUATIONITEM(" &
+  rule	Print.printBuf "EQUATIONITEM(" &
 	print_equation eq &
-	Print.print_buf ", <comment>)\n"
+	Print.printBuf ", <comment>)\n"
 	-------------------------------
 	print_equationitem Absyn.EQUATIONITEM(eq,_)
 	
-  rule	Print.print_buf "EQUATIONITEMANN(<annotation>)\n" 
+  rule	Print.printBuf "EQUATIONITEMANN(<annotation>)\n" 
 	--------------
 	print_equationitem Absyn.EQUATIONITEMANN(_)
 end
@@ -1935,7 +1935,7 @@ relation unparse_equation_str: (int, Absyn.Equation) => string =
 	-------------------
 	unparse_equation_str(i, Absyn.EQ_WHEN_E(exp,eql,eqlelse)) => str
 
-  rule	Print.print_buf " ** Failure! UNKNOWN EQUATION ** "
+  rule	Print.printBuf " ** Failure! UNKNOWN EQUATION ** "
 	--------------------------------
 	unparse_equation_str(_,_) => ""
 	
@@ -1982,7 +1982,7 @@ end
  **)
 relation print_eq_elseif : (Absyn.Exp * Absyn.EquationItem list) => () =
 	
-  rule	Print.print_buf " ELSEIF " & print_exp e & Print.print_buf " THEN " &
+  rule	Print.printBuf " ELSEIF " & print_exp e & Print.printBuf " THEN " &
 	print_list_debug("print_eq_elseif",el, print_equationitem, ";")
 	-----------------------------------
 	print_eq_elseif((e,el))
@@ -2037,13 +2037,13 @@ end
  **)
 relation print_algorithmitem: Absyn.AlgorithmItem => () =
 
-  rule	Print.print_buf "ALGORITHMITEM(" &
+  rule	Print.printBuf "ALGORITHMITEM(" &
 	print_algorithm(alg)&
-	Print.print_buf ")\n"
+	Print.printBuf ")\n"
 	-------------------
 	print_algorithmitem (Absyn.ALGORITHMITEM(alg,_))
 
-  rule	Print.print_buf "ALGORITHMITEMANN(<annotation>)\n"
+  rule	Print.printBuf "ALGORITHMITEMANN(<annotation>)\n"
 	----------------------------------------
 	print_algorithmitem(Absyn.ALGORITHMITEMANN(ann))
 end
@@ -2054,44 +2054,44 @@ end
  **)
 relation print_algorithm: Absyn.Algorithm => () =
 	
-  rule	Print.print_buf "ALG_ASSIGN(" & print_component_ref cr &
-	Print.print_buf " := " & print_exp(exp) & Print.print_buf ")"
+  rule	Print.printBuf "ALG_ASSIGN(" & print_component_ref cr &
+	Print.printBuf " := " & print_exp(exp) & Print.printBuf ")"
 	-------------------------------------------
 	print_algorithm(Absyn.ALG_ASSIGN(cr,exp))
 	
-  rule	Print.print_buf "ALG_TUPLE_ASSIGN(" & print_exp(e1) &
-	Print.print_buf " := " & print_exp(e2) & Print.print_buf ")"
+  rule	Print.printBuf "ALG_TUPLE_ASSIGN(" & print_exp(e1) &
+	Print.printBuf " := " & print_exp(e2) & Print.printBuf ")"
 	-------------------------------------------
 	print_algorithm(Absyn.ALG_TUPLE_ASSIGN(e1,e2))
 
-  rule	Print.print_buf "IF (" & print_exp(e) & Print.print_buf ") THEN " &
+  rule	Print.printBuf "IF (" & print_exp(e) & Print.printBuf ") THEN " &
 	print_list_debug("print_algorithm",tb, print_algorithmitem, ";") &
 	print_list_debug("print_algorithm",eb, print_alg_elseif, " ") &
-	Print.print_buf " ELSE " & print_list_debug("print_algorithm",fb, print_algorithmitem, ";")
+	Print.printBuf " ELSE " & print_list_debug("print_algorithm",fb, print_algorithmitem, ";")
 	----------------------------------------------------
 	print_algorithm(Absyn.ALG_IF(e,tb,eb,fb))
 	
-  rule	Print.print_buf "FOR " & Print.print_buf i & Print.print_buf " in " & print_exp(e) &
-	Print.print_buf " {" & print_list_debug("print_algorithm",el, print_algorithmitem, ";") & Print.print_buf "}"
+  rule	Print.printBuf "FOR " & Print.printBuf i & Print.printBuf " in " & print_exp(e) &
+	Print.printBuf " {" & print_list_debug("print_algorithm",el, print_algorithmitem, ";") & Print.printBuf "}"
 	----------------------------------------------------------
 	print_algorithm Absyn.ALG_FOR(i,e,el)
 	
-  rule	Print.print_buf "WHILE " & print_exp(e) &
-	Print.print_buf " {" & print_list_debug("print_algorithm",al, print_algorithmitem, ";") & Print.print_buf "}"
+  rule	Print.printBuf "WHILE " & print_exp(e) &
+	Print.printBuf " {" & print_list_debug("print_algorithm",al, print_algorithmitem, ";") & Print.printBuf "}"
 	----------------------------------------------------------
 	print_algorithm Absyn.ALG_WHILE(e,al)
 	
-	(*  rule	Print.print_buf "WHEN_E " & print_exp(e) &
-	Print.print_buf " {" & print_list_debug("print_algorithm",al, print_algorithmitem, ";") & Print.print_buf "}"
+	(*  rule	Print.printBuf "WHEN_E " & print_exp(e) &
+	Print.printBuf " {" & print_list_debug("print_algorithm",al, print_algorithmitem, ";") & Print.printBuf "}"
 	 ----------------------------------------------------------
 	print_algorithm Absyn.ALG_WHEN_E(e,al)
 *)
-  rule	Print.print_buf "WHEN_A " & print_exp(e) &
-	Print.print_buf " {" & print_list_debug("print_algorithm",al, print_algorithmitem, ";") & Print.print_buf "}"
+  rule	Print.printBuf "WHEN_A " & print_exp(e) &
+	Print.printBuf " {" & print_list_debug("print_algorithm",al, print_algorithmitem, ";") & Print.printBuf "}"
 	----------------------------------------------------------
 	print_algorithm Absyn.ALG_WHEN_A(e,al,el)
 	
-  rule	Print.print_buf " ** UNKNOWN ALGORITHM CLAUSE ** "
+  rule	Print.printBuf " ** UNKNOWN ALGORITHM CLAUSE ** "
 	--------------------------------
 	print_algorithm(_)
 	
@@ -2194,7 +2194,7 @@ relation unparse_algorithm_str: (int, Absyn.AlgorithmItem) => string =
 	------------------------------------------
 	unparse_algorithm_str (i,Absyn.ALGORITHMITEMANN(ann)) => str'
   
-  rule	Print.print_error_buf "#Error, unparse_algorithm_str failed\n"
+  rule	Print.printErrorBuf "#Error, unparse_algorithm_str failed\n"
 	--------------------------------
 	unparse_algorithm_str(_,_) => ""
 	
@@ -2284,7 +2284,7 @@ end
  **)
 relation print_alg_elseif : (Absyn.Exp * Absyn.AlgorithmItem list) => () =
 
-  rule	Print.print_buf " ELSEIF " & print_exp e & Print.print_buf " THEN " &
+  rule	Print.printBuf " ELSEIF " & print_exp e & Print.printBuf " THEN " &
 	print_list_debug("print_alg_elseif",el, print_algorithmitem, ";")
 	-----------------------------------
 	print_alg_elseif((e,el))
@@ -2329,21 +2329,21 @@ end
  *)
 relation print_component_ref : Absyn.ComponentRef => () =
 
-  rule	Print.print_buf "Absyn.CREF_IDENT(\"" &
-	Print.print_buf s &
-	Print.print_buf "\", " &
+  rule	Print.printBuf "Absyn.CREF_IDENT(\"" &
+	Print.printBuf s &
+	Print.printBuf "\", " &
 	print_subscripts subs &
-	Print.print_buf ")" 
+	Print.printBuf ")" 
 	---------------------
 	print_component_ref Absyn.CREF_IDENT(s,subs)
 
-  rule	Print.print_buf "Absyn.CREF_QUAL(\"" &
-	Print.print_buf s &
-	Print.print_buf "\", " &
+  rule	Print.printBuf "Absyn.CREF_QUAL(\"" &
+	Print.printBuf s &
+	Print.printBuf "\", " &
 	print_subscripts subs &
-	Print.print_buf "," &
+	Print.printBuf "," &
 	print_component_ref cr &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	---------------------
 	print_component_ref Absyn.CREF_QUAL(s,subs,cr)
 end
@@ -2354,11 +2354,11 @@ end
  **)
 relation print_subscripts : Absyn.Subscript list => () =
 
-  rule	Print.print_buf "[]" 
+  rule	Print.printBuf "[]" 
 	-------------------
 	print_subscripts []
 
-  rule	Print.print_buf "[" & print_list_debug("print_subscripts",l,print_subscript,",") & Print.print_buf "]"
+  rule	Print.printBuf "[" & print_list_debug("print_subscripts",l,print_subscript,",") & Print.printBuf "]"
 	-------------------------------------------------------
 	print_subscripts l
 
@@ -2406,7 +2406,7 @@ end
  *)
 relation print_path : Absyn.Path => () =
 
-  rule	Absyn.path_string p => s & Print.print_buf s
+  rule	Absyn.path_string p => s & Print.printBuf s
 	----------------------------------
 	print_path p
 end
@@ -2417,17 +2417,17 @@ end
  **)
 relation dump_path: Absyn.Path => () =
 
-  rule	Print.print_buf("Absyn.IDENT(\"") &
-	Print.print_buf str & 
-	Print.print_buf "\")"
+  rule	Print.printBuf("Absyn.IDENT(\"") &
+	Print.printBuf str & 
+	Print.printBuf "\")"
 	---------------------------
 	dump_path(Absyn.IDENT(str)) 
 		    
-  rule	Print.print_buf("Absyn.QUALIFIED(\"") &
-	Print.print_buf str & 
-	Print.print_buf "\"," &
+  rule	Print.printBuf("Absyn.QUALIFIED(\"") &
+	Print.printBuf str & 
+	Print.printBuf "\"," &
 	dump_path(path) &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	---------------------------
 	dump_path(Absyn.QUALIFIED(str,path)) 
 end
@@ -2453,140 +2453,140 @@ end
 relation print_exp : Absyn.Exp => () =
 	
   rule	int_string(x) => s & 
-	Print.print_buf "Absyn.INTEGER(" &
-	Print.print_buf s &
-	Print.print_buf ")" 
+	Print.printBuf "Absyn.INTEGER(" &
+	Print.printBuf s &
+	Print.printBuf ")" 
 	----------------------------
 	print_exp(Absyn.INTEGER(x))
 
   rule	real_string(x) => s & 
-	Print.print_buf "Absyn.REAL(" &
-	Print.print_buf s &
-	Print.print_buf ")" 
+	Print.printBuf "Absyn.REAL(" &
+	Print.printBuf s &
+	Print.printBuf ")" 
 	-----------------------------
 	print_exp(Absyn.REAL(x))
 
-  rule	Print.print_buf "Absyn.CREF(" &
+  rule	Print.printBuf "Absyn.CREF(" &
 	print_component_ref(c) &
-	Print.print_buf ")" 
+	Print.printBuf ")" 
 	---------------------
 	print_exp(Absyn.CREF(c))
 
-  rule	Print.print_buf "Absyn.STRING(\"" &
-	Print.print_buf s &
-	Print.print_buf "\")"
+  rule	Print.printBuf "Absyn.STRING(\"" &
+	Print.printBuf s &
+	Print.printBuf "\")"
 	---------------------------------
 	print_exp(Absyn.STRING(s))
 
-  rule	Print.print_buf "Absyn.BOOL(false)"
+  rule	Print.printBuf "Absyn.BOOL(false)"
 	-------------
 	print_exp(Absyn.BOOL(false))
 
-  rule	Print.print_buf "Absyn.BOOL(true)"
+  rule	Print.printBuf "Absyn.BOOL(true)"
 	-------------
 	print_exp(Absyn.BOOL(true))
 
   rule	dump_op_symbol(op) => sym & 
-	Print.print_buf "Absyn.BINARY(" & 
+	Print.printBuf "Absyn.BINARY(" & 
 	print_exp e1 & 
-	Print.print_buf "," &
-	Print.print_buf sym & 
-	Print.print_buf "," &
+	Print.printBuf "," &
+	Print.printBuf sym & 
+	Print.printBuf "," &
 	print_exp e2 &
-	Print.print_buf ")" 
+	Print.printBuf ")" 
 	--------------------
 	print_exp(Absyn.BINARY(e1, op, e2))
 
   rule	dump_op_symbol(op) => sym &
-	Print.print_buf "Absyn.UNARY(" &
-	Print.print_buf sym &
-	Print.print_buf ", " & 
+	Print.printBuf "Absyn.UNARY(" &
+	Print.printBuf sym &
+	Print.printBuf ", " & 
 	print_exp e &
-	Print.print_buf ")" 
+	Print.printBuf ")" 
 	----------------------------
 	print_exp(Absyn.UNARY(op, e))
 
   rule	dump_op_symbol(op) => sym & 
-	Print.print_buf "Absyn.LBINARY(" &
+	Print.printBuf "Absyn.LBINARY(" &
 	print_exp e1 & 
-	Print.print_buf "," &
-	Print.print_buf sym & 
-	Print.print_buf "," &
+	Print.printBuf "," &
+	Print.printBuf sym & 
+	Print.printBuf "," &
 	print_exp e2 &
-	Print.print_buf ")" 
+	Print.printBuf ")" 
 	----------------------------------------------------------------
 	print_exp(Absyn.LBINARY(e1, op, e2))
 
   rule	dump_op_symbol(op) => sym &
-	Print.print_buf "Absyn.UNARY(" &
-	Print.print_buf sym &
-	Print.print_buf ", " & 
+	Print.printBuf "Absyn.UNARY(" &
+	Print.printBuf sym &
+	Print.printBuf ", " & 
 	print_exp e &
-	Print.print_buf ")" 
+	Print.printBuf ")" 
 	---------------------------------------------------
 	print_exp(Absyn.LUNARY(op, e))
 
   rule	dump_op_symbol(op) => sym & 
-	Print.print_buf "Absyn.RELATION(" &
+	Print.printBuf "Absyn.RELATION(" &
 	print_exp e1 & 
-	Print.print_buf "," &
-	Print.print_buf sym & 
-	Print.print_buf "," &
+	Print.printBuf "," &
+	Print.printBuf sym & 
+	Print.printBuf "," &
 	print_exp e2 &
-	Print.print_buf ")" 
+	Print.printBuf ")" 
 	-----------------------------------------------------------------
 	print_exp(Absyn.RELATION(e1, op, e2))
 
-  rule	Print.print_buf "Absyn.IFEXP(" & print_exp(c) &
-	Print.print_buf ", " & print_exp(t) &
-	Print.print_buf ", " & print_exp(f) &
-	Print.print_buf ")" 
+  rule	Print.printBuf "Absyn.IFEXP(" & print_exp(c) &
+	Print.printBuf ", " & print_exp(t) &
+	Print.printBuf ", " & print_exp(f) &
+	Print.printBuf ")" 
 	----------------------------
 	print_exp(Absyn.IFEXP(c,t,f,lst))
 
-  rule	Print.print_buf "Absyn.CALL(" &
+  rule	Print.printBuf "Absyn.CALL(" &
 	print_component_ref(fcn) &
- 	Print.print_buf ", " & 
-	print_function_args(args) & Print.print_buf ")"
+ 	Print.printBuf ", " & 
+	print_function_args(args) & Print.printBuf ")"
 	---------------------------------------------
 	print_exp(Absyn.CALL(fcn, args))
 
-  rule	Print.print_buf "Absyn.ARRAY([" &
+  rule	Print.printBuf "Absyn.ARRAY([" &
 	print_list_debug("print_exp",es, print_exp, ",") &
-	Print.print_buf "])"
+	Print.printBuf "])"
 	---------
 	print_exp Absyn.ARRAY(es)
 
 	(* PR. *)
-  rule	Print.print_buf "Absyn.TUPLE([" &
-	Print.print_buf "(" &
+  rule	Print.printBuf "Absyn.TUPLE([" &
+	Print.printBuf "(" &
 	print_list_debug("print_exp",es, print_exp, ",") &
-	Print.print_buf "])"
+	Print.printBuf "])"
 	---------
 	print_exp Absyn.TUPLE(es)
 	
-  rule	Print.print_buf "Absyn.MATRIX([" &
+  rule	Print.printBuf "Absyn.MATRIX([" &
 	print_list_debug("print_exp",es, print_row, ";") &
-	Print.print_buf "])"
+	Print.printBuf "])"
 	---------
 	print_exp Absyn.MATRIX(es)
 
-  rule	Print.print_buf "Absyn.RANGE(" & print_exp start & 
-	Print.print_buf ",NONE," & print_exp stop & Print.print_buf ")"
+  rule	Print.printBuf "Absyn.RANGE(" & print_exp start & 
+	Print.printBuf ",NONE," & print_exp stop & Print.printBuf ")"
 	-------------------------------------------------------------
 	print_exp Absyn.RANGE(start,NONE,stop)
 
-  rule	Print.print_buf "Absyn.RANGE(" & print_exp start & 
-	Print.print_buf ",SOME(" & print_exp step &
- 	Print.print_buf ")," & print_exp stop & Print.print_buf ")"
+  rule	Print.printBuf "Absyn.RANGE(" & print_exp start & 
+	Print.printBuf ",SOME(" & print_exp step &
+ 	Print.printBuf ")," & print_exp stop & Print.printBuf ")"
 	-------------------------------------------------------------
 	print_exp Absyn.RANGE(start,SOME(step),stop)
 
-  rule Print.print_buf "Absyn.END"
+  rule Print.printBuf "Absyn.END"
 	----------------------------------
 	print_exp Absyn.END
 
-  rule	Print.print_buf "#UNKNOWN EXPRESSION#"
+  rule	Print.printBuf "#UNKNOWN EXPRESSION#"
 	----------------------------------
 	print_exp (_)
 end
@@ -2597,21 +2597,21 @@ end
  **)
 relation print_function_args: Absyn.FunctionArgs => () =
 	
-  rule  Print.print_buf "FUNCTIONARGS(" &
+  rule  Print.printBuf "FUNCTIONARGS(" &
 	print_list_debug("print_exp",expargs,print_exp,", ") &
-	Print.print_buf ", " &
+	Print.printBuf ", " &
 	print_list_debug("print_namedarg",nargs,print_named_arg,", ") &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	-------------------
 	print_function_args Absyn.FUNCTIONARGS(expargs,nargs)
 
-  rule  Print.print_buf "FOR_ITER_FARG(" &
+  rule  Print.printBuf "FOR_ITER_FARG(" &
 	print_exp exp &
-	Print.print_buf ", " &
-	Print.print_buf id &
-	Print.print_buf ", " &
+	Print.printBuf ", " &
+	Print.printBuf id &
+	Print.printBuf ", " &
 	print_exp iterexp &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	-------------------
 	print_function_args Absyn.FOR_ITER_FARG (exp, id, iterexp)
 end
@@ -2654,8 +2654,8 @@ end
  **)
 relation print_named_arg: Absyn.NamedArg => () =
 
-  rule	Print.print_buf ident &
-	Print.print_buf "=" &
+  rule	Print.printBuf ident &
+	Print.printBuf "=" &
 	print_exp(e) 
 	------------
 	print_named_arg Absyn.NAMEDARG(ident,e)
@@ -3091,7 +3091,7 @@ end
 relation print_select: (bool,string,string) => () =
 
   rule	select_string(f,yes,no) => res &
-	Print.print_buf res
+	Print.printBuf res
 	-------------------------
 	print_select(f,yes,no)
 
@@ -3103,13 +3103,13 @@ end
  **)
 relation print_option : (('a option),('a => ())) => () =
 
-  rule	Print.print_buf "NONE" 
+  rule	Print.printBuf "NONE" 
 	------------------------
 	print_option(NONE,_) => ()
 	
-  rule	Print.print_buf "SOME(" &
+  rule	Print.printBuf "SOME(" &
 	r( x ) &
-	Print.print_buf ")" 
+	Print.printBuf ")" 
 	-------------------
 	print_option(SOME(x),r) => ()
 end
@@ -3133,7 +3133,7 @@ relation print_list_debug : (string, 'a list, 'a => (), string) => () =
   rule	string_append("print_list_debug-3 from ", caller) => s1 &
 	Debug.fprintl ("dumptr", [s1, "\n"]) &
 	r(h) & 
-	Print.print_buf sep & 
+	Print.printBuf sep & 
 	Debug.fprintln ("dumptr", "//print_list_debug-3") &
 	print_list_debug(s1, rest, r, sep)
 	-------------------------------------
@@ -3153,7 +3153,7 @@ relation print_list : ('a list, 'a => (), string) => () =
 	------------------
 	print_list([h],r,_)
 
-  rule	r(h) & Print.print_buf sep &
+  rule	r(h) & Print.printBuf sep &
 	print_list(t,r,sep)
 	-------------------------------------
 	print_list(h::t,r,sep)
@@ -3257,12 +3257,12 @@ end
  **)
 relation print_string_comment_option: string option => () =
 	
-  rule	Print.print_buf "NONE" 
+  rule	Print.printBuf "NONE" 
 	--------------------
 	print_string_comment_option(NONE) => ()
 	
   rule	Util.string_append_list(["SOME( \"",s,"\")"])=> str &
-	Print.print_buf str 
+	Print.printBuf str 
 	--------------------------
 	print_string_comment_option(SOME(s)) => ()
 end
@@ -3310,9 +3310,9 @@ end
  **)
 relation stdout: () => () =
 
-  rule 	Print.get_string() => str &
+  rule 	Print.getString() => str &
         print str &
-        Print.clear_buf()
+        Print.clearBuf()
         ------------------------
         stdout() => ()
 end 

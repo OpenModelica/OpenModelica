@@ -58,55 +58,55 @@ module TaskGraphExt:
   with "DAELow.rml"
 
 
-relation new_task: string => int
+relation newTask: string => int
 
-relation add_edge: (int (*from*),
+relation addEdge: (int (*from*),
 		    int (*to*),
 		    string (*communicated variable*), 
 		    int (*priority*)) => ()
 
-relation get_task: string => int 
+relation getTask: string => int 
 
-relation store_result: (string, int, bool(*send to endtask? *),string (* orig name*)) => ()
+relation storeResult: (string, int, bool(*send to endtask? *),string (* orig name*)) => ()
 
-relation dump_graph: (string) => ()
+relation dumpGraph: (string) => ()
 
-relation dump_merged_graph: (string) => ()
+relation dumpMergedGraph: (string) => ()
 
-relation register_startstop: (int,int) => ()
+relation registerStartStop: (int,int) => ()
 
-relation get_starttask: () => int
+relation getStartTask: () => int
 
-relation get_stoptask: () => int
+relation getStopTask: () => int
 
-relation merge_tasks: (real (*latency*), real(*bandwidth*) ) => ()
+relation mergeTasks: (real (*latency*), real(*bandwidth*) ) => ()
 
 relation schedule: (int (* nproc*)) => ()
 
-relation generate_code: (int, (* n states *)
+relation generateCode: (int, (* n states *)
 			 int, (* n alg. vars *)
 			 int (* n params *)) 
 	  => ()
 
-relation set_execcost: (int , (* taskid *)
+relation setExecCost: (int , (* taskid *)
 			real) (* value *) => ()
 
-relation set_tasktype: (int , (* taskid *)
+relation setTaskType: (int , (* taskid *)
 			int) (* type *) => ()
 
-relation set_commcost: (int, (* source *)
+relation setCommCost: (int, (* source *)
 			int, (* target *)
 			int) (* value *) => ()
 
-relation add_initvar: (int, 
+relation addInitVar: (int, 
 		       string(*value*),
 		       string(*origname*)) => ()
 
-relation add_initstate: (int, 
+relation addInitState: (int, 
 			 string(*value*),
 			 string(*origname*)) => ()
 
-relation add_initparam: (int, 
+relation addInitParam: (int, 
 			 string(*value*),
 			 string(*origname*)) => ()
 

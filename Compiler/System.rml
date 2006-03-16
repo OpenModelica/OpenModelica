@@ -55,11 +55,11 @@ module System:
 
 with "Values.rml"
 
-(** relation: remove_first_and_last_char
+(** relation: removeFirstAndLastChar
  **
  ** Used e.g. when de-stringifying a Modelica string. "foo" becomes foo.
  **)
-relation remove_first_and_last_char: (string) => string
+relation removeFirstAndLastChar: (string) => string
 
 
 (** relation: trim
@@ -70,14 +70,14 @@ relation remove_first_and_last_char: (string) => string
  **)
 relation trim: (string,string) => string 
 
-(** relation trim_char
+(** relation trimChar
  ** 
  **
  ** removes the character from the begining and end of the string
  ** (".....s..d.f.g....",'.') => s..d.f.g
  ** this is faster than trim(string,string)
  **)
- relation trim_char: (string,char) => string 
+ relation trimChar: (string,string) => string 
 
  (** relation: strcmp
   **
@@ -85,11 +85,11 @@ relation trim: (string,string) => string
   **)
 relation strcmp: (string,string) => int
 
-(** relation: string_replace
+(** relation: stringReplace
  **
  ** Replaces all occurences of source with target in str.
  **)
-relation string_replace:(string, (*str*)
+relation stringReplace:(string, (*str*)
 			string, (*source*)
 			string) (*target*)
 	  => string 
@@ -106,74 +106,74 @@ relation toupper: (string) => string
  **)
 relation strtok: (string,string) => string list
 
-(** relation: compile_c_file 
+(** relation: compileCFile 
  **
  ** Compiles the c-file given as argument.
  ** Requires that the compiler and compiler flags have been set.
  **)
-relation compile_c_file: (string) => ()
+relation compileCFile: (string) => ()
 
-(** relation: set_c_compiler
+(** relation: setCCompiler
  **
- ** Sets the C compiler used by compile_c_file.
+ ** Sets the C compiler used by compileCFile.
  **)
-relation set_c_compiler: (string) => ()
+relation setCCompiler: (string) => ()
 
-(** relation: set_c_flags
+(** relation: setCFlags
  **
- ** Sets the compiler flags used by compile_c_file.
+ ** Sets the compiler flags used by compileCFile.
  **)
-relation set_c_flags: (string) => ()
+relation setCFlags: (string) => ()
 
-(** relation: execute_function
+(** relation: executeFunction
  **
  ** Execute a function which have been generated code for.
  **)
-relation execute_function: (string) => ()
+relation executeFunction: (string) => ()
 
-(** relation: write_file
+(** relation: writeFile
  **
  ** Writes a string to a file.
  **)
-relation write_file: (string(*filename*),string(*data*)) => ()
+relation writeFile: (string(*filename*),string(*data*)) => ()
 
-(** relation: read_file
+(** relation: readFile
  **
  ** Read the content of a file into a string.
  **)
-relation read_file: (string) => string
+relation readFile: (string) => string
 
-(** relation: read_values_from_file
+(** relation: readValuesFromFile
  **
  ** Read values from a file into 'Values' data, used e.g. when storing
  ** values for executing functions.
  **)
-relation read_values_from_file: (string) => Values.Value
+relation readValuesFromFile: (string) => Values.Value
 
-(** relation: read_ptoleyplot_dataset
+(** relation: readPtoleyplotDataset
  **
  ** Reads a dataset using the ptolemy plot data format.
  **)
-relation read_ptolemyplot_dataset: (string, (* filename *)
+relation readPtolemyplotDataset: (string, (* filename *)
 				    string list, (* variables*)
 				    int) (* size *)
  => Values.Value
 
-(** relation: read_ptoleyplot_dataset_size
+(** relation: readPtoleyplotDatasetSize
  **
  ** Determines the size of a dataset in the ptolemy plot data format.
  **)
-relation read_ptolemyplot_dataset_size: (string (* filename *))
+relation readPtolemyplotDatasetSize: (string (* filename *))
  => Values.Value
 
 
 
-(** relation: system_call
+(** relation: systemCall
  ** 
  ** Execute a system call, returning the exit code of the call.
 **)
 
-relation system_call: (string) => int
+relation systemCall: (string) => int
 
 (** relation: cd
  **
@@ -195,34 +195,34 @@ relation pwd: () => string
 
 (* relation modelicapath: () => string *)
 
-(** read_env
+(** readEnv
  **
  ** Returns the value of an environment variable.
  ** If the environment variable is not set, the relation fails.
  **)
-relation read_env: (string) => string
+relation readEnv: (string) => string
 
 (** 2005-11-24 adrpo@ida added
- ** set_env
+ ** setEnv
  ** 
  ** Sets the value of an environment variable.
  ** If the environment variable is already 
  ** set it will be overwritten if overwrite is 1 or not overwritten if overwrite is 0 
  ** returns 0 if it succeeds and non-zero otherwise
  **)
-relation set_env: (string (* variable *), string (* value *), int (* overwrite *) ) => int
+relation setEnv: (string (* variable *), string (* value *), int (* overwrite *) ) => int
 
-(** relation: sub_directories
+(** relation: subDirectories
  **
  ** Return a list of sub directory strings given a directory path.
  **)
-relation sub_directories: (string) => string list
+relation subDirectories: (string) => string list
 
-(** relation: mo_files
+(** relation: moFiles
  **
  ** Return a list of all .mo files in a directory path.
  **)
-relation mo_files: (string) => string list
+relation moFiles: (string) => string list
 
 (** relation: time
  **
@@ -237,33 +237,33 @@ relation time: () => real
  **)
 relation hash: string => int 
 
-(** relation: path_delimiter
+(** relation: pathDelimiter
  **
  ** Returns the string used for path delimiter, e.g. "\" on Windows and "/"
  ** on Cygwin.
  **)
-relation path_delimiter: () => string
+relation pathDelimiter: () => string
 
-(** relation: group_delimiter
+(** relation: groupDelimiter
  **
  ** Returns the group delimiter for groups of paths, e.g. used in MODELICAPATH.
  **)
-relation group_delimiter: () => string
+relation groupDelimiter: () => string
 
-(** relation: regular_file_exist
+(** relation: regularFileExists
  **
  ** Returns zero if the string passed as argument is a regular file.
  ** Otherwise a non-zero value is returned.
  **)
 
-relation regular_file_exist: (string) => int
+relation regularFileExists: (string) => int
 
-(** relation: directory_exist
+(** relation: directoryExists
  **
  ** Returns zero fi the string passed as argument is a directory.
  ** Otherwise a non-zero value is returned.
  **)
-relation directory_exist: (string) => int
+relation directoryExists: (string) => int
 
 (** relation: platform
  ** 
@@ -326,17 +326,17 @@ relation sinh: real => real
  **)
 relation tanh: real => real 
 
-(** relation get_classnames_for_simulation
+(** relation getClassnamesForSimulation
  ** this returns a list of classnames that are in the
  ** simulation list.
  **)
-relation get_classnames_for_simulation: () => string
+relation getClassnamesForSimulation: () => string
 
 
-(** relation add_classnames_to_simulation 
+(** relation setClassnamesForSimulation 
  ** this adds a classname to the simulation list
  **)
-relation set_classnames_for_simulation: string => ()
+relation setClassnamesForSimulation: string => ()
 
 
 

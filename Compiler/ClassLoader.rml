@@ -82,14 +82,14 @@ with "Dump.rml"
 relation load_class: (Absyn.Path, string) => (Absyn.Program) =
 
 	(* Simple names: Just load the file if it can be found in $MODELICAPATH *)
-  rule System.group_delimiter => gd &	
+  rule System.groupDelimiter => gd &	
 	System.strtok(mp,gd) => mps &
 	load_class_from_mps(classname,mps) => p
 	-------------------------------------
 	load_class(Absyn.IDENT(classname),mp) => p
 
 	(* Qualified names: First check if it is defined in a file pack.mo *)
-  rule	System.group_delimiter => gd &	
+  rule	System.groupDelimiter => gd &	
 	System.strtok(mp,gd) => mps &
 	load_class_from_mps(pack,mps) => p
 	-------------------------------------
@@ -97,7 +97,7 @@ relation load_class: (Absyn.Path, string) => (Absyn.Program) =
 
 	(* Qualified names: Else, load the complete package and then check that *)
 	(* the package contains the file *) 
-  rule	System.group_delimiter => gd &	
+  rule	System.groupDelimiter => gd &	
 	System.strtok(mp,gd) => mps &
 	load_complete_package_from_mps(pack,mps,Absyn.TOP,Absyn.PROGRAM([],Absyn.TOP)) => p &
 	Interactive.get_pathed_class_in_program(path,p)=> _
@@ -115,7 +115,7 @@ end
  **)
 relation exist_regular_file: (string) => () =
 
-  rule	System.regular_file_exist filename => 0 
+  rule	System.regularFileExists filename => 0 
 	----------------------------
 	exist_regular_file(filename) 
 end
@@ -126,7 +126,7 @@ end
  **)
 relation exist_directory_file: (string) => () =
 
-  rule	System.directory_exist filename => 0 
+  rule	System.directoryExists filename => 0 
 	----------------------------
 	exist_directory_file(filename) 
 end
@@ -157,7 +157,7 @@ end
 relation load_class_from_mp: (Absyn.Ident, string) => Absyn.Program =
 	
   rule  System.trim(mp'," \"\t") => mp &
-        System.path_delimiter => pd &
+        System.pathDelimiter => pd &
 	string_append(class,".mo") => classfile &
 	Util.string_append_list([mp,pd,classfile])=> classfile' &
 	exist_regular_file(classfile') &
@@ -167,12 +167,12 @@ relation load_class_from_mp: (Absyn.Ident, string) => Absyn.Program =
 	load_class_from_mp(class,mp') => p
 
   rule  System.trim(mp'," \"\t") => mp &
-        System.path_delimiter => pd &
+        System.pathDelimiter => pd &
 	Util.string_append_list([mp,pd,class]) => dirfile &
 	Util.string_append_list([dirfile, pd, "package.mo"]) => packfile &
 	exist_directory_file dirfile &
 	exist_regular_file packfile &
-	Print.print_buf "Class is package stored in a directory, loading whole package(incl. subdir)\n" &
+	Print.printBuf "Class is package stored in a directory, loading whole package(incl. subdir)\n" &
 	load_complete_package_from_mp(class,mp,Absyn.TOP,
 				      Absyn.PROGRAM([],Absyn.TOP)) => p 
 	--------------------------------------
@@ -205,15 +205,15 @@ end
  **)
 relation load_complete_package_from_mp: (Absyn.Ident, string, Absyn.Within, Absyn.Program) => Absyn.Program =
 	
-  rule System.path_delimiter => pd &	
+  rule System.pathDelimiter => pd &	
 	Util.string_append_list([mp,pd,pack]) => mp' &
 	Util.string_append_list([mp', pd, "package.mo"]) => packagefile &
 	exist_regular_file(packagefile) &
 	print "parsing " & print packagefile & print "\n" &
 	Parser.parse(packagefile) => Absyn.PROGRAM(p1,w1) &
-	Print.print_buf("loading ") & Print.print_buf(packagefile) & Print.print_buf "\n" &
+	Print.printBuf("loading ") & Print.printBuf(packagefile) & Print.printBuf "\n" &
 	Interactive.update_program(Absyn.PROGRAM(p1,w1),Absyn.PROGRAM(oldc,Absyn.TOP)) => p1' &
-	System.sub_directories(mp') => subdirs &
+	System.subDirectories(mp') => subdirs &
 	Util.string_delimit_list(subdirs, ", ") => subdirstr &
 	print "subdirs =" & print subdirstr & print "\n" &
 	load_complete_subdirs(subdirs,pack,mp',within,p1') => p2 &
@@ -221,15 +221,15 @@ relation load_complete_package_from_mp: (Absyn.Ident, string, Absyn.Within, Absy
 	------------------------------
 	load_complete_package_from_mp(pack,mp,within as Absyn.TOP,Absyn.PROGRAM(oldc,_)) => p
 
-  rule	System.path_delimiter => pd &
+  rule	System.pathDelimiter => pd &
 	Util.string_append_list([mp,pd,pack]) => mp' &
 	Util.string_append_list([mp',pd, "package.mo"]) => packagefile &
 	exist_regular_file(packagefile) &
 	print "parsing " & print packagefile & print "\n" &
 	Parser.parse(packagefile) => Absyn.PROGRAM(p1,w1) &
-	Print.print_buf("loading ") & Print.print_buf(packagefile) & Print.print_buf "\n" &
+	Print.printBuf("loading ") & Print.printBuf(packagefile) & Print.printBuf "\n" &
 	Interactive.update_program(Absyn.PROGRAM(p1,Absyn.WITHIN(wpath)),Absyn.PROGRAM(oldc,Absyn.TOP)) => p1' &
-	System.sub_directories(mp') => subdirs &
+	System.subDirectories(mp') => subdirs &
 	Util.string_delimit_list(subdirs, ", ") => subdirstr &
 	print "subdirs =" & print subdirstr & print "\n" &
 	load_complete_subdirs(subdirs,pack,mp',within,p1') => p2 &
@@ -281,14 +281,14 @@ relation load_complete_subfiles: (Absyn.Ident, string, Absyn.Within, Absyn.Progr
 	  => Absyn.Program =
 
   rule	(* Here *.mo files in same directory as package.mo should be loaded as sub-packages*)
-	System.mo_files(mp)=> mofiles &
+	System.moFiles(mp)=> mofiles &
 	Absyn.join_paths(within,Absyn.IDENT(pack)) => within' &
 	load_subpackage_files(mofiles,mp,Absyn.WITHIN(within'),oldp) => p 
 	------------------------------------------
 	load_complete_subfiles(pack,mp,Absyn.WITHIN(within),oldp) => p
 
   rule	(* Here *.mo files in same directory as package.mo should be loaded as sub-packages*)
-	System.mo_files(mp)=> mofiles &
+	System.moFiles(mp)=> mofiles &
 	load_subpackage_files(mofiles,mp,Absyn.WITHIN(Absyn.IDENT(pack)),oldp) => p
 	------------------------------------------
 	load_complete_subfiles(pack,mp,Absyn.TOP,oldp) => p
@@ -308,11 +308,11 @@ relation load_subpackage_files: (string list, string, Absyn.Within, Absyn.Progra
 
   axiom	load_subpackage_files([],mp,within,Absyn.PROGRAM(cls,w)) => Absyn.PROGRAM(cls,w)
 
-  rule	System.path_delimiter => pd &
+  rule	System.pathDelimiter => pd &
 	Util.string_append_list([mp,pd,f]) => f' &
 	print "parsing " & print f' & print "\n" &
 	Parser.parse(f') => Absyn.PROGRAM(cls,_) &
-	Print.print_buf("loading ") & Print.print_buf(f') & Print.print_buf "\n" &
+	Print.printBuf("loading ") & Print.printBuf(f') & Print.printBuf "\n" &
 	Interactive.update_program(Absyn.PROGRAM(cls,within),Absyn.PROGRAM(oldc,Absyn.TOP))=> p' &
 	load_subpackage_files(fs, mp, within, p') => p''
 	-------------------------------
@@ -335,17 +335,17 @@ end
 relation load_file:(string) 
         => (Absyn.Program) =
 
-  rule  System.regular_file_exist(name) => 0 &
+  rule  System.regularFileExists(name) => 0 &
         Util.get_absolute_directory_and_file(name) => (dir,"package.mo") &
         Parser.parse(name) => p1' &
-        System.path_delimiter() => pd &
+        System.pathDelimiter() => pd &
         Util.string_append_list([dir,pd,".."])=> dir' &
         load_model_from_each_class(p1',dir') => p1 
         -----------------------------------
 	load_file (name)
 	  => p1
 
-  rule  System.regular_file_exist(name) => 0 &
+  rule  System.regularFileExists(name) => 0 &
         Util.get_absolute_directory_and_file(name) => (dir,filename) &
         Parser.parse(name) => p1 
         -----------------------------------

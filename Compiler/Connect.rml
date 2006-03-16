@@ -637,15 +637,15 @@ end
 
 relation print_set : Set => () =
 
-  rule	Print.print_buf " non-flow set: { " &
+  rule	Print.printBuf " non-flow set: { " &
 	Exp.print_list(cs, Exp.print_component_ref, ", ") &
-	Print.print_buf " }\n"
+	Print.printBuf " }\n"
 	----------------------------------------------------
 	print_set EQU(cs)
 
-  rule	Print.print_buf " flow set: { " &
+  rule	Print.printBuf " flow set: { " &
 	Exp.print_list(cs, print_flow_ref, ", ") &
-	Print.print_buf " }\n"
+	Print.printBuf " }\n"
 	----------------------------------------------------
 	print_set FLOW(cs)
 
@@ -654,12 +654,12 @@ end
 relation print_flow_ref : (Exp.ComponentRef * Face) => () =
 
   rule	Exp.print_component_ref c &
-	Print.print_buf " INNER"
+	Print.printBuf " INNER"
 	-----------
 	print_flow_ref((c,INNER))
 
   rule	Exp.print_component_ref c &
-	Print.print_buf " OUTER"
+	Print.printBuf " OUTER"
 	-----------
 	print_flow_ref((c,OUTER))
 

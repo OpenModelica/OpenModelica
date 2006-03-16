@@ -115,7 +115,7 @@ void* runOrb(void* arg)
 }
 
 
-RML_BEGIN_LABEL(Corba__wait_5ffor_5fcommand)
+RML_BEGIN_LABEL(Corba__waitForCommand)
 {
   pthread_mutex_lock(&omc_waitlock);
   while (!omc_waiting) {

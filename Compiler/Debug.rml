@@ -113,8 +113,8 @@ end
  **)
 relation fprint: (string, string) => () =
 
-  rule	RTOpts.debug_flag (flag) => true &
-	Print.print_error_buf str
+  rule	RTOpts.debugFlag (flag) => true &
+	Print.printErrorBuf str
 	-------------------
 	fprint (flag, str)
 
@@ -128,9 +128,9 @@ end
  **)
 relation fprintln: (string, string) => () =
 
-  rule	RTOpts.debug_flag (flag) => true &
-	Print.print_error_buf str &
-	Print.print_error_buf "\n"
+  rule	RTOpts.debugFlag (flag) => true &
+	Print.printErrorBuf str &
+	Print.printErrorBuf "\n"
 	-------------------
 	fprintln (flag, str)
 
@@ -144,9 +144,9 @@ end
  **)
 relation fprintl: (string, string list) => () =
 
-  rule	RTOpts.debug_flag (flag) => true &
+  rule	RTOpts.debugFlag (flag) => true &
 	Util.string_append_list strlist => str &
-	Print.print_error_buf str
+	Print.printErrorBuf str
 	-------------------
 	fprintl (flag, strlist)
 
@@ -160,7 +160,7 @@ end
  **)
 relation fcall: (string, 'a => (), 'a) => () =
 
-  rule	RTOpts.debug_flag (flag) => true &
+  rule	RTOpts.debugFlag (flag) => true &
 	func(str)
 	------------
 	fcall (flag, func, str)
@@ -175,7 +175,7 @@ end
  **)
 relation fcall0: (string, () => ()) => () =
 
-  rule	RTOpts.debug_flag (flag) => true &
+  rule	RTOpts.debugFlag (flag) => true &
 	func()
 	------------
 	fcall0 (flag, func)
@@ -192,7 +192,7 @@ end
  **)
 relation fcallret: (string, 'a => 'b, 'a, 'b) => 'b =
 
-  rule	RTOpts.debug_flag (flag) => true &
+  rule	RTOpts.debugFlag (flag) => true &
 	func(arg) => res
 	----------------
 	fcallret (flag, func, arg, def) => res
@@ -236,7 +236,7 @@ end
  **)
 relation notfcall: (string, 'a => (), 'a) => () =
 
-  rule	RTOpts.debug_flag (flag) => false &
+  rule	RTOpts.debugFlag (flag) => false &
 	func(str)
 	------------
 	notfcall (flag, func, str)
@@ -252,7 +252,7 @@ end
  **)
 relation fprint_list: (string, 'a list, 'a => (), string) => () =
 
-  rule	RTOpts.debug_flag (flag) => true &
+  rule	RTOpts.debugFlag (flag) => true &
 	print_list (lst, func, sep)
 	--------------------------------
 	fprint_list (flag, lst, func, sep)
@@ -274,7 +274,7 @@ relation print_list : ('a list, 'a => (), string) => () =
 	------------------
 	print_list([h],r,_)
 
-  rule	r(h) & Print.print_error_buf sep &
+  rule	r(h) & Print.printErrorBuf sep &
 	print_list(t,r,sep)
 	-------------------------------------
 	print_list(h::t,r,sep)

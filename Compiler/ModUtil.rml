@@ -317,12 +317,12 @@ end
  **)
 relation path_string: Absyn.Path => string =
 
-  rule	RTOpts.modelica_output => true &
+  rule	RTOpts.modelicaOutput => true &
 	path_string2(path,"__") => s
 	-------------------------------------
 	path_string path => s
 
-  rule	RTOpts.modelica_output => false &
+  rule	RTOpts.modelicaOutput => false &
 	path_string2(path,".") => s
 	-------------------------------------
 	path_string path => s

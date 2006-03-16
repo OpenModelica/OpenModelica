@@ -164,59 +164,59 @@ end
 
 relation print_state : State => () =
 
-  rule	Print.print_buf "UNKNOWN " & Print.print_buf s
+  rule	Print.printBuf "UNKNOWN " & Print.printBuf s
 	----------------------------
 	print_state UNKNOWN(s)
 
-  rule	Print.print_buf "MODEL " & Print.print_buf s
+  rule	Print.printBuf "MODEL " & Print.printBuf s
 	----------------------------
 	print_state MODEL(s)
 
-  rule	Print.print_buf "RECORD " & Print.print_buf s
+  rule	Print.printBuf "RECORD " & Print.printBuf s
 	----------------------------
 	print_state RECORD(s)
 
-  rule	Print.print_buf "BLOCK " & Print.print_buf s
+  rule	Print.printBuf "BLOCK " & Print.printBuf s
 	----------------------------
 	print_state BLOCK(s)
 
-  rule	Print.print_buf "CONNECTOR " & Print.print_buf s
+  rule	Print.printBuf "CONNECTOR " & Print.printBuf s
 	----------------------------
 	print_state CONNECTOR(s)
 
-  rule	Print.print_buf "TYPE " & Print.print_buf s
+  rule	Print.printBuf "TYPE " & Print.printBuf s
 	----------------------------
 	print_state TYPE(s)
 
-  rule	Print.print_buf "PACKAGE " & Print.print_buf s
+  rule	Print.printBuf "PACKAGE " & Print.printBuf s
 	----------------------------
 	print_state PACKAGE(s)
 
-  rule	Print.print_buf "FUNCTION " & Print.print_buf s
+  rule	Print.printBuf "FUNCTION " & Print.printBuf s
 	----------------------------
 	print_state FUNCTION(s)
 
-  rule	Print.print_buf "TYPE_INTEGER " & Print.print_buf s
+  rule	Print.printBuf "TYPE_INTEGER " & Print.printBuf s
 	----------------------------
 	print_state TYPE_INTEGER(s)
 
-  rule	Print.print_buf "TYPE_REAL " & Print.print_buf s
+  rule	Print.printBuf "TYPE_REAL " & Print.printBuf s
 	----------------------------
 	print_state TYPE_REAL(s)
 
-  rule	Print.print_buf "TYPE_STRING " & Print.print_buf s
+  rule	Print.printBuf "TYPE_STRING " & Print.printBuf s
 	----------------------------
 	print_state TYPE_STRING(s)
 
-  rule	Print.print_buf "TYPE_BOOL " & Print.print_buf s
+  rule	Print.printBuf "TYPE_BOOL " & Print.printBuf s
 	----------------------------
 	print_state TYPE_BOOL(s)
 
-  rule	Print.print_buf "IS_NEW " & Print.print_buf s
+  rule	Print.printBuf "IS_NEW " & Print.printBuf s
 	----------------------------
 	print_state IS_NEW(s)
 
-  rule	Print.print_buf "HAS_EQUATIONS " & Print.print_buf s
+  rule	Print.printBuf "HAS_EQUATIONS " & Print.printBuf s
 	----------------------------
 	print_state HAS_EQUATIONS(s)
 
@@ -249,11 +249,11 @@ end
 (** relation: print_event *)
 relation print_event : Event => () =
 
-  rule	Print.print_buf "FOUND_EQUATION"
+  rule	Print.printBuf "FOUND_EQUATION"
 	----------------------
 	print_event FOUND_EQUATION
 
-  rule	Print.print_buf "NEWDEF"
+  rule	Print.printBuf "NEWDEF"
 	--------------
 	print_event NEWDEF
 
@@ -335,8 +335,8 @@ relation trans : (State, Event) => State =
   axiom	trans(FUNCTION(s),       FOUND_EQUATION) => fail
   axiom	trans(HAS_EQUATIONS(s),  FOUND_EQUATION) => HAS_EQUATIONS(s)
 
-  rule	Print.print_buf "- trans failed: " & print_state st &
- 	Print.print_buf ", " & print_event ev & Print.print_buf "\n"
+  rule	Print.printBuf "- trans failed: " & print_state st &
+ 	Print.printBuf ", " & print_event ev & Print.printBuf "\n"
 	--------------------------------------------------------
 	trans(st, ev) => fail
 
@@ -400,13 +400,13 @@ relation assert_valid : (State, SCode.Restriction) => () =
 	------------
 	assert_valid(st,re)
 
-  rule	Print.print_error_buf "# Restriction violation: " & 
+  rule	Print.printErrorBuf "# Restriction violation: " & 
 	get_state_name st => str &
-	Print.print_error_buf str &
-	Print.print_error_buf " is not a " &
+	Print.printErrorBuf str &
+	Print.printErrorBuf " is not a " &
 	SCode.restr_string re => str &
-	Print.print_error_buf str &
-	Print.print_error_buf "\n" 
+	Print.printErrorBuf str &
+	Print.printErrorBuf "\n" 
 	-------------------------------------------
 	assert_valid(st,re) => fail
 

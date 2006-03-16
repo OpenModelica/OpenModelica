@@ -55,14 +55,14 @@ module ErrorExt:
 
 with "Error.rml"
 
-relation add_message:(Error.ErrorID,
+relation addMessage:(Error.ErrorID,
 		     string, (* messageType*)
 		     string, (* severity*)
 		     string, (*message*)
 		     string list) (* tokens*)
 	=> ()
 
-relation add_source_message:(Error.ErrorID,
+relation addSourceMessage:(Error.ErrorID,
 			     string, (* messageType*)
 			     string, (* severity*)
 			     int,    (* sline*)
@@ -75,12 +75,12 @@ relation add_source_message:(Error.ErrorID,
 			     string list) (* tokens*)
 	=> ()
 
-relation print_messages_str:() => string
-relation get_messages_str:() => string
+relation printMessagesStr:() => string
+relation getMessagesStr:() => string
 
-relation error_off:() => () 
+relation errorOff:() => () 
 
-relation error_on:() => ()
+relation errorOn:() => ()
 
 end
  

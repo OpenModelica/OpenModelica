@@ -1128,81 +1128,81 @@ end
  **)
 relation print_type : Type => () =
 
-  rule	Print.print_error_buf "Integer" 
-	& Print.print_error_buf " ("
+  rule	Print.printErrorBuf "Integer" 
+	& Print.printErrorBuf " ("
 	& Dump.print_list(vars, print_var, ", ")
-	& Print.print_error_buf ")" 
+	& Print.printErrorBuf ")" 
 	---------------
 	print_type((T_INTEGER(vars),_))
 
-  rule	Print.print_error_buf "Real" 
-	& Print.print_error_buf " ("
+  rule	Print.printErrorBuf "Real" 
+	& Print.printErrorBuf " ("
 	& Dump.print_list(vars, print_var, ", ")
-	& Print.print_error_buf ")" 
+	& Print.printErrorBuf ")" 
 	------------
 	print_type((T_REAL(vars),_))
 
-  rule	Print.print_error_buf "String"
-	& Print.print_error_buf " ("
+  rule	Print.printErrorBuf "String"
+	& Print.printErrorBuf " ("
 	& Dump.print_list(vars, print_var, ", ")
-	& Print.print_error_buf ")" 
+	& Print.printErrorBuf ")" 
 	--------------
 	print_type((T_STRING(vars),_))
 
-  rule	Print.print_error_buf "Boolean" 
-	& Print.print_error_buf " ("
+  rule	Print.printErrorBuf "Boolean" 
+	& Print.printErrorBuf " ("
 	& Dump.print_list(vars, print_var, ", ")
-	& Print.print_error_buf ")" 
+	& Print.printErrorBuf ")" 
 	---------------
 	print_type((T_BOOL(vars),_))
 
-  rule	Print.print_error_buf "EnumType" 
+  rule	Print.printErrorBuf "EnumType" 
 	---------------
 	print_type((T_ENUM,_))
 
-  rule	Print.print_error_buf "enumeration((" &
+  rule	Print.printErrorBuf "enumeration((" &
 	Dump.print_list(l,print, ", ") &
-	Print.print_error_buf ") "  
-	& Print.print_error_buf ", ("
+	Print.printErrorBuf ") "  
+	& Print.printErrorBuf ", ("
 	& Dump.print_list(vars, print_var, ", ")
-	& Print.print_error_buf ")" 
+	& Print.printErrorBuf ")" 
 	---------------------
 	print_type((T_ENUMERATION(l,vars),_))
 
-  rule	Print.print_error_buf "composite(" &
-	Print.print_error_buf ", (" &
+  rule	Print.printErrorBuf "composite(" &
+	Print.printErrorBuf ", (" &
 	ClassInf.print_state(st) &
-	Print.print_error_buf ", (" &
+	Print.printErrorBuf ", (" &
 	Dump.print_list(vars, print_var, ", ") &
-	Print.print_error_buf ")" 
+	Print.printErrorBuf ")" 
 	-----------------
 	print_type((T_COMPLEX(st,vars,bc),_))
 
-  rule	Print.print_error_buf "array[" & print_arraydim dim & Print.print_error_buf "] of " &
-	print_type t & Print.print_error_buf ")" 
+  rule	Print.printErrorBuf "array[" & print_arraydim dim & Print.printErrorBuf "] of " &
+	print_type t & Print.printErrorBuf ")" 
 	------------
 	print_type((T_ARRAY(dim,t),_))
 
-  rule	Print.print_error_buf "function(" & print_params params & Print.print_error_buf " => " &
-	print_type restype &  Print.print_error_buf ")"
+  rule	Print.printErrorBuf "function(" & print_params params & Print.printErrorBuf " => " &
+	print_type restype &  Print.printErrorBuf ")"
 	------------------------------
 	print_type((T_FUNCTION(params,restype),_))
 
-  rule	Print.print_error_buf "(" & 
+  rule	Print.printErrorBuf "(" & 
 	Dump.print_list(tys, print_type, ", ") &
-	Print.print_error_buf ")"  
+	Print.printErrorBuf ")"  
 	---------
 	print_type((T_TUPLE(tys),_))
 
-  rule	Print.print_error_buf "#NOTYPE#"
+  rule	Print.printErrorBuf "#NOTYPE#"
 	----------------
 	print_type((T_NOTYPE,_))
 
-  rule	Print.print_error_buf "#T_ANYTYPE#"
+  rule	Print.printErrorBuf "#T_ANYTYPE#"
 	----------------
 	print_type((T_ANYTYPE(_),_))
 
-  rule	Print.print_error_buf "print_type failed!\n"
+  rule	Print.printErrorBuf "print_type failed!\n"
 	---------------------------
 	print_type( (_,_) )
 
@@ -1216,7 +1216,7 @@ end
 relation print_arraydim: ArrayDim => () =
 
   rule	get_arraydim_str ad => s &
-	Print.print_error_buf s
+	Print.printErrorBuf s
 	-------
 	print_arraydim ad
 
@@ -1256,12 +1256,12 @@ relation print_params : FuncArg list => () =
 
   axiom	print_params []
 
-  rule	Print.print_error_buf n & Print.print_error_buf " :: " & print_type t
+  rule	Print.printErrorBuf n & Print.printErrorBuf " :: " & print_type t
 	-------------------------------------
 	print_params [(n,t)]
 
-  rule	Print.print_error_buf n & Print.print_error_buf " :: " & print_type t &
-	Print.print_error_buf " * " & print_params params
+  rule	Print.printErrorBuf n & Print.printErrorBuf " :: " & print_type t &
+	Print.printErrorBuf " * " & print_params params
 	---------------------------------
 	print_params ((n,t)::params)
 
@@ -1298,10 +1298,10 @@ end
  **)
 relation print_var : Var => () =
 
-  rule	print_type typ & Print.print_error_buf " " &
-	Print.print_error_buf n & Print.print_error_buf " " & 
+  rule	print_type typ & Print.printErrorBuf " " &
+	Print.printErrorBuf n & Print.printErrorBuf " " & 
 	SCode.variability_string var => vs &
-	Print.print_error_buf vs & Print.print_error_buf " " &
+	Print.printErrorBuf vs & Print.printErrorBuf " " &
 	print_binding bind 
 	-------
 	print_var VAR(n, ATTR(_,_,var,_), prot, typ, bind)
@@ -1315,18 +1315,18 @@ end
  **)
 relation print_binding : Binding => () =
 
-  rule	Print.print_error_buf "UNBOUND"
+  rule	Print.printErrorBuf "UNBOUND"
 	---------------
 	print_binding UNBOUND
 
-  rule	Print.print_error_buf "EQBOUND: " &
+  rule	Print.printErrorBuf "EQBOUND: " &
 	Exp.print_exp exp &
 	unparse_const(f) => str &
-	Print.print_error_buf str 
+	Print.printErrorBuf str 
 	----------------------------------------
 	print_binding EQBOUND (exp,_,f)
 
-  rule	Print.print_error_buf "VALBOUND: " &
+  rule	Print.printErrorBuf "VALBOUND: " &
 	Values.print_val v
 	--------------------
 	print_binding VALBOUND (v)
@@ -1407,7 +1407,7 @@ end
  **)
 relation print_farg: FuncArg => () =
 
-  rule	print_type ty & Print.print_error_buf " " & Print.print_error_buf n
+  rule	print_type ty & Print.printErrorBuf " " & Print.printErrorBuf n
 	-----------------------------------
 	print_farg ((n,ty))
 
@@ -2130,13 +2130,13 @@ relation type_convert_array : (Exp.Exp list, Type, Type) => Exp.Exp list =
 	-------------------------------------------
 	type_convert_array (first::rest, ty1, ty2) => first'::rest'
 
-(*  rule	Print.print_error_buf "- type conversion of array failed exp=" &
+(*  rule	Print.printErrorBuf "- type conversion of array failed exp=" &
 	Exp.print_exp e &
-	Print.print_error_buf "t1 = " &
+	Print.printErrorBuf "t1 = " &
 	print_type t1 & 
-	Print.print_error_buf " t2 = " &
+	Print.printErrorBuf " t2 = " &
 	print_type t2 &
-	Print.print_error_buf "\n" 
+	Print.printErrorBuf "\n" 
 	-------------------------------
 	type_convert_array (e::_,t1,t2) => fail *)
 
@@ -2156,12 +2156,12 @@ relation type_convert_matrix : ((Exp.Exp*bool) list list, Type, Type)
 	-------------------------------------------
 	type_convert_matrix (first::rest, ty1, ty2) => first'::rest'
 
-(*  rule	Print.print_error_buf "- type conversion of matrix failed" &
-	Print.print_error_buf "t1 = " &
+(*  rule	Print.printErrorBuf "- type conversion of matrix failed" &
+	Print.printErrorBuf "t1 = " &
 	print_type t1 & 
-	Print.print_error_buf " t2 = " &
+	Print.printErrorBuf " t2 = " &
 	print_type t2 &
-	Print.print_error_buf "\n" 
+	Print.printErrorBuf "\n" 
 	-------------------------------
 	type_convert_matrix (e::_,t1,t2) => fail *)
 
@@ -2347,7 +2347,7 @@ end
 relation print_prop : Properties => () =
 
   rule	print_prop_str p => str &
-	Print.print_error_buf str 
+	Print.printErrorBuf str 
 	----------------
 	print_prop (p) => ()
 end

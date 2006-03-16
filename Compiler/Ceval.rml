@@ -395,8 +395,8 @@ end
 	 string_append(funcstr,"_in.txt") => infilename &
 	 string_append(funcstr,"_out.txt") => outfilename &
 	 Values.write_to_file_as_args(vallst,infilename)  &
-	 System.execute_function(funcstr) &
-	 System.read_values_from_file(outfilename) => newval
+	 System.executeFunction(funcstr) &
+	 System.readValuesFromFile(outfilename) => newval
 	 -------------------------------------------------------
 	 ceval (env, e as Exp.CALL(func,expl,_,_),impl as true,st as SOME(Interactive.SYMBOLTABLE(p,_,_,_,cflist)),_,msg) => (newval,st)
 	 
@@ -686,7 +686,7 @@ ceval (env, Exp.BINARY(lh, Exp.DIV(Exp.REAL), rh),impl,st,dim,msg)
 	 ceval (env, Exp.ASUB(e,indx),impl,st,dim,msg) => (v,st')
 	 
         (* (v,st) *)
-  rule	Print.print_buf "#-- ceval reduction\n"
+  rule	Print.printBuf "#-- ceval reduction\n"
 	 ---------------------------------------
 	 ceval (env, Exp.REDUCTION(p,exp,iter,iterexp),impl,st,dim,MSG)
 	  => fail 
@@ -745,8 +745,8 @@ relation ceval_call_function : (Env.Env,
 	string_append(funcstr,"_in.txt") => infilename &
 	string_append(funcstr,"_out.txt") => outfilename &
 	Values.write_to_file_as_args(vallst,infilename)  &
-	System.execute_function(funcstr) &
-	System.read_values_from_file(outfilename) => newval
+	System.executeFunction(funcstr) &
+	System.readValuesFromFile(outfilename) => newval
 	-------------------------------------------------------
 	ceval_call_function (env, e as Exp.CALL(funcpath,expl,_,builtin), 
 			     vallst,msg) => newval
@@ -1293,9 +1293,9 @@ end
 	 Lookup.lookup_class(env,path,true) => (c, env) &
 	 Env.get_env_path(env) => SOME(p1) &
 	 ModUtil.path_string(p1) => s1 &
-	 Print.print_buf "Found class " &
-	 Print.print_buf s1 & Print.print_buf "\n\n" &
-	 Print.get_string() => str
+	 Print.printBuf "Found class " &
+	 Print.printBuf s1 & Print.printBuf "\n\n" &
+	 Print.getString() => str
 	 -------------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("lookupClass"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (Values.STRING(str),st)
@@ -1351,35 +1351,35 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
                                       st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
           => (ret_val,st')(*(Values.STRING("The model have been translated"),st')*)
 
-  rule  Settings.set_compile_command(cmd)
+  rule  Settings.setCompileCommand(cmd)
 	 -------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("setCompileCommand"),
                                                     [Exp.SCONST(cmd)],_,_),
                                       st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
           => (Values.BOOL(true),st)
            
-  rule  Settings.set_plot_command(cmd)
+  rule  Settings.setPlotCommand(cmd)
 	 -------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("setPlotCommand"),
                                                     [Exp.SCONST(cmd)],_,_),
                                       st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
           => (Values.BOOL(true),st)
            
-  rule  Settings.set_temp_directory_path(cmd)
+  rule  Settings.setTempDirectoryPath(cmd)
 	 -------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("setTempDirectoryPath"),
                                                     [Exp.SCONST(cmd)],_,_),
                                       st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
           => (Values.BOOL(true),st)
            
-  rule  Settings.set_installation_directory_path(cmd)
+  rule  Settings.setInstallationDirectoryPath(cmd)
 	 -------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("setInstallationDirectoryPath"),
                                                     [Exp.SCONST(cmd)],_,_),
                                       st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
           => (Values.BOOL(true),st)
  
-  rule  Settings.set_modelica_path(cmd)
+  rule  Settings.setModelicaPath(cmd)
 	 -------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("setModelicaPath"),
                                                     [Exp.SCONST(cmd)],_,_),
@@ -1423,12 +1423,12 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
          build_model(env,exp,st',msg) => (executable,method_str,st,_) &
          
          win_citation() => cit &
-	 System.path_delimiter => pd &
+	 System.pathDelimiter => pd &
 	 string_append(executable,".exe") => executableSuffixedExe &
 	 Util.string_append_list([cit,".", pd, executableSuffixedExe, cit, " -m ",
                                   method_str," >> output.log 2>&1"
                                   ]) => sim_call &
-	 System.system_call(sim_call) => 0 &
+	 System.systemCall(sim_call) => 0 &
          
          Util.string_append_list([executable,"_res.plt"]) => result_file &
          
@@ -1453,7 +1453,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	   
   rule	
 	 (* simulation fail for some other reason than OPENMODELICAHOME not being set.*)
-	 Settings.get_installation_directory_path => omhome &
+	 Settings.getInstallationDirectoryPath => omhome &
 	 Util.string_append_list(["Simulation failed.\n"]) => res &
 	 let simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),[Values.STRING(res)],["resultFile"])
 	 ------------------------------------------------------------------
@@ -1486,11 +1486,11 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
   rule	Static.component_ref_to_path(cr) => path &
 	 SCode.elaborate(p) => p' &
 	 (* we do not want error msg twice.. *)
-	 Print.get_error_string() => str &
+	 Print.getErrorString() => str &
 	 not Inst.instantiate_class(p',path) => (dae as DAE.DAE(dael),env) &
-	 Print.clear_error_buf() &
-	 Print.print_error_buf(str) &
-	 Print.get_error_string() => str
+	 Print.clearErrorBuf() &
+	 Print.printErrorBuf(str) &
+	 Print.getErrorString() => str
 	 -------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("instantiateModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (Values.STRING(str),Interactive.SYMBOLTABLE(p,sp,ic,iv,cf))
@@ -1505,9 +1505,9 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	    (size_value as Values.INTEGER(size),SOME(st)) &
 	 Util.list_map(vars,Exp.print_exp_str) => vars' &
 	 System.pwd() => pwd &
-	 System.path_delimiter => pd & 
+	 System.pathDelimiter => pd & 
 	 Util.string_append_list([pwd,pd,filename]) => filename' &
-	 System.read_ptolemyplot_dataset(filename',vars',size) => value
+	 System.readPtolemyplotDataset(filename',vars',size) => value
 	 ------------------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResult"),[Exp.SCONST(filename),Exp.ARRAY(_,_,vars),size_expression],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (value,st)
@@ -1518,9 +1518,9 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	  => fail
 
   rule	System.pwd() => pwd &
-	 System.path_delimiter => pd & 
+	 System.pathDelimiter => pd & 
 	 Util.string_append_list([pwd,pd,filename]) => filename' &
-	 System.read_ptolemyplot_dataset_size(filename') => value 
+	 System.readPtolemyplotDatasetSize(filename') => value 
 	 ------------------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readSimulationResultSize"),[Exp.SCONST(filename)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (value,st)
@@ -1535,18 +1535,18 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 Util.list_union_elt("time",vars') => vars'' &
 	 ceval(env,Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",[]),Exp.OTHER),true,SOME(st),NONE,msg) 
 	  => (Values.RECORD(_,[Values.STRING(filename)],_),_) &
-	   System.read_ptolemyplot_dataset(filename,vars'',0) => value &
+	   System.readPtolemyplotDataset(filename,vars'',0) => value &
 	 System.pwd() => pwd &
         win_citation() => cit &
-	 Settings.get_installation_directory_path => omhome &
+	 Settings.getInstallationDirectoryPath => omhome &
 	 System.trim(omhome,"\"") => omhome' &
-	 System.path_delimiter => pd &
+	 System.pathDelimiter => pd &
 	 Util.string_append_list([cit,omhome',pd,"bin",pd,"doPlot",cit]) => plotCmd &
 	 Util.string_append_list([pwd,pd,"tmpPlot.plt"]) => tmpPlotFile &
 	 Values.write_ptolemyplot_dataset(tmpPlotFile,value,vars'',"Plot by OpenModelica") 
 	  => res &
 	   Util.string_append_list([cit,plotCmd, " \"", tmpPlotFile,"\"",cit]) => call &			   
-	 System.system_call(call) => _
+	 System.systemCall(call) => _
 	 ------------------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plot"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (Values.BOOL(true),st)
@@ -1556,7 +1556,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 Util.list_union_elt("time",vars') => vars'' &
 	 ceval(env,Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",[]),Exp.OTHER),true,SOME(st),NONE,msg) 
 	  => (Values.RECORD(_,[Values.STRING(filename)],_),_) &
-	   not System.read_ptolemyplot_dataset(filename,vars'',0) => _ 
+	   not System.readPtolemyplotDataset(filename,vars'',0) => _ 
 	 ---------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plot"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (Values.STRING("Error reading the simulation result."),st)
@@ -1581,18 +1581,18 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 int_gt(length,1) => true &
 	 ceval(env,Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",[]),Exp.OTHER),true,SOME(st),NONE,msg) 
 	  => (Values.RECORD(_,[Values.STRING(filename)],_),_) &
-	   System.read_ptolemyplot_dataset(filename,vars',0) => value &
+	   System.readPtolemyplotDataset(filename,vars',0) => value &
 	 System.pwd() => pwd &
          win_citation() => cit &
-	 Settings.get_installation_directory_path => omhome &
+	 Settings.getInstallationDirectoryPath => omhome &
 	 System.trim(omhome,"\"") => omhome' &
-	 System.path_delimiter => pd &
+	 System.pathDelimiter => pd &
 	 Util.string_append_list([cit,omhome',pd,"bin",pd,"doPlot",cit]) => plotCmd &
 	 Util.string_append_list([pwd,pd,"tmpPlot.plt"]) => tmpPlotFile &
 	 Values.write_ptolemyplot_dataset(tmpPlotFile,value,vars',"Plot by OpenModelica") 
 	  => res &
 	   Util.string_append_list([cit,plotCmd, " \"", tmpPlotFile,"\"",cit]) => call &			   
-	 System.system_call(call) => _
+	 System.systemCall(call) => _
 	 ------------------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plotParametric"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (Values.BOOL(true),st)
@@ -1612,7 +1612,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 (*Util.list_union_elt("time",vars') => vars'' & *)
 	 ceval(env,Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",[]),Exp.OTHER),true,SOME(st),NONE,msg) 
 	  => (Values.RECORD(_,[Values.STRING(filename)],_),_) &
-	   not System.read_ptolemyplot_dataset(filename,vars',0) => _ 
+	   not System.readPtolemyplotDataset(filename,vars',0) => _ 
 	 ---------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("plotParametric"),[Exp.ARRAY(_,_,vars)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (Values.STRING("Error reading the simulation result."),st)
@@ -1638,11 +1638,11 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 -------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("timing"),[exp],_,_),st,msg) => (Values.REAL(time),st')
 
-  rule	System.set_c_compiler(str)
+  rule	System.setCCompiler(str)
 	 -------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("setCompiler"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.BOOL(true),st)
 
-  rule	System.set_c_flags(str)
+  rule	System.setCFlags(str)
 	 -------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("setCompilerFlags"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.BOOL(true),st)
 
@@ -1658,7 +1658,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	    ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("cd"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.STRING(str'),st)
 
 	    (* no such directory *)
-  rule	not System.directory_exist(str) => 0 &
+  rule	not System.directoryExists(str) => 0 &
 	    Util.string_append_list(["Error, directory ", str, " does not exist,"]) => res
 	    ----------------------
 	    ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("cd"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.STRING(res),st)
@@ -1667,12 +1667,12 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 -------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("cd"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.STRING(str'),st)
 
-  rule	System.system_call(str) => res 
+  rule	System.systemCall(str) => res 
 	 -------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("system"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.INTEGER(res),st)
 
 
-  rule	System.read_file(str) => str'
+  rule	System.readFile(str) => str'
 	 --------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("readFile"),[Exp.SCONST(str)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.STRING(str'),st)
 
@@ -1689,7 +1689,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 --------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("getMessagesStringInternal"),[],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.STRING(str),st)
 
-  rule	System.read_file(str) => scriptstr &
+  rule	System.readFile(str) => scriptstr &
 	 Parser.parsestringexp(scriptstr) => (istmts,msg) &
 	 msg = "Ok" &
 	 Interactive.evaluate(istmts,st,true) => (res,newst) &
@@ -1714,11 +1714,11 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	  Interactive.SYMBOLTABLE(p,sp,ic,iv,(path,t)::cf),
 	  but where to get t? *)
 
-  rule	Settings.get_modelica_path => mp &
+  rule	Settings.getModelicaPath => mp &
 	 Static.component_ref_to_path(cr) => path &
 	 ClassLoader.load_class(path, mp) => pnew &
 	 Interactive.update_program(pnew,p) => p' &
-	 Print.get_string => str &
+	 Print.getString => str &
 	 let newst = Interactive.SYMBOLTABLE(p', sp, [], iv, cf)
 	 ------------------------------
          ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadModel"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) => (Values.BOOL(true),newst)
@@ -1736,7 +1736,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
  
 
 
-  rule  (* System.regular_file_exist(name) => 0 & *)
+  rule  (* System.regularFileExists(name) => 0 & *)
 (*          Parser.parse(name) => p1 & *)
          ClassLoader.load_file(name) => p1 &
          Interactive.update_program(p1,p) => newp 
@@ -1749,7 +1749,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 
        (** it the rule above have failed then check if file exists **)
         (* without this omc crashes *)
-  rule  System.regular_file_exist(name) => rest &
+  rule  System.regularFileExists(name) => rest &
          int_gt(rest,0) => true
          ---------------------------------------------------
          ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("loadFile"),[Exp.SCONST(name)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg)
@@ -1764,7 +1764,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
   rule	Static.component_ref_to_path(cr) => classpath &
 	 Interactive.get_pathed_class_in_program(classpath,p) => class &
 	 Dump.unparse_str(Absyn.PROGRAM([class],Absyn.TOP)(*,true*)) => str &
-	 System.write_file(filename,str) 
+	 System.writeFile(filename,str) 
 	 --------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(filename),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (Values.BOOL(true),st)
@@ -1782,7 +1782,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
   rule	Static.component_ref_to_path(cr) => classpath &
 	Interactive.get_contained_class_and_file(classpath,p) => (p',filename) &
 	Dump.unparse_str(p'(*,true*)) => str &
-	System.write_file(filename,str) 
+	System.writeFile(filename,str) 
 	--------------------------
 	ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("save"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (Values.BOOL(true),st)
@@ -1791,7 +1791,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	  => (Values.BOOL(false),st)
 
   rule	Dump.unparse_str(p(*,true*)) => str &
-	 System.write_file(filename,str) 
+	 System.writeFile(filename,str) 
 	 --------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveAll"),[Exp.SCONST(filename)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (Values.BOOL(true),st)
@@ -1805,13 +1805,13 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("saveModel"),[Exp.SCONST(name),Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (Values.BOOL(false),st)
 
-  rule	Settings.get_installation_directory_path => omhome &
+  rule	Settings.getInstallationDirectoryPath => omhome &
 	System.trim(omhome,"\"") => omhome' &
 	win_citation() => cit &  
-         System.path_delimiter => pd &
+         System.pathDelimiter => pd &
          Util.string_append_list([omhome',pd,"bin",pd,"omc_helptext.txt"]) => filename &
 	 print filename & 
-	 System.read_file(filename) => str 
+	 System.readFile(filename) => str 
 	 --------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("help"),[],_,_),
 				      st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
@@ -1974,7 +1974,7 @@ end
           => (Values.STRING("The model have been translated"),st,
               indexed_dlow', libs)
          
-  rule  (*Print.print_error_buf("# translate_model failed\n")*)
+  rule  (*Print.printErrorBuf("# translate_model failed\n")*)
          ---------------------------------------------
          translate_model (env, cr,
                           st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),
@@ -2058,7 +2058,7 @@ relation calculate_simulation_settings: (Env.Env,Exp.Exp,
                                       cname_str)
           => (init_filename,starttime_r,stoptime_r,interval_r,method_str)
 
-  rule  Print.print_error_buf("# calculate_simulation_settings failed\n")
+  rule  Print.printErrorBuf("# calculate_simulation_settings failed\n")
         ----------------------------------
         calculate_simulation_settings(_,_,_,_,_) => fail
 
@@ -2114,7 +2114,7 @@ relation build_model:(Env.Env,
                     msg) 
           => (filenameprefix,method_str,st,init_filename)
 
-  rule (*Print.print_error_buf("# build_model failed\n")*)
+  rule (*Print.printErrorBuf("# build_model failed\n")*)
         -----------------------------------------
         build_model(_,_,_,_) => fail
 end
@@ -2137,7 +2137,7 @@ relation change_to_file_dir:(Absyn.ComponentRef,
         Absyn.cref_to_path(class) => p_class &
 	Interactive.get_pathed_class_in_program(p_class,p) => cdef &
 	Absyn.class_filename(cdef) => filename &
-        System.path_delimiter() => pd &
+        System.pathDelimiter() => pd &
         string_list(pd) => pd'::_ &
         Util.string_split_at_char(filename,pd') => filename' &
         Util.list_strip_last(filename') => dir &
@@ -2149,9 +2149,9 @@ relation change_to_file_dir:(Absyn.ComponentRef,
 
 
   rule  (*model no saved! change to OPENMODELICAHOME/work *)
-        Settings.get_installation_directory_path => omhome &
+        Settings.getInstallationDirectoryPath => omhome &
 	System.trim(omhome,"\"") => omhome' &
-        System.path_delimiter() => pd &
+        System.pathDelimiter() => pd &
         win_citation() => cit &
         Util.string_append_list([cit,omhome',pd,"work",cit]) => dir' &
         System.cd(dir') => 0
@@ -2171,15 +2171,15 @@ end
  **)
 relation compile_model: (string, string list) => () =
 	 
-  rule	Settings.get_compile_command => "" &
-        System.path_delimiter => pd &
-	Settings.get_installation_directory_path => omhome & 
-	System.string_replace(omhome,"\"","") => omhome' &
+  rule	Settings.getCompileCommand => "" &
+        System.pathDelimiter => pd &
+	Settings.getInstallationDirectoryPath => omhome & 
+	System.stringReplace(omhome,"\"","") => omhome' &
         win_citation() => cit &
         System.pwd => cd_path &
         string_append(fileprefix,".libs") => libsfilename &
         Util.string_delimit_list(libs," ") => libs_str &
-        System.write_file(libsfilename,libs_str) &
+        System.writeFile(libsfilename,libs_str) &
         Util.string_append_list([cit,omhome', pd, "bin", pd, "Compile",cit," ", 
                                  (*"\"",cd_path,"\""," ",*)
                                  fileprefix (*,  " "
@@ -2187,17 +2187,17 @@ relation compile_model: (string, string list) => () =
                                  ]) => s_call &
         (*> output.log 2>&1 = redirect stderr to stdout and put it in output.log *)
         (*print s_call & print "\n" &*)
-	System.system_call(s_call) => 0 
+	System.systemCall(s_call) => 0 
 	--------------------------
 	compile_model(fileprefix, libs) => ()
 	
-  rule	Settings.get_compile_command => command &
+  rule	Settings.getCompileCommand => command &
         Util.is_empty_string(command) => false & (*needed when the above rule does not work*)
         System.pwd => cd_path &
         win_citation() => cit &
         Util.string_delimit_list(libs," ") => libs_str &
         string_append(fileprefix,".libs") => libsfilename &
-        System.write_file(libsfilename,libs_str) &
+        System.writeFile(libsfilename,libs_str) &
         Util.string_append_list([command," ", 
                                  (*cit,cd_path,cit," ",*)
                                  fileprefix (*, " " ,
@@ -2206,19 +2206,19 @@ relation compile_model: (string, string list) => () =
         (*> output.log 2>&1 = redirect stderr to stdout and put it in output.log *)
         print s_call & print "\n" &
         
-	System.system_call(s_call) => 0 
+	System.systemCall(s_call) => 0 
 	--------------------------
 	compile_model(fileprefix,libs) => ()
 
 	(* compilation failed\n *)
   rule  Util.string_append_list([fileprefix,".log"]) => filename &
-        System.regular_file_exist(filename) => 0 &
-        System.read_file(filename) => str &
+        System.regularFileExists(filename) => 0 &
+        System.readFile(filename) => str &
 	Error.add_message(Error.SIMULATOR_BUILD_ERROR,[str])
 	--------------------------
 	compile_model(fileprefix,libs) => fail
  
-  rule  Print.print_error_buf ("#Error building simulation code.\n ") 
+  rule  Print.printErrorBuf ("#Error building simulation code.\n ") 
 	--------------------------
 	compile_model(fileprefix,libs) => fail
 end
@@ -2451,10 +2451,10 @@ relation ceval_builtin_size : (Env.Env, Exp.Exp, Exp.Exp, bool,
 	  ---------------------------------
 	  ceval_builtin_size(env,exp,dim,impl,st,msg) => (v2,st')
 
-  rule	Print.print_error_buf "#-- ceval_builtin_size failed: "  &
+  rule	Print.printErrorBuf "#-- ceval_builtin_size failed: "  &
 	  Exp.print_exp_str exp => expstr &
-	  Print.print_error_buf expstr &
-	  Print.print_error_buf "\n" 
+	  Print.printErrorBuf expstr &
+	  Print.printErrorBuf "\n" 
 	  ------------------------------------
 	  ceval_builtin_size(env,exp,dim,impl,st,MSG) => fail
   end
@@ -3266,7 +3266,7 @@ end
            (*           =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) *)
 
 	 
-  rule Print.print_buf "#Differentiation failed\n" 
+  rule Print.printBuf "#Differentiation failed\n" 
 	 ---------------------------------------------------------
 	 ceval_builtin_differentiate (_,_,_,st,msg) => fail
  end
@@ -3296,7 +3296,7 @@ end
            (*           =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) *)
 
 	 
-  rule Print.print_buf "#simplification failed\n" 
+  rule Print.printBuf "#simplification failed\n" 
 	 ---------------------------------------------------------
 	 ceval_builtin_simplify (_,_,_,st,MSG) => fail
 	 
@@ -3416,26 +3416,26 @@ relation ceval_generate_function : (Env.Env, Absyn.Path) => () =
 	ModUtil.path_string2 (path,"_") => pathstr &
 	ceval_generate_function_str (path,env,[]) => (gencodestr,_) &
 	string_append(pathstr,".c") => filename &
-	Print.clear_buf &
+	Print.clearBuf &
         (*
 	 string_append("CEVALGENFUNC_", pathstr) => defmacro &
-	 Print.print_buf "#ifndef " & Print.print_buf defmacro & Print.print_buf "\n" &
-	 Print.print_buf "#define " & Print.print_buf defmacro & Print.print_buf "\n" &
+	 Print.printBuf "#ifndef " & Print.printBuf defmacro & Print.printBuf "\n" &
+	 Print.printBuf "#define " & Print.printBuf defmacro & Print.printBuf "\n" &
          *)
-	Print.print_buf "#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n" &
-	Print.print_buf gencodestr &
-	Print.print_buf "\nint main(int argc, char** argv)\n" &
-	Print.print_buf "{\n\n  if (argc != 3)\n" &
-	Print.print_buf "{\n      fprintf(stderr,\"# Incorrect number of arguments\\n\");\n" &
-	Print.print_buf "return 1;\n    }\n" &
-	Print.print_buf "_" &
-	Print.print_buf pathstr &
-	Print.print_buf "_read_call_write(argv[1],argv[2]);\n  return 0;\n}\n" &
+	Print.printBuf "#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n" &
+	Print.printBuf gencodestr &
+	Print.printBuf "\nint main(int argc, char** argv)\n" &
+	Print.printBuf "{\n\n  if (argc != 3)\n" &
+	Print.printBuf "{\n      fprintf(stderr,\"# Incorrect number of arguments\\n\");\n" &
+	Print.printBuf "return 1;\n    }\n" &
+	Print.printBuf "_" &
+	Print.printBuf pathstr &
+	Print.printBuf "_read_call_write(argv[1],argv[2]);\n  return 0;\n}\n" &
         (*
-	 Print.print_buf "#endif /*" & Print.print_buf defmacro & Print.print_buf "*/\n" & 
+	 Print.printBuf "#endif /*" & Print.printBuf defmacro & Print.printBuf "*/\n" & 
          *)
-	Print.write_buf(filename)&
-	System.compile_c_file(filename) 
+	Print.writeBuf(filename)&
+	System.compileCFile(filename) 
 	--------------------------------------
 	ceval_generate_function (env, path)
 	
@@ -3479,13 +3479,13 @@ relation ceval_generate_function_str : (Absyn.Path,
 	ceval_generate_function_str_list (calledfuncs, env, gflist) => (calledfuncsstrs, gflist') &
 	Debug.fprint("ceval", "/*- ceval_generate_function_str prefixing dae */") &
 	ModUtil.string_prefix_params DAE.DAE(d) => d' &
-	Print.clear_buf &
+	Print.clearBuf &
 	Absyn.path_string path => funcname &
 	Util.string_append_list(["/*---FUNC: ", funcname, " ---*/\n\n"]) => funccom &
-	Print.print_buf funccom &
+	Print.printBuf funccom &
 	Debug.fprintln("ceval", "/* - ceval_generate_function_str generating functions */") &
 	Codegen.generate_functions(d') => libs &
-	Print.get_string => thisfuncstr &
+	Print.getString => thisfuncstr &
 	Util.list_append_elt(thisfuncstr, calledfuncsstrs) => calledfuncsstrs' &
 	Util.string_delimit_list(calledfuncsstrs', "\n\n") => resstr
 	---------------------------------------------------------------------------
@@ -3538,15 +3538,15 @@ relation ceval_builtin_diagonal : (Env.Env,
          retExp &
 	 
    	 int_string dimension => dimensionString &
-   	 Debug.fcall("ceval", Print.print_buf, "== dimensionString ") & 
-   	 Debug.fcall("ceval", Print.print_buf, dimensionString) & 
-   	 Debug.fcall("ceval", Print.print_buf, "\n")    	
+   	 Debug.fcall("ceval", Print.printBuf, "== dimensionString ") & 
+   	 Debug.fcall("ceval", Print.printBuf, dimensionString) & 
+   	 Debug.fcall("ceval", Print.printBuf, "\n")    	
 	 --------------------------------------
 	 ceval_builtin_diagonal(env,[exp],impl,st,msg) 
 	  => (Values.ARRAY(retExp),st)
 	 
 	 
-  rule  Print.print_error_buf "#Error, could not evaulate diagonal.\n"
+  rule  Print.printErrorBuf "#Error, could not evaulate diagonal.\n"
 	 ---------------------------------------------------------
 	 ceval_builtin_diagonal (_,_,_,_,MSG) => fail
          
@@ -3679,7 +3679,7 @@ relation ceval_builtin_transpose : (Env.Env,
 	  => (Values.ARRAY(vlst'),st)
 	 
 	 
-  rule  Print.print_error_buf "#Error, could not evaulate transpose.\n"
+  rule  Print.printErrorBuf "#Error, could not evaulate transpose.\n"
 	 ---------------------------------------------------------
 	 ceval_builtin_transpose (_,_,_,_,MSG) => fail
          
@@ -4039,7 +4039,7 @@ relation ceval_cref_binding : (Env.Env, Exp.ComponentRef,
 	ceval_cref_binding (env,cr (*Exp.CREF_IDENT(id,subsc)*),Types.VALBOUND(v),impl,msg)
 	  => res
 	  
-  rule	Print.print_buf "- ceval_cref_binding failed (UNBOUND)\n"
+  rule	Print.printBuf "- ceval_cref_binding failed (UNBOUND)\n"
 	-------------------------------------
 	ceval_cref_binding (env,_,Types.UNBOUND,impl as false,MSG) => fail
 	

@@ -670,15 +670,15 @@ relation add_message: ( ErrorID,MessageTokens) => () =
   rule	lookup_message(error_id) => (msg_type, severity, msg) &
 	message_type_str(msg_type) => msg_type_str &
 	severity_str(severity) => severity_string &
-	ErrorExt.add_message(error_id,msg_type_str,severity_string,msg,tokens)
+	ErrorExt.addMessage(error_id,msg_type_str,severity_string,msg,tokens)
 	---------------------------
 	add_message(error_id,tokens) => ()
 	
   rule	not lookup_message(error_id) => (_,_,_) &
-	Print.print_error_buf "#Internal error, error message with id " &
+	Print.printErrorBuf "#Internal error, error message with id " &
 	int_string(error_id) => id_str &
-	Print.print_error_buf id_str & 
-	Print.print_error_buf " not defined.\n"
+	Print.printErrorBuf id_str & 
+	Print.printErrorBuf " not defined.\n"
 	-----------------
 	add_message(error_id,tokens) => fail
 end
@@ -694,17 +694,17 @@ relation add_source_message: ( ErrorID,MessageTokens, Absyn.Info) => () =
   rule	lookup_message(error_id) => (msg_type, severity, msg) &
 	message_type_str(msg_type) => msg_type_str &
 	severity_str(severity) => severity_string &
-	ErrorExt.add_source_message(error_id,msg_type_str,severity_string,
+	ErrorExt.addSourceMessage(error_id,msg_type_str,severity_string,
 				    sline,scol,eline,ecol,isReadOnly,file,
 				    msg,tokens )
 	---------------------------
 	add_source_message(error_id,tokens,Absyn.INFO(file,isReadOnly,sline,scol,eline,ecol)) => ()
 	
   rule	not lookup_message(error_id) => (_,_,_) &
-	Print.print_error_buf "#Internal error, error message with id " &
+	Print.printErrorBuf "#Internal error, error message with id " &
 	int_string(error_id) => id_str &
-	Print.print_error_buf id_str & 
-	Print.print_error_buf " not defined.\n"
+	Print.printErrorBuf id_str & 
+	Print.printErrorBuf " not defined.\n"
 	-----------------
 	add_source_message(error_id,tokens,sinfo) => fail
 
@@ -720,7 +720,7 @@ end
  **)
 relation print_messages_str: () => string =
 
-  rule	ErrorExt.print_messages_str() => res
+  rule	ErrorExt.printMessagesStr() => res
 	--------------------
 	print_messages_str() => res
 
@@ -769,7 +769,7 @@ end
  **)
 relation get_messages_str: () => string =
 
-  rule	ErrorExt.get_messages_str() => res
+  rule	ErrorExt.getMessagesStr() => res
 	--------------------------------
 	get_messages_str() => res
 

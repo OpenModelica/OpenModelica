@@ -905,7 +905,7 @@ relation evaluate_graphical_api2: (InteractiveStmts, InteractiveSymbolTable)
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
    (* adrpo added 2005-11-24 *)
-   rule	 System.read_env(name) => resstr 
+   rule	 System.readEnv(name) => resstr 
 	 ---------------------------------
 	 evaluate_graphical_api2(
 	     ISTMTS([IEXP(Absyn.CALL(
@@ -916,7 +916,7 @@ relation evaluate_graphical_api2: (InteractiveStmts, InteractiveSymbolTable)
 
 
    (* adrpo added 2005-11-24 *)
-   rule	 not System.read_env(name) => resstr 
+   rule	 not System.readEnv(name) => resstr 
 	 ---------------------------------
 	 evaluate_graphical_api2(
 	     ISTMTS([IEXP(Absyn.CALL(
@@ -926,7 +926,7 @@ relation evaluate_graphical_api2: (InteractiveStmts, InteractiveSymbolTable)
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("error",st)
 
    (* adrpo added 2005-11-24 *)
-   rule	 System.set_env(name, value, 1 (* overwrite*) ) => 0 
+   rule	 System.setEnv(name, value, 1 (* overwrite*) ) => 0 
 	 --------------------------------------------------------
 	 evaluate_graphical_api2(
 	     ISTMTS([IEXP(Absyn.CALL(
@@ -936,7 +936,7 @@ relation evaluate_graphical_api2: (InteractiveStmts, InteractiveSymbolTable)
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("Ok",st)
 
    (* adrpo added 2005-11-24 *)
-   rule	 System.set_env(name, value, 1 (* overwrite*) ) => rest &
+   rule	 System.setEnv(name, value, 1 (* overwrite*) ) => rest &
             int_eq(rest, 0) => false    
 	 --------------------------------------------------------
 	 evaluate_graphical_api2(
@@ -948,7 +948,7 @@ relation evaluate_graphical_api2: (InteractiveStmts, InteractiveSymbolTable)
 
    (* adrpo added 2005-12-16 *)	     
    rule  
-         System.regular_file_exist(name) => 0 &
+         System.regularFileExists(name) => 0 &
 	 Parser.parse(name) => p1 &
 	 update_program(p1,p) => newp &
 	 get_top_qualified_classnames(p1) => top_names_str
@@ -964,7 +964,7 @@ relation evaluate_graphical_api2: (InteractiveStmts, InteractiveSymbolTable)
    (* adrpo added 2005-12-16 *)	     
 	 (** it the rule above have failed then check if file exists **)
 	 (* without this omc crashes *)
-   rule  System.regular_file_exist(name) => rest &
+   rule  System.regularFileExists(name) => rest &
 	 int_gt(rest,0) => true
 	 ---------------------------------------------------
 	 evaluate_graphical_api2(
@@ -1105,7 +1105,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable)
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("true",newst)
 
 
-   rule  (*   System.regular_file_exist(name) => 0 & *)
+   rule  (*   System.regularFileExists(name) => 0 & *)
 (* 	 Parser.parse(name) => p1 & *)
         ClassLoader.load_file(name) => p1 &
         update_program(p1,p) => newp & 
@@ -1122,7 +1122,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable)
 
 	 (** it the rule above have failed then check if file exists **)
 	 (* without this omc crashes *)
-   rule  System.regular_file_exist(name) => rest &
+   rule  System.regularFileExists(name) => rest &
 	 int_gt(rest,0) => true
 	 ---------------------------------------------------
 	 evaluate_graphical_api(
@@ -1156,7 +1156,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable)
 
 
    rule	add_component(name,tp,model,nargs,p) => (newp,resstr)
-	 & Print.get_string() => str & string_append(resstr,str) => resstr'
+	 & Print.getString() => str & string_append(resstr,str) => resstr'
 	 -----------------------
 	 evaluate_graphical_api(
 	     ISTMTS([IEXP(Absyn.CALL(
@@ -1177,7 +1177,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable)
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (res, SYMBOLTABLE(newp,s,ic,iv,cf))
 
    rule	delete_component(name,model,p) => (newp,resstr)
-	 & Print.get_string() => str & string_append(resstr,str) => resstr'
+	 & Print.getString() => str & string_append(resstr,str) => resstr'
 	 -----------------------
 	 evaluate_graphical_api(
 	     ISTMTS([IEXP(Absyn.CALL(
@@ -1429,7 +1429,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable)
 	     ),
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => ("{}",st)
 
-   rule	System.get_classnames_for_simulation => resstr
+   rule	System.getClassnamesForSimulation => resstr
 	 -----------------------
 	 evaluate_graphical_api(
 	     ISTMTS([IEXP(Absyn.CALL(
@@ -1438,7 +1438,7 @@ relation evaluate_graphical_api: (InteractiveStmts, InteractiveSymbolTable)
 	     ),
 	     st as SYMBOLTABLE(p,s,ic,iv,cf)) => (resstr,st)
 
-   rule	System.set_classnames_for_simulation(str)
+   rule	System.setClassnamesForSimulation(str)
 	 -----------------------
 	 evaluate_graphical_api(
 	     ISTMTS([IEXP(Absyn.CALL(
@@ -6870,7 +6870,7 @@ relation update_program: (Absyn.Program,Absyn.Program) => Absyn.Program =
 	 update_program(Absyn.IMPORT_DEFINITION(elt,SOME(path as Absyn.IDENT(_))),p) 
 	   => newp	
 
-   rule	Print.print_buf "Further program merging not implemented yet\n"
+   rule	Print.printBuf "Further program merging not implemented yet\n"
 	 ------------------------
 	 update_program (a,b) => b
 end
@@ -9202,7 +9202,7 @@ relation get_connection_annotation_str: Absyn.EquationItem => string =
 	 Inst.make_env_from_program(p',Absyn.IDENT("")) => env  & 
 	 Static.elab_graphics_exp(env,Absyn.CALL(Absyn.CREF_IDENT("Line",[]),fargs), false (*impl*)) => (newexp,_) &	
 	 (* this is to clear the error-msg generated by the annotations. *)
-	 Print.clear_error_buf() &
+	 Print.clearErrorBuf() &
 	 Exp.print_exp_str(newexp) => gexpstr 
 	 -------------------------------------------------
 	 get_connection_annotation_str(Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(_,_), SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION([Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Line",_),SOME(Absyn.CLASSMOD(elts,NONE)),_)])),_))))
@@ -9585,7 +9585,7 @@ relation get_annotation_string: (Absyn.Program,Absyn.Annotation) => string =
 	 DAE.get_variable_bindings_str dae' => str  &
 	 Static.elab_graphics_exp(env,graphicexp,false (*impl*) ) => (graphicexp2,prop) &
 	 (* this is to clear the error-msg generated by the annotations. *)
-	 Print.clear_error_buf() &
+	 Print.clearErrorBuf() &
 
 	 Exp.print_exp_str(graphicexp2) => gexpstr &
 	 string_append(str,",") => s1 &
@@ -9628,7 +9628,7 @@ relation get_annotation_string: (Absyn.Program,Absyn.Annotation) => string =
 
 	 Static.elab_graphics_exp(env,graphicexp,false (*impl*)) => (graphicexp2,prop) &
 	 (* this is to clear the error-msg generated by the annotations. *)
-	 Print.clear_error_buf() &
+	 Print.clearErrorBuf() &
 	 Exp.print_exp_str(graphicexp2) => gexpstr &
 	 string_append(str,",") => s1 &
 	 string_append(s1,gexpstr) => totstr
@@ -9650,7 +9650,7 @@ relation get_annotation_string: (Absyn.Program,Absyn.Annotation) => string =
 	 -----------------------------------------
 	 get_annotation_string(p, Absyn.ANNOTATION([(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT(anncname,_),SOME(Absyn.CLASSMOD(mod,_)),_))])) => str
 
-   rule	 Print.print_buf "get_annotation_string failed!\n"
+   rule	 Print.printBuf "get_annotation_string failed!\n"
 	 ---------------------------------------
 	 get_annotation_string(_,_) => fail
 end
@@ -10255,9 +10255,9 @@ relation replace_class_in_program: (Absyn.Class, Absyn.Program) => Absyn.Program
 	     Absyn.PROGRAM((c1 as Absyn.CLASS(name2,_,_,_,_,_,_))::clst,w)) 
 	     => Absyn.PROGRAM(c1::newclst,w)
 
-   rule	Print.print_buf "replace_class_in_program failed \n class:" &
+   rule	Print.printBuf "replace_class_in_program failed \n class:" &
 	 Debug.fcall ("dump", Dump.dump, Absyn.PROGRAM([c],Absyn.TOP)) &
-	 Print.print_buf "\nprogram: \n" &
+	 Print.printBuf "\nprogram: \n" &
 	 Debug.fcall ("dump", Dump.dump, p)
 	 ----------------------------
 	 replace_class_in_program(c,p) => fail
@@ -10313,7 +10313,7 @@ relation insert_class_in_class: (Absyn.Class, Absyn.Within, Absyn.Class)
 	 ---------------------------------------------
 	 insert_class_in_class(c1,Absyn.WITHIN(Absyn.QUALIFIED(name,path)),c2) => cnew'
 
-   rule	Print.print_buf "insert_class_in_class failed\n" 
+   rule	Print.printBuf "insert_class_in_class failed\n" 
 	 -------------------------------------
 	 insert_class_in_class(_,_,_) => fail
 end
@@ -10344,7 +10344,7 @@ relation remove_inner_class: (Absyn.Class, Absyn.Class) => Absyn.Class =
 	 remove_inner_class (c1,Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(parts,cmt),file_info)) 
 	     => Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(parts2,cmt),file_info)
 
-   rule	Print.print_buf "Failed in remove_inner_class\n"
+   rule	Print.printBuf "Failed in remove_inner_class\n"
 	 ---------------------------------------
 	 remove_inner_class (_,_) => fail
 end
@@ -10394,7 +10394,7 @@ relation replace_inner_class: (Absyn.Class, Absyn.Class) => Absyn.Class =
 	 -----------------------------------------------
 	 replace_inner_class (c1,Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(parts,cmt),file_info)) 
 	     => Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(parts2,cmt),file_info)
-   rule	Print.print_buf "Failed in replace_inner_class\n"
+   rule	Print.printBuf "Failed in replace_inner_class\n"
 	 ---------------------------------------
 	 replace_inner_class (_,_) => fail
 end
@@ -10444,12 +10444,12 @@ relation get_inner_class: (Absyn.Class, Absyn.Ident) => Absyn.Class =
 	 -----------------------------------------------
 	 get_inner_class (Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_), name) => c1
 
-   rule	Print.get_string => str &
-	 Print.clear_buf &
-	 Print.print_buf "get_inner_class failed, c:" &
+   rule	Print.getString => str &
+	 Print.clearBuf &
+	 Print.printBuf "get_inner_class failed, c:" &
 	 Dump.dump Absyn.PROGRAM([c],Absyn.TOP) &
-	 Print.print_buf "name :" & Print.print_buf name & 
-	 Print.get_string => s1 & (*print s1 &*) Print.clear_buf & Print.print_buf str 
+	 Print.printBuf "name :" & Print.printBuf name & 
+	 Print.getString => s1 & (*print s1 &*) Print.clearBuf & Print.printBuf str 
 	 --------------
 	 get_inner_class (c,name) => fail
 end
@@ -10933,8 +10933,8 @@ relation record_constructor_to_modification: (Absyn.Exp )
 						       Absyn.FUNCTIONARGS([e as Absyn.CALL(_,_)],nargs))) => res	
 
 
-   rule	 Print.print_buf "record_constructor_to_modification failed, exp=" & 
-	 Absyn.print_absyn_exp e & Print.print_buf "\n" 
+   rule	 Print.printBuf "record_constructor_to_modification failed, exp=" & 
+	 Absyn.print_absyn_exp e & Print.printBuf "\n" 
 	 -------------------------
 	 record_constructor_to_modification(e) => fail
 end
@@ -10956,7 +10956,7 @@ relation namedarg_to_modification: (Absyn.NamedArg) => Absyn.ElementArg =
 	 ----------------------------------------------------------------
 	 namedarg_to_modification( Absyn.NAMEDARG(id,e)) => res
 
-   rule	Print.print_buf "- namedarg_to_modification failed\n" 
+   rule	Print.printBuf "- namedarg_to_modification failed\n" 
 	 ----------------
 	 namedarg_to_modification(_) => fail
 end

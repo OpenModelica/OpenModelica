@@ -55,47 +55,47 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 module Print:
 
 
-(** relation: print_error_buf
+(** relation: printErrorBuf
  **
  ** Prints a string to the error buffer.
  **)
-relation print_error_buf: string => ()
+relation printErrorBuf: string => ()
 
-(**relation: clear_error_buf
+(**relation: clearErrorBuf
  **
  ** Clears the error buffer.
  **)
-relation clear_error_buf: () => ()
+relation clearErrorBuf: () => ()
 
-(**relation: get_error_string
+(**relation: getErrorString
  ** 
  ** Return the whole string in the error buffer.
  **)
-relation get_error_string: () => string
+relation getErrorString: () => string
 
-(**relation: print_buf
+(**relation: printBuf
  **
  ** Print a string to the Print buffer.
  **)
-relation print_buf: string => ()
+relation printBuf: string => ()
 
-(**relation: clear_buf
+(**relation: clearBuf
  **
  ** Clears the Print buffer.
  **)
-relation clear_buf: () => ()
+relation clearBuf: () => ()
 
-(**relation: get_string
+(**relation: getString
  **
  ** Get the whole string in the Print buffer.
  **)
-relation get_string: () => string
+relation getString: () => string
 
-(**relation: write_buf
+(**relation: writeBuf
  **
  ** Write the buffer to a file specified by a filename.
  **)
-relation write_buf: (string) => ()
+relation writeBuf: (string) => ()
 
 end
 

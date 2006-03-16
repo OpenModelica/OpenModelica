@@ -52,69 +52,69 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **)
 module Settings:
 
-(** relation set_compile_command 
+(** relation setCompileCommand 
  ** this sets the compilecommand for compilation
  **)
-relation set_compile_command: (string) => ()
+relation setCompileCommand: (string) => ()
 
-(** relation get_compile_command 
+(** relation getCompileCommand 
  ** author: x02lucpo
  ** this retrives the compilecommand for compilation
  **)
-relation get_compile_command: () => string
+relation getCompileCommand: () => string
 
-(** relation set_temp_directory_path 
+(** relation setTempDirectoryPath 
  ** author: x02lucpo
  **)
-relation set_temp_directory_path: (string) => ()
+relation setTempDirectoryPath: (string) => ()
 
-(** relation  get_temp_directory_path
+(** relation  getTempDirectoryPath
  ** author: x02lucpo
  **)
-relation get_temp_directory_path: () => string
+relation getTempDirectoryPath: () => string
 
-(** relation  set_installation_directory_path
+(** relation  setInstallationDirectoryPath
  ** author: x02lucpo
  **)
-relation set_installation_directory_path: (string) => ()
+relation setInstallationDirectoryPath: (string) => ()
 
-(** relation get_installation_directory_path 
+(** relation getInstallationDirectoryPath 
  ** author: x02lucpo
  **
- ** returns the OPENMODELICAHOME. If none is set with set_installation_directory_path
+ ** returns the OPENMODELICAHOME. If none is set with setInstallationDirectoryPath
  ** then it returns the OPENMODELICAHOME environment varible.
- ** If none is set with set_installation_directory_path or there is no
+ ** If none is set with setInstallationDirectoryPath or there is no
  ** OPENMODELICAHOME environment varible then it fails
  **)
-relation get_installation_directory_path: () => string
+relation getInstallationDirectoryPath: () => string
 
-(** relation set_plot_command 
+(** relation setPlotCommand 
  ** author: x02lucpo
- ** this sets the plotcommand for compilation
+ ** this sets the plot command for compilation
  **)
-relation set_plot_command: (string) => ()
+relation setPlotCommand: (string) => ()
 
-(** relation get_plot_command 
+(** relation getPlotCommand 
  ** author: x02lucpo
- ** this retrives the plotcommand for compilation
+ ** this retrives the plot command for compilation
  **)
-relation get_plot_command: () => string
+relation getPlotCommand: () => string
 
-(** relation set_modelica_path
+(** relation setModelicaPath
  ** author: x02lucpo
  **
- ** returns the modelicapath. If none is set with set_modelica_path
+ ** returns the modelicapath. If none is set with setModelicaPath
  ** then it returns the MODELICAPATH environment varible
- ** If none is set with set_modelica_path or there is no
+ ** If none is set with setModelicaPath or there is no
  ** MODELICAPATH environment varible then it fails
  **)
-relation set_modelica_path: (string) => ()
+relation setModelicaPath: (string) => ()
 
-(** relation get_modelica_path 
+(** relation getModelicaPath 
  ** author: x02lucpo
  **)
-relation get_modelica_path: () => string
+relation getModelicaPath: () => string
 
-relation dump_settings:() => ()
+relation dumpSettings:() => ()
 end
 

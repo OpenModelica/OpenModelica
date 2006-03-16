@@ -235,112 +235,112 @@ end
  **)
 relation dump2: DAElist => () =
 
-  rule	Print.print_buf "VAR(" &
+  rule	Print.printBuf "VAR(" &
 	Exp.print_component_ref cr &
-	Print.print_buf "=" &
+	Print.printBuf "=" &
 	Exp.print_exp e &
-	Print.print_buf ",dims=" &
+	Print.printBuf ",dims=" &
 	Dump.print_list(dims,Exp.print_subscript,", ") &
 (* 	dump_start_value start & *)
         Dump.unparse_comment_option(comment) => comment_str &
         print "  comment:" & print comment_str & print ",\n " &
      dump_variable_attributes dae_var_attr &
-	Print.print_buf ")\n" &
+	Print.printBuf ")\n" &
 	dump2 (DAE(xs))
 	-------------------
 	dump2 DAE(VAR(cr,_,_,_,SOME(e),dims,start,_,_,dae_var_attr,comment)::xs)
 
-  rule	Print.print_buf "VAR(" &
+  rule	Print.printBuf "VAR(" &
 	Exp.print_component_ref cr &
 	(* 	dump_start_value start & *)
         Dump.unparse_comment_option(comment) => comment_str &
         print "  comment:" & print comment_str & print ",\n " &
         dump_variable_attributes dae_var_attr &
 
-	Print.print_buf ")\n" &
+	Print.printBuf ")\n" &
 	dump2 (DAE(xs))
 	-------------------
 	dump2 DAE(VAR(cr,_,_,_,NONE,_,start,_,_,dae_var_attr,comment)::xs)
 
-  rule	Print.print_buf "DEFINE(" &
+  rule	Print.printBuf "DEFINE(" &
 	Exp.print_component_ref cr &
-	Print.print_buf ")\n" &
+	Print.printBuf ")\n" &
 	dump2 (DAE(xs))
 	---------
 	dump2 DAE(DEFINE(cr,_)::xs)
 
-  rule	Print.print_buf "INITIALDEFINE(" &
+  rule	Print.printBuf "INITIALDEFINE(" &
 	Exp.print_component_ref cr &
-	Print.print_buf ")\n" &
+	Print.printBuf ")\n" &
 	dump2 (DAE(xs))
 	---------
 	dump2 DAE(INITIALDEFINE(cr,_)::xs)
 
-  rule	Print.print_buf "EQUATION(" &
+  rule	Print.printBuf "EQUATION(" &
 	Exp.print_exp e1 &
-	Print.print_buf " = " &
+	Print.printBuf " = " &
 	Exp.print_exp e2 &
-	Print.print_buf ")\n" &
+	Print.printBuf ")\n" &
 	dump2( DAE(xs))
 	---------
 	dump2 DAE(EQUATION(e1,e2)::xs)
 	
-  rule	Print.print_buf "INITIALEQUATION(" &
+  rule	Print.printBuf "INITIALEQUATION(" &
 	Exp.print_exp e1 &
-	Print.print_buf " = " &
+	Print.printBuf " = " &
 	Exp.print_exp e2 &
-	Print.print_buf ")\n" &
+	Print.printBuf ")\n" &
 	dump2( DAE(xs))
 	---------
 	dump2 DAE(INITIALEQUATION(e1,e2)::xs)
 
-  rule	Print.print_buf "ALGORITHM(...)" &
+  rule	Print.printBuf "ALGORITHM(...)" &
 	dump2 (DAE(xs))
 	------------
 	dump2 (DAE(ALGORITHM(_)::xs))
 
-  rule	Print.print_buf "INITIALALGORITHM(...)" &
+  rule	Print.printBuf "INITIALALGORITHM(...)" &
 	dump2 (DAE(xs))
 	------------
 	dump2 (DAE(INITIALALGORITHM(_)::xs))
 
-  rule	Print.print_buf "COMP(" &
-	Print.print_buf ident &
+  rule	Print.printBuf "COMP(" &
+	Print.printBuf ident &
 	dump2 (lst) &
-	Print.print_buf ")\n" &
+	Print.printBuf ")\n" &
 	dump2 (DAE(xs))
 	----------
 	dump2 (DAE(COMP(ident,lst)::xs))
 
-  rule	Print.print_buf "FUNCTION(...)\n" &
+  rule	Print.printBuf "FUNCTION(...)\n" &
 	dump2 (DAE(xs))
 	--------------
 	dump2 (DAE(FUNCTION(_,_,_)::xs))
 
-  rule	Print.print_buf "EXTFUNCTION(\n" &
-	Absyn.path_string path => str & Print.print_buf str &
-	Print.print_buf ", " &
+  rule	Print.printBuf "EXTFUNCTION(\n" &
+	Absyn.path_string path => str & Print.printBuf str &
+	Print.printBuf ", " &
 	dump2 dae &
-	Print.print_buf ", " &
+	Print.printBuf ", " &
 	Types.print_type tp &
-	Print.print_buf ", " &
+	Print.printBuf ", " &
 	dump_ext_decl_str extdecl => extdeclstr &
-	Print.print_buf extdeclstr &
-	Print.print_buf ")\n" &	
+	Print.printBuf extdeclstr &
+	Print.printBuf ")\n" &	
 	dump2 (DAE(xs))
 	--------------
 	dump2 (DAE(EXTFUNCTION(path,dae,tp,extdecl)::xs))
 
-  rule	Print.print_buf "ASSERT(\n" &
+  rule	Print.printBuf "ASSERT(\n" &
 	Exp.print_exp e &
-	Print.print_buf ")\n" &	
+	Print.printBuf ")\n" &	
 	dump2 (DAE(xs))
 	--------------
 	dump2 (DAE(ASSERT(e)::xs))
 
   axiom dump2 (DAE([]))
 
-  rule	Print.print_buf "dump2 failed\n"
+  rule	Print.printBuf "dump2 failed\n"
 	---------------------
 	dump2 (_)
 end
@@ -351,9 +351,9 @@ end
  **)
 relation dump_start_value: StartValue => () =
 
-  rule	Print.print_buf("(start=") &
+  rule	Print.printBuf("(start=") &
 	Exp.print_exp e &
-	Print.print_buf(")")
+	Print.printBuf(")")
 	--------------------
 	dump_start_value(SOME(e)) => ()
 
@@ -439,17 +439,17 @@ end
  **)
 relation dump_comp_element : Element => () =
 	
-  rule	RTOpts.modelica_output => false &	
-	Print.print_buf "fclass " & Print.print_buf n & Print.print_buf "\n" &
+  rule	RTOpts.modelicaOutput => false &	
+	Print.printBuf "fclass " & Print.printBuf n & Print.printBuf "\n" &
 	dump_elements(l) &
-	Print.print_buf "end " & Print.print_buf n & Print.print_buf ";\n"
+	Print.printBuf "end " & Print.printBuf n & Print.printBuf ";\n"
 	-----------------------------------
 	dump_comp_element COMP(n,DAE(l))
 
-  rule	RTOpts.modelica_output => true &
-	Print.print_buf "class " & Print.print_buf n & Print.print_buf "\n" &
+  rule	RTOpts.modelicaOutput => true &
+	Print.printBuf "class " & Print.printBuf n & Print.printBuf "\n" &
 	dump_elements(l) &
-	Print.print_buf "end " & Print.print_buf n & Print.print_buf ";\n"
+	Print.printBuf "end " & Print.printBuf n & Print.printBuf ";\n"
 	-----------------------------------
 	dump_comp_element COMP(n,DAE(l))
 
@@ -464,7 +464,7 @@ end
  **)
 relation dump_comp_element_str : Element => string =
 	
-  rule	RTOpts.modelica_output => false &
+  rule	RTOpts.modelicaOutput => false &
 	string_append("fclass ",n) => s1 & 
 	string_append(s1,"\n") => s2 &
 	dump_elements_str(l) => s3 &
@@ -475,7 +475,7 @@ relation dump_comp_element_str : Element => string =
 	-----------------------------------
 	dump_comp_element_str COMP(n,DAE(l)) => str
 
-  rule	RTOpts.modelica_output => true &
+  rule	RTOpts.modelicaOutput => true &
 	string_append("class ",n) => s1 &
 	string_append(s1,"\n") => s2 &
 	dump_elements_str(l) => s3 &
@@ -498,9 +498,9 @@ end
 relation dump_elements : Element list => () =
 
  rule	dump_vars l &
-	Print.print_buf "initial equation\n" &
+	Print.printBuf "initial equation\n" &
 	Util.list_map_0(l, dump_initialequation) &
-	Print.print_buf "equation\n" &
+	Print.printBuf "equation\n" &
 	Util.list_map_0(l, dump_equation) &
 	Util.list_map_0(l, dump_initialalgorithm) & 
 	Util.list_map_0(l, dump_algorithm) & 
@@ -716,7 +716,7 @@ end
 relation dump_vars: Element list => () =
 	
  rule	dump_vars_str lst => str &
-	Print.print_buf str 
+	Print.printBuf str 
 	-------------------
 	dump_vars lst
 end
@@ -743,19 +743,19 @@ end
  **)
 relation dump_kind =
 
-  rule	Print.print_buf " constant  "
+  rule	Print.printBuf " constant  "
 	--------------------
 	dump_kind CONST
 	
-  rule	Print.print_buf " parameter "
+  rule	Print.printBuf " parameter "
 	--------------------
 	dump_kind PARAM
 	
-  rule	Print.print_buf " discrete  "
+  rule	Print.printBuf " discrete  "
 	--------------------
 	dump_kind DISCRETE
 
-  rule	Print.print_buf "           "
+  rule	Print.printBuf "           "
 	--------------------
 	dump_kind VARIABLE
 
@@ -781,15 +781,15 @@ end
  **)
 relation dump_direction =
 
-  rule	Print.print_buf " input  "
+  rule	Print.printBuf " input  "
 	--------------------
 	dump_direction INPUT
 
-  rule	Print.print_buf " output "
+  rule	Print.printBuf " output "
 	--------------------
 	dump_direction OUTPUT
 	
-  rule	Print.print_buf "        "
+  rule	Print.printBuf "        "
 	--------------------
 	dump_direction BIDIR
 
@@ -830,7 +830,7 @@ end
 relation dump_variable_attributes: VariableAttributes option => () =
  
   rule  dump_variable_attributes_str attr => res &
-        Print.print_buf res
+        Print.printBuf res
         --------------------------------
         dump_variable_attributes(attr)
 
@@ -991,29 +991,29 @@ end
  **)
 relation dump_type =
 
-  rule	Print.print_buf "Integer "
+  rule	Print.printBuf "Integer "
 	----------------
 	dump_type INT
 
-  rule	Print.print_buf "Real    "
+  rule	Print.printBuf "Real    "
 	----------------
 	dump_type REAL
 
-  rule	Print.print_buf "Boolean "
+  rule	Print.printBuf "Boolean "
 	----------------
 	dump_type BOOL
 
-  rule	Print.print_buf "String  "
+  rule	Print.printBuf "String  "
 	----------------
 	dump_type STRING
 
-  rule	Print.print_buf "Enum "
+  rule	Print.printBuf "Enum "
 	-------------
 	dump_type ENUM
 
-  rule	Print.print_buf "Enumeration(" &
+  rule	Print.printBuf "Enumeration(" &
 	Dump.print_list(l,print,",") &
-	Print.print_buf ") "
+	Print.printBuf ") "
 	------------------
 	dump_type ENUMERATION(l)
 end
@@ -1056,10 +1056,10 @@ relation dump_var : Element => () =
         
 (*	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
 	Util.string_delimit_list(classstrlst, ", ") => classstr &
-	Print.print_buf " \"{" &
-	Print.print_buf classstr &
-	Print.print_buf "}\" " & *)
-	Print.print_buf ";\n"
+	Print.printBuf " \"{" &
+	Print.printBuf classstr &
+	Print.printBuf "}\" " & *)
+	Print.printBuf ";\n"
 	--------------------------------------
 	dump_var VAR(id, kind, dir, typ, NONE,_,start,flow,classlst,dae_var_attr,comment)
 	
@@ -1068,8 +1068,8 @@ relation dump_var : Element => () =
 	(* 	dump_start_value start & *)
     dump_variable_attributes dae_var_attr &
 	
-	Print.print_buf " = " &
-	Exp.print_exp e & Print.print_buf ";\n"
+	Print.printBuf " = " &
+	Exp.print_exp e & Print.printBuf ";\n"
 	--------------------------------------
 	dump_var VAR(id, kind, dir, typ, SOME(e),_,start,flow,class,dae_var_attr,comment)
 	
@@ -1138,7 +1138,7 @@ end
 relation dump_comment_option : (Absyn.Comment option) => () =
 
   rule  dump_comment_option_str(comment) => str &
-        Print.print_buf(str) 
+        Print.printBuf(str) 
 	---------------------------------------------
 	dump_comment_option(comment) => ()
 	
@@ -1150,17 +1150,17 @@ end
  **)
 relation dump_equation : Element => () =
 	
-  rule	Print.print_buf "  " & Exp.print_exp e1 &
-	Print.print_buf " = " & Exp.print_exp e2 & Print.print_buf ";\n"
+  rule	Print.printBuf "  " & Exp.print_exp e1 &
+	Print.printBuf " = " & Exp.print_exp e2 & Print.printBuf ";\n"
 	--------------------------------------
 	dump_equation(EQUATION(e1, e2))
 	
-  rule	Print.print_buf "  " & Exp.print_component_ref c &
-	Print.print_buf " ::= " & Exp.print_exp e & Print.print_buf ";\n"
+  rule	Print.printBuf "  " & Exp.print_component_ref c &
+	Print.printBuf " ::= " & Exp.print_exp e & Print.printBuf ";\n"
 	--------------------------------------
 	dump_equation(DEFINE(c, e))
 
-  rule	Exp.print_exp e & Print.print_buf ";\n"
+  rule	Exp.print_exp e & Print.printBuf ";\n"
 	--------------------------------------
 	dump_equation(ASSERT(e))
 	
@@ -1175,13 +1175,13 @@ end
  **)
 relation dump_initialequation : Element => () =
 	
-  rule	Print.print_buf "  " & Exp.print_exp e1 &
-	Print.print_buf " = " & Exp.print_exp e2 & Print.print_buf ";\n"
+  rule	Print.printBuf "  " & Exp.print_exp e1 &
+	Print.printBuf " = " & Exp.print_exp e2 & Print.printBuf ";\n"
 	--------------------------------------
 	dump_initialequation(INITIALEQUATION(e1, e2))
 	
-  rule	Print.print_buf "  " & Exp.print_component_ref c &
-	Print.print_buf " ::= " & Exp.print_exp e & Print.print_buf ";\n"
+  rule	Print.printBuf "  " & Exp.print_component_ref c &
+	Print.printBuf " ::= " & Exp.print_exp e & Print.printBuf ";\n"
 	--------------------------------------
 	dump_initialequation(INITIALDEFINE(c, e))
 	
@@ -1229,7 +1229,7 @@ end
  **)
 relation dump_algorithm : Element => () =
 
-  rule	Print.print_buf "algorithm\n" &
+  rule	Print.printBuf "algorithm\n" &
 	Dump.print_list(stmts, pp_statement, "")
 	----------------------------------------------
 	dump_algorithm ALGORITHM(Algorithm.ALGORITHM(stmts))
@@ -1244,7 +1244,7 @@ end
  **)
 relation dump_initialalgorithm : Element => () =
 
-  rule	Print.print_buf "initial algorithm\n" &
+  rule	Print.printBuf "initial algorithm\n" &
 	Dump.print_list(stmts, pp_statement, "")
 	----------------------------------------------
 	dump_initialalgorithm INITIALALGORITHM(Algorithm.ALGORITHM(stmts))
@@ -1290,11 +1290,11 @@ end
 relation dump_function: Element => () =
 
 
-  rule	Print.print_buf "function " &
+  rule	Print.printBuf "function " &
 	Absyn.path_string fpath => fstr &
-	Print.print_buf fstr & Print.print_buf "\n" &
+	Print.printBuf fstr & Print.printBuf "\n" &
 	dump_elements(dae) &
-	Print.print_buf "end " & Print.print_buf fstr & Print.print_buf ";\n\n"
+	Print.printBuf "end " & Print.printBuf fstr & Print.printBuf ";\n\n"
 	------------------------------------
 	dump_function FUNCTION(fpath,DAE(dae),t)
 	
@@ -1355,17 +1355,17 @@ relation pp_stmt : (Algorithm.Statement, int) => () =
 
   rule	indent i &
 	Exp.print_component_ref c &
-	Print.print_buf " := " &
+	Print.printBuf " := " &
 	Exp.print_exp e &
-	Print.print_buf ";\n"
+	Print.printBuf ";\n"
 	----------
 	pp_stmt (Algorithm.ASSIGN(_,c,e), i)
 
   rule	indent i &
 	Exp.print_component_ref c &
-	Print.print_buf " := " &
+	Print.printBuf " := " &
 	Exp.print_exp e &
-	Print.print_buf ";\n"
+	Print.printBuf ";\n"
 	----------
 	pp_stmt (Algorithm.ASSIGN_ARR(_,c,e), i)
 
@@ -1374,48 +1374,48 @@ relation pp_stmt : (Algorithm.Statement, int) => () =
 	Util.list_map(expl,Exp.print_exp_str) => es &
 	Util.string_delimit_list(es,", ") => s3 &
 	Util.string_append_list([s1,"(",s3,") := ",s2,";\n"]) => str &
-	Print.print_buf str
+	Print.printBuf str
 	--------------------------------------------
 	pp_stmt (Algorithm.TUPLE_ASSIGN(_,expl,e), i) 
 
   rule	indent i &
- 	Print.print_buf "if " & Exp.print_exp e & Print.print_buf " then\n" &
+ 	Print.printBuf "if " & Exp.print_exp e & Print.printBuf " then\n" &
 	int_add(i,2) => i' &
 	pp_stmt_list (then, i') &
 	pp_else (else, i) &
-	indent i & Print.print_buf "end if;\n"
+	indent i & Print.printBuf "end if;\n"
         -------------------
 	pp_stmt (Algorithm.IF(e,then,else), i)
 	
   rule	indent i &
-	Print.print_buf "for " & Print.print_buf id & Print.print_buf " in " &
- 	Exp.print_exp e & Print.print_buf " loop\n" &
+	Print.printBuf "for " & Print.printBuf id & Print.printBuf " in " &
+ 	Exp.print_exp e & Print.printBuf " loop\n" &
 	int_add(i,2) => i' &
 	pp_stmt_list (stmts, i') &
 	indent i &
-	Print.print_buf "end for;\n"
+	Print.printBuf "end for;\n"
         -------------------
 	pp_stmt (Algorithm.FOR(_,_,id,e,stmts), i)
 	
   rule	indent i &
-	Print.print_buf "while " & Exp.print_exp e & Print.print_buf " loop\n" &
+	Print.printBuf "while " & Exp.print_exp e & Print.printBuf " loop\n" &
 	int_add(i,2) => i' &
 	pp_stmt_list (stmts, i') &
 	indent i &
-	Print.print_buf "end while;\n"
+	Print.printBuf "end while;\n"
         -------------------
 	pp_stmt (Algorithm.WHILE(e,stmts), i)
 	
   rule	indent i &
-	Print.print_buf "when " & Exp.print_exp e & Print.print_buf " do\n" &
+	Print.printBuf "when " & Exp.print_exp e & Print.printBuf " do\n" &
 	int_add(i,2) => i' &
 	pp_stmt_list (stmts, i') &
 	indent i &
-	Print.print_buf "end when;\n"
+	Print.printBuf "end when;\n"
         -------------------
 	pp_stmt (Algorithm.WHEN(e,stmts), i)
 	
-  rule	indent i & Print.print_buf "**ALGORITHM**;\n"
+  rule	indent i & Print.printBuf "**ALGORITHM**;\n"
 	----------------------------------
 	pp_stmt (_,i)
 
@@ -1559,7 +1559,7 @@ relation pp_else : (Algorithm.Else, int) => () =
   axiom	pp_else (Algorithm.NOELSE, _)
 
   rule	indent i &
- 	Print.print_buf "elseif " & Exp.print_exp e & Print.print_buf " then\n" &
+ 	Print.printBuf "elseif " & Exp.print_exp e & Print.printBuf " then\n" &
 	int_add(i,2) => i' &
 	pp_stmt_list (then, i') &
 	pp_else (else, i)
@@ -1567,7 +1567,7 @@ relation pp_else : (Algorithm.Else, int) => () =
 	pp_else (Algorithm.ELSEIF(e,then,else), i)
 
   rule	indent i &
- 	Print.print_buf "else\n" &
+ 	Print.printBuf "else\n" &
 	int_add(i,2) => i' &
 	pp_stmt_list (stmts, i')
         ------------------------
@@ -1614,7 +1614,7 @@ relation indent : int => () =
 
   axiom indent 0
 
-  rule	Print.print_buf " " & int_sub(i,1) => i' & indent i'
+  rule	Print.printBuf " " & int_sub(i,1) => i' & indent i'
 	------------------------------------------
 	indent i
 
@@ -1830,7 +1830,7 @@ end
 ********************************)
 relation dump_debug : DAElist => () =
 
-  rule	Print.print_buf "DAE(" & dump_debug_elist elist & Print.print_buf ")"
+  rule	Print.printBuf "DAE(" & dump_debug_elist elist & Print.printBuf ")"
 	-------------------------------------------------
 	dump_debug DAE(elist)
 
@@ -1844,7 +1844,7 @@ relation dump_debug_elist : Element list => () =
 
   axiom dump_debug_elist []
 
-  rule	dump_debug_element first & Print.print_buf "\n" &
+  rule	dump_debug_element first & Print.printBuf "\n" &
 	dump_debug_elist rest
 	---------------------
 	dump_debug_elist first :: rest
@@ -1857,86 +1857,86 @@ end
  **)
 relation dump_debug_element : Element => () =
 
-  rule	Print.print_buf "VAR(" &
-	Exp.print_component_ref cr & Print.print_buf ", " &
+  rule	Print.printBuf "VAR(" &
+	Exp.print_component_ref cr & Print.printBuf ", " &
 	dump_kind vk &
         Dump.unparse_comment_option(comment) => comment_str &
-        Print.print_buf "  comment:" &  Print.print_buf comment_str &
+        Print.printBuf "  comment:" &  Print.printBuf comment_str &
 
         dump_variable_attributes_str(dae_var_attr) => tmp_str &
-        Print.print_buf tmp_str &
-	Print.print_buf ")"
+        Print.printBuf tmp_str &
+	Print.printBuf ")"
 	-------------
 	    dump_debug_element VAR(cr,vk,vd,ty,NONE,_,_,_,_,dae_var_attr,comment)
 
-  rule	Print.print_buf "VAR(" &
-	Exp.print_component_ref cr & Print.print_buf ", " &
-	dump_kind vk & Print.print_buf ", " &
+  rule	Print.printBuf "VAR(" &
+	Exp.print_component_ref cr & Print.printBuf ", " &
+	dump_kind vk & Print.printBuf ", " &
         Dump.unparse_comment_option(comment) => comment_str &
-        Print.print_buf "  comment:" &  Print.print_buf comment_str &
+        Print.printBuf "  comment:" &  Print.printBuf comment_str &
         dump_variable_attributes_str(dae_var_attr) => tmp_str &
 	Exp.print_exp e &
-        Print.print_buf tmp_str &
-	Print.print_buf ")"
+        Print.printBuf tmp_str &
+	Print.printBuf ")"
 	-------------
 	dump_debug_element VAR(cr,vk,vd,ty,SOME(e),_,_,_,_,dae_var_attr,comment)
 
-  rule	Print.print_buf "DEFINE(" &
+  rule	Print.printBuf "DEFINE(" &
 	Exp.print_component_ref cr &
-	Print.print_buf ", " &
+	Print.printBuf ", " &
 	Exp.print_exp exp &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	----------------
 	dump_debug_element DEFINE(cr,exp)
 
-  rule	Print.print_buf "INITIALDEFINE(" &
+  rule	Print.printBuf "INITIALDEFINE(" &
 	Exp.print_component_ref cr &
-	Print.print_buf ", " &
+	Print.printBuf ", " &
 	Exp.print_exp exp &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	----------------
 	dump_debug_element INITIALDEFINE(cr,exp)
 
-  rule	Print.print_buf "EQUATION(" &
+  rule	Print.printBuf "EQUATION(" &
 	Exp.print_exp e1 &
-	Print.print_buf "," &
+	Print.printBuf "," &
 	Exp.print_exp e2 &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	------------------
 	dump_debug_element EQUATION(e1,e2)
 
-  rule	Print.print_buf "INITIALEQUATION(" &
+  rule	Print.printBuf "INITIALEQUATION(" &
 	Exp.print_exp e1 &
-	Print.print_buf "," &
+	Print.printBuf "," &
 	Exp.print_exp e2 &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	------------------
 	dump_debug_element INITIALEQUATION(e1,e2)
 
-  rule	Print.print_buf "ALGORITHM()"
+  rule	Print.printBuf "ALGORITHM()"
 	-------------------
 	dump_debug_element ALGORITHM(_)
 
-  rule	Print.print_buf "INITIALALGORITHM()"
+  rule	Print.printBuf "INITIALALGORITHM()"
 	-------------------
 	dump_debug_element INITIALALGORITHM(_)
 
-  rule	Print.print_buf "COMP(" & Print.print_buf n & Print.print_buf "," &
+  rule	Print.printBuf "COMP(" & Print.printBuf n & Print.printBuf "," &
 	dump_debug (l) &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	--------------------------------------
 	dump_debug_element COMP(n,l)
 
-  rule	Print.print_buf "FUNCTION(" &
+  rule	Print.printBuf "FUNCTION(" &
 	Absyn.path_string fpath => fstr &
-	Print.print_buf fstr & Print.print_buf "," &
-	Types.print_type t & Print.print_buf "," &
+	Print.printBuf fstr & Print.printBuf "," &
+	Types.print_type t & Print.printBuf "," &
 	dump_debug (l) &
-	Print.print_buf ")"
+	Print.printBuf ")"
 	--------------------------------------
 	dump_debug_element FUNCTION(fpath,l,t)
 
-  rule	Print.print_buf "UNKNOWN "
+  rule	Print.printBuf "UNKNOWN "
 	---------------------------
 	dump_debug_element _
 

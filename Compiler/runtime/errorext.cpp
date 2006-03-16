@@ -116,19 +116,19 @@ extern "C"
     while(!errorMessageQueue.empty()) errorMessageQueue.pop();
   }
 
-  RML_BEGIN_LABEL(ErrorExt__error_5fon)
+  RML_BEGIN_LABEL(ErrorExt__errorOn)
   {
     error_on = true;
     RML_TAILCALLK(rmlSC);
   }
 
-  RML_BEGIN_LABEL(ErrorExt__error_5foff)
+  RML_BEGIN_LABEL(ErrorExt__errorOff)
   {
     error_on = false;
     RML_TAILCALLK(rmlSC);
   }
 
-  RML_BEGIN_LABEL(ErrorExt__add_5fmessage)
+  RML_BEGIN_LABEL(ErrorExt__addMessage)
   {
 
     int errorID = RML_UNTAGFIXNUM(rmlA0);
@@ -148,7 +148,7 @@ extern "C"
   } 
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(ErrorExt__add_5fsource_5fmessage)
+  RML_BEGIN_LABEL(ErrorExt__addSourceMessage)
   {
     int errorID = RML_UNTAGFIXNUM(rmlA0);
     char* tp = RML_STRINGDATA(rmlA1);
@@ -175,7 +175,7 @@ extern "C"
   } 
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(ErrorExt__print_5fmessages_5fstr)
+  RML_BEGIN_LABEL(ErrorExt__printMessagesStr)
   {
     std::string res("");
     while(!errorMessageQueue.empty()) {
@@ -187,7 +187,7 @@ extern "C"
   } 
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(ErrorExt__get_5fmessages_5fstr)
+  RML_BEGIN_LABEL(ErrorExt__getMessagesStr)
   {
     std::string res("{");
     while(!errorMessageQueue.empty()) {

@@ -803,7 +803,7 @@ relation initial_env =
 	Env.extend_frame_t(env, "ndims", array6dimbool2int) 		     => env &
 	Env.extend_frame_t(env, "ndims", array7dimbool2int) 		     => env &
 	Env.extend_frame_t(env, "ndims", array8dimbool2int) 		     => env &
-(* Debug. Print.print_buf "\n Just before the built in built in size." &	*)
+(* Debug. Print.printBuf "\n Just before the built in built in size." &	*)
 
 	Env.extend_frame_t(env, "size", array1dimint_int2int)	      => env & 
 	Env.extend_frame_t(env, "size", array2dimint_int2int)	      => env &
@@ -1266,7 +1266,7 @@ relation initial_env =
 	Env.extend_frame_t(env, "sqrt", real2real)			              => env 
 
 
-(*Debug.	Print.print_buf "\n Just AFTER the built in array functions part." *)
+(*Debug.	Print.printBuf "\n Just AFTER the built in array functions part." *)
 	----------------------------------------------
 	initial_env () => env
 

@@ -92,8 +92,8 @@ relation server_loop: (int,Interactive.InteractiveSymbolTable)  => Interactive.I
 	Debug.fprint ("interactivedump" ,"------- Recieved Data from client -----\n") &
 	Debug.fprint ("interactivedump" , str ) &
 	Debug.fprint ("interactivedump", "------- End recieved Data-----\n") &
-	Print.clear_buf & 
-	(*Print.clear_error_buf &*)
+	Print.clearBuf & 
+	(*Print.clearErrorBuf &*)
    	handle_command (str,isymb)  => (true,replystr,newsymb) &
 	Socket.sendreply(shandle,replystr) &
 	server_loop (shandle,newsymb) => ressymb
@@ -105,11 +105,11 @@ relation server_loop: (int,Interactive.InteractiveSymbolTable)  => Interactive.I
 	Debug.fprint ("interactivedump" ,"------- Recieved Data from client -----\n") &
 	Debug.fprint ("interactivedump" , str ) &
 	Debug.fprint ("interactivedump", "------- End recieved Data-----\n") &
-	(*Print.clear_error_buf &*)
-	Print.clear_buf & 
+	(*Print.clearErrorBuf &*)
+	Print.clearBuf & 
 	handle_command (str,isymb)  => (false,replystr,newsymb) &
 	(* 2004-11-27 - adrpo added part ends here *)
-	Print.print_buf "Exiting\n" &
+	Print.printBuf "Exiting\n" &
 	Socket.sendreply(shandle, "quit requested, shutting server down\n") &
  	Socket.close shandle &
 	Socket.cleanup 
@@ -149,12 +149,12 @@ end
 
 relation make_debug_result : (string, string) => string =
 
-  rule	Print.get_string () => debugstr &
+  rule	Print.getString () => debugstr &
 	Util.string_append_list ([res, 
 				  "\n---DEBUG(",flagstr,")---\n", 
 				  debugstr,
 				  "\n---/DEBUG(",flagstr,")---\n"]) => res_with_debug &
-	RTOpts.debug_flag (flagstr) => dumpflag &
+	RTOpts.debugFlag (flagstr) => dumpflag &
 	Util.if (dumpflag, res_with_debug, res) => res'
 	-----------------------------------------------------
 	make_debug_result (flagstr, res) => res'
@@ -175,8 +175,8 @@ relation handle_command: (string,Interactive.InteractiveSymbolTable)  =>
 	
 	(* Add a class or function to the interactive symbol table.
 	   If it is a function, type check it. *)
-  rule	Debug.fcall0 ("dump", Print.clear_buf) &
-	Debug.fcall0 ("dumpgraphviz", Print.clear_buf) &
+  rule	Debug.fcall0 ("dump", Print.clearBuf) &
+	Debug.fcall0 ("dumpgraphviz", Print.clearBuf) &
 	Debug.fprint ("dump","\nTrying to parse class definition...\n") &
 	Parser.parsestring(str) => (p,msg) & (* Always succeeds, check msg for errors *)
 	msg = "Ok" &  (* fails here if the string is not "Ok" *)
@@ -195,8 +195,8 @@ relation handle_command: (string,Interactive.InteractiveSymbolTable)  =>
 	(true, res, Interactive.SYMBOLTABLE(newprog,a,b,vars',cf'))
 	
 	(* Interactively evaluate an algorithm statement or expression *)
-  rule	Debug.fcall0 ("dump", Print.clear_buf) &
-	Debug.fcall0 ("dumpgraphviz", Print.clear_buf) &
+  rule	Debug.fcall0 ("dump", Print.clearBuf) &
+	Debug.fcall0 ("dumpgraphviz", Print.clearBuf) &
 	Debug.fprint ("dump","\nNot a class definition, trying expresion parser\n") &
 	Parser.parsestringexp str => (exp,msg) & (* always succeeds, check msg for errors *)
 	msg = "Ok" &
@@ -208,7 +208,7 @@ relation handle_command: (string,Interactive.InteractiveSymbolTable)  =>
 	--------------------------------------------------
 	handle_command (str, isymb) => (true, res, newisymb)
 
-  rule	Debug.fcall0 ("failtrace", Print.clear_buf) &
+  rule	Debug.fcall0 ("failtrace", Print.clearBuf) &
 	Parser.parsestring str => (p,msg) &
 	Parser.parsestringexp str => (p,expmsg) &
 	not msg = "Ok" &
@@ -221,8 +221,8 @@ relation handle_command: (string,Interactive.InteractiveSymbolTable)  =>
 	handle_command (str,isymb) => (true, res, isymb)
 
 
-  rule  Print.print_buf "Error occured building AST\n" &
-	Print.get_string () => debugstr &
+  rule  Print.printBuf "Error occured building AST\n" &
+	Print.getString () => debugstr &
 	string_append (debugstr,"Syntax Error\n") => str
 	----------------------------------
 	handle_command (_,isymb) => (true,str,isymb)
@@ -319,23 +319,23 @@ relation translate_file : string list => () =
 *)	& fix_modelica_output (d') => d
 (*	& fix_modelica_output (dimpl') => dimpl
 *)
-	& Print.clear_buf()
+	& Print.clearBuf()
 	& Debug.fprint ("info", "---dumping\n")
 	& Debug.fcallret ("flatmodelica", DAE.dump_str, d, "") => s
-	& Debug.fcall ("flatmodelica", Print.print_buf, s)
+	& Debug.fcall ("flatmodelica", Print.printBuf, s)
 (*
 	& Debug.fprint ("flatmodelica", "Implicit:\n")
 	& Debug.fcall ("flatmodelica", DAE.dump, dimpl)
 *)
 	& Debug.fcallret ("none", DAE.dump_str, d, "") => s
-	& Debug.fcall ("none", Print.print_buf, s)
+	& Debug.fcall ("none", Print.printBuf, s)
 	& Debug.fcall ("daedump", DAE.dump, d)
 	& Debug.fcall ("daedump2", DAE.dump2, d)
 	& Debug.fcall ("daedumpdebug", DAE.dump_debug, d)
 	& Debug.fcall ("daedumpgraphv", DAE.dump_graphviz, d)
 	& Absyn.last_classname(p) => cname
 
-	& Print.get_string () => str
+	& Print.getString () => str
 	& RTOpts.silent() => silent 
 	& bool_not(silent) => notsilent
 	& Debug.bcall(notsilent,print, str)
@@ -351,27 +351,27 @@ relation translate_file : string list => () =
 	------------------------------
 	translate_file [f]
 
-  rule	ErrorExt.print_messages_str() => str &
+  rule	ErrorExt.printMessagesStr() => str &
 	print str 
 	---------------------
 	translate_file [f] => fail
 	
-  rule	Print.print_error_buf "# Too many arguments\n"
+  rule	Print.printErrorBuf "# Too many arguments\n"
 	----------------------------
 	translate_file _::_::_ => fail
 
-  rule	Print.print_buf "Usage: omc <options> filename \n" &
-	Print.print_buf "omc accepts .mo (Modelica files) \n" &
-	Print.print_buf "            .mof (Flat Modelica files) \n" &
-	Print.print_buf "            .mos (Modelica Script files) \n" &
- 	Print.print_buf "Options:\n========" &
-	Print.print_buf "+s    Generate simulation code\n" &
-	Print.print_buf "+q    Run in quiet mode, ouput nothing\n" &
-	Print.print_buf "+d=flags, set flags: \n" &
-	Print.print_buf "    blt               apply blt transformation\n" &
-	Print.print_buf "    interactive       run in interactive mode\n" &
-	Print.print_buf "    interactiveCorba  run in interactive mode using Corba\n" &
-	Print.print_buf "    ..., see DEBUG.TXT for further flags\n" 
+  rule	Print.printBuf "Usage: omc <options> filename \n" &
+	Print.printBuf "omc accepts .mo (Modelica files) \n" &
+	Print.printBuf "            .mof (Flat Modelica files) \n" &
+	Print.printBuf "            .mos (Modelica Script files) \n" &
+ 	Print.printBuf "Options:\n========" &
+	Print.printBuf "+s    Generate simulation code\n" &
+	Print.printBuf "+q    Run in quiet mode, ouput nothing\n" &
+	Print.printBuf "+d=flags, set flags: \n" &
+	Print.printBuf "    blt               apply blt transformation\n" &
+	Print.printBuf "    interactive       run in interactive mode\n" &
+	Print.printBuf "    interactiveCorba  run in interactive mode using Corba\n" &
+	Print.printBuf "    ..., see DEBUG.TXT for further flags\n" 
  	----------------------------
  	translate_file [] => fail
 end
@@ -384,9 +384,9 @@ end
  **)
 relation run_backend_q: () => bool =
 
-  rule	RTOpts.debug_flag "blt" => bltflag &
-	RTOpts.simulation_cg => sim_cg &
-	RTOpts.no_proc() => n &
+  rule	RTOpts.debugFlag "blt" => bltflag &
+	RTOpts.simulationCg => sim_cg &
+	RTOpts.noProc() => n &
 	int_gt (n,0) => par &
 	bool_or (bltflag,par) => res &
 	bool_or(res,sim_cg) => res'
@@ -439,7 +439,7 @@ end
 relation modpar: (DAELow.DAELow, int vector, int vector, int list list) => () =
 
   rule	(* If modpar not enabled, nproc = 0, return *) 
-	RTOpts.no_proc() => n &
+	RTOpts.noProc() => n &
 	int_eq(n,0) => true
 	----------------
 	modpar(_,_,_,_) => ()
@@ -452,22 +452,22 @@ relation modpar: (DAELow.DAELow, int vector, int vector, int list list) => () =
 (*	print "new dae:" & DAELow.dump indexed_dae' &*)
 	print "building task graph\n" &
 	TaskGraph.build_taskgraph(indexed_dae',ass1,ass2,comps) &
-	TaskGraphExt.dump_graph("model.viz") &
+	TaskGraphExt.dumpGraph("model.viz") &
 	RTOpts.latency  => l &
 	RTOpts.bandwidth => b &
 	clock() => t1 &
-	TaskGraphExt.merge_tasks(l,b) &
+	TaskGraphExt.mergeTasks(l,b) &
 	clock() => t2 &
 	real_sub(t2,t1) => time &
 	real_string(time) => timestr &
 	print "task merging took " & print timestr & print " seconds\n" &
-	TaskGraphExt.dump_merged_graph("merged_model.viz") &
-	RTOpts.no_proc => n &
+	TaskGraphExt.dumpMergedGraph("merged_model.viz") &
+	RTOpts.noProc => n &
 	TaskGraphExt.schedule(n) &
 	DAELow.calculate_sizes(indexed_dae') => (nx,ny,np,_)  &
 	int_string np => nps &
 	print "=======\nnp =" & print nps & print "=======\n" &
-	TaskGraphExt.generate_code(nx,ny,np) &
+	TaskGraphExt.generateCode(nx,ny,np) &
 	print "done\n" 
 	-----------------
 	modpar(dae,ass1,ass2,comps)
@@ -493,9 +493,9 @@ relation simcodegen: (Absyn.Path, (* classname *)
 		      int list list) (* blocks *)
 	  => () =
 
-  rule	RTOpts.simulation_cg() => true &
-	Print.clear_error_buf() &
-	Print.clear_buf() &
+  rule	RTOpts.simulationCg() => true &
+	Print.clearErrorBuf() &
+	Print.clearBuf() &
 	DAELow.translate_dae (dlow) => indexed_dlow &
 	DAELow.calculate_values(indexed_dlow) => indexed_dlow' &
 	Absyn.path_string(classname) => cname_str &
@@ -511,12 +511,12 @@ relation simcodegen: (Absyn.Path, (* classname *)
 	simcodegen(classname,p,dae,dlow,ass1,ass2,m,mt,comps)
 
 	(* If something above failed. fail so Main can print errors *)
-  rule	RTOpts.simulation_cg() => true 
+  rule	RTOpts.simulationCg() => true 
 	-----------------
 	simcodegen(_,_,_,_,_,_,_,_,_) => fail
 
 	(* If not generating simulation code*)
-  rule	RTOpts.simulation_cg() => false
+  rule	RTOpts.simulationCg() => false
 	-----------------
 	simcodegen(_,_,_,_,_,_,_,_,_) => ()
 
@@ -528,7 +528,7 @@ end
  **)
 relation run_modpar_q: () => bool =
 	
-  rule	RTOpts.no_proc() => n &
+  rule	RTOpts.noProc() => n &
 	int_gt(n,0) => res
 	------------------
 	run_modpar_q() => res
@@ -541,12 +541,12 @@ end
  **)
 relation fix_modelica_output : DAE.DAElist => DAE.DAElist =
 
-  rule	RTOpts.modelica_output => true &
+  rule	RTOpts.modelicaOutput => true &
 	Inst.init_vars_modelica_output dae => dae'
 	-------------------------------
 	fix_modelica_output DAE.DAE(dae) => DAE.DAE(dae')
 
-  rule	RTOpts.modelica_output => false
+  rule	RTOpts.modelicaOutput => false
 	-------------------------------
 	fix_modelica_output (d as DAE.DAE(dae)) => d
 
@@ -583,8 +583,8 @@ end
 relation server_loop_corba: (Interactive.InteractiveSymbolTable)  => 
 	Interactive.InteractiveSymbolTable =
 
-  rule	Corba.wait_for_command() => str &
-	Print.clear_buf & 
+  rule	Corba.waitForCommand() => str &
+	Print.clearBuf & 
 	handle_command (str,isymb)  => (true,replystr,newsymb) &
 	Corba.sendreply(replystr) &
 	server_loop_corba (newsymb) => ressymb
@@ -592,11 +592,11 @@ relation server_loop_corba: (Interactive.InteractiveSymbolTable)  =>
 	server_loop_corba (isymb) => ressymb
 
   rule (* start - 2005-06-12 - adrpo added this part to make the loop deterministic *)
-		Corba.wait_for_command() => str &
-		Print.clear_buf & 
+		Corba.waitForCommand() => str &
+		Print.clearBuf & 
 		handle_command (str,isymb)  => (false,replystr,newsymb) &
 		(* end - 2005-06-12 - *)
-	Print.print_buf "Exiting\n" &
+	Print.printBuf "Exiting\n" &
 	Corba.sendreply("quit requested, shutting server down\n") &
  	Corba.close
 	---------------------
@@ -611,20 +611,20 @@ end
 relation main : string list => () =
 
   rule	RTOpts.args args => args' &
-	RTOpts.debug_flag("interactive") => ismode &
-	RTOpts.debug_flag("interactiveCorba") => icmode &
+	RTOpts.debugFlag("interactive") => ismode &
+	RTOpts.debugFlag("interactiveCorba") => icmode &
 	bool_or(ismode,icmode) => imode &
 	bool_not(imode) => imode' &
 	Debug.bcall (ismode, interactivemode, args' ) &
 	Debug.bcall (icmode, interactivemode_corba, args') &
 	Debug.bcall (imode', translate_file, args') &
-	Print.get_error_string => s &
+	Print.getErrorString => s &
 	Debug.fcall("failtrace",print,s) 
 	---------------------------------------
 	main args 
 
   rule	(* If main fails, retrieve error messages and print to std out. *)
-	Print.get_error_string => str &
+	Print.getErrorString => str &
 	print str 
 	--------------
 	main _ => fail

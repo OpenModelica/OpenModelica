@@ -24,56 +24,56 @@ extern "C"
   {
   }
   
-  RML_BEGIN_LABEL(TaskGraphExt__new_5ftask)
+  RML_BEGIN_LABEL(TaskGraphExt__newTask)
   {
     errormsg();
     RML_TAILCALLK(rmlFC);
   } 
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(TaskGraphExt__add_5fedge)
+  RML_BEGIN_LABEL(TaskGraphExt__addEdge)
   {
     errormsg();
     RML_TAILCALLK(rmlFC);
   } 
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(TaskGraphExt__get_5ftask)
+  RML_BEGIN_LABEL(TaskGraphExt__getTask)
   {
     errormsg();
     RML_TAILCALLK(rmlFC);
   } 
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(TaskGraphExt__store_5fresult)
+  RML_BEGIN_LABEL(TaskGraphExt__storeResult)
   {
     errormsg();
     RML_TAILCALLK(rmlFC);
   } 
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(TaskGraphExt__dump_5fgraph)
+  RML_BEGIN_LABEL(TaskGraphExt__dumpGraph)
   {
     errormsg();
     RML_TAILCALLK(rmlFC);
   } 
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(TaskGraphExt__dump_5fmerged_5fgraph)
+  RML_BEGIN_LABEL(TaskGraphExt__dumpMergedGraph)
   {
     errormsg();
     RML_TAILCALLK(rmlFC);
   } 
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(TaskGraphExt__register_5fstartstop)
+  RML_BEGIN_LABEL(TaskGraphExt__registerStartStop)
   {
     errormsg();
     RML_TAILCALLK(rmlFC);
   } 
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(TaskGraphExt__get_5fstarttask)
+  RML_BEGIN_LABEL(TaskGraphExt__getStartTask)
   {
     errormsg();
     RML_TAILCALLK(rmlFC);
@@ -81,7 +81,7 @@ extern "C"
   } 
   RML_END_LABEL
 
-  RML_BEGIN_LABEL(TaskGraphExt__get_5fstoptask)
+  RML_BEGIN_LABEL(TaskGraphExt__getStopTask)
   {
     errormsg();
     RML_TAILCALLK(rmlFC);
@@ -89,21 +89,21 @@ extern "C"
   RML_END_LABEL
 
 
-  RML_BEGIN_LABEL(TaskGraphExt__merge_5ftasks)
+  RML_BEGIN_LABEL(TaskGraphExt__mergeTasks)
   {
     errormsg();
     RML_TAILCALLK(rmlFC);
   } 
   RML_END_LABEL  
 
-  RML_BEGIN_LABEL(TaskGraphExt__set_5fexeccost)
+  RML_BEGIN_LABEL(TaskGraphExt__setExecCost)
   {
     errormsg();
     RML_TAILCALLK(rmlFC);
   } 
   RML_END_LABEL  
 
-  RML_BEGIN_LABEL(TaskGraphExt__set_5fcommcost)
+  RML_BEGIN_LABEL(TaskGraphExt__setCommCost)
   {
     errormsg();
     RML_TAILCALLK(rmlFC);
@@ -117,35 +117,35 @@ extern "C"
   } 
   RML_END_LABEL  
 
-  RML_BEGIN_LABEL(TaskGraphExt__generate_5fcode)
+  RML_BEGIN_LABEL(TaskGraphExt__generateCode)
   {
     errormsg();
     RML_TAILCALLK(rmlFC);			  
   } 
   RML_END_LABEL  
 
-  RML_BEGIN_LABEL(TaskGraphExt__add_5finitstate)
+  RML_BEGIN_LABEL(TaskGraphExt__addInitState)
   {
     errormsg();
     RML_TAILCALLK(rmlFC);			  
   } 
   RML_END_LABEL  
 
-  RML_BEGIN_LABEL(TaskGraphExt__add_5finitparam)
+  RML_BEGIN_LABEL(TaskGraphExt__addInitParam)
   {
     errormsg();
     RML_TAILCALLK(rmlFC);			  
   } 
   RML_END_LABEL  
 
-  RML_BEGIN_LABEL(TaskGraphExt__add_5finitvar)
+  RML_BEGIN_LABEL(TaskGraphExt__addInitVar)
   {
     errormsg();
     RML_TAILCALLK(rmlFC);			  
   } 
   RML_END_LABEL  
 
-  RML_BEGIN_LABEL(TaskGraphExt__set_5ftasktype)
+  RML_BEGIN_LABEL(TaskGraphExt__setTaskType)
   {
     errormsg();
     RML_TAILCALLK(rmlFC);			  
