@@ -6,12 +6,13 @@ builddir_inc=$(top_builddir)/build/include
 CC = gcc
 FC = g77
 AR = ar -ru 
-CFLAGS = -g -Wall -ansi -pedantic -I$(top_builddir)/mosh/src/
+CFLAGS = -g -Wall -ansi -pedantic -I$(top_builddir)/mosh/src/ $(EXTRA_CFLAGS)
 CPPFLAGS = $(CFLAGS)
 FFLAGS  = -O
 # P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.
 OSTYP = $(OSTYPE)
 OS_MSYS=msys
+
 
 FSRCS = daux.f \
     ddasrt.f \
@@ -41,24 +42,25 @@ FSRCS = daux.f \
 FOBJS = $(patsubst %.f,%.o,$(FSRCS))
 
 OBJS = $(FOBJS) boolean_array.o index_spec.o integer_array.o memory_pool.o \
-	real_array.o string_array.o read_write.o utility.o modelica_string.o 
+	real_array.o string_array.o read_write.o utility.o modelica_string.o $(EXTRA_OBJS)
 SIMOBJS = $(FOBJS) simulation_runtime.o ../mosh/src/options.o dgesv_aux.o 
 
 HFILES = blaswrap.h f2c.h integer_array.h memory_pool.h modelica_string.h \
 	real_array.h string_array.h boolean_array.h index_spec.h matrix.h \
 	modelica.h read_write.h simulation_runtime.h utility.h
 
+LIBS = libc_runtime.a libsim.a 
+
 
 all : libc_runtime.a libsim.a libf2c.a install
 
 libc_runtime.a : $(OBJS)
 	$(AR) $@ $(OBJS)
-	
+
 
 install: libc_runtime.a libsim.a libf2c/libf2c.a
 	cp $(HFILES) $(builddir_inc)/
-	cp libc_runtime.a  $(builddir_lib)/
-	cp libsim.a  $(builddir_lib)/
+	cp $(LIBS) $(builddir_lib)/
 	cp libf2c/libf2c.* $(builddir_lib)/
 
 libsim.a : $(SIMOBJS)
@@ -83,4 +85,3 @@ clean :
 	rm -f $(builddir_lib)/libf2c.*
 	cd $(builddir_inc)/ && rm -f $(HFILES)
 
-	
