@@ -10,7 +10,7 @@ Adrian Pop, adrpo@ida.liu.se, 2006-02-01
 
 2. Unpack for example into:
    c:\OMDev-mingw\
-   + Follow the instruction in the INSTALL file
+   + Follow the instructions in the INSTALL file
 
 3. Open OpenModelica project in Eclipse
    and run the OMDev-MINGW-OpenModelicaBuilder (Ctrl+B in general)
@@ -22,3 +22,4 @@ For problems with OMDev package, contact:
 Adrian Pop, 
 adrpo@ida.liu.se
            
+Last Update:2006-03-20
