@@ -502,6 +502,16 @@ int dassl_main(int argc, char **argv)
     printf("Error in initialization. Storing results and exiting.\n");
     goto exit;
   }
+  // Calculate initial derivatives
+  if(functionODE(x,xd,y,p,nx,ny,np,&t)) { 
+    printf("Error calculating initial derivatives\n");
+    goto exit;
+  }
+  // Calculate initial output values 
+  if(functionDAE_output(&t,x,xd,y,p)) {
+    printf("Error calculating initial derivatives\n");
+    goto exit;
+  }
   t=start;
   tout = newTime(t, step); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
  
