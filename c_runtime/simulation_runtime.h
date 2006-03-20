@@ -148,6 +148,12 @@ int initial_function(double*x, double *xd, double*y, double*p,
 		     double *t,
 		    int nx, int ny, int np); 
 
+// function for calculating bound parameters that depend on other
+// parameters, e.g. parameter Real n=1/m;
+int bound_parameters(double*x, double *xd, double*y, double*p,
+		     double *t,
+		    int nx, int ny, int np); 
+
 // function for calculate residual values for the initial equations
 // and fixed start attibutes
 extern char init_fixed[];

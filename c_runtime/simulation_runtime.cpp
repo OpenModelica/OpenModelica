@@ -490,6 +490,11 @@ int dassl_main(int argc, char **argv)
   zeroCrossingEnabled = new long[ng];
   data =  initialize_simdata(5*numpoints,nx,ny);
 
+  if(bound_parameters(x,xd,y,p,&t,nx,ny,np)) {
+    printf("Error calculating bound parameters\n");
+    return -1;
+  }
+
   // Calculate initial values from (fixed) start attributes and intial equation
   // sections
   init=1;

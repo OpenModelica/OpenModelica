@@ -191,6 +191,7 @@ relation generate_simulation_code: (DAE.DAElist,
 	  => (c_eventchecking, helpVarInfo) & 
 	  list_length helpVarInfo => n_h &
 	generate_initial_value_code2(dlow) => (s_code2,nres) &
+	generate_initial_bound_parameter_code(dlow) => (s_code3) &
         generate_global_data(class,dlow,n_o,n_i,n_h,nres) => cglobal &  
      	  generate_compute_output(cname,dae,dlow,ass1,ass2,blt_no_states) 
 	  => coutput &
@@ -208,7 +209,7 @@ relation generate_simulation_code: (DAE.DAElist,
 				 "\n#include \"simulation_runtime.h\"\n",
 				 "\n#include \"",funcfilename,"\"\n",
 				 cglobal,coutput,in_str,out_str,cstate,czerocross,cwhen,
-				 c_ode,s_code,s_code2,c_eventchecking]) => res &
+				 c_ode,s_code,s_code2,s_code3,c_eventchecking]) => res &
 	System.writeFile(filename,res) 
 	---------------------------------------------------------------------
 	generate_simulation_code(dae,dlow,ass1,ass2,m,mt,comps,class,filename,funcfilename) => ()
@@ -1310,6 +1311,36 @@ relation generate_output_function_code2:(DAELow.Var list,int) => string list =
 
 end
 
+(** relation: generate_initial_bound_parameter_code:
+ **
+ **
+ ** This relation generates initial value code for bound parameters
+ ** that depend on other parameters, eg. parameter Real n=1/m;
+ **)
+relation generate_initial_bound_parameter_code:(DAELow.DAELow) 
+	  => (string(* code*)) =
+
+  rule	Codegen.c_make_function("int","bound_parameters",[],["double *x",
+							     "double *xd", 
+							     "double *y",
+							     "double *p",
+							     "double *t",
+							     "int nx",
+							     "int ny",
+							     "int np"])
+	  => param_func &
+	DAELow.var_list(knvars) => knvars_lst &
+	generate_parameter_assignments(knvars_lst,0) 
+	  => (param_assigns,_) &
+	  Codegen.c_add_statements(param_assigns,["return 0;"]) 
+	  => param_assigns' &
+	Codegen.c_merge_fns([param_func,param_assigns']) => cfunc &
+	Codegen.c_print_functions_str([cfunc]) => str
+	  ------------------------------
+	generate_initial_bound_parameter_code(DAELow.DAELOW(vars,knvars,eqns,se,ie,ae,al,ev)) => str 
+
+end
+
 (** relation: generate_initial_value_code2
  **
  ** This relation generates initial value code according to the new 
@@ -1319,8 +1350,7 @@ end
 relation generate_initial_value_code2:(DAELow.DAELow) => (string(* code*),
 							  int (*n res*)) =
 
-  rule  
-	Codegen.c_make_function("int","initial_residual",[],["double *x",
+  rule	Codegen.c_make_function("int","initial_residual",[],["double *x",
 							     "double *xd", 
 							     "double *y",
 							     "double *p",
