@@ -5543,8 +5543,10 @@ relation rename_class: (Absyn.Program,
 	Absyn.cref_to_path(old_class) => old_path &
 	Absyn.cref_to_path(new_name) => new_path &
         
-	traverse_classes(p,NONE,rename_class_visitor,(old_path,new_path,p,[]),
-			 true (* traverse protected*)) => ((p',_,(_,_,_,path_str_lst))) &
+	SCode.elaborate(p) => pa' &
+	Inst.make_env_from_program(pa',Absyn.IDENT("")) => env &
+	traverse_classes(p,NONE,rename_class_visitor,(old_path,new_path,p,[],env),
+			 true (* traverse protected*)) => ((p',_,(_,_,_,path_str_lst,_))) &
         Util.string_delimit_list_no_empty(path_str_lst,",") => path_str_lst_no_empty &
         Util.string_append_list(["{",path_str_lst_no_empty,"}"]) => res
 	------------------------
@@ -5557,8 +5559,10 @@ relation rename_class: (Absyn.Program,
         Absyn.strip_last(old_path) => old_path_no_last &
         Absyn.join_paths(old_path_no_last,new_path') => new_path &
 
-	traverse_classes(p,NONE,rename_class_visitor,(old_path,new_path,p,[]),
-			 true (* traverse protected*)) => ((p',_,(_,_,_,path_str_lst)))&
+	SCode.elaborate(p) => pa' &
+	Inst.make_env_from_program(pa',Absyn.IDENT("")) => env &
+	traverse_classes(p,NONE,rename_class_visitor,(old_path,new_path,p,[],env),
+			 true (* traverse protected*)) => ((p',_,(_,_,_,path_str_lst,_)))&
         Util.string_delimit_list_no_empty(path_str_lst,",") => path_str_lst_no_empty &
         Util.string_append_list(["{",path_str_lst_no_empty,"}"]) => res
 	------------------------
@@ -5571,8 +5575,8 @@ end
   **
   ** This visitor renames a class given a new name
   **)
-relation rename_class_visitor: ((Absyn.Class* Absyn.Path option *(Absyn.Path*Absyn.Path*Absyn.Program*string list)))
-	   => ((Absyn.Class*Absyn.Path option *(Absyn.Path*Absyn.Path*Absyn.Program*string list))) =
+relation rename_class_visitor: ((Absyn.Class* Absyn.Path option *(Absyn.Path*Absyn.Path*Absyn.Program*string list*Env.Env)))
+	   => ((Absyn.Class*Absyn.Path option *(Absyn.Path*Absyn.Path*Absyn.Program*string list*Env.Env))) =
 
       
 
@@ -5582,9 +5586,9 @@ relation rename_class_visitor: ((Absyn.Class* Absyn.Path option *(Absyn.Path*Abs
         Absyn.path_string(new_class_path) => path_str 
 	----------------
 	rename_class_visitor((Absyn.CLASS(id,a,b,c,d,e,file_info),SOME(pa),
-                              (old_class_path,new_class_path,p,path_str_lst)))
+                              (old_class_path,new_class_path,p,path_str_lst,env)))
 	  => ((Absyn.CLASS(new_name,a,b,c,d,e,file_info),SOME(pa),
-               (old_class_path,new_class_path,p,path_str::path_str_lst)))
+               (old_class_path,new_class_path,p,path_str::path_str_lst,env)))
           
   rule  let path' = Absyn.IDENT(id) &
         ModUtil.path_equal(old_class_path,path') => true &
@@ -5592,29 +5596,31 @@ relation rename_class_visitor: ((Absyn.Class* Absyn.Path option *(Absyn.Path*Abs
         Absyn.path_string(new_class_path) => path_str 
 	----------------
 	rename_class_visitor((Absyn.CLASS(id,a,b,c,d,e,file_info),NONE,
-                              (old_class_path,new_class_path,p,path_str_lst)))
+                              (old_class_path,new_class_path,p,path_str_lst,env)))
 	  => ((Absyn.CLASS(new_name,a,b,c,d,e,file_info),NONE,
-               (old_class_path,new_class_path,p,path_str::path_str_lst)))
+               (old_class_path,new_class_path,p,path_str::path_str_lst,env)))
           
   rule  Absyn.join_paths(pa,Absyn.IDENT(id)) => path' &
-        get_class_env(p,path') => cenv &
+        (* get_class_env(p,path') => cenv & *)
+        get_class_env_no_elaboration(p,path',env) => cenv &
         rename_class_in_class(class,old_class_path,new_class_path,cenv) => (class',changed) &
         Absyn.path_string(path') => path_str' &
         Util.if(changed,path_str',"") => path_str
 	----------------
 	rename_class_visitor((class as Absyn.CLASS(id,a,b,c,d,e,file_info),SOME(pa),
-                              (old_class_path,new_class_path,p,path_str_lst)))
-	  => ((class',SOME(pa),(old_class_path,new_class_path,p,path_str::path_str_lst)))
+                              (old_class_path,new_class_path,p,path_str_lst,env)))
+	  => ((class',SOME(pa),(old_class_path,new_class_path,p,path_str::path_str_lst,env)))
           
   rule  let path' = Absyn.IDENT(id) &
-        get_class_env(p,path') => cenv &
+(*         get_class_env(p,path') => cenv & *)
+        get_class_env_no_elaboration(p,path',env) => cenv &
         rename_class_in_class(class,old_class_path,new_class_path,cenv) => (class',changed) &
         Absyn.path_string(path') => path_str' &
         Util.if(changed,path_str',"") => path_str
 	----------------
 	rename_class_visitor((class as Absyn.CLASS(id,a,b,c,d,e,file_info),NONE,
-                              (old_class_path,new_class_path,p,path_str_lst)))
-	  => ((class',NONE,(old_class_path,new_class_path,p,path_str::path_str_lst)))
+                              (old_class_path,new_class_path,p,path_str_lst,env)))
+	  => ((class',NONE,(old_class_path,new_class_path,p,path_str::path_str_lst,env)))
 
   axiom  rename_class_visitor((class,pa,args)) => ((class,pa,args))
 
