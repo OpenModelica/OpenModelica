@@ -403,6 +403,11 @@ extern "C"
 		* ast is initialized */
 		void* ast = mk_nil();
 
+		/* adrpo added 2004-10-27 
+		* I use this to delete [] the temp allocation of get_string(...)
+		*/
+		char* getStringHolder = NULL;
+
 		try 
 		{
 			ANTLR_USE_NAMESPACE(antlr)ASTFactory my_factory( "MyAST", MyAST::factory );
@@ -446,114 +451,51 @@ extern "C"
 		}
 		catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException &e) 
 		{
-		  std::list<std::string> tokens;
-		  tokens.push_back(std::string(e.getMessage()));
-		  add_source_message(2, /* Grammar error, see Error.rml */
-				     "GRAMMAR",
-				     "ERROR",
-				     "Parse error: %s",
-				     tokens,
-				     e.getLine(),
-				     e.getColumn(),
-				     e.getLine(),
-				     e.getColumn(),
-				     false,
-				     ""); 
+			stringStream << "[" << e.getLine() << ":" << e.getColumn() 
+				<< "]: error: " << e.getMessage() << std::endl;
+			//		std::cerr << stringStream.str().c_str();
 			rmlA0 = mk_nil(); a0set=true;
-			rmlA1 = mk_scon(("Error")); a1set=true;
+			rmlA1 = mk_scon((getStringHolder = get_string(stringStream))); a1set=true;
 		}
 		catch (ANTLR_USE_NAMESPACE(antlr)CharStreamException &e) 
 		{
-
-		  std::list<std::string> tokens;
-		  tokens.push_back(std::string(lex.getText()));
-		  rmlA0 = mk_nil(); a0set=true;
-		  add_source_message(1, /* syntax error, see Error.rml */
-				     "SYNTAX",
-				     "ERROR",
-				     "Syntax error near: %s",
-				     tokens,
-				     lex.getLine(),
-				     lex.getColumn(),
-				     lex.getLine(),
-				     lex.getColumn(),
-				     false,
-				     "");
-			rmlA1 = mk_scon("Error"); a1set=true;
+			//		std::cerr << "Lexical error (CharStreamException). "  << std::endl;    
+			rmlA0 = mk_nil(); a0set=true;
+			rmlA1 = mk_scon("[-,-]: internal error: lexical error"); a1set=true;
 		}
 		catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamException &e) 
-		{		  
-		  std::list<std::string> tokens;
-		  tokens.push_back(std::string("illegal token"));
-		  add_source_message(2, /* Grammar error, see Error.rml */
-				     "GRAMMAR",
-				     "ERROR",
-				     "Parse error: %s",
-				     tokens,
-				     0,
-				     0,
-				     0,
-				     0,
-				     false,
-				     ""); 
-		  rmlA0 = mk_nil(); a0set=true;
-		  rmlA1 = mk_scon("Error"); a1set=true;
+		{
+			stringStream << "[" << lex.getLine() << ":" << lex.getColumn() 
+				<< "]: error: illegal token" << std::endl;
+			//		std::cerr << stringStream.str().c_str();
+			rmlA0 = mk_nil(); a0set=true;
+			rmlA1 = mk_scon((getStringHolder = get_string(stringStream))); a1set=true;
 		}
 		catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e) 
 		{
-		  std::list<std::string> tokens;
-		  tokens.push_back(std::string("while parsing"));
-		  add_source_message(63, /* Internal error, see Error.rml */
-				     "TRANSLATION",
-				     "ERROR",
-				     "Internal error %s",
-				     tokens,
-				     0,
-				     0,
-				     0,
-				     0,
-				     false,
-				     "");
-
-		  rmlA0 = mk_nil(); a0set=true;
-		  rmlA1 = mk_scon("Error"); a1set=true;
+			//		std::cerr << "ANTLRException: " << e.getMessage() << std::endl;
+			stringStream << "[-,-]: internal error: " << e.getMessage() << std::endl;
+			rmlA0 = mk_nil(); a0set=true;
+			rmlA1 = mk_scon((getStringHolder = get_string(stringStream))); a1set=true;
 		}
 		catch (std::exception &e) 
 		{
-		  std::list<std::string> tokens;
-		  tokens.push_back(std::string("while parsing"));
-		  add_source_message(63, /* Internal error, see Error.rml */
-				     "TRANSLATION",
-				     "ERROR",
-				     "Internal error %s",
-				     tokens,
-				     0,
-				     0,
-				     0,
-				     0,
-				     false,
-				     "");
-		  rmlA0 = mk_nil(); a0set=true;
-		  rmlA1 = mk_scon("Error"); a1set=true;
+			//		std::cerr << "Error while parsing: " << e.what() << "\n";
+			stringStream << "[-,-]: internal error: " << e.what() << std::endl;
+			rmlA0 = mk_nil(); a0set=true;
+			rmlA1 = mk_scon((getStringHolder = get_string(stringStream))); a1set=true;
 		}
 		catch (...) 
 		{
-		  std::list<std::string> tokens;
-		  tokens.push_back(std::string("while parsing"));
-		  add_source_message(63, /* Internal error, see Error.rml */
-				     "TRANSLATION",
-				     "ERROR",
-				     "Internal error %s",
-				     tokens,
-				     0,
-				     0,
-				     0,
-				     0,
-				     false,
-				     "");
-
-		  rmlA1 = mk_scon("Error"); a1set=true;
+			//		std::cerr << "Error while parsing\n";
+			rmlA0 = mk_nil(); a0set=true;
+			rmlA1 = mk_scon("[-,-]: internal error"); a1set=true;
 		}
+
+		/* adrpo added 2004-10-27 
+		* no need for getStringHolder temp value allocated from get_string
+		*/
+		if (getStringHolder) delete [] getStringHolder; 
 
 		if (! a0set) 
 		{
@@ -578,6 +520,13 @@ extern "C"
 		* into the code. This way, if this relation fails at least the 
 		* ast is initialized */
 		void* ast = mk_nil();
+
+
+		/* adrpo added 2004-10-27 
+		* I use this to delete [] the temp allocation of get_string(...)
+		*/
+		char* getStringHolder = NULL;
+
 
 		try 
 		{
@@ -623,60 +572,31 @@ extern "C"
 		} 
 		catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e) 
 		{
-		  std::list<std::string> tokens;
-		  tokens.push_back(std::string("while parsing:")+
-				   std::string(e.getMessage()));
-		  add_source_message(63, /* Internal error, see Error.rml */
-				     "TRANSLATION",
-				     "ERROR",
-				     "Internal error %s",
-				     tokens,
-				     0,
-				     0,
-				     0,
-				     0,
-				     false,
-				     "");
+			//std::cerr << "Error while parsing expression:\n" << e.getMessage() << "\n";
+			stringStream << "[-,-]: internal error: " << e.getMessage() << std::endl;
 			rmlA0 = mk_nil();
-			rmlA1 = mk_scon("Error");
+			rmlA1 = mk_scon((getStringHolder = get_string(stringStream)));
 		}
 		catch (std::exception &e) 
 		{
-		  std::list<std::string> tokens;
-		  tokens.push_back(std::string(e.what()));
-		  add_source_message(63, /* Internal error, see Error.rml */
-				     "TRANSLATION",
-				     "ERROR",
-				     "Internal error %s",
-				     tokens,
-				     0,
-				     0,
-				     0,
-				     0,
-				     false,
-				     "");
+			//std::cerr << "Error while parsing expression:\n" << e.what() << "\n";
+			stringStream << "[-,-]: internal error: " << e.what() << std::endl;
 			rmlA0 = mk_nil();
-			rmlA1 = mk_scon("Error");
+			rmlA1 = mk_scon((getStringHolder = get_string(stringStream)));
 		}
 		catch (...) 
 		  {
-		    std::list<std::string> tokens;
-		    tokens.push_back(std::string("while parsing:"));
-		    add_source_message(63, /* Internal error, see Error.rml */
-				       "TRANSLATION",
-				       "ERROR",
-				       "Internal error %s",
-				       tokens,
-				       0,
-				       0,
-				       0,
-				       0,
-				       false,
-				       "");
-		    
-		    rmlA0 = mk_nil();
-		    rmlA1 = mk_scon("Error");
-		  }
+			//std::cerr << "Error while parsing expression\n";
+			stringStream << "Error while parsing expression. Unknown exception in parse.cpp." << std::endl;
+			rmlA0 = mk_nil();
+			rmlA1 = mk_scon((getStringHolder = get_string(stringStream)));
+		}
+
+		/* adrpo added 2004-10-27 
+		* no need for getStringHolder temp value allocated from get_string
+		*/
+		if (getStringHolder) delete [] getStringHolder; 
+
 
 		RML_TAILCALLK(rmlSC);
 	}
