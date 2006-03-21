@@ -470,19 +470,11 @@ relation unconnected_flow_equations : (Sets, DAE.Element list, Env.Env,bool) => 
 	Env.local_outside_connector_flowvars(env) => v1 &
 	Env.local_inside_connector_flowvars(env) => v2 &
 	list_append(v1,v2) => vars &
-	get_all_flow_variables(csets) => vars2 &
+	get_outer_flow_variables(csets) => vars2 &
 	remove_variables(vars,vars2) => unconnectedvars &
 	generate_zeroflow_equations(unconnectedvars) => dae'
 	----------------------------------
 	unconnected_flow_equations(csets,dae,env,true) => dae'
-
-	(* If not outermost call, only look at unconnected inner connectors *)
-  rule	Env.local_inside_connector_flowvars(env) => vars &
- 	get_all_flow_variables(csets) => vars2 &
-	remove_variables(vars,vars2) => unconnectedvars &
- 	generate_zeroflow_equations(unconnectedvars) => dae'
-	----------------------------------
-	 unconnected_flow_equations(csets,dae,env,true) => dae'
 
   rule	(*Debug.fprint("failtrace","-unconnected_flow_equations failed\n") *)
 	----------------------------------
@@ -600,6 +592,51 @@ relation get_inner_flow_variables_2: (Exp.ComponentRef * Face) list
   rule	(*Debug.fprint("failtrace","-get_inner_flow_variables_2 failed\n")*)
 	----------------------------------
 	get_inner_flow_variables_2(_) => fail 
+end
+
+(** relation: get_outer_flow_variables
+ **
+ ** Get all flow variables that are inner variables from the Sets.
+ **)
+relation get_outer_flow_variables: Sets => Exp.ComponentRef list =
+
+  axiom	get_outer_flow_variables(SETS([],_)) => []
+
+  rule	get_outer_flow_variables_2(vars) => res1 &
+	get_outer_flow_variables(SETS(xs,crs)) => res2 &
+	list_append(res1,res2) => res
+	---------------------------------- 
+	get_outer_flow_variables(SETS(FLOW(vars)::xs,crs)) => res 
+
+  rule	get_outer_flow_variables(SETS(xs,crs)) => res
+	---------------------------------- 
+	get_outer_flow_variables(SETS(EQU(_)::xs,crs)) => res 
+
+  rule	(*Debug.fprint("failtrace","-get_outer_flow_variables failed\n")*)
+	----------------------------------
+	get_outer_flow_variables(_) => fail 
+end
+
+(** relation: get_outer_flow_variables_2
+ **
+ ** Help relation to get_outer_flow_variables.
+ **)
+relation get_outer_flow_variables_2: (Exp.ComponentRef * Face) list 
+	  => Exp.ComponentRef list =
+
+  axiom	get_outer_flow_variables_2 ([]) => []
+
+  rule	get_outer_flow_variables_2(xs) => res
+	-------------------------------------
+	get_outer_flow_variables_2( (cr,INNER)::xs) => cr::res
+
+  rule	get_outer_flow_variables_2(xs) => res
+	-------------------------------------
+	get_outer_flow_variables_2( _::xs) => res
+
+  rule	(*Debug.fprint("failtrace","-get_outer_flow_variables_2 failed\n")*)
+	----------------------------------
+	get_outer_flow_variables_2(_) => fail 
 end
 
 

@@ -25,7 +25,7 @@
                    add_source_message(2, \
                                       "SYNTAX", \
                                       "ERROR", \
-                                      "error: %s, parsing continued at token '%s' on line %s", \
+                                      "error: %s, parsing resumed at token '%s' on line %s", \
                                       tokens, \
                                       errorLine, \
                                       errorColumn, \
