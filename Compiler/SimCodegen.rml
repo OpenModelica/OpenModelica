@@ -79,6 +79,7 @@ module SimCodegen:
                                       string) => ()
 	  	  
   relation generate_init_data: (DAELow.DAELow, Absyn.Path(* classname *), 
+                               string (* executable file name *) ,
 				string,real,real,real)  => ()
 	  
   relation generate_makefile: (string, (*filename*)
@@ -3465,6 +3466,7 @@ end
  ** by investigating values of variables.
  **)
 relation generate_init_data: (DAELow.DAELow, Absyn.Path(* classname *), 
+                               string (* executable file name *) ,
 			      string(* filename *),
 			      real, (* start time*)
 			      real, (* stop time *)
@@ -3490,11 +3492,11 @@ relation generate_init_data: (DAELow.DAELow, Absyn.Path(* classname *),
  				 init_str]) => str &
  	System.writeFile(filename,str) 
  	--------------------------
- 	generate_init_data(dlow,class,filename,start,stop,intervals)
+ 	generate_init_data(dlow,class,exe,filename,start,stop,intervals)
 
   rule	print "-generate_init_data failed\n"
  	------------------------------------
-	generate_init_data(_,_,_,_,_,_) => fail
+	generate_init_data(_,_,_,_,_,_,_) => fail
 end
 
 (** relation: generate_init_data2

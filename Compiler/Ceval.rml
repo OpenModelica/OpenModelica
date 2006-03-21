@@ -2098,9 +2098,9 @@ relation build_model:(Env.Env,
           => (init_filename,starttime_r,
               stoptime_r,interval_r,method_str) &
         
-	SimCodegen.generate_init_data(indexed_dlow',classname,init_filename,
-				      starttime_r,stoptime_r,interval_r) &
         extract_file_prefix(env,fileprefix,st,msg) => filenameprefix &
+	SimCodegen.generate_init_data(indexed_dlow',classname,filenameprefix,init_filename,
+				      starttime_r,stoptime_r,interval_r) &
         generate_makefilename(filenameprefix) => makefilename &
         (*	Util.string_append_list(["make -f ",cname_str, ".makefile\n"]) => s_call &
          *)
