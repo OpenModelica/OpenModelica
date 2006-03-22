@@ -3246,7 +3246,7 @@ fi
 
 echo "$as_me:$LINENO: checking for antlr header files" >&5
 echo $ECHO_N "checking for antlr header files... $ECHO_C" >&6
-antlrinc=`find $ANTLRHOME /usr/local/include -type f -name TreeParser.hpp -print | head -1 | awk -F/ '{ total="";for (i = 1 ; i < NF-1; i++) total= total $i "/"; print total}'`
+antlrinc=`find $ANTLRHOME /usr/local/include /usr/include -type f -name TreeParser.hpp -print | head -1 | awk -F/ '{ total="";for (i = 1 ; i < NF-1; i++) total= total $i "/"; print total}'`
 if test -z "$antlrinc" ; then
   { { echo "$as_me:$LINENO: error: Could not find antlr include files" >&5
 echo "$as_me: error: Could not find antlr include files" >&2;}
@@ -3258,7 +3258,7 @@ fi
 
 echo "$as_me:$LINENO: checking for antlr libs" >&5
 echo $ECHO_N "checking for antlr libs... $ECHO_C" >&6
-antlrlib=`find $ANTLRHOME /usr/local/lib -type f -name libantlr.a -print | head -1 | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
+antlrlib=`find $ANTLRHOME /usr/local/lib /usr/lib -type f -name libantlr.a -print | head -1 | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
 if test -z "$antlrlib" ; then
   { { echo "$as_me:$LINENO: error: Could not find antlr lib file" >&5
 echo "$as_me: error: Could not find antlr lib file" >&2;}
