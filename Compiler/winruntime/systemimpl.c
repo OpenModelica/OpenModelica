@@ -511,7 +511,13 @@ RML_BEGIN_LABEL(System__writeFile)
   FILE * file=NULL;
   file = fopen(filename,"w");
   if (file == NULL) { 
-    printf("error opening file: %s\n",filename); 
+    char *c_tokens[1]={filename};
+    c_add_message(21, /* WRITING_FILE_ERROR */
+		  "SCRIPTING",
+		  "ERROR",
+		  "Error writing to file %s.",
+		  c_tokens,
+		  1);
     RML_TAILCALLK(rmlFC);
   } 
   fprintf(file,"%s",data);
@@ -531,6 +537,13 @@ RML_BEGIN_LABEL(System__readFile)
 
   if(res!=0)
   {
+    char *c_tokens[1]={filename};
+    c_add_message(85, /* ERROR_OPENING_FILE */
+		  "SCRIPTING",
+		  "ERROR",
+		  "Error opening file %s.",
+		  c_tokens,
+		  1);
     rmlA0 = (void*) mk_scon("No such file");
     RML_TAILCALLK(rmlSC);
   }

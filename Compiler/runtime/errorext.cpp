@@ -41,9 +41,31 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <fstream>
 #include <queue>
-
+#include <list>
 
 using namespace std;
+
+void add_message(int errorID,
+		 char* type,
+		 char* severity,
+		 char* message,
+		 std::list<std::string> tokens);
+
+extern "C" {
+  void c_add_message(int errorID,
+		     char* type,
+		     char* severity,
+		     char* message,
+		     char** ctokens,
+		     int nTokens)
+  {
+    std::list<std::string> tokens;
+    for (int i=nTokens-1; i>=0; i--) {
+      tokens.push_back(std::string(ctokens[i]));    
+    }
+    add_message(errorID,type,severity,message,tokens);
+  }
+}
 
 // if error_on is true, message is added, otherwise not.
 bool error_on=true;

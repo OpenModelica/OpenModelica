@@ -4456,7 +4456,9 @@ relation check_matching : (DAELow,MatchingOptions) => () =
 
   rule	equation_size(eqns) => esize &
 	int_lt(esize,vars_size) => true &
-	int_string(esize) => esize_str &
+	int_sub(esize,1) => esize & (* remove dummy var*)
+	int_sub(vars_size,1) => vars_size & (* remove dummy var*)
+	int_string(esize) => esize_str & 
 	int_string(vars_size) => vsize_str &
 	Error.add_message(Error.UNDERDET_EQN_SYSTEM,[vsize_str,esize_str])
  	------------------
@@ -4465,6 +4467,8 @@ relation check_matching : (DAELow,MatchingOptions) => () =
 
   rule	equation_size(eqns) => esize &
 	int_gt(esize,vars_size) => true &
+	int_sub(esize,1) => esize & (* remove dummy var*)
+	int_sub(vars_size,1) => vars_size & (* remove dummy var*)
 	int_string(esize) => esize_str &
 	int_string(vars_size) => vsize_str &
 	Error.add_message(Error.OVERDET_EQN_SYSTEM,[vsize_str,esize_str])
@@ -6148,7 +6152,8 @@ relation strong_components: (IncidenceMatrix, IncidenceMatrixT,
 	-----------------------------------
 	strong_components(m,mt,ass1,ass2) => (comps)
 
-  rule	Debug.fprint("failtrace", "strong_components failed\n")
+  rule	Debug.fprint("failtrace", "strong_components failed\n") &
+	Error.add_message(Error.INTERNAL_ERROR, ["sorting equations(strong components failed)"])
 	----------------------------------
 	strong_components(_,_,_,_) => fail
 end

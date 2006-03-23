@@ -1939,7 +1939,7 @@ end
          DAE.transform_if_eq_to_expr(dae') => (dae as DAE.DAE(dael)) &
          Interactive.add_instantiated_class(ic,Interactive.INSTCLASS(classname,dael,env)) 
 	  => ic' &
-           DAELow.lower(dae,true) => dlow &
+         DAELow.lower(dae,true) => dlow &
          Debug.fprint("bltdump","Lowered DAE:\n") &
          Debug.fcall("bltdump", DAELow.dump,dlow) &
          DAELow.incidence_matrix(dlow) => m &
@@ -1973,15 +1973,6 @@ end
                           fileprefix) 
           => (Values.STRING("The model have been translated"),st,
               indexed_dlow', libs)
-         
-  rule  (*Print.printErrorBuf("# translate_model failed\n")*)
-         ---------------------------------------------
-         translate_model (env, cr,
-                          st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),
-                          _,
-                          _)
-	  => fail
-
 end
 
 

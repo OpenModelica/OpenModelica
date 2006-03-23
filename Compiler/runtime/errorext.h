@@ -45,6 +45,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <list>
 
+extern "C" {
+  void c_add_message(int errorID,
+		     char* type,
+		     char* severity,
+		     char* message,
+		     char** ctokens,
+		     int nTokens);
+       }
+
 
   void add_message(int errorID,
 		   char* type,

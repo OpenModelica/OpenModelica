@@ -216,7 +216,7 @@ relation generate_simulation_code: (DAE.DAElist,
 	generate_simulation_code(dae,dlow,ass1,ass2,m,mt,comps,class,filename,funcfilename) => ()
 
 
-  rule	Error.add_message(Error.INTERNAL_ERROR, ["generate_simulation_code failed"])
+  rule	Error.add_message(Error.INTERNAL_ERROR, ["Generation of simulation code  failed"])
 	-----------------------
 	generate_simulation_code(_,_,_,_,_,_,_,_,_,_) => fail
 end
@@ -3369,7 +3369,7 @@ relation generate_functions: (SCode.Program, (* Needed to instantiate functions*
 	  => libs
 
 
-  rule	Error.add_message(Error.INTERNAL_ERROR, ["generate_functions failed"])
+  rule	Error.add_message(Error.INTERNAL_ERROR, ["Code generation of Modelica functions failed. "])
 	-------------------------------------
 	generate_functions (_, _, _, _, _) => fail
 
@@ -4730,7 +4730,7 @@ relation relop_symbol : Exp.Operator => string =
   axiom	relop_symbol(Exp.GREATER(_))    => " > "
   axiom	relop_symbol(Exp.GREATEREQ(_))  => " >= "
   axiom	relop_symbol(Exp.EQUAL(_))      => " == "
-  axiom	relop_symbol(Exp.NEQUAL(_))     => " <> "
+  axiom	relop_symbol(Exp.NEQUAL(_))     => " != "
 end
 
 

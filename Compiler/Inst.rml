@@ -368,6 +368,13 @@ relation instantiate_class : (SCode.Program, SCode.Path)
 	--------------------------------------------
 	instantiate_class(cdecls as _::_, path as Absyn.QUALIFIED(name,_)) 
 	  => (DAE.DAE([DAE.COMP(pathstr,DAE.DAE(dae))]),env'')
+
+	  (* error instantiating *)
+  rule	Absyn.path_string(path) => cname_str &
+	Error.add_message(Error.ERROR_FLATTENING,[cname_str]) 
+	----------------------------
+	instantiate_class(cdecls, path ) 
+	  => fail
 	
 end
 
