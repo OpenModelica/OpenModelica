@@ -1,0 +1,161 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Array Types and Type Checking&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">ColorPixel&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">It is possible to declare user-defined array types analogously to other user-defined types. For example, a &lt;span style=" font-family:Courier New;">ColorPixel&lt;/span> can be defined as a three-element vector representing the three base colors, and a variable image declared as a matrix of such pixels.&lt;br />&lt;br />The expanded type of an array is the multidimensional array which is constructed by taking the first dimensions from the variable declaration and subsequent dimensions from the maximally expanded array element type of the declaration. Note that we are not using ColorPixel[512, 512] as in the book, because of the incredible amount of variables it would imply.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>type ColorPixel = Real[3];</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class ColorPixelInst
+  ColorPixel[10, 10] image = fill(10, 10, 10, 3);
+end ColorPixelInst;</Input>
+     <Output></Output>
+    </InputCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of ColorPixelInst&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>simulate( ColorPixelInst );</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Output" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>image[[1,6,3
+]]
+[0]
+</Input>
+      <Output></Output>
+     </InputCell>
+    </GroupCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Voltage and Current&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Consider the definition of the notion of the expanded type in the example below. The user-defined types &lt;span style=" font-family:Courier New;">Voltage&lt;/span> and &lt;span style=" font-family:Courier New;">Current&lt;/span> are defined using type definitions.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>type Voltage = Real(unit = "V");</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>type Current = Real(unit = "A");</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Pin&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-family:Courier New;">Pin&lt;/span> is defined through the declaration of a connector. The type of &lt;span style=" font-family:Courier New;">v&lt;/span> and &lt;span style=" font-family:Courier New;">i&lt;/span> is &lt;span style=" font-family:Courier New;">Voltage&lt;/span> and the expanded type of &lt;span style=" font-family:Courier New;">v&lt;/span> and &lt;span style=" font-family:Courier New;">i&lt;/span> is &lt;span style=" font-family:Courier New;">Real&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>connector Pin 
+  Voltage v;              
+  flow Current i;    
+end Pin;</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">This is not allowed in the current version of Modelica, so the simulation of this example won't work.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>type MultiPin = Pin[5];</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The type of p is &lt;span style=" font-family:Courier New;">MultiPin[4]&lt;/span>, expanded type is &lt;span style=" font-family:Courier New;">Pin[4, 5]&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class MPInst
+  MultiPin[4] p;      
+end MPInst;</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Point&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The array variables &lt;span style=" font-family:Courier New;">p1&lt;/span> and &lt;span style=" font-family:Courier New;">p2&lt;/span> have identical expanded types of &lt;span style=" font-family:Courier New;">Real[10,3]&lt;/span> which makes the two equations in &lt;span style=" font-family:Courier New;">PointSum&lt;/span> correct.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>type Point = Real[3];</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class PointInst
+  Point[10]     p1 = fill(8, 10, 3);
+  Real[10, 3]     p2 = fill(16, 10, 3);
+  Real r[3] = p1[2, :];              // Equivalent to r[3] = p1[2]
+//equation  
+  //p2[5, :] = p1[2, :] + p1[4, :];            // Equivalent to p2[5] = p1[2] + p2[4]
+end PointInst;  
+</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class PointSum  
+  extends PointInst(p2[5, :] = p1[2, :] + p1[4, :]);
+  Real r[3] = p1[2, :];              // Equivalent to r[3] = p1[2]
+//equation  
+  //p2[5] = p1[2] + p2[4];            // Equivalent to p2[5, :] = p1[2, :] + p2[4, :]
+end PointSum;
+</Input>
+     <Output></Output>
+    </InputCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of PointSum&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>simulate( PointInst );</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Output" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>simulate( PointSum );</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Output" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+    </GroupCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

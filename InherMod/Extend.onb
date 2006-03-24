@@ -1,0 +1,166 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Modifiers in Extends Clauses&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">LowPassFilter with Extends Clause&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Modifiers may also occur in &lt;span style=" font-family:Courier New;">extends&lt;/span> clauses, and are applied to inherited element declarations in a similar way as modifiers in short class definitions. We inherit the contents of the class &lt;span style=" font-family:Courier New;">LowPassFilter1&lt;/span> into the class &lt;span style=" font-family:Courier New;">LowPassFilter20C&lt;/span>, and give the same modifiers as in the short class definition of &lt;span style=" font-family:Courier New;">LowPassFilter20&lt;/span> above. &lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>model LowPassFilter1
+  constant   Real ystart = 1;
+  parameter Real T     = 1;
+  parameter Real u     = 5;         
+  Real        y(start = ystart);
+equation
+  T*der(y) + y = u;
+end LowPassFilter1;</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>model LowPassFilter20C
+  extends LowPassFilter1(ystart = 0, T = 20);
+end LowPassFilter20C;
+</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of LowPassFilter &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( LowPassFilter20C, stopTime=20 );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>plot( y, xrange={0,15} );</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/10.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/10.png" >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</Image>
+    </TextCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Voltage&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Another example demonstrates that modifiers in extends clauses can be applied to elements that are local classes such as &lt;span style=" font-family:Courier New;">Voltage&lt;/span> within the class &lt;span style=" font-family:Courier New;">LowVoltage&lt;/span> below.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class LowVoltage
+
+  type Voltage = Real(unit = "V");      // Local class
+  
+  Voltage v1;
+  Voltage v2;
+end LowVoltage;</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class HighVoltage
+  extends LowVoltage(Voltage(unit = "kV"));
+end HighVoltage;
+</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Notice that the variables&lt;span style=" font-family:Courier New;"> vhigh.v1&lt;/span> and &lt;span style=" font-family:Courier New;">vhigh.v2&lt;/span> have the unit "kV".&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class HighVoltageInst
+  HighVoltage vhigh;
+end HighVoltageInst;</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Nested Extends Clauses&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The possibilities to apply modifiers are not limited to declared elements that are variables or local classes. It is actually possible to modify elements that are extends clauses in superclasses, so-called nested extends clauses, even though such clauses dissappear in the expanded subclass.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class A
+  parameter Real a;
+  parameter Real b;
+end A;</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class B
+  extends A(b = 3);
+end B;
+</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The classes &lt;span style=" font-family:Courier New;">A&lt;/span> and &lt;span style=" font-family:Courier New;">B&lt;/span> can be combined and expressed as &lt;span style=" font-family:Courier New;">Bexpanded&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class Bexpanded 
+  parameter Real a;
+  parameter Real b = 3;
+end Bexpanded;</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The class &lt;span style=" font-family:Courier New;">C&lt;/span> below modifies the nested extends clause of class B, which can be considered to be nested one level down in the inheritance chain (where &lt;span style=" font-family:Courier New;">C&lt;/span> inherits B which inherits A). The most recent, i.e. "outermost", modifiers in the inheritance chain have priority over previous modifiers.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class C
+  extends B(a = 1, A(b = 2));
+end C;
+</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The classes &lt;span style=" font-family:Courier New;">A, B&lt;/span> and &lt;span style=" font-family:Courier New;">C&lt;/span> are equivalent to the single class &lt;span style=" font-family:Courier New;">Cexpanded&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class Cexpanded
+  parameter Real a = 1;
+  parameter Real b = 2;
+end Cexpanded;</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">The Rule of the Most Recent Modification&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The class &lt;span style=" font-family:Courier New;">C2&lt;/span> below illustrates the rule that the most recently applied modifications like &lt;span style=" font-family:Courier New;">b = 1&lt;/span> overrides modifications like &lt;span style=" font-family:Courier New;">A(b = 2)&lt;/span> of a nested extends clause, since  &lt;span style=" font-family:Courier New;">b = 1&lt;/span> is further down in the modification chain. The instance bcomp has &lt;span style=" font-family:Courier New;">bcomp.b = 1&lt;/span>, which overrides &lt;span style=" font-family:Courier New;">b = 2&lt;/span> from the nested modifier.&lt;br /> &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class C2
+  B bcomp(b = 1, A(b = 2));
+end C2;
+</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

@@ -1,0 +1,80 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Repetitive Equation Structures&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Nested for-loop&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Write a function, &lt;span style=" font-family:Courier New;">MatrixAddition&lt;/span>, for adding two two-dimensional matrices.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input></Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br /> Do a function call to &lt;span style=" font-family:Courier New;">MatrixAddition&lt;/span> with two arrays. Then simulate the class with the function call and plot the result.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input></Input>
+     <Output></Output>
+    </InputCell>
+    <GroupCell closed="true" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>function MatrixAddition
+  input Integer matrix1[:, :];
+  input Integer matrix2[:, :];
+  output Integer matrixSum[2, 2];
+algorithm
+  for i in 1:size(matrix1, 1) loop
+    for j in 1:size(matrix2, 2) loop
+      matrixSum[i, j] := matrix1[i, j] + matrix2[i, j];
+    end for;
+  end for;
+end MatrixAddition;</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;"> &lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>class MatrixAdditionCall
+  Real[2, 2] MA = MatrixAddition([1, 2; 3, 4], [1, 2; 3, 4]);   
+end MatrixAdditionCall;</Input>
+      <Output></Output>
+     </InputCell>
+     <GroupCell closed="true" >
+      <TextCell style="Subsubsection" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;"> Simulation of MatrixAddition&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <TextCell style="Text" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">We simulate the MatrixAdditionCall and then plot to see the result.&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="true" >
+       <Input>simulate( MatrixAdditionCall );</Input>
+       <Output></Output>
+      </InputCell>
+      <TextCell style="Output" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="true" >
+       <Input>plot( { MA[1,1], MA[1,2], MA[2,1], MA[2,2] } );</Input>
+       <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+      </InputCell>
+      <TextCell style="Text" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/3.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+       <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/3.png" >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</Image>
+      </TextCell>
+     </GroupCell>
+    </GroupCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

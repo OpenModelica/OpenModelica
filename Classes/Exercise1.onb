@@ -1,0 +1,80 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Exercise 1 - Classes&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Creating a Class&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Create a class, &lt;span style=" font-family:Courier New;">Multiply&lt;/span>, that calculates the product of two variables, which are &lt;span style=" font-family:Courier New;">Real&lt;/span> numbers with given values. &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input></Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />&lt;br />Make the previous class into a model.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input></Input>
+     <Output></Output>
+    </InputCell>
+    <GroupCell closed="true" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>class Multiply
+  parameter Real x = 2;
+  parameter Real y = 3;
+  Real product;
+equation
+  product = x*y;
+end Multiply;</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>model Multiply
+  parameter Real x = 2;
+  parameter Real y = 3;
+  Real product;
+equation
+  product = x*y;
+end Multiply;</Input>
+      <Output></Output>
+     </InputCell>
+     <GroupCell closed="true" >
+      <TextCell style="Subsubsection" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Simulation of Multiply&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <TextCell style="Text" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">We simulate Multiply in the interval {0, 1}, since we see that both x, y and product will get constant values. Then we can use PlotSimulation to plot the fields.&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="true" >
+       <Input>simulate( Multiply );</Input>
+       <Output></Output>
+      </InputCell>
+      <TextCell style="Output" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="true" >
+       <Input>plot( {x,y,product} );</Input>
+       <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+      </InputCell>
+      <TextCell style="Output" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/7.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+       <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/7.png" >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</Image>
+      </TextCell>
+     </GroupCell>
+    </GroupCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

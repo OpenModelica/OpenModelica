@@ -1,0 +1,326 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Using the Object Oriented Component-Based Approach&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Tank System with a Continuous PI Controller&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Now we show the tank model using the object oriented component-based approach. The structure of the tank system model using this approach is clearly visible in Figure 1 below.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/3.png" width="265" height="141" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/3.png" >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</Image>
+    </TextCell>
+    <TextCell style="" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;"> A tank system with a continuous PI controller and a source for liquid.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The three components of the tank system: the tank, the PI controller and the source of liquid are explicit in Figure 1 and in the declaration of the class &lt;span style=" font-family:Courier New;">TankPI&lt;/span> below. Tank instances of t&lt;span style=" font-family:Courier New;">ank&lt;/span>, &lt;span style=" font-family:Courier New;">source&lt;/span> and &lt;span style=" font-family:Courier New;">piContinuous&lt;/span> are connected to controllers and liquid sources through their connectors.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>model TankPI
+  LiquidSource           source(flowLevel=0.02);
+  PIcontinuousController piContinuous(ref=0.25);
+  Tank                   tank(area=1);
+equation
+  connect(source.qOut, tank.qIn);
+  connect(tank.tActuator, piContinuous.cOut);
+  connect(tank.tSensor, piContinuous.cIn);
+end TankPI;</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Tank&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The tank has four connectors: &lt;span style=" font-family:Courier New;">qIn&lt;/span> for input flow, &lt;span style=" font-family:Courier New;">qOut&lt;/span> for output flow, &lt;span style=" font-family:Courier New;">tSensor&lt;/span> for providing fluid level measurements, and &lt;span style=" font-family:Courier New;">tActuator&lt;/span> for setting the position of the valve at the outlet of the tank.&lt;br />&lt;br />The central equation regulating the behavior of the tank is the mass balance equation, which in the current simple form assumes constant pressure. The output flow is related to the valve position by a &lt;span style=" font-family:Courier New;">flowGain&lt;/span> parameter, and by a limiter that guarantees that the flow does not exceed what corresponds to the open/closed positions of the valve.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>model Tank
+  ReadSignal     tSensor              "Connector, sensor reading tank level (m)";
+  ActSignal      tActuator            "Connector, actuator controlling input flow";
+  LiquidFlow     qIn                  "Connector, flow (m3/s) through input valve";
+  LiquidFlow     qOut                 "Connector, flow (m3/s) through output valve";
+  parameter Real area(unit = "m2")       =  0.5;
+  parameter Real flowGain(unit = "m2/s") = 0.05;
+  parameter Real minV= 0, maxV = 10;         // Limits for output valve flow
+  Real           h(start = 0.0, unit = "m")   "Tank level";
+ equation
+  assert(minV>=0,"minV - minimum Valve level must be >= 0 ");
+  der(h)      = (qIn.lflow - qOut.lflow)/area;               // Mass balance equation
+  qOut.lflow  = LimitValue(minV, maxV, -flowGain*tActuator.act);
+  tSensor.val = h;
+end Tank;</Input>
+     <Output></Output>
+    </InputCell>
+    <GroupCell closed="true" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">LimitValue&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">A limiter function is needed in the model to reflect minimum and maximum flows through the output valve:&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>function LimitValue
+  input  Real pMin;
+  input  Real pMax;
+  input  Real p;
+  output Real pLim;
+ algorithm
+  pLim := if p>pMax then pMax
+          else if p&lt;pMin then pMin 
+          else p;
+end LimitValue;</Input>
+      <Output></Output>
+     </InputCell>
+    </GroupCell>
+    <GroupCell closed="true" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Connectors&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">As already stated, the tank has four connectors. These are instances of the following three connector classes:&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>connector ReadSignal          "Reading fluid level"
+  Real val(unit = "m");
+end ReadSignal;</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>connector ActSignal            "Signal to actuator for setting valve position"
+  Real act;
+end ActSignal;</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>connector LiquidFlow          "Liquid flow at inlets or outlets"
+  Real lflow(unit = "m3/s");
+end LiquidFlow;</Input>
+      <Output></Output>
+     </InputCell>
+    </GroupCell>
+    <GroupCell closed="true" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">LiquidSource&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The fluid entering the tank must come from somewhere. Therefore we have a liquid source component in the tank system. The flow increases sharply at time = 150 to factor of three of the previous flow level, which creates an interesting control problem that the controller of the tank has to handle.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>model LiquidSource
+  LiquidFlow qOut;
+  parameter Real flowLevel = 0.02;
+equation    
+  qOut.lflow = if time > 150 then 3*flowLevel else flowLevel;
+end LiquidSource;</Input>
+      <Output></Output>
+     </InputCell>
+    </GroupCell>
+    <GroupCell closed="true" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">PIcontinuousController&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The controller needs to be specified. We will initially choose a PI controller but later replace this by other kinds of controllers. &lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>model PIcontinuousController
+  extends BaseController(K = 2, T = 10);
+  Real  x  "State variable of continuous PI controller";
+equation
+  der(x) = error/T;
+  outCtr = K*(error + x);
+end PIcontinuousController;</Input>
+      <Output></Output>
+     </InputCell>
+    </GroupCell>
+    <GroupCell closed="true" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">BaseController&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Both the &lt;span style=" font-family:Courier New;">PI controller&lt;/span> and the &lt;span style=" font-family:Courier New;">PID controller&lt;/span> to be defined later inherit the partial controller class &lt;span style=" font-family:Courier New;">BaseController&lt;/span>, containing common parameters, state variables, and two connectors: one to read the sensor and one to control the valve actuator.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>partial model BaseController
+  parameter Real Ts(unit = "s") = 0.1  "Time period between discrete samples";
+  parameter Real K = 2          "Gain";
+  parameter Real T(unit = "s") = 10    "Time constant";
+  ReadSignal cIn            "Input sensor level, connector";
+  ActSignal  cOut            "Control to actuator, connector";
+  parameter Real ref          "Reference level";
+  Real error              "Deviation from reference level";
+  Real outCtr              "Output control signal";
+equation
+  error = ref - cIn.val;
+  cOut.act = outCtr;  
+end BaseController;</Input>
+      <Output></Output>
+     </InputCell>
+    </GroupCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of TankPI&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">We simulate the &lt;span style=" font-family:Courier New;">TankPI&lt;/span> model and obtain the same response as for the &lt;span style=" font-family:Courier New;">FlatTank&lt;/span> model, which is not surprising given that both models have the same basic equations. &lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( TankPI, stopTime=250 );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>plot( tank.h );</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/4.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/4.png" >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</Image>
+    </TextCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Tank with PID Continuous Controller&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">We define a &lt;span style=" font-family:Courier New;">TankPID&lt;/span> system which is the same as the &lt;span style=" font-family:Courier New;">TankPI&lt;/span> system except that the PI controller has been the replaced by a PID controller. Here we see a clear advantage of the object oriented component-based approach over the traditional modeling approach, since system components can easily be replaced and changed in a plug-and-play manner.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/5.png" width="262" height="141" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/5.png" >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</Image>
+    </TextCell>
+    <TextCell style="" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">The tank system with the PI controller replaced by a PID controller.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The Modelica class declaration for the &lt;span style=" font-family:Courier New;">TankPID&lt;/span> system appears as follows:&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>model TankPID
+  LiquidSource            source(flowLevel  = 0.02);
+  PIDcontinuousController pidContinuous(ref = 0.25);
+  Tank                    tank(area = 1);
+equation
+  connect(source.qOut, tank.qIn);
+  connect(tank.tActuator, pidContinuous.cOut);
+  connect(tank.tSensor, pidContinuous.cIn);
+end TankPID;</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />We create a &lt;span style=" font-family:Courier New;">PIDcontinuousController&lt;/span> class in Modelica containing the three defining equations:&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>model PIDcontinuousController
+  extends BaseController(K = 2, T = 10);
+  Real  x;                   // State variable of continuous PID controller
+  Real  y;                   // State variable of continuous PID controller
+equation
+  der(x) = error/T;
+  y      = T*der(error);
+  outCtr = K*(error + x + y);
+end PIDcontinuousController;</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of TankPID&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">We simulate the tank model once more but now including the PID controller:&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( TankPID, stopTime=250 );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>plot( tank.h );</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/6.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/6.png" >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</Image>
+    </TextCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Two Tanks Connected Together&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/7.png" width="474" height="148" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Rule name="GeneratedCell" >False</Rule>
+     <Rule name="CellAutoOverwrite" >False</Rule>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/7.png" >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</Image>
+    </TextCell>
+    <TextCell style="" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">Two connected tanks with PI controllers and a source for liquid connected to the first tank. &lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The Modelica model &lt;span style=" font-family:Courier New;">TanksConnectedPI&lt;/span> corresponding to Figure 3 appears as follows:&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>model TanksConnectedPI
+  LiquidSource  source(flowLevel = 0.02);
+  Tank          tank1(area = 1);
+  Tank          tank2(area = 1.3);
+  PIcontinuousController piContinuous1(ref = 0.25);
+  PIcontinuousController piContinuous2(ref = 0.4);
+ equation
+  connect(source.qOut,tank1.qIn);
+  connect(tank1.tActuator,piContinuous1.cOut);
+  connect(tank1.tSensor,piContinuous1.cIn);
+  connect(tank1.qOut,tank2.qIn);
+  connect(tank2.tActuator,piContinuous2.cOut);
+  connect(tank2.tSensor,piContinuous2.cIn);
+end TanksConnectedPI;</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />We simulate the connected tank system. We clearly see the tank level responses of the first and second tank to the changes in fluid flow from the source, where the response from the first tank of course appears earlier in time than the response of the second tank.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of TanksConnectedPI&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( TanksConnectedPI, stopTime=400 );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>plot( {tank1.h,tank2.h} );</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/8.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/8.png" >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</Image>
+    </TextCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

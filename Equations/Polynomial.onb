@@ -1,0 +1,148 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Repetitive Equation Structures&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Xpowers1&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The polynomial equation where n = 4 can be expressed as a set of equations:&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class Xpowers1
+  parameter Real x=10;
+  Real a = 1;
+  parameter Integer n = 5;
+  Real xpowers[n];
+  Real y; 
+equation
+  xpowers[1] = 1;
+  xpowers[2] = xpowers[1]*x;
+  xpowers[3] = xpowers[2]*x;
+  xpowers[4] = xpowers[3]*x;
+  xpowers[4 + 1] = xpowers[4]*x;
+  y = a * xpowers[5];
+end Xpowers1;
+</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of Xpowers1&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Here the simulation of the &lt;span style=" font-family:Courier New;">XPowers1&lt;/span> is shown. The variables can then be plotted as below.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( Xpowers1 );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>plot( { xpowers[1], xpowers[2], xpowers[3], xpowers[4], xpowers[5] } );</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/9.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/9.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAEgAAAA1ggDAAAARuGvAgAAAwBQTFRFAAAAAH8A/wAAAAD/vwC/AL+/2dnZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAsDzUVQAAAAlwSFlzAAALEwAACxMBAJqcGAAAA/FJREFUeJztmotW6jAQAKNX8/+frJeWNo+2k3iKQjojhwO6hHTcdLeEEOWQ8NcTeHYUBCgIUBCgIOBcQeGb//f3R3F6EotHr8TJgqbxwvpwfvyA9/oleNLf//jbbUqAOTviPVOWpAmJlUJQWP76guxM+t9EEhOy2+0nOey7vitm0HyoG4LyEfYzaH7VqIKW9bQsscXZurjSDJpWVCpoedUL0jzppsCwhmWCOt/rmWiddGgq0ktxt8zvjGYfRKNlJ/L7G4xdxeyDtnibSGI6+qC0JbpABnX3QSF5lX3QTh9UlHn7oCXIPoii7IMOR7MPotHsg1r6oELQiH3Q+0QS09EHlY3i4Bn0kz6oXmKjZVAa0dsHxXK12QclQfZBFDWnkGV+Z7TkTHSVk3R3ma9O0iOW+TqmvczXH9oPmEGfE3NIX5mPZQZZ5qtG0W2f3SDLPEWF4pFlPhstrFVOQZujrXVt7CqWRnR/3FF98mEfVFSxC3TSHxNzSF8fVHXS9kFFBvlxx0GQfRBF2QddDAUBCgIUBKyCsjJe3//6zJ6EogqHnZuCooK2aRX0MTCnCDKDwvrdHk/SCc2XGg+dxROjIEBBgIKA9o87HjqN58UMAhQEKAhQEKAgwCoGmEGAggAFAQoCFAQoCLDMA2YQoCBAQUB54O5qFITqqftiGZsZpKCV5gy6ap13iQGepAHLPKAgQEGAggCv5gEzCFAQoCBAQYCCAAUBlnnADAIUBCgIUBCgIMAqBphBgIIABQH1rsa0CxbL+9+d1vNQCZrv3BebKTcO3XoucOsZcOsZ2FxinqRXLPOAggAFAQoCvJoHzCBAQYCCAAUBCgIUBFjmATMIUBCgIEBBgIIAqxhgBgEKAhQEVAfu1nNOvfXsvliGG4dAvXEYtpLIrefsN2bQysZJOniSTrDMAwoCFAQoCPBqHjCDAAUBCgIUBCgIUBBgmQfMIEBBgIIABQEKAqxigBkEKAhQEFDtrNb7Ge5q5E/dF8uo98WiglLqLy/EbUFXrfP1EotmUMrGlxeiJ+kEyzygIEBBgIIAr+YBMwhQEKAgQEGAggAFAa0H/jkwpwgyg06KGw4FAQoCFAR4sQqYQYCCAAUBCgIUVLC5k9rA+8BkPkKxh9wg6Paat4EJqZWfZtCVllhvBnXFvT5FS6wgQEHAZQ+8lVMFpcuXrm6zv0NwPu5hbM8U2t67ZYxG0gJQFoOj2Bi6Ys+aQvOIp5HP6LwjyWIhgTKXbQf3R4JoheUHfXgsHTJfJ4No3GL27Rn0yoLSLzVCUmSxjWfe+7jNwzYtsYb0lSMUBCgIUBCgIEBBgIIABQEKAhQEKAhQEKAgQEGAgoAvj6B6e1ao0CgAAAAASUVORK5CYII=</Image>
+    </TextCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Xpowers2&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The same thing can be expressed more compactly as a simple equation together with a for-clause equation:&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class Xpowers2
+  parameter Real x=10;
+  Real xpowers[n];
+  parameter Integer i=1;
+  parameter Integer n = 5;
+equation  
+  xpowers[1]=1;
+  for i in 1:n-1 loop
+    xpowers[i + 1] = xpowers[i]*x;
+  end for;  
+end Xpowers2;  
+</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of Xpowers2&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Here the simulation of the &lt;span style=" font-family:Courier New;">XPowers2&lt;/span> is shown. The variables can then be plotted as below.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( Xpowers2 );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>plot( { xpowers[1], xpowers[2], xpowers[3], xpowers[4], xpowers[5] } );</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/10.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/10.png" >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</Image>
+    </TextCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Xpowers3&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">A very compact notation:&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class Xpowers3
+  parameter Real x=10;
+  Real xpowers[n+1];
+  parameter Integer n = 5;
+equation
+  xpowers[1]=1;
+  xpowers[2:n+1] = xpowers[1:n]*x;
+end Xpowers3;    
+</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of Xpowers3&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Here the simulation of the &lt;span style=" font-family:Courier New;">XPowers3&lt;/span> is shown. The variables can then be plotted as below.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( Xpowers3 );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>plot( { xpowers[1], xpowers[2], xpowers[3], xpowers[4], xpowers[5] } );</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/11.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/11.png" >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</Image>
+    </TextCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

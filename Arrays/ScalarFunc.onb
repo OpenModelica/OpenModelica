@@ -1,0 +1,89 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Application of Scalar Functions to Arrays&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />It is possible to apply a function to array values if an obvious generalization to element-wise application of the function is possible. Modelica functions with one scalar return value can be applied to arrays element-wise, e.g. if &lt;span style=" font-family:Courier New;">v&lt;/span> is a vector of reals, then &lt;span style=" font-family:Courier New;">sin(v)&lt;/span> is a vector where each element is the result of applying the function &lt;span style=" font-family:Courier New;">sin&lt;/span> to the corresponding element in &lt;span style=" font-family:Courier New;">v&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">One Return Value&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class OneReturnValue
+  Real a = 1, b = 0, c = 1;
+  Real s1[3] = sin({a, b, c});    // Vector argument, result: {sin(a), sin(b), sin(c)}
+  Real s2[2, 2] = sin([1, 2; 3, 4]);
+                    // Matrix argument, result: [sin(1), sin(2); sin(3), sin(4)]
+end OneReturnValue;  </Input>
+     <Output></Output>
+    </InputCell>
+    <GroupCell closed="true" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of Multiplication&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>simulate( OneReturnValue );</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Output" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>s1[[3]]
+[0]
+</Input>
+      <Output></Output>
+     </InputCell>
+    </GroupCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Returning More Values&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Functions with more than one argument can be generalized to element-wise application. If more than one argument is generalized to an array, all of the arguments have to be of the same size, and they are traversed in parallel. This is the case in the axample with the function &lt;span style=" font-family:Courier New;">atan2(x, y)&lt;/span> below. The function: &lt;span style=" font-family:Courier New;">atan2Add(w, x, y) = w + atan2(x, y)&lt;/span>adds a value w to each application of &lt;span style=" font-family:Courier New;">atan2&lt;/span>.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Rule name="TextAlignment" >Left</Rule>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class SeveralArguments
+  Real a = 1, b = 0, c = 1, d = 0, e = 1, f = 0;
+  Real at[3] = atan2({a, b, c}, {d, e, f});     // Result: {atan2(a, d), atan2(b, e), atan2(c, f)}  
+  Real atAdd[2] = atan2Add(2, {a, b}, {d, e}); // Result: {2 + atan2(a, d), 2 + atan2(b, e)}
+end SeveralArguments;
+</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">SumVec&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Formal function parameters that are generalized to higher dimension arrays need not necessarily be scalars. For example, the function:&lt;br />&lt;br />&lt;span style=" font-family:Courier New;">                            atan2SumVec(v1, v2) = atan2(sum(v1), sum(v2))&lt;br />                            &lt;br />&lt;/span>used below has two formal parameters &lt;span style=" font-family:Courier New;">v1&lt;/span> and &lt;span style=" font-family:Courier New;">v2&lt;/span> of type &lt;span style=" font-family:Courier New;">Real[:]&lt;/span> computing &lt;span style=" font-family:Courier New;">atan2&lt;/span> on the sums of the argument vectors. Applying this function on a matrix which is a vector of vectors gives a result which is a vector. Calling this function with two matrices M1 and M2 as arguments gives the following result:    &lt;br />            &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class SumVec
+  Real[3] v1 = {1, 2, 3};
+  Real[3] v2 = {6, 4, 5};
+  Real[3] v3 = {3, 7, 6};
+  Real[3] v4 = {1, 3, 8};
+  Real[2, 3] M1 = {v1, v2};
+  Real[2, 3] M2 = {v3, v4};
+  
+  Real sv1[2] = atan2SumVec(M1, M2);          
+    // atan2SumVec({v1, v2}, {v3, v4}) &lt;=> {atan2(sum(v1), sum(v2)), atan2(sum(v3), sum(v4))}
+    
+  Real sv2[2] = atan2SumVec({{1, 2}, {3, 4}}, {{6, 7}, {8, 9}});
+    // {atan2(sum({1, 2}), sum({3, 4})), atan2(sum({6, 7}), sum({8, 9}))} 
+    // &lt;=> {atan2(3, 7), atan2(13, 17) }
+end SumVec;</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

@@ -1,0 +1,35 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Nonencapsulated Packages&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />A nonencapsulated package is a package declared without the prefix &lt;span style=" font-family:Courier New;">encapsulated&lt;/span>. Also large encapsulated packages, containing &lt;span style=" font-family:Courier New;">protected&lt;/span> declarations, can be internally structured into nonencapsulated packages. &lt;br />&lt;br />In the example below, the encapsulated package &lt;span style=" font-family:Courier New;">Blocks&lt;/span> has been internally structured into three nonencapsulated packages &lt;span style=" font-family:Courier New;">Interfaces&lt;/span>, &lt;span style=" font-family:Courier New;">Continuous&lt;/span>, and &lt;span style=" font-family:Courier New;">Examples&lt;/span> that all can access the protected type &lt;span style=" font-family:Courier New;">MySecret&lt;/span>.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>encapsulated package Modelica
+  encapsulated package Blocks
+    protected
+      type MySecret = Integer;
+    public
+      package Interfaces
+      end Interfaces;
+      
+      package Continuous
+        MySecret x;
+      end Continuous;
+      
+      package Examples
+      end Examples;
+    
+    end Blocks;
+
+end Modelica;
+</Input>
+    <Output></Output>
+   </InputCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

@@ -1,0 +1,166 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Function Annotations&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Two rather special annotations are defined for functions. These are the function &lt;span style=" font-family:Courier New;">derivative&lt;/span> annotation and the &lt;span style=" font-family:Courier New;">arrayLayout&lt;/span> annotation. The function derivative annotation allows you to explicitly specify the computation of the derivatives of a function to any order, e.g. in order to gain performance and/or numerical accuracy. The external function annotation &lt;span style=" font-family:Courier New;">arrayLayout&lt;/span> can be used to explicitly give the layout of arrays&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Function Derivative Annotations &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>function h0                 // exp(x(t)+i1)
+  annotation(derivative=h1);
+  input  Integer i1;
+  input  Real    x;
+  input  Boolean linear;        // not used
+  output Real    y;
+ algorithm
+  y := exp(x)+i1;
+end h0;
+</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>function h1                 // (d/dt)(exp(x(t))
+  annotation(derivative(order=2)=h2);
+  input  Integer i1;
+  input  Real    x;
+  input  Boolean linear;
+  input  Real    der_x;
+  output Real    der_y;
+algorithm
+  der_y := exp(x)*der_x;
+end h1;</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>function h2                 // (d/dt)(exp(x(t)*der_x(t))
+  input  Integer i1;
+  input  Real    x;
+  input  Boolean linear;
+  input  Real    der_x;
+  input  Real    der_2_x;
+  output Real    der_2_y;
+algorithm
+  der_2_y := exp(x)*der_x*der_x + exp(x)*der_2_x;
+end h1;</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">MakeAlive on h0, h1 and h2&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Since functions generated from MakeAlive functions need numerical values the &lt;span style=" font-style:italic;">exp&lt;/span> function in Modelica needs to be transformed to the equivalent &lt;span style=" font-style:italic;">Exp&lt;/span> function in &lt;span style=" font-style:italic;">Mathematica&lt;/span>. This is done by the pattern "/.exp-&amp;gt;Exp", which means that all occurances of "exp" are replaced with "Exp". The "//N" transforms the expression to a numerical value and "//First" removes the array expression.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>MakeAlive[h0]
+</Input>
+     <Output></Output>
+    </InputCell>
+    <InputCell style="Input" closed="true" >
+     <Input>fn0=h0[2, 5,True
+]
+/.exp[Rule]Exp
+
+//N
+//First
+
+</Input>
+     <Output></Output>
+    </InputCell>
+    <InputCell style="Input" closed="true" >
+     <Input>MakeAlive[h1]
+</Input>
+     <Output></Output>
+    </InputCell>
+    <InputCell style="Input" closed="true" >
+     <Input>fn1=h1[2, 5,True,fn0
+]
+/.exp[Rule]Exp
+
+//First
+
+</Input>
+     <Output></Output>
+    </InputCell>
+    <InputCell style="Input" closed="true" >
+     <Input>MakeAlive[h2]
+</Input>
+     <Output></Output>
+    </InputCell>
+    <InputCell style="Input" closed="true" >
+     <Input>fn2=h2[2, 5,True,fn0,fn1
+]
+/.exp[Rule]Exp
+
+//First
+
+</Input>
+     <Output></Output>
+    </InputCell>
+    <InputCell style="Input" closed="true" >
+     <Input>xRange</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The below expression makes a plot of the h0 function from x=4 to x=6:&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>ListPlot[Transpose@{Table[x,{x,4,6,0.1
+}
+
+]
+,Table[h0[2,x,True
+]
+/.exp[Rule]Exp
+
+, {x,4,6,0.1
+}
+
+]
+//Flatten
+
+}
+
+,PlotJoined[Rule]True
+
+]
+;
+</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">External Function Annotations&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Regarding specific annotations only for external function declarations there is an optional &lt;span style=" font-family:Courier New;">arrayLayout&lt;/span> annotation, which can be either &lt;span style=" font-family:Courier New;">"rowMajor"&lt;/span> or &lt;span style=" font-family:Courier New;">"columnMajor"&lt;/span>. This annotation causes additional information to be passed to the compiler when necessary. It is only needed when the array storage layout deviates from the default for the external language. This is the case for the function &lt;span style=" font-family:Courier New;">joinThreeVectors2&lt;/span> below where the C function uses column-major array representation which is different from the default row-major layout that normally is used for C.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>function joinThreeVectors2      "External C function with column-major arrays"
+  input  Real v1[:],v2[:],v3[:];
+  output Real vres[size(v1,1)+size(v2,1)+size(v3,1)];
+ external "C" join3vec(v1,v2,v3,vres,size(v1,1),size(v2,1),size(v3,1));
+         annotation(arrayLayout = "columnMajor");
+end joinThreeVectors2;
+</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

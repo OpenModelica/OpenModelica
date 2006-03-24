@@ -1,0 +1,50 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Redeclaration of Elements not Declared Replaceable&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />There are only two kinds of redeclarations that do not require the modified element to be declared replaceable: restricting the variability of a declared variable, e.g. from parameter to constant or restricting array dimension sizes, e.g. from (:) to a specified size. The following examples demonstrates these kinds of redeclarations.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>class C3
+  Real x1;
+  parameter Real vec[:];
+end C3;</Input>
+    <Output></Output>
+   </InputCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>class C4 = C3(redeclare parameter Real x1, redeclare parameter Real vec[20]);
+</Input>
+    <Output></Output>
+   </InputCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />&lt;span style=" font-family:Courier New;">C4&lt;/span> is equivalent to &lt;span style=" font-family:Courier New;">C4expanded&lt;/span> below.&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>class C4Expanded
+  parameter Real x1;
+  parameter Real vec[20];
+end C4Expanded;  </Input>
+    <Output></Output>
+   </InputCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of C4&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( C4 );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

@@ -1,0 +1,66 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Multiple Events at the Same Point in Time and Event Iteration&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">MultipleEvents&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Multiple events may actually occur at the same point in time. Two or more independent events may just happen to be fired at the same time instant, or additional events may be fired at the time instant as a consequence of handling one of the events at that time instant. In the example below different event handlers &lt;span style=" font-family:Courier New;">A, B, C &lt;/span>and &lt;span style=" font-family:Courier New;">D &lt;/span> occur in a special order according to the &lt;span style=" font-style:italic;">declaration order&lt;/span>.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>model MultipleEvents
+  discrete Integer x(start = 1);
+  Boolean          signal(start = false);
+algorithm 
+  when x == 2 then      // Event handler A
+    x := pre(x)+1;           // x becomes 2 + 1 = 3
+  end when;
+
+  when x == 3 then      // Event handler B
+    x := pre(x)+5;           // x becomes 2 + 5 = 7
+  end when;
+
+  when time >= 2 then   // Event handler C
+    x := 2;                  // x becomes 2
+  end when;
+
+equation
+  when time >= 2 then   // Event handler D
+    signal = true;
+  end when;
+end MultipleEvents;
+</Input>
+     <Output></Output>
+    </InputCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of MultipleEvents&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>simulate( MultipleEvents, stopTime=5 );</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Output" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Since the &lt;span style=" font-family:Courier New;">when&lt;/span>-statements in the algorithm section are sequential, &lt;span style=" font-family:Courier New;">pre(x)&lt;/span> will not be updated until reaching the end of the algorithm section.&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>plot( { x, signal } );</Input>
+      <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/4.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+      <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/4.png" >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</Image>
+     </TextCell>
+    </GroupCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

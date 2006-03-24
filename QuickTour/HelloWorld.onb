@@ -1,0 +1,48 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">First Basic Class&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">HelloWorld&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The program contains a declaration of a class called &lt;span style=" font-family:Courier New;">HelloWorld&lt;/span> with two fields and one equation. The first field is the variable x which is initialized to a start value  2 at the time when the simulation starts. The second field is the variable a, which is a constant that is initialized to 2 at the beginning of the simulation. Such a constant is prefixed by the keyword parameter in order to indicate that it is constant during simulation but is a model parameter that can be changed between simulations.&lt;br />&lt;br />The Modelica program solves a trivial differential equation:    &lt;span style=" font-family:Courier New;">x' = - a * x. &lt;/span>The variable x is a state variable that can change value over time. The x ' is the time derivative of x.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class HelloWorld
+  Real x(start = 1);
+  parameter Real a = 1;
+equation
+  der(x) = - a * x;
+end HelloWorld;
+</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of HelloWorld &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( HelloWorld, startTime=0, stopTime=4 );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>plot( x );</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/3.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/3.png" >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</Image>
+    </TextCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

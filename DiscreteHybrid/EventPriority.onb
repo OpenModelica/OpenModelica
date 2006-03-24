@@ -1,0 +1,80 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Using Event Priority to Avoid Erroneous Multiple Definitions&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Priority in When-Statements&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Two separate &lt;span style=" font-family:Courier New;">when-&lt;/span>equations or &lt;span style=" font-family:Courier New;">when-&lt;/span>statements in different algorithm sections may not define the same variable. Without this rule a conflict between the equations will occur if both conditions would become true at the same time instant. This would happen for the erroneous model &lt;span style=" font-family:Courier New;">WhenConflictX&lt;/span> below if we would have the same condition, e.g. &lt;span style=" font-family:Courier New;">time &amp;gt;= 1&lt;/span>, in both &lt;span style=" font-family:Courier New;">when&lt;/span>-equations since there are two equations:  x = pre(x) + 1.5 and x = pre(x) + 1 that define the same variable x.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>model WhenConflictX     // Erroneous model: two equations define x
+   discrete Real x;
+equation
+  when time >= 2 then   // When A: Increase x by 1.5 at time >= 2
+    x = pre(x) + 1.5;
+  end when;
+  when time >= 1 then   // When B: Increase x by 1 at time >= 1
+    x = pre(x) + 1;
+  end when;
+end WhenConflictX;
+</Input>
+     <Output></Output>
+    </InputCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Eliminating the double definition&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The multiple assignment conflict in the above example can be avoided by giving a higher priority to one of the defining equations through the &lt;span style=" font-family:Courier New;">elsewhen&lt;/span> construct, as in the same example in converted form below. We have put both equations within the same &lt;span style=" font-family:Courier New;">when-&lt;/span>equation and ordered the conditions in &lt;span style=" font-style:italic;">decreasing&lt;/span> priority.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>model WhenPriorityX
+   discrete Real x;
+equation
+  when time >= 2 then       // Higher priority
+    x = pre(x) + 1.5;
+  elsewhen time >= 1 then   // Lower priority
+    x = pre(x) + 1;
+  end when;
+end WhenPriorityX;
+</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/1.png" width="324" height="153" />&lt;/p>&lt;/body>&lt;/html></Text>
+      <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/1.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAFEAAAAmQgDAAAAYOOzsQAAAwBQTFRFAAAA////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAZ3bsYwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAnRJREFUeJzt3MFygkAQANHh/386FxCMLDNAx91od+UmonnBhbImxGS3i95v4BMSEUhEIBGBRAQSEUhEIBGBRAQSEUhEIBGBRAQSEUhEIBGBRAQSEUhEIBGBRAQSEUhEIBGBRAQSEegMouCNTsBEqLjfOUQVd6uzhIitTiKquFdZJX4hxpknf3hVh4hXRQ3nriNq+Oj6daJH4qPLiK6Ja22H+ZHNR1izRk2Yhc5FMK8Fs6x423OJiI2yj/N26RsNcZhL/3RNnEZGvBX4RpJHRj4Sh+kYMZ6+ABOxkV/KAokIJCKQiEAiAokIJCKQiEAiAokIJCKQiEAiAokIJCKQiEAiAokIJCKQiEAiAokIJCKQiEAiAlXmE/Ntv7xsPtFZnELpfOIkYlqHqbBhxgqxeozW3Zwr/IsJw3s5nwjkfCKQ14lAIgKJCCQikIhAIgKJCCQikIhAIgKJCCQikIhAIgKJCCQikIhAIgKJCCQikIhAIgKJCCQikIhAzamwx63/wvsnZjVg1hGcSLe1DDGcxclLETfbiNgo/ThPIqZ5JAIdn52dTyzldSKQiEAiAokIJCKQiEAiAokIJCKQiEAiAokIJCKQiEAiAokIJCKQiEAiAokIJCKQiEAiAvVAHG0/txMRSMTjlyjdkEzE45co3ddNxOOXKN0e7xTiN4chntj2QyoZinhchVDEpAqhiEm1W652QYR2VDlI3lKXSxxmR0/D+V3rgBjgr/61iCPuaNnbtR3+a0T4OLy8uy6fB2xdYIuY/+dkua6pnrn+MWLtGu7MDp9/6meuMVbmMXpBrP6VRFzbOxKrT7S5eU1cT9MeiW9MRKAf/1i+qsrencoAAAAASUVORK5CYII=</Image>
+     </TextCell>
+     <TextCell style="" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Courier New; font-size:12pt; color:#000000;">&lt;br />Eliminating the double definition conflict between equations in different when-equations in the WhenPriority model by giving the event at time = 2 higher priority than the event at &lt;br />time = 1 through the use of elsewhen in the WhenPriorityX model.&lt;/span>&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">However, note that multiple assignments to the same variable within an algorithm section are allowed since only &lt;span style=" font-style:italic;">the last assignment to the same variable in an algorithm section is counted&lt;/span>.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>class MultipleWhen
+  discrete Real x;
+algorithm
+  when time >= 2 then   
+    x := pre(x) + 0.75;    // multiple assignments within the same 
+    x := x + 0.75;         // when-statement or algorithm section is allowed
+  elsewhen time >= 1 then  
+    x := pre(x) + 1;
+  end when;
+end MultipleWhen;
+</Input>
+      <Output></Output>
+     </InputCell>
+    </GroupCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

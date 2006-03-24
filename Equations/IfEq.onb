@@ -1,0 +1,57 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Conditional Equations with if-Equations&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Modelica can be used for expressing hybrid models, i.e. models with mixed continuous and discrete parts.  I&lt;span style=" font-family:Courier New;">f&lt;/span>-equations or &lt;span style=" font-family:Courier New;">if&lt;/span>-expressions are used for conditional models with different behavior in different operating regions. The conditional equations may contain continuous-time expressions. The &lt;span style=" font-family:Courier New;">elseif&lt;/span>-part is optional and can occur zero or more times. The &lt;span style=" font-family:Courier New;">else&lt;/span>-part is also optional and can occur at most once. There is a constraint regarding the number of equations in each part of an &lt;span style=" font-family:Courier New;">if&lt;/span>-equation: &lt;span style=" font-style:italic;">If-equations&lt;/span> for which the conditions have higher variability than &lt;span style=" font-family:Courier New;">constant&lt;/span> or &lt;span style=" font-family:Courier New;">parameter&lt;/span> must include an &lt;span style=" font-family:Courier New;">else&lt;/span>-part. Each branch (&lt;span style=" font-family:Courier New;">then&lt;/span>-, &lt;span style=" font-family:Courier New;">elseif&lt;/span>-, and &lt;span style=" font-family:Courier New;">else&lt;/span>-parts) must have the &lt;span style=" font-style:italic;">same number of equations&lt;/span>.&lt;br />&lt;br />&lt;br />The model &lt;a href="CompConn/CardEq.onb
+">&lt;span style=" text-decoration: underline; color:#0000ff;">Cardinality Resistor&lt;/span>&lt;/a> contains a conditional &lt;span style=" font-family:Courier New;">if-&lt;/span>equation with a &lt;span style=" font-style:italic;">condition&lt;/span> that is a parameter expression (the built-in function &lt;span style=" font-family:Courier New;">cardinality&lt;/span> has parameter variability), i.e. the &lt;span style=" font-style:italic;">condition&lt;/span> does not change during simulation.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">IfEquation&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The if-equation below specifies different equations for the variable y in three different operating regions, limiting values of y such that: uMin &amp;lt;= y &amp;lt;= uMax.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class IfEquation
+  parameter Real u;
+  parameter Real uMax;
+  parameter Real uMin;
+  Real y;
+equation
+  if u > uMax then 
+    y = uMax;
+  elseif u &lt; uMin then 
+    y = uMin;
+  else 
+    y = u;
+  end if;
+end IfEquation;</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of IfEquation&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Here the simulation of &lt;span style=" font-family:Courier New;">IfEquation&lt;/span> is shown.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( IfEquation );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

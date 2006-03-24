@@ -1,0 +1,72 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Assert&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The &lt;span style=" font-family:Courier New;">assert&lt;/span> statement provides a convenient means for specifying checks on model validity within a model. The &lt;span style=" font-family:Courier New;">assert&lt;/span> expression in an assert statement should normally evaluate to true. When the assertion evaluates to false, the message in the second argument will be displayed to the user and the simulation will stop. The class &lt;span style=" font-family:Courier New;">AssertTest&lt;/span> contains an example of the use of &lt;span style=" font-family:Courier New;">assert&lt;/span>.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>class AssertTest
+  parameter Real lowlimit;
+  parameter Real highlimit;
+  Real x = 5;
+algorithm
+  assert(x >= lowlimit and x &lt;= highlimit, "Variable x out of limit");  
+end AssertTest;</Input>
+    <Output></Output>
+   </InputCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>class Test1
+  AssertTest assertTsest(lowlimit = 4, highlimit = 8);
+end Test1;</Input>
+    <Output></Output>
+   </InputCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>class Test2
+  AssertTest assertTsest(lowlimit = 6, highlimit = 20);
+end Test2;</Input>
+    <Output></Output>
+   </InputCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of Test1 and Test2 &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( Test1 );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">In the simulation of &lt;span style=" font-family:Courier New;">Test2&lt;/span> we see that an error occurs and by looking in the file dslog.txt we see that the assertion fails and returns the message "Variable x out of limit".&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( Test2, stopTime=10 );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">Simulate::smmd&lt;/span>&lt;/p>&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">: &lt;/p>&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">"Simulate failed to simulate \\!\\(Test2\\)."&lt;/p>&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">ShowLog::shlg: "\\!\\(\"Instantiation started\\\&lt;br />\\\&lt;br />Logged connection equations:\\\&lt;br />  0 default connections generated.\\\&lt;br />- savelog\\\&lt;br />- translateModel(\\\\\"Test2\\\\\")\\\&lt;br />Translation started\\\&lt;br />  \\\&lt;br />STATISTICS\\\&lt;br />  \\\&lt;br />Original Model\\\&lt;br />  Number of components: 2\\\&lt;br />  Variables: 3\\\&lt;br />    Constants: 0\\\&lt;br />    Parameters: 2 (2 scalars)\\\&lt;br />    Unknowns: 1 (1 scalars)\\\&lt;br />    Differentiated variables: 0\\\&lt;br />  Equations: 2\\\&lt;br />    Nontrivial : 1\\\&lt;br />\\\&lt;br />   \\\&lt;br />Translated Model\\\&lt;br />  Constants: 1 scalars\\\&lt;br />  Free parameters: 2 scalars\\\&lt;br />  Parameter depending: 0\\\&lt;br />  Inputs: 0\\\&lt;br />  Outputs: 0\\\&lt;br />  Continuous time states: 0\\\&lt;br />  Time-varying variables: 0\\\&lt;br />  Alias variables: 0\\\&lt;br />  Number of mixed real/discrete systems of equations: 0\\\&lt;br />  Sizes of linear systems of equations: { }\\\&lt;br />  Sizes after manipulation of the linear systems: { }\\\&lt;br />  Sizes of nonlinear systems of equations: { }\\\&lt;br />  Sizes after manipulation of the nonlinear systems: { }\\\&lt;br />  Number of numerical Jacobians: 0\\\&lt;br />   \\\&lt;br />Finished\\\&lt;br />- savelog\\\&lt;br />\"\\)."&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">ShowSimulationLog::shlg: "\\!\\(\"Log-file of program .\\\\\\\\dymosim\\\&lt;br />(generated: Fri Jan 30 14:51:08 2004)\\\&lt;br />\\\&lt;br />dymosim started (dymosim version 4.6, Dec 21, 2001)\\\&lt;br />... \\\\\"dsin.txt\\\\\" loading (dymosim input file)\\\&lt;br />Assertion failed: assertTsest.x &amp;gt;= assertTsest.lowlimit and assertTsest.x The following error was detected at time: 0\\\&lt;br />Variable x out of limit\\\&lt;br />\"\\)."&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">$Failed&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

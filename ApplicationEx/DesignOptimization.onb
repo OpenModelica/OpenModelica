@@ -1,0 +1,210 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Design Optimization&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />An important use for modeling and simulation is to improve a system design, usually before it is physically realized and manufactured. In this process it is customary to perform a number of simulations for different values of the design parameters, until a design has been obtained that best fulfills a given set of design criteria. To automate this process it is very useful if the simulation environment has programmable scripting facilities that provide the glue between optimization algorithms, executing simulations and various computational functions.&lt;br />&lt;br />The following example demonstrates the solution of a small but non-trivial design optimization problem containing dynamic system simulations. First we define a Modelica model of a &lt;span style=" font-style:italic;">linear actuator&lt;/span> with a spring damped stopping, as well as a first order system that will be used to generate a kind of "reference" response. The goal is to find a damping for the translational spring-damper that minimizes the deviation between the step response of the linear actuator system and the step response from our "reference" first order system. &lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">LinearActuator Model&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">In this example we use the MathModelica environment with Mathematica as the scripting language providing the built-in optimization function &lt;span style=" font-family:Courier New;">FindMinimum&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/21.png" width="357" height="265" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/21.png" >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</Image>
+    </TextCell>
+    <TextCell style="" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">A LinearActuator model containing a spring damped connection to an anchoring point.&lt;/span>&lt;/p>&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Consider the following model of a linear actuator, depicted in Figure 1, with a spring-damped connection to an anchoring point:&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>model LinearActuator
+  import Modelica.Mechanics.Translational;
+  import Modelica.Mechanics.Rotational;
+  import Modelica.Blocks.Sources;
+  Translational.SlidingMass   slidingMass1(m = 0.5);
+  Translational.SpringDamper   springDamper1(d = 3, c = 20);
+  Translational.Fixed          fixed1;
+  Rotational.IdealGearR2T       idealGearR2T1;
+  Rotational.Inertia         inertia1(J = 0.1);
+  Rotational.SpringDamper     springDamper2(c = 15, d = 2);
+  Rotational.Inertia           inertia2(J = 0.1);
+  Rotational.Torque            torque1;
+  Sources.Step                 step1;
+equation
+  connect(inertia1.flange_b,      idealGearR2T1.flange_a);
+  connect(idealGearR2T1.flange_b, slidingMass1.flange_a);
+  connect(slidingMass1.flange_b,  springDamper1.flange_a);
+  connect(springDamper1.flange_b, fixed1.flange_b);
+  connect(inertia1.flange_a,      springDamper2.flange_b);
+  connect(springDamper2.flange_a, inertia2.flange_b);
+  connect(inertia2.flange_a,      torque1.flange_b);
+  connect(torque1.inPort,         step1.outPort);
+end LinearActuator;</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />We first make a simulation of the step response for the above linear actuator with damping &lt;span style=" font-family:Courier New;">d=2&lt;/span> and store the result in the scripting language variable called &lt;span style=" font-family:Courier New;">resLinActFirst&lt;/span>. Then we plot the simulated position of the sliding mass as a function of time to take a closer look at the response.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of LinearActuator&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( LinearActuator, stopTime=5 );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>plot( slidingMass1.s );</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/22.png" width="386" height="287" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/22.png" >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</Image>
+    </TextCell>
+    <TextCell style="" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">Plot of step response from the linear actuator.&lt;/span>&lt;/p>&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Different behavior with different values of d.&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Assume that we have some freedom in choosing the damping in the translational spring-damper. A number of simulation runs show what kind of behavior we have for different values of the damping parameter &lt;span style=" font-family:Courier New;">d&lt;/span>. The Mathematica &lt;span style=" font-family:Courier New;">Table[]&lt;/span> function is used to collect the results from calls to &lt;span style=" font-family:Courier New;">Simulate[]&lt;/span> into an array &lt;span style=" font-family:Courier New;">res&lt;/span>. The array then contains the results from simulations of &lt;span style=" font-family:Courier New;">LinearActuator&lt;/span> with a damping of 2 and 14 in increments of 2, i.e. seven simulations are performed.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>res = Table[Simulate[LinearActuator,{t,0,4},
+	ParameterValues ->{springDamper1.d == s}], {s,2,15,2}];</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>PlotSimulation[slidingMass1.s[t], {t, 0, 4}, 
+	SimulationResult -> res, Legend -> False]</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">Plots of step responses from seven simulations of the linear actuator with different camping coefficients.&lt;/span>&lt;/p>&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Now assume that we would like to choose the damping parameter d so that the resulting linear actuator system behaves as closely as possible to the following "reference" first order system response, obtained by solving a first order ODE using the Mathematica differential equation solver &lt;span style=" font-family:Courier New;">NDSolve&lt;/span>:&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>resReference = NDSolve[{0.2*y'[t]+y[t]== 0.05, y[0] == 0}, {y}, {t,0,4}];</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />We make a plot to compare the step response we simulated first for a damping value d=2 and the response from the [OpenCurlyDoubleQuote]reference[CloseCurlyDoubleQuote] first order system.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>PlotSimulation[{slidingMass1.s[t], y[t] /. resReference, {t,0,4},
+	SimulationResult -> resLinActFirst]</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">Comparison plot between the step response of the linear actuator and the "reference" first&lt;/span>&lt;/p>&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">-order system.&lt;/p>&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+    </GroupCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of an integral&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Now, let us make things a little more automatic. Simulate and compute the integral of the square deviation from t = 0 to t = 4. This integral is a measure of the deviation from the "reference" response and is thus suitable as a goal function to be minimized.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>Simulate[LinearActuator,{t,0,4},
+	ParameterValues -> {springDamper1.d == 3}];</Input>
+      <Output></Output>
+     </InputCell>
+     <InputCell style="Input" closed="true" >
+      <Input>NIntegrate[First[(y[t] /. resReference) - slidingMass1.s[t]]^2, {t, 0, 4}]
+</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">We define a Mathematica function, &lt;span style=" font-family:Courier New;">f[a_]&lt;/span>, doing the same thing as above, but for different values of the spring-damper design parameter &lt;span style=" font-family:Courier New;">d&lt;/span>. The function contains two variables &lt;span style=" font-family:Courier New;">res&lt;/span> and &lt;span style=" font-family:Courier New;">t&lt;/span>. The expression &lt;span style=" font-family:Courier New;">(y[t]/.resReference)&lt;/span> retrieves the interpolating function representing the variable &lt;span style=" font-family:Courier New;">y[t]&lt;/span>, i.e. the reference response.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>f[a_] := Module[{res, t}, 
+ res=Simulate[LinearActuator, {t, 0, 4},ParameterValues ->{springDamper1.d == a}];
+  NIntegrate[First[(y[t]/.resReference)-slidingMass1.s[t]]2,{t,0,4}]];</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">We tabulate some results for &lt;span style=" font-style:italic;">2 [LessEqual] d [LessEqual] 10&lt;/span> into an array &lt;span style=" font-family:Courier New;">resDeviations&lt;/span>:&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>resDeviations = Table[{d, f[d]}, {d, 2, 10, 0.5}];</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The tabulated values are interpolated into a Mathematica interpolating function. The default interpolation order is 3.&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>fpre=Interpolation[resDeviations]</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">A plot of the interpolationg function fpre:&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>Plot[fpre[d], {d, 2, 10}];</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">Plot of the deviation function for finding the value of the damping parameter that gives a minimum deviation from the reference response.&lt;/span>&lt;/p>&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The minimizing value of &lt;span style=" font-family:Courier New;">d&lt;/span> can be computed using &lt;span style=" font-family:Courier New;">FindMinimum&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>FindMinimum[fpre[d], {d, 4}]</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">A simulation with the optimal parameter value:&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>Simulate[LinearActuator, {t, 0, 4}, 
+	ParameterValues -> {springDamper1.d == 5.28642}];</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />A plot comparing the [OpenCurlyDoubleQuote]reference[CloseCurlyDoubleQuote] first order system and linear actuator system responses together with a plot of the squared deviation amplified by a factor 100.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>PlotSimulation[{slidingMass1.s[t], 
+	y[t] /. resReference, 
+	100*(slidingMass1.s[t] - (y[t] /. resReference))^2},
+	{t, 0, 4}, Legend -> False];</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">Comparison plot of the first and second order system step responses together with the squared error.&lt;/span>&lt;/p>&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+    </GroupCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

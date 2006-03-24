@@ -1,0 +1,122 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Modifiers in Short Class Definitions&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simple Short Class Definitions&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">A few simple examples of short class definitions with modifiers are shown below, all being modifications of the superclass &lt;span style=" font-family:Courier New;">Real&lt;/span>: &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class Current = Real(unit = "mA");</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>type Force3 = Real[3](unit = {"N", "N", "N"});</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>type Voltage = Real(unit = "V", min = -220.0, max = 220.0);</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">LowPassFilter&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>model LowPassFilter1
+  constant   Real ystart = 1;
+  parameter Real T     = 1;
+  parameter Real u     = 5;         
+  Real        y(start = ystart);
+equation
+  T*der(y) + y = u;
+end LowPassFilter1;</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />&lt;span style=" font-family:Courier New;">LowPassFilter20&lt;/span> is a modification of the model &lt;span style=" font-family:Courier New;">LowPassFilter1&lt;/span>, with the changed values of &lt;span style=" font-family:Courier New;">ystart&lt;/span> and &lt;span style=" font-family:Courier New;">T&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>model LowPassFilter20 = LowPassFilter1(ystart = 0, T = 20);</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The two models &lt;span style=" font-family:Courier New;">LowPassFilter1&lt;/span> and &lt;span style=" font-family:Courier New;">LowPassFilter20&lt;/span> can be replaced by the single model &lt;span style=" font-family:Courier New;">LowPassFilter20&lt;/span>B.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>model LowPassFilter20B
+  constant   Real ystart =  0;
+  parameter Real T     = 20;
+  parameter Real u    =  5; 
+  Real        y(start = ystart);
+equation
+  T*der(y) + y = u;
+end LowPassFilter20B;</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of LowPassFilter &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( LowPassFilter1, stopTime=15 );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>plot( y );</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/19.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/19.png" >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</Image>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( LowPassFilter20, stopTime=20 );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>{y[0], y[10], y[20]}</Input>
+     <Output></Output>
+    </InputCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( LowPassFilter20B, stopTime=20 );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>plot( y );</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/20.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/20.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAEgAAAA1ggDAAAARuGvAgAAAwBQTFRFAAAAAAD/2dnZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAqOCPfgAAAAlwSFlzAAALEwAACxMBAJqcGAAABGJJREFUeJzt3YtS6jAUheGY939oj8cipZCu3HayL+sfZ1TaAn6Ttg4lmjK7Le1+AtojEIhAIAKBCAQiEIhAIAKBCAQiEIhAIAKBCAQiEIhAIAKBCAQiEIhAIAKBCARqAErp/Sv/tQA9VyfQeY1/4yUdOOmnqq3cVPhRv46OVdJjVY6gz+ucgTiCSiv9KqXnDSGqG0HXVQn0skp6/czTPDtFIBCBQAQCEQhEIBCBQAQCEQhEIBCBQAQCEQhEINAtEPUIBCMQiECg8EDHta1iwYEQT2wgrJMDA1Xp5JJBSjcLPVTLUzA4X413WL1OLhu4BWrSyUWDYxdzJ9TKE2sXa9fJkQ7SXTxhTvOdOjkIUD9PBKARnewfaJDHOdDXMI9roAk62THQHB6vQLN0sk+giTwegaby+AOaq5O9AU0ePT85AhLQyY6AZHjcAEnxOAGS43EBJMlzNji/AJ3sTAsT1ckng/SCdVmoNmme0iw5I69Jy/N8GDXn71Rf9pE99PyV3r7INi77rOE5Ax0z4s9DRy/QKh6bp/lFO9dvBoFW8hgEWstjDmg1jzGg9TymgHbwGALaw2MGaBePEaClv/hcMgC0k8cC0FYe/UCbebQDbefRDaSARzPQ3mPzX2qBdPCofZ+0Fh6l77TXw4Pmaix8Is+UHHyOCrvY8WmHkCqe8i5WXiibMp4S0K5Lz7r2rv+pOs3r41EFpJFHE5BOHzVASnm0AKnlUQKkl0cFkOLhkxUA6ebZD6TdZzOQep7NQAZ8dgJZ4NkIZINnH5AVn01ACl/WKLUFyA7PHiBDPDsms1gaPrk4V+PtlmkZ81k9mcUaTwlIajKLOZ4CkNCVVXvDJ18msyTRySwmfdad5m3yrAOy6rMKyKzPGiC7PGuALPssADLNswDIuI84kHUfYSDzPMJADnxEgRzwSAJ5GD5ZEMiJjxSQFx4pID8+MkCOfEQmszjikZir4Wn4ZAEgZz4AqF3Im8/kEeSO52YySyotvMmhz9TTvEefmUAeeSYCuRw+eR6QV59ZQG595gD55ZkFNOGJaG0CkOfxMwPIt884kHOfYSDnPMNA7n3GgLzvXj+NAEXwGQEK4TMAFIJnACjG+OmfzBKE5/xG8stb7V8WXosyfHIR6P5F+0A+BaD7ySyRfD4D3U9mCeXztlvhySyxfNpP87F4moGCDZ/cChTPpxVI7olorQUo4PhpAgrp0wAU06ceKCZPPVBUn1qgoPtXrgUKy1MJFNinCiiyTw1QaJ8KoNg+GCi4DwKKe3p/dA8U0OcKcn/x9Onz9oK+y5ufkww+L72sl75SnEogM6ciuChdhxRYOV6Xi4EEAhEIRAOQCFDq+wuVL1d1ezbs3/Jmjeb7rHnYge2uZ5H6B+x41HT6uLvr2fX+idNBoJ5HhQ8pdAzqu9sxoJGhtxao62c8NuwH6tnw700sJnax4zf+9o27N3z8r8LlB2lPEQhEIBCBQAQCEQhEIBCBQAQCEQhEIBCBQN9Z4Ns/i45NWQAAAABJRU5ErkJggg==</Image>
+    </TextCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

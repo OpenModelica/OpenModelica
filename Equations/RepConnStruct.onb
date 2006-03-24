@@ -1,0 +1,73 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Connection Equations&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />In Modelica we use &lt;a href="CompConn/Connections.onb
+">&lt;span style=" text-decoration: underline; color:#0000ff;">connect equations&lt;/span>&lt;/a> to establish connections between components via connectors. The two arguments of a connect equation must be references to connectors, each of which either has to be declared directly within the same class where the connect equation occurs, or has to be a member of one of the declared variables in that class. The &lt;span style=" font-family:Courier New;">ResistorCircuit&lt;/span> fulfills the locality constraint mentioned above.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>model ResistorCircuit          
+  Modelica.Electrical.Analog.Basic.Resistor R1(R = 100);
+  Modelica.Electrical.Analog.Basic.Resistor R2(R = 200);
+  Modelica.Electrical.Analog.Basic.Resistor R3(R = 300);
+equation
+  connect(R1.p, R2.p);
+  connect(R1.p, R3.p);
+end ResistorCircuit;</Input>
+    <Output></Output>
+   </InputCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Repetitive Connection Structures&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">You can use &lt;a href="CompConn/Connections.onb
+">&lt;span style=" text-decoration: underline; color:#0000ff;">connect equations&lt;/span>&lt;/a> together with the &lt;span style=" font-family:Courier New;">for&lt;/span>-equation construct described previously to establish &lt;span style=" font-style:italic;">repetitive connection structures&lt;/span> consisting of a number of connections between connectors beloning to array elements. This is a quite important use of &lt;span style=" font-family:Courier New;">for&lt;/span>-equations in combination with connect equations.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class RegComponent
+  parameter Integer n;
+  Modelica.Electrical.Analog.Basic.Resistor r_components[n];
+  Modelica.Electrical.Analog.Basic.Capacitor C;
+  Modelica.Electrical.Analog.Basic.Ground G;
+  Modelica.Electrical.Analog.Sources.SineVoltage src(V=10);
+equation
+  for i in 1:n-1 loop
+    connect(r_components[i].n, r_components[i + 1].p);
+  end for;
+  connect(G.p,C.n);
+  connect(C.p,r_components[n].n);
+  connect(r_components[1].p,src.p);
+  connect(src.n,G.p);
+end RegComponent;    </Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>model Test
+  RegComponent rc(n = 6);
+end Test;</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="true" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of Test&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( Test );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

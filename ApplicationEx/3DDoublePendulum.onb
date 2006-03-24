@@ -1,0 +1,82 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">A 3D Double Pendulum&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />In this section an idealized model of a double pendulum is considered. This pendulum consists of two boxes linked by a hinge. The upper box is lined by a hinge to a non-movable platform, i.e. an inertial system. Both the boxes can move in the XY plane. The corresponding kinematic outline consists of two revolute joints, one frame translation and one inertial system. &lt;br />&lt;br />The motion of dynamic system cannot be defined just by its kinematic outline, since an outline does not contain mass objects yet. The class &lt;span style=" font-family:Courier New;">Body&lt;/span> represents mechanical objects with mass. This class has a connector &lt;span style=" font-family:Courier New;">frame_a&lt;/span> as well as the parameters &lt;span style=" font-family:Courier New;">m&lt;/span> (mass of the body), &lt;span style=" font-family:Courier New;">rCM[3]&lt;/span> (position of center of mass with respect to frame a) and &lt;span style=" font-family:Courier New;">I[3, 3]&lt;/span> (inertia tensor with respect to the position of the center of the mass; it's defined by 6 numbers since it's symmetric).&lt;br />&lt;br />In the double pendulum example two bodies can be added to the kinematic outline. &lt;br />Since the description of class &lt;span style=" font-family:Courier New;">Body&lt;/span> contains the distance between its frame A and its center of mass, such objects can be directly connected to connector &lt;span style=" font-family:Courier New;">frame_b&lt;/span> of the revolute joints &lt;span style=" font-family:Courier New;">Revolute1&lt;/span> and &lt;span style=" font-family:Courier New;">Revolute2.&lt;br />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>class doublePendulumNoGeometry 
+  import ModelicaAdditions.MultiBody.Parts;
+  import ModelicaAdditions.MultiBody.Joints;
+  parameter Real         L1 = 1   "length of 1st arm";
+  parameter Real         L2 = 1.3 "length of 2nd arm";
+  parameter Real         M = 1.0  "mass";
+  Parts.InertialSystem   inertialSystem1;
+  Joints.Revolute        revolute2;
+  Joints.Revolute        revolute1;
+  Parts.Body             body1(rCM = {L1/2, 0, 0}, m = M);
+  Parts.FrameTranslation frameTranslation1(r = {L1, 0, 0});
+  Parts.Body             body2(rCM = {L2/2, 0, 0}, m = M);
+equation 
+  connect(inertialSystem1.frame_b,   revolute1.frame_a);
+  connect(revolute1.frame_b,         body1.frame_a);
+  connect(revolute1.frame_b,         frameTranslation1.frame_a);
+  connect(frameTranslation1.frame_b, revolute2.frame_a);
+  connect(revolute2.frame_b,         body2.frame_a);
+end doublePendulumNoGeometry;</Input>
+    <Output></Output>
+   </InputCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">A Double Pendulum Consisting of two Cylinders&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">In this example the pendulum consists of two cylinders. The textual representation of Modelica model is following: &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class doublePendulum
+  import ModelicaAdditions.MultiBody.Parts;
+  import ModelicaAdditions.MultiBody.Joints;
+  parameter Real          L1 = 1   "length of 1st arm";
+  parameter Real          L2 = 1.3 "length of 2nd arm";
+  Parts.InertialSystem    inertialSystem1;
+  Joints.Revolute         revolute1;
+  Parts.CylinderBody      cylinderBody1(r = {L1, 0, 0});
+  Joints.Revolute         revolute2;
+  Parts.CylinderBody      cylinderBody2(r = {L2, 0, 0}, Material = {1, 1, 0, 0.5});
+equation 
+  connect(inertialSystem1.frame_b, revolute1.frame_a);
+  connect(revolute1.frame_b,       cylinderBody1.frame_a);
+  connect(cylinderBody1.frame_b,   revolute2.frame_a);
+  connect(revolute2.frame_b,       cylinderBody2.frame_a);
+end doublePendulum;</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of DoublePendulum&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( doublePendulum );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>plot( cylinderBody1.body.frame_a.a[1] );</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/19.png" width="382" height="284" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/19.png" >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</Image>
+    </TextCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

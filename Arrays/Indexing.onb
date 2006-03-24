@@ -1,0 +1,227 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Array Indexing&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">General Description&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The indexing operator ....[....] takes two or more operands, where the first operand is the array to be indexed and the rest of the operands are index expressions. It is used to access array elements for retrieval of their values or for updating these values. In class ArrayInde&lt;br />&lt;br />&lt;span style=" font-style:italic;">arrayname[indexexpr1, indexexpr2, ......];&lt;/span> &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">ArrayIndex Class&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>class ArrayIndex
+  Real[2, 2] A = {{2, 3}, {4, 5}};      // Definition of array A
+  Real A_Retrieval = A[2, 2];        // Retrieves the array element value 5
+  Real B[2, 2];
+  Real c;
+algorithm
+  B := fill(1,2,2);              // B will have the values {{1, 1}, {1, 1}}
+  B[2, 1] := 8;                // Assignment to the array element B[2, 1]
+  c := A[1, 1];
+end ArrayIndex;
+</Input>
+      <Output></Output>
+     </InputCell>
+    </GroupCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of ArrayIndex&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Here we simulate the class &lt;span style=" font-family:Courier New;">ArrayIndex&lt;/span> above.&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>simulate( ArrayIndex );</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Output" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">We see that &lt;span style=" font-family:Courier New;">B[2, 1]&lt;/span> now has the value 8.&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>plot( { c, B[2,1] } );</Input>
+      <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/4.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+      <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/4.png" >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</Image>
+     </TextCell>
+    </GroupCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Indexing with Scalar Index Expressions &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Array indexing using scalar integer index expressions is usually used to retrieve or update single array elements. The value of the index expression for the i:th dimension of an array &lt;span style=" font-family:Courier New;">X&lt;/span> must be within the bounds of the size of that dimension, i.e. &lt;span style=" font-family:Courier New;">1 . Since multi-dimensional arrays are defined as arrays of arrays in Modelica, it is also possible to access sub-arrays using simple scalar indexing. For example, the array B can also be regarded as a one-dimensional array of vectors.&lt;br />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class ScalarIndex
+  Real[2, 2] B     = {{1, 2}, {4, 5}};
+  Real[2]    v     = {10, 11};
+  Real[4, 2] M;
+  
+  Real B_Ret1 = B[1, 2];      // Retrieves the value 2
+  //Real B_Ret2[2] = B[2];      // Retrieves B[2] giving {4, 5}
+  
+  Real v_Ret1  = v[2];        // Retrieves the value 11
+  // Real v_Ret2  = v[4];      // Error, index out of range!
+  
+algorithm
+  M[4] := fill(5, 4, 2);
+  M[4] := v;            // Updates M to become 
+                    // {{5, 5}, {5, 5}, {5, 5}, {10, 11}}
+end ScalarIndex;
+</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Accessing Array Slices with Index Vectors &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">When at least one of the index expressions in an array indexing operation is a vector expression, a subsection (slice) of the array is accessed rather than a single element. Such an index vector must be a vector of integer values, where each value must be within the size bounds for the particular array dimension. An index vector can be constructed in any way but it is often convenient to use the colon operator to construct a range vector of index values. A single colon without operands used as an index expression at a dimension k of an array of &lt;span style=" font-family:Courier New;">X&lt;/span> denotes all indices of that dimension and is equivalent to the index vector &lt;span style=" font-family:Courier New;">1:size(X, k)&lt;/span>.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class ArraySlice
+  Real x1    = X[2, 1];        // Retrieves the value 3
+  Real x2[3] = X[:, 1];        // Gets the first column of X as the vector {1, 3, 8}
+  Real x3[2] = X[2, :];        // Gets the second row of X as the vector {3, 4}
+  Real x4[2] = X[2, 1:2];      // Same as above, i.e. {3, 4}
+  Real x5[2] = X[2, {1, 2}];    // Same as above, i.e. {3, 4}
+  Real x6[1] = X[2, {2}];      // Half of the above vector, i.e. {4}
+  Real x7[3, 1] = X[:, 1:1];    // Gets the first column of X as 
+                    // column matrix {{1}, {3}, {8}}
+  Real x8[1, 2] = X[{2}, :];    // Gets the second row of X as the row matrix {{3, 4}}
+  Real x9[2, 2] = X[{2, 3}, {1, 2}];  // Extract submatrix given {{3, 4}, {8, 9}}
+  
+  Real w1[3] = w[2:4];        // Get the 2:nd through 4:th elements as {16, 17, 18}
+  Real w2[2] = w[{1, 3}];      // Get the 1:st and 3:rd elements as {15, 17}
+  Real w3[2] = w[1:2:4];      // Get the 1:st to 4:th step 2 elements as {15, 17}
+  
+  Real X[3, 2] = {{1, 2}, {3, 4}, {8, 9}};
+  Real w[4]    = {15, 16, 17, 18};
+  Real[4] y = fill(1, 4);  
+algorithm
+   w[3:4] := {1, 2};          // Assignment causing w to become {15, 16, 1, 2}
+end ArraySlice;</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Array Field Slices of Record Arrays &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">If &lt;span style=" font-family:Courier New;">A&lt;/span> is an array of records and m is a field of that record type, the expression &lt;span style=" font-family:Courier New;">A.m&lt;/span> is interpreted as an array field slice operation of that record array. It returns the array of fields: &lt;span style=" font-family:Courier New;">{A[1].m, A[2]m, A[3].m, ...}&lt;/span>. For example, given a record &lt;span style=" font-family:Courier New;">Person&lt;/span> with three fields: &lt;span style=" font-family:Courier New;">name&lt;/span>, &lt;span style=" font-family:Courier New;">age&lt;/span> and &lt;span style=" font-family:Courier New;">children&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Record Person, Function mkperson and Class p&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>record Person
+  String       name;
+  Integer       age;
+  String[2]      children;
+end Person;  </Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />We have defined a record constructor function: &lt;span style=" font-family:Courier New;">mkperson(name, age, children)&lt;/span> in Modelica returning a Person record, which is used to define the contents of a small array &lt;span style=" font-family:Courier New;">persons&lt;/span> consisting of &lt;span style=" font-family:Courier New;">Person&lt;/span> records. &lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>function mkperson
+  input String     name;
+  input Integer   age;
+  input String[2]  children;
+  output Person p;
+algorithm
+  p.name       := name;
+  p.age       := age;
+  p.children     := children;
+end mkperson;    </Input>
+      <Output></Output>
+     </InputCell>
+    </GroupCell>
+    <GroupCell closed="true" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">MakeAlive on mkperson&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>MakeAlive[mkperson]
+</Input>
+      <Output></Output>
+     </InputCell>
+     <InputCell style="Input" closed="true" >
+      <Input>mkperson["John",35,{"Carl","Eva"
+}
+
+]
+</Input>
+      <Output></Output>
+     </InputCell>
+     <InputCell style="Input" closed="true" >
+      <Input>mkperson[name->"John"
+,age[Rule]35
+,children[Rule]{"Carl","Eva"
+}
+
+
+]
+</Input>
+      <Output></Output>
+     </InputCell>
+     <InputCell style="Input" closed="true" >
+      <Input>??mkperson
+</Input>
+      <Output></Output>
+     </InputCell>
+    </GroupCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Classes PersonList and getPerson&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>class PersonList
+  Person[3] persons = {mkperson("John", 35, {"Carl", "Eva"} ),
+              mkperson("Karin", 40, {"Anders", "Dan"} ),
+               mkperson("Lisa", 37, {"John", "Daniel"} )
+        };
+end PersonList;</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The field slices &lt;span style=" font-family:Courier New;">persons.name,&lt;/span> &lt;span style=" font-family:Courier New;">persons.age and persons.children &lt;/span> give the following results:&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>class getPerson
+  PersonList pList;
+  String name[3];
+  Integer age[3];
+  String[3, 2] children;
+equation  
+  name     = pList.persons.name;           // Returns: {"John", "Karin", "Lisa"}
+  age     = pList.persons.age;          // Returns: {35, 40, 37}
+  children   = pList.persons.children;        // Returns: {{"Carl", "Eva"}, 
+                            //       {"Anders", "Dan"}, 
+                            //       {"John", "Daniel"}}
+end getPerson;  </Input>
+      <Output></Output>
+     </InputCell>
+    </GroupCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

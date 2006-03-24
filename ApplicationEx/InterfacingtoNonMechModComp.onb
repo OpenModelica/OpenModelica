@@ -1,0 +1,183 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Interfacing to Non-Mechanical Model Components&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />When a multidomain model in Modelica is designed, the mechanical part of the model physically interacts with some other parts of the model. The mechanical part should usually be connected with the part describing the drive train, which is in turn connected to the part describing the energy source, e.g. electrical circuit. There are standard Modelica libraries for all these components. &lt;br />&lt;br />However, sometimes the attention is focused on an isolated mechanical part of the model. In this case the reference positions as well as forces and torques acting on the model can be specified directly. &lt;br />&lt;br />There exist three major ways to set up an interface between the mechanical part of Modelica model and other parts. These ways correspond to three connector types: &lt;span style=" font-family:Courier New;">Multiboby.Interfaces.Frame, Rotational.Interfaces.Flange&lt;/span> and &lt;span style=" font-family:Courier New;">Translational.Interfaces.Flange&lt;/span>. &lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Using Multibody.Interfaces.Frame&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Any object with connector of type &lt;span style=" font-family:Courier New;">Frame_a&lt;/span> or &lt;span style=" font-family:Courier New;">Frame_b&lt;/span> can be connected to a model of external force or torque. This external force (or torque) will be applied to the corresponding point on the relevant body. The example below includes a force acting on the end of the pendulum in direction of the local Y-axis (perpendicular to the pendulum bar). When force is attached to the pendulum it does not oscillate;  it rotates instead.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class ExtForcePendulum
+  import ModelicaAdditions.MultiBody.Parts;
+  import ModelicaAdditions.MultiBody.Joints;
+  import ModelicaAdditions.MultiBody.Forces;
+  import Modelica.Blocks.Sources;
+  Parts.InertialSystem  inertialSystem1;
+  Joints.Revolute       revolute1;
+  Parts.CylinderBody    cylinderBody1(r = {1, 0, 0});
+  Forces.ExtForce       extForce1;
+  Sources.Constant      constant1(k = {0, 1190, 0});
+equation 
+  connect(inertialSystem1.frame_b, revolute1.frame_a);
+  connect(revolute1.frame_b,       cylinderBody1.frame_a);
+  connect(cylinderBody1.frame_b,   extForce1.frame_b);
+  connect(constant1.outPort,       extForce1.inPort);
+end ExtForcePendulum;</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Sometimes it is necessary to specify external force in global coordinates. One connect statement should be replaced by equation (see below). The input signal &lt;span style=" font-family:Courier New;">ExtForce&lt;/span> object is adjusted according to the orientation matrix &lt;span style=" font-family:Courier New;">S&lt;/span> of the &lt;span style=" font-family:Courier New;">ExtForce&lt;/span> frame. When such constant force (in direction of vector {1,1,0} in the global coordinate system) is applied to the pendulum, it oscillates near the equilibrium point.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class ExtGlobalForcePendulum
+  import ModelicaAdditions.MultiBody.Parts;
+  import ModelicaAdditions.MultiBody.Joints;
+  import ModelicaAdditions.MultiBody.Forces;
+  import Modelica.Blocks.Sources;
+  Parts.InertialSystem  inertialSystem1;
+  Joints.Revolute       revolute1; 
+  Parts.CylinderBody    cylinderBody1(r = {1, 0, 0});
+  Forces.ExtForce       extForce1;
+  Sources.Constant      constant1(k = {5000, 5000, 0});
+equation 
+  connect(inertialSystem1.frame_b, revolute1.frame_a);
+  connect(revolute1.frame_b,       cylinderBody1.frame_a);
+  connect(cylinderBody1.frame_b,   extForce1.frame_b);
+  transpose(extForce1.frame_b.S) * constant1.outPort.signal = extForce.inPort.signal;
+end ExtGlobalForcePendulum;
+</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Using Rotational.Interfaces.Flange&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The &lt;span style=" font-family:Courier New;">Rotational&lt;/span> library describes varius elements for one-dimensional rotational motion. These elements can be attached to the Revolute joint from &lt;span style=" font-family:Courier New;">MultiBody&lt;/span> library. A torque, spring, damper or any other component can be attached to the flanges of the revolute joint. The example below illustrates a one-dimensional spring and damper (from &lt;span style=" font-family:Courier New;">Rotational&lt;/span> library) attached to the revolute joint of a simple pendulum.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class PendulumWithDamper 
+  import ModelicaAdditions.MultiBody.Parts;
+  import ModelicaAdditions.MultiBody.Joints;
+  import ModelicaAdditions.MultiBody.Forces;
+  import Modelica.Blocks.Sources;
+  import Modelica.Mechanics.Rotational;
+  Parts.InertialSystem     inertialSystem1;
+  Parts.CylinderBody       cylinderBody1(r = {1, 0, 0});
+  Joints.Revolute          revolute1;
+  Rotational.SpringDamper  springDamper1(c = 500, phi_rel0 = 1, d = 500);
+equation 
+  connect(inertialSystem1.frame_b, revolute1.frame_a);
+  connect(springDamper1.flange_a,  revolute1.bearing);
+  connect(springDamper1.flange_b,  revolute1.axis);
+  connect(revolute1.frame_b,       cylinderBody1.frame_a);
+end PendulumWithDamper;</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Often it is necessary to move the joint to the desired position. This can be done by &lt;span style=" font-family:Courier New;">Rotational.Position&lt;/span> component. The angle is given by a signal that come from a &lt;span style=" font-family:Courier New;">Block&lt;/span> library element.The example below illustrates a &lt;span style=" font-family:Courier New;">Step&lt;/span> block attached to such component.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class PendulumWithPosition 
+  import ModelicaAdditions.MultiBody.Parts;
+  import ModelicaAdditions.MultiBody.Joints;
+  import Modelica.Blocks.Sources;
+  import Modelica.Mechanics.Rotational;
+  Parts.InertialSystem  inertialSystem1;
+  Parts.CylinderBody    cylinderBody1(r = {1, 0, 0});
+  Joints.Revolute       revolute1;
+  Sources.Step          step1(startTime = {0.5});
+  Rotational.Position position1(f_crit = 5);
+equation
+  connect(revolute1.frame_b, cylinderBody1.frame_a);
+  connect(springDamper1.flange_a, revolute1.bearing);
+  connect(springDamper1.flange_b, revolute1.axis);
+  connect(revolute1.frame_b, cylinderBody1.frame_a);
+end PendulumWithPosition;
+</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />In class Position the reference angle is filtered and the second derivative of the filtered curve is used to compute the reference acceleration of the flange. Angular position of the joint is computed from this acceleration. For filtering, a second order Bessel filter is used. The critical frequency (also called cut-off frequency) of the filter is defined via parameter &lt;span style=" font-family:Courier New;">f_crit&lt;/span> in [Hz]. This value should be selected in such a way that it is higher as the essential low frequencies in the signal.&lt;br />&lt;br />Another way to steer a joint is to set up a &lt;span style=" font-style:italic;">Proportional Derivative (PD) controller&lt;/span>. Instead of computing angular position, the PD controller creates an active torque, which acts on the joint. It behaves like a motor; parameters &lt;span style=" font-family:Courier New;">k&lt;/span> and &lt;span style=" font-family:Courier New;">d&lt;/span> can be tuned in order to adjust the reaction speed and power.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class SimpleRotationalController 
+  "Input signal acting as reference value for angle, 
+   gives external torque on a flange"
+  import Modelica.Blocks;
+  import Modelica.Mechanics.Rotational;
+  parameter Real             k = 1;
+  parameter Real             d = 1;
+  Blocks.Interfaces.InPort        inPort(final n = 1);
+  Rotational.Interfaces.Flange_b  flange_b;
+equation 
+  flange_b.tau = k * (flange_b.phi - inPort.signal[1]) + 
+                 d * der(flange_b.phi);
+end SimpleRotationalController;</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class PendulumWithSteering 
+  import ModelicaAdditions.MultiBody.Parts;
+  import ModelicaAdditions.MultiBody.Joints;
+  import Modelica.Blocks.Sources;
+  Parts.InertialSystem       inertialSystem1;
+  Parts.CylinderBody         cylinderBody1(r = {1, 0, 0});
+  Joints.Revolute            revolute1;
+  Sources.Step               step1(startTime = {0.5});
+  SimpleRotationalController ctrl(k = 5000, d = 500);
+equation 
+  connect(revolute1.frame_b,       cylinderBody1.frame_a);
+  connect(step1.outPort,           ctrl.inPort);
+  connect(ctrl.flange_b,           revolute1.axis);
+  connect(inertialSystem1.frame_b, revolute1.frame_a);
+end PendulumWithSteering;</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The Translational library describes various elements for one-dimensional translational motion. These elements can be attached to the &lt;span style=" font-family:Courier New;">Prismatic&lt;/span> joint from &lt;span style=" font-family:Courier New;">MultiBody&lt;/span> library.A force, spring, damper or any other component can be attached to the flanges of the prismatic joint. Below a &lt;span style=" font-family:Courier New;">Position&lt;/span> component is attached to prismatic joint, and steers the position of the first body according to the signal from the &lt;span style=" font-family:Courier New;">Step&lt;/span> block. In addition a free flying body is attached to the first body. It is connected by a 3D spring and damper to the first one. The example demonstrates how &lt;span style=" font-family:Courier New;">FreeMotion&lt;/span> class is used.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class PrismaticPosition
+  import ModelicaAdditions.MultiBody.Parts;
+  import ModelicaAdditions.MultiBody.Joints;
+  import ModelicaAdditions.MultiBody.Forces;
+  import Modelica.Blocks.Sources;
+  import Modelica.Mechanics.Translational;
+  Parts.InertialSystem   inertialSystem1;
+  Parts.CylinderBody     cylinderBody1;
+  Joints.Prismatic       prismatic1;
+  Forces.SpringDamperPar springDamperPar1(c = 10000, s0 = 0.3,  d = 500);
+  Joints.FreeMotion      freeMotion1;
+  Parts.CylinderBody     cylinderBody2;
+  Translational.Position position1;
+  Sources.Step           step1(startTime = {0.5});
+equation 
+  connect(prismatic1.frame_b,       cylinderBody1.frame_a);
+  connect(prismatic1.frame_a,       inertialSystem1.frame_b);
+  connect(springDamperPar1.frame_a, cylinderBody1.frame_b);
+  connect(cylinderBody1.frame_b,    freeMotion1.frame_a);
+  connect(freeMotion1.frame_b,      cylinderBody2.frame_a);
+  connect(springDamperPar1.frame_b, cylinderBody2.frame_a);
+  connect(position1.flange_b,       prismatic1.axis);
+  connect(step1.outPort,            position1.inPort);
+end PrismaticPosition;</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

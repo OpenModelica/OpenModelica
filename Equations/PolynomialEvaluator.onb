@@ -1,0 +1,93 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Polynomial Equations&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">PolynomialEvaluator&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-family:Courier New;">PolynomialEvaluator&lt;/span> is a restricted class of block kind since both public variables have specified causality input or output.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>block PolynomialEvaluator 
+  parameter Real c[:];     
+  input Real x;
+  output Real y;
+protected
+  parameter Integer n = size(c, 1) - 1;
+  Real xpowers[n + 1];
+equation
+  xpowers[1] = 1;
+  for i in 1:n loop
+    xpowers[i + 1] = xpowers[i]*x;
+  end for;  
+  y = c[1] * xpowers[n + 1];
+end PolynomialEvaluator;
+</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />You can for example use this class to evaluate a simple polynomial in terms of the built-in variable time, by instantiating the class with the coefficient vector &lt;br />c = {1, 2, 3, 4}.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class PolyEvaluate1
+  Real p;
+  PolynomialEvaluator polyeval(c = {1, 2, 3, 4});
+equation
+  polyeval.x = time;  
+  p = polyeval.y;              // p gets the result
+end PolyEvaluate1;
+</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />An alternative way is to bind the inputs and the outputs using modifier equations in the declaration of the &lt;span style=" font-family:Courier New;">polyeval&lt;/span> instance of &lt;span style=" font-family:Courier New;">PolynomialEvaluator&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class PolyEvaluate2
+  Real p;
+  PolynomialEvaluator polyeval(c = {1, 2, 3, 4}, x = time, y = p);
+end PolyEvaluate2;</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of PolynomialEvaluator &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Here the simulation of the &lt;span style=" font-family:Courier New;">PolyEvaluate1&lt;/span> is shown. The variables can then be plotted as below.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( PolyEvaluate1, stopTime=10 );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>plot( p );</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/12.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/12.png" >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</Image>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Here the simulation of the &lt;span style=" font-family:Courier New;">PolyEvaluate2&lt;/span> is shown.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( PolyEvaluate2 );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

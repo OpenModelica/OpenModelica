@@ -1,0 +1,387 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Discrete Event System Specification (DEVS)&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">The Random Package&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>package Random
+import Modelica.Math;
+constant Real NV_MAGICCONST = 4 * exp( -0.5 ) / sqrt( 2.0 );
+type Seed=Integer[3];
+
+function random "input random number generator with external storage of the seed"
+  input Seed si "input random seed";
+  output Real x "uniform random variate between 0 and 1";
+  output Seed so "output random seed";
+algorithm
+  so[1] := rem((171 * si[1]),30269);
+  so[2] := rem((172 * si[2]),30307);
+  so[3] := rem((170 * si[3]),30323);
+  // zero is a poor Seed, therfore substitute 1;
+  if so[1] == 0 then
+    so[1] := 1;
+  end if;
+  if so[2] == 0 then
+    so[2] := 1;
+  end if;
+  if so[3] == 0 then
+    so[3] := 1;
+  end if;
+  x := rem((so[1]/30269.0 +so[2]/30307.0 + so[3]/30323.0),1.0);
+end random;
+
+function normalvariate "normally distributed random variable"
+  input Real mu "mean value";
+  input Real sigma "standard deviation";
+  input Seed si "input random seed";
+  output Real x "gaussian random variate";
+  output Seed so "output random seed";
+protected
+  Seed s1, s2;
+  Real z, zz, u1, u2;
+  Boolean break=false;
+algorithm
+  s1 := si;
+  u2 := 1;
+  while not break loop
+    (u1,s2) := random(s1);
+    (u2,s1) := random(s2);
+    z := NV_MAGICCONST*(u1-0.5)/u2;
+    zz := z*z/4.0;
+    break := zz &lt;= (- Math.log(u2));
+  end while;
+  x := mu + z*sigma;
+  so := s1; 
+end normalvariate;
+
+connector discreteConnector
+   discrete Boolean dcon;
+end discreteConnector;
+
+end Random;</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />DymolaBUG: for some strange  reason Dymola crashes when the following statement is initialized&lt;br />type Seed=Integer[3](min=zeros(3),max=ones(3)*255);&lt;br />this will also cause MathModelica to loop forever in the evaluation of the model.&lt;br />The follwing statement should be used instead&lt;br />type Seed;&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">DEVS Model&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">We will now describe a fairly comprehensive example on how DEVS models can be represented in Modelica. One difference in Modelica is that we have a built-in time variable for absolute time rather than a local timer tlocal that is reset at the most recent event. This local timer is not really needed for modeling purposes since time is available, but is included to show the relation to traditional DEVS models. The facilities for model structuring and reuse are in general much greater in Modelica due to its object-oriented properties compared to traditional DEVS. In order to simplify comparisons this example connects model components such as servers or generators in a way that is analogous to traditional DEVS.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>connector EventPort
+  Boolean signal;
+end EventPort;</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>partial model BasicDEVSTwoPort
+
+  import Modelica.Constants.inf;       // import constant inf
+  input  EventPort  inp;               // Input port for external events
+  output EventPort  outp;              // Output port for emitted events
+  Boolean   DEVSactive(start=false);    // Start in non-active mode (phase)
+  Real      tResidual(start=inf);        // Time until internal event (sigma)
+  Real      tlocal(start=0);             // Local timer reset at events (e)
+  discrete Real tNextEvent(start=0.0001);     // Time of next internal event
+  discrete Real tLastEvent(start=0);       // Time of most recent event
+equation
+  tResidual = if tNextEvent&lt;time // tNextEvent==inf
+              then  inf  else  tNextEvent-time;
+  tlocal = if inp.signal or tNextEvent&lt;=time // extern or intern ev
+           then 0 else time - tLastEvent;
+  when {inp.signal, pre(tNextEvent)&lt;=time} then
+    tLastEvent = time;                     // Note the time of this event
+  end when;
+end BasicDEVSTwoPort;
+</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />A simple job shop model illustrates DEVS based modeling. A generator for arriving jobs is connected to a simple DEVS based server.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/26.png" width="439" height="137" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/26.png" >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</Image>
+    </TextCell>
+    <TextCell style="" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Courier New; font-size:12pt; color:#000000;">The testDEVSServer model connects a job generator to a simple DEVS-based server.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">testDEVSServer Model&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The &lt;span style=" font-family:Courier New;">testDEVSServer&lt;/span> model contains two main items: a &lt;span style=" font-family:Courier New;">generateJobEvents&lt;/span> generator component that generates arriving jobs at regular intervals, and a &lt;span style=" font-family:Courier New;">simpleDEVSServer&lt;/span> server component being a very simple model of a job shop system that services arriving jobs with a normally distributed service time. The &lt;span style=" font-family:Courier New;">SignalView&lt;/span> class instances are needed to widen sharp peaks for plotting.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>model testDEVSServer
+  GenerateJobEvents  generateJobEvents(period=1.5,startTime=3);  
+  SimpleDEVSServer   simpleDEVSServer;   
+  SignalView         viewSignal1;   // Not shown, just for plotting
+  SignalView         viewSignal2;   // Not shown, just for plotting
+ equation
+  connect(generateJobEvents.outp, simpleDEVSServer.inp);
+  connect(simpleDEVSServer.outp, viewSignal2.inp);
+  connect(generateJobEvents.outp, viewSignal1.inp);  // Just for plotting
+end testDEVSServer;</Input>
+      <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>model GenerateJobEvents  "Generates Job events periodically"
+  output EventPort outp; // Output port
+  parameter Real startTime = 0;
+  parameter Real period = 2;
+equation
+  outp.signal = sample(startTime,period);
+end GenerateJobEvents;</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+    </GroupCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">SimpleDEVSServer&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The &lt;span style=" font-family:Courier New;">SimpleDEVSServer&lt;/span> class is a fairly straightforward extension of the basic DEVS class BasicDEVSTwoPort. A randomly distributed service time variable &lt;span style=" font-family:Courier New;">servTime&lt;/span> has been added with a normal distribution determined by parameters &lt;span style=" font-family:Courier New;">mean&lt;/span> and &lt;span style=" font-family:Courier New;">stdev&lt;/span>. The discrete &lt;span style=" font-family:Courier New;">randomSeed&lt;/span> variable is needed to store the seed between calls to &lt;span style=" font-family:Courier New;">normalvariate&lt;/span>, which as all Modelica functions is a mathematical function whose value is completely determined by its inputs. The absolute value of &lt;span style=" font-family:Courier New;">servTime&lt;/span> is used to guarantee positive service times.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>model SimpleDEVSServer
+  import Modelica.Constants.inf; // import constant inf
+  extends BasicDEVSTwoPort;
+  Boolean   internalEvent;
+  Boolean   externalEvent;
+  parameter Real  mean  = 2.0  "mean of job service time";
+  parameter Real  stdev = 0.5;
+  discrete  Real  servTime;  // time needed to service current job
+ discrete  Random.Seed randomSeed(start={23,87,187});
+ 
+equation
+  internalEvent = pre(tNextEvent)&lt;=time;
+  externalEvent = inp.signal;
+  //outp.signal   = internalEvent; 
+  when {externalEvent,internalEvent} then
+    (servTime,randomSeed) = Random.normalvariate(mean,stdev, pre(randomSeed));
+    if edge(externalEvent) and not pre(DEVSactive) then          
+      DEVSactive = true;
+      tNextEvent  = time + abs(servTime); 
+    elseif edge(externalEvent) and pre(DEVSactive) then
+      DEVSactive = true;
+      tNextEvent  = pre(tNextEvent); 
+    else
+      DEVSactive = false;
+      tNextEvent = pre(tNextEvent); 
+    end if;
+  end when;
+  
+  outp.signal = if pre(DEVSactive) and edge(internalEvent) then true else false;
+end SimpleDEVSServer;</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>model SignalView  "Increase width of sample trigger signals"
+  EventPort    inp;
+  EventPort    outp;
+  parameter Real width=0.001;
+  discrete  Real T0;
+equation
+  when inp.signal then
+    T0=time;
+  end when;
+  outp.signal=(time>=T0) and (time&lt;T0+width);
+end TriggerSignalView;</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Remember the following two connect equations from the testDEVSServer model. When using the currently available Modelica tools it is necessary to employ some kind of &lt;span style=" font-family:Courier New;">SignalView&lt;/span> peak widening facility in order to plot sharp peaks that have zero width, i.e. have no time duration. Otherwise these peaks would not be visible in the diagram.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>class Conn1
+equation
+  connect(simpleDEVSServer.outp, viewSignal2.inp);
+end Conn1;</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>class Conn2
+equation
+  connect(generateJobEvents.outp, viewSignal1.inp);
+end Conn2;</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+    </GroupCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of testDEVSServer&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">We simulate the testDEVSServer model to be able to view some of the input and output signals. The plot agrees with the specification of the generateJobEvents instance, where the first event is generated at time = 3 and subsequent events are generated with a periodicity 1.5 seconds.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>simulate( testDEVSServer, stopTime=10 );</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Output" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <GroupCell closed="false" >
+      <TextCell style="Subsubsection" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Plot&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="true" >
+       <Input>plot( { viewSignal1.outp.signal, viewSignal2.outp.signal, simpleDEVSServer.DEVSactive } );</Input>
+       <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+      </InputCell>
+      <TextCell style="Output" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/27.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+       <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/27.png" >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</Image>
+      </TextCell>
+      <TextCell style="Text" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-family:Courier New; font-weight:600;">Diagram 1:&lt;/span>&lt;span style=" font-family:Courier New;"> viewSignal1.outp.signal, viewSignal2.outp.signal and DEVSactive&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+     </GroupCell>
+     <GroupCell closed="false" >
+      <TextCell style="Subsubsection" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Plot&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="true" >
+       <Input>plot( { viewSignal1.outp.signal, viewSignal2.outp.signal } );</Input>
+       <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+      </InputCell>
+      <TextCell style="Output" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/28.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+       <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/28.png" >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</Image>
+      </TextCell>
+      <TextCell style="Text" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-family:Courier New; font-weight:600;">Diagram 2:&lt;/span>&lt;span style=" font-family:Courier New;"> - viewSignal1.outp.signal and viewSignal2.outp.signal&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+     </GroupCell>
+     <GroupCell closed="false" >
+      <TextCell style="Subsubsection" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Plot&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="true" >
+       <Input>plot( viewSignal1.outp.signal );</Input>
+       <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+      </InputCell>
+      <TextCell style="Output" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/30.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+       <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/30.png" >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</Image>
+      </TextCell>
+      <TextCell style="Text" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-family:Courier New; font-weight:600;">Diagram 3:&lt;/span>&lt;span style=" font-family:Courier New;"> - The output signal outp of the generateJobEvents generator component in testDEVSServer.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+     </GroupCell>
+     <GroupCell closed="false" >
+      <TextCell style="Subsubsection" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Plot&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="true" >
+       <Input>plot( simpleDEVSServer.tNextEvent );</Input>
+       <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+      </InputCell>
+      <TextCell style="Output" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/31.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+       <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/31.png" >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</Image>
+      </TextCell>
+      <TextCell style="Text" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-family:Courier New; font-weight:600;">Diagram 4:&lt;/span>&lt;span style=" font-family:Courier New;"> - The output signal simpleDEVSServer.tNextEvent.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+     </GroupCell>
+     <GroupCell closed="false" >
+      <TextCell style="Subsubsection" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Plot&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="true" >
+       <Input>plot( viewSignal2.outp.signal );</Input>
+       <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+      </InputCell>
+      <TextCell style="Output" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/32.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+       <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/32.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAEgAAAA1ggDAAAARuGvAgAAAwBQTFRFAAAAAAD/2dnZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAqOCPfgAAAAlwSFlzAAALEwAACxMBAJqcGAAAA4FJREFUeJzt3Yt22joUANGD//+j24DlF5LGMsI4YfZNGwrCNlMZ1qoINwZVxacP4OoMBAwEDAQMBAwEDAQMBAwEDAQMBAwEDAQMBAwEDAQMBAwEDAQMBAwE9gWK7MXHn/8rb+hxW/rW+7DOsOtIaoMCby6PuU6Gsj3H+DPmZw6kX+lSbK55TKdpSt2/xdNuxvvcv2L8fXFjxLDe5ocVjuE2msfE/H18GHH/b1hev/iar1rvJXLDpttTrBiKh3ayvTNofjqZr0iJsoFiMYNivbHs13pvvzdQOgUejyCmv/P5+ukUGs+fIXvijJNw3tjm8jz+w15+kj4+9IW7nKj5Zb467MjfefFOh7bW3RWO4dIMBAwEDAQMBAwEDAQMBAwEDAQMBAwEDAQMBAwE6qs1Zx7JRZX+sap241cxEKgGun220O30O2bUA3Xc0QHHA3U88GygtDr6awN1PIjqSWQgAyEDAQMBAwEDAQMBAwEDAQMBAwEDAQMBAwEDAQMBAwEDAQMBAwEDAQMBA4E50PJHR+KXLxx2PIhYXHi6bKBCIGfQrD6DfPOCpxjZnlarH8g2kC/zyEDAQMBAwEDAQMBAwEDAQMBAwEDAQMBAwEDAQMBAwEDAQMBAwEDAQMBAoLQ277rYqLD03H9HB1w3ULhwOHFtHrg2D7Jr855iM1/mgYGAgYCBgIGAgYCBgIGAgYCBgIGAgYCBgIGAgYCBgIGAgYCBgIGAgYCBgIFA/s0Lg29eSEpvXjDQyKVnUHp3x+Mz7X3zQuEUcwZN8h8sMPh/RUh8mQcGAgYCBgIGAgYCBgIGAgYCBgIGAgYCBgIGAgYCBgIGAgYCBgIGAgYCBgKlDxbovqMDrhXIpee8wsqqMyipfzSFa/PFU6z7jg64VqDNBwv4HDTyZR4YCBgIGAgYCBgIGAgYCBgIGAgYCBgIGAgYCBgIGAgYCBgIGAgYCBgIGAgYCBhoYxukY6C2deodoxe7b9v2C8edfiJ+354LR/j0Joc3XZ3f/Y6NHD7upz8VA91Dxu07rGZNbKdUPtCOG/+qqM+o/Td+CQMBGwADgX6Bom1TTcOjcXTj0NodugXavjzi8LbR7zqSoDt0PMUaH3HD8LYJ1DQ5TwzU+BhaHnRjzmvOoOYNveshXzZQ83nQ8lT6plNsnMinPEn/VQYCBgIGAgYCBgIGAgYCBgIGAgYC/wA3VNtd7nKdWAAAAABJRU5ErkJggg==</Image>
+      </TextCell>
+      <TextCell style="Text" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-family:Courier New; font-weight:600;">Diagram 5:&lt;/span>&lt;span style=" font-family:Courier New;"> - A signal is emitted through simpleDEVSServer.outp when completing \\ service of a job, here Job 1 and Job 3.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+     </GroupCell>
+     <GroupCell closed="false" >
+      <TextCell style="Subsubsection" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Plot&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="true" >
+       <Input>plot( simpleDEVSServer.DEVSactive );</Input>
+       <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+      </InputCell>
+      <TextCell style="Output" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/33.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+       <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/33.png" >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</Image>
+      </TextCell>
+      <TextCell style="Text" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-family:Courier New; font-weight:600;">Diagram 6:&lt;/span>&lt;span style=" font-family:Courier New;"> - The variable simpleDEVSServer.DEVSactive is true while a job is being serviced.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+     </GroupCell>
+     <GroupCell closed="false" >
+      <TextCell style="Subsubsection" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Plot&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="true" >
+       <Input>plot( simpleDEVSServer.servTime );</Input>
+       <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+      </InputCell>
+      <TextCell style="Output" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/34.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+       <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/34.png" >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</Image>
+      </TextCell>
+      <TextCell style="Text" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-family:Courier New; font-weight:600;">Diagram 7:&lt;/span>&lt;span style=" font-family:Courier New;"> - The service time variable simpleDEVSServer.servTime obtains new values at events.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+     </GroupCell>
+     <GroupCell closed="false" >
+      <TextCell style="Subsubsection" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Plot&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="true" >
+       <Input>plot( simpleDEVSServer.internalEvent );</Input>
+       <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+      </InputCell>
+      <TextCell style="Output" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/35.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+       <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/35.png" >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</Image>
+      </TextCell>
+      <TextCell style="Text" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-family:Courier New; font-weight:600;">Diagram 8:&lt;/span>&lt;span style=" font-family:Courier New;"> - The output signal simpleDEVSServer.internalEvent.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+     </GroupCell>
+    </GroupCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

@@ -1,0 +1,52 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Local Packages&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />A local package is simply a package that is declared directly inside a &lt;span style=" font-style:italic;">class&lt;/span> that is not a package. In the model &lt;span style=" font-family:Courier New;">MyCircuit&lt;/span> below we use a local specialized version of the package &lt;span style=" font-family:Courier New;">Electrical.Components&lt;/span> being replaced by the local type &lt;span style=" font-family:Courier New;">MyResistorModel&lt;/span>. Several classes from the local package &lt;span style=" font-family:Courier New;">MyComponents&lt;/span> are used for instantiating variables.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>model MyCircuit
+
+  model MyResistorModel
+    extends Electrical.Interfaces.ResistorModel;
+      // declarations and equations
+  end MyResistorModel;
+  
+  encapsulated package MyComponents =
+      Electrical.Components(redeclare model ResistorModel = MyResistorModel);
+  
+  MyComponents.Transformer tr1;
+  MyComponents.Transducer td2;
+
+end MyCircuit;
+</Input>
+    <Output></Output>
+   </InputCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The class &lt;span style=" font-family:Courier New;">DeQueueLocalUser&lt;/span> below uses the local package &lt;span style=" font-family:Courier New;">P&lt;/span> that is a version of the package &lt;span style=" font-family:Courier New;">DoubleEndedQueue&lt;/span> from the section &lt;a href="Inherited.onb
+">&lt;span style=" text-decoration: underline; color:#0000ff;">Inherited Packages&lt;/span>&lt;/a> parameterized by the local type &lt;span style=" font-family:Courier New;">VerySecret&lt;/span>.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>class DeQueueLocalUser
+  protected
+    type VerySecret = Integer;
+    package P = DoubleEndedQueue(redeclare type Element = VerySecret);
+    P.Stack q(maxsize = 200);
+    Integer item;
+algorithm
+    q := P.Push(q, 65);        // Insert two numbers at the beginning
+    q := P.Push(q, 500);
+    q := P.AddBottom(q, 455);    // Insert at the end of the queue
+    item := P.Bottom(q);      // Get the end element, i.e. 455
+    q := P.Pop(q);          // Remove the first element from the queue
+end DequeueLocalUser;
+</Input>
+    <Output></Output>
+   </InputCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

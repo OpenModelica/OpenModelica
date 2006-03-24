@@ -1,0 +1,141 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">An Oscillating Mass Connected to a Spring&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="true" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Components&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>partial model Compliant                "Compliant coupling of 2 translational 1D flanges"
+  Modelica.Mechanics.Translational.Interfaces.Flange_a flange_a      "Driving flange";    
+  Modelica.Mechanics.Translational.Interfaces.Flange_b flange_b      "Driven flange";
+  Modelica.SIunits.Distance s_rel           "Relative distance between flange_a and flange_b";
+  flow Modelica.SIunits.Force f            "Force between flanges, positive in direction of N";
+equation
+  s_rel = flange_b.s - flange_a.s;
+  0   = flange_b.f + flange_a.f;
+  f      = flange_b.f;
+end Compliant;</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>model Spring                     "Linear 1D translational spring"
+  extends Compliant;
+  parameter Modelica.SIunits.Distance s_rel0 = 0  "Unstretched spring length";
+  parameter Real c(unit = "N/m") = 1        "Spring constant";
+equation
+  f = c*(s_rel - s_rel0);              // Spring equation
+end Spring;    </Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>model Mass                       "Hanging mass object"
+  extends Rigid;
+  parameter Real m = 1                "Mass of the hanging mass";
+  constant Real  g = 9.81              "Gravitational acceleration";
+  Real        v                  "Absolute velocity of component";
+  Real        a                  "Absolute acceleration of component";
+equation
+  v = der(s);
+  a = der(v);  
+  flange_b.f = m*a - m*g;
+end Mass;  </Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>partial model Rigid                 "Rigid connection of two translational 1D flanges"
+  Real s                      
+                            "Absolute position s of center of component
+                            (s = flange_a.s + L/2 = flange_b.s - L/2)";
+  parameter Real L = 0                "Length L of component from left to right flange
+                            (L = flange_b.s - flange_a.s)";
+  Modelica.Mechanics.Translational.Interfaces.Flange_a flange_a;
+  Modelica.Mechanics.Translational.Interfaces.Flange_b flange_b;
+equation
+  flange_a.s = s - L/2;
+  flange_b.s = s + L/2;                  
+end Rigid;                      // From Modelica.Mechanics.Translational.Interfaces</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>model Fixed                      "Fixed flange at a housing"
+  parameter Real s0 = 0                "Fixed offset position of housing"; 
+  Modelica.Mechanics.Translational.Interfaces.Flange_b flange_b;
+equation
+  flange_b.s = s0;
+end Fixed;                       // From Modelica.Mechanics.Translational</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Oscillator&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The following model gives rise to some dynamic movement when simulated. A mass is connected to a spring which is connected to a fixed housing. The mass &lt;span style=" font-family:Courier New;">mass1&lt;/span> is subject to the gravitational force &lt;span style=" font-family:Courier New;">-mg&lt;/span> and the force from the spring. It is given an initial position &lt;span style=" font-family:Courier New;">s&lt;/span>=&lt;span style=" font-family:Courier New;">-0.5&lt;/span> which is offset from the equilibrium position and therefore starts an oscillating movement up-and-down.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>model Oscillator
+  Mass     mass1(L = 1, s(start = -0.5));
+  Spring   spring1(s_rel0 = 2, c = 10000);
+  Fixed   fixed1(s0 = 1.0);
+equation
+  connect(spring1.flange_b, fixed1.flange_b);
+  connect(mass1.flange_b, spring1.flange_a);
+end Oscillator;   </Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of Oscillator&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( Oscillator );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>plot( mass1.s, xrange={0,0.5} );</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/12.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/12.png" >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</Image>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-weight:600;">            Diagram 1:&lt;/span> Plot of the absolute position mass1.s(t) of the center of the haning mass.&lt;br />&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>plot( mass1.v, xrange={0,0.5} );</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/13.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/13.png" >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</Image>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-weight:600;">            Diagram 2:&lt;/span> Plot of the absolute velocity mass1.v(t) of the center of the haning mass.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

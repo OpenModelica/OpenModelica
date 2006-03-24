@@ -1,0 +1,48 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Van der Pol Model&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />This example describes a Van der Pol oscillator. Notice that here the keyword &lt;span style=" font-family:Courier New;">model&lt;/span> is used instead of &lt;span style=" font-family:Courier New;">class&lt;/span> with the same meaning. This example contains declarations of two state variables x and y, both of type Real and a parameter constant lambda, which is a so-called simulation parameter. The keyword parameter specifies that the variable is constant during a simulation run, but can have its value initialized before a run, or between runs. Finally, there is an equation section starting with the keyword equation, containing two mutually dependent equations that define the dynamics of the model.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>model VanDerPol                    "Van der Pol oscillator model"
+  Real x(start = 1);                      
+  Real y(start = 1);                            
+  parameter Real lambda = 0.3;
+equation
+  der(x) = y;                     
+  der (y) = - x + lambda*(1 - x*x)*y;  
+end VanDerPol;
+</Input>
+    <Output></Output>
+   </InputCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of Van der Pol &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">To illustrate the behavior of the model, we give a command to simulate the Van der Pol oscillator during 25 seconds starting at time 0.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate(VanDerPol, startTime=0, stopTime=25 );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>plotParametric( x, y );</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/9.png" width="288" height="177" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/9.png" >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</Image>
+    </TextCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

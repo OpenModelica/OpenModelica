@@ -1,0 +1,116 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">External Functions&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">General Description&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">It is possible to call functions defined outside the Modelica language. The body of an external function is marked with the keyword &lt;span style=" font-family:Courier New;">external&lt;/span> possibly followed by any of he optional items &lt;span style=" font-style:italic;">language_spec, external_function_call_spec or external_function_annotation&lt;/span>. If you just user the keyword external without any of the optional items a number of default rules apply, e.g. , if no external language is specified the implementation language for the function is assumed to be C.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Default Call&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">In the function &lt;span style=" font-family:Courier New;">log&lt;/span>, the default mapping rules apply.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>function log 
+  input Real x;
+  output Real y;
+external;
+end log;
+</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Specified Call&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Leastsquares uses external function. Here the language is specified to be Fortran 77.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>function Leastsquares               "Solves a linear least squares problem"
+  input Real A[:,:];
+  input Real B[:,:];
+  
+  output Real Ares[size(A,1),size(A,2)] := A;  // Factorization is returned in Ares for later use
+  output Real x[size(A,2), size(B,2)];
+  
+protected
+  integer lwork =   min(size(A,1), size(A,2)) +
+                  max(max(size(A,1), size(A,2)), size(B,2))*32;
+  Real work[lwork];
+  Integer info;
+  String transposed = "NNNN";            // Workaround for passing character data to Fortran routine
+  external "FORTRAN 77"
+  
+    dgels(  transposed, 100, size(A,1), size(A,2), size(B,2), 
+        Ares, size(A,1), B, size(B,1), work, lwork, info
+        );
+end Leastsquares;
+</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">A Large Example&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The external function interface supports a number of advanced features such as in-out parameters and declaration of temporary work variables, which are illustrated by the following rather complicated example.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>function BilinearSampling            
+"Function for Discrete-time &lt;--> continuous-time systems conversion by a bilinear transformation"
+  input  Real alpha := 1, beta := 1;
+  input  Real A[:, size(A, 1)], B[size(A, 1), :], C[:, size(A, 1)], D[size(c, 1), size(B, 2)];
+  input  Boolean inContinuous := true;
+  output Real   Ares[size(A, 1), size(A, 2)] := A,     // Ares is in-out to the Fortran function 
+          Bres[size(B, 1), size(B, 2)] := B,
+          Cres[size(C, 1), size(C, 2)] := C,
+          Dres[size(D, 1), size(D, 2)] := D;
+  output Integer info;
+protected
+  Integer iwork[size(A, 1)];              // Work arrays  
+  Real    dwork[size(A, 1)];
+  String  c2dstring := if isContinuous then "C" else "D";
+
+external "FORTRAN 77" abo4md(cd2string, size(a, 1), size(B, 2), size(C, 1), alpha, beta, 
+  Ares, size(Ares, 1), Bres, size(Bres, 1), Cres, size(Cres, 1), Dres, size(Dres, 1),
+    iwork, dwork, size(dwork, 1), info);
+end BilinearSampling;</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The following Modelica class contains an example call to BilinearSampling, which via the external function interface is transformed to a call to &lt;span style=" font-family:Courier New;">ab04md&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class BilinearSamplingTest
+  parameter Real alpha = 1, beta = 1;
+  parameter Real A[:, :] = [0, 1; 2, 4],           // Coefficients
+           B[:, :] = [5, 6; 7, 8],
+           C[:, :] = [9, 10; 11, 12],
+           D[:, :] = [13, 14; 15, 16];
+  Real  Ares [size(A, 1), size(A, 2)],
+      Bres [size(B, 1), size(B, 2)],
+      Cres [size(C, 1), size(C, 2)],
+      Dres [size(D, 1), size(D, 2)];
+  Integer info;
+equation
+  (Ares, Bres, Cres, Dres, info) = BilinearSampling(alpha, beta, A, B, C, D, true);          
+end BilinearSamplingTest;</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

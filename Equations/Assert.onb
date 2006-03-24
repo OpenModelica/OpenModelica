@@ -1,0 +1,56 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Assert&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-family:Courier New;">&lt;br />Assert&lt;/span> provides a convinient means for specifying checks on model validity within a model. The &lt;span style=" font-style:italic;">assert-expression&lt;/span> in an &lt;span style=" font-family:Courier New;">assert&lt;/span> equation should normally evaluate to &lt;span style=" font-family:Courier New;">true&lt;/span>. A failed assertion, i.e. when the expression evaluates to &lt;span style=" font-family:Courier New;">false&lt;/span>, should be reported back to the user in some way that is dependent on the simulation tool.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>class AssertTest
+  parameter Real lowlimit   = -5;
+  parameter Real highlimit   =  5;
+  parameter Real x = 1;
+equation
+  assert(x >= lowlimit and x &lt;= highlimit, "Variable x out of limit");
+end AssertTest;    
+</Input>
+    <Output></Output>
+   </InputCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>class AssertTestInst
+  AssertTest assertTest(lowlimit = -2, highlimit = 6, x = 5);
+end AssertTestInst;</Input>
+    <Output></Output>
+   </InputCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of AssertTest&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Here the simulation of the &lt;span style=" font-family:Courier New;">AssertTest&lt;/span> is shown. The variables can then be plotted below.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( AssertTestInst, stopTime=5 );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>plot( { assertTest.x, assertTest.highlimit, assertTest.lowlimit }, xrange={0,1} );</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/1.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/1.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAEgAAAA1ggDAAAARuGvAgAAAwBQTFRFAAAAAH8A/wAAAAD/2dnZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4gDaCQAAAAlwSFlzAAALEwAACxMBAJqcGAAAA/xJREFUeJztnYtymzAQAC8N///NbWMweuEVwcFy2J2OH5dDkdeH0RHGjUkeEq+ewOgoCFAQoCBAQYCCAAUBCgL6BHVm/ad3qDWTt3klXZPjpLjdRJna2DLWu9hMGoeeyd1yvqojkttpvvl3t9TOklnG52hEMtxUbDUoG5P7nMlyYra03t5fXloLd4nl8FnB/LoKutfCWgDpT5NXHMl2kT0tBsi2GpVdgiKroKm1u6XxaYlPt0C5i01ZYFCe9CG9/zdGFRmTZx7mdw31qw7zV0ZBgIIABQEKAs5rVteeo4hEfeAf6H07sVmtR3ncaowh6bxmtVxb39flyVZfwfXxCIo25vAxk+UcbFYjyY3kX34CJO6hEfSc3Kz+ekEHm9WYktKaB0t2tPlZWqjPfrXf4Pxm9UcHfT6nN6vzgENURw/vMs+XoSBAQYCCgPN6scZR+3EXNsZ7d2Ivtt2MbYSHMHRiL1b2XFFF1sfj/LmjX9DhXixtSpYV8/qDVpMxsKA/M2vO8V5sl6D3q6DDvVgRmSLLb3Zh7yLoVRMdwc+rerFhf2nFGLMYGAUBCgIUBCgIKAUNtMgfg0pQO3xdyu57oDXsGNSnJ74iHxfiW4KsoAV3MeDxOT1REKEgQEGAggAFAQoCtgRpaMYKAhQEKAhQEKAgQEGAggAFARsmPi/EtwRZQQsKAhQEKAhQEKAgQEGAggDPKAJWEKAgQEGAggAFAZUJL+LMqS/iVFCGl+AB9SV443xtxhDUIqygjMaHdLTCl8XDPKAgQEGAggAFAQoCPKMIWEGAggAFAQoCFAQoCFAQoCDAhSJgBQEKAhQEKAhQEKAgQEGAggAXioAVBCgIUBCgIEBBQHUJXjTD18VL8ID6Aqp2+LLUV7ne7jQ0U+9irfCFaVzl2ghfGA/zgIIABQEKAhQEKAjwjCJgBQEKAhQEKAhQEKAgQEGAggAXioAVBCgIUBCgIEBBgIIABQEKAhQEuJIGrCBAQYCCAAUBCgIUVLBxyR2l7Rz1fdOX70mk0aKdsfPxz6b/wKb108ZVrhclEbKzgq5G0UQoCFAQoCBAQcBBQeknWscpkiyF8/PRd6bjZPoSjwlKj4nl8RHSp9ib/uTJdA78PEEdGx3w2VNAmc/uD4lvCuob/8h7HPiaj/gcsII6Nimm/eRXPKKg5T+ZiGmauCKy9J69Jh99z2S6dzEsZA/zgIIABQEKAhQEKAg4tlC8AFYQoCBAQYCCAAUBCgIUBCgIcKEIWEGAggAFAQoCFASUJvyiyYKonkYjfGGyv3SuAQUtVLvY7e7PhdglKNrhC1MKynY08TCPKAjQBKAgQEGAggAFAQoCFAQoCFAQoCBAQYCCAAUBfwHUJqpOSlo5XwAAAABJRU5ErkJggg==</Image>
+    </TextCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

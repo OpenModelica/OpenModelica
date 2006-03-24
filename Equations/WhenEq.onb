@@ -1,0 +1,325 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Conditional Equations with when-Equations&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">WhenEquation&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-family:Courier New;">When&lt;/span>-equations are used to express instantaneous equations that are only valid at events, e.g. at discontinuities or when certain conditions become true. The conditional equations automatically contain only discrete-time expressions since they become active only at event instants. The two equations in the &lt;span style=" font-family:Courier New;">whenEquation&lt;/span> below become active at the event instant when the &lt;span style=" font-family:Courier New;">Boolean&lt;/span> expression &lt;span style=" font-family:Courier New;">x&lt;/span> &lt;span style=" font-family:Courier New;">&amp;gt;&lt;/span> &lt;span style=" font-family:Courier New;">2&lt;/span> becomes &lt;span style=" font-family:Courier New;">true&lt;/span>.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>model WhenEquation
+  Real x(start = 1);
+  discrete Real y1;
+  parameter Real y2 = 3;
+  discrete Real y3;
+equation  
+  x = time - y2;
+  when x > 2 then
+    y1 = sin(x);      
+    y3 = 2*x + y1 + y2; 
+  end when;  
+end WhenEquation;</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of WhenEquation &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Here &lt;span style=" font-family:Courier New;">WhenEquation&lt;/span> is simulated. Then as below the variables can be plotted.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( WhenEquation, stopTime=10 );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>plot( { y1, y2, y3, x } );</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/14.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/14.png" >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</Image>
+    </TextCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">WhenSet&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">If we instead use a Boolean vector expression containing three elements as the conditions, then the two equations will be activated at event instants when either of the three conditions: &lt;span style=" font-family:Courier New;">x &amp;gt; 2, sample(0,2), &lt;/span>or&lt;span style=" font-family:Courier New;"> x  becomes true. Sample is more explained &lt;/span>&lt;a href="DiscreteHybrid/SampleClock.onb
+">&lt;span style=" font-family:Courier New; text-decoration: underline; color:#0000ff;">here&lt;/span>&lt;/a>&lt;span style=" font-family:Courier New;">.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class WhenSet
+  Real x;
+  parameter Real y2 = 3;
+  discrete Real y1;
+  discrete Real y3;
+equation  
+  x = time - y2;
+  when {x > 2, sample(0, 2), x &lt; 5} then
+    y1 = sin(x);
+    y3 = 2*x + y1 + y2;
+  end when;
+end WhenSet;</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of WhenSet &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Here &lt;span style=" font-family:Courier New;">WhenSet&lt;/span> is simulated.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( WhenSet, stopTime=10 );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>plot( { y1, y2, y3, x } );</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/15.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/15.png" >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</Image>
+    </TextCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Activate&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Special behavior can be specified by &lt;span style=" font-family:Courier New;">when&lt;/span>-equations when a simulation starts and finishes by testing the built-in predicates &lt;span style=" font-family:Courier New;">initial()&lt;/span> and &lt;span style=" font-family:Courier New;">terminal()&lt;/span>. The predicate &lt;span style=" font-family:Courier New;">initial()&lt;/span> returns true at the beginning of the simulation when time is equal to &lt;span style=" font-family:Courier New;">time.start&lt;/span> and the predicate &lt;span style=" font-family:Courier New;">terminal()&lt;/span> returns true at the end of the simulation.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class Activate
+  constant Real x = 4;
+  Real y, z;
+equation
+  when initial() then
+    y = x + 3;              // Equations to be activated at the beginning
+  end when;    
+  
+  when terminal() then
+    z = x - 2;              // Equations to be activated at the end of the simulation
+  end when;
+end;
+</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of Activate &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Here &lt;span style=" font-family:Courier New;">Activate&lt;/span> is simulated.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( Activate, stopTime=10 );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>plot( { x, y, z } );</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/16.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/16.png" >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</Image>
+    </TextCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Restrictions on Equations within when-Equations&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">To make it possible both for a Modelica tool and a person to determine which variables are "results" from a &lt;span style=" font-family:Courier New;">when&lt;/span>-equation, Modelica restricts the allowed equations within a &lt;span style=" font-family:Courier New;">when&lt;/span>-equation to a form where the result variable is on the left-hand side.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">WhenNotValid&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>model WhenNotValid
+  Real x, y;
+equation
+  x + y = 5;
+  when sample(0, 2) then 
+    2*x + y = 7;                // Error: not valid Modelica code 
+  end when;   
+end WhenNotValid;
+</Input>
+      <Output></Output>
+     </InputCell>
+    </GroupCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of WhenNotValid&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Here &lt;span style=" font-family:Courier New;">WhenNotValid&lt;/span> is simulated. Since the code &lt;span style=" font-family:Courier New;">2*x + y = 7; &lt;/span>is not valid Modelica code the error message&lt;span style=" font-family:Courier New;"> Illegal left hand equation in when equation&lt;/span> is shown in the failed simulation message below.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>simulate( WhenNotValid );</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">Simulate::trsmd&lt;/span>&lt;/p>&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">: &lt;/p>&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">"Simulate failed to translate model."&lt;/p>&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">ShowLog::shlg: "\\!\\(\"Instantiation started\\\&lt;br />\\\&lt;br />Logged connection equations:\\\&lt;br />  0 default connections generated.\\\&lt;br />- savelog\\\&lt;br />- translateModel(\\\\\"WhenNotValid\\\\\")\\\&lt;br />Translation started\\\&lt;br />Error: Illegal left hand side in the when equation\\\&lt;br />equation\\\&lt;br />when sample(0, 2) then\\\&lt;br />  2*x+y = 7;\\\&lt;br />end when;\\\&lt;br />\\\&lt;br />Errors detected in when equations.\\\&lt;br />Translation aborted.\\\&lt;br />- savelog\\\&lt;br />\"\\)."&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Output" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">$Failed&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+    </GroupCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">WhenValidResult&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>model WhenValidResult
+  Real x;
+  Real y;
+equation
+  x + y = 5;                  // Equation to be used to compute x
+  when sample(0, 2) then 
+    y = 7; // - 2*x;              // Correct, y is a result variable from the when
+  end when;   
+end WhenValidResult;
+</Input>
+      <Output></Output>
+     </InputCell>
+    </GroupCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of WhenValidResult&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Here &lt;span style=" font-family:Courier New;">WhenValidResult&lt;/span> is simulated. &lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>simulate( WhenValidResult );</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="Output" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+    </GroupCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Nested When&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">When-clauses are not allowed to be nested.&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>model ErrorNestedWhen
+  Real x, y1, y2;
+equation
+  when x > 2 then
+    when x > 3 then         // Error: when-clauses cannot be nested  
+      y2 = sin(x);
+    end when;
+  end when;
+end ErrorNestedWhen;    
+</Input>
+      <Output></Output>
+     </InputCell>
+    </GroupCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of ErrorNestedWhen&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Here &lt;span style=" font-family:Courier New;">ErrorNestedWhen&lt;/span> is simulated. Since it is not allowed to write nested when-clauses, the error message&lt;span style=" font-family:Courier New;"> Illegal left hand equation in when equation&lt;/span> is shown in the failed simulation message below.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>simulate( ErrorNestedWhen );</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">Simulate::trsmd&lt;/span>&lt;/p>&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">: &lt;/p>&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">"Simulate failed to translate model."&lt;/p>&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">ShowLog::shlg: "\\!\\(\"Instantiation started\\\&lt;br />\\\&lt;br />Logged connection equations:\\\&lt;br />  0 default connections generated.\\\&lt;br />- savelog\\\&lt;br />- translateModel(\\\\\"ErrorNestedWhen\\\\\")\\\&lt;br />Translation started\\\&lt;br />Error: when-clause inside when-clause equation\\\&lt;br />when x &amp;gt; 2 then\\\&lt;br />  when x &amp;gt; 3 then\\\&lt;br />    y2 = sin(x);\\\&lt;br />  end when;\\\&lt;br />end when;\\\&lt;br />\\\&lt;br />Errors or failure to expand the equation: \\\&lt;br />when x &amp;gt; 2 then\\\&lt;br />  when x &amp;gt; 3 then\\\&lt;br />    y2 = sin(x);\\\&lt;br />  end when;\\\&lt;br />end when;\\\&lt;br />Found in class ErrorNestedWhen, c:\\\\\\\\cvsroot\\\\\\\\mathmo~1\\\\\\\\workdir\\\\\\\\model.mo at line 7.\\\&lt;br />\\\&lt;br />Errors or failure to expand vector or matrix expressions.\\\&lt;br />Translation aborted.\\\&lt;br />- savelog\\\&lt;br />\"\\)."&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Output" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">$Failed&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+    </GroupCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Application of the Single-Assignment Rule on when-Clauses&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Two when-caluses may not define the same variable. Without this rule that may actually happen for the erroneous model &lt;span style=" font-family:Courier New;">DoubleConflict&lt;/span> below a conflict between the equations will occur if both conditions become true at the same time instant.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">DoubleWhenConflict&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>model DoubleWhenConflict
+  Real x;
+  Boolean close;          // Erroneous model: close defined by two equations!
+equation
+  
+  when x > 2 then
+    close = true;
+  end when;
+  
+  when x > 3 then
+    close = false;
+  end when;
+end DoubleWhenConflict         
+</Input>
+      <Output></Output>
+     </InputCell>
+    </GroupCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of DoubleWhenConflict&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Since the variable &lt;span style=" font-family:Courier New;">close&lt;/span> cannot be defined by two equations the model could not be translated.&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>simulate( DoubleWhenConflict );</Input>
+      <Output></Output>
+     </InputCell>
+     <TextCell style="" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">Simulate::trsmd&lt;/span>&lt;/p>&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">: &lt;/p>&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">"Simulate failed to translate model."&lt;/p>&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">ShowLog::shlg: "\\!\\(\"Instantiation started\\\&lt;br />\\\&lt;br />Logged connection equations:\\\&lt;br />  0 default connections generated.\\\&lt;br />- savelog\\\&lt;br />- translateModel(\\\\\"DoubleWhenConflict\\\\\")\\\&lt;br />Translation started\\\&lt;br />Warning: The initial conditions are not fully specified.\\\&lt;br />Moreover, they cannot be fixed by adding literal start values to states.\\\&lt;br />  There are 1 scalar conditions missing\\\&lt;br />Cannot decide the following variables uniquely\\\&lt;br />  x\\\&lt;br />Warning: All initial equations are neglected.\\\&lt;br />unassignedremVars\\\&lt;br />  x\\\&lt;br />Error: The current version of Dymola cannot \\\&lt;br />generate code for algebraic loops \\\&lt;br />involving when equations or algorithms with when parts.\\\&lt;br />You may be able to cut the loop\\\&lt;br />by putting 'pre' around some of the references to\\\&lt;br />unknown continuous time variables in when parts.\\\&lt;br />Unknowns of the loop:\\\&lt;br />  close\\\&lt;br />  x\\\&lt;br />Equations of the loop\\\&lt;br />  equation\\\&lt;br />  when x &amp;gt; 3 then\\\&lt;br />    close = false;\\\&lt;br />  end when;\\\&lt;br />  when x &amp;gt; 2 then\\\&lt;br />    close = true;\\\&lt;br />  end when;\\\&lt;br />\\\&lt;br />Failed to generate simulation code.\\\&lt;br />See dsmodel.c \\\&lt;br />Translation aborted.\\\&lt;br />\\\&lt;br />Translation aborted.\\\&lt;br />- savelog\\\&lt;br />\"\\)."&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Output" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">$Failed&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+    </GroupCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

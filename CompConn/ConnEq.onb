@@ -1,0 +1,87 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Generation of Connection Equations&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">General Description&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">By generating connection equations we mean the conversion of connect statements to the two different forms of equations to be used for non-flow and flow variables respectively. The process of converting &lt;span style=" font-family:Courier New;">connect&lt;/span> statements can be divided into two steps: Building &lt;span style=" font-style:italic;">connections sets&lt;/span> from &lt;span style=" font-family:Courier New;">connect&lt;/span> statements and Generating &lt;span style=" font-style:italic;">connection equations&lt;/span> for the complete model. &lt;span style=" font-size:11pt;">Connections sets are needed to generate the connection equations of a model.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">ResistorCircuit&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">A practical way to generate these sets is to first create a small connection set from each connect statement consisting of its two arguments. If any of these connector arguments are members of other connections sets, the corresponding connection sets are merged.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/7.png" width="382" height="102" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/7.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAF+AAAAZggDAAAA+/YKjAAAAwBQTFRFAAAAzc3N////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0UNNbwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAx9JREFUeJztnOGWqjAMhLt5/4e+564KBUvbkMA47swP8QhJJp+ldWEPxSSgCtrA35bwQyX8UAk/VMIPVQL+coc+0VUcXQr+eIoLalzvSvhTIxAVhP+0hD81AlFB+E9L+FMjEBWE/7SEPzUCUUH4T0v4UyMQFYT/tIQ/NQJRQfhPiwv/9jKhs+7H4U+67nkj/nrjcH3yCu/V+HPqBKMdaGr8ZVy3vL6i8vPSrFeHp+o43/f7GfgdeUprc3z0fxaPr8qPf/r4ykyZcbWOii/HXyGJ4S+9ic6NfxkVH4i/26l36W3hn1WFfz2LOv4dLIvt8Z+XPZDFMiy2+p1uTc+Ms7nR3/hwN/ovxj8MGaXLiH6z1T523vXs0hvDvx1EEzC48S/7pyafx5sg/tHk41m/fs/w7VnOhd+19D7eREf/aOmdHhFte56o4zTB6FKNjAytiVorTdPC+tF+8jmu8vbq8NcxNZ8mFp3kYlzIs2fjaQK/lSUox9OtOS4mP6hxtOdF9rqBIfydPde7Ev7OHuFPlPBfmSJQQ/jjKQI1hD+eIlBD+OMpAjWEP54iUEP44ykCNYQ/niJQQ/jjKQI1hD+eIlBD+O+QuwGkJwe7hBxQcTfA7d7YG+B2b+wNcLs39ga43Rt7A9zujb0BbvfG3gC3e2NvgNu9sTfA7d7YG+B2b+wNcLs39ga43Rt7A9zujb0BbvfG3gC3e2NvgNu9sTfA7d4OG7jhZlfG7a6vxY8rfXMKrIQfKuGHSvihEn6ohB8q4YdK+KESfqiEH6r3BnL/CdZVGpECqwb+7SNQ+s/Yyi2NSIHVCH/pP2MrtzQiBVaNC5H70d/pspqkXJNV1gRHj/9dLvzLpljvuIM4T8ggz9doj783+Qh/ujxLb9lsJmg8swn/oRqTz/Gx1WZmHn8t5KX+JHC77K/j3y6fM6N/j/+0z3j0R2r7q6Q/pnfrsvAnabKv0ngZBgj/UB786zkwjCrPh2UKf18u/PacpfRnV5Z0xRMq4YdK+KESfqiEHyrhh0r4oRJ+qIQfKuGHSvihEn6ohB8q4YcqdAt2+lZtWP8AjscjoGS4kHsAAAAASUVORK5CYII=</Image>
+    </TextCell>
+    <TextCell style="" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Courier New; font-size:12pt; color:#000000;">ResistorCircuit&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+     <Rule name="TextAlignment" >Left</Rule>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>model ResistorCircuit
+  Modelica.Electrical.Analog.Basic.Resistor R1, R2, R3;
+equation
+  connect(R1.p, R2.p);
+  connect(R2.p, R3.p);
+end ResistorCircuit;</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">ECircuit&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/8.png" width="650" height="77" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/8.png" >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</Image>
+    </TextCell>
+    <TextCell style="" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Courier New; font-size:12pt; color:#000000;">ECircuit&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+     <Rule name="TextAlignment" >Left</Rule>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The situation is somewhat different regarding the ECircuit model below since it contains a structured component E1 that contains both inside and outside connectors.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class E
+  Modelica.Electrical.Analog.Basic.Resistor R2, R3;
+  Modelica.Electrical.Analog.Basic.Pin p, n;
+equation
+  connect(p, R2.p);
+  connect(R2.n, R3.p);
+  connect(R3.n, n);
+end E;</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>model ECircuit
+  Modelica.Electrical.Analog.Basic.Resistor R1, R4;
+  E E1;
+equation
+  connect(R1.n, E1.p);
+  connect(E1.n, R4.p);
+end ECircuit;
+</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

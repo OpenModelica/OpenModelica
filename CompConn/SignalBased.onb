@@ -1,0 +1,44 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Signal Based Connector Classes&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Signal based connector classes are very simple. All that is needed is a vector of input signals or output signals. Most application models where signal connectors are needed can be satisfied with the connector classes &lt;span style=" font-family:Courier New;">InPort&lt;/span> and &lt;span style=" font-family:Courier New;">OutPort&lt;/span> below, both from the library &lt;span style=" font-family:Courier New;">Modelica.Blocks.Interfaces.&lt;br />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>connector InPort        "Connector with input signals of type Real"
+  parameter Integer n = 1    "Dimension of signal vector";
+  input Real     signal[n]  "Real input signals";
+end InPort;</Input>
+    <Output></Output>
+   </InputCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>connector OutPort        "Connector with output signals of type Real"
+  parameter Integer n = 1    "Dimension of signal vector";
+  output Real     signal[n]  "Real output signals";
+end OutPort;</Input>
+    <Output></Output>
+   </InputCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The &lt;span style=" font-family:Courier New;">InPort&lt;/span> and &lt;span style=" font-family:Courier New;">OutPort&lt;/span> connector classes can be specialized to different numbers of signals when instantiated,as in the class &lt;span style=" font-family:Courier New;">MISO&lt;/span> below&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>partial block MISO            "Multiple Input Signal Output continuous control block"
+  parameter Integer nin = 1        "Number of inputs";
+  InPort       inPort(n = nin)    "Connector of Real input signals";
+  OutPort       outPort(n = 1)    "Connector of Real output signal";
+protected
+  Real u[:] = inPort.signal        "Input signals";
+  Real y = outPort.signal[1]      "Output signal";
+end MISO;                // From Modelica.Blocks.Interfaces</Input>
+    <Output></Output>
+   </InputCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

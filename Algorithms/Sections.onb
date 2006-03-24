@@ -1,0 +1,46 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Algorithm Sections&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Algorithm sections can also be called algorithm equations, since an algorithm section externally is treated as a group of equations involving one or more variables, and can appear among equation sections. An algorithm section is terminated by the appearance of one of the five keywords &lt;span style=" font-family:Courier New;">equation, public, protected, algorithm&lt;/span> or &lt;span style=" font-family:Courier New;">end&lt;/span>. An algorithm section embedded among equation sections can appear as below, where the example algorithm section contains three assignment statements.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>model AlgorithmSection
+  Real x, z, u;
+  parameter Real w = 3,y = 2;
+  Real x1, x2, x3;
+equation
+  x = y*2;
+  z = w;
+algorithm
+  x1 := z  + x;  
+  x2 := y  - 5;
+  x3 := x2 + y;
+equation
+  u = x1 + x2;  
+end AlgorithmSection;
+</Input>
+    <Output></Output>
+   </InputCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Note that the code in the algorithm section uses the value of certain variables from outside the algorithm section. The variables are also called &lt;span style=" font-family:Courier New;">inputs&lt;/span> to the algorithm section (in this example &lt;span style=" font-family:Courier New;">x, y&lt;/span>, and &lt;span style=" font-family:Courier New;">z&lt;/span>). Analogously, variables assigned values by the algorithm define the outputs of the algorithm (in this example &lt;span style=" font-family:Courier New;">x1&lt;/span> and &lt;span style=" font-family:Courier New;">x2&lt;/span>). This makes the semantics of an algorithm section quite similar to a &lt;span style=" font-family:Courier New;">function&lt;/span> with the algorithm section as its body, and with &lt;span style=" font-family:Courier New;">input&lt;/span> and &lt;span style=" font-family:Courier New;">output&lt;/span> formal parameters corresponding to inputs and outputs as described above. &lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of AlgorithmSection&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( AlgorithmSection );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

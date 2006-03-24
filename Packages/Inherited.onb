@@ -1,0 +1,120 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Inherited Packages&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">General Stack Package&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Since packages are restricted and enhanced classes they can be inherited and specialized in the same way as classes in general. For example, we can create a package for a double-ended queue, also called dequeue (combines actions of a stack and a queue). For that we need to inherit all stack operations with the data structure declaration &lt;span style=" font-family:Courier New;">Element&lt;/span> from  &lt;span style=" font-family:Courier New;">GeneralStack&lt;/span>.&lt;span style=" font-family:Courier New;"> &lt;/span>Then we add operations, as in the example &lt;span style=" font-family:Courier New;">DoubleEndedQueue&lt;/span> below.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>package GeneralStack
+
+  replaceable class Element
+  end Element;
+
+  record Stack
+    parameter Integer maxsize = 0;
+    Integer       size = 0;
+    Element[maxsize]   vec;
+  end Stack;
+
+  function Push
+    input Stack si;
+    input Element e;
+    output Stack so;
+  algorithm
+    so := si;
+    so.size := so.size+1;
+    so.vec[so.size] := e;
+  end Push;
+
+  function Pop
+    input Stack si;
+    output Stack so;
+  algorithm
+    so := si;
+    so.size := so.size-1;
+  end Pop;
+
+  function Top
+    input Stack si;
+    output Element e;
+  algorithm
+    e := si.vec[si.size];
+  end Top;
+
+end GeneralStack;</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">DoubleEndedQueue Package&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>encapsulated package DoubleEndedQueue
+
+  extends GeneralStack;
+
+  function AddBottom
+    input Stack si;
+    input Element e;
+    output Stack so;
+  algorithm
+    so.size := si.size+1;
+    for i in 1:si.size loop  
+      so.vec[i+1] := si.vec[i];
+    end for;
+    so.vec[1] := e;
+  end AddBottom;
+
+  function RemoveBottom
+    input Stack si;
+    output Stack so;
+  algorithm
+    so.size := si.size-1;
+    for i in 1:so.size loop  
+      so.vec[i] := si.vec[i+1];
+    end for;
+  end RemoveBottom;
+
+  function Bottom
+    input Stack si;
+    output Element e;
+  algorithm
+    e := si.vec[1];
+  end Bottom;
+
+end DoubleEndedQueue;</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Below is an "instantiation" of the double-ended queue together with a small usage example. Two integers are inserted at the beginning of the queue and one at the end of the queue. Then the end element is accessed and the first element is removed.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>package IntDeQueue = DoubleEndedQueue(redeclare type Element = Integer);
+
+class DeQueueUser
+  import ID = IntDeQueue;
+  ID.Stack q(maxsize = 200);
+  Integer item;
+algorithm
+  q := ID.Push(q, 65);        // Insert two numbers at the beginning
+  q := ID.Push(q, 500);
+  q := ID.AddBottom(q, 455);    // Insert at the end of the queue
+  item := ID.Bottom(q);        // Get the end element, i.e. 455
+  q := ID.Pop(q);          // Remove the first element from the queue
+end DequeueUser;
+</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

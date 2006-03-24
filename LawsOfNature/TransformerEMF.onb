@@ -1,0 +1,49 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Models of a Transformer and Electromagnetic Force&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Here the &lt;span style=" font-family:Courier New;">Transformer&lt;/span> model from the Modelica library is shown.&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>model Transformer "Transformer with inductance" 
+  extends Modelica.Electrical.Analog.Interfaces.TwoPort;
+  parameter SIunits.Inductance L1=1 "Primary inductance";
+  parameter SIunits.Inductance L2=1 "Secondary inductance";
+  parameter SIunits.Inductance M=1  "Coupling inductance";
+equation 
+  v1 = L1*der(i1) + M*der(i2);
+  v2 = M*der(i1) + L2*der(i2);
+end Transformer;  // from Modelica.Electrical.Analog.Basic.Transformer</Input>
+    <Output></Output>
+   </InputCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Another model that we show below is the &lt;span style=" font-family:Courier New;">EMF&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>model EMF "Electromotoric force (electric/mechanic transformer)"
+  import Modelica.Electrical.Analog.Interfaces;
+  import Modelica.Mechanics.Rotational.Interfaces.Flange_b;
+  parameter Real     k(final unit="N.m/A")=1 "Transformation coefficient";
+  SIunits.Voltage    v    "Voltage drop between the two pins";
+  SIunits.Current    i    "Current flowing from positive to negative pin";
+  SIunits.AngularVelocity   w "Angular velocity of flange_b";
+  Interfaces.PositivePin    p;
+  Interfaces.NegativePin    n;
+  Flange_b                  flange_b;
+equation
+  v = p.v-n.v;
+  0 = p.i+n.i;
+  i = p.i;
+  w = der(flange_b.phi);
+  k*w = v;
+  flange_b.tau = -k*i;
+end EMF;  // from Modelica.Electrical.Analog.Basic.EMF</Input>
+    <Output></Output>
+   </InputCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

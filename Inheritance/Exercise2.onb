@@ -1,0 +1,136 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Exercise 2&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Create Subclasses and Superclasses&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">In this exercise you should crete a partial class &lt;span style=" font-family:Courier New;">Vehicle&lt;/span> with the variable speed. You should also create four classes; &lt;span style=" font-family:Courier New;">Car&lt;/span>, &lt;span style=" font-family:Courier New;">Boat&lt;/span>, &lt;span style=" font-family:Courier New;">Train&lt;/span> and &lt;span style=" font-family:Courier New;">Bicycle&lt;/span> which inherit from &lt;span style=" font-family:Courier New;">Vehicle&lt;/span>. Remember the variables for each subclass, which you can see in the picture below..&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/4.png" width="559" height="264" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/4.png" >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</Image>
+    </TextCell>
+    <TextCell style="" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">The Vehicle class and different classes inheriting from Vehicle.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Vehicle class:&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input></Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />&lt;br />Car class:&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input></Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />&lt;br />Boat class:&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input></Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />&lt;br />Train class:&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input></Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />&lt;br />Bicycle class:&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input></Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />&lt;br />&lt;br />Let's write an instance of Train!&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input></Input>
+     <Output></Output>
+    </InputCell>
+    <GroupCell closed="true" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <GroupCell closed="true" >
+      <TextCell style="Subsubsection" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Vehicle&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="true" >
+       <Input>partial class Vehicle
+  Real speed;
+end Vehicle;</Input>
+       <Output></Output>
+      </InputCell>
+     </GroupCell>
+     <GroupCell closed="true" >
+      <TextCell style="Subsubsection" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Car, Boat, Train and Bicycle&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="true" >
+       <Input>class Car
+  extends Vehicle;
+  Real motorEffect;
+end Car;</Input>
+       <Output></Output>
+      </InputCell>
+      <TextCell style="Text" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="true" >
+       <Input>class Boat
+  extends Vehicle;
+  Real boatWeight;
+end Boat;</Input>
+       <Output></Output>
+      </InputCell>
+      <TextCell style="Text" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="true" >
+       <Input>class Train
+  extends Vehicle;
+  Real nrOfCarriages;
+end Train;</Input>
+       <Output></Output>
+      </InputCell>
+      <TextCell style="Text" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="true" >
+       <Input>class Bicycle
+  extends Vehicle;
+  Real NrOfGears;
+end Bicycle;</Input>
+       <Output></Output>
+      </InputCell>
+     </GroupCell>
+     <GroupCell closed="true" >
+      <TextCell style="Subsubsection" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Instance of Train&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <InputCell style="Input" closed="true" >
+       <Input>class SuperTrain
+  Train superTrain(nrOfCarriages = 55);
+end SuperTrain;</Input>
+       <Output></Output>
+      </InputCell>
+     </GroupCell>
+    </GroupCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

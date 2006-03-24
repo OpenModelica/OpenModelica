@@ -1,0 +1,154 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Packages as Abstract Data Types&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">General Description&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The notion of a package is related to the notion of abstract data types. A data type, e.g. &lt;span style=" font-family:Courier New;">Real&lt;/span>,  is a data structure together with operations on that data structure. An abstract data type is just like an ordinary data type with definitions of data and operations. That together with a method for collecting the implementations of the operations in one place and hiding the details of those implementations. &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Complex Example&lt;/p>&lt;/body>&lt;/html></Text>
+     <Rule name="CellTags" >Complex Example</Rule>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">As an example, consider the package &lt;span style=" font-family:Courier New;">ComplexNumbers&lt;/span> below which contains a data structure declaration, the record &lt;span style=" font-family:Courier New;">Complex&lt;/span>, and associated operations such as&lt;span style=" font-family:Courier New;"> Add, Multiply, MakeComplex&lt;/span>, etc. Adding the word &lt;span style=" font-family:Courier New;">encapsulated&lt;/span> to the package keeps the package well structured as well as being easier to understand and maintain.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>encapsulated package ComplexNumbers
+
+  record Complex
+    Real re;
+    Real im;
+  end Complex;
+
+  function Add
+    input  Complex x;
+    input  Complex y;
+    output Complex z;
+  algorithm
+    z.re := x.re + y.re;
+    z.im := x.im + y.im;
+  end Add;
+
+  function Multiply
+    input  Complex x;
+    input  Complex y;
+    output Complex z;
+  algorithm
+    z.re := x.re*y.re - x.im*y.im;
+    z.im := x.re*y.im + x.im*y.re;
+  end Multiply;
+
+  function MakeComplex
+    input  Real x;
+    input  Real y;
+    output Complex z;
+  algorithm
+    z.re := x;
+    z.im := y;
+  end MakeComplex;
+
+end ComplexNumbers;
+</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />In the &lt;span style=" font-family:Courier New;">ComplexUser&lt;/span> class below, both the type &lt;span style=" font-family:Courier New;">Complex&lt;/span> as well as the operations &lt;span style=" font-family:Courier New;">Multiply&lt;/span> and &lt;span style=" font-family:Courier New;">Add&lt;/span> are referenced by prefexing them with the package name &lt;span style=" font-family:Courier New;">ComplexNumbers&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class ComplexUser
+  ComplexNumbers.Complex  a(x = 1.0, y = 2.0);
+  ComplexNumbers.Complex  b(x = 1.0, y = 2.0);
+  ComplexNumbers.Complex  z, w;
+equation
+  z = ComplexNumbers.Multiply(a, b);
+  z = ComplexNumbers.Add(a, b);
+end ComplexUser;
+</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">What about information hiding in the package? &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The type &lt;span style=" font-family:Courier New;">Complex&lt;/span> must be made available for allocation and initialization of variables of that type, e.g the variables &lt;span style=" font-family:Courier New;">a, b, z &lt;/span>and &lt;span style=" font-family:Courier New;">w&lt;/span> in &lt;span style=" font-family:Courier New;">ComplexUser&lt;/span>. It would not work if you declared x and y &lt;span style=" font-family:Courier New;">protected&lt;/span> in the variables &lt;span style=" font-family:Courier New;">Complex&lt;/span> since then these fields would not be available for the implementation of &lt;span style=" font-family:Courier New;">Add&lt;/span> and &lt;span style=" font-family:Courier New;">Multiply&lt;/span>, etc. However, by declaring the operations on &lt;span style=" font-family:Courier New;">Complex&lt;/span> inside the class &lt;span style=" font-family:Courier New;">Complex&lt;/span> itself, as in the package &lt;span style=" font-family:Courier New;">ComplexNumbersA&lt;/span> further below, these fields can be accessed even if they are protected. &lt;br />&lt;br />We can increase the degree of data abstaction by using the function &lt;span style=" font-family:Courier New;">MakeComplex&lt;/span> for initialization instead of modifiers, e.g. as in &lt;span style=" font-family:Courier New;">ComplexUser2&lt;/span> below, thus avoiding exposing the fields x and y.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class ComplexUser2
+  ComplexNumbers.Complex  a = MakeComplex(1.0, 2.0);
+  ComplexNumbers.Complex  b = MakeComplex(1.0, 2.0);
+  ComplexNumbers.Complex  z, w;
+equation
+  z = ComplexNumbers.Multiply(a, b);
+  z = ComplexNumbers.Add(a, b);
+end ComplexUser2;
+</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />In &lt;span style=" font-family:Courier New;">ComplexNumbersA&lt;/span> the implementation details of the &lt;span style=" font-family:Courier New;">Complex&lt;/span> data structure are hidden since its data fields are protected.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>encapsulated package ComplexNumbersA
+
+  function Add = Complex.Add;
+
+  function Multiply = Complex.Multiply;
+
+  function MakeComplex = Complex.MakeComplex;
+
+
+  class Complex
+
+    protected
+      Real re;
+      Real im;
+
+    public
+      function Add
+        input Complex x;
+        input Complex y;
+        output Complex z;
+      algorithm
+        z.re:=x.re+y.re;
+        z.im:=x.im+y.im;
+      end Add;
+
+      function Multiply
+        input Complex x;
+        input Complex y;
+        output Complex z;
+      algorithm
+        z.re:=x.re*y.re-x.im*y.im;
+        z.im:=x.re*y.im+x.im*y.re;
+      end Multiply;
+
+      function MakeComplex
+        input Real x;
+        input Real y;
+        output Complex z;
+      algorithm
+        z.re:=x;
+        z.im:=y;
+      end MakeComplex;
+    
+    end Complex;
+
+end ComplexNumbersA;
+</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

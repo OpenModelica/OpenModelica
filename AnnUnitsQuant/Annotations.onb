@@ -1,0 +1,25 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Annotations&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />An annotation can be understood as an attribute or property containing information associated with some element of a Modelica model. Examples are model documentation and graphical layout information concerning icons and connections associated with models. The graphical view usually makes models easier to understand. &lt;br />&lt;br />&lt;span style=" font-family:Courier New;">Resistor1&lt;/span> is an example of an annotation containing information about the graphical layout of an icon representing a resistor model, the &lt;span style=" font-family:Courier New;">annotation&lt;/span> has the name &lt;span style=" font-family:Courier New;">Icon&lt;/span> and contains instances of the graphical annotation elements &lt;span style=" font-family:Courier New;">Rectangle&lt;/span>, &lt;span style=" font-family:Courier New;">Text&lt;/span>, &lt;span style=" font-family:Courier New;">Line&lt;/span>, etc. &lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>model Resistor1
+  annotation(Icon(
+    Rectangle(extent = [-70, -30, 70, 30], style(fillPattern = 1)),
+    Text(extent =[-100, 55; 100, 110], string = "%name = %R"),
+    Line(points = [-90, 0; -70, 0]),
+    Line(points = [70, 0; 90, 0])
+    ));
+end Resistor1;
+</Input>
+    <Output></Output>
+   </InputCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

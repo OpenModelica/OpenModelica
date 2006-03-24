@@ -1,0 +1,197 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Partial Classes Describe Common Properties&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Types from Modelica.SIunits&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>type Voltage = Real(unit = "V");</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>type Current = Real(unit = "A");</Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Electrical Connectors&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>connector Pin
+  Voltage v;
+  flow Current i;
+end Pin;  </Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Components&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">TwoPin&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The class prefix &lt;span style=" font-family:Courier New;">partial&lt;/span> is used to indicate that a class is incomplete such that it cannot be instatiated. The class &lt;span style=" font-family:Courier New;">TwoPin&lt;/span> can be used to define our own &lt;span style=" font-family:Courier New;">Resistor&lt;/span>, &lt;span style=" font-family:Courier New;">Capacitor&lt;/span>, &lt;span style=" font-family:Courier New;">Inductor&lt;/span>, Voltage source AC and Ground classes.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>partial class TwoPin        "Superclass of elements with two electrical pins"
+  Pin p, n;
+  Voltage v;
+  Current i;
+equation
+  v = p.v - n.v;
+  p.i + n.i = 0;
+  i = p.i;
+end TwoPin;</Input>
+      <Output></Output>
+     </InputCell>
+    </GroupCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Resistor&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>class Resistor             "Ideal electrical Resistor"
+  extends TwoPin;
+  parameter Real R(unit = "Ohm")   "Resistance";
+equation
+  R*i = v;
+end Resistor;</Input>
+      <Output></Output>
+     </InputCell>
+    </GroupCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Capacitor&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>class Capacitor           "Ideal electrical Capacitor"
+  extends TwoPin;
+  parameter Real C(unit = "F")     "Capacitance";
+equation
+  C*der(v) = i;
+end Capacitor;</Input>
+      <Output></Output>
+     </InputCell>
+    </GroupCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Inductor&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>class Inductor             "Ideal electrical Inductor"
+  extends TwoPin;
+  parameter Real L(unit = "H")     "Inductance";
+equation
+  v = L*der(i);
+end Inductor;</Input>
+      <Output></Output>
+     </InputCell>
+    </GroupCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">VsourceAC&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>class VsourceAC           "Sin-wave voltage source"
+  extends TwoPin;
+  parameter Voltage VA      = 220 "Amplitude";
+  parameter Real f(unit = "Hz") = 50 "Frequency";
+  constant Real PI        = 3.141592653589793;
+  input    Voltage u;
+equation
+  v = u;
+  u = VA*sin(2*PI*f*time);
+end VsourceAC;  </Input>
+      <Output></Output>
+     </InputCell>
+    </GroupCell>
+    <GroupCell closed="false" >
+     <TextCell style="Subsection" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Ground&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="true" >
+      <Input>class Ground 
+  Pin p;
+equation
+  p.v = 0;
+end Ground;</Input>
+      <Output></Output>
+     </InputCell>
+    </GroupCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">SimpleCircuit&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Based on these classes we can declare the Simple Circuit Model: &lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>class SimpleCircuit
+  Resistor     R1(R = 10);
+  Capacitor   C(C = 0.01);
+  Resistor     R2(R = 100);
+  Inductor     L(L = 0.1);
+  VsourceAC   AC(f = 1);
+  Ground     G;
+equation
+  connect(AC.p, R1.p);      // 1, Capacitor circuit
+  connect(R1.n, C.p);      //    Wire 2
+  connect(C.n, AC.n);      //     Wire 3
+  connect(R1.p, R2.p);      // 2, Inductor circuit
+  connect(R2.n, L.p);      //    Wire 5
+  connect(L.n, C.n);      //     Wire 6
+  connect(AC.n, G.p);      // 7, Ground
+end SimpleCiruit;    </Input>
+     <Output></Output>
+    </InputCell>
+   </GroupCell>
+   <GroupCell closed="false" >
+    <TextCell style="Section" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">SimpleCircuit Simulation&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>simulate( SimpleCircuit );</Input>
+     <Output></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>plot( {R1.v, R2.v } );</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/9.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/9.png" >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</Image>
+    </TextCell>
+    <TextCell style="" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="true" >
+     <Input>plot( {R1.i,R2.i} );</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    </InputCell>
+    <TextCell style="Output" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/10.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/10.png" >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</Image>
+    </TextCell>
+    <TextCell style="" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+   </GroupCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>

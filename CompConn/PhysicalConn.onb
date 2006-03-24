@@ -1,0 +1,51 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+ <GroupCell closed="false" >
+  <GroupCell closed="false" >
+   <TextCell style="Title" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Physical Connector Classes Based on Energy Flow&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />In addition to the previously presented translational &lt;span style=" font-family:Courier New;">Flange_a&lt;/span> there is also a rotational Flange_a connector class., shown renamed below, from the library called &lt;span style=" font-family:Courier New;">Modelica.Mechanics.Rotational.Intefaces&lt;/span> for one-dimensional rotational mechanical systems. &lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>connector RotFlange_a      "1D rotational flange"
+  Angle phi            "Absolute rotational angle";
+  flow Torque tau;
+end RotFlange_a;</Input>
+    <Output></Output>
+   </InputCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>type Angle = Real(final quantity = "Angle", final unit = "rad", displayUnit = "deg");</Input>
+    <Output></Output>
+   </InputCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>type Torque = Real(final quantity = "Torque", final unit = "N.m");</Input>
+    <Output></Output>
+   </InputCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The connector class &lt;span style=" font-family:Courier New;">Frame_b&lt;/span> below from the &lt;span style=" font-style:italic;">Modelica multibody systems&lt;/span> (MBS) library is an example of a connector class of the kind that contains extra potential variables to get around problems caused by connections that cause higher index systems. &lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="true" >
+    <Input>connector Frame_b              "Frame b of a 3D mechanical element"
+  import Modelica.SIunits;
+  output SIunits.Position     r0[3]    "Frame origin in inertial system";
+  Real                S[3, 3]    "Transformation matrix";
+  SIunits.Velocity         v[3]    "Absolute velocity of frame origin";
+  SIunits.AngularVelocity     w[3]    "Absolute angular velocity of frame a";  
+  SIunits.Acceleration        a[3]    "Absolute acceleration of frame origin";
+  SIunits.AngularAcceleration   z[3]    "Absolute angular acceleration";  
+  flow SIunits.Force       f[3];
+  flow SIunits.Torque       t[3];
+end Frame_b;                  // From ModelicaAdditions.MultiBody.Intefaces</Input>
+    <Output></Output>
+   </InputCell>
+  </GroupCell>
+ </GroupCell>
+</Notebook>
