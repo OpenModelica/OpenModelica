@@ -77,8 +77,8 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #define XML_FALSE				"false"
 #define XML_TRUE				"true"
 
-
 // Define different read mode
-#define READMODE_NORMAL			1
-#define READMODE_OLD			2
+#define READMODE_NORMAL				1
+#define READMODE_OLD				2
+#define READMODE_CONVERTING_ONB		3
 

@@ -69,12 +69,14 @@ tokens
 {
     MODULENAME      = "FrontEnd";
     LIST            = "List";
+    LIST_SMALL      = "list";
     NOTEBOOK        = "Notebook";
     CELL            = "Cell"; 
     TEXTDATA        = "TextData";
     CELLGROUPDATA   = "CellGroupData";
         
     RULE            = "Rule";
+    RULE_SMALL      = "rule";
     RULEDELAYED     = "RuleDelayed";
 
     GRAYLEVEL       = "GrayLevel";
@@ -100,9 +102,17 @@ tokens
     FRACTIONBOX     = "FractionBox";
     SQRTBOX         = "SqrtBox";
     RADICALBOX      = "RadicalBox";
-    DIREXTEDINFINITY = "DirectedInfinity";
-    NOT_MATH_STARTMODELEDITOR = "StartModelEditor";
-    NOT_MATH_OLEDATE = "OLEData";
+    INTERPRETATIONBOX          = "InterpretationBox";
+    ANNOTATION                 = "Annotation";
+    EQUAL                      = "Equal";
+    DIAGRAM                    = "Diagram";
+    ICON                       = "Icon";
+    POLYGON                    = "Polygon";
+    ELLIPSE                    = "Ellipse";
+    LINE                       = "Line";
+    DIREXTEDINFINITY           = "DirectedInfinity";
+    NOT_MATH_STARTMODELEDITOR  = "StartModelEditor";
+    NOT_MATH_OLEDATE           = "OLEData";
 
 //ATTRIBUTE
     FONTSLANT             = "FontSlant";
@@ -127,6 +137,7 @@ tokens
     LINESPACING           = "LineSpacing";
     HYPHENATION           = "Hyphenation";
     ACTIVE_TOKEN	      = "Active";
+    VISIBLE_TOKEN         = "Visible";
     EVALUATABLE           = "Evaluatable";
     BUTTONFUNCTION        = "ButtonFunction";
     BUTTONDATA            = "ButtonData";
@@ -147,6 +158,10 @@ tokens
     DEFAULTFORMATTYPE     = "DefaultFormatType";
     NUMBERMARKS           = "NumberMarks";
     LINEBREAKADJUSTMENTS  = "LinebreakAdjustments";
+    VISIOLINEFORMAT       = "VisioLineFormat";
+    VISIOFILLFORMAT       = "VisioFillFormat";
+    EXTENT                = "Extent";
+    NAMEPOSITION          = "NamePosition";
 
 //CELLOPTIONS
     CELLTAGS              = "CellTags";
@@ -160,6 +175,7 @@ tokens
     CELLMARGINS		      = "CellMargins";
     CELLDINGBAT           = "CellDingbat";
     CELLHORIZONTALSCROLL  = "CellHorizontalScrolling";
+    CELLOPEN			  = "CellOpen";
     CELLGENERATED         = "GeneratedCell";
     SHOWCELLBRACKET       = "ShowCellBracket";
     SHOWCELLLABEL         = "ShowCellLabel";
@@ -183,6 +199,8 @@ tokens
     SCREENSTYLEENV     = "ScreenStyleEnvironment";
     PRINTINGSTYLEENV   = "PrintingStyleEnvironment";
     PRINTINGOPTIONS    = "PrintingOptions";
+    PRINTINGCOPIES     = "PrintingCopies";
+    PRINTINGPAGERANGE  = "PrintingPageRange";
     PRIVATEFONTOPTIONS = "PrivateFontOptions";
   
 //ANNAT
@@ -213,6 +231,7 @@ tokens
     IMAGEREGION     = "ImageRegion";
     IMAGERANGECACHE = "ImageRangeCache";
     IMAGECACHE      = "ImageCache";
+    NOT_MATH_MODELEDITOR  = "ModelEditor";
     GENERATECELL    = "GenerateCell";
     CELLAUTOOVRT    = "CellAutoOverwrite";
     MAGNIFICATION   = "Magnification";
@@ -267,6 +286,9 @@ EXP
 protected
 DIGIT    
     : '0'..'9'
+    | '`'
+    | '*'
+    | '^'
     ;
 
 /*

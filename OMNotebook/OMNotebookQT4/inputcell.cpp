@@ -604,7 +604,7 @@ namespace IAEX
 	
 		// 2005-10-04 AF, added some code to replace/remove
 		QString tmp = text.replace("<br>", "\n");
-		tmp.replace( "&nbsp;&nbsp;&nbsp;&nbsp;", "&nbsp;" );
+		tmp.replace( "&nbsp;&nbsp;&nbsp;&nbsp;", "  " );
 
 		// 2005-12-08 AF, remove any <span style tag
 		QRegExp spanEnd( "</span>" );

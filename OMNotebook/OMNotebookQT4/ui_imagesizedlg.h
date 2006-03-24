@@ -47,7 +47,7 @@ public:
     vboxLayout->setObjectName(QString::fromUtf8("vboxLayout"));
     label = new QLabel(verticalLayout_2);
     label->setObjectName(QString::fromUtf8("label"));
-    QSizePolicy sizePolicy((QSizePolicy::Policy)0, (QSizePolicy::Policy)0);
+    QSizePolicy sizePolicy(static_cast<QSizePolicy::Policy>(0), static_cast<QSizePolicy::Policy>(0));
     sizePolicy.setHorizontalStretch(0);
     sizePolicy.setVerticalStretch(0);
     sizePolicy.setHeightForWidth(label->sizePolicy().hasHeightForWidth());

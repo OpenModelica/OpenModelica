@@ -29,7 +29,7 @@ public:
     {
     SelectDialog->setObjectName(QString::fromUtf8("SelectDialog"));
     SelectDialog->resize(QSize(315, 58).expandedTo(SelectDialog->minimumSizeHint()));
-    QSizePolicy sizePolicy((QSizePolicy::Policy)0, (QSizePolicy::Policy)0);
+    QSizePolicy sizePolicy(static_cast<QSizePolicy::Policy>(0), static_cast<QSizePolicy::Policy>(0));
     sizePolicy.setHorizontalStretch(0);
     sizePolicy.setVerticalStretch(0);
     sizePolicy.setHeightForWidth(SelectDialog->sizePolicy().hasHeightForWidth());

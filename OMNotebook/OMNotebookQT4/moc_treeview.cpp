@@ -1,8 +1,8 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'treeview.h'
 **
-** Created: ti 24. jan 12:19:47 2006
-**      by: The Qt Meta Object Compiler version 58 (Qt 4.0.1)
+** Created: to 23. mar 15:11:41 2006
+**      by: The Qt Meta Object Compiler version 59 (Qt 4.1.0)
 **
 ** WARNING! All changes made in this file will be lost!
 *****************************************************************************/
@@ -10,8 +10,8 @@
 #include "treeview.h"
 #if !defined(Q_MOC_OUTPUT_REVISION)
 #error "The header file 'treeview.h' doesn't include <QObject>."
-#elif Q_MOC_OUTPUT_REVISION != 58
-#error "This file was generated using the moc from 4.0.1. It"
+#elif Q_MOC_OUTPUT_REVISION != 59
+#error "This file was generated using the moc from 4.1.0. It"
 #error "cannot be used with the include files from this version of Qt."
 #error "(The moc has changed too much.)"
 #endif
@@ -66,9 +66,9 @@ int IAEX::TreeView::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
         switch (_id) {
-        case 0: becomeSelected(*(bool*)_a[1]); break;
-        case 1: setClosed(*(bool*)_a[1]); break;
-        case 2: setSelected(*(bool*)_a[1]); break;
+        case 0: becomeSelected(*reinterpret_cast< bool*>(_a[1])); break;
+        case 1: setClosed(*reinterpret_cast< bool*>(_a[1])); break;
+        case 2: setSelected(*reinterpret_cast< bool*>(_a[1])); break;
         }
         _id -= 3;
     }
@@ -78,6 +78,6 @@ int IAEX::TreeView::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
 // SIGNAL 0
 void IAEX::TreeView::becomeSelected(bool _t1)
 {
-    void *_a[] = { 0, (void*)&_t1 };
+    void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)) };
     QMetaObject::activate(this, &staticMetaObject, 0, _a);
 }

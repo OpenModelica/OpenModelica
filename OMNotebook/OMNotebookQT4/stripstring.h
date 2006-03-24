@@ -134,6 +134,8 @@ public:
 					str.replace( pos, 21, "]]" );
 				else if( str.find( "[Equal]", pos ) == pos+1 )
 					str.replace( pos, 8, "=" );
+				else if( str.find( "[SkeletonIndicator]", pos) == pos+1 )
+					str.replace( pos, 20, "-" );
 				else
 					str.erase( pos, 1 );
 				break;

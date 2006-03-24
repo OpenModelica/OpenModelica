@@ -52,8 +52,9 @@ expr
     ;
 
 exprheader
-    : NOTEBOOK^      LBRACK! expr (COMMA! rule)* RBRACK!
-    | LIST^          LBRACK! listbody (COMMA! listbody)* RBRACK!
+    : NOTEBOOK^           LBRACK! expr (COMMA! rule)* RBRACK!
+    | LIST^               LBRACK! (listbody)* (COMMA! listbody)* RBRACK!
+    | LIST_SMALL^         LBRACK! (listbody)* (COMMA! listbody)* (COMMA! rule)* RBRACK!
     | CELL^          LBRACK! expr (COMMA! expr)? (COMMA! rule)* RBRACK!
     | CELLGROUPDATA^ LBRACK! expr (COMMA! (CELLGROUPOPEN|CELLGROUPCLOSED)) RBRACK!
     
@@ -70,20 +71,29 @@ exprheader
     | SQRTBOX^       LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
     | RADICALBOX^    LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
     | ROWBOX^        LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
+    | GRIDBOX^       LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
     | FORMBOX^       LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
     | TAGBOX^        LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
     | COUNTERBOX^    LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
     | ADJUSTMENTBOX^ LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
     | BUTTONBOX^     LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
-    | GRAYLEVEL^     LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
-    | NOT_MATH_OLEDATE^ LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
-    | RGBCOLOR^      LBRACK! NUMBER COMMA! NUMBER COMMA! NUMBER RBRACK!
-    | FILENAME^      LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
-    | BOXDATA^       LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
-    | GRAPHICSDATA^	 LBRACK! QSTRING COMMA! QSTRING (COMMA! rule!)* RBRACK!
-    | DIREXTEDINFINITY^ LBRACK! NUMBER RBRACK!
-    | NOT_MATH_STARTMODELEDITOR! LBRACK! RBRACK!
-    | PARENTDIRECTORY! LBRACK! RBRACK!
+    | INTERPRETATIONBOX^  LBRACK! expr COMMA! expr RBRACK!
+    | ANNOTATION^         LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
+    | EQUAL^              LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
+    | DIAGRAM^            LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
+    | ICON^               LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
+    | POLYGON^            LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
+    | ELLIPSE^            LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
+    | LINE^               LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
+    | GRAYLEVEL^          LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
+    | NOT_MATH_OLEDATE^   LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
+    | RGBCOLOR^           LBRACK! NUMBER COMMA! NUMBER COMMA! NUMBER RBRACK!
+    | FILENAME^           LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
+    | BOXDATA^            LBRACK! expr (COMMA! expr)* (COMMA! rule)* RBRACK!
+    | GRAPHICSDATA^	      LBRACK! QSTRING COMMA! QSTRING (COMMA! rule!)* RBRACK!
+    | DIREXTEDINFINITY^   LBRACK! NUMBER RBRACK!
+    | NOT_MATH_STARTMODELEDITOR!  LBRACK! RBRACK!
+    | PARENTDIRECTORY!            LBRACK! RBRACK!
     ;
 
 listbody
@@ -92,6 +102,7 @@ listbody
 
 rule
     : RULE^          LBRACK! expr (COMMA! expr)  RBRACK!
+    | RULE_SMALL^    LBRACK! expr (COMMA! expr)  RBRACK!
     | RULEDELAYED^   LBRACK! expr (COMMA! expr)  RBRACK!
     ;
 
@@ -141,6 +152,7 @@ attribute
     |   LINESPACING
     |   HYPHENATION
     |   ACTIVE_TOKEN
+    |   VISIBLE_TOKEN
     |   EVALUATABLE
     |   BUTTONFUNCTION
     |   BUTTONDATA
@@ -161,6 +173,10 @@ attribute
     |   DEFAULTFORMATTYPE
     |   NUMBERMARKS
     |   LINEBREAKADJUSTMENTS
+    |   VISIOLINEFORMAT
+    |   VISIOFILLFORMAT
+    |   EXTENT
+	|   NAMEPOSITION
     |   CELLTAGS
     |   CELLFRAME
     |   CELLFRAMECOLOR
@@ -172,6 +188,7 @@ attribute
     |   CELLMARGINS
     |   CELLDINGBAT
     |   CELLHORIZONTALSCROLL
+    |   CELLOPEN
     |   CELLGENERATED
     |   SHOWCELLBRACKET
     |   SHOWCELLLABEL
@@ -193,6 +210,8 @@ attribute
     |   SCREENSTYLEENV
     |   PRINTINGSTYLEENV
     |   PRINTINGOPTIONS
+    |   PRINTINGCOPIES
+    |   PRINTINGPAGERANGE
     |   PRIVATEFONTOPTIONS
     |   MAGNIFICATION
     |   GENERATEDCELL
@@ -201,5 +220,6 @@ attribute
     |   IMAGEMARGINS     
     |   IMAGEREGION      
     |   IMAGERANGECACHE 
-    |   IMAGECACHE      
+    |   IMAGECACHE
+    |   NOT_MATH_MODELEDITOR  
     ;

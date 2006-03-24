@@ -130,8 +130,8 @@ namespace IAEX
     *
     * \throws runtime_error if the notebook can not be opened.
     */
-   NotebookParser::NotebookParser(const QString filename, Factory *f)
-      : filename_(filename), factory_(f) {}
+   NotebookParser::NotebookParser(const QString filename, Factory *f, int readmode)
+      : filename_(filename), factory_(f), readmode_(readmode) {}
 
    NotebookParser::~NotebookParser(){}
    
@@ -162,7 +162,7 @@ namespace IAEX
       
       AntlrNotebookTreeParser *walker = new AntlrNotebookTreeParser();
             
-      walker->document(t, workspace, factory_);
+      walker->document(t, workspace, factory_, readmode_);
       anotebook.close();
       
       return workspace;

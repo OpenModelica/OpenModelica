@@ -44,9 +44,8 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 ------------------------------------------------------------------------------------
 */
-#ifdef WIN32
-#include "windows.h"
-#endif
+
+#define RUN_DRMODELICA_CONVERTION		false
 
 //QT Headers
 #include <QtCore/QDir>
@@ -67,6 +66,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "highlighterthread.h"
 #include "stylesheet.h"
 #include "inputcell.h"
+#include "notebookcommands.h"
 
 
 namespace IAEX
@@ -74,7 +74,7 @@ namespace IAEX
 	/*! 
 	 * \class CellApplication
 	 * \author Ingemar Axelsson and Anders Fernström
-	 * \date 2006-02-13 (update)
+	 * \date 2006-02-24 (update)
 	 *
 	 * \brief Implements the application interface. This class is the
 	 * main controller of the program.
@@ -95,6 +95,9 @@ namespace IAEX
 	 * 2006-02-09 AF, code for starting omc have been moved to the
 	 * omc interactive environment.
 	 * 2006-02-13 AF, create temp dir
+	 * 2006-02-27 AF, use environment variable to find DrModelica
+	 * 2005-03-24 AF, first look for DrModelica.onb, and then for
+	 * DrModelica.nb
 	 */
 	CellApplication::CellApplication(int &argc, char **argv)
 		: QObject()
@@ -156,53 +159,81 @@ namespace IAEX
 			std::exit(-1);
 		}
 
-		// 2006-01-09 AF, create a new highlight thread with the
-		// 'openmodelicahighlighter' as the highlighter that should be
-		// used.
-		try
-		{
-			Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
-			CellStyle style = sheet->getStyle( "Input" );
-			style.textCharFormat()->setBackground( QBrush( QColor( 200, 200, 255 ) ));
 
-			OpenModelicaHighlighter *highlighter = 
-				new OpenModelicaHighlighter( "modelicacolors.xml", *style.textCharFormat() );
-			HighlighterThread *thread = HighlighterThread::instance( highlighter );
-			thread->start( QThread::LowPriority );
-		}
-		catch( exception &e )
+		// 2006-03-21 AF, code for converting DrModelica from mathematica
+		// fullform to OMNotebook (.onb)
+		if( RUN_DRMODELICA_CONVERTION )
 		{
-			QString msg = e.what();
-			msg += "\nCould not create highlighter thread, exiting OMNotebook";
-			QMessageBox::warning( 0, "Error", msg, "OK" );
-			std::exit(-1);
+			convertDrModelica();
 		}
- 
-		//open(QString("WelcomeToOMNotebook.onb"));
-		// 2006-02-02 AF, open DrModelica from the begining - release stuff
-		// 2006-02-27 AF, use environment variable to find DrModelica
-		QString drmodelica( getenv( "OPENMODELICAHOME" ) );
-		if( drmodelica.isEmpty() )
-		{
-			cout << "Could not find environment variable OPENMODELICAHOME" << endl;
-			open(QString::null);
-			return;
-		}
-		
-		if( drmodelica.endsWith("/") || drmodelica.endsWith( "\\") )
-			drmodelica += "DrModelica/DrModelica.nb";
-		else
-			drmodelica += "/DrModelica/DrModelica.nb";
-
-		if( dir.exists( drmodelica ))
-			open(drmodelica);
-		else if( dir.exists( "DrModelica/DrModelica.nb" ))
-			open( "DrModelica/DrModelica.nb" );
 		else
 		{
-			cout << "Unable to find (1): " << drmodelica.toStdString() << endl;
-			cout << "Unable to find (2): DrModelica/DrModelica.nb" << endl;
-			open(QString::null);
+			// 2006-01-09 AF, create a new highlight thread with the
+			// 'openmodelicahighlighter' as the highlighter that should be
+			// used.
+			try
+			{
+				Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
+				CellStyle style = sheet->getStyle( "Input" );
+				style.textCharFormat()->setBackground( QBrush( QColor( 200, 200, 255 ) ));
+
+				OpenModelicaHighlighter *highlighter = 
+					new OpenModelicaHighlighter( "modelicacolors.xml", *style.textCharFormat() );
+				HighlighterThread *thread = HighlighterThread::instance( highlighter );
+				thread->start( QThread::LowPriority );
+			}
+			catch( exception &e )
+			{
+				QString msg = e.what();
+				msg += "\nCould not create highlighter thread, exiting OMNotebook";
+				QMessageBox::warning( 0, "Error", msg, "OK" );
+				std::exit(-1);
+			}
+
+
+			// 2006-02-27 AF, use environment variable to find DrModelica
+			// 2006-03-24 AF, First try to find DrModelica.onb, then .nb
+			QString drmodelica( getenv( "OPENMODELICAHOME" ) );
+			if( drmodelica.isEmpty() )
+			{
+				cout << "Could not find environment variable OPENMODELICAHOME" << endl;
+				open(QString::null);
+				return;
+			}
+			
+			// ONB
+			if( drmodelica.endsWith("/") || drmodelica.endsWith( "\\") )
+				drmodelica += "DrModelica/DrModelica.onb";
+			else
+				drmodelica += "/DrModelica/DrModelica.onb";
+
+			if( dir.exists( drmodelica ))
+				open(drmodelica);
+			else if( dir.exists( "DrModelica/DrModelica.onb" ))
+				open( "DrModelica/DrModelica.onb" );
+			else
+			{
+				cout << "Unable to find (1): " << drmodelica.toStdString() << endl;
+				cout << "Unable to find (2): DrModelica/DrModelica.onb" << endl;
+
+				// NB
+				drmodelica = getenv( "OPENMODELICAHOME" );
+				if( drmodelica.endsWith("/") || drmodelica.endsWith( "\\") )
+					drmodelica += "DrModelica/DrModelica.nb";
+				else
+					drmodelica += "/DrModelica/DrModelica.nb";
+
+				if( dir.exists( drmodelica ))
+					open(drmodelica);
+				else if( dir.exists( "DrModelica/DrModelica.nb" ))
+					open( "DrModelica/DrModelica.nb" );
+				else
+				{
+					cout << "Unable to find (3): " << drmodelica.toStdString() << endl;
+					cout << "Unable to find (4): DrModelica/DrModelica.nb" << endl;
+					open(QString::null);
+				}
+			}
 		}
 	}
 
@@ -501,5 +532,78 @@ namespace IAEX
 			else
 				++dv_iter;
 		}
+	}
+
+	/*! 
+	* \author Anders Fernström
+	* \date 2006-03-21
+	*
+	* \brief convert DrModelica documentation into OMNotebook format
+	* (.onb). 
+	*
+	* NO A WORKING FUNCTION
+	* -Temporary function
+	* -The function is not called anywhere.
+	* -The function asume that DrModelia is located in 'C:\OpenModelica132\DrModelicaConv'
+	* -Save documents to 'C:\OpenModelica132\DrModelicaConv'
+	* -remove all .nb file
+	*/
+	void CellApplication::convertDrModelica()
+	{
+		cout << "CONVERTING DRMODELICA" << endl;
+		cout << "---------------------" << endl << endl;
+
+		// load from
+		QString path = "C:/OpenModelica132/DrModelicaConv";
+		QDir dir( path );
+		dir.setSorting( QDir::Name );
+
+		if( dir.exists() )
+		{
+			// get dirs
+			dir.setFilter( QDir::Dirs | QDir::NoDotAndDotDot);
+			QStringList dirList = dir.entryList();
+			dirList.prepend( "" );
+
+			for( int i = 0; i < dirList.size(); ++i )
+			{
+				// get file names
+				QDir fileDir( dir.absolutePath() + "/" + dirList.at(i) );
+				fileDir.setSorting( QDir::Name );
+				fileDir.setFilter( QDir::Files );
+				//fileDir.setNameFilters( QStringList(".nb") );
+				QStringList fileList = fileDir.entryList();
+
+				// loop through all files
+				for( int j = 0; j < fileList.size(); ++j )
+				{
+					cout << "Loading: " << fileDir.absolutePath().toStdString() +
+						string( "/" ) + fileList.at(j).toStdString() << endl;
+					
+					Document *d = new CellDocument( this, fileDir.absolutePath() + 
+						QString( "/" ) + fileList.at(j), READMODE_CONVERTING_ONB );
+
+					// save file
+					QString filename = fileList.at(j);
+					filename.replace( ".nb", ".onb" );
+
+					cout << "Saving: " << dir.absolutePath().toStdString() +
+						string( "/" ) + dirList.at(i).toStdString() + string( "/" ) +
+						filename.toStdString() << endl;
+					
+					SaveDocumentCommand command( d, dir.absolutePath() +
+						QString( "/" ) + dirList.at(i) + QString( "/" ) + filename );
+					this->commandCenter()->executeCommand( &command );
+					
+					cout << "DONE!" << endl << endl;
+
+					// delete file
+					delete d;
+					fileDir.remove( fileList.at(j) );
+				}
+			}
+ 		}
+
+		cout << "CONVERTION DONE !!!" << endl;
 	}
 }

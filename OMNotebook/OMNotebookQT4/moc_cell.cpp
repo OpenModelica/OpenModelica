@@ -1,8 +1,8 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'cell.h'
 **
-** Created: fr 3. feb 10:13:54 2006
-**      by: The Qt Meta Object Compiler version 58 (Qt 4.0.1)
+** Created: to 23. mar 15:11:42 2006
+**      by: The Qt Meta Object Compiler version 59 (Qt 4.1.0)
 **
 ** WARNING! All changes made in this file will be lost!
 *****************************************************************************/
@@ -10,8 +10,8 @@
 #include "cell.h"
 #if !defined(Q_MOC_OUTPUT_REVISION)
 #error "The header file 'cell.h' doesn't include <QObject>."
-#elif Q_MOC_OUTPUT_REVISION != 58
-#error "This file was generated using the moc from 4.0.1. It"
+#elif Q_MOC_OUTPUT_REVISION != 59
+#error "This file was generated using the moc from 4.1.0. It"
 #error "cannot be used with the include files from this version of Qt."
 #error "(The moc has changed too much.)"
 #endif
@@ -22,7 +22,7 @@ static const uint qt_meta_data_IAEX__Cell[] = {
        1,       // revision
        0,       // classname
        0,    0, // classinfo
-      26,   10, // methods
+      27,   10, // methods
        0,    0, // properties
        0,    0, // enums/sets
 
@@ -55,6 +55,7 @@ static const uint qt_meta_data_IAEX__Cell[] = {
      584,  578,   11,   11, 0x09,
      616,  602,   11,   11, 0x09,
      651,  641,   11,   11, 0x09,
+     683,  675,   11,   11, 0x09,
 
        0        // eod
 };
@@ -71,7 +72,7 @@ static const char qt_meta_stringdata_IAEX__Cell[] = {
     "setSelected(bool)\0height\0setHeight(int)\0hidden\0hideTreeView(bool)\0"
     "event\0wheelEvent(QWheelEvent*)\0label\0setLabel(QLabel*)\0"
     "newTreeWidget\0setTreeWidget(TreeView*)\0newWidget\0"
-    "setMainWidget(QWidget*)\0"
+    "setMainWidget(QWidget*)\0counter\0addChapterCounter(QWidget*)\0"
 };
 
 const QMetaObject IAEX::Cell::staticMetaObject = {
@@ -99,34 +100,35 @@ int IAEX::Cell::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
         switch (_id) {
-        case 0: clicked(*(Cell**)_a[1]); break;
-        case 1: doubleClicked(*(int*)_a[1]); break;
-        case 2: changedWidth(*(int*)_a[1]); break;
-        case 3: selected(*(bool*)_a[1]); break;
-        case 4: cellselected(*(Cell**)_a[1],*(Qt::KeyboardModifiers*)_a[2]); break;
+        case 0: clicked(*reinterpret_cast< Cell**>(_a[1])); break;
+        case 1: doubleClicked(*reinterpret_cast< int*>(_a[1])); break;
+        case 2: changedWidth(*reinterpret_cast< int*>(_a[1])); break;
+        case 3: selected(*reinterpret_cast< bool*>(_a[1])); break;
+        case 4: cellselected(*reinterpret_cast< Cell**>(_a[1]),*reinterpret_cast< Qt::KeyboardModifiers*>(_a[2])); break;
         case 5: heightChanged(); break;
-        case 6: openLink(*(const QUrl**)_a[1]); break;
-        case 7: cellOpened(*(Cell**)_a[1],*(bool*)_a[2]); break;
-        case 8: addRule(*(Rule**)_a[1]); break;
-        case 9: setText(*(QString*)_a[1]); break;
-        case 10: setText(*(QString*)_a[1],*(QTextCharFormat*)_a[2]); break;
-        case 11: setTextHtml(*(QString*)_a[1]); break;
-        case 12: setStyle(*(QString*)_a[1]); break;
-        case 13: setStyle(*(CellStyle*)_a[1]); break;
-        case 14: setCellTag(*(QString*)_a[1]); break;
-        case 15: setReadOnly(*(bool*)_a[1]); break;
-        case 16: setFocus(*(bool*)_a[1]); break;
+        case 6: openLink(*reinterpret_cast< const QUrl**>(_a[1])); break;
+        case 7: cellOpened(*reinterpret_cast< Cell**>(_a[1]),*reinterpret_cast< bool*>(_a[2])); break;
+        case 8: addRule(*reinterpret_cast< Rule**>(_a[1])); break;
+        case 9: setText(*reinterpret_cast< QString*>(_a[1])); break;
+        case 10: setText(*reinterpret_cast< QString*>(_a[1]),*reinterpret_cast< QTextCharFormat*>(_a[2])); break;
+        case 11: setTextHtml(*reinterpret_cast< QString*>(_a[1])); break;
+        case 12: setStyle(*reinterpret_cast< QString*>(_a[1])); break;
+        case 13: setStyle(*reinterpret_cast< CellStyle*>(_a[1])); break;
+        case 14: setCellTag(*reinterpret_cast< QString*>(_a[1])); break;
+        case 15: setReadOnly(*reinterpret_cast< bool*>(_a[1])); break;
+        case 16: setFocus(*reinterpret_cast< bool*>(_a[1])); break;
         case 17: applyLinksToText(); break;
-        case 18: setBackgroundColor(*(QColor*)_a[1]); break;
-        case 19: setSelected(*(bool*)_a[1]); break;
-        case 20: setHeight(*(int*)_a[1]); break;
-        case 21: hideTreeView(*(bool*)_a[1]); break;
-        case 22: wheelEvent(*(QWheelEvent**)_a[1]); break;
-        case 23: setLabel(*(QLabel**)_a[1]); break;
-        case 24: setTreeWidget(*(TreeView**)_a[1]); break;
-        case 25: setMainWidget(*(QWidget**)_a[1]); break;
+        case 18: setBackgroundColor(*reinterpret_cast< QColor*>(_a[1])); break;
+        case 19: setSelected(*reinterpret_cast< bool*>(_a[1])); break;
+        case 20: setHeight(*reinterpret_cast< int*>(_a[1])); break;
+        case 21: hideTreeView(*reinterpret_cast< bool*>(_a[1])); break;
+        case 22: wheelEvent(*reinterpret_cast< QWheelEvent**>(_a[1])); break;
+        case 23: setLabel(*reinterpret_cast< QLabel**>(_a[1])); break;
+        case 24: setTreeWidget(*reinterpret_cast< TreeView**>(_a[1])); break;
+        case 25: setMainWidget(*reinterpret_cast< QWidget**>(_a[1])); break;
+        case 26: addChapterCounter(*reinterpret_cast< QWidget**>(_a[1])); break;
         }
-        _id -= 26;
+        _id -= 27;
     }
     return _id;
 }
@@ -134,35 +136,35 @@ int IAEX::Cell::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
 // SIGNAL 0
 void IAEX::Cell::clicked(Cell * _t1)
 {
-    void *_a[] = { 0, (void*)&_t1 };
+    void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)) };
     QMetaObject::activate(this, &staticMetaObject, 0, _a);
 }
 
 // SIGNAL 1
 void IAEX::Cell::doubleClicked(int _t1)
 {
-    void *_a[] = { 0, (void*)&_t1 };
+    void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)) };
     QMetaObject::activate(this, &staticMetaObject, 1, _a);
 }
 
 // SIGNAL 2
 void IAEX::Cell::changedWidth(const int _t1)
 {
-    void *_a[] = { 0, (void*)&_t1 };
+    void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)) };
     QMetaObject::activate(this, &staticMetaObject, 2, _a);
 }
 
 // SIGNAL 3
 void IAEX::Cell::selected(const bool _t1)
 {
-    void *_a[] = { 0, (void*)&_t1 };
+    void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)) };
     QMetaObject::activate(this, &staticMetaObject, 3, _a);
 }
 
 // SIGNAL 4
 void IAEX::Cell::cellselected(Cell * _t1, Qt::KeyboardModifiers _t2)
 {
-    void *_a[] = { 0, (void*)&_t1, (void*)&_t2 };
+    void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)), const_cast<void*>(reinterpret_cast<const void*>(&_t2)) };
     QMetaObject::activate(this, &staticMetaObject, 4, _a);
 }
 
@@ -175,13 +177,13 @@ void IAEX::Cell::heightChanged()
 // SIGNAL 6
 void IAEX::Cell::openLink(const QUrl * _t1)
 {
-    void *_a[] = { 0, (void*)&_t1 };
+    void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)) };
     QMetaObject::activate(this, &staticMetaObject, 6, _a);
 }
 
 // SIGNAL 7
 void IAEX::Cell::cellOpened(Cell * _t1, const bool _t2)
 {
-    void *_a[] = { 0, (void*)&_t1, (void*)&_t2 };
+    void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)), const_cast<void*>(reinterpret_cast<const void*>(&_t2)) };
     QMetaObject::activate(this, &staticMetaObject, 7, _a);
 }

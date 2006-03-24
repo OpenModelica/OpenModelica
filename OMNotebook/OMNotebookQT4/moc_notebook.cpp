@@ -1,8 +1,8 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'notebook.h'
 **
-** Created: fr 3. feb 15:19:15 2006
-**      by: The Qt Meta Object Compiler version 58 (Qt 4.0.1)
+** Created: to 23. mar 15:11:42 2006
+**      by: The Qt Meta Object Compiler version 59 (Qt 4.1.0)
 **
 ** WARNING! All changes made in this file will be lost!
 *****************************************************************************/
@@ -10,8 +10,8 @@
 #include "notebook.h"
 #if !defined(Q_MOC_OUTPUT_REVISION)
 #error "The header file 'notebook.h' doesn't include <QObject>."
-#elif Q_MOC_OUTPUT_REVISION != 58
-#error "This file was generated using the moc from 4.0.1. It"
+#elif Q_MOC_OUTPUT_REVISION != 59
+#error "This file was generated using the moc from 4.1.0. It"
 #error "cannot be used with the include files from this version of Qt."
 #error "(The moc has changed too much.)"
 #endif
@@ -22,7 +22,7 @@ static const uint qt_meta_data_IAEX__NotebookWindow[] = {
        1,       // revision
        0,       // classname
        0,    0, // classinfo
-      59,   10, // methods
+      62,   10, // methods
        0,    0, // properties
        0,    0, // enums/sets
 
@@ -43,49 +43,52 @@ static const uint qt_meta_data_IAEX__NotebookWindow[] = {
      287,   21,   21,   21, 0x0a,
      307,   21,   21,   21, 0x0a,
      326,   21,   21,   21, 0x0a,
-     346,   21,   21,   21, 0x08,
-     365,  356,   21,   21, 0x08,
-     383,   21,   21,   21, 0x28,
-     394,   21,   21,   21, 0x08,
-     412,  406,   21,   21, 0x08,
-     437,   21,   21,   21, 0x08,
-     455,   21,   21,   21, 0x08,
-     466,   21,   21,   21, 0x08,
-     475,   21,   21,   21, 0x08,
-     482,   21,   21,   21, 0x08,
-     499,   21,   21,   21, 0x08,
-     507,   21,   21,   21, 0x08,
-     527,  520,   21,   21, 0x08,
-     549,   21,   21,   21, 0x08,
-     563,  520,   21,   21, 0x08,
-     584,  520,   21,   21, 0x08,
-     609,  520,   21,   21, 0x08,
-     634,  520,   21,   21, 0x08,
-     662,  520,   21,   21, 0x08,
-     688,  520,   21,   21, 0x08,
-     718,  520,   21,   21, 0x08,
-     752,  520,   21,   21, 0x08,
-     775,  520,   21,   21, 0x08,
-     798,  520,   21,   21, 0x08,
-     822,  520,   21,   21, 0x08,
-     845,   21,   21,   21, 0x08,
-     856,   21,   21,   21, 0x08,
-     867,   21,   21,   21, 0x08,
-     877,   21,   21,   21, 0x08,
-     888,   21,   21,   21, 0x08,
-     900,   21,   21,   21, 0x08,
-     914,   21,   21,   21, 0x08,
-     927,   21,   21,   21, 0x08,
+     346,   21,   21,   21, 0x0a,
+     374,  370,   21,   21, 0x0a,
+     400,   21,   21,   21, 0x08,
+     419,  410,   21,   21, 0x08,
+     437,   21,   21,   21, 0x28,
+     448,   21,   21,   21, 0x08,
+     466,  460,   21,   21, 0x08,
+     491,   21,   21,   21, 0x08,
+     509,   21,   21,   21, 0x08,
+     519,   21,   21,   21, 0x08,
+     530,   21,   21,   21, 0x08,
+     539,   21,   21,   21, 0x08,
+     546,   21,   21,   21, 0x08,
+     563,   21,   21,   21, 0x08,
+     571,   21,   21,   21, 0x08,
+     591,  584,   21,   21, 0x08,
+     613,   21,   21,   21, 0x08,
+     627,  584,   21,   21, 0x08,
+     648,  584,   21,   21, 0x08,
+     673,  584,   21,   21, 0x08,
+     698,  584,   21,   21, 0x08,
+     726,  584,   21,   21, 0x08,
+     752,  584,   21,   21, 0x08,
+     782,  584,   21,   21, 0x08,
+     816,  584,   21,   21, 0x08,
+     839,  584,   21,   21, 0x08,
+     862,  584,   21,   21, 0x08,
+     886,  584,   21,   21, 0x08,
+     909,   21,   21,   21, 0x08,
+     920,   21,   21,   21, 0x08,
+     931,   21,   21,   21, 0x08,
      941,   21,   21,   21, 0x08,
      952,   21,   21,   21, 0x08,
-     968,   21,   21,   21, 0x08,
-     988,   21,   21,   21, 0x08,
-     998,   21,   21,   21, 0x08,
-    1009,   21,   21,   21, 0x08,
-    1021,   21,   21,   21, 0x08,
-    1036,   21,   21,   21, 0x08,
-    1053,   21,   21,   21, 0x08,
-    1072,   21,   21,   21, 0x08,
+     964,   21,   21,   21, 0x08,
+     978,   21,   21,   21, 0x08,
+     991,   21,   21,   21, 0x08,
+    1005,   21,   21,   21, 0x08,
+    1016,   21,   21,   21, 0x08,
+    1032,   21,   21,   21, 0x08,
+    1052,   21,   21,   21, 0x08,
+    1062,   21,   21,   21, 0x08,
+    1073,   21,   21,   21, 0x08,
+    1085,   21,   21,   21, 0x08,
+    1100,   21,   21,   21, 0x08,
+    1117,   21,   21,   21, 0x08,
+    1136,   21,   21,   21, 0x08,
 
        0        // eod
 };
@@ -96,10 +99,11 @@ static const char qt_meta_stringdata_IAEX__NotebookWindow[] = {
     "updateFontFaceMenu()\0updateFontSizeMenu()\0updateFontStretchMenu()\0"
     "updateFontColorMenu()\0updateTextAlignmentMenu()\0"
     "updateVerticalAlignmentMenu()\0updateBorderMenu()\0updateMarginMenu()\0"
-    "updatePaddingMenu()\0updateWindowMenu()\0updateWindowTitle()\0newFile()\0"
+    "updatePaddingMenu()\0updateWindowMenu()\0updateWindowTitle()\0"
+    "updateChapterCounters()\0msg\0setStatusMessage(QString)\0newFile()\0"
     "filename\0openFile(QString)\0openFile()\0closeFile()\0event\0"
-    "closeEvent(QCloseEvent*)\0aboutQTNotebook()\0helpText()\0saveas()\0"
-    "save()\0quitOMNotebook()\0print()\0selectFont()\0action\0"
+    "closeEvent(QCloseEvent*)\0aboutQTNotebook()\0aboutQT()\0helpText()\0"
+    "saveas()\0save()\0quitOMNotebook()\0print()\0selectFont()\0action\0"
     "changeStyle(QAction*)\0changeStyle()\0changeFont(QAction*)\0"
     "changeFontFace(QAction*)\0changeFontSize(QAction*)\0"
     "changeFontStretch(QAction*)\0changeFontColor(QAction*)\0"
@@ -153,51 +157,54 @@ int IAEX::NotebookWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
         case 13: updatePaddingMenu(); break;
         case 14: updateWindowMenu(); break;
         case 15: updateWindowTitle(); break;
-        case 16: newFile(); break;
-        case 17: openFile(*(QString*)_a[1]); break;
-        case 18: openFile(); break;
-        case 19: closeFile(); break;
-        case 20: closeEvent(*(QCloseEvent**)_a[1]); break;
-        case 21: aboutQTNotebook(); break;
-        case 22: helpText(); break;
-        case 23: saveas(); break;
-        case 24: save(); break;
-        case 25: quitOMNotebook(); break;
-        case 26: print(); break;
-        case 27: selectFont(); break;
-        case 28: changeStyle(*(QAction**)_a[1]); break;
-        case 29: changeStyle(); break;
-        case 30: changeFont(*(QAction**)_a[1]); break;
-        case 31: changeFontFace(*(QAction**)_a[1]); break;
-        case 32: changeFontSize(*(QAction**)_a[1]); break;
-        case 33: changeFontStretch(*(QAction**)_a[1]); break;
-        case 34: changeFontColor(*(QAction**)_a[1]); break;
-        case 35: changeTextAlignment(*(QAction**)_a[1]); break;
-        case 36: changeVerticalAlignment(*(QAction**)_a[1]); break;
-        case 37: changeBorder(*(QAction**)_a[1]); break;
-        case 38: changeMargin(*(QAction**)_a[1]); break;
-        case 39: changePadding(*(QAction**)_a[1]); break;
-        case 40: changeWindow(*(QAction**)_a[1]); break;
-        case 41: undoEdit(); break;
-        case 42: redoEdit(); break;
-        case 43: cutEdit(); break;
-        case 44: copyEdit(); break;
-        case 45: pasteEdit(); break;
-        case 46: insertImage(); break;
-        case 47: insertLink(); break;
-        case 48: openOldFile(); break;
-        case 49: pureText(); break;
-        case 50: createNewCell(); break;
-        case 51: deleteCurrentCell(); break;
-        case 52: cutCell(); break;
-        case 53: copyCell(); break;
-        case 54: pasteCell(); break;
-        case 55: moveCursorUp(); break;
-        case 56: moveCursorDown(); break;
-        case 57: groupCellsAction(); break;
-        case 58: inputCellsAction(); break;
+        case 16: updateChapterCounters(); break;
+        case 17: setStatusMessage(*reinterpret_cast< QString*>(_a[1])); break;
+        case 18: newFile(); break;
+        case 19: openFile(*reinterpret_cast< QString*>(_a[1])); break;
+        case 20: openFile(); break;
+        case 21: closeFile(); break;
+        case 22: closeEvent(*reinterpret_cast< QCloseEvent**>(_a[1])); break;
+        case 23: aboutQTNotebook(); break;
+        case 24: aboutQT(); break;
+        case 25: helpText(); break;
+        case 26: saveas(); break;
+        case 27: save(); break;
+        case 28: quitOMNotebook(); break;
+        case 29: print(); break;
+        case 30: selectFont(); break;
+        case 31: changeStyle(*reinterpret_cast< QAction**>(_a[1])); break;
+        case 32: changeStyle(); break;
+        case 33: changeFont(*reinterpret_cast< QAction**>(_a[1])); break;
+        case 34: changeFontFace(*reinterpret_cast< QAction**>(_a[1])); break;
+        case 35: changeFontSize(*reinterpret_cast< QAction**>(_a[1])); break;
+        case 36: changeFontStretch(*reinterpret_cast< QAction**>(_a[1])); break;
+        case 37: changeFontColor(*reinterpret_cast< QAction**>(_a[1])); break;
+        case 38: changeTextAlignment(*reinterpret_cast< QAction**>(_a[1])); break;
+        case 39: changeVerticalAlignment(*reinterpret_cast< QAction**>(_a[1])); break;
+        case 40: changeBorder(*reinterpret_cast< QAction**>(_a[1])); break;
+        case 41: changeMargin(*reinterpret_cast< QAction**>(_a[1])); break;
+        case 42: changePadding(*reinterpret_cast< QAction**>(_a[1])); break;
+        case 43: changeWindow(*reinterpret_cast< QAction**>(_a[1])); break;
+        case 44: undoEdit(); break;
+        case 45: redoEdit(); break;
+        case 46: cutEdit(); break;
+        case 47: copyEdit(); break;
+        case 48: pasteEdit(); break;
+        case 49: insertImage(); break;
+        case 50: insertLink(); break;
+        case 51: openOldFile(); break;
+        case 52: pureText(); break;
+        case 53: createNewCell(); break;
+        case 54: deleteCurrentCell(); break;
+        case 55: cutCell(); break;
+        case 56: copyCell(); break;
+        case 57: pasteCell(); break;
+        case 58: moveCursorUp(); break;
+        case 59: moveCursorDown(); break;
+        case 60: groupCellsAction(); break;
+        case 61: inputCellsAction(); break;
         }
-        _id -= 59;
+        _id -= 62;
     }
     return _id;
 }

@@ -85,7 +85,7 @@ namespace IAEX
       }
       else if(filename.endsWith(".nb", Qt::CaseInsensitive))
       {
-		 return new NotebookParser(filename, f); //openNotebookFile(filename);
+		 return new NotebookParser(filename, f, readmode); //openNotebookFile(filename);
       }
       else
       {

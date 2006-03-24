@@ -105,6 +105,8 @@ namespace IAEX{
 
 		mainWidget()->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 		setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+		style_.setName( "cellgroup" );
 	}
 
 	/*! 
@@ -152,9 +154,7 @@ namespace IAEX{
 			return child()->style();
 		else
 		{
-			CellStyle tmp;
-			tmp.setName( "cellgroup" );
-			return &tmp;
+			return &style_;
 		}
 	}
 

@@ -62,13 +62,14 @@ namespace IAEX
    class NotebookParser : public NBParser
    {
    public:
-      NotebookParser(const QString filename, Factory *f);
+      NotebookParser(const QString filename, Factory *f, int readmode);
       virtual ~NotebookParser();
       
       virtual Cell *parse();
    private:
       QString filename_;
       Factory *factory_;
+	  int readmode_;
    };
 };
 #endif

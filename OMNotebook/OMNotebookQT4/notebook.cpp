@@ -97,23 +97,6 @@ using namespace std;
 namespace IAEX
 {
 	/*! 
-	 * \class SleeperThread
-	 * \author Anders Ferström
-	 *
-	 * \brief Extends QThread. A small trick to get access to protected
-	 * function in QThread.
-	 */
-	class SleeperThread : public QThread
-	{
-	public:
-		static void msleep(unsigned long msecs)
-		{
-			QThread::msleep(msecs);
-		}
-	};
-
-
-	/*! 
 	 * \class NotebookWindow 
 	 * \author Ingemar Axelsson and Anders Fernström
 	 *
@@ -3051,9 +3034,13 @@ namespace IAEX
 	/*! 
 	 * \author Anders Fernström
 	 * \date 2005-11-21
+	 * \date 2006-03-24 (update)
 	 *
 	 * \brief Method for exporting the document content to a file with
 	 * pure text only
+	 *
+	 * 2006-03-24 AF, Added message box to inform the user when export
+	 * is done.
 	 */
 	void NotebookWindow::pureText()
 	{
@@ -3079,6 +3066,18 @@ namespace IAEX
 
 			application()->commandCenter()->executeCommand(
 				new ExportToPureText(subject_, filename) );
+
+			// 2006-03-24 AF, added message box - so user know when 
+			// export is done
+			QString title = QFileInfo( subject_->getFilename() ).fileName();
+			title.remove( "\n" );
+			if( title.isEmpty() )
+				title = "(untitled)";
+
+			QString msg = QString( "The document " ) + title +
+				QString( " have been exported as pure text to " ) +
+				filename + QString( "." );
+			QMessageBox::information( 0, "Document exported", msg, "OK" );
 		}
 	}
 

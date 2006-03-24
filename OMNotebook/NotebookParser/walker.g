@@ -27,6 +27,7 @@ header {
 #include "rule.h"
 #include "factory.h"
 #include "stripstring.h"
+#include "xmlnodename.h"
 
 using namespace std;
 using namespace IAEX;
@@ -79,9 +80,11 @@ options
     //This is not very nice.   
     
     // AF
-    bool imagePartOfText; 
+    bool imagePartOfText;
+    bool convertingToONB;
+    int readmode_;
 }
-document[Cell *ws, Factory *f]
+document[Cell *ws, Factory *f, int readmode]
 {
     //This is in NotebookTreeParser.cpp
     factory = f;
@@ -90,6 +93,12 @@ document[Cell *ws, Factory *f]
     
     // AF
     imagePartOfText = false;
+    readmode_ = readmode;
+    
+    if( readmode_ == READMODE_CONVERTING_ONB )
+		convertingToONB = true;
+	else
+		convertingToONB = false;
     
     
     result_t result(output);// = new result_t; //??
@@ -348,11 +357,34 @@ exprheader [result_t &result]
             // have to insert # symbol
             filename = StripString::fixFilename( filename );
             
+            // 2006-03-21 AF, if convertion to ONB - replace .nb with .onb
+            if( convertingToONB )
+            {
+				string::size_type index = filename.find( ".nb" );
+				if( index != string::npos )
+				{
+					filename.replace( index, 3, ".onb" );
+				}
+            }
+            
 
             result.first << "<a href=\"" << filename << "\">" 
                          << buttonTitle.first.str() << "</a>";
         }
-    |   {
+    |   
+        {
+            // InpterpretationBox contains hidden information in Mathematica
+            ostringstream boxesoutput;
+            result_t boxes(boxesoutput);
+            
+            ostringstream interpretationdataoutput;
+            result_t interpretationdata(interpretationdataoutput);
+        }
+        #(INTERPRETATIONBOX  expr[boxes] expr[interpretationdata])
+        {
+        }
+    |   
+        {
     	    ostringstream diroutput;
     	    ostringstream filenameoutput;
             result_t dir(diroutput);
@@ -370,7 +402,7 @@ exprheader [result_t &result]
     |   
         {
 		}
-		#(GRAPHICSDATA	 type:QSTRING	data:QSTRING)
+		#(GRAPHICSDATA  type:QSTRING data:QSTRING)
 		{
 		}
 	|	
@@ -397,7 +429,9 @@ exprheader [result_t &result]
 			else
 				result.first << "7777:3333:2222";
 		}
+	| #(LIST_SMALL         expr[result] (expr[result])* (rule[rules])*)
     | #(ROWBOX        expr[result] (expr[result])* (rule[rules])*)
+    | #(GRIDBOX       expr[result] (expr[result])* (rule[rules])*)
     | #(FORMBOX       expr[result] (expr[result])* (rule[rules])*)
     | #(TAGBOX        expr[result] (expr[result])* (rule[rules])*)
     | #(COUNTERBOX    expr[result] (expr[result])* (rule[rules])*)
@@ -406,12 +440,19 @@ exprheader [result_t &result]
     | #(UNDERSCRIPTBOX expr[result] (expr[result])* (rule[rules])*)
     | #(OVERSCRIPTBOX expr[result] (expr[result])* (rule[rules])*)
     | #(UNDEROVERSCRIPTBOX expr[result] (expr[result])* (rule[rules])*)
-    | #(FRACTIONBOX expr[result] (expr[result])* (rule[rules])*)
-    | #(SQRTBOX       expr[result] (expr[result])* (rule[rules])*)
-    | #(RADICALBOX    expr[result] (expr[result])* (rule[rules])*)
-    | #(GRAYLEVEL     expr[result] (expr[result])* (rule[rules])*)
-    | #(STYLEDATA     expr[result] (expr[result])* (rule[rules])*)
-    | #(NOT_MATH_OLEDATE expr[result] (expr[result])* (rule[rules])*)
+    | #(FRACTIONBOX        expr[result] (expr[result])* (rule[rules])*)
+    | #(SQRTBOX            expr[result] (expr[result])* (rule[rules])*)
+    | #(RADICALBOX         expr[result] (expr[result])* (rule[rules])*)
+    | #(ANNOTATION         expr[result] (expr[result])* (rule[rules])*)
+	| #(EQUAL              expr[result] (expr[result])* (rule[rules])*)
+	| #(DIAGRAM            expr[result] (expr[result])* (rule[rules])*)
+	| #(ICON               expr[result] (expr[result])* (rule[rules])*)
+	| #(POLYGON            expr[result] (expr[result])* (rule[rules])*)
+	| #(ELLIPSE            expr[result] (expr[result])* (rule[rules])*)
+	| #(LINE               expr[result] (expr[result])* (rule[rules])*)
+    | #(GRAYLEVEL          expr[result] (expr[result])* (rule[rules])*)
+    | #(STYLEDATA          expr[result] (expr[result])* (rule[rules])*)
+    | #(NOT_MATH_OLEDATE   expr[result] (expr[result])* (rule[rules])*)
     ;
 
 listelement[result_t &list]
@@ -440,6 +481,9 @@ rule [rules_t &rules]
         {   
             //rules.push_back(Rule(attribute.first.str(), value.first.str()));
             rules.push_back(rule_t(attribute.first.str(), value.first.str()));
+        }
+    | #(RULE_SMALL expr[attribute] expr[value])
+        {
         }
     | #(RULEDELAYED expr[attribute] expr[value])
         {
@@ -625,6 +669,10 @@ attribute returns [string value]
         {
             value = string(activetoken->getText());
         }
+    | visibletoken:VISIBLE_TOKEN
+        {
+            value = string(visibletoken->getText());
+        }
     | evaluatable:EVALUATABLE
         {
             value = string(evaluatable->getText());
@@ -705,6 +753,22 @@ attribute returns [string value]
         {
             value = string(linebreakadjustments->getText());
         }
+    | visiolineformat:VISIOLINEFORMAT
+        {
+            value = string(visiolineformat->getText());
+        }
+    | visiofillformat:VISIOFILLFORMAT
+        {
+            value = string(visiofillformat->getText());
+        }
+    | extent:EXTENT
+        {
+            value = string(extent->getText());
+        }
+    | nameposition:NAMEPOSITION
+        {
+            value = string(nameposition->getText());
+        }
     | celltags:CELLTAGS
         {
             value = string(celltags->getText());
@@ -748,6 +812,10 @@ attribute returns [string value]
 	| cellhorizontalscrolling:CELLHORIZONTALSCROLL
 	    {
 	        value = string(cellhorizontalscrolling->getText());
+	    }
+	| cellopen:CELLOPEN
+	    {
+	        value = string(cellopen->getText());
 	    }
     | cellgenerated:CELLGENERATED
         {
@@ -833,6 +901,14 @@ attribute returns [string value]
         {
             value = string(printingoptions->getText());
         }
+    | printingcopies:PRINTINGCOPIES
+        {
+            value = string(printingcopies->getText());
+        }
+    | printingpagerange:PRINTINGPAGERANGE
+        {
+            value = string(printingpagerange->getText());
+        }
     | privatefontoption:PRIVATEFONTOPTIONS
         {
             value = string(privatefontoption->getText());
@@ -868,5 +944,9 @@ attribute returns [string value]
     | imagecache:IMAGECACHE      
         {
             value = string(imagecache->getText());
+        }
+    | modeleditor:NOT_MATH_MODELEDITOR
+        {
+            value = string(modeleditor->getText());
         }
     ;

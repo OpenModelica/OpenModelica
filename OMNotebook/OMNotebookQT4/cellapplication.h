@@ -82,6 +82,9 @@ namespace IAEX
 		void removeDocumentView( DocumentView *view );	// Added 2006-01-27 AF
 
 	private:
+		void convertDrModelica();						// Added 2006-03-21 AF
+
+	private:
 		QApplication *app_;
 		vector<Document *> documents_;
 		vector<DocumentView *> views_;

@@ -453,6 +453,7 @@ namespace IAEX
 	void TextCell::setTextHtml(QString html)
 	{
 		text_->setHtml( html );
+		text_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
 		text_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
 
 		contentChanged();
