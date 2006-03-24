@@ -1445,82 +1445,13 @@ end
  **)
 relation generate_initial_value_code:(DAELow.DAELow) => string =
 
-
-	(* with initial equations *)
-  rule  DAELow.var_list(vars) => vars_lst &
-	DAELow.var_list(knvars) => knvars_lst &
-	DAELow.equation_list(ie) => (initial_eqns1 as _::_)  &
-	generate_initial_equations_from_start(vars_lst)  => initial_eqns2 &
-	generate_initial_assignments_from_start(vars_lst,0) 
-	  => (start_assigns,cg_id) &
-	generate_parameter_assignments(knvars_lst,cg_id) 
-	  => (param_assigns,cg_id') &
-	list_append(initial_eqns1,initial_eqns2) => initial_eqns &
-	DAELow.list_equation(initial_eqns) => initial_eqns' &
-	list_array([]) => arr &
-	list_array([]) => arr2 &
-	let empty_eqn = DAELow.EQUATION_ARRAY(0,0,arr) &
-
-	let initial_dae = DAELow.DAELOW(vars,knvars,initial_eqns',empty_eqn,empty_eqn,arr2,al,ev) &
-       
-	(* States are no longer special, they are just a variable that 
-	 * needs an initial value. *)
-	DAELow.make_all_states_algebraic(initial_dae) 
-	  => (initial_dae' as DAELow.DAELOW(v,kv,e,re,ie,ae,al,ev)) &
-
- 	DAELow.incidence_matrix(initial_dae') => m &
-
-	(* Collect only variables part of the initial equations*)
-	DAELow.vars_incidence_matrix(m) => v_indx_lst &
-	Util.list_map_1r(v_indx_lst,DAELow.get_var_at,v) => varlst &
-	DAELow.list_var(varlst) => vars' &
-	DAELow.var_list(v) => allvars &
-	DAELow.var_list(kv) => knvars1 &
-	(* Make all other variables known*)
-	Util.list_setdifference_p(allvars,varlst,DAELow.var_equal) => knvars2 &
-	list_append(knvars1,knvars2) => knvars &
-	DAELow.list_var(knvars) => knvars' &
-	
-	let new_initial_dae = DAELow.DAELOW(vars',knvars',e,re,ie,ae,al,ev) &
-
-	print "new_initial_dae: \n" &
-	DAELow.dump new_initial_dae &
- 	DAELow.incidence_matrix(new_initial_dae) => m &
- 	DAELow.transpose_matrix(m) => mT &
-	(* once dae has been translated, state or not should not matter *)
-	DAELow.abs_incidence_matrix(m) => m' &
-	DAELow.abs_incidence_matrix(mT) => mT' &
-
-	(* index reduction for intitial equations makes no sense.. 
-	 * Do not remove simple equations for initial equations.
-	 *)
-	DAELow.matching_algorithm(new_initial_dae,m',mT',(DAELow.NO_INDEX_REDUCTION,DAELow.ALLOW_UNDERCONSTRAINED, DAELow.KEEP_SIMPLE_EQN)) 
-	  => (ass1,ass2,initial_dae',m,mT) &
-	DAELow.strong_components(m',mT',ass1,ass2) => blocks &
-	generate_ode_blocks(new_initial_dae,ass1,ass2,blocks,cg_id')
-	  => (block_code,_,extra_funcs) &
-	Codegen.c_make_function("int","initial_function",[],["double *x",
-							     "double *xd", 
-							     "double *y",
-							     "double *p",
-							     "double *t",
-							     "int nx",
-							     "int ny",
-							     "int np"])
-	  => init_func' &
-
-	Codegen.c_add_cleanups(init_func', ["return 0;"]) => init_func &
-        Codegen.c_merge_fns([init_func,start_assigns,param_assigns,block_code]) => res &
-	list_append(extra_funcs,[res]) => all_funcs &
-	Codegen.c_print_functions_str(all_funcs) => str
-
-        ----------------------------------
-        generate_initial_value_code(indae as DAELow.DAELOW(vars,knvars,eqns,se,ie,ae,al,ev)) => str
+	(* Removed with initial equations. Did not work correct. And 
+	 ** initial_function is deprecated anyway. *) 
 
 	(* without initial equations *)
   rule  DAELow.var_list(vars) => vars_lst &
 	DAELow.var_list(knvars) => knvars_lst &
-	DAELow.equation_list(ie) => [] &
+	(*DAELow.equation_list(ie) => [] &*)
 	generate_initial_equations_from_start(vars_lst) 
 	  => initial_eqns2 &
 	generate_initial_assignments_from_start(vars_lst,0) 
