@@ -122,8 +122,8 @@ with "Util.rml"
 with "Print.rml"
 with "Debug.rml"
 with "Error.rml"
-(* adrpo -- not used
 with "Absyn.rml"
+(* adrpo -- not used
 with "Dump.rml" 
 *)
 

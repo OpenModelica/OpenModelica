@@ -106,6 +106,7 @@ with "System.rml"
 with "Util.rml" 
 with "Algorithm.rml"
 with "Debug.rml"
+with "Absyn.rml"
 
 (** relation: apply_replacements
  **

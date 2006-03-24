@@ -76,6 +76,7 @@ with "TaskGraphExt.rml"
 with "SimCodegen.rml"
 with "ErrorExt.rml"
 with "Error.rml"
+with "Types.rml"
 (* adrpo -- not used
 with "ModUtil.rml"
 with "Codegen.rml"

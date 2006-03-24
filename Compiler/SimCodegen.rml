@@ -133,6 +133,8 @@ with "Dump.rml"
 with "Inst.rml"
 with "Error.rml"
 with "Settings.rml"
+with "Algorithm.rml"
+with "Types.rml"
 
 (** relation: generate_makefile
  **

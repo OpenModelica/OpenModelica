@@ -1396,6 +1396,8 @@ end
 
 relation is_function =
 
+  axiom  is_function ("vars_size", _) => false
+
   rule	Dictionary.search(dict, mid) => SOME(Absyn.RMLDB_REL(_,_,_,_)) 
 		-----------------------------------------------------------------
 		is_function(mid,PDB(_, dict)) => true
@@ -1471,12 +1473,14 @@ relation transform_expression =
 		transform_expression(Absyn.RML_REFERENCE(id),pdb) => 
 		Absyn.CREF(cref)
 		
+(*
   rule	get_rml_id2(id) => mid &
 		is_variable(id, pdb) => true &
 		create_cref(mid) => cref 
 		---------------------------
 		transform_expression(Absyn.RML_REFERENCE(id),pdb) => 
-		Absyn.CREF(cref)				
+		Absyn.CREF(cref)
+*)
 		
   rule	get_rml_id2(id) => mid &
 		is_function(mid, pdb) => true &

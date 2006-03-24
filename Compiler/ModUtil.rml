@@ -74,6 +74,8 @@ end
 
 with "RTOpts.rml"
 with "Util.rml"
+with "Algorithm.rml"
+with "Types.rml"
 (* adrpo -- not used
 with "Print.rml"
 *)

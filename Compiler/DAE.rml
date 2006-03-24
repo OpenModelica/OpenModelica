@@ -216,6 +216,7 @@ with "Ceval.rml"
 with "ModUtil.rml"
 with "Debug.rml"
 with "Error.rml"
+with "SCode.rml"
 
 (** relation: dump
  **
