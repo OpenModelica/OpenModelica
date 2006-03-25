@@ -1,0 +1,32 @@
+/* Copyright 2006 Adrian Pop, adrpo@ida.liu.se, http://www.ida.liu.se/~adrpo
+ *
+ * This program has been adapted from Apache Monitor to monitor OpenModelica
+ * compiler. Portions of the code are still from the Apache Monitor and the
+ * license is below.
+ * Adrian Pop, adrpo@ida.liu.se
+ */
+
+/* Copyright 2001-2005 The Apache Software Foundation or its licensors, as
+ * applicable.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/* ====================================================================
+ * ApacheMonitor.c Simple program to manage and monitor Apache services.
+ *
+ * Contributed by Mladen Turk <mturk mappingsoft.com>
+ *
+ * 05 Aug 2001
+ * ====================================================================
+ */
+

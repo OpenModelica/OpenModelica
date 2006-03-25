@@ -1,0 +1,21 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OMCMonitor", "OMCMonitor.vcproj", "{04D8E975-04D5-4CD2-8D58-464E05CD6863}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{04D8E975-04D5-4CD2-8D58-464E05CD6863}.Debug.ActiveCfg = Debug|Win32
+		{04D8E975-04D5-4CD2-8D58-464E05CD6863}.Debug.Build.0 = Debug|Win32
+		{04D8E975-04D5-4CD2-8D58-464E05CD6863}.Release.ActiveCfg = Release|Win32
+		{04D8E975-04D5-4CD2-8D58-464E05CD6863}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

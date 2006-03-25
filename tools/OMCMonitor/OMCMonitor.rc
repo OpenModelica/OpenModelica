@@ -1,0 +1,204 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Swedish resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_SVE)
+#ifdef _WIN32
+LANGUAGE LANG_SWEDISH, SUBLANG_DEFAULT
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_APSRVMON            ICON                    "OMCMonitor.ico"
+IDI_ICOSTOP             ICON                    "apstop.ico"
+IDI_ICORUN              ICON                    "aprun.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DLGSERVICES DIALOGEX 0, 0, 341, 158
+STYLE DS_SETFONT | DS_MODALFRAME | DS_SETFOREGROUND | WS_MINIMIZEBOX | 
+    WS_VISIBLE | WS_CLIPCHILDREN | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_CONTROLPARENT
+CAPTION "OpenModelica OMC Monitor"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "&OK",IDOK,262,46,50,14
+    LTEXT           "OMC St&atus :",IDC_SSTATUS,1,1,228,8
+    LISTBOX         IDL_SERVICES,1,11,230,73,LBS_OWNERDRAWFIXED | 
+                    LBS_HASSTRINGS | LBS_USETABSTOPS | LBS_NOINTEGRALHEIGHT | 
+                    LBS_DISABLENOSCROLL | WS_VSCROLL | WS_TABSTOP
+    LISTBOX         IDL_STDOUT,0,89,231,51,LBS_NOINTEGRALHEIGHT | 
+                    LBS_DISABLENOSCROLL | LBS_NOSEL | WS_VSCROLL
+    PUSHBUTTON      "&Start",IDC_SSTART,262,67,50,14
+    PUSHBUTTON      "S&top",IDC_SSTOP,262,86,50,14
+    PUSHBUTTON      "&Restart",IDC_SRESTART,262,104,50,14
+    CONTROL         114,IDC_STATIC,"Static",SS_BITMAP,238,0,100,40
+    PUSHBUTTON      "E&xit",IDC_SEXIT,262,126,50,14
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_BMPSTOP             BITMAP                  "sstop.bmp"
+IDB_BMPRUN              BITMAP                  "srun.bmp"
+IDB_BMPHEADER           BITMAP                  "OMC_header.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+1 VERSIONINFO
+ FILEVERSION 1,0,0,0
+ PRODUCTVERSION 1,0,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "Comments", "Copyright 2006, Adrian Pop [http://www.ida.liu.se/~adrpo, adrpo@ida.liu.se]."
+            VALUE "CompanyName", "PELAB/IDA/LiU, Linköping University"
+            VALUE "FileDescription", "OMC HTTP Server Monitor"
+            VALUE "FileVersion", "1.0"
+            VALUE "InternalName", "OMCMonitor.exe"
+            VALUE "LegalCopyright", "Copyright 2006, Adrian Pop, [http://www.ida.liu.se/~adrpo, adrpo@ida.liu.se]. Portions of the code belong to Apache Software Foundation."
+            VALUE "OriginalFilename", "OMCMonitor.exe"
+            VALUE "ProductName", "OMC Monitor"
+            VALUE "ProductVersion", "1.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_DLGSERVICES, DIALOG
+    BEGIN
+        RIGHTMARGIN, 338
+        BOTTOMMARGIN, 155
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE 
+BEGIN
+    IDS_APMONITORTITLE      "OMC Service Monitor"
+    IDS_APMONITORCLASS      "OMCServiceMonitorClass"
+END
+
+STRINGTABLE 
+BEGIN
+    IDS_MSG_APPRUNNING      "OMC monitor is already started"
+    IDS_MSG_ERROR           "Error"
+    IDS_MSG_RUNNINGALL      "OpenModelica OMC is running"
+    IDS_MSG_RUNNING         "OpenModelica OMC is running"
+    IDS_MSG_RUNNINGNONE     "OpenModelica OMC is stoped"
+    IDS_MSG_NOSERVICES      "No OMC running"
+    IDS_MSG_MNUSERVICES     "Open &Services"
+    IDS_MSG_MNUSHOW         "&Open OpenModelica OMC Monitor"
+    IDS_MSG_MNUEXIT         "E&xit"
+    IDS_MSG_SRVSTART        " %s is starting."
+    IDS_MSG_SRVSTARTED      "%s has started."
+    IDS_MSG_SRVSTOP         "%s is stopping."
+    IDS_MSG_SRVSTOPPED      "%s has stopped."
+    IDS_MSG_SRVRESTART      "%s is restarting."
+    IDS_MSG_SRVRESTARTED    "%s has restarted."
+    IDS_MSG_SRVFAILED       "The requested operation has failed!"
+END
+
+STRINGTABLE 
+BEGIN
+    IDS_MSG_SSTART          "&Start"
+    IDS_MSG_SSTOP           "S&top"
+    IDS_MSG_SRESTART        "&Restart"
+END
+
+#endif    // Swedish resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
