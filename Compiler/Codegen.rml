@@ -2533,6 +2533,17 @@ relation generate_builtin_function: (Exp.Exp,int) => (CFunction,string,int) =
 	generate_builtin_function( Exp.CALL(Absyn.IDENT("max"),[s1,s2],false,true),tnr)  
 	  => (cfn,tvar,tnr3)
 
+  rule	Exp.typeof(s1) => tp &
+	exp_type_str(tp,false) => tp_str &
+	generate_expression(s1,tnr) => (cfn1,var1,tnr1) &
+	generate_temp_decl(tp_str,tnr1) => (tdecl,tvar,tnr2) &
+	c_add_variables(cfn1,[tdecl]) => cfn2 &
+	Util.string_append_list([tvar," = fabs(", var1, ");"])
+	  => stmt &
+	c_add_statements(cfn2,[stmt]) => cfn 
+	-----------------------
+	generate_builtin_function( Exp.CALL(Absyn.IDENT("abs"),[s1],false,true),tnr)  
+	  => (cfn,tvar,tnr2)
 
 end
 
