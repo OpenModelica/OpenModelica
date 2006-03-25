@@ -274,17 +274,29 @@ end
 
 relation transform_tyvar =
 
-  rule	string_length(id) => len &
+  rule	External.startsWith(id, "'") => true &
+		string_length(id) => len &
 		External.substring(id, 1, len) => id' & (* take out the ' from 'a *)
-		string_append("Type_",id') => id''
-		-------------------------
+		transform_tyvar(id', "") => id''
+		--------------------------------
 		transform_tyvar(id,"") => id''
 
-  rule	string_length(id) => len &
-		External.substring(id, 1, len) => id' & (* take out the ' from 'a *)
-		string_append("Type_",id') => id''
+  rule	External.startsWith(id, "'") => false &
+		string_append("Type_",id) => id'
 		-------------------------
-		transform_tyvar(id,_) => id''
+		transform_tyvar(id,"") => id'
+
+  rule	External.startsWith(id, "'") => true &
+		string_length(id) => len &
+		External.substring(id, 1, len) => id' & (* take out the ' from 'a *)
+		transform_tyvar(id', x) => id''
+		-------------------------
+		transform_tyvar(id,x) => id''
+
+  rule	External.startsWith(id, "'") => false &
+		string_append("Type_",id) => id'
+		-------------------------
+		transform_tyvar(id,x) => id'
 
 end
 

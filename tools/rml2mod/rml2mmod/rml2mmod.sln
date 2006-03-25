@@ -19,6 +19,7 @@ Global
 		..\Makefile = ..\Makefile
 		..\moddump.rml = ..\moddump.rml
 		..\modrefactor.rml = ..\modrefactor.rml
+		..\modrefactortypes.rml = ..\modrefactortypes.rml
 		..\parser.output = ..\parser.output
 		..\parser.y = ..\parser.y
 		..\print.rml = ..\print.rml
@@ -29,6 +30,9 @@ Global
 		..\rmltomod.rml = ..\rmltomod.rml
 		..\scanparse.c = ..\scanparse.c
 		..\scanparse.rml = ..\scanparse.rml
+		..\test.rml = ..\test.rml
+		..\test1.rml = ..\test1.rml
+		..\test2.rml = ..\test2.rml
 		..\util.rml = ..\util.rml
 		..\yacclib.c = ..\yacclib.c
 		..\yacclib.h = ..\yacclib.h
