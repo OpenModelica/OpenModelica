@@ -797,6 +797,26 @@ relation compare_filenames =
   
 end
 
+relation if_val_dict = 
+
+  rule	Dictionary.search(dict, mid) => SOME(Absyn.RMLDB_VAR(_,_,_,_,_,_))
+		-----------------------------------------------------------------
+		if_val_dict(mid, dict) => true
+
+  axiom if_val_dict(mid, dict) => false
+
+end
+
+relation fixIfVal = 
+
+	rule if_val_dict(var, dict) => true &
+		 External.toJavaName(var) => java_name
+		 -----------------------------
+		 fixIfVal(dict, var) => java_name
+
+	 axiom fixIfVal(d, var) => var
+
+end
 
 relation get_var_type =
 
@@ -805,13 +825,14 @@ relation get_var_type =
 		int_ge(ls,dbls) => true &
 		int_ge(dble,ls) => true &
 		transform_id_handle_quotes(varname,0,0) => varname' &
-		escape_modkeywords(varname') => varname'' 
+		escape_modkeywords(varname') => varname'' &
+		fixIfVal(p, varname'') => varname''
 		-------------------------------------------------------------------------
 		get_var_type(Absyn.RMLSHORTID(varname, Absyn.INFO(filename,ls,cs,le,ce)),
 					Absyn.RMLDB_VAR(
 						dbfilename,Absyn.RMLSHORTID(dbvar,_),_,
 						Absyn.RMLDB_RANGE(dbls,dbcs,dble,dbce),_,
-						the_type)) 
+						the_type), p) 
 		=> (the_type,varname'')
 
 end 
@@ -871,14 +892,14 @@ relation check_pdb =
 
   axiom	check_pdb(rmlident,decl_db,ldecl_db,PDB([],dict)) => (decl_db,ldecl_db)
 
-  rule	get_var_type(rmlident,fpdb) => (the_type,varname) &
+  rule	get_var_type(rmlident,fpdb, dict) => (the_type,varname) &
 		is_defined_different_type(varname,the_type,decl_db) => true &
 		add_decl(varname,the_type,ldecl_db) => ldecl_db' &
 		add_type(the_type,decl_db) => decl_db'
 		------------------------------------------------------------------------------
 		check_pdb(rmlident,decl_db,ldecl_db,PDB(fpdb::_,dict)) => (decl_db',ldecl_db')
 
-  rule	get_var_type(rmlident,fpdb) => (the_type,varname) &
+  rule	get_var_type(rmlident,fpdb, dict) => (the_type,varname) &
 		add_decl(varname,the_type,decl_db) => decl_db' 
 		-----------------------------------------------------------------------------
 		check_pdb(rmlident,decl_db,ldecl_db,PDB(fpdb::_,dict)) => (decl_db',ldecl_db)
@@ -1200,7 +1221,6 @@ relation create_componentitems =
 		create_componentitems(rest,exp,com) => cilst 
 		-------------------------------------------------------
 		create_componentitems(fvar::rest,exp,com)  => ci::cilst
-
 end
  
 relation create_standard_equationitem =
@@ -2040,6 +2060,7 @@ end
 
 
 relation transform_rule =
+
   rule	transform_goals(goal,result,pdb) => (equation_item_list,rml_idents1,specres,speccom) &
 	(*	RML.debug_print("rml_idents goals", rml_idents1) & print "  \n" &*)
       		transform_rulepattern(pattern,pdb) => (mpattern,rml_idents2) &
@@ -2833,7 +2854,8 @@ relation transform_rmldecl =
   rule	(* debug_print("valdef2", v) & *)
 		transform_id_java(id) => id_java &
 		get_rml_id(id_java,true) => mid &
-		check_pdb(id,[],[],pdb) => (decl,_) &
+		insertIntOrDef(p, mid, DEF) => p &
+		check_pdb(id,[],[], pdb) => (decl,_) &
 		let VTELEMENT(the_type,mids)::_ = decl &
 		get_specialtypes(the_type,alttypes_db,false,NONE,0) => (eitems,alttypes_db',_) &
 		get_specialtype_id(the_type,"",alttypes_db,false) => (valtype_id,true) &
@@ -2842,16 +2864,16 @@ relation transform_rmldecl =
 		create_components_init([mid],valtype_id,Absyn.CONST,Absyn.BIDIR,mexp,com') => component &
 		create_standard_elementitem(component) => eitem &
 		list_append(eitems,[eitem]) => eitems' &
-		insertIntOrDef(p, mid, DEF) => p &
 		get_pub_or_pro(mid, eitems', p) => classpart 
 		--------------------------------
-		transform_rmldecl(v as Absyn.VALDEF(id,exp,com),pdb,alttypes_db,valtypes_db,p,_,pub) => 
+		transform_rmldecl(v as Absyn.VALDEF(id,exp,com),pdb as PDB(gELMS,_),alttypes_db,valtypes_db,p,_,pub) => 
 		([classpart],alttypes_db',valtypes_db,p)
 
   rule	(* debug_print("valdef3", v) & *)
   		transform_id_java(id) => id_java &
 		get_rml_id(id_java,true) => mid  &
-		check_pdb(id,[],[],pdb) => (decl,_) &
+		insertIntOrDef(p, mid, DEF) => p &
+		check_pdb(id,[],[], pdb) => (decl,_) &
 		let VTELEMENT(the_type,mids)::_ = decl &
 		get_specialtypes(the_type,alttypes_db,false,NONE,0) => (eitems,alttypes_db',_) &
 		get_valtype_id(the_type,alttypes_db,false) => valtype_id &
@@ -2860,10 +2882,9 @@ relation transform_rmldecl =
 		create_components_init([mid],valtype_id,Absyn.CONST,Absyn.BIDIR,mexp,com') => component &
 		create_standard_elementitem(component) => eitem &
 		list_append(eitems,[eitem]) => eitems' &
-		insertIntOrDef(p, mid, DEF) => p &
 		get_pub_or_pro(mid, eitems', p) => classpart 
      	-------------------------------
-		transform_rmldecl(v as Absyn.VALDEF(id,exp,com),pdb,alttypes_db,valtypes_db,p,_,pub) => 
+		transform_rmldecl(v as Absyn.VALDEF(id,exp,com),pdb as PDB(gELMS,_),alttypes_db,valtypes_db,p,_,pub) => 
 		([classpart],alttypes_db',valtypes_db,p)
 
   axiom	transform_rmldecl(_,_,a,v,p,_,_) => ([],a,v,p)
@@ -3145,7 +3166,7 @@ end
 relation transform_module =
 
  (*this is probably an external module*)
-  rule  transform_interfaces(iflist,pdb,[],[],Dictionary.emptyDict,toptions) => (cp,_,_,_) &
+  rule  transform_interfaces(iflist,pdb,[],[],Dictionary.emptyDict, toptions) => (cp,_,_,_) &
         get_rml_id(id,true) => mid &
         create_class_parts(mid,Absyn.R_PACKAGE,false,cp,comment,true) => class
         ---------------------------
