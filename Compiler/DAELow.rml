@@ -5386,10 +5386,15 @@ end
  **)
 relation create_dummy_var: (Exp.ComponentRef) => Exp.ComponentRef =
 	  
-  rule  string_append("der_",id) => id'
+  rule Util.string_split_at_char(origname,#".") => origname_lst &
+        Util.list_last(origname_lst) => var_name &
+        Util.list_strip_last(origname_lst) => origname_lst' &
+	Util.string_append_list(["der(",var_name,")"]) => der_var_name' &
+        Util.string_delimit_list(origname_lst',".") => prefix &
+        Util.string_append_list([prefix,".",der_var_name']) => ret_str 
 	-------------------------------
-	create_dummy_var(Exp.CREF_IDENT(id,subs)) 
-	  => Exp.CREF_IDENT(id',subs)
+	create_dummy_var(Exp.CREF_IDENT(origname,subs)) 
+	  => Exp.CREF_IDENT(ret_str,subs)
 
   rule	create_dummy_var(cr) => cr'
 	------------------------
