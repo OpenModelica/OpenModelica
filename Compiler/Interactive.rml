@@ -5703,6 +5703,14 @@ end
           bool) (* signal if something in class have been changed *)
          =
          
+(*   rule  Absyn.path_string(old_comp) => old_str & *)
+(*         Absyn.path_string(new_comp) => new_str & *)
+(*          Util.string_append_list([old_str," => ", new_str,"\n"]) => print_str & *)
+(*          print print_str & *)
+(*          int_eq(1,2) => true *)
+(*          --------- *)
+(*          rename_class_in_parts(_,old_comp,new_comp,env) => ([],false) *)
+
   rule  
          --------------------------------------
          rename_class_in_parts([],_,_,env) => ([],false)
@@ -5776,12 +5784,28 @@ end
          (Absyn.ElementSpec,
           bool) (* signal if something in class have been changed *)
          =
+(*   rule  Absyn.path_string(old_comp) => old_str & *)
+(*         Absyn.path_string(new_comp) => new_str & *)
+(*          Util.string_append_list([old_str," ==> ", new_str,"\n"]) => print_str & *)
+(*          print print_str & *)
+(*          int_eq(1,2) => true *)
+(*          --------- *)
+(*          rename_class_in_element_spec(A,old_comp,new_comp,env) => (A,false) *)
          
   rule Lookup.lookup_class(env,path',false) => (SCode.CLASS(id,_,_,_,_),cenv) &
          let path' = Absyn.IDENT(id) &
          Inst.make_fully_qualified(cenv,path') => path &
          ModUtil.path_equal(path,old_comp) => true &
-         change_last_ident(path',new_comp) => new_path
+
+
+         change_last_ident(path,new_comp) => new_path
+
+(*  & Absyn.path_string(path) => old_str & *)
+(*         Absyn.path_string(new_comp) => new_str & *)
+(*         Absyn.path_string(new_path) => new2_str & *)
+(*          Util.string_append_list([old_str," =E=> ", new_str," ",new2_str ,"\n"]) => print_str & *)
+(*          print print_str & *)
+
          -------------------------------
          rename_class_in_element_spec(Absyn.COMPONENTS(a,path',comp_items),old_comp,new_comp,env) 
           => (Absyn.COMPONENTS(a,new_path,comp_items),true)
@@ -5890,7 +5914,6 @@ relation change_last_ident:(Absyn.Path,
         -------------------------
         change_last_ident(a as Absyn.QUALIFIED(_,_),b as Absyn.QUALIFIED(_,_)) 
           => res
-
 
 end
 
