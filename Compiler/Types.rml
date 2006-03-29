@@ -1857,9 +1857,10 @@ relation elab_type : Type => Exp.Type =
   axiom elab_type((T_ENUM,_)) => Exp.ENUM
 
   rule	array_element_type t => et &
-	elab_type et => t'
+	elab_type et => t' &
+	get_dimension_sizes(t) => dims 
 	----------------
-	elab_type(t as (T_ARRAY(_,_),_)) => t'
+	elab_type(t as (T_ARRAY(_,_),_)) => Exp.T_ARRAY(t',dims)
 
   axiom	elab_type((_,_)) => Exp.OTHER
 

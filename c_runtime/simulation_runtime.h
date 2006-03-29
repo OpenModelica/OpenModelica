@@ -203,7 +203,7 @@ double GreaterEq(double a,double b);
 #define ZEROCROSSING(ind,exp) gout[ind] = (zeroCrossingEnabled[ind])?double(zeroCrossingEnabled[ind])*exp:1.0
 #define noEvent(arg) arg
 
-#define MODELICA_ASSERT(cond,msg) do { if ((cond)) { printf(msg); \
+#define MODELICA_ASSERT(cond,msg) do { if (!(cond)) { printf(msg); \
 exit(-1);} } while(0)
 #define initial() init
 

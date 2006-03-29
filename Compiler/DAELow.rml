@@ -85,7 +85,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 		*  DAE.InstDims                  (* arryDim ; array dimensions on nonexpanded var *)
 		*  DAE.StartValue                (* startValue ; value of start attribute *)
 		*  int                           (* index ; index in impl. vector *)
-		*  string                        (* origVarName ; original variable name *)
+		*  Exp.ComponentRef              (* origVarName ; original variable name *)
 		*  Absyn.Path list               (* className ; classname variable belongs to *)
 		*  DAE.VariableAttributes option (* values ; values on builtin attributes *)
 		*  Absyn.Comment option          (* comment ; this contains the comment and annotation from Absyn *)
@@ -453,7 +453,7 @@ relation  add_dummy_state: (Variables, Equation list, bool) => (Variables, Equat
 
 	(* TODO::The dummy variable must be fixed **)
   rule	add_var(VAR(Exp.CREF_IDENT("$dummy",[]),STATE,DAE.BIDIR,DAE.REAL,
-		    NONE,NONE,[],NONE,-1,"$dummy",[],SOME(DAE.VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,SOME(true),NONE,NONE)),NONE,
+		    NONE,NONE,[],NONE,-1,Exp.CREF_IDENT("$dummy",[]),[],SOME(DAE.VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,SOME(true),NONE,NONE)),NONE,
 		    DAE.NON_CONNECTOR),vars) => vars' 
 	
 	-------------------
@@ -1266,10 +1266,15 @@ relation dump: DAELow => () =
 	print "===============\n" &
 	Util.list_map(zc,dump_zc_str) => ss &
 	Util.string_delimit_list(ss,",\n") => s &
-	print s & print "\n" 
+	print s & print "\n"  &
+	print "Array Equations :\n"&
+	print "===============\n"& 
+	array_list(ae) => ae_lst &
+	dump_array_eqns(ae_lst) 
 	-----------------
 	dump(DAELOW(vars1,vars2,eqns,reqns,ieqns,ae,algs,EVENT_INFO(_,zc)))
 end
+
 
 
 (** relation: var_list
@@ -1343,7 +1348,9 @@ end
  **)
 relation var_orig_name: (Var) => string  =
 
-  axiom	var_orig_name(VAR(_,_,_,_,_,_,_,_,_,s,_,_,_,_)) => s
+  rule	Exp.print_component_ref_str(s) => str 
+	-------------------------------------
+	var_orig_name(VAR(_,_,_,_,_,_,_,_,_,s,_,_,_,_)) => str
 
 end
 
@@ -1504,6 +1511,22 @@ relation dump_jacobian_str2:((int*int*Equation) list) => string list =
 	dump_jacobian_str2(eqns) => strs
 	--------------------------------
 	dump_jacobian_str2((row,col,RESIDUAL_EQUATION(e))::eqns) => str::strs
+end
+
+(** relation: dump_array_eqns
+ **
+ ** helper relation to dump
+ **)
+relation dump_array_eqns: MultiDimEquation list => () =
+
+  axiom	dump_array_eqns([]) => ()
+  rule	Exp.print_exp_str(e1) => s1 &
+	Exp.print_exp_str(e2) => s2 &
+	Util.string_append_list([s1," = ",s2,"\n"]) => s &
+	print s &
+	dump_array_eqns(es) 
+	------------------
+	dump_array_eqns(MULTIDIM_EQUATION(_,e1,e2)::es)
 end
 
 
@@ -1907,10 +1930,8 @@ end
  **) 
 relation is_top_level_input_or_output:(Exp.ComponentRef, Variables, Variables) => bool =
 
-  rule  get_var(cr,vars) => (VAR(cr,kind,DAE.OUTPUT,_,_,_,_,_,_,old_name,_,_,_,flow)::_,_) &
-        Util.string_split_at_char(old_name, #".") => cr_str_lst &
-        list_length(cr_str_lst) => 1
-        ---------------------------------------------
+  rule  get_var(cr,vars) => (VAR(cr,kind,DAE.OUTPUT,_,_,_,_,_,_,Exp.CREF_IDENT(_,_),_,_,_,flow)::_,_) 
+	---------------------------------------------
         is_top_level_input_or_output(cr,vars,_) => true
    
 
@@ -1951,7 +1972,7 @@ end
  **) 
 relation is_var_on_top_level_and_input:(Var) => bool =
 
-  rule  top_level_input(Exp.CREF_IDENT(old_name,[]),dir,flow) => () 
+  rule  top_level_input(old_name,dir,flow) => () 
         ---------------------------------------------
         is_var_on_top_level_and_input(VAR(cr,kind,dir,_,_,_,_,_,_,old_name,_,_,_,flow)) => true
    
@@ -2162,8 +2183,8 @@ relation dump_vars2: (Var list,int) => () =
 	print "= " & Exp.print_exp_str e => s & print s & print(" ") & print(path_str) & 
         (*print "  " & print comment_str &
         
-        print " former: " & print old_name &
-	int_string(indx) => indx_str & print " indx = " & print indx_str &*)
+        print " former: " & print old_name &*)
+	int_string(indx) => indx_str & print " indx = " & print indx_str &
 	int_add(varno,1) => varno' & 
 	print "\n" &
     	(*DAE.dump_variable_attributes(dae_var_attr) &*)
@@ -2179,9 +2200,9 @@ relation dump_vars2: (Var list,int) => () =
 	Util.string_delimit_list(path_strs, ", ") => path_str &
         Dump.unparse_comment_option(comment) => comment_str &
 	print str & print ":" & dump_kind kind & print(" ") & print(path_str) & 
-        (*print " former: " & print old_name &
+        (*print " former: " & print old_name &*)
 	int_string(indx) => indx_str & print " indx = " & print indx_str &
-	DAE.dump_variable_attributes(dae_var_attr) &
+	(*	DAE.dump_variable_attributes(dae_var_attr) &
         print "  " & print comment_str & 
         print ",\n" &*)
 	print "\n" &
@@ -2975,21 +2996,23 @@ end
  **
  ** Transforms a DAE variable to DAELOW variable.
  ** Includes changing the ComponentRef name to a simpler form 
- ** 'a'.'b'.'c' becomes
- ** 'a.b.c' (as CREF_IDENT("a.b.c",[]) )
+ ** 'a'.'b'[2]'c'[5] becomes
+ ** 'a.b[2].c' (as CREF_IDENT("a.b.c",[2]) )
  ** inputs: (DAE.Element, BinTree /* states */) 
  ** outputs: Var
  **)
 relation lower_var: (DAE.Element, BinTree) => Var =
 
-  rule	Exp.print_component_ref_str name => origname &
-	let newname = Exp.CREF_IDENT(origname,[]) &
+  rule	Exp.cref_last_subs(name) => subs & 
+	Exp.cref_strip_last_subs(name) => name' &
+	Exp.print_component_ref_str(name') => origname &
+	let newname = Exp.CREF_IDENT(origname,subs) &
 	lower_varkind(kind,tp,newname,dir,flow,states) => kind' & 
 	lower_binding(bind) => bind' &
 	lower_binding(start) => start'
 	----------------------------------------
 	lower_var (DAE.VAR(name,kind,dir,tp,bind,dims,start,flow,class,dae_var_attr,comment),states)
-	  => VAR(newname,kind',dir,tp,bind',NONE,dims,start',-1,origname,class,dae_var_attr,comment,flow)
+	  => VAR(newname,kind',dir,tp,bind',NONE,dims,start',-1,name,class,dae_var_attr,comment,flow)
 
 (*  rule	print "-lower_var failed\n" 
 	------------------------
@@ -3018,14 +3041,16 @@ end
  **)		   
 relation lower_known_var: (DAE.Element) => Var =
 
-  rule	Exp.print_component_ref_str name => origname &
-	let newname = Exp.CREF_IDENT(origname,[]) &
+  rule	Exp.cref_last_subs(name) => subs & 
+	Exp.cref_strip_last_subs(name) => name' &
+	Exp.print_component_ref_str(name') => origname &
+	let newname = Exp.CREF_IDENT(origname,subs) &
 	lower_known_varkind(kind,name,dir,flow) => kind' &
 	lower_binding(bind) => bind' &
 	lower_binding(start) => start'
 	----------------------------------------
 	lower_known_var (DAE.VAR(name,kind,dir,tp,bind,dims,start,flow,class,dae_var_attr,comment))
-	  => VAR(newname,kind',dir,tp,bind',NONE,dims,start',-1,origname,class,dae_var_attr,comment,flow)
+	  => VAR(newname,kind',dir,tp,bind',NONE,dims,start',-1,name,class,dae_var_attr,comment,flow)
 
   rule	print "-lower_known_var failed\n" 
 	-------------------
@@ -3537,12 +3562,13 @@ relation add_var: (Var, Variables) => Variables =
 	vararray_add(varr,v) => varr' &
 	array_nth(hashvec,indx)=> indexes &
 	array_setnth(hashvec,indx,CREFINDEX(cr,newpos)::indexes) => hashvec' &
-	vararray_length(varr') => n'
-        &
-	hash_string(name) => hvalold &
+	vararray_length(varr') => n' &
+	Exp.print_component_ref_str(name) => name_str &
+	hash_string(name_str) => hvalold &
 	int_mod(hvalold,bsize) => indxold & 
 	array_nth(oldhashvec,indxold)=> indexexold &
-	array_setnth(oldhashvec,indxold,STRINGINDEX(name,newpos)::indexexold) => oldhashvec' 
+	Exp.print_component_ref_str(name) => name_str &
+	array_setnth(oldhashvec,indxold,STRINGINDEX(name_str,newpos)::indexexold) => oldhashvec' 
 
 	-----------------------------
 	add_var(v as VAR(cr,_,_,_,_,_,_,_,_,name,_,_,_,flow),
@@ -3967,7 +3993,8 @@ relation get_var_using_name: (string, Variables) => (Var,int) =
 	array_nth(oldhashvec,hashindx) => indexes &
 	get_var_using_name2(cr, indexes) => indx &
 	vararray_nth(varr,indx) => (v  as VAR(cr2,_,_,_,_,_,_,_,_,name,_,_,_,flow)) &
-        name = cr &
+	Exp.print_component_ref_str(name) => name_str &
+        name_str = cr &
 	int_add(indx,1) => indx'
 	-----------------------------
 	get_var_using_name(cr,VARIABLES(hashvec,oldhashvec,varr,bsize,n)) => (v,indx')
@@ -5276,7 +5303,7 @@ relation replace_dummy_der_others_exp: (Exp.Exp, Variables)
 	get_var(cr,vars) => (VAR(_,STATE,a,b,c ,d,e,f,g,h,i,dae_var_attr,comment,flow)::_,_) &
 	create_dummy_var(cr) => dummyder & 
 	create_dummy_var(dummyder) => dummyder' &
-	add_var(VAR(dummyder',DUMMY_DER,a,b,NONE,NONE,e,NONE,0,"dummyder",i,dae_var_attr,comment,flow),vars) => vars'
+	add_var(VAR(dummyder',DUMMY_DER,a,b,NONE,NONE,e,NONE,0,dummyder',i,dae_var_attr,comment,flow),vars) => vars'
 	--------------------------------------------------------------------------------
 	replace_dummy_der_others_exp(Exp.CALL(Absyn.IDENT("der"),
 					      [Exp.CALL(Absyn.IDENT("der"),
@@ -5290,7 +5317,7 @@ relation replace_dummy_der_others_exp: (Exp.Exp, Variables)
    rule  (* der(der_s)) der_s is dummy var => der_der_s *)
 	get_var(cr,vars) => (VAR(_,DUMMY_DER,a,b,c,d,e,f,g,h,i,dae_var_attr,comment,flow)::_,_) &
 	create_dummy_var(cr) => dummyder & 
-	add_var(VAR(dummyder,DUMMY_DER,a,b,NONE,NONE,e,NONE,0,"dummyder",i,dae_var_attr,comment,flow),vars) => vars'
+	add_var(VAR(dummyder,DUMMY_DER,a,b,NONE,NONE,e,NONE,0,dummyder,i,dae_var_attr,comment,flow),vars) => vars'
 	-------------------------------------------------------
 	replace_dummy_der_others_exp(Exp.CALL(Absyn.IDENT("der"),
 					      [Exp.CREF(cr,_)],
@@ -5302,7 +5329,7 @@ relation replace_dummy_der_others_exp: (Exp.Exp, Variables)
   rule  (* der(v) v is alg var => der_v *)
 	get_var(cr,vars) => (VAR(_,VARIABLE,a,b,c,d,e,f,g,h,i,dae_var_attr,comment,flow)::_,_) &
 	create_dummy_var(cr) => dummyder & 
-	add_var(VAR(dummyder,DUMMY_DER,a,b,NONE,NONE,e,NONE,0,"dummyder",i,dae_var_attr,comment,flow),vars) => vars'
+	add_var(VAR(dummyder,DUMMY_DER,a,b,NONE,NONE,e,NONE,0,dummyder,i,dae_var_attr,comment,flow),vars) => vars'
 	-------------------------------------------------------
 	replace_dummy_der_others_exp(Exp.CALL(Absyn.IDENT("der"),
 					      [Exp.CREF(cr,_)],
@@ -5339,7 +5366,7 @@ relation new_dummy_var:(Exp.ComponentRef,DAELow) => (Exp.ComponentRef,DAELow) =
 	
   rule	get_var(var,vars) => (VAR(_,kind,dir,tp,bind,value,dim,start,idx,name,class,dae_var_attr,comment,flow)::_,_) &
 	create_dummy_var(var) => dummyvar &
-	add_var(VAR(dummyvar,DUMMY_DER,dir,tp,NONE,NONE,dim,NONE,0,"dummyvar",class,dae_var_attr,comment,flow),vars) 
+	add_var(VAR(dummyvar,DUMMY_DER,dir,tp,NONE,NONE,dim,NONE,0,dummyvar,class,dae_var_attr,comment,flow),vars) 
 	  => vars'
 	-----------------------------------
 	new_dummy_var(var,DAELOW(vars,kv,eqns,seqns,ie,ae,al,wc)) 
@@ -6497,15 +6524,17 @@ end
  **)
 relation translate_dae: DAELow => DAELow =
 	
-  rule   var_list(vars) => varlst &
+  rule  var_list(vars) => varlst &
 	var_list(knvars) => knvarlst &
+	list_reverse(varlst) => varlst &
+	list_reverse(knvarlst) => knvarlst &
 	calculate_indexes(varlst,knvarlst) => (varlst',knvarlst') &
 	list_append(varlst',knvarlst') => totvars &
         equation_list(eqns) => eqnsl &
         equation_list(seqns) => seqnsl &
         equation_list(ieqns) => ieqnsl &
 	variable_replacements(totvars,eqnsl) => (s,t) &
-	
+
 	translate_dae_replace(s,t,eqnsl,seqnsl,ieqnsl,ae,al,wc,zc,varlst',knvarlst',"%")
 	  => (eqnsl',seqnsl',ieqnsl',ae',al',wc',zc',varlst'',knvarlst'') &
 	  
@@ -6517,6 +6546,8 @@ relation translate_dae: DAELow => DAELow =
 
           empty_vars() => vars' &
 	empty_vars() => knvars' &
+	list_reverse(varlst''') => varlst''' &
+	list_reverse(knvarlst''') => knvarlst''' &
 	add_vars(varlst''',vars') => vars'' &
 	add_vars(knvarlst''',knvars') => knvars'' &
 	list_equation(eqnsl'') => eqns'  &
@@ -7708,8 +7739,9 @@ end
 	 bintree_to_list(bt) => (states,_) &
          derivative_replacements(states,vars) => (s1,t1) &
 	 alg_variable_replacements(vars) => (s2,t2) &
-         list_append(s1,s2) => s &
-	 list_append(t1,t2) => t
+	 alg_variable_array_replacements(vars) => (s3,t3) &
+         Util.list_flatten([s1,s2,s3]) => s &
+	 Util.list_flatten([t1,t2,t3]) => t
 	 ---------------------
 	 variable_replacements(vars,eqns) =>  (s,t)
 	 
@@ -7797,98 +7829,55 @@ relation alg_variable_replacements: (Var list) => (Exp.Exp list, Exp.Exp list) =
 
   axiom	alg_variable_replacements([]) => ([],[])
 
-	(* algebraic variables, '%y[index]' *)
-  rule	(* print "DAELow.rml 6697  " & *) alg_variable_replacements(vs) => (s1,t1) &
+  rule	alg_variable_replacements(vs) => (s1,t1) &
 	int_string(indx) => indxs &
         Exp.print_component_ref_str(cr) => name &
         Util.modelica_string_to_c_str(name) => c_name &
         Util.string_append_list(["%$",c_name]) => newid
-        (* 	Util.string_append_list(["%y[",indxs,"]"]) => newid *)
 	--------------------
-	alg_variable_replacements(VAR(cr,VARIABLE,_,_,_ ,_,_,_,indx,_,_,dae_var_attr,comment,flow)::vs)
-	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
-
-	  (* state variables, '%x[index]' *)
-  rule	(* print "DAELow.rml 6708  " & *)alg_variable_replacements(vs) => (s1,t1) &
-	int_string(indx) => indxs &
-        Exp.print_component_ref_str(cr) => name &
-        Util.modelica_string_to_c_str(name) => c_name &
-        Util.string_append_list(["%$",c_name]) => newid
-        (* 	Util.string_append_list(["%x[",indxs,"]"]) => newid *)
-	--------------------
-	alg_variable_replacements(VAR(cr,STATE,_,_,_, _,_,_,indx,_,_,dae_var_attr,comment,flow)::vs)
-	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
-
-	  (* dummy derivatives => alg. vars *)
-  rule	(* print "DAELow.rml 6719  " & *) alg_variable_replacements(vs) => (s1,t1) &
-	int_string(indx) => indxs &
-        Exp.print_component_ref_str(cr) => name &
-        Util.modelica_string_to_c_str(name) => c_name &
-        Util.string_append_list(["%$",c_name]) => newid
-        (* 	Util.string_append_list(["%y[",indxs,"]"]) => newid *)
-	--------------------
-	alg_variable_replacements(VAR(cr,DUMMY_DER,_,_, _,_,_,_,indx,_,_,dae_var_attr,comment,flow)::vs)
-	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
-
-	  (* dummy states => alg. vars *)
-  rule	(* print "DAELow.rml 6730  " & *) alg_variable_replacements(vs) => (s1,t1) &
-	int_string(indx) => indxs &
-        Exp.print_component_ref_str(cr) => name &
-        Util.modelica_string_to_c_str(name) => c_name &
-        Util.string_append_list(["%$",c_name]) => newid
-        (* 	Util.string_append_list(["%y[",indxs,"]"]) => newid *)
-	--------------------
-	alg_variable_replacements(VAR(cr,DUMMY_STATE,_,_, _,_,_,_,indx,_,_,dae_var_attr,comment,flow)::vs)
-	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
-
-	  (* discrete variables, => alg. vars *)
-  rule	(* print "DAELow.rml 6741  " & *)alg_variable_replacements(vs) => (s1,t1) &
-	int_string(indx) => indxs &
-        Exp.print_component_ref_str(cr) => name &
-        Util.modelica_string_to_c_str(name) => c_name &
-        Util.string_append_list(["%$",c_name]) => newid
-(* 	Util.string_append_list(["%y[",indxs,"]"]) => newid *)
-	--------------------
-	alg_variable_replacements(VAR(cr,DISCRETE,_,_, _,_,_,_,indx,_,_,dae_var_attr,comment,flow)::vs)
-	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
-
-	  (* parameters *)
-  rule	(* print "DAELow.rml 6752  " & *) alg_variable_replacements(vs) => (s1,t1) &
-	int_string(indx) => indxs &
-        Exp.print_component_ref_str(cr) => name &
-        Util.modelica_string_to_c_str(name) => c_name &
-        Util.string_append_list(["%$",c_name]) => newid
-(* 	Util.string_append_list(["%p[",indxs,"]"]) => newid *)
-	--------------------
-	alg_variable_replacements(VAR(cr,PARAM,_,_, _,_,_,_,indx,_,_,dae_var_attr,comment,flow)::vs)
-	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
-
-	  (* structural parameters *)
-  rule	(* print "DAELow.rml 6763  " & *) alg_variable_replacements(vs) => (s1,t1) &
-	int_string(indx) => indxs &
-        Exp.print_component_ref_str(cr) => name &
-        Util.modelica_string_to_c_str(name) => c_name &
-        Util.string_append_list(["%$",c_name]) => newid
-(* 	Util.string_append_list(["%p[",indxs,"]"]) => newid *)
-	--------------------
-	alg_variable_replacements(VAR(cr,STRUCTPARAM,_,_, _,_,_,_,indx,_,_,dae_var_attr,comment,flow)::vs)
-	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
-
-	  (* constants, should not occur... *)
-  rule	(* print "DAELow.rml 6774  " &  *)alg_variable_replacements(vs) => (s1,t1) &
-	int_string(indx) => indxs &
-        Exp.print_component_ref_str(cr) => name &
-        Util.modelica_string_to_c_str(name) => c_name &
-        Util.string_append_list(["%$",c_name]) => newid
-(* 	Util.string_append_list(["%p[",indxs,"]"]) => newid *)
-	--------------------
-	alg_variable_replacements(VAR(cr,CONST,_,_, _,_,_,_,indx,_,_,dae_var_attr,comment,flow)::vs)
+	alg_variable_replacements(VAR(cr,_,_,_,_ ,_,_,_,indx,_,_,dae_var_attr,comment,flow)::vs)
 	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
 
   rule	print "-alg_variable_replacements failed\n" 
 	-------------------------------------------
 	alg_variable_replacements(_) => fail
 end
+
+(** relation: alg_variable_array_replacements
+ ** author: PA
+ **
+ ** Build replacement "rules" for a complete array variable,
+ ** E.g. Real x[3] should also have a replacement 'x' -> '$x', apart
+ ** from the x[1] -> $x[1], etc, generated by alg_variable_replacements.
+ ** Note: the new variable must be an identifier not valid in Modelica, 
+ ** otherwise name collisions may occur.
+ **)
+relation alg_variable_array_replacements: (Var list) => (Exp.Exp list, Exp.Exp list) =
+
+  axiom	alg_variable_array_replacements([]) => ([],[])
+
+  rule	alg_variable_array_replacements(vs) => (s1,t1) &
+	Exp.cref_is_first_array_elt(cr) => true &
+	Exp.cref_strip_last_subs(cr) => cr' &
+	int_string(indx) => indxs &
+        Exp.print_component_ref_str(cr') => name &
+        Util.modelica_string_to_c_str(name) => c_name &
+        Util.string_append_list(["%$",c_name]) => newid
+	--------------------
+	alg_variable_array_replacements(VAR(cr,_,_,_,_ ,_,instdims as _::_ ,_,indx,_,_,dae_var_attr,comment,flow)::vs)
+	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
+
+  rule	alg_variable_array_replacements(vs) => (s1,t1) 
+	--------------------
+	alg_variable_array_replacements(_::vs)
+	  => (s1,t1)
+
+  rule	print "-alg_variable_array_replacements failed\n" 
+	-------------------------------------------
+	alg_variable_array_replacements(_) => fail
+end
+
+
 
 
 (** relation: states_eqns
@@ -8019,18 +8008,19 @@ end
 
   axiom transform_variables([],_,_,_) => []
 
-	 (* When dollar sign, save original name *)
+	 (* When percent sign, save original name *)
   rule	transform_variables(vs,s,t,var_prefix) => vs' &
-	 Exp.print_component_ref_str(cr) => name &	
-	 transform_variable(name,i,kind,var_prefix) => cr' &
+	 Exp.print_component_ref_str(cr) => cr_str &
+	 transform_variable(cr_str,i,kind,var_prefix) => cr' &
          Exp.replace_exp_list(e,s,t) => (e',_) &
          transform_startValue(start,s,t) => start'
 	 -------------------
 	 transform_variables(VAR(cr,kind,a,b,SOME(e), c,d,start,i,_,j,dae_var_attr,comment,flow)::vs,s,t,var_prefix as "%")
-	  => (VAR(cr',kind,a,b,SOME(e'),c,d,start',i,name,j,dae_var_attr,comment,flow)::vs')
+	  => (VAR(cr',kind,a,b,SOME(e'),c,d,start',i,cr,j,dae_var_attr,comment,flow)::vs')
 	   (* when empty prefix, use old original name *)
   rule	transform_variables(vs,s,t,var_prefix) => vs' &
-	 transform_variable(name,i,kind,var_prefix) => cr' &
+	 Exp.print_component_ref_str(name) => name_str &
+	 transform_variable(name_str,i,kind,var_prefix) => cr' &
          Exp.replace_exp_list(e,s,t) => (e',_) &
          transform_startValue(start,s,t) => start'
 	 ------------------- 
@@ -8038,16 +8028,17 @@ end
 	  => (VAR(cr',kind,a,b,SOME(e'),c,d,start',i,name,j,dae_var_attr,comment,flow)::vs')
 	   (* When dollar sign, save original name *)
   rule	transform_variables(vs,s,t,var_prefix) => vs' &
-	 Exp.print_component_ref_str(cr) => name &
- 	 transform_variable(name,i,kind,var_prefix) => cr' &
+	 Exp.print_component_ref_str(cr) => cr_str &
+ 	 transform_variable(cr_str,i,kind,var_prefix) => cr' &
          transform_startValue(start,s,t) => start'
 	 ---------------------------------------
 	 transform_variables(VAR(cr,kind,a,b,NONE, c,d,start,i,_,j,dae_var_attr,comment,flow)::vs,s,t,var_prefix as "%")
-	  => (VAR(cr',kind,a,b,NONE,c,d,start',i,name,j,dae_var_attr,comment,flow)::vs')
+	  => (VAR(cr',kind,a,b,NONE,c,d,start',i,cr,j,dae_var_attr,comment,flow)::vs')
 
 	   (* when empty prefix, use old original name *)
   rule	transform_variables(vs,s,t,var_prefix) => vs' &
-	 transform_variable(name,i,kind,var_prefix) => cr' &
+	 Exp.print_component_ref_str(name) => name_str &
+	 transform_variable(name_str,i,kind,var_prefix) => cr' &
          transform_startValue(start,s,t) => start'
 	 ---------------------------------------
 	 transform_variables(VAR(cr,kind,a,b,NONE, c,d,start,i,name,j,dae_var_attr,comment,flow)::vs,s,t,var_prefix as "")

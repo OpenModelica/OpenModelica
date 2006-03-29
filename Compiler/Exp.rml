@@ -79,7 +79,13 @@ module Exp:
    ** These types are not used as expression types (see the `Types'
    ** module for expression types).  They are used to parameterize
    ** operators which may work on several simple types. *)
-  datatype Type = INT | REAL | BOOL | STRING | ENUM | OTHER 
+  datatype Type = INT  
+		| REAL 
+		| BOOL 
+		| STRING 
+		| ENUM 
+		| OTHER (* e.g. complex types, etc.*)
+		| T_ARRAY of Type * int list (*arrayDimensions*)
 
   (** Expressions
    ** The `Exp' datatype closely corresponds to the `Absyn.Exp'
@@ -161,6 +167,7 @@ module Exp:
 
   relation is_range : Exp => bool
   relation is_zero: Exp => bool 
+  relation is_one: Exp => bool 
   relation is_const: Exp => bool 
   relation is_not_const: Exp => bool 
 
@@ -172,6 +179,7 @@ module Exp:
   relation subscript_cref: (ComponentRef, Subscript list) => ComponentRef	  
   relation join_crefs : (ComponentRef, ComponentRef) => ComponentRef
   relation int_subscripts : int list => Subscript list
+  relation subscript_exp: (Subscript) => Exp 
   relation simplify : Exp => Exp
   relation unelab_exp : Exp => Absyn.Exp 	   
   relation unelab_cref: ComponentRef => Absyn.ComponentRef
@@ -213,6 +221,7 @@ module Exp:
   relation cref_prefix_of: (ComponentRef (* x*), ComponentRef (*y*))
 	  => bool
   relation ident_equal: (Ident, Ident) => bool 
+  relation cref_is_first_array_elt: (ComponentRef) => bool
   relation print_list_str : ('a list, 'a => string, string) => string
   relation print_exp_str : Exp => string
   relation to_exp_cref : Absyn.ComponentRef => ComponentRef
@@ -232,6 +241,7 @@ module Exp:
   relation solve : (Exp, Exp, Exp) => Exp
   relation get_cref_from_exp: (Exp) => ComponentRef list	 
   relation typeof: (Exp) => Type 
+  relation array_elt_type: Type => Type
   relation type_builtin: (Type) => bool
   relation get_function_calls_list : Exp list => Exp list
   relation get_function_calls : Exp  => Exp list
@@ -459,6 +469,32 @@ relation is_range : Exp => bool =
 
 end
 
+(** relation: is_one
+ **
+ ** Returns true íf an expression is constant and has the value one, 
+ ** otherwise false
+ **)
+relation is_one: Exp => bool =
+
+  rule	int_eq(ival,1) => true
+	----------------------
+	is_one(ICONST(ival)) => true
+
+  rule	(* Due to bug in rml, go trough a cast from int *)
+	int_real(1) => rzero &
+	real_eq(rzero,rval) => true 
+	---------------------------
+	is_one(RCONST(rval)) => true
+
+  rule	(* Casting to zero is still zero *)
+	is_one(e) => res 
+	------------------
+	is_one(CAST(t,e)) => res
+
+  axiom	is_one(_) => false
+
+end
+
 (** relation: is_zero
  **
  ** Returns true íf an expression is constant and has the value zero, 
@@ -648,6 +684,19 @@ relation cref_equal_return : (ComponentRef, ComponentRef) => ComponentRef =
 	cref_equal_return (cr,cr2) => cr
 end
 
+
+(** relation: subscript_exp
+ **
+ ** Returns the expression in a subscript index. If the subscript is not 
+ ** an index the relation fails.x
+**)
+
+relation subscript_exp: (Subscript) => Exp =
+
+  axiom	subscript_exp(INDEX(e)) => e
+
+end
+
 (** relation: subscript_equal
  ** 
  ** Returns true if two subscript lists are equal.
@@ -767,14 +816,17 @@ relation simplify : Exp => Exp =
 
 	(* cast of array *)
   rule	simplify(e) => ARRAY(t,b,exps) &
- 	Util.list_map_1(exps,add_cast,tp) => exps' &
+	unlift_array(tp) => tp' &
+ 	Util.list_map_1(exps,add_cast,tp') => exps' &
  	simplify(ARRAY(t,b,exps')) => res
 	-----------------
 	simplify (CAST(tp,e)) => res
 	
   rule	simplify(e) => MATRIX(t,n,exps) &
-	matrix_exp_map_1(exps,add_cast,tp) => exps' &
-	simplify(MATRIX(tp,n,exps')) => res
+	unlift_array(tp) => tp1 &
+	unlift_array(tp) => tp2 &
+	matrix_exp_map_1(exps,add_cast,tp2) => exps' &
+	simplify(MATRIX(t,n,exps')) => res
 	----------------------------------
 	simplify(CAST(tp,e)) => res
 
@@ -787,12 +839,13 @@ relation simplify : Exp => Exp =
 	simplify ASUB(e, i) => exp
 
   rule	simplify e => MATRIX(t,n,exps) &
+	unlift_array(t) => t1 &
 	int_sub (i,1) => i' &
 	list_nth(exps,i') => (expl) &
 	Util.split_tuple2_list(expl) => (expl',bls) &
 	Util.bool_and_list(bls) => b
 	-----------------------
-	simplify ASUB(e, i) => ARRAY(t,b,expl')
+	simplify ASUB(e, i) => ARRAY(t1,b,expl')
 
   rule	simplify e => IFEXP(c,t,f) &
 	simplify ASUB(t,i) => t' &
@@ -1086,15 +1139,17 @@ end
  **)
 relation simplify_matrix_product4: ((Exp*bool) list, (Exp*bool) list) => Exp =
 
-  rule	typeof(e1) => tp
+  rule	typeof(e1) => tp &
+	array_elt_type(tp) => tp' 
 	--------------------
 	simplify_matrix_product4([(e1,_)],[(e2,_)]) 
-	  => BINARY(e1,MUL(tp),e2)
+	  => BINARY(e1,MUL(tp'),e2)
 
   rule	simplify_matrix_product4(es1,es2) => e &
 	typeof(e) => tp &
-	simplify(BINARY(BINARY(e1,MUL(tp),e2),
-		    ADD(tp),
+	array_elt_type(tp) => tp' &
+	simplify(BINARY(BINARY(e1,MUL(tp'),e2),
+		    ADD(tp'),
 		    e)) => res
 	---------------------------
 	simplify_matrix_product4((e1,_)::es1,(e2,_)::es2) 
@@ -1664,9 +1719,10 @@ relation simplify_asub: (Exp, int) => Exp =
   rule	int_sub (indx,1) => i' &
 	list_nth(exps,i') => (expl) &
 	Util.split_tuple2_list(expl) => (expl',bls) &
+	unlift_array(t) => t' &
 	Util.bool_and_list(bls) => b
 	-----------------------
-	simplify_asub( MATRIX(t,n,exps),indx) => ARRAY(t,b,expl')
+	simplify_asub( MATRIX(t,n,exps),indx) => ARRAY(t',b,expl')
 
   rule	simplify(ASUB(e,indx)) => e'
 	--------------------------------
@@ -2030,6 +2086,32 @@ relation type_builtin: (Type) => bool =
   axiom	type_builtin(BOOL) => true
   axiom	type_builtin(_) => false
 
+end
+
+(** relation: array_elt_type
+ **
+ ** Returns the element type of an array expression.
+ **)
+
+relation array_elt_type: Type => Type =
+
+  axiom	array_elt_type(T_ARRAY(t,_)) => t 
+  axiom	array_elt_type(t) => t 
+end
+
+
+(** relation: unlift_array
+ **
+ ** Converts an array type into its element type.
+ **)
+
+relation unlift_array: Type => Type =
+	 
+  axiom	unlift_array(T_ARRAY(tp,[_])) => tp 
+
+  axiom	unlift_array(T_ARRAY(tp,d::ds)) => T_ARRAY(tp,ds)
+
+  axiom	unlift_array(t) => t
 end
 
 (** relation typeof
@@ -2831,7 +2913,12 @@ relation type_string : Type => string =
   axiom	type_string STRING => "STRING"
 
   axiom	type_string OTHER => "OTHER"
-
+  rule	Util.list_map(dims,int_string) => ss &
+	Util.string_delimit_list(ss,", ") => s1 &
+	type_string(t) => ts &
+	Util.string_append_list(["/tp:",ts,"[",s1,"]/"]) => res
+	---------------------------------
+	type_string(T_ARRAY(t,dims)) => res
 end
 
 (** relation: print_component_ref
@@ -3508,9 +3595,9 @@ relation print_exp2_str : (Exp,int) => string =
 
   axiom	print_exp2_str(BCONST(true),_) => "true"
 
-  rule	print_component_ref_str (c) => s
+  rule	print_component_ref_str (c) => s 
 	--------------------------------
-	print_exp2_str(CREF(c,_),_) => s
+	print_exp2_str(CREF(c,t),_) => s
 
   rule	binop_symbol(op) => sym &
  	binop_priority op => pri2' &
@@ -4127,6 +4214,26 @@ relation replace_exp_matrix2: ((Exp*bool) list, Exp, Exp)
 	replace_exp_matrix2((e,b)::es,src,dst) => ((e',b)::es',c)
 end
 
+(** relation: cref_is_first_array_elt
+ **
+ ** This relation returns true for component references that
+ ** are arrays and references the first element of the array.
+ ** like for instance a.b[1,1] and a[1] returns true but
+ ** a.b[1,2] or a[2] returns false.
+ **)
+
+relation cref_is_first_array_elt: (ComponentRef) => bool =
+
+  rule	cref_last_subs(cr) => (subs as _::_) &
+	Util.list_map(subs,subscript_exp) => exps &
+	Util.list_map(exps,is_one) => bools &
+ 	Util.bool_and_list(bools) => true 
+	------------------------
+	cref_is_first_array_elt(cr) => true
+
+  axiom	cref_is_first_array_elt(_) => false
+end
+
 (** relation: stringify_component_ref
  **
  ** Translates a ComponentRef into a CREF_IDENT by putting the string
@@ -4136,9 +4243,11 @@ end
  **)
 relation stringify_component_ref: ComponentRef => ComponentRef =
 	
-  rule	print_component_ref_str(cr) => crs 
+  rule	cref_last_subs(cr) => subs & (* PA*)
+	cref_strip_last_subs(cr) => cr' &
+	print_component_ref_str(cr') => crs 
 	----------------------------------
-	stringify_component_ref(cr) => CREF_IDENT(crs,[])
+	stringify_component_ref(cr) => CREF_IDENT(crs,subs)
 end
 
 (** relation: stringify_crefs
@@ -5113,6 +5222,7 @@ end
 relation exp_add: (Exp,Exp) => Exp =
 
   rule	typeof(e1) => tp & type_builtin(tp) => true 
+(*	array_elt_type(tp) => tp'*)
 	------------------------------------
 	exp_add(e1,e2) => BINARY(e1,ADD(tp),e2)
 end
@@ -5125,6 +5235,7 @@ end
 relation exp_mul: (Exp,Exp) => Exp =
 
   rule	typeof(e1) => tp & type_builtin(tp) => true 
+(*	array_elt_type(tp) => tp'*)
 	------------------------------------
 	exp_mul(e1,e2) => BINARY(e1,MUL(tp),e2)
 end

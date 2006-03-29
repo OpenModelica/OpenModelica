@@ -29,6 +29,29 @@
 #include <assert.h>
 #include <stdarg.h>
 
+/** function: real_array_create
+ **
+ ** sets all fields in a real_array, i.e. data, ndims and dim_size.
+ **/
+
+void real_array_create(real_array_t*dest, modelica_real *data, int ndims,...)
+{
+  va_list ap;
+  int i;
+
+  dest->data = data;
+  dest->ndims = ndims;
+  
+  va_start(ap,ndims);
+  
+  dest->dim_size = size_alloc(ndims);
+    
+  for (i = 0; i < ndims; ++i)
+    {
+      dest->dim_size[i] = va_arg(ap,int);
+    }
+  va_end(ap);
+}
 
 int real_array_ok(real_array_t* a)
 {

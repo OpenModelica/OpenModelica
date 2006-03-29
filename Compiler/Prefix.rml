@@ -87,6 +87,7 @@ end
 
 with "Util.rml"
 with "Print.rml"
+with "Debug.rml"
 
 (** relation: print_prefix_str
  ** 
@@ -360,8 +361,10 @@ relation prefix_exp : (Env.Env,Exp.Exp,Prefix) => Exp.Exp =
 	-------------------------------------
 	prefix_exp(env,Exp.REDUCTION(fcn,exp,id,iterexp), p) => Exp.REDUCTION(fcn,exp',id,iterexp')
 
-  rule	Print.printBuf "- prefix_exp failed\n" &
-	Print.printBuf "  expression: " & Exp.print_exp e & Print.printBuf "\n"
+  rule	Debug.fprint("failtrace","-prefix_exp failed on exp:") &
+	Exp.print_exp_str(e) => s &
+	Debug.fprint("failtrace",s) &
+	Debug.fprint("failtrace","\n") 
 	-----------------------------------------------------
 	prefix_exp(_,e,_) => fail
 

@@ -41,6 +41,8 @@ struct real_array_s
 
 typedef struct real_array_s real_array_t;
 
+/* Setting the fields of a real_array */
+void real_array_create(real_array_t*dst, modelica_real *data, int ndims,...);
 
 /* Allocation of a vector */
 void simple_alloc_1d_real_array(real_array_t* dest, int n);

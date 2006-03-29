@@ -1415,6 +1415,13 @@ relation pp_stmt : (Algorithm.Statement, int) => () =
 	Print.printBuf "end when;\n"
         -------------------
 	pp_stmt (Algorithm.WHEN(e,stmts), i)
+
+  rule	indent i &
+	Print.printBuf "assert( " & Exp.print_exp cond &
+	Print.printBuf ", " & Exp.print_exp msg &
+	Print.printBuf ");\n"
+        -------------------
+	pp_stmt (Algorithm.ASSERT(cond,msg), i)
 	
   rule	indent i & Print.printBuf "**ALGORITHM**;\n"
 	----------------------------------
@@ -1515,6 +1522,14 @@ relation pp_stmt_str : (Algorithm.Statement, int) => string =
 	string_append(s9,"end when;\n") => str
         -------------------
 	pp_stmt_str (Algorithm.WHEN(e,stmts), i) => str
+
+  rule	indent_str i => s1 &
+	Exp.print_exp_str(cond) => cond_str &
+	Exp.print_exp_str(msg) => msg_str &
+	Util.string_append_list([s1,"assert(",cond_str,", ",msg_str,");\n"]) 
+	  => str
+        -------------------
+	pp_stmt_str (Algorithm.ASSERT(cond,msg), i) => str
 
   rule	indent_str i => s1 & string_append(s1,"**ALGORITHM**;\n") => str
 	----------------------------------

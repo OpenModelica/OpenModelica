@@ -4922,14 +4922,16 @@ relation cref_vectorize: (Exp.Exp,Types.Type) => Exp.Exp =
   rule	int_lt(ds,4) => b1 &
 	int_lt(ds2,4) => b2 &
 	bool_and(b1,b2) => true &
- 	create_cref_array_2d(cr,1,ds,ds2,exptp,t) => e 
+	Exp.array_elt_type(exptp) => elt_tp &
+ 	create_cref_array_2d(cr,1,ds,ds2,elt_tp,t) => e 
 	-----------------------------------
 	cref_vectorize(Exp.CREF(cr,exptp),(Types.T_ARRAY(Types.DIM(SOME(ds)),t as (Types.T_ARRAY(Types.DIM(SOME(ds2)),_),_)),_)) =>  e
 
 	(* vectorsizes > 4 is not vectorized *)
   rule	Types.is_array(t) => false &
 	int_lt(ds,4) => true &
-	create_cref_array(cr,1,ds,exptp,t) => e 
+	Exp.array_elt_type(exptp) => elt_tp &
+	create_cref_array(cr,1,ds,elt_tp,t) => e 
 	-----------------------------------
 	cref_vectorize(Exp.CREF(cr,exptp),(Types.T_ARRAY(Types.DIM(SOME(ds)),t),_)) =>  e
 
