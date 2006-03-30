@@ -1968,10 +1968,10 @@ relation generate_ode_system: (DAELow.DAELow, int vector, int vector, int list,
 	DAELow.abs_incidence_matrix(m) => m' &
 	DAELow.transpose_matrix(m') => mt' &
 	(* calculate jacobian. If constant, linear system of equations. Otherwise nonlinear *)
-	
 	DAELow.calculate_jacobian(vars',eqns',ae,m',mt') => jac &
+	
 	DAELow.analyze_jacobian(cont_subsystem_dae,jac) => jac_tp &
-
+	DAELow.jacobian_type_str(jac_tp) => s & 
 	generate_ode_system2(cont_subsystem_dae,jac,jac_tp,cg_id) 
 	  => (s2,cg_id',f1) 
 	------------------------
@@ -2491,16 +2491,20 @@ relation generate_ode_system2: (DAELow.DAELow, (* the daelow for the subsystem*)
 	------------------------------------------------------
 	generate_ode_system2(DAELow.DAELOW(v,kv,eqn,_,_,_,_,_),SOME(jac),DAELow.JAC_NONLINEAR,cg_id) 
 	  => (s1,cg_id',f1)
-
-  rule	print "no analytic jacobian available!\n" 
+	  (* no analythic jacobian available. Generate non-linear system *)
+  rule	DAELow.equation_list(eqn) => eqn_lst &
+	DAELow.var_list(v) => var_lst &
+	Util.list_map(var_lst,DAELow.var_cref) => crefs &
+	generate_ode_system2_nonlinear_residuals(crefs,eqn_lst,cg_id) 
+	  => (s1,cg_id',f1)  
 	---------
-	generate_ode_system2(_,NONE,_,_) => fail
+	generate_ode_system2(DAELow.DAELOW(v,kv,eqn,_,_,_,_,_),NONE,
+			     DAELow.JAC_NO_ANALYTIC,cg_id) 
+	  => (s1,cg_id',f1)
 
-  rule	print "-generate_ode_system2 failed,dae = " &
-	DAELow.dump dae &
-	DAELow.dump_jacobian_str SOME(jac) => s & print "\nJac=" & print s & print "\n"
+  rule	Debug.fprint("failtrace", "-generate_ode_system2 failed \n")
 	-------------------------
-	generate_ode_system2(dae,SOME(jac),_,_) => fail
+	generate_ode_system2(_,_,_,_) => fail
 end
 
 (** relation: generate_single_array_eqn_code
@@ -3319,18 +3323,6 @@ relation generate_ode_equation: (DAELow.DAELow,
 	----------------------
 	generate_ode_equation(DAELow.DAELOW(vars,_,eqns,_,_,_,_,_),ass1,ass2,e,cg_id) 
 	  => fail
-end
-
-(** relation: generate_nonlinear_equations
- ** author: PA
- ** 
- ** This relation generates a nonlinear system of equations.
- **)
-relation generate_nonlinear_equations: (Exp.ComponentRef list, (* variables *)
-				     Exp.Exp list) (* residuals *)
-	=> string =
-  axiom	generate_nonlinear_equations(_,_) 
-	  => "/* Generate non-linear equations not impl. yet.*/\n"
 end
 
 (** relation generate_functions

@@ -71,6 +71,7 @@ end
 with "Absyn.rml" 
 with "Util.rml"
 with "Error.rml"
+with "Debug.rml"
 (* adrpo -- not used
 with "Print.rml" 
 with "Graphviz.rml" 
@@ -534,11 +535,11 @@ relation differentiate_exp: (Exp.Exp, Exp.ComponentRef) => Exp.Exp =
 	--------------------------------
 	differentiate_exp(e,cr) => Exp.RCONST(0.0)
 
-  rule	print "differentiate_exp " &
-	Exp.print_exp_str e => s & print s &
+  rule	Exp.print_exp_str e => s & 
 	Exp.print_component_ref_str cr => s2 & 
-	print " w.r.t: " & print s2 & 
-	print " failed\n" 
+	Util.string_append_list(["differentiate_exp ", s, " w.r.t:", s2,
+				 " failed\n"]) => str &
+	Debug.fprint("failtrace", str)
 	------------------------
 	differentiate_exp(e,cr) => fail
 	
