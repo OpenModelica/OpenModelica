@@ -2961,7 +2961,7 @@ relation generate_rhs_cref : (Exp.ComponentRef, Exp.Type, int,Context)
 	Util.string_delimit_list(dims_strs,", ") => dims_str &
 	comp_ref_cstr cref => (cref_str,_) &
 	Util.string_append_list([e_sh_tp_str,"_array_create(&",
-				 vstr,", ","&$",cref_str,", ",
+				 vstr,", ","&",cref_str,", ",
 				 ndims_str,", ",dims_str,");"]) => stmt &
 	c_add_statements(c_empty_function,[stmt]) => cfunc &
 				 

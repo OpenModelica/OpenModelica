@@ -7736,6 +7736,8 @@ end
          derivative_replacements(states,vars) => (s1,t1) &
 	 alg_variable_replacements(vars) => (s2,t2) &
 	 alg_variable_array_replacements(vars) => (s3,t3) &
+	 Util.list_map(s3, Exp.print_exp_str) => ss &
+	 Util.string_delimit_list(ss, ", ") => str &
          Util.list_flatten([s1,s2,s3]) => s &
 	 Util.list_flatten([t1,t2,t3]) => t
 	 ---------------------
@@ -7858,10 +7860,11 @@ relation alg_variable_array_replacements: (Var list) => (Exp.Exp list, Exp.Exp l
 	int_string(indx) => indxs &
         Exp.print_component_ref_str(cr') => name &
         Util.modelica_string_to_c_str(name) => c_name &
-        Util.string_append_list(["%$",c_name]) => newid
+	Exp.subscripts_int(instdims) => int_dims &
+        Util.string_append_list(["$",c_name]) => newid
 	--------------------
 	alg_variable_array_replacements(VAR(cr,_,_,_,_ ,_,instdims as _::_ ,_,indx,_,_,dae_var_attr,comment,flow)::vs)
-	  => (Exp.CREF(cr,Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.REAL)::t1)
+	  => (Exp.CREF(cr',Exp.REAL)::s1,Exp.CREF(Exp.CREF_IDENT(newid,[]),Exp.T_ARRAY(Exp.REAL,int_dims))::t1)
 
   rule	alg_variable_array_replacements(vs) => (s1,t1) 
 	--------------------

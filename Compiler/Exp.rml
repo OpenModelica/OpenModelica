@@ -179,7 +179,9 @@ module Exp:
   relation subscript_cref: (ComponentRef, Subscript list) => ComponentRef	  
   relation join_crefs : (ComponentRef, ComponentRef) => ComponentRef
   relation int_subscripts : int list => Subscript list
+  relation subscripts_int : Subscript list => int list 	  
   relation subscript_exp: (Subscript) => Exp 
+
   relation simplify : Exp => Exp
   relation unelab_exp : Exp => Absyn.Exp 	   
   relation unelab_cref: ComponentRef => Absyn.ComponentRef
@@ -793,6 +795,21 @@ relation int_subscripts : int list => Subscript list =
 	------------------------
 	int_subscripts x::xs => INDEX(ICONST(x))::xs'
 
+end
+
+(** relation: subscripts_int
+ ** author: PA
+ **
+ ** This relation creates a list of ints from a subscript list,
+ ** see also int_subscripts.
+ **)
+relation subscripts_int : Subscript list => int list =
+
+  axiom	subscripts_int [] => []
+
+  rule	subscripts_int xs => xs'
+	------------------------
+	subscripts_int INDEX(ICONST(x))::xs => x::xs'
 end
 
 (** relation: simplify
@@ -3030,7 +3047,7 @@ relation print_exp2 : (Exp,int) => () =
 	-------------
 	print_exp2(BCONST(true),_)
 
-  rule	print_component_ref(c)
+  rule	print_component_ref(c) 
 	---------------------
 	print_exp2(CREF(c,_),_)
 
