@@ -73,6 +73,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   with "Interactive.rml"
   with "Values.rml"
   with "DAELow.rml"
+  with "Absyn.rml"
 		
   datatype Msg = MSG	(* Give error message *)
 	     | NO_MSG   (* Do not give error message *)								   
@@ -115,8 +116,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	  => (Values.Value, 
               Interactive.InteractiveSymbolTable,
               DAELow.DAELow,
-              string list (*libs *)) 
+              string list (*libs *),
+              string (* mo file directory *)) 
 	  
+  relation get_file_dir:(Absyn.ComponentRef,
+			    Absyn.Program) => string
 
  end
 
@@ -127,7 +131,6 @@ with "Print.rml"
 with "Types.rml"
 with "ModUtil.rml"
 with "System.rml"
-with "Absyn.rml"
 with "SCode.rml"
 with "Inst.rml"
 with "Lookup.rml"
@@ -1344,7 +1347,7 @@ axiom	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("clear"),[],_,_),s
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("jacobian"),[Exp.CREF(cr,_)],_,_),st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf),msg) 
 	  => (Values.STRING(res),Interactive.SYMBOLTABLE(p,sp,ic',iv,cf))
 
-  rule  translate_model(env,cr,st,msg,filenameprefix) => (ret_val,st',_,_)
+  rule  translate_model(env,cr,st,msg,filenameprefix) => (ret_val,st',_,_,_)
 	 -------------------------
 	 ceval_interactive_functions (env, Exp.CALL(Absyn.IDENT("translateModel"),
                                                     [Exp.CREF(cr,_),filenameprefix],_,_),
@@ -1930,7 +1933,8 @@ end
 	  => (Values.Value, 
               Interactive.InteractiveSymbolTable,
               DAELow.DAELow,
-              string list) =
+              string list,
+              string (* mo file directory*) ) =
          
   rule  extract_file_prefix(env,fileprefix,st,msg) => filenameprefix &
          Static.component_ref_to_path(cr) => classname &
@@ -1960,9 +1964,11 @@ end
 	 Util.string_append_list([filenameprefix,".cpp"]) => filename &
 	 Util.string_append_list([filenameprefix,"_functions.cpp"]) => funcfilename &
 	 generate_makefilename(filenameprefix) => makefilename &
+         Exp.unelab_cref(cr) => a_cref &
+         get_file_dir(a_cref,p) => file_dir &
          SimCodegen.generate_functions(p',dae,indexed_dlow',classname,funcfilename) => libs &
 	 SimCodegen.generate_simulation_code(dae,indexed_dlow',ass1,ass2,m,mT,comps,classname,filename,funcfilename) &
-	 SimCodegen.generate_makefile(makefilename,filenameprefix,libs) 
+	 SimCodegen.generate_makefile(makefilename,filenameprefix,libs,file_dir) 
          (*	Util.string_append_list(["make -f ",cname_str, ".makefile\n"]) => s_call &
           *)
          ---------------------------------------------
@@ -1972,7 +1978,7 @@ end
                           msg,
                           fileprefix) 
           => (Values.STRING("The model have been translated"),st,
-              indexed_dlow', libs)
+              indexed_dlow', libs,file_dir)
 end
 
 
@@ -2079,12 +2085,10 @@ relation build_model:(Env.Env,
               Interactive.InteractiveSymbolTable, 
               string) =
 
-  rule   translate_model(env,cr,st',msg,fileprefix) => (ret_val, st,indexed_dlow',libs) &
+  rule   translate_model(env,cr,st',msg,fileprefix) => (ret_val, st,indexed_dlow',libs,file_dir) &
         Static.component_ref_to_path(cr) => classname &
 	Absyn.path_string(classname) => cname_str &
         
-        Exp.unelab_cref(cr) => a_cref &
-        change_to_file_dir(a_cref,p) &
         calculate_simulation_settings(env,exp,st,msg,cname_str) 
           => (init_filename,starttime_r,
               stoptime_r,interval_r,method_str) &
@@ -2095,7 +2099,7 @@ relation build_model:(Env.Env,
         generate_makefilename(filenameprefix) => makefilename &
         (*	Util.string_append_list(["make -f ",cname_str, ".makefile\n"]) => s_call &
          *)
-        compile_model(filenameprefix,libs) 
+        compile_model(filenameprefix,libs,file_dir) 
 
         -------------------------------------------
         build_model(env,exp as Exp.CALL(Absyn.IDENT(_),
@@ -2105,24 +2109,24 @@ relation build_model:(Env.Env,
                     msg) 
           => (filenameprefix,method_str,st,init_filename)
 
-  rule (*Print.printErrorBuf("# build_model failed\n")*)
+  rule print "-build_model failed\n"
         -----------------------------------------
         build_model(_,_,_,_) => fail
 end
 
 
-(** relation: change_to_file_dir
+(** relation: get_file_dir
  ** author: x02lucpo
  **
- ** CHANges to the dir where class-file (.mo) is saved or 
+ ** returns the dir where class-file (.mo) is saved or 
  ** OPENMODELICAHOMe/work if not saved
  **
  ** inputs: (Absyn.ComponentRef, /* class */
 			    Absyn.Program) 
- ** outputs: ()
+ ** outputs: string 
  **)
-relation change_to_file_dir:(Absyn.ComponentRef,
-			    Absyn.Program) => () =
+relation get_file_dir:(Absyn.ComponentRef,
+			    Absyn.Program) => string =
 
   rule  (* change to the saved files directory *)
         Absyn.cref_to_path(class) => p_class &
@@ -2132,11 +2136,9 @@ relation change_to_file_dir:(Absyn.ComponentRef,
         string_list(pd) => pd'::_ &
         Util.string_split_at_char(filename,pd') => filename' &
         Util.list_strip_last(filename') => dir &
-        Util.string_delimit_list(dir,pd) => dir' &
-
-        System.cd(dir') => 0
+        Util.string_delimit_list(dir,pd) => dir' 
         ------------------------------
-        change_to_file_dir(class,p) => ()
+        get_file_dir(class,p) => dir'
 
 
   rule  (*model no saved! change to OPENMODELICAHOME/work *)
@@ -2144,13 +2146,12 @@ relation change_to_file_dir:(Absyn.ComponentRef,
 	System.trim(omhome,"\"") => omhome' &
         System.pathDelimiter() => pd &
         win_citation() => cit &
-        Util.string_append_list([cit,omhome',pd,"work",cit]) => dir' &
-        System.cd(dir') => 0
+        Util.string_append_list([cit,omhome',pd,"work",cit]) => dir' 
         -------------------------------
-        change_to_file_dir(class,p) => ()
+        get_file_dir(class,p) => dir'
 
         (*this relation should never fail*)
-  axiom change_to_file_dir(_,_) => ()
+  axiom get_file_dir(_,_) => ""
 
 end
 
@@ -2160,7 +2161,9 @@ end
  **
  ** Compiles a model given a file-prefix, helper relation to build_model.
  **)
-relation compile_model: (string, string list) => () =
+relation compile_model: (string, (* executable name *)
+                         string list, (* external libs *)
+                         string (* directory for mo-file *)) => () =
 	 
   rule	Settings.getCompileCommand => "" &
         System.pathDelimiter => pd &
@@ -2173,14 +2176,14 @@ relation compile_model: (string, string list) => () =
         System.writeFile(libsfilename,libs_str) &
         Util.string_append_list([cit,omhome', pd, "bin", pd, "Compile",cit," ", 
                                  (*"\"",cd_path,"\""," ",*)
-                                 fileprefix (*,  " "
-				 ,libs_str*)
+                                 fileprefix
+(*                                  ," ",cit,file_dir," ",cit *)
                                  ]) => s_call &
         (*> output.log 2>&1 = redirect stderr to stdout and put it in output.log *)
-        (*print s_call & print "\n" &*)
+        print s_call & print "\n" &
 	System.systemCall(s_call) => 0 
 	--------------------------
-	compile_model(fileprefix, libs) => ()
+	compile_model(fileprefix, libs,file_dir) => ()
 	
   rule	Settings.getCompileCommand => command &
         Util.is_empty_string(command) => false & (*needed when the above rule does not work*)
@@ -2191,15 +2194,15 @@ relation compile_model: (string, string list) => () =
         System.writeFile(libsfilename,libs_str) &
         Util.string_append_list([command," ", 
                                  (*cit,cd_path,cit," ",*)
-                                 fileprefix (*, " " ,
-                                 libs_str *)
+                                 fileprefix
+(*                                  ," ",cit,file_dir," ",cit *)
                                  ]) => s_call &
         (*> output.log 2>&1 = redirect stderr to stdout and put it in output.log *)
-        print s_call & print "\n" &
+        (*print s_call & print "\n" &*)
         
 	System.systemCall(s_call) => 0 
 	--------------------------
-	compile_model(fileprefix,libs) => ()
+	compile_model(fileprefix,libs,file_dir) => ()
 
 	(* compilation failed\n *)
   rule  Util.string_append_list([fileprefix,".log"]) => filename &
@@ -2207,11 +2210,11 @@ relation compile_model: (string, string list) => () =
         System.readFile(filename) => str &
 	Error.add_message(Error.SIMULATOR_BUILD_ERROR,[str])
 	--------------------------
-	compile_model(fileprefix,libs) => fail
+	compile_model(fileprefix,libs,file_dir) => fail
  
   rule  Print.printErrorBuf ("#Error building simulation code.\n ") 
 	--------------------------
-	compile_model(fileprefix,libs) => fail
+	compile_model(fileprefix,libs,file_dir) => fail
 end
 
 

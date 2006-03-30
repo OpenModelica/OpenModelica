@@ -184,6 +184,8 @@ end
 val replaceStringPatterns = [REPLACEPATTERN(".","$point"),
                              REPLACEPATTERN("[","$leftBracket"),
                              REPLACEPATTERN("]","$rightBracket"),
+                             REPLACEPATTERN("(","$leftParanthesis"),
+                             REPLACEPATTERN(")","$rightParanthesis"),
 			     REPLACEPATTERN(",","$comma")]
 
 

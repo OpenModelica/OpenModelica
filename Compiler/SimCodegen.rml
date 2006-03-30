@@ -82,10 +82,11 @@ module SimCodegen:
                                string (* executable file name *) ,
 				string,real,real,real)  => ()
 	  
-  relation generate_makefile: (string, (*filename*)
-			       string, (* classname *)
-			       string list (* libs *)
-			       ) => ()
+  relation generate_makefile:(string, (*filename*)
+	                      string, (* classname *)
+	                      string list, (* libs *)
+                              string (* directory for mo-file *)
+	                      ) => () 
 	  
   relation print_exp_cpp_str : Exp.Exp => string 
 	  
@@ -143,10 +144,11 @@ with "Types.rml"
  **  - OPENMODELICAHOME/include as a reference to includes and
  **  - OPENMODELICAHOME/lib as a reference to library files 
  **)
-relation generate_makefile: (string, (*filename*)
-			     string, (* classname *)
-			     string list (* libs *)
-			     ) => () =
+ relation generate_makefile:(string, (*filename*)
+	                     string, (* classname *)
+	                     string list, (* libs *)
+                             string (* directory for mo-file *)
+	                     ) => () =
 			      
   rule	Util.string_append_list([cname,".cpp"]) => cpp_file &
 	Util.string_delimit_list(libs, " ") => libs' &
@@ -158,12 +160,14 @@ relation generate_makefile: (string, (*filename*)
 				 "\t $(CXX) -o ",cname,".exe ", (* ".exe" is needed for a class that is in a package. *) 
                                  cpp_file, 
 		                 " -L\"",omhome,"/lib/\"",
+                                 " -L\"",file_dir,"\"",
 				 " -I\"",omhome,"/include/\" ",
+                                 " -I\"",file_dir,"\"",
 				 " -lsim -lg2c -lc_runtime ",libs', "\n"
 				 ]) => str &
 	System.writeFile(filename,str) 
 	-------------------------
-	generate_makefile(filename,cname,libs)
+	generate_makefile(filename,cname,libs,file_dir)
 end
 
 
