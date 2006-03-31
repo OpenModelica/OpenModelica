@@ -441,7 +441,7 @@ relation build_residual_code2:(Exp.Exp list,
 
   axiom	build_residual_code2([],_,_) => "" 
 
-  rule	VarTransform.replace_exp(e,repl) => e' &
+  rule	VarTransform.replace_exp(e,repl,NONE) => e' &
 	SimCodegen.print_exp_cpp_str(e') => s1 &
 	pos + 1 => pos'  &
 	build_residual_code2(es,pos',repl) => s2 &

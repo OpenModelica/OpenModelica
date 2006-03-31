@@ -687,7 +687,11 @@ double pre(double & var)
     return y_saved[ind];
   }
   ind = long(pvar - h);
-  return h_saved[ind];
+  if (ind >= 0 && ind < nhelp) {
+    return h_saved[ind];
+  } 
+  printf("error, pre called with invalid argument.\n");
+  return 0.0;
 }
 
 bool edge(double& var) 

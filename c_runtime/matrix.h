@@ -69,9 +69,9 @@ double nls_wa1[size]; \
 double nls_wa2[size]; \
 double nls_wa3[size]; \
 double nls_wa4[size]; \
-double xtol = 1e-6; \
-double epsfcn=1e-6; \
-int maxfev=2000; \
+double xtol = 1e-9; \
+double epsfcn=1e-9; \
+int maxfev=8000; \
 int n=size; \
 int ml=size-1; \
 int mu = size-1; \

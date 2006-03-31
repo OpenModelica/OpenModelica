@@ -92,7 +92,8 @@ relation add_replacement:(VariableReplacements,Exp.ComponentRef, Exp.ComponentRe
 
 relation get_replacement:(VariableReplacements, Exp.ComponentRef) => Exp.ComponentRef
 
-relation replace_exp:(Exp.Exp,VariableReplacements) => Exp.Exp 
+relation replace_exp:(Exp.Exp,VariableReplacements,(Exp.Exp=> bool) option) 
+	  => Exp.Exp 
 
 relation apply_replacements: (VariableReplacements, Exp.ComponentRef, Exp.ComponentRef) 
 	=> (Exp.ComponentRef, Exp.ComponentRef)
@@ -118,8 +119,8 @@ relation apply_replacements: (VariableReplacements,
 			      Exp.ComponentRef) 
 	=> (Exp.ComponentRef, Exp.ComponentRef) =
 
-  rule	replace_exp(Exp.CREF(cr1,Exp.REAL),repl) => (Exp.CREF(cr1',_)) &
-	replace_exp(Exp.CREF(cr2,Exp.REAL),repl) => (Exp.CREF(cr2',_))	
+  rule	replace_exp(Exp.CREF(cr1,Exp.REAL),repl,NONE) => (Exp.CREF(cr1',_)) &
+	replace_exp(Exp.CREF(cr2,Exp.REAL),repl,NONE) => (Exp.CREF(cr2',_))	
 	----------------------------------------------------------------------
 	apply_replacements(repl, cr1, cr2) => (cr1', cr2') 
 end
@@ -146,8 +147,8 @@ relation replace_equations:(DAELow.Equation list,VariableReplacements)
 
 axiom replace_equations([],_) => []
 
-  rule	replace_exp(e1,repl) => e1' &
-	replace_exp(e2,repl) => e2' &
+  rule	replace_exp(e1,repl,NONE) => e1' &
+	replace_exp(e2,repl,NONE) => e2' &
 	replace_equations(es,repl) => es'
 	---------------------------------
 	replace_equations(DAELow.EQUATION(e1,e2)::es,repl) 
@@ -158,13 +159,13 @@ axiom replace_equations([],_) => []
 	replace_equations((a as DAELow.ALGORITHM(_,_,_))::es,repl) 
 	  => a::es'
 
-  rule	replace_exp(e,repl) => e' &
+  rule	replace_exp(e,repl,NONE) => e' &
 	replace_equations(es,repl) => es'
 	-----------------------
 	replace_equations(DAELow.SOLVED_EQUATION(cr,e)::es,repl) 
 	  => DAELow.SOLVED_EQUATION(cr,e')::es'
 
-  rule	replace_exp(e,repl) => e' &
+  rule	replace_exp(e,repl,NONE) => e' &
 	replace_equations(es,repl) => es'
 	-----------------------
 	replace_equations(DAELow.RESIDUAL_EQUATION(e)::es,repl) 
@@ -184,8 +185,8 @@ relation replace_equations_stmts: (Algorithm.Statement list, VariableReplacement
 	  => Algorithm.Statement list =
   axiom	replace_equations_stmts ([],_) => []
 
-  rule	replace_exp(e,repl) => e' &
-	replace_exp(Exp.CREF(cr,Exp.OTHER),repl) => Exp.CREF(cr',_) &
+  rule	replace_exp(e,repl,NONE) => e' &
+	replace_exp(Exp.CREF(cr,Exp.OTHER),repl,NONE) => Exp.CREF(cr',_) &
 	replace_equations_stmts(xs,repl) => xs'
 	---------------------------------------
 	replace_equations_stmts(Algorithm.ASSIGN(tp,cr,e)::xs,repl) 
@@ -385,119 +386,155 @@ end
 
 (** relation: replace_exp
  **
- ** Takes a set of replacement rules and an expression
- ** and replaces all variables in the expression using 
- ** the replacement rules.
+ ** Takes a set of replacement rules and an expression and a relation
+ ** giving a boolean value for an expression.
+ ** The relation replaces all variables in the expression using 
+ ** the replacement rules, if the boolean value is true children of the 
+ ** expression is visited (including the expression itself). If it is false, 
+ ** no replacemet is performed.
  **)
-relation replace_exp:(Exp.Exp,VariableReplacements) => Exp.Exp =
+
+relation replace_exp:(Exp.Exp,VariableReplacements,(Exp.Exp=> bool) option) => Exp.Exp =
 	 
-  rule	get_replacement(repl,cr) => cr' 
+  rule	replace_exp_cond(cond,e) => true &
+	get_replacement(repl,cr) => cr' 
 	------------------------------
-	replace_exp(Exp.CREF(cr,t),repl) 
+	replace_exp(e as Exp.CREF(cr,t),repl,cond) 
 	  => Exp.CREF(cr',t)
 
-  rule	replace_exp(e1,repl) => e1' &
-	replace_exp(e2,repl) => e2' 
+  rule	replace_exp_cond(cond,e) => true &
+	replace_exp(e1,repl,cond) => e1' &
+	replace_exp(e2,repl,cond) => e2' 
 	------------------------------------
-	replace_exp(Exp.BINARY(e1,op,e2),repl) 
+	replace_exp(e as Exp.BINARY(e1,op,e2),repl,cond) 
 	  => Exp.BINARY(e1',op,e2')
 	  
-  rule	replace_exp(e1,repl) => e1' &
-	replace_exp(e2,repl) => e2' 
+  rule	replace_exp_cond(cond,e) => true &
+	replace_exp(e1,repl,cond) => e1' &
+	replace_exp(e2,repl,cond) => e2' 
 	------------------------------------
-	replace_exp(Exp.LBINARY(e1,op,e2),repl) 
+	replace_exp(e as Exp.LBINARY(e1,op,e2),repl,cond) 
 	  => Exp.LBINARY(e1',op,e2')
 
-  rule	replace_exp(e1,repl) => e1'
+  rule	replace_exp_cond(cond,e) => true &
+	replace_exp(e1,repl,cond) => e1'
 	------------------------------------
-	replace_exp(Exp.UNARY(op,e1),repl) 
+	replace_exp(e as Exp.UNARY(op,e1),repl,cond) 
 	  => Exp.UNARY(op,e1')
 
-  rule	replace_exp(e1,repl) => e1'
+  rule	replace_exp_cond(cond,e) => true &
+	replace_exp(e1,repl,cond) => e1'
 	------------------------------------
-	replace_exp(Exp.LUNARY(op,e1),repl) 
+	replace_exp(e as Exp.LUNARY(op,e1),repl,cond) 
 	  => Exp.LUNARY(op,e1')
 
 
-  rule	replace_exp(e1,repl) => e1' &
-	replace_exp(e2,repl) => e2' 
+  rule	replace_exp(e1,repl,cond) => e1' &
+	replace_exp(e2,repl,cond) => e2' 
 	------------------------------------
-	replace_exp(Exp.RELATION(e1,op,e2),repl) 
+	replace_exp(Exp.RELATION(e1,op,e2),repl,cond) 
 	  => Exp.RELATION(e1',op,e2')
 
-  rule	replace_exp(e1,repl) => e1' &
-	replace_exp(e2,repl) => e2' &
-	replace_exp(e3,repl) => e3' 
+  rule	replace_exp_cond(cond,e) => true &
+	replace_exp(e1,repl,cond) => e1' &
+	replace_exp(e2,repl,cond) => e2' &
+	replace_exp(e3,repl,cond) => e3' 
 	------------------------------------
-	replace_exp(Exp.IFEXP(e1,e2,e3),repl) 
+	replace_exp(e as Exp.IFEXP(e1,e2,e3),repl,cond) 
 	  => Exp.IFEXP(e1',e2',e3')
 
-  rule  Util.list_map_1(expl,replace_exp,repl) => expl' 
+  rule  replace_exp_cond(cond,e) => true &
+	Util.list_map_2(expl,replace_exp,repl,cond) => expl' 
 	-----------------------------------------------
-	replace_exp(Exp.CALL(path,expl,t,c),repl) 
+	replace_exp(e as Exp.CALL(path,expl,t,c),repl,cond) 
 	  => Exp.CALL(path,expl',t,c)
 
-  rule	Util.list_map_1(expl,replace_exp,repl) => expl' 
+  rule	replace_exp_cond(cond,e) => true &
+	Util.list_map_2(expl,replace_exp,repl,cond) => expl' 
 	----------------------------------------------
-	replace_exp(Exp.ARRAY(tp,c,expl),repl) 
+	replace_exp(e as Exp.ARRAY(tp,c,expl),repl,cond) 
 	  => Exp.ARRAY(tp,c,expl')
 
-  rule	replace_exp_matrix(expl,repl) => expl' 
+  rule	replace_exp_cond(cond,e) => true &
+	replace_exp_matrix(expl,repl,cond) => expl' 
 	-----------------------------------------------
-	replace_exp(Exp.MATRIX(t,b,expl),repl) 
+	replace_exp(e as Exp.MATRIX(t,b,expl),repl,cond) 
 	  => Exp.MATRIX(t,b,expl')
 
-  rule	replace_exp(e1,repl) => e1' &
-	replace_exp(e2,repl) => e2' 
+  rule	replace_exp_cond(cond,e) => true &
+	replace_exp(e1,repl,cond) => e1' &
+	replace_exp(e2,repl,cond) => e2' 
 	-----------------------------------------------
-	replace_exp(Exp.RANGE(tp,e1,NONE,e2),repl) 
+	replace_exp(e as Exp.RANGE(tp,e1,NONE,e2),repl,cond) 
 	  => Exp.RANGE(tp,e1',NONE,e2')
 
-  rule	replace_exp(e1,repl) => e1' &
-	replace_exp(e2,repl) => e2' &
-	replace_exp(e3,repl) => e3' 
+  rule	replace_exp_cond(cond,e) => true &
+	replace_exp(e1,repl,cond) => e1' &
+	replace_exp(e2,repl,cond) => e2' &
+	replace_exp(e3,repl,cond) => e3' 
 	-----------------------------------------------
-	replace_exp(Exp.RANGE(tp,e1,SOME(e3),e2),repl) 
+	replace_exp(e as Exp.RANGE(tp,e1,SOME(e3),e2),repl,cond) 
 	  => Exp.RANGE(tp,e1',SOME(e3'),e2')
 
-  rule	Util.list_map_1(expl,replace_exp,repl) => expl'
+  rule	replace_exp_cond(cond,e) => true &
+	Util.list_map_2(expl,replace_exp,repl,cond) => expl'
 	-----------------------------------------------
-	replace_exp(Exp.TUPLE(expl),repl) 
+	replace_exp(e as Exp.TUPLE(expl),repl,cond) 
 	  => Exp.TUPLE(expl')
 
-  rule	replace_exp(e1,repl) => e1'
+  rule	replace_exp_cond(cond,e) => true &
+	replace_exp(e1,repl,cond) => e1'
 	-----------------------------------------------
-	replace_exp(Exp.CAST(tp,e1),repl) 
+	replace_exp(e as Exp.CAST(tp,e1),repl,cond) 
 	  => Exp.CAST(tp,e1')
 
-  rule	replace_exp(e1,repl) => e1' 
+  rule	replace_exp_cond(cond,e) => true &
+	replace_exp(e1,repl,cond) => e1' 
 	-----------------------------------------------
-	replace_exp(Exp.ASUB(e1,i),repl)
+	replace_exp(e as Exp.ASUB(e1,i),repl,cond)
 	  => Exp.ASUB(e1',i)
 
-  rule	replace_exp(e1,repl) => e1'
+  rule	replace_exp_cond(cond,e) => true &
+	replace_exp(e1,repl,cond) => e1'
 	-----------------------------------------------
-	replace_exp(Exp.SIZE(e1,NONE),repl) 
+	replace_exp(e as Exp.SIZE(e1,NONE),repl,cond) 
 	  => Exp.SIZE(e1',NONE)
 
-  rule	replace_exp(e1,repl) => e1' &
-	replace_exp(e2,repl) => e2' 
+  rule	replace_exp_cond(cond,e) => true &
+	replace_exp(e1,repl,cond) => e1' &
+	replace_exp(e2,repl,cond) => e2' 
 	-----------------------------------------------
-	replace_exp(Exp.SIZE(e1,SOME(e2)),repl) 
+	replace_exp(e as Exp.SIZE(e1,SOME(e2)),repl,cond) 
 	  => Exp.SIZE(e1',SOME(e2'))
 
   rule	print "replace_exp on CODE not impl.\n" 
 	-----------------------------------------------
-	replace_exp(Exp.CODE(a,b),repl) 
+	replace_exp(Exp.CODE(a,b),repl,cond) 
 	  => Exp.CODE(a,b)
 
-  rule	replace_exp(e,repl) => e' &
-	replace_exp(r,repl) => r' 
+  rule	replace_exp_cond(cond,e) => true &
+	replace_exp(e1,repl,cond) => e1' &
+	replace_exp(r,repl,cond) => r' 
 	-----------------------------------------------
-	replace_exp(Exp.REDUCTION(p,e,id,r),repl) 
-	  => Exp.REDUCTION(p,e',id,r')
+	replace_exp(e as Exp.REDUCTION(p,e1,id,r),repl,cond) 
+	  => Exp.REDUCTION(p,e1',id,r')
 
- axiom	replace_exp(e,repl) => e
+ axiom	replace_exp(e,repl,cond) => e
+end
+
+(** relation replace_exp_cond(cond,e) => true &
+ ** 
+ ** Helper relation to replace_exp. Evaluates a condition relation if 
+ ** SOME otherwise returns true. 
+**)
+relation replace_exp_cond:((Exp.Exp=> bool) option(*cond*),
+			   Exp.Exp(* e *)) => bool =
+
+  rule	cond(e) => res
+	----------------
+	replace_exp_cond(SOME(cond),e) => res
+	
+  axiom	replace_exp_cond(NONE,_) => true
 end
 
 (** relation: replace_exp_matrix
@@ -506,15 +543,15 @@ end
  ** Helper relation to replace_exp, traverses Matrix expression list.
  **)
 
-relation replace_exp_matrix: ( (Exp.Exp*bool) list list, VariableReplacements) 
+relation replace_exp_matrix: ( (Exp.Exp*bool) list list, VariableReplacements, (Exp.Exp => bool) option) 
 	  => ((Exp.Exp* bool) list list) =
 
-  axiom	replace_exp_matrix([],repl) => ([])
+  axiom	replace_exp_matrix([],repl,cond) => ([])
 
-  rule	replace_exp_matrix2(e,repl) => (e') &
-	replace_exp_matrix(es,repl) => (es') 
+  rule	replace_exp_matrix2(e,repl,cond) => (e') &
+	replace_exp_matrix(es,repl,cond) => (es') 
 	---------------------
-	replace_exp_matrix(e::es,repl) => (e'::es')
+	replace_exp_matrix(e::es,repl,cond) => (e'::es')
 end
 
 (** relation: replace_exp_matrix2
@@ -523,15 +560,16 @@ end
  ** Helper relation to replace_exp_matrix
  **)
 
-relation replace_exp_matrix2: ((Exp.Exp*bool) list,VariableReplacements) 
+relation replace_exp_matrix2: ((Exp.Exp*bool) list,VariableReplacements,
+			       (Exp.Exp=>bool) option) 
 	  => ((Exp.Exp*bool)  list) =
 
-  axiom	replace_exp_matrix2([],_) => ([])
+  axiom	replace_exp_matrix2([],_,_) => ([])
 
-  rule	replace_exp_matrix2(es,repl) => (es') &
-	replace_exp(e,repl) => (e') 
+  rule	replace_exp_matrix2(es,repl,cond) => (es') &
+	replace_exp(e,repl,cond) => (e') 
 	---------------
-	replace_exp_matrix2((e,b)::es,repl) => ((e',b)::es')
+	replace_exp_matrix2((e,b)::es,repl,cond) => ((e',b)::es')
 end
 
 (** relation: bintree_to_list

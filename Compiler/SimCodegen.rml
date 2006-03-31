@@ -343,7 +343,7 @@ relation generate_fixed_vector:(DAELow.DAELow, int (*nx*),
 	array_create(arr_size,"0/*default*/") => str_arr &
 	generate_fixed_vector2(dae,str_arr,nx,ny,np) => str_arr' &
 	array_list(str_arr') => str_lst &
-	Util.string_delimit_list(str_lst,", ") => str &
+	Util.string_delimit_list_2sep(str_lst,", ","\n",3) => str &
 	Util.string_append_list(["char init_fixed[NX+NX+NY+NP]={",str,"};"]) 
 	  => res
 	-----------------------------------
@@ -404,6 +404,10 @@ relation generate_fixed_vector3: (DAELow.Var list,
 	int_add(off,indx) => indx' &
 	DAELow.var_fixed(v) => b &
 	Util.if(b,"1", "0") => value &
+
+	DAELow.var_orig_name(v) => name &
+	Util.string_append_list([value,"/*",name,"*/"]) => value &
+	
 	array_setnth(str_arr,indx',value) => str_arr' &
 	generate_fixed_vector3(vs,str_arr',nx,ny,np) => str_arr''
 	-------------------------
@@ -1395,7 +1399,7 @@ relation generate_initial_bound_parameter_code:(DAELow.DAELow)
 	generate_parameter_assignments(knvars_lst,0) 
 	  => (param_assigns,_) &
 	  add_memory_management(param_assigns) => param_assigns &
-	  Codegen.c_add_statements(param_assigns,["return 0;"]) 
+	  Codegen.c_add_cleanups(param_assigns,["return 0;"]) 
 	  => param_assigns' &
 	Codegen.c_merge_fns([param_func,param_assigns']) => cfunc &
 	Codegen.c_print_functions_str([cfunc]) => str
@@ -2713,8 +2717,8 @@ end
  ** author: PA
  **
  ** This relation makes replacement rules for variables occuring in a 
- ** nonlinear equation system. They should be replaced by x[index], i.e.
- ** an unique index in the x vector.
+ ** nonlinear equation system. They should be replaced by xloc[index], i.e.
+ ** an unique index in a xloc vector.
  **)
 relation make_residual_replacements:(Exp.ComponentRef list) => 
 	VarTransform.VariableReplacements =
@@ -2794,7 +2798,7 @@ relation generate_ode_system2_nonlinear_call: (string (* residual func id *),
 				 TAB, "}\n",
 				 TAB,"if (info >= 2 && info <= 5) {\n",
 				 TAB,TAB,"printf(\"error solving nonlinear",
-				 " system.\\n\");\n",
+				 " system nr. ",func_id," at time %f\\n\",*t);\n",
 				 TAB,"}"
 				 ]) => stmt &
 	Codegen.c_add_statements(Codegen.c_empty_function,
@@ -2848,7 +2852,7 @@ relation generate_ode_system2_nonlinear_residuals2: (DAELow.Equation list,
   rule	Exp.typeof(e1) => tp &
 	let res_exp = Exp.BINARY(e1,Exp.SUB(tp),e2) &
 	Exp.simplify(res_exp) => res_exp' &
-	VarTransform.replace_exp(res_exp',repl) => res_exp'' &
+	VarTransform.replace_exp(res_exp',repl, SOME(skip_pre_operator)) => res_exp'' &
 	Codegen.generate_expression(res_exp'',cg_id,Codegen.SIMULATION) => (exp_func,var,cg_id') &
      	int_string(indx) => indx_str &
 	indx + 1 => indx' &
@@ -2863,7 +2867,7 @@ relation generate_ode_system2_nonlinear_residuals2: (DAELow.Equation list,
 	  => (cfunc',cg_id'')
 
   rule	Exp.simplify(e) => res_exp' &
-	VarTransform.replace_exp(res_exp',repl) => res_exp'' &
+	VarTransform.replace_exp(res_exp',repl,SOME(skip_pre_operator)) => res_exp'' &
 	Codegen.generate_expression(res_exp'',cg_id,Codegen.SIMULATION) => (exp_func,var,cg_id') &
 	int_string(indx) => indx_str &
 	indx + 1 => indx' &
@@ -2876,6 +2880,20 @@ relation generate_ode_system2_nonlinear_residuals2: (DAELow.Equation list,
 	-----------------------
 	generate_ode_system2_nonlinear_residuals2(DAELow.RESIDUAL_EQUATION(e)::rest,indx,repl,cg_id) 
 	  => (cfunc',cg_id'')
+end
+
+(** relation: skip_pre_operator
+ **
+ ** Condition relation, used in generate_ode_system2_nonlinear_residuals2.
+ ** The variable in the pre operator should not be replaced in residual 
+ ** functions. This relation is passed to replace_exp to ensure this.
+ **)
+
+relation skip_pre_operator: (Exp.Exp) => bool =
+
+  axiom	skip_pre_operator(Exp.CALL(Absyn.IDENT("pre"),_,_,_)) => false
+
+  axiom	skip_pre_operator(_) => true
 end
 
 
@@ -3787,9 +3805,10 @@ relation generate_zero_crossing: (string,
 	  
   rule	
 	generate_zero_crossing2(zc,0,dae,dlow,ass1,ass2,blocks,helpVarInfo,0,0) 
-	  => (func_zc,cg_id1,func_handle_zc,cg_id2) &
+	  => (func_zc,cg_id1,func_handle_zc,cg_id2,extra_funcs1) &
 
-	generate_ode_blocks(dlow,ass1,ass2,blocks,0) => (cfunc,_,extra_funcs) &
+	generate_ode_blocks(dlow,ass1,ass2,blocks,0) => (cfunc,_,extra_funcs2)&
+	list_append(extra_funcs1,extra_funcs2) => extra_funcs &
 	Codegen.c_print_functions_str(extra_funcs) => extra_funcs_str &
 	Codegen.c_make_function("int","function_updateDependents",[],
 				["double*t"]) => cfunc0' &
@@ -3838,40 +3857,41 @@ relation generate_zero_crossing2: (DAELow.ZeroCrossing list, int,
 				   (int * Exp.Exp * int) list,
 				   int, (* cg var_id1*)
 				   int) (* cg_var_id2 *)
-	  => (CFunction,int,CFunction,int) =
+	  => (CFunction,int,CFunction,int, CFunction list) =
 
   axiom	generate_zero_crossing2([],_,_,_,_,_,_,_,cg_id1,cg_id2) 
-	  => (Codegen.c_empty_function,cg_id1,Codegen.c_empty_function,cg_id2)
+	  => (Codegen.c_empty_function,cg_id1,Codegen.c_empty_function,cg_id2,[])
 
   rule	use_zerocrossing => false 
 	----------------------------------------
 	generate_zero_crossing2(_,_,_,_,_,_,_,_,cg_id1,cg_id2) 
-	  => (Codegen.c_empty_function,cg_id1,Codegen.c_empty_function,cg_id2)
+	  => (Codegen.c_empty_function,cg_id1,Codegen.c_empty_function,cg_id2,[])
 
 	
   rule  dump_zero_crossing_str zc => zc_str &
 	int_string index => index_str &
 	index + 1 => index' &
 	generate_zero_crossing2(xs,index',dae,dlow,ass1,ass2,blocks,helpVarInfo,cg_id1,cg_id2) 
-	  => (cfunc1,cg_id1',cfunc2,cg_id2') &
+	  => (cfunc1,cg_id1',cfunc2,cg_id2',extra_funcs1) &
 	Util.string_append_list(["ZEROCROSSING(",index_str, ",",zc_str,");\n"]) 
 	  => stmt1 &
         Util.list_select_1(helpVarInfo,(index,dlow),isZeroCrossingAffectingHelpVar)
 	  => usedHelpVars &
  	build_zero_crossing_eqns (dae,dlow,ass1,ass2,eql,blocks,cg_id2') 
-	  => (Codegen.CFUNCTION(rettp,fn,retrec,arg,vars,init,stmts,cleanups),cg_id2'') &
+	  => (Codegen.CFUNCTION(rettp,fn,retrec,arg,vars,init,stmts,cleanups),cg_id2'',extra_funcs2) &
 	Util.string_append_list(["case ", index_str, ":\n"]) => case_stmt &
 	let stmts' = case_stmt::stmts &
         build_help_var_assignments (usedHelpVars) => help_var_str &
 	list_append(stmts',[help_var_str,"break;"]) => stmts'' &
 	let cfunc2' = Codegen.CFUNCTION(rettp,fn,retrec,arg,vars,init,stmts'',cleanups) &
 	Codegen.c_merge_fns([cfunc2',cfunc2]) => cfunc2'' &
-	Codegen.c_prepend_statements(cfunc1,[stmt1]) => cfunc1' 
+	Codegen.c_prepend_statements(cfunc1,[stmt1]) => cfunc1' &
+	list_append(extra_funcs1,extra_funcs2) => extra_funcs 
 	--------------------------------------------------
 	generate_zero_crossing2((zc as DAELow.ZERO_CROSSING(_,eql,_))::xs,
 				index,dae,dlow,ass1,ass2,blocks,
 				helpVarInfo,cg_id1,cg_id2) 
-	  => (cfunc1',cg_id1',cfunc2'',cg_id2'')
+	  => (cfunc1',cg_id1',cfunc2'',cg_id2'',extra_funcs)
 
   rule	dump_zero_crossing_str zc => zc_str &
 	Util.string_append_list(["generating zero crossing :",
@@ -4104,10 +4124,10 @@ relation build_zero_crossing_eqns : (DAE.DAElist,
 				     int vector(*ass2*), 
 				     int list(*eqns*),
 				     int list list (* blocks*),
-				     int (* cg var_id*)) => (CFunction,int(*cg var_id*))  =
+				     int (* cg var_id*)) => (CFunction,int(*cg var_id*), CFunction list)  =
 
   axiom build_zero_crossing_eqns(_,_,_,_,[],_,cg_id) 
-	  => (Codegen.c_empty_function,cg_id)
+	  => (Codegen.c_empty_function,cg_id,[])
 
 	  (* Zero crossing for mixed system*)
   rule	is_part_of_mixed_system(dlow,eqn,blocks,ass2) => true &
@@ -4143,7 +4163,7 @@ relation build_zero_crossing_eqns : (DAE.DAElist,
 	  => (s0,cg_id1) &
 	Codegen.c_prepend_statements(s0,[save_stmt]) => s0 &
 	generate_ode_system2(cont_subsystem_dae,jac,jac_tp,cg_id1) 
-	  => (Codegen.CFUNCTION(rettp,fn,retrec,arg,vars,init,stmts,cleanups),cg_id2,_) &
+	  => (Codegen.CFUNCTION(rettp,fn,retrec,arg,vars,init,stmts,cleanups),cg_id2,extra_funcs1) &
 	  (* initialization of e.g. matrices for linsys must be done in each
 	   * iteration, create new scope and put them first.*)
 	  Util.list_flatten([["{"],vars,stmts,["}"]]) => stmts' &
@@ -4155,13 +4175,14 @@ relation build_zero_crossing_eqns : (DAE.DAElist,
 	generate_mixed_system_store_discrete(disc_var,0,cg_id4) 
 	  => (s1,cg_id5,_) &
 	build_zero_crossing_eqns(dae,dlow,ass1,ass2,rest,blocks,cg_id5) 
-	  => (cfn3,cg_id6) &
-	Codegen.c_merge_fns([s0,s1,s2',s3,s4,cfn3]) => cfn   
+	  => (cfn3,cg_id6,extra_funcs2) &
+	Codegen.c_merge_fns([s0,s1,s2',s3,s4,cfn3]) => cfn &
+	list_append(extra_funcs1,extra_funcs2) => extra_funcs 
 	----------------------------------------
 	build_zero_crossing_eqns(dae,
 				 dlow as DAELow.DAELOW(vars,knvars,eqns,se,ie,ae,al,ev),
 				 ass1,ass2,eqn::rest,blocks,cg_id) 
-	  => (cfn,cg_id6)
+	  => (cfn,cg_id6,extra_funcs)
 
 	(* Zero crossing for single equation*)
   rule	build_equation(dae,dlow,ass1,ass2,eqn,cg_id) => (cfn2,cg_id') &
@@ -4170,17 +4191,17 @@ relation build_zero_crossing_eqns : (DAE.DAElist,
 	DAELow.get_var_at(vars,v) => (DAELow.VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,_)) &  
 	Exp.print_component_ref_str(cr) => cr_str &
 	build_zero_crossing_eqns(dae,dlow,ass1,ass2,rest,blocks,cg_id') 
-	  => (cfn3,cg_id'') &
+	  => (cfn3,cg_id'',extra_funcs) &
  	Util.string_append_list(["save(",cr_str,");"]) => stmt &
  	Codegen.c_add_statements(Codegen.c_empty_function,[stmt]) => cfn1 &
 	Codegen.c_merge_fns([cfn1,cfn2,cfn3]) => cfn
 	----------------------------------------
 	build_zero_crossing_eqns(dae,dlow as DAELow.DAELOW(vars,_,_,_,_,_,_,_),
 				 ass1,ass2,eqn::rest,blocks,cg_id) 
-	  => (cfn,cg_id'')
+	  => (cfn,cg_id'',extra_funcs)
 
   axiom build_zero_crossing_eqns(_,_,_,_,_,_,cg_id) 
-	  => (Codegen.c_empty_function,cg_id)
+	  => (Codegen.c_empty_function,cg_id,[])
 end
 
 (** relation: dump_mixed_system

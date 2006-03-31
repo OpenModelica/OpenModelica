@@ -2182,7 +2182,7 @@ relation compile_model: (string, (* executable name *)
 (*                                  ," ",cit,file_dir," ",cit *)
                                  ]) => s_call &
         (*> output.log 2>&1 = redirect stderr to stdout and put it in output.log *)
-        print s_call & print "\n" &
+        (*print s_call & print "\n" &*)
 	System.systemCall(s_call) => 0 
 	--------------------------
 	compile_model(fileprefix, libs,file_dir) => ()
