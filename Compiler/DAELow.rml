@@ -388,8 +388,8 @@ with "Dump.rml"
 with "System.rml"
 with "VarTransform.rml"
 with "Error.rml"
-(* adrpo -- not used
 with "SimCodegen.rml"
+(* adrpo -- not used
 with "RTOpts.rml"
 *)
 
@@ -5386,12 +5386,7 @@ end
  **)
 relation create_dummy_var: (Exp.ComponentRef) => Exp.ComponentRef =
 	  
-  rule Util.string_split_at_char(origname,#".") => origname_lst &
-        Util.list_last(origname_lst) => var_name &
-        Util.list_strip_last(origname_lst) => origname_lst' &
-	Util.string_append_list(["der(",var_name,")"]) => der_var_name' &
-        Util.string_delimit_list(origname_lst',".") => prefix &
-        Util.string_append_list([prefix,".",der_var_name']) => ret_str 
+  rule SimCodegen.change_name_for_derivative(origname) => ret_str
 	-------------------------------
 	create_dummy_var(Exp.CREF_IDENT(origname,subs)) 
 	  => Exp.CREF_IDENT(ret_str,subs)

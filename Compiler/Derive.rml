@@ -72,6 +72,7 @@ with "Absyn.rml"
 with "Util.rml"
 with "Error.rml"
 with "Debug.rml"
+with "SimCodeGen.rml"
 (* adrpo -- not used
 with "Print.rml" 
 with "Graphviz.rml" 
@@ -129,7 +130,7 @@ relation differentiate_exp_time: (Exp.Exp,DAELow.Variables) => Exp.Exp =
 	  (* special rule for DUMMY_STATES, they become DUMMY_DER *)
   rule	DAELow.get_var(cr,timevars) => ([DAELow.VAR(cr,DAELow.DUMMY_STATE,_,_,_,_,_,_,_,_,_,_,_,_)],_) &
 	Exp.print_component_ref_str(cr) => cr_str &
-	string_append("der_",cr_str) => cr_str' 
+        SimCodegen.change_name_for_derivative(cr_str) => cr_str' 
 	--------------------------------
 	differentiate_exp_time(e as Exp.CREF(cr,tp),timevars) 
 	  => Exp.CREF(Exp.CREF_IDENT(cr_str',[]),Exp.REAL)
