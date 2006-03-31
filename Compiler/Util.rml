@@ -1768,6 +1768,20 @@ relation tick_str:() => string =
 	tick_str() => s
 end
 
+(** relation replace_slash_with_path_delimiter
+ ** author: x02lucpo
+ ** 
+ ** replace the "/" with the system-pathdelimiter.
+ ** On window must be \ so that the get_absolute_directory_and_file works
+ **)
+relation replace_slash_with_path_delimiter:(string) => string =
+        
+  rule  System.pathDelimiter() => pd &
+        System.stringReplace(str,"/",pd) => ret_string 
+        -----------------------------
+        replace_slash_with_path_delimiter(str) => ret_string
+end
+
 (** relation get_absolute_directory_and_file
  ** author: x02lucpo
  **
@@ -1778,15 +1792,17 @@ end
 
 relation get_absolute_directory_and_file:(string) => (string,string) =
 
-  rule  System.pathDelimiter() => pd &
+  rule  replace_slash_with_path_delimiter(file') => file &
+        System.pathDelimiter() => pd &
         string_list(pd) => pd_chr::[] &
         (*same dir only filename as param*) 
         string_split_at_char(file,pd_chr) => list_path::[] &
         System.pwd() => res 
         -------------------------
-        get_absolute_directory_and_file(file) => (res,list_path)
+        get_absolute_directory_and_file(file') => (res,list_path)
 
-  rule   System.pathDelimiter() => pd &
+  rule  replace_slash_with_path_delimiter(file') => file &
+         System.pathDelimiter() => pd &
         string_list(pd) => pd_chr::[] &
         string_split_at_char(file,pd_chr) => list_path &
         list_last(list_path) => file_path &
@@ -1798,7 +1814,7 @@ relation get_absolute_directory_and_file:(string) => (string,string) =
         System.pwd() => res &
         System.cd(current_dir) => 0
         -------------------------
-        get_absolute_directory_and_file(file) => (res,file_path)
+        get_absolute_directory_and_file(file') => (res,file_path)
 
   rule   Debug.fprint("failtrace",  "-get_absolute_directory_and_file  failed")
         -------------------------
