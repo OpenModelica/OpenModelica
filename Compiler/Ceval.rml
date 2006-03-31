@@ -2036,13 +2036,15 @@ relation calculate_simulation_settings: (Env.Env,Exp.Exp,
   rule  ceval(env,filenameprefix,true,SOME(st),NONE,msg) 
 	  => (Values.STRING(prefix_str),SOME(st)) &
           ceval(env,starttime,true,SOME(st),NONE,msg) 
-	  => (Values.REAL(starttime_r),SOME(st)) &
+	  => (starttime_v,SOME(st)) &
 	   ceval(env,stoptime,true,SOME(st),NONE,msg) 
-	  => (Values.REAL(stoptime_r),SOME(st)) &
+	  => (stoptime_v,SOME(st)) &
 	   ceval(env,interval,true,SOME(st),NONE,msg) 
 	  => (Values.INTEGER(interval_i),SOME(st)) &
 	   ceval(env,method,true,SOME(st),NONE,msg) 
 	  => (Values.STRING(method_str),SOME(st)) &
+	  Values.value_real(starttime_v) => starttime_r &
+	  Values.value_real(stoptime_v) => stoptime_r &
 	 int_real(interval_i) => interval_r &
 	 Util.string_append_list([prefix_str,"_init.txt"]) => init_filename 
         ---------------------------------

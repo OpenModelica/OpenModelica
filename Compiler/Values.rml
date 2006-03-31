@@ -90,6 +90,7 @@ with "Absyn.rml"
   relation unparse_values: (Value list) => string
   relation reverseMatrix: (Value ) => Value
   relation value_neg: (Value) => Value 
+  relation value_real: (Value) => real	  
   relation exp_value: Exp.Exp => Value 
   relation write_ptolemyplot_dataset: (string,Value,string list,string) => int
 end
@@ -410,6 +411,21 @@ relation exp_value: Exp.Exp => Value =
 
   axiom	exp_value Exp.SCONST(i) => STRING(i)
   axiom	exp_value Exp.BCONST(i) => BOOL(i)
+end
+
+(** relation: value_real
+ **
+ ** Return the real value of a Value. If the value is an integer,
+ ** it is cast to a real.
+ **)
+
+relation value_real: (Value) => real =
+
+  axiom	value_real(REAL(r)) => r
+
+  rule	int_real(i) => r
+	---------------------
+	value_real(INTEGER(i)) => r
 end
 
 (** relation: value_neg
