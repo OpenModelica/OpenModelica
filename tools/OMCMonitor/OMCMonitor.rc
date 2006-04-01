@@ -90,9 +90,9 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "Comments", "Copyright 2006, Adrian Pop [http://www.ida.liu.se/~adrpo, adrpo@ida.liu.se]."
-            VALUE "CompanyName", "PELAB/IDA/LiU, Linköping University"
-            VALUE "FileDescription", "OMC HTTP Server Monitor"
+            VALUE "Comments", "Copyright 2006, Adrian Pop [http://www.ida.liu.se/~adrpo, adrpo@ida.liu.se]. Portions of the code belong to Apache Software Foundation."
+            VALUE "CompanyName", "Adrian Pop, PELAB/IDA/LiU, Linköping University"
+            VALUE "FileDescription", "OpenModelica OMC Monitor"
             VALUE "FileVersion", "1.0"
             VALUE "InternalName", "OMCMonitor.exe"
             VALUE "LegalCopyright", "Copyright 2006, Adrian Pop, [http://www.ida.liu.se/~adrpo, adrpo@ida.liu.se]. Portions of the code belong to Apache Software Foundation."
@@ -156,13 +156,13 @@ END
 
 STRINGTABLE 
 BEGIN
-    IDS_APMONITORTITLE      "OMC Service Monitor"
-    IDS_APMONITORCLASS      "OMCServiceMonitorClass"
+    IDS_APMONITORTITLE      "OMC Monitor"
+    IDS_APMONITORCLASS      "OMC Monitor Class"
 END
 
 STRINGTABLE 
 BEGIN
-    IDS_MSG_APPRUNNING      "OMC monitor is already started"
+    IDS_MSG_APPRUNNING      "OMC Monitor is already started"
     IDS_MSG_ERROR           "Error"
     IDS_MSG_RUNNINGALL      "OpenModelica OMC is running"
     IDS_MSG_RUNNING         "OpenModelica OMC is running"
