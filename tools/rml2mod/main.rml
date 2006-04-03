@@ -105,10 +105,8 @@ end
 relation transformFiles: (string list, string list) => Absyn.Transformed list = 
 
   rule 	transformFile(file, flags) => transformed &
-		(* 
-        print "Writing: " &
+		(*
 		dumpFiles([transformed],"-nap-none") &
-        print "\n" &
 		*)
         transformFiles(files, flags) => transformedFiles &
 		list_append([transformed], transformedFiles) => result

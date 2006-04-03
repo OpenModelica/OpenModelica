@@ -215,8 +215,8 @@ static int yylex0()
 
 	struct Token *val;
 
-	static char ident[100];
-	static char string[4100];
+	static char ident[LEXER_IDENT_MAXLENGTH];
+	static char string[LEXER_STRING_MAXLENGTH];
 
 
 	if(creg >= MAX_COMMENTINFO-1) 
@@ -438,7 +438,7 @@ static int yylex0()
 				break;
 			if (c == '\\')
 				c = esc_char(0);
-			if (i < 4096)
+			if (i < LEXER_STRING_MAXLENGTH-1)
 				string[i++] = c;
 			else
 				yyerror("string buffer overflow");

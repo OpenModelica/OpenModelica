@@ -26,6 +26,9 @@ module External:
   relation getFirstIdent: string => string
   relation string_real: string => real
 
+  relation stringEscape: string => string
+  relation commentEscape: string => string
+
 end
 
 (* testing of external *)

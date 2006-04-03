@@ -543,3 +543,156 @@ RML_BEGIN_LABEL(External__string_5freal)
 	RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(External__stringEscape)
+{
+	char *str = RML_STRINGDATA(rmlA0);
+	rml_uint_t len = strlen(str);
+	char *strnew = (char*)malloc(2*len); /* should be enough */
+	int i=0, j=0, c=0, n=0;
+	rml_uint_t lennew = 0;
+	unsigned char *snew = 0;
+	struct rml_string *rml_strnew = 0;
+	while (1)
+	{
+		if (i >= len) break;
+		c = str[i];
+		if (c == '\\')
+		{
+			strnew[lennew] = c; lennew++; i++;
+			if (i >= len) break;
+			c = str[i];
+			switch (c)
+			{
+			case 'f':
+				strnew[lennew] = '\f'; 
+				break;
+			case 'b':
+				strnew[lennew] = '\b'; 
+				break;
+			case 'e':
+				strnew[lennew] = 033; 
+				break;
+			case 'v':
+				strnew[lennew] = '\v';
+				break;
+			case 'a':
+				strnew[lennew] = '\a';
+				break;
+			case '?':
+				strnew[lennew] = '\?';
+				break;
+			case 'n':
+				strnew[lennew] = '\n';
+				break;
+			case 't':
+				strnew[lennew] = '\t';
+				break;
+			case 'r':
+				strnew[lennew] = '\r';
+				break;
+			case '"':
+				strnew[lennew] = '\"';
+				break;
+			default: 
+				strnew[lennew] = '\\'; lennew++; 
+				strnew[lennew] = c; 
+			}
+			lennew++;
+		}
+		else if(c == '"' || c == '\'')
+		{
+			strnew[lennew++] = '\\';
+			strnew[lennew++] = c;
+		}
+		else /* leave the char as it is */
+		{
+			strnew[lennew++] = c;
+		}
+		i++;
+	}
+	strnew[lennew]='\0';
+	/* now alloc the new string */
+	rml_strnew = rml_prim_mkstring(lennew, 1);
+	snew = (unsigned char*)rml_strnew->data;
+	for(i = 0; i < lennew; i++)
+	{
+		*snew++ = strnew[i];
+	}
+	*snew = '\0';
+	free(strnew);
+	rmlA0 = RML_TAGPTR(rml_strnew);
+	RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(External__commentEscape)
+{
+	char *str = RML_STRINGDATA(rmlA0);
+	rml_uint_t len = strlen(str);
+	char *strnew = (char*)malloc(2*len); /* should be enough */
+	int i=0, j=0, c=0, n=0;
+	rml_uint_t lennew = 0;
+	unsigned char *snew = 0;
+	struct rml_string *rml_strnew = 0;
+	while (1)
+	{
+		if (i >= len) break;
+		c = str[i];
+		if (c == '\\')
+		{
+			strnew[lennew] = c; lennew++; i++;
+			if (i >= len) break;
+			c = str[i]; 
+			switch (c)
+			{
+			/*
+			case 'n':
+				strnew[lennew] = '\n';
+				break;
+			case 't':
+				strnew[lennew] = '\t';
+				break;
+			case 'r':
+				strnew[lennew] = '\r';
+				break;
+			*/
+			case '\\': 
+				strnew[lennew] = '\\';
+				break;
+			case '"': 
+				/* already escaped */
+				strnew[lennew] = '"';
+				break;
+			default: /* don't know the escape sequence, escape the \ */
+				strnew[lennew] = '\\'; 
+				lennew++;
+				strnew[lennew] = c;
+			}
+			lennew++;
+		}
+		else if(c == '"' || c == '\'')
+		{
+			strnew[lennew++] = '\\';
+			strnew[lennew++] = c;
+		}
+		else 
+		{
+			strnew[lennew++] = c;
+		}
+		i++;
+	}
+	strnew[lennew]='\0';
+	/* now alloc the new string */
+	rml_strnew = rml_prim_mkstring(lennew, 1);
+	snew = (unsigned char*)rml_strnew->data;
+	for(i = 0; i < lennew; i++)
+	{
+		*snew++ = strnew[i];
+	}
+	*snew = '\0';
+	free(strnew);
+	rmlA0 = RML_TAGPTR(rml_strnew);
+	RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

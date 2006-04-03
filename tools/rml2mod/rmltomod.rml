@@ -1,5 +1,5 @@
 (*
-   Copyright 2005, Adrian Pop, adrpo@ida.liu.se and PELAB, Linköping University
+   Copyright 2005-2006, Adrian Pop, adrpo@ida.liu.se and PELAB, Linköping University
 *)
 
 module RMLToMod:
@@ -417,6 +417,17 @@ relation get_specialtype_id =
 		transform_typeid(mid,false) => cid &
 		string_append(cid,id) => tid &
 		get_specialtype_id(last,cid,alttypes_db,b_ei) => (fid,_) &
+		string_append(fid,tid) => fid' &
+		get_alternative_typeid(fid',alttypes_db,b_ei) => (aid,b) 
+		-------------------------------------------
+		get_specialtype_id(
+			Absyn.RMLTYPE_TYCONS(
+				(last as Absyn.RMLTYPE_SIGNATURE(_))::[],nid),id,alttypes_db,b_ei) => (aid,b)
+
+ rule	get_rml_id(nid,true) => mid &
+		transform_typeid(mid,false) => cid &
+		string_append(cid,id) => tid &
+		get_specialtype_id(last,cid,alttypes_db,b_ei) => (fid,_) &
 		string_append(fid,id) => fid' &
 		get_alternative_typeid(fid',alttypes_db,b_ei) => (aid,b) 
 		-------------------------------------------
@@ -501,10 +512,10 @@ relation get_valtype_id =
 
 end
 
-(**
- Relations to get the types that builds special constructions like
- lists,vectors,records,option..*)
-
+(*
+ * Relations to get the types that builds special constructions like
+ * lists, vectors, records, option..
+ *)
 relation is_unique =
 
   rule	list_member(id, list) => b &
@@ -552,17 +563,19 @@ end
 relation get_specialtypes =
 
   rule	transform_decl_signature(sign,alttypes_db,false) => (in_out_spec,in_out_decl,il,ol,alttypes_db') &
-		get_specialtype_id(sign,"",alttypes_db,b_ei) => (type_id,false) &
+		get_specialtype_id(sign,"",alttypes_db,b_ei) => (utype_id,false) &
 		(*make a shorter but unique funcname*)
+		(*
 		int_add(fc,1) => fc' &
 		int_string(fc') => sfc &
 		string_append("FuncType",sfc) => utype_id &
+		*)
 		create_class_parts(utype_id,Absyn.R_FUNCTION,true,[Absyn.PUBLIC(in_out_decl),
 								Absyn.PUBLIC(in_out_spec)],[],true) => class &
 		create_standard_elementitem(Absyn.CLASSDEF(false,class)) => elementitem
 		-----------------------------------------------
 		get_specialtypes(sign,alttypes_db,b_ei,com,fc) => 
-		([elementitem],ATYPES(type_id,utype_id,true)::alttypes_db,fc')
+		([elementitem],ATYPES(utype_id,utype_id,true)::alttypes_db,fc)
 
   rule	get_specialtype_id(tyvar,"",alttypes_db,b_ei) => (type_id,false) &
         get_specialtype("replaceable",type_id,com) => derived &
@@ -935,7 +948,7 @@ relation get_alternative_typeid =
   rule	get_alternative_typeid(the_typeid,rest,b_ei) => (a_typeid,b)
 		-----------------------------
 		get_alternative_typeid(the_typeid,_::rest,b_ei) => (a_typeid,b)
-	
+
 end
 
 relation create_local_decl =
@@ -970,7 +983,6 @@ relation create_specialtypes :
   rule  create_specialtypes(rest,alttypes_db,b_ei) => (special_types,alttypes_db')
 		-----------------------------------------------------------------------------
 		create_specialtypes(_::rest,alttypes_db,b_ei) => (special_types,alttypes_db')
-
 
 end
 
@@ -1327,13 +1339,19 @@ end
 
 relation transform_handle_escape =
 
-  rule  External.strrplall(s, "\\", "\\\\") => s &
-		External.strrplall(s,"\"","\\\"") => s &
-		External.strrplall(s, "\n", "\\n") => s &
-		External.strrplall(s, "\t", "\\t") => s &
-		External.strrplall(s, "\b", "\\b") => s 
-		-----------------------------------------
-		transform_handle_escape(s,_,_) => s
+(*
+  rule External.stringEscape(s) => s 
+       -----------------------------------------
+       transform_handle_escape(s,_,_) => s
+*)
+
+  rule External.strrplall(s, "\\", "\\\\") => s &
+       External.strrplall(s,"\"","\\\"") => s &
+       External.strrplall(s, "\n", "\\n") => s &
+       External.strrplall(s, "\t", "\\t") => s &
+       External.strrplall(s, "\b", "\\b") => s 
+       -----------------------------------------
+       transform_handle_escape(s,_,_) => s
 
 (*
   rule  int_ge(i,l) => true
@@ -2392,7 +2410,13 @@ end
 relation transform_type =
 
   rule	get_rml_id2(id) => mid &
-		transform_typeid(mid,false) => cid &  
+		transform_typeid(mid,false) => cid &
+		(*
+		print "\n" &
+		debug_print("variable list",var_lst) &
+		debug_print("type", cid) & 
+		print "\n" &
+		*)
 		get_alternative_typeid(cid,alttypes_db,b_ext) => (spec_id,_) &
 		create_components(var_lst,spec_id,dir,com) => components &
 		create_standard_elementitem(components) => elementitem
@@ -2401,6 +2425,13 @@ relation transform_type =
 		elementitem
 
   rule	get_specialtype_id(the_type,"",alttypes_db,b_ext) => (spec_id,_) &
+		(*
+		print "\n" &
+		debug_print("variable list",var_lst) &
+		debug_print("the_type", the_type) & 
+		debug_print("type", spec_id) & 
+		print "\n" &
+		*)
 		create_components(var_lst,spec_id,dir,com) => components &
 		create_standard_elementitem(components) => elementitem
 		--------------------------------------------------
@@ -2968,19 +2999,22 @@ end
  *)
 relation transform_comment_handle_dq =
 	
-  rule	External.strrplall(s,"\"","\\\"") => s &
-        External.strrplall(s,"\\\\\"","\\\"") => s &
-		External.strrplall(s,"[","{") => s &
-		External.strrplall(s,"]","}") => s &
-		External.strrplall(s,"relation","function") => s &
-		External.strrplall(s,"/*","/-") => s &
-		External.strrplall(s,"*/","-/") => s &
-		External.strrplall(s,"*","") => s &
-		External.strrplall(s,"/-","/*") => s &
-		External.strrplall(s,"-/","*/") => s &
-		External.trimstring(s," ") => s 
-        ---------------------------------------
-		transform_comment_handle_dq(s,i) => s
+  rule (*
+       External.strrplall(s,"\"","\\\"") => s &
+       External.strrplall(s,"\\\\\"","\\\"") => s &
+	   *) 
+	   External.commentEscape(s) => s &
+       External.strrplall(s,"[","{") => s &
+       External.strrplall(s,"]","}") => s &
+       External.strrplall(s,"relation","function") => s &
+       External.strrplall(s,"/*","/-") => s &
+       External.strrplall(s,"*/","-/") => s &
+       External.strrplall(s,"*","") => s &
+       External.strrplall(s,"/-","/*") => s &
+       External.strrplall(s,"-/","*/") => s &
+       External.trimstring(s," ") => s 
+       ---------------------------------------
+       transform_comment_handle_dq(s,i) => s
 end
 
 (*

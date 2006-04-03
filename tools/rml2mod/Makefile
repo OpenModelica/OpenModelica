@@ -4,9 +4,9 @@ RMLHOME=/c/OMDEV/tools/rml/
 #RMLHOME=/c/bin/cygwin/home/adrpo/rml-2.3.0/x86-mingw32-gcc
 #RMLHOME=/c/bin/cygwin/home/adrpo/rml-2.3.0/x86-cygwin-gcc
 #RMLHOME=/c/dev/rml/rml-mmc-2.3.3-cygwin-mingw/x86-cygwin-gcc
-CC = gcc -O2 #-g
-LD = gcc -O2 #-g
-RML=${RMLHOME}/bin/rmlc #-Wc,-g
+CC = gcc #-g
+LD = gcc #-g
+RML=${RMLHOME}/bin/rmlc #-Wr,-ftrace #-Wc,-g
 CCFLAGS=-I${RMLHOME}/include/plain/ 
 LDFLAGS=-L${RMLHOME}/lib/plain/ -lrml 
 
