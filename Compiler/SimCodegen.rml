@@ -4281,7 +4281,8 @@ relation generate_compute_residual_state:(string,
 				 "double *delta", "long int *ires", 
 				 "double *rpar", "long int* ipar"]) => cfn1 &
 	Codegen.c_add_variables(cfn1,["int i;", "double temp_xd[NX];"]) => cfn2 &
-	Codegen.c_add_statements(cfn2,["functionODE(x,temp_xd,y,p,nx,ny,np,t);",
+	Codegen.c_add_statements(cfn2,["for (i=0; i<nx; i++) temp_xd[i]=xd[i];",
+				       "functionODE(x,temp_xd,y,p,nx,ny,np,t);",
 				 " for (i=0; i < nx; i++) delta[i]=temp_xd[i]-xd[i];",
 				 "return 0;"]) => cfn &
 	Codegen.c_print_functions_str([cfn]) => res
