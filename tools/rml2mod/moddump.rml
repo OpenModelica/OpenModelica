@@ -1276,6 +1276,12 @@ relation print_equationitem: Absyn.EquationItem => () =
 	print_equationitem Absyn.EQUATIONITEMANN(_)
 end
 
+relation is_array =
+	axiom is_array("RML.arrayNth") => true
+	axiom is_array("arrayNth") => true
+	axiom is_array(_) => false
+end
+
 relation unparse_equation_str: (int, Absyn.Equation,bool) => string =
 
 (*ADDED*)
@@ -1313,21 +1319,34 @@ relation unparse_equation_str: (int, Absyn.Equation,bool) => string =
 	unparse_equation_str(i, Absyn.EQ_FAILURE(fe::elist),b) => str
 	(*!!when more then one!*)
 	
+  (* dump array index as [] here! *)
   rule	Absyn.path_string(path) => s1 &
-	print_function_args_str(fargs) => s2 &
-	unparse_pattern(pat) => s3 &
-	indent_str(i) => is &
-	Util.string_append_list([is,s3," := ",s1,"(",s2,")"]) => str
-	----------------------------------------------------
-	unparse_equation_str(i, Absyn.EQ_CALL(path,fargs,pat),true) => str
+		is_array(s1) => true &
+		print_exp_str(exp1) => str_exp1 &
+		print_exp_str(exp2) => str_exp2 &
+		unparse_pattern(pat) => s3 &
+		indent_str(i) => is &
+		if_exp(x, " := ", " = ") => str_eq &
+		Util.string_append_list([is,s3,str_eq,str_exp1,"[",str_exp2," + 1]"]) => str
+		----------------------------------------------------------------------------
+		unparse_equation_str(i, 
+			Absyn.EQ_CALL(path,Absyn.FUNCTIONARGS([exp1, exp2], []), pat),x) => str
 
   rule	Absyn.path_string(path) => s1 &
-	print_function_args_str(fargs) => s2 &
-	unparse_pattern(pat) => s3 &
-	indent_str(i) => is &
-	Util.string_append_list([is,s3," = ",s1,"(",s2,")"]) => str
-	----------------------------------------------------
-	unparse_equation_str(i, Absyn.EQ_CALL(path,fargs,pat),_) => str
+		print_function_args_str(fargs) => s2 &
+		unparse_pattern(pat) => s3 &
+		indent_str(i) => is &
+		Util.string_append_list([is,s3," := ",s1,"(",s2,")"]) => str
+		----------------------------------------------------
+		unparse_equation_str(i, Absyn.EQ_CALL(path,fargs,pat),true) => str
+
+  rule	Absyn.path_string(path) => s1 &
+		print_function_args_str(fargs) => s2 &
+		unparse_pattern(pat) => s3 &
+		indent_str(i) => is &
+		Util.string_append_list([is,s3," = ",s1,"(",s2,")"]) => str
+		----------------------------------------------------
+		unparse_equation_str(i, Absyn.EQ_CALL(path,fargs,pat),_) => str
 
 (*END ADDED*)
   rule	print_exp_str(e) => s1 &
