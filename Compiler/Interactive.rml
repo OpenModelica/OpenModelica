@@ -10709,10 +10709,6 @@ relation get_pathed_class_in_program: (Absyn.Path, Absyn.Program)
 	 ------------------------------------------------------------
 	 get_pathed_class_in_program (path as Absyn.QUALIFIED(c1,prest),p as Absyn.PROGRAM(_,w)) => res
 
-  rule  print "-get_pathed_class_in_program failed\n"
-	 ---------------------------------
-	 get_pathed_class_in_program (_,_) => fail
-         
 end
 
 
