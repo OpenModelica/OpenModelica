@@ -24,7 +24,10 @@ Adrian Pop, adrpo@ida.liu.se, 2006-04-06
    to OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder.launch and do whatever
    modifications are needed on it to reflect your paths.
 
-6. Setting your Eclipse workspace
+6. Installing Modelica Develioment Tooling (MDT) and Setting your Eclipse workspace
+   Start Eclipse and follow instructions from:
+   http://www.ida.liu.se/~pelab/modelica/OpenModelica/MDT/
+   to install MDT. Eclipse will restart at the end.
    Start Eclipse, change workspace to your installation:
    - note here that your workspace must point one directory 
      up the OpenModelica svn directory (for me named OpenModelica)
