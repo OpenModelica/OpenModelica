@@ -72,7 +72,7 @@ with "Absyn.rml"
 with "Util.rml"
 with "Error.rml"
 with "Debug.rml"
-with "SimCodeGen.rml"
+with "SimCodegen.rml"
 (* adrpo -- not used
 with "Print.rml" 
 with "Graphviz.rml" 
