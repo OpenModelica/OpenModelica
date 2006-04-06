@@ -75,13 +75,13 @@ Adrian Pop, adrpo@ida.liu.se, 2006-04-06
        NOTE: Do not use the mico2311.dll from OMDev/bin/mico/ as this one was
              compiled with MSVC not with MinGW!
     c) copy OMDev/tools/mingw/bin/mingwm10.dll to OpenModelica/build/bin/mingwm10.dll
-    d) Set your OPENMODELICAHOME to c:\path\to\your\OpenModelica\build
-    e) run make in the OpenModelica/testsuite directory
-       you can use MSYS teminal for this if you want:
-       run OMDev/tools/msys/msys.bat
-       >export OPENMODELICAHOME="c:\\path\\to\\your\\OpenModelica\\build"
-       >cd testsuite
-       testsuite>make 
+    To run the testsuite from Eclipse:
+    - Ctrl+B and type test
+    To run the testsuite from MSYS terminal:
+    - run OMDev/tools/msys/msys.bat and in the terminal you write
+      >export OPENMODELICAHOME="c:\\path\\to\\your\\OpenModelica\\build"
+      >cd testsuite
+      testsuite> make 
 
 For problems with OMDev package, contact:
 Adrian Pop, 
