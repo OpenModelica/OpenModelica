@@ -62,7 +62,7 @@ namespace IAEX
 	{
 		Q_OBJECT
 	public:
-		CellApplication(int &argc, char **argv);
+		CellApplication(int &argc, char *argv[]);
 		virtual ~CellApplication();
 
 		virtual CommandCenter *commandCenter();

@@ -92,6 +92,7 @@ namespace IAEX
 		virtual void viewExpression(const bool expr);
 
 	signals:
+		void heightChanged();
 		void textChanged();
 		void textChanged( bool );
 		void hoverOverUrl( const QUrl &link );				// Added 2006-02-10 AF
@@ -128,6 +129,8 @@ namespace IAEX
 		QTextBrowser *chaptercounter_;						// Added 2006-03-02 AF
 
 		QString oldHoverLink_;								// Added 2006-02-10 AF
+
+		int oldHeight_;										// Added 2006-04-10 AF
 	};
 
 	//***************************************************

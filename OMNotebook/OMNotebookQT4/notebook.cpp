@@ -2297,12 +2297,26 @@ namespace IAEX
 	 */
 	void NotebookWindow::saveas()
 	{
-		// open save as dialog
-		QString filename = QFileDialog::getSaveFileName(
-			this,
-			"Choose a filename to save under",
-			saveDir_,
-			"OpenModelica Notebooks (*.onb)");
+		// if a filename exists, use that filename as default
+		QString filename;
+		if( !subject_->getFilename().isEmpty() )
+		{
+			// open save as dialog
+			filename = QFileDialog::getSaveFileName(
+				this,
+				"Choose a filename to save under",
+				subject_->getFilename(),
+				"OpenModelica Notebooks (*.onb)");
+		}
+		else
+		{
+			// open save as dialog
+			filename = QFileDialog::getSaveFileName(
+				this,
+				"Choose a filename to save under",
+				saveDir_,
+				"OpenModelica Notebooks (*.onb)");
+		}
 
 		if(!filename.isEmpty())
 		{

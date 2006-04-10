@@ -142,8 +142,10 @@ namespace IAEX
 	{
 		stopHighlighter = false;
 		inCommand = false;
-		QTextEdit::mousePressEvent(event);
-		emit clickOnCell();
+		QTextBrowser::mousePressEvent(event);
+
+		if( event->modifiers() != Qt::ShiftModifier )
+			emit clickOnCell();
 	}
 
 	/*! 
@@ -292,6 +294,7 @@ namespace IAEX
 		evaluated_(false), 
 		closed_(true), 
 		delegate_(0),
+		oldHeight_( 0 ),
 		document_(doc)
 	{
 		QWidget *main = new QWidget(this);
@@ -479,7 +482,7 @@ namespace IAEX
 		chaptercounter_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 		chaptercounter_->setContextMenuPolicy( Qt::NoContextMenu );
 
-		chaptercounter_->setFixedWidth(75);
+		chaptercounter_->setFixedWidth(50);
 		chaptercounter_->setReadOnly( true );
 
 		connect( chaptercounter_, SIGNAL( clickOnCell() ),
@@ -933,12 +936,13 @@ namespace IAEX
 
 	/*!
 	 * \author Anders Fernström and Ingemar Axelsson
-	 * \date 2005-10-31 (update)
+	 * \date 2006-04-10 (update)
 	 *
 	 * \breif Recalculates height. 
 	 *
-	 * Large part of this function was changes due to porting
-	 * to QT4 (changes from Q3TextBrowser to QTextBrowser). /AF
+	 * 2005-10-31 AF, Large part of this function was changes due to 
+	 * porting to QT4 (changes from Q3TextBrowser to QTextBrowser).
+	 * 2006-04-10 AF, emits heightChanged if the height changes
 	 */
 	void InputCell::contentChanged()
 	{
@@ -961,9 +965,15 @@ namespace IAEX
 			height += outHeight;
 		}
 
-		// add a little extra, just in case
+		// add a little extra, just in case, emit 'heightChanged()' if height
+		// have chagned /AF
 		setHeight( height + 3 );
 		emit textChanged();
+
+		if( oldHeight_ != (height + 3) )
+			emit heightChanged();
+
+		oldHeight_ = height + 3;
 	}
 
 	/*! 
@@ -1125,7 +1135,6 @@ namespace IAEX
 			QString error;
 			
 			// 2006-02-02 AF, Added try-catch
-			/* Remove this temporary
 			try
 			{
 				error = delegate()->getError();
@@ -1136,7 +1145,7 @@ namespace IAEX
 				input_->blockSignals(false);
 				output_->blockSignals(false);
 				return;
-			}*/
+			}
 
 			// if the expression is a plot command and the is no errors
 			// in the result, find the image and insert it into the 
@@ -1195,7 +1204,7 @@ namespace IAEX
 					if( sleepTime > 25 )
 					{
 						output_->selectAll();
-						output_->textCursor().insertText( "[Error] Unable to found plot image \"" + imagename + "\"" );
+						output_->textCursor().insertText( "[Error] Unable to find plot image \"" + imagename + "\"" );
 //						output_->setPlainText( "[Error] Unable to found plot image \"" + imagename + "\"" );
 						break;
 					}
@@ -1208,7 +1217,7 @@ namespace IAEX
 			else
 			{
 				// check if resualt is empty
-				if( res.isEmpty() )
+				if( res.isEmpty() && error.isEmpty() )
 					res = "[done]";
 
 				if( !error.isEmpty() )

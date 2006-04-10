@@ -55,7 +55,9 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <iostream>
 
 //QT Headers
+#include <QtCore/QCoreApplication>
 #include <QtGui/QTextCursor>
+#include <QtGui/QTextBrowser>
 #include <QtGui/QTextEdit>
 
 //IAEX Headers
@@ -150,8 +152,10 @@ namespace IAEX
 				highlighter_->highlight( editor->document() );
 
 				// force text to be updated
-				QTextCursor cursor = editor->textCursor();
-				editor->setTextCursor( cursor );
+				editor->update();
+				QCoreApplication::processEvents();
+				//QTextCursor cursor = editor->textCursor();
+				//editor->setTextCursor( cursor );
 			}
 
 			// 2006-01-05 AF, check if any editor should be removed

@@ -115,11 +115,14 @@ namespace IAEX
 	/*! 
 	 * \author Anders Fernström
 	 * \date 2005-12-17
+	 * \date 2005-12-29 (update)
 	 *
 	 * \brief Highlights a QTextDocument. The function highlights
 	 * one text block at the time
 	 *
 	 * \param doc The text document that should be highlighted
+	 *
+	 * 2005-12-29 AF, Block signals while highlighting
 	 */
 	void OpenModelicaHighlighter::highlight( QTextDocument *doc )
 	{
@@ -319,8 +322,8 @@ namespace IAEX
 		}
 
 		layout->setAdditionalFormats( overrides );
-		//const_cast<QTextDocument *>(block.document())->markContentsDirty(
-        //block.position(), block.length());
+		const_cast<QTextDocument *>(block.document())->markContentsDirty(
+        block.position(), block.length());
 	}
 
 

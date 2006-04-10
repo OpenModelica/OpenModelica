@@ -118,7 +118,9 @@ namespace IAEX
 	void MyTextBrowser::mousePressEvent(QMouseEvent *event)
 	{
 		QTextBrowser::mousePressEvent(event);
-		emit clickOnCell();
+
+		if( event->modifiers() != Qt::ShiftModifier )
+			emit clickOnCell();
 	}
 
 	/*! 
@@ -207,7 +209,8 @@ namespace IAEX
 	 * \brief The class constructor
 	 */
 	TextCell::TextCell(QWidget *parent)
-		: Cell(parent)
+		: Cell(parent),
+		oldHeight_( 0 )
 	{
 		setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed));
 		setFocusPolicy(Qt::NoFocus);
@@ -297,7 +300,7 @@ namespace IAEX
 		chaptercounter_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 		chaptercounter_->setContextMenuPolicy( Qt::NoContextMenu );
 		
-		chaptercounter_->setFixedWidth(75);
+		chaptercounter_->setFixedWidth(50);
 		chaptercounter_->setReadOnly( true );
 
 		connect( chaptercounter_, SIGNAL( clickOnCell() ),
@@ -650,12 +653,13 @@ namespace IAEX
 
 	/*!
 	 * \author Anders Fernström and Ingemar Axelsson
-	 * \date 2005-10-31 (update)
+	 * \date 2006-04-10 (update)
 	 *
 	 * \breif Recalculates height. 
 	 *
-	 * Large part of this function was changes due to porting
-	 * to QT4 (changes from Q3TextBrowser to QTextBrowser). /AF
+	 * 2005-10-31 AF, Large part of this function was changes due to 
+	 * porting to QT4 (changes from Q3TextBrowser to QTextBrowser).
+	 * 2006-04-10 AF, emits heightChanged if the height changes
 	 */
 	void TextCell::contentChanged()
 	{
@@ -668,9 +672,15 @@ namespace IAEX
 
 		text_->setMinimumHeight( height );
 		
-		// add a little extra, just in case /AF
+		// add a little extra, just in case, emit 'heightChanged()' if height
+		// have chagned /AF
 		setHeight( height + 5 );		
 		emit textChanged();
+
+		if( oldHeight_ != (height + 5) )
+			emit heightChanged();
+
+		oldHeight_ = height + 5;
 	}
 
 	/*!

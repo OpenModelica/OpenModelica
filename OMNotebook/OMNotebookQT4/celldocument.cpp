@@ -723,6 +723,7 @@ namespace IAEX
 	 */
 	void CellDocument::updateScrollArea()
 	{
+		qDebug( "Update ScrollArea" );
 		if( scroll_->verticalScrollBar()->isVisible() )
 		{
 			CellCursor *cursor = getCursor();
@@ -756,12 +757,14 @@ namespace IAEX
 					// TO BIG
 					if( height > (scrollBottom-scrollTop) )
 					{
+						//qDebug( "TO BIG" );
 						// cell so big that it span over entire viewarea
 						return;
 					}
 					// END OF DOCUMENT
 					else if( scrollBottom > (scroll_->widget()->height() - 10 ))
 					{
+						//qDebug( "END OF DOCUMENT" );
 						// 2006-03-03 AF, ignore if cursor at end of document
 						return;
 					}
@@ -777,16 +780,21 @@ namespace IAEX
 							pos = 0;
 
 						// set new scrollvalue
+						//cout << "UP: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << endl;
 						scroll_->verticalScrollBar()->setValue( pos );
 					}
 					// DOWN
-					else if( pos > (scrollBottom - 30) )
+					else if( pos > (scrollBottom - 10) )
 					{
 						// cursor have moved below the viewarea of the 
 						// scrollbar, move down the scrollbar
 
 						// add cell height + a little extra to scrollbar
-						pos = height + 20 + scroll_->verticalScrollBar()->value();
+						//pos = height + 20 + scroll_->verticalScrollBar()->value();
+
+						// add differens between cell cursor position och scroll bottom
+						// to the scroll value
+						pos = scroll_->verticalScrollBar()->value() + (pos - (scrollBottom - 10));
 						
 						if( pos >= scroll_->verticalScrollBar()->maximum() )
 						{
@@ -798,6 +806,7 @@ namespace IAEX
 						}
 
 						// set new scrollvalue
+						//cout << "DOWN: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << endl;
 						scroll_->verticalScrollBar()->setValue( pos );
 					}
 				}

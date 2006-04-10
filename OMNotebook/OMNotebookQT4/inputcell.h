@@ -105,6 +105,7 @@ namespace IAEX
 
 
 	signals:
+		void heightChanged();
 		void textChanged();
 		void textChanged( bool );
 		void clickedOutput( Cell* );					// Added 2006-02-03 AF
@@ -156,6 +157,7 @@ namespace IAEX
 		bool evaluated_;
 		bool closed_;
 		static int numEvals_;
+		int oldHeight_;										// Added 2006-04-10 AF
 
 		QTextBrowser *input_;
 		QTextBrowser *output_;

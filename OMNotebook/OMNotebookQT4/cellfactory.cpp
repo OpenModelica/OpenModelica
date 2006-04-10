@@ -134,7 +134,7 @@ namespace IAEX
 				doc_, SLOT(mouseClickedOnCellOutput(Cell*)));
 			
 			// 2005-11-29 AF
-			QObject::connect( text, SIGNAL( textChanged() ),
+			QObject::connect( text, SIGNAL( heightChanged() ),
 				doc_, SLOT( updateScrollArea() ));
 
 			// 2006-01-17 AF
@@ -182,7 +182,7 @@ namespace IAEX
 				doc_, SLOT(linkClicked(const QUrl*)));
 
 			// 2005-11-29 AF
-			QObject::connect( text, SIGNAL( textChanged() ),
+			QObject::connect( text, SIGNAL( heightChanged() ),
 				doc_, SLOT( updateScrollArea() ));
 
 			// 2006-01-17 AF

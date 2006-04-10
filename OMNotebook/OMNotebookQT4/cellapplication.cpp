@@ -74,7 +74,7 @@ namespace IAEX
 	/*! 
 	 * \class CellApplication
 	 * \author Ingemar Axelsson and Anders Fernström
-	 * \date 2006-02-24 (update)
+	 * \date 2006-04-10 (update)
 	 *
 	 * \brief Implements the application interface. This class is the
 	 * main controller of the program.
@@ -96,18 +96,14 @@ namespace IAEX
 	 * omc interactive environment.
 	 * 2006-02-13 AF, create temp dir
 	 * 2006-02-27 AF, use environment variable to find DrModelica
-	 * 2005-03-24 AF, first look for DrModelica.onb, and then for
+	 * 2006-03-24 AF, first look for DrModelica.onb, and then for
 	 * DrModelica.nb
+	 * 2006-04-10 AF, use environment variable to find xml files
+	 * 2006-04-10 AF, Open file that is sent to main
 	 */
-	CellApplication::CellApplication(int &argc, char **argv)
+	CellApplication::CellApplication( int &argc, char *argv[] )
 		: QObject()
 	{  
-		// 2006-02-13 AF, create temp dir
-		QDir dir;
-		if( !dir.exists( "OMNoteboook_tempfiles" ) )
-			dir.mkdir( "OMNoteboook_tempfiles" );
-
-
 		app_ = new QApplication(argc, argv);
 
 		// 2005-10-25 AF, added a check if omc is running, otherwise
@@ -134,11 +130,33 @@ namespace IAEX
 		//Create a commandCenter.
 		cmdCenter_ = new CellCommandCenter(this);
 
+
+		// 2006-04-10 AF, use environment variable to find xml files
+		QString openmodelica( getenv( "OPENMODELICAHOME" ) );
+		if( openmodelica.isEmpty() )
+		{
+			cout << "Could not find environment variable OPENMODELICAHOME" << endl;
+			open(QString::null);
+			return;
+		}
+
+		// 2006-02-13 AF, create temp dir
+		QDir dir;
+		if( !dir.exists( "OMNoteboook_tempfiles" ) )
+			dir.mkdir( "OMNoteboook_tempfiles" );
+		
 		// 2005-12-17 AF, Create instance (load styles) of stylesheet
+		// 2006-04-10 AF, use environment variable to find stylesheet.xml
 		Stylesheet *sheet;
 		try
 		{
-			sheet = Stylesheet::instance("stylesheet.xml");
+			QString stylesheetfile;
+			if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
+				stylesheetfile = openmodelica + "bin/stylesheet.xml";
+			else
+				stylesheetfile = openmodelica + "/bin/stylesheet.xml";
+
+			sheet = Stylesheet::instance( stylesheetfile );
 		}
 		catch( exception &e )
 		{
@@ -147,9 +165,16 @@ namespace IAEX
 		}
 
 		// 2005-12-16 AF, Create instance of CommandCompletion.
+		// 2006-04-10 AF, use environment variable to find commands.xml
 		try
 		{
-			CommandCompletion::instance( "commands.xml" );
+			QString commandfile;
+			if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
+				commandfile = openmodelica + "bin/commands.xml";
+			else
+				commandfile = openmodelica + "/bin/commands.xml";
+
+			CommandCompletion::instance( commandfile );
 		}
 		catch( exception &e )
 		{
@@ -171,16 +196,23 @@ namespace IAEX
 			// 2006-01-09 AF, create a new highlight thread with the
 			// 'openmodelicahighlighter' as the highlighter that should be
 			// used.
+			// 2006-04-10 AF, use environment variable to find modelicacolors.xml
 			try
 			{
 				Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
 				CellStyle style = sheet->getStyle( "Input" );
 				style.textCharFormat()->setBackground( QBrush( QColor( 200, 200, 255 ) ));
 
+				QString modelicacolorsfile;
+				if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
+					modelicacolorsfile = openmodelica + "bin/modelicacolors.xml";
+				else
+					modelicacolorsfile = openmodelica + "/bin/modelicacolors.xml";
+
 				OpenModelicaHighlighter *highlighter = 
-					new OpenModelicaHighlighter( "modelicacolors.xml", *style.textCharFormat() );
+					new OpenModelicaHighlighter( modelicacolorsfile, *style.textCharFormat() );
 				HighlighterThread *thread = HighlighterThread::instance( highlighter );
-				thread->start( QThread::LowPriority );
+				//thread->start( QThread::LowPriority );
 			}
 			catch( exception &e )
 			{
@@ -191,47 +223,54 @@ namespace IAEX
 			}
 
 
-			// 2006-02-27 AF, use environment variable to find DrModelica
-			// 2006-03-24 AF, First try to find DrModelica.onb, then .nb
-			QString drmodelica( getenv( "OPENMODELICAHOME" ) );
-			if( drmodelica.isEmpty() )
+			// second arg is a file that should be opened.
+			if( argc > 1 )
 			{
-				cout << "Could not find environment variable OPENMODELICAHOME" << endl;
-				open(QString::null);
-				return;
+				QString fileToOpen( argv[1] );
+				if( dir.exists( fileToOpen ) && 
+					( fileToOpen.endsWith( ".onb" ) || fileToOpen.endsWith( ".nb" )))
+				{
+					open( fileToOpen );
+				}
 			}
-			
-			// ONB
-			if( drmodelica.endsWith("/") || drmodelica.endsWith( "\\") )
-				drmodelica += "DrModelica/DrModelica.onb";
-			else
-				drmodelica += "/DrModelica/DrModelica.onb";
-
-			if( dir.exists( drmodelica ))
-				open(drmodelica);
-			else if( dir.exists( "DrModelica/DrModelica.onb" ))
-				open( "DrModelica/DrModelica.onb" );
 			else
 			{
-				cout << "Unable to find (1): " << drmodelica.toStdString() << endl;
-				cout << "Unable to find (2): DrModelica/DrModelica.onb" << endl;
+				// 2006-02-27 AF, use environment variable to find DrModelica
+				// 2006-03-24 AF, First try to find DrModelica.onb, then .nb
+				QString drmodelica = openmodelica;
 
-				// NB
-				drmodelica = getenv( "OPENMODELICAHOME" );
+				// ONB
 				if( drmodelica.endsWith("/") || drmodelica.endsWith( "\\") )
-					drmodelica += "DrModelica/DrModelica.nb";
+					drmodelica += "DrModelica/DrModelica.onb";
 				else
-					drmodelica += "/DrModelica/DrModelica.nb";
+					drmodelica += "/DrModelica/DrModelica.onb";
 
 				if( dir.exists( drmodelica ))
 					open(drmodelica);
-				else if( dir.exists( "DrModelica/DrModelica.nb" ))
-					open( "DrModelica/DrModelica.nb" );
+				else if( dir.exists( "DrModelica/DrModelica.onb" ))
+					open( "DrModelica/DrModelica.onb" );
 				else
 				{
-					cout << "Unable to find (3): " << drmodelica.toStdString() << endl;
-					cout << "Unable to find (4): DrModelica/DrModelica.nb" << endl;
-					open(QString::null);
+					cout << "Unable to find (1): " << drmodelica.toStdString() << endl;
+					cout << "Unable to find (2): DrModelica/DrModelica.onb" << endl;
+
+					// NB
+					drmodelica = getenv( "OPENMODELICAHOME" );
+					if( drmodelica.endsWith("/") || drmodelica.endsWith( "\\") )
+						drmodelica += "DrModelica/DrModelica.nb";
+					else
+						drmodelica += "/DrModelica/DrModelica.nb";
+
+					if( dir.exists( drmodelica ))
+						open(drmodelica);
+					else if( dir.exists( "DrModelica/DrModelica.nb" ))
+						open( "DrModelica/DrModelica.nb" );
+					else
+					{
+						cout << "Unable to find (3): " << drmodelica.toStdString() << endl;
+						cout << "Unable to find (4): DrModelica/DrModelica.nb" << endl;
+						open(QString::null);
+					}
 				}
 			}
 		}
