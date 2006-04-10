@@ -53,40 +53,40 @@ LDFLAGS = -lm -L$(RMLHOME)/lib/plain -lrml $(ANTLR_LIBP) -lantlr $(LIBSOCKET) $(
 
 
 PROG = omc
-RML	= @rmlc_bin@ -Wc,-O3
-
+RMLC	= @rmlc_bin@ -Wc,-O3
+RML	= $(RMLHOME)/bin/rml
 
 
 
 SUBDIRS	= $(srcdir)/runtime $(srcdir)/absyn_builder $(srcdir)/modpar
 
-all : $(ALLRML) subdirs $(PROG)
+all : $(ALLMO) subdirs $(PROG)
 
 
 .SUFFIXES:
-.SUFFIXES: .o .rml .h
+.SUFFIXES: .o .mo .h
 .PHONY: all subdirs report vctarget absyn_subdir clean reallyclean
 
 SRCHSRCDIR = $(SRCH:%.h=$(srcdir)/%.h)
 
 
-$(ALLRML): %.rml : $(srcdir)/%.rml
+$(ALLMO): %.mo : $(srcdir)/%.mo
 	cp $< $@
 
 $(SRCO): %.o : %.c %.h
-	$(RML) -c $<
+	$(RMLC) -c $<
 
-$(SRCC): %.c : %.rml
-	$(RML) +C $<
+$(SRCC): %.c : %.mo
+	$(RMLC) +C $<
 
 $(SRCHSRCDIR) : $(srcdir)/%.h : %.h
 	cp $< $@
 
-$(SRCH): %.h : %.rml
-	$(RML) -c $<
+$(SRCH): %.h : %.mo
+	$(RMLC) -c $<
 
-%.sig : %.rml
-	$(srcdir)/rml2sig/rmldep.sh $<
+%.sig : %.mo
+	$(RML) -fdump-interface $< > $@
 
 
 vctarget: $(SRCC) absyn_subdir
@@ -111,10 +111,10 @@ clean:
 	$(RM) $(SRCO) $(SRCC) $(SRCH) $(PROG)$(EXEEXT) *~
 
 reallyclean: clean
-	$(RM) $(ALLRML) $(ALLRML:.rml=.sig)  $(SRCRDB) $(PROG)$(EXEEXT)
+	$(RM) $(ALLMO) $(ALLMO:.mo=.sig)  $(SRCRDB) $(PROG)$(EXEEXT)
 
 # don't remove these files after intermediate build steps
-.PRECIOUS: Makefile $(ALLRML)
+.PRECIOUS: Makefile $(ALLMO)
 
 Makefile: Makefile.in
 	$(top_builddir)/config.status Makefile

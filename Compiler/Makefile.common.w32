@@ -1,39 +1,39 @@
-SRCRML= Absyn.rml \
-	Algorithm.rml \
-	Builtin.rml \
-	Ceval.rml \
-	ClassInf.rml \
-	ClassLoader.rml \
-	Codegen.rml \
-	Connect.rml \
-	DAE.rml \
-	DAELow.rml \
-	Derive.rml \
-	Debug.rml \
-	Dump.rml \
-	DumpGraphviz.rml \
-	Env.rml \
-	Error.rml \
-	Exp.rml \
-	SCode.rml \
-	Graphviz.rml \
-	Inst.rml \
-	Interactive.rml \
-	Lookup.rml \
-	Main.rml \
-	Mod.rml \
-	ModUtil.rml \
-	Prefix.rml \
-	Static.rml \
-	SimCodegen.rml \
-	Types.rml \
-	TaskGraph.rml \
-	Util.rml \
-	Values.rml \
-	VarTransform.rml
+SRCMO= Absyn.mo \
+	Algorithm.mo \
+	Builtin.mo \
+	Ceval.mo \
+	ClassInf.mo \
+	ClassLoader.mo \
+	Codegen.mo \
+	Connect.mo \
+	DAE.mo \
+	DAELow.mo \
+	Derive.mo \
+	Debug.mo \
+	Dump.mo \
+	DumpGraphviz.mo \
+	Env.mo \
+	Error.mo \
+	Exp.mo \
+	SCode.mo \
+	Graphviz.mo \
+	Inst.mo \
+	Interactive.mo \
+	Lookup.mo \
+	Main.mo \
+	Mod.mo \
+	ModUtil.mo \
+	Prefix.mo \
+	Static.mo \
+	SimCodegen.mo \
+	Types.mo \
+	TaskGraph.mo \
+	Util.mo \
+	Values.mo \
+	VarTransform.mo
 
-ALLRML = $(SRCRML) DAEEXT.rml Print.rml RTOpts.rml System.rml Parser.rml \
-		TaskGraphExt.rml Corba.rml Socket.rml ErrorExt.rml  Settings.rml
+ALLMO = $(SRCMO) DAEEXT.mo Print.mo RTOpts.mo System.mo Parser.mo \
+		TaskGraphExt.mo Corba.mo Socket.mo ErrorExt.mo  Settings.mo
 
 
 

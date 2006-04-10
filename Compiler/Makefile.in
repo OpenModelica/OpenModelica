@@ -25,7 +25,7 @@ CC	= gcc
 CFLAGS	= $(USE_CORBA) -DCYGWIN
 RMLHOME	= @rmlhome@
 #RML	= @rmlc_bin@ -g -Wc,-O3 -Wr,-East,-Ecps,-Efol
-#RML	= @rmlc_bin@ -Wc,-O3
+RML	= $(RMLHOME)/bin/rml
 RMLINC  = -I$(RMLHOME)/include/plain
 
 USE_CORBA = @USE_CORBA@
@@ -46,7 +46,7 @@ DOC_FILES = omc_helptext.txt omc_interactive_api.txt
 SUBDIRS	= runtime absyn_builder modpar
 
 .SUFFIXES:
-.SUFFIXES: .o .rml .h
+.SUFFIXES: .o .mo .h
 .PHONY: all subdirs report vctarget debug release depend clean dclean test reallyclean omc_release omc_debug
 
 #all : debug 
@@ -170,9 +170,7 @@ report:
 
 depend:	
 	-$(RM) .depend
-	for f in $(SRCRML); do \
-	  echo `echo $$f | sed "s/\.rml/.o/"`: $$f `sed -n -e 's/.*with "\(.*\)\.rml".*/\1.sig/p' < $$f | egrep -v 'nothing'` >> .depend ; \
-	done
+	time $(RML) -fdump-depends $(SRCMO) > .depend
 
 .PRECIOUS: Makefile
 

@@ -1,12 +1,14 @@
 !INCLUDE Makefile.common.w32
 
+RML=$(RMLHOME)bin\rml
+
 .SUFFIXES :
-.SUFFIXES : .rml
+.SUFFIXES : .mo
 
 .PHONY : all
 
-all: 	$(ALLRML:.rml=.sig)
+all: 	$(ALLMO:.mo=.sig)
 
 
-.rml.sig:
-    rml2sig\rml2sig.bat $<
+.mo.sig:
+    $(RML) -fdump-interface $< > $@
