@@ -387,7 +387,7 @@ void OMS::createMoshError()
 	moshError_->setFrameShadow( QFrame::Plain );
 	moshError_->setFrameShape( QFrame::Panel );
 	moshError_->setAutoFormatting( QTextEdit::AutoNone );
-	moshError_->setFixedHeight( 50 );
+	moshError_->setFixedHeight( 80 );
 
 	moshError_->setSizePolicy( QSizePolicy(
 		QSizePolicy::Expanding, QSizePolicy::Fixed ));
@@ -660,7 +660,9 @@ void OMS::returnPressed()
 		if( error.size() > 2 )
 		{
 			QTextCursor errorCursor = moshError_->textCursor();
-			errorCursor.insertText( error.mid( 0, error.size() - 1 ) + "\n" );
+			errorCursor.insertText( "\n" + error.mid( 0, error.size() - 1 ) );
+
+			moshError_->verticalScrollBar()->triggerAction(QAbstractSlider::SliderToMaximum);
 		}
 	}
 	else
@@ -945,14 +947,28 @@ void OMS::exit()
 
 void OMS::cut()
 {
-	QKeyEvent* key = new QKeyEvent( QEvent::KeyPress, Qt::Key_X, Qt::ControlModifier, "x" );
-	((MyTextEdit*)moshEdit_)->sendKey( key );
+	if( moshEdit_->hasFocus() )
+	{
+		QKeyEvent* key = new QKeyEvent( QEvent::KeyPress, Qt::Key_X, Qt::ControlModifier, "x" );
+		((MyTextEdit*)moshEdit_)->sendKey( key );
+	}
+	else if( moshError_->hasFocus() )
+	{
+		moshError_->copy();
+	}
 }
 
 void OMS::copy()
 {
-	QKeyEvent* key = new QKeyEvent( QEvent::KeyPress, Qt::Key_C, Qt::ControlModifier, "c" );
-	((MyTextEdit*)moshEdit_)->sendKey( key );
+	if( moshEdit_->hasFocus() )
+	{
+		QKeyEvent* key = new QKeyEvent( QEvent::KeyPress, Qt::Key_C, Qt::ControlModifier, "c" );
+		((MyTextEdit*)moshEdit_)->sendKey( key );
+	}
+	else if( moshError_->hasFocus() )
+	{
+		moshError_->copy();
+	}
 }
 
 void OMS::paste()
