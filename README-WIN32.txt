@@ -3,6 +3,7 @@
 ---------------------------------------------------------------------------
            
              Last update 2005-09-26 David Broman
+             Last update 2006-04-11 Adrian Pop
 
 The following step-by-step guides explain how to compile the 
 Open Modelica Compiler using RML and Microsoft Visual Studio .NET 2003
@@ -20,7 +21,8 @@ to compile it under a UNIX systems.
 2.  Install MS Visual Studio .NET 2003
 
 3.  Download Mico, a free CORBA implementation:
-    http://www.mico.org/. The latest tested version was 2.3.11. 
+    http://www.mico.org/. The latest tested version was 2.3.11 but 
+                          it should work also with  2.3.12
     Unzip the files into a folder, such as c:\code\mico
 
 4.  - Open the MS Visual Studio command prompt by using the start menu:
@@ -38,8 +40,9 @@ to compile it under a UNIX systems.
 6.  Download the latest RML-compiler from 
     http://www.ida.liu.se/~pelab/rml/. Download the
     binary cygwin version and unzip it to a folder, such as:
-    C:\code\rml-2.3.0-cygwin. 
-    The latest tasted version was 2.3.0.
+    C:\code\rml-mmc-2.3.5-cygwin-mingw. 
+    The latest OpenModelica compiles only with 
+    rml-mmc version 2.3.5 and above.
 
 7.  Download ANTLR from http://www.antlr.org/download.html
     Download the source distribution and unzip it to a folder, such as:
@@ -167,15 +170,16 @@ under C:\code\omc\trunk\testsuite. To be able to run this testsuite,
 the cygwin environment must be installed. Do the following to 
 execute the test suite:
 1. Install cygwin from www.cygwin.org 
-2. Set up the cygwin path to the build directory in omc, i.e.
+2. Set the OPENMODELICAHOME=/cygdrive/c/code/omc/trunk/build
+3. Set up the cygwin path to the build directory in omc, i.e.
    /code/omc/trunk/build/bin
-3. The omc.exe we have build must be copied to the compiler directory.
+4. The omc.exe we have build must be copied to the compiler directory.
    Copy the following two files:
       C:\code\omc\trunk\Compiler\VC7\Release\omc.exe
       C:\code\mico\win32-bin\mico2311.dll
    to 
       C:\code\omc\trunk\build\bin
-4. Go to folder /trunc/testsuite/ and run "make".
+5. Go to folder /trunk/testsuite/ and run "make".
 
 
 

@@ -59,24 +59,14 @@ Adrian Pop, adrpo@ida.liu.se, 2006-04-06
 10. Available options for OMDev-MINGW-OpenModelicaBuilder
     In the Environment tab of the OMDev-MINGW-OpenModelicaBuilder
     you have several variables. 
-    We are interesed in 2 of them:
-    - OMC_BUILD_FROM set as "mo" or "rml" (without quotes) 
-      + IF is set to "mo" it will translate your .rml 
-        files to .mo files automatically, then compile the
-        .mo files
-      + IF is set to "rml" it will just compile your .rml files.
     - OMC_BUILD_STATIC which is not present in Environment tab
       when set to "/static/" (without quotes) will compile a
       independent (static) omc.exe.
 
 11. To run the OpenModelica testsuite you have to:
-    a) copy OMDev/tools/mingw to OpenModelica/build/MinGW
-    b) copy OMDev/lib/mico-msys-mingw/mico2311.dll to OpenModelica/build/bin
-       NOTE: Do not use the mico2311.dll from OMDev/bin/mico/ as this one was
-             compiled with MSVC not with MinGW!
-    c) copy OMDev/tools/mingw/bin/mingwm10.dll to OpenModelica/build/bin/mingwm10.dll
+    Copy OMDev/tools/mingw to OpenModelica/build/MinGW
     To run the testsuite from Eclipse:
-    - Ctrl+B and type test
+    - Ctrl+B and type: test
     To run the testsuite from MSYS terminal:
     - run OMDev/tools/msys/msys.bat and in the terminal you write
       >export OPENMODELICAHOME="c:\\path\\to\\your\\OpenModelica\\build"
@@ -87,5 +77,5 @@ For problems with OMDev package, contact:
 Adrian Pop, 
 adrpo@ida.liu.se
            
-Last Update:2006-04-06
+Last Update:2006-04-11
 
