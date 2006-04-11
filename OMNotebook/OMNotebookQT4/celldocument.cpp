@@ -723,7 +723,6 @@ namespace IAEX
 	 */
 	void CellDocument::updateScrollArea()
 	{
-		qDebug( "Update ScrollArea" );
 		if( scroll_->verticalScrollBar()->isVisible() )
 		{
 			CellCursor *cursor = getCursor();
