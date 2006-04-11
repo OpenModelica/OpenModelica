@@ -256,6 +256,9 @@ OMS::OMS( QWidget* parent )
 	createMenu();
 	createToolbar();
 
+	connect( this, SIGNAL( emitQuit() ),
+		qApp, SLOT( quit() ));
+
 	// start server
 	startServer();
 
@@ -264,9 +267,6 @@ OMS::OMS( QWidget* parent )
 	setWindowTitle( tr("OMShell - OpenModelica Shell") );
 	setWindowIcon( QIcon(":/Resources/OMS.bmp") );
 	statusBar()->showMessage( tr("Ready") );
-
-	connect( this, SIGNAL( emitQuit() ),
-		qApp, SLOT( quit() ));
 
 	// sett start message
 	cursor_.insertText( "OpenModelica 1.3.2\n", textFormat_ );
@@ -627,6 +627,7 @@ void OMS::returnPressed()
 	// send command to OMC
 	if( delegate_ )
 	{
+eval:
 		// 2006-02-02 AF, Added try-catch
 		try
 		{
@@ -668,7 +669,14 @@ void OMS::returnPressed()
 	else
 	{
 		QTextCursor cursor = moshError_->textCursor();
-		cursor.insertText("[ERROR] No OMC serer started\n" );
+
+		if( startServer() )
+		{
+			cursor.insertText("[ERROR] No OMC serer started - restarted OMC\n" );
+			goto eval;
+		}
+		else
+			cursor.insertText("[ERROR] No OMC serer started - unable to restart OMC\n" );
 	}
 
 	// add new command line
@@ -924,17 +932,20 @@ void OMS::exit()
 	// check if omc is running, if so: ask if it is ok that omc also closes.
 	try 
 	{
-		delegate_->closeConnection();
-		delegate_->reconnect();
-		
-		int result = QMessageBox::question( 0, tr("Close OMC"),
-			"OK to quit running OpenModelica Compiler process at exit?\n(Answer No if other OMShell/OMNotebook/Graphic editor is still running)", 
-			QMessageBox::Yes | QMessageBox::Default,
-			QMessageBox::No );
-
-		if( result == QMessageBox::Yes )
+		if( delegate_ )
 		{
-			stopServer();
+			delegate_->closeConnection();
+			delegate_->reconnect();
+			
+			int result = QMessageBox::question( 0, tr("Close OMC"),
+				"OK to quit running OpenModelica Compiler process at exit?\n(Answer No if other OMShell/OMNotebook/Graphic editor is still running)", 
+				QMessageBox::Yes | QMessageBox::Default,
+				QMessageBox::No );
+
+			if( result == QMessageBox::Yes )
+			{
+				stopServer();
+			}
 		}
 	}
 	catch(exception e) 
@@ -1049,8 +1060,7 @@ bool OMS::startServer()
 		{
 			if( !IAEX::OmcInteractiveEnvironment::startOMC() )
 			{
-				QMessageBox::critical( 0, "OMC Error", "Was unable to start OMC, therefore OMShell will close." );
-				exit();
+				QMessageBox::critical( 0, "OMC Error", "Was unable to start OMC, therefore OMShell will not work correctly." );
 			}
 			else
 			{
@@ -1058,12 +1068,10 @@ bool OMS::startServer()
 				// give OMC time to start up
 				SleeperThread::msleep( 1000 );
 
+				delegate_ = new IAEX::OmcInteractiveEnvironment();
 				omcNowStarted = true;
 			}
 		}
-
-		if( omcNowStarted )
-			delegate_ = new IAEX::OmcInteractiveEnvironment();
 	}
 
 	return omcNowStarted;
