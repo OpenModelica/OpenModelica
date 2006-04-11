@@ -217,20 +217,21 @@ namespace IAEX
       
       if(cells.empty())
       {
-	 //Empty pasteboard. 
-	 application()->clearPasteboard();
-	 application()->addToPasteboard(c->currentCell());
+		  return;
+		//Empty pasteboard. 
+		//application()->clearPasteboard();
+		//application()->addToPasteboard(c->currentCell());
       }
       else
       {		 
-	 document()->clearSelection(); //Notice
-	 application()->clearPasteboard();
-	 
-	 vector<Cell *>::iterator i = cells.begin();
-	 for(;i != cells.end();++i)
-	 {
-	    application()->addToPasteboard((*i));
-	 }
+		document()->clearSelection(); //Notice
+		application()->clearPasteboard();
+		 
+		vector<Cell *>::iterator i = cells.begin();
+		for(;i != cells.end();++i)
+		{
+			application()->addToPasteboard((*i));
+		}
       }   
    }
 
@@ -245,11 +246,12 @@ namespace IAEX
 	 
 	 if(cells.empty())
 	 {
+		 return;
 	    //Empty pasteboard. 
-	    application()->clearPasteboard();
-	    application()->addToPasteboard(c->currentCell());
+	    //application()->clearPasteboard();
+	    //application()->addToPasteboard(c->currentCell());
 	    
-	    c->removeCurrentCell();
+	    //c->removeCurrentCell();
 	 }
 	 else
 	 {
@@ -299,8 +301,11 @@ namespace IAEX
 			if(!cells.empty())
 			{
 				//Reverse iterator!!!!!
-				vector<Cell *>::reverse_iterator i = cells.rbegin();
-				for(;i != cells.rend();++i)
+				//vector<Cell *>::reverse_iterator i = cells.rbegin();
+				//for(;i != cells.rend();++i)
+				// AF, Not reverse
+				vector<Cell *>::iterator i = cells.begin();
+				for(;i != cells.end();++i)
 				{
 					try
 					{
