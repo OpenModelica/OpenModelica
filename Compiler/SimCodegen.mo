@@ -283,7 +283,7 @@ algorithm
   matchcontinue (inPath1,inDAELow2,inInteger3,inInteger4,inInteger5,inInteger6)
     local
       Integer nx,ny,np,ng,ng_1,no,ni,nh,nres;
-      String class_str,nx_str,ny_str,np_str,ng_str,no_str,ni_str,nh_str,nres_str,c_code2_str,c_code_str,macros_str,global_bufs,str1,str;
+      String class_str,nx_str,ny_str,np_str,ng_str,no_str,ni_str,nh_str,nres_str,c_code2_str,c_code3_str,c_code_str,macros_str,global_bufs,str1,str;
       list<String> c_code;
       Absyn.Path class_;
       DAELow.DAELow dlow;
@@ -302,6 +302,7 @@ algorithm
         nres_str = intString(nres);
         c_code = generateVarNamesAndComments(dlow, nx, ny, ni, no, np);
         (c_code2_str) = generateFixedVector(dlow, nx, ny, np);
+        (c_code3_str) = generateAttrVector(dlow, nx, ny, np);
         c_code_str = Util.stringDelimitList(c_code, "\n");
         macros_str = generateMacros();
         global_bufs = generateGlobalBufs();
@@ -312,7 +313,7 @@ algorithm
           " // number of outputvar on topmodel\n","#define NI ",ni_str," // number of inputvar on topmodel\n",
           "#define NR ",nres_str," // number of residuals for initialialization function\n",
           "#define MAXORD 5\n","#define time (*t)\n","\n",global_bufs,"char *model_name=\"",
-          class_str,"\";\n",c_code_str,c_code2_str,"\n"});
+          class_str,"\";\n",c_code_str,c_code2_str,"\n",c_code3_str,"\n"});
         str = Util.stringAppendList({str1,macros_str,"\n"}) "this is done here and not in the above Util.string_append_list VC7.1 cannot compile too complicated c-programs this is removed for now \"typedef struct equation {\\n\", \"  char equation;\\n\", \"  char fileName;\\n\", \"  int   lineNumber;\\n\", \"} equation;\\n\"," ;
       then
         str;
@@ -323,6 +324,258 @@ algorithm
         fail();
   end matchcontinue;
 end generateGlobalData;
+
+protected function generateAttrVector "
+author: PA
+ 
+  Generates a vector, attr[nx+ny+np] where attributes  of variables are stored
+  It is collected for states, variables and parameters.
+  The information is encoded as:
+  1 - Real
+  2 - String
+  4 - Integer
+  8 - Boolean
+  16 - discrete time variable
+"
+  input DAELow.DAELow daelow;
+  input Integer nx "number of states";
+  input Integer ny "number of alg. vars";
+  input Integer np "number of parameters";
+  output String c_code "resulting C code";
+algorithm 
+  outString:=
+  matchcontinue (daelow,nx,ny,np)
+    local
+      Integer arr_size,nx,ny,np;
+      String[:] str_arr,str_arr1,str_arr2;
+      list<String> str_lst;
+      String str,res;
+      DAELow.DAELow dae;
+    case (dae,nx,ny,np) 
+      equation 
+        arr_size = Util.listReduce({nx,ny,np}, int_add);
+        str_arr = fill("0", arr_size);
+        str_arr1 = generateAttrVectorType(dae, str_arr, nx, ny, np);
+        str_arr2 = generateAttrVectorDiscrete(dae, str_arr1, nx, ny, np);
+        str_lst = arrayList(str_arr1);
+        str = Util.stringDelimitList2sep(str_lst, ", ", "\n", 3);
+        res = Util.stringAppendList({"char var_attr[NX+NY+NP]={",str,"};"});
+      then
+        res;
+    case (dae,nx,ny,np)
+      equation 
+        print("generate_fixed_vector failed\n");
+      then
+        fail();
+  end matchcontinue;
+end generateAttrVector;
+
+protected function generateAttrVectorType "
+  author: PA
+ 
+  Helper function to generateAttrVector. Generates the value for the type of v,
+  see generateAttrVector.
+"
+  input DAELow.DAELow inDAELow1;
+  input String[:] inStringArray2;
+  input Integer inInteger3;
+  input Integer inInteger4;
+  input Integer inInteger5;
+  output String[:] outStringArray;
+algorithm 
+  outStringArray:=
+  matchcontinue (inDAELow1,inStringArray2,inInteger3,inInteger4,inInteger5)
+    local
+      list<DAELow.Var> v_lst,kv_lst;
+      String[:] str_arr1,str_arr2,str_arr;
+      DAELow.Variables v,kv;
+      Integer nx,ny,np;
+    case (DAELow.DAELOW(orderedVars = v,knownVars = kv),str_arr,nx,ny,np) /* nx ny np */ 
+      equation 
+        v_lst = DAELow.varList(v);
+        kv_lst = DAELow.varList(kv);
+        str_arr1 = generateAttrVectorType2(v_lst, str_arr, nx, ny, np);
+        str_arr2 = generateAttrVectorType2(kv_lst, str_arr1, nx, ny, np);
+      then
+        str_arr1;
+  end matchcontinue;
+end generateAttrVectorType;
+
+protected function generateAttrVectorType2 "
+  author: PA
+ 
+  Helper function to generateAttrVectorType
+"
+  input list<DAELow.Var> inDAELowVarLst1;
+  input String[:] inStringArray2;
+  input Integer inInteger3;
+  input Integer inInteger4;
+  input Integer inInteger5;
+  output String[:] outStringArray;
+algorithm 
+  outStringArray:=
+  matchcontinue (inDAELowVarLst1,inStringArray2,inInteger3,inInteger4,inInteger5)
+    local
+      String[:] str_arr,str_arr_1,str_arr_2;
+      DAELow.Var v;
+      list<DAELow.Var> vs;
+      Integer nx,ny,np,indx,off,indx_1,varTypeInt;
+      DAELow.VarKind kind;
+      DAE.Type varType;
+      String value,name;
+    case ({},str_arr,_,_,_) then str_arr;  /* nx ny np */ 
+    case ((v :: vs),str_arr,nx,ny,np) /* skip constants */ 
+      equation 
+        DAELow.CONST() = DAELow.varKind(v);
+        str_arr_1 = generateAttrVectorType2(vs, str_arr, nx, ny, np);
+      then
+        str_arr_1;
+    case ((v :: vs),str_arr,nx,ny,np)
+      equation 
+        kind = DAELow.varKind(v);
+        indx = DAELow.varIndex(v);
+        (indx >= 0) = true;
+        off = calcAttrOffset(kind, nx, ny, np);
+        indx_1 = off + indx;
+        varType = DAELow.varType(v);
+        name = DAELow.varOrigName(v);
+        varTypeInt = vartypeAttrInt(varType);
+        value = intString(varTypeInt);
+        value = Util.stringAppendList({"/*",name,":*/",value});
+        str_arr_1 = arrayUpdate(str_arr, indx_1 + 1, value);
+        str_arr_2 = generateAttrVectorType2(vs, str_arr_1, nx, ny, np);
+      then
+        str_arr_2;
+    case ((v :: vs),str_arr,nx,ny,np)
+      equation 
+        print("generate_fixed_vector3 failed\n");
+      then
+        fail();
+  end matchcontinue;
+end generateAttrVectorType2;
+
+protected function vartypeAttrInt " helper function to generateAttrVectorType2
+
+calculates the int value of the type of a variable (1 .. 8)"
+input DAE.Type tp;
+output Integer res;
+algorithm
+  res := matchcontinue (tp) 
+		  case DAE.REAL() then 1;
+	  	case DAE.STRING() then 2;
+	  	case DAE.INT() then 4;
+	  	case DAE.BOOL() then 8;
+  		case DAE.ENUM() then 0;
+	  end matchcontinue;	 
+end vartypeAttrInt;
+
+protected function varDiscreteAttrInt " helper function to generateAttrVectorDiscrete2
+
+calculates the int value of the variability of a variable. 
+0 - continuous time variable
+16 - discrete time variable.
+ "
+input DAE.Type tp;
+input DAELow.VarKind kind;
+output Integer res;
+algorithm
+  res := matchcontinue (tp,kind) 
+	  	case (DAE.REAL(),DAELow.DISCRETE()) then 16;
+	  	case (_,DAELow.DISCRETE()) then 16;
+	  	case (DAE.INT(),_) then 16;
+	  	case (DAE.BOOL(),_) then 16;
+  		case (DAE.ENUM(),_) then 16;
+  		case (_,_) then 0;
+	  end matchcontinue;	 
+end vartypeAttrInt;
+
+protected function generateAttrVectorDiscrete "
+  author: PA
+ 
+  Helper function to generateAttrVector. Generates the value for discrete flag,
+  see generateAttrVector.
+"
+  input DAELow.DAELow inDAELow1;
+  input String[:] inStringArray2;
+  input Integer inInteger3;
+  input Integer inInteger4;
+  input Integer inInteger5;
+  output String[:] outStringArray;
+algorithm 
+  outStringArray:=
+  matchcontinue (inDAELow1,inStringArray2,inInteger3,inInteger4,inInteger5)
+    local
+      list<DAELow.Var> v_lst,kv_lst;
+      String[:] str_arr1,str_arr2,str_arr;
+      DAELow.Variables v,kv;
+      Integer nx,ny,np;
+    case (DAELow.DAELOW(orderedVars = v,knownVars = kv),str_arr,nx,ny,np) /* nx ny np */ 
+      equation 
+        v_lst = DAELow.varList(v);
+        kv_lst = DAELow.varList(kv);
+        str_arr1 = generateAttrVectorDiscrete2(v_lst, str_arr, nx, ny, np);
+        str_arr2 = generateAttrVectorDiscrete2(kv_lst, str_arr1, nx, ny, np);
+        
+      then
+        str_arr2;
+  end matchcontinue;
+end generateAttrVectorDiscrete;
+
+protected function generateAttrVectorDiscrete2 "
+  author: PA
+ 
+  Helper function to generateAttrVectorType
+"
+  input list<DAELow.Var> inDAELowVarLst1;
+  input String[:] inStringArray2;
+  input Integer inInteger3;
+  input Integer inInteger4;
+  input Integer inInteger5;
+  output String[:] outStringArray;
+algorithm 
+  outStringArray:=
+  matchcontinue (inDAELowVarLst1,inStringArray2,inInteger3,inInteger4,inInteger5)
+    local
+      String[:] str_arr,str_arr_1,str_arr_2;
+      DAELow.Var v;
+      list<DAELow.Var> vs;
+      Integer nx,ny,np,indx,off,indx_1,varTypeInt;
+      DAELow.VarKind kind;
+      DAE.Type varType;
+      DAELow.VarKind varKind;
+      String value,name,oldVal;
+    case ({},str_arr,_,_,_) then str_arr;  /* nx ny np */ 
+    case ((v :: vs),str_arr,nx,ny,np) /* skip constants */ 
+      equation 
+        DAELow.CONST() = DAELow.varKind(v);
+        str_arr_1 = generateAttrVectorType2(vs, str_arr, nx, ny, np);
+      then
+        str_arr_1;
+    case ((v :: vs),str_arr,nx,ny,np)
+      equation 
+        kind = DAELow.varKind(v);
+        indx = DAELow.varIndex(v);
+        (indx >= 0) = true;
+        off = calcAttrOffset(kind, nx, ny, np);
+        indx_1 = off + indx;
+        varType = DAELow.varType(v);
+        varKind = DAELow.varKind(v);
+        name = DAELow.varOrigName(v);
+        varTypeInt = varDiscreteAttrInt(varType,varKind);
+        value = intString(varTypeInt);
+        oldVal = str_arr[indx_1+1];
+        value = Util.stringAppendList({oldVal,"+",value});
+        str_arr_1 = arrayUpdate(str_arr, indx_1 + 1, value);
+        str_arr_2 = generateAttrVectorDiscrete2(vs, str_arr_1, nx, ny, np);
+      then
+        str_arr_2;
+    case ((v :: vs),str_arr,nx,ny,np)
+      equation 
+        print("generate_fixed_vector3 failed\n");
+      then
+        fail();
+  end matchcontinue;
+end generateAttrVectorDiscrete2;
 
 protected function generateFixedVector "function: generateFixedVector
  
@@ -481,6 +734,38 @@ algorithm
         fail();
   end matchcontinue;
 end calcFixedOffset;
+
+protected function calcAttrOffset "function: calcAttrOffset
+  author: PA
+ 
+  Calculates the offset for variable attributes int the varAttr vector.
+  The attributes are stored in this order:
+  {states, alg. vars, parameters}.
+"
+  input DAELow.VarKind inVarKind1;
+  input Integer inInteger2;
+  input Integer inInteger3;
+  input Integer inInteger4;
+  output Integer outInteger;
+algorithm 
+  outInteger:=
+  matchcontinue (inVarKind1,inInteger2,inInteger3,inInteger4)
+    local Integer nx,ny,np,offset;
+    case (DAELow.STATE(),_,_,_) then 0;  /* nx ny np states offset: 0 */ 
+    case (DAELow.VARIABLE(),nx,ny,np) then nx ;  /* algebraic variables offset: nx algebraic variables offset: 2nx */ 
+    case (DAELow.DUMMY_DER(),nx,ny,np) then nx ;  /* algebraic variables offset: nx */ 
+    case (DAELow.DUMMY_STATE(),nx,ny,np) then nx; 
+    case (DAELow.DISCRETE(),nx,ny,np) then nx;  /* algebraic variables offset: nx */ 
+    case (DAELow.PARAM(),nx,ny,np) then nx+ny; /* parameter offset: nx+ny */ 
+    case (DAELow.CONST(),nx,ny,np) then nx+ny; /* parameter offset: nx+ny */ 
+    case (DAELow.CONST(),nx,ny,np) then nx+ny; /* constant offset: nx+ny NOTE: should not happend */ 
+    case (_,_,_,_)
+      equation 
+        print("calc_fixed_offset failed\n");
+      then
+        fail();
+  end matchcontinue;
+end calcAttrOffset;
 
 protected function generateGlobalBufs "function: generateGlobalBufs
   author: PA
@@ -2068,12 +2353,22 @@ algorithm
         vars_1 = DAELow.listVar(cont_var);
         eqns_1 = DAELow.listEquation(cont_eqn);
         cont_subsystem_dae = DAELow.DAELOW(vars_1,knvars,eqns_1,se,ie,ae,al,ev);
+        //print("subsystem dae:"); DAELow.dump(cont_subsystem_dae);
         m = DAELow.incidenceMatrix(cont_subsystem_dae);
         m_1 = DAELow.absIncidenceMatrix(m);
         mt_1 = DAELow.transposeMatrix(m_1);
+        //print("mixed system, subsystem incidence matrix:\n");
+        //DAELow.dumpIncidenceMatrix(m);
+        //print("mixed system, calculating jacobian....\n");
         jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_1, mt_1) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
+        //print("mixed system, analyzing jacobian\n");
         jac_tp = DAELow.analyzeJacobian(cont_subsystem_dae, jac);
+        //print("mixed syste, jacobian_str\n"); 
         s = DAELow.jacobianTypeStr(jac_tp);
+        //print("mixed system with Jacobian type: "); print(s); print("\n");
+        //s = DAELow.dumpJacobianStr(jac);
+        //print("jacobian ="); print(s); print("\n");       
+        
         (s2,cg_id_1,f1) = generateOdeSystem2(cont_subsystem_dae, jac, jac_tp, cg_id);
       then
         (s2,cg_id_1,f1);
@@ -2657,22 +2952,29 @@ algorithm
       list<DAELow.Equation> eqn_lst;
       list<DAELow.Var> var_lst;
       list<Exp.ComponentRef> crefs;
-    case (dae,jac,jac_tp,cg_id) /* cg var_id system code cg var_id extra functions code A single array equation */ 
+      
+      /* A single array equation */ 
+    case (dae,jac,jac_tp,cg_id) 
       equation 
         singleArrayEquation(dae);
         (s1,cg_id_1,f1) = generateSingleArrayEqnCode(dae, jac, cg_id);
       then
         (s1,cg_id_1,f1);
-    case ((d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_CONSTANT(),cg_id) /* constant jacobians. Linear system of equations (A x = b) where
-	   A and b are constants. */ 
+ 
+ /* constant jacobians. Linear system of equations (A x = b) where
+	   A and b are constants. TODO: implement symbolic gaussian elimination here. Currently uses dgesv as 
+	   for next case */ 
+    case ((d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_CONSTANT(),cg_id) 
       local list<tuple<Integer, Integer, DAELow.Equation>> jac;
       equation 
         eqn_size = DAELow.equationSize(eqn);
         (s1,cg_id_1,f1) = generateOdeSystem2(d, SOME(jac), DAELow.JAC_TIME_VARYING(), cg_id) "NOTE: Not impl. yet, use time_varying..." ;
       then
         (s1,cg_id_1,f1);
-    case ((d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_TIME_VARYING(),cg_id) /* Time varying jacobian. Linear system of equations that needs to 
-	  be solved during runtime. */ 
+
+	/* Time varying jacobian. Linear system of equations that needs to 
+		  be solved during runtime. */
+    case ((d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_TIME_VARYING(),cg_id)  
       local list<tuple<Integer, Integer, DAELow.Equation>> jac;
       equation 
         eqn_size = DAELow.equationSize(eqn);
@@ -3126,7 +3428,7 @@ algorithm
         indx_1 = indx + 1;
         (cfunc,cg_id_2) = generateOdeSystem2NonlinearResiduals2(rest, indx_1, repl, cg_id_1);
         stmt = Util.stringAppendList({TAB,"res[",indx_str,"] = ",var,";"});
-        exp_func_1 = Codegen.cAddStatements(exp_func, {stmt});
+        exp_func_1 = Codegen.cAddStatements(exp_func, {stmt}); 
         cfunc_1 = Codegen.cMergeFns({exp_func_1,cfunc});
       then
         (cfunc_1,cg_id_2);

@@ -916,7 +916,7 @@ algorithm
         p_1 = SCode.elaborate(p);
         env = Inst.makeEnvFromProgram(p_1, Absyn.IDENT(""));
         env_1 = addVarsToEnv(vars, env);
-      then
+	    then
         env_1;
   end matchcontinue;
 end buildEnvFromSymboltable;
@@ -1574,8 +1574,32 @@ algorithm
         resstr = getClassAttributes(cr, p);
       then
         (resstr,st);
+
+        // list(cr) added here to speed up model editor. Also exists in Ceval
+    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "list"),
+           functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+          (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))  
+      equation 
+        resstr = listClass(cr, p); 
+        resstr = Util.stringAppendList({"\"",resstr,"\""});
+      then
+        (resstr,st);
   end matchcontinue;
 end evaluateGraphicalApi;
+
+protected function listClass "Unparse a class definition and return it in a String"
+  input Absyn.ComponentRef cr "Class name as a ComponentRef";
+  input Absyn.Program p "AST - Program";
+  output String classStr "Class defintition";
+protected  
+	Absyn.Path path;
+	Absyn.Class cl;
+algorithm
+	 path := Absyn.crefToPath(cr);
+   cl := getPathedClassInProgram(path, p);
+   classStr := Dump.unparseStr(Absyn.PROGRAM({cl},Absyn.TOP())) ",false" ;  
+  
+end listClass;
 
 protected function extractAllComponentreplacements "function extractAllComponentreplacements
   author: x02lucpo

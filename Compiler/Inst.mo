@@ -1,7 +1,7 @@
 package Inst "
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet, Department of
+Copyright (c) 1998-2005, Linköpings universitet, Department of 
 Computer and Information Science, PELAB
 
 All rights reserved.
@@ -586,7 +586,7 @@ public function makeEnvFromProgram "function: makeEnvFromProgram
 algorithm 
   env := Builtin.initialEnv();
   env_1 := addProgramToEnv(env, prog, c);
-end makeEnvFromProgram;
+ end makeEnvFromProgram;
 
 public function makeSimpleEnvFromProgram "function: makeSimpleEnvFromProgram
  

@@ -85,10 +85,10 @@ public function strcmp
 end strcmp;
 
 public function stringReplace
-  input String inString1;
-  input String inString2;
-  input String inString3;
-  output String outString;
+  input String str;
+  input String source;
+  input String target;
+  output String res;
 
   external "C" ;
 end stringReplace;

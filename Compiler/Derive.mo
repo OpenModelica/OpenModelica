@@ -476,6 +476,15 @@ algorithm
           Exp.BINARY(Exp.RCONST(1.0),Exp.DIV(Exp.REAL()),
           Exp.BINARY(Exp.CALL(Absyn.IDENT("cos"),{exp},b,c),Exp.POW(Exp.REAL()),
           Exp.RCONST(2.0))),Exp.MUL(Exp.REAL()),exp_1);
+          
+       // derivative of arbitrary function, not dependent of variable, i.e. constant
+		case (Exp.CALL(fname,expl,b,c),tv)
+		  local list<Boolean> bLst;
+      equation 
+        bLst = Util.listMap1(expl,Exp.expContains, Exp.CREF(tv,Exp.REAL()));
+        false = Util.listReduce(bLst,boolOr); 
+      then
+        Exp.RCONST(0.0); 
 
     case ((e as Exp.LBINARY(exp = e1,operator = op,logical = e2)),tv)
       equation 

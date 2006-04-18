@@ -9298,6 +9298,7 @@ algorithm
     case JAC_CONSTANT() then "Jacobian Constant"; 
     case JAC_TIME_VARYING() then "Jacobian Time varying"; 
     case JAC_NONLINEAR() then "Jacobian Nonlinear"; 
+    case JAC_NO_ANALYTIC() then "No analythic jacobian";
   end matchcontinue;
 end jacobianTypeStr;
 
