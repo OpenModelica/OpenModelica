@@ -6059,7 +6059,7 @@ algorithm
     case (str,0) then "";  /* n */ 
     case (str,level)
       equation 
-        new_level = level + -1;
+        new_level = level + (-1);
         new_str = genStringNTime(str, new_level);
         res_str = stringAppend(str, new_str);
       then
