@@ -67,15 +67,10 @@ libsim.a : $(SIMOBJS)
 	$(AR) $@ $(SIMOBJS)
 
 libf2c.a :
-ifeq ($(OSTYP),$(OS_MSYS))
 	cd libf2c && $(MAKE) -f makefile.mingw
-else
-	cd libf2c && $(MAKE) -f makefile.u
-endif
-
 
 clean : 
-	cd ./libf2c && $(MAKE) -f makefile.u clean
+	cd ./libf2c && $(MAKE) -f makefile.mingw clean
 	rm -f libc_runtime.a
 	rm -f libsim.a
 	rm -f $(OBJS)
