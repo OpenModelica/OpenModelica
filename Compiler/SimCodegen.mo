@@ -487,7 +487,7 @@ algorithm
   		case (DAE.ENUM(),_) then 16;
   		case (_,_) then 0;
 	  end matchcontinue;	 
-end vartypeAttrInt;
+end varDiscreteAttrInt;
 
 protected function generateAttrVectorDiscrete "
   author: PA
