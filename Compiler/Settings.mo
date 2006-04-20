@@ -110,6 +110,18 @@ public function getModelicaPath
   external "C" ;
 end getModelicaPath;
 
+public function getEcho
+  output Integer echo;
+
+  external "C" ;
+end getModelicaPath;
+
+public function setEcho
+  input Integer echo;
+
+  external "C" ;
+end getModelicaPath;
+
 public function dumpSettings
 
   external "C" ;

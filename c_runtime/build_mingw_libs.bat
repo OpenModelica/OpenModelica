@@ -5,8 +5,8 @@ rem OPENMODELICAHOME must be set in order to find the mingw compilers which
 rem are assumed to be in %OPENMODELICAHOME%\MinGW\bin
 
 set OLDPATH=%PATH%
-pushd "%OPENMODELICAHOME%\MinGW\bin"
-set PATH=%CD%
+pushd "%OMDEV%\tools\MinGW\bin"
+set PATH=%CD%;%OMDEV%\tools\msys\bin\
 popd
 del ..\mosh\src\options.o *.o *.a
 pushd ..\mosh\src

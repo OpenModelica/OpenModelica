@@ -2247,6 +2247,27 @@ algorithm
   end matchcontinue;
 end cevalInteractiveFunctions;
 
+
+protected function setEcho 
+  input Boolean echo;
+
+algorithm
+  _:=
+  matchcontinue (echo)
+    local
+    case (true)
+      equation 
+        Settings.setEcho(1);
+      then
+        ();
+    case (false)
+      equation 
+        Settings.setEcho(0);
+      then
+        ();
+  end matchcontinue; 
+end setEcho;
+
 protected function generateMakefilename "function generateMakefilename
  
 "
@@ -2567,7 +2588,7 @@ algorithm
   _:=
   matchcontinue (inString1,inStringLst2,inString3)
     local
-      String pd,omhome,omhome_1,cit,cd_path,libsfilename,libs_str,s_call,fileprefix,file_dir,command,filename,str;
+      String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,s_call,fileprefix,file_dir,command,filename,str;
       list<String> libs;
     case (fileprefix,libs,file_dir) /* executable name external libs directory for mo-file */ 
       equation 
@@ -2575,12 +2596,13 @@ algorithm
         pd = System.pathDelimiter();
         omhome = Settings.getInstallationDirectoryPath();
         omhome_1 = System.stringReplace(omhome, "\"", "");
-        cit = winCitation();
         cd_path = System.pwd();
         libsfilename = stringAppend(fileprefix, ".libs");
         libs_str = Util.stringDelimitList(libs, " ");
         System.writeFile(libsfilename, libs_str);
-        s_call = Util.stringAppendList({cit,omhome_1,pd,"bin",pd,"Compile",cit," ",fileprefix}) "\"\"\",cd_path,\"\"\",\" \", ,\" \",cit,file_dir,\" \",cit" ;
+        s_call = Util.stringAppendList({"\"",omhome_1,pd,"bin",pd,"Compile","\""," ",fileprefix}) "\"\"\",cd_path,\"\"\",\" \", ,\" \",cit,file_dir,\" \",cit" ;
+        print(s_call);
+        print("<<<<<\n");
         0 = System.systemCall(s_call) "> output.log 2>&1 = redirect stderr to stdout and put it in output.log print s_call & print \"\\n\" &" ;
       then
         ();
@@ -2589,11 +2611,12 @@ algorithm
         command = Settings.getCompileCommand();
         false = Util.isEmptyString(command);
         cd_path = System.pwd() "needed when the above rule does not work" ;
-        cit = winCitation();
         libs_str = Util.stringDelimitList(libs, " ");
         libsfilename = stringAppend(fileprefix, ".libs");
         System.writeFile(libsfilename, libs_str);
         s_call = Util.stringAppendList({command," ",fileprefix}) "cit,cd_path,cit,\" \", ,\" \",cit,file_dir,\" \",cit" ;
+        print(s_call);
+        print("<<<<<222\n");
         0 = System.systemCall(s_call) "> output.log 2>&1 = redirect stderr to stdout and put it in output.log print s_call & print \"\\n\" &" ;
       then
         ();

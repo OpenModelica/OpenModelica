@@ -53,6 +53,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 public import OpenModelica.Compiler.Values;
 
+
+
 public function removeFirstAndLastChar
   input String inString;
   output String outString;
@@ -83,6 +85,16 @@ public function strcmp
 
   external "C" ;
 end strcmp;
+
+public function strncmp
+  input String inString1;
+  input String inString2;
+  input Integer len;
+  output Integer outInteger;
+
+  external "C" ;
+end strcmp;
+
 
 public function stringReplace
   input String str;

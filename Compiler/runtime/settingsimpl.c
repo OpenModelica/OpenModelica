@@ -9,7 +9,7 @@ char* installationDirectoryPath = 0;
 char* tempDirectoryPath = 0;
 char* plotCommand = 0;
 char* modelicaPath = 0;
-
+int echo = 1; //true
 void Settings_5finit(void)
 {
   
@@ -159,6 +159,24 @@ RML_BEGIN_LABEL(Settings__getModelicaPath)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(Settings__getEcho)
+{
+  rmlA0	= (void*) mk_icon(echo);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+
+
+RML_BEGIN_LABEL(Settings__setEcho)
+{
+  echo = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA0));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+
 
 RML_BEGIN_LABEL(Settings__dumpSettings)
 {

@@ -62,6 +62,8 @@ public import OpenModelica.Compiler.Values;
 
 public import OpenModelica.Compiler.Env;
 
+public import OpenModelica.Compiler.Settings;
+
 public 
 uniontype InteractiveStmt "An Statement given in the interactive environment can either be 
     an Algorithm statement or an expression.
@@ -235,14 +237,14 @@ algorithm
     case (ISTMTS(interactiveStmtLst = {x},semicolon = semicolon),st,verbose)
       equation 
         (res,newst) = evaluate2(ISTMTS({x},verbose), st);
-        echo = getEcho(newst);
+        echo = getEcho();
         res_1 = selectResultstr(res, semicolon, verbose, echo);
       then
         (res_1,newst);
     case (ISTMTS(interactiveStmtLst = (x :: xs),semicolon = semicolon),st,verbose)
       equation 
         (res,newst) = evaluate2(ISTMTS({x},semicolon), st);
-        echo = getEcho(newst);
+        echo = getEcho();
         res_1 = selectResultstr(res, semicolon, verbose, echo);
         (res2,newst_1) = evaluate(ISTMTS(xs,semicolon), newst, verbose);
         res_2 = Util.stringAppendList({res_1,res2});
@@ -250,6 +252,8 @@ algorithm
         (res_2,newst_1);
   end matchcontinue;
 end evaluate;
+
+
 
 protected function selectResultstr "function: selectResultstr
  
@@ -284,7 +288,6 @@ protected function getEcho "function: getEcho
  
   Return echo variable, which determines if result should be printed or not.
 "
-  input InteractiveSymbolTable inInteractiveSymbolTable;
   output Boolean outBoolean;
 algorithm 
   outBoolean:=
@@ -293,14 +296,12 @@ algorithm
       list<Env.Frame> env;
       Boolean res;
       InteractiveSymbolTable st;
-    case (st)
+    case ()
       equation 
-        env = buildEnvFromSymboltable(st);
-        (Values.BOOL(res),_) = Ceval.ceval(env, Exp.CREF(Exp.CREF_IDENT("$echo",{}),Exp.BOOL()), 
-          true, SOME(st), NONE, Ceval.MSG());
+        0 = Settings.getEcho();
       then
-        res;
-    case (_) then true; 
+        false;
+    case () then true; 
   end matchcontinue;
 end getEcho;
 

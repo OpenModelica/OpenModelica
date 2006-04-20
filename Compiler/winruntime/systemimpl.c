@@ -369,6 +369,19 @@ RML_BEGIN_LABEL(System__strcmp)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__strncmp)
+{
+  char *str = RML_STRINGDATA(rmlA0);
+  char *str2 = RML_STRINGDATA(rmlA1);
+  int len = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA2));
+  int res= strncmp(str,str2,len);
+
+  rmlA0 = (void*) mk_icon(res);
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__stringReplace)
 {
   char *str = /* strdup( */RML_STRINGDATA(rmlA0)/* ) */;
