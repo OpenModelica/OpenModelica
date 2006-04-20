@@ -2601,8 +2601,8 @@ algorithm
         libs_str = Util.stringDelimitList(libs, " ");
         System.writeFile(libsfilename, libs_str);
         s_call = Util.stringAppendList({"\"",omhome_1,pd,"bin",pd,"Compile","\""," ",fileprefix}) "\"\"\",cd_path,\"\"\",\" \", ,\" \",cit,file_dir,\" \",cit" ;
-        print(s_call);
-        print("<<<<<\n");
+ //       print(s_call);
+ //       print("<<<<<\n");
         0 = System.systemCall(s_call) "> output.log 2>&1 = redirect stderr to stdout and put it in output.log print s_call & print \"\\n\" &" ;
       then
         ();
@@ -2615,8 +2615,8 @@ algorithm
         libsfilename = stringAppend(fileprefix, ".libs");
         System.writeFile(libsfilename, libs_str);
         s_call = Util.stringAppendList({command," ",fileprefix}) "cit,cd_path,cit,\" \", ,\" \",cit,file_dir,\" \",cit" ;
-        print(s_call);
-        print("<<<<<222\n");
+//        print(s_call);
+//        print("<<<<<222\n");
         0 = System.systemCall(s_call) "> output.log 2>&1 = redirect stderr to stdout and put it in output.log print s_call & print \"\\n\" &" ;
       then
         ();
