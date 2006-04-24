@@ -1378,6 +1378,14 @@ algorithm
       then
         (resstr,st);
 
+     case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getDocumentationAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+      local Absyn.Path path;
+      equation 
+        path = Absyn.crefToPath(cr);
+        resstr = getDocumentationAnnotation(path, p);
+      then
+        (resstr,st);
+
     case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getPackages"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       local Absyn.Path path;
       equation 
@@ -10062,6 +10070,33 @@ algorithm
   end matchcontinue;
 end getDiagramAnnotation;
 
+protected function getDocumentationAnnotation "function: getDocumentationAnnotation
+ 
+  Thisfunction takes a Path and a Program and returns a comma separated 
+  string of values for the Documentation annotation for the class named by the 
+  first argument.
+"
+  input Absyn.Path inPath;
+  input Absyn.Program inProgram;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inPath,inProgram)
+    local
+      Absyn.Class cdef;
+      String str;
+      Absyn.Path modelpath;
+      Absyn.Program p;
+    case (modelpath,p)
+      equation 
+        cdef = getPathedClassInProgram(modelpath, p);
+        str = getDocumentationAnnotationInClass(cdef);
+      then
+        str;
+    case (_,_) then "{}"; 
+  end matchcontinue;
+end getDocumentationAnnotation;
+
 protected function getIconAnnotation "function: getIconAnnotation
   Thisfunction takes a Path and a Program and returns a comma separated
   string of values for the icon annotation for the class named by the 
@@ -10935,6 +10970,39 @@ algorithm
   end matchcontinue;
 end getDiagramAnnotationInClass;
 
+protected function getDocumentationAnnotationInClass "function: getDocumentationAnnotationInClass
+ 
+  Retrieve the documentation annotation as a string from the class passed as 
+  argument.
+"
+  input Absyn.Class inClass;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inClass)
+    local
+      list<Absyn.ElementItem> publst,protlst,lst;
+      String str,res;
+      list<Absyn.ClassPart> parts;
+      list<Absyn.ElementArg> annlst;
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
+      equation 
+        publst = getPublicList(parts) "class def." ;
+        protlst = getProtectedList(parts);
+        lst = listAppend(publst, protlst);
+        str = getDocumentationAnnotationInElementitemlist(lst);
+      then
+        str;
+    case (Absyn.CLASS(body = Absyn.DERIVED(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_)))))
+      equation 
+        str = getDocumentationAnnotationStr(annlst);
+        res = Util.stringAppendList({"{",str,"}"});
+      then
+        res;
+    case (_) then ""; 
+  end matchcontinue;
+end getDocumentationAnnotationInClass;
+
 protected function getDiagramAnnotationInElementitemlist "function: getDiagramAnnotationInElementitemlist
  
   Retrieve the diagram annotation from an element item list passed as
@@ -10965,6 +11033,37 @@ algorithm
   end matchcontinue;
 end getDiagramAnnotationInElementitemlist;
 
+protected function getDocumentationAnnotationInElementitemlist "function: getDocumentationAnnotationInElementitemlist
+ 
+  Retrieve the into annotation from an element item list passed as
+  argument.
+"
+  input list<Absyn.ElementItem> inAbsynElementItemLst;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inAbsynElementItemLst)
+    local
+      String s1,s2,str;
+      list<Absyn.ElementArg> annlst;
+      list<Absyn.ElementItem> xs;
+    case {} then ""; 
+    case ((Absyn.ANNOTATIONITEM(annotation_ = Absyn.ANNOTATION(elementArgs = annlst)) :: _))
+      equation 
+        s1 = getDocumentationAnnotationStr(annlst);
+        s2 = stringAppend("{", s1);
+        str = stringAppend(s2, "}");
+      then
+        str;
+    case ((_ :: xs))
+      equation 
+        str = getDocumentationAnnotationInElementitemlist(xs);
+      then
+        str;
+  end matchcontinue;
+end getDocumentationAnnotationInElementitemlist;
+
+
 protected function getDiagramAnnotationStr "function: getDiagramAnnotationStr
  
   Helperfunction to get_diagram_anonotation_in_elementitemlist.
@@ -10991,6 +11090,83 @@ algorithm
         str;
   end matchcontinue;
 end getDiagramAnnotationStr;
+
+protected function getDocumentationAnnotationStr "function: getDocumentationAnnotationStr
+ 
+  Helperfunction to getDocumentationAnnotationInElementitemlist.
+"
+  input list<Absyn.ElementArg> inAbsynElementArgLst;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inAbsynElementArgLst)
+    local
+      String str;
+      Absyn.ElementArg ann;
+      Option<Absyn.Modification> mod;
+      list<Absyn.ElementArg> xs;
+    case (((ann as Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "Documentation"),modification = mod)) :: _))
+      equation 
+        str = getDocumentationAnnotationString(mod);
+      then
+        str;
+    case ((_ :: xs))
+      equation 
+        str = getDocumentationAnnotationStr(xs);
+      then
+        str;
+  end matchcontinue;
+end getDocumentationAnnotationStr;
+
+protected function getDocumentationAnnotationString
+  input Option<Absyn.Modification> mod;
+  output String docStr;
+algorithm
+  docStr := matchcontinue (mod)
+  local list<Absyn.ElementArg> arglst; 
+  case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
+  	local	
+    list<String> strs;
+    String s;
+  	equation 
+  	  strs = getDocumentationAnnotationString2(arglst);
+  	  s = Util.stringDelimitList(strs,",");
+   then 	s;
+  case (_)
+    then "";
+  end matchcontinue;
+end getDocumentationAnnotationString;       
+
+protected function getDocumentationAnnotationString2 "Helper function to getDocumentationAnnotationString"
+  input list<Absyn.ElementArg> eltArgs;
+  output list<String> strs;
+algorithm
+  strs := matchcontinue (eltArgs) 
+  local Absyn.Exp exp;
+    list<Absyn.ElementArg> xs;
+		case ({}) then {};
+		case (Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "info"),
+		  		modification=SOME(Absyn.CLASSMOD(expOption=SOME(exp))))::xs) 
+		  local String s; list<String> ss;		
+		  equation
+		  		s = Dump.printExpStr(exp);
+		  		ss = getDocumentationAnnotationString2(xs);
+		  then s::ss;
+		    
+		case (Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "revisions"),
+		  		modification=SOME(Absyn.CLASSMOD(expOption=SOME(exp))))::xs) 
+		  local String s; list<String> ss;		
+		  equation
+		  		s = Dump.printExpStr(exp);
+		  		ss = getDocumentationAnnotationString2(xs);
+		  then s::ss;
+		case (_::xs) 
+      local list<String> ss;		
+		  equation
+		  		ss = getDocumentationAnnotationString2(xs);
+		  then ss;
+		end matchcontinue;
+end getDocumentationAnnotationString2;
 
 protected function getNthPublicConnectorStr "function: getNthPublicConnectorStr
  
