@@ -202,12 +202,7 @@ protected import OpenModelica.Compiler.Ceval;
 protected import OpenModelica.Compiler.Error;
 
 public constant InteractiveSymbolTable emptySymboltable=SYMBOLTABLE(Absyn.PROGRAM({},Absyn.TOP()),{},{},
-          {IVAR("$echo",Values.BOOL(true),(Types.T_BOOL({}),NONE))},{}) "adrpo -- not used
-with \"RTOpts.rml\"
-with \"Codegen.rml\"
-with \"ErrorExt.rml\"
-
-- Empty Interactive Symbol Table" ;
+          {},{}) "Empty Interactive Symbol Table" ;
 
 public function evaluate "function: evaluate
  

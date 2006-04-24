@@ -252,6 +252,7 @@ algorithm
         vt = valueType(v);
       then
         (e_1,Types.PROP(vt,c));
+       
     case (e,(prop as Types.PROP_TUPLE(tupleConst = c)),Types.C_CONST(),impl,env) /* as false */ 
       local Types.TupleConst c;
       equation 

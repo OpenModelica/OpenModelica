@@ -271,28 +271,28 @@ algorithm
       list<DAE.Element> lfunc,lnofunc,l;
     case (p)
       equation 
-        Debug.fprintln("insttr", "instantiate");
+        //Debug.fprintln("insttr", "instantiate");
         pnofunc = Util.listSelect(p, isNotFunction);
         pfunc = Util.listSelect(p, SCode.isFunction);
         env = Builtin.initialEnv();
-        Debug.fprintln("insttr", "Instantiating functions");
+        //Debug.fprintln("insttr", "Instantiating functions");
         pfuncnames = Util.listMap(pfunc, SCode.className);
         str1 = Util.stringDelimitList(pfuncnames, ", ");
-        Debug.fprint("insttr", "Instantiating functions: ");
-        Debug.fprintln("insttr", str1);
+        //Debug.fprint("insttr", "Instantiating functions: ");
+        //Debug.fprintln("insttr", str1);
         envimpl = Env.extendFrameClasses(env, p) "pfunc" ;
         (lfunc,envimpl_1) = instProgramImplicit(envimpl, pfunc);
-        Debug.fprint("insttr", "Instantiating other classes: ");
+        //Debug.fprint("insttr", "Instantiating other classes: ");
         pnofuncnames = Util.listMap(pnofunc, SCode.className);
         str2 = Util.stringDelimitList(pnofuncnames, ", ");
-        Debug.fprintln("insttr", str2);
+        //Debug.fprintln("insttr", str2);
         lnofunc = instProgram(envimpl_1, pnofunc);
         l = listAppend(lfunc, lnofunc);
       then
         DAE.DAE(l);
     case _
       equation 
-        Debug.fprintln("failtrace", "instantiate failed");
+        //Debug.fprintln("failtrace", "instantiate failed");
       then
         fail();
   end matchcontinue;
@@ -315,7 +315,7 @@ algorithm
       list<SCode.Class> p;
     case (p)
       equation 
-        Debug.fprintln("insttr", "instantiate_implicit");
+        //Debug.fprintln("insttr", "instantiate_implicit");
         env = Builtin.initialEnv();
         env_1 = Env.extendFrameClasses(env, p);
         (l,_) = instProgramImplicit(env_1, p);
@@ -323,7 +323,7 @@ algorithm
         DAE.DAE(l);
     case _
       equation 
-        Debug.fprintln("failtrace", "instantiate_implicit failed");
+        //Debug.fprintln("failtrace", "instantiate_implicit failed");
       then
         fail();
   end matchcontinue;
@@ -388,7 +388,7 @@ public function instantiateClassImplicit "function: instantiateClassImplicit
   author: PA
  
   Similar to instantiate_class, i.e. instantation of arbitrary classes
-  but this one instantiates the class implicit, e.g. for functions.
+  but this one instantiates the class implicit, which is less costly.
 "
   input SCode.Program inProgram;
   input SCode.Path inPath;
@@ -411,7 +411,7 @@ algorithm
         fail();
     case ((cdecls as (_ :: _)),(path as Absyn.IDENT(name = name2))) /* top level class */ 
       equation 
-        env = Builtin.initialEnv();
+        env = Builtin.initialEnv(); 
         (env_1,dae1) = instClassDecls(env, cdecls, path);
         (dae,env_2) = instClassInProgramImplicit(env_1, cdecls, path);
       then
@@ -421,6 +421,7 @@ algorithm
         env = Builtin.initialEnv();
         (env_1,_) = instClassDecls(env, cdecls, path);
         ((cdef as SCode.CLASS(n,_,_,_,_)),env_2) = Lookup.lookupClass(env_1, path, true);
+        env_2 = Env.extendFrameC(env_2, cdef);
         (env,dae) = implicitInstantiation(env_2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           cdef, {}, false);
       then
@@ -432,6 +433,56 @@ algorithm
         fail();
   end matchcontinue;
 end instantiateClassImplicit;
+
+public function instantiateFunctionImplicit "function: instantiateFunctionImplicit
+  author: PA
+ 
+  Similar to instantiateClassImplict, i.e. instantation of arbitrary classes
+  but this one instantiates the class implicit for functions.
+"
+  input SCode.Program inProgram;
+  input SCode.Path inPath;
+  output DAE.DAElist outDAElist;
+  output Env outEnv;
+algorithm 
+  (outDAElist,outEnv):=
+  matchcontinue (inProgram,inPath)
+    local
+      Absyn.Path cr,path;
+      list<Env.Frame> env,env_1,env_2;
+      list<DAE.Element> dae1,dae;
+      list<SCode.Class> cdecls;
+      String name2,n,name;
+      SCode.Class cdef;
+    case ({},cr)
+      equation 
+        Error.addMessage(Error.NO_CLASSES_LOADED, {});
+      then
+        fail();
+    case ((cdecls as (_ :: _)),(path as Absyn.IDENT(name = name2))) /* top level class */ 
+      equation 
+        env = Builtin.initialEnv(); 
+        (env_1,dae1) = instClassDecls(env, cdecls, path);
+        (dae,env_2) = instFunctionInProgramImplicit(env_1, cdecls, path);
+      then
+        (DAE.DAE(dae),env_2);
+    case ((cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */ 
+      equation 
+        env = Builtin.initialEnv();
+        (env_1,_) = instClassDecls(env, cdecls, path);
+        ((cdef as SCode.CLASS(n,_,_,_,_)),env_2) = Lookup.lookupClass(env_1, path, true);
+        env_2 = Env.extendFrameC(env_2, cdef);
+        (env,dae) = implicitFunctionInstantiation(env_2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          cdef, {}, false);
+      then
+        (DAE.DAE(dae),env);
+    case (_,_)
+      equation 
+        print("-instantiateFunctionImplicit failed\n");
+      then
+        fail();
+  end matchcontinue;
+end instantiateFunctionImplicit;
 
 protected function instClassInProgram "function: instClassInProgram
  
@@ -467,7 +518,7 @@ algorithm
       then
         (dae,env);
     case (env,{},_) then ({},env); 
-    case (env,_,_) /* Debug.fprint(\"failtrace\", \"inst_class_in_program failed\\n\") */  then fail(); 
+    case (env,_,_) /* //Debug.fprint(\"failtrace\", \"inst_class_in_program failed\\n\") */  then fail(); 
   end matchcontinue;
 end instClassInProgram;
 
@@ -494,6 +545,7 @@ algorithm
     case (env,((c as SCode.CLASS(name = name)) :: cs),Absyn.IDENT(name = name2))
       equation 
         equality(name = name2);
+        env = Env.extendFrameC(env, c);
         (env_1,dae) = implicitInstantiation(env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
           {}, false) "packimpl" ;
       then
@@ -505,9 +557,48 @@ algorithm
       then
         (dae,env);
     case (env,{},_) then ({},env); 
-    case (env,_,_) /* Debug.fprint(\"failtrace\", \"inst_class_in_program failed\\n\") */  then fail(); 
+    case (env,_,_) /* //Debug.fprint(\"failtrace\", \"inst_class_in_program failed\\n\") */  then fail(); 
   end matchcontinue;
 end instClassInProgramImplicit;
+
+protected function instFunctionInProgramImplicit "function: instFunctionInProgramImplicit
+ 
+  Instantitates a specific function in a Program using implicit instatiation. 
+  The class must reside on top level.
+"
+  input Env inEnv;
+  input SCode.Program inProgram;
+  input SCode.Path inPath;
+  output list<DAE.Element> outDAEElementLst;
+  output Env outEnv;
+algorithm 
+  (outDAEElementLst,outEnv):=
+  matchcontinue (inEnv,inProgram,inPath)
+    local
+      list<Env.Frame> env_1,env;
+      list<DAE.Element> dae;
+      SCode.Class c;
+      String name,name2;
+      list<SCode.Class> cs;
+      Absyn.Path path;
+    case (env,((c as SCode.CLASS(name = name)) :: cs),Absyn.IDENT(name = name2))
+      equation 
+        equality(name = name2);
+        env = Env.extendFrameC(env, c);
+        (env_1,dae) = implicitFunctionInstantiation(env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
+          {}, false) "packimpl" ;
+      then
+        (dae,env_1);
+    case (env,((c as SCode.CLASS(name = name)) :: cs),(path as Absyn.IDENT(name = name2)))
+      equation 
+        failure(equality(name = name2));
+        (dae,env) = instFunctionInProgramImplicit(env, cs, path);
+      then
+        (dae,env);
+    case (env,{},_) then ({},env); 
+    case (env,_,_)  then fail(); 
+  end matchcontinue;
+end instFunctionInProgramImplicit;
 
 protected function instClassDecls "function: instClassDecls
  
@@ -645,16 +736,16 @@ algorithm
         fail();
     case (env,{(c as SCode.CLASS(name = n))})
       equation 
-        Debug.fprint("insttr", "inst_program1: ");
-        Debug.fprint("insttr", n);
-        Debug.fprintln("insttr", "");
+        //Debug.fprint("insttr", "inst_program1: ");
+        //Debug.fprint("insttr", n);
+        //Debug.fprintln("insttr", "");
         (dae,env_1,csets,_,_) = instClass(env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
           {}, false, TOP_CALL()) "Env.extend_frame_c(env,c) => env\' & packimp" ;
       then
         {DAE.COMP(n,DAE.DAE(dae))};
     case (env,(c :: (cs as (_ :: _))))
       equation 
-        Debug.fprintln("insttr", "inst_program2");
+        //Debug.fprintln("insttr", "inst_program2");
         (env_1,dae1) = instClassDecl(env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
           {}, false) "packimpl" ;
         dae2 = instProgram(env_1, cs) "Env.extend_frame_c(env,c) => env\' &" ;
@@ -663,7 +754,7 @@ algorithm
         dae;
     case (_,_)
       equation 
-        Debug.fprintln("failtrace", "- inst_program failed");
+        //Debug.fprintln("failtrace", "- inst_program failed");
       then
         fail();
   end matchcontinue;
@@ -690,9 +781,10 @@ algorithm
       list<SCode.Class> cs;
     case (env,((c as SCode.CLASS(name = n,restricion = restr)) :: cs))
       equation 
-        Debug.fprint("insttr", "inst_program_implicit: ");
-        Debug.fprint("insttr", n);
-        Debug.fprintln("insttr", "");
+        //Debug.fprint("insttr", "inst_program_implicit: ");
+        //Debug.fprint("insttr", n);
+        //Debug.fprintln("insttr", "");
+        env = Env.extendFrameC(env, c);
         (env_1,dae1) = implicitInstantiation(env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
           {}, false) "packimpl" ;
         (dae2,env_2) = instProgramImplicit(env_1, cs);
@@ -701,7 +793,7 @@ algorithm
         (dae,env_2);
     case (env,{})
       equation 
-        Debug.fprintln("insttr", "inst_program_implicit (end)");
+        //Debug.fprintln("insttr", "inst_program_implicit (end)");
       then
         ({},env);
   end matchcontinue;
@@ -782,9 +874,9 @@ algorithm
         (dae,env_3,Connect.SETS({},crs),ty,ci_state_1);
     case (_,_,_,_,SCode.CLASS(name = n),_,impl,_)
       equation 
-        Debug.fprint("failtrace", "- inst_class ");
-        Debug.fprint("failtrace", n);
-        Debug.fprint("failtrace", " failed\n");
+        //Debug.fprint("failtrace", "- inst_class ");
+        //Debug.fprint("failtrace", n);
+        //Debug.fprint("failtrace", " failed\n");
       then
         fail();
   end matchcontinue;
@@ -854,9 +946,9 @@ algorithm
         (dae,env_3,Connect.SETS({},crs),ty,ci_state_1);
     case (_,_,_,_,SCode.CLASS(name = n),_,impl,_)
       equation 
-        Debug.fprint("failtrace", "- inst_class_basictype ");
-        Debug.fprint("failtrace", n);
-        Debug.fprint("failtrace", " failed\n");
+        //Debug.fprint("failtrace", "- inst_class_basictype ");
+        //Debug.fprint("failtrace", n);
+        //Debug.fprint("failtrace", " failed\n");
       then
         fail();
   end matchcontinue;
@@ -920,27 +1012,28 @@ algorithm
     case (env,mods,pre,Connect.SETS(connection = crs),ci_state,cls,_,_,(impl as false),packimpl) /* No DAE Ignore functions if not implicit instantiation No DAE */ 
       equation 
         true = SCode.isFunction(cls);
-        Debug.fprint("insttr", "Ignoring function in explicit instantiation: ");
+        //Debug.fprint("insttr", "Ignoring function in explicit instantiation: ");
         clsname = SCode.className(cls);
-        Debug.fprint("insttr", clsname);
-        Debug.fprint("insttr", "\n");
+        //Debug.fprint("insttr", clsname);
+        //Debug.fprint("insttr", "\n");
       then
         ({},env,Connect.SETS({},crs),ci_state,{},NONE);
     case (env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restricion = r,parts = d)),prot,inst_dims,impl,packimpl)
       equation 
         clsname = SCode.className(c) "print \"inst_class_in\" & print n & print \"\\n\" &" ;
-        Debug.fprint("insttr", "Instantiating class: ");
+        //print("instClassIn");print(n);print("\n");
+        //Debug.fprint("insttr", "Instantiating class: ");
         implstr = Util.if_(impl, " (implicit) ", " (explicit) ");
-        Debug.fprint("insttr", implstr);
-        Debug.fprint("insttr", clsname);
-        Debug.fprint("insttr", "\n");
+        //Debug.fprint("insttr", implstr);
+        //Debug.fprint("insttr", clsname);
+        //Debug.fprint("insttr", "\n");
         (l,env_1,csets_1,ci_state_1,tys,bc) = instClassdef(env, mods, pre, csets, ci_state, d, r, prot, inst_dims, 
           impl, packimpl);
       then
         (l,env_1,csets_1,ci_state_1,tys,bc);
     case (_,_,_,csets,_,_,_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "- inst_class_in failed\n");
+        //Debug.fprint("failtrace", "- inst_class_in failed\n");
       then
         fail();
   end matchcontinue;
@@ -1235,10 +1328,10 @@ algorithm
         fail();
     case (env,_,_,_,_,_,_,_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "- inst_classdef failed\n class :");
+        //Debug.fprint("failtrace", "- inst_classdef failed\n class :");
         s = Env.printEnvPathStr(env);
-        Debug.fprint("failtrace", s);
-        Debug.fprint("failtrace", "\n");
+        //Debug.fprint("failtrace", s);
+        //Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;
@@ -1446,11 +1539,11 @@ algorithm
   (outEnv,outState):=
   matchcontinue (inEnv,inMod,inPrefix,inSets,inState,inClassDef,inRestriction,inBoolean,inInstDims)
     local
-      ClassInf.State ci_state1,ci_state,new_ci_state,new_ci_state_1;
-      list<SCode.Element> cdefelts,extendselts,els;
-      list<Env.Frame> env1,env2,env,cenv,cenv_2,env_2;
+      ClassInf.State ci_state1,ci_state,new_ci_state,new_ci_state_1,ci_state2;
+      list<SCode.Element> cdefelts,extendselts,els,allEls;
+      list<Env.Frame> env1,env2,env,cenv,cenv_2,env_2,env3;
       Types.Mod emods,mods,m,mod_1,mods_1,mods_2;
-      list<tuple<SCode.Element, Mod>> extcomps;
+      list<tuple<SCode.Element, Mod>> extcomps,allEls2,constantEls;
       list<SCode.Equation> eqs2,initeqs2,eqs,initeqs;
       list<SCode.Algorithm> alg2,initalg2,alg,initalg;
       Prefix.Prefix pre;
@@ -1463,15 +1556,24 @@ algorithm
       Absyn.Path cn;
       Option<list<Absyn.Subscript>> ad;
       SCode.Mod mod;
-    case (env,mods,pre,csets,ci_state,SCode.PARTS(elementLst = els,equationLst = eqs,initialEquation = initeqs,algorithmLst = alg,initialAlgorithm = initalg),re,prot,inst_dims)
+    case (env,mods,pre,csets,ci_state,SCode.PARTS(elementLst = els,equationLst = eqs,initialEquation = initeqs,
+      		algorithmLst = alg,initialAlgorithm = initalg),re,prot,inst_dims)
+      		  local String str;
       equation 
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         cdefelts = classdefAndImpElts(els);
         extendselts = extendsElts(els);
-        env1 = addClassdefsToEnv(env, cdefelts, true) "1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)" ;
+        env1 = addClassdefsToEnv(env, cdefelts, true) " CLASSDEF & IMPORT nodes are added to env" ;
         (env2,emods,extcomps,eqs2,initeqs2,alg2,initalg2) = instExtendsList(env1, mods, extendselts, ci_state, true) "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations." ;
+				allEls = listAppend(extendselts,els);
+				allEls2=addNomod(allEls);
+				constantEls = constantEls(allEls2) " Retrieve all constants";
+				env3 = addComponentsToEnv(env2, mods, pre, csets, ci_state, constantEls, constantEls, 
+          {}, inst_dims, false);
+				 (_,env3,_,ci_state2,_) = instElementList(env3, mods, pre, csets, ci_state1, constantEls, inst_dims, 
+          false, true) "instantiate constants";
       then
-        (env2,ci_state1);
+        (env3,ci_state2);
     case (env,mods,pre,csets,ci_state,SCode.DERIVED(short = cn,absynArrayDimOption = ad,mod = mod),re,prot,inst_dims) /* This rule describes how to instantiate a derived class definition */ 
       equation 
         ((c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = Lookup.lookupClass(env, cn, true);
@@ -1495,6 +1597,36 @@ algorithm
         fail();
   end matchcontinue;
 end partialInstClassdef;
+
+protected function constantEls "Returns only elements that are constants.
+author: PA
+
+Used buy partialInstClassdef to instantiate constants in packages.
+"
+input list<tuple<SCode.Element, Mod>> elements;
+output list<tuple<SCode.Element, Mod>> outElements;
+algorithm 
+  outElements := matchcontinue (elements) 
+  local 
+    SCode.Attributes attr;
+    SCode.Variability vari;
+    SCode.Element el;
+    Types.Mod m;
+    list<tuple<SCode.Element, Mod>> els,els1;
+  	case	({}) then {};
+  	  
+ 	  case	((el as SCode.COMPONENT(attributes=attr),m)::els) local String str;
+ 	    equation
+				SCode.CONST() = SCode.attrVariability(attr);
+ 	      els1 = constantEls(els);
+	  then ((el,m)::els1);
+	    
+	  case (_::els)
+	    equation
+	      els1 = constantEls(els);
+	   then els1;
+  end matchcontinue;
+end constantEls;
 
 protected function updateCompeltsMods "function: updateCompeltsMods
   author: PA
@@ -1631,7 +1763,7 @@ algorithm
         fail();
     case (env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,impl)
       equation 
-        Debug.fprint("failtrace", "Failed inst_extends_list on EXTENDS\n env:");
+        //Debug.fprint("failtrace", "Failed inst_extends_list on EXTENDS\n env:");
         Env.printEnv(env);
       then
         fail();
@@ -1643,7 +1775,7 @@ algorithm
     case (env,mod,{},ci_state,impl) then (env,mod,{},{},{},{},{}); 
     case (_,_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "- inst_extends_list failed\n");
+        //Debug.fprint("failtrace", "- inst_extends_list failed\n");
       then
         fail();
   end matchcontinue;
@@ -1827,7 +1959,7 @@ algorithm
         ((c,Types.NOMOD()) :: res);
     case (_,_,_)
       equation 
-        Debug.fprint("failtrace", "-update_components failed\n");
+        //Debug.fprint("failtrace", "-update_components failed\n");
       then
         fail();
   end matchcontinue;
@@ -1903,7 +2035,7 @@ algorithm
         (env,elt,eq,ieq,alg,ialg);
     case (_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "- inst_derived_classes failed\n");
+        //Debug.fprint("failtrace", "- inst_derived_classes failed\n");
       then
         fail();
   end matchcontinue;
@@ -1970,7 +2102,7 @@ algorithm
         (dae,env_2,csets_2,ci_state_2,tys);
     case (_,_,_,_,_,els,_,_,_)
       equation 
-        Debug.fprint("failtrace", "- inst_element_list failed\n");
+        //Debug.fprint("failtrace", "- inst_element_list failed\n");
       then
         fail();
   end matchcontinue;
@@ -2306,7 +2438,7 @@ algorithm
         env_2;
     case (_,_,_,_,_,comps,_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "- add_components_to_env failed\n");
+        //Debug.fprint("failtrace", "- add_components_to_env failed\n");
       then
         fail();
   end matchcontinue;
@@ -2371,8 +2503,8 @@ algorithm
     case (env,_,_,_,_,{},_,_) then env; 
     case (env,_,_,_,_,comps,_,_)
       equation 
-        Debug.fprint("failtrace", "- add_components_to_env2 failed\n");
-        Debug.fprint("failtrace", "\n\n");
+        //Debug.fprint("failtrace", "- add_components_to_env2 failed\n");
+        //Debug.fprint("failtrace", "\n\n");
       then
         fail();
   end matchcontinue;
@@ -2517,9 +2649,9 @@ algorithm
 	 */ 
       equation 
         ((classmod as Types.REDECL(final_,{(SCode.CLASSDEF(n2,f2,repl2,cls2,_),_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n)) "Redeclare of class definition, replaceable is true" ;
-        (env_1,dae) = instClassDecl(env, classmod, pre, csets, cls2, inst_dims, packimpl) "Debug.fprintln (\"insttr\", \"--Classdef mods\") &
+        (env_1,dae) = instClassDecl(env, classmod, pre, csets, cls2, inst_dims, packimpl) "//Debug.fprintln (\"insttr\", \"--Classdef mods\") &
 	Debug.fcall (\"insttr\", Mod.print_mod, classmod) &
-	Debug.fprintln (\"insttr\", \"--All mods\") &
+	//Debug.fprintln (\"insttr\", \"--All mods\") &
 	Debug.fcall (\"insttr\", Mod.print_mod, mods) &" ;
       then
         (dae,env_1,csets,ci_state,{});
@@ -2532,9 +2664,9 @@ algorithm
     case (env,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n,class_ = c),_),inst_dims,impl,packimpl) /* Classdefinition without redeclaration */ 
       equation 
         classmod = Mod.lookupModificationP(mods, Absyn.IDENT(n));
-        (env_1,dae) = instClassDecl(env, classmod, pre, csets, c, inst_dims, packimpl) "Debug.fprintln (\"insttr\", \"Classdef mods\") &
+        (env_1,dae) = instClassDecl(env, classmod, pre, csets, c, inst_dims, packimpl) "//Debug.fprintln (\"insttr\", \"Classdef mods\") &
 	Debug.fcall (\"insttr\", Mod.print_mod, classmod) &
-	Debug.fprintln (\"insttr\", \"All mods\") &
+	//Debug.fprintln (\"insttr\", \"All mods\") &
 	Debug.fcall (\"insttr\", Mod.print_mod, mods) &" ;
       then
         (dae,env_1,csets,ci_state,{});
@@ -2550,8 +2682,8 @@ algorithm
 	    instantiate the class with an extended prefix.
 	 */ 
       equation 
-        vn = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,{})) "Debug.fprint(\"insttr\", \"Instantiating component \") &
-	Debug.fprint(\"insttr\", n) & Debug.fprint(\"insttr\", \"\\n\") &" ;
+        vn = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,{})) "//Debug.fprint(\"insttr\", \"Instantiating component \") &
+	//Debug.fprint(\"insttr\", n) & //Debug.fprint(\"insttr\", \"\\n\") &" ;
         classmod = Mod.lookupModificationP(mods, t) "The class definition is fetched from the environment. Then the set of modifications is calculated.  The modificions is the result of merging the modifications from several sources.  The modification stored with the class definition is put in the variable `classmod\', the modification passed to the function_ is extracted and put in the variable `mm\', and the modification that is included in the variable declaration is in the variable `m\'.  All of these are merged so that the correct precedence rules are followed." ;
         mm = Mod.lookupCompModification(mods, n);
         owncref = Absyn.CREF_IDENT(n,{}) "The types in the environment does not have correct Binding.
@@ -2583,7 +2715,7 @@ algorithm
 	  binding. 
 	" ;
         new_var = Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding) "true in update_frame means the variable is now instantiated." ;
-        env_1 = Env.updateFrameV(env2_1, new_var, true, compenv) "type info present Now we can also put the binding into the dae If the type is one of the simple, predifined types a simple variable declaration is added to the DAE. & Debug.fprint(\"insttr\",\"inst_element Component succeeded\\n\")" ;
+        env_1 = Env.updateFrameV(env2_1, new_var, true, compenv) "type info present Now we can also put the binding into the dae If the type is one of the simple, predifined types a simple variable declaration is added to the DAE. & //Debug.fprint(\"insttr\",\"inst_element Component succeeded\\n\")" ;
       then
         (dae,env_1,csets_1,ci_state,{
           Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding)});
@@ -2602,9 +2734,9 @@ algorithm
         fail();
     case (env,omod,_,_,_,(el,mod),_,_,_) /* => ({},env,csets,ci_state,{}) */ 
       equation 
-        Debug.fprint("failtrace", "- inst_element failed\n");
+        //Debug.fprint("failtrace", "- inst_element failed\n");
         Debug.fcall("failtrace", SCode.printElement, el);
-        Debug.fprint("failtrace", "\n");
+        //Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;
@@ -2649,7 +2781,7 @@ algorithm
         (Env.FRAME(id,cl,tps,imps,env_2,crs,enc) :: fs);
     case (_,_)
       equation 
-        Debug.fprint("failtrace", "-get_derived_env failed\n");
+        //Debug.fprint("failtrace", "-get_derived_env failed\n");
       then
         fail();
   end matchcontinue;
@@ -2754,7 +2886,7 @@ algorithm
         (comp,mod,env,csets);
     case (_,_,_,_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "- redeclare_type failed\n");
+        //Debug.fprint("failtrace", "- redeclare_type failed\n");
       then
         fail();
   end matchcontinue;
@@ -2965,21 +3097,20 @@ algorithm
         idxs_1 = listReverse(idxs);
         pre_1 = Prefix.prefixAdd(n, idxs_1, pre);
         prefix_str = Prefix.printPrefixStr(pre_1);
-        Debug.fprintl("insttr", 
-          {"instantiating var class: ",n," prefix ",prefix_str,"\n"});
+        //Debug.fprintl("insttr", {"instantiating var class: ",n," prefix ",prefix_str,"\n"});
         (dae1,env_1,csets_1,ty,st) = instClass(env, mod, pre_1, csets, cl, inst_dims, impl, INNER_CALL());
         dae1_1 = fixDirection(dae1, dir);
         subs = Exp.intSubscripts(idxs_1);
         cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,subs));
         dae2 = instModEquation(cr, ty, mod, impl);
         index_string = Util.listMap(idxs_1, int_string);
-        Debug.fprint("insttrind", "\n ******************\n ");
-        Debug.fprint("insttrind", "\n index_string ");
-        Debug.fprintl("insttr", index_string);
-        Debug.fprint("insttrind", "\n component ref ");
+        //Debug.fprint("insttrind", "\n ******************\n ");
+        //Debug.fprint("insttrind", "\n index_string ");
+        //Debug.fprintl("insttr", index_string);
+        //Debug.fprint("insttrind", "\n component ref ");
         Debug.fcall("insttr", Exp.printComponentRef, cr);
-        Debug.fprint("insttrind", "\n ******************\n ");
-        Debug.fprint("insttrind", "\n ");
+        //Debug.fprint("insttrind", "\n ******************\n ");
+        //Debug.fprint("insttrind", "\n ");
         start = instStartBindingExp(mod, ty, idxs_1);
         dae_var_attr = instDaeVariableAttributes(env, mod, ty, {}) "idxs\'" ;
         dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flow_,acc,vt,dir), NONE, 
@@ -3001,9 +3132,9 @@ algorithm
     case (_,_,_,_,_,n,_,_,_,_,_,_,_) /* Rules for instantation of function variables (e.g. input and output 
         parameters and protected variables) */ 
       equation 
-        Debug.fprint("failtrace", "- inst_var2 failed: ");
-        Debug.fprint("failtrace", n);
-        Debug.fprint("failtrace", "\n");
+        //Debug.fprint("failtrace", "- inst_var2 failed: ");
+        //Debug.fprint("failtrace", n);
+        //Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;
@@ -3040,7 +3171,7 @@ algorithm
         ((Types.T_ARRAY(Types.DIM(NONE),ty_1),p));
     case (_,_)
       equation 
-        Debug.fprint("failtrace", "- make_array_type failed\n");
+        //Debug.fprint("failtrace", "- make_array_type failed\n");
       then
         fail();
   end matchcontinue;
@@ -3152,7 +3283,7 @@ algorithm
     case (_) then {}; 
     case (_)
       equation 
-        Debug.fprint("failtrace", "- get_cref_from_mod failed\n");
+        //Debug.fprint("failtrace", "- get_cref_from_mod failed\n");
       then
         fail();
   end matchcontinue;
@@ -3188,7 +3319,7 @@ algorithm
     case ({}) then {}; 
     case (_)
       equation 
-        Debug.fprint("failtrace", "- get_cref_from_dim failed\n");
+        //Debug.fprint("failtrace", "- get_cref_from_dim failed\n");
       then
         fail();
   end matchcontinue;
@@ -3251,7 +3382,7 @@ algorithm
         (env_2,csets) = updateComponentsInEnv(mods, rest, env_1, ci_state, csets, impl);
       then
         (env_2,csets);
-    case (_,{},env,ci_state,csets,impl) /* 	Debug.fprint(\"decl\", \"update_components_in_env finished\\n\") */  then (env,csets); 
+    case (_,{},env,ci_state,csets,impl) /* 	//Debug.fprint(\"decl\", \"update_components_in_env finished\\n\") */  then (env,csets); 
   end matchcontinue;
 end updateComponentsInEnv;
 
@@ -3374,16 +3505,16 @@ algorithm
         (env_1,csets_1);
     case (mod,cref,env,ci_state,csets,impl)
       equation 
-        Debug.fprint("failtrace", "-update_component_in_env failed, ident = ");
+        //Debug.fprint("failtrace", "-update_component_in_env failed, ident = ");
         str = Debug.fcallret("failtrace", Dump.printComponentRefStr, cref, "");
-        Debug.fprint("failtrace", str);
-        Debug.fprint("failtrace", "\n mods:");
+        //Debug.fprint("failtrace", str);
+        //Debug.fprint("failtrace", "\n mods:");
         str2 = Debug.fcallret("failtrace", Mod.printModStr, mod, "");
-        Debug.fprint("failtrace", str2);
-        Debug.fprint("failtrace", "\n   env:   ");
+        //Debug.fprint("failtrace", str2);
+        //Debug.fprint("failtrace", "\n   env:   ");
         str3 = Debug.fcallret("failtrace", Env.printEnvStr, env, "");
-        Debug.fprint("failtrace", str3);
-        Debug.fprint("failtrace", "\n");
+        //Debug.fprint("failtrace", str3);
+        //Debug.fprint("failtrace", "\n");
       then
         (env,csets);
   end matchcontinue;
@@ -3749,9 +3880,9 @@ algorithm
         (env_1,dae,csets_2,ty);
     case (_,_,_,_,_,n,(_,_),_,_,_,_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "- inst_array failed: ");
+        //Debug.fprint("failtrace", "- inst_array failed: ");
         Debug.fcall("failtrace", Print.printBuf, n);
-        Debug.fprint("failtrace", "\n");
+        //Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;
@@ -3961,11 +4092,11 @@ algorithm
         fail();
     case (_,cref,ad,_,_,_)
       equation 
-        Debug.fprint("failtrace", "- elab_arraydim failed\n cref:");
+        //Debug.fprint("failtrace", "- elab_arraydim failed\n cref:");
         Debug.fcall("failtrace", Dump.printComponentRef, cref);
-        Debug.fprint("failtrace", " dim: ");
+        //Debug.fprint("failtrace", " dim: ");
         Debug.fcall("failtrace", Dump.printArraydim, ad);
-        Debug.fprint("failtrace", "\n");
+        //Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;
@@ -4123,7 +4254,7 @@ algorithm
 	  nonimplicit instantiation.
 	 as false */ 
       equation 
-        Debug.fprintln("insttr", "elab_arraydim_decl5");
+        //Debug.fprintln("insttr", "elab_arraydim_decl5");
         (e,Types.PROP((Types.T_INTEGER(_),_),cnst),_) = Static.elabExp(env, d, impl, st);
         failure(equality(cnst = Types.C_VAR()));
         (Values.INTEGER(i),_) = Ceval.ceval(env, e, impl, st, NONE, Ceval.MSG());
@@ -4132,7 +4263,7 @@ algorithm
         (SOME(DIMINT(i)) :: l);
     case (env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),(impl as false),st) /* when not implicit instantiation, array dim. must be constant. */ 
       equation 
-        Debug.fprintln("insttr", "elab_arraydim_decl5");
+        //Debug.fprintln("insttr", "elab_arraydim_decl5");
         (e,Types.PROP((Types.T_INTEGER(_),_),Types.C_VAR()),_) = Static.elabExp(env, d, impl, st);
         str = Dump.printExpStr(d);
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {str});
@@ -4140,7 +4271,7 @@ algorithm
         fail();
     case (env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),(impl as true),st) /* Non-constant dimension creates DIMEXP */ 
       equation 
-        Debug.fprintln("insttr", "elab_arraydim_decl6");
+        //Debug.fprintln("insttr", "elab_arraydim_decl6");
         (e,Types.PROP((Types.T_INTEGER(_),_),cnst),_) = Static.elabExp(env, d, impl, st);
         l = elabArraydimDecl(env, cref, ds, impl, st);
       then
@@ -4161,7 +4292,7 @@ algorithm
         fail();
     case (_,_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "- elab_arraydim_decl failed\n");
+        //Debug.fprint("failtrace", "- elab_arraydim_decl failed\n");
       then
         fail();
   end matchcontinue;
@@ -4270,7 +4401,7 @@ algorithm
     case (_,_)
       equation 
         Print.printBuf("-compatible_arraydim failed\n");
-        Debug.fprint("failtrace", "- compatible_arraydim failed\n");
+        //Debug.fprint("failtrace", "- compatible_arraydim failed\n");
       then
         fail();
   end matchcontinue;
@@ -4323,8 +4454,8 @@ algorithm
     case (_,{}) then {}; 
     case (t,(_ :: ad)) /* PR, for debugging */ 
       equation 
-        Debug.fprint("failtrace", "Undefined!");
-        Debug.fprint("failtrace", " The type detected: ");
+        //Debug.fprint("failtrace", "Undefined!");
+        //Debug.fprint("failtrace", " The type detected: ");
         Debug.fcall("failtrace", Types.printType, t);
       then
         fail();
@@ -4373,7 +4504,7 @@ algorithm
         (env_2,dae);
     case (env,_,_,_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "- inst_class_decl failed\n");
+        //Debug.fprint("failtrace", "- inst_class_decl failed\n");
       then
         fail();
   end matchcontinue;
@@ -4417,7 +4548,7 @@ algorithm
       SCode.ClassDef parts;
       list<SCode.Element> els;
       list<String> l;
-    case (env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = SCode.R_FUNCTION())),inst_dims,(packimpl as false)) /* packimpl Implicit instantiation of functions */ 
+    /*case (env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = SCode.R_FUNCTION())),inst_dims,(packimpl as false)) /* packimpl Implicit instantiation of functions */ 
       equation 
         (dae,_,csets_1,ty,st) = instClass(env, mod, pre, csets, c, inst_dims, true, INNER_CALL()) "impl" ;
         env_1 = Env.extendFrameT(env, n, ty);
@@ -4434,14 +4565,14 @@ algorithm
           prot, inst_dims, true, packimpl) "impl" ;
         extdecl = instExtDecl(tempenv, n, parts, true) "impl" ;
       then
-        (env_1,{DAE.EXTFUNCTION(fpath,DAE.DAE(dae),ty,extdecl)});
+        (env_1,{DAE.EXTFUNCTION(fpath,DAE.DAE(dae),ty,extdecl)});*/
     case (env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = SCode.R_TYPE(),parts = SCode.ENUMERATION(identLst = l))),inst_dims,packimpl) /* enumerations */ 
       equation 
         enumclass = instEnumeration(n, l);
-        env_2 = Env.extendFrameC(env, enumclass);
+        env_2 = Env.extendFrameC(env, enumclass); 
       then
         (env_2,{});
-    case (env,mod,pre,csets,c,_,_) then (env,{});  /* .. the rest will fall trough */ 
+    case (env,mod,pre,csets,c,_,_) then (env,{});  /* .. the rest will fall trough */
   end matchcontinue;
 end implicitInstantiation;
 
@@ -4506,9 +4637,9 @@ algorithm
     local
       list<DAE.Element> dae,daefuncs;
       Connect.Sets csets_1,csets;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
+      tuple<Types.TType, Option<Absyn.Path>> ty,ty1;
       ClassInf.State st;
-      list<Env.Frame> env_1,env,tempenv;
+      list<Env.Frame> env_1,env,tempenv,cenv;
       Absyn.Path fpath;
       Types.Mod mod;
       Prefix.Prefix pre;
@@ -4522,33 +4653,54 @@ algorithm
       list<SCode.Element> els;
       list<Absyn.Path> funcnames;
     case (env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = SCode.R_FUNCTION())),inst_dims,(packimpl as false))
-      equation 
-        (dae,_,csets_1,ty,st) = instClass(env, mod, pre, csets, c, inst_dims, true, INNER_CALL());
-        env_1 = Env.extendFrameT(env, n, ty);
-        fpath = makeFullyQualified(env, Absyn.IDENT(n));
+   local String s;
+      equation  
+        (dae,cenv,csets_1,ty,st) = instClass(env, mod, pre, csets, c, inst_dims, true, INNER_CALL());
+        env_1 = Env.extendFrameC(env,c);    
+        fpath = makeFullyQualified(env_1, Absyn.IDENT(n));
+        ty1 = setFullyQualifiedTypename(ty,fpath);
+        env_1 = Env.extendFrameT(env_1, n, ty1); 
       then
-        (env_1,{DAE.FUNCTION(fpath,DAE.DAE(dae),ty)});
+        (env_1,{DAE.FUNCTION(fpath,DAE.DAE(dae),ty1)});
     case (env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = (restr as SCode.R_EXT_FUNCTION()),parts = (parts as SCode.PARTS(elementLst = els)))),inst_dims,(packimpl as false)) /* External functions should also have their type in env, 
 	    but no dae. */ 
       equation 
-        (dae,_,csets_1,ty,st) = instClass(env, mod, pre, csets, c, inst_dims, true, INNER_CALL());
-        env_1 = Env.extendFrameT(env, n, ty);
-        fpath = makeFullyQualified(env, Absyn.IDENT(n));
+        (dae,cenv,csets_1,ty,st) = instClass(env, mod, pre, csets, c, inst_dims, true, INNER_CALL());
+        env_1 = Env.extendFrameC(env,c);    
+        fpath = makeFullyQualified(env_1, Absyn.IDENT(n));
+        ty1 = setFullyQualifiedTypename(ty,fpath);
+        env_1 = Env.extendFrameT(env_1, n, ty1);
         prot = false;
         (_,tempenv,_,_,_,_) = instClassdef(env_1, mod, pre, csets_1, ClassInf.FUNCTION(n), parts, 
           restr, prot, inst_dims, true, packimpl) "how to get this? impl" ;
         extdecl = instExtDecl(tempenv, n, parts, true) "impl" ;
       then
-        (env_1,{DAE.EXTFUNCTION(fpath,DAE.DAE(dae),ty,extdecl)});
+        (env_1,{DAE.EXTFUNCTION(fpath,DAE.DAE(dae),ty1,extdecl)});
     case (env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = (restr as SCode.R_FUNCTION()),parts = SCode.OVERLOAD(absynPathLst = funcnames))),inst_dims,(packimpl as false))
       equation 
         (env_1,daefuncs) = instOverloadedFunctions(env, n, funcnames) "Overloaded functions" ;
       then
         (env_1,daefuncs);
-    case (_,_,_,_,_,_,_) /* Debug.fprint(\"failtrace\", \"#-- implicit_function_instantiation failed\\n\") */  then fail(); 
+    case (_,_,_,_,_,_,_) equation /*print("implicit_function_instantiation failed\n");*/ then fail(); 
   end matchcontinue;
 end implicitFunctionInstantiation;
 
+protected function setFullyQualifiedTypename "This function sets the FQ path
+given as argument in types that have optional path set. (The optional path
+points to the class the type is built from)"
+
+  input tuple<Types.TType, Option<Absyn.Path>> inType;
+  input Absyn.Path path;
+  output tuple<Types.TType, Option<Absyn.Path>> resType;
+algorithm 
+  resType := matchcontinue (tp,path) 
+  local Absyn.Path p,newPath;
+        Types.TType tp;   
+  		case ((tp,NONE()),_) then ((tp,NONE));
+  		case ((tp,SOME(p)),newPath) then ((tp,SOME(newPath)));
+  end matchcontinue;
+end setFullyQualifiedTypename; 
+  
 public function implicitFunctionTypeInstantiation "function implicitFunctionTypeInstantiation
   author: PA
  
@@ -4571,10 +4723,11 @@ algorithm
       String id;
       Boolean p,e;
       SCode.Restriction r;
+      option<Absyn.ExternalDecl> extDecl;
       list<SCode.Element> elts;
-    case (env,SCode.CLASS(name = id,partial_ = p,encapsulated_ = e,restricion = r,parts = SCode.PARTS(elementLst = elts))) /* The function type can be determined without the body. */ 
+    case (env,SCode.CLASS(name = id,partial_ = p,encapsulated_ = e,restricion = r,parts = SCode.PARTS(elementLst = elts,used=extDecl))) /* The function type can be determined without the body. */ 
       equation 
-        stripped_class = SCode.CLASS(id,p,e,r,SCode.PARTS(elts,{},{},{},{},NONE));
+        stripped_class = SCode.CLASS(id,p,e,r,SCode.PARTS(elts,{},{},{},{},extDecl));
         (env_1,_) = implicitFunctionInstantiation(env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           stripped_class, {}, false);
       then
@@ -4623,7 +4776,7 @@ algorithm
         (env_2,(DAE.FUNCTION(fpath,DAE.DAE(dae),ty) :: dae1));
     case (env,_,_)
       equation 
-        Debug.fprint("failtrace", "inst_overloaded_functions failed\n");
+        //Debug.fprint("failtrace", "inst_overloaded_functions failed\n");
       then
         fail();
   end matchcontinue;
@@ -4685,7 +4838,7 @@ algorithm
         daeextdecl;
     case (env,_,_,_)
       equation 
-        Debug.fprint("failtrace", "#-- inst_ext_decl failed");
+        //Debug.fprint("failtrace", "#-- inst_ext_decl failed");
       then
         fail();
   end matchcontinue;
@@ -4758,7 +4911,7 @@ algorithm
         extdecl;
     case (_,_,_)
       equation 
-        Debug.fprint("failtrace", "#-- inst_ext_make_externaldecl failed\n");
+        //Debug.fprint("failtrace", "#-- inst_ext_make_externaldecl failed\n");
       then
         fail();
   end matchcontinue;
@@ -4995,7 +5148,7 @@ algorithm
     case (env,exp,impl,st)
       local Absyn.Exp exp;
       equation 
-        Debug.fprint("failtrace", "-elab_exp_ext failed\n");
+        //Debug.fprint("failtrace", "-elab_exp_ext failed\n");
       then
         fail();
   end matchcontinue;
@@ -5031,7 +5184,7 @@ algorithm
         extargs;
     case (_,_,impl)
       equation 
-        Debug.fprint("failtrace", "- inst_ext_get_fargs failed\n");
+        //Debug.fprint("failtrace", "- inst_ext_get_fargs failed\n");
       then
         fail();
   end matchcontinue;
@@ -5111,9 +5264,9 @@ algorithm
     case (env,exp,Types.PROP(type_ = ty,constFlag = cnst)) then DAE.EXTARGEXP(exp,ty); 
     case (_,exp,prop)
       equation 
-        Debug.fprint("failtrace", "#-- inst_ext_get_fargs_single failed\n");
+        //Debug.fprint("failtrace", "#-- inst_ext_get_fargs_single failed\n");
         Debug.fcall("failtrace", Exp.printExp, exp);
-        Debug.fprint("failtrace", "\n");
+        //Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;
@@ -5150,7 +5303,7 @@ algorithm
         extarg;
     case (_,_,_)
       equation 
-        Debug.fprint("failtrace", "#-- inst_ext_rettype failed\n");
+        //Debug.fprint("failtrace", "#-- inst_ext_rettype failed\n");
       then
         fail();
   end matchcontinue;
@@ -5245,7 +5398,7 @@ algorithm
     case (_,_,_,_,_,_,_,_,_)
       equation 
         print("dae_declare failed\n");
-        Debug.fprint("failtrace", "- dae_declare failed\n");
+        //Debug.fprint("failtrace", "- dae_declare failed\n");
       then
         fail();
   end matchcontinue;
@@ -5311,7 +5464,7 @@ algorithm
         dae;
     case (_,_,_,_,_,_,_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "- dae_declare2 failed\n");
+        //Debug.fprint("failtrace", "- dae_declare2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -5365,7 +5518,7 @@ algorithm
         dae;
     case (_,_,_,_,_,_,_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "#- dae_declare3 failed\n");
+        //Debug.fprint("failtrace", "#- dae_declare3 failed\n");
       then
         fail();
   end matchcontinue;
@@ -5480,7 +5633,7 @@ algorithm
         (dae,env,csets_1,ci_state_1);
     case (_,_,_,_,_,_,impl)
       equation 
-        Debug.fprint("failtrace", "- inst_equation failed\n");
+        //Debug.fprint("failtrace", "- inst_equation failed\n");
       then
         fail();
   end matchcontinue;
@@ -5559,7 +5712,7 @@ algorithm
         (dae,env,csets_1,ci_state_1);
     case (_,_,_,_,_,_,impl)
       equation 
-        Debug.fprint("failtrace", "- inst_initialequation failed\n");
+        //Debug.fprint("failtrace", "- inst_initialequation failed\n");
       then
         fail();
   end matchcontinue;
@@ -5751,12 +5904,12 @@ algorithm
           FIXME: Why lookup after add_for_loop_scope ?
 	 */ 
       equation 
-        (e_1,Types.PROP((Types.T_ARRAY(Types.DIM(_),id_t),_),_),_) = Static.elabExp(env, e, impl, NONE) "Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1\") &" ;
-        env_1 = addForLoopScope(env, i, id_t) "Debug.fprintln (\"insti\", \"for expression elaborated\") &" ;
-        (Types.ATTR(false,SCode.RW(),SCode.VAR(),_),(Types.T_INTEGER(_),_),Types.UNBOUND()) = Lookup.lookupVar(env_1, Exp.CREF_IDENT(i,{})) "	Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
-        (v,_) = Ceval.ceval(env, e_1, impl, NONE, NONE, Ceval.MSG()) "	Debug.fprintln (\"insti\", \"loop variable looked up\") & FIXME: Check bounds" ;
-        (dae,csets_1) = unroll(env_1, mod, pre, csets, ci_state, i, v, el, initial_, impl) "	Debug.fprintln (\"insti\", \"for expression evaluated\") &" ;
-        ci_state_1 = instEquationCommonCiTrans(ci_state, initial_) "	Debug.fprintln (\"insti\", \"for expression unrolled\") & 	& Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1 succeeded\")" ;
+        (e_1,Types.PROP((Types.T_ARRAY(Types.DIM(_),id_t),_),_),_) = Static.elabExp(env, e, impl, NONE) "//Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1\") &" ;
+        env_1 = addForLoopScope(env, i, id_t) "//Debug.fprintln (\"insti\", \"for expression elaborated\") &" ;
+        (Types.ATTR(false,SCode.RW(),SCode.VAR(),_),(Types.T_INTEGER(_),_),Types.UNBOUND()) = Lookup.lookupVar(env_1, Exp.CREF_IDENT(i,{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
+        (v,_) = Ceval.ceval(env, e_1, impl, NONE, NONE, Ceval.MSG()) "	//Debug.fprintln (\"insti\", \"loop variable looked up\") & FIXME: Check bounds" ;
+        (dae,csets_1) = unroll(env_1, mod, pre, csets, ci_state, i, v, el, initial_, impl) "	//Debug.fprintln (\"insti\", \"for expression evaluated\") &" ;
+        ci_state_1 = instEquationCommonCiTrans(ci_state, initial_) "	//Debug.fprintln (\"insti\", \"for expression unrolled\") & 	& //Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1 succeeded\")" ;
       then
         (dae,env,csets_1,ci_state_1);
     case (env,mod,pre,csets,ci_state,SCode.EQ_FOR(ident = i,exp = e,eEquationLst = el),initial_,impl)
@@ -5782,10 +5935,10 @@ algorithm
         ({DAE.REINIT(cr_1,e2_1)},env,csets,ci_state);
     case (_,_,_,_,_,eqn,_,impl)
       equation 
-        Debug.fprint("failtrace", "- inst_equation_common failed for eqn: ");
+        //Debug.fprint("failtrace", "- inst_equation_common failed for eqn: ");
         s = SCode.equationStr(eqn);
-        Debug.fprint("failtrace", s);
-        Debug.fprint("failtrace", "\n");
+        //Debug.fprint("failtrace", s);
+        //Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;
@@ -5912,12 +6065,12 @@ algorithm
 	    a type T_ENUM
 	 */ 
       equation 
-        dae = instEqEquation2(e1, e2, t, initial_) "Debug.fprint (\"insttr\", \"Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM or T_ENUMERATION.\\n\") &" ;
+        dae = instEqEquation2(e1, e2, t, initial_) "//Debug.fprint (\"insttr\", \"Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM or T_ENUMERATION.\\n\") &" ;
       then
         dae;
     case ((e1 as Exp.CREF(componentRef = _)),Types.PROP(type_ = (Types.T_ENUMERATION(names = _),_)),e2,Types.PROP(type_ = (t as (Types.T_ENUMERATION(names = _),_))),initial_,impl)
       equation 
-        dae = instEqEquation2(e1, e2, t, initial_) "Debug.fprint (\"insttr\", \"Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM or T_ENUMERATION.\\n\") &" ;
+        dae = instEqEquation2(e1, e2, t, initial_) "//Debug.fprint (\"insttr\", \"Found assignment to T_ENUMERATION type. Rhs type must be T_ENUM or T_ENUMERATION.\\n\") &" ;
       then
         dae;
     case (e1,Types.PROP(type_ = t1),e2,Types.PROP(type_ = t2),initial_,impl)
@@ -6069,13 +6222,13 @@ algorithm
     case (e1,e2,t,initial_)
       local tuple<Types.TType, Option<Absyn.Path>> t;
       equation 
-        Debug.fprint("failtrace", "- inst_eq_equation_2 failed\n exp1=");
+        //Debug.fprint("failtrace", "- inst_eq_equation_2 failed\n exp1=");
         Debug.fcall("failtrace", Exp.printExp, e1);
-        Debug.fprint("failtrace", " exp2=");
+        //Debug.fprint("failtrace", " exp2=");
         Debug.fcall("failtrace", Exp.printExp, e2);
-        Debug.fprint("failtrace", " type =");
+        //Debug.fprint("failtrace", " type =");
         Debug.fcall("failtrace", Types.printType, t);
-        Debug.fprint("failtrace", "\n");
+        //Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;
@@ -6154,7 +6307,7 @@ algorithm
         dae;
     case (_,_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "- inst_array_equation failed\n");
+        //Debug.fprint("failtrace", "- inst_array_equation failed\n");
       then
         fail();
   end matchcontinue;
@@ -6199,7 +6352,7 @@ algorithm
         {};
     case (_,_,_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "- inst_array_el_eq failed\n");
+        //Debug.fprint("failtrace", "- inst_array_el_eq failed\n");
       then
         fail();
   end matchcontinue;
@@ -6267,9 +6420,9 @@ algorithm
         (dae,csets_2);
     case (_,_,_,_,_,_,v,_,_,_)
       equation 
-        Debug.fprint("failtrace", "- unroll ");
+        //Debug.fprint("failtrace", "- unroll ");
         Debug.fcall("failtrace", Values.printVal, v);
-        Debug.fprint("failtrace", " failed\n");
+        //Debug.fprint("failtrace", " failed\n");
       then
         fail();
   end matchcontinue;
@@ -6312,7 +6465,7 @@ algorithm
         ({DAE.ALGORITHM(Algorithm.ALGORITHM(statements_1))},env,csets,ci_state);
     case (_,_,_,_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "- inst_algorithm failed\n");
+        //Debug.fprint("failtrace", "- inst_algorithm failed\n");
       then
         fail();
   end matchcontinue;
@@ -6355,7 +6508,7 @@ algorithm
         ({DAE.INITIALALGORITHM(Algorithm.ALGORITHM(statements_1))},env,csets,ci_state);
     case (_,_,_,_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "- inst_algorithm failed\n");
+        //Debug.fprint("failtrace", "- inst_algorithm failed\n");
       then
         fail();
   end matchcontinue;
@@ -6525,9 +6678,9 @@ algorithm
         stmt;
     case (env,alg,impl)
       equation 
-        Debug.fprint("failtrace", "- inst_statement failed\n alg:");
+        //Debug.fprint("failtrace", "- inst_statement failed\n alg:");
         Debug.fcall("failtrace", Dump.printAlgorithm, alg);
-        Debug.fprint("failtrace", "\n");
+        //Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;
@@ -6564,7 +6717,7 @@ algorithm
         ((e_1,prop,stmts) :: tail_1);
     case (_,_,_)
       equation 
-        Debug.fprint("failtrace", "- inst_elseifs failed\n");
+        //Debug.fprint("failtrace", "- inst_elseifs failed\n");
       then
         fail();
   end matchcontinue;
@@ -6620,7 +6773,7 @@ algorithm
         (sets_1,dae);
     case (_,_,_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "-inst_connect failed\n");
+        //Debug.fprint("failtrace", "-inst_connect failed\n");
       then
         fail();
   end matchcontinue;
@@ -6718,11 +6871,11 @@ algorithm
         fail();
     case (c1,_,_,c2,_,_)
       equation 
-        Debug.fprint("failtrace", "- check_connect_types(");
+        //Debug.fprint("failtrace", "- check_connect_types(");
         Debug.fcall("failtrace", Exp.printComponentRef, c1);
-        Debug.fprint("failtrace", " <-> ");
+        //Debug.fprint("failtrace", " <-> ");
         Debug.fcall("failtrace", Exp.printComponentRef, c2);
-        Debug.fprint("failtrace", ") failed\n");
+        //Debug.fprint("failtrace", ") failed\n");
       then
         fail();
   end matchcontinue;
@@ -7629,13 +7782,13 @@ algorithm
     case (c,t,m,impl)
       local tuple<Types.TType, Option<Absyn.Path>> t;
       equation 
-        Debug.fprint("failtrace", "- inst_mod_equation failed\n type: ");
+        //Debug.fprint("failtrace", "- inst_mod_equation failed\n type: ");
         Debug.fcall("failtrace", Types.printType, t);
-        Debug.fprint("failtrace", "\n  cref: ");
+        //Debug.fprint("failtrace", "\n  cref: ");
         Debug.fcall("failtrace", Exp.printComponentRef, c);
-        Debug.fprint("failtrace", "\n mod:");
+        //Debug.fprint("failtrace", "\n mod:");
         Debug.fcall("failtrace", Mod.printMod, m);
-        Debug.fprint("failtrace", "\n");
+        //Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;
@@ -7721,7 +7874,7 @@ algorithm
         fail();
     case (_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "- make_binding failed\n");
+        //Debug.fprint("failtrace", "- make_binding failed\n");
       then
         fail();
   end matchcontinue;
@@ -7882,28 +8035,28 @@ algorithm
       SCode.Element elt;
     case (env,SCode.COMPONENT(component = id,replaceable_ = repl,protected_ = prot,attributes = (attr as SCode.ATTR(arrayDim = dim,flow_ = f,RW = acc,parameter_ = var,input_ = dir)),type_ = t,mod = mod,baseclass = bc,this = comment),impl) /* impl */ 
       equation 
-        Debug.fprint("recconst", "inst_record_constructor_elt called\n");
+        //Debug.fprint("recconst", "inst_record_constructor_elt called\n");
         (cl,cenv) = Lookup.lookupClass(env, t, true);
-        Debug.fprint("recconst", "looked up class\n");
+        //Debug.fprint("recconst", "looked up class\n");
         mod_1 = Mod.elabMod(env, Prefix.NOPRE(), mod, impl);
         owncref = Absyn.CREF_IDENT(id,{});
         dimexp = elabArraydim(env, owncref, dim, NONE, false, NONE);
-        Debug.fprint("recconst", "calling inst_var\n");
+        //Debug.fprint("recconst", "calling inst_var\n");
         (_,_,_,tp_1) = instVar(cenv, ClassInf.FUNCTION(""), mod_1, Prefix.NOPRE(), 
           Connect.emptySet, id, cl, attr, dimexp, {}, {}, impl, comment);
-        Debug.fprint("recconst", "Type of argument:");
+        //Debug.fprint("recconst", "Type of argument:");
         Debug.fcall("recconst", Types.printType, tp_1);
-        Debug.fprint("recconst", "\nMod=");
+        //Debug.fprint("recconst", "\nMod=");
         Debug.fcall("recconst", Mod.printMod, mod_1);
         bind = makeBinding(env, attr, mod_1, tp_1);
       then
         Types.VAR(id,Types.ATTR(f,acc,var,Absyn.INPUT()),prot,tp_1,bind);
     case (env,elt,impl)
       equation 
-        Debug.fprint("failtrace", "- inst_record_constructor_elt failed.,elt:");
+        //Debug.fprint("failtrace", "- inst_record_constructor_elt failed.,elt:");
         str = SCode.printElementStr(elt);
-        Debug.fprint("failtrace", str);
-        Debug.fprint("failtrace", "\n");
+        //Debug.fprint("failtrace", str);
+        //Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;

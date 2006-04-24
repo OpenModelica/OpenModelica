@@ -163,8 +163,10 @@ algorithm
         ((c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(env, Absyn.IDENT(pack), false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
-        (_,env_2,_,cistate1,_,_) = Inst.instClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, true, false) "Instantiate implicit (last argument = true) true" ;
+         (env_2,cistate1) = Inst.partialInstClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          ci_state, c, false, {});
+        /*(_,env_2,_,cistate1,_,_) = Inst.instClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          ci_state, c, false, {}, true, false) "Instantiate implicit (last argument = true) true" ;*/
         failure(ClassInf.valid(cistate1, SCode.R_PACKAGE()));
         (t,env_3) = lookupTypeInClass(env_2, c, path, true) "Has to do additional check for encapsulated classes, see rule below" ;
       then
@@ -174,8 +176,10 @@ algorithm
         ((c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(env, Absyn.IDENT(pack), msg);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
-        (_,env_2,_,cistate1,_,_) = Inst.instClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, true, false) "true" ;
+         (env_2,cistate1) = Inst.partialInstClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          ci_state, c, false, {});
+        /*(_,env_2,_,cistate1,_,_) = Inst.instClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          ci_state, c, false, {}, true, false) "true" ;*/
         ClassInf.valid(cistate1, SCode.R_PACKAGE());
         (c_1,env_3) = lookupTypeInClass(env_2, c, path, false) "Has NOT to do additional check for encapsulated classes, see rule above" ;
       then
@@ -271,8 +275,11 @@ algorithm
         ((c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(env, Absyn.IDENT(pack), msgflag);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
+        
         (env_2,cistate1) = Inst.partialInstClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {});
+          /*(_,env_2,_,cistate1,_,_) = Inst.instClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+           ci_state, c, false/*FIXME:prot*/, {}, false, false);*/
         failure(ClassInf.valid(cistate1, SCode.R_PACKAGE()));
         (c_1,env_3) = lookupClass(env_2, path, msgflag) "Has to do additional check for encapsulated classes, see rule below" ;
       then
@@ -281,9 +288,12 @@ algorithm
       equation 
         ((c as SCode.CLASS(id,_,encflag,restr,_)),env1) = lookupClass(env, Absyn.IDENT(pack), msgflag);
         env2 = Env.openScope(env1, encflag, SOME(id));
-        ci_state = ClassInf.start(restr, id);
+        ci_state = ClassInf.start(restr, id); 
+        
         (env4,cistate1) = Inst.partialInstClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {});
+          /*(_,env4,_,cistate1,_,_) = Inst.instClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+           ci_state, c, false/*FIXME:prot*/, {}, false, false);*/
         ClassInf.valid(cistate1, SCode.R_PACKAGE());
         (c_1,env5) = lookupClass(env4, path, msgflag) "Has NOT to do additional check for encapsulated classes, see rule above" ;
       then
@@ -895,6 +905,7 @@ algorithm
       Option<String> sid;
       list<Env.Item> items;
       Env.Frame f;
+      // Lookup of enumeration variables
     case (env,Exp.CREF_QUAL(ident = id1,subscriptLst = {},componentRef = (id2 as Exp.CREF_IDENT(ident = _))))
       equation 
         ((c as SCode.CLASS(n,_,encflag,(r as SCode.R_ENUMERATION()),_)),env2) = lookupClass(env, Absyn.IDENT(id1), false) "Special case for looking up enumerations" ;
@@ -905,6 +916,7 @@ algorithm
         (attr,ty,bind) = lookupVarInPackages(env5, id2);
       then
         (attr,ty,bind);
+      // lookup of constants on form A.B in packages
     case (env,Exp.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref)) /* First part of name is a class. */ 
       equation 
         ((c as SCode.CLASS(n,_,encflag,r,_)),env2) = lookupClass(env, Absyn.IDENT(id), false);
@@ -915,7 +927,7 @@ algorithm
         (attr,ty,bind) = lookupVarInPackages(env5, cref);
       then
         (attr,ty,bind);
-    case (env,(cr as Exp.CREF_IDENT(ident = id,subscriptLst = sb)))
+    case (env,(cr as Exp.CREF_IDENT(ident = id,subscriptLst = sb))) local String str;
       equation 
         (attr,ty,bind) = lookupVarLocal(env, cr);
       then
@@ -938,7 +950,7 @@ algorithm
         fail();
     case ((f :: fs),cr) /* Search parent scopes */ 
       equation 
-        (attr,ty,bind) = lookupVarInPackages(fs, cr);
+         (attr,ty,bind) = lookupVarInPackages(fs, cr);
       then
         (attr,ty,bind);
     case (env,cr) /* Debug.fprint(\"failtrace\",  \"lookup_var_in_packages failed\\n exp:\" ) &
@@ -1107,8 +1119,10 @@ algorithm
         ((c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(env, Absyn.IDENT(pack), false) "For qualified function names, e.g. Modelica.Math.sin" ;
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
-        (_,env_2,_,cistate1,_,_) = Inst.instClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, true, false) "Instantiate implicit (last argument = true)" ;
+       (env_2,cistate1) = Inst.partialInstClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          ci_state, c, false, {});
+        /*(_,env_2,_,cistate1,_,_) = Inst.instClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          ci_state, c, false, {}, true, false) "Instantiate implicit (last argument = true)" ;*/
         reslist = lookupFunctionsInEnv(env_2, path);
       then
         reslist;
@@ -1294,7 +1308,7 @@ algorithm
       equation 
         Env.CLASS((cdef as SCode.CLASS(_,_,_,SCode.R_FUNCTION(),_)),cenv) = Env.treeGet(ht, id, Env.myhash) "If found class that is function." ;
         env_1 = Inst.implicitFunctionTypeInstantiation(cenv, cdef);
-        tps = lookupFunctionsInEnv(env_1, Absyn.IDENT(id));
+        tps = lookupFunctionsInEnv(env_1, Absyn.IDENT(id)); 
       then
         tps;
     case (ht,httypes,env,id)

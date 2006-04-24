@@ -3283,7 +3283,7 @@ algorithm
       Exp.ComponentRef cr;
       list<Exp.ComponentRef> crs;
     case (repl,{},_) then repl; 
-    case (repl,(cr :: crs),pos)
+    case (repl,(cr :: crs),pos) 
       equation 
         pstr = intString(pos);
         str = Util.stringAppendList({"xloc[",pstr,"]"});
@@ -3495,7 +3495,7 @@ algorithm
         (res,cg_id);
     case (size,unique_id,cg_id)
       equation 
-        Debug.fprint("failtrace", "-generate_ode_system2_declaration failed\n");
+        Debug.fprint("failtrace", "generateOdeSystem2Declaration failed\n");
       then
         fail();
   end matchcontinue;
@@ -3537,7 +3537,7 @@ algorithm
         (res,cg_id2);
     case (jac,vars,eqns,unique_id,cg_id)
       equation 
-        Debug.fprint("failtrace", "-generate_ode_system2_populate_Ab failed\n");
+        Debug.fprint("failtrace", "generateOdeSystem2PopulateAb failed\n");
       then
         fail();
   end matchcontinue;
@@ -3580,7 +3580,7 @@ algorithm
         (res,cg_id);
     case (jac,vars,eqns,unique_id,cg_id)
       equation 
-        Debug.fprint("failtrace", "-generate_ode_system2_populate_A failed\n");
+        Debug.fprint("failtrace", "generateOdeSystem2PopulateA failed\n");
       then
         fail();
   end matchcontinue;
@@ -3630,7 +3630,7 @@ algorithm
         (cfunc_1,cg_id_2);
     case (_,_,_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "-generate_ode_system2_populate_A2 failed\n");
+        Debug.fprint("failtrace", "generateOdeSystem2PopulateA2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -3667,7 +3667,7 @@ algorithm
         (res,cg_id_1);
     case (jac,vars,eqns,unique_id,cg_id)
       equation 
-        Debug.fprint("failtrace", "-generate_ode_system2_populate_b failed\n");
+        Debug.fprint("failtrace", "generateOdeSystem2PopulateB2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -3729,7 +3729,7 @@ algorithm
         (cfunc_1,cg_id_2);
     case ((DAELow.EQUATION(exp = e1,scalar = e2) :: rest),v,index,unique_id,cg_id)
       equation 
-        Debug.fprint("failtrace", "generate_ode_system2_populate_b2 failed\n");
+        Debug.fprint("failtrace", "generateOdeSystem2PopulateB2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -3799,7 +3799,7 @@ algorithm
     case (vars,unique_id,cg_id)
       equation 
         Debug.fprint("failtrace", 
-          "-generaet_ode_system2_collect_results failed\n");
+          "generateOdeSystem2CollectResults failed\n");
       then
         fail();
   end matchcontinue;
@@ -4109,9 +4109,9 @@ algorithm
       Absyn.Path path;
       DAE.ExternalDecl extdecl;
     case (_,{},allpaths) then {};  /* iterated over complete list */ 
-    case (p,(path :: paths),allpaths)
+    case (p,(path :: paths),allpaths) 
       equation 
-        (fdae,_) = Inst.instantiateClassImplicit(p, path);
+        (fdae,_) = Inst.instantiateFunctionImplicit(p, path);
         DAE.DAE(elementLst = {DAE.FUNCTION(dAElist = dae,type_ = t)}) = fdae;
         patched_dae = DAE.DAE({DAE.FUNCTION(path,dae,t)});
         subfuncs = getCalledFunctionsInFunction(path, patched_dae);
@@ -4122,7 +4122,7 @@ algorithm
         res;
     case (p,(path :: paths),allpaths)
       equation 
-        (fdae,_) = Inst.instantiateClassImplicit(p, path);
+        (fdae,_) = Inst.instantiateFunctionImplicit(p, path);
         DAE.DAE(elementLst = {DAE.EXTFUNCTION(dAElist = dae,type_ = t,externalDecl = extdecl)}) = fdae;
         patched_dae = DAE.DAE({DAE.EXTFUNCTION(path,dae,t,extdecl)});
         subfuncs = getCalledFunctionsInFunction(path, patched_dae);
@@ -4133,7 +4133,7 @@ algorithm
         res;
     case (_,_,_)
       equation 
-        print("generate_functions_3 failed\n");
+        print("generateFunctions3 failed\n");
       then
         fail();
   end matchcontinue;

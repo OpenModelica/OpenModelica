@@ -1690,6 +1690,15 @@ algorithm
   end matchcontinue;
 end printClassdefStr;
 
+public function attrVariability "Return the variability attribute from Attributes"
+  input Attributes attr;
+  output Variability var;
+algorithm
+  var := matchcontinue (attr) local Variability v;
+	    case	ATTR(parameter_=v) then v;
+    end matchcontinue;
+end attrVariability;
+
 public function variabilityString "function: variabilityString
  
   Print Variability to a string.
@@ -1716,14 +1725,27 @@ public function isParameterOrConst "function: isParameterOrConst
 algorithm 
   outBoolean:=
   matchcontinue (inVariability)
-    local Variability STRUCPARAM;
     case (VAR()) then false; 
     case (DISCRETE()) then false; 
     case (PARAM()) then true; 
-    case (STRUCPARAM) then true; 
     case (CONST()) then true; 
   end matchcontinue;
 end isParameterOrConst;
+
+public function isConstant "function: isConstant
+Returns true if Variability is constant, otherwise false
+"
+  input Variability inVariability;
+  output Boolean outBoolean;
+algorithm 
+  outBoolean:=
+  matchcontinue (inVariability)
+    case (VAR()) then false; 
+    case (DISCRETE()) then false; 
+    case (PARAM()) then false;
+   case (CONST()) then true; 
+  end matchcontinue;
+end isConstant;
 
 public function countParts "function: countParts
  

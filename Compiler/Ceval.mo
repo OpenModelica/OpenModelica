@@ -2241,12 +2241,11 @@ algorithm
     case (env,Exp.CALL(path = Absyn.IDENT(name = "echo"),expLst = {bool_exp}),st,msg)
       equation 
         ((v as Values.BOOL(bval)),SOME(st_1)) = ceval(env, bool_exp, true, SOME(st), NONE, msg);
-        st_2 = Interactive.addVarToSymboltable("$echo", v, (Types.T_BOOL({}),NONE), st_1);
+        setEcho(bval);
       then
-        (v,st_2);
+        (v,st);
   end matchcontinue;
 end cevalInteractiveFunctions;
-
 
 protected function setEcho 
   input Boolean echo;
