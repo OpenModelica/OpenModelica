@@ -115,7 +115,7 @@ private slots:
 
 private:
 	void createMoshEdit();
-	void createMoshError();
+	//void createMoshError();
 	void createAction();
 	void createMenu();
 	void createToolbar();
@@ -127,7 +127,7 @@ private:
 	QFrame* mainFrame_;
 	QTextCursor cursor_;
 	QTextEdit* moshEdit_;
-	QTextEdit* moshError_;
+	//QTextEdit* moshError_;
 	QVBoxLayout* layout_;
 	QString clipboard_;
 

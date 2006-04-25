@@ -52,6 +52,8 @@ licence: http://www.trolltech.com/products/qt/licensing.html
  * \date 2005-11-10 (created)
  */
 
+// 2006-04-25 AF, removed error editor
+
 
 #ifdef WIN32
 #include "windows.h"
@@ -251,7 +253,7 @@ OMS::OMS( QWidget* parent )
 
 	fontSize_ = 11;
 	createMoshEdit();
-	createMoshError();
+	//createMoshError();
 	createAction();
 	createMenu();
 	createToolbar();
@@ -378,6 +380,7 @@ void OMS::createMoshEdit()
 		this, SLOT( codeCompletion(bool) ));
 }
 
+/*
 void OMS::createMoshError()
 {
 	moshError_ = new QTextEdit( mainFrame_ );
@@ -405,6 +408,7 @@ void OMS::createMoshError()
 	moshError_->setFontWeight( QFont::Normal );
 	moshError_->setFontPointSize( fontSize_ );
 }
+*/
 
 void OMS::createAction()
 {
@@ -660,14 +664,26 @@ eval:
 		QString error = delegate_->getResult();
 		if( error.size() > 2 )
 		{
+			cursor_.insertText( error.mid( 1, error.size() - 2 ) );
+			/*
 			QTextCursor errorCursor = moshError_->textCursor();
 			errorCursor.insertText( "\n" + error.mid( 0, error.size() - 1 ) );
-
 			moshError_->verticalScrollBar()->triggerAction(QAbstractSlider::SliderToMaximum);
+			*/
 		}
 	}
 	else
 	{
+		if( startServer() )
+		{
+			cursor_.insertText("[ERROR] No OMC serer started - restarted OMC\n" );
+			goto eval;
+		}
+		else
+			cursor_.insertText("[ERROR] No OMC serer started - unable to restart OMC\n" );
+		
+
+		/*
 		QTextCursor cursor = moshError_->textCursor();
 
 		if( startServer() )
@@ -677,6 +693,7 @@ eval:
 		}
 		else
 			cursor.insertText("[ERROR] No OMC serer started - unable to restart OMC\n" );
+		*/
 	}
 
 	// add new command line
@@ -958,28 +975,28 @@ void OMS::exit()
 
 void OMS::cut()
 {
-	if( moshEdit_->hasFocus() )
-	{
+/*	if( moshEdit_->hasFocus() )
+	{*/
 		QKeyEvent* key = new QKeyEvent( QEvent::KeyPress, Qt::Key_X, Qt::ControlModifier, "x" );
 		((MyTextEdit*)moshEdit_)->sendKey( key );
-	}
+/*	}
 	else if( moshError_->hasFocus() )
 	{
 		moshError_->copy();
-	}
+	}*/
 }
 
 void OMS::copy()
 {
-	if( moshEdit_->hasFocus() )
-	{
+/*	if( moshEdit_->hasFocus() )
+	{*/
 		QKeyEvent* key = new QKeyEvent( QEvent::KeyPress, Qt::Key_C, Qt::ControlModifier, "c" );
 		((MyTextEdit*)moshEdit_)->sendKey( key );
-	}
+/*	}
 	else if( moshError_->hasFocus() )
 	{
 		moshError_->copy();
-	}
+	}*/
 }
 
 void OMS::paste()
@@ -1007,8 +1024,12 @@ void OMS::fontSize()
 	}
 	else
 	{
+		cursor_.movePosition( QTextCursor::End );
+		cursor_.insertText( "[ERROR] Selected fontsize not between 8 and 120.\n" );
+		/*
 		QTextCursor cursor = moshError_->textCursor();
 		cursor.insertText( "[ERROR] Selected fontsize not between 8 and 120.\n" );
+		*/
 	}
 }
 
@@ -1100,6 +1121,7 @@ void OMS::clear()
 	addCommandLine();
 
 
+	/*
 	moshError_->clear();
 	
 	// set backgroundcolor
@@ -1111,6 +1133,7 @@ void OMS::clear()
 	moshError_->setFontFamily( "Courier New" );
 	moshError_->setFontWeight( QFont::Normal );
 	moshError_->setFontPointSize( fontSize_ );
+	*/
 }
 
 void OMS::closeEvent( QCloseEvent *event )
