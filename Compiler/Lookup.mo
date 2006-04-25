@@ -75,6 +75,8 @@ protected import OpenModelica.Compiler.Mod;
 
 protected import OpenModelica.Compiler.Prefix;
 
+protected import OpenModelica.Compiler.Print;
+
 protected import OpenModelica.Compiler.Builtin;
 
 protected import OpenModelica.Compiler.ModUtil;
@@ -140,7 +142,7 @@ algorithm
 	Debug.fcall (\"lotype\",Types.print_type, t) */ 
       then
         (t,env_1);
-    case (env,(path as Absyn.IDENT(name = _)),msg)
+    case (env,(path as Absyn.IDENT(name = _)),msg) local String s;
       equation 
         ((c as SCode.CLASS(id,_,encflag,SCode.R_FUNCTION(),_)),env_1) = lookupClass(env, path, false) "If we didn\'t find the type, but found a class definition 
 	   that is a function with the same name then we implicitly instantiate that
@@ -302,9 +304,12 @@ algorithm
       equation 
         s = Absyn.pathString(path) "print \"-lookup_class failed \" &" ;
         Debug.fprint("failtrace", "- lookup_class failed\n  - looked for ") "print s & print \"\\n\" & 	Env.print_env_str env => s & print s & print \"\\n\" & 	Env.print_env env & 	Print.get_string => str & print \"Env: \" & print str & print \"\\n\" & 	Print.print_buf \"#Error, class \" & Print.print_buf s & 	Print.print_buf \" not found.\\n\" &" ;
+        //print("lookup class ");print(s);print("failed\n");
         Debug.fprint("failtrace", s);
         Debug.fprint("failtrace", "\n env:");
-        Debug.fcall("failtrace", Env.printEnv, env);
+        s = Env.printEnvStr(env);
+        //print("env:");print(s);
+        Debug.fprint("failtrace", s);
         Debug.fprint("failtrace", "\n");
       then
         fail();
@@ -529,7 +534,7 @@ algorithm
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
         (_,(f :: _),_,_,_,_) = Inst.instClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, false, false);
+          ci_state, c, false, {}, false);
         (attr,ty,bind) = lookupVarInPackages({f}, Exp.CREF_IDENT(ident,{}));
         more = moreLookupUnqualifiedImportedVarInFrame(fs, env, ident);
         unique = boolNot(more);
@@ -912,7 +917,7 @@ algorithm
         env3 = Env.openScope(env2, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
         (_,env5,_,_,types,_) = Inst.instClassIn(env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, false, false);
+          ci_state, c, false, {}, false);
         (attr,ty,bind) = lookupVarInPackages(env5, id2);
       then
         (attr,ty,bind);
@@ -923,7 +928,7 @@ algorithm
         env3 = Env.openScope(env2, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
         (_,env5,_,_,types,_) = Inst.instClassIn(env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, true, false);
+          ci_state, c, false, {}, true);
         (attr,ty,bind) = lookupVarInPackages(env5, cref);
       then
         (attr,ty,bind);
@@ -1106,7 +1111,7 @@ algorithm
       then
         reslist;
     case ((env as (Env.FRAME(class_1 = sid,list_2 = ht,list_3 = httypes) :: fs)),(iid as Absyn.IDENT(name = id)))
-      local String id;
+      local String id,s;
       equation 
         c1 = lookupFunctionsInFrame(ht, httypes, env, id);
         c2 = lookupFunctionsInEnv(fs, iid);
@@ -1114,7 +1119,7 @@ algorithm
       then
         reslist;
     case ((env as (Env.FRAME(class_1 = sid,list_2 = ht,list_3 = httypes) :: fs)),(iid as Absyn.QUALIFIED(name = pack,path = path)))
-      local String id;
+      local String id,s;
       equation 
         ((c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(env, Absyn.IDENT(pack), false) "For qualified function names, e.g. Modelica.Math.sin" ;
         env2 = Env.openScope(env_1, encflag, SOME(id));
@@ -1124,10 +1129,10 @@ algorithm
         /*(_,env_2,_,cistate1,_,_) = Inst.instClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, true, false) "Instantiate implicit (last argument = true)" ;*/
         reslist = lookupFunctionsInEnv(env_2, path);
-      then
+      then 
         reslist;
     case (env,(path as Absyn.IDENT(name = id))) /* f::_ */ 
-      local String id;
+      local String id,s;
       equation 
         ((c as SCode.CLASS(_,_,_,SCode.R_FUNCTION(),_)),env_1) = lookupClass(env, path, false) "If we find class that is function. {f}" ;
         ((env as (Env.FRAME(sid,ht,httypes,_,_,_,_) :: _))) = Inst.implicitFunctionTypeInstantiation(env_1, c);
@@ -1248,7 +1253,7 @@ algorithm
       equation 
         Env.CLASS((cdef as SCode.CLASS(_,_,_,SCode.R_FUNCTION(),_)),cenv) = Env.treeGet(ht, id, Env.myhash) "If we found class that is function" ;
         (env_1,_) = Inst.implicitFunctionInstantiation(cenv, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          cdef, {}, false);
+          cdef, {});
         (ty,env_2) = lookupTypeInEnv(env_1, Absyn.IDENT(id));
       then
         (ty,env_2);
@@ -1304,7 +1309,7 @@ algorithm
         ftype = Types.makeFunctionType(fpath, varlst);
       then
         {ftype};
-    case (ht,httypes,env,id)
+    case (ht,httypes,env,id) local String s;
       equation 
         Env.CLASS((cdef as SCode.CLASS(_,_,_,SCode.R_FUNCTION(),_)),cenv) = Env.treeGet(ht, id, Env.myhash) "If found class that is function." ;
         env_1 = Inst.implicitFunctionTypeInstantiation(cenv, cdef);
@@ -1692,10 +1697,12 @@ algorithm
          /* , true encapsulated does not matter, _ */ 
       then
         (tp,env_1);
-    case (env,cdef,(classname as Absyn.IDENT(name = _)),_)
+    case (env,cdef,(classname as Absyn.IDENT(name = _)),_) local String s;
       equation 
         ((c as SCode.CLASS(_,_,_,SCode.R_FUNCTION(),_)),env_1) = lookupClassInEnv(env, classname, false) "If not found, look for classdef that is function and instantiate." ;
         env_2 = Inst.implicitFunctionTypeInstantiation(env_1, c);
+        s = Env.printEnvStr(env_2);
+        print("env=");print(s);print("\n");
         (t,env3) = lookupTypeInEnv(env_2, classname);
          /* true means here encapsulated */ 
       then
@@ -1714,7 +1721,7 @@ algorithm
         env2 = Env.openScope(env, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
         (_,env3,_,_,_,_) = Inst.instClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, true, false);
+          ci_state, c, false, {}, true);
         (t,env5) = lookupTypeInClass(env3, c, p1, false);
       then
         (t,env5);
@@ -1731,7 +1738,7 @@ algorithm
         env2 = Env.openScope(env1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
         (_,env4,_,_,_,_) = Inst.instClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, true, false) "	Print.print_buf \"instanitating class \" &
+          ci_state, c, false, {}, true) "	Print.print_buf \"instanitating class \" &
 	Print.print_buf id &
 	Print.print_buf \" in envpath:\\n\" &
 	Env.print_env_path(env2\') &

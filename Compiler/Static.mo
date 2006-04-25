@@ -4524,7 +4524,7 @@ algorithm
         (cls,env_1) = Lookup.lookupClass(env, path, false) "	Inst.instantiate_implicit(p\') => d & message" ;
         Debug.fprintln("sei", "generate_compiled_function: class looked up");
         (env_2,d) = Inst.implicitFunctionInstantiation(env_1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          cls, {}, false);
+          cls, {});
         Debug.fprintln("sei", "generate_compiled_function: function instantiated");
         Print.clearBuf();
         d_1 = ModUtil.stringPrefixParams(DAE.DAE(d));
@@ -4667,7 +4667,8 @@ algorithm
 	 functiontype of several possibilites. The solution is to send
 	 in the funktion type of the user function and check both the
 	 funktion name and the function\'s type. 
-	" ;
+	" ;			
+				Print.printErrorBuf("Found functions\n");
         (args_1,constlist,restype,functype,vect_dims,slots) = elabTypes(env, args, typelist, impl) "The constness of a function depends on the inputs. If all inputs are
 	  constant the call itself is constant.
 	" ;

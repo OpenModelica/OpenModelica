@@ -335,7 +335,7 @@ algorithm
         env = buildEnvFromSymboltable(st);
         scode_class = SCode.elabClass(absyn_class);
         (env_1,d) = Inst.implicitFunctionInstantiation(env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          scode_class, {}, false);
+          scode_class, {});
       then
         ();
     case (Absyn.PROGRAM(classes = (class_list as (cls :: morecls)),within_ = w),st) /* Recursively go through all classes */ 

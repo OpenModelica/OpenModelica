@@ -417,13 +417,14 @@ algorithm
       then
         (DAE.DAE(dae),env_2);
     case ((cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */ 
+      local String s;
       equation 
         env = Builtin.initialEnv();
         (env_1,_) = instClassDecls(env, cdecls, path);
         ((cdef as SCode.CLASS(n,_,_,_,_)),env_2) = Lookup.lookupClass(env_1, path, true);
         env_2 = Env.extendFrameC(env_2, cdef);
         (env,dae) = implicitInstantiation(env_2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          cdef, {}, false);
+          cdef, {});
       then
         (DAE.DAE(dae),env);
     case (_,_)
@@ -431,7 +432,7 @@ algorithm
         print("-instantiate_class_implicit failed\n");
       then
         fail();
-  end matchcontinue;
+  end matchcontinue; 
 end instantiateClassImplicit;
 
 public function instantiateFunctionImplicit "function: instantiateFunctionImplicit
@@ -467,13 +468,14 @@ algorithm
       then
         (DAE.DAE(dae),env_2);
     case ((cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */ 
+      local String s;
       equation 
         env = Builtin.initialEnv();
         (env_1,_) = instClassDecls(env, cdecls, path);
         ((cdef as SCode.CLASS(n,_,_,_,_)),env_2) = Lookup.lookupClass(env_1, path, true);
         env_2 = Env.extendFrameC(env_2, cdef);
         (env,dae) = implicitFunctionInstantiation(env_2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          cdef, {}, false);
+          cdef, {});
       then
         (DAE.DAE(dae),env);
     case (_,_)
@@ -543,11 +545,12 @@ algorithm
       list<SCode.Class> cs;
       Absyn.Path path;
     case (env,((c as SCode.CLASS(name = name)) :: cs),Absyn.IDENT(name = name2))
+      local String s;
       equation 
         equality(name = name2);
         env = Env.extendFrameC(env, c);
         (env_1,dae) = implicitInstantiation(env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
-          {}, false) "packimpl" ;
+          {}) ;
       then
         (dae,env_1);
     case (env,((c as SCode.CLASS(name = name)) :: cs),(path as Absyn.IDENT(name = name2)))
@@ -582,11 +585,12 @@ algorithm
       list<SCode.Class> cs;
       Absyn.Path path;
     case (env,((c as SCode.CLASS(name = name)) :: cs),Absyn.IDENT(name = name2))
+      local String s;
       equation 
         equality(name = name2);
         env = Env.extendFrameC(env, c);
         (env_1,dae) = implicitFunctionInstantiation(env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
-          {}, false) "packimpl" ;
+          {}) ;
       then
         (dae,env_1);
     case (env,((c as SCode.CLASS(name = name)) :: cs),(path as Absyn.IDENT(name = name2)))
@@ -623,8 +627,7 @@ algorithm
     case (env,((c as SCode.CLASS(name = name)) :: cs),(ref as Absyn.IDENT(name = name2)))
       equation 
         failure(equality(name = name2));
-        (env_1,dae1) = instClassDecl(env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
-          {}, false) "packimpl" ;
+        (env_1,dae1) = instClassDecl(env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {}) ;
         (env_2,dae2) = instClassDecls(env_1, cs, ref);
         dae = listAppend(dae1, dae2);
       then
@@ -638,8 +641,7 @@ algorithm
     case (env,((c as SCode.CLASS(name = name)) :: cs),(ref as Absyn.QUALIFIED(name = name2)))
       equation 
         equality(name = name2);
-        (env_1,dae1) = instClassDecl(env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
-          {}, false) "How should be do here ??? packimpl" ;
+        (env_1,dae1) = instClassDecl(env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {});
         (env_2,dae2) = instClassDecls(env_1, cs, ref);
         dae = listAppend(dae1, dae2);
       then
@@ -647,8 +649,7 @@ algorithm
     case (env,((c as SCode.CLASS(name = name)) :: cs),(ref as Absyn.QUALIFIED(name = name2)))
       equation 
         failure(equality(name = name2));
-        (env_1,dae1) = instClassDecl(env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
-          {}, false) "packimpl" ;
+        (env_1,dae1) = instClassDecl(env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {})  ;
         (env_2,dae2) = instClassDecls(env_1, cs, ref);
         dae = listAppend(dae1, dae2);
       then
@@ -740,14 +741,13 @@ algorithm
         //Debug.fprint("insttr", n);
         //Debug.fprintln("insttr", "");
         (dae,env_1,csets,_,_) = instClass(env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
-          {}, false, TOP_CALL()) "Env.extend_frame_c(env,c) => env\' & packimp" ;
+          {}, false, TOP_CALL()) ;
       then
         {DAE.COMP(n,DAE.DAE(dae))};
     case (env,(c :: (cs as (_ :: _))))
       equation 
         //Debug.fprintln("insttr", "inst_program2");
-        (env_1,dae1) = instClassDecl(env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
-          {}, false) "packimpl" ;
+        (env_1,dae1) = instClassDecl(env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {}) ;
         dae2 = instProgram(env_1, cs) "Env.extend_frame_c(env,c) => env\' &" ;
         dae = listAppend(dae1, dae2);
       then
@@ -780,13 +780,13 @@ algorithm
       SCode.Restriction restr;
       list<SCode.Class> cs;
     case (env,((c as SCode.CLASS(name = n,restricion = restr)) :: cs))
+      local String s;
       equation 
         //Debug.fprint("insttr", "inst_program_implicit: ");
         //Debug.fprint("insttr", n);
         //Debug.fprintln("insttr", "");
         env = Env.extendFrameC(env, c);
-        (env_1,dae1) = implicitInstantiation(env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
-          {}, false) "packimpl" ;
+        (env_1,dae1) = implicitInstantiation(env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {});
         (dae2,env_2) = instProgramImplicit(env_1, cs);
         dae = listAppend(dae1, dae2);
       then
@@ -847,18 +847,24 @@ algorithm
       SCode.Restriction r;
       InstDims inst_dims;
       CallingScope callscope;
-    case (env,mod,pre,csets,SCode.CLASS(name = n,partial_ = (partial_ as true)),_,(impl as false),_) /* impl Classes with the keyword partial can not be instantiated.
+      
+      /*  Classes with the keyword partial can not be instantiated.
 	 They can only be inherited */ 
+    case (env,mod,pre,csets,SCode.CLASS(name = n,partial_ = (partial_ as true)),_,(impl as false),_) 
       equation 
         Error.addMessage(Error.INST_PARTIAL_CLASS, {n});
       then
         fail();
+        
+        /* Instantiation of a class. Create new scope and call instClassIn.
+        	Then generate equations from connects.
+        */
     case (env,mod,pre,csets,(c as SCode.CLASS(name = n,encapsulated_ = encflag,restricion = r)),inst_dims,impl,callscope)
       equation 
         env_1 = Env.openScope(env, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
-        (dae1,env_3,(csets_1 as Connect.SETS(_,crs)),ci_state_1,tys,bc_ty) = instClassIn(env_1, mod, pre, csets, ci_state, c, false, inst_dims, 
-          impl, false) "accesibility packimpl" ;
+        (dae1,env_3,(csets_1 as Connect.SETS(_,crs)),ci_state_1,tys,bc_ty) 
+        			= instClassIn(env_1, mod, pre, csets, ci_state, c, false, inst_dims, impl) ;
         fq_class = makeFullyQualified(env, Absyn.IDENT(n));
         dae1_1 = DAE.setComponentType(dae1, fq_class);
         callscope_1 = isTopCall(callscope);
@@ -866,12 +872,10 @@ algorithm
         dae3 = Connect.unconnectedFlowEquations(csets_1, dae1, env_3, callscope_1);
         dae = Util.listFlatten({dae1_1,dae2,dae3});
         typename = makeFullyQualified(env, Absyn.IDENT(n));
-        ty = mktype(typename, ci_state_1, tys, bc_ty) "	& print \"inst class \" & print n & print \" type =\" & 
-	Types.unparse_type ty => s &
-	print s & print \" state =\" & ClassInf.print_state_str ci_state\' => s2 & 
-	print s2 & print \"\\n\"" ;
+        ty = mktype(typename, ci_state_1, tys, bc_ty) ;
       then
         (dae,env_3,Connect.SETS({},crs),ty,ci_state_1);
+
     case (_,_,_,_,SCode.CLASS(name = n),_,impl,_)
       equation 
         //Debug.fprint("failtrace", "- inst_class ");
@@ -932,8 +936,8 @@ algorithm
         env_1 = Env.openScope(env, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
         c_1 = SCode.classSetPartial(c, false);
-        (dae1,env_3,(csets_1 as Connect.SETS(_,crs)),ci_state_1,tys,bc_ty) = instClassIn(env_1, mod, pre, csets, ci_state, c_1, false, inst_dims, 
-          impl, false) "accesibility packimpl" ;
+        (dae1,env_3,(csets_1 as Connect.SETS(_,crs)),ci_state_1,tys,bc_ty) 
+         			= instClassIn(env_1, mod, pre, csets, ci_state, c_1, false, inst_dims, impl) ;
         fq_class = makeFullyQualified(env, Absyn.IDENT(n));
         dae1_1 = DAE.setComponentType(dae1, fq_class);
         callscope_1 = isTopCall(callscope);
@@ -975,7 +979,6 @@ public function instClassIn "function: instClassIn
   input Boolean inBoolean7;
   input InstDims inInstDims8;
   input Boolean inBoolean9;
-  input Boolean inBoolean10;
   output list<DAE.Element> outDAEElementLst;
   output Env outEnv;
   output Connect.Sets outSets;
@@ -984,7 +987,7 @@ public function instClassIn "function: instClassIn
   output Option<Types.Type> outTypesTypeOption;
 algorithm 
   (outDAEElementLst,outEnv,outSets,outState,outTypesVarLst,outTypesTypeOption):=
-  matchcontinue (inEnv1,inMod2,inPrefix3,inSets4,inState5,inClass6,inBoolean7,inInstDims8,inBoolean9,inBoolean10)
+  matchcontinue (inEnv1,inMod2,inPrefix3,inSets4,inState5,inClass6,inBoolean7,inInstDims8,inBoolean9)
     local
       Option<tuple<Types.TType, Option<Absyn.Path>>> bc;
       list<Env.Frame> env,env_1;
@@ -994,22 +997,28 @@ algorithm
       ClassInf.State ci_state,ci_state_1;
       SCode.Class c,cls;
       InstDims inst_dims;
-      Boolean impl,packimpl,prot;
+      Boolean impl,prot;
       String clsname,implstr,n;
       list<DAE.Element> l;
       Connect.Sets csets_1,csets;
       list<Types.Var> tys;
       SCode.Restriction r;
       SCode.ClassDef d;
-    case (env,mods,pre,Connect.SETS(connection = crs),ci_state,(c as SCode.CLASS(name = "Real")),_,inst_dims,impl,packimpl) /* Accesibility implicit instantiation implicit function (ls:package?) instantiation basictype baseclass No DAE */ 
+      /*  implicit instantiation - No DAE */ 
+    case (env,mods,pre,Connect.SETS(connection = crs),ci_state,(c as SCode.CLASS(name = "Real")),_,inst_dims,impl) 
       equation 
         bc = arrayBasictypeBaseclass(inst_dims, (Types.T_REAL({}),NONE));
       then
         ({},env,Connect.SETS({},crs),ci_state,{},bc);
-    case (env,mods,pre,Connect.SETS(connection = crs),ci_state,(c as SCode.CLASS(name = "Integer")),_,_,impl,packimpl) then ({},env,Connect.SETS({},crs),ci_state,{},NONE);  /* No DAE csets should be emtpy, but crs must be propagated to \"next component\" No DAE */ 
-    case (env,mods,pre,Connect.SETS(connection = crs),ci_state,(c as SCode.CLASS(name = "String")),_,_,impl,packimpl) then ({},env,Connect.SETS({},crs),ci_state,{},NONE);  /* No DAE No DAE */ 
-    case (env,mods,pre,Connect.SETS(connection = crs),ci_state,(c as SCode.CLASS(name = "Boolean")),_,_,impl,packimpl) then ({},env,Connect.SETS({},crs),ci_state,{},NONE);  /* No DAE No DAE */ 
-    case (env,mods,pre,Connect.SETS(connection = crs),ci_state,cls,_,_,(impl as false),packimpl) /* No DAE Ignore functions if not implicit instantiation No DAE */ 
+    case (env,mods,pre,Connect.SETS(connection = crs),ci_state,(c as SCode.CLASS(name = "Integer")),_,_,impl) 
+      then ({},env,Connect.SETS({},crs),ci_state,{},NONE);  /* No DAE csets should be emtpy, but crs must be propagated to \"next component\" No DAE */ 
+    case (env,mods,pre,Connect.SETS(connection = crs),ci_state,(c as SCode.CLASS(name = "String")),_,_,impl) 
+      then ({},env,Connect.SETS({},crs),ci_state,{},NONE);  /* No DAE No DAE */ 
+    case (env,mods,pre,Connect.SETS(connection = crs),ci_state,(c as SCode.CLASS(name = "Boolean")),_,_,impl) 
+      then ({},env,Connect.SETS({},crs),ci_state,{},NONE);  /* No DAE No DAE */ 
+  
+   	/* No DAE Ignore functions if not implicit instantiation No DAE */ 
+    case (env,mods,pre,Connect.SETS(connection = crs),ci_state,cls,_,_,(impl as false)) 
       equation 
         true = SCode.isFunction(cls);
         //Debug.fprint("insttr", "Ignoring function in explicit instantiation: ");
@@ -1018,7 +1027,7 @@ algorithm
         //Debug.fprint("insttr", "\n");
       then
         ({},env,Connect.SETS({},crs),ci_state,{},NONE);
-    case (env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restricion = r,parts = d)),prot,inst_dims,impl,packimpl)
+    case (env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restricion = r,parts = d)),prot,inst_dims,impl)
       equation 
         clsname = SCode.className(c) "print \"inst_class_in\" & print n & print \"\\n\" &" ;
         //print("instClassIn");print(n);print("\n");
@@ -1027,11 +1036,10 @@ algorithm
         //Debug.fprint("insttr", implstr);
         //Debug.fprint("insttr", clsname);
         //Debug.fprint("insttr", "\n");
-        (l,env_1,csets_1,ci_state_1,tys,bc) = instClassdef(env, mods, pre, csets, ci_state, d, r, prot, inst_dims, 
-          impl, packimpl);
+        (l,env_1,csets_1,ci_state_1,tys,bc) = instClassdef(env, mods, pre, csets, ci_state, d, r, prot, inst_dims, impl);
       then
         (l,env_1,csets_1,ci_state_1,tys,bc);
-    case (_,_,_,csets,_,_,_,_,_,_)
+    case (_,_,_,csets,_,_,_,_,_)
       equation 
         //Debug.fprint("failtrace", "- inst_class_in failed\n");
       then
@@ -1176,7 +1184,6 @@ protected function instClassdef "function: instClassdef
   input Boolean inBoolean8;
   input InstDims inInstDims9;
   input Boolean inBoolean10;
-  input Boolean inBoolean11;
   output list<DAE.Element> outDAEElementLst;
   output Env outEnv;
   output Connect.Sets outSets;
@@ -1185,7 +1192,7 @@ protected function instClassdef "function: instClassdef
   output Option<Types.Type> outTypesTypeOption;
 algorithm 
   (outDAEElementLst,outEnv,outSets,outState,outTypesVarLst,outTypesTypeOption):=
-  matchcontinue (inEnv1,inMod2,inPrefix3,inSets4,inState5,inClassDef6,inRestriction7,inBoolean8,inInstDims9,inBoolean10,inBoolean11)
+  matchcontinue (inEnv1,inMod2,inPrefix3,inSets4,inState5,inClassDef6,inRestriction7,inBoolean8,inInstDims9,inBoolean10)
     local
       list<SCode.Element> cdefelts,compelts,extendselts,els;
       list<Env.Frame> env1,env2,env3,env,env4,env5,cenv,cenv_2,env_2;
@@ -1200,7 +1207,7 @@ algorithm
       list<SCode.Equation> eqs,initeqs,eqs2,initeqs2,eqs_1,initeqs_1;
       list<SCode.Algorithm> alg,initalg,alg2,initalg2,alg_1,initalg_1;
       SCode.Restriction re,r;
-      Boolean prot,impl,packimpl,enc2;
+      Boolean prot,impl,enc2;
       InstDims inst_dims,inst_dims2,inst_dims_1;
       String id,pre_str,cn2,cns,scope_str,s;
       SCode.Class c;
@@ -1209,8 +1216,11 @@ algorithm
       Absyn.Path cn;
       Option<list<Absyn.Subscript>> ad;
       SCode.Mod mod;
-    case (env,mods,pre,csets,ci_state,SCode.PARTS(elementLst = els,equationLst = eqs,initialEquation = initeqs,algorithmLst = alg,initialAlgorithm = initalg),re,prot,inst_dims,impl,(packimpl as false)) /* implicit inst implicit package inst basictype baseclass This rule describes how to instantiate a class definition
+      /* This rule describes how to instantiate a class definition
 	  that extends a basic type. */ 
+    case (env,mods,pre,csets,ci_state,SCode.PARTS(elementLst = els,equationLst = eqs,
+      																						initialEquation = initeqs,algorithmLst = alg,initialAlgorithm = initalg)
+      		,re,prot,inst_dims,impl) 
       equation 
         cdefelts = classdefAndImpElts(els);
         compelts = componentElts(els) "should be empty, checked in inst_basic type below" ;
@@ -1219,13 +1229,16 @@ algorithm
         cdefelts_1 = addNomod(cdefelts) "instantiate CDEFS so redeclares are carried out" ;
         (cdefelts_2,env2,csets) = updateCompeltsMods(env1, pre, cdefelts_1, ci_state, csets, impl);
         (dae1,env3,csets1,ci_state1,tys) = instElementList(env2, mods, pre, csets, ci_state, cdefelts_2, inst_dims, 
-          impl, packimpl);
+          impl);
         bc = instBasictypeBaseclass(env3, extendselts, compelts, mods, inst_dims);
         ErrorExt.errorOn();
       then
         ({},env,Connect.emptySet,ci_state,{},bc);
-    case (env,mods,pre,csets,ci_state,SCode.PARTS(elementLst = els,equationLst = eqs,initialEquation = initeqs,algorithmLst = alg,initialAlgorithm = initalg),re,prot,inst_dims,impl,(packimpl as false)) /* This rule describes how to instantiate an explicit
-	  class definition no basictype bc */ 
+        
+        /* This rule describes how to instantiate an explicit class definition*/ 
+    case (env,mods,pre,csets,ci_state,SCode.PARTS(elementLst = els,equationLst = eqs,initialEquation = initeqs,
+      																					algorithmLst = alg,initialAlgorithm = initalg)
+      	    ,re,prot,inst_dims,impl) 
       equation 
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         cdefelts = classdefAndImpElts(els);
@@ -1265,10 +1278,9 @@ algorithm
           eqs_1, inst_dims, impl) "Add variables to env, wihtout type and binding, which will be added later in inst_element_list (where update_variable is called)" ;
         (compelts_2,env4,csets) = updateCompeltsMods(env3, pre, compelts_1, ci_state, csets, impl) "Update the modifiers of elements to typed ones, needed for modifiers
 	   on components that are inherited." ;
-        (dae1,env5,csets1,ci_state2,tys) = instElementList(env4, mods, pre, csets, ci_state1, compelts_2, inst_dims, 
-          impl, packimpl) "3. Instantiate components" ;
-        (dae2,_,csets2,ci_state3) = instList(env5, mods, pre, csets1, ci_state2, instEquation, eqs_1, 
-          impl) "Instantiate equations" ;
+        (dae1,env5,csets1,ci_state2,tys) 
+        		= instElementList(env4, mods, pre, csets, ci_state1, compelts_2, inst_dims, impl) "3. Instantiate components" ;
+        (dae2,_,csets2,ci_state3) = instList(env5, mods, pre, csets1, ci_state2, instEquation, eqs_1, impl) "Instantiate equations" ;
         (dae3,_,csets3,ci_state4) = instList(env5, mods, pre, csets2, ci_state3, instInitialequation, 
           initeqs_1, impl);
         (dae4,_,csets4,ci_state5) = instList(env5, mods, pre, csets3, ci_state4, instAlgorithm, alg_1, 
@@ -1277,30 +1289,11 @@ algorithm
           initalg_1, impl);
         dae = Util.listFlatten({dae1,dae2,dae3,dae4,dae5}) "collect the dae\'s" ;
       then
-        (dae,env5,csets5,ci_state6,tys,NONE);
-    case (env,mods,pre,csets,ci_state,SCode.PARTS(elementLst = els,equationLst = eqs,initialEquation = initeqs,algorithmLst = alg,initialAlgorithm = initalg),re,prot,inst_dims,impl,true) /* no basictype bc This rule describes how to instantiate an explicit
-	  class definition packimpl */ 
-      equation 
-        ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
-        cdefelts = classdefAndImpElts(els);
-        compelts = componentElts(els);
-        extendselts = extendsElts(els);
-        env1 = addClassdefsToEnv(env, cdefelts, impl) "1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)" ;
-        (env2,emods,extcomps,eqs2,initeqs2,alg2,initalg2) = instExtendsList(env1, mods, extendselts, ci_state, impl) "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations." ;
-        compelts_1 = addNomod(compelts);
-        cdefelts_1 = addNomod(cdefelts);
-        compelts_1 = Util.listFlatten({extcomps,compelts_1,cdefelts_1});
-        eqs_1 = listAppend(eqs, eqs2) "Add components from base classes to be instantiated in 3 as well." ;
-        initeqs_1 = listAppend(initeqs, initeqs2);
-        alg_1 = listAppend(alg, alg2);
-        initalg_1 = listAppend(initalg, initalg2);
-        env3 = addComponentsToEnv(env2, emods, pre, csets, ci_state, compelts_1, compelts_1, 
-          eqs_1, inst_dims, impl) "Add variables to env, wihtout type and binding, which will be added later in inst_element_list (where update_variable is called)" ;
-        (dae1,env4,csets1,ci_state2,tys) = instElementList(env3, mods, pre, csets, ci_state1, compelts_1, inst_dims, 
-          impl, true) "3. Instantiate components packimpl" ;
-      then
-        (dae1,env4,csets1,ci_state2,tys,NONE);
-    case (env,mods,pre,csets,ci_state,SCode.DERIVED(short = cn,absynArrayDimOption = ad,mod = mod),re,prot,inst_dims,impl,packimpl) /* packimpl This rule describes how to instantiate a derived class definition */ 
+        (dae,env5,csets5,ci_state6,tys,NONE/* no basictype bc*/);
+   
+      
+        /* This rule describes how to instantiate a derived class definition */ 
+    case (env,mods,pre,csets,ci_state,SCode.DERIVED(short = cn,absynArrayDimOption = ad,mod = mod),re,prot,inst_dims,impl) 
       equation 
         ((c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = Lookup.lookupClass(env, cn, true);
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
@@ -1314,11 +1307,14 @@ algorithm
         inst_dims2 = instDimExpLst(dims, impl);
         inst_dims_1 = listAppend(inst_dims, inst_dims2);
         (dae,env_2,csets_1,ci_state_1,tys,bc) = instClassIn(cenv_2, mods_2, pre, csets, new_ci_state, c, prot, 
-          inst_dims_1, impl, false) "instantiate class in opened scope. packimpl" ;
+          inst_dims_1, impl) "instantiate class in opened scope. " ;
         ClassInf.assertValid(ci_state_1, re) "Check for restriction violations" ;
       then
         (dae,env_2,csets_1,ci_state_1,tys,bc);
-    case (env,mods,pre,csets,ci_state,SCode.DERIVED(short = cn,absynArrayDimOption = ad,mod = mod),re,prot,inst_dims,impl,packimpl) /* If the class is derived from a class that can not be found in the environment, this rule prints an error message. */ 
+        
+        /* If the class is derived from a class that can not be found in the environment, this rule prints an error message. */ 
+   
+    case (env,mods,pre,csets,ci_state,SCode.DERIVED(short = cn,absynArrayDimOption = ad,mod = mod),re,prot,inst_dims,impl) 
       equation 
         failure((_,_) = Lookup.lookupClass(env, cn, false));
         cns = Absyn.pathString(cn);
@@ -1326,7 +1322,7 @@ algorithm
         Error.addMessage(Error.LOOKUP_ERROR, {cns,scope_str});
       then
         fail();
-    case (env,_,_,_,_,_,_,_,_,_,_)
+    case (env,_,_,_,_,_,_,_,_,_)
       equation 
         //Debug.fprint("failtrace", "- inst_classdef failed\n class :");
         s = Env.printEnvPathStr(env);
@@ -1570,8 +1566,7 @@ algorithm
 				constantEls = constantEls(allEls2) " Retrieve all constants";
 				env3 = addComponentsToEnv(env2, mods, pre, csets, ci_state, constantEls, constantEls, 
           {}, inst_dims, false);
-				 (_,env3,_,ci_state2,_) = instElementList(env3, mods, pre, csets, ci_state1, constantEls, inst_dims, 
-          false, true) "instantiate constants";
+				 (_,env3,_,ci_state2,_) = instElementList(env3, mods, pre, csets, ci_state1, constantEls, inst_dims, true) "instantiate constants";
       then
         (env3,ci_state2);
     case (env,mods,pre,csets,ci_state,SCode.DERIVED(short = cn,absynArrayDimOption = ad,mod = mod),re,prot,inst_dims) /* This rule describes how to instantiate a derived class definition */ 
@@ -2068,7 +2063,6 @@ protected function instElementList "function: instElementList
   input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst6;
   input InstDims inInstDims7;
   input Boolean inBoolean8;
-  input Boolean inBoolean9;
   output list<DAE.Element> outDAEElementLst;
   output Env outEnv;
   output Connect.Sets outSets;
@@ -2088,19 +2082,17 @@ algorithm
       tuple<SCode.Element, Mod> el;
       list<tuple<SCode.Element, Mod>> els;
       InstDims inst_dims;
-      Boolean impl,packimpl;
-    case (env,_,_,csets,ci_state,{},_,_,_) then ({},env,csets,ci_state,{}); 
-    case (env,mod,pre,csets,ci_state,(el :: els),inst_dims,impl,packimpl) /* most work done in inst_element. */ 
+      Boolean impl;
+    case (env,_,_,csets,ci_state,{},_,_) then ({},env,csets,ci_state,{}); 
+    case (env,mod,pre,csets,ci_state,(el :: els),inst_dims,impl) /* most work done in inst_element. */ 
       equation 
-        (dae1,env_1,csets_1,ci_state_1,tys1) = instElement(env, mod, pre, csets, ci_state, el, inst_dims, impl, 
-          packimpl);
-        (dae2,env_2,csets_2,ci_state_2,tys2) = instElementList(env_1, mod, pre, csets_1, ci_state_1, els, inst_dims, 
-          impl, packimpl);
+        (dae1,env_1,csets_1,ci_state_1,tys1) = instElement(env, mod, pre, csets, ci_state, el, inst_dims, impl);
+        (dae2,env_2,csets_2,ci_state_2,tys2) = instElementList(env_1, mod, pre, csets_1, ci_state_1, els, inst_dims, impl);
         tys = listAppend(tys1, tys2);
         dae = listAppend(dae1, dae2);
       then
         (dae,env_2,csets_2,ci_state_2,tys);
-    case (_,_,_,_,_,els,_,_,_)
+    case (_,_,_,_,_,els,_,_)
       equation 
         //Debug.fprint("failtrace", "- inst_element_list failed\n");
       then
@@ -2239,24 +2231,52 @@ algorithm
     local
       list<Env.Frame> env,env_1,env_2;
       SCode.Class cl;
+      list<SCode.Element> els;
+      Boolean impl;
+      Absyn.Import imp;
+    case (env,els,impl) 
+      local String s;
+      equation
+      	env_1 = addClassdefsToEnv2(env,els,impl);
+      	env_2 = addClassdefsToEnv2(env_1,els,impl) "classes added with correct env"; 
+       then env_2;     
+  end matchcontinue;
+end addClassdefsToEnv;
+
+protected function addClassdefsToEnv2 "function: addClassdefsToEnv2
+  author: PA
+ 
+  Helper relation to addClassdefsToEnv
+"
+  input Env inEnv;
+  input list<SCode.Element> inSCodeElementLst;
+  input Boolean inBoolean;
+  output Env outEnv;
+algorithm 
+  outEnv:=
+  matchcontinue (inEnv,inSCodeElementLst,inBoolean)
+    local
+      list<Env.Frame> env,env_1,env_2;
+      SCode.Class cl;
       list<SCode.Element> xs;
       Boolean impl;
       Absyn.Import imp;
     case (env,{},_) then env; 
     case (env,(SCode.CLASSDEF(class_ = cl) :: xs),impl)
+      local String s;
       equation 
         env_1 = Env.extendFrameC(env, cl);
-        env_2 = addClassdefsToEnv(env_1, xs, impl);
+        env_2 = addClassdefsToEnv2(env_1, xs, impl);
       then
         env_2;
     case (env,(SCode.IMPORT(import_ = imp) :: xs),impl)
       equation 
         env_1 = Env.extendFrameI(env, imp);
-        env_2 = addClassdefsToEnv(env_1, xs, impl);
+        env_2 = addClassdefsToEnv2(env_1, xs, impl);
       then
         env_2;
   end matchcontinue;
-end addClassdefsToEnv;
+end addClassdefsToEnv2;
 
 protected function isStructuralParameter "function: isStructuralParameter
   author: PA
@@ -2588,7 +2608,6 @@ protected function instElement "function: instElement
   input tuple<SCode.Element, Mod> inTplSCodeElementMod6;
   input InstDims inInstDims7;
   input Boolean inBoolean8;
-  input Boolean inBoolean9;
   output list<DAE.Element> outDAEElementLst;
   output Env outEnv;
   output Connect.Sets outSets;
@@ -2596,7 +2615,7 @@ protected function instElement "function: instElement
   output list<Types.Var> outTypesVarLst;
 algorithm 
   (outDAEElementLst,outEnv,outSets,outState,outTypesVarLst):=
-  matchcontinue (inEnv1,inMod2,inPrefix3,inSets4,inState5,inTplSCodeElementMod6,inInstDims7,inBoolean8,inBoolean9)
+  matchcontinue (inEnv1,inMod2,inPrefix3,inSets4,inState5,inTplSCodeElementMod6,inInstDims7,inBoolean8)
     local
       list<Env.Frame> env,env_1,env2,env2_1,cenv,compenv;
       Types.Mod mod,mods,classmod,mm,mods_1,classmod_1,mm_1,m_1,mod1,mod1_1,mod_1,cmod,omod;
@@ -2606,7 +2625,7 @@ algorithm
       Absyn.Import imp;
       InstDims instdims,inst_dims;
       String n,n2,s,scope_str,ns;
-      Boolean final_,repl,prot,f2,repl2,impl,packimpl,flow_;
+      Boolean final_,repl,prot,f2,repl2,impl,flow_;
       SCode.Class cls2,c,cl;
       list<DAE.Element> dae;
       Exp.ComponentRef vn;
@@ -2627,50 +2646,52 @@ algorithm
       tuple<Types.TType, Option<Absyn.Path>> ty;
       Types.Binding binding;
       Types.Var new_var;
-    case (env,mod,pre,csets,ci_state,(SCode.IMPORT(import_ = imp),_),instdims,_,_) then ({},env,csets,ci_state,{});  /* imports
+    case (env,mod,pre,csets,ci_state,(SCode.IMPORT(import_ = imp),_),instdims,_) then ({},env,csets,ci_state,{});  /* imports
 	    imports are simply added to the current frame, so that the lookup rule can find them.
 	 Import have allready been added to the environment so there 
 	  is nothing more to do here.
 	 */ 
-    case (env,mods,pre,csets,ci_state,(SCode.COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot),_),_,_,_) /* If a variable is declared multiple times, the first is used */ 
+   /* If a variable is declared multiple times, the first is used */ 
+    case (env,mods,pre,csets,ci_state,(SCode.COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot),_),_,_) 
       equation 
         (_,NONE,true,_) = Lookup.lookupIdentLocal(env, n);
       then
         ({},env,csets,ci_state,{});
-    case (env,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n),_),_,_,_) /* Illegal redeclarations */ 
+    case (env,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n),_),_,_) /* Illegal redeclarations */ 
       equation 
         (_,_,_,_) = Lookup.lookupIdentLocal(env, n);
         Error.addMessage(Error.REDECLARE_CLASS_AS_VAR, {n});
       then
         fail();
-    case (env,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n,replaceable_ = true,class_ = c),_),inst_dims,impl,packimpl) /* A new class definition
-	   
-	    Put it in the current frame in the environment
-	 */ 
+        
+        /* A new class definition
+	   	    Put it in the current frame in the environment
+	 			*/ 
+    case (env,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n,replaceable_ = true,class_ = c),_),inst_dims,impl) 
       equation 
         ((classmod as Types.REDECL(final_,{(SCode.CLASSDEF(n2,f2,repl2,cls2,_),_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n)) "Redeclare of class definition, replaceable is true" ;
-        (env_1,dae) = instClassDecl(env, classmod, pre, csets, cls2, inst_dims, packimpl) "//Debug.fprintln (\"insttr\", \"--Classdef mods\") &
+        (env_1,dae) = instClassDecl(env, classmod, pre, csets, cls2, inst_dims) "//Debug.fprintln (\"insttr\", \"--Classdef mods\") &
 	Debug.fcall (\"insttr\", Mod.print_mod, classmod) &
 	//Debug.fprintln (\"insttr\", \"--All mods\") &
 	Debug.fcall (\"insttr\", Mod.print_mod, mods) &" ;
       then
         (dae,env_1,csets,ci_state,{});
-    case (env,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n,replaceable_ = false,class_ = c),_),inst_dims,impl,packimpl)
+    case (env,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n,replaceable_ = false,class_ = c),_),inst_dims,impl)
       equation 
         ((classmod as Types.REDECL(final_,{(SCode.CLASSDEF(n2,f2,repl2,cls2,_),_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n)) "Redeclare of class definition, replaceable is false" ;
         Error.addMessage(Error.REDECLARE_NON_REPLACEABLE, {n});
       then
         fail();
-    case (env,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n,class_ = c),_),inst_dims,impl,packimpl) /* Classdefinition without redeclaration */ 
+    case (env,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n,class_ = c),_),inst_dims,impl) /* Classdefinition without redeclaration */ 
       equation 
         classmod = Mod.lookupModificationP(mods, Absyn.IDENT(n));
-        (env_1,dae) = instClassDecl(env, classmod, pre, csets, c, inst_dims, packimpl) "//Debug.fprintln (\"insttr\", \"Classdef mods\") &
+        (env_1,dae) = instClassDecl(env, classmod, pre, csets, c, inst_dims) "//Debug.fprintln (\"insttr\", \"Classdef mods\") &
 	Debug.fcall (\"insttr\", Mod.print_mod, classmod) &
 	//Debug.fprintln (\"insttr\", \"All mods\") &
 	Debug.fcall (\"insttr\", Mod.print_mod, mods) &" ;
       then
         (dae,env_1,csets,ci_state,{});
-    case (env,mods,pre,csets,ci_state,((comp as SCode.COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = (attr as SCode.ATTR(arrayDim = ad,flow_ = flow_,RW = acc,parameter_ = param,input_ = dir)),type_ = t,mod = m,baseclass = bc,this = comment)),cmod),inst_dims,impl,packimpl) /* A component
+    case (env,mods,pre,csets,ci_state,((comp as SCode.COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = (attr as SCode.ATTR(arrayDim = ad,flow_ = flow_,RW = acc,parameter_ = param,input_ = dir)),type_ = t,mod = m,baseclass = bc,this = comment)),cmod),inst_dims,impl) /* A component
 	   
 	    This is the rule for instantiating a model component.  A
 	    component can be a structured subcomponent or a variable,
@@ -2719,7 +2740,7 @@ algorithm
       then
         (dae,env_1,csets_1,ci_state,{
           Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding)});
-    case (env,_,pre,csets,ci_state,(SCode.COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,type_ = t),_),_,_,_) /* If the class lookup in the previous rule fails, this
+    case (env,_,pre,csets,ci_state,(SCode.COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,type_ = t),_),_,_) /* If the class lookup in the previous rule fails, this
 	  rule catches the error and prints an error message about
 	  the unknown class. 
 	 Failure => ({},env,csets,ci_state,{}) */ 
@@ -2732,7 +2753,7 @@ algorithm
         Error.addMessage(Error.LOOKUP_ERROR_COMPNAME, {s,scope_str,ns}) "	Debug.fcall (\"instdb\", Env.print_env, env)" ;
       then
         fail();
-    case (env,omod,_,_,_,(el,mod),_,_,_) /* => ({},env,csets,ci_state,{}) */ 
+    case (env,omod,_,_,_,(el,mod),_,_) /* => ({},env,csets,ci_state,{}) */ 
       equation 
         //Debug.fprint("failtrace", "- inst_element failed\n");
         Debug.fcall("failtrace", SCode.printElement, el);
@@ -4479,7 +4500,6 @@ public function instClassDecl "function: instClassDecl
   input Connect.Sets inSets;
   input SCode.Class inClass;
   input InstDims inInstDims;
-  input Boolean inBoolean;
   output Env outEnv;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
@@ -4495,14 +4515,14 @@ algorithm
       String n;
       SCode.Restriction restr;
       InstDims inst_dims;
-      Boolean packimpl;
-    case (env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = restr)),inst_dims,packimpl) /* packimpl */ 
+    case (env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = restr)),inst_dims)  
+      local String s;
       equation 
         env_1 = Env.extendFrameC(env, c);
-        (env_2,dae) = implicitInstantiation(env_1, Types.NOMOD(), pre, csets, c, inst_dims, packimpl);
+        (env_2,dae) = implicitInstantiation(env_1, Types.NOMOD(), pre, csets, c, inst_dims);
       then
         (env_2,dae);
-    case (env,_,_,_,_,_,_)
+    case (env,_,_,_,_,_)
       equation 
         //Debug.fprint("failtrace", "- inst_class_decl failed\n");
       then
@@ -4524,12 +4544,11 @@ public function implicitInstantiation "function implicitInstantiation
   input Connect.Sets inSets;
   input SCode.Class inClass;
   input InstDims inInstDims;
-  input Boolean inBoolean;
   output Env outEnv;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   (outEnv,outDAEElementLst):=
-  matchcontinue (inEnv,inMod,inPrefix,inSets,inClass,inInstDims,inBoolean)
+  matchcontinue (inEnv,inMod,inPrefix,inSets,inClass,inInstDims)
     local
       list<DAE.Element> dae;
       Connect.Sets csets_1,csets;
@@ -4542,37 +4561,19 @@ algorithm
       SCode.Class c,enumclass;
       String n;
       InstDims inst_dims;
-      Boolean packimpl,prot;
+      Boolean prot;
       DAE.ExternalDecl extdecl;
       SCode.Restriction restr;
       SCode.ClassDef parts;
       list<SCode.Element> els;
       list<String> l;
-    /*case (env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = SCode.R_FUNCTION())),inst_dims,(packimpl as false)) /* packimpl Implicit instantiation of functions */ 
-      equation 
-        (dae,_,csets_1,ty,st) = instClass(env, mod, pre, csets, c, inst_dims, true, INNER_CALL()) "impl" ;
-        env_1 = Env.extendFrameT(env, n, ty);
-        fpath = makeFullyQualified(env, Absyn.IDENT(n));
-      then
-        (env_1,{DAE.FUNCTION(fpath,DAE.DAE(dae),ty)});
-    case (env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = (restr as SCode.R_EXT_FUNCTION()),parts = (parts as SCode.PARTS(elementLst = els)))),inst_dims,(packimpl as false)) /* Implicit instantiation of external functions */ 
-      equation 
-        (dae,_,csets_1,ty,st) = instClass(env, mod, pre, csets, c, inst_dims, true, INNER_CALL());
-        env_1 = Env.extendFrameT(env, n, ty);
-        fpath = makeFullyQualified(env, Absyn.IDENT(n));
-        prot = false;
-        (_,tempenv,_,_,_,_) = instClassdef(env, mod, pre, csets_1, ClassInf.UNKNOWN(n), parts, restr, 
-          prot, inst_dims, true, packimpl) "impl" ;
-        extdecl = instExtDecl(tempenv, n, parts, true) "impl" ;
-      then
-        (env_1,{DAE.EXTFUNCTION(fpath,DAE.DAE(dae),ty,extdecl)});*/
-    case (env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = SCode.R_TYPE(),parts = SCode.ENUMERATION(identLst = l))),inst_dims,packimpl) /* enumerations */ 
+     case (env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = SCode.R_TYPE(),parts = SCode.ENUMERATION(identLst = l))),inst_dims) /* enumerations */ 
       equation 
         enumclass = instEnumeration(n, l);
         env_2 = Env.extendFrameC(env, enumclass); 
       then
         (env_2,{});
-    case (env,mod,pre,csets,c,_,_) then (env,{});  /* .. the rest will fall trough */
+    case (env,mod,pre,csets,c,_) then (env,{});  /* .. the rest will fall trough */
   end matchcontinue;
 end implicitInstantiation;
 
@@ -4628,12 +4629,11 @@ public function implicitFunctionInstantiation "function: implicitFunctionInstant
   input Connect.Sets inSets;
   input SCode.Class inClass;
   input InstDims inInstDims;
-  input Boolean inBoolean;
   output Env outEnv;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   (outEnv,outDAEElementLst):=
-  matchcontinue (inEnv,inMod,inPrefix,inSets,inClass,inInstDims,inBoolean)
+  matchcontinue (inEnv,inMod,inPrefix,inSets,inClass,inInstDims)
     local
       list<DAE.Element> dae,daefuncs;
       Connect.Sets csets_1,csets;
@@ -4646,23 +4646,23 @@ algorithm
       SCode.Class c;
       String n;
       InstDims inst_dims;
-      Boolean packimpl,prot;
+      Boolean prot;
       DAE.ExternalDecl extdecl;
       SCode.Restriction restr;
       SCode.ClassDef parts;
       list<SCode.Element> els;
       list<Absyn.Path> funcnames;
-    case (env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = SCode.R_FUNCTION())),inst_dims,(packimpl as false))
+    case (env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = SCode.R_FUNCTION())),inst_dims)
    local String s;
-      equation  
+      equation 
         (dae,cenv,csets_1,ty,st) = instClass(env, mod, pre, csets, c, inst_dims, true, INNER_CALL());
-        env_1 = Env.extendFrameC(env,c);    
+        env_1 = Env.extendFrameC(env,c);
         fpath = makeFullyQualified(env_1, Absyn.IDENT(n));
         ty1 = setFullyQualifiedTypename(ty,fpath);
         env_1 = Env.extendFrameT(env_1, n, ty1); 
       then
         (env_1,{DAE.FUNCTION(fpath,DAE.DAE(dae),ty1)});
-    case (env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = (restr as SCode.R_EXT_FUNCTION()),parts = (parts as SCode.PARTS(elementLst = els)))),inst_dims,(packimpl as false)) /* External functions should also have their type in env, 
+    case (env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = (restr as SCode.R_EXT_FUNCTION()),parts = (parts as SCode.PARTS(elementLst = els)))),inst_dims) /* External functions should also have their type in env, 
 	    but no dae. */ 
       equation 
         (dae,cenv,csets_1,ty,st) = instClass(env, mod, pre, csets, c, inst_dims, true, INNER_CALL());
@@ -4672,16 +4672,16 @@ algorithm
         env_1 = Env.extendFrameT(env_1, n, ty1);
         prot = false;
         (_,tempenv,_,_,_,_) = instClassdef(env_1, mod, pre, csets_1, ClassInf.FUNCTION(n), parts, 
-          restr, prot, inst_dims, true, packimpl) "how to get this? impl" ;
+          restr, prot, inst_dims, true) "how to get this? impl" ;
         extdecl = instExtDecl(tempenv, n, parts, true) "impl" ;
       then
         (env_1,{DAE.EXTFUNCTION(fpath,DAE.DAE(dae),ty1,extdecl)});
-    case (env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = (restr as SCode.R_FUNCTION()),parts = SCode.OVERLOAD(absynPathLst = funcnames))),inst_dims,(packimpl as false))
+    case (env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = (restr as SCode.R_FUNCTION()),parts = SCode.OVERLOAD(absynPathLst = funcnames))),inst_dims)
       equation 
         (env_1,daefuncs) = instOverloadedFunctions(env, n, funcnames) "Overloaded functions" ;
       then
         (env_1,daefuncs);
-    case (_,_,_,_,_,_,_) equation /*print("implicit_function_instantiation failed\n");*/ then fail(); 
+    case (_,_,_,_,_,_) equation /*print("implicit_function_instantiation failed\n");*/ then fail(); 
   end matchcontinue;
 end implicitFunctionInstantiation;
 
@@ -4728,8 +4728,7 @@ algorithm
     case (env,SCode.CLASS(name = id,partial_ = p,encapsulated_ = e,restricion = r,parts = SCode.PARTS(elementLst = elts,used=extDecl))) /* The function type can be determined without the body. */ 
       equation 
         stripped_class = SCode.CLASS(id,p,e,r,SCode.PARTS(elts,{},{},{},{},extDecl));
-        (env_1,_) = implicitFunctionInstantiation(env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          stripped_class, {}, false);
+        (env_1,_) = implicitFunctionInstantiation(env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, stripped_class, {});
       then
         env_1;
   end matchcontinue;

@@ -469,9 +469,36 @@ algorithm
       list<Exp.ComponentRef> crs;
       Boolean encflag;
       Absyn.Import imp;
-    case ((FRAME(class_1 = sid,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs),imp) then (FRAME(sid,ht,httypes,(IMPORT(imp) :: imps),bcframes,crs,encflag) :: fs); 
+      Env env;
+    case ((FRAME(class_1 = sid,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs),imp) 
+      equation
+        false = memberImportList(imps,imp);
+    then (FRAME(sid,ht,httypes,(IMPORT(imp) :: imps),bcframes,crs,encflag) :: fs);
+      case (env,imp) then env;
   end matchcontinue;
 end extendFrameI;
+
+protected function memberImportList "Returns true if import exist in imps"
+	input list<Item> imps;
+	input Absyn.Import imp;
+  output Boolean res "true if import exist in imps, false otherwise";	
+algorithm
+  res := matchcontinue (imps,imp) 
+  	local 
+  	  list<Item> ims;
+  		Absyn.Import imp2;
+  		Boolean res;
+    case (IMPORT(imp2)::ims,imp) 
+      equation
+     		equality(imp2 = imp); 
+    then true;
+   
+    case (_::ims,imp) equation 
+       res=memberImportList(ims,imp);
+    then res;
+    case (_,_) then false;
+   end matchcontinue;
+end memberImportList;
 
 public function addBcFrame "function: addBcFrame
   author: PA

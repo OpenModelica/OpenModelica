@@ -2708,7 +2708,7 @@ algorithm
         env3 = Env.openScope(env_1, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
         (dae1,env4,csets_1,ci_state_1,tys,_) = Inst.instClassIn(env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, false, false);
+          ci_state, c, false, {}, false);
         cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT("stateSelect",{}));
         (attr,ty,Types.EQBOUND(exp,_,_)) = Lookup.lookupVar(env4, cref_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname_1,dae1,env4));
@@ -2732,7 +2732,7 @@ algorithm
         env3 = Env.openScope(env_1, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
         (dae1,env4,csets_1,ci_state_1,tys,_) = Inst.instClassIn(env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, false, false);
+          ci_state, c, false, {}, false);
         cref_1 = Exp.joinCrefs(cref, Exp.CREF_IDENT(attribute,{}));
         (attr,ty,Types.VALBOUND(v)) = Lookup.lookupVar(env4, cref_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname_1,dae1,env4));
@@ -4417,7 +4417,7 @@ algorithm
         (cls,env_1) = Lookup.lookupClass(env, path, false);
         Debug.fprintln("ceval", "/*- ceval_generate_function_str instantiating*/");
         (env_2,d) = Inst.implicitFunctionInstantiation(env_1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          cls, {}, false);
+          cls, {});
         Debug.fprint("ceval", 
           "/*- ceval_generate_function_str getting functions: ");
         calledfuncs = SimCodegen.getCalledFunctionsInFunction(path, DAE.DAE(d));
