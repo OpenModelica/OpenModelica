@@ -93,7 +93,7 @@ public function strncmp
   output Integer outInteger;
 
   external "C" ;
-end strcmp;
+end strncmp;
 
 
 public function stringReplace

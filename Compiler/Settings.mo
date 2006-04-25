@@ -114,13 +114,13 @@ public function getEcho
   output Integer echo;
 
   external "C" ;
-end getModelicaPath;
+end getEcho;
 
 public function setEcho
   input Integer echo;
 
   external "C" ;
-end getModelicaPath;
+end setEcho;
 
 public function dumpSettings
 
