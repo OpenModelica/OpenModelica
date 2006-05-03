@@ -1732,30 +1732,35 @@ algorithm
 
     case (env,Exp.CALL(path = Absyn.IDENT(name = "setCompileCommand"),expLst = {Exp.SCONST(string = cmd)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* (Values.STRING(\"The model have been translated\"),st\') */ 
       equation 
+        cmd = Util.rawStringToInputString(cmd);
         Settings.setCompileCommand(cmd);
       then
         (Values.BOOL(true),st);
 
     case (env,Exp.CALL(path = Absyn.IDENT(name = "setPlotCommand"),expLst = {Exp.SCONST(string = cmd)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
+        cmd = Util.rawStringToInputString(cmd);
         Settings.setPlotCommand(cmd);
       then
         (Values.BOOL(true),st);
 
     case (env,Exp.CALL(path = Absyn.IDENT(name = "setTempDirectoryPath"),expLst = {Exp.SCONST(string = cmd)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
+        cmd = Util.rawStringToInputString(cmd);
         Settings.setTempDirectoryPath(cmd);
       then
         (Values.BOOL(true),st);
 
     case (env,Exp.CALL(path = Absyn.IDENT(name = "setInstallationDirectoryPath"),expLst = {Exp.SCONST(string = cmd)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
+        cmd = Util.rawStringToInputString(cmd);
         Settings.setInstallationDirectoryPath(cmd);
       then
         (Values.BOOL(true),st);
 
     case (env,Exp.CALL(path = Absyn.IDENT(name = "setModelicaPath"),expLst = {Exp.SCONST(string = cmd)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
+        cmd = Util.rawStringToInputString(cmd);
         Settings.setModelicaPath(cmd);
       then
         (Values.BOOL(true),st);

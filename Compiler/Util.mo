@@ -2816,5 +2816,30 @@ algorithm
         fail();
   end matchcontinue;
 end getAbsoluteDirectoryAndFile;
+
+
+public function rawStringToInputString "function: rawStringToInputString
+  author: x02lucpo
+ 
+  replace the double-backslash with backslash
+"
+  input String inString;
+  output String s;
+algorithm 
+  (s) :=
+  matchcontinue (inString)
+    local
+      String retString,rawString;
+    case (rawString)
+      equation 
+         retString = System.stringReplace(rawString, "\\\"", "\"") "change backslash-double-quote to double-quote ";
+         retString = System.stringReplace(retString, "\\\\", "\\") "double-backslash with backslash ";
+      then
+        (retString);
+  end matchcontinue;
+end  rawStringToInputString;
+
+
+
 end Util;
 
