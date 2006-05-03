@@ -271,7 +271,7 @@ OMS::OMS( QWidget* parent )
 	statusBar()->showMessage( tr("Ready") );
 
 	// sett start message
-	cursor_.insertText( "OpenModelica 1.3.2\n", textFormat_ );
+	cursor_.insertText( "OpenModelica 1.4.0\n", textFormat_ );
 	cursor_.insertText( "Copyright 2002-2006, PELAB, Linkoping University\n\n", textFormat_ );
 	cursor_.insertText( "To get help on using OMShell and OpenModelica, type \"help()\" and press enter.\n", textFormat_ );
 
@@ -1052,7 +1052,7 @@ void OMS::viewStatusbar()
 void OMS::aboutOMS()
 {
 	QMessageBox::about(this, "About OMShell",
-		QString("OMShell v1.1 (for OpenModelica v1.3.2)\n") + 
+		QString("OMShell v1.1 (for OpenModelica v1.4.0)\n") + 
 		QString("Copyright PELAB (c) 2006") );
 }
 
@@ -1114,7 +1114,7 @@ void OMS::clear()
 	moshEdit_->setFontPointSize( fontSize_ );
 
 	cursor_ = moshEdit_->textCursor();
-	cursor_.insertText( "OpenModelica 1.3.2\n" );
+	cursor_.insertText( "OpenModelica 1.4.0\n" );
 	cursor_.insertText( "Copyright 2002-2006, PELAB, Linkoping University\n\n" );
 	cursor_.insertText( "To get help on using OMShell and OpenModelica, type \"help()\" and press enter.\n" );
 
