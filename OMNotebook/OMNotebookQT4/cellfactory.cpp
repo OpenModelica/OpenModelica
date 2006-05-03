@@ -141,6 +141,10 @@ namespace IAEX
 			QObject::connect( text, SIGNAL( textChanged(bool) ),
 				doc_, SLOT( setChanged(bool) ));
 
+			// 2006-04-27 AF
+			QObject::connect( text, SIGNAL( forwardAction(int) ),
+				doc_, SIGNAL( forwardAction(int) ));
+
 
 			return text;
 		}
@@ -192,6 +196,10 @@ namespace IAEX
 			// 2006-02-10 AF
 			QObject::connect( text, SIGNAL( hoverOverUrl(const QUrl &) ),
 				doc_, SLOT( hoverOverUrl(const QUrl &) ));
+
+			// 2006-04-27 AF
+			QObject::connect( text, SIGNAL( forwardAction(int) ),
+				doc_, SIGNAL( forwardAction(int) ));
 
 			return text; 
 		}

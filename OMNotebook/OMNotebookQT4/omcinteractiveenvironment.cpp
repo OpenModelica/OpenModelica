@@ -52,6 +52,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 //QT Headers
 #include <QtCore/QDir>
 #include <QtCore/QProcess>
+#include <QtCore/QThread>
 #include <QtGui/QMessageBox>
 
 //IAEX Headers
@@ -61,6 +62,16 @@ using namespace std;
 
 namespace IAEX
 {
+	class SleeperThread : public QThread
+	{
+	public:
+		static void msleep(unsigned long msecs)
+		{
+			QThread::msleep(msecs);
+		}
+	};
+
+
 	/*! \class OmcInteractiveEnvironment
 	*
 	* \brief Implements evaluation for modelica code. 
@@ -240,6 +251,10 @@ namespace IAEX
 		
 			// 2006-03-14 AF, start omc
 			omcProcess->start( omc, parameters );
+
+			// give time to start up..
+			SleeperThread::msleep( 500 );
+
 			if( QProcess::Running == omcProcess->state() )
 				flag = true;
 			else

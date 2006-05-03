@@ -176,5 +176,25 @@ namespace IAEX
 		void execute();
 	};
 
+	// 2006-04-26 AF, UNGROUP
+	class UngroupCellCommand : public Command
+	{
+	public:
+		UngroupCellCommand(){}
+		virtual ~UngroupCellCommand(){}
+		virtual QString commandName(){ return QString("UngroupCellCommand");}
+		void execute();
+	};
+
+	// 2006-04-26 AF, SPLIT CELL
+	class SplitCellCommand : public Command
+	{
+	public:
+		SplitCellCommand(){}
+		virtual ~SplitCellCommand(){}
+		virtual QString commandName(){ return QString("SplitCellCommand");}
+		void execute();
+	};
+
 };
 #endif

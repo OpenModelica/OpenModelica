@@ -110,6 +110,7 @@ namespace IAEX
 		void updateWindowTitle();				// Added 2006-01-17 AF
 		void updateChapterCounters();			// Added 2006-03-02 AF
 		void setStatusMessage( QString msg );	// Added 2006-02-10 AF
+		void forwardedAction( int action );		// Added 2006-04-27 AF
 
 	protected:
 		void keyPressEvent(QKeyEvent *event);
@@ -158,6 +159,8 @@ namespace IAEX
 		void cutCell();
 		void copyCell();
 		void pasteCell();
+		void ungroupCell();				// Added 2006-04-26 AF
+		void splitCell();				// Added 2006-04-26 AF
 		void moveCursorUp();
 		void moveCursorDown();
 		void groupCellsAction();
@@ -232,10 +235,12 @@ namespace IAEX
 		QAction *searchAction;
 		QAction *showExprAction;
 
-		QAction *cutCellAction;
-		QAction *copyCellAction;
-		QAction *pasteCellAction;
+		//QAction *cutCellAction;
+		//QAction *copyCellAction;
+		//QAction *pasteCellAction;
 		QAction *addCellAction;
+		QAction *ungroupCellAction;			// Added 2006-04-26 AF
+		QAction *splitCellAction;			// Added 2006-04-26 AF
 		QAction *deleteCellAction;
 		QAction *nextCellAction;
 		QAction *previousCellAction;

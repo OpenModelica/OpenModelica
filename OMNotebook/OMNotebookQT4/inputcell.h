@@ -109,6 +109,7 @@ namespace IAEX
 		void textChanged();
 		void textChanged( bool );
 		void clickedOutput( Cell* );					// Added 2006-02-03 AF
+		void forwardAction( int );						// Added 2006-04-27 AF
 
 	public slots:
 		void eval();
@@ -152,6 +153,7 @@ namespace IAEX
 		void createOutputCell();
 		void createChapterCounter();
 		void exceptionInEval(exception &e);					// Added 2006-02-02 AF
+		void setOutputStyle();								// Added 2006-04-21 AF
 
 	private:
 		bool evaluated_;
@@ -190,6 +192,7 @@ namespace IAEX
 		void nextCommand();					// Added 2005-12-15 AF
 		void nextField();					// Added 2005-12-15 AF
 		void eval();						// Added 2005-12-15 AF
+		void forwardAction( int );			// Added 2006-04-27 AF
 
 	protected:
 		void mousePressEvent(QMouseEvent *event);			// Added 2005-11-01 AF

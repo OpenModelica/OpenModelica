@@ -55,7 +55,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <iostream>
 
 //QT Headers
-#include <QtGui/QApplication>
+//#include <QtGui/QApplication>
 #include <QtGui/QMessageBox>
 
 //IAEX Headers
@@ -67,39 +67,20 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 using namespace std;
 using namespace IAEX;
 
-/*!
- */
-
-
-
-
-/*
-#include <QTextEdit>
-
-int main(int argc, char *argv[])
-{
-        QApplication app(argc, argv);
-
-        QTextEdit *edit = new QTextEdit(0);
-        edit->setHtml("<img src='test.png'/>");
-        edit->show();
-        return app.exec();
-}
-*/
-
 int main(int argc, char *argv[])
 {	 
-   try
-   {
-      CellApplication a(argc, argv);      
-      return a.exec();
-   }
-   catch(exception &e)
-   {
-	   // 2006-01-30 AF, add message box
-	   QString msg = QString("In main(), exception: \n") + e.what();
+	try
+	{
+		CellApplication a(argc, argv); 
+		return a.exec();
+	}
+	catch(exception &e)
+	{
+		// 2006-01-30 AF, add message box
+		QString msg = QString("In main(), exception: \n") + e.what();
 		QMessageBox::warning( 0, "Warning", msg, "OK" );
-   }
- 
-   return 0;
+	}
+
+	return 0;
 }
+

@@ -77,12 +77,14 @@ namespace IAEX
 		void addEditor( QTextEdit *editor );		// Added 2005-12-29 AF
 		void removeEditor( QTextEdit *editor );		// Added 2006-01-05 AF
 		bool haveEditor( QTextEdit *editor );		// Added 2006-01-05 AF
+		void setStop( bool stop );					// Added 2006-05-03 AF
 
 	private:
 		HighlighterThread( SyntaxHighlighter *highlighter = 0, QObject *parent = 0 );
 
 	private:
 		static HighlighterThread *instance_;
+		bool stopHighlighting_;
 
 		SyntaxHighlighter *highlighter_;
 		QStack<QTextEdit*> stack_;

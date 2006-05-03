@@ -95,7 +95,8 @@ namespace IAEX
 		void heightChanged();
 		void textChanged();
 		void textChanged( bool );
-		void hoverOverUrl( const QUrl &link );				// Added 2006-02-10 AF
+		void hoverOverUrl( const QUrl &link );		// Added 2006-02-10 AF
+		void forwardAction( int );					// Added 2006-04-27 AF
 
 	public slots:
 		void clickEvent();
@@ -142,10 +143,13 @@ namespace IAEX
 		MyTextBrowser(QWidget *parent=0);
 		virtual ~MyTextBrowser();
 
+		void setActive( bool active );				// Added 2006-04-25 AF
+
 	signals:
 		void openLink(const QUrl *);				// Changed 2005-11-03 AF
 		void clickOnCell();							// Added 2005-11-01 AF
 		void wheelMove( QWheelEvent* );				// Added 2005-11-28 AF
+		void forwardAction( int );					// Added 2006-04-27 AF
 
 	public slots:
 		void setSource(const QUrl &name);			// Changed 2005-11-03 AF
@@ -155,6 +159,7 @@ namespace IAEX
 		void wheelEvent(QWheelEvent * event);				// Added 2005-11-28 AF
 		void insertFromMimeData(const QMimeData *source);	// Added 2006-01-23 AF
 		void keyPressEvent(QKeyEvent *event );				// Added 2006-01-30 AF
+
 	};
 
 }

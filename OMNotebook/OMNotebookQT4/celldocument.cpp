@@ -141,7 +141,8 @@ namespace IAEX
 		saved_(false), 
 		app_(a), 
 		filename_(filename),
-		currentImageNo_(0)
+		currentImageNo_(0),
+		lastClickedCell_(0)
 	{
 		mainFrame_ = new QFrame();
 		mainFrame_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, 
@@ -341,6 +342,44 @@ namespace IAEX
 		{	
 			executeCommand(new AddCellCommand());
 			open_ = true;
+			emit cursorChanged();
+		}
+		catch( exception &e )
+		{
+			throw e;
+		}
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-04-26
+	 *
+	 * \brief Ungroup all selected groupcells
+	 */
+	void CellDocument::cursorUngroupCell()
+	{
+		try
+		{	
+			executeCommand( new UngroupCellCommand() );
+			emit cursorChanged();
+		}
+		catch( exception &e )
+		{
+			throw e;
+		}
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-04-26
+	 *
+	 * \brief Split current cell
+	 */
+	void CellDocument::cursorSplitCell()
+	{
+		try
+		{	
+			executeCommand( new SplitCellCommand() );
 			emit cursorChanged();
 		}
 		catch( exception &e )
@@ -752,6 +791,7 @@ namespace IAEX
 					cout << "CELL HEIGHT: " << height << endl;
 					*/
 					
+					
 
 					// TO BIG
 					if( height > (scrollBottom-scrollTop) )
@@ -761,9 +801,10 @@ namespace IAEX
 						return;
 					}
 					// END OF DOCUMENT
-					else if( scrollBottom > (scroll_->widget()->height() - 10 ))
+					else if( pos > (scroll_->widget()->height() - 2 ) &&
+						scrollBottom > (scroll_->widget()->height() - 2 ) )
 					{
-						//qDebug( "END OF DOCUMENT" );
+						//cout << "END OF DOCUMENT, widget height(" << scroll_->widget()->height() << ")" << endl;
 						// 2006-03-03 AF, ignore if cursor at end of document
 						return;
 					}
@@ -774,7 +815,7 @@ namespace IAEX
 						// scrollbar, move up the scrollbar
 
 						// remove cell height + a little extra
-						pos -= (height + 20);
+						pos -= (height + 10);
 						if( pos < 0 )
 							pos = 0;
 
@@ -862,6 +903,13 @@ namespace IAEX
 	 */
 	void CellDocument::mouseClickedOnCell(Cell *clickedCell)
 	{
+		// 2006-04-25, AF
+		if( lastClickedCell_ == clickedCell )
+			return;
+		else
+			lastClickedCell_ = clickedCell;
+
+
 		//Deselect all selection
 		clearSelection();
 
@@ -1111,45 +1159,156 @@ namespace IAEX
 
 	////SELECTION HANDLING/////////////////////////
 
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-04-18
+	 *
+	 * \brief Help function for selection handling
+	 */
+	void CellDocument::addSelectedCell( Cell* cell )
+	{
+		if( cell )
+		{
+			cell->setSelected( true );
+			selectedCells_.push_back( cell );
+		}
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-04-18
+	 *
+	 * \brief Help function for selection handling
+	 */
+	void CellDocument::removeSelectedCell( Cell* cell )
+	{
+		if( cell )
+		{
+			vector<Cell*>::iterator found = std::find( selectedCells_.begin(),
+				selectedCells_.end(), cell );
+
+			if( found != selectedCells_.end() )
+			{
+				(*found)->setSelected( false );
+				selectedCells_.erase( found );
+			}
+		}
+	}
+
 	void CellDocument::clearSelection()
 	{      
 		vector<Cell*>::iterator i = selectedCells_.begin();
+
 		for(;i!= selectedCells_.end();++i)
 			(*i)->setSelected(false);
+		
 		selectedCells_.clear();
 	}
 
-	void CellDocument::selectedACell(Cell *selected, Qt::KeyboardModifiers state)
+	// 2006-04-18 AF, Reimplemented the function. Also added support
+	// for selecting several cells by holding SHIFT down
+	void CellDocument::selectedACell( Cell *selected, Qt::KeyboardModifiers state )
 	{
-		vector<Cell*>::iterator found = std::find(selectedCells_.begin(), 
-			selectedCells_.end(),
-			selected);
-		if(found != selectedCells_.end())
-		{ 
-			// 2005-10-07 AF, Porting, Changed 'state-1' to 'state'
-			//State - 1 is QT stuff.
-			if(state == Qt::ControlModifier)
-		 {
-			 (*found)->setSelected(false);
-		 }
+		if( selected )
+		{
+			// if SHIFT is pressed, select all cells from last cell
+			if( state == Qt::ShiftModifier && 
+				selected->isSelected() &&
+				selectedCells_.size() > 0 )
+			{
+				// if last selected cell and this selected cell aren't
+				// int the same groupcell this funciton can't be used.
+				Cell *lastCell = selectedCells_[ selectedCells_.size() - 1 ];
+				if( selected->parentCell() == lastCell->parentCell() )
+				{
+					// check which cell is first in list
+					int count(0);
+					int cellCount(0);
+					int lastCellCound(0);
+
+					Cell *current = selected->next();
+					while( current )
+					{
+						// don't count cursor
+						if( typeid(CellCursor) != typeid(*current) )
+							++cellCount;
+
+						current = current->next();
+					}
+
+					current = lastCell->next();
+					while( current )
+					{
+						// don't count cursor
+						if( typeid(CellCursor) != typeid(*current) )
+							++lastCellCound;
+
+						current = current->next();
+					}
+
+					// LASTCELL, last in list
+					if( cellCount > lastCellCound )
+					{
+						count = ( cellCount - lastCellCound ) + 1; // also add last cell
+						removeSelectedCell( lastCell );
+
+						current = selected;
+						for( int i = 0; i < count; ++i )
+						{
+							// don't add cursor
+							if( typeid(CellCursor) != typeid(*current) )
+								addSelectedCell( current );
+							else
+								++count;
+
+							current = current->next();
+						}
+					}
+					// LASTCELL, first in list
+					else
+					{
+						count = ( lastCellCound - cellCount );
+
+						current = lastCell->next();
+						for( int i = 0; i < count; ++i )
+						{
+							// don't add cursor
+							if( typeid(CellCursor) != typeid(*current) )
+								addSelectedCell( current );
+							else
+								++count;
+
+							current = current->next();
+						}
+					}
+				}
+				else
+				{
+					selected->setSelected( false );
+					return;
+				}
+			}
+			// if CTRL is pressed, keep existing selections
+			else if( state == Qt::ControlModifier )
+			{
+				if( selected->isSelected() )
+					addSelectedCell( selected );
+				else
+					removeSelectedCell( selected );
+			}
 			else
-		 {
-			 clearSelection();
-		 }
-		}
-		else
-		{  //if not selected
-			if(state == Qt::ControlModifier)
-			{ //add to selection.
-				selectedCells_.push_back(selected);
-		 }
-			else
-			{  
+			{
+				bool flag = ( selectedCells_.size() > 1 );
 				clearSelection();
 
-				//Add new cell to selected.
-				selectedCells_.push_back(selected);
-		 }
+				if( flag || selected->isSelected() )
+					addSelectedCell( selected );
+				else
+					removeSelectedCell( selected );
+			}
+
+			// move cell cursor to cell
+			cursorMoveAfter( selected, false );
 		}
 	}
 

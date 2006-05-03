@@ -39,7 +39,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="TRUE"
-				AdditionalDependencies="qtmain.lib QtCore4.lib QtGui4.lib QtXml4.lib NotebookParser.lib mico2311.lib antlr.lib msvcprt.lib msvcrt.lib"
+				AdditionalDependencies="qtmain.lib QtCore4.lib QtGui4.lib QtNetwork4.lib QtXml4.lib NotebookParser.lib mico2311.lib antlr.lib msvcprt.lib msvcrt.lib"
 				OutputFile="Release\\OMNotebook.exe"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="&quot;$(QNBHOME)\antlr\Release&quot;;&quot;$(QNBHOME)\NotebookParser\Release&quot;;&quot;$(QTHOME)\lib&quot;;&quot;$(MICOHOME)\win32-bin\lib&quot;"
@@ -105,7 +105,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="TRUE"
-				AdditionalDependencies="qtmaind.lib QtCored4.lib QtGuid4.lib QtXmld4.lib antlr.lib NotebookParser.lib mico2311.lib"
+				AdditionalDependencies="qtmaind.lib QtCored4.lib QtGuid4.lib QtNetworkd4.lib QtXmld4.lib antlr.lib NotebookParser.lib mico2311.lib"
 				OutputFile="Debug\\OMNotebook.exe"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="&quot;$(QNBHOME)\antlr\Debug&quot;;&quot;$(MICOHOME)\win32-bin\lib&quot;;&quot;$(QNBHOME)\NotebookParser\Debug&quot;;&quot;$(QTHOME)\lib&quot;"
@@ -193,6 +193,9 @@
 			</File>
 			<File
 				RelativePath="notebookparser.cpp">
+			</File>
+			<File
+				RelativePath=".\notebooksocket.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\[anders]\[ exjobb ]\modelica_omc\omc_communication.cc">
@@ -534,6 +537,29 @@
 				RelativePath="notebookparser.h">
 			</File>
 			<File
+				RelativePath=".\notebooksocket.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing notebooksocket.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe notebooksocket.h -o moc_notebooksocket.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_notebooksocket.cpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing notebooksocket.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe notebooksocket.h -o moc_notebooksocket.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_notebooksocket.cpp"/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath=".\omc_communicator.hpp">
 				<FileConfiguration
 					Name="Release|Win32">
@@ -715,6 +741,9 @@
 			</File>
 			<File
 				RelativePath="moc_notebook.cpp">
+			</File>
+			<File
+				RelativePath=".\moc_notebooksocket.cpp">
 			</File>
 			<File
 				RelativePath=".\moc_omc_communicator.cpp">

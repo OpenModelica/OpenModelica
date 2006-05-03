@@ -76,12 +76,29 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "xmlparser.h"
 #include "inputcell.h"
 #include "cellgroup.h"
+#include "highlighterthread.h"
 
 
 using namespace std;
 
 namespace IAEX
 {
+	/*! 
+	 * \class SleeperThread
+	 * \author Anders Ferström
+	 *
+	 * \brief Extends QThread. A small trick to get access to protected
+	 * function in QThread.
+	 */
+	class SleeperThread : public QThread
+	{
+	public:
+		static void msleep(unsigned long msecs)
+		{
+			QThread::msleep(msecs);
+		}
+	};
+
 	/*! 
 	 * \class SaveDocumentCommand
 	 * \author Ingemar Axelsson and Anders Fernström
@@ -267,6 +284,9 @@ namespace IAEX
 				PrinterVisitor visitor( printDocument );
 				doc_->runVisitor( visitor );
 				printDocument->print( printer_ );
+
+				// 2006-03-16 AF
+				delete printDocument;
 			}
 			catch(exception &e)
 			{

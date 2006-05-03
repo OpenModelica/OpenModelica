@@ -49,7 +49,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 //QT Headers
 #include <QtCore/QDir>
-#include <QtCore/QObject>
+//#include <QtCore/QObject>
 #include <QtGui/QImageWriter>
 #include <QtGui/QMessageBox>
 
@@ -67,6 +67,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "stylesheet.h"
 #include "inputcell.h"
 #include "notebookcommands.h"
+#include "notebooksocket.h"
 
 
 namespace IAEX
@@ -105,6 +106,48 @@ namespace IAEX
 		: QObject()
 	{  
 		app_ = new QApplication(argc, argv);
+		QDir dir;
+
+		// 2006-05-03 AF, Notebook socket...
+		notebooksocket_ = new NotebookSocket( this );
+		
+		try
+		{
+			if( notebooksocket_->connectToNotebook() )
+			{
+				// found another OMNotebook process
+				cout << "SOCKET: Connected" << endl;
+
+				if( argc > 1 )
+				{
+					QString fileToOpen( argv[1] );
+					if( dir.exists( fileToOpen ) && 
+						( fileToOpen.endsWith( ".onb" ) || fileToOpen.endsWith( ".nb" )))
+					{
+						if( notebooksocket_->sendFilename( fileToOpen ))
+						{
+							cout << "SOCKET: sent filename" << endl;
+							exit( -1 );
+						}
+						else
+							cout << "SOCKET: unable to send filename" << endl;
+					}
+					else
+						cout << "SOCKET: Specified filename do not exist" << endl;
+				}
+				else
+					cout << "SOCKET: No filename specified" << endl;
+			}
+			else
+				cout << "SOCKET: Server" << endl;
+		}
+		catch( exception &e )
+		{
+			string msg = string( "Unable to create socket, the application want work as supposed:\nTry restarting OMNotebook." )+ e.what();
+			QMessageBox::warning( 0, "Socket Error", msg.c_str() );
+		}
+
+
 
 		// 2005-10-25 AF, added a check if omc is running, otherwise
 		// try to start it
@@ -135,13 +178,12 @@ namespace IAEX
 		QString openmodelica( getenv( "OPENMODELICAHOME" ) );
 		if( openmodelica.isEmpty() )
 		{
-			cout << "Could not find environment variable OPENMODELICAHOME" << endl;
+			QMessageBox::critical( 0, "OpenModelica Error", "Could not find environment variable OPENMODELICAHOME" );
 			open(QString::null);
 			return;
 		}
 
 		// 2006-02-13 AF, create temp dir
-		QDir dir;
 		if( !dir.exists( "OMNoteboook_tempfiles" ) )
 			dir.mkdir( "OMNoteboook_tempfiles" );
 		
@@ -278,7 +320,7 @@ namespace IAEX
 
 	/*! 
 	 * \author Anders Fernström and Ingemar Axelsson
-	 * \date 2006-02-13 (update)
+	 * \date 2006-05-03 (update)
 	 *
 	 * \brief Class destructor
 	 *
@@ -290,9 +332,14 @@ namespace IAEX
 	 * 2006-02-09 AF, moved code for quiting omc to notebook windows
 	 * closeEvent handler
 	 * 2006-02-13 AF, remove temp dir
+	 * 2006-05-03 AF, delete notebook socket
 	 */
 	CellApplication::~CellApplication()
 	{
+		// 2006-05-03 AF, delete notebook socket
+		notebooksocket_->closeNotebookSocket();
+		delete notebooksocket_;
+
 		// 2005-12-19 AF, stop highlighter thread
 		HighlighterThread *thread = HighlighterThread::instance();
 		thread->exit();
@@ -462,7 +509,7 @@ namespace IAEX
 
 	/*! 
 	 * \author Ingemar Axelsson and Anders Fernström
-	 * \date 2006-01-30 (update)
+	 * \date 2006-05-03 (update)
 	 *
 	 * \brief Open an file, and display the content of hte file
 	 *
@@ -476,12 +523,17 @@ namespace IAEX
 	 * document to false.
 	 * 2006-01-31 AF, open windows minimized, then show normal when
 	 * all operations are done on the window.
+	 * 2006-05-03 AF, during open, stop highlighter
 	 */
 	void CellApplication::open( const QString filename, int readmode )
 	{
 		// 2005-12-01 AF, Added try-catch
 		try
 		{
+			//2006-05-03 AF, during open, stop highlighter
+			HighlighterThread *thread = HighlighterThread::instance();
+			thread->setStop( true );
+
 			//1. Create a new document.
 			Document *d = new CellDocument( this, filename, readmode );
 			add(d);
@@ -509,6 +561,10 @@ namespace IAEX
 			// childs in the documentview
 			UpdateGroupcellVisitor visitor;
 			v->document()->runVisitor( visitor );
+
+
+			// 2006-05-03 AF, done, start highlighter again
+			thread->setStop( false );
 		}
 		catch( exception &e )
 		{
@@ -645,4 +701,5 @@ namespace IAEX
 
 		cout << "CONVERTION DONE !!!" << endl;
 	}
+
 }

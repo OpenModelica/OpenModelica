@@ -95,7 +95,8 @@ namespace IAEX
 	 * \brief The class constructor
 	 */
 	CellCursor::CellCursor(QWidget *parent)
-		: Cell(parent)
+		: Cell(parent),
+		clickedOn_( false )
 	{
 		setHeight(3);
 		QWidget *content = new CursorWidget(this);
@@ -105,6 +106,11 @@ namespace IAEX
 		// PORT >> setBackgroundMode(Qt::PaletteBase);
 		setBackgroundRole( QPalette::Base );
 		setBackgroundColor(QColor(100,100,100));
+
+		// 2006-04-27 AF, set cursor shape for cell cursor
+		QCursor mousecursor = cursor();
+		mousecursor.setShape( Qt::SizeHorCursor );
+		setCursor( mousecursor );
 	}
 
 	/*! 
@@ -133,6 +139,39 @@ namespace IAEX
 		return false;
 	}
 
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-04-27
+	 *
+	 * \brief Return state of the clickedOn_ property.
+	 */
+	bool CellCursor::isClickedOn()
+	{
+		return clickedOn_;
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-04-27
+	 *
+	 * \brief Reimplemenation of the mousePressEvent function
+	 */
+	void CellCursor::mousePressEvent(QMouseEvent *event)
+	{
+		clickedOn_ = true;
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-04-27
+	 *
+	 * \brief Function that should be called everytime the cursor
+	 * is about to be moved.
+	 */
+	void CellCursor::cursorIsMoved()
+	{
+		clickedOn_ = false;
+	}
 
 
 	// ***************************************************************
@@ -155,6 +194,9 @@ namespace IAEX
 
 	void CellCursor::addBefore(Cell *newCell)
 	{
+		// 2006-04-27 AF,
+		cursorIsMoved();
+
 		if(parentCell()->child() == this)
 		{ //first in line.
 			newCell->setParentCell(parentCell());
@@ -235,7 +277,10 @@ namespace IAEX
 	void CellCursor::removeCurrentCell()
 	{
 		if(hasPrevious()) //If cursor has previous
-		{	 
+		{
+			// 2006-04-27 AF,
+			cursorIsMoved();
+
 			Cell *current = previous();
 
 			removeFromCurrentPosition();
@@ -264,7 +309,10 @@ namespace IAEX
 	void CellCursor::deleteCurrentCell()
 	{
 		if(hasPrevious()) //If cursor has previous
-		{	 
+		{
+			// 2006-04-27 AF,
+			cursorIsMoved();
+
 			//removeCurrentCell();
 
 			//OLD CODE
@@ -307,7 +355,10 @@ namespace IAEX
 	}
 
 	void CellCursor::moveUp()
-	{      
+	{
+		// 2006-04-27 AF,
+		cursorIsMoved();
+
 		if( !hasPrevious() )
 		{
 			if( parentCell()->hasParentCell() )
@@ -342,6 +393,9 @@ namespace IAEX
 	*/
 	void CellCursor::moveDown()
 	{
+		// 2006-04-27 AF,
+		cursorIsMoved();
+
 		if( !hasNext() )
 		{
 			if( parentCell()->hasParentCell() )
@@ -372,6 +426,9 @@ namespace IAEX
 	*/
 	void CellCursor::moveToFirstChild(Cell *parent)
 	{
+		// 2006-04-27 AF,
+		cursorIsMoved();
+
 		if(parent->hasChilds())
 		{
 			parent->removeCellWidgets();
@@ -396,6 +453,9 @@ namespace IAEX
 	*/
 	void CellCursor::moveToLastChild(Cell *parent)
 	{
+		// 2006-04-27 AF,
+		cursorIsMoved();
+
 		if(parent->hasChilds())
 		{
 			parent->removeCellWidgets();
@@ -416,6 +476,9 @@ namespace IAEX
 	*/
 	void CellCursor::moveAfter(Cell *current)
 	{
+		// 2006-04-27 AF,
+		cursorIsMoved();
+
 		removeFromCurrentPosition();
 
 		//if(!current->hasParentCell())
@@ -459,6 +522,9 @@ namespace IAEX
 	*/
 	void CellCursor::moveBefore(Cell *current)
 	{
+		// 2006-04-27 AF,
+		cursorIsMoved();
+
 		removeFromCurrentPosition();
 
 		//Remove all widgets from currents parent.

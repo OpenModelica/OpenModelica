@@ -121,6 +121,8 @@ namespace IAEX
 		virtual void cursorStepUp() = 0;
 		virtual void cursorStepDown() = 0;
 		virtual void cursorMoveAfter(Cell *aCell, const bool open) = 0;
+		virtual void cursorUngroupCell() = 0;					// Added 2006-04-26 AF
+		virtual void cursorSplitCell() = 0;						// Added 2006-04-26 AF
 		virtual void cursorAddCell() = 0;
 		virtual void cursorDeleteCell() = 0;
 		virtual void cursorCutCell() = 0;

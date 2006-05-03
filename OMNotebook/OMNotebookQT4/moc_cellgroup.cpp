@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'cellgroup.h'
 **
-** Created: to 23. mar 15:11:42 2006
+** Created: on 26. apr 11:09:49 2006
 **      by: The Qt Meta Object Compiler version 59 (Qt 4.1.0)
 **
 ** WARNING! All changes made in this file will be lost!

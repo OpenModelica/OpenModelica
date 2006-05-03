@@ -168,6 +168,9 @@ namespace IAEX
 			this, SLOT( updateWindowTitle() ));
 		connect( subject_, SIGNAL( hoverOverFile(QString) ),
 			this, SLOT( setStatusMessage(QString) ));
+		// 2006-04-27 AF
+		connect( subject_, SIGNAL( forwardAction(int) ),
+			this, SLOT( forwardedAction(int) ));
 
 		updateWindowTitle();
 		updateChapterCounters();
@@ -256,10 +259,12 @@ namespace IAEX
 		delete searchAction;
 		delete showExprAction;
 
-		delete cutCellAction;
-		delete copyCellAction;
-		delete pasteCellAction;
+		//delete cutCellAction;
+		//delete copyCellAction;
+		//delete pasteCellAction;
 		delete addCellAction;
+		delete ungroupCellAction;
+		delete splitCellAction;
 		delete deleteCellAction;
 		delete nextCellAction;
 		delete previousCellAction;
@@ -554,17 +559,21 @@ namespace IAEX
 
 	/*! 
 	 * \author Anders Fernström
-	 * \date 2005-10-07 (update)
+	 * \date 2006-04-27 (update)
 	 *
 	 * \brief Method for creating cell nemu.
 	 *
 	 * Remade the function when porting to QT4.
+	 * 
+	 * 2006-04-26 AF, Added UNGROUP and SPLIT CELL
+	 * 2006-04-27 AF, remove cut,copy,paste cell from menu
 	 */
 	void NotebookWindow::createCellMenu()
 	{
 		// 2005-10-07 AF, Porting, replaced this
 		//QAction *cutCellAction = new QAction("Cut cell", "&Cut Cell", CTRL+SHIFT+Key_X, this, "cutcell");
 		//QObject::connect(cutCellAction, SIGNAL(activated()), this, SLOT(cutCell()));
+		/*
 		cutCellAction = new QAction( tr("Cu&t Cell"), this);
 		cutCellAction->setShortcut( tr("Ctrl+Shift+X") );
 		cutCellAction->setStatusTip( tr("Cut selected cell") );
@@ -585,6 +594,7 @@ namespace IAEX
 		pasteCellAction->setShortcut( tr("Ctrl+Shift+V") );
 		pasteCellAction->setStatusTip( tr("Paste in a cell") );
 		connect(pasteCellAction, SIGNAL(triggered()), this, SLOT(pasteCell()));
+		*/
 
 		// 2005-10-07 AF, Porting, replaced this
 		//QAction *addCellAction = new QAction("Add cell", "&Add Cell", CTRL+Key_A, this, "addcell");
@@ -608,7 +618,22 @@ namespace IAEX
 		groupAction = new QAction( tr("&Groupcell"), this);
 		groupAction->setShortcut( tr("Ctrl+Shift+G") );
 		groupAction->setStatusTip( tr("Groupcell") );
-		connect(groupAction, SIGNAL(triggered()), this, SLOT(groupCellsAction()));
+		connect( groupAction, SIGNAL( triggered() ), 
+			this, SLOT( groupCellsAction() ));
+
+		// 2006-04-26 AF, UNGROUP
+		ungroupCellAction = new QAction( tr("&Ungroup groupcell"), this);
+		ungroupCellAction->setShortcut( tr("Ctrl+Shift+U") );
+		ungroupCellAction->setStatusTip( tr("Ungroup the selected groupcell in the tree view") );
+		connect( ungroupCellAction, SIGNAL( triggered() ), 
+			this, SLOT( ungroupCell() ));
+
+		// 2006-04-26 AF, SPLIT CELL
+		splitCellAction = new QAction( tr("&Split cell"), this);
+		splitCellAction->setShortcut( tr("Ctrl+Shift+P") );
+		splitCellAction->setStatusTip( tr("Split selected cell") );
+		connect( splitCellAction, SIGNAL( triggered() ), 
+			this, SLOT( splitCell() ));
 
 		// 2005-10-07 AF, Porting, replaced this
 		//QAction *deleteCellAction = new QAction("Delete cell", "&Delete Cell", CTRL+SHIFT+Key_D, this, "deletecell");
@@ -628,20 +653,23 @@ namespace IAEX
 		// 2005-10-07 AF, Porting, replaced this
 		//QAction *previousCellAction = new QAction("previous cell", "&Previous Cell", 0, this, "prevoiscell");
 		//QObject::connect(previousCellAction, SIGNAL(activated()), this, SLOT(moveCursorUp()));
-		previousCellAction = new QAction( tr("&Previous Cell"), this);
+		previousCellAction = new QAction( tr("P&revious Cell"), this);
 		previousCellAction->setStatusTip( tr("Move to previous cell") );
 		connect(previousCellAction, SIGNAL(triggered()), this, SLOT(moveCursorUp()));
 
 
 		// 2005-10-07 AF, Porting, new code for creating menu
+		// 2006-04-27 AF, remove cut,copy,paste cell from menu
 		cellMenu = menuBar()->addMenu( tr("&Cell") );
-		cellMenu->addAction( cutCellAction );
-		cellMenu->addAction( copyCellAction );
-		cellMenu->addAction( pasteCellAction );
-		cellMenu->addSeparator();
+		//cellMenu->addAction( cutCellAction );
+		//cellMenu->addAction( copyCellAction );
+		//cellMenu->addAction( pasteCellAction );
+		//cellMenu->addSeparator();
 		cellMenu->addAction( addCellAction );
 		cellMenu->addAction( inputAction );
 		cellMenu->addAction( groupAction );
+		cellMenu->addAction( ungroupCellAction );
+		cellMenu->addAction( splitCellAction );
 		cellMenu->addAction( deleteCellAction );
 		cellMenu->addSeparator();
 		cellMenu->addAction( nextCellAction );
@@ -1501,11 +1529,12 @@ namespace IAEX
 	/*! 
 	 * \author Anders Fernström
 	 * \date 2005-11-02
-	 * \date 2006-02-03 (update)
+	 * \date 2006-04-27 (update)
 	 *
 	 * \brief Method for updating the edit menu
 	 *
-	 * 2006-02-03 AF, check if undo/redo is available
+	 * 2006-02-03 AF, check if undo/redo is available.
+	 * 2006-04-27 AF, check if copied cells exsists.
 	 */
 	void NotebookWindow::updateEditMenu()
 	{
@@ -1546,7 +1575,8 @@ namespace IAEX
 					in_cursor = editor->textCursor();
 				}
 
-				if( in_cursor.hasSelection() )
+				if( in_cursor.hasSelection() || 
+					subject_->getSelection().size() > 0 )
 				{
 					cutAction->setEnabled( true );
 					copyAction->setEnabled( true );
@@ -1564,7 +1594,8 @@ namespace IAEX
 			}
 
 			// paste
-			if( !qApp->clipboard()->text().isEmpty() )
+			if( !qApp->clipboard()->text().isEmpty() ||
+				application()->pasteboard().size() > 0 )
 				pasteAction->setEnabled( true );
 			else
 				pasteAction->setEnabled( false );
@@ -1584,19 +1615,55 @@ namespace IAEX
 	/*! 
 	 * \author Anders Fernström
 	 * \date 2006-02-03
+	 * \date 2006-04-26 (update)
 	 *
 	 * \brief Method for updating the cell menu
+	 *
+	 * 2006-04-26 AF, update UNGROUP, SLIT CELL
 	 */
 	void NotebookWindow::updateCellMenu()
 	{
 		Cell *cell = subject_->getCursor()->currentCell();
+
+		// GROUPCELL & DELETE
 		if( cell )
 		{
 			if( cell->treeView()->isHidden() )
+			{
 				groupAction->setEnabled( false );
+				deleteCellAction->setEnabled( false );
+			}
 			else
+			{
 				groupAction->setEnabled( true );
+				deleteCellAction->setEnabled( true );
+			}
 		}
+		else
+		{
+			groupAction->setEnabled( false );
+			deleteCellAction->setEnabled( false );
+		}
+
+		// UNGROUP
+		if( subject_->getSelection().size() > 0 )
+			ungroupCellAction->setEnabled( true );
+		else
+			ungroupCellAction->setEnabled( false );
+
+		// SLIT CELL
+		if( cell )
+		{
+			if( typeid( *cell ) == typeid( TextCell ) ||
+				typeid( *cell ) == typeid( InputCell ) )
+			{
+				splitCellAction->setEnabled( true );
+			}
+			else
+				splitCellAction->setEnabled( false );
+		}
+		else
+			splitCellAction->setEnabled( false );
 	}
 
 	/*! 
@@ -1990,6 +2057,30 @@ namespace IAEX
 			statusBar()->showMessage( msg );
 	}
 
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-04-27
+	 *
+	 * \brief handles forwarded actions
+	 */
+	void NotebookWindow::forwardedAction( int action )
+	{
+		switch( action )
+		{
+		case 1: //COPY
+			copyEdit();
+			break;
+		case 2: //CUT
+			cutEdit();
+			break;
+		case 3: //PASTE
+			pasteEdit();
+			break;
+		default:
+			break;
+		}
+	}
+
 	/*!
 	 * \author Ingemar Axelsson and Anders Fernström
 	 *
@@ -2053,6 +2144,8 @@ namespace IAEX
 				{
 					subject_->cursorDeleteCell();
 					event->setAccepted( true );
+
+					updateChapterCounters();
 				}
 				else
 					QMainWindow::keyReleaseEvent(event);
@@ -2234,7 +2327,7 @@ namespace IAEX
 	 */
 	void NotebookWindow::aboutQTNotebook()
 	{
-		QString abouttext = QString("OMNotebook version 2.0 (for OpenModelica v1.3.2)\r\n") + 
+		QString abouttext = QString("OMNotebook version 2.0 (for OpenModelica v1.4.0)\r\n") + 
 			QString("Copyright 2004-2006, PELAB, Linkoping University\r\n\r\n") + 
 			QString("Created by Ingemar Axelsson (2004-2005) and Anders Fernström (2005-2006) as part of their final theses.");
 
@@ -2902,34 +2995,64 @@ namespace IAEX
 	/*! 
 	 * \author Anders Fernström
 	 * \date 2006-02-03
+	 * \date 2006-04-27 (update)
 	 *
 	 * \brief Method for cuting text
+	 *
+	 * 2006-04-27 AF, if cells are selected in the treeview cut
+	 * them instead of the text.
 	 */
 	void NotebookWindow::cutEdit()
 	{
-		subject_->textcursorCutText();
+		if( subject_ )
+		{
+			if( subject_->getSelection().size() > 0 )
+				cutCell();
+			else
+				subject_->textcursorCutText();
+		}
 	}
 
 	/*! 
 	 * \author Anders Fernström
 	 * \date 2006-02-03
+	 * \date 2006-04-27 (update)
 	 *
 	 * \brief Method for copying text
+	 *
+	 * 2006-04-27 AF, if cells are selected in the treeview copy
+	 * them instead of the text.
 	 */
 	void NotebookWindow::copyEdit()
 	{
-		subject_->textcursorCopyText();
+		if( subject_ )
+		{
+			if( subject_->getSelection().size() > 0 )
+				copyCell();
+			else
+				subject_->textcursorCopyText();
+		}
 	}
 
 	/*! 
 	 * \author Anders Fernström
 	 * \date 2006-02-03
+	 * \date 2006-04-27 (update)
 	 *
 	 * \brief Method for pasteing text
+	 *
+	 * 2006-04-27 AF, if the cell cursor is selected, paste
+	 * cell instead of text.
 	 */
 	void NotebookWindow::pasteEdit()
 	{
-		subject_->textcursorPasteText();
+		if( subject_ )
+		{
+			if( subject_->getCursor()->isClickedOn() )
+				pasteCell();
+			else
+				subject_->textcursorPasteText();
+		}
 	}
 
 	/*! 
@@ -3140,6 +3263,31 @@ namespace IAEX
 	}
 
 	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-04-26
+	 *
+	 * \brief Ungroup all selected groupcells
+	 */
+	void NotebookWindow::ungroupCell()
+	{
+		if( subject_->getSelection().size() == 1 )
+			subject_->cursorUngroupCell();
+		else
+			QMessageBox::information( this, "Information", "Ungroup can only be done on one cell at the time. Please select only one cell" );
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-04-26
+	 *
+	 * \brief Split current cell
+	 */
+	void NotebookWindow::splitCell()
+	{
+		subject_->cursorSplitCell();
+	}
+
+	/*! 
 	 * \author Ingemar Axelsson
 	 */
 	void NotebookWindow::moveCursorDown()
@@ -3195,23 +3343,5 @@ namespace IAEX
 	}
 	
 	
-
-
-
-
-
-
-
-
-	// ***************************************************************
-
-
-
-	
-
-	
-
-	
-
 
 }

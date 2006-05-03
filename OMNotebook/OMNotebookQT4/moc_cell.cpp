@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'cell.h'
 **
-** Created: to 23. mar 15:11:42 2006
+** Created: to 27. apr 12:19:22 2006
 **      by: The Qt Meta Object Compiler version 59 (Qt 4.1.0)
 **
 ** WARNING! All changes made in this file will be lost!

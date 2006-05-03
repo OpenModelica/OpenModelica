@@ -103,6 +103,8 @@ namespace IAEX
 		virtual void cursorStepUp();
 		virtual void cursorStepDown();
 		virtual void cursorAddCell();
+		virtual void cursorUngroupCell();					// Added 2006-04-26 AF
+		virtual void cursorSplitCell();						// Added 2006-04-26 AF
 		virtual void cursorDeleteCell();
 		virtual void cursorCutCell();
 		virtual void cursorCopyCell();
@@ -174,10 +176,16 @@ namespace IAEX
 		void viewExpression(const bool);
 		void contentChanged();				// Added 2005-11-29 AF
 		void hoverOverFile( QString );		// Added 2006-02-10 AF
+		void forwardAction( int );			// Added 2006-04-27 AF
 
 	protected:
 		void setWorkspace(Cell *newWorkspace);
 		bool eventFilter(QObject *o, QEvent *e);
+
+	private:
+		void addSelectedCell( Cell* cell );
+		void removeSelectedCell( Cell* cell );
+
 
 	private:
 		bool changed_;					// Added 2006-01-17 AF
@@ -188,6 +196,7 @@ namespace IAEX
 		QString filename_;
 
 		Cell *workspace_;				//This should alwas be a cellgroup. 
+		Cell *lastClickedCell_;			// Added 2006-04-25 AF
 		QFrame *mainFrame_;
 		QScrollArea *scroll_;			// Added 2005-11-01 AF
 		QGridLayout *mainLayout_;

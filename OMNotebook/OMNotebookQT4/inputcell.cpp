@@ -144,8 +144,13 @@ namespace IAEX
 		inCommand = false;
 		QTextBrowser::mousePressEvent(event);
 
-		if( event->modifiers() != Qt::ShiftModifier )
-			emit clickOnCell();
+		if( event->modifiers() == Qt::ShiftModifier ||
+			textCursor().hasSelection() )
+		{
+			return;
+		}
+
+		emit clickOnCell();
 	}
 
 	/*! 
@@ -228,6 +233,36 @@ namespace IAEX
 			stopHighlighter = false;
 
 			event->ignore();
+		}
+		// CTRL+C
+		else if( event->modifiers() == Qt::ControlModifier &&
+			event->key() == Qt::Key_C )
+		{
+			inCommand = false;
+			stopHighlighter = false;
+
+			event->ignore();
+			emit forwardAction( 1 );
+		}
+		// CTRL+X
+		else if( event->modifiers() == Qt::ControlModifier &&
+			event->key() == Qt::Key_X )
+		{
+			inCommand = false;
+			stopHighlighter = false;
+
+			event->ignore();
+			emit forwardAction( 2 );
+		}
+		// CTRL+V
+		else if( event->modifiers() == Qt::ControlModifier &&
+			event->key() == Qt::Key_V )
+		{
+			inCommand = false;
+			stopHighlighter = false;
+
+			event->ignore();
+			emit forwardAction( 3 );
 		}
 		else
 		{
@@ -412,6 +447,9 @@ namespace IAEX
 		// 2006-01-17 AF, new...
 		connect( input_, SIGNAL( currentCharFormatChanged(const QTextCharFormat &) ),
 			this, SLOT( charFormatChanged(const QTextCharFormat &) ));
+		// 2006-04-27 AF,
+		connect( input_, SIGNAL( forwardAction(int) ),
+			this, SIGNAL( forwardAction(int) ));
 
 		contentChanged();
 	}
@@ -447,7 +485,23 @@ namespace IAEX
 		connect( output_, SIGNAL( wheelMove(QWheelEvent*) ),
 			this, SLOT( wheelEvent(QWheelEvent*) ));
 
+		setOutputStyle();
+		
+
+		output_->hide();
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-04-21
+	 *
+	 * \brief Set the output style
+	 */
+	void InputCell::setOutputStyle()
+	{
 		// Set the correct style for the QTextEdit output_
+		output_->selectAll();
+
 		Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
 		CellStyle style = sheet->getStyle( "Output" );
 
@@ -464,7 +518,9 @@ namespace IAEX
 			QMessageBox::warning( 0, "Warning", msg, "OK" );
 		}
 
-		output_->hide();
+		QTextCursor cursor = output_->textCursor();
+		cursor.clearSelection();
+		output_->setTextCursor( cursor );
 	}
 
 	/*! 
@@ -1056,7 +1112,7 @@ namespace IAEX
 
 	/*! 
 	 * \author Ingemar Axelsson and Anders Fernström
-	 * \date 2005-11-23 (update)
+	 * \date 2006-04-18 (update)
 	 *
 	 *\brief Sends the content of the inputcell to the evaluator. 
 	 * Displays the result in a outputcell. 
@@ -1066,6 +1122,7 @@ namespace IAEX
 	 * 2005-11-17 AF, added a check if the result if empty, if so add
 	 * some default text
 	 * 2005-11-23 AF, added support for inserting image to output
+	 * 2006-04-18 AF, uses environment variable to find the plot
 	 *
 	 * Removes whitespaces and tags from the content string. Then sends
 	 * the content to the delegate object for evaluation. The result is
@@ -1078,14 +1135,31 @@ namespace IAEX
 		input_->blockSignals(true);
 		output_->blockSignals(true);
 
-		// Only the text, no html tags. /AF
-		QString expr = input_->toPlainText();
-		//expr = expr.simplified();
-
-		if(hasDelegate())
+		if( hasDelegate() )
 		{
+			// Only the text, no html tags. /AF
+			QString expr = input_->toPlainText();
+			//expr = expr.simplified();
+
+
+			QString openmodelica( getenv( "OPENMODELICAHOME" ) );
+			if( openmodelica.isEmpty() )
+				QMessageBox::critical( 0, "OpenModelica Error", "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
+	
+			if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
+				openmodelica += "bin/";
+			else
+				openmodelica += "/bin/";
+
+			//QDir dir( openmodelica );
 			QDir dir;
+			dir.setPath( openmodelica );
 			QString imagename = "omc_tmp_plot.png";
+
+			QString filename = dir.absolutePath();
+			if( !filename.endsWith( "/" ) )
+				filename += "/";
+			filename += imagename;
 
 			// 2006-02-17 AF, 
 			evaluated_ = true;
@@ -1095,6 +1169,7 @@ namespace IAEX
 			// evaluation of expressiuon
 			output_->selectAll();
 			output_->textCursor().insertText( "{evaluating expression}" );
+			setOutputStyle();
 			//output_->setPlainText( "{evaluating expression}" );
 			output_->update();
 			QCoreApplication::processEvents();
@@ -1164,7 +1239,7 @@ namespace IAEX
 				{
 					if( dir.exists( imagename ))
 					{
-						QImage *image = new QImage( imagename );
+						QImage *image = new QImage( filename );
 						if( !image->isNull() )
 						{
 							QString newname = document_->addImage( image );
@@ -1194,7 +1269,7 @@ namespace IAEX
 							else
 							{
 								output_->selectAll();
-								output_->textCursor().insertText( "[Error] Unable to read plot image \"" + imagename + "\". Please retry." );
+								output_->textCursor().insertText( "[Error] Unable to read plot image \"" + filename + "\". Please retry." );
 								//output_->setPlainText( "[Error] Unable to read plot image \"" + imagename + "\". Please retry." );
 								break;
 							}
@@ -1204,7 +1279,7 @@ namespace IAEX
 					if( sleepTime > 25 )
 					{
 						output_->selectAll();
-						output_->textCursor().insertText( "[Error] Unable to find plot image \"" + imagename + "\"" );
+						output_->textCursor().insertText( "[Error] Unable to find plot image \"" + filename + "\"" );
 //						output_->setPlainText( "[Error] Unable to found plot image \"" + imagename + "\"" );
 						break;
 					}
@@ -1230,14 +1305,18 @@ namespace IAEX
 
 			++numEvals_;
 			dir.remove( imagename );
+
+
+			contentChanged();
+
+			//Emit that the text have changed
+			emit textChanged(true);
 		}
+		else
+			cout << "Not delegate on inputcell" << endl;
 
 		input_->blockSignals(false);
 		output_->blockSignals(false);
-		contentChanged();
-
-		//Emit that the text have changed
-		emit textChanged(true);
 	}
 
 	/*! 

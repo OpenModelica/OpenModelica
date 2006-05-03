@@ -52,6 +52,9 @@ licence: http://www.trolltech.com/products/qt/licensing.html
  * \brief Describes different cell commands
  */
 
+// QT Headers
+#include <QtGui/QTextCursor>
+#include <QtGui/QTextDocumentFragment>
 
 //STD Headers
 #include <exception>
@@ -603,4 +606,160 @@ namespace IAEX
 		  
       }
    }
+
+   /*! 
+    * \class UngroupCellCommand 
+    * \author Anders Fernström
+    * \date 2006-04-26
+    *
+    * \brief Ungroup the cell
+    */
+	void UngroupCellCommand::execute()
+	{
+		try
+		{
+			vector<Cell *> cells = document()->getSelection();
+
+			if( !cells.empty() )
+			{
+				// clear selection before changing cell strucure
+				document()->clearSelection();
+
+				vector<Cell *>::iterator c_iter = cells.begin();
+				for(; c_iter != cells.end() ; ++c_iter )
+				{
+					//check if groupcell
+					if( typeid( *(*c_iter) ) == typeid( CellGroup ))
+					{
+						if( !(*c_iter)->hasChilds() )
+							throw exception( "No children" );
+
+						// get child
+						Cell* child = (*c_iter)->child();
+						Cell* deletedCellsParent = (*c_iter)->parentCell();
+						Cell* deletedCellsPrevious = (*c_iter)->previous();
+						Cell* deletedCellsNext = (*c_iter)->next();
+
+						// if previous is 0 = first in cell
+						child->setPrevious( deletedCellsPrevious );
+						if( !child->hasPrevious() )
+							deletedCellsParent->setChild( child );
+						else
+							deletedCellsPrevious->setNext( child );
+
+						// add all children
+						while( child != 0 )
+						{
+							//child->setParent( (*c_iter)->parent() );
+							child->setParentCell( deletedCellsParent );
+
+							if( child->hasNext() )
+                                child = child->next();
+							else
+							{
+								child->setNext( deletedCellsNext );
+								if( !child->hasNext() )
+								{
+									// update last value on all cells
+									Cell* current = child;
+									while( current != 0 )
+									{
+										current->setLast( child );
+										current = current->previous();
+									}
+								}
+								else
+									deletedCellsNext->setPrevious( child );
+
+								break;
+							}
+						}
+
+						(*c_iter)->setChild( 0 );
+						(*c_iter)->hide();
+
+						// must update groupcells parents layout
+						deletedCellsParent->removeCellWidgets();
+						deletedCellsParent->addCellWidgets();
+
+						// delete groupcell
+						//(document()->getCursor())->moveAfter( (*c_iter) );
+						//(document()->getCursor())->deleteCurrentCell();
+						delete (*c_iter);
+
+						// update document
+						document()->setChanged( true );
+					}
+				}
+			}
+		}
+		catch( exception &e )
+		{
+			string str = string("UngroupCellCommand(), Exception: ") + e.what();
+			throw exception( str.c_str() );
+		}
+	}
+
+ /*! 
+    * \class SplitCellCommand 
+    * \author Anders Fernström
+    * \date 2006-04-26
+    *
+    * \brief Split the cell
+    */
+	void SplitCellCommand::execute()
+	{
+		try
+		{
+			if( document()->getCursor()->currentCell() )
+			{
+				if( typeid( *document()->getCursor()->currentCell() ) == typeid( TextCell ) ||
+					typeid( *document()->getCursor()->currentCell() ) == typeid( InputCell ) )
+				{
+					// extraxt text
+					QTextEdit* editor = document()->getCursor()->currentCell()->textEdit();
+					if( editor )
+					{
+						QTextCursor cursor = editor->textCursor();
+						cursor.movePosition( QTextCursor::End, QTextCursor::KeepAnchor );
+						QTextDocumentFragment text = cursor.selection();
+						cursor.removeSelectedText();
+
+						// add new cell
+						if( typeid( *document()->getCursor()->currentCell() ) == typeid( TextCell ) )
+						{
+							AddCellCommand addcellCommand;
+							addcellCommand.setApplication( application() );
+							addcellCommand.setDocument( document() );
+							addcellCommand.execute();
+						}
+						else
+						{
+							// inputcell
+							CreateNewCellCommand newcellCommand( "Input" );
+							newcellCommand.setApplication( application() );
+							newcellCommand.setDocument( document() );
+							newcellCommand.execute();
+						}
+
+						// add text to new cell
+						QTextEdit* newEditor = document()->getCursor()->currentCell()->textEdit();
+						QTextCursor newCursor = newEditor->textCursor();
+						newCursor.insertFragment( text );
+						newCursor.movePosition( QTextCursor::Start );
+						newEditor->setTextCursor( newCursor );
+
+						// update document
+						document()->setChanged( true );
+					}
+				}
+			}
+		}
+		catch( exception &e )
+		{
+			string str = string("SplitCellCommand(), Exception: ") + e.what();
+			throw exception( str.c_str() );
+		}
+	}
+
 };

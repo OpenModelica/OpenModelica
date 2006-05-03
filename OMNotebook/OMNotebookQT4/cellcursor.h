@@ -94,6 +94,7 @@ namespace IAEX
 
 		//Flag
 		bool isEditable();								// Added 2005-10-28 AF
+		bool isClickedOn();								// Added 2006-04-27 AF
 
 	public slots:
 		virtual void setFocus(const bool){}
@@ -102,8 +103,15 @@ namespace IAEX
 		void changedPosition();
 		void positionChanged(int x, int y, int xm, int ym);
 
+	protected:
+		void mousePressEvent(QMouseEvent *event);		// Added 2006-04-27 AF
+
 	private:
+		void cursorIsMoved();							// Added 2006-04-27 AF
 		void removeFromCurrentPosition();
+
+	private:
+		bool clickedOn_;
 
 	};
 

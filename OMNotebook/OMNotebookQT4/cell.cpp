@@ -65,7 +65,6 @@ using namespace std;
 
 namespace IAEX
 {
-
 	/*! 
 	 * \class Cell
 	 * \author Ingemar Axelsson and Anders Ferström
@@ -108,7 +107,7 @@ namespace IAEX
 		last_(0),
 		previous_(0),
 		child_(0),
-		references_(0)      
+		references_(0)
 	{
 		setMouseTracking(true);
 		setEnabled(true);

@@ -119,8 +119,13 @@ namespace IAEX
 	{
 		QTextBrowser::mousePressEvent(event);
 
-		if( event->modifiers() != Qt::ShiftModifier )
-			emit clickOnCell();
+		if( event->modifiers() == Qt::ShiftModifier ||
+			textCursor().hasSelection() )
+		{
+			return;
+		}
+
+		emit clickOnCell();
 	}
 
 	/*! 
@@ -172,6 +177,27 @@ namespace IAEX
 			( event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return ))
 		{
 			event->ignore();
+		}
+		// CTRL+C
+		else if( event->modifiers() == Qt::ControlModifier &&
+			event->key() == Qt::Key_C )
+		{
+			event->ignore();
+			emit forwardAction( 1 );
+		}
+		// CTRL+X
+		else if( event->modifiers() == Qt::ControlModifier &&
+			event->key() == Qt::Key_X )
+		{
+			event->ignore();
+			emit forwardAction( 2 );
+		}
+		// CTRL+V
+		else if( event->modifiers() == Qt::ControlModifier &&
+			event->key() == Qt::Key_V )
+		{
+			event->ignore();
+			emit forwardAction( 3 );
 		}
 		else
 		{
@@ -281,6 +307,9 @@ namespace IAEX
 		// 2006-02-10 AF, new...
 		connect( text_, SIGNAL( highlighted(const QUrl &) ),
 			this, SLOT( hoverOverLink(const QUrl &) ));
+		// 2006-04-27 AF,
+		connect( text_, SIGNAL( forwardAction(int) ),
+			this, SIGNAL( forwardAction(int) ));
 		
 		contentChanged();
 	}

@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'textcell.h'
 **
-** Created: to 23. mar 15:11:41 2006
+** Created: to 27. apr 10:52:31 2006
 **      by: The Qt Meta Object Compiler version 59 (Qt 4.1.0)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -22,44 +22,46 @@ static const uint qt_meta_data_IAEX__TextCell[] = {
        1,       // revision
        0,       // classname
        0,    0, // classinfo
-      19,   10, // methods
+      21,   10, // methods
        0,    0, // properties
        0,    0, // enums/sets
 
  // signals: signature, parameters, type, tag, flags
       16,   15,   15,   15, 0x05,
-      30,   15,   15,   15, 0x05,
-      53,   48,   15,   15, 0x05,
+      32,   15,   15,   15, 0x05,
+      46,   15,   15,   15, 0x05,
+      69,   64,   15,   15, 0x05,
+      88,   15,   15,   15, 0x05,
 
  // slots: signature, parameters, type, tag, flags
-      72,   15,   15,   15, 0x0a,
-      90,   85,   15,   15, 0x0a,
-     119,  107,   15,   15, 0x0a,
-     157,  152,   15,   15, 0x0a,
-     188,  178,   15,   15, 0x0a,
-     212,  206,   15,   15, 0x0a,
-     239,  232,   15,   15, 0x0a,
-     274,   15,  266,   15, 0x0a,
-     291,   15,  266,   15, 0x0a,
-     321,  312,   15,   15, 0x0a,
-     345,  339,   15,   15, 0x0a,
-     360,   15,   15,   15, 0x09,
-     377,   48,   15,   15, 0x09,
-     401,  397,   15,   15, 0x09,
-     431,   15,   15,   15, 0x09,
-     453,   15,   15,   15, 0x09,
+     107,   15,   15,   15, 0x0a,
+     125,  120,   15,   15, 0x0a,
+     154,  142,   15,   15, 0x0a,
+     192,  187,   15,   15, 0x0a,
+     223,  213,   15,   15, 0x0a,
+     247,  241,   15,   15, 0x0a,
+     274,  267,   15,   15, 0x0a,
+     309,   15,  301,   15, 0x0a,
+     326,   15,  301,   15, 0x0a,
+     356,  347,   15,   15, 0x0a,
+     380,  374,   15,   15, 0x0a,
+     395,   15,   15,   15, 0x09,
+     412,   64,   15,   15, 0x09,
+     436,  432,   15,   15, 0x09,
+     466,   15,   15,   15, 0x09,
+     488,   15,   15,   15, 0x09,
 
        0        // eod
 };
 
 static const char qt_meta_stringdata_IAEX__TextCell[] = {
-    "IAEX::TextCell\0\0textChanged()\0textChanged(bool)\0link\0"
-    "hoverOverUrl(QUrl)\0clickEvent()\0text\0setText(QString)\0text,format\0"
-    "setText(QString,QTextCharFormat)\0html\0setTextHtml(QString)\0stylename\0"
-    "setStyle(QString)\0style\0setStyle(CellStyle)\0number\0"
-    "setChapterCounter(QString)\0QString\0ChapterCounter()\0"
-    "ChapterCounterHtml()\0readonly\0setReadOnly(bool)\0focus\0"
-    "setFocus(bool)\0contentChanged()\0hoverOverLink(QUrl)\0url\0"
+    "IAEX::TextCell\0\0heightChanged()\0textChanged()\0textChanged(bool)\0"
+    "link\0hoverOverUrl(QUrl)\0forwardAction(int)\0clickEvent()\0text\0"
+    "setText(QString)\0text,format\0setText(QString,QTextCharFormat)\0html\0"
+    "setTextHtml(QString)\0stylename\0setStyle(QString)\0style\0"
+    "setStyle(CellStyle)\0number\0setChapterCounter(QString)\0QString\0"
+    "ChapterCounter()\0ChapterCounterHtml()\0readonly\0setReadOnly(bool)\0"
+    "focus\0setFocus(bool)\0contentChanged()\0hoverOverLink(QUrl)\0url\0"
     "openLinkInternal(const QUrl*)\0textChangedInternal()\0"
     "charFormatChanged(QTextCharFormat)\0"
 };
@@ -89,51 +91,66 @@ int IAEX::TextCell::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
         switch (_id) {
-        case 0: textChanged(); break;
-        case 1: textChanged(*reinterpret_cast< bool*>(_a[1])); break;
-        case 2: hoverOverUrl(*reinterpret_cast< QUrl*>(_a[1])); break;
-        case 3: clickEvent(); break;
-        case 4: setText(*reinterpret_cast< QString*>(_a[1])); break;
-        case 5: setText(*reinterpret_cast< QString*>(_a[1]),*reinterpret_cast< QTextCharFormat*>(_a[2])); break;
-        case 6: setTextHtml(*reinterpret_cast< QString*>(_a[1])); break;
-        case 7: setStyle(*reinterpret_cast< QString*>(_a[1])); break;
-        case 8: setStyle(*reinterpret_cast< CellStyle*>(_a[1])); break;
-        case 9: setChapterCounter(*reinterpret_cast< QString*>(_a[1])); break;
-        case 10: { QString _r = ChapterCounter();
+        case 0: heightChanged(); break;
+        case 1: textChanged(); break;
+        case 2: textChanged(*reinterpret_cast< bool*>(_a[1])); break;
+        case 3: hoverOverUrl(*reinterpret_cast< QUrl*>(_a[1])); break;
+        case 4: forwardAction(*reinterpret_cast< int*>(_a[1])); break;
+        case 5: clickEvent(); break;
+        case 6: setText(*reinterpret_cast< QString*>(_a[1])); break;
+        case 7: setText(*reinterpret_cast< QString*>(_a[1]),*reinterpret_cast< QTextCharFormat*>(_a[2])); break;
+        case 8: setTextHtml(*reinterpret_cast< QString*>(_a[1])); break;
+        case 9: setStyle(*reinterpret_cast< QString*>(_a[1])); break;
+        case 10: setStyle(*reinterpret_cast< CellStyle*>(_a[1])); break;
+        case 11: setChapterCounter(*reinterpret_cast< QString*>(_a[1])); break;
+        case 12: { QString _r = ChapterCounter();
             if (_a[0]) *reinterpret_cast< QString*>(_a[0]) = _r; }  break;
-        case 11: { QString _r = ChapterCounterHtml();
+        case 13: { QString _r = ChapterCounterHtml();
             if (_a[0]) *reinterpret_cast< QString*>(_a[0]) = _r; }  break;
-        case 12: setReadOnly(*reinterpret_cast< bool*>(_a[1])); break;
-        case 13: setFocus(*reinterpret_cast< bool*>(_a[1])); break;
-        case 14: contentChanged(); break;
-        case 15: hoverOverLink(*reinterpret_cast< QUrl*>(_a[1])); break;
-        case 16: openLinkInternal(*reinterpret_cast< const QUrl**>(_a[1])); break;
-        case 17: textChangedInternal(); break;
-        case 18: charFormatChanged(*reinterpret_cast< QTextCharFormat*>(_a[1])); break;
+        case 14: setReadOnly(*reinterpret_cast< bool*>(_a[1])); break;
+        case 15: setFocus(*reinterpret_cast< bool*>(_a[1])); break;
+        case 16: contentChanged(); break;
+        case 17: hoverOverLink(*reinterpret_cast< QUrl*>(_a[1])); break;
+        case 18: openLinkInternal(*reinterpret_cast< const QUrl**>(_a[1])); break;
+        case 19: textChangedInternal(); break;
+        case 20: charFormatChanged(*reinterpret_cast< QTextCharFormat*>(_a[1])); break;
         }
-        _id -= 19;
+        _id -= 21;
     }
     return _id;
 }
 
 // SIGNAL 0
-void IAEX::TextCell::textChanged()
+void IAEX::TextCell::heightChanged()
 {
     QMetaObject::activate(this, &staticMetaObject, 0, 0);
 }
 
 // SIGNAL 1
-void IAEX::TextCell::textChanged(bool _t1)
+void IAEX::TextCell::textChanged()
 {
-    void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)) };
-    QMetaObject::activate(this, &staticMetaObject, 1, _a);
+    QMetaObject::activate(this, &staticMetaObject, 1, 0);
 }
 
 // SIGNAL 2
-void IAEX::TextCell::hoverOverUrl(const QUrl & _t1)
+void IAEX::TextCell::textChanged(bool _t1)
 {
     void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)) };
     QMetaObject::activate(this, &staticMetaObject, 2, _a);
+}
+
+// SIGNAL 3
+void IAEX::TextCell::hoverOverUrl(const QUrl & _t1)
+{
+    void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)) };
+    QMetaObject::activate(this, &staticMetaObject, 3, _a);
+}
+
+// SIGNAL 4
+void IAEX::TextCell::forwardAction(int _t1)
+{
+    void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)) };
+    QMetaObject::activate(this, &staticMetaObject, 4, _a);
 }
 static const uint qt_meta_data_IAEX__MyTextBrowser[] = {
 
@@ -141,7 +158,7 @@ static const uint qt_meta_data_IAEX__MyTextBrowser[] = {
        1,       // revision
        0,       // classname
        0,    0, // classinfo
-       4,   10, // methods
+       5,   10, // methods
        0,    0, // properties
        0,    0, // enums/sets
 
@@ -149,16 +166,17 @@ static const uint qt_meta_data_IAEX__MyTextBrowser[] = {
       21,   20,   20,   20, 0x05,
       43,   20,   20,   20, 0x05,
       57,   20,   20,   20, 0x05,
+      81,   20,   20,   20, 0x05,
 
  // slots: signature, parameters, type, tag, flags
-      86,   81,   20,   20, 0x0a,
+     105,  100,   20,   20, 0x0a,
 
        0        // eod
 };
 
 static const char qt_meta_stringdata_IAEX__MyTextBrowser[] = {
     "IAEX::MyTextBrowser\0\0openLink(const QUrl*)\0clickOnCell()\0"
-    "wheelMove(QWheelEvent*)\0name\0setSource(QUrl)\0"
+    "wheelMove(QWheelEvent*)\0forwardAction(int)\0name\0setSource(QUrl)\0"
 };
 
 const QMetaObject IAEX::MyTextBrowser::staticMetaObject = {
@@ -189,9 +207,10 @@ int IAEX::MyTextBrowser::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
         case 0: openLink(*reinterpret_cast< const QUrl**>(_a[1])); break;
         case 1: clickOnCell(); break;
         case 2: wheelMove(*reinterpret_cast< QWheelEvent**>(_a[1])); break;
-        case 3: setSource(*reinterpret_cast< QUrl*>(_a[1])); break;
+        case 3: forwardAction(*reinterpret_cast< int*>(_a[1])); break;
+        case 4: setSource(*reinterpret_cast< QUrl*>(_a[1])); break;
         }
-        _id -= 4;
+        _id -= 5;
     }
     return _id;
 }
@@ -214,4 +233,11 @@ void IAEX::MyTextBrowser::wheelMove(QWheelEvent * _t1)
 {
     void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)) };
     QMetaObject::activate(this, &staticMetaObject, 2, _a);
+}
+
+// SIGNAL 3
+void IAEX::MyTextBrowser::forwardAction(int _t1)
+{
+    void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)) };
+    QMetaObject::activate(this, &staticMetaObject, 3, _a);
 }

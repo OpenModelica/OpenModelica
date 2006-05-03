@@ -48,9 +48,11 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #ifndef _CELLAPPLICATION_H
 #define _CELLAPPLICATION_H
 
+// QT Headers
 #include <QtGui/QApplication>
 #include <QtCore/QObject>
 
+// IAEX Headers
 #include "application.h"
 #include "commandcenter.h"
 #include "documentview.h"
@@ -58,6 +60,10 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 namespace IAEX
 {
+	// forward declaration
+	class NotebookSocket;
+
+
 	class CellApplication : public QObject, public Application
 	{
 		Q_OBJECT
@@ -91,6 +97,8 @@ namespace IAEX
 		CommandCenter *cmdCenter_;
 		vector<Cell *> pasteboard_;
 		QStringList removeList_;		// Added 2006-01-16 AF
+
+		NotebookSocket *notebooksocket_;
 	};
 };
 

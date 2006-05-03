@@ -82,7 +82,6 @@ namespace IAEX
 	/*! 
 	 * \author Anders Fernström
 	 * \date 2005-12-19
-	 * \date 2006-03-03 (update)
 	 *
 	 * \brief The class constructor
 	 *
@@ -104,8 +103,8 @@ namespace IAEX
 		tableFormat.setCellPadding( 5 );
 
 		QVector<QTextLength> constraints;
-        constraints << QTextLength(QTextLength::FixedLength, 80)
-                    << QTextLength(QTextLength::VariableLength, 300);
+        constraints << QTextLength(QTextLength::FixedLength, 50)
+                    << QTextLength(QTextLength::VariableLength, 620);
         tableFormat.setColumnWidthConstraints(constraints);
 
 		// insert the table
