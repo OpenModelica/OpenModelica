@@ -125,6 +125,9 @@ uniontype State "- Machine states, the string contains the classname."
     String string;
   end TYPE_ENUM;
 
+	record EXTERNAL_OBJ
+	  String string;
+	end EXTERNAL_OBJ;
 end State;
 
 public 
@@ -169,6 +172,7 @@ algorithm
     case TYPE_BOOL(string = s) then "Boolean"; 
     case IS_NEW(string = s) then "new def"; 
     case HAS_EQUATIONS(string = s) then "has eqn"; 
+    case EXTERNAL_OBJ(string = s) then "ExternalObject"; 
   end matchcontinue;
 end printStateStr;
 
@@ -289,6 +293,7 @@ algorithm
     case TYPE_BOOL(string = s) then s; 
     case IS_NEW(string = s) then s; 
     case HAS_EQUATIONS(string = s) then s; 
+    case EXTERNAL_OBJ(string = s) then s; 
   end matchcontinue;
 end getStateName;
 

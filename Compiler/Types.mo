@@ -458,7 +458,7 @@ algorithm
     case (m) then m; 
   end matchcontinue;
 end stripSubmod;
-
+  
 public function getDimensionSizes "function: getDimensionSizes
   
   Return the dimension sizes of a Type.

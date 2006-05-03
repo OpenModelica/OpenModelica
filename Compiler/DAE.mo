@@ -103,6 +103,9 @@ uniontype Type
   record ENUMERATION
     list<String> stringLst;
   end ENUMERATION;
+  
+  record EXT_OBJECT
+  end EXT_OBJECT;  
 
 end Type;
 
@@ -130,8 +133,8 @@ end VarDirection;
 public 
 uniontype Element
   record VAR
-    Exp.ComponentRef componentRef;
-    VarKind varible "varible name" ;
+    Exp.ComponentRef componentRef " The variable name";
+    VarKind varible "varible kind" ;
     VarDirection variable "variable, constant, parameter, etc." ;
     Type input_ "input, output or bidir" ;
     Option<Exp.Exp> one "one of the builtin types" ;
@@ -144,55 +147,55 @@ uniontype Element
     Option<Absyn.Comment> absynCommentOption;
   end VAR;
 
-  record DEFINE
+  record DEFINE "A solved equation"
     Exp.ComponentRef componentRef;
     Exp.Exp exp;
   end DEFINE;
 
-  record INITIALDEFINE
+  record INITIALDEFINE " A solved initial equation"
     Exp.ComponentRef componentRef;
     Exp.Exp exp;
   end INITIALDEFINE;
 
-  record EQUATION
+  record EQUATION "Scalar equation"
     Exp.Exp exp;
-    Exp.Exp scalar "Scalar equation" ;
+    Exp.Exp scalar ;
   end EQUATION;
 
-  record ARRAY_EQUATION
+  record ARRAY_EQUATION " an array equation"
     list<Integer> dimension "dimension sizes" ;
     Exp.Exp exp;
-    Exp.Exp array "array equation" ;
+    Exp.Exp array  ;
   end ARRAY_EQUATION;
 
-  record WHEN_EQUATION
+  record WHEN_EQUATION " a when equation"
     Exp.Exp condition "Condition" ;
     list<Element> equations "Equations" ;
     Option<Element> elsewhen_ "Elsewhen should be of type WHEN_EQUATION" ;
   end WHEN_EQUATION;
 
-  record IF_EQUATION
+  record IF_EQUATION " an if-equation"
     Exp.Exp condition1 "Condition" ;
     list<Element> equations2 "Equations of true branch" ;
     list<Element> equations3 "Equations of false branch" ;
   end IF_EQUATION;
 
-  record INITIAL_IF_EQUATION
+  record INITIAL_IF_EQUATION "An initial if-equation"
     Exp.Exp condition1 "Condition" ;
     list<Element> equations2 "Equations of true branch" ;
     list<Element> equations3 "Equations of false branch" ;
   end INITIAL_IF_EQUATION;
 
-  record INITIALEQUATION
+  record INITIALEQUATION " An initial equaton"
     Exp.Exp exp1;
     Exp.Exp exp2;
   end INITIALEQUATION;
 
-  record ALGORITHM
+  record ALGORITHM " An algorithm section"
     Algorithm.Algorithm algorithm_;
   end ALGORITHM;
 
-  record INITIALALGORITHM
+  record INITIALALGORITHM " An initial algorithm section"
     Algorithm.Algorithm algorithm_;
   end INITIALALGORITHM;
 
@@ -203,24 +206,30 @@ uniontype Element
 						    only used at top level." ;
   end COMP;
 
-  record FUNCTION
+  record FUNCTION " A Modelica function"
     Absyn.Path path;
     DAElist dAElist;
     Types.Type type_;
   end FUNCTION;
 
-  record EXTFUNCTION
+  record EXTFUNCTION "An external function"
     Absyn.Path path;
     DAElist dAElist;
     Types.Type type_;
     ExternalDecl externalDecl;
   end EXTFUNCTION;
-
-  record ASSERT
+  
+  record EXTOBJECTCLASS "The 'class' of an external object"
+    Absyn.Path path "className of external object";
+    Element constructor "constructor is an EXTFUNCTION";
+    Element destructor "destructor is an EXTFUNCTION";
+  end EXTOBJECTCLASS;
+  
+  record ASSERT " The Modelica builtin assert"
     Exp.Exp exp;
   end ASSERT;
 
-  record REINIT
+  record REINIT " reinit operator for reinitialization of states"
     Exp.ComponentRef componentRef;
     Exp.Exp exp;
   end REINIT;
@@ -1312,6 +1321,11 @@ algorithm
         Print.printBuf(") ");
       then
         ();
+     case EXT_OBJECT()
+      equation 
+        Print.printBuf("ExternalObject   ");
+      then
+        ();
   end matchcontinue;
 end dumpType;
 
@@ -1339,6 +1353,7 @@ algorithm
         str = stringAppend(s2, ")");
       then
         str;
+    case EXT_OBJECT() then "ExternalObject ";    
   end matchcontinue;
 end dumpTypeStr;
 

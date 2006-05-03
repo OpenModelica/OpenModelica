@@ -545,6 +545,16 @@ algorithm
   end matchcontinue;
 end topFrame;
 
+public function getClassName
+  input Env inEnv;
+  output Ident name;
+algorithm
+   name := matchcontinue (inEnv) 
+   	local Ident n;
+   	case FRAME(class_1 = SOME(n))::_ then n;
+  end matchcontinue;
+end getClassName;    	
+
 public function getEnvPath "function: getEnvPath
  
   This function returns all partially instantiated parents as an Absyn.Path 

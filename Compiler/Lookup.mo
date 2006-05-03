@@ -75,8 +75,6 @@ protected import OpenModelica.Compiler.Mod;
 
 protected import OpenModelica.Compiler.Prefix;
 
-protected import OpenModelica.Compiler.Print;
-
 protected import OpenModelica.Compiler.Builtin;
 
 protected import OpenModelica.Compiler.ModUtil;
@@ -127,52 +125,63 @@ algorithm
       String id,pack,classname,scope;
       SCode.Restriction restr;
       ClassInf.State ci_state,cistate1;
+      
+      /*For simple names */
     case (env,(path as Absyn.IDENT(name = _)),msg) /* msg flag Lookup of simple names */ 
       equation 
-        (t,env_1) = lookupTypeInEnv(env, path) "Debug.fprint (\"lotype\",\"lookup_type(\") &
-	Debug.fcall (\"lotype\",Env.print_env, env) &
-	Debug.fprint (\"lotype\",\", \") & 
-	Debug.fcall (\"lotype\",Dump.print_path,path) &
-	Debug.fprint (\"lottype\",\")\\n\") &" ;
-         /* Debug.fprint (\"lotype\",\"lookup_type(\") &
-	Debug.fcall (\"lotype\",Env.print_env, env) &
-	Debug.fprint (\"lotype\",\", \") & 
-	Debug.fcall (\"lotype\",Dump.print_path,path) &
-	Debug.fprint (\"lottype\",\")\\n\") & Debug.fprint (\"lotype\", \"found type:\") &
-	Debug.fcall (\"lotype\",Types.print_type, t) */ 
+        (t,env_1) = lookupTypeInEnv(env, path);
       then
         (t,env_1);
+      /*If we find a class definition 
+	   that is a function with the same name then we implicitly instantiate that
+	  function, look up the type. */  
     case (env,(path as Absyn.IDENT(name = _)),msg) local String s;
       equation 
-        ((c as SCode.CLASS(id,_,encflag,SCode.R_FUNCTION(),_)),env_1) = lookupClass(env, path, false) "If we didn\'t find the type, but found a class definition 
-	   that is a function with the same name then we implicitly instantiate that
-	  function, and try again." ;
+        ((c as SCode.CLASS(id,_,encflag,SCode.R_FUNCTION(),_)),env_1) = lookupClass(env, path, false);
         env_2 = Inst.implicitFunctionTypeInstantiation(env_1, c);
         (t,env3) = lookupTypeInEnv(env_2, path);
       then
         (t,env3);
+      /* Same for external functions */  
     case (env,(path as Absyn.IDENT(name = _)),msg)
       equation 
-        ((c as SCode.CLASS(id,_,encflag,SCode.R_EXT_FUNCTION(),_)),env_1) = lookupClass(env, path, msg) "If we didn\'t find the type, but found a class definition 
-	   that is an external function with the same name then we implicitly 
-	   instantiate that function, and try again." ;
+        ((c as SCode.CLASS(id,_,encflag,SCode.R_EXT_FUNCTION(),_)),env_1) = lookupClass(env, path, msg);
         env_2 = Inst.implicitFunctionTypeInstantiation(env_1, c);
         (t,env3) = lookupTypeInEnv(env_2, path);
       then
         (t,env3);
-    case (env,Absyn.QUALIFIED(name = pack,path = path),msg) /* Lookup of qualified name */ 
+
+	/* Classes that are external objects. Implicityly instantiate to get type */
+ case (env,(path as Absyn.IDENT(name = _)),msg) local String s;
+      equation 
+        (c ,env_1) = lookupClass(env, path, false);
+        true = Inst.classIsExternalObject(c);
+        //print("found class that is external object\n");
+       (_,env_1,_,_,_) = Inst.instClass(env_1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
+          {}, false, Inst.TOP_CALL());
+	   		//s = Env.printEnvStr(env_1);
+        //print("instantiated external object2, env:");
+        //print(s);
+        //print("\n");
+        (t,env_2) = lookupTypeInEnv(env_1, path);
+      then
+        (t,env_2);
+
+        /* Lookup of qualified name when first part of name is not a package.*/ 
+    case (env,Absyn.QUALIFIED(name = pack,path = path),msg) 
       equation 
         ((c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(env, Absyn.IDENT(pack), false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
          (env_2,cistate1) = Inst.partialInstClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {});
-        /*(_,env_2,_,cistate1,_,_) = Inst.instClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, true, false) "Instantiate implicit (last argument = true) true" ;*/
+   
         failure(ClassInf.valid(cistate1, SCode.R_PACKAGE()));
         (t,env_3) = lookupTypeInClass(env_2, c, path, true) "Has to do additional check for encapsulated classes, see rule below" ;
       then
         (t,env_3);
+   
+   	/* Same as above but first part of name is a package. */
     case (env,(p as Absyn.QUALIFIED(name = pack,path = path)),msg)
       equation 
         ((c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(env, Absyn.IDENT(pack), msg);
@@ -180,12 +189,12 @@ algorithm
         ci_state = ClassInf.start(restr, id);
          (env_2,cistate1) = Inst.partialInstClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {});
-        /*(_,env_2,_,cistate1,_,_) = Inst.instClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, true, false) "true" ;*/
         ClassInf.valid(cistate1, SCode.R_PACKAGE());
         (c_1,env_3) = lookupTypeInClass(env_2, c, path, false) "Has NOT to do additional check for encapsulated classes, see rule above" ;
       then
         (c_1,env_3);
+
+   	/* Error for class not found */
     case (env,path,true)
       equation 
         classname = Absyn.pathString(path);
@@ -1102,11 +1111,13 @@ algorithm
         reslist = lookupFunctionsInFrame(ht, httypes, env, id);
       then
         reslist;
+        
+        /*Check for special builtin operators that can not be represented
+	  in environment like for instance cardinality.*/
     case (env,(iid as Absyn.IDENT(name = id)))
       local String id;
       equation 
-        _ = Static.elabBuiltinHandlerGeneric(id) "Check for special builtin operators that can not be represented
-	  in environment like for instance cardinality." ;
+        _ = Static.elabBuiltinHandlerGeneric(id)  ;
         reslist = createGenericBuiltinFunctions(env, id);
       then
         reslist;
@@ -1126,19 +1137,10 @@ algorithm
         ci_state = ClassInf.start(restr, id);
        (env_2,cistate1) = Inst.partialInstClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {});
-        /*(_,env_2,_,cistate1,_,_) = Inst.instClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, true, false) "Instantiate implicit (last argument = true)" ;*/
         reslist = lookupFunctionsInEnv(env_2, path);
       then 
         reslist;
-    case (env,(path as Absyn.IDENT(name = id))) /* f::_ */ 
-      local String id,s;
-      equation 
-        ((c as SCode.CLASS(_,_,_,SCode.R_FUNCTION(),_)),env_1) = lookupClass(env, path, false) "If we find class that is function. {f}" ;
-        ((env as (Env.FRAME(sid,ht,httypes,_,_,_,_) :: _))) = Inst.implicitFunctionTypeInstantiation(env_1, c);
-        res = lookupFunctionsInFrame(ht, httypes, env, id);
-      then
-        res;
+   
     case ((f :: fs),id) /* Did not match. Continue */ 
       local list<tuple<Types.TType, Option<Absyn.Path>>> c;
       equation 
@@ -1241,6 +1243,7 @@ algorithm
         Error.addMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id});
       then
         fail();
+        /* Record constructor function*/
     case (ht,httypes,env,id)
       equation 
         Env.CLASS((cdef as SCode.CLASS(n,_,_,SCode.R_RECORD(),_)),_) = Env.treeGet(ht, id, Env.myhash) "Each time a record constructor function is looked up, this rule will create the function. An improvement (perhaps needing lot of code) is to add the function to the environment, which is returned from this function." ;
@@ -1249,14 +1252,17 @@ algorithm
         ftype = Types.makeFunctionType(fpath, varlst);
       then
         (ftype,env);
+        /* Found function, instantiate to get type */
     case (ht,httypes,env,id)
       equation 
-        Env.CLASS((cdef as SCode.CLASS(_,_,_,SCode.R_FUNCTION(),_)),cenv) = Env.treeGet(ht, id, Env.myhash) "If we found class that is function" ;
+        Env.CLASS((cdef as SCode.CLASS(_,_,_,SCode.R_FUNCTION(),_)),cenv) = Env.treeGet(ht, id, Env.myhash);
         (env_1,_) = Inst.implicitFunctionInstantiation(cenv, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           cdef, {});
         (ty,env_2) = lookupTypeInEnv(env_1, Absyn.IDENT(id));
       then
         (ty,env_2);
+        
+        /* Found external function, instantiate to get type */
     case (ht,httypes,env,id)
       equation 
         Env.CLASS((cdef as SCode.CLASS(_,_,_,SCode.R_EXT_FUNCTION(),_)),cenv) = Env.treeGet(ht, id, Env.myhash) "If we found class that is external function" ;
@@ -1289,7 +1295,7 @@ algorithm
       SCode.Class cdef;
       list<Types.Var> varlst;
       Absyn.Path fpath;
-      tuple<Types.TType, Option<Absyn.Path>> ftype;
+      tuple<Types.TType, Option<Absyn.Path>> ftype,t;
     case (ht,httypes,env,id) /* Classes and vars Types */ 
       equation 
         Env.TYPE(tps) = Env.treeGet(httypes, id, Env.myhash);
@@ -1301,7 +1307,9 @@ algorithm
         Error.addMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id});
       then
         fail();
-    case (ht,httypes,env,id)
+        
+        /* Records, create record constructor function*/
+    case (ht,httypes,env,id) 
       equation 
         Env.CLASS((cdef as SCode.CLASS(n,_,_,SCode.R_RECORD(),_)),cenv) = Env.treeGet(ht, id, Env.myhash);
         varlst = buildRecordConstructorVarlst(cdef, env);
@@ -1309,6 +1317,8 @@ algorithm
         ftype = Types.makeFunctionType(fpath, varlst);
       then
         {ftype};
+        
+        /* Found class that is function, instantiate to get type*/
     case (ht,httypes,env,id) local String s;
       equation 
         Env.CLASS((cdef as SCode.CLASS(_,_,_,SCode.R_FUNCTION(),_)),cenv) = Env.treeGet(ht, id, Env.myhash) "If found class that is function." ;
@@ -1316,6 +1326,8 @@ algorithm
         tps = lookupFunctionsInEnv(env_1, Absyn.IDENT(id)); 
       then
         tps;
+        
+        /* Found class that is external function, instantiate to get type */
     case (ht,httypes,env,id)
       equation 
         Env.CLASS((cdef as SCode.CLASS(_,_,_,SCode.R_EXT_FUNCTION(),_)),cenv) = Env.treeGet(ht, id, Env.myhash) "If found class that is external function." ;
@@ -1323,6 +1335,21 @@ algorithm
         tps = lookupFunctionsInEnv(env_1, Absyn.IDENT(id));
       then
         tps;
+        
+     /* Found class that is is external object*/
+     case (ht,httypes,env,id)  
+        local String s;
+        equation
+          Env.CLASS(cdef,cenv) = Env.treeGet(ht, id, Env.myhash);
+	        true = Inst.classIsExternalObject(cdef);
+	        //print("found class that is external object\n");
+	        (_,env_1,_,t,_) = Inst.instClass(cenv, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, 
+         	 {}, false, Inst.TOP_CALL());
+          (t,_) = lookupTypeInEnv(env_1, Absyn.IDENT(id));
+           //s = Types.unparseType(t);
+         	 //print("type :");print(s);print("\n");
+       then
+        {t};  
   end matchcontinue;
 end lookupFunctionsInFrame;
 
@@ -1701,10 +1728,10 @@ algorithm
       equation 
         ((c as SCode.CLASS(_,_,_,SCode.R_FUNCTION(),_)),env_1) = lookupClassInEnv(env, classname, false) "If not found, look for classdef that is function and instantiate." ;
         env_2 = Inst.implicitFunctionTypeInstantiation(env_1, c);
-        s = Env.printEnvStr(env_2);
-        print("env=");print(s);print("\n");
+        //s = Env.printEnvStr(env_2);
+        //print("env=");print(s);print("\n");
         (t,env3) = lookupTypeInEnv(env_2, classname);
-         /* true means here encapsulated */ 
+        
       then
         (t,env3);
     case (env,cdef,(classname as Absyn.IDENT(name = _)),_)
@@ -1712,10 +1739,9 @@ algorithm
         ((c as SCode.CLASS(_,_,_,SCode.R_EXT_FUNCTION(),_)),env_1) = lookupClassInEnv(env, classname, false) "If not found, look for classdef that is external function and instantiate." ;
         env_2 = Inst.implicitFunctionTypeInstantiation(env_1, c);
         (t,env3) = lookupTypeInEnv(env_2, classname);
-         /* true means here encapsulated */ 
-      then
+       then
         (t,env3);
-    case (env,cdef,Absyn.QUALIFIED(name = c1,path = p1),true)
+    case (env,cdef,Absyn.QUALIFIED(name = c1,path = p1),true /* true means here encapsulated */)
       equation 
         ((c as SCode.CLASS(id,_,(encflag as true),restr,_)),env) = lookupClassInEnv(env, Absyn.IDENT(c1), false) "Restrict lookup to encapsulated elements only" ;
         env2 = Env.openScope(env, encflag, SOME(id));

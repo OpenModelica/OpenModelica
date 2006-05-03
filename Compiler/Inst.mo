@@ -1235,6 +1235,17 @@ algorithm
       then
         ({},env,Connect.emptySet,ci_state,{},bc);
         
+        /* This case instantiates external objects. An external object inherits from ExternalOBject
+         and have two local functions: constructor and destructor (and no other elements). */
+        case (env,mods,pre,csets,ci_state,SCode.PARTS(elementLst = els, equationLst = eqs,
+      																						initialEquation = initeqs,algorithmLst = alg,initialAlgorithm = initalg)
+      		,re,prot,inst_dims,impl) 
+      	equation
+      	  	true = isExternalObject(els);
+      	  	(dae,env,ci_state) = instantiateExternalObject(env,els,impl);
+      	  then 
+      	  (dae,env,Connect.emptySet,ci_state,{},NONE);  
+        
         /* This rule describes how to instantiate an explicit class definition*/ 
     case (env,mods,pre,csets,ci_state,SCode.PARTS(elementLst = els,equationLst = eqs,initialEquation = initeqs,
       																					algorithmLst = alg,initialAlgorithm = initalg)
@@ -1333,7 +1344,202 @@ algorithm
   end matchcontinue;
 end instClassdef;
 
-protected function printExtcomps
+protected function instantiateExternalObject
+" instantiate an external object. This is done by instantiating the destructor and constructor
+functions and create a DAE element containing these two."
+input Env.Env env "environment";
+input list<SCode.Element> els "elements";
+input Boolean impl;
+output list<DAE.Element> dae "resulting dae";
+output Env.Env outEnv;
+output ClassInf.State ciState;
+algorithm
+  (dae,outEnv,ciState) := matchcontinue(env,els,impl) 
+ 	 local 
+ 	   SCode.Class destr,constr;
+ 	   DAE.Element destr_dae,constr_dae;
+ 	   Env.Env env1;
+ 	   // Explicit instantiation, generate constructor and destructor and the function type.
+  case	(env,els,false) 
+    local 
+    	Ident className;
+    	Absyn.Path classNameFQ;
+    	Types.Type functp;
+    	Env.Frame f;
+    	list<Env.Frame> fs,fs1;
+    equation
+    destr = getExternalObjectDestructor(els);
+    constr = getExternalObjectConstructor(els);
+    destr_dae = instantiateExternalObjectDestructor(env,destr);
+    (constr_dae,functp) = instantiateExternalObjectConstructor(env,constr);
+    className=Env.getClassName(env); // The external object classname is in top frame of environment.
+    SOME(classNameFQ)= Env.getEnvPath(env); // Fully qualified classname
+		//Extend the frame with the type, one frame up at the same place as the class.
+    f::fs = env;
+    fs1 = Env.extendFrameT(fs,className,functp);
+    env1 = f::fs1; 
+    then ({DAE.EXTOBJECTCLASS(classNameFQ,constr_dae,destr_dae)},env1,ClassInf.EXTERNAL_OBJ(className));
+      
+      // Implicit, do no instantiate constructor and destructor.
+  case (env,els,true) 
+    local Ident className;
+    equation 
+       className = Env.getClassName(env);
+    then ({},env,ClassInf.EXTERNAL_OBJ(className));
+  case (env,els,impl) equation
+     print("instantiateExternalObject failed\n");
+     then fail();
+  end matchcontinue;   
+end instantiateExternalObject;
+
+protected function instantiateExternalObjectDestructor 
+"instantiates the destructor function of an external object"
+	input Env.Env env;
+	input SCode.Class cl;
+	output DAE.Element dae;
+algorithm	
+  dae := matchcontinue (env,cl)
+  	case (env,cl) 
+  	  local
+  	    Env.Env env1;
+  	    DAE.Element daeElt;
+  	    list<DAE.Element> dae;
+  	    String s;
+  		equation
+  		  (env1,{daeElt}) = implicitFunctionInstantiation(env, Types.NOMOD(), Prefix.NOPRE(), 
+		  		  Connect.emptySet, cl, {}) ;
+  	then
+  	  daeElt;
+  	  case (env,cl)
+  	    equation
+  	      print("instantiateExternalObjectDestructor failed\n");
+  	  then fail();
+   end matchcontinue;   	  
+end instantiateExternalObjectDestructor;
+
+protected function instantiateExternalObjectConstructor 
+"instantiates the constructor function of an external object"
+	input Env.Env env;
+	input SCode.Class cl;
+	output DAE.Element dae;
+	output Types.Type tp;
+algorithm	
+	dae := matchcontinue (env,cl)
+  	case (env,cl) 
+  	  local
+  	    Env.Env env1;
+  	    DAE.Element daeElt;
+  	    Types.Type funcTp;
+  	    String s;
+  		equation
+  		  (env1,{daeElt as DAE.EXTFUNCTION(type_ = funcTp )}) 
+  		     	= implicitFunctionInstantiation(env, Types.NOMOD(), Prefix.NOPRE(), 
+		  		  Connect.emptySet, cl, {}) ;
+  	then
+  	  (daeElt,funcTp);
+	  case (env,cl)
+  	  equation
+  	    print("instantiateExternalObjectConstructor failed\n");
+  	then fail();
+  	  end matchcontinue;
+end instantiateExternalObjectConstructor;
+
+public function classIsExternalObject 
+"returns true if a Class fulfills the requirements of an external object"
+	input SCode.Class cl;
+	output Boolean res;
+algorithm
+  res := matchcontinue (cl)
+  local list<SCode.Element> els;
+    case SCode.CLASS(parts=SCode.PARTS(elementLst=els)) 
+      equation
+        res = isExternalObject(els);
+     then res;       
+    case (_) then false;
+  end matchcontinue;
+end classIsExternalObject;
+
+protected function isExternalObject 
+"Returns true if the element list fulfills the condition of an External Object.
+An external object extends the builtinClass ExternalObject, and has two local 
+functions, destructor and constructor. "
+input  list<SCode.Element> els;
+output Boolean res;
+algorithm
+ res := matchcontinue(els) 
+ case (els)
+   equation
+  	true = hasExtendsOfExternalObject(els);
+	  true = hasExternalObjectDestructor(els);
+  	true = hasExternalObjectConstructor(els);
+  	3 = listLength(els);
+  then true;
+  case (_) then false;
+  end matchcontinue;
+end isExternalObject;
+
+protected function hasExtendsOfExternalObject 
+"returns true if element list contains 'extends ExternalObject;'"
+input list<SCode.Element> els;
+output Boolean res;
+
+algorithm 
+  res:= matchcontinue(els)
+  	case SCode.EXTENDS(path = Absyn.IDENT("ExternalObject"))::_ then true;
+  	case _::els then hasExtendsOfExternalObject(els);
+  	case _ then false;
+  end matchcontinue; 
+end hasExtendsOfExternalObject;
+
+protected function hasExternalObjectDestructor 
+"returns true if element list contains 'function destructor .. end destructor'"
+input list<SCode.Element> els;
+output Boolean res;
+
+algorithm 
+  res:= matchcontinue(els)
+  	case SCode.CLASSDEF(class_ = SCode.CLASS(name="destructor"))::_ then true;
+  	case _::els then hasExternalObjectDestructor(els);
+  	case _ then false;
+  end matchcontinue;
+end hasExternalObjectDestructor;
+
+protected function hasExternalObjectConstructor 
+"returns true if element list contains 'function constructor ... end constructor'"
+input list<SCode.Element> els;
+output Boolean res;
+
+algorithm 
+  res:= matchcontinue(els)
+  	case SCode.CLASSDEF(class_ = SCode.CLASS(name="constructor"))::_ then true;
+  	case _::els then hasExternalObjectConstructor(els);
+  	case _ then false;
+  end matchcontinue;
+end hasExternalObjectConstructor;
+
+protected function getExternalObjectDestructor 
+"returns the class 'function destructor .. end destructor' from element list"
+input list<SCode.Element> els;
+output SCode.Class cl;
+algorithm 
+  cl:= matchcontinue(els) local SCode.Class cl;
+  	case SCode.CLASSDEF(class_ = cl as SCode.CLASS(name="destructor"))::_ then cl;
+  	case _::els then getExternalObjectDestructor(els);
+  end matchcontinue;
+end getExternalObjectDestructor;
+
+protected function getExternalObjectConstructor 
+"returns the class 'function constructor ... end constructor' from element list"
+input list<SCode.Element> els;
+output SCode.Class cl;
+algorithm 
+  cl:= matchcontinue(els)
+  	case SCode.CLASSDEF(class_ = cl as SCode.CLASS(name="constructor"))::_ then cl;
+  	case _::els then getExternalObjectConstructor(els);
+  end matchcontinue;
+end getExternalObjectConstructor;
+ 
+protected function printExtcomps " prints the tuple of elements and modifiers to stdout"
   input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst;
 algorithm 
   _:=
@@ -2691,8 +2897,9 @@ algorithm
 	Debug.fcall (\"insttr\", Mod.print_mod, mods) &" ;
       then
         (dae,env_1,csets,ci_state,{});
-    case (env,mods,pre,csets,ci_state,((comp as SCode.COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = (attr as SCode.ATTR(arrayDim = ad,flow_ = flow_,RW = acc,parameter_ = param,input_ = dir)),type_ = t,mod = m,baseclass = bc,this = comment)),cmod),inst_dims,impl) /* A component
-	   
+        
+        
+        /* A component
 	    This is the rule for instantiating a model component.  A
 	    component can be a structured subcomponent or a variable,
 	    parameter or constant.  All of these are treated in a
@@ -2701,7 +2908,10 @@ algorithm
 	    Lookup the class name, apply modifications and add the
 	    variable to the current frame in the environment. Then
 	    instantiate the class with an extended prefix.
-	 */ 
+	 */
+    case (env,mods,pre,csets,ci_state,((comp as SCode.COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,
+      		attributes = (attr as SCode.ATTR(arrayDim = ad,flow_ = flow_,RW = acc,parameter_ = param,input_ = dir)),
+      		type_ = t,mod = m,baseclass = bc,this = comment)),cmod),inst_dims,impl)  
       equation 
         vn = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,{})) "//Debug.fprint(\"insttr\", \"Instantiating component \") &
 	//Debug.fprint(\"insttr\", n) & //Debug.fprint(\"insttr\", \"\\n\") &" ;
@@ -5569,16 +5779,25 @@ algorithm
           DAE.VAR(vn,kind,dir,DAE.STRING(),e,inst_dims,start,fl,{},
           dae_var_attr,comment)}; 
     case (vn,(Types.T_ENUM(),_),fl,kind,dir,e,inst_dims,start,dae_var_attr,comment) then {}; 
-    case (vn,(Types.T_ENUMERATION(names = l),_),fl,kind,dir,e,inst_dims,start,dae_var_attr,comment) then {
-          DAE.VAR(vn,kind,dir,DAE.ENUMERATION(l),e,inst_dims,start,fl,{},
-          dae_var_attr,comment)};  /* We should not declare each enumeration value of an enumeration when instantiating,e.g Myenum my !=> constant EnumType my.enum1,... {DAE.VAR(vn, kind, dir, DAE.ENUM, e, inst_dims)} instantiation of complex type extending from basic type */ 
-    case (vn,(Types.T_COMPLEX(complexClassType = ci,complexVarLst = {},complexTypeOption = SOME(tp)),_),fl,kind,dir,e,inst_dims,start,dae_var_attr,comment) /* instantiation of complex type extending from basic type */ 
-      equation 
-        dae = daeDeclare4(vn, tp, fl, kind, dir, e, inst_dims, start, dae_var_attr, 
-          comment);
-      then
-        dae;
-    case (vn,(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(dim)),arrayType = tp),_),fl,kind,dir,e,inst_dims,start,dae_var_attr,comment) /* test */ 
+
+			/* We should not declare each enumeration value of an enumeration when instantiating,
+  		e.g Myenum my !=> constant EnumType my.enum1,... {DAE.VAR(vn, kind, dir, DAE.ENUM, e, inst_dims)} 
+  		instantiation of complex type extending from basic type */ 
+    case (vn,(Types.T_ENUMERATION(names = l),_),fl,kind,dir,e,inst_dims,start,dae_var_attr,comment) 
+      then {DAE.VAR(vn,kind,dir,DAE.ENUMERATION(l),e,inst_dims,start,fl,{}, dae_var_attr,comment)};  
+
+          /* Complex type that is ExternalObject*/
+     case (vn, (Types.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),_),fl,kind,dir,e,inst_dims,start,dae_var_attr,comment)    
+          then {DAE.VAR(vn,kind,dir,DAE.EXT_OBJECT(),e,inst_dims,start,fl,{}, dae_var_attr,comment)};
+            
+      /* instantiation of complex type extending from basic type */ 
+    case (vn,(Types.T_COMPLEX(complexClassType = ci,complexVarLst = {},complexTypeOption = SOME(tp)),_),fl,kind,dir,e,inst_dims,start,dae_var_attr,comment) 
+      equation
+        dae = daeDeclare4(vn,tp,fl,kind,dir,e,inst_dims,start,dae_var_attr,comment);
+        then dae;
+		
+		/* Array that extends basic type */          
+    case (vn,(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(dim)),arrayType = tp),_),fl,kind,dir,e,inst_dims,start,dae_var_attr,comment) 
       equation 
         dae = daeDeclare4(vn, tp, fl, kind, dir, e, inst_dims, start, dae_var_attr, 
           comment);
@@ -7095,10 +7314,7 @@ algorithm
       ClassInf.State st;
       String name;
       Option<tuple<Types.TType, Option<Absyn.Path>>> bc;
-    case (p,ClassInf.TYPE_INTEGER(string = _),v,_) /* rule	Types.is_array(tp) => true &
-	not ClassInf.is_connector(ci) 
-	-----------------
-	mktype(p,ci,vs,SOME(tp)) => tp */ 
+    case (p,ClassInf.TYPE_INTEGER(string = _),v,_) 
       equation 
         somep = getOptPath(p);
       then

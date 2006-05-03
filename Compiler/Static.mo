@@ -4645,6 +4645,7 @@ algorithm
       Exp.Exp call_exp;
       list<Ident> t_lst;
       Ident fn_str,types_str,scope;
+      String s;
     case (env,fn,args,nargs,impl,st) /* impl Record constructors, user defined or implicit tuple builtin */ 
       equation 
         ((t as (Types.T_FUNCTION(fargs,(outtype as (Types.T_COMPLEX(ClassInf.RECORD(_),_,_),_))),_)),env_1) = Lookup.lookupType(env, fn, true);
@@ -4668,8 +4669,7 @@ algorithm
 	 in the funktion type of the user function and check both the
 	 funktion name and the function\'s type. 
 	" ;			
-				Print.printErrorBuf("Found functions\n");
-        (args_1,constlist,restype,functype,vect_dims,slots) = elabTypes(env, args, typelist, impl) "The constness of a function depends on the inputs. If all inputs are
+        (args_1,constlist,restype,functype,vect_dims,slots) = elabTypes(env, args,nargs, typelist, impl) "The constness of a function depends on the inputs. If all inputs are
 	  constant the call itself is constant.
 	" ;
         fn_1 = deoverloadFuncname(fn, functype);
@@ -4685,7 +4685,7 @@ algorithm
     case (env,fn,args,nargs,impl,st)
       equation 
         ktypelist = getKoeningFunctionTypes(env, fn, args, nargs, impl) "Rule above failed. Also consider koening lookup." ;
-        (args_1,constlist,restype,functype,vect_dims,slots) = elabTypes(env, args, ktypelist, impl);
+        (args_1,constlist,restype,functype,vect_dims,slots) = elabTypes(env, args, nargs, ktypelist, impl);
         fn_1 = deoverloadFuncname(fn, functype);
         tuple_ = isTuple(restype);
         builtin = isBuiltinFunc(fn_1);
@@ -4715,7 +4715,7 @@ algorithm
         fail();
     case (env,fn,args,nargs,impl,st)
       equation 
-        Debug.fprint("failtrace", "- elab_call_args failed\n") "elab_exp(env, e) => (e\',Types.PROP(t,_)) &" ;
+        Debug.fprint("failtrace", "- elabCallArgs failed\n") ;
       then
         fail();
   end matchcontinue;
@@ -5010,6 +5010,7 @@ protected function elabTypes "function: elabTypes
 "
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input list<Types.Type> inTypesTypeLst;
   input Boolean inBoolean;
   output list<Exp.Exp> outExpExpLst1;
@@ -5020,7 +5021,7 @@ protected function elabTypes "function: elabTypes
   output list<Slot> outSlotLst6;
 algorithm 
   (outExpExpLst1,outTypesConstLst2,outType3,outType4,outTypesArrayDimLst5,outSlotLst6):=
-  matchcontinue (inEnv,inAbsynExpLst,inTypesTypeLst,inBoolean)
+  matchcontinue (inEnv,inAbsynExpLst,inAbsynNamedArgLst,inTypesTypeLst,inBoolean)
     local
       list<Slot> slots,newslots;
       list<Exp.Exp> args_1;
@@ -5028,25 +5029,26 @@ algorithm
       list<Types.ArrayDim> dims;
       list<Env.Frame> env;
       list<Absyn.Exp> args;
+      list<Absyn.NamedArg> nargs;
       tuple<Types.TType, Option<Absyn.Path>> t,restype;
       list<tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>>> params;
       list<tuple<Types.TType, Option<Absyn.Path>>> trest;
       Boolean impl;
-    case (env,args,((t as (Types.T_FUNCTION(funcArg = params,funcResultType = restype),_)) :: trest),impl) /* argument expressions function candidate types impl const result type function type Vectorized dimensions slots, needed for vectorization We found a match. */ 
+    case (env,args,nargs,((t as (Types.T_FUNCTION(funcArg = params,funcResultType = restype),_)) :: trest),impl) /* argument expressions function candidate types impl const result type function type Vectorized dimensions slots, needed for vectorization We found a match. */ 
       equation 
         slots = makeEmptySlots(params);
-        (args_1,newslots,clist) = elabInputArgs(env, args, {}, slots, impl);
+        (args_1,newslots,clist) = elabInputArgs(env, args, nargs, slots, impl);
         dims = slotsVectorizable(newslots);
       then
         (args_1,clist,restype,t,dims,newslots);
-    case (env,args,((Types.T_FUNCTION(funcArg = params,funcResultType = restype),_) :: trest),impl) /* We did not found a match, try next function type */ 
+    case (env,args,nargs,((Types.T_FUNCTION(funcArg = params,funcResultType = restype),_) :: trest),impl) /* We did not found a match, try next function type */ 
       equation 
-        (args_1,clist,restype,t,dims,slots) = elabTypes(env, args, trest, impl);
+        (args_1,clist,restype,t,dims,slots) = elabTypes(env, args,nargs,trest, impl);
       then
         (args_1,clist,restype,t,dims,slots);
-    case (env,_,_,_)
+    case (env,_,_,_,_)
       equation 
-        Debug.fprintln("failtrace", "- elab_types failed.");
+        Debug.fprintln("failtrace", "elabTypes failed.\n");
       then
         fail();
   end matchcontinue;
@@ -5452,14 +5454,19 @@ algorithm
         explst = expListFromSlots(newslots);
       then
         (explst,newslots,clist);
-    case (env,{},(narg as (_ :: _)),slots,impl) /* Fill slots with named arguments */ 
+    case (env,{},narg,slots,impl) /* Fill slots with named arguments */ 
+       local String s;
       equation 
         farg = funcargLstFromSlots(slots);
+        s = printSlotsStr(slots);
         (newslots,clist) = elabNamedInputArgs(env, narg, farg, slots, impl);
+            s = printSlotsStr(newslots);
         newexp = expListFromSlots(newslots);
       then
         (newexp,newslots,clist);
     case (env,{},{},slots,impl) then ({},slots,{}); 
+      
+    case (_,_,_,_,_) equation Debug.fprint("failtrace","elabInputArgs failed\n"); then fail();
   end matchcontinue;
 end elabInputArgs;
 
