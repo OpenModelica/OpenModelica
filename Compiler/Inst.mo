@@ -7161,20 +7161,24 @@ algorithm
       list<Types.Var> l1,l2;
       Boolean flow_;
       String c1_str,t1_str;
-    case (sets,env,pre,c1,f1,(Types.T_REAL(varLstReal = _),_),c2,f2,(Types.T_REAL(varLstReal = _),_),true) /* flow Flow type, must be a subtype of Real */ 
+      
+      /* flow - with a subtype of Real */ 
+    case (sets,env,pre,c1,f1,(Types.T_REAL(varLstReal = _),_),c2,f2,(Types.T_REAL(varLstReal = _),_),true) 
       equation 
         c1_1 = Prefix.prefixCref(pre, c1);
         c2_1 = Prefix.prefixCref(pre, c2);
         sets_1 = Connect.addFlow(sets, c1_1, f1, c2_1, f2);
       then
         (sets_1,{});
-    case (sets,env,pre,c1,f1,(Types.T_ARRAY(arrayType = t1),_),c2,f2,(Types.T_ARRAY(arrayType = t2),_),true)
+        
+        /* flow - with arrays */ 
+    case (sets,env,pre,c1,f1,(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(dim1)),arrayType = t1),_),c2,f2,(Types.T_ARRAY(arrayType = t2),_),true)
       equation 
         ((Types.T_REAL(_),_)) = Types.arrayElementType(t1);
         ((Types.T_REAL(_),_)) = Types.arrayElementType(t2);
         c1_1 = Prefix.prefixCref(pre, c1);
         c2_1 = Prefix.prefixCref(pre, c2);
-        sets_1 = Connect.addEqu(sets, c1_1, c2_1);
+        sets_1 = Connect.addArrayFlow(sets, c1_1,f1, c2_1,f2,dim1);
       then
         (sets_1,{});
     case (sets,env,pre,c1,f1,(_,_),c2,f2,(_,_),false) /* Non-flow type Parameters and constants generate assert statements */ 

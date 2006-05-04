@@ -149,6 +149,41 @@ algorithm
   ss_1 := merge(ss, s1, s2);
 end addFlow;
 
+public function addArrayFlow "function: addArrayFlow
+ For connecting two arrays, a flow equation for each index should be generated, see addFlow.
+"
+  input Sets ss;
+  input Exp.ComponentRef r1;
+  input Face d1;
+  input Exp.ComponentRef r2;
+  input Face d2;
+  input Integer dsize;
+  output Sets ss_1;
+  Set s1,s2;
+  Sets ss_1;
+algorithm 
+    outSets:=
+  matchcontinue (ss,r1,d1,r2,d2,dsize)
+    local
+      Sets s,ss_1,ss_2,ss;
+      Exp.ComponentRef r1_1,r2_1,r1,r2;
+      Integer i_1,i;
+      Set s1,s2;
+    case (s,_,_,_,_,0) then s; 
+    case (ss,r1,d1,r2,d2,i)
+      equation 
+        r1_1 = Exp.subscriptCref(r1, {Exp.INDEX(Exp.ICONST(i))});
+        r2_1 = Exp.subscriptCref(r2, {Exp.INDEX(Exp.ICONST(i))});
+        i_1 = i - 1;
+        s1 = findFlowSet(ss, r1_1,d1);
+        s2 = findFlowSet(ss, r2_1,d2);
+        ss_1 = merge(ss, s1, s2);
+        ss_2 = addArrayFlow(ss_1, r1,d1, r2,d2, i_1);
+      then
+        ss_2;
+  end matchcontinue;
+end addArrayFlow;
+
 public function addArrayEqu "function: addArrayEqu
  
   For connecting two arrays, an equal equation for each index should 
