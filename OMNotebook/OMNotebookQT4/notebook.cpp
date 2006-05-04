@@ -2392,6 +2392,7 @@ namespace IAEX
 	{
 		// if a filename exists, use that filename as default
 		QString filename;
+/*		don't work correctly.
 		if( !subject_->getFilename().isEmpty() )
 		{
 			// open save as dialog
@@ -2402,14 +2403,14 @@ namespace IAEX
 				"OpenModelica Notebooks (*.onb)");
 		}
 		else
-		{
+		{*/
 			// open save as dialog
 			filename = QFileDialog::getSaveFileName(
 				this,
 				"Choose a filename to save under",
 				saveDir_,
 				"OpenModelica Notebooks (*.onb)");
-		}
+		//}
 
 		if(!filename.isEmpty())
 		{

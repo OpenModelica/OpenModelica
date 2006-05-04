@@ -154,8 +154,8 @@ namespace IAEX
 			if( !stack_.isEmpty() )
 			{
 				QTextEdit *editor = stack_.pop();
-				if( editor->isVisible() )
-				{
+				//if( editor->isVisible() )
+				//{
 					highlighter_->highlight( editor->document() );
 
 					// force text to be updated
@@ -163,12 +163,12 @@ namespace IAEX
 					//QCoreApplication::processEvents();
 					//QTextCursor cursor = editor->textCursor();
 					//editor->setTextCursor( cursor );
-				}
-				else
-				{
+				//}
+				//else
+				//{
 					// add last
-					stack_.push_back( editor );
-				}
+					//stack_.push_back( editor );
+				//}
 			}
 
 			// 2006-01-05 AF, check if any editor should be removed
