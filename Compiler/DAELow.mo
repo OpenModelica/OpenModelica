@@ -9747,7 +9747,9 @@ algorithm
       Variables vars,knvars;
       list<WhenClause> wc;
       list<ZeroCrossing> zc;
-    case (DAELOW(orderedVars = vars,knownVars = knvars,eventInfo = EVENT_INFO(whenClauseLst = wc,zeroCrossingLst = zc)))
+    case (DAELOW(orderedVars = vars,knownVars = knvars,
+                 eventInfo = EVENT_INFO(whenClauseLst = wc,
+                                        zeroCrossingLst = zc)))
       equation 
         varlst = varList(vars) "input variables are put in the known var list, 
 	  but they should be counted by the ny counter." ;

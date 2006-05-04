@@ -36,7 +36,7 @@ static list<long> EventQueue;
 
 long numpoints; // the number of points allocated for in data array
 long actual_points=0; // the number of actual points saved
-double t;
+//double t;
 
 int init; 
 int sim_verbose;
@@ -47,6 +47,13 @@ double* xd_saved;
 double* y_saved;
 double* gout;
 long* zeroCrossingEnabled;
+
+DATA *globalData = 0;
+
+double *globalInitialResidual;
+
+
+#define MAXORD 5
 
 // dummy Jacobian
 int dummyJacobianDASSL(double *t, double *y, double *yprime, double *pd, long *cj, double *rpar, long* ipar){
@@ -96,10 +103,11 @@ double Sample(double t, double start ,double interval)
 
 double sample(double start ,double interval)
 {
-  int count = int((t - start) / interval);
-  if (t < (start-interval*0.25)) return 0;
-  if (( t-start-count*interval) < 0) return 0;
-  if (( t-start-count*interval) > interval*0.5) return 0;
+  //  double sloop = 4.0/interval;
+  int count = int((globalData->timeValue - start) / interval);
+  if (globalData->timeValue < (start-interval*0.25)) return 0;
+  if (( globalData->timeValue-start-count*interval) < 0) return 0;
+  if (( globalData->timeValue-start-count*interval) > interval*0.5) return 0;
   return 1;
 }
 
@@ -127,11 +135,12 @@ inline double newTime(double t, double step)
 inline void calcEnabledZeroCrossings()
 {
   int i;
-  for (i=0;i<ng;i++) {
+  for (i=0;i<globalData->nZeroCrossing;i++) {
     zeroCrossingEnabled[i] = 1;
   }
-  function_zeroCrossing(&nx,&t,x,&ng,gout,0,0);
-  for (i=0;i<ng;i++) {
+  function_zeroCrossing(&globalData->nStates,&globalData->timeValue,
+                        globalData->states,&globalData->nZeroCrossing,gout,0,0);
+  for (i=0;i<globalData->nZeroCrossing;i++) {
     if (gout[i] > 0)
       zeroCrossingEnabled[i] = 1;
     else if (gout[i] < 0)
@@ -145,11 +154,11 @@ inline void calcEnabledZeroCrossings()
 int emit()
 {
   if (actual_points < maxpoints) {
-    add_result(data,t,x,xd,y,nx,ny,&actual_points);
+    add_result(data,&actual_points);
     return 0;
   }
   else {
-    cout << "Too many points" << endl;
+    cout << "Too many points: " << actual_points << " max points: " << maxpoints << endl;
     return -1;
   }
 }
@@ -159,6 +168,17 @@ int dassl_main(int, char **);
 
 int main(int argc, char**argv) 
 {
+  globalData = initializeDataStruc(ALL);
+  if( !globalData ){
+      std::cerr << "Error: Could not initialize the global data structure file" << std::endl;
+  }
+  //this sets the static variable that is in the file with the generated-model functions
+  setLocalData(globalData);
+  if(globalData->nStates == 0 && globalData->nAlgebraic == 0)
+    {
+      std::cerr << "No variables in the model." << std::endl;
+      return 1;
+    }
   /* verbose flag is set : -v */
   sim_verbose = (int)flagSet("v",argc,argv);
   
@@ -192,17 +212,25 @@ int euler_main(int argc,char** argv) {
     exit(0);
   }
 
-  read_input(argc,argv,x,xd,y,p,nx,ny,np,&start,&stop,&step);
+  read_input(argc,argv,
+             globalData->states,
+             globalData->statesDerivatives,
+             globalData->algebraics,
+             globalData->parameters,
+             globalData->nStates,
+             globalData->nAlgebraic,
+             globalData->nParameters,
+             &start,&stop,&step);
   
   long numpoints = long((stop-start)/step)+2;
   
   // load default initial values.
-  data =  initialize_simdata(numpoints,nx,ny);
+  data =  initialize_simdata(numpoints,globalData->nStates,globalData->nAlgebraic);
   
   // Calculate initial values from (fixed) start attributes and intial equation
   // sections
   init=1;
-  initial_function(x,xd,y,p,&t,nx,ny,np);
+  initial_function();
   init=0;
 
   int npts_per_result=int((stop-start)/(step*(numpoints-2)));
@@ -210,13 +238,15 @@ int euler_main(int argc,char** argv) {
   int pt=0;
   for(sim_time=start; sim_time <= stop; sim_time+=step,pt++) {
 
-    euler(x,xd,y,p,data,nx,ny,np,&sim_time,&step,functionODE);
+    //euler(x,xd,y,p,/*data,*/nx,ny,np,&sim_time,&step,functionODE);
+    euler(globalData,&step,functionODE);
+
 
     /* Calculate the output variables */
-    functionDAE_output(&sim_time,x,xd,y,p);
+    functionDAE_output();
 
     if (pt % npts_per_result == 0 || sim_time+step > stop) { // store result
-      add_result(data,sim_time,x,xd,y,nx,ny,&actual_points);
+      add_result(data,&actual_points);
     }
   } 
 
@@ -224,55 +254,55 @@ int euler_main(int argc,char** argv) {
   string * result_file =(string*)getFlagValue("r",argc,argv);
   const char * result_file_cstr;
   if (!result_file) {
-    result_file_cstr = string(string(model_name)+string("_res.plt")).c_str();
+    result_file_cstr = string(string(globalData->modelName)+string("_res.plt")).c_str();
   } else {
     result_file_cstr = result_file->c_str();
   }
-  store_result(result_file_cstr,data,actual_points,nx,ny);
+  store_result(result_file_cstr,data,actual_points);
 
   return 0;
 }
 
-void euler ( double *x, double *xd, double *y, double *p, double *data,
-	     int nx, int ny, int np, double *time, double *step,
-	     int (*f)(double*,// x
-		       double*,// xd
-		       double*,// y
-		       double*,// p
-		       int,int,int, //nx,ny,np
-		       double *) // time
-	     )
+
+void euler (DATA * data,
+             double* step,
+	     int (*f)() // time
+            )
 {
-  f(x,xd,y,p,nx,ny,np,time); // calculate equations
-  for(int i=0; i < nx; i++) {
-    x[i]=x[i]+xd[i]*(*step); // Based on that, calculate state variables.
+  setLocalData(data);
+  f(); // calculate equations
+  for(int i=0; i < data->nStates; i++) {
+    data->states[i]=data->states[i]+data->statesDerivatives[i]*(*step); // Based on that, calculate state variables.
   }
 }
+
 
 double *static_y;
 
 void leastSquare(long *nz, double *z, double *funcValue)
 {
   int ind, indAct, indz, indy;
-  for (ind=0, indAct=0, indz=0; ind<nx; ind++)
-  	if (init_fixed[indAct++]==0)
-      x[ind] = z[indz++];
+  for (ind=0, indAct=0, indz=0; ind<globalData->nStates; ind++)
+  	if (globalData->initFixed[indAct++]==0)
+          globalData->states[ind] = z[indz++];
 
-  for (ind=0,indAct=2*nx+ny; ind<np; ind++)
-    if (init_fixed[indAct++]==0)
-      p[ind] = z[indz++];
+  for (ind=0,indAct=2*globalData->nStates+globalData->nAlgebraic; ind<globalData->nParameters; ind++)
+    if (globalData->initFixed[indAct++]==0)
+      globalData->parameters[ind] = z[indz++];
 
-  functionODE(x,xd,y,p,nx,ny,np,&t);
-  functionDAE_output(&t,x,xd,y,p);
+  //functionODE(x,xd,y,p,nx,ny,np,&t);
+  //functionDAE_output(&t,x,xd,y,p);
+  functionODE();
+  functionDAE_output();
 
-  for (ind=0,indy=0,indAct=2*nx; ind<ny; ind++)
-    if (init_fixed[indAct++]==1)
-    	y[ind] = static_y[indy++];
+  for (ind=0,indy=0,indAct=2*globalData->nStates; ind<globalData->nAlgebraic; ind++)
+    if (globalData->initFixed[indAct++]==1)
+      globalData->algebraics [ind] = static_y[indy++];
 
-  initial_residual(x, xd, y, p, &t, nx, ny,  np, init_res,  nr);  
+  initial_residual(globalInitialResidual);  
 
-  for (ind=0, *funcValue=0; ind<nr; ind++)
-    *funcValue += init_res[ind]*init_res[ind];	
+  for (ind=0, *funcValue=0; ind<globalData->nInitialResiduals; ind++)
+    *funcValue += globalInitialResidual[ind]*globalInitialResidual[ind];	
 }
 
 /** function reportResidualValue
@@ -296,8 +326,7 @@ int reportResidualValue(double funcValue)
  ** This does not require a jacobian for the residuals.
  **/
 
-int simplex_initialization(double* x, double* xd, double* y, double* p, double *t, double *z,
-			   int nx, int ny, int np, int nr,long nz)
+int simplex_initialization(long& nz,double *z)
 {
   int ind;
   double funcValue;
@@ -332,7 +361,7 @@ int simplex_initialization(double* x, double* xd, double* y, double* p, double *
  
       SIMP = 1.e-6;
 //C  Now call NELMEAD to do the work.
-  nelmead_(z,STEP,&nz,&funcValue,&MAXF,&IPRINT,&STOPCR,
+  NELMEAD(z,STEP,&nz,&funcValue,&MAXF,&IPRINT,&STOPCR,
            &NLOOP,&IQUAD,&SIMP,VAR,leastSquare,&IFAULT);
   if (IFAULT == 1) { 
     printf("Error in initialization. Solver iterated %d times without finding a solution\n",(int)MAXF);
@@ -356,8 +385,7 @@ int simplex_initialization(double* x, double* xd, double* y, double* p, double *
  ** a trust region method that forms quadratic models by interpolation.
  **/
 
-int newuoa_initialization(double* x, double* xd, double* y, double* p, double *t, double *z,
-			  int nx, int ny, int np, int nr,long nz)
+int newuoa_initialization(long& nz,double *z)
 {
   long IPRINT = sim_verbose? 2 : 0;
   long MAXFUN=50000;
@@ -367,7 +395,7 @@ int newuoa_initialization(double* x, double* xd, double* y, double* p, double *t
 		    // value can be used for this.
   long NPT = 2*nz+1;
   double *W = new double[(NPT+13)*(NPT+nz)+3*nz*(nz+3)/2];
-  newuoa_(&nz,&NPT,z,&RHOBEG,&RHOEND,&IPRINT,&MAXFUN,W,leastSquare);
+  NEWUOA(&nz,&NPT,z,&RHOBEG,&RHOEND,&IPRINT,&MAXFUN,W,leastSquare);
 
   // Calculate the residual to verify that equations are consistent.
   double funcValue;
@@ -379,13 +407,12 @@ int newuoa_initialization(double* x, double* xd, double* y, double* p, double *t
 /* function: initialize
  *
  * Perform initialization of the problem. It reads the global variable
- * init_fixed to find out which variables are fixed.
+ * globalData->initFixed to find out which variables are fixed.
  * It uses the generated function initial_residual, which calcualtes the 
  * residual of all equations (both continuous time eqns and initial eqns).
  */
 
-int initialize(double* x, double* xd, double* y, double* p, double *t,
-	       int nx, int ny, int np, int nr, const std::string*method)
+int initialize(const std::string*method)
 {
   long nz;
   int ind, indAct, indz, indy, n_static_y;
@@ -397,42 +424,50 @@ int initialize(double* x, double* xd, double* y, double* p, double *t,
     init_method = *method;
   }
 
-  for (ind=0, nz=0; ind<nx; ind++)
-   	 if (init_fixed[ind]==0)
-  	   nz++;
-  for (ind=2*nx+ny; ind<2*nx+ny+np; ind++)
-   	 if (init_fixed[ind]==0)
-  	   nz++;
-  for (ind=2*nx, n_static_y=0; ind<2*nx+ny; ind++)
-   	 if (init_fixed[ind]==1) 
-  	   n_static_y++;
+
+  for (ind=0, nz=0; ind<globalData->nStates; ind++){
+    if (globalData->initFixed[ind]==0)
+      nz++;
+  }
+  for (ind=2*globalData->nStates+globalData->nAlgebraic; 
+       ind<2*globalData->nStates+globalData->nAlgebraic+globalData->nParameters; ind++){
+    if (globalData->initFixed[ind]==0)
+      nz++;
+  }
+  for (ind=2*globalData->nStates, n_static_y=0; 
+       ind<2*globalData->nStates+globalData->nAlgebraic; ind++){
+    if (globalData->initFixed[ind]==1) 
+      n_static_y++;
+  }
   if (n_static_y>0) static_y = new double[n_static_y];
 
   // No initial values to calculate.
-  if (nz ==  0) { return 0;} 
+  if (nz ==  0) {
+    return 0;
+  } 
 
-  double *z=(double*) malloc(nz*sizeof(double));
+  double *z= new double[nz];
   if(z == NULL) {return -1;}
   /* Fill z with the non-fixed variables from x, xd, y and p*/
-  for (ind=0, indAct=0, indz=0; ind<nx; ind++)
+  for (ind=0, indAct=0, indz=0; ind<globalData->nStates; ind++)
     {
-      if (init_fixed[indAct++]==0)
+      if (globalData->initFixed[indAct++]==0)
 	{
-	  z[indz++] = x[ind];
+	  z[indz++] = globalData->states[ind];
 	}
   }
-  for (ind=0,indy=0,indAct=2*nx; ind<ny; ind++)
+  for (ind=0,indy=0,indAct=2*globalData->nStates; ind<globalData->nAlgebraic; ind++)
     {
-      if (init_fixed[indAct++]==1)
+      if (globalData->initFixed[indAct++]==1)
 	{
-	  static_y[indy++] = y[ind];
+	  static_y[indy++] = globalData->algebraics[ind];
 	}
     }
   
   if (init_method == std::string("simplex")) {
-    return simplex_initialization(x,xd,y,p,t,z,nx,ny,np,nr,nz);
+    return simplex_initialization(nz,z);
   } else if (init_method == std::string("newuoa")) { // Better name ?
-    return newuoa_initialization(x,xd,y,p,t,z,nx,ny,np,nr,nz);
+    return newuoa_initialization(nz,z);
   } else {
     std::cerr << "unrecognized option -im " << init_method << std::endl;
     std::cerr << "current options are: simplex or newuoa" << std::endl;
@@ -444,7 +479,7 @@ int initialize(double* x, double* xd, double* y, double* p, double *t,
 
 
 /* The main function for the dassl solver*/
-int dassl_main(int argc, char **argv) 
+int dassl_main( int argc, char**argv)
 {
   int status;
   double start = 0.0; //default value
@@ -463,34 +498,58 @@ int dassl_main(int argc, char **argv)
   long ipar = 0;
   int i;
 
+  globalInitialResidual = new double[globalData->nInitialResiduals];
+
+  long liw = 20+globalData->nStates;
+  long lrw = 50+(MAXORD+4)*globalData->nStates+
+    globalData->nStates*globalData->nStates+3*globalData->nZeroCrossing;
+
+  long *iwork = new long[liw];
+  double *rwork = new double[lrw];
+  long *jroot = new long[globalData->nZeroCrossing];
+  double *dummy_delta = new double[globalData->nStates];
+
   for(i=0; i<15; i++) 
     info[i] = 0;
   for(i=0; i<liw; i++) 
     iwork[i] = 0;
   for(i=0; i<lrw; i++) 
     rwork[i] = 0.0;
-  for(i=0; i<nhelp; i++)
-    h[i] = 0;
+  for(i=0; i<globalData->nHelpVars; i++)
+    globalData->helpVars[i] = 0;
   
   if (argc == 2 && flagSet("?",argc,argv)) {
     cout << "usage: " << argv[0]  << " <-f initfile> <-r result file> -m solver:{dassl, euler}" << endl;
     exit(0);
   }
 
-  read_input(argc,argv,x,xd,y,p,nx,ny,np,&start,&stop,&step);
-  
+  //read_input(argc,argv,x,xd,y,p,nx,ny,np,&start,&stop,&step);
+  read_input(argc,argv,
+             globalData->states,
+             globalData->statesDerivatives,
+             globalData->algebraics,
+             globalData->parameters,
+             globalData->nStates,
+             globalData->nAlgebraic,
+             globalData->nParameters,
+             &start,&stop,&step);
+
   numpoints = long((stop-start)/step)+2;
  
   // load default initial values.
-  gout = new double[ng];
-  h_saved = new double[nhelp];  
-  x_saved = new double[nx];
-  xd_saved = new double[nx];
-  y_saved = new double[ny];
-  zeroCrossingEnabled = new long[ng];
-  data =  initialize_simdata(5*numpoints,nx,ny);
+  gout = new double[globalData->nZeroCrossing];
+  h_saved = new double[globalData->nHelpVars];  
+  x_saved = new double[globalData->nStates];
+  xd_saved = new double[globalData->nStates];
+  y_saved = new double[globalData->nAlgebraic];
+  if(!y_saved || !gout || !h_saved || !x_saved || !xd_saved){
+    std::cerr << "Could not allocate memory" << std::endl;
+    return -1;
+  }
+  zeroCrossingEnabled = new long[globalData->nZeroCrossing];
+  data =  initialize_simdata(5*numpoints,globalData->nStates,globalData->nAlgebraic);
 
-  if(bound_parameters(x,xd,y,p,&t,nx,ny,np)) {
+  if(bound_parameters()) {
     printf("Error calculating bound parameters\n");
     return -1;
   }
@@ -498,83 +557,98 @@ int dassl_main(int argc, char **argv)
   // Calculate initial values from (fixed) start attributes and intial equation
   // sections
   init=1;
-  if (initialize(x,xd,y,p,&t,nx,ny,np,nr,init_method)) {
+  if (initialize(init_method)) {
     printf("Error in initialization. Storing results and exiting.\n");
     goto exit;
   }
   // Calculate initial derivatives
-  if(functionODE(x,xd,y,p,nx,ny,np,&t)) { 
+  if(functionODE()) { 
     printf("Error calculating initial derivatives\n");
     goto exit;
   }
   // Calculate initial output values 
-  if(functionDAE_output(&t,x,xd,y,p)) {
+  if(functionDAE_output()) {
     printf("Error calculating initial derivatives\n");
     goto exit;
   }
-  t=start;
-  tout = newTime(t, step); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
+  globalData->timeValue=start;
+  tout = newTime(globalData->timeValue, step); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
  
-  function_updateDependents(&t);
+  function_updateDependents();
 
-  functionDAE_output(&t,x,xd,y,p);
+  functionDAE_output();
   saveall();
   if(emit()) { printf("Error, not enough space to save data"); return -1; }
   calcEnabledZeroCrossings();
+  DDASRT(functionDAE_res, &globalData->nStates,   &globalData->timeValue, globalData->states, 
+         globalData->statesDerivatives, &tout, 
+         info,&rtol, &atol, 
+         &idid,rwork,&lrw, iwork, &liw, globalData->algebraics, 
+         &ipar, dummyJacobianDASSL, function_zeroCrossing,
+         &globalData->nZeroCrossing, jroot);
   init=0;
-  DDASRT(functionDAE_res, &nx,   &t, x, xd, &tout, info,&rtol, &atol, &idid,rwork,&lrw, iwork, &liw, y, &ipar, dummyJacobianDASSL, function_zeroCrossing, &ng, jroot);
-
   info[0] = 1;
 
-  functionDAE_res(&t,x,xd,dummy_delta,0,0,0); // Since residual function calculates 
+  functionDAE_res(&globalData->timeValue,globalData->states,globalData->statesDerivatives,
+                  dummy_delta,0,0,0); // Since residual function calculates 
 					      // alg vars too.
-  functionDAE_output(&t,x,xd,y,p);
+  functionDAE_output();
+
+
+
 
   tout += step;
-  while(t<stop && idid>0) {
+  while(globalData->timeValue<stop && idid>0) {
     // TODO: check here if time event has been reached.
-
-
 
     while (idid == 4) {
       if (emit()) {printf("Too many points\n");
 	idid = -99; break;}
       saveall();
-      
     // Make a tiny step so we are sure that crossings have really occured.
       info[0]=1;
-      tout=t+1.0e-6;
+      tout=globalData->timeValue+1.0e-6;
       {
-	long *tmp_jroot =(long *) malloc(sizeof(long)*ng);
+	long *tmp_jroot = new long[globalData->nZeroCrossing];
 	int i;
-	for (i=0;i<ng;i++) {
+	for (i=0;i<globalData->nZeroCrossing;i++) {
 	  tmp_jroot[i]=jroot[i];
 	}
-	DDASRT(functionDAE_res, &nx,   &t, x, xd, &tout, info,&rtol, &atol, 
-	       &idid,rwork,&lrw, iwork, &liw, y, &ipar, dummyJacobianDASSL, 
-	       function_zeroCrossing, &ng, jroot);
-	for (i=0;i<ng;i++) {
+	DDASRT(functionDAE_res, &globalData->nStates,   
+               &globalData->timeValue, globalData->states, globalData->statesDerivatives, &tout, 
+               info,&rtol, &atol, 
+	       &idid,rwork,&lrw, iwork, &liw, globalData->algebraics, &ipar, dummyJacobianDASSL, 
+	       function_zeroCrossing, &globalData->nZeroCrossing, jroot);
+	for (i=0;i<globalData->nZeroCrossing;i++) {
 	  jroot[i]=tmp_jroot[i];
 	}
+        delete[] tmp_jroot;
       } // end tiny step
       
       calcEnabledZeroCrossings();
-      StateEventHandler(jroot, &t);
-      CheckForNewEvents(&t);
-      StartEventIteration(&t);
+      StateEventHandler(jroot, &globalData->timeValue);
+      CheckForNewEvents(&globalData->timeValue);
+      StartEventIteration(&globalData->timeValue);
       saveall();
 
       // Restart simulation
       info[0] = 0;
-      if (tout-t < atol) tout = newTime(t,step);
+      if (tout-globalData->timeValue < atol) tout = newTime(globalData->timeValue,step);
       calcEnabledZeroCrossings();
-      DDASRT(functionDAE_res, &nx,   &t, x, xd, &tout, info,&rtol, &atol, 
-	     &idid,rwork,&lrw, iwork, &liw, y, &ipar, dummyJacobianDASSL, 
-	     function_zeroCrossing, &ng, jroot);
+      DDASRT(functionDAE_res, 
+             &globalData->nStates,   &globalData->timeValue, 
+             globalData->states, globalData->statesDerivatives, &tout, 
+             info,&rtol, &atol, 
+	     &idid,rwork,&lrw, iwork, &liw, globalData->algebraics, 
+             &ipar, dummyJacobianDASSL, 
+	     function_zeroCrossing, &globalData->nZeroCrossing, jroot);
 
-      functionDAE_res(&t,x,xd,dummy_delta,0,0,0); // Since residual function calculates 
+      //functionDAE_res(&t,x,xd,dummy_delta,0,0,0); // Since residual function calculates 
+      functionDAE_res(&globalData->timeValue,globalData->states,
+                      globalData->statesDerivatives,
+                      dummy_delta,0,0,0); // Since residual function calculates 
 					      // alg vars too.
-      functionDAE_output(&t,x,xd,y,p);
+      functionDAE_output();
 
       info[0] = 1;
     }
@@ -583,12 +657,18 @@ int dassl_main(int argc, char **argv)
       printf("Error, could not save data. Not enought space.\n"); 
     }
     saveall();
-    tout = newTime(t,step); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
+    tout = newTime(globalData->timeValue,step); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
     calcEnabledZeroCrossings();
-    DDASRT(functionDAE_res, &nx, &t, x, xd, &tout, info,&rtol, &atol, &idid,rwork,&lrw, iwork, &liw, y, &ipar, dummyJacobianDASSL, function_zeroCrossing, &ng, jroot);
-    functionDAE_res(&t,x,xd,dummy_delta,0,0,0); // Since residual function calculates 
+    DDASRT(functionDAE_res, 
+           &globalData->nStates, &globalData->timeValue, 
+           globalData->states, globalData->statesDerivatives, &tout, 
+           info,&rtol, &atol, 
+           &idid,rwork,&lrw, iwork, &liw, globalData->algebraics, 
+           &ipar, dummyJacobianDASSL, 
+           function_zeroCrossing, &globalData->nZeroCrossing, jroot);
+    functionDAE_res(&globalData->timeValue,globalData->states,globalData->statesDerivatives,dummy_delta,0,0,0); // Since residual function calculates 
 					      // alg vars too.
-    functionDAE_output(&t,x,xd,y,p);  // descrete variables should probably be seperated so that the can be emited before and after the event.    
+    functionDAE_output();  // descrete variables should probably be seperated so that the can be emited before and after the event.    
   } // end while
 
  exit:
@@ -596,7 +676,7 @@ int dassl_main(int argc, char **argv)
       printf("Error, could not save data. Not enought space.\n"); 
   }
   if (idid < 0 ) {
-    cerr << "Error, simulation stopped at time: " << t << endl;
+    cerr << "Error, simulation stopped at time: " << globalData->timeValue << endl;
     cerr << "Result written to file." << endl;
 	status = 1;
   }
@@ -611,11 +691,11 @@ int dassl_main(int argc, char **argv)
   string * result_file =(string*)getFlagValue("r",argc,argv);
   const char * result_file_cstr;
   if (!result_file) {
-    result_file_cstr = string(string(model_name)+string("_res.plt")).c_str();
+    result_file_cstr = string(string(globalData->modelName)+string("_res.plt")).c_str();
   } else {
     result_file_cstr = result_file->c_str();
   }
-  store_result(result_file_cstr,data,actual_points,nx,ny);
+  store_result(result_file_cstr,data,actual_points);
 
   return status;
 }
@@ -624,15 +704,15 @@ int dassl_main(int argc, char **argv)
 void saveall()
 {
   int i;
-  for(i=0;i<nx; i++) {
-    x_saved[i] = x[i];
-    xd_saved[i] = xd[i];
+  for(i=0;i<globalData->nStates; i++) {
+    x_saved[i] = globalData->states[i];
+    xd_saved[i] = globalData->statesDerivatives[i];
   }
-  for(i=0;i<ny; i++) {
-    y_saved[i] = y[i];
+ for(i=0;i<globalData->nAlgebraic; i++) {
+    y_saved[i] = globalData->algebraics[i];
   }
-  for(i=0;i<nhelp; i++) {
-    h_saved[i] = h[i];
+  for(i=0;i<globalData->nHelpVars; i++) {
+    h_saved[i] = globalData->helpVars[i];
   }
 }
 
@@ -646,23 +726,23 @@ void save(double & var)
   long ind;
 
 
-  ind = long(pvar - h);
-  if (ind >= 0 && ind < nhelp) {
+  ind = long(pvar - globalData->helpVars);
+  if (ind >= 0 && ind < globalData->nHelpVars) {
     h_saved[ind] = var;
     return;
   }
-  ind = long(pvar - x);
-  if (ind >= 0 && ind < nx) {
+  ind = long(pvar - globalData->states);
+  if (ind >= 0 && ind < globalData->nStates) {
     x_saved[ind] = var;
     return;
   }
-  ind = long(pvar - xd);
-  if (ind >= 0 && ind < nx) {    
+  ind = long(pvar - globalData->statesDerivatives);
+  if (ind >= 0 && ind < globalData->nStates) {    
     xd_saved[ind] = var;
     return;
   }
-  ind = long(pvar - y);
-  if (ind >= 0 && ind < ny) {
+  ind = long(pvar - globalData->algebraics);
+  if (ind >= 0 && ind < globalData->nAlgebraic) {
     y_saved[ind] = var;
     return;
   }
@@ -674,26 +754,21 @@ double pre(double & var)
   double* pvar = &var;
   long ind;
 
-  ind = long(pvar - x);
-  if (ind >= 0 && ind < nx) {
+  ind = long(pvar - globalData->states);
+  if (ind >= 0 && ind < globalData->nStates) {
     return x_saved[ind];
   }
-  ind = long(pvar - xd);
-  if (ind >= 0 && ind < nx) {    
+  ind = long(pvar - globalData->statesDerivatives);
+  if (ind >= 0 && ind < globalData->nStates) {    
     return xd_saved[ind];
   }
-  ind = long(pvar - y);
-  if (ind >= 0 && ind < ny) {
+  ind = long(pvar - globalData->algebraics);
+  if (ind >= 0 && ind < globalData->nAlgebraic) {
     return y_saved[ind];
   }
-  ind = long(pvar - h);
-  if (ind >= 0 && ind < nhelp) {
-    return h_saved[ind];
-  } 
-  printf("error, pre called with invalid argument.\n");
-  return 0.0;
+  ind = long(pvar - globalData->helpVars);
+  return h_saved[ind];
 }
-
 bool edge(double& var) 
 {
   return var && ! pre(var);
@@ -704,8 +779,7 @@ bool edge(double& var)
 * suitable for plotting, etc.
 */
 
-void store_result(const char * filename, double*data,long numpoints, 
-                  long nx, long ny)
+void store_result(const char * filename, double*data,long numpoints)
 {
   ofstream f(filename);
   if (!f)
@@ -723,7 +797,7 @@ void store_result(const char * filename, double*data,long numpoints,
 
 
 
-  int num_vars = 1+nx*2+ny;
+  int num_vars = 1+globalData->nStates*2+globalData->nAlgebraic;
   
   // time variable.
   f << "DataSet: time"  << endl;
@@ -731,27 +805,27 @@ void store_result(const char * filename, double*data,long numpoints,
     f << data[i*num_vars] << ", " << data[i*num_vars]<< endl;
   f << endl;
 
-  for(int var = 0; var < nx; ++var)
+  for(int var = 0; var < globalData->nStates; ++var)
   {
-    f << "DataSet: " << varnames[var] << endl;
+    f << "DataSet: " << globalData->statesNames[var] << endl;
     for(int i = 0; i < numpoints; ++i)
       f << data[i*num_vars] << ", " << data[i*num_vars + 1+var] << endl;
     f << endl;
   }
   
-  for(int var = 0; var < nx; ++var)
+  for(int var = 0; var < globalData->nStates; ++var)
   {
-    f << "DataSet: " << varnames[var+nx] << endl;
+    f << "DataSet: " << globalData->stateDerivativesNames[var]  << endl;
     for(int i = 0; i < numpoints; ++i)
-      f << data[i*num_vars] << ", " << data[i*num_vars + 1+nx+var] << endl;
+      f << data[i*num_vars] << ", " << data[i*num_vars + 1+globalData->nStates+var] << endl;
     f << endl;
   }
   
-  for(int var = 0; var < ny; ++var)
+  for(int var = 0; var < globalData->nAlgebraic; ++var)
   {
-    f << "DataSet: " << varnames[var+2*nx] << endl;
+    f << "DataSet: " << globalData->algebraicsNames[var] << endl;
     for(int i = 0; i < numpoints; ++i)
-      f << data[i*num_vars] << ", " << data[i*num_vars + 1+2*nx+var] << endl;
+      f << data[i*num_vars] << ", " << data[i*num_vars + 1+2*globalData->nStates+var] << endl;
     f << endl;
   }
 
@@ -768,24 +842,23 @@ void store_result(const char * filename, double*data,long numpoints,
  * array to be able to later store this on file.
  */
 
-void add_result(double *data, double time,double *x, double *xd, double *y,
-		long nx, long ny, long *actual_points)
+void add_result(double *data, long *actual_points)
 {
   //save time first
   //cerr << "adding result for time: " << time;
   //cerr.flush();
-  data[current_pos++] = time;
+  data[current_pos++] = globalData->timeValue;
   // .. then states..
-  for (int i = 0; i < nx; i++, current_pos++) {
-    data[current_pos] = x[i];
+  for (int i = 0; i < globalData->nStates; i++, current_pos++) {
+    data[current_pos] = globalData->states[i];
   }
   // ..followed by derivatives..
-  for (int i = 0; i < nx; i++, current_pos++) {
-    data[current_pos] = xd[i];
+  for (int i = 0; i < globalData->nStates; i++, current_pos++) {
+    data[current_pos] = globalData->statesDerivatives[i];
   }
   // .. and last alg. vars.
-  for (int i = 0; i < ny; i++, current_pos++) {
-    data[current_pos] = y[i];
+  for (int i = 0; i < globalData->nAlgebraic; i++, current_pos++) {
+    data[current_pos] = globalData->algebraics[i];
   }
   //cerr << "  ... done" << endl;
   (*actual_points)++;
@@ -805,7 +878,7 @@ void add_result(double *data, double time,double *x, double *xd, double *y,
 
   string *filename=(string*)getFlagValue("f",argc,argv);
   if (filename == NULL) { 
-    filename = new string(string(model_name)+"_init.txt");  // model_name defined in generated code for model.
+    filename = new string(string(globalData->modelName)+"_init.txt");  // model_name defined in generated code for model.
   }
 
   ifstream file(filename->c_str());
@@ -874,10 +947,10 @@ inline void read_commented_value( ifstream &f, int *res)
 
 void StateEventHandler(long* jroot, double *t) 
 {
-  for(int i=0;i<ng;i++) {
+  for(int i=0;i<globalData->nZeroCrossing;i++) {
     if (jroot[i] ) {
-      handleZeroCrossing(i,t);
-      function_updateDependents(t);
+      handleZeroCrossing(i);
+      function_updateDependents();
     }
   }
   emit();
@@ -890,10 +963,14 @@ void AddEvent(long);
 void CheckForNewEvents(double *t)
 {
   // Check for changes in discrete variables
-  checkForDiscreteVarChanges(t);
+  globalData->timeValue = *t;
+  checkForDiscreteVarChanges();
 
-  function_zeroCrossing(&nx,t,x,&ng,gout,0,0);
-  for (long i=0;i<ng;i++) {
+  function_zeroCrossing(&globalData->nStates,
+                        &globalData->timeValue,
+                        globalData->states,
+                        &globalData->nZeroCrossing,gout,0,0);
+  for (long i=0;i<globalData->nZeroCrossing;i++) {
     if (gout[i] < 0) {
        AddEvent(i);
     }
@@ -917,12 +994,14 @@ ExecuteNextEvent(double *t)
   if (EventQueue.begin() != EventQueue.end()) {
     long nextEvent = EventQueue.front();
     //    calcEnabledZeroCrossings();
-    if (nextEvent >= ng) {
-      function_when(nextEvent-ng, t);
+    if (nextEvent >= globalData->nZeroCrossing) {
+      globalData->timeValue = *t;
+      function_when(nextEvent-globalData->nZeroCrossing);
     }
     else {
-      handleZeroCrossing(nextEvent, t);
-      function_updateDependents(t);
+      globalData->timeValue = *t;
+      handleZeroCrossing(nextEvent);
+      function_updateDependents();
     }
     //    CheckForNewEvents(t);
     emit();
@@ -938,11 +1017,10 @@ StartEventIteration(double *t)
   while (EventQueue.begin() != EventQueue.end()) {
     calcEnabledZeroCrossings();
     while (ExecuteNextEvent(t)) {}
-    for (unsigned int i = 0; i < nhelp; i++) save(h[i]);
-    function_updateDependents(t);
+    for (long i = 0; i < globalData->nHelpVars; i++) save(globalData->helpVars[i]);
+    globalData->timeValue = *t;
+    function_updateDependents();
     CheckForNewEvents(t);
   }
   //  cout << "EventIteration done" << endl;
 }
-
-

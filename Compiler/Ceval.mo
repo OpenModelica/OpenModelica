@@ -1781,7 +1781,7 @@ algorithm
         executableSuffixedExe = stringAppend(executable, ".exe");
         sim_call = Util.stringAppendList(
           {cit,".",pd,executableSuffixedExe,cit," -m ",method_str,
-          " >> output.log 2>&1"});
+          " > output.log 2>&1"});
         0 = System.systemCall(sim_call);
         result_file = Util.stringAppendList({executable,"_res.plt"});
         simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),

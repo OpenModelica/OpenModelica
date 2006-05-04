@@ -34,9 +34,13 @@
 
 
 using namespace std;
-
+#ifdef _MSC_VER
+#  define NEWUOA NEWUOA
+#else
+#  define NEWUOA newuoa_
+#endif
 extern "C" {
-	void  newuoa_(
+	void  NEWUOA(
 	long *nz,
 	long *NPT,
 	double *z,
@@ -49,8 +53,14 @@ extern "C" {
 	);
 } // extern C
 
+#ifdef _MSC_VER
+#  define NELMEAD NELMEAD
+#else
+#  define NELMEAD nelmead_
+#endif
+
 extern "C" {
-	void  nelmead_(
+	void  NELMEAD(
 	   double *z,
 	   double *STEP,
 	   long *nz,
@@ -66,16 +76,20 @@ extern "C" {
 	   long *IFAULT);
 } // extern "C"
 
-#define DDASRT ddasrt_
+#ifdef _MSC_VER
+#  define DDASRT DDASRT
+#else
+#  define DDASRT ddasrt_
+#endif
 
 extern "C" {
-  void ddasrt_(
+  void  DDASRT(
 	       int (*res) (double *t, double *y, double *yprime, double *delta, long *ires, double *rpar, long* ipar), 
 	       long *neq, 
 	       double *t,
 	       double *y,
 	       double *yprime, 
-	       double *tout,
+	       double *tout, 
 	       long *info,
 	       double *rtol, 
 	       double *atol, 
@@ -102,84 +116,186 @@ void read_input(int argc, char **argv,
 		double *start, double *stop,
 		double *step);
 
-extern double* h;
-extern double* x;
-extern double* xd;
-extern double* dummy_delta;
-extern double* y;
-extern double* p;
-extern long* jroot;
-extern long liw;
-extern long lrw;
-extern double* rwork;
-extern long* iwork;
-extern long nhelp,nx,ny,np,ng,nr;
-extern char *model_name;
-extern char** varnames;
-extern int init;
+/* extern double* h; */
+/* extern double* x; */
+/* extern double* xd; */
+/* extern double* dummy_delta; */
+/* extern double* y; */
+/* extern double* p; */
+/* extern long* jroot; */
+/* extern long liw; */
+/* extern long lrw; */
+/* extern double* rwork; */
+/* extern long* iwork; */
+/* extern long nhelp,nx,ny,np,ng,nr; */
+/* extern char *model_name; */
+/* extern char** varnames; */
+/* extern int init; */
 
+
+typedef enum {
+/*   These are flags for the generated 
+     initializeDataStruc(DATA_INIT_FLAGS) function */
+
+  NO_INIT_OF_VECTORS           = 0x00000000,
+  STATES                  = 0x00000001,
+  STATESDERIVATIVES       = 0x00000002,
+  HELPVARS                = 0x00000004,
+  ALGEBRAICS              = 0x00000008,
+  PARAMETERS              = 0x00000010,
+  INPUTVARS               = 0x00000040,
+  OUTPUTVARS              = 0x00000080,
+  INITFIXED               = 0x00000100,
+
+  /*in initializeDataStruc these are not allocated with malloc!*/
+  MODELNAME               = 0x00000200, 
+  STATESNAMES             = 0x00000400,
+  STATESDERIVATIVESNAMES  = 0x00000800,
+  ALGEBRAICSNAMES         = 0x00001000,
+  PARAMETERSNAMES         = 0x00002000,
+  INPUTNAMES              = 0x00004000,
+  OUTPUTNAMES             = 0x00008000,
+
+  /*in initializeDataStruc these are not allocated with malloc!*/
+  STATESCOMMENTS            = 0x00010000,
+  STATESDERIVATIVESCOMMENTS = 0x00020000,
+  ALGEBRAICSCOMMENTS        = 0x00040000,
+  PARAMETERSCOMMENTS        = 0x00080000,
+  INPUTCOMMENTS             = 0x00010000,
+  OUTPUTCOMMENTS            = 0x00020000,
+
+  ALL                       = 0xFFFFFFFF
+} DATA_FLAGS;
+
+
+
+typedef struct sim_DATA {
+  /* this is the data structure for saving important data for this simulation. */
+  /* Each generated function have a DATA* parameter wich contain the data. */
+  /* A object for the data can be created using */
+  /* initializeDataStruc(DATA_FLAGS) function*/
+  double* states; //x STATES
+  double* statesDerivatives; //xd DERIVATIVES
+  double* algebraics; //y ALGVARS
+  double* parameters; //p; PARAMETERS
+  double* inputVars; //in_y INPUTVARS
+  double* outputVars; //out_y OUTPUTVARS
+  double* helpVars;
+  char* initFixed;
+  /* nStatesDerivatives == states */
+  long nStates,nAlgebraic,nParameters;
+  long nInputVars,nOutputVars;
+  long nZeroCrossing/*NG*/;
+  long nInitialResiduals/*NR*/;
+  long nHelpVars/* NHELP */;
+  //extern char init_fixed[];
+  
+
+  char*  modelName;
+  char** statesNames;
+  char** stateDerivativesNames;
+  char** algebraicsNames;
+  char** parametersNames;
+  char** inputNames;
+  char** outputNames;
+  char** statesComments;
+  char** stateDerivativesComments;
+  char** algebraicsComments;
+  char** parametersComments;
+  char** inputComments;
+  char** outputComments;
+
+  double timeValue; //the time for the simulation
+  //used in some generated function
+  // this is not changed by initializeDataStruc
+  // it cannot be time because of the generated: #define time localData->timeValue
+} DATA;
+
+
+/*
+ * this is used for initialize the DATA structure that is used in 
+ * all the generated functions. 
+ * The parameter controls what vectors should be initilized in
+ * in the structure. Usually you can use the "ALL" flag which
+ * initilizes all the vectors. This is needed for example in those ocasions
+ * when another process have allocated the needed vectors.
+ * Make sure that you call this function first because it sets the non-initialize
+ * pointer to 0.
+ *
+ * This flag should be the same for second argument in deInitializeDataStruc
+ * to avoid memory leak.
+ */
+DATA* initializeDataStruc(DATA_FLAGS flags);
+
+/* this frees the memory that is allocated in the data-structure.
+ * The second argument must have the same value as the argument in initializeDataStruc
+ */ 
+void deInitializeDataStruc(DATA* data, DATA_FLAGS flags);
+/* this is used to set the localData to be used in the diferrent functions that
+ * cannot be changed to use a data-object, i.e. functionDAE_res
+ * 
+ * IMPORTANT: MAKE SURE THAT THIS IS USED BEFORE CALLING A FUNCTION THAT USES THIS
+ * BECAUSE IT IS CHECKED WITH assert!
+ */ 
+void setLocalData(DATA* data);
+
+
+/*used in DDASRT fortran function*/
 int 
 function_zeroCrossing(long *neqm, double *t, double *x, long *ng, double *gout, double *rpar, long* ipar);
 
 int
-handleZeroCrossing(long index, double* t);
+handleZeroCrossing(long index);
 
 // function for calculating ouput values 
+/*used in DDASRT fortran function*/
 int 
-functionDAE_output(double *t, double *x, double *xprimne, double *y, double* p);
+functionDAE_output();
 
 // function for calculating state values on residual form
+/*used in DDASRT fortran function*/
 int
 functionDAE_res(double *t, double *x, double *xprime, double *delta, long int *ires, double *rpar, long int* ipar);
 
 int
-function_when(int i, double *t);
+function_when(int i);
 
 int
-function_updateDependents(double *t);
+function_updateDependents();
 
 // function for calculating states on explicit ODE form
-int functionODE(double *x, double *xd, double *y, double *p, 
-		 int nx, int ny, int np, double *t);
+/*used in functionDAE_res function*/
+int functionODE();
 
 // function for calculate initial values from initial equations
 // and fixed start attibutes
-int initial_function(double*x, double *xd, double*y, double*p,
-		     double *t,
-		    int nx, int ny, int np); 
+int initial_function(); 
+
+int checkForDiscreteVarChanges();
 
 // function for calculating bound parameters that depend on other
 // parameters, e.g. parameter Real n=1/m;
-int bound_parameters(double*x, double *xd, double*y, double*p,
-		     double *t,
-		    int nx, int ny, int np); 
+int bound_parameters(); 
 
 // function for calculate residual values for the initial equations
 // and fixed start attibutes
-extern char init_fixed[];
-extern double *init_res;
-int initial_residual(double*x, double *xd, double*y, double*p,
-		     double *t,
-		    int nx, int ny, int np, double *res, int nr); 
+int initial_residual(double *res);
 
+int initialize(const std::string*method);
 
 // Adds a result to the simulation result data.
-void add_result(double *data, double time,double *x, double *ndx, double *y,
-		long nx, long ny, long *actual_points);
+void add_result(double *data, long *actual_points); 
 
 // stores the result on file.
 void store_result(const char * filename, double*data,
-		  long numpoints, long nx, long ny);
+		  long numpoints);
 
 // euler numerical solver
-void euler ( double *x, double *xd, double *y, double *p, double *data,
-	     int nx, int ny, int np, double *time, double *step,
-	     int (*f)(double*,// x
-		       double*,// xd
-		       double*,// y
-		       double*,// p
-		       int,int,int, //nx,ny,np
-		       double *));
+void euler ( DATA * data,
+             double* step,
+	     int (*f)() // time
+	     );
+ 
 void saveall();
 void save(double & var);
 double pre(double & var);
