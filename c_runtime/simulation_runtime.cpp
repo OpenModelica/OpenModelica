@@ -48,6 +48,8 @@ double* y_saved;
 double* gout;
 long* zeroCrossingEnabled;
 
+
+// this is the globalData that is used in all the functions
 DATA *globalData = 0;
 
 double *globalInitialResidual;

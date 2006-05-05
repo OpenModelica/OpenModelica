@@ -231,11 +231,9 @@ DATA* initializeDataStruc(DATA_FLAGS flags);
  * The second argument must have the same value as the argument in initializeDataStruc
  */ 
 void deInitializeDataStruc(DATA* data, DATA_FLAGS flags);
-/* this is used to set the localData to be used in the diferrent functions that
- * cannot be changed to use a data-object, i.e. functionDAE_res
+/* this is used to set the localData in the generated code
+ * that is used in the diferrent generated functions 
  * 
- * IMPORTANT: MAKE SURE THAT THIS IS USED BEFORE CALLING A FUNCTION THAT USES THIS
- * BECAUSE IT IS CHECKED WITH assert!
  */ 
 void setLocalData(DATA* data);
 
