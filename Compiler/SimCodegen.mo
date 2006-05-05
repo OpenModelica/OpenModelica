@@ -399,6 +399,12 @@ algorithm
        "    returnData->inputVars = 0;\n",
        "  }\n",
        "\n",
+       "  if(flags & INITIALRESIDUALS && returnData->nInitialResiduals){\n",
+       "    returnData->initialResiduals = (double*) malloc(sizeof(double)*returnData->nInitialResiduals);\n",
+       "  }else{\n",
+       "    returnData->initialResiduals = 0;\n",
+       "  }\n",
+       "\n",
        "  if(flags & INITFIXED){\n",
        "    returnData->initFixed = init_fixed;\n",
        "  }else{\n",
@@ -516,6 +522,10 @@ algorithm
        "  if(flags & INPUTVARS && data->outputVars){\n",
        "    free(data->outputVars);\n",
        "    data->outputVars = 0;\n",
+       "  }\n",
+       "  if(flags & INITIALRESIDUALS && data->initialResiduals){\n",
+       "    free(data->initialResiduals);\n",
+       "    data->initialResiduals = 0;\n",
        "  }\n",
        "\n",
        "}\n"
@@ -1868,7 +1878,7 @@ algorithm
     case ((dae as DAELow.DAELOW(orderedVars = vars,knownVars = knvars,orderedEqs = eqns,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = ev))) /* code n res */ 
       equation 
         init_func_1 = Codegen.cMakeFunction("int", "initial_residual", {}, 
-          {"double *res"});
+          {});
         vars_lst = DAELow.varList(vars);
         knvars_lst = DAELow.varList(knvars);
         eqns_lst = DAELow.equationList(eqns);
@@ -1922,7 +1932,7 @@ algorithm
     case ((DAELow.RESIDUAL_EQUATION(exp = e) :: es),cg_id)
       equation 
         (cfunc,var,cg_id) = Codegen.generateExpression(e, cg_id, Codegen.SIMULATION());
-        assign = Util.stringAppendList({"res[i++] = ",var,";"});
+        assign = Util.stringAppendList({"localData->initialResiduals[i++] = ",var,";"});
         cfunc = Codegen.cAddStatements(cfunc, {assign});
         (cfunc2,cg_id) = generateInitialResidualEqn(es, cg_id);
         cfn = Codegen.cMergeFns({cfunc,cfunc2});
@@ -3626,7 +3636,7 @@ algorithm
         indx_str = intString(indx);
         indx_1 = indx + 1;
         (cfunc,cg_id_2) = generateOdeSystem2NonlinearResiduals2(rest, indx_1, repl, cg_id_1);
-        stmt = Util.stringAppendList({TAB,"res[",indx_str,"] = ",var,";"});
+        stmt = Util.stringAppendList({TAB,"localData->initialResiduals[",indx_str,"] = ",var,";"});
         exp_func_1 = Codegen.cAddStatements(exp_func, {stmt}); 
         cfunc_1 = Codegen.cMergeFns({exp_func_1,cfunc});
       then
@@ -3639,7 +3649,7 @@ algorithm
         indx_str = intString(indx);
         indx_1 = indx + 1;
         (cfunc,cg_id_2) = generateOdeSystem2NonlinearResiduals2(rest, indx_1, repl, cg_id_1);
-        stmt = Util.stringAppendList({TAB,"res[",indx_str,"] = ",var,";"});
+        stmt = Util.stringAppendList({TAB,"localData->initialResiduals[",indx_str,"] = ",var,";"});
         exp_func_1 = Codegen.cAddStatements(exp_func, {stmt});
         cfunc_1 = Codegen.cMergeFns({exp_func_1,cfunc});
       then

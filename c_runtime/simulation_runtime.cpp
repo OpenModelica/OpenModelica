@@ -52,7 +52,6 @@ long* zeroCrossingEnabled;
 // this is the globalData that is used in all the functions
 DATA *globalData = 0;
 
-double *globalInitialResidual;
 
 
 #define MAXORD 5
@@ -301,10 +300,10 @@ void leastSquare(long *nz, double *z, double *funcValue)
     if (globalData->initFixed[indAct++]==1)
       globalData->algebraics [ind] = static_y[indy++];
 
-  initial_residual(globalInitialResidual);  
+  initial_residual();  
 
   for (ind=0, *funcValue=0; ind<globalData->nInitialResiduals; ind++)
-    *funcValue += globalInitialResidual[ind]*globalInitialResidual[ind];	
+    *funcValue += globalData->initialResiduals[ind]*globalData->initialResiduals[ind];	
 }
 
 /** function reportResidualValue
@@ -500,7 +499,6 @@ int dassl_main( int argc, char**argv)
   long ipar = 0;
   int i;
 
-  globalInitialResidual = new double[globalData->nInitialResiduals];
 
   long liw = 20+globalData->nStates;
   long lrw = 50+(MAXORD+4)*globalData->nStates+

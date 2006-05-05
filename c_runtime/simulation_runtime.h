@@ -143,6 +143,7 @@ typedef enum {
   HELPVARS                = 0x00000004,
   ALGEBRAICS              = 0x00000008,
   PARAMETERS              = 0x00000010,
+  INITIALRESIDUALS        = 0x00000020,
   INPUTVARS               = 0x00000040,
   OUTPUTVARS              = 0x00000080,
   INITFIXED               = 0x00000100,
@@ -181,6 +182,7 @@ typedef struct sim_DATA {
   double* inputVars; //in_y INPUTVARS
   double* outputVars; //out_y OUTPUTVARS
   double* helpVars;
+  double* initialResiduals;
   char* initFixed;
   /* nStatesDerivatives == states */
   long nStates,nAlgebraic,nParameters;
@@ -208,7 +210,6 @@ typedef struct sim_DATA {
   double timeValue; //the time for the simulation
   //used in some generated function
   // this is not changed by initializeDataStruc
-  // it cannot be time because of the generated: #define time localData->timeValue
 } DATA;
 
 
@@ -277,7 +278,7 @@ int bound_parameters();
 
 // function for calculate residual values for the initial equations
 // and fixed start attibutes
-int initial_residual(double *res);
+int initial_residual();
 
 int initialize(const std::string*method);
 
