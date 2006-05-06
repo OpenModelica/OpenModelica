@@ -12,6 +12,6 @@ del ..\mosh\src\options.o *.o *.a
 pushd ..\mosh\src
 g++ -O3 -c options.cpp
 popd
-mingw32-make
+mingw32-make -f Makefile.omdev.mingw
 del ..\mosh\src\options.o *.o
 set PATH=%OLDPATH%

@@ -10,8 +10,11 @@ CFLAGS = -g -Wall -ansi -pedantic -I$(top_builddir)/mosh/src/ $(EXTRA_CFLAGS)
 CPPFLAGS = $(CFLAGS)
 FFLAGS  = -O
 # P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.
-OSTYP = $(OSTYPE)
-OS_MSYS=msys
+# Adrian Pop, adrpo@ida.liu.se
+# - please leave makefile.u as if you don't it breaks the compilation on UNIX/LINUX
+# - use make -f Makefile.omdev.mingw if you want to compile on MinGW
+
+
 
 
 FSRCS = daux.f \
@@ -67,10 +70,13 @@ libsim.a : $(SIMOBJS)
 	$(AR) $@ $(SIMOBJS)
 
 libf2c.a :
-	cd libf2c && $(MAKE) -f makefile.mingw
+	echo $(OSTYPE)
+	cd libf2c && $(MAKE) -f $(SELECTED_MAKEFILE)
+
 
 clean : 
-	cd ./libf2c && $(MAKE) -f makefile.mingw clean
+	echo $(OSTYPE)
+	cd ./libf2c && $(MAKE) -f $(SELECTED_MAKEFILE) clean
 	rm -f libc_runtime.a
 	rm -f libsim.a
 	rm -f $(OBJS)
