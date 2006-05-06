@@ -15,8 +15,6 @@ FFLAGS  = -O
 # - use make -f Makefile.omdev.mingw if you want to compile on MinGW
 
 
-
-
 FSRCS = daux.f \
     ddasrt.f \
     ddassl.f \
@@ -70,13 +68,11 @@ libsim.a : $(SIMOBJS)
 	$(AR) $@ $(SIMOBJS)
 
 libf2c.a :
-	echo $(OSTYPE)
-	cd libf2c && $(MAKE) -f $(SELECTED_MAKEFILE)
+	cd libf2c && $(MAKE) -f makefile.u
 
 
 clean : 
-	echo $(OSTYPE)
-	cd ./libf2c && $(MAKE) -f $(SELECTED_MAKEFILE) clean
+	cd ./libf2c && $(MAKE) -f makefile.u clean
 	rm -f libc_runtime.a
 	rm -f libsim.a
 	rm -f $(OBJS)
