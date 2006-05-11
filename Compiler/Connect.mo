@@ -670,6 +670,8 @@ algorithm
         v2 = Env.localInsideConnectorFlowvars(env);
         vars = listAppend(v1, v2);
         vars2 = getOuterFlowVariables(csets);
+        // last array subscripts are not present in vars, therefor removed from vars2 too.
+        vars2 = Util.listMap(vars2,Exp.crefStripLastSubs); 
         unconnectedvars = removeVariables(vars, vars2);
         dae_1 = generateZeroflowEquations(unconnectedvars);
       then

@@ -10564,11 +10564,40 @@ algorithm
       list<Absyn.ComponentRef> res;
       list<Absyn.ClassPart> parts;
       list<Env.Frame> env;
+      Absyn.Path tp;
     case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),env)
       equation 
         res = getBaseClassesFromParts(parts, env);
       then
         res;
+    case (Absyn.CLASS(body = Absyn.DERIVED(path=tp)),env)
+      local 
+        Env.Env cenv;
+        Absyn.Path envpath,p1;
+        String tpname,str;
+        Absyn.ComponentRef cref;
+        SCode.Class c;
+      equation
+        (c,cenv) = Lookup.lookupClass(env, tp, true);
+        SOME(envpath) = Env.getEnvPath(cenv);
+        tpname = Absyn.pathLastIdent(tp);
+        p1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
+        cref = Absyn.pathToCref(p1);
+        str = Absyn.pathString(p1);
+      then {cref};
+    case (Absyn.CLASS(body = Absyn.DERIVED(path=tp)),env)
+      local 
+        Env.Env cenv;
+        Absyn.Path envpath,p1;
+        String tpname,str;
+        Absyn.ComponentRef cref;
+
+        SCode.Class c;
+      equation
+        (c,cenv) = Lookup.lookupClass(env, tp, true);
+        NONE = Env.getEnvPath(cenv);
+        cref = Absyn.pathToCref(tp);
+        then {cref};
     case (_,_) then {}; 
   end matchcontinue;
 end getBaseClasses;
@@ -10661,11 +10690,13 @@ algorithm
     local
       Integer res;
       list<Absyn.ClassPart> parts;
+      Absyn.Path tp;
     case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
       equation 
         res = countBaseClassesFromParts(parts);
       then
         res;
+    case (Absyn.CLASS(body = Absyn.DERIVED(path=tp))) then 1;
     case (_) then 0; 
   end matchcontinue;
 end countBaseClasses;
