@@ -1011,7 +1011,7 @@ algorithm
         (resstr,st);
     case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getComponentModifierValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = ident))},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
-        resstr = getParameterValue(class_, Absyn.CREF_IDENT(ident,{}), p);
+        resstr = getComponentBinding(class_, Absyn.CREF_IDENT(ident,{}), p);
       then
         (resstr,st);
     case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getSourceFile"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
@@ -1134,7 +1134,7 @@ algorithm
 
     case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getParameterValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.CREF(componentReg = ident)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
-        resstr = getParameterValue(class_, ident, p);
+        resstr = getComponentBinding(class_, ident, p);
       then
         (resstr,st);
 
@@ -5862,9 +5862,14 @@ algorithm
   end matchcontinue;
 end getModificationNames;
 
-protected function getParameterValue "function: getParameterValue
+protected function getComponentBinding "function: getComponentBinding
   
-   Returns the value of a parameter in a class.
+   Returns the value of a component in a class.
+   
+   For example, the component
+   Real x=1; 
+   returns 1.
+  This can be used for both parameters, constants and variables.
   
    inputs: (Absyn.ComponentRef, /* class */
               Absyn.ComponentRef, /* variable name */
@@ -5895,8 +5900,7 @@ algorithm
         Absyn.IDENT(name) = Absyn.crefToPath(name);
         cdef = getPathedClassInProgram(p_class, p);
         comps = getComponentsInClass(cdef);
-        comps_1 = Util.listSelect(comps, isParameterElement);
-        compelts = Util.listMap(comps_1, getComponentitemsInElement);
+        compelts = Util.listMap(comps, getComponentitemsInElement);
         compelts_1 = Util.listFlatten(compelts);
         {compitem} = Util.listSelect1(compelts_1, name, componentitemNamed);
         exp = getVariableBindingInComponentitem(compitem);
@@ -5905,7 +5909,7 @@ algorithm
         res;
     case (_,_,_) then "Error"; 
   end matchcontinue;
-end getParameterValue;
+end getComponentBinding;
 
 protected function getVariableBindingInComponentitem "function: get_variable_binding_in_componenitem
   
