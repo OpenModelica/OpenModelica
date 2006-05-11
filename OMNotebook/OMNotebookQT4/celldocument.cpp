@@ -783,20 +783,20 @@ namespace IAEX
 					// cell height
 					int height = cursor->currentCell()->height();
 
-					/*
+					
 					cout << "*********************************************" << endl;
 					cout << "SCROLL TOP: " << scrollTop << endl;
 					cout << "SCROLL BOTTOM: " << scrollBottom << endl;
 					cout << "CELL CURSOR: " << pos << endl;
 					cout << "CELL HEIGHT: " << height << endl;
-					*/
+					
 					
 					
 
 					// TO BIG
 					if( height > (scrollBottom-scrollTop) )
 					{
-						//qDebug( "TO BIG" );
+						qDebug( "TO BIG" );
 						// cell so big that it span over entire viewarea
 						return;
 					}
@@ -804,7 +804,7 @@ namespace IAEX
 					else if( pos > (scroll_->widget()->height() - 2 ) &&
 						scrollBottom > (scroll_->widget()->height() - 2 ) )
 					{
-						//cout << "END OF DOCUMENT, widget height(" << scroll_->widget()->height() << ")" << endl;
+						cout << "END OF DOCUMENT, widget height(" << scroll_->widget()->height() << ")" << endl;
 						// 2006-03-03 AF, ignore if cursor at end of document
 						return;
 					}
@@ -820,7 +820,7 @@ namespace IAEX
 							pos = 0;
 
 						// set new scrollvalue
-						//cout << "UP: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << endl;
+						cout << "UP: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << endl;
 						scroll_->verticalScrollBar()->setValue( pos );
 					}
 					// DOWN
@@ -838,16 +838,20 @@ namespace IAEX
 						
 						if( pos >= scroll_->verticalScrollBar()->maximum() )
 						{
-							pos = scroll_->verticalScrollBar()->maximum();
+							cout << "more then max!" << endl;
+							scroll_->verticalScrollBar()->triggerAction( QAbstractSlider::SliderToMaximum );
+							//pos = scroll_->verticalScrollBar()->maximum();
 						
 							// a little extra to the max value of the scrollbar
-							scroll_->verticalScrollBar()->setMaximum( 5 +
-								scroll_->verticalScrollBar()->maximum() );
+							//scroll_->verticalScrollBar()->setMaximum( 5 +
+							//	scroll_->verticalScrollBar()->maximum() );
 						}
-
-						// set new scrollvalue
-						//cout << "DOWN: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << endl;
-						scroll_->verticalScrollBar()->setValue( pos );
+						else
+						{
+							// set new scrollvalue
+							cout << "DOWN: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << endl;
+							scroll_->verticalScrollBar()->setValue( pos );
+						}
 					}
 				}
 			}
@@ -1308,7 +1312,7 @@ namespace IAEX
 			}
 
 			// move cell cursor to cell
-			cursorMoveAfter( selected, false );
+			//cursorMoveAfter( selected, false );
 		}
 	}
 

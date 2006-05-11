@@ -322,8 +322,9 @@ namespace IAEX
 		}
 
 		layout->setAdditionalFormats( overrides );
-		const_cast<QTextDocument *>(block.document())->markContentsDirty(
-        block.position(), block.length());
+		// 2006-05-11 AF, removed
+		//const_cast<QTextDocument *>(block.document())->markContentsDirty(
+        //block.position(), block.length());
 	}
 
 

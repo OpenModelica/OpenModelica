@@ -89,9 +89,9 @@
 	</command>
 	<command name="simulate($0, startTime=$1, stopTime=$2, numberOfIntervals=$3)">
 		<field name="$0">modelname</field>
-		<field name="$1">&lt;Real></field>
-		<field name="$2">&lt;Real></field>
-		<field name="$3">&lt;Integer></field>
+		<field name="$1">0</field>
+		<field name="$2">1</field>
+		<field name="$3">500</field>
 		<helptext>Translates a model and simulates it. Ex: simulate(dcmotor). Ex: simulate(dcmotor,startTime=0, stopTime=10, numberOfIntervals=1000).</helptext>
 	</command>
 	<command name="system($0)">

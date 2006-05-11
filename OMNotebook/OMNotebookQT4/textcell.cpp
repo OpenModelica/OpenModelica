@@ -178,6 +178,16 @@ namespace IAEX
 		{
 			event->ignore();
 		}
+		// PAGE UP (ignore)
+		else if( event->key() == Qt::Key_PageUp )
+		{
+			event->ignore();
+		}
+		// PAGE DOWN (ignore)
+		else if( event->key() == Qt::Key_PageDown )
+		{
+			event->ignore();
+		}
 		// CTRL+C
 		else if( event->modifiers() == Qt::ControlModifier &&
 			event->key() == Qt::Key_C )
@@ -865,10 +875,6 @@ namespace IAEX
 	{
 		text_->clear();
 	}
-
-
-
-
 
 
 }

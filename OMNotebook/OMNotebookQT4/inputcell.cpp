@@ -234,6 +234,22 @@ namespace IAEX
 
 			event->ignore();
 		}
+		// PAGE UP (ignore)
+		else if( event->key() == Qt::Key_PageUp )
+		{
+			inCommand = false;
+			stopHighlighter = false;
+
+			event->ignore();
+		}
+		// PAGE DOWN (ignore)
+		else if( event->key() == Qt::Key_PageDown )
+		{
+			inCommand = false;
+			stopHighlighter = false;
+
+			event->ignore();
+		}
 		// CTRL+C
 		else if( event->modifiers() == Qt::ControlModifier &&
 			event->key() == Qt::Key_C )
@@ -263,6 +279,14 @@ namespace IAEX
 
 			event->ignore();
 			emit forwardAction( 3 );
+		}
+		// TAB
+		else if( event->key() == Qt::Key_Tab )
+		{
+			inCommand = false;
+			stopHighlighter = false;
+
+            textCursor().insertText( "  " );
 		}
 		else
 		{
