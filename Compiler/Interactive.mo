@@ -5568,7 +5568,7 @@ algorithm
       equation 
         equality(varname = id);
         args_1 = setSubmodifierInElementargs(args, submodpath, mod);
-        optmod = createOptModificationFromEltargs(args_1);
+        optmod = createOptModificationFromEltargs(args_1,expopt);
       then
         (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,optmod),cond,cmt) :: rest);
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = NONE),condition = cond,comment = cmt) :: rest),varname,submod,mod)
@@ -5600,13 +5600,15 @@ protected function createOptModificationFromEltargs "function: createOptModifica
   If list is empty, NONE is created.
 "
   input list<Absyn.ElementArg> inAbsynElementArgLst;
+  input Option<Absyn.Exp> inExpOpt;
   output Option<Absyn.Modification> outAbsynModificationOption;
 algorithm 
   outAbsynModificationOption:=
-  matchcontinue (inAbsynElementArgLst)
+  matchcontinue (inAbsynElementArgLst,inExpOpt)
     local list<Absyn.ElementArg> args;
-    case ({}) then NONE; 
-    case (args) then SOME(Absyn.CLASSMOD(args,NONE)); 
+      Option<Absyn.Exp> expOpt;
+    case ({},_) then NONE; 
+    case (args,expOpt) then SOME(Absyn.CLASSMOD(args,expOpt)); 
   end matchcontinue;
 end createOptModificationFromEltargs;
 
