@@ -152,8 +152,18 @@ void MyTextEdit::keyPressEvent(QKeyEvent *event)
 			sameTab_ = false;
 			break;
 		case Qt::Key_Tab:
-			emit codeCompletion( sameTab_ );
-			sameTab_ = true;
+			{
+				if( event->modifiers() == Qt::ControlModifier )
+				{
+					emit codeNextField();
+					sameTab_ = false;
+				}
+				else
+				{
+					emit codeCompletion( sameTab_ );
+					sameTab_ = true;
+				}
+			}
 			break;
 		default:
 			QTextEdit::keyPressEvent( event );
@@ -276,8 +286,30 @@ OMS::OMS( QWidget* parent )
 	cursor_.insertText( "To get help on using OMShell and OpenModelica, type \"help()\" and press enter.\n", textFormat_ );
 
 
+	// create command compleation instance
+	QString openmodelica( getenv( "OPENMODELICAHOME" ) );
+	if( openmodelica.isEmpty() )
+		QMessageBox::critical( 0, "OMShell Error", "Could not find environment variable OPENMODELICAHOME, command compleation will not work" );
+
+	try
+	{
+		QString commandfile;
+		if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
+			commandfile = openmodelica + "bin/commands.xml";
+		else
+			commandfile = openmodelica + "/bin/commands.xml";
+
+		commandcompletion_ = IAEX::CommandCompletion::instance( commandfile );
+	}
+	catch( exception &e )
+	{
+		QString msg = e.what();
+		msg += "\nCould not create command completion class!";
+		QMessageBox::warning( 0, "Error", msg, "OK" );
+	}
+	
 	// add function names for code completion
-	currentFunction_ = -1;
+	/*currentFunction_ = -1;
 	currentFunctionName_ = "";
 	functionList_ = new QStringList();
 	functionList_->push_back( "cd()" );
@@ -300,7 +332,7 @@ OMS::OMS( QWidget* parent )
 	functionList_->push_back( "simulate(modelname, startTime=0, stopTime=1)" );
 	functionList_->push_back( "system(str)" );
 	functionList_->push_back( "timing(expr)" );
-	functionList_->push_back( "typeOf(variable)" );
+	functionList_->push_back( "typeOf(variable)" );*/
 
 	// command stuff
 	commandSignFormat_.setFontFamily( "Arial" );
@@ -316,8 +348,10 @@ OMS::~OMS()
 {
 	delete mainFrame_;
 	delete delegate_;
-	delete commands_;
-	delete functionList_;
+	delete commandcompletion_;
+
+	//delete commands_;
+	//delete functionList_;
 
 	delete fileMenu_;
 	delete editMenu_;
@@ -378,6 +412,8 @@ void OMS::createMoshEdit()
 		this, SLOT( goHome(bool) ));
 	connect( moshEdit_, SIGNAL( codeCompletion(bool) ),
 		this, SLOT( codeCompletion(bool) ));
+	connect( moshEdit_, SIGNAL( codeNextField() ),
+		this, SLOT( codeNextField() ));
 }
 
 /*
@@ -834,6 +870,19 @@ void OMS::goHome( bool shift )
 void OMS::codeCompletion( bool same )
 {
 	cursor_ = moshEdit_->textCursor();
+	if( !same )
+	{
+		commandcompletion_->insertCommand( cursor_ );
+		moshEdit_->setTextCursor( cursor_ );
+	}
+	else
+	{
+		commandcompletion_->nextCommand( cursor_ );
+		moshEdit_->setTextCursor( cursor_ );
+	}
+
+	/*
+	cursor_ = moshEdit_->textCursor();
 
 	if( !same )
 	{
@@ -865,8 +914,15 @@ void OMS::codeCompletion( bool same )
 		cursor_.insertText( list.at( currentFunction_ ));
 		moshEdit_->setTextCursor( cursor_ );
 	}
-
+*/
 	
+}
+
+void OMS::codeNextField()
+{
+	cursor_ = moshEdit_->textCursor();
+	commandcompletion_->nextField( cursor_ );
+	moshEdit_->setTextCursor( cursor_ );
 }
 
 QStringList OMS::getFunctionNames(QString func)

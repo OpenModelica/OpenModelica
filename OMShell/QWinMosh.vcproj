@@ -25,7 +25,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="qtmain.lib QtCore4.lib QtGui4.lib mico2311.lib"
+				AdditionalDependencies="qtmain.lib QtCore4.lib QtGui4.lib QtXml4.lib mico2311.lib"
 				OutputFile="$(OutDir)\OMShell.exe"
 				AdditionalLibraryDirectories="&quot;$(QTHOME)\lib&quot;;&quot;$(MICOHOME)\win32-bin\lib&quot;"
 				GenerateDebugInformation="FALSE"
@@ -67,7 +67,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="qtmaind.lib QtCored4.lib QtGuid4.lib mico2311.lib"
+				AdditionalDependencies="qtmaind.lib QtCored4.lib QtGuid4.lib QtXmld4.lib mico2311.lib"
 				OutputFile="$(OutDir)\OMShell.exe"
 				AdditionalLibraryDirectories="&quot;$(QTHOME)\lib&quot;;&quot;$(MICOHOME)\win32-bin\lib&quot;"
 				GenerateDebugInformation="TRUE"
@@ -102,6 +102,9 @@
 			Filter="cpp;cxx;c;def"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
 			<File
+				RelativePath=".\commandcompletion.cpp">
+			</File>
+			<File
 				RelativePath=".\main.cpp">
 			</File>
 			<File
@@ -121,6 +124,32 @@
 			Name="Header Files"
 			Filter="h"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
+			<File
+				RelativePath=".\commandcompletion.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing commandcompletion.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe -DWIN32 -I.\GeneratedFiles\Release;.\GeneratedFiles;&quot;$(MODELICAHOME)&quot;;&quot;$(MICOHOME)\include&quot;;&quot;$(QTHOME)\include&quot; &quot;.\commandcompletion.h&quot; -o &quot;GeneratedFiles\Release\moc_commandcompletion.cpp&quot;
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe;.\commandcompletion.h"
+						Outputs="&quot;GeneratedFiles\Release\moc_commandcompletion.cpp&quot;"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing commandcompletion.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe -DWIN32 -DQT_DEBUG -I.\GeneratedFiles\Debug;.\GeneratedFiles;&quot;$(MODELICAHOME)&quot;;&quot;$(MICOHOME)\include&quot;;&quot;$(QTHOME)\include&quot; &quot;.\commandcompletion.h&quot; -o &quot;GeneratedFiles\Debug\moc_commandcompletion.cpp&quot;
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe;.\commandcompletion.h"
+						Outputs="&quot;GeneratedFiles\Debug\moc_commandcompletion.cpp&quot;"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\commandunit.h">
+			</File>
 			<File
 				RelativePath=".\inputcelldelegate.h">
 			</File>
@@ -250,7 +279,28 @@
 			Filter="moc;h;cpp"
 			UniqueIdentifier="{71ED8ED8-ACB9-4CE9-BBE1-E00B30144E11}">
 			<File
-				RelativePath=".\generatedfiles\release\moc_omc_communicator.cpp">
+				RelativePath=".\generatedfiles\debug\moc_commandcompletion.cpp">
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\generatedfiles\release\moc_commandcompletion.cpp">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|Win32"
 					ExcludedFromBuild="TRUE">
@@ -275,7 +325,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\GeneratedFiles\release\moc_oms.cpp">
+				RelativePath=".\generatedfiles\release\moc_omc_communicator.cpp">
 				<FileConfiguration
 					Name="Debug|Win32"
 					ExcludedFromBuild="TRUE">
@@ -297,6 +347,20 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\GeneratedFiles\release\moc_oms.cpp">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 			</File>
 			<File

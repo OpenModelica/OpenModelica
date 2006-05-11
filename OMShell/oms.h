@@ -64,6 +64,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 //IAEX Headers
 #include "inputcelldelegate.h"
+#include "commandcompletion.h"
 
 //Forward Declaration
 class QAction;
@@ -93,6 +94,7 @@ public slots:
 	void nextCommand();
 	void goHome( bool shift );
 	void codeCompletion( bool same );
+	void codeNextField();
 
 	void loadModel();
 	void loadModelicaLibrary();
@@ -132,6 +134,7 @@ private:
 	QString clipboard_;
 
 	IAEX::InputCellDelegate* delegate_;
+	IAEX::CommandCompletion* commandcompletion_;
 	int fontSize_;
 
 	int currentFunction_;
@@ -183,6 +186,7 @@ signals:
 	void nextCommand();
 	void goHome( bool shift );
 	void codeCompletion( bool same );
+	void codeNextField();
 
 protected:
 	void keyPressEvent(QKeyEvent *event);
