@@ -69,7 +69,7 @@ $(ALLMO): %.mo : $(srcdir)/%.mo
 	cp $< $@
 
 $(SRCO): %.o : %.c %.h
-	$(RMLC) -c $< > $@
+	$(RMLC) -c $< 
 
 $(SRCC): %.c : %.mo
 	$(RMLC) +C $<
