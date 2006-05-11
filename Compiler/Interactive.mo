@@ -3955,13 +3955,19 @@ protected function getClassEnv "function: getClassEnv
   SCode.Restriction restr;
   ClassInf.State ci_state;
 algorithm 
-  p_1 := SCode.elaborate(p);
-  env := Inst.makeEnvFromProgram(p_1, Absyn.IDENT(""));
-  ((cl as SCode.CLASS(id,_,encflag,restr,_)),env_1) := Lookup.lookupClass(env, p_class, false);
-  env2 := Env.openScope(env_1, encflag, SOME(id));
-  ci_state := ClassInf.start(restr, id);
-  (env_2,_) := Inst.partialInstClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+  env_2 := matchcontinue (p,p_class)
+    case (p,p_class) 
+      equation 
+        p_1 = SCode.elaborate(p);
+        env = Inst.makeEnvFromProgram(p_1, Absyn.IDENT(""));
+        ((cl as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(env, p_class, false);
+        env2 = Env.openScope(env_1, encflag, SOME(id));
+        ci_state = ClassInf.start(restr, id);
+        (env_2,_) = Inst.partialInstClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, cl, false, {});
+      then env_2;
+    case (p,p_class) then {};
+  end matchcontinue;
 end getClassEnv;
 
 protected function getClassEnvNoElaboration "function: getClassEnvNoElaboration
