@@ -2,7 +2,7 @@
 set GCC_EXEC_PREFIX=
 set OLDPATH=%PATH%
 pushd "%OPENMODELICAHOME%\MinGW\bin"
-set PATH=%CD%
+set PATH=%CD%;%PATH%
 popd
 mingw32-make -f %1.makefile >%1.log 2<&1
 set RESULT=%ERRORLEVEL%
