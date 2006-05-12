@@ -4149,14 +4149,14 @@ algorithm
         (Exp.CALL(Absyn.IDENT("plot"),{Exp.ARRAY(Exp.OTHER(),false,vars_1)},
           false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
 
-    case (env,Absyn.CREF_IDENT(name = "plotParametric"),{Absyn.ARRAY(arrayExp = vars)},{},impl,SOME(st)) /* PlotParametric is similar to plot but does not allow a single CREF as an 
+    case (env,Absyn.CREF_IDENT(name = "plotParametric"),vars,{},impl,SOME(st)) /* PlotParametric is similar to plot but does not allow a single CREF as an 
    argument as you are plotting at least one variable as a function of another.
    Thus, plotParametric has to take an array as an argument, or two componentRefs. */ 
       equation 
         vars_1 = elabVariablenames(vars);
       then
         (Exp.CALL(Absyn.IDENT("plotParametric"),
-          {Exp.ARRAY(Exp.OTHER(),false,vars_1)},false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
+          vars_1,false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
 
     case (env,Absyn.CREF_IDENT(name = "timing"),{exp},{},impl,SOME(st))
       equation 

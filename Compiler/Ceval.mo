@@ -1930,9 +1930,11 @@ algorithm
       local list<Exp.Exp> vars;
       then
         (Values.STRING("Unknown error while plotting"),st);
-
-    case (env,Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = {Exp.ARRAY(array = vars)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* plotparametric This rule represents the normal case when an array of at least two elements 
-   is given as an argument */ 
+        
+    /* plotparametric This rule represents the normal case when an array of at least two elements 
+     *  is given as an argument 
+     */
+    case (env,Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = vars),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)  
       local
         Integer res;
         list<Exp.Exp> vars;
@@ -1956,7 +1958,7 @@ algorithm
       then
         (Values.BOOL(true),st);
 
-    case (env,Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = {Exp.ARRAY(array = vars)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (env,Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = vars),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local list<Exp.Exp> vars;
       equation 
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error with less than two elements (=variables) in the array.
@@ -1966,7 +1968,7 @@ algorithm
       then
         (Values.STRING("Error: Less than two variables given to plotParametric."),st);
 
-    case (env,Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = {Exp.ARRAY(array = vars)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (env,Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = vars),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local list<Exp.Exp> vars;
       equation 
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
@@ -1976,7 +1978,7 @@ algorithm
       then
         (Values.STRING("Error reading the simulation result."),st);
 
-    case (env,Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = {Exp.ARRAY(array = vars)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (env,Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = vars),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local list<Exp.Exp> vars;
       equation 
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
@@ -1985,12 +1987,13 @@ algorithm
       then
         (Values.STRING("No simulation result to plot."),st);
 
-    case (env,Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = {Exp.ARRAY(array = vars)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (env,Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = vars),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local list<Exp.Exp> vars;
       then
         (Values.STRING("Unknown error while plotting"),st);
+    /* end plotparametric */        
 
-    case (env,Exp.CALL(path = Absyn.IDENT(name = "timing"),expLst = {exp}),st,msg) /* end plotparametric */ 
+    case (env,Exp.CALL(path = Absyn.IDENT(name = "timing"),expLst = {exp}),st,msg)  
       equation 
         t1 = System.time();
         (value,SOME(st_1)) = ceval(env, exp, true, SOME(st), NONE, msg);
