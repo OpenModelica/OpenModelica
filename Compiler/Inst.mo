@@ -4816,8 +4816,9 @@ algorithm
 	  The FQ path consist of the simple class name
 	  appended to the environment path of the looked up class.
 	 */ 
+	 local String s;
       equation 
-        (_,env_1) = Lookup.lookupClass(env, path, false);
+         (_,env_1) = Lookup.lookupClass(env, path, false);
         SOME(path_1) = Env.getEnvPath(env_1);
         class_name = Absyn.pathLastIdent(path);
         path_2 = Absyn.joinPaths(path_1, Absyn.IDENT(class_name));

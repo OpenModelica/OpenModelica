@@ -3956,6 +3956,15 @@ protected function getClassEnv "function: getClassEnv
   ClassInf.State ci_state;
 algorithm 
   env_2 := matchcontinue (p,p_class)
+   case (p,p_class) // Special case for derived classes. When instantiating a derived class, the environment
+   									// of the derived class is returned, which can be a totally different scope.
+     local Absyn.Path tp;								
+      equation 
+        p_1 = SCode.elaborate(p);
+        env = Inst.makeEnvFromProgram(p_1, Absyn.IDENT(""));
+        ((cl as SCode.CLASS(id,_,encflag,restr,SCode.DERIVED(short=tp))),env_1) = Lookup.lookupClass(env, p_class, false);
+      then env_1;
+        
     case (p,p_class) 
       equation 
         p_1 = SCode.elaborate(p);
@@ -5242,11 +5251,17 @@ algorithm
     local
       list<Absyn.ElementSpec> ext;
       list<Absyn.ClassPart> parts;
+      list<Absyn.ElementArg> eltArg;
+      Absyn.Path tp;
     case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
       equation 
         ext = getExtendsElementspecInClassparts(parts);
       then
         ext;
+    case (Absyn.CLASS(body = Absyn.DERIVED(path=tp, arguments=eltArg)))
+      then
+        {Absyn.EXTENDS(tp,eltArg)}; // Note: the array dimensions of DERIVED are lost. They must be 
+        														// queried by another api-function
     case (_) then {}; 
   end matchcontinue;
 end getExtendsElementspecInClass;
