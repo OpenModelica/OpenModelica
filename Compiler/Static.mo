@@ -224,6 +224,7 @@ algorithm
   matchcontinue (inExp,inProperties,inConst,inBoolean,inEnv)
     local
       Exp.Exp e_1,e;
+      String before, after;
       Types.Properties prop;
       Boolean impl;
       Values.Value v;
@@ -6034,7 +6035,7 @@ algorithm
         t = Types.elabType(tt);
       then
         (Exp.CREF(cr,t),Types.C_CONST(),acc);
-    case (env,cr,acc,variability,tp,Types.EQBOUND(exp = Exp.CREF(componentRef = cref,component = t),constant_ = Types.C_VAR()))
+    case (env,cr,acc,variability,tp,Types.EQBOUND(exp = Exp.CREF(componentRef = cref,ty = t),constant_ = Types.C_VAR()))
       local
         tuple<Types.TType, Option<Absyn.Path>> t_1;
         Exp.Type t;
@@ -6098,7 +6099,7 @@ algorithm
       Exp.ComponentRef cr;
       Integer ds,ds2;
       tuple<Types.TType, Option<Absyn.Path>> t;
-    case (Exp.CREF(componentRef = cr,component = exptp),(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(ds)),arrayType = (t as (Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(ds2))),_))),_)) /* matrix sizes > 4 is not vectorized */ 
+    case (Exp.CREF(componentRef = cr,ty = exptp),(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(ds)),arrayType = (t as (Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(ds2))),_))),_)) /* matrix sizes > 4 is not vectorized */ 
       equation 
         b1 = (ds < 4);
         b2 = (ds2 < 4);
@@ -6107,7 +6108,7 @@ algorithm
         e = createCrefArray2d(cr, 1, ds, ds2, elt_tp, t);
       then
         e;
-    case (Exp.CREF(componentRef = cr,component = exptp),(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(ds)),arrayType = t),_)) /* vectorsizes > 4 is not vectorized */ 
+    case (Exp.CREF(componentRef = cr,ty = exptp),(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(ds)),arrayType = t),_)) /* vectorsizes > 4 is not vectorized */ 
       equation 
         false = Types.isArray(t);
         (ds < 4) = true;
