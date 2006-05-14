@@ -330,7 +330,7 @@ algorithm
     case (_,(e as Exp.RCONST(real = _)),_) then e; 
     case (_,(e as Exp.SCONST(string = _)),_) then e; 
     case (_,(e as Exp.BCONST(bool = _)),_) then e; 
-    case (env,Exp.CREF(componentRef = p,component = t),pre)
+    case (env,Exp.CREF(componentRef = p,ty = t),pre)
       equation 
         (_,_,_) = Lookup.lookupVarLocal(env, p);
         p_1 = prefixCref(pre, p);
@@ -341,40 +341,40 @@ algorithm
         failure((_,_,_) = Lookup.lookupVarLocal(env, p));
       then
         e;
-    case (env,Exp.BINARY(exp = e1,operator = o,binary = e2),p)
+    case (env,Exp.BINARY(exp1 = e1,operator = o,exp2 = e2),p)
       local Prefix p;
       equation 
         e1_1 = prefixExp(env, e1, p);
         e2_1 = prefixExp(env, e2, p);
       then
         Exp.BINARY(e1_1,o,e2_1);
-    case (env,Exp.UNARY(operator = o,unary = e1),p)
+    case (env,Exp.UNARY(operator = o,exp = e1),p)
       local Prefix p;
       equation 
         e1_1 = prefixExp(env, e1, p);
       then
         Exp.UNARY(o,e1_1);
-    case (env,Exp.LBINARY(exp = e1,operator = o,logical = e2),p)
+    case (env,Exp.LBINARY(exp1 = e1,operator = o,exp2 = e2),p)
       local Prefix p;
       equation 
         e1_1 = prefixExp(env, e1, p);
         e2_1 = prefixExp(env, e2, p);
       then
         Exp.LBINARY(e1_1,o,e2_1);
-    case (env,Exp.LUNARY(operator = o,logical = e1),p)
+    case (env,Exp.LUNARY(operator = o,exp = e1),p)
       local Prefix p;
       equation 
         e1_1 = prefixExp(env, e1, p);
       then
         Exp.LUNARY(o,e1_1);
-    case (env,Exp.RELATION(exp = e1,operator = o,relation_ = e2),p)
+    case (env,Exp.RELATION(exp1 = e1,operator = o,exp2 = e2),p)
       local Prefix p;
       equation 
         e1_1 = prefixExp(env, e1, p);
         e2_1 = prefixExp(env, e2, p);
       then
         Exp.RELATION(e1_1,o,e2_1);
-    case (env,Exp.IFEXP(exp1 = e1,exp2 = e2,if_3 = e3),p)
+    case (env,Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3),p)
       local Prefix p;
       equation 
         e1_1 = prefixExp(env, e1, p);
@@ -382,14 +382,14 @@ algorithm
         e3_1 = prefixExp(env, e3, p);
       then
         Exp.IFEXP(e1_1,e2_1,e3_1);
-    case (env,Exp.SIZE(exp = cref,the = SOME(dim)),p)
+    case (env,Exp.SIZE(exp = cref,sz = SOME(dim)),p)
       local Prefix p;
       equation 
         cref_1 = prefixExp(env, cref, p);
         dim_1 = prefixExp(env, dim, p);
       then
         Exp.SIZE(cref_1,SOME(dim_1));
-    case (env,Exp.SIZE(exp = cref,the = NONE),p)
+    case (env,Exp.SIZE(exp = cref,sz = NONE),p)
       local Prefix p;
       equation 
         cref_1 = prefixExp(env, cref, p);
@@ -401,11 +401,11 @@ algorithm
         es_1 = prefixExpList(env, es, p);
       then
         Exp.CALL(f,es_1,b,bi);
-    case (env,Exp.ARRAY(type_ = t,scalar = a,array = {}),p)
+    case (env,Exp.ARRAY(ty = t,scalar = a,array = {}),p)
       local Prefix p;
       then
         Exp.ARRAY(t,a,{});
-    case (env,Exp.ARRAY(type_ = t,scalar = a,array = es),p)
+    case (env,Exp.ARRAY(ty = t,scalar = a,array = es),p)
       local Prefix p;
       equation 
         es_1 = prefixExpList(env, es, p);
@@ -417,13 +417,13 @@ algorithm
         es_1 = prefixExpList(env, es, p);
       then
         Exp.TUPLE(es_1);
-    case (env,Exp.MATRIX(type_ = t,integer = a,scalar = {}),p)
+    case (env,Exp.MATRIX(ty = t,integer = a,scalar = {}),p)
       local
         Integer a;
         Prefix p;
       then
         Exp.MATRIX(t,a,{});
-    case (env,Exp.MATRIX(type_ = t,integer = a,scalar = (x :: xs)),p)
+    case (env,Exp.MATRIX(ty = t,integer = a,scalar = (x :: xs)),p)
       local
         Integer b,a;
         Prefix p;
@@ -435,14 +435,14 @@ algorithm
         Exp.MATRIX(t,b,xs_1) = prefixExp(env, Exp.MATRIX(t,a,xs), p);
       then
         Exp.MATRIX(t,a,(x_1 :: xs_1));
-    case (env,Exp.RANGE(type_ = t,exp = start,expOption = NONE,range = stop),p)
+    case (env,Exp.RANGE(ty = t,exp = start,expOption = NONE,range = stop),p)
       local Prefix p;
       equation 
         start_1 = prefixExp(env, start, p);
         stop_1 = prefixExp(env, stop, p);
       then
         Exp.RANGE(t,start_1,NONE,stop_1);
-    case (env,Exp.RANGE(type_ = t,exp = start,expOption = SOME(step),range = stop),p)
+    case (env,Exp.RANGE(ty = t,exp = start,expOption = SOME(step),range = stop),p)
       local Prefix p;
       equation 
         start_1 = prefixExp(env, start, p);
@@ -450,7 +450,7 @@ algorithm
         stop_1 = prefixExp(env, stop, p);
       then
         Exp.RANGE(t,start_1,SOME(step_1),stop_1);
-    case (env,Exp.CAST(type_ = Exp.REAL(),cast = e),p)
+    case (env,Exp.CAST(ty = Exp.REAL(),exp = e),p)
       local Prefix p;
       equation 
         e_1 = prefixExp(env, e, p);

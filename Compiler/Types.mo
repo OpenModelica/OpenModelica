@@ -2588,7 +2588,7 @@ algorithm
         a = isArray(ty2);
       then
         (Exp.ARRAY(at,a,elist_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p));
-    case (Exp.RANGE(type_ = t,exp = begin,expOption = SOME(step),range = stop),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p))
+    case (Exp.RANGE(ty = t,exp = begin,expOption = SOME(step),range = stop),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p))
       equation 
         (dim1 == dim2) = true "Range expressions" ;
         (begin_1,_) = typeConvert(begin, ty1, ty2);
@@ -2598,7 +2598,7 @@ algorithm
         a = isArray(ty2);
       then
         (Exp.RANGE(at,begin_1,SOME(step_1),stop_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p));
-    case (Exp.RANGE(type_ = t,exp = begin,expOption = NONE,range = stop),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p))
+    case (Exp.RANGE(ty = t,exp = begin,expOption = NONE,range = stop),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p))
       equation 
         (dim1 == dim2) = true "Range expressions" ;
         (begin_1,_) = typeConvert(begin, ty1, ty2);

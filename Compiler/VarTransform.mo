@@ -532,45 +532,45 @@ algorithm
       Integer b,i;
       Absyn.Code a;
       String id;
-    case ((e as Exp.CREF(componentRef = cr,component = t)),repl,cond)
+    case ((e as Exp.CREF(componentRef = cr,ty = t)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         cr_1 = getReplacement(repl, cr);
       then
         Exp.CREF(cr_1,t);
-    case ((e as Exp.BINARY(exp = e1,operator = op,binary = e2)),repl,cond)
+    case ((e as Exp.BINARY(exp1 = e1,operator = op,exp2 = e2)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
         e2_1 = replaceExp(e2, repl, cond);
       then
         Exp.BINARY(e1_1,op,e2_1);
-    case ((e as Exp.LBINARY(exp = e1,operator = op,logical = e2)),repl,cond)
+    case ((e as Exp.LBINARY(exp1 = e1,operator = op,exp2 = e2)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
         e2_1 = replaceExp(e2, repl, cond);
       then
         Exp.LBINARY(e1_1,op,e2_1);
-    case ((e as Exp.UNARY(operator = op,unary = e1)),repl,cond)
+    case ((e as Exp.UNARY(operator = op,exp = e1)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
       then
         Exp.UNARY(op,e1_1);
-    case ((e as Exp.LUNARY(operator = op,logical = e1)),repl,cond)
+    case ((e as Exp.LUNARY(operator = op,exp = e1)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
       then
         Exp.LUNARY(op,e1_1);
-    case (Exp.RELATION(exp = e1,operator = op,relation_ = e2),repl,cond)
+    case (Exp.RELATION(exp1 = e1,operator = op,exp2 = e2),repl,cond)
       equation 
         e1_1 = replaceExp(e1, repl, cond);
         e2_1 = replaceExp(e2, repl, cond);
       then
         Exp.RELATION(e1_1,op,e2_1);
-    case ((e as Exp.IFEXP(exp1 = e1,exp2 = e2,if_3 = e3)),repl,cond)
+    case ((e as Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
@@ -585,27 +585,27 @@ algorithm
         expl_1 = Util.listMap2(expl, replaceExp, repl, cond);
       then
         Exp.CALL(path,expl_1,t,c);
-    case ((e as Exp.ARRAY(type_ = tp,scalar = c,array = expl)),repl,cond)
+    case ((e as Exp.ARRAY(ty = tp,scalar = c,array = expl)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         expl_1 = Util.listMap2(expl, replaceExp, repl, cond);
       then
         Exp.ARRAY(tp,c,expl_1);
-    case ((e as Exp.MATRIX(type_ = t,integer = b,scalar = expl)),repl,cond)
+    case ((e as Exp.MATRIX(ty = t,integer = b,scalar = expl)),repl,cond)
       local list<list<tuple<Exp.Exp, Boolean>>> expl_1,expl;
       equation 
         true = replaceExpCond(cond, e);
         expl_1 = replaceExpMatrix(expl, repl, cond);
       then
         Exp.MATRIX(t,b,expl_1);
-    case ((e as Exp.RANGE(type_ = tp,exp = e1,expOption = NONE,range = e2)),repl,cond)
+    case ((e as Exp.RANGE(ty = tp,exp = e1,expOption = NONE,range = e2)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
         e2_1 = replaceExp(e2, repl, cond);
       then
         Exp.RANGE(tp,e1_1,NONE,e2_1);
-    case ((e as Exp.RANGE(type_ = tp,exp = e1,expOption = SOME(e3),range = e2)),repl,cond)
+    case ((e as Exp.RANGE(ty = tp,exp = e1,expOption = SOME(e3),range = e2)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
@@ -619,32 +619,32 @@ algorithm
         expl_1 = Util.listMap2(expl, replaceExp, repl, cond);
       then
         Exp.TUPLE(expl_1);
-    case ((e as Exp.CAST(type_ = tp,cast = e1)),repl,cond)
+    case ((e as Exp.CAST(ty = tp,exp = e1)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
       then
         Exp.CAST(tp,e1_1);
-    case ((e as Exp.ASUB(exp = e1,array = i)),repl,cond)
+    case ((e as Exp.ASUB(exp = e1,sub = i)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
       then
         Exp.ASUB(e1_1,i);
-    case ((e as Exp.SIZE(exp = e1,the = NONE)),repl,cond)
+    case ((e as Exp.SIZE(exp = e1,sz = NONE)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
       then
         Exp.SIZE(e1_1,NONE);
-    case ((e as Exp.SIZE(exp = e1,the = SOME(e2))),repl,cond)
+    case ((e as Exp.SIZE(exp = e1,sz = SOME(e2))),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
         e1_1 = replaceExp(e1, repl, cond);
         e2_1 = replaceExp(e2, repl, cond);
       then
         Exp.SIZE(e1_1,SOME(e2_1));
-    case (Exp.CODE(code = a,modelica = b),repl,cond)
+    case (Exp.CODE(code = a,ty = b),repl,cond)
       local Exp.Type b;
       equation 
         print("replace_exp on CODE not impl.\n");

@@ -543,7 +543,7 @@ algorithm
       Boolean at;
       list<Exp.Exp> expl;
       Exp.Exp e;
-    case (Exp.ARRAY(type_ = a,scalar = at,array = expl))
+    case (Exp.ARRAY(ty = a,scalar = at,array = expl))
       equation 
         mexpl = elabMatrixToMatrixExp2(expl);
         dim = listLength(mexpl);
@@ -569,7 +569,7 @@ algorithm
       Boolean at;
       list<Exp.Exp> expl,es;
     case ({}) then {}; 
-    case ((Exp.ARRAY(type_ = a,scalar = at,array = expl) :: es))
+    case ((Exp.ARRAY(ty = a,scalar = at,array = expl) :: es))
       equation 
         expl_1 = elabMatrixToMatrixExp3(expl);
         es_1 = elabMatrixToMatrixExp2(es);
@@ -714,11 +714,11 @@ algorithm
       Exp.Exp e1,e2,e;
       Absyn.Path funcname;
       Types.Const c;
-    case (Exp.BINARY(exp = e1,operator = Exp.USERDEFINED(the = funcname),binary = e2),c) then Exp.CALL(funcname,{e1,e2},false,false); 
-    case (Exp.UNARY(operator = Exp.USERDEFINED(the = funcname),unary = e1),c) then Exp.CALL(funcname,{e1},false,false); 
-    case (Exp.LBINARY(exp = e1,operator = Exp.USERDEFINED(the = funcname),logical = e2),c) then Exp.CALL(funcname,{e1,e2},false,false); 
-    case (Exp.LUNARY(operator = Exp.USERDEFINED(the = funcname),logical = e1),c) then Exp.CALL(funcname,{e1},false,false); 
-    case (Exp.RELATION(exp = e1,operator = Exp.USERDEFINED(the = funcname),relation_ = e2),c) then Exp.CALL(funcname,{e1,e2},false,false); 
+    case (Exp.BINARY(exp1 = e1,operator = Exp.USERDEFINED(fqName = funcname),exp2 = e2),c) then Exp.CALL(funcname,{e1,e2},false,false); 
+    case (Exp.UNARY(operator = Exp.USERDEFINED(fqName = funcname),exp = e1),c) then Exp.CALL(funcname,{e1},false,false); 
+    case (Exp.LBINARY(exp1 = e1,operator = Exp.USERDEFINED(fqName = funcname),exp2 = e2),c) then Exp.CALL(funcname,{e1,e2},false,false); 
+    case (Exp.LUNARY(operator = Exp.USERDEFINED(fqName = funcname),exp = e1),c) then Exp.CALL(funcname,{e1},false,false); 
+    case (Exp.RELATION(exp1 = e1,operator = Exp.USERDEFINED(fqName = funcname),exp2 = e2),c) then Exp.CALL(funcname,{e1,e2},false,false); 
     case (e,_) then e; 
   end matchcontinue;
 end replaceOperatorWithFcall;
@@ -1610,7 +1610,7 @@ algorithm
       list<Exp.Exp> expl,expl1,expl2;
       Exp.Type a1,a2;
       Boolean at1,at2;
-    case (Exp.ARRAY(type_ = a1,scalar = at1,array = expl1),Exp.ARRAY(type_ = a2,scalar = at2,array = expl2))
+    case (Exp.ARRAY(ty = a1,scalar = at1,array = expl1),Exp.ARRAY(ty = a2,scalar = at2,array = expl2))
       equation 
         expl = elabMatrixCatTwo3(expl1, expl2);
       then
@@ -1633,7 +1633,7 @@ algorithm
       Exp.Type a1,a2;
       Boolean at1,at2;
     case ({},{}) then {}; 
-    case ((Exp.ARRAY(type_ = a1,scalar = at1,array = expl1) :: es1),(Exp.ARRAY(type_ = a2,scalar = at2,array = expl2) :: es2))
+    case ((Exp.ARRAY(ty = a1,scalar = at1,array = expl1) :: es1),(Exp.ARRAY(ty = a2,scalar = at2,array = expl2) :: es2))
       equation 
         expl = listAppend(expl1, expl2);
         es_1 = elabMatrixCatTwo3(es1, es2);
@@ -1659,13 +1659,13 @@ algorithm
       Exp.Type a;
       Boolean at;
       list<Exp.Exp> expl,expl1,expl2,es;
-    case ({(e as Exp.ARRAY(type_ = a,scalar = at,array = expl))}) then e; 
-    case ({Exp.ARRAY(type_ = a,scalar = at,array = expl1),Exp.ARRAY(array = expl2)})
+    case ({(e as Exp.ARRAY(ty = a,scalar = at,array = expl))}) then e; 
+    case ({Exp.ARRAY(ty = a,scalar = at,array = expl1),Exp.ARRAY(array = expl2)})
       equation 
         expl = listAppend(expl1, expl2);
       then
         Exp.ARRAY(a,at,expl);
-    case ((Exp.ARRAY(type_ = a,scalar = at,array = expl1) :: es))
+    case ((Exp.ARRAY(ty = a,scalar = at,array = expl1) :: es))
       equation 
         Exp.ARRAY(_,_,expl2) = elabMatrixCatOne(es);
         expl = listAppend(expl1, expl2);
@@ -1735,7 +1735,7 @@ algorithm
       Boolean at;
       Exp.Exp e;
       Ident es;
-    case (Exp.ARRAY(type_ = a,scalar = at,array = expl),(n,tp))
+    case (Exp.ARRAY(ty = a,scalar = at,array = expl),(n,tp))
       equation 
         n_1 = n - 1;
         tp_1 = Types.unliftArray(tp);
@@ -4763,7 +4763,7 @@ algorithm
         tp_1 = Types.liftArray(tp, SOME(dim));
       then
         (vect_exp_1,Types.PROP(tp_1,c));
-    case (Exp.ARRAY(type_ = tp,scalar = scalar,array = expl),e_type,(Types.DIM(integerOption = SOME(dim)) :: ad),slots,prop) /* array expression of function calls */ 
+    case (Exp.ARRAY(ty = tp,scalar = scalar,array = expl),e_type,(Types.DIM(integerOption = SOME(dim)) :: ad),slots,prop) /* array expression of function calls */ 
       equation 
         exp_type = Types.elabType(e_type);
         vect_exp = vectorizeCallArray(Exp.ARRAY(tp,scalar,expl), exp_type, dim, slots);
@@ -4800,7 +4800,7 @@ algorithm
       Exp.Type tp,exp_tp;
       Integer cur_dim;
       list<Slot> slots;
-    case (Exp.ARRAY(type_ = tp,scalar = scalar,array = expl),exp_tp,cur_dim,slots) /* cur_dim */ 
+    case (Exp.ARRAY(ty = tp,scalar = scalar,array = expl),exp_tp,cur_dim,slots) /* cur_dim */ 
       equation 
         arr_expl = vectorizeCallArray2(expl, exp_tp, cur_dim, slots);
         scalar_1 = Exp.typeBuiltin(exp_tp);
@@ -4862,7 +4862,7 @@ algorithm
         e_1 = vectorizeCallScalar(e, e_tp, cur_dim, slots);
       then
         e_1;
-    case ((e as Exp.ARRAY(type_ = _)),e_tp,cur_dim,slots)
+    case ((e as Exp.ARRAY(ty = _)),e_tp,cur_dim,slots)
       equation 
         e_1 = vectorizeCallArray(e, e_tp, cur_dim, slots);
       then
@@ -6528,12 +6528,12 @@ algorithm
       Types.ArrayDim dim;
       Option<Absyn.Path> p;
     case (t,{}) then t; 
-    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = _),arrayType = t),_),(Exp.INDEX(a = _) :: subs))
+    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = _),arrayType = t),_),(Exp.INDEX(exp = _) :: subs))
       equation 
         t_1 = subscriptType(t, subs);
       then
         t_1;
-    case ((Types.T_ARRAY(arrayDim = dim,arrayType = t),p),(Exp.SLICE(a = _) :: subs))
+    case ((Types.T_ARRAY(arrayDim = dim,arrayType = t),p),(Exp.SLICE(exp = _) :: subs))
       equation 
         t_1 = subscriptType(t, subs);
       then
@@ -6923,7 +6923,7 @@ algorithm
   matchcontinue (inSubscript1,inSubscript2)
     local Exp.Exp s1,s2;
     case (Exp.WHOLEDIM(),Exp.WHOLEDIM()) then (); 
-    case (Exp.INDEX(a = s1),Exp.INDEX(a = s2))
+    case (Exp.INDEX(exp = s1),Exp.INDEX(exp = s2))
       equation 
         equality(s1 = s2);
       then
@@ -7053,19 +7053,19 @@ algorithm
       tuple<Types.TType, Option<Absyn.Path>> typ1,typ2,rtype,etype,typ;
       Ident t1_str,t2_str;
       Integer n1,n2,m,n,m1,m2,p;
-    case (Exp.ADD_ARR(type_ = _),{typ1,typ2},rtype)
+    case (Exp.ADD_ARR(ty = _),{typ1,typ2},rtype)
       equation 
         true = Types.subtype(typ1, typ2);
       then
         typ1;
 
-    case (Exp.ADD_ARR(type_ = _),{typ1,typ2},rtype)
+    case (Exp.ADD_ARR(ty = _),{typ1,typ2},rtype)
       equation 
         true = Types.subtype(typ1, typ2);
       then
         typ1;
 
-    case (Exp.ADD_ARR(type_ = _),{typ1,typ2},_)
+    case (Exp.ADD_ARR(ty = _),{typ1,typ2},_)
       equation 
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
@@ -7073,19 +7073,19 @@ algorithm
       then
         fail();
 
-    case (Exp.SUB_ARR(type_ = _),{typ1,typ2},rtype)
+    case (Exp.SUB_ARR(ty = _),{typ1,typ2},rtype)
       equation 
         true = Types.subtype(typ1, typ2);
       then
         typ1;
 
-    case (Exp.SUB_ARR(type_ = _),{typ1,typ2},rtype)
+    case (Exp.SUB_ARR(ty = _),{typ1,typ2},rtype)
       equation 
         true = Types.subtype(typ1, typ2);
       then
         typ1;
 
-    case (Exp.SUB_ARR(type_ = _),{typ1,typ2},_)
+    case (Exp.SUB_ARR(ty = _),{typ1,typ2},_)
       equation 
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
@@ -7094,19 +7094,19 @@ algorithm
       then
         fail();
 
-    case (Exp.MUL_SCALAR_PRODUCT(type_ = _),{typ1,typ2},rtype)
+    case (Exp.MUL_SCALAR_PRODUCT(ty = _),{typ1,typ2},rtype)
       equation 
         true = Types.subtype(typ1, typ2);
       then
         rtype;
 
-    case (Exp.MUL_SCALAR_PRODUCT(type_ = _),{typ1,typ2},rtype)
+    case (Exp.MUL_SCALAR_PRODUCT(ty = _),{typ1,typ2},rtype)
       equation 
         true = Types.subtype(typ1, typ2);
       then
         rtype;
 
-    case (Exp.MUL_SCALAR_PRODUCT(type_ = _),{typ1,typ2},rtype)
+    case (Exp.MUL_SCALAR_PRODUCT(ty = _),{typ1,typ2},rtype)
       equation 
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
@@ -7114,7 +7114,7 @@ algorithm
       then
         fail();
 
-    case (Exp.MUL_MATRIX_PRODUCT(type_ = _),{typ1,typ2},_)
+    case (Exp.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_)
       equation 
         1 = nDims(typ1);
         2 = nDims(typ2);
@@ -7127,7 +7127,7 @@ algorithm
       then
         rtype;
 
-    case (Exp.MUL_MATRIX_PRODUCT(type_ = _),{typ1,typ2},_)
+    case (Exp.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_)
       equation 
         2 = nDims(typ1);
         1 = nDims(typ2);
@@ -7140,7 +7140,7 @@ algorithm
       then
         rtype;
 
-    case (Exp.MUL_MATRIX_PRODUCT(type_ = _),{typ1,typ2},_)
+    case (Exp.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_)
       equation 
         2 = nDims(typ1);
         2 = nDims(typ2);
@@ -7156,7 +7156,7 @@ algorithm
       then
         rtype;
 
-    case (Exp.MUL_MATRIX_PRODUCT(type_ = _),{typ1,typ2},rtype)
+    case (Exp.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},rtype)
       equation 
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
@@ -7165,29 +7165,29 @@ algorithm
       then
         fail();
 
-    case (Exp.MUL_SCALAR_ARRAY(a = _),{typ1,typ2},rtype) then typ2;  /* rtype */ 
+    case (Exp.MUL_SCALAR_ARRAY(ty = _),{typ1,typ2},rtype) then typ2;  /* rtype */ 
 
-    case (Exp.MUL_ARRAY_SCALAR(type_ = _),{typ1,typ2},rtype) then typ1;  /* rtype */ 
+    case (Exp.MUL_ARRAY_SCALAR(ty = _),{typ1,typ2},rtype) then typ1;  /* rtype */ 
 
-    case (Exp.DIV_ARRAY_SCALAR(type_ = _),{typ1,typ2},rtype) then typ1;  /* rtype */ 
+    case (Exp.DIV_ARRAY_SCALAR(ty = _),{typ1,typ2},rtype) then typ1;  /* rtype */ 
 
-    case (Exp.ADD(type_ = _),_,typ) then typ; 
+    case (Exp.ADD(ty = _),_,typ) then typ; 
 
-    case (Exp.SUB(type_ = _),_,typ) then typ; 
+    case (Exp.SUB(ty = _),_,typ) then typ; 
 
-    case (Exp.MUL(type_ = _),_,typ) then typ; 
+    case (Exp.MUL(ty = _),_,typ) then typ; 
 
-    case (Exp.DIV(type_ = _),_,typ) then typ; 
+    case (Exp.DIV(ty = _),_,typ) then typ; 
 
-    case (Exp.POW(type_ = _),_,typ) then typ; 
+    case (Exp.POW(ty = _),_,typ) then typ; 
 
-    case (Exp.UMINUS(type_ = _),_,typ) then typ; 
+    case (Exp.UMINUS(ty = _),_,typ) then typ; 
 
-    case (Exp.UMINUS_ARR(type_ = _),(typ1 :: _),_) then typ1; 
+    case (Exp.UMINUS_ARR(ty = _),(typ1 :: _),_) then typ1; 
 
-    case (Exp.UPLUS(type_ = _),_,typ) then typ; 
+    case (Exp.UPLUS(ty = _),_,typ) then typ; 
 
-    case (Exp.UPLUS_ARR(type_ = _),(typ1 :: _),_) then typ1; 
+    case (Exp.UPLUS_ARR(ty = _),(typ1 :: _),_) then typ1; 
 
     case (Exp.AND(),_,typ) then typ; 
 
@@ -7195,19 +7195,19 @@ algorithm
 
     case (Exp.NOT(),_,typ) then typ; 
 
-    case (Exp.LESS(type_ = _),_,typ) then typ; 
+    case (Exp.LESS(ty = _),_,typ) then typ; 
 
-    case (Exp.LESSEQ(type_ = _),_,typ) then typ; 
+    case (Exp.LESSEQ(ty = _),_,typ) then typ; 
 
-    case (Exp.GREATER(type_ = _),_,typ) then typ; 
+    case (Exp.GREATER(ty = _),_,typ) then typ; 
 
-    case (Exp.GREATEREQ(type_ = _),_,typ) then typ; 
+    case (Exp.GREATEREQ(ty = _),_,typ) then typ; 
 
-    case (Exp.EQUAL(type_ = _),_,typ) then typ; 
+    case (Exp.EQUAL(ty = _),_,typ) then typ; 
 
-    case (Exp.NEQUAL(type_ = _),_,typ) then typ; 
+    case (Exp.NEQUAL(ty = _),_,typ) then typ; 
 
-    case (Exp.USERDEFINED(the = _),_,typ) then typ; 
+    case (Exp.USERDEFINED(fqName = _),_,typ) then typ; 
   end matchcontinue;
 end computeReturnType;
 

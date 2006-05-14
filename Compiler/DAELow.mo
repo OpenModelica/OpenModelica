@@ -705,15 +705,15 @@ algorithm
       Boolean scalar;
     case (((e as Exp.CALL(path = Absyn.IDENT(name = "noEvent"))),(_,vars))) then ((e,({},vars))); 
     case (((e as Exp.CALL(path = Absyn.IDENT(name = "sample"))),(zeroCrossings,vars))) then ((e,((e :: zeroCrossings),vars))); 
-    case (((e as Exp.RELATION(exp = e1,operator = op,relation_ = e2)),(zeroCrossings,vars))) /* function with discrete expressions generate no zerocrossing */ 
+    case (((e as Exp.RELATION(exp1 = e1,operator = op,exp2 = e2)),(zeroCrossings,vars))) /* function with discrete expressions generate no zerocrossing */ 
       equation 
         true = isDiscreteExp(e1, vars);
         true = isDiscreteExp(e2, vars);
       then
         ((e,(zeroCrossings,vars)));
-    case (((e as Exp.RELATION(exp = e1,operator = op,relation_ = e2)),(zeroCrossings,vars))) then ((e,((e :: zeroCrossings),vars)));  /* All other functions generate zerocrossing. */ 
+    case (((e as Exp.RELATION(exp1 = e1,operator = op,exp2 = e2)),(zeroCrossings,vars))) then ((e,((e :: zeroCrossings),vars)));  /* All other functions generate zerocrossing. */ 
     case (((e as Exp.ARRAY(array = {})),(zeroCrossings,vars))) then ((e,(zeroCrossings,vars))); 
-    case ((Exp.ARRAY(type_ = tp,scalar = scalar,array = (e :: el)),(zeroCrossings,vars)))
+    case ((Exp.ARRAY(ty = tp,scalar = scalar,array = (e :: el)),(zeroCrossings,vars)))
       equation 
         ((_,(zeroCrossings_1,vars))) = Exp.traverseExp(e, collectZeroCrossings, (zeroCrossings,vars));
         ((e_1,(zeroCrossings_2,vars))) = collectZeroCrossings((Exp.ARRAY(tp,scalar,el),(zeroCrossings,vars)));
@@ -781,38 +781,38 @@ algorithm
         res = isKindDiscrete(kind);
       then
         res;
-    case (Exp.BINARY(exp = e1,operator = op,binary = e2),vars)
+    case (Exp.BINARY(exp1 = e1,operator = op,exp2 = e2),vars)
       equation 
         b1 = isDiscreteExp(e1, vars);
         b2 = isDiscreteExp(e2, vars);
         res = boolOr(b1, b2);
       then
         res;
-    case (Exp.LBINARY(exp = e1,operator = op,logical = e2),vars)
+    case (Exp.LBINARY(exp1 = e1,operator = op,exp2 = e2),vars)
       equation 
         b1 = isDiscreteExp(e1, vars);
         b2 = isDiscreteExp(e2, vars);
         res = boolOr(b1, b2);
       then
         res;
-    case (Exp.UNARY(operator = op,unary = e),vars)
+    case (Exp.UNARY(operator = op,exp = e),vars)
       equation 
         res = isDiscreteExp(e, vars);
       then
         res;
-    case (Exp.LUNARY(operator = op,logical = e),vars)
+    case (Exp.LUNARY(operator = op,exp = e),vars)
       equation 
         res = isDiscreteExp(e, vars);
       then
         res;
-    case (Exp.RELATION(exp = e1,operator = op,relation_ = e2),vars)
+    case (Exp.RELATION(exp1 = e1,operator = op,exp2 = e2),vars)
       equation 
         b1 = isDiscreteExp(e1, vars);
         b2 = isDiscreteExp(e2, vars);
         res = boolOr(b1, b2);
       then
         res;
-    case (Exp.IFEXP(exp1 = e1,exp2 = e2,if_3 = e3),vars)
+    case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3),vars)
       equation 
         b1 = isDiscreteExp(e1, vars);
         b2 = isDiscreteExp(e2, vars);
@@ -827,13 +827,13 @@ algorithm
         res = Util.boolOrList(blst);
       then
         res;
-    case (Exp.ARRAY(type_ = tp,array = expl),vars)
+    case (Exp.ARRAY(ty = tp,array = expl),vars)
       equation 
         blst = Util.listMap1(expl, isDiscreteExp, vars);
         res = Util.boolOrList(blst);
       then
         res;
-    case (Exp.MATRIX(type_ = tp,scalar = expl),vars)
+    case (Exp.MATRIX(ty = tp,scalar = expl),vars)
       local list<list<tuple<Exp.Exp, Boolean>>> expl;
       equation 
         expl_1 = Util.listFlatten(expl);
@@ -842,7 +842,7 @@ algorithm
         res = Util.boolOrList(blst);
       then
         res;
-    case (Exp.RANGE(type_ = tp,exp = e1,expOption = SOME(e2),range = e3),vars)
+    case (Exp.RANGE(ty = tp,exp = e1,expOption = SOME(e2),range = e3),vars)
       equation 
         b1 = isDiscreteExp(e1, vars);
         b2 = isDiscreteExp(e2, vars);
@@ -850,7 +850,7 @@ algorithm
         res = Util.boolOrList({b1,b2,b3});
       then
         res;
-    case (Exp.RANGE(type_ = tp,exp = e1,expOption = NONE,range = e2),vars)
+    case (Exp.RANGE(ty = tp,exp = e1,expOption = NONE,range = e2),vars)
       equation 
         b1 = isDiscreteExp(e1, vars);
         b2 = isDiscreteExp(e2, vars);
@@ -863,7 +863,7 @@ algorithm
         res = Util.boolOrList(blst);
       then
         res;
-    case (Exp.CAST(type_ = tp,cast = e1),vars)
+    case (Exp.CAST(ty = tp,exp = e1),vars)
       equation 
         res = isDiscreteExp(e1, vars);
       then
@@ -873,14 +873,14 @@ algorithm
         res = isDiscreteExp(e, vars);
       then
         res;
-    case (Exp.SIZE(exp = e1,the = SOME(e2)),vars)
+    case (Exp.SIZE(exp = e1,sz = SOME(e2)),vars)
       equation 
         b1 = isDiscreteExp(e1, vars);
         b2 = isDiscreteExp(e2, vars);
         res = boolOr(b1, b2);
       then
         res;
-    case (Exp.SIZE(exp = e1,the = NONE),vars)
+    case (Exp.SIZE(exp = e1,sz = NONE),vars)
       equation 
         res = isDiscreteExp(e1, vars);
       then
@@ -2204,7 +2204,7 @@ algorithm
       list<Exp.Subscript> s;
       Exp.Type tp;
       Exp.Exp e;
-    case ((Exp.CREF(componentRef = Exp.CREF_IDENT(ident = id,subscriptLst = s),component = tp),str))
+    case ((Exp.CREF(componentRef = Exp.CREF_IDENT(ident = id,subscriptLst = s),ty = tp),str))
       equation 
         slen = stringLength(str);
         true = Util.strncmp(str, id, slen);
@@ -2269,7 +2269,7 @@ algorithm
       Exp.ComponentRef cr_1,cr;
       Exp.Type tp;
       Exp.Exp e;
-    case ((Exp.CALL(path = Absyn.IDENT(name = "der"),expLst = {Exp.CREF(componentRef = cr,component = tp)},tuple_ = false,builtin = true),str))
+    case ((Exp.CALL(path = Absyn.IDENT(name = "der"),expLst = {Exp.CREF(componentRef = cr,ty = tp)},tuple_ = false,builtin = true),str))
       equation 
         id = Exp.printComponentRefStr(cr);
         id_1 = stringAppend(str, id);
@@ -2702,12 +2702,12 @@ algorithm
       Exp.ComponentRef cr1,cr2;
       Exp.Exp e;
     case EQUATION(exp = Exp.CREF(componentRef = cr1),scalar = Exp.CREF(componentRef = cr2)) then (cr1,cr2); 
-    case (EQUATION(exp = Exp.BINARY(exp = Exp.CREF(componentRef = cr1),operator = Exp.SUB(type_ = _),binary = Exp.CREF(componentRef = cr2)),scalar = e))
+    case (EQUATION(exp = Exp.BINARY(exp1 = Exp.CREF(componentRef = cr1),operator = Exp.SUB(ty = _),exp2 = Exp.CREF(componentRef = cr2)),scalar = e))
       equation 
         true = Exp.isZero(e);
       then
         (cr1,cr2);
-    case (EQUATION(exp = e,scalar = Exp.BINARY(exp = Exp.CREF(componentRef = cr1),operator = Exp.SUB(type_ = _),binary = Exp.CREF(componentRef = cr2))))
+    case (EQUATION(exp = e,scalar = Exp.BINARY(exp1 = Exp.CREF(componentRef = cr1),operator = Exp.SUB(ty = _),exp2 = Exp.CREF(componentRef = cr2))))
       equation 
         true = Exp.isZero(e);
       then
@@ -3028,35 +3028,35 @@ algorithm
       Exp.ComponentRef cr_1,cr;
       list<Exp.Exp> expl;
       list<list<tuple<Exp.Exp, Boolean>>> m;
-    case (Exp.BINARY(exp = e1,binary = e2),bt)
+    case (Exp.BINARY(exp1 = e1,exp2 = e2),bt)
       equation 
         bt = statesExp(e1, bt);
         bt = statesExp(e2, bt);
       then
         bt;
-    case (Exp.UNARY(unary = e),bt)
+    case (Exp.UNARY(exp = e),bt)
       equation 
         bt = statesExp(e, bt);
       then
         bt;
-    case (Exp.LBINARY(exp = e1,logical = e2),bt)
+    case (Exp.LBINARY(exp1 = e1,exp2 = e2),bt)
       equation 
         bt = statesExp(e1, bt);
         bt = statesExp(e2, bt);
       then
         bt;
-    case (Exp.LUNARY(logical = e),bt)
+    case (Exp.LUNARY(exp = e),bt)
       equation 
         bt = statesExp(e, bt);
       then
         bt;
-    case (Exp.RELATION(exp = e1,relation_ = e2),bt)
+    case (Exp.RELATION(exp1 = e1,exp2 = e2),bt)
       equation 
         bt = statesExp(e1, bt);
         bt = statesExp(e2, bt);
       then
         bt;
-    case (Exp.IFEXP(exp1 = e1,exp2 = e2,if_3 = e3),bt)
+    case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3),bt)
       equation 
         bt = statesExp(e1, bt);
         bt = statesExp(e2, bt);
@@ -3089,7 +3089,7 @@ algorithm
         bt = Util.listFold(expl, statesExp, bt);
       then
         bt;
-    case (Exp.CAST(cast = e),bt)
+    case (Exp.CAST(exp = e),bt)
       equation 
         bt = statesExp(e, bt);
       then
@@ -3714,43 +3714,43 @@ algorithm
       list<Value> p;
       list<list<Exp.Exp>> lst;
       list<list<tuple<Exp.Exp, Boolean>>> mexp;
-    case ((e as Exp.CREF(componentRef = cr,component = tp)),vars)
+    case ((e as Exp.CREF(componentRef = cr,ty = tp)),vars)
       equation 
         (_,_) = getVar(cr, vars);
       then
         {e};
-    case (Exp.BINARY(exp = e1,binary = e2),vars)
+    case (Exp.BINARY(exp1 = e1,exp2 = e2),vars)
       equation 
         s1 = statesAndVarsExp(e1, vars);
         s2 = statesAndVarsExp(e2, vars);
         res = Util.listUnionP(s1, s2, Exp.expEqual);
       then
         res;
-    case (Exp.UNARY(unary = e),vars)
+    case (Exp.UNARY(exp = e),vars)
       equation 
         res = statesAndVarsExp(e, vars);
       then
         res;
-    case (Exp.LBINARY(exp = e1,logical = e2),vars)
+    case (Exp.LBINARY(exp1 = e1,exp2 = e2),vars)
       equation 
         s1 = statesAndVarsExp(e1, vars);
         s2 = statesAndVarsExp(e2, vars);
         res = Util.listUnionP(s1, s2, Exp.expEqual);
       then
         res;
-    case (Exp.LUNARY(logical = e),vars)
+    case (Exp.LUNARY(exp = e),vars)
       equation 
         res = statesAndVarsExp(e, vars);
       then
         res;
-    case (Exp.RELATION(exp = e1,relation_ = e2),vars)
+    case (Exp.RELATION(exp1 = e1,exp2 = e2),vars)
       equation 
         s1 = statesAndVarsExp(e1, vars);
         s2 = statesAndVarsExp(e2, vars);
         res = listAppend(s1, s2);
       then
         res;
-    case (Exp.IFEXP(exp1 = e1,exp2 = e2,if_3 = e3),vars)
+    case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3),vars)
       equation 
         s1 = statesAndVarsExp(e1, vars);
         s2 = statesAndVarsExp(e2, vars);
@@ -3791,7 +3791,7 @@ algorithm
         res = Util.listListUnionP(lst, Exp.expEqual);
       then
         res;
-    case (Exp.CAST(cast = e),vars)
+    case (Exp.CAST(exp = e),vars)
       equation 
         res = statesAndVarsExp(e, vars);
       then
@@ -4448,38 +4448,38 @@ algorithm
         ((VAR(_,DUMMY_STATE(),_,_,_,_,_,_,_,_,_,_,_,flow_) :: _),p) = getVar(cr, vars);
       then
         p;
-    case (Exp.BINARY(exp = e1,binary = e2),vars)
+    case (Exp.BINARY(exp1 = e1,exp2 = e2),vars)
       equation 
         s1 = incidenceRowExp(e1, vars);
         s2 = incidenceRowExp(e2, vars);
         res = listAppend(s1, s2);
       then
         res;
-    case (Exp.UNARY(unary = e),vars)
+    case (Exp.UNARY(exp = e),vars)
       equation 
         res = incidenceRowExp(e, vars);
       then
         res;
-    case (Exp.LBINARY(exp = e1,logical = e2),vars)
+    case (Exp.LBINARY(exp1 = e1,exp2 = e2),vars)
       equation 
         s1 = incidenceRowExp(e1, vars);
         s2 = incidenceRowExp(e2, vars);
         res = listAppend(s1, s2);
       then
         res;
-    case (Exp.LUNARY(logical = e),vars)
+    case (Exp.LUNARY(exp = e),vars)
       equation 
         res = incidenceRowExp(e, vars);
       then
         res;
-    case (Exp.RELATION(exp = e1,relation_ = e2),vars)
+    case (Exp.RELATION(exp1 = e1,exp2 = e2),vars)
       equation 
         s1 = incidenceRowExp(e1, vars);
         s2 = incidenceRowExp(e2, vars);
         res = listAppend(s1, s2);
       then
         res;
-    case (Exp.IFEXP(exp1 = e1,exp2 = e2,if_3 = e3),vars) /* if expressions. */ 
+    case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3),vars) /* if expressions. */ 
       equation 
         s1 = incidenceRowExp(e1, vars);
         s2 = incidenceRowExp(e2, vars);
@@ -4521,7 +4521,7 @@ algorithm
         print("incidence_row_exp TUPLE not impl. yet.");
       then
         {};
-    case (Exp.CAST(cast = e),vars)
+    case (Exp.CAST(exp = e),vars)
       equation 
         res = incidenceRowExp(e, vars);
       then
@@ -5098,7 +5098,7 @@ algorithm
       Value i1,i2;
       Exp.ComponentRef arr_cr;
       Variables vars;
-    case ({Exp.INDEX(a = Exp.ICONST(integer = i1))},arr_cr,vars)
+    case ({Exp.INDEX(exp = Exp.ICONST(integer = i1))},arr_cr,vars)
       equation 
         indx_lst = Util.listIntRange(i1);
         indx_lstlst = Util.listMap(indx_lst, Util.listCreate);
@@ -5109,7 +5109,7 @@ algorithm
         indxs_1 = Util.listFlatten(indxs);
       then
         (vs_1,indxs_1);
-    case ({Exp.INDEX(a = Exp.ICONST(integer = i1)),Exp.INDEX(a = Exp.ICONST(integer = i2))},arr_cr,vars)
+    case ({Exp.INDEX(exp = Exp.ICONST(integer = i1)),Exp.INDEX(exp = Exp.ICONST(integer = i2))},arr_cr,vars)
       equation 
         indx_lst1 = Util.listIntRange(i1);
         indx_lstlst1 = Util.listMap(indx_lst1, Util.listCreate);
@@ -6893,35 +6893,35 @@ algorithm
     case ((e as Exp.SCONST(string = _)),vars) then (e,vars); 
     case ((e as Exp.BCONST(bool = _)),vars) then (e,vars); 
     case ((e as Exp.CREF(componentRef = _)),vars) then (e,vars); 
-    case (Exp.BINARY(exp = e1,operator = op,binary = e2),vars)
+    case (Exp.BINARY(exp1 = e1,operator = op,exp2 = e2),vars)
       equation 
         (e1_1,vars1) = replaceDummyDerOthersExp(e1, vars);
         (e2_1,vars2) = replaceDummyDerOthersExp(e2, vars1);
       then
         (Exp.BINARY(e1_1,op,e2_1),vars2);
-    case (Exp.LBINARY(exp = e1,operator = op,logical = e2),vars)
+    case (Exp.LBINARY(exp1 = e1,operator = op,exp2 = e2),vars)
       equation 
         (e1_1,vars1) = replaceDummyDerOthersExp(e1, vars);
         (e2_1,vars2) = replaceDummyDerOthersExp(e2, vars1);
       then
         (Exp.LBINARY(e1_1,op,e2_1),vars2);
-    case (Exp.UNARY(operator = op,unary = e1),vars)
+    case (Exp.UNARY(operator = op,exp = e1),vars)
       equation 
         (e1_1,vars1) = replaceDummyDerOthersExp(e1, vars);
       then
         (Exp.UNARY(op,e1_1),vars1);
-    case (Exp.LUNARY(operator = op,logical = e1),vars)
+    case (Exp.LUNARY(operator = op,exp = e1),vars)
       equation 
         (e1_1,vars1) = replaceDummyDerOthersExp(e1, vars);
       then
         (Exp.LUNARY(op,e1_1),vars1);
-    case (Exp.RELATION(exp = e1,operator = op,relation_ = e2),vars)
+    case (Exp.RELATION(exp1 = e1,operator = op,exp2 = e2),vars)
       equation 
         (e1_1,vars1) = replaceDummyDerOthersExp(e1, vars);
         (e2_1,vars2) = replaceDummyDerOthersExp(e2, vars1);
       then
         (Exp.RELATION(e1_1,op,e2_1),vars2);
-    case (Exp.IFEXP(exp1 = e1,exp2 = e2,if_3 = e3),vars)
+    case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3),vars)
       equation 
         (e1_1,vars1) = replaceDummyDerOthersExp(e1, vars);
         (e2_1,vars2) = replaceDummyDerOthersExp(e2, vars1);
@@ -11208,41 +11208,41 @@ algorithm
     case (Exp.BCONST(bool = false)) then true; 
     case (Exp.BCONST(bool = true)) then true; 
     case (Exp.CREF(componentRef = c)) then true; 
-    case (Exp.BINARY(exp = e1,operator = (op as Exp.SUB(type_ = ty)),binary = (e2 as Exp.BINARY(exp = e21,operator = Exp.SUB(type_ = ty2),binary = e22))))
+    case (Exp.BINARY(exp1 = e1,operator = (op as Exp.SUB(ty = ty)),exp2 = (e2 as Exp.BINARY(exp1 = e21,operator = Exp.SUB(ty = ty2),exp2 = e22))))
       equation 
         true = isAlgebraic(e1);
         true = isAlgebraic(e2);
       then
         true;
-    case (Exp.BINARY(exp = e1,operator = op,binary = e2))
+    case (Exp.BINARY(exp1 = e1,operator = op,exp2 = e2))
       equation 
         true = isAlgebraic(e1);
         true = isAlgebraic(e2);
       then
         true;
-    case (Exp.UNARY(operator = op,unary = e))
+    case (Exp.UNARY(operator = op,exp = e))
       equation 
         true = isAlgebraic(e);
       then
         true;
-    case (Exp.LBINARY(exp = e1,operator = op,logical = e2))
+    case (Exp.LBINARY(exp1 = e1,operator = op,exp2 = e2))
       equation 
         true = isAlgebraic(e1);
         true = isAlgebraic(e2);
       then
         true;
-    case (Exp.LUNARY(operator = op,logical = e))
+    case (Exp.LUNARY(operator = op,exp = e))
       equation 
         true = isAlgebraic(e);
       then
         true;
-    case (Exp.RELATION(exp = e1,operator = op,relation_ = e2))
+    case (Exp.RELATION(exp1 = e1,operator = op,exp2 = e2))
       equation 
         true = isAlgebraic(e1);
         true = isAlgebraic(e2);
       then
         true;
-    case (Exp.IFEXP(exp1 = c,exp2 = t,if_3 = f))
+    case (Exp.IFEXP(expCond = c,expThen = t,expElse = f))
       local Exp.Exp c;
       equation 
         true = isAlgebraic(c);
@@ -11271,17 +11271,17 @@ algorithm
         true = isAlgebraic(stop);
       then
         true;
-    case (Exp.CAST(type_ = REAL,cast = Exp.ICONST(integer = ival))) then true; 
-    case (Exp.CAST(type_ = REAL,cast = Exp.UNARY(operator = Exp.UMINUS(type_ = _),unary = Exp.ICONST(integer = ival)))) then true; 
-    case (Exp.CAST(type_ = Exp.REAL(),cast = e)) then true; 
-    case (Exp.CAST(type_ = Exp.REAL(),cast = e)) then true; 
-    case (Exp.ASUB(exp = e,array = i))
+    case (Exp.CAST(ty = REAL,exp = Exp.ICONST(integer = ival))) then true; 
+    case (Exp.CAST(ty = REAL,exp = Exp.UNARY(operator = Exp.UMINUS(ty = _),exp = Exp.ICONST(integer = ival)))) then true; 
+    case (Exp.CAST(ty = Exp.REAL(),exp = e)) then true; 
+    case (Exp.CAST(ty = Exp.REAL(),exp = e)) then true; 
+    case (Exp.ASUB(exp = e,sub = i))
       equation 
         true = isAlgebraic(e);
       then
         true;
-    case (Exp.SIZE(exp = cr,the = SOME(dim))) then true; 
-    case (Exp.SIZE(exp = cr,the = NONE)) then true; 
+    case (Exp.SIZE(exp = cr,sz = SOME(dim))) then true; 
+    case (Exp.SIZE(exp = cr,sz = NONE)) then true; 
     case (Exp.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp)) then true; 
     case (_) then true; 
   end matchcontinue;
@@ -11466,8 +11466,8 @@ algorithm
   matchcontinue (inSubscript)
     local Exp.Exp e;
     case Exp.WHOLEDIM() then {}; 
-    case Exp.SLICE(a = e) then {e}; 
-    case Exp.INDEX(a = e) then {e}; 
+    case Exp.SLICE(exp = e) then {e}; 
+    case Exp.INDEX(exp = e) then {e}; 
   end matchcontinue;
 end getAllExpsSubscript;
 

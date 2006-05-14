@@ -4973,7 +4973,7 @@ algorithm
       String e1_str,e2_str,op_str,zc_str,e_str;
       Exp.Exp e1,e2,start,interval,e;
       Exp.Operator op;
-    case (DAELow.ZERO_CROSSING(relation_ = Exp.RELATION(exp = e1,operator = op,relation_ = e2)))
+    case (DAELow.ZERO_CROSSING(relation_ = Exp.RELATION(exp1 = e1,operator = op,exp2 = e2)))
       equation 
         e1_str = printExpCppStr(e1);
         e2_str = printExpCppStr(e2);
@@ -5055,10 +5055,10 @@ protected function printZeroCrossingOpStr
 algorithm 
   outString:=
   matchcontinue (inOperator)
-    case (Exp.LESS(type_ = _)) then "Less"; 
-    case (Exp.GREATER(type_ = _)) then "Greater"; 
-    case (Exp.LESSEQ(type_ = _)) then "LessEq"; 
-    case (Exp.GREATEREQ(type_ = _)) then "GreaterEq"; 
+    case (Exp.LESS(ty = _)) then "Less"; 
+    case (Exp.GREATER(ty = _)) then "Greater"; 
+    case (Exp.LESSEQ(ty = _)) then "LessEq"; 
+    case (Exp.GREATEREQ(ty = _)) then "GreaterEq"; 
   end matchcontinue;
 end printZeroCrossingOpStr;
 
@@ -6070,12 +6070,12 @@ protected function relopSymbol "function: relopSymbol
 algorithm 
   outString:=
   matchcontinue (inOperator)
-    case (Exp.LESS(type_ = _)) then " < "; 
-    case (Exp.LESSEQ(type_ = _)) then " <= "; 
-    case (Exp.GREATER(type_ = _)) then " > "; 
-    case (Exp.GREATEREQ(type_ = _)) then " >= "; 
-    case (Exp.EQUAL(type_ = _)) then " == "; 
-    case (Exp.NEQUAL(type_ = _)) then " != "; 
+    case (Exp.LESS(ty = _)) then " < "; 
+    case (Exp.LESSEQ(ty = _)) then " <= "; 
+    case (Exp.GREATER(ty = _)) then " > "; 
+    case (Exp.GREATEREQ(ty = _)) then " >= "; 
+    case (Exp.EQUAL(ty = _)) then " == "; 
+    case (Exp.NEQUAL(ty = _)) then " != "; 
   end matchcontinue;
 end relopSymbol;
 
@@ -6168,7 +6168,7 @@ algorithm
       then
         res;
 
-    case (Exp.BINARY(exp = e1,operator = (op as Exp.SUB(type_ = ty)),binary = (e2 as Exp.BINARY(exp = e21,operator = Exp.SUB(type_ = ty2),binary = e22))),pri1)
+    case (Exp.BINARY(exp1 = e1,operator = (op as Exp.SUB(ty = ty)),exp2 = (e2 as Exp.BINARY(exp1 = e21,operator = Exp.SUB(ty = ty2),exp2 = e22))),pri1)
       equation 
         sym = Exp.binopSymbol(op);
         pri2_1 = Exp.binopPriority(op);
@@ -6184,7 +6184,7 @@ algorithm
       then
         s_3;
 
-    case (Exp.BINARY(exp = e1,operator = (op as Exp.POW(type_ = _)),binary = Exp.ICONST(integer = 2)),pri1)
+    case (Exp.BINARY(exp1 = e1,operator = (op as Exp.POW(ty = _)),exp2 = Exp.ICONST(integer = 2)),pri1)
       equation 
         pri2 = Exp.binopPriority(op) "x^2 => xx" ;
         (s1,pri3) = Exp.printLeftparStr(pri1, pri2);
@@ -6194,7 +6194,7 @@ algorithm
       then
         res;
 
-    case (Exp.BINARY(exp = e1,operator = (op as Exp.POW(type_ = _)),binary = Exp.RCONST(real = two)),pri1)
+    case (Exp.BINARY(exp1 = e1,operator = (op as Exp.POW(ty = _)),exp2 = Exp.RCONST(real = two)),pri1)
       equation 
         two_1 = intReal(2) "x^2 => xx" ;
         (two ==. two) = true;
@@ -6206,7 +6206,7 @@ algorithm
       then
         res;
 
-    case (Exp.BINARY(exp = e1,operator = (op as Exp.POW(type_ = _)),binary = e2),pri1)
+    case (Exp.BINARY(exp1 = e1,operator = (op as Exp.POW(ty = _)),exp2 = e2),pri1)
       equation 
         pri2 = Exp.binopPriority(op);
         (s1,pri3) = Exp.printLeftparStr(pri1, pri2);
@@ -6222,7 +6222,7 @@ algorithm
       then
         res_1;
 
-    case (Exp.BINARY(exp = e1,operator = (op as Exp.DIV(type_ = _)),binary = e2),pri1)
+    case (Exp.BINARY(exp1 = e1,operator = (op as Exp.DIV(ty = _)),exp2 = e2),pri1)
       equation 
         pri2 = Exp.binopPriority(op);
         (s1,pri3) = Exp.printLeftparStr(pri1, pri2);
@@ -6233,7 +6233,7 @@ algorithm
       then
         res_1;
 
-    case (Exp.BINARY(exp = e1,operator = op,binary = e2),pri1)
+    case (Exp.BINARY(exp1 = e1,operator = op,exp2 = e2),pri1)
       equation 
         sym = Exp.binopSymbol(op);
         pri2 = Exp.binopPriority(op);
@@ -6248,7 +6248,7 @@ algorithm
       then
         s_3;
 
-    case (Exp.UNARY(operator = op,unary = e),pri1)
+    case (Exp.UNARY(operator = op,exp = e),pri1)
       equation 
         sym = Exp.unaryopSymbol(op);
         pri2 = Exp.unaryopPriority(op);
@@ -6261,7 +6261,7 @@ algorithm
       then
         s_2;
 
-    case (Exp.LBINARY(exp = e1,operator = op,logical = e2),pri1)
+    case (Exp.LBINARY(exp1 = e1,operator = op,exp2 = e2),pri1)
       equation 
         sym = lbinopSymbol(op);
         pri2 = Exp.lbinopPriority(op);
@@ -6276,7 +6276,7 @@ algorithm
       then
         s_3;
 
-    case (Exp.LUNARY(operator = op,logical = e),pri1)
+    case (Exp.LUNARY(operator = op,exp = e),pri1)
       equation 
         sym = lunaryopSymbol(op);
         pri2 = Exp.lunaryopPriority(op);
@@ -6289,7 +6289,7 @@ algorithm
       then
         s_2;
 
-    case (Exp.RELATION(exp = e1,operator = op,relation_ = e2),pri1)
+    case (Exp.RELATION(exp1 = e1,operator = op,exp2 = e2),pri1)
       equation 
         sym = relopSymbol(op);
         pri2 = Exp.relopPriority(op);
@@ -6304,7 +6304,7 @@ algorithm
       then
         s_3;
 
-    case (Exp.IFEXP(exp1 = c,exp2 = t,if_3 = f),_)
+    case (Exp.IFEXP(expCond = c,expThen = t,expElse = f),_)
       local Exp.Exp c;
       equation 
         ifstr = printExp2Str(c, 0);
@@ -6400,7 +6400,7 @@ algorithm
       then
         s_5;
 
-    case (Exp.CAST(type_ = REAL,cast = Exp.ICONST(integer = ival)),_)
+    case (Exp.CAST(ty = REAL,exp = Exp.ICONST(integer = ival)),_)
       equation 
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
@@ -6408,7 +6408,7 @@ algorithm
       then
         res;
 
-    case (Exp.CAST(type_ = REAL,cast = Exp.UNARY(operator = Exp.UMINUS(type_ = _),unary = Exp.ICONST(integer = ival))),_)
+    case (Exp.CAST(ty = REAL,exp = Exp.UNARY(operator = Exp.UMINUS(ty = _),exp = Exp.ICONST(integer = ival))),_)
       equation 
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
@@ -6417,7 +6417,7 @@ algorithm
       then
         res2;
 
-    case (Exp.CAST(type_ = Exp.REAL(),cast = e),_)
+    case (Exp.CAST(ty = Exp.REAL(),exp = e),_)
       equation 
         false = RTOpts.modelicaOutput();
         s = printExpCppStr(e);
@@ -6426,14 +6426,14 @@ algorithm
       then
         s_2;
 
-    case (Exp.CAST(type_ = Exp.REAL(),cast = e),_)
+    case (Exp.CAST(ty = Exp.REAL(),exp = e),_)
       equation 
         true = RTOpts.modelicaOutput();
         s = printExpCppStr(e);
       then
         s;
 
-    case (Exp.ASUB(exp = e,array = i),pri1)
+    case (Exp.ASUB(exp = e,sub = i),pri1)
       equation 
         pri2 = 51;
         cref_list = Exp.getCrefFromExp(e);
@@ -6449,7 +6449,7 @@ algorithm
       then
         s_4;
 
-    case (Exp.SIZE(exp = cr,the = SOME(dim)),_)
+    case (Exp.SIZE(exp = cr,sz = SOME(dim)),_)
       equation 
         crstr = printExpCppStr(cr);
         dimstr = printExpCppStr(dim);
@@ -6457,7 +6457,7 @@ algorithm
       then
         str;
 
-    case (Exp.SIZE(exp = cr,the = NONE),_)
+    case (Exp.SIZE(exp = cr,sz = NONE),_)
       equation 
         crstr = printExpCppStr(cr);
         str = Util.stringAppendList({"size(",crstr,")"});

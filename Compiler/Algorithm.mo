@@ -207,7 +207,7 @@ algorithm
         Error.addMessage(Error.ASSIGN_READONLY_ERROR, {lhs_str,rhs_str});
       then
         fail();
-    case (Exp.CREF(componentRef = c,component = crt),lhprop,rhs,rhprop,_)
+    case (Exp.CREF(componentRef = c,ty = crt),lhprop,rhs,rhprop,_)
       equation 
         Types.C_VAR() = Types.propAnyConst(lhprop);
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop);
@@ -215,7 +215,7 @@ algorithm
         t = getPropExpType(lhprop);
       then
         ASSIGN(t,c,rhs_1);
-    case (Exp.CREF(componentRef = c,component = crt),lhprop,rhs,rhprop,_)
+    case (Exp.CREF(componentRef = c,ty = crt),lhprop,rhs,rhprop,_)
       equation 
         Types.C_VAR() = Types.propAnyConst(lhprop);
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop);

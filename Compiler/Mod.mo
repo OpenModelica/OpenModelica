@@ -624,14 +624,14 @@ algorithm
       Types.Mod m;
       list<Types.SubMod> mods,mods_1;
       list<Exp.Subscript> xs;
-    case ({Exp.INDEX(a = Exp.ICONST(integer = x))},m) then {Types.IDXMOD({x},m)}; 
-    case ((Exp.INDEX(a = Exp.ICONST(integer = x)) :: xs),m)
+    case ({Exp.INDEX(exp = Exp.ICONST(integer = x))},m) then {Types.IDXMOD({x},m)}; 
+    case ((Exp.INDEX(exp = Exp.ICONST(integer = x)) :: xs),m)
       equation 
         mods = makeIdxmods(xs, m);
         mods_1 = prefixIdxmods(mods, x);
       then
         mods_1;
-    case ((Exp.SLICE(a = Exp.ARRAY(array = x)) :: xs),m)
+    case ((Exp.SLICE(exp = Exp.ARRAY(array = x)) :: xs),m)
       local list<Exp.Exp> x;
       equation 
         Print.printBuf("= expand_slice\n");

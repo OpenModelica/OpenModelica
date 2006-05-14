@@ -1336,7 +1336,7 @@ algorithm
     case Exp.BOOL() then "boolean"; 
     case Exp.OTHER() then "OTHER"; 
     case Exp.ENUM() then "ENUM_NOT_IMPLEMENTED"; 
-    case Exp.T_ARRAY(type_ = t)
+    case Exp.T_ARRAY(ty = t)
       equation 
         res = expShortTypeStr(t);
       then
@@ -2148,7 +2148,7 @@ algorithm
       Exp.Exp e;
       list<Exp.Subscript> r,subs;
     case (_,{},tnr,context) then (cEmptyFunction,{},tnr); 
-    case (id,(Exp.INDEX(a = e) :: r),tnr,context)
+    case (id,(Exp.INDEX(exp = e) :: r),tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e, tnr, context);
         (cfn2,vars2,tnr2) = generateSizeSubscripts(id, r, tnr1, context);
@@ -2512,7 +2512,7 @@ algorithm
       Exp.Type t;
       Exp.Exp e1,e3,e2;
       Context context;
-    case (Exp.RANGE(type_ = t,exp = e1,expOption = NONE,range = e3),tnr,context)
+    case (Exp.RANGE(ty = t,exp = e1,expOption = NONE,range = e3),tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         var2 = "(1)";
@@ -2520,7 +2520,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn3);
       then
         (cfn,var1,var2,var3,tnr3);
-    case (Exp.RANGE(type_ = t,exp = e1,expOption = SOME(e2),range = e3),tnr,context)
+    case (Exp.RANGE(ty = t,exp = e1,expOption = SOME(e2),range = e3),tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -2968,7 +2968,7 @@ algorithm
       Lib str;
       Integer i;
       Exp.Subscript e;
-    case Exp.INDEX(a = Exp.ICONST(integer = i))
+    case Exp.INDEX(exp = Exp.ICONST(integer = i))
       equation 
         str = intString(i);
       then
@@ -3194,37 +3194,37 @@ algorithm
         var = Util.if_(b, "(1)", "(0)");
       then
         (cEmptyFunction,var,tnr);
-    case (Exp.CREF(componentRef = cref,component = t),tnr,context)
+    case (Exp.CREF(componentRef = cref,ty = t),tnr,context)
       equation 
         (cfn,var,tnr_1) = generateRhsCref(cref, t, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.BINARY(exp = e1,operator = op,binary = e2),tnr,context)
+    case (Exp.BINARY(exp1 = e1,operator = op,exp2 = e2),tnr,context)
       equation 
         (cfn,var,tnr_1) = generateBinary(e1, op, e2, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.UNARY(operator = op,unary = e),tnr,context)
+    case (Exp.UNARY(operator = op,exp = e),tnr,context)
       equation 
         (cfn,var,tnr_1) = generateUnary(op, e, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.LBINARY(exp = e1,operator = op,logical = e2),tnr,context)
+    case (Exp.LBINARY(exp1 = e1,operator = op,exp2 = e2),tnr,context)
       equation 
         (cfn,var,tnr_1) = generateLbinary(e1, op, e2, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.LUNARY(operator = op,logical = e),tnr,context)
+    case (Exp.LUNARY(operator = op,exp = e),tnr,context)
       equation 
         (cfn,var,tnr_1) = generateLunary(op, e, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.RELATION(exp = e1,operator = op,relation_ = e2),tnr,context)
+    case (Exp.RELATION(exp1 = e1,operator = op,exp2 = e2),tnr,context)
       equation 
         (cfn,var,tnr_1) = generateRelation(e1, op, e2, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.IFEXP(exp1 = e,exp2 = then_,if_3 = else_),tnr,context)
+    case (Exp.IFEXP(expCond = e,expThen = then_,expElse = else_),tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e, tnr, context);
         (decl,tvar,tnr1_1) = generateTempDecl("modelica_boolean", tnr1);
@@ -3272,7 +3272,7 @@ algorithm
         cfn = cAddStatements(cfn2, {stmt});
       then
         (cfn,tvar,tnr2);
-    case (Exp.SIZE(exp = (crexp as Exp.CREF(componentRef = cr,component = ty)),the = SOME(dim)),tnr,context)
+    case (Exp.SIZE(exp = (crexp as Exp.CREF(componentRef = cr,ty = ty)),sz = SOME(dim)),tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(crexp, tnr, context);
         (tdecl,tvar,tnr2) = generateTempDecl("size_t", tnr1);
@@ -3285,14 +3285,14 @@ algorithm
         cfn = cAddStatements(cfn4, {stmt});
       then
         (cfn,tvar,tnr2);
-    case (Exp.SIZE(exp = cr,the = NONE),tnr,context)
+    case (Exp.SIZE(exp = cr,sz = NONE),tnr,context)
       local Exp.Exp cr;
       equation 
         Debug.fprint("failtrace", 
           "#-- Codegen.generate_expression: size(X) not implemented");
       then
         fail();
-    case (Exp.ARRAY(type_ = t,scalar = a,array = elist),tnr,context)
+    case (Exp.ARRAY(ty = t,scalar = a,array = elist),tnr,context)
       equation 
         (cfn1,vars1,tnr1) = generateExpressions(elist, tnr, context);
         nvars = listLength(vars1);
@@ -3311,12 +3311,12 @@ algorithm
         cfn = cAddStatements(cfn_1, {stmt});
       then
         (cfn,tvar,tnr2);
-    case (Exp.MATRIX(type_ = t,integer = maxn,scalar = ell),tnr,context)
+    case (Exp.MATRIX(ty = t,integer = maxn,scalar = ell),tnr,context)
       equation 
         (cfn,var,tnr_1) = generateMatrix(t, maxn, ell, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.RANGE(type_ = t,exp = e1,expOption = NONE,range = e2),tnr,context)
+    case (Exp.RANGE(ty = t,exp = e1,expOption = NONE,range = e2),tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -3330,7 +3330,7 @@ algorithm
         cfn = cMergeFns({cfn1_1,cfn2_1});
       then
         (cfn,tvar,tnr3);
-    case (Exp.RANGE(type_ = t,exp = e1,expOption = SOME(e2),range = e3),tnr,context)
+    case (Exp.RANGE(ty = t,exp = e1,expOption = SOME(e2),range = e3),tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -3351,13 +3351,13 @@ algorithm
           "# Codegen.generate_expression: tuple not implemented\n");
       then
         fail();
-    case (Exp.CAST(type_ = Exp.INT(),cast = e),tnr,context)
+    case (Exp.CAST(ty = Exp.INT(),exp = e),tnr,context)
       equation 
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
         var_1 = Util.stringAppendList({"((modelica_int)",var,")"});
       then
         (cfn,var_1,tnr_1);
-    case (Exp.CAST(type_ = Exp.REAL(),cast = e),tnr,context)
+    case (Exp.CAST(ty = Exp.REAL(),exp = e),tnr,context)
       equation 
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
         var_1 = Util.stringAppendList({"((modelica_real)",var,")"});
@@ -3463,50 +3463,50 @@ algorithm
       Exp.Exp e;
       Context context;
       Exp.Type tp;
-    case (Exp.UPLUS(type_ = Exp.REAL()),e,tnr,context)
+    case (Exp.UPLUS(ty = Exp.REAL()),e,tnr,context)
       equation 
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.UPLUS(type_ = Exp.INT()),e,tnr,context)
+    case (Exp.UPLUS(ty = Exp.INT()),e,tnr,context)
       equation 
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.UMINUS(type_ = Exp.REAL()),e,tnr,context)
+    case (Exp.UMINUS(ty = Exp.REAL()),e,tnr,context)
       equation 
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
         var_1 = Util.stringAppendList({"(-",var,")"});
       then
         (cfn,var_1,tnr_1);
-    case (Exp.UMINUS(type_ = Exp.INT()),e,tnr,context)
+    case (Exp.UMINUS(ty = Exp.INT()),e,tnr,context)
       equation 
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
         var_1 = Util.stringAppendList({"(-",var,")"});
       then
         (cfn,var_1,tnr_1);
-    case (Exp.UMINUS(type_ = Exp.OTHER()),e,tnr,context)
+    case (Exp.UMINUS(ty = Exp.OTHER()),e,tnr,context)
       equation 
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
         var_1 = Util.stringAppendList({"(-",var,")"});
       then
         (cfn,var_1,tnr_1);
-    case (Exp.UPLUS_ARR(type_ = Exp.REAL()),e,tnr,context)
+    case (Exp.UPLUS_ARR(ty = Exp.REAL()),e,tnr,context)
       equation 
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.UPLUS_ARR(type_ = Exp.INT()),e,tnr,context)
+    case (Exp.UPLUS_ARR(ty = Exp.INT()),e,tnr,context)
       equation 
         (cfn,var,tnr_1) = generateExpression(e, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (Exp.UMINUS_ARR(type_ = _),_,_,_)
+    case (Exp.UMINUS_ARR(ty = _),_,_,_)
       equation 
         Debug.fprint("failtrace", "# unary minus for arrays not implemented\n");
       then
         fail();
-    case (Exp.UMINUS(type_ = tp),_,_,_)
+    case (Exp.UMINUS(ty = tp),_,_,_)
       equation 
         Debug.fprint("failtrace", "-generate_unary failed\n");
         s = Exp.typeString(tp);
@@ -3548,7 +3548,7 @@ algorithm
       Integer tnr1,tnr2,tnr,tnr3;
       Exp.Exp e1,e2;
       Context context;
-    case (e1,Exp.ADD(type_ = _),e2,tnr,context)
+    case (e1,Exp.ADD(ty = _),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -3556,7 +3556,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.SUB(type_ = _),e2,tnr,context)
+    case (e1,Exp.SUB(ty = _),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -3564,7 +3564,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.MUL(type_ = _),e2,tnr,context)
+    case (e1,Exp.MUL(ty = _),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -3572,7 +3572,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.DIV(type_ = _),e2,tnr,context)
+    case (e1,Exp.DIV(ty = _),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -3580,7 +3580,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.POW(type_ = _),e2,tnr,context) /* POW uses the math lib function with the same name. */ 
+    case (e1,Exp.POW(ty = _),e2,tnr,context) /* POW uses the math lib function with the same name. */ 
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -3588,19 +3588,19 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (_,Exp.UMINUS(type_ = _),_,_,_)
+    case (_,Exp.UMINUS(ty = _),_,_,_)
       equation 
         Debug.fprint("failtrace", 
           "# Unary minus in binary expression (internal error)");
       then
         fail();
-    case (_,Exp.UPLUS(type_ = _),_,_,_)
+    case (_,Exp.UPLUS(ty = _),_,_,_)
       equation 
         Debug.fprint("failtrace", 
           "# Unary plus in binary expression (internal error)");
       then
         fail();
-    case (e1,Exp.ADD_ARR(type_ = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.ADD_ARR(ty = Exp.REAL()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -3611,7 +3611,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.ADD_ARR(type_ = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.ADD_ARR(ty = Exp.INT()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -3623,7 +3623,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.SUB_ARR(type_ = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.SUB_ARR(ty = Exp.REAL()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -3634,7 +3634,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.SUB_ARR(type_ = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.SUB_ARR(ty = Exp.INT()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -3646,7 +3646,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.MUL_SCALAR_ARRAY(a = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.MUL_SCALAR_ARRAY(ty = Exp.REAL()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -3659,7 +3659,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.MUL_SCALAR_ARRAY(a = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.MUL_SCALAR_ARRAY(ty = Exp.INT()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -3672,7 +3672,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.MUL_ARRAY_SCALAR(type_ = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.MUL_ARRAY_SCALAR(ty = Exp.REAL()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -3685,7 +3685,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.MUL_ARRAY_SCALAR(type_ = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.MUL_ARRAY_SCALAR(ty = Exp.INT()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -3698,7 +3698,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.MUL_SCALAR_PRODUCT(type_ = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.MUL_SCALAR_PRODUCT(ty = Exp.REAL()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -3706,7 +3706,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.MUL_SCALAR_PRODUCT(type_ = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.MUL_SCALAR_PRODUCT(ty = Exp.INT()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -3714,7 +3714,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.MUL_MATRIX_PRODUCT(type_ = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.MUL_MATRIX_PRODUCT(ty = Exp.REAL()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -3727,7 +3727,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.MUL_MATRIX_PRODUCT(type_ = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.MUL_MATRIX_PRODUCT(ty = Exp.INT()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -3740,7 +3740,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.DIV_ARRAY_SCALAR(type_ = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.DIV_ARRAY_SCALAR(ty = Exp.REAL()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -3753,7 +3753,7 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (e1,Exp.DIV_ARRAY_SCALAR(type_ = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.DIV_ARRAY_SCALAR(ty = Exp.INT()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -3766,17 +3766,17 @@ algorithm
         cfn = cAddStatements(cfn_2, {stmt});
       then
         (cfn,var,tnr3);
-    case (_,Exp.DIV_ARRAY_SCALAR(type_ = _),_,_,_)
+    case (_,Exp.DIV_ARRAY_SCALAR(ty = _),_,_,_)
       equation 
         Debug.fprint("failtrace", "# div_array_scalar FAILING BECAUSE IT SUX\n");
       then
         fail();
-    case (_,Exp.POW_ARR(type_ = _),_,_,_)
+    case (_,Exp.POW_ARR(ty = _),_,_,_)
       equation 
         Debug.fprint("failtrace", "# pow_array not implemented\n");
       then
         fail();
-    case (_,Exp.DIV_ARRAY_SCALAR(type_ = _),_,_,_)
+    case (_,Exp.DIV_ARRAY_SCALAR(ty = _),_,_,_)
       equation 
         Debug.fprint("failtrace", "# div_array_scalar not implemented\n");
       then
@@ -3924,7 +3924,7 @@ algorithm
       list<Integer> dims;
       Context context;
       list<Exp.Subscript> subs;
-    case (cref,Exp.T_ARRAY(type_ = t,arrayDimensions = dims),tnr,SIMULATION()) /* For context simulation array variables must be boxed 
+    case (cref,Exp.T_ARRAY(ty = t,arrayDimensions = dims),tnr,SIMULATION()) /* For context simulation array variables must be boxed 
 	    into a real_array object since they are represented only
 	    in a double array. */ 
       equation 
@@ -3979,9 +3979,9 @@ algorithm
       Boolean b;
       list<Exp.Subscript> r;
     case {} then true; 
-    case (Exp.SLICE(a = _) :: _) then false; 
+    case (Exp.SLICE(exp = _) :: _) then false; 
     case (Exp.WHOLEDIM() :: _) then false; 
-    case (Exp.INDEX(a = _) :: r)
+    case (Exp.INDEX(exp = _) :: r)
       equation 
         b = subsToScalar(r);
       then
@@ -4234,7 +4234,7 @@ algorithm
       Integer tnr1,tnr,tnr2;
       Exp.Exp e;
       Context context;
-    case (Exp.INDEX(a = e),tnr,context)
+    case (Exp.INDEX(exp = e),tnr,context)
       equation 
         (cfn,var1,tnr1) = generateExpression(e, tnr, context);
         idx = Util.stringAppendList({"make_index_array(1, ",var1,")"});
@@ -4247,7 +4247,7 @@ algorithm
         idxsize = "(1)";
       then
         (cEmptyFunction,idx,idxsize,tnr);
-    case (Exp.SLICE(a = e),tnr,context)
+    case (Exp.SLICE(exp = e),tnr,context)
       equation 
         (cfn,var1,tnr1) = generateExpression(e, tnr, context);
         (decl,tvar,tnr2) = generateTempDecl("modelica_integer", tnr1);
@@ -4285,7 +4285,7 @@ algorithm
       Integer tnr1,tnr;
       Exp.Exp e;
       Context context;
-    case (Exp.INDEX(a = e),tnr,context)
+    case (Exp.INDEX(exp = e),tnr,context)
       equation 
         (cfn,var1,tnr1) = generateExpression(e, tnr, context);
       then
@@ -4458,7 +4458,7 @@ algorithm
       Integer tnr1,tnr2,tnr;
       Exp.Exp e1,e2;
       Context context;
-    case (e1,Exp.LESS(type_ = Exp.BOOL()),e2,tnr,context)
+    case (e1,Exp.LESS(ty = Exp.BOOL()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -4466,12 +4466,12 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.LESS(type_ = Exp.STRING()),e2,tnr,context)
+    case (e1,Exp.LESS(ty = Exp.STRING()),e2,tnr,context)
       equation 
         Print.printErrorBuf("# string comparison not supported\n");
       then
         fail();
-    case (e1,Exp.LESS(type_ = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.LESS(ty = Exp.INT()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -4479,7 +4479,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.LESS(type_ = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.LESS(ty = Exp.REAL()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -4487,7 +4487,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.GREATER(type_ = Exp.BOOL()),e2,tnr,context)
+    case (e1,Exp.GREATER(ty = Exp.BOOL()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -4495,12 +4495,12 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.GREATER(type_ = Exp.STRING()),e2,tnr,context)
+    case (e1,Exp.GREATER(ty = Exp.STRING()),e2,tnr,context)
       equation 
         Print.printErrorBuf("# string comparison not supported\n");
       then
         fail();
-    case (e1,Exp.GREATER(type_ = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.GREATER(ty = Exp.INT()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -4508,7 +4508,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.GREATER(type_ = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.GREATER(ty = Exp.REAL()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -4516,7 +4516,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.LESSEQ(type_ = Exp.BOOL()),e2,tnr,context)
+    case (e1,Exp.LESSEQ(ty = Exp.BOOL()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -4524,12 +4524,12 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.LESSEQ(type_ = Exp.STRING()),e2,tnr,context)
+    case (e1,Exp.LESSEQ(ty = Exp.STRING()),e2,tnr,context)
       equation 
         Print.printErrorBuf("# string comparison not supported\n");
       then
         fail();
-    case (e1,Exp.LESSEQ(type_ = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.LESSEQ(ty = Exp.INT()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -4537,7 +4537,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.LESSEQ(type_ = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.LESSEQ(ty = Exp.REAL()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -4545,7 +4545,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.GREATEREQ(type_ = Exp.BOOL()),e2,tnr,context)
+    case (e1,Exp.GREATEREQ(ty = Exp.BOOL()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -4553,12 +4553,12 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.GREATEREQ(type_ = Exp.STRING()),e2,tnr,context)
+    case (e1,Exp.GREATEREQ(ty = Exp.STRING()),e2,tnr,context)
       equation 
         Print.printErrorBuf("# string comparison not supported\n");
       then
         fail();
-    case (e1,Exp.GREATEREQ(type_ = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.GREATEREQ(ty = Exp.INT()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -4566,7 +4566,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.GREATEREQ(type_ = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.GREATEREQ(ty = Exp.REAL()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -4574,7 +4574,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.EQUAL(type_ = Exp.BOOL()),e2,tnr,context)
+    case (e1,Exp.EQUAL(ty = Exp.BOOL()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -4582,12 +4582,12 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.EQUAL(type_ = Exp.STRING()),e2,tnr,context)
+    case (e1,Exp.EQUAL(ty = Exp.STRING()),e2,tnr,context)
       equation 
         Print.printBuf("# string comparison not supported\n");
       then
         fail();
-    case (e1,Exp.EQUAL(type_ = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.EQUAL(ty = Exp.INT()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -4595,12 +4595,12 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.EQUAL(type_ = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.EQUAL(ty = Exp.REAL()),e2,tnr,context)
       equation 
         Print.printErrorBuf("# Reals can't be compared with ==\n");
       then
         fail();
-    case (e1,Exp.NEQUAL(type_ = Exp.BOOL()),e2,tnr,context)
+    case (e1,Exp.NEQUAL(ty = Exp.BOOL()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -4608,12 +4608,12 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.NEQUAL(type_ = Exp.STRING()),e2,tnr,context)
+    case (e1,Exp.NEQUAL(ty = Exp.STRING()),e2,tnr,context)
       equation 
         Print.printErrorBuf("# string comparison not supported\n");
       then
         fail();
-    case (e1,Exp.NEQUAL(type_ = Exp.INT()),e2,tnr,context)
+    case (e1,Exp.NEQUAL(ty = Exp.INT()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
@@ -4621,7 +4621,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,Exp.NEQUAL(type_ = Exp.REAL()),e2,tnr,context)
+    case (e1,Exp.NEQUAL(ty = Exp.REAL()),e2,tnr,context)
       equation 
         Debug.fprint("failtrace", "# Reals can't be compared with <>\n");
       then

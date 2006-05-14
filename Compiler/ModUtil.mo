@@ -130,46 +130,46 @@ algorithm
       list<list<Boolean>> bl;
       list<list<tuple<Exp.Exp, Boolean>>> ell_1,ell;
       Integer i;
-    case (str,r,rarg,Exp.CREF(componentRef = cr,component = t))
+    case (str,r,rarg,Exp.CREF(componentRef = cr,ty = t))
       equation 
         r(cr, rarg);
         cr_1 = stringPrefixCref(str, cr);
       then
         Exp.CREF(cr_1,t);
-    case (_,r,rarg,Exp.CREF(componentRef = cr,component = t))
+    case (_,r,rarg,Exp.CREF(componentRef = cr,ty = t))
       equation 
         failure(r(cr, rarg));
       then
         Exp.CREF(cr,t);
-    case (str,r,rarg,Exp.BINARY(exp = e1,operator = op,binary = e2))
+    case (str,r,rarg,Exp.BINARY(exp1 = e1,operator = op,exp2 = e2))
       equation 
         e1_1 = stringPrefixComponentRef(str, r, rarg, e1);
         e2_1 = stringPrefixComponentRef(str, r, rarg, e2);
       then
         Exp.BINARY(e1_1,op,e2_1);
-    case (str,r,rarg,Exp.UNARY(operator = op,unary = e1))
+    case (str,r,rarg,Exp.UNARY(operator = op,exp = e1))
       equation 
         e1_1 = stringPrefixComponentRef(str, r, rarg, e1);
       then
         Exp.UNARY(op,e1_1);
-    case (str,r,rarg,Exp.LBINARY(exp = e1,operator = op,logical = e2))
+    case (str,r,rarg,Exp.LBINARY(exp1 = e1,operator = op,exp2 = e2))
       equation 
         e1_1 = stringPrefixComponentRef(str, r, rarg, e1);
         e2_1 = stringPrefixComponentRef(str, r, rarg, e2);
       then
         Exp.LBINARY(e1_1,op,e2_1);
-    case (str,r,rarg,Exp.LUNARY(operator = op,logical = e1))
+    case (str,r,rarg,Exp.LUNARY(operator = op,exp = e1))
       equation 
         e1_1 = stringPrefixComponentRef(str, r, rarg, e1);
       then
         Exp.LUNARY(op,e1_1);
-    case (str,r,rarg,Exp.RELATION(exp = e1,operator = op,relation_ = e2))
+    case (str,r,rarg,Exp.RELATION(exp1 = e1,operator = op,exp2 = e2))
       equation 
         e1_1 = stringPrefixComponentRef(str, r, rarg, e1);
         e2_1 = stringPrefixComponentRef(str, r, rarg, e2);
       then
         Exp.RELATION(e1_1,op,e2_1);
-    case (str,r,rarg,Exp.IFEXP(exp1 = e1,exp2 = e2,if_3 = e3))
+    case (str,r,rarg,Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3))
       equation 
         e1_1 = stringPrefixComponentRef(str, r, rarg, e1);
         e2_1 = stringPrefixComponentRef(str, r, rarg, e2);
@@ -181,12 +181,12 @@ algorithm
         el_1 = stringPrefixComponentRefs(str, r, rarg, el);
       then
         Exp.CALL(p,el_1,b,bi);
-    case (str,r,rarg,Exp.ARRAY(type_ = t,scalar = a,array = el))
+    case (str,r,rarg,Exp.ARRAY(ty = t,scalar = a,array = el))
       equation 
         el_1 = stringPrefixComponentRefs(str, r, rarg, el);
       then
         Exp.ARRAY(t,a,el_1);
-    case (str,r,rarg,Exp.MATRIX(type_ = t,integer = a,scalar = ell))
+    case (str,r,rarg,Exp.MATRIX(ty = t,integer = a,scalar = ell))
       local
         list<list<Exp.Exp>> el,el_1;
         Integer a;
@@ -197,13 +197,13 @@ algorithm
         ell_1 = Util.listListThreadTuple(el_1, bl);
       then
         Exp.MATRIX(t,a,ell_1);
-    case (str,r,rarg,Exp.RANGE(type_ = t,exp = e1,expOption = NONE,range = e2))
+    case (str,r,rarg,Exp.RANGE(ty = t,exp = e1,expOption = NONE,range = e2))
       equation 
         e1_1 = stringPrefixComponentRef(str, r, rarg, e1);
         e2_1 = stringPrefixComponentRef(str, r, rarg, e2);
       then
         Exp.RANGE(t,e1_1,NONE,e2_1);
-    case (str,r,rarg,Exp.RANGE(type_ = t,exp = e1,expOption = SOME(e2),range = e3))
+    case (str,r,rarg,Exp.RANGE(ty = t,exp = e1,expOption = SOME(e2),range = e3))
       equation 
         e1_1 = stringPrefixComponentRef(str, r, rarg, e1);
         e2_1 = stringPrefixComponentRef(str, r, rarg, e2);
@@ -215,12 +215,12 @@ algorithm
         el_1 = stringPrefixComponentRefs(str, r, rarg, el);
       then
         Exp.TUPLE(el_1);
-    case (str,r,rarg,Exp.CAST(type_ = ty,cast = e1))
+    case (str,r,rarg,Exp.CAST(ty = ty,exp = e1))
       equation 
         e1_1 = stringPrefixComponentRef(str, r, rarg, e1);
       then
         Exp.CAST(ty,e1_1);
-    case (str,r,rarg,Exp.ASUB(exp = e1,array = i))
+    case (str,r,rarg,Exp.ASUB(exp = e1,sub = i))
       equation 
         e1_1 = stringPrefixComponentRef(str, r, rarg, e1);
       then

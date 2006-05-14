@@ -803,7 +803,7 @@ algorithm
       Exp.ComponentRef cr,cr2;
       Exp.Exp exp;
       Exp.Type tp;
-    case (cr,(exp as Exp.CREF(componentRef = cr2,component = tp)),origname) /* varname expression orig. name */ 
+    case (cr,(exp as Exp.CREF(componentRef = cr2,ty = tp)),origname) /* varname expression orig. name */ 
       equation 
         (task,str) = buildExpression(exp) "special rule for equation a:=b" ;
         tid = TaskGraphExt.newTask("copy");
@@ -883,7 +883,7 @@ algorithm
         tid = TaskGraphExt.newTask(crs);
       then
         (tid,crs);
-    case (Exp.BINARY(exp = e1,operator = Exp.POW(type_ = _),binary = Exp.RCONST(real = rval)))
+    case (Exp.BINARY(exp1 = e1,operator = Exp.POW(ty = _),exp2 = Exp.RCONST(real = rval)))
       equation 
         (t1,s1) = buildExpression(e1) "special case for pow" ;
         ival = realInt(rval);
@@ -893,7 +893,7 @@ algorithm
         TaskGraphExt.addEdge(t1, t, s1, 0);
       then
         (t,"");
-    case (Exp.BINARY(exp = e1,operator = op,binary = e2))
+    case (Exp.BINARY(exp1 = e1,operator = op,exp2 = e2))
       equation 
         (t1,s1) = buildExpression(e1);
         (t2,s2) = buildExpression(e2);
@@ -904,7 +904,7 @@ algorithm
         TaskGraphExt.addEdge(t2, t, s2, 1);
       then
         (t,"");
-    case (Exp.LBINARY(exp = e1,operator = op,logical = e2))
+    case (Exp.LBINARY(exp1 = e1,operator = op,exp2 = e2))
       equation 
         (t1,s1) = buildExpression(e1);
         (t2,s2) = buildExpression(e2);
@@ -915,7 +915,7 @@ algorithm
         TaskGraphExt.addEdge(t2, t, s2, 1);
       then
         (t,"");
-    case (Exp.UNARY(operator = op,unary = e1))
+    case (Exp.UNARY(operator = op,exp = e1))
       equation 
         (t1,s1) = buildExpression(e1);
         ops = Exp.unaryopSymbol(op);
@@ -924,7 +924,7 @@ algorithm
         TaskGraphExt.addEdge(t1, t, s1, 0);
       then
         (t,"");
-    case (Exp.LUNARY(operator = op,logical = e1))
+    case (Exp.LUNARY(operator = op,exp = e1))
       equation 
         (t1,s1) = buildExpression(e1);
         ops = Exp.lunaryopSymbol(op);
@@ -933,7 +933,7 @@ algorithm
         TaskGraphExt.addEdge(t1, t, s1, 0);
       then
         (t,"");
-    case (Exp.RELATION(exp = e1,operator = relop,relation_ = e2))
+    case (Exp.RELATION(exp1 = e1,operator = relop,exp2 = e2))
       equation 
         (t1,s1) = buildExpression(e1);
         (t2,s2) = buildExpression(e2);
@@ -944,7 +944,7 @@ algorithm
         TaskGraphExt.addEdge(t2, t, s2, 1);
       then
         (t,"");
-    case (Exp.IFEXP(exp1 = e1,exp2 = e2,if_3 = e3))
+    case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3))
       equation 
         (t1,s1) = buildExpression(e1);
         (t2,s2) = buildExpression(e2);
@@ -966,17 +966,17 @@ algorithm
         addPredecessors(t, tasks, strs, 0);
       then
         (t,"");
-    case (Exp.ARRAY(type_ = _))
+    case (Exp.ARRAY(ty = _))
       equation 
         print("build_expression(ARRAY) not impl. yet\n");
       then
         fail();
-    case (Exp.ARRAY(type_ = _))
+    case (Exp.ARRAY(ty = _))
       equation 
         print("build_expression(MATRIX) not impl. yet\n");
       then
         fail();
-    case (Exp.RANGE(type_ = _))
+    case (Exp.RANGE(ty = _))
       equation 
         print("build_expression(RANGE) not impl. yet\n");
       then
@@ -986,7 +986,7 @@ algorithm
         print("build_expression(TUPLE) not impl. yet\n");
       then
         fail();
-    case (Exp.CAST(type_ = t,cast = e))
+    case (Exp.CAST(ty = t,exp = e))
       equation 
         (t,s) = buildExpression(e);
       then

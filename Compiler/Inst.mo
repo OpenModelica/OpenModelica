@@ -1085,7 +1085,7 @@ algorithm
       Integer i;
       InstDims ss;
     case ({}) then {}; 
-    case ((Exp.INDEX(a = Exp.ICONST(integer = i)) :: ss))
+    case ((Exp.INDEX(exp = Exp.ICONST(integer = i)) :: ss))
       equation 
         res = instdimsIntOptList(ss);
       then
@@ -3885,7 +3885,7 @@ algorithm
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {";"});
       then
         fail();
-    case (DIMEXP(subscript = Exp.SLICE(a = e)),(impl as false))
+    case (DIMEXP(subscript = Exp.SLICE(exp = e)),(impl as false))
       equation 
         s = Exp.printExpStr(e);
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {s});
@@ -3896,7 +3896,7 @@ algorithm
       then
         e;
     case (DIMINT(integer = i),_) then Exp.INDEX(Exp.ICONST(i)); 
-    case (DIMEXP(subscript = (e as Exp.INDEX(a = _))),_)
+    case (DIMEXP(subscript = (e as Exp.INDEX(exp = _))),_)
       local Exp.Subscript e;
       then
         e;
@@ -5453,12 +5453,12 @@ algorithm
       String crefstr,scope;
       Exp.Exp dim,exp;
       Types.Properties prop;
-    case (env,Exp.CREF(componentRef = cref,component = crty),Types.PROP(type_ = ty,constFlag = cnst))
+    case (env,Exp.CREF(componentRef = cref,ty = crty),Types.PROP(type_ = ty,constFlag = cnst))
       equation 
         (attr,ty,bnd) = Lookup.lookupVarLocal(env, cref);
       then
         DAE.EXTARG(cref,attr,ty);
-    case (env,Exp.CREF(componentRef = cref,component = crty),Types.PROP(type_ = ty,constFlag = cnst))
+    case (env,Exp.CREF(componentRef = cref,ty = crty),Types.PROP(type_ = ty,constFlag = cnst))
       equation 
         failure((attr,ty,bnd) = Lookup.lookupVarLocal(env, cref));
         crefstr = Exp.printComponentRefStr(cref);
@@ -5466,7 +5466,7 @@ algorithm
         Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {crefstr,scope});
       then
         fail();
-    case (env,Exp.SIZE(exp = Exp.CREF(componentRef = cref,component = crty),the = SOME(dim)),Types.PROP(type_ = ty,constFlag = cnst))
+    case (env,Exp.SIZE(exp = Exp.CREF(componentRef = cref,ty = crty),sz = SOME(dim)),Types.PROP(type_ = ty,constFlag = cnst))
       equation 
         (attr,varty,bnd) = Lookup.lookupVarLocal(env, cref);
       then
@@ -6354,12 +6354,12 @@ algorithm
         dae = makeDaeEquation(e1, e2, initial_);
       then
         {dae};
-    case (Exp.CREF(componentRef = cr,component = t),e2,(Types.T_ENUM(),_),initial_)
+    case (Exp.CREF(componentRef = cr,ty = t),e2,(Types.T_ENUM(),_),initial_)
       equation 
         dae = makeDaeDefine(cr, e2, initial_);
       then
         {dae};
-    case (Exp.CREF(componentRef = cr,component = t),e2,(Types.T_ENUMERATION(names = _),_),initial_)
+    case (Exp.CREF(componentRef = cr,ty = t),e2,(Types.T_ENUMERATION(names = _),_),initial_)
       equation 
         dae = makeDaeDefine(cr, e2, initial_);
       then
@@ -6396,7 +6396,7 @@ algorithm
       then
         dae;
     case (e1,e2,(Types.T_COMPLEX(complexVarLst = {}),_),initial_) then {}; 
-    case (Exp.CREF(componentRef = c1,component = t1),Exp.CREF(componentRef = c2,component = t2),(Types.T_COMPLEX(complexClassType = cs,complexVarLst = (Types.VAR(name = n,type_ = t) :: vs),complexTypeOption = bc),p),initial_)
+    case (Exp.CREF(componentRef = c1,ty = t1),Exp.CREF(componentRef = c2,ty = t2),(Types.T_COMPLEX(complexClassType = cs,complexVarLst = (Types.VAR(name = n,type_ = t) :: vs),complexTypeOption = bc),p),initial_)
       local
         list<DAE.Element> dae;
         tuple<Types.TType, Option<Absyn.Path>> t;

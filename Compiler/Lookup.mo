@@ -1888,27 +1888,27 @@ algorithm
         t_1 = checkSubscripts(t, ys);
       then
         ((Types.T_ARRAY(dim,t_1),p));
-    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(sz)),arrayType = t),p),(Exp.SLICE(a = Exp.ARRAY(array = se)) :: ys))
+    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(sz)),arrayType = t),p),(Exp.SLICE(exp = Exp.ARRAY(array = se)) :: ys))
       local Integer dim;
       equation 
         t_1 = checkSubscripts(t, ys);
         dim = listLength(se) "FIXME: Check range" ;
       then
         ((Types.T_ARRAY(Types.DIM(SOME(dim)),t_1),p));
-    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(sz)),arrayType = t),_),(Exp.INDEX(a = Exp.ICONST(integer = ind)) :: ys))
+    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(sz)),arrayType = t),_),(Exp.INDEX(exp = Exp.ICONST(integer = ind)) :: ys))
       equation 
         (ind > 0) = true;
         (ind <= sz) = true;
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(sz)),arrayType = t),_),(Exp.INDEX(a = _) :: ys)) /* HJ: Subscrits needn\'t be constant. No range-checking can
+    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(sz)),arrayType = t),_),(Exp.INDEX(exp = _) :: ys)) /* HJ: Subscrits needn\'t be constant. No range-checking can
 	       be done */ 
       equation 
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = NONE),arrayType = t),_),(Exp.INDEX(a = _) :: ys))
+    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = NONE),arrayType = t),_),(Exp.INDEX(exp = _) :: ys))
       equation 
         t_1 = checkSubscripts(t, ys);
       then
@@ -1923,12 +1923,12 @@ algorithm
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(sz)),arrayType = t),_),(Exp.SLICE(a = _) :: ys))
+    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(sz)),arrayType = t),_),(Exp.SLICE(exp = _) :: ys))
       equation 
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = NONE),arrayType = t),_),(Exp.SLICE(a = _) :: ys))
+    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = NONE),arrayType = t),_),(Exp.SLICE(exp = _) :: ys))
       equation 
         t_1 = checkSubscripts(t, ys);
       then

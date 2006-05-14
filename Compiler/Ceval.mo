@@ -178,12 +178,12 @@ algorithm
       list<Exp.Exp> args,expl;
       list<Values.Value> vallst;
       Absyn.Path funcpath;
-    case (env,Exp.SIZE(exp = exp,the = SOME(dim)),impl,st,_,msg)
+    case (env,Exp.SIZE(exp = exp,sz = SOME(dim)),impl,st,_,msg)
       equation 
         (v,st) = cevalBuiltinSize(env, exp, dim, impl, st, msg) "Handle size separately" ;
       then
         (v,st);
-    case (env,Exp.SIZE(exp = exp,the = NONE),impl,st,_,msg)
+    case (env,Exp.SIZE(exp = exp,sz = NONE),impl,st,_,msg)
       equation 
         (v,st) = cevalBuiltinSizeMatrix(env, exp, impl, st, msg);
       then
@@ -406,7 +406,7 @@ algorithm
       then
         (v,st_1);
 
-    case (env,Exp.BINARY(exp = lh,operator = Exp.POW(type_ = Exp.INT()),binary = rh),impl,st,dim,msg)
+    case (env,Exp.BINARY(exp1 = lh,operator = Exp.POW(ty = Exp.INT()),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
       equation 
         (Values.INTEGER(lhv),st_1) = ceval(env, lh, impl, st, dim, msg);
@@ -418,7 +418,7 @@ algorithm
       then
         (Values.INTEGER(res),st_2);
 
-    case (env,Exp.BINARY(exp = lh,operator = Exp.POW(type_ = Exp.REAL()),binary = rh),impl,st,dim,msg)
+    case (env,Exp.BINARY(exp1 = lh,operator = Exp.POW(ty = Exp.REAL()),exp2 = rh),impl,st,dim,msg)
       local
         Real lhv;
         Option<Integer> dim;
@@ -430,7 +430,7 @@ algorithm
       then
         (Values.REAL(resr),st_2);
 
-    case (env,Exp.BINARY(exp = lh,operator = Exp.POW(type_ = Exp.REAL()),binary = rh),impl,st,dim,msg)
+    case (env,Exp.BINARY(exp1 = lh,operator = Exp.POW(ty = Exp.REAL()),exp2 = rh),impl,st,dim,msg)
       local
         Real rhv;
         Option<Integer> dim;
@@ -442,7 +442,7 @@ algorithm
       then
         (Values.REAL(resr),st_2);
 
-    case (env,Exp.BINARY(exp = lh,operator = Exp.POW(type_ = Exp.REAL()),binary = rh),impl,st,dim,msg)
+    case (env,Exp.BINARY(exp1 = lh,operator = Exp.POW(ty = Exp.REAL()),exp2 = rh),impl,st,dim,msg)
       local
         Real lhv,rhv;
         Option<Integer> dim;
@@ -491,7 +491,7 @@ algorithm
       then
         (newval,st);
 
-    case (env,Exp.BINARY(exp = lh,operator = Exp.ADD(type_ = Exp.STRING()),binary = rh),impl,st,_,msg) /* Strings */ 
+    case (env,Exp.BINARY(exp1 = lh,operator = Exp.ADD(ty = Exp.STRING()),exp2 = rh),impl,st,_,msg) /* Strings */ 
       local String lhv,rhv;
       equation 
         (Values.STRING(lhv),_) = ceval(env, lh, impl, st, NONE, msg);
@@ -500,7 +500,7 @@ algorithm
       then
         (Values.STRING(str),st);
 
-    case (env,Exp.BINARY(exp = lh,operator = Exp.ADD(type_ = Exp.REAL()),binary = rh),impl,st,dim,msg) /* Numerical */ 
+    case (env,Exp.BINARY(exp1 = lh,operator = Exp.ADD(ty = Exp.REAL()),exp2 = rh),impl,st,dim,msg) /* Numerical */ 
       local
         Real lhv,rhv;
         Option<Integer> dim;
@@ -511,7 +511,7 @@ algorithm
       then
         (Values.REAL(sum),st_2);
 
-    case (env,Exp.BINARY(exp = lh,operator = Exp.ADD_ARR(type_ = _),binary = rh),impl,st,dim,msg)
+    case (env,Exp.BINARY(exp1 = lh,operator = Exp.ADD_ARR(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
       equation 
         (Values.ARRAY(vlst1),st_1) = ceval(env, lh, impl, st, dim, msg);
@@ -520,7 +520,7 @@ algorithm
       then
         (Values.ARRAY(reslst),st_2);
 
-    case (env,Exp.BINARY(exp = lh,operator = Exp.SUB_ARR(type_ = _),binary = rh),impl,st,dim,msg)
+    case (env,Exp.BINARY(exp1 = lh,operator = Exp.SUB_ARR(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
       equation 
         (Values.ARRAY(vlst1),st_1) = ceval(env, lh, impl, st, dim, msg);
@@ -529,7 +529,7 @@ algorithm
       then
         (Values.ARRAY(reslst),st_2);
 
-    case (env,Exp.BINARY(exp = lh,operator = Exp.MUL_SCALAR_ARRAY(a = _),binary = rh),impl,st,dim,msg)
+    case (env,Exp.BINARY(exp1 = lh,operator = Exp.MUL_SCALAR_ARRAY(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
       equation 
         (sval,st_1) = ceval(env, lh, impl, st, dim, msg);
@@ -538,7 +538,7 @@ algorithm
       then
         (Values.ARRAY(reslst),st_2);
 
-    case (env,Exp.BINARY(exp = lh,operator = Exp.MUL_ARRAY_SCALAR(type_ = _),binary = rh),impl,st,dim,msg)
+    case (env,Exp.BINARY(exp1 = lh,operator = Exp.MUL_ARRAY_SCALAR(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
       equation 
         (sval,st_1) = ceval(env, rh, impl, st, dim, msg);
@@ -547,7 +547,7 @@ algorithm
       then
         (Values.ARRAY(reslst),st_2);
 
-    case (env,Exp.BINARY(exp = lh,operator = Exp.DIV_ARRAY_SCALAR(type_ = _),binary = rh),impl,st,dim,msg)
+    case (env,Exp.BINARY(exp1 = lh,operator = Exp.DIV_ARRAY_SCALAR(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
       equation 
         (sval,st_1) = ceval(env, rh, impl, st, dim, msg);
@@ -556,7 +556,7 @@ algorithm
       then
         (Values.ARRAY(reslst),st_2);
 
-    case (env,Exp.BINARY(exp = lh,operator = Exp.MUL_SCALAR_PRODUCT(type_ = _),binary = rh),impl,st,dim,msg)
+    case (env,Exp.BINARY(exp1 = lh,operator = Exp.MUL_SCALAR_PRODUCT(ty = _),exp2 = rh),impl,st,dim,msg)
       local
         Values.Value res;
         Option<Integer> dim;
@@ -567,7 +567,7 @@ algorithm
       then
         (res,st_2);
 
-    case (env,Exp.BINARY(exp = lh,operator = Exp.MUL_MATRIX_PRODUCT(type_ = _),binary = rh),impl,st,dim,msg)
+    case (env,Exp.BINARY(exp1 = lh,operator = Exp.MUL_MATRIX_PRODUCT(ty = _),exp2 = rh),impl,st,dim,msg)
       local
         Values.Value res;
         Option<Integer> dim;
@@ -580,7 +580,7 @@ algorithm
       then
         (res,st_2);
 
-    case (env,Exp.BINARY(exp = lh,operator = Exp.MUL_MATRIX_PRODUCT(type_ = _),binary = rh),impl,st,dim,msg)
+    case (env,Exp.BINARY(exp1 = lh,operator = Exp.MUL_MATRIX_PRODUCT(ty = _),exp2 = rh),impl,st,dim,msg)
       local
         Values.Value res;
         Option<Integer> dim;
@@ -593,7 +593,7 @@ algorithm
       then
         (res,st_2);
 
-    case (env,Exp.BINARY(exp = lh,operator = Exp.MUL_MATRIX_PRODUCT(type_ = _),binary = rh),impl,st,dim,msg)
+    case (env,Exp.BINARY(exp1 = lh,operator = Exp.MUL_MATRIX_PRODUCT(ty = _),exp2 = rh),impl,st,dim,msg)
       local
         list<Values.Value> res;
         Option<Integer> dim;
@@ -606,7 +606,7 @@ algorithm
       then
         (Values.ARRAY(res),st_2);
 
-    case (env,Exp.BINARY(exp = lh,operator = Exp.ADD(type_ = Exp.INT()),binary = rh),impl,st,dim,msg)
+    case (env,Exp.BINARY(exp1 = lh,operator = Exp.ADD(ty = Exp.INT()),exp2 = rh),impl,st,dim,msg)
       local
         Integer sum;
         Option<Integer> dim;
@@ -617,7 +617,7 @@ algorithm
       then
         (Values.INTEGER(sum),st_2);
 
-    case (env,Exp.BINARY(exp = lh,operator = Exp.SUB(type_ = Exp.REAL()),binary = rh),impl,st,dim,msg) /*  */ 
+    case (env,Exp.BINARY(exp1 = lh,operator = Exp.SUB(ty = Exp.REAL()),exp2 = rh),impl,st,dim,msg) /*  */ 
       local
         Real lhv,rhv;
         Option<Integer> dim;
@@ -628,7 +628,7 @@ algorithm
       then
         (Values.REAL(sum),st_2);
 
-    case (env,Exp.BINARY(exp = lh,operator = Exp.SUB(type_ = Exp.INT()),binary = rh),impl,st,dim,msg)
+    case (env,Exp.BINARY(exp1 = lh,operator = Exp.SUB(ty = Exp.INT()),exp2 = rh),impl,st,dim,msg)
       local
         Integer sum;
         Option<Integer> dim;
@@ -639,7 +639,7 @@ algorithm
       then
         (Values.INTEGER(sum),st_2);
 
-    case (env,Exp.BINARY(exp = lh,operator = Exp.MUL(type_ = Exp.REAL()),binary = rh),impl,st,dim,msg) /*  */ 
+    case (env,Exp.BINARY(exp1 = lh,operator = Exp.MUL(ty = Exp.REAL()),exp2 = rh),impl,st,dim,msg) /*  */ 
       local
         Real lhv,rhv;
         Option<Integer> dim;
@@ -650,7 +650,7 @@ algorithm
       then
         (Values.REAL(sum),st_2);
 
-    case (env,Exp.BINARY(exp = lh,operator = Exp.DIV(type_ = Exp.REAL()),binary = rh),impl,st,dim,msg)
+    case (env,Exp.BINARY(exp1 = lh,operator = Exp.DIV(ty = Exp.REAL()),exp2 = rh),impl,st,dim,msg)
       local
         Real lhv,rhv;
         Option<Integer> dim;
@@ -661,7 +661,7 @@ algorithm
       then
         (Values.REAL(div),st_2);
 
-    case (env,Exp.BINARY(exp = lh,operator = Exp.DIV(type_ = Exp.REAL()),binary = rh),impl,st,dim,msg)
+    case (env,Exp.BINARY(exp1 = lh,operator = Exp.DIV(ty = Exp.REAL()),exp2 = rh),impl,st,dim,msg)
       local
         Real lhv,rhv;
         Option<Integer> dim;
@@ -675,7 +675,7 @@ algorithm
       then
         fail();
 
-    case (env,Exp.BINARY(exp = lh,operator = Exp.MUL(type_ = Exp.INT()),binary = rh),impl,st,dim,msg)
+    case (env,Exp.BINARY(exp1 = lh,operator = Exp.MUL(ty = Exp.INT()),exp2 = rh),impl,st,dim,msg)
       local
         Integer sum;
         Option<Integer> dim;
@@ -686,7 +686,7 @@ algorithm
       then
         (Values.INTEGER(sum),st_2);
 
-    case (env,Exp.UNARY(operator = Exp.UMINUS_ARR(type_ = _),unary = exp),impl,st,dim,msg) /*  unary minus of array */ 
+    case (env,Exp.UNARY(operator = Exp.UMINUS_ARR(ty = _),exp = exp),impl,st,dim,msg) /*  unary minus of array */ 
       local
         Exp.Exp exp;
         Option<Integer> dim;
@@ -696,7 +696,7 @@ algorithm
       then
         (Values.ARRAY(arr_1),st_1);
 
-    case (env,Exp.UNARY(operator = Exp.UMINUS(type_ = _),unary = exp),impl,st,dim,msg)
+    case (env,Exp.UNARY(operator = Exp.UMINUS(ty = _),exp = exp),impl,st,dim,msg)
       local
         Exp.Exp exp;
         Option<Integer> dim;
@@ -706,7 +706,7 @@ algorithm
       then
         (v_1,st_1);
 
-    case (env,Exp.UNARY(operator = Exp.UPLUS(type_ = _),unary = exp),impl,st,dim,msg)
+    case (env,Exp.UNARY(operator = Exp.UPLUS(ty = _),exp = exp),impl,st,dim,msg)
       local
         Exp.Exp exp;
         Option<Integer> dim;
@@ -715,7 +715,7 @@ algorithm
       then
         (v,st_1);
 
-    case (env,Exp.LBINARY(exp = lh,operator = Exp.AND(),logical = rh),impl,st,dim,msg) /* Logical */ 
+    case (env,Exp.LBINARY(exp1 = lh,operator = Exp.AND(),exp2 = rh),impl,st,dim,msg) /* Logical */ 
       local
         Boolean lhv,rhv,x;
         Option<Integer> dim;
@@ -726,7 +726,7 @@ algorithm
       then
         (Values.BOOL(x),st_2);
 
-    case (env,Exp.LBINARY(exp = lh,operator = Exp.OR(),logical = rh),impl,st,dim,msg)
+    case (env,Exp.LBINARY(exp1 = lh,operator = Exp.OR(),exp2 = rh),impl,st,dim,msg)
       local
         Boolean lhv,rhv,x;
         Option<Integer> dim;
@@ -737,7 +737,7 @@ algorithm
       then
         (Values.BOOL(x),st_2);
 
-    case (env,Exp.LUNARY(operator = Exp.NOT(),logical = e),impl,st,dim,msg)
+    case (env,Exp.LUNARY(operator = Exp.NOT(),exp = e),impl,st,dim,msg)
       local Option<Integer> dim;
       equation 
         (Values.BOOL(b),st_1) = ceval(env, e, impl, st, dim, msg);
@@ -745,7 +745,7 @@ algorithm
       then
         (Values.BOOL(b_1),st_1);
 
-    case (env,Exp.RELATION(exp = lhs,operator = relop,relation_ = rhs),impl,st,dim,msg) /* Relations */ 
+    case (env,Exp.RELATION(exp1 = lhs,operator = relop,exp2 = rhs),impl,st,dim,msg) /* Relations */ 
       local Option<Integer> dim;
       equation 
         (lhs_1,st_1) = ceval(env, lhs, impl, st, dim, msg);
@@ -754,7 +754,7 @@ algorithm
       then
         (v,st_2);
 
-    case (env,Exp.RANGE(type_ = Exp.INT(),exp = start,expOption = NONE,range = stop),impl,st,dim,msg) /*  */ 
+    case (env,Exp.RANGE(ty = Exp.INT(),exp = start,expOption = NONE,range = stop),impl,st,dim,msg) /*  */ 
       local Option<Integer> dim;
       equation 
         (Values.INTEGER(start_1),st_1) = ceval(env, start, impl, st, dim, msg);
@@ -763,7 +763,7 @@ algorithm
       then
         (Values.ARRAY(arr),st_1);
 
-    case (env,Exp.RANGE(type_ = Exp.INT(),exp = start,expOption = SOME(step),range = stop),impl,st,dim,msg)
+    case (env,Exp.RANGE(ty = Exp.INT(),exp = start,expOption = SOME(step),range = stop),impl,st,dim,msg)
       local Option<Integer> dim;
       equation 
         (Values.INTEGER(start_1),st_1) = ceval(env, start, impl, st, dim, msg);
@@ -773,7 +773,7 @@ algorithm
       then
         (Values.ARRAY(arr),st_3);
 
-    case (env,Exp.RANGE(type_ = Exp.REAL(),exp = start,expOption = NONE,range = stop),impl,st,dim,msg)
+    case (env,Exp.RANGE(ty = Exp.REAL(),exp = start,expOption = NONE,range = stop),impl,st,dim,msg)
       local
         Real start_1,stop_1,step;
         Option<Integer> dim;
@@ -786,7 +786,7 @@ algorithm
       then
         (Values.ARRAY(arr),st_2);
 
-    case (env,Exp.RANGE(type_ = Exp.REAL(),exp = start,expOption = SOME(step),range = stop),impl,st,dim,msg)
+    case (env,Exp.RANGE(ty = Exp.REAL(),exp = start,expOption = SOME(step),range = stop),impl,st,dim,msg)
       local
         Real start_1,step_1,stop_1;
         Option<Integer> dim;
@@ -798,7 +798,7 @@ algorithm
       then
         (Values.ARRAY(arr),st_3);
 
-    case (env,Exp.CAST(type_ = Exp.REAL(),cast = e),impl,st,dim,msg)
+    case (env,Exp.CAST(ty = Exp.REAL(),exp = e),impl,st,dim,msg)
       local Option<Integer> dim;
       equation 
         (Values.INTEGER(i),st_1) = ceval(env, e, impl, st, dim, msg);
@@ -806,7 +806,7 @@ algorithm
       then
         (Values.REAL(r),st_1);
 
-    case (env,Exp.CAST(type_ = Exp.REAL(),cast = e),impl,st,dim,msg)
+    case (env,Exp.CAST(ty = Exp.REAL(),exp = e),impl,st,dim,msg)
       local Option<Integer> dim;
       equation 
         (Values.ARRAY(ivals),st_1) = ceval(env, e, impl, st, dim, msg);
@@ -814,7 +814,7 @@ algorithm
       then
         (Values.ARRAY(rvals),st_1);
 
-    case (env,Exp.CAST(type_ = Exp.REAL(),cast = (e as Exp.ARRAY(type_ = Exp.INT(),array = expl))),impl,st,dim,msg)
+    case (env,Exp.CAST(ty = Exp.REAL(),exp = (e as Exp.ARRAY(ty = Exp.INT(),array = expl))),impl,st,dim,msg)
       local Option<Integer> dim;
       equation 
         (Values.ARRAY(vallst),st_1) = ceval(env, e, impl, st, dim, msg);
@@ -822,7 +822,7 @@ algorithm
       then
         (Values.ARRAY(vallst_1),st_1);
 
-    case (env,Exp.CAST(type_ = Exp.REAL(),cast = (e as Exp.RANGE(type_ = Exp.INT()))),impl,st,dim,msg)
+    case (env,Exp.CAST(ty = Exp.REAL(),exp = (e as Exp.RANGE(ty = Exp.INT()))),impl,st,dim,msg)
       local Option<Integer> dim;
       equation 
         (Values.ARRAY(vallst),st_1) = ceval(env, e, impl, st, dim, msg);
@@ -830,7 +830,7 @@ algorithm
       then
         (Values.ARRAY(vallst_1),st_1);
 
-    case (env,Exp.CAST(type_ = Exp.REAL(),cast = (e as Exp.MATRIX(type_ = Exp.INT()))),impl,st,dim,msg)
+    case (env,Exp.CAST(ty = Exp.REAL(),exp = (e as Exp.MATRIX(ty = Exp.INT()))),impl,st,dim,msg)
       local Option<Integer> dim;
       equation 
         (Values.ARRAY(vallst),st_1) = ceval(env, e, impl, st, dim, msg);
@@ -838,7 +838,7 @@ algorithm
       then
         (Values.ARRAY(vallst_1),st_1);
 
-    case (env,Exp.IFEXP(exp1 = b,exp2 = e1,if_3 = e2),impl,st,dim,msg)
+    case (env,Exp.IFEXP(expCond = b,expThen = e1,expElse = e2),impl,st,dim,msg)
       local
         Exp.Exp b;
         Option<Integer> dim;
@@ -848,7 +848,7 @@ algorithm
       then
         (v,st_2);
 
-    case (env,Exp.IFEXP(exp1 = b,exp2 = e1,if_3 = e2),impl,st,dim,msg)
+    case (env,Exp.IFEXP(expCond = b,expThen = e1,expElse = e2),impl,st,dim,msg)
       local
         Exp.Exp b;
         Option<Integer> dim;
@@ -858,7 +858,7 @@ algorithm
       then
         (v,st_2);
 
-    case (env,Exp.ASUB(exp = e,array = indx),impl,st,dim,msg)
+    case (env,Exp.ASUB(exp = e,sub = indx),impl,st,dim,msg)
       local Option<Integer> dim;
       equation 
         (Values.ARRAY(vals),st_1) = ceval(env, e, impl, st, dim, msg) "asub" ;
@@ -1861,7 +1861,7 @@ algorithm
       then
         (value,st);
 
-    case (env,Exp.CALL(path = Absyn.IDENT(name = "readSimulationResult"),expLst = {Exp.SCONST(string = filename),Exp.ARRAY(type_ = _),_}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (env,Exp.CALL(path = Absyn.IDENT(name = "readSimulationResult"),expLst = {Exp.SCONST(string = filename),Exp.ARRAY(ty = _),_}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
         Error.addMessage(Error.SCRIPT_READ_SIM_RES_ERROR, {});
       then
@@ -2850,7 +2850,7 @@ algorithm
       Exp.Exp exp,e;
       String cr_str,dim_str,size_str,expstr;
       list<Exp.Exp> es;
-    case (env,Exp.CREF(componentRef = cr,component = tp),dim,impl,st,msg)
+    case (env,Exp.CREF(componentRef = cr,ty = tp),dim,impl,st,msg)
       equation 
         (attr,tp,bind) = Lookup.lookupVar(env, cr) "If dimensions known, always ceval" ;
         true = Types.dimensionsKnown(tp);
@@ -2860,7 +2860,7 @@ algorithm
         v = listNth(sizelst, dim_1);
       then
         (Values.INTEGER(v),st_1);
-    case (env,Exp.CREF(componentRef = cr,component = tp),dim,(impl as false),st,msg)
+    case (env,Exp.CREF(componentRef = cr,ty = tp),dim,(impl as false),st,msg)
       local
         Exp.Type tp;
         Exp.Exp dim;
@@ -2877,14 +2877,14 @@ algorithm
         v2 = cevalBuiltinSize3(dims, dimv);
       then
         (v2,st_1);
-    case (env,Exp.CREF(componentRef = cr,component = tp),dim,(impl as true),st,msg)
+    case (env,Exp.CREF(componentRef = cr,ty = tp),dim,(impl as true),st,msg)
       local Exp.Exp dim;
       equation 
         (attr,tp,bind) = Lookup.lookupVar(env, cr) "If dimensions not known and impl=true, just silently fail" ;
         false = Types.dimensionsKnown(tp);
       then
         fail();
-    case (env,Exp.CREF(componentRef = cr,component = tp),dim,(impl as false),st,MSG())
+    case (env,Exp.CREF(componentRef = cr,ty = tp),dim,(impl as false),st,MSG())
       local Exp.Exp dim;
       equation 
         (attr,tp,bind) = Lookup.lookupVar(env, cr) "If dimensions not known and impl=false, error message" ;
@@ -2895,14 +2895,14 @@ algorithm
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {size_str});
       then
         fail();
-    case (env,Exp.CREF(componentRef = cr,component = tp),dim,(impl as false),st,NO_MSG())
+    case (env,Exp.CREF(componentRef = cr,ty = tp),dim,(impl as false),st,NO_MSG())
       local Exp.Exp dim;
       equation 
         (attr,tp,bind) = Lookup.lookupVar(env, cr);
         false = Types.dimensionsKnown(tp);
       then
         fail();
-    case (env,(exp as Exp.CREF(componentRef = cr,component = crtp)),dim,(impl as false),st,MSG())
+    case (env,(exp as Exp.CREF(componentRef = cr,ty = crtp)),dim,(impl as false),st,MSG())
       local Exp.Exp dim;
       equation 
         (attr,tp,Types.UNBOUND()) = Lookup.lookupVar(env, cr) "For crefs without value binding" ;
@@ -2910,19 +2910,19 @@ algorithm
         Error.addMessage(Error.UNBOUND_VALUE, {expstr});
       then
         fail();
-    case (env,(exp as Exp.CREF(componentRef = cr,component = crtp)),dim,(impl as false),st,NO_MSG())
+    case (env,(exp as Exp.CREF(componentRef = cr,ty = crtp)),dim,(impl as false),st,NO_MSG())
       local Exp.Exp dim;
       equation 
         (attr,tp,Types.UNBOUND()) = Lookup.lookupVar(env, cr);
       then
         fail();
-    case (env,(exp as Exp.CREF(componentRef = cr,component = crtp)),dim,(impl as true),st,msg)
+    case (env,(exp as Exp.CREF(componentRef = cr,ty = crtp)),dim,(impl as true),st,msg)
       local Exp.Exp dim;
       equation 
         (attr,tp,Types.UNBOUND()) = Lookup.lookupVar(env, cr) "For crefs without value binding. If impl=true just silently fail" ;
       then
         fail();
-    case (env,(exp as Exp.CREF(componentRef = cr,component = crtp)),dim,impl,st,msg)
+    case (env,(exp as Exp.CREF(componentRef = cr,ty = crtp)),dim,impl,st,msg)
       local
         Values.Value v;
         Exp.Exp dim;
@@ -4734,7 +4734,7 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st,st_1;
       Msg msg;
       Exp.Exp exp;
-    case (env,Exp.CREF(componentRef = cr,component = tp),impl,st,msg)
+    case (env,Exp.CREF(componentRef = cr,ty = tp),impl,st,msg)
       equation 
         (attr,tp,bind) = Lookup.lookupVar(env, cr);
         sizelst = Types.getDimensionSizes(tp);
@@ -4768,67 +4768,67 @@ algorithm
       Exp.Type t;
       Boolean b,nb1,nb2,ba,bb,b1,b2;
       Integer i1,i2;
-    case (v1,Exp.GREATER(type_ = t),v2)
+    case (v1,Exp.GREATER(ty = t),v2)
       equation 
         v = cevalRelation(v2, Exp.LESS(t), v1);
       then
         v;
-    case (Values.INTEGER(integer = i1),Exp.LESS(type_ = Exp.INT()),Values.INTEGER(integer = i2)) /* Integers */ 
+    case (Values.INTEGER(integer = i1),Exp.LESS(ty = Exp.INT()),Values.INTEGER(integer = i2)) /* Integers */ 
       equation 
         b = (i1 < i2);
       then
         Values.BOOL(b);
-    case (Values.INTEGER(integer = i1),Exp.LESSEQ(type_ = Exp.INT()),Values.INTEGER(integer = i2))
+    case (Values.INTEGER(integer = i1),Exp.LESSEQ(ty = Exp.INT()),Values.INTEGER(integer = i2))
       equation 
         b = (i1 <= i2);
       then
         Values.BOOL(b);
-    case (Values.INTEGER(integer = i1),Exp.GREATEREQ(type_ = Exp.INT()),Values.INTEGER(integer = i2))
+    case (Values.INTEGER(integer = i1),Exp.GREATEREQ(ty = Exp.INT()),Values.INTEGER(integer = i2))
       equation 
         b = (i1 >= i2);
       then
         Values.BOOL(b);
-    case (Values.INTEGER(integer = i1),Exp.EQUAL(type_ = Exp.INT()),Values.INTEGER(integer = i2))
+    case (Values.INTEGER(integer = i1),Exp.EQUAL(ty = Exp.INT()),Values.INTEGER(integer = i2))
       equation 
         b = (i1 == i2);
       then
         Values.BOOL(b);
-    case (Values.INTEGER(integer = i1),Exp.NEQUAL(type_ = Exp.INT()),Values.INTEGER(integer = i2)) /* Reals */ 
+    case (Values.INTEGER(integer = i1),Exp.NEQUAL(ty = Exp.INT()),Values.INTEGER(integer = i2)) /* Reals */ 
       equation 
         b = (i1 <> i2);
       then
         Values.BOOL(b);
-    case (Values.REAL(real = i1),Exp.LESS(type_ = Exp.REAL()),Values.REAL(real = i2)) /* Reals */ 
+    case (Values.REAL(real = i1),Exp.LESS(ty = Exp.REAL()),Values.REAL(real = i2)) /* Reals */ 
       local Real i1,i2;
       equation 
         b = (i1 <. i2);
       then
         Values.BOOL(b);
-    case (Values.REAL(real = i1),Exp.LESSEQ(type_ = Exp.REAL()),Values.REAL(real = i2))
+    case (Values.REAL(real = i1),Exp.LESSEQ(ty = Exp.REAL()),Values.REAL(real = i2))
       local Real i1,i2;
       equation 
         b = (i1 <=. i2);
       then
         Values.BOOL(b);
-    case (Values.REAL(real = i1),Exp.GREATEREQ(type_ = Exp.REAL()),Values.REAL(real = i2))
+    case (Values.REAL(real = i1),Exp.GREATEREQ(ty = Exp.REAL()),Values.REAL(real = i2))
       local Real i1,i2;
       equation 
         b = (i1 >=. i2);
       then
         Values.BOOL(b);
-    case (Values.REAL(real = i1),Exp.EQUAL(type_ = Exp.REAL()),Values.REAL(real = i2))
+    case (Values.REAL(real = i1),Exp.EQUAL(ty = Exp.REAL()),Values.REAL(real = i2))
       local Real i1,i2;
       equation 
         b = (i1 ==. i2);
       then
         Values.BOOL(b);
-    case (Values.REAL(real = i1),Exp.NEQUAL(type_ = Exp.REAL()),Values.REAL(real = i2)) /* Booleans */ 
+    case (Values.REAL(real = i1),Exp.NEQUAL(ty = Exp.REAL()),Values.REAL(real = i2)) /* Booleans */ 
       local Real i1,i2;
       equation 
         b = (i1 <>. i2);
       then
         Values.BOOL(b);
-    case (Values.BOOL(boolean = b1),Exp.NEQUAL(type_ = Exp.BOOL()),Values.BOOL(boolean = b2)) /* Booleans */ 
+    case (Values.BOOL(boolean = b1),Exp.NEQUAL(ty = Exp.BOOL()),Values.BOOL(boolean = b2)) /* Booleans */ 
       equation 
         nb1 = boolNot(b1) "b1 != b2  == (b1 and not b2) or (not b1 and b2)" ;
         nb2 = boolNot(b2);
@@ -4837,7 +4837,7 @@ algorithm
         b = boolOr(ba, bb);
       then
         Values.BOOL(b);
-    case (Values.BOOL(boolean = b1),Exp.EQUAL(type_ = Exp.BOOL()),Values.BOOL(boolean = b2))
+    case (Values.BOOL(boolean = b1),Exp.EQUAL(ty = Exp.BOOL()),Values.BOOL(boolean = b2))
       equation 
         nb1 = boolNot(b1) "b1 == b2  ==> b1 and b2 or (not b1 and not b2)" ;
         nb2 = boolNot(b2);
@@ -4846,8 +4846,8 @@ algorithm
         b = boolOr(ba, bb);
       then
         Values.BOOL(b);
-    case (Values.BOOL(boolean = false),Exp.LESS(type_ = Exp.BOOL()),Values.BOOL(boolean = true)) then Values.BOOL(true); 
-    case (Values.BOOL(boolean = _),Exp.LESS(type_ = Exp.BOOL()),Values.BOOL(boolean = _)) then Values.BOOL(false); 
+    case (Values.BOOL(boolean = false),Exp.LESS(ty = Exp.BOOL()),Values.BOOL(boolean = true)) then Values.BOOL(true); 
+    case (Values.BOOL(boolean = _),Exp.LESS(ty = Exp.BOOL()),Values.BOOL(boolean = _)) then Values.BOOL(false); 
     case (_,_,_)
       equation 
         Debug.fprint("failtrace", "- ceval_relation failed\n");
@@ -5246,7 +5246,7 @@ algorithm
       list<Integer> dims;
       Boolean impl;
       Msg msg;
-    case (env,(Exp.INDEX(a = exp) :: subs),Values.ARRAY(valueLst = lst),(dim :: dims),impl,msg)
+    case (env,(Exp.INDEX(exp = exp) :: subs),Values.ARRAY(valueLst = lst),(dim :: dims),impl,msg)
       equation 
         (Values.INTEGER(n),_) = ceval(env, exp, impl, NONE, SOME(dim), msg);
         n_1 = n - 1;
@@ -5327,13 +5327,13 @@ algorithm
       Boolean impl;
       Msg msg;
     case (env,Exp.WHOLEDIM(),_,_,_) then Exp.WHOLEDIM(); 
-    case (env,Exp.INDEX(a = e1),dim,impl,msg)
+    case (env,Exp.INDEX(exp = e1),dim,impl,msg)
       equation 
         (v1,_) = ceval(env, e1, impl, NONE, SOME(dim), msg);
         e1_1 = Static.valueExp(v1);
       then
         Exp.INDEX(e1_1);
-    case (env,Exp.SLICE(a = e1),dim,impl,msg)
+    case (env,Exp.SLICE(exp = e1),dim,impl,msg)
       equation 
         (v1,_) = ceval(env, e1, impl, NONE, SOME(dim), msg);
         e1_1 = Static.valueExp(v1);

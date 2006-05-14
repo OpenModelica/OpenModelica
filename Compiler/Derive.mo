@@ -141,15 +141,15 @@ algorithm
       Integer i;
     case (Exp.ICONST(integer = _),_) then Exp.RCONST(0.0); 
     case (Exp.RCONST(real = _),_) then Exp.RCONST(0.0); 
-    case (Exp.CREF(componentRef = Exp.CREF_IDENT(ident = "time",subscriptLst = {}),component = tp),_) then Exp.RCONST(1.0); 
-    case ((e as Exp.CREF(componentRef = cr,component = tp)),timevars) /* special rule for DUMMY_STATES, they become DUMMY_DER */ 
+    case (Exp.CREF(componentRef = Exp.CREF_IDENT(ident = "time",subscriptLst = {}),ty = tp),_) then Exp.RCONST(1.0); 
+    case ((e as Exp.CREF(componentRef = cr,ty = tp)),timevars) /* special rule for DUMMY_STATES, they become DUMMY_DER */ 
       equation 
         ({DAELow.VAR(cr,DAELow.DUMMY_STATE(),_,_,_,_,_,_,_,_,_,_,_,_)},_) = DAELow.getVar(cr, timevars);
         cr_str = Exp.printComponentRefStr(cr);
         cr_str_1 = SimCodegen.changeNameForDerivative(cr_str);
       then
         Exp.CREF(Exp.CREF_IDENT(cr_str_1,{}),Exp.REAL());
-    case ((e as Exp.CREF(componentRef = cr,component = tp)),timevars)
+    case ((e as Exp.CREF(componentRef = cr,ty = tp)),timevars)
       equation 
         (_,_) = DAELow.getVar(cr, timevars);
       then
@@ -160,27 +160,27 @@ algorithm
       then
         Exp.BINARY(e_1,Exp.MUL(Exp.REAL()),
           Exp.CALL(Absyn.IDENT("cos"),{e},false,true));
-    case ((e as Exp.CREF(componentRef = cr,component = tp)),timevars) /* list_member(cr,timevars) => false */  then Exp.RCONST(0.0); 
-    case (Exp.BINARY(exp = e1,operator = Exp.ADD(type_ = tp),binary = e2),tv)
+    case ((e as Exp.CREF(componentRef = cr,ty = tp)),timevars) /* list_member(cr,timevars) => false */  then Exp.RCONST(0.0); 
+    case (Exp.BINARY(exp1 = e1,operator = Exp.ADD(ty = tp),exp2 = e2),tv)
       equation 
         e1_1 = differentiateExpTime(e1, tv);
         e2_1 = differentiateExpTime(e2, tv);
       then
         Exp.BINARY(e1_1,Exp.ADD(tp),e2_1);
-    case (Exp.BINARY(exp = e1,operator = Exp.SUB(type_ = tp),binary = e2),tv)
+    case (Exp.BINARY(exp1 = e1,operator = Exp.SUB(ty = tp),exp2 = e2),tv)
       equation 
         e1_1 = differentiateExpTime(e1, tv);
         e2_1 = differentiateExpTime(e2, tv);
       then
         Exp.BINARY(e1_1,Exp.SUB(tp),e2_1);
-    case (Exp.BINARY(exp = e1,operator = Exp.MUL(type_ = tp),binary = e2),tv) /* f\'g + fg\' */ 
+    case (Exp.BINARY(exp1 = e1,operator = Exp.MUL(ty = tp),exp2 = e2),tv) /* f\'g + fg\' */ 
       equation 
         e1_1 = differentiateExpTime(e1, tv);
         e2_1 = differentiateExpTime(e2, tv);
       then
         Exp.BINARY(Exp.BINARY(e1,Exp.MUL(tp),e2_1),Exp.ADD(tp),
           Exp.BINARY(e1_1,Exp.MUL(tp),e2));
-    case (Exp.BINARY(exp = e1,operator = Exp.DIV(type_ = tp),binary = e2),tv) /* (f\'g - fg\' ) / g^2 */ 
+    case (Exp.BINARY(exp1 = e1,operator = Exp.DIV(ty = tp),exp2 = e2),tv) /* (f\'g - fg\' ) / g^2 */ 
       equation 
         e1_1 = differentiateExpTime(e1, tv);
         e2_1 = differentiateExpTime(e2, tv);
@@ -188,29 +188,29 @@ algorithm
         Exp.BINARY(
           Exp.BINARY(Exp.BINARY(e1_1,Exp.MUL(tp),e2),Exp.SUB(tp),
           Exp.BINARY(e1,Exp.MUL(tp),e2_1)),Exp.DIV(tp),Exp.BINARY(e2,Exp.MUL(tp),e2));
-    case (Exp.UNARY(operator = op,unary = e),tv)
+    case (Exp.UNARY(operator = op,exp = e),tv)
       equation 
         e_1 = differentiateExpTime(e, tv);
       then
         Exp.UNARY(op,e_1);
-    case ((e as Exp.LBINARY(exp = e1,operator = op,logical = e2)),tv)
+    case ((e as Exp.LBINARY(exp1 = e1,operator = op,exp2 = e2)),tv)
       equation 
         e_str = Exp.printExpStr(e) "The derivative of logic expressions are non-existent" ;
         Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {e_str});
       then
         fail();
-    case (Exp.LUNARY(operator = op,logical = e),tv)
+    case (Exp.LUNARY(operator = op,exp = e),tv)
       equation 
         e_1 = differentiateExpTime(e, tv);
       then
         Exp.LUNARY(op,e_1);
-    case (Exp.RELATION(exp = e1,operator = rel,relation_ = e2),tv)
+    case (Exp.RELATION(exp1 = e1,operator = rel,exp2 = e2),tv)
       equation 
         e1_1 = differentiateExpTime(e1, tv);
         e2_1 = differentiateExpTime(e2, tv);
       then
         Exp.RELATION(e1_1,rel,e2_1);
-    case (Exp.IFEXP(exp1 = e1,exp2 = e2,if_3 = e3),tv)
+    case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3),tv)
       equation 
         e2_1 = differentiateExpTime(e2, tv);
         e3_1 = differentiateExpTime(e3, tv);
@@ -228,12 +228,12 @@ algorithm
         Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {s1,"no suggestion"});
       then
         fail();
-    case (Exp.ARRAY(type_ = tp,scalar = b,array = expl),tv)
+    case (Exp.ARRAY(ty = tp,scalar = b,array = expl),tv)
       equation 
         expl_1 = Util.listMap1(expl, differentiateExpTime, tv);
       then
         Exp.ARRAY(tp,b,expl_1);
-    case ((e as Exp.MATRIX(type_ = _)),_)
+    case ((e as Exp.MATRIX(ty = _)),_)
       equation 
         Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, 
           {"differentiation of matrix expressions",
@@ -245,12 +245,12 @@ algorithm
         expl_1 = Util.listMap1(expl, differentiateExpTime, tv);
       then
         Exp.TUPLE(expl_1);
-    case (Exp.CAST(type_ = tp,cast = e),tv)
+    case (Exp.CAST(ty = tp,exp = e),tv)
       equation 
         e_1 = differentiateExpTime(e, tv);
       then
         Exp.CAST(tp,e_1);
-    case (Exp.ASUB(exp = e,array = i),tv)
+    case (Exp.ASUB(exp = e,sub = i),tv)
       equation 
         e_1 = differentiateExpTime(e, tv);
       then
@@ -314,21 +314,21 @@ algorithm
       then
         Exp.RCONST(0.0);
 
-    case (Exp.BINARY(exp = e1,operator = Exp.ADD(type_ = tp),binary = e2),tv)
+    case (Exp.BINARY(exp1 = e1,operator = Exp.ADD(ty = tp),exp2 = e2),tv)
       equation 
         e1_1 = differentiateExp(e1, tv);
         e2_1 = differentiateExp(e2, tv);
       then
         Exp.BINARY(e1_1,Exp.ADD(tp),e2_1);
 
-    case (Exp.BINARY(exp = e1,operator = Exp.SUB(type_ = tp),binary = e2),tv)
+    case (Exp.BINARY(exp1 = e1,operator = Exp.SUB(ty = tp),exp2 = e2),tv)
       equation 
         e1_1 = differentiateExp(e1, tv);
         e2_1 = differentiateExp(e2, tv);
       then
         Exp.BINARY(e1_1,Exp.SUB(tp),e2_1);
 
-    case (Exp.BINARY(exp = (e1 as Exp.CREF(componentRef = cr)),operator = Exp.POW(type_ = tp),binary = e2),tv) /* ax^(a-1) */ 
+    case (Exp.BINARY(exp1 = (e1 as Exp.CREF(componentRef = cr)),operator = Exp.POW(ty = tp),exp2 = e2),tv) /* ax^(a-1) */ 
       equation 
         true = Exp.crefEqual(cr, tv) "a^x => ax^(a-1)" ;
         false = Exp.expContains(e2, Exp.CREF(tv,tp));
@@ -337,7 +337,7 @@ algorithm
         Exp.BINARY(e2,Exp.MUL(tp),
           Exp.BINARY(e1,Exp.POW(tp),Exp.BINARY(e2,Exp.SUB(tp),const_one)));
 
-    case (Exp.BINARY(exp = e1,operator = Exp.POW(type_ = tp),binary = e2),tv) /* ax^(a-1) */ 
+    case (Exp.BINARY(exp1 = e1,operator = Exp.POW(ty = tp),exp2 = e2),tv) /* ax^(a-1) */ 
       equation 
         d_e1 = differentiateExp(e1, tv) "e^x => xder(e)e^x-1" ;
         false = Exp.expContains(e2, Exp.CREF(tv,tp));
@@ -348,7 +348,7 @@ algorithm
       then
         exp;
 
-    case (Exp.BINARY(exp = (e1 as Exp.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = {(exp as Exp.CREF(componentRef = cr))},tuple_ = b,builtin = c)),operator = Exp.POW(type_ = tp),binary = e2),tv) /* ax^(a-1) */ 
+    case (Exp.BINARY(exp1 = (e1 as Exp.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = {(exp as Exp.CREF(componentRef = cr))},tuple_ = b,builtin = c)),operator = Exp.POW(ty = tp),exp2 = e2),tv) /* ax^(a-1) */ 
       equation 
         true = Exp.crefEqual(cr, tv) "der(e)^x => xder(e,2)der(e)^(x-1)" ;
         false = Exp.expContains(e2, Exp.CREF(tv,tp));
@@ -358,7 +358,7 @@ algorithm
           Exp.BINARY(Exp.CALL(a,{exp,Exp.ICONST(2)},b,c),Exp.MUL(tp),e2),Exp.MUL(tp),
           Exp.BINARY(e1,Exp.POW(tp),Exp.BINARY(e2,Exp.SUB(tp),const_one)));
 
-    case (Exp.BINARY(exp = e1,operator = Exp.MUL(type_ = tp),binary = e2),tv) /* f\'g + fg\' */ 
+    case (Exp.BINARY(exp1 = e1,operator = Exp.MUL(ty = tp),exp2 = e2),tv) /* f\'g + fg\' */ 
       equation 
         e1_1 = differentiateExp(e1, tv);
         e2_1 = differentiateExp(e2, tv);
@@ -366,7 +366,7 @@ algorithm
         Exp.BINARY(Exp.BINARY(e1,Exp.MUL(tp),e2_1),Exp.ADD(tp),
           Exp.BINARY(e1_1,Exp.MUL(tp),e2));
 
-    case (Exp.BINARY(exp = e1,operator = Exp.DIV(type_ = tp),binary = e2),tv) /* (f\'g - fg\' ) / g^2 */ 
+    case (Exp.BINARY(exp1 = e1,operator = Exp.DIV(ty = tp),exp2 = e2),tv) /* (f\'g - fg\' ) / g^2 */ 
       equation 
         e1_1 = differentiateExp(e1, tv);
         e2_1 = differentiateExp(e2, tv);
@@ -375,7 +375,7 @@ algorithm
           Exp.BINARY(Exp.BINARY(e1_1,Exp.MUL(tp),e2),Exp.SUB(tp),
           Exp.BINARY(e1,Exp.MUL(tp),e2_1)),Exp.DIV(tp),Exp.BINARY(e2,Exp.MUL(tp),e2));
 
-    case (Exp.UNARY(operator = op,unary = e),tv)
+    case (Exp.UNARY(operator = op,exp = e),tv)
       equation 
         e_1 = differentiateExp(e, tv);
       then
@@ -486,27 +486,27 @@ algorithm
       then
         Exp.RCONST(0.0); 
 
-    case ((e as Exp.LBINARY(exp = e1,operator = op,logical = e2)),tv)
+    case ((e as Exp.LBINARY(exp1 = e1,operator = op,exp2 = e2)),tv)
       equation 
         e_str = Exp.printExpStr(e) "The derivative of logic expressions are non-existent" ;
         Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {e_str});
       then
         fail();
 
-    case (Exp.LUNARY(operator = op,logical = e),tv)
+    case (Exp.LUNARY(operator = op,exp = e),tv)
       equation 
         e_1 = differentiateExp(e, tv);
       then
         Exp.LUNARY(op,e_1);
 
-    case (Exp.RELATION(exp = e1,operator = rel,relation_ = e2),tv)
+    case (Exp.RELATION(exp1 = e1,operator = rel,exp2 = e2),tv)
       equation 
         e1_1 = differentiateExp(e1, tv);
         e2_1 = differentiateExp(e2, tv);
       then
         Exp.RELATION(e1_1,rel,e2_1);
 
-    case (Exp.IFEXP(exp1 = e1,exp2 = e2,if_3 = e3),tv)
+    case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3),tv)
       equation 
         e2_1 = differentiateExp(e2, tv);
         e3_1 = differentiateExp(e3, tv);
@@ -526,7 +526,7 @@ algorithm
         Exp.BINARY(Exp.CALL(Absyn.IDENT("sign"),{exp_1},false,true),
           Exp.MUL(Exp.REAL()),exp_1);
 
-    case (Exp.ARRAY(type_ = tp,scalar = b,array = expl),tv)
+    case (Exp.ARRAY(ty = tp,scalar = b,array = expl),tv)
       equation 
         expl_1 = Util.listMap1(expl, differentiateExp, tv);
       then
@@ -538,13 +538,13 @@ algorithm
       then
         Exp.TUPLE(expl_1);
 
-    case (Exp.CAST(type_ = tp,cast = e),tv)
+    case (Exp.CAST(ty = tp,exp = e),tv)
       equation 
         e_1 = differentiateExp(e, tv);
       then
         Exp.CAST(tp,e_1);
 
-    case (Exp.ASUB(exp = e,array = i),tv)
+    case (Exp.ASUB(exp = e,sub = i),tv)
       equation 
         e_1 = differentiateExp(e, tv);
       then

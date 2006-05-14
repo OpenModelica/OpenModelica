@@ -3285,40 +3285,40 @@ algorithm
       Boolean b;
       Integer i;
       Option<Exp.Exp> eopt_1,eopt;
-    case (Exp.CREF(componentRef = cr,component = t))
+    case (Exp.CREF(componentRef = cr,ty = t))
       equation 
         cr_1 = toModelicaFormCref(cr);
       then
         Exp.CREF(cr_1,t);
-    case (Exp.BINARY(exp = e1,operator = op,binary = e2))
+    case (Exp.BINARY(exp1 = e1,operator = op,exp2 = e2))
       equation 
         e1_1 = toModelicaFormExp(e1);
         e2_1 = toModelicaFormExp(e2);
       then
         Exp.BINARY(e1_1,op,e2_1);
-    case (Exp.LBINARY(exp = e1,operator = op,logical = e2))
+    case (Exp.LBINARY(exp1 = e1,operator = op,exp2 = e2))
       equation 
         e1_1 = toModelicaFormExp(e1);
         e2_1 = toModelicaFormExp(e2);
       then
         Exp.LBINARY(e1_1,op,e2_1);
-    case (Exp.UNARY(operator = op,unary = e))
+    case (Exp.UNARY(operator = op,exp = e))
       equation 
         e_1 = toModelicaFormExp(e);
       then
         Exp.UNARY(op,e_1);
-    case (Exp.LUNARY(operator = op,logical = e))
+    case (Exp.LUNARY(operator = op,exp = e))
       equation 
         e_1 = toModelicaFormExp(e);
       then
         Exp.LUNARY(op,e_1);
-    case (Exp.RELATION(exp = e1,operator = op,relation_ = e2))
+    case (Exp.RELATION(exp1 = e1,operator = op,exp2 = e2))
       equation 
         e1_1 = toModelicaFormExp(e1);
         e2_1 = toModelicaFormExp(e2);
       then
         Exp.RELATION(e1_1,op,e2_1);
-    case (Exp.IFEXP(exp1 = e1,exp2 = e2,if_3 = e3))
+    case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3))
       equation 
         e1_1 = toModelicaFormExp(e1);
         e2_1 = toModelicaFormExp(e2);
@@ -3331,7 +3331,7 @@ algorithm
         expl_1 = Util.listMap(expl, toModelicaFormExp);
       then
         Exp.CALL(f,expl_1,t,b);
-    case (Exp.ARRAY(type_ = t,scalar = b,array = expl))
+    case (Exp.ARRAY(ty = t,scalar = b,array = expl))
       equation 
         expl_1 = Util.listMap(expl, toModelicaFormExp);
       then
@@ -3341,17 +3341,17 @@ algorithm
         expl_1 = Util.listMap(expl, toModelicaFormExp);
       then
         Exp.TUPLE(expl_1);
-    case (Exp.CAST(type_ = t,cast = e))
+    case (Exp.CAST(ty = t,exp = e))
       equation 
         e_1 = toModelicaFormExp(e);
       then
         Exp.CAST(t,e_1);
-    case (Exp.ASUB(exp = e,array = i))
+    case (Exp.ASUB(exp = e,sub = i))
       equation 
         e_1 = toModelicaFormExp(e);
       then
         Exp.ASUB(e_1,i);
-    case (Exp.SIZE(exp = e,the = eopt))
+    case (Exp.SIZE(exp = e,sz = eopt))
       equation 
         e_1 = toModelicaFormExp(e);
         eopt_1 = toModelicaFormExpOpt(eopt);
@@ -3564,8 +3564,8 @@ algorithm
   matchcontinue (inSubscript)
     local Exp.Exp e;
     case Exp.WHOLEDIM() then {}; 
-    case Exp.SLICE(a = e) then {e}; 
-    case Exp.INDEX(a = e) then {e}; 
+    case Exp.SLICE(exp = e) then {e}; 
+    case Exp.INDEX(exp = e) then {e}; 
     case _
       equation 
         Debug.fprintln("failtrace", "-- get_all_exps_subscript failed");
