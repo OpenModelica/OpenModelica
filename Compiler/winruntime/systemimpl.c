@@ -389,8 +389,18 @@ RML_BEGIN_LABEL(System__stringReplace)
   char *target =/*  strdup( */RML_STRINGDATA(rmlA2)/* ) */;
   char * res=0;
 /*   printf("in '%s' replace '%s' with '%s'\n",str,source,target); */
+
+  /* adrpo 2006-05-15 
+   * if source and target are the same this function
+   * cycles, get rid of that here
+   */
+   if (!strcmp(source, target)) 
+   	RML_TAILCALLK(rmlSC);
+  /* end adrpo */
+
   res = _replace(str,source,target);
-  if (res == NULL) {
+  if (res == NULL) 
+  {
 /*      printf("res == NULL\n");  */
     RML_TAILCALLK(rmlFC);
   }
