@@ -406,7 +406,7 @@ RML_BEGIN_LABEL(System__stringReplace)
     RML_TAILCALLK(rmlFC);
   }
   rmlA0 = (void*) mk_scon(res);
-  /* free(res); */
+  free(res);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
