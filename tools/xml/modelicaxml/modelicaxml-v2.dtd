@@ -1,0 +1,538 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--Adrian Pop 2003-07-01 adrpo@ida.liu.se-->
+<!--modelica.dtd version 0.1 conform with Modelica Language Specification 2.0/2.1 -->
+<!--   Copyright PELAB, Linkoping University
+   
+   This file is part of Open Source Modelica (OSM).
+
+    OSM is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    OSM is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Foobar; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA-->
+<!-- A DTD for Modelica, an XML representation of Modelica Source Code (AST) -->
+<!--http://www.ida.liu.se/~adrpo/modelica/xml-->
+<!-- we use location to make the mapping between xml elements and the location of the elements in the source representation -->
+<!ENTITY % location "
+            sline CDATA #IMPLIED 
+            scolumn CDATA #IMPLIED 
+            eline CDATA #IMPLIED 
+            ecolumn CDATA #IMPLIED             
+	     info CDATA #IMPLIED">
+<!-- elements inside composition are import, extends, definitions, components, component, constrain -->
+<!ENTITY % elements " (import | extends | ( (definition | component), constrain?) )">
+<!-- composition defines parts of the class (elements, annotations,  algorithm, equation) 
+      for elements we have visibility attribute to decide public/protected, same for annotation 
+      for an equation/algorithm element we have initial attribute to know if is initial -->
+<!ENTITY % composition "( ( ( %elements; )* | annotation* | equation* | algorithm* )* , external? )">
+<!-- a class can be either a composition, can be derived (using =) or can be an enumeration -->
+<!ENTITY % class_specifier "( (%composition;) | (derived, constrain?) | enumeration )">
+<!-- type prefix can be flow, variability, direction -->
+<!ENTITY % type_prefix "flow (true) #IMPLIED 
+                                        variability (discrete | parameter | constant) #IMPLIED 
+                                        direction (input | output | bidirectional) #IMPLIED">
+<!-- enumeration_list is used in the class definitions -->
+<!ENTITY % enum_list "(enumeration_literal+)">
+<!-- class modifications states what modifications are made to a class when it is used -->
+<!ENTITY % class_modification "( ( ( element_modification | element_redeclaration)+ )? )">
+<!-- a modification states the modifications are made to the components of a class or to the class itself -->
+<!ENTITY % modification "(modification_arguments | modification_equals | modification_assign)">
+<!ENTITY % exp "( if | range | or | and | not | lt | lte | gt |  gte | eq | ne | add | sub  | mul | div | pow | integer_literal | real_literal | string_literal | bool_literal  | component_reference  | call | output_expression_list | concat | array | end )">
+
+<!ENTITY % equation_list "(equation*)">
+<!ENTITY % algorithm_list "(algorithm*)">
+<!ENTITY % named_arguments "(named_argument)+">
+<!ENTITY % subscript "(colon | %exp;)">
+<!--
+  - modelica 
+    - modelicaxml (stored_definition*)
+      + a model model is a set of definitions togheter with a within statement
+    - intermediate
+      + here will lay the intermediate code
+    - flat
+	  + here will be the flat modelica representation
+-->
+<!ELEMENT modelica (modelicaxml*, flatmodelicaxml*)>
+
+<!ELEMENT modelicaxml (definition*)>
+<!ATTLIST modelicaxml
+	within CDATA #IMPLIED
+	file CDATA #IMPLIED	
+	%location; 
+>
+
+<!ELEMENT flatmodelicaxml EMPTY>
+
+
+<!-- comments are either string comments or annotations or empty -->
+<!ELEMENT comment ((string_comment?, annotation?))>
+<!-- a string comment set as an attribute -->
+<!ATTLIST comment
+	%location; 
+>
+
+<!ELEMENT string_comment (add_string|string_literal)?>
+<!ATTLIST string_comment
+	%location; 
+>
+
+<!ELEMENT add_string ((add_string|string_literal), string_literal)>
+<!ATTLIST add_string	
+	%location; 
+>
+
+<!-- annotation are class modifications (a list of arguments that can be either redeclarations or modifications)-->
+<!ELEMENT annotation (%class_modification;)>
+<!-- annotation can appear inside ellement_list, equation_clause, algorithm_clause, comment 
+      we model this as attributes -->
+<!ATTLIST annotation
+	visibility (public | protected) #IMPLIED
+	initial (true) #IMPLIED
+	inside (element | equation | algorithm | comment) #IMPLIED
+	%location; 
+>
+<!-- class definition is formed from class_specifier entity-->
+<!ELEMENT definition ((%class_specifier;), string_comment?)>
+<!-- for a definition we have attributes:
+      ident: the name
+      final, partial, encapsulated:  these attributes are set to true or does not exist
+      restriction: say what kind of class this is 
+       -->
+<!ATTLIST definition
+	ident CDATA #REQUIRED
+	final (true) #IMPLIED
+	partial (true) #IMPLIED
+	encapsulated (true) #IMPLIED
+	restriction (class | model | record | block | connector | type | package | function) #REQUIRED
+	inside (element | redeclaration) #IMPLIED
+	innerouter (inner | outer | innerouter) #IMPLIED
+	replaceable (true) #IMPLIED
+	visibility (public | protected) #IMPLIED
+	string_comment CDATA #IMPLIED
+	%location; 
+>
+<!-- derived element states the definitions of the form class CapacitorMicroCircuit = GenMicroCircuit(%class_modification;); 
+      the type attribute here is GenMicroCircuit 
+      example:
+	<definition ident="CapacitorMicroCircuit" restriction="class">
+		<derived type="GenMicroCircuit">
+			<element_redeclaration>
+				<definition ident="CompType" restriction="type">
+					<derived type="Capacitor"/>
+				</definition>
+			</element_redeclaration>
+		</derived>
+	</definition>      
+      -->
+<!ELEMENT derived (array_subscripts?, (%class_modification;)?, comment?)>
+<!ATTLIST derived
+	type CDATA #REQUIRED
+	%type_prefix; 
+	%location; 
+>
+<!ELEMENT enumeration (((%enum_list;)? | colon), comment?)>
+<!ELEMENT enumeration_literal (comment?)>
+<!ATTLIST enumeration_literal
+	ident CDATA #REQUIRED
+	%location; 
+>
+<!--
+  (* ExternalDecl *)
+  ident and language_specifications are specified as attributes
+-->
+<!ELEMENT external ((external_equal?, (expression_list)?), annotation?, (semicolon, annotation)?)>
+<!ATTLIST external
+	ident CDATA #IMPLIED
+	language_specification CDATA #IMPLIED
+	%location; 
+>
+<!ELEMENT external_equal (component_reference)>
+<!ATTLIST external_equal
+	%location; 
+>
+<!-- elements are:
+	imports (public/protected)
+	extends (public/protected)
+	element (final, innerouter, replaceable) and (constraining_clause (extends) + comment) -->
+
+<!ELEMENT import ((named_import|qualified_import|unqualified_import), comment?)>
+<!ATTLIST import
+	visibility (public | protected) #IMPLIED
+	%location; 
+>
+
+<!ELEMENT named_import EMPTY>
+<!ATTLIST named_import
+	ident CDATA #IMPLIED
+	name CDATA #REQUIRED
+	%location; 
+>
+	
+<!ELEMENT qualified_import EMPTY>
+<!ATTLIST qualified_import
+	name CDATA #REQUIRED
+	%location; 
+>
+
+<!ELEMENT unqualified_import EMPTY>
+<!ATTLIST unqualified_import
+	name CDATA #REQUIRED
+	%location; 
+>
+
+
+<!ELEMENT extends (%class_modification;)>
+<!ATTLIST extends
+	type CDATA #REQUIRED
+	visibility (public | protected) #IMPLIED
+	%location; 
+>
+<!ELEMENT constrain (extends, comment?)?>
+<!ATTLIST constrain
+	%location; 
+>
+<!--
+  (** - Components *)   
+nformation specific to one component. *)
+-->
+<!ELEMENT component (type_array_subscripts?, array_subscripts?, (%modification;)?, conditional?, comment?)>
+<!ATTLIST component
+	ident CDATA #REQUIRED
+	type CDATA #REQUIRED
+	%type_prefix; 
+	final (true) #IMPLIED
+	inside (element | redeclaration) #IMPLIED
+	innerouter (inner | outer | innerouter) #IMPLIED
+	replaceable (true) #IMPLIED
+	visibility (public | protected) #IMPLIED
+	list (start | end | continue) #IMPLIED
+	%location; 
+>
+<!ELEMENT conditional (%exp;)>
+<!ATTLIST conditional
+	%location; 
+>
+<!--
+equation_list
+-->
+<!ELEMENT equation ((equ_equal | equ_if | equ_connect | equ_for | equ_when | equ_call), comment?)>
+<!ATTLIST equation
+	initial (true) #IMPLIED
+	%location; 
+>
+<!ELEMENT for_indices (for_index+)>
+<!ATTLIST for_indices
+	%location; 
+>
+<!ELEMENT for_index (%exp;)>
+<!ATTLIST for_index
+	ident CDATA #REQUIRED
+	%location; 
+>
+<!ELEMENT equ_for (for_indices, %equation_list;)>
+<!ATTLIST equ_for
+	%location; 
+>
+<!ELEMENT equ_if (%exp;, equ_then, equ_elseif*, equ_else?)>
+<!ATTLIST equ_if
+	%location; 
+>
+<!ELEMENT equ_then (%equation_list;)>
+<!ATTLIST equ_then
+	%location; 
+>
+<!ELEMENT equ_elseif (%exp;, equ_then)>
+<!ATTLIST equ_elseif
+	%location; 
+>
+<!ELEMENT equ_else (%equation_list;)>
+<!ATTLIST equ_else
+	%location; 
+>
+<!ELEMENT equ_equal (%exp;, %exp;)>
+<!ATTLIST equ_equal
+	%location; 
+>
+<!ELEMENT equ_when (%exp;, equ_then, equ_elsewhen*)>
+<!ATTLIST equ_when
+	%location; 
+>
+<!ELEMENT equ_elsewhen (%exp;, equ_then)>
+<!ATTLIST equ_elsewhen
+	%location; 
+>
+<!ELEMENT equ_call (function_arguments)>
+<!ATTLIST equ_call
+	ident CDATA #REQUIRED
+	%location; 
+>
+<!ELEMENT equ_connect (component_reference, component_reference)>
+<!ATTLIST equ_connect
+	%location; 
+>
+<!--
+Algorithm
+ -->
+<!ELEMENT algorithm ((alg_assign | alg_call | alg_if | alg_for | alg_while | alg_when | alg_break | alg_return), comment?)>
+<!ATTLIST algorithm
+	initial (true) #IMPLIED
+	%location; 
+>
+<!ELEMENT alg_assign ((component_reference, %exp;) | (output_expression_list, call))>
+<!ATTLIST alg_assign
+	%location; 
+>
+<!ELEMENT alg_call (component_reference, function_arguments)>
+<!ATTLIST alg_call
+	%location; 
+>
+<!ELEMENT alg_if (%exp;, alg_then, alg_elseif*, alg_else?)>
+<!ATTLIST alg_if
+	%location; 
+>
+<!ELEMENT alg_then (%algorithm_list;)>
+<!ATTLIST alg_then
+	%location; 
+>
+<!ELEMENT alg_elseif (%exp;, alg_then)>
+<!ATTLIST alg_elseif
+	%location; 
+>
+<!ELEMENT alg_else (%algorithm_list;)>
+<!ATTLIST alg_else
+	%location; 
+>
+<!ELEMENT alg_for (for_indices, %algorithm_list;)>
+<!ATTLIST alg_for
+	%location; 
+>
+<!ELEMENT alg_while (%exp;, %algorithm_list;)>
+<!ATTLIST alg_while
+	%location; 
+>
+<!ELEMENT alg_when (%exp;, alg_then, alg_elsewhen*)>
+<!ATTLIST alg_when
+	%location; 
+>
+<!ELEMENT alg_elsewhen (%exp;, alg_then)>
+<!ATTLIST alg_elsewhen
+	%location; 
+>
+<!ELEMENT alg_break EMPTY>
+<!ATTLIST alg_break
+	%location; 
+>
+<!ELEMENT alg_return EMPTY>
+<!ATTLIST alg_return
+	%location; 
+>
+<!--
+   (** - Modifications *)
+-->
+<!ELEMENT modification_arguments (%class_modification;, modification_equals?)>
+<!ATTLIST modification_arguments
+	%location; 
+>
+<!ELEMENT modification_equals (%exp;)>
+<!ATTLIST modification_equals
+	%location; 
+>
+<!ELEMENT modification_assign (%exp;)>
+<!ATTLIST modification_assign
+	%location; 
+>
+<!ELEMENT element_modification (component_reference, (%modification;)?, string_comment?)>
+<!ATTLIST element_modification
+	string_comment CDATA #IMPLIED
+	final (true) #IMPLIED
+	each (true) #IMPLIED
+	%location; 
+>
+<!ELEMENT element_redeclaration ((definition | component), constrain?)>
+<!ATTLIST element_redeclaration
+	final (true) #IMPLIED
+	each (true) #IMPLIED
+	replaceable (true) #IMPLIED
+	%location; 
+>
+<!--
+  (** - Array dimensions *)
+-->
+<!ELEMENT array_subscripts ((%subscript;)+)>
+<!ATTLIST array_subscripts
+	%location; 
+>
+<!--
+  (** type_array_subscripts are used in a component to specify if the array subscripts comes with the type,
+       example: Real[3] x; [3] will go into the type_array_subscripts  *)
+-->
+<!ELEMENT type_array_subscripts ((%subscript;)+)>
+<!ATTLIST type_array_subscripts
+	%location; 
+>
+<!--
+  (** - expression_list *)
+-->
+
+<!ELEMENT integer_literal EMPTY>
+<!ATTLIST integer_literal
+	value CDATA #REQUIRED
+	%location; 
+>
+<!ELEMENT real_literal EMPTY>
+<!ATTLIST real_literal
+	value CDATA #REQUIRED
+	%location; 
+>
+<!ELEMENT string_literal EMPTY>
+<!ATTLIST string_literal
+	value CDATA #REQUIRED
+	%location; 
+>
+<!ELEMENT bool_literal EMPTY>
+<!ATTLIST bool_literal
+	value (true | false) #REQUIRED
+	%location; 
+>
+<!ELEMENT or (%exp;, %exp;)>
+<!ATTLIST or
+	%location; 
+>
+<!ELEMENT and (%exp;, %exp;)>
+<!ATTLIST and
+	%location; 
+>
+<!ELEMENT not (%exp;)>
+<!ATTLIST not
+	%location; 
+>
+<!ELEMENT lt (%exp;, %exp;)>
+<!ATTLIST lt
+	%location; 
+>
+<!ELEMENT lte (%exp;, %exp;)>
+<!ATTLIST lte
+	%location; 
+>
+<!ELEMENT eq (%exp;, %exp;)>
+<!ATTLIST eq
+	%location; 
+>
+<!ELEMENT gt (%exp;, %exp;)>
+<!ATTLIST gt
+	%location; 
+>
+<!ELEMENT gte (%exp;, %exp;)>
+<!ATTLIST gte
+	%location; 
+>
+<!ELEMENT ne (%exp;, %exp;)>
+<!ATTLIST ne
+	%location; 
+>
+<!ELEMENT add (%exp;, (%exp;)?)>
+<!ATTLIST add
+	operation (binary | unary) #IMPLIED
+	%location; 
+>
+<!ELEMENT sub (%exp;, (%exp;)?)>
+<!ATTLIST sub
+	operation (binary | unary) #IMPLIED
+	%location; 
+>
+<!ELEMENT mul (%exp;, %exp;)>
+<!ATTLIST mul
+	%location; 
+>
+<!ELEMENT div (%exp;, %exp;)>
+<!ATTLIST div
+	%location; 
+>
+<!ELEMENT pow (%exp;, %exp;)>
+<!ATTLIST pow
+	%location; 
+>
+<!ELEMENT array (expression_list|function_arguments)>
+<!ATTLIST array
+	%location; 
+>
+<!ELEMENT concat (expression_list, expression_list*)>
+<!ATTLIST concat
+	%location; 
+>
+
+<!ELEMENT semicolon EMPTY>
+<!ATTLIST semicolon
+	%location; 
+>
+
+<!ELEMENT if ((%exp;), then, elseif*, else)>
+<!ATTLIST if
+	%location; 
+>
+
+<!ELEMENT then (%exp;)>
+<!ATTLIST then
+	%location; 
+>
+<!ELEMENT elseif (%exp;, then)>
+<!ATTLIST elseif
+	%location; 
+>
+<!ELEMENT else (%exp;)>
+<!ATTLIST else
+	%location; 
+>
+<!ELEMENT call (component_reference, function_arguments?)>
+<!ATTLIST call
+	%location; 
+>
+<!ELEMENT range ((%exp;), (%exp;, (%exp;)?)?)>
+<!ATTLIST range
+	%location; 
+>
+
+<!ELEMENT output_expression_list ((%exp;)?, (comma, (%exp;)?)*)>
+<!ATTLIST output_expression_list
+	%location; 
+>
+
+<!ELEMENT expression_list ((%exp;), (comma, (%exp;)?)*)>
+<!ATTLIST expression_list
+	%location; 
+>
+
+<!ELEMENT comma EMPTY>
+<!ATTLIST comma
+	%location; 
+>
+<!ELEMENT end EMPTY>
+<!ATTLIST end
+	%location; 
+>
+<!ELEMENT function_arguments ((%exp;, (%exp; | for_indices)*) | %named_arguments;)>
+<!ATTLIST function_arguments
+	%location; 
+>
+<!ELEMENT named_argument (%exp;)>
+<!ATTLIST named_argument
+	ident CDATA #REQUIRED
+	%location; 
+>
+<!ELEMENT colon EMPTY>
+<!ATTLIST colon
+	%location; 
+>
+<!ELEMENT component_reference (array_subscripts?, component_reference?)>
+<!ATTLIST component_reference
+	ident CDATA #REQUIRED
+	%location; 
+>
