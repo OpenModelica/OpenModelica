@@ -58,6 +58,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 //STD Headers
 #include <exception>
+#include <stdexcept>
 
 //IAEX Headers
 #include "cellcommands.h"
@@ -138,7 +139,7 @@ namespace IAEX
 		{
 			// 2006-01-30 AF, add exception
 			string str = string("AddCellCommand(), Exception: \n") + e.what();
-			throw exception( str.c_str() );
+			throw runtime_error( str.c_str() );
 		}
 	}
    
@@ -194,7 +195,7 @@ namespace IAEX
       {
 		  // 2006-01-30 AF, add exception
 		  string str = string("CreateNewCommand(), Exception: \n") + e.what();
-		  throw exception( str.c_str() );
+		  throw runtime_error( str.c_str() );
       }
    }
 
@@ -282,7 +283,7 @@ namespace IAEX
       {
 		  // 2006-01-30 AF, add message box
 		  string str = string("DeleteCurrentCellsCommand(), Exception: \n") + e.what();
-		throw exception( str.c_str() );
+		throw runtime_error( str.c_str() );
       }
    }
    
@@ -328,7 +329,7 @@ namespace IAEX
 		{
 			// 2006-01-30 AF, add exception
 			string str = string("PasteCellsCommand(), Exception: \n") + e.what();
-			throw exception( str.c_str() );
+			throw runtime_error( str.c_str() );
 		}
 	}
 	
@@ -458,7 +459,7 @@ namespace IAEX
 		else
 		{
 			// ERROR
-			throw exception("Unknown cell");
+			throw runtime_error("Unknown cell");
 		}
 	}
    
@@ -506,7 +507,7 @@ namespace IAEX
       {
 		  // 2006-01-30 AF, add exception
 		  string str = string("DeleteSelectedCellsCommand(), Exception: \n") + e.what();
-		throw exception( str.c_str() );
+		throw runtime_error( str.c_str() );
       }
    }
 
@@ -556,7 +557,7 @@ namespace IAEX
 		{
 			// 2006-01-30 AF, add exception
 			string str = string("ChangeStyleOnSelectedCellsCommand(), Exception: \n") + e.what();
-			throw exception( str.c_str() );
+			throw runtime_error( str.c_str() );
 		}
 	}
 
@@ -574,7 +575,7 @@ namespace IAEX
       {
 		  // 2006-01-30 AF, add exception
 		  string str = string("ChangeStyleOnCurrentCellCommand(), Exception: \n") + e.what();
-		throw exception( str.c_str() );
+		throw runtime_error( str.c_str() );
       }
    }   
 
@@ -602,7 +603,7 @@ namespace IAEX
       {
 		  // 2006-01-30 AF, add exception
 		  string str = string("MakeGroupCellCommand(), Exception: \n") + e.what();
-		throw exception( str.c_str() );
+		throw runtime_error( str.c_str() );
 		  
       }
    }
@@ -632,7 +633,7 @@ namespace IAEX
 					if( typeid( *(*c_iter) ) == typeid( CellGroup ))
 					{
 						if( !(*c_iter)->hasChilds() )
-							throw exception( "No children" );
+							throw runtime_error( "No children" );
 
 						// get child
 						Cell* child = (*c_iter)->child();
@@ -696,7 +697,7 @@ namespace IAEX
 		catch( exception &e )
 		{
 			string str = string("UngroupCellCommand(), Exception: ") + e.what();
-			throw exception( str.c_str() );
+			throw runtime_error( str.c_str() );
 		}
 	}
 
@@ -758,7 +759,7 @@ namespace IAEX
 		catch( exception &e )
 		{
 			string str = string("SplitCellCommand(), Exception: ") + e.what();
-			throw exception( str.c_str() );
+			throw runtime_error( str.c_str() );
 		}
 	}
 

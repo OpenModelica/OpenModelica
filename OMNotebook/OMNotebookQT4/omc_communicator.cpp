@@ -236,7 +236,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 
 		// 2006-02-02 AF, Added throw exception
 		string msg = string("OMC-ERROR in function call: ") + fnCall.toStdString();
-		throw exception( msg.c_str() );
+		throw runtime_error( msg.c_str() );
 	}
 
 	//emit omcInput(fnCall + "\n");
@@ -257,7 +257,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 			if( 0 != fnCall.indexOf( "quit()", 0, Qt::CaseInsensitive ))
 			{
 				// 2006-02-02 AF, Added throw exception
-				throw exception("OMC is not responding");
+				throw runtime_error("OMC is not responding");
 			}
 			else
 				break;

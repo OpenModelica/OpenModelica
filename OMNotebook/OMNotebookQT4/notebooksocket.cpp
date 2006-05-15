@@ -83,7 +83,7 @@ namespace IAEX
 			return false;
 
 		// something is wrong, throw exception
-		throw exception( "Unable to connect OR start server" );
+		throw runtime_error( "Unable to connect OR start server" );
 	}
 
 	/*! 
@@ -103,7 +103,7 @@ namespace IAEX
 				
 				if( socket_->state() == QAbstractSocket::ConnectedState )
 					if( !socket_->waitForDisconnected( 5000 ))
-						throw exception( "Unable to disconnect socket from host" );
+						throw runtime_error( "Unable to disconnect socket from host" );
 			}
 
 			delete socket_;
@@ -152,7 +152,7 @@ namespace IAEX
 			return true;
 		}
 
-		throw exception( "Didn't found correct server" );
+		throw runtime_error( "Didn't found correct server" );
 	}
 
 

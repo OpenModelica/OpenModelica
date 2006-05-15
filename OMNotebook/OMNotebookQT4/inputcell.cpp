@@ -1506,7 +1506,7 @@ namespace IAEX
 	InputCellDelegate *InputCell::delegate()
 	{
 		if(!hasDelegate())
-			throw exception("No delegate.");
+			throw runtime_error("No delegate.");
 
 		return delegate_;
 	}

@@ -52,6 +52,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 //STD Headers
 #include <exception>
+#include <stdexcept>
 
 //QT Headers
 #include <QtCore/QDir>
@@ -87,7 +88,7 @@ namespace IAEX
 		if( !oldDir_.exists() || !newDir_.exists() )
 		{
 			string msg = "UpdateLink, old or new dir don't exists.";
-			throw exception( msg.c_str() );
+			throw runtime_error( msg.c_str() );
 		}
 	}
 
@@ -144,7 +145,7 @@ namespace IAEX
 				{
 					// this should never happen!
 					string msg = "Error, found no end of linkpath";
-                    throw exception( msg.c_str() );
+                    throw runtime_error( msg.c_str() );
 					break;
 				}
 			}

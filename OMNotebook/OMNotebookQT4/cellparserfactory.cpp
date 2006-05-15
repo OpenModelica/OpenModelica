@@ -89,7 +89,7 @@ namespace IAEX
       }
       else
       {
-		 throw exception("Can only open files ending with .onb or .nb,\n(can open old OMNotebooks file that ends with .xml)");
+		 throw runtime_error("Can only open files ending with .onb or .nb,\n(can open old OMNotebooks file that ends with .xml)");
       }
    }
 };

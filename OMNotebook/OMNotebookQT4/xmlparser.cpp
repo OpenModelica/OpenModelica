@@ -134,14 +134,14 @@ namespace IAEX
 		if( !file.open( QIODevice::ReadOnly ))
 		{
 			string msg = "Could not open " + filename_.toStdString();
-			throw exception( msg.c_str() );
+			throw runtime_error( msg.c_str() );
 		}
 		
 		if( !domdoc.setContent( &file ))
 		{
 			file.close();
 			string msg = "Could not understand content of " + filename_.toStdString();
-			throw exception( msg.c_str() );
+			throw runtime_error( msg.c_str() );
 		}
 		file.close();
 
@@ -182,7 +182,7 @@ namespace IAEX
 		{
 			string msg = "Wrong root node (" + root.toElement().tagName().toStdString() +
 				") in file " + filename_.toStdString();
-			throw exception( msg.c_str() );
+			throw runtime_error( msg.c_str() );
 		}
 
 		// Remove first cellgroup.
@@ -212,7 +212,7 @@ namespace IAEX
 		if( !rootcell->hasChilds() )
 		{
 			string msg = "File " + filename_.toStdString() + " is empty";
-			throw exception( msg.c_str() );
+			throw runtime_error( msg.c_str() );
 		}
 
 		return rootcell;
@@ -236,7 +236,7 @@ namespace IAEX
 		{
 			string msg = "Wrong root node (" + root.toElement().tagName().toStdString() +
 				") in file " + filename_.toStdString() + " (Old File)";
-			throw exception( msg.c_str() );
+			throw runtime_error( msg.c_str() );
 		}
 
 		// Remove first cellgroup.
@@ -291,7 +291,7 @@ namespace IAEX
 					else
 					{
 						string msg = "Unknow tag name: " + element.tagName().toStdString() + ", in file " + filename_.toStdString();
-						throw exception( msg.c_str() );
+						throw runtime_error( msg.c_str() );
 					}
 				}
 
@@ -331,7 +331,7 @@ namespace IAEX
 		else if( closed == XML_FALSE )
 			groupcell->setClosed( false );
 		else
-			throw exception( "Unknown closed value in group cell" );
+			throw runtime_error( "Unknown closed value in group cell" );
 
 		parent->addChild( groupcell );
 	}
@@ -379,7 +379,7 @@ namespace IAEX
 				else
 				{
 					string msg = "Unknown tagname " + e.tagName().toStdString() + ", in text cell";
-					throw exception( msg.c_str() );
+					throw runtime_error( msg.c_str() );
 				}
 			}
 
@@ -449,7 +449,7 @@ namespace IAEX
 				else
 				{
 					string msg = "Unknown tagname " + e.tagName().toStdString() + ", in input cell";
-					throw exception( msg.c_str() );
+					throw runtime_error( msg.c_str() );
 				}
 			}
 
@@ -467,7 +467,7 @@ namespace IAEX
 		else if( closed == XML_FALSE )
 			inputcell->setClosed( false );
 		else
-			throw exception( "Unknown closed value in inputcell" );
+			throw runtime_error( "Unknown closed value in inputcell" );
 
 		parent->addChild( inputcell );
 	}
@@ -492,7 +492,7 @@ namespace IAEX
 		// Get saved image name
 		QString imagename = element.attribute( XML_NAME, "" );
 		if( imagename.isEmpty() || imagename.isNull() )
-			throw exception( "No name in image tag" );
+			throw runtime_error( "No name in image tag" );
 
 		// Get saved image data
 		QByteArray imagedata = QByteArray::fromBase64( element.text().toLatin1() );
@@ -526,13 +526,13 @@ namespace IAEX
 			else
 			{
 				string msg = "Unknown typeid of parent cell";
-				throw exception( msg.c_str() );
+				throw runtime_error( msg.c_str() );
 			}
 		}
 		else
 		{	
 			string msg = "Error creating image: <"+ imagename.toStdString() +">";
-			throw exception( msg.c_str() );
+			throw runtime_error( msg.c_str() );
 		}
 	}
 
@@ -586,7 +586,7 @@ namespace IAEX
 				else
 				{
 					string msg = "Unknown tag: <"+ e.tagName().toStdString() +">";
-					throw exception( msg.c_str() );
+					throw runtime_error( msg.c_str() );
 				}
 			}
 			node = node.nextSibling();

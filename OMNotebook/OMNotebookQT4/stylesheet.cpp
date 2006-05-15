@@ -60,6 +60,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 //STD Headers
 #include <exception>
+#include <stdexcept>
 #include <iostream>
 #include <cstdlib>
 
@@ -102,7 +103,7 @@ namespace IAEX
 		{
 			// 2005-10-03 AF, thorw exception insted of exit
 			string tmp = "Could not open file: " + filename.toStdString();
-			throw exception( tmp.c_str() );
+			throw runtime_error( tmp.c_str() );
 		}
 
 		//Här kan det bli feeeeel!    
@@ -114,7 +115,7 @@ namespace IAEX
 			string tmp = "Could not read content from file: " + 
 				filename.toStdString() + 
 				" Probably some syntax error in the xml file";
-			throw exception( tmp.c_str() );
+			throw runtime_error( tmp.c_str() );
 		}
 		file.close();
 
@@ -277,7 +278,7 @@ namespace IAEX
 	void Stylesheet::traverseStyleSettings( QDomNode node, CellStyle *item ) const
 	{
 		if( !item )
-			throw exception( "STYLESHEET TRAVERSE... No ITEM SET!!" );
+			throw runtime_error( "STYLESHEET TRAVERSE... No ITEM SET!!" );
 
 		while( !node.isNull() )
 		{

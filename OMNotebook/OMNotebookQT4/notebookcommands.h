@@ -182,14 +182,14 @@ namespace IAEX
 					else
 					{
 						string msg = "Could not save documet to file: " + filename_.toStdString();
-						throw exception( msg.c_str() );
+						throw runtime_error( msg.c_str() );
 					}
 				}
 				catch(exception &e)
 				{
 					// 2006-01-30 AF, add exception
 					string str = string("SaveDocumentCommand(), Exception: ") + e.what();
-					throw exception( str.c_str() );
+					throw runtime_error( str.c_str() );
 				}
 			}
 	private:
@@ -218,7 +218,7 @@ namespace IAEX
 			catch(exception &e)
 			{
 				string msg = string("OpenFileCommand(), Exception:\r\n") + e.what();
-				throw exception( msg.c_str() );				
+				throw runtime_error( msg.c_str() );				
 			}
 		}
 	private:
@@ -251,7 +251,7 @@ namespace IAEX
 			catch(exception &e)
 			{
 				string msg = string("OpenOldFileCommand(), Exception:\r\n") + e.what();
-				throw exception( msg.c_str() );				
+				throw runtime_error( msg.c_str() );				
 			}
 		}
 	private:
@@ -291,7 +291,7 @@ namespace IAEX
 			catch(exception &e)
 			{
 				string msg = string("PrintDocumentCommand(), Exception:\r\n") + e.what();
-				throw exception( msg.c_str() );				
+				throw runtime_error( msg.c_str() );				
 			}
 		}
 	private:
@@ -322,7 +322,7 @@ namespace IAEX
 			{
 				// 2006-01-30 AF, add exception
 				string str = string("CloseFileCommand(), Exception: ") + e.what();
-				throw exception( str.c_str() );
+				throw runtime_error( str.c_str() );
 			}
 		}
 	};
@@ -352,7 +352,7 @@ namespace IAEX
 			{
 				// 2006-01-30 AF, add exception
 				string str = string("NewFileCommand(), Exception: ") + e.what();
-				throw exception( str.c_str() );
+				throw runtime_error( str.c_str() );
 			}
 		}
 	};
@@ -384,7 +384,7 @@ namespace IAEX
 				else
 				{
 					string msg = "Could not export text to file: " + filename_.toStdString();
-					throw exception( msg.c_str() );
+					throw runtime_error( msg.c_str() );
 				}
 
 				file.close();
@@ -393,7 +393,7 @@ namespace IAEX
 			{
 				// 2006-01-30 AF, add exception
 				string str = string("ExportToPureText(), Exception: ") + e.what();
-				throw exception( str.c_str() );
+				throw runtime_error( str.c_str() );
 			}			
 		}
 
@@ -434,7 +434,7 @@ namespace IAEX
 			catch(exception &e)
 			{
 				string str = string("EvalSelectedCells(), Exception: ") + e.what();
-				throw exception( str.c_str() );
+				throw runtime_error( str.c_str() );
 			}			
 		}
 
@@ -486,7 +486,7 @@ namespace IAEX
 			catch(exception &e)
 			{
 				string str = string("UpdateChapterCounters(), Exception: ") + e.what();
-				throw exception( str.c_str() );
+				throw runtime_error( str.c_str() );
 			}			
 		}
 

@@ -212,35 +212,53 @@ namespace IAEX
 		try
 		{
 			// 2006-02-28 AF, use environment varable to find omc.exe
-			string drmodelica( getenv( "OPENMODELICAHOME" ) );
-			if( drmodelica.empty() )
-				throw std::exception( "Could not find environment variable OPENMODELICAHOME" );
+			string OMCPath( getenv( "OPENMODELICAHOME" ) );
+			if( OMCPath.empty() )
+				throw std::runtime_error( "Could not find environment variable OPENMODELICAHOME" );
 
 			// location of omc in openmodelica folder
 			QDir dir;
-			if( dir.exists( QString(drmodelica.c_str()) + "\\bin\\omc.exe" ) )
-				drmodelica += "\\bin\\";
-			else if( dir.exists( QString(drmodelica.c_str()) + "\\omc.exe" ) )
-				drmodelica;
+#ifdef WIN32
+			if( dir.exists( QString(OMCPath.c_str()) + "\\bin\\omc.exe" ) )
+				OMCPath += "\\bin\\";
+			else if( dir.exists( QString(OMCPath.c_str()) + "\\omc.exe" ) )
+				OMCPath;
 			else if( dir.exists( "omc.exe" ))
-				drmodelica = "";
+				OMCPath = "";
 			else
 			{
 				string msg = "Unable to find OMC, searched in:\n" +
-					drmodelica + "\\bin\\\n" +
-					drmodelica + "\n" +
+					OMCPath + "\\bin\\\n" +
+					OMCPath + "\n" +
 					dir.absolutePath().toStdString();
 
-				throw std::exception( msg.c_str() );
+				throw std::runtime_error( msg.c_str() );
 			}
+#else /* unix */
+			if( dir.exists( QString(OMCPath.c_str()) + "/bin/omc" ) )
+				OMCPath += "/bin/";
+			else if( dir.exists( QString(OMCPath.c_str()) + "/omc" ) )
+				OMCPath;
+			else if( dir.exists( "omc.exe" ))
+				OMCPath = "";
+			else
+			{
+				string msg = "Unable to find OMC, searched in:\n" +
+					OMCPath + "/bin/\n" +
+					OMCPath + "\n" +
+					dir.absolutePath().toStdString();
+
+				throw std::runtime_error( msg.c_str() );
+			}
+#endif
 			
 
 			// 2006-03-14 AF, set omc loaction and parameters
 			QString omc;
 			#ifdef WIN32
-				omc = QString( drmodelica.c_str() ) + "omc.exe";
+				omc = QString( OMCPath.c_str() ) + "omc.exe";
 			#else
-				omc = QString( drmodelica.c_str() ) + "omc";
+				omc = QString( OMCPath.c_str() ) + "omc";
 			#endif
 			
 			QStringList parameters;
@@ -253,9 +271,7 @@ namespace IAEX
 			omcProcess->start( omc, parameters );
 
 			// give time to start up..
-			SleeperThread::msleep( 500 );
-
-			if( QProcess::Running == omcProcess->state() )
+			if( omcProcess->waitForStarted(2000) )
 				flag = true;
 			else
 				flag = false;
@@ -281,7 +297,7 @@ namespace IAEX
 			Sleep(1000);
 
 			if( !flag )
-				throw std::exception("Was unable to start OMC");
+				throw std::runtime_error("Was unable to start OMC");
 
 				*/
 		}

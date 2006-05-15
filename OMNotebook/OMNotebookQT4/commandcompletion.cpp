@@ -56,6 +56,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 //STD Headers
 #include <exception>
+#include <stdexcept>
 #include <iostream>
 #include <cstdlib>
 
@@ -104,7 +105,7 @@ namespace IAEX
 		if(!file.open(QIODevice::ReadOnly))
 		{
 			string tmp = "Could not open file: " + filename.toStdString();
-			throw exception( tmp.c_str() );
+			throw runtime_error( tmp.c_str() );
 		}
  
 		if( !doc_->setContent(&file) )
@@ -113,7 +114,7 @@ namespace IAEX
 			string tmp = "Could not read content from file: " + 
 				filename.toStdString() + 
 				" Probably some syntax error in the xml file";
-			throw exception( tmp.c_str() );
+			throw runtime_error( tmp.c_str() );
 		}
 		file.close();
 
@@ -387,7 +388,7 @@ namespace IAEX
 	void CommandCompletion::parseCommand( QDomNode node, CommandUnit *item ) const
 	{
 		if( !item )
-			throw exception( "ParseCommand... No ITEM set" );
+			throw runtime_error( "ParseCommand... No ITEM set" );
 
 		while( !node.isNull() )
 		{

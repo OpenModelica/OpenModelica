@@ -107,7 +107,7 @@ namespace IAEX
 			{
 				// 2006-01-30 AF, add exception
 				string str = string("CursorMoveUpCommand(), Exception: ") + e.what();
-				throw exception( str.c_str() );
+				throw runtime_error( str.c_str() );
 			}
 		}
 	}; 
@@ -161,7 +161,7 @@ namespace IAEX
 			{
 				// 2006-01-30 AF, add exception
 				string str = string("CursorMoveDownCommand(), Exception: ") + e.what();
-				throw exception( str.c_str() );
+				throw runtime_error( str.c_str() );
 			}
 		}
 	}; 
@@ -216,7 +216,7 @@ namespace IAEX
 			{
 				// 2006-01-30 AF, add exception
 				string str = string("CursorMoveAfterCommand(), Exception: ") + e.what();
-				throw exception( str.c_str() );
+				throw runtime_error( str.c_str() );
 			}
 		}
 	private:

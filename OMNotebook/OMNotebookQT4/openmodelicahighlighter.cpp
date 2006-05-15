@@ -61,6 +61,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 //STD Headers
 #include <exception>
+#include <stdexcept>
 #include <iostream>
 
 //QT Headers
@@ -343,7 +344,7 @@ namespace IAEX
 		if( !file.open(QIODevice::ReadOnly) )
 		{
 			string tmp = "Could not open " + filename_.toStdString();
-			throw exception( tmp.c_str() );
+			throw runtime_error( tmp.c_str() );
 		}
 
 		if( !doc.setContent(&file) )
@@ -351,7 +352,7 @@ namespace IAEX
 			file.close();
 
 			string tmp = "Could not understand content of " +  filename_.toStdString();
-			throw exception( tmp.c_str() );
+			throw runtime_error( tmp.c_str() );
 		}
 		file.close();
 

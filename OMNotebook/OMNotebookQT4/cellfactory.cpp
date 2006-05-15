@@ -112,7 +112,7 @@ namespace IAEX
 				if( cstyle.name() != "null" )
 					text->setStyle( cstyle );
 				else
-					throw exception("No Input style defened, the inputcell may not work correctly, please define a Input style in stylesheet.xml");
+					throw runtime_error("No Input style defened, the inputcell may not work correctly, please define a Input style in stylesheet.xml");
 			}
 			catch( exception e )
 			{

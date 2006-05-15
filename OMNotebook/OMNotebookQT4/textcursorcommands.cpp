@@ -53,7 +53,6 @@ licence: http://www.trolltech.com/products/qt/licensing.html
  * \brief Describes different textcursor commands
  */
 
-
 //QT Headers
 #include <QtCore/QDir>
 #include <QtGui/QMessageBox>
@@ -547,7 +546,7 @@ namespace IAEX
 			else
 			{
 				string str = string("Could not open image: ") + filepath_.toStdString().c_str();
-				throw exception( str.c_str() );
+				throw runtime_error( str.c_str() );
 			}
 		}
 	}
