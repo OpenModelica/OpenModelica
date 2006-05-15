@@ -5584,13 +5584,21 @@ algorithm
       Absyn.ComponentItem comp;
     case ({},_,_,_) then {}; 
       
-      case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = SOME(Absyn.CLASSMOD(args,expopt))),condition = cond,comment = cmt) :: rest),varname,Absyn.CREF_IDENT("",{}),mod)
+      // remove modifier.
+    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = SOME(Absyn.CLASSMOD(args,expopt))),condition = cond,comment = cmt) :: rest),varname,Absyn.CREF_IDENT("",{}),mod)
       equation 
         equality(varname = id);
         optmod = createOptModificationFromEltargs(args,NONE);
       then
         (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,optmod),cond,cmt) :: rest);
-      
+        
+       // remove modifier.
+    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = NONE),condition = cond,comment = cmt) :: rest),varname,Absyn.CREF_IDENT("",{}),mod)
+      equation 
+        equality(varname = id);
+      then
+        (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,NONE),cond,cmt) :: rest);
+        
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = SOME(Absyn.CLASSMOD(args,expopt))),condition = cond,comment = cmt) :: rest),varname,submodpath,mod)
       equation 
         equality(varname = id);
@@ -5598,6 +5606,15 @@ algorithm
         optmod = createOptModificationFromEltargs(args_1,expopt);
       then
         (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,optmod),cond,cmt) :: rest);
+        
+        case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = NONE),condition = cond,comment = cmt) :: rest),varname,submod,Absyn.CLASSMOD({},NONE))
+      equation 
+        equality(varname = id);
+      then
+        (Absyn.COMPONENTITEM(
+          Absyn.COMPONENT(id,dim,NONE),cond,cmt) :: rest);
+          
+        
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = NONE),condition = cond,comment = cmt) :: rest),varname,submod,mod)
       equation 
         equality(varname = id);
@@ -5672,8 +5689,10 @@ algorithm
       Absyn.ElementArg m;
   	case ({},cref,Absyn.CLASSMOD({},NONE)) then {}; // Empty modification.
     case ({},cref,mod) then {
-          Absyn.MODIFICATION(false,Absyn.NON_EACH(),cref,SOME(mod),NONE)};  /* empty modification, remove MODIFICATION */ 
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = Absyn.CREF_IDENT(name = name,subscripts = idx),comment = cmt) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD(elementArgLst = {},expOption = NONE))) /* empty modification, remove MODIFICATION */ 
+          Absyn.MODIFICATION(false,Absyn.NON_EACH(),cref,SOME(mod),NONE)};  
+          
+       //Clear modification
+    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = Absyn.CREF_IDENT(name = name,subscripts = idx),comment = cmt) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD( {}, NONE)))  
       equation 
         equality(name = submodident);
       then
@@ -5683,16 +5702,41 @@ algorithm
         equality(name = submodident);
       then
         (Absyn.MODIFICATION(f,each_,Absyn.CREF_IDENT(name,idx),SOME(mod),cmt) :: rest);
+
+    // Clear modification
+     case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = (cr1 as Absyn.CREF_QUAL(name = _)),comment = cmt) :: rest),cr2,Absyn.CLASSMOD({},NONE))
+      equation 
+        true = Absyn.crefEqual(cr1, cr2);
+      then
+        (rest);
+    
     case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = (cr1 as Absyn.CREF_QUAL(name = _)),comment = cmt) :: rest),cr2,mod)
       equation 
         true = Absyn.crefEqual(cr1, cr2);
       then
         (Absyn.MODIFICATION(f,each_,cr1,SOME(mod),cmt) :: rest);
+
+     //Clear modification   
+    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = Absyn.CREF_QUAL(name = name1),comment = cmt) :: rest),Absyn.CREF_IDENT(name = name2,subscripts = idx),Absyn.CLASSMOD({},NONE))
+      equation 
+        equality(name1 = name2);
+      then
+        (rest);
+        
     case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = Absyn.CREF_QUAL(name = name1),comment = cmt) :: rest),Absyn.CREF_IDENT(name = name2,subscripts = idx),mod)
       equation 
         equality(name1 = name2);
       then
         (Absyn.MODIFICATION(f,each_,Absyn.CREF_IDENT(name2,idx),SOME(mod),cmt) :: rest);
+   
+   // Clear modification
+   case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = (cr as Absyn.CREF_IDENT(name = name2)),modification = SOME(Absyn.CLASSMOD(args,NONE)),comment = cmt) :: rest),Absyn.CREF_QUAL(name = name1,componentRef = cr1),Absyn.CLASSMOD({},NONE))
+      equation 
+        equality(name1 = name2);
+        {}= setSubmodifierInElementargs(args, cr1, Absyn.CLASSMOD({},NONE));
+      then
+        (Absyn.MODIFICATION(f,each_,cr,NONE,cmt) :: rest);
+   
     case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = (cr as Absyn.CREF_IDENT(name = name2)),modification = SOME(Absyn.CLASSMOD(args,exp)),comment = cmt) :: rest),Absyn.CREF_QUAL(name = name1,componentRef = cr1),mod)
       equation 
         equality(name1 = name2);
