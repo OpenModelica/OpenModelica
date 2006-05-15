@@ -3073,6 +3073,13 @@ algorithm
   end matchcontinue;
 end isConstZero;
 
+public function makeIntegerExp "creates an integer constant expression given the integer input."
+  input Integer i;
+  output Exp e;
+algorithm
+  e:=ICONST(i);
+end makeIntegerExp;
+
 protected function makeConstOne "function makeConstOne
   author: PA
  

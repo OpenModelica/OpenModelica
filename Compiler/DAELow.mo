@@ -6284,10 +6284,15 @@ algorithm
     case (dae,m,mt,nv,nf,i)
       equation 
         eqns = DAEEXT.getMarkedEqns();
-        es = Util.listMap(eqns, int_string);
+        diff_eqns = DAEEXT.getDifferentiatedEqns();
+        eqns_1 = Util.listSetdifferenceP(eqns, diff_eqns, int_eq);
+        es = Util.listMap(eqns_1, int_string);
         es_1 = Util.stringDelimitList(es, ", ");
-        ({},_) = statesInEqns(eqns, dae, m, mt);
-        printEquations(eqns, dae);
+        print("eqns =");print(es_1);print("\n");
+        ({},_) = statesInEqns(eqns_1, dae, m, mt);
+        print("no states found in equations:");
+        printEquations(eqns_1, dae);
+       
       then
         fail();
     case (_,_,_,_,_,_)

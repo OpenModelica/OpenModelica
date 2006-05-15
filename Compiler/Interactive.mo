@@ -1119,12 +1119,14 @@ algorithm
       then
         (resstr,SYMBOLTABLE(p_1,s,ic,iv,cf));
 
+			//special case for clearing modifier simple name.	
     case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentModifierValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.CREF(componentReg = (ident as Absyn.CREF_IDENT(name = _))),Absyn.CODE(code = Absyn.C_MODIFICATION(modification = (mod as Absyn.CLASSMOD(elementArgLst = {},expOption = NONE))))},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
-        (p_1,resstr) = setComponentModifier(class_, ident, Absyn.CREF_IDENT("",{}), mod, p) "special case for clearing modifier" ;
+        (p_1,resstr) = setComponentModifier(class_, ident, Absyn.CREF_IDENT("",{}),mod, p)  ;
       then
         (resstr,SYMBOLTABLE(p_1,s,ic,iv,cf));
-
+        
+          
     case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentModifierValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.CREF(componentReg = Absyn.CREF_QUAL(name = ident,componentRef = subident)),Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       local String ident;
       equation 
@@ -5540,7 +5542,9 @@ algorithm
       Absyn.ComponentRef submodident;
       Absyn.Modification mod;
       Absyn.Element elt;
-    case (Absyn.ELEMENT(final_ = f,redeclareKeywords = r,innerOuter = i,name = n,specification = Absyn.COMPONENTS(attributes = attr,typeName = tp,components = compitems),info = info,constrainClass = constr),varname,submodident,mod)
+    case (Absyn.ELEMENT(final_ = f,redeclareKeywords = r,innerOuter = i,name = n,
+      specification = Absyn.COMPONENTS(attributes = attr,typeName = tp,components = compitems),
+      info = info,constrainClass = constr),varname,submodident,mod)
       equation 
         compitems_1 = setComponentSubmodifierInCompitems(compitems, varname, submodident, mod);
       then
@@ -5579,6 +5583,14 @@ algorithm
       Absyn.Modification mod;
       Absyn.ComponentItem comp;
     case ({},_,_,_) then {}; 
+      
+      case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = SOME(Absyn.CLASSMOD(args,expopt))),condition = cond,comment = cmt) :: rest),varname,Absyn.CREF_IDENT("",{}),mod)
+      equation 
+        equality(varname = id);
+        optmod = createOptModificationFromEltargs(args,NONE);
+      then
+        (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,optmod),cond,cmt) :: rest);
+      
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = SOME(Absyn.CLASSMOD(args,expopt))),condition = cond,comment = cmt) :: rest),varname,submodpath,mod)
       equation 
         equality(varname = id);
@@ -5620,8 +5632,11 @@ protected function createOptModificationFromEltargs "function: createOptModifica
 algorithm 
   outAbsynModificationOption:=
   matchcontinue (inAbsynElementArgLst,inExpOpt)
-    local list<Absyn.ElementArg> args;
+    local 
+      list<Absyn.ElementArg> args;
       Option<Absyn.Exp> expOpt;
+      Absyn.Exp e;
+    case({},SOME(e)) then SOME(Absyn.CLASSMOD({},SOME(e)));
     case ({},_) then NONE; 
     case (args,expOpt) then SOME(Absyn.CLASSMOD(args,expOpt)); 
   end matchcontinue;
@@ -5653,7 +5668,9 @@ algorithm
       Option<String> cmt;
       list<Absyn.ElementArg> rest,args_1,args,res;
       Option<Absyn.Exp> exp;
+      Absyn.Exp e;
       Absyn.ElementArg m;
+  	case ({},cref,Absyn.CLASSMOD({},NONE)) then {}; // Empty modification.
     case ({},cref,mod) then {
           Absyn.MODIFICATION(false,Absyn.NON_EACH(),cref,SOME(mod),NONE)};  /* empty modification, remove MODIFICATION */ 
     case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = Absyn.CREF_IDENT(name = name,subscripts = idx),comment = cmt) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD(elementArgLst = {},expOption = NONE))) /* empty modification, remove MODIFICATION */ 

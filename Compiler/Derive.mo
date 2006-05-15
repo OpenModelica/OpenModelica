@@ -139,6 +139,7 @@ algorithm
       Absyn.Path a;
       Boolean b,c;
       Integer i;
+      Absyn.Path fname;
     case (Exp.ICONST(integer = _),_) then Exp.RCONST(0.0); 
     case (Exp.RCONST(real = _),_) then Exp.RCONST(0.0); 
     case (Exp.CREF(componentRef = Exp.CREF_IDENT(ident = "time",subscriptLst = {}),ty = tp),_) then Exp.RCONST(1.0); 
@@ -154,12 +155,22 @@ algorithm
         (_,_) = DAELow.getVar(cr, timevars);
       then
         Exp.CALL(Absyn.IDENT("der"),{e},false,true);
-    case (Exp.CALL(path = Absyn.IDENT(name = "sin"),expLst = {e},tuple_ = false,builtin = true),timevars)
+    case (Exp.CALL(path = fname,expLst = {e},tuple_ = false,builtin = true),timevars)
       equation 
+        isSin(fname);
         e_1 = differentiateExpTime(e, timevars) "der(sin(x)) = der(x)cos(x)" ;
       then
         Exp.BINARY(e_1,Exp.MUL(Exp.REAL()),
           Exp.CALL(Absyn.IDENT("cos"),{e},false,true));
+          
+    case (Exp.CALL(path = fname,expLst = {e},tuple_ = false,builtin = true),timevars)
+      equation 
+        isCos(fname);
+        e_1 = differentiateExpTime(e, timevars) "der(cos(x)) = -der(x)sin(x)" ;
+      then
+        Exp.UNARY(Exp.UMINUS(Exp.REAL()),Exp.BINARY(e_1,Exp.MUL(Exp.REAL()),
+          Exp.CALL(Absyn.IDENT("sin"),{e},false,true)));
+          
     case ((e as Exp.CREF(componentRef = cr,ty = tp)),timevars) /* list_member(cr,timevars) => false */  then Exp.RCONST(0.0); 
     case (Exp.BINARY(exp1 = e1,operator = Exp.ADD(ty = tp),exp2 = e2),tv)
       equation 

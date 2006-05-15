@@ -673,7 +673,7 @@ algorithm
         // last array subscripts are not present in vars, therefor removed from vars2 too.
         vars2 = Util.listMap(vars2,Exp.crefStripLastSubs); 
         unconnectedvars = removeVariables(vars, vars2);
-        dae_1 = generateZeroflowEquations(unconnectedvars);
+        dae_1 = generateZeroflowEquations(unconnectedvars,env);
       then
         dae_1;
     case (csets,dae,env,_) /* Debug.fprint(\"failtrace\",\"-unconnected_flow_equations failed\\n\") */  then {}; 
@@ -736,18 +736,35 @@ protected function generateZeroflowEquations "function: generateZeroflowEquation
   generates equations setting each variable in the list to zero.
 "
   input list<Exp.ComponentRef> inExpComponentRefLst;
+  input Env.Env inEnv;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   outDAEElementLst:=
-  matchcontinue (inExpComponentRefLst)
+  matchcontinue (inExpComponentRefLst,inEnv)
     local
       list<DAE.Element> res;
       Exp.ComponentRef cr;
+      Env.Env env;
+      Types.Type tp;
       list<Exp.ComponentRef> xs;
-    case ({}) then {}; 
-    case ((cr :: xs))
-      equation 
-        res = generateZeroflowEquations(xs);
+      list<int> dimSizes;
+      list<Exp.Exp> dimExps;
+    case ({},_) then {}; 
+    case ((cr :: xs),env)
+      equation
+        (_,tp,_) = Lookup.lookupVar(env,cr);
+        true = Types.isArray(tp); // For variables that are arrays, generate cr = fill(0,dims);
+        dimSizes = Types.getDimensionSizes(tp);
+        dimExps = Util.listMap(dimSizes,Exp.makeIntegerExp);
+        res = generateZeroflowEquations(xs,env);
+      then
+        (DAE.EQUATION(Exp.CREF(cr,Exp.REAL()),Exp.CALL(Absyn.IDENT("fill"),Exp.RCONST(0.0)::dimExps,false,true)) :: res);        
+ 
+    case ((cr :: xs),env) // For scalars.
+      equation
+        (_,tp,_) = Lookup.lookupVar(env,cr);
+        false = Types.isArray(tp); // scalar
+        res = generateZeroflowEquations(xs,env);
       then
         (DAE.EQUATION(Exp.CREF(cr,Exp.REAL()),Exp.RCONST(0.0)) :: res);
   end matchcontinue;
@@ -907,6 +924,13 @@ protected import OpenModelica.Compiler.Print "
 " ;
 
 protected import OpenModelica.Compiler.Util;
+
+protected import OpenModelica.Compiler.Types;
+
+protected import OpenModelica.Compiler.Lookup;
+
+protected import OpenModelica.Compiler.Absyn;
+
 
 public function printSets "adrpo -- not used
 with \"Debug.rml\"
