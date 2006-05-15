@@ -1,3 +1,0 @@
- ( STORED_DEFINITION ( CLASS_DEFINITION class CelestialBody ( STRING_COMMENT Celestial Body ) ( DECLARATION Real mass COMMENT ) ( DECLARATION String name COMMENT ) ( DECLARATION constant Real ( g ( = 6.672e-11 ) ) COMMENT ) ( DECLARATION parameter Real radius COMMENT ) ) ( CLASS_DEFINITION class Body ( STRING_COMMENT Generic Body ) ( DECLARATION Real mass COMMENT ) ( DECLARATION String name COMMENT ) ) ( CLASS_DEFINITION class CelestialBody ( STRING_COMMENT Celestial Body ) ( extends Body ) ( DECLARATION constant Real ( g ( = 6.672e-11 ) ) COMMENT ) ( DECLARATION parameter Real radius COMMENT ) ) )
-
-SUCCESS! File:C:\dev\src\modelicaxml\body.mo

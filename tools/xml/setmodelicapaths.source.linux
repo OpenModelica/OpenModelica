@@ -1,7 +1,0 @@
-#!/bin/bash
-RMLHOME=/home/adrpo/rml-2.1.8/x86-linux-gcc
-ANTLRHOME=/home/adrpo/antlr-2.7.1/lib/cpp
-CLASSPATH=/home/adrpo/antlr-2.7.1/antlr.jar:/home/adrpo/antlr-2.7.1:$CLASSPATH
-MOSHHOME=/home/adrpo/src/modelica/mosh
-
-export RMLHOME ANTLRHOME CLASSPATH MOSHHOME
