@@ -53,9 +53,13 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <stdlib.h> //This should be cstdlib, if it even should be used!! 
 #include <fstream>
 #include <sstream>
+#include <exception>
+#include <stdexcept>
 
 // Windows includes
+#ifdef WIN32
 #include "windows.h"
+#endif
 
 // QT includes
 #include <QtGui/QApplication>
@@ -124,7 +128,7 @@ bool OmcCommunicator::establishConnection()
 	char *user = getenv("USER");
 	if (!user) { user = "nobody"; }
 
-	objectRefFile.setName("/tmp/openmodelica." + *(new QString(user)) + ".objid");
+	objectRefFile.setFileName("/tmp/openmodelica." + *(new QString(user)) + ".objid");
 
 #endif
 
@@ -188,7 +192,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 
 		// 2006-02-02 AF, Added throw exception
 		string msg = string("OMC-ERROR in function call: ") + fnCall.toStdString();
-		throw exception( msg.c_str() );
+		throw runtime_error( msg.c_str() );
 	}
 
 	QString returnString;
@@ -201,7 +205,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 		{
 			if( fnCall != "quit()" && fnCall != "quit();" )
 			{
-				throw exception("NOT RESPONDING");
+				throw runtime_error("NOT RESPONDING");
 			}
 			else
 				break;

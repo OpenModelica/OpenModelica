@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2006, Linköpings universitet,
+Copyright (c) 1998-2006, LinkÃ¶pings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
 
-    * Neither the name of Linköpings universitet nor the names of its contributors
+    * Neither the name of LinkÃ¶pings universitet nor the names of its contributors
       may be used to endorse or promote products derived from this software without
       specific prior written permission.
 
@@ -48,7 +48,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 /*! 
  * \file otherdlg.h
- * \author Anders Fernström
+ * \author Anders FernstrÃ¶m
  * \date 2005-11-10 (created)
  */
 
@@ -690,7 +690,8 @@ eval:
 		// get Error text
 		try
 		{
-			delegate_->evalExpression( QString("getErrorString()") );
+		  QString getErrorString = "getErrorString";
+			delegate_->evalExpression( getErrorString);
 		}
 		catch( exception &e )
 		{
@@ -1157,7 +1158,10 @@ bool OMS::startServer()
 void OMS::stopServer()
 {
 	if( delegate_ )
-		delegate_->evalExpression( QString("quit()") );
+	{
+	  QString quit = "quit()"; 
+	  delegate_->evalExpression( quit );
+	}
 }
 
 void OMS::clear()

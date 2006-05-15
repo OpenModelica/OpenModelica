@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2006, Linköpings universitet,
+Copyright (c) 1998-2006, LinkÃ¶pings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
 
-    * Neither the name of Linköpings universitet nor the names of its contributors
+    * Neither the name of LinkÃ¶pings universitet nor the names of its contributors
       may be used to endorse or promote products derived from this software without
       specific prior written permission.
 
@@ -82,7 +82,7 @@ namespace IAEX
       return result_;
    }
    
-   void OmcInteractiveEnvironment::evalExpression(QString &expr)
+   void OmcInteractiveEnvironment::evalExpression(QString& expr)
    {
 		// 2006-02-02 AF, Added try-catch
 		try
@@ -133,10 +133,11 @@ namespace IAEX
 			// 2006-02-28 AF, use environment varable to find omc.exe
 			string OMCPath( getenv( "OPENMODELICAHOME" ) );
 			if( OMCPath.empty() )
-				throw std::exception( "Could not find environment variable OPENMODELICAHOME" );
+				throw std::runtime_error( "Could not find environment variable OPENMODELICAHOME" );
 
 			// location of omc in openmodelica folder
 			QDir dir;
+#ifdef WIN32
 			if( dir.exists( QString(OMCPath.c_str()) + "\\bin\\omc.exe" ) )
 				OMCPath += "\\bin\\";
 			else if( dir.exists( QString(OMCPath.c_str()) + "\\omc.exe" ) )
@@ -150,16 +151,33 @@ namespace IAEX
 					OMCPath + "\n" +
 					dir.absolutePath().toStdString();
 
-				throw std::exception( msg.c_str() );
+				throw std::runtime_error( msg.c_str() );
 			}
+#else /* unix */
+			if( dir.exists( QString(OMCPath.c_str()) + "/bin/omc" ) )
+				OMCPath += "/bin/";
+			else if( dir.exists( QString(OMCPath.c_str()) + "/omc" ) )
+				OMCPath;
+			else if( dir.exists( "omc.exe" ))
+				OMCPath = "";
+			else
+			{
+				string msg = "Unable to find OMC, searched in:\n" +
+					OMCPath + "/bin/\n" +
+					OMCPath + "\n" +
+					dir.absolutePath().toStdString();
+
+				throw std::runtime_error( msg.c_str() );
+			}
+#endif 
 
 			// 2006-03-14 AF, set omc loaction and parameters
 			QString omc;
-			#ifdef WIN32
+#ifdef WIN32
 				omc = QString( OMCPath.c_str() ) + "omc.exe";
-			#else
+#else /* unix */
 				omc = QString( OMCPath.c_str() ) + "omc";
-			#endif
+#endif
 			
 			QStringList parameters;
 			parameters << "+d=interactiveCorba";
@@ -169,7 +187,8 @@ namespace IAEX
 		
 			// 2006-03-14 AF, start omc
 			omcProcess->start( omc, parameters );
-			if( QProcess::Running == omcProcess->state() )
+
+			if( omcProcess->waitForStarted(2000) )
 				flag = true;
 			else
 				flag = false;

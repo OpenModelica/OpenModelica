@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2006, Linköpings universitet,
+Copyright (c) 1998-2006, LinkÃ¶pings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -23,7 +23,7 @@ are permitted provided that the following conditions are met:
       this list of conditions and the following disclaimer in the documentation
       and/or other materials provided with the distribution.
 
-    * Neither the name of Linköpings universitet nor the names of its contributors
+    * Neither the name of LinkÃ¶pings universitet nor the names of its contributors
       may be used to endorse or promote products derived from this software without
       specific prior written permission.
 
@@ -69,7 +69,7 @@ namespace IAEX
    {
    public:
       virtual QString getResult() = 0;
-      virtual void evalExpression(QString &expr) = 0;
+      virtual void evalExpression(QString& expr) = 0;
 	  virtual void closeConnection() = 0;				// Added 2006-02-02 AF
   	  virtual void reconnect() = 0;						// Added 2006-02-09 AF
 	  virtual bool startDelegate() = 0;					// Added 2006-02-09 AF
