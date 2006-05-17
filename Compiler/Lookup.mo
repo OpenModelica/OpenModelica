@@ -1945,69 +1945,69 @@ algorithm
   end matchcontinue;
 end checkSubscripts;
 
-protected function checkSubscriptsBinding "function: checkSubscriptsBinding
+// protected function checkSubscriptsBinding "function: checkSubscriptsBinding
  
-  This function checks a list of subscripts agains type, and removes
-  dimensions from the type according to the subscripting.
-"
-  input Types.Binding inBinding;
-  input list<Exp.Subscript> inExpSubscriptLst;
-  output Types.Binding outBinding;
-algorithm 
-  outBinding:=
-  matchcontinue (inType,inBinding,inExpSubscriptLst)
-    local
-      Types.Binding t,t_1;
-      Types.ArrayDim dim;
-      Option<Absyn.Path> p;
-      list<Exp.Subscript> ys,s;
-      Integer sz,ind;
-      list<Exp.Exp> se;
-      Types.Binding binding;
-      Exp.Exp exp;
-      Option<Values.Value> eExp "evaluatedExp; evaluated exp" ;
-      Types.Const const "constant" ;
-      Values.Value v,v2;
-    case (binding,{}) then binding; 
-    case (Types.UNBOUND(),_) then Types.UNBOUND();
-    case (Types.EQBOUND(exp,eExp,const),
-          (Exp.INDEX(a = Exp.ICONST(integer = ind)) :: ys)) 
-      equation
-        Debug.fprint("tcvt", "*** checkSubscriptsBinding Types.EQBOUND\n");
-        t_1 = checkSubscriptsBinding(Types.EQBOUND(Exp.ASUB(exp,ind),eExp,const), ys);
-      then 
-        t_1;
+//   This function checks a list of subscripts agains type, and removes
+//   dimensions from the type according to the subscripting.
+// "
+//   input Types.Binding inBinding;
+//   input list<Exp.Subscript> inExpSubscriptLst;
+//   output Types.Binding outBinding;
+// algorithm 
+//   outBinding:=
+//   matchcontinue (inType,inBinding,inExpSubscriptLst)
+//     local
+//       Types.Binding t,t_1;
+//       Types.ArrayDim dim;
+//       Option<Absyn.Path> p;
+//       list<Exp.Subscript> ys,s;
+//       Integer sz,ind;
+//       list<Exp.Exp> se;
+//       Types.Binding binding;
+//       Exp.Exp exp;
+//       Option<Values.Value> eExp "evaluatedExp; evaluated exp" ;
+//       Types.Const const "constant" ;
+//       Values.Value v,v2;
+//     case (binding,{}) then binding; 
+//     case (Types.UNBOUND(),_) then Types.UNBOUND();
+//     case (Types.EQBOUND(exp,eExp,const),
+//           (Exp.INDEX(a = Exp.ICONST(integer = ind)) :: ys)) 
+//       equation
+//         Debug.fprint("tcvt", "*** checkSubscriptsBinding Types.EQBOUND\n");
+//         t_1 = checkSubscriptsBinding(Types.EQBOUND(Exp.ASUB(exp,ind),eExp,const), ys);
+//       then 
+//         t_1;
  
  
 
-    case (Types.VALBOUND(v),(Exp.INDEX(a = Exp.ICONST(integer = ind)) :: ys)) 
-      equation
-        Debug.fprint("tcvt", "*** checkSubscriptsBinding before ntharrayelt Types.VALBOUND\n");
-        v2= Values.nthArrayelt(v,ind);
-        Debug.fprint("tcvt", "*** checkSubscriptsBinding after ntharrayelt Types.VALBOUND\n");
-        t_1 = checkSubscriptsBinding(Types.VALBOUND(v2), ys);
-      then t_1;
+//     case (Types.VALBOUND(v),(Exp.INDEX(a = Exp.ICONST(integer = ind)) :: ys)) 
+//       equation
+//         Debug.fprint("tcvt", "*** checkSubscriptsBinding before ntharrayelt Types.VALBOUND\n");
+//         v2= Values.nthArrayelt(v,ind);
+//         Debug.fprint("tcvt", "*** checkSubscriptsBinding after ntharrayelt Types.VALBOUND\n");
+//         t_1 = checkSubscriptsBinding(Types.VALBOUND(v2), ys);
+//       then t_1;
 
 
-    case (binding,_)  
-      equation
-        Debug.fprint("tcvt", "*** checkSubscriptsBinding binding\n");
+//     case (binding,_)  
+//       equation
+//         Debug.fprint("tcvt", "*** checkSubscriptsBinding binding\n");
      
 
-      then binding;
+//       then binding;
 
 
-    case (binding,s)
-      local String str;
-      equation 
-        Debug.fprint("failtrace", "- checkSubscriptsBinding failed ( ");
-        str = Types.printBindingStr(binding);
-        Debug.fprint("failtrace", str);
-        Debug.fprint("failtrace", ")\n");
-      then
-        fail();
-  end matchcontinue;
-end checkSubscriptsBinding;
+//     case (binding,s)
+//       local String str;
+//       equation 
+//         Debug.fprint("failtrace", "- checkSubscriptsBinding failed ( ");
+//         str = Types.printBindingStr(binding);
+//         Debug.fprint("failtrace", str);
+//         Debug.fprint("failtrace", ")\n");
+//       then
+//         fail();
+//   end matchcontinue;
+// end checkSubscriptsBinding;
 
 
 
