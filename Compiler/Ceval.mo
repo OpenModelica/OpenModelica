@@ -76,6 +76,7 @@ public import OpenModelica.Compiler.DAELow;
 
 public import OpenModelica.Compiler.Absyn;
 
+public  import OpenModelica.Compiler.Types;
 public 
 uniontype Msg
   record MSG "Give error message" end MSG;
@@ -89,8 +90,6 @@ protected import OpenModelica.Compiler.SimCodegen;
 protected import OpenModelica.Compiler.Static;
 
 protected import OpenModelica.Compiler.Print;
-
-protected import OpenModelica.Compiler.Types;
 
 protected import OpenModelica.Compiler.ModUtil;
 
@@ -2522,8 +2521,8 @@ algorithm
         SimCodegen.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename, 
           starttime_r, stoptime_r, interval_r);
         makefilename = generateMakefilename(filenameprefix);
-        compileModel(filenameprefix, libs, file_dir) "	Util.string_append_list({\"make -f \",cname_str, \".makefile\\n\"}) => s_call &
-" ;
+        compileModel(filenameprefix, libs, file_dir);
+        //"	Util.string_append_list({\"make -f \",cname_str, \".makefile\\n\"}) => s_call &"
       then
         (filenameprefix,method_str,st,init_filename);
     case (_,_,_,_)
@@ -5085,9 +5084,9 @@ algorithm
   end matchcontinue;
 end cevalCref;
 
-protected function cevalCrefBinding "function: cevalCrefBinding
+public function cevalCrefBinding "function: cevalCrefBinding
  
-  Helper function to ceval_cref. Evaluates varaibles by evaluating 
+  Helper function to ceval_cref. Evaluates variables by evaluating 
   their bindings.
  
   signature: ceval_cref_binding : (Env.Env, Exp.ComponentRef,
@@ -5118,6 +5117,7 @@ algorithm
       Exp.Exp elexp,iterexp,exp;
     case (env,cr,Types.VALBOUND(valBound = v),impl,msg) /* Exp.CREF_IDENT(id,subsc) */ 
       equation 
+        Debug.fprint("tcvt", "+++++++ cevalCrefBinding Types.VALBOUND\n");
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
         (_,tp,_) = Lookup.lookupVar(env, cr_1) "Exp.CREF_IDENT(id,{})" ;

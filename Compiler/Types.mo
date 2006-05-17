@@ -2580,6 +2580,7 @@ algorithm
       list<Type> tys_1,tys1,tys2;
       list<Ident> l;
       list<Var> v;
+      String str;
     case (Exp.ARRAY(array = elist),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p))
       equation 
         (dim1 == dim2) = true "Array expressions" ;
@@ -2676,10 +2677,13 @@ algorithm
         (Exp.TUPLE(elist_1),(T_TUPLE(tys_1),p2));
     case (exp,(T_ENUM(),_),(T_ENUMERATION(names = l,varLst = v),p2)) then (exp,(T_ENUMERATION(l,v),p2)); 
     case (e,(T_INTEGER(varLstInt = v),_),(T_REAL(varLstReal = _),p)) then (Exp.CAST(Exp.REAL(),e),(T_REAL(v),p)); 
-    case (_,t1,t2)
+    case (exp,t1,t2)
       equation 
         Debug.fprint("tcvt", "- type conversion failed: ");
-        Debug.fcall("tcvt", printType, t1);
+         str = Exp.printExpStr(exp);
+        Debug.fprint("tcvt", str);
+        Debug.fprint("tcvt", "  ");
+         Debug.fcall("tcvt", printType, t1);
         Debug.fprint("tcvt", ", ");
         Debug.fcall("tcvt", printType, t2);
         Debug.fprint("tcvt", "\n");

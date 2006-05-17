@@ -806,7 +806,10 @@ algorithm
         (Exp.BCONST(x),Types.PROP((Types.T_BOOL({}),NONE),Types.C_CONST()));
     case (env,Absyn.CREF(componentReg = cr),impl)
       equation 
+        Debug.fprint("tcvt","before elabCref in elabGraphicsExp\n");
+
         (exp,prop,_) = elabCref(env, cr, impl);
+        Debug.fprint("tcvt","after elabCref in elabGraphicsExp\n");
       then
         (exp,prop);
     case (env,(exp as Absyn.BINARY(exp1 = e1,op = op,exp2 = e2)),impl) /* Binary and unary operations */ 
@@ -5952,6 +5955,7 @@ algorithm
       SCode.Variability variability_1,variability,var;
       Types.Binding binding_1,bind;
       Ident s,str,scope;
+      Types.Binding binding;
     case (_,cr,acc,_,(t as (Types.T_NOTYPE(),_)),_) /* If type not yet determined, component must be referencing itself. 
 	    constantness undecidable since binding not available, 
 	    return C_VAR */ 
@@ -5975,8 +5979,13 @@ algorithm
         e = crefVectorize(Exp.CREF(cr_1,t), tt);
       then
         (e,Types.C_VAR(),acc);
-    case (_,cr,_,SCode.CONST(),t,Types.VALBOUND(valBound = v))
+    case (env,cr,acc,SCode.CONST(),t,binding)
+      //local Exp.Type t;
       equation 
+
+        
+        v = Ceval.cevalCrefBinding(env,cr,binding,false,Ceval.MSG());
+
         e = valueExp(v);
         et = Types.typeOfValue(v);
         (e_1,_) = Types.matchType(e, et, t);

@@ -76,7 +76,8 @@ end ReplacePattern;
 
 protected constant list<ReplacePattern> replaceStringPatterns={REPLACEPATTERN(".","$point"),
           REPLACEPATTERN("[","$leftBracket"),REPLACEPATTERN("]","$rightBracket"),
-          REPLACEPATTERN("(","$leftParanthesis"),REPLACEPATTERN(")","$rightParanthesis"),REPLACEPATTERN(",","$comma")};
+          REPLACEPATTERN("(","$leftParanthesis"),REPLACEPATTERN(")","$rightParanthesis"),
+          REPLACEPATTERN(",","$comma")};
 
 protected import OpenModelica.Compiler.System;
 

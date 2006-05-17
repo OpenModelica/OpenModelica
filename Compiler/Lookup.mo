@@ -85,6 +85,8 @@ protected import OpenModelica.Compiler.Connect;
 
 protected import OpenModelica.Compiler.Error;
 
+protected import OpenModelica.Compiler.Values;
+
 public function lookupType "adrpo -- not used
 with \"Util.rml\"
 with \"Print.rml\"
@@ -1943,52 +1945,71 @@ algorithm
   end matchcontinue;
 end checkSubscripts;
 
-protected function lookupInVar "function: lookupInVar
-  
-  Searches for the rest of a qualified variable when first part of
-  variable name has been found.
+protected function checkSubscriptsBinding "function: checkSubscriptsBinding
+ 
+  This function checks a list of subscripts agains type, and removes
+  dimensions from the type according to the subscripting.
 "
-  input Types.Type inType;
-  input Exp.ComponentRef inComponentRef;
-  output Types.Attributes outAttributes;
-  output Types.Type outType;
+  input Types.Binding inBinding;
+  input list<Exp.Subscript> inExpSubscriptLst;
   output Types.Binding outBinding;
 algorithm 
-  (outAttributes,outType,outBinding):=
-  matchcontinue (inType,inComponentRef)
+  outBinding:=
+  matchcontinue (inType,inBinding,inExpSubscriptLst)
     local
-      Boolean fl;
-      SCode.Accessibility acc;
-      SCode.Variability vt;
-      Absyn.Direction di;
-      tuple<Types.TType, Option<Absyn.Path>> ty_1,ty_2,ty,ty_3;
+      Types.Binding t,t_1;
+      Types.ArrayDim dim;
+      Option<Absyn.Path> p;
+      list<Exp.Subscript> ys,s;
+      Integer sz,ind;
+      list<Exp.Exp> se;
       Types.Binding binding;
-      String id;
-      list<Exp.Subscript> ss;
-      Types.Attributes attr;
-      Exp.ComponentRef vs;
-    case (ty,Exp.CREF_IDENT(ident = id,subscriptLst = ss)) /* Public components */ 
+      Exp.Exp exp;
+      Option<Values.Value> eExp "evaluatedExp; evaluated exp" ;
+      Types.Const const "constant" ;
+      Values.Value v,v2;
+    case (binding,{}) then binding; 
+    case (Types.UNBOUND(),_) then Types.UNBOUND();
+    case (Types.EQBOUND(exp,eExp,const),
+          (Exp.INDEX(a = Exp.ICONST(integer = ind)) :: ys)) 
+      equation
+        Debug.fprint("tcvt", "*** checkSubscriptsBinding Types.EQBOUND\n");
+        t_1 = checkSubscriptsBinding(Types.EQBOUND(Exp.ASUB(exp,ind),eExp,const), ys);
+      then 
+        t_1;
+ 
+ 
+
+    case (Types.VALBOUND(v),(Exp.INDEX(a = Exp.ICONST(integer = ind)) :: ys)) 
+      equation
+        Debug.fprint("tcvt", "*** checkSubscriptsBinding before ntharrayelt Types.VALBOUND\n");
+        v2= Values.nthArrayelt(v,ind);
+        Debug.fprint("tcvt", "*** checkSubscriptsBinding after ntharrayelt Types.VALBOUND\n");
+        t_1 = checkSubscriptsBinding(Types.VALBOUND(v2), ys);
+      then t_1;
+
+
+    case (binding,_)  
+      equation
+        Debug.fprint("tcvt", "*** checkSubscriptsBinding binding\n");
+     
+
+      then binding;
+
+
+    case (binding,s)
+      local String str;
       equation 
-        (Types.VAR(_,Types.ATTR(fl,acc,vt,di),false,ty_1,binding)) = Types.lookupComponent(ty, id);
-        ty_2 = checkSubscripts(ty_1, ss);
-      then
-        (Types.ATTR(fl,acc,vt,di),ty_2,binding);
-    case (ty,Exp.CREF_IDENT(ident = id,subscriptLst = ss)) /* Protected components */ 
-      equation 
-        (Types.VAR(_,_,true,_,_)) = Types.lookupComponent(ty, id);
-        Error.addMessage(Error.REFERENCE_PROTECTED, {id});
+        Debug.fprint("failtrace", "- checkSubscriptsBinding failed ( ");
+        str = Types.printBindingStr(binding);
+        Debug.fprint("failtrace", str);
+        Debug.fprint("failtrace", ")\n");
       then
         fail();
-    case (ty,Exp.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = vs))
-      equation 
-        (Types.VAR(_,Types.ATTR(fl,acc,vt,di),_,ty_1,_)) = Types.lookupComponent(ty, id);
-        ty_2 = checkSubscripts(ty_1, ss);
-        (attr,ty_3,binding) = lookupInVar(ty_2, vs);
-      then
-        (attr,ty_3,binding);
-    case (_,_) /* Debug.fprint(\"failtrace\", \"- lookup_in_var failed\\n\") */  then fail(); 
   end matchcontinue;
-end lookupInVar;
+end checkSubscriptsBinding;
+
+
 
 protected function lookupVarF "function: lookupVarF
  
@@ -2012,7 +2033,7 @@ algorithm
       SCode.Variability vt;
       Absyn.Direction di;
       tuple<Types.TType, Option<Absyn.Path>> ty,ty_1;
-      Types.Binding bind,binding;
+      Types.Binding bind,binding,binding2;
       Env.BinTree ht;
       list<Exp.Subscript> ss;
       list<Env.Frame> compenv;
@@ -2022,6 +2043,7 @@ algorithm
       equation 
         (Types.VAR(n,Types.ATTR(f,acc,vt,di),_,ty,bind),_,_,_) = lookupVar2(ht, id);
         ty_1 = checkSubscripts(ty, ss);
+//          binding2 = checkSubscriptsBinding(bind,ss);
       then
         (Types.ATTR(f,acc,vt,di),ty_1,bind);
     case (ht,Exp.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)) /* Qualified variables looked up through component environment. */ 
