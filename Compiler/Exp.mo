@@ -556,6 +556,7 @@ algorithm
       ComponentRef cr;
     case (CREF_IDENT(ident = id,subscriptLst = {}))
       equation 
+        //print("\n +++++++++++++++++++++++++++++ ");print(id);print("\n");
         lst = Util.stringSplitAtChar(id, "[");
         lst_1 = Util.listStripLast(lst);
         id_1 = Util.stringDelimitList(lst_1, "[");
@@ -1769,7 +1770,7 @@ algorithm
         {e_1};
     case (_)
       equation 
-        print("simplify_binary_add_constants failed\n");
+        Debug.fprint("failtrace","simplify_binary_add_constants failed\n");
       then
         fail();
   end matchcontinue;
@@ -1963,7 +1964,7 @@ algorithm
         expl_1;
     case (_)
       equation 
-        print("-simplify_add failed\n");
+        Debug.fprint("failtrace","-simplify_add failed\n");
       then
         fail();
   end matchcontinue;
@@ -1993,7 +1994,7 @@ algorithm
         ((e_1,coeff) :: rest);
     case (_)
       equation 
-        print("simplify_add2 failed\n");
+        Debug.fprint("failtrace","simplify_add2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -2330,12 +2331,12 @@ algorithm
       equation 
         e_1 = simplifyAsub(e, indx);
       then
-        UNARY(UMINUS_ARR(t),e_1);
+        UNARY(UMINUS(t),e_1);
     case (UNARY(operator = UPLUS_ARR(ty = t),exp = e),indx)
       equation 
         e_1 = simplifyAsub(e, indx);
       then
-        UNARY(UPLUS_ARR(t),e_1);
+        UNARY(UPLUS(t),e_1);
     case (BINARY(exp1 = e1,operator = SUB_ARR(ty = t),exp2 = e2),indx)
       equation 
         e1_1 = simplifyAsub(e1, indx);
@@ -2469,17 +2470,17 @@ algorithm
       equation 
         fs = printExpStr(factor);
         es = printExpStr(expr);
-        print("remove_factor failed, factor:");
-        print(fs);
-        print(" expr:");
-        print(es);
-        print("\n");
+        Debug.fprint("failtrace","remove_factor failed, factor:");
+        Debug.fprint("failtrace",fs);
+        Debug.fprint("failtrace"," expr:");
+        Debug.fprint("failtrace",es);
+        Debug.fprint("failtrace","\n");
         e2s = factors(expr);
         elst = Util.listMap(e2s, printExpStr);
         factorsstr = Util.stringDelimitList(elst, ", ");
-        print(" factors:");
-        print(factorsstr);
-        print("\n");
+        Debug.fprint("failtrace"," factors:");
+        Debug.fprint("failtrace",factorsstr);
+        Debug.fprint("failtrace","\n");
       then
         fail();
   end matchcontinue;
@@ -2753,11 +2754,11 @@ algorithm
         BINARY(e1,MUL(tp),e2);
     case (lst)
       equation 
-        print("-make_product failed, exp lst:");
+        Debug.fprint("failtrace","-make_product failed, exp lst:");
         explst = Util.listMap(lst, printExpStr);
         str = Util.stringDelimitList(explst, ", ");
-        print(str);
-        print("\n");
+        Debug.fprint("failtrace",str);
+        Debug.fprint("failtrace","\n");
       then
         fail();
   end matchcontinue;
@@ -2794,11 +2795,11 @@ algorithm
         BINARY(e1,ADD(tp),e2);
     case (lst)
       equation 
-        print("-make_sum failed, exp lst:");
+        Debug.fprint("failtrace","-make_sum failed, exp lst:");
         explst = Util.listMap(lst, printExpStr);
         str = Util.stringDelimitList(explst, ", ");
-        print(str);
-        print("\n");
+        Debug.fprint("failtrace",str);
+        Debug.fprint("failtrace","\n");
       then
         fail();
   end matchcontinue;
@@ -3616,6 +3617,12 @@ algorithm
         r_1 = 0.0 -. r;
       then
         RCONST(r_1);
+    case (_,UMINUS(ty = ty),BINARY(exp1 = e1,operator = MUL(ty = ty1),exp2 = e2))
+      equation 
+         e_1 = simplify(BINARY(UNARY(UMINUS(ty),e1),MUL(ty1),e2)) "-(a*b) => (-a)*b" ;
+      then
+        e_1;
+
     case (_,UMINUS(ty = ty),e1)
       equation 
         e1_1 = simplify(e1);
@@ -5340,7 +5347,7 @@ algorithm
         res;
     case (MATRIX(ty = _),MATRIX(ty = _))
       equation 
-        print("exp_equal for MATRIX not impl. yet.\n");
+        Debug.fprint("failtrace","exp_equal for MATRIX not impl. yet.\n");
       then
         false;
     case (RANGE(ty = tp1,exp = e11,expOption = NONE,range = e13),RANGE(ty = tp2,exp = e21,expOption = NONE,range = e23))
@@ -5391,7 +5398,7 @@ algorithm
         res;
     case (CODE(code = _),CODE(code = _))
       equation 
-        print("exp_equal on CODE not impl.\n");
+        Debug.fprint("failtrace","exp_equal on CODE not impl.\n");
       then
         false;
     case (REDUCTION(path = path1,expr = e1,ident = id1,range = r1),REDUCTION(path = path2,expr = e2,ident = id2,range = r2))
@@ -5624,7 +5631,7 @@ algorithm
     case (CODE(code = a,ty = b),source,target)
       local Type b;
       equation 
-        print("replace_exp on CODE not impl.\n");
+        Debug.fprint("failtrace","replace_exp on CODE not impl.\n");
       then
         (CODE(a,b),0);
     case (REDUCTION(path = p,expr = e,ident = id,range = r),source,target)
@@ -6263,7 +6270,7 @@ algorithm
         new_level1 = level + 1;
         nodes = Util.listMap1(es, dumpExpStr, new_level1);
         nodes_1 = Util.stringAppendList(nodes);
-        res_str = Util.stringAppendList({gen_str,"ARRAY ",nodes_1,"\n"});
+        res_str = Util.stringAppendList({gen_str,"ARRAY ","\n",nodes_1});
       then
         res_str;
     case (TUPLE(PR = es),level) /* Graphviz.NODE(\"TUPLE\",{},nodes) */ 
@@ -6324,7 +6331,7 @@ algorithm
         ct = dumpExpStr(e, new_level1);
         istr = intString(i);
         s = Util.stringAppendList({"[",istr,"]"});
-        res_str = Util.stringAppendList({gen_str,"ASUB ","\n",s,ct,""});
+        res_str = Util.stringAppendList({gen_str,"ASUB ",s,"\n",ct,""});
       then
         res_str;
     case (SIZE(exp = cr,sz = SOME(dim)),level) /* Graphviz.NODE(\"SIZE\",{},{crt,dimt}) */ 
