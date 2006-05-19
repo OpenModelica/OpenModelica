@@ -11552,6 +11552,37 @@ algorithm
   end matchcontinue;
 end isParam;
 
+public function isRealParam "function: isParam
+ 
+  Return true if variable is a parameter of real-type
+"
+  input Var inVar;
+  output Boolean outBoolean;
+algorithm 
+  outBoolean:=
+  matchcontinue (inVar)
+    local DAE.Flow flow_;
+    case (VAR(varKind = PARAM(),flow_ = flow_,builtinTypeOrEnum = DAE.REAL())) then true; 
+    case (_) then false; 
+  end matchcontinue;
+end isRealParam;
+
+public function isNonRealParam "function: isParam
+ 
+  Return true if variable is a parameter of real-type
+"
+  input Var inVar;
+  output Boolean outBoolean;
+algorithm 
+  outBoolean:=
+  matchcontinue (inVar)
+    local DAE.Flow flow_;
+    case (VAR(varKind = PARAM(),flow_ = flow_,builtinTypeOrEnum = DAE.REAL())) then false; 
+    case (VAR(varKind = PARAM(),flow_ = flow_)) then true; 
+    case (_) then false; 
+  end matchcontinue;
+end isNonRealParam;
+
 public function isOutput "function: isOutput
  
   Return true if variable is declared as output. Note that the output
