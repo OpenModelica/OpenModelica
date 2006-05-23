@@ -482,213 +482,184 @@ algorithm
 	extObjConstructors_str := generateExternalObjectConstructorCalls(daelow);
   outString:=Util.stringAppendList
      (
-      {"void setLocalData(DATA* data)\n",
-       "{\n",
-       "   localData = data;\n",
-       "}\n",
-       "\n",
-       "DATA* initializeDataStruc(DATA_FLAGS flags)\n",
-       "{\n",
-       "  DATA* returnData = (DATA*)malloc(sizeof(DATA));\n",
-       "\n",
-       "  if(!returnData) //error check\n",
-       "    return 0;\n",
-       "\n",
-       "  returnData->nStates = NX;\n",
-       "  returnData->nAlgebraic = NY;\n",
-       "  returnData->nParameters = NP;\n",
-       "  returnData->nInputVars = NI;\n",
-       "  returnData->nOutputVars = NO;\n",
-       "  returnData->nZeroCrossing = NG;\n",
-       "  returnData->nInitialResiduals = NR;\n",
-       "  returnData->nHelpVars = NHELP;\n",
-       "\n",
-       "  if(flags & STATES && returnData->nStates){\n",
-       "    returnData->states = (double*) malloc(sizeof(double)*returnData->nStates);\n",
-       "  }else{\n",
-       "    returnData->states = 0;\n",
-       "  }\n",
-       "\n",
-       "  if(flags & STATESDERIVATIVES && returnData->nStates){\n",
-       "    returnData->statesDerivatives = (double*) malloc(sizeof(double)*returnData->nStates);\n",
-       "  }else{\n",
-       "    returnData->statesDerivatives = 0;\n",
-       "  }\n",
-       "  if(flags & HELPVARS && returnData->nHelpVars){\n",
-       "    returnData->helpVars = (double*) malloc(sizeof(double)*returnData->nHelpVars);\n",
-       "  }else{\n",
-       "    returnData->helpVars = 0;\n",
-       "  }\n",
-       "    \n",
-       "  if(flags & ALGEBRAICS && returnData->nAlgebraic){\n",
-       "    returnData->algebraics = (double*) malloc(sizeof(double)*returnData->nAlgebraic);\n",
-       "  }else{\n",
-       "    returnData->algebraics = 0;\n",
-       "  }\n",
-       "\n",
-       "  if(flags & PARAMETERS && returnData->nParameters){\n",
-       "    returnData->parameters = (double*) malloc(sizeof(double)*returnData->nParameters);\n",
-       "  }else{\n",
-       "    returnData->parameters = 0;\n",
-       "  }\n",
-       "\n",
-       "  if(flags & OUTPUTVARS && returnData->nOutputVars){\n",
-       "    returnData->outputVars = (double*) malloc(sizeof(double)*returnData->nOutputVars);\n",
-       "  }else{\n",
-       "    returnData->outputVars = 0;\n",
-       "  }\n",
-       "\n",
-       "  if(flags & INPUTVARS && returnData->nInputVars){\n",
-       "    returnData->inputVars = (double*) malloc(sizeof(double)*returnData->nInputVars);\n",
-       "  }else{\n",
-       "    returnData->inputVars = 0;\n",
-       "  }\n",
-       "\n",
-       "  if(flags & INITIALRESIDUALS && returnData->nInitialResiduals){\n",
-       "    returnData->initialResiduals = (double*) malloc(sizeof(double)*returnData->nInitialResiduals);\n",
-       "  }else{\n",
-       "    returnData->initialResiduals = 0;\n",
-       "  }\n",
-       "\n",
-       "  if(flags & INITFIXED){\n",
-       "    returnData->initFixed = init_fixed;\n",
-       "  }else{\n",
-       "    returnData->initFixed = 0;\n",
-       "  }\n",
-       "\n",
-       "  /*   names   */\n",
-       "  if(flags & MODELNAME){\n",
-       "    returnData->modelName = model_name;\n",
-       "  }else{\n",
-       "    returnData->modelName = 0;\n",
-       "  }\n",
-       "\n",
-       "  if(flags & STATESNAMES){\n",
-       "    returnData->statesNames = state_names;\n",
-       "  }else{\n",
-       "    returnData->statesNames = 0;\n",
-       "  }\n",
-       "\n",
-       "  if(flags & STATESDERIVATIVESNAMES){\n",
-       "    returnData->stateDerivativesNames = derivative_names;\n",
-       "  }else{\n",
-       "    returnData->stateDerivativesNames = 0;\n",
-       "  }\n",
-       "\n",
-       "  if(flags & ALGEBRAICSNAMES){\n",
-       "    returnData->algebraicsNames = algvars_names;\n",
-       "  }else{\n",
-       "    returnData->algebraicsNames = 0;\n",
-       "  }\n",
-       "\n",
-       "  if(flags & PARAMETERSNAMES){\n",
-       "    returnData->parametersNames = param_names;\n",
-       "  }else{\n",
-       "    returnData->parametersNames = 0;\n",
-       "  }\n",
-       "\n",
-       "  if(flags & INPUTNAMES){\n",
-       "    returnData->inputNames = input_names;\n",
-       "  }else{\n",
-       "    returnData->inputNames = 0;\n",
-       "  }\n",
-       "\n",
-       "  if(flags & OUTPUTNAMES){\n",
-       "    returnData->outputNames = output_names;\n",
-       "  }else{\n",
-       "    returnData->outputNames = 0;\n",
-       "  }\n",
-       "\n",
-       "  /*   comments  */\n",
-       "  if(flags & STATESCOMMENTS){\n",
-       "    returnData->statesComments = state_comments;\n",
-       "  }else{\n",
-       "    returnData->statesComments = 0;\n",
-       "  }\n",
-       "\n",
-       "  if(flags & STATESDERIVATIVESCOMMENTS){\n",
-       "    returnData->stateDerivativesComments = derivative_comments;\n",
-       "  }else{\n",
-       "    returnData->stateDerivativesComments = 0;\n",
-       "  }\n",
-       "\n",
-       "  if(flags & ALGEBRAICSCOMMENTS){\n",
-       "    returnData->algebraicsComments = algvars_comments;\n",
-       "  }else{\n",
-       "    returnData->algebraicsComments = 0;\n",
-       "  }\n",
-       "\n",
-       "  if(flags & PARAMETERSCOMMENTS){\n",
-       "    returnData->parametersComments = param_comments;\n",
-       "  }else{\n",
-       "    returnData->parametersComments = 0;\n",
-       "  }\n",
-       "\n",
-       "  if(flags & INPUTCOMMENTS){\n",
-       "    returnData->inputComments = input_comments;\n",
-       "  }else{\n",
-       "    returnData->inputComments = 0;\n",
-       "  }\n",
-       "\n",
-       "  if(flags & OUTPUTCOMMENTS){\n",
-       "    returnData->outputComments = output_comments;\n",
-       "  }else{\n",
-       "    returnData->outputComments = 0;\n",
-       "  }\n",
-       "  if (flags & EXTERNALVARS) {\n",
-       "  returnData->extObjs = (void**)malloc(sizeof(void*)*NEXT);\n",
-       "  if (!returnData->extObjs) { \n",
-       "     printf(\"error allocating external objects\\n\");\n",
-       "     exit(-2);\n",
-       "  }\n",
-       "  setLocalData(returnData); /* must be set since used by constructors*/\n",
-       extObjConstructors_str,
-       "  }\n",       
-       "\n",
-       "  return returnData;\n",
-       "}\n",
-       "\n",
-       "void deInitializeDataStruc(DATA* data, DATA_FLAGS flags)\n",
-       "{\n",
-       "  if(!data)\n",
-       "    return;\n",
-       "\n",
-       "  if(flags & STATES && data->states){\n",
-       "    free(data->states);\n",
-       "    data->states = 0;\n",
-       "  }\n",
-       "  if(flags & STATESDERIVATIVES && data->statesDerivatives){\n",
-       "    free(data->statesDerivatives);\n",
-       "    data->statesDerivatives = 0;\n",
-       "  }\n",
-       "  if(flags & ALGEBRAICS && data->algebraics){\n",
-       "    free(data->algebraics);\n",
-       "    data->algebraics = 0;\n",
-       "  }\n",
-       "  if(flags & PARAMETERS && data->parameters){\n",
-       "    free(data->parameters);\n",
-       "    data->parameters = 0;\n",
-       "  }\n",
-       "  if(flags & OUTPUTVARS && data->inputVars){\n",
-       "    free(data->inputVars);\n",
-       "    data->inputVars = 0;\n",
-       "  }\n",
-       "  if(flags & INPUTVARS && data->outputVars){\n",
-       "    free(data->outputVars);\n",
-       "    data->outputVars = 0;\n",
-       "  }\n",
-       "  if(flags & INITIALRESIDUALS && data->initialResiduals){\n",
-       "    free(data->initialResiduals);\n",
-       "    data->initialResiduals = 0;\n",
-       "  }\n",
-       "  if (flags & EXTERNALVARS && data->extObjs) {\n",
-       extObjDestructors_str, 
-       "\n",
-       "    free(data->extObjs);\n",
-       "    data->extObjs = 0;\n",
-       "  }\n",           
-       "\n",
-       "}\n"
+      {
+"
+void setLocalData(DATA* data)\n{\n
+   localData = data;\n}\n\n
+DATA* initializeDataStruc(DATA_FLAGS flags)\n{\n
+  DATA* returnData = (DATA*)malloc(sizeof(DATA));\n\n
+  if(!returnData) //error check\n
+    return 0;\n\n
+  returnData->nStates = NX;\n
+  returnData->nAlgebraic = NY;\n
+  returnData->nParameters = NP;\n
+  returnData->nInputVars = NI;\n
+  returnData->nOutputVars = NO;\n
+  returnData->nZeroCrossing = NG;\n
+  returnData->nInitialResiduals = NR;\n
+  returnData->nHelpVars = NHELP;\n\n
+  if(flags & STATES && returnData->nStates){\n
+    returnData->states = (double*) malloc(sizeof(double)*returnData->nStates);\n
+  }else{\n
+    returnData->states = 0;\n
+  }\n\n
+  if(flags & STATESDERIVATIVES && returnData->nStates){\n
+    returnData->statesDerivatives = (double*) malloc(sizeof(double)*returnData->nStates);\n
+  }else{\n
+    returnData->statesDerivatives = 0;\n
+  }\n
+  if(flags & HELPVARS && returnData->nHelpVars){\n
+    returnData->helpVars = (double*) malloc(sizeof(double)*returnData->nHelpVars);\n
+  }else{\n
+    returnData->helpVars = 0;\n
+  }\n\n", "
+  if(flags & ALGEBRAICS && returnData->nAlgebraic){\n
+    returnData->algebraics = (double*) malloc(sizeof(double)*returnData->nAlgebraic);\n
+  }else{\n
+    returnData->algebraics = 0;\n
+  }\n\n
+  if(flags & PARAMETERS && returnData->nParameters){\n
+    returnData->parameters = (double*) malloc(sizeof(double)*returnData->nParameters);\n
+  }else{\n
+    returnData->parameters = 0;\n
+  }\n\n
+  if(flags & OUTPUTVARS && returnData->nOutputVars){\n
+    returnData->outputVars = (double*) malloc(sizeof(double)*returnData->nOutputVars);\n
+  }else{\n
+    returnData->outputVars = 0;\n
+  }\n\n
+  if(flags & INPUTVARS && returnData->nInputVars){\n
+    returnData->inputVars = (double*) malloc(sizeof(double)*returnData->nInputVars);\n
+  }else{\n
+    returnData->inputVars = 0;\n
+  }\n\n
+  if(flags & INITIALRESIDUALS && returnData->nInitialResiduals){\n
+    returnData->initialResiduals = (double*) malloc(sizeof(double)*returnData->nInitialResiduals);\n
+  }else{\n
+    returnData->initialResiduals = 0;\n
+  }\n\n
+  if(flags & INITFIXED){\n
+    returnData->initFixed = init_fixed;\n
+  }else{\n
+    returnData->initFixed = 0;\n
+  }\n\n","
+  /*   names   */\n
+  if(flags & MODELNAME){\n
+    returnData->modelName = model_name;\n
+  }else{\n
+    returnData->modelName = 0;\n
+  }\n\n
+  if(flags & STATESNAMES){\n
+    returnData->statesNames = state_names;\n
+  }else{\n
+    returnData->statesNames = 0;\n
+  }\n\n
+  if(flags & STATESDERIVATIVESNAMES){\n
+    returnData->stateDerivativesNames = derivative_names;\n
+  }else{\n
+    returnData->stateDerivativesNames = 0;\n
+  }\n\n
+  if(flags & ALGEBRAICSNAMES){\n
+    returnData->algebraicsNames = algvars_names;\n
+  }else{\n
+    returnData->algebraicsNames = 0;\n
+  }\n\n
+  if(flags & PARAMETERSNAMES){\n
+    returnData->parametersNames = param_names;\n
+  }else{\n
+    returnData->parametersNames = 0;\n
+  }\n\n
+  if(flags & INPUTNAMES){\n
+    returnData->inputNames = input_names;\n
+  }else{\n
+    returnData->inputNames = 0;\n
+  }\n\n
+  if(flags & OUTPUTNAMES){\n
+    returnData->outputNames = output_names;\n
+  }else{\n
+    returnData->outputNames = 0;\n
+  }\n\n","
+  /*   comments  */\n
+  if(flags & STATESCOMMENTS){\n
+    returnData->statesComments = state_comments;\n
+  }else{\n
+    returnData->statesComments = 0;\n
+  }\n\n
+  if(flags & STATESDERIVATIVESCOMMENTS){\n
+    returnData->stateDerivativesComments = derivative_comments;\n
+  }else{\n
+    returnData->stateDerivativesComments = 0;\n
+  }\n\n
+  if(flags & ALGEBRAICSCOMMENTS){\n
+    returnData->algebraicsComments = algvars_comments;\n
+  }else{\n
+    returnData->algebraicsComments = 0;\n
+  }\n\n
+  if(flags & PARAMETERSCOMMENTS){\n
+    returnData->parametersComments = param_comments;\n
+  }else{\n
+    returnData->parametersComments = 0;\n
+  }\n\n
+  if(flags & INPUTCOMMENTS){\n
+    returnData->inputComments = input_comments;\n
+  }else{\n
+    returnData->inputComments = 0;\n
+  }\n\n
+  if(flags & OUTPUTCOMMENTS){\n
+    returnData->outputComments = output_comments;\n
+  }else{\n
+    returnData->outputComments = 0;\n
+  }\n
+  if (flags & EXTERNALVARS) {\n
+  returnData->extObjs = (void**)malloc(sizeof(void*)*NEXT);\n
+  if (!returnData->extObjs) { \n
+     printf(\error allocating external objects\\n\);\n
+     exit(-2);\n
+  }\n
+  setLocalData(returnData); /* must be set since used by constructors*/\n",
+  extObjConstructors_str,
+"  }\n\n
+  return returnData;\n
+}\n\n
+void deInitializeDataStruc(DATA* data, DATA_FLAGS flags)\n
+{\n
+  if(!data)\n
+    return;\n\n
+  if(flags & STATES && data->states){\n
+    free(data->states);\n
+    data->states = 0;\n
+  }\n
+  if(flags & STATESDERIVATIVES && data->statesDerivatives){\n
+    free(data->statesDerivatives);\n
+    data->statesDerivatives = 0;\n
+  }\n
+  if(flags & ALGEBRAICS && data->algebraics){\n
+    free(data->algebraics);\n
+    data->algebraics = 0;\n
+  }\n
+  if(flags & PARAMETERS && data->parameters){\n
+    free(data->parameters);\n
+    data->parameters = 0;\n
+  }\n
+  if(flags & OUTPUTVARS && data->inputVars){\n
+    free(data->inputVars);\n
+    data->inputVars = 0;\n
+  }\n
+  if(flags & INPUTVARS && data->outputVars){\n
+    free(data->outputVars);\n
+    data->outputVars = 0;\n
+  }\n
+  if(flags & INITIALRESIDUALS && data->initialResiduals){\n
+    free(data->initialResiduals);\n
+    data->initialResiduals = 0;\n
+  }\n
+  if (flags & EXTERNALVARS && data->extObjs) {\n",
+extObjDestructors_str, 
+"\n
+    free(data->extObjs);\n
+    data->extObjs = 0;\n
+  }\n\n
+}\n"
        }
       );
 
