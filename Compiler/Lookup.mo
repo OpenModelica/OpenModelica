@@ -110,11 +110,11 @@ with \"Dump.rml\"
   Arg1: Env.Env is the environment which to perform the lookup in
   Arg2: Absyn.Path is the type to look for
 "
-  input Env.Env inEnv;
-  input Absyn.Path inPath;
-  input Boolean inBoolean;
-  output Types.Type outType;
-  output Env.Env outEnv;
+  input Env.Env inEnv "environment to search in";
+  input Absyn.Path inPath "type to look for";
+  input Boolean inBoolean "Messaage flag, true outputs lookup error messages";
+  output Types.Type outType "the found type";
+  output Env.Env outEnv "The environment the type was found in";
 algorithm 
   (outType,outEnv):=
   matchcontinue (inEnv,inPath,inBoolean)
@@ -158,7 +158,6 @@ algorithm
       equation 
         (c ,env_1) = lookupClass(env, path, false);
         true = Inst.classIsExternalObject(c);
-        //print("found class that is external object\n");
        (_,env_1,_,_,_) = Inst.instClass(env_1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
           {}, false, Inst.TOP_CALL());
 	   		//s = Env.printEnvStr(env_1);
@@ -169,7 +168,7 @@ algorithm
       then
         (t,env_2);
 
-        /* Lookup of qualified name when first part of name is not a package.*/ 
+         /* Lookup of qualified name when first part of name is not a package.*/ 
     case (env,Absyn.QUALIFIED(name = pack,path = path),msg) 
       equation 
         ((c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(env, Absyn.IDENT(pack), false);
@@ -1344,7 +1343,6 @@ algorithm
         equation
           Env.CLASS(cdef,cenv) = Env.treeGet(ht, id, Env.myhash);
 	        true = Inst.classIsExternalObject(cdef);
-	        //print("found class that is external object\n");
 	        (_,env_1,_,t,_) = Inst.instClass(cenv, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, 
          	 {}, false, Inst.TOP_CALL());
           (t,_) = lookupTypeInEnv(env_1, Absyn.IDENT(id));
@@ -1743,6 +1741,17 @@ algorithm
         (t,env3) = lookupTypeInEnv(env_2, classname);
        then
         (t,env3);
+        
+     /* Classes that are external objects. Implicityly instantiate to get type */
+    case (env,cdef,(classname as Absyn.IDENT(name = _)),_)
+      equation 
+        (c ,env_1) = lookupClassInEnv(env, classname, false);
+        true = Inst.classIsExternalObject(c);
+        (_,env_1,_,_,_) = Inst.instClass(env_1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
+          {}, false, Inst.TOP_CALL());
+        (t,env_2) = lookupTypeInEnv(env_1, classname);
+      then
+        (t,env_2);   
     case (env,cdef,Absyn.QUALIFIED(name = c1,path = p1),true /* true means here encapsulated */)
       equation 
         ((c as SCode.CLASS(id,_,(encflag as true),restr,_)),env) = lookupClassInEnv(env, Absyn.IDENT(c1), false) "Restrict lookup to encapsulated elements only" ;

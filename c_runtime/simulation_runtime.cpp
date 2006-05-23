@@ -169,6 +169,7 @@ int dassl_main(int, char **);
 
 int main(int argc, char**argv) 
 {
+   int retVal=-1;
   globalData = initializeDataStruc(ALL);
   if( !globalData ){
       std::cerr << "Error: Could not initialize the global data structure file" << std::endl;
@@ -186,17 +187,18 @@ int main(int argc, char**argv)
   /* the main method identifies which solver to use and then calls 
      respecive solver main function*/
   if (!getFlagValue("m",argc,argv)) {
-    return dassl_main(argc,argv);
+    retVal= dassl_main(argc,argv);
   } else  if (*getFlagValue("m",argc,argv) == std::string("euler")) {
-    return euler_main(argc,argv);
+    retVal= euler_main(argc,argv);
   }
   else if (*getFlagValue("m",argc,argv) == std::string("dassl")) {
-    return dassl_main(argc,argv);
+    retVal= dassl_main(argc,argv);
   } else {
     cout << "Unrecognized solver, using dassl." << endl;
-    return dassl_main(argc,argv);    
+    retVal = dassl_main(argc,argv);    
   }
-      return -1;
+  deInitializeDataStruc(globalData,ALL);
+  return retVal;	
 }
 
 

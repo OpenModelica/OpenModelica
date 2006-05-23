@@ -59,4 +59,6 @@ int read_modelica_string(FILE*,modelica_string_t*);
 int write_modelica_string(FILE*,modelica_string_t*);
 int read_type_description(FILE*, type_description*);
 
+int read_modelica_complex(FILE*, modelica_complex);
+
 #endif

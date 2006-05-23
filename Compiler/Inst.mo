@@ -154,6 +154,8 @@ uniontype DimExp
 
 end DimExp;
 
+protected import OpenModelica.Compiler.System;
+
 protected import OpenModelica.Compiler.Debug;
 
 protected import OpenModelica.Compiler.Interactive;
@@ -288,6 +290,7 @@ algorithm
         //Debug.fprintln("insttr", str2);
         lnofunc = instProgram(envimpl_1, pnofunc);
         l = listAppend(lfunc, lnofunc);
+
       then
         DAE.DAE(l);
     case _
@@ -1028,6 +1031,7 @@ algorithm
       then
         ({},env,Connect.SETS({},crs),ci_state,{},NONE);
     case (env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restricion = r,parts = d)),prot,inst_dims,impl)
+      local String s;
       equation 
         clsname = SCode.className(c) "print \"inst_class_in\" & print n & print \"\\n\" &" ;
         //print("instClassIn");print(n);print("\n");
@@ -1036,7 +1040,7 @@ algorithm
         //Debug.fprint("insttr", implstr);
         //Debug.fprint("insttr", clsname);
         //Debug.fprint("insttr", "\n");
-        (l,env_1,csets_1,ci_state_1,tys,bc) = instClassdef(env, mods, pre, csets, ci_state, d, r, prot, inst_dims, impl);
+        (l,env_1,csets_1,ci_state_1,tys,bc) = instClassdef(env, mods, pre, csets, ci_state, d, r, prot, inst_dims, impl);        
       then
         (l,env_1,csets_1,ci_state_1,tys,bc);
     case (_,_,_,csets,_,_,_,_,_)
@@ -1153,8 +1157,17 @@ algorithm
     case (env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = "String")),_,_) then (env,ci_state); 
     case (env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = "Boolean")),_,_) then (env,ci_state); 
     case (env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restricion = r,parts = d)),prot,inst_dims)
+      local String str,str2; Boolean b; Real t1,t2,time;
       equation 
+        t1 = System.time();
         (env_1,ci_state_1) = partialInstClassdef(env, mods, pre, csets, ci_state, d, r, prot, inst_dims);
+        t2 = System.time();
+        time = t2 -. t1;
+        str = realString(time);
+        b = time >. 0.3;
+        str2=Util.stringAppendList({"partialInstClassIn ",n,"  ",str,"\n"});
+        str=Util.if_(b,str2,"");
+        print(str);
       then
         (env_1,ci_state_1);
   end matchcontinue;
@@ -1221,6 +1234,7 @@ algorithm
     case (env,mods,pre,csets,ci_state,SCode.PARTS(elementLst = els,equationLst = eqs,
       																						initialEquation = initeqs,algorithmLst = alg,initialAlgorithm = initalg)
       		,re,prot,inst_dims,impl) 
+      		local String s;
       equation 
         cdefelts = classdefAndImpElts(els);
         compelts = componentElts(els) "should be empty, checked in inst_basic type below" ;
@@ -1368,6 +1382,7 @@ algorithm
     	Env.Frame f;
     	list<Env.Frame> fs,fs1;
     equation
+     
     destr = getExternalObjectDestructor(els);
     constr = getExternalObjectConstructor(els);
     destr_dae = instantiateExternalObjectDestructor(env,destr);
@@ -1378,14 +1393,14 @@ algorithm
     f::fs = env;
     fs1 = Env.extendFrameT(fs,className,functp);
     env1 = f::fs1; 
-    then ({DAE.EXTOBJECTCLASS(classNameFQ,constr_dae,destr_dae)},env1,ClassInf.EXTERNAL_OBJ(className));
+    then ({DAE.EXTOBJECTCLASS(classNameFQ,constr_dae,destr_dae)},env1,ClassInf.EXTERNAL_OBJ(classNameFQ));
       
       // Implicit, do no instantiate constructor and destructor.
   case (env,els,true) 
-    local Ident className;
+    local Absyn.Path classNameFQ;
     equation 
-       className = Env.getClassName(env);
-    then ({},env,ClassInf.EXTERNAL_OBJ(className));
+      	SOME(classNameFQ)= Env.getEnvPath(env); // Fully qualified classname
+    then ({},env,ClassInf.EXTERNAL_OBJ(classNameFQ));
   case (env,els,impl) equation
      print("instantiateExternalObject failed\n");
      then fail();
@@ -1760,13 +1775,14 @@ algorithm
       SCode.Mod mod;
     case (env,mods,pre,csets,ci_state,SCode.PARTS(elementLst = els,equationLst = eqs,initialEquation = initeqs,
       		algorithmLst = alg,initialAlgorithm = initalg),re,prot,inst_dims)
-      		  local String str;
+      		  local String str,str2,str3;
+      		  Real t1,t2,time; Boolean b;
       equation 
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         cdefelts = classdefAndImpElts(els);
         extendselts = extendsElts(els);
         env1 = addClassdefsToEnv(env, cdefelts, true) " CLASSDEF & IMPORT nodes are added to env" ;
-        (env2,emods,extcomps,eqs2,initeqs2,alg2,initalg2) = instExtendsList(env1, mods, extendselts, ci_state, true) "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations." ;
+        (env2,emods,extcomps,eqs2,initeqs2,alg2,initalg2) = partialInstExtendsList(env1, mods, extendselts, ci_state, true) "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations." ;
 				allEls = listAppend(extendselts,els);
 				allEls2=addNomod(allEls);
 				constantEls = constantEls(allEls2) " Retrieve all constants";
@@ -1981,6 +1997,90 @@ algorithm
         fail();
   end matchcontinue;
 end instExtendsList;
+
+protected function partialInstExtendsList "function: partialInstExtendsList 
+  author: PA
+  
+  This function is the same as instExtendsList, except that it does partial instantiation.
+"
+  input Env inEnv;
+  input Mod inMod;
+  input list<SCode.Element> inSCodeElementLst;
+  input ClassInf.State inState;
+  input Boolean inBoolean;
+  output Env outEnv1;
+  output Mod outMod2;
+  output list<tuple<SCode.Element, Mod>> outTplSCodeElementModLst3;
+  output list<SCode.Equation> outSCodeEquationLst4;
+  output list<SCode.Equation> outSCodeEquationLst5;
+  output list<SCode.Algorithm> outSCodeAlgorithmLst6;
+  output list<SCode.Algorithm> outSCodeAlgorithmLst7;
+algorithm 
+  (outEnv1,outMod2,outTplSCodeElementModLst3,outSCodeEquationLst4,outSCodeEquationLst5,outSCodeAlgorithmLst6,outSCodeAlgorithmLst7):=
+  matchcontinue (inEnv,inMod,inSCodeElementLst,inState,inBoolean)
+    local
+      SCode.Class c;
+      String cn,s,scope_str;
+      Boolean encf,impl;
+      SCode.Restriction r;
+      list<Env.Frame> cenv,cenv1,cenv3,env2,env,env_1;
+      Types.Mod outermod,mod_1,mod_2,mods,mods_1,emod_1,mod;
+      list<SCode.Element> els,els_1,rest;
+      list<SCode.Equation> eq1,ieq1,eq1_1,ieq1_1,eq2,ieq2,eq3,ieq3,eq,ieq,initeq2;
+      list<SCode.Algorithm> alg1,ialg1,alg1_1,ialg1_1,alg2,ialg2,alg3,ialg3,alg,ialg;
+      Absyn.Path tp_1,tp;
+      ClassInf.State new_ci_state,ci_state;
+      list<tuple<SCode.Element, Mod>> compelts1,compelts2,compelts,compelts3;
+      SCode.Mod emod;
+      SCode.Element elt;
+    case (env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,impl) /* inherited initial equations inherited algorithms inherited initial algorithms */ 
+      equation 
+        ((c as SCode.CLASS(cn,_,encf,r,_)),cenv) = Lookup.lookupClass(env, tp, true);
+        outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
+        (cenv1,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cenv, outermod, c, impl);
+        tp_1 = makeFullyQualified(cenv1, tp);
+        els_1 = addInheritScope(els, tp_1) "Add the scope of the base class to elements" ;
+        cenv3 = Env.openScope(cenv1, encf, SOME(cn));
+        new_ci_state = ClassInf.start(r, cn);
+        mod_1 = Mod.elabUntypedMod(emod, cenv3, Prefix.NOPRE());
+        mod_2 = Mod.merge(outermod, mod_1, cenv3, Prefix.NOPRE());
+        (_,mods,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsList(cenv1, outermod, els_1, ci_state, impl) "recurse to fully flatten extends elements env" ;
+        (env2,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(env, mod, rest, ci_state, impl) "continue with next element in list" ;
+        emod_1 = Mod.elabUntypedMod(emod, env2, Prefix.NOPRE()) "corresponding elements. But emod is Absyn.Mod and can not Must merge(mod,emod) here and then apply the bindings to the be elaborated, because for instance extends A(x=y) can reference a variable y defined in A and will thus not be found. On the other hand: A(n=4), n might be a structural parameter that must be set to instantiate A. How could this be solved? Solution: made new function elab_untyped_mod which transforms to a Mod, but set the type information to unknown. We can then perform the merge, and update untyped modifications later (using update_mod), when we are instantiating the components." ;
+        mod_1 = Mod.merge(mod, mods_1, env2, Prefix.NOPRE());
+        mods_1 = Mod.merge(mod_1, emod_1, env2, Prefix.NOPRE());
+        compelts = listAppend(compelts2, compelts1);
+        compelts3 = updateComponents(compelts, mods_1, env2) "update components with new merged modifiers" ;
+      then
+        (env2,mods_1,compelts3,{},{},{},{});
+    case (env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,impl) /* base class not found */ 
+      equation 
+        failure(((c as SCode.CLASS(cn,_,encf,r,_)),cenv) = Lookup.lookupClass(env, tp, true));
+        s = Absyn.pathString(tp);
+        scope_str = Env.printEnvPathStr(env);
+        Error.addMessage(Error.LOOKUP_BASECLASS_ERROR, {s,scope_str});
+      then
+        fail();
+    case (env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,impl)
+      equation 
+        //Debug.fprint("failtrace", "Failed inst_extends_list on EXTENDS\n env:");
+        Env.printEnv(env);
+      then
+        fail();
+    case (env,mod,(elt :: rest),ci_state,impl) /* Components that are not EXTENDS */ 
+      equation 
+        (env_1,mods,compelts2,eq2,initeq2,alg2,ialg2) = instExtendsList(env, mod, rest, ci_state, impl);
+      then
+        (env_1,mods,((elt,Types.NOMOD()) :: compelts2),eq2,initeq2,alg2,ialg2);
+    case (env,mod,{},ci_state,impl) then (env,mod,{},{},{},{},{}); 
+    case (_,_,_,_,_)
+      equation 
+        //Debug.fprint("failtrace", "- inst_extends_list failed\n");
+      then
+        fail();
+  end matchcontinue;
+end partialInstExtendsList;
+
 
 protected function addInheritScope "function: addInheritScope
   author: PA
@@ -2912,6 +3012,7 @@ algorithm
     case (env,mods,pre,csets,ci_state,((comp as SCode.COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,
       		attributes = (attr as SCode.ATTR(arrayDim = ad,flow_ = flow_,RW = acc,parameter_ = param,input_ = dir)),
       		type_ = t,mod = m,baseclass = bc,this = comment)),cmod),inst_dims,impl)  
+      		  local String s;
       equation 
         vn = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,{})) "//Debug.fprint(\"insttr\", \"Instantiating component \") &
 	//Debug.fprint(\"insttr\", n) & //Debug.fprint(\"insttr\", \"\\n\") &" ;
@@ -2941,7 +3042,7 @@ algorithm
         eq = Mod.modEquation(mod_1);
         dims = elabArraydim(env2_1, owncref, ad, eq, impl, NONE) "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;
         (compenv,dae,csets_1,ty) = instVar(cenv, ci_state, mod_1, pre, csets, n, cl, attr, dims, {}, 
-          inst_dims, impl, comment) "Instantiate the component" ;
+          inst_dims, impl, comment) "Instantiate the component" ;    
         binding = makeBinding(env2_1, attr, mod_1, ty) "The environment is extended (updated) with the new variable 
 	  binding. 
 	" ;
@@ -3244,8 +3345,7 @@ algorithm
       list<Exp.ComponentRef> crs;
       Option<Integer> dimt;
       DimExp dim;
-    case (env,(ci_state as ClassInf.FUNCTION(string = _)),mod,pre,csets,n,cl,attr,(dims as (_ :: _)),idxs,inst_dims,impl,comment) /* True = Implicit instantiation, should only be 
-			    used when instantiating functions. Then we can 
+       /* Function. For Functions we can 
 			    not always find dimensional sizes. e.g. 
 			    input Real x{:}; component environement The class is instantiated with the calculated 
           modification, and an extended prefix. 
@@ -3259,7 +3359,9 @@ algorithm
 	  equation inside the variable declaration, and discard all the
 	  equations.
 	 Rules for normal instantiation, will resolv dimensional sizes, etc. Array vars with binding in functions,e.g. input Real x{:}=Y */ 
-      equation 
+      
+    case (env,(ci_state as ClassInf.FUNCTION(string = _)),mod,pre,csets,n,cl,attr,(dims as (_ :: _)),idxs,inst_dims,impl,comment) 
+           equation 
         dims_1 = instDimExpLst(dims, impl) "Do not flatten because it is a function" ;
         SOME(Types.TYPED(e,_,p)) = Mod.modEquation(mod) "get the equation modification" ;
         (_,env_1,csets_1,ty,st) = instClass(env, mod, pre, csets, cl, inst_dims, impl, INNER_CALL()) "Instantiate type of the component" ;
@@ -3272,8 +3374,10 @@ algorithm
         dae = listAppend(dae1, {daeeq});
       then
         (env_1,dae,csets_1,ty_1);
-    case (env,(ci_state as ClassInf.FUNCTION(string = _)),mod,pre,csets,n,cl,attr,(dims as (_ :: _)),idxs,inst_dims,impl,comment) /* Array vars without binding in functions , e.g. input Real x{:} */ 
-      equation 
+   
+      /* Array vars without binding in functions , e.g. input Real x{:} */ 
+    case (env,(ci_state as ClassInf.FUNCTION(string = _)),mod,pre,csets,n,cl,attr,(dims as (_ :: _)),idxs,inst_dims,impl,comment) 
+       equation 
         (_,env_1,csets,ty,st) = instClass(env, mod, pre, csets, cl, inst_dims, impl, INNER_CALL()) "Do not flatten because it is a function" ;
         cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,{}));
         dims_1 = instDimExpLst(dims, impl) "Do all dimensions..." ;
@@ -3281,7 +3385,9 @@ algorithm
         arrty = makeArrayType(dims, ty);
       then
         (env_1,dae,csets,arrty);
-    case (env,ci_state,(mod as Types.MOD(eqModOption = SOME(Types.TYPED(e,_,_)))),pre,csets,n,cl,SCode.ATTR(flow_ = flow_,RW = acc,parameter_ = (vt as SCode.CONST()),input_ = dir),{},idxs,inst_dims,impl,comment) /* Constants as false */ 
+
+         /* Constants */ 
+    case (env,ci_state,(mod as Types.MOD(eqModOption = SOME(Types.TYPED(e,_,_)))),pre,csets,n,cl,SCode.ATTR(flow_ = flow_,RW = acc,parameter_ = (vt as SCode.CONST()),input_ = dir),{},idxs,inst_dims,impl,comment) 
       equation 
         idxs_1 = listReverse(idxs);
         pre_1 = Prefix.prefixAdd(n, idxs_1, pre);
@@ -3295,7 +3401,9 @@ algorithm
         dae = listAppend(dae1_1, dae3);
       then
         (env_1,dae,csets_1,ty);
-    case (env,ci_state,(mod as Types.MOD(eqModOption = SOME(Types.TYPED(e,_,_)))),pre,csets,n,cl,SCode.ATTR(flow_ = flow_,RW = acc,parameter_ = (vt as SCode.PARAM()),input_ = dir),{},idxs,inst_dims,impl,comment) /* as false Parameters */ 
+
+        /* Parameters */ 
+    case (env,ci_state,(mod as Types.MOD(eqModOption = SOME(Types.TYPED(e,_,_)))),pre,csets,n,cl,SCode.ATTR(flow_ = flow_,RW = acc,parameter_ = (vt as SCode.PARAM()),input_ = dir),{},idxs,inst_dims,impl,comment) 
       equation 
         idxs_1 = listReverse(idxs);
         pre_1 = Prefix.prefixAdd(n, idxs_1, pre);
@@ -3309,7 +3417,9 @@ algorithm
         dae = listAppend(dae1_1, dae3);
       then
         (env_1,dae,csets_1,ty);
-    case (env,ci_state,(mod as Types.MOD(eqModOption = SOME(Types.TYPED(e,_,_)))),pre,csets,n,cl,SCode.ATTR(flow_ = flow_,RW = acc,parameter_ = (vt as SCode.STRUCTPARAM()),input_ = dir),{},idxs,inst_dims,impl,comment) /* Structural Parameters */ 
+
+        /* Structural Parameters */ 
+    case (env,ci_state,(mod as Types.MOD(eqModOption = SOME(Types.TYPED(e,_,_)))),pre,csets,n,cl,SCode.ATTR(flow_ = flow_,RW = acc,parameter_ = (vt as SCode.STRUCTPARAM()),input_ = dir),{},idxs,inst_dims,impl,comment) 
       equation 
         idxs_1 = listReverse(idxs);
         pre_1 = Prefix.prefixAdd(n, idxs_1, pre);
@@ -3322,8 +3432,12 @@ algorithm
           SOME(e), inst_dims, NONE, dae_var_attr, comment);
         dae = listAppend(dae1_1, dae3);
       then
-        (env_1,dae,csets_1,ty);
-    case (env,ci_state,mod,pre,csets,n,cl,SCode.ATTR(flow_ = flow_,RW = acc,parameter_ = vt,input_ = dir),{},idxs,inst_dims,impl,comment) /* Scalar Variables */ 
+        (env_1,dae,csets_1,ty);        
+           
+        /* Scalar Variables, different from the ones above since variable binings are expanded to equations.
+        Exception: external objects, see below.*/         
+    case (env,ci_state,mod,pre,csets,n,cl,SCode.ATTR(flow_ = flow_,RW = acc,parameter_ = vt,input_ = dir),{},idxs,inst_dims,impl,comment) 
+      local Option<Exp.Exp> eOpt "for external objects";
       equation 
         idxs_1 = listReverse(idxs);
         pre_1 = Prefix.prefixAdd(n, idxs_1, pre);
@@ -3343,8 +3457,9 @@ algorithm
         //Debug.fprint("insttrind", "\n ******************\n ");
         //Debug.fprint("insttrind", "\n ");
         start = instStartBindingExp(mod, ty, idxs_1);
+        eOpt = makeExternalObjectBinding(ty,mod);
         dae_var_attr = instDaeVariableAttributes(env, mod, ty, {}) "idxs\'" ;
-        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flow_,acc,vt,dir), NONE, 
+        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flow_,acc,vt,dir), eOpt, 
           inst_dims, start, dae_var_attr, comment);
         daex = listAppend(dae1_1, dae2);
         dae = listAppend(daex, dae3);
@@ -3370,6 +3485,28 @@ algorithm
         fail();
   end matchcontinue;
 end instVar2;
+
+protected function makeExternalObjectBinding "Helper relation to instVar2
+
+For external objects the binding contains the constructor call.  This must be inserted in the DAE.VAR 
+as the binding expression so the 
+constructor code can be generated.
+If the type is not externa object, NONE is returned, since an equation should be generated instead with
+instModEquation.
+"
+input Types.Type tp;
+input Types.Mod mod;
+output Option<Exp.Exp> eOpt;
+
+algorithm
+  eOpt := matchcontinue(tp,mod)
+  case ((Types.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(_)),_),
+    Types.MOD(eqModOption = SOME(Types.TYPED(e,_,_))))
+    local Exp.Exp e;
+    then SOME(e);
+  case (_,_) then NONE;
+end matchcontinue;
+end makeExternalObjectBinding;
 
 protected function makeArrayType "function: makeArrayType
  
@@ -3684,7 +3821,7 @@ algorithm
         (env2_1,binding_1) = checkStructuralParamBinding(param, binding, env2) "Check if binding makes other variables into structural parameters
 	  For example input Integer n=p;
 	  If p is known to be a structural parameter, n should also become
-	  one.
+	  one. 
 	" ;
         env_1 = Env.updateFrameV(env2_1, 
           Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding_1), false, compenv) "type info present" ;
@@ -4873,8 +5010,10 @@ algorithm
         env_1 = Env.extendFrameT(env_1, n, ty1); 
       then
         (env_1,{DAE.FUNCTION(fpath,DAE.DAE(dae),ty1)});
-    case (env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = (restr as SCode.R_EXT_FUNCTION()),parts = (parts as SCode.PARTS(elementLst = els)))),inst_dims) /* External functions should also have their type in env, 
-	    but no dae. */ 
+
+        /* External functions should also have their type in env, 
+         but no dae. */ 
+    case (env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = (restr as SCode.R_EXT_FUNCTION()),parts = (parts as SCode.PARTS(elementLst = els)))),inst_dims)
       equation 
         (dae,cenv,csets_1,ty,st) = instClass(env, mod, pre, csets, c, inst_dims, true, INNER_CALL());
         env_1 = Env.extendFrameC(env,c);    
@@ -5023,7 +5162,7 @@ algorithm
       Absyn.ExternalDecl extdecl,orgextdecl;
       Boolean impl;
       list<SCode.Element> els;
-    case (env,n,SCode.PARTS(used = SOME(extdecl)),impl) /* impl */ 
+    case (env,n,SCode.PARTS(elementLst=els,used = SOME(extdecl)),impl) /* impl */ 
       equation 
         isExtExplicitCall(extdecl);
         fname = instExtGetFname(extdecl, n);
@@ -5252,12 +5391,13 @@ protected function instExtGetAnnotation "function: instExtGetAnnotation
   author: PA
  
   Return the annotation associated with an external function declaration.
+  If no annotation is found, check the classpart annotations.
 "
   input Absyn.ExternalDecl inExternalDecl;
   output Option<Absyn.Annotation> outAbsynAnnotationOption;
 algorithm 
   outAbsynAnnotationOption:=
-  matchcontinue (inExternalDecl)
+  matchcontinue (inExternalDecl,els)
     local Option<Absyn.Annotation> ann;
     case (Absyn.EXTERNALDECL(annotation_ = ann)) then ann; 
   end matchcontinue;
@@ -5788,8 +5928,10 @@ algorithm
       then {DAE.VAR(vn,kind,dir,DAE.ENUMERATION(l),e,inst_dims,start,fl,{}, dae_var_attr,comment)};  
 
           /* Complex type that is ExternalObject*/
-     case (vn, (Types.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),_),fl,kind,dir,e,inst_dims,start,dae_var_attr,comment)    
-          then {DAE.VAR(vn,kind,dir,DAE.EXT_OBJECT(),e,inst_dims,start,fl,{}, dae_var_attr,comment)};
+     case (vn, (Types.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_),fl,kind,dir,e,inst_dims,start,dae_var_attr,comment)    
+       local Absyn.Path path;
+       equation
+          then {DAE.VAR(vn,kind,dir,DAE.EXT_OBJECT(path),e,inst_dims,start,fl,{}, dae_var_attr,comment)};
             
       /* instantiation of complex type extending from basic type */ 
     case (vn,(Types.T_COMPLEX(complexClassType = ci,complexVarLst = {},complexTypeOption = SOME(tp)),_),fl,kind,dir,e,inst_dims,start,dae_var_attr,comment) 

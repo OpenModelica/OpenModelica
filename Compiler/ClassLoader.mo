@@ -185,9 +185,9 @@ algorithm
         classfile = stringAppend(class_, ".mo");
         classfile_1 = Util.stringAppendList({mp,pd,classfile});
         existRegularFile(classfile_1);
-        //print("parsing ");
-        //print(classfile_1);
-        //print("\n");
+        print("parsing ");
+        print(classfile_1);
+        print("\n");
         p = Parser.parse(classfile_1);
       then
         p;
@@ -267,9 +267,9 @@ algorithm
         mp_1 = Util.stringAppendList({mp,pd,pack});
         packagefile = Util.stringAppendList({mp_1,pd,"package.mo"});
         existRegularFile(packagefile);
-        //print("parsing ");
-        //print(packagefile);
-        //print("\n");
+        print("parsing ");
+        print(packagefile);
+        print("\n");
         Absyn.PROGRAM(p1,w1) = Parser.parse(packagefile);
         Print.printBuf("loading ");
         Print.printBuf(packagefile);
@@ -277,9 +277,9 @@ algorithm
         p1_1 = Interactive.updateProgram(Absyn.PROGRAM(p1,w1), Absyn.PROGRAM(oldc,Absyn.TOP()));
         subdirs = System.subDirectories(mp_1);
         subdirstr = Util.stringDelimitList(subdirs, ", ");
-        //print("subdirs =");
-        //print(subdirstr);
-        //print("\n");
+        print("subdirs =");
+        print(subdirstr);
+        print("\n");
         p2 = loadCompleteSubdirs(subdirs, pack, mp_1, within_, p1_1);
         p = loadCompleteSubfiles(pack, mp_1, within_, p2);
       then
@@ -290,9 +290,9 @@ algorithm
         mp_1 = Util.stringAppendList({mp,pd,pack});
         packagefile = Util.stringAppendList({mp_1,pd,"package.mo"});
         existRegularFile(packagefile);
-        //print("parsing ");
-        //print(packagefile);
-        //print("\n");
+        print("parsing ");
+        print(packagefile);
+        print("\n");
         Absyn.PROGRAM(p1,w1) = Parser.parse(packagefile);
         Print.printBuf("loading ");
         Print.printBuf(packagefile);
@@ -301,9 +301,9 @@ algorithm
           Absyn.PROGRAM(oldc,Absyn.TOP()));
         subdirs = System.subDirectories(mp_1);
         subdirstr = Util.stringDelimitList(subdirs, ", ");
-        //print("subdirs =");
-        //print(subdirstr);
-        //print("\n");
+        print("subdirs =");
+        print(subdirstr);
+        print("\n");
         p2 = loadCompleteSubdirs(subdirs, pack, mp_1, within_, p1_1);
         wpath_1 = Absyn.joinPaths(wpath, Absyn.IDENT(pack));
         p = loadCompleteSubfiles(pack, mp_1, within_, p2);
@@ -422,9 +422,9 @@ algorithm
       equation 
         pd = System.pathDelimiter();
         f_1 = Util.stringAppendList({mp,pd,f});
-        //print("parsing ");
-        //print(f_1);
-        //print("\n");
+        print("parsing ");
+        print(f_1);
+        print("\n");
         Absyn.PROGRAM(cls,_) = Parser.parse(f_1);
         Print.printBuf("loading ");
         Print.printBuf(f_1);

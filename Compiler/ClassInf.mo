@@ -58,6 +58,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 "
 
 public import OpenModelica.Compiler.SCode;
+public import OpenModelica.Compiler.Absyn;
 
 public 
 uniontype State "- Machine states, the string contains the classname."
@@ -126,7 +127,7 @@ uniontype State "- Machine states, the string contains the classname."
   end TYPE_ENUM;
 
 	record EXTERNAL_OBJ
-	  String string;
+	  Absyn.Path fullClassName;
 	end EXTERNAL_OBJ;
 end State;
 
@@ -172,7 +173,7 @@ algorithm
     case TYPE_BOOL(string = s) then "Boolean"; 
     case IS_NEW(string = s) then "new def"; 
     case HAS_EQUATIONS(string = s) then "has eqn"; 
-    case EXTERNAL_OBJ(string = s) then "ExternalObject"; 
+    case EXTERNAL_OBJ(_) then "ExternalObject"; 
   end matchcontinue;
 end printStateStr;
 
@@ -279,6 +280,7 @@ algorithm
   outString:=
   matchcontinue (inState)
     local String s;
+      Absyn.Path path;
     case UNKNOWN(string = s) then s; 
     case MODEL(string = s) then s; 
     case RECORD(string = s) then s; 
@@ -293,7 +295,7 @@ algorithm
     case TYPE_BOOL(string = s) then s; 
     case IS_NEW(string = s) then s; 
     case HAS_EQUATIONS(string = s) then s; 
-    case EXTERNAL_OBJ(string = s) then s; 
+    case EXTERNAL_OBJ(path) then Absyn.pathString(path); 
   end matchcontinue;
 end getStateName;
 

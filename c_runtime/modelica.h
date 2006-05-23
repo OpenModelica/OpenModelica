@@ -33,6 +33,8 @@
 extern "C" {
 #endif
 
+typedef void* modelica_complex; /* currently only External objects are represented using modelica_complex.*/
+
 #include "modelica_string.h"
 #include "memory_pool.h"
 #include "index_spec.h"
@@ -70,6 +72,7 @@ typedef modelica_real abs_rettype;
 typedef modelica_real max_rettype;
 typedef modelica_real min_rettype;
 typedef modelica_real floor_rettype;
+
 
 #if defined(__cplusplus)
 }

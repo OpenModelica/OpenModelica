@@ -61,6 +61,8 @@ public import OpenModelica.Compiler.Print;
 
 public import OpenModelica.Compiler.Exp;
 
+public import OpenModelica.Compiler.Absyn;
+
 public 
 type Ident = String;
 
@@ -128,7 +130,7 @@ end Context;
 
 protected import OpenModelica.Compiler.Debug;
 
-protected import OpenModelica.Compiler.Absyn;
+
 
 protected import OpenModelica.Compiler.Algorithm;
 
@@ -818,9 +820,18 @@ algorithm
       DAE.DAElist dae;
       list<DAE.Element> elist;
     case ((dae as DAE.DAE(elementLst = elist))) /* libs */ 
+      local String s;
       equation 
+         Print.printBuf("#ifdef __cplusplus\n");
+        Print.printBuf("extern \"C\" {\n");
+        Print.printBuf("#endif\n");
         libs = generateFunctionHeaders(dae);
         generateFunctionBodies(dae);
+        Print.printBuf("\n");
+        Print.printBuf("#ifdef __cplusplus\n");
+        Print.printBuf("}\n");
+        Print.printBuf("#endif\n");
+     
       then
         libs;
     case _
@@ -878,7 +889,7 @@ algorithm
         cfns = generateFunctionsElist(elist);
         Print.printBuf("/* header part */\n");
         Print.printBuf("#include \"modelica.h\"\n");
-        libs = cPrintFunctionIncludes(cfns) "FIXME: needed?" ;
+        libs = cPrintFunctionIncludes(cfns) ;
         cPrintFunctionHeaders(cfns);
         Print.printBuf("\n");
       then
@@ -1018,7 +1029,7 @@ algorithm
   end matchcontinue;
 end generateFunction;
 
-protected function generateExtFunctionIncludes "function: generateExtFunctionIncludes
+public function generateExtFunctionIncludes "function: generateExtFunctionIncludes
  
   Collects the includes and libs for an external function by
   investigating the annotation of an external function.
@@ -1334,7 +1345,7 @@ algorithm
     case Exp.REAL() then "real"; 
     case Exp.STRING() then "string"; 
     case Exp.BOOL() then "boolean"; 
-    case Exp.OTHER() then "OTHER"; 
+    case Exp.OTHER() then "complex"; // Only use is currently for external objects. Perhaps in future also records.
     case Exp.ENUM() then "ENUM_NOT_IMPLEMENTED"; 
     case Exp.T_ARRAY(ty = t)
       equation 
@@ -1435,6 +1446,9 @@ algorithm
         str = generateTypeExternal(ty);
       then
         str;
+
+        // External objects are stored in void pointer
+    case ((Types.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),_)) then "void *";
     case ty
       equation 
         Debug.fprint("failtrace", "#-- generate_type_external failed\n");
@@ -1550,6 +1564,9 @@ algorithm
         n_2 = stringAppend(n_1, "&");
       then
         n_2;
+    case ((Types.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),_))
+      then
+        "void *";
     case ((t as (Types.T_ARRAY(arrayDim = _),_)))
       equation 
         t_1 = Types.arrayElementType(t);
@@ -3110,7 +3127,7 @@ algorithm
   end matchcontinue;
 end generateResultVar;
 
-protected function generateExpressions "function: generateExpressions
+public function generateExpressions "function: generateExpressions
  
   Generates code for a list of expressions.
 "

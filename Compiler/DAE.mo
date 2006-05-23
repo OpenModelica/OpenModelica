@@ -105,6 +105,7 @@ uniontype Type
   end ENUMERATION;
   
   record EXT_OBJECT
+    Absyn.Path fullClassName;
   end EXT_OBJECT;  
 
 end Type;
@@ -368,6 +369,7 @@ algorithm
     case DAE(elementLst = daelist)
       equation 
         Util.listMap0(daelist, dumpFunction);
+        Util.listMap0(daelist, dumpExtObjectClass);
         Util.listMap0(daelist, dumpCompElement);
       then
         ();
@@ -644,14 +646,15 @@ algorithm
   outString:=
   matchcontinue (inDAElist)
     local
-      list<Ident> flist,clist,slist;
+      list<Ident> flist,clist,slist,extlist;
       Ident str;
       list<Element> daelist;
     case DAE(elementLst = daelist)
       equation 
         flist = Util.listMap(daelist, dumpFunctionStr);
+        extlist = Util.listMap(daelist, dumpExtObjClassStr);
         clist = Util.listMap(daelist, dumpCompElementStr);
-        slist = listAppend(flist, clist);
+        slist = Util.listFlatten({flist,extlist, clist});
         str = Util.stringAppendList(slist);
       then
         str;
@@ -744,6 +747,7 @@ public function dumpElements "function: dumpElements
   input list<Element> l;
 algorithm 
   dumpVars(l);
+  Util.listMap0(l, dumpExtObjectClass);
   Print.printBuf("initial equation\n");
   Util.listMap0(l, dumpInitialequation);
   Print.printBuf("equation\n");
@@ -751,6 +755,7 @@ algorithm
   Util.listMap0(l, dumpInitialalgorithm);
   Util.listMap0(l, dumpAlgorithm);
   Util.listMap0(l, dumpCompElement);
+  
 end dumpElements;
 
 public function dumpElementsStr "function: dumpElementsStr
@@ -759,7 +764,7 @@ public function dumpElementsStr "function: dumpElementsStr
 "
   input list<Element> l;
   output String str;
-  Ident s1,s2,s3,s4,s5,initeqstr,initalgstr,eqstr,algstr;
+  Ident s0,s1,s2,s3,s4,s5,initeqstr,initalgstr,eqstr,algstr;
   Boolean noiniteq,noinitalg,noeq,noalg;
 algorithm 
   s1 := dumpVarsStr(l);
@@ -775,7 +780,8 @@ algorithm
   initalgstr := Dump.selectString(noinitalg, "", "initial algorithm\n");
   eqstr := Dump.selectString(noeq, "", "equation\n");
   algstr := Dump.selectString(noalg, "", "algorithm\n");
-  str := Util.stringAppendList({s1,initeqstr,s2,initalgstr,s4,eqstr,s3,algstr,s5});
+  s0 := Util.stringDelimitListNoEmpty(Util.listMap(l,dumpExtObjClassStr),"\n");
+  str := Util.stringAppendList({s0,s1,initeqstr,s2,initalgstr,s4,eqstr,s3,algstr,s5});
 end dumpElementsStr;
 
 protected function dumpAlgorithmsStr "function: dumpAlgorithmsStr
@@ -1321,7 +1327,7 @@ algorithm
         Print.printBuf(") ");
       then
         ();
-     case EXT_OBJECT()
+     case EXT_OBJECT(_)
       equation 
         Print.printBuf("ExternalObject   ");
       then
@@ -1353,7 +1359,7 @@ algorithm
         str = stringAppend(s2, ")");
       then
         str;
-    case EXT_OBJECT() then "ExternalObject ";    
+    case EXT_OBJECT(_) then "ExternalObject ";    
   end matchcontinue;
 end dumpTypeStr;
 
@@ -1687,6 +1693,37 @@ algorithm
   end matchcontinue;
 end dumpInitialalgorithmStr;
 
+protected function dumpExtObjectClass "function: dumpExtObjectClass
+ 
+  Dump External Object class
+"
+  input Element inElement;
+algorithm 
+  _:=
+  matchcontinue (inElement)
+    local
+      Ident fstr;
+      Absyn.Path fpath;
+      Element constr,destr;
+      list<Element> dae;
+      tuple<Types.TType, Option<Absyn.Path>> t;
+    case EXTOBJECTCLASS(path = fpath,constructor=constr,destructor=destr)
+      equation 
+        Print.printBuf("class ");
+        fstr = Absyn.pathString(fpath);
+        Print.printBuf(fstr);
+        Print.printBuf("\n extends ExternalObject;\n");
+        dumpFunction(constr);
+        dumpFunction(destr);
+        Print.printBuf("end ");
+        Print.printBuf(fstr);
+        Print.printBuf(";\n");
+      then
+        ();
+    case _ then (); 
+  end matchcontinue;
+end dumpExtObjectClass;
+
 protected function dumpFunction "function: dumpFunction
  
   Dump function
@@ -1712,11 +1749,20 @@ algorithm
         Print.printBuf(";\n\n");
       then
         ();
+     case EXTFUNCTION(path = fpath,dAElist = DAE(elementLst = dae),type_ = t)
+       local String fstr,daestr,str;
+      equation 
+        fstr = Absyn.pathString(fpath);
+        daestr = dumpElementsStr(dae);
+        str = Util.stringAppendList({"function ",fstr,"\n",daestr,"\nexternal \"C\";\nend ",fstr,";\n\n"});
+        Print.printBuf(str);
+      then
+        ();
     case _ then (); 
   end matchcontinue;
 end dumpFunction;
 
-protected function dumpFunctionStr "function: dumpFunctionStr
+public function dumpFunctionStr "function: dumpFunctionStr
  
   Dump function to a string.
 "
@@ -1737,9 +1783,44 @@ algorithm
         str = Util.stringAppendList({"function ",fstr,"\n",daestr,"end ",fstr,";\n\n"});
       then
         str;
+    case EXTFUNCTION(path = fpath,dAElist = DAE(elementLst = dae),type_ = t)
+      equation 
+        fstr = Absyn.pathString(fpath);
+        daestr = dumpElementsStr(dae);
+        str = Util.stringAppendList({"function ",fstr,"\n",daestr,"\nexternal \"C\";\nend ",fstr,";\n\n"});
+      then
+        str;
     case _ then ""; 
   end matchcontinue;
 end dumpFunctionStr;
+
+protected function dumpExtObjClassStr "function: dumpExtObjStr
+ 
+  Dump external object class to a string.
+"
+  input Element inElement;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inElement)
+    local
+      Ident fstr,daestr,str,c_str,d_str;
+      Absyn.Path fpath;
+      list<Element> dae;
+      Element constr,destr;
+      tuple<Types.TType, Option<Absyn.Path>> t;
+    case EXTOBJECTCLASS(path = fpath,constructor = constr, destructor = destr)
+      equation 
+        fstr = Absyn.pathString(fpath);
+        c_str = dumpFunctionStr(constr);
+        d_str = dumpFunctionStr(destr);
+        str = Util.stringAppendList({"class  ",fstr,"\n  extends ExternalObject;\n",c_str,
+          d_str,"end ",fstr,";\n"});
+      then
+        str;
+    case _ then ""; 
+  end matchcontinue;
+end dumpExtObjClassStr;
 
 protected function ppStatement "function: ppStatement
  

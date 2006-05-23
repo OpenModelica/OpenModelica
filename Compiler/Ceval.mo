@@ -454,7 +454,8 @@ algorithm
 
     case (env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),impl,st,_,msg) /* Call functions FIXME: functions are always generated. Put back the check
 	  and write another rule for the false case that generates the function */ 
-      equation 
+	  local String s; list<String> ss;
+      equation
         vallst = cevalList(env, expl, impl, st, msg);
         newval = cevalCallFunction(env, e, vallst, msg);
       then
@@ -927,15 +928,26 @@ algorithm
       list<Values.Value> vallst;
       Msg msg;
       String funcstr,infilename,outfilename,str;
-    case (env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg) /* External functions that are \"known\" should be evaluated without
+   /* External functions that are \"known\" should be evaluated without
 	  compilation, e.g. all math functions */ 
+    case (env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg) 
       equation 
         newval = cevalKnownExternalFuncs(env, funcpath, vallst, msg);
       then
         newval;
+        
+        // This case prevents the constructor call of external objects of being evaluated
+    case (env,(e as Exp.CALL(path = funcpath,expLst = expl, builtin = builtin)),vallst,msg)
+      local Types.Type tp;
+        Absyn.Path funcpath2;
+        String s;
+      equation
+        cevalIsExternalObjectConstructor(funcpath,env);
+        then fail();
     case (env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg) /* Call functions in non-interactive mode. FIXME: functions are always generated. Put back the check
 	 and write another rule for the false case that generates the function */ 
-      equation 
+      equation
+ 				failure(cevalIsExternalObjectConstructor(funcpath,env));
         cevalGenerateFunction(env, funcpath) "Static.is_function_in_cflist(cflist,funcpath) => true &" ;
         funcstr = ModUtil.pathString2(funcpath, "_");
         infilename = stringAppend(funcstr, "_in.txt");
@@ -954,6 +966,19 @@ algorithm
         fail();
   end matchcontinue;
 end cevalCallFunction;
+
+protected function cevalIsExternalObjectConstructor
+  input Absyn.Path funcpath;
+  input Env.Env env;
+protected
+  Absyn.Path funcpath2;
+  Types.Type tp;
+algorithm
+  "constructor" := Absyn.pathLastIdent(funcpath);
+  funcpath2:=Absyn.stripLast(funcpath);
+  (tp,_) := Lookup.lookupType(env,funcpath2,true);
+  Types.externalObjectConstructorType(tp);
+end cevalIsExternalObjectConstructor;
 
 protected function cevalKnownExternalFuncs "function: cevalKnownExternalFuncs
  
@@ -1715,7 +1740,7 @@ algorithm
         (dae_1,env) = Inst.instantiateClass(p_1, path);
         ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(path,dael,env));
-        ((daelow as DAELow.DAELOW(vars,_,eqnarr,_,_,ae,_,_))) = DAELow.lower(dae, false) "no dummy state" ;
+        ((daelow as DAELow.DAELOW(vars,_,_,eqnarr,_,_,ae,_,_,_))) = DAELow.lower(dae, false) "no dummy state" ;
         m = DAELow.incidenceMatrix(daelow);
         mt = DAELow.transposeMatrix(m);
         jac = DAELow.calculateJacobian(vars, eqnarr, ae, m, mt);

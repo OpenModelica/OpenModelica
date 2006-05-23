@@ -591,7 +591,7 @@ algorithm
         TaskGraphExt.dumpMergedGraph("merged_model.viz");
         n = RTOpts.noProc();
         TaskGraphExt.schedule(n);
-        (nx,ny,np,_) = DAELow.calculateSizes(indexed_dae_1);
+        (nx,ny,np,_,_) = DAELow.calculateSizes(indexed_dae_1);
         nps = intString(np);
         print("=======\nnp =");
         print(nps);
@@ -644,6 +644,7 @@ algorithm
         Print.clearBuf();
         indexed_dlow = DAELow.translateDae(dlow);
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
+        Debug.fcall("dumpindxdae", DAELow.dump, indexed_dlow_1);
         cname_str = Absyn.pathString(classname);
         filename = Util.stringAppendList({cname_str,".cpp"});
         funcfilename = Util.stringAppendList({cname_str,"_functions.cpp"});

@@ -94,7 +94,11 @@ int read_type_description(FILE* file, type_description* desc)
   return 0;
 }
 
-
+int read_modelica_complex(FILE *file, modelica_complex data)
+{
+	printf("Internal Error, read_modelica_complex not supported\n");
+	return -1;
+}
 
 int read_modelica_real(FILE* file, modelica_real* data)
 {

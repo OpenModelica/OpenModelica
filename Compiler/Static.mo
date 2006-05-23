@@ -1317,6 +1317,7 @@ algorithm
         c = Types.constAnd(c2, c1);
       then
         c;
+    case (_) equation Debug.fprint("failtrace", "-elabArrayConst failed\n"); then fail();
   end matchcontinue;
 end elabArrayConst;
 
@@ -5835,6 +5836,7 @@ algorithm
       Boolean impl;
       Ident s,scope;
     case (env,c,impl) /* impl */ 
+      local String s;
       equation 
         (c_1,const) = elabCrefSubs(env, c, impl);
         (Types.ATTR(_,acc,variability,_),t,binding) = Lookup.lookupVar(env, c_1);

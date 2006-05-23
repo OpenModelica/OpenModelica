@@ -137,33 +137,34 @@ typedef enum {
 /*   These are flags for the generated 
      initializeDataStruc(DATA_INIT_FLAGS) function */
 
-  NO_INIT_OF_VECTORS           = 0x00000000,
-  STATES                  = 0x00000001,
-  STATESDERIVATIVES       = 0x00000002,
-  HELPVARS                = 0x00000004,
-  ALGEBRAICS              = 0x00000008,
-  PARAMETERS              = 0x00000010,
-  INITIALRESIDUALS        = 0x00000020,
-  INPUTVARS               = 0x00000040,
-  OUTPUTVARS              = 0x00000080,
-  INITFIXED               = 0x00000100,
+  NO_INIT_OF_VECTORS        = 0x00000000,
+  STATES                  	= 0x00000001,
+  STATESDERIVATIVES      	= 0x00000002,
+  HELPVARS                	= 0x00000004,
+  ALGEBRAICS              	= 0x00000008,
+  PARAMETERS              	= 0x00000010,
+  INITIALRESIDUALS        	= 0x00000020,
+  INPUTVARS               	= 0x00000040,
+  OUTPUTVARS              	= 0x00000080,
+  INITFIXED               	= 0x00000100,
+  EXTERNALVARS			  	= 0x00000200,
 
   /*in initializeDataStruc these are not allocated with malloc!*/
-  MODELNAME               = 0x00000200, 
-  STATESNAMES             = 0x00000400,
-  STATESDERIVATIVESNAMES  = 0x00000800,
-  ALGEBRAICSNAMES         = 0x00001000,
-  PARAMETERSNAMES         = 0x00002000,
-  INPUTNAMES              = 0x00004000,
-  OUTPUTNAMES             = 0x00008000,
+  MODELNAME               	= 0x00000400, 
+  STATESNAMES             	= 0x00000800,
+  STATESDERIVATIVESNAMES  	= 0x00001000,
+  ALGEBRAICSNAMES         	= 0x00002000,
+  PARAMETERSNAMES         	= 0x00004000,
+  INPUTNAMES              	= 0x00008000,
+  OUTPUTNAMES             	= 0x00010000,
 
   /*in initializeDataStruc these are not allocated with malloc!*/
-  STATESCOMMENTS            = 0x00010000,
-  STATESDERIVATIVESCOMMENTS = 0x00020000,
-  ALGEBRAICSCOMMENTS        = 0x00040000,
-  PARAMETERSCOMMENTS        = 0x00080000,
-  INPUTCOMMENTS             = 0x00010000,
-  OUTPUTCOMMENTS            = 0x00020000,
+  STATESCOMMENTS            = 0x00020000,
+  STATESDERIVATIVESCOMMENTS = 0x00040000,
+  ALGEBRAICSCOMMENTS        = 0x00080000,
+  PARAMETERSCOMMENTS        = 0x00100000,
+  INPUTCOMMENTS             = 0x00200000,
+  OUTPUTCOMMENTS            = 0x00400000,
 
   ALL                       = 0xFFFFFFFF
 } DATA_FLAGS;
@@ -184,6 +185,7 @@ typedef struct sim_DATA {
   double* helpVars;
   double* initialResiduals;
   char* initFixed;
+  void** extObjs; // External objects	
   /* nStatesDerivatives == states */
   long nStates,nAlgebraic,nParameters;
   long nInputVars,nOutputVars;

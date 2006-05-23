@@ -312,6 +312,35 @@ algorithm
   end matchcontinue;
 end discreteType;
 
+public function externalObjectType "author: PA
+  
+  Succeeds if type is ExternalObject
+"
+  input Type inType;
+algorithm 
+  _:=
+  matchcontinue (inType)
+    case ((T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),_)) then (); 
+  end matchcontinue;
+end externalObjectType;
+
+public function externalObjectConstructorType "author: PA
+  
+  Succeeds if type is ExternalObject constructor function
+"
+  input Type inType;
+algorithm 
+  _:=
+  matchcontinue (inType)
+    case ((T_FUNCTION(funcResultType = tp),_)) 
+      local Type tp;
+      equation
+        externalObjectType(tp);
+      then (); 
+  end matchcontinue;
+end externalObjectConstructorType;
+
+
 public function simpleType "function: simpleType
   author: PA
   
