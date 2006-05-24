@@ -921,7 +921,7 @@ algorithm
   end matchcontinue;
 end printElementArg;
 
-protected function unparseElementArgStr "function: unparseElementArgStr
+public function unparseElementArgStr "function: unparseElementArgStr
  
   Prettyprints an ElementArg to a string.
 "

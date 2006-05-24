@@ -5076,8 +5076,16 @@ algorithm
       list<Env.Frame> env;
       Absyn.Modification mod;
       Absyn.Element elt;
-    case (Absyn.ELEMENT(final_ = f,redeclareKeywords = r,innerOuter = i,name = n,specification = Absyn.EXTENDS(path = path,elementArg = eargs),info = info,constrainClass = constr),inherit,submod,Absyn.CLASSMOD(elementArgLst = {},expOption = NONE),env) /* special case for clearing modifications */  then Absyn.ELEMENT(f,r,i,n,Absyn.EXTENDS(path,{}),info,constr); 
-    case (Absyn.ELEMENT(final_ = f,redeclareKeywords = r,innerOuter = i,name = n,specification = Absyn.EXTENDS(path = path,elementArg = eargs),info = info,constrainClass = constr),inherit,submod,mod,env)
+      /* special case for clearing modifications */  
+   /* case (Absyn.ELEMENT(final_ = f,redeclareKeywords = r,innerOuter = i,name = n,
+      specification = Absyn.EXTENDS(path = path,elementArg = eargs),info = info,constrainClass = constr),
+      inherit,submod,Absyn.CLASSMOD(elementArgLst = {},expOption = NONE),env) 
+      
+      then Absyn.ELEMENT(f,r,i,n,Absyn.EXTENDS(path,{}),info,constr); */
+        
+    case (Absyn.ELEMENT(final_ = f,redeclareKeywords = r,innerOuter = i,name = n,
+      specification = Absyn.EXTENDS(path = path,elementArg = eargs),info = info,constrainClass = constr),
+      inherit,submod,mod,env)
       equation 
         path_1 = Inst.makeFullyQualified(env, path);
         true = ModUtil.pathEqual(inherit, path_1);
@@ -5678,12 +5686,13 @@ algorithm
     local
       Absyn.ComponentRef cref,cr1,cr2,cr;
       Absyn.Modification mod;
+      Option<Absyn.Modification> mod2,modM;
       Boolean f;
       Absyn.Each each_;
       String name,submodident,name1,name2;
       list<Absyn.Subscript> idx;
       Option<String> cmt;
-      list<Absyn.ElementArg> rest,args_1,args,res;
+      list<Absyn.ElementArg> rest,args_1,args,res,submods;
       Option<Absyn.Exp> exp;
       Absyn.Exp e;
       Absyn.ElementArg m;
@@ -5691,64 +5700,71 @@ algorithm
     case ({},cref,mod) then {
           Absyn.MODIFICATION(false,Absyn.NON_EACH(),cref,SOME(mod),NONE)};  
           
-       //Clear modification
+       //Clear modification, m
     case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = Absyn.CREF_IDENT(name = name,subscripts = idx),comment = cmt) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD( {}, NONE)))  
       equation 
         equality(name = submodident);
       then
         rest;
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = Absyn.CREF_IDENT(name = name,subscripts = idx),comment = cmt) :: rest),Absyn.CREF_IDENT(name = submodident),mod) /* update modification */ 
+        // modfication, m=e
+    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = Absyn.CREF_IDENT(name = name,subscripts = idx),modification=SOME(Absyn.CLASSMOD(submods,_)),comment = cmt) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD({},SOME(e)))) /* update modification */ 
+      equation 
+        equality(name = submodident);
+      then
+        (Absyn.MODIFICATION(f,each_,Absyn.CREF_IDENT(name,idx),SOME(Absyn.CLASSMOD(submods,SOME(e))),cmt) :: rest);
+        
+               // modfication, m(...)=e
+    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = Absyn.CREF_IDENT(name = name,subscripts = idx),modification=mod2,comment = cmt) :: rest),Absyn.CREF_IDENT(name = submodident),mod) /* update modification */ 
       equation 
         equality(name = submodident);
       then
         (Absyn.MODIFICATION(f,each_,Absyn.CREF_IDENT(name,idx),SOME(mod),cmt) :: rest);
 
-    // Clear modification
+    // Clear modification, m.n
      case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = (cr1 as Absyn.CREF_QUAL(name = _)),comment = cmt) :: rest),cr2,Absyn.CLASSMOD({},NONE))
       equation 
         true = Absyn.crefEqual(cr1, cr2);
       then
         (rest);
-    
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = (cr1 as Absyn.CREF_QUAL(name = _)),comment = cmt) :: rest),cr2,mod)
-      equation 
-        true = Absyn.crefEqual(cr1, cr2);
-      then
-        (Absyn.MODIFICATION(f,each_,cr1,SOME(mod),cmt) :: rest);
 
-     //Clear modification   
+     //Clear modification m.n  
     case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = Absyn.CREF_QUAL(name = name1),comment = cmt) :: rest),Absyn.CREF_IDENT(name = name2,subscripts = idx),Absyn.CLASSMOD({},NONE))
       equation 
         equality(name1 = name2);
       then
         (rest);
         
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = Absyn.CREF_QUAL(name = name1),comment = cmt) :: rest),Absyn.CREF_IDENT(name = name2,subscripts = idx),mod)
-      equation 
-        equality(name1 = name2);
-      then
-        (Absyn.MODIFICATION(f,each_,Absyn.CREF_IDENT(name2,idx),SOME(mod),cmt) :: rest);
-   
-   // Clear modification
+   // Clear modification m(...)
    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = (cr as Absyn.CREF_IDENT(name = name2)),modification = SOME(Absyn.CLASSMOD(args,NONE)),comment = cmt) :: rest),Absyn.CREF_QUAL(name = name1,componentRef = cr1),Absyn.CLASSMOD({},NONE))
       equation 
         equality(name1 = name2);
-        {}= setSubmodifierInElementargs(args, cr1, Absyn.CLASSMOD({},NONE));
+        {} = setSubmodifierInElementargs(args, cr1, Absyn.CLASSMOD({},NONE));
       then
         (Absyn.MODIFICATION(f,each_,cr,NONE,cmt) :: rest);
    
+   // Clear modification m(...)=expr
+   case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = (cr as Absyn.CREF_IDENT(name = name2)),modification = SOME(Absyn.CLASSMOD(args,SOME(e))),comment = cmt) :: rest),Absyn.CREF_QUAL(name = name1,componentRef = cr1),Absyn.CLASSMOD({},NONE))
+      equation 
+        equality(name1 = name2);
+        {} = setSubmodifierInElementargs(args, cr1, Absyn.CLASSMOD({},NONE));
+      then
+        (Absyn.MODIFICATION(f,each_,cr,SOME(Absyn.CLASSMOD({},SOME(e))),cmt) :: rest);
+   
+        // modification, m for m.n
     case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = (cr as Absyn.CREF_IDENT(name = name2)),modification = SOME(Absyn.CLASSMOD(args,exp)),comment = cmt) :: rest),Absyn.CREF_QUAL(name = name1,componentRef = cr1),mod)
       equation 
         equality(name1 = name2);
         args_1 = setSubmodifierInElementargs(args, cr1, mod);
       then
         (Absyn.MODIFICATION(f,each_,cr,SOME(Absyn.CLASSMOD(args_1,exp)),cmt) :: rest);
+        
+        // next element
     case ((m :: rest),submodident,mod)
       local Absyn.ComponentRef submodident;
       equation 
         res = setSubmodifierInElementargs(rest, submodident, mod);
       then
-        (m :: res);
+        (m :: res); 
     case (_,_,_)
       equation 
         print("-set_submodifier_in_elementargs failed\n");

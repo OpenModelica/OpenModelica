@@ -613,7 +613,7 @@ DATA* initializeDataStruc(DATA_FLAGS flags)\n{\n
   if (flags & EXTERNALVARS) {\n
   returnData->extObjs = (void**)malloc(sizeof(void*)*NEXT);\n
   if (!returnData->extObjs) { \n
-     printf(\error allocating external objects\\n\);\n
+     printf(\"error allocating external objects\\n\");\n
      exit(-2);\n
   }\n
   setLocalData(returnData); /* must be set since used by constructors*/\n",
