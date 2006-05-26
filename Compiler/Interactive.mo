@@ -5700,8 +5700,15 @@ algorithm
     case ({},cref,mod) then {
           Absyn.MODIFICATION(false,Absyn.NON_EACH(),cref,SOME(mod),NONE)};  
           
-       //Clear modification, m
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = Absyn.CREF_IDENT(name = name,subscripts = idx),comment = cmt) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD( {}, NONE)))  
+       //Clear modification m(...) 
+    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = (cr as Absyn.CREF_IDENT(name = name,subscripts = idx)),comment = cmt,modification=SOME(Absyn.CLASSMOD((submods as _::_),_))) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD( {}, NONE)))  
+      equation 
+        equality(name = submodident);
+      then
+        Absyn.MODIFICATION(f,each_,cr,SOME(Absyn.CLASSMOD(submods,NONE)),cmt)::rest;
+        
+        //Clear modification, m with no submodifiers
+    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = Absyn.CREF_IDENT(name = name,subscripts = idx),comment = cmt,modification=SOME(Absyn.CLASSMOD({},_))) :: rest),Absyn.CREF_IDENT(name = submodident),(mod as Absyn.CLASSMOD( {}, NONE)))  
       equation 
         equality(name = submodident);
       then
@@ -5713,7 +5720,7 @@ algorithm
       then
         (Absyn.MODIFICATION(f,each_,Absyn.CREF_IDENT(name,idx),SOME(Absyn.CLASSMOD(submods,SOME(e))),cmt) :: rest);
         
-               // modfication, m(...)=e
+        // modfication, m(...)=e
     case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = Absyn.CREF_IDENT(name = name,subscripts = idx),modification=mod2,comment = cmt) :: rest),Absyn.CREF_IDENT(name = submodident),mod) /* update modification */ 
       equation 
         equality(name = submodident);
@@ -5727,10 +5734,11 @@ algorithm
       then
         (rest);
 
-     //Clear modification m.n  
-    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = Absyn.CREF_QUAL(name = name1),comment = cmt) :: rest),Absyn.CREF_IDENT(name = name2,subscripts = idx),Absyn.CLASSMOD({},NONE))
+     //Clear modification m.n first part matches. Check that m is not present in rest of list.
+    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = Absyn.CREF_QUAL(name = name1),comment = cmt) :: rest),cr as Absyn.CREF_IDENT(name = name2,subscripts = idx),Absyn.CLASSMOD({},NONE))
       equation 
         equality(name1 = name2);
+        false = findCrefModification(cr,rest);
       then
         (rest);
         
@@ -5772,6 +5780,22 @@ algorithm
         fail();
   end matchcontinue;
 end setSubmodifierInElementargs;
+
+protected function findCrefModification
+  input Absyn.ComponentRef cr;
+  input list<Absyn.ElementArg> rest;
+  output Boolean found;
+algorithm
+  
+  found := matchcontinue(cr,rest)
+    local Absyn.ComponentRef cr2;		  
+    case (cr,Absyn.MODIFICATION(componentReg = cr2)::_) 
+      equation
+        true = Absyn.crefEqual(cr,cr2); then true;
+    case (cr,_::rest) then findCrefModification(cr,rest);
+    case (cr,{}) then false;
+  end matchcontinue;
+end findCrefModification;
 
 protected function getComponentModifierValue "function: getComponentModifierValue(class,ident,subident,p) => resstr 
   
@@ -5936,6 +5960,18 @@ algorithm
         names = getModificationNames(rest);
       then
         (name :: names);
+        // modifier with submodifiers -and- binding, e.g. m(...)=2, add also m to list
+    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = cr,modification = SOME(Absyn.CLASSMOD(args,SOME(_))),comment = cmt) :: rest))
+      equation 
+        name = Dump.printComponentRefStr(cr);
+        names2 = getModificationNames(args);
+        names2_1 = Util.listMap1r(names2, string_append, ".");
+        names2_2 = Util.listMap1r(names2_1, string_append, name);
+        names = getModificationNames(rest);
+        res = listAppend(names2_2, names);
+      then
+        name::res;
+      // modifier with submodifiers, e.g. m(...)  
     case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = cr,modification = SOME(Absyn.CLASSMOD(args,_)),comment = cmt) :: rest))
       equation 
         name = Dump.printComponentRefStr(cr);
