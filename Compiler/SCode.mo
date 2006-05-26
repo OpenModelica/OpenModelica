@@ -513,6 +513,7 @@ algorithm
         als = elabClassdefAlgorithms(parts);
         initals = elabClassdefInitialalgorithms(parts);
         decl = elabClassdefExternaldecls(parts);
+        decl = elabAlternativeExternalAnnotation(decl,parts);
       then
         PARTS(els,eqs,initeqs,als,initals,decl);
     case (Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(enumLiterals = lst)))
@@ -539,6 +540,70 @@ algorithm
     case (Absyn.PDER(functionName = path,vars = vars)) then PDER(path,vars); 
   end matchcontinue;
 end elabClassdef;
+
+protected function elabAlternativeExternalAnnotation "This function fills external declarations 
+without annotation with the first class annotation instead, since it is very common that an 
+element annotation is used for this purpose.
+
+For instance, instead of
+external \"C\" annotation(Library=\"foo.lib\";
+it says
+external \"C\" ;
+annotation(Library=\"foo.lib\";
+"
+input Option<Absyn.ExternalDecl> decl;
+input list<Absyn.ClassPart> parts;
+output Option<Absyn.ExternalDecl> outDecl;
+algorithm
+  outDecl := matchcontinue(decl,parts)
+    local 
+      Absyn.Annotation ann;
+      Option<Ident> name ;
+      Option<String> l ;
+      Option<Absyn.ComponentRef> out ;
+      list<Absyn.Exp> a;
+      list<Absyn.ElementItem> els;
+      list<Absyn.ClassPart> cls;
+    case (NONE,_) then NONE;
+
+      // Already filled.
+    case (decl as SOME(Absyn.EXTERNALDECL(annotation_ = SOME(_))),_) then decl;
+
+     // EXTERNALDECL.
+    case (SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),Absyn.EXTERNAL(_,SOME(ann))::_)
+    then SOME(Absyn.EXTERNALDECL(name,l,out,a,SOME(ann)));
+      
+			// Annotation item.
+    case (SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),Absyn.PUBLIC(Absyn.ANNOTATIONITEM(ann)::_)::_)
+    then SOME(Absyn.EXTERNALDECL(name,l,out,a,SOME(ann)));
+
+    // Next element in public list
+    case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),Absyn.PUBLIC(_::els)::cls)
+		then elabAlternativeExternalAnnotation(decl,Absyn.PUBLIC(els)::cls);
+		  
+		// Next classpart list
+    case (decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),Absyn.PUBLIC({})::cls)
+		then elabAlternativeExternalAnnotation(decl,cls);
+		  
+		   case (SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),Absyn.PROTECTED(Absyn.ANNOTATIONITEM(ann)::_)::_)
+    then SOME(Absyn.EXTERNALDECL(name,l,out,a,SOME(ann)));
+
+    // Next element in public list
+    case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),Absyn.PROTECTED(_::els)::cls)
+		then elabAlternativeExternalAnnotation(decl,Absyn.PROTECTED(els)::cls);
+		  
+		// Next classpart list
+    case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),Absyn.PROTECTED({})::cls)
+		then elabAlternativeExternalAnnotation(decl,cls);
+
+	  // Next in list
+		   case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE)),_::cls)
+		then elabAlternativeExternalAnnotation(decl,cls);
+		  
+		// not found
+    case (decl,_) then decl;
+  end matchcontinue;
+end elabAlternativeExternalAnnotation;
 
 protected function elabEnumlist "function: elabEnumlist
  
