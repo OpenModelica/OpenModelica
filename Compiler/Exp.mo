@@ -381,6 +381,29 @@ protected import OpenModelica.Compiler.Debug;
 
 protected constant Exp rconstone=RCONST(1.0);
 
+
+public function dumpExpWithTitle
+  input String title;
+  input Exp exp;
+  protected String str;
+algorithm
+  str := dumpExpStr(exp,0);
+  print(title);
+  print(str);
+  print("\n");
+end dumpExpWithTitle;
+  
+
+public function dumpExp
+  input Exp exp;
+  protected String str;
+algorithm
+  str := dumpExpStr(exp,0);
+  print(str);
+  print("--------------------\n");
+end dumpExp;
+
+
 public function crefToPath "function: crefToPath
  
   This function converts a `ComponentRef\' to a `Path\', if possible.
@@ -1171,6 +1194,7 @@ algorithm
       ComponentRef c_1;
       Operator op;
       String before, after;
+
     case (CAST(ty = REAL(),exp = RCONST(real = v))) then RCONST(v); 
     case (CAST(ty = REAL(),exp = e))
       local Integer v;
@@ -1657,6 +1681,8 @@ algorithm
       list<Exp> e_lst,e_lst_1,const_es1,notconst_es1,const_es1_1,e_lst_2;
       Exp res,e,e1,e2;
       Type tp;
+       String str;
+
     case ((e as BINARY(exp1 = e1,operator = MUL(ty = tp),exp2 = e2)))
       equation 
         e_lst = factors(e);
@@ -1789,12 +1815,14 @@ algorithm
     local
       Exp e,e_1,e1;
       list<Exp> es;
+      Type tp;
     case ({}) then {}; 
     case ({e}) then {e}; 
     case ((e1 :: es))
       equation 
         {e} = simplifyBinaryMulConstants(es);
-        e_1 = simplifyBinaryConst(MUL(REAL()), e1, e);
+        tp = typeof(e);
+        e_1 = simplifyBinaryConst(MUL(tp), e1, e);
       then
         {e_1};
   end matchcontinue;
@@ -1807,13 +1835,13 @@ protected function simplifyMul "function: simplifyMul
 "
   input list<Exp> expl;
   output list<Exp> expl_1;
-  list<Ident> sl;
-  Ident s;
+//   list<Ident> sl;
+//   Ident s;
   list<tuple<Exp, Real>> exp_const,exp_const_1;
   list<Exp> expl_1;
 algorithm 
-  sl := Util.listMap(expl, printExpStr);
-  s := Util.stringDelimitList(sl, ", ");
+//   sl := Util.listMap(expl, printExpStr);
+//   s := Util.stringDelimitList(sl, ", ");
   exp_const := simplifyMul2(expl);
   exp_const_1 := simplifyMulJoinFactors(exp_const);
   expl_1 := simplifyMulMakePow(exp_const_1);
@@ -1927,6 +1955,7 @@ algorithm
       Exp e;
       Real r;
       list<tuple<Exp, Real>> xs;
+      Type tp;
     case ({}) then {}; 
     case (((e,r) :: xs))
       equation 
@@ -1937,8 +1966,9 @@ algorithm
     case (((e,r) :: xs))
       equation 
         res = simplifyMulMakePow(xs);
+        tp = typeof(e);
       then
-        (BINARY(e,POW(REAL()),RCONST(r)) :: res);
+        (BINARY(e,POW(tp),RCONST(r)) :: res);
   end matchcontinue;
 end simplifyMulMakePow;
 
@@ -2074,6 +2104,7 @@ algorithm
       Exp e;
       Real r;
       list<tuple<Exp, Real>> xs;
+      Type tp;
     case ({}) then {}; 
     case (((e,r) :: xs))
       equation 
@@ -2081,6 +2112,14 @@ algorithm
         res = simplifyAddMakeMul(xs);
       then
         (e :: res);
+    case (((e,r) :: xs))
+      local Integer tmpInt;
+      equation 
+        INT() = typeof(e);
+        res = simplifyAddMakeMul(xs);
+        tmpInt = realInt(r);
+      then
+        (BINARY(ICONST(tmpInt),MUL(INT()),e) :: res);
     case (((e,r) :: xs))
       equation 
         res = simplifyAddMakeMul(xs);
@@ -6190,15 +6229,19 @@ algorithm
         res_str = Util.stringAppendList({gen_str,"CREF ",s,"\n"});
       then
         res_str;
-    case (BINARY(exp1 = e1,operator = op,exp2 = e2),level) /* Graphviz.LNODE(\"BINARY\",{sym},{},{lt,rt}) */ 
+    case (exp as BINARY(exp1 = e1,operator = op,exp2 = e2),level) /* Graphviz.LNODE(\"BINARY\",{sym},{},{lt,rt}) */ 
+        local String str;
+              Type tp;
       equation 
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
         new_level2 = level + 1;
         sym = binopSymbol(op);
+        tp = typeof(exp);
+        str = typeString(tp);
         lt = dumpExpStr(e1, new_level1);
         rt = dumpExpStr(e2, new_level2);
-        res_str = Util.stringAppendList({gen_str,"BINARY ",sym,"\n",lt,rt,""});
+        res_str = Util.stringAppendList({gen_str,"BINARY ",sym," ",str,"\n",lt,rt,""});
       then
         res_str;
     case (UNARY(operator = op,exp = e),level) /* Graphviz.LNODE(\"UNARY\",{sym},{},{ct}) */ 
