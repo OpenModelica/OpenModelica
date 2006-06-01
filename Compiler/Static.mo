@@ -5836,7 +5836,8 @@ algorithm
       Boolean impl;
       Ident s,scope;
     case (env,c,impl) /* impl */ 
-      local String s;
+      local String str;
+         Types.Properties props;
       equation 
         (c_1,const) = elabCrefSubs(env, c, impl);
         (Types.ATTR(_,acc,variability,_),t,binding) = Lookup.lookupVar(env, c_1);
@@ -6305,6 +6306,8 @@ algorithm
         (_,t,_) = Lookup.lookupVar(env, Exp.CREF_IDENT(id,{}));
         sl = Types.getDimensionSizes(t);
         (ss_1,const) = elabSubscriptsDims(env, ss, sl, impl);
+
+
          /* elab_subscripts (env, ss) => (ss\', const) */ 
       then
         (Exp.CREF_IDENT(id,ss_1),const);
@@ -6385,6 +6388,19 @@ algorithm
       list<Integer> restdims;
       Boolean impl;
     case (_,{},_,_) then ({},Types.C_CONST());  /* impl */ 
+    //if the subscript contains a param the it should be evaluated to the 
+    //value
+    case (env,(sub :: subs),(dim :: restdims),impl) /* If param, call ceval. */ 
+      equation 
+        (sub_1,const1) = elabSubscript(env, sub, impl);
+        (subs_1,const2) = elabSubscriptsDims(env, subs, restdims, impl);
+        Types.C_PARAM() = Types.constAnd(const1, const2);
+        ss = Ceval.cevalSubscripts(env, (sub_1 :: subs_1), (dim :: restdims), impl, 
+          Ceval.MSG());
+      then
+        (ss,Types.C_PARAM());
+    //if the subscript contains a const the it should be evaluated to the 
+    //value
     case (env,(sub :: subs),(dim :: restdims),impl) /* If constant, call ceval. */ 
       equation 
         (sub_1,const1) = elabSubscript(env, sub, impl);

@@ -403,7 +403,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (OPERAND_BUILTIN_TYPE,TRANSLATION(),ERROR(),
           "Operand of %s must be builtin-type in %s"),
           (WRONG_TYPE_OR_NO_OF_ARGS,TRANSLATION(),ERROR(),
-          "Wrong tyep or wrong number of arguments to %s"),
+          "Wrong type or wrong number of arguments to %s"),
           (DIFFERENT_DIM_SIZE_IN_ARGUMENTS,TRANSLATION(),ERROR(),
           "Different dimension sizes in arguments to %s"),
           (DER_APPLIED_TO_CONST,TRANSLATION(),ERROR(),
