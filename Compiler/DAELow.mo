@@ -436,6 +436,126 @@ with \"RTOpts.rml\"
 
 public constant String derivativeNamePrefix="$derivative";
 
+
+
+
+
+
+
+public function dumpDAELowEqnList
+
+  input list<Equation> inDAELowEqnList;
+  input String header;
+  input Boolean printExpTree;
+algorithm
+   print(header);
+   dumpDAELowEqnList2(inDAELowEqnList,printExpTree);
+   print("===================\n");
+end dumpDAELowEqnList;
+
+protected function dumpDAELowEqnList2
+
+  input list<Equation> inDAELowEqnList;
+  input Boolean printExpTree;
+algorithm
+  ():=
+   matchcontinue (inDAELowEqnList,printExpTree)
+    local
+      Exp.Exp e1_1,e2_1,e1,e2,e_1,e;
+      String str;
+      list<String> strList;
+      list<Equation> res;
+      list<Exp.Exp> expList,expList2;
+     case ({},_) then (); 
+     case (EQUATION(e1,e2)::res,printExpTree) /* header */ 
+      equation 
+        dumpDAELowEqnList2(res,printExpTree);
+        print("EQUATION: ");
+        str = Exp.printExpStr(e1);
+        print(str);
+        print("\n");
+        str = Exp.dumpExpStr(e1,0);
+        str = Util.if_(printExpTree,str,"");
+        print(str);
+        print("\n");
+      then
+        ();
+    case (SOLVED_EQUATION(_,e)::res,printExpTree)
+      equation 
+        dumpDAELowEqnList2(res,printExpTree);
+        print("SOLVED_EQUATION: ");
+        str = Exp.printExpStr(e);
+        print(str);
+        print("\n");
+        str = Exp.dumpExpStr(e,0);
+        str = Util.if_(printExpTree,str,"");
+        print(str);
+        print("\n");
+      then
+        ();
+    case (RESIDUAL_EQUATION(e)::res,printExpTree)
+      equation 
+        dumpDAELowEqnList2(res,printExpTree);
+        print("RESIDUAL_EQUATION: ");
+        str = Exp.printExpStr(e);
+        print(str);
+        print("\n");
+        str = Exp.dumpExpStr(e,0);
+        str = Util.if_(printExpTree,str,"");
+        print(str);
+        print("\n");
+      then
+        ();
+    case (ARRAY_EQUATION(_,expList)::res,printExpTree)
+      equation 
+        dumpDAELowEqnList2(res,printExpTree);
+        print("ARRAY_EQUATION: ");
+        strList = Util.listMap(expList,Exp.printExpStr);
+        str = Util.stringDelimitList(strList," | ");
+        print(str);
+        print("\n");
+      then
+        ();
+     case (ALGORITHM(_,expList,expList2)::res,printExpTree)
+      equation 
+        dumpDAELowEqnList2(res,printExpTree);
+        print("ALGORITHM: ");
+        strList = Util.listMap(expList,Exp.printExpStr);
+        str = Util.stringDelimitList(strList," | ");
+        print(str);
+        print("\n");
+        strList = Util.listMap(expList2,Exp.printExpStr);
+        str = Util.stringDelimitList(strList," | ");
+        print(str);
+        print("\n");
+      then
+        ();
+     case (WHEN_EQUATION(WHEN_EQ(_,_,e))::res,printExpTree)
+      equation 
+        dumpDAELowEqnList2(res,printExpTree);
+        print("WHEN_EQUATION: ");
+        str = Exp.printExpStr(e);
+        print(str);
+        print("\n");
+        str = Exp.dumpExpStr(e,0);
+        str = Util.if_(printExpTree,str,"");
+        print(str);
+        print("\n");
+      then
+        ();
+     case (_::res,printExpTree)
+      equation
+      then ();
+  end matchcontinue;
+end dumpDAELowEqnList2;
+
+
+
+
+
+
+
+
 public function lower "function: lower
  
   This function translates a DAE, which is the result from instantiating a 
@@ -1026,14 +1146,11 @@ protected function sortEqn "function: sortEqn
 algorithm 
   outEquationLst:=
   matchcontinue (inEquationLst)
-    local list<Equation> algEqns,diffEqns,res,eqns;
+    local list<Equation> algEqns,diffEqns,res,eqns,resArrayEqns;
     case (eqns)
       equation 
-        (algEqns,diffEqns) = extractAlgebraicAndDifferentialEqn(eqns);
-        res = listAppend(algEqns, diffEqns) "print \"ALGEBRAIC EQUATIONS\\n\" &
-        dump_eqns(algEqns) &
-        print \"\\n\\nDIFFERENTIATED EQUATIONS\\n\" &
-        dump_eqns(diffEqns) &" ;
+        (algEqns,diffEqns,resArrayEqns) = extractAlgebraicAndDifferentialEqn(eqns);
+        res = Util.listFlatten({algEqns, diffEqns,resArrayEqns});
       then
         res;
     case (eqns)
@@ -1052,46 +1169,47 @@ protected function extractAlgebraicAndDifferentialEqn "function: extractAlgebrai
   input list<Equation> inEquationLst;
   output list<Equation> outEquationLst1;
   output list<Equation> outEquationLst2;
+  output list<Equation> outEquationLst3;
 algorithm 
   (outEquationLst1,outEquationLst2):=
   matchcontinue (inEquationLst)
     local
-      list<Equation> resAlgEqn,resDiffEqn,rest;
+      list<Equation> resAlgEqn,resDiffEqn,rest,resArrayEqns;
       Equation eqn,alg;
       Exp.Exp exp1,exp2;
       list<Boolean> bool_lst;
       Value indx;
       list<Exp.Exp> expl;
-    case ({}) then ({},{});  /* algebraic equations differential equations */ 
+    case ({}) then ({},{},{});  /* algebraic equations differential equations */ 
     case (((eqn as EQUATION(exp = exp1,scalar = exp2)) :: rest)) /* scalar equation */ 
       equation 
         true = isAlgebraic(exp1);
         true = isAlgebraic(exp2);
-        (resAlgEqn,resDiffEqn) = extractAlgebraicAndDifferentialEqn(rest);
+        (resAlgEqn,resDiffEqn,resArrayEqns) = extractAlgebraicAndDifferentialEqn(rest);
       then
-        ((eqn :: resAlgEqn),resDiffEqn);
+        ((eqn :: resAlgEqn),resDiffEqn,resArrayEqns);
     case (((eqn as ARRAY_EQUATION(index = indx,crefOrDerCref = expl)) :: rest)) /* array equation */ 
       equation 
         bool_lst = Util.listMap(expl, isAlgebraic);
         true = Util.boolAndList(bool_lst);
-        (resAlgEqn,resDiffEqn) = extractAlgebraicAndDifferentialEqn(rest);
+        (resAlgEqn,resDiffEqn,resArrayEqns) = extractAlgebraicAndDifferentialEqn(rest);
       then
-        ((eqn :: resAlgEqn),resDiffEqn);
+        (resAlgEqn,resDiffEqn,(eqn :: resArrayEqns));
     case (((eqn as EQUATION(exp = exp1,scalar = exp2)) :: rest))
       equation 
-        (resAlgEqn,resDiffEqn) = extractAlgebraicAndDifferentialEqn(rest);
+        (resAlgEqn,resDiffEqn,resArrayEqns) = extractAlgebraicAndDifferentialEqn(rest);
       then
-        (resAlgEqn,(eqn :: resDiffEqn));
+        (resAlgEqn,(eqn :: resDiffEqn),resArrayEqns);
     case (((eqn as ARRAY_EQUATION(index = _)) :: rest))
       equation 
-        (resAlgEqn,resDiffEqn) = extractAlgebraicAndDifferentialEqn(rest);
+        (resAlgEqn,resDiffEqn,resArrayEqns) = extractAlgebraicAndDifferentialEqn(rest);
       then
-        (resAlgEqn,(eqn :: resDiffEqn));
+        (resAlgEqn,(eqn :: resDiffEqn),resArrayEqns);
     case ((alg :: rest))
       equation 
-        (resAlgEqn,resDiffEqn) = extractAlgebraicAndDifferentialEqn(rest) "Put algorithms in algebraic equations" ;
+        (resAlgEqn,resDiffEqn,resArrayEqns) = extractAlgebraicAndDifferentialEqn(rest) "Put algorithms in algebraic equations" ;
       then
-        ((alg :: resAlgEqn),resDiffEqn);
+        ((alg :: resAlgEqn),resDiffEqn,resArrayEqns);
   end matchcontinue;
 end extractAlgebraicAndDifferentialEqn;
 
@@ -7474,6 +7592,7 @@ algorithm
       equation 
         e_1 = e - 1;
         eqn = equationNth(eqns, e_1);
+   
         eqn_1 = Derive.differentiateEquationTime(eqn, v);
         Debug.fprint("bltdump", "High index problem, differentiated equation: ") "update equation row in IncidenceMatrix" ;
         str = equationStr(eqn) "	print \"differentiated equation \" &" ;
