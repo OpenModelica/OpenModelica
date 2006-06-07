@@ -651,20 +651,23 @@ public function unconnectedFlowEquations "Unconnected flow variables.
   these are connected or not. This is only known in the preceding recursive 
   call. However, the top call must generate for both inner and outer 
   connectors, hence the last argument, true for top call"
+ 	input Env.Cache inCache;
   input Sets inSets;
   input list<DAE.Element> inDAEElementLst;
   input Env.Env inEnv;
   input Boolean inBoolean;
+  output Env.Cache outCache;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
-  outDAEElementLst:=
-  matchcontinue (inSets,inDAEElementLst,inEnv,inBoolean)
+  (outCache,outDAEElementLst) :=
+  matchcontinue (inCache,inSets,inDAEElementLst,inEnv,inBoolean)
     local
       list<Exp.ComponentRef> v1,v2,vars,vars2,unconnectedvars;
       list<DAE.Element> dae_1,dae;
       Sets csets;
       list<Env.Frame> env;
-    case (csets,dae,env,true)
+      Env.Cache cache;
+    case (cache,csets,dae,env,true)
       equation 
         v1 = Env.localOutsideConnectorFlowvars(env) "if outermost call look at both inner and outer unconnected connectors" ;
         v2 = Env.localInsideConnectorFlowvars(env);
@@ -673,10 +676,11 @@ algorithm
         // last array subscripts are not present in vars, therefor removed from vars2 too.
         vars2 = Util.listMap(vars2,Exp.crefStripLastSubs); 
         unconnectedvars = removeVariables(vars, vars2);
-        dae_1 = generateZeroflowEquations(unconnectedvars,env);
+        (cache,dae_1) = generateZeroflowEquations(cache,unconnectedvars,env);
       then
-        dae_1;
-    case (csets,dae,env,_) /* Debug.fprint(\"failtrace\",\"-unconnected_flow_equations failed\\n\") */  then {}; 
+        (cache,dae_1);
+    case (cache,csets,dae,env,_) /* Debug.fprint(\"failtrace\",\"-unconnected_flow_equations failed\\n\") */  
+    then (cache,{}); 
   end matchcontinue;
 end unconnectedFlowEquations;
 
@@ -735,12 +739,14 @@ protected function generateZeroflowEquations "function: generateZeroflowEquation
   Unconnected flow variables should be set to zero. This function 
   generates equations setting each variable in the list to zero.
 "
+	input Env.Cache inCache;
   input list<Exp.ComponentRef> inExpComponentRefLst;
   input Env.Env inEnv;
+  output Env.Cache outCache;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
-  outDAEElementLst:=
-  matchcontinue (inExpComponentRefLst,inEnv)
+  (outCache,outDAEElementLst) :=
+  matchcontinue (inCache,inExpComponentRefLst,inEnv)
     local
       list<DAE.Element> res;
       Exp.ComponentRef cr;
@@ -749,24 +755,25 @@ algorithm
       list<Exp.ComponentRef> xs;
       list<int> dimSizes;
       list<Exp.Exp> dimExps;
-    case ({},_) then {}; 
-    case ((cr :: xs),env)
+      Env.Cache cache;
+    case (cache,{},_) then (cache,{}); 
+    case (cache,(cr :: xs),env)
       equation
-        (_,tp,_) = Lookup.lookupVar(env,cr);
+        (cache,_,tp,_) = Lookup.lookupVar(cache,env,cr);
         true = Types.isArray(tp); // For variables that are arrays, generate cr = fill(0,dims);
         dimSizes = Types.getDimensionSizes(tp);
         dimExps = Util.listMap(dimSizes,Exp.makeIntegerExp);
-        res = generateZeroflowEquations(xs,env);
+        (cache,res) = generateZeroflowEquations(cache,xs,env);
       then
-        (DAE.EQUATION(Exp.CREF(cr,Exp.REAL()),Exp.CALL(Absyn.IDENT("fill"),Exp.RCONST(0.0)::dimExps,false,true)) :: res);        
+        (cache,DAE.EQUATION(Exp.CREF(cr,Exp.REAL()),Exp.CALL(Absyn.IDENT("fill"),Exp.RCONST(0.0)::dimExps,false,true)) :: res);        
  
-    case ((cr :: xs),env) // For scalars.
+    case (cache,(cr :: xs),env) // For scalars.
       equation
-        (_,tp,_) = Lookup.lookupVar(env,cr);
+        (cache,_,tp,_) = Lookup.lookupVar(cache,env,cr);
         false = Types.isArray(tp); // scalar
-        res = generateZeroflowEquations(xs,env);
+        (cache,res) = generateZeroflowEquations(cache,xs,env);
       then
-        (DAE.EQUATION(Exp.CREF(cr,Exp.REAL()),Exp.RCONST(0.0)) :: res);
+        (cache,DAE.EQUATION(Exp.CREF(cr,Exp.REAL()),Exp.RCONST(0.0)) :: res);
   end matchcontinue;
 end generateZeroflowEquations;
 

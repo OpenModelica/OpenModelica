@@ -105,6 +105,28 @@ type Ident = String "adrpo -- not used
   with \"Values.rml\"
 " ;
 
+public uniontype Cache
+  record CACHE 
+    Option<EnvCache> envCache "The cache consists of environments from which classes can be found";
+    Option<Env> initialEnv "and the initial environment";
+  end CACHE;
+end Cache;
+
+public uniontype EnvCache 
+ record ENVCACHE "Cache for environments. The cache consists of a tree of environments from which lookup
+ 		can be performed."
+   		CacheTree envTree;
+  end ENVCACHE;
+end EnvCache;
+
+public uniontype CacheTree
+  record CACHETREE
+		Ident	name;
+		Env env;
+		list<CacheTree> children;
+  end CACHETREE;
+end CacheTree;
+
 public 
 uniontype Frame
   record FRAME
@@ -176,6 +198,8 @@ type Key = Ident "Key" ;
 
 public 
 type Value = Item;
+  
+public 
 
 protected import OpenModelica.Compiler.Dump;
 
@@ -190,6 +214,8 @@ protected import OpenModelica.Compiler.Util;
 protected import OpenModelica.Compiler.System;
 
 public constant Env emptyEnv={} "- Values" ;
+
+public constant Cache emptyCache = CACHE(NONE,NONE);
 
 public function newFrame "- Relations
   function: newFrame
@@ -1160,6 +1186,318 @@ algorithm
   end matchcontinue;
 end treeAdd;
 
+public function getCachedInitialEnv "get the initial environment from the cache"
+  input Cache cache;
+  output Env env;
+algorithm	
+  env := matchcontinue(cache) 
+    //case (_) then fail();
+    case (CACHE(_,SOME(env))) equation
+    //	print("getCachedInitialEnv\n");
+      then env;
+  end matchcontinue;
+end getCachedInitialEnv;  
+
+public function setCachedInitialEnv "set the initial environment in the cache"
+  input Cache inCache;
+  input Env env;
+  output Cache outCache;
+algorithm	
+  outCache := matchcontinue(inCache,env) 
+  local
+    	Option<EnvCache> envCache;
+
+    case (CACHE(envCache,_),env) equation 
+ //    	print("setCachedInitialEnv\n");
+      then CACHE(envCache,SOME(env));
+  end matchcontinue;
+end setCachedInitialEnv;  
+    
+public function cacheGet "Get an environment from the cache."
+  input Absyn.Path scope;
+  input Absyn.Path path;
+  input Cache cache;
+  output Env env;
+algorithm
+  env:= matchcontinue(scope,path,cache)
+  local CacheTree tree;
+   case (scope,path,CACHE(SOME(ENVCACHE(tree)),_))
+      equation
+        env = cacheGetEnv(scope,path,tree);
+       // print("got cached env for ");print(Absyn.pathString(path)); print("\n");
+      then env;          
+    case (_,_,_) then fail();
+  end matchcontinue;
+end cacheGet;
+
+
+public function cacheAdd "Add an environment to the cache."
+  input Absyn.Path fullpath "Fully qualified path to the environment";
+  input Cache inCache ;
+  input Env env "environment";
+  output Cache outCache;
+algorithm
+  outCache := matchcontinue(fullpath,inCache,env)
+  local CacheTree tree;
+    Option<Env> ie;
+      
+    case (fullpath,CACHE(NONE,ie),env) 
+      equation
+        tree = cacheAddEnv(fullpath,CACHETREE("$global",emptyEnv,{}),env);
+        //print("Adding ");print(Absyn.pathString(fullpath));print(" to empty cache\n");
+      then CACHE(SOME(ENVCACHE(tree)),ie);
+    case (fullpath,CACHE(SOME(ENVCACHE(tree)),ie),env) 
+      equation
+        //print(" about to Adding ");print(Absyn.pathString(fullpath));print(" to cache:\n");
+        //print(printCacheStr(CACHE(SOME(ENVCACHE(tree)),ie)));
+      tree = cacheAddEnv(fullpath,tree,env);
+       //print("Adding ");print(Absyn.pathString(fullpath));print(" to cache\n");
+      then CACHE(SOME(ENVCACHE(tree)),ie);
+    case (_,_,_) equation print("cacheAdd failed\n"); then fail();
+  end matchcontinue;
+end cacheAdd;
+
+protected function cacheGetEnv "get an environment from the tree cache."
+	input Absyn.Path scope;
+	input Absyn.Path path;
+	input CacheTree tree;
+	output Env env;
+algorithm
+  env := matchcontinue(scope,path,tree)
+  local
+    	Absyn.Path path2;
+    	Ident id;
+    	list<CacheTree> children;
+    	
+			// Search this scope.
+    case (path2,path,tree)
+      equation
+        env = cacheGetEnv2(path2,path,tree);
+        //print("found in cache\n");
+      then env;
+
+		   // Go up one level.
+    case (path2,path,tree)
+      equation
+        path2 =Absyn.stripLast(path2);
+        env = cacheGetEnv(path2,path,tree);
+        //print("found in cache\n");
+      then env;      
+        
+        // Finally try top level
+    case (Absyn.IDENT(_),path,CACHETREE(_,_,children))
+      equation
+        env = cacheGetEnv3(path,children);
+        //print("found in cache\n");
+      then env;      
+       
+  end matchcontinue;
+end cacheGetEnv;
+ 
+protected function cacheGetEnv2 "Help function to cacheGetEnv. Searches in one scope by 
+  first looking up the scope and then search from there."
+  input Absyn.Path scope;
+  input Absyn.Path path;
+  input CacheTree tree;
+  output Env env;
+  
+algorithm
+   env := matchcontinue(scope,path,tree)
+	local 	
+	  	Env env2;
+	  	Ident id,id2;
+	  	list<CacheTree> children,children2;
+	  	Absyn.Path path2;
+
+	  //	Simple name found in children, search for model from this scope.
+     case (Absyn.IDENT(id),path,CACHETREE(_,_,CACHETREE(id2,env2,children2)::_))
+       equation 
+         equality(id = id2);
+         //print("found (1) ");print(id); print("\n");
+         env=cacheGetEnv3(path,children2); 
+       then env;
+         
+         //	Simple name. try next.
+     case (Absyn.IDENT(id),path,CACHETREE(id2,env2,_::children))
+       equation 
+         //print("try next ");print(id);print("\n");
+         env=cacheGetEnv2(Absyn.IDENT(id),path,CACHETREE(id2,env2,children));
+       then env;
+         
+    // for qualified name, found first matching identifier in child
+     case (Absyn.QUALIFIED(id,path2),path,CACHETREE(_,_,CACHETREE(id2,env2,children2)::_))
+       equation
+         equality(id=id2);
+         //print("found qualified (1) ");print(id);print("\n");
+         env = cacheGetEnv2(path2,path,CACHETREE(id2,env2,children2));
+       then env;
+           
+    // for qualified name, try next
+     case (Absyn.QUALIFIED(id,path2),path,CACHETREE(id2,env2,_::children2))
+       equation
+         //print("try next qualified ");print(id);print("\n");
+         env = cacheGetEnv2(path2,path,CACHETREE(id2,env2,children2));
+       then env;
+   end matchcontinue;  
+end cacheGetEnv2;
+
+protected function cacheGetEnv3 "Help function to cacheGetEnv2, searches down in tree for env."
+  input Absyn.Path path;
+  input list<CacheTree> children;
+  output Env env;
+algorithm
+  env := matchcontinue(path,tree)
+
+    local
+      Ident id,id2;
+
+		//found matching simple name
+    case (Absyn.IDENT(id),CACHETREE(id2,env,_)::_)
+      equation
+        equality(id =id2); then env;
+     
+     // found matching qualified name
+    case (Absyn.QUALIFIED(id,path),CACHETREE(id2,_,children)::_) 
+      equation
+        equality(id =id2);
+        	env = cacheGetEnv3(path,children);
+         then env;
+
+     // try next      
+    case (path,_::children) 
+      equation
+        	env = cacheGetEnv3(path,children);
+         then env;
+  end matchcontinue;
+end cacheGetEnv3;
+
+public function cacheAddEnv "Add an environment to the cache"
+  input Absyn.Path fullpath "Fully qualified path to the environment";
+  input CacheTree tree ;
+  input Env env "environment";
+  output CacheTree outTree;
+algorithm
+  outTree := matchcontinue(path,tree,env)
+    local 
+      Ident id,globalID,id2;
+      Absyn.Path path;
+      Env globalEnv;
+      list<CacheTree> children;
+      CacheTree child;
+      // simple names already added
+      case (Absyn.IDENT(id),(tree as CACHETREE(globalID,globalEnv,CACHETREE(id2,_,_)::_)),env) 
+        equation
+          //print(id);print(" already added\n");
+          equality(id=id2);
+          then tree;
+            
+       // simple names try next
+      case (Absyn.IDENT(id),tree as CACHETREE(globalID,globalEnv,child::children),env) 
+        equation
+          CACHETREE(globalID,globalEnv,children) = cacheAddEnv(Absyn.IDENT(id),CACHETREE(globalID,globalEnv,children),env);
+          then CACHETREE(globalID,globalEnv,child::children);
+                        
+      // Simple names, not found
+    case (Absyn.IDENT(id),CACHETREE(globalID,globalEnv,{}),env) 
+    then CACHETREE(globalID,globalEnv,{CACHETREE(id,env,{})});
+      
+      // Qualified names.
+    case (path as Absyn.QUALIFIED(_,_),CACHETREE(globalID,globalEnv,children),env)
+      equation
+        children=cacheAddEnv2(path,children,env);
+      then CACHETREE(globalID,globalEnv,children);
+    case (path,_,_) equation print("cacheAddEnv path=");print(Absyn.pathString(path));print(" failed\n");
+      then fail();
+  end matchcontinue;
+end cacheAddEnv;
+
+protected function cacheAddEnv2
+  input Absyn.Path path;
+  input list<CacheTree> inChilren;
+  input Env env;
+  output list<CacheTree> outChildren;
+algorithm
+  outChildren := matchcontinue(path,inChildren,env)
+    local 
+      Ident id,id2;
+      Absyn.Path path;
+      list<CacheTree> children,children2;
+      CacheTree child;
+      Env env2;
+      
+      // qualified name, found matching    
+    case(Absyn.QUALIFIED(id,path),CACHETREE(id2,env2,children2)::children,env)
+      equation
+        equality(id=id2);
+        children2 = cacheAddEnv2(path,children2,env);
+        //print("qualified name, found matching\n");
+      then	CACHETREE(id2,env2,children2)::children;
+
+		// simple name, found matching
+    case (Absyn.IDENT(id),CACHETREE(id2,env2,children2)::children,env) 
+      equation
+        equality(id=id2);
+        //print("single name, found matching\n");
+      then CACHETREE(id2,env,children2)::children;
+        
+        // try next
+    case(path,child::children,env)
+      equation
+        //print("try next\n");
+        children = cacheAddEnv2(path,children,env);
+      then	child::children;
+        
+    // qualified name no child found, create one.
+    case (Absyn.QUALIFIED(id,path),{},env) 
+      equation        
+        children = cacheAddEnv2(path,{},env);
+        //print("qualified name no child found, create one.\n");
+      then {CACHETREE(id,emptyEnv,children)};   
+
+    // simple name no child found, create one.
+    case (Absyn.IDENT(id),{},env) 
+      equation
+        //print("simple name no child found, create one.\n");
+      then {CACHETREE(id,env,{})};
+        
+    case (_,_,_) equation print("cacheAddEnv2 failed\n"); then fail();
+  end matchcontinue;
+end cacheAddEnv2;  
+
+public function printCacheStr
+  input Cache cache;
+  output String str;
+algorithm
+  str := matchcontinue(cache)
+  local CacheTree tree;
+    case CACHE(SOME(ENVCACHE(tree)),_) 
+      local String s;
+      equation
+      s = printCacheTreeStr(tree,1); 
+      str = Util.stringAppendList({"Cache:\n",s,"\n"});
+      then str;
+    case CACHE(NONE,_) then "EMPTY CACHE";
+  end matchcontinue;
+end printCacheStr;
+
+protected function printCacheTreeStr
+	input CacheTree tree;
+	input Integer indent;
+  output String str;
+algorithm
+	str:= matchcontinue(tree,indent)
+	local Ident id;
+	  list<CacheTree> children;
+	  case (CACHETREE(id,_,children),indent) 
+	    local
+	      String s,s1;
+	    equation
+	      s = Util.stringDelimitList(Util.listMap1(children,printCacheTreeStr,indent+1),"\n");
+	    	s1 = Util.stringAppendList(Util.listFill(" ",indent));
+	    	str = Util.stringAppendList({s1,id,"\n",s});
+	    then str;
+	end matchcontinue;
+end printCacheTreeStr;
 public function localOutsideConnectorFlowvars "function: localOutsideConnectorFlowvars
  
   Return the outside connector variables that are flow in the local scope.

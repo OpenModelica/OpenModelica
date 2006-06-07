@@ -97,14 +97,16 @@ public function elabMod "function: elabMod
   expressions in modifications must be elaborated on in the context
   they are provided in, and not the context they are used in.
 "
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input Prefix.Prefix inPrefix;
   input SCode.Mod inMod;
   input Boolean inBoolean;
+  output Env.Cache outCache;
   output Types.Mod outMod;
 algorithm 
-  outMod:=
-  matchcontinue (inEnv,inPrefix,inMod,inBoolean)
+  (outCache,outMod) :=
+  matchcontinue (inCache,inEnv,inPrefix,inMod,inBoolean)
     local
       Boolean impl,final_;
       list<Types.SubMod> subs_1;
@@ -120,28 +122,29 @@ algorithm
       list<tuple<SCode.Element, Types.Mod>> elist_1;
       list<SCode.Element> elist;
       Ident str;
-    case (_,_,SCode.NOMOD(),impl) then Types.NOMOD();  /* impl */ 
-    case (env,pre,(m as SCode.MOD(final_ = final_,each_ = each_,subModLst = subs,absynExpOption = NONE)),impl)
+      Env.Cache cache;
+    case (cache,_,_,SCode.NOMOD(),impl) then (cache,Types.NOMOD());  /* impl */ 
+    case (cache,env,pre,(m as SCode.MOD(final_ = final_,each_ = each_,subModLst = subs,absynExpOption = NONE)),impl)
       equation 
-        subs_1 = elabSubmods(env, pre, subs, impl);
+        (cache,subs_1) = elabSubmods(cache,env, pre, subs, impl);
       then
-        Types.MOD(final_,each_,subs_1,NONE);
-    case (env,pre,(m as SCode.MOD(final_ = final_,each_ = each_,subModLst = subs,absynExpOption = SOME(e))),impl)
+        (cache,Types.MOD(final_,each_,subs_1,NONE));
+    case (cache,env,pre,(m as SCode.MOD(final_ = final_,each_ = each_,subModLst = subs,absynExpOption = SOME(e))),impl)
       equation 
-        subs_1 = elabSubmods(env, pre, subs, impl);
-        (e_1,prop,_) = Static.elabExp(env, e, impl, NONE);
-        e_val = elabModValue(env, e_1);
-        e_2 = Prefix.prefixExp(env, e_1, pre) "Bug: will cause elaboration of parameters without value to fail,
+        (cache,subs_1) = elabSubmods(cache,env, pre, subs, impl);
+        (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE);
+        (cache,e_val) = elabModValue(cache,env, e_1);
+        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre) "Bug: will cause elaboration of parameters without value to fail,
 	 But this can be ok, since a modifier is present, giving it a value 
 	 from outer modifications.." ;
       then
-        Types.MOD(final_,each_,subs_1,SOME(Types.TYPED(e_2,e_val,prop)));
-    case (env,pre,(m as SCode.REDECL(final_ = final_,elementLst = elist)),impl)
+        (cache,Types.MOD(final_,each_,subs_1,SOME(Types.TYPED(e_2,e_val,prop))));
+    case (cache,env,pre,(m as SCode.REDECL(final_ = final_,elementLst = elist)),impl)
       equation 
         elist_1 = Inst.addNomod(elist);
       then
-        Types.REDECL(final_,elist_1);
-    case (_,pre,mod,impl)
+        (cache,Types.REDECL(final_,elist_1));
+    case (cache,_,pre,mod,impl)
       equation 
         Debug.fprint("failtrace", "#-- elab_mod ");
         str = SCode.printModStr(mod);
@@ -159,22 +162,25 @@ protected function elabModValue "function: elabModValue
   if possible.
   Tries to Constant evaluate an expressions an create a Value option for it.
 "
+  input Env.Cache inCache;
   input Env.Env inEnv;
   input Exp.Exp inExp;
+  output Env.Cache outCache;
   output Option<Values.Value> outValuesValueOption;
 algorithm 
-  outValuesValueOption:=
-  matchcontinue (inEnv,inExp)
+  (outCache,outValuesValueOption) :=
+  matchcontinue (inCache,inEnv,inExp)
     local
       Values.Value v;
       list<Env.Frame> env;
       Exp.Exp e;
-    case (env,e) /* If ceval fails, it should not print error messages. */ 
+      Env.Cache cache;
+    case (cache,env,e) /* If ceval fails, it should not print error messages. */ 
       equation 
-        (v,_) = Ceval.ceval(env, e, false, NONE, NONE, Ceval.NO_MSG());
+        (cache,v,_) = Ceval.ceval(cache,env, e, false, NONE, NONE, Ceval.NO_MSG());
       then
-        SOME(v);
-    case (_,_) then NONE; 
+        (cache,SOME(v));
+    case (cache,_,_) then (cache,NONE); 
   end matchcontinue;
 end elabModValue;
 
@@ -311,14 +317,16 @@ public function updateMod "function: updateMod
   This function updates and untyped modification to a typed one, by looking
   up the type of the modifier in the environment and update it.
 "
+	input Env.Cache inCache;
   input Env.Env inEnv;
   input Prefix.Prefix inPrefix;
   input Types.Mod inMod;
   input Boolean inBoolean;
+  output Env.Cache outCache;
   output Types.Mod outMod;
 algorithm 
-  outMod:=
-  matchcontinue (inEnv,inPrefix,inMod,inBoolean)
+  (outCache,outMod) :=
+  matchcontinue (inCache,inEnv,inPrefix,inMod,inBoolean)
     local
       Boolean impl,f;
       Types.Mod m;
@@ -330,31 +338,32 @@ algorithm
       Prefix.Prefix pre;
       Absyn.Each each_;
       Absyn.Exp e;
-    case (_,_,Types.NOMOD(),impl) then Types.NOMOD();  /* impl */ 
-    case (_,_,(m as Types.REDECL(final_ = _)),impl) then m; 
-    case (env,pre,(m as Types.MOD(final_ = f,each_ = each_,subModLst = subs,eqModOption = SOME(Types.UNTYPED(e)))),impl)
+      Env.Cache cache;
+    case (cache,_,_,Types.NOMOD(),impl) then (cache,Types.NOMOD());  /* impl */ 
+    case (cache,_,_,(m as Types.REDECL(final_ = _)),impl) then (cache,m); 
+    case (cache,env,pre,(m as Types.MOD(final_ = f,each_ = each_,subModLst = subs,eqModOption = SOME(Types.UNTYPED(e)))),impl)
       equation 
-        subs_1 = updateSubmods(env, pre, subs, impl);
-        (e_1,prop,_) = Static.elabExp(env, e, impl, NONE);
-        e_val = elabModValue(env, e_1);
-        e_2 = Prefix.prefixExp(env, e_1, pre);
+        (cache,subs_1) = updateSubmods(cache,env, pre, subs, impl);
+        (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE);
+        (cache,e_val) = elabModValue(cache,env, e_1);
+        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
         Debug.fprint("updmod", "Updated mod: ");
         Debug.fcall("updmod", printMod, 
           Types.MOD(f,each_,subs_1,SOME(Types.TYPED(e_2,NONE,prop))));
       then
-        Types.MOD(f,each_,subs_1,SOME(Types.TYPED(e_2,e_val,prop)));
-    case (env,pre,Types.MOD(final_ = f,each_ = each_,subModLst = subs,eqModOption = SOME(Types.TYPED(e,e_val,p))),impl)
+        (cache,Types.MOD(f,each_,subs_1,SOME(Types.TYPED(e_2,e_val,prop))));
+    case (cache,env,pre,Types.MOD(final_ = f,each_ = each_,subModLst = subs,eqModOption = SOME(Types.TYPED(e,e_val,p))),impl)
       local Exp.Exp e;
       equation 
-        subs_1 = updateSubmods(env, pre, subs, impl);
+        (cache,subs_1) = updateSubmods(cache,env, pre, subs, impl);
       then
-        Types.MOD(f,each_,subs_1,SOME(Types.TYPED(e,e_val,p)));
-    case (env,pre,Types.MOD(final_ = f,each_ = each_,subModLst = subs,eqModOption = NONE),impl)
+        (cache,Types.MOD(f,each_,subs_1,SOME(Types.TYPED(e,e_val,p))));
+    case (cache,env,pre,Types.MOD(final_ = f,each_ = each_,subModLst = subs,eqModOption = NONE),impl)
       equation 
-        subs_1 = updateSubmods(env, pre, subs, impl);
+        (cache,subs_1) = updateSubmods(cache,env, pre, subs, impl);
       then
-        Types.MOD(f,each_,subs_1,NONE);
-    case (env,pre,m,impl)
+        (cache,Types.MOD(f,each_,subs_1,NONE));
+    case (cache,env,pre,m,impl)
       equation 
         Print.printBuf("- update_mod failed\n mod:");
         printMod(m);
@@ -365,40 +374,45 @@ algorithm
 end updateMod;
 
 protected function updateSubmods
+	input Env.Cache inCache;
   input Env.Env inEnv;
   input Prefix.Prefix inPrefix;
   input list<Types.SubMod> inTypesSubModLst;
   input Boolean inBoolean;
+  output Env.Cache outCache;
   output list<Types.SubMod> outTypesSubModLst;
 algorithm 
-  outTypesSubModLst:=
-  matchcontinue (inEnv,inPrefix,inTypesSubModLst,inBoolean)
+  (outCache,outTypesSubModLst):=
+  matchcontinue (inCache,inEnv,inPrefix,inTypesSubModLst,inBoolean)
     local
       Boolean impl;
       list<Types.SubMod> x_1,xs_1,res,xs;
       list<Env.Frame> env;
       Prefix.Prefix pre;
       Types.SubMod x;
-    case (_,_,{},impl) then {};  /* impl */ 
-    case (env,pre,(x :: xs),impl)
+      Env.Cache cache;
+    case (cache,_,_,{},impl) then (cache,{});  /* impl */ 
+    case (cache,env,pre,(x :: xs),impl)
       equation 
-        x_1 = updateSubmod(env, pre, x, impl);
-        xs_1 = updateSubmods(env, pre, xs, impl);
+        (cache,x_1) = updateSubmod(cache,env, pre, x, impl);
+        (cache,xs_1) = updateSubmods(cache,env, pre, xs, impl);
         res = insertSubmods(x_1, xs_1, env, pre);
       then
-        res;
+        (cache,res);
   end matchcontinue;
 end updateSubmods;
 
 protected function updateSubmod
+	input Env.Cache inCache;
   input Env.Env inEnv;
   input Prefix.Prefix inPrefix;
   input Types.SubMod inSubMod;
   input Boolean inBoolean;
+  output Env.Cache outCache;
   output list<Types.SubMod> outTypesSubModLst;
 algorithm 
-  outTypesSubModLst:=
-  matchcontinue (inEnv,inPrefix,inSubMod,inBoolean)
+  (outCache,outTypesSubModLst):=
+  matchcontinue (outCache,inEnv,inPrefix,inSubMod,inBoolean)
     local
       Types.Mod m_1,m;
       list<Env.Frame> env;
@@ -406,18 +420,19 @@ algorithm
       Ident i;
       Boolean impl;
       list<Types.SubMod> smods;
-    case (env,pre,Types.NAMEMOD(ident = i,mod = m),impl) /* impl */ 
+      Env.Cache cache;
+    case (cache,env,pre,Types.NAMEMOD(ident = i,mod = m),impl) /* impl */ 
       equation 
-        m_1 = updateMod(env, pre, m, impl);
+        (cache,m_1) = updateMod(cache,env, pre, m, impl);
       then
-        {Types.NAMEMOD(i,m_1)};
-    case (env,pre,Types.IDXMOD(mod = m),impl)
+        (cache,{Types.NAMEMOD(i,m_1)});
+    case (cache,env,pre,Types.IDXMOD(mod = m),impl)
       equation 
-        m_1 = updateMod(env, pre, m, impl) "Static.elab_subscripts (env,ss) => (ss\',true) &" ;
+        (cache,m_1) = updateMod(cache,env, pre, m, impl) "Static.elab_subscripts (env,ss) => (ss\',true) &" ;
         smods = makeIdxmods({}, m_1);
         Print.printBuf("#Error, not implemented updating of IDXMOD yet\n") "Need to store untyped IDXMOD list in mods such that we can elab the index here" ;
       then
-        smods;
+        (cache,smods);
   end matchcontinue;
 end updateSubmod;
 
@@ -483,14 +498,16 @@ protected function elabSubmods "function: elabSubmods
   This function helps `elab_mod\' by recusively elaborating on a list
   of submodifications.
 "
+	input Env.Cache inCache;
   input Env.Env inEnv;
   input Prefix.Prefix inPrefix;
   input list<SCode.SubMod> inSCodeSubModLst;
   input Boolean inBoolean;
+  output Env.Cache outCache;
   output list<Types.SubMod> outTypesSubModLst;
 algorithm 
-  outTypesSubModLst:=
-  matchcontinue (inEnv,inPrefix,inSCodeSubModLst,inBoolean)
+  (outCache,outTypesSubModLst) :=
+  matchcontinue (inCache,inEnv,inPrefix,inSCodeSubModLst,inBoolean)
     local
       Boolean impl;
       list<Types.SubMod> x_1,xs_1,res;
@@ -498,14 +515,15 @@ algorithm
       Prefix.Prefix pre;
       SCode.SubMod x;
       list<SCode.SubMod> xs;
-    case (_,_,{},impl) then {};  /* impl */ 
-    case (env,pre,(x :: xs),impl)
+      Env.Cache cache;
+    case (cache,_,_,{},impl) then (cache,{});  /* impl */ 
+    case (cache,env,pre,(x :: xs),impl)
       equation 
-        x_1 = elabSubmod(env, pre, x, impl);
-        xs_1 = elabSubmods(env, pre, xs, impl);
+        (cache,x_1) = elabSubmod(cache,env, pre, x, impl);
+        (cache,xs_1) = elabSubmods(cache,env, pre, xs, impl);
         res = insertSubmods(x_1, xs_1, env, pre);
       then
-        res;
+        (cache,res);
   end matchcontinue;
 end elabSubmods;
 
@@ -514,14 +532,16 @@ protected function elabSubmod "function: elabSubmod
   This function elaborates on a submodification, turning an
   `SCode.SubMod\' into one or more `Types.SubMod\'s.
 "
+	input Env.Cache inCache;
   input Env.Env inEnv;
   input Prefix.Prefix inPrefix;
   input SCode.SubMod inSubMod;
   input Boolean inBoolean;
+  output Env.Cache outCache;
   output list<Types.SubMod> outTypesSubModLst;
 algorithm 
-  outTypesSubModLst:=
-  matchcontinue (inEnv,inPrefix,inSubMod,inBoolean)
+  (outCache,outTypesSubModLst) :=
+  matchcontinue (inCache,inEnv,inPrefix,inSubMod,inBoolean)
     local
       Types.Mod m_1;
       list<Env.Frame> env;
@@ -532,18 +552,19 @@ algorithm
       list<Exp.Subscript> ss_1;
       list<Types.SubMod> smods;
       list<Absyn.Subscript> ss;
-    case (env,pre,SCode.NAMEMOD(ident = i,A = m),impl) /* impl */ 
+      Env.Cache cache;
+    case (cache,env,pre,SCode.NAMEMOD(ident = i,A = m),impl) /* impl */ 
       equation 
-        m_1 = elabMod(env, pre, m, impl);
+        (cache,m_1) = elabMod(cache,env, pre, m, impl);
       then
-        {Types.NAMEMOD(i,m_1)};
-    case (env,pre,SCode.IDXMOD(subscriptLst = ss,an = m),impl)
+        (cache,{Types.NAMEMOD(i,m_1)});
+    case (cache,env,pre,SCode.IDXMOD(subscriptLst = ss,an = m),impl)
       equation 
-        (ss_1,Types.C_CONST()) = Static.elabSubscripts(env, ss, impl);
-        m_1 = elabMod(env, pre, m, impl);
+        (cache,ss_1,Types.C_CONST()) = Static.elabSubscripts(cache,env, ss, impl);
+        (cache,m_1) = elabMod(cache,env, pre, m, impl);
         smods = makeIdxmods(ss_1, m_1);
       then
-        smods;
+        (cache,smods);
   end matchcontinue;
 end elabSubmod;
 

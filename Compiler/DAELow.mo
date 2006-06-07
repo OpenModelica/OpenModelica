@@ -10251,7 +10251,7 @@ algorithm
     case (DAELOW(orderedVars = vars,knownVars = knvars,externalObjects=extVars,orderedEqs = eqns,
       removedEqs = seqns,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = wc,extObjClasses=extObjCls))
       equation 
-        env = Builtin.initialEnv();
+        (_,env) = Builtin.initialEnv(Env.emptyCache);
         knvarlst = varList(knvars);
         env_1 = addVariablesToEnv(knvarlst, env);
         knvarlst_1 = updateVariables(knvarlst, env_1);
@@ -10356,7 +10356,7 @@ algorithm
     case ((VAR(varName = cr,varKind = a,varDirection = b,varType = c,bindExp = SOME(e),arryDim = d,startValue = f,index = g,origVarName = h,className = i,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest),env)
       equation 
         rest_1 = updateVariables(rest, env);
-        (v,_) = Ceval.ceval(env, e, false, NONE, NONE, Ceval.MSG());
+        (_,v,_) = Ceval.ceval(Env.emptyCache,env, e, false, NONE, NONE, Ceval.MSG());
       then
         (VAR(cr,a,b,c,SOME(e),SOME(v),d,f,g,h,i,dae_var_attr,comment,
           flow_) :: rest_1);
@@ -10364,7 +10364,7 @@ algorithm
       local Option<Values.Value> v;
       equation 
         rest_1 = updateVariables(rest, env);
-        failure((_,_) = Ceval.ceval(env, e, false, NONE, NONE, Ceval.NO_MSG()));
+        failure((_,_,_) = Ceval.ceval(Env.emptyCache,env, e, false, NONE, NONE, Ceval.NO_MSG()));
         Print.printBuf("Warning, ceval failed for parameter: ");
         Exp.printComponentRef(cr);
         Print.printBuf("\n");

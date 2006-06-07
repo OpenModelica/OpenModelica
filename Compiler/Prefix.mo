@@ -305,13 +305,15 @@ public function prefixExp "function: prefixExp
   Add the supplied prefix to all component references in an
   expression.
 "
+	input Env.Cache inCache;
   input Env.Env inEnv;
   input Exp.Exp inExp;
   input Prefix inPrefix;
+  output Env.Cache outCache;
   output Exp.Exp outExp;
 algorithm 
-  outExp:=
-  matchcontinue (inEnv,inExp,inPrefix)
+  (outCache,outExp) :=
+  matchcontinue (inCache,inEnv,inExp,inPrefix)
     local
       Exp.Exp e,e1_1,e2_1,e1,e2,e3_1,e3,cref_1,dim_1,cref,dim,start_1,stop_1,start,stop,step_1,step,e_1,exp_1,iterexp_1,exp,iterexp;
       Exp.ComponentRef p_1,p;
@@ -326,144 +328,145 @@ algorithm
       list<tuple<Exp.Exp, Boolean>> x_1,x;
       list<list<tuple<Exp.Exp, Boolean>>> xs_1,xs;
       String id,s;
-    case (_,(e as Exp.ICONST(integer = _)),_) then e; 
-    case (_,(e as Exp.RCONST(real = _)),_) then e; 
-    case (_,(e as Exp.SCONST(string = _)),_) then e; 
-    case (_,(e as Exp.BCONST(bool = _)),_) then e; 
-    case (env,Exp.CREF(componentRef = p,ty = t),pre)
+      Env.Cache cache;
+    case (cache,_,(e as Exp.ICONST(integer = _)),_) then (cache,e); 
+    case (cache,_,(e as Exp.RCONST(real = _)),_) then (cache,e); 
+    case (cache,_,(e as Exp.SCONST(string = _)),_) then (cache,e); 
+    case (cache,_,(e as Exp.BCONST(bool = _)),_) then (cache,e); 
+    case (cache,env,Exp.CREF(componentRef = p,ty = t),pre)
       equation 
-        (_,_,_) = Lookup.lookupVarLocal(env, p);
+        (cache,_,_,_) = Lookup.lookupVarLocal(cache,env, p);
         p_1 = prefixCref(pre, p);
       then
-        Exp.CREF(p_1,t);
-    case (env,(e as Exp.CREF(componentRef = p)),pre)
+        (cache,Exp.CREF(p_1,t));
+    case (cache,env,(e as Exp.CREF(componentRef = p)),pre)
       equation 
-        failure((_,_,_) = Lookup.lookupVarLocal(env, p));
+        failure((_,_,_,_) = Lookup.lookupVarLocal(cache,env, p));
       then
-        e;
-    case (env,Exp.BINARY(exp1 = e1,operator = o,exp2 = e2),p)
+        (cache,e);
+    case (cache,env,Exp.BINARY(exp1 = e1,operator = o,exp2 = e2),p)
       local Prefix p;
       equation 
-        e1_1 = prefixExp(env, e1, p);
-        e2_1 = prefixExp(env, e2, p);
+        (cache,e1_1) = prefixExp(cache,env, e1, p);
+        (cache,e2_1) = prefixExp(cache,env, e2, p);
       then
-        Exp.BINARY(e1_1,o,e2_1);
-    case (env,Exp.UNARY(operator = o,exp = e1),p)
+        (cache,Exp.BINARY(e1_1,o,e2_1));
+    case (cache,env,Exp.UNARY(operator = o,exp = e1),p)
       local Prefix p;
       equation 
-        e1_1 = prefixExp(env, e1, p);
+        (cache,e1_1) = prefixExp(cache,env, e1, p);
       then
-        Exp.UNARY(o,e1_1);
-    case (env,Exp.LBINARY(exp1 = e1,operator = o,exp2 = e2),p)
+        (cache,Exp.UNARY(o,e1_1));
+    case (cache,env,Exp.LBINARY(exp1 = e1,operator = o,exp2 = e2),p)
       local Prefix p;
       equation 
-        e1_1 = prefixExp(env, e1, p);
-        e2_1 = prefixExp(env, e2, p);
+        (cache,e1_1) = prefixExp(cache,env, e1, p);
+        (cache,e2_1) = prefixExp(cache,env, e2, p);
       then
-        Exp.LBINARY(e1_1,o,e2_1);
-    case (env,Exp.LUNARY(operator = o,exp = e1),p)
+        (cache,Exp.LBINARY(e1_1,o,e2_1));
+    case (cache,env,Exp.LUNARY(operator = o,exp = e1),p)
       local Prefix p;
       equation 
-        e1_1 = prefixExp(env, e1, p);
+        (cache,e1_1) = prefixExp(cache,env, e1, p);
       then
-        Exp.LUNARY(o,e1_1);
-    case (env,Exp.RELATION(exp1 = e1,operator = o,exp2 = e2),p)
+        (cache,Exp.LUNARY(o,e1_1));
+    case (cache,env,Exp.RELATION(exp1 = e1,operator = o,exp2 = e2),p)
       local Prefix p;
       equation 
-        e1_1 = prefixExp(env, e1, p);
-        e2_1 = prefixExp(env, e2, p);
+        (cache,e1_1) = prefixExp(cache,env, e1, p);
+        (cache,e2_1) = prefixExp(cache,env, e2, p);
       then
-        Exp.RELATION(e1_1,o,e2_1);
-    case (env,Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3),p)
+        (cache,Exp.RELATION(e1_1,o,e2_1));
+    case (cache,env,Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3),p)
       local Prefix p;
       equation 
-        e1_1 = prefixExp(env, e1, p);
-        e2_1 = prefixExp(env, e2, p);
-        e3_1 = prefixExp(env, e3, p);
+        (cache,e1_1) = prefixExp(cache,env, e1, p);
+        (cache,e2_1) = prefixExp(cache,env, e2, p);
+        (cache,e3_1) = prefixExp(cache,env, e3, p);
       then
-        Exp.IFEXP(e1_1,e2_1,e3_1);
-    case (env,Exp.SIZE(exp = cref,sz = SOME(dim)),p)
+        (cache,Exp.IFEXP(e1_1,e2_1,e3_1));
+    case (cache,env,Exp.SIZE(exp = cref,sz = SOME(dim)),p)
       local Prefix p;
       equation 
-        cref_1 = prefixExp(env, cref, p);
-        dim_1 = prefixExp(env, dim, p);
+        (cache,cref_1) = prefixExp(cache,env, cref, p);
+        (cache,dim_1) = prefixExp(cache,env, dim, p);
       then
-        Exp.SIZE(cref_1,SOME(dim_1));
-    case (env,Exp.SIZE(exp = cref,sz = NONE),p)
+        (cache,Exp.SIZE(cref_1,SOME(dim_1)));
+    case (cache,env,Exp.SIZE(exp = cref,sz = NONE),p)
       local Prefix p;
       equation 
-        cref_1 = prefixExp(env, cref, p);
+        (cache,cref_1) = prefixExp(cache,env, cref, p);
       then
-        Exp.SIZE(cref_1,NONE);
-    case (env,Exp.CALL(path = f,expLst = es,tuple_ = b,builtin = bi),p)
+        (cache,Exp.SIZE(cref_1,NONE));
+    case (cache,env,Exp.CALL(path = f,expLst = es,tuple_ = b,builtin = bi),p)
       local Prefix p;
       equation 
-        es_1 = prefixExpList(env, es, p);
+        (cache,es_1) = prefixExpList(cache,env, es, p);
       then
-        Exp.CALL(f,es_1,b,bi);
-    case (env,Exp.ARRAY(ty = t,scalar = a,array = {}),p)
+        (cache,Exp.CALL(f,es_1,b,bi));
+    case (cache,env,Exp.ARRAY(ty = t,scalar = a,array = {}),p)
       local Prefix p;
       then
-        Exp.ARRAY(t,a,{});
-    case (env,Exp.ARRAY(ty = t,scalar = a,array = es),p)
-      local Prefix p;
-      equation 
-        es_1 = prefixExpList(env, es, p);
-      then
-        Exp.ARRAY(t,a,es_1);
-    case (env,Exp.TUPLE(PR = es),p)
+        (cache,Exp.ARRAY(t,a,{}));
+    case (cache,env,Exp.ARRAY(ty = t,scalar = a,array = es),p)
       local Prefix p;
       equation 
-        es_1 = prefixExpList(env, es, p);
+        (cache,es_1) = prefixExpList(cache,env, es, p);
       then
-        Exp.TUPLE(es_1);
-    case (env,Exp.MATRIX(ty = t,integer = a,scalar = {}),p)
+        (cache,Exp.ARRAY(t,a,es_1));
+    case (cache,env,Exp.TUPLE(PR = es),p)
+      local Prefix p;
+      equation 
+        (cache,es_1) = prefixExpList(cache,env, es, p);
+      then
+        (cache,Exp.TUPLE(es_1));
+    case (cache,env,Exp.MATRIX(ty = t,integer = a,scalar = {}),p)
       local
         Integer a;
         Prefix p;
       then
-        Exp.MATRIX(t,a,{});
-    case (env,Exp.MATRIX(ty = t,integer = a,scalar = (x :: xs)),p)
+        (cache,Exp.MATRIX(t,a,{}));
+    case (cache,env,Exp.MATRIX(ty = t,integer = a,scalar = (x :: xs)),p)
       local
         Integer b,a;
         Prefix p;
       equation 
         el = Util.listMap(x, Util.tuple21);
         bl = Util.listMap(x, Util.tuple22);
-        el_1 = prefixExpList(env, el, p);
+        (cache,el_1) = prefixExpList(cache,env, el, p);
         x_1 = Util.listThreadTuple(el_1, bl);
-        Exp.MATRIX(t,b,xs_1) = prefixExp(env, Exp.MATRIX(t,a,xs), p);
+        (cache,Exp.MATRIX(t,b,xs_1)) = prefixExp(cache,env, Exp.MATRIX(t,a,xs), p);
       then
-        Exp.MATRIX(t,a,(x_1 :: xs_1));
-    case (env,Exp.RANGE(ty = t,exp = start,expOption = NONE,range = stop),p)
+        (cache,Exp.MATRIX(t,a,(x_1 :: xs_1)));
+    case (cache,env,Exp.RANGE(ty = t,exp = start,expOption = NONE,range = stop),p)
       local Prefix p;
       equation 
-        start_1 = prefixExp(env, start, p);
-        stop_1 = prefixExp(env, stop, p);
+        (cache,start_1) = prefixExp(cache,env, start, p);
+        (cache,stop_1) = prefixExp(cache,env, stop, p);
       then
-        Exp.RANGE(t,start_1,NONE,stop_1);
-    case (env,Exp.RANGE(ty = t,exp = start,expOption = SOME(step),range = stop),p)
+        (cache,Exp.RANGE(t,start_1,NONE,stop_1));
+    case (cache,env,Exp.RANGE(ty = t,exp = start,expOption = SOME(step),range = stop),p)
       local Prefix p;
       equation 
-        start_1 = prefixExp(env, start, p);
-        step_1 = prefixExp(env, step, p);
-        stop_1 = prefixExp(env, stop, p);
+        (cache,start_1) = prefixExp(cache,env, start, p);
+        (cache,step_1) = prefixExp(cache,env, step, p);
+        (cache,stop_1) = prefixExp(cache,env, stop, p);
       then
-        Exp.RANGE(t,start_1,SOME(step_1),stop_1);
-    case (env,Exp.CAST(ty = Exp.REAL(),exp = e),p)
+        (cache,Exp.RANGE(t,start_1,SOME(step_1),stop_1));
+    case (cache,env,Exp.CAST(ty = Exp.REAL(),exp = e),p)
       local Prefix p;
       equation 
-        e_1 = prefixExp(env, e, p);
+        (cache,e_1) = prefixExp(cache,env, e, p);
       then
-        Exp.CAST(Exp.REAL(),e_1);
-    case (env,Exp.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp),p)
+        (cache,Exp.CAST(Exp.REAL(),e_1));
+    case (cache,env,Exp.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp),p)
       local Prefix p;
       equation 
-        exp_1 = prefixExp(env, exp, p);
-        iterexp_1 = prefixExp(env, iterexp, p);
+        (cache,exp_1) = prefixExp(cache,env, exp, p);
+        (cache,iterexp_1) = prefixExp(cache,env, iterexp, p);
       then
-        Exp.REDUCTION(fcn,exp_1,id,iterexp_1);
-    case (_,e,_)
+        (cache,Exp.REDUCTION(fcn,exp_1,id,iterexp_1));
+    case (_,_,e,_)
       equation 
         Debug.fprint("failtrace", "-prefix_exp failed on exp:");
         s = Exp.printExpStr(e);
@@ -479,25 +482,28 @@ public function prefixExpList "function: prefixExpList
   This function prefixes a list of expressions using the
   `prefix_exp\' function.
 "
+	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
   input Prefix inPrefix;
+  output Env.Cache outCache;
   output list<Exp.Exp> outExpExpLst;
 algorithm 
-  outExpExpLst:=
-  matchcontinue (inEnv,inExpExpLst,inPrefix)
+  (outCache,outExpExpLst) :=
+  matchcontinue (inCache,inEnv,inExpExpLst,inPrefix)
     local
       Exp.Exp e_1,e;
       list<Exp.Exp> es_1,es;
       list<Env.Frame> env;
       Prefix p;
-    case (_,{},_) then {}; 
-    case (env,(e :: es),p)
+      Env.Cache cache;
+    case (cache,_,{},_) then (cache,{}); 
+    case (cache,env,(e :: es),p)
       equation 
-        e_1 = prefixExp(env, e, p);
-        es_1 = prefixExpList(env, es, p);
+        (cache,e_1) = prefixExp(cache,env, e, p);
+        (cache,es_1) = prefixExpList(cache,env, es, p);
       then
-        (e_1 :: es_1);
+        (cache,e_1 :: es_1);
   end matchcontinue;
 end prefixExpList;
 

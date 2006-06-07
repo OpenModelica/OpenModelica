@@ -357,6 +357,8 @@ protected import OpenModelica.Compiler.Error;
 
 protected import OpenModelica.Compiler.SCode;
 
+protected import OpenModelica.Compiler.Env;
+
 public function dump "function: dump
  
   This function prints the DAE in the standard output format.
@@ -3138,7 +3140,7 @@ algorithm
     case (cname,{},_) then Values.RECORD(cname,{},{});  /* impl */ 
     case (cname,(EQUATION(exp = Exp.CREF(componentRef = cr),scalar = rhs) :: rest),impl)
       equation 
-        (value,_) = Ceval.ceval({}, rhs, impl, NONE, NONE, Ceval.MSG());
+        (_,value,_) = Ceval.ceval(Env.emptyCache,{}, rhs, impl, NONE, NONE, Ceval.MSG());
         Values.RECORD(cname,vals,names) = daeToRecordValue(cname, rest, impl);
         cr_str = Exp.printComponentRefStr(cr);
       then

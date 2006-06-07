@@ -96,6 +96,7 @@ protected import OpenModelica.Compiler.Error;
 protected import OpenModelica.Compiler.Types;
 
 protected import OpenModelica.Compiler.Ceval;
+protected import OpenModelica.Compiler.Env;
 
 protected function serverLoop "adrpo -- not used
 with \"ModUtil.rml\"
@@ -403,7 +404,7 @@ algorithm
         Debug.fprint("info", 
           "\n------------------------------------------------------------ \n");
         Debug.fprint("info", "---instantiating\n");
-        d_2 = Inst.instantiate(p_1);
+        (_,d_2) = Inst.instantiate(Env.emptyCache,p_1);
         d_1 = DAE.transformIfEqToExpr(d_2);
         Debug.fprint("beforefixmodout", "Explicit part:\n");
         Debug.fcall("beforefixmodout", DAE.dumpDebug, d_1) "	& Inst.instantiate_implicit(pfunc\') => dimpl\'
