@@ -270,6 +270,8 @@ public constant ErrorID ERROR_FLATTENING=88;
 
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 
+public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
+
 public constant ErrorID INDEX_REDUCTION_NOTIFICATION=1000;
 
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable={(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
@@ -446,6 +448,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Error occured while flattening model %s"),
           (UNBOUND_PARAMETER_WARNING,TRANSLATION(),WARNING(),
           "Warning, parameter %s has no value."),
+          (BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER(),TRANSLATION(),WARNING(),
+          "Warning, function \"sum\" has scalar as parameter. Parameter: \"%s\""),
           (INDEX_REDUCTION_NOTIFICATION,SYMBOLIC(),NOTIFICATION(),
           "Notification, differentiated equation %s to %s for index reduction.")};
 

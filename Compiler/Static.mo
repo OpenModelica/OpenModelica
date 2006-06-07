@@ -2201,6 +2201,22 @@ algorithm
       Absyn.Exp arrexp;
       Boolean impl;
     case (env,{arrexp},impl) /* impl */ 
+      local String str;
+      equation 
+        (exp_1,Types.PROP((Types.T_INTEGER({}),_),c),_) = elabExp(env, arrexp, impl, NONE);
+        str = Dump.printExpStr(arrexp);
+        Error.addMessage(Error.BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER, {str});
+      then
+         (exp_1,Types.PROP((Types.T_INTEGER({}),NONE),c));
+    case (env,{arrexp},impl) /* impl */ 
+      local String str;
+      equation 
+        (exp_1,Types.PROP((Types.T_REAL({}),_),c),_) = elabExp(env, arrexp, impl, NONE);
+        str = Dump.printExpStr(arrexp);
+        Error.addMessage(Error.BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER, {str});
+      then
+         (exp_1,Types.PROP((Types.T_REAL({}),NONE),c));
+    case (env,{arrexp},impl) /* impl */ 
       equation 
         (exp_1,Types.PROP((Types.T_ARRAY(dim,tp),_),c),_) = elabExp(env, arrexp, impl, NONE);
         exp_2 = Exp.CALL(Absyn.IDENT("sum"),{exp_1},false,true);
