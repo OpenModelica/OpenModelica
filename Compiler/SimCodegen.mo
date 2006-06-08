@@ -130,6 +130,8 @@ protected import OpenModelica.Compiler.Algorithm;
 
 protected import OpenModelica.Compiler.Types;
 
+protected import OpenModelica.Compiler.Env;
+
 public function generateMakefile "function: generateMakefile
  
   This function generates a makefile for the simulation code.
@@ -4602,7 +4604,7 @@ algorithm
     case (_,{},allpaths) then {};  /* iterated over complete list */ 
     case (p,(path :: paths),allpaths)  local String s;
       equation 
-        (fdae,_) = Inst.instantiateFunctionImplicit(p, path);
+        (_,fdae,_) = Inst.instantiateFunctionImplicit(Env.emptyCache,p, path);
         DAE.DAE(elementLst = {DAE.FUNCTION(dAElist = dae,type_ = t)}) = fdae;
         patched_dae = DAE.DAE({DAE.FUNCTION(path,dae,t)});
         subfuncs = getCalledFunctionsInFunction(path, patched_dae);
@@ -4614,7 +4616,7 @@ algorithm
     case (p,(path :: paths),allpaths)
       local String s;
       equation 
-        (fdae,_) = Inst.instantiateFunctionImplicit(p, path);
+        (_,fdae,_) = Inst.instantiateFunctionImplicit(Env.emptyCache,p, path);
         DAE.DAE(elementLst = {DAE.EXTFUNCTION(dAElist = dae,type_ = t,externalDecl = extdecl)}) = fdae;
         patched_dae = DAE.DAE({DAE.EXTFUNCTION(path,dae,t,extdecl)});
         subfuncs = getCalledFunctionsInFunction(path, patched_dae);
