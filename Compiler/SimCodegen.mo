@@ -1,4 +1,4 @@
-package SimCodegen "
+package SimCodegen " 
 This file is part of OpenModelica.
 
 Copyright (c) 1998-2005, Linköpings universitet, Department of
@@ -2801,7 +2801,9 @@ algorithm
       Integer[:] ass1,ass2;
       list<Integer> block_;
       DAELow.ExternalObjectClasses eoc;
-    case ((daelow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,cg_id) /* cg var_id system code cg var_id extra function code Mixed system of equations */ 
+
+      /* Mixed system of equations */ 
+    case ((daelow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,cg_id) 
       equation 
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         true = isMixedSystem(var_lst);
@@ -2828,7 +2830,9 @@ algorithm
         (s2,cg_id_1,f1) = generateOdeSystem2(cont_subsystem_dae, jac, jac_tp, cg_id);
       then
         (s2,cg_id_1,f1);
-    case ((daelow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,cg_id) /* continuous system of equations */ 
+
+        /* continuous system of equations */ 
+    case ((daelow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,cg_id) 
       equation 
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2) "extract the variables and equations of the block." ;
         var_lst_1 = Util.listMap(var_lst, transformXToXd);
@@ -3416,10 +3420,18 @@ algorithm
         (s1,cg_id_1,f1) = generateSingleArrayEqnCode(dae, jac, cg_id);
       then
         (s1,cg_id_1,f1);
+        
+        /* A single algorithm section for several variables. */ 
+    case (dae,jac,jac_tp,cg_id) 
+      equation 
+        singleAlgorithmSection(dae);
+        (s1,cg_id_1,f1) = generateSingleAlgorithmCode(dae, jac, cg_id);
+      then
+        (s1,cg_id_1,f1);
  
- /* constant jacobians. Linear system of equations (A x = b) where
-	   A and b are constants. TODO: implement symbolic gaussian elimination here. Currently uses dgesv as 
-	   for next case */ 
+        /* constant jacobians. Linear system of equations (A x = b) where
+         A and b are constants. TODO: implement symbolic gaussian elimination here. Currently uses dgesv as 
+         for next case */ 
     case ((d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_CONSTANT(),cg_id) 
       local list<tuple<Integer, Integer, DAELow.Equation>> jac;
       equation 
@@ -3466,6 +3478,78 @@ algorithm
         fail();
   end matchcontinue;
 end generateOdeSystem2;
+
+protected function generateSingleAlgorithmCode "function: generateSingleAlgorithmCode
+  author: PA
+ 
+  Generates code for a system consisting of a  single algorithm.
+"
+  input DAELow.DAELow inDAELow;
+  input Option<list<tuple<Integer, Integer, DAELow.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
+  input Integer inInteger;
+  output CFunction outCFunction;
+  output Integer outInteger;
+  output list<CFunction> outCFunctionLst;
+algorithm 
+  (outCFunction,outInteger,outCFunctionLst):=
+  matchcontinue (inDAELow,inTplIntegerIntegerDAELowEquationLstOption,inInteger)
+    local
+      Integer indx,cg_id_1,cg_id;
+      list<Integer> ds;
+      Exp.Exp e1,e2;
+      Exp.ComponentRef cr,origname,cr_1;
+      Codegen.CFunction s1;
+      list<CFunction> f1;
+      DAELow.Variables vars,knvars;
+      DAELow.EquationArray eqns,se,ie;
+      DAELow.MultiDimEquation[:] ae;
+      Algorithm.Algorithm[:] al;
+      Algorithm.Algorithm alg;
+      DAELow.EventInfo ev;
+      list<Exp.ComponentRef> solvedVars,algOutVars;
+      list<Exp.Exp> algOutExpVars;
+      Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
+      String message,algStr;
+    case (DAELow.DAELOW(orderedVars = vars,knownVars = knvars,orderedEqs = eqns,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = ev),jac,cg_id) /* eqn code cg var_id extra functions */ 
+      equation 
+        (DAELow.ALGORITHM(indx,_,algOutExpVars) :: _) = DAELow.equationList(eqns);
+        alg = al[indx + 1];
+        solvedVars = Util.listMap(DAELow.varList(vars),DAELow.varCref);
+        algOutVars = Util.listMap(algOutExpVars,Exp.expCref);
+        
+        // The variables solved for and the output variables of the algorithm must be the same.
+        true = Util.listSetEqualP(solvedVars,algOutVars,Exp.crefEqual);
+        
+        (s1,cg_id) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), 1, Codegen.SIMULATION());
+      then (s1,cg_id,{});
+
+        /* Error message, inverse algorithms not supported yet */
+ 	 case (DAELow.DAELOW(orderedVars = vars,knownVars = knvars,orderedEqs = eqns,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = ev),jac,cg_id) 
+      equation 
+        (DAELow.ALGORITHM(indx,_,algOutExpVars) :: _) = DAELow.equationList(eqns);
+        alg = al[indx + 1];
+        solvedVars = Util.listMap(DAELow.varList(vars),DAELow.varCref);
+        algOutVars = Util.listMap(algOutExpVars,Exp.expCref);
+        
+        // The variables solved for and the output variables of the algorithm must be the same.
+        false = Util.listSetEqualP(solvedVars,algOutVars,Exp.crefEqual);
+
+        algStr =	DAE.dumpAlgorithmsStr({DAE.ALGORITHM(alg)});	
+        message = Util.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,
+          ". This is not implemented yet.\n"});
+        Error.addMessage(Error.INTERNAL_ERROR, 
+          {message});
+      then fail();
+        
+    case (_,_,_)
+      equation 
+        Error.addMessage(Error.INTERNAL_ERROR, 
+          {
+          "array equations currently only supported on form v = functioncall(...)"});
+      then
+        fail();
+  end matchcontinue;
+end generateSingleAlgorithmCode;
 
 protected function generateSingleArrayEqnCode "function: generateSingleArrayEqnCode
   author: PA
@@ -3616,6 +3700,44 @@ algorithm
         cr;
   end matchcontinue;
 end getVectorizedCrefFromExp;
+
+protected function singleAlgorithmSection "function: singleAlgorithmSection
+  author: PA
+  
+  Checks if a dae (subsystem) consists of a single algorithm section.
+"
+  input DAELow.DAELow inDAELow;
+algorithm 
+  _:=
+  matchcontinue (inDAELow)
+    local
+      list<DAELow.Equation> eqn_lst;
+      DAELow.Variables vars;
+      DAELow.EquationArray eqnarr;
+    case (DAELow.DAELOW(orderedVars = vars,orderedEqs = eqnarr))
+      equation 
+        eqn_lst = DAELow.equationList(eqnarr);
+        singleAlgorithmSection2(eqn_lst);
+      then
+        ();
+  end matchcontinue;
+end singleAlgorithmSection;
+
+protected function singleAlgorithmSection2
+  input list<DAELow.Equation> inDAELowEquationLst;
+algorithm 
+  _:=
+  matchcontinue (inDAELowEquationLst)
+    local list<DAELow.Equation> res;
+    case ({}) then (); 
+    case ((DAELow.ALGORITHM(index = _) :: res))
+      equation 
+        singleAlgorithmSection2(res);
+      then
+        ();
+  end matchcontinue;
+end singleAlgorithmSection2;
+
 
 protected function singleArrayEquation "function: singleArrayEquation
   author: PA
@@ -3809,7 +3931,7 @@ algorithm
           "&info,&nfev,nls_fjac,&ldfjac,\n",TAB,TAB,"nls_r,","&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,",
           "nls_wa4);\n",TAB,"if (info == 0) {\n",TAB,TAB,"printf(\"improper ",
           "input parameters to nonlinear eq. syst.\\n\");\n",TAB,"}\n",TAB,"if (info >= 2 && info <= 5) {\n",TAB,TAB,
-          "printf(\"error solving nonlinear"," system nr. ",func_id," at time %f\\n\",*t);\n",TAB,"}"});
+          "printf(\"error solving nonlinear"," system nr. ",func_id," at time %f\\n\",time);\n",TAB,"}"});
         func = Codegen.cAddStatements(Codegen.cEmptyFunction, {stmt});
       then
         (func,cg_id);
@@ -3883,7 +4005,7 @@ algorithm
         indx_str = intString(indx);
         indx_1 = indx + 1;
         (cfunc,cg_id_2) = generateOdeSystem2NonlinearResiduals2(rest, indx_1, repl, cg_id_1);
-        stmt = Util.stringAppendList({TAB,"localData->initialResiduals[",indx_str,"] = ",var,";"});
+        stmt = Util.stringAppendList({TAB,"res[",indx_str,"] = ",var,";"});
         exp_func_1 = Codegen.cAddStatements(exp_func, {stmt}); 
         cfunc_1 = Codegen.cMergeFns({exp_func_1,cfunc});
       then
@@ -3896,7 +4018,7 @@ algorithm
         indx_str = intString(indx);
         indx_1 = indx + 1;
         (cfunc,cg_id_2) = generateOdeSystem2NonlinearResiduals2(rest, indx_1, repl, cg_id_1);
-        stmt = Util.stringAppendList({TAB,"localData->initialResiduals[",indx_str,"] = ",var,";"});
+        stmt = Util.stringAppendList({TAB,"res[",indx_str,"] = ",var,";"});
         exp_func_1 = Codegen.cAddStatements(exp_func, {stmt});
         cfunc_1 = Codegen.cMergeFns({exp_func_1,cfunc});
       then
@@ -4406,10 +4528,11 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
-      Codegen.CFunction exp_func,res;
+      Codegen.CFunction exp_func,res,cfunc;
       String var,cr_str,stmt,indxs,name,c_name,id,s1,s2,s;
       DAELow.Equation eqn;
       list<CFunction> f1;
+      Algorithm.Algorithm alg;
     case (DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e,cg_id) /* assignements 1 assignements 2 equation number cg var_id equation code cg var_id extra functions discrete equations not considered if event-code is produced */ 
       equation 
         true = useZerocrossing();
@@ -4431,7 +4554,8 @@ algorithm
         (res,cg_id_1,{});
     case (DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e,cg_id)
       equation 
-        (DAELow.EQUATION(e1,e2),DAELow.VAR(cr,DAELow.STATE(),_,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flow_)) = getEquationAndSolvedVar(e, eqns, vars, ass2) "Solving the state s means solving for der(s)" ;
+        (DAELow.EQUATION(e1,e2),DAELow.VAR(cr,DAELow.STATE(),_,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flow_)) 
+        		= getEquationAndSolvedVar(e, eqns, vars, ass2) "Solving the state s means solving for der(s)" ;
         indxs = intString(indx);
         name = Exp.printComponentRefStr(cr);
         c_name = Util.modelicaStringToCStr(name);
@@ -4468,15 +4592,55 @@ algorithm
         (res,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals({cr}, {eqn}, cg_id);
       then
         (res,cg_id_1,f1);
-    case (DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e,cg_id) /* When equations ignored */ 
+        
+        /* When equations ignored */ 
+    case (DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e,cg_id) 
       equation 
         (DAELow.WHEN_EQUATION(_),_) = getEquationAndSolvedVar(e, eqns, vars, ass2);
       then
         (Codegen.cEmptyFunction,cg_id,{});
+        
+        /* Algorithm for single variable. */
+    case (DAELow.DAELOW(orderedVars = vars, orderedEqs = eqns,algorithms=alg),ass1,ass2,e,cg_id)
+      local 
+        Integer indx;
+        list<Exp.Exp> algInputs,algOutputs;
+        DAELow.Var v;
+        Exp.ComponentRef varOutput;
+      equation
+        (DAELow.ALGORITHM(indx,algInputs,Exp.CREF(varOutput,_)::_),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
+
+				// The output variable of the algorithm must be the variable solved for, otherwise we need to
+				// solve an inverse problem of an algorithm section.
+      true = Exp.crefEqual(DAELow.varCref(v),varOutput);
+      alg = alg[indx + 1];
+      (cfunc,cg_id) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), 1, Codegen.SIMULATION());
+      then (cfunc,cg_id,{});
+        
+        /* inverse Algorithm for single variable . */
+    case (DAELow.DAELOW(orderedVars = vars, orderedEqs = eqns,algorithms=alg),ass1,ass2,e,cg_id)
+      local 
+        Integer indx;
+        list<Exp.Exp> algInputs,algOutputs;
+        DAELow.Var v;
+        Exp.ComponentRef varOutput;
+        String algStr,message;
+      equation
+        (DAELow.ALGORITHM(indx,algInputs,Exp.CREF(varOutput,_)::_),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
+
+				// We need to solve an inverse problem of an algorithm section.
+      false = Exp.crefEqual(DAELow.varCref(v),varOutput);
+			alg = alg[indx + 1];
+		  algStr =	DAE.dumpAlgorithmsStr({DAE.ALGORITHM(alg)});	
+		  message = Util.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,
+		  ". This is not implemented yet.\n"});
+			Error.addMessage(Error.INTERNAL_ERROR,{message});
+      then fail();
+      
     case (DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e,cg_id)
       equation 
         Debug.fprint("failtrace", "-generate_ode_equation failed\n");
-        ((eqn as DAELow.EQUATION(e1,e2)),DAELow.VAR(cr,_,_,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flow_)) = getEquationAndSolvedVar(e, eqns, vars, ass2);
+        (eqn,DAELow.VAR(cr,_,_,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flow_)) = getEquationAndSolvedVar(e, eqns, vars, ass2);
         s1 = DAELow.equationStr(eqn);
         s2 = Exp.printComponentRefStr(cr);
         s = Util.stringAppendList({"trying to solve ",s2," from eqn: ",s1,"\n"});

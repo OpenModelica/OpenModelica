@@ -7012,7 +7012,7 @@ end expMul;
 
 public function expCref "function: expCref
  
-  Returns the componentref is exp is a CREF,
+  Returns the componentref if exp is a CREF,
 "
   input Exp inExp;
   output ComponentRef outComponentRef;

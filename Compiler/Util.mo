@@ -1529,6 +1529,33 @@ algorithm
   end matchcontinue;
 end listIntersectionP;
 
+public function listSetEqualP "function: listSetEqualP
+  Takes two lists and a comparison function over two elements of the list.
+  It returns true if the two sets are equal, false otherwise.
+"
+  input list<Type_a> lst1;
+  input list<Type_a> lst2;
+  input CompareFunc compare;
+  output Boolean equal;
+  replaceable type Type_a;
+  partial function CompareFunc
+    input Type_a inTypeA1;
+    input Type_a inTypeA2;
+    output Boolean outBoolean;
+  end CompareFunc;
+algorithm 
+   equal := matchcontinue(lst1,lst2,compare)
+     case (lst1,lst2,compare) 
+       local list<Type_a> lst;
+       equation
+       	lst = listIntersectionP(lst1,lst2,compare);
+       	true = intEq(listLength(lst), listLength(lst1));
+       	true = intEq(listLength(lst), listLength(lst2));
+       then true;
+     case (_,_,_) then false;
+  end matchcontinue;
+end listSetEqualP;
+
 public function listSetdifferenceP "function: listSetdifferenceP
   Takes two lists and a comparison function over two elements of the list.
   It returns the set difference of the two lists A-B, using the comparison function passed as 

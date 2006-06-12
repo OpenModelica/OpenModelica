@@ -201,6 +201,8 @@ protected import OpenModelica.Compiler.Ceval;
 
 protected import OpenModelica.Compiler.Error;
 
+protected import OpenModelica.Compiler.Main;
+
 public constant InteractiveSymbolTable emptySymboltable=SYMBOLTABLE(Absyn.PROGRAM({},Absyn.TOP()),{},{},
           {},{}) "Empty Interactive Symbol Table" ;
 
@@ -982,6 +984,12 @@ algorithm
       Absyn.Path p_class;
       Boolean final_,flow_,protected_,repl,dref1,dref2;
       Integer rest;
+      
+    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getVersion"),functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+      equation 
+        resstr = Main.getVersionNr();
+      then
+        (resstr,SYMBOLTABLE(p,s,ic,iv,cf));
     case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setExtendsModifierValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.CREF(componentReg = Absyn.CREF_QUAL(name = ident,componentRef = subident)),Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
         (newp,resstr) = setExtendsModifierValue(class_, Absyn.CREF_IDENT(ident,{}), subident, mod, p);

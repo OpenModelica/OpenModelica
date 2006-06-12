@@ -786,7 +786,7 @@ algorithm
   str := Util.stringAppendList({s0,s1,initeqstr,s2,initalgstr,s4,eqstr,s3,algstr,s5});
 end dumpElementsStr;
 
-protected function dumpAlgorithmsStr "function: dumpAlgorithmsStr
+public function dumpAlgorithmsStr "function: dumpAlgorithmsStr
  
   Dump algorithms to a string.
 "

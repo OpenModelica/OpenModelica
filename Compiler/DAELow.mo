@@ -10208,6 +10208,9 @@ algorithm
     case ((ALGORITHM(index = indx,in_ = inputs,out = outputs) :: es),s,t) /* algorithms are replaced separately in translate_dae_replace */ 
       equation 
         es_1 = replaceVariables(es, s, t);
+        inputs = Util.listMap(Util.listMap22(inputs,Exp.replaceExpList,s,t),Util.tuple21);
+          
+        outputs = Util.listMap(Util.listMap22(outputs,Exp.replaceExpList,s,t),Util.tuple21);
       then
         (ALGORITHM(indx,inputs,outputs) :: es_1);
     case ((ARRAY_EQUATION(index = indx,crefOrDerCref = expl) :: es),s,t) /* array eqns are replaced separatedly in translate_dae_replace */ 

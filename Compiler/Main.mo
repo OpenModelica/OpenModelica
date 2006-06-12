@@ -98,6 +98,16 @@ protected import OpenModelica.Compiler.Types;
 protected import OpenModelica.Compiler.Ceval;
 protected import OpenModelica.Compiler.Env;
 
+
+public function getVersionNr "Returns the version number of this release"
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue ()
+    case () then "1.4.1"; 
+  end matchcontinue;
+end getVersionNr;
+
 protected function serverLoop "adrpo -- not used
 with \"ModUtil.rml\"
 with \"Codegen.rml\"
@@ -105,7 +115,7 @@ with \"Codegen.rml\"
   function: serverLoop
  
   This function is the main loop of the server listening to a port
-  which recieves modelica expressions,  
+  which recieves modelica expressions.  
 "
   input Integer inInteger;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
@@ -371,6 +381,15 @@ algorithm
   end matchcontinue;
 end transformIfFlat;
 
+protected function versionRequest
+algorithm
+  _:= matchcontinue() 
+    case () equation
+      true = RTOpts.versionRequest();
+    then ();
+  end matchcontinue;
+end versionRequest;
+
 protected function translateFile "function: translateFile
  
   This function invokes the translator on a source file.  The
@@ -385,10 +404,18 @@ algorithm
       list<SCode.Class> p_1;
       DAE.DAElist d_2,d_1,d;
       String s,str,f,res;
+      list<String> lst;
       Absyn.Path cname;
       Boolean silent,notsilent;
       Interactive.InteractiveStmts stmts;
       Interactive.InteractiveSymbolTable newst;
+      /* Version requested using --version*/
+      case (_) 
+        equation
+        versionRequest();
+        print(getVersionNr());
+        then ();
+       
     case {f} /* A Modelica file .mo */ 
       equation 
         isModelicaFile(f);

@@ -119,5 +119,12 @@ public function silent
 
   external "C" ;
 end silent;
+
+public function versionRequest
+  output Boolean outBoolean;
+  
+  external "C";
+  end versionRequest;
+
 end RTOpts;
 

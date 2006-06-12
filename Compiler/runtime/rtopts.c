@@ -48,6 +48,7 @@ static int split_arrays;
 static int modelica_output;
 static int debug_flag_info;
 static int params_struct;
+static int version_request;
 
 static char **debug_flags;
 static char *debug_flagstr;
@@ -72,6 +73,7 @@ void RTOpts_5finit(void)
   nproc = 0;
   simulation_cg = 0;
   silent = 0;
+  version_request = 0;
 }
 
 static int set_debug_flags(char *flagstr)
@@ -171,7 +173,9 @@ RML_BEGIN_LABEL(RTOpts__args)
   while (RML_GETHDR(args) != RML_NILHDR)
   {
     char *arg = RML_STRINGDATA(RML_CAR(args));
-    if (arg[0] == '+')
+    if(strcmp(arg,"++version") == 0 || strcmp(arg,"++v") == 0) {
+    	version_request = 1;
+    } else if (arg[0] == '+')
     {
       if (strlen(arg) < 2)
       {
@@ -352,6 +356,13 @@ RML_END_LABEL
 RML_BEGIN_LABEL(RTOpts__simulationCg)
 {
   rmlA0 = RML_PRIM_MKBOOL(simulation_cg);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__versionRequest)
+{
+  rmlA0 = RML_PRIM_MKBOOL(version_request);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

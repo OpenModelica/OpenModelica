@@ -1875,9 +1875,11 @@ algorithm
         (cache,simValue,newst);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "simulate"),expLst = {Exp.CREF(componentRef = cr),starttime,stoptime,interval,method,filenameprefix}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      local String errorStr;
       equation 
         omhome = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
-        res = Util.stringAppendList({"Simulation failed.\n"});
+        errorStr = Error.printMessagesStr();
+        res = Util.stringAppendList({"Simulation failed.\n",errorStr});
         simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),{Values.STRING(res)},
           {"resultFile"});
       then
@@ -2621,8 +2623,6 @@ algorithm
       then
         (cache,filenameprefix,method_str,st,init_filename);
     case (_,_,_,_,_)
-      equation 
-        print("-build_model failed\n");
       then
         fail();
   end matchcontinue;
