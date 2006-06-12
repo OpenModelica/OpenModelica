@@ -16,6 +16,13 @@ void Settings_5finit(void)
   
 }
 
+RML_BEGIN_LABEL(Settings__getVersionNr)
+{
+    rmlA0 = (void*) mk_scon("1.4.1");
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(Settings__setCompileCommand)
 {
   char* command = RML_STRINGDATA(rmlA0);

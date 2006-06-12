@@ -50,6 +50,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   
 "
 
+public function getVersionNr "Returns the version number of this release"
+  output String outString;
+
+external "C";
+end getVersionNr;
+
 public function setCompileCommand
   input String inString;
 

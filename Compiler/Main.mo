@@ -96,17 +96,13 @@ protected import OpenModelica.Compiler.Error;
 protected import OpenModelica.Compiler.Types;
 
 protected import OpenModelica.Compiler.Ceval;
+
 protected import OpenModelica.Compiler.Env;
 
+protected import OpenModelica.Compiler.Settings;
 
-public function getVersionNr "Returns the version number of this release"
-  output String outString;
-algorithm 
-  outString:=
-  matchcontinue ()
-    case () then "1.4.1"; 
-  end matchcontinue;
-end getVersionNr;
+
+
 
 protected function serverLoop "adrpo -- not used
 with \"ModUtil.rml\"
@@ -413,7 +409,7 @@ algorithm
       case (_) 
         equation
         versionRequest();
-        print(getVersionNr());
+        print(Settings.getVersionNr());
         then ();
        
     case {f} /* A Modelica file .mo */ 
