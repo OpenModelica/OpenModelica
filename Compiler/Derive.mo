@@ -86,6 +86,7 @@ algorithm
     local
       Exp.Exp e1_1,e2_1,e1_2,e2_2,e1,e2;
       DAELow.Variables timevars;
+      DAELow.Equation dae_equation;
     case (DAELow.EQUATION(exp = e1,scalar = e2),timevars) /* time varying variables */ 
       equation 
         e1_1 = differentiateExpTime(e1, timevars);
@@ -100,8 +101,9 @@ algorithm
         print("-differentiate_equation_time on algorithm not impl yet.\n");
       then
         fail();
-    case (_,_)
+    case (dae_equation,_)
       equation 
+        DAELow.dumpDAELowEqnList({dae_equation},"differentiate_equation_time\n",false);
         print("-differentiate_equation_time faile\n");
       then
         fail();

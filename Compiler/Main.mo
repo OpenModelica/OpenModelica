@@ -740,14 +740,16 @@ protected function interactivemode "function: interactivemode
   Initiate the interactive mode using socket communication.
 "
   input list<String> inStringLst;
+  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
 algorithm 
   _:=
-  matchcontinue (inStringLst)
+  matchcontinue (inStringLst,inInteractiveSymbolTable)
     local Integer shandle;
-    case _
+     Interactive.InteractiveSymbolTable symbolTable;
+    case (_,symbolTable)
       equation 
         shandle = Socket.waitforconnect(29500);
-        _ = serverLoop(shandle, Interactive.emptySymboltable);
+        _ = serverLoop(shandle, symbolTable/*Interactive.emptySymboltable*/);
       then
         ();
   end matchcontinue;
@@ -758,17 +760,21 @@ protected function interactivemodeCorba "function: interactivemodeCorba
   Initiate the interactive mode using corba communication.
 "
   input list<String> inStringLst;
+  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
 algorithm 
   _:=
-  matchcontinue (inStringLst)
-    case _
+  matchcontinue (inStringLst,inInteractiveSymbolTable)
+   local 
+     Interactive.InteractiveSymbolTable symbolTable;
+    case (_,symbolTable)
       equation 
         Corba.initialize();
-        _ = serverLoopCorba(Interactive.emptySymboltable);
+        _ = serverLoopCorba(symbolTable/*Interactive.emptySymboltable*/);
       then
         ();
   end matchcontinue;
 end interactivemodeCorba;
+
 
 protected function serverLoopCorba "function: serverLoopCorba
  
@@ -804,6 +810,80 @@ algorithm
   end matchcontinue;
 end serverLoopCorba;
 
+
+protected function readSettings "function: readSettings
+ author: x02lucpo
+ Checks if 'settings.mos' exist and uses handleCommand with runScript(...) to execute it.
+ Checks if '-s <file>.mos' has been 
+ returns Interactive.InteractiveSymbolTable which is used in the rest of the loop
+"
+  input list<String> inStringLst;
+  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+algorithm
+  outInteractiveSymbolTable:=
+  matchcontinue (inStringLst)
+    local
+      list<String> args;
+      String str;
+      Interactive.InteractiveSymbolTable outSymbolTable;
+    case (args)
+      equation
+        outSymbolTable = Interactive.emptySymboltable;
+         "" = Util.flagValue("-s",args);
+//         this is out-commented because automatically reading settings.mos
+//         can make a system bad
+//         outSymbolTable = readSettingsFile("settings.mos", Interactive.emptySymboltable);
+      then
+       outSymbolTable;
+    case (args)
+      equation
+        str = Util.flagValue("-s",args);
+        str = System.trim(str," \"");
+        outSymbolTable = readSettingsFile(str, Interactive.emptySymboltable);
+      then
+       outSymbolTable;
+  end matchcontinue;
+
+
+end readSettings;
+
+
+protected function readSettingsFile
+ input String filePath;
+  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+
+algorithm
+ outInteractiveSymbolTable :=
+  matchcontinue (filePath,inInteractiveSymbolTable)
+    local
+      String file;
+      Interactive.InteractiveSymbolTable inSymbolTable, outSymbolTable;
+      String str;
+    case (file,inSymbolTable)
+      equation
+        0 = System.regularFileExists(file);
+        str = Util.stringAppendList({"runScript(\"",file,"\")"});
+        (_,_,outSymbolTable) = handleCommand(str,inSymbolTable);
+      then
+        outSymbolTable;
+    case (file,inSymbolTable)
+       local Integer rest;
+      equation
+        rest = System.regularFileExists(file);
+        (rest > 0) = true;  //could not found file
+      then
+        inSymbolTable;
+    case (_,inSymbolTable)
+      equation
+        print("-readSettingsFile another error\n");
+      then
+        inSymbolTable;
+  end matchcontinue;
+end readSettingsFile;
+
+
+
 public function main "function: main
  
   This is the main function that the RML runtime system calls to
@@ -814,27 +894,33 @@ algorithm
   _:=
   matchcontinue (inStringLst)
     local
+      String ver_str,errstr;
       list<String> args_1,args;
       Boolean ismode,icmode,imode,imode_1;
       String s,str;
+      Interactive.InteractiveSymbolTable symbolTable;
     case args
       equation 
         args_1 = RTOpts.args(args);
+        symbolTable = readSettings(args);
         ismode = RTOpts.debugFlag("interactive");
         icmode = RTOpts.debugFlag("interactiveCorba");
         imode = boolOr(ismode, icmode);
         imode_1 = boolNot(imode);
-        Debug.bcall(ismode, interactivemode, args_1);
-        Debug.bcall(icmode, interactivemodeCorba, args_1);
+        Debug.bcall2(ismode, interactivemode, args_1,symbolTable);
+        Debug.bcall2(icmode, interactivemodeCorba, args_1,symbolTable);
+
         Debug.bcall(imode_1, translateFile, args_1);
-        s = Print.getErrorString();
-        Debug.fcall("failtrace", print, s);
+        errstr = Print.getErrorString();
+        Debug.fcall("errorbuf", print, errstr);
       then
         ();
     case _
       equation 
-        str = Print.getErrorString() "If main fails, retrieve error messages and print to std out." ;
-        print(str);
+        print("#|Execution failed!\n");
+        errstr = Print.getErrorString();
+        Debug.fcall("errorbuf", print, "\n\n----\n\nError buffer:\n\n");
+        Debug.fcall("errorbuf", print, errstr);
       then
         fail();
   end matchcontinue;

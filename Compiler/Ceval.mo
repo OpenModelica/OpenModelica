@@ -1822,6 +1822,23 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
 
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "getSettings"),expLst = {}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+        local String str1,res;
+      equation 
+        res = "";
+        str1 = Settings.getCompileCommand();
+        res = Util.stringAppendList({res,"Compile command: ", str1,"\n"});
+        str1 = Settings.getTempDirectoryPath();
+        res = Util.stringAppendList({res,"Temp folder path: ", str1,"\n"});
+        str1 = Settings.getInstallationDirectoryPath();
+        res = Util.stringAppendList({res,"Installation folder: ", str1,"\n"});
+        str1 = Settings.getPlotCommand();
+        res = Util.stringAppendList({res,"Plot command: ", str1,"\n"});
+        str1 = Settings.getModelicaPath();
+        res = Util.stringAppendList({res,"Modelica path: ", str1,"\n"});
+      then
+        (cache,Values.STRING(res),st);
+
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "setTempDirectoryPath"),expLst = {Exp.SCONST(string = cmd)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
         cmd = Util.rawStringToInputString(cmd);

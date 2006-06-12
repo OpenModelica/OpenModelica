@@ -4381,6 +4381,8 @@ algorithm
 
     case (cache,env,Absyn.CREF_IDENT(name = "setPlotCommand"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setPlotCommand"),{Exp.SCONST(str)},false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st)); 
 
+    case (cache,env,Absyn.CREF_IDENT(name = "getSettings"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("getSettings"),{},false,true),Types.PROP((Types.T_STRING({}),NONE),Types.C_VAR()),SOME(st)); 
+
     case (cache,env,Absyn.CREF_IDENT(name = "setTempDirectoryPath"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setTempDirectoryPath"),{Exp.SCONST(str)},
           false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st)); 
 

@@ -85,7 +85,45 @@ protected import OpenModelica.Compiler.Print;
 
 protected import OpenModelica.Compiler.Debug;
 
+public function flagValue "function flagValue
+  author: x02lucpo
+  Extracts the flagvalue from an argument list:
+  flagvalue('-s',{'-d','hej','-s','file'}) => 'file'
 
+"
+
+  input String flag;
+  input list<String> arguments;
+  output String flagVal;
+algorithm
+  flagVal :=
+   matchcontinue(flag,arguments)
+   local 
+      String flag,arg,value;
+      list<String> args;
+   case(flag,[]) then "";
+   case(flag,arg::[])
+      equation
+        0 = System.strcmp(flag,arg);
+      then
+        "";
+   case(flag,arg::value::args)
+      equation
+        0 = System.strcmp(flag,arg);
+      then
+        value;
+   case(flag,arg::args)
+      equation
+        value = flagValue(flag,args);
+      then
+        value;
+   case(_,_)
+      equation
+       print("-flagValue failed\n");
+      then
+       fail();
+   end matchcontinue;
+end flagValue;
 
 public function listFill "function: listFill
   Returns a list of n elements of type \'a.
