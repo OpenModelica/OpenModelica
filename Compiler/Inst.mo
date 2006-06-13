@@ -911,7 +911,7 @@ algorithm
         (cache,dae1,env_3,(csets_1 as Connect.SETS(_,crs)),ci_state_1,tys,bc_ty) 
         			= instClassIn(cache,env_1, mod, pre, csets, ci_state, c, false, inst_dims, impl) ;
         (cache,fq_class) = makeFullyQualified(cache,env, Absyn.IDENT(n));
-    
+
         dae1_1 = DAE.setComponentType(dae1, fq_class);
         callscope_1 = isTopCall(callscope);
         dae2 = Connect.equations(csets_1);
@@ -1089,7 +1089,9 @@ algorithm
         //Debug.fprint("insttr", implstr);
         //Debug.fprint("insttr", clsname);
         //Debug.fprint("insttr", "\n");
+       //print("instClassDef, ");print(n);print(" env:");print(Env.printEnvStr(env));
         (cache,l,env_1,csets_1,ci_state_1,tys,bc) = instClassdef(cache,env, mods, pre, csets, ci_state, d, r, prot, inst_dims, impl);
+        //print("instClassDef, outenv:");print(Env.printEnvStr(env));
         cache = addCachedEnv(cache,n,env_1);
       then
         (cache,l,env_1,csets_1,ci_state_1,tys,bc);

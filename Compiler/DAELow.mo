@@ -10205,22 +10205,26 @@ algorithm
         es_1 = replaceVariables(es, s, t);
       then
         (WHEN_EQUATION(WHEN_EQ(i,cr_1,e2_1)) :: es_1);
-    case ((ALGORITHM(index = indx,in_ = inputs,out = outputs) :: es),s,t) /* algorithms are replaced separately in translate_dae_replace */ 
+        
+        /* algorithms are replaced also in translateDaeReplace */         
+    case ((ALGORITHM(index = indx,in_ = inputs,out = outputs) :: es),s,t) 
       equation 
-        es_1 = replaceVariables(es, s, t);
-        inputs = Util.listMap(Util.listMap22(inputs,Exp.replaceExpList,s,t),Util.tuple21);
-          
+        inputs = Util.listMap(Util.listMap22(inputs,Exp.replaceExpList,s,t),Util.tuple21);          
         outputs = Util.listMap(Util.listMap22(outputs,Exp.replaceExpList,s,t),Util.tuple21);
+        es_1 = replaceVariables(es, s, t);
       then
         (ALGORITHM(indx,inputs,outputs) :: es_1);
-    case ((ARRAY_EQUATION(index = indx,crefOrDerCref = expl) :: es),s,t) /* array eqns are replaced separatedly in translate_dae_replace */ 
+        
+        /* array eqns are also replaced in translateDaeReplace */ 
+    case ((ARRAY_EQUATION(index = indx,crefOrDerCref = expl) :: es),s,t) 
       equation 
+        expl = Util.listMap(Util.listMap22(expl,Exp.replaceExpList,s,t),Util.tuple21);
         es_1 = replaceVariables(es, s, t);
       then
         (ARRAY_EQUATION(indx,expl) :: es_1);
     case (_,_,_)
       equation 
-        print("-replace_variables failed\n");
+        print("-replaceVariables failed\n");
       then
         fail();
   end matchcontinue;
@@ -10421,7 +10425,7 @@ algorithm
         (s,t);
     case (vars,eqns)
       equation 
-        print("-variable_replacements failed\n");
+        print("-variableReplacements failed\n");
       then
         fail();
   end matchcontinue;
@@ -10456,7 +10460,7 @@ algorithm
         (s,t);
     case (vars,knvars,extvars)
       equation 
-        print("-variable_replacements_no_dollar failed\n");
+        print("-variableReplacementsNoDollar failed\n");
       then
         fail();
   end matchcontinue;
@@ -10505,7 +10509,7 @@ algorithm
         fail();
     case (_)
       equation 
-        print("-variable_replacements_remove_dollar failed\n");
+        print("-variableReplacementsRemoveDollar failed\n");
       then
         fail();
   end matchcontinue;

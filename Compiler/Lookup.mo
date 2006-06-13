@@ -259,7 +259,7 @@ algorithm
       ClassInf.State ci_state,cistate1;
     
     	/* First look in cache for environment. If found look up class in that environment*/
-    case (cache,env,path,msg)
+   case (cache,env,path,msg)
       equation
         SOME(scope) = Env.getEnvPath(env);
         f::fs = Env.cacheGet(scope,path,cache);
@@ -785,13 +785,14 @@ algorithm
         (cache,attr,ty,binding) = lookupVarInternal(cache,env, cref);
       then
         (cache,attr,ty,binding);
-    case (cache,env,cref) /* then look in classes (implicitly instantiated packages)
-	 */ 
+    case (cache,env,cref) /* then look in classes (implicitly instantiated packages) */ 
       equation 
+        //print("calling lookupVarInPackages env:");print(Env.printEnvStr(env)); print("END ENV\n");
         (cache,attr,ty,binding) = lookupVarInPackages(cache,env, cref);
       then
         (cache,attr,ty,binding);
-    case (_,_,_) /* Debug.fprint(\"failtrace\",  \"- lookup_var failed\\n\") */  then fail(); 
+    case (_,env,cref) equation
+      /* Debug.fprint(\"failtrace\",  \"- lookup_var failed\\n\") */  then fail(); 
   end matchcontinue;
 end lookupVar;
 
@@ -817,10 +818,12 @@ algorithm
       Env.BinTree ht;
       list<Env.Item> imps;
       list<Env.Frame> fs;
+      Env.Frame frame;
       Exp.ComponentRef ref;
       Env.Cache cache;
-    case (cache,(Env.FRAME(class_1 = sid,list_2 = ht,list_4 = imps) :: fs),ref)
+    case (cache,((frame as Env.FRAME(class_1 = sid,list_2 = ht,list_4 = imps)) :: fs),ref)
       equation 
+        //print("lookup var in frame:");print(Env.printEnvStr({frame}));print("end lookupVar frame\n");
         (cache,attr,ty,binding) = lookupVarF(cache,ht, ref);
       then
         (cache,attr,ty,binding);
@@ -859,7 +862,7 @@ algorithm
       String n,id1,id;
       Boolean encflag;
       SCode.Restriction r;
-      list<Env.Frame> env2,env3,env5,env,fs;
+      list<Env.Frame> env2,env3,env5,env,fs,bcframes;
       ClassInf.State ci_state;
       list<Types.Var> types;
       Types.Attributes attr;
@@ -915,6 +918,14 @@ algorithm
         (cache,attr,ty,bind) = lookupVarLocal(cache,env, cr);
       then
         (cache,attr,ty,bind);
+        
+        /* Search base classes */
+    case (cache,Env.FRAME(list_5 = (bcframes as (_ :: _)))::fs,cref) 
+      equation 
+        (cache,attr,ty,bind) = lookupVar(cache,bcframes, cref);
+      then
+        (cache,attr,ty,bind);
+
     case (cache,(env as (Env.FRAME(class_1 = sid,list_4 = items) :: _)),(cr as Exp.CREF_IDENT(ident = id,subscriptLst = sb)))
       equation 
         (cache,attr,ty,bind) = lookupQualifiedImportedVarInFrame(cache,items, env, id);
@@ -971,17 +982,19 @@ algorithm
       Types.Binding binding;
       Option<String> sid;
       Env.BinTree ht;
-      list<Env.Frame> fs,env;
-      Exp.ComponentRef ref;
+      list<Env.Frame> fs,env,bcframes;
+      Exp.ComponentRef cref;
       Env.Cache cache;
-    case (cache,(Env.FRAME(class_1 = sid,list_2 = ht) :: fs),ref)
+      /* Lookup in frame */
+    case (cache,(Env.FRAME(class_1 = sid,list_2 = ht) :: fs),cref)
       equation 
-        (cache,attr,ty,binding) = lookupVarF(cache,ht, ref);
+        (cache,attr,ty,binding) = lookupVarF(cache,ht, cref);
       then
         (cache,attr,ty,binding);
-    case (cache,(Env.FRAME(class_1 = SOME("$for loop scope$")) :: env),ref)
+        
+    case (cache,(Env.FRAME(class_1 = SOME("$for loop scope$")) :: env),cref)
       equation 
-        (cache,attr,ty,binding) = lookupVarLocal(cache,env, ref) "Exception, when in for loop scope allow search of next scope" ;
+        (cache,attr,ty,binding) = lookupVarLocal(cache,env, cref) "Exception, when in for loop scope allow search of next scope" ;
       then
         (cache,attr,ty,binding);
   end matchcontinue;
@@ -1960,72 +1973,6 @@ algorithm
   end matchcontinue;
 end checkSubscripts;
 
-// protected function checkSubscriptsBinding "function: checkSubscriptsBinding
- 
-//   This function checks a list of subscripts agains type, and removes
-//   dimensions from the type according to the subscripting.
-// "
-//   input Types.Binding inBinding;
-//   input list<Exp.Subscript> inExpSubscriptLst;
-//   output Types.Binding outBinding;
-// algorithm 
-//   outBinding:=
-//   matchcontinue (inType,inBinding,inExpSubscriptLst)
-//     local
-//       Types.Binding t,t_1;
-//       Types.ArrayDim dim;
-//       Option<Absyn.Path> p;
-//       list<Exp.Subscript> ys,s;
-//       Integer sz,ind;
-//       list<Exp.Exp> se;
-//       Types.Binding binding;
-//       Exp.Exp exp;
-//       Option<Values.Value> eExp "evaluatedExp; evaluated exp" ;
-//       Types.Const const "constant" ;
-//       Values.Value v,v2;
-//     case (binding,{}) then binding; 
-//     case (Types.UNBOUND(),_) then Types.UNBOUND();
-//     case (Types.EQBOUND(exp,eExp,const),
-//           (Exp.INDEX(a = Exp.ICONST(integer = ind)) :: ys)) 
-//       equation
-//         Debug.fprint("tcvt", "*** checkSubscriptsBinding Types.EQBOUND\n");
-//         t_1 = checkSubscriptsBinding(Types.EQBOUND(Exp.ASUB(exp,ind),eExp,const), ys);
-//       then 
-//         t_1;
- 
- 
-
-//     case (Types.VALBOUND(v),(Exp.INDEX(a = Exp.ICONST(integer = ind)) :: ys)) 
-//       equation
-//         Debug.fprint("tcvt", "*** checkSubscriptsBinding before ntharrayelt Types.VALBOUND\n");
-//         v2= Values.nthArrayelt(v,ind);
-//         Debug.fprint("tcvt", "*** checkSubscriptsBinding after ntharrayelt Types.VALBOUND\n");
-//         t_1 = checkSubscriptsBinding(Types.VALBOUND(v2), ys);
-//       then t_1;
-
-
-//     case (binding,_)  
-//       equation
-//         Debug.fprint("tcvt", "*** checkSubscriptsBinding binding\n");
-     
-
-//       then binding;
-
-
-//     case (binding,s)
-//       local String str;
-//       equation 
-//         Debug.fprint("failtrace", "- checkSubscriptsBinding failed ( ");
-//         str = Types.printBindingStr(binding);
-//         Debug.fprint("failtrace", str);
-//         Debug.fprint("failtrace", ")\n");
-//       then
-//         fail();
-//   end matchcontinue;
-// end checkSubscriptsBinding;
-
-
-
 protected function lookupVarF "function: lookupVarF
  
   This function looks in a frame to find a declared variable.  If
@@ -2061,7 +2008,6 @@ algorithm
       equation 
         (cache,Types.VAR(n,Types.ATTR(f,acc,vt,di),_,ty,bind),_,_,_) = lookupVar2(cache,ht, id);
         ty_1 = checkSubscripts(ty, ss);
-//          binding2 = checkSubscriptsBinding(bind,ss);
       then
         (cache,Types.ATTR(f,acc,vt,di),ty_1,bind);
     case (cache,ht,Exp.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)) /* Qualified variables looked up through component environment. */ 

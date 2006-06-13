@@ -719,8 +719,7 @@ algorithm
         s4 = printEnvStr(bcframes);
         res = Util.stringAppendList(
           {"FRAME: ",sid," (enc=",encflag_str,
-          ") \nclasses and vars:\n=============\n",s1,"   Types:\n======\n",s2,"   Imports:\n=======\n",s3,
-          "   bcframes:\n=======\n",s4,"\n\n\n"});
+          ") \nclasses and vars:\n=============\n",s1,"   Types:\n======\n",s2,"   Imports:\n=======\n",s3,"\n"});
       then
         res;
     case FRAME(class_1 = NONE,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag)
@@ -732,8 +731,7 @@ algorithm
         encflag_str = Util.boolString(encflag);
         res = Util.stringAppendList(
           {"FRAME: unnamed (enc=",encflag_str,
-          ") \nclasses and vars:\n=============\n",s1,"   Types:\n======\n",s2,"   Imports:\n=======\n",s3,
-          "   bcframes:\n=======\n",s4,"\n\n\n"});
+          ") \nclasses and vars:\n=============\n",s1,"   Types:\n======\n",s2,"   Imports:\n=======\n",s3,"\n"});
       then
         res;
   end matchcontinue;
