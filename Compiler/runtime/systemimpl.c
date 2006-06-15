@@ -1132,11 +1132,7 @@ RML_BEGIN_LABEL(System__setClassnamesForSimulation)
   if(class_names_for_simulation)
     free(class_names_for_simulation);
 
-  class_names_for_simulation = (char*)malloc(strlen(class_names)+1);
-  if (class_names_for_simulation == NULL) {
-    RML_TAILCALLK(rmlFC);
-  }
-  memcpy(class_names_for_simulation,class_names,strlen(class_names)+1);
+  class_names_for_simulation = strdup(class_names);
 
   RML_TAILCALLK(rmlSC);
 }
