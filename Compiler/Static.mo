@@ -503,11 +503,12 @@ algorithm
     case (cache,env,e,_,_)
       equation 
         Debug.fprint("failtrace", "- elab_exp failed: ");
-        expstr = Debug.fcallret("failtrace", Dump.printExpStr, e, "");
+        expstr = Debug.fcallret("failtrace", Dump.dumpExpStr, e, "");
         Debug.fprintln("failtrace", expstr);
         Debug.fprint("failtrace", "\n env : ");
         envstr = Debug.fcallret("failtrace", Env.printEnvStr, env, "");
         Debug.fprintln("failtrace", envstr);
+        Debug.fprintln("failtrace", "\n----------------------- FINISHED ENV ------------------------\n");
       then
         fail();
   end matchcontinue;

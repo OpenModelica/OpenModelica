@@ -67,6 +67,29 @@ protected import OpenModelica.Compiler.Util;
 
 protected import OpenModelica.Compiler.Debug;
 
+public function dumpExpStr
+  input Absyn.Exp exp;
+  output String str;
+algorithm
+  Print.clearBuf();
+  printExp(exp);
+  str := Print.getString();
+end dumpExpStr;
+
+
+public function dumpExp
+  input Absyn.Exp exp;
+  protected String str;
+algorithm
+  Print.clearBuf();
+  printExp(exp);
+  str := Print.getString();
+  print(str);
+  print("--------------------\n");
+end dumpExp;
+
+
+
 public function dump "adrpo -- not used
 with \"RTOpts.rml\"
 with \"ClassInf.rml\"

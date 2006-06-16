@@ -785,9 +785,14 @@ algorithm
       then
         (cache,{DAE.COMP(n,DAE.DAE(dae))});
     case (cache,env,(c :: (cs as (_ :: _))))
+         local String str;
       equation 
         //Debug.fprintln("insttr", "inst_program2");
         (cache,env_1,dae1) = instClassDecl(cache,env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {}) ;
+
+        //str = SCode.printClassStr(c); print("------------------- CLASS instProgram-----------------\n");print(str);print("\n===============================================\n");
+        //str = Env.printEnvStr(env_1);print("------------------- env instProgram 1-----------------\n");print(str);print("\n===============================================\n");
+
         (cache,dae2) = instProgram(cache,env_1, cs) "Env.extend_frame_c(env,c) => env\' &" ;
         dae = listAppend(dae1, dae2);
       then
@@ -905,12 +910,19 @@ algorithm
         	Then generate equations from connects.
         */
     case (cache,env,mod,pre,csets,(c as SCode.CLASS(name = n,encapsulated_ = encflag,restricion = r)),inst_dims,impl,callscope)
+      local String str;
       equation 
+
+//str = SCode.printClassStr(c); print("------------------- CLASS instClass-----------------\n");print(str);print("\n===============================================\n");
+
+
         env_1 = Env.openScope(env, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
         (cache,dae1,env_3,(csets_1 as Connect.SETS(_,crs)),ci_state_1,tys,bc_ty) 
         			= instClassIn(cache,env_1, mod, pre, csets, ci_state, c, false, inst_dims, impl) ;
         (cache,fq_class) = makeFullyQualified(cache,env, Absyn.IDENT(n));
+        
+//str = Absyn.pathString(fq_class); print("------------------- CLASS makeFullyQualified instClass-----------------\n");print(n); print("  ");print(str);print("\n===============================================\n");
 
         dae1_1 = DAE.setComponentType(dae1, fq_class);
         callscope_1 = isTopCall(callscope);
@@ -5052,7 +5064,7 @@ algorithm
         (cache,env_2,dae);
     case (cache,env,_,_,_,_,_)
       equation 
-        //Debug.fprint("failtrace", "- inst_class_decl failed\n");
+        Debug.fprint("failtrace", "- inst_class_decl failed\n");
       then
         fail();
   end matchcontinue;

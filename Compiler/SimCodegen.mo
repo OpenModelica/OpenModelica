@@ -100,6 +100,7 @@ protected constant String paramComments="param_comments";
 
 protected constant String paramInGetNameFunction="ptr";
 
+
 protected import OpenModelica.Compiler.Util;
 
 protected import OpenModelica.Compiler.RTOpts;
@@ -291,7 +292,7 @@ algorithm
   outString:=
   matchcontinue (inPath1,inDAELow2,inInteger3,inInteger4,inInteger5,inInteger6)
     local
-      Integer nx,ny,np,ng,ng_1,no,ni,nh,nres,next;
+      Integer nx,ny,np,ng,ng_1,no,ni,nh,nres,next,ny_string,np_string;
       String initDeinitDataStructFunction,class_str,nx_str,ny_str,np_str,ng_str,no_str,ni_str,nh_str;
       String nres_str,c_code2_str,c_code3_str,c_code_str,macros_str,global_bufs,str1,str,next_str;
       list<String> c_code;
@@ -299,7 +300,9 @@ algorithm
       DAELow.DAELow dlow;
     case (class_,dlow,no,ni,nh,nres)
       equation 
-        (nx,ny,np,ng,next) = DAELow.calculateSizes(dlow) "DAELow.dump(dlow) &" ;
+        (nx,ny,np,ng,next,ny_string,np_string) = DAELow.calculateSizes(dlow);
+        //DAELow.dump(dlow);
+
         ng_1 = filterNg(ng);
         class_str = Absyn.pathString(class_);
         nx_str = intString(nx);
@@ -487,11 +490,11 @@ algorithm
       {
 "
 void setLocalData(DATA* data)\n{\n
-   localData = data;\n}\n\n
+   localData = data;\n}\n
 DATA* initializeDataStruc(DATA_FLAGS flags)\n{\n
-  DATA* returnData = (DATA*)malloc(sizeof(DATA));\n\n
+  DATA* returnData = (DATA*)malloc(sizeof(DATA));\n
   if(!returnData) //error check\n
-    return 0;\n\n
+    return 0;\n
   returnData->nStates = NX;\n
   returnData->nAlgebraic = NY;\n
   returnData->nParameters = NP;\n
@@ -499,12 +502,12 @@ DATA* initializeDataStruc(DATA_FLAGS flags)\n{\n
   returnData->nOutputVars = NO;\n
   returnData->nZeroCrossing = NG;\n
   returnData->nInitialResiduals = NR;\n
-  returnData->nHelpVars = NHELP;\n\n
+  returnData->nHelpVars = NHELP;\n
   if(flags & STATES && returnData->nStates){\n
     returnData->states = (double*) malloc(sizeof(double)*returnData->nStates);\n
   }else{\n
     returnData->states = 0;\n
-  }\n\n
+  }\n
   if(flags & STATESDERIVATIVES && returnData->nStates){\n
     returnData->statesDerivatives = (double*) malloc(sizeof(double)*returnData->nStates);\n
   }else{\n
@@ -514,99 +517,99 @@ DATA* initializeDataStruc(DATA_FLAGS flags)\n{\n
     returnData->helpVars = (double*) malloc(sizeof(double)*returnData->nHelpVars);\n
   }else{\n
     returnData->helpVars = 0;\n
-  }\n\n", "
+  }\n", "
   if(flags & ALGEBRAICS && returnData->nAlgebraic){\n
     returnData->algebraics = (double*) malloc(sizeof(double)*returnData->nAlgebraic);\n
   }else{\n
     returnData->algebraics = 0;\n
-  }\n\n
+  }\n
   if(flags & PARAMETERS && returnData->nParameters){\n
     returnData->parameters = (double*) malloc(sizeof(double)*returnData->nParameters);\n
   }else{\n
     returnData->parameters = 0;\n
-  }\n\n
+  }\n
   if(flags & OUTPUTVARS && returnData->nOutputVars){\n
     returnData->outputVars = (double*) malloc(sizeof(double)*returnData->nOutputVars);\n
   }else{\n
     returnData->outputVars = 0;\n
-  }\n\n
+  }\n
   if(flags & INPUTVARS && returnData->nInputVars){\n
     returnData->inputVars = (double*) malloc(sizeof(double)*returnData->nInputVars);\n
   }else{\n
     returnData->inputVars = 0;\n
-  }\n\n
+  }\n
   if(flags & INITIALRESIDUALS && returnData->nInitialResiduals){\n
     returnData->initialResiduals = (double*) malloc(sizeof(double)*returnData->nInitialResiduals);\n
   }else{\n
     returnData->initialResiduals = 0;\n
-  }\n\n
+  }\n
   if(flags & INITFIXED){\n
     returnData->initFixed = init_fixed;\n
   }else{\n
     returnData->initFixed = 0;\n
-  }\n\n","
+  }\n","
   /*   names   */\n
   if(flags & MODELNAME){\n
     returnData->modelName = model_name;\n
   }else{\n
     returnData->modelName = 0;\n
-  }\n\n
+  }\n
   if(flags & STATESNAMES){\n
     returnData->statesNames = state_names;\n
   }else{\n
     returnData->statesNames = 0;\n
-  }\n\n
+  }\n
   if(flags & STATESDERIVATIVESNAMES){\n
     returnData->stateDerivativesNames = derivative_names;\n
   }else{\n
     returnData->stateDerivativesNames = 0;\n
-  }\n\n
+  }\n
   if(flags & ALGEBRAICSNAMES){\n
     returnData->algebraicsNames = algvars_names;\n
   }else{\n
     returnData->algebraicsNames = 0;\n
-  }\n\n
+  }\n
   if(flags & PARAMETERSNAMES){\n
     returnData->parametersNames = param_names;\n
   }else{\n
     returnData->parametersNames = 0;\n
-  }\n\n
+  }\n
   if(flags & INPUTNAMES){\n
     returnData->inputNames = input_names;\n
   }else{\n
     returnData->inputNames = 0;\n
-  }\n\n
+  }\n
   if(flags & OUTPUTNAMES){\n
     returnData->outputNames = output_names;\n
   }else{\n
     returnData->outputNames = 0;\n
-  }\n\n","
+  }\n","
   /*   comments  */\n
   if(flags & STATESCOMMENTS){\n
     returnData->statesComments = state_comments;\n
   }else{\n
     returnData->statesComments = 0;\n
-  }\n\n
+  }\n
   if(flags & STATESDERIVATIVESCOMMENTS){\n
     returnData->stateDerivativesComments = derivative_comments;\n
   }else{\n
     returnData->stateDerivativesComments = 0;\n
-  }\n\n
+  }\n
   if(flags & ALGEBRAICSCOMMENTS){\n
     returnData->algebraicsComments = algvars_comments;\n
   }else{\n
     returnData->algebraicsComments = 0;\n
-  }\n\n
+  }\n
   if(flags & PARAMETERSCOMMENTS){\n
     returnData->parametersComments = param_comments;\n
   }else{\n
     returnData->parametersComments = 0;\n
-  }\n\n
+  }\n
   if(flags & INPUTCOMMENTS){\n
     returnData->inputComments = input_comments;\n
   }else{\n
     returnData->inputComments = 0;\n
-  }\n\n
+  }\n
   if(flags & OUTPUTCOMMENTS){\n
     returnData->outputComments = output_comments;\n
   }else{\n
@@ -620,13 +623,13 @@ DATA* initializeDataStruc(DATA_FLAGS flags)\n{\n
   }\n
   setLocalData(returnData); /* must be set since used by constructors*/\n",
   extObjConstructors_str,
-"  }\n\n
+"  }\n
   return returnData;\n
-}\n\n
+}\n
 void deInitializeDataStruc(DATA* data, DATA_FLAGS flags)\n
 {\n
   if(!data)\n
-    return;\n\n
+    return;\n
   if(flags & STATES && data->states){\n
     free(data->states);\n
     data->states = 0;\n
@@ -660,7 +663,7 @@ extObjDestructors_str,
 "\n
     free(data->extObjs);\n
     data->extObjs = 0;\n
-  }\n\n
+  }\n
 }\n"
        }
       );
@@ -1601,7 +1604,8 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       DAE.Flow flow_;
       list<String> get_name_function_ifs,var_defines;
-    case (DAELow.VAR(varName = cr,varKind = kind,varDirection = dir,arryDim = inst_dims,startValue = value,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_),name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines) /* the variable to checked the old number of variables generated name of the from \"a\" comment of the from \"a afhalk\" number of generated strings */ 
+      DAE.Type typeVar;
+    case (DAELow.VAR(varName = cr,varKind = kind,varDirection = dir,varType = typeVar,arryDim = inst_dims,startValue = value,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_),name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines) /* the variable to checked the old number of variables generated name of the from \"a\" comment of the from \"a afhalk\" number of generated strings */ 
       equation 
         kind_lst = {DAELow.VARIABLE(),DAELow.DISCRETE(),DAELow.DUMMY_DER(),
           DAELow.DUMMY_STATE()};
@@ -1616,7 +1620,10 @@ algorithm
         if_str = generateGetnameFunctionIf(cr, indx, algvarsNames);
         is = intString(indx);
         name = Exp.printComponentRefStr(cr);
-        define_str = Util.stringAppendList({"#define ",name," localData->algebraics[",is,"]","\n"});
+        
+        define_str = generateNameDependentOnType("algebraics",typeVar);
+
+        define_str = Util.stringAppendList({"#define ",name," localData->",define_str,"[",is,"]","\n"});
         array_define = generateArrayDefine(origname, inst_dims, indx, "localData->algebraics");
         define_str = stringAppend(define_str, array_define);
       then
@@ -1627,6 +1634,60 @@ algorithm
         (name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines);
   end matchcontinue;
 end generateVarNamesAndCommentsAlgvars;
+
+protected function generateNameDependentOnType "function: generateAlgebraicNameDependentOnType
+ 
+  generates the name of the algebraic variable depending on type
+"
+  input String baseName;
+  input DAE.Type inType;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (baseName,inType)
+    local
+      String str;
+      list<String> l;
+      String baseArrayName;
+    case (baseArrayName,DAE.INT()) 
+    equation
+       str = Util.stringAppendList({baseArrayName,""});
+    then 
+       str; 
+    case (baseArrayName,DAE.REAL() ) 
+    equation
+       str = Util.stringAppendList({baseArrayName,""});
+    then 
+       str; 
+    case (baseArrayName,DAE.BOOL())  
+    equation
+       str = Util.stringAppendList({baseArrayName,""});
+    then 
+       str; 
+    case (baseArrayName,DAE.STRING())  
+    equation
+       str = Util.stringAppendList({"stringVariables",".",baseArrayName});
+    then 
+       str; 
+    case (baseArrayName,DAE.ENUM())  
+    equation
+       str = Util.stringAppendList({baseArrayName,""});
+    then
+       str; 
+    case (baseArrayName,DAE.ENUMERATION(stringLst = l))
+      equation 
+       print("generateNameDependentOnType - Enumeration not implemented yet\n");
+      then
+       fail();
+    case (baseArrayName,DAE.EXT_OBJECT(_) )
+    equation 
+       str = Util.stringAppendList({baseArrayName,""});
+    then
+       str; 
+  end matchcontinue;
+end generateNameDependentOnType;
+
+
 
 protected function generateVarNamesAndCommentsParams "function generateVarNamesAndCommentsParams
   Checks and generates a comment and input for a param variable
@@ -1659,7 +1720,8 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       DAE.Flow flow_;
       list<String> get_name_function_ifs,var_defines;
-    case ((var as DAELow.VAR(varName = cr,varKind = kind,varDirection = dir,arryDim = inst_dims,startValue = value,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_)),name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines) /* the variable to checked the old number of variables generated name of the from \"a\" comment of the from \"a afhalk\" number of generated strings */ 
+      DAE.Type typeVar;
+    case ((var as DAELow.VAR(varName = cr,varKind = kind,varDirection = dir,varType = typeVar,arryDim = inst_dims,startValue = value,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_)),name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines) /* the variable to checked the old number of variables generated name of the from \"a\" comment of the from \"a afhalk\" number of generated strings */ 
       equation 
         true = DAELow.isParam(var);
         origname_str = Exp.printComponentRefStr(origname);
@@ -1672,7 +1734,10 @@ algorithm
         if_str = generateGetnameFunctionIf(cr, indx, paramNames);
         is = intString(indx);
         name = Exp.printComponentRefStr(cr);
-        define_str = Util.stringAppendList({"#define ",name," localData->parameters[",is,"]","\n"});
+        
+        define_str = generateNameDependentOnType("parameters",typeVar);
+
+        define_str = Util.stringAppendList({"#define ",name," localData->",define_str,"[",is,"]","\n"});
         array_define = generateArrayDefine(origname, inst_dims, indx, "localData->parameters");
         define_str = stringAppend(define_str, array_define);
       then
@@ -1784,6 +1849,7 @@ algorithm
         get_name_function_ifs_2 = (if_str_1 :: get_name_function_ifs_1);
         is = intString(indx);
         name = Exp.printComponentRefStr(cr);
+           //no need for checking if the variable is string because a state is _ALLWAYS_ a real
         define_str = Util.stringAppendList({"#define ",name," localData->states[",is,"]","\n"});
         define_str_der = Util.stringAppendList(
           {"#define ",DAELow.derivativeNamePrefix,name," localData->statesDerivatives[",is,"]",
@@ -2175,6 +2241,17 @@ algorithm
       Exp.Exp e;
       list<DAELow.Equation> es;
     case ({},cg_id) then (Codegen.cEmptyFunction,cg_id);  /* cg var_id cg var_id */ 
+    case ((DAELow.RESIDUAL_EQUATION(exp = e) :: es),cg_id)
+      equation 
+        // if exp is a string just increase the index;
+        Exp.STRING() = Exp.typeof(e);
+        (cfunc,var,cg_id) = Codegen.generateExpression(e, cg_id, Codegen.SIMULATION());
+        assign = Util.stringAppendList({"localData->initialResiduals[i++] = 0;//",var,";"});
+        cfunc = Codegen.cAddStatements(cfunc, {assign});
+        (cfunc2,cg_id) = generateInitialResidualEqn(es, cg_id);
+        cfn = Codegen.cMergeFns({cfunc,cfunc2});
+      then
+        (cfn,cg_id);
     case ((DAELow.RESIDUAL_EQUATION(exp = e) :: es),cg_id)
       equation 
         (cfunc,var,cg_id) = Codegen.generateExpression(e, cg_id, Codegen.SIMULATION());
@@ -4862,7 +4939,7 @@ algorithm
         start_str = realString(start);
         stop_str = realString(stop);
         step_str = realString(step);
-        (nx,ny,np,_,_) = DAELow.calculateSizes(dlow);
+        (nx,ny,np,_,_,_,_) = DAELow.calculateSizes(dlow);
         nx_str = intString(nx);
         ny_str = intString(ny);
         np_str = intString(np);

@@ -2965,8 +2965,9 @@ algorithm
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
       list<Var> xs;
+      DAE.Type var_type;
     case ({},_) then (); 
-    case (((v as VAR(varName = cr,varKind = kind,varDirection = dir,bindExp = SOME(e),index = indx,origVarName = old_name,className = paths,values = dae_var_attr,comment = comment,flow_ = flow_)) :: xs),varno)
+    case (((v as VAR(varName = cr,varKind = kind,varDirection = dir,varType = var_type,bindExp = SOME(e),index = indx,origVarName = old_name,className = paths,values = dae_var_attr,comment = comment,flow_ = flow_)) :: xs),varno)
       equation 
         varnostr = intString(varno);
         print(varnostr);
@@ -2989,6 +2990,9 @@ algorithm
         indx_str = intString(indx) "print \"  \" & print comment_str &
         
         print \" former: \" & print old_name &" ;
+        
+           str = DAE.dumpTypeStr(var_type);print( " type: "); print(str); 
+        
         print(" indx = ");
         print(indx_str);
         varno_1 = varno + 1;
@@ -2996,7 +3000,7 @@ algorithm
         dumpVars2(xs, varno_1) "DAE.dump_variable_attributes(dae_var_attr) &" ;
       then
         ();
-    case (((v as VAR(varName = cr,varKind = kind,varDirection = dir,bindExp = NONE,index = indx,origVarName = old_name,className = paths,values = dae_var_attr,comment = comment,flow_ = flow_)) :: xs),varno)
+    case (((v as VAR(varName = cr,varKind = kind,varDirection = dir,varType = var_type,bindExp = NONE,index = indx,origVarName = old_name,className = paths,values = dae_var_attr,comment = comment,flow_ = flow_)) :: xs),varno)
       equation 
         varnostr = intString(varno);
         print(varnostr);
@@ -3014,6 +3018,11 @@ algorithm
         print(" ");
         print(path_str);
         indx_str = intString(indx) "print \" former: \" & print old_name &" ;
+
+        
+           str = DAE.dumpTypeStr(var_type);print( " type: "); print(str); 
+        
+
         print(" indx = ");
         print(indx_str);
         print("\n") "	DAE.dump_variable_attributes(dae_var_attr) &
@@ -9985,14 +9994,19 @@ algorithm
     local
       Exp.Exp e,e1,e2,exp;
       Exp.ComponentRef cr;
+      Exp.Type tp;
     case (EQUATION(exp = e1,scalar = e2))
       equation 
-        e = Exp.simplify(Exp.BINARY(e1,Exp.SUB(Exp.REAL()),e2));
+         //Exp.dumpExpWithTitle("equationToResidualForm 1\n",e2);
+        tp = Exp.typeof(e2);
+        e = Exp.simplify(Exp.BINARY(e1,Exp.SUB(tp),e2));
       then
         RESIDUAL_EQUATION(e);
     case (SOLVED_EQUATION(componentRef = cr,exp = exp))
       equation 
-        e = Exp.simplify(Exp.BINARY(Exp.CREF(cr,Exp.REAL()),Exp.SUB(Exp.REAL()),exp));
+         //Exp.dumpExpWithTitle("equationToResidualForm 2\n",exp);
+        tp = Exp.typeof(exp);
+        e = Exp.simplify(Exp.BINARY(Exp.CREF(cr,tp),Exp.SUB(tp),exp));
       then
         RESIDUAL_EQUATION(e);
     case ((e as RESIDUAL_EQUATION(exp = _)))
@@ -10031,7 +10045,8 @@ public function calculateSizes "function: calculateSizes
   outputs: (int, /* nx */
               int, /* ny */
               int, /* np */ 
-              int) /* ng */
+              int  /* ng */
+               int) next
 "
   input DAELow inDAELow;
   output Integer outnx "number of states";
@@ -10039,12 +10054,16 @@ public function calculateSizes "function: calculateSizes
   output Integer outnp "number of parameters";
   output Integer outng " number of zerocrossings";
   output Integer outnext " number of external objects";
+  
+//nx cannot be strings
+  output Integer outny_string "number of alg.vars which are strings";
+  output Integer outnp_string  "number of parameters which are strings";
 algorithm 
   (outnx,outny,outnp,outng,outnext):=
   matchcontinue (inDAELow)
     local
       list<Var> varlst,knvarlst,extvarlst;
-      Value np,ng,nx,ny,nx_1,ny_1,next;
+      Value np,ng,nx,ny,nx_1,ny_1,next,ny_string,np_string,ny_1_string;
       String np_str;
       Variables vars,knvars,extvars;
       list<WhenClause> wc;
@@ -10058,13 +10077,13 @@ algorithm
 	  	  extvarlst = varList(extvars);
 	  	  next = listLength(extvarlst);
         knvarlst = varList(knvars);
-        np = calculateParamSizes(knvarlst);
+        (np,np_string) = calculateParamSizes(knvarlst);
         np_str = intString(np);
         ng = listLength(zc);
-        (nx,ny) = calculateVarSizes(varlst, 0, 0);
-        (nx_1,ny_1) = calculateVarSizes(knvarlst, nx, ny);
+        (nx,ny,ny_string) = calculateVarSizes(varlst, 0, 0,0);
+        (nx_1,ny_1,ny_1_string) = calculateVarSizes(knvarlst, nx, ny,ny_string);
       then
-        (nx_1,ny_1,np,ng,next);
+        (nx_1,ny_1,np,ng,next,ny_1_string,np_string);
   end matchcontinue;
 end calculateSizes;
 
@@ -10075,25 +10094,32 @@ protected function calculateParamSizes "function: calculateParamSizes
 "
   input list<Var> inVarLst;
   output Integer outInteger;
+  output Integer outInteger2;
 algorithm 
-  outInteger:=
+  (outInteger,outInteger2):=
   matchcontinue (inVarLst)
     local
-      Value s1;
+      Value s1,s2;
       Var var;
       list<Var> vs;
-    case ({}) then 0; 
+    case ({}) then (0,0); 
     case ((var :: vs))
       equation 
-        s1 = calculateParamSizes(vs);
+        (s1,s2) = calculateParamSizes(vs);
+        true = isStringParam(var);
+      then
+        (s1,s2 + 1);
+    case ((var :: vs))
+      equation 
+        (s1,s2) = calculateParamSizes(vs);
         true = isParam(var);
       then
-        s1 + 1;
+        (s1 + 1,s2);
     case ((_ :: vs))
       equation 
-        s1 = calculateParamSizes(vs);
+        (s1,s2) = calculateParamSizes(vs);
       then
-        s1;
+        (s1,s2);
   end matchcontinue;
 end calculateParamSizes;
 
@@ -10105,52 +10131,88 @@ protected function calculateVarSizes "function: calculateVarSizes
   input list<Var> inVarLst1;
   input Integer inInteger2;
   input Integer inInteger3;
+  input Integer inInteger4;
+
   output Integer outInteger1;
   output Integer outInteger2;
+  output Integer outInteger3;
+
 algorithm 
-  (outInteger1,outInteger2):=
-  matchcontinue (inVarLst1,inInteger2,inInteger3)
+  (outInteger1,outInteger2,outInteger3):=
+  matchcontinue (inVarLst1,inInteger2,inInteger3,inInteger4)
     local
-      Value nx,ny,ny_1,nx_2,ny_2,nx_1;
+      Value nx,ny,ny_1,nx_2,ny_2,nx_1,nx_string,ny_string,ny_1_string,ny_2_string;
       DAE.Flow flow_;
       list<Var> vs;
-    case ({},nx,ny) then (nx,ny); 
-    case ((VAR(varKind = VARIABLE(),flow_ = flow_) :: vs),nx,ny)
+    case ({},nx,ny,ny_string) then (nx,ny,ny_string); 
+    case ((VAR(varKind = VARIABLE(),varType= DAE.STRING(),flow_ = flow_) :: vs),nx,ny,ny_string)
+      equation 
+        ny_1_string = ny_string + 1;
+        (nx_2,ny_2,ny_2_string) = calculateVarSizes(vs, nx, ny, ny_1_string);
+      then
+        (nx_2,ny_2,ny_2_string);
+    case ((VAR(varKind = VARIABLE(),flow_ = flow_) :: vs),nx,ny,ny_string)
       equation 
         ny_1 = ny + 1;
-        (nx_2,ny_2) = calculateVarSizes(vs, nx, ny_1);
+        (nx_2,ny_2,ny_2_string) = calculateVarSizes(vs, nx, ny_1,ny_string);
       then
-        (nx_2,ny_2);
-    case ((VAR(varKind = DISCRETE(),flow_ = flow_) :: vs),nx,ny)
+        (nx_2,ny_2,ny_2_string);
+
+
+     case ((VAR(varKind = DISCRETE(),varType= DAE.STRING(),flow_ = flow_) :: vs),nx,ny,ny_string)
+      equation 
+        ny_1_string = ny_string + 1;
+        (nx_2,ny_2,ny_2_string) = calculateVarSizes(vs, nx, ny,ny_1_string);
+      then
+        (nx_2,ny_2,ny_2_string);
+     case ((VAR(varKind = DISCRETE(),flow_ = flow_) :: vs),nx,ny,ny_string)
       equation 
         ny_1 = ny + 1;
-        (nx_2,ny_2) = calculateVarSizes(vs, nx, ny_1);
+        (nx_2,ny_2,ny_2_string) = calculateVarSizes(vs, nx, ny_1,ny_string);
       then
-        (nx_2,ny_2);
-    case ((VAR(varKind = STATE(),flow_ = flow_) :: vs),nx,ny)
+        (nx_2,ny_2,ny_2_string);
+
+    case ((VAR(varKind = STATE(),flow_ = flow_) :: vs),nx,ny,ny_string)
       equation 
         nx_1 = nx + 1;
-        (nx_2,ny_2) = calculateVarSizes(vs, nx_1, ny);
+        (nx_2,ny_2,ny_2_string) = calculateVarSizes(vs, nx_1, ny,ny_string);
       then
-        (nx_2,ny_2);
-    case ((VAR(varKind = DUMMY_STATE(),flow_ = flow_) :: vs),nx,ny) /* A dummy state is an algebraic variable */ 
+        (nx_2,ny_2,ny_2_string);
+
+    case ((VAR(varKind = DUMMY_STATE(),varType= DAE.STRING(),flow_ = flow_) :: vs),nx,ny,ny_string) /* A dummy state is an algebraic variable */ 
+      equation 
+        ny_1_string = ny_string + 1;
+        (nx_2,ny_2,ny_2_string) = calculateVarSizes(vs, nx, ny,ny_1_string);
+      then
+        (nx_2,ny_2,ny_2_string);
+    case ((VAR(varKind = DUMMY_STATE(),flow_ = flow_) :: vs),nx,ny,ny_string) /* A dummy state is an algebraic variable */ 
       equation 
         ny_1 = ny + 1;
-        (nx_2,ny_2) = calculateVarSizes(vs, nx, ny_1);
+        (nx_2,ny_2,ny_2_string) = calculateVarSizes(vs, nx, ny_1,ny_string);
       then
-        (nx_2,ny_2);
-    case ((VAR(varKind = DUMMY_DER(),flow_ = flow_) :: vs),nx,ny)
+        (nx_2,ny_2,ny_2_string);
+
+    case ((VAR(varKind = DUMMY_DER(),varType= DAE.STRING(),flow_ = flow_) :: vs),nx,ny,ny_string)
+      equation 
+        ny_1_string = ny_string + 1;
+        (nx_2,ny_2,ny_2_string) = calculateVarSizes(vs, nx, ny,ny_1_string);
+      then
+        (nx_2,ny_2,ny_2_string);
+    case ((VAR(varKind = DUMMY_DER(),flow_ = flow_) :: vs),nx,ny,ny_string)
       equation 
         ny_1 = ny + 1;
-        (nx_2,ny_2) = calculateVarSizes(vs, nx, ny_1);
+        (nx_2,ny_2,ny_2_string) = calculateVarSizes(vs, nx, ny_1,ny_string);
       then
-        (nx_2,ny_2);
-    case ((_ :: vs),nx,ny)
+        (nx_2,ny_2,ny_2_string);
+
+    case ((_ :: vs),nx,ny,ny_string)
       equation 
-        (nx_1,ny_1) = calculateVarSizes(vs, nx, ny);
+        (nx_1,ny_1,ny_1_string) = calculateVarSizes(vs, nx, ny,ny_string);
       then
-        (nx_1,ny_1);
-    case (_,_,_)
+        (nx_1,ny_1,ny_1_string);
+
+
+    case (_,_,_,_)
       equation 
         print("-calculate_var_sizes failed\n");
       then
@@ -10747,12 +10809,12 @@ algorithm
   matchcontinue (inVarLst1,inVarLst2,inVarLst3)
     local
       list<Var> vars_1,knvars_1,extvars_1,extvars,vars,knvars;
-      Value x,xd,y,p,dummy,ext;
+      Value x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType;
     case (vars,knvars,extvars)
       equation 
-        (vars_1,x,xd,y,p,dummy,ext) = calculateIndexes2(vars, 0, 0, 0, 0, 0,0);
-        (knvars_1,_,_,_,_,_,_) = calculateIndexes2(knvars, x, xd, y, p, dummy,0);
-        (extvars_1,_,_,_,_,_,_) = calculateIndexes2(extvars, x, xd, y, p, dummy,0);
+        (vars_1,x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType) = calculateIndexes2(vars, 0, 0, 0, 0, 0,0,0,0,0,0,0);
+        (knvars_1,_,_,_,_,_,_,x_strType,xd_strType,y_strType,p_strType,dummy_strType) = calculateIndexes2(knvars, x, xd, y, p, dummy,0,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+        (extvars_1,_,_,_,_,_,_,x_strType,xd_strType,y_strType,p_strType,dummy_strType) = calculateIndexes2(extvars, x, xd, y, p, dummy,0,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
         (vars_1,knvars_1,extvars_1);
     case (_,_,_)
@@ -10902,12 +10964,20 @@ protected function calculateIndexes2 "function: calculateIndexes2
   Helper function to calculate_indexes
 "
   input list<Var> inVarLst1;
-  input Integer inInteger2;
-  input Integer inInteger3;
-  input Integer inInteger4;
-  input Integer inInteger5;
-  input Integer inInteger6;
-  input Integer inInteger7;
+  input Integer inInteger2; //X
+  input Integer inInteger3; //xd
+  input Integer inInteger4; //y
+  input Integer inInteger5; //p
+  input Integer inInteger6; //dummy
+  input Integer inInteger7; //ext
+
+  input Integer inInteger8; //X_str
+  input Integer inInteger9; //xd_str
+  input Integer inInteger10; //y_str
+  input Integer inInteger11; //p_str
+  input Integer inInteger12; //dummy_str
+
+
   output list<Var> outVarLst1;
   output Integer outInteger2;
   output Integer outInteger3;
@@ -10915,11 +10985,18 @@ protected function calculateIndexes2 "function: calculateIndexes2
   output Integer outInteger5;
   output Integer outInteger6;
   output Integer outInteger7;
+
+  output Integer outInteger8; //x_str
+  output Integer outInteger9; //xd_str
+  output Integer outInteger10; //y_str
+  output Integer outInteger11; //p_str
+  output Integer outInteger12; //dummy_str
 algorithm 
   (outVarLst1,outInteger2,outInteger3,outInteger4,outInteger5,outInteger6,outInteger7):=
-  matchcontinue (inVarLst1,inInteger2,inInteger3,inInteger4,inInteger5,inInteger6,inInteger7)
+  matchcontinue (inVarLst1,inInteger2,inInteger3,inInteger4,inInteger5,inInteger6,inInteger7,inInteger8,inInteger9,inInteger10,inInteger11,inInteger12)
     local
-      Value x,xd,y,p,dummy,y_1,x1,xd1,y1,p1,dummy1,x_1,p_1,ext,ext_1;
+      Value x,xd,y,p,dummy,y_1,x1,xd1,y1,p1,dummy1,x_1,p_1,ext,ext_1,x_strType,xd_strType,y_strType,p_strType,dummy_strType,y_1_strType,x_1_strType,p_1_strType;
+      Value x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1;
       list<Var> vars_1,vs;
       Exp.ComponentRef cr,name;
       DAE.VarDirection d;
@@ -10931,63 +11008,117 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
-    case ({},x,xd,y,p,dummy,ext) then ({},x,xd,y,p,dummy,ext); 
-    case ((VAR(varName = cr,varKind = VARIABLE(),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext)
+    case ({},x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType) then ({},x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType); 
+
+    case ((VAR(varName = cr,varKind = VARIABLE(),varDirection = d,varType = DAE.STRING(),bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+      equation 
+        y_1_strType = y_strType + 1;
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType);
+
+      then
+        ((VAR(cr,VARIABLE(),d,DAE.STRING(),b,value,dim,start,y_strType,name,cl,
+          dae_var_attr,comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+    case ((VAR(varName = cr,varKind = VARIABLE(),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation 
         y_1 = y + 1;
-        (vars_1,x1,xd1,y1,p1,dummy1,ext) = calculateIndexes2(vs, x, xd, y_1, p, dummy,ext);
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
         ((VAR(cr,VARIABLE(),d,tp,b,value,dim,start,y,name,cl,
-          dae_var_attr,comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext);
-    case ((VAR(varName = cr,varKind = STATE(),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext)
+          dae_var_attr,comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+
+    case ((VAR(varName = cr,varKind = STATE(),varDirection = d,varType = DAE.STRING(),bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+      equation 
+        x_1_strType = x_strType + 1;
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_1_strType,xd_strType,y_strType,p_strType,dummy_strType);
+      then
+        ((VAR(cr,STATE(),d,DAE.STRING(),b,value,dim,start,x_strType,name,cl,dae_var_attr,
+          comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+    case ((VAR(varName = cr,varKind = STATE(),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation 
         x_1 = x + 1;
-        (vars_1,x1,xd1,y1,p1,dummy1,ext) = calculateIndexes2(vs, x_1, xd, y, p, dummy,ext);
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x_1, xd, y, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
         ((VAR(cr,STATE(),d,tp,b,value,dim,start,x,name,cl,dae_var_attr,
-          comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext);
-    case ((VAR(varName = cr,varKind = DUMMY_DER(),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext)
+          comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+
+    case ((VAR(varName = cr,varKind = DUMMY_DER(),varDirection = d,varType = DAE.STRING(),bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+      equation 
+        y_1_strType = y_strType + 1 "Dummy derivatives become algebraic variables" ;
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType);
+      then
+        ((VAR(cr,DUMMY_DER(),d,DAE.STRING(),b,value,dim,start,y_strType,name,cl,
+          dae_var_attr,comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+    case ((VAR(varName = cr,varKind = DUMMY_DER(),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation 
         y_1 = y + 1 "Dummy derivatives become algebraic variables" ;
-        (vars_1,x1,xd1,y1,p1,dummy1,ext) = calculateIndexes2(vs, x, xd, y_1, p, dummy,ext);
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType) = calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
         ((VAR(cr,DUMMY_DER(),d,tp,b,value,dim,start,y,name,cl,
-          dae_var_attr,comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext);
-    case ((VAR(varName = cr,varKind = DUMMY_STATE(),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext)
+          dae_var_attr,comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+
+    case ((VAR(varName = cr,varKind = DUMMY_STATE(),varDirection = d,varType = DAE.STRING(),bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+      equation 
+        y_1_strType = y_strType + 1 "Dummy state become algebraic variables" ;
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType);
+      then
+        ((VAR(cr,DUMMY_STATE(),d,DAE.STRING(),b,value,dim,start,y_strType,name,cl,
+          dae_var_attr,comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+    case ((VAR(varName = cr,varKind = DUMMY_STATE(),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation 
         y_1 = y + 1 "Dummy state become algebraic variables" ;
-        (vars_1,x1,xd1,y1,p1,dummy1,ext) = calculateIndexes2(vs, x, xd, y_1, p, dummy,ext);
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
         ((VAR(cr,DUMMY_STATE(),d,tp,b,value,dim,start,y,name,cl,
-          dae_var_attr,comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext);
-    case ((VAR(varName = cr,varKind = DISCRETE(),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext)
+          dae_var_attr,comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+
+    case ((VAR(varName = cr,varKind = DISCRETE(),varDirection = d,varType = DAE.STRING(),bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+      equation 
+        y_1_strType = y_strType + 1;
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_1_strType,p_strType,dummy_strType);
+      then
+        ((VAR(cr,DISCRETE(),d,DAE.STRING(),b,value,dim,start,y_strType,name,cl,
+          dae_var_attr,comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+    case ((VAR(varName = cr,varKind = DISCRETE(),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation 
         y_1 = y + 1;
-        (vars_1,x1,xd1,y1,p1,dummy1,ext) = calculateIndexes2(vs, x, xd, y_1, p, dummy,ext);
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y_1, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
         ((VAR(cr,DISCRETE(),d,tp,b,value,dim,start,y,name,cl,
-          dae_var_attr,comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext);
-    case ((VAR(varName = cr,varKind = PARAM(),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext)
+          dae_var_attr,comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+
+    case ((VAR(varName = cr,varKind = PARAM(),varDirection = d,varType = DAE.STRING(),bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
+      equation 
+        p_1_strType = p_strType + 1;
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_strType,p_1_strType,dummy_strType);
+      then
+        ((VAR(cr,PARAM(),d,DAE.STRING(),b,value,dim,start,p_strType,name,cl,dae_var_attr,
+          comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+    case ((VAR(varName = cr,varKind = PARAM(),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation 
         p_1 = p + 1;
-        (vars_1,x1,xd1,y1,p1,dummy1,ext) = calculateIndexes2(vs, x, xd, y, p_1, dummy,ext);
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y, p_1, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
         ((VAR(cr,PARAM(),d,tp,b,value,dim,start,p,name,cl,dae_var_attr,
-          comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext);
-    case ((VAR(varName = cr,varKind = CONST(),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext)
+          comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+
+    case ((VAR(varName = cr,varKind = CONST(),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation 
-        (vars_1,x1,xd1,y1,p1,dummy1,ext) = calculateIndexes2(vs, x, xd, y, p, dummy,ext);
+
+         //IS THIS A BUG??
+         // THE INDEX FOR const IS SET TO p (=last parameter index)
+        (vars_1,x1,xd1,y1,p1,dummy1,ext,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y, p, dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
         ((VAR(cr,CONST(),d,tp,b,value,dim,start,p,name,cl,dae_var_attr,
-          comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext);
-    case ((VAR(varName = cr,varKind = EXTOBJ(path),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext)
+          comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy1,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
+
+    case ((VAR(varName = cr,varKind = EXTOBJ(path),varDirection = d,varType = tp,bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       local Absyn.Path path;
       equation 
-				ext_1 = ext+1;	
-        (vars_1,x1,xd1,y1,p1,dummy,ext_1) = calculateIndexes2(vs, x, xd, y, p, dummy,ext_1);
+	ext_1 = ext+1;	
+        (vars_1,x1,xd1,y1,p1,dummy,ext_1,x_strType1,xd_strType1,y_strType1,p_strType1,dummy_strType1) = calculateIndexes2(vs, x, xd, y, p, dummy,ext_1,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
       then
         ((VAR(cr,EXTOBJ(path),d,tp,b,value,dim,start,p,name,cl,dae_var_attr,
-          comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy,ext_1);
+          comment,flow_) :: vars_1),x1,xd1,y1,p1,dummy,ext_1,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
   end matchcontinue;
 end calculateIndexes2;
 
@@ -11875,6 +12006,21 @@ algorithm
     case (_) then false; 
   end matchcontinue;
 end isParam;
+
+public function isStringParam "function: isStringParam
+ 
+  Return true if variable is a parameter.
+"
+  input Var inVar;
+  output Boolean outBoolean;
+algorithm 
+  outBoolean:=
+  matchcontinue (inVar)
+    local DAE.Flow flow_;
+    case (VAR(varKind = PARAM(),flow_ = flow_,varType = DAE.STRING())) then true; 
+    case (_) then false; 
+  end matchcontinue;
+end isStringParam;
 
 public function isExtObj "function: isExtObj
  
