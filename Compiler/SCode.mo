@@ -1928,5 +1928,19 @@ algorithm
     case (CLASS(name = id,encapsulated_ = enc,restricion = restr,parts = def),partial_) then CLASS(id,partial_,enc,restr,def); 
   end matchcontinue;
 end classSetPartial;
+
+function isFunctionOrExtFunction "
+This function returns true if the class restriction is function or external function.
+Otherwise false is returned.
+"
+  input Restriction r;
+  output Boolean res;
+algorithm
+  res := matchcontinue(r)
+    case(R_FUNCTION()) then true;
+    case (R_EXT_FUNCTION()) then true;
+    case(_) then false;
+  end matchcontinue;
+ end isFunctionOrExtFunction;
 end SCode;
 

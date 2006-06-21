@@ -154,6 +154,10 @@ protected constant list<SCode.Element> stateSelectComps={
 protected constant SCode.Class stateSelectType=SCode.CLASS("StateSelect",false,false,SCode.R_ENUMERATION(),
           SCode.PARTS(stateSelectComps,{},{},{},{},NONE)) "The State Select Type" ;
 
+public constant SCode.Class ExternalObjectType=SCode.CLASS("ExternalObject",false,false,SCode.R_CLASS(),
+          SCode.PARTS(
+          {},{},{},{},{},NONE)) "ExternalObject type" ;
+
 public constant SCode.Class realType=SCode.CLASS("Real",false,false,SCode.R_PREDEFINED_REAL(),
           SCode.PARTS(
           {unit,quantity,displayUnit,min,max,realStart,fixed,nominal,
@@ -2490,6 +2494,7 @@ algorithm
   env := Env.extendFrameC(env, strType);
   env := Env.extendFrameC(env, boolType);
   env := Env.extendFrameC(env, enumType);
+  env := Env.extendFrameC(env, ExternalObjectType);
   env := Env.extendFrameC(env, realType);
   env := Env.extendFrameC(env, integerType);
   env := Env.extendFrameC(env, stringType);
@@ -2531,6 +2536,7 @@ algorithm
       env = Env.extendFrameC(env, strType);
       env = Env.extendFrameC(env, boolType);
       env = Env.extendFrameC(env, enumType);
+      env = Env.extendFrameC(env, ExternalObjectType);
       env = Env.extendFrameC(env, realType);
       env = Env.extendFrameC(env, integerType);
       env = Env.extendFrameC(env, stringType);

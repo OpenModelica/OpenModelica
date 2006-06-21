@@ -4734,6 +4734,7 @@ algorithm
         Debug.fprintln("sei", "generate_compiled_function: start2");
         path = Absyn.crefToPath(fn);
         false = isFunctionInCflist(cflist, path);
+        (cache,false) = isExternalObjectFunction(cache,env,path);
         p_1 = SCode.elaborate(p);
         Debug.fprintln("sei", "generate_compiled_function: elaborated");
         (cache,cls,env_1) = Lookup.lookupClass(cache,env, path, false) "	Inst.instantiate_implicit(p\') => d & message" ;
@@ -4895,20 +4896,24 @@ algorithm
         tuple_ = isTuple(restype);
         (cache,builtin) = isBuiltinFunc(cache,fn_1);
         const = Util.listReduce(constlist, Types.constAnd);
+        (cache,const) = determineConstSpecialFunc(cache,env,const,fn);
         tyconst = elabConsts(restype, const);
         prop = getProperties(restype, tyconst);
         (call_exp,prop_1) = vectorizeCall(Exp.CALL(fn_1,args_1,tuple_,builtin), restype, vect_dims, 
           slots, prop);
       then
         (cache,call_exp,prop_1);
+        
+        /*case above failed. Also consider koening lookup.*/
     case (cache,env,fn,args,nargs,impl,st)
       equation 
-        (cache,ktypelist) = getKoeningFunctionTypes(cache,env, fn, args, nargs, impl) "Rule above failed. Also consider koening lookup." ;
+        (cache,ktypelist) = getKoeningFunctionTypes(cache,env, fn, args, nargs, impl)  ;
         (cache,args_1,constlist,restype,functype,vect_dims,slots) = elabTypes(cache,env, args, nargs, ktypelist, impl);
         fn_1 = deoverloadFuncname(fn, functype);
         tuple_ = isTuple(restype);
         (cache,builtin) = isBuiltinFunc(cache,fn_1);
         const = Util.listReduce(constlist, Types.constAnd);
+        (cache,const) = determineConstSpecialFunc(cache,env,const,fn);
         tyconst = elabConsts(restype, const);
         prop = getProperties(restype, tyconst);
         (call_exp,prop_1) = vectorizeCall(Exp.CALL(fn_1,args_1,tuple_,builtin), restype, vect_dims, 
@@ -4939,6 +4944,56 @@ algorithm
         fail();
   end matchcontinue;
 end elabCallArgs;
+
+protected function determineConstSpecialFunc "For the special functions constructor and destructor,
+in external object, 
+the constantness is always variable, even if arguments are constant, because they should be called during
+runtime and not during compiletime.
+
+"	
+	input Env.Cache inCache;
+	input Env.Env env;
+  input Types.Const inConst;
+  input Absyn.Path funcName;
+  output Env.Cache outCache;
+  output Types.Const outConst;
+algorithm
+  (outCache,outConst) := matchcontinue(inCache,env,inConst,funcName)
+  local Absyn.Path path;
+    Env.Cache cache;
+    SCode.Class c;
+    Env.Env env_1;
+    list<SCode.Element> els;
+		/* External Object found, constructor call is not constant.*/
+    case (cache,env,inConst, path) equation 
+      (cache,true) = isExternalObjectFunction(cache,env,path);
+      then (cache,Types.C_VAR());        
+    case (cache,env,inConst,path) then (cache,inConst);
+  end matchcontinue;
+end determineConstSpecialFunc;
+    
+public function isExternalObjectFunction
+	input Env.Cache cache;
+	input Env.Env env;
+	input Absyn.Path path;
+  output Env.Cache outCache;
+	output Boolean res;
+algorithm 
+  (outCache,res) := matchcontinue(cache,env,path)
+    local Env.Cache cache; Env.Env env_1;
+      list<SCode.Element> els;
+    case (cache,env,path) equation
+      (cache,SCode.CLASS(parts = SCode.PARTS(elementLst = els)),env_1) 
+        	= Lookup.lookupClass(cache,env, path, false);
+      true = Inst.isExternalObject(els);
+      then (cache,true);
+    case (cache,env,path) equation
+      "constructor" = Absyn.pathLastIdent(path); then (cache,true);
+    case (cache,env,path) equation
+      "destructor" = Absyn.pathLastIdent(path); then (cache,true);
+    case (cache,env,path)  then (cache,false);
+  end matchcontinue;
+end isExternalObjectFunction;
 
 protected function vectorizeCall "function: vectorizeCall
   author: PA

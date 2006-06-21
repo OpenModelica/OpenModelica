@@ -87,22 +87,16 @@ protected import OpenModelica.Compiler.Error;
 
 protected import OpenModelica.Compiler.Values;
 
-public function lookupType "adrpo -- not used
-with \"Util.rml\"
-with \"Print.rml\"
-with \"Parser.rml\"
-with \"Dump.rml\"
-
-  
-  - Lookup functions
+/*   - Lookup functions
  
   These functions look up class and variable names in the environment.
   The names are supplied as a path, and if the path is qualified, a
   variable named as the first part of the path is searched for, and the
   name is looked for in it.
  
-  function: lookupType
-  
+ */
+ 
+public function lookupType "  
   This function finds a specified type in the environment. 
   If it finds a function instead, this will be implicitly instantiated 
   and lookup will start over. 
@@ -132,25 +126,20 @@ algorithm
       Env.Cache cache;
       
       /*For simple names */
-    case (cache,env,(path as Absyn.IDENT(name = _)),msg) /* msg flag Lookup of simple names */ 
+    case (cache,env,(path as Absyn.IDENT(name = _)),msg/* message flag*/) 
       equation 
         (cache,t,env_1) = lookupTypeInEnv(cache,env, path);
       then
         (cache,t,env_1);
       /*If we find a class definition 
-	   that is a function with the same name then we implicitly instantiate that
+	   that is a function or external function with the same name then we implicitly instantiate that
 	  function, look up the type. */  
-    case (cache,env,(path as Absyn.IDENT(name = _)),msg) local String s;
+    case (cache,env,path,msg) 
+      local String s;
+      SCode.Restriction restr;
       equation 
-        (cache,(c as SCode.CLASS(id,_,encflag,SCode.R_FUNCTION(),_)),env_1) = lookupClass(cache,env, path, false);
-        (cache,env_2) = Inst.implicitFunctionTypeInstantiation(cache,env_1, c);
-        (cache,t,env3) = lookupTypeInEnv(cache,env_2, path);
-      then
-        (cache,t,env3);
-      /* Same for external functions */  
-    case (cache,env,(path as Absyn.IDENT(name = _)),msg)
-      equation 
-        (cache,(c as SCode.CLASS(id,_,encflag,SCode.R_EXT_FUNCTION(),_)),env_1) = lookupClass(cache,env, path, msg);
+        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,env, path, false);
+        true = SCode.isFunctionOrExtFunction(restr);
         (cache,env_2) = Inst.implicitFunctionTypeInstantiation(cache,env_1, c);
         (cache,t,env3) = lookupTypeInEnv(cache,env_2, path);
       then
@@ -172,7 +161,7 @@ algorithm
         (cache,t,env_2);
 
          /* Lookup of qualified name when first part of name is not a package.*/ 
-    case (cache,env,Absyn.QUALIFIED(name = pack,path = path),msg) 
+/*    case (cache,env,Absyn.QUALIFIED(name = pack,path = path),msg) 
       equation 
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,env, Absyn.IDENT(pack), false);        
         env2 = Env.openScope(env_1, encflag, SOME(id));
@@ -183,10 +172,10 @@ algorithm
         failure(ClassInf.valid(cistate1, SCode.R_PACKAGE()));
         (cache,t,env_3) = lookupTypeInClass(cache,env_2, c, path, true) "Has to do additional check for encapsulated classes, see rule below" ;
       then
-        (cache,t,env_3);
+        (cache,t,env_3);*/
    
    	/* Same as above but first part of name is a package. */
-    case (cache,env,(p as Absyn.QUALIFIED(name = pack,path = path)),msg)
+/*    case (cache,env,(p as Absyn.QUALIFIED(name = pack,path = path)),msg)
       equation 
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,env, Absyn.IDENT(pack), msg);
         env2 = Env.openScope(env_1, encflag, SOME(id));
@@ -196,7 +185,7 @@ algorithm
         ClassInf.valid(cistate1, SCode.R_PACKAGE());
         (cache,c_1,env_3) = lookupTypeInClass(cache,env_2, c, path, false) "Has NOT to do additional check for encapsulated classes, see rule above" ;
       then
-        (cache,c_1,env_3);
+        (cache,c_1,env_3);*/
 
    	/* Error for class not found */
     case (cache,env,path,true)
@@ -1252,24 +1241,17 @@ algorithm
         ftype = Types.makeFunctionType(fpath, varlst);
       then
         (cache,ftype,env);
-        /* Found function, instantiate to get type */
+        /* Found function */
     case (cache,ht,httypes,env,id)
+      local SCode.Restriction restr;
       equation 
-        Env.CLASS((cdef as SCode.CLASS(_,_,_,SCode.R_FUNCTION(),_)),cenv) = Env.treeGet(ht, id, Env.myhash);
+        Env.CLASS((cdef as SCode.CLASS(_,_,_,restr,_)),cenv) = Env.treeGet(ht, id, Env.myhash);
+        true = SCode.isFunctionOrExtFunction(restr);
         (cache,env_1,_) = Inst.implicitFunctionInstantiation(cache,cenv, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           cdef, {});
         (cache,ty,env_2) = lookupTypeInEnv(cache,env_1, Absyn.IDENT(id));
       then
-        (cache,ty,env_2);
-        
-        /* Found external function, instantiate to get type */
-    case (cache,ht,httypes,env,id)
-      equation 
-        Env.CLASS((cdef as SCode.CLASS(_,_,_,SCode.R_EXT_FUNCTION(),_)),cenv) = Env.treeGet(ht, id, Env.myhash) "If we found class that is external function" ;
-        (cache,env_1) = Inst.implicitFunctionTypeInstantiation(cache,cenv, cdef);
-        (cache,ty,env_2) = lookupTypeInEnv(cache,env_1, Absyn.IDENT(id));
-      then
-        (cache,ty,env_2);
+        (cache,ty,env_2);        
   end matchcontinue;
 end lookupTypeInFrame;
 
@@ -1322,20 +1304,12 @@ algorithm
         (cache,{ftype});
         
         /* Found class that is function, instantiate to get type*/
-    case (cache,ht,httypes,env,id) local String s;
+    case (cache,ht,httypes,env,id) local SCode.Restriction restr;
       equation 
-        Env.CLASS((cdef as SCode.CLASS(_,_,_,SCode.R_FUNCTION(),_)),cenv) = Env.treeGet(ht, id, Env.myhash) "If found class that is function." ;
+        Env.CLASS((cdef as SCode.CLASS(_,_,_,restr,_)),cenv) = Env.treeGet(ht, id, Env.myhash) "If found class that is function." ;
+        true = SCode.isFunctionOrExtFunction(restr);
         (cache,env_1) = Inst.implicitFunctionTypeInstantiation(cache,cenv, cdef);
         (cache,tps) = lookupFunctionsInEnv(cache,env_1, Absyn.IDENT(id)); 
-      then
-        (cache,tps);
-        
-        /* Found class that is external function, instantiate to get type */
-    case (cache,ht,httypes,env,id)
-      equation 
-        Env.CLASS((cdef as SCode.CLASS(_,_,_,SCode.R_EXT_FUNCTION(),_)),cenv) = Env.treeGet(ht, id, Env.myhash) "If found class that is external function." ;
-        (cache,env_1) = Inst.implicitFunctionTypeInstantiation(cache,cenv, cdef);
-        (cache,tps) = lookupFunctionsInEnv(cache,env_1, Absyn.IDENT(id));
       then
         (cache,tps);
         
@@ -1741,22 +1715,16 @@ algorithm
          /* , true encapsulated does not matter, _ */ 
       then
         (cache,tp,env_1);
-    case (cache,env,cdef,(classname as Absyn.IDENT(name = _)),_) local String s;
+    case (cache,env,cdef,(classname as Absyn.IDENT(name = _)),_) 
+      local SCode.Restriction restr;
       equation 
-        (cache,(c as SCode.CLASS(_,_,_,SCode.R_FUNCTION(),_)),env_1) = lookupClassInEnv(cache,env, classname, false) "If not found, look for classdef that is function and instantiate." ;
+        (cache,(c as SCode.CLASS(_,_,_,restr,_)),env_1) = lookupClassInEnv(cache,env, classname, false) "If not found, look for classdef that is function and instantiate." ;
+        true = SCode.isFunctionOrExtFunction(restr);
         (cache,env_2) = Inst.implicitFunctionTypeInstantiation(cache,env_1, c);
         //s = Env.printEnvStr(env_2);
         //print("env=");print(s);print("\n");
-        (cache,t,env3) = lookupTypeInEnv(cache,env_2, classname);
-        
+        (cache,t,env3) = lookupTypeInEnv(cache,env_2, classname);      
       then
-        (cache,t,env3);
-    case (cache,env,cdef,(classname as Absyn.IDENT(name = _)),_)
-      equation 
-        (cache,(c as SCode.CLASS(_,_,_,SCode.R_EXT_FUNCTION(),_)),env_1) = lookupClassInEnv(cache,env, classname, false) "If not found, look for classdef that is external function and instantiate." ;
-        (cache,env_2) = Inst.implicitFunctionTypeInstantiation(cache,env_1, c);
-        (cache,t,env3) = lookupTypeInEnv(cache,env_2, classname);
-       then
         (cache,t,env3);
         
      /* Classes that are external objects. Implicityly instantiate to get type */

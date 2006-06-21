@@ -1068,6 +1068,7 @@ algorithm
       SCode.Restriction r;
       SCode.ClassDef d;
       Env.Cache cache;
+      Real t1,t2,time; Boolean b;
       /*  implicit instantiation - No DAE */ 
     case (cache,env,mods,pre,Connect.SETS(connection = crs),ci_state,(c as SCode.CLASS(name = "Real")),_,inst_dims,impl) 
       equation 
@@ -1091,8 +1092,23 @@ algorithm
         //Debug.fprint("insttr", "\n");
       then
         (cache,{},env,Connect.SETS({},crs),ci_state,{},NONE);
+    
     case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restricion = r,parts = d)),prot,inst_dims,impl)
       local String s; Absyn.Path fullPath;
+        Boolean b;
+        Absyn.Path scope;
+      equation 
+        //clsname = SCode.className(c); 
+        SOME(scope) = Env.getEnvPath(env);
+        _ = Env.cacheGet(scope,Absyn.IDENT(n),cache);
+        //print("instClassIn ");print(n);print(" that already exist in class!\n");
+      then
+        fail();
+        
+    
+    case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restricion = r,parts = d)),prot,inst_dims,impl)
+      local String s; Absyn.Path fullPath;
+        Boolean b;
       equation 
         //clsname = SCode.className(c); 
         //print("instClassIn");print(n);print("\n");
@@ -1102,7 +1118,16 @@ algorithm
         //Debug.fprint("insttr", clsname);
         //Debug.fprint("insttr", "\n");
        //print("instClassDef, ");print(n);print(" env:");print(Env.printEnvStr(env));
+       
+
+				t1 = clock();
         (cache,l,env_1,csets_1,ci_state_1,tys,bc) = instClassdef(cache,env, mods, pre, csets, ci_state, d, r, prot, inst_dims, impl);
+        t2 = clock();
+        time = t2 -. t1;
+        b=realGt(time,0.05);
+        s = realString(time);
+        s=Util.stringAppendList({"instClassIn ",n," ",s," s\n"});
+        //print(Util.if_(b,s,""));
         //print("instClassDef, outenv:");print(Env.printEnvStr(env));
         cache = addCachedEnv(cache,n,env_1);
       then
@@ -1226,8 +1251,17 @@ algorithm
     case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restricion = r,parts = d)),prot,inst_dims)
       local
         Absyn.Path fullPath;
+        Real t1,t2,time; String s,s2; Boolean b;
       equation 
+       	t1 = clock();
         (cache,env_1,ci_state_1) = partialInstClassdef(cache,env, mods, pre, csets, ci_state, d, r, prot, inst_dims);
+        t2 = clock();
+        time = t2 -. t1;
+        b=realGt(time,0.05);
+        s = realString(time);
+        s2 = Env.printEnvPathStr(env);
+        s=Util.stringAppendList({"PARTIAL instClassIn ",n," in scope ",s2," ",s," s\n"});
+        //print(Util.if_(b,s,""));
 				//cache = addCachedEnv(cache,n,env);
       then
         (cache,env_1,ci_state_1);
@@ -1344,6 +1378,7 @@ algorithm
       	equation
       	  	true = isExternalObject(els);
       	  	(cache,dae,env,ci_state) = instantiateExternalObject(cache,env,els,impl);
+
       	  then 
       	  (cache,dae,env,Connect.emptySet,ci_state,{},NONE);  
         
@@ -1570,7 +1605,7 @@ algorithm
   end matchcontinue;
 end classIsExternalObject;
 
-protected function isExternalObject 
+public function isExternalObject 
 "Returns true if the element list fulfills the condition of an External Object.
 An external object extends the builtinClass ExternalObject, and has two local 
 functions, destructor and constructor. "

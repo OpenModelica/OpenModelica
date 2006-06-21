@@ -482,6 +482,7 @@ algorithm
 
     case (cache,env,(e as Exp.CALL(path = func,expLst = expl)),(impl as true),(st as SOME(_)),_,msg)
       equation 
+				(cache,false) = Static.isExternalObjectFunction(cache,env,func);
         (cache,vallst) = cevalList(cache,env, expl, impl, st, msg) "Call of record constructors, etc., i.e. functions that can be 
 	 constant propagated." ;
         (cache,newval) = cevalFunction(cache,env, func, vallst, impl, msg);
@@ -491,6 +492,7 @@ algorithm
     case (cache,env,(e as Exp.CALL(path = func,expLst = expl)),(impl as true),(st as SOME(Interactive.SYMBOLTABLE(p,_,_,_,cflist))),_,msg)
       equation 
         true = Static.isFunctionInCflist(cflist, func) "Call externally implemented functions." ;
+        (cache,false) = Static.isExternalObjectFunction(cache,env,func);
         (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
         funcstr = ModUtil.pathString2(func, "_");
         infilename = stringAppend(funcstr, "_in.txt");
@@ -992,6 +994,7 @@ algorithm
   funcpath2:=Absyn.stripLast(funcpath);
   (_,tp,_) := Lookup.lookupType(cache,env,funcpath2,true);
   Types.externalObjectConstructorType(tp);
+  print("isExternalObjectConstructor: ");print(Absyn.pathString(funcpath));print("\n");
 end cevalIsExternalObjectConstructor;
 
 protected function cevalKnownExternalFuncs "function: cevalKnownExternalFuncs
@@ -4559,6 +4562,7 @@ algorithm
       Env.Cache cache;
     case (cache,env,path)
       equation 
+         (cache,false) = Static.isExternalObjectFunction(cache,env,path); //ext objs functions not possible to ceval.
         Debug.fprintln("ceval", "/*- ceval_generate_function starting*/");
         pathstr = ModUtil.pathString2(path, "_");
         (cache,gencodestr,_) = cevalGenerateFunctionStr(cache,path, env, {});

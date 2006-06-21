@@ -120,13 +120,26 @@ uniontype CFunction
 
 end CFunction;
 
+public uniontype Context
+	record CONTEXT
+	  	CodeContext codeContext "The context code is generated in, either simulation or function";
+	  	ExpContext expContext "The context expressions are generated in, either normal or external calls";
+	end CONTEXT;
+	end Context;
+
 public 
-uniontype Context "Which context is the code generated in."
+uniontype CodeContext "Which context is the code generated in."
   record SIMULATION "when generating simulation code" end SIMULATION;
 
   record FUNCTION "when generating function code" end FUNCTION;
 
-end Context;
+end CodeContext;
+
+public
+uniontype ExpContext 
+  record NORMAL "Normal expression generation" end NORMAL;
+  record EXP_EXTERNAL "for expressions in external calls" end EXP_EXTERNAL;
+end ExpContext;
 
 protected import OpenModelica.Compiler.Debug;
 
@@ -410,6 +423,27 @@ algorithm
         ();
   end matchcontinue;
 end cPrintFunctions;
+
+public function cPrintDeclarations " 
+Prints only the local variable declarations of a function to a string"
+input CFunction inCFunction;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inCFunction)
+    local
+      Integer i5;
+      Lib str,res,rt,fn;
+      list<Lib> rts,ad,vd,is,st,cl;
+    case CFUNCTION(returnType = rt,functionName = fn,returnTypeStruct = rts,argumentDeclarationLst = ad,variableDeclarationLst = vd,initStatementLst = is,statementLst = st,cleanupStatementLst = cl)
+      equation 
+        (i5,str) = cPrintIndentedListStr(vd, 2);
+        res = stringAppend(str, "\n");
+      then
+        res;
+  end matchcontinue;
+end cPrintDeclarations;
+
 
 public function cPrintStatements "function: cPrintStatements
  
@@ -1902,15 +1936,15 @@ algorithm
   (ret_decl,ret_var,tnr_ret_1) := generateTempDecl(ret_type_str, tnr);
   ret_stmt := Util.stringAppendList({"return ",ret_var,";"});
   outvars := DAE.getOutputVars(dae);
-  (out_fn,tnr_ret) := generateAllocOutvars(outvars, ret_decl, ret_var, tnr_ret_1, FUNCTION());
+  (out_fn,tnr_ret) := generateAllocOutvars(outvars, ret_decl, ret_var, tnr_ret_1, CONTEXT(FUNCTION(),NORMAL()));
   (mem_decl,mem_var,tnr_mem) := generateTempDecl("state", tnr_ret);
   mem_stmt1 := Util.stringAppendList({mem_var," = get_memory_state();"});
   mem_stmt2 := Util.stringAppendList({"restore_memory_state(",mem_var,");"});
   mem_fn_1 := cAddVariables(out_fn, {mem_decl});
   mem_fn := cAddInits(mem_fn_1, {mem_stmt1});
-  (var_fn,tnr_var) := generateVars(dae, isVarQ, tnr_mem, FUNCTION());
-  (alg_fn,tnr_alg) := generateAlgorithms(dae, tnr_var, FUNCTION());
-  (res_var_fn,tnr_res) := generateResultVars(dae, ret_var, tnr_alg, FUNCTION());
+  (var_fn,tnr_var) := generateVars(dae, isVarQ, tnr_mem, CONTEXT(FUNCTION(),NORMAL()));
+  (alg_fn,tnr_alg) := generateAlgorithms(dae, tnr_var, CONTEXT(FUNCTION(),NORMAL()));
+  (res_var_fn,tnr_res) := generateResultVars(dae, ret_var, tnr_alg, CONTEXT(FUNCTION(),NORMAL()));
   cfn_1 := cMergeFn(mem_fn, var_fn);
   cfn_2 := cMergeFn(cfn_1, alg_fn);
   cfn_3 := cMergeFn(cfn_2, res_var_fn);
@@ -2063,7 +2097,7 @@ algorithm
     case (((var as DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = t,one = e,binding = id,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)) :: r),rv,tnr,extdecl)
       equation 
         DAE.EXTERNALDECL(return = "C") = extdecl;
-        (cfn1,tnr1) = generateAllocOutvar(var, rv, tnr, FUNCTION());
+        (cfn1,tnr1) = generateAllocOutvar(var, rv, tnr, CONTEXT(FUNCTION(),NORMAL()));
         (cfn2,tnr2) = generateAllocOutvarsExt(r, rv, tnr1, extdecl);
         cfn = cMergeFn(cfn1, cfn2);
       then
@@ -2121,7 +2155,7 @@ algorithm
         (cref_str1,_) = compRefCstr(id);
         cref_str2 = Util.stringAppendList({prefix,".",cref_str1});
         cref_str = Util.if_(emptypre, cref_str1, cref_str2);
-        (cfn1,dim_strs,tnr1) = generateSizeSubscripts(cref_str, inst_dims, tnr, FUNCTION()) "	list_reverse inst_dims => inst_dims\' &" ;
+        (cfn1,dim_strs,tnr1) = generateSizeSubscripts(cref_str, inst_dims, tnr, CONTEXT(FUNCTION(),NORMAL())) "	list_reverse inst_dims => inst_dims\' &" ;
         cfn1_1 = cMoveStatementsToInits(cfn1);
         ndims = listLength(dim_strs);
         ndims_str = intString(ndims);
@@ -2204,7 +2238,7 @@ algorithm
         (elty,dims) = Types.flattenArrayType(ty);
         dimsubs = Exp.intSubscripts(dims);
         tnr = tick();
-        (cfn1,dim_strs,tnr1) = generateSizeSubscripts(crefstr, dimsubs, tnr, FUNCTION());
+        (cfn1,dim_strs,tnr1) = generateSizeSubscripts(crefstr, dimsubs, tnr, CONTEXT(FUNCTION(),NORMAL()));
         cfn1_1 = cMoveStatementsToInits(cfn1);
         typ_str = generateType(ty);
         ndims = listLength(dim_strs);
@@ -2489,10 +2523,11 @@ algorithm
         Debug.fprint("failtrace", "# tuple assign statement not implemented\n");
       then
         fail();
-    case (Algorithm.ASSERT(exp1 = e1,exp2 = e2),tnr,context)
+    case (Algorithm.ASSERT(exp1 = e1,exp2 = e2),tnr,CONTEXT(codeContext,_))
+      local CodeContext codeContext;
       equation 
-        (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
-        (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
+        (cfn1,var1,tnr1) = generateExpression(e1, tnr, CONTEXT(codeContext,EXP_EXTERNAL()));
+        (cfn2,var2,tnr2) = generateExpression(e2, tnr1, CONTEXT(codeContext,EXP_EXTERNAL()));
         stmt = Util.stringAppendList({"MODELICA_ASSERT(",var1,", ",var2,");"});
         cfn2_1 = cAddStatements(cfn2, {stmt});
         cfn = cMergeFns({cfn1,cfn2_1});
@@ -3202,10 +3237,15 @@ algorithm
       then
         (cEmptyFunction,rstr,tnr);
     case (Exp.SCONST(string = s),tnr,context)
+      local String stmt; CFunction cfn;
       equation 
-        sstr = Util.stringAppendList({"\"",s,"\""});
+        (decl,tvar,tnr1_1) = generateTempDecl("modelica_string", tnr);
+        stmt = Util.stringAppendList({"init_modelica_string(&",tvar,",\"",s,"\");"});
+        cfn = cAddStatements(cEmptyFunction, {stmt});
+        cfn = cAddVariables(cfn, {decl});
+        tvar = cAddExternalStringData(tvar,context);
       then
-        (cEmptyFunction,sstr,tnr);
+        (cfn,tvar,tnr1_1);
     case (Exp.BCONST(bool = b),tnr,context)
       equation 
         var = Util.if_(b, "(1)", "(0)");
@@ -3257,12 +3297,16 @@ algorithm
         var = Util.stringAppendList({"((",tvar,")?",var2,":",var3,")"});
       then
         (cfn,var,tnr3);
-    case ((e as Exp.CALL(path = fn,expLst = args,tuple_ = false,builtin = builtin)),tnr,context) /* some buitlin functions that are e.g. overloaded */ 
+        
+        /* some buitlin functions that are e.g. overloaded */ 
+    case ((e as Exp.CALL(path = fn,expLst = args,tuple_ = false,builtin = builtin)),tnr,context) 
       equation 
         (cfn,var,tnr2) = generateBuiltinFunction(e, tnr, context);
       then
         (cfn,var,tnr2);
-    case (Exp.CALL(path = fn,expLst = args,tuple_ = false,builtin = builtin),tnr,context) /* non-tuple calls */ 
+
+        /* non-tuple calls */ 
+    case (Exp.CALL(path = fn,expLst = args,tuple_ = false,builtin = builtin),tnr,context) 
       equation 
         (cfn1,vars1,tnr1) = generateExpressions(args, tnr, context);
         ret_type = generateReturnType(fn);
@@ -3277,7 +3321,9 @@ algorithm
         var = Util.if_(builtin, tvar, var_not_bi);
       then
         (cfn,var,tnr2);
-    case (Exp.CALL(path = fn,expLst = args,tuple_ = true,builtin = builtin),tnr,context) /* tuple calls */ 
+        
+        /* tuple calls */
+    case (Exp.CALL(path = fn,expLst = args,tuple_ = true,builtin = builtin),tnr,context)  
       equation 
         (cfn1,vars1,tnr1) = generateExpressions(args, tnr, context);
         ret_type = generateReturnType(fn);
@@ -3289,6 +3335,7 @@ algorithm
         cfn = cAddStatements(cfn2, {stmt});
       then
         (cfn,tvar,tnr2);
+        
     case (Exp.SIZE(exp = (crexp as Exp.CREF(componentRef = cr,ty = ty)),sz = SOME(dim)),tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(crexp, tnr, context);
@@ -3302,6 +3349,7 @@ algorithm
         cfn = cAddStatements(cfn4, {stmt});
       then
         (cfn,tvar,tnr2);
+        
     case (Exp.SIZE(exp = cr,sz = NONE),tnr,context)
       local Exp.Exp cr;
       equation 
@@ -3806,6 +3854,20 @@ algorithm
   end matchcontinue;
 end generateBinary;
 
+protected function cAddExternalStringData " adds .data to variable names if context is EXP_EXTERNAL, i.e.
+for expressions in external function calls."
+input String variable;
+input Context context;
+output String newVariable;
+
+algorithm
+  newVariable := matchcontinue(variable,context)
+    case (variable,CONTEXT(_,EXP_EXTERNAL())) 
+      then stringAppend(variable,".data");
+    case (variable,_) then variable;
+  end matchcontinue;
+end cAddExternalStringData;
+
 protected function generateTempDecl "function: generateTempDecl
   
   Generates code for the declaration of a temporary variable.
@@ -3941,7 +4003,7 @@ algorithm
       list<Integer> dims;
       Context context;
       list<Exp.Subscript> subs;
-    case (cref,Exp.T_ARRAY(ty = t,arrayDimensions = dims),tnr,SIMULATION()) /* For context simulation array variables must be boxed 
+    case (cref,Exp.T_ARRAY(ty = t,arrayDimensions = dims),tnr,CONTEXT(SIMULATION(),_)) /* For context simulation array variables must be boxed 
 	    into a real_array object since they are represented only
 	    in a double array. */ 
       equation 
@@ -3960,6 +4022,7 @@ algorithm
         cfunc = cAddInits(cfunc, {vdecl});
       then
         (cfunc,vstr,tnr1);
+                
     case (cref,crt,tnr,context)
       equation 
         (cref_str,{}) = compRefCstr(cref);
@@ -4903,8 +4966,8 @@ algorithm
           {"char const* in_filename","char const* out_filename"});
   out_decl := Util.stringAppendList({retstr," out;"});
   cfn1_1 := cAddInits(cfn1, {"PRE_VARIABLES",out_decl});
-  (cfn31,tnr21) := generateVarDecls(invars, isRcwInput, 1, FUNCTION()) "generate_vars(outvars,is_rcw_output,1) => (cfn2,tnr1) &" ;
-  (cfn32,tnr2) := generateVarInits(invars, isRcwInput, tnr21, "", FUNCTION());
+  (cfn31,tnr21) := generateVarDecls(invars, isRcwInput, 1, CONTEXT(FUNCTION(),NORMAL())) "generate_vars(outvars,is_rcw_output,1) => (cfn2,tnr1) &" ;
+  (cfn32,tnr2) := generateVarInits(invars, isRcwInput, tnr21, "", CONTEXT(FUNCTION(),NORMAL()));
   cfn3 := cMergeFns({cfn31,cfn32});
   cfn3_1 := cAddInits(cfn3, {"PRE_OPEN_INFILE"});
   in_names := invarNames(invars);
@@ -4952,10 +5015,10 @@ algorithm
         cfn1 = cMakeFunction(retstr, fnname, {}, arg_strs);
         out_decl = Util.stringAppendList({retstr," out;"});
         cfn1_1 = cAddVariables(cfn1, {out_decl});
-        (cfn31,tnr_invars1) = generateVarDecls(invars, isRcwInput, tnr, FUNCTION());
-        (cfn32,tnr_invars) = generateVarInits(invars, isRcwInput, tnr_invars1, "", FUNCTION());
-        (cfn33,tnr_bivars1) = generateVarDecls(bivars, isRcwBidir, tnr_invars, FUNCTION());
-        (cfn34,tnr_bivars) = generateVarInits(bivars, isRcwBidir, tnr_bivars1, "", FUNCTION());
+        (cfn31,tnr_invars1) = generateVarDecls(invars, isRcwInput, tnr, CONTEXT(FUNCTION(),NORMAL()));
+        (cfn32,tnr_invars) = generateVarInits(invars, isRcwInput, tnr_invars1, "", CONTEXT(FUNCTION(),NORMAL()));
+        (cfn33,tnr_bivars1) = generateVarDecls(bivars, isRcwBidir, tnr_invars, CONTEXT(FUNCTION(),NORMAL()));
+        (cfn34,tnr_bivars) = generateVarInits(bivars, isRcwBidir, tnr_bivars1, "", CONTEXT(FUNCTION(),NORMAL));
         cfn3 = cMergeFns({cfn1_1,cfn31,cfn32,cfn33,cfn34});
         vars_1 = listAppend(invars, outvars);
         vars = listAppend(vars_1, bivars);
@@ -5005,7 +5068,7 @@ algorithm
         (allocstmts_1,tnr_ret) = generateAllocOutvarsExt(outvars, "out", tnr, extdecl) "generate_vars(outvars,is_rcw_output,1) => (cfn2,tnr1) &" ;
         allocstmts = cAddVariables(allocstmts_1, {out_decl});
         (biallocstmts,tnr_bialloc_1) = generateAllocOutvarsExt(bivars, "", tnr_ret, extdecl);
-        (cfnoutinit,tnr_bialloc) = generateVarInits(outvars, isRcwOutput, tnr_bialloc_1, "out", FUNCTION());
+        (cfnoutinit,tnr_bialloc) = generateVarInits(outvars, isRcwOutput, tnr_bialloc_1, "out", CONTEXT(FUNCTION(),NORMAL()));
         cfnoutbialloc = cMergeFns({allocstmts,biallocstmts,cfnoutinit});
         (mem_decl,mem_var,tnr_mem) = generateTempDecl("state", tnr_bialloc);
         get_mem_stmt = Util.stringAppendList({mem_var," = get_memory_state();"});
@@ -5013,10 +5076,10 @@ algorithm
         mem_fn_1 = cAddVariables(cEmptyFunction, {mem_decl});
         mem_fn_2 = cAddInits(mem_fn_1, {get_mem_stmt});
         mem_fn = cMergeFns({mem_fn_2,cfnoutbialloc});
-        (cfn31,tnr_invars1) = generateVarDecls(invars, isRcwInput, tnr_mem, FUNCTION());
-        (cfn32,tnr_invars) = generateVarInits(invars, isRcwInput, tnr_invars1, "", FUNCTION());
-        (cfn33,tnr_bivars1) = generateVarDecls(bivars, isRcwBidir, tnr_invars, FUNCTION());
-        (cfn34,tnr_bivars) = generateVarInits(bivars, isRcwBidir, tnr_bivars1, "", FUNCTION());
+        (cfn31,tnr_invars1) = generateVarDecls(invars, isRcwInput, tnr_mem, CONTEXT(FUNCTION(),NORMAL()));
+        (cfn32,tnr_invars) = generateVarInits(invars, isRcwInput, tnr_invars1, "", CONTEXT(FUNCTION(),NORMAL()));
+        (cfn33,tnr_bivars1) = generateVarDecls(bivars, isRcwBidir, tnr_invars, CONTEXT(FUNCTION(),NORMAL()));
+        (cfn34,tnr_bivars) = generateVarInits(bivars, isRcwBidir, tnr_bivars1, "", CONTEXT(FUNCTION(),NORMAL()));
         cfn3 = cMergeFns({cfn31,cfn32,cfn33,cfn34});
         cfn3_1 = cAddInits(cfn3, {"PRE_OPEN_INFILE"});
         readinvars = generateRead(invars);
@@ -5154,7 +5217,7 @@ algorithm
         dims_1 = listReverse(dims);
         extvar = DAE.VAR(cref_1,vk,vd,ty,value,dims_1,NONE,DAE.NON_FLOW(),{},NONE,
           NONE);
-        (fn,tnr_1) = generateVarDecl(extvar, tnr, FUNCTION());
+        (fn,tnr_1) = generateVarDecl(extvar, tnr, CONTEXT(FUNCTION(),NORMAL()));
         (restfn,tnr_3) = generateExtcallCopydeclsF77(rest, tnr_1);
         resfn = cMergeFn(fn, restfn);
       then
@@ -5665,7 +5728,7 @@ algorithm
     case arg
       equation 
         DAE.EXTARGEXP(exp = exp,type_ = ty) = arg;
-        (_,res,_) = generateExpression(exp, 1, FUNCTION());
+        (_,res,_) = generateExpression(exp, 1, CONTEXT(FUNCTION(),NORMAL()));
       then
         res;
     case ((arg as DAE.EXTARGSIZE(componentRef = _))) /* SIZE */ 

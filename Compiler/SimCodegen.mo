@@ -343,11 +343,13 @@ algorithm
 end generateGlobalData;
 
 protected function generateExternalObjectDestructorCalls "generate destructor calls for external objects"
-	input DAELow.DAELow daelow;
-	output String str;
+	input Integer cg_in;
+  input DAELow.DAELow daelow;
+  output CFunction outCFunction;
+  output Integer cg_out;
 algorithm
-	str := matchcontinue(daelow)
-	  case DAELow.DAELOW(externalObjects = evars, extObjClasses = eclasses) 
+	(outCFunction,outInteger) := matchcontinue(cg_in,daelow)
+	  case (cg_in,DAELow.DAELOW(externalObjects = evars, extObjClasses = eclasses))
 	    local 
 	      DAELow.Variables evars;
 	      list<DAELow.Var> evarLst;
@@ -355,123 +357,183 @@ algorithm
 	      list<String> strs;
 	    equation
 	       evarLst = DAELow.varList(evars);
-	       strs = Util.listMap1(evarLst,generateExternalObjectDestructorCall,eclasses);
-	       str = Util.stringDelimitList(strs,"\n");
-	    then str;
+	       (outCFunction,cg_out) = generateExternalObjectDestructorCalls2(cg_in,evarLst,eclasses);
+	    then (outCFunction,cg_out);
   end matchcontinue;
 end generateExternalObjectDestructorCalls;
 
+protected function generateExternalObjectDestructorCalls2 "
+help function to generateExternalObjectDestructorCalls"
+	input Integer cg_in;
+  input list<DAELow.Var> varLst;
+  input DAELow.ExternalObjectClasses eclasses;
+  output CFunction outCFunction;
+  output Integer cg_out;
+algorithm
+  (outCFunction,cg_out) := matchcontinue(cg_in,varLst,eclasses)
+    local	DAELow.Var v;
+      list<DAELow.Var> vs;
+      Codegen.CFunction cfunc,cfunc2;
+    case (cg_in,{},eclasses) 
+    then (Codegen.cEmptyFunction,cg_in);
+    case (cg_in,v::vs,eclasses) equation
+      (cfunc,cg_out) = generateExternalObjectDestructorCalls2(cg_in,vs,eclasses);
+      (cfunc2,cg_out) = generateExternalObjectDestructorCall(cg_out,v,eclasses);
+      cfunc = Codegen.cMergeFns({cfunc2,cfunc});
+      then (cfunc,cg_out);
+  end matchcontinue;
+end generateExternalObjectDestructorCalls2;
+
 protected function generateExternalObjectDestructorCall "help function to generateExternalObjectDestructorCalls"
+	input Integer cg_in;
 	input DAELow.Var var;
 	input DAELow.ExternalObjectClasses eclasses;
-	output String str;
+  output CFunction outCFunction;
+  output Integer cg_out;
 algorithm
-	str := matchcontinue (v,eclasses) 
-	  case (_,{}) equation print("generateExternalObjectDestructorCall failed\n"); then fail();
+	(outCFunction,cg_out) := matchcontinue (cg_in,v,eclasses) 
+	  case (_,_,{}) equation print("generateExternalObjectDestructorCall failed\n"); then fail();
 	
 		// found class
-	  case (DAELow.VAR(varName = name,varKind = DAELow.EXTOBJ(path1)), DAELow.EXTOBJCLASS(path=path2,destructor=destr)::_) 
+	  case (cg_in,DAELow.VAR(varName = name,varKind = DAELow.EXTOBJ(path1)), DAELow.EXTOBJCLASS(path=path2,destructor=destr)::_) 
 	    local 
 	      DAE.Element destr;
 	      Exp.ComponentRef name;
 	      Absyn.Path path1,path2;
+	      Codegen.CFunction cfunc;
 	      
 	    equation
 	      true = ModUtil.pathEqual(path1,path2);
-	      str = generateExternalObjectDestructorCall2(name,destr);
-	      then str;
+	      (cfunc,cg_out) = generateExternalObjectDestructorCall2(cg_in,name,destr);
+	      then (cfunc,cg_out);
 	  // Try next class.
-	  case (var,_::eclasses) 
-	  then  generateExternalObjectDestructorCall(var,eclasses);
-
+	  case (cg_in,var,_::eclasses) 
+	    local Codegen.CFunction cfunc;
+	    equation
+	     (cfunc,cg_out) = generateExternalObjectDestructorCall(cg_in,var,eclasses);
+	  then (cfunc,cg_out);
   end matchcontinue;
 end generateExternalObjectDestructorCall;
 
 protected function generateExternalObjectDestructorCall2 "Help funciton to generateExternalObjectDestructorCall"
+	input Integer cg_in;
   input Exp.ComponentRef varName;
   input DAE.Element destructor;
-  output String str;
+  output CFunction outCFunction;
+  output Integer cg_out;
 algorithm
-  str := matchcontinue(var,destructor) 
-    case (varName,destructor as DAE.EXTFUNCTION(externalDecl = DAE.EXTERNALDECL(ident=funcStr)))
-      local String vStr,funcStr;
-        
+  (cg_out,outCFunction) := matchcontinue(cg_in,var,destructor) 
+    case (cg_in,varName,destructor as DAE.EXTFUNCTION(externalDecl = DAE.EXTERNALDECL(ident=funcStr)))
+      local String vStr,funcStr,str;
+        Codegen.CFunction cfunc;
       equation
         vStr = Exp.printComponentRefStr(varName);
         str = Util.stringAppendList({"    ",funcStr,"(",vStr,");"});
-      then str;
-        case (_,_) then "/*generateExternalObjectDestructorCall2 failed*/";
+        cfunc = Codegen.cAddStatements(Codegen.cEmptyFunction,{str});
+      then (cfunc,cg_in);
+
   end matchcontinue;
 end generateExternalObjectDestructorCall2;
 
 protected function generateExternalObjectConstructorCalls " generates constructor calls of all external objects"
+	input Integer cg_in;
   input DAELow.DAELow daelow;
-  output String str;
+  output CFunction outCFunction;
+  output Integer cg_out;
 algorithm
-  str := matchcontinue(daelow)
-	  case DAELow.DAELOW(externalObjects = evars, extObjClasses = eclasses) 
+  str := matchcontinue(cg_in,daelow)
+	  case (cg_in,DAELow.DAELOW(externalObjects = evars, extObjClasses = eclasses)) 
 	    local 
 	      DAELow.Variables evars;
 	      list<DAELow.Var> evarLst;
 	      DAELow.ExternalObjectClasses eclasses;
 	      list<String> strs;
 	    equation
-	       evarLst = DAELow.varList(evars);
-	       strs = Util.listMap1(evarLst,generateExternalObjectConstructorCall,eclasses);
-	       str = Util.stringDelimitList(strs,"\n");
-	       str = stringAppend(str,"\n");
-	    then str;
+	      evarLst = DAELow.varList(evars);
+	      (outCFunction,cg_out) = generateExternalObjectConstructorCalls2(cg_in,evarLst,eclasses);
+	    then (outCFunction,cg_out);
   end matchcontinue;
 end generateExternalObjectConstructorCalls;
 
+protected function generateExternalObjectConstructorCalls2 "
+help function to generateExternalObjectConstructorCalls"
+	input Integer cg_in;
+  input list<DAELow.Var> varLst;
+  input DAELow.ExternalObjectClasses eclasses;
+  output CFunction outCFunction;
+  output Integer cg_out;
+algorithm
+  (outCFunction,cg_out) := matchcontinue(cg_in,varLst,eclasses)
+    local	DAELow.Var v;
+      list<DAELow.Var> vs;
+      Codegen.CFunction cfunc,cfunc2;
+    case (cg_in,{},eclasses) 
+    then (Codegen.cEmptyFunction,cg_in);
+    case (cg_in,v::vs,eclasses) equation
+      (cfunc,cg_out) = generateExternalObjectConstructorCalls2(cg_in,vs,eclasses);
+      (cfunc2,cg_out) = generateExternalObjectConstructorCall(cg_out,v,eclasses);
+      cfunc = Codegen.cMergeFns({cfunc2,cfunc});
+      then (cfunc,cg_out);
+  end matchcontinue;
+end generateExternalObjectConstructorCalls2;
+
 protected function generateExternalObjectConstructorCall "help function to generateExternalObjectConstructorCalls"
+  input Integer cg_in;
   input DAELow.Var var;
 	input DAELow.ExternalObjectClasses eclasses;
-	output String str;
+  output CFunction outCFunction;
+  output Integer cg_out;
 algorithm
-	str := matchcontinue (v,eclasses) 
-	  case (_,{}) equation print("generateExternalObjectConstructorCall failed\n"); then fail();
+	(outCFunction,cg_out) := matchcontinue (cg_in,v,eclasses) 
+	  case (_,_,{}) equation print("generateExternalObjectConstructorCall failed\n"); then fail();
 	
 		// found class
-	  case (DAELow.VAR(varName = name,bindExp = SOME(e),varKind = DAELow.EXTOBJ(path1)), DAELow.EXTOBJCLASS(path=path2,constructor=constr)::_) 
+	  case (cg_in,DAELow.VAR(varName = name,bindExp = SOME(e),varKind = DAELow.EXTOBJ(path1)), DAELow.EXTOBJCLASS(path=path2,constructor=constr)::_) 
 	    local 
 	      DAE.Element constr;
 	      Exp.ComponentRef name;
 	      Absyn.Path path1,path2;
 	      Exp.Exp e;
-	      
+	      Codegen.CFunction cfunc;
 	    equation
 	      true = ModUtil.pathEqual(path1,path2);
-	      str = generateExternalObjectConstructorCall2(name,constr,e);
-	      then str;
+	      (cfunc,cg_out) = generateExternalObjectConstructorCall2(cg_in,name,constr,e);
+	      then (cfunc,cg_out);
 	  // Try next class.
-	  case (var,_::eclasses) 
-	  then  generateExternalObjectDestructorCall(var,eclasses);
+	  case (cg_in,var,_::eclasses) 
+	    local  
+	      Codegen.CFunction cfunc;
+	    equation
+	    (cfunc,cg_out) = generateExternalObjectConstructorCall(cg_in,var,eclasses);
+	    then (cfunc,cg_out);
 
   end matchcontinue;
 end generateExternalObjectConstructorCall;
 
 protected function generateExternalObjectConstructorCall2 "Help funciton to generateExternalObjectConstructorCall"
+	input Integer cg_in;
   input Exp.ComponentRef varName;
   input DAE.Element constructor;
   input Exp.Exp constrCallExp;
-  output String str;
+  output CFunction outCFunction;
+  output Integer cg_out;
 algorithm
-  str := matchcontinue(var,constructor,constrCallExp) 
-    case (varName,constructor as DAE.EXTFUNCTION(externalDecl = DAE.EXTERNALDECL(ident=funcStr)),Exp.CALL(expLst = args))
+  (outCFunction,cg_out) := matchcontinue(cg_in,var,constructor,constrCallExp) 
+    case (cg_in,varName,constructor as DAE.EXTFUNCTION(externalDecl = DAE.EXTERNALDECL(ident=funcStr)),Exp.CALL(expLst = args))
       local 
-        String vStr,funcStr,argsStr;
+        String vStr,funcStr,argsStr,str;
         list<Exp.Exp> args;
         list<String> vars1;
+        Codegen.CFunction cfunc;
       equation
         vStr = Exp.printComponentRefStr(varName);
         /* TODO: cfn1 might contain additional code  that is needed, also 0 must be propagated to prevent
         resuing same variable name */
-        (_,vars1,_) = Codegen.generateExpressions(args, 0, Codegen.SIMULATION);        
+        (cfunc,vars1,cg_out) = Codegen.generateExpressions(args, cg_in, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.EXP_EXTERNAL()));        
         argsStr = Util.stringDelimitList(vars1,", ");
         str = Util.stringAppendList({"    ",vStr," = ",funcStr,"(",argsStr,");"});
-      then str;
-        case (_,_,_) then "/*generateExternalObjectConstructorCall2 failed*/";
+        cfunc = Codegen.cAddStatements(cfunc,{str});
+      then (cfunc,cg_out);
   end matchcontinue;
 end generateExternalObjectConstructorCall2;
 
@@ -481,18 +543,27 @@ protected function generateInitializeDeinitializationDataStruc "
             "
   input DAELow.DAELow daelow;           
   output String outString "resulting C code";
-  protected String extObjDestructors_str,extObjConstructors_str;
+  protected Codegen.CFunction extObjDestructors,extObjConstructors;
+  String extObjDestructors_str,extObjConstructors_str;
+  String extObjDestructorsDecl_str,extObjConstructorsDecl_str;
+  Integer cg_out;
 algorithm 
-	extObjDestructors_str := generateExternalObjectDestructorCalls(daelow);
-	extObjConstructors_str := generateExternalObjectConstructorCalls(daelow);
+	(extObjDestructors,cg_out) := generateExternalObjectDestructorCalls(0,daelow);
+	(extObjConstructors,cg_out):= generateExternalObjectConstructorCalls(cg_out,daelow);
+	extObjDestructors_str := Codegen.cPrintStatements(extObjDestructors);
+  extObjConstructors_str := Codegen.cPrintStatements(extObjConstructors);
+  extObjDestructorsDecl_str := Codegen.cPrintDeclarations(extObjDestructors);
+  extObjConstructorsDecl_str := Codegen.cPrintDeclarations(extObjConstructors);
   outString:=Util.stringAppendList
      (
       {
 "
 void setLocalData(DATA* data)\n{\n
    localData = data;\n}\n
-DATA* initializeDataStruc(DATA_FLAGS flags)\n{\n
-  DATA* returnData = (DATA*)malloc(sizeof(DATA));\n
+DATA* initializeDataStruc(DATA_FLAGS flags)\n{\n",
+extObjDestructorsDecl_str,
+extObjConstructorsDecl_str,
+"  DATA* returnData = (DATA*)malloc(sizeof(DATA));\n
   if(!returnData) //error check\n
     return 0;\n
   returnData->nStates = NX;\n
@@ -2245,7 +2316,7 @@ algorithm
       equation 
         // if exp is a string just increase the index;
         Exp.STRING() = Exp.typeof(e);
-        (cfunc,var,cg_id) = Codegen.generateExpression(e, cg_id, Codegen.SIMULATION());
+        (cfunc,var,cg_id) = Codegen.generateExpression(e, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
         assign = Util.stringAppendList({"localData->initialResiduals[i++] = 0;//",var,";"});
         cfunc = Codegen.cAddStatements(cfunc, {assign});
         (cfunc2,cg_id) = generateInitialResidualEqn(es, cg_id);
@@ -2254,7 +2325,7 @@ algorithm
         (cfn,cg_id);
     case ((DAELow.RESIDUAL_EQUATION(exp = e) :: es),cg_id)
       equation 
-        (cfunc,var,cg_id) = Codegen.generateExpression(e, cg_id, Codegen.SIMULATION());
+        (cfunc,var,cg_id) = Codegen.generateExpression(e, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
         assign = Util.stringAppendList({"localData->initialResiduals[i++] = ",var,";"});
         cfunc = Codegen.cAddStatements(cfunc, {assign});
         (cfunc2,cg_id) = generateInitialResidualEqn(es, cg_id);
@@ -2341,7 +2412,7 @@ algorithm
       equation 
         false = Exp.isConst(e);
         cr_str = Exp.printComponentRefStr(cr);
-        (exp_func,e_str,cg_id_1) = Codegen.generateExpression(e, cg_id, Codegen.SIMULATION());
+        (exp_func,e_str,cg_id_1) = Codegen.generateExpression(e, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
         (func,cg_id_2) = generateParameterAssignments(vs, cg_id_1);
         stmt = Util.stringAppendList({cr_str," = ",e_str,";"});
         func_1 = Codegen.cAddStatements(func, {stmt});
@@ -2420,7 +2491,7 @@ algorithm
         false = Exp.isConst(startv);
         (func,cg_id_1) = generateInitialAssignmentsFromStart(vars, cg_id);
         cr_str = Exp.printComponentRefStr(cr);
-        (exp_func,startv_str,cg_id_2) = Codegen.generateExpression(startv, cg_id_1, Codegen.SIMULATION());
+        (exp_func,startv_str,cg_id_2) = Codegen.generateExpression(startv, cg_id_1, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
         stmt = Util.stringAppendList({cr_str," = ",startv_str,";"});
         func_1 = Codegen.cAddStatements(func, {stmt});
         func_2 = Codegen.cMergeFns({exp_func,func_1});
@@ -3325,7 +3396,7 @@ algorithm
         cr = DAELow.varCref(v);
         varexp = Exp.CREF(cr,Exp.REAL());
         expr = Exp.solve(e1, e2, varexp);
-        (exp_func,var,cg_id_2) = Codegen.generateExpression(expr, cg_id_1, Codegen.SIMULATION());
+        (exp_func,var,cg_id_2) = Codegen.generateExpression(expr, cg_id_1, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
         indx_str = intString(indx);
         cr_str = Exp.printComponentRefStr(cr);
         stmt = Util.stringAppendList({cr_str," = ",var,";"});
@@ -3597,7 +3668,7 @@ algorithm
         // The variables solved for and the output variables of the algorithm must be the same.
         true = Util.listSetEqualP(solvedVars,algOutVars,Exp.crefEqual);
         
-        (s1,cg_id) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), 1, Codegen.SIMULATION());
+        (s1,cg_id) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), 1, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
       then (s1,cg_id,{});
 
         /* Error message, inverse algorithms not supported yet */
@@ -3701,7 +3772,7 @@ algorithm
       equation 
         true = Exp.crefEqual(cr, cr2);
         s1 = Exp.printComponentRefStr(eltcr);
-        (cfunc,s2,cg_id_1) = Codegen.generateExpression(e2, cg_id, Codegen.SIMULATION());
+        (cfunc,s2,cg_id_1) = Codegen.generateExpression(e2, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
         stmt = Util.stringAppendList({"copy_real_array_data_mem(&",s2,", &$",s1,");"});
         func_1 = Codegen.cAddStatements(cfunc, {stmt});
       then
@@ -3710,7 +3781,7 @@ algorithm
       equation 
         true = Exp.crefEqual(cr, cr2);
         s1 = Exp.printComponentRefStr(eltcr);
-        (cfunc,s2,cg_id_1) = Codegen.generateExpression(e1, cg_id, Codegen.SIMULATION());
+        (cfunc,s2,cg_id_1) = Codegen.generateExpression(e1, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
         stmt = Util.stringAppendList({"copy_real_array_data_mem(&",s1,", &$",s2,");"});
         func_1 = Codegen.cAddStatements(cfunc, {stmt});
       then
@@ -3719,7 +3790,7 @@ algorithm
       equation 
         cr2 = getVectorizedCrefFromExp(e2);
         s1 = Exp.printComponentRefStr(eltcr);
-        (cfunc,s2,cg_id_1) = Codegen.generateExpression(e1, cg_id, Codegen.SIMULATION());
+        (cfunc,s2,cg_id_1) = Codegen.generateExpression(e1, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
         stmt = Util.stringAppendList({"copy_real_array_data_mem(&",s1,", &$",s2,");"});
         func_1 = Codegen.cAddStatements(cfunc, {stmt});
       then
@@ -3728,7 +3799,7 @@ algorithm
       equation 
         cr2 = getVectorizedCrefFromExp(e1);
         s1 = Exp.printComponentRefStr(eltcr);
-        (cfunc,s2,cg_id_1) = Codegen.generateExpression(e2, cg_id, Codegen.SIMULATION());
+        (cfunc,s2,cg_id_1) = Codegen.generateExpression(e2, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
         stmt = Util.stringAppendList({"copy_real_array_data_mem(&",s2,", &$",s1,");"});
         func_1 = Codegen.cAddStatements(cfunc, {stmt});
       then
@@ -4078,7 +4149,7 @@ algorithm
         res_exp = Exp.BINARY(e1,Exp.SUB(tp),e2);
         res_exp_1 = Exp.simplify(res_exp);
         res_exp_2 = VarTransform.replaceExp(res_exp_1, repl, SOME(skipPreOperator));
-        (exp_func,var,cg_id_1) = Codegen.generateExpression(res_exp_2, cg_id, Codegen.SIMULATION());
+        (exp_func,var,cg_id_1) = Codegen.generateExpression(res_exp_2, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
         indx_str = intString(indx);
         indx_1 = indx + 1;
         (cfunc,cg_id_2) = generateOdeSystem2NonlinearResiduals2(rest, indx_1, repl, cg_id_1);
@@ -4091,7 +4162,7 @@ algorithm
       equation 
         res_exp_1 = Exp.simplify(e);
         res_exp_2 = VarTransform.replaceExp(res_exp_1, repl, SOME(skipPreOperator));
-        (exp_func,var,cg_id_1) = Codegen.generateExpression(res_exp_2, cg_id, Codegen.SIMULATION());
+        (exp_func,var,cg_id_1) = Codegen.generateExpression(res_exp_2, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
         indx_str = intString(indx);
         indx_1 = indx + 1;
         (cfunc,cg_id_2) = generateOdeSystem2NonlinearResiduals2(rest, indx_1, repl, cg_id_1);
@@ -4274,7 +4345,7 @@ algorithm
         rc = intString(c_1);
         n_rows_str = intString(n_rows);
         id_str = intString(unique_id);
-        (cfunc1,var,cg_id_1) = Codegen.generateExpression(exp, cg_id, Codegen.SIMULATION());
+        (cfunc1,var,cg_id_1) = Codegen.generateExpression(exp, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
         (cfunc,cg_id_2) = generateOdeSystem2PopulateA(jac, vars, eqn, unique_id, cg_id_1);
         stmt = Util.stringAppendList(
           {"set_matrix_elt(A",id_str,",",rs,", ",rc,", ",n_rows_str,
@@ -4358,7 +4429,7 @@ algorithm
         rhs_exp = DAELow.getEqnsysRhsExp(new_exp, v);
         rhs_exp_1 = Exp.UNARY(Exp.UMINUS(tp),rhs_exp);
         rhs_exp_2 = Exp.simplify(rhs_exp_1);
-        (exp_func,var,cg_id_1) = Codegen.generateExpression(rhs_exp_2, cg_id, Codegen.SIMULATION());
+        (exp_func,var,cg_id_1) = Codegen.generateExpression(rhs_exp_2, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
         index_str = intString(index);
         id_str = intString(unique_id);
         index_1 = index + 1;
@@ -4372,7 +4443,7 @@ algorithm
       equation 
         rhs_exp = DAELow.getEqnsysRhsExp(res_exp, v);
         rhs_exp_1 = Exp.simplify(rhs_exp);
-        (exp_func,var,cg_id_1) = Codegen.generateExpression(rhs_exp_1, cg_id, Codegen.SIMULATION());
+        (exp_func,var,cg_id_1) = Codegen.generateExpression(rhs_exp_1, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
         index_str = intString(index);
         id_str = intString(unique_id);
         index_1 = index + 1;
@@ -4623,7 +4694,7 @@ algorithm
         isNonState(kind);
         varexp = Exp.CREF(cr,Exp.REAL());
         expr = Exp.solve(e1, e2, varexp);
-        (exp_func,var,cg_id_1) = Codegen.generateExpression(expr, cg_id, Codegen.SIMULATION());
+        (exp_func,var,cg_id_1) = Codegen.generateExpression(expr, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
         cr_str = Exp.printComponentRefStr(cr);
         stmt = Util.stringAppendList({cr_str," = ",var,";"});
         res = Codegen.cAddStatements(exp_func, {stmt});
@@ -4640,7 +4711,7 @@ algorithm
         cr_1 = Exp.CREF_IDENT(id,{});
         varexp = Exp.CREF(cr_1,Exp.REAL());
         expr = Exp.solve(e1, e2, varexp);
-        (exp_func,var,cg_id_1) = Codegen.generateExpression(expr, cg_id, Codegen.SIMULATION());
+        (exp_func,var,cg_id_1) = Codegen.generateExpression(expr, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
         cr_str = Exp.printComponentRefStr(cr_1);
         stmt = Util.stringAppendList({cr_str," = ",var,";"});
         res = Codegen.cAddStatements(exp_func, {stmt});
@@ -4691,7 +4762,7 @@ algorithm
 				// solve an inverse problem of an algorithm section.
       true = Exp.crefEqual(DAELow.varCref(v),varOutput);
       alg = alg[indx + 1];
-      (cfunc,cg_id) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), 1, Codegen.SIMULATION());
+      (cfunc,cg_id) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), 1, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
       then (cfunc,cg_id,{});
         
         /* inverse Algorithm for single variable . */
@@ -6157,7 +6228,7 @@ algorithm
         e_1 = e - 1;
         DAELow.ALGORITHM(indx,inputs,outputs) = DAELow.equationNth(eqns, e_1);
         alg = alg[indx + 1];
-        (Codegen.CFUNCTION(_,_,_,_,_,_,stmt_strs,_),_) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), 1, Codegen.SIMULATION());
+        (Codegen.CFUNCTION(_,_,_,_,_,_,stmt_strs,_),_) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), 1, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
         res = Util.stringDelimitList(stmt_strs, "\n");
       then
         res;
@@ -6359,7 +6430,7 @@ algorithm
         e_1 = e - 1 "Algorithms Each algorithm should only be genated once." ;
         DAELow.ALGORITHM(indx,inputs,outputs) = DAELow.equationNth(eqns, e_1);
         alg = algs[indx + 1];
-        (cfn,cg_id_1) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), cg_id, Codegen.SIMULATION());
+        (cfn,cg_id_1) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
       then
         (cfn,cg_id_1);
     case (_,_,_,_,_,_)
@@ -6524,7 +6595,7 @@ algorithm
     case ((dae as DAE.DAE(elementLst = elements)),cr,(exp as Exp.CALL(path = path,expLst = args,tuple_ = (tuple_ as false),builtin = builtin)),origname,cg_id) /* varname expression orig. name cg var_id cg var_id */ 
       equation 
         cr_str = Exp.printComponentRefStr(cr);
-        (cfn,var,cg_id_1) = Codegen.generateExpression(exp, cg_id, Codegen.SIMULATION());
+        (cfn,var,cg_id_1) = Codegen.generateExpression(exp, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
         stmt = Util.stringAppendList({cr_str," = ",var,";\n"});
         cfn = Codegen.cAddStatements(cfn, {stmt});
       then
@@ -6538,7 +6609,7 @@ algorithm
     case (dae,cr,exp,origname,cg_id)
       equation 
         cr_str = Exp.printComponentRefStr(cr);
-        (cfn,var,cg_id_1) = Codegen.generateExpression(exp, cg_id, Codegen.SIMULATION());
+        (cfn,var,cg_id_1) = Codegen.generateExpression(exp, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
         stmt = Util.stringAppendList({cr_str," = ",var,";\n"});
         cfn = Codegen.cAddStatements(cfn, {stmt});
       then
