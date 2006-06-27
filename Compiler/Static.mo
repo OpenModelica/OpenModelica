@@ -3405,24 +3405,24 @@ algorithm
     local
       Exp.Exp exp_1,exp_2;
       list<Env.Frame> env;
+      list<Absyn.Exp> expl;
       Absyn.Exp exp;
       Boolean impl;
       Types.Const c;
+      Types.Type tp1;
       Env.Cache cache;
-    case (cache,env,{exp},impl) /* impl Constness: C_VAR */ 
+    case (cache,env,{exp},impl) /* Argument to sign must be an Integer or Real expression */ 
       equation 
-        (cache,exp_1,Types.PROP((Types.T_BOOL({}),_),Types.C_VAR()),_) = elabExp(cache,env, exp, impl, NONE);
+        (cache,exp_1,Types.PROP(tp1,c),_) = elabExp(cache,env, exp, impl, NONE);
+        Types.integerOrReal(tp1);
       then
-        (cache,Exp.CALL(Absyn.IDENT("sign"),{exp_1},false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()));
-    case (cache,env,{exp},impl) /* constness: C_PARAM & C_CONST */ 
+        (cache,Exp.CALL(Absyn.IDENT("sign"),{exp_1},false,true),Types.PROP(tp1,c));
+    case (cache,env,expl,_)
+      local String s;
       equation 
-        (cache,exp_1,Types.PROP((Types.T_BOOL({}),_),c),_) = elabExp(cache,env, exp, impl, NONE);
-        exp_2 = valueExp(Values.BOOL(false));
-      then
-        (cache,exp_2,Types.PROP((Types.T_BOOL({}),NONE),c));
-    case (cache,env,_,_)
-      equation 
-        Error.addMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {"sign"});
+        s = Util.stringDelimitList(Util.listMap(expl, Dump.printExpStr),", ");
+				s = Util.stringAppendList({"sign(",s,")"});
+        Error.addMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s});
       then
         fail();
   end matchcontinue;

@@ -247,7 +247,8 @@ algorithm
     case "sqrt" then cevalBuiltinSqrt; 
     case "div" then cevalBuiltinDiv; 
     case "sin" then cevalBuiltinSin; 
-    case "cos" then cevalBuiltinCos; 
+    case "cos" then cevalBuiltinCos;
+    case "log" then cevalBuiltinLog;   
     case "asin" then cevalBuiltinAsin; 
     case "acos" then cevalBuiltinAcos; 
     case "atan" then cevalBuiltinAtan; 
@@ -994,7 +995,6 @@ algorithm
   funcpath2:=Absyn.stripLast(funcpath);
   (_,tp,_) := Lookup.lookupType(cache,env,funcpath2,true);
   Types.externalObjectConstructorType(tp);
-  print("isExternalObjectConstructor: ");print(Absyn.pathString(funcpath));print("\n");
 end cevalIsExternalObjectConstructor;
 
 protected function cevalKnownExternalFuncs "function: cevalKnownExternalFuncs
@@ -3793,6 +3793,40 @@ algorithm
         (cache,Values.REAL(rv_1),st);
   end matchcontinue;
 end cevalBuiltinCos;
+
+protected function cevalBuiltinLog "function cevalBuiltinLog
+  author: LP
+ 
+  Evaluates the builtin Log function.
+"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Exp.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      Real rv,rv_1;
+      list<Env.Frame> env;
+      Exp.Exp exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+    case (cache,env,{exp},impl,st,msg)
+      equation 
+        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
+        rv_1 = System.log(rv);
+      then
+        (cache,Values.REAL(rv_1),st);
+  end matchcontinue;
+end cevalBuiltinLog;
 
 protected function cevalBuiltinTan "function cevalBuiltinTan
   author: LP

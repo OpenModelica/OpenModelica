@@ -134,7 +134,7 @@ algorithm
       Exp.Type tp;
       Exp.ComponentRef cr;
       String cr_str,cr_str_1,e_str,str,s1;
-      Exp.Exp e,e_1,e1_1,e2_1,e1,e2,e3_1,e3;
+      Exp.Exp e,e_1,e1_1,e2_1,e1,e2,e3_1,e3,d_e1,exp,e0;
       DAELow.Variables timevars,tv;
       Exp.Operator op,rel;
       list<Exp.Exp> expl_1,expl;
@@ -172,7 +172,28 @@ algorithm
       then
         Exp.UNARY(Exp.UMINUS(Exp.REAL()),Exp.BINARY(e_1,Exp.MUL(Exp.REAL()),
           Exp.CALL(Absyn.IDENT("sin"),{e},false,true)));
+    
+    // *** Addition by JA 20060621      
+    case (Exp.CALL(path = fname,expLst = {e},tuple_ = false,builtin = true),timevars)
+      equation 
+        isLog(fname);
+        e_1 = differentiateExpTime(e, timevars) "der(log(x)) = der(x)/x" ;
+      then
+        Exp.BINARY(e_1,Exp.DIV(Exp.REAL()),e);
+       
+    case (e0 as Exp.BINARY(exp1 = e1,operator = Exp.POW(tp),exp2 = (e2 as Exp.RCONST(_))),timevars) /* ax^(a-1) */ 
+      equation 
+        d_e1 = differentiateExpTime(e1, timevars) "e^x => xder(e)e^x-1" ;
+        //false = Exp.expContains(e2, Exp.CREF(tv,tp));
+        //const_one = differentiateExp(Exp.CREF(tv,tp), tv);
+        exp = Exp.BINARY(
+          Exp.BINARY(d_e1,Exp.MUL(tp),e2),Exp.MUL(tp),
+          Exp.BINARY(e1,Exp.POW(tp),Exp.BINARY(e2,Exp.SUB(tp),Exp.RCONST(1.0))));  
+        print(Exp.printExpStr(e0) +& " => " +& Exp.printExpStr(exp)+&"\n");
+      then
+        exp;  
           
+    // *** End of addition by JA 20060621      
     case ((e as Exp.CREF(componentRef = cr,ty = tp)),timevars) /* list_member(cr,timevars) => false */  then Exp.RCONST(0.0); 
     case (Exp.BINARY(exp1 = e1,operator = Exp.ADD(ty = tp),exp2 = e2),tv)
       equation 

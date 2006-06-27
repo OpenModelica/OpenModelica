@@ -85,12 +85,6 @@ protected import OpenModelica.Compiler.Connect;
 
 protected import OpenModelica.Compiler.Error;
 
-protected import OpenModelica.Compiler.ErrorExt;
-
-protected import OpenModelica.Compiler.Values;
-
-protected import OpenModelica.Compiler.Util;
-
 /*   - Lookup functions
  
   These functions look up class and variable names in the environment.
@@ -137,17 +131,15 @@ algorithm
         (cache,t,env_1);
     
 	/* Classes that are external objects. Implicityly instantiate to get type */
- case (cache,env,path ,msg) local String s;
+ case (cache,env,path ,msg) local String ident,s;
       equation 
         (cache,c ,env_1) = lookupClass(cache,env, path, false);
         true = Inst.classIsExternalObject(c);
-       (cache,_,env_1,_,_,_) = Inst.instClass(cache,env_1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
+       (cache,_,_::env_1,_,_,_) = Inst.instClass(cache,env_1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
           {}, false, Inst.TOP_CALL());
-	   		//s = Env.printEnvStr(env_1);
-        //print("instantiated external object2, env:");
-        //print(s);
-        //print("\n");
-        (cache,t,env_2) = lookupTypeInEnv(cache,env_1, path);
+        ident = Absyn.pathLastIdent(path); /* Once class has instantiated we only need to look up the last
+        	part of the name as a type */
+        (cache,t,env_2) = lookupTypeInEnv(cache,env_1, Absyn.IDENT(ident));
       then
         (cache,t,env_2);
 
@@ -170,6 +162,7 @@ algorithm
     case (cache,env,path,true)
       equation 
         classname = Absyn.pathString(path);
+        classname = stringAppend(classname," (its type) ");
         scope = Env.printEnvPathStr(env);
         Error.addMessage(Error.LOOKUP_ERROR, {classname,scope});
       then
@@ -963,12 +956,13 @@ algorithm
         (cache,attr,ty,bind) = lookupVar(cache,bcframes, cref);
       then
         (cache,attr,ty,bind);
-
+        /* Search among qualified imports, e.g. import A.B; or import D=A.B; */
     case (cache,(env as (Env.FRAME(class_1 = sid,list_4 = items) :: _)),(cr as Exp.CREF_IDENT(ident = id,subscriptLst = sb)))
       equation 
         (cache,attr,ty,bind) = lookupQualifiedImportedVarInFrame(cache,items, env, id);
       then
         (cache,attr,ty,bind);
+        /* Search among unqualified imports, e.g. import A.B.* */
     case (cache,(env as (Env.FRAME(class_1 = sid,list_4 = items) :: _)),(cr as Exp.CREF_IDENT(ident = id,subscriptLst = sb)))
       local Boolean unique;
       equation 
@@ -1751,28 +1745,36 @@ algorithm
       String id,name;
       list<Env.Item> items;
       Env.Cache cache;
+      /* Check this scope for class */
     case (cache,Env.FRAME(class_1 = sid,list_2 = ht),totenv,id,_)
       equation 
-        Env.CLASS(c,env) = Env.treeGet(ht, id, Env.myhash) "print \"looking for class \" & print id & print \" in frame\\n\" & 	& print \"found \" & print id & print \"\\n\"" ;
+        Env.CLASS(c,env) = Env.treeGet(ht, id, Env.myhash) ;
       then
         (cache,c,totenv);
+        
+        /* Searching for class, found component*/
     case (cache,Env.FRAME(class_1 = sid,list_2 = ht),_,id,true)
       equation 
         Env.VAR(_,_,_,_) = Env.treeGet(ht, id, Env.myhash);
         Error.addMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id});
       then
         fail();
-    case (cache,Env.FRAME(list_5 = (bcframes as (_ :: _))),totenv,name,_) /* Search base classes */ 
+        
+        /* Search base classes */ 
+    case (cache,Env.FRAME(list_5 = (bcframes as (_ :: _))),totenv,name,_) 
       equation 
-        (cache,c,env) = lookupClass(cache,bcframes, Absyn.IDENT(name), false) "print \"Searching baseclasses for \" & print name & print \"\\n\" & 
-	Env.print_env_str bcframes => s & print \"env:\" & print s & print \"\\n\" &" ;
+        (cache,c,env) = lookupClass(cache,bcframes, Absyn.IDENT(name), false);
       then
         (cache,c,env);
+        
+        /* Search among the qualified imports, e.g. import A.B; or import D=A.B; */
     case (cache,Env.FRAME(class_1 = sid,list_4 = items),totenv,name,_)
       equation 
         (cache,c,env_1) = lookupQualifiedImportedClassInFrame(cache,items, totenv, name);
       then
         (cache,c,env_1);
+        
+        /* Search among the unqualified imports, e.g. import A.B.*; */
     case (cache,Env.FRAME(class_1 = sid,list_4 = items),totenv,name,_)
       local Boolean unique;
       equation 
