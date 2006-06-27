@@ -85,7 +85,11 @@ protected import OpenModelica.Compiler.Connect;
 
 protected import OpenModelica.Compiler.Error;
 
+protected import OpenModelica.Compiler.ErrorExt;
+
 protected import OpenModelica.Compiler.Values;
+
+protected import OpenModelica.Compiler.Util;
 
 /*   - Lookup functions
  
@@ -131,22 +135,9 @@ algorithm
         (cache,t,env_1) = lookupTypeInEnv(cache,env, path);
       then
         (cache,t,env_1);
-      /*If we find a class definition 
-	   that is a function or external function with the same name then we implicitly instantiate that
-	  function, look up the type. */  
-    case (cache,env,path,msg) 
-      local String s;
-      SCode.Restriction restr;
-      equation 
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,env, path, false);
-        true = SCode.isFunctionOrExtFunction(restr);
-        (cache,env_2) = Inst.implicitFunctionTypeInstantiation(cache,env_1, c);
-        (cache,t,env3) = lookupTypeInEnv(cache,env_2, path);
-      then
-        (cache,t,env3);
-
+    
 	/* Classes that are external objects. Implicityly instantiate to get type */
- case (cache,env,(path as Absyn.IDENT(name = _)),msg) local String s;
+ case (cache,env,path ,msg) local String s;
       equation 
         (cache,c ,env_1) = lookupClass(cache,env, path, false);
         true = Inst.classIsExternalObject(c);
@@ -160,34 +151,22 @@ algorithm
       then
         (cache,t,env_2);
 
-         /* Lookup of qualified name when first part of name is not a package.*/ 
-/*    case (cache,env,Absyn.QUALIFIED(name = pack,path = path),msg) 
+  /*If we find a class definition 
+	   that is a function or external function with the same name then we implicitly instantiate that
+	  function, look up the type. */  
+    case (cache,env,path,msg) 
+      local String s,ident;
+      SCode.Restriction restr;
       equation 
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,env, Absyn.IDENT(pack), false);        
-        env2 = Env.openScope(env_1, encflag, SOME(id));
-        ci_state = ClassInf.start(restr, id);
-         (cache,env_2,cistate1) = Inst.partialInstClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {});
-   
-        failure(ClassInf.valid(cistate1, SCode.R_PACKAGE()));
-        (cache,t,env_3) = lookupTypeInClass(cache,env_2, c, path, true) "Has to do additional check for encapsulated classes, see rule below" ;
+        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,env, path, false);
+        true = SCode.isFunctionOrExtFunction(restr);
+        (cache,env_2) = Inst.implicitFunctionTypeInstantiation(cache,env_1, c);
+        ident = Absyn.pathLastIdent(path);
+        (cache,t,env3) = lookupTypeInEnv(cache,env_2, Absyn.IDENT(ident));
       then
-        (cache,t,env_3);*/
-   
-   	/* Same as above but first part of name is a package. */
-/*    case (cache,env,(p as Absyn.QUALIFIED(name = pack,path = path)),msg)
-      equation 
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,env, Absyn.IDENT(pack), msg);
-        env2 = Env.openScope(env_1, encflag, SOME(id));
-        ci_state = ClassInf.start(restr, id);
-         (cache,env_2,cistate1) = Inst.partialInstClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {});
-        ClassInf.valid(cistate1, SCode.R_PACKAGE());
-        (cache,c_1,env_3) = lookupTypeInClass(cache,env_2, c, path, false) "Has NOT to do additional check for encapsulated classes, see rule above" ;
-      then
-        (cache,c_1,env_3);*/
-
-   	/* Error for class not found */
+        (cache,t,env3);
+        
+   	/* Error for type not found */
     case (cache,env,path,true)
       equation 
         classname = Absyn.pathString(path);
@@ -254,6 +233,8 @@ algorithm
         f::fs = Env.cacheGet(scope,path,cache);
         id = Absyn.pathLastIdent(path);        
         (cache,c,env) = lookupClassInEnv(cache,fs,Absyn.IDENT(id),msg);
+        //print("found ");print(id);print( " in Cache." scope=");print(Absyn.pathString(scope));print("\n");
+        //print("env: ");print(Env.printEnvStr(f::fs));print("\n");
     then
       (cache,c,env);
 
@@ -296,9 +277,10 @@ algorithm
         ci_state = ClassInf.start(restr, id);
         
         (cache,env_2,cistate1) = Inst.partialInstClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+       
           ci_state, c, false, {});
-          /*(_,env_2,_,cistate1,_,_) = Inst.instClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-           ci_state, c, false/*FIXME:prot*/, {}, false, false);*/
+          /*(cache,_,env_2,_,cistate1,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+           ci_state, c, false/*FIXME:prot*/, {}, false);*/
         failure(ClassInf.valid(cistate1, SCode.R_PACKAGE()));
         (cache,c_1,env_3) = lookupClass(cache,env_2, path, msgflag) "Has to do additional check for encapsulated classes, see rule below" ;
       then
@@ -309,10 +291,10 @@ algorithm
         env2 = Env.openScope(env1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id); 
         
-        (_,env4,cistate1) = Inst.partialInstClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+        (cache,env4,cistate1) = Inst.partialInstClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {});
-          /*(_,env4,_,cistate1,_,_) = Inst.instClassIn(env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-           ci_state, c, false/*FIXME:prot*/, {}, false, false);*/
+/*        (cache,_,env4,_,cistate1,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+           ci_state, c, false/*FIXME:prot*/, {}, false);*/
         ClassInf.valid(cistate1, SCode.R_PACKAGE());
         (cache,c_1,env5) = lookupClass(cache,env4, path, msgflag) "Has NOT to do additional check for encapsulated classes, see rule above" ;
       then
@@ -325,7 +307,8 @@ algorithm
         Debug.fprint("failtrace", s);
         Debug.fprint("failtrace", "\n env:");
         s = Env.printEnvStr(env);
-        //print("env:");print(s);
+       // print("env:");print(s);
+        //print("Cache:");print(Env.printCacheStr(cache));print("\n");
         Debug.fprint("failtrace", s);
         Debug.fprint("failtrace", "\n");
       then
@@ -455,11 +438,25 @@ algorithm
       list<Env.Item> fs;
       Env.Cache cache;
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident)
+           local 
+        Exp.ComponentRef cr;
+        Absyn.Path path,scope;
+        Absyn.Ident firstIdent;
       equation 
+        firstIdent = Absyn.pathFirstIdent(path);
+        f::_ = Env.cacheGet(Absyn.IDENT(firstIdent),path,cache);
+        (cache,_,_,_) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,{}));
+      then
+        (cache,true);
+     
+      // if not found in cache or in "simple instantiation", try to instantiate
+    case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident)
+      equation  
         fr = Env.topFrame(env);
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,{fr}, path, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
+
         (cache,(f :: _),_) = Inst.partialInstClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {});
         (cache,_,_,_) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,{}));
@@ -505,10 +502,28 @@ algorithm
       Absyn.Path path;
       list<Env.Item> fs;
       Env.Cache cache;
+      // First look in cache
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident) /* unique */ 
+           local 
+        Exp.ComponentRef cr;
+        Absyn.Path path,scope;
+        Absyn.Ident firstIdent;
       equation 
+        //print("look in cache\n");
+        firstIdent = Absyn.pathFirstIdent(path);
+        f::_ = Env.cacheGet(Absyn.IDENT(firstIdent),path,cache);
+        (cache,attr,ty,bind) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,{}));
+        (cache,more) = moreLookupUnqualifiedImportedVarInFrame(cache,fs, env, ident);
+        unique = boolNot(more);
+      then
+        (cache,attr,ty,bind,unique);
+
+      // if not in cache or "simple instantiation" try to instantiate
+    case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident) /* unique */ 
+       equation 
         fr = Env.topFrame(env);
         cref = Exp.pathToCref(path);
+        
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,{fr}, path, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
@@ -633,16 +648,31 @@ algorithm
       list<Env.Frame> env_1,env2,env;
       ClassInf.State ci_state;
       Absyn.Path path;
+      Absyn.Ident firstIdent;
       list<Env.Item> fs;
       Env.Cache cache;
+      
+      // Look in cache
+    case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident)
+      equation
+        firstIdent = Absyn.pathFirstIdent(path);
+          f::_= Env.cacheGet(Absyn.IDENT(firstIdent),path,cache);
+        (cache,_,_) = lookupClass(cache,{f}, Absyn.IDENT(ident), false);
+      then
+        (cache,true);
+        
+        // Not found, instantiate
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident)
       equation 
         fr = Env.topFrame(env);
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,{fr}, path, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
-        (cache,(f :: _),_) = Inst.partialInstClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {});
+        //print("instClassIn ");print(id);print(" scope =");print(Env.printEnvPathStr(env2));print("\n");
+        (cache,_,f::_,_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+           ci_state, c, false/*FIXME:prot*/, {}, false);         
+/*       (cache,(f :: _),_) = Inst.partialInstClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          ci_state, c, false, {});*/
         (cache,_,_) = lookupClass(cache,{f}, Absyn.IDENT(ident), false);
       then
         (cache,true);
@@ -681,6 +711,19 @@ algorithm
       Absyn.Path path;
       list<Env.Item> fs;
       Env.Cache cache;
+      Absyn.Ident firstIdent;
+      // Look in cache
+    case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident) /* unique */ 
+      equation
+        firstIdent = Absyn.pathFirstIdent(path);
+        f::fs_1 = Env.cacheGet(Absyn.IDENT(firstIdent),path,cache);
+        (cache,c_1,(f_1 :: _)) = lookupClass(cache,{f}, Absyn.IDENT(ident), false) "Restrict import to the imported scope only, not its parents..." ;
+        (cache,more) = moreLookupUnqualifiedImportedClassInFrame(cache,fs, env, ident);
+        unique = boolNot(more);
+      then
+        (cache,c_1,(f_1 :: fs_1),unique);
+        
+        // Not in cache, instantiate.
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident) /* unique */ 
       equation 
         fr = Env.topFrame(env);
@@ -776,7 +819,6 @@ algorithm
         (cache,attr,ty,binding);
     case (cache,env,cref) /* then look in classes (implicitly instantiated packages) */ 
       equation 
-        //print("calling lookupVarInPackages env:");print(Env.printEnvStr(env)); print("END ENV\n");
         (cache,attr,ty,binding) = lookupVarInPackages(cache,env, cref);
       then
         (cache,attr,ty,binding);
@@ -823,6 +865,8 @@ algorithm
         (cache,attr,ty,binding);
   end matchcontinue;
 end lookupVarInternal;
+
+
 
 protected function lookupVarInPackages "function: lookupVarInPackages
  
@@ -876,7 +920,7 @@ algorithm
       then
         (cache,attr,ty,bind);
 
-      // lookup of constants on form A.B in packages. First look in cache.
+       // lookup of constants on form A.B in packages. First look in cache.
     case (cache,env,cr as Exp.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref)) /* First part of name is a class. */ 
       local 
         Exp.ComponentRef cr;
@@ -888,15 +932,20 @@ algorithm
         path = Absyn.stripLast(path);
         f::fs = Env.cacheGet(scope,path,cache);
         (cache,attr,ty,bind) = lookupVarLocal(cache,f::fs, Exp.CREF_IDENT(id,{}));
-      then
+        //print("found ");print(Exp.printComponentRefStr(cr));print(" in cache\n");
+        then
         (cache,attr,ty,bind);
 
+
+
       // lookup of constants on form A.B in packages. instantiate package and look inside.
-    case (cache,env,Exp.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref)) /* First part of name is a class. */ 
+    case (cache,env,cr as Exp.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref)) /* First part of name is a class. */ 
       equation 
         (cache,(c as SCode.CLASS(n,_,encflag,r,_)),env2) = lookupClass(cache,env, Absyn.IDENT(id), false);
         env3 = Env.openScope(env2, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
+        //print("instClassIn ");print(Exp.printComponentRefStr(cr));print(" scope =");print(Env.printEnvPathStr(env3));print("\n");
+        //print("cache = ");print(Env.printCacheStr(cache));print("\n");        
         (cache,_,env5,_,_,types,_) = Inst.instClassIn(cache,env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, true);
         (cache,attr,ty,bind) = lookupVarInPackages(cache,env5, cref);
@@ -921,16 +970,13 @@ algorithm
       then
         (cache,attr,ty,bind);
     case (cache,(env as (Env.FRAME(class_1 = sid,list_4 = items) :: _)),(cr as Exp.CREF_IDENT(ident = id,subscriptLst = sb)))
+      local Boolean unique;
       equation 
-        (cache,attr,ty,bind,true) = lookupUnqualifiedImportedVarInFrame(cache,items, env, id);
+        (cache,attr,ty,bind,unique) = lookupUnqualifiedImportedVarInFrame(cache,items, env, id);
+        reportSeveralNamesError(unique,id);
       then
-        (cache,attr,ty,bind);
-    case (cache,(env as (Env.FRAME(class_1 = sid,list_4 = items) :: _)),(cr as Exp.CREF_IDENT(ident = id,subscriptLst = sb)))
-      equation 
-        (cache,attr,ty,bind,false) = lookupUnqualifiedImportedVarInFrame(cache,items, env, id);
-        Error.addMessage(Error.IMPORT_SEVERAL_NAMES, {id});
-      then
-        fail();
+        (cache,attr,ty,bind); 
+        
     case (cache,(f :: fs),cr) /* Search parent scopes */ 
       equation 
          (cache,attr,ty,bind) = lookupVarInPackages(cache,fs, cr);
@@ -1236,7 +1282,7 @@ algorithm
     case (cache,ht,httypes,env,id)
       equation 
         Env.CLASS((cdef as SCode.CLASS(n,_,_,SCode.R_RECORD(),_)),_) = Env.treeGet(ht, id, Env.myhash) "Each time a record constructor function is looked up, this rule will create the function. An improvement (perhaps needing lot of code) is to add the function to the environment, which is returned from this function." ;
-        (_,fpath) = Inst.makeFullyQualified(cache,env, Absyn.IDENT(n));
+        (cache,fpath) = Inst.makeFullyQualified(cache,env, Absyn.IDENT(n));
         (cache,varlst) = buildRecordConstructorVarlst(cache,cdef, env);
         ftype = Types.makeFunctionType(fpath, varlst);
       then
@@ -1298,7 +1344,7 @@ algorithm
       equation 
         Env.CLASS((cdef as SCode.CLASS(n,_,_,SCode.R_RECORD(),_)),cenv) = Env.treeGet(ht, id, Env.myhash);
         (cache,varlst) = buildRecordConstructorVarlst(cache,cdef, env);
-        (_,fpath) = Inst.makeFullyQualified(cache,cenv, Absyn.IDENT(n));
+        (cache,fpath) = Inst.makeFullyQualified(cache,cenv, Absyn.IDENT(n));
         ftype = Types.makeFunctionType(fpath, varlst);
       then
         (cache,{ftype});
@@ -1634,8 +1680,9 @@ algorithm
       Env.Frame frame,f;
       String id,sid,scope;
       Boolean msg,msgflag;
-      Absyn.Path aid;
+      Absyn.Path aid,path;
       Env.Cache cache;
+            
     case (cache,(env as (frame :: fs)),Absyn.IDENT(name = id),msg) /* msg */ 
       equation 
         (cache,c,env_1) = lookupClassInFrame(cache,frame, (frame :: fs), id, msg) "print \"looking in env for \" & print id & print \"\\n\" &" ;
@@ -1656,13 +1703,13 @@ algorithm
         Error.addMessage(Error.LOOKUP_ERROR, {id,scope});
       then
         fail();
-    case (cache,(Env.FRAME(class_1 = sid,encapsulated_7 = true) :: fs),(aid as Absyn.IDENT(name = id)),false) /* no error msg if msg = false */ 
+   /* case (cache,(Env.FRAME(class_1 = sid,encapsulated_7 = true) :: fs),(aid as Absyn.IDENT(name = id)),false) /* no error msg if msg = false */ 
       local Option<String> sid;
       equation 
         (cache,i_env) = Builtin.initialEnv(cache);
         failure((_,_,_) = lookupClassInEnv(cache,i_env, aid, false));
       then
-        fail();
+        fail();*/
     case (cache,(Env.FRAME(class_1 = sid,encapsulated_7 = true) :: fs),(aid as Absyn.IDENT(name = id)),msgflag) /* lookup stops at encapsulated classes, except for builtin scope */ 
       local Option<String> sid;
       equation 
@@ -1680,96 +1727,6 @@ algorithm
         (cache,c,env_1);
   end matchcontinue;
 end lookupClassInEnv;
-
-protected function lookupTypeInClass "function: lookupTypeInClass
- 
-  This function looks up an type inside a class. The outer class can be 
-  a package. Environment is passed along in case it needs to be modified.
-  bool determines whether we restrict lookup for encapsulated class (true).
-   
-"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input SCode.Class inClass;
-  input Absyn.Path inPath;
-  input Boolean inBoolean;
-	output Env.Cache outCache;
-  output Types.Type outType;
-  output Env.Env outEnv;
-algorithm 
-  (outCache,outType,outEnv):=
-  matchcontinue (inCache,inEnv,inClass,inPath,inBoolean)
-    local
-      tuple<Types.TType, Option<Absyn.Path>> tp,t;
-      list<Env.Frame> env_1,env,env_2,env3,env2,env5,env1,env4;
-      SCode.Class cdef,c;
-      Absyn.Path classname,p1,path;
-      String id,c1,str,cname;
-      Boolean encflag;
-      SCode.Restriction restr;
-      ClassInf.State ci_state;
-      Env.Cache cache;
-    case (cache,env,cdef,(classname as Absyn.IDENT(name = _)),_)
-      equation 
-        (cache,tp,env_1) = lookupTypeInEnv(cache,env, classname) ", true" ;
-         /* , true encapsulated does not matter, _ */ 
-      then
-        (cache,tp,env_1);
-    case (cache,env,cdef,(classname as Absyn.IDENT(name = _)),_) 
-      local SCode.Restriction restr;
-      equation 
-        (cache,(c as SCode.CLASS(_,_,_,restr,_)),env_1) = lookupClassInEnv(cache,env, classname, false) "If not found, look for classdef that is function and instantiate." ;
-        true = SCode.isFunctionOrExtFunction(restr);
-        (cache,env_2) = Inst.implicitFunctionTypeInstantiation(cache,env_1, c);
-        //s = Env.printEnvStr(env_2);
-        //print("env=");print(s);print("\n");
-        (cache,t,env3) = lookupTypeInEnv(cache,env_2, classname);      
-      then
-        (cache,t,env3);
-        
-     /* Classes that are external objects. Implicityly instantiate to get type */
-    case (cache,env,cdef,(classname as Absyn.IDENT(name = _)),_)
-      equation 
-        (cache,c ,env_1) = lookupClassInEnv(cache,env, classname, false);
-        true = Inst.classIsExternalObject(c);
-        (cache,_,env_1,_,_,_) = Inst.instClass(cache,env_1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
-          {}, false, Inst.TOP_CALL());
-        (cache,t,env_2) = lookupTypeInEnv(cache,env_1, classname);
-      then
-        (cache,t,env_2);   
-    case (cache,env,cdef,Absyn.QUALIFIED(name = c1,path = p1),true /* true means here encapsulated */)
-      equation 
-        (cache,(c as SCode.CLASS(id,_,(encflag as true),restr,_)),env) = lookupClassInEnv(cache,env, Absyn.IDENT(c1), false) "Restrict lookup to encapsulated elements only" ;
-        env2 = Env.openScope(env, encflag, SOME(id));
-        ci_state = ClassInf.start(restr, id);
-        (cache,_,env3,_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, true);
-        (cache,t,env5) = lookupTypeInClass(cache,env3, c, p1, false);
-      then
-        (cache,t,env5);
-    case (cache,env,cdef,(path as Absyn.QUALIFIED(name = c1,path = p1)),true)
-      equation 
-        (cache,(c as SCode.CLASS(id,_,(encflag as false),restr,_)),env) = lookupClassInEnv(cache,env, Absyn.IDENT(c1), false) "Restrict lookup to encapsulated elements only" ;
-        str = Absyn.pathString(path);
-        Error.addMessage(Error.LOOKUP_ENCAPSULATED_RESTRICTION_VIOLATION, {str});
-      then
-        fail();
-    case (cache,env,cdef,Absyn.QUALIFIED(name = c1,path = p1),false)
-      equation 
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env1) = lookupClassInEnv(cache,env, Absyn.IDENT(c1), false) "Lookup not restricted to encapsulated elts. only" ;
-        env2 = Env.openScope(env1, encflag, SOME(id));
-        ci_state = ClassInf.start(restr, id);
-        (cache,_,env4,_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, true) ;
-        (cache,t,env5) = lookupTypeInClass(cache,env4, c, p1, false);
-      then
-        (cache,t,env5);
-    case (_,_,SCode.CLASS(name = cname),path,_) /* Debug.fprint(\"failtrace\",cname) &
-	Debug.fprint(\"failtrace\", \"\\n  - looked for: \") & Absyn.path_string path => s & 
-	Debug.fprint(\"failtrace\", s) & 
-	Debug.fprint(\"failtrace\", \"\\n\") */  then fail(); 
-  end matchcontinue;
-end lookupTypeInClass;
 
 protected function lookupClassInFrame "function: lookupClassInFrame
   
@@ -1817,18 +1774,28 @@ algorithm
       then
         (cache,c,env_1);
     case (cache,Env.FRAME(class_1 = sid,list_4 = items),totenv,name,_)
+      local Boolean unique;
       equation 
-        (cache,c,env_1,true) = lookupUnqualifiedImportedClassInFrame(cache,items, totenv, name) "unique" ;
+        (cache,c,env_1,unique) = lookupUnqualifiedImportedClassInFrame(cache,items, totenv, name) "unique" ;
+        reportSeveralNamesError(unique,name);
       then
         (cache,c,env_1);
-    case (cache,Env.FRAME(class_1 = sid,list_4 = items),totenv,name,_)
-      equation 
-        (cache,c,env_1,false) = lookupUnqualifiedImportedClassInFrame(cache,items, totenv, name) "unique" ;
-        Error.addMessage(Error.IMPORT_SEVERAL_NAMES, {name});
-      then
-        fail();
   end matchcontinue;
 end lookupClassInFrame;
+
+protected function reportSeveralNamesError "given a boolean, report error message of importing several names
+if boolean flag is false and fail. If flag is true succeed and do nothing."
+	input Boolean unique;
+	input String name;
+algorithm
+  _ := matchcontinue(unique,name)
+    case(true,_) then ();
+    case(false,name) 
+      equation   
+      Error.addMessage(Error.IMPORT_SEVERAL_NAMES, {name});
+      then ();
+  end matchcontinue;
+end reportSeveralNamesError;
 
 protected function lookupVar2 "function: lookupVar2
   

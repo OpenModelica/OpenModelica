@@ -4217,16 +4217,9 @@ algorithm
       list<Absyn.Exp> vars;
       Absyn.Exp size_absyn,exp,bool_exp;
       Env.Cache cache;
-    case (cache,env,Absyn.CREF_IDENT(name = "lookupClass"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
-      equation 
-        path = Absyn.crefToPath(cr);
-        cr_1 = pathToComponentRef(path);
-      then
-        (cache,Exp.CALL(Absyn.IDENT("lookupClass"),{Exp.CREF(cr_1,Exp.OTHER())},
-          false,true),Types.PROP((Types.T_STRING({}),NONE),Types.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "typeOf"),{Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = varid,subscripts = {}))},{},impl,SOME(st)) then (cache,Exp.CALL(Absyn.IDENT("typeOf"),
-          {Exp.CREF(Exp.CREF_IDENT(varid,{}),Exp.OTHER())},false,true),Types.PROP((Types.T_STRING({}),NONE),Types.C_VAR()),SOME(st)); 
+          {Exp.CODE(Absyn.C_VARIABLENAME(Absyn.CREF_IDENT(varid,{})),Exp.OTHER())},false,true),Types.PROP((Types.T_STRING({}),NONE),Types.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "clear"),{},{},impl,SOME(st)) then (cache,Exp.CALL(Absyn.IDENT("clear"),{},false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st)); 
 
@@ -4235,16 +4228,18 @@ algorithm
     case (cache,env,Absyn.CREF_IDENT(name = "list"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("list"),{},false,true),Types.PROP((Types.T_STRING({}),NONE),Types.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "list"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
+      local Absyn.Path className;
       equation 
-        (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
+				className = Absyn.crefToPath(cr);	
       then
-        (cache,Exp.CALL(Absyn.IDENT("list"),{Exp.CREF(cr_1,Exp.OTHER())},false,true),Types.PROP((Types.T_STRING({}),NONE),Types.C_VAR()),SOME(st));
+        (cache,Exp.CALL(Absyn.IDENT("list"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},false,true),Types.PROP((Types.T_STRING({}),NONE),Types.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "translateModel"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
+      local
+        Absyn.Path className;
       equation 
-        (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
-        classname = componentRefToPath(cr_1) "this extracts the fileNamePrefix which is used when generating code and init-file" ;
-        cname_str = Absyn.pathString(classname);
+        className = Absyn.crefToPath(cr); 
+        cname_str = Absyn.pathString(className);
         (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix", 
           (Types.T_STRING({}),NONE), args, Exp.SCONST(cname_str));
         recordtype = (
@@ -4256,18 +4251,21 @@ algorithm
           Types.ATTR(false,SCode.RO(),SCode.VAR(),Absyn.BIDIR()),false,(Types.T_STRING({}),NONE),Types.UNBOUND())},NONE),NONE);
       then
         (cache,Exp.CALL(Absyn.IDENT("translateModel"),
-          {Exp.CREF(cr_1,Exp.OTHER()),filenameprefix},false,true),Types.PROP(recordtype,Types.C_VAR()),SOME(st));
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),filenameprefix},false,true),Types.PROP(recordtype,Types.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "instantiateModel"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
-      equation 
+      local Absyn.Path className;
+      equation
+        className = Absyn.crefToPath(cr); 
         (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
       then
         (cache, Exp.CALL(Absyn.IDENT("instantiateModel"),
-          {Exp.CREF(cr_1,Exp.OTHER())},false,true),Types.PROP((Types.T_STRING({}),NONE),Types.C_VAR()),SOME(st));
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},false,true),Types.PROP((Types.T_STRING({}),NONE),Types.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
+      local Absyn.Path className;
       equation 
-        (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
+        className = Absyn.crefToPath(cr); 
         (cache,startTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "startTime", (Types.T_REAL({}),NONE), 
           args, Exp.RCONST(0.0));
         (cache,stopTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "stopTime", (Types.T_REAL({}),NONE), 
@@ -4276,19 +4274,20 @@ algorithm
           (Types.T_INTEGER({}),NONE), args, Exp.ICONST(500));
         (cache,method) = getOptionalNamedArg(cache,env, SOME(st), impl, "method", (Types.T_STRING({}),NONE), 
           args, Exp.SCONST("dassl"));
-        classname = componentRefToPath(cr_1) "this extracts the fileNamePrefix which is used when generating code and init-file" ;
-        cname_str = Absyn.pathString(classname);
+        cname_str = Absyn.pathString(className);
         (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix", 
           (Types.T_STRING({}),NONE), args, Exp.SCONST(cname_str));
       then
         (cache,Exp.CALL(Absyn.IDENT("buildModel"),
-          {Exp.CREF(cr_1,Exp.OTHER()),startTime,stopTime,
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),startTime,stopTime,
           numberOfIntervals,method,filenameprefix},false,true),Types.PROP(
           (
           Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE),Types.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */ 
+      local Absyn.Path className;
       equation 
+        className = Absyn.crefToPath(cr); 
         (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
         (cache,startTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "startTime", (Types.T_REAL({}),NONE), 
           args, Exp.RCONST(0.0));
@@ -4309,7 +4308,7 @@ algorithm
           Types.ATTR(false,SCode.RO(),SCode.VAR(),Absyn.BIDIR()),false,(Types.T_STRING({}),NONE),Types.UNBOUND())},NONE),NONE);
       then
         (cache,Exp.CALL(Absyn.IDENT("simulate"),
-          {Exp.CREF(cr_1,Exp.OTHER()),startTime,stopTime,
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),startTime,stopTime,
           numberOfIntervals,method,filenameprefix},false,true),Types.PROP(recordtype,Types.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "jacobian"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */ 
@@ -4369,10 +4368,11 @@ algorithm
         (cache,Exp.CALL(Absyn.IDENT("timing"),{exp_1},false,true),Types.PROP((Types.T_REAL({}),NONE),Types.C_VAR()),st_1);
 
     case (cache,env,Absyn.CREF_IDENT(name = "generateCode"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
+      local Absyn.Path className;
       equation 
-        (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
+        className = Absyn.crefToPath(cr); 
       then
-        (cache,Exp.CALL(Absyn.IDENT("generateCode"),{Exp.CREF(cr_1,Exp.OTHER())},
+        (cache,Exp.CALL(Absyn.IDENT("generateCode"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},
           false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "setCompiler"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setCompiler"),{Exp.SCONST(str)},false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st)); 
@@ -4415,10 +4415,11 @@ algorithm
     case (cache,env,Absyn.CREF_IDENT(name = "runScript"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("runScript"),{Exp.SCONST(str)},false,true),Types.PROP((Types.T_STRING({}),NONE),Types.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "loadModel"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
+      local Absyn.Path className;
       equation 
-        (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
+        className = Absyn.crefToPath(cr); 
       then
-        (cache,Exp.CALL(Absyn.IDENT("loadModel"),{Exp.CREF(cr_1,Exp.OTHER())},
+        (cache,Exp.CALL(Absyn.IDENT("loadModel"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},
           false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "deleteFile"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("deleteFile"),{Exp.SCONST(str)},false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st)); 
@@ -4426,17 +4427,19 @@ algorithm
     case (cache,env,Absyn.CREF_IDENT(name = "loadFile"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("loadFile"),{Exp.SCONST(str)},false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "saveModel"),{Absyn.STRING(value = str),Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
+      local Absyn.Path className;
       equation 
-        (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
+          className = Absyn.crefToPath(cr); 
       then
         (cache,Exp.CALL(Absyn.IDENT("saveModel"),
-          {Exp.SCONST(str),Exp.CREF(cr_1,Exp.OTHER())},false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
+          {Exp.SCONST(str),Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "save"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
+      local Absyn.Path className;
       equation 
-        (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
+        className = Absyn.crefToPath(cr); 
       then
-        (cache,Exp.CALL(Absyn.IDENT("save"),{Exp.CREF(cr_1,Exp.OTHER())},false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
+        (cache,Exp.CALL(Absyn.IDENT("save"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "saveAll"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("saveAll"),{Exp.SCONST(str)},false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st)); 
 
@@ -4542,10 +4545,10 @@ algorithm
     case {} then {}; 
     case ((Absyn.CREF(componentReg = cr) :: xs))
       equation 
-        cr_1 = Exp.toExpCref(cr) "Use simplified conversion, all indexes integer constants" ;
+        
         xs_1 = elabVariablenames(xs);
       then
-        (Exp.CREF(cr_1,Exp.OTHER()) :: xs_1);
+        (Exp.CODE(Absyn.C_VARIABLENAME(cr),Exp.OTHER()) :: xs_1);
   end matchcontinue;
 end elabVariablenames;
 
@@ -4594,7 +4597,7 @@ algorithm
   end matchcontinue;
 end getOptionalNamedArg;
 
-protected function elabUntypedCref "function: elabUntypedCref
+public function elabUntypedCref "function: elabUntypedCref
   This function elaborates a ComponentRef without adding type information. 
    Environment is passed along, such that constant subscripts can be elabed using existing
   functions

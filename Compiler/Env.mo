@@ -273,7 +273,7 @@ protected function nameScope "function: nameScope
   know what the current class being instantiated is.
   
   Secondly, it is needed when expanding type names in the context of 
-  flattening of the inheritance hierarchy. The reason for this is that types
+  flattening of the inheritance hiergearchy. The reason for this is that types
   of inherited components needs to be expanded such that the types can be 
   looked up from the environment of the base class.
 "
@@ -1221,6 +1221,7 @@ algorithm
   local CacheTree tree;
    case (scope,path,CACHE(SOME(ENVCACHE(tree)),_))
       equation
+        
         env = cacheGetEnv(scope,path,tree);
        // print("got cached env for ");print(Absyn.pathString(path)); print("\n");
       then env;          
@@ -1246,10 +1247,11 @@ algorithm
       then CACHE(SOME(ENVCACHE(tree)),ie);
     case (fullpath,CACHE(SOME(ENVCACHE(tree)),ie),env) 
       equation
-        //print(" about to Adding ");print(Absyn.pathString(fullpath));print(" to cache:\n");
-        //print(printCacheStr(CACHE(SOME(ENVCACHE(tree)),ie)));
+       // print(" about to Adding ");print(Absyn.pathString(fullpath));print(" to cache:\n");
       tree = cacheAddEnv(fullpath,tree,env);
+      
        //print("Adding ");print(Absyn.pathString(fullpath));print(" to cache\n");
+        //print(printCacheStr(CACHE(SOME(ENVCACHE(tree)),ie)));
       then CACHE(SOME(ENVCACHE(tree)),ie);
     case (_,_,_) equation print("cacheAdd failed\n"); then fail();
   end matchcontinue;
@@ -1271,24 +1273,28 @@ algorithm
     case (path2,path,tree)
       equation
         env = cacheGetEnv2(path2,path,tree);
-        //print("found in cache\n");
+        //print("found ");print(Absyn.pathString(path));print(" in cache\n");
       then env;
 
-		   // Go up one level.
-    case (path2,path,tree)
+		   // Go up one level. Only if we search for e.g. M.C.E and in scope M
+ /*   case (path2,path,tree)
+      local Ident id1,id2;
       equation
+        id1=Absyn.pathFirstIdent(path2);
+        id2 = Absyn.pathFirstIdent(path);
+        id1 = id2; // only then because otherwise we might lookup wrong class (Eg. Modelica.Math instead of Modelica.Blocks.Math)
         path2 =Absyn.stripLast(path2);
         env = cacheGetEnv(path2,path,tree);
         //print("found in cache\n");
       then env;      
-        
-        // Finally try top level
+   */     
+/*        // Finally try top level
     case (Absyn.IDENT(_),path,CACHETREE(_,_,children))
       equation
         env = cacheGetEnv3(path,children);
         //print("found in cache\n");
       then env;      
-       
+  */     
   end matchcontinue;
 end cacheGetEnv;
  
@@ -1379,11 +1385,11 @@ algorithm
     local 
       Ident id,globalID,id2;
       Absyn.Path path;
-      Env globalEnv;
-      list<CacheTree> children;
+      Env globalEnv,oldEnv;
+      list<CacheTree> children,children2;
       CacheTree child;
       // simple names already added
-      case (Absyn.IDENT(id),(tree as CACHETREE(globalID,globalEnv,CACHETREE(id2,_,_)::_)),env) 
+      case (Absyn.IDENT(id),(tree as CACHETREE(globalID,globalEnv,CACHETREE(id2,oldEnv,children)::children2)),env) 
         equation
           //print(id);print(" already added\n");
           equality(id=id2);
@@ -1428,7 +1434,6 @@ algorithm
       equation
         equality(id=id2);
         children2 = cacheAddEnv2(path,children2,env);
-        //print("qualified name, found matching\n");
       then	CACHETREE(id2,env2,children2)::children;
 
 		// simple name, found matching
@@ -1436,7 +1441,7 @@ algorithm
       equation
         equality(id=id2);
         //print("single name, found matching\n");
-      then CACHETREE(id2,env,children2)::children;
+      then CACHETREE(id2,env2,children2)::children;
         
         // try next
     case(path,child::children,env)

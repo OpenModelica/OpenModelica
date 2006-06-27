@@ -1128,8 +1128,8 @@ algorithm
         s = realString(time);
         s=Util.stringAppendList({"instClassIn ",n," ",s," s\n"});
         //print(Util.if_(b,s,""));
-        //print("instClassDef, outenv:");print(Env.printEnvStr(env));
-        cache = addCachedEnv(cache,n,env_1);
+        //print("instClassDef, outenv:");print(Env.printEnvStr(env_1));
+       cache = addCachedEnv(cache,n,env_1);
       then
         (cache,l,env_1,csets_1,ci_state_1,tys,bc);
     case (_,_,_,_,csets,_,_,_,_,_)
@@ -1262,7 +1262,10 @@ algorithm
         s2 = Env.printEnvPathStr(env);
         s=Util.stringAppendList({"PARTIAL instClassIn ",n," in scope ",s2," ",s," s\n"});
         //print(Util.if_(b,s,""));
-				//cache = addCachedEnv(cache,n,env);
+        //print("inCache:");print(Env.printCacheStr(cache));print("\n");
+				cache = addCachedEnv(cache,n,env_1);
+        //print("outCache:");print(Env.printCacheStr(cache));print("\n");
+        //print("partialInstClassDef, outenv:");print(Env.printEnvStr(env_1));
       then
         (cache,env_1,ci_state_1);
   end matchcontinue;
@@ -1748,7 +1751,7 @@ algorithm
         ErrorExt.errorOff();
         (cache,m_1) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod, true) "impl" ;
         m_2 = Mod.merge(mods, m_1, env, Prefix.NOPRE());
-        (_,cdef,cenv) = Lookup.lookupClass(cache,env, path, true);
+        (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, true);
         (cache,dae,env_1,_,ty,st) = instClassBasictype(cache,env, m_2, Prefix.NOPRE(), Connect.emptySet, cdef, 
           inst_dims, false, INNER_CALL()) "impl" ;
         b1 = Types.basicType(ty);
@@ -2087,7 +2090,7 @@ algorithm
       Env.Cache cache;
     case (cache,env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,impl) /* inherited initial equations inherited algorithms inherited initial algorithms */ 
       equation 
-        (_,(c as SCode.CLASS(cn,_,encf,r,_)),cenv) = Lookup.lookupClass(cache,env, tp, true);
+        (cache,(c as SCode.CLASS(cn,_,encf,r,_)),cenv) = Lookup.lookupClass(cache,env, tp, true);
         outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
         (cache,cenv1,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv, outermod, c, impl);
         (cache,tp_1) = makeFullyQualified(cache,cenv1, tp);
@@ -2181,7 +2184,7 @@ algorithm
       Env.Cache cache;
     case (cache,env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,impl) /* inherited initial equations inherited algorithms inherited initial algorithms */ 
       equation 
-        (_,(c as SCode.CLASS(cn,_,encf,r,_)),cenv) = Lookup.lookupClass(cache,env, tp, true);
+        (cache,(c as SCode.CLASS(cn,_,encf,r,_)),cenv) = Lookup.lookupClass(cache,env, tp, true);
         outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
         (cache,cenv1,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv, outermod, c, impl);
         (cache,tp_1) = makeFullyQualified(cache,cenv1, tp);
@@ -3051,7 +3054,7 @@ algorithm
   end matchcontinue;
 end memberCrefs;
 
-protected function instElement "function: instElement
+public function instElement "function: instElement
  
   This monster function instantiates an element of a class
   definition.  An element is either a class definition, a variable,
@@ -3763,7 +3766,7 @@ algorithm
     case (cache,_,_,_,SCode.CLASS(name = "Boolean"),_,_) then (cache,{}); 
     case (cache,env,mods,pre,SCode.CLASS(name = id,restricion = SCode.R_TYPE(),parts = SCode.DERIVED(short = cn,absynArrayDimOption = ad,mod = mod)),dims,impl) /* Derived classes with restriction type, e.g. type Point = Real{3}; */ 
       equation 
-        (_,cl,cenv) = Lookup.lookupClass(cache,env, cn, true);
+        (cache,cl,cenv) = Lookup.lookupClass(cache,env, cn, true);
         owncref = Absyn.CREF_IDENT(id,{});
         ad_1 = getOptionArraydim(ad);
         (cache,mod_1) = Mod.elabMod(cache,env, pre, mod, impl);

@@ -1738,6 +1738,7 @@ algorithm
       Interactive.InteractiveStmts istmts;
       Boolean bval;
       Env.Cache cache;
+      Absyn.Path className;
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "lookupClass"),expLst = {Exp.CREF(componentRef = cr)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
         path = Static.componentRefToPath(cr);
@@ -1753,7 +1754,7 @@ algorithm
       then
         (cache,Values.STRING(str),st);
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "typeOf"),expLst = {Exp.CREF(componentRef = Exp.CREF_IDENT(ident = varid))}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "typeOf"),expLst = {Exp.CODE(Absyn.C_VARIABLENAME(Absyn.CREF_IDENT(name = varid)),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
         tp = Interactive.getTypeOfVariable(varid, iv);
         str = Types.unparseType(tp);
@@ -1782,9 +1783,8 @@ algorithm
       then
         (cache,Values.STRING(str),st);
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "list"),expLst = {Exp.CREF(componentRef = cr)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "list"),expLst = {Exp.CODE(Absyn.C_TYPENAME(path),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
-        path = Static.componentRefToPath(cr);
         class_ = Interactive.getPathedClassInProgram(path, p);
         str = Dump.unparseStr(Absyn.PROGRAM({class_},Absyn.TOP())) ",false" ;
       then
@@ -1805,9 +1805,9 @@ algorithm
       then
         (cache,Values.STRING(res),Interactive.SYMBOLTABLE(p,sp,ic_1,iv,cf));
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "translateModel"),expLst = {Exp.CREF(componentRef = cr),filenameprefix}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "translateModel"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),filenameprefix}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
-        (cache,ret_val,st_1,_,_,_) = translateModel(cache,env, cr, st, msg, filenameprefix);
+        (cache,ret_val,st_1,_,_,_) = translateModel(cache,env, className, st, msg, filenameprefix);
       then
         (cache,ret_val,st_1);
 
@@ -1863,16 +1863,16 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
 
-    case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = "buildModel"),expLst = {Exp.CREF(componentRef = cr),starttime,stoptime,interval,method,filenameprefix})),(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = "buildModel"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,method,filenameprefix})),(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
         (cache,executable,method_str,st,initfilename) = buildModel(cache,env, exp, st_1, msg);
       then
         (cache,Values.ARRAY({Values.STRING(executable),Values.STRING(initfilename)}),st);
 
-    case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = "buildModel"),expLst = {Exp.CREF(componentRef = cr),starttime,stoptime,interval,method,filenameprefix})),(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* failing build_model */  
+    case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = "buildModel"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,method,filenameprefix})),(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* failing build_model */  
     then (cache,Values.ARRAY({Values.STRING(""),Values.STRING("")}),st_1); 
 
-    case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = "simulate"),expLst = {Exp.CREF(componentRef = cr),starttime,stoptime,interval,method,filenameprefix})),(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = "simulate"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,method,filenameprefix})),(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
         (cache,executable,method_str,st,_) = buildModel(cache,env, exp, st_1, msg) "FIXME: Should ceval be called with impl=true here? Build and simulate model" ;
         cit = winCitation();
@@ -1894,7 +1894,7 @@ algorithm
       then
         (cache,simValue,newst);
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "simulate"),expLst = {Exp.CREF(componentRef = cr),starttime,stoptime,interval,method,filenameprefix}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "simulate"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,method,filenameprefix}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local String errorStr;
       equation 
         omhome = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
@@ -1905,7 +1905,7 @@ algorithm
       then
         (cache,simValue,st);
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "simulate"),expLst = {Exp.CREF(componentRef = cr),starttime,stoptime,interval,method,filenameprefix}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "simulate"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,method,filenameprefix}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
         simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),
           {
@@ -1914,28 +1914,28 @@ algorithm
       then
         (cache,simValue,st);
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "instantiateModel"),expLst = {Exp.CREF(componentRef = cr)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "instantiateModel"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      local Absyn.Path className;
+        Absyn.ComponentRef crefCName;
       equation 
-        cr_1 = Exp.unelabCref(cr);
-        true = Interactive.existClass(cr_1, p);
-        path = Static.componentRefToPath(cr);
+        crefCName = Absyn.pathToCref(className);
+        true = Interactive.existClass(crefCName, p);
         p_1 = SCode.elaborate(p);
-        (cache,(dae as DAE.DAE(dael)),env) = Inst.instantiateClass(cache,p_1, path);
-        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(path,dael,env));
+        (cache,(dae as DAE.DAE(dael)),env) = Inst.instantiateClass(cache,p_1, className);
+        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
         str = DAE.dumpStr(dae);
       then
         (cache,Values.STRING(str),Interactive.SYMBOLTABLE(p,sp,ic_1,iv,cf));
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "instantiateModel"),expLst = {Exp.CREF(componentRef = cr)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* model does not exist */ 
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "instantiateModel"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* model does not exist */ 
       equation 
-        cr_1 = Exp.unelabCref(cr);
+				cr_1 = Absyn.pathToCref(className);
         false = Interactive.existClass(cr_1, p);
       then
         (cache,Values.STRING("Unknown model.\n"),Interactive.SYMBOLTABLE(p,sp,ic,iv,cf));
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "instantiateModel"),expLst = {Exp.CREF(componentRef = cr)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "instantiateModel"),expLst = {Exp.CODE(Absyn.C_TYPENAME(path),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
-        path = Static.componentRefToPath(cr);
         p_1 = SCode.elaborate(p);
         str = Print.getErrorString() "we do not want error msg twice.." ;
         failure((_,_,_) = Inst.instantiateClass(cache,p_1, path));
@@ -1954,6 +1954,7 @@ algorithm
       local list<Exp.Exp> vars;
       equation 
         (cache,(size_value as Values.INTEGER(size)),SOME(st)) = ceval(cache,env, size_expression, true, SOME(st), NONE, msg);
+				vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr);
         pwd = System.pwd();
         pd = System.pathDelimiter();
@@ -1988,6 +1989,7 @@ algorithm
         Integer res;
         list<Exp.Exp> vars;
       equation 
+        vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
         vars_2 = Util.listUnionElt("time", vars_1);
         (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env, 
@@ -2009,6 +2011,7 @@ algorithm
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "plot"),expLst = {Exp.ARRAY(array = vars)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local list<Exp.Exp> vars;
       equation 
+        vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
         (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env, 
@@ -2020,6 +2023,7 @@ algorithm
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "plot"),expLst = {Exp.ARRAY(array = vars)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local list<Exp.Exp> vars;
       equation 
+        vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
         failure((_,_,_) = ceval(cache,env, 
@@ -2040,6 +2044,7 @@ algorithm
         Integer res;
         list<Exp.Exp> vars;
       equation 
+        vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr);
         length = listLength(vars_1);
         (length > 1) = true;
@@ -2062,6 +2067,7 @@ algorithm
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = vars),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local list<Exp.Exp> vars;
       equation 
+        vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error with less than two elements (=variables) in the array.
            This means we cannot plot var2 as a function of var1 as var2 is missing" ;
         length = listLength(vars_1);
@@ -2072,6 +2078,7 @@ algorithm
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = vars),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local list<Exp.Exp> vars;
       equation 
+        vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env, 
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
@@ -2082,6 +2089,7 @@ algorithm
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = vars),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local list<Exp.Exp> vars;
       equation 
+        vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         failure((_,_,_) = ceval(cache,env, 
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, NO_MSG())) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
@@ -2188,20 +2196,18 @@ algorithm
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "runScript"),expLst = {Exp.SCONST(string = str)}),st,msg) then (cache,Values.BOOL(false),st); 
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "generateCode"),expLst = {(funcref as Exp.CREF(componentRef = fcr))}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "generateCode"),expLst = {Exp.CODE(Absyn.C_TYPENAME(path),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
-        path = Static.componentRefToPath(fcr) "SCode.elaborate(p) => p\' &" ;
         cache = cevalGenerateFunction(cache,env, path) "	& Inst.instantiate_implicit(p\') => d &" ;
       then
         (cache,Values.BOOL(true),st);
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "loadModel"),expLst = {Exp.CREF(componentRef = cr)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* add path to symboltable for compiled functions
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "loadModel"),expLst = {Exp.CODE(Absyn.C_TYPENAME(path),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* add path to symboltable for compiled functions
 	  Interactive.SYMBOLTABLE(p,sp,ic,iv,(path,t)::cf),
 	  but where to get t? */ 
       local Absyn.Program p_1;
       equation 
         mp = Settings.getModelicaPath();
-        path = Static.componentRefToPath(cr);
         pnew = ClassLoader.loadClass(path, mp);
         p_1 = Interactive.updateProgram(pnew, p);
         str = Print.getString();
@@ -2209,15 +2215,14 @@ algorithm
       then
         (cache,Values.BOOL(true),newst);
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "loadModel"),expLst = {Exp.CREF(componentRef = cr)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "loadModel"),expLst = {Exp.CODE(Absyn.C_TYPENAME(path),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
-        path = Static.componentRefToPath(cr);
         pathstr = ModUtil.pathString(path);
         Error.addMessage(Error.LOAD_MODEL_ERROR, {pathstr});
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "loadModel"),expLst = {Exp.CREF(componentRef = cr)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) 
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "loadModel"),expLst = {Exp.CODE(Absyn.C_TYPENAME(path),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) 
     then (cache,Values.BOOL(false),st);  /* loadModel failed */ 
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "loadFile"),expLst = {Exp.SCONST(string = name)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
@@ -2256,17 +2261,16 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "save"),expLst = {Exp.CREF(componentRef = cr)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "save"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local Absyn.Program p_1;
       equation 
-        classpath = Static.componentRefToPath(cr);
-        (p_1,filename) = Interactive.getContainedClassAndFile(classpath, p);
+        (p_1,filename) = Interactive.getContainedClassAndFile(className, p);
         str = Dump.unparseStr(p_1) ",true" ;
         System.writeFile(filename, str);
       then
         (cache,Values.BOOL(true),st);
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "save"),expLst = {Exp.CREF(componentRef = cr)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) 
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "save"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) 
     then (cache,Values.BOOL(false),st); 
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "saveAll"),expLst = {Exp.SCONST(string = filename)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
@@ -2276,9 +2280,8 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "saveModel"),expLst = {Exp.SCONST(string = name),Exp.CREF(componentRef = cr)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "saveModel"),expLst = {Exp.SCONST(string = name),Exp.CODE(Absyn.C_TYPENAME(classpath),_)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
-        classpath = Static.componentRefToPath(cr) "Error writing to file" ;
         cname = Absyn.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {cname,"global"});
       then
@@ -2405,7 +2408,7 @@ public function translateModel "function translateModel
 "
 	input Env.Cache inCache;
 	input Env.Env inEnv;
-  input Exp.ComponentRef inComponentRef;
+  input Absyn.Path className;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Msg inMsg;
   input Exp.Exp inExp;
@@ -2417,7 +2420,7 @@ public function translateModel "function translateModel
   output String outString;
 algorithm 
   (outCache,outValue,outInteractiveSymbolTable,outDAELow,outStringLst,outString):=
-  matchcontinue (inCache,inEnv,inComponentRef,inInteractiveSymbolTable,inMsg,inExp)
+  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg,inExp)
     local
       String filenameprefix,cname_str,filename,funcfilename,makefilename,file_dir;
       Absyn.Path classname;
@@ -2440,14 +2443,13 @@ algorithm
       Msg msg;
       Exp.Exp fileprefix;
       Env.Cache cache;
-    case (cache,env,cr,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,fileprefix) /* mo file directory */ 
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,fileprefix) /* mo file directory */ 
       equation 
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
-        classname = Static.componentRefToPath(cr);
         p_1 = SCode.elaborate(p);
-        (cache,dae_1,env) = Inst.instantiateClass(cache,p_1, classname);
+        (cache,dae_1,env) = Inst.instantiateClass(cache,p_1, className);
         ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1);
-        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dael,env));
+        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
         dlow = DAELow.lower(dae, true);
         Debug.fprint("bltdump", "Lowered DAE:\n");
         Debug.fcall("bltdump", DAELow.dump, dlow);
@@ -2464,14 +2466,14 @@ algorithm
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrixT, mT);
         Debug.fcall("bltdump", DAELow.dump, indexed_dlow_1);
         Debug.fcall("bltdump", DAELow.dumpMatching, ass1);
-        cname_str = Absyn.pathString(classname);
+        cname_str = Absyn.pathString(className);
         filename = Util.stringAppendList({filenameprefix,".cpp"});
         funcfilename = Util.stringAppendList({filenameprefix,"_functions.cpp"});
         makefilename = generateMakefilename(filenameprefix);
-        a_cref = Exp.unelabCref(cr);
+        a_cref = Absyn.pathToCref(className);
         file_dir = getFileDir(a_cref, p);
-        libs = SimCodegen.generateFunctions(p_1, dae, indexed_dlow_1, classname, funcfilename);
-        SimCodegen.generateSimulationCode(dae, indexed_dlow_1, ass1, ass2, m, mT, comps, classname, 
+        libs = SimCodegen.generateFunctions(p_1, dae, indexed_dlow_1, className, funcfilename);
+        SimCodegen.generateSimulationCode(dae, indexed_dlow_1, ass1, ass2, m, mT, comps, className, 
           filename, funcfilename);
         SimCodegen.generateMakefile(makefilename, filenameprefix, libs, file_dir) "	Util.string_append_list({\"make -f \",cname_str, \".makefile\\n\"}) => s_call &
 " ;
@@ -2562,7 +2564,8 @@ algorithm
       list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,Exp.CALL(expLst = {Exp.CREF(componentRef = cr),starttime,stoptime,interval,method,filenameprefix}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,cname_str)
+      Absyn.Path className;
+    case (cache,env,Exp.CALL(expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,method,filenameprefix}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,cname_str)
       equation 
         (cache,Values.STRING(prefix_str),SOME(st)) = ceval(cache,env, filenameprefix, true, SOME(st), NONE, msg);
         (cache,starttime_v,SOME(st)) = ceval(cache,env, starttime, true, SOME(st), NONE, msg);
@@ -2628,10 +2631,9 @@ algorithm
       list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = _),expLst = {Exp.CREF(componentRef = cr),starttime,stoptime,interval,method,fileprefix})),(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = _),expLst = {Exp.CODE(Absyn.C_TYPENAME(classname),_),starttime,stoptime,interval,method,fileprefix})),(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
-        (cache,ret_val,st,indexed_dlow_1,libs,file_dir) = translateModel(cache,env, cr, st_1, msg, fileprefix);
-        classname = Static.componentRefToPath(cr);
+        (cache,ret_val,st,indexed_dlow_1,libs,file_dir) = translateModel(cache,env, classname, st_1, msg, fileprefix);
         cname_str = Absyn.pathString(classname);
         (cache,init_filename,starttime_r,stoptime_r,interval_r,method_str) = calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);

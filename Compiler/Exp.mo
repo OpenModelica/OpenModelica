@@ -379,6 +379,10 @@ protected import OpenModelica.Compiler.Error;
 
 protected import OpenModelica.Compiler.Debug;
 
+protected import OpenModelica.Compiler.Static;
+
+protected import OpenModelica.Compiler.Env;
+
 protected constant Exp rconstone=RCONST(1.0);
 
 
@@ -7313,5 +7317,17 @@ algorithm
         ((e_1,b) :: es_1);
   end matchcontinue;
 end matrixExpMap1Help;
+
+public function CodeVarToCref
+  input Exp inExp;
+  output Exp outExp;
+algorithm
+  outExp:=matchcontinue(inExp)
+  local ComponentRef e_cref; Absyn.ComponentRef cref;
+    case(CODE(Absyn.C_VARIABLENAME(cref),_)) equation
+      (_,e_cref) = Static.elabUntypedCref(Env.emptyCache,Env.emptyEnv,cref,false);
+      then CREF(e_cref,OTHER());
+  end matchcontinue;
+end CodeVarToCref;
 end Exp;
 

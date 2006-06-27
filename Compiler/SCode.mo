@@ -1372,6 +1372,11 @@ algorithm
       Element elt,comp,cdef;
       String id2,id1;
       list<Element> xs;
+    case (id2,((comp as COMPONENT(component = id1)) :: _))
+      equation 
+        equality(id1 = id2);
+      then
+        comp;
     case (id2,(COMPONENT(component = id1) :: xs))
       equation 
         failure(equality(id1 = id2));
@@ -1389,16 +1394,18 @@ algorithm
         elt = getElementNamedFromElts(id2, xs);
       then
         elt;
-    case (id2,((comp as COMPONENT(component = id1)) :: _))
-      equation 
-        equality(id1 = id2);
-      then
-        comp;
     case (id2,((cdef as CLASSDEF(name = id1)) :: _))
       equation 
         equality(id1 = id2);
       then
         cdef;
+    
+    // Try next.
+    case (id2, _:: xs)
+      equation 
+        elt = getElementNamedFromElts(id2, xs);
+      then
+        elt;
   end matchcontinue;
 end getElementNamedFromElts;
 

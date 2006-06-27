@@ -902,6 +902,7 @@ algorithm
     case args
       equation 
         args_1 = RTOpts.args(args);
+        //Env.globalCache = fill(Env.emptyCache,1);
         symbolTable = readSettings(args);
         ismode = RTOpts.debugFlag("interactive");
         icmode = RTOpts.debugFlag("interactiveCorba");
