@@ -7958,6 +7958,9 @@ algorithm
       Ident op;
       tuple<Types.TType, Option<Absyn.Path>> t1,t2;
       Env.Cache cache;
+      //NOTE: Koening operator disabled. Not part of Modelica yet.
+      // When introduced in standard, remove case below.
+      case (cache,op,env,t1,t2) then (cache,{});  
     case (cache,op,env,t1,t2)
       equation 
         ((p1 as Absyn.QUALIFIED(_,_))) = Types.getClassname(t1) "Both types user defined" ;
@@ -8023,6 +8026,7 @@ algorithm
         (cache,_,(f_1 :: _)) = Lookup.lookupType(cache,{f}, Absyn.IDENT(funcname), false) "To make sure the function is implicitly instantiated." ;
         (cache,tplst) = Lookup.lookupFunctionsInEnv(cache,{f_1}, Absyn.IDENT(funcname)) "TODO: Fix so lookup_functions_in_env also does instantiation to get type" ;
         tplen = listLength(tplst);
+        //print("makeFullyQualified8034\n");
         (cache,fullfuncname) = Inst.makeFullyQualified(cache,(f_1 :: fs), Absyn.IDENT(funcname));
         res = buildOperatorTypes(tplst, fullfuncname);
       then

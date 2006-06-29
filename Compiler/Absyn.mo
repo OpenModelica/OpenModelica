@@ -894,6 +894,8 @@ protected import OpenModelica.Compiler.Util;
 
 protected import OpenModelica.Compiler.Print;
 
+protected import OpenModelica.Compiler.ModUtil;
+
 public function elementSpecName "adrpo -- not used
 with \"Dump.rml\"
 
@@ -1010,6 +1012,96 @@ algorithm
     case (IDENT(name = n)) then n; 
   end matchcontinue;
 end pathFirstIdent;
+
+public function pathSuffixOf "returns true if suffix_path is a suffix of path"
+	input Path suffix_path;
+	input Path path;
+	output Boolean res;
+algorithm
+  res := matchcontinue(suffix_path,path)
+  local Path p;
+    case(suffix_path,path) 
+      equation
+      true = ModUtil.pathEqual(suffix_path,path);
+      then true;
+    case(suffix_path,QUALIFIED(name=_,path = p)) 
+      then pathSuffixOf(suffix_path,p);
+    case(_,_) then false;
+  end matchcontinue;
+end pathSuffixOf;
+
+
+public function pathPrefixOf "returns true if prefix_path is a prefix of path"
+	input Path prefix_path;
+	input Path path;
+	output Boolean res;
+algorithm
+  res := matchcontinue(prefix_path,path)
+  local Path p;
+    case(prefix_path,path) 
+      equation
+      true = ModUtil.pathEqual(prefix_path,path);
+      then true;
+    case(prefix_path,path) 
+      then pathPrefixOf(prefix_path,stripLast(path));
+    case(_,_) then false;
+  end matchcontinue;
+end pathPrefixOf;
+
+
+public function removePrefix "removes the prefix_path from path, and returns the rest of path"
+	input Path prefix_path;
+	input Path path;
+	output Path newPath;
+algorithm
+  newPath := matchcontinue(prefix_path,path)
+  local Path p,p2; Ident id1,id2;
+    case (QUALIFIED(name=id1,path=p),QUALIFIED(name=id2,path=p2)) equation
+      equality(id1=id2);
+      then removePrefix(p,p2);
+      case(IDENT(id1),QUALIFIED(name=id2,path=p2)) equation
+        equality(id1=id2);
+        then p2;          
+  end matchcontinue;
+end removePrefix;
+
+public function pathContainedIn "This function checks if subPath is contained in path.
+If it is the complete path is returned. Otherwise the function fails.
+For example,
+pathContainedIn( C.D, A.B.C) => A.B.C.D
+pathContainedIn(C.D, A.B.C.D) => A.B.C.D
+pathContainedIn(A.B.C.D, A.B.C.D) => A.B.C.D
+pathContainedIn(B.C,A.B) => A.B.C
+"
+	input Path subPath;
+	input Path path;
+	output Path completePath;
+algorithm
+  completePath := matchcontinue(subPath,path)
+  	// A suffix, e.g. C.D in A.B.C.D
+    case (subPath,path)
+      equation
+        true=pathSuffixOf(subPath,path);
+      then path;
+     // strip last ident of path and recursively check if suffix.
+    case (subPath,path)
+      local Ident ident; Path newPath;
+      equation
+        ident = pathLastIdent(path);
+        newPath = stripLast(path);
+        newPath=pathContainedIn(subPath,newPath);    
+      then joinPaths(newPath,IDENT(ident));
+        
+        // strip last ident of subpath and recursively check if suffix.
+    case (subPath,path)
+      local Ident ident; Path newSubPath;
+      equation
+        ident = pathLastIdent(subPath);
+        newSubPath = stripLast(subPath);
+        newSubPath=pathContainedIn(newSubPath,path);    
+      then joinPaths(newSubPath,IDENT(ident));
+  end matchcontinue;
+end pathContainedIn;
 
 public function getCrefFromExp "function: getCrefFromExp
  
@@ -1235,6 +1327,22 @@ algorithm
         QUALIFIED(str,p_1);
   end matchcontinue;
 end stripLast;
+
+public function stripFirst "function: stripFirst
+ 
+  Returns the path given as argument to the function
+  minus the first ident.
+"
+  input Path inPath;
+  output Path outPath;
+algorithm 
+  outPath:=
+  matchcontinue (inPath)
+    local
+      Path p;
+    case (QUALIFIED(name = _,path = p)) then p; 
+  end matchcontinue;
+end stripFirst;
 
 public function crefToPath "function: crefToPath
  

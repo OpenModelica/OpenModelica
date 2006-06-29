@@ -920,6 +920,7 @@ algorithm
         ci_state = ClassInf.start(r, n);
         (cache,dae1,env_3,(csets_1 as Connect.SETS(_,crs)),ci_state_1,tys,bc_ty) 
         			= instClassIn(cache,env_1, mod, pre, csets, ci_state, c, false, inst_dims, impl) ;
+        //print("makeFullyQualified926\n");
         (cache,fq_class) = makeFullyQualified(cache,env, Absyn.IDENT(n));
         
 //str = Absyn.pathString(fq_class); print("------------------- CLASS makeFullyQualified instClass-----------------\n");print(n); print("  ");print(str);print("\n===============================================\n");
@@ -929,6 +930,7 @@ algorithm
         dae2 = Connect.equations(csets_1);
         (cache,dae3) = Connect.unconnectedFlowEquations(cache,csets_1, dae1, env_3, callscope_1);
         dae = Util.listFlatten({dae1_1,dae2,dae3});
+        //print("makeFullyQualified936\n");
         (cache,typename) = makeFullyQualified(cache,env, Absyn.IDENT(n));
         ty = mktype(typename, ci_state_1, tys, bc_ty) ;
       then
@@ -999,13 +1001,15 @@ algorithm
         c_1 = SCode.classSetPartial(c, false);
         (cache,dae1,env_3,(csets_1 as Connect.SETS(_,crs)),ci_state_1,tys,bc_ty) 
          			= instClassIn(cache,env_1, mod, pre, csets, ci_state, c_1, false, inst_dims, impl) ;
-        (cache,fq_class) = makeFullyQualified(cache,env, Absyn.IDENT(n));
+        //print("makeFullyQualified1007\n");
+        (cache,fq_class) = makeFullyQualified(cache,env_3, Absyn.IDENT(n));
         dae1_1 = DAE.setComponentType(dae1, fq_class);
         callscope_1 = isTopCall(callscope);
         dae2 = Connect.equations(csets_1);
         (cache,dae3) = Connect.unconnectedFlowEquations(cache,csets_1, dae1, env_3, callscope_1);
         dae = Util.listFlatten({dae1_1,dae2,dae3});
-        (cache,typename) = makeFullyQualified(cache,env, Absyn.IDENT(n));
+        //print("makeFullyQualified1014\n");
+        (cache,typename) = makeFullyQualified(cache,env_3, Absyn.IDENT(n));
         ty = mktypeWithArrays(typename, ci_state_1, tys, bc_ty);
       then
         (cache,dae,env_3,Connect.SETS({},crs),ty,ci_state_1);
@@ -1752,7 +1756,7 @@ algorithm
         (cache,m_1) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod, true) "impl" ;
         m_2 = Mod.merge(mods, m_1, env, Prefix.NOPRE());
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, true);
-        (cache,dae,env_1,_,ty,st) = instClassBasictype(cache,env, m_2, Prefix.NOPRE(), Connect.emptySet, cdef, 
+        (cache,dae,env_1,_,ty,st) = instClassBasictype(cache,cenv, m_2, Prefix.NOPRE(), Connect.emptySet, cdef, 
           inst_dims, false, INNER_CALL()) "impl" ;
         b1 = Types.basicType(ty);
         b2 = Types.arrayType(ty);
@@ -1929,6 +1933,7 @@ algorithm
 				env3 = addComponentsToEnv(env2, mods, pre, csets, ci_state, constantEls, constantEls, 
           {}, inst_dims, false);
 				 (cache,_,env3,_,ci_state2,_) = instElementList(cache,env3, mods, pre, csets, ci_state1, constantEls, inst_dims, true) "instantiate constants";
+				 
       then
         (cache,env3,ci_state2);
     case (cache,env,mods,pre,csets,ci_state,SCode.DERIVED(short = cn,absynArrayDimOption = ad,mod = mod),re,prot,inst_dims) /* This rule describes how to instantiate a derived class definition */ 
@@ -1940,6 +1945,7 @@ algorithm
         new_ci_state = ClassInf.start(r, cn2);
         mods_1 = Mod.merge(mods, m, cenv_2, pre);
         mods_2 = Mod.merge(mods_1, mod_1, cenv_2, pre);
+        print("partialInstClassIn1948\n");
         (cache,env_2,new_ci_state_1) = partialInstClassIn(cache,cenv_2, mods_2, pre, csets, new_ci_state, c, prot, 
           inst_dims);
       then
@@ -2088,7 +2094,7 @@ algorithm
       SCode.Mod emod;
       SCode.Element elt;
       Env.Cache cache;
-    case (cache,env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,impl) /* inherited initial equations inherited algorithms inherited initial algorithms */ 
+    case (cache,env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,impl) 
       equation 
         (cache,(c as SCode.CLASS(cn,_,encf,r,_)),cenv) = Lookup.lookupClass(cache,env, tp, true);
         outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
@@ -2126,8 +2132,7 @@ algorithm
         fail();
     case (cache,env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,impl)
       equation 
-        //Debug.fprint("failtrace", "Failed inst_extends_list on EXTENDS\n env:");
-        Env.printEnv(env);
+        //print("instExtendsList failed on extends ");print(Absyn.pathString(tp));print("\n");
       then
         fail();
     case (cache,env,mod,(elt :: rest),ci_state,impl) /* Components that are not EXTENDS */ 
@@ -3264,19 +3269,31 @@ algorithm
       Env.BinTree cl,tps;
       list<Env.Item> imps;
       list<Exp.ComponentRef> crs;
-      Absyn.Path tp;
+      Absyn.Path tp,envpath;
       Env.Cache cache;
     case (cache,env,NONE) then (cache,env); 
-    case (cache,(env as (Env.FRAME(class_1 = id,list_2 = cl,list_3 = tps,list_4 = imps,current6 = crs,encapsulated_7 = enc) :: fs)),SOME(tp)) /* Base classes are fully qualified names, search from top scope This is needed since the environment can be encapsulated, but
-	  inherited classes are not affected by this and therefore should
-	  search from top scope directly. */ 
+     
+      /* Special case to avoid infinite recursion.
+      	If in scope A.B and searching for A.B.C.D, look for C.D directly in the scope. Otherwise, A.B 
+      	will be instantiated over and over again, see testcase packages2.mo
+      		*/      		
+    case (cache,(env as (Env.FRAME(class_1 = id,list_2 = cl,list_3 = tps,list_4 = imps,current6 = crs,encapsulated_7 = enc) :: fs)),SOME(tp)) 
+      local Absyn.Path newTp;
+      equation
+				SOME(envpath) = Env.getEnvPath(env);
+				true = Absyn.pathPrefixOf(envpath,tp);
+				newTp = Absyn.removePrefix(envpath,tp);
+				(cache,env_2) = Lookup.lookupAndInstantiate(cache,env,newTp,true);
+      then
+        (cache,Env.FRAME(id,cl,tps,imps,env_2,crs,enc) :: fs);
+            
+      /* Base classes are fully qualified names, search from top scope.
+       This is needed since the environment can be encapsulated, but inherited classes are not affected 
+       by this and therefore should search from top scope directly. */ 
+    case (cache,(env as (Env.FRAME(class_1 = id,list_2 = cl,list_3 = tps,list_4 = imps,current6 = crs,encapsulated_7 = enc) :: fs)),SOME(tp)) 
       equation 
         top_frame = Env.topFrame(env);
-        (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = Lookup.lookupClass(cache,{top_frame}, tp, true);
-        cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
-        new_ci_state = ClassInf.start(r, cn2);
-        (cache,env_2,new_ci_state_1) = partialInstClassIn(cache,cenv_2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          new_ci_state, c, false, {});
+        (cache,env_2) = Lookup.lookupAndInstantiate(cache,{top_frame},tp,true);
       then
         (cache,Env.FRAME(id,cl,tps,imps,env_2,crs,enc) :: fs);
     case (_,_,_)
@@ -5185,6 +5202,15 @@ algorithm
         NONE = Env.getEnvPath(env);
       then
         (cache,path);
+        
+  /*  case (cache,env,path)
+      local Absyn.Path envpath,newPath;
+        equation
+          SOME(envpath) = Env.getEnvPath(env);
+         newPath = Absyn.pathContainedIn(path,envpath);
+         //print("makeFullyQualified( contained =");print(Absyn.pathString(newPath));print("\n");
+          then (cache,newPath);*/
+      
     case (cache,env,path) /* To make a class fully qualified, the class path
 	  is looked up in the environment.
 	  The FQ path consist of the simple class name
@@ -5245,6 +5271,7 @@ algorithm
       equation 
         (cache,dae,cenv,csets_1,ty,st) = instClass(cache,env, mod, pre, csets, c, inst_dims, true, INNER_CALL());
         env_1 = Env.extendFrameC(env,c);
+        //print("makeFullyQualified5275\n");
         (cache,fpath) = makeFullyQualified(cache,env_1, Absyn.IDENT(n));
         ty1 = setFullyQualifiedTypename(ty,fpath);
         env_1 = Env.extendFrameT(env_1, n, ty1); 
@@ -5256,7 +5283,8 @@ algorithm
     case (cache,env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = (restr as SCode.R_EXT_FUNCTION()),parts = (parts as SCode.PARTS(elementLst = els)))),inst_dims)
       equation 
         (cache,dae,cenv,csets_1,ty,st) = instClass(cache,env, mod, pre, csets, c, inst_dims, true, INNER_CALL());
-        env_1 = Env.extendFrameC(env,c);    
+        env_1 = Env.extendFrameC(env,c);   
+        //print("makeFullyQualified5288\n"); 
         (cache,fpath) = makeFullyQualified(cache,env_1, Absyn.IDENT(n));
         ty1 = setFullyQualifiedTypename(ty,fpath);
         env_1 = Env.extendFrameT(env_1, n, ty1);

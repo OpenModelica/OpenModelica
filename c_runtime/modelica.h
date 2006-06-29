@@ -60,17 +60,25 @@ typedef modelica_string_t modelica_string;
 typedef modelica_integer size_real_array_rettype;
 typedef modelica_integer size_integer_array_rettype;
 
+/* math functions (-lm)*/
 typedef modelica_real cos_rettype;
+typedef modelica_real cosh_rettype;
 typedef modelica_real sin_rettype;
-typedef modelica_real pre_rettype;
-typedef modelica_real edge_rettype;
-typedef modelica_real initial_rettype;
+typedef modelica_real sinh_rettype;
+typedef modelica_real log_rettype;
+typedef modelica_real tan_rettype;
+typedef modelica_real tanh_rettype;
 typedef modelica_real exp_rettype;
-typedef modelica_real noEvent_rettype;
 typedef modelica_real sqrt_rettype;
 typedef modelica_real abs_rettype;
 typedef modelica_real max_rettype;
 typedef modelica_real min_rettype;
+
+/* Special Modelica builtin functions*/
+typedef modelica_real pre_rettype;
+typedef modelica_real edge_rettype;
+typedef modelica_real initial_rettype;
+typedef modelica_real noEvent_rettype;
 typedef modelica_real floor_rettype;
 
 

@@ -276,6 +276,7 @@ protected function nameScope "function: nameScope
   flattening of the inheritance hiergearchy. The reason for this is that types
   of inherited components needs to be expanded such that the types can be 
   looked up from the environment of the base class.
+  See also openScope, getScopeName.
 "
   input Env inEnv;
   input Ident inIdent;
@@ -293,6 +294,19 @@ algorithm
     case ((FRAME(list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: res),id) then (FRAME(SOME(id),ht,httypes,imps,bcframes,crs,encflag) :: res); 
   end matchcontinue;
 end nameScope;
+
+public function getScopeName "function: getScopeName
+ Returns the name of a scope, if no name exist, the function fails.
+"
+  input Env inEnv;
+  output Ident name;
+algorithm 
+  name:=
+  matchcontinue (inEnv)
+    case ((FRAME(class_1 = SOME(name))::_)) then (name); 
+  end matchcontinue;
+end getScopeName;
+
 
 public function extendFrameC "function: extendFrameC
  
@@ -719,7 +733,7 @@ algorithm
         s4 = printEnvStr(bcframes);
         res = Util.stringAppendList(
           {"FRAME: ",sid," (enc=",encflag_str,
-          ") \nclasses and vars:\n=============\n",s1,"   Types:\n======\n",s2,"   Imports:\n=======\n",s3,"\n"});
+          ") \nclasses and vars:\n=============\n",s1,"   Types:\n======\n",s2,"   Imports:\n=======\n",s3,"baseclass:\n======\n",s4,"end baseclass\n"});
       then
         res;
     case FRAME(class_1 = NONE,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag)
@@ -731,7 +745,7 @@ algorithm
         encflag_str = Util.boolString(encflag);
         res = Util.stringAppendList(
           {"FRAME: unnamed (enc=",encflag_str,
-          ") \nclasses and vars:\n=============\n",s1,"   Types:\n======\n",s2,"   Imports:\n=======\n",s3,"\n"});
+          ") \nclasses and vars:\n=============\n",s1,"   Types:\n======\n",s2,"   Imports:\n=======\n",s3,"baseclass:\n======\n",s4,"end baseclass\n"});
       then
         res;
   end matchcontinue;
@@ -1223,7 +1237,7 @@ algorithm
       equation
         
         env = cacheGetEnv(scope,path,tree);
-       // print("got cached env for ");print(Absyn.pathString(path)); print("\n");
+        //print("got cached env for ");print(Absyn.pathString(path)); print("\n");
       then env;          
     case (_,_,_) then fail();
   end matchcontinue;
@@ -1273,7 +1287,8 @@ algorithm
     case (path2,path,tree)
       equation
         env = cacheGetEnv2(path2,path,tree);
-        //print("found ");print(Absyn.pathString(path));print(" in cache\n");
+        //print("found ");print(Absyn.pathString(path));print(" in cache at scope");
+				//print(Absyn.pathString(path2));print("\n");
       then env;
 
 		   // Go up one level. Only if we search for e.g. M.C.E and in scope M
