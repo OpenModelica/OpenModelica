@@ -1304,6 +1304,87 @@ algorithm
   end matchcontinue;
 end modEquation;
 
+public function modEqual
+  input Types.Mod mod1;
+  input Types.Mod mod2;
+  output Boolean equal;
+algorithm
+  equal := matchcontinue(mod1,mod2)
+    local Boolean b1,b2,b3,b4,f1,f2;
+      Absyn.Each each1,each2;
+      list<Types.SubMod> submods1,submods2;
+      Option<Types.EqMod> eqmod1,eqmod2;
+      
+    case(Types.MOD(f1,each1,submods1,eqmod1),Types.MOD(f2,each2,submods2,eqmod2)) equation
+      b1 = Util.boolEqual(f1,f2);
+      b2 = Absyn.eachEqual(each1,each2);
+      b3 = subModsEqual(submods1,submods2);
+      b4 = eqModEqual(eqmod1,eqmod2);
+      equal = Util.boolAndList({b1,b2,b3,b4});
+      then equal;
+    case(Types.REDECL(_,_),Types.REDECL(_,_)) then false;
+    case(Types.NOMOD(),Types.NOMOD()) then true;
+     
+  end matchcontinue;
+end modEqual;
+
+protected function subModsEqual "Returns true if two submod lists are equal."
+  input list<Types.SubMod> subModLst1;
+  input list<Types.SubMod> subModLst2;
+  output Boolean equal;
+algorithm
+  equal := matchcontinue(subModLst1,subModLst2)
+  local	Types.Ident id1,id2;
+    Types.Mod mod1,mod2;
+    Boolean b1,b2,b3;
+    list<Integer> indx1,indx2;
+    list<Boolean> blst1;
+    case ({},{}) then true;
+    case (Types.NAMEMOD(id1,mod1)::subModLst1,Types.NAMEMOD(id2,mod2)::subModLst2) 
+      equation
+        equality(id1=id2);
+        b1 = modEqual(mod1,mod2);
+        b2 = subModsEqual(subModLst1,subModLst2);
+        equal = Util.boolAndList({b1,b2});
+      then equal;
+        case (Types.IDXMOD(indx1,mod1)::subModLst1,Types.IDXMOD(indx2,mod2)::subModLst2) 
+      equation
+        blst1 = Util.listThreadMap(indx1,indx2,intEq);
+        b2 = modEqual(mod1,mod2);
+        b3 = subModsEqual(subModLst1,subModLst2);
+        equal = Util.boolAndList(b2::b3::blst1);
+      then equal;
+        case(_,_) then false;
+  end matchcontinue;
+end subModsEqual;
+          
+protected function eqModEqual "Returns true if two EqMods are equal"
+  input Option<Types.EqMod> eqMod1;
+  input Option<Types.EqMod> eqMod2;
+  output Boolean equal;
+algorithm
+  equal := matchcontinue(eqMod1,eqMod2)
+  local Absyn.Exp aexp1,aexp2;
+    Exp.Exp exp1,exp2;
+    case(SOME(Types.TYPED(exp1,_,_)),SOME(Types.TYPED(exp2,_,_))) equation
+      equal = Exp.expEqual(exp1,exp2);
+    then equal;
+    case(SOME(Types.TYPED(exp1,_,_)),SOME(Types.UNTYPED(aexp2))) equation
+      aexp1 = Exp.unelabExp(exp1);
+      equal = Absyn.expEqual(aexp1,aexp2);
+    then equal;
+    case(SOME(Types.UNTYPED(aexp1)),SOME(Types.TYPED(exp2,_,_))) equation
+      aexp2 = Exp.unelabExp(exp2);
+      equal = Absyn.expEqual(aexp1,aexp2);
+    then equal;
+    case(SOME(Types.UNTYPED(aexp1)),SOME(Types.UNTYPED(aexp2))) equation
+      equal = Absyn.expEqual(aexp1,aexp2);
+    then equal;
+    case(NONE,NONE) then true;
+    case(_,_) then false;
+  end matchcontinue;
+end eqModEqual;
+
 public function printModStr "- Printing
   !ignorecode
   function: print_mod

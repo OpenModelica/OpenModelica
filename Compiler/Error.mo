@@ -268,6 +268,8 @@ public constant ErrorID MODIFIER_TYPE_MISMATCH_ERROR=87;
 
 public constant ErrorID ERROR_FLATTENING=88;
 
+public constant ErrorID DUPLICATE_ELEMENTS_NOT_IDENTICAL=89;
+
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
@@ -446,6 +448,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Type mismatch in modifier, expected type %s, got modifier %s of type %s"),
           (ERROR_FLATTENING,TRANSLATION(),ERROR(),
           "Error occured while flattening model %s"),
+          (DUPLICATE_ELEMENTS_NOT_IDENTICAL,TRANSLATION(),ERROR(),
+          "Error duplicate elements (due to inherited elements) not identical, first element is: %s, second element is: %s."),
           (UNBOUND_PARAMETER_WARNING,TRANSLATION(),WARNING(),
           "Warning, parameter %s has no value."),
           (BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER(),TRANSLATION(),WARNING(),

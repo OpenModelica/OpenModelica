@@ -1593,5 +1593,126 @@ algorithm
     case (_) then false; 
   end matchcontinue;
 end isPackageRestriction;
+
+public function expEqual "Returns true if two expressions are equal"
+  input Exp exp1;
+  input Exp exp2;
+  output Boolean equal;
+algorithm
+  equal := matchcontinue(exp1,exp2)
+    case(INTEGER(i1),INTEGER(i2))
+      local Integer i1,i2;
+        then intEq(i1,i2);
+    case(REAL(r1),REAL(r2))
+      local Real r1,r2;
+        then realEq(r1,r2);
+    case(CREF(cr1),CREF(cr2))
+      local ComponentRef cr1,cr2;
+        then crefEqual(cr1,cr2);
+    case(STRING(s1),STRING(s2))
+      local String s1,s2;
+        then Util.stringEqual(s1,s2);
+    case (BOOL(b1),BOOL(b2)) 
+      local Boolean b1,b2;
+        then Util.boolEqual(b1,b2);
+    case (BINARY(e11,_,e12),BINARY(e21,_,e22))
+      local Exp e11,e12,e21,e22;
+      then boolAnd(expEqual(e11,e21),expEqual(e12,e22));
+    case (LBINARY(e11,_,e12),LBINARY(e21,_,e22))
+      local Exp e11,e12,e21,e22;
+      then boolAnd(expEqual(e11,e21),expEqual(e12,e22));
+    case (UNARY(_,e1),UNARY(_,e2))
+      local Exp e1,e2;
+        then expEqual(e1,e2);
+    case (LUNARY(_,e1),LUNARY(_,e2))
+      local Exp e1,e2;
+        then expEqual(e1,e2);
+    case (RELATION(e11,_,e12),RELATION(e21,_,e22))
+      local Exp e12,e11,e21,e22; 
+        then boolAnd(expEqual(e11,e21),expEqual(e12,e22));
+    case (IFEXP(e11,e12,e13,_),IFEXP(e21,e22,e23,_))
+      local  Exp e12,e11,e13,e21,e22,e23; Boolean b1,b2,b3; equation
+        b1 = expEqual(e11,e21);
+        b2 = expEqual(e12,e22);
+        b3 = expEqual(e13,e23);
+        equal = Util.boolAndList({b1,b2,b3});
+        then equal;
+    case (CALL(cref1,args1),CALL(cref2,args2))
+      local ComponentRef cref1,cref2; FunctionArgs args1,args2; Boolean b1,b2; list<Boolean> blst; equation
+        b1 = crefEqual(cref1,cref2);
+        b2 = functionArgsEqual(args1,args2);
+        equal = Util.boolAndList({b1,b2});
+      then equal;
+    case (ARRAY(args1),ARRAY(args2))
+      local ComponentRef cref1,cref2; list<Exp> args1,args2; Boolean b1; list<Boolean> blst; equation
+        blst = Util.listThreadMap(args1,args2,expEqual);
+        equal = Util.boolAndList(blst);
+      then equal;
+
+    case (MATRIX(args1),MATRIX(args2))
+      local ComponentRef cref1,cref2; list<list<Exp>> args1,args2; Boolean b1; list<list<Boolean>> blst; equation
+        blst = Util.listListThreadMap(args1,args2,expEqual);
+        equal = Util.boolAndList(Util.listFlatten(blst));
+      then equal;
+        
+    case (RANGE(e11,SOME(e12),e13),RANGE(e21,SOME(e22),e23))
+      local Exp e11,e12,e13,e21,e22,e23;
+      Boolean b1,b2,b3;
+      equation
+         b1 = expEqual(e11,e21);
+         b2 = expEqual(e12,e22);
+         b3 = expEqual(e13,e23);
+         equal = Util.boolAndList({b1,b2,b3});
+      then equal;
+        
+    case (RANGE(e11,_,e13),RANGE(e21,_,e23))
+      local Exp e11,e12,e13,e21,e22,e23;
+      Boolean b1,b2,b3;
+      equation
+        b1 = expEqual(e11,e21);
+        b3 = expEqual(e13,e23);
+        equal = Util.boolAndList({b1,b3});
+      then equal;
+    case (TUPLE(args1),TUPLE(args2))
+      local ComponentRef cref1,cref2; list<Exp> args1,args2; Boolean b1; list<Boolean> blst; equation
+        blst = Util.listThreadMap(args1,args2,expEqual);
+        equal = Util.boolAndList(blst);
+      then equal;
+    case (END(),END()) then true;
+    case(CODE(_),CODE(_)) equation
+      print("expEqual CODE not implemented yet.\n");
+      then false;
+    case(_,_) then false;
+  end matchcontinue;
+end expEqual;
+
+public function eachEqual "Returns true if two each attributes are equal"
+  input Each each1;
+  input Each each2;
+  output Boolean equal;
+algorithm
+  equal := matchcontinue(each1,each2)
+    case(NON_EACH(),NON_EACH()) then true;
+    case(EACH(),EACH()) then true;
+    case(_,_) then false;
+  end matchcontinue;
+end eachEqual;
+
+protected function functionArgsEqual
+  input FunctionArgs args1;
+  input FunctionArgs args2;
+  output Boolean equal;
+algorithm
+ equal := matchcontinue(args1,args2)
+   case (FUNCTIONARGS(expl1,_),FUNCTIONARGS(expl2,_))
+      local ComponentRef cref1,cref2; list<Exp> expl1,expl2; Boolean b1; list<Boolean> blst; 
+        equation
+        blst = Util.listThreadMap(expl1,expl2,expEqual);
+        equal = Util.boolAndList(blst);
+      then equal;
+        
+   case(_,_) then false;       
+ end matchcontinue;
+end functionArgsEqual;
 end Absyn;
 

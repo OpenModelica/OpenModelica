@@ -1438,7 +1438,7 @@ algorithm
       Absyn.Each each_;
       list<SubMod> subs;
       Option<Absyn.Exp> ass;
-    case (NOMOD()) then "NOMOD"; 
+    case (NOMOD()) then ""; 
     case REDECL(final_ = b,elementLst = elist)
       equation 
         Print.printBuf("redeclare(");
@@ -1701,6 +1701,60 @@ algorithm
   end matchcontinue;
 end printElementStr;
 
+public function unparseElementStr "function: printElementStr
+ 
+  Print Element to a string.
+"
+  input Element inElement;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inElement)
+    local
+      String str,res,n,mod_str,s,vs;
+      Absyn.Path path,typath;
+      Mod mod;
+      Boolean final_,repl,prot;
+      Class cl;
+      Variability var;
+      Option<Absyn.Comment> comment;
+      Attributes attr;
+    case EXTENDS(path = path,mod = mod)
+      equation 
+        str = Absyn.pathString(path);
+        res = Util.stringAppendList({"extends ",str,";"});
+      then
+        res;
+    case COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = ATTR(parameter_ = var),type_ = typath,mod = mod,baseclass = SOME(path),this = comment)
+      equation 
+        mod_str = printModStr(mod);
+        s = Absyn.pathString(typath);
+        vs = unparseVariability(var);
+        str = Absyn.pathString(path);
+        res = Util.stringAppendList(
+          {vs," ",s," ",n,mod_str,"; // from baseclass: ",
+          str,"\n"});
+      then
+        res;
+    case CLASSDEF(name = n,final_ = final_,replaceable_ = repl,class_ = cl,baseclass = _)
+      equation 
+        str = printClassStr(cl);
+        res = Util.stringAppendList({"class ",n,"\n",str,"end ",n,";\n"});
+      then
+        res;
+    case COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = ATTR(parameter_ = var),type_ = typath,mod = mod,baseclass = NONE,this = comment)
+      equation 
+          mod_str = printModStr(mod);
+        s = Absyn.pathString(typath);
+        vs = unparseVariability(var);
+        res = Util.stringAppendList(
+          {vs," ",s," ",n,mod_str,";\n"});
+      then
+        res;
+    case (IMPORT(import_ = _)) then "import ... "; 
+  end matchcontinue;
+end unparseElementStr;
+
 public function printClassStr
   input Class inClass;
   output String outString;
@@ -1771,6 +1825,7 @@ algorithm
     end matchcontinue;
 end attrVariability;
 
+
 public function variabilityString "function: variabilityString
  
   Print Variability to a string.
@@ -1787,6 +1842,24 @@ algorithm
     case (CONST()) then "CONST"; 
   end matchcontinue;
 end variabilityString;
+
+public function unparseVariability "function: variabilityString
+ 
+  Print Variability to a string.
+"
+  input Variability inVariability;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inVariability)
+    case (VAR()) then ""; 
+    case (DISCRETE()) then "discrete"; 
+    case (PARAM()) then "parameter"; 
+    case (STRUCTPARAM()) then "parameter"; 
+    case (CONST()) then "constant"; 
+  end matchcontinue;
+end unparseVariability;
+
 
 public function isParameterOrConst "function: isParameterOrConst
  
@@ -1949,5 +2022,204 @@ algorithm
     case(_) then false;
   end matchcontinue;
  end isFunctionOrExtFunction;
+ 
+ public function elementEqual "returns true if two elements are equal, 
+ i.e. for a component have the same type, name, and attributes, etc."
+   input Element element1;
+   input Element element2;
+   output Boolean equal;
+ algorithm
+   equal := matchcontinue(element1,element2)
+     case (COMPONENT(name1,f1,r1,p1,attr1,tp1,mod1,_,_), COMPONENT(name2,f2,r2,p2,attr2,tp2,mod2,_,_))
+       local
+         Boolean b1,b2,b3,b4,b5,b6,f1,f2,r1,r2,p1,p2; Ident name1,name2; 
+         Attributes attr1,attr2; Mod mod1,mod2; Absyn.Path tp1,tp2;
+       equation
+         b1 = Util.stringEqual(name1,name2);
+         b2 = Util.boolEqual(f1,f2);
+         b3 = Util.boolEqual(r1,r2);
+         b4 = Util.boolEqual(p1,p2);
+         b5 = attributesEqual(attr1,attr2);
+         b6 = modEqual(mod1,mod2);
+         equal = Util.boolAndList({b1,b2,b3,b4,b5,b6});
+         then equal;
+     case(_,_) then false;
+   end matchcontinue;
+ end elementEqual;
+ 
+ protected function modEqual "Return true if two Mod:s are equal"
+   input Mod mod1;
+   input Mod mod2;
+   output Boolean equal;
+ algorithm
+   equal := matchcontinue(mod1,mod2)
+   local 
+     case (MOD(f1,each1,submodlst1,SOME(e1)),MOD(f2,each2,submodlst2,SOME(e2)))  
+       local Boolean f1,f2,b1,b2,b3,b4; Absyn.Each each1,each2;
+         list<SubMod> submodlst1,submodlst2;
+         Absyn.Exp e1,e2;
+       equation
+         b1 = Util.boolEqual(f1,f2);
+         b2 = Absyn.eachEqual(each1,each2);
+         b3 = subModsEqual(submodlst1,submodlst2);
+         b4 = Absyn.expEqual(e1,e2);
+         equal = Util.boolAndList({b1,b2,b3,b4});
+       then equal;
+     case (MOD(f1,each1,submodlst1,_),MOD(f2,each2,submodlst2,_))   
+       local Boolean b1,b2,b3,f1,f2; Absyn.Each each1,each2;
+         list<SubMod> submodlst1,submodlst2;
+       equation 
+         b1 = Util.boolEqual(f1,f2);
+         b2 = Absyn.eachEqual(each1,each2);
+         b3 = subModsEqual(submodlst1,submodlst2);
+         equal = Util.boolAndList({b1,b2,b3});
+       then equal;
+     case (NOMOD(),NOMOD()) then true;
+     case (REDECL(f1,elts1),REDECL(f2,elts2)) 
+       local list<Element> elts1,elts2;
+         list<Boolean> blst; Boolean b1,f1,f2;
+       equation
+         b1 = Util.boolEqual(f1,f2);
+         blst = Util.listThreadMap(elts1,elts2,elementEqual);
+         equal = Util.boolAndList(b1::blst);
+       then equal;
+     case(_,_) then false;
+   end matchcontinue;
+end modEqual;
+
+protected function subModsEqual "return true if two subModifier lists are equal"
+  input list<SubMod>  subModLst1;
+  input list<SubMod>  subModLst2;
+  output Boolean equal;
+algorithm
+  equal := matchcontinue(subModLst1,subModLst2)
+    case ({},{}) then true;
+      
+    case (NAMEMOD(id1,mod1)::subModLst1,NAMEMOD(id2,mod2)::subModLst2)
+      local Ident id1,id2; Mod mod1,mod2; Boolean b1,b2,b3; 
+        equation
+          b1 = Util.stringEqual(id1,id2);
+          b2 = modEqual(mod1,mod2);
+          b3 = subModsEqual(subModLst1,subModLst2);
+          equal = Util.boolAndList({b1,b2,b3});
+        then equal;
+    case (IDXMOD(ss1,mod1)::subModLst1,IDXMOD(ss2,mod2)::subModLst2)
+      local list<Subscript> ss1,ss2; Mod mod1,mod2; Boolean b1,b2,b3;
+        equation
+          b1 = subscriptsEqual(ss1,ss2);
+          b2 = modEqual(mod1,mod2);
+          b3 = subModsEqual(subModLst1,subModLst2);
+          equal = Util.boolAndList({b1,b2,b3});
+        then equal;
+    case (_,_) then false;
+  end matchcontinue;
+end subModsEqual;
+
+protected function subscriptsEqual "Returns true if two subscript lists are equal"
+  input list<Subscript> ss1;
+  input list<Subscript> ss2;
+  output Boolean equal;
+algorithm 
+  equal := matchcontinue(ss1,ss2)
+    case({},{}) then true;
+    case(Absyn.NOSUB()::ss1,Absyn.NOSUB()::ss2) 
+      then subscriptsEqual(ss1,ss2);
+    case(Absyn.SUBSCRIPT(e1)::ss1,Absyn.SUBSCRIPT(e2)::ss2)
+      local Boolean b1,b2; Absyn.Exp e1,e2;
+      equation 
+        b1 = Absyn.expEqual(e1,e2);
+        b2 = subscriptsEqual(ss1,ss2);
+        equal = Util.boolAndList({b1,b2});
+        then equal;
+    case(_,_) then false;
+  end matchcontinue;  
+end subscriptsEqual;
+  
+ protected function attributesEqual "Returns true if two Atributes are equal"
+   input Attributes attr1;
+   input Attributes attr2;
+   output Boolean equal;
+algorithm
+  equal:= matchcontinue(attr1,attr2)
+    case(ATTR(ad1,fl1,acc1,var1,dir1),ATTR(ad2,fl2,acc2,var2,dir2))
+      local Accessibility acc1,acc2;
+        Variability var1,var2;
+        Boolean fl1,fl2,b1,b2,b3,b4,b5;
+        Absyn.ArrayDim ad1,ad2;
+        Absyn.Direction dir1,dir2;      
+      equation
+        	b1 = arrayDimEqual(ad1,ad2);
+        	b2 = Util.boolEqual(fl1,fl2);
+        	b3 = accessibilityEqual(acc1,acc2);
+        	b4 = variabilityEqual(var1,var2);
+        	b5 = directionEqual(dir1,dir2);
+        	equal = Util.boolAndList({b1,b2,b3,b4,b5});
+        then equal;
+  end matchcontinue;
+end attributesEqual;
+
+protected function accessibilityEqual "Returns true if two  Accessibliy:s are equal"
+  input Accessibility acc1;
+  input Accessibility acc2;
+  output Boolean equal;
+algorithm
+  equal := matchcontinue(acc1,acc2)
+    case(RW(), RW()) then true;
+    case(RO(), RO()) then true;
+    case(WO(), WO()) then true;
+    case(_, _) then false;
+  end matchcontinue;
+end accessibilityEqual;
+
+protected function variabilityEqual "Returns true if two Variablity:s are equal"
+  input Variability var1;
+  input Variability var2;
+  output Boolean equal;
+algorithm 
+  equal := matchcontinue(var1,var2)
+    case(VAR(),VAR()) then true;
+    case(DISCRETE(),DISCRETE()) then true;
+    case(PARAM(),PARAM()) then true;
+    case(STRUCTPARAM(),STRUCTPARAM()) then true;
+    case(CONST(),CONST()) then true;
+    case(_,_) then false;
+  end matchcontinue;
+end variabilityEqual;
+
+protected function directionEqual "Returns true if two Direction:s are equal"
+  input Absyn.Direction dir1;
+  input Absyn.Direction dir2;
+  output Boolean equal;
+algorithm 
+  equal := matchcontinue(var1,var2)
+    case(Absyn.INPUT(),Absyn.INPUT()) then true;
+    case(Absyn.OUTPUT(),Absyn.OUTPUT()) then true;
+    case(Absyn.BIDIR(),Absyn.BIDIR()) then true;
+    case(_,_) then false;
+  end matchcontinue;
+end directionEqual;
+
+protected function arrayDimEqual "Return true if two arraydims are equal"
+ input Absyn.ArrayDim ad1;
+ input Absyn.ArrayDim ad2;
+ output Boolean equal;
+ algorithm
+   equal := matchcontinue(ad1,ad2)
+      local Boolean b1; Absyn.Exp e1,e2;
+     case({},{}) then true;       
+     case (Absyn.NOSUB()::ad1, Absyn.NOSUB()::ad2) equation
+       equal = arrayDimEqual(ad1,ad2);
+       then equal;
+     case (Absyn.SUBSCRIPT(e1)::ad1,Absyn.SUBSCRIPT(e2)::ad2)
+       local Absyn.Exp e1,e2; Boolean b1,b2;
+       equation
+         b1 = Absyn.expEqual(e1,e2);
+         b2 =  arrayDimEqual(ad1,ad2);
+         equal = Util.boolAndList({b1,b2});
+         then equal;
+     case(_,_) then false;
+   end matchcontinue;
+end arrayDimEqual;
+
 end SCode;
 

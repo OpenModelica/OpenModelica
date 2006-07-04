@@ -304,7 +304,7 @@ algorithm
         fail();
     case (cache,env,path,false)
       equation 
-       // print("lookupClass(");print(Absyn.pathString(path));print(",msg=false failed, env:");
+        //print("lookupClass(");print(Absyn.pathString(path));print(",msg=false failed, env:");
         //print(Env.printEnvStr(env));print("\n");
       then
         fail();

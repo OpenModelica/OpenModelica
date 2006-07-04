@@ -1136,8 +1136,9 @@ algorithm
        cache = addCachedEnv(cache,n,env_1);
       then
         (cache,l,env_1,csets_1,ci_state_1,tys,bc);
-    case (_,_,_,_,csets,_,_,_,_,_)
+    case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restricion = r,parts = d)),prot,inst_dims,impl)
       equation 
+        //print("instClassIn(");print(n);print("failed\n");
         //Debug.fprint("failtrace", "- inst_class_in failed\n");
       then
         fail();
@@ -2982,7 +2983,7 @@ algorithm
         cmod_1 = Mod.merge(compmod, cmod, env, pre);
         env_1 = Env.extendFrameV(env, 
           Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,
-          (Types.T_NOTYPE(),NONE),Types.UNBOUND()), SOME((comp,cmod_1)), false, {}) "comp env" ;
+          (Types.T_NOTYPE(),NONE),Types.UNBOUND()), SOME((comp,cmod_1)), false, {});
         env_2 = addComponentsToEnv2(env_1, mods, pre, csets, ci_state, xs, inst_dims, impl);
       then
         env_2;
@@ -3124,12 +3125,6 @@ algorithm
     case (cache,env,mod,pre,csets,ci_state,(SCode.IMPORT(import_ = imp),_),instdims,_) 
       then (cache,{},env,csets,ci_state,{});  
 
-   /* If a variable is declared multiple times, the first is used */ 
-    case (cache,env,mods,pre,csets,ci_state,(SCode.COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot),_),_,_) 
-      equation 
-        (_,_,NONE,true,_) = Lookup.lookupIdentLocal(cache,env, n);
-      then
-        (cache,{},env,csets,ci_state,{});
 
         /* Illegal redeclarations */ 
     case (cache,env,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n),_),_,_) 
@@ -3181,6 +3176,7 @@ algorithm
       		type_ = t,mod = m,baseclass = bc,this = comment)),cmod),inst_dims,impl)  
       		  local String s;
       equation 
+        checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl); // Fails if multiple decls not identical
         vn = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,{})) "//Debug.fprint(\"insttr\", \"Instantiating component \") &
 	//Debug.fprint(\"insttr\", n) & //Debug.fprint(\"insttr\", \"\\n\") &" ;
         classmod = Mod.lookupModificationP(mods, t) "The class definition is fetched from the environment. Then the set of modifications is calculated.  The modificions is the result of merging the modifications from several sources.  The modification stored with the class definition is put in the variable `classmod\', the modification passed to the function_ is extracted and put in the variable `mm\', and the modification that is included in the variable declaration is in the variable `m\'.  All of these are merged so that the correct precedence rules are followed." ;
@@ -3244,6 +3240,77 @@ algorithm
   end matchcontinue;
 end instElement;
 
+protected function checkMultiplyDeclared "Check if variable is multiply declared and that 
+all declarations are identical if so."
+  input Env.Cache cache;
+  input Env env;
+  input Mod mod;
+  input Prefix prefix;
+  input Connect.Sets csets;
+  input ClassInf.State ciState;
+  input tuple<SCode.Element, Mod> compTuple;
+  input InstDims instDims;
+  input Boolean impl;
+  
+algorithm
+  _ := matchcontinue(cache,env,mod,prefix,csets,ciState,compTuple,instDims,impl)
+  local
+     list<Env.Frame> env,env_1,env2,env2_1,cenv,compenv;
+      Types.Mod mod;
+      String n;
+      Boolean final_,repl,prot;
+    /* If a variable is declared multiple times, the first is used. If the two variables are not
+    identical, an error is given.
+    */ 
+    case (cache,env,mod,prefix,csets,ciState,(newComp as (SCode.COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot),_)),_,_) 
+      local
+        SCode.Element oldElt; Types.Mod oldMod;
+        tuple<SCode.Element,Types.Mod> newComp;
+      equation 
+        //print(n);
+        //print("looking for multiple declared components, env:");
+        //print(Env.printEnvStr(env));
+        (_,_,SOME((oldElt,oldMod)),true,_) = Lookup.lookupIdentLocal(cache,env, n); 
+          checkMultipleElementsIdentical((oldElt,oldMod),newComp);
+      then
+        ();
+    
+    // If not multiply declared, return.
+    case (cache,env,mod,prefix,csets,ciState,(newComp as (SCode.COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot),_)),_,_) 
+      local
+        SCode.Element oldElt; Types.Mod oldMod;
+        tuple<SCode.Element,Types.Mod> newComp;
+      equation 
+        failure((_,_,SOME((oldElt,oldMod)),true,_) = Lookup.lookupIdentLocal(cache,env, n)); 
+      then
+        ();
+  end matchcontinue;
+end checkMultiplyDeclared;
+
+protected function checkMultipleElementsIdentical "checks that the old declaration is identical to 
+the new one. If not, give error message"
+  input tuple<SCode.Element,Types.Mod> oldComponent;
+  input tuple<SCode.Element,Types.Mod> newComponent;
+
+algorithm
+  _ := matchcontinue(oldComponent,newComponent)
+    local 
+      SCode.Element oldElt,newElt;
+      Types.Mod oldMod,newMod;
+    case((oldElt,oldMod),(newElt,newMod)) equation
+      true = SCode.elementEqual(oldElt,newElt); // NOTE: Should be type identical instead? see spec. 
+      // p.23, check of flattening. "Check that duplicate elements are identical". 
+      then ();
+    case ((oldElt,oldMod),(newElt,newMod)) 
+      local String s1,s2;
+      equation
+      s1 = SCode.unparseElementStr(oldElt);
+      s2 = SCode.unparseElementStr(newElt);
+      Error.addMessage(Error.DUPLICATE_ELEMENTS_NOT_IDENTICAL(),{s1,s2});
+      then fail();
+  end matchcontinue;
+end checkMultipleElementsIdentical;
+  
 protected function getDerivedEnv "function: getDerivedEnv
  
   This function returns the environment of a baseclass.
@@ -4033,7 +4100,7 @@ algorithm
 	  one. 
 	" ;
         env_1 = Env.updateFrameV(env2_1, 
-          Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding_1), false, compenv) "type info present" ;
+          Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding_1), true, compenv) "type info present" ;
       then
         (cache,env_1,csets_1);
 
@@ -4083,7 +4150,7 @@ algorithm
           dims, {}, {}, false, NONE) "Instantiate the component" ;
         (cache,binding) = makeBinding(cache,env2, attr, mod_3, ty) "The environment is extended with the new variable binding." ;
         env_1 = Env.updateFrameV(env2, 
-          Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding), false, compenv) "type info present" ;
+          Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding), true, compenv) "type info present" ;
       then
         (cache,env_1,csets_1);
     case (cache,mod,cref,env,ci_state,csets,impl)

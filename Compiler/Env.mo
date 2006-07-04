@@ -146,7 +146,7 @@ uniontype Item
   record VAR
     Types.Var instantiated "instantiated component" ;
     Option<tuple<SCode.Element, Types.Mod>> declaration "declaration if not fully instantiated." ;
-    Boolean if_ "if it typed/fully instantiated or not" ;
+    Boolean typed "if it typed/fully instantiated or not" ;
     Env env "The environment of the instantiated component
 			       Contains e.g. all sub components 
 			" ;
@@ -389,9 +389,17 @@ algorithm
       Option<tuple<SCode.Element, Types.Mod>> c;
     case ((FRAME(class_1 = id,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs),(v as Types.VAR(name = n)),c,i,env) /* environment of component */ 
       equation 
+        failure((_)= treeGet(ht, n, System.hash)); 
         (ht_1) = treeAdd(ht, n, VAR(v,c,i,env), System.hash);
       then
         (FRAME(id,ht_1,httypes,imps,bcframes,crs,encflag) :: fs);
+
+        // Variable already added, perhaps from baseclass
+    case ((FRAME(class_1 = id,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs),(v as Types.VAR(name = n)),c,i,env) /* environment of component */ 
+      equation 
+        (_)= treeGet(ht, n, System.hash); 
+      then
+        (FRAME(id,ht,httypes,imps,bcframes,crs,encflag) :: fs);
   end matchcontinue;
 end extendFrameV;
 
@@ -840,7 +848,7 @@ algorithm
       Integer len;
       list<tuple<Types.TType, Option<Absyn.Path>>> lst;
       Absyn.Import imp;
-    case ((n,VAR(instantiated = (tv as Types.VAR(attributes = Types.ATTR(parameter_ = var),type_ = tp,binding = bind)),declaration = SOME((elt,_)),if_ = i,env = (compframe :: _))))
+    case ((n,VAR(instantiated = (tv as Types.VAR(attributes = Types.ATTR(parameter_ = var),type_ = tp,binding = bind)),declaration = SOME((elt,_)),typed = i,env = (compframe :: _))))
       equation 
         s = SCode.variabilityString(var);
         elt_str = SCode.printElementStr(elt);
@@ -854,7 +862,7 @@ algorithm
 				 frame_str" ;
       then
         res;
-    case ((n,VAR(instantiated = (tv as Types.VAR(attributes = Types.ATTR(parameter_ = var),type_ = tp)),declaration = SOME((elt,_)),if_ = i,env = {})))
+    case ((n,VAR(instantiated = (tv as Types.VAR(attributes = Types.ATTR(parameter_ = var),type_ = tp)),declaration = SOME((elt,_)),typed = i,env = {})))
       equation 
         s = SCode.variabilityString(var);
         elt_str = SCode.printElementStr(elt);
@@ -865,7 +873,7 @@ algorithm
           "}, compframe: []"});
       then
         res;
-    case ((n,VAR(instantiated = Types.VAR(binding = bnd),declaration = NONE,if_ = i,env = env)))
+    case ((n,VAR(instantiated = Types.VAR(binding = bnd),declaration = NONE,typed = i,env = env)))
       equation 
         res = Util.stringAppendList({"v:",n,"\n"});
       then

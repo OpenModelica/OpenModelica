@@ -1024,6 +1024,46 @@ algorithm
   end matchcontinue;
 end listThreadMap;
 
+public function listListThreadMap "function: listListThreadMap
+  Takes two lists of lists and a function and threads and maps the elements  of the elements of the 
+  two lists creating a new list.
+  For example,
+  listListThreadMap({{1,2}},{{3,4}},int_add) => {{1+3, 2+4}}
+"
+  input list<list<Type_a>> inTypeALst;
+  input list<list<Type_b>> inTypeBLst;
+  input FuncTypeType_aType_bToType_c inFuncTypeTypeATypeBToTypeC;
+  output list<list<Type_c>> outTypeCLst;
+  replaceable type Type_a;
+  replaceable type Type_b;
+  partial function FuncTypeType_aType_bToType_c
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    output Type_c outTypeC;
+    replaceable type Type_c;
+  end FuncTypeType_aType_bToType_c;
+  replaceable type Type_c;
+algorithm 
+  outTypeCLst:=
+  matchcontinue (inTypeALst,inTypeBLst,inFuncTypeTypeATypeBToTypeC)
+    local
+      Type_c fr;
+      list<Type_c> res;
+      Type_a fa;
+      list<Type_a> ra;
+      Type_b fb;
+      list<Type_b> rb;
+      FuncTypeType_aType_bToType_c fn;
+    case ({},{},_) then {}; 
+    case ((fa :: ra),(fb :: rb),fn)
+      equation 
+        fr = listThreadMap(fa,fb,fn);
+        res = listListThreadMap(ra, rb, fn);
+      then
+        (fr :: res);
+  end matchcontinue;
+end listListThreadMap;
+
 public function listThreadTuple "function: listThreadTuple
   Takes two lists and threads the arguments into a list of tuples
   consisting of the two element types.
@@ -2418,6 +2458,18 @@ algorithm
     case false then "false"; 
   end matchcontinue;
 end boolString;
+
+public function boolEqual "Returns true if two booleans are equal, false otherwise"
+	input Boolean b1;
+	input Boolean b2;
+	output Boolean res;
+algorithm
+  res := matchcontinue(b1,b2)
+    case (true,true) then true;
+    case (false,false) then true;
+    case (_,_) then false;
+  end matchcontinue;
+end boolEqual;
 
 public function stringEqual "function: stringEqual
   Takes two strings and returns true if the strings are equal
