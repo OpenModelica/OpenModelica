@@ -2743,7 +2743,7 @@ algorithm
       equation 
         (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c),_) = elabExp(cache,env, s1, impl, NONE) "print \"# floor function not implemented yet\\n\" &" ;
       then
-        (cache,Exp.CALL(Absyn.IDENT("floor"),{s1_1},false,true),Types.PROP((Types.T_REAL({}),NONE),c));
+        (cache,Exp.CALL(Absyn.IDENT("floor"),{s1_1},false,true),Types.PROP((Types.T_INTEGER({}),NONE),c));
   end matchcontinue;
 end elabBuiltinFloor;
 
@@ -2772,7 +2772,7 @@ algorithm
       equation 
         (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c),_) = elabExp(cache,env, s1, impl, NONE) "print \"# ceil function not implemented yet\\n\" &" ;
       then
-        (cache,Exp.CALL(Absyn.IDENT("ceil"),{s1_1},false,true),Types.PROP((Types.T_REAL({}),NONE),c));
+        (cache,Exp.CALL(Absyn.IDENT("ceil"),{s1_1},false,true),Types.PROP((Types.T_INTEGER({}),NONE),c));
   end matchcontinue;
 end elabBuiltinCeil;
 

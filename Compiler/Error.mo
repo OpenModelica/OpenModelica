@@ -270,6 +270,8 @@ public constant ErrorID ERROR_FLATTENING=88;
 
 public constant ErrorID DUPLICATE_ELEMENTS_NOT_IDENTICAL=89;
 
+public constant ErrorID PACKAGE_VARIABLE_NOT_CONSTANT=90;
+
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
@@ -449,7 +451,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (ERROR_FLATTENING,TRANSLATION(),ERROR(),
           "Error occured while flattening model %s"),
           (DUPLICATE_ELEMENTS_NOT_IDENTICAL,TRANSLATION(),ERROR(),
-          "Error duplicate elements (due to inherited elements) not identical, first element is: %s, second element is: %s."),
+          "Error duplicate elements (due to inherited elements) not identical, first element is: %s, second element is: %s"),
+          (PACKAGE_VARIABLE_NOT_CONSTANT, TRANSLATION(),ERROR(),"Variable %s in package %s is not constant"),
           (UNBOUND_PARAMETER_WARNING,TRANSLATION(),WARNING(),
           "Warning, parameter %s has no value."),
           (BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER(),TRANSLATION(),WARNING(),

@@ -323,11 +323,12 @@ protected function lookupQualifiedImportedVarInFrame "function: lookupQualifiedI
   input Env.Env inEnv;
   input SCode.Ident inIdent;
   output Env.Cache outCache;
+  output Env.Env outEnv;
   output Types.Attributes outAttributes;
   output Types.Type outType;
   output Types.Binding outBinding;
 algorithm 
-  (outCache,outAttributes,outType,outBinding):=
+  (outCache,outEnv,outAttributes,outType,outBinding):=
   matchcontinue (inCache,inEnvItemLst,inEnv,inIdent)
     local
       Env.Frame fr;
@@ -336,7 +337,7 @@ algorithm
       Types.Binding bind;
       String id,ident,str;
       list<Env.Item> fs;
-      list<Env.Frame> env;
+      list<Env.Frame> env,p_env;
       Exp.ComponentRef cref;
       Absyn.Path strippath,path;
       SCode.Class c2;
@@ -348,26 +349,26 @@ algorithm
         fr = Env.topFrame(env);
         (cache,attr,ty,bind) = lookupVar(cache,{fr}, Exp.CREF_IDENT(ident,{}));
       then
-        (cache,attr,ty,bind);
+        (cache,{fr},attr,ty,bind);
     case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = path)) :: fs),env,ident) /* For imported qualified name, e.g. A.B.C, assert A.B is package */ 
       equation 
         id = Absyn.pathLastIdent(path);
         equality(id = ident);
         fr = Env.topFrame(env);
         cref = Exp.pathToCref(path);
-        (cache,attr,ty,bind) = lookupVarInPackages(cache,{fr}, cref);
+        (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{fr}, cref);
         strippath = Absyn.stripLast(path);
         (cache,c2,_) = lookupClass(cache,{fr}, strippath, true);
         assertPackage(c2);
       then
-        (cache,attr,ty,bind);
+        (cache,p_env,attr,ty,bind);
     case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = path)) :: fs),env,ident) /* importing qualified name, If not package, error */ 
       equation 
         id = Absyn.pathLastIdent(path);
         equality(id = ident);
         fr = Env.topFrame(env);
         cref = Exp.pathToCref(path);
-        (cache,attr,ty,bind) = lookupVarInPackages(cache,{fr}, cref);
+        (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{fr}, cref);
         strippath = Absyn.stripLast(path);
         (cache,c2,_) = lookupClass(cache,{fr}, strippath, true);
         failure(assertPackage(c2));
@@ -380,18 +381,18 @@ algorithm
         equality(id = ident);
         fr = Env.topFrame(env);
         cref = Exp.pathToCref(path);
-        (cache,attr,ty,bind) = lookupVarInPackages(cache,{fr}, cref);
+        (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{fr}, cref);
         strippath = Absyn.stripLast(path);
         (cache,c2,_) = lookupClass(cache,{fr}, strippath, true);
         assertPackage(c2);
       then
-        (cache,attr,ty,bind);
+        (cache,p_env,attr,ty,bind);
     case (cache,(Env.IMPORT(import_ = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs),env,ident) /* Assert package for Named imports */ 
       equation 
         equality(id = ident);
         fr = Env.topFrame(env);
         cref = Exp.pathToCref(path);
-        (cache,attr,ty,bind) = lookupVarInPackages(cache,{fr}, cref);
+        (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{fr}, cref);
         strippath = Absyn.stripLast(path);
         (cache,c2,_) = lookupClass(cache,{fr}, strippath, true);
         failure(assertPackage(c2));
@@ -401,9 +402,9 @@ algorithm
         fail();
     case (cache,(_ :: fs),env,ident) /* Check next frame. */ 
       equation 
-        (cache,attr,ty,bind) = lookupQualifiedImportedVarInFrame(cache,fs, env, ident);
+        (cache,p_env,attr,ty,bind) = lookupQualifiedImportedVarInFrame(cache,fs, env, ident);
       then
-        (cache,attr,ty,bind);
+        (cache,p_env,attr,ty,bind);
   end matchcontinue;
 end lookupQualifiedImportedVarInFrame;
 
@@ -440,7 +441,7 @@ algorithm
       equation 
         firstIdent = Absyn.pathFirstIdent(path);
         f::_ = Env.cacheGet(Absyn.IDENT(firstIdent),path,cache);
-        (cache,_,_,_) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,{}));
+        (cache,_,_,_,_) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,{}));
       then
         (cache,true);
      
@@ -455,7 +456,7 @@ algorithm
            ci_state, c, false/*FIXME:prot*/, {}, false);*/
          (cache,(f :: _),_) = Inst.partialInstClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}); 
-        (cache,_,_,_) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,{}));
+        (cache,_,_,_,_) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,{}));
       then
         (cache,true);
     case (cache,(_ :: fs),env,ident)
@@ -476,12 +477,13 @@ protected function lookupUnqualifiedImportedVarInFrame "function: lookupUnqualif
   input Env.Env inEnv;
   input SCode.Ident inIdent;
   output Env.Cache outCache;
+  output Env.Env outEnv;
   output Types.Attributes outAttributes;
   output Types.Type outType;
   output Types.Binding outBinding;
   output Boolean outBoolean;
 algorithm 
-  (outCache,outAttributes,outType,outBinding,outBoolean):=
+  (outCache,outEnv,outAttributes,outType,outBinding,outBoolean):=
   matchcontinue (inCache,inEnvItemLst,inEnv,inIdent)
     local
       Env.Frame fr,f;
@@ -490,7 +492,7 @@ algorithm
       String id,ident;
       Boolean encflag,more,unique;
       SCode.Restriction restr;
-      list<Env.Frame> env_1,env2,env;
+      list<Env.Frame> env_1,env2,env,p_env;
       ClassInf.State ci_state;
       Types.Attributes attr;
       tuple<Types.TType, Option<Absyn.Path>> ty;
@@ -508,11 +510,11 @@ algorithm
         //print("look in cache\n");
         firstIdent = Absyn.pathFirstIdent(path);
         f::_ = Env.cacheGet(Absyn.IDENT(firstIdent),path,cache);
-        (cache,attr,ty,bind) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,{}));
+        (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,{}));
         (cache,more) = moreLookupUnqualifiedImportedVarInFrame(cache,fs, env, ident);
         unique = boolNot(more);
       then
-        (cache,attr,ty,bind,unique);
+        (cache,p_env,attr,ty,bind,unique);
 
       // if not in cache, try to instantiate
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident) /* unique */ 
@@ -524,16 +526,16 @@ algorithm
         ci_state = ClassInf.start(restr, id);
         (cache,_,(f :: _),_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false);
-        (cache,attr,ty,bind) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,{}));
+        (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,{}));
         (cache,more) = moreLookupUnqualifiedImportedVarInFrame(cache,fs, env, ident);
         unique = boolNot(more);
       then
-        (cache,attr,ty,bind,unique);
+        (cache,p_env,attr,ty,bind,unique);
     case (cache,(_ :: fs),env,ident)
       equation 
-        (cache,attr,ty,bind,unique) = lookupUnqualifiedImportedVarInFrame(cache,fs, env, ident);
+        (cache,p_env,attr,ty,bind,unique) = lookupUnqualifiedImportedVarInFrame(cache,fs, env, ident);
       then
-        (cache,attr,ty,bind,unique);
+        (cache,p_env,attr,ty,bind,unique);
   end matchcontinue;
 end lookupUnqualifiedImportedVarInFrame;
 
@@ -805,7 +807,7 @@ algorithm
       Types.Attributes attr;
       tuple<Types.TType, Option<Absyn.Path>> ty;
       Types.Binding binding;
-      list<Env.Frame> env;
+      list<Env.Frame> env,p_env;
       Exp.ComponentRef cref;
       Env.Cache cache;
     case (cache,env,cref) /* try the old lookup_var */ 
@@ -815,13 +817,35 @@ algorithm
         (cache,attr,ty,binding);
     case (cache,env,cref) /* then look in classes (implicitly instantiated packages) */ 
       equation 
-        (cache,attr,ty,binding) = lookupVarInPackages(cache,env, cref);
+        (cache,p_env,attr,ty,binding) = lookupVarInPackages(cache,env, cref);
+        checkPackageVariableConstant(p_env,attr,ty,cref);
       then
         (cache,attr,ty,binding);
     case (_,env,cref) equation
       /* Debug.fprint(\"failtrace\",  \"- lookup_var failed\\n\") */  then fail(); 
   end matchcontinue;
 end lookupVar;
+
+protected function checkPackageVariableConstant "
+Variables in packages must be constant. This function produces an error message and fails 
+if variable is not constant."
+  input Env.Env env;
+	input Types.Attributes attr;
+	input Types.Type tp;
+	input Exp.ComponentRef cref;
+algorithm
+   _ := matchcontinue(env,attr,tp,cref)
+   local Absyn.Path path;
+     case (env, Types.ATTR(parameter_= SCode.CONST()),_,cref)
+       then ();
+     case (env,attr,tp,cref) local String s1,s2;
+       equation
+       s1=Exp.printComponentRefStr(cref);
+       s2 = Env.printEnvPathStr(env);
+       Error.addMessage(Error.PACKAGE_VARIABLE_NOT_CONSTANT,{s1,s2});
+       then fail();
+   end matchcontinue;
+end checkPackageVariableConstant;
 
 protected function lookupVarInternal "function: lookupVarInternal
  
@@ -880,18 +904,19 @@ protected function lookupVarInPackages "function: lookupVarInPackages
   input Env.Env inEnv;
   input Exp.ComponentRef inComponentRef;
   output Env.Cache outCache;
+  output Env.Env outEnv;
   output Types.Attributes outAttributes;
   output Types.Type outType;
   output Types.Binding outBinding;
 algorithm 
-  (outCache,outAttributes,outType,outBinding):=
+  (outCache,outEnv,outAttributes,outType,outBinding):=
   matchcontinue (inCache,inEnv,inComponentRef)
     local
       SCode.Class c;
       String n,id1,id;
       Boolean encflag;
       SCode.Restriction r;
-      list<Env.Frame> env2,env3,env5,env,fs,bcframes;
+      list<Env.Frame> env2,env3,env5,env,fs,bcframes,p_env;
       ClassInf.State ci_state;
       list<Types.Var> types;
       Types.Attributes attr;
@@ -912,9 +937,9 @@ algorithm
         ci_state = ClassInf.start(r, n);
         (cache,_,env5,_,_,types,_) = Inst.instClassIn(cache,env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false);
-        (cache,attr,ty,bind) = lookupVarInPackages(cache,env5, id2);
+        (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,env5, id2);
       then
-        (cache,attr,ty,bind);
+        (cache,p_env,attr,ty,bind);
 
        // lookup of constants on form A.B in packages. First look in cache.
     case (cache,env,cr as Exp.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref)) /* First part of name is a class. */ 
@@ -930,7 +955,21 @@ algorithm
         (cache,attr,ty,bind) = lookupVarLocal(cache,f::fs, Exp.CREF_IDENT(id,{}));
         //print("found ");print(Exp.printComponentRefStr(cr));print(" in cache\n");
         then
-        (cache,attr,ty,bind);
+        (cache,f::fs,attr,ty,bind);
+        
+        /* If we search for A1.A2....An.x while in scope A1.A2...An, just search for x. 
+        Must do like this to ensure finite recursion */
+         case (cache,env,cr as Exp.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref))
+           local Absyn.Path ep,p,packp;
+           equation 
+             p = Exp.crefToPath(cr);
+             SOME(ep) = Env.getEnvPath(env);
+             packp = Absyn.stripLast(p);
+             true = ModUtil.pathEqual(ep, packp);
+             id = Absyn.pathLastIdent(p);
+             (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,env, Exp.CREF_IDENT(id,{}));
+           then
+             (cache,p_env,attr,ty,bind);
 
       // lookup of constants on form A.B in packages. instantiate package and look inside.
     case (cache,env,cr as Exp.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref)) /* First part of name is a class. */ 
@@ -940,14 +979,15 @@ algorithm
         ci_state = ClassInf.start(r, n);
         (cache,_,env5,_,_,types,_) = Inst.instClassIn(cache,env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, /*true*/false);
-        (cache,attr,ty,bind) = lookupVarInPackages(cache,env5, cref);
+        (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,env5, cref);
       then
-        (cache,attr,ty,bind);
+        (cache,p_env,attr,ty,bind);
+        
     case (cache,env,(cr as Exp.CREF_IDENT(ident = id,subscriptLst = sb))) local String str;
       equation 
         (cache,attr,ty,bind) = lookupVarLocal(cache,env, cr);
       then
-        (cache,attr,ty,bind);
+        (cache,env,attr,ty,bind);
         
         /* Search base classes */
     case (cache,Env.FRAME(list_5 = (bcframes as (_ :: _)))::fs,cref) 
@@ -956,28 +996,30 @@ algorithm
         (cache,attr,ty,bind) = lookupVar(cache,bcframes, cref);
         //print("found in baseclass\n");
       then
-        (cache,attr,ty,bind);
+        (cache,bcframes,attr,ty,bind);
         /* Search among qualified imports, e.g. import A.B; or import D=A.B; */
     case (cache,(env as (Env.FRAME(class_1 = sid,list_4 = items) :: _)),(cr as Exp.CREF_IDENT(ident = id,subscriptLst = sb)))
       equation 
-        (cache,attr,ty,bind) = lookupQualifiedImportedVarInFrame(cache,items, env, id);
+        (cache,p_env,attr,ty,bind) = lookupQualifiedImportedVarInFrame(cache,items, env, id);
       then
-        (cache,attr,ty,bind);
+        (cache,p_env,attr,ty,bind);
+        
         /* Search among unqualified imports, e.g. import A.B.* */
     case (cache,(env as (Env.FRAME(class_1 = sid,list_4 = items) :: _)),(cr as Exp.CREF_IDENT(ident = id,subscriptLst = sb)))
       local Boolean unique;
       equation 
-        (cache,attr,ty,bind,unique) = lookupUnqualifiedImportedVarInFrame(cache,items, env, id);
+        (cache,p_env,attr,ty,bind,unique) = lookupUnqualifiedImportedVarInFrame(cache,items, env, id);
         reportSeveralNamesError(unique,id);
       then
-        (cache,attr,ty,bind); 
+        (cache,p_env,attr,ty,bind); 
         
     case (cache,(f :: fs),cr) /* Search parent scopes */ 
       equation 
           //print("searching parent scope of ");print(Env.printEnvPathStr(fs));print("\n");
-         (cache,attr,ty,bind) = lookupVarInPackages(cache,fs, cr);
+         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,fs, cr);
       then
-        (cache,attr,ty,bind);
+        (cache,p_env,attr,ty,bind);
+
     case (cache,env,cr) /* Debug.fprint(\"failtrace\",  \"lookup_var_in_packages failed\\n exp:\" ) &
 	Debug.fcall(\"failtrace\", Exp.print_component_ref, cr) &
 	Debug.fprint(\"failtrace\", \"\\n\") */  then fail(); 

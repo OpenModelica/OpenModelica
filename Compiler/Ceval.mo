@@ -3623,6 +3623,7 @@ algorithm
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       Real rv,rv_1;
+      Integer iv;
       list<Env.Frame> env;
       Exp.Exp exp;
       Boolean impl;
@@ -3633,8 +3634,9 @@ algorithm
       equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         rv_1 = realFloor(rv);
+        iv=realInt(rv_1);
       then
-        (cache,Values.REAL(rv_1),st);
+        (cache,Values.INTEGER(iv),st);
   end matchcontinue;
 end cevalBuiltinFloor;
 
@@ -3672,16 +3674,15 @@ algorithm
         rvt = intReal(ri);
         (rvt ==. rv) = true;
       then
-        (cache,Values.REAL(rv_1),st);
+        (cache,Values.INTEGER(ri),st);
     case (cache,env,{exp},impl,st,msg)
       equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         rv_1 = realFloor(rv);
         ri = realInt(rv_1);
         ri_1 = ri + 1;
-        rv_2 = intReal(ri_1);
       then
-        (cache,Values.REAL(rv_2),st);
+        (cache,Values.INTEGER(ri_1),st);
   end matchcontinue;
 end cevalBuiltinCeil;
 
