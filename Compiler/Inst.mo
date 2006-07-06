@@ -1125,6 +1125,7 @@ algorithm
        
 
 				t1 = clock();
+				
         (cache,l,env_1,csets_1,ci_state_1,tys,bc) = instClassdef(cache,env, mods, pre, csets, ci_state, d, r, prot, inst_dims, impl);
         t2 = clock();
         time = t2 -. t1;
@@ -1401,6 +1402,7 @@ algorithm
         extendselts = extendsElts(els);
         env1 = addClassdefsToEnv(env, cdefelts, impl) "1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)" ;
         (cache,env2,emods,extcomps,eqs2,initeqs2,alg2,initalg2) = instExtendsList(cache,env1, mods, extendselts, ci_state, impl) "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations." ;
+
         compelts_1 = addNomod(compelts) "Problem. Modifiers on inherited components are unelabed, loosing their 
 	   type information. This will not work, since the modifier type can not always be found.
 	   for instance. 
@@ -1479,10 +1481,10 @@ algorithm
         fail();
     case (_,env,_,_,_,_,_,_,_,_,_)
       equation 
-        //Debug.fprint("failtrace", "- inst_classdef failed\n class :");
+        Debug.fprint("failtrace", "- inst_classdef failed\n class :");
         s = Env.printEnvPathStr(env);
-        //Debug.fprint("failtrace", s);
-        //Debug.fprint("failtrace", "\n");
+        Debug.fprint("failtrace", s);
+        Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;
@@ -1708,6 +1710,7 @@ algorithm
       equation 
         s = SCode.printElementStr(el);
         print(s);
+        print(", ");print(Mod.printModStr(mod));
         print("\n");
         printExtcomps(els);
       then
@@ -2144,7 +2147,7 @@ algorithm
     case (cache,env,mod,{},ci_state,impl) then (cache,env,mod,{},{},{},{},{}); 
     case (_,_,_,_,_,_)
       equation 
-        //Debug.fprint("failtrace", "- inst_extends_list failed\n");
+        Debug.fprint("failtrace", "- inst_extends_list failed\n");
       then
         fail();
   end matchcontinue;
@@ -2230,7 +2233,7 @@ algorithm
     case (cache,env,mod,{},ci_state,impl) then (cache,env,mod,{},{},{},{},{}); 
     case (_,_,_,_,_,_)
       equation 
-        //Debug.fprint("failtrace", "- inst_extends_list failed\n");
+        Debug.fprint("failtrace", "- inst_extends_list failed\n");
       then
         fail();
   end matchcontinue;
@@ -2415,7 +2418,7 @@ algorithm
         ((c,Types.NOMOD()) :: res);
     case (_,_,_)
       equation 
-        //Debug.fprint("failtrace", "-update_components failed\n");
+        Debug.fprint("failtrace", "-update_components failed\n");
       then
         fail();
   end matchcontinue;
@@ -2494,7 +2497,7 @@ algorithm
         (cache,env,elt,eq,ieq,alg,ialg);
     case (_,_,_,_,_)
       equation 
-        //Debug.fprint("failtrace", "- inst_derived_classes failed\n");
+        Debug.fprint("failtrace", "- inst_derived_classes failed\n");
       then
         fail();
   end matchcontinue;
@@ -2561,7 +2564,7 @@ algorithm
         (cache,dae,env_2,csets_2,ci_state_2,tys);
     case (_,_,_,_,_,_,els,_,_)
       equation 
-        //Debug.fprint("failtrace", "- inst_element_list failed\n");
+        Debug.fprint("failtrace", "- inst_element_list failed\n");
       then
         fail();
   end matchcontinue;
@@ -2925,7 +2928,7 @@ algorithm
         env_2;
     case (_,_,_,_,_,comps,_,_,_,_)
       equation 
-        //Debug.fprint("failtrace", "- add_components_to_env failed\n");
+        Debug.fprint("failtrace", "- add_components_to_env failed\n");
       then
         fail();
   end matchcontinue;
@@ -2990,8 +2993,8 @@ algorithm
     case (env,_,_,_,_,{},_,_) then env; 
     case (env,_,_,_,_,comps,_,_)
       equation 
-        //Debug.fprint("failtrace", "- add_components_to_env2 failed\n");
-        //Debug.fprint("failtrace", "\n\n");
+        Debug.fprint("failtrace", "- add_components_to_env2 failed\n");
+        Debug.fprint("failtrace", "\n\n");
       then
         fail();
   end matchcontinue;
@@ -3182,6 +3185,7 @@ algorithm
         classmod = Mod.lookupModificationP(mods, t) "The class definition is fetched from the environment. Then the set of modifications is calculated.  The modificions is the result of merging the modifications from several sources.  The modification stored with the class definition is put in the variable `classmod\', the modification passed to the function_ is extracted and put in the variable `mm\', and the modification that is included in the variable declaration is in the variable `m\'.  All of these are merged so that the correct precedence rules are followed." ;
         mm = Mod.lookupCompModification(mods, n);
         owncref = Absyn.CREF_IDENT(n,{}) "The types in the environment does not have correct Binding.
+        
 	   We must update those variables that is found in m into a new environment." ;
         crefs = getCrefFromMod(m);
         crefs2 = getCrefFromDim(ad);
@@ -3232,9 +3236,10 @@ algorithm
         fail();
     case (cache,env,omod,_,_,_,(el,mod),_,_) /* => ({},env,csets,ci_state,{}) */ 
       equation 
-        //Debug.fprint("failtrace", "- inst_element failed\n");
-        Debug.fcall("failtrace", SCode.printElement, el);
-        //Debug.fprint("failtrace", "\n");
+        Debug.fprint("failtrace", "- inst_element failed\n");
+        
+        Debug.fprint("failtrace", SCode.printElementStr(el));
+        Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;
@@ -3365,7 +3370,7 @@ algorithm
         (cache,Env.FRAME(id,cl,tps,imps,env_2,crs,enc) :: fs);
     case (_,_,_)
       equation 
-        //Debug.fprint("failtrace", "-get_derived_env failed\n");
+        Debug.fprint("failtrace", "-get_derived_env failed\n");
       then
         fail();
   end matchcontinue;
@@ -3476,7 +3481,7 @@ algorithm
         (cache,comp,mod,env,csets);
     case (_,_,_,_,_,_,_,_)
       equation 
-        //Debug.fprint("failtrace", "- redeclare_type failed\n");
+        Debug.fprint("failtrace", "- redeclare_type failed\n");
       then
         fail();
   end matchcontinue;
@@ -3742,9 +3747,9 @@ algorithm
     case (_,_,_,_,_,_,n,_,_,_,_,_,_,_) /* Rules for instantation of function variables (e.g. input and output 
         parameters and protected variables) */ 
       equation 
-        //Debug.fprint("failtrace", "- inst_var2 failed: ");
-        //Debug.fprint("failtrace", n);
-        //Debug.fprint("failtrace", "\n");
+        Debug.fprint("failtrace", "- inst_var2 failed: ");
+        Debug.fprint("failtrace", n);
+        Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;
@@ -3803,7 +3808,7 @@ algorithm
         ((Types.T_ARRAY(Types.DIM(NONE),ty_1),p));
     case (_,_)
       equation 
-        //Debug.fprint("failtrace", "- make_array_type failed\n");
+        Debug.fprint("failtrace", "- make_array_type failed\n");
       then
         fail();
   end matchcontinue;
@@ -3918,7 +3923,7 @@ algorithm
     case (_) then {}; 
     case (_)
       equation 
-        //Debug.fprint("failtrace", "- get_cref_from_mod failed\n");
+        Debug.fprint("failtrace", "- get_cref_from_mod failed\n");
       then
         fail();
   end matchcontinue;
@@ -3954,7 +3959,7 @@ algorithm
     case ({}) then {}; 
     case (_)
       equation 
-        //Debug.fprint("failtrace", "- get_cref_from_dim failed\n");
+        Debug.fprint("failtrace", "- get_cref_from_dim failed\n");
       then
         fail();
   end matchcontinue;
@@ -4543,9 +4548,9 @@ algorithm
         (cache,env_1,dae,csets_2,ty);
     case (_,_,_,_,_,_,n,(_,_),_,_,_,_,_,_,_)
       equation 
-        //Debug.fprint("failtrace", "- inst_array failed: ");
+       Debug.fprint("failtrace", "- inst_array failed: ");
         Debug.fcall("failtrace", Print.printBuf, n);
-        //Debug.fprint("failtrace", "\n");
+        Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;
@@ -4768,11 +4773,11 @@ algorithm
         fail();
     case (_,_,cref,ad,_,_,_)
       equation 
-        //Debug.fprint("failtrace", "- elab_arraydim failed\n cref:");
+        Debug.fprint("failtrace", "- elab_arraydim failed\n cref:");
         Debug.fcall("failtrace", Dump.printComponentRef, cref);
-        //Debug.fprint("failtrace", " dim: ");
+        Debug.fprint("failtrace", " dim: ");
         Debug.fcall("failtrace", Dump.printArraydim, ad);
-        //Debug.fprint("failtrace", "\n");
+        Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;
@@ -4972,7 +4977,7 @@ algorithm
         fail();
     case (_,_,_,_,_,_)
       equation 
-        //Debug.fprint("failtrace", "- elab_arraydim_decl failed\n");
+        Debug.fprint("failtrace", "- elab_arraydim_decl failed\n");
       then
         fail();
   end matchcontinue;
@@ -5080,8 +5085,7 @@ algorithm
         (DIMEXP(Exp.WHOLEDIM(),NONE) :: l);
     case (_,_)
       equation 
-        Print.printBuf("-compatible_arraydim failed\n");
-        //Debug.fprint("failtrace", "- compatible_arraydim failed\n");
+        Debug.fprint("failtrace", "- compatible_arraydim failed\n");
       then
         fail();
   end matchcontinue;
@@ -5134,8 +5138,8 @@ algorithm
     case (_,{}) then {}; 
     case (t,(_ :: ad)) /* PR, for debugging */ 
       equation 
-        //Debug.fprint("failtrace", "Undefined!");
-        //Debug.fprint("failtrace", " The type detected: ");
+        Debug.fprint("failtrace", "Undefined!");
+        Debug.fprint("failtrace", " The type detected: ");
         Debug.fcall("failtrace", Types.printType, t);
       then
         fail();
@@ -5319,7 +5323,7 @@ algorithm
       Connect.Sets csets_1,csets;
       tuple<Types.TType, Option<Absyn.Path>> ty,ty1;
       ClassInf.State st;
-      list<Env.Frame> env_1,env,tempenv,cenv;
+      list<Env.Frame> env_1,env,tempenv,cenv,env_11;
       Absyn.Path fpath;
       Types.Mod mod;
       Prefix.Prefix pre;
@@ -5350,11 +5354,10 @@ algorithm
     case (cache,env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = (restr as SCode.R_EXT_FUNCTION()),parts = (parts as SCode.PARTS(elementLst = els)))),inst_dims)
       equation 
         (cache,dae,cenv,csets_1,ty,st) = instClass(cache,env, mod, pre, csets, c, inst_dims, true, INNER_CALL());
-        env_1 = Env.extendFrameC(env,c);   
-        //print("makeFullyQualified5288\n"); 
-        (cache,fpath) = makeFullyQualified(cache,env_1, Absyn.IDENT(n));
+        //env_11 = Env.extendFrameC(cenv,c); // Only created to be able to get FQ path.  
+        (cache,fpath) = makeFullyQualified(cache,cenv, Absyn.IDENT(n));
         ty1 = setFullyQualifiedTypename(ty,fpath);
-        env_1 = Env.extendFrameT(env_1, n, ty1);
+        env_1 = Env.extendFrameT(cenv, n, ty1);
         prot = false;
         (cache,_,tempenv,_,_,_,_) = instClassdef(cache,env_1, mod, pre, csets_1, ClassInf.FUNCTION(n), parts, 
           restr, prot, inst_dims, true) "how to get this? impl" ;
@@ -5420,7 +5423,7 @@ algorithm
       then
         (cache,env_1);
   end matchcontinue;
-end implicitFunctionTypeInstantiation;
+end implicitFunctionTypeInstantiation; 
 
 protected function instOverloadedFunctions "function: instOverloadedFunctions
  
@@ -5466,7 +5469,7 @@ algorithm
         (cache,env_2,(DAE.FUNCTION(fpath,DAE.DAE(dae),ty) :: dae1));
     case (_,env,_,_)
       equation 
-        //Debug.fprint("failtrace", "inst_overloaded_functions failed\n");
+        Debug.fprint("failtrace", "inst_overloaded_functions failed\n");
       then
         fail();
   end matchcontinue;
@@ -5531,7 +5534,7 @@ algorithm
         (cache,daeextdecl);
     case (_,env,_,_,_)
       equation 
-        //Debug.fprint("failtrace", "#-- inst_ext_decl failed");
+        Debug.fprint("failtrace", "#-- inst_ext_decl failed");
       then
         fail();
   end matchcontinue;
@@ -5604,7 +5607,7 @@ algorithm
         extdecl;
     case (_,_,_)
       equation 
-        //Debug.fprint("failtrace", "#-- inst_ext_make_externaldecl failed\n");
+        Debug.fprint("failtrace", "#-- inst_ext_make_externaldecl failed\n");
       then
         fail();
   end matchcontinue;
@@ -5848,7 +5851,7 @@ algorithm
     case (cache,env,exp,impl,st)
       local Absyn.Exp exp;
       equation 
-        //Debug.fprint("failtrace", "-elab_exp_ext failed\n");
+        Debug.fprint("failtrace", "-elab_exp_ext failed\n");
       then
         fail();
   end matchcontinue;
@@ -5887,7 +5890,7 @@ algorithm
         (cache,extargs);
     case (_,_,_,impl)
       equation 
-        //Debug.fprint("failtrace", "- inst_ext_get_fargs failed\n");
+        Debug.fprint("failtrace", "- inst_ext_get_fargs failed\n");
       then
         fail();
   end matchcontinue;
@@ -5973,9 +5976,9 @@ algorithm
     case (cache,env,exp,Types.PROP(type_ = ty,constFlag = cnst)) then (cache,DAE.EXTARGEXP(exp,ty)); 
     case (cache,_,exp,prop)
       equation 
-        //Debug.fprint("failtrace", "#-- inst_ext_get_fargs_single failed\n");
+        Debug.fprint("failtrace", "#-- inst_ext_get_fargs_single failed\n");
         Debug.fcall("failtrace", Exp.printExp, exp);
-        //Debug.fprint("failtrace", "\n");
+        Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;
@@ -6015,7 +6018,7 @@ algorithm
         (cache,extarg);
     case (_,_,_,_)
       equation 
-        //Debug.fprint("failtrace", "#-- inst_ext_rettype failed\n");
+        Debug.fprint("failtrace", "- instExtRettype failed\n");
       then
         fail();
   end matchcontinue;
@@ -6109,8 +6112,7 @@ algorithm
         dae;
     case (_,_,_,_,_,_,_,_,_)
       equation 
-        print("dae_declare failed\n");
-        //Debug.fprint("failtrace", "- dae_declare failed\n");
+        Debug.fprint("failtrace", "- dae_declare failed\n");
       then
         fail();
   end matchcontinue;
@@ -6176,7 +6178,7 @@ algorithm
         dae;
     case (_,_,_,_,_,_,_,_,_,_)
       equation 
-        //Debug.fprint("failtrace", "- dae_declare2 failed\n");
+        Debug.fprint("failtrace", "- daeDeclare2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -6230,7 +6232,7 @@ algorithm
         dae;
     case (_,_,_,_,_,_,_,_,_,_)
       equation 
-        //Debug.fprint("failtrace", "#- dae_declare3 failed\n");
+        //Debug.fprint("failtrace", "- daeDeclare3 failed\n");
       then
         fail();
   end matchcontinue;
@@ -6359,7 +6361,7 @@ algorithm
         (cache,dae,env,csets_1,ci_state_1);
     case (_,_,_,_,_,_,_,impl)
       equation 
-        //Debug.fprint("failtrace", "- inst_equation failed\n");
+        Debug.fprint("failtrace", "- instEquation failed\n");
       then
         fail();
   end matchcontinue;
@@ -6444,7 +6446,7 @@ algorithm
         (cache,dae,env,csets_1,ci_state_1);
     case (_,_,_,_,_,_,_,impl)
       equation 
-        //Debug.fprint("failtrace", "- inst_initialequation failed\n");
+        Debug.fprint("failtrace", "- instInitialequation failed\n");
       then
         fail();
   end matchcontinue;
@@ -6536,20 +6538,23 @@ algorithm
       Exp.ComponentRef cr_1;
       SCode.EEquation eqn;
       Env.Cache cache;
-    case (cache,env,mods,pre,csets,ci_state,SCode.EQ_CONNECT(componentRef1 = c1,componentRef2 = c2),initial_,impl) /* impl 
-	  Handle connect statements
-	 */ 
+      /* connect statements */
+    case (cache,env,mods,pre,csets,ci_state,SCode.EQ_CONNECT(componentRef1 = c1,componentRef2 = c2),initial_,impl) 
       equation 
         (cache,csets_1,dae) = instConnect(cache,csets, env, pre, c1, c2, impl);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
         (cache,dae,env,csets_1,ci_state_1);
-    case (cache,env,mods,pre,csets,ci_state,SCode.EQ_EQUALS(exp1 = Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = n,subscripts = {})),exp2 = e2),initial_,impl) /* The following rule handles shadowed (replaced) equations. If an equation has a simple name on the left-hand side, and that component has an equation modifier, this equation is discarded. */ 
+        
+        /* The following rule handles shadowed (replaced) equations. If an equation has a simple name 
+        on the left-hand side, and that component has an equation modifier, this equation is discarded.*/ 
+    case (cache,env,mods,pre,csets,ci_state,SCode.EQ_EQUALS(exp1 = Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = n,subscripts = {})),exp2 = e2),initial_,impl) 
       equation 
         (cache,Types.VAR(_,_,_,_,Types.EQBOUND(_,_,_)),_,_,_) = Lookup.lookupIdentLocal(cache,env, n);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
         (cache,{},env,csets,ci_state_1);
+        /* equality equations e1 = e2 */
     case (cache,env,mods,pre,csets,ci_state,SCode.EQ_EQUALS(exp1 = e1,exp2 = e2),initial_,impl)
       local Option<Interactive.InteractiveSymbolTable> c1,c2;
       equation 
@@ -6571,13 +6576,15 @@ algorithm
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
         (cache,dae,env,csets,ci_state_1);
-    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_IF(conditional = e,true_ = tb,false_ = fb),NON_INITIAL(),impl) /* `if\' statements
+
+/* `if\' statements
 	 
 	  If statements are instantiated by evaluating the
 	  conditional expression, and selecting the branch that
 	  should be used.
 	 EQ_IF. When the condition is constant evaluate it and 
 	  select the correct branch */ 
+    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_IF(conditional = e,true_ = tb,false_ = fb),NON_INITIAL(),impl) 
       equation 
         (cache,e_1,Types.PROP((Types.T_BOOL(_),_),_),_) = Static.elabExp(cache,env, e, impl, NONE);
         (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e_1, impl, NONE, NONE, Ceval.NO_MSG());
@@ -6585,8 +6592,10 @@ algorithm
         (cache,dae,env_1,csets_1,ci_state_1) = instList(cache,env, mod, pre, csets, ci_state, instEEquation, b, impl);
       then
         (cache,dae,env_1,csets_1,ci_state_1);
-    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_IF(conditional = e,true_ = tb,false_ = fb),INITIAL(),impl) /* initial EQ_IF. When the condition is constant evaluate it and 
-	  select the correct branch */ 
+
+        /* initial EQ_IF. When the condition is constant evaluate it and 
+         select the correct branch */ 
+    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_IF(conditional = e,true_ = tb,false_ = fb),INITIAL(),impl) 
       equation 
         (cache,e_1,Types.PROP((Types.T_BOOL(_),_),_),_) = Static.elabExp(cache,env, e, impl, NONE);
         (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e_1, impl, NONE, NONE, Ceval.NO_MSG());
@@ -6595,14 +6604,18 @@ algorithm
           impl);
       then
         (cache,dae,env_1,csets_1,ci_state_1);
-    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_IF(conditional = e,true_ = tb,false_ = fb),NON_INITIAL(),impl) /* IF_EQUATION */ 
+
+        /* IF_EQUATION */ 
+    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_IF(conditional = e,true_ = tb,false_ = fb),NON_INITIAL(),impl) 
       equation 
         (cache,e_1,Types.PROP((Types.T_BOOL(_),_),Types.C_VAR()),_) = Static.elabExp(cache,env, e, impl, NONE);
         (cache,dae1,env_1,_,ci_state_1) = instList(cache,env, mod, pre, csets, ci_state, instEEquation, tb, impl);
         (cache,dae2,env_2,_,ci_state_2) = instList(cache,env_1, mod, pre, csets, ci_state, instEEquation, fb, impl) "There are no connections inside if-clauses." ;
       then
         (cache,{DAE.IF_EQUATION(e_1,dae1,dae2)},env_1,csets,ci_state_1);
-    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_IF(conditional = e,true_ = tb,false_ = fb),INITIAL(),impl) /* Initial IF_EQUATION */ 
+
+        /* Initial IF_EQUATION */ 
+    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_IF(conditional = e,true_ = tb,false_ = fb),INITIAL(),impl) 
       equation 
         (cache,e_1,Types.PROP((Types.T_BOOL(_),_),Types.C_VAR()),_) = Static.elabExp(cache,env, e, impl, NONE);
         (cache,dae1,env_1,_,ci_state_1) = instList(cache,env, mod, pre, csets, ci_state, instEInitialequation, tb, 
@@ -6611,11 +6624,12 @@ algorithm
           fb, impl) "There are no connections inside if-clauses." ;
       then
         (cache,{DAE.INITIAL_IF_EQUATION(e_1,dae1,dae2)},env_1,csets,ci_state_1);
-    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_WHEN(exp = e,eEquationLst = el,tplAbsynExpEEquationLstLst = ((ee,eel) :: eex)),(initial_ as NON_INITIAL()),impl) /* `when equation\' statement, modelica 1.1 
-	 
-	  When statements are instantiated by evaluating the
-	  conditional expression.
-	 */ 
+        
+        /* `when equation\' statement, modelica 1.1 
+         When statements are instantiated by evaluating the
+         conditional expression.
+         */ 
+    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_WHEN(exp = e,eEquationLst = el,tplAbsynExpEEquationLstLst = ((ee,eel) :: eex)),(initial_ as NON_INITIAL()),impl) 
       local DAE.Element dae2;
       equation 
         (cache,e_1,_,_) = Static.elabExp(cache,env, e, impl, NONE);
@@ -6626,6 +6640,7 @@ algorithm
         ci_state_2 = instEquationCommonCiTrans(ci_state_1, initial_);
       then
         (cache,{DAE.WHEN_EQUATION(e_2,dae1,SOME(dae2))},env_2,csets,ci_state_2);
+        
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_WHEN(exp = e,eEquationLst = el,tplAbsynExpEEquationLstLst = {}),(initial_ as NON_INITIAL()),impl)
       equation 
         (cache,e_1,_,_) = Static.elabExp(cache,env, e, impl, NONE);
@@ -6634,13 +6649,13 @@ algorithm
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
         (cache,{DAE.WHEN_EQUATION(e_2,dae1,NONE)},env_1,csets,ci_state_1);
-    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_FOR(ident = i,exp = e,eEquationLst = el),initial_,impl) /* seems unnecessary to handle when equations that are initial `for\' loops
-	 
+
+/* seems unnecessary to handle when equations that are initial `for\' loops
 	  The loop expression is evaluated to a constant array of
-	  integers, and then the loop is unrolled.
-	 
+	  integers, and then the loop is unrolled.	 
           FIXME: Why lookup after add_for_loop_scope ?
 	 */ 
+    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_FOR(ident = i,exp = e,eEquationLst = el),initial_,impl) 
       equation 
         (cache,e_1,Types.PROP((Types.T_ARRAY(Types.DIM(_),id_t),_),_),_) = Static.elabExp(cache,env, e, impl, NONE) "//Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1\") &" ;
         env_1 = addForLoopScope(env, i, id_t) "//Debug.fprintln (\"insti\", \"for expression elaborated\") &" ;
@@ -6651,6 +6666,8 @@ algorithm
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_) "	//Debug.fprintln (\"insti\", \"for expression unrolled\") & 	& //Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1 succeeded\")" ;
       then
         (cache,dae,env,csets_1,ci_state_1);
+
+        
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_FOR(ident = i,exp = e,eEquationLst = el),initial_,impl)
       equation 
         (cache,Types.ATTR(false,SCode.RW(),SCode.VAR(),_),(Types.T_INTEGER(_),_),Types.UNBOUND()) 
@@ -6661,6 +6678,7 @@ algorithm
           {"Non-constant iteration bounds","No suggestion"});
       then
         fail();
+        /* assert statements*/
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_ASSERT(exp = e1,condition = e2),initial_,impl)
       equation 
         (cache,e1_1,Types.PROP((Types.T_BOOL(_),_),_),_) = Static.elabExp(cache,env, e1, impl, NONE) "assert statement" ;
@@ -6668,18 +6686,21 @@ algorithm
       then
         (cache,{
           DAE.ASSERT(Exp.CALL(Absyn.IDENT("assert"),{e1_1,e2_1},false,false))},env,csets,ci_state);
+
+        /* reinit statement */
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_REINIT(componentRef = cr,state = e2),initial_,impl)
       equation 
         (cache,Exp.CREF(cr_1,_),_,_) = Static.elabCref(cache,env, cr, impl) "reinit statement" ;
         (cache,e2_1,_,_) = Static.elabExp(cache,env, e2, impl, NONE);
       then
         (cache,{DAE.REINIT(cr_1,e2_1)},env,csets,ci_state);
-    case (_,_,_,_,_,_,eqn,_,impl)
+    case (_,env,_,_,_,_,eqn,_,impl)
       equation 
-        //Debug.fprint("failtrace", "- inst_equation_common failed for eqn: ");
+        Debug.fprint("failtrace", "- inst_equation_common failed for eqn: ");
         s = SCode.equationStr(eqn);
-        //Debug.fprint("failtrace", s);
-        //Debug.fprint("failtrace", "\n");
+        Debug.fprint("failtrace", s);
+        Debug.fprint("failtrace", "ENV:");
+        Debug.fprint("failtrace",Env.printEnvStr(env));
       then
         fail();
   end matchcontinue;
@@ -6809,6 +6830,8 @@ algorithm
         Error.addMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {s1,s2});
       then
         fail();
+        
+        
   end matchcontinue;
 end instEqEquation;
 
@@ -7032,7 +7055,7 @@ algorithm
         dae;
     case (_,_,_,_,_)
       equation 
-        //Debug.fprint("failtrace", "- inst_array_equation failed\n");
+        Debug.fprint("failtrace", "- inst_array_equation failed\n");
       then
         fail();
   end matchcontinue;
@@ -7077,7 +7100,7 @@ algorithm
         {};
     case (_,_,_,_,_,_)
       equation 
-        //Debug.fprint("failtrace", "- inst_array_el_eq failed\n");
+        Debug.fprint("failtrace", "- inst_array_el_eq failed\n");
       then
         fail();
   end matchcontinue;
@@ -7148,9 +7171,9 @@ algorithm
         (cache,dae,csets_2);
     case (_,_,_,_,_,_,_,v,_,_,_)
       equation 
-        //Debug.fprint("failtrace", "- unroll ");
+        Debug.fprint("failtrace", "- unroll ");
         Debug.fcall("failtrace", Values.printVal, v);
-        //Debug.fprint("failtrace", " failed\n");
+        Debug.fprint("failtrace", " failed\n");
       then
         fail();
   end matchcontinue;
@@ -7196,7 +7219,7 @@ algorithm
         (cache,{DAE.ALGORITHM(Algorithm.ALGORITHM(statements_1))},env,csets,ci_state);
     case (_,_,_,_,_,_,_,_)
       equation 
-        //Debug.fprint("failtrace", "- inst_algorithm failed\n");
+        Debug.fprint("failtrace", "- instAlgorithm failed\n");
       then
         fail();
   end matchcontinue;
@@ -7242,7 +7265,7 @@ algorithm
         (cache,{DAE.INITIALALGORITHM(Algorithm.ALGORITHM(statements_1))},env,csets,ci_state);
     case (_,_,_,_,_,_,_,_)
       equation 
-        //Debug.fprint("failtrace", "- inst_algorithm failed\n");
+        Debug.fprint("failtrace", "- instInitialAlgorithm failed\n");
       then
         fail();
   end matchcontinue;
@@ -7421,9 +7444,9 @@ algorithm
         (cache,stmt);
     case (cache,env,alg,impl)
       equation 
-        //Debug.fprint("failtrace", "- inst_statement failed\n alg:");
+        Debug.fprint("failtrace", "- inst_statement failed\n alg:");
         Debug.fcall("failtrace", Dump.printAlgorithm, alg);
-        //Debug.fprint("failtrace", "\n");
+        Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;
@@ -7463,7 +7486,7 @@ algorithm
         (cache,(e_1,prop,stmts) :: tail_1);
     case (_,_,_,_)
       equation 
-        //Debug.fprint("failtrace", "- inst_elseifs failed\n");
+        Debug.fprint("failtrace", "- instElseifs failed\n");
       then
         fail();
   end matchcontinue;
@@ -7522,7 +7545,7 @@ algorithm
         (cache,sets_1,dae);
     case (_,_,_,_,_,_,_)
       equation 
-        //Debug.fprint("failtrace", "-inst_connect failed\n");
+        Debug.fprint("failtrace", "- instConnect failed\n");
       then
         fail();
   end matchcontinue;
@@ -7620,11 +7643,11 @@ algorithm
         fail();
     case (c1,_,_,c2,_,_)
       equation 
-        //Debug.fprint("failtrace", "- check_connect_types(");
+        Debug.fprint("failtrace", "- check_connect_types(");
         Debug.fcall("failtrace", Exp.printComponentRef, c1);
-        //Debug.fprint("failtrace", " <-> ");
+        Debug.fprint("failtrace", " <-> ");
         Debug.fcall("failtrace", Exp.printComponentRef, c2);
-        //Debug.fprint("failtrace", ") failed\n");
+        Debug.fprint("failtrace", ") failed\n");
       then
         fail();
   end matchcontinue;
@@ -8564,13 +8587,13 @@ algorithm
     case (c,t,m,impl)
       local tuple<Types.TType, Option<Absyn.Path>> t;
       equation 
-        //Debug.fprint("failtrace", "- inst_mod_equation failed\n type: ");
+        Debug.fprint("failtrace", "- inst_mod_equation failed\n type: ");
         Debug.fcall("failtrace", Types.printType, t);
-        //Debug.fprint("failtrace", "\n  cref: ");
+        Debug.fprint("failtrace", "\n  cref: ");
         Debug.fcall("failtrace", Exp.printComponentRef, c);
-        //Debug.fprint("failtrace", "\n mod:");
+        Debug.fprint("failtrace", "\n mod:");
         Debug.fcall("failtrace", Mod.printMod, m);
-        //Debug.fprint("failtrace", "\n");
+        Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;
@@ -8659,7 +8682,7 @@ algorithm
         fail();
     case (_,_,_,_,_)
       equation 
-        //Debug.fprint("failtrace", "- make_binding failed\n");
+        Debug.fprint("failtrace", "- makeBinding failed\n");
       then
         fail();
   end matchcontinue;
@@ -8841,10 +8864,10 @@ algorithm
         (cache,Types.VAR(id,Types.ATTR(f,acc,var,Absyn.INPUT()),prot,tp_1,bind));
     case (cache,env,elt,impl)
       equation 
-        //Debug.fprint("failtrace", "- inst_record_constructor_elt failed.,elt:");
+        Debug.fprint("failtrace", "- instRecordConstructorElt failed.,elt:");
         str = SCode.printElementStr(elt);
-        //Debug.fprint("failtrace", str);
-        //Debug.fprint("failtrace", "\n");
+        Debug.fprint("failtrace", str);
+        Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;

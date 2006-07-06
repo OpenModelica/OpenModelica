@@ -466,7 +466,10 @@ algorithm
       then
         ();
     case {f}
+      local String s;
       equation 
+        s = Print.getErrorString();
+        Debug.fcall("failtrace",print,s);
         str = ErrorExt.printMessagesStr();
         print(str);
       then

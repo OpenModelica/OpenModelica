@@ -4884,7 +4884,7 @@ algorithm
         (cache,Exp.CALL(fn,args_2,false,false),prop);
     case (cache,env,fn,args,nargs,impl,st) /* ..Other functions */ 
       equation 
-        (cache,typelist) = Lookup.lookupFunctionsInEnv(cache,env, fn) "PR. A function can have several types. Taking an array with
+        (cache,typelist as _::_) = Lookup.lookupFunctionsInEnv(cache,env, fn) "PR. A function can have several types. Taking an array with
 	 different dimensions as parameter for example. Because of this we
 	 cannot just lookup the function name and trust that it
 	 returns the correct function. It returns just one
@@ -4906,6 +4906,15 @@ algorithm
           slots, prop);
       then
         (cache,call_exp,prop_1);
+        
+         case (cache,env,fn,args,nargs,impl,st) /* No functions found. */ 
+      equation 
+        (cache,{}) = Lookup.lookupFunctionsInEnv(cache,env, fn);			
+      	print("NO FUNCTION Found\nenv:");
+      	print(Env.printEnvStr(env));print("\n");
+      	
+      then
+        fail();
         
         /*case above failed. Also consider koening lookup.*/
     case (cache,env,fn,args,nargs,impl,st)
@@ -6144,10 +6153,13 @@ algorithm
       then
         fail();
     case (cache,env,c,impl)
+      local String s;
       equation 
         Debug.fprint("failtrace", "- elab_cref failed: ");
-        Debug.fcall("failtrace", Dump.printComponentRef, c);
-        Debug.fprint("failtrace", "\n");
+        s = Dump.printComponentRefStr(c);
+        Debug.fprint("failtrace", s);
+        Debug.fprint("failtrace", "\nENV:");
+        Debug.fprint("failtrace",Env.printEnvStr(env));
       then
         fail();
   end matchcontinue;

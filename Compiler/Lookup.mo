@@ -1220,7 +1220,7 @@ algorithm
         (cache,c);
     case (_,_,_)
       equation 
-        Debug.fprintln("failtrace", "lookup_functions_in_env failed");
+        Debug.fprint("failtrace", "lookup_functions_in_env failed\n");
       then
         fail();
   end matchcontinue;
@@ -1394,7 +1394,7 @@ algorithm
         /* Found class that is function, instantiate to get type*/
     case (cache,ht,httypes,env,id) local SCode.Restriction restr;
       equation 
-        Env.CLASS((cdef as SCode.CLASS(_,_,_,restr,_)),cenv) = Env.treeGet(ht, id, Env.myhash) "If found class that is function." ;
+        Env.CLASS((cdef as SCode.CLASS(_,_,_,restr,_)),cenv) = Env.treeGet(ht, id, Env.myhash) "If found class that is function." ;        
         true = SCode.isFunctionOrExtFunction(restr);
         (cache,env_1) = Inst.implicitFunctionTypeInstantiation(cache,cenv, cdef);
         (cache,tps) = lookupFunctionsInEnv(cache,env_1, Absyn.IDENT(id)); 
