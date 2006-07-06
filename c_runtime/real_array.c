@@ -1156,7 +1156,7 @@ void exp_real_array(real_array_t* a, modelica_integer n, real_array_t* dest)
 	}
       else
 	{
-	  real_array_t* tmp;
+	  real_array_t* tmp = 0;
 	  clone_real_array_spec(a,tmp);
 	  copy_real_array_data(a,tmp);
 	  for ( i = 1; i < n; ++i)
@@ -1373,7 +1373,7 @@ void diagonal_real_array(real_array_t* v,real_array_t* dest)
   assert((dest->dim_size[0]==n) && (dest->dim_size[1]==n));
 
   for (i = 0; i < n; ++i) {
-    for (i = 0; j < n; ++j) {
+    for (j = 0; j < n; ++j) {
       dest->data[i*n+j] = (i==j) ? v->data[i] : 0;
     }
   }

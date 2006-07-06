@@ -937,7 +937,7 @@ void exp_integer_array(integer_array_t* a, modelica_integer n, integer_array_t* 
 	}
       else
 	{
-	  integer_array_t* tmp;
+	  integer_array_t* tmp = 0;
 	  clone_integer_array_spec(a,tmp);
 	  copy_integer_array_data(a,tmp);
 	  for ( i = 1; i < n; ++i)
@@ -1149,7 +1149,7 @@ void diagonal_integer_array(integer_array_t* v,integer_array_t* dest)
 
   for (i = 0; i < nr_of_elements; ++i)
     {
-      for (i = 0; j < nr_of_elements;++j)
+      for (j = 0; j < nr_of_elements;++j)
       {
 	dest->data[i*nr_of_elements+j] = (i==j)?v->data[i]:0;
       }
