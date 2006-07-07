@@ -1132,6 +1132,7 @@ algorithm
         b=realGt(time,0.05);
         s = realString(time);
         s=Util.stringAppendList({"instClassIn ",n," ",s," s\n"});
+        //print(s);
         //print(Util.if_(b,s,""));
         //print("instClassDef, outenv:");print(Env.printEnvStr(env_1));
        cache = addCachedEnv(cache,n,env_1);
@@ -1949,7 +1950,6 @@ algorithm
         new_ci_state = ClassInf.start(r, cn2);
         mods_1 = Mod.merge(mods, m, cenv_2, pre);
         mods_2 = Mod.merge(mods_1, mod_1, cenv_2, pre);
-        print("partialInstClassIn1948\n");
         (cache,env_2,new_ci_state_1) = partialInstClassIn(cache,cenv_2, mods_2, pre, csets, new_ci_state, c, prot, 
           inst_dims);
       then
@@ -7592,6 +7592,9 @@ algorithm
       tuple<Types.TType, Option<Absyn.Path>> tp,t;
       String str;
     case ((Types.T_REAL(varLstReal = _),_)) then (); 
+    case ((Types.T_INTEGER(_),_)) then ();
+    case ((Types.T_STRING(_),_)) then ();
+    case ((Types.T_BOOL(_),_)) then ();
     case ((Types.T_COMPLEX(complexClassType = state),_))
       equation 
         ClassInf.valid(state, SCode.R_CONNECTOR());
@@ -7788,6 +7791,20 @@ algorithm
       then
         (cache,sets_1,{});
     case (cache,sets,env,pre,c1,_,(Types.T_INTEGER(varLstInt = _),_),c2,_,(Types.T_INTEGER(varLstInt = _),_),false)
+      equation 
+        c1_1 = Prefix.prefixCref(pre, c1);
+        c2_1 = Prefix.prefixCref(pre, c2);
+        sets_1 = Connect.addEqu(sets, c1_1, c2_1);
+      then
+        (cache,sets_1,{});
+    case (cache,sets,env,pre,c1,_,(Types.T_BOOL(_),_),c2,_,(Types.T_BOOL(_),_),false)
+      equation 
+        c1_1 = Prefix.prefixCref(pre, c1);
+        c2_1 = Prefix.prefixCref(pre, c2); 
+        sets_1 = Connect.addEqu(sets, c1_1, c2_1);
+      then
+        (cache,sets_1,{});
+    case (cache,sets,env,pre,c1,_,(Types.T_STRING(_),_),c2,_,(Types.T_STRING(_),_),false)
       equation 
         c1_1 = Prefix.prefixCref(pre, c1);
         c2_1 = Prefix.prefixCref(pre, c2);
