@@ -272,6 +272,8 @@ public constant ErrorID DUPLICATE_ELEMENTS_NOT_IDENTICAL=89;
 
 public constant ErrorID PACKAGE_VARIABLE_NOT_CONSTANT=90;
 
+public constant ErrorID RECURSIVE_DEFINITION= 91;
+
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
@@ -453,6 +455,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (DUPLICATE_ELEMENTS_NOT_IDENTICAL,TRANSLATION(),ERROR(),
           "Error duplicate elements (due to inherited elements) not identical, first element is: %s, second element is: %s"),
           (PACKAGE_VARIABLE_NOT_CONSTANT, TRANSLATION(),ERROR(),"Variable %s in package %s is not constant"),
+          (RECURSIVE_DEFINITION,TRANSLATION(),ERROR(),"Class %s has a recursive definition, i.e. contains an instance of itself"),
           (UNBOUND_PARAMETER_WARNING,TRANSLATION(),WARNING(),
           "Warning, parameter %s has no value."),
           (BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER(),TRANSLATION(),WARNING(),

@@ -3180,6 +3180,7 @@ algorithm
       		  local String s;
       equation 
         checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl); // Fails if multiple decls not identical
+        checkRecursiveDefinition(env,t);
         vn = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,{})) "//Debug.fprint(\"insttr\", \"Instantiating component \") &
 	//Debug.fprint(\"insttr\", n) & //Debug.fprint(\"insttr\", \"\\n\") &" ;
         classmod = Mod.lookupModificationP(mods, t) "The class definition is fetched from the environment. Then the set of modifications is calculated.  The modificions is the result of merging the modifications from several sources.  The modification stored with the class definition is put in the variable `classmod\', the modification passed to the function_ is extracted and put in the variable `mm\', and the modification that is included in the variable declaration is in the variable `m\'.  All of these are merged so that the correct precedence rules are followed." ;
@@ -3244,6 +3245,31 @@ algorithm
         fail();
   end matchcontinue;
 end instElement;
+
+protected function checkRecursiveDefinition "Checks that a class does not have a recursive definition, 
+i.e. an instance of itself. This is not allowed in Modelica."
+  input Env.Env env;
+  input Absyn.Path tp;
+algorithm
+_ := matchcontinue(env,tp)
+local Absyn.Path envPath;
+  // No envpath, nothing to check.
+  case(env,tp) equation
+    NONE = Env.getEnvPath(env);
+  then ();
+    // No recursive definition, succed.
+  case(env,tp) equation
+    SOME(envPath) = Env.getEnvPath(env);
+    false = Absyn.pathSuffixOf(tp,envPath);
+    then ();
+  case(env,tp) local String s; equation
+    SOME(envPath) = Env.getEnvPath(env);
+    true= Absyn.pathSuffixOf(tp,envPath);
+    s = Absyn.pathString(tp);
+    Error.addMessage(Error.RECURSIVE_DEFINITION,{s});
+    then fail();
+  end matchcontinue;
+end checkRecursiveDefinition;
 
 protected function checkMultiplyDeclared "Check if variable is multiply declared and that 
 all declarations are identical if so."
