@@ -4399,6 +4399,8 @@ algorithm
 
     case (cache,env,Absyn.CREF_IDENT(name = "cd"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("cd"),{},false,true),Types.PROP((Types.T_STRING({}),NONE),Types.C_VAR()),SOME(st)); 
 
+    case (cache,env,Absyn.CREF_IDENT(name = "getVersion"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("getVersion"),{},false,true),Types.PROP((Types.T_STRING({}),NONE),Types.C_VAR()),SOME(st)); 
+
     case (cache,env,Absyn.CREF_IDENT(name = "system"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("system"),{Exp.SCONST(str)},false,true),Types.PROP((Types.T_INTEGER({}),NONE),Types.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "readFile"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("readFile"),{Exp.SCONST(str)},false,true),Types.PROP((Types.T_STRING({}),NONE),Types.C_VAR()),SOME(st)); 
