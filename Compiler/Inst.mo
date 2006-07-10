@@ -3767,7 +3767,8 @@ algorithm
         (cache,compenv,dae,Connect.SETS(_,crs),ty) = instArray(cache,env, ci_state, mod, pre, csets, n, (cl,attr), 1, dim, 
           dims, idxs, inst_dims_1, impl, comment);
         dimt = instDimType(dim);
-        ty_1 = Types.liftArray(ty, dimt);
+        ty_1 = liftNonBasicTypes(ty,dimt); // Do not lift types extending basic type, they are already array types.
+       /* ty_1 = Types.liftArray(ty, dimt);*/
       then
         (cache,compenv,dae,Connect.SETS({},crs),ty_1);
     case (_,_,_,_,_,_,n,_,_,_,_,_,_,_) /* Rules for instantation of function variables (e.g. input and output 
@@ -3780,6 +3781,23 @@ algorithm
         fail();
   end matchcontinue;
 end instVar2;
+
+protected function liftNonBasicTypes "Helper functin to instVar2. All array variables should be given
+array types, by lifting the type given a dimensionality. An exception are types extending builtin types,
+since they already have array types. This relation performs the lifting for alltypes except types 
+extending basic types."
+	input Types.Type tp;
+  input  Option<Integer> dimt;
+	output Types.Type outTp;
+algorithm
+  outTp:= matchcontinue(tp,dimt)
+    case ((tp as (Types.T_COMPLEX(_,_,SOME(_)),_)),dimt) then tp;
+      
+    case (tp,dimt) 
+      equation  outTp = Types.liftArray(tp, dimt);
+      then outTp;
+  end matchcontinue;
+end liftNonBasicTypes;
 
 protected function makeExternalObjectBinding "Helper relation to instVar2
 
@@ -7552,11 +7570,14 @@ algorithm
       list<Env.Frame> env;
       Prefix.Prefix pre;
       Absyn.ComponentRef c1,c2;
+      Exp.Exp crefOrArray1,crefOrArray2;
       Env.Cache cache;
     case (cache,sets,env,pre,c1,c2,impl) /* impl */ 
       equation 
-        (cache,Exp.CREF(c1_1,t1),prop1,acc) = Static.elabCref(cache,env, c1, impl);
-        (cache,Exp.CREF(c2_1,t2),prop2,acc) = Static.elabCref(cache,env, c2, impl);
+        (cache,crefOrArray1,prop1,acc) = Static.elabCref(cache,env, c1, impl);
+        (cache,crefOrArray2,prop2,acc) = Static.elabCref(cache,env, c2, impl);
+        Exp.CREF(c1_1,t2) = getVectorizedCref(crefOrArray1);
+        Exp.CREF(c2_1,t2) = getVectorizedCref(crefOrArray2);
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
         (cache,(attr1 as Types.ATTR(flow1,_,_,_)),ty1,_) = Lookup.lookupVarLocal(cache,env, c1_2);
@@ -7569,7 +7590,7 @@ algorithm
         (cache,sets_1,dae) = connectComponents(cache,sets, env, pre, c1_2, f1, ty1, c2_2, f2, ty2, flow1);
       then
         (cache,sets_1,dae);
-    case (_,_,_,_,_,_,_)
+    case (cache,sets,env,pre,c1,c2,impl)
       equation 
         Debug.fprint("failtrace", "- instConnect failed\n");
       then
@@ -7577,6 +7598,19 @@ algorithm
   end matchcontinue;
 end instConnect;
 
+protected function getVectorizedCref "for a vectorized cref, return the originial cref without vector subscripts"
+input Exp.Exp crefOrArray;
+output Exp.Exp cref;
+algorithm
+   cref := matchcontinue(crefOrArray)
+   local Exp.ComponentRef cr;
+     Exp.Type t;
+     case (cref as Exp.CREF(_,_)) then cref;
+     case (Exp.ARRAY(_,_,Exp.CREF(cr,t)::_)) equation
+       cr = Exp.crefStripLastSubs(cr);
+       then Exp.CREF(cr,t);
+   end matchcontinue;
+end getVectorizedCref;
 protected function validConnector "function: validConnector
  
   This function tests whether a type is a eligible to be used in

@@ -6172,7 +6172,7 @@ protected function fillCrefSubscripts "function: fillCrefSubscripts
   This is a helper function to elab_cref2.
   It investigates a Types.Type in order to fill the subscript lists of a 
   component reference. For instance, the name \'a.b\' with the type array of 
-  one dimension will become \'a.b{:}\'.
+  one dimension will become \'a.b[:]\'.
 "
   input Exp.ComponentRef inComponentRef;
   input Types.Type inType;
@@ -6419,7 +6419,15 @@ algorithm
       Exp.ComponentRef cr;
       Integer ds,ds2;
       tuple<Types.TType, Option<Absyn.Path>> t;
-    case (Exp.CREF(componentRef = cr,ty = exptp),(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(ds)),arrayType = (t as (Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(ds2))),_))),_)) /* matrix sizes > 4 is not vectorized */ 
+      
+      /* types extending basictype */
+    case (e,(Types.T_COMPLEX(_,_,SOME(t)),_))
+      equation
+        e = crefVectorize(e,t);
+      then e;
+
+        /* matrix sizes > 4 is not vectorized */         
+    case (Exp.CREF(componentRef = cr,ty = exptp),(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(ds)),arrayType = (t as (Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(ds2))),_))),_)) 
       equation 
         b1 = (ds < 4);
         b2 = (ds2 < 4);
@@ -6428,7 +6436,9 @@ algorithm
         e = createCrefArray2d(cr, 1, ds, ds2, elt_tp, t);
       then
         e;
-    case (Exp.CREF(componentRef = cr,ty = exptp),(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(ds)),arrayType = t),_)) /* vectorsizes > 4 is not vectorized */ 
+
+        /* vectorsizes > 4 is not vectorized */ 
+    case (Exp.CREF(componentRef = cr,ty = exptp),(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(ds)),arrayType = t),_)) 
       equation 
         false = Types.isArray(t);
         (ds < 4) = true;
@@ -7440,6 +7450,7 @@ algorithm
       then
         fail();
 
+        /* Vector[n]*Matrix[n,m] */
     case (Exp.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_)
       equation 
         1 = nDims(typ1);
@@ -7452,7 +7463,7 @@ algorithm
         rtype = (Types.T_ARRAY(Types.DIM(SOME(m)),etype),NONE);
       then
         rtype;
-
+        /* Matrix[n,m]*Vector[m] */
     case (Exp.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_)
       equation 
         2 = nDims(typ1);
@@ -7557,6 +7568,10 @@ algorithm
         ns = nDims(t);
       then
         ns + 1;
+    case ((Types.T_COMPLEX(_,_,SOME(t)),_)) 
+    equation
+      ns = nDims(t);
+      then ns;
   end matchcontinue;
 end nDims;
 
@@ -7578,6 +7593,11 @@ algorithm
         (d > 1) = true;
         d_1 = d - 1;
         n = dimSize(t, d_1);
+      then
+        n;
+    case ((Types.T_COMPLEX(_,_,SOME(t)),_),d)
+      equation 
+       n = dimSize(t, d);
       then
         n;
   end matchcontinue;
@@ -7602,6 +7622,10 @@ algorithm
         t_1 = elementType(t);
       then
         t_1;
+    case ((Types.T_COMPLEX(_,_,SOME(t)),_)) 
+      equation
+        t_1 = elementType(t);
+      then t_1;
   end matchcontinue;
 end elementType;
 

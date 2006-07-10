@@ -1289,7 +1289,7 @@ algorithm
         res = ClassInf.getStateName(ci_state);
         st_str = ClassInf.printStateStr(ci_state);
         bc_tp_str = unparseType(bc_tp);
-        res = Util.stringAppendList({res," ",st_str," bc:",bc_tp_str});
+        res = Util.stringAppendList({"(",res," ",st_str," bc:",bc_tp_str,")"});
       then
         res;
     case ((T_COMPLEX(complexClassType = ci_state,complexVarLst = vs,complexTypeOption = NONE),_))
