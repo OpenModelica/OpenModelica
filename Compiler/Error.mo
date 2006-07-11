@@ -381,7 +381,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (CONNECT_FLOW_TO_NONFLOW,TRANSLATION(),ERROR(),
           "Cannot connect flow component %s to non-flow component %s"),
           (INVALID_CONNECTOR_VARIABLE,TRANSLATION(),ERROR(),
-          "The type of variable %s (%s) is not allowed in connectors"),
+          "The type of variables %s (%s) are inconsistent in connect equations"),
           (TYPE_ERROR,TRANSLATION(),ERROR(),
           "Wrong type on %s, expected %s"),
           (MODIFY_PROTECTED,TRANSLATION(),ERROR(),

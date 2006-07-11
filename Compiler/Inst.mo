@@ -7781,7 +7781,7 @@ algorithm
       list<DAE.Element> dae;
       list<Types.Var> l1,l2;
       Boolean flow_;
-      String c1_str,t1_str;
+      String c1_str,t1_str,t2_str,c2_str;
       Env.Cache cache;
       
       /* flow - with a subtype of Real */ 
@@ -7855,11 +7855,20 @@ algorithm
         sets_1 = Connect.addArrayEqu(sets, c1_1, c2_1, dim1);
       then
         (cache,sets_1,{});
-    case (cache,sets,env,pre,c1,f1,(Types.T_COMPLEX(complexVarLst = l1,complexTypeOption = SOME(bc_tp1)),_),c2,f2,(Types.T_COMPLEX(complexVarLst = l2,complexTypeOption = SOME(bc_tp2)),_),flow_) /* Complex types extending basetype */ 
+     
+        /* Complex types extending basetype */ 
+    case (cache,sets,env,pre,c1,f1,(Types.T_COMPLEX(complexVarLst = l1,complexTypeOption = SOME(bc_tp1)),_),c2,f2,t2,flow_) 
       equation 
-        (cache,sets_1,dae) = connectComponents(cache,sets, env, pre, c1, f1, bc_tp1, c2, f2, bc_tp2, flow_);
+        (cache,sets_1,dae) = connectComponents(cache,sets, env, pre, c1, f1, bc_tp1, c2, f2, t2, flow_);
       then
         (cache,sets_1,dae);
+        /* Complex types extending basetype */ 
+    case (cache,sets,env,pre,c1,f1,t1,c2,f2,(Types.T_COMPLEX(complexVarLst = l1,complexTypeOption = SOME(bc_tp2)),_),flow_) 
+      equation 
+        (cache,sets_1,dae) = connectComponents(cache,sets, env, pre, c1, f1, t1, c2, f2, bc_tp2, flow_);
+      then
+        (cache,sets_1,dae);
+        
     case (cache,sets,env,pre,c1,f1,(Types.T_COMPLEX(complexVarLst = l1),_),c2,f2,(Types.T_COMPLEX(complexVarLst = l2),_),_) /* Complex types */ 
       equation 
         c1_1 = Prefix.prefixCref(pre, c1);
@@ -7873,6 +7882,10 @@ algorithm
         c2_1 = Prefix.prefixCref(pre, c2);
         c1_str = Exp.printComponentRefStr(c1);
         t1_str = Types.unparseType(t1);
+        c2_str = Exp.printComponentRefStr(c2);
+        t2_str = Types.unparseType(t2);
+        c1_str = Util.stringAppendList({c1_str," and ",c2_str});
+        t1_str = Util.stringAppendList({t1_str," and ",t2_str});
         Error.addMessage(Error.INVALID_CONNECTOR_VARIABLE, {c1_str,t1_str});
       then
         fail();
@@ -7930,6 +7943,8 @@ algorithm
         dae_1 = listAppend(dae, dae2);
       then
         (cache,sets_2,dae_1);
+        
+     
   end matchcontinue;
 end connectVars;
 
