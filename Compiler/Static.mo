@@ -1582,7 +1582,7 @@ algorithm
         (cache,Exp.ARRAY(at,a,(el_2 :: els_1)),props,dim1,dim2_1);
     case (_,_,_,_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "- elab_matrix_comma failed\n");
+        Debug.fprint("failtrace", "- elabMatrixComma failed\n");
       then
         fail();
   end matchcontinue;
@@ -1766,6 +1766,9 @@ algorithm
         (e_2,prop_1) = promoteExp(e_1, Types.PROP(tp_1,c), n_1);
       then
         (e_2,prop_1);
+    case(_,_,_) equation
+      Debug.fprint("failtrace","-promoteExp failed\n");
+      then fail();
   end matchcontinue;
 end promoteExp;
 
@@ -4909,17 +4912,8 @@ algorithm
       then
         (cache,call_exp,prop_1);
         
-         case (cache,env,fn,args,nargs,impl,st) /* No functions found. */ 
-      equation 
-        (cache,{}) = Lookup.lookupFunctionsInEnv(cache,env, fn);			
-      	print("NO FUNCTION Found\nenv:");
-      	print(Env.printEnvStr(env));print("\n");
-      	
-      then
-        fail();
-        
         /*case above failed. Also consider koening lookup.*/
-    case (cache,env,fn,args,nargs,impl,st)
+    /*case (cache,env,fn,args,nargs,impl,st)
       equation 
         (cache,ktypelist) = getKoeningFunctionTypes(cache,env, fn, args, nargs, impl)  ;
         (cache,args_1,constlist,restype,functype,vect_dims,slots) = elabTypes(cache,env, args, nargs, ktypelist, impl);
@@ -4933,7 +4927,7 @@ algorithm
         (call_exp,prop_1) = vectorizeCall(Exp.CALL(fn_1,args_1,tuple_,builtin), restype, vect_dims, 
           slots, prop);
       then
-        (cache,call_exp,prop);
+        (cache,call_exp,prop);*/
     case (cache,env,fn,args,nargs,impl,st) /* no matching type found. */ 
       equation 
         (cache,typelist) = Lookup.lookupFunctionsInEnv(cache,env, fn);
@@ -7548,7 +7542,7 @@ algorithm
   end matchcontinue;
 end computeReturnType;
 
-protected function nDims "function nDims
+public function nDims "function nDims
   Returns the number of dimensions of a Type.
 "
   input Types.Type inType;
@@ -7675,9 +7669,9 @@ algorithm
           {(Types.T_REAL({}),NONE),(Types.T_REAL({}),NONE)},(Types.T_REAL({}),NONE)),
           (Exp.ADD(Exp.STRING()),
           {(Types.T_STRING({}),NONE),(Types.T_STRING({}),NONE)},(Types.T_STRING({}),NONE))};
-        (cache,userops) = getKoeningOperatorTypes(cache,"plus", env, t1, t2);
+        /*(cache,userops) = getKoeningOperatorTypes(cache,"plus", env, t1, t2);*/
         arrays = Util.listFlatten({intarrs,realarrs,stringarrs});
-        types = Util.listFlatten({scalars,arrays,userops});
+        types = Util.listFlatten({scalars,arrays/*,userops*/});
       then
         (cache,types);
     case (cache,Absyn.SUB(),env,t1,t2)
@@ -7693,8 +7687,8 @@ algorithm
           {(Types.T_INTEGER({}),NONE),(Types.T_INTEGER({}),NONE)},(Types.T_INTEGER({}),NONE)),
           (Exp.SUB(Exp.REAL()),
           {(Types.T_REAL({}),NONE),(Types.T_REAL({}),NONE)},(Types.T_REAL({}),NONE))};
-        (cache,userops) = getKoeningOperatorTypes(cache,"minus", env, t1, t2);
-        types = Util.listFlatten({scalars,intarrs,realarrs,userops});
+        /*(cache,userops) = getKoeningOperatorTypes(cache,"minus", env, t1, t2);*/
+        types = Util.listFlatten({scalars,intarrs,realarrs/*,userops*/});
       then
         (cache,types);
     case (cache,Absyn.MUL(),env,t1,t2)
@@ -7731,10 +7725,10 @@ algorithm
           intarrtypes);
         realarrsscalar = operatorReturn(Exp.MUL_ARRAY_SCALAR(Exp.REAL()), realarrtypes, realtypes, 
           realarrtypes);
-        (cache,userops) = getKoeningOperatorTypes(cache,"times", env, t1, t2);
+        /*(cache,userops) = getKoeningOperatorTypes(cache,"times", env, t1, t2);*/
         types = Util.listFlatten(
           {scalars,intscalararrs,realscalararrs,intarrsscalar,
-          realarrsscalar,scalarprod,matrixprod,userops});
+          realarrsscalar,scalarprod,matrixprod/*,userops*/});
       then
         (cache,types);
     case (cache,Absyn.DIV(),env,t1,t2)
@@ -7746,8 +7740,8 @@ algorithm
         scalars = {(real_div,{real_scalar,real_scalar},real_scalar)};
         realarrscalar = operatorReturn(Exp.DIV_ARRAY_SCALAR(Exp.REAL()), realarrtypes, realtypes, 
           realarrtypes);
-        (cache,userops) = getKoeningOperatorTypes(cache,"divide", env, t1, t2);
-        types = Util.listFlatten({scalars,realarrscalar,userops});
+        /*(cache,userops) = getKoeningOperatorTypes(cache,"divide", env, t1, t2);*/
+        types = Util.listFlatten({scalars,realarrscalar/*,userops*/});
       then
         (cache,types);
     case (cache,Absyn.POW(),env,t1,t2)
@@ -7764,8 +7758,8 @@ algorithm
         arrscalar = {
           (Exp.POW_ARR(Exp.REAL()),{real_matrix,int_scalar},
           real_matrix)};
-        (cache,userops) = getKoeningOperatorTypes(cache,"power", env, t1, t2);
-        types = Util.listFlatten({scalars,arrscalar,userops});
+        /*(cache,userops) = getKoeningOperatorTypes(cache,"power", env, t1, t2);*/
+        types = Util.listFlatten({scalars,arrscalar/*,userops*/});
       then
         (cache,types);
     case (cache,Absyn.UMINUS(),env,t1,t2)
@@ -7779,8 +7773,8 @@ algorithm
         realarrtypes = arrayTypeList(9, (Types.T_REAL({}),NONE));
         intarrs = operatorReturnUnary(Exp.UMINUS_ARR(Exp.INT()), intarrtypes, intarrtypes);
         realarrs = operatorReturnUnary(Exp.UMINUS_ARR(Exp.REAL()), realarrtypes, realarrtypes);
-        (cache,userops) = getKoeningOperatorTypes(cache,"unaryMinus", env, t1, t2);
-        types = Util.listFlatten({scalars,intarrs,realarrs,userops});
+        /*(cache,userops) = getKoeningOperatorTypes(cache,"unaryMinus", env, t1, t2);*/
+        types = Util.listFlatten({scalars,intarrs,realarrs/*,userops*/});
       then
         (cache,types);
     case (cache,Absyn.UPLUS(),env,t1,t2)
@@ -7794,8 +7788,8 @@ algorithm
         realarrtypes = arrayTypeList(9, (Types.T_REAL({}),NONE));
         intarrs = operatorReturnUnary(Exp.UPLUS(Exp.INT()), intarrtypes, intarrtypes);
         realarrs = operatorReturnUnary(Exp.UPLUS(Exp.REAL()), realarrtypes, realarrtypes);
-        (cache,userops) = getKoeningOperatorTypes(cache,"unaryPlus", env, t1, t2);
-        types = Util.listFlatten({scalars,intarrs,realarrs,userops});
+        /*(cache,userops) = getKoeningOperatorTypes(cache,"unaryPlus", env, t1, t2);*/
+        types = Util.listFlatten({scalars,intarrs,realarrs/*,userops*/});
       then
         (cache,types);
     case (cache,Absyn.AND(),env,t1,t2) then (cache,{
@@ -7813,8 +7807,8 @@ algorithm
           {(Types.T_INTEGER({}),NONE),(Types.T_INTEGER({}),NONE)},(Types.T_BOOL({}),NONE)),
           (Exp.LESS(Exp.REAL()),
           {(Types.T_REAL({}),NONE),(Types.T_REAL({}),NONE)},(Types.T_BOOL({}),NONE))} "\'<\' operator" ;
-        (cache,userops) = getKoeningOperatorTypes(cache,"less", env, t1, t2);
-        types = Util.listFlatten({scalars,userops});
+        /*(cache,userops) = getKoeningOperatorTypes(cache,"less", env, t1, t2);*/
+        types = Util.listFlatten({scalars/*,userops*/});
       then
         (cache,types);
     case (cache,Absyn.LESSEQ(),env,t1,t2)
@@ -7824,8 +7818,8 @@ algorithm
           {(Types.T_INTEGER({}),NONE),(Types.T_INTEGER({}),NONE)},(Types.T_BOOL({}),NONE)),
           (Exp.LESSEQ(Exp.REAL()),
           {(Types.T_REAL({}),NONE),(Types.T_REAL({}),NONE)},(Types.T_BOOL({}),NONE))} "\'<=\' operator" ;
-        (cache,userops) = getKoeningOperatorTypes(cache,"lessEqual", env, t1, t2);
-        types = Util.listFlatten({scalars,userops});
+        /*(cache,userops) = getKoeningOperatorTypes(cache,"lessEqual", env, t1, t2);*/
+        types = Util.listFlatten({scalars/*,userops*/});
       then
         (cache,types);
     case (cache,Absyn.GREATER(),env,t1,t2)
@@ -7835,8 +7829,8 @@ algorithm
           {(Types.T_INTEGER({}),NONE),(Types.T_INTEGER({}),NONE)},(Types.T_BOOL({}),NONE)),
           (Exp.GREATER(Exp.REAL()),
           {(Types.T_REAL({}),NONE),(Types.T_REAL({}),NONE)},(Types.T_BOOL({}),NONE))} "\'>\' operator" ;
-        (cache,userops) = getKoeningOperatorTypes(cache,"greater", env, t1, t2);
-        types = Util.listFlatten({scalars,userops});
+        /*(cache,userops) = getKoeningOperatorTypes(cache,"greater", env, t1, t2);*/
+        types = Util.listFlatten({scalars/*,userops*/});
       then
         (cache,types);
     case (cache,Absyn.GREATEREQ(),env,t1,t2)
@@ -7846,8 +7840,8 @@ algorithm
           {(Types.T_INTEGER({}),NONE),(Types.T_INTEGER({}),NONE)},(Types.T_BOOL({}),NONE)),
           (Exp.GREATEREQ(Exp.REAL()),
           {(Types.T_REAL({}),NONE),(Types.T_REAL({}),NONE)},(Types.T_BOOL({}),NONE))} "\'>=\' operator" ;
-        (cache,userops) = getKoeningOperatorTypes(cache,"greaterEqual", env, t1, t2);
-        types = Util.listFlatten({scalars,userops});
+        /*(cache,userops) = getKoeningOperatorTypes(cache,"greaterEqual", env, t1, t2);*/
+        types = Util.listFlatten({scalars/*,userops*/});
       then
         (cache,types);
     case (cache,Absyn.EQUAL(),env,t1,t2)
@@ -7861,8 +7855,8 @@ algorithm
           {(Types.T_STRING({}),NONE),(Types.T_STRING({}),NONE)},(Types.T_BOOL({}),NONE)),
           (Exp.EQUAL(Exp.BOOL()),
           {(Types.T_BOOL({}),NONE),(Types.T_BOOL({}),NONE)},(Types.T_BOOL({}),NONE))} "\'==\' operator" ;
-        (cache,userops) = getKoeningOperatorTypes(cache,"equal", env, t1, t2);
-        types = Util.listFlatten({scalars,userops});
+        /*(cache,userops) = getKoeningOperatorTypes(cache,"equal", env, t1, t2);*/
+        types = Util.listFlatten({scalars/*,userops*/});
       then
         (cache,types);
     case (cache,Absyn.NEQUAL(),env,t1,t2)
@@ -7876,8 +7870,8 @@ algorithm
           {(Types.T_STRING({}),NONE),(Types.T_STRING({}),NONE)},(Types.T_BOOL({}),NONE)),
           (Exp.NEQUAL(Exp.BOOL()),
           {(Types.T_BOOL({}),NONE),(Types.T_BOOL({}),NONE)},(Types.T_BOOL({}),NONE))} "\'!=\' operator" ;
-        (cache,userops) = getKoeningOperatorTypes(cache,"notEqual", env, t1, t2);
-        types = Util.listFlatten({scalars,userops});
+        /*(cache,userops) = getKoeningOperatorTypes(cache,"notEqual", env, t1, t2);*/
+        types = Util.listFlatten({scalars/*,userops*/});
       then
         (cache,types);
     case (cache,op,env,t1,t2)

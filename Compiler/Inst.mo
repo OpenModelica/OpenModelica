@@ -1126,6 +1126,7 @@ algorithm
 
 				t1 = clock();
 				
+
         (cache,l,env_1,csets_1,ci_state_1,tys,bc) = instClassdef(cache,env, mods, pre, csets, ci_state, d, r, prot, inst_dims, impl);
         t2 = clock();
         time = t2 -. t1;
@@ -1135,7 +1136,7 @@ algorithm
         //print(s);
         //print(Util.if_(b,s,""));
         //print("instClassDef, outenv:");print(Env.printEnvStr(env_1));
-       cache = addCachedEnv(cache,n,env_1);
+        cache = addCachedEnv(cache,n,env_1);
       then
         (cache,l,env_1,csets_1,ci_state_1,tys,bc);
     case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restricion = r,parts = d)),prot,inst_dims,impl)
@@ -5502,6 +5503,7 @@ algorithm
 	  needed when deoverloading */ 
       equation 
         (cache,(c as SCode.CLASS(id,_,encflag,SCode.R_FUNCTION(),_)),cenv) = Lookup.lookupClass(cache,env, fn, true);
+        
         (cache,dae,_,_,(Types.T_FUNCTION(args,tp),_),st) = instClass(cache,cenv, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
           {}, true, INNER_CALL());
         (cache,fpath) = makeFullyQualified(cache,env, Absyn.IDENT(overloadname));

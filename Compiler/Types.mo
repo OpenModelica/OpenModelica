@@ -380,7 +380,9 @@ public function isArray "function: isArray
 algorithm 
   outBoolean:=
   matchcontinue (inType)
+      local Type t;
     case ((T_ARRAY(arrayDim = _),_)) then true; 
+    case ((T_COMPLEX(_,_,SOME(t)),_)) then isArray(t);      
     case ((_,_)) then false; 
   end matchcontinue;
 end isArray;
@@ -440,6 +442,9 @@ algorithm
         n = ndims(t);
       then
         n + 1;
+    case ((T_COMPLEX(_,_,SOME(t)),_)) equation
+        n = ndims(t);
+    then n;
     case ((_,_)) then 0; 
   end matchcontinue;
 end ndims;
@@ -506,6 +511,8 @@ algorithm
         res = getDimensionSizes(tp);
       then
         (i :: res);
+    case ((T_COMPLEX(_,_,SOME(tp)),_))
+      then getDimensionSizes(tp);        
     case ((_,_)) then {}; 
   end matchcontinue;
 end getDimensionSizes;
@@ -1178,11 +1185,17 @@ algorithm
       ArrayDim dim;
       Option<Absyn.Path> path;
       Option<Integer> i;
+      ClassInf.State ci;
+      list<Var> varlst;
     case ((T_ARRAY(arrayDim = dim,arrayType = ty),path),i)
       equation 
         ty_1 = liftArrayRight(ty, i);
       then
         ((T_ARRAY(dim,ty_1),path));
+    case((T_COMPLEX(ci,varlst,SOME(ty)),path),i)
+      equation
+        ty_1 = liftArrayRight(ty,i);
+        then ((T_COMPLEX(ci,varlst,SOME(ty_1)),path));          
     case ((ty,path),i)
       local TType ty;
       then
@@ -1201,6 +1214,7 @@ algorithm
   matchcontinue (inType)
     local Type ty;
     case ((T_ARRAY(arrayDim = DIM(integerOption = _),arrayType = ty),_)) then ty; 
+    case ((T_COMPLEX(_,_,SOME(ty)),_)) then unliftArray(ty);
   end matchcontinue;
 end unliftArray;
 
@@ -2112,6 +2126,14 @@ algorithm
         res = boolOr(r1, r2);
       then
         res;
+        
+    case ((T_COMPLEX(_,_,SOME(tp)),_)::xs) 
+      equation
+        r1 = containReal({tp});
+        r2 = containReal(xs);
+        res = boolOr(r1,r2);
+      then res;
+        
     case (((T_REAL(varLstReal = _),_) :: _)) then true; 
     case ((_ :: xs))
       equation 
@@ -2434,6 +2456,8 @@ algorithm
         dims = getDimensionSizes(t);
       then
         Exp.T_ARRAY(t_1,dims);
+    case ( (T_COMPLEX(_,_,SOME(t)),_))
+    then elabType(t);
     case ((_,_)) then Exp.OTHER(); 
   end matchcontinue;
 end elabType;
@@ -2864,6 +2888,14 @@ algorithm
       Option<Absyn.Path> p2,p;
       Boolean havereal;
       list<Var> v;
+
+    case (PROP((T_COMPLEX(_,_,SOME(t1)),_),c1),PROP(t2,c2),havereal) 
+    then matchWithPromote(PROP(t1,c1),PROP(t2,c2),havereal);
+
+    case (PROP(t1,c1),PROP((T_COMPLEX(_,_,SOME(t2)),_),c2),havereal)
+    then matchWithPromote(PROP(t1,c1),PROP(t2,c2),havereal);
+
+     
     case (PROP(type_ = (T_ARRAY(arrayDim = dim1,arrayType = t1),_),constFlag = c1),PROP(type_ = (T_ARRAY(arrayDim = dim2,arrayType = t2),p2),constFlag = c2),havereal) /* Allow Integer => Real */ 
       equation 
         PROP(t,c) = matchWithPromote(PROP(t1,c1), PROP(t2,c2), havereal);
@@ -2911,6 +2943,9 @@ algorithm
         c = constAnd(c1, c2) "Have real and both Integer" ;
       then
         PROP((T_REAL({}),p2),c);
+    case(_,_,_) equation
+      Debug.fprint("failtrace","-matchWithPromote failed\n");
+    then fail();
   end matchcontinue;
 end matchWithPromote;
 

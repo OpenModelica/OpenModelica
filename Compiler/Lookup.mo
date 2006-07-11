@@ -267,7 +267,6 @@ algorithm
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,env, Absyn.IDENT(pack), msgflag);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
-        
           (cache,_,env_2,_,cistate1,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
            ci_state, c, false/*FIXME:prot*/, {}, false);
         failure(ClassInf.valid(cistate1, SCode.R_PACKAGE()));
@@ -1212,6 +1211,8 @@ algorithm
       Env.Frame f;
       Env.Cache cache;
     case (cache,{},id) then (cache,{}); 
+      
+      /* Builtin operators are looked up in top frame directly */
     case (cache,env,(iid as Absyn.IDENT(name = id)))
       local String id;
       equation 
@@ -1230,18 +1231,19 @@ algorithm
         reslist = createGenericBuiltinFunctions(env, id);
       then
         (cache,reslist);
+    /* Simple name, search frame */
     case (cache,(env as (Env.FRAME(class_1 = sid,list_2 = ht,list_3 = httypes) :: fs)),(iid as Absyn.IDENT(name = id)))
       local String id,s;
       equation 
-        (cache,c1)= lookupFunctionsInFrame(cache,ht, httypes, env, id);
-        (cache,c2)= lookupFunctionsInEnv(cache,fs, iid);
-        reslist = listAppend(c1, c2);
+        (cache,c1 as _::_)= lookupFunctionsInFrame(cache,ht, httypes, env, id);
       then
-        (cache,reslist);
+        (cache,c1);
+      
+      /*For qualified function names, e.g. Modelica.Math.sin */  
     case (cache,(env as (Env.FRAME(class_1 = sid,list_2 = ht,list_3 = httypes) :: fs)),(iid as Absyn.QUALIFIED(name = pack,path = path)))
       local String id,s;
       equation 
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,env, Absyn.IDENT(pack), false) "For qualified function names, e.g. Modelica.Math.sin" ;
+        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,env, Absyn.IDENT(pack), false) ;
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
         
@@ -1253,8 +1255,9 @@ algorithm
         (cache,reslist) = lookupFunctionsInEnv(cache,env_2, path);
       then 
         (cache,reslist);
-   
-    case (cache,(f :: fs),id) /* Did not match. Continue */ 
+
+   /* Did not match. Search next frame. */ 
+    case (cache,(f :: fs),id) 
       local list<tuple<Types.TType, Option<Absyn.Path>>> c;
       equation 
         (cache,c) = lookupFunctionsInEnv(cache,fs, id);
@@ -1987,6 +1990,8 @@ algorithm
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
+    case ((Types.T_COMPLEX(_,_,SOME(t)),_),ys)
+      then checkSubscripts(t,ys);
     case (t,s)
       equation 
         Debug.fprint("failtrace", "- check_subscripts failed ( ");
