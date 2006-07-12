@@ -6304,11 +6304,7 @@ algorithm
         e_1 = crefVectorize(Exp.CREF(cr_1,t), tt);
       then
         (cache,e_1,Types.C_PARAM(),acc);
-    case (cache,env,cr,acc,SCode.CONST(),tt,Types.EQBOUND(exp = exp,constant_ = const)) /* rule	Types.elab_type tt => t &
-	fill_cref_subscripts (cr,tt) => cr\' &
-	value_exp v => e\'
-	----------------
-  	elab_cref2 (env,cr,acc,SCode.STRUCTPARAM,tt, Types.VALBOUND(v)) => (e\',Types.C_PARAM,acc) */ 
+    case (cache,env,cr,acc,SCode.CONST(),tt,Types.EQBOUND(exp = exp,constant_ = const)) 
       local Exp.Type t;
       equation 
         t = Types.elabType(tt) "Constants with equal binings should be constant, i.e. true
@@ -6391,13 +6387,13 @@ end elabCref2;
 
 protected function crefVectorize "function: crefVectorize
  
-  This function takes a \'Exp.Exp\' and a \'Types.Type\' and if the expression
+  This function takes a 'Exp.Exp' and a 'Types.Type' and if the expression
   is a ComponentRef and the type is an array it returns an array of 
   component references with subscripts for each index.
-  For instance, parameter Real x{3};   
-  gives cref_vectorize(\'x\', <arraytype>) => \'{x{1},x{2},x{3}}\'
-  This is needed since the DAE does not know what the variable \'x\' is, it only
-  knows the variables \'x{1}\', \'x{2}\' and \'x{3}\'.
+  For instance, parameter Real x[3];   
+  gives cref_vectorize('x', <arraytype>) => '{x[1],x[2],x[3]}
+  This is needed since the DAE does not know what the variable 'x' is, it only
+  knows the variables 'x[1]', 'x[2]' and 'x[3]'.
   NOTE: Currently only works for one and two dimensions.
 "
   input Exp.Exp inExp;
@@ -6420,22 +6416,22 @@ algorithm
         e = crefVectorize(e,t);
       then e;
 
-        /* matrix sizes > 4 is not vectorized */         
+        /* matrix sizes > 20 is not vectorized */         
     case (Exp.CREF(componentRef = cr,ty = exptp),(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(ds)),arrayType = (t as (Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(ds2))),_))),_)) 
       equation 
-        b1 = (ds < 4);
-        b2 = (ds2 < 4);
+        b1 = (ds < 20);
+        b2 = (ds2 < 20);
         true = boolAnd(b1, b2);
         elt_tp = Exp.arrayEltType(exptp);
         e = createCrefArray2d(cr, 1, ds, ds2, elt_tp, t);
       then
         e;
 
-        /* vectorsizes > 4 is not vectorized */ 
+        /* vectorsizes > 20 is not vectorized */ 
     case (Exp.CREF(componentRef = cr,ty = exptp),(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(ds)),arrayType = t),_)) 
       equation 
         false = Types.isArray(t);
-        (ds < 4) = true;
+        (ds < 20) = true;
         elt_tp = Exp.arrayEltType(exptp);
         e = createCrefArray(cr, 1, ds, elt_tp, t);
       then
@@ -6501,6 +6497,7 @@ algorithm
       tuple<Types.TType, Option<Absyn.Path>> t;
       list<Exp.Exp> expl;
       Exp.Exp e_1;
+      list<Exp.Subscript> ss;
     case (cr,indx,ds,et,t) /* index iterator dimension size */ 
       equation 
         (indx > ds) = true;
@@ -6510,9 +6507,9 @@ algorithm
       equation 
         indx_1 = indx + 1;
         Exp.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t);
-        {Exp.WHOLEDIM()} = Exp.crefLastSubs(cr);
+        Exp.WHOLEDIM()::ss = Exp.crefLastSubs(cr);
         cr_1 = Exp.crefStripLastSubs(cr);
-        cr_1 = Exp.subscriptCref(cr_1, {Exp.INDEX(Exp.ICONST(indx))});
+        cr_1 = Exp.subscriptCref(cr_1, Exp.INDEX(Exp.ICONST(indx))::ss);
         e_1 = crefVectorize(Exp.CREF(cr_1,et), t);
       then
         Exp.ARRAY(et,false,(e_1 :: expl));
@@ -6527,13 +6524,14 @@ algorithm
         Exp.ARRAY(et,false,(e_1 :: expl));
     case (cr,indx,ds,et,t) /* index */ 
       equation 
-        indx_1 = indx + 1;
-        (Exp.INDEX(_) :: _) = Exp.crefLastSubs(cr);
-        Exp.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t);
-        cr_1 = Exp.subscriptCref(cr, {Exp.INDEX(Exp.ICONST(indx))});
-        e_1 = crefVectorize(Exp.CREF(cr_1,et), t);
+        (Exp.INDEX(e_1) :: ss) = Exp.crefLastSubs(cr);
+        cr_1 = Exp.crefStripLastSubs(cr);
+        cr_1 = Exp.subscriptCref(cr_1,ss); 
+        Exp.ARRAY(_,_,expl) = createCrefArray(cr_1, indx, ds, et, t);
+        expl = Util.listMap1(expl,Exp.prependSubscriptExp,Exp.INDEX(e_1));
       then
-        Exp.ARRAY(et,false,(e_1 :: expl));
+        Exp.ARRAY(et,false,expl);
+        
     case (cr,indx,ds,et,t)
       equation 
         Debug.fprint("failtrace", "create_cref_array failed\n");

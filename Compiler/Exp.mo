@@ -969,6 +969,24 @@ algorithm
   end matchcontinue;
 end crefEqual;
 
+public function prependSubscriptExp "Prepends a subscript to a CREF expression
+
+For instance a.b[1,2] with subscript 'i' becomes a.b[i,1,2]."
+input Exp exp;
+input Subscript subscr;
+output Exp outExp;
+algorithm
+  outexp := matchcontinue(exp,subscr)
+  local Type t; ComponentRef cr,cr1,cr2;
+    list<Subscript> subs;
+    case(CREF(cr,t),subscr) equation
+      cr1 = crefStripLastSubs(cr);
+      subs = crefLastSubs(cr);
+      cr2 = subscriptCref(cr1,subscr::subs);
+    then CREF(cr2,t);
+  end matchcontinue;
+end prependSubscriptExp;    
+
 public function crefEqualReturn "function: crefEqualReturn
   author: PA
  
@@ -1291,7 +1309,7 @@ algorithm
         exp_1 = BINARY(e1_1,op,e2_1);
         exp_2 = simplifyBinarySortConstants(exp_1);
         exp_3 = trySimplifyBinary(exp_2);        
-        e_1 = simplifyBinaryCoeff(exp_3);        
+        e_1 = simplifyBinaryCoeff(exp_3);
       then
         e_1;
     case ((exp as RELATION(exp1 = e1,operator = op,exp2 = e2)))
@@ -1376,7 +1394,7 @@ algorithm
     case (a1,DIV_ARRAY_SCALAR(ty = tp),s1)
       equation 
         tp = typeof(s1);
-        res = simplifyVectorScalar(s1, DIV(tp), a1);
+        res = simplifyVectorScalar(a1, DIV(tp), s1);
       then
         res;
     case (e1,MUL_SCALAR_PRODUCT(ty = tp),e2)
@@ -1504,12 +1522,22 @@ algorithm
       Type tp;
       Boolean sc;
       list<Exp> es_1,es;
-    case (s1,op,ARRAY(ty = tp,scalar = sc,array = {e1})) then ARRAY(tp,sc,{BINARY(s1,op,e1)});  /* scalar resulting operator array */ 
+      /* scalar operator array */ 
+    case (s1,op,ARRAY(ty = tp,scalar = sc,array = {e1})) then ARRAY(tp,sc,{BINARY(s1,op,e1)});  
     case (s1,op,ARRAY(ty = tp,scalar = sc,array = (e1 :: es)))
       equation 
         ARRAY(_,_,es_1) = simplifyVectorScalar(s1, op, ARRAY(tp,sc,es));
       then
         ARRAY(tp,sc,(BINARY(s1,op,e1) :: es_1));
+
+        /* array operator scalar */ 
+    case (ARRAY(ty = tp,scalar = sc,array = {e1}),op,s1) then ARRAY(tp,sc,{BINARY(e1,op,s1)});  
+    case (ARRAY(ty = tp,scalar = sc,array = (e1 :: es)),op,s1)
+      equation 
+        ARRAY(_,_,es_1) = simplifyVectorScalar(ARRAY(tp,sc,es),op,s1);
+      then
+        ARRAY(tp,sc,(BINARY(e1,op,s1) :: es_1));
+        
   end matchcontinue;
 end simplifyVectorScalar;
 
