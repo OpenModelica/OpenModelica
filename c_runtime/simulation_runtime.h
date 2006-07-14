@@ -169,6 +169,15 @@ typedef enum {
   ALL                       = 0xFFFFFFFF
 } DATA_FLAGS;
 
+typedef struct sim_DATA_STRING {
+  char** algebraics; //y ALGVARS
+  char** parameters; //p; PARAMETERS
+  char** inputVars; //in_y INPUTVARS
+  char** outputVars; //out_y OUTPUTVARS
+
+  long nAlgebraic,nParameters;
+  long nInputVars,nOutputVars;
+} DATA_STRING;
 
 
 typedef struct sim_DATA {
@@ -193,7 +202,8 @@ typedef struct sim_DATA {
   long nInitialResiduals/*NR*/;
   long nHelpVars/* NHELP */;
   //extern char init_fixed[];
-  
+    DATA_STRING stringVariables;
+
 
   char*  modelName;
   char** statesNames;
