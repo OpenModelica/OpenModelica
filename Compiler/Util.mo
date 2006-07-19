@@ -1460,7 +1460,8 @@ algorithm
     local
       list<Type_a> res,r1,xs,lst2;
       Type_a x;
-    case ({},res) then res; 
+    case ({},{}) then {};
+    case ({},x::xs) then listUnionElt(x,listUnion({},xs)); 
     case ((x :: xs),lst2)
       equation 
         r1 = listUnionElt(x, lst2);
