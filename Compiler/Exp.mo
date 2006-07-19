@@ -1998,9 +1998,8 @@ algorithm
     case (((e,r) :: xs))
       equation 
         res = simplifyMulMakePow(xs);
-        tp = typeof(e);
       then
-        (BINARY(e,POW(tp),RCONST(r)) :: res);
+        (BINARY(e,POW(REAL()),RCONST(r)) :: res);
   end matchcontinue;
 end simplifyMulMakePow;
 
