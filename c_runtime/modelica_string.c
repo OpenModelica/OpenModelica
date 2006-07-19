@@ -27,14 +27,14 @@
 
 int modelica_string_ok(modelica_string_t* a)
 {
-    if (!a) return 0;
-    if (a->length < 0) return 0;
-    return 1;
+	/* Since a modelica string is a char* check that it is not null.*/
+	
+    return (int)a;
 }
 
 int modelica_string_length(modelica_string_t* a)
 {
-  return a->length;
+  return strlen(*a);
 }
 
 void init_modelica_string(modelica_string_t* dest, const char* str)
@@ -42,57 +42,35 @@ void init_modelica_string(modelica_string_t* dest, const char* str)
   int i;
   int length = strlen(str);
   alloc_modelica_string(dest, length);
-  alloc_modelica_string_data(dest);
   for (i = 0; i<length; ++i) {
-    dest->data[i] = str[i];
+    (*dest)[i] = str[i];
   }
+  (*dest)[i]=0;
 }
 
 void alloc_modelica_string(modelica_string_t* dest, int n)
 { 
-  dest->length = n;
-  dest->data = char_alloc(n);
-
+	/* Reserve place for null terminator too.*/
+  *dest = char_alloc(n+1);
 }
 
-void alloc_modelica_string_data(modelica_string_t* a)
-{
-  int length = modelica_string_length(a);
 
-  a->data = char_alloc(length);
-}
-
-void free_modelica_string_data(modelica_string_t* a)
+void free_modelica_string(modelica_string_t* a)
 {
   int length;
 
   assert(modelica_string_ok(a));
 
   length = modelica_string_length(a);
-  char_free(length);
-}
-
-void clone_modelica_string_spec(modelica_string_t* source, modelica_string_t* dest)
-{
-  assert(modelica_string_ok(source));
-  dest->length = source->length;
-}
-
-void copy_modelica_string_data(modelica_string_t* source, modelica_string_t* dest)
-{
-  int length;
-  int i;
-  assert(modelica_string_ok(source));
-  assert(modelica_string_ok(dest));
-  length = source->length;
-  for (i = 0; i<length; ++i) {
-    dest->data[i] = source->data[i];
-  }
+  /* Free also null terminator.*/
+  char_free(length+1);
 }
 
 void copy_modelica_string(modelica_string_t* source, modelica_string_t* dest)
-{
-  clone_modelica_string_spec (source, dest);
-  alloc_modelica_string_data(dest);
-  copy_modelica_string_data(source,dest);
+{ 
+	int i;
+	alloc_modelica_string(dest,modelica_string_length(source));
+	for (i=0; i < modelica_string_length(source)+1; ++i) {
+	(*dest)[i]=(*source)[i];
+	}
 }

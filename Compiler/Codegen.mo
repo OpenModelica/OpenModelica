@@ -3236,14 +3236,14 @@ algorithm
         rstr = realString(r);
       then
         (cEmptyFunction,rstr,tnr);
+	  //Strings are stored as char*, therefor return data member of modelica_string struct.
     case (Exp.SCONST(string = s),tnr,context)
-      local String stmt; CFunction cfn;
+      local String stmt,tvar_data; CFunction cfn;
       equation 
         (decl,tvar,tnr1_1) = generateTempDecl("modelica_string", tnr);
         stmt = Util.stringAppendList({"init_modelica_string(&",tvar,",\"",s,"\");"});
         cfn = cAddStatements(cEmptyFunction, {stmt});
         cfn = cAddVariables(cfn, {decl});
-        tvar = cAddExternalStringData(tvar,context);
       then
         (cfn,tvar,tnr1_1);
     case (Exp.BCONST(bool = b),tnr,context)
@@ -3504,6 +3504,21 @@ algorithm
         cfn = cAddStatements(cfn2, {stmt});
       then
         (cfn,tvar,tnr2);
+            
+    case (Exp.CALL(path = Absyn.IDENT(name = "sum"),expLst = {s1},tuple_ = false,builtin = true),tnr,context)
+      local String arr_tp_str;
+      equation 
+        tp = Exp.typeof(s1);
+        tp_str = expTypeStr(tp, false);
+        arr_tp_str = expTypeStr(tp, true);
+        (cfn1,var1,tnr1) = generateExpression(s1, tnr, context);
+        (tdecl,tvar,tnr2) = generateTempDecl(tp_str, tnr1);
+        cfn2 = cAddVariables(cfn1, {tdecl});
+        stmt = Util.stringAppendList({tvar," = sum_",arr_tp_str,"(&",var1,");"});
+        cfn = cAddStatements(cfn2, {stmt});
+      then
+        (cfn,tvar,tnr2);
+        
   end matchcontinue;
 end generateBuiltinFunction;
 
@@ -3853,20 +3868,6 @@ algorithm
         fail();
   end matchcontinue;
 end generateBinary;
-
-protected function cAddExternalStringData " adds .data to variable names if context is EXP_EXTERNAL, i.e.
-for expressions in external function calls."
-input String variable;
-input Context context;
-output String newVariable;
-
-algorithm
-  newVariable := matchcontinue(variable,context)
-    case (variable,CONTEXT(_,EXP_EXTERNAL())) 
-      then stringAppend(variable,".data");
-    case (variable,_) then variable;
-  end matchcontinue;
-end cAddExternalStringData;
 
 protected function generateTempDecl "function: generateTempDecl
   
@@ -5669,7 +5670,7 @@ end generateExtCallFcall2;
 
 protected function generateExtCallFcallArg "function: generateExtCallFcallArg
  
-  LS: is_array AND is_string, string has also .data
+  LS: is_array AND is_string
 "
   input DAE.ExtArg inExtArg;
   output String outString;
@@ -5709,14 +5710,14 @@ algorithm
         res = stringAppend(name, ".data");
       then
         res;
-    case arg /* INPUT/OUTPUT STRING */ 
+  /*  case arg /* INPUT/OUTPUT STRING */ 
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
         true = Types.isString(ty);
         (name,_) = compRefCstr(cref);
         res = stringAppend(name, ".data");
       then
-        res;
+        res;*/
     case arg /* INPUT/OUTPUT NON-ARRAY */ 
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;

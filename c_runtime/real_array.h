@@ -139,6 +139,7 @@ void add_real_array(real_array_t* a, real_array_t* b, real_array_t* dest);
 void sub_real_array(real_array_t* a, real_array_t* b, real_array_t* dest);
 void sub_alloc_real_array(real_array_t* a, real_array_t* b, real_array_t* dest);
 
+void sub_real_array_data_mem(real_array_t* a, real_array_t* b, modelica_real* dest);
 
 void mul_scalar_real_array(modelica_real a,real_array_t* b,real_array_t* dest);
 void mul_alloc_scalar_real_array(modelica_real a,real_array_t* b,real_array_t* dest);

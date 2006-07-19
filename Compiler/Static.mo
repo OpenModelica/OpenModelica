@@ -3413,13 +3413,25 @@ algorithm
       Boolean impl;
       Types.Const c;
       Types.Type tp1;
+      Exp.Type tp_1;
+      Exp.Exp zero,one;
       Env.Cache cache;
     case (cache,env,{exp},impl) /* Argument to sign must be an Integer or Real expression */ 
       equation 
         (cache,exp_1,Types.PROP(tp1,c),_) = elabExp(cache,env, exp, impl, NONE);
         Types.integerOrReal(tp1);
+        tp_1 = Types.elabType(tp1);
+        zero = Exp.makeConstZero(tp_1);
+        one = Exp.makeConstOne(tp_1);
       then
-        (cache,Exp.CALL(Absyn.IDENT("sign"),{exp_1},false,true),Types.PROP(tp1,c));
+        (cache, 
+        // Expanded to : (if v>0 then 1 else if v < 0 then -1 else 0)
+        Exp.IFEXP(Exp.RELATION(exp_1,Exp.GREATER(tp_1),zero), 
+        					one,
+        					Exp.IFEXP(Exp.RELATION(exp_1,Exp.LESS(tp_1),zero),
+        										Exp.UNARY(Exp.UMINUS(tp_1),one),
+        										zero)),
+        Types.PROP(tp1,c));
     case (cache,env,expl,_)
       local String s;
       equation 

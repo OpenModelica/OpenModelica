@@ -457,11 +457,11 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (PACKAGE_VARIABLE_NOT_CONSTANT, TRANSLATION(),ERROR(),"Variable %s in package %s is not constant"),
           (RECURSIVE_DEFINITION,TRANSLATION(),ERROR(),"Class %s has a recursive definition, i.e. contains an instance of itself"),
           (UNBOUND_PARAMETER_WARNING,TRANSLATION(),WARNING(),
-          "Warning, parameter %s has no value."),
-          (BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER(),TRANSLATION(),WARNING(),
-          "Warning, function \"sum\" has scalar as parameter. Parameter: \"%s\""),
+          "Warning, parameter %s has no value"),
+          (BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER,TRANSLATION(),WARNING(),
+          "Warning, function \"sum\" has scalar as argument in sum(%s)"),
           (INDEX_REDUCTION_NOTIFICATION,SYMBOLIC(),NOTIFICATION(),
-          "Notification, differentiated equation %s to %s for index reduction.")};
+          "Notification, differentiated equation %s to %s for index reduction")};
 
 protected import OpenModelica.Compiler.ErrorExt "Errors
 WARNING		

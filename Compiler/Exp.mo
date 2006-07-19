@@ -3122,6 +3122,16 @@ algorithm
   end matchcontinue;
 end isConstMinusOne;
 
+public function makeConstZero "Generates a zero constant"
+	input Type inType;
+	output Exp const;
+algorithm
+  const := matchcontinue(inType)
+    case (REAL()) then RCONST(0.0);
+    case (INT()) then ICONST(0);  
+  end matchcontinue;
+end makeConstZero;
+
 protected function isConstZero "function: isConstZero
  
   Return true if expression is 0
@@ -3152,7 +3162,7 @@ algorithm
   e:=ICONST(i);
 end makeIntegerExp;
 
-protected function makeConstOne "function makeConstOne
+public function makeConstOne "function makeConstOne
   author: PA
  
   Create the constant value one, given a type that is INT or REAL

@@ -939,6 +939,20 @@ void sub_real_array(real_array_t* a, real_array_t* b, real_array_t* dest)
     }
 }
 
+void sub_real_array_data_mem(real_array_t* a, real_array_t* b, modelica_real* dest)
+{
+  size_t nr_of_elements;
+  size_t i;
+
+  /* Assert a and b are of the same size */
+  /* Assert that dest are of correct size */
+  nr_of_elements = real_array_nr_of_elements(a);
+  for (i = 0; i < nr_of_elements; ++i)
+    {
+      dest[i] = a->data[i]-b->data[i];
+    }
+}
+
 void sub_alloc_real_array(real_array_t* a, real_array_t* b,real_array_t* dest)
 {
   clone_real_array_spec(a,dest);

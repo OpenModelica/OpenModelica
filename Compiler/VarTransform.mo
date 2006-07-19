@@ -176,7 +176,15 @@ algorithm
       VariableReplacements repl;
       DAELow.Equation a;
       Exp.ComponentRef cr;
+      Integer indx;
+      list<Exp.Exp> expl,expl1;
     case ({},_) then {}; 
+    case ((DAELow.ARRAY_EQUATION(indx,expl)::es),repl)
+      equation
+        expl1 = Util.listMap2(expl,replaceExp,repl,NONE);
+        es_1 = replaceEquations(es,repl);
+      then
+         (DAELow.ARRAY_EQUATION(indx,expl1)::es_1); 
     case ((DAELow.EQUATION(exp = e1,scalar = e2) :: es),repl)
       equation 
         e1_1 = replaceExp(e1, repl, NONE);
@@ -208,6 +216,36 @@ algorithm
         (a :: es_1);
   end matchcontinue;
 end replaceEquations;
+
+public function replaceMultiDimEquations "function: replaceMultiDimEquations
+ 
+  This function takes a list of equations ana a set of variable replacements
+  and applies the replacements on all array equations.
+  The function returns the updated list of array equations
+"
+  input list<DAELow.MultiDimEquation> inDAELowEquationLst;
+  input VariableReplacements inVariableReplacements;
+  output list<DAELow.MultiDimEquation> outDAELowEquationLst;
+algorithm 
+  outDAELowEquationLst:=
+  matchcontinue (inDAELowEquationLst,inVariableReplacements)
+    local
+      Exp.Exp e1_1,e2_1,e1,e2,e_1,e;
+      list<DAELow.MultiDimEquation> es_1,es;
+      VariableReplacements repl;
+      DAELow.Equation a;
+      Exp.ComponentRef cr;
+      list<Integer> dims;
+    case ({},_) then {}; 
+    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2,dimSize = dims) :: es),repl)
+      equation 
+        e1_1 = replaceExp(e1, repl, NONE);
+        e2_1 = replaceExp(e2, repl, NONE);
+        es_1 = replaceMultiDimEquations(es, repl);
+      then
+        (DAELow.MULTIDIM_EQUATION(dims,e1_1,e2_1) :: es_1);
+  end matchcontinue;
+end replaceMultiDimEquations;
 
 protected function replaceEquationsStmts "function: replaceEquationsStmts
  

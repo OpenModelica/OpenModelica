@@ -576,7 +576,7 @@ public function lower "function: lower
   BinTree s;
   Variables vars,knvars,vars_1,extVars;
   list<Equation> eqns,reqns,ieqns,algeqns,multidimeqns,eqns_1;
-  list<MultiDimEquation> aeqns;
+  list<MultiDimEquation> aeqns,aeqns1;
   list<Algorithm.Algorithm> algs;
   list<WhenClause> whenclauses,whenclauses_1;
   list<ZeroCrossing> zero_crossings;
@@ -593,14 +593,14 @@ algorithm
   multidimeqns := lowerMultidimeqns(vars, aeqns);
   eqns := listAppend(algeqns, eqns);
   eqns := listAppend(multidimeqns, eqns);
-  (vars,knvars,eqns,reqns,ieqns) := removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, s);
+  (vars,knvars,eqns,reqns,ieqns,aeqns1) := removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, s);
   vars_1 := detectImplicitDiscrete(vars, eqns);
   eqns_1 := sortEqn(eqns);
   (zero_crossings) := findZeroCrossings(vars_1, eqns_1, whenclauses_1);
   eqnarr := listEquation(eqns_1);
   reqnarr := listEquation(reqns);
   ieqnarr := listEquation(ieqns);
-  arr_md_eqns := listArray(aeqns);
+  arr_md_eqns := listArray(aeqns1);
   algarr := listArray(algs);
   outDAELow := DAELOW(vars_1,knvars,extVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,
           EVENT_INFO(whenclauses_1,zero_crossings),extObjCls);
@@ -2200,7 +2200,7 @@ algorithm
   outString:=
   matchcontinue (inEquation)
     local
-      String s1,s2,res,indx_str,is;
+      String s1,s2,res,indx_str,is,var_str;
       Exp.Exp e1,e2,e;
       Value indx,i;
       list<Exp.Exp> expl;
@@ -2215,7 +2215,8 @@ algorithm
     case (ARRAY_EQUATION(index = indx,crefOrDerCref = expl))
       equation 
         indx_str = intString(indx);
-        res = Util.stringAppendList({"Array eqn no: ",indx_str,"\n"});
+        var_str=Util.stringDelimitList(Util.listMap(expl,Exp.printExpStr),", ");
+        res = Util.stringAppendList({"Array eqn no: ",indx_str,"for variables:",var_str,"\n"});
       then
         res;
     case (SOLVED_EQUATION(componentRef = cr,exp = e2))
@@ -2266,21 +2267,24 @@ protected function removeSimpleEquations "function: removeSimpleEquations
   input list<Equation> inEquationLst3;
   input list<Equation> inEquationLst4;
   input list<Equation> inEquationLst5;
+  input list<MultiDimEquation> inArrayEquationLst;
   input BinTree inBinTree6;
   output Variables outVariables1;
   output Variables outVariables2;
   output list<Equation> outEquationLst3;
   output list<Equation> outEquationLst4;
   output list<Equation> outEquationLst5;
+  output list<MultiDimEquation> outArrayEquationLst;
 algorithm 
-  (outVariables1,outVariables2,outEquationLst3,outEquationLst4,outEquationLst5):=
-  matchcontinue (inVariables1,inVariables2,inEquationLst3,inEquationLst4,inEquationLst5,inBinTree6)
+  (outVariables1,outVariables2,outEquationLst3,outEquationLst4,outEquationLst5,outArrayEquationLst):=
+  matchcontinue (inVariables1,inVariables2,inEquationLst3,inEquationLst4,inEquationLst5,inArrayEquationLst,inBinTree6)
     local
       VarTransform.VariableReplacements repl,vartransf;
       list<Equation> eqns_1,seqns,eqns_2,seqns_1,ieqns_1,eqns_3,seqns_2,ieqns_2,seqns_3,eqns,reqns,ieqns;
+      list<MultiDimEquation> arreqns,arreqns1,arreqns2;
       BinTree movedvars_1,states;
       Variables vars_1,knvars_1,vars,knvars;
-    case (vars,knvars,eqns,reqns,ieqns,states)
+    case (vars,knvars,eqns,reqns,ieqns,arreqns,states)
       equation 
         repl = VarTransform.emptyReplacements();
         (eqns_1,seqns,movedvars_1,vartransf) = removeSimpleEquations2(eqns, vars, knvars, emptyBintree, states, repl);
@@ -2288,14 +2292,16 @@ algorithm
         eqns_2 = VarTransform.replaceEquations(eqns_1, vartransf);
         seqns_1 = VarTransform.replaceEquations(seqns, vartransf);
         ieqns_1 = VarTransform.replaceEquations(ieqns, vartransf);
+        arreqns1 = VarTransform.replaceMultiDimEquations(arreqns, vartransf);
         (vars_1,knvars_1) = moveVariables(vars, knvars, movedvars_1);
         eqns_3 = renameDerivatives(eqns_2);
         seqns_2 = renameDerivatives(seqns_1);
         ieqns_2 = renameDerivatives(ieqns_1);
+        arreqns2 = renameMultiDimDerivatives(arreqns1);
         seqns_3 = listAppend(seqns_2, reqns) "& print_vars_statistics(vars\',knvars\')" ;
       then
-        (vars_1,knvars_1,eqns_3,seqns_3,ieqns_2);
-    case (_,_,_,_,_,_)
+        (vars_1,knvars_1,eqns_3,seqns_3,ieqns_2,arreqns2);
+    case (_,_,_,_,_,_,_)
       equation 
         print("-remove_simple_equations failed\n");
       then
@@ -2340,6 +2346,35 @@ algorithm
         (e :: es_1);
   end matchcontinue;
 end renameDerivatives;
+
+protected function renameMultiDimDerivatives "function: renameMultiDimDerivatives
+  author: PA
+ 
+  Renames $DER$x to der(x) for all array equations given as argument.
+ 
+"
+  input list<MultiDimEquation> inEquationLst;
+  output list<MultiDimEquation> outEquationLst;
+algorithm 
+  outEquationLst:=
+  matchcontinue (inEquationLst)
+    local
+      Exp.Exp e1_1,e2_1,e1,e2;
+      list<MultiDimEquation> es_1,es;
+      Exp.ComponentRef cr1;
+      Equation e;
+      list<Integer> dims;
+    case ({}) then {}; 
+    case ((MULTIDIM_EQUATION(left= e1,right= e2,dimSize=dims) :: es))
+      equation 
+        ((e1_1,_)) = Exp.traverseExp(e1, renameDerivativesExp, "$DER$");
+        ((e2_1,_)) = Exp.traverseExp(e2, renameDerivativesExp, "$DER$");
+        es_1 = renameMultiDimDerivatives(es);
+      then
+        (MULTIDIM_EQUATION(dims,e1_1,e2_1) :: es_1);
+  end matchcontinue;
+end renameMultiDimDerivatives;
+
 
 protected function renameDerivativesExp "function renameDerivativesExp
   
@@ -6060,12 +6095,13 @@ algorithm
       DAELow dae,dae_1,dae_2;
       Variables v,kv,v_1,kv_1,vars,exv;
       EquationArray e,re,ie,e_1,re_1,ie_1,eqns;
-      MultiDimEquation[:] ae;
+      MultiDimEquation[:] ae,ae1;
       Algorithm.Algorithm[:] al;
       EventInfo ev;
       list<Value>[:] m,mt,m_1,mt_1;
       BinTree s;
       list<Equation> e_lst,re_lst,ie_lst,e_lst_1,re_lst_1,ie_lst_1;
+      list<MultiDimEquation> ae_lst,ae_lst1;
       Value[:] vec1,vec2;
       MatchingOptions match_opts;
       ExternalObjectClasses eoc;
@@ -6088,12 +6124,14 @@ algorithm
         e_lst = equationList(e);
         re_lst = equationList(re);
         ie_lst = equationList(ie);
-        (v_1,kv_1,e_lst_1,re_lst_1,ie_lst_1) = removeSimpleEquations(v, kv, e_lst, re_lst, ie_lst, s);
+        ae_lst = arrayList(ae);
+        (v_1,kv_1,e_lst_1,re_lst_1,ie_lst_1,ae_lst1) = removeSimpleEquations(v, kv, e_lst, re_lst, ie_lst,ae_lst, s);
+				ae1 = listArray(ae_lst1);        
         e_1 = listEquation(e_lst_1) "	  let v\' = v & let kv\' = kv & let e_lst\' = e_lst & let ie_lst\'=ie_lst &
 	let re_lst\'= re_lst &" ;
         re_1 = listEquation(re_lst_1);
         ie_1 = listEquation(ie_lst_1);
-        dae_1 = DAELOW(v_1,kv_1,exv,e_1,re_1,ie_1,ae,al,ev,eoc);
+        dae_1 = DAELOW(v_1,kv_1,exv,e_1,re_1,ie_1,ae1,al,ev,eoc);
         m_1 = incidenceMatrix(dae_1) "Rerun matching to get updated assignments and incidence matrices TODO: instead of rerunning: find out which equations are removed
 	  and remove those from assignments and incidence matrix.
 	" ;
@@ -6440,6 +6478,10 @@ algorithm
         eqn_str = dumpMarkedEqns(dae, eqn_lst);
         var_str = dumpMarkedVars(dae, var_lst);
         Error.addMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str});
+        //print("structurally singular. IM:");
+        //dumpIncidenceMatrix(m);
+        //print("daelow:");
+        //dump(dae); 
       then
         fail();
   end matchcontinue;
@@ -6488,7 +6530,7 @@ algorithm
   outString:=
   matchcontinue (inDAELow,inIntegerLst)
     local
-      String s1,s2,res;
+      String s1,s2,res,s3;
       Value v_1,v;
       Exp.ComponentRef cr;
       DAELow dae;
@@ -6498,10 +6540,10 @@ algorithm
     case ((dae as DAELOW(orderedVars = vars)),(v :: vs))
       equation 
         s1 = dumpMarkedVars(dae, vs);
-        v_1 = v - 1;
-        VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,_) = getVarAt(vars, v_1);
+        VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,_) = getVarAt(vars, v);
         s2 = Exp.printComponentRefStr(cr);
-        res = Util.stringAppendList({s2,", ",s1});
+        s3 = intString(v);
+        res = Util.stringAppendList({s2,"(",s3,"), ",s1});
       then
         res;
   end matchcontinue;
@@ -6572,6 +6614,8 @@ algorithm
         ({},_) = statesInEqns(eqns_1, dae, m, mt);
         print("no states found in equations:");
         printEquations(eqns_1, dae);
+        print("Variables :");print(Util.stringDelimitList(Util.listMap(DAEEXT.getMarkedVariables(),intString),", "));
+        print("\n");
        
       then
         fail();
@@ -10647,7 +10691,6 @@ algorithm
     case ({}) then ({},{}); 
     case ((VAR(varName = cr,arryDim = (instdims as (_ :: _)),index = indx,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs))
       equation 
-        (s1,t1) = algVariableArrayReplacements(vs);
         true = Exp.crefIsFirstArrayElt(cr);
         cr_1 = Exp.crefStripLastSubs(cr);
         indxs = intString(indx);
@@ -10655,6 +10698,7 @@ algorithm
         c_name = Util.modelicaStringToCStr(name);
         int_dims = Exp.subscriptsInt(instdims);
         newid = Util.stringAppendList({"$",c_name});
+        (s1,t1) = algVariableArrayReplacements(vs);
       then
         ((Exp.CREF(cr_1,Exp.REAL()) :: s1),(Exp.CREF(Exp.CREF_IDENT(newid,{}),Exp.T_ARRAY(Exp.REAL(),int_dims)) :: t1));
     case ((_ :: vs))
