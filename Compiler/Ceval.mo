@@ -2158,6 +2158,12 @@ algorithm
       then
         (cache,Values.STRING(str_1),st);
 
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "getTempDirectoryPath"),expLst = {}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      equation 
+        str_1 = Settings.getTempDirectoryPath();
+      then
+        (cache,Values.STRING(str_1),st);
+
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "system"),expLst = {Exp.SCONST(string = str)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local Integer res;
       equation 
