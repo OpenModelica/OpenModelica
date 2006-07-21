@@ -78,6 +78,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(Settings__setInstallationDirectoryPath)
 {
   char* command = RML_STRINGDATA(rmlA0);
+  char* omhome = 0;
   if(installationDirectoryPath)
     free(installationDirectoryPath);
 
@@ -86,7 +87,18 @@ RML_BEGIN_LABEL(Settings__setInstallationDirectoryPath)
     RML_TAILCALLK(rmlFC);
   }
   memcpy(installationDirectoryPath,command,strlen(command)+1);
-
+  
+  omhome = (char*)malloc(strlen(command)+1+18);
+  if (omhome == NULL) {
+    RML_TAILCALLK(rmlFC);
+  }
+  strncpy(omhome,"OPENMODELICAHOME=",17);
+  omhome[17]='\0';
+  strncat(omhome,command,strlen(command));
+  if( _putenv(omhome) != 0){
+    RML_TAILCALLK(rmlFC);
+  }
+  free(omhome);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
