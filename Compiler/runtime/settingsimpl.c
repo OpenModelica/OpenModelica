@@ -88,6 +88,7 @@ RML_BEGIN_LABEL(Settings__setInstallationDirectoryPath)
   }
   memcpy(installationDirectoryPath,command,strlen(command)+1);
   
+  /* create a str of the form: OPENMODELICAHOME=<PATH>*/
   omhome = (char*)malloc(strlen(command)+1+18);
   if (omhome == NULL) {
     RML_TAILCALLK(rmlFC);
@@ -95,6 +96,9 @@ RML_BEGIN_LABEL(Settings__setInstallationDirectoryPath)
   strncpy(omhome,"OPENMODELICAHOME=",17);
   omhome[17]='\0';
   strncat(omhome,command,strlen(command));
+  /*set the env-var to created string
+   this is useful when scripts and clients started
+  by omc wants to use OPENMODELICAHOME*/
   if( _putenv(omhome) != 0){
     RML_TAILCALLK(rmlFC);
   }
