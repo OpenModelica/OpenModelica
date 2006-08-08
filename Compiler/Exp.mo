@@ -1863,7 +1863,7 @@ end simplifyBinaryMulConstants;
 protected function simplifyMul "function: simplifyMul
   author: PA
  
-  Simplifies expressions like aaababa
+  Simplifies expressions like a*a*a*b*a*b*a
 "
   input list<Exp> expl;
   output list<Exp> expl_1;
@@ -2808,6 +2808,7 @@ algorithm
     case ({e1,e2})
       equation 
         tp = typeof(e1) "Take type info from e1, ok since type checking already performed." ;
+        tp = checkIfOther(tp);
       then
         BINARY(e1,MUL(tp),e2);
     case ((BINARY(exp1 = e1,operator = DIV(ty = tp),exp2 = e) :: es))
@@ -2819,7 +2820,8 @@ algorithm
     case ((e1 :: rest))
       equation 
         e2 = makeProduct(rest);
-        tp = typeof(e2);
+        tp = typeof(e1);
+        tp = checkIfOther(tp);
       then
         BINARY(e1,MUL(tp),e2);
     case (lst)
@@ -2833,6 +2835,18 @@ algorithm
         fail();
   end matchcontinue;
 end makeProduct;
+
+protected function checkIfOther "Checks if a type is OTHER and in that case returns REAL instead.
+THis is used to make proper transformations in case OTHER is retrieved from subexpression where it should instead be 
+REAL or INT"
+input Type inTp;
+output Type outTp;
+algorithm
+  outTp := matchcontinue(inTp)
+    case (OTHER()) then REAL();
+    case (inTp) then inTp;
+  end matchcontinue;
+end checkIfOther;
 
 public function makeSum "function: makeSum
  
@@ -4704,8 +4718,18 @@ algorithm
         s_1 = stringAppend(s, "> ");
       then
         s_1;
-    case (SUB(ty = t)) then " - "; 
-    case (MUL(ty = t)) then " * "; 
+    case (SUB(ty = t)) equation
+       ts = typeString(t);
+       s = stringAppend(" -<", ts);
+        s_1 = stringAppend(s, "> ");
+      then
+        s_1;
+    case (MUL(ty = t)) equation
+      ts = typeString(t);
+       s = stringAppend(" *<", ts);
+        s_1 = stringAppend(s, "> ");
+      then
+        s_1;
     case (DIV(ty = t))
       equation 
         ts = typeString(t);

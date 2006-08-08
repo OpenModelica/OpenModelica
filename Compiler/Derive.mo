@@ -157,7 +157,7 @@ algorithm
         (_,_) = DAELow.getVar(cr, timevars);
       then
         Exp.CALL(Absyn.IDENT("der"),{e},false,true);
-    case (Exp.CALL(path = fname,expLst = {e},tuple_ = false,builtin = true),timevars)
+    case (Exp.CALL(path = fname,expLst = {e}),timevars)
       equation 
         isSin(fname);
         e_1 = differentiateExpTime(e, timevars) "der(sin(x)) = der(x)cos(x)" ;
@@ -165,7 +165,7 @@ algorithm
         Exp.BINARY(e_1,Exp.MUL(Exp.REAL()),
           Exp.CALL(Absyn.IDENT("cos"),{e},false,true));
           
-    case (Exp.CALL(path = fname,expLst = {e},tuple_ = false,builtin = true),timevars)
+    case (Exp.CALL(path = fname,expLst = {e}),timevars)
       equation 
         isCos(fname);
         e_1 = differentiateExpTime(e, timevars) "der(cos(x)) = -der(x)sin(x)" ;

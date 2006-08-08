@@ -5911,7 +5911,7 @@ algorithm
   print(mlen_str);
   print("\n");
   m_1 := arrayList(m);
-  dumpIncidenceMatrix2(m_1);
+  dumpIncidenceMatrix2(m_1,1);
 end dumpIncidenceMatrix;
 
 public function dumpIncidenceMatrixT "function: dumpIncidenceMatrixT
@@ -5932,7 +5932,7 @@ algorithm
   print(mlen_str);
   print("\n");
   m_1 := arrayList(m);
-  dumpIncidenceMatrix2(m_1);
+  dumpIncidenceMatrix2(m_1,1);
 end dumpIncidenceMatrixT;
 
 protected function dumpIncidenceMatrix2 "function: dumpIncidenceMatrix2
@@ -5941,17 +5941,19 @@ protected function dumpIncidenceMatrix2 "function: dumpIncidenceMatrix2
   Helper function to dump_incidence_matrix (+_t).
 "
   input list<list<Integer>> inIntegerLstLst;
+  input Integer rowIndex;
 algorithm 
   _:=
-  matchcontinue (inIntegerLstLst)
+  matchcontinue (inIntegerLstLst,rowIndex)
     local
       list<Value> row;
       list<list<Value>> rows;
-    case ({}) then (); 
-    case ((row :: rows))
+    case ({},_) then (); 
+    case ((row :: rows),rowIndex)
       equation 
+        print(intString(rowIndex));print(":");
         dumpIncidenceRow(row);
-        dumpIncidenceMatrix2(rows);
+        dumpIncidenceMatrix2(rows,rowIndex+1);
       then
         ();
   end matchcontinue;
@@ -5965,12 +5967,12 @@ protected function dumpIncidenceRow "function: dumpIncidenceRow
   input list<Integer> inIntegerLst;
 algorithm 
   _:=
-  matchcontinue (inIntegerLst)
+  matchcontinue (inIntegerLst,rowIndex)
     local
       String s;
       Value x;
       list<Value> xs;
-    case {}
+    case ({})
       equation 
         print("\n");
       then
@@ -6593,14 +6595,18 @@ algorithm
         (dae,m,mt,nv,nf,deqns) = differentiateEqns(dae, m, mt, nv, nf, eqns_1);
         (state,stateno) = selectDummyState(states, stateindx, dae, m, mt);
         dae = propagateDummyFixedAttribute(dae, eqns_1, state, stateno);
-        (dummy_der,dae) = newDummyVar(state, dae) "Exp.print_component_ref_str state => statestr &
-	 print \"Choosen dummy state: \" & print statestr & print \"\\n\" &" ;
+        (dummy_der,dae) = newDummyVar(state, dae)  ;
+        //print("Chosen dummy: ");print(Exp.printComponentRefStr(dummy_der));print("\n");
         reqns = eqnsForVarWithStates(mt, stateno);
         changedeqns = Util.listUnionP(deqns, reqns, int_eq);
         (dae,m,mt) = replaceDummyDer(state, dummy_der, dae, m, mt, changedeqns) "We need to change variables in the differentiated equations and in the 
 	  equations having the dummy derivative" ;
         dae = makeAlgebraic(dae, state);
         (m,mt) = updateIncidenceMatrix(dae, m, mt, changedeqns);
+        //print("new DAE:");
+        //dump(dae);
+        //print("new IM:");
+        //dumpIncidenceMatrix(m);
       then
         (dae,m,mt);
     case (dae,m,mt,nv,nf,i)
@@ -6614,6 +6620,8 @@ algorithm
         ({},_) = statesInEqns(eqns_1, dae, m, mt);
         print("no states found in equations:");
         printEquations(eqns_1, dae);
+        print("differentiated equations:");
+        printEquations(diff_eqns,dae);
         print("Variables :");print(Util.stringDelimitList(Util.listMap(DAEEXT.getMarkedVariables(),intString),", "));
         print("\n");
        
