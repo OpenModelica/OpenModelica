@@ -2987,7 +2987,7 @@ algorithm
         cmod_1 = Mod.merge(compmod, cmod, env, pre);
         env_1 = Env.extendFrameV(env, 
           Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,
-          (Types.T_NOTYPE(),NONE),Types.UNBOUND()), SOME((comp,cmod_1)), false, {});
+          (Types.T_NOTYPE(),NONE),Types.UNBOUND()), SOME((comp,cmod_1)), Env.VAR_UNTYPED(), {});
         env_2 = addComponentsToEnv2(env_1, mods, pre, csets, ci_state, xs, inst_dims, impl);
       then
         env_2;
@@ -3179,8 +3179,10 @@ algorithm
       		attributes = (attr as SCode.ATTR(arrayDim = ad,flow_ = flow_,RW = acc,parameter_ = param,input_ = dir)),
       		type_ = t,mod = m,baseclass = bc,this = comment)),cmod),inst_dims,impl)  
       		  local String s;
+      		    Boolean allreadyDeclared;
+      		    list<Types.Var> vars;
       equation 
-        checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl); // Fails if multiple decls not identical
+        allreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl); // Fails if multiple decls not identical
         checkRecursiveDefinition(env,t);
         vn = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,{})) "//Debug.fprint(\"insttr\", \"Instantiating component \") &
 	//Debug.fprint(\"insttr\", n) & //Debug.fprint(\"insttr\", \"\\n\") &" ;
@@ -3217,10 +3219,12 @@ algorithm
 	  binding. 
 	" ;
         new_var = Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding) "true in update_frame means the variable is now instantiated." ;
-        env_1 = Env.updateFrameV(env2_1, new_var, true, compenv) "type info present Now we can also put the binding into the dae If the type is one of the simple, predifined types a simple variable declaration is added to the DAE. & //Debug.fprint(\"insttr\",\"inst_element Component succeeded\\n\")" ;
-      then
-        (cache,dae,env_1,csets_1,ci_state,{
+        env_1 = Env.updateFrameV(env2_1, new_var, Env.VAR_DAE(), compenv) "type info present Now we can also put the binding into the dae If the type is one of the simple, predifined types a simple variable declaration is added to the DAE. & //Debug.fprint(\"insttr\",\"inst_element Component succeeded\\n\")" ;
+        vars = Util.if_(allreadyDeclared,{},{
           Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding)});
+        dae = Util.if_(allreadyDeclared,{},dae);
+      then
+        (cache,dae,env_1,csets_1,ci_state,vars);
 
         /* If the class lookup in the previous rule fails, this
          rule catches the error and prints an error message about
@@ -3283,9 +3287,10 @@ all declarations are identical if so."
   input tuple<SCode.Element, Mod> compTuple;
   input InstDims instDims;
   input Boolean impl;
+  output Boolean allreadyDeclared;
   
 algorithm
-  _ := matchcontinue(cache,env,mod,prefix,csets,ciState,compTuple,instDims,impl)
+  allreadyDeclared := matchcontinue(cache,env,mod,prefix,csets,ciState,compTuple,instDims,impl)
   local
      list<Env.Frame> env,env_1,env2,env2_1,cenv,compenv;
       Types.Mod mod;
@@ -3298,26 +3303,38 @@ algorithm
       local
         SCode.Element oldElt; Types.Mod oldMod;
         tuple<SCode.Element,Types.Mod> newComp;
+        Env.InstStatus instStatus;
+        Boolean allreadyDeclared;
       equation 
         //print(n);
         //print("looking for multiple declared components, env:");
         //print(Env.printEnvStr(env));
-        (_,_,SOME((oldElt,oldMod)),true,_) = Lookup.lookupIdentLocal(cache,env, n); 
+        (_,_,SOME((oldElt,oldMod)),instStatus,_) = Lookup.lookupIdentLocal(cache,env, n); 
           checkMultipleElementsIdentical((oldElt,oldMod),newComp);
-      then
-        ();
-    
+        allreadyDeclared = instStatusToBool(instStatus);
+      then allreadyDeclared;
+       
     // If not multiply declared, return.
     case (cache,env,mod,prefix,csets,ciState,(newComp as (SCode.COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot),_)),_,_) 
       local
         SCode.Element oldElt; Types.Mod oldMod;
         tuple<SCode.Element,Types.Mod> newComp;
       equation 
-        failure((_,_,SOME((oldElt,oldMod)),true,_) = Lookup.lookupIdentLocal(cache,env, n)); 
-      then
-        ();
+        failure((_,_,SOME((oldElt,oldMod)),_,_) = Lookup.lookupIdentLocal(cache,env, n)); 
+      then false;
   end matchcontinue;
 end checkMultiplyDeclared;
+
+protected function instStatusToBool "Translates InstStatus to a boolean indicating if component is allready declared."
+input Env.InstStatus instStatus;
+output Boolean allreadyDeclared;
+algorithm
+  allreadyDeclared := matchcontinue(instStatus)
+    case (Env.VAR_DAE()) then true;
+    case (Env.VAR_UNTYPED()) then false;
+    case (Env.VAR_TYPED()) then false;
+  end matchcontinue;
+end instStatusToBool;
 
 protected function checkMultipleElementsIdentical "checks that the old declaration is identical to 
 the new one. If not, give error message"
@@ -4150,7 +4167,7 @@ algorithm
 	  one. 
 	" ;
         env_1 = Env.updateFrameV(env2_1, 
-          Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding_1), true, compenv) "type info present" ;
+          Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding_1), Env.VAR_TYPED(), compenv) "type info present" ;
       then
         (cache,env_1,csets_1);
 
@@ -4200,7 +4217,7 @@ algorithm
           dims, {}, {}, false, NONE) "Instantiate the component" ;
         (cache,binding) = makeBinding(cache,env2, attr, mod_3, ty) "The environment is extended with the new variable binding." ;
         env_1 = Env.updateFrameV(env2, 
-          Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding), true, compenv) "type info present" ;
+          Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding), Env.VAR_TYPED(), compenv) "type info present" ;
       then
         (cache,env_1,csets_1);
     case (cache,mod,cref,env,ci_state,csets,impl)
@@ -4277,7 +4294,8 @@ algorithm
     local
       list<Env.Frame> env,env_1;
       String n,a,id,s;
-      Boolean flow_,prot,b,c,d,f,typed;
+      Boolean flow_,prot,b,c,d,f;
+      Env.InstStatus typed;
       SCode.Accessibility acc,g;
       Absyn.Direction dir,h;
       tuple<Types.TType, Option<Absyn.Path>> tp;
@@ -4300,7 +4318,7 @@ algorithm
           bind), 
           SOME(
           (
-          SCode.COMPONENT(a,b,c,d,SCode.ATTR(e,f,g,SCode.STRUCTPARAM(),h),i,j,k,l),m)), false, {}) "replace variable, relies on hash_add to replace node. comp env" ;
+          SCode.COMPONENT(a,b,c,d,SCode.ATTR(e,f,g,SCode.STRUCTPARAM(),h),i,j,k,l),m)), Env.VAR_UNTYPED(), {}) "replace variable, relies on hash_add to replace node. comp env" ;
       then
         ((cache,env_1));
     case (cr,(cache,env))
@@ -6787,7 +6805,7 @@ algorithm
   env_1 := Env.openScope(env, false, SOME(forScopeName));
   env_2 := Env.extendFrameV(env_1, 
           Types.VAR(i,Types.ATTR(false,SCode.RW(),SCode.VAR(),Absyn.BIDIR()),
-          false,typ,Types.UNBOUND()), NONE, false, {}) "comp env" ;
+          false,typ,Types.UNBOUND()), NONE, Env.VAR_UNTYPED(), {}) "comp env" ;
 end addForLoopScope;
 
 protected function instEqEquation "function: instEqEquation
@@ -7195,7 +7213,7 @@ algorithm
         env_1 = Env.openScope(env, false, SOME(forScopeName));
         env_2 = Env.extendFrameV(env_1, 
           Types.VAR(i,Types.ATTR(false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),
-          true,(Types.T_INTEGER({}),NONE),Types.VALBOUND(fst)), NONE, false, {}) "comp env" ;
+          true,(Types.T_INTEGER({}),NONE),Types.VALBOUND(fst)), NONE, Env.VAR_UNTYPED(), {}) "comp env" ;
         (cache,dae1,env_3,csets_1,ci_state_1) = instList(cache,env_2, mods, pre, csets, ci_state, instEEquation, eqs, impl);
         (cache,dae2,csets_2) = unroll(cache,env, mods, pre, csets_1, ci_state_1, i, 
           Values.ARRAY(rest), eqs, initial_, impl);
@@ -7207,7 +7225,7 @@ algorithm
         env_1 = Env.openScope(env, false, SOME(forScopeName));
         env_2 = Env.extendFrameV(env_1, 
           Types.VAR(i,Types.ATTR(false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),
-          true,(Types.T_INTEGER({}),NONE),Types.VALBOUND(fst)), NONE, false, {}) "comp env" ;
+          true,(Types.T_INTEGER({}),NONE),Types.VALBOUND(fst)), NONE, Env.VAR_UNTYPED(), {}) "comp env" ;
         (cache,dae1,env_3,csets_1,ci_state_1) = instList(cache,env_2, mods, pre, csets, ci_state, instEInitialequation, 
           eqs, impl);
         (cache,dae2,csets_2) = unroll(cache,env, mods, pre, csets_1, ci_state_1, i, 

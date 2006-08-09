@@ -1082,15 +1082,15 @@ public function lookupIdentLocal "function: lookupIdentLocal
   output Env.Cache outCache;
   output Types.Var outVar;
   output Option<tuple<SCode.Element, Types.Mod>> outTplSCodeElementTypesModOption;
-  output Boolean outBoolean;
+  output Env.InstStatus instStatus;
   output Env.Env outEnv;
 algorithm 
-  (outCache,outVar,outTplSCodeElementTypesModOption,outBoolean,outEnv):=
+  (outCache,outVar,outTplSCodeElementTypesModOption,instStatus,outEnv):=
   matchcontinue (inCache,inEnv,inIdent)
     local
       Types.Var fv;
       Option<tuple<SCode.Element, Types.Mod>> c;
-      Boolean i;
+      Env.InstStatus i;
       list<Env.Frame> env;
       Option<String> sid;
       Env.BinTree ht;
@@ -1157,14 +1157,14 @@ public function lookupIdent "function: lookupIdent
   output Env.Cache outCache;
   output Types.Var outVar;
   output Option<tuple<SCode.Element, Types.Mod>> outTplSCodeElementTypesModOption;
-  output Boolean outBoolean;
+  output Env.InstStatus instStatus;
 algorithm 
-  (outCache,outVar,outTplSCodeElementTypesModOption,outBoolean):=
+  (outCache,outVar,outTplSCodeElementTypesModOption,instStatus):=
   matchcontinue (outCache,inEnv,inIdent)
     local
       Types.Var fv;
       Option<tuple<SCode.Element, Types.Mod>> c;
-      Boolean i;
+      Env.InstStatus i;
       Option<String> sid;
       Env.BinTree ht;
       String id;
@@ -1900,15 +1900,15 @@ protected function lookupVar2 "function: lookupVar2
   output Env.Cache outCache;
   output Types.Var outVar;
   output Option<tuple<SCode.Element, Types.Mod>> outTplSCodeElementTypesModOption;
-  output Boolean outBoolean;
+  output Env.InstStatus instStatus;
   output Env.Env outEnv;
 algorithm 
-  (outCache,outVar,outTplSCodeElementTypesModOption,outBoolean,outEnv):=
+  (outCache,outVar,outTplSCodeElementTypesModOption,instStatus,outEnv):=
   matchcontinue (inCache,inBinTree,inIdent)
     local
       Types.Var fv;
       Option<tuple<SCode.Element, Types.Mod>> c;
-      Boolean i;
+      Env.InstStatus i;
       list<Env.Frame> env;
       Env.BinTree ht;
       String id;

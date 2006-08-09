@@ -938,7 +938,7 @@ algorithm
         (_,_,_,_) = Lookup.lookupVar(Env.emptyCache,env, Exp.CREF_IDENT(id,{}));
         env_1 = Env.updateFrameV(env, 
           Types.VAR(id,Types.ATTR(false,SCode.RW(),SCode.VAR(),Absyn.BIDIR()),
-          false,tp,Types.VALBOUND(v)), true, {});
+          false,tp,Types.VALBOUND(v)), Env.VAR_TYPED(), {});
         env_2 = addVarsToEnv(rest, env_1);
       then
         env_2;
@@ -947,7 +947,7 @@ algorithm
         failure((_,_,_,_) = Lookup.lookupVar(Env.emptyCache,env, Exp.CREF_IDENT(id,{})));
         env_1 = Env.extendFrameV(env, 
           Types.VAR(id,Types.ATTR(false,SCode.RW(),SCode.VAR(),Absyn.BIDIR()),
-          false,tp,Types.VALBOUND(v)), NONE, false, {});
+          false,tp,Types.VALBOUND(v)), NONE, Env.VAR_UNTYPED(), {});
         env_2 = addVarsToEnv(rest, env_1);
       then
         env_2;

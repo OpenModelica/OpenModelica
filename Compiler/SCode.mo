@@ -345,6 +345,8 @@ protected import OpenModelica.Compiler.Util;
 
 protected import OpenModelica.Compiler.Error;
 
+protected import OpenModelica.Compiler.ModUtil;
+
 public function elaborate "function: elaborate
  
   This function takes an `Absyn.Program\' and constructs a `Program\'
@@ -2030,6 +2032,19 @@ algorithm
    output Boolean equal;
  algorithm
    equal := matchcontinue(element1,element2)
+     case (CLASSDEF(name1,f1,r1,cl1,_),CLASSDEF(name2,f2,r2,cl2,_))
+         local 
+           Ident name1,name2;
+           Boolean f1,f2,r1,r2,b1,b2,b3;
+           Class cl1,cl2;
+       equation
+         b1 = Util.stringEqual(name1,name2);
+         b2 = Util.boolEqual(f1,f2);
+         b3 = Util.boolEqual(r1,r2);
+         b3 = classEqual(cl1,cl2);
+         equal = Util.boolAndList({b1,b2,b3});
+       then equal;
+         
      case (COMPONENT(name1,f1,r1,p1,attr1,tp1,mod1,_,_), COMPONENT(name2,f2,r2,p2,attr2,tp2,mod2,_,_))
        local
          Boolean b1,b2,b3,b4,b5,b6,f1,f2,r1,r2,p1,p2; Ident name1,name2; 
@@ -2047,6 +2062,295 @@ algorithm
    end matchcontinue;
  end elementEqual;
  
+protected function classEqual "returns true if two classes are equal"
+  input Class class1;
+  input Class class2;
+  output Boolean equal;
+  
+algorithm
+  equal := matchcontinue(class1,class2)
+    case (CLASS(name1,p1,e1,restr1,parts1), CLASS(name2,p2,e2,restr2,parts2))
+      local
+        Ident name1,name2;
+        Boolean p1,e1,p2,e2,b1,b2,b3,b4,b5;
+        Restriction restr1,restr2;
+        ClassDef parts1,parts2;
+        equation
+          b1 = Util.stringEqual(name1,name2);
+          b2 = Util.boolEqual(p1,p2);
+          b3 = Util.boolEqual(e1,e2); 
+          b4 = restrictionEqual(restr1,restr2);
+          b5 = classDefEqual(parts1,parts2);
+          equal = Util.boolAndList({b1,b2,b3,b4,b5});
+        then equal;
+  end matchcontinue;
+end classEqual;
+ 
+ protected function restrictionEqual "Returns true if two Restriction's are equal."
+ input Restriction restr1;
+ input Restriction restr2;
+ output Boolean equal;
+ algorithm
+   equal := matchcontinue(restr1,restr2)
+     case (R_CLASS(),R_CLASS()) then true;
+     case (R_MODEL(),R_MODEL()) then true;
+     case (R_RECORD(),R_RECORD()) then true;
+     case (R_BLOCK(),R_BLOCK()) then true;
+     case (R_CONNECTOR(),R_CONNECTOR()) then true;
+     case (R_TYPE(),R_TYPE()) then true;
+     case (R_PACKAGE(),R_PACKAGE()) then true;
+     case (R_FUNCTION(),R_FUNCTION()) then true;
+     case (R_EXT_FUNCTION(),R_EXT_FUNCTION()) then true;
+     case (R_ENUMERATION(),R_ENUMERATION()) then true;
+     case (R_PREDEFINED_INT(),R_PREDEFINED_INT()) then true;
+     case (R_PREDEFINED_REAL(),R_PREDEFINED_REAL()) then true;
+     case (R_PREDEFINED_STRING(),R_PREDEFINED_STRING()) then true;
+     case (R_PREDEFINED_BOOL(),R_PREDEFINED_BOOL()) then true;
+     case (R_PREDEFINED_ENUM(),R_PREDEFINED_ENUM()) then true;
+     case (_,_) then false;
+   end matchcontinue;
+ end restrictionEqual;
+ 
+ protected function classDefEqual "Returns true if Two ClassDef's are equal"
+ input ClassDef cdef1;
+ input ClassDef cdef2;
+ output Boolean equal;
+ algorithm
+   equal := matchcontinue(cdef1,cdef2)
+     case(PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,_),PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,_))
+       local  
+         list<Element> elts1,elts2;
+         list<Equation> eqns1,eqns2;
+         list<Equation> ieqns1,ieqns2;
+         list<Algorithm> algs1,algs2;
+         list<Algorithm> ialgs1,ialgs2; 
+         list<Boolean> blst1,blst2,blst3,blst4,blst5,blst;
+       equation
+         blst1 = Util.listThreadMap(elts1,elts2,elementEqual);
+         blst2 = Util.listThreadMap(eqns1,eqns2,equationEqual);
+         blst3 = Util.listThreadMap(ieqns1,ieqns2,equationEqual);
+         blst4 = Util.listThreadMap(algs1,algs2,algorithmEqual);
+         blst5 = Util.listThreadMap(ialgs1,ialgs2,algorithmEqual);
+         blst = Util.listFlatten({blst1,blst2,blst3,blst4,blst5});
+         equal = Util.boolAndList(blst);
+       then equal;
+         case (DERIVED(path1,adopt1,mod1),DERIVED(path2,adopt2,mod2))
+           local 
+             Absyn.Path path1,path2;
+             Option<Absyn.ArrayDim> adopt1,adopt2;
+             Mod mod1,mod2;
+             Boolean b1,b2,b3;
+           equation
+            b1 = ModUtil.pathEqual(path1,path2);
+            b2 = arraydimOptEqual(adopt1,adopt2);
+            b3 = modEqual(mod1,mod2);
+            equal = Util.boolAndList({b1,b2,b3});
+           then equal;
+         case (ENUMERATION(ilst1),ENUMERATION(ilst2))
+           local list<Ident> ilst1,ilst2;
+             list<Boolean> blst;
+             equation
+               blst = Util.listThreadMap(ilst1,ilst2,Util.stringEqual);
+               equal = Util.boolAndList(blst);
+             then equal;
+         case (CLASS_EXTENDS(_,_,_,_,_,_,_),CLASS_EXTENDS(_,_,_,_,_,_,_))
+            equation
+           print("classDefEqual on CLASS_EXTENDS not implemented yet\n");
+           then false;
+           case (PDER(_,_),PDER(_,_)) equation
+             print("classDefEqual on PDER not impl. yet\n");
+             then false;
+           case(_,_) then false;
+   end matchcontinue;
+ end classDefEqual;
+ 
+ protected function arraydimOptEqual " Returns true if two Option<ArrayDim> are equal"
+   input Option<Absyn.ArrayDim> adopt1;
+   input Option<Absyn.ArrayDim> adopt2;
+   output Boolean equal;
+ algorithm
+   equal := matchcontinue(adopt1,adopt2)
+     case(NONE(),NONE()) then true;
+     case(SOME(lst1),SOME(lst2)) 
+       local 
+         list<Absyn.Subscript> lst1,lst2;
+         list<Boolean> blst;
+       equation
+           blst = Util.listThreadMap(lst1,lst2,subscriptEqual);
+           equal = Util.boolAndList(blst);
+       then equal;
+   end matchcontinue;
+end arraydimOptEqual;
+
+protected function subscriptEqual "Returns true if two Absyn.Subscript's are equal"
+input Absyn.Subscript sub1;
+input Absyn.Subscript sub2;
+output Boolean equal;
+algorithm
+  equal := matchcontinue(sub1,sub2)
+    case(Absyn.NOSUB,Absyn.NOSUB) then true;
+    case(Absyn.SUBSCRIPT(e1),Absyn.SUBSCRIPT(e2))
+      local 
+        Absyn.Exp e1,e2;
+        equation
+          equal=Absyn.expEqual(e1,e2);
+          then equal;
+    case (_,_) then false;            
+  end matchcontinue;
+end subscriptEqual;
+
+ 
+protected function algorithmEqual "Returns true if two Algorithm's are equal."
+  input Algorithm alg1;
+  input Algorithm alg2;
+  output Boolean equal;
+algorithm
+  equal := matchcontinue(alg1,alg2)
+    case(ALGORITHM(a1,_),ALGORITHM(a2,_)) 
+      local
+        list<Absyn.Algorithm> a1,a2;
+        list<Boolean> blst;
+      equation
+        blst = Util.listThreadMap(a1,a2,algorithmEqual2);
+        equal = Util.boolAndList(blst);
+      then equal;
+  end matchcontinue;
+end algorithmEqual;
+ 
+protected function algorithmEqual2 "Returns true if two Absyn.Algorithm's are equal."
+ input Absyn.Algorithm a1;
+ input Absyn.Algorithm a2;
+ output Boolean equal;
+ algorithm 
+   equal := matchcontinue(a1,a2)
+     case(Absyn.ALG_ASSIGN(cr1,e1),Absyn.ALG_ASSIGN(cr2,e2)) 
+       local 
+         Absyn.ComponentRef cr1,cr2;
+         Absyn.Exp e1,e2;
+         Boolean b1,b2;
+       equation
+           b1 = Absyn.crefEqual(cr1,cr2);
+           b2 = Absyn.expEqual(e1,e2);
+           equal = boolAnd(b1,b2);
+       then equal;
+     case(Absyn.ALG_TUPLE_ASSIGN(e11,e12),Absyn.ALG_TUPLE_ASSIGN(e21,e22)) 
+       local 
+         Absyn.Exp e11,e12,e21,e22;
+         Boolean b1,b2;
+       equation
+           b1 = Absyn.expEqual(e11,e21);
+           b2 = Absyn.expEqual(e12,e22);
+           equal = boolAnd(b1,b2);
+       then equal;
+     case(Absyn.ALG_IF(_,_,_,_),Absyn.ALG_IF(_,_,_,_)) // TODO: ALG_IF
+			then false;
+     case (Absyn.ALG_FOR(_,_,_),Absyn.ALG_FOR(_,_,_)) then false; // TODO: ALG_FOR
+     case (Absyn.ALG_WHILE(_,_),Absyn.ALG_WHILE(_,_)) then false; // TODO: ALG_WHILE
+     case(Absyn.ALG_WHEN_A(_,_,_),Absyn.ALG_WHEN_A(_,_,_)) then false; //TODO: ALG_WHILE
+     case (Absyn.ALG_NORETCALL(_,_),Absyn.ALG_NORETCALL(_,_)) then false; //TODO: ALG_NORETCALL
+     case(_,_) then false;
+   end matchcontinue;
+ end algorithmEqual2;
+ 
+ protected function equationEqual "Returns true if two equations are equal."
+ input Equation eqn1;
+ input Equation eqn2;
+ output Boolean equal;
+ algorithm
+   equal := matchcontinue(eqn1,eqn2)
+     case (EQUATION(eq1,_),EQUATION(eq2,_)) local
+       EEquation eq1,eq2;
+       equation
+         equal = equationEqual2(eq1,eq2);
+         then equal;
+   end matchcontinue;
+ end equationEqual;
+ 
+ protected function equationEqual2 "Helper function to equationEqual"
+ input EEquation eq1;
+ input EEquation eq2;
+ output Boolean equal;
+ algorithm
+   equal := matchcontinue(eq1,eq2)
+     case (EQ_IF(cond1,tb1,fb1),EQ_IF(cond2,tb2,fb2)) 
+       local
+         list<EEquation> tb1,fb1,tb2,fb2;
+         Absyn.Exp cond1,cond2;
+         list<Boolean> blst1,blst2,blst;
+         Boolean b1;
+       equation
+         blst1 = Util.listThreadMap(tb1,tb2,equationEqual2);
+         blst2 = Util.listThreadMap(fb1,fb2,equationEqual2);
+         b1 = Absyn.expEqual(cond1,cond2);
+         blst = Util.listFlatten({{b1},blst1,blst2});
+         equal = Util.boolAndList(blst);
+         then equal;
+     case(EQ_EQUALS(e11,e12),EQ_EQUALS(e21,e22)) 
+       local 
+         Absyn.Exp e11,e12,e21,e22;
+         Boolean b1,b2;
+       equation
+         b1 = Absyn.expEqual(e11,e21);
+         b2 = Absyn.expEqual(e21,e22);
+         equal = boolAnd(b1,b2);
+         then equal;
+     case(EQ_CONNECT(cr11,cr12),EQ_CONNECT(cr21,cr22))
+       local 
+         Absyn.ComponentRef cr11,cr12,cr21,cr22;
+         Boolean b1,b2;
+       equation
+         b1 = Absyn.crefEqual(cr11,cr21);
+         b2 = Absyn.crefEqual(cr12,cr22);
+         equal = boolAnd(b1,b2);
+         then equal;
+     case (EQ_FOR(id1,exp1,eq1),EQ_FOR(id2,exp2,eq2))
+       local 
+         Absyn.Ident id1,id2;
+         Absyn.Exp exp1,exp2;
+         list<EEquation> eq1,eq2;
+         list<Boolean> blst1;
+         Boolean b1,b2;
+       equation
+         blst1 = Util.listThreadMap(eq1,eq2,equationEqual2);
+         b1 = Absyn.expEqual(exp1,exp2);
+         b2 = Util.stringEqual(id1,id2);
+         equal = Util.boolAndList(b1::b2::blst1);
+       then equal;
+         case (EQ_WHEN(cond1,elst1,_),EQ_WHEN(cond2,elst2,_)) // TODO: elsewhen not checked yet.
+         local 
+           Absyn.Exp cond1,cond2;
+           list<EEquation> elst1,elst2;
+           list<Boolean> blst1;
+           Boolean b1;
+           equation
+             blst1 = Util.listThreadMap(elst1,elst2,equationEqual2);
+             b1 = Absyn.expEqual(cond1,cond2);
+             equal = Util.boolAndList(b1::blst1);
+           then equal;
+        
+         case (EQ_ASSERT(c1,m1),EQ_ASSERT(c2,m2))
+           local
+             Absyn.Exp c1,c2,m1,m2;
+             Boolean b1,b2;
+             equation
+               b1 = Absyn.expEqual(c1,c2);
+               b2 = Absyn.expEqual(m1,m2);
+               equal = boolAnd(b1,b2);
+               then equal;
+         case (EQ_REINIT(cr1,e1),EQ_REINIT(cr2,e2))
+           local 
+             Absyn.ComponentRef cr1,cr2;
+             Absyn.Exp e1,e2;
+             Boolean b1,b2;
+             equation
+               b1 = Absyn.expEqual(e1,e2);
+               b2 = Absyn.crefEqual(cr1,cr2);
+               equal = boolAnd(b1,b2);
+               then equal;
+         case(_,_) then false;         
+   end matchcontinue;
+ end equationEqual2;
+   
  protected function modEqual "Return true if two Mod:s are equal"
    input Mod mod1;
    input Mod mod2;

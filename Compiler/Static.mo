@@ -664,7 +664,7 @@ algorithm
   env_1 := Env.openScope(env, false, SOME("$for loop scope$")) "encapsulated?" ;
   env_2 := Env.extendFrameV(env_1, 
           Types.VAR(i,Types.ATTR(false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),
-          false,typ,Types.VALBOUND(Values.INTEGER(1))), NONE, false, {});
+          false,typ,Types.VALBOUND(Values.INTEGER(1))), NONE, Env.VAR_UNTYPED(), {});
 end addForLoopScopeConst;
 
 protected function elabCallReduction "function: elabCallReduction

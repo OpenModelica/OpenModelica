@@ -2542,7 +2542,7 @@ algorithm
       env = Env.extendFrameC(env, stringType);
       env = Env.extendFrameC(env, booleanType);
       env = Env.extendFrameC(env, stateSelectType);
-      env = Env.extendFrameV(env, timeVar, NONE, false, {});
+      env = Env.extendFrameV(env, timeVar, NONE, Env.VAR_UNTYPED(), {});
       env = Env.extendFrameT(env, "inital", nil2real) "non-functions" ;
       env = Env.extendFrameT(env, "terminal", nil2real);
       env = Env.extendFrameT(env, "event", bool2bool);

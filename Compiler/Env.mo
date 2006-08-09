@@ -141,12 +141,27 @@ uniontype Frame
 
 end Frame;
 
+public uniontype InstStatus "Used to distinguish between different phases of the instantiation of a component
+A component is first added to environment untyped. It can thereafter be instantiated to get its type 
+and finally instantiated to produce the DAE. These three states are indicated by this datatype."
+
+  record VAR_UNTYPED "Untyped variables, initially added to env"
+  end VAR_UNTYPED;
+  
+  record VAR_TYPED "Typed variables, when instantiation to get type has been performed"
+  end VAR_TYPED;
+  
+  record VAR_DAE "Typed variables that also have been instantiated to generate dae. Required to distinguish
+                  between typed variables without DAE to know when to skip multiply declared dae elements"
+  end VAR_DAE;                  
+end InstStatus;
+
 public 
 uniontype Item
   record VAR
     Types.Var instantiated "instantiated component" ;
     Option<tuple<SCode.Element, Types.Mod>> declaration "declaration if not fully instantiated." ;
-    Boolean typed "if it typed/fully instantiated or not" ;
+    InstStatus instStatus "if it untyped, typed or fully instantiated (dae)" ;
     Env env "The environment of the instantiated component
 			       Contains e.g. all sub components 
 			" ;
@@ -371,19 +386,20 @@ public function extendFrameV "function: extendFrameV
   input Env inEnv1;
   input Types.Var inVar2;
   input Option<tuple<SCode.Element, Types.Mod>> inTplSCodeElementTypesModOption3;
-  input Boolean inBoolean4;
+  input InstStatus instStatus;
   input Env inEnv5;
   output Env outEnv;
 algorithm 
   outEnv:=
-  matchcontinue (inEnv1,inVar2,inTplSCodeElementTypesModOption3,inBoolean4,inEnv5)
+  matchcontinue (inEnv1,inVar2,inTplSCodeElementTypesModOption3,instStatus,inEnv5)
     local
       BinTree ht_1,ht,httypes;
       Option<Ident> id;
       list<Value> imps;
       Env bcframes,fs,env;
       list<Exp.ComponentRef> crs;
-      Boolean encflag,i;
+      Boolean encflag;
+      InstStatus i;
       Types.Var v;
       Ident n;
       Option<tuple<SCode.Element, Types.Mod>> c;
@@ -411,14 +427,15 @@ public function updateFrameV "function: updateFrameV
 "
   input Env inEnv1;
   input Types.Var inVar2;
-  input Boolean inBoolean3;
+  input InstStatus instStatus;
   input Env inEnv4;
   output Env outEnv;
 algorithm 
   outEnv:=
-  matchcontinue (inEnv1,inVar2,inBoolean3,inEnv4)
+  matchcontinue (inEnv1,inVar2,instStatus,inEnv4)
     local
-      Boolean i,encflag;
+      Boolean encflag;
+      InstStatus i;
       Option<tuple<SCode.Element, Types.Mod>> c;
       BinTree ht_1,ht,httypes;
       Option<Ident> sid;
@@ -842,13 +859,13 @@ algorithm
       tuple<Types.TType, Option<Absyn.Path>> tp;
       Types.Binding bind,bnd;
       SCode.Element elt;
-      Boolean i;
+      InstStatus i;
       Frame compframe;
       Env env;
       Integer len;
       list<tuple<Types.TType, Option<Absyn.Path>>> lst;
       Absyn.Import imp;
-    case ((n,VAR(instantiated = (tv as Types.VAR(attributes = Types.ATTR(parameter_ = var),type_ = tp,binding = bind)),declaration = SOME((elt,_)),typed = i,env = (compframe :: _))))
+    case ((n,VAR(instantiated = (tv as Types.VAR(attributes = Types.ATTR(parameter_ = var),type_ = tp,binding = bind)),declaration = SOME((elt,_)),instStatus = i,env = (compframe :: _))))
       equation 
         s = SCode.variabilityString(var);
         elt_str = SCode.printElementStr(elt);
@@ -862,7 +879,7 @@ algorithm
 				 frame_str" ;
       then
         res;
-    case ((n,VAR(instantiated = (tv as Types.VAR(attributes = Types.ATTR(parameter_ = var),type_ = tp)),declaration = SOME((elt,_)),typed = i,env = {})))
+    case ((n,VAR(instantiated = (tv as Types.VAR(attributes = Types.ATTR(parameter_ = var),type_ = tp)),declaration = SOME((elt,_)),instStatus = i,env = {})))
       equation 
         s = SCode.variabilityString(var);
         elt_str = SCode.printElementStr(elt);
@@ -873,7 +890,7 @@ algorithm
           "}, compframe: []"});
       then
         res;
-    case ((n,VAR(instantiated = Types.VAR(binding = bnd),declaration = NONE,typed = i,env = env)))
+    case ((n,VAR(instantiated = Types.VAR(binding = bnd),declaration = NONE,instStatus = i,env = env)))
       equation 
         res = Util.stringAppendList({"v:",n,"\n"});
       then

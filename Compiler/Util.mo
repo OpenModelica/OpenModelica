@@ -2419,8 +2419,9 @@ end boolOrList;
 public function boolAndList "function: boolAndList
   Takes a list of boolean values and applies the boolean \'and\' operator on the elements
   For example,
-  bool_and_list({true, true}) => true
-  bool_and_list({false,false,true}) => false
+  boolAndList({}) => true
+  boolAndList({true, true}) => true
+  boolAndList({false,false,true}) => false
 "
   input list<Boolean> inBooleanLst;
   output Boolean outBoolean;
@@ -2430,6 +2431,7 @@ algorithm
     local
       Boolean b,res;
       list<Boolean> rest;
+    case({}) then true;
     case ({b}) then b; 
     case ((b :: rest))
       equation 

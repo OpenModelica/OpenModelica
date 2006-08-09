@@ -1698,7 +1698,7 @@ algorithm
   end matchcontinue;
 end eachEqual;
 
-protected function functionArgsEqual
+protected function functionArgsEqual "Retirms true if two FunctionArgs are equal"
   input FunctionArgs args1;
   input FunctionArgs args2;
   output Boolean equal;
