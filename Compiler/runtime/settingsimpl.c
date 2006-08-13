@@ -99,7 +99,8 @@ RML_BEGIN_LABEL(Settings__setInstallationDirectoryPath)
   /*set the env-var to created string
    this is useful when scripts and clients started
   by omc wants to use OPENMODELICAHOME*/
-  if( _putenv(omhome) != 0){
+    if( putenv(omhome) != 0) // adrpo: in Linux there is not _putenv if( _putenv(omhome) != 0)
+  {
     RML_TAILCALLK(rmlFC);
   }
   free(omhome);
