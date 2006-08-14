@@ -56,10 +56,17 @@ public import OpenModelica.Compiler.Exp;
 public import OpenModelica.Compiler.DAELow;
 
 public 
-uniontype VariableReplacements
+uniontype VariableReplacements "
+VariableReplacements consists of a mapping between variables and expressions, the first binary tree of this type.
+To eliminate a variable from an equation system a replacement rule varname->expression is added to this
+datatype.
+To be able to update these replacement rules incrementally a backward lookup mechanism is also required.
+For instance, having a rule a->b and adding a rule b->c requires to find the first rule a->b and update it to
+a->c. This is what the second binary tree is used for.
+   "
   record REPLACEMENTS
-    BinTree src "src -> dst, used for replacing" ;
-    BinTree2 binTree2;
+    BinTree src "src -> dst, used for replacing. src is variable, dst is expression" ;
+    BinTree2 binTree2 "dst -> list of sources. dst is a variable, sources are variables.";
   end REPLACEMENTS;
 
 end VariableReplacements;
@@ -106,7 +113,7 @@ public
 type Key = Exp.ComponentRef "Key" ;
 
 public 
-type Value = Exp.ComponentRef;
+type Value = Exp.Exp;
 
 public 
 type Value2 = list<Exp.ComponentRef>;
@@ -146,6 +153,32 @@ algorithm
   end matchcontinue;
 end applyReplacements;
 
+public function applyReplacementsExp "
+ 
+Similar to applyReplacements but for expressions instead of component references.
+"
+  input VariableReplacements repl;
+  input Exp.Exp inExp1;
+  input Exp.Exp inExp2;
+  output Exp.Exp outExp1;
+  output Exp.Exp outExp2;
+algorithm 
+  (outExp1,outExp2):=
+  matchcontinue (repl,inExp1,inExp2)
+    local
+      Exp.Exp e1,e2;
+      VariableReplacements repl;
+    case (repl,e1,e2)
+      equation 
+        (e1) = replaceExp(e1, repl, NONE);
+        (e2) = replaceExp(e2, repl, NONE);
+        e1 = Exp.simplify(e1);
+        e2 = Exp.simplify(e2);
+      then
+        (e1,e2);
+  end matchcontinue;
+end applyReplacementsExp;
+
 public function emptyReplacements "function: emptyReplacements
  
   Returns an empty set of replacement rules
@@ -171,27 +204,30 @@ algorithm
   outDAELowEquationLst:=
   matchcontinue (inDAELowEquationLst,inVariableReplacements)
     local
-      Exp.Exp e1_1,e2_1,e1,e2,e_1,e;
+      Exp.Exp e1_1,e2_1,e1_2,e2_2,e1,e2,e_1,e_2,e;
       list<DAELow.Equation> es_1,es;
       VariableReplacements repl;
       DAELow.Equation a;
       Exp.ComponentRef cr;
       Integer indx;
-      list<Exp.Exp> expl,expl1;
+      list<Exp.Exp> expl,expl1,expl2;
     case ({},_) then {}; 
     case ((DAELow.ARRAY_EQUATION(indx,expl)::es),repl)
       equation
         expl1 = Util.listMap2(expl,replaceExp,repl,NONE);
+        expl2 = Util.listMap(expl1,Exp.simplify);
         es_1 = replaceEquations(es,repl);
       then
-         (DAELow.ARRAY_EQUATION(indx,expl1)::es_1); 
+         (DAELow.ARRAY_EQUATION(indx,expl2)::es_1); 
     case ((DAELow.EQUATION(exp = e1,scalar = e2) :: es),repl)
       equation 
         e1_1 = replaceExp(e1, repl, NONE);
         e2_1 = replaceExp(e2, repl, NONE);
+        e1_2 = Exp.simplify(e1_1);
+        e2_2 = Exp.simplify(e2_1);
         es_1 = replaceEquations(es, repl);
       then
-        (DAELow.EQUATION(e1_1,e2_1) :: es_1);
+        (DAELow.EQUATION(e1_2,e2_2) :: es_1);
     case (((a as DAELow.ALGORITHM(index = _)) :: es),repl)
       equation 
         es_1 = replaceEquations(es, repl);
@@ -200,15 +236,17 @@ algorithm
     case ((DAELow.SOLVED_EQUATION(componentRef = cr,exp = e) :: es),repl)
       equation 
         e_1 = replaceExp(e, repl, NONE);
+        e_2 = Exp.simplify(e_1);
         es_1 = replaceEquations(es, repl);
       then
-        (DAELow.SOLVED_EQUATION(cr,e_1) :: es_1);
+        (DAELow.SOLVED_EQUATION(cr,e_2) :: es_1);
     case ((DAELow.RESIDUAL_EQUATION(exp = e) :: es),repl)
       equation 
         e_1 = replaceExp(e, repl, NONE);
+        e_2 = Exp.simplify(e_1);
         es_1 = replaceEquations(es, repl);
       then
-        (DAELow.RESIDUAL_EQUATION(e_1) :: es_1);
+        (DAELow.RESIDUAL_EQUATION(e_2) :: es_1);
     case ((a :: es),repl)
       equation 
         es_1 = replaceEquations(es, repl);
@@ -230,7 +268,7 @@ algorithm
   outDAELowEquationLst:=
   matchcontinue (inDAELowEquationLst,inVariableReplacements)
     local
-      Exp.Exp e1_1,e2_1,e1,e2,e_1,e;
+      Exp.Exp e1_1,e2_1,e1,e2,e_1,e,e1_2,e2_2;
       list<DAELow.MultiDimEquation> es_1,es;
       VariableReplacements repl;
       DAELow.Equation a;
@@ -241,9 +279,11 @@ algorithm
       equation 
         e1_1 = replaceExp(e1, repl, NONE);
         e2_1 = replaceExp(e2, repl, NONE);
+        e1_2 = Exp.simplify(e1_1);
+        e2_2 = Exp.simplify(e2_1);
         es_1 = replaceMultiDimEquations(es, repl);
       then
-        (DAELow.MULTIDIM_EQUATION(dims,e1_1,e2_1) :: es_1);
+        (DAELow.MULTIDIM_EQUATION(dims,e1_2,e2_2) :: es_1);
   end matchcontinue;
 end replaceMultiDimEquations;
 
@@ -323,15 +363,16 @@ public function addReplacement "function: addReplacement
   the rule a->b is updated to a->c. This is done using the make_transitive
   function.
 "
-  input VariableReplacements inVariableReplacements1;
-  input Exp.ComponentRef inComponentRef2;
-  input Exp.ComponentRef inComponentRef3;
-  output VariableReplacements outVariableReplacements;
+  input VariableReplacements repl;
+  input Exp.ComponentRef inSrc;
+  input Exp.Exp inDst;
+  output VariableReplacements outRepl;
 algorithm 
-  outVariableReplacements:=
-  matchcontinue (inVariableReplacements1,inComponentRef2,inComponentRef3)
+  outRepl:=
+  matchcontinue (repl,inSrc,inDst)
     local
-      Exp.ComponentRef olddst,src,dst,src_1,dst_1;
+      Exp.ComponentRef src,src_1,dst_1;
+      Exp.Exp dst,dst_1,olddst;
       VariableReplacements repl;
       BinTree bt,bt_1;
       BinTree2 invbt,invbt_1;
@@ -345,12 +386,13 @@ algorithm
       equation 
         (REPLACEMENTS(bt,invbt),src_1,dst_1) = makeTransitive(repl, src, dst);
         s1 = Exp.printComponentRefStr(src);
-        s2 = Exp.printComponentRefStr(dst);
+        s2 = Exp.printExpStr(dst);
         s3 = Exp.printComponentRefStr(src_1);
-        s4 = Exp.printComponentRefStr(dst_1);
+        s4 = Exp.printExpStr(dst_1);
         s = Util.stringAppendList(
           {"add_replacement(",s1,", ",s2,") -> add_replacement(",s3,
           ", ",s4,")\n"});
+          //print(s);
         Debug.fprint("addrepl", s);
         bt_1 = treeAdd(bt, src_1, dst_1);
         invbt_1 = addReplacementInv(invbt, src_1, dst_1);
@@ -366,20 +408,50 @@ end addReplacement;
 
 protected function addReplacementInv "function: addReplacementInv
  
-  Helper function to add_replacement_inv
+  Helper function to addReplacement
   Adds the inverse rule of a replacement to the second binary tree
   of VariableReplacements.
 "
-  input BinTree2 inBinTree21;
-  input Exp.ComponentRef inComponentRef2;
-  input Exp.ComponentRef inComponentRef3;
-  output BinTree2 outBinTree2;
+  input BinTree2 bt;
+  input Exp.ComponentRef src;
+  input Exp.Exp dst;
+  output BinTree2 outBt;
 algorithm 
-  outBinTree2:=
-  matchcontinue (inBinTree21,inComponentRef2,inComponentRef3)
+  outBt:=
+  matchcontinue (bt,src,dst)
     local
       BinTree2 invbt_1,invbt;
-      Exp.ComponentRef src,dst;
+      Exp.ComponentRef src;
+      Exp.Exp dst;
+      list<Exp.ComponentRef> dests;
+    case (invbt,src,dst) equation
+      dests = Exp.getCrefFromExp(dst);
+      invbt_1 = Util.listFold_2(dests,addReplacementInv2,invbt,src);
+      then
+        invbt_1;
+  end matchcontinue;
+end addReplacementInv;
+
+protected function addReplacementInv2 "function: addReplacementInv2
+ 
+  Helper function to addReplacementInv
+  Adds the inverse rule for one of the variables of a replacement to the second binary tree
+  of VariableReplacements.
+  Since a replacement is on the form var -> expression of vars(v1,v2,...,vn) the inverse binary tree
+  contains rules for v1 -> var, v2 -> var, ...., vn -> var so that any of the variables of the expression
+  will update the rule.
+"
+  input BinTree2 bt;
+  input Exp.ComponentRef src;
+  input Exp.ComponentRef dst;
+  output BinTree2 outBt;
+algorithm 
+  outBt:=
+  matchcontinue (bt,src,dst)
+    local
+      BinTree2 invbt_1,invbt;
+      Exp.ComponentRef src;
+      Exp.ComponentRef dst;
       list<Exp.ComponentRef> srcs;
     case (invbt,src,dst)
       equation 
@@ -394,7 +466,7 @@ algorithm
       then
         invbt_1;
   end matchcontinue;
-end addReplacementInv;
+end addReplacementInv2;
 
 protected function makeTransitive "function: makeTransitive
  
@@ -403,82 +475,119 @@ protected function makeTransitive "function: makeTransitive
   is replaced with the transitive value.
   For example, if we have the rule a->b and a new rule c->a it is changed to c->b.
   Also, if we have a rule a->b and a new rule b->c then the -old- rule a->b is changed
-  to a->c
+  to a->c.
+  For arbitrary expressions: if we have a rule ax-> expr(b1,..,bn) and a new rule c->expr(a1,ax,..,an)
+  it is changed to c-> expr(a1,expr(b1,...,bn),..,an). 
+  And similary for a rule ax -> expr(b1,bx,..,bn) and a new rule bx->expr(c1,..,cn) then old rule is changed to
+  ax -> expr(b1,expr(c1,..,cn),..,bn).
 "
-  input VariableReplacements inVariableReplacements1;
-  input Exp.ComponentRef inComponentRef2;
-  input Exp.ComponentRef inComponentRef3;
-  output VariableReplacements outVariableReplacements1;
-  output Exp.ComponentRef outComponentRef2;
-  output Exp.ComponentRef outComponentRef3;
+  input VariableReplacements repl;
+  input Exp.ComponentRef src;
+  input Exp.Exp dst;
+  output VariableReplacements outRepl;
+  output Exp.ComponentRef outSrc;
+  output Exp.Exp outDst;
 algorithm 
-  (outVariableReplacements1,outComponentRef2,outComponentRef3):=
-  matchcontinue (inVariableReplacements1,inComponentRef2,inComponentRef3)
+  (outRepl,outSrc,outDst):=
+  matchcontinue (repl,src,dst)
     local
       VariableReplacements repl_1,repl_2,repl;
-      Exp.ComponentRef src_1,dst_1,src_2,dst_2,src,dst;
+      Exp.ComponentRef src_1,src_2;
+      Exp.Exp dst_1,dst_2,dst_3;
     case (repl,src,dst) /* replacement rules src dst updated replacement rules src updated dst */ 
       equation 
         (repl_1,src_1,dst_1) = makeTransitive1(repl, src, dst);
         (repl_2,src_2,dst_2) = makeTransitive2(repl_1, src_1, dst_1);
+        dst_3 = Exp.simplify(dst_2) "to remove e.g. --a";
       then
-        (repl_2,src_2,dst_2);
+        (repl_2,src_2,dst_3);
   end matchcontinue;
 end makeTransitive;
 
 protected function makeTransitive1 "function: makeTransitive1
  
-  helper function to make_transitive
+  helper function to makeTransitive
 "
-  input VariableReplacements inVariableReplacements1;
-  input Exp.ComponentRef inComponentRef2;
-  input Exp.ComponentRef inComponentRef3;
-  output VariableReplacements outVariableReplacements1;
-  output Exp.ComponentRef outComponentRef2;
-  output Exp.ComponentRef outComponentRef3;
+  input VariableReplacements repl;
+  input Exp.ComponentRef src;
+  input Exp.Exp dst;
+  output VariableReplacements outRepl;
+  output Exp.ComponentRef outSrc;
+  output Exp.Exp outDst;
 algorithm 
-  (outVariableReplacements1,outComponentRef2,outComponentRef3):=
-  matchcontinue (inVariableReplacements1,inComponentRef2,inComponentRef3)
+  (outRepl,outSrc,outDst):=
+  matchcontinue (repl,src,dst)
     local
       list<Exp.ComponentRef> lst;
-      VariableReplacements repl_1,repl;
+      VariableReplacements repl_1,repl,singleRepl;
       BinTree bt;
       BinTree2 invbt;
-      Exp.ComponentRef src,dst;
-    case ((repl as REPLACEMENTS(src = bt,binTree2 = invbt)),src,dst) /* replacement rules src dst updated replacement rules src updated dst */ 
+      Exp.Exp dst_1;
+      // old rule a->expr(b1,..,bn) must be updated to a->expr(c_exp,...,bn) when new rule b1->c_exp 
+      // is introduced
+    case ((repl as REPLACEMENTS(src = bt,binTree2 = invbt)),src,dst)  
       equation 
-        lst = treeGet2(invbt, src) "old rule a->b must be updated to a->c when new rule b->c introduced" ;
-        repl_1 = addReplacements(repl, lst, dst);
+        lst = treeGet2(invbt, src);
+        singleRepl = addReplacement(emptyReplacements(),src,dst);
+        repl_1 = makeTransitive12(lst,repl,singleRepl);
       then
         (repl_1,src,dst);
     case (repl,src,dst) then (repl,src,dst); 
   end matchcontinue;
 end makeTransitive1;
 
+protected function makeTransitive12 "Helper function to makeTransitive1
+For each old rule a->expr(b1,..,bn) update dest by applying the new rule passed as argument 
+in singleRepl."
+  input list<Exp.ComponentRef> lst;
+  input VariableReplacements repl;
+  input VariableReplacements singleRepl "contain one replacement rule: the rule to be added";
+  output VariableReplacements outRepl;
+algorithm
+  outRepl := matchcontinue(lst,repl,src,dst)
+    local 
+      Exp.Exp crDst;
+      Exp.ComponentRef cr;
+      list<Exp.ComponentRef> crs;
+      VariableReplacements repl1,repl2;
+      BinTree bt;
+      BinTree2 invbt;      
+    case({},repl,_) then repl;
+    case(cr::crs,repl as REPLACEMENTS(src = bt,binTree2 = invbt),singleRepl) equation
+      crDst = treeGet(bt,cr);
+      crDst = replaceExp(crDst,singleRepl,NONE);
+      repl1=addReplacement(repl,cr,crDst) "add updated old rule";
+      repl2 = makeTransitive12(crs,repl1,singleRepl);
+    then repl2;
+  end matchcontinue;
+end makeTransitive12;
+
 protected function makeTransitive2 "function: makeTransitive2
  
-  Helper function to make_transitive
+  Helper function to makeTransitive
 "
-  input VariableReplacements inVariableReplacements1;
-  input Exp.ComponentRef inComponentRef2;
-  input Exp.ComponentRef inComponentRef3;
-  output VariableReplacements outVariableReplacements1;
-  output Exp.ComponentRef outComponentRef2;
-  output Exp.ComponentRef outComponentRef3;
+  input VariableReplacements repl;
+  input Exp.ComponentRef src;
+  input Exp.Exp dst;
+  output VariableReplacements outRepl;
+  output Exp.ComponentRef outSrc;
+  output Exp.Exp outDst;
 algorithm 
-  (outVariableReplacements1,outComponentRef2,outComponentRef3):=
-  matchcontinue (inVariableReplacements1,inComponentRef2,inComponentRef3)
+  (outRepl,outSrc,outDst):=
+  matchcontinue (repl,src,dst)
     local
-      Exp.ComponentRef newdst,src_1,dst_1,src,dst;
+      Exp.ComponentRef src,src_1;
+      Exp.Exp newdst,dst_1,dst;
       VariableReplacements repl_1,repl;
       BinTree bt;
       BinTree2 invbt;
-    case ((repl as REPLACEMENTS(src = bt,binTree2 = invbt)),src,dst) /* replacement rules src dst updated replacement rules src updated dst */ 
+      // for rule a->b1+..+bn, replace all b1 to bn's in the expression;
+    case ((repl as REPLACEMENTS(src = bt,binTree2 = invbt)),src,dst) 
       equation 
-        newdst = treeGet(bt, dst) "If dst has own replacement rule, change to its destintation and recurse" ;
-        (repl_1,src_1,dst_1) = makeTransitive2(repl, src, newdst);
+        (dst_1) = replaceExp(dst,repl,NONE);
       then
-        (repl_1,src_1,dst_1);
+        (repl,src,dst_1);
+        // replaceExp failed, keep old rule.
     case (repl,src,dst) then (repl,src,dst);  /* dst has no own replacement, return */ 
   end matchcontinue;
 end makeTransitive2;
@@ -488,16 +597,16 @@ protected function addReplacements "function: addReplacements
   Adding of several replacements at once with common destination.
   Uses add_replacement
 "
-  input VariableReplacements inVariableReplacements;
-  input list<Exp.ComponentRef> inExpComponentRefLst;
-  input Exp.ComponentRef inComponentRef;
-  output VariableReplacements outVariableReplacements;
+  input VariableReplacements repl;
+  input list<Exp.ComponentRef> srcs;
+  input Exp.Exp dst;
+  output VariableReplacements outRepl;
 algorithm 
-  outVariableReplacements:=
-  matchcontinue (inVariableReplacements,inExpComponentRefLst,inComponentRef)
+  outRepl:=
+  matchcontinue (repl,srcs,dst)
     local
       VariableReplacements repl,repl_1,repl_2;
-      Exp.ComponentRef src,dst;
+      Exp.ComponentRef src;
       list<Exp.ComponentRef> srcs;
     case (repl,{},_) then repl; 
     case (repl,(src :: srcs),dst)
@@ -521,12 +630,13 @@ public function getReplacement "function: getReplacement
 "
   input VariableReplacements inVariableReplacements;
   input Exp.ComponentRef inComponentRef;
-  output Exp.ComponentRef outComponentRef;
+  output Exp.Exp outComponentRef;
 algorithm 
   outComponentRef:=
   matchcontinue (inVariableReplacements,inComponentRef)
     local
-      Exp.ComponentRef dst,src;
+      Exp.ComponentRef src;
+      Exp.Exp dst;
       BinTree bt;
       BinTree2 invbt;
     case (REPLACEMENTS(src = bt,binTree2 = invbt),src)
@@ -573,9 +683,9 @@ algorithm
     case ((e as Exp.CREF(componentRef = cr,ty = t)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
-        cr_1 = getReplacement(repl, cr);
+        e1 = getReplacement(repl, cr);
       then
-        Exp.CREF(cr_1,t);
+        e1;
     case ((e as Exp.BINARY(exp1 = e1,operator = op,exp2 = e2)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);
@@ -826,7 +936,8 @@ algorithm
   matchcontinue (inBinTree1,inExpExpLst2,inExpExpLst3)
     local
       list<Exp.Exp> klst,vlst;
-      Exp.ComponentRef key,value;
+      Exp.ComponentRef key;
+      Exp.Exp value;
       Option<BinTree> left,right;
     case (TREENODE(value = NONE,left = NONE,right = NONE),klst,vlst) then (klst,vlst); 
     case (TREENODE(value = SOME(TREEVALUE(key,value)),left = left,right = right),klst,vlst)
@@ -834,7 +945,7 @@ algorithm
         (klst,vlst) = bintreeToExplistOpt(left, klst, vlst);
         (klst,vlst) = bintreeToExplistOpt(right, klst, vlst);
       then
-        ((Exp.CREF(key,Exp.REAL()) :: klst),(Exp.CREF(value,Exp.REAL()) :: vlst));
+        ((Exp.CREF(key,Exp.REAL()) :: klst),(value :: vlst));
     case (TREENODE(value = NONE,left = left,right = right),klst,vlst)
       equation 
         (klst,vlst) = bintreeToExplistOpt(left, klst, vlst);
@@ -882,7 +993,8 @@ algorithm
   matchcontinue (inBinTree,inKey)
     local
       String rkeystr,keystr;
-      Exp.ComponentRef rkey,rval,key,res;
+      Exp.ComponentRef rkey,key;
+      Exp.Exp rval,res;
       Option<BinTree> left,right;
       Integer cmpval;
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = right),key)
@@ -929,7 +1041,8 @@ algorithm
   outBinTree:=
   matchcontinue (inBinTree,inKey,inValue)
     local
-      Exp.ComponentRef key,value,rkey,rval;
+      Exp.ComponentRef key,rkey;
+      Exp.Exp value,rval;
       String rkeystr,keystr;
       Option<BinTree> left,right;
       Integer cmpval;

@@ -908,6 +908,43 @@ algorithm
   end matchcontinue;
 end listFold;
 
+public function listFold_2 "function: listFold_2
+  Similar to listFold but relation takes three arguments. 
+  The first argument is folded (i.e. passed through each relation)
+  The second argument is constant (given as argument)
+  The third argument is iterated over list.
+"
+  input list<Type_a> lst;
+  input FoldFunc foldFunc;
+  input Type_b foldArg;
+  input Type_c extraArg;
+  output Type_b res;
+  replaceable type Type_a;
+  replaceable type Type_b;
+  replaceable type Type_c;
+  partial function FoldFunc
+    input Type_b foldArg;
+    input Type_c extraArg;
+    input Type_a iterated;
+    output Type_b foldArg;
+  end FoldFunc;
+algorithm 
+  res:=
+  matchcontinue (lst,foldFunc,foldArg,extraArg)
+    local
+      Type_b foldArg1,foldArg2;
+      Type_a l;
+      list<Type_a> lst;
+    case ({},foldFunc,foldArg,extraArg) then foldArg; 
+    case ((l :: lst),foldFunc,foldArg,extraArg)
+      equation 
+        foldArg1 = foldFunc(foldArg,extraArg,l);
+        foldArg2 = listFold_2(lst, foldFunc,foldArg1, extraArg);
+      then
+        foldArg2;
+  end matchcontinue;
+end listFold_2;
+
 public function listFoldMap "function: listFoldMap
   author: PA
  

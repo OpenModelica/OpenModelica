@@ -2503,18 +2503,21 @@ algorithm
       Equation e;
       Exp.Type t;
     case ({},vars,knvars,mvars,states,repl) then ({},{},mvars,repl); 
+      
+      //Both are states, i.e. x1 = x2 can not be removed
     case ((e :: eqns),vars,knvars,mvars,states,repl)
       equation 
-        (cr1,cr2) = simpleEquation(e) "Both are states, i.e. x1 = x2 can not be removed" ;
+        (cr1,cr2) = simpleEquation(e)  ;
         (cr1,cr2) = VarTransform.applyReplacements(repl, cr1, cr2);
         _ = treeGet(states, cr1);
         _ = treeGet(states, cr2);
         (eqns_1,seqns_1,mvars_1,repl) = removeSimpleEquations2(eqns, vars, knvars, mvars, states, repl);
       then
         ((e :: eqns_1),seqns_1,mvars_1,repl);
+      // cr1 is state and cr2 not, remove cr2
     case ((e :: eqns),vars,knvars,mvars,states,repl)
       equation 
-        (cr1,cr2) = simpleEquation(e) "cr1 is state and cr2 not, remove cr2" ;
+        (cr1,cr2) = simpleEquation(e)  ;
         false = isTopLevelInputOrOutput(cr2, vars, knvars) "is the variable to be removed is output the do not remove it" ;
         t = typeofEquation(e);
         (cr1,cr2) = VarTransform.applyReplacements(repl, cr1, cr2);
@@ -2522,14 +2525,16 @@ algorithm
         failure(_ = treeGet(states, cr2));
         failure(_ = VarTransform.getReplacement(repl, cr2));
         _ = treeGet(states, cr1);
-        repl_1 = VarTransform.addReplacement(repl, cr2, cr1);
+        repl_1 = VarTransform.addReplacement(repl, cr2, Exp.CREF(cr1,t));
         mvars_1 = treeAdd(mvars, cr2, 0);
         (eqns_1,seqns_1,mvars_2,repl_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1);
       then
         (eqns_1,(SOLVED_EQUATION(cr2,Exp.CREF(cr1,t)) :: seqns_1),mvars_2,repl_2);
+
+        // as above but swapped args: cr1 is state and cr2 not, remove cr2
     case ((e :: eqns),vars,knvars,mvars,states,repl)
       equation 
-        (cr2,cr1) = simpleEquation(e) "as above but swapped args: cr1 is state and cr2 not, remove cr2" ;
+        (cr2,cr1) = simpleEquation(e);
         false = isTopLevelInputOrOutput(cr2, vars, knvars) "is the variable to be removed is output the do not remove it" ;
         t = typeofEquation(e);
         (cr1,cr2) = VarTransform.applyReplacements(repl, cr1, cr2);
@@ -2537,14 +2542,16 @@ algorithm
         failure(_ = treeGet(states, cr2));
         failure(_ = VarTransform.getReplacement(repl, cr2));
         _ = treeGet(states, cr1);
-        repl_1 = VarTransform.addReplacement(repl, cr2, cr1);
+        repl_1 = VarTransform.addReplacement(repl, cr2, Exp.CREF(cr1,t));
         mvars_1 = treeAdd(mvars, cr2, 0);
         (eqns_1,seqns_1,mvars_2,repl_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1);
       then
         (eqns_1,(SOLVED_EQUATION(cr2,Exp.CREF(cr1,t)) :: seqns_1),mvars_2,repl_2);
+
+        // cr1 variable, cr2 constant, remove cr1
     case ((e :: eqns),vars,knvars,mvars,states,repl)
       equation 
-        (cr1,cr2) = simpleEquation(e) "cr1 variable, cr2 constant, remove cr1" ;
+        (cr1,cr2) = simpleEquation(e) ;
         t = typeofEquation(e);
         false = isTopLevelInputOrOutput(cr1, vars, knvars) "is the variable to be removed is output the do not remove it" ;
         (cr1,cr2) = VarTransform.applyReplacements(repl, cr1, cr2);
@@ -2552,14 +2559,16 @@ algorithm
         isVariable(cr1, vars, knvars);
         failure(_ = treeGet(states, cr1));
         failure(isVariable(cr2, vars, knvars));
-        repl_1 = VarTransform.addReplacement(repl, cr1, cr2);
+        repl_1 = VarTransform.addReplacement(repl, cr1, Exp.CREF(cr2,t));
         mvars_1 = treeAdd(mvars, cr1, 0);
         (eqns_1,seqns_1,mvars_2,repl_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1);
       then
         (eqns_1,(SOLVED_EQUATION(cr1,Exp.CREF(cr2,t)) :: seqns_1),mvars_2,repl_2);
+
+        // same as above but swapped args: remove cr1
     case ((e :: eqns),vars,knvars,mvars,states,repl)
       equation 
-        (cr2,cr1) = simpleEquation(e) "same as above but swapped args: remove cr1" ;
+        (cr2,cr1) = simpleEquation(e) ;
         t = typeofEquation(e);
         false = isTopLevelInputOrOutput(cr1, vars, knvars) "is the variable to be removed is output the do not remove it" ;
         (cr1,cr2) = VarTransform.applyReplacements(repl, cr1, cr2);
@@ -2567,14 +2576,16 @@ algorithm
         isVariable(cr1, vars, knvars);
         failure(_ = treeGet(states, cr1));
         failure(isVariable(cr2, vars, knvars));
-        repl_1 = VarTransform.addReplacement(repl, cr1, cr2);
+        repl_1 = VarTransform.addReplacement(repl, cr1, Exp.CREF(cr2,t));
         mvars_1 = treeAdd(mvars, cr1, 0);
         (eqns_1,seqns_1,mvars_2,repl_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1);
       then
         (eqns_1,(SOLVED_EQUATION(cr1,Exp.CREF(cr2,t)) :: seqns_1),mvars_2,repl_2);
+
+        // None are states, but  variables, remove cr1
     case ((e :: eqns),vars,knvars,mvars,states,repl)
       equation 
-        (cr1,cr2) = simpleEquation(e) "None are states, but  variables, remove cr1" ;
+        (cr1,cr2) = simpleEquation(e)  ;
         t = typeofEquation(e);
         false = isTopLevelInputOrOutput(cr1, vars, knvars) "is the variable to be removed is output the do not remove it" ;
         (cr1,cr2) = VarTransform.applyReplacements(repl, cr1, cr2);
@@ -2583,14 +2594,16 @@ algorithm
         failure(_ = treeGet(states, cr2));
         isVariable(cr1, vars, knvars);
         isVariable(cr2, vars, knvars);
-        repl_1 = VarTransform.addReplacement(repl, cr1, cr2);
+        repl_1 = VarTransform.addReplacement(repl, cr1, Exp.CREF(cr2,t));
         mvars_1 = treeAdd(mvars, cr1, 0);
         (eqns_1,seqns_1,mvars_2,repl_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1);
       then
         (eqns_1,(SOLVED_EQUATION(cr1,Exp.CREF(cr2,t)) :: seqns_1),mvars_2,repl_2);
+        
+        // same as above but swapped args, remove cr1
     case ((e :: eqns),vars,knvars,mvars,states,repl)
       equation 
-        (cr1,cr2) = simpleEquation(e) "same as above but swapped args, remove cr1" ;
+        (cr1,cr2) = simpleEquation(e)  ;
         t = typeofEquation(e);
         false = isTopLevelInputOrOutput(cr1, vars, knvars) "is the variable to be removed is output the do not remove it" ;
         (cr1,cr2) = VarTransform.applyReplacements(repl, cr1, cr2);
@@ -2599,11 +2612,33 @@ algorithm
         failure(_ = treeGet(states, cr2));
         isVariable(cr1, vars, knvars);
         isVariable(cr2, vars, knvars);
-        repl_1 = VarTransform.addReplacement(repl, cr1, cr2);
+        repl_1 = VarTransform.addReplacement(repl, cr1, Exp.CREF(cr2,t));
         mvars_1 = treeAdd(mvars, cr1, 0);
         (eqns_1,seqns_1,mvars_2,repl_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1);
       then
         (eqns_1,(SOLVED_EQUATION(cr1,Exp.CREF(cr2,t)) :: seqns_1),mvars_2,repl_2);
+  
+  	// Negated alias, e.g. a+b=0 or a = -b
+    case ((e :: eqns),vars,knvars,mvars,states,repl)
+      local Exp.Exp e1,e2;
+      equation 
+        (e1 as Exp.CREF(cr1,_),e2) = negatedAliasEquation(e);
+        t = typeofEquation(e);
+        false = isTopLevelInputOrOutput(cr1, vars, knvars) "is the variable to be removed is output the do not remove it" ;
+        
+        // Source variable can not be replaced by any expression, it must be a CREF. This because we
+        // can not have rule like c+d -> f
+        (e1 as Exp.CREF(cr1,_),e2) = VarTransform.applyReplacementsExp(repl, e1, e2);
+        failure(_ = VarTransform.getReplacement(repl, cr1));
+        failure(_ = treeGet(states, cr1));
+        isVariable(cr1, vars, knvars);
+        repl_1 = VarTransform.addReplacement(repl, cr1, e2);
+        mvars_1 = treeAdd(mvars, cr1, 0);
+        (eqns_1,seqns_1,mvars_2,repl_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1);
+      then
+        (eqns_1,(SOLVED_EQUATION(cr1,e2) :: seqns_1),mvars_2,repl_2);
+        
+        // try next equation.
     case ((e :: eqns),vars,knvars,mvars,states,repl)
       equation 
         (eqns_1,seqns_1,mvars_1,repl_1) = removeSimpleEquations2(eqns, vars, knvars, mvars, states, repl) "Not a simple variable, check rest" ;
@@ -2611,6 +2646,37 @@ algorithm
         ((e :: eqns_1),seqns_1,mvars_1,repl_1);
   end matchcontinue;
 end removeSimpleEquations2;
+
+protected function negatedAliasEquation "Checks if an equation is on the form a+b=0 or a=-b, 
+i.e. a negated alias. If so, return a and -b as two expressions."
+  input Equation eqn;
+  output Exp.Exp crExp;
+  output Exp.Exp rhsExp;
+algorithm
+  (crExp,rhsExp) := matchcontinue(eqn) 
+  	local
+  	  Exp.Exp e,e1,e2;
+  	  Exp.Type t;
+  	  
+  	  // a+b=0
+    case EQUATION(Exp.BINARY(e1 as Exp.CREF(_,_),Exp.ADD(t),e2 as Exp.CREF(_,_)),e) equation
+      true = Exp.isZero(e);
+      then (e1,Exp.UNARY(Exp.UMINUS(t),e2));
+   
+      // 0 = a+b
+    case EQUATION(e,Exp.BINARY(e1 as Exp.CREF(_,_),Exp.ADD(t),e2 as Exp.CREF(_,_))) equation
+      true = Exp.isZero(e);
+      then (e1,Exp.UNARY(Exp.UMINUS(t),e2)); 
+     
+     // a = -b
+    case EQUATION(e1 as Exp.CREF(_,_),e2 as Exp.UNARY(Exp.UMINUS(_),Exp.CREF(_,_))) 
+      then (e1,e2);
+        
+      // -a = b
+    case EQUATION(e2 as Exp.UNARY(Exp.UMINUS(_),Exp.CREF(_,_)),e1 as Exp.CREF(_,_)) 
+      then (e1,e2);
+  end matchcontinue;
+end negatedAliasEquation;
 
 protected function isTopLevelInputOrOutput "function isTopLevelInputOrOutput
   author: LP
@@ -2879,7 +2945,7 @@ public function simpleEquation "function: simpleEquation
   a = b or a-b=0 
   These functions can be removed from the set of equations.
 "
-  input Equation inEquation;
+  input Equation inEquation; 
   output Exp.ComponentRef outComponentRef1;
   output Exp.ComponentRef outComponentRef2;
 algorithm 
@@ -7656,10 +7722,15 @@ algorithm
    
         eqn_1 = Derive.differentiateEquationTime(eqn, v);
         Debug.fprint("bltdump", "High index problem, differentiated equation: ") "update equation row in IncidenceMatrix" ;
-        str = equationStr(eqn) "	print \"differentiated equation \" &" ;
-        Debug.fprint("bltdump", str) "	print str & print \"\\n\" &" ;
+        str = equationStr(eqn);
+        //print( "differentiated equation ") ;
+        Debug.fprint("bltdump", str)  ;
+        //print(str);
         Debug.fprint("bltdump", " to ");
+        //print(" to ");
         str = equationStr(eqn_1);
+        //print(str);
+        //print("\n");
         Debug.fprint("bltdump", str) "	print \" to \" & print str &  print \"\\n\" &" ;
         Debug.fprint("bltdump", "\n");
         eqns_1 = equationAdd(eqns, eqn_1);

@@ -3145,29 +3145,6 @@ algorithm
   end matchcontinue;
 end makeConstZero;
 
-protected function isConstZero "function: isConstZero
- 
-  Return true if expression is 0
-"
-  input Exp inExp;
-  output Boolean outBoolean;
-algorithm 
-  outBoolean:=
-  matchcontinue (inExp)
-    local
-      Real rval;
-      Exp e;
-    case e
-      equation 
-        rval = intReal(0);
-        equality(e = RCONST(rval));
-      then
-        true;
-    case ICONST(integer = 0) then true; 
-    case (_) then false; 
-  end matchcontinue;
-end isConstZero;
-
 public function makeIntegerExp "creates an integer constant expression given the integer input."
   input Integer i;
   output Exp e;
@@ -3429,21 +3406,21 @@ algorithm
 
     case (_,ADD(ty = ty),e1,e2)
       equation 
-        true = isConstZero(e1);
+        true = isZero(e1);
         e2_1 = simplify(e2);
       then
         e2_1;
 
     case (_,ADD(ty = ty),e1,e2)
       equation 
-        true = isConstZero(e2);
+        true = isZero(e2);
         e1_1 = simplify(e1);
       then
         e1_1;
 
     case (_,SUB(ty = ty),e1,e2)
       equation 
-        true = isConstZero(e1);
+        true = isZero(e1);
         e = UNARY(UMINUS(ty),e2);
         e_1 = simplify(e);
       then
@@ -3451,14 +3428,14 @@ algorithm
 
     case (_,SUB(ty = ty),e1,e2)
       equation 
-        true = isConstZero(e2);
+        true = isZero(e2);
         e1_1 = simplify(e1);
       then
         e1_1;
 
     case (_,SUB(ty = ty),e1,e2)
       equation 
-        true = isConstZero(e2);
+        true = isZero(e2);
         e1_1 = simplify(e1);
       then
         e1_1;
@@ -3483,13 +3460,13 @@ algorithm
 
     case (_,MUL(ty = ty),e1,e2)
       equation 
-        true = isConstZero(e1);
+        true = isZero(e1);
       then
         e1;
 
     case (_,MUL(ty = ty),e1,e2)
       equation 
-        true = isConstZero(e2);
+        true = isZero(e2);
       then
         e2;
 
@@ -3536,13 +3513,13 @@ algorithm
 
     case (_,DIV(ty = ty),e1,e2)
       equation 
-        true = isConstZero(e1);
+        true = isZero(e1);
       then
         RCONST(0.0);
 
     case (_,DIV(ty = ty),e1,e2)
       equation 
-        true = isConstZero(e2);
+        true = isZero(e2);
         s1 = printExpStr(e1);
         s2 = printExpStr(e2);
         Error.addMessage(Error.DIVISION_BY_ZERO, {s1,s2});
@@ -3720,7 +3697,7 @@ algorithm
     case (_,UMINUS(ty = ty),e1)
       equation 
         e1_1 = simplify(e1);
-        true = isConstZero(e1_1);
+        true = isZero(e1_1);
       then
         e1_1;
     case (_,UMINUS(ty = ty),BINARY(exp1 = e1,operator = SUB(ty = ty1),exp2 = e2))
