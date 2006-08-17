@@ -309,4 +309,30 @@ namespace IAEX
 
 		return flag;
 	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-08-17
+	 *
+	 *\brief Ststic method for returning the version of omc
+	 */
+	QString OmcInteractiveEnvironment::OMCVersion()
+	{
+		QString version( "(version)" );
+
+		try
+		{
+			OmcInteractiveEnvironment *env = new OmcInteractiveEnvironment();
+			env->evalExpression( QString( "getVersion()" ));
+			version = env->getResult();
+			version.remove( "\"" );
+			delete env;
+		}
+		catch( exception &e )
+		{
+			QMessageBox::critical( 0, "OMC Error", "Unable to get OMC version, OMC is not started." );
+		}
+
+		return version;
+	}
 }

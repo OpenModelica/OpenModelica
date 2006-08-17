@@ -2327,8 +2327,9 @@ namespace IAEX
 	 */
 	void NotebookWindow::aboutQTNotebook()
 	{
-		QString abouttext = QString("OMNotebook version 2.0 (for OpenModelica v1.4.0)\r\n") + 
-			QString("Copyright 2004-2006, PELAB, Linkoping University\r\n\r\n") + 
+		QString version = OmcInteractiveEnvironment::OMCVersion();
+		QString abouttext = QString("OMNotebook version 2.0 (for OpenModelica ") + version + 
+			QString(")\r\n") + QString("Copyright 2004-2006, PELAB, Linkoping University\r\n\r\n") + 
 			QString("Created by Ingemar Axelsson (2004-2005) and Anders Fernström (2005-2006) as part of their final theses.");
 
 		QMessageBox::about( this, "OMNotebook", abouttext );

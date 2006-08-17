@@ -68,6 +68,7 @@ namespace IAEX
 		virtual void reconnect();					// Added 2006-02-02 AF
 		virtual bool startDelegate();				// Added 2006-02-09 AF
 		static bool startOMC();						// Added 2006-02-09 AF
+		static QString OMCVersion();				// Added 2006-08-17 AF
 
 		
 
