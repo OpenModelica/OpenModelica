@@ -2401,14 +2401,14 @@ algorithm
       equation 
         e_1 = simplifyAsub(e, indx);
       then
-        UNARY(UMINUS(t),e_1);
+        UNARY(UMINUS_ARR(t),e_1);
     case (UNARY(operator = UPLUS_ARR(ty = t),exp = e),indx)
       equation 
         e_1 = simplifyAsub(e, indx);
       then
         UNARY(UPLUS(t),e_1);
     case (BINARY(exp1 = e1,operator = SUB_ARR(ty = t),exp2 = e2),indx)
-      equation 
+      equation
         e1_1 = simplifyAsub(e1, indx);
         e2_1 = simplifyAsub(e2, indx);
       then
