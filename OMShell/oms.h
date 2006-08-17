@@ -136,6 +136,7 @@ private:
 	//QTextEdit* moshError_;
 	QVBoxLayout* layout_;
 	QString clipboard_;
+	QString omc_version_;
 
 	IAEX::InputCellDelegate* delegate_;
 	IAEX::CommandCompletion* commandcompletion_;

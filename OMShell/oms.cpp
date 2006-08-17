@@ -244,6 +244,7 @@ OMS::OMS( QWidget* parent )
 	: QMainWindow( parent )
 {
 	delegate_ = 0;
+	omc_version_ = "(version)";
 
 	mainFrame_ = new QFrame();
 	mainFrame_->setFrameShadow( QFrame::Sunken );
@@ -281,7 +282,7 @@ OMS::OMS( QWidget* parent )
 	statusBar()->showMessage( tr("Ready") );
 
 	// sett start message
-	cursor_.insertText( "OpenModelica 1.4.0\n", textFormat_ );
+	cursor_.insertText( QString("OpenModelica ") + omc_version_ + "\n", textFormat_ );
 	cursor_.insertText( "Copyright 2002-2006, PELAB, Linkoping University\n\n", textFormat_ );
 	cursor_.insertText( "To get help on using OMShell and OpenModelica, type \"help()\" and press enter.\n", textFormat_ );
 
@@ -1109,8 +1110,8 @@ void OMS::viewStatusbar()
 void OMS::aboutOMS()
 {
 	QMessageBox::about(this, "About OMShell",
-		QString("OMShell v1.1 (for OpenModelica v1.4.0)\n") + 
-		QString("Copyright PELAB (c) 2006") );
+		QString("OMShell v1.1 (for OpenModelica ") + omc_version_ + 
+		QString(")\n") + QString("Copyright PELAB (c) 2006") );
 }
 
 void OMS::aboutQT()
@@ -1133,6 +1134,11 @@ bool OMS::startServer()
 		{
 			delegate_ = new IAEX::OmcInteractiveEnvironment();
 			omcNowStarted = true;
+
+			// get version no
+			delegate_->evalExpression( QString("getVersion()") );
+			omc_version_ = delegate_->getResult();
+			omc_version_.remove( "\"" );
 		}
 		catch( exception &e )
 		{
@@ -1148,6 +1154,11 @@ bool OMS::startServer()
 
 				delegate_ = new IAEX::OmcInteractiveEnvironment();
 				omcNowStarted = true;
+
+				// get version no
+				delegate_->evalExpression( QString("getVersion()") );
+				omc_version_ = delegate_->getResult();
+				omc_version_.remove( "\"" );
 			}
 		}
 	}
@@ -1174,7 +1185,7 @@ void OMS::clear()
 	moshEdit_->setFontPointSize( fontSize_ );
 
 	cursor_ = moshEdit_->textCursor();
-	cursor_.insertText( "OpenModelica 1.4.0\n" );
+	cursor_.insertText( QString("OpenModelica ") + omc_version_ + "\n" );
 	cursor_.insertText( "Copyright 2002-2006, PELAB, Linkoping University\n\n" );
 	cursor_.insertText( "To get help on using OMShell and OpenModelica, type \"help()\" and press enter.\n" );
 
