@@ -214,7 +214,7 @@ int euler_main(int argc,char** argv) {
     cout << "usage: " << argv[0]  << " <-f initfile> <-r result file> -m solver:{dassl, euler}" << endl;
     exit(0);
   }
-
+  
   read_input(argc,argv,
              globalData->states,
              globalData->statesDerivatives,
@@ -223,19 +223,26 @@ int euler_main(int argc,char** argv) {
              globalData->nStates,
              globalData->nAlgebraic,
              globalData->nParameters,
-             &start,&stop,&step);
+             &start,&stop,&step);            
   
   long numpoints = long((stop-start)/step)+2;
   
-  // load default initial values.
+  // allocate data for storing results.
   data =  initialize_simdata(numpoints,globalData->nStates,globalData->nAlgebraic);
+  
+  if (sim_verbose) { cout << "Allocated simulation data storage" << endl; }
   
   // Calculate initial values from (fixed) start attributes and intial equation
   // sections
   init=1;
   initial_function();
-  init=0;
-
+  init=0; 
+  
+  if (sim_verbose)  { 
+  	cout << "Performed initial value calutation." << endl; 
+  	cout << "Starting numerical solver at time "<< start << endl;
+  }
+  	
   int npts_per_result=int((stop-start)/(step*(numpoints-2)));
   long actual_points =0 ; // the number of actual points saved
   int pt=0;
@@ -520,6 +527,7 @@ int dassl_main( int argc, char**argv)
   for(i=0; i<globalData->nHelpVars; i++)
     globalData->helpVars[i] = 0;
   
+  
   if (argc == 2 && flagSet("?",argc,argv)) {
     cout << "usage: " << argv[0]  << " <-f initfile> <-r result file> -m solver:{dassl, euler}" << endl;
     exit(0);
@@ -536,6 +544,9 @@ int dassl_main( int argc, char**argv)
              globalData->nParameters,
              &start,&stop,&step);
 
+  // Set starttime for simulation.
+  globalData->timeValue=start;	
+
   numpoints = long((stop-start)/step)+2;
  
   // load default initial values.
@@ -550,18 +561,24 @@ int dassl_main( int argc, char**argv)
   }
   zeroCrossingEnabled = new long[globalData->nZeroCrossing];
   data =  initialize_simdata(5*numpoints,globalData->nStates,globalData->nAlgebraic);
-
-  if(bound_parameters()) {
-    printf("Error calculating bound parameters\n");
-    return -1;
-  }
-
+ 
+	 if (sim_verbose) { cout << "Allocated simulation data storage" << endl; }	
+	 
+	  if(bound_parameters()) {
+	    printf("Error calculating bound parameters\n");
+	    return -1;
+	  }
+		if (sim_verbose) { cout << "Calculated bound parameters" << endl; }		
   // Calculate initial values from (fixed) start attributes and intial equation
   // sections
   init=1;
   if (initialize(init_method)) {
     printf("Error in initialization. Storing results and exiting.\n");
     goto exit;
+  }
+   if (sim_verbose)  { 
+  	cout << "Performed initial value calutation." << endl; 
+  	cout << "Starting numerical solver at time "<< start << endl;
   }
   // Calculate initial derivatives
   if(functionODE()) { 
@@ -573,7 +590,6 @@ int dassl_main( int argc, char**argv)
     printf("Error calculating initial derivatives\n");
     goto exit;
   }
-  globalData->timeValue=start;
   tout = newTime(globalData->timeValue, step); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
  
   function_updateDependents();
@@ -646,6 +662,7 @@ int dassl_main( int argc, char**argv)
 	     function_zeroCrossing, &globalData->nZeroCrossing, jroot);
 
       //functionDAE_res(&t,x,xd,dummy_delta,0,0,0); // Since residual function calculates 
+    
       functionDAE_res(&globalData->timeValue,globalData->states,
                       globalData->statesDerivatives,
                       dummy_delta,0,0,0); // Since residual function calculates 
@@ -654,7 +671,7 @@ int dassl_main( int argc, char**argv)
 
       info[0] = 1;
     }
-    
+  
     if(emit()) {
       printf("Error, could not save data. Not enought space.\n"); 
     }
@@ -672,6 +689,9 @@ int dassl_main( int argc, char**argv)
 					      // alg vars too.
     functionDAE_output();  // descrete variables should probably be seperated so that the can be emited before and after the event.    
   } // end while
+
+  	if (sim_verbose) { cout << "Simulation stoped at time " << globalData->timeValue << endl; }		
+
 
  exit:
   if(emit()) {
@@ -904,19 +924,34 @@ void add_result(double *data, long *actual_points)
     cerr << "np from file: "<<npchk<<endl;
     exit(-1);
   }
-  for(int i = 0; i < nx; i++) { // Read x initial values
+  for(int i = 0; i < nx; i++) { // Read x initial values  	
     read_commented_value(file,&x[i]);
+    if (sim_verbose) {
+    cout << "read " << getName(&x[i]) << " = " << x[i] << " from init file." << endl;
+    }
   }
  for(int i = 0; i < nx; i++) { // Read der(x) initial values
     read_commented_value(file,&xd[i]);
+    if (sim_verbose) {
+    cout << "read " << getName(&xd[i]) << " = " << xd[i] << " from init file." << endl;
+    }
   }
  for(int i = 0; i < ny; i++) { // Read y initial values
     read_commented_value(file,&y[i]);
+    if (sim_verbose) {
+    cout << "read " << getName(&y[i]) << " = " << y[i] << " from init file." << endl;
+    }
   }
  for(int i = 0; i < np; i++) { // Read parameter values
     read_commented_value(file,&p[i]);
+    if (sim_verbose) {
+    cout << "read" << getName(&p[i]) << " = " << p[i] << " from init file." << endl;
+    }
   }
  file.close();
+ if (sim_verbose) {
+ 	cout << "Read parameter data from file " << *filename << endl;
+ }
 }
 
 

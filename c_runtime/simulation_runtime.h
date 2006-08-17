@@ -250,6 +250,8 @@ void deInitializeDataStruc(DATA* data, DATA_FLAGS flags);
  */ 
 void setLocalData(DATA* data);
 
+// defined in model code. Used to get name of variable by investigating its pointer in the state or alg vectors.
+char* getName(double* ptr);
 
 /*used in DDASRT fortran function*/
 int 

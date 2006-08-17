@@ -217,6 +217,11 @@ algorithm
       equation 
         cname = Absyn.pathString(class_);
         (blt_states,blt_no_states) = DAELow.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
+				Debug.fcall("bltdump",print," state blocks (dynamic section):");
+				Debug.fcall("bltdump",DAELow.dumpComponents,blt_states);
+				Debug.fcall("bltdump",print," algebraic blocks (accepted section):");
+				Debug.fcall("bltdump",DAELow.dumpComponents,blt_no_states);
+
         (out_str,n_o) = generateOutputFunctionCode(dlow);
         (in_str,n_i) = generateInputFunctionCode(dlow);
         (c_eventchecking,helpVarInfo) = generateEventCheckingCode(dlow, blt_states, ass1, ass2, m, mt, class_);
@@ -3695,6 +3700,8 @@ algorithm
     case ((d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_TIME_VARYING(),cg_id)  
       local list<tuple<Integer, Integer, DAELow.Equation>> jac;
       equation 
+        //print("linearSystem of equations:");
+        //DAELow.dump(d);
         eqn_size = DAELow.equationSize(eqn);
         unique_id = tick();
         (s1,cg_id1) = generateOdeSystem2Declaration(eqn_size, unique_id, cg_id);

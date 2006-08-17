@@ -52,10 +52,10 @@ for(int i=0; i<n; i++) ipiv[i] = 0; \
 long int info; /* output */ \
 dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
  if (info < 0) { \
-   printf("Error solving linear system of equations (no. %d). Argument %d illegal.\n",id,info); \
+   printf("Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,localData->timeValue,info); \
  } \
  else if (info > 0) { \
-   printf("Error sovling linear system of equations (no. %d), system is singular.\n",id); \
+   printf("Error sovling linear system of equations (no. %d) at time %f, system is singular.\n",id,localData->timeValue); \
  } \
 } while (0) /* (no trailing ; ) */ 
 
