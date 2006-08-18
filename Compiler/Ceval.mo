@@ -2744,8 +2744,8 @@ algorithm
         libsfilename = stringAppend(fileprefix, ".libs");
         libs_str = Util.stringDelimitList(libs, " ");
         System.writeFile(libsfilename, libs_str);
-        s_call = Util.stringAppendList({"\"",omhome_1,pd,"bin",pd,"Compile","\""," ",fileprefix,
-        " ", omhome_1});
+        s_call = Util.stringAppendList({"set OPENMODELICAHOME=",omhome_1,"&& \"",
+        omhome_1,pd,"bin",pd,"Compile","\""," ",fileprefix});
 //        print(s_call);
       	0 = System.systemCall(s_call)  ;
       then
@@ -2761,7 +2761,7 @@ algorithm
         libs_str = Util.stringDelimitList(libs, " ");
         libsfilename = stringAppend(fileprefix, ".libs");
         System.writeFile(libsfilename, libs_str);
-        s_call = Util.stringAppendList({command," ",fileprefix," ",omhome_1});
+        s_call = Util.stringAppendList({"set OPENMODELICAHOME=",omhome_1,"&& ",command," ",fileprefix});
 //         print(s_call);
         0 = System.systemCall(s_call) ;
       then
