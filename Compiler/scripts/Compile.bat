@@ -1,6 +1,7 @@
 @echo off
 set GCC_EXEC_PREFIX=
 set OLDPATH=%PATH%
+set OPENMODELICAHOME=%2
 pushd "%OPENMODELICAHOME%\MinGW\bin"
 set PATH=%CD%;%PATH%
 popd
