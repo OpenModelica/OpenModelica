@@ -1856,6 +1856,13 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
 
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "getInstallationDirectoryPath"),expLst = {}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      local String res;
+      equation 
+        res = Settings.getInstallationDirectoryPath();
+      then
+        (cache,Values.STRING(res),st);
+
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "setModelicaPath"),expLst = {Exp.SCONST(string = cmd)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
         cmd = Util.rawStringToInputString(cmd);
@@ -2725,7 +2732,9 @@ algorithm
     local
       String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,s_call,fileprefix,file_dir,command,filename,str;
       list<String> libs;
-    case (fileprefix,libs,file_dir) /* executable name external libs directory for mo-file */ 
+      
+      // If compileCommand not set, use <installationDirectory>\bin\Compile
+    case (fileprefix,libs,file_dir) 
       equation 
         "" = Settings.getCompileCommand();
         pd = System.pathDelimiter();
@@ -2735,12 +2744,13 @@ algorithm
         libsfilename = stringAppend(fileprefix, ".libs");
         libs_str = Util.stringDelimitList(libs, " ");
         System.writeFile(libsfilename, libs_str);
-        s_call = Util.stringAppendList({"\"",omhome_1,pd,"bin",pd,"Compile","\""," ",fileprefix/*," \"",omhome_1,"\""*/});
+        s_call = Util.stringAppendList({"\"",omhome_1,pd,"bin",pd,"Compile","\""," ",fileprefix,
+        " ", omhome_1});
 //        print(s_call);
-//        print("<<<<<\n");
-      0 = System.systemCall(s_call) "> output.log 2>&1 = redirect stderr to stdout and put it in output.log print s_call & print \"\\n\" &" ;
+      	0 = System.systemCall(s_call)  ;
       then
         ();
+        // If compileCommand is set.
     case (fileprefix,libs,file_dir)
       equation 
         command = Settings.getCompileCommand();
@@ -2751,17 +2761,41 @@ algorithm
         libs_str = Util.stringDelimitList(libs, " ");
         libsfilename = stringAppend(fileprefix, ".libs");
         System.writeFile(libsfilename, libs_str);
-        s_call = Util.stringAppendList({command," ",fileprefix/*," \"",omhome_1,"\""*/}) ;
+        s_call = Util.stringAppendList({command," ",fileprefix," ",omhome_1});
 //         print(s_call);
-//         print("<<<<<222\n");
-        0 = System.systemCall(s_call) "> output.log 2>&1 = redirect stderr to stdout and put it in output.log print s_call & print \"\\n\" &" ;
+        0 = System.systemCall(s_call) ;
       then
-        ();
+        ();     
+        
     case (fileprefix,libs,file_dir) /* compilation failed\\n */ 
       equation 
         filename = Util.stringAppendList({fileprefix,".log"});
         0 = System.regularFileExists(filename);
         str = System.readFile(filename);
+        Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
+      then
+        fail();
+       case (fileprefix,libs,file_dir)
+         local Integer retVal;
+      equation 
+        command = Settings.getCompileCommand();
+        false = Util.isEmptyString(command);
+        retVal = System.regularFileExists(command);
+        true = retVal != 0; 
+        str=Util.stringAppendList({"command ",command," not found. Check OPENMODELICAHOME"});
+        Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
+        then fail();
+        
+        case (fileprefix,libs,file_dir) /* compilation failed\\n */ 
+          local Integer retVal;
+      equation  
+        omhome = Settings.getInstallationDirectoryPath();
+        omhome_1 = System.stringReplace(omhome, "\"", "");
+        pd = System.pathDelimiter();
+        s_call = Util.stringAppendList({"\"",omhome_1,pd,"bin",pd,"Compile.bat","\""});
+        retVal = System.regularFileExists(s_call);
+        true = retVal != 0; 
+        str=Util.stringAppendList({"command ",s_call," not found. Check OPENMODELICAHOME"});
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
       then
         fail();

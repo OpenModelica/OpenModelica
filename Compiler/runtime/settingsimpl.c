@@ -5,10 +5,8 @@
 #include <malloc.h>
 
 char* compileCommand = 0;
-char* installationDirectoryPath = 0;
 char* tempDirectoryPath = 0;
 char* plotCommand = 0;
-char* modelicaPath = 0;
 int echo = 1; //true
 void Settings_5finit(void)
 {
@@ -79,8 +77,7 @@ RML_BEGIN_LABEL(Settings__setInstallationDirectoryPath)
 {
   char* command = RML_STRINGDATA(rmlA0);
   char* omhome = 0;
-  if(installationDirectoryPath)
-    free(installationDirectoryPath);
+  char* installationDirectoryPath = NULL;
 
   installationDirectoryPath = (char*)malloc(strlen(command)+1);
   if (installationDirectoryPath == NULL) {
@@ -110,9 +107,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Settings__getInstallationDirectoryPath)
 {
-  if(installationDirectoryPath)
-    rmlA0 = (void*) mk_scon(strdup(installationDirectoryPath));
-  else{
+ 
     char *path = getenv("OPENMODELICAHOME");
     if (path == NULL) {
       rmlA0 = (void*) mk_scon("");
@@ -120,7 +115,7 @@ RML_BEGIN_LABEL(Settings__getInstallationDirectoryPath)
     }
     else
       rmlA0 = (void*) mk_scon(path);
-  }
+  
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -154,8 +149,8 @@ RML_END_LABEL
 RML_BEGIN_LABEL(Settings__setModelicaPath)
 {
   char* command = RML_STRINGDATA(rmlA0);
-  if(modelicaPath)
-    free(modelicaPath);
+  char* mmpath;
+  char* modelicaPath = NULL;
 
   modelicaPath = (char*)malloc(strlen(command)+1);
   if (modelicaPath == NULL) {
@@ -163,24 +158,37 @@ RML_BEGIN_LABEL(Settings__setModelicaPath)
   }
   memcpy(modelicaPath,command,strlen(command)+1);
 
+ /* create a str of the form: MODELICAPATH=<PATH>*/
+  mmpath = (char*)malloc(strlen(command)+1+strlen("MODELICAPATH="));
+  if (mmpath == NULL) {
+    RML_TAILCALLK(rmlFC);
+  }
+  strncpy(mmpath,"MODELICAPATH=",strlen("MODELICAPATH="));
+  mmpath[strlen("MODELICAPATH=")+1]='\0';
+  strncat(mmpath,command,strlen(command));
+  /*set the env-var to created string
+   this is useful when scripts and clients started
+  by omc wants to use OPENMODELICAHOME*/
+    if( putenv(mmpath) != 0) // adrpo: in Linux there is not _putenv if( _putenv(omhome) != 0)
+  {
+    RML_TAILCALLK(rmlFC);
+  }
+
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(Settings__getModelicaPath)
 {
-  if(modelicaPath)
-    rmlA0 = (void*) mk_scon(strdup(modelicaPath));
-  else{
-    char *path = getenv("MODELICAPATH");
-    if (path == NULL) {
-      rmlA0 = (void*) mk_scon("");
-      RML_TAILCALLK(rmlFC);
-    }
-    else
-      rmlA0 = (void*) mk_scon(path);
-  }
-  RML_TAILCALLK(rmlSC);
+	 
+	 char *path = getenv("MODELICAPATH");
+	 if (path == NULL) {
+	    rmlA0 = (void*) mk_scon("");
+	    RML_TAILCALLK(rmlFC);
+	  }
+	  else
+	    rmlA0 = (void*) mk_scon(path);
+	 RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -207,17 +215,12 @@ RML_BEGIN_LABEL(Settings__dumpSettings)
   if(compileCommand) 
     printf("compile command: %s\n",compileCommand);
 
-  if(installationDirectoryPath) 
-    printf("installation directory path: %s\n",installationDirectoryPath);
  
   if(tempDirectoryPath) 
     printf("temp directory path: %s\n",tempDirectoryPath);
  
   if(plotCommand) 
     printf("plot command: %s\n",plotCommand);
-
-  if(modelicaPath) 
-    printf("modelica path: %s\n",modelicaPath);
 
 
   RML_TAILCALLK(rmlSC);

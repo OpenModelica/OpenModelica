@@ -490,7 +490,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__pathDelimiter)
 {
-  rmlA0 = (void*) mk_scon("\\");
+  rmlA0 = (void*) mk_scon("/");
 
   RML_TAILCALLK(rmlSC);
 }
@@ -606,7 +606,8 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__readEnv)
 {
   char* envname = RML_STRINGDATA(rmlA0);
-  char *envvalue = getenv(envname);
+  char *envvalue;
+  envvalue = getenv(envname);
   if (envvalue == NULL) {
     RML_TAILCALLK(rmlFC);
   }
@@ -624,7 +625,7 @@ RML_BEGIN_LABEL(System__setEnv)
   int setenv_result = 0;
   char *temp = (char*)malloc(strlen(envname)+strlen(envvalue)+2);
   sprintf(temp,"%s=%s", envname, envvalue);
-  setenv_result = _putenv(temp); 
+  setenv_result = putenv(temp); 
   rmlA0 = (void*) mk_icon(setenv_result);
   RML_TAILCALLK(rmlSC);
 }

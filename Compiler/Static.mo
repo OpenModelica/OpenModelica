@@ -4404,6 +4404,12 @@ algorithm
 
     case (cache,env,Absyn.CREF_IDENT(name = "setInstallationDirectoryPath"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setInstallationDirectoryPath"),
           {Exp.SCONST(str)},false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st)); 
+   
+    case (cache,env,Absyn.CREF_IDENT(name = "getInstallationDirectoryPath"),{},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("getInstallationDirectoryPath"),
+          {},false,true),Types.PROP((Types.T_STRING({}),NONE),Types.C_VAR()),SOME(st)); 
+
+		case (cache,env,Absyn.CREF_IDENT(name = "setModelicaPath"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setModelicaPath"),
+          {Exp.SCONST(str)},false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "setCompilerFlags"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, Exp.CALL(Absyn.IDENT("setCompilerFlags"),{Exp.SCONST(str)},false,
           true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st)); 
