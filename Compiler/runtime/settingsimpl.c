@@ -164,7 +164,7 @@ RML_BEGIN_LABEL(Settings__setModelicaPath)
     RML_TAILCALLK(rmlFC);
   }
   strncpy(mmpath,"MODELICAPATH=",strlen("MODELICAPATH="));
-  mmpath[strlen("MODELICAPATH=")+1]='\0';
+  mmpath[strlen("MODELICAPATH=")]='\0';
   strncat(mmpath,command,strlen(command));
   /*set the env-var to created string
    this is useful when scripts and clients started
