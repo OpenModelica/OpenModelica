@@ -3851,7 +3851,7 @@ algorithm
         (s1,cg_id_1,f1);
     case (_,_,_)
       equation 
-        Error.addMessage(Error.INTERNAL_ERROR, 
+                Error.addMessage(Error.INTERNAL_ERROR, 
           {
           "array equations currently only supported on form v = functioncall(...)"});
       then
@@ -3951,9 +3951,19 @@ algorithm
       list<String> strs;
       String s;
       list<Exp.Exp> expl;
+      list<list<tuple<Exp.Exp, Boolean>>> column; 
     case (Exp.ARRAY(array = expl))
       equation 
-        ((crefs as (cr :: _))) = Util.listMap(expl, Exp.expCref);
+        ((crefs as (cr :: _))) = Util.listMap(expl, Exp.expCref); //Get all CRefs from exp1.
+        crefs_1 = Util.listMap(crefs, Exp.crefStripLastSubsStringified); //Strip last subscripts
+        strs = Util.listMap(crefs_1, Exp.printComponentRefStr); //convert crefs to strings
+        s = Util.stringDelimitList(strs, ","); //convert to comma-separated form
+        _ = Util.listReduce(crefs_1, Exp.crefEqualReturn); //Check if elements are equal, remove one
+      then
+        cr;
+    case (Exp.MATRIX(scalar = column))
+      equation 
+        ((crefs as (cr :: _))) = Util.listMap(column, getVectorizedCrefFromExpMatrix);
         crefs_1 = Util.listMap(crefs, Exp.crefStripLastSubsStringified);
         strs = Util.listMap(crefs_1, Exp.printComponentRefStr);
         s = Util.stringDelimitList(strs, ",");
@@ -3962,6 +3972,44 @@ algorithm
         cr;
   end matchcontinue;
 end getVectorizedCrefFromExp;
+
+protected function getVectorizedCrefFromExpMatrix "function: getVectorizedCrefFromExpMatrix 
+  author: KN
+ 
+  Helper function for the 2D part of getVectorizedCrefFromExp
+  Returns the component ref v if list of expressions is on form
+   {v{1},v{2},...v{n}}  for some n.
+"
+  input list<tuple<Exp.Exp, Boolean>> column; //One column in a matrix.
+  output Exp.ComponentRef outComponentRef; //The expanded column
+algorithm 
+  outComponentRef:=
+  matchcontinue (column)
+    local
+      list<tuple<Exp.Exp, Boolean>> col;
+      list<Exp.ComponentRef> crefs,crefs_1;
+      Exp.ComponentRef cr;
+      list<String> strs;
+      String s;
+      list<Exp.Exp> expl;
+    case (col)
+      equation 
+        ((crefs as (cr :: _))) = Util.listMap(col, Exp.expCrefTuple); //Get all CRefs from the list of tuples.
+        crefs_1 = Util.listMap(crefs, Exp.crefStripLastSubsStringified); //Strip last subscripts
+        strs = Util.listMap(crefs_1, Exp.printComponentRefStr); //convert crefs to strings
+        s = Util.stringDelimitList(strs, ","); //convert to comma-separated form
+        _ = Util.listReduce(crefs_1, Exp.crefEqualReturn); //Check if elements are equal, remove one
+      then
+        cr;
+		case (_)
+		  equation
+      then
+        fail();
+  end matchcontinue;
+end getVectorizedCrefFromExpMatrix;
+
+
+
 
 protected function singleAlgorithmSection "function: singleAlgorithmSection
   author: PA

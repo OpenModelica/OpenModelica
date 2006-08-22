@@ -153,18 +153,36 @@ int read_real_array(FILE* file, real_array_t* arr)
   read_to_eol(file);
   return 0;
 }
-/*
-void read_integer_array(FILE* file, integer_array_t* arr)
+
+int read_integer_array(FILE* file, integer_array_t* arr)
 {
+	
   int nr_elements;
   int i;
+  int f;
+  integer_array_t tmp;
+  type_description desc;
+
+  if (read_type_description(file,&desc)) { in_report("ia type_desc"); return 1; }
+  if ((desc.type != 'r') && (desc.type != 'i')) { in_report("ia type"); return 1; }
+  if (desc.ndims <= 0) { in_report("a ndims"); return 1; }
+  
+  tmp.ndims = desc.ndims;
+  tmp.dim_size = desc.dim_size;
+  clone_integer_array_spec(&tmp,arr);
+  alloc_integer_array_data(arr);
+  cleanup_description(&desc);
+
   nr_elements = integer_array_nr_of_elements(arr);
   for (i = 0; i < nr_elements; ++i)
     {
-      fscanf(file,"%d",arr->data + i);
+      if (fscanf(file,"%d",&f) != 1) { in_report("ia parse"); return 1; }
+      arr->data[i] = f;
     }
+  read_to_eol(file);
+  return 0;
 }
-*/
+
 int write_modelica_real(FILE* file, modelica_real* data)
 {
   fprintf(file,"# r!\n");

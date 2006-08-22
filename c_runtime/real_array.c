@@ -100,10 +100,17 @@ void check_dim_sizes_except(int k, real_array_t **elts,int n)
   }
   for (curdim = 0; curdim < ndims; curdim++) {
     if (curdim != k_loc) {
-      dimsize = elts[0]->dim_size[curdim];
-      for(i=1; i<n ; i++) {
-	assert(dimsize == elts[i]->dim_size[curdim]&&"Dimensions size not same");
-      }
+    	/*printf("testdjur curdim=%d, ndims=%d, k=%d",curdim, ndims, k);
+    	fflush(stdout);*/
+    	assert(elts[0]);
+    	assert(elts[0]->dim_size[curdim]);
+        dimsize = elts[0]->dim_size[curdim];
+      
+    	/*printf(" - ok\n");
+    	fflush(stdout);*/
+    	  for(i=1; i<n ; i++) {
+			assert(dimsize == elts[i]->dim_size[curdim]&&"Dimensions size not same");
+          }
     }
   }
 
@@ -821,13 +828,15 @@ void cat_real_array(int k, real_array_t* dest,  int n, real_array_t* first,...)
  */
 void cat_alloc_real_array(int k, real_array_t* dest, int n, real_array_t* first,...)
 {
-  va_list ap; int i;
+  va_list ap; 
+  int i;
   int new_k_dim_size;
   real_array_t **elts=malloc(sizeof(real_array_t*)*n);
   assert(elts);
   /* collect all array ptrs to simplify traversal.*/
   va_start(ap,first);
   elts[0] = first;
+  fflush(stdout);
   for (i=1; i < n ; i++) {
     elts[i] = va_arg(ap,real_array_t*);
   }
@@ -1205,6 +1214,8 @@ void promote_real_array(real_array_t* a, int n,real_array_t* dest)
     {
       dest->dim_size[i] = 1;
     }
+    
+    dest->ndims=n;
 }
 
 /* function: promote_scalar_real_array

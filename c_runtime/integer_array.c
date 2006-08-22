@@ -30,7 +30,7 @@
 int integer_array_ok(integer_array_t* a)
 {
     int i;
-    if (!a) return 0;
+	if (!a) return 0;
     if (a->ndims < 0) return 0;
     if (!a->dim_size) return 0;
     for (i = 0; i < a->ndims; ++i) 
@@ -627,9 +627,22 @@ void array_scalar_integer_array(integer_array_t* dest,int n,modelica_integer fir
 
 }
 
+/* Allocate space for array of arrays
+ * Author: KN
+ * 
+ */
 void array_alloc_scalar_integer_array(integer_array_t* dest,int n,modelica_integer first,...)
 {
-
+  int i;
+  va_list ap;
+  simple_alloc_1d_integer_array(dest,n);
+  va_start(ap,first);      
+  put_integer_element(first,0,dest);
+  for (i = 1; i < n; ++i)
+    {
+      put_integer_element(va_arg(ap,m_integer),i,dest);
+    }
+  va_end(ap);
 }
 
 modelica_integer* integer_array_element_addr1(integer_array_t* source,int ndims,int dim1)
@@ -1001,6 +1014,7 @@ int ndims_integer_array(integer_array_t* a)
 
 int size_of_dimension_integer_array(integer_array_t a, int i)
 {
+
   assert(integer_array_ok(&a));
   assert((i > 0) && (i <= a.ndims));
 

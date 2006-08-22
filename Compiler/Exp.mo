@@ -7173,6 +7173,21 @@ algorithm
   end matchcontinue;
 end expCref;
 
+public function expCrefTuple "function: expCrefTuple
+ 
+  Returns the componentref if the expression in inTuple is a CREF,
+"
+  input tuple<Exp, Boolean> inTuple;
+  output ComponentRef outComponentRef;
+algorithm 
+  outComponentRef:=
+  matchcontinue (inTuple)
+    local ComponentRef cr;
+    case ((CREF(componentRef = cr),_)) then cr; 
+  end matchcontinue;
+end expCrefTuple;
+
+
 public function traverseExp "function traverseExp
  
   Traverses all subexpressions of an expression.

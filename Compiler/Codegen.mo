@@ -4297,7 +4297,7 @@ end generateIndices;
 
 protected function generateIndexArray "function: generateIndexArray
  
-  Helper relatoin to generate_indices_array
+  Helper relatiin to generate_indices_array
 "
   input Exp.Subscript inSubscript;
   input Integer inInteger;
