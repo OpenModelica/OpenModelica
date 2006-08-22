@@ -232,8 +232,7 @@ int euler_main(int argc,char** argv) {
   
   if (sim_verbose) { cout << "Allocated simulation data storage" << endl; }
   
-  // Calculate initial values from (fixed) start attributes and intial equation
-  // sections
+  // Calculate initial values from (fixed) start attributes 
   init=1;
   initial_function();
   init=0; 
@@ -572,6 +571,8 @@ int dassl_main( int argc, char**argv)
   // Calculate initial values from (fixed) start attributes and intial equation
   // sections
   init=1;
+  initial_function(); // calculates e.g. start values depending on e.g parameters.
+  
   if (initialize(init_method)) {
     printf("Error in initialization. Storing results and exiting.\n");
     goto exit;

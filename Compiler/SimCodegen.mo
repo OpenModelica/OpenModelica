@@ -2468,8 +2468,7 @@ algorithm
       DAELow.MultiDimEquation[:] ae;
       Algorithm.Algorithm[:] al;
       DAELow.EventInfo ev;
-    case (DAELow.DAELOW(orderedVars = vars,knownVars = knvars,orderedEqs = eqns,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = ev)) /* Removed with initial equations. Did not work correct. And 
-	  initial_function is deprecated anyway. without initial equations */ 
+    case (DAELow.DAELOW(orderedVars = vars,knownVars = knvars,orderedEqs = eqns,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = ev))  
       equation 
         vars_lst = DAELow.varList(vars);
         knvars_lst = DAELow.varList(knvars);

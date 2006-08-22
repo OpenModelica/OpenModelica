@@ -383,6 +383,8 @@ protected import OpenModelica.Compiler.Static;
 
 protected import OpenModelica.Compiler.Env;
 
+protected import OpenModelica.Compiler.System;
+
 protected constant Exp rconstone=RCONST(1.0);
 
 
@@ -4755,6 +4757,8 @@ algorithm
   end matchcontinue;
 end lbinopSymbol;
 
+
+
 public function lunaryopSymbol "function: lunaryopSymbol
  
   Return string representation of logical unary operator.
@@ -4767,6 +4771,9 @@ algorithm
     case (NOT()) then " NOT "; 
   end matchcontinue;
 end lunaryopSymbol;
+
+
+
 
 public function relopSymbol "function: relopSymbol
  
@@ -4785,6 +4792,8 @@ algorithm
     case (NEQUAL(ty = _)) then " <> "; 
   end matchcontinue;
 end relopSymbol;
+
+
 
 public function printList "function: printList
  
@@ -4832,6 +4841,8 @@ algorithm
   es_1 := Util.listMap(es, Util.tuple21);
   printList(es_1, printExp, ",");
 end printRow;
+
+
 
 public function printComponentRefStr "function: print_component_ref
  
@@ -5265,6 +5276,7 @@ algorithm
   end matchcontinue;
 end printExp2Str;
 
+
 public function printRowStr "function: printRowStr
  
   Prints a list of expressions to a string.
@@ -5276,6 +5288,9 @@ algorithm
   es_1 := Util.listMap(es, Util.tuple21);
   s := printListStr(es_1, printExpStr, ",");
 end printRowStr;
+
+
+
 
 public function printLeftparStr "function: printLeftparStr
  

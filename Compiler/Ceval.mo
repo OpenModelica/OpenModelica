@@ -1886,8 +1886,9 @@ algorithm
         pd = System.pathDelimiter();
         executableSuffixedExe = stringAppend(executable, ".exe");
         sim_call = Util.stringAppendList(
-          {cit,".",pd,executableSuffixedExe,cit," -m ",method_str,
+          {cit,executableSuffixedExe,cit," -m ",method_str,
           " > output.log 2>&1"});
+          //print(sim_call);
         0 = System.systemCall(sim_call);
         result_file = Util.stringAppendList({executable,"_res.plt"});
         simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),
@@ -2746,7 +2747,7 @@ algorithm
         System.writeFile(libsfilename, libs_str);
         s_call = Util.stringAppendList({"set OPENMODELICAHOME=",omhome_1,"&& \"",
         omhome_1,pd,"bin",pd,"Compile","\""," ",fileprefix});
-//        print(s_call);
+        //print(s_call);
       	0 = System.systemCall(s_call)  ;
       then
         ();
