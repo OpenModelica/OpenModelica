@@ -199,7 +199,7 @@ algorithm
       then
         (cache,v,st);
     case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = (builtin as true))),impl,(st as NONE),_,msg)
-      equation 
+      equation  
         (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
         (cache,newval) = cevalCallFunction(cache,env, e, vallst, msg);
       then
@@ -277,6 +277,14 @@ algorithm
         fail();
   end matchcontinue;
 end cevalBuiltinHandler;
+
+
+
+
+
+
+
+
 
 public function ceval "function: ceval
  
@@ -407,6 +415,7 @@ algorithm
       then
         (cache,v,st);
 
+    //Evaluates for build in types. ADD, SUB, MUL, DIV for Reals and Integers.
     case (cache,env,exp,impl,st,dim,msg)
       local
         Exp.Exp exp;
@@ -416,54 +425,9 @@ algorithm
       then
         (cache,v,st_1);
 
-    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.POW(ty = Exp.INT()),exp2 = rh),impl,st,dim,msg)
-      local Option<Integer> dim;
-      equation 
-        (cache,Values.INTEGER(lhv),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
-        (cache,Values.INTEGER(rhv),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
-        lhvr = intReal(lhv);
-        rhvr = intReal(rhv);
-        resr = realPow(lhvr, rhvr);
-        res = realInt(resr);
-      then
-        (cache,Values.INTEGER(res),st_2);
 
-    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.POW(ty = Exp.REAL()),exp2 = rh),impl,st,dim,msg)
-      local
-        Real lhv;
-        Option<Integer> dim;
-      equation 
-        (cache,Values.REAL(lhv),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
-        (cache,Values.INTEGER(rhv),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
-        rhvr = intReal(rhv);
-        resr = realPow(lhv, rhvr);
-      then
-        (cache,Values.REAL(resr),st_2);
-
-    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.POW(ty = Exp.REAL()),exp2 = rh),impl,st,dim,msg)
-      local
-        Real rhv;
-        Option<Integer> dim;
-      equation 
-        (cache,Values.INTEGER(lhv),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
-        (cache,Values.REAL(rhv),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
-        lhvr = intReal(lhv);
-        resr = realPow(lhvr, rhv);
-      then
-        (cache,Values.REAL(resr),st_2);
-
-    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.POW(ty = Exp.REAL()),exp2 = rh),impl,st,dim,msg)
-      local
-        Real lhv,rhv;
-        Option<Integer> dim;
-      equation 
-        (cache,Values.REAL(lhv),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
-        (cache,Values.REAL(rhv),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
-        resr = realPow(lhv, rhv);
-      then
-        (cache,Values.REAL(resr),st_2);
-
-    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),impl,st,_,msg) /* Call functions FIXME: functions are always generated. Put back the check
+    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),impl,st,_,msg) 
+      /* Call functions FIXME: functions are always generated. Put back the check
 	  and write another rule for the false case that generates the function */ 
 	  local String s; list<String> ss;
       equation
@@ -619,61 +583,85 @@ algorithm
       then
         (cache,Values.ARRAY(res),st_2);
 
-    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.ADD(ty = Exp.INT()),exp2 = rh),impl,st,dim,msg)
-      local
-        Integer sum;
-        Option<Integer> dim;
-      equation 
-        (cache,Values.INTEGER(lhv),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
-        (cache,Values.INTEGER(rhv),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
-        sum = lhv + rhv;
-      then
-        (cache,Values.INTEGER(sum),st_2);
 
-    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.SUB(ty = Exp.REAL()),exp2 = rh),impl,st,dim,msg) /*  */ 
-      local
-        Real lhv,rhv;
-        Option<Integer> dim;
-      equation 
-        (cache,Values.REAL(lhv),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
-        (cache,Values.REAL(rhv),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
-        sum = lhv -. rhv;
-      then
-        (cache,Values.REAL(sum),st_2);
 
-    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.SUB(ty = Exp.INT()),exp2 = rh),impl,st,dim,msg)
-      local
-        Integer sum;
-        Option<Integer> dim;
-      equation 
-        (cache,Values.INTEGER(lhv),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
-        (cache,Values.INTEGER(rhv),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
-        sum = lhv - rhv;
-      then
-        (cache,Values.INTEGER(sum),st_2);
 
-    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.MUL(ty = Exp.REAL()),exp2 = rh),impl,st,dim,msg) /*  */ 
+		//POW (integer or real)
+    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.POW(ty=_),exp2 = rh),impl,st,dim,msg)
       local
-        Real lhv,rhv;
+        Values.Value res1, res2, res3;
         Option<Integer> dim;
-      equation 
-        (cache,Values.REAL(lhv),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
-        (cache,Values.REAL(rhv),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
-        sum = lhv*.rhv;
-      then
-        (cache,Values.REAL(sum),st_2);
+      equation
+        (cache,res1,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
+        (cache,res2,st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);        
+				res3 = Values.safeIntRealOp(res1, res2, Values.POWOP);
+      then 
+        (cache,res3,st_2);
 
-    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.DIV(ty = Exp.REAL()),exp2 = rh),impl,st,dim,msg)
+
+		//MUL (integer or real)
+    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.MUL(ty=_),exp2 = rh),impl,st,dim,msg)
+      local
+        Values.Value res1, res2, res3;
+        Option<Integer> dim;
+      equation
+        (cache,res1,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
+        (cache,res2,st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);        
+				res3 = Values.safeIntRealOp(res1, res2, Values.MULOP);
+      then
+        (cache,res3,st_2);
+
+		//DIV (integer or real)
+    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.DIV(ty=_),exp2 = rh),impl,st,dim,msg)
+      local
+        Values.Value res1, res2, res3;
+        Option<Integer> dim;
+      equation
+        (cache,res1,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
+        (cache,res2,st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);        
+				res3 = Values.safeIntRealOp(res1, res2, Values.DIVOP);
+      then
+        (cache,res3,st_2);
+
+		//DIV (handle div by zero)
+    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.DIV(ty =_),exp2 = rh),impl,st,dim,msg)
       local
         Real lhv,rhv;
         Option<Integer> dim;
       equation 
-        (cache,Values.REAL(lhv),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
-        (cache,Values.REAL(rhv),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
-        div = lhv/.rhv;
+        lh_str = Exp.printExpStr(lh);
+        rh_str = Exp.printExpStr(rh);
+        Error.addMessage(Error.DIVISION_BY_ZERO, {lh_str,rh_str});
       then
-        (cache,Values.REAL(div),st_2);
+        fail();
 
+
+		//ADD (integer or real)
+    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.ADD(ty=_),exp2 = rh),impl,st,dim,msg)
+      local
+        Values.Value res1, res2, res3;
+        Option<Integer> dim;
+      equation
+        (cache,res1,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
+        (cache,res2,st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);        
+				res3 = Values.safeIntRealOp(res1, res2, Values.ADDOP);
+      then
+        (cache,res3,st_2);
+
+		//SUB (integer or real)
+    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.SUB(ty=_),exp2 = rh),impl,st,dim,msg)
+      local
+        Values.Value res1, res2, res3;
+        Option<Integer> dim;
+      equation
+        (cache,res1,st_1) = ceval(cache,env, lh, impl, st, dim, msg);
+        (cache,res2,st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);        
+				res3 = Values.safeIntRealOp(res1, res2, Values.SUBOP);
+      then
+        (cache,res3,st_2);
+
+
+/*
     case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.DIV(ty = Exp.REAL()),exp2 = rh),impl,st,dim,msg)
       local
         Real lhv,rhv;
@@ -687,18 +675,11 @@ algorithm
         Error.addMessage(Error.DIVISION_BY_ZERO, {lh_str,rh_str});
       then
         fail();
-
-    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.MUL(ty = Exp.INT()),exp2 = rh),impl,st,dim,msg)
-      local
-        Integer sum;
-        Option<Integer> dim;
-      equation 
-        (cache,Values.INTEGER(lhv),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
-        (cache,Values.INTEGER(rhv),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
-        sum = lhv*rhv;
-      then
-        (cache,Values.INTEGER(sum),st_2);
-
+*/
+ 
+ 
+ 
+ 
     case (cache,env,Exp.UNARY(operator = Exp.UMINUS_ARR(ty = _),exp = exp),impl,st,dim,msg) /*  unary minus of array */ 
       local
         Exp.Exp exp;

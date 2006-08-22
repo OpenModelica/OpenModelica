@@ -1,6 +1,6 @@
 package Values "
 This file is part of OpenModelica.
-
+§
 Copyright (c) 1998-2005, Linköpings universitet, Department of
 Computer and Information Science, PELAB
 
@@ -271,6 +271,167 @@ algorithm
   end matchcontinue;
 end unparseValueNumbers;
 
+
+public uniontype IntRealOp
+  record MULOP end MULOP;
+  record DIVOP end DIVOP;
+  record ADDOP end ADDOP;
+  record SUBOP end SUBOP;
+  record POWOP end POWOP;
+end IntRealOp;
+ 
+public function safeIntRealOp 
+	"Performs mul, div, sub, add and pow on integers and reals. 
+	 If for example an integer multiplication does not fit in a
+	 integer, a real is returned instead. The is not the ideal way of
+	 handling this, since the types are decided in run-time. Currently,
+	 this is the simplest and best alternative for the moment though.
+	 
+	 In the future, we should introduce BIG-INTS, or maybe throw exceptions
+	 (when exceptions are available in the language).
+	"
+	input Value val1;
+	input Value val2;
+	input IntRealOp op;
+	output Value outv;
+algorithm	
+  outv :=
+  	matchcontinue(val1, val2, op)
+  		local
+  		  Real rv1,rv2,rv3;
+  		  Integer iv1, iv2,iv3;
+  		  Exp.Exp e;
+  		  //MUL
+  		  case (INTEGER(iv1),INTEGER(iv2), MULOP)
+  		    equation
+  		      e = Exp.safeIntOp(iv1,iv2,Exp.MULOP);
+  		      outv = expValue(e);
+  		  then 
+  		    	outv;  		  
+  		  case (REAL(rv1),INTEGER(iv2), MULOP)
+  		    equation
+  		      rv2 = intReal(iv2);
+  		      rv3 = rv1 *. rv2;
+  		  then 
+  		    	REAL(rv3);  
+  		  case (INTEGER(iv1), REAL(rv2), MULOP)
+  		    equation
+  		      rv1 = intReal(iv1);
+  		      rv3 = rv1 *. rv2;
+  		  then 
+  		    	REAL(rv3);  
+  		  case (REAL(rv1), REAL(rv2), MULOP)
+  		    equation
+  		      rv3 = rv1 *. rv2;
+  		  then 
+  		    	REAL(rv3);    		    			  
+  		  //DIV 
+  		  case (INTEGER(iv1),INTEGER(iv2), DIVOP)
+  		    equation
+  		      e = Exp.safeIntOp(iv1,iv2,Exp.DIVOP);
+  		      outv = expValue(e);
+  		  then 
+  		    	outv;  		  
+  		  case (REAL(rv1),INTEGER(iv2), DIVOP)
+  		    equation
+  		      rv2 = intReal(iv2);
+  		      rv3 = rv1 /. rv2;
+  		  then 
+  		    	REAL(rv3);  
+  		  case (INTEGER(iv1), REAL(rv2), DIVOP)
+  		    equation
+  		      rv1 = intReal(iv1);
+  		      rv3 = rv1 /. rv2;
+  		  then 
+  		    	REAL(rv3);  
+  		  case (REAL(rv1), REAL(rv2), DIVOP)
+  		    equation
+  		      rv3 = rv1 /. rv2;
+  		  then 
+  		    	REAL(rv3);    		    			  
+  		  //POW
+  		  case (INTEGER(iv1),INTEGER(iv2), POWOP)
+  		    equation
+  		      e = Exp.safeIntOp(iv1,iv2,Exp.POWOP);
+  		      outv = expValue(e);
+  		  then 
+  		    	outv;  		  
+  		  case (REAL(rv1),INTEGER(iv2), POWOP)
+  		    equation
+  		      rv2 = intReal(iv2);
+  		      rv3 = realPow(rv1, rv2);
+  		  then 
+  		    	REAL(rv3);  
+  		  case (INTEGER(iv1), REAL(rv2), POWOP)
+  		    equation
+  		      iv2 = realInt(rv2);
+  		      e = Exp.safeIntOp(iv1,iv2,Exp.POWOP);
+  		      outv = expValue(e);
+  		  then 
+						outv;   
+  		  case (INTEGER(iv1), REAL(rv2), POWOP)
+  		    equation
+  		      rv1 = intReal(iv1);
+  		      rv3 = realPow(rv1, rv2);
+  		  then 
+  		    	REAL(rv3);  
+  		  case (REAL(rv1), REAL(rv2), POWOP)
+  		    equation
+  		      rv3 = realPow(rv1, rv2);
+  		  then 
+  		    	REAL(rv3);    		    			  
+  		  //ADD
+  		  case (INTEGER(iv1),INTEGER(iv2), ADDOP)
+  		    equation
+  		      e = Exp.safeIntOp(iv1,iv2,Exp.ADDOP);
+  		      outv = expValue(e);
+  		  then 
+  		    	outv;  		  
+  		  case (REAL(rv1),INTEGER(iv2), ADDOP)
+  		    equation
+  		      rv2 = intReal(iv2);
+  		      rv3 = rv1 +. rv2;
+  		  then 
+  		    	REAL(rv3);  
+  		  case (INTEGER(iv1), REAL(rv2), ADDOP)
+  		    equation
+  		      rv1 = intReal(iv1);
+  		      rv3 = rv1 +. rv2;
+  		  then 
+  		    	REAL(rv3);  
+  		  case (REAL(rv1), REAL(rv2), ADDOP)
+  		    equation
+  		      rv3 = rv1 +. rv2;
+  		  then 
+  		    	REAL(rv3);    		    			  
+  		  //SUB
+  		  case (INTEGER(iv1),INTEGER(iv2), SUBOP)
+  		    equation
+  		      e = Exp.safeIntOp(iv1,iv2,Exp.SUBOP);
+  		      outv = expValue(e);
+  		  then 
+  		    	outv;  		  
+  		  case (REAL(rv1),INTEGER(iv2), SUBOP)
+  		    equation
+  		      rv2 = intReal(iv2);
+  		      rv3 = rv1 -. rv2;
+  		  then 
+  		    	REAL(rv3);  
+  		  case (INTEGER(iv1), REAL(rv2), SUBOP)
+  		    equation
+  		      rv1 = intReal(iv1);
+  		      rv3 = rv1 -. rv2;
+  		  then 
+  		    	REAL(rv3);  
+  		  case (REAL(rv1), REAL(rv2), SUBOP)
+  		    equation
+  		      rv3 = rv1 -. rv2;
+  		  then 
+  		    	REAL(rv3);    		    			  
+		end matchcontinue;
+end safeIntRealOp;
+
+
 protected function unparseDescription "function: unparseDescription
  
   Helper function to unparse_values. Creates a description string
@@ -532,6 +693,7 @@ algorithm
         BOOL(i);
   end matchcontinue;
 end expValue;
+
 
 public function valueReal "function: valueReal
  

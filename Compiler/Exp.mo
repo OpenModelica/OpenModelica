@@ -388,6 +388,93 @@ protected import OpenModelica.Compiler.System;
 protected constant Exp rconstone=RCONST(1.0);
 
 
+public uniontype IntOp
+  record MULOP end MULOP;
+  record DIVOP end DIVOP;
+  record ADDOP end ADDOP;
+  record SUBOP end SUBOP;
+  record POWOP end POWOP;
+end IntOp;
+   
+
+public function realToIntIfPossible 
+  "converts to ICONST if possible. If it does not fit, a
+  RCONST is returned instead."  
+	input Real inVal;
+	output Exp outVal;
+algorithm
+  outVal := matchcontinue(inVal)
+  	local
+  	  	Integer i;
+    case	(inVal)
+      equation
+       	 i = realInt(inVal);
+     	then		
+				ICONST(i);
+    case	(inVal)
+    	then 
+				RCONST(inVal);        	
+	end matchcontinue;
+end realToIntIfPossible;  
+   
+
+public function safeIntOp 
+	"Safe mul, add, sub or pow operations for integers.
+	 The function returns an integer if possible, otherwise a real.
+	"
+	input Integer val1;
+	input Integer val2;
+	input IntOp op;
+	output Exp outv;
+algorithm	
+  outv :=
+  	matchcontinue(val1, val2, op)
+  		local
+  		  Real rv1,rv2,rv3;
+  		  case (val1,val2, MULOP)
+  		    equation
+  		      rv1 = intReal(val1);
+  		      rv2 = intReal(val2);
+  		      rv3 = rv1 *. rv2;
+  		      outv = realToIntIfPossible(rv3);
+  		  then 
+  		    	outv;  		  
+  		  case (val1,val2, DIVOP)
+  		    local 
+  		      Integer ires;
+  		    equation
+  		      ires = val1 / val2;
+  		  then 
+  		    	ICONST(ires);  		  
+  		    	
+  		  case (val1,val2, SUBOP)
+  		    equation
+  		      rv1 = intReal(val1);
+  		      rv2 = intReal(val2);
+  		      rv3 = rv1 -. rv2;
+  		      outv = realToIntIfPossible(rv3);
+  		  then 
+  		    	outv;  		  
+  		  case (val1,val2, ADDOP)
+  		    equation
+  		      rv1 = intReal(val1);
+  		      rv2 = intReal(val2);
+  		      rv3 = rv1 +. rv2;
+  		      outv = realToIntIfPossible(rv3);
+  		  then 
+  		    	outv;  		    		    	
+  		  case (val1,val2, POWOP)
+  		    equation
+  		      rv1 = intReal(val1);
+  		      rv2 = intReal(val2);
+  		      rv3 = realPow(rv1,rv2);
+  		      outv = realToIntIfPossible(rv3);
+  		  then 
+  		    	outv;  		  
+		end matchcontinue;
+end safeIntOp;
+
+
 public function dumpExpWithTitle
   input String title;
   input Exp exp;
@@ -3185,10 +3272,11 @@ algorithm
       Real e2_1,e1_1;
       Operator op;
     case (ADD(ty = _),ICONST(integer = e1),ICONST(integer = e2))
+     	local 	Exp val;
       equation 
-        e3 = e1 + e2;
+	   		val = safeIntOp(e1,e2,ADDOP);      
       then
-        ICONST(e3);
+				val;
     case (ADD(ty = _),RCONST(real = e1),RCONST(real = e2))
       local Real e3,e1,e2;
       equation 
@@ -3210,10 +3298,11 @@ algorithm
       then
         RCONST(e3);
     case (SUB(ty = _),ICONST(integer = e1),ICONST(integer = e2))
+     	local 	Exp val;
       equation 
-        e3 = e1 - e2;
+	   		val = safeIntOp(e1,e2,SUBOP);      
       then
-        ICONST(e3);
+        val;
     case (SUB(ty = _),RCONST(real = e1),RCONST(real = e2))
       local Real e3,e1,e2;
       equation 
@@ -3234,11 +3323,14 @@ algorithm
         e3 = e1_1 -. e2;
       then
         RCONST(e3);
+        
     case (MUL(ty = _),ICONST(integer = e1),ICONST(integer = e2))
+      	local 	Exp val;
       equation 
-        e3 = e1*e2;
+				val = safeIntOp(e1,e2,MULOP);
       then
-        ICONST(e3);
+        val;        
+
     case (MUL(ty = _),RCONST(real = e1),RCONST(real = e2))
       local Real e3,e1,e2;
       equation 
@@ -3248,7 +3340,7 @@ algorithm
     case (MUL(ty = _),RCONST(real = e1),ICONST(integer = e2))
       local Real e3,e1;
       equation 
-        e2_1 = intReal(e2);
+         e2_1 = intReal(e2);
         e3 = e1*.e2_1;
       then
         RCONST(e3);
@@ -3260,10 +3352,11 @@ algorithm
       then
         RCONST(e3);
     case (DIV(ty = _),ICONST(integer = e1),ICONST(integer = e2))
+     	local 	Exp val;
       equation 
-        e3 = e1/e2;
+	   		val = safeIntOp(e1,e2,DIVOP);      
       then
-        ICONST(e3);
+        val;
     case (DIV(ty = _),RCONST(real = e1),RCONST(real = e2))
       local Real e3,e1,e2;
       equation 
@@ -3284,15 +3377,14 @@ algorithm
         e3 = e1_1/.e2;
       then
         RCONST(e3);
-    /* 2006-05-14 adrpo added simplification for constant1 ^ constant2 */
+
     case (POW(ty = _),ICONST(integer = e1),ICONST(integer = e2))
-      local Real e1r,e2r,e3;
+      local Exp val;	
       equation
-        e1r = intReal(e1);
-        e2r = intReal(e2);
-        e3 = e1r ^. e2r;
+				val = safeIntOp(e1,e2,POWOP);
       then
-        RCONST(e3);
+				val;
+				
     case (POW(ty = _),RCONST(real = e1),RCONST(real = e2))
       local Real e3,e1,e2;
       equation 
@@ -3303,7 +3395,7 @@ algorithm
       local Real e3,e1;
       equation 
         e2_1 = intReal(e2);
-        e3 = e1 ^. e2_1;
+        e3 = e1 ^. e2_1; 
       then
         RCONST(e3);
     case (POW(ty = _),ICONST(integer = e1),RCONST(real = e2))
@@ -3347,7 +3439,7 @@ algorithm
         true = isConst(e2_1);
         e3 = simplifyBinaryConst(oper, e1_1, e2_1);
       then
-        e3;
+        e3; 
 
     case (_,DIV(ty = ty),BINARY(exp1 = e1,operator = ADD(ty = ty2),exp2 = e2),e3) /* (a+b)/c1 => a/c1+b/c1, for constant c1 */ 
       equation 

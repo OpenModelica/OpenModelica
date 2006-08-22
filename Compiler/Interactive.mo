@@ -8,7 +8,7 @@ All rights reserved.
 
 (The new BSD license, see also
 http://www.opensource.org/licenses/bsd-license.php)
-
+ 
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -430,12 +430,15 @@ algorithm
       tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> cond1;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> cond2,cond3,elseifexpitemlist;
       list<Absyn.AlgorithmItem> algitemlist,elseitemlist;
-    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg}))),(st as SYMBOLTABLE(ast = p)))
-      equation 
+    case (Absyn.ALGORITHMITEM(
+      		algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
+      		functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg}))),
+      		(st as SYMBOLTABLE(ast = p)))
+      equation  
         env = buildEnvFromSymboltable(st);
         (_,econd,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache,env, cond, true, SOME(st));
         (_,Values.BOOL(true),SOME(st_2)) = Ceval.ceval(Env.emptyCache,env, econd, true, SOME(st_1), NONE, Ceval.MSG());
-      then
+      then 
         ("",st_2);
     case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg}))),(st as SYMBOLTABLE(ast = p)))
       equation 
@@ -500,17 +503,23 @@ algorithm
       list<Absyn.AlgorithmItem> algitemlst;
       String estr,tstr;
       tuple<Types.TType, Option<Absyn.Path>> vtype;
-    case (Values.BOOL(boolean = false),_,_,st) then st; 
+    case (Values.BOOL(boolean = false),_,_,st) 
+      equation
+      then 
+      	st; 
     case (Values.BOOL(boolean = true),exp,algitemlst,st)
       equation 
         st_1 = evaluateAlgStmtLst(algitemlst, st);
         (value,st_2) = evaluateExpr(exp, st_1);
-        st_3 = evaluateWhileStmt(value, exp, algitemlst, st_2);
+        st_3 = evaluateWhileStmt(value, exp, algitemlst, st_2); /* Tail recursive */
       then
         st_3;
-    case (value,exp,_,st) /* Report type error */ 
+    case (Values.BOOL(_), _,_,st) // An error occured when evaluating the algorithm items
+	    then 
+	      st;
+    case (value,exp,_,st) // The condition value was not a boolean 
       equation 
-        estr = stringRepresOfExpr(exp, st);
+        estr = stringRepresOfExpr(exp, st); 
         vtype = Types.typeOfValue(value);
         tstr = Types.unparseType(vtype);
         Error.addMessage(Error.WHILE_CONDITION_TYPE_ERROR, {estr,tstr});

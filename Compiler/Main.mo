@@ -1,10 +1,10 @@
 package Main "
 This file is part of OpenModelica.
-
+ 
 Copyright (c) 1998-2005, Linköpings universitet, Department of
 Computer and Information Science, PELAB
 
-All rights reserved.
+All rights reserved.   
 
 (The new BSD license, see also
 http://www.opensource.org/licenses/bsd-license.php)
@@ -465,7 +465,7 @@ algorithm
         print(res);
       then
         ();
-    case {f}
+    case {f}  
       local String s;
       equation 
         s = Print.getErrorString();
