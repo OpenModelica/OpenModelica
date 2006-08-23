@@ -312,6 +312,11 @@ void leastSquare(long *nz, double *z, double *funcValue)
 
   for (ind=0, *funcValue=0; ind<globalData->nInitialResiduals; ind++)
     *funcValue += globalData->initialResiduals[ind]*globalData->initialResiduals[ind];	
+    
+  if (sim_verbose) {
+  	cout << "initial residual: " << *funcValue << endl;
+  }
+  
 }
 
 /** function reportResidualValue
@@ -321,7 +326,7 @@ void leastSquare(long *nz, double *z, double *funcValue)
 
 int reportResidualValue(double funcValue)
 {
-  if (funcValue > 1e-16) {
+  if (funcValue > 1e-3) {
     std::cerr << "Error in initialization. System of initial equations are not consistent." << std::endl;
     std::cerr << "(Least Square function value is " << funcValue << ")" << std::endl;
     return -1;
@@ -433,7 +438,6 @@ int initialize(const std::string*method)
     init_method = *method;
   }
 
-
   for (ind=0, nz=0; ind<globalData->nStates; ind++){
     if (globalData->initFixed[ind]==0)
       nz++;
@@ -449,9 +453,13 @@ int initialize(const std::string*method)
       n_static_y++;
   }
   if (n_static_y>0) static_y = new double[n_static_y];
+	
 
   // No initial values to calculate.
   if (nz ==  0) {
+  	if (sim_verbose) {
+  		cout << "No initial values to calculate" << endl;
+  	}
     return 0;
   } 
 
@@ -578,7 +586,7 @@ int dassl_main( int argc, char**argv)
     goto exit;
   }
    if (sim_verbose)  { 
-  	cout << "Performed initial value calutation." << endl; 
+  	cout << "Performed initial value calculation." << endl; 
   	cout << "Starting numerical solver at time "<< start << endl;
   }
   // Calculate initial derivatives

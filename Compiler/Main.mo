@@ -539,6 +539,7 @@ algorithm
       DAE.DAElist dae,daeimpl;
       Absyn.Path classname;
     case (p,ap,dae,daeimpl,classname)
+      local String str;
       equation 
         true = runBackendQ();
         dlow = DAELow.lower(dae, true) "add dummy state" ;
@@ -556,6 +557,8 @@ algorithm
         Debug.fcall("bltdump", DAELow.dumpMatching, v1);
         (comps) = DAELow.strongComponents(m, mT, v1, v2);
         Debug.fcall("bltdump", DAELow.dumpComponents, comps);
+				str = DAELow.dumpComponentsGraphStr(DAELow.systemSize(dlow_1),m,mT,v1,v2);
+				Debug.fcall("dumpcompgraph",print,str);
         modpar(dlow_1, v1, v2, comps);
         simcodegen(classname, p, ap, daeimpl, dlow_1, v1, v2, m, mT, comps);
       then

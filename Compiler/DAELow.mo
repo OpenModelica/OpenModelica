@@ -8021,6 +8021,20 @@ algorithm
   end matchcontinue;
 end equationList2;
 
+public function systemSize "returns the size of the dae system"
+input DAELow dae;
+output Integer n;
+algorithm
+  n := matchcontinue(dae)
+  local EquationArray eqns;
+    case(DAELOW(orderedEqs = eqns)) 
+      equation    
+        n = equationSize(eqns);
+      then n;
+          
+  end matchcontinue; 
+end systemSize;
+
 public function equationSize "function: equationSize
   author: PA
  
@@ -8631,6 +8645,65 @@ algorithm
   end matchcontinue;
 end forallUnmarkedVarsInEqnBody;
 
+public function dumpComponentsGraphStr " Dumps the assignment graph used to determine strong components to
+format suitable for Mathematica"
+  input Integer n;
+  input IncidenceMatrix m;
+  input IncidenceMatrixT mT;
+  input Integer[:] ass1;
+  input Integer[:] ass2;
+  output String res;
+algorithm
+  res := matchcontinue(n,m,mT,ass1,ass2)
+    case(n,m,mT,ass1,ass2) 
+      local list<String> lst;
+      equation
+      	lst = dumpComponentsGraphStr2(1,n,m,mT,ass1,ass2);
+      	res = Util.stringDelimitList(lst,",");
+      	res = Util.stringAppendList({"{",res,"}"});
+      then res;  
+  end matchcontinue;
+end dumpComponentsGraphStr;
+
+protected function dumpComponentsGraphStr2 "help function"
+  input Integer i;
+  input Integer n;
+  input IncidenceMatrix m;
+  input IncidenceMatrixT mT;
+  input Integer[:] ass1;
+  input Integer[:] ass2;
+  output list<String> lst;
+algorithm
+  lst := matchcontinue(i,n,m,mT,ass1,ass2)
+    case(i,n,m,mT,ass1,ass2) equation
+      true = (i > n);
+      then {};
+    case(i,n,m,mT,ass1,ass2) 
+      local 
+        list<list<Integer>> llst;
+        list<Integer> eqns;
+        list<String> strLst,slst;
+        String str;
+      equation
+        eqns = reachableNodes(i, m, mT, ass1, ass2);
+        llst = Util.listMap(eqns,Util.listCreate);
+        llst = Util.listMap1(llst,Util.listCons,i);
+        slst = Util.listMap(llst,intListStr);
+        str = Util.stringDelimitList(slst,",");
+        str = Util.stringAppendList({"{",str,"}"});
+        strLst = dumpComponentsGraphStr2(i+1,n,m,mT,ass1,ass2);
+      then str::strLst;
+  end matchcontinue;
+end dumpComponentsGraphStr2;
+
+protected function intListStr "Takes a list of Integers and produces a string  on form: \"{1,2,3}\" "
+  input list<Integer> lst;
+  output String res;
+algorithm
+  res := Util.stringDelimitList(Util.listMap(lst,intString),",");
+  res := Util.stringAppendList({"{",res,"}"});
+end intListStr;
+
 public function strongComponents "function: strongComponents
   author: PA
  
@@ -8716,6 +8789,8 @@ algorithm
       then
         (i,stack,comp);
     case (m,mt,a1,a2,n,i,w,stack,comps)
+      local list<list<Integer>> comps2;
+        
       equation 
         0 = DAEEXT.getNumber(w);
         (i,stack_1,comps) = strongConnect(m, mt, a1, a2, i, w, stack, comps);
@@ -8733,7 +8808,7 @@ algorithm
         (i,stack_1,comps);
   end matchcontinue;
 end strongConnectMain;
-
+  
 protected function strongConnect "function: strongConnect
   author: PA
  
@@ -8766,8 +8841,7 @@ algorithm
     case (m,mt,a1,a2,i,v,stack,comps)
       equation 
         i_1 = i + 1;
-        DAEEXT.setNumber(v, i_1) "	set_number(number,v,i\') => number\' &
-	set_lowlink(lowlink,v,i\') => lowlink\' &" ;
+        DAEEXT.setNumber(v, i_1)  ;
         DAEEXT.setLowLink(v, i_1);
         stack_1 = (v :: stack);
         eqns = reachableNodes(v, m, mt, a1, a2);
@@ -8877,7 +8951,7 @@ algorithm
   (outInteger,outIntegerLst,outIntegerLstLst):=
   matchcontinue (inIntegerLst1,inIncidenceMatrix2,inIncidenceMatrixT3,inIntegerArray4,inIntegerArray5,inInteger6,inInteger7,inIntegerLst8,inIntegerLstLst9)
     local
-      Value i,lv,lw,minv,w,v,nw,nv,lowlinkw;
+      Value i,lv,lw,minv,w,v,nw,nv,lowlinkv;
       list<Value> stack,ws;
       list<list<Value>> comps_1,comps_2,comps;
       list<Value>[:] m,mt;
@@ -8899,12 +8973,13 @@ algorithm
         nv = DAEEXT.getNumber(v);
         (nw < nv) = true;
         true = listMember(w, stack);
-        lowlinkw = DAEEXT.getLowLink(w);
-        minv = intMin(nw, lowlinkw);
+        lowlinkv = DAEEXT.getLowLink(v);
+        minv = intMin(nw, lowlinkv);
         DAEEXT.setLowLink(v, minv);
         (i,stack,comps_1) = iterateReachableNodes(ws, m, mt, a1, a2, i, v, stack, comps);
       then
         (i,stack,comps_1);
+                  
     case ((w :: ws),m,mt,a1,a2,i,v,stack,comps)
       equation 
         (i,stack,comps_1) = iterateReachableNodes(ws, m, mt, a1, a2, i, v, stack, comps);
@@ -8961,7 +9036,7 @@ algorithm
     case (m,mt,a1,a2,i,v,stack)
       equation 
         lv = DAEEXT.getLowLink(v);
-        nv = DAEEXT.getNumber(v);
+        nv = DAEEXT.getNumber(v);        
         (lv == nv) = true;
         (i,stack_1,comps) = checkStack(m, mt, a1, a2, i, v, stack, {});
       then
