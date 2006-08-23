@@ -13,7 +13,7 @@ http://www.opensource.org/licenses/bsd-license.php)
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
 met:
-
+ 
  Redistributions of source code must retain the above copyright
   notice, this list of conditions and the following disclaimer.
 
@@ -417,7 +417,7 @@ algorithm
       list<Env.Frame> env;
       Exp.Exp econd,msg_1,sexp,srexp;
       Types.Properties prop,rprop;
-      InteractiveSymbolTable st_1,st_2,st,newst;
+      InteractiveSymbolTable st_1,st_2,st_3,st_4,st,newst;
       Absyn.Exp cond,msg,exp,rexp;
       Absyn.Program p;
       String str,ident;
@@ -430,6 +430,10 @@ algorithm
       tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> cond1;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> cond2,cond3,elseifexpitemlist;
       list<Absyn.AlgorithmItem> algitemlist,elseitemlist;
+      String iter;
+			list<Absyn.AlgorithmItem> algItemList;
+      Values.Value startv, stepv, stopv;
+      Absyn.Exp starte, stepe, stope;			
     case (Absyn.ALGORITHMITEM(
       		algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
       		functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg}))),
@@ -474,14 +478,126 @@ algorithm
         st_1 = evaluateIfStatementLst(cond3, st);
       then
         ("",st_1);
-    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_WHILE(whileStmt = exp,whileBody = algitemlist)),st) /* WHILE-statement */ 
+		 /* while-statement */ 
+    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_WHILE(whileStmt = exp,whileBody = algitemlist)),st)
       equation 
         (value,st_1) = evaluateExpr(exp, st);
         st_2 = evaluateWhileStmt(value, exp, algitemlist, st_1);
+      then 
+        ("",st_2);  
+        
+    /* for-statement, optimized case, e.g.: for i in 1:1000 loop */ 
+    case (Absyn.ALGORITHMITEM(algorithm_ =  
+      	Absyn.ALG_FOR(forVariable = iter, forStmt = Absyn.RANGE(start=starte,step=NONE, stop=stope),
+        forBody = algItemList)),st)       
+      equation 
+        (startv,st_1) = evaluateExpr(starte, st);
+        (stopv,st_2) = evaluateExpr(stope, st_1);
+        st_3 = evaluateForStmtRangeOpt(iter, startv, Values.INTEGER(1), stopv, algItemList, st_2);
+     then
+        ("",st_3);
+
+    /* for-statement, optimized case, e.g.: for i in 7.3:0.4:1000.3 loop */ 
+    case (Absyn.ALGORITHMITEM(algorithm_ = 
+      	Absyn.ALG_FOR(forVariable = iter, forStmt = Absyn.RANGE(start=starte, step=SOME(stepe), stop=stope),
+        forBody = algItemList)),st)       
+      equation 
+        (startv,st_1) = evaluateExpr(starte, st);
+        (stepv,st_2) = evaluateExpr(stepe, st_1);
+        (stopv,st_3) = evaluateExpr(stope, st_2);
+        st_4 = evaluateForStmtRangeOpt(iter, startv, stepv, stopv, algItemList, st_3);
+      then
+        ("",st_4);
+        
+    /* for-statement, general case */ //DABR
+    case (Absyn.ALGORITHMITEM(algorithm_ = 
+      	Absyn.ALG_FOR(forVariable = iter, forStmt = exp,forBody = algItemList)),st) 
+      local
+        input list<Values.Value> valList;
+      equation 
+        (Values.ARRAY(valList),st_1) = evaluateExpr(exp, st);
+        st_2 = evaluateForStmt(iter, valList, algItemList, st_1);
       then
         ("",st_2);
+    /* for-statement - not an array type */ 
+    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_FOR(forStmt = exp)),st) 
+      local
+        String estr;
+      equation 
+        estr = stringRepresOfExpr(exp, st);
+        Error.addMessage(Error.NOT_ARRAY_TYPE_IN_FOR_STATEMENT, {estr});
+      then 
+        fail();
   end matchcontinue;
-end evaluateAlgStmt;
+end evaluateAlgStmt; 
+ 
+
+
+protected function evaluateForStmt "evaluates a for-statement in an algorithm section"
+  input String iter "The iterator variable which will be assigned different values";
+  input list<Values.Value> valList "List of values that the iterator later will be assigned to";
+	input list<Absyn.AlgorithmItem> algItemList;
+  input InteractiveSymbolTable inInteractiveSymbolTable;
+  output InteractiveSymbolTable outInteractiveSymbolTable;
+algorithm 
+  outInteractiveSymbolTable:=
+  matchcontinue (forVar,valList,algItemList, inInteractiveSymbolTable)
+    local
+      Values.Value val;
+      list<Values.Value> vallst;
+      list<Absyn.AlgorithmItem> algItems;
+      InteractiveSymbolTable st1,st2,st3,st4,st5;
+    case (iter, val::vallst, algItems, st1)
+    equation
+      st2 = appendVarToSymboltable(iter, val, Types.typeOfValue(val), st1); 
+			st3 = evaluateAlgStmtLst(algItems, st2); 
+			st4 = deleteVarFromSymboltable(iter, st3);
+			st5 = evaluateForStmt(iter, vallst, algItems, st4);
+		then 
+			st5;
+    case (_, {}, _, st1) 
+		then
+			st1;			
+  end matchcontinue;
+end evaluateForStmt;
+
+
+protected function evaluateForStmtRangeOpt 
+  "Optimized version of for statement. In this case, we do not create a large array if 
+  a range expression is given. E.g. for i in 1:10000 loop"
+  input String iter "The iterator variable which will be assigned different values";
+  input Values.Value startVal;
+  input Values.Value stepVal;
+  input Values.Value stopVal;
+	input list<Absyn.AlgorithmItem> algItemList;
+  input InteractiveSymbolTable inInteractiveSymbolTable;
+  output InteractiveSymbolTable outInteractiveSymbolTable;
+algorithm 
+  outInteractiveSymbolTable:=
+  matchcontinue (forVar, startVal, stepVal, stopVal, algItemList, inInteractiveSymbolTable)
+    local
+      Values.Value startv, stepv, stopv, nextv;
+      list<Values.Value> vallst;
+      list<Absyn.AlgorithmItem> algItems;
+      InteractiveSymbolTable st1,st2,st3,st4,st5;
+      Boolean startIsLess;
+    case (iter, startv, stepv, stopv, algItems, st1)
+    equation
+      startIsLess = Values.safeLessEq(startv, stopv);
+      equality(startIsLess = true);
+      st2 = appendVarToSymboltable(iter, startv, Types.typeOfValue(startv), st1); 
+			st3 = evaluateAlgStmtLst(algItems, st2); 
+			st4 = deleteVarFromSymboltable(iter, st3);
+			nextv = Values.safeIntRealOp(startv, stepv, Values.ADDOP);
+			st5 = evaluateForStmtRangeOpt(iter, nextv, stepv, stopv, algItems, st4);
+		then 
+			st5;
+    case (_,_,_,_,_,st1) 
+		then
+			st1;			
+  end matchcontinue;
+end evaluateForStmtRangeOpt;
+
 
 protected function evaluateWhileStmt "function: evaluateWhileStmt
   
@@ -866,9 +982,91 @@ algorithm
   end matchcontinue;
 end addVarToSymboltable;
 
-protected function addVarToVarlist "function: addVarToVarlist
- 
-  Helper function to add_var_to_symboltable
+public function appendVarToSymboltable "
+  Appends a variable to the interactive symbol table. Compared to addVarToSymboltable, this
+  function does not search for the identifier, it adds the variable to the beginning of the list.
+  Used in for example iterators in for statements.
+"
+  input Absyn.Ident inIdent;
+  input Values.Value inValue;
+  input Types.Type inType;
+  input InteractiveSymbolTable inInteractiveSymbolTable;
+  output InteractiveSymbolTable outInteractiveSymbolTable;
+algorithm 
+  outInteractiveSymbolTable:=
+  matchcontinue (inIdent,inValue,inType,inInteractiveSymbolTable)
+    local
+      list<InteractiveVariable> vars_1,vars;
+      String ident;
+      Values.Value v;
+      tuple<Types.TType, Option<Absyn.Path>> t;
+      Absyn.Program p;
+      list<SCode.Class> sp;
+      list<InstantiatedClass> id;
+      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+    case (ident,v,t,SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = id,lstVarVal = vars,compiledFunctions = cf))
+      equation 
+        vars_1 = (IVAR(ident,v,t))::vars;
+      then
+        SYMBOLTABLE(p,sp,id,vars_1,cf);
+  end matchcontinue;
+end appendVarToSymboltable;
+
+
+
+public function deleteVarFromSymboltable 
+  input Absyn.Ident inIdent;
+  input InteractiveSymbolTable inInteractiveSymbolTable;
+  output InteractiveSymbolTable outInteractiveSymbolTable;
+algorithm 
+  outInteractiveSymbolTable:=
+  matchcontinue (inIdent,inInteractiveSymbolTable)
+    local
+      list<InteractiveVariable> vars_1,vars;
+      String ident;
+      Absyn.Program p;
+      list<SCode.Class> sp;
+      list<InstantiatedClass> id;
+      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+    case (ident,SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = id,lstVarVal = vars,compiledFunctions = cf))
+      equation 
+        vars_1 = deleteVarFromVarlist(ident, vars);
+      then
+        SYMBOLTABLE(p,sp,id,vars_1,cf);
+  end matchcontinue;
+end deleteVarFromSymboltable;
+
+
+
+protected function deleteVarFromVarlist "deletes the first variable found"
+  input Absyn.Ident inIdent;
+  input list<InteractiveVariable> inInteractiveVariableLst;
+  output list<InteractiveVariable> outInteractiveVariableLst;
+algorithm
+  outInteractiveVariableLst:=
+  matchcontinue (inIdent,inInteractiveVariableLst)
+    local
+      String ident,id2;
+      Values.Value v,val2;
+      list<InteractiveVariable> rest, rest2;
+      InteractiveVariable var;
+    case (ident,(IVAR(varIdent = id2) :: rest))
+      equation 
+        equality(ident = id2);
+      then
+        rest;
+    case (ident,var::rest)
+      equation 
+        rest2 = deleteVarFromVarlist(ident, rest);
+      then
+        var::rest2;
+    case (ident,{}) 
+      then {};       
+  end matchcontinue;
+end deleteVarFromVarlist;
+
+protected function addVarToVarlist "
+  Assignes a value to a variable with a specific identifier. 
 "
   input Absyn.Ident inIdent;
   input Values.Value inValue;

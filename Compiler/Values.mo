@@ -3,7 +3,7 @@ This file is part of OpenModelica.
 §
 Copyright (c) 1998-2005, Linköpings universitet, Department of
 Computer and Information Science, PELAB
-
+ 
 All rights reserved.
 
 (The new BSD license, see also
@@ -278,6 +278,7 @@ public uniontype IntRealOp
   record ADDOP end ADDOP;
   record SUBOP end SUBOP;
   record POWOP end POWOP;
+  record LESSEQOP end LESSEQOP;
 end IntRealOp;
  
 public function safeIntRealOp 
@@ -431,6 +432,44 @@ algorithm
 		end matchcontinue;
 end safeIntRealOp;
 
+
+public function safeLessEq 
+	"Checks if val1 is less or equal to val2. Val1 or val2 can
+	 be integers or reals.
+	"
+	input Value val1;
+	input Value val2;
+	output Boolean outv;
+algorithm	
+  outv :=
+  	matchcontinue(val1, val2)
+  		local
+  		  Real rv1,rv2;
+  		  Integer iv1,iv2;
+  		  case (INTEGER(iv1),INTEGER(iv2))
+  		    equation
+  		      outv = (iv1 <= iv2);
+  		  then 
+  		    	outv;  		  
+  		  case (REAL(rv1),INTEGER(iv2))
+  		    equation
+  		      rv2 = intReal(iv2);
+  		      outv = (rv1 <=. rv2);
+  		  then 
+  		    	outv;  
+  		  case (INTEGER(iv1), REAL(rv2))
+  		    equation
+  		      rv1 = intReal(iv1);
+  		      outv = (rv1 <=. rv2);
+  		  then 
+  		    	outv;  
+  		  case (REAL(rv1), REAL(rv2))
+  		    equation
+  		      outv = (rv1 <=. rv2);
+  		  then 
+  		    	outv;  
+		end matchcontinue;
+end safeLessEq;
 
 protected function unparseDescription "function: unparseDescription
  
@@ -1185,6 +1224,8 @@ algorithm
         fail();
   end matchcontinue;
 end valString;
+
+
 
 protected function valRecordString "function: valRecordString
  

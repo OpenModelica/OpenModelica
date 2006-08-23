@@ -272,7 +272,9 @@ public constant ErrorID DUPLICATE_ELEMENTS_NOT_IDENTICAL=89;
 
 public constant ErrorID PACKAGE_VARIABLE_NOT_CONSTANT=90;
 
-public constant ErrorID RECURSIVE_DEFINITION= 91;
+public constant ErrorID RECURSIVE_DEFINITION= 91; 
+ 
+public constant ErrorID NOT_ARRAY_TYPE_IN_FOR_STATEMENT= 92;
 
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 
@@ -452,6 +454,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Type mismatch in modifier, expected type %s, got modifier %s of type %s"),
           (ERROR_FLATTENING,TRANSLATION(),ERROR(),
           "Error occured while flattening model %s"),
+		      (NOT_ARRAY_TYPE_IN_FOR_STATEMENT, TRANSLATION(), ERROR(),
+		      "Expression %s in for-statement must be an array type"),    
           (DUPLICATE_ELEMENTS_NOT_IDENTICAL,TRANSLATION(),ERROR(),
           "Error duplicate elements (due to inherited elements) not identical, first element is: %s, second element is: %s"),
           (PACKAGE_VARIABLE_NOT_CONSTANT, TRANSLATION(),ERROR(),"Variable %s in package %s is not constant"),
@@ -466,7 +470,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
 protected import OpenModelica.Compiler.ErrorExt "Errors
 WARNING		
 Notification" ;
-
+ 
 protected import OpenModelica.Compiler.Util;
 
 protected import OpenModelica.Compiler.Print;

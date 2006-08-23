@@ -454,7 +454,7 @@ algorithm
         (start_2,NONE,stop_2,rt) = deoverloadRange((start_1,start_t), NONE, (stop_1,stop_t));
         const = Types.constAnd(c_start, c_stop);
         (cache,t) = elabRangeType(cache,env, start_2, NONE, stop_2, const, rt, impl);
-      then
+      then 
         (cache,Exp.RANGE(rt,start_1,NONE,stop_1),Types.PROP(t,const),st_2);
     case (cache,env,Absyn.RANGE(start = start,step = SOME(step),stop = stop),impl,st)
       equation 

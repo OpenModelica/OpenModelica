@@ -649,10 +649,10 @@ uniontype Exp "The `Exp\' datatype is the container of a Modelica expression.
   end ARRAY;
 
   record MATRIX
-    list<list<Exp>> matrix "matrix Range expressions, e.g. 1:10 or 1:0.5:10" ;
+    list<list<Exp>> matrix "matrix Range expressions, " ;
   end MATRIX;
 
-  record RANGE
+  record RANGE "e.g. 1:10 or 1:0.5:10"
     Exp start "start" ;
     Option<Exp> step "step" ;
     Exp stop "stop Tuples used in function calls returning several values" ;
