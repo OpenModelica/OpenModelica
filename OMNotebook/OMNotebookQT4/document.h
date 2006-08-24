@@ -106,6 +106,7 @@ namespace IAEX
 		virtual bool hasChanged() const = 0;
 		virtual bool isOpen() const = 0;
 		virtual bool isSaved() const = 0;					// AF
+		virtual bool isEmpty() const = 0;					// Added 2006-08-24 AF
 
 		//File operations
 		virtual void open( const QString &filename, int readmode ) = 0;
@@ -156,6 +157,7 @@ namespace IAEX
 
 		//Utility operations
 		virtual Factory *cellFactory() = 0;
+		virtual Cell* getMainCell() = 0;				// Added 2006-08-24 AF
 		virtual vector<Cell *> getSelection() = 0;
 		virtual void clearSelection() = 0;
 

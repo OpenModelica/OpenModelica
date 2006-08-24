@@ -965,7 +965,7 @@ namespace IAEX
 	 * calculate the new height, to reflect the changes made when 
 	 * porting from Q3TextEdit to QTextEdit. 
 	 */
-	void InputCell::setClosed(const bool closed)
+	void InputCell::setClosed(const bool closed, bool update)
 	{
 		if( closed )
 			output_->hide();

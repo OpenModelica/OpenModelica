@@ -748,6 +748,38 @@ namespace IAEX
 
 	/*! 
 	 * \author Anders Fernström
+	 * \date 2006-08-24
+	 *
+	 * \brief Return true if the document is empty, otherwise false
+	 */
+	bool CellDocument::isEmpty() const
+	{
+		bool empty( false );
+		if( workspace_ )
+		{
+			if( workspace_->hasChilds() )
+			{
+				Cell* cell = workspace_->child();
+				if( cell )
+				{
+					if( !cell->hasNext() )
+						if( typeid( (*cell) ) == typeid( CellCursor ))
+							empty = true;
+				}
+				else
+					empty = true;
+			}
+			else
+				empty = true;
+		}
+		else
+			empty = true;
+
+		return empty;
+	}
+
+	/*! 
+	 * \author Anders Fernström
 	 * \date 2005-11-29
 	 * \date 2006-03-03 (update)
 	 *
@@ -1087,6 +1119,17 @@ namespace IAEX
 	Factory *CellDocument::cellFactory()
 	{
 		return factory_;
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-08-24
+	 *
+	 * \brief get the main cell
+	 */
+	Cell* CellDocument::getMainCell()
+	{
+		return workspace_;
 	}
 
 	QString CellDocument::getFilename()

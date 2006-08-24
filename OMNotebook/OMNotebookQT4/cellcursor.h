@@ -81,8 +81,8 @@ namespace IAEX
 		Cell *currentCell();
 
 		//Movment
-		void moveUp();
-		void moveDown();
+		bool moveUp();									// Changed 2006-08-24 AF
+		bool moveDown();								// Changed 2006-08-24 AF
 
 		void moveToFirstChild(Cell *parent);
 		void moveToLastChild(Cell *parent);

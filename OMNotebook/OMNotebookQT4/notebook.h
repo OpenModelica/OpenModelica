@@ -78,6 +78,9 @@ class QWidget;
 
 namespace IAEX
 {
+	// forward declaration
+	class SearchForm;
+
 	class NotebookWindow : public DocumentView
 	{
 		Q_OBJECT
@@ -148,6 +151,8 @@ namespace IAEX
 		void cutEdit();					// Added 2006-02-03 AF
 		void copyEdit();				// Added 2006-02-03 AF
 		void pasteEdit();				// Added 2006-02-03 AF
+		void findEdit();				// Added 2006-08-24 AF
+		void replaceEdit();				// Added 2006-08-24 AF
 		
 		void insertImage();				// Added 2005-11-18 AF
 		void insertLink();				// Added 2005-12-05 AF
@@ -232,7 +237,8 @@ namespace IAEX
 		QAction *cutAction;
 		QAction *copyAction;
 		QAction *pasteAction;
-		QAction *searchAction;
+		QAction *findAction;				// Changed 2006-08-24 AF
+		QAction *replaceAction;				// Added 2006-08-24 AF
 		QAction *showExprAction;
 
 		//QAction *cutCellAction;
@@ -338,6 +344,7 @@ namespace IAEX
 		QTimer *savingTimer_;
 		map<QString, QAction*> styles_;   
 
+		SearchForm* findForm_;		// added 2006-08-24 AF
 		bool closing_;				// Added 2006-02-09 AF
 
 		static QString openDir_;	// Added 2006-03-01 AF

@@ -354,15 +354,23 @@ namespace IAEX
 			return previous();
 	}
 
-	void CellCursor::moveUp()
+	// 2006-08-24 AF, changed so the function returns a boolean value, true if
+	// the cursor is moved.
+	bool CellCursor::moveUp()
 	{
+		// 2006-08-24 AF,
+        bool moved( false );		
+
 		// 2006-04-27 AF,
 		cursorIsMoved();
 
 		if( !hasPrevious() )
 		{
 			if( parentCell()->hasParentCell() )
+			{
 				moveBefore( parentCell() );
+				moved = true;
+			}
 		}
 		else 
 		{
@@ -370,19 +378,27 @@ namespace IAEX
 			if(previous()->hasChilds())
 			{
 				if(!previous()->isClosed())
+				{
 					moveToLastChild(previous());
+					moved = true;
+				}
 				else
+				{
 					moveBefore(previous());
+					moved = true;
+				}
 			}
 			else
 			{  
 				moveBefore(previous());
+				moved = true;
 			}
 		}
 		emit positionChanged(x(), y(), 5,5);
 		
 		// TMP EMIT
 		emit changedPosition();
+		return moved;
 	}
 
 	/*!
@@ -390,34 +406,51 @@ namespace IAEX
 	* 
 	* \todo It is better that Commands take care of how to change
 	* state of cells.(Ingemar Axelsson)
+	* 
+	* 2006-08-24 AF, changed so the function returns a boolean value, true if
+	* the cursor is moved.
 	*/
-	void CellCursor::moveDown()
+	bool CellCursor::moveDown()
 	{
+		// 2006-08-24 AF,
+        bool moved( false );
+
 		// 2006-04-27 AF,
 		cursorIsMoved();
 
 		if( !hasNext() )
 		{
 			if( parentCell()->hasParentCell() )
+			{
 				moveAfter( parentCell() );
+				moved = true;
+			}
 		}
 		else //Has next.
 		{
 			if(next()->hasChilds())
 			{  
 				if(!next()->isClosed())
+				{
 					moveToFirstChild(next());
+					moved = true;
+				}
 				else
+				{
 					moveAfter(next());
+					moved = true;
+				}
 			}
 			else
 			{
 				moveAfter(next());
+				moved = true;
 			}
 		}
 		// TMP EMIT
 		emit changedPosition();
 		emit positionChanged(x(), y(), 5,5);
+		return moved;
 	}
 
 	/*! Insert this cell as first child of parent.

@@ -216,10 +216,16 @@
 				RelativePath=".\puretextvisitor.cpp">
 			</File>
 			<File
+				RelativePath=".\qcombobox_search.cpp">
+			</File>
+			<File
 				RelativePath="qtapp.cpp">
 			</File>
 			<File
 				RelativePath=".\res.rc">
+			</File>
+			<File
+				RelativePath=".\searchform.cpp">
 			</File>
 			<File
 				RelativePath="serializingvisitor.cpp">
@@ -601,7 +607,31 @@
 				RelativePath=".\puretextvisitor.h">
 			</File>
 			<File
+				RelativePath=".\qcombobox_search.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing qcombobox_search.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe qcombobox_search.h -o moc_qcomboboxsearch.cpp"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_qcomboboxsearch.cpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing qcombobox_search.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe qcombobox_search.h -o moc_qcomboboxsearch.cpp"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_qcomboboxsearch.cpp"/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath=".\removehighlightervisitor.h">
+			</File>
+			<File
+				RelativePath=".\replaceallvisitor.h">
 			</File>
 			<File
 				RelativePath=".\resource.h">
@@ -611,6 +641,27 @@
 			</File>
 			<File
 				RelativePath=".\rule.h">
+			</File>
+			<File
+				RelativePath=".\searchform.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing searchform.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe searchform.h -o moc_searchform.cpp"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_searchform.cpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing searchform.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe searchform.h -o moc_searchform.cpp"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_searchform.cpp"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="serializingvisitor.h">
@@ -749,6 +800,12 @@
 				RelativePath=".\moc_omc_communicator.cpp">
 			</File>
 			<File
+				RelativePath=".\moc_qcomboboxsearch.cpp">
+			</File>
+			<File
+				RelativePath=".\moc_searchform.cpp">
+			</File>
+			<File
 				RelativePath="moc_stylesheet.cpp">
 			</File>
 			<File
@@ -762,6 +819,9 @@
 			</File>
 			<File
 				RelativePath=".\ui_otherdlg.h">
+			</File>
+			<File
+				RelativePath=".\ui_searchform.h">
 			</File>
 		</Filter>
 		<Filter
@@ -811,6 +871,27 @@
 "
 						AdditionalDependencies="$(QTHOME)\bin\uic.exe"
 						Outputs="ui_otherdlg.h"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\searchform.ui">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Uic&apos;ing searchform.ui..."
+						CommandLine="$(QTHOME)\bin\uic.exe -o ui_searchform.h searchform.ui"
+						AdditionalDependencies="$(QTHOME)\bin\uic.exe"
+						Outputs="ui_searchform.h"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Uic&apos;ing searchform.ui..."
+						CommandLine="$(QTHOME)\bin\uic.exe -o ui_searchform.h searchform.ui"
+						AdditionalDependencies="$(QTHOME)\bin\uic.exe"
+						Outputs="ui_searchform.h"/>
 				</FileConfiguration>
 			</File>
 		</Filter>

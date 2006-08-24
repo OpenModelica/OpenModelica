@@ -130,7 +130,7 @@ namespace IAEX
 		QString ChapterCounterHtml();					// Added 2006-03-03 AF
 		void setReadOnly(const bool readonly);			// Added 2005-11-01 AF
 		void setEvaluated(const bool evaluated);		// Added 2006-01-16 AF
-		void setClosed(const bool closed);
+		void setClosed(const bool closed, bool update = true); //Changed 2006-08-24
 		virtual void setFocus(const bool focus);
 		virtual void setFocusOutput(const bool focus);	// Added 2006-02-03 AF
 		

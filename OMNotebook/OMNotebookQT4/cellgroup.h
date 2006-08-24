@@ -105,10 +105,12 @@ namespace IAEX{
 		bool isClosed() const;
 		bool isEditable();								// Added 2005-10-28 AF
 
+		QTextEdit* textEdit();							// Added 2006-08-24 AF
+
 
 	public slots:	
 		virtual void setStyle( CellStyle style );		// Changed 2005-10-28 AF
-		void setClosed(const bool closed);
+		void setClosed(const bool closed, bool update = true);
 		virtual void setFocus(const bool focus);
 
 	protected:

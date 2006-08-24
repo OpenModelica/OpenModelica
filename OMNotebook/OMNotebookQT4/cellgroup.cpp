@@ -222,6 +222,23 @@ namespace IAEX{
 		return false;
 	}
 
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2005-08-24
+	 *
+	 * \brief Returns the first childs text editor, if the cell is closed. If
+	 * the cell isn't closed, return 0.
+	 *
+	 * \return False
+	 */
+	QTextEdit* CellGroup::textEdit()
+	{
+		if( isClosed() && hasChilds() )
+			return child()->textEdit();
+		else
+			return 0;
+	}
+
 	/*!
 	 * \author Ingemar Axelsson
 	 *
@@ -242,16 +259,20 @@ namespace IAEX{
 	 * \bug This function could create a segmentation fault in some
 	 * special cases. Try to find them.
 	 */
-	void CellGroup::setClosed(const bool closed)
-	{      
+	void CellGroup::setClosed(const bool closed, bool update)
+	{   
+		closed_ = closed;
+
 		if( hasChilds() )
 			child()->hideTreeView( closed );
 
 		treeView()->setClosed( closed );
 		setHeight( height() ); //Sends a signal
 
-		closed_ = closed;
-		emit cellOpened(this, closed_);
+		
+		
+		if( update )
+			emit cellOpened(this, closed_);
 	}
 
 	/*!

@@ -139,10 +139,12 @@ namespace IAEX
 		virtual bool hasChanged() const;
 		bool isOpen() const;
 		bool isSaved() const;
+		bool isEmpty() const;		// Added 2006-08-24 AF
 
 		//Cursor operations
 		CellCursor *getCursor();
 		Factory *cellFactory();
+		Cell* getMainCell();				// Added 2006-08-24 AF
 		vector<Cell*> getSelection();
 
 		//Command

@@ -88,6 +88,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "notebookcommands.h"
 #include "otherdlg.h"
 #include "stylesheet.h"
+#include "searchform.h"
 #include "xmlparser.h"
 #include "removehighlightervisitor.h"
 #include "omcinteractiveenvironment.h"
@@ -140,7 +141,8 @@ namespace IAEX
 		subject_(subject),
 		filename_(filename),
 		closing_(false),
-		app_( subject->application() ) //AF
+		app_( subject->application() ), //AF
+		findForm_( 0 )					//AF
 	{
 		if( filename_ != QString::null )
 			qDebug( filename_.toStdString().c_str() );
@@ -179,7 +181,7 @@ namespace IAEX
 
 	/*! 
 	 * \author Ingemar Axelsson and Anders Fernström
-	 * \date 2006-01-05 (update)
+	 * \date 2006-08-24 (update)
 	 *
 	 * \brief The class destructor
 	 *
@@ -188,6 +190,7 @@ namespace IAEX
 	 * removelist in the highlighter
 	 * 2006-01-27 AF, remove this notebook window from the list of
 	 * notebook windows in the main applicaiton
+	 * 2006-08-24 AF, delete replace action
 	 */
 	NotebookWindow::~NotebookWindow()
 	{
@@ -256,7 +259,8 @@ namespace IAEX
 		delete cutAction;
 		delete copyAction;
 		delete pasteAction;
-		delete searchAction;
+		delete findAction;
+		delete replaceAction;
 		delete showExprAction;
 
 		//delete cutCellAction;
@@ -339,6 +343,10 @@ namespace IAEX
 		delete insertLinkAction;
 		delete importOldFile;
 		delete exportPureText;
+
+		// 2006-08-24 AF, delete findForm if it exists
+		if( findForm_ )
+			delete findForm_;
 	}
 
 	/*! 
@@ -466,12 +474,13 @@ namespace IAEX
 
 	/*! 
 	 * \author Anders Fernström
-	 * \date 2006-02-03 (update)
+	 * \date 2006-08-24 (update)
 	 *
 	 * \brief Method for creating edit nemu.
 	 *
 	 * 2005-10-07 AF, Remade the function when porting to QT4.
 	 * 2006-02-03 AF, Made undo, redo, cut, copy and paste actions for the editor
+	 * 2006-08-24 AF, added a replace action, renamed search action to find action
 	 */
 	void NotebookWindow::createEditMenu()
 	{
@@ -512,11 +521,20 @@ namespace IAEX
 		connect( pasteAction, SIGNAL( triggered() ),
 			this, SLOT( pasteEdit() ));
 		
-		// 2005-10-07 AF, Porting, replaced this
-		//QAction *searchAction = new QAction("Search", "&Search", 0, this, "search");
-		searchAction = new QAction( tr("&Search"), this);
-		searchAction->setStatusTip( tr("Search through the document") );
-		searchAction->setEnabled(false);
+		// FIND
+		findAction = new QAction( tr("&Find"), this);
+		findAction->setShortcut( tr("Ctrl+F") );
+		findAction->setStatusTip( tr("Search through the document") );
+		connect( findAction, SIGNAL( triggered() ),
+			this, SLOT( findEdit() ));
+
+		// REPLACE, added 2006-08-24 AF
+		replaceAction = new QAction( tr("Re&place"), this);
+		replaceAction->setShortcut( tr("Ctrl+H") );
+		replaceAction->setStatusTip( tr("Search through the document and replace") );
+		connect( replaceAction, SIGNAL( triggered() ),
+			this, SLOT( replaceEdit() ));
+		
 
 		// 2005-10-07 AF, Porting, replaced this
 		//QAction *showExprAction = new QAction("View Expression", "&View Expression",0, this, "viewexpr");
@@ -538,7 +556,9 @@ namespace IAEX
 		editMenu->addAction( copyAction );
 		editMenu->addAction( pasteAction );
 		editMenu->addSeparator();
-		//editMenu->addAction( searchAction );
+		editMenu->addAction( findAction );
+		editMenu->addAction( replaceAction );
+		editMenu->addSeparator();
 		editMenu->addAction( showExprAction );
 
 
@@ -3054,6 +3074,50 @@ namespace IAEX
 				pasteCell();
 			else
 				subject_->textcursorPasteText();
+		}
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-08-24
+	 *
+	 * \brief Menu function, perform find
+	 */
+	void NotebookWindow::findEdit()
+	{
+		if( subject_ )
+		{
+			// initiate findform, check if it is already visible, or set the current document
+			if( !findForm_ )
+				findForm_ = new SearchForm( this, subject_ );
+			else
+				findForm_->setDocument( subject_ );
+
+			// show/start find form
+			if( !findForm_->isVisible() )
+				findForm_->show();
+		}
+	}
+
+	/*! 
+	 * \author Anders Fernström
+	 * \date 2006-08-24
+	 *
+	 * \brief Menu function, perform replace
+	 */
+	void NotebookWindow::replaceEdit()
+	{
+		if( subject_ )
+		{
+			// initiate findform(replace), check if it is already visible, or set the current document
+			if( !findForm_ )
+				findForm_ = new SearchForm( this, subject_, true );
+			else
+				findForm_->setDocument( subject_ );
+
+			// show/start find form
+			if( !findForm_->isVisible() )
+				findForm_->show();
 		}
 	}
 

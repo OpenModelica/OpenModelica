@@ -129,7 +129,7 @@ namespace IAEX
 		virtual void addChild(Cell *){}
 		virtual void removeChild(Cell *){}
 		virtual bool isClosed() const{ return false;}
-		virtual void setClosed(const bool){}
+		virtual void setClosed(const bool closed, bool update = true){}	// Changed 2006-08-24
 
 		virtual void addCellWidget(Cell *newCell); //Protected?
 
