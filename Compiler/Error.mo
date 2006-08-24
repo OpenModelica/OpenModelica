@@ -321,7 +321,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (SCRIPT_READ_SIM_RES_SIZE_ERROR,SCRIPTING(),ERROR(),
           "Error reading simulation result size"),
           (LOAD_MODEL_ERROR,TRANSLATION(),ERROR(),
-          "Class %s not found in MODELICAPATH"),
+          "Class %s not found in OPENMODELICALIBRARY"),
           (WRITING_FILE_ERROR,SCRIPTING(),ERROR(),
           "Error writing to file %s."),
           (SIMULATOR_BUILD_ERROR,TRANSLATION(),ERROR(),

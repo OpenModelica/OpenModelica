@@ -41,11 +41,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   
   file:	 ClassLoader.rml
   module:      ClassLoader
-  description: Loading of classes from $MODELICAPATH.
+  description: Loading of classes from $OPENMODELICALIBRARY.
  
   RCS: $Id$
  
-  This module loads classes from $MODELICAPATH. It exports two
+  This module loads classes from $OPENMODELICALIBRARY. It exports two
   functions: 
   load_class function 
   load_file function
@@ -72,7 +72,7 @@ with \"Env.rml\"
 with \"Dump.rml\"
 
   function: loadClass
-  This function takes a \'Path\' and the $MODELICAPATH as a string
+  This function takes a \'Path\' and the $OPENMODELICALIBRARY as a string
   and tries to load the class from the path.
   If the classname is qualified, the complete package is loaded. 
   E.g. load_class(Modelica.SIunits.Voltage) -> whole Modelica package loaded.
@@ -88,7 +88,7 @@ algorithm
       list<String> mps;
       Absyn.Program p;
       Absyn.Path rest,path;
-    case (Absyn.IDENT(name = classname),mp) /* Simple names: Just load the file if it can be found in $MODELICAPATH */ 
+    case (Absyn.IDENT(name = classname),mp) /* Simple names: Just load the file if it can be found in $OPENMODELICALIBRARY */ 
       equation 
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
@@ -138,7 +138,7 @@ end existDirectoryFile;
 
 protected function loadClassFromMps "function: loadClassFromMps
  
-  Loads a class or classes from a set of paths in modelicapath
+  Loads a class or classes from a set of paths in OPENMODELICALIBRARY
 "
   input Absyn.Ident inIdent;
   input list<String> inStringLst;
@@ -214,7 +214,7 @@ end loadClassFromMp;
 
 protected function loadCompletePackageFromMps "function: loadCompletePackageFromMps
  
-  Loads a whole package from the ModelicaPaths defined in MODELICAPATH
+  Loads a whole package from the ModelicaPaths defined in OPENMODELICALIBRARY
 "
   input Absyn.Ident inIdent;
   input list<String> inStringLst;
@@ -244,7 +244,7 @@ end loadCompletePackageFromMps;
 
 protected function loadCompletePackageFromMp "function: loadCompletePackageFromMp
   
-  Loads a whole package from the ModelicaPaths defined in MODELICAPATH
+  Loads a whole package from the ModelicaPaths defined in OPENMODELICALIBRARY
 "
   input Absyn.Ident inIdent;
   input String inString;

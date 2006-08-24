@@ -93,7 +93,7 @@ to compile it under a UNIX systems.
 
 17. For the compiler to be able to find the standard library, we have to set
     the following environment variable:
-    MODELICAPATH=C:\code\omc\trunk\ModelicaLibrary
+    OPENMODELICALIBRARY=C:\code\omc\trunk\ModelicaLibrary
 
 
 18. If all compiling steps in the above instructions were successful,

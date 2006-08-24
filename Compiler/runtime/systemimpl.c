@@ -581,7 +581,7 @@ RML_END_LABEL
 
 /* RML_BEGIN_LABEL(System__modelicapath) */
 /* { */
-/*   char *path = getenv("MODELICAPATH"); */
+/*   char *path = getenv("OPENMODELICALIBRARY"); */
 /*   if (path == NULL)  */
 /*       RML_TAILCALLK(rmlFC); */
   

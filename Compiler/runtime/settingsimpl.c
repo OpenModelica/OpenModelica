@@ -158,13 +158,13 @@ RML_BEGIN_LABEL(Settings__setModelicaPath)
   }
   memcpy(modelicaPath,command,strlen(command)+1);
 
- /* create a str of the form: MODELICAPATH=<PATH>*/
-  mmpath = (char*)malloc(strlen(command)+1+strlen("MODELICAPATH="));
+ /* create a str of the form: OPENMODELICALIBRARY=<PATH>*/
+  mmpath = (char*)malloc(strlen(command)+1+strlen("OPENMODELICALIBRARY="));
   if (mmpath == NULL) {
     RML_TAILCALLK(rmlFC);
   }
-  strncpy(mmpath,"MODELICAPATH=",strlen("MODELICAPATH="));
-  mmpath[strlen("MODELICAPATH=")]='\0';
+  strncpy(mmpath,"OPENMODELICALIBRARY=",strlen("OPENMODELICALIBRARY="));
+  mmpath[strlen("OPENMODELICALIBRARY=")]='\0';
   strncat(mmpath,command,strlen(command));
   /*set the env-var to created string
    this is useful when scripts and clients started
@@ -181,7 +181,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(Settings__getModelicaPath)
 {
 	 
-	 char *path = getenv("MODELICAPATH");
+	 char *path = getenv("OPENMODELICALIBRARY");
 	 if (path == NULL) {
 	    rmlA0 = (void*) mk_scon("");
 	    RML_TAILCALLK(rmlFC);
