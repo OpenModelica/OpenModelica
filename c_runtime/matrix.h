@@ -31,6 +31,9 @@ void hybrd_(void (*) (int*, double *, double*, int*),
 assert(A!=0); \
 for (int i=0;i<nrows*ncols;i++) A[i]=0.0;
 
+#define free_matrix(A) delete []A;
+#define free_vector(A) delete []A;
+
 #define declare_vector(v,nelts) double *v=new double[nelts];\
 assert(v!=0); \
 for (int i=0;i<nelts;i++) v[i]=0.0;

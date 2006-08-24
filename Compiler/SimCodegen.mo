@@ -3654,8 +3654,8 @@ algorithm
   (outCFunction,outInteger,outCFunctionLst):=
   matchcontinue (inDAELow,inTplIntegerIntegerDAELowEquationLstOption,inJacobianType,inInteger)
     local
-      Codegen.CFunction s1,s2,s3,s4,s;
-      Integer cg_id_1,cg_id,eqn_size,unique_id,cg_id1,cg_id2,cg_id3,cg_id4;
+      Codegen.CFunction s1,s2,s3,s4,s5,s;
+      Integer cg_id_1,cg_id,eqn_size,unique_id,cg_id1,cg_id2,cg_id3,cg_id4,cg_id5;
       list<CFunction> f1;
       DAELow.DAELow dae,d;
       Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
@@ -3707,7 +3707,8 @@ algorithm
         (s2,cg_id2) = generateOdeSystem2PopulateAb(jac, v, eqn, unique_id, cg_id1);
         (s3,cg_id3) = generateOdeSystem2SolveCall(eqn_size, unique_id, cg_id2);
         (s4,cg_id4) = generateOdeSystem2CollectResults(v, unique_id, cg_id3);
-        s = Codegen.cMergeFns({s1,s2,s3,s4});
+        (s5,cg_id5) = generateOdeSystem2Cleanup(eqn_size, unique_id, cg_id4);
+        s = Codegen.cMergeFns({s1,s2,s3,s4,s5});
       then
         (s,cg_id4,{});
     case (DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),SOME(jac),DAELow.JAC_NONLINEAR(),cg_id) /* Time varying nonlinear jacobian. Non-linear system of equations */ 
@@ -4497,6 +4498,41 @@ algorithm
         fail();
   end matchcontinue;
 end generateOdeSystem2Declaration;
+
+protected function generateOdeSystem2Cleanup "
+  Generates code for the cleanups (delete) of A and b when
+  solving linear systems of equations.
+  inputs: (size: int, unique_id: int)
+  outputs: (fcn : CFunction)
+"
+  input Integer inInteger1;
+  input Integer inInteger2;
+  input Integer inInteger3;
+  output CFunction outCFunction;
+  output Integer outInteger;
+algorithm 
+  (outCFunction,outInteger):=
+  matchcontinue (inInteger1,inInteger2,inInteger3)
+    local
+      String size_str,id_str,stmt1,stmt2;
+      Codegen.CFunction res;
+      Integer size,unique_id,cg_id;
+    case (size,unique_id,cg_id) /* size unique_id cg var_id cg var_id */ 
+      equation 
+        size_str = intString(size);
+        id_str = intString(unique_id);
+        stmt1 = Util.stringAppendList({"free_matrix(A",id_str,");"});
+        stmt2 = Util.stringAppendList({"free_vector(b",id_str,");"});
+        res = Codegen.cAddStatements(Codegen.cEmptyFunction, {stmt1,stmt2});
+      then
+        (res,cg_id);
+    case (size,unique_id,cg_id)
+      equation 
+        Debug.fprint("failtrace", "generateOdeSystem2Cleanup failed\n");
+      then
+        fail();
+  end matchcontinue;
+end generateOdeSystem2Cleanup;
 
 protected function generateOdeSystem2PopulateAb "function: generateOdeSystem2PopulateAb
   author: PA
