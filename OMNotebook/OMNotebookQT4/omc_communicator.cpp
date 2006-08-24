@@ -305,7 +305,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 /**
  * \brief
  * Loads the specified Modelica class by looking up the correct file to load in the
- * environment variable MODELICAPATH.
+ * environment variable OPENMODELICALIBRARY.
  *
  * \return true if a file with the specified Modelica class was found, false otherwise.
  *

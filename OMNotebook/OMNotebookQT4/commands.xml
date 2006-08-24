@@ -49,7 +49,7 @@
 	</command>
 	<command name="loadModel($0)">
 		<field name="$0">name</field>
-		<helptext>Load model, function, or package relative to $MODELICAPATH. Ex: loadModel(Modelica.Electrical). Note: if e.g. loadModel(Modelica) fails, you may have MODELICAPATH pointing at the wrong location.</helptext>
+		<helptext>Load model, function, or package relative to $OPENMODELICALIBRARY. Ex: loadModel(Modelica.Electrical). Note: if e.g. loadModel(Modelica) fails, you may have OPENMODELICALIBRARY pointing at the wrong location.</helptext>
 	</command>
 	<command name="plot($0)">
 		<field name="$0">var</field>
