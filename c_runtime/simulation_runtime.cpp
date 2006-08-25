@@ -38,7 +38,6 @@ long numpoints; // the number of points allocated for in data array
 long actual_points=0; // the number of actual points saved
 //double t;
 
-int init; 
 int sim_verbose;
 
 double* h_saved;
@@ -233,9 +232,9 @@ int euler_main(int argc,char** argv) {
   if (sim_verbose) { cout << "Allocated simulation data storage" << endl; }
   
   // Calculate initial values from (fixed) start attributes 
-  init=1;
+  globalData->init=1;
   initial_function();
-  init=0; 
+  globalData->init=0; 
   
   if (sim_verbose)  { 
   	cout << "Performed initial value calutation." << endl; 
@@ -578,7 +577,7 @@ int dassl_main( int argc, char**argv)
 		if (sim_verbose) { cout << "Calculated bound parameters" << endl; }		
   // Calculate initial values from (fixed) start attributes and intial equation
   // sections
-  init=1;
+  globalData->init=1;
   initial_function(); // calculates e.g. start values depending on e.g parameters.
   
   if (initialize(init_method)) {
@@ -589,6 +588,7 @@ int dassl_main( int argc, char**argv)
   	cout << "Performed initial value calculation." << endl; 
   	cout << "Starting numerical solver at time "<< start << endl;
   }
+  
   // Calculate initial derivatives
   if(functionODE()) { 
     printf("Error calculating initial derivatives\n");
@@ -600,29 +600,33 @@ int dassl_main( int argc, char**argv)
     goto exit;
   }
   tout = newTime(globalData->timeValue, step); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
+
+  saveall();
  
   function_updateDependents();
 
-  functionDAE_output();
-  saveall();
+  // Need to check for events at init=1 since e.g. initial() generate event at initialization.
+  CheckForNewEvents(&globalData->timeValue);
+  StartEventIteration(&globalData->timeValue);
+
+  //functionDAE_output();
+  
+  globalData->init = 0; 
+
   if(emit()) { printf("Error, not enough space to save data"); return -1; }
-  calcEnabledZeroCrossings();
+  calcEnabledZeroCrossings(); 
   DDASRT(functionDAE_res, &globalData->nStates,   &globalData->timeValue, globalData->states, 
          globalData->statesDerivatives, &tout, 
          info,&rtol, &atol, 
          &idid,rwork,&lrw, iwork, &liw, globalData->algebraics, 
          &ipar, dummyJacobianDASSL, function_zeroCrossing,
          &globalData->nZeroCrossing, jroot);
-  init=0;
   info[0] = 1;
 
   functionDAE_res(&globalData->timeValue,globalData->states,globalData->statesDerivatives,
                   dummy_delta,0,0,0); // Since residual function calculates 
 					      // alg vars too.
   functionDAE_output();
-
-
-
 
   tout += step;
   while(globalData->timeValue<stop && idid>0) {

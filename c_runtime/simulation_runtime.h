@@ -193,7 +193,8 @@ typedef struct sim_DATA {
   double* outputVars; //out_y OUTPUTVARS
   double* helpVars;
   double* initialResiduals;
-  char* initFixed;
+  char* initFixed; // Fixed attribute for all variables and parameters
+  int init; // =1 during initialization, 0 otherwise.
   void** extObjs; // External objects	
   /* nStatesDerivatives == states */
   long nStates,nAlgebraic,nParameters;
@@ -334,6 +335,6 @@ double GreaterEq(double a,double b);
 
 #define MODELICA_ASSERT(cond,msg) do { if (!(cond)) { printf(msg); \
 exit(-1);} } while(0)
-#define initial() init
+#define initial() localData->init
 
 #endif

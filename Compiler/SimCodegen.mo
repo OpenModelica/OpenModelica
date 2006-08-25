@@ -6641,13 +6641,18 @@ algorithm
       Codegen.CFunction cfunc;
       DAE.DAElist dae;
       DAELow.DAELow dlow;
-    case (_,DAELow.DAELOW(orderedVars = DAELow.VARIABLES(varArr = vararr)),_,ass2,e,cg_id) /* cg var_id cg var_id */ 
+      list<Integer> zcEqns;
+      
+      // Discrete equations that exists in ZeroCrossings are skipped.
+    case (_,dlow as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(varArr = vararr)),_,ass2,e,cg_id) /* cg var_id cg var_id */ 
       equation 
         e_1 = e - 1;
         v = ass2[e_1 + 1];
         v_1 = v - 1;
         (v) = DAELow.vararrayNth(vararr, v_1);
         true = hasDiscreteVar({v});
+        zcEqns = DAELow.zeroCrossingsEquations(dlow);
+        true = listMember(e,zcEqns);
       then
         (Codegen.cEmptyFunction,cg_id);
     case (dae,dlow,ass1,ass2,eqn,cg_id)

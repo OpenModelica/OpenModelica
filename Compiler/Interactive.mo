@@ -11934,12 +11934,9 @@ algorithm
       Absyn.ComponentRef cr1,cr2;
     case Absyn.EQ_CONNECT(connector1 = cr1,connector2 = cr2)
       equation 
-        p1 = Absyn.crefToPath(cr1);
-        p2 = Absyn.crefToPath(cr2);
-        s1 = Absyn.pathString(p1);
-        s2 = Absyn.pathString(p2);
-        s3 = stringAppend(s1, ",");
-        str = stringAppend(s3, s2);
+        s1 = Dump.printComponentRefStr(cr1);
+        s2 = Dump.printComponentRefStr(cr2);
+        str = Util.stringAppendList({s1,",",s2});
       then
         str;
   end matchcontinue;

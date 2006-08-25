@@ -791,6 +791,67 @@ algorithm
   end matchcontinue;
 end addDummyState;
 
+public function zeroCrossingsEquations "Returns a list of all equations (by their index) that contain a zero crossing
+Used e.g. to find out which discrete equations are not part of a zero crossing"
+  input DAELow dae;
+  output list<Integer> eqns;
+algorithm
+  eqns := matchcontinue(dae)
+    case (DAELOW(eventInfo=EVENT_INFO(zeroCrossingLst = zcLst),orderedEqs=eqnArr)) local
+      list<ZeroCrossing> zcLst;
+      list<list<Integer>> zcEqns;
+      list<Integer> wcEqns;
+      EquationArray eqnArr;
+      equation
+        zcEqns = Util.listMap(zcLst,zeroCrossingEquations);
+        wcEqns = whenEquationsIndices(eqnArr);
+        eqns = Util.listListUnion(listAppend(zcEqns,{wcEqns}));
+      then eqns;
+  end matchcontinue;
+end zeroCrossingsEquations;
+
+protected function whenEquationsIndices "Returns all equation-indices that contain a when clause"
+  input EquationArray eqns;
+  output list<Integer> res;
+algorithm
+   res := matchcontinue(eqns)
+     case(eqns) equation
+       	res=whenEquationsIndices2(1,equationSize(eqns),eqns);
+       then res;
+   end matchcontinue;
+end whenEquationsIndices;  
+
+protected function whenEquationsIndices2 "Help function"
+  input Integer i;
+  input Integer size;
+  input EquationArray eqns;
+  output list<Integer> eqnLst;
+algorithm
+  eqnLst := matchcontinue(i,size,eqns)
+    case(i,size,eqns) equation
+      true = (i > size ); 
+    then {};
+    case(i,size,eqns) 
+      equation
+        WHEN_EQUATION(_) = equationNth(eqns,i-1);
+        eqnLst = whenEquationsIndices2(i+1,size,eqns);
+    then i::eqnLst;
+    case(i,size,eqns)
+      equation
+        eqnLst=whenEquationsIndices2(i+1,size,eqns);
+      then eqnLst;
+  end matchcontinue;
+end whenEquationsIndices2;
+
+protected function zeroCrossingEquations "Returns the list of equations (indices) from a ZeroCrossing"
+  input ZeroCrossing zc;
+  output list<Integer> lst;
+algorithm
+  lst := matchcontinue(zc)
+    case(ZERO_CROSSING(_,lst,_)) then lst;
+  end matchcontinue;
+end zeroCrossingEquations;
+
 protected function dumpZcStr "function: dumpZcStr
  
   Dumps a zerocrossing into a string, for debugging purposes.
@@ -993,6 +1054,7 @@ algorithm
       Boolean scalar;
     case (((e as Exp.CALL(path = Absyn.IDENT(name = "noEvent"))),(_,vars))) then ((e,({},vars))); 
     case (((e as Exp.CALL(path = Absyn.IDENT(name = "sample"))),(zeroCrossings,vars))) then ((e,((e :: zeroCrossings),vars))); 
+      
     case (((e as Exp.RELATION(exp1 = e1,operator = op,exp2 = e2)),(zeroCrossings,vars))) /* function with discrete expressions generate no zerocrossing */ 
       equation 
         true = isDiscreteExp(e1, vars);
