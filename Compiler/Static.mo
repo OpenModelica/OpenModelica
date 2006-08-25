@@ -7132,22 +7132,27 @@ protected function canonCref2 "function: canonCref2
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Exp.ComponentRef inComponentRef;
-  input list<Integer> inIntegerLst;
+  input Exp.ComponentRef inPrefixCref;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.ComponentRef outComponentRef;
 algorithm 
   (outCache,outComponentRef) :=
-  matchcontinue (inCache,inEnv,inComponentRef,inIntegerLst,inBoolean)
+  matchcontinue (inCache,inEnv,inComponentRef,inPrefixCref,inBoolean)
     local
       list<Exp.Subscript> ss_1,ss;
       list<Env.Frame> env;
       Ident n;
-      list<Integer> sl;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,Exp.CREF_IDENT(ident = n,subscriptLst = ss),sl,impl) /* impl */ 
+      Exp.ComponentRef prefixCr,cr;
+      list<Integer> sl;
+      tuple<Types.TType, Option<Absyn.Path>> t;
+    case (cache,env,Exp.CREF_IDENT(ident = n,subscriptLst = ss),prefixCr,impl) /* impl */ 
       equation 
+        cr = Exp.joinCrefs(prefixCr,Exp.CREF_IDENT(n,{}));
+        (cache,_,t,_) = Lookup.lookupVar(cache,env, cr);
+        sl = Types.getDimensionSizes(t);          
         (cache,ss_1) = Ceval.cevalSubscripts(cache,env, ss, sl, impl, Ceval.MSG());
       then
         (cache,Exp.CREF_IDENT(n,ss_1));
@@ -7189,12 +7194,14 @@ algorithm
         (cache,_,t,_) = Lookup.lookupVar(cache,env, Exp.CREF_IDENT(n,{}));
         sl = Types.getDimensionSizes(t);
         (cache,ss_1) = Ceval.cevalSubscripts(cache,env, ss, sl, impl, Ceval.MSG());
-        (cache,c_1) = canonCref2(cache,env, c, sl, impl);
+       (cache,c_1) = canonCref2(cache,env, c, Exp.CREF_IDENT(n,ss), impl);
       then
         (cache,Exp.CREF_QUAL(n,ss_1,c_1));
     case (cache,env,cr,_)
       equation 
-        Debug.fprint("failtrace", "-canon_cref failed\n");
+        Debug.fprint("failtrace", "-canon_cref failed, cr: ");
+        Debug.fprint("failtrace", Exp.printComponentRefStr(cr));
+        Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;

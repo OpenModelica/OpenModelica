@@ -6423,9 +6423,13 @@ algorithm
         (cache,dae,_,csets_1,ci_state_1) = instEquationCommon(cache,env_1, mods, pre, csets, ci_state, eq, NON_INITIAL(), impl);
       then
         (cache,dae,env,csets_1,ci_state_1);
-    case (_,_,_,_,_,_,_,impl)
+    case (_,_,_,_,_,_,SCode.EQUATION(eEquation = eqn),impl)
+      local SCode.EEquation eqn; String str;
       equation 
-        Debug.fprint("failtrace", "- instEquation failed\n");
+        str= SCode.equationStr(eqn);
+        Debug.fprint("failtrace", "- instEquation failed eqn:");
+        Debug.fprint("failtrace", str);
+        Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;

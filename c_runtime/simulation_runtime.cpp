@@ -609,8 +609,6 @@ int dassl_main( int argc, char**argv)
   CheckForNewEvents(&globalData->timeValue);
   StartEventIteration(&globalData->timeValue);
 
-  //functionDAE_output();
-  
   globalData->init = 0; 
 
   if(emit()) { printf("Error, not enough space to save data"); return -1; }
@@ -1001,6 +999,7 @@ void StateEventHandler(long* jroot, double *t)
     if (jroot[i] ) {
       handleZeroCrossing(i);
       function_updateDependents();
+      functionDAE_output();
     }
   }
   emit();
@@ -1052,6 +1051,7 @@ ExecuteNextEvent(double *t)
       globalData->timeValue = *t;
       handleZeroCrossing(nextEvent);
       function_updateDependents();
+      functionDAE_output();
     }
     //    CheckForNewEvents(t);
     emit();
