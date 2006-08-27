@@ -18,8 +18,7 @@
   constant Integer one = 1;      // Declaration equation
 equation
   x = 3*one;            // Normal equation 
-end Equations
-</Input>
+end Equations</Input>
      <Output></Output>
     </InputCell>
     <GroupCell closed="true" >

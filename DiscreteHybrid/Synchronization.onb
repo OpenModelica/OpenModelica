@@ -12,7 +12,7 @@
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Events often need to be synchronized and propagated. However, Modelica gives no guarantee that two different independent events occur at exactly the same time instant if they are not explicitly synchronized, e.g. via equations. &lt;br />&lt;br />To achieve guaranteed synchronization between two events, we use the synchronous principle that computation at an event takes no time. An event can instantaneously, via one or more equations, change the values of certain discrete time variables used for the synchronization, typically &lt;span style=" font-family:Courier New;">Boolean&lt;/span> or &lt;span style=" font-family:Courier New;">Integer&lt;/span> variables. These changes may trigger other events without any elapsed time, which thereby are synchronized. For example, you can synchronize counters performing their counting behavior at different frequencies, e.g. as in the example below.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>model SynchCounters              // Two synchronized counters
   Boolean slowPulses;
   Boolean fastPulses;
@@ -22,19 +22,18 @@ equation
   fastPulses = sample(0,1);
   when fastPulses then              // Count every second
     count      = pre(count)+1;
-    slowPulses = mod(count,2)==0;       // true when count=2,4,6,...
+    slowPulses = mod(count,2)==0;    // true when count=2,4,6,...
    end when;
   when slowPulses then              // Count every 2nd second
     slowCount = pre(slowCount)+1;
   end when;
-end SynchCounters;
-</Input>
-     <Output></Output>
+end SynchCounters;</Input>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />A kind of [OpenCurlyDoubleQuote]deadlock[CloseCurlyDoubleQuote] between different &lt;span style=" font-family:Courier New;">when-&lt;/span>equations is present if there are mutual dependences, a so-called [OpenCurlyDoubleQuote]algebraic loop[CloseCurlyDoubleQuote], between the equations of the &lt;span style=" font-family:Courier New;">when-&lt;/span>equations, as in the example below. This case should be detected by a Modelica compiler. &lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />A kind of "deadlock" between different &lt;span style=" font-family:Courier New;">when-&lt;/span>equations is present if there are mutual dependences, a so-called "algebraic loop", between the equations of the &lt;span style=" font-family:Courier New;">when-&lt;/span>equations, as in the example below. This case should be detected by a Modelica compiler. &lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>model DeadLock
   Boolean b1, b2;
 equation
@@ -44,17 +43,18 @@ equation
   when pre(b2) then
     b1 = true;
   end when;
-end DeadLock;
-</Input>
-     <Output></Output>
+end DeadLock;</Input>
+     <Output>Ok</Output>
     </InputCell>
     <GroupCell closed="false" >
      <TextCell style="Subsection" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of DeadLock&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
-      <Input>simulate( DeadLock );</Input>
-      <Output></Output>
+     <InputCell style="Input" closed="false" >
+      <Input>simulate( DeadLock ) //??Need to be investigated</Input>
+      <Output>record
+    resultFile = "DeadLock_res.plt"
+end record</Output>
      </InputCell>
      <TextCell style="Output" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>

@@ -19,7 +19,7 @@
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The if-equation below specifies different equations for the variable y in three different operating regions, limiting values of y such that: uMin &amp;lt;= y &amp;lt;= uMax.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class IfEquation
   parameter Real u;
   parameter Real uMax;
@@ -34,7 +34,7 @@ equation
     y = u;
   end if;
 end IfEquation;</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
@@ -44,9 +44,15 @@ end IfEquation;</Input>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Here the simulation of &lt;span style=" font-family:Courier New;">IfEquation&lt;/span> is shown.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>simulate( IfEquation );</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>simulate( IfEquation ) //?? Incomplete model example - cannot be simulated</Input>
+     <Output>record
+    resultFile = "Simulation failed.
+Warning, parameter u has no value
+Warning, parameter uMax has no value
+Error occured while flattening model IfEquation
+"
+end record</Output>
     </InputCell>
     <TextCell style="Output" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>

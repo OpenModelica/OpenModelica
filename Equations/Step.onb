@@ -9,45 +9,45 @@
     <TextCell style="Section" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Block Signal Connectors&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>connector InPort            "Connector with input signals of type Real"
   parameter Integer n = 1        "Dimension of signal vector";
   input Real     signal[n]      "Real input signals";
 end InPort;                // From Modelica.Blocks.Interfaces</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>connector OutPort            "Connector with output signals of type Real"
   parameter Integer n = 1        "Dimension of signal vector";
   output Real     signal[n]      "Real output signals";
 end OutPort;              // From Modelica.Blocks.Interfaces</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="true" >
     <TextCell style="Section" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Time From Modelica.SIunits&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>type Time=Real(quantity="Time",unit="s");</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="true" >
     <TextCell style="Section" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Signal Block Components&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>partial block MO             "Multiple Output continuous control block"
   parameter Integer nout = 1      "Number of outputs";
   OutPort       outPort(n = nout)  "Connector of Real output signals";
 protected
   Real n[nout] = outPort.signal;
 end MO;                  // From Modelica.Blocks.Interfaces</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
@@ -57,7 +57,7 @@ end MO;                  // From Modelica.Blocks.Interfaces</Input>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The class &lt;span style=" font-family:Courier New;">Step&lt;/span> includes a number of advanced features such as variable length arrays, conditional expressions in parameter declarations, and a repetitive equation structure in the form of a &lt;span style=" font-family:Courier New;">for&lt;/span>-equation defining the vector &lt;span style=" font-family:Courier New;">outPort.signal&lt;/span> inherited from the base class MO, a Multiple Output continuous control block.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>block Step                   "Generate step signals of type Real"
   parameter Real   height[:] = {1}      "Heights of steps";
   parameter Real   offset[:] = {0}      "Offset of output signals"; 
@@ -90,27 +90,27 @@ equation
   end for;    
 end Step;                        // From Modelica.Blocks.Sources  
 </Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
     <TextCell style="Section" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of Step &lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>simulate( Step );</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>simulate( Step ) /??Error in plotting below - need investigation</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">record&lt;/p>&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">    resultFile = "Step_res.plt"&lt;/p>&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">end record&lt;/p>&lt;/body>&lt;/html></Output>
     </InputCell>
     <TextCell style="Output" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>plot( { outPort.n, outPort.signal[1], offset[1], nout } );</Input>
-     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>plot( { outPort.n, outPort.signal[1], offset[1], nout } )</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">[Error] Unable to find plot image "C:/OpenModelica1.4.2/bin/omc_tmp_plot.png"&lt;/p>&lt;/body>&lt;/html></Output>
     </InputCell>
     <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/13.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
-     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/13.png" >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</Image>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" color:#000000;">&lt;img src="file:///C:/OpenModelica1.4.2/bin/OMNoteboook_tempfiles/148.png" width="288" height="214" />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica1.4.2/bin/OMNoteboook_tempfiles/148.png" >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</Image>
     </TextCell>
    </GroupCell>
   </GroupCell>

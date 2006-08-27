@@ -86,7 +86,7 @@ end Mult2;</Input>
      <TextCell style="Subsection" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
+     <InputCell style="Input" closed="false" >
       <Input>class MatrixMultiplication
   Real M1[2, 3] = [2, 3, 4; 5, 6, 7];
   Real M2[3, 2] = [5, 6; 3, 2; 1, 7];
@@ -94,24 +94,23 @@ end Mult2;</Input>
 equation
   prod = M1*M2;  
 end MatrixMultiplication;</Input>
-      <Output></Output>
+      <Output>Ok</Output>
      </InputCell>
-     <GroupCell closed="true" >
+     <GroupCell closed="false" >
       <TextCell style="Subsubsection" >
-       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Simulation of Repetitive&lt;/p>&lt;/body>&lt;/html></Text>
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Simulation of MatrixMultiplication&lt;/p>&lt;/body>&lt;/html></Text>
       </TextCell>
-      <InputCell style="Input" closed="true" >
-       <Input>simulate( MatrixMultiplication );</Input>
-       <Output></Output>
+      <InputCell style="Input" closed="false" >
+       <Input>simulate( MatrixMultiplication )</Input>
+       <Output>record
+    resultFile = "MatrixMultiplication_res.plt"
+end record</Output>
       </InputCell>
-      <TextCell style="Output" >
-       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+      <TextCell style="Text" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Take a look at a value:&lt;/p>&lt;/body>&lt;/html></Text>
       </TextCell>
       <InputCell style="Input" closed="true" >
-       <Input>M1[[1,2
-]]
-[0]
-</Input>
+       <Input>val(M1[1,2],0)   //??val is needed</Input>
        <Output></Output>
       </InputCell>
      </GroupCell>

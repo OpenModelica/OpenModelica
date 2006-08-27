@@ -20,16 +20,14 @@
   parameter String quantity    = "";
   parameter String unit     = "";
   parameter String displayUnit   = "";
-end Real;    
-</Input>
+end Real;    </Input>
      <Output></Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Below are examples of definitions and uses of types corresponding to some physical quantities. Remember that the &lt;span style=" font-family:Courier New;">final&lt;/span> prefix on &lt;span style=" font-family:Courier New;">quantity&lt;/span> and &lt;span style=" font-family:Courier New;">unit&lt;/span> means that these attributes cannot be changed by further modification of the types &lt;span style=" font-family:Courier New;">Force&lt;/span> and &lt;span style=" font-family:Courier New;">Angle&lt;/span>.&lt;br />&lt;br />&lt;br />Definintion of quantity types:&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
-     <Input>type Force = Real(final quantity = "Force", final unit = "N");
-</Input>
+     <Input>type Force = Real(final quantity = "Force", final unit = "N");</Input>
      <Output></Output>
     </InputCell>
     <TextCell style="Text" >
@@ -37,8 +35,7 @@ end Real;
     </TextCell>
     <InputCell style="Input" closed="true" >
      <Input>type Angle = Real(final quantity = "Angle", final unit = "rad",
-                    displayUnit    = "deg");
-</Input>
+                    displayUnit    = "deg");</Input>
      <Output></Output>
     </InputCell>
     <TextCell style="Text" >
@@ -57,8 +54,7 @@ end QuantityTypes;</Input>
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The quantity attribute can be used as a grouping mechanism in interactive Modelica environments. The quantity name is needed because it is in general not possible to determine just from the unit whether two different units belong to the same physical quantity. For example, consider the following two types:&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
-     <Input>type Energy = Real(final quantity = "Energy", final unit = "J");
-</Input>
+     <Input>type Energy = Real(final quantity = "Energy", final unit = "J");</Input>
      <Output></Output>
     </InputCell>
     <TextCell style="Text" >
@@ -70,7 +66,7 @@ end QuantityTypes;</Input>
      <Output></Output>
     </InputCell>
    </GroupCell>
-   <GroupCell closed="true" >
+   <GroupCell closed="false" >
     <TextCell style="Section" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Modelica.SIunits&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>

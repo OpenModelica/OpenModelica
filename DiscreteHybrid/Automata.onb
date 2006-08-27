@@ -19,8 +19,7 @@
   output Boolean  outSignal;
  equation
   outSignal = sample(startTime, period);
-end SampleSignalGenerator;
-</Input>
+end SampleSignalGenerator;</Input>
      <Output></Output>
     </InputCell>
    </GroupCell>

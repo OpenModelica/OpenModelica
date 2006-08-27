@@ -8,7 +8,7 @@
    <TextCell style="Text" >
     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />There is a special form of assignment statement that is only used when the right-hand side contains a call to a function with multiple results. The left-hand side contains a parenthesized, comma-separated list of variables receiving the results from the function call. A function with n results needs n receiving variables on the left-hand side. &lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
    </TextCell>
-   <InputCell style="Input" closed="true" >
+   <InputCell style="Input" closed="false" >
     <Input>function f
   input Real x;
   input Real y;
@@ -20,12 +20,12 @@ algorithm
   r2 := y;
   r3 := x*y;
 end f;    </Input>
-    <Output></Output>
+    <Output>Ok</Output>
    </InputCell>
    <TextCell style="Text" >
     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
    </TextCell>
-   <InputCell style="Input" closed="true" >
+   <InputCell style="Input" closed="false" >
     <Input>model fCall
   Real x[3];
   Real a, b, c;
@@ -34,55 +34,48 @@ equation
   (x[1], x[2], x[3]) = f(3.0, 4.0);
 end fCall;  
 </Input>
-    <Output></Output>
+    <Output>Ok</Output>
    </InputCell>
-   <GroupCell closed="true" >
+   <GroupCell closed="false" >
     <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">MakeAlive on f&lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Calling the function f&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">When running MakeAlive on the function we can call &lt;span style=" font-family:Courier New;">f&lt;/span> with some input values and see what outputs it returns.&lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">We can call &lt;span style=" font-family:Courier New;">f&lt;/span> with some input values and see what outputs it returns.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>MakeAlive[f]
-</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>f(2.5, 3)</Input>
+     <Output>(2.5,3.0,7.5)</Output>
     </InputCell>
-    <InputCell style="Input" closed="true" >
-     <Input>f[2.5, 3
-]
-</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>f(3, 4)</Input>
+     <Output>(3.0,4.0,12.0)</Output>
     </InputCell>
-    <InputCell style="Input" closed="true" >
-     <Input>f[3, 4
-]
-</Input>
-     <Output></Output>
-    </InputCell>
-    <InputCell style="Input" closed="true" >
-     <Input>f[1.0, 2.0
-]
-</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>f(1.0, 2.0)</Input>
+     <Output>(1.0,2.0,2.0)</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
     <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of fCall&lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of the fCall model&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">We simulate &lt;span style=" font-family:Courier New;">fCall&lt;/span> in the interval from 0 to 1, then we can look at the values of the variables.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>simulate( fCall );</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>simulate( fCall )  /??error</Input>
+     <Output>record
+    resultFile = "Simulation failed.
+Too few equations, underdetermined system. The model has 6 variables and 2 equations
+"
+end record</Output>
     </InputCell>
     <TextCell style="Output" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
-     <Input>{a[0], b[0], c[0]}</Input>
+     <Input>{val(a,0), val(b,0), val(c,0)}  //??val used</Input>
      <Output></Output>
     </InputCell>
     <InputCell style="Input" closed="true" >
@@ -90,8 +83,8 @@ end fCall;
      <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
     </InputCell>
     <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/10.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
-     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/10.png" >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</Image>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" color:#000000;">&lt;img src="file:///C:/OpenModelica1.4.2/bin/OMNoteboook_tempfiles/4.png" width="288" height="214" />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica1.4.2/bin/OMNoteboook_tempfiles/4.png" >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</Image>
     </TextCell>
    </GroupCell>
   </GroupCell>

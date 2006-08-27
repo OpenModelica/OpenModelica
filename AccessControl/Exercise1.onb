@@ -36,7 +36,7 @@ end AccessInst;</Input>
      <TextCell style="Text" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The public variables &lt;span style=" font-family:Courier New;">a, b&lt;/span> and &lt;span style=" font-family:Courier New;">c&lt;/span> can be set in either class, while &lt;span style=" font-family:Courier New;">d&lt;/span> and &lt;span style=" font-family:Courier New;">e&lt;/span> must be set in class &lt;span style=" font-family:Courier New;">Acc&lt;/span>. The variable a must be a parameter, since we want to change it in the class Access.&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
+     <InputCell style="Input" closed="false" >
       <Input>class Access
   parameter Real a;
   Real b;
@@ -49,16 +49,16 @@ equation
   d = 5;
   e = 7;  
 end Access;</Input>
-      <Output></Output>
+      <Output>Ok</Output>
      </InputCell>
      <TextCell style="Text" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Since a is a parameter it can not be changed during simulation, so it can not be modified in the equation section.&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
+     <InputCell style="Input" closed="false" >
       <Input>class AccessInst
   Access acc(a = 7.4);
 end AccessInst;</Input>
-      <Output></Output>
+      <Output>Ok</Output>
      </InputCell>
      <TextCell style="Text" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
@@ -67,16 +67,16 @@ end AccessInst;</Input>
       <TextCell style="Subsubsection" >
        <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Simulation of Access and AccessInst&lt;/p>&lt;/body>&lt;/html></Text>
       </TextCell>
-      <InputCell style="Input" closed="true" >
+      <InputCell style="Input" closed="false" >
        <Input>simulate( Access );</Input>
-       <Output></Output>
+       <Output>[done]</Output>
       </InputCell>
       <TextCell style="Output" >
        <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
       </TextCell>
-      <InputCell style="Input" closed="true" >
+      <InputCell style="Input" closed="false" >
        <Input>simulate( AccessInst );</Input>
-       <Output></Output>
+       <Output>[done]</Output>
       </InputCell>
       <TextCell style="Output" >
        <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>

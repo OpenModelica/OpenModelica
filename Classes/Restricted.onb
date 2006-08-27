@@ -18,14 +18,13 @@
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Model&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">This keyword is used for modeling purposes. The only restriction is that a&lt;span style=" font-family:Courier New;"> model&lt;/span> may not be used in connections.&lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The &lt;span style=" font-family:Courier New;">model&lt;/span> keyword is used for modeling purposes. The only restriction is that a&lt;span style=" font-family:Courier New;"> model&lt;/span> may not be used in connections.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
      <Input>model SimpleCar
   Wheel w1, w2, w3, w4     "Four wheels";
   Chassis chassis;
-end SimpleCar;  
-</Input>
+end SimpleCar;  </Input>
      <Output></Output>
     </InputCell>
    </GroupCell>
@@ -40,8 +39,7 @@ end SimpleCar;
      <Input>record person
   Real age;
   String name;
-end person;  
-</Input>
+end person;  </Input>
      <Output></Output>
     </InputCell>
    </GroupCell>
@@ -53,8 +51,7 @@ end person;
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The restricted class &lt;span style=" font-family:Courier New;">type&lt;/span> is often used to introduce new type names. A &lt;span style=" font-family:Courier New;">type&lt;/span> may be an extension to either a predefined type (e.g. &lt;span style=" font-family:Courier New;">Real&lt;/span> or &lt;span style=" font-family:Courier New;">Integer&lt;/span>), a &lt;span style=" font-family:Courier New;">record&lt;/span> &lt;span style=" font-family:Courier New;">class&lt;/span> or some kind of array.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
-     <Input>type Matrix = Real[3, 3];
-</Input>
+     <Input>type Matrix = Real[3, 3];</Input>
      <Output></Output>
     </InputCell>
    </GroupCell>
@@ -69,8 +66,7 @@ end person;
      <Input>connector Pin
   Voltage v;
   flow Current i;
-end Pin;  
-</Input>
+end Pin;  </Input>
      <Output></Output>
     </InputCell>
    </GroupCell>
@@ -79,7 +75,7 @@ end Pin;
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Block&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">A &lt;span style=" font-family:Courier New;">block&lt;/span> is class for which the data flow direction is known for each of its variables. All variables declared in a &lt;span style=" font-family:Courier New;">block&lt;/span> must have one of the prefixes &lt;span style=" font-family:Courier New;">input&lt;/span> or &lt;span style=" font-family:Courier New;">output&lt;/span>. A &lt;span style=" font-family:Courier New;">block&lt;/span> may not be used in connections. &lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">A &lt;span style=" font-family:Courier New;">block&lt;/span> is a class for which the data flow direction is known for each of its variables. All variables declared in a &lt;span style=" font-family:Courier New;">block&lt;/span> must have one of the prefixes &lt;span style=" font-family:Courier New;">input&lt;/span> or &lt;span style=" font-family:Courier New;">output&lt;/span>. A &lt;span style=" font-family:Courier New;">block&lt;/span> may not be used in connections. &lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
      <Input>block Multiply
@@ -88,8 +84,7 @@ end Pin;
   output Real result;
 equation 
   result = x*y;
-end Multiply;  
-</Input>
+end Multiply;  </Input>
      <Output></Output>
     </InputCell>
    </GroupCell>
@@ -101,40 +96,40 @@ end Multiply;
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The &lt;span style=" font-family:Courier New;">function&lt;/span> concept in Modelica corresponds to mathematical functions without external side effects. These are the restrictions of a &lt;span style=" font-family:Courier New;">function&lt;/span>:&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <TextCell style="" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">Each formal parameter of the function must be prefixed by either input or output and be public and non-constant. &lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">Each formal parameter of the function must be prefixed by either input or output and be public and non-constant. &lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <TextCell style="" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">A function may not be used in connections, may have no equations, and can have at most one algorithm.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">A function may not be used in connections, may have no equations, and can have at most one algorithm.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <TextCell style="" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">For a function to be called, it must either have an algorithm or an external function interface as its body.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">For a function to be called, it must either have an algorithm or an external function interface as its body.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <TextCell style="" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">A function cannot contain calls to the Modelica built-in operators, &lt;/span>&lt;span style=" font-family:Courier New; font-size:12pt; color:#000000;">der, initial, terminal, sample, pre, edge, change, reinit, delay, cardinality, &lt;/span>&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">and is not allowed to contain when-statements.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <TextCell style="" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">A subtype of a function type needs to be equivalent to the function type itself.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">A subtype of a function type needs to be equivalent to the function type itself.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+     <Rule name="TextAlignment" >Left</Rule>
     </TextCell>
     <TextCell style="" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">The size of each array result or array local variable of a function must either be given by the formal parameters, or given by constant or parameter expressions.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">The size of each array result or array local variable of a function must either be given by the formal parameters, or given by constant or parameter expressions.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <GroupCell closed="false" >
      <TextCell style="Subsection" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Multiply&lt;/p>&lt;/body>&lt;/html></Text>
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Multiply Function Example&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
+     <InputCell style="Input" closed="false" >
       <Input>function multiply
   input Real x;
   input Real y := 0;
   output Real result;
 algorithm
   result := x*y;
-end multiply;    
-</Input>
-      <Output></Output>
+end multiply;    </Input>
+      <Output>Ok</Output>
      </InputCell>
      <TextCell style="Text" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The function &lt;span style=" font-family:Courier New;">multiply&lt;/span> can be called:&lt;/p>&lt;/body>&lt;/html></Text>
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The function &lt;span style=" font-family:Courier New;">multiply&lt;/span> can be called from within a clas:&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <InputCell style="Input" closed="true" >
       <Input>class MultCall
@@ -145,23 +140,16 @@ end MultCall;  </Input>
       <Output></Output>
      </InputCell>
     </GroupCell>
-    <GroupCell closed="true" >
+    <GroupCell closed="false" >
      <TextCell style="Subsection" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">MakeAlive on multiply&lt;/p>&lt;/body>&lt;/html></Text>
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Calling multiply&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <TextCell style="Text" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">We use MakeAlive on functions to see the results. &lt;/p>&lt;/body>&lt;/html></Text>
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The function multiply can also be called directly: &lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
-      <Input>MakeAlive[multiply]
-</Input>
-      <Output></Output>
-     </InputCell>
-     <InputCell style="Input" closed="true" >
-      <Input>multiply[2.0, 5.0
-]
-</Input>
-      <Output></Output>
+     <InputCell style="Input" closed="false" >
+      <Input>multiply(2.0, 5.0)</Input>
+      <Output>10.0</Output>
      </InputCell>
     </GroupCell>
     <GroupCell closed="false" >
@@ -171,13 +159,42 @@ end MultCall;  </Input>
      <TextCell style="Text" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The second argument can be left out, since the default value is available for this argument.&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The function multiply can also be called directly: &lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="false" >
       <Input>class MultCall2
   Real res;
 equation
   res = multiply(x = 5);
 end MultCall2;  </Input>
-      <Output></Output>
+      <Output>Ok</Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Simulate MultCall2:&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="false" >
+      <Input>simulate(MultCall2)  //??Error - not yet implemented</Input>
+      <Output>record
+    resultFile = "Simulation failed.
+Class multiply (its type)  not found in scope MultCall2.
+No matching function found for multiply, candidates are 
+Class multiply not found in scope MultCall2.
+Error occured while flattening model MultCall2
+"
+end record</Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The function multiply can also be called directly with named arguments: &lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="false" >
+      <Input>multiply(x=5.0)  //?? Calling functions interactively with named arguments not yet implemented</Input>
+      <Output>
+OMC-ERROR: 
+"Class multiply (its type)  not found in scope &lt;global scope>.
+No matching function found for multiply, candidates are 
+Class multiply not found in scope &lt;global scope>.
+"</Output>
      </InputCell>
     </GroupCell>
    </GroupCell>
@@ -197,7 +214,7 @@ end MultCall2;  </Input>
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">A &lt;span style=" font-family:Courier New;">package&lt;/span> is a restricted and enhanced class that is primarily used to manage name spaces and organize Modelica code. A &lt;span style=" font-family:Courier New;">package&lt;/span> has the restrictions of only containing declarations of classes including all kinds of restricted classes and constants, i.e. no variable declarations. Also a &lt;span style=" font-family:Courier New;">package&lt;/span> has the enhancement of being allowed to import from. &lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <InputCell style="Input" closed="true" >
-      <Input>package smallpack
+      <Input>package SmallPack
 
   constant Real mypi = 3.14159;
   
@@ -214,7 +231,7 @@ end MultCall2;  </Input>
     result := x*y;
   end multiply;    
   
-end smallpack;
+end SmallPack;
 </Input>
       <Output></Output>
      </InputCell>

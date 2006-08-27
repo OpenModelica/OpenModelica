@@ -12,7 +12,7 @@
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">There are two basic forms a of function call in Modelica: &lt;span style=" font-style:italic;">positional&lt;/span> or &lt;span style=" font-style:italic;">named&lt;/span> association to formal parameters. We will as an example use the function &lt;span style=" font-family:Courier New;">PolynomiaEvaluator&lt;/span>, which computes the value of a polynomial given two arguments: a coefficient vector A and a value of x.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>function PolynomialEvaluator
   input Real A[:];          // Array, size defined at function call time
   input Real x := 1.0;        // Default value 1.0 for x
@@ -27,7 +27,7 @@ algorithm
     xpower := xpower*x;
   end for;
 end PolynomialEvaluator;</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
@@ -37,30 +37,28 @@ end PolynomialEvaluator;</Input>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Function calls with &lt;span style=" font-style:italic;">positional association&lt;/span> of actual arguments to formal parameters is the most common form of function call. The actual arguments are associated with the formal parameters according to their position in the argument list. &lt;br />&lt;br />Using positional association {1, 2, 3, 4} becomes the value of the coefficient vector &lt;span style=" font-family:Courier New;">A&lt;/span> and 21 becomes the value of the formal parameter &lt;span style=" font-family:Courier New;">x&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class PositionalCall                        
   Real p;
 equation
   p = PolynomialEvaluator({1, 2, 3, 4}, 21);
-end PositionalCall;
-</Input>
-     <Output></Output>
+end PositionalCall;</Input>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
     <TextCell style="Section" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of PositionalCall &lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>simulate( PositionalCall );</Input>
-     <Output></Output>
+     <Output>[done]</Output>
     </InputCell>
     <TextCell style="Output" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
-     <Input>p[0]
-</Input>
+     <Input>p[0] //??val needed</Input>
      <Output></Output>
     </InputCell>
    </GroupCell>
@@ -71,31 +69,37 @@ end PositionalCall;
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The same call to the function &lt;span style=" font-family:Courier New;">PolynomialEvaluator&lt;/span> can instead be made using &lt;span style=" font-style:italic;">named association&lt;/span> of actual arguments to formal parameters. Here the actual argument is associated with the formal parameter through an equation in the argument list.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class NamedCall
   Real p;
 equation
   p = PolynomialEvaluator(A = {1, 2, 3, 4}, x = 21);
-end NamedCall;
-</Input>
-     <Output></Output>
+end NamedCall;</Input>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
     <TextCell style="Section" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of NamedCall &lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>simulate( NamedCall );</Input>
-     <Output></Output>
+     <Output>[done]</Output>
     </InputCell>
     <TextCell style="Output" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>p[0]
-</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>plot(p)</Input>
+     <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;img src="file:///C:/OpenModelica1.4.2/bin/OMNoteboook_tempfiles/155.png" width="492" height="250" />&lt;/p>&lt;/body>&lt;/html></Output>
+     <Image name="file:///C:/OpenModelica1.4.2/bin/OMNoteboook_tempfiles/155.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAHsAAAA+ggGAAAAY9J0UgAAAAlwSFlzAAAOxAAADsQBlSsOGwAAC9tJREFUeJzt3WuSozoSBlCY6H1dL51ZmebHBHVpCoR4OtM+J6Ii2iCLNHb5syTa1ZdSSgcAhPafdxcAAGwT2ACQgMAGgAQENgAkILABIAGBDQAJCGwASEBgA0ACAhsAEhDYAJCAwAaABAQ2ACQgsAEggdsDu+/7uw8BAB/v1sAW1gBwjdsCu+/7zp/aBoBr3BLYwhoArnXrCHucEjc1DgDn/Lmj0+no2mibd1j7kDh/bc63tfZdu8/RfluOO/fO361pPUt1bO0/cqw9/czvc9fzAk9pHmGvvQGOI2mjaDI4+zp91+u89vsXwbyOKHVNlVKENak1jbBrbxZbo2m/ILzT0oh6y9rIcLq9dbS21K51W2s909+7aT9bNdZGwEv91Praq6XPlnO8p7a1/lrOQ+sx4E4/I+y1T8imtPkmV44UlwL+jD0fhreO3fo4W9qt1dHyQaGlvjO1ban10XLe4Ek/gT39JD0NaWFNZnuWbLZGstNtrdOrtX7mF2Ve/bvWMjswfRy1df+W2louMt0zezFvs9RP62No6WNu2rf3QSK45aIziGpPyM6ng48e62w/dx27paa7gqqlvqsew96a7jwGnPFXYI+/GD5N8im8lp9x11r3u62t5cM7/BXYXpDw75LQFVeUX/lGv3SR55lj3xGqey7s26rv6cfgv4ER3a8pcaNsvtX8Oo7p9rm9V4nP247Haulnra5afXuO3dLXVVrO8dbjnbY58xhqfUwZyBDFX1eJ711zm77ghTyfYOtK7D2v8XkIXVnXnu1rF1S19tWq9ULVlnPacu6ueAy1Wtb2CXDepS9SFt7izv/f7NcaPs/tfw8bqBOuQAuBDW9gWhXYy5Q4ACRghA0ACXztN52ZkgRgSdSJ568N7K675m/0RnpiI9UTqZaui1VPpFq6Tj01kWrpulj1RKql666rJ/JgzpQ4ACQgsAEgAYENAAkI7BOGYXh3CX+JVE+kWrouVj2Rauk69dREqqXrYtUTqZaui1fPHQQ2ACTw1VeJA8Ct1q46P3BF+2Zgt/6BgpZ2a5fd17bX+jx6PwDIpvrVpPNAbA3cpXZrf0Wotr3W59H7ze8/9Q1rIAD86/V6/dq2NTid/gnqzUHhhSPsruyw1ny+fald13Wr7dbar90+er+W7XsMw3C6jytFqidSLaXEqidSLaWopyZSLaXEqidSLaVcV89WNsyzbDNL/h/Nv38OeOSis7VR7tK2FkfvBwBnvSuDmi462xr6l8n0QK0dAHBMU2CPAXxkDTva980CwGMuzL/HpsTHEXjkL1YHgC3vyrHqCPuK0fHayBsAMpouAz+ZadXArq1NT8P3jjXso31aTwfgbu/Ils017NqFZi3tjvTV2ufR+wFANr5LHAAavXNAKLABIAGBDQAJCGwASEBgA0ACAhsAEhDYAJCAwAaABAQ2ACQgsAEgAYENAAkIbABIQGADQAICGwASENgAkIDABoAEBDYAJCCwASABgQ0ACQhsAEhAYANAAgIbABIQ2ACQgMAGgAQENgAkILABIAGBDQAJCGwASEBgA0ACAhsAEhDYAJCAwAaABAQ2ACQgsAEggT9bDfq+//l3KeVUu77vF/fVtq/12bpvq24AyKAvlTSbB2lr4C61G0N0z/a1PreOt1bn0nGnhmGo3geAz/J6vX5tCzvIKzusNZ9vX2rXdd1qu7X2a7f37Fuz86EvGobhdB9XilRPpFpKiVVPpFpKUU9NpFpKiVVPpFpKua6eK7LhLo+sYa+NeJe2XXW88QcAPsHmGnbXrU9bj0opzWvdTyg7p8cBILqmwC4ra8ejPevNdxPOAHyix6bExxG4aWoA2K8a2FeEaynl52e8fScfCAD4RNUp8dra9HSq+4417FqfR/cBQFaba9i1C81a2h3pq6XPo/sAICNfTQoACQhsAEhAYANAAgIbABIQ2ACQgMAGgAQENgAkILABIAGBDQAJCGwASEBgA0ACAhsAEhDYAJCAwAaABAQ2ACQgsAEgAYENAAkIbABIQGADQAICGwASENgAkIDABoAEBDYAJCCwASABgQ0ACQhsAEhAYANAAgIbABIQ2ACQgMAGgAQENgAkILABIAGBDQAJ9KWU8u4i3qHv++70Q+/7a4oB4JT/DkP3zz//nO7nkmy4yZ+tBv0klGoPoqXd2omobV/r8+g+AMioOsKeB2lr4C61G0N0z/a1Po/uWzru1DAMv7YB8Ller9evbWEHemWHtebz7Uvtuq5bbbfWfu320X0t2/cYhuF0H1eKVE+kWkqJVU+kWkpRT02kWkqJVU+kWkq5rp4rsuEuj1x0tjbKXdoGAPy2uYbddevT1qNSinVjALhRU2CXlfXh0Z41ZQBgv8emxMcR+NLFXgBAXTWwrwjXUsrPz3gbANinOiVeW5ueTnXfsYZd6/PoPgDIanMNu3ahWUu7I3219Hl0HwBk5LvEASABgQ0ACQhsAEhAYANAAgIbABIQ2ACQgMAGgAQENgAkILABIAGBDQAJCGwASEBgA0ACAhsAEhDYAJCAwAaABAQ2ACQgsAEgAYENAAkIbABIQGADQAICGwASENgAkIDABoAEBDYAJCCwASABgQ0ACQhsAEhAYANAAgIbABIQ2ACQgMAGgAQENgAkILABIIE/Ww36vv/5dynlVLu+73/tq93vin1bdQNABn2ppNk8YJcCt7XdGKK1dtPbR/fV6lyqZ2oYhup9APgsr9fr17awg7yyw1rz+faldl3Xbbab3r5q35qdD33RMAyn+7hSpHoi1VJKrHoi1VKKemoi1VJKrHoi1VLKdfVckQ13eWQNu2XEe/Xxxh8A+ASba9hdtzydPVVKaV7rPqIWvEv7ys7pcQCIrimwy8ra8WjPenOr6YeApQ8EtX0A8GmaAvusaaDuCfBaO8EMwDeprmFfsQZcSvn5GW+32DsN3rIPALKqjrBr083TkfLRaena/e7YBwBZbU6J1y40a2m31ebotLfpcgC+ia8mBYAEBDYAJCCwASABgQ0ACQhsAEhAYANAAgIbABIQ2ACQgMAGgAQENgAkILABIAGBDQAJCGwASEBgA0ACAhsAEhDYAJCAwAaABAQ2ACQgsAEgAYENAAkIbABIQGADQAICGwASENgAkIDABoAEBDYAJPBnq0Hf9z//LqWcatf3/a99tfvdsQ8AMqoG9jxglwK3td00RFvud8c+AMiqOiUu6AAghkfWsI1yAeCczTXsrvt3OnstdEspt64bL02nt+wDgE/RFNhr68OjPWvKraYfApY+EKztA4BP1BTYZ00DdU+A19qZYgfgm1TXsK8YuZZSfn7G2y1MgwPAv6oj7Nra9HSkfHQNu3a/O/YBQFZ9+dJEWxqlD8PwfCEAvM3r9fq1LWwsli91xUMfhuGCSq4TqZ5ItZQSq55ItZSinppItZQSq55ItZRyXT2RY9F3iQNAAgIbABL46jXssw892je4RaonUi1dF6ueSLV0nXpqItXSdbHqiVRL111XT7THNWWEDQAJCGwASEBgA0ACX72GDQBzUWPxke8SjyjqEwIAS0yJA0ACAhsAEhDYAJCAwAaABAQ2ACQgsAEgAYENAAkIbABI4Gu/OGWP6bei1b5wpbXdU/WMbSPUEu3cPFHP3mNEfK622j5dzztrWfp2ROfm2Vqmx2p573uqnqcI7A3zF8baC6W13VP1jPvulPXcPFHP3mNEea5GT7/hZniu5tvues4ynpunfsfHvlvaPFXPk0yJf6hIL9AodYyi1RNJpNfNkii1RT9Pn+rbz7vA/lDf/KLOJtqbUN/3Pz9RRKon2vP1Tb79vJsS51GR3uzGAIhSTxTRphKnNUSoJ4pSSsh12igfrD6RwOZrRQiBaAEUqZZRxJoiiLROO/3wMP8gwXUENo+JFk5RTN/cnKPYPD/rnJf7WcPmEZHe6CJ9+i+l/PyMt98p0rkhD6+bZ/Tl3e8QCaytEy1NSS21e1c9a9ueriXC/199x3O153mqbX+6nmiv40jP1VMfPLOem7trWTv2u+t5isAGgARMiQNAAgIbABIQ2ACQgMAGgAT+B2XFqEeaVfZCAAAAAElFTkSuQmCC</Image>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Direct positionalcall:&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="false" >
+     <Input>PolynomialEvaluator({1, 2, 3, 4},  21)</Input>
+     <Output>38410.0</Output>
     </InputCell>
    </GroupCell>
   </GroupCell>

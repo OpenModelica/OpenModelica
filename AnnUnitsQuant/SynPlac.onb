@@ -117,9 +117,8 @@ end Pin;              //From Modelica.Electrical.Analog.Interfaces</Input>
      </TextCell>
      <InputCell style="Input" closed="true" >
       <Input>class P
-Pin p  annotation(extent=[-110, -10; -90, 10]);
-end P;
-</Input>
+  Pin p  annotation(extent=[-110, -10; -90, 10]);
+end P;</Input>
       <Output></Output>
      </InputCell>
     </GroupCell>
@@ -129,13 +128,12 @@ end P;
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Import Annotations&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">As for variable annotations, &lt;span style=" font-style:italic;">import annotations&lt;/span> are placed in the end of the &lt;span style=" font-family:Courier New;">import&lt;/span> statement after the optional string comment, e.g.:&lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">As for variable annotations, &lt;span style=" font-style:italic;">import annotations&lt;/span> are placed at the end of the &lt;span style=" font-family:Courier New;">import&lt;/span> statement after the optional string comment, e.g.:&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
      <Input>class I
-import Modelica.Mechanics.Rotational  "Rotational import" annotation();
-end I;
-</Input>
+  import Modelica.Mechanics.Rotational  "Rotational import" annotation();
+end I;</Input>
      <Output></Output>
     </InputCell>
    </GroupCell>
@@ -144,15 +142,14 @@ end I;
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Equation Annotations&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The most common form of &lt;span style=" font-style:italic;">equation annotation&lt;/span> is annotations to connection equations. It is natural to associate graphical attributes such as lines with a certain position, length, and color to such equations. Notice thar the declaration is placed at the end, after the optional comment, as in Variable and Import Annotations. &lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The most common form of &lt;span style=" font-style:italic;">equation annotation&lt;/span> is annotations to connect equations. It is natural to associate graphical attributes such as lines with a certain position, length, and color to such equations. Notice thar the declaration is placed at the end, after the optional comment, as in Variable and Import Annotations. &lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
      <Input>class C
 equation
   connect(p1.n, p2.p) "comment";
   annotation(Line(points = [-90, 0; -70, 0]));
-end C;
-</Input>
+end C;</Input>
      <Output></Output>
     </InputCell>
    </GroupCell>
@@ -166,7 +163,7 @@ end C;
     <InputCell style="Input" closed="true" >
      <Input>class S
 algorithm
-name := x+2*y   "comment"  annotation( );
+  name := x+2*y   "comment"  annotation( );
 end S;
 </Input>
      <Output></Output>

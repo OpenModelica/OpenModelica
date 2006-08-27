@@ -10,7 +10,7 @@
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">General Description&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Each mechanical component has an associated coordinate system, called &lt;span style=" font-style:italic;">frame&lt;/span>. This is true also for components in a simple domain like the 1D mechanical translational domain. Even the flanges in the 1D mechanical translational domain have their own coordinate systems. The connector classes  &lt;span style=" font-family:Courier New;">Flange_a&lt;/span> and &lt;span style=" font-family:Courier New;">Flange_b&lt;/span> used for flanges in the 1D translational mechanical domain are identical but have slightly different roles, somewhat analogous to the roles of &lt;span style=" font-family:Courier New;">PositivePin&lt;/span> and &lt;span style=" font-family:Courier New;">NegativePin&lt;/span> in the electrical domain. &lt;br />&lt;br />A f&lt;span style=" font-family:Courier New;">lange_a&lt;/span> connector is used at the [OpenCurlyDoubleQuote]left[CloseCurlyDoubleQuote] side of a component, whereas a f&lt;span style=" font-family:Courier New;">lange_b&lt;/span> connector is used at the [OpenCurlyDoubleQuote]right[CloseCurlyDoubleQuote] side of the component, represented by the empty square. Each flange has an internal coordinate system characterized by the unit vector n from left to right.&lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Each mechanical component has an associated coordinate system, called &lt;span style=" font-style:italic;">frame&lt;/span>. This is true also for components in a simple domain like the 1D mechanical translational domain. Even the flanges in the 1D mechanical translational domain have their own coordinate systems. The connector classes  &lt;span style=" font-family:Courier New;">Flange_a&lt;/span> and &lt;span style=" font-family:Courier New;">Flange_b&lt;/span> used for flanges in the 1D translational mechanical domain are identical but have slightly different roles, somewhat analogous to the roles of &lt;span style=" font-family:Courier New;">PositivePin&lt;/span> and &lt;span style=" font-family:Courier New;">NegativePin&lt;/span> in the electrical domain. &lt;br />&lt;br />A f&lt;span style=" font-family:Courier New;">lange_a&lt;/span> connector is used at the "left" side of a component, whereas a f&lt;span style=" font-family:Courier New;">lange_b&lt;/span> connector is used at the "right" side of the component, represented by the empty square. Each flange has an internal coordinate system characterized by the unit vector n from left to right.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
    </GroupCell>
    <GroupCell closed="false" >
@@ -48,7 +48,7 @@ equation
   v = p.v - n.v;
   0 = p.i + n.i;
   i = p.i;
-end TwoPin;                // Same as OnePort in Modelica.Electrical.Analog.Interfaces</Input>
+end TwoPin; // Same as OnePort in Modelica.Electrical.Analog.Interfaces</Input>
      <Output></Output>
     </InputCell>
     <TextCell style="Text" >
@@ -90,11 +90,11 @@ connector Flange_b = Modelica.Mechanics.Translational.Interfaces.Flange_b;      
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The partial base class &lt;span style=" font-family:Courier New;">Compliant&lt;/span> below is extended by classes for compliant flexible mechanical components with two flanges. It can be regarded as a 1D mechanical analogue of the &lt;span style=" font-family:Courier New;">TwoPin&lt;/span> base class from the electrical domain.&lt;span style=" font-size:11pt;"> &lt;/span>A &lt;span style=" font-family:Courier New;">flange_a &lt;/span>connector is used at the "left" side of a component, where as a &lt;span style=" font-family:Courier New;">flange_b connector &lt;/span>is used at the "right" side of the component. &lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
-     <Input>partial model Compliant                "Compliant coupling of 2 translational 1D flanges"
+     <Input>partial model Compliant  "Compliant coupling of 2 translational 1D flanges"
   Flange_a flange_a                  "Driving flange";    
   Flange_b flange_b                  "Driven flange";
-  Modelica.SIunits.Distance s_rel          "Relative distance between flange_a and flange_b";
-  flow Modelica.SIunits.Force f            "Force between flanges, positive in direction of N";
+  Modelica.SIunits.Distance s_rel     "Relative distance between flange_a and flange_b";
+  flow Modelica.SIunits.Force f   "Force between flanges, positive in direction of N";
 equation
   s_rel = flange_b.s - flange_a.s;
   0   = flange_b.f + flange_a.f;

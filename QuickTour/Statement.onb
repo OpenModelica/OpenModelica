@@ -12,7 +12,7 @@
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The summation below uses both a &lt;span style=" font-family:Courier New;">while&lt;/span>-loop and an &lt;span style=" font-family:Courier New;">if-&lt;/span>statement, where &lt;span style=" font-family:Courier New;">size(a,1)&lt;/span> returns the size of the first dimension of array &lt;span style=" font-family:Courier New;">a&lt;/span> in other words the number of rows in array &lt;span style=" font-family:Courier New;">a&lt;/span> (in this case 1). The &lt;span style=" font-family:Courier New;">elseif&lt;/span> and &lt;span style=" font-family:Courier New;">else&lt;/span> parts of if statements are optional. &lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class Summation
   Real sum(start = 0);
   Integer n(start = size(a, 1));  
@@ -28,25 +28,23 @@ algorithm
     end if;
     n := n - 1;
   end while;
-end Summation;
-</Input>
-     <Output></Output>
+end Summation;</Input>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
     <TextCell style="Section" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of Summation&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>simulate( Summation );</Input>
-     <Output></Output>
+     <Output>[done]</Output>
     </InputCell>
     <TextCell style="Output" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
-     <Input>sum[1]
-</Input>
+     <Input>val(sum,1)  //??val needed</Input>
      <Output></Output>
     </InputCell>
    </GroupCell>
@@ -57,7 +55,7 @@ end Summation;
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />When using equations to model the computation of the polynomial it was necessary to introduce an auxliliary vector &lt;span style=" font-family:Courier New;">xpowers&lt;/span> for storing the different powers of x. Alternatively, the same computation can be expressed as an algorithm including a for loop as below. This can be done without the need for an extra vector, it is enough to use a scalar variable &lt;span style=" font-family:Courier New;">xpower&lt;/span> for the most recently computed power of x.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class Xpowers
   parameter Real x=10;
   Real xpowers[n];
@@ -68,9 +66,8 @@ equation
   for i in 1:n-1 loop
     xpowers[i + 1] = xpowers[i]*x;
   end for;  
-end Xpowers;  
-</Input>
-     <Output></Output>
+end Xpowers;  </Input>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
@@ -80,41 +77,31 @@ end Xpowers;
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Here the simulation of the &lt;span style=" font-family:Courier New;">XPowers&lt;/span> is shown.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>simulate( Xpowers );</Input>
-     <Output></Output>
+     <Output>[done]</Output>
     </InputCell>
     <TextCell style="Output" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">Value at time=0:&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
-     <Input>xpowers[[1]]
-[0]
-</Input>
+     <Input>val(xpowers[1],0)  //??val needed</Input>
      <Output></Output>
     </InputCell>
     <InputCell style="Input" closed="true" >
-     <Input>xpowers[[2]]
-[0]
-</Input>
+     <Input>val(xpowers[2],0)  //??val needed</Input>
      <Output></Output>
     </InputCell>
     <InputCell style="Input" closed="true" >
-     <Input>xpowers[[3]]
-[0]
-</Input>
+     <Input>val(xpowers[3],0)  //??val needed</Input>
      <Output></Output>
     </InputCell>
     <InputCell style="Input" closed="true" >
-     <Input>xpowers[[4]]
-[0]
-</Input>
+     <Input>val(xpowers[4],0)  //??val needed</Input>
      <Output></Output>
     </InputCell>
     <InputCell style="Input" closed="true" >
-     <Input>xpowers[[5]]
-[0]
-</Input>
+     <Input>val(xpowers[5],0)  //??val needed</Input>
      <Output></Output>
     </InputCell>
    </GroupCell>

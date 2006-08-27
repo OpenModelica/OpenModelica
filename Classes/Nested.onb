@@ -10,9 +10,9 @@
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">General Description&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">In Modelica it is possible to define &lt;span style=" font-family:Courier New;">local&lt;/span> classes nested inside a class, like &lt;span style=" font-family:Courier New;">Lpin&lt;/span> in &lt;span style=" font-family:Courier New;">C1&lt;/span> below. &lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">In Modelica it is possible to defin&lt;span style=" font-family:Courier New;">e&lt;/span> local classes nested inside a class, like &lt;span style=" font-family:Courier New;">Lpin&lt;/span> in &lt;span style=" font-family:Courier New;">C1&lt;/span> below. &lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class C1
   class Lpin              // Local class
     Real p;
@@ -24,16 +24,20 @@
   Lpin pn(p = 2);
 end C1;  
 </Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
     <TextCell style="Section" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of C1&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>simulate( C1 );</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>simulate( C1 )  //??Error - not yet implemented</Input>
+     <Output>record
+    resultFile = "Simulation failed.
+Error occured while flattening model C1
+"
+end record</Output>
     </InputCell>
     <TextCell style="Output" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
@@ -46,37 +50,38 @@ end C1;
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Local classes are considered as elements of the type of the class within which they are declared. The "&lt;span style=" font-style:italic;">field name&lt;/span>" of such a local class is the class name, and the type is the type representation of the local class as a set of pairs according to our general type representation.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class Main
-  constant Real x = 3.14;        // field x
+  constant Real x = 3.14;   // constant variable (class field) x
   
-  class LocalClass1            // Local class
+  class LocalClass1         // Local class
     Integer x;
   equation
-    x = 2;                // Refers to local x inside LocalClass1
+    x = 2;                  // Refers to local x inside LocalClass1
   end LocalClass1;
   
-  class LocalClass2            // Local class
+  class LocalClass2         // Local class
     Real y;
   equation
-    x = y;                // Refers to x in Main
+    x = y;                  // Refers to x in Main
   end LocalClass2;
   
-  LocalClass1 L1x;            // field L1x, instance of LocalClass1
-  LocalClass2 L2x;            // field L2x, instance of LocalClass2
+  LocalClass1 L1x;          // field L1x, instance of LocalClass1
+  LocalClass2 L2x;          // field L2x, instance of LocalClass2
  
-end Main;
-</Input>
-     <Output></Output>
+end Main;</Input>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
     <TextCell style="Section" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of Main&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>simulate( Main );</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>simulate( Main )</Input>
+     <Output>record
+    resultFile = "Main_res.plt"
+end record</Output>
     </InputCell>
     <TextCell style="Output" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
@@ -89,47 +94,50 @@ end Main;
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The local classes &lt;span style=" font-family:Courier New;">LocalClass1&lt;/span> and &lt;span style=" font-family:Courier New;">LocalClass2&lt;/span> could be moved outside the class &lt;span style=" font-family:Courier New;">Main&lt;/span> with some changes of names. &lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>class Main_LocalClass1          // Hypothetical LocalClass1 outside Main
+    <InputCell style="Input" closed="false" >
+     <Input>class Main_LocalClass1   // Hypothetical LocalClass1 outside Main
   Integer x;
 equation
   x = 2;                // Refers to local x inside Main_LocalClass1
 end Main_LocalClass1;</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>class Main_LocalClass2        // Hypothetical LocalClass2 outside Main
+    <InputCell style="Input" closed="false" >
+     <Input>class Main_LocalClass2   // Hypothetical LocalClass2 outside Main
   Real y;
   Main main;
 equation
   main.x = y;            // Refers to x in the main instance of Main
 end Main_LocalClass2;</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>class Main2              // Hypothetical Main referrring to outside LocalClass1 and LocalClass2
-  Real x;              // field x  
-  Main_LocalClass1 L1x;        // field L1x, instance of Main_LocalClass1
-  Main_LocalClass2 L2x;        // field L2x, instance of Main_LocalClass2
+    <InputCell style="Input" closed="false" >
+     <Input>class Main2  // Hypothetical Main referrring to 
+             // outside LocalClass1 and LocalClass2
+  Real x;                // class field x  
+  Main_LocalClass1 L1x;  // field L1x, instance of Main_LocalClass1
+  Main_LocalClass2 L2x;  // field L2x, instance of Main_LocalClass2
 equation
   x = 3.14;
 end Main2;</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
     <TextCell style="Section" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of Main2&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>simulate( Main2 );</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>simulate( Main2 )</Input>
+     <Output>record
+    resultFile = "Main2_res.plt"
+end record</Output>
     </InputCell>
     <TextCell style="Output" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>

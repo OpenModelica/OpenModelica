@@ -12,46 +12,44 @@
     <TextCell style="Section" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Constructing Arrays&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>type Angle = Real(unit="rad");          // The type Angle is a subtype of Real  </Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>type Angle = Real(unit="rad");     // The type Angle is a subtype of Real  </Input>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class ArrayConstruction
   Integer[3]   a = {1, 2, 3};             // A 3-vector of type Integer[3]
   Real[3]    b = array(1.0, 2.0, 3);        // A 3-vector of type Real[3]
 
   Integer[2,3] c = {{11, 12, 13}, {21, 22, 23}};   // A 2x3 matrix of type Integer[2,3] 
-  Real[1,1,3]  d ={{{1.0, 2.0, 3.0}}};         // A 1x1x3 array of type Real[1,1,3]
+  Real[1,1,3]  d ={{{1.0, 2.0, 3.0}}};  // A 1x1x3 array of type Real[1,1,3]
 
-  Real[3] v = array(1, 2, 3.0);            // The vector v is equal to {1.,2.,3.}
+  Real[3] v = array(1, 2, 3.0);     // The vector v is equal to {1.,2.,3.}
 
-  parameter Angle alpha = 2.0;            // The expanded type of alpha is Real
-  Real[3] f = array(alpha, 2, 3.0);          // A 3-vector of type Real[3] 
-  Angle[3] A = {1.0, alpha, 4};           // The expanded type of A is Real[3]
-end ArrayConstruction;
-</Input>
-     <Output></Output>
+  parameter Angle alpha = 2.0;       // The expanded type of alpha is Real
+  Real[3] f = array(alpha, 2, 3.0);  // A 3-vector of type Real[3] 
+  Angle[3] A = {1.0, alpha, 4};      // The expanded type of A is Real[3]
+end ArrayConstruction;</Input>
+     <Output>Ok</Output>
     </InputCell>
     <GroupCell closed="false" >
      <TextCell style="Subsection" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of ArrayConstruction&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
-      <Input>simulate( ArrayConstruction );</Input>
-      <Output></Output>
+     <InputCell style="Input" closed="false" >
+      <Input>simulate( ArrayConstruction )</Input>
+      <Output>record
+    resultFile = "ArrayConstruction_res.plt"
+end record</Output>
      </InputCell>
-     <TextCell style="Output" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Take a look at the result at time=0:&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <InputCell style="Input" closed="true" >
-      <Input>d[[1,1,1
-]]
-[0]
-</Input>
+      <Input>val(d[1,1,1],0)  //??val needed</Input>
       <Output></Output>
      </InputCell>
     </GroupCell>
@@ -63,36 +61,38 @@ end ArrayConstruction;
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">A range vector is a vector containing a range of numeric values increasing or decreasing by a fixed increment or decrement value for each additional element. For example, {1, 2, 3} is an Integer range vector starting at 1 and increasing by 1 for each element.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class Range
-  Real v1[5]       = 2.7 : 6.8;            // v1 is {2.7, 3.7, 4.7, 5.7, 6.7}
+  Real v1[5]       = 2.7 : 6.8;       // v1 is {2.7, 3.7, 4.7, 5.7, 6.7}
   Real v2[5]       = {2.7, 3.7, 4.7, 5.7, 6.7};    // v2 is equal to v1
   
-  Integer v3[3]     = 3 : 5;              // v3 is {3, 4, 5}  
-  Integer v4empty[0]   = 3 : 2;              // v4empty is an empty Integer vector 
+  Integer v3[3]     = 3 : 5;        // v3 is {3, 4, 5}  
+  Integer v4empty[0]   = 3 : 2;     // v4empty is an empty Integer vector 
   
-  Real v5[4]       = 1.0 : 2 : 8;            // v5 is {1.0, 3.0, 5.0, 7.0}
-  Integer v6[5]     = 1 : -1 : -3;            // v6 is {1, 0, -1, -2, -3}
+  Real v5[4]       = 1.0 : 2 : 8;      // v5 is {1.0, 3.0, 5.0, 7.0}
+  Integer v6[5]     = 1 : -1 : -3;     // v6 is {1, 0, -1, -2, -3}
   Real[0] v7none;                      // v7 none is an empty Real vector 
-end Range;  
-</Input>
-     <Output></Output>
+end Range;  </Input>
+     <Output>Ok</Output>
     </InputCell>
-    <GroupCell closed="false" >
+    <GroupCell closed="true" >
      <TextCell style="Subsection" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of Range&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
-      <Input>simulate( Range );</Input>
-      <Output></Output>
+     <InputCell style="Input" closed="false" >
+      <Input>simulate( Range )    //??Error - not yet implemented</Input>
+      <Output>record
+    resultFile = "Simulation failed.
+Type mismatch in modifier, expected type #NOTYPE#[0], got modifier =3:2 of type Integer[0]
+Error occured while flattening model Range
+"
+end record</Output>
      </InputCell>
-     <TextCell style="Output" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Take a look at the result at time=0:&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <InputCell style="Input" closed="true" >
-      <Input>v3[[1]]
-[0]
-</Input>
+      <Input>val(v3[1],0)</Input>
       <Output></Output>
      </InputCell>
     </GroupCell>

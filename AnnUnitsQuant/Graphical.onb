@@ -22,15 +22,15 @@ type Current         = ElectricCurrent;</Input>
       <Output></Output>
      </InputCell>
     </GroupCell>
-    <GroupCell closed="true" >
+    <GroupCell closed="false" >
      <TextCell style="Subsection" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Electrical Connectors&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <InputCell style="Input" closed="true" >
-      <Input>connector Pin           "Pin of an electrical component"
-   Voltage v           "Potential at the pin";
-   flow Current i         "Current flowing into the pin";
-end Pin;              //From Modelica.Electrical.Analog.Interfaces</Input>
+      <Input>connector Pin "Pin of an electrical component"
+   Voltage v       "Potential at the pin";
+   flow Current i  "Current flowing into the pin";
+end Pin;  //From Modelica.Electrical.Analog.Interfaces</Input>
       <Output></Output>
      </InputCell>
     </GroupCell>
@@ -39,7 +39,7 @@ end Pin;              //From Modelica.Electrical.Analog.Interfaces</Input>
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Resistor&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <InputCell style="Input" closed="true" >
-      <Input>model Resistor
+      <Input>model Resistor  //?? Uses old or new Modelica annotations
   Pin p annotation(extent = [-110, -10, -90, 10], style(fillPattern = 1));
   Pin n annotation(extent = [110, -10, 90, 10]);
   parameter Real R        "Resistance in [Ohm]";
@@ -90,7 +90,7 @@ end Resistor;
      <InputCell style="Input" closed="true" >
       <Input>record Style
   Integer color[3], fillColor[3];            // RGB
-  Integer pattern, fillPattern, thickness, gradient,  // ?Explanations ?
+  Integer pattern, fillPattern, thickness, gradient,  // ??Explanations
         smooth, arrow, textStyle;
   String font;      
 end Style;</Input>
@@ -341,10 +341,10 @@ end NewResistor;
   replaceable FrictionFunction a(func = exp)
   extends TwoPin;
   annotation(choices(
-        choice(redeclare ConstantFriction a(c = 1)    "Friction Constant"),
-        choice(redeclare TableFriction a(table = "...")    "Friction-table"),  
-        choice(redeclare FunctionFriction a(func = exp)    "Friction-exp") 
-        ));    
+      choice(redeclare ConstantFriction a(c = 1)    "Friction Constant"),
+      choice(redeclare TableFriction a(table = "...")  "Friction-table"),  
+      choice(redeclare FunctionFriction a(func = exp)  "Friction-exp") 
+     ));    
 end NewFrictionFunction;
 </Input>
       <Output></Output>

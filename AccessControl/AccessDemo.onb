@@ -6,7 +6,7 @@
     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Demonstration of Access Control&lt;/p>&lt;/body>&lt;/html></Text>
    </TextCell>
    <TextCell style="Text" >
-    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Members of a Modelica class can have two levels of visibility: &lt;span style=" font-family:Courier New;">public&lt;/span> or &lt;span style=" font-family:Courier New;">protected&lt;/span>. The default is &lt;span style=" font-family:Courier New;">public&lt;/span> if nothing else is specified. Publically declared variables can be  can be read or updated by any code with access to that class. Variables that are declared protected can be reched only by code inside the class as well as code in classes that inherit this class. However, only code inside the class is allowed access to the same instance of a protected variable. You can read more about &lt;a href="Inheritance/ProtectedElements.onb
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Members of a Modelica class can have two levels of visibility: &lt;span style=" font-family:Courier New;">public&lt;/span> or &lt;span style=" font-family:Courier New;">protected&lt;/span>. The default is &lt;span style=" font-family:Courier New;">public&lt;/span> if nothing else is specified. Publically declared variables can be  can be read or updated by any code with access to that class. Variables that are declared protected can be reched only by code inside the class as well as code in classes that inherit this class. However, only code inside the class is allowed access to the same instance of a protected variable. You can read more about this in &lt;a href="Inheritance/ProtectedElements.onb
 ">&lt;span style=" text-decoration: underline; color:#0000ff;">Private and Protected Elements&lt;/span>&lt;/a>.&lt;/p>&lt;/body>&lt;/html></Text>
    </TextCell>
    <GroupCell closed="false" >
@@ -16,32 +16,32 @@
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The variables &lt;span style=" font-family:Courier New;">a, x, z &lt;/span>and &lt;span style=" font-family:Courier New;">u3&lt;/span> is public and &lt;span style=" font-family:Courier New;">w, u &lt;/span>and &lt;span style=" font-family:Courier New;">u2&lt;/span> are protected in the &lt;span style=" font-family:Courier New;">AccessDemo&lt;/span> class&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class AccessDemo       "Illustration of access prefixes"
-        parameter Real a = 2;
+    parameter Real a = 2;
   public   Real x, z;
-        parameter Real y;
+     parameter Real y;
   protected
-        parameter Real w, u;
-        Real u2;
+    parameter Real w, u;
+    Real u2;
   public   Real u3;
 equation  
   x  = 2;          // Legal, since code inside the class
   z  = 5;          // Legal, since code inside the class
   u2 = 5;          // Legal, since code inside the class
-  u3 = 8;            // Legal, since code inside the class
+  u3 = 8;          // Legal, since code inside the class
 end AccessDemo;              
 </Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
     <TextCell style="Section" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of AccessDemo&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>simulate( AccessDemo );</Input>
-     <Output></Output>
+     <Output>[done]</Output>
     </InputCell>
     <TextCell style="Output" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
@@ -54,12 +54,12 @@ end AccessDemo;
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">In &lt;span style=" font-family:Courier New;">A&lt;/span> an illegal modification is done, since &lt;span style=" font-family:Courier New;">w&lt;/span> is protected it can not be modified if &lt;span style=" font-family:Courier New;">AccessDemo&lt;/span> is not inherited.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class A
   AccessDemo ad(a = 2, y = 7, w = 7); // Illegal, since AccessDemo is not inherited
 end A;
 </Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
@@ -69,12 +69,17 @@ end A;
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Here we can see that if we try to simulate class &lt;span style=" font-family:Courier New;">A&lt;/span> with the erroneous modification"w = 7" we get a warning for trying to modify a protected variable.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>simulate( A );</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>simulate( A )</Input>
+     <Output>record
+    resultFile = "Simulation failed.
+Trying to modify protected element ad.w
+Error occured while flattening model A
+"
+end record</Output>
     </InputCell>
     <TextCell style="" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">  &lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p align='justify' style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">  &lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
    </GroupCell>
    <GroupCell closed="false" >
@@ -84,25 +89,27 @@ end A;
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">In the class B &lt;span style=" font-family:Courier New;">AccessDemo&lt;/span> is inherited, then it is legal to change the value u&lt;span style=" font-family:Courier New;">2&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class B
   extends AccessDemo;
   Real p, q;
 equation
   u2 = p;          // Legal, since AccessDemo is inherited
-  u3 = q;            // Legal, since u3 is public
+  u3 = q;          // Legal, since u3 is public
 end B;
 </Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
     <TextCell style="Section" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of B&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>simulate( B );</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>simulate( B )</Input>
+     <Output>record
+    resultFile = "B_res.plt"
+end record</Output>
     </InputCell>
     <TextCell style="Output" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>

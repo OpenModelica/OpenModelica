@@ -12,13 +12,13 @@
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Complete the class, &lt;span style=" font-family:Courier New;">Concatenate&lt;/span>, like this:&lt;br />&lt;br />1)   Create a new variable &lt;span style=" font-family:Courier New;">V1&lt;/span> in which you append 60 to &lt;span style=" font-family:Courier New;">A&lt;/span>.&lt;br />2)   Append 50 to &lt;span style=" font-family:Courier New;">V1.&lt;/span>&lt;br />3)   If you didn't use the &lt;span style=" font-family:Courier New;">cat&lt;/span>-operator before, use this to append 60 to A.&lt;br />4)  Append the set of 60 to B.&lt;br />5)   If you didn't use the &lt;span style=" font-family:Courier New;">cat&lt;/span>-operator before, use this to append 60 to B.&lt;br />6)   Append the set of 18 to v, using the &lt;span style=" font-family:Courier New;">cat&lt;/span>-operator.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class Concatenate
   Real[1, 2]     A = [50, 32];
   Real[2, 1]     B = [3; 7];
   Real[5]       a = {4, 9, 7, 5, 2};
 end Concatenate;</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
     <GroupCell closed="true" >
      <TextCell style="Subsection" >
@@ -101,12 +101,21 @@ end Concatenate;
        <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The result is {4, 9, 7, 5, 2, 18}&lt;/p>&lt;/body>&lt;/html></Text>
       </TextCell>
      </GroupCell>
-     <GroupCell closed="true" >
+     <GroupCell closed="false" >
       <TextCell style="Subsubsection" >
        <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Simulation of Concatenate&lt;/p>&lt;/body>&lt;/html></Text>
       </TextCell>
+      <InputCell style="Input" closed="false" >
+       <Input>simulate( Concatenate )</Input>
+       <Output>record
+    resultFile = "Concatenate_res.plt"
+end record</Output>
+      </InputCell>
+      <TextCell style="Text" >
+       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Take a look at some results:&lt;/p>&lt;/body>&lt;/html></Text>
+      </TextCell>
       <InputCell style="Input" closed="true" >
-       <Input>simulate( Concatenate );</Input>
+       <Input>//??val needed to loock at variable values</Input>
        <Output></Output>
       </InputCell>
       <TextCell style="Output" >

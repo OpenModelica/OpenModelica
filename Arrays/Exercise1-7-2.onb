@@ -93,21 +93,25 @@ end RangeVectors;  </Input>
      <TextCell style="Text" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">These vectors are just examples of how the vectors can be constructed. There is more than one solution to every vector.&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
+     <InputCell style="Input" closed="false" >
       <Input>class RangeVectors2
   Real     v1[5]       = 15.0 : 3 : 27.0;
   Real     v2[3]       = -6.5 : -2 : -10.5;
   Integer   v3[0];
 end RangeVectors2;  </Input>
-      <Output></Output>
+      <Output>Ok</Output>
      </InputCell>
      <GroupCell closed="true" >
       <TextCell style="Subsubsection" >
        <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Simulation of RangeVectors2&lt;/p>&lt;/body>&lt;/html></Text>
       </TextCell>
-      <InputCell style="Input" closed="true" >
-       <Input>simulate( RangeVectors2 );</Input>
-       <Output></Output>
+      <InputCell style="Input" closed="false" >
+       <Input>simulate( RangeVectors2 )  //??Error</Input>
+       <Output>record
+    resultFile = "Simulation failed.
+Error occured while flattening model RangeVectors2
+"
+end record</Output>
       </InputCell>
       <TextCell style="Output" >
        <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>

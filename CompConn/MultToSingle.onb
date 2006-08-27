@@ -16,8 +16,7 @@
 equation
   connect(R1.p, R2.p);
   connect(R1.p, R3.p);
-end ResistorCircuit;
-</Input>
+end ResistorCircuit;</Input>
     <Output></Output>
    </InputCell>
    <TextCell style="Text" >
@@ -37,8 +36,7 @@ end ResistorCircuit;
 equation
   connect(spring1.flange_a, spring2.flange_a);  
   connect(spring1.flange_a, spring3.flange_a);
-end TripleSprings;  
-</Input>
+end TripleSprings;  </Input>
     <Output></Output>
    </InputCell>
   </GroupCell>

@@ -58,14 +58,14 @@ end SumVector;
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">After we have simulated &lt;span style=" font-family:Courier New;">SumVector&lt;/span> we see that the sum of the absolute value of the elements in the vecor is 1500.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
-     <Input>simulate( SumVector );</Input>
+     <Input>simulate( SumVector ); //?? algorithm sections outside functions not yet implemented</Input>
      <Output></Output>
     </InputCell>
     <TextCell style="Output" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
-     <Input>sum[0]
+     <Input>val(sum,0)  /??val needed
 </Input>
      <Output></Output>
     </InputCell>
@@ -106,7 +106,7 @@ end CondAssign;
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of CondAssign&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <InputCell style="Input" closed="true" >
-      <Input>simulate( CondAssign );</Input>
+      <Input>simulate( CondAssign ); //?? algorithm sections outside functions not yet implemented</Input>
       <Output></Output>
      </InputCell>
      <TextCell style="Output" >
@@ -120,7 +120,7 @@ end CondAssign;
      <TextCell style="Text" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The function CondAssignFunc below behaves similarily. Here the local variables x and y are automatically assigned the default initial values 35 and 45 on entry to the algorithm section that comprises its function body.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
+     <InputCell style="Input" closed="false" >
       <Input>function CondAssignFunc
   input Real z;
   output Real x := 35;
@@ -134,36 +134,37 @@ algorithm
   end if;
 end CondAssignFunc;          
 </Input>
-      <Output></Output>
+      <Output>Ok</Output>
      </InputCell>
      <TextCell style="Text" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
+     <InputCell style="Input" closed="false" >
       <Input>class CondAssignFuncCall
   Real a, b;
 equation
   (a, b) = CondAssignFunc(z = 5);
 end CondAssignFuncCall;</Input>
-      <Output></Output>
+      <Output>Ok</Output>
      </InputCell>
     </GroupCell>
     <GroupCell closed="false" >
      <TextCell style="Subsection" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of CondAssignFuncCall&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
-      <Input>simulate( CondAssignFuncCall );</Input>
-      <Output></Output>
+     <InputCell style="Input" closed="false" >
+      <Input>simulate( CondAssignFuncCall )  //??error</Input>
+      <Output>record
+    resultFile = "Simulation failed.
+Too few equations, underdetermined system. The model has 2 variables and 1 equations
+"
+end record</Output>
      </InputCell>
      <TextCell style="Output" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <InputCell style="Input" closed="true" >
-      <Input>{a[0]
-, b[0]
-
-}
+      <Input>{val(a,0), val(b,0)}  //??val used
 </Input>
       <Output></Output>
      </InputCell>

@@ -12,29 +12,34 @@
     <TextCell style="Section" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Class Concat&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class Concat
-  Real[5] c1 = cat(1, {1, 2}, {10, 12, 13});          // Result: {1, 2, 10, 12, 13}
-  Real[2, 3] c2 = cat(2, {{1, 2}, {3, 4}}, {{10}, {11}});    // Result: {{1, 2, 10}, {3, 4, 11}}
-end Concat;
-</Input>
-     <Output></Output>
+  Real[5] c1 = cat(1, {1, 2}, {10, 12, 13});   // Result: {1, 2, 10, 12, 13}
+  Real[2, 3] c2 = cat(2, {{1, 2}, {3, 4}}, {{10}, {11}});  // Result: {{1, 2, 10}, {3, 4, 11}}
+end Concat;</Input>
+     <Output>Ok</Output>
     </InputCell>
-    <GroupCell closed="false" >
+    <GroupCell closed="true" >
      <TextCell style="Subsection" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of Concat&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
-      <Input>simulate( Concat );</Input>
-      <Output></Output>
+     <InputCell style="Input" closed="false" >
+      <Input>simulate( Concat )    //??Error - not yet implemented</Input>
+      <Output>record
+    resultFile = "Simulation failed.
+Different dimension sizes in arguments to cat(1, {1,2}, {10,12,13})
+Class cat (its type)  not found in scope Concat.
+No matching function found for cat, candidates are 
+Class cat not found in scope Concat.
+Error occured while flattening model Concat
+"
+end record</Output>
      </InputCell>
-     <TextCell style="Output" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Take a look at the value at time=0:&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <InputCell style="Input" closed="true" >
-      <Input>c1[[2]]
-[0]
-</Input>
+      <Input>val(c1[2], 0)</Input>
       <Output></Output>
      </InputCell>
     </GroupCell>
@@ -46,29 +51,33 @@ end Concat;
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">A matrix can be constructed from scalar expressions by separating rows by semicolon and columns by comma.  The previous example of concatenation along the second dimension can be expressed like this:&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class Concat2
-  Real[2, 3] c3 = cat(2, [1, 2; 3, 4], [10; 11]);        // Same result: {{1, 2, 10}, {3, 4, 11}}
-end Concat2;
-</Input>
-     <Output></Output>
+  Real[2, 3] c3 = cat(2, [1, 2; 3, 4], [10; 11]);   // Same result: {{1, 2, 10}, {3, 4, 11}}
+end Concat2;</Input>
+     <Output>Ok</Output>
     </InputCell>
-    <GroupCell closed="false" >
+    <GroupCell closed="true" >
      <TextCell style="Subsection" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of Concat2&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
-      <Input>simulate( Concat2 );</Input>
-      <Output></Output>
+     <InputCell style="Input" closed="false" >
+      <Input>simulate( Concat2 )    //??Error - not yet implemented</Input>
+      <Output>record
+    resultFile = "Simulation failed.
+Different dimension sizes in arguments to cat(2, [1,2;3,4], [10;11])
+Class cat (its type)  not found in scope Concat2.
+No matching function found for cat, candidates are 
+Class cat not found in scope Concat2.
+Error occured while flattening model Concat2
+"
+end record</Output>
      </InputCell>
-     <TextCell style="Output" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Take a look at the value at time=0:&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <InputCell style="Input" closed="true" >
-      <Input>c3[[1,3
-]]
-[1]
-</Input>
+      <Input>val(c3[1,3], 0)</Input>
       <Output></Output>
      </InputCell>
     </GroupCell>
@@ -80,30 +89,30 @@ end Concat2;
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The arrays that is concatenated must have the same number of dimensions. The concatenation dimension k must exist. Arrays must have identical dimension sizes with the exception of the size of dimension k, which is called &lt;span style=" font-style:italic;">Size matching. &lt;/span>Argument arrays must have equivalent maximally expanded element types. The element type of the result array is the element type of the maximally expanded type of the arguments. These rules make it possible to mix integers and real numbers as in the example below:&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class Concat3
   Real[2, 3] r1  = cat(1, {{1.0, 2.0, 3}}, {{4, 5, 6}});
   Real[2, 6] r2  = cat(2, r1, r1);
-end Concat3;
-</Input>
-     <Output></Output>
+end Concat3;</Input>
+     <Output>Ok</Output>
     </InputCell>
-    <GroupCell closed="false" >
+    <GroupCell closed="true" >
      <TextCell style="Subsection" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of Concat3&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
-      <Input>simulate( Concat3 );</Input>
-      <Output></Output>
+     <InputCell style="Input" closed="false" >
+      <Input>simulate( Concat3 )   //??Error - not yet implemented</Input>
+      <Output>record
+    resultFile = "Simulation failed.
+Too few equations, underdetermined system. The model has 12 variables and 1 equations
+"
+end record</Output>
      </InputCell>
-     <TextCell style="Output" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Take a look at the value at time=0:&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <InputCell style="Input" closed="true" >
-      <Input>r2[[1,3
-]]
-[1]
-</Input>
+      <Input>val(r2[1,3], 0)</Input>
       <Output></Output>
      </InputCell>
     </GroupCell>
@@ -112,32 +121,36 @@ end Concat3;
     <TextCell style="Section" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Concatenating Larger Arrays&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class Concat4
   Real[1, 1, 1] A = {{{1}}};
   Real[1, 1, 2] B = {{{2, 3}}};
   Real[1, 1, 3] C = {{{4, 5, 6}}};
-  Real[1, 1, 6] R = cat(3, A, B, C);            // Result value: {{{1, 2, 3, 4, 5, 6}}};
-end Concat4;
-</Input>
-     <Output></Output>
+  Real[1, 1, 6] R = cat(3,A,B,C);  // Result value: {{{1, 2, 3, 4, 5, 6}}};
+end Concat4;</Input>
+     <Output>Ok</Output>
     </InputCell>
-    <GroupCell closed="false" >
+    <GroupCell closed="true" >
      <TextCell style="Subsection" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of Concat4&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
-      <Input>simulate( Concat4 );</Input>
-      <Output></Output>
+     <InputCell style="Input" closed="false" >
+      <Input>simulate( Concat4 )    //??Error - not yet implemented</Input>
+      <Output>record
+    resultFile = "Simulation failed.
+Different dimension sizes in arguments to cat(3, A, B, C)
+Class cat (its type)  not found in scope Concat4.
+No matching function found for cat, candidates are 
+Class cat not found in scope Concat4.
+Error occured while flattening model Concat4
+"
+end record</Output>
      </InputCell>
-     <TextCell style="Output" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Take a look at the value at time=0:&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <InputCell style="Input" closed="true" >
-      <Input>C[[1,1,2
-]]
-[1]
-</Input>
+      <Input>val(C[1,1,2],0)</Input>
       <Output></Output>
      </InputCell>
     </GroupCell>

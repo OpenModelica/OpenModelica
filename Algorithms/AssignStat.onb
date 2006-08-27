@@ -6,32 +6,27 @@
     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Arial; font-size:38pt; font-weight:600; color:#000000;">Simple Assignment Statements&lt;/p>&lt;/body>&lt;/html></Text>
    </TextCell>
    <TextCell style="Text" >
-    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Assignment statements may also occur as initializers in the declaration of local variables (after the keyword &lt;span style=" font-family:Courier New;">protected&lt;/span>) or formal parameters of Modelica functions. The block &lt;span style=" font-family:Courier New;">foo&lt;/span> contains a declaration of the local variable&lt;span style=" font-family:Courier New;"> y1&lt;/span> with an initializing assignment and the formal parameter &lt;span style=" font-family:Courier New;">x&lt;/span> with a default value assignment.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Assignment statements may also occur as initializers in the declaration of local variables (after the keyword &lt;span style=" font-family:Courier New;">protected&lt;/span>) or formal parameters of Modelica functions. The function &lt;span style=" font-family:Courier New;">foo&lt;/span> contains a declaration of the local variable&lt;span style=" font-family:Courier New;"> y1&lt;/span> with an initializing assignment and the formal parameter &lt;span style=" font-family:Courier New;">x&lt;/span> with a default value assignment.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
    </TextCell>
-   <InputCell style="Input" closed="true" >
-    <Input>block foo
+   <InputCell style="Input" closed="false" >
+    <Input>function foo
   input Real x := 2.0;
+  output Real res;
 protected
   Real y1 := cos(1.84) + x - 1.2E-2;
+algorithm
+  res := y1;
 end foo;    
 </Input>
-    <Output></Output>
+    <Output>Ok</Output>
    </InputCell>
    <GroupCell closed="false" >
     <TextCell style="Section" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of foo&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>simulate( foo );</Input>
-     <Output></Output>
-    </InputCell>
-    <TextCell style="Output" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>y1[1]
-</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>foo(3.0)  //??? Error, wrong result</Input>
+     <Output>0.0</Output>
     </InputCell>
    </GroupCell>
   </GroupCell>
