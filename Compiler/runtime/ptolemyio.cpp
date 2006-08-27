@@ -1,2 +1,2 @@
 /* adrpo -- 2006-08-28 -> no difference from the one in winruntime */
-#include "../winruntime/systemimpl.c"
+#include "../winruntime/ptolemyio.cpp"
