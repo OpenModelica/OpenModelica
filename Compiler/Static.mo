@@ -4367,6 +4367,24 @@ algorithm
         (cache,Exp.CALL(Absyn.IDENT("plot"),{Exp.ARRAY(Exp.OTHER(),false,vars_1)},
           false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
 
+   case (cache,env,Absyn.CREF_IDENT(name = "val"),{(cr as Absyn.CREF(componentReg = _)),(cd as Absyn.REAL(value = _))},{},impl,SOME(st))
+      local 
+        Absyn.Exp cr,cd;
+      equation 
+        vars_1 = elabVariablenames({cr});
+      then
+        (cache,Exp.CALL(Absyn.IDENT("val"),{Exp.ARRAY(Exp.OTHER(),false,vars_1)},
+          false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
+
+   case (cache,env,Absyn.CREF_IDENT(name = "val"),{(cr as Absyn.CREF(componentReg = _)),(cd as Absyn.INTEGER(value = _))},{},impl,SOME(st))
+      local 
+        Absyn.Exp cr,cd;
+      equation 
+        vars_1 = elabVariablenames({cr});
+      then
+        (cache,Exp.CALL(Absyn.IDENT("val"),{Exp.ARRAY(Exp.OTHER(),false,vars_1)},
+          false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
+
     case (cache,env,Absyn.CREF_IDENT(name = "plotParametric"),vars,{},impl,SOME(st)) /* PlotParametric is similar to plot but does not allow a single CREF as an 
    argument as you are plotting at least one variable as a function of another.
    Thus, plotParametric has to take an array as an argument, or two componentRefs. */ 

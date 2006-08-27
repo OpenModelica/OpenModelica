@@ -2025,6 +2025,11 @@ algorithm
       then
         (cache,Values.STRING("Unknown error while plotting"),st);
         
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "val"),expLst = {Exp.ARRAY(array = vars)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      local list<Exp.Exp> vars;
+      then
+        (cache,Values.STRING("Implementation of val() not yet completed"),st);
+        
     /* plotparametric This rule represents the normal case when an array of at least two elements 
      *  is given as an argument 
      */
