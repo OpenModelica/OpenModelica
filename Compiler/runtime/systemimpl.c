@@ -437,10 +437,10 @@ RML_BEGIN_LABEL(System__compileCFile)
 
   sprintf(command,"%s %s -o %s %s",cc,str,exename,cflags);
   //printf("compile using: %s\n",command);
-  _putenv("GCC_EXEC_PREFIX="); 
+  putenv("GCC_EXEC_PREFIX="); 
   tmp = getenv("MODELICAUSERCFLAGS");
   if (tmp == NULL || tmp[0] == '\0'  ) {
-	  _putenv("MODELICAUSERCFLAGS=  ");
+	  putenv("MODELICAUSERCFLAGS=  ");
   }
   if (system(command) != 0) {
     RML_TAILCALLK(rmlFC);

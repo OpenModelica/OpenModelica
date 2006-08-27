@@ -174,7 +174,7 @@ void System_5finit(void)
 		if (strncmp(mingwpath,path,strlen(mingwpath))!=0) {
 			newPath = malloc(strlen(path)+strlen(mingwpath)+10);
 			sprintf(newPath,"PATH=%s;%s",mingwpath,path);
-			putenv(newPath);
+			_putenv(newPath);
 			free(newPath);
 		}
 		free(mingwpath);
@@ -413,7 +413,7 @@ RML_BEGIN_LABEL(System__compileCFile)
 
   sprintf(command,"%s %s -o %s %s",cc,str,exename,cflags);
   //printf("compile using: %s\n",command);
-  putenv("GCC_EXEC_PREFIX="); 
+  _putenv("GCC_EXEC_PREFIX="); 
   tmp = getenv("MODELICAUSERCFLAGS");
   if (tmp == NULL || tmp[0] == '\0'  ) {
 	  _putenv("MODELICAUSERCFLAGS=  ");
@@ -607,7 +607,7 @@ RML_BEGIN_LABEL(System__setEnv)
   int setenv_result = 0;
   char *temp = (char*)malloc(strlen(envname)+strlen(envvalue)+2);
   sprintf(temp,"%s=%s", envname, envvalue);
-  setenv_result = putenv(temp); 
+  setenv_result = _putenv(temp); 
   rmlA0 = (void*) mk_icon(setenv_result);
   RML_TAILCALLK(rmlSC);
 }
