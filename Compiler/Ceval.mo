@@ -2774,7 +2774,11 @@ algorithm
         omhome = Settings.getInstallationDirectoryPath();
         omhome_1 = System.stringReplace(omhome, "\"", "");
         pd = System.pathDelimiter();
-        s_call = Util.stringAppendList({"\"",omhome_1,pd,"bin",pd,"Compile.bat","\""});
+        /* adrpo - 2006-08-28 -> 
+         * please leave Compile instead of Compile.bat 
+         * here as it has to work on Linux too
+         */
+        s_call = Util.stringAppendList({"\"",omhome_1,pd,"bin",pd,"Compile","\""});
         retVal = System.regularFileExists(s_call);
         true = retVal != 0; 
         str=Util.stringAppendList({"command ",s_call," not found. Check OPENMODELICAHOME"});

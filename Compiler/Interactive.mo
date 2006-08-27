@@ -4734,6 +4734,8 @@ algorithm
         s = stringAppend(s, str_eline);
         s = stringAppend(s, ",");
         s = stringAppend(s, str_ecol);
+        s = stringAppend("{", s);
+        s = stringAppend(s, "}");
       then
         s;
     case (_,_) then "Error"; 
@@ -4906,14 +4908,14 @@ algorithm
     case (visibility_str,(current :: {})) /* deal with the last element */ 
       equation 
         s1 = getElementInfo(current);
-        element_str = Util.stringAppendList({"{ elementvisibility=",visibility_str,", ",s1," }"});
+        element_str = Util.stringAppendList({"{ rec(elementvisibility=",visibility_str,", ",s1,") }"});
         res = Util.stringAppendList({element_str,"\n"});
       then
         res;
     case (visibility_str,(current :: rest))
       equation 
         s1 = getElementInfo(current);
-        element_str = Util.stringAppendList({"{ elementvisibility=",visibility_str,", ",s1," }"});
+        element_str = Util.stringAppendList({"{ rec(elementvisibility=",visibility_str,", ",s1,") }"});
         s2 = constructElementsInfo(visibility_str, rest);
         res = Util.stringAppendList({element_str,",\n",s2});
       then
@@ -7596,11 +7598,11 @@ algorithm
   str_eline := intString(el);
   str_ecol := intString(ec);
   res_1 := Util.stringAppendList(
-          {"{name=\"",name,"\", partial=",strPartial,", final=",
+          {"{ rec(name=\"",name,"\", partial=",strPartial,", final=",
           strFinal,", encapsulated=",strEncapsulated,", restriction=",res,", comment=",
           cmt,", file=\"",file,"\", readonly=\"",str_readonly,"\", startLine=",
           str_sline,", startColumn=",str_scol,", endLine=",str_eline,", endColumn=",
-          str_ecol,"}"}) "composing the final returned string" ;
+          str_ecol,") }"}) "composing the final returned string" ;
 end getClassAttributes;
 
 protected function getClassComment "function: getClassComment
