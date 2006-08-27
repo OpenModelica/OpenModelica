@@ -6614,14 +6614,6 @@ algorithm
       then
         (cache,dae,env,csets_1,ci_state_1);
         
-        /* The following rule handles shadowed (replaced) equations. If an equation has a simple name 
-        on the left-hand side, and that component has an equation modifier, this equation is discarded.*/ 
-    case (cache,env,mods,pre,csets,ci_state,SCode.EQ_EQUALS(exp1 = Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = n,subscripts = {})),exp2 = e2),initial_,impl) 
-      equation 
-        (cache,Types.VAR(_,_,_,_,Types.EQBOUND(_,_,_)),_,_,_) = Lookup.lookupIdentLocal(cache,env, n);
-        ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
-      then
-        (cache,{},env,csets,ci_state_1);
         /* equality equations e1 = e2 */
     case (cache,env,mods,pre,csets,ci_state,SCode.EQ_EQUALS(exp1 = e1,exp2 = e2),initial_,impl)
       local Option<Interactive.InteractiveSymbolTable> c1,c2;
