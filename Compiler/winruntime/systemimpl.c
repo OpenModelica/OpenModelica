@@ -181,24 +181,6 @@ void System_5finit(void)
 	}
 }
 
-/* adrpo 2006-03-16 this is not-used
-RML_BEGIN_LABEL(System__vector_5fsetnth)
-{
-  * This will not work until the garbage collector in RML is rewritten
-    such that is can handle side effects correctly. 
-  *
-    rml_uint_t nelts = 0;
-    void *vec = rmlA0;
-    rml_uint_t i = (rml_uint_t)RML_UNTAGFIXNUM(rmlA1);
-    if( i >= RML_HDRSLOTS(RML_GETHDR(vec)) ) {
-      RML_TAILCALLK(rmlFC);
-    } else {
-      RML_STRUCTDATA(vec)[i] = rmlA2;      
-      RML_TAILCALLK(rmlSC);
-    }
-}
-RML_END_LABEL
-*/
 
 RML_BEGIN_LABEL(System__strtok)
 {
@@ -431,7 +413,7 @@ RML_BEGIN_LABEL(System__compileCFile)
 
   sprintf(command,"%s %s -o %s %s",cc,str,exename,cflags);
   //printf("compile using: %s\n",command);
-  _putenv("GCC_EXEC_PREFIX="); 
+  putenv("GCC_EXEC_PREFIX="); 
   tmp = getenv("MODELICAUSERCFLAGS");
   if (tmp == NULL || tmp[0] == '\0'  ) {
 	  _putenv("MODELICAUSERCFLAGS=  ");
@@ -482,7 +464,7 @@ RML_BEGIN_LABEL(System__systemCall)
 	int ret_val;
 	char* str = RML_STRINGDATA(rmlA0);
 	ret_val	= system(str);
-	rmlA0	= (void*) mk_icon(ret_val);
+	rmlA0 = (void*) mk_icon(ret_val);
 
 	RML_TAILCALLK(rmlSC);
 }
@@ -823,29 +805,12 @@ RML_BEGIN_LABEL(System__readValuesFromFile)
 }   
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__readPtolemyplotDatasetSize)
-{
-  int size;
-  char* filename = RML_STRINGDATA(rmlA0);
-  void* p;
-
-  size=read_ptolemy_dataset_size(filename);
-  
-  rmlA0 = (void*)Values__INTEGER(mk_icon(size));
-  if (rmlA0 == NULL) {
-    RML_TAILCALLK(rmlFC);
-  }
-  RML_TAILCALLK(rmlSC);
-}   
-RML_END_LABEL
-
-
 RML_BEGIN_LABEL(System__readPtolemyplotDataset)
 {
   int i,size;
   char **vars;
   char* filename = RML_STRINGDATA(rmlA0);
-  void * lst = rmlA1;
+  void *lst = rmlA1;
   int datasize = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA2));
   void* p;
   rmlA0 = lst;
@@ -868,6 +833,21 @@ RML_BEGIN_LABEL(System__readPtolemyplotDataset)
 }   
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__readPtolemyplotDatasetSize)
+{
+  int size;
+  char* filename = RML_STRINGDATA(rmlA0);
+  void* p;
+
+  size=read_ptolemy_dataset_size(filename);
+  
+  rmlA0 = (void*)Values__INTEGER(mk_icon(size));
+  if (rmlA0 == NULL) {
+    RML_TAILCALLK(rmlFC);
+  }
+  RML_TAILCALLK(rmlSC);
+}   
+RML_END_LABEL
 
 RML_BEGIN_LABEL(System__writePtolemyplotDataset)
 {
@@ -899,44 +879,11 @@ RML_BEGIN_LABEL(System__hash)
 {
   char *str = RML_STRINGDATA(rmlA0);
   int res=0,i=0;
-  while( str[i]){
+  while( str[i])
     res+=(int)str[i++];
-  }
 
   rmlA0 = (void*) mk_icon(res);
   RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-
-RML_BEGIN_LABEL(System__regularFileExists)
-{
-	char* str = RML_STRINGDATA(rmlA0);
-	int ret_val;
-	void *res;
-	WIN32_FIND_DATA FileData;
-	HANDLE sh;
-
-	if (str == NULL)
-		RML_TAILCALLK(rmlFC);
-
-	sh = FindFirstFile(str, &FileData);
-	if (sh == INVALID_HANDLE_VALUE) {
-		ret_val = 1;
-	}
-	else {
-		if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
-			ret_val = 1;
-		}
-		else {
-			ret_val = 0;
-		}
-		FindClose(sh);
-	}
-
-	rmlA0 = (void*) mk_icon(ret_val);
-
-	RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -957,6 +904,37 @@ RML_BEGIN_LABEL(System__directoryExists)
 	}
 	else {
 		if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
+			ret_val = 1;
+		}
+		else {
+			ret_val = 0;
+		}
+		FindClose(sh);
+	}
+
+	rmlA0 = (void*) mk_icon(ret_val);
+
+	RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__regularFileExists)
+{
+	char* str = RML_STRINGDATA(rmlA0);
+	int ret_val;
+	void *res;
+	WIN32_FIND_DATA FileData;
+	HANDLE sh;
+
+	if (str == NULL)
+		RML_TAILCALLK(rmlFC);
+
+	sh = FindFirstFile(str, &FileData);
+	if (sh == INVALID_HANDLE_VALUE) {
+		ret_val = 1;
+	}
+	else {
+		if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
 			ret_val = 1;
 		}
 		else {
@@ -1081,7 +1059,7 @@ int next_intelt(int *arr)
   else return arr[curpos++];
 }
 
-void * generate_array(char type, int curdim, type_description *desc,void *data)
+void * generate_array(char type, int curdim, type_description *desc, void *data)
 
 {
   void *lst;
@@ -1122,9 +1100,9 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__setClassnamesForSimulation)
 {
   char* class_names = RML_STRINGDATA(rmlA0);
-  if(class_names_for_simulation){
+  if(class_names_for_simulation)
     free(class_names_for_simulation);
-  }
+
   class_names_for_simulation = strdup(class_names);
   RML_TAILCALLK(rmlSC);
 }

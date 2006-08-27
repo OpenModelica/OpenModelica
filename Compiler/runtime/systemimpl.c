@@ -271,7 +271,7 @@ RML_BEGIN_LABEL(System__removeFirstAndLastChar)
       res=malloc(length-1);
       strncpy(res,str + 1,length-2);
 
-      res[length-2] = '\0';  
+      res[length-1] = '\0';  
     }
   rmlA0 = (void*) mk_scon(res);
   /* adrpo added 2004-10-29 */
@@ -424,8 +424,10 @@ RML_BEGIN_LABEL(System__compileCFile)
   char* str = RML_STRINGDATA(rmlA0);
   char command[255];
   char exename[255];
-  if(strlen(str) >= 255) {
-    RML_TAILCALLK(rmlFC);
+  char *tmp;
+
+  if (strlen(str) >= 255) {
+    RML_TAILCALLK(rmlFC);    
   }
   if (cc == NULL||cflags == NULL) {
     RML_TAILCALLK(rmlFC);
@@ -435,6 +437,11 @@ RML_BEGIN_LABEL(System__compileCFile)
 
   sprintf(command,"%s %s -o %s %s",cc,str,exename,cflags);
   //printf("compile using: %s\n",command);
+  _putenv("GCC_EXEC_PREFIX="); 
+  tmp = getenv("MODELICAUSERCFLAGS");
+  if (tmp == NULL || tmp[0] == '\0'  ) {
+	  _putenv("MODELICAUSERCFLAGS=  ");
+  }
   if (system(command) != 0) {
     RML_TAILCALLK(rmlFC);
   }
@@ -481,10 +488,9 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__systemCall)
 {
-  char* str = RML_STRINGDATA(rmlA0);
   int ret_val;
+  char* str = RML_STRINGDATA(rmlA0);
   ret_val = system(str);
-
   rmlA0 = (void*) mk_icon(ret_val);
 
   RML_TAILCALLK(rmlSC);
@@ -706,7 +712,6 @@ RML_BEGIN_LABEL(System__moFiles)
 }
 RML_END_LABEL
 
-
 void* read_one_value_from_file(FILE* file, type_description* desc)
 {
   void *res=NULL;
@@ -810,7 +815,7 @@ RML_BEGIN_LABEL(System__readValuesFromFile)
   while (stat == 0) { /* Loop for tuples. At the end of while, we try to read another description */
     res = read_one_value_from_file(file, &desc);
     if (res == NULL) {
-          printf("Error reading values from file2\n");
+      printf("Error reading values from file2\n");
       RML_TAILCALLK(rmlFC);
     }
     lst = (void*)mk_cons(res, lst);
@@ -855,7 +860,7 @@ RML_BEGIN_LABEL(System__readPtolemyplotDataset)
   if (rmlA0 == NULL) {
     RML_TAILCALLK(rmlFC);
   }
-  
+
   rml_prim_once(Values__reverseMatrix);
 
   RML_TAILCALLK(rmlSC);
@@ -877,7 +882,6 @@ RML_BEGIN_LABEL(System__readPtolemyplotDatasetSize)
   RML_TAILCALLK(rmlSC);
 }   
 RML_END_LABEL
-
 
 RML_BEGIN_LABEL(System__writePtolemyplotDataset)
 {
@@ -911,7 +915,7 @@ RML_BEGIN_LABEL(System__hash)
   int res=0,i=0;
   while( str[i])
     res+=(int)str[i++];
-      
+
   rmlA0 = (void*) mk_icon(res);
   RML_TAILCALLK(rmlSC);
 }
@@ -938,6 +942,10 @@ RML_BEGIN_LABEL(System__directoryExists)
   char* str = RML_STRINGDATA(rmlA0);
   int ret_val;
   struct stat buf;
+  
+  if (str == NULL)
+  	RML_TAILCALLK(rmlFC);
+		  
   ret_val = stat(str, &buf);
   if (ret_val != 0 ) {
     rmlA0 = (void*) mk_icon(1);
@@ -997,7 +1005,6 @@ RML_BEGIN_LABEL(System__platform)
   RML_TAILCALLK(rmlSC);
 }
 #endif
-
 
 RML_BEGIN_LABEL(System__asin)
 {
@@ -1082,7 +1089,7 @@ int next_intelt(int *arr)
   
   if(arr == NULL) {
     curpos = 0;
-    return 0.0;
+    return 0;
   }
   else return arr[curpos++];
 }
@@ -1114,7 +1121,6 @@ void * generate_array(char type, int curdim, type_description *desc, void *data)
   return lst;
 }
 
-
 char* class_names_for_simulation = NULL;
 RML_BEGIN_LABEL(System__getClassnamesForSimulation)
 {
@@ -1133,7 +1139,6 @@ RML_BEGIN_LABEL(System__setClassnamesForSimulation)
     free(class_names_for_simulation);
 
   class_names_for_simulation = strdup(class_names);
-
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
