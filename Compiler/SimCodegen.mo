@@ -2864,6 +2864,141 @@ algorithm
   end matchcontinue;
 end addMissingEquations;
 
+
+protected function buildDiscreteVarChanges "function:  buildWhenConditionChecks
+"
+  input DAELow.DAELow daelow;
+  input list<list<Integer>> comps;
+  input Integer[:] ass1;
+  input Integer[:] ass2;
+  input DAELow.IncidenceMatrix m;
+  input DAELow.IncidenceMatrixT mT;
+  output String outString;
+algorithm
+  outString := matchcontinue(daelow,comps,ass1,ass2,m,mT)
+    local String s1,s2; 
+      list<Integer> b;
+      list<list<Integer>> blocks;
+      DAELow.Variables v;
+      list<DAELow.Var> vLst;
+    case (daelow as DAELow.DAELOW(orderedVars = v),blocks,ass1,ass2,m,mT) 
+      equation
+      vLst = DAELow.varList(v);
+      vLst = Util.listSelect(vLst,DAELow.isVarDiscrete); // select all discrete vars.
+			outString = Util.stringDelimitList(Util.listMap2(vLst, buildDiscreteVarChangesVar,daelow,mT),"\n");
+    then outString;
+    case(_,_,_,_,_,_) equation
+      print("buildDiscreteVarChanges failed\n");
+      then fail();
+  end matchcontinue;
+end buildDiscreteVarChanges;
+
+protected function buildDiscreteVarChangesVar "help function to buildDiscreteVarChanges"
+  input DAELow.Var var;
+  input DAELow.DAELow daelow;
+  input DAELow.IncidenceMatrixT mT;
+  output String outString;
+algorithm
+  outString := matchcontinue(var,daelow,ass1) 
+  local list<String> strLst;
+    Exp.ComponentRef cr;
+    Integer varIndx;
+    list<Integer> eqns;
+    case(var as DAELow.VAR(varName=cr,index=varIndx), daelow,mT) equation
+      eqns = mT[varIndx+1]; // eqns continaing var
+      true = crefNotInWhenEquation(cr,daelow,eqns);
+  		strLst = Util.listMap2(eqns,buildDiscreteVarChangesVar2,cr,daelow);
+  		outString = Util.stringDelimitList(strLst,"\n");
+    then outString;
+      
+    case(_,_,_) then "";
+  end matchcontinue;
+end buildDiscreteVarChangesVar;
+  
+protected function crefNotInWhenEquation "Returns true if cref is not solved in any of the equations 
+given as indices which is a when_equation"
+  input Exp.ComponentRef cr;
+  input DAELow.DAELow daelow;
+  input list<Integer> eqns;
+  output Boolean res;
+algorithm
+  res := matchcontinue(cr,daelow,eqns)
+  local
+    DAELow.EquationArray eqs;
+    Integer e;
+    Exp.ComponentRef cr2;
+    case(cr,daelow,{}) then true;
+    case(cr,daelow as DAELow.DAELOW(orderedEqs=eqs),e::eqns) equation
+      DAELow.WHEN_EQUATION(DAELow.WHEN_EQ(_,cr2,_)) = DAELow.equationNth(eqs,intAbs(e)-1);
+      true = Exp.crefEqual(cr,cr2);
+    then false;
+    case(cr,daelow,_::eqns) equation
+      res = crefNotInWhenEquation(cr,daelow,eqns);
+    then res;
+  end matchcontinue;
+end crefNotInWhenEquation;
+protected function buildDiscreteVarChangesVar2 "Help relation to buildDiscreteVarChangesVar
+For an equation e  (not a when equation) containing a discrete variable v, if e contains a 
+ZeroCrossing(i) generate 'if edge(v) AddEvent(i)'
+"
+  input Integer eqn;
+  input Exp.ComponentRef cr;
+  input DAELow.DAELow daelow;
+  output String outString;
+algorithm
+  outString := matchcontinue(eqn,cr,daelow)
+  local DAELow.EquationArray eqns;
+    DAELow.Equation e;
+    list<DAELow.ZeroCrossing> zcLst;
+    String crStr;
+    list<String> strLst;
+    list<Integer> zcIndxLst;
+ 
+    case(eqn,cr,daelow as DAELow.DAELOW(eventInfo=DAELow.EVENT_INFO(zeroCrossingLst = zcLst)))
+     equation
+     		zcIndxLst = zeroCrossingsContainIndex(eqn,0,zcLst);
+				strLst = Util.listMap1(zcIndxLst,buildDiscreteVarChangesAddEvent,cr);
+				outString = Util.stringDelimitList(strLst,"\n");
+     then outString;
+    case(_,_,_) equation
+      print("buildDiscreteVarChangesVar2 failed\n");
+      then fail();
+  end matchcontinue;
+end buildDiscreteVarChangesVar2;
+
+protected function zeroCrossingsContainIndex "Returns the zero crossing indices that contains equation
+given by input index."
+  input Integer eqn "equation index";
+  input Integer i "iterator for zc starts at 0 to n-1 zero crossings";
+  input	list<DAELow.ZeroCrossing> zcLst;
+  output list<Integer> eqns;
+algorithm
+  eqns := matchcontinue(eqn,zcLst)
+    local list<Integer> eqnLst;
+    case (_,_,{}) then {};
+    case(eqn,i,DAELow.ZERO_CROSSING(occurEquLst=eqnLst)::zcLst) equation
+      true = listMember(eqn,eqnLst);
+      eqns = zeroCrossingsContainIndex(eqn,i+1,zcLst);
+    then  i::eqns;
+    case(eqn,i,_::zcLst) equation
+      eqns = zeroCrossingsContainIndex(eqn,i+1,zcLst);
+    then  eqns;   
+  end matchcontinue;
+end zeroCrossingsContainIndex;
+
+protected function buildDiscreteVarChangesAddEvent "help function to buildDiscreteVarChangesVar2
+Generates 'if (edge(v)) AddEvent(i) for and index i and variable v"
+  input Integer indx;
+  input Exp.ComponentRef cr;
+  output String str;
+protected 
+	String crStr,indxStr;  
+algorithm
+	crStr := Exp.printComponentRefStr(cr);
+	indxStr := intString(indx);
+	str := Util.stringAppendList({"if (edge(",crStr,")) AddEvent(",indxStr,");"});
+end buildDiscreteVarChangesAddEvent;
+  
 protected function buildWhenConditionChecks "function:  buildWhenConditionChecks
 "
   input DAELow.DAELow inDAELow;
@@ -2921,7 +3056,7 @@ algorithm
   matchcontinue (inDAELow1,inIntegerLstLst2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inPath7)
     local
       Boolean usezc;
-      String check_code,check_code_1,res;
+      String check_code,check_code_1,res,check_code2,check_code2_1;
       list<tuple<Integer, Exp.Exp, Integer>> helpVarInfo;
       DAELow.DAELow dlow;
       list<list<Integer>> comps;
@@ -2932,10 +3067,12 @@ algorithm
       equation 
         usezc = useZerocrossing();
         (check_code,helpVarInfo) = buildWhenConditionChecks(dlow, comps);
+        check_code2 = buildDiscreteVarChanges(dlow,comps,ass1,ass2,m,mt);
         check_code_1 = Util.if_(usezc, check_code, "");
+        check_code2_1 = Util.if_(usezc,check_code2, "");
         res = Util.stringAppendList(
           {"int checkForDiscreteVarChanges()\n{\n",
-          check_code_1,"return 0;\n","}\n"});
+          check_code_1,check_code2_1,"return 0;\n","}\n"});
       then
         (res,helpVarInfo);
     case (_,_,_,_,_,_,_)
@@ -3075,12 +3212,12 @@ algorithm
         //print("mixed system, analyzing jacobian\n");
         jac_tp = DAELow.analyzeJacobian(cont_subsystem_dae, jac);
         //print("mixed syste, jacobian_str\n"); 
-        s = DAELow.jacobianTypeStr(jac_tp);
+        //s = DAELow.jacobianTypeStr(jac_tp);
         //print("mixed system with Jacobian type: "); print(s); print("\n");
         //s = DAELow.dumpJacobianStr(jac);
         //print("jacobian ="); print(s); print("\n");       
         
-        (s2,cg_id_1,f1) = generateOdeSystem2(cont_subsystem_dae, jac, jac_tp, cg_id);
+        (s2,cg_id_1,f1) = generateOdeSystem2(false/*mixed system but not event code*/,cont_subsystem_dae, jac, jac_tp, cg_id);
       then
         (s2,cg_id_1,f1);
 
@@ -3097,7 +3234,7 @@ algorithm
         mt_1 = DAELow.transposeMatrix(m_1);
         jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_1, mt_1) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
         jac_tp = DAELow.analyzeJacobian(subsystem_dae, jac);
-        (s1,cg_id_1,f1) = generateOdeSystem2(subsystem_dae, jac, jac_tp, cg_id) "	print \"generating subsystem :\" &
+        (s1,cg_id_1,f1) = generateOdeSystem2(false,subsystem_dae, jac, jac_tp, cg_id) "	print \"generating subsystem :\" &
 	DAELow.dump subsystem_dae &" ;
       then
         (s1,cg_id_1,f1);
@@ -3643,6 +3780,7 @@ protected function generateOdeSystem2 "function: generateOdeSystem2
   Generates the actual simulation code for the system of equation, once
   its jacobian and type has been given.
 "
+  input Boolean mixedEvent "true if generating the mixed system event code";
   input DAELow.DAELow inDAELow;
   input Option<list<tuple<Integer, Integer, DAELow.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
   input DAELow.JacobianType inJacobianType;
@@ -3652,7 +3790,7 @@ protected function generateOdeSystem2 "function: generateOdeSystem2
   output list<CFunction> outCFunctionLst;
 algorithm 
   (outCFunction,outInteger,outCFunctionLst):=
-  matchcontinue (inDAELow,inTplIntegerIntegerDAELowEquationLstOption,inJacobianType,inInteger)
+  matchcontinue (mixedEvent,inDAELow,inTplIntegerIntegerDAELowEquationLstOption,inJacobianType,inInteger)
     local
       Codegen.CFunction s1,s2,s3,s4,s5,s;
       Integer cg_id_1,cg_id,eqn_size,unique_id,cg_id1,cg_id2,cg_id3,cg_id4,cg_id5;
@@ -3668,7 +3806,7 @@ algorithm
       DAELow.MultiDimEquation[:] ae;
      
       /* A single array equation */ 
-    case (dae,jac,jac_tp,cg_id) 
+    case (mixedEvent,dae,jac,jac_tp,cg_id) 
       equation 
         singleArrayEquation(dae);
         (s1,cg_id_1,f1) = generateSingleArrayEqnCode(dae, jac, cg_id);
@@ -3676,7 +3814,7 @@ algorithm
         (s1,cg_id_1,f1);
         
         /* A single algorithm section for several variables. */ 
-    case (dae,jac,jac_tp,cg_id) 
+    case (mixedEvent,dae,jac,jac_tp,cg_id) 
       equation 
         singleAlgorithmSection(dae);
         (s1,cg_id_1,f1) = generateSingleAlgorithmCode(dae, jac, cg_id);
@@ -3686,23 +3824,24 @@ algorithm
         /* constant jacobians. Linear system of equations (A x = b) where
          A and b are constants. TODO: implement symbolic gaussian elimination here. Currently uses dgesv as 
          for next case */ 
-    case ((d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_CONSTANT(),cg_id) 
+    case (mixedEvent,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_CONSTANT(),cg_id) 
       local list<tuple<Integer, Integer, DAELow.Equation>> jac;
       equation 
         eqn_size = DAELow.equationSize(eqn);
-        (s1,cg_id_1,f1) = generateOdeSystem2(d, SOME(jac), DAELow.JAC_TIME_VARYING(), cg_id) "NOTE: Not impl. yet, use time_varying..." ;
+        (s1,cg_id_1,f1) = generateOdeSystem2(mixedEvent,d, SOME(jac), DAELow.JAC_TIME_VARYING(), cg_id) "NOTE: Not impl. yet, use time_varying..." ;
       then
         (s1,cg_id_1,f1);
 
 	/* Time varying jacobian. Linear system of equations that needs to 
 		  be solved during runtime. */
-    case ((d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_TIME_VARYING(),cg_id)  
+    case (mixedEvent,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_TIME_VARYING(),cg_id)  
       local list<tuple<Integer, Integer, DAELow.Equation>> jac;
       equation 
         //print("linearSystem of equations:");
         //DAELow.dump(d);
         eqn_size = DAELow.equationSize(eqn);
         unique_id = tick();
+        // TODO: propagate mixedEvent to linear system solving code...
         (s1,cg_id1) = generateOdeSystem2Declaration(eqn_size, unique_id, cg_id);
         (s2,cg_id2) = generateOdeSystem2PopulateAb(jac, v, eqn, unique_id, cg_id1);
         (s3,cg_id3) = generateOdeSystem2SolveCall(eqn_size, unique_id, cg_id2);
@@ -3711,25 +3850,25 @@ algorithm
         s = Codegen.cMergeFns({s1,s2,s3,s4,s5});
       then
         (s,cg_id4,{});
-    case (DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),SOME(jac),DAELow.JAC_NONLINEAR(),cg_id) /* Time varying nonlinear jacobian. Non-linear system of equations */ 
+    case (mixedEvent,DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),SOME(jac),DAELow.JAC_NONLINEAR(),cg_id) /* Time varying nonlinear jacobian. Non-linear system of equations */ 
       local list<tuple<Integer, Integer, DAELow.Equation>> jac;
       equation 
  
         eqn_lst = DAELow.equationList(eqn);
         var_lst = DAELow.varList(v);
-        crefs = Util.listMap(var_lst, DAELow.varCref);
-        (s1,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(crefs, eqn_lst,ae, cg_id);
+        crefs = Util.listMap(var_lst, DAELow.varCrefPrefixStates);// get varnames and prefix $derivative for states.
+        (s1,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(mixedEvent,crefs, eqn_lst,ae, cg_id);
       then
         (s1,cg_id_1,f1);
-    case (DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),NONE,DAELow.JAC_NO_ANALYTIC(),cg_id) /* no analythic jacobian available. Generate non-linear system */ 
+    case (mixedEvent,DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),NONE,DAELow.JAC_NO_ANALYTIC(),cg_id) /* no analythic jacobian available. Generate non-linear system */ 
       equation 
         eqn_lst = DAELow.equationList(eqn);
         var_lst = DAELow.varList(v);
-        crefs = Util.listMap(var_lst, DAELow.varCref);
-        (s1,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(crefs, eqn_lst, ae, cg_id);
+        crefs = Util.listMap(var_lst, DAELow.varCrefPrefixStates); // get varnames and prefix $derivative for states.
+        (s1,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(mixedEvent,crefs, eqn_lst, ae, cg_id);
       then
         (s1,cg_id_1,f1);
-    case (_,_,_,_)
+    case (_,_,_,_,_)
       equation 
         Debug.fprint("failtrace", "-generate_ode_system2 failed \n");
       then
@@ -4092,6 +4231,7 @@ protected function generateOdeSystem2NonlinearResiduals "function: generateOdeSy
  
   Generates residual statements for nonlinear equation systems.
 "
+	input Boolean mixedEvent "true if inside mixed system event code";
   input list<Exp.ComponentRef> inExpComponentRefLst;
   input list<DAELow.Equation> inDAELowEquationLst;
   input DAELow.MultiDimEquation[:] multiDimEqnLst;
@@ -4101,7 +4241,7 @@ protected function generateOdeSystem2NonlinearResiduals "function: generateOdeSy
   output list<CFunction> outCFunctionLst;
 algorithm 
   (outCFunction,outInteger,outCFunctionLst):=
-  matchcontinue (inExpComponentRefLst,inDAELowEquationLst,multiDimEqnLst,inInteger)
+  matchcontinue (mixedEvent,inExpComponentRefLst,inDAELowEquationLst,multiDimEqnLst,inInteger)
     local
       VarTransform.VariableReplacements repl;
       Codegen.CFunction s1,res_func,func,f2,f3,f4,f1,f5,res;
@@ -4110,7 +4250,7 @@ algorithm
       list<Exp.ComponentRef> crs;
       list<DAELow.Equation> eqns;
       DAELow.MultiDimEquation[:] aeqns;
-    case (crs,eqns,aeqns,cg_id) /* cg var_id solve code cg var_id extra functions: residual func */ 
+    case (mixedEvent,crs,eqns,aeqns,cg_id) /* cg var_id solve code cg var_id extra functions: residual func */ 
       equation 
         repl = makeResidualReplacements(crs);
         (s1,cg_id1) = generateOdeSystem2NonlinearResiduals2(eqns, aeqns, 0, repl, cg_id);
@@ -4123,7 +4263,7 @@ algorithm
           {"int *n","double* xloc","double* res","int* iflag"});
         func = Codegen.cMergeFns({res_func,s1});
         (f2,cg_id2) = generateOdeSystem2NonlinearSetvector(crs, 0, cg_id1);
-        (f3,cg_id3) = generateOdeSystem2NonlinearCall(str_id, cg_id2);
+        (f3,cg_id3) = generateOdeSystem2NonlinearCall(mixedEvent,str_id, cg_id2);
         (f4,cg_id4) = generateOdeSystem2NonlinearStoreResults(crs, 0, cg_id3);
         start_stmt = Util.stringAppendList({"start_nonlinear_system(",size_str,");"});
         end_stmt = "end_nonlinear_system();";
@@ -4132,7 +4272,7 @@ algorithm
         res = Codegen.cMergeFns({f1,f2,f3,f4,f5});
       then
         (res,cg_id4,{func});
-    case (_,_,_,_)
+    case (_,_,_,_,_)
       equation 
         print("generate_ode_system2_nonlinear_residuals failed\n");
       then
@@ -4229,18 +4369,20 @@ protected function generateOdeSystem2NonlinearCall "function: generateOdeSystem2
  
   Generates the call to the nonlinear equation solver.
 "
+  input Boolean mixedEvent "true if inside mixed system event code";
   input String inString;
   input Integer inInteger;
   output CFunction outCFunction;
   output Integer outInteger;
 algorithm 
-  (outCFunction,outInteger):=
+  (mixedEvent,outCFunction,outInteger):=
   matchcontinue (inString,inInteger)
     local
       String stmt,func_id;
       Codegen.CFunction func;
       Integer cg_id;
-    case (func_id,cg_id) /* residual func id cg var_id cg var_id */ 
+      // Not mixed system event code
+    case (false,func_id,cg_id) /* residual func id cg var_id cg var_id */ 
       equation 
         stmt = Util.stringAppendList(
           {"hybrd_(residualFunc",func_id,
@@ -4249,6 +4391,20 @@ algorithm
           "nls_wa4);\n",TAB,"if (info == 0) {\n",TAB,TAB,"printf(\"improper ",
           "input parameters to nonlinear eq. syst.\\n\");\n",TAB,"}\n",TAB,"if (info >= 2 && info <= 5) {\n",TAB,TAB,
           "printf(\"error solving nonlinear"," system nr. ",func_id," at time %f\\n\",time);\n",TAB,"}"});
+        func = Codegen.cAddStatements(Codegen.cEmptyFunction, {stmt});
+      then
+        (func,cg_id);
+        
+        // Mixed system event code.
+    case (true,func_id,cg_id) /* residual func id cg var_id cg var_id */ 
+      equation 
+        stmt = Util.stringAppendList(
+          {"hybrd_(residualFunc",func_id,
+          ",&n, nls_x,nls_fvec,&xtol,&maxfev,&ml,&mu,","&epsfcn,\n",TAB,TAB,"nls_diag,&mode,&factor,&nprint,",
+          "&info,&nfev,nls_fjac,&ldfjac,\n",TAB,TAB,"nls_r,","&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,",
+          "nls_wa4);\n",TAB,"if (info == 0) {\n",TAB,TAB,"printf(\"improper ",
+          "input parameters to nonlinear eq. syst.\\n\");\n",TAB,"}\n",TAB,"if (info >= 2 && info <= 5) {\n",TAB,TAB,
+          "found_solution=-1;\n",TAB,"}"});
         func = Codegen.cAddStatements(Codegen.cEmptyFunction, {stmt});
       then
         (func,cg_id);
@@ -5035,7 +5191,7 @@ algorithm
         cr_1 = Exp.CREF_IDENT(id,{});
         varexp = Exp.CREF(cr_1,Exp.REAL());
         failure(_ = Exp.solve(e1, e2, varexp));
-        (res,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals({cr_1}, {eqn},ae, cg_id);
+        (res,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(false,{cr_1}, {eqn},ae, cg_id);
       then
         (res,cg_id_1,f1);
     case (DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns,arrayEqs = ae),ass1,ass2,e,cg_id) /* non-state non-linear */ 
@@ -5045,7 +5201,7 @@ algorithm
         indxs = intString(indx);
         varexp = Exp.CREF(cr,Exp.REAL());
         failure(_ = Exp.solve(e1, e2, varexp));
-        (res,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals({cr}, {eqn},ae, cg_id);
+        (res,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(false,{cr}, {eqn},ae, cg_id);
       then
         (res,cg_id_1,f1);
         
@@ -5758,6 +5914,7 @@ algorithm
       DAELow.DAELow dlow;
       Integer[:] ass1,ass2;
       list<list<Integer>> blocks;
+      list<String> saveStmts;
     case ({},_,_,_,_,_,_,_,cg_id1,cg_id2) then (Codegen.cEmptyFunction,cg_id1,Codegen.cEmptyFunction,cg_id2,{});  /* cg_var_id2 */ 
     case (_,_,_,_,_,_,_,_,cg_id1,cg_id2)
       equation 
@@ -5773,8 +5930,9 @@ algorithm
           cg_id1, cg_id2);
         stmt1 = Util.stringAppendList({"ZEROCROSSING(",index_str,",",zc_str,");\n"});
         usedHelpVars = Util.listSelect1(helpVarInfo, (index,dlow), isZeroCrossingAffectingHelpVar);
-        (Codegen.CFUNCTION(rettp,fn,retrec,arg,vars,init,stmts,cleanups),cg_id2_2,extra_funcs2) = buildZeroCrossingEqns(dae, dlow, ass1, ass2, eql, blocks, cg_id2_1);
+        (Codegen.CFUNCTION(rettp,fn,retrec,arg,vars,init,stmts,cleanups),saveStmts,cg_id2_2,extra_funcs2) = buildZeroCrossingEqns(dae, dlow, ass1, ass2, eql, blocks, cg_id2_1);
         case_stmt = Util.stringAppendList({"case ",index_str,":\n"});
+        stmts = listAppend(saveStmts,stmts); // save statements before all equations
         stmts_1 = (case_stmt :: stmts);
         help_var_str = buildHelpVarAssignments(usedHelpVars);
         stmts_2 = listAppend(stmts_1, {help_var_str,"break;"});
@@ -6117,11 +6275,12 @@ algorithm
   end matchcontinue;
 end buildWhenBlocks;
 
-protected function buildZeroCrossingEqns "function: buildZeroCrossingEqns
-  author: haklu?
+
+protected function buildZeroCrossingEqns "function: buildZeroCrossingEqns2
+  author: haklu
  
-  Helper rerlation to generate_zero_crossing2. Generates code for each
-  zero crossing.
+  Helper function to generateZeroCrossing2. Iterates and generates code for each
+  equation in a zero crossing.
 "
   input DAE.DAElist inDAElist1;
   input DAELow.DAELow inDAELow2;
@@ -6131,6 +6290,7 @@ protected function buildZeroCrossingEqns "function: buildZeroCrossingEqns
   input list<list<Integer>> inIntegerLstLst6;
   input Integer inInteger7;
   output CFunction outCFunction;
+  output list<String> saveStmts " list of 'save(..);' statements";
   output Integer outInteger;
   output list<CFunction> outCFunctionLst;
 algorithm 
@@ -6159,7 +6319,7 @@ algorithm
       Integer[:] ass1,ass2;
       list<list<Integer>> blocks;
       DAELow.ExternalObjectClasses eoc;
-    case (_,_,_,_,{},_,cg_id) then (Codegen.cEmptyFunction,cg_id,{});  /* ass1 ass2 eqns blocks cg var_id cg var_id */ 
+    case (_,_,_,_,{},_,cg_id) then (Codegen.cEmptyFunction,{},cg_id,{});  /* ass1 ass2 eqns blocks cg var_id cg var_id */ 
     case (dae,(dlow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,(eqn :: rest),blocks,cg_id) /* Zero crossing for mixed system */ 
       equation 
         true = isPartOfMixedSystem(dlow, eqn, blocks, ass2);
@@ -6181,19 +6341,18 @@ algorithm
         jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_1, mt_1) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
         jac_tp = DAELow.analyzeJacobian(cont_subsystem_dae, jac);
         (s0,cg_id1) = generateMixedHeader(cont_eqn, cont_var, disc_eqn, disc_var, cg_id);
-        s0 = Codegen.cPrependStatements(s0, {save_stmt});
-        (Codegen.CFUNCTION(rettp,fn,retrec,arg,vars,init,stmts,cleanups),cg_id2,extra_funcs1) = generateOdeSystem2(cont_subsystem_dae, jac, jac_tp, cg_id1);
+        (Codegen.CFUNCTION(rettp,fn,retrec,arg,vars,init,stmts,cleanups),cg_id2,extra_funcs1) = generateOdeSystem2(true/*mixed system*/,cont_subsystem_dae, jac, jac_tp, cg_id1);
         stmts_1 = Util.listFlatten({{"{"},vars,stmts,{"}"}}) "initialization of e.g. matrices for linsys must be done in each
 	    iteration, create new scope and put them first." ;
         s2_1 = Codegen.CFUNCTION(rettp,fn,retrec,arg,{},init,stmts_1,cleanups);
         (s4,cg_id3) = generateMixedFooter(cont_eqn, cont_var, disc_eqn, disc_var, cg_id2);
         (s3,cg_id4,_) = generateMixedSystemDiscretePartCheck(disc_eqn, disc_var, cg_id3);
         (s1,cg_id5,_) = generateMixedSystemStoreDiscrete(disc_var, 0, cg_id4);
-        (cfn3,cg_id6,extra_funcs2) = buildZeroCrossingEqns(dae, dlow, ass1, ass2, rest, blocks, cg_id5);
+        (cfn3,saveStmts,cg_id6,extra_funcs2) = buildZeroCrossingEqns(dae, dlow, ass1, ass2, rest, blocks, cg_id5);
         cfn = Codegen.cMergeFns({s0,s1,s2_1,s3,s4,cfn3});
         extra_funcs = listAppend(extra_funcs1, extra_funcs2);
       then
-        (cfn,cg_id6,extra_funcs);
+        (cfn,save_stmt::saveStmts,cg_id6,extra_funcs);
     case (dae,(dlow as DAELow.DAELOW(orderedVars = vars)),ass1,ass2,(eqn :: rest),blocks,cg_id) /* Zero crossing for single equation */ 
       local DAELow.Variables vars;
       equation 
@@ -6202,13 +6361,12 @@ algorithm
         v = ass2[eqn_1 + 1];
         (DAELow.VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,_)) = DAELow.getVarAt(vars, v);
         cr_str = Exp.printComponentRefStr(cr);
-        (cfn3,cg_id_2,extra_funcs) = buildZeroCrossingEqns(dae, dlow, ass1, ass2, rest, blocks, cg_id_1);
+        (cfn3,saveStmts,cg_id_2,extra_funcs) = buildZeroCrossingEqns(dae, dlow, ass1, ass2, rest, blocks, cg_id_1);
         stmt = Util.stringAppendList({"save(",cr_str,");"});
-        cfn1 = Codegen.cAddStatements(Codegen.cEmptyFunction, {stmt});
-        cfn = Codegen.cMergeFns({cfn1,cfn2,cfn3});
+        cfn = Codegen.cMergeFns({cfn2,cfn3});
       then
-        (cfn,cg_id_2,extra_funcs);
-    case (_,_,_,_,_,_,cg_id) then (Codegen.cEmptyFunction,cg_id,{}); 
+        (cfn,stmt::saveStmts,cg_id_2,extra_funcs);
+    case (_,_,_,_,_,_,cg_id) then (Codegen.cEmptyFunction,{},cg_id,{}); 
   end matchcontinue;
 end buildZeroCrossingEqns;
 

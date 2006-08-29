@@ -319,6 +319,7 @@ double Sample(double t, double start ,double interval);
 double sample(double start ,double interval);
 
 void CheckForNewEvents(double *t);
+void CheckForInitialEvents(double *t);
 void StartEventIteration(double *t);
 void StateEventHandler(long jroot[], double *t);
 

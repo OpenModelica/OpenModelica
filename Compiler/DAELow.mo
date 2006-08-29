@@ -1074,6 +1074,17 @@ algorithm
   end matchcontinue;
 end collectZeroCrossings;
 
+public function isVarDiscrete " returns true if variable is discrete"
+input Var var;
+output Boolean res;
+algorithm 
+  res := matchcontinue(var)
+    case(VAR(varKind=kind)) local VarKind kind;
+      then isKindDiscrete(kind);
+  end matchcontinue;
+end isVarDiscrete;
+
+
 protected function isKindDiscrete "function: isKindDiscrete
  
   Returns true if VarKind is discrete.
@@ -1996,6 +2007,39 @@ algorithm
     case (VAR(varName = cr,flow_ = flow_)) then cr; 
   end matchcontinue;
 end varCref;
+
+public function varCrefPrefixStates "
+  author: PA
+  extracts the ComponentRef of a variable and prefixes the variable name with derivativeNamePrefix if the variable
+  is a state (and it does not alreaday have the prefix). This function can be used e.g. when extracting the solved variables of a subsystem of equations."
+
+  input Var inVar;
+  output Exp.ComponentRef outComponentRef;
+algorithm 
+  outComponentRef:=
+  matchcontinue (inVar)
+    local
+      Exp.ComponentRef cr,cr2;
+      DAE.Flow flow_;
+      Exp.Ident name;
+      list<Exp.Subscript> subs;
+    case (VAR(varName = Exp.CREF_IDENT(name,subs),varKind=STATE())) 
+      equation
+        failure(0=System.strncmp(derivativeNamePrefix,name,stringLength(derivativeNamePrefix)));
+        name = stringAppend(derivativeNamePrefix,name);
+      then Exp.CREF_IDENT(name,subs);
+    case (VAR(varName = Exp.CREF_QUAL(name,subs,cr2),varKind=STATE())) 
+      equation
+       failure(0=System.strncmp(derivativeNamePrefix,name,stringLength(derivativeNamePrefix)));
+        name = stringAppend(derivativeNamePrefix,name);
+      then Exp.CREF_QUAL(name,subs,cr2);
+	
+		// For non-states, return name        
+    case (VAR(varName = cr)) then cr; 
+      
+  end matchcontinue;
+end varCrefPrefixStates;
+
 
 public function varType "function: varType
   author: PA

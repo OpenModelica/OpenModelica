@@ -96,17 +96,22 @@ do { \
 double discrete_loc[size]; \
 double discrete_loc2[size];
 
-#define mixed_equation_system_end(size)    } while (!found_solution); \
+#define mixed_equation_system_end(size) } while (!found_solution); \
  } while(0)
 
 #define check_discrete_values(size) do {int i; \
 if (!found_solution) { \
+if (found_solution == -1) { /*system of equations failed*/ \
+found_solution=0; \
+} else { \
 found_solution = 1; \
 for (i=0; i < size; i++) { \
-if ((discrete_loc[i] - discrete_loc2[i]) > 1e-12) {\
+if (fabs((discrete_loc[i] - discrete_loc2[i])) > 1e-12) {\
 found_solution=0;\
+/*printf("did not find solution, iterate\n");*/ \
 }\
  }\
+}\
 if (!found_solution ) { \
 cur_value_indx++; \
 /*printf("iterating mixed system, i=%d\n",cur_value_indx);*/ \

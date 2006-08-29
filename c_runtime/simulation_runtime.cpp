@@ -40,10 +40,12 @@ long actual_points=0; // the number of actual points saved
 
 int sim_verbose;
 
+// vectors with saved values used by pre(v)
 double* h_saved;
 double* x_saved;
 double* xd_saved;
 double* y_saved;
+
 double* gout;
 long* zeroCrossingEnabled;
 
@@ -76,22 +78,22 @@ inline void dumpresult(double t, double y, long idid, double* rwork, long* iwork
 // relation functions used in zero crossing detection
 double Less(double a, double b) 
 {
-  return a-b;
+    return a-b;
 }
 
 double LessEq(double a, double b) 
 {
-  return a-b;
+    return a-b;
 }
 
 double Greater(double a, double b) 
 {
-  return b-a;
+    return b-a;
 }
 
 double GreaterEq(double a, double b) 
 {
-  return b-a;
+    return b-a;
 }
 
 double Sample(double t, double start ,double interval)
@@ -147,7 +149,8 @@ inline void calcEnabledZeroCrossings()
       zeroCrossingEnabled[i] = -1;
     else
       zeroCrossingEnabled[i] = 0;
-    //cout << "e[" << i << "]=" << zeroCrossingEnabled[i] << endl;
+ // cout << "e[" << i << "]=" << zeroCrossingEnabled[i] << " gout[" << i << "]="<< gout[i] 
+   //  << " init =" << globalData->init << endl;
   }
 }
 
@@ -492,7 +495,47 @@ int initialize(const std::string*method)
 
   return 0;
 }
-
+/* DASSRT can not handle events at exaclty the start time.
+ * For instance der(x)=1, b = x>0 simulated from 0 .. x will miss the event.
+ * The zeroCrossingEnabled vector is used to prevent DASSRT from checking the event above since it occur
+ * at start time for the solver.
+ * 
+ * This function checks such initial events and calls the event handling for this. The function is called after the first 
+ * step is taken by DASSRT (a small tiny step just to check these events)
+ * */
+void checkForInitialZeroCrossings(long*jroot)
+{
+	int i;
+	if (sim_verbose) {
+		cout << "checkForIntialZeroCrossings" << endl;
+	}
+	// enable only those that were disabled at init time.
+	for (i=0; i<globalData->nZeroCrossing; i++) {
+		if (zeroCrossingEnabled[i]==0) {
+			zeroCrossingEnabled[i]=1;
+		} else {
+			zeroCrossingEnabled[i]=0;
+		}
+	}
+	function_zeroCrossing(&globalData->nStates,&globalData->timeValue,
+                        globalData->states,&globalData->nZeroCrossing,gout,0,0);
+		
+	for(i=0;i<globalData->nZeroCrossing;i++) {
+    if (zeroCrossingEnabled[i] && gout[i]) {
+      handleZeroCrossing(i);
+      function_updateDependents();
+      functionDAE_output();
+    }
+  }
+	emit();
+    CheckForNewEvents(&globalData->timeValue);
+    StartEventIteration(&globalData->timeValue);
+    saveall();		
+    calcEnabledZeroCrossings();
+    if (sim_verbose) {
+    	cout << "checkForIntialZeroCrossings done." << endl;
+    }
+}
 
 /* The main function for the dassl solver*/
 int dassl_main( int argc, char**argv)
@@ -561,10 +604,11 @@ int dassl_main( int argc, char**argv)
   x_saved = new double[globalData->nStates];
   xd_saved = new double[globalData->nStates];
   y_saved = new double[globalData->nAlgebraic];
-  if(!y_saved || !gout || !h_saved || !x_saved || !xd_saved){
+  if(!y_saved || !gout || !h_saved || !x_saved || !xd_saved ){
     std::cerr << "Could not allocate memory" << std::endl;
     return -1;
   }
+
   zeroCrossingEnabled = new long[globalData->nZeroCrossing];
   data =  initialize_simdata(5*numpoints,globalData->nStates,globalData->nAlgebraic);
  
@@ -599,26 +643,36 @@ int dassl_main( int argc, char**argv)
     printf("Error calculating initial derivatives\n");
     goto exit;
   }
-  tout = newTime(globalData->timeValue, step); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
+  tout = globalData->timeValue+1e-6; // take tiny step.
 
-  saveall();
+  //saveall();
  
   function_updateDependents();
 
+  if (sim_verbose) { cout << "Checking events at initialization (at time "<< globalData->timeValue << ")." << endl; }
+
   // Need to check for events at init=1 since e.g. initial() generate event at initialization.
-  CheckForNewEvents(&globalData->timeValue);
+  //calcEnabledZeroCrossings();  
+  CheckForInitialEvents(&globalData->timeValue);
   StartEventIteration(&globalData->timeValue);
 
-  globalData->init = 0; 
+  saveall();
+
 
   if(emit()) { printf("Error, not enough space to save data"); return -1; }
   calcEnabledZeroCrossings(); 
+    globalData->init = 0; 
+  if (sim_verbose) { cout << "calling DDASRT from "<< globalData->timeValue << " to "<<
+  	tout << endl; }
+  	// Take an initial tiny step and then check for events at startTime
+  	// Such events will have zeroCrossingEnable[i] == 0.
   DDASRT(functionDAE_res, &globalData->nStates,   &globalData->timeValue, globalData->states, 
          globalData->statesDerivatives, &tout, 
          info,&rtol, &atol, 
          &idid,rwork,&lrw, iwork, &liw, globalData->algebraics, 
          &ipar, dummyJacobianDASSL, function_zeroCrossing,
          &globalData->nZeroCrossing, jroot);
+  checkForInitialZeroCrossings(jroot);
   info[0] = 1;
 
   functionDAE_res(&globalData->timeValue,globalData->states,globalData->statesDerivatives,
@@ -631,6 +685,9 @@ int dassl_main( int argc, char**argv)
     // TODO: check here if time event has been reached.
 
     while (idid == 4) {
+    	if (sim_verbose) { 
+    		cout << "found event at time " << globalData->timeValue << endl;
+    	}
       if (emit()) {printf("Too many points\n");
 	idid = -99; break;}
       saveall();
@@ -643,6 +700,8 @@ int dassl_main( int argc, char**argv)
 	for (i=0;i<globalData->nZeroCrossing;i++) {
 	  tmp_jroot[i]=jroot[i];
 	}
+	if (sim_verbose) { cout << "Taking tiny step to time " << tout << " to pass time at event " << globalData->timeValue << endl;
+	}
 	DDASRT(functionDAE_res, &globalData->nStates,   
                &globalData->timeValue, globalData->states, globalData->statesDerivatives, &tout, 
                info,&rtol, &atol, 
@@ -654,6 +713,7 @@ int dassl_main( int argc, char**argv)
         delete[] tmp_jroot;
       } // end tiny step
       
+      if (sim_verbose) { cout << "Checking events at time " << globalData->timeValue << endl; }
       calcEnabledZeroCrossings();
       StateEventHandler(jroot, &globalData->timeValue);
       CheckForNewEvents(&globalData->timeValue);
@@ -752,13 +812,15 @@ void saveall()
 
 
 
+/* save(v) saves the previous value of a discrete variable v, which can be accessed 
+ * using pre(v) in Modelica.
+ */
 
 void save(double & var) 
 {
   double* pvar = &var;
   long ind;
-
-
+  //printf("save %s = %f\n",getName(&var),var);
   ind = long(pvar - globalData->helpVars);
   if (ind >= 0 && ind < globalData->nHelpVars) {
     h_saved[ind] = var;
@@ -770,7 +832,7 @@ void save(double & var)
     return;
   }
   ind = long(pvar - globalData->statesDerivatives);
-  if (ind >= 0 && ind < globalData->nStates) {    
+  if (ind >= 0 && ind < globalData->nStates) {   
     xd_saved[ind] = var;
     return;
   }
@@ -786,7 +848,9 @@ double pre(double & var)
 {
   double* pvar = &var;
   long ind;
-
+  if (globalData->init) { // if during initialization, pre(v) = v
+  	return *pvar;
+  }
   ind = long(pvar - globalData->states);
   if (ind >= 0 && ind < globalData->nStates) {
     return x_saved[ind];
@@ -1009,6 +1073,30 @@ int
 checkForDiscreteVarChanges(double *t);
 void AddEvent(long);
 
+/* This function is similar to CheckForNewEvents except that is called during initialization.
+ * 
+ */
+
+void CheckForInitialEvents(double *t)
+{
+  // Check for changes in discrete variables
+  globalData->timeValue = *t;
+  checkForDiscreteVarChanges();
+
+  function_zeroCrossing(&globalData->nStates,
+                        &globalData->timeValue,
+                        globalData->states,
+                        &globalData->nZeroCrossing,gout,0,0);
+  for (long i=0;i<globalData->nZeroCrossing;i++) {
+  	//printf("gout[%d]=%f\n",i,gout[i]);
+    if (gout[i] < 0  || zeroCrossingEnabled[i]==0) { // check also zero crossings that are on zero.
+    	//printf("adding event %d\n",i);
+       AddEvent(i);
+    }
+  }
+}
+
+
 void CheckForNewEvents(double *t)
 {
   // Check for changes in discrete variables
@@ -1042,7 +1130,7 @@ ExecuteNextEvent(double *t)
 {
   if (EventQueue.begin() != EventQueue.end()) {
     long nextEvent = EventQueue.front();
-    //    calcEnabledZeroCrossings();
+    //    calcEnabledZeroCrossings();    
     if (nextEvent >= globalData->nZeroCrossing) {
       globalData->timeValue = *t;
       function_when(nextEvent-globalData->nZeroCrossing);
