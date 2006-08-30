@@ -7631,6 +7631,38 @@ algorithm
   end matchcontinue;
 end varEqual;
 
+public function equationEqual "Returns true if two equations are equal"
+  input Equation e1;
+  input Equation e2;
+  output Boolean res;
+algorithm
+  res := matchcontinue(e1,e2)
+    local 
+      Exp.Exp e11,e12,e21,e22,e1,e2;
+      Integer i1,i2;
+      Exp.ComponentRef cr1,cr2;
+    case (EQUATION(e11,e12),EQUATION(e21,e22)) equation
+      res = boolAnd(Exp.expEqual(e11,e21),Exp.expEqual(e12,e22));
+    then res;
+    case(ARRAY_EQUATION(i1,_),ARRAY_EQUATION(i2,_)) equation
+      res = intEq(i1,i2);
+    then res;
+    case(SOLVED_EQUATION(cr1,e1),SOLVED_EQUATION(cr2,e2)) equation
+      res = boolAnd(Exp.crefEqual(cr1,cr2),Exp.expEqual(e1,e2));
+    then res;
+    case(RESIDUAL_EQUATION(e1),RESIDUAL_EQUATION(e2)) equation
+      res = Exp.expEqual(e1,e2);
+    then res;
+    case(ALGORITHM(i1,_,_),ALGORITHM(i2,_,_)) equation
+      res = intEq(i1,i2);
+    then res;
+    case (WHEN_EQUATION(WHEN_EQ(i1,_,_)),WHEN_EQUATION(WHEN_EQ(i2,_,_))) equation
+      res = intEq(i1,i2);
+    then res;
+    case(_,_) then false;
+  end matchcontinue;
+end equationEqual;
+
 protected function newDummyVar "function: newDummyVar
   author: PA
  

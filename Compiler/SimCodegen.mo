@@ -2639,7 +2639,7 @@ algorithm
       equation 
         cname = Absyn.pathString(class_);
         (blt_states,blt_no_states) = DAELow.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
-        (block_code,_,extra_funcs) = generateOdeBlocks(dlow, ass1, ass2, blt_states, 0);
+        (block_code,_,extra_funcs) = generateOdeBlocks(dlow,ass1, ass2, blt_states, 0);
         func_1 = Codegen.cMakeFunction("int", "functionODE", {}, 
           {""});
         func_1 = addMemoryManagement(func_1);
@@ -3120,7 +3120,7 @@ algorithm
         (res,cg_id_2,res2);
     case (dae,ass1,ass2,((block_ as {eqn}) :: blocks),cg_id)
       equation 
-        (s1,cg_id_1,f1) = generateOdeEquation(dae, ass1, ass2, eqn, cg_id) "for single equations" ;
+        (s1,cg_id_1,f1) = generateOdeEquation(dae,ass1, ass2, eqn, cg_id) "for single equations" ;
         (s2,cg_id_2,f2) = generateOdeBlocks(dae, ass1, ass2, blocks, cg_id_1);
         res = Codegen.cMergeFns({s1,s2});
         res2 = listAppend(f1, f2);
@@ -3659,41 +3659,64 @@ protected function splitMixedEquations "function: splitMixedEquations
   author: PA
   
   Splits the equation of a mixed equation system into its continuous and
-  discrete parts
+  discrete parts. 
+  
+  Even though the matching algorithm might say that a discrete variable is solved in a specific equation
+  (when part of a mixed system) this is not always correct. It might be impossible to solve the discrete
+  variable from that equation, for instance solving v from equation x = v < 0; This happens for e.g. the Gear model.
+  Instead, to split the equations and variables the following scheme is used:
+  
+  1. Split the variables into continuous and discrete.
+  2. For each discrete variable v, select among the equations where it is present 
+   for an equation v = expr. (This could be done 
+   by looking at incidence matrix but for now we look through all equations. This is sufficiently 
+   efficient for small systems of mixed equations < 100)
+  3. The equations not selected in step 2 are continuous equations.
 "
-  input list<DAELow.Equation> inDAELowEquationLst;
-  input list<DAELow.Var> inDAELowVarLst;
-  output list<DAELow.Equation> outDAELowEquationLst1;
-  output list<DAELow.Var> outDAELowVarLst2;
-  output list<DAELow.Equation> outDAELowEquationLst3;
-  output list<DAELow.Var> outDAELowVarLst4;
+  input list<DAELow.Equation> eqnLst;
+  input list<DAELow.Var> varLst;
+  output list<DAELow.Equation> contEqnLst;
+  output list<DAELow.Var> contVarLst;
+  output list<DAELow.Equation> discEqnLst;
+  output list<DAELow.Var> discVarLst;
 algorithm 
-  (outDAELowEquationLst1,outDAELowVarLst2,outDAELowEquationLst3,outDAELowVarLst4):=
-  matchcontinue (inDAELowEquationLst,inDAELowVarLst)
-    local
-      list<DAELow.Equation> cont_e,disc_e,eqns;
-      list<DAELow.Var> cont_v,disc_v,vs;
-      DAELow.Equation eqn;
-      DAELow.Var v;
-    case ({},{}) then ({},{},{},{});  /* continous eqns continuous vars discrete eqns discrete vars */ 
-    case ((eqn :: eqns),(v :: vs)) /* discrete eqn */ 
-      equation 
-        true = hasDiscreteVar({v});
-        (cont_e,cont_v,disc_e,disc_v) = splitMixedEquations(eqns, vs);
-      then
-        (cont_e,cont_v,(eqn :: disc_e),(v :: disc_v));
-    case ((eqn :: eqns),(v :: vs)) /* continuous eqn */ 
-      equation 
-        (cont_e,cont_v,disc_e,disc_v) = splitMixedEquations(eqns, vs);
-      then
-        ((eqn :: cont_e),(v :: cont_v),disc_e,disc_v);
-    case (_,_)
-      equation 
-        print("split_mixed_equations failed\n");
-      then
-        fail();
+  (contEqnLst,contVarLst,discEqnLst,discVarLst):=
+  matchcontinue (eqnLst,varLst)
+      case (eqnLst,varLst) equation
+        discVarLst = Util.listSelect(varLst,DAELow.isVarDiscrete);
+        contVarLst = Util.listSetdifferenceP(varLst,discVarLst,DAELow.varEqual);
+			  discEqnLst = Util.listMap1(discVarLst,findDiscreteEquation,eqnLst);
+			  contEqnLst = Util.listSetdifferenceP(eqnLst,discEqnLst,DAELow.equationEqual);       
+			  then (contEqnLst,contVarLst,discEqnLst,discVarLst);
   end matchcontinue;
 end splitMixedEquations;
+
+protected function findDiscreteEquation "help function to splitMixedEquations, finds the discrete equation
+on the form v = expr for solving variable v"
+  input DAELow.Var v;
+  input list<DAELow.Equation> eqnLst;
+  output DAELow.Equation eqn;
+algorithm
+  eqn := matchcontinue(v,eqnLst)
+    local Exp.ComponentRef cr1,cr;
+      Exp.Exp e2;
+    case (v,(eqn as DAELow.EQUATION(Exp.CREF(cr,_),e2))::_) equation
+      cr1=DAELow.varCref(v);
+      true = Exp.crefEqual(cr1,cr);
+    then eqn;
+    case(v,(eqn as DAELow.EQUATION(e2,Exp.CREF(cr,_)))::_) equation
+      cr1=DAELow.varCref(v);
+      true = Exp.crefEqual(cr1,cr);
+    then eqn;
+    case(v,_::eqnLst) equation
+      eqn = findDiscreteEquation(v,eqnLst);
+    then eqn;
+    case(_,_) equation
+      print("findDiscreteEquationFailed\n");
+    then fail();
+  end matchcontinue;
+end findDiscreteEquation;
+
 
 protected function isMixedSystem "function: isMixedSystem
   author: PA
@@ -5117,7 +5140,7 @@ protected function generateOdeEquation "function: generateOdeEquation
   genrerate_ode_code.
 "
   input DAELow.DAELow inDAELow1;
-  input Integer[:] inIntegerArray2;
+ input Integer[:] inIntegerArray2;
   input Integer[:] inIntegerArray3;
   input Integer inInteger4;
   input Integer inInteger5;
