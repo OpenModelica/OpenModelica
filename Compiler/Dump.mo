@@ -3721,6 +3721,7 @@ algorithm
   end matchcontinue;
 end printNamedArgStr;
 
+
 protected function printRow "function: printRow
  
   Print an Expression list to the Print buffer.
@@ -3730,11 +3731,12 @@ algorithm
   printListDebug("print_row", es, printExp, ",");
 end printRow;
 
+
 protected function expPriority "function: expPriority
 
  Returns a priority number for an expression.
- This function is used to output parenthesis when needed. eg 3(1+2) should output 3(1+2) 
- and not 31+2
+ This function is used to output parenthesis when needed, e.g., 3(1+2) should output 3(1+2) 
+ and not 31+2.
 "
   input Absyn.Exp inExp;
   output Integer outInteger;
@@ -3773,6 +3775,7 @@ algorithm
   end matchcontinue;
 end expPriority;
 
+
 protected function parenthesize "function: parenthesize
  
   Adds parentheisis to a string if expression and parent expression 
@@ -3788,7 +3791,7 @@ algorithm
     local
       Ident str_1,str;
       Integer pparent,pexpr;
-    case (str,pparent,pexpr) /* expressuion prio parent expr prio */ 
+    case (str,pparent,pexpr) /* expr, prio. parent expr, prio. expr */ 
       equation 
         (pparent > pexpr) = true;
         str_1 = Util.stringAppendList({"(",str,")"});
@@ -3797,6 +3800,7 @@ algorithm
     case (str,_,_) then str; 
   end matchcontinue;
 end parenthesize;
+
 
 public function printExpStr "function: print_exp
  
@@ -3877,7 +3881,7 @@ algorithm
         p1 = expPriority(e1);
         p2 = expPriority(e2);
         s1_1 = parenthesize(s1, p1, p);
-        s2_1 = parenthesize(s2, p1, p);
+        s2_1 = parenthesize(s2, p2, p);
         s = stringAppend(s1_1, sym);
         s_1 = stringAppend(s, s2_1);
       then
