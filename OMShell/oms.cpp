@@ -1136,7 +1136,8 @@ bool OMS::startServer()
 			omcNowStarted = true;
 
 			// get version no
-			delegate_->evalExpression( QString("getVersion()") );
+			QString getVersionStr = "getVersion()";
+			delegate_->evalExpression( getVersionStr );
 			omc_version_ = delegate_->getResult();
 			omc_version_.remove( "\"" );
 		}
@@ -1156,7 +1157,8 @@ bool OMS::startServer()
 				omcNowStarted = true;
 
 				// get version no
-				delegate_->evalExpression( QString("getVersion()") );
+				QString getVersionStr = "getVersion()";
+				delegate_->evalExpression( getVersionStr );
 				omc_version_ = delegate_->getResult();
 				omc_version_.remove( "\"" );
 			}
