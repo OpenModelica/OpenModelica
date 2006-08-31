@@ -530,6 +530,9 @@ void checkForInitialZeroCrossings(long*jroot)
 	emit();
     CheckForNewEvents(&globalData->timeValue);
     StartEventIteration(&globalData->timeValue);
+    if(sim_verbose) {
+    	cout << "Saving all 1 "<< endl;
+    }
     saveall();		
     calcEnabledZeroCrossings();
     if (sim_verbose) {
@@ -655,7 +658,9 @@ int dassl_main( int argc, char**argv)
   //calcEnabledZeroCrossings();  
   CheckForInitialEvents(&globalData->timeValue);
   StartEventIteration(&globalData->timeValue);
-
+  if (sim_verbose) {
+  	cout << "save all 2" << endl;
+  }
   saveall();
 
 
@@ -690,6 +695,10 @@ int dassl_main( int argc, char**argv)
     	}
       if (emit()) {printf("Too many points\n");
 	idid = -99; break;}
+	  if (sim_verbose) {
+  	cout << "save all 3" << endl;
+  }
+	
       saveall();
     // Make a tiny step so we are sure that crossings have really occured.
       info[0]=1;
@@ -718,6 +727,9 @@ int dassl_main( int argc, char**argv)
       StateEventHandler(jroot, &globalData->timeValue);
       CheckForNewEvents(&globalData->timeValue);
       StartEventIteration(&globalData->timeValue);
+      if (sim_verbose) {
+      	cout << "Done checking events at time " << globalData->timeValue << endl; 
+      }
       saveall();
 
       // Restart simulation
@@ -746,6 +758,10 @@ int dassl_main( int argc, char**argv)
     if(emit()) {
       printf("Error, could not save data. Not enought space.\n"); 
     }
+    if (sim_verbose) {
+  		cout << "save all 4" << endl;
+  	}
+    
     saveall();
     tout = newTime(globalData->timeValue,step); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
     calcEnabledZeroCrossings();
@@ -797,6 +813,9 @@ int dassl_main( int argc, char**argv)
 void saveall()
 {
   int i;
+  if (sim_verbose) {
+  	cout << "saving all variables" << endl;
+  }
   for(i=0;i<globalData->nStates; i++) {
     x_saved[i] = globalData->states[i];
     xd_saved[i] = globalData->statesDerivatives[i];
@@ -820,7 +839,8 @@ void save(double & var)
 {
   double* pvar = &var;
   long ind;
-  //printf("save %s = %f\n",getName(&var),var);
+  if (sim_verbose) { printf("save %s = %f\n",getName(&var),var);
+  }
   ind = long(pvar - globalData->helpVars);
   if (ind >= 0 && ind < globalData->nHelpVars) {
     h_saved[ind] = var;
@@ -851,6 +871,7 @@ double pre(double & var)
   if (globalData->init) { // if during initialization, pre(v) = v
   	return *pvar;
   }
+  
   ind = long(pvar - globalData->states);
   if (ind >= 0 && ind < globalData->nStates) {
     return x_saved[ind];
@@ -1081,8 +1102,11 @@ void CheckForInitialEvents(double *t)
 {
   // Check for changes in discrete variables
   globalData->timeValue = *t;
-  checkForDiscreteVarChanges();
 
+  checkForDiscreteVarChanges();
+  if (sim_verbose) { 
+  	cout << "Check for initial events." << endl;
+  }
   function_zeroCrossing(&globalData->nStates,
                         &globalData->timeValue,
                         globalData->states,
@@ -1090,9 +1114,11 @@ void CheckForInitialEvents(double *t)
   for (long i=0;i<globalData->nZeroCrossing;i++) {
   	//printf("gout[%d]=%f\n",i,gout[i]);
     if (gout[i] < 0  || zeroCrossingEnabled[i]==0) { // check also zero crossings that are on zero.
-    	//printf("adding event %d\n",i);
+    	if (sim_verbose) {
+    		cout << "adding event " << i << " at initialization" << endl;
+    		}
        AddEvent(i);
-    }
+    } 
   }
 }
 

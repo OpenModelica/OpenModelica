@@ -123,5 +123,5 @@ for (i=0; i < size; i++) { \
 } \
 } \
 } while(0)
-
+#define roundEps(x) (((x) > 0) ? (floor(x*1.0e10)*1e-10): (ceil(x*1.0e10)*1e-10))
 #endif

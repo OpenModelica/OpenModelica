@@ -2996,7 +2996,7 @@ protected
 algorithm
 	crStr := Exp.printComponentRefStr(cr);
 	indxStr := intString(indx);
-	str := Util.stringAppendList({"if (edge(",crStr,")) AddEvent(",indxStr,");"});
+	str := Util.stringAppendList({"if (edge(",crStr,")) { AddEvent(",indxStr,"); foundEvent=1; }"});
 end buildDiscreteVarChangesAddEvent;
   
 protected function buildWhenConditionChecks "function:  buildWhenConditionChecks
@@ -3072,7 +3072,8 @@ algorithm
         check_code2_1 = Util.if_(usezc,check_code2, "");
         res = Util.stringAppendList(
           {"int checkForDiscreteVarChanges()\n{\n",
-          check_code_1,check_code2_1,"return 0;\n","}\n"});
+          " int foundEvent=0;\n",
+          check_code_1,check_code2_1,"\n if (foundEvent) saveall();\n return 0;\n","}\n"});
       then
         (res,helpVarInfo);
     case (_,_,_,_,_,_,_)
@@ -4461,7 +4462,7 @@ algorithm
         indx_str = intString(indx);
         indx_1 = indx + 1;
         (func,cg_id_1) = generateOdeSystem2NonlinearStoreResults(crs, indx_1, cg_id);
-        stmt = Util.stringAppendList({cr_str," = nls_x[",indx_str,"];"});
+        stmt = Util.stringAppendList({cr_str," = roundEps(nls_x[",indx_str,"]);"});
         func_1 = Codegen.cAddStatements(func, {stmt});
       then
         (func_1,cg_id_1);
@@ -6352,9 +6353,12 @@ algorithm
         (DAELow.VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,_)) = DAELow.getVarAt(vars, v);
         cr_str = Exp.printComponentRefStr(cr);
         save_stmt = Util.stringAppendList({"save(",cr_str,");"});
+        save_stmt = ""; //moved save to after checkForDiscreteVarChanges
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         true = isMixedSystem(var_lst);
+        eqn_lst = Util.listMap(eqn_lst,replaceEqnGreaterWithGreaterEq); //temporary fix to make events occur. Remove once mixed systems are solved analythically"        
         (cont_eqn,cont_var,disc_eqn,disc_var) = splitMixedEquations(eqn_lst, var_lst);
+
         vars_1 = DAELow.listVar(cont_var) "dump_mixed_system(cont_eqn,cont_var,disc_eqn,disc_var) &" ;
         eqns_1 = DAELow.listEquation(cont_eqn);
         cont_subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,eqns_1,se,ie,ae,al,ev,eoc);
@@ -6386,6 +6390,7 @@ algorithm
         cr_str = Exp.printComponentRefStr(cr);
         (cfn3,saveStmts,cg_id_2,extra_funcs) = buildZeroCrossingEqns(dae, dlow, ass1, ass2, rest, blocks, cg_id_1);
         stmt = Util.stringAppendList({"save(",cr_str,");"});
+        stmt = ""; //moved save to after checkDiscreteVarChanges
         cfn = Codegen.cMergeFns({cfn2,cfn3});
       then
         (cfn,stmt::saveStmts,cg_id_2,extra_funcs);
@@ -6393,6 +6398,44 @@ algorithm
   end matchcontinue;
 end buildZeroCrossingEqns;
 
+protected function replaceEqnGreaterWithGreaterEq "Temporary fix to get mixed system to work in 
+e.g. Modelica.Mechanics.Rotational.Interfaces.FrictionBase"
+input DAELow.Equation eqn;
+output DAELow.Equation res;
+algorithm
+  res := matchcontinue(eqn)
+  local
+    Exp.Exp e1,e2;
+    DAELow.Equation e;
+    Exp.ComponentRef cr1;
+    case(DAELow.EQUATION(e1,e2)) equation
+      ((e1,_)) = Exp.traverseExp(e1,replaceExpGTWithGE,true);
+      ((e2,_)) = Exp.traverseExp(e2,replaceExpGTWithGE,true);
+    then DAELow.EQUATION(e1,e2);
+    case(DAELow.SOLVED_EQUATION(cr1,e2)) equation
+      ((e2,_)) = Exp.traverseExp(e2,replaceExpGTWithGE,true);
+    then DAELow.SOLVED_EQUATION(cr1,e2);
+    case(DAELow.RESIDUAL_EQUATION(e1)) equation
+      ((e1,_)) = Exp.traverseExp(e1,replaceExpGTWithGE,true);
+    then DAELow.RESIDUAL_EQUATION(e1);
+    case(e) then e;
+  end matchcontinue;
+end replaceEqnGreaterWithGreaterEq;
+
+protected function replaceExpGTWithGE "traversal function to replace > with >="
+  input tuple<Exp.Exp,Boolean> inExp;
+  output tuple<Exp.Exp,Boolean> outExp;
+algorithm
+  outExp := matchcontinue(inExp)
+  local Exp.Type tp;
+    Exp.Exp e1,e2;
+    Boolean dummyArg;
+    case((Exp.RELATION(e1,Exp.LESS(tp),e2),dummyArg)) then ((Exp.RELATION(e1,Exp.LESSEQ(tp),e2),dummyArg));
+    case((Exp.RELATION(e1,Exp.GREATER(tp),e2),dummyArg)) then ((Exp.RELATION(e1,Exp.GREATEREQ(tp),e2),dummyArg));
+    case((e1,dummyArg)) then ((e1,dummyArg));
+  end matchcontinue;
+end replaceExpGTWithGE;
+  
 protected function dumpMixedSystem "function: dumpMixedSystem
 
   dumps a mixed system of equations on stdout.
