@@ -892,6 +892,12 @@ bool edge(double& var)
   return var && ! pre(var);
 }
 
+bool change(double& var)
+{
+ return   var && ! pre(var) || !var && pre(var);
+}
+
+
 /* store_result
 * stores the result of all variables for all timesteps on a file
 * suitable for plotting, etc.

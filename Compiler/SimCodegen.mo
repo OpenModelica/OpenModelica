@@ -2939,7 +2939,7 @@ algorithm
 end crefNotInWhenEquation;
 protected function buildDiscreteVarChangesVar2 "Help relation to buildDiscreteVarChangesVar
 For an equation e  (not a when equation) containing a discrete variable v, if e contains a 
-ZeroCrossing(i) generate 'if edge(v) AddEvent(i)'
+ZeroCrossing(i) generate 'if change(v) AddEvent(i)'
 "
   input Integer eqn;
   input Exp.ComponentRef cr;
@@ -2987,7 +2987,7 @@ algorithm
 end zeroCrossingsContainIndex;
 
 protected function buildDiscreteVarChangesAddEvent "help function to buildDiscreteVarChangesVar2
-Generates 'if (edge(v)) AddEvent(i) for and index i and variable v"
+Generates 'if (change(v)) AddEvent(i) for and index i and variable v"
   input Integer indx;
   input Exp.ComponentRef cr;
   output String str;
@@ -2996,7 +2996,7 @@ protected
 algorithm
 	crStr := Exp.printComponentRefStr(cr);
 	indxStr := intString(indx);
-	str := Util.stringAppendList({"if (edge(",crStr,")) { AddEvent(",indxStr,"); foundEvent=1; }"});
+	str := Util.stringAppendList({"if (change(",crStr,")) { AddEvent(",indxStr,"); foundEvent=1; }"});
 end buildDiscreteVarChangesAddEvent;
   
 protected function buildWhenConditionChecks "function:  buildWhenConditionChecks

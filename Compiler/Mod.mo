@@ -1181,12 +1181,19 @@ algorithm
         equality(outer_ = inner_);
       then
         outer_;
-    case (_,(m as Types.MOD(final_ = true)),_,_)
+        
+        /* Commented this becaus it gave false positives. 
+        The problem is that merge is used repeatedly in the instantiation process even though 
+        no real outer modfier is present. This causes this check to succeed even if no modifier is applied.
+        */
+    /*case (m1,(m as Types.MOD(final_ = true)),_,_)
+      local Types.Mod m1;
       equation 
-        Print.printBuf("# trying to modify final element\n");
+				print("trying to modify final element with ");print(printModStr(m1));print("\n");
+        Print.printBuf("# trying to modify final element\n"); 
       then
-        fail();
-    case (Types.MOD(final_ = final_,each_ = each_,subModLst = subs1,eqModOption = ass1),Types.MOD(final_ = false,each_ = each2,subModLst = subs2,eqModOption = ass2),env,pre)
+        fail();*/
+    case (Types.MOD(final_ = final_,each_ = each_,subModLst = subs1,eqModOption = ass1),Types.MOD(final_ = _/*false*, see case above.*/,each_ = each2,subModLst = subs2,eqModOption = ass2),env,pre)
       equation 
         subs = mergeSubs(subs1, subs2, env, pre);
         ass = mergeEq(ass1, ass2);

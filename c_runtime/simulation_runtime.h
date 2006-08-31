@@ -314,6 +314,7 @@ void saveall();
 void save(double & var);
 double pre(double & var);
 bool edge(double& var);
+bool change(double& var);
 
 double Sample(double t, double start ,double interval);
 double sample(double start ,double interval);
