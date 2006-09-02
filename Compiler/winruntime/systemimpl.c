@@ -1108,3 +1108,83 @@ RML_BEGIN_LABEL(System__setClassnamesForSimulation)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__getVariableValue)
+{
+  double timeStamp 	= rml_prim_get_real(rmlA0);
+  void *timeValues 	= rmlA1;  
+  void *varValues 	= rmlA2;
+  
+  // values to find the correct range
+  double preValue 	= 0.0;
+  double preTime 	= 0.0;
+  double nowValue 	= 0.0;
+  double nowTime 	= 0.0;
+  
+  // linjear interpolation data
+  double timedif 			= 0.0;
+  double valuedif			= 0.0;
+  double valueSlope			= 0.0;
+  double timeDifTimeStamp	= 0.0;
+  
+  // break loop and return value
+  int valueFound = 0;
+  double returnValue = 0.0;
+
+ for(; RML_GETHDR(timeValues) == RML_CONSHDR ; timeValues = RML_CDR(timeValues), varValues = RML_CDR(varValues)) {
+  
+  
+    nowValue 	= rml_prim_get_real(RML_CAR(varValues));
+  	nowTime 	=  rml_prim_get_real(RML_CAR(timeValues));
+
+
+	if(timeStamp == nowTime){
+    	valueFound 	= 1;
+    	returnValue = nowValue;
+    	
+    } else if (timeStamp >= preTime && timeStamp <= nowTime) { // need to do interpolation
+    	valueFound 			= 1;
+    	timedif 			= nowTime - preTime;
+    	valuedif			= nowValue - preValue;
+    	valueSlope 			= valuedif / timedif;
+    	timeDifTimeStamp 	= timeStamp - preTime;
+    	returnValue 		= preValue + (valueSlope*timeDifTimeStamp);
+    	/*
+    	printf("\t ### Interpolation ###");
+    	printf("nowTime: %f", nowTime);
+    	printf("\n");
+    	printf("preTime: %f", preTime);
+    	printf("\n");
+    	printf("nowValue: %f", nowValue);
+    	printf("\n");
+    	printf("preValue: %f", preValue);
+    	printf("\n");
+    	
+		printf("timedif: %f", timedif);
+    	printf("\n");
+    	printf("valuedif: %f", valuedif);
+    	printf("\n");
+    	printf("valueSlope: %f", valueSlope);
+    	printf("\n");
+    	printf("timeDifTimeStamp: %f", timeDifTimeStamp);
+    	printf("\n");
+    	printf("returnValue: %f", returnValue);
+    	printf("\n");
+		*/
+	} else {
+		preValue 	= nowValue;
+  		preTime 	= nowTime;
+		
+	}
+
+  }
+  if(valueFound == 0){
+		// value could not be found in the dataset, what do we do?
+		printf("\n WARNING: timestamp outside simualtion timeline \n");
+		RML_TAILCALLK(rmlFC);
+	} else {
+  
+  		rmlA0 = (void*)mk_rcon(returnValue);
+  		RML_TAILCALLK(rmlSC);
+  }
+}
+RML_END_LABEL

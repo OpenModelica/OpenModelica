@@ -2025,13 +2025,38 @@ algorithm
       then
         (cache,Values.STRING("Unknown error while plotting"),st);
         
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "val"),expLst = {Exp.ARRAY(array = vars)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      local list<Exp.Exp> vars;
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "val"),expLst = {Exp.ARRAY(array = {varName, varTimeStamp})}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      local 
+        Exp.Exp varName, varTimeStamp;
+        String var;
+        Integer res;
+        Real timeStamp;
+        list<Values.Value> varValues, timeValues;
+        list<Real> tV, vV; 
+        Real val; 
+        
+      equation 
+        var = Exp.printExpStr(Exp.CodeVarToCref(varName));      
+        (cache,Values.REAL(timeStamp),SOME(st)) = ceval(cache,env, varTimeStamp, true, SOME(st), NONE, msg);        
+        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env, 
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+        Values.ARRAY({Values.ARRAY(varValues)}) = System.readPtolemyplotDataset(filename, {var}, 0);
+        Values.ARRAY({Values.ARRAY(timeValues)}) = System.readPtolemyplotDataset(filename, {"time"}, 0);               
+        tV = Values.valueReals(timeValues);
+        vV = Values.valueReals(varValues);      
+        val = System.getVariableValue(timeStamp, tV, vV);
       then
-        (cache,Values.STRING("Implementation of val() not yet completed"),st);
+        (cache,Values.REAL(val),st);
+        
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "val"),expLst = {Exp.ARRAY(array = vars)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)      
+      local 
+        list<Exp.Exp> vars;
+      then
+        (cache,Values.STRING("Error, check variable name and time variables"),st);
+        
         
     /* plotparametric This rule represents the normal case when an array of at least two elements 
-     *  is given as an argument 
+     *  is given as an argument  
      */
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = vars),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)  
       local

@@ -4370,8 +4370,11 @@ algorithm
    case (cache,env,Absyn.CREF_IDENT(name = "val"),{(cr as Absyn.CREF(componentReg = _)),(cd as Absyn.REAL(value = _))},{},impl,SOME(st))
       local 
         Absyn.Exp cr,cd;
+        Exp.Exp cd1;
       equation 
         vars_1 = elabVariablenames({cr});
+        (cache,cd1,ptop,st_1) = elabExp(cache,env, cd, false, SOME(st)); 
+        vars_1 = listAppend(vars_1, {cd1});        
       then
         (cache,Exp.CALL(Absyn.IDENT("val"),{Exp.ARRAY(Exp.OTHER(),false,vars_1)},
           false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
@@ -4379,8 +4382,11 @@ algorithm
    case (cache,env,Absyn.CREF_IDENT(name = "val"),{(cr as Absyn.CREF(componentReg = _)),(cd as Absyn.INTEGER(value = _))},{},impl,SOME(st))
       local 
         Absyn.Exp cr,cd;
+        Exp.Exp cd1;
       equation 
         vars_1 = elabVariablenames({cr});
+        (cache,cd1,ptop,st_1) = elabExp(cache,env, cd, false, SOME(st)); 
+        vars_1 = listAppend(vars_1, {cd1});        
       then
         (cache,Exp.CALL(Absyn.IDENT("val"),{Exp.ARRAY(Exp.OTHER(),false,vars_1)},
           false,true),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));

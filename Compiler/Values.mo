@@ -756,6 +756,41 @@ algorithm
   end matchcontinue;
 end valueReal;
 
+public function valueReals "function: valueReals
+ 
+  Return the real value of a Value. If the value is an integer,
+  it is cast to a real.
+"
+  input list<Value> inValue;
+  output list<Real> outReal;
+algorithm 
+  outReal:=
+  matchcontinue (inValue)
+    local
+      Real r;
+      list<Value> rest;
+      list<Real> res;
+      Integer i;
+    case ({}) then {};
+    case (REAL(real = r)::rest) 
+      equation
+        res = valueReals(rest); 
+       then
+         r::res;
+    case (INTEGER(integer = i)::rest)
+      equation 
+        r = intReal(i);
+        res = valueReals(rest);
+      then
+        r::res;
+    case (_::rest)         
+      equation 
+        res = valueReals(rest);
+      then
+        res;
+  end matchcontinue;
+end valueReals;
+
 public function valueNeg "function: valueNeg
   author: PA
  

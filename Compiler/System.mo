@@ -351,5 +351,15 @@ public function setClassnamesForSimulation
 
   external "C" ;
 end setClassnamesForSimulation;
+
+public function getVariableValue
+  input Real timeStamp;
+  input list<Real> timeValues;
+  input list<Real> varValues; 
+  output Real outValue;
+
+  external "C" ;
+end getVariableValue;
+
 end System;
 
