@@ -334,17 +334,16 @@ namespace IAEX
 	}
 	
 	// 2006-01-16 AF, move this code to a seperated function
+	// 2006-09-04 AF, redid entire function, so groupcells are created, have there
+	// children added and THEN add to the documnet
 	void PasteCellsCommand::pasteCell( Cell *cell, CellGroup *groupcell )
 	{
-		//Get current position.
+		// get cursor, factory and cell style
 		CellCursor *cursor = document()->getCursor();
-
-		Factory *fac = document()->cellFactory();
-
-		// 2005-10-28 AF, changed style from QString to CellStyle
+		Factory *factory = document()->cellFactory();
 		CellStyle style = *cell->style();
 
-		//Create a new cell.
+		// set focus and readonly stuff (from old implementation, IA)
 		if(cursor->currentCell()->isClosed())
 		{
 			if(cursor->currentCell()->hasChilds())
@@ -359,16 +358,86 @@ namespace IAEX
 			cursor->currentCell()->setFocus(false);
 		}
 
-		// 2006-01-16 AF, Added support so groupcell can be pasted.
+		// create the new cell, if there exists a groupcell add the new cell to 
+		// that groupcell.
+		Cell* newCell = factory->createCell( style.name() );
 		if( groupcell )
+			groupcell->addChild( newCell );
+
+
+		// set content of cell
+		// *************************************************************************
+		
+		// COPY - EVERY CELL TYPE
+		// ----------------------
+		newCell->setCellTag( cell->cellTag() );
+
+		// rules
+		rules_t rules = cell->rules();
+		rules_t::iterator current = rules.begin();
+		while( current != rules.end() )
 		{
-			// add child and move cursor to correct position
-			groupcell->addChild( fac->createCell( style.name() ));
-			cursor->moveAfter( groupcell->child() );
+			newCell->addRule( (*current) );
+			++current;
+		}
+
+		// COPY - SPECIFIC FOR CELL TYPE
+		// -----------------------------
+		if( typeid(CellGroup) == typeid( *newCell ))
+		{
+			CellGroup *newCellGroup = dynamic_cast<CellGroup *>( newCell );
+			newCellGroup->setClosed( cell->isClosed() );
+
+			if( cell->hasChilds() )
+			{
+				Cell* child = cell->child();
+				while( child )
+				{
+					pasteCell( child, newCellGroup );
+					child = child->next();
+				}
+			}
+		}
+		else if( typeid(InputCell) == typeid( *newCell ))
+		{
+			InputCell *newInputCell = dynamic_cast<InputCell *>( newCell );
+			InputCell *oldInputCell = dynamic_cast<InputCell *>( cell );
+
+			newInputCell->setStyle( style );
+			newInputCell->setText( oldInputCell->text() );
+
+			if( oldInputCell->isEvaluated() )
+			{
+				newInputCell->setEvaluated( true );
+
+				if( oldInputCell->isPlot() )
+					newInputCell->setTextOutputHtml( oldInputCell->textOutputHtml() );
+				else
+					newInputCell->setTextOutput( oldInputCell->textOutput() );
+			}
+			else
+				newInputCell->setEvaluated( false );
+
+			newInputCell->setClosed( oldInputCell->isClosed() );
+		}
+		else if( typeid(TextCell) == typeid( *newCell ))
+		{
+			newCell->setStyle( style );
+			newCell->setTextHtml( cell->textHtml() );
 		}
 		else
-			cursor->addBefore(fac->createCell(style.name()));
+		{
+			// Error
+			throw runtime_error("pasteCell(): Unknown celltype.");
+		}
+		// *************************************************************************
 
+
+		// Add cell to document
+		if( !groupcell )
+			cursor->addBefore( newCell );
+
+		// set focus and readonly stuff (from old implementation, IA)
 		if(cursor->currentCell()->isClosed())
 		{
 			if(cursor->currentCell()->hasChilds())
@@ -381,85 +450,6 @@ namespace IAEX
 		{
 			cursor->currentCell()->setReadOnly(false);
 			cursor->currentCell()->setFocus(true);
-		}
-
-
-		//Copy its content.
-		//This is a problem!
-		// 2006-01-12/16 AF, Updated what is copied
-		
-		//copy (every cell type)
-		cursor->currentCell()->setCellTag( cell->cellTag() );
-
-		rules_t rules = cell->rules();
-		rules_t::iterator current = rules.begin();
-		while( current != rules.end() )
-		{
-			cursor->currentCell()->addRule( (*current) );
-			++current;
-		}
-
-		// copy (specific for cell type)
-		if( typeid(CellGroup) == typeid( *cursor->currentCell() ))
-		{
-			CellGroup *newCell = dynamic_cast<CellGroup *>(cursor->currentCell());
-			
-			if( cell->isClosed() )
-				newCell->setClosed( true );
-			else
-				newCell->setClosed( false );
-
-			if( cell->hasChilds() )
-			{
-				//add first child
-				Cell *child = cell->child();
-				pasteCell( child, newCell );
-
-				
-				// add rest of children
-				child = child->next();
-				while( child != 0 )
-				{
-					pasteCell( child );
-					child = child->next();
-				}
-			}
-		}
-		else if( typeid(InputCell) == typeid( *cursor->currentCell() ))
-		{
-			InputCell *newCell = dynamic_cast<InputCell *>(cursor->currentCell());
-			InputCell *oldCell = dynamic_cast<InputCell *>( cell );
-
-			newCell->setStyle( style );
-			newCell->setText( oldCell->text() );
-			
-			if( oldCell->isEvaluated() )
-			{
-				newCell->setEvaluated( true );
-
-				if( oldCell->isPlot() )
-					newCell->setTextOutputHtml( oldCell->textOutputHtml() );
-				else
-					newCell->setTextOutput( oldCell->textOutput() );
-			}
-			else
-				newCell->setEvaluated( false );
-
-
-			if( oldCell->isClosed() )
-				newCell->setClosed( true );
-			else
-				newCell->setClosed( false );
-		}
-		else if( typeid(TextCell) == typeid( *cursor->currentCell() ))
-		{
-			cursor->currentCell()->setStyle( style );
-			cursor->currentCell()->setTextHtml( cell->textHtml() );
-		}
-		else
-		{
-			// ERROR
-			throw runtime_error("Unknown cell");
 		}
 	}
    
