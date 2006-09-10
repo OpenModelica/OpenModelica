@@ -247,7 +247,8 @@ within_clause returns [void *ast]
 }
     : #(WITHIN (name = name_path)? )	
         {
-            ast = Absyn__WITHIN(name);
+        	if (name == 0) ast = Absyn__TOP;
+        	else ast = Absyn__WITHIN(name);
         }
     ;
 
