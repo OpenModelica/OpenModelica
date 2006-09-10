@@ -152,6 +152,25 @@ tokens {
         }   
         return l;
     }
+
+    void* fix_elseif(l_stack& s, void* elsePart)
+    {
+    	// the stack SHOULD NOT BE EMPTY here!
+        void *l = elsePart;
+        
+        while (!s.empty())
+        {
+        	void *cond = 0;
+        	void *then = 0;
+        	struct rml_struct* p = (struct rml_struct*)RML_UNTAGPTR(s.top());
+        	cond = p->data[0];
+        	then = p->data[1];
+            l = Absyn__IFEXP(cond, then, l, mk_nil());
+            free(p);
+            s.pop();
+        }   
+        return l;
+    }
     
 
     struct type_prefix_t
@@ -1596,8 +1615,11 @@ if_expression returns [void* ast]
 		#(IF cond = expression
 			thenPart = expression (e=elseif_expression {el_stack.push(e);} )* elsePart = expression
 			{
-				elseifPart = make_rml_list_from_stack(el_stack);
-				ast = Absyn__IFEXP(cond,thenPart,elsePart,elseifPart);
+				elseifPart = mk_nil();
+				if (el_stack.empty()) // if stack is empty no elseif is there
+					ast = Absyn__IFEXP(cond,thenPart,elsePart,elseifPart);
+				else // if stack is NON empty then transform to if cond then if cond ... else expr
+					ast = Absyn__IFEXP(cond,thenPart,fix_elseif(el_stack, elsePart), elseifPart);
 			}
 		)
 	;
