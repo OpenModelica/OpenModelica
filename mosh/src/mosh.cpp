@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
     if (!noserv) {
       // Starting background server using corba
       char systemstr[1024];
-      sprintf(systemstr, "%s/bin/omc +d=interactiveCorba > %s/error.log 2>&1 &", omhome, omhome);
+      sprintf(systemstr, "%s/bin/omc +d=interactiveCorba > /tmp/error.log 2>&1 &", omhome);
       int res = system(systemstr);
       if (!scriptname)
 	cout << "Started server using:"<< systemstr << "\n res = " << res << endl;
@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
     if (!noserv) {
      // Starting background server using corba
       char systemstr[1024];
-      sprintf(systemstr,"%s/bin/omc +d=interactive > %s/error.log 2>&1 &",
+      sprintf(systemstr,"%s/bin/omc +d=interactive > /tmp/error.log 2>&1 &",
 	      omhome, omhome);
       int res = system(systemstr);
       if (!scriptname)
