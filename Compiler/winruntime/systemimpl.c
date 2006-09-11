@@ -1108,6 +1108,7 @@ RML_BEGIN_LABEL(System__setClassnamesForSimulation)
 }
 RML_END_LABEL
 
+
 RML_BEGIN_LABEL(System__getVariableValue)
 {
   double timeStamp 	= rml_prim_get_real(rmlA0);
@@ -1130,7 +1131,7 @@ RML_BEGIN_LABEL(System__getVariableValue)
   int valueFound = 0;
   double returnValue = 0.0;
 
- for(; RML_GETHDR(timeValues) == RML_CONSHDR ; timeValues = RML_CDR(timeValues), varValues = RML_CDR(varValues)) {
+for(; RML_GETHDR(timeValues) == RML_CONSHDR && valueFound == 0; timeValues = RML_CDR(timeValues), varValues = RML_CDR(varValues)) {
   
   
     nowValue 	= rml_prim_get_real(RML_CAR(varValues));

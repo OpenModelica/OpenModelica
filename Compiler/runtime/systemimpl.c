@@ -1166,13 +1166,14 @@ RML_BEGIN_LABEL(System__getVariableValue)
   // break loop and return value
   int valueFound = 0;
   double returnValue = 0.0;
-  
 
-  for(; RML_GETHDR(timeValues) == RML_CONSHDR ; timeValues = RML_CDR(timeValues), varValues = RML_CDR(varValues)) {
+for(; RML_GETHDR(timeValues) == RML_CONSHDR && valueFound == 0; timeValues = RML_CDR(timeValues), varValues = RML_CDR(varValues)) {
   
-   	nowValue 	= rml_prim_get_real(RML_CAR(varValues));
-  	nowTime 	=  rml_prim_get_real(RML_CAR(timeValues));    
-    
+  
+    nowValue 	= rml_prim_get_real(RML_CAR(varValues));
+  	nowTime 	=  rml_prim_get_real(RML_CAR(timeValues));
+
+
 	if(timeStamp == nowTime){
     	valueFound 	= 1;
     	returnValue = nowValue;
@@ -1209,9 +1210,10 @@ RML_BEGIN_LABEL(System__getVariableValue)
 	} else {
 		preValue 	= nowValue;
   		preTime 	= nowTime;
+		
 	}
+
   }
-  
   if(valueFound == 0){
 		// value could not be found in the dataset, what do we do?
 		printf("\n WARNING: timestamp outside simualtion timeline \n");
