@@ -12,36 +12,28 @@
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Equations in Modelica can be classified into three different groups: Normal equations, that occur in equation sections, declaration equations and modification equations. Equations are more powerful than assignments, since one equation can express seceral different assignments.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class Equations
-  Real x(start = 2);        // Modification equation
-  constant Integer one = 1;      // Declaration equation
+  Real x(start = 2);         // Modification equation
+  constant Integer one = 1;  // Declaration equation
 equation
-  x = 3*one;            // Normal equation 
-end Equations</Input>
-     <Output></Output>
+  x = 3*one;                 // Normal equation 
+end Equations;</Input>
+     <Output>Ok</Output>
     </InputCell>
-    <GroupCell closed="true" >
+    <GroupCell closed="false" >
      <TextCell style="Subsection" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">GetFlatDefinition on Equations&lt;/p>&lt;/body>&lt;/html></Text>
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Flattening the Equations Class&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
-      <Input>GetFlatDefinition[Equations]
-//ToModelica
-</Input>
-      <Output></Output>
-     </InputCell>
-     <InputCell style="Input" closed="true" >
-      <Input>GetFlatConstants[Equations]
-//ToModelica
-</Input>
-      <Output></Output>
-     </InputCell>
-     <InputCell style="Input" closed="true" >
-      <Input>GetFlatEquations[Equations]
-//ToModelica
-</Input>
-      <Output></Output>
+     <InputCell style="Input" closed="false" >
+      <Input>instantiateModel(Equations)</Input>
+      <Output>"fclass Equations
+Real x(start = 2.0);
+constant Integer one = 1;
+equation
+  x = 3.0;
+end Equations;
+"</Output>
      </InputCell>
     </GroupCell>
    </GroupCell>

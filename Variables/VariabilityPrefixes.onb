@@ -11,11 +11,10 @@
    </TextCell>
    <InputCell style="Input" closed="true" >
     <Input>class VariabilityPref
-  constant     Real     PI   = 3.14159;
-  parameter   Real     p   = 36.7;
-  discrete     Boolean   bo   = false;
-end VariabilityPref;
-</Input>
+  constant   Real     PI  = 3.14159;
+  parameter  Real     p   = 36.7;
+  discrete   Boolean  bo(start = false);
+end VariabilityPref;</Input>
     <Output></Output>
    </InputCell>
   </GroupCell>

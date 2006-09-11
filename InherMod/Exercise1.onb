@@ -23,20 +23,17 @@
    </GroupCell>
    <GroupCell closed="false" >
     <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Easy Modifying Example&lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Easy Example of Using Modifications&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Modify &lt;br />- the &lt;span style=" font-family:Courier New;">start&lt;/span> value to 3, &lt;br />- the &lt;span style=" font-family:Courier New;">min&lt;/span> value to -22 and &lt;br />- the &lt;span style=" font-family:Courier New;">fixed&lt;/span> value to true &lt;br />of the variable &lt;span style=" font-family:Courier New;">test&lt;/span> in the class &lt;span style=" font-family:Courier New;">Test&lt;/span> below.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class Test
   parameter Integer test;
 end Test;</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
-    <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Rewrite the class here.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
@@ -51,11 +48,11 @@ end Test;</Input>
      <TextCell style="Text" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
+     <InputCell style="Input" closed="false" >
       <Input>class Test
   parameter Integer test(start = 3, min = -22, fixed = true);
 end Test;</Input>
-      <Output></Output>
+      <Output>Ok</Output>
      </InputCell>
     </GroupCell>
    </GroupCell>
@@ -66,21 +63,19 @@ end Test;</Input>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">In this exercise you should modify different values of the following variables:&lt;br />Set fixed to true in A1.&lt;br />Set the start value to false in truthvalues.&lt;br />Set unit to "kV" in the position: first row and second column of A2.&lt;br />Set the start value on the first row in A3 to the values 3, 5 and 8. In the second row of the matrix the values should be set to 3, 10 and 22.&lt;br />Set the matrix elements to "Pippi" in A4.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class ModArray
-
-  Integer A1[5];
-  Boolean truthvalues[2];
-  Real A2[2,2];
-  Integer A3[2,3];
-  Real A4[2,2];
-  
+  Integer  A1[5];
+  Boolean  truthvalues[2];
+  Real     A2[2,2];
+  Integer  A3[2,3];
+  Real     A4[2,2];
 end ModArray;</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
     <GroupCell closed="true" >
      <TextCell style="Subsection" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Tip&lt;/p>&lt;/body>&lt;/html></Text>
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Hint&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <TextCell style="Text" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Remember that each attribute has the same dimensionality as the array itself.&lt;br />Read more about predefined Types/Classes in "Introduction to Modelica ..." by Peter Fritzson.&lt;/p>&lt;/body>&lt;/html></Text>
@@ -90,10 +85,7 @@ end ModArray;</Input>
      <TextCell style="Subsection" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <TextCell style="Text" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
-     </TextCell>
-     <InputCell style="Input" closed="true" >
+     <InputCell style="Input" closed="false" >
       <Input>class ModArray
 
   Integer A1[5](fixed = true);          
@@ -102,17 +94,18 @@ end ModArray;</Input>
   Boolean truthvalues[2](start = {false, false});
   // Modifies the start value for the whole array
   
+
   Real A2[2,2](unit[1,2] = "kV");  
   // Modifies the start value for a certain place in the matrix
-                  
-  Integer A3[2,3](start = {{1, 0, 5}, {}});
+              
+  Integer A3[2,3](start = {{1, 0, 5}, {0,0,0}} );
   // Modifies the start value for the first row in the matrix
-  
+
   String A4[2,2](start = {{"Pippi", "Pippi"}, 
-             {"Pippi", "Pippi"}});
-  
+                          {"Pippi", "Pippi"}} );
+
 end ModArray;</Input>
-      <Output></Output>
+      <Output>Ok</Output>
      </InputCell>
     </GroupCell>
    </GroupCell>

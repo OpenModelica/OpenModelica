@@ -25,8 +25,8 @@
     </TextCell>
     <InputCell style="Input" closed="true" >
      <Input>connector Pin
-  Voltage     v;
-  flow Current   i;
+  Voltage       v;
+  flow Current  i;
 end Pin;        </Input>
      <Output></Output>
     </InputCell>
@@ -53,14 +53,14 @@ end Resistor;</Input>
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
-     <Input>model TempResistor                  "Temperature dependent Resistor"
-  Pin       p, n                "Positive and Negative Pins";
+     <Input>model TempResistor   "Temperature dependent Resistor"
+  Pin       p, n         "Positive and Negative Pins";
   Voltage     v;
   Current     i;
-  parameter Real R(unit = "Ohm")          "Resistance at reference Temperature";
-  parameter Real RT(unit = "Ohm/degC")   = 0     "Temperature dependent Resistance";
-  parameter Real Tref(unit = "degC")   = 20    "Reference Temperature";
-  Real        Temp           = 20    "Actual Temperature";
+  parameter Real R(unit = "Ohm")   "Resistance at reference Temperature";
+  parameter Real RT(unit = "Ohm/degC") = 0 "Temperature dep. Resistance";
+  parameter Real Tref(unit = "degC")  = 20 "Reference Temperature";
+  Real      Temp           = 20    "Actual Temperature";
 equation 
   v = i*(R + RT*(Temp - Tref));
 end TempResistor;</Input>

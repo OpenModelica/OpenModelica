@@ -8,7 +8,7 @@
    <TextCell style="Text" >
     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Copying or moving a &lt;span style=" font-family:Courier New;">nonencapsulated&lt;/span> subpackage might be a bit problematic since used declarations may not be available in the new location for that subclass. When copying or moving an encapsulated package or class at most the &lt;span style=" font-family:Courier New;">import&lt;/span> statements inside this package or class, including subpackages and local classes, need to be updated.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
    </TextCell>
-   <InputCell style="Input" closed="true" >
+   <InputCell style="Input" closed="false" >
     <Input>encapsulated package Modelica
 
   encapsulated package Blocks
@@ -28,9 +28,8 @@
     end Rotational;
   end Mechanics;
 
-end Modelica;
-</Input>
-    <Output></Output>
+end Modelica;</Input>
+    <Output>Ok</Output>
    </InputCell>
    <TextCell style="Text" >
     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />If you move the package &lt;span style=" font-family:Courier New;">Rotational&lt;/span> inside &lt;span style=" font-family:Courier New;">YourModelica&lt;/span> as below, it will continue to work without changes since its &lt;span style=" font-family:Courier New;">import&lt;/span> statements still refers to &lt;span style=" font-family:Courier New;">YourModelica.Blocks.Interfaces&lt;/span>. Maybe if you instead would like to refer the package &lt;span style=" font-family:Courier New;">YourModelica.Blocks.Interfaces&lt;/span>, just update the &lt;span style=" font-family:Courier New;">import&lt;/span> statement as we have done below.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>

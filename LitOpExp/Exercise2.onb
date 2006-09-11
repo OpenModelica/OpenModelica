@@ -14,10 +14,10 @@
     </TextCell>
     <InputCell style="Input" closed="true" >
      <Input>class Happy
-  boolean right(fixed = true);
+  Boolean           right(fixed = true);
   parameter Integer h = 15;
-  constant Integer m = h + 28;
-  parameter Real k = 32;
+  constant  Integer m = h + 28;
+  parameter Real    k = 32;
 end Happy;</Input>
      <Output></Output>
     </InputCell>
@@ -26,16 +26,15 @@ end Happy;</Input>
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <TextCell style="Text" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The constant m cannot be set to a non-constant value, in this case h + 28.&lt;/p>&lt;/body>&lt;/html></Text>
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The constant m cannot be set to a non-constant value, in this case h + 28, with h having parameter variability meaning that it can be changed between simulations whereas m is always the same.&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <InputCell style="Input" closed="true" >
       <Input>class Happy
-  boolean right(fixed = true);
+  Boolean           right(fixed = true);
   parameter Integer h = 15;
-  constant Integer m = h + 28;
-  parameter Real k = 32;
-end Happy;
-</Input>
+  constant  Integer m = h + 28;
+  parameter Real    k = 32;
+end Happy;</Input>
       <Output></Output>
      </InputCell>
     </GroupCell>

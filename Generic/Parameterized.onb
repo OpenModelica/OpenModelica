@@ -17,20 +17,20 @@
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">ResistorCircuit&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <TextCell style="Text" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p align='center' style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/3.png" width="156" height="132" />&lt;/p>&lt;/body>&lt;/html></Text>
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p align='center' style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" color:#000000;">&lt;img src="file:///C:/OpenModelica1.4.2/bin/OMNoteboook_tempfiles/27.png" width="156" height="132" />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
       <Rule name="TextAlignment" >Center</Rule>
       <Rule name="CellTags" >Model1</Rule>
-      <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/3.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAACcAAAAhAgGAAAAZT1CuwAAAAlwSFlzAAALEwAACxMBAJqcGAAAA8dJREFUeJzt3eFupCAYRuFhs/d/y+4v2wkrCgIH0PMkTZOW0S/4DmCrY9i2bftIkD+jC9C7GDihDJxQBk4oAyeUgRPKwAll4IQycEIZOKEMnFAGTigDJ5SBE8rACWXghDJwQhk4of623mAIrbdY5mkXzD+tP5sH7vMZd9BHH5xentSfTqlCGTihiqbUoyF29jVTXPNM9b6xP6vXcCHM20lHtc1c7+czd30t+tMpVagmZ6kznR2maglfv5ip3l+/w8RM9bWupUngvofU0Z2VqmX/RIu7U1YI4dP6UzFSfbVCf95VFLhtG98BpWY+aXhjfxaPcDMdsCsr1LpCjbsWtXrSIJSBE6rL/1JXW5fM7kn92TxwK61JVvC0/nRKFcrACWXghDJwQhk4oQycUAZOKAMnlIETysAJZeCEMnBCGTihDJxQBk4oAyeUgROq8LNFjq91rr1fM+eezxb3hfa4t7TGqv35XXfpNm7cJvj/DmoPJBGC1MEdbbX+jGsrrbXLlBpC+PnK+V3cLm4Tf8/ZR/x9ppGt1Mj+jNvW9mOHj1xNvwNy3h2pNjXbWT1so/uz5Ru2OHBH77K7xeS8rue2Z7BCf6ZecyeIVWu41A7PFsNXC86cNk/ytv6smlLjofn752ev2aU6uNdwPruV+vPudrr/He5sMXvVXv+boT9rQlt90hC/K8+G8NopYN/PbNNES7P359EZbkn/h+1JR6ujN03tPfmvLaEMnFAGTigDJ5SBE8rACWXghDJwQhk4oQycUAZOKAMnlIETysAJZeCE6vKsLbUz+gLo1pcAGrgFjLrus0fYnVKFMnBCGTihXMMNlFojzXqvTot6DZyKxOEqPbEwcAX63qT9fb9ox90Ual2LgcvU457UnClqdPha12LgVCQOXen70MANNOvJQUqLev2ziFAGTiin1AWMPnFoycBNbrV13hWnVKEMnFAGTigDJ5SBE8rACWXghDJwQhk4oQycUAZOKAMnlIETysAJZeCEMnBCGTihvOJ3oLNn2ddu92obNc9/rXk4soEb7OiA1T4MuOeDhOPaSmt1Sl1ACOHnK+d3cbu4zdFjxFP7iNvWhtkRbnJnI0rOaJNqU7Kdlo9fN3CDHY1adw9uzuvubDs17d/ZnoEbLGckOTu5uFrA57S5IzU6XjFwE4mnuu+fn71mlzr4vabHOzxpWMzZycFV+9b7v8MRbjLxKHc2JdZOqft+Sqbd2ik6bCPHV72OU6pQBk4oAyeUgRPKwAll4IQycEIZOKEMnFAGTigDJ5SBE8rACWXghPoHc+4zftekJnMAAAAASUVORK5CYII=</Image>
+      <Image name="file:///C:/OpenModelica1.4.2/bin/OMNoteboook_tempfiles/27.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAACcAAAAhAgGAAAAZT1CuwAAAAlwSFlzAAALEwAACxMBAJqcGAAAA8dJREFUeJzt3eFupCAYRuFhs/d/y+4v2wkrCgIH0PMkTZOW0S/4DmCrY9i2bftIkD+jC9C7GDihDJxQBk4oAyeUgRPKwAll4IQycEIZOKEMnFAGTigDJ5SBE8rACWXghDJwQhk4of623mAIrbdY5mkXzD+tP5sH7vMZd9BHH5xentSfTqlCGTihiqbUoyF29jVTXPNM9b6xP6vXcCHM20lHtc1c7+czd30t+tMpVagmZ6kznR2maglfv5ip3l+/w8RM9bWupUngvofU0Z2VqmX/RIu7U1YI4dP6UzFSfbVCf95VFLhtG98BpWY+aXhjfxaPcDMdsCsr1LpCjbsWtXrSIJSBE6rL/1JXW5fM7kn92TxwK61JVvC0/nRKFcrACWXghDJwQhk4oQycUAZOKAMnlIETysAJZeCEMnBCGTihDJxQBk4oAyeUgROq8LNFjq91rr1fM+eezxb3hfa4t7TGqv35XXfpNm7cJvj/DmoPJBGC1MEdbbX+jGsrrbXLlBpC+PnK+V3cLm4Tf8/ZR/x9ppGt1Mj+jNvW9mOHj1xNvwNy3h2pNjXbWT1so/uz5Ru2OHBH77K7xeS8rue2Z7BCf6ZecyeIVWu41A7PFsNXC86cNk/ytv6smlLjofn752ev2aU6uNdwPruV+vPudrr/He5sMXvVXv+boT9rQlt90hC/K8+G8NopYN/PbNNES7P359EZbkn/h+1JR6ujN03tPfmvLaEMnFAGTigDJ5SBE8rACWXghDJwQhk4oQycUAZOKAMnlIETysAJZeCE6vKsLbUz+gLo1pcAGrgFjLrus0fYnVKFMnBCGTihXMMNlFojzXqvTot6DZyKxOEqPbEwcAX63qT9fb9ox90Ual2LgcvU457UnClqdPha12LgVCQOXen70MANNOvJQUqLev2ziFAGTiin1AWMPnFoycBNbrV13hWnVKEMnFAGTigDJ5SBE8rACWXghDJwQhk4oQycUAZOKAMnlIETysAJZeCEMnBCGTihvOJ3oLNn2ddu92obNc9/rXk4soEb7OiA1T4MuOeDhOPaSmt1Sl1ACOHnK+d3cbu4zdFjxFP7iNvWhtkRbnJnI0rOaJNqU7Kdlo9fN3CDHY1adw9uzuvubDs17d/ZnoEbLGckOTu5uFrA57S5IzU6XjFwE4mnuu+fn71mlzr4vabHOzxpWMzZycFV+9b7v8MRbjLxKHc2JdZOqft+Sqbd2ik6bCPHV72OU6pQBk4oAyeUgRPKwAll4IQycEIZOKEMnFAGTigDJ5SBE8rACWXghPoHc+4zftekJnMAAAAASUVORK5CYII=</Image>
      </TextCell>
      <TextCell style="" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">ResistorCircuit, which is a class consisting of three Resistors connected at one node.&lt;/span>&lt;/p>&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;span style=" font-family:Times New Roman; font-size:12pt; color:#000000;">ResistorCircuit, which is a class consisting of three Resistors connected at one node.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
       <Rule name="TextAlignment" >Left</Rule>
      </TextCell>
      <TextCell style="Text" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
-      <Input>model ResistorCircuit            // Circuit of three Resistors connected at one node
+     <InputCell style="Input" closed="false" >
+      <Input>model ResistorCircuit   // Circuit of three Resistors connected at one node
   Resistor R1(R = 100);
   Resistor R2(R = 200);
   Resistor R3(R = 300);
@@ -38,7 +38,7 @@ equation
   connect(R1.p, R2.p);
   connect(R1.p, R3.p);
 end ResistorCircuit;</Input>
-      <Output></Output>
+      <Output>Ok</Output>
      </InputCell>
     </GroupCell>
    </GroupCell>
@@ -49,7 +49,7 @@ end ResistorCircuit;</Input>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The class &lt;span style=" font-family:Courier New;">ResistorCircuit&lt;/span> has been converted into a parameterized generic class &lt;span style=" font-family:Courier New;">GenericResistorCircuit&lt;/span> in the example below. In &lt;span style=" font-family:Courier New;">GenericResistorCircuit&lt;/span> class parameters are components (instances or objects).&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>model GenericResistorCircuit        // The ResistorCircuit made generic
   replaceable Resistor R1(R = 100);      // Formal class parameter
   replaceable Resistor R2(R = 200);      // Formal class parameter
@@ -59,36 +59,34 @@ equation
   connect(R1.p, R3.p);
 end GenericResistorCircuit;
 </Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />A more specialized class &lt;span style=" font-family:Courier New;">TemperatureDependentResistorCircuit&lt;/span> is created by changing the types of &lt;span style=" font-family:Courier New;">R1&lt;/span> and &lt;span style=" font-family:Courier New;">R2&lt;/span> to &lt;span style=" font-family:Courier New;">TemperatureResistor&lt;/span>, which is a subtype of &lt;span style=" font-family:Courier New;">Resistor&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>model TemperatureDependentResistorCircuit =
     GenericResistorCircuit(
-        redeclare TempResistor R1,  // Actual argument
-        redeclare TempResistor R2);  // Actual argument
-</Input>
-     <Output></Output>
+        redeclare TempResistor R1,   // Actual argument
+        redeclare TempResistor R2);  // Actual argument</Input>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Now we add a temperature variable &lt;span style=" font-family:Courier New;">Temp.&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>model TemperatureDependentResistorCircuit 
   Real Temp;
   extends GenericResistorCircuit(
   redeclare TempResistor R1(RT = 0.1, Temp = Temp),
   redeclare TempResistor R2);
-end TemperatureDependentResistorCircuit;
-</Input>
-     <Output></Output>
+end TemperatureDependentResistorCircuit;</Input>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />&lt;span style=" font-family:Courier New;">TemperatureDependentResistorCircuit&lt;/span> is equivalent to the class below. The prefix replaceable has been lost for  &lt;span style=" font-family:Courier New;">R2&lt;/span> and &lt;span style=" font-family:Courier New;">R3&lt;/span>, since we did not use &lt;span style=" font-family:Courier New;">redeclare&lt;/span> &lt;span style=" font-family:Courier New;">replaceable&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>model TempDepResistorCircuitInherited 
   Real Temp;
   replaceable Resistor R1(R = 100);
@@ -98,7 +96,7 @@ equation
   connect(R1.p, R2.p);
   connect(R1.p, R3.p);
 end TempDepResistorCircuitInherited;</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
@@ -112,31 +110,31 @@ end TempDepResistorCircuitInherited;</Input>
      <TextCell style="Subsection" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Connectors&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
+     <InputCell style="Input" closed="false" >
       <Input>type Voltage = Real(Unit = "V");</Input>
-      <Output></Output>
+      <Output>Ok</Output>
      </InputCell>
      <TextCell style="Text" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
+     <InputCell style="Input" closed="false" >
       <Input>type Current = Real(Unit = "A");</Input>
-      <Output></Output>
+      <Output>Ok</Output>
      </InputCell>
      <TextCell style="Text" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
+     <InputCell style="Input" closed="false" >
       <Input>connector Pin
   Voltage v;
   flow Current i;
 end Pin;  </Input>
-      <Output></Output>
+      <Output>Ok</Output>
      </InputCell>
      <TextCell style="Text" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
+     <InputCell style="Input" closed="false" >
       <Input>partial class TwoPin
   "Superclass of elements with two electrical pins"
   Pin p, n;
@@ -147,14 +145,14 @@ equation
   p.i + n.i = 0;
   i = p.i;
 end TwoPin;</Input>
-      <Output></Output>
+      <Output>Ok</Output>
      </InputCell>
     </GroupCell>
     <GroupCell closed="false" >
      <TextCell style="Subsection" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">GeneralSimpleCircuit&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
+     <InputCell style="Input" closed="false" >
       <Input>model GeneralSimpleCircuit 
   replaceable Resistor comp1(R = 100) extends TwoPin;
   replaceable Resistor comp2(R = 200) extends TwoPin;
@@ -162,21 +160,19 @@ end TwoPin;</Input>
 equation
   connect(R1.p, R2.p);
   connect(R1.p, R3.p);
-end GeneralSimpleCircuit;
-</Input>
-      <Output></Output>
+end GeneralSimpleCircuit;</Input>
+      <Output>Ok</Output>
      </InputCell>
      <TextCell style="Text" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The generalized parameterization properties of &lt;span style=" font-family:Courier New;">GeneralSimpleCircuit&lt;/span> are used below when replacing the circuit components &lt;span style=" font-family:Courier New;">comp1&lt;/span> and &lt;span style=" font-family:Courier New;">comp2&lt;/span> with components of the types &lt;span style=" font-family:Courier New;">Capacitor&lt;/span> and &lt;span style=" font-family:Courier New;">Inductor&lt;/span> that are subtypes of &lt;span style=" font-family:Courier New;">TwoPin&lt;/span>.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
+     <InputCell style="Input" closed="false" >
       <Input>model RefinedSimpleCircuit
   extends GeneralSimpleCircuit(
     redeclare Capacitor comp1(C = 0.003),
     redeclare Inductor comp2(L = 0.0002));
-end RefinedSimpleCircuit;
-</Input>
-      <Output></Output>
+end RefinedSimpleCircuit;</Input>
+      <Output>Ok</Output>
      </InputCell>
     </GroupCell>
    </GroupCell>
@@ -187,7 +183,7 @@ end RefinedSimpleCircuit;
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">A formal class parameter, can also be a type, which is useful for changing the type of many objects. For example, by providing a type parameter &lt;span style=" font-family:Courier New;">ResistorModel&lt;/span> in the class below it is easy to change the resistor type of all objects of type &lt;span style=" font-family:Courier New;">ResistorModel&lt;/span>, e.g. from the default type &lt;span style=" font-family:Courier New;">Resistor&lt;/span> to the temperature dependent type &lt;span style=" font-family:Courier New;">TempResistor&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>model GenericResistorCircuit2
   replaceable model ResistorModel = Resistor;
   replaceable Resistor R1(R = 100);    
@@ -196,23 +192,21 @@ end RefinedSimpleCircuit;
 equation
   connect(R1.p, R2.p);
   connect(R1.p, R3.p);
-end GenericResistorCircuit2;
-</Input>
-     <Output></Output>
+end GenericResistorCircuit2;</Input>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />A more specialized temperature dependent circuit &lt;span style=" font-family:Courier New;">RefinedSimpleCircuit2&lt;/span> can be created where the resistor type &lt;span style=" font-family:Courier New;">TempResistor&lt;/span> is supplied as an actual argument to the formal class parameter &lt;span style=" font-family:Courier New;">ResistorModel&lt;/span>: &lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>model RefinedSimpleCircuit2 =
-  ResistorCircuit(redeclare model ResistorModel = TempResistor);
-</Input>
-     <Output></Output>
+  ResistorCircuit(redeclare model ResistorModel = TempResistor);</Input>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />&lt;span style=" font-family:Courier New;">RefinedSimpleCircuit2&lt;/span> is equivalent to the "expanded" class &lt;span style=" font-family:Courier New;">RefinedSimpleCircuit2expanded&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>model RefinedSimpleCircuit2expanded
   model ResistorModel = TempResistor;
   replaceable Resistor R1(R = 100);    
@@ -222,7 +216,7 @@ equation
   connect(R1.p, R2.p);
   connect(R1.p, R3.p);
 end RefinedSimpleCircuit2expanded;</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
   </GroupCell>

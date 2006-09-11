@@ -20,7 +20,7 @@
      <TextCell style="Subsection" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
+     <InputCell style="Input" closed="false" >
       <Input>class Lights
   Integer switch;
   Boolean off = true;
@@ -31,15 +31,20 @@ equation
     switch = 1;
   end if;
 end Lights;</Input>
-      <Output></Output>
+      <Output>Ok</Output>
      </InputCell>
      <GroupCell closed="false" >
       <TextCell style="Subsubsection" >
        <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Simulation of Lights&lt;/p>&lt;/body>&lt;/html></Text>
       </TextCell>
-      <InputCell style="Input" closed="true" >
+      <InputCell style="Input" closed="false" >
        <Input>simulate( Lights );</Input>
-       <Output></Output>
+       <Output>[done]</Output>
+      </InputCell>
+      <InputCell style="Input" closed="false" >
+       <Input>plot(switch)</Input>
+       <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;img src="file:///C:/OpenModelica1.4.2/bin/OMNoteboook_tempfiles/7.png" width="492" height="250" />&lt;/p>&lt;/body>&lt;/html></Output>
+       <Image name="file:///C:/OpenModelica1.4.2/bin/OMNoteboook_tempfiles/7.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAHsAAAA+ggGAAAAY9J0UgAAAAlwSFlzAAAOxAAADsQBlSsOGwAACiRJREFUeJzt3eGSojgYBVDZmvcaH515suyPWXsZhmCiqLn0OVVd02IIn+h4TQB7KqWUCwAwtH8+XQAAcJ/ABoAAAhsAAghsAAggsAEggMAGgAACGwACCGwACCCwASCAwAaAAAIbAAIIbAAIILABIIDABoAAAhsAAghsAAggsAEggMAGgAA/Pl0A38s0TZvLSyl/tVkua+17b51H+23Z7trR2+ixrGerjnv3P7Ktnn7W67zqeYGzMcJmCLUgf9f6R2/3U/WsresYpa6lUoqwhgZG2HzE1oj6ntrIcLm8dbS21a51WWs9yxH/sp97Ne6NgLf62eurV0ufLfu4p7Zafy37oXUbcAZG2EQ4cqS4FfDPWIdFa5Btbbv1cba0q9XR8kGhpb5nartnr4+W/QZnJLD5iGmavn5a2t7cG/22Tq/u9bMcIa/bHqFldmD5OPaO+7fUtn48e21a6lu32eqn9TG09LG27NvImu/ElDhD6AnZ9XTwo9t6tp9XbbulplcFVUt9Rz2G3ppeuQ1IILD5CCOj93jVse5Pqx3LhzMT2MS4ncR1xBnlR77Rry8nuzf1fG/brwjVnhP77tX37sfgMjD4TWAzvGU4tF5j3Hpm8rrtbVst/dTq2quvZ9stfR2lZR/fe7zLNs88hr0+loys+W6cdEaEe2di9wTaOoSOrKtnee2Eqta+Wi2PObe0a62l57H3Poa9Wmr3CXDObirmleAPr7y+2X834FFG2FAhXIGRCGxYMK0KjMqUOAAEMMIGgADDXtZlahKAy8X5JDfDBvblcszf6h3liVZL3Uj1qGWbWupGqueMtRi8/c+UOAAEENgAEEBgA0CAUwf2PM+fLuGLWupGqkct29RSN1I9ajm3Uwc2AJyFwAbg21qehd5yRnr3WevTtP3zgO7Lunr+MELttP5X/HEFAOiVlEFdX026DuC96+xqf52otY+tTzGOiQCc2/V6/WvZI3/f/l7W3G4v/93qY739dfu7EVobTT/yQaF0WDevrX5bvnV/bx/PmOf56T6Oopa6kepRyza11I1UzxlruZcFtUy5lzVb7Vp/r91XKXD75wEvOYZdgqYYADiPW/6UxSh4PSru/Ra2ddtPZdzQX00KAHuWQXy7fVYCG4Boy5Ae6fvUL5fLY8eqK1zWBUCsvcusbqPv9TR5b6CP8gdIjLABiHX0lPgt0Jf9jjJi7wrsvR3T+qnlOx1vAOD19nLk3gljy9stJ5d98gS07hF2rbiWB3ZvOQCwzTFsAAggsAEggMAGgAACGwACCGwACCCwASCAwAaAAAIbAAIIbAAIILABIIDABoAAAhsAAghsAAggsAEggMAGgAACGwACCGwACCCwASCAwAaAAAIbAAIIbAAIILABIIDABoAAAhsAAghsAAggsAEggMAGgAACGwACCGwACCCwASCAwAaAAAIbAAIIbAAIILABIMCP3hWmafr6vZTyULvlfff6AQAul6l0pOU0TX+E6/p2a7vaeus+1uZ5bi0VgEDX6/WvZQZ1/ykd1s1rq++1a91kZ2mb5nl+uo+jqKVupHrUsk0tdSPVc8ZajsiCs+ieEj9C67Q6APDbRwK7dE6PA8B39/azxIUzAPRzWRcABHh7YG+d/Q0A7Os6hl1KqZ4wtjwWvddu7z4AYFv3SWe1gF0v3wtiIQ0AfRzDBoAAAhsAAghsAAggsAEggMAGgAACGwACCGwACCCwASCAwAaAAAIbAAIIbAAIILABIIDABoAAAhsAAghsAAggsAEggMAGgAACGwACCGwACCCwASCAwAaAAAIbAAIIbAAIILABIIDABoAAAhsAAghsAAggsAEggMAGgAACGwACCGwACCCwASCAwAaAAFMppXStME1fv++tuteupY9pmnb7b7LYDgDv82ueLz9//ny6n0Oy4CR+9DRe77jajtxr19rH7b6leZ57yr08/1IB4FG/fv3qXud6vR5fyFmUDuvmtdX32j3axyPmeX66j6OopW6ketSyTS11I9VzxlqOyIKzcAwbAAIIbAAIILABIIDABoAAAhsAAnRd1lVKqV5Dvbw8a6/d3n0AwLauwL5c6gG7Xr4XxEIaAPqYEgeAAAIbAAIIbAAIILABIIDABoAAAhsAAghsAAggsAEggMAGgAACGwACCGwACCCwASCAwAaAAAIbAAIIbAAIILABIIDABoAAAhsAAghsAAggsAEggMAGgAACGwACCGwACCCwASCAwAaAAAIbAAIIbAAIILABIIDABoAAAhsAAghsAAggsAEggMAGgAACGwAC/OhdYZqmr99LKQ+1W953rx8A4HKZSkdaTtP0R7iub7e2q6237mNtnufWUgEIdL1e/1pmUPef0mHdvLb6XrvWTXaWtmme56f7OIpa6kaqRy3b1FI3Uj1nrOWILDiL7inxI7ROqwMAv30ksEvn9DgAfHfVwH7VKFg4A0C/amALVgAYx9uvw946+xsA2Nd1DLuUUp0qXx6L3mu3dx8AsK37pLNawK6X7wWxkAaAPr6aFAACCGwACCCwASCAwAaAAAIbAAIIbAAIILABIIDABoAAAhsAAghsAAggsAEggMAGgAACGwACCGwACCCwASCAwAaAAAIbAAIIbAAIILABIIDABoAAAhsAAghsAAggsAEggMAGgAACGwACCGwACPCjd4Vpmr5+L6XcbbvVpqcPAKAzsNcBXAvk233P9gEA/PaSKXEhDADHeklgC2sAOJaTzgAgQPUYthPDAGAc1cAW0gAwDlPiABCg67KuUkp1qrz1zPC9PgCAbVMZNDG3ruOe5/n9hQDwNtfr9a9lg8bU+5VBHVHaPM8HVHIMtdSNVI9atqmlbqR6zljLwDH1do5hA0AAgQ0AAYY+hv1saSN9Rapa6kaqRy3b1FI3Uj1nrGWkx/RpRtgAEEBgA0AAgQ0AAYY+hg0Ag8bU23V909k7eYIA4H+mxAEggMAGgAACGwACCGwACCCwASCAwAaAAAIbAAIIbAAIMOwXp/RYfiva3heutLZ7Ry23tq/8gpiR9sto9fRu45XP1SP75V7bd9byyf2y9Y2IIz1P36GW23Za3u/eUcuZxQf2+oVSe+G0tntHLbf7Xmmk/TJaPb3beOVz1VvLO990E56j9bJXPVeJ++ad/7db2ryjlrMzJf4BI71YR6njZrR6RjHSa2ZtlLpG3kdnZZ+/l8D+AC/wHCO9IU3T9PUzgtFqGeV5+k7s8/eKnxLnOCO96d2CYJR6RjDSlOJy+5+uZSSllCGP1Y7ywYrnCGyGNEIYjBREo9RxM1o9oxjpWO3yw8P6gwSZBDaXy2WscBrJ8k3OPhqT56XOfjkXx7AZ6g1vpFFAKeXr53b7U0baL2TwmjmfqYzyTv2E2jGjremprXafqKW27N21jHAd6+jP097yd9Yy0n4ZrZZ3vI2l7ptX17K13U/WcmanCGwAODtT4gAQQGADQACBDQABBDYABPgXSwoAudsWC5UAAAAASUVORK5CYII=</Image>
       </InputCell>
       <TextCell style="Output" >
        <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>

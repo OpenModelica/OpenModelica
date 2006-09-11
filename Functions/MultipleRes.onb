@@ -8,8 +8,8 @@
    <TextCell style="Text" >
     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />A function that has more than one output parameter has multiple results. &lt;/p>&lt;/body>&lt;/html></Text>
    </TextCell>
-   <InputCell style="Input" closed="true" >
-    <Input>function MultipleResultsFunction
+   <InputCell style="Input" closed="false" >
+    <Input>function multipleResultsFunction
   input Real x;
   input Real y;
   output Real r1;
@@ -19,42 +19,38 @@ algorithm
   r1 := x + y;
   r2 := x * y;
   r3 := x - y;  
-end MultipleResultsFunction;
-</Input>
-    <Output></Output>
+end multipleResultsFunction;</Input>
+    <Output>Ok</Output>
+   </InputCell>
+   <TextCell style="Text" >
+    <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Call it directly:&lt;/p>&lt;/body>&lt;/html></Text>
+   </TextCell>
+   <InputCell style="Input" closed="false" >
+    <Input>multipleResultsFunction(2.0, 1.0)</Input>
+    <Output>(3.0,2.0,1.0)</Output>
    </InputCell>
    <TextCell style="Text" >
     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
    </TextCell>
-   <InputCell style="Input" closed="true" >
+   <InputCell style="Input" closed="false" >
     <Input>class MRFcall
   Real a, b, c;
 equation
-  (a, b, c) = MultipleResultsFunction(2.0, 1.0);
-end MRFcall;
-</Input>
-    <Output></Output>
+  (a, b, c) = multipleResultsFunction(2.0, 1.0);
+end MRFcall;</Input>
+    <Output>Ok</Output>
    </InputCell>
    <GroupCell closed="false" >
     <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">MakeAlive on MultipleResultsFunction&lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of Call to MultipleResultsFunction&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>MakeAlive[MultipleResultsFunction]</Input>
-     <Output></Output>
-    </InputCell>
-    <InputCell style="Input" closed="true" >
-     <Input>MultipleResultsFunction[2.0, 1.0]</Input>
-     <Output></Output>
-    </InputCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of MultipleResultsFunction&lt;/p>&lt;/body>&lt;/html></Text>
-    </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>simulate( MRFcall );</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>simulate( MRFcall ) //??Error - not yet implemented</Input>
+     <Output>record
+    resultFile = "Simulation failed.
+Too few equations, underdetermined system. The model has 3 variables and 1 equations
+"
+end record</Output>
     </InputCell>
     <TextCell style="Output" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
@@ -64,8 +60,8 @@ end MRFcall;
      <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
     </InputCell>
     <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/1.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
-     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/1.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAEgAAAA1ggDAAAARuGvAgAAAwBQTFRFAAAAAH8A/wAAAAD/2dnZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4gDaCQAAAAlwSFlzAAALEwAACxMBAJqcGAAAAxNJREFUeJzt3NFS2kAAQNG1+v/f3I4ghJBwE4dpLTnnpRFWhtwuxOiG8cFD418/gZ9OoCBQECgIFAQKAgWBwo5AY9xvvb49ga7DBbodc5ox43NrTDodwcquvp9NR5lBa0OuM+hzFm37rlexMdClyrXVQex8k97/Xf87h/lwoF39HoGCQEGgIFDoQJdDlqNYDHGqsTbkPGGcrE68nZ2HOFmNIU5WH42YvMScrG4cKtDiUId57gkUBAoCBW/SwR8Ogz8cBmfzYWVXf51NhzgXWx0zOQFzLrZpqECLQx3muSdQECgsB5r+DvHgFhtMfwt9dGsNBDpbaXC6+f0Y9gfyErvyJh0eNhBIoCRQECgIFAQKAgWBgkBBoCBQECgIFAQKAgWBgkBBoCBQECgIFAQKAgWBgkBBoCBQECgIFAQK1wbTxc/jcAvqV43JxpjfKtDa9QUWUF3czZrpV0e65GDNuNv4sEZxanKByulawunUEchhPgkUBAoCBYGCQEGgIFAQKAgUBAoCBYGCQEGgIFAQKAgUBAoCBYGCQEGgIFAQKAgUBAoCBYGCQGG5geUvF4sNLKC6WmlgBn1ZeYmd/nk7hv2BxqM7D2Y5kIXkFw7zQaAgUBAoCBQECgIFgYJAQaAgUBAoCBQECgIFgYJAQaAgUBAoCBQECgIFgYJAQaAgUBAoCBSuDXxM4KLxaFOg1UCW4H1ZDvS1iFOh5UBWuV5dGozTujsfEzjjMB8ECgIFgYJAQaAgUBAoCBQECgIFgYJAQaAgUBAoCBQECgIFgYJAQaAgUBAoCBQECgIFgYJAQaAg0Mx8n58Y6CVGj6+PJ9v0WCvr81735ruvVgN9hhy/juFm1oz5lFoOtOHOVzUez6jtdx6EQEGDIFB4RqDby2D2jO7hC5fYPO2ZbBr3hEDTA+P8IPl49J+tfaOf+ky2PeyTA/UDfj/nhgl0k3Prrv3dQPv+l+c/1z8evS/nz5xB/XCzJ/7UXf6hgaYXwOSU+JhdLlPDbx97xzPZ+hKrWewwHwQKAgWBgkBBoCBQECgIFAQKAoXf5YG1lHSxxlkAAAAASUVORK5CYII=</Image>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" color:#000000;">&lt;img src="file:///C:/OpenModelica1.4.2/bin/OMNoteboook_tempfiles/29.png" width="288" height="214" />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica1.4.2/bin/OMNoteboook_tempfiles/29.png" >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</Image>
     </TextCell>
    </GroupCell>
    <GroupCell closed="false" >
@@ -73,33 +69,71 @@ end MRFcall;
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">PointOnCircle&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Another example of a multiple results function is the function &lt;span style=" font-family:Courier New;">PointOnCircle&lt;/span>, which computes the cartesian coordinates of a point located at a certain angle on a circle with a certain radius. The cartesian coordinates are returned via the two result variables &lt;span style=" font-family:Courier New;">x&lt;/span> and &lt;span style=" font-family:Courier New;">y&lt;/span>.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Another example of a multiple results function is the function p&lt;span style=" font-family:Courier New;">ointOnCircle&lt;/span>, which computes the cartesian coordinates of a point located at a certain angle on a circle with a certain radius. The cartesian coordinates are returned via the two result variables &lt;span style=" font-family:Courier New;">x&lt;/span> and &lt;span style=" font-family:Courier New;">y&lt;/span>.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>function PointOnCircle            "Computes cartesian coordinates of a point"
+    <InputCell style="Input" closed="false" >
+     <Input>function pointOnCircle  "Computes cartesian coordinates of a point"
   input Real angle              "Angle in radians";
   input Real radius;
   output Real x;              // 1:st result formal parameter
   output Real y;              // 2:nd result formal parameter
 algorithm
-  x := radius*Modelica.Math.cos(angle);
-  y := radius*Modelica.Math.sin(angle);
-end PointOnCircle;
-</Input>
-     <Output></Output>
+  x := radius*cos(angle);
+  y := radius*sin(angle);
+end pointOnCircle;</Input>
+     <Output>Ok</Output>
     </InputCell>
-   </GroupCell>
-   <GroupCell closed="false" >
-    <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">MakeAlive on PointOnCircle&lt;/p>&lt;/body>&lt;/html></Text>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Call it:&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>MakeAlive[PointOnCircle]</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>pointOnCircle(1.2, 2)</Input>
+     <Output>(0.724715411663055,1.86407804489136)</Output>
     </InputCell>
-    <InputCell style="Input" closed="true" >
-     <Input>PointOnCircle[1.2, 2]</Input>
-     <Output></Output>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">//??Error - apparently some parsing error when calling the fully qualified name Modelica.Math.sin and the Modelica library is not loaded.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="false" >
+     <Input>function pointOnCircle2  "Computes cartesian coordinates of a point"
+  input Real angle              "Angle in radians";
+  input Real radius;
+  output Real x;              // 1:st result formal parameter
+  output Real y;              // 2:nd result formal parameter
+algorithm
+  x := radius*cos(angle);
+  y := radius*Modelica.Math.sin(angle);
+end pointOnCircle2;</Input>
+     <Output>Error occured building AST
+Syntax Error
+OMC-ERROR: 
+"Class Modelica.Math.sin (its type)  not found in scope PointOnCircle.
+No matching function found for Modelica.Math.sin, candidates are 
+Class Modelica.Math.sin not found in scope PointOnCircle.
+No matching function found for Modelica.Math.sin, candidates are 
+Class Modelica.Math.sin not found in scope PointOnCircle.
+"</Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">load Modelica library&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="false" >
+     <Input>loadModel(Modelica)</Input>
+     <Output>true</Output>
+    </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Try again - then it works.&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="false" >
+     <Input>function pointOnCircle2  "Computes cartesian coordinates of a point"
+  input Real angle              "Angle in radians";
+  input Real radius;
+  output Real x;              // 1:st result formal parameter
+  output Real y;              // 2:nd result formal parameter
+algorithm
+  x := radius*cos(angle);
+  y := radius*Modelica.Math.sin(angle);
+end pointOnCircle2;</Input>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
@@ -109,23 +143,26 @@ end PointOnCircle;
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">When calling a multiple results functions there are two possibilities, equation form or statement form.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>class EquqtionCall
+    <InputCell style="Input" closed="false" >
+     <Input>class PointOnCircleCall
   Real px, py;
 equation
-  (px, py) = PointOnCircle(1.2, 2);    
-end PointOnCirclecall;
-</Input>
-     <Output></Output>
+  (px, py) = pointOnCircle(1.2, 2);    
+end PointOnCircleCall;</Input>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
     <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of EquqtionCall &lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of EquationCall &lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>simulate( EquqtionCall );</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>simulate( PointOnCircleCall )  //??Error - not yet implemented</Input>
+     <Output>record
+    resultFile = "Simulation failed.
+Too few equations, underdetermined system. The model has 2 variables and 1 equations
+"
+end record</Output>
     </InputCell>
     <TextCell style="Output" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
@@ -135,37 +172,41 @@ end PointOnCirclecall;
      <Output>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Output>
     </InputCell>
     <TextCell style="Text" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;img src="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/2.png" width="288" height="214" />&lt;/p>&lt;/body>&lt;/html></Text>
-     <Image name="file:///C:/OpenModelica132/bin/OMNoteboook_tempfiles/2.png" >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</Image>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" color:#000000;">&lt;img src="file:///C:/OpenModelica1.4.2/bin/OMNoteboook_tempfiles/30.png" width="288" height="214" />&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+     <Image name="file:///C:/OpenModelica1.4.2/bin/OMNoteboook_tempfiles/30.png" >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</Image>
     </TextCell>
    </GroupCell>
    <GroupCell closed="false" >
     <TextCell style="Section" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Function Call on Statement Form &lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class StatementCall
   Real px, py;
 algorithm
   (px, py) := PointOnCircle(1.2, 2);  
-end StatementCall;
-</Input>
-     <Output></Output>
+end StatementCall;</Input>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
     <TextCell style="Section" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of StatementCall &lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>simulate( StatementCall );</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>simulate( StatementCall )  //??Error - not yet implemented</Input>
+     <Output>record
+    resultFile = "Simulation failed.
+Tuple assignment only allowed when rhs is function call (in PointOnCircle(1.2, 2))
+Error occured while flattening model StatementCall
+"
+end record</Output>
     </InputCell>
     <TextCell style="Output" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="true" >
-     <Input>{px[0], py[0]}</Input>
+     <Input>{val(px,0), val(py,0)}</Input>
      <Output></Output>
     </InputCell>
    </GroupCell>

@@ -8,7 +8,7 @@
    <TextCell style="Text" >
     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />TwoPin is a partial model of components that has two pins. Since most electrical components have two pins, this information is collected into a base class. A partial class is incomplete and can not be simulated alone.  In &lt;span style=" font-family:Courier New;">TwoPin&lt;/span> there are six variables (p.v, p.i, n.i, n.v, v, i) and only three equations, which makes the system unsolvable (no unique solution can be found).&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
    </TextCell>
-   <InputCell style="Input" closed="true" >
+   <InputCell style="Input" closed="false" >
     <Input>partial class TwoPin        "Superclass of elements with two electrical pins"
   Pin p, n;
   Voltage v;
@@ -17,9 +17,8 @@ equation
   v = p.v - n.v;
   p.i + n.i = 0;
   i = p.i;
-end TwoPin;
-</Input>
-    <Output></Output>
+end TwoPin;</Input>
+    <Output>Ok</Output>
    </InputCell>
    <GroupCell closed="false" >
     <TextCell style="Section" >
@@ -28,14 +27,14 @@ end TwoPin;
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Now that we have the partial class TwoPin we can use that to create a Resistor, by adding the constitutive equation: &lt;span style=" font-family:Courier New;">R*i = v, which &lt;/span>describes the specific physical characteristics of the relation between voltage and current for resistors.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class Resistor               "Ideal linear electrical Resistor"
   extends TwoPin;          
   parameter Real R(unit = "Ohm")     "Resistance";
 equation
   R*i = v;
 end Resistor;                // From Modelica.Electrical.Analog.Basic </Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
   </GroupCell>

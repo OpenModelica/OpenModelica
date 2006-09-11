@@ -63,11 +63,15 @@
      <TextCell style="Subsection" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <GroupCell closed="true" >
+     <GroupCell closed="false" >
       <TextCell style="Subsubsection" >
        <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">package Geometry&lt;/p>&lt;/body>&lt;/html></Text>
       </TextCell>
-      <InputCell style="Input" closed="true" >
+      <InputCell style="Input" closed="false" >
+       <Input>loadModel(Modelica);  // Load the library if not loaded</Input>
+       <Output>[done]</Output>
+      </InputCell>
+      <InputCell style="Input" closed="false" >
        <Input>package Geometry
   constant Real PI = 3.1415926536;
 
@@ -107,54 +111,68 @@
   end CircleArea;
 
 end Geometry;</Input>
-       <Output></Output>
+       <Output>Ok</Output>
       </InputCell>
      </GroupCell>
-     <GroupCell closed="true" >
+     <GroupCell closed="false" >
       <TextCell style="Subsubsection" >
        <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Simulation of Geometry&lt;/p>&lt;/body>&lt;/html></Text>
       </TextCell>
-      <InputCell style="Input" closed="true" >
-       <Input>simulate( Geometry );</Input>
-       <Output></Output>
+      <InputCell style="Input" closed="false" >
+       <Input>simulate( Geometry )</Input>
+       <Output>record
+    resultFile = "Geometry_res.plt"
+end record</Output>
       </InputCell>
       <TextCell style="Output" >
        <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
       </TextCell>
      </GroupCell>
-     <GroupCell closed="true" >
+     <GroupCell closed="false" >
       <TextCell style="Subsubsection" >
        <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">GeometryUser&lt;/p>&lt;/body>&lt;/html></Text>
       </TextCell>
-      <InputCell style="Input" closed="true" >
+      <InputCell style="Input" closed="false" >
        <Input>class GeometryUser
   Geometry.Distance rectangleArea   = Geometry.RectangleArea(4, 5); 
-  Geometry.Distance triangleArea   = Geometry.TriangleArea(4, 5);  
+  Geometry.Distance triangleArea    = Geometry.TriangleArea(4, 5);  
   Geometry.Distance circlePerimeter = Geometry.CirclePerimeter(3.5);
-  Geometry.Distance circleArea     = Geometry.CircleArea(3.5);
+  Geometry.Distance circleArea      = Geometry.CircleArea(3.5);
 end GeometryUser;</Input>
-       <Output></Output>
+       <Output>Ok</Output>
       </InputCell>
      </GroupCell>
-     <GroupCell closed="true" >
+     <GroupCell closed="false" >
       <TextCell style="Subsubsection" >
        <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:12pt; font-weight:600; color:#000000;">Simulation of GeometryUser&lt;/p>&lt;/body>&lt;/html></Text>
       </TextCell>
-      <InputCell style="Input" closed="true" >
-       <Input>simulate( GeometryUser );</Input>
-       <Output></Output>
+      <InputCell style="Input" closed="false" >
+       <Input>simulate( GeometryUser )  //??Error - constants can be referenced from within functions</Input>
+       <Output>record
+    resultFile = "GeometryUser_res.plt"
+end record
+OMC-ERROR: 
+"Class Geometry.RectangleArea not found in scope global scope.
+Variable PI not found in scope Geometry.CirclePerimeter
+Variable PI not found in scope Geometry.CirclePerimeter
+Variable PI not found in scope Geometry.CirclePerimeter
+Variable PI not found in scope Geometry.CirclePerimeter
+Variable PI not found in scope Geometry.CirclePerimeter
+Variable PI not found in scope Geometry.CirclePerimeter
+Variable PI not found in scope Geometry.CircleArea
+Variable PI not found in scope Geometry.CircleArea
+Variable PI not found in scope Geometry.CircleArea
+Variable PI not found in scope Geometry.CircleArea
+Variable PI not found in scope Geometry.CircleArea
+Variable PI not found in scope Geometry.CircleArea
+"</Output>
       </InputCell>
       <TextCell style="Output" >
        <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
       </TextCell>
       <InputCell style="Input" closed="true" >
-       <Input>{rectangleArea[0]
-, triangleArea[0]
-, circlePerimeter[0]
-, circleArea[0]
-
-}
-</Input>
+       <Input>{val(rectangleArea,0), val(triangleArea,0),
+val(circlePerimeter,0),val(circleArea,0)}</Input>
        <Output></Output>
       </InputCell>
      </GroupCell>

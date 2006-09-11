@@ -21,34 +21,30 @@
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-family:Courier New;">Import&lt;/span> statements in a package or class fill the two needs of either making definitions from other packages available for use in a package or class or explicit declaration of usage dependences on other packages. An &lt;span style=" font-family:Courier New;">import&lt;/span> statement can occur in several syntactic forms. In the examples below we want to access the &lt;span style=" font-family:Courier New;">Add&lt;/span> operation of the package Modelica.Math.ComplexNumbers.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>import Modelica.Math.ComplexNumbers;        // Access by ComplexNumbers.Add
-</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>import Modelica.Math.ComplexNumbers;        // Access by ComplexNumbers.Add</Input>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>import Modelica.Math.ComplexNumbers.Add;      // Access by Add
-</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>import Modelica.Math.ComplexNumbers.Add;     // Access by Add</Input>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>import Modelica.Math.ComplexNumbers.*;        // Access by Add
-</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>import Modelica.Math.ComplexNumbers.*;       // Access by Add</Input>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>import Co = Modelica.Math.ComplexNumbers;      // Access by Co.Add
-</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>import Co = Modelica.Math.ComplexNumbers;    // Access by Co.Add</Input>
+     <Output>Ok</Output>
     </InputCell>
     <GroupCell closed="false" >
      <TextCell style="Subsection" >
@@ -58,7 +54,7 @@
      <TextCell style="Text" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The&lt;span style=" font-style:italic;"> qualified import &lt;/span>statement of the form &lt;span style=" font-family:Courier New;">import&lt;/span> ; imports all definitions in a package, which subsequently can be referred to by names &lt;span style=" font-style:italic;">simplepackagename.definitionname&lt;/span>, where the &lt;span style=" font-style:italic;">simplepackagename&lt;/span> is the &lt;span style=" font-style:italic;">packagename&lt;/span> without its prefix. This is the most common form of &lt;span style=" font-family:Courier New;">import&lt;/span> &lt;span style=" font-family:Courier New;">(&lt;/span>see &lt;span style=" font-family:Courier New;">ComplexUser1) &lt;/span>that eliminates the risk for name collisions when importing from several packages.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
+     <InputCell style="Input" closed="false" >
       <Input>encapsulated package ComplexUser1
   import ComplexNumbers;
 
@@ -71,9 +67,8 @@
     z = ComplexNumbers.Add(a, b);
   end User;
 
-end ComplexUser1;
-</Input>
-      <Output></Output>
+end ComplexUser1;</Input>
+      <Output>Ok</Output>
      </InputCell>
     </GroupCell>
     <GroupCell closed="false" >
@@ -84,7 +79,7 @@ end ComplexUser1;
      <TextCell style="Text" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The&lt;span style=" font-style:italic;"> single definition import &lt;/span>statement of the form &lt;span style=" font-family:Courier New;">import&lt;/span> &lt;span style=" font-style:italic;">.&lt;/span>; allows you to import a single specific definition from a package and use that definition referred to by its &lt;span style=" font-style:italic;">definitionname&lt;/span> without the package prefix. This allows you to only write &lt;span style=" font-family:Courier New;">Add&lt;/span> (see &lt;span style=" font-family:Courier New;">ComplexUser2&lt;/span> below) but still you have to write an &lt;span style=" font-family:Courier New;">import&lt;/span> statement for each imported definition which can be a bit cumbersome. There is no risk for name collision as long as you do not try to import two definitions with the same short name.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
+     <InputCell style="Input" closed="false" >
       <Input>encapsulated package ComplexUser2
   import ComplexNumbers.Complex;
   import ComplexNumbers.Multiply;
@@ -99,9 +94,8 @@ end ComplexUser1;
     z = Add(a, b);
   end User;
 
-end ComplexUser2;
-</Input>
-      <Output></Output>
+end ComplexUser2;</Input>
+      <Output>Ok</Output>
      </InputCell>
     </GroupCell>
     <GroupCell closed="false" >
@@ -112,7 +106,7 @@ end ComplexUser2;
      <TextCell style="Text" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The&lt;span style=" font-style:italic;"> unqualified import &lt;/span>statement of the form &lt;span style=" font-family:Courier New;">import&lt;/span> &lt;span style=" font-style:italic;">packagename.*&lt;/span>; imports all definitions from the package using their short names without qualification prefixes. This is shown in &lt;span style=" font-family:Courier New;">ComplexUser3&lt;/span> below. There is a high risk of name collisions as well as future compilation errors, but nice for the lazy programmer.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
+     <InputCell style="Input" closed="false" >
       <Input>class ComplexUser3
   import ComplexNumbers.*;
   Complex  a(x = 1.0, y = 2.0);
@@ -121,9 +115,8 @@ end ComplexUser2;
 equation
   z = Multiply(a, b);
   z = Add(a, b);
-end ComplexUser3;
-</Input>
-      <Output></Output>
+end ComplexUser3;</Input>
+      <Output>Ok</Output>
      </InputCell>
     </GroupCell>
     <GroupCell closed="false" >
@@ -134,7 +127,7 @@ end ComplexUser3;
      <TextCell style="Text" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The&lt;span style=" font-style:italic;"> renaming import &lt;/span>statement of the form &lt;span style=" font-family:Courier New;">import&lt;/span> &lt;span style=" font-style:italic;"> = &lt;/span>; imports a package and renames it locally to &lt;span style=" font-style:italic;">shortpackagename&lt;/span>. You can refer to imported definitions using  &lt;span style=" font-style:italic;">shortpackagename &lt;/span>as a presumably shorter package prefix. In the class &lt;span style=" font-family:Courier New;">ComplexUser4&lt;/span> below, Co is used instead of the longer name &lt;span style=" font-family:Courier New;">ComplexNumbers&lt;/span>.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
+     <InputCell style="Input" closed="false" >
       <Input>class ComplexUser4
   import Co = ComplexNumbers;
   Co.Complex  a(x = 1.0, y = 2.0);
@@ -143,9 +136,8 @@ end ComplexUser3;
 equation
   z = Co.Multiply(a, b);
   z = Co.Add(a, b);
-end ComplexUser4;
-</Input>
-      <Output></Output>
+end ComplexUser4;</Input>
+      <Output>Ok</Output>
      </InputCell>
     </GroupCell>
    </GroupCell>

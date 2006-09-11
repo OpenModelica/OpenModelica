@@ -8,34 +8,31 @@
    <TextCell style="Text" >
     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />When declaring variables you do either several single declarations or a multiple declaration. A variable specifier can be a single &lt;span style=" font-style:italic;">identifier&lt;/span>, or an identifier optionally followed by a &lt;span style=" font-style:italic;">modifier&lt;/span> and/or an array dimension descriptor, optionally followed by an &lt;span style=" font-style:italic;">initializer &lt;/span>or&lt;span style=" font-style:italic;"> declaration equation &lt;/span>right&lt;span style=" font-style:italic;"> &lt;/span>hand side. &lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
    </TextCell>
-   <InputCell style="Input" closed="true" >
+   <InputCell style="Input" closed="false" >
     <Input>class Matrix
   Real[2, 2] A;        // Single declaration
   Real[2, 2] B;        // Single declaration
-end Matrix;  
-</Input>
-    <Output></Output>
+end Matrix;  </Input>
+    <Output>Ok</Output>
    </InputCell>
    <TextCell style="Text" >
     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The following declaration has the same meaning as the single declaration above.&lt;/p>&lt;/body>&lt;/html></Text>
    </TextCell>
-   <InputCell style="Input" closed="true" >
+   <InputCell style="Input" closed="false" >
     <Input>class Matrix
   Real[2, 2] A, B;      // Multiple declaration
-end Matrix;
-</Input>
-    <Output></Output>
+end Matrix;</Input>
+    <Output>Ok</Output>
    </InputCell>
    <TextCell style="Text" >
     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />Another way of writing single declarations with the same meaning is shown below. &lt;/p>&lt;/body>&lt;/html></Text>
    </TextCell>
-   <InputCell style="Input" closed="true" >
+   <InputCell style="Input" closed="false" >
     <Input>class Matrix
   Real A[2, 2];
   Real B[2, 2];
-end Matrix;  
-</Input>
-    <Output></Output>
+end Matrix;  </Input>
+    <Output>Ok</Output>
    </InputCell>
   </GroupCell>
  </GroupCell>

@@ -12,14 +12,14 @@
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The declaration of a class starts with a keyword, class for instance,  followed by the name of the class. A class declaration creates a type name which makes it possible to declare variables of that type, also known as an instance of the class, simply by writing: &lt;span style=" font-family:Courier New;">typename variable&lt;/span>. First we declare the class &lt;span style=" font-family:Courier New;">Point&lt;/span>., where the variables &lt;span style=" font-family:Courier New;">x, y&lt;/span> and &lt;span style=" font-family:Courier New;">z&lt;/span> are instances of the type &lt;span style=" font-family:Courier New;">Real&lt;/span>.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class Point                "Point in a three-dimensional space"
   public
     parameter Real x;
     parameter Real y;
     parameter Real z;
 end Point;    </Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
@@ -29,25 +29,34 @@ end Point;    </Input>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">To create new instances the "new" keyword is not used as is common in object-oriented programming languages, since it does not exist in Modelica. In &lt;span style=" font-family:Courier New;">MyPoints&lt;/span> three instances of &lt;span style=" font-family:Courier New;">Point&lt;/span> are created. &lt;span style=" font-family:Courier New;">Point1&lt;/span> is created with initial values for the variables, given through modification. &lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class MyPoints
   Point point1(x = 1, y = 2, z = 3);
   Point point2;
   Point point3;
 end MyPoints;
 </Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
-   <GroupCell closed="true" >
+   <GroupCell closed="false" >
     <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">GetFlatDefinition of MyPoints&lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Look at Flattened Version of MyPoints&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>GetFlatDefinition[MyPoints]
-//ToModelica
-</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>instantiateModel(MyPoints)</Input>
+     <Output>"fclass MyPoints
+parameter Real point1.x = 1;
+parameter Real point1.y = 2;
+parameter Real point1.z = 3;
+parameter Real point2.x;
+parameter Real point2.y;
+parameter Real point2.z;
+parameter Real point3.x;
+parameter Real point3.y;
+parameter Real point3.z;
+end MyPoints;
+"</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
@@ -57,38 +66,36 @@ end MyPoints;
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-family:Courier New;">MyPointsInst&lt;/span> creates three new &lt;span style=" font-family:Courier New;">Points&lt;/span> by instantiating &lt;span style=" font-family:Courier New;">MyPoints&lt;/span>. There are two different ways to give the variables initial values when creating the instance. This is shown in &lt;span style=" font-family:Courier New;">MyPointsInst1&lt;/span> and &lt;span style=" font-family:Courier New;">MyPointsInst2&lt;/span>. &lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class MyPointsInst1
   MyPoints pts(point1(x= 1, y = 2, z = 3));
-end MyPointsInst1;
-</Input>
-     <Output></Output>
+end MyPointsInst1;</Input>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class MyPointsInst2
   MyPoints pts(point1.x = 1, point1.y = 2, point1.z = 3);
-end MyPointsInst2;
-</Input>
-     <Output></Output>
+end MyPointsInst2;</Input>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
     <TextCell style="Section" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of MyPointsInst1 and MyPointsInst2&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>simulate( MyPointsInst1 );</Input>
-     <Output></Output>
+     <Output>[done]</Output>
     </InputCell>
     <TextCell style="Output" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">//??val would be natural to use here to look at values&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>simulate( MyPointsInst2 );</Input>
-     <Output></Output>
+     <Output>[done]</Output>
     </InputCell>
     <TextCell style="Output" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Courier New; font-size:11pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>

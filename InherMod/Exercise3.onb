@@ -12,33 +12,33 @@
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Today you are going on a lunch date! To help you, several classes are created below. &lt;br />&lt;br />The &lt;span style=" font-style:italic;">first&lt;/span> class is &lt;span style=" font-family:Courier New;">DayName&lt;/span>, contains the parameter &lt;span style=" font-family:Courier New;">nameOfDay&lt;/span>, a certain day written as a &lt;span style=" font-family:Courier New;">String&lt;/span>. &lt;br />The &lt;span style=" font-style:italic;">second&lt;/span> class, &lt;span style=" font-family:Courier New;">LunchAppointment&lt;/span>, contains the variables &lt;span style=" font-family:Courier New;">lunchTime&lt;/span> (what time you are going to lunch) and &lt;span style=" font-family:Courier New;">lunchDate&lt;/span> (who you are going on the lunch date with). &lt;br />And at last the class, &lt;span style=" font-family:Courier New;">Date&lt;/span>, with parameters &lt;span style=" font-family:Courier New;">dayName&lt;/span> (where you can set the variable in the class &lt;span style=" font-family:Courier New;">DayName&lt;/span>, for fun it is now Funday) as well as d&lt;span style=" font-family:Courier New;">ate&lt;/span>, &lt;span style=" font-family:Courier New;">month&lt;/span> and &lt;span style=" font-family:Courier New;">year&lt;/span>.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class DayName
   parameter String nameOfDay;
 end DayName;</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class LunchAppointment
   parameter Integer lunchTime;
   parameter String lunchDate;
 end LunchAppointment;</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class Date
   DayName dayName(nameOfDay = "Funday");
   parameter Integer date;
   parameter String month;
   parameter Integer year;
 end Date;</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />What you are going to do now is create a class, &lt;span style=" font-family:Courier New;">Today&lt;/span>, in which you can modify the values in the class &lt;span style=" font-family:Courier New;">Date&lt;/span> as well as in the class &lt;span style=" font-family:Courier New;">LunchAppointment&lt;/span>. First, write the class using &lt;span style=" font-style:italic;">nested notation&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
@@ -58,30 +58,30 @@ end Date;</Input>
      <TextCell style="Subsection" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Answer&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
+     <InputCell style="Input" closed="false" >
       <Input>class Today
   Date date(dayName(nameOfDay = "Wednesday"),
-        date = 2,
-        month = "October",
-      year = 2002);
+            date = 2,
+            month = "October",
+            year = 2002);
   LunchAppointment lunchApp(lunchTime = 12,
-              lunchDate = "Frederick");
+                            lunchDate = "Frederick");
 end Today;</Input>
-      <Output></Output>
+      <Output>Ok</Output>
      </InputCell>
      <TextCell style="Text" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
-     <InputCell style="Input" closed="true" >
+     <InputCell style="Input" closed="false" >
       <Input>class Tomorrow
   Date date(dayName.nameOfDay = "Thursday",
-     date = 3,
-     month = "October",
-     year = 2002);
+            date = 3,
+            month = "October",
+            year = 2002);
   LunchAppointment lunchApp(lunchTime = 12,
-         lunchDate = "Steven"); 
+                            lunchDate = "Steven"); 
 end Tomorrow;</Input>
-      <Output></Output>
+      <Output>Ok</Output>
      </InputCell>
     </GroupCell>
    </GroupCell>

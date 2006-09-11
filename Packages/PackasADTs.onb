@@ -21,7 +21,7 @@
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">As an example, consider the package &lt;span style=" font-family:Courier New;">ComplexNumbers&lt;/span> below which contains a data structure declaration, the record &lt;span style=" font-family:Courier New;">Complex&lt;/span>, and associated operations such as&lt;span style=" font-family:Courier New;"> Add, Multiply, MakeComplex&lt;/span>, etc. Adding the word &lt;span style=" font-family:Courier New;">encapsulated&lt;/span> to the package keeps the package well structured as well as being easier to understand and maintain.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>encapsulated package ComplexNumbers
 
   record Complex
@@ -58,12 +58,12 @@
 
 end ComplexNumbers;
 </Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />In the &lt;span style=" font-family:Courier New;">ComplexUser&lt;/span> class below, both the type &lt;span style=" font-family:Courier New;">Complex&lt;/span> as well as the operations &lt;span style=" font-family:Courier New;">Multiply&lt;/span> and &lt;span style=" font-family:Courier New;">Add&lt;/span> are referenced by prefexing them with the package name &lt;span style=" font-family:Courier New;">ComplexNumbers&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class ComplexUser
   ComplexNumbers.Complex  a(x = 1.0, y = 2.0);
   ComplexNumbers.Complex  b(x = 1.0, y = 2.0);
@@ -71,9 +71,8 @@ end ComplexNumbers;
 equation
   z = ComplexNumbers.Multiply(a, b);
   z = ComplexNumbers.Add(a, b);
-end ComplexUser;
-</Input>
-     <Output></Output>
+end ComplexUser;</Input>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
@@ -83,7 +82,7 @@ end ComplexUser;
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">The type &lt;span style=" font-family:Courier New;">Complex&lt;/span> must be made available for allocation and initialization of variables of that type, e.g the variables &lt;span style=" font-family:Courier New;">a, b, z &lt;/span>and &lt;span style=" font-family:Courier New;">w&lt;/span> in &lt;span style=" font-family:Courier New;">ComplexUser&lt;/span>. It would not work if you declared x and y &lt;span style=" font-family:Courier New;">protected&lt;/span> in the variables &lt;span style=" font-family:Courier New;">Complex&lt;/span> since then these fields would not be available for the implementation of &lt;span style=" font-family:Courier New;">Add&lt;/span> and &lt;span style=" font-family:Courier New;">Multiply&lt;/span>, etc. However, by declaring the operations on &lt;span style=" font-family:Courier New;">Complex&lt;/span> inside the class &lt;span style=" font-family:Courier New;">Complex&lt;/span> itself, as in the package &lt;span style=" font-family:Courier New;">ComplexNumbersA&lt;/span> further below, these fields can be accessed even if they are protected. &lt;br />&lt;br />We can increase the degree of data abstaction by using the function &lt;span style=" font-family:Courier New;">MakeComplex&lt;/span> for initialization instead of modifiers, e.g. as in &lt;span style=" font-family:Courier New;">ComplexUser2&lt;/span> below, thus avoiding exposing the fields x and y.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class ComplexUser2
   ComplexNumbers.Complex  a = MakeComplex(1.0, 2.0);
   ComplexNumbers.Complex  b = MakeComplex(1.0, 2.0);
@@ -93,12 +92,12 @@ equation
   z = ComplexNumbers.Add(a, b);
 end ComplexUser2;
 </Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />In &lt;span style=" font-family:Courier New;">ComplexNumbersA&lt;/span> the implementation details of the &lt;span style=" font-family:Courier New;">Complex&lt;/span> data structure are hidden since its data fields are protected.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>encapsulated package ComplexNumbersA
 
   function Add = Complex.Add;
@@ -144,9 +143,8 @@ end ComplexUser2;
     
     end Complex;
 
-end ComplexNumbersA;
-</Input>
-     <Output></Output>
+end ComplexNumbersA;</Input>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
   </GroupCell>

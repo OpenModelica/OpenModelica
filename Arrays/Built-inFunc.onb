@@ -14,12 +14,12 @@
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>class DimSize
-  Real dim = ndims(x);                    // Returns 3
-  Real dimsize = size(x, 1);              // Returns 4
-  Real specsize[3] = size(x);             // Returns the vector {4, 1, 6}
-  Real[4, 1, 6] x = fill(1, 4, 1, 6);
+  parameter Real[4, 1, 6] x = fill(1., 4, 1, 6);
+  parameter Real dim = ndims(x);           // Returns 3
+  parameter Real dimsize = size(x, 1);     // Returns 4
+  parameter Real specsize[3] = size(x);    // Returns the vector {4, 1, 6}
 equation  
-  size(2*x + x) = size(x);                // This equation holds
+ // size(2*x + x) = size(x);                // This equation holds
 end DimSize;  </Input>
      <Output>Ok</Output>
     </InputCell>
@@ -31,7 +31,7 @@ end DimSize;  </Input>
       <Input>simulate( DimSize )   //??Error - not yet implemented</Input>
       <Output>record
     resultFile = "Simulation failed.
-Type mismatch in equation dim={{ndims(x[1,1])},{ndims(x[2,1])},{ndims(x[3,1])},{ndims(x[4,1])}} of type Real=Integer[4, 1]
+Type mismatch in modifier, expected type Real, got modifier ={{ndims(x[1,1])},{ndims(x[2,1])},{ndims(x[3,1])},{ndims(x[4,1])}} of type Integer[4, 1]
 Error occured while flattening model DimSize
 "
 end record</Output>
@@ -138,7 +138,7 @@ end record</Output>
      <Input>class Reduce
   Real minimum, maximum, summ, prod;
 equation
-  minimum = min({1, -1, 7});              // Gives the vaule -1
+  minimum = min({1, -1, 7});              // Gives the value -1
   maximum = max([1, 2, 3; 4, 5, 6]);      // Gives the value 6
   summ    = sum({{1, 2, 3}, {4, 5, 6}});  // Gives the value 21
   prod    = product({3.14, 2, 2});        // Gives the value 12.56

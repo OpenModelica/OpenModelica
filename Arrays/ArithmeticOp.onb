@@ -33,6 +33,25 @@ end AddSub;  </Input>
 end AddSub2;  </Input>
      <Output>Ok</Output>
     </InputCell>
+    <TextCell style="Text" >
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Try interactive:&lt;/p>&lt;/body>&lt;/html></Text>
+    </TextCell>
+    <InputCell style="Input" closed="false" >
+     <Input>{{1, 1}, {2, 2}}  // Works</Input>
+     <Output>{{1,1},{2,2}}</Output>
+    </InputCell>
+    <InputCell style="Input" closed="false" >
+     <Input>[1, 1; 2, 2]   //Works</Input>
+     <Output>{{1,1},{2,2}}</Output>
+    </InputCell>
+    <InputCell style="Input" closed="false" >
+     <Input>2.0*{{1, 1}, {2, 2}}  // ??Error - no value interactively</Input>
+     <Output>[done]</Output>
+    </InputCell>
+    <InputCell style="Input" closed="false" >
+     <Input>{{1, 1}, {2, 2}} + {{1, 2}, {3, 4}}   // ??Error - no value  interactively</Input>
+     <Output>[done]</Output>
+    </InputCell>
     <GroupCell closed="false" >
      <TextCell style="Subsection" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of AddSub and AddSub2&lt;/p>&lt;/body>&lt;/html></Text>
@@ -51,6 +70,13 @@ end record</Output>
       <Output>record
     resultFile = "AddSub2_res.plt"
 end record</Output>
+     </InputCell>
+     <TextCell style="Text" >
+      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Look at results:&lt;/p>&lt;/body>&lt;/html></Text>
+     </TextCell>
+     <InputCell style="Input" closed="false" >
+      <Input>val(Sub1[1],1.)  //??val error</Input>
+      <Output>0.0</Output>
      </InputCell>
      <TextCell style="Text" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">??val should be used to look at results&lt;/p>&lt;/body>&lt;/html></Text>
@@ -122,6 +148,10 @@ end record</Output>
   Real m8[2, 2] = [1, 2; 3, 4] * [1, 2; 2, 1];   // Matrix mult: {{5, 4}, {11, 10}};
 end Multiplication;  </Input>
      <Output>Ok</Output>
+    </InputCell>
+    <InputCell style="Input" closed="false" >
+     <Input>{{1, 2}, {3, 4}} * {1, 2}  //??Error - no value interactively</Input>
+     <Output>[done]</Output>
     </InputCell>
     <GroupCell closed="false" >
      <TextCell style="Subsection" >

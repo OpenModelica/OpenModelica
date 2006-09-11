@@ -15,14 +15,13 @@
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">A &lt;span style=" font-style:italic;">record/class type&lt;/span> in Modelica is conceptually the set of all record values of that record type, where each value contains named field values for the fields of that record.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>record Person
   String name;
-  Real weight;
-  Real length;
-end Person;
-</Input>
-     <Output></Output>
+  Real   weight;
+  Real   length;
+end Person;</Input>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
@@ -32,20 +31,18 @@ end Person;
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">An array type is conceptually a set of array values, where each array value can be considered as a set of pairs (array-element-index, array-value) analogous to the set of pairs (field-name, field value) that make up a record value.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>type vector2 = Real[2];        // Vector type with specified dimension size
-type vector  = Real[:];        // Vector type with unspecified dimension size 
-</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>type vector2 = Real[2];   // Vector type with specified dimension size
+type vector  = Real[:];   // Vector type with unspecified dimension size </Input>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>type matrix23 = Real[2, 3];      //  Matrix type with specified dimension size
-type matrix   = Real[:, :];      //  Matrix type with unspecified dimension size
-</Input>
-     <Output></Output>
+    <InputCell style="Input" closed="false" >
+     <Input>type matrix23 = Real[2, 3];  // Matrix type with specified dimension size
+type matrix   = Real[:, :];  // Matrix type with unspecified dimension size</Input>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
   </GroupCell>

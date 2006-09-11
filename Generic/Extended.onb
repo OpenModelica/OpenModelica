@@ -10,39 +10,40 @@
    </TextCell>
    <GroupCell closed="true" >
     <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Connector Classes&lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Type and Connector Classes&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>type Voltage = Real(unit = "V");</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>type Current = Real(unit = "A");</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>connector Pin
   Voltage     v;
   flow Current   i;
 end Pin;        </Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="true" >
     <TextCell style="Section" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Components&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>partial model TwoPin          // Same as OnePort in Modelica.Electrical.Analog.Interfaces
-                    "Component with two electrical pins p and n and current i from p to n"
-  Voltage v                "Voltage drop between the two pins (= p.v - n.v)";
-  Current i                "Current flowing from pin p to pin n";
+    <InputCell style="Input" closed="false" >
+     <Input>partial model TwoPin  
+     // Same as OnePort in Modelica.Electrical.Analog.Interfaces
+ "For Component with two electrical pins p and n and current i from p to n"
+  Voltage v      "Voltage drop between the two pins (= p.v - n.v)";
+  Current i      "Current flowing from pin p to pin n";
   PositivePin p;
   NegativePin n;
 equation
@@ -50,29 +51,29 @@ equation
   0 = p.i + n.i;
   i = p.i;
 end TwoPin;          </Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="true" >
     <TextCell style="Section" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Resistor&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>model Resistor                 "Electrical resistor"
+    <InputCell style="Input" closed="false" >
+     <Input>model Resistor     "Electrical resistor"
   Pin p,n;
   Voltage v;
   Current i;
-  parameter Real R(unit = "Ohm")        "Resistance";
+  parameter Real R(unit = "Ohm")   "Resistance";
 equation
   v = i*R;
 end Resistor;</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>model TempResistor              "Temperature dependent electricla resistor"
+    <InputCell style="Input" closed="false" >
+     <Input>model TempResistor     "Temperature dependent electricla resistor"
   Pin p,n;
   Voltage v;
   Current i;
@@ -83,7 +84,7 @@ end Resistor;</Input>
 equation
   v = i*(R + RT*(Temp - Tref));
 end TempResistor;</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
    <GroupCell closed="false" >
@@ -93,39 +94,39 @@ end TempResistor;</Input>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">One way of getting around the problems of inheriting and specializing behavior, exemplified with the &lt;span style=" font-family:Courier New;">Resistor&lt;/span> class, is to create incomplete, i.e. partial base classes that only contain the data declarations that can be reused.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>partial model BaseResistor            "Electrical resistor"
+    <InputCell style="Input" closed="false" >
+     <Input>partial model BaseResistor "Electrical resistor"
   Pin p, n;
   Voltage v;
   Current i;
-  parameter Real R(unit = "Ohm")        "Resistance";
+  parameter Real R(unit = "Ohm")   "Resistance";
 end BaseResistor;</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The class is partial because it does not contain enough equations to completely specify its physical behavior. Using &lt;span style=" font-family:Courier New;">BaseResistor&lt;/span>, to classes &lt;span style=" font-family:Courier New;">Resistor2&lt;/span> and &lt;span style=" font-family:Courier New;">TempResistor2&lt;/span> (equivalent to &lt;span style=" font-family:Courier New;">Resistor&lt;/span> and &lt;span style=" font-family:Courier New;">TempResistor&lt;/span>) can be defined to reuse all the common data in the base class.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>model Resistor2                   "Electrical resistor"
+    <InputCell style="Input" closed="false" >
+     <Input>model Resistor2   "Electrical resistor"
   extends BaseResistor;
 equation 
 v = R*i;
 end Resistor2;</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>model TempResistor2                 "Temperature dependent electricla resistor"
+    <InputCell style="Input" closed="false" >
+     <Input>model TempResistor2  "Temperature dependent electricla resistor"
   extends BaseResistor;
-  parameter Real RT(unit = "Ohm/degC") = 0    "Temp. dependent Resistance.";
-  parameter Real Tref(unit = "degC") = 20    "Reference temperature";
-  Real        Temp = 20            "Actual temperature";
+  parameter Real RT(unit = "Ohm/degC") = 0  "Temp. dependent Resistance.";
+  parameter Real Tref(unit = "degC") = 20   "Reference temperature";
+  Real        Temp = 20    "Actual temperature";
 equation
   v = i*(R + RT*(Temp - Tref));
 end TempResistor;</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The drawback of this approach is that we have given up on reuse and inheritance of behavior when part of the behavior needs to be redefined. In the next section we examine a way to get around the problem.&lt;/p>&lt;/body>&lt;/html></Text>
@@ -138,12 +139,12 @@ end TempResistor;</Input>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">There are two ways to indirectly associate a name with equations(s), a declaration equation named by its variable or a group of equations in a named replaceable local class.&lt;br />&lt;br />The &lt;span style=" font-family:Courier New;">ResistorEquation&lt;/span> class within the class &lt;span style=" font-family:Courier New;">Resistor3&lt;/span> below is an example of this technique. &lt;span style=" font-family:Courier New;">Resistor3&lt;/span> has the same data fields and behavior as&lt;span style=" font-family:Courier New;"> Resistor&lt;/span>, but allows redeclaration of its equations since they are defined in the &lt;span style=" font-family:Courier New;">replaceable&lt;/span> class &lt;span style=" font-family:Courier New;">ResistorEquation&lt;/span>.&lt;br />&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
-     <Input>model Resistor3                 "Electrical Resistor"
+    <InputCell style="Input" closed="false" >
+     <Input>model Resistor3  "Electrical Resistor"
   Pin p, n;
   Voltage v;
   Current i;
-  parameter Real R(unit = "Ohm")        "Resistance";
+  parameter Real R(unit = "Ohm")   "Resistance";
   
   replaceable class ResistorEquation
     equation
@@ -153,12 +154,12 @@ end TempResistor;</Input>
   extends ResistorEquation;
   
 end Resistor3;</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;br />The temperature dependent resistor class &lt;span style=" font-family:Courier New;">TempResistor3&lt;/span> can inherit &lt;span style=" font-family:Courier New;">Resistor3&lt;/span>, by declaring its temperature dependent equation in a redeclaration class &lt;span style=" font-family:Courier New;">ResistorEquation&lt;/span> that replaces the original local class &lt;span style=" font-family:Courier New;">ResistorEquation&lt;/span>.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>model TempResistor3 "Temperature dependent electrical resistor"
   extends Resistor3(
     redeclare class ResistorEquation
@@ -166,12 +167,12 @@ end Resistor3;</Input>
         v = i*(R + RT*(Temp - Tref));
     end ResistorEquation);
   
-  parameter Real RT(unit = "Ohm/degC") = 0    "Temp. dependent Resistance.";
+  parameter Real RT(unit = "Ohm/degC") = 0   "Temp. dependent Resistance.";
   parameter Real Tref(unit = "degC") = 20    "Reference temperature";
-  Real        Temp = 20            "Actual temperature";
+  Real    Temp = 20            "Actual temperature";
   
 end TempResistor3;</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
    </GroupCell>
   </GroupCell>
