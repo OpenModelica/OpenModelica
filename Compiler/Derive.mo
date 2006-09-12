@@ -172,7 +172,22 @@ algorithm
       then
         Exp.UNARY(Exp.UMINUS(Exp.REAL()),Exp.BINARY(e_1,Exp.MUL(Exp.REAL()),
           Exp.CALL(Absyn.IDENT("sin"),{e},false,true)));
-    
+          
+    case (Exp.CALL(path = fname,expLst = {e}),timevars)
+      equation 
+        isExp(fname);
+        e_1 = differentiateExpTime(e, timevars) "der(exp(x)) = der(x)exp(x)" ;
+      then
+        Exp.BINARY(e_1,Exp.MUL(Exp.REAL()),
+          Exp.CALL(fname,{e},false,true));
+          
+        case (Exp.CALL(path = fname,expLst = {e}),timevars)
+      equation 
+        isLog(fname);
+        e_1 = differentiateExpTime(e, timevars) "der(log(x)) = der(x)/x";
+      then
+        Exp.BINARY(e_1,Exp.DIV(Exp.REAL()),e);    
+              
     // *** Addition by JA 20060621      
     case (Exp.CALL(path = fname,expLst = {e},tuple_ = false,builtin = true),timevars)
       equation 
