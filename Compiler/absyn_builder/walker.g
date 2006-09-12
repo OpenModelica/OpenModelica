@@ -52,6 +52,7 @@ header "post_include_hpp" {
     #include <string.h>
     
     extern std::string modelicafilename; // Global filename string.
+    extern bool modelicafileReadOnly; // Global readonly flag for file.
     
     extern "C" {
 		#include <stdio.h>
@@ -300,7 +301,7 @@ class_definition [bool final] returns [ void* ast ]
                 class_spec,
                 Absyn__INFO(
                   mk_scon((char*)(modelicafilename.c_str())),
-                  RML_PRIM_MKBOOL(0), /* false */ 
+                  RML_PRIM_MKBOOL(modelicafileReadOnly), 
                   mk_icon(classDef?classDef->getLine():0),
                   mk_icon(classDef?classDef->getColumn():0),
                   mk_icon(classDef?classDef->getEndLine():0),

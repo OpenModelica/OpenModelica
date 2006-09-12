@@ -69,6 +69,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using namespace std;
 string modelicafilename; // The filename for the parsed file.
+bool modelicafileReadOnly; // True if file is read only.
 extern "C"
 {
 
@@ -105,7 +106,9 @@ extern "C"
 		if (filestring.size()-4 == filestring.rfind(".mof")){
 			parseFlatModelica=true;
 		}
-
+		std::ifstream checkROfile(filename,ios::out); // open file in write mode to check if readonly
+		modelicafileReadOnly = !checkROfile;
+		
 		std::ifstream stream(filename);
 		if (!stream) 
 		{
@@ -394,6 +397,7 @@ extern "C"
 		bool a1set=false;
 		bool debug = check_debug_flag("parsedump");
 		std::istringstream stream(str);
+		modelicafileReadOnly = false;
 		modelica_lexer lex(stream);
 		modelica_parser parse(lex);
 
@@ -531,7 +535,7 @@ extern "C"
 		try 
 		{
 			std::istringstream stream(str);
-
+			modelicafileReadOnly = false;
 			modelica_lexer lex(stream);
 			modelica_expression_parser parse(lex);
 			ANTLR_USE_NAMESPACE(antlr)ASTFactory factory;
@@ -617,7 +621,7 @@ extern "C"
 		try 
 		{
 			std::ifstream stream(filename);
-
+			modelicafileReadOnly = false;
 			modelica_lexer lex(stream);
 			modelica_expression_parser parse(lex);
 			ANTLR_USE_NAMESPACE(antlr)ASTFactory factory;
