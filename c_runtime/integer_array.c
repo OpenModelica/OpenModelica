@@ -985,9 +985,14 @@ void promote_integer_array(integer_array_t* a, int n,integer_array_t* dest)
     {
       dest->dim_size[i] = 1;
     }
+  dest->ndims=n;
 }
 
-void promote_scalar_integer_array(double s,int n,integer_array_t* dest)
+/* function: promote_scalar_integer_array
+ *
+ * promotes a scalar value to an n dimensional array.
+ */
+ void promote_scalar_integer_array(double s,int n,integer_array_t* dest)
 {
   size_t i;
   
