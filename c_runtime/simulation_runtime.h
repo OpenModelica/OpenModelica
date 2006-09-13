@@ -116,6 +116,8 @@ void read_input(int argc, char **argv,
 		double *start, double *stop,
 		double *step);
 
+extern int sim_verbose; // control debug output during simulation.
+
 /* extern double* h; */
 /* extern double* x; */
 /* extern double* xd; */

@@ -531,9 +531,7 @@ void checkForInitialZeroCrossings(long*jroot)
 	emit();
     CheckForNewEvents(&globalData->timeValue);
     StartEventIteration(&globalData->timeValue);
-    if(sim_verbose) {
-    	cout << "Saving all 1 "<< endl;
-    }
+
     saveall();		
     calcEnabledZeroCrossings();
     if (sim_verbose) {
@@ -633,7 +631,6 @@ int dassl_main( int argc, char**argv)
     goto exit;
   }
    if (sim_verbose)  { 
-  	cout << "Performed initial value calculation." << endl; 
   	cout << "Starting numerical solver at time "<< start << endl;
   }
   
@@ -659,9 +656,7 @@ int dassl_main( int argc, char**argv)
   //calcEnabledZeroCrossings();  
   CheckForInitialEvents(&globalData->timeValue);
   StartEventIteration(&globalData->timeValue);
-  if (sim_verbose) {
-  	cout << "save all 2" << endl;
-  }
+
   saveall();
 
 
@@ -696,9 +691,7 @@ int dassl_main( int argc, char**argv)
     	}
       if (emit()) {printf("Too many points\n");
 	idid = -99; break;}
-	  if (sim_verbose) {
-  	cout << "save all 3" << endl;
-  }
+
 	
       saveall();
     // Make a tiny step so we are sure that crossings have really occured.
@@ -759,9 +752,6 @@ int dassl_main( int argc, char**argv)
     if(emit()) {
       printf("Error, could not save data. Not enought space.\n"); 
     }
-    if (sim_verbose) {
-  		cout << "save all 4" << endl;
-  	}
     
     saveall();
     tout = newTime(globalData->timeValue,step); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
@@ -814,9 +804,6 @@ int dassl_main( int argc, char**argv)
 void saveall()
 {
   int i;
-  if (sim_verbose) {
-  	cout << "saving all variables" << endl;
-  }
   for(i=0;i<globalData->nStates; i++) {
     x_saved[i] = globalData->states[i];
     xd_saved[i] = globalData->statesDerivatives[i];

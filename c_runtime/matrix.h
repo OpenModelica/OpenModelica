@@ -27,6 +27,64 @@ void hybrd_(void (*) (int*, double *, double*, int*),
 }
 #endif
 
+#define solve_nonlinear_system_mixed(residual,no) do { \
+	 int giveUp=0; \
+	 int retries = 0; \
+	 while(!giveUp) { \
+		 giveUp = 1; \
+		 hybrd_(residual,&n, nls_x,nls_fvec,&xtol,&maxfev,&ml,&mu,&epsfcn, \
+    	    nls_diag,&mode,&factor,&nprint,&info,&nfev,nls_fjac,&ldfjac, \
+        nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4); \
+	    if (info == 0) { \
+	        printf("improper input parameters to nonlinear eq. syst.\n"); \
+	    } \
+	    if ((info == 4 || info == 5 )&& retries < 3) { /* First try to decrease factor*/ \
+	    	retries++; giveUp = 0; \
+	    	factor = factor / 10.0; \
+	    	if (sim_verbose)  \
+	    		printf("Solving nonlinear system: iteration not making progress, trying to decrease factor to %f\n",factor); \
+	    } else if ((info == 4 || info == 5) && retries < 5) { /* Secondly, try with different starting point*/  \
+	    	int i; \
+	    	for (i=0; i < n; i++) { nls_x[i]+=1e-6; }; \
+   		 	retries++; giveUp=0; \
+   		 	if (sim_verbose) \
+   		 		printf("Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)"); \
+	    } \
+	    else if (info >= 2 && info <= 5) { \
+	       found_solution=-1; \
+	    } \
+	 } \
+} while(0) /* (no trailing ;)*/ 
+
+#define solve_nonlinear_system(residual,no) do { \
+	 int giveUp=0; \
+	 int retries = 0; \
+	 while(!giveUp) { \
+		 giveUp = 1; \
+		 hybrd_(residual,&n, nls_x,nls_fvec,&xtol,&maxfev,&ml,&mu,&epsfcn, \
+    	    nls_diag,&mode,&factor,&nprint,&info,&nfev,nls_fjac,&ldfjac, \
+        nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4); \
+    	if (info == 0) { \
+    	    printf("improper input parameters to nonlinear eq. syst.\n"); \
+    	} \
+    	if ((info == 4 || info == 5 )&& retries < 3) { /* First try to decrease factor*/ \
+    		retries++; giveUp = 0; \
+    		factor = factor / 10.0; \
+    		 	if (sim_verbose)  \
+	    		printf("Solving nonlinear system: iteration not making progress, trying to decrease factor to %f\n",factor); \
+    	} else if ((info == 4 || info == 5) && retries < 5) { /* Secondly, try with different starting point*/  \
+    		int i; \
+    		for (i=0; i < n; i++) { nls_x[i]+=0.1; }; \
+    		retries++; giveUp=0; \
+    		if (sim_verbose) \
+   		 		printf("Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)"); \
+    	} \
+    	else if (info >= 2 && info <= 5) { \
+    	    printf("error solving nonlinear system nr. %d at time %f\n",no,time); \
+    	} \
+	 }\
+} while(0) /* (no trailing ;)*/ 
+
 #define declare_matrix(A,nrows,ncols) double *A = new double[nrows*ncols]; \
 assert(A!=0); \
 for (int i=0;i<nrows*ncols;i++) A[i]=0.0;

@@ -4409,12 +4409,7 @@ algorithm
     case (false,func_id,cg_id) /* residual func id cg var_id cg var_id */ 
       equation 
         stmt = Util.stringAppendList(
-          {"hybrd_(residualFunc",func_id,
-          ",&n, nls_x,nls_fvec,&xtol,&maxfev,&ml,&mu,","&epsfcn,\n",TAB,TAB,"nls_diag,&mode,&factor,&nprint,",
-          "&info,&nfev,nls_fjac,&ldfjac,\n",TAB,TAB,"nls_r,","&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,",
-          "nls_wa4);\n",TAB,"if (info == 0) {\n",TAB,TAB,"printf(\"improper ",
-          "input parameters to nonlinear eq. syst.\\n\");\n",TAB,"}\n",TAB,"if (info >= 2 && info <= 5) {\n",TAB,TAB,
-          "printf(\"error solving nonlinear"," system nr. ",func_id," at time %f\\n\",time);\n",TAB,"}"});
+          {"solve_nonlinear_system(residualFunc",func_id,", ",func_id,");"});
         func = Codegen.cAddStatements(Codegen.cEmptyFunction, {stmt});
       then
         (func,cg_id);
@@ -4422,13 +4417,8 @@ algorithm
         // Mixed system event code.
     case (true,func_id,cg_id) /* residual func id cg var_id cg var_id */ 
       equation 
-        stmt = Util.stringAppendList(
-          {"hybrd_(residualFunc",func_id,
-          ",&n, nls_x,nls_fvec,&xtol,&maxfev,&ml,&mu,","&epsfcn,\n",TAB,TAB,"nls_diag,&mode,&factor,&nprint,",
-          "&info,&nfev,nls_fjac,&ldfjac,\n",TAB,TAB,"nls_r,","&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,",
-          "nls_wa4);\n",TAB,"if (info == 0) {\n",TAB,TAB,"printf(\"improper ",
-          "input parameters to nonlinear eq. syst.\\n\");\n",TAB,"}\n",TAB,"if (info >= 2 && info <= 5) {\n",TAB,TAB,
-          "found_solution=-1;\n",TAB,"}"});
+         stmt = Util.stringAppendList(
+          {"solve_nonlinear_system_mixed(residualFunc",func_id,", ",func_id,");"});
         func = Codegen.cAddStatements(Codegen.cEmptyFunction, {stmt});
       then
         (func,cg_id);
