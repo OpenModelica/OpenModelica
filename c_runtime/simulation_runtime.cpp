@@ -287,8 +287,8 @@ void euler (DATA * data,
   }
 }
 
-
-double *static_y;
+/* This function calculates the residual value as the sum of squared residual equations.
+ */
 
 void leastSquare(long *nz, double *z, double *funcValue)
 {
@@ -301,15 +301,17 @@ void leastSquare(long *nz, double *z, double *funcValue)
     if (globalData->initFixed[indAct++]==0)
       globalData->parameters[ind] = z[indz++];
 
-  //functionODE(x,xd,y,p,nx,ny,np,&t);
-  //functionDAE_output(&t,x,xd,y,p);
   functionODE();
   functionDAE_output();
 
-  for (ind=0,indy=0,indAct=2*globalData->nStates; ind<globalData->nAlgebraic; ind++)
+/*  for (ind=0,indy=0,indAct=2*globalData->nStates; ind<globalData->nAlgebraic; ind++)
     if (globalData->initFixed[indAct++]==1)
       globalData->algebraics [ind] = static_y[indy++];
-
+      
+      Comment from Bernhard: Even though algebraic variables are "fixed", they are calculated from 
+      the states, so they should be allowed to change when states vary, 
+      and NOT be replaced by their initial values as above.
+*/
   initial_residual();  
 
   for (ind=0, *funcValue=0; ind<globalData->nInitialResiduals; ind++)
@@ -318,7 +320,6 @@ void leastSquare(long *nz, double *z, double *funcValue)
   if (sim_verbose) {
   	cout << "initial residual: " << *funcValue << endl;
   }
-  
 }
 
 /** function reportResidualValue
@@ -328,10 +329,16 @@ void leastSquare(long *nz, double *z, double *funcValue)
 
 int reportResidualValue(double funcValue)
 {
+	int i;
   if (funcValue > 1e-3) {
     std::cerr << "Error in initialization. System of initial equations are not consistent." << std::endl;
     std::cerr << "(Least Square function value is " << funcValue << ")" << std::endl;
-    return -1;
+    for (i=0; i<globalData->nInitialResiduals; i++) {
+    	if (fabs(globalData->initialResiduals[i]) > 1e-6) {
+    		cout << "residual[" << i << "] = " << globalData->initialResiduals[i] << endl;
+    	}
+    }
+    return 0 /*-1*/;
   }
   return 0;
 }
@@ -431,7 +438,7 @@ int newuoa_initialization(long& nz,double *z)
 int initialize(const std::string*method)
 {
   long nz;
-  int ind, indAct, indz, indy, n_static_y;
+  int ind, indAct, indz, indy;
   std::string init_method;
 
   if (method == NULL) { 
@@ -449,13 +456,14 @@ int initialize(const std::string*method)
     if (globalData->initFixed[ind]==0)
       nz++;
   }
-  for (ind=2*globalData->nStates, n_static_y=0; 
-       ind<2*globalData->nStates+globalData->nAlgebraic; ind++){
-    if (globalData->initFixed[ind]==1) 
-      n_static_y++;
-  }
-  if (n_static_y>0) static_y = new double[n_static_y];
 	
+	if (sim_verbose) {
+		cout << "fixed attribute for states:" << endl;
+		for(int i=0;i<globalData->nStates; i++) {
+			cout <<	getName(&globalData->states[i]) << "(fixed=" << (globalData->initFixed[i]?"true":"false") << ")"
+			<< endl; 
+		}
+	}
 
   // No initial values to calculate.
   if (nz ==  0) {
@@ -475,13 +483,6 @@ int initialize(const std::string*method)
 	  z[indz++] = globalData->states[ind];
 	}
   }
-  for (ind=0,indy=0,indAct=2*globalData->nStates; ind<globalData->nAlgebraic; ind++)
-    {
-      if (globalData->initFixed[indAct++]==1)
-	{
-	  static_y[indy++] = globalData->algebraics[ind];
-	}
-    }
   
   if (init_method == std::string("simplex")) {
     return simplex_initialization(nz,z);

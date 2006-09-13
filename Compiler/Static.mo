@@ -476,7 +476,7 @@ algorithm
       then
         (cache,Exp.ARRAY(at,a,es_1),Types.PROP((Types.T_ARRAY(Types.DIM(SOME(l)),t),NONE),const),st);
     case (cache,env,Absyn.MATRIX(matrix = es),impl,st)
-      local list<list<Absyn.Exp>> es;
+      local list<list<Absyn.Exp>> es; Exp.Type mt;
       equation 
         (cache,_,tps,_) = elabExpListList(cache,env, es, impl, st) "matrix expressions, e.g. {1,0;0,1} with elements of simple type." ;
         tps_1 = Util.listListMap(tps, Types.getPropType);
@@ -2127,9 +2127,7 @@ algorithm
         (cache,Exp.ARRAY(tp,sc,expl),Types.PROP((Types.T_ARRAY(d1,(Types.T_ARRAY(d2,eltp),_)),_),_),_) 
         	= elabExp(cache,env, matexp, impl, NONE);
         dim1 = Types.arraydimInt(d1);
-        print("calling elab builtin_transpose2\n");
         exp_2 = elabBuiltinTranspose2(expl, 1, dim1);
-        print("elab builtin_transpose2 done\n");
         newtp = (Types.T_ARRAY(d2,(Types.T_ARRAY(d1,eltp),NONE)),NONE);
         prop = Types.PROP(newtp,Types.C_VAR());
       then
@@ -6466,8 +6464,8 @@ algorithm
         b1 = (ds < 20);
         b2 = (ds2 < 20);
         true = boolAnd(b1, b2);
-        elt_tp = Exp.arrayEltType(exptp);
-        e = createCrefArray2d(cr, 1, ds, ds2, elt_tp, t);
+        //elt_tp = Exp.arrayEltType(exptp);
+        e = createCrefArray2d(cr, 1, ds, ds2, exptp, t);
       then
         e;
 
@@ -6476,8 +6474,8 @@ algorithm
       equation 
         false = Types.isArray(t);
         (ds < 20) = true;
-        elt_tp = Exp.arrayEltType(exptp);
-        e = createCrefArray(cr, 1, ds, elt_tp, t);
+        //elt_tp = Exp.arrayEltType(exptp);
+        e = createCrefArray(cr, 1, ds, exptp, t);
       then
         e;
     case (e,_) then e; 
@@ -6537,7 +6535,7 @@ algorithm
     local
       Exp.ComponentRef cr,cr_1;
       Integer indx,ds,indx_1;
-      Exp.Type et;
+      Exp.Type et,elt_tp;
       tuple<Types.TType, Option<Absyn.Path>> t;
       list<Exp.Exp> expl;
       Exp.Exp e_1;
@@ -6554,7 +6552,8 @@ algorithm
         Exp.WHOLEDIM()::ss = Exp.crefLastSubs(cr);
         cr_1 = Exp.crefStripLastSubs(cr);
         cr_1 = Exp.subscriptCref(cr_1, Exp.INDEX(Exp.ICONST(indx))::ss);
-        e_1 = crefVectorize(Exp.CREF(cr_1,et), t);
+        elt_tp = Exp.unliftArray(et);
+        e_1 = crefVectorize(Exp.CREF(cr_1,elt_tp), t);
       then
         Exp.ARRAY(et,false,(e_1 :: expl));
     case (cr,indx,ds,et,t) /* no subscript */ 
@@ -6563,7 +6562,8 @@ algorithm
         {} = Exp.crefLastSubs(cr);
         Exp.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t);
         cr_1 = Exp.subscriptCref(cr, {Exp.INDEX(Exp.ICONST(indx))});
-        e_1 = crefVectorize(Exp.CREF(cr_1,et), t);
+        elt_tp = Exp.unliftArray(et);
+        e_1 = crefVectorize(Exp.CREF(cr_1,elt_tp), t);
       then
         Exp.ARRAY(et,false,(e_1 :: expl));
     case (cr,indx,ds,et,t) /* index */ 
@@ -6602,7 +6602,7 @@ algorithm
     local
       Exp.ComponentRef cr,cr_1;
       Integer indx,ds,ds2,indx_1;
-      Exp.Type et,tp;
+      Exp.Type et,tp,elt_tp;
       tuple<Types.TType, Option<Absyn.Path>> t;
       list<list<tuple<Exp.Exp, Boolean>>> ms;
       Boolean sc;
@@ -6619,7 +6619,8 @@ algorithm
         indx_1 = indx + 1;
         Exp.MATRIX(_,_,ms) = createCrefArray2d(cr, indx_1, ds, ds2, et, t);
         cr_1 = Exp.subscriptCref(cr, {Exp.INDEX(Exp.ICONST(indx))});
-        Exp.ARRAY(tp,sc,expl) = crefVectorize(Exp.CREF(cr_1,et), t);
+        elt_tp = Exp.unliftArray(et);
+        Exp.ARRAY(tp,sc,expl) = crefVectorize(Exp.CREF(cr_1,elt_tp), t);
         scs = Util.listFill(sc, ds2);
         row = Util.listThreadTuple(expl, scs);
       then

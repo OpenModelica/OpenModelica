@@ -2478,9 +2478,9 @@ algorithm
   matchcontinue (inExp,inInteger)
     local
       Exp e_1,e,e1_1,e2_1,e1,e2,exp;
-      Type t,t_1;
+      Type t,t_1,t2;
       Integer indx,i_1,n;
-      Operator op;
+      Operator op,op2;
       Boolean b;
       list<Exp> exps,expl_1;
       list<tuple<Exp, Boolean>> expl;
@@ -2489,51 +2489,67 @@ algorithm
     case (UNARY(operator = UMINUS_ARR(ty = t),exp = e),indx)
       equation 
         e_1 = simplifyAsub(e, indx);
+        t2 = typeof(e_1);
+        b = typeBuiltin(t2);
+        op2 = Util.if_(b,UMINUS(t2),UMINUS_ARR(t2));
       then
-        UNARY(UMINUS_ARR(t),e_1);
+        UNARY(op2,e_1);
     case (UNARY(operator = UPLUS_ARR(ty = t),exp = e),indx)
       equation 
         e_1 = simplifyAsub(e, indx);
+        t2 = typeof(e_1);
+        b = typeBuiltin(t2);
+        op2 = Util.if_(b,UPLUS(t2),UPLUS_ARR(t2));
       then
-        UNARY(UPLUS(t),e_1);
+        UNARY(op2,e_1);
     case (BINARY(exp1 = e1,operator = SUB_ARR(ty = t),exp2 = e2),indx)
+      local Boolean b; Type t2; Operator op2;
       equation
         e1_1 = simplifyAsub(e1, indx);
         e2_1 = simplifyAsub(e2, indx);
+        t2 = typeof(e1_1);
+        b = typeBuiltin(t2);
+        op2 = Util.if_(b,SUB(t2),SUB_ARR(t2));
       then
-        BINARY(e1_1,SUB_ARR(t),e2_1);
+        BINARY(e1_1,op2,e2_1);
     case (BINARY(exp1 = e1,operator = MUL_SCALAR_ARRAY(ty = t),exp2 = e2),indx)
       equation 
         e2_1 = simplifyAsub(e2, indx);
         e1_1 = simplify(e1);
-        op = simplifyAsubOperator(e2_1, MUL(t), MUL_SCALAR_ARRAY(t));
+        t2 = typeof(e2_1);
+        b = typeBuiltin(t2);
+        op = Util.if_(b,MUL(t2),MUL_SCALAR_ARRAY(t2));
       then
         BINARY(e1_1,op,e2_1);
     case (BINARY(exp1 = e1,operator = MUL_ARRAY_SCALAR(ty = t),exp2 = e2),indx)
       equation 
         e1_1 = simplifyAsub(e1, indx);
         e2_1 = simplify(e2);
-        op = simplifyAsubOperator(e2_1, MUL(t), MUL_SCALAR_ARRAY(t));
+        t2 = typeof(e1_1);
+        b = typeBuiltin(t2);
+        op = Util.if_(b,MUL(t2),MUL_SCALAR_ARRAY(t2));
       then
         BINARY(e1_1,op,e2_1);
     case (BINARY(exp1 = e1,operator = DIV_ARRAY_SCALAR(ty = t),exp2 = e2),indx)
       equation 
         e1_1 = simplifyAsub(e1, indx);
         e2_1 = simplify(e2);
+        t2 = typeof(e1_1);
+        b = typeBuiltin(t2);
+        op = Util.if_(b,DIV(t2),DIV_ARRAY_SCALAR(t2));
       then
         BINARY(e1_1,DIV(t),e2_1);
     case (BINARY(exp1 = e1,operator = ADD_ARR(ty = t),exp2 = e2),indx)
+        local Boolean b; Type t2; Operator op2;
       equation 
         e1_1 = simplifyAsub(e1, indx);
         e2_1 = simplifyAsub(e2, indx);
+        t2 = typeof(e1_1);
+        b = typeBuiltin(t2);
+        op2 = Util.if_(b,ADD(t2),ADD_ARR(t2));
       then
-        BINARY(e1_1,ADD_ARR(t),e2_1);
-    case (BINARY(exp1 = e1,operator = SUB_ARR(ty = t),exp2 = e2),indx)
-      equation 
-        e1_1 = simplifyAsub(e1, indx);
-        e2_1 = simplifyAsub(e2, indx);
-      then
-        BINARY(e1_1,SUB_ARR(t),e2_1);
+        BINARY(e1_1,op2,e2_1);
+    
     case (ARRAY(ty = t,scalar = b,array = exps),indx)
       equation 
         i_1 = indx - 1;
@@ -3051,7 +3067,7 @@ algorithm
   end matchcontinue;
 end arrayEltType;
 
-protected function unliftArray "function: unliftArray
+public function unliftArray "function: unliftArray
  
   Converts an array type into its element type.
 "
