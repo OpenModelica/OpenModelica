@@ -1791,6 +1791,12 @@ algorithm
         (cache,ret_val,st_1,_,_,_) = translateModel(cache,env, className, st, msg, filenameprefix);
       then
         (cache,ret_val,st_1);
+        
+      case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "checkModel"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+           equation 
+        (cache,ret_val,st_1) = checkModel(cache,env, className, st, msg);
+      then
+        (cache,ret_val,st_1);
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "setCompileCommand"),expLst = {Exp.SCONST(string = cmd)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* (Values.STRING(\"The model have been translated\"),st\') */ 
       equation 
@@ -2512,6 +2518,71 @@ algorithm
         (cache,Values.STRING("The model have been translated"),st,indexed_dlow_1,libs,file_dir);
   end matchcontinue;
 end translateModel;
+
+public function checkModel "
+ 
+ checks a model and returns number of variables and equations 
+ 
+"
+	input Env.Cache inCache;
+	input Env.Env inEnv;
+  input Absyn.Path className;
+  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+algorithm 
+  (outCache,outValue,outInteractiveSymbolTable):=
+  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
+    local
+      String filenameprefix,cname_str,filename,funcfilename,makefilename,file_dir;
+      Absyn.Path classname;
+      list<SCode.Class> p_1,sp;
+      DAE.DAElist dae_1,dae;
+      list<Env.Frame> env;
+      list<DAE.Element> dael;
+      list<Interactive.InstantiatedClass> ic_1,ic;
+      DAELow.DAELow dlow,dlow_1,indexed_dlow,indexed_dlow_1;
+      list<Integer>[:] m,mT;
+      Integer[:] ass1,ass2;
+      list<list<Integer>> comps;
+      Absyn.ComponentRef a_cref;
+      list<String> libs;
+      Exp.ComponentRef cr;
+      Interactive.InteractiveSymbolTable st;
+      Absyn.Program p;
+      list<Interactive.InteractiveVariable> iv;
+      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+      Msg msg;
+      Exp.Exp fileprefix;
+      Env.Cache cache;
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)  
+      local Integer eqnSize,varSize;
+        String eqnSizeStr,varSizeStr,retStr,classNameStr;
+        DAELow.EquationArray eqns;
+      equation 
+        p_1 = SCode.elaborate(p);
+        (cache,dae_1,env) = Inst.instantiateClass(cache,p_1, className);
+        ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1);
+        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
+        (dlow as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(numberOfVars = varSize),orderedEqs = eqns)) 
+        	= DAELow.lower(dae, true);
+        	eqnSize = DAELow.equationSize(eqns);
+				eqnSizeStr = intString(eqnSize);
+				varSizeStr = intString(varSize);
+				classNameStr = Absyn.pathString(className);
+				retStr=Util.stringAppendList({"model ",classNameStr," has ",eqnSizeStr," equation(s) and ",
+				varSizeStr," variable(s)."});
+      then
+        (cache,Values.STRING(retStr),st);
+ case (cache,_,_,st,_)
+   
+   then (cache,Values.STRING("Check of model failed."),st);  
+           
+  end matchcontinue;
+end checkModel;
+
 
 protected function extractFilePrefix "function extractFilePrefix
   author: x02lucpo

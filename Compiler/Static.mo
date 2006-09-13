@@ -4247,6 +4247,13 @@ algorithm
       then
         (cache,Exp.CALL(Absyn.IDENT("list"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},false,true),Types.PROP((Types.T_STRING({}),NONE),Types.C_VAR()),SOME(st));
 
+		case (cache,env,Absyn.CREF_IDENT(name = "checkModel"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st)) 
+		  local Absyn.Path className;
+		  equation
+		  className = Absyn.crefToPath(cr);
+		then (cache,Exp.CALL(Absyn.IDENT("checkModel"),
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},false,true),Types.PROP((Types.T_STRING({}),NONE),Types.C_VAR()),SOME(st)); 
+
     case (cache,env,Absyn.CREF_IDENT(name = "translateModel"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
       local
         Absyn.Path className;
