@@ -41,20 +41,20 @@ to compile it under a UNIX systems.
 6.  Download the latest RML-compiler from 
     http://www.ida.liu.se/~pelab/rml/. Download the
     binary cygwin version and unzip it to a folder, such as:
-    C:\code\rml-mmc-2.3.5-cygwin-mingw. 
+    C:\code\rml-mmc-2.3.6-cygwin-mingw. 
     The latest OpenModelica compiles only with 
-    rml-mmc version 2.3.5 and above.
+    rml-mmc version 2.3.6 and above.
 
 7.  Download ANTLR from http://www.antlr.org/download.html
     Download the source distribution and unzip it to a folder, such as:
     C:\code\antlr-2.7.5. 
-    The latest tasted version was 2.7.5
+    The latest tested version was 2.7.5 (also works with 2.7.6)
 
 8.  In the windows control panel, select "system". Select the "Advanced"
     tab and click on the button "Environment Variables". Create the following
     system variables (using the paths that you selected when installing
     the above program and libraries.
-     RMLHOME=C:\code\rml-2.3.0-cygwin\x86-cygwin-gcc\
+     RMLHOME=C:\code\rml-2.3.6-cygwin\x86-cygwin-gcc\
      ANTLRHOME=C:\code\antlr-2.7.5\     
      MICOHOME=C:\code\mico\
      CLASSPATH=C:\code\antlr-2.7.5\antlr-2.7.5.jar
@@ -166,6 +166,12 @@ script, use the following command
 ---------------------------------------------------------------------------
                          Running the test suite
 ---------------------------------------------------------------------------
+[
+Adrian Pop - 2006-09-18
+This section needs updating, we use OMDev now for testing: 
+http://www.ida.liu.se/~adrpo/omc/omdev/mingw/
+]
+
 To automate the testing of the compiler, a test suite is available
 under C:\code\omc\trunk\testsuite. To be able to run this testsuite, 
 the cygwin environment must be installed. Do the following to 
