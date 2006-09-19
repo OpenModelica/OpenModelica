@@ -1,4 +1,4 @@
-Compiling OMC using OMDev-mingw package
+Compiling OMC using OMDev package
 ========================================
 Adrian Pop, adrpo@ida.liu.se, 2006-04-06
 
@@ -9,7 +9,7 @@ Adrian Pop, adrpo@ida.liu.se, 2006-04-06
      to compile OMC on Windows using MinGW+MSys
 
 2. Unpack for example into:
-   c:\OMDev-mingw\
+   c:\OMDev\
    + Follow the instructions in the INSTALL file
 
 3. You should have an OpenModelica directory you got
@@ -77,5 +77,5 @@ For problems with OMDev package, contact:
 Adrian Pop, 
 adrpo@ida.liu.se
            
-Last Update:2006-04-11
+Last Update:2006-09-19
 

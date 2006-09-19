@@ -1,6 +1,6 @@
 !INCLUDE Makefile.common.w32
 
-RML=$(RMLHOME)bin\rml
+RML=$(OMDEV)\tools\rml\bin\rml
 
 .SUFFIXES :
 .SUFFIXES : .mo
