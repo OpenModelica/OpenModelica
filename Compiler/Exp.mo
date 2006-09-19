@@ -3903,6 +3903,134 @@ algorithm
   end matchcontinue;
 end simplifyUnary;
 
+public function containVectorFunctioncall "  Returns true if expression or subexpression is a functioncall that returns an array.
+  otherwise false.
+  Note: the \'der\' operator is represented as a function call but still return 
+  false."
+
+  input Exp inExp;
+  output Boolean outBoolean;
+algorithm 
+  outBoolean:=
+  matchcontinue (inExp)
+    local
+      Exp e1,e2,e,e3;
+      Boolean res;
+      list<Boolean> blst;
+      list<Exp> elst;
+      list<tuple<Exp, Boolean>> flatexplst;
+      list<list<tuple<Exp, Boolean>>> explst;
+      Option<Exp> optexp;
+    case (CALL(path = Absyn.IDENT(name = "der"))) then false; 
+    case (CALL(path = _,ty=T_ARRAY(_,_))) then true; 
+    case (CALL(path = _)) then false; 
+    case (BINARY(exp1 = e1,exp2 = e2)) /* Binary */ 
+      equation 
+        true = containVectorFunctioncall(e1);
+      then
+        true;
+    case (BINARY(exp1 = e1,exp2 = e2))
+      equation 
+        true = containVectorFunctioncall(e2);
+      then
+        true;
+    case (UNARY(exp = e)) /* Unary */ 
+      equation 
+        res = containVectorFunctioncall(e);
+      then
+        res;
+    case (LBINARY(exp1 = e1,exp2 = e2)) /* LBinary */ 
+      equation 
+        true = containVectorFunctioncall(e1);
+      then
+        true;
+    case (LBINARY(exp1 = e1,exp2 = e2))
+      equation 
+        true = containVectorFunctioncall(e2);
+      then
+        true;
+    case (LUNARY(exp = e)) /* LUnary */ 
+      equation 
+        res = containVectorFunctioncall(e);
+      then
+        res;
+    case (RELATION(exp1 = e1,exp2 = e2)) /* Relation */ 
+      equation 
+        true = containVectorFunctioncall(e1);
+      then
+        true;
+    case (RELATION(exp1 = e1,exp2 = e2))
+      equation 
+        true = containVectorFunctioncall(e2);
+      then
+        true;
+    case (IFEXP(expCond = e1,expThen = e2,expElse = e3)) /* If exp */ 
+      equation 
+        true = containVectorFunctioncall(e1);
+      then
+        true;
+    case (IFEXP(expCond = e1,expThen = e2,expElse = e3))
+      equation 
+        true = containVectorFunctioncall(e2);
+      then
+        true;
+    case (IFEXP(expCond = e1,expThen = e2,expElse = e3))
+      equation 
+        true = containVectorFunctioncall(e3);
+      then
+        true;
+    case (ARRAY(array = elst)) /* Array */ 
+      equation 
+        blst = Util.listMap(elst, containVectorFunctioncall);
+        res = Util.boolOrList(blst);
+      then
+        res;
+    case (MATRIX(scalar = explst)) /* Matrix */ 
+      equation 
+        flatexplst = Util.listFlatten(explst);
+        elst = Util.listMap(flatexplst, Util.tuple21);
+        blst = Util.listMap(elst, containVectorFunctioncall);
+        res = Util.boolOrList(blst);
+      then
+        res;
+    case (RANGE(exp = e1,expOption = optexp,range = e2)) /* Range */ 
+      equation 
+        true = containVectorFunctioncall(e1);
+      then
+        true;
+    case (RANGE(exp = e1,expOption = optexp,range = e2))
+      equation 
+        true = containVectorFunctioncall(e2);
+      then
+        true;
+    case (RANGE(exp = e1,expOption = SOME(e),range = e2))
+      equation 
+        true = containVectorFunctioncall(e);
+      then
+        true;
+    case (TUPLE(PR = _)) then true;  /* Tuple */ 
+    case (CAST(exp = e))
+      equation 
+        res = containVectorFunctioncall(e);
+      then
+        res;
+    case (SIZE(exp = e1,sz = e2)) /* Size */ 
+      local Option<Exp> e2;
+      equation 
+        true = containVectorFunctioncall(e1);
+      then
+        true;
+    case (SIZE(exp = e1,sz = SOME(e2)))
+      equation 
+        true = containVectorFunctioncall(e2);
+      then
+        true;
+    case (_) then false; 
+  end matchcontinue;
+end containVectorFunctioncall;
+
+
+
 public function containFunctioncall "function: containFunctioncall
   Returns true if expression or subexpression is a functioncall.
   otherwise false.

@@ -6953,18 +6953,16 @@ algorithm
         dae = makeDaeDefine(cr, e2, initial_);
       then
         {dae};
-    case (e1,(e2 as Exp.CALL(path = _)),(t as (Types.T_ARRAY(arrayDim = _),_)),initial_) /* arrays with function calls => array equations */ 
-      local tuple<Types.TType, Option<Absyn.Path>> t;
+    case (e1,e2,(t as (Types.T_ARRAY(arrayDim = _),_)),initial_) /* arrays with function calls => array equations */ 
+      local tuple<Types.TType, Option<Absyn.Path>> t; Boolean b1,b2;
       equation 
+        b1 = Exp.containVectorFunctioncall(e2);
+        b2 = Exp.containVectorFunctioncall(e2);
+        true = boolOr(b1,b2);
         ds = Types.getDimensionSizes(t);
       then
         {DAE.ARRAY_EQUATION(ds,e1,e2)};
-    case ((e1 as Exp.CALL(path = _)),e2,(t as (Types.T_ARRAY(arrayDim = _),_)),initial_) /* arrays with function calls => array equations */ 
-      local tuple<Types.TType, Option<Absyn.Path>> t;
-      equation 
-        ds = Types.getDimensionSizes(t);
-      then
-        {DAE.ARRAY_EQUATION(ds,e1,e2)};
+    
     case (e1,e2,(Types.T_ARRAY(arrayDim = ad,arrayType = t),_),initial_) /* arrays that are splitted */ 
       local
         list<DAE.Element> dae;

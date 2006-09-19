@@ -2337,12 +2337,39 @@ algorithm
       local Exp.Type etp; Types.Type t;
       equation 
         (cache,exp_1,Types.PROP(t as (Types.T_ARRAY(dim,tp),_),c),_) = elabExp(cache,env, arrexp, impl, NONE);
-        etp = Types.elabType(t);
-        exp_2 = Exp.CALL(Absyn.IDENT("sum"),{exp_1},false,true,etp);
+        tp = Types.arrayElementType(t);        
+        etp = Types.elabType(tp);
+        exp_2 = elabBuiltinSum2(Exp.CALL(Absyn.IDENT("sum"),{exp_1},false,true,etp));  
       then
-        (cache,exp_2,Types.PROP(tp,c));
+        (cache,exp_2,Types.PROP(tp,c)); 
   end matchcontinue;
 end elabBuiltinSum;
+
+protected function elabBuiltinSum2 " replaces sum({a1,a2,...an}) with a1+a2+...+an} and
+sum([a11,a12,...,a1n;...,am1,am2,..amn]) with a11+a12+...+amn
+"
+input Exp.Exp inExp;
+output Exp.Exp outExp;
+algorithm
+  outExp := matchcontinue(inExp)
+    local 
+      Exp.Type ty;
+      Boolean sc;
+      list<Exp.Exp> expl;
+      Exp.Exp e;
+      list<list<tuple<Exp.Exp, Boolean>>> mexpl;
+      Integer dim;
+    case(Exp.CALL(_,{Exp.ARRAY(ty,sc,expl)},_,_,_)) equation
+      e = Exp.makeSum(expl);
+    then e;
+    case(Exp.CALL(_,{Exp.MATRIX(ty,dim,mexpl)},_,_,_)) equation
+      expl = Util.listMap(Util.listFlatten(mexpl), Util.tuple21);
+      e = Exp.makeSum(expl);
+    then e;
+      
+    case (e) then e;
+  end matchcontinue;
+end elabBuiltinSum2;
 
 protected function elabBuiltinPre "function: elabBuiltinPre
  
