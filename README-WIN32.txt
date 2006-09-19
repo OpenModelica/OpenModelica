@@ -27,28 +27,28 @@ See the file:
 
 2.  Install MS Visual Studio .NET 2003
 
-8.  In the windows control panel, select "system". Select the "Advanced"
+3.  In the windows control panel, select "system". Select the "Advanced"
     tab and click on the button "Environment Variables". 
     Create the following environment variable: 
      CLASSPATH=$(OMDEV)\bin\antlr\antlr.jar
  
-9.  Open the visual studio solution located at path:
+4.  Open the visual studio solution located at path:
     trunk\Compiler\VC7\omc\omc.sln
 
-10. In the VS development environment, select from the menu:
+5. In the VS development environment, select from the menu:
     Build->Configuration Manager and select "Release" as the active
     solution configuration.
 
-11. Press Ctrl-Shift-B to build the whole project.
+6. Press Ctrl-Shift-B to build the whole project.
 
-12. The compiled libraries and executables are now located under:
+7. The compiled libraries and executables are now located under:
     C:\code\omc\trunk\Compiler\VC7\Release
 
-13. Copy:
-    a) omc.exe from directory at step 12 to: C:\code\omc\trunk\build\bin
+8. Copy:
+    a) omc.exe from directory at step 7 to: C:\code\omc\trunk\build\bin
     b) $(OMDEV)\lib\mico-win32-msvc\mico2311.dll to C:\code\omc\trunk\build\bin
     
-14. To test omc.exe follow the step 11 in README-OMDev-MINGW.txt 
+9. To test omc.exe follow the step 11 in README-OMDev-MINGW.txt 
 
 ---------------------------------------------------------------------------
                 Compiling .mo files and executing .mos scripts
