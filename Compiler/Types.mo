@@ -621,7 +621,7 @@ protected function valuesToRecordConstructorCall "function: valuesToRecordConstr
   list<Exp.Exp> expl;
 algorithm 
   expl := Util.listMap(values, Static.valueExp);
-  outExp := Exp.CALL(funcname,expl,false,false);
+  outExp := Exp.CALL(funcname,expl,false,false,Exp.OTHER());
 end valuesToRecordConstructorCall;
 
 public function valuesToVars "function valuesToVars
@@ -1152,6 +1152,53 @@ algorithm
   end matchcontinue;
 end makeArray;
 
+
+public function dimensionsEqual "Returns true if two dimensions are 'equal', i.e. if both
+are specified, return comparison of dimension size,
+if both are unspecified return true,
+if either one is unspecified, return true."
+  input Option<Integer> dim1;
+  input Option<Integer> dim2;
+  output Boolean res;
+algorithm
+  res := matchcontinue(dim1,dim2)
+  local Integer d1,d2;
+    case(NONE,NONE) then true;
+    case(NONE,_) then true;
+    case(_,NONE) then true;
+    case(SOME(d1),SOME(d2)) 
+    then intEq(d1,d2); 
+  end matchcontinue;
+end dimensionsEqual;
+
+public function dimensionsAdd "Adds two dimensions,
+If both are specified return SOME(d1+d2), otherwise return NONE ([:] + 2 is still  [:])"
+  input Option<Integer> dim1;
+  input Option<Integer> dim2;
+  output Option<Integer> res;
+algorithm
+  res := matchcontinue(dim1,dim2)
+  local Integer d1,d2,d;
+    case(NONE,NONE) then NONE;
+    case(NONE,_) then NONE;
+    case(_,NONE) then NONE;
+    case(SOME(d1),SOME(d2)) equation
+      d = d1+d2;
+    then SOME(d); 
+  end matchcontinue;
+end dimensionsAdd;
+
+public function dimensionStr "Returns the dimension as a string, i,e, a number or ':'"
+  input Option<Integer> dim;
+  output String res;
+algorithm
+  res := matchcontinue(dim)
+  local Integer i;
+    case(NONE) then ":";
+    case(SOME(i)) then intString(i);
+  end matchcontinue;
+end dimensionStr;
+
 public function liftArray "function: liftArray
  
   This function turns a type into an array of that type.  If the
@@ -1284,9 +1331,8 @@ algorithm
       equation 
         (ty,dimlst) = flattenArrayTypeOpt(t);
         dimlststr = Util.listMap2(dimlst, Dump.getOptionStrDefault, int_string, ":");
-        dimlststr_1 = listReverse(dimlststr);
         tys = unparseType(ty);
-        dims = Util.stringDelimitList(dimlststr_1, ", ");
+        dims = Util.stringDelimitList(dimlststr, ", ");
         res = Util.stringAppendList({tys,"[",dims,"]"});
       then
         res;
@@ -2173,7 +2219,7 @@ algorithm
   end matchcontinue;
 end flattenArrayType;
 
-protected function flattenArrayTypeOpt "function: flattenArrayTypeOpt
+public function flattenArrayTypeOpt "function: flattenArrayTypeOpt 
  
   Returns the element type of a Type and the list of dimensions of the type.
   If dimension is \':\' NONE is returned.
@@ -2196,9 +2242,16 @@ algorithm
     case ((T_ARRAY(arrayDim = DIM(integerOption = SOME(dim)),arrayType = ty),_))
       equation 
         (ty_1,dimlist) = flattenArrayTypeOpt(ty);
-        dimlist_1 = listAppend(dimlist, {SOME(dim)});
+        dimlist_1 = SOME(dim)::dimlist;
       then
         (ty_1,dimlist_1);
+        
+        // Complex type extending basetype.
+    case ((T_COMPLEX(_,_,SOME(ty)),_)) equation
+      (ty_1,dimlist) = flattenArrayTypeOpt(ty);
+      then (ty_1,dimlist);
+
+        // element type
     case ty then (ty,{}); 
   end matchcontinue;
 end flattenArrayTypeOpt;
@@ -2443,7 +2496,7 @@ algorithm
     local
       Type et,t;
       Exp.Type t_1;
-      list<Integer> dims;
+      list<Option<Integer>> dims;
     case ((T_INTEGER(varLstInt = _),_)) then Exp.INT(); 
     case ((T_REAL(varLstReal = _),_)) then Exp.REAL(); 
     case ((T_BOOL(varLstBool = _),_)) then Exp.BOOL(); 
@@ -2453,7 +2506,7 @@ algorithm
       equation 
         et = arrayElementType(t);
         t_1 = elabType(et);
-        dims = getDimensionSizes(t);
+        (_,dims) = flattenArrayTypeOpt(t);
       then
         Exp.T_ARRAY(t_1,dims);
     case ( (T_COMPLEX(_,_,SOME(t)),_))

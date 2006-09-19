@@ -6745,7 +6745,7 @@ algorithm
         (cache,e2_1,Types.PROP((Types.T_STRING(_),_),_),_) = Static.elabExp(cache,env, e2, impl, NONE);
       then
         (cache,{
-          DAE.ASSERT(Exp.CALL(Absyn.IDENT("assert"),{e1_1,e2_1},false,false))},env,csets,ci_state);
+          DAE.ASSERT(Exp.CALL(Absyn.IDENT("assert"),{e1_1,e2_1},false,false,Exp.OTHER()))},env,csets,ci_state);
 
         /* reinit statement */
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_REINIT(componentRef = cr,state = e2),initial_,impl)
@@ -7452,7 +7452,7 @@ algorithm
         (cache,stmt);
     case (cache,env,Absyn.ALG_TUPLE_ASSIGN(tuple_ = Absyn.TUPLE(expressions = expl),value = e),impl)
       equation 
-        (cache,(e_1 as Exp.CALL(_,_,_,_)),eprop,_) = Static.elabExp(cache,env, e, impl, NONE);
+        (cache,(e_1 as Exp.CALL(_,_,_,_,_)),eprop,_) = Static.elabExp(cache,env, e, impl, NONE);
         (cache,expl_1,cprops,_) = Static.elabExpList(cache,env, expl, impl, NONE);
         stmt = Algorithm.makeTupleAssignment(expl_1, cprops, e_1, eprop);
       then
@@ -7832,7 +7832,7 @@ algorithm
           Exp.CALL(Absyn.IDENT("assert"),
           {
           Exp.RELATION(Exp.CREF(c1_1,Exp.REAL()),Exp.EQUAL(Exp.BOOL()),
-          Exp.CREF(c2_1,Exp.REAL())),Exp.SCONST("automatically generated from connect")},false,true))});
+          Exp.CREF(c2_1,Exp.REAL())),Exp.SCONST("automatically generated from connect")},false,true,Exp.OTHER()))});
     case (cache,sets,env,pre,c1,_,(Types.T_REAL(varLstReal = _),_),c2,_,(Types.T_REAL(varLstReal = _),_),false)
       equation 
         c1_1 = Prefix.prefixCref(pre, c1);

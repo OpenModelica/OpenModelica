@@ -398,12 +398,12 @@ algorithm
         (cache,cref_1) = prefixExp(cache,env, cref, p);
       then
         (cache,Exp.SIZE(cref_1,NONE));
-    case (cache,env,Exp.CALL(path = f,expLst = es,tuple_ = b,builtin = bi),p)
-      local Prefix p;
+    case (cache,env,Exp.CALL(path = f,expLst = es,tuple_ = b,builtin = bi,ty = tp),p)
+      local Prefix p; Exp.Type tp;
       equation 
         (cache,es_1) = prefixExpList(cache,env, es, p);
       then
-        (cache,Exp.CALL(f,es_1,b,bi));
+        (cache,Exp.CALL(f,es_1,b,bi,tp)); 
     case (cache,env,Exp.ARRAY(ty = t,scalar = a,array = {}),p)
       local Prefix p;
       then

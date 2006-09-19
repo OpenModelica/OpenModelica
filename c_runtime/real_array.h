@@ -162,6 +162,7 @@ void exp_alloc_real_array(real_array_t* a, modelica_integer b, real_array_t* des
 
 void promote_real_array(real_array_t* a, int n,real_array_t* dest);
 void promote_scalar_real_array(double s,int n,real_array_t* dest);
+void promote_alloc_real_array(real_array_t* a, int n, real_array_t* dest);
 
 int ndims_real_array(real_array_t* a);
 int size_of_dimension_real_array(real_array_t a, int i);
@@ -173,6 +174,7 @@ void vector_real_array(real_array_t* a, real_array_t* dest);
 void vector_real_scalar(double a,real_array_t* dest);
 void matrix_real_array(real_array_t* a, real_array_t* dest);
 void matrix_real_scalar(double a,real_array_t* dest);
+void transpose_alloc_real_array(real_array_t* a, real_array_t* dest);
 void transpose_real_array(real_array_t* a, real_array_t* dest);
 void outer_product_real_array(real_array_t* v1,real_array_t* v2,real_array_t* dest);
 void identity_real_array(int n, real_array_t* dest);

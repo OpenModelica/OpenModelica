@@ -91,7 +91,7 @@ uniontype Type "- Basic types
 
   record T_ARRAY
     Type ty;
-    list<Integer> arrayDimensions "arrayDimensions" ;
+    list<Option<Integer>> arrayDimensions "arrayDimensions" ;
   end T_ARRAY;
 
 end Type;
@@ -164,6 +164,7 @@ uniontype Exp "Expressions
     list<Exp> expLst;
     Boolean tuple_ "tuple" ;
     Boolean builtin "builtin Function call" ;
+    Type ty "The type of the return value, if several return values this is undefined";
   end CALL;
 
   record ARRAY
@@ -382,8 +383,6 @@ protected import OpenModelica.Compiler.Debug;
 protected import OpenModelica.Compiler.Static;
 
 protected import OpenModelica.Compiler.Env;
-
-protected import OpenModelica.Compiler.System;
 
 protected constant Exp rconstone=RCONST(1.0);
 
@@ -1306,7 +1305,12 @@ algorithm
       Operator op;
       String before, after;
 
-    case (CAST(ty = REAL(),exp = RCONST(real = v))) then RCONST(v); 
+    case (CAST(ty = REAL(),exp=e ))
+      local Exp e; Real v;
+      equation
+        RCONST(v) = simplify(e);
+       then RCONST(v); 
+         
     case (CAST(ty = REAL(),exp = e))
       local Integer v;
       equation 
@@ -1319,7 +1323,8 @@ algorithm
         ARRAY(t,b,exps) = simplify(e);
         tp_1 = unliftArray(tp);
         exps_1 = Util.listMap1(exps, addCast, tp_1);
-        res = simplify(ARRAY(t,b,exps_1));
+    		exps_1 = Util.listMap(exps_1,simplify);
+        res = ARRAY(tp,b,exps_1);
       then
         res;
     case (CAST(ty = tp,exp = e))
@@ -1329,9 +1334,21 @@ algorithm
         tp1 = unliftArray(tp);
         tp2 = unliftArray(tp);
         exps_1 = matrixExpMap1(exps, addCast, tp2);
-        res = simplify(MATRIX(t,n,exps_1));
+        res = simplify(MATRIX(tp,n,exps_1));
       then
         res;
+        
+        // If expression alreay is has specified cast type.
+	    case (CAST(ty = tp,exp = e))
+	      local ComponentRef cr; Exp e1; Type t1,t2;
+      equation 
+        t1 = arrayEltType(tp);
+				e1 = simplify(e);
+				t2 = arrayEltType(typeof(e1));
+				equality(t1 = t2);
+      then
+        e1;
+       
     case ASUB(exp = e,sub = i) /* Array and Matrix stuff */ 
       equation 
         ARRAY(t,b,exps) = simplify(e);
@@ -1477,7 +1494,7 @@ algorithm
     case (a1,MUL_ARRAY_SCALAR(ty = tp),s1)
       equation 
         tp = typeof(s1);
-        res = simplifyVectorScalar(s1, MUL(tp), a1);
+        res = simplifyVectorScalar(s1, MUL(tp), a1);        
       then
         res;
     case (a1,DIV_ARRAY_SCALAR(ty = tp),s1)
@@ -3062,10 +3079,31 @@ algorithm
   outType:=
   matchcontinue (inType)
     local Type t;
-    case (T_ARRAY(ty = t)) then t; 
+    case (T_ARRAY(ty = t)) then arrayEltType(t); 
     case (t) then t; 
   end matchcontinue;
 end arrayEltType;
+
+public function liftArray "Converts a type into an array type with dimension n"
+  input Type tp;
+  input Option<Integer> n; 
+  output Type outTp;
+algorithm
+  outTp := matchcontinue(tp,n)
+    local 
+      Type elt_tp,tp;
+      list<Option<Integer>> dims;
+      
+    case(T_ARRAY(elt_tp,dims),n) 
+      equation
+      dims = listAppend(dims,{n});
+      then T_ARRAY(elt_tp,dims);
+      
+    case(tp,n)
+    then T_ARRAY(tp,{n});      
+      
+  end matchcontinue;
+end liftArray;
 
 public function unliftArray "function: unliftArray
  
@@ -3078,8 +3116,8 @@ algorithm
   matchcontinue (inType)
     local
       Type tp,t;
-      Integer d;
-      list<Integer> ds;
+      Option<Integer> d;
+      list<Option<Integer>> ds;
     case (T_ARRAY(ty = tp,arrayDimensions = {_})) then tp; 
     case (T_ARRAY(ty = tp,arrayDimensions = (d :: ds))) then T_ARRAY(tp,ds); 
     case (t) then t; 
@@ -3134,7 +3172,7 @@ algorithm
         tp = typeof(e2);
       then
         tp;
-    case (CALL(path = _)) then OTHER();  /* Not always true */ 
+    case (CALL(path = _,ty=tp)) then tp;  
     case (ARRAY(ty = tp)) then tp; 
     case (MATRIX(ty = tp)) then tp; 
     case (RANGE(ty = tp)) then tp; 
@@ -3153,6 +3191,31 @@ algorithm
     case (END()) then OTHER();  /* Can be any type. */ 
   end matchcontinue;
 end typeof;
+
+public function liftArrayRight "
+This function has the same functionality as Types.liftArrayType but for Exp.Type
+"
+  input Type inType;
+  input Option<Integer> inIntegerOption;
+  output Type outType;
+algorithm 
+  outType:=
+  matchcontinue (inType,inIntegerOption)
+    local
+      Type ty_1,ty;
+      list<Option<Integer>> dims;
+      Option<Integer> dim;
+      Integer i;
+    case (T_ARRAY(ty,dims),dim)
+      equation 
+        ty_1 = liftArrayRight(ty, dim);
+      then
+        T_ARRAY(ty_1,dims);         
+    case (ty,SOME(i))
+      then
+        T_ARRAY(ty,{SOME(i)});
+  end matchcontinue;
+end liftArrayRight;
 
 protected function typeofOp "function: typeofOp
  
@@ -4189,7 +4252,7 @@ algorithm
       list<Ident> ss;
       Ident s1,ts,res;
       Type t;
-      list<Integer> dims;
+      list<Option<Integer>> dims;
     case INT() then "INT"; 
     case REAL() then "REAL"; 
     case BOOL() then "BOOL"; 
@@ -4197,8 +4260,8 @@ algorithm
     case OTHER() then "OTHER"; 
     case (T_ARRAY(ty = t,arrayDimensions = dims))
       equation 
-        ss = Util.listMap(dims, int_string);
-        s1 = Util.stringDelimitList(ss, ", ");
+        ss = Util.listMap(Util.listMap1(dims, Util.applyOption,int_string),Util.stringOption);
+        s1 = Util.stringDelimitListNoEmpty(ss, ", ");
         ts = typeString(t);
         res = Util.stringAppendList({"/tp:",ts,"[",s1,"]/"});
       then
@@ -5258,11 +5321,12 @@ algorithm
         s_2 = stringAppend(s_1, ")");
       then
         s_2;
-    case (ARRAY(array = es),_)
+    case (ARRAY(array = es,ty=tp),_)
+      local Type tp; String s3; 
       equation 
+        s3 = typeString(tp);
         s = printListStr(es, printExpStr, ",");
-        s_1 = stringAppend("{", s);
-        s_2 = stringAppend(s_1, "}");
+        s_2 = Util.stringAppendList({"{",s,"}"});
       then
         s_2;
     case (TUPLE(PR = es),_)
@@ -5272,12 +5336,13 @@ algorithm
         s_2 = stringAppend(s_1, ")");
       then
         s_2;
-    case (MATRIX(scalar = es),_)
+    case (MATRIX(scalar = es,ty=tp),_)
       local list<list<tuple<Exp, Boolean>>> es;
+        Type tp; String s3;        
       equation 
+        s3 = typeString(tp);
         s = printListStr(es, printRowStr, "},{");
-        s_1 = stringAppend("{{", s);
-        s_2 = stringAppend(s_1, "}}");
+        s_2 = Util.stringAppendList({"{{",s,"}}"}); 
       then
         s_2;
     case (RANGE(exp = start,expOption = NONE,range = stop),pri1)
@@ -5763,14 +5828,14 @@ algorithm
         c = Util.listReduce({c1,c2,c3}, int_add);
       then
         (IFEXP(e1_1,e2_1,e3_1),c);
-    case (CALL(path = path,expLst = expl,tuple_ = t,builtin = c),source,target)
-      local Boolean c;
+    case (CALL(path = path,expLst = expl,tuple_ = t,builtin = c,ty=tp),source,target)
+      local Boolean c; Type tp;
       equation 
         expl_1 = Util.listMap22(expl, replaceExp, source, target);
         (expl_1,cnt) = Util.splitTuple2List(expl_1);
         cnt_1 = Util.listReduce(cnt, int_add);
       then
-        (CALL(path,expl_1,t,c),cnt_1);
+        (CALL(path,expl_1,t,c,tp),cnt_1);
     case (ARRAY(ty = tp,scalar = c,array = expl),source,target)
       local Boolean c;
       equation 
@@ -6026,12 +6091,12 @@ algorithm
         e3_1 = stringifyCrefs(e3);
       then
         IFEXP(e1_1,e2_1,e3_1);
-    case (CALL(path = p,expLst = expl,tuple_ = t,builtin = b))
-      local Boolean t;
+    case (CALL(path = p,expLst = expl,tuple_ = t,builtin = b,ty=tp))
+      local Boolean t; Type tp;
       equation 
         expl_1 = Util.listMap(expl, stringifyCrefs);
       then
-        CALL(p,expl_1,t,b);
+        CALL(p,expl_1,t,b,tp);
     case (ARRAY(ty = t,scalar = b,array = expl))
       equation 
         expl_1 = Util.listMap(expl, stringifyCrefs);
@@ -7274,12 +7339,13 @@ algorithm
         ((e_1,ext_arg_4)) = rel((e,ext_arg_3));
       then
         ((IFEXP(e1_1,e2_1,e3_1),ext_arg_4));
-    case ((e as CALL(path = fn,expLst = expl,tuple_ = t,builtin = b)),rel,ext_arg)
+    case ((e as CALL(path = fn,expLst = expl,tuple_ = t,builtin = b,ty=tp)),rel,ext_arg)
+      local Type tp,tp_1;
       equation 
         (expl_1,ext_arg_1) = Util.listFoldMap(expl, rel, ext_arg);
-        ((CALL(fn_1,_,t_1,b_1),ext_arg_2)) = rel((e,ext_arg_1));
+        ((CALL(fn_1,_,t_1,b_1,tp_1),ext_arg_2)) = rel((e,ext_arg_1));
       then
-        ((CALL(fn_1,expl_1,t_1,b_1),ext_arg_2));
+        ((CALL(fn_1,expl_1,t_1,b_1,tp_1),ext_arg_2));
     case ((e as ARRAY(ty = tp,scalar = scalar,array = expl)),rel,ext_arg)
       equation 
         (expl_1,ext_arg_1) = Util.listFoldMap(expl, rel, ext_arg);

@@ -309,7 +309,7 @@ modelica_integer* calc_integer_index_va(integer_array_t* source,int ndims,va_lis
 void print_integer_matrix(integer_array_t* source)
 {
   size_t i,j;
-  double value;
+  int value;
 
   if (source->ndims == 2)
     {
@@ -318,7 +318,7 @@ void print_integer_matrix(integer_array_t* source)
 	  for (j = 0; j < source->dim_size[1];++j)
 	    {
 	      value = source->data[i*source->dim_size[1]+j];
-	      printf("%e\t",value);
+	      printf("%d\t",value);
 	    }
 	  printf("\n");
 	}
@@ -472,9 +472,14 @@ void indexed_assign_integer_array(integer_array_t* source,
 }
 
 /*
-
- a := b[1:3];
-
+ function: index_integer_array
+ *
+ * Returns an subscript of the source array in the destination array.
+ * Assumes that both source array and destination array is properly
+ * allocated.
+ *
+ * a := b[1:3];
+ *
 */
 
 
@@ -496,12 +501,12 @@ void index_integer_array(integer_array_t* source,
     assert(index_spec_ok(source_spec));
     assert(index_spec_fit_integer_array(source_spec,source));
     for (i = 0,j=0; i < source->ndims; ++i) 
-      if (source_spec->dim_size[i] != 0) ++j;
+      if (source_spec->index_type[i] =='W' || source_spec->index_type[i] == 'A' ) ++j;
     assert(j == dest->ndims);
 
     mem_state = get_memory_state();
-    idx_vec1 = (size_t *)size_alloc(source->ndims);
-    idx_vec2 = (size_t *)size_alloc(dest->ndims);
+    idx_vec1 = (size_t *)size_alloc(source->ndims); /*indices in the source array*/
+    idx_vec2 = (size_t *)size_alloc(dest->ndims); /* indices in the destination array*/
     idx_size = (size_t *)size_alloc(source_spec->ndims);
 
     for (i = 0; i < source->ndims; ++i) idx_vec1[i] = 0;
@@ -517,7 +522,7 @@ void index_integer_array(integer_array_t* source,
     while(1)
       {
 	for (i = 0,j=0; i < source->ndims; ++i) {
-	  if (source_spec->dim_size[i] != 0) {
+	  if (source_spec->index_type[i]=='A' || source_spec->index_type[i] == 'W') {
 	    idx_vec2[j] = idx_vec1[i];
 	    ++j;
 	  }
@@ -534,6 +539,17 @@ void index_integer_array(integer_array_t* source,
   
 }
 
+/* 
+ * function: index_alloc_integer_array
+ *
+ * Returns an subscript of the source array in the destination array
+ * in the same manner as index_integer_array, except that the destination
+ * array is allocated.
+ * 
+ *
+ * a := b[1:3];
+ */
+
 void index_alloc_integer_array(integer_array_t* source, 
 			       index_spec_t* source_spec, 
 			       integer_array_t* dest)
@@ -549,29 +565,27 @@ void index_alloc_integer_array(integer_array_t* source,
   ndimsdiff = 0;
   for (i = 0; i < source_spec->ndims; ++i)
     {
-      if (source_spec->dim_size[i] == 0) ndimsdiff--;
+     /* if slice or ':' */
+      if (source_spec->index_type[i] == 'W' || source_spec->index_type[i]== 'A') 
+      	ndimsdiff--;
     }
 
   dest->ndims = source->ndims + ndimsdiff;
   dest->dim_size = size_alloc(dest->ndims);
 
   for (i = 0,j = 0; i < dest->ndims; ++i)
-    {
-      while (source_spec->dim_size[i+j] == 0) ++j;
-      if (source_spec->index[i+j] == 0)
-	{
-	  dest->dim_size[i] = source->dim_size[i+j];
+  {
+  	while(source_spec->index_type[i+j] == 'S') ++j; /* Skip scalars */
+	if ( source_spec->index_type[i+j] == 'W') { /*take whole dimension from source*/
+	   	dest->dim_size[i]=source->dim_size[i+j];
+	} else if (source_spec->index_type[i+j] == 'A') { /* Take dimension size from splice*/
+	  	dest->dim_size[i]=source_spec->dim_size[i+j];
 	}
-      else
-	{
-	  dest->dim_size[i] = source_spec->dim_size[i+j];
-	}
-    }
+  }
 
   alloc_integer_array_data(dest);
 
   index_integer_array(source,source_spec,dest);
-
 }
 
 
@@ -586,7 +600,7 @@ void simple_index_integer_array1(integer_array_t* source,
 				       int i1, 
 				       integer_array_t* dest)
 {
-  
+  assert(0&&"Not implemented yet");
 
 }
 
@@ -594,16 +608,70 @@ void simple_index_integer_array2(integer_array_t* source,
 				       int i1, int i2, 
 				       integer_array_t* dest)
 {
+	assert(0&&"Not implemented yet");
 }
 
 void array_integer_array(integer_array_t* dest,int n,integer_array_t* first,...)
 {
+	assert(0&&"Not implemented yet");
+}
 
+/* help function to e.g. array_alloc_integer_array
+ * Checks that all arrays have the same number of dimensions and same 
+ ** dimension sizes.
+ */
+void check_integer_array_dim_sizes(integer_array_t **elts,int n) 
+{
+  int i,curdim,dimsize;
+  int ndims = elts[0]->ndims;
+  for (i=1; i< n ; i++) {
+    assert(elts[i]->ndims == ndims && "Not same number of dimensions");
+  }
+  for (curdim = 0; curdim < ndims; curdim++) {
+    dimsize = elts[0]->dim_size[curdim];
+    for(i=1; i<n ; i++) {
+      assert(dimsize == elts[i]->dim_size[curdim]&&"Dimensions size not same");
+    }
+  }
 }
 
 void array_alloc_integer_array(integer_array_t* dest,int n,integer_array_t* first,...)
 {
+  int i,j,c,m; 
+  va_list ap;
+  
+  integer_array_t **elts=malloc(sizeof(integer_array_t*)*n);
+  assert(elts);
+  /* collect all array ptrs to simplify traversal.*/
+  va_start(ap,first);
+  elts[0] = first;
+  for (i=1; i < n ; i++) {
+    elts[i] = va_arg(ap,integer_array_t*);
+  }
+  va_end(ap);
 
+  check_integer_array_dim_sizes(elts,n);
+
+  if (first->ndims == 1) {
+    alloc_integer_array(dest,2,n,first->dim_size[0]);
+  } else if (first->ndims == 2) {
+    alloc_integer_array(dest,3,n,first->dim_size[0],first->dim_size[1]);
+  } else if (first->ndims == 3) {
+    alloc_integer_array(dest,4,n,first->dim_size[0],first->dim_size[1],
+		     first->dim_size[2]);
+  } else if (first->ndims == 4) {
+    alloc_integer_array(dest,5,n,first->dim_size[0],first->dim_size[1],
+		     first->dim_size[2],first->dim_size[3]);
+  } else {
+    assert(0 && "Dimension size > 4 not impl. yet");
+  }
+  
+  for (i=0,c=0; i < n ; i++) {
+    m = integer_array_nr_of_elements(elts[i]);
+    for(j=0; j<m; j++) {
+      dest->data[c++]=elts[i]->data[j];
+    }
+  }
 }
 
 void array_scalar_integer_array(integer_array_t* dest,int n,modelica_integer first,...)
@@ -672,9 +740,100 @@ void cat_integer_array(int k, integer_array_t* dest,  int n, integer_array_t* fi
 {
   assert(0 && "Not implemented yet");
 }
+
+/* help function to e.g. cat_alloc_integer_array.
+ * Checks that all arrays have the same number of dimensions and same 
+ ** dimension sizes  for all sizes except for dimension k.
+ */
+void check_integer_array_dim_sizes_except(int k, integer_array_t **elts,int n) 
+{
+  int i,curdim,dimsize;
+  int k_loc = k-1;
+  int ndims = elts[0]->ndims;
+  for (i=1; i< n ; i++) {
+    assert(elts[i]->ndims == ndims && "Not same number of dimensions");
+  }
+  for (curdim = 0; curdim < ndims; curdim++) {
+    if (curdim != k_loc) {
+    	/*printf("testdjur curdim=%d, ndims=%d, k=%d",curdim, ndims, k);
+    	fflush(stdout);*/
+    	assert(elts[0]);
+    	assert(elts[0]->dim_size[curdim]);
+        dimsize = elts[0]->dim_size[curdim];
+      
+    	/*printf(" - ok\n");
+    	fflush(stdout);*/
+    	  for(i=1; i<n ; i++) {
+			assert(dimsize == elts[i]->dim_size[curdim]&&"Dimensions size not same");
+          }
+    }
+  }
+}
+
 void cat_alloc_integer_array(int k, integer_array_t* dest, int n, integer_array_t* first,...)
 {
-  assert(0 && "Not implemented yet");
+  va_list ap; 
+  int i;
+  int new_k_dim_size;
+  integer_array_t **elts=malloc(sizeof(integer_array_t*)*n);
+  assert(elts);
+  /* collect all array ptrs to simplify traversal.*/
+  va_start(ap,first);
+  elts[0] = first;
+  fflush(stdout);
+  for (i=1; i < n ; i++) {
+    elts[i] = va_arg(ap,integer_array_t*);
+  }
+  va_end(ap);
+
+  /* calculate new k:th dim size.*/
+  new_k_dim_size = 0;
+  for(i=0;i < n; i++) {
+    assert(elts[i]->ndims >= k);
+    new_k_dim_size += elts[i]->dim_size[k-1];
+  }
+  check_integer_array_dim_sizes_except(k,elts,n);
+  
+  /* concatenation along first dimension */
+  /* cat(1,[1,2;3,4],[5,6;7,8]) => [1,2;3,4;5,6;7,8]*/
+  if (k == 1) {
+    int r,c,j;
+    int dim_size_2 = elts[0]->dim_size[1];
+    dest->data=integer_alloc(dim_size_2*new_k_dim_size);
+    dest->dim_size = size_alloc(2);
+    dest->dim_size[0]=new_k_dim_size;
+    dest->dim_size[1]=dim_size_2;
+    dest->ndims = 2;
+
+    for(i=0,j=0; i < n ; i++) {
+      for(r=0; r < elts[i]->dim_size[0];r++) {
+	for(c=0; c < elts[i]->dim_size[1];c++) {
+	  dest->data[j++]=elts[i]->data[c+r*elts[i]->dim_size[1]];
+	}
+      }
+    }
+  } /* concatenation along second dimension */
+  /* cat(2,[1,2;3,4],[5,6;7,8]) => [1,2,5,6;3,4,7,8]*/
+  else if (k == 2) {
+    int r,c,j;
+    int dim_size_1 = elts[0]->dim_size[0];
+    dest->data=integer_alloc(dim_size_1*new_k_dim_size);
+    dest->dim_size = size_alloc(2);
+    dest->dim_size[0]=dim_size_1;
+    dest->dim_size[1]=new_k_dim_size;
+    dest->ndims = 2;
+
+    for(r=0,j=0; r < elts[0]->dim_size[0];r++) {
+      for(i=0; i < n ; i++) {
+	for(c=0; c < elts[i]->dim_size[1];c++) {
+	  dest->data[j++]=elts[i]->data[c+r*elts[i]->dim_size[1]];
+	}
+      }
+    }
+  } else {
+    assert(0&&"Only concatenation dimension 1 and 2 supported");
+  } 
+  free(elts);	
 }
 
 
@@ -775,7 +934,7 @@ void mul_integer_array_scalar(integer_array_t* a,modelica_integer b,integer_arra
 
 void mul_alloc_integer_array_scalar(integer_array_t* a,modelica_integer b,integer_array_t* dest)
 {
-    clone_integer_array_spec(a,dest);
+  clone_integer_array_spec(a,dest);
   alloc_integer_array_data(dest);
   mul_integer_array_scalar(a,b,dest);
 }
@@ -970,6 +1129,26 @@ void exp_alloc_integer_array(integer_array_t* a,modelica_integer b,integer_array
   exp_integer_array(a,b,dest);
 }
 
+/* function: promote_alloc_integer_array
+ * 
+ * Implementation of promote(A,n) same as promote_integer_array except 
+ * that the destination array is allocated.
+ */
+void promote_alloc_integer_array(integer_array_t* a, int n, integer_array_t* dest)
+{
+  clone_integer_array_spec(a,dest);
+  alloc_integer_array_data(dest);
+  promote_integer_array(a,n,dest);
+}
+
+/* function: promote_integer_array. 
+ * 
+ * Implementation of promote(a,n) 
+ * Adds n onesized array dimensions to the array a to "the right of array dimensions".  
+ * For instance 
+ * promote_exp( {1,2},1) => {{1},{2}}
+ * promote_exp( {1,2},2) => { {{1}},{{2}} }
+*/
 void promote_integer_array(integer_array_t* a, int n,integer_array_t* dest)
 {
   size_t i;
@@ -1083,6 +1262,25 @@ void matrix_integer_scalar(double a,integer_array_t* dest)
   dest->data[0] = a;
 }
 
+void transpose_alloc_integer_array(integer_array_t* a, integer_array_t* dest)
+{
+  clone_integer_array_spec(a,dest); /* allocation*/
+
+  /* transpose only valid for matrices.*/
+	
+  assert(a->ndims == 2);
+  dest->dim_size[0]=a->dim_size[1];
+  dest->dim_size[1]=a->dim_size[0];
+  dest->ndims = 2;
+  
+  alloc_integer_array_data(dest);
+  transpose_integer_array(a,dest);
+}
+
+/* function: transpose_integer_array
+ * 
+ * Implementation of transpose(A) for matrix A. 
+ */
 void transpose_integer_array(integer_array_t* a, integer_array_t* dest)
 {
   size_t i;

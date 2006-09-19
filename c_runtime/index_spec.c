@@ -87,10 +87,12 @@ void create_index_spec(index_spec_t* dest, int nridx, ...)
   dest->ndims = nridx;
   dest->dim_size = size_alloc(nridx);
   dest->index = index_alloc(nridx);   
+  dest->index_type = char_alloc(nridx);
   for (i = 0; i < nridx; ++i)
     {
       dest->dim_size[i] = va_arg(ap,int);      
       dest->index[i] = va_arg(ap,int*);
+      dest->index_type[i] = (char)va_arg(ap,int); /* char is cast to int by va_arg.*/
     }
   va_end(ap);
   
@@ -124,10 +126,28 @@ int imax(int i,int j)
   return i < j ? j : i;
 }
 
+void print_size_array(int size, size_t* arr)
+{
+	int i;
+	printf("{");
+	for(i=0;i<size;i++) {
+		printf("%d",arr[i]);
+		if(i != size-1) printf(",");
+	}
+	printf("}\n");
+}
+
+/* Calculates the next index for copying subscripted array.
+ * ndims - dimension size of indices.
+ * idx - updated with the the next index 
+ * size - size of each index dimension
+ * The function returns 0 if new index is calculated and 1 if no more indices are
+ * available (all indices traversed).
+  */
 int next_index(int ndims, size_t* idx, size_t* size) 
 {
   int d = ndims - 1;
-
+  
   idx[d]++;
   while (idx[d] >= size[d])
     {
@@ -137,4 +157,26 @@ int next_index(int ndims, size_t* idx, size_t* size)
       idx[d]++;	    
     }
   return 0;
+}
+
+void print_index_spec(index_spec_t* spec)
+{
+	int i,k;
+	printf("[");
+	for(i=0;i<spec->ndims;i++) {
+		if (spec->index_type[i]=='S') {
+			printf("%d",*spec->index[i]);
+		} else if (spec->index_type[i]=='A') {
+			printf("{");
+			for (k=0;k<spec->dim_size[i];k++) {
+				printf("%d",spec->index[i][k]);
+				if (k != spec->dim_size[i]-1) printf(",");
+			}
+			printf("}");
+		} else if (spec->index_type[i] == 'W') {
+			printf(":");						
+		} else printf("INVALID TYPE %c.",spec->index_type[i]);
+		if (i != spec->ndims-1) printf(", ");
+	}
+	printf("]");
 }

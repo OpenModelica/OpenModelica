@@ -1826,15 +1826,32 @@ protected function extractAllComponentreplacements "function extractAllComponent
   input Absyn.ComponentRef cref1;
   input Absyn.ComponentRef cref2;
   output ComponentReplacementRules comp_reps;
-  Components comps;
-  Absyn.Path class_path;
-  ComponentReplacementRules comp_repsrules;
+
 algorithm 
-  comps := extractAllComponents(p) "class in package" ;
-  class_path := Absyn.crefToPath(class_);
-  comp_repsrules := COMPONENTREPLACEMENTRULES({COMPONENTREPLACEMENT(class_path,cref1,cref2)},1);
-  comp_reps := getComponentreplacementsrules(comps, comp_repsrules, 0);
+  comp_reps := matchcontinue(p,class_,cref1,cref2)
+  local 
+    Components comps;
+    Absyn.Path class_path;
+    ComponentReplacementRules comp_repsrules;
+    case(p,class_,cref1,cref2) 
+      equation
+        comps = extractAllComponents(p) "class in package" ;
+        false = isClassReadOnly(getPathedClassInProgram(Absyn.crefToPath(class_),p));
+        class_path = Absyn.crefToPath(class_);
+        comp_repsrules = COMPONENTREPLACEMENTRULES({COMPONENTREPLACEMENT(class_path,cref1,cref2)},1);
+        comp_reps = getComponentreplacementsrules(comps, comp_repsrules, 0);
+      then comp_reps;
+  end matchcontinue;
 end extractAllComponentreplacements;
+
+protected function isClassReadOnly "Returns the readonly attribute of a class."
+input Absyn.Class cl;
+output Boolean readOnly;
+algorithm
+  readOnly := matchcontinue(cl)
+    case(Absyn.CLASS(info = Absyn.INFO(isReadOnly=readOnly))) then readOnly;
+  end matchcontinue;
+end isClassReadOnly;
 
 protected function renameComponent "function: renameComponent
   author: x02lucpo
@@ -3577,6 +3594,7 @@ algorithm
   matchcontinue (inTplAbsynClassAbsynPathOptionTplComponentsAbsynProgramEnvEnv)
     local
       Absyn.Path path_1,pa_1,pa;
+      Option<Absyn.Path> paOpt;
       list<Env.Frame> cenv,env;
       Components comps_1,comps;
       Absyn.Class class_;
@@ -3588,6 +3606,7 @@ algorithm
       Absyn.Program p;
     case (((class_ as Absyn.CLASS(name = id,partial_ = a,final_ = b,encapsulated_ = c,restricion = d,body = e,info = file_info)),SOME(pa),(comps,p,env)))
       equation 
+        false = isReadOnly(file_info);
         path_1 = Absyn.joinPaths(pa, Absyn.IDENT(id));
         cenv = getClassEnvNoElaboration(p, path_1, env);
         (_,pa_1) = Inst.makeFullyQualified(Env.emptyCache,cenv, path_1);
@@ -3596,14 +3615,25 @@ algorithm
         ((class_,SOME(pa),(comps_1,p,env)));
     case (((class_ as Absyn.CLASS(name = id,partial_ = a,final_ = b,encapsulated_ = c,restricion = d,body = e,info = file_info)),NONE,(comps,p,env)))
       equation 
+        false = isReadOnly(file_info);
         path_1 = Absyn.IDENT(id);
         cenv = getClassEnvNoElaboration(p, path_1, env);
         (_,pa_1) = Inst.makeFullyQualified(Env.emptyCache,cenv, path_1);
         comps_1 = extractComponentsFromClass(class_, pa_1, comps, cenv);
       then
         ((class_,NONE,(comps_1,p,env)));
+    case ((class_ ,paOpt,(comps,p,env))) then   ((class_,paOpt,(comps,p,env)));
   end matchcontinue;
 end extractAllComponentsVisitor;
+
+protected function isReadOnly
+	input Absyn.Info file_info;
+	output Boolean res;
+algorithm
+  res := matchcontinue(file_info)
+    case(Absyn.INFO(isReadOnly = res)) then res;
+  end matchcontinue;
+end isReadOnly;
 
 protected function extractComponentsFromClass "
   author: x02lucpo
@@ -4208,8 +4238,8 @@ algorithm
   (_,(cl as SCode.CLASS(id,_,encflag,restr,_)),env_1) := Lookup.lookupClass(Env.emptyCache,env, p_class, false);
   env2 := Env.openScope(env_1, encflag, SOME(id));
   ci_state := ClassInf.start(restr, id);
-  (_,env_2,_) := Inst.partialInstClassIn(Env.emptyCache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, cl, false, {});
+  (_,_,env_2,_,_,_,_) := Inst.instClassIn(Env.emptyCache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          ci_state, cl, false, {},false);
 end getClassEnvNoElaboration;
 
 protected function setComponentProperties "function: setComponentProperties
@@ -6971,8 +7001,8 @@ end changeLastIdent;
 
 public function traverseClasses "function: traverseClasses
    
-   Thisfunction traverses all classes of a program and applies afunction 
-   to each class. Thefunction takes the Absyn.Class, Absyn.Path option 
+   This function traverses all classes of a program and applies a function 
+   to each class. The function takes the Absyn.Class, Absyn.Path option 
    and an additional argument and returns an updated class and the 
    additional values. The Absyn.Path option contains the path to the class
    that is traversed.

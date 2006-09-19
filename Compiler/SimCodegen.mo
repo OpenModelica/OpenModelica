@@ -1103,7 +1103,7 @@ algorithm
     case (dae,nx,ny,np) /* nx ny np */ 
       equation 
         arr_size = Util.listReduce({nx,nx,ny,np}, int_add);
-        str_arr = fill("0/*default*/", arr_size);
+        str_arr = fill("1/*default*/", arr_size);
         str_arr_1 = generateFixedVector2(dae, str_arr, nx, ny, np);
         str_lst = arrayList(str_arr_1);
         str = Util.stringDelimitList2sep(str_lst, ", ", "\n", 3);
@@ -2996,7 +2996,7 @@ protected
 algorithm
 	crStr := Exp.printComponentRefStr(cr);
 	indxStr := intString(indx);
-	str := Util.stringAppendList({"if (change(",crStr,")) { AddEvent(",indxStr,"); foundEvent=1; }"});
+	str := Util.stringAppendList({"if (change(",crStr,")) { AddEvent(",indxStr,"); }"});
 end buildDiscreteVarChangesAddEvent;
   
 protected function buildWhenConditionChecks "function:  buildWhenConditionChecks
@@ -3072,8 +3072,7 @@ algorithm
         check_code2_1 = Util.if_(usezc,check_code2, "");
         res = Util.stringAppendList(
           {"int checkForDiscreteVarChanges()\n{\n",
-          " int foundEvent=0;\n",
-          check_code_1,check_code2_1,"\n if (foundEvent) saveall();\n return 0;\n","}\n"});
+          check_code_1,check_code2_1,"\n  return 0;\n","}\n"});
       then
         (res,helpVarInfo);
     case (_,_,_,_,_,_,_)
@@ -6380,7 +6379,6 @@ algorithm
         cr_str = Exp.printComponentRefStr(cr);
         (cfn3,saveStmts,cg_id_2,extra_funcs) = buildZeroCrossingEqns(dae, dlow, ass1, ass2, rest, blocks, cg_id_1);
         stmt = Util.stringAppendList({"save(",cr_str,");"});
-        stmt = ""; //moved save to after checkDiscreteVarChanges
         cfn = Codegen.cMergeFns({cfn2,cfn3});
       then
         (cfn,stmt::saveStmts,cg_id_2,extra_funcs);

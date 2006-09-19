@@ -148,6 +148,7 @@ void exp_alloc_integer_array(integer_array_t* a, modelica_integer b, integer_arr
 
 void promote_integer_array(integer_array_t* a, int n,integer_array_t* dest);
 void promote_scalar_integer_array(double s,int n,integer_array_t* dest);
+void promote_alloc_integer_array(integer_array_t* a, int n, integer_array_t* dest);
 
 int ndims_integer_array(integer_array_t* a);
 int size_of_dimension_integer_array(integer_array_t a, int i);
@@ -160,6 +161,7 @@ void vector_integer_scalar(double a,integer_array_t* dest);
 void matrix_integer_array(integer_array_t* a, integer_array_t* dest);
 void matrix_integer_scalar(double a,integer_array_t* dest);
 void transpose_integer_array(integer_array_t* a, integer_array_t* dest);
+void transpose_alloc_integer_array(integer_array_t* a, integer_array_t* dest);
 void outer_product_integer_array(integer_array_t* v1,integer_array_t* v2,integer_array_t* dest);
 void identity_integer_array(int n, integer_array_t* dest);
 void diagonal_integer_array(integer_array_t* v,integer_array_t* dest);

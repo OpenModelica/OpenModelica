@@ -1959,8 +1959,9 @@ algorithm
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(sz)),arrayType = t),_),(Exp.INDEX(exp = _) :: ys)) /* HJ: Subscrits needn\'t be constant. No range-checking can
+    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(sz)),arrayType = t),_),(Exp.INDEX(exp = e) :: ys)) /* HJ: Subscrits needn\'t be constant. No range-checking can
 	       be done */ 
+	       local Exp.Exp e;
       equation 
         t_1 = checkSubscripts(t, ys);
       then
@@ -1980,18 +1981,23 @@ algorithm
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(sz)),arrayType = t),_),(Exp.SLICE(exp = _) :: ys))
+        
+        // If slicing with integer array of VAR variability, i.e. index changing during runtime. 
+        // => resulting ARRAY type has no specified dimension size.
+    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(sz)),arrayType = t),p),(Exp.SLICE(exp = e) :: ys))
+      local Exp.Exp e;
       equation 
         t_1 = checkSubscripts(t, ys);
       then
-        t_1;
-    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = NONE),arrayType = t),_),(Exp.SLICE(exp = _) :: ys))
+       ((Types.T_ARRAY(Types.DIM(NONE),t_1),p));
+    case ((Types.T_ARRAY(arrayDim = Types.DIM(integerOption = NONE),arrayType = t),p),(Exp.SLICE(exp = _) :: ys))
       equation 
         t_1 = checkSubscripts(t, ys);
       then
-        t_1;
+        ((Types.T_ARRAY(Types.DIM(NONE),t_1),p));
+        
     case ((Types.T_COMPLEX(_,_,SOME(t)),_),ys)
-      then checkSubscripts(t,ys);
+      then checkSubscripts(t,ys); 
     case (t,s)
       equation 
         Debug.fprint("failtrace", "- check_subscripts failed ( ");

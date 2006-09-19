@@ -1021,6 +1021,31 @@ algorithm
   end matchcontinue;
 end listThread;
 
+public function listThread3 "function: listThread
+  Takes three lists of the same type and threads them togheter.
+  For eample,
+  list_thread({1,2,3},{4,5,6},{7,8,9}) => {7,4,1,8,5,2,9,6,3}
+"
+  input list<Type_a> inTypeALst1;
+  input list<Type_a> inTypeALst2;
+  input list<Type_a> inTypeALst3;
+  output list<Type_a> outTypeALst;
+  replaceable type Type_a;
+algorithm 
+  outTypeALst:=
+  matchcontinue (inTypeALst1,inTypeALst2,inTypeALst2)
+    local
+      list<Type_a> r_1,c,d,ra,rb,rc;
+      Type_a fa,fb,fc;
+    case ({},{},{}) then {}; 
+    case ((fa :: ra),(fb :: rb),fc::rc)
+      equation 
+        r_1 = listThread3(ra, rb,rc);
+      then
+        fa::fb::fc::r_1;
+  end matchcontinue;
+end listThread3;
+
 public function listThreadMap "function: listThreadMap
   Takes two lists and a function and threads and maps the elements of the two lists
   creating a new list.

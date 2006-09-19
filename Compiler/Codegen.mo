@@ -2410,11 +2410,16 @@ algorithm
       then
         (cfn,tnr2);
     case (Algorithm.ASSIGN_ARR(type_ = typ,componentRef = cref,exp = exp),tnr,context)
+      local 
+        Boolean sim;
+        String memStr;
       equation 
         (cref_str,{}) = compRefCstr(cref);
+        sim = isSimulationContext(context);
+        memStr = Util.if_(sim,"_mem","");
         (cfn1,var1,tnr1) = generateExpression(exp, tnr, context);
         type_str = expTypeStr(typ, true);
-        stmt = Util.stringAppendList({"copy_",type_str,"_data(&",var1,", &",cref_str,");"});
+        stmt = Util.stringAppendList({"copy_",type_str,"_data",memStr,"(&",var1,", &",cref_str,");"});
         cfn2 = cAddStatements(cfn1, {stmt});
       then
         (cfn2,tnr1);
@@ -2541,6 +2546,16 @@ algorithm
         fail();
   end matchcontinue;
 end generateAlgorithmStatement;
+
+protected function isSimulationContext "Returns true is context is Simulation."
+  input Context context;
+  output Boolean res;
+algorithm
+  res := matchcontinue(context)
+    case(CONTEXT(SIMULATION(),_)) then true;
+    case(_) then false;
+  end matchcontinue;
+end isSimulationContext;
 
 protected function generateRangeExpressions "function: generateRangeExpressions
   
@@ -3357,7 +3372,8 @@ algorithm
           "#-- Codegen.generate_expression: size(X) not implemented");
       then
         fail();
-    case (Exp.ARRAY(ty = t,scalar = a,array = elist),tnr,context)
+    case (e as Exp.ARRAY(ty = t,scalar = a,array = elist),tnr,context)
+      local Exp.Exp e;
       equation 
         (cfn1,vars1,tnr1) = generateExpressions(elist, tnr, context);
         nvars = listLength(vars1);
@@ -3365,8 +3381,8 @@ algorithm
         array_type_str = expTypeStr(t, true);
         short_type_str = expShortTypeStr(t);
         (tdecl,tvar,tnr2) = generateTempDecl(array_type_str, tnr1);
-        scalar = Util.if_(a, "", "scalar_");
-        scalar_ref = Util.if_(a, "&", "");
+        scalar = Util.if_(a, "scalar_", "");
+        scalar_ref = Util.if_(a, "", "&");
         scalar_delimit = stringAppend(", ", scalar_ref);
         args_str = Util.stringDelimitList(vars1, scalar_delimit);
         stmt = Util.stringAppendList(
@@ -3376,7 +3392,7 @@ algorithm
         cfn = cAddStatements(cfn_1, {stmt});
       then
         (cfn,tvar,tnr2);
-    case (Exp.MATRIX(ty = t,integer = maxn,scalar = ell),tnr,context)
+    case (e as Exp.MATRIX(ty = t,integer = maxn,scalar = ell),tnr,context)
       equation 
         (cfn,var,tnr_1) = generateMatrix(t, maxn, ell, tnr, context);
       then
@@ -3515,6 +3531,40 @@ algorithm
         (tdecl,tvar,tnr2) = generateTempDecl(tp_str, tnr1);
         cfn2 = cAddVariables(cfn1, {tdecl});
         stmt = Util.stringAppendList({tvar," = sum_",arr_tp_str,"(&",var1,");"});
+        cfn = cAddStatements(cfn2, {stmt});
+      then
+        (cfn,tvar,tnr2);
+        
+     case (Exp.CALL(path = Absyn.IDENT(name = "promote"),expLst = {A,n},tuple_ = false,builtin = true),tnr,context)
+       local 
+         Exp.Exp A,n;
+         String arr_tp_str;
+       equation 
+         tp = Exp.typeof(A);
+        tp_str = expTypeStr(tp, false);
+        arr_tp_str = expTypeStr(tp, true);
+        (cfn1,var1,tnr1) = generateExpression(A, tnr, context);
+        (cfn2,var2,tnr2) = generateExpression(n, tnr1, context);
+        (tdecl,tvar,tnr2) = generateTempDecl(arr_tp_str, tnr1);
+        cfn1 = cMergeFns({cfn1,cfn2});
+        cfn2 = cAddVariables(cfn1, {tdecl});
+        stmt = Util.stringAppendList({"promote_alloc_",arr_tp_str,"(&",var1,",",var2,",&",tvar,");"});
+        cfn = cAddStatements(cfn2, {stmt});
+      then
+        (cfn,tvar,tnr2);
+        
+     case (Exp.CALL(path = Absyn.IDENT(name = "transpose"),expLst = {A},tuple_ = false,builtin = true),tnr,context)
+       local 
+         Exp.Exp A;
+         String arr_tp_str;
+       equation 
+        tp = Exp.typeof(A);
+        tp_str = expTypeStr(tp, false);
+        arr_tp_str = expTypeStr(tp, true);
+        (cfn1,var1,tnr1) = generateExpression(A, tnr, context);
+        (tdecl,tvar,tnr2) = generateTempDecl(arr_tp_str, tnr1);
+        cfn2 = cAddVariables(cfn1, {tdecl});
+        stmt = Util.stringAppendList({"transpose_alloc_",arr_tp_str,"(&",var1,",&",tvar,");"});
         cfn = cAddStatements(cfn2, {stmt});
       then
         (cfn,tvar,tnr2);
@@ -4001,7 +4051,7 @@ algorithm
       CFunction cfunc,cfn;
       Exp.ComponentRef cref;
       Exp.Type t,crt;
-      list<Integer> dims;
+      list<Option<Integer>> dims;
       Context context;
       list<Exp.Subscript> subs;
     case (cref,Exp.T_ARRAY(ty = t,arrayDimensions = dims),tnr,CONTEXT(SIMULATION(),_)) /* For context simulation array variables must be boxed 
@@ -4013,8 +4063,9 @@ algorithm
         (vdecl,vstr,tnr1) = generateTempDecl(e_tp_str, tnr);
         ndims = listLength(dims);
         ndims_str = intString(ndims);
-        dims_strs = Util.listMap(dims, int_string);
-        dims_str = Util.stringDelimitList(dims_strs, ", ");
+        // Assumes that all dimensions are known, i.e. no NONE in dims.
+        dims_strs = Util.listMap(Util.listMap1(dims,Util.applyOption, int_string),Util.stringOption);
+        dims_str = Util.stringDelimitListNoEmpty(dims_strs, ", ");
         (cref_str,_) = compRefCstr(cref);
         stmt = Util.stringAppendList(
           {e_sh_tp_str,"_array_create(&",vstr,", ","&",cref_str,", ",
@@ -4189,18 +4240,18 @@ algorithm
   matchcontinue (inExpSubscriptLst,inInteger,inContext)
     local
       CFunction cfn1,cfn_1,cfn;
-      list<Lib> idxs1,idxsizes,idxs_1;
+      list<Lib> idxs1,idxsizes,idxs_1,idxTypes;
       Integer tnr1,tnr2,nridx,tnr;
       Lib decl,spec,nridx_str,idxs_str,stmt;
       list<Exp.Subscript> subs;
       Context context;
     case (subs,tnr,context)
       equation 
-        (cfn1,idxs1,idxsizes,tnr1) = generateIndicesArray(subs, tnr, context);
+        (cfn1,idxs1,idxsizes,idxTypes,tnr1) = generateIndicesArray(subs, tnr, context);
         (decl,spec,tnr2) = generateTempDecl("index_spec_t", tnr1);
         nridx = listLength(idxs1);
         nridx_str = intString(nridx);
-        idxs_1 = Util.listThread(idxsizes, idxs1);
+        idxs_1 = Util.listThread3(idxsizes, idxs1,idxTypes);
         idxs_str = Util.stringDelimitList(idxs_1, ", ");
         stmt = Util.stringAppendList(
           {"create_index_spec(&",spec,", ",nridx_str,", ",idxs_str,
@@ -4217,9 +4268,8 @@ algorithm
   end matchcontinue;
 end generateIndexSpec;
 
-protected function generateIndicesArray "function: generateIndicesArray
- 
-  Helper function to generaet_indices_array
+protected function generateIndicesArray "
+  Helper function to generateIndicesArray
 "
   input list<Exp.Subscript> inExpSubscriptLst;
   input Integer inInteger;
@@ -4227,28 +4277,30 @@ protected function generateIndicesArray "function: generateIndicesArray
   output CFunction outCFunction1;
   output list<String> outStringLst2;
   output list<String> outStringLst3;
+  output list<String> outStringLst4;
   output Integer outInteger4;
 algorithm 
-  (outCFunction1,outStringLst2,outStringLst3,outInteger4):=
+  (outCFunction1,outStringLst2,outStringLst3,outSTringLst4,outInteger4):=
   matchcontinue (inExpSubscriptLst,inInteger,inContext)
     local
       Integer tnr,tnr1,tnr2;
       Context context;
       CFunction cfn1,cfn2,cfn;
-      Lib idx1,idxsize1;
-      list<Lib> idxs2,idxsizes2,idxs,idxsizes;
+      Lib idx1,idxsize1,indxType;
+      list<Lib> idxs2,idxsizes2,idxs,idxsizes,indxTypeLst1,indxTypeLst2;
       Exp.Subscript f;
       list<Exp.Subscript> r;
-    case ({},tnr,context) then (cEmptyFunction,{},{},tnr); 
+    case ({},tnr,context) then (cEmptyFunction,{},{},{},tnr); 
     case ((f :: r),tnr,context)
       equation 
-        (cfn1,idx1,idxsize1,tnr1) = generateIndexArray(f, tnr, context);
-        (cfn2,idxs2,idxsizes2,tnr2) = generateIndicesArray(r, tnr1, context);
+        (cfn1,idx1,idxsize1,indxType,tnr1) = generateIndexArray(f, tnr, context);
+        (cfn2,idxs2,idxsizes2,indxTypeLst1,tnr2) = generateIndicesArray(r, tnr1, context);
         cfn = cMergeFn(cfn1, cfn2);
         idxs = (idx1 :: idxs2);
         idxsizes = (idxsize1 :: idxsizes2);
+        indxTypeLst2 = indxType::indxTypeLst1;
       then
-        (cfn,idxs,idxsizes,tnr2);
+        (cfn,idxs,idxsizes,indxTypeLst2,tnr2);
     case (_,_,_)
       equation 
         Debug.fprint("failtrace", "# generate_indices_array failed\n");
@@ -4295,9 +4347,8 @@ algorithm
   end matchcontinue;
 end generateIndices;
 
-protected function generateIndexArray "function: generateIndexArray
- 
-  Helper relatiin to generate_indices_array
+protected function generateIndexArray "
+  Helper function to generateIndicesArray
 "
   input Exp.Subscript inSubscript;
   input Integer inInteger;
@@ -4305,9 +4356,10 @@ protected function generateIndexArray "function: generateIndexArray
   output CFunction outCFunction1;
   output String outString2;
   output String outString3;
+  output String outString4;
   output Integer outInteger4;
 algorithm 
-  (outCFunction1,outString2,outString3,outInteger4):=
+  (outCFunction1,outString2,outString3,outString4,outInteger4):=
   matchcontinue (inSubscript,inInteger,inContext)
     local
       CFunction cfn,cfn_1,cfn_2;
@@ -4315,19 +4367,23 @@ algorithm
       Integer tnr1,tnr,tnr2;
       Exp.Exp e;
       Context context;
+      // Scalar index
     case (Exp.INDEX(exp = e),tnr,context)
       equation 
         (cfn,var1,tnr1) = generateExpression(e, tnr, context);
         idx = Util.stringAppendList({"make_index_array(1, ",var1,")"});
         idxsize = "(1)";
       then
-        (cfn,idx,idxsize,tnr1);
+        (cfn,idx,idxsize,"'S'",tnr1);
+        // Whole dimension, ':'
     case (Exp.WHOLEDIM(),tnr,context)
       equation 
         idx = "(0)";
         idxsize = "(1)";
       then
-        (cEmptyFunction,idx,idxsize,tnr);
+        (cEmptyFunction,idx,idxsize,"'W'",tnr);
+        
+        // Slice, e.g A[{1,3,5}]
     case (Exp.SLICE(exp = e),tnr,context)
       equation 
         (cfn,var1,tnr1) = generateExpression(e, tnr, context);
@@ -4338,7 +4394,7 @@ algorithm
         idx = Util.stringAppendList({"integer_array_make_index_array(&",var1,")"});
         idxsize = tvar;
       then
-        (cfn_2,idx,idxsize,tnr2);
+        (cfn_2,idx,idxsize,"'A'",tnr2);
     case (_,_,_)
       equation 
         Debug.fprint("failtrace", "# generate_index_array failed\n");
@@ -4905,7 +4961,7 @@ algorithm
   end matchcontinue;
 end generateMatrixExprRow;
 
-protected function generateMatrixExpression "function: generateMatrixExpressions.
+protected function generateMatrixExpression "function: generateMatrixExpression.
  
   Helper function to generate_matrix_expressions.
 "
@@ -4930,12 +4986,12 @@ algorithm
       Context context;
     case (t,(e,b),maxn,tnr,context)
       equation 
-        (cfn1,var1,tnr1) = generateExpression(e, tnr, context);
+        (cfn1,var1,tnr1) = generateExpression(e, tnr, context);     
         array_type_str = expTypeStr(t, true);
         maxn_str = intString(maxn);
         (tdecl,tvar,tnr2) = generateTempDecl(array_type_str, tnr1);
-        scalar = Util.if_(b, "", "scalar_");
-        sc_ref = Util.if_(b, "&", "");
+        scalar = Util.if_(b, "scalar_", "");
+        sc_ref = Util.if_(b, "", "&");
         stmt = Util.stringAppendList(
           {"promote_",scalar,array_type_str,"(",sc_ref,var1,", 2, &",
           tvar,");"});
@@ -4943,6 +4999,7 @@ algorithm
         cfn = cAddStatements(cfn_1, {stmt});
       then
         (cfn,tvar,tnr2);
+        
   end matchcontinue;
 end generateMatrixExpression;
 
@@ -6396,4 +6453,7 @@ algorithm
   DAE.isBidirVar(e);
 end isRcwBidir;
 end Codegen;
+
+
+
 

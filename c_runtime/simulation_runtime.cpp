@@ -1150,7 +1150,6 @@ ExecuteNextEvent(double *t)
 {
   if (EventQueue.begin() != EventQueue.end()) {
     long nextEvent = EventQueue.front();
-    //    calcEnabledZeroCrossings();    
     if (nextEvent >= globalData->nZeroCrossing) {
       globalData->timeValue = *t;
       function_when(nextEvent-globalData->nZeroCrossing);
@@ -1161,7 +1160,6 @@ ExecuteNextEvent(double *t)
       function_updateDependents();
       functionDAE_output();
     }
-    //    CheckForNewEvents(t);
     emit();
     EventQueue.pop_front();
     return true;

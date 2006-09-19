@@ -71,7 +71,7 @@ int real_array_ok(real_array_t* a)
  * Checks that all arrays have the same number of dimensions and same 
  ** dimension sizes.
  */
-void check_dim_sizes(real_array_t **elts,int n) 
+void check_real_array_dim_sizes(real_array_t **elts,int n) 
 {
   int i,curdim,dimsize;
   int ndims = elts[0]->ndims;
@@ -90,7 +90,7 @@ void check_dim_sizes(real_array_t **elts,int n)
  * Checks that all arrays have the same number of dimensions and same 
  ** dimension sizes  for all sizes except for dimension k.
  */
-void check_dim_sizes_except(int k, real_array_t **elts,int n) 
+void check_real_array_dim_sizes_except(int k, real_array_t **elts,int n) 
 {
   int i,curdim,dimsize;
   int k_loc = k-1;
@@ -299,7 +299,7 @@ void copy_real_array_data(real_array_t* source, real_array_t* dest)
 
   assert(real_array_ok(source));
   assert(real_array_ok(dest));
-  assert(real_array_shape_eq(source, dest));
+  assert(real_array_shape_eq(source, dest)); 
 
   nr_of_elements = real_array_nr_of_elements(source);
 
@@ -354,19 +354,18 @@ modelica_real* calc_real_index_spec(int ndims, size_t* idx_vec, real_array_t* ar
     index = 0;
     for (i = 0; i < ndims; ++i)
     {
-	d = idx_vec[i];
-	if (spec->index[i])
-	{
-	    d2 = spec->index[i][d] - 1;
-	}
-	else 
-	{
-	    d2 = d;
-	}
-	index = index*arr->dim_size[i] + d2;
+		d = idx_vec[i];
+		if (spec->index[i])
+		{
+		    d2 = spec->index[i][d] - 1;
+		}
+		else 
+		{
+		    d2 = d;
+		}
+		index = index*arr->dim_size[i] + d2;
 	
     }
-
     return arr->data + index;
 }
 
@@ -381,9 +380,8 @@ modelica_real* calc_real_index(int ndims, size_t* idx_vec, real_array_t* arr)
   for (i = 0; i < ndims; ++i)
     {
       /* Assert that idx_vec[i] is not out of bounds */
-      index = index*arr->dim_size[i] + idx_vec[i]; 
+      index = index*arr->dim_size[i] + idx_vec[i];
     }
-  
   return arr->data + index;
 }
 
@@ -560,7 +558,6 @@ void indexed_assign_real_array(real_array_t* source,
 		++j;
 	      }
 	  }
-
 	*calc_real_index_spec(dest->ndims,idx_vec1,dest,dest_spec) =
 	  *calc_real_index(source->ndims,idx_vec2, source);
 
@@ -602,38 +599,38 @@ void index_real_array(real_array_t* source,
     assert(index_spec_ok(source_spec));
     assert(index_spec_fit_real_array(source_spec,source));
     for (i = 0,j=0; i < source->ndims; ++i) 
-      if (source_spec->dim_size[i] != 0) ++j;
+      if (source_spec->index_type[i] =='W' || source_spec->index_type[i] == 'A' ) ++j;
     assert(j == dest->ndims);
 
     mem_state = get_memory_state();
-    idx_vec1 = (size_t *)size_alloc(source->ndims);
-    idx_vec2 = (size_t *)size_alloc(dest->ndims);
+    idx_vec1 = (size_t *)size_alloc(source->ndims);  /*indices in the source array*/
+    idx_vec2 = (size_t *)size_alloc(dest->ndims); /* indices in the destination array*/
     idx_size = (size_t *)size_alloc(source_spec->ndims);
 
     for (i = 0; i < source->ndims; ++i) idx_vec1[i] = 0;
     for (i = 0; i < source_spec->ndims; ++i)
       {
-	if (source_spec->index[i])
-	  idx_size[i] = imax(source_spec->dim_size[i],1);
-	else
-	  idx_size[i] = source->dim_size[i];
+		if (source_spec->index[i])
+		  idx_size[i] = imax(source_spec->dim_size[i],1);
+		else
+		  idx_size[i] = source->dim_size[i];
       }
 
-    quit = 0;
-    while(1)
-      {
-	for (i = 0,j=0; i < source->ndims; ++i) {
-	  if (source_spec->dim_size[i] != 0) {
-	    idx_vec2[j] = idx_vec1[i];
-	    ++j;
-	  }
-	}
+   	quit = 0;
+   	while(1)
+    {
+		for (i = 0,j=0; i < source->ndims; ++i) {
+			if (source_spec->index_type[i]=='A' || source_spec->index_type[i] == 'W') {
+				idx_vec2[j] = idx_vec1[i];	
+				j++;
+			}
+		}
 		
-	*calc_real_index(dest->ndims,idx_vec2, dest) 
-	  = *calc_real_index_spec(source->ndims,idx_vec1, source,source_spec);
-
-	quit = next_index(source->ndims,idx_vec1,idx_size);
-	if (quit) break;
+		*calc_real_index(dest->ndims,idx_vec2, dest) 
+		  = *calc_real_index_spec(source->ndims,idx_vec1, source,source_spec);
+		
+		quit = next_index(source->ndims,idx_vec1,idx_size);
+		if (quit) break;
     }
 
     restore_memory_state(mem_state);
@@ -666,7 +663,9 @@ void index_alloc_real_array(real_array_t* source,
   ndimsdiff = 0;
   for (i = 0; i < source_spec->ndims; ++i)
     {
-      if (source_spec->dim_size[i] == 0) ndimsdiff--;
+    	/* if slice or ':' */
+      if (source_spec->index_type[i] == 'W' || source_spec->index_type[i]== 'A') 
+      	ndimsdiff--;
     }
 
   dest->ndims = source->ndims + ndimsdiff;
@@ -674,21 +673,16 @@ void index_alloc_real_array(real_array_t* source,
 
   for (i = 0,j = 0; i < dest->ndims; ++i)
     {
-      while (source_spec->dim_size[i+j] == 0) ++j;
-      if (source_spec->index[i+j] == 0)
-	{
-	  dest->dim_size[i] = source->dim_size[i+j];
-	}
-      else
-	{
-	  dest->dim_size[i] = source_spec->dim_size[i+j];
-	}
+	    while(source_spec->index_type[i+j] == 'S') ++j; /* Skip scalars */
+	    if ( source_spec->index_type[i+j] == 'W') { /*take whole dimension from source*/
+	    	dest->dim_size[i]=source->dim_size[i+j];
+	    } else if (source_spec->index_type[i+j] == 'A') { /* Take dimension size from splice*/
+	    	dest->dim_size[i]=source_spec->dim_size[i+j];
+	    }
     }
 
   alloc_real_array_data(dest);
-
   index_real_array(source,source_spec,dest);
-
 }
 
 
@@ -733,7 +727,7 @@ void array_alloc_real_array(real_array_t* dest,int n,real_array_t* first,...)
   }
   va_end(ap);
 
-  check_dim_sizes(elts,n);
+  check_real_array_dim_sizes(elts,n);
 
   if (first->ndims == 1) {
     alloc_real_array(dest,2,n,first->dim_size[0]);
@@ -848,7 +842,7 @@ void cat_alloc_real_array(int k, real_array_t* dest, int n, real_array_t* first,
     assert(elts[i]->ndims >= k);
     new_k_dim_size += elts[i]->dim_size[k-1];
   }
-  check_dim_sizes_except(k,elts,n);
+  check_real_array_dim_sizes_except(k,elts,n);
   
   /* concatenation along first dimension */
   /* cat(1,[1,2;3,4],[5,6;7,8]) => [1,2;3,4;5,6;7,8]*/
@@ -1199,23 +1193,43 @@ void exp_alloc_real_array(real_array_t* a,modelica_integer b,real_array_t* dest)
   exp_real_array(a,b,dest);
 }
 
+/* function: promote_alloc_real_array
+ * 
+ * Implementation of promote(A,n) same as promote_real_array except 
+ * that the destination array is allocated.
+ */
+void promote_alloc_real_array(real_array_t* a, int n, real_array_t* dest)
+{
+  clone_real_array_spec(a,dest);
+  alloc_real_array_data(dest);
+  promote_real_array(a,n,dest);
+}
+
+/* function: promote_real_array. 
+ * 
+ * Implementation of promote(a,n) 
+ * Adds n onesized array dimensions to the array a to "the right of array dimensions".  
+ * For instance 
+ * promote_exp( {1,2},1) => {{1},{2}}
+ * promote_exp( {1,2},2) => { {{1}},{{2}} }
+*/
 void promote_real_array(real_array_t* a, int n,real_array_t* dest)
 {
   size_t i;
   
-  dest->dim_size = size_alloc(n);
+  dest->dim_size = size_alloc(n+a->ndims);
   dest->data = a->data;
   /*Assert a->ndims>=n */
   for (i = 0; i < a->ndims; ++i)
     {
       dest->dim_size[i] = a->dim_size[i];
     }
-  for (i = a->ndims; i < n; ++i)
+  for (i = a->ndims; i < n+a->ndims; ++i)
     {
       dest->dim_size[i] = 1;
     }
     
-    dest->ndims=n;
+    dest->ndims=n+a->ndims;
 }
 
 /* function: promote_scalar_real_array
@@ -1316,7 +1330,31 @@ void matrix_real_scalar(double a,real_array_t* dest)
   dest->dim_size[1] = 1;
   dest->data[0] = a;
 }
+/* function: transpose_alloc_real_array
+ * 
+ * Implementation of transpose(A) for matrix A. Same as transpose_real_array except that 
+ * destionation array is allocated.
+ */
 
+void transpose_alloc_real_array(real_array_t* a, real_array_t* dest)
+{
+  clone_real_array_spec(a,dest); /* allocation*/
+
+  /* transpose only valid for matrices.*/
+	
+  assert(a->ndims == 2);
+  dest->dim_size[0]=a->dim_size[1];
+  dest->dim_size[1]=a->dim_size[0];
+  dest->ndims = 2;
+  
+  alloc_real_array_data(dest);
+  transpose_real_array(a,dest);
+}
+
+/* function: transpose_real_array
+ * 
+ * Implementation of transpose(A) for matrix A. 
+ */
 void transpose_real_array(real_array_t* a, real_array_t* dest)
 {
   size_t i;

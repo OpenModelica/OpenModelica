@@ -754,6 +754,7 @@ algorithm
       Types.Type tp;
       list<Exp.ComponentRef> xs;
       list<int> dimSizes;
+      list<Option<Integer>> dimSizesOpt;
       list<Exp.Exp> dimExps;
       Env.Cache cache;
     case (cache,{},_) then (cache,{}); 
@@ -762,10 +763,11 @@ algorithm
         (cache,_,tp,_) = Lookup.lookupVar(cache,env,cr);
         true = Types.isArray(tp); // For variables that are arrays, generate cr = fill(0,dims);
         dimSizes = Types.getDimensionSizes(tp);
+        (_,dimSizesOpt) = Types.flattenArrayTypeOpt(tp); 
         dimExps = Util.listMap(dimSizes,Exp.makeIntegerExp);
         (cache,res) = generateZeroflowEquations(cache,xs,env);
       then
-        (cache,DAE.EQUATION(Exp.CREF(cr,Exp.REAL()),Exp.CALL(Absyn.IDENT("fill"),Exp.RCONST(0.0)::dimExps,false,true)) :: res);        
+        (cache,DAE.EQUATION(Exp.CREF(cr,Exp.REAL()),Exp.CALL(Absyn.IDENT("fill"),Exp.RCONST(0.0)::dimExps,false,true,Exp.T_ARRAY(Exp.REAL(),dimSizesOpt))) :: res);        
  
     case (cache,(cr :: xs),env) // For scalars.
       equation

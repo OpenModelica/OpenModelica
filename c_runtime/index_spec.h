@@ -24,11 +24,20 @@
 #define INDEX_SPEC_H_
 #include <stdio.h>
 
+/* This structure holds indexes when subscripting an array.
+ * ndims - number of subscripts, E.g. A[1,{2,3},:] => ndims = 3
+ * dim_size - dimension size of each subscript, Eg. A[1,{2,3},:,{3}] => dim_size={1,2,0,1}
+ * spec_type - index type for each index, 'S' for scalar, 'A' for array, 'W' for whole dimension (:)
+ *     Eg. A[1,{2,3},:,{3}] => spec_type = {'S','A','W','A'}. 
+ *     spec_type is required to be able to distinguish between {1} and 1 as an index.
+ * index - pointer to all indices (except of type 'W'), eg A[1,{2,3},:,{3}] => index -> {1,2,3,3}
+*/
 struct index_spec_s
 {
-  int ndims;
-  int* dim_size;
-  int** index;
+  int ndims;  /* number of indices/subscripts */
+  int* dim_size; /* size for each subscript */
+  char* index_type;  /* type of each subscript, any of 'S','A' or 'W' */
+  int** index; /* all indices*/
 };
 
 typedef struct index_spec_s index_spec_t;
@@ -39,5 +48,6 @@ void create_index_spec(index_spec_t* dest, int nridx, ...);
 int* make_index_array(int nridx,...);
 int imax(int i,int j);
 int next_index(int ndims, size_t* idx, size_t* size);
+void print_index_spec(index_spec_t* spec);
 
 #endif

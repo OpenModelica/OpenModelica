@@ -726,13 +726,13 @@ algorithm
         e3_1 = replaceExp(e3, repl, cond);
       then
         Exp.IFEXP(e1_1,e2_1,e3_1);
-    case ((e as Exp.CALL(path = path,expLst = expl,tuple_ = t,builtin = c)),repl,cond)
-      local Boolean t;
+    case ((e as Exp.CALL(path = path,expLst = expl,tuple_ = t,builtin = c,ty=tp)),repl,cond)
+      local Boolean t; Exp.Type tp;
       equation 
         true = replaceExpCond(cond, e);
         expl_1 = Util.listMap2(expl, replaceExp, repl, cond);
       then
-        Exp.CALL(path,expl_1,t,c);
+        Exp.CALL(path,expl_1,t,c,tp); 
     case ((e as Exp.ARRAY(ty = tp,scalar = c,array = expl)),repl,cond)
       equation 
         true = replaceExpCond(cond, e);

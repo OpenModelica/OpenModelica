@@ -3408,12 +3408,12 @@ algorithm
         e3_1 = toModelicaFormExp(e3);
       then
         Exp.IFEXP(e1_1,e2_1,e3_1);
-    case (Exp.CALL(path = f,expLst = expl,tuple_ = t,builtin = b))
-      local Boolean t;
+    case (Exp.CALL(path = f,expLst = expl,tuple_ = t,builtin = b,ty=tp))
+      local Boolean t; Exp.Type tp;
       equation 
         expl_1 = Util.listMap(expl, toModelicaFormExp);
       then
-        Exp.CALL(f,expl_1,t,b);
+        Exp.CALL(f,expl_1,t,b,tp);
     case (Exp.ARRAY(ty = t,scalar = b,array = expl))
       equation 
         expl_1 = Util.listMap(expl, toModelicaFormExp);

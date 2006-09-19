@@ -787,7 +787,7 @@ algorithm
       then
         (vars_1,(EQUATION(
           Exp.CALL(Absyn.IDENT("der"),
-          {Exp.CREF(Exp.CREF_IDENT("$dummy",{}),Exp.REAL())},false,true),Exp.RCONST(0.0)) :: eqns));
+          {Exp.CREF(Exp.CREF_IDENT("$dummy",{}),Exp.REAL())},false,true,Exp.REAL()),Exp.RCONST(0.0)) :: eqns));
   end matchcontinue;
 end addDummyState;
 
@@ -2266,7 +2266,7 @@ algorithm
         STATE() = varKind(v);
       then
         true;
-    case (_) then false;  /* rest defaults to false */ 
+    case (_) then true;  /* rest defaults to true */ 
   end matchcontinue;
 end varFixed;
 
@@ -2656,7 +2656,7 @@ algorithm
       then
         ((
           Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(Exp.CREF_IDENT(id_1,s),tp)},
-          false,true),str));
+          false,true,Exp.REAL()),str));
     case ((e,str)) then ((e,str)); 
   end matchcontinue;
 end renameDerivativesExp;
@@ -2757,6 +2757,7 @@ algorithm
       (e1 as Exp.CREF(cr1,_),e2) = simpleEquation(e,false);
       failure(_ = treeGet(states, cr1)) "cr1 not state";
       isVariable(cr1, vars, knvars) "cr1 not constant";
+      false = isTopLevelInputOrOutput(cr1,vars,knvars);
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       mvars_1 = treeAdd(mvars, cr1, 0);
       (eqns_1,seqns_1,mvars_2,repl_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1);
@@ -2770,6 +2771,7 @@ algorithm
       failure(_ = treeGet(states, cr1)) "cr1 not state";
       isVariable(cr1, vars, knvars) "cr1 not constant";
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
+      false = isTopLevelInputOrOutput(cr1,vars,knvars);
       mvars_1 = treeAdd(mvars, cr1, 0);
       (eqns_1,seqns_1,mvars_2,repl_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1);
     then
@@ -6914,8 +6916,8 @@ protected function propagateDummyFixedAttribute "function: propagateDummyFixedAt
   and the chosen dummy state.
   The fixed attribute of the selected dummy state is propagated to 
   the other state. This must be done since the dummy state becomes 
-  an algebraic state which has fixed = false by default.
-  For example cosider the equations:
+  an algebraic state which has fixed = true by default.
+  For example consider the equations:
   s1 = b;
   b=2c;
   c = s2;
@@ -6958,10 +6960,10 @@ algorithm
         ({v},{indx}) = getVar(dummy, vars);
         dummy_fixed = varFixed(v);
         ({v_1},{indx_1}) = getVar(state, vars);
-        v_2 = setVarFixed(v_1, dummy_fixed);
-        vars_1 = addVar(v_2, vars);
+        //v_2 = setVarFixed(v_1, dummy_fixed);
+        //vars_1 = addVar(v_2, vars);
       then
-        DAELOW(vars_1,kv,ev,e,se,ie,ae,al,ei,eoc);
+        DAELOW(vars/*_1*/,kv,ev,e,se,ie,ae,al,ei,eoc);
     case (dae,_,_,_)
       equation 
         Debug.fprint("failtrace", "propagate_dummy_initial_equations failed\n");
@@ -7413,7 +7415,7 @@ algorithm
       Equation res;
     case (st,dummyder,EQUATION(exp = e1,scalar = e2))
       equation 
-        dercall = Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(st,Exp.REAL())},false,true) "scalar equation" ;
+        dercall = Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(st,Exp.REAL())},false,true,Exp.REAL()) "scalar equation" ;
         (e1_1,_) = Exp.replaceExp(e1, dercall, Exp.CREF(dummyder,Exp.REAL()));
         (e2_1,_) = Exp.replaceExp(e2, dercall, Exp.CREF(dummyder,Exp.REAL()));
       then
@@ -7422,7 +7424,7 @@ algorithm
     case (st,dummyder,ALGORITHM(index = indx,in_ = in_,out = out)) /* TODO: We need to go through Algorithm.Algorithm here.. */  then ALGORITHM(indx,in_,out);  /* Algorithms */ 
     case (st,dummyder,WHEN_EQUATION(whenEquation = WHEN_EQ(index = i,left = cr,right = e1)))
       equation 
-        dercall = Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(st,Exp.REAL())},false,true);
+        dercall = Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(st,Exp.REAL())},false,true,Exp.REAL());
         (e1_1,_) = Exp.replaceExp(e1, dercall, Exp.CREF(dummyder,Exp.REAL()));
         res = WHEN_EQUATION(WHEN_EQ(i,cr,e1_1));
       then
@@ -11106,7 +11108,7 @@ algorithm
       list<Exp.Exp> s1,t1;
       Exp.ComponentRef cr_1,cr;
       String indxs,name,c_name,newid;
-      list<Value> int_dims;
+      list<Option<Integer>> int_dims;
       list<Exp.Subscript> instdims;
       Value indx;
       Option<DAE.VariableAttributes> dae_var_attr;
@@ -11121,7 +11123,7 @@ algorithm
         indxs = intString(indx);
         name = Exp.printComponentRefStr(cr_1);
         c_name = Util.modelicaStringToCStr(name);
-        int_dims = Exp.subscriptsInt(instdims);
+        int_dims = Util.listMap(Exp.subscriptsInt(instdims),Util.makeOption);
         newid = Util.stringAppendList({"$",c_name});
         (s1,t1) = algVariableArrayReplacements(vs);
       then
@@ -11217,7 +11219,7 @@ algorithm
         c_name = Util.modelicaStringToCStr(name);
         newid = Util.stringAppendList({derivativeNamePrefix,"$",c_name})  ;
       then
-        ((Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(s,Exp.REAL())},false,true) :: s1),(Exp.CREF(Exp.CREF_IDENT(newid,{}),Exp.REAL()) :: t1));
+        ((Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(s,Exp.REAL())},false,true,Exp.REAL()) :: s1),(Exp.CREF(Exp.CREF_IDENT(newid,{}),Exp.REAL()) :: t1));
     case (_)
       equation 
         print("-derivative_replacements failed\n");
