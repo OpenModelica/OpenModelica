@@ -53,10 +53,7 @@ HFILES = blaswrap.h f2c.h integer_array.h memory_pool.h modelica_string.h \
 LIBS = libc_runtime.a libsim.a 
 
 
-all : libc_runtime.a libsim.a libf2c.a index_spec_test install
-
-index_spec_test : index_spec_test.c
-	g++ -o index_spec_test index_spec_test.c libc_runtime.a
+all : libc_runtime.a libsim.a libf2c.a install
 
 libc_runtime.a : $(OBJS)
 	$(AR) $@ $(OBJS)
