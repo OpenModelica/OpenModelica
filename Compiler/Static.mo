@@ -4988,7 +4988,7 @@ algorithm
       tuple<Types.TType, Option<Absyn.Path>> t,outtype,restype,functype;
       list<tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>>> fargs;
       list<Env.Frame> env_1,env_2,env;
-      list<Slot> slots,newslots,newslots2;
+      list<Slot> slots,newslots,newslots2,slots2;
       list<Exp.Exp> args_1,args_2;
       list<Types.Const> constlist;
       Types.Const const;
@@ -5035,6 +5035,7 @@ algorithm
         (cache,args_1,constlist,restype,functype,vect_dims,slots) = elabTypes(cache,env, args,nargs, typelist, impl) "The constness of a function depends on the inputs. If all inputs are
 	  constant the call itself is constant.
 	" ;
+	
         fn_1 = deoverloadFuncname(fn, functype);
         tuple_ = isTuple(restype);
         (cache,builtin) = isBuiltinFunc(cache,fn_1);
@@ -5042,9 +5043,12 @@ algorithm
         (cache,const) = determineConstSpecialFunc(cache,env,const,fn);
         tyconst = elabConsts(restype, const);
         prop = getProperties(restype, tyconst);
-        tp = Types.elabType(restype);
-        (call_exp,prop_1) = vectorizeCall(Exp.CALL(fn_1,args_1,tuple_,builtin,tp), restype, vect_dims, 
-          slots, prop);
+ 	      tp = Types.elabType(restype);
+
+ 	      (cache,args_2,slots2) = addDefaultArgs(cache,env,args_1,fn,slots,impl);
+         
+        (call_exp,prop_1) = vectorizeCall(Exp.CALL(fn_1,args_2,tuple_,builtin,tp), restype, vect_dims, 
+          slots2, prop);
       then
         (cache,call_exp,prop_1);
         
@@ -5088,6 +5092,44 @@ algorithm
         fail();
   end matchcontinue;
 end elabCallArgs;
+
+protected function addDefaultArgs "adds default values (from slots) to argument list of function call.
+This is needed because when generating C-code all arguments must be present in the function call. 
+
+If in future C++ code is generated instead, this is not required, since C++ allows default values for arguments.
+"
+  input Env.Cache inCache;
+  input Env.Env env;
+  input list<Exp.Exp> inArgs;
+  input Absyn.Path fn;
+  input list<Slot> slots;
+  input Boolean impl;
+  output Env.Cache outCache;
+  output list<Exp.Exp> outArgs;
+  output list<Slot> outSlots;
+algorithm
+  (outCache,outArgs,outSlots) := matchcontinue(cache,env,inArgs,fn,slots,impl)
+    local Env.Cache cache;
+      SCode.Class cl;
+      Env.Env env_2;
+      list<Exp.Exp> args_2;
+      list<Slot> slots2;
+      // If we find a class
+    case(cache,env,inArgs,fn,slots,impl) equation
+      // We need the class to fill default slots
+      (cache,cl,env_2) = Lookup.lookupClass(cache,env,fn,false);
+      (cache,slots2) = fillDefaultSlots(cache,slots, cl, env_2, impl);
+      // Update argument list to include default values.
+      args_2 = expListFromSlots(slots2);
+    then (cache,args_2,slots2);
+      
+      // If no class found. builtin, with no defaults. NOTE: if builtin class with defaults exist
+      // both its type -and- its class must be added to Builtin.mo
+    case(cache,env,inArgs,fn,slots,impl) 
+    then (cache,inArgs,slots);
+  end matchcontinue;
+end addDefaultArgs;
+
 
 protected function determineConstSpecialFunc "For the special functions constructor and destructor,
 in external object, 
