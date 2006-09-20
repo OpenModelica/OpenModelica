@@ -1332,7 +1332,7 @@ algorithm
       equation 
         MATRIX(t,n,exps) = simplify(e);
         tp1 = unliftArray(tp);
-        tp2 = unliftArray(tp);
+        tp2 = unliftArray(tp1);
         exps_1 = matrixExpMap1(exps, addCast, tp2);
         res = simplify(MATRIX(tp,n,exps_1));
       then
@@ -5521,8 +5521,7 @@ algorithm
       equation 
         false = RTOpts.modelicaOutput();
         s = printExpStr(e);
-        s_1 = stringAppend("Real(", s);
-        s_2 = stringAppend(s_1, ")");
+        s_2 = Util.stringAppendList({"Real(",s,")"});
       then
         s_2;
     case (CAST(ty = REAL(),exp = e),_)

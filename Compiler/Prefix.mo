@@ -453,12 +453,12 @@ algorithm
         (cache,stop_1) = prefixExp(cache,env, stop, p);
       then
         (cache,Exp.RANGE(t,start_1,SOME(step_1),stop_1));
-    case (cache,env,Exp.CAST(ty = Exp.REAL(),exp = e),p)
-      local Prefix p;
+    case (cache,env,Exp.CAST(ty = tp,exp = e),p)
+      local Prefix p; Exp.Type tp;
       equation 
         (cache,e_1) = prefixExp(cache,env, e, p);
       then
-        (cache,Exp.CAST(Exp.REAL(),e_1));
+        (cache,Exp.CAST(tp,e_1));
     case (cache,env,Exp.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp),p)
       local Prefix p;
       equation 

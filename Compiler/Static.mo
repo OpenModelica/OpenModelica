@@ -4432,7 +4432,7 @@ algorithm
       then
         (cache,Exp.CALL(Absyn.IDENT("readSimulationResult"),
           {Exp.SCONST(filename),Exp.ARRAY(Exp.OTHER(),false,vars_1),
-          size_exp},false,true,Exp.OTHER()),Types.PROP(
+          size_exp},false,true,Exp.T_ARRAY(Exp.REAL(),{SOME(var_len),SOME(size)})),Types.PROP(
           (
           Types.T_ARRAY(Types.DIM(SOME(var_len)),
           (

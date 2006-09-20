@@ -6960,6 +6960,8 @@ algorithm
         b2 = Exp.containVectorFunctioncall(e2);
         true = boolOr(b1,b2);
         ds = Types.getDimensionSizes(t);
+        e1 = Exp.simplify(e1);
+        e2 = Exp.simplify(e2);
       then
         {DAE.ARRAY_EQUATION(ds,e1,e2)};
     

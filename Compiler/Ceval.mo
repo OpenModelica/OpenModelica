@@ -800,7 +800,7 @@ algorithm
       then
         (cache,Values.REAL(r),st_1);
 
-    case (cache,env,Exp.CAST(ty = Exp.REAL(),exp = e),impl,st,dim,msg)
+    case (cache,env,Exp.CAST(ty = Exp.T_ARRAY(Exp.REAL(),_),exp = e),impl,st,dim,msg)
       local Option<Integer> dim;
       equation 
         (cache,Values.ARRAY(ivals),st_1) = ceval(cache,env, e, impl, st, dim, msg);

@@ -2677,9 +2677,9 @@ algorithm
     local
       list<Exp.Exp> elist_1,elist;
       Exp.Type at,t;
-      Boolean a;
+      Boolean a,sc;
       Integer dim1,dim2,nmax,dim11,dim22;
-      Type ty1,ty2,t1,t2,t_1;
+      Type ty1,ty2,t1,t2,t_1,ty0;
       Option<Absyn.Path> p,p1,p2;
       Exp.Exp begin_1,step_1,stop_1,begin,step,stop,e_1,e,exp;
       list<list<tuple<Exp.Exp, Boolean>>> ell_1,ell;
@@ -2687,93 +2687,121 @@ algorithm
       list<Ident> l;
       list<Var> v;
       String str;
-    case (Exp.ARRAY(array = elist),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p))
+
+      // Array expressions: expression dimension {dim1}, expected dimension {dim2}
+    case (Exp.ARRAY(array = elist),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
+      		ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p))
       equation 
-        (dim1 == dim2) = true "Array expressions" ;
-        elist_1 = typeConvertArray(elist, ty1, ty2);
-        at = elabType(ty2);
+        (dim1 == dim2) = true  ;
+        elist_1 = typeConvertArray(elist, ty1, ty2,SOME(dim1));
+        at = elabType(ty0);
         a = isArray(ty2);
+        sc = boolNot(a);
       then
-        (Exp.ARRAY(at,a,elist_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p));
-    case (Exp.RANGE(ty = t,exp = begin,expOption = SOME(step),range = stop),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p))
+        (Exp.ARRAY(at,sc,elist_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p));
+
+     // Array expressions: expression dimension {:}, expected dimension {dim2}
+    case (Exp.ARRAY(array = elist),(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty1),_),
+      	ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p2))
       equation 
-        (dim1 == dim2) = true "Range expressions" ;
+        (elist_1) = typeConvertArray(elist, ty1, ty2,SOME(dim2))  ;
+        at = elabType(ty0);
+        a = isArray(ty2);
+        sc = boolNot(a);
+      then
+        (Exp.ARRAY(at,sc,elist_1),(T_ARRAY(DIM(NONE),ty2),p2));
+
+        // Array expressions: expression dimension {dim1}, expected dimension {:}
+    case (Exp.ARRAY(array = elist),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
+      	ty0 as (T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty2),p2))
+      equation 
+        (elist_1) = typeConvertArray(elist, ty1, ty2,SOME(dim1));
+        at = elabType(ty0);
+        a = isArray(ty2);
+        sc = boolNot(a);
+      then
+        (Exp.ARRAY(at,sc,elist_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p2));
+        
+        // Range expressions, e.g. 1:2:10
+    case (Exp.RANGE(ty = t,exp = begin,expOption = SOME(step),range = stop),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
+      ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p))
+      equation 
+        (dim1 == dim2) = true   ;
         (begin_1,_) = typeConvert(begin, ty1, ty2);
         (step_1,_) = typeConvert(step, ty1, ty2);
         (stop_1,_) = typeConvert(stop, ty1, ty2);
-        at = elabType(ty2);
-        a = isArray(ty2);
+        at = elabType(ty0);
       then
         (Exp.RANGE(at,begin_1,SOME(step_1),stop_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p));
-    case (Exp.RANGE(ty = t,exp = begin,expOption = NONE,range = stop),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p))
+
+        // Range expressions, e.g. 1:10
+    case (Exp.RANGE(ty = t,exp = begin,expOption = NONE,range = stop),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
+      ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p))
       equation 
-        (dim1 == dim2) = true "Range expressions" ;
+        (dim1 == dim2) = true  ;
         (begin_1,_) = typeConvert(begin, ty1, ty2);
         (stop_1,_) = typeConvert(stop, ty1, ty2);
-        at = elabType(ty2);
-        a = isArray(ty2);
+        at = elabType(ty0);
       then
         (Exp.RANGE(at,begin_1,NONE,stop_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p));
-    case (Exp.MATRIX(integer = nmax,scalar = ell),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim11)),arrayType = t1),_)),_),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim22)),arrayType = t2),p1)),p2))
+
+        // Matrix expressions: expression dimension {dim1,dim11}, expected dimension {dim2,dim22}
+    case (Exp.MATRIX(integer = nmax,scalar = ell),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim11)),arrayType = t1),_)),_),
+      ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim22)),arrayType = t2),p1)),p2))
       equation 
-        (dim1 == dim2) = true "Matrix expressions" ;
+        (dim1 == dim2) = true  ;
         (dim11 == dim22) = true;
-        ell_1 = typeConvertMatrix(ell, t1, t2);
-        at = elabType(t2);
+        ell_1 = typeConvertMatrix(ell, t1, t2,SOME(dim1),SOME(dim2));
+        at = elabType(ty0);
       then
         (Exp.MATRIX(at,nmax,ell_1),(T_ARRAY(DIM(SOME(dim1)),(T_ARRAY(DIM(SOME(dim11)),t2),p1)),
           p2));
-    case (Exp.MATRIX(integer = nmax,scalar = ell),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim11)),arrayType = t1),_)),_),(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim22)),arrayType = t2),p1)),p2))
+          
+        // Matrix expressions: expression dimension {dim1,dim11} expected dimension {:,dim22} 
+    case (Exp.MATRIX(integer = nmax,scalar = ell),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim11)),arrayType = t1),_)),_),
+      ty0 as (T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim22)),arrayType = t2),p1)),p2))
       equation 
-        (dim11 == dim22) = true "Matrix expressions" ;
-        ell_1 = typeConvertMatrix(ell, t1, t2);
-        at = elabType(t2);
+        (dim11 == dim22) = true;
+        ell_1 = typeConvertMatrix(ell, t1, t2,SOME(dim1),SOME(dim11));
+        at = elabType(ty0);
       then
         (Exp.MATRIX(at,nmax,ell_1),(T_ARRAY(DIM(SOME(dim1)),(T_ARRAY(DIM(SOME(dim11)),t2),p1)),
           p2));
-    case (Exp.ARRAY(array = elist),(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty1),_),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p2))
+    
+        // Arbitrary expressions, expression dimension {dim1}, expected dimension {dim2}
+    case (e,(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
+      	ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p2))
       equation 
-        (elist_1) = typeConvertArray(elist, ty1, ty2) "Array expressions This rule is used to ensure that casts are made on each element, instead of on the whole array" ;
-        at = elabType(ty2);
-        a = isArray(ty2);
-      then
-        (Exp.ARRAY(at,a,elist_1),(T_ARRAY(DIM(NONE),ty2),p2));
-    case (Exp.ARRAY(array = elist),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty2),p2))
-      equation 
-        (elist_1) = typeConvertArray(elist, ty1, ty2) "Array expressions This rule is used to ensure that casts are made on each element, instead of on the whole array" ;
-        at = elabType(ty2);
-        a = isArray(ty2);
-      then
-        (Exp.ARRAY(at,a,elist_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p2));
-    case (e,(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p2))
-      equation 
-        (dim1 == dim2) = true "Arbitrary expressions, 
-	  first dimension {dim1}, 
-	  second dimension {dim2}" ;
+        (dim1 == dim2) = true ;
         (e_1,t_1) = typeConvert(e, ty1, ty2);
+        e_1 = liftExpType(e_1,SOME(dim1));
       then
         (e_1,(T_ARRAY(DIM(SOME(dim2)),t_1),p2));
-    case (e,(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty1),_),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p2))
+
+        // Arbitrary expressions,  expression dimension {:},  expected dimension {dim2}
+    case (e,(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty1),_),
+      	(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p2))
       equation 
-        (e_1,t_1) = typeConvert(e, ty1, ty2) "Arbitrary expressions, 
-	  first dimension {:}, 
-	  second dimension {dim2}" ;
+        (e_1,t_1) = typeConvert(e, ty1, ty2) ;
+        e_1 = liftExpType(e_1,NONE);
       then
         (e_1,(T_ARRAY(DIM(NONE),t_1),p2));
-    case (e,(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty1),_),(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty2),p2))
+        
+        // Arbitrary expressions, expression dimension {:} expected dimension {:}
+    case (e,(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty1),_),
+      (T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty2),p2))
       equation 
-        (e_1,t_1) = typeConvert(e, ty1, ty2) "Arbitrary expressions 
-	  first dimension {:}
-	  second dimension {:}
-	" ;
+        (e_1,t_1) = typeConvert(e, ty1, ty2) ;
+        e_1 = liftExpType(e_1,NONE);
       then
         (e_1,(T_ARRAY(DIM(NONE),t_1),p2));
-    case (e,(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty2),p2))
+        
+        // Arbitrary expression, expression dimension {dim1} expected dimension {:}
+    case (e,(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
+      	(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty2),p2))
       equation 
-        (e_1,t_1) = typeConvert(e, ty1, ty2) "Arbitrary expression 
-	  first dimension {dim1}
-	  second dimension {:}
-	" ;
+        (e_1,t_1) = typeConvert(e, ty1, ty2)  ;
+        e_1 = liftExpType(e_1,SOME(dim1));
       then
         (e_1,(T_ARRAY(DIM(SOME(dim1)),t_1),p2));
     case (Exp.TUPLE(PR = elist),(T_TUPLE(tupleType = tys1),_),(T_TUPLE(tupleType = tys2),p2))
@@ -2798,6 +2826,24 @@ algorithm
   end matchcontinue;
 end typeConvert;
 
+protected function liftExpType "help funciton to typeConvert. Changes the Exp.Type stored 
+in expression (which is typically a CAST) by adding a dimension to it, making it into an array 
+type."
+ input Exp.Exp e;
+ input Option<Integer> dim;
+ output Exp.Exp res;
+algorithm
+  res := matchcontinue(e,dim)
+  local Exp.Type ty,ty1;
+    case(Exp.CAST(ty,e),dim)
+      equation
+        ty1 = Exp.liftArray(ty,dim); 
+      then Exp.CAST(ty1,e);
+
+    case(e,dim) then e;
+  end matchcontinue;
+end liftExpType;
+
 public function typeConvertArray "function: typeConvertArray
  
   Helper function to type_convert. Handles array expressions.
@@ -2805,27 +2851,21 @@ public function typeConvertArray "function: typeConvertArray
   input list<Exp.Exp> inExpExpLst1;
   input Type inType2;
   input Type inType3;
+  input Option<Integer> dim;
   output list<Exp.Exp> outExpExpLst;
 algorithm 
   outExpExpLst:=
-  matchcontinue (inExpExpLst1,inType2,inType3)
+  matchcontinue (inExpExpLst1,inType2,inType3,dim)
     local
       list<Exp.Exp> rest_1,rest;
       Exp.Exp first_1,first;
       Type ty1,ty2;
-    case ({},_,_) then {}; 
-    case ((first :: rest),ty1,ty2) /* rule	Print.printErrorBuf \"- type conversion of array failed exp=\" &
-	Exp.print_exp e &
-	Print.printErrorBuf \"t1 = \" &
-	print_type t1 & 
-	Print.printErrorBuf \" t2 = \" &
-	print_type t2 &
-	Print.printErrorBuf \"\\n\" 
-	-------------------------------
-	type_convert_array (e::_,t1,t2) => fail */ 
+    case ({},_,_,_) then {}; 
+    case ((first :: rest),ty1,ty2,dim) 
       equation 
-        rest_1 = typeConvertArray(rest, ty1, ty2);
+        rest_1 = typeConvertArray(rest, ty1, ty2,dim);
         (first_1,_) = typeConvert(first, ty1, ty2);
+         //first_1 = liftExpType(first_1,dim);
       then
         (first_1 :: rest_1);
   end matchcontinue;
@@ -2838,26 +2878,21 @@ protected function typeConvertMatrix "function: typeConvertMatrix
   input list<list<tuple<Exp.Exp, Boolean>>> inTplExpExpBooleanLstLst1;
   input Type inType2;
   input Type inType3;
+  input Option<Integer> dim1;
+  input Option<Integer> dim2;
   output list<list<tuple<Exp.Exp, Boolean>>> outTplExpExpBooleanLstLst;
 algorithm 
   outTplExpExpBooleanLstLst:=
-  matchcontinue (inTplExpExpBooleanLstLst1,inType2,inType3)
+  matchcontinue (inTplExpExpBooleanLstLst1,inType2,inType3,dim1,dim2)
     local
       list<list<tuple<Exp.Exp, Boolean>>> rest_1,rest;
       list<tuple<Exp.Exp, Boolean>> first_1,first;
       Type ty1,ty2;
-    case ({},_,_) then {}; 
-    case ((first :: rest),ty1,ty2) /* rule	Print.printErrorBuf \"- type conversion of matrix failed\" &
-	Print.printErrorBuf \"t1 = \" &
-	print_type t1 & 
-	Print.printErrorBuf \" t2 = \" &
-	print_type t2 &
-	Print.printErrorBuf \"\\n\" 
-	-------------------------------
-	type_convert_matrix (e::_,t1,t2) => fail */ 
+    case ({},_,_,_,_) then {}; 
+    case ((first :: rest),ty1,ty2,dim1,dim2)
       equation 
-        rest_1 = typeConvertMatrix(rest, ty1, ty2);
-        first_1 = typeConvertMatrixRow(first, ty1, ty2);
+        rest_1 = typeConvertMatrix(rest, ty1, ty2,dim1,dim2);
+        first_1 = typeConvertMatrixRow(first, ty1, ty2,dim1,dim2);
       then
         (first_1 :: rest_1);
   end matchcontinue;
@@ -2870,23 +2905,28 @@ protected function typeConvertMatrixRow "function: typeConvertMatrixRow
   input list<tuple<Exp.Exp, Boolean>> inTplExpExpBooleanLst1;
   input Type inType2;
   input Type inType3;
+  input Option<Integer> dim1;
+  input Option<Integer> dim2;
   output list<tuple<Exp.Exp, Boolean>> outTplExpExpBooleanLst;
 algorithm 
   outTplExpExpBooleanLst:=
-  matchcontinue (inTplExpExpBooleanLst1,inType2,inType3)
+  matchcontinue (inTplExpExpBooleanLst1,inType2,inType3,dim1,dim2)
     local
       list<tuple<Exp.Exp, Boolean>> rest;
       Exp.Exp exp_1,exp;
       Type newt,t1,t2;
-      Boolean a;
-    case ({},_,_) then {}; 
-    case (((exp,_) :: rest),t1,t2)
+      Boolean a,sc;
+    case ({},_,_,_,_) then {}; 
+    case (((exp,_) :: rest),t1,t2,dim1,dim2)
       equation 
-        rest = typeConvertMatrixRow(rest, t1, t2);
+        rest = typeConvertMatrixRow(rest, t1, t2,dim1,dim2);
         (exp_1,newt) = typeConvert(exp, t1, t2);
+        //exp_1 = liftExpType(exp_1,dim1);
+        //exp_1 = liftExpType(exp_1,dim2);
         a = isArray(t2);
+        sc = boolNot(a);
       then
-        ((exp_1,a) :: rest);
+        ((exp_1,sc) :: rest);
   end matchcontinue;
 end typeConvertMatrixRow;
 
