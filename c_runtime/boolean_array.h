@@ -22,6 +22,12 @@
 #ifndef BOOLEAN_ARRAY_H_
 #define BOOLEAN_ARRAT_H_
 
+#include "index_spec.h"
+#include "memory_pool.h"
+#include <stdio.h>
+#include <stdarg.h>
+#include <math.h>
+
 typedef double modelica_boolean;
 
 struct boolean_array_s
@@ -32,5 +38,11 @@ struct boolean_array_s
 };
 
 typedef struct boolean_array_s boolean_array_t;
+
+size_t boolean_array_nr_of_elements(boolean_array_t* a);
+
+void alloc_boolean_array_data(boolean_array_t* a);
+
+void clone_boolean_array_spec(boolean_array_t* source, boolean_array_t* dest);
 
 #endif

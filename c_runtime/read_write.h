@@ -55,6 +55,11 @@ int read_integer_array(FILE*,integer_array_t*);
 int write_modelica_integer(FILE*,modelica_integer*);
 int write_integer_array(FILE*,integer_array_t*);
 
+int read_modelica_boolean(FILE*,modelica_boolean*);
+int read_boolean_array(FILE*,boolean_array_t*);
+int write_modelica_boolean(FILE*,modelica_boolean*);
+int write_boolean_array(FILE*,boolean_array_t*);
+
 int read_modelica_string(FILE*,modelica_string_t*);
 int write_modelica_string(FILE*,modelica_string_t*);
 int read_type_description(FILE*, type_description*);

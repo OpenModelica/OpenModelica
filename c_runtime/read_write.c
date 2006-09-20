@@ -126,6 +126,18 @@ int read_modelica_integer(FILE* file, modelica_integer* data)
   return 0;
 }
 
+int read_modelica_boolean(FILE* file, modelica_boolean* data)
+{
+  type_description desc;
+  if (read_type_description(file,&desc)) { in_report("is type_desc"); return 1; }
+  if (desc.type != 'b') { cleanup_description(&desc); in_report("is type"); return 1; }
+  if (desc.ndims != 0) { cleanup_description(&desc); in_report("is ndims"); return 1; }
+  if (fscanf(file,"%e",(float*)data) != 1) { cleanup_description(&desc); in_report("is parse"); return 1; }
+  read_to_eol(file);
+  cleanup_description(&desc);
+  return 0;
+}
+
 int read_real_array(FILE* file, real_array_t* arr)
 {
   int nr_elements;
@@ -183,6 +195,35 @@ int read_integer_array(FILE* file, integer_array_t* arr)
   return 0;
 }
 
+int read_boolean_array(FILE* file, boolean_array_t* arr)
+{
+	
+  int nr_elements;
+  int i;
+  float f;
+  boolean_array_t tmp;
+  type_description desc;
+
+  if (read_type_description(file,&desc)) { in_report("ia type_desc"); return 1; }
+  if ((desc.type != 'b')) { in_report("ia type"); return 1; }
+  if (desc.ndims <= 0) { in_report("a ndims"); return 1; }
+  
+  tmp.ndims = desc.ndims;
+  tmp.dim_size = desc.dim_size;
+  clone_boolean_array_spec(&tmp,arr);
+  alloc_boolean_array_data(arr);
+  cleanup_description(&desc);
+
+  nr_elements = boolean_array_nr_of_elements(arr);
+  for (i = 0; i < nr_elements; ++i)
+    {
+      if (fscanf(file,"%e",&f) != 1) { in_report("ia parse"); return 1; }
+      arr->data[i] = f;
+    }
+  read_to_eol(file);
+  return 0;
+}
+
 int write_modelica_real(FILE* file, modelica_real* data)
 {
   fprintf(file,"# r!\n");
@@ -190,6 +231,12 @@ int write_modelica_real(FILE* file, modelica_real* data)
   return 0;
 }
 
+int write_modelica_boolean(FILE* file, modelica_boolean* data)
+{
+  fprintf(file,"# b!\n");
+  fprintf(file,"%e\n",*data);
+  return 0;
+}
 int write_modelica_integer(FILE* file, modelica_integer* data)
 {
   fprintf(file,"# i!\n");
@@ -211,8 +258,23 @@ int write_real_array(FILE* file, real_array_t* arr)
     }
   return 0;
 }
-/*
-void write_integer_array(FILE* file, integer_array_t* arr)
+
+int write_boolean_array(FILE* file, boolean_array_t* arr)
+{
+  int nr_elements;
+  int i;
+  fprintf(file,"# b[ %d",arr->ndims);
+  for (i = 0; i < arr->ndims; ++i) fprintf(file," %d",arr->dim_size[i]);
+  fprintf(file,"\n");
+  nr_elements = boolean_array_nr_of_elements(arr);
+  for (i = 0; i < nr_elements; ++i)
+    {
+      fprintf(file,"%e\n",arr->data[i]);
+    }
+  return 0;
+}
+
+int write_integer_array(FILE* file, integer_array_t* arr)
 {
   int nr_elements;
   int i;
@@ -226,7 +288,7 @@ void write_integer_array(FILE* file, integer_array_t* arr)
     }
     return 0;
 }
-*/
+
 
 int read_modelica_string(FILE* file, modelica_string_t* str)
 {

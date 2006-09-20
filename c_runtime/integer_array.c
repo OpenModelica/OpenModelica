@@ -165,16 +165,6 @@ void alloc_integer_array_data(integer_array_t* a)
 
   array_size = integer_array_nr_of_elements(a);
   a->data = integer_alloc(array_size);
-
-  /*  size_t array_size;
-  void* ptr;
-
-  assert(integer_array_ok(a));
-  array_size = integer_array_nr_of_elements(a) * sizeof(modelica_integer);
-  ptr = malloc(array_size);
-  assert(ptr);
-  a->data = ptr;*/
-  
 }
 
 void free_integer_array_data(integer_array_t* a)
@@ -185,8 +175,6 @@ void free_integer_array_data(integer_array_t* a)
 
   array_size = integer_array_nr_of_elements(a) * sizeof(modelica_integer);
   integer_free(array_size);
-  /*  free(a->data);
-      a->data = 0;*/
 }
 
 void clone_integer_array_spec(integer_array_t* source, integer_array_t* dest)

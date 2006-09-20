@@ -193,8 +193,8 @@ size_t real_array_nr_of_elements(real_array_t* a)
 	nr_of_elements *= a->dim_size[i];
     }
     return nr_of_elements;
-
 }
+
 void simple_alloc_1d_real_array(real_array_t* dest, int n)
 {
   dest->ndims = 1;
@@ -240,16 +240,7 @@ void alloc_real_array_data(real_array_t* a)
 
   array_size = real_array_nr_of_elements(a);
   a->data = real_alloc(array_size);
-
-  /*  size_t array_size;
-  void* ptr;
-
-  assert(real_array_ok(a));
-  array_size = real_array_nr_of_elements(a) * sizeof(modelica_real);
-  ptr = malloc(array_size);
-  assert(ptr);
-  a->data = ptr;*/
-  
+ 
 }
 
 void free_real_array_data(real_array_t* a)
