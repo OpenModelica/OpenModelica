@@ -31,7 +31,6 @@ options {
 tokens {
     ALGORITHM_STATEMENT;
 	ARGUMENT_LIST;
-    BEGIN_DEFINITION;
 	CLASS_DEFINITION	;
     CLASS_EXTENDS ;
 	CLASS_MODIFICATION;
@@ -46,7 +45,6 @@ tokens {
     COMPONENT_DEFINITION;
 	DECLARATION	; 
 	DEFINITION ;
-    END_DEFINITION;
 	ENUMERATION_LITERAL;
 	ELEMENT		;
 	ELEMENT_MODIFICATION		;
@@ -83,38 +81,7 @@ tokens {
 
 
 stored_definition :
-// To handle split models into several evaluations, "package A", 
-// "model test end test", "end A;" as in MathModelica
-        ( (ENCAPSULATED)? 
- 		(PARTIAL)?
- 		class_type
- 		IDENT EOF ) => ( (ENCAPSULATED)? 
- 		(PARTIAL)?
- 		class_type
- 		IDENT EOF!)
-         {
-             #stored_definition = #([BEGIN_DEFINITION,"BEGIN_DEFINITION"],
-                                      #stored_definition);
-         }
-        |
-            END! IDENT SEMICOLON! EOF! {
-                #stored_definition = #([END_DEFINITION,"END_DEFINITION"],
-                                     #stored_definition);
-        } 
-        |
-        (component_clause) => component_clause SEMICOLON! EOF! 
-        {
-                #stored_definition = #([COMPONENT_DEFINITION,"COMPONENT_DEFINITION"],
-                                     #stored_definition);
-        }
-        |
-        import_clause SEMICOLON! EOF! 
-        {
-            #stored_definition = #([IMPORT_DEFINITION,"IMPORT_DEFINITION"],
-                                     #stored_definition);
-        }
-        |
-// End handle split models.
+
 			(within_clause SEMICOLON!)?
 			((FINAL)? cd:class_definition s:SEMICOLON!
 			{

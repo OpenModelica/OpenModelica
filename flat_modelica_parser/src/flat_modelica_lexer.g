@@ -11,7 +11,7 @@ class flat_modelica_lexer extends Lexer;
 options {
     k=2;
     charVocabulary = '\3'..'\377';
-    exportVocab = flatmodelica;
+    exportVocab = modelica;
     testLiterals = false;
     defaultErrorHandler = false;
 }
@@ -27,6 +27,7 @@ tokens {
 	CONNECTOR	= "connector"	;
 	CONSTANT	= "constant"	;
 	DISCRETE	= "discrete"	;
+    DER         = "der";
 	EACH		= "each"	;
 	ELSE		= "else"	;
 	ELSEIF		= "elseif"	;
@@ -35,6 +36,7 @@ tokens {
 	ENUMERATION	= "enumeration"	;
 	EQUATION	= "equation"	;
 	ENCAPSULATED	= "encapsulated";
+    EXPANDABLE  = "expandable";
 	EXTENDS		= "extends"	;
 	EXTERNAL	= "external"	;
 	FALSE		= "false"	;
@@ -68,41 +70,13 @@ tokens {
 	TRUE		= "true"	;
 	TYPE		= "type"	;
 	UNSIGNED_REAL	= "unsigned_real";
+    DOT         = ".";
 	WHEN		= "when"	;
 	WHILE		= "while"	;
 	WITHIN		= "within" 	;
-    
-//    SUM = "sum" ;
-//    ARRAY = "array";
+}
 
-// Extra tokens for RML
-        ABSTYPE         = "abstype";
-//        AND             = "and";
-        AS              = "as";
-        AXIOM           = "axiom";
-        DATATYPE        = "datatype";
-        FAIL            = "fail";
-        LET             = "let";
-        INTERFACE       = "interface";
-        MODULE          = "module";
-        OF              = "of";
-        RELATION        = "relation";
-        RULE            = "rule";
-        VAL             = "val";
-        WILD            = "_";
-        WITH            = "with";
-        WITHTYPE        = "withtype";
-}
-{
-    std::string & replaceAll(std::string & str, const char *src, const char* dst) 
-    {
-        size_t pos;
-        while((pos = str.find(".")) < str.size()-1) {
-                str.replace(pos,1,"_");
-            }
-        return str;
-    }
-}
+
 // ---------
 // Operators
 // ---------
@@ -119,7 +93,7 @@ PLUS		: '+'	;
 MINUS		: '-'	;
 STAR		: '*'	;
 SLASH		: '/'	;
-DOT		: '.'	;
+
 COMMA		: ','	;
 LESS		: '<'	;
 LESSEQ		: "<="	;
@@ -163,19 +137,12 @@ SL_COMMENT :
   	;
 
 IDENT options { testLiterals = true; paraphrase = "an identifier";} :
-		NONDIGIT (NONDIGIT | DIGIT | DOT )* 
-        {
-            std::string tmp=$getText;
-            $setText(replaceAll(tmp,
-                ".",
-                "_"));
-        }
-            
+		NONDIGIT (NONDIGIT | DIGIT)* | QIDENT
 		;
 
-TYVARIDENT options { testLiterals = true; paraphrase = "a type identifier";} :
-		     '\'' NONDIGIT (NONDIGIT | DIGIT)*
-		;
+protected 
+QIDENT options { testLiterals = true; paraphrase = "an identifier";} : 
+         '\'' (QCHAR | SESCAPE) (QCHAR | SESCAPE)* '\'' ;
 
 protected
 NONDIGIT : 	('_' | 'a'..'z' | 'A'..'Z');
@@ -192,13 +159,13 @@ EXPONENT :
 
 
 UNSIGNED_INTEGER :
-	(( (DIGIT)+ '.' ) => (DIGIT)+ ( '.' (DIGIT)* ) 
-			{ 
-				$setType(UNSIGNED_REAL); 
-			}
-	| 	(DIGIT)+
-	)
-	(EXPONENT { $setType(UNSIGNED_REAL); } )?
+        (DIGIT)+ ('.' (DIGIT)* { $setType(UNSIGNED_REAL);} )? 
+        (EXPONENT { $setType(UNSIGNED_REAL); } )?
+    |
+        ('.' DIGIT) => ('.' (DIGIT)+ { $setType(UNSIGNED_REAL);})         
+        (EXPONENT { $setType(UNSIGNED_REAL); } )?
+    | 
+      '.' { $setType(DOT); }
 	;
 
 STRING : '"'! (SCHAR | SESCAPE)* '"'!;
@@ -208,6 +175,11 @@ protected
 SCHAR :	(options { generateAmbigWarnings=false; } : ('\n' | "\r\n"))	{ newline(); }
 	| '\t'
 	| ~('\n' | '\t' | '\r' | '\\' | '"');
+
+protected 
+QCHAR :	(options { generateAmbigWarnings=false; } : ('\n' | "\r\n"))	{ newline(); }
+	| '\t'
+	| ~('\n' | '\t' | '\r' | '\\' | '\'');
 
 protected
 SESCAPE : '\\' ('\\' | '"' | "'" | '?' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v');
@@ -220,8 +192,5 @@ ESC :
 	|	'\\'
 	)
 	;
-
-
-
 
 

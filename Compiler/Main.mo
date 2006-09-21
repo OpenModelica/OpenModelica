@@ -413,6 +413,7 @@ algorithm
         then ();
        
     case {f} /* A Modelica file .mo */ 
+      local String s;
       equation 
         isModelicaFile(f);
         p = Parser.parse(f);
@@ -420,6 +421,8 @@ algorithm
           "\n--------------- Parsed program ---------------\n");
         Debug.fcall("dumpgraphviz", DumpGraphviz.dump, p);
         Debug.fcall("dump", Dump.dump, p);
+        s = Print.getString();
+        Debug.fcall("dump",print,s);
         Debug.fprint("info", 
           "\n------------------------------------------------------------ \n");
         Debug.fprint("info", "---elaborating\n");

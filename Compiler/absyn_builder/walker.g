@@ -153,6 +153,29 @@ tokens {
         }   
         return l;
     }
+    void* string_append_from_stack(l_stack& s)
+    {
+    	char* buf;
+        l_stack tmpStack = s; // copy stack
+       	if (s.empty()) return 0;
+        int size=3; // space for '\0' and '[' and ']'
+        while(!tmpStack.empty()) {
+        	size +=strlen((const char*)tmpStack.top());
+        	tmpStack.pop();
+        } 
+        buf = (char*)malloc(sizeof(char)*size);
+        if(!buf) return 0;
+        buf[0]='\0';	
+        buf = strcat(buf,"[");
+        
+        while (!s.empty())
+        {
+            buf = strcat(buf, (const char*)s.top());
+            s.pop();
+        }   
+        buf = strcat(buf,"]");
+        return buf;
+    }
 
     void* fix_elseif(l_stack& s, void* elsePart)
     {
@@ -276,6 +299,7 @@ class_definition [bool final] returns [ void* ast ]
 {
     void* restr = 0;
     void* class_spec = 0;
+    void* name=0;
     RefMyAST classDef;
 }
     :
@@ -284,7 +308,7 @@ class_definition [bool final] returns [ void* ast ]
             (p:PARTIAL )?
             (ex:EXPANDABLE)?
             restr = class_restriction
-            (i:IDENT)?
+            (name = flat_name_path)? 
             class_spec = class_specifier
         )
         {   
@@ -293,7 +317,7 @@ class_definition [bool final] returns [ void* ast ]
                 restr = Absyn__R_5fEXP_5fCONNECTOR;
             }
             ast = Absyn__CLASS(
-                i? to_rml_str(i): mk_scon(""),
+                name? mk_scon((char*)name): mk_scon(""),
                 RML_PRIM_MKBOOL(p != 0),
                 RML_PRIM_MKBOOL(final),
                 RML_PRIM_MKBOOL(e != 0), 
@@ -307,7 +331,8 @@ class_definition [bool final] returns [ void* ast ]
                   mk_icon(classDef?classDef->getEndLine():0),
                   mk_icon(classDef?classDef->getEndColumn():0)
                   )
-            );                
+            );     
+            if (name) free(name);            
         }
     ;
 
@@ -927,20 +952,43 @@ conditional_attribute returns [void* ast]
         ;
 
 // returns datatype Component
-declaration returns [void* ast]
+declaration returns [void* ast=0]
 {
 	void* arr = 0;
 	void* mod = 0;
 	void* id = 0;
+	void* id2 = 0;
+	void* id3 = 0;
+	char* buf=0;
 }
 	:
-		#(i:IDENT (arr = array_subscripts)? (mod = modification)?)
+		(#(i:IDENT (arr = array_subscripts)? (mod = modification)?)
 		{
 			if (!arr) arr = mk_nil();
 			id = to_rml_str(i);
 			ast = Absyn__COMPONENT(id, arr, mod ? mk_some(mod) : mk_none());
-
-		}
+		} 
+		/* For flat modelica parsing */
+		|#(DOT #(i2:IDENT (id2 = flat_array_subscripts)?)  
+				(id3 = flat_component_reference[&arr])) (mod=modification)?
+			{
+				buf = (char*)malloc(strlen(i2->getText().c_str())
+				+(id2==0?0:strlen((char*)id2))
+				+(id3==0?0:strlen((char*)id3))+2);
+				if (!buf)  return 0;
+				buf[0]='\0';	
+				buf = strcat(buf,i2->getText().c_str());
+				if (id2) buf = strcat(buf,(const char*)id2);
+				buf = strcat(buf,".");
+				if (id3) buf = strcat(buf,(const char*)id3);
+				if (!arr) arr = mk_nil();
+				id = mk_scon(buf);
+				ast = Absyn__COMPONENT(id, arr, mod ? mk_some(mod) : mk_none());
+				free(buf);buf=0;
+				if (id3) free(id3);
+				if (id2) free (id2);
+			}
+		)
 	;
 
 modification returns [void* ast] 
@@ -2095,4 +2143,104 @@ annotation returns [ void *ast]
         }
     ;		
 
+flat_array_subscripts returns [void* ast]
+{
+	l_stack el_stack;
+	void* s = 0;
+	
+}
+	:
+		#(LBRACK s = flat_subscript 
+			{
+				el_stack.push(s);
+			}
+			(s = flat_subscript
+				{
+					el_stack.push(s);
+				}
+			)* )
+		{
+			ast = string_append_from_stack(el_stack);
+		}
+	;
+/* Flat subscript currently only works for UNSIGNED_INTEGER or IDENT */
+flat_subscript returns [void* ast]
+{
+}
+	:
+		(
+			ui:UNSIGNED_INTEGER 
+			{ 
+				ast = (void*)ui->getText().c_str(); 
+			}
+			|
+			i:IDENT
+			{
+				ast = (void*)i->getText().c_str();
+			}
+		| c:COLON 
+			{
+				ast = (void*)":";
+			}
+		)
+	;
+flat_component_reference [void**lastarrsub]	returns [void* ast]
+{
+	void* arr = 0;
+	void* ast2 = 0;
+	char* buf=0;
+}
+	:
+		#(i:IDENT (arr= array_subscripts)?)
+			{
+				*lastarrsub = arr;
+				ast = (void*)i->getText().c_str();				
+			}
+		|#(DOT #(i2:IDENT (arr = flat_array_subscripts)?)  
+				ast2 = flat_component_reference[lastarrsub])
+			{
+				buf = (char*) malloc(strlen(i2->getText().c_str())
+					+(arr==0?0:strlen((const char*)arr))
+					+(ast2 == 0?0:strlen((const char*)ast2)) + 2);
+				if (!buf) return 0;
+				buf[0]='\0';
+				buf = strcat(buf,i2->getText().c_str());
+				if (arr) buf = strcat(buf,(const char*)arr);
+				buf = strcat(buf,".");
+				if (ast2) buf = strcat(buf,(const char*)ast2);
+				ast = buf;
+				if (ast2) free(ast2);
+				if (arr) free(arr);				
+			}
+		
+	;
 
+/* flat_name_path is used in flat modelica where a model name can be qualified.
+* E.g. 
+* model A.B.C 
+*   Real x.y;
+* end A.B.C;
+* 
+* This is solved by collecting the tokens and forming an identifier which is "A.B.C"
+*/      
+flat_name_path returns [void* ast]
+{
+	char* buf=0;
+}
+	:
+		i:IDENT 
+		{
+			ast = strdup(i->getText().c_str());
+		}
+	|#(d:DOT i2:IDENT ast = flat_name_path )
+		{
+			buf = (char*) malloc(strlen(i2->getText().c_str())
+					+strlen((const char*)ast)+2);
+			if (!buf) return 0;
+			buf[0]='\0';
+			buf = strcat(buf,i2->getText().c_str());
+			buf = strcat(buf,".");
+			buf = strcat(buf,(const char*)ast);
+			ast = buf;
+		}
+	;

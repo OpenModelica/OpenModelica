@@ -3,7 +3,12 @@ header "post_include_hpp" {
 #define null 0
 #include "MyAST.h"
 
+#include "../../Compiler/runtime/errorext.h"
+
+#include "../../Compiler/runtime/error_reporting.h"
+
 typedef ANTLR_USE_NAMESPACE(antlr)ASTRefCount<MyAST> RefMyAST;
+
 }
 
 options {
@@ -15,7 +20,7 @@ class flat_modelica_parser extends Parser;
 options {
     codeGenMakeSwitchThreshold = 3;
     codeGenBitsetTestThreshold = 4;
-	importVocab = flatmodelica;
+	importVocab = modelica;
     defaultErrorHandler = false;
 	k = 2;
 	buildAST = true;
@@ -26,8 +31,8 @@ options {
 tokens {
     ALGORITHM_STATEMENT;
 	ARGUMENT_LIST;
-    BEGIN_DEFINITION;
 	CLASS_DEFINITION	;
+    CLASS_EXTENDS ;
 	CLASS_MODIFICATION;
 	CODE_EXPRESSION;
 	CODE_MODIFICATION;
@@ -40,15 +45,16 @@ tokens {
     COMPONENT_DEFINITION;
 	DECLARATION	; 
 	DEFINITION ;
-    END_DEFINITION;
 	ENUMERATION_LITERAL;
 	ELEMENT		;
 	ELEMENT_MODIFICATION		;
 	ELEMENT_REDECLARATION	;
     EQUATION_STATEMENT;
+    EXTERNAL_ANNOTATION ;
  	INITIAL_EQUATION;
 	INITIAL_ALGORITHM;
     IMPORT_DEFINITION;
+    IDENT_LIST;
 	EXPRESSION_LIST;
 	EXTERNAL_FUNCTION_CALL;
     FOR_INDICES ;
@@ -75,22 +81,43 @@ tokens {
 
 
 stored_definition :
-        class_definition 
-        {
-          #stored_definition = #([STORED_DEFINITION,"STORED_DEFINITION"],
-          #stored_definition);
-        }
-        
-    ;
+
+			(within_clause SEMICOLON!)?
+			((FINAL)? cd:class_definition s:SEMICOLON!
+			{
+			  /* adrpo, fix the end of this AST node */
+			  if(#cd != NULL) 
+			  {
+            		  	/*
+            		  	std::cout << (#cd)->toString() << std::endl;				
+            		  	std::cout << s->getLine() << ":" << s->getColumn() << std::endl;
+            		  	*/				
+				RefMyAST(#cd)->setEndLine(s->getLine());
+				RefMyAST(#cd)->setEndColumn(s->getColumn());
+			   }							
+			}
+			)* 
+			EOF!
+			{
+				#stored_definition = #([STORED_DEFINITION,"STORED_DEFINITION"],
+				#stored_definition);
+			}
+			;
+
+
+within_clause :
+  				WITHIN^ (name_path)?
+			;
 
 /*
  * 2.2.2 Class definition
  */
 
 class_definition :
-        class_type
-		IDENT
-		class_specifier
+		(ENCAPSULATED)? 
+		(PARTIAL)?
+		class_type     
+        class_specifier
 		{ 
 			#class_definition = #([CLASS_DEFINITION, "CLASS_DEFINITION"], 
 				class_definition); 
@@ -98,15 +125,43 @@ class_definition :
 		;
 
 class_type :
-		MODEL 
-		;
-
-class_specifier :
-		( string_comment composition END! name_path! SEMICOLON! (.!)* EOF!
-		| EQUALS^  base_prefix name_path ( array_subscripts )? ( class_modification )? comment
-		| EQUALS^ enumeration
+		( CLASS | MODEL | RECORD | BLOCK | ( EXPANDABLE )? CONNECTOR | TYPE 
+        | PACKAGE | FUNCTION 
 		)
 		;
+
+class_specifier: 	
+        name_path /*was IDENT in modelica_parser*/ class_specifier2 
+    |   EXTENDS! IDENT (class_modification)? string_comment composition
+            END! IDENT! 
+        {
+            #class_specifier = #([CLASS_EXTENDS,"CLASS_EXTENDS"],#class_specifier);
+        }
+        ;
+
+class_specifier2 :
+		( string_comment composition END! /* was IDENT!*/ name_path!
+		| EQUALS^  base_prefix name_path ( array_subscripts )? ( class_modification )? comment
+		| EQUALS^ enumeration
+        | EQUALS^ pder    
+		| EQUALS^ overloading
+		)
+		;
+
+pder:   DER^ LPAR! name_path COMMA! ident_list RPAR! comment ;
+
+ident_list : 
+        IDENT 
+    | IDENT COMMA! ident_list
+        {
+            #ident_list=#([IDENT_LIST,"IDENT_LIST"],#ident_list);
+        }
+    ;
+        
+
+overloading:
+		OVERLOAD^ LPAR! name_list RPAR! comment
+	;
 
 base_prefix:
 		type_prefix
@@ -117,7 +172,7 @@ name_list:
 		;
 
 enumeration :
-		ENUMERATION^ LPAR! enum_list RPAR! comment 
+		ENUMERATION^ LPAR! (enum_list | COLON ) RPAR! comment 
 		;
 enum_list :
 		enumeration_literal ( COMMA! enumeration_literal)*
@@ -145,13 +200,20 @@ composition :
 
 external_clause :
         EXTERNAL^	
-            ( language_specification )? 
-            ( external_function_call )?
-			(SEMICOLON!) ?  
-			/* Relaxed from Modelica 2.0. This code will be correct in 2.1 */ 
-			( annotation SEMICOLON! )?
+        ( language_specification )? 
+        ( external_function_call )?
+        ( annotation )? SEMICOLON!
+        ( external_annotation )?
         ;
-		
+
+external_annotation:
+		annotation SEMICOLON! 
+        { 
+            #external_annotation=#([EXTERNAL_ANNOTATION,
+					"EXTERNAL_ANNOTATION"],#external_annotation); 
+        }
+    ;
+
 public_element_list :
 		PUBLIC^ element_list
 		;
@@ -174,15 +236,63 @@ external_function_call :
 		;
 
 element_list :
-		((element | annotation ) SEMICOLON!)*
+		((e:element | a:annotation ) s:SEMICOLON!
+		{		
+		   /* adrpo, fix the end of this AST node */
+		   if (#e)
+		   {
+    		  	/*
+    		  	std::cout << (#e)->toString() << std::endl;				
+    		  	std::cout << s->getLine() << ":" << s->getColumn() << std::endl;
+    		  	*/
+			RefMyAST(#e)->setEndLine(s->getLine());
+			RefMyAST(#e)->setEndColumn(s->getColumn());		   	
+		   	if (#e->getFirstChild())
+		   	{
+		   	   /*
+    		  	   std::cout << (#e->getFirstChild())->toString() << std::endl;				
+    		  	   std::cout << s->getLine() << ":" << s->getColumn() << std::endl;
+    		  	   */
+			   RefMyAST(#e->getFirstChild())->setEndLine(s->getLine());
+			   RefMyAST(#e->getFirstChild())->setEndColumn(s->getColumn());		   	
+		        }		   
+		   }
+		   
+		}
+		)*
 		;
+        exception
+        catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
+        {
+          BEFORE_SYNC;
+
+          // Sync to {PUBLIC, PROTECTED, EQUATION, ALGORITHM, EXTERNAL, END}
+          while(LA(1) != PUBLIC && LA(1) != PROTECTED && LA(1) != EQUATION && LA(1) != ALGORITHM && LA(1) != EXTERNAL && LA(1) != END)
+          {
+            if(LA(1) == EOF_)
+            {
+              throw ANTLR_USE_NAMESPACE(antlr)RecognitionException("unexpected end of file", modelicafilename, LT(1)->getLine(), LT(1)->getColumn());
+            }
+            consume();
+          }
+
+          AFTER_SYNC;
+        }
 
 element :
-		(FINAL)?	 
-        (INNER | OUTER)?
-		(class_definition | cc:component_clause)
+			ic:import_clause
+		|	ec:extends_clause			 
+		|	(REDECLARE)?
+        (FINAL)?	 
+        (INNER)? 
+        (OUTER)?
+		(	(class_definition | cc:component_clause)
+			|(REPLACEABLE ( class_definition | cc2:component_clause )
+				(constraining_clause comment)?
+			 )
+		)
 		{ 
-			if(#cc != null ) 
+			if(#cc != null || #cc2 != null) 
 			{ 
 				#element = #([DECLARATION,"DECLARATION"], #element); 
 			}
@@ -191,6 +301,61 @@ element :
 				#element = #([DEFINITION,"DEFINITION"], #element); 
 			}
 		}
+		;
+        exception
+        catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
+        {
+          BEFORE_SYNC;
+
+          // Sync to SEMICOLON
+          while(LA(1) != SEMICOLON)
+          {
+            if(LA(1) == EOF_)
+            {
+              throw ANTLR_USE_NAMESPACE(antlr)RecognitionException("unexpected end of file", modelicafilename, LT(1)->getLine(), LT(1)->getColumn());
+            }
+            consume();
+          }
+
+          AFTER_SYNC;
+        }
+
+import_clause : 
+		IMPORT^ (explicit_import_name | implicit_import_name) comment
+		;
+
+explicit_import_name:
+		IDENT EQUALS^ name_path
+		;
+
+implicit_import_name!
+		{
+			bool has_star = false;
+		}
+		:
+		has_star = np:name_path_star
+		{
+			if (has_star)
+			{
+				#implicit_import_name = #([UNQUALIFIED,"UNQUALIFIED"],#np);
+			}
+			else
+			{
+				#implicit_import_name = #([QUALIFIED,"QUALIFIED"],#np);
+			}
+		};
+/*
+ * 2.2.3 Extends
+ */
+
+// Note that this is a minor modification of the standard by 
+// allowing the comment.
+extends_clause : 
+		EXTENDS^ name_path ( class_modification )?
+		;
+
+constraining_clause :
+		extends_clause
 		;
 
 /*
@@ -221,11 +386,23 @@ component_list :
 		;
 
 component_declaration :
-		declaration comment
+		declaration (conditional_attribute)? comment
 		;
 
-declaration :
-		IDENT^ (array_subscripts)? (modification)?
+conditional_attribute:
+        IF^ expression
+        ;
+
+declaration !
+		:
+		comp:component_reference /* was: IDENT^  (array_subscripts)?*/ (mod:modification)? 
+		{
+			if (#mod) {	
+				#declaration = #(#comp,#mod);
+			} else {
+			   #declaration = #comp;
+			}
+		}
 		;
 
 /*
@@ -255,21 +432,41 @@ argument_list :
 		;
 
 argument ! :
-		em:element_modification 
+		(em:element_modification_or_replaceable
 		{ 
 			#argument = #([ELEMENT_MODIFICATION,"ELEMENT_MODIFICATION"], #em); 
 		}
+		| er:element_redeclaration 
+		{ 
+			#argument = #([ELEMENT_REDECLARATION,"ELEMENT_REDECLARATION"], #er); 		}
+		)
 		;
+
+element_modification_or_replaceable: 
+        (EACH)? (FINAL)? (element_modification | element_replaceable)
+    ;
 
 element_modification :
-		( EACH )? component_reference ( modification )? string_comment
+		component_reference ( modification )? string_comment
 	;
 
-
-component_clause1 :
-		type_prefix type_specifier component_declaration
+element_redeclaration :
+		REDECLARE^ ( EACH )? (FINAL )?
+		(	(class_definition | component_clause1) | element_replaceable )
 		;
 
+element_replaceable: 
+        REPLACEABLE^ ( class_definition | component_clause1 )
+				(constraining_clause comment)?
+    ;
+component_clause1 :
+		type_prefix type_specifier component_declaration1
+		;
+
+component_declaration1 :
+        declaration comment
+    ;
+        
 
 /*
  * 2.2.6 Equations
@@ -295,6 +492,24 @@ equation_annotation_list :
 		|
 		( equation SEMICOLON! | annotation SEMICOLON!) equation_annotation_list
 		; 
+        exception
+        catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
+        {
+          BEFORE_SYNC;
+
+          // Sync to {END, EQUATION, ALGORITHM, INITIAL, PROTECTED, PUBLIC}
+          while(LA(1) != END && LA(1) != EQUATION && LA(1) != ALGORITHM && LA(1) != INITIAL
+                && LA(1) != PROTECTED && LA(1) != PUBLIC)
+          {
+            if(LA(1) == EOF_)
+            {
+              throw ANTLR_USE_NAMESPACE(antlr)RecognitionException("unexpected end of file", modelicafilename, LT(1)->getLine(), LT(1)->getColumn());
+            }
+            consume();
+          }
+
+          AFTER_SYNC;
+        }
 
 algorithm_clause :
 		ALGORITHM^
@@ -302,6 +517,25 @@ algorithm_clause :
 		|annotation SEMICOLON!
 		)*
 		;
+        exception
+        catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
+        {
+          BEFORE_SYNC;
+
+          // Sync to {END, EQUATION, ALGORITHM, INITIAL, PROTECTED, PUBLIC}
+          while(LA(1) != END && LA(1) != EQUATION && LA(1) != ALGORITHM && LA(1) != INITIAL
+                && LA(1) != PROTECTED && LA(1) != PUBLIC)
+          {
+            if(LA(1) == EOF_)
+            {
+              throw ANTLR_USE_NAMESPACE(antlr)RecognitionException("unexpected end of file", modelicafilename, LT(1)->getLine(), LT(1)->getColumn());
+            }
+            consume();
+          }
+
+          AFTER_SYNC;
+        }
+
 initial_algorithm_clause :
 		{ LA(2)==ALGORITHM}?
 		INITIAL! ALGORITHM^
@@ -312,11 +546,30 @@ initial_algorithm_clause :
 	            #initial_algorithm_clause = #([INITIAL_ALGORITHM,"INTIAL_ALGORITHM"], #initial_algorithm_clause);
 		}
 		;
-equation :
+        exception
+        catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
+        {
+          BEFORE_SYNC;
 
-		(	(simple_expression EQUALS) => equality_equation
+          // Sync to {END, EQUATION, ALGORITHM, INITIAL, PROTECTED, PUBLIC}
+          while(LA(1) != END && LA(1) != EQUATION && LA(1) != ALGORITHM && LA(1) != INITIAL
+                && LA(1) != PROTECTED && LA(1) != PUBLIC)
+          {
+            if(LA(1) == EOF_)
+            {
+              throw ANTLR_USE_NAMESPACE(antlr)RecognitionException("unexpected end of file", modelicafilename, LT(1)->getLine(), LT(1)->getColumn());
+            }
+            consume();
+          }
+
+          AFTER_SYNC;
+        }
+
+equation :
+		(   (simple_expression EQUALS) => equality_equation
 		|	conditional_equation_e
 		|	for_clause_e
+		|	connect_clause
 		|	when_clause_e
 		|   IDENT function_call
 		)
@@ -325,6 +578,23 @@ equation :
         }
 		comment
 		;
+        exception
+        catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
+        {
+          BEFORE_SYNC;
+
+          // Sync to SEMICOLON
+          while(LA(1) != SEMICOLON)
+          {
+            if(LA(1) == EOF_)
+            {
+              throw ANTLR_USE_NAMESPACE(antlr)RecognitionException("unexpected end of file", modelicafilename, LT(1)->getLine(), LT(1)->getColumn());
+            }
+            consume();
+          }
+
+          AFTER_SYNC;
+        }
 
 algorithm :
 		( assign_clause_a
@@ -339,6 +609,23 @@ algorithm :
             #algorithm = #([ALGORITHM_STATEMENT,"ALGORITHM_STATEMENT"], #algorithm);
         }
 		;
+        exception
+        catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
+        {
+          BEFORE_SYNC;
+
+          // Sync to SEMICOLON
+          while(LA(1) != SEMICOLON)
+          {
+            if(LA(1) == EOF_)
+            {
+              throw ANTLR_USE_NAMESPACE(antlr)RecognitionException("unexpected end of file", modelicafilename, LT(1)->getLine(), LT(1)->getColumn());
+            }
+            consume();
+          }
+
+          AFTER_SYNC;
+        }
 
 assign_clause_a : component_reference	( ASSIGN^ expression | function_call );
 
@@ -346,7 +633,7 @@ multi_assign_clause_a :
         LPAR! expression_list RPAR! ASSIGN^ component_reference function_call;
 
 equality_equation :
-		simple_expression EQUALS^ expression
+		simple_expression EQUALS^ expression 
 		;
 
 conditional_equation_e :
@@ -425,6 +712,17 @@ algorithm_list :
 		( algorithm SEMICOLON! )*
 		;
 
+connect_clause :
+		CONNECT^ LPAR! connector_ref COMMA! connector_ref RPAR!
+		;
+
+connector_ref :
+		IDENT^ ( array_subscripts )? ( DOT^ connector_ref_2 )?
+		;
+
+connector_ref_2 :
+		IDENT^ ( array_subscripts )?
+		;
 
 /*
  * 2.2.7 Expressions
@@ -433,6 +731,7 @@ algorithm_list :
 expression :
 		( if_expression 
         | simple_expression
+		| code_expression
 		)
 		;
 
@@ -479,7 +778,58 @@ simple_expression ! :
 			}
 		}
 		;
+/* Code quotation mechanism */
+code_expression ! :
+		CODE LPAR ((expression RPAR)=> e:expression | m:modification | el:element (SEMICOLON!)?
+		| eq:code_equation_clause | ieq:code_initial_equation_clause
+		| alg:code_algorithm_clause | ialg:code_initial_algorithm_clause
+		)  RPAR 
+ 		{
+ 			if (#e) {
+ 				#code_expression = #([CODE_EXPRESSION, "CODE_EXPRESSION"],#e);
+ 			} else if (#m) {
+ 				#code_expression = #([CODE_MODIFICATION, "CODE_MODIFICATION"],#m);
+ 			} else if (#el) {
+ 				#code_expression = #([CODE_ELEMENT, "CODE_ELEMENT"],#el);
+ 			} else if (#eq) {
+				#code_expression = #([CODE_EQUATION, "CODE_EQUATION"],#eq);
+ 			} else if (#ieq) {				
+ 				#code_expression = #([CODE_INITIALEQUATION, "CODE_EQUATION"],#ieq);
+ 			} else if (#alg) {
+				#code_expression = #([CODE_ALGORITHM, "CODE_ALGORITHM"],#alg);
+  			} else if (#ialg) {				
+ 				#code_expression = #([CODE_INITIALALGORITHM, "CODE_ALGORITHM"],#ialg);
+			}
+		}
+	;
 
+code_equation_clause :
+		( EQUATION^ (equation SEMICOLON! | annotation SEMICOLON! )*  )
+		;
+
+code_initial_equation_clause :
+ 		{ LA(2)==EQUATION}?
+ 		INITIAL! ec:code_equation_clause
+         {
+             #code_initial_equation_clause = #([INITIAL_EQUATION,"INTIAL_EQUATION"], ec);
+         } 
+ 		;
+
+code_algorithm_clause :
+		ALGORITHM^ (algorithm SEMICOLON! | annotation SEMICOLON!)*
+		;
+code_initial_algorithm_clause :
+		{ LA(2) == ALGORITHM }?
+		INITIAL! ALGORITHM^
+		(algorithm SEMICOLON!
+		|annotation SEMICOLON!
+		)*
+		{
+			#code_initial_algorithm_clause = #([INITIAL_ALGORITHM,"INTIAL_ALGORITHM"], #code_initial_algorithm_clause);
+		}
+		;
+
+/* End Code quotation mechanism */
 
 logical_expression :
 		logical_term ( OR^ logical_term )*
@@ -537,6 +887,7 @@ primary :
 		| FALSE
 		| TRUE
 		| component_reference__function_call
+        | DER^ function_call
 		| LPAR^ expression_list RPAR!
 		| LBRACK^ expression_list (SEMICOLON! expression_list)* RBRACK!
 		| LBRACE^ for_or_expression_list RBRACE!
@@ -566,7 +917,7 @@ name_path :
 		IDENT DOT^ name_path
 		;
 
-name_path_star returns [bool val]
+name_path_star returns [bool val=false]
 		: 
 		{ LA(2)!=DOT }? IDENT { val=false;}|
 		{ LA(2)!=DOT }? STAR! { val=true;}|
@@ -580,7 +931,7 @@ name_path_star returns [bool val]
 		;
 
 component_reference :
-		IDENT^ ( array_subscripts)? ( DOT^ component_reference )?
+		IDENT^ ( array_subscripts )? ( DOT^ component_reference )?
 		;
 
 function_call :
