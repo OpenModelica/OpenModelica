@@ -566,15 +566,6 @@ algorithm
       then
         Exp.RELATION(e1_1,rel,e2_1);
 
-	// if expression does not have derivative, but present here so linear equations can be 
-	// identified by calculation of jacobian.
-    case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3),tv)
-      equation 
-        e2_1 = differentiateExp(e2, tv);
-        e3_1 = differentiateExp(e3, tv); 
-      then
-        Exp.IFEXP(e1,e2_1,e3_1);
-
     case (Exp.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = {(exp as Exp.CREF(componentRef = cr))},tuple_ = b,builtin = c,ty=tp),tv) /* der(x) */ 
       local Exp.Type tp;
       equation 

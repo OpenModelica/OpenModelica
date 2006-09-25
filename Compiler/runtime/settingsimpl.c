@@ -4,15 +4,47 @@
 #include <string.h>
 #include <malloc.h>
 
+#ifdef WIN32
+#include <Windows.h>
+#endif
+
 char* compileCommand = 0;
 char* tempDirectoryPath = 0;
 char* plotCommand = 0;
 int echo = 1; //true
+
+char* _replace(char* source_str,char* search_str,char* replace_str); //Defined in systemimpl.c
+
 void Settings_5finit(void)
 {
-  
-  
+
+// On windows, set Temp directory path to Temp directory as returned by GetTempPath, 
+// which is usually TMP or TEMP or windows catalogue.
+#ifdef WIN32
+	int numChars;
+	char* str,str1;
+	char tempDirectory[1024];
+		//extract the temp path
+	numChars= GetTempPath(1024, tempDirectory);
+	if (numChars == 1024 || numChars == 0) {
+		printf("Error setting temppath in Kernel\n");
+	} else {
+	if (tempDirectoryPath) { 
+		free(tempDirectoryPath);
+		tempDirectoryPath=0;
+	}
+	// Must do replacement in two steps, since the _replace function can not have similar source as target.
+	str = _replace(tempDirectory,"\\","/");
+	tempDirectoryPath= _replace(str,"/","\\\\");
+	free(str);
+	}
+#endif
+
+// TODO: for other operating systems probably look at $Temp  
 }
+
+
+
 
 RML_BEGIN_LABEL(Settings__getVersionNr)
 {

@@ -27,6 +27,27 @@ void hybrd_(void (*) (int*, double *, double*, int*),
 }
 #endif
 
+#define print_matrix(A,d1,d2) do {\
+	int r,c;\
+	printf("{{"); \
+	for(r=0;r<d1;r++) {\
+		for (c=0;c < d2; c++) {\
+			printf("%2.3f",A[r+d1*c]);\
+			if (c != d2-1) printf(",");\
+		}\
+		if(r != d1-1) printf("},{");\
+	}\
+	printf("}}\n"); \
+} while(0)
+#define print_vector(b,d1) do {\
+	int i; \
+	printf("{");\
+	for(i=0;i<d1;i++) { \
+		printf("%2.3f",b[i]); \
+		if (i != d1-1) printf(",");\
+	} \
+	printf("}\n"); \
+} while(0)
 #define solve_nonlinear_system_mixed(residual,no) do { \
 	 int giveUp=0; \
 	 int retries = 0; \
@@ -120,6 +141,21 @@ dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
  } \
 } while (0) /* (no trailing ; ) */ 
 
+#define solve_linear_equation_system_mixed(A,b,size,id) do { long int n=size; \
+long int nrhs=1; /* number of righthand sides*/\
+long int lda=n /* Leading dimension of A */; long int ldb=n; /* Leading dimension of b*/\
+long int * ipiv=new long int[n]; /* Pivott indices */ \
+assert(ipiv != 0); \
+for(int i=0; i<n; i++) ipiv[i] = 0; \
+long int info; /* output */ \
+dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
+ if (info < 0) { \
+   printf("Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,localData->timeValue,info); \
+ } \
+ else if (info > 0) { \
+     found_solution=-1; \
+ } \
+} while (0) /* (no trailing ; ) */ 
 
 #define start_nonlinear_system(size) { double nls_x[size]; \
 double nls_fvec[size]; \
@@ -152,13 +188,12 @@ int found_solution = 0; \
 int cur_value_indx=0; \
 do { \
 double discrete_loc[size]; \
-double discrete_loc2[size];
+double discrete_loc2[size]
 
 #define mixed_equation_system_end(size) } while (!found_solution); \
  } while(0)
 
-#define check_discrete_values(size) do {int i; \
-if (!found_solution) { \
+#define check_discrete_values(size,numValues) do {int i; \
 if (found_solution == -1) { /*system of equations failed*/ \
 found_solution=0; \
 } else { \
@@ -166,20 +201,30 @@ found_solution = 1; \
 for (i=0; i < size; i++) { \
 if (fabs((discrete_loc[i] - discrete_loc2[i])) > 1e-12) {\
 found_solution=0;\
-/*printf("did not find solution, iterate\n");*/ \
 }\
  }\
 }\
 if (!found_solution ) { \
 cur_value_indx++; \
-/*printf("iterating mixed system, i=%d\n",cur_value_indx);*/ \
+if (cur_value_indx > numValues/size) { \
+	found_solution=-1; \
+} else {\
 /* try next set of values*/ \
 for (i=0; i < size; i++) { \
  *loc_ptrs[i]=values[cur_value_indx*size+i];  \
-/*printf("Setting new value for disc[%d] = %f\n",i,values[cur_value_indx*size+i]);*/ \
 } \
 } \
+} \
+if (found_solution && sim_verbose) { /* we found a solution*/ \
+	{int i; \
+		printf("Result of mixed system discrete variables:\n"); \
+		for (i=0;i<size;i++) { \
+			printf("%s = %f  pre(%s)= %f\n",getName(loc_ptrs[i]),*loc_ptrs[i], \
+											getName(loc_ptrs[i]),pre(*loc_ptrs[i])); \
+		} \
+	} \
 } \
 } while(0)
+
 #define roundEps(x) (((x) > 0) ? (floor(x*1.0e10)*1e-10): (ceil(x*1.0e10)*1e-10))
 #endif

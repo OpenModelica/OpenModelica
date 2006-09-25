@@ -630,6 +630,14 @@ int dassl_main( int argc, char**argv)
     printf("Error in initialization. Storing results and exiting.\n");
     goto exit;
   }
+  
+  if (sim_verbose) { cout << "Checking events at initialization (at time "<< globalData->timeValue << ")." << endl; }
+
+  // Need to check for events at init=1 since e.g. initial() generate event at initialization.
+  //calcEnabledZeroCrossings();  
+  CheckForInitialEvents(&globalData->timeValue);
+  StartEventIteration(&globalData->timeValue);
+  
    if (sim_verbose)  { 
   	cout << "Starting numerical solver at time "<< start << endl;
   }
@@ -648,14 +656,7 @@ int dassl_main( int argc, char**argv)
 
   //saveall();
  
-  function_updateDependents();
-
-  if (sim_verbose) { cout << "Checking events at initialization (at time "<< globalData->timeValue << ")." << endl; }
-
-  // Need to check for events at init=1 since e.g. initial() generate event at initialization.
-  //calcEnabledZeroCrossings();  
-  CheckForInitialEvents(&globalData->timeValue);
-  StartEventIteration(&globalData->timeValue);
+  function_updateDependents(); 
 
   saveall();
 
@@ -856,10 +857,10 @@ double pre(double & var)
 {
   double* pvar = &var;
   long ind;
-  if (globalData->init) { // if during initialization, pre(v) = v
+/*  if (globalData->init) { // if during initialization, pre(v) = v
   	return *pvar;
   }
-  
+  */
   ind = long(pvar - globalData->states);
   if (ind >= 0 && ind < globalData->nStates) {
     return x_saved[ind];
@@ -1096,11 +1097,13 @@ void CheckForInitialEvents(double *t)
 {
   // Check for changes in discrete variables
   globalData->timeValue = *t;
-
-  checkForDiscreteVarChanges();
   if (sim_verbose) { 
   	cout << "Check for initial events." << endl;
   }
+  // if discrete variable not in when equation has changed, saveall and  solve equations again.
+  while(checkForDiscreteVarChanges()) { 
+  	saveall();
+  	function_updateDependents(); }
   function_zeroCrossing(&globalData->nStates,
                         &globalData->timeValue,
                         globalData->states,
@@ -1116,12 +1119,18 @@ void CheckForInitialEvents(double *t)
   }
 }
 
-
 void CheckForNewEvents(double *t)
 {
+	int discVarChange=0;
   // Check for changes in discrete variables
   globalData->timeValue = *t;
-  checkForDiscreteVarChanges();
+  // if discrete variable not in when equation has changed, saveall and solve equations again.
+  while(checkForDiscreteVarChanges()) { 
+  	discVarChange=1;
+  	saveall();
+  	function_updateDependents(); }
+
+	if(!discVarChange) function_updateDependents();	
 
   function_zeroCrossing(&globalData->nStates,
                         &globalData->timeValue,
@@ -1142,9 +1151,9 @@ void AddEvent(long index)
       return;
   }
   EventQueue.push_back(index);
-  //  cout << "Adding Event:" << index << " queue length:" << EventQueue.size() << endl;
+    //cout << "Adding Event:" << index << " queue length:" << EventQueue.size() << endl;
 }
-
+ 
 bool
 ExecuteNextEvent(double *t)
 {

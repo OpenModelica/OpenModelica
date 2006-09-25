@@ -1843,6 +1843,13 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
 
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "getTempDirectoryPath"),expLst = {}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      local String res;
+      equation 
+        res = Settings.getTempDirectoryPath();
+      then
+        (cache,Values.STRING(res),st);
+        
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "getInstallationDirectoryPath"),expLst = {}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local String res;
       equation 
