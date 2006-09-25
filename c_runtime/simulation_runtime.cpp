@@ -857,10 +857,7 @@ double pre(double & var)
 {
   double* pvar = &var;
   long ind;
-/*  if (globalData->init) { // if during initialization, pre(v) = v
-  	return *pvar;
-  }
-  */
+
   ind = long(pvar - globalData->states);
   if (ind >= 0 && ind < globalData->nStates) {
     return x_saved[ind];
