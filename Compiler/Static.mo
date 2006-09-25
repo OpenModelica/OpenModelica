@@ -4368,7 +4368,7 @@ algorithm
           {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},false,true,Exp.STRING()),Types.PROP((Types.T_STRING({}),NONE),Types.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
-      local Absyn.Path className;
+      local Absyn.Path className; Exp.Exp storeInTemp;
       equation 
         className = Absyn.crefToPath(cr); 
         (cache,startTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "startTime", (Types.T_REAL({}),NONE), 
@@ -4382,15 +4382,17 @@ algorithm
         cname_str = Absyn.pathString(className);
         (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix", 
           (Types.T_STRING({}),NONE), args, Exp.SCONST(cname_str));
+        (cache,storeInTemp) = getOptionalNamedArg(cache,env, SOME(st), impl, "storeInTemp", 
+          (Types.T_BOOL({}),NONE), args, Exp.BCONST(false));  
       then
         (cache,Exp.CALL(Absyn.IDENT("buildModel"),
           {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),startTime,stopTime,
-          numberOfIntervals,method,filenameprefix},false,true,Exp.OTHER()),Types.PROP(
+          numberOfIntervals,method,filenameprefix,storeInTemp},false,true,Exp.OTHER()),Types.PROP(
           (
           Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE),Types.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */ 
-      local Absyn.Path className;
+      local Absyn.Path className; Exp.Exp storeInTemp;
       equation 
         className = Absyn.crefToPath(cr); 
         (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
@@ -4406,6 +4408,8 @@ algorithm
         cname_str = Absyn.pathString(classname);
         (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix", 
           (Types.T_STRING({}),NONE), args, Exp.SCONST(cname_str));
+         (cache,storeInTemp) = getOptionalNamedArg(cache,env, SOME(st), impl, "storeInTemp", 
+          (Types.T_BOOL({}),NONE), args, Exp.BCONST(false));  
         recordtype = (
           Types.T_COMPLEX(ClassInf.RECORD("SimulationResult"),
           {
@@ -4414,7 +4418,7 @@ algorithm
       then
         (cache,Exp.CALL(Absyn.IDENT("simulate"),
           {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),startTime,stopTime,
-          numberOfIntervals,method,filenameprefix},false,true,Exp.OTHER()),Types.PROP(recordtype,Types.C_VAR()),SOME(st));
+          numberOfIntervals,method,filenameprefix,storeInTemp},false,true,Exp.OTHER()),Types.PROP(recordtype,Types.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "jacobian"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */ 
       equation 

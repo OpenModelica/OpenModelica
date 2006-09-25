@@ -1711,7 +1711,7 @@ algorithm
       list<Integer>[:] m,mt;
       Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
       Values.Value ret_val,simValue,size_value,value,v;
-      Exp.Exp filenameprefix,exp,starttime,stoptime,interval,method,size_expression,funcref,bool_exp;
+      Exp.Exp filenameprefix,exp,starttime,stoptime,interval,method,size_expression,funcref,bool_exp,storeInTemp;
       Absyn.ComponentRef cr_1;
       Integer size,length,rest;
       list<String> vars_1,vars_2,args;
@@ -1864,16 +1864,16 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
 
-    case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = "buildModel"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,method,filenameprefix})),(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = "buildModel"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,method,filenameprefix,storeInTemp})),(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
         (cache,executable,method_str,st,initfilename) = buildModel(cache,env, exp, st_1, msg);
       then
         (cache,Values.ARRAY({Values.STRING(executable),Values.STRING(initfilename)}),st);
 
-    case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = "buildModel"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,method,filenameprefix})),(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* failing build_model */  
+    case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = "buildModel"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,method,filenameprefix,storeInTemp})),(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* failing build_model */  
     then (cache,Values.ARRAY({Values.STRING(""),Values.STRING("")}),st_1); 
 
-    case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = "simulate"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,method,filenameprefix})),(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = "simulate"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,method,filenameprefix,storeInTemp})),(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
         (cache,executable,method_str,st,_) = buildModel(cache,env, exp, st_1, msg) "FIXME: Should ceval be called with impl=true here? Build and simulate model" ;
         cit = winCitation();
@@ -1896,7 +1896,7 @@ algorithm
       then
         (cache,simValue,newst);
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "simulate"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,method,filenameprefix}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "simulate"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,method,filenameprefix,storeInTemp}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local String errorStr;
       equation 
         omhome = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
@@ -2674,7 +2674,7 @@ algorithm
       Msg msg;
       Env.Cache cache;
       Absyn.Path className;
-    case (cache,env,Exp.CALL(expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,method,filenameprefix}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,cname_str)
+    case (cache,env,Exp.CALL(expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,method,filenameprefix,_}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,cname_str)
       equation 
         (cache,Values.STRING(prefix_str),SOME(st)) = ceval(cache,env, filenameprefix, true, SOME(st), NONE, msg);
         (cache,starttime_v,SOME(st)) = ceval(cache,env, starttime, true, SOME(st), NONE, msg);
@@ -2727,11 +2727,11 @@ algorithm
       Interactive.InteractiveSymbolTable st,st_1;
       DAELow.DAELow indexed_dlow_1;
       list<String> libs;
-      String file_dir,cname_str,init_filename,method_str,filenameprefix,makefilename;
+      String file_dir,cname_str,init_filename,method_str,filenameprefix,makefilename,oldDir,tempDir;
       Absyn.Path classname;
       Real starttime_r,stoptime_r,interval_r;
       list<Env.Frame> env;
-      Exp.Exp exp,starttime,stoptime,interval,method,fileprefix;
+      Exp.Exp exp,starttime,stoptime,interval,method,fileprefix,storeInTemp;
       Exp.ComponentRef cr;
       Absyn.Program p;
       list<SCode.Class> sp;
@@ -2740,8 +2740,12 @@ algorithm
       list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = _),expLst = {Exp.CODE(Absyn.C_TYPENAME(classname),_),starttime,stoptime,interval,method,fileprefix})),(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      Boolean cdToTemp;
+    case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = _),expLst = {Exp.CODE(Absyn.C_TYPENAME(classname),_),starttime,stoptime,interval,method,fileprefix,storeInTemp})),(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
+        (cache,Values.BOOL(cdToTemp),SOME(st)) = ceval(cache,env, storeInTemp, true, SOME(st_1), NONE, msg);
+        oldDir = System.pwd();
+        changeToTempDirectory(cdToTemp);
         (cache,ret_val,st,indexed_dlow_1,libs,file_dir) = translateModel(cache,env, classname, st_1, msg, fileprefix);
         cname_str = Absyn.pathString(classname);
         (cache,init_filename,starttime_r,stoptime_r,interval_r,method_str) = calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
@@ -2750,6 +2754,7 @@ algorithm
           starttime_r, stoptime_r, interval_r);
         makefilename = generateMakefilename(filenameprefix);
         compileModel(filenameprefix, libs, file_dir);
+        _ = System.cd(oldDir);
         //"	Util.string_append_list({\"make -f \",cname_str, \".makefile\\n\"}) => s_call &"
       then
         (cache,filenameprefix,method_str,st,init_filename);
@@ -2758,6 +2763,19 @@ algorithm
         fail();
   end matchcontinue;
 end buildModel;
+
+protected function changeToTempDirectory "changes to temp directory (from Settings.mo) if boolean flag is true"
+	input Boolean cdToTemp;
+algorithm
+  _ := matchcontinue(cdToTemp)
+  local String tempDir;
+    case(true) equation
+   			tempDir = Settings.getTempDirectoryPath();
+        0 = System.cd(tempDir);
+        then ();
+    case(_) then ();
+  end matchcontinue;
+end changeToTempDirectory;
 
 public function getFileDir "function: getFileDir
   author: x02lucpo
