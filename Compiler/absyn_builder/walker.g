@@ -969,6 +969,13 @@ declaration returns [void* ast=0]
 			ast = Absyn__COMPONENT(id, arr, mod ? mk_some(mod) : mk_none());
 		} 
 		/* For flat modelica parsing */
+		| #(FLAT_IDENT id2 = flat_component_reference[&arr] (mod=modification)? )
+		{
+			if (!arr) arr = mk_nil();
+			id = mk_scon((char*)id2);
+			ast = Absyn__COMPONENT(id, arr, mod ? mk_some(mod) : mk_none());
+		}
+		/* For flat modelica parsing */
 		|#(DOT #(i2:IDENT (id2 = flat_array_subscripts)?)  
 				(id3 = flat_component_reference[&arr])) (mod=modification)?
 			{
@@ -997,7 +1004,7 @@ modification returns [void* ast]
 	void* cm = 0;
 }
 	:
-		( cm = class_modification ( e = expression )?
+		( cm = class_modification ( EQUALS e = expression )?
 		|#(EQUALS e = expression)
 		|#(ASSIGN e = expression)
 		)

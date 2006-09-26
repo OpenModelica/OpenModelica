@@ -71,6 +71,7 @@ tokens {
 	UNARY_MINUS	;
 	UNARY_PLUS	;
 	UNQUALIFIED;
+	FLAT_IDENT;
 
 }
 
@@ -402,7 +403,7 @@ declaration :
  */
 
 modification :
-		(	class_modification ( EQUALS! expression )?
+		(	class_modification ( EQUALS expression )?
 		|	EQUALS^ expression
 		|	ASSIGN^ expression
 		)

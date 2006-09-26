@@ -71,6 +71,7 @@ tokens {
 	UNARY_MINUS	;
 	UNARY_PLUS	;
 	UNQUALIFIED;
+	FLAT_IDENT;
 
 }
 
@@ -398,7 +399,7 @@ declaration !
 		comp:component_reference /* was: IDENT^  (array_subscripts)?*/ (mod:modification)? 
 		{
 			if (#mod) {	
-				#declaration = #(#comp,#mod);
+				#declaration = #([FLAT_IDENT,"FLAT_IDENT"],#comp,#mod);
 			} else {
 			   #declaration = #comp;
 			}
@@ -410,7 +411,7 @@ declaration !
  */
 
 modification :
-		(	class_modification ( EQUALS! expression )?
+		(	class_modification ( EQUALS expression )?
 		|	EQUALS^ expression
 		|	ASSIGN^ expression
 		)
