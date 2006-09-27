@@ -14498,6 +14498,685 @@ algorithm
   end matchcontinue;
 end getSurroundingPackage;
 
+
+public function transformFlatProgram "Transforms component references in a Absyn.PROGRAM to
+same format as the variables of the flat program.
+i.e. a.b[3].c[2] becomes CREF_IDENT(\"a.b[3].c\",[INDEX(ICONST(2))])
+"
+input Absyn.Program p;
+output Absyn.Program newP;
+algorithm 
+  newP := matchcontinue(p)
+    case(p) equation
+      ((newP,_,_)) = traverseClasses(p, NONE, transformFlatClass, 0, true) "traverse protected" ;	
+      then newP;
+  end matchcontinue;
+end transformFlatProgram;
+  
+protected function transformFlatClass " this is the visitor function for traversing a class 
+in transformFlatProgram.
+"
+  input tuple<Absyn.Class, Option<Absyn.Path>,Integer > inTuple;
+  output tuple<Absyn.Class, Option<Absyn.Path>, Integer> outTuple;
+algorithm 
+outTuple:=
+  matchcontinue (inTuple)
+      local 
+        Absyn.Ident id;
+        Option<Absyn.Path> pa;
+        Boolean a,b,c;
+        Absyn.Restriction d;
+        Absyn.Info file_info;
+        Absyn.ClassDef cdef,cdef1;
+        Integer i;
+    case((Absyn.CLASS(id, a,b,c,d,cdef,file_info),pa,i)) equation
+      cdef1 = transformFlatClassDef(cdef);
+    then ((Absyn.CLASS(id,a,b,c,d,cdef1,file_info),pa,i));
+      
+    case((_,_,_)) equation
+      print("transformFlatClass failed\n");
+      then fail();
+  end matchcontinue;
+end transformFlatClass;
+
+protected function transformFlatClassDef "help function to transformFlatClass"
+  input Absyn.ClassDef cdef;
+  output Absyn.ClassDef outCdef;
+algorithm
+  outCddef := matchcontinue(cdef)
+  local
+    list<Absyn.ClassPart> parts,parts1;
+    Option<String> cmt;
+    case(Absyn.PARTS(parts,cmt)) equation
+    	  parts1 = Util.listMap(parts,transformFlatPart);
+    then Absyn.PARTS(parts1,cmt);
+    case(cdef as Absyn.DERIVED(path=_)) then cdef;
+    case(cdef as Absyn.ENUMERATION(enumLiterals = _)) then cdef;
+    case(cdef as Absyn.OVERLOAD(functionNames =_)) then cdef;
+    case(cdef as Absyn.CLASS_EXTENDS(name=_)) then cdef;
+    case(cdef as Absyn.PDER(functionName=_)) then cdef;     
+    case(_) equation print("transformFlatClassDef failed\n"); then fail();
+  end matchcontinue;
+end transformFlatClassDef;  
+
+function transformFlatPart "help function to transformFlatClassDef"
+  input Absyn.ClassPart part;
+  output Absyn.ClassPart outPart;
+algorithm
+  outPart := matchcontinue(part)
+    local list<Absyn.ElementItem> eitems, eitems1;
+      list<Absyn.EquationItem> eqnitems, eqnitems1;
+      list<Absyn.AlgorithmItem> algitems,algitems1;
+
+    case(Absyn.PUBLIC(eitems)) equation
+      eitems1 = Util.listMap(eitems,transformFlatElementItem);
+    then Absyn.PUBLIC(eitems1);
+      
+    case(Absyn.PROTECTED(eitems)) equation
+      eitems1 = Util.listMap(eitems,transformFlatElementItem);
+    then Absyn.PROTECTED(eitems1);
+
+    case(Absyn.EQUATIONS(eqnitems)) equation
+      eqnitems1 = Util.listMap(eqnitems,transformFlatEquationItem);
+    then Absyn.EQUATIONS(eqnitems1);
+
+    case(Absyn.INITIALEQUATIONS(eqnitems)) equation
+      eqnitems1 = Util.listMap(eqnitems,transformFlatEquationItem);
+    then Absyn.INITIALEQUATIONS(eqnitems1);
+
+    case(Absyn.ALGORITHMS(algitems)) equation
+      algitems1 = Util.listMap(algitems,transformFlatAlgorithmItem);
+    then Absyn.ALGORITHMS(algitems1);
+
+    case(Absyn.INITIALALGORITHMS(algitems)) equation
+      algitems1 = Util.listMap(algitems,transformFlatAlgorithmItem);
+    then Absyn.INITIALALGORITHMS(algitems1);
+      
+      case(part as Absyn.EXTERNAL(_,_)) then part;
+      case(_) equation print("transformFlatPart failed\n");
+        then fail();
+  end matchcontinue;
+end transformFlatPart;
+
+protected function transformFlatElementItem "help function to transformFlatParts"
+  input Absyn.ElementItem eitem;
+  output Absyn.ElementItem outEitem;
+algorithm
+  outEitem := matchcontinue(eitem)
+  local Absyn.Element elt,elt1;
+    case(Absyn.ELEMENTITEM(elt))  equation
+      elt1 = transformFlatElement(elt);
+    then (Absyn.ELEMENTITEM(elt1));
+    case(eitem as Absyn.ANNOTATIONITEM(_)) then eitem;
+  end matchcontinue;
+end transformFlatElementItem;
+
+protected function transformFlatElement "help function to transformFlatElementItem"
+  input Absyn.Element elt;
+  output Absyn.Element outElt;
+algorithm
+  outElt := matchcontinue(elt)
+  local 
+    Boolean f;
+     Option<Absyn.RedeclareKeywords> r;
+    Absyn.InnerOuter io;
+    Absyn.Ident name ;
+    Absyn.ElementSpec spec,spec1;
+    Absyn.Info info ;
+    Option<Absyn.ConstrainClass> constr;
+    case(Absyn.ELEMENT(f,r,io,name,spec,info,constr)) equation
+      spec1=transformFlatElementSpec(spec);
+      //TODO: constr clause might need transformation too.
+      then (Absyn.ELEMENT(f,r,io,name,spec,info,constr));
+    case (elt as Absyn.TEXT(optName=_)) then elt;
+  end matchcontinue;
+end transformFlatElement;
+
+protected function transformFlatElementSpec
+	input Absyn.ElementSpec eltSpec;
+	output Absyn.ElementSpec outEltSpec;
+algorithm
+  outEltSpec := matchcontinue(eltSpec)
+  local Boolean r;
+    Absyn.Class cl,cl1;
+    Absyn.Path path,tp;
+    list<Absyn.ElementArg> eargs,eargs1;
+    Absyn.ElementAttributes attr;
+    list<Absyn.ComponentItem> comps,comps1;
+    case(Absyn.CLASSDEF(r,cl)) equation
+      ((cl1,_,_)) = transformFlatClass((cl,NONE,0));
+    then Absyn.CLASSDEF(r,cl1);
+
+    case(Absyn.EXTENDS(path,eargs)) equation
+      eargs1 = Util.listMap(eargs,transformFlatElementArg);
+    then	(Absyn.EXTENDS(path,eargs1));
+
+    case(eltSpec as Absyn.IMPORT(import_ = _)) then eltSpec;
+    
+    case(Absyn.COMPONENTS(attr,tp,comps)) equation
+      comps1 = Util.listMap(comps,transformFlatComponentItem);
+    then Absyn.COMPONENTS(attr,tp,comps1);
+      
+  end matchcontinue;
+end transformFlatElementSpec;
+
+protected function transformFlatComponentItem "Help function to transformFlatElementSpec"
+  input Absyn.ComponentItem compitem;
+  output Absyn.ComponentItem outCompitem;
+algorithm
+  outCompitem := matchcontinue(compitem)
+  local Option<Absyn.ComponentCondition> cond;
+    Option<Absyn.Comment> cmt;
+    Absyn.Component comp,comp1;
+    case(Absyn.COMPONENTITEM(comp,cond,cmt)) equation
+      comp1 = transformFlatComponent(comp);
+    then Absyn.COMPONENTITEM(comp1,cond,cmt);
+  end matchcontinue;
+end transformFlatComponentItem;
+
+protected function transformFlatComponent "help function to transformFlatComponentItem"
+	input Absyn.Component comp;
+	output Absyn.Component outComp;
+algorithm
+  outComp := matchcontinue(comp)
+  local Absyn.ArrayDim arraydim,arraydim1;
+    Option<Absyn.Modification> mod,mod1;
+    Absyn.Ident id;
+    case(Absyn.COMPONENT(id,arraydim,mod)) equation 
+      mod1 = transformFlatModificationOption(mod);
+      arraydim1 = transformFlatArrayDim(arraydim);
+    then (Absyn.COMPONENT(id,arraydim1,mod1));
+  end matchcontinue;
+end transformFlatComponent;
+
+protected function transformFlatArrayDim "Help function to transformFlatComponent"
+	input Absyn.ArrayDim ad;
+	output  Absyn.ArrayDim outAd;
+algorithm
+  outAd := matchcontinue(ad) 
+  local Absyn.ArrayDim ad1;
+    case(ad) equation
+      ad1 = Util.listMap(ad,transformFlatSubscript);
+    then ad1;
+  end matchcontinue;
+end transformFlatArrayDim;
+
+protected function transformFlatSubscript "Help functino to TransformFlatArrayDim"
+  input Absyn.Subscript s;
+  output Absyn.Subscript outS;
+algorithm
+  outS := matchcontinue(s)
+  local Absyn.Exp e,e1;
+    case(Absyn.NOSUB()) then Absyn.NOSUB();
+    
+    case(Absyn.SUBSCRIPT(e)) equation
+        ((e1,_)) = traverseExp(e,transformFlatExp,0);
+    then (Absyn.SUBSCRIPT(e1));
+  end matchcontinue;
+end transformFlatSubscript;
+
+protected function transformFlatElementArg "helper function to e.g. transformFlatElementSpec"
+	input Absyn.ElementArg eltArg;
+	output Absyn.ElementArg outEltArg;
+algorithm
+  outEltArg := matchcontinue(eltArg)
+  local Boolean f;
+    Absyn.Each e;
+    Absyn.ComponentRef cr,cr1;
+    Option<Absyn.Modification> mod,mod1;
+    Option<String> cmt;
+    case(Absyn.MODIFICATION(f,e,cr,mod,cmt)) equation
+      mod1 = transformFlatModificationOption(mod);
+      cr1 = transformFlatComponentRef(cr);
+      then (Absyn.MODIFICATION(f,e,cr1,mod1,cmt));
+        
+        // redeclarations not in flat Modelica
+    case(eltArg as Absyn.REDECLARATION(finalItem = _)) then eltArg;
+  end matchcontinue;
+end transformFlatElementArg;	
+
+protected function transformFlatModificationOption 
+	input Option<Absyn.Modification> mod;
+	output Option<Absyn.Modification> outMod;
+algorithm
+  outMod := matchcontinue(mod)
+  local Absyn.Exp e,e1;
+    list<Absyn.ElementArg> eltArgs,eltArgs1;
+    case (SOME(Absyn.CLASSMOD(eltArgs,SOME(e)))) equation
+      eltArgs1=Util.listMap(eltArgs,transformFlatElementArg);
+      ((e1,_)) = traverseExp(e,transformFlatExp,0);
+    then SOME(Absyn.CLASSMOD(eltArgs1,SOME(e1)));
+    case (SOME(Absyn.CLASSMOD(eltArgs,NONE))) equation
+      eltArgs1=Util.listMap(eltArgs,transformFlatElementArg);
+    then SOME(Absyn.CLASSMOD(eltArgs1,NONE));
+    case(NONE) then NONE;
+  end matchcontinue;
+end transformFlatModificationOption;
+
+protected function transformFlatComponentRef "Help functino to e.g. transformFlatElementArg and
+ transformFlatExp"
+  input Absyn.ComponentRef cr;
+  output Absyn.ComponentRef outCr;
+algorithm
+  outCr := matchcontinue(cr)
+  local Absyn.ComponentRef cr1;
+    list<Absyn.Subscript> ss;
+    String s;
+    case (cr) equation      
+      ss = Absyn.crefLastSubs(cr);
+      cr1 = Absyn.crefStripLastSubs(cr);
+      s = Dump.printComponentRefStr(cr1);
+    then Absyn.CREF_IDENT(s,ss);
+  end matchcontinue;
+end transformFlatComponentRef;
+	
+protected function transformFlatEquationItem "Help function to transformFlatParts"
+  input Absyn.EquationItem eqnitem;
+  output Absyn.EquationItem outEqnitem;
+algorithm
+  outEqnitem := matchcontinue(eqnitem)
+  local 
+    Option<Absyn.Comment> cmt;
+    Absyn.Equation eqn,eqn1;
+    
+    case(Absyn.EQUATIONITEM(eqn,cmt)) equation
+      eqn1 = transformFlatEquation(eqn);
+    then Absyn.EQUATIONITEM(eqn1,cmt);
+
+      case(eqnitem as Absyn.EQUATIONITEMANN(annotation_=_))
+        then eqnitem;
+  end matchcontinue;
+end transformFlatEquationItem;
+
+protected function transformFlatEquation "Help function to transformFlatEquationItem"
+  input Absyn.Equation eqn;
+  output Absyn.Equation outEqn;
+algorithm
+  outEqn := matchcontinue(eqn)
+  local Absyn.Exp e,e1,e2,e11,e21;
+    Absyn.Ident id,name;
+    list<Absyn.EquationItem> thenpart,thenpart1,elsepart,elsepart1,forEqns,forEqns1,whenEqns,whenEqns1;
+    list<tuple<Absyn.Exp,list<Absyn.EquationItem>>> elseifpart,elseifpart1,elseWhenEqns,elseWhenEqns1;
+    Absyn.ComponentRef cr1,cr2,cr11,cr21;
+    Absyn.FunctionArgs fargs,fargs1;
+    case(Absyn.EQ_IF(e1,thenpart,elseifpart,elsepart)) equation
+      ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+      thenpart1 = Util.listMap(thenpart,transformFlatEquationItem);
+      elsepart1 = Util.listMap(elsepart,transformFlatEquationItem);
+      elseifpart1 = Util.listMap(elseifpart,transformFlatElseIfPart);
+      then Absyn.EQ_IF(e11,thenpart1,elseifpart1,elsepart1);
+        
+    case(Absyn.EQ_EQUALS(e1,e2)) equation
+      ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+      ((e21,_)) = traverseExp(e2,transformFlatExp,0);
+    then Absyn.EQ_EQUALS(e11,e21);
+      
+    case(Absyn.EQ_CONNECT(cr1,cr2)) equation
+      cr11 = transformFlatComponentRef(cr1);
+      cr21 = transformFlatComponentRef(cr2);
+    then Absyn.EQ_CONNECT(cr11,cr21);
+      
+    case(Absyn.EQ_FOR(id,e1,forEqns)) equation
+      ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+      forEqns1 = Util.listMap(forEqns,transformFlatEquationItem);
+    then (Absyn.EQ_FOR(id,e11,forEqns1));
+	
+    case(Absyn.EQ_WHEN_E(e1,whenEqns,elseWhenEqns)) equation
+      ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+    	elseWhenEqns1 = Util.listMap(elseWhenEqns,transformFlatElseIfPart);
+    	whenEqns1 = Util.listMap(whenEqns,transformFlatEquationItem);
+    then Absyn.EQ_WHEN_E(e11,whenEqns1,elseWhenEqns1);
+    	  
+    case(Absyn.EQ_NORETCALL(name,fargs)) equation
+      fargs1 = transformFlatFunctionArgs(fargs);
+    then Absyn.EQ_NORETCALL(name,fargs1);      
+  end matchcontinue;
+end transformFlatEquation;
+
+protected function transformFlatElseIfPart "Help function to transformFlatEquation"
+  input tuple<Absyn.Exp, list<Absyn.EquationItem>> elseIfPart;
+  output tuple<Absyn.Exp, list<Absyn.EquationItem>> outElseIfPart;
+algorithm
+  outElseIfPart := matchcontinue(elseIfPart)
+  local Absyn.Exp e1,e11;
+    list<Absyn.EquationItem> eqnitems,eqnitems1;
+    case((e1,eqnitems)) equation
+      ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+   		eqnitems1 = Util.listMap(eqnitems,transformFlatEquationItem);
+      then ((e11,eqnitems1));
+  end matchcontinue;
+end transformFlatElseIfPart;
+
+protected function transformFlatFunctionArgs "Help function to e.g. transformFlatEquation"
+  input Absyn.FunctionArgs fargs;
+  output Absyn.FunctionArgs outFargs;
+algorithm
+  outFargs := matchcontinue(fargs)
+  local list<Absyn.Exp> expl,expl1;
+    list<Absyn.NamedArg> namedArgs,namedArgs1;
+    case( Absyn.FUNCTIONARGS(expl,namedArgs)) equation
+       (expl1,_) = Util.listFoldMap(expl, transformFlatExp, 0);
+       namedArgs1 = Util.listMap(namedArgs,transformFlatNamedArg);
+      then Absyn.FUNCTIONARGS(expl1,namedArgs1);
+    case(fargs as Absyn.FOR_ITER_FARG(from = _)) then fargs;
+  end matchcontinue;
+end transformFlatFunctionArgs;
+
+protected function transformFlatNamedArg "helper functin to e.g. transformFlatFunctionArgs"
+	input Absyn.NamedArg namedArg;
+	output Absyn.NamedArg outNamedArg;
+algorithm
+  outNamedArg := matchcontinue(namedArg)
+    local Absyn.Exp e1,e11; Absyn.Ident id;
+    case(Absyn.NAMEDARG(id,e1)) equation
+        ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+      then Absyn.NAMEDARG(id,e11);
+  end matchcontinue;
+end transformFlatNamedArg;
+
+protected function transformFlatExp
+	input tuple<Absyn.Exp,Integer> inExp;
+	output tuple<Absyn.Exp,Integer> outExp;
+algorithm
+  outExp := matchcontinue(inExp)
+  local Absyn.ComponentRef cr,cr1;
+    Absyn.Exp e;
+    Integer i;
+    case( (Absyn.CREF(cr),i)) equation
+      cr1 = transformFlatComponentRef(cr);
+    then ((Absyn.CREF(cr1),i));
+
+    case((e,i)) then ((e,i));
+  end matchcontinue;
+end transformFlatExp;
+
+protected function transformFlatAlgorithmItem
+	input Absyn.AlgorithmItem algitem;
+	output Absyn.AlgorithmItem outAlgitem;
+algorithm
+  outAlgitem := matchcontinue(algitem)
+  local Option<Absyn.Comment> cmt;
+    Absyn.Algorithm alg,alg1;
+    case(Absyn.ALGORITHMITEM(alg,cmt)) equation
+      alg1 = transformFlatAlgorithm(alg);
+    then Absyn.ALGORITHMITEM(alg1,cmt);
+    
+    case(algitem as Absyn.ALGORITHMITEMANN(_)) then algitem;
+  end matchcontinue;
+end transformFlatAlgorithmItem;
+
+protected function transformFlatAlgorithm "help function to transformFlatAlgorithmItem"
+  input Absyn.Algorithm alg;
+	output Absyn.Algorithm outAlg;
+algorithm
+  alg := matchcontinue(outAlg)
+    local Absyn.Exp e,e1,e11,e2,e21;
+      Absyn.ComponentRef cr,cr1;
+      list<Absyn.AlgorithmItem> body,body1,thenPart,thenPart1,elsePart,elsePart1;
+      list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> elseIfPart,elseIfPart1,whenBranch,whenBranch1;
+      Absyn.Ident id;
+      Absyn.FunctionArgs fargs,fargs1;
+    case(Absyn.ALG_ASSIGN(cr,e1))  equation
+      ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+      cr1 = transformFlatComponentRef(cr);
+      then (Absyn.ALG_ASSIGN(cr1,e1));
+        
+    case(Absyn.ALG_TUPLE_ASSIGN(e1,e2)) equation
+      ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+      ((e21,_)) = traverseExp(e2,transformFlatExp,0);
+    then (Absyn.ALG_TUPLE_ASSIGN(e11,e21));
+      
+    case(Absyn.ALG_IF(e1,thenPart,elseIfPart,elsePart)) equation
+      thenPart1 = Util.listMap(thenPart,transformFlatAlgorithmItem);
+      elseIfPart1 =  Util.listMap(elseIfPart,transformFlatElseIfAlgorithm);
+      elsePart1 = Util.listMap(elsePart,transformFlatAlgorithmItem);
+      ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+    then (Absyn.ALG_IF(e11,thenPart1,elseIfPart1,elsePart1));
+      
+    case(Absyn.ALG_FOR(id,e1,body)) equation
+      ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+      body1 = Util.listMap(body,transformFlatAlgorithmItem);
+   then Absyn.ALG_FOR(id,e11,body1);
+     
+    case(Absyn.ALG_WHILE(e1,body)) equation
+      ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+      body1 = Util.listMap(body,transformFlatAlgorithmItem);
+    then Absyn.ALG_WHILE(e11,body1);
+ 
+    case(Absyn.ALG_WHEN_A(e1,body,whenBranch)) equation
+       ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+      body1 = Util.listMap(body,transformFlatAlgorithmItem);
+      whenBranch1 =  Util.listMap(whenBranch,transformFlatElseIfAlgorithm);
+    then Absyn.ALG_WHEN_A(e11,body1,whenBranch1);
+      
+    case(Absyn.ALG_NORETCALL(cr,fargs))  equation
+      cr1 = transformFlatComponentRef(cr);
+      fargs1 = transformFlatFunctionArgs(fargs);
+    then Absyn.ALG_NORETCALL(cr1,fargs1);
+  end matchcontinue;
+end transformFlatAlgorithm;
+
+protected function transformFlatElseIfAlgorithm
+ input tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> elseIfbranch;
+ output tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> outElseIfbranch;
+algorithm
+  outElseIfBranch := matchcontinue(elseIfbranch)
+  local Absyn.Exp e1,e11;
+    list<Absyn.AlgorithmItem> algitems,algitems1;    
+    case((e1,algitems)) equation
+      ((e11,_)) = traverseExp(e1,transformFlatExp,0);
+      algitems1 = Util.listMap(algitems,transformFlatAlgorithmItem);
+    then ((e11,algitems1));
+  end matchcontinue;
+end transformFlatElseIfAlgorithm;
+
+
+
+public function traverseExp " 
+  Traverses all subexpressions of an Absyn.Exp expression.
+  Takes a function and an extra argument passed through the traversal.
+  NOTE:This function was copied from Exp.traverseExp.
+"
+  input Absyn.Exp inExp;
+  input FuncTypeTplExpType_aToTplExpType_a inFuncTypeTplExpTypeAToTplExpTypeA;
+  input Type_a inTypeA;
+  output tuple<Absyn.Exp, Type_a> outTplExpTypeA;
+  partial function FuncTypeTplExpType_aToTplExpType_a
+    input tuple<Absyn.Exp, Type_a> inTplExpTypeA;
+    output tuple<Absyn.Exp, Type_a> outTplExpTypeA;
+    replaceable type Type_a;
+  end FuncTypeTplExpType_aToTplExpType_a;
+  replaceable type Type_a;
+algorithm 
+  outTplExpTypeA:=
+  matchcontinue (inExp,inFuncTypeTplExpTypeAToTplExpTypeA,inTypeA)
+    local
+      Absyn.Exp e1_1,e,e1,e2_1,e2,e3_1,e_1,e3;
+      Type_a ext_arg_1,ext_arg_2,ext_arg,ext_arg_3,ext_arg_4;
+      Absyn.Operator op_1,op;
+      FuncTypeTplExpType_aToTplExpType_a rel;
+      list<Absyn.Exp> expl_1,expl;
+      Absyn.Path fn_1,fn,path_1,path;
+      Boolean t_1,b_1,t,b,scalar_1,scalar;
+      Integer i_1,i;
+      Absyn.Ident id_1,id;
+    case ((e as Absyn.UNARY(op,e1)),rel,ext_arg) /* unary */ 
+      equation 
+        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
+        ((Absyn.UNARY(op_1,_),ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((Absyn.UNARY(op_1,e1_1),ext_arg_2));
+    case ((e as Absyn.BINARY(e1,op,e2)),rel,ext_arg) /* binary */ 
+      equation 
+        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
+        ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
+        ((Absyn.BINARY(_,op_1,_),ext_arg_3)) = rel((e,ext_arg_2));
+      then
+        ((Absyn.BINARY(e1_1,op_1,e2_1),ext_arg_3));
+    case ((e as Absyn.LUNARY(op,e1)),rel,ext_arg) /* logic unary */ 
+      equation 
+        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
+        ((Absyn.LUNARY(op_1,_),ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((Absyn.LUNARY(op_1,e1_1),ext_arg_2));
+    case ((e as Absyn.LBINARY(e1,op,e2)),rel,ext_arg) /* logic binary */ 
+      equation 
+        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
+        ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
+        ((Absyn.LBINARY(_,op_1,_),ext_arg_3)) = rel((e,ext_arg_2));
+      then
+        ((Absyn.LBINARY(e1_1,op_1,e2_1),ext_arg_3));
+    case ((e as Absyn.RELATION(e1,op,e2)),rel,ext_arg) /* RELATION */ 
+      equation 
+        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
+        ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
+        ((Absyn.RELATION(_,op_1,_),ext_arg_3)) = rel((e,ext_arg_2));
+      then
+        ((Absyn.RELATION(e1_1,op_1,e2_1),ext_arg_3));
+
+    case ((e as Absyn.IFEXP(e1,e2,e3,elseIfBranch)),rel,ext_arg) /* if expression */ 
+      local list<tuple<Absyn.Exp,Absyn.Exp>> elseIfBranch,elseIfBranch1;
+      equation 
+        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
+        ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
+        ((e3_1,ext_arg_3)) = traverseExp(e3, rel, ext_arg_2);
+				((elseIfBranch1,ext_arg_3)) = traverseExpElseIfBranch(elseIfBranch,rel,ext_arg_3);
+        ((e_1,ext_arg_4)) = rel((e,ext_arg_3));
+      then
+        ((Absyn.IFEXP(e1_1,e2_1,e3_1,elseIfBranch1),ext_arg_4));
+   
+    case ((e as Absyn.CALL(cfn,fargs)),rel,ext_arg)
+      local Absyn.FunctionArgs fargs,fargs1; Absyn.ComponentRef cfn,cfn_1;
+      equation 
+        ((fargs1,ext_arg_1)) = traverseExpFunctionArgs(fargs, rel, ext_arg);
+        ((Absyn.CALL(cfn_1,_),ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((Absyn.CALL(cfn_1,fargs1),ext_arg_2)); 
+        
+    case ((e as Absyn.ARRAY(expl)),rel,ext_arg)
+      equation 
+        (expl_1,ext_arg_1) = Util.listFoldMap(expl, rel, ext_arg);
+        ((Absyn.ARRAY(_),ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((Absyn.ARRAY(expl_1),ext_arg_2));
+        
+    case ((e as Absyn.MATRIX(mexpl)),rel,ext_arg)
+      local list<list<Absyn.Exp>> mexpl,mexpl1;
+      equation 
+        (mexpl1,ext_arg_1) = Util.listlistFoldMap(mexpl,rel,ext_arg);
+        ((Absyn.MATRIX(_),ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((Absyn.MATRIX(mexpl1),ext_arg_2));
+        
+    case ((e as Absyn.RANGE(e1,NONE,e2)),rel,ext_arg)
+      equation 
+        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
+        ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
+        ((Absyn.RANGE(_,_,_),ext_arg_3)) = rel((e,ext_arg_2));
+      then
+        ((Absyn.RANGE(e1_1,NONE,e2_1),ext_arg_3));
+    case ((e as Absyn.RANGE(e1,SOME(e2),e3)),rel,ext_arg)
+      equation 
+        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
+        ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
+        ((e3_1,ext_arg_3)) = traverseExp(e3, rel, ext_arg_2);
+        ((Absyn.RANGE(_,_,_),ext_arg_4)) = rel((e,ext_arg_3));
+      then
+        ((Absyn.RANGE(e1_1,SOME(e3),e2_1),ext_arg_4));
+    case ((e as Absyn.TUPLE(expl)),rel,ext_arg)
+      equation 
+        (expl_1,ext_arg_1) = Util.listFoldMap(expl, rel, ext_arg);
+        ((e_1,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((Absyn.TUPLE(expl_1),ext_arg_2));
+    case (e,rel,ext_arg)
+      equation 
+        ((e_1,ext_arg_1)) = rel((e,ext_arg));
+      then
+        ((e_1,ext_arg_1));
+  end matchcontinue;
+end traverseExp;
+
+public function traverseExpElseIfBranch  " 
+Help function for traverseExp
+"
+  input list<tuple<Absyn.Exp,Absyn.Exp>> inLst;
+  input FuncTypeTplExpType_aToTplExpType_a rel;
+  input Type_a ext_arg;
+  output tuple<list<tuple<Absyn.Exp,Absyn.Exp>>, Type_a> outTplExpTypeA;
+  partial function FuncTypeTplExpType_aToTplExpType_a
+    input tuple<Absyn.Exp, Type_a> inTplExpTypeA;
+    output tuple<Absyn.Exp, Type_a> outTplExpTypeA;
+    replaceable type Type_a;
+  end FuncTypeTplExpType_aToTplExpType_a;
+  replaceable type Type_a;
+algorithm
+  outTplExpTypeA:= matchcontinue(inLst,rel,ext_arg)
+ 	local Absyn.Exp e1,e2,e11,e21;
+ 	  list<tuple<Absyn.Exp,Absyn.Exp>> lst;
+    case({},rel,ext_arg) then (({},ext_arg));
+    case((e1,e2)::inLst,rel,ext_arg) equation
+      ((lst,ext_arg)) = traverseExpElseIfBranch(inLst,rel,ext_arg);
+      ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
+      ((e21,ext_arg)) = traverseExp(e2, rel, ext_arg);
+    then (((e11,e21)::lst,ext_arg));
+  end matchcontinue;
+end traverseExpElseIfBranch;
+
+public function traverseExpFunctionArgs  " 
+Help function for traverseExp
+"
+  input Absyn.FunctionArgs inArgs;
+  input FuncTypeTplExpType_aToTplExpType_a rel;
+  input Type_a ext_arg;
+  output tuple<Absyn.FunctionArgs, Type_a> outTplExpTypeA;
+  partial function FuncTypeTplExpType_aToTplExpType_a
+    input tuple<Absyn.Exp, Type_a> inTplExpTypeA;
+    output tuple<Absyn.Exp, Type_a> outTplExpTypeA;
+    replaceable type Type_a;
+  end FuncTypeTplExpType_aToTplExpType_a;
+  replaceable type Type_a;
+algorithm
+  outTplExpTypeA:= matchcontinue(inArgs,rel,ext_arg)
+ 	local Absyn.Exp e1,e2,e11,e21;
+ 	  list<Absyn.NamedArg> nargs;
+ 	  list<Absyn.Exp> expl,expl_1;
+ 	  case(Absyn.FUNCTIONARGS(expl,nargs),rel,ext_arg) equation
+ 	    	(expl_1,ext_arg) = Util.listFoldMap(expl, rel, ext_arg);
+ 	    	((nargs,ext_arg)) = traverseExpNamedArgs(nargs,rel,ext_arg);
+ 	  then ((Absyn.FUNCTIONARGS(expl_1,nargs),ext_arg));
+ 	      
+ 	  case(inArgs as Absyn.FOR_ITER_FARG(from = _),rel,ext_arg) 
+ 	    
+ 	  then((inArgs,ext_arg)); 	    
+  end matchcontinue;
+end traverseExpFunctionArgs;
+
+protected function traverseExpNamedArgs "Help function to traverseExpFunctionArgs"
+  input list<Absyn.NamedArg> nargs;
+  input FuncTypeTplExpType_aToTplExpType_a rel;
+  input Type_a ext_arg;
+  output tuple<list<Absyn.NamedArg>, Type_a> outTplExpTypeA;
+  partial function FuncTypeTplExpType_aToTplExpType_a
+    input tuple<Absyn.Exp, Type_a> inTplExpTypeA;
+    output tuple<Absyn.Exp, Type_a> outTplExpTypeA;
+    replaceable type Type_a;
+  end FuncTypeTplExpType_aToTplExpType_a;
+  replaceable type Type_a;
+algorithm
+  outTplExpTypeA:= matchcontinue(nargs,rel,ext_arg)
+ 	local Absyn.Exp e1,e2,e11,e21;
+ 	 	Absyn.Ident id; 	  
+ 	  list<Absyn.NamedArg> nargs;
+ 	  case({},rel,ext_arg)
+		then (({},ext_arg));
+ 	  case(Absyn.NAMEDARG(id,e1)::nargs,rel,ext_arg) equation
+ 	    ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
+ 	    ((nargs,ext_arg)) = traverseExpNamedArgs(nargs,rel,ext_arg);
+ 	  then((Absyn.NAMEDARG(id,e11)::nargs,ext_arg));
+  end matchcontinue;
+end traverseExpNamedArgs;
+
 protected constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           {
           Absyn.CLASS("LinePattern",false,false,false,Absyn.R_TYPE(),

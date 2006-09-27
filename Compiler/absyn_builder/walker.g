@@ -977,7 +977,7 @@ declaration returns [void* ast=0]
 		}
 		/* For flat modelica parsing */
 		|#(DOT #(i2:IDENT (id2 = flat_array_subscripts)?)  
-				(id3 = flat_component_reference[&arr])) (mod=modification)?
+				(id3 = flat_component_reference[&arr] )) (mod=modification)?
 			{
 				buf = (char*)malloc(strlen(i2->getText().c_str())
 				+(id2==0?0:strlen((char*)id2))
@@ -2201,7 +2201,7 @@ flat_component_reference [void**lastarrsub]	returns [void* ast]
 		#(i:IDENT (arr= array_subscripts)?)
 			{
 				*lastarrsub = arr;
-				ast = (void*)i->getText().c_str();				
+				ast = (void*)strdup(i->getText().c_str());				
 			}
 		|#(DOT #(i2:IDENT (arr = flat_array_subscripts)?)  
 				ast2 = flat_component_reference[lastarrsub])

@@ -945,6 +945,39 @@ algorithm
   end matchcontinue;
 end listFold_2;
 
+public function listlistFoldMap "function: listlistFoldMap
+  For example see Absyn.traverse_exp.
+"
+  input list<list<Type_a>> inTypeALst;
+  input FuncTypeTplType_aType_bToTplType_aType_b inFuncTypeTplTypeATypeBToTplTypeATypeB;
+  input Type_b inTypeB;
+  output list<list<Type_a>> outTypeALst;
+  output Type_b outTypeB;
+  replaceable type Type_a;
+  partial function FuncTypeTplType_aType_bToTplType_aType_b
+    input tuple<Type_a, Type_b> inTplTypeATypeB;
+    output tuple<Type_a, Type_b> outTplTypeATypeB;
+    replaceable type Type_b;
+  end FuncTypeTplType_aType_bToTplType_aType_b;
+  replaceable type Type_b;
+algorithm 
+  (outTypeALst,outTypeB):=
+  matchcontinue (inTypeALst,inFuncTypeTplTypeATypeBToTplTypeATypeB,inTypeB)
+    local
+      FuncTypeTplType_aType_bToTplType_aType_b rel;
+      Type_b e_arg,b_1,b_2,b;
+      list<Type_a> elt_1,elt;
+      list<list<Type_a>> elts_1,elts;
+    case ({},rel,e_arg) then ({},e_arg); 
+    case ((elt :: elts),rel,b)
+      equation 
+        (elt_1,b_1) = listFoldMap(elt,rel,b);
+        (elts_1,b_2) = listlistFoldMap(elts, rel, b_1);
+      then
+        ((elt_1 :: elts_1),b_2);
+  end matchcontinue;
+end listlistFoldMap;
+
 public function listFoldMap "function: listFoldMap
   author: PA
  

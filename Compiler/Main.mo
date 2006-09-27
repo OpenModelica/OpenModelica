@@ -354,29 +354,6 @@ algorithm
   equality(last := "mos");
 end isModelicaScriptFile;
 
-protected function transformIfFlat "function: transformIfFlat
-  Checks is a modelica file is a flat modelica file
-  and if so, translates all variables on the form a.b.c to a_b_c
-"
-  input String inString;
-  input DAE.DAElist inDAElist;
-  output DAE.DAElist outDAElist;
-algorithm 
-  outDAElist:=
-  matchcontinue (inString,inDAElist)
-    local
-      DAE.DAElist d,dae;
-      String f;
-    case (f,dae)
-      equation 
-        isFlatModelicaFile(f);
-        d = DAE.toModelicaForm(dae);
-      then
-        d;
-    case (_,d) then d; 
-  end matchcontinue;
-end transformIfFlat;
-
 protected function versionRequest
 algorithm
   _:= matchcontinue() 
@@ -423,6 +400,7 @@ algorithm
         Debug.fcall("dump", Dump.dump, p);
         s = Print.getString();
         Debug.fcall("dump",print,s);
+        p = transformFlatProgram(p,f);  
         Debug.fprint("info", 
           "\n------------------------------------------------------------ \n");
         Debug.fprint("info", "---elaborating\n");
@@ -501,6 +479,27 @@ algorithm
         fail();
   end matchcontinue;
 end translateFile;
+
+protected function transformFlatProgram "Transforms the variables in equations to have the same 
+format as for variables, i.e. a.b[3].c[2] becomes CREF_IDENT(\"a.b[3].c\",[INDEX(ICONST(2))])
+
+"
+input Absyn.Program p;
+input String filename;
+output Absyn.Program outP;
+
+algorithm
+  outP := matchcontinue(p,filename)
+    case(p,filename) equation
+      isFlatModelicaFile(filename);
+      outP = Interactive.transformFlatProgram(p);
+      then outP;
+    case(p,filename) then p;
+  end matchcontinue;
+end transformFlatProgram;
+
+
+
 
 protected function runBackendQ "function: runt_backend_q
  

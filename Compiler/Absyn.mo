@@ -1391,6 +1391,50 @@ algorithm
   end matchcontinue;
 end pathToCref;
 
+public function crefLastSubs "function: crefLastSubs
+ 
+  Return the last subscripts of an Absyn.ComponentRef
+"
+  input ComponentRef inComponentRef;
+  output list<Subscript> outSubscriptLst;
+algorithm 
+  outSubscriptLst:=
+  matchcontinue (inComponentRef)
+    local
+      Ident id;
+      list<Subscript> subs,res;
+      ComponentRef cr;
+    case (CREF_IDENT(name = id,subscripts= subs)) then subs; 
+    case (CREF_QUAL(componentRef = cr))
+      equation 
+        res = crefLastSubs(cr);
+      then
+        res;
+  end matchcontinue;
+end crefLastSubs;
+
+public function crefStripLastSubs "function: crefStripLastSubs
+ 
+  Strips the last subscripts of a ComponentRef
+"
+  input ComponentRef inComponentRef;
+  output ComponentRef outComponentRef;
+algorithm 
+  outComponentRef:=
+  matchcontinue (inComponentRef)
+    local
+      Ident id;
+      list<Subscript> subs,s;
+      ComponentRef cr_1,cr;
+    case (CREF_IDENT(name = id,subscripts= subs)) then CREF_IDENT(id,{}); 
+    case (CREF_QUAL(name= id,subScripts= s,componentRef = cr))
+      equation 
+        cr_1 = crefStripLastSubs(cr);
+      then
+        CREF_QUAL(id,s,cr_1);
+  end matchcontinue;
+end crefStripLastSubs;
+
 public function joinCrefs "function: joinCrefs
  
   This function joins two ComponentRefs.
