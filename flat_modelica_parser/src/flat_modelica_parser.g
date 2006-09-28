@@ -97,8 +97,9 @@ stored_definition :
 				RefMyAST(#cd)->setEndColumn(s->getColumn());
 			   }							
 			}
-			)* 
-			EOF!
+			)*  
+			/*EOF!   By not checking for EOF we allow some crap (debug text,etc) to be at the end 
+				of the file, which can be produced by some Modelica tools.*/
 			{
 				#stored_definition = #([STORED_DEFINITION,"STORED_DEFINITION"],
 				#stored_definition);
