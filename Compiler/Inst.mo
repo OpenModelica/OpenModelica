@@ -8325,8 +8325,12 @@ protected function instStartBindingExp "function: instStartBindingExp
   input Types.Type etype;
   input list<Integer> index_list;
   output DAE.StartValue result;
+protected Types.Type eltType;
 algorithm 
-  result := instBinding(mod, etype, index_list, "start");
+  eltType := Types.arrayElementType(etype); // When instantiating arrays, the array type is passed
+  // But binding is performed on the element type.
+	// Also removed index, since indexing is already performed on the modifier.
+  result := instBinding(mod, eltType, {}, "start");
 end instStartBindingExp;
 
 protected function instDaeVariableAttributes "function: instDaeVariableAttributes 

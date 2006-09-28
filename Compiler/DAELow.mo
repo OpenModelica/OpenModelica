@@ -3261,10 +3261,11 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
+      DAE.StartValue start;
       list<Var> xs;
       DAE.Type var_type;
     case ({},_) then (); 
-    case (((v as VAR(varName = cr,varKind = kind,varDirection = dir,varType = var_type,bindExp = SOME(e),index = indx,origVarName = old_name,className = paths,values = dae_var_attr,comment = comment,flow_ = flow_)) :: xs),varno)
+    case (((v as VAR(varName = cr,varKind = kind,varDirection = dir,varType = var_type,bindExp = SOME(e),index = indx,origVarName = old_name,className = paths,values = dae_var_attr,comment = comment,flow_ = flow_,startValue=start)) :: xs),varno)
       equation 
         varnostr = intString(varno);
         print(varnostr);
@@ -3293,11 +3294,12 @@ algorithm
         print(" indx = ");
         print(indx_str);
         varno_1 = varno + 1;
+        print(" start:");print(Dump.getOptionStr(start,Exp.printExpStr));
         print("\n");
         dumpVars2(xs, varno_1) "DAE.dump_variable_attributes(dae_var_attr) &" ;
       then
         ();
-    case (((v as VAR(varName = cr,varKind = kind,varDirection = dir,varType = var_type,bindExp = NONE,index = indx,origVarName = old_name,className = paths,values = dae_var_attr,comment = comment,flow_ = flow_)) :: xs),varno)
+    case (((v as VAR(varName = cr,varKind = kind,varDirection = dir,varType = var_type,bindExp = NONE,index = indx,origVarName = old_name,className = paths,values = dae_var_attr,comment = comment,flow_ = flow_,startValue=start)) :: xs),varno)
       equation 
         varnostr = intString(varno);
         print(varnostr);
@@ -3322,9 +3324,8 @@ algorithm
 
         print(" indx = ");
         print(indx_str);
-        print("\n") "	DAE.dump_variable_attributes(dae_var_attr) &
-        print \"  \" & print comment_str & 
-        print \",\\n\" &" ;
+        print(" start:");print(Dump.getOptionStr(start,Exp.printExpStr));
+        print("\n")  ;
         varno_1 = varno + 1;
         dumpVars2(xs, varno_1);
       then
