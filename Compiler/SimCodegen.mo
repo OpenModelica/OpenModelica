@@ -2203,7 +2203,7 @@ algorithm
         i_str = intString(i);
         i_1 = i + 1;
         cr_str = Exp.printComponentRefStr(cr);
-        assign_str = Util.stringAppendList({cr_str," = in_x[",i_str,"];"});
+        assign_str = Util.stringAppendList({cr_str," = localData->inputVars[",i_str,"];"});
         res = generateInputFunctionCode2(rest, i_1);
       then
         (assign_str :: res);
