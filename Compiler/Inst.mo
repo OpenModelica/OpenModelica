@@ -1430,7 +1430,7 @@ algorithm
 	  csets will remain unfiltered for other components in \"outer class\"" ;
         csets = addConnectionCrefs(csets, eqs_1) "Add connection crefs from equations to connection sets" ;
         csets_filtered = addConnectionCrefs(csets_filtered, eqs_1);
-        env2 = addConnectionSetToEnv(csets_filtered, env2) "Add filtered connection sets to env so ceval can reach it" ;
+        env2 = addConnectionSetToEnv(csets_filtered,pre, env2) "Add filtered connection sets to env so ceval can reach it" ;
         id = Env.printEnvPathStr(env);
         pre_str = Prefix.printPrefixStr(pre);
         env3 = addComponentsToEnv(env2, emods, pre, csets, ci_state, compelts_1, compelts_1, 
@@ -1795,23 +1795,32 @@ end instBasictypeBaseclass;
 
 protected function addConnectionSetToEnv "function: addConnectionSetToEnv
  
-  Adds the connection set to the environment such that Ceval can reach it.
+  Adds the connection set and Prefix to the environment such that Ceval can reach it.
   It is required to evaluate cardinality
 "
   input Connect.Sets inSets;
+  input Prefix.Prefix prefix;
   input Env inEnv;
   output Env outEnv;
 algorithm 
   outEnv:=
-  matchcontinue (inSets,inEnv)
+  matchcontinue (inSets,prefix,inEnv)
     local
       list<Exp.ComponentRef> crs;
       Option<String> n;
       Env.BinTree bt1,bt2;
       list<Env.Item> imp;
+      Exp.ComponentRef prefix_cr;
       list<Env.Frame> bc,fs;
       Boolean enc;
-    case (Connect.SETS(connection = crs),(Env.FRAME(class_1 = n,list_2 = bt1,list_3 = bt2,list_4 = imp,list_5 = bc,encapsulated_7 = enc) :: fs)) then (Env.FRAME(n,bt1,bt2,imp,bc,crs,enc) :: fs); 
+    case (Connect.SETS(connection = crs),prefix,(Env.FRAME(class_1 = n,list_2 = bt1,list_3 = bt2,list_4 = imp,list_5 = bc,encapsulated_7 = enc) :: fs))       
+      equation
+        prefix_cr = Prefix.prefixToCref(prefix);
+    then (Env.FRAME(n,bt1,bt2,imp,bc,(crs,prefix_cr),enc) :: fs); 
+    case (Connect.SETS(connection = crs),prefix,(Env.FRAME(class_1 = n,list_2 = bt1,list_3 = bt2,list_4 = imp,list_5 = bc,encapsulated_7 = enc) :: fs))       
+      equation
+    then (Env.FRAME(n,bt1,bt2,imp,bc,(crs,Exp.CREF_IDENT("",{})),enc) :: fs); 
+ 
   end matchcontinue;
 end addConnectionSetToEnv;
 
@@ -3384,7 +3393,7 @@ algorithm
       Option<String> id;
       Env.BinTree cl,tps;
       list<Env.Item> imps;
-      list<Exp.ComponentRef> crs;
+      tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
       Absyn.Path tp,envpath;
       Env.Cache cache;
     case (cache,env,NONE) then (cache,env); 

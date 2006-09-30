@@ -135,7 +135,7 @@ uniontype Frame
     BinTree list_3 "List of types, which DOES NOT be uniquely named, eg. size have several types" ;
     list<Item> list_4 "list of unnamed items (imports)" ;
     list<Frame> list_5 "list of frames for inherited elements" ;
-    list<Exp.ComponentRef> current6 "current connection set crefs" ;
+    tuple<list<Exp.ComponentRef>,Exp.ComponentRef> current6 "current connection set crefs" ;
     Boolean encapsulated_7 "encapsulated bool=true means that FRAME is created due to encapsulated class" ;
   end FRAME;
 
@@ -244,7 +244,7 @@ public function newFrame "- Relations
 algorithm 
   ht := treeNew();
   httypes := treeNew();
-  outFrame := FRAME(NONE,ht,httypes,{},{},{},enc);
+  outFrame := FRAME(NONE,ht,httypes,{},{},({},Exp.CREF_IDENT("",{})),enc);
 end newFrame;
 
 public function openScope "function: openScope
@@ -303,7 +303,7 @@ algorithm
       BinTree ht,httypes;
       list<Value> imps;
       Env bcframes,res;
-      list<Exp.ComponentRef> crs;
+      tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
       Boolean encflag;
       Ident id;
     case ((FRAME(list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: res),id) then (FRAME(SOME(id),ht,httypes,imps,bcframes,crs,encflag) :: res); 
@@ -338,7 +338,7 @@ algorithm
       Env env,bcframes,fs;
       Option<Ident> id;
       list<Value> imps;
-      list<Exp.ComponentRef> crs;
+      tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
       Boolean encflag;
       SCode.Class c;
       Ident n;
@@ -397,7 +397,7 @@ algorithm
       Option<Ident> id;
       list<Value> imps;
       Env bcframes,fs,env;
-      list<Exp.ComponentRef> crs;
+      tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
       Boolean encflag;
       InstStatus i;
       Types.Var v;
@@ -441,7 +441,7 @@ algorithm
       Option<Ident> sid;
       list<Value> imps;
       Env bcframes,fs,env,frames;
-      list<Exp.ComponentRef> crs;
+      tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
       Types.Var v;
       Ident n,id;
     case ({},_,i,_) then {};  /* fully instantiated env of component */ 
@@ -497,7 +497,7 @@ algorithm
       Option<Ident> sid;
       list<Value> imps;
       Env bcframes,fs;
-      list<Exp.ComponentRef> crs;
+      tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
       Boolean encflag;
       Ident n;
       tuple<Types.TType, Option<Absyn.Path>> t;
@@ -531,7 +531,7 @@ algorithm
       BinTree ht,httypes;
       list<Value> imps;
       Env bcframes,fs;
-      list<Exp.ComponentRef> crs;
+      tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
       Boolean encflag;
       Absyn.Import imp;
       Env env;
@@ -582,7 +582,7 @@ algorithm
       BinTree cls,tps;
       list<Value> imps;
       Env bc,fs;
-      list<Exp.ComponentRef> crefs;
+      tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crefs;
       Boolean enc;
       Frame f;
     case ((FRAME(class_1 = sid,list_2 = cls,list_3 = tps,list_4 = imps,list_5 = bc,current6 = crefs,encapsulated_7 = enc) :: fs),(f :: _)) then (FRAME(sid,cls,tps,imps,(f :: bc),crefs,enc) :: fs);  /* env bc env */ 
@@ -747,7 +747,7 @@ algorithm
       BinTree ht,httypes;
       list<Value> imps;
       Env bcframes;
-      list<Exp.ComponentRef> crs;
+      tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
       Boolean encflag;
     case FRAME(class_1 = SOME(sid),list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag)
       equation 
@@ -790,7 +790,7 @@ algorithm
       BinTree ht,httypes;
       list<Value> imps;
       Env bcframes;
-      list<Exp.ComponentRef> crs;
+      tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
       Boolean encflag;
     case FRAME(class_1 = SOME(sid),list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag)
       equation 
@@ -1036,7 +1036,7 @@ algorithm
       BinTree ht,httypes;
       list<Value> imps;
       Env bcframes;
-      list<Exp.ComponentRef> crs;
+      tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
       Boolean encflag;
     case FRAME(class_1 = sid,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) then Graphviz.NODE("FRAME",{},{}); 
   end matchcontinue;

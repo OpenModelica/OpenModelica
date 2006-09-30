@@ -710,6 +710,16 @@ algorithm
   end matchcontinue;
 end crefContainedIn;
 
+public function crefIsIdent "returns true if ComponentRef is an ident, i.e a => true , a.b => false"
+input ComponentRef cr;
+output Boolean res;
+algorithm
+  res := matchcontinue(cr)
+    case(CREF_IDENT(_,_)) then true;
+    case(_) then false;
+  end matchcontinue;
+end crefIsIdent;
+
 public function crefPrefixOf "function: crefPrefixOf
   author: PA
   

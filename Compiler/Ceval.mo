@@ -3529,14 +3529,33 @@ algorithm
   (outCache,outInteger) :=
   matchcontinue (inCache,inEnv,inComponentRef)
     local
-      list<Exp.ComponentRef> cr_lst,crs;
+      list<Exp.ComponentRef> cr_lst,cr_lst2,cr_totlst,crs;
       Integer res;
       Exp.ComponentRef cr;
       Env.Cache cache;
-    case (cache,(Env.FRAME(current6 = crs) :: _),cr)
+      Absyn.Path path;
+      Exp.ComponentRef prefix,currentPrefix;
+      Absyn.Ident currentPrefixIdent;
+    case (cache,(Env.FRAME(current6 = (crs,prefix)) :: _),cr)
       equation 
         cr_lst = Util.listSelect1(crs, cr, Exp.crefContainedIn);
-        res = listLength(cr_lst);
+        currentPrefixIdent= Exp.crefLastIdent(prefix);
+        currentPrefix = Exp.CREF_IDENT(currentPrefixIdent,{});
+ 		    //	Select connect references that has cr as suffix and correct Prefix.
+        cr_lst = Util.listSelect1R(cr_lst, currentPrefix, Exp.crefPrefixOf);
+        
+        // Select connect references that are identifiers (inside connectors)
+        cr_lst2 = Util.listSelect(crs,Exp.crefIsIdent);
+        cr_lst2 = Util.listSelect1(cr_lst2,cr,Exp.crefEqual);
+        
+        cr_totlst = listAppend(cr_lst,cr_lst2);
+        res = listLength(cr_totlst);
+      /*  print("cardinality(");print(Exp.printComponentRefStr(cr));print(")=");print(intString(res));
+        print("\n");
+        print("icrefs =");print(Util.stringDelimitList(Util.listMap(crs,Exp.printComponentRefStr),","));
+        print("crefs =");print(Util.stringDelimitList(Util.listMap(cr_totlst,Exp.printComponentRefStr),","));
+        print("\n");
+       	print("prefix =");print(Exp.printComponentRefStr(prefix));print("\n");*/
       then
         (cache,res);
   end matchcontinue;
