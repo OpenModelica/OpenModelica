@@ -2252,7 +2252,7 @@ algorithm
     local
       Boolean fixed;
       Var v;
-    case (VAR(values = SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,SOME(fixed),_,_)))) then fixed; 
+    case (v as VAR(values = SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,SOME(fixed),_,_)))) then fixed; 
     case (VAR(values = SOME(DAE.VAR_ATTR_INT(_,_,_,SOME(fixed))))) then fixed; 
     case (VAR(values = SOME(DAE.VAR_ATTR_BOOL(_,_,SOME(fixed))))) then fixed; 
     case (VAR(values = SOME(DAE.VAR_ATTR_ENUMERATION(_,_,_,SOME(fixed))))) then fixed; 
@@ -2266,7 +2266,7 @@ algorithm
         STATE() = varKind(v);
       then
         true;
-    case (_) then true;  /* rest defaults to true */ 
+    case (_) then false;  /* rest defaults to false*/ 
   end matchcontinue;
 end varFixed;
 
@@ -3294,7 +3294,8 @@ algorithm
         print(" indx = ");
         print(indx_str);
         varno_1 = varno + 1;
-        print(" start:");print(Dump.getOptionStr(start,Exp.printExpStr));
+        //print(" start:");print(Dump.getOptionStr(start,Exp.printExpStr));
+        print("fixed:");print(Util.boolString(varFixed(v)));
         print("\n");
         dumpVars2(xs, varno_1) "DAE.dump_variable_attributes(dae_var_attr) &" ;
       then
@@ -3319,12 +3320,13 @@ algorithm
         indx_str = intString(indx) "print \" former: \" & print old_name &" ;
 
         
-           str = DAE.dumpTypeStr(var_type);print( " type: "); print(str); 
+        str = DAE.dumpTypeStr(var_type);print( " type: "); print(str); 
         
 
         print(" indx = ");
         print(indx_str);
-        print(" start:");print(Dump.getOptionStr(start,Exp.printExpStr));
+        //print(" start:");print(Dump.getOptionStr(start,Exp.printExpStr));
+        print("fixed:");print(Util.boolString(varFixed(v)));
         print("\n")  ;
         varno_1 = varno + 1;
         dumpVars2(xs, varno_1);
@@ -6917,7 +6919,7 @@ protected function propagateDummyFixedAttribute "function: propagateDummyFixedAt
   and the chosen dummy state.
   The fixed attribute of the selected dummy state is propagated to 
   the other state. This must be done since the dummy state becomes 
-  an algebraic state which has fixed = true by default.
+  an algebraic state which has fixed = false by default.
   For example consider the equations:
   s1 = b;
   b=2c;
@@ -6959,12 +6961,23 @@ algorithm
         crefs = Util.listDeletememberP(crefs, dummy, Exp.crefEqual);
         state = findState(vars, crefs);
         ({v},{indx}) = getVar(dummy, vars);
-        dummy_fixed = varFixed(v);
+        (dummy_fixed as false) = varFixed(v);
         ({v_1},{indx_1}) = getVar(state, vars);
-        //v_2 = setVarFixed(v_1, dummy_fixed);
-        //vars_1 = addVar(v_2, vars);
+        v_2 = setVarFixed(v_1, dummy_fixed);
+        vars_1 = addVar(v_2, vars);
       then
-        DAELOW(vars/*_1*/,kv,ev,e,se,ie,ae,al,ei,eoc);
+        DAELOW(vars_1,kv,ev,e,se,ie,ae,al,ei,eoc);
+      // Never propagate fixed=true
+      case ((dae as DAELOW(vars,kv,ev,e,se,ie,ae,al,ei,eoc)),eqns,dummy,dummy_no) 
+      equation 
+        eqns_1 = Util.listMap1(eqns, int_sub, 1);
+        eqns_lst = Util.listMap1r(eqns_1, equationNth, e);
+        crefs = equationsCrefs(eqns_lst);
+        crefs = Util.listDeletememberP(crefs, dummy, Exp.crefEqual);
+        state = findState(vars, crefs);
+        ({v},{indx}) = getVar(dummy, vars);
+       true = varFixed(v);
+      then dae;
     case (dae,_,_,_)
       equation 
         Debug.fprint("failtrace", "propagate_dummy_initial_equations failed\n");
@@ -7687,7 +7700,7 @@ algorithm
       Option<Values.Value> value;
       list<Exp.Subscript> dim;
       Value idx;
-      Exp.ComponentRef name,dummyvar,var;
+      Exp.ComponentRef name,dummyvar_cr,var;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
@@ -7698,15 +7711,18 @@ algorithm
       Algorithm.Algorithm[:] al;
       EventInfo wc;
       ExternalObjectClasses eoc;
+      Var dummyvar;
     case (var,DAELOW(vars, kv, ev, eqns, seqns, ie, ae, al, wc,eoc))
       equation 
         ((VAR(_,kind,dir,tp,bind,value,dim,start,idx,name,class_,dae_var_attr,comment,flow_) :: _),_) = getVar(var, vars);
-        dummyvar = createDummyVar(var);
-        vars_1 = addVar(
-          VAR(dummyvar,DUMMY_DER(),dir,tp,NONE,NONE,dim,NONE,0,dummyvar,
-          class_,dae_var_attr,comment,flow_), vars);
+        dummyvar_cr = createDummyVar(var);
+        dummyvar = VAR(dummyvar_cr,DUMMY_DER(),dir,tp,NONE,NONE,dim,NONE,0,dummyvar_cr,
+          class_,dae_var_attr,comment,flow_);
+            /* Dummy variables are algebraic variables, hence fixed = false */
+        dummyvar = setVarFixed(dummyvar,false);    
+        vars_1 = addVar(dummyvar, vars);
       then
-        (dummyvar,DAELOW(vars_1,kv,ev,eqns,seqns,ie,ae,al,wc,eoc));
+        (dummyvar_cr,DAELOW(vars_1,kv,ev,eqns,seqns,ie,ae,al,wc,eoc));
     case (_,_)
       equation 
         print("-new_dummy_var failed\n");
