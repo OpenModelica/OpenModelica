@@ -226,7 +226,7 @@ algorithm
         (in_str,n_i) = generateInputFunctionCode(dlow);
         (c_eventchecking,helpVarInfo) = generateEventCheckingCode(dlow, blt_states, ass1, ass2, m, mt, class_);
         n_h = listLength(helpVarInfo);
-        (s_code2,nres) = generateInitialValueCode2(dlow);
+        (s_code2,nres) = generateInitialValueCode2(dlow,ass1,ass2);
         (s_code3) = generateInitialBoundParameterCode(dlow);
         cglobal = generateGlobalData(class_, dlow, n_o, n_i, n_h, nres);
         coutput = generateComputeOutput(cname, dae, dlow, ass1, ass2, blt_no_states);
@@ -2347,11 +2347,13 @@ protected function generateInitialValueCode2 "function: generateInitialValueCode
   once it is stable.
 "
   input DAELow.DAELow inDAELow;
+  input Integer[:] ass1;
+  input Integer[:] ass2;
   output String outString;
   output Integer outInteger;
 algorithm 
   (outString,outInteger):=
-  matchcontinue (inDAELow)
+  matchcontinue (inDAELow,ass1,ass2)
     local
       Codegen.CFunction init_func_1,f1,f2,f3,f4,cfunc;
       list<DAELow.Var> vars_lst,knvars_lst;
@@ -2364,7 +2366,7 @@ algorithm
       DAELow.MultiDimEquation[:] ae;
       Algorithm.Algorithm[:] al;
       DAELow.EventInfo ev;
-    case ((dae as DAELow.DAELOW(orderedVars = vars,knownVars = knvars,orderedEqs = eqns,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = ev))) /* code n res */ 
+    case ((dae as DAELow.DAELOW(orderedVars = vars,knownVars = knvars,orderedEqs = eqns,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = ev)),ass1,ass2) /* code n res */ 
       equation 
         init_func_1 = Codegen.cMakeFunction("int", "initial_residual", {}, 
           {});
@@ -2374,6 +2376,7 @@ algorithm
         se_lst = DAELow.equationList(se);
         ie_lst = DAELow.equationList(ie);
         ie2_lst = generateInitialEquationsFromStart(vars_lst) "equations from start values with fixed = true" ;
+        eqns_lst = selectContinuousEquations(eqns_lst,1,ass2,dae); // Select only non-discrete equations
         n1 = listLength(eqns_lst) "calculate total size" ;
         n2 = listLength(se_lst);
         n3 = listLength(ie_lst);
@@ -2395,10 +2398,37 @@ algorithm
         str = Codegen.cPrintFunctionsStr({cfunc});
       then
         (str,n);
-    case (_) then ("/* generate_initial_value_code2 failed */",0); 
+    case (_,_,_) then ("/* generate_initial_value_code2 failed */",0); 
   end matchcontinue;
 end generateInitialValueCode2;
 
+protected function selectContinuousEquations "Returns only the equations that are solved for a continous variable."
+  input list<DAELow.Equation> eqnLst;
+  input Integer eqnIndx; // iterator, starts at 1..n 
+	input Integer[:] ass2;
+	input DAELow.DAELow daelow;
+	output list<DAELow.Equation> outEqnLst;
+algorithm
+  outEqnLst := matchcontinue(eqnLst,eqnIndx,ass2,daelow)
+    local  
+      DAELow.VariableArray vararr;
+      DAELow.Var var;
+      Integer v,v_1;
+      Boolean b;
+      DAELow.Equation e;
+    case({},eqnIndx,ass2,daelow) then {};
+    case(e::eqnLst,eqnIndx,ass2,daelow as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(varArr = vararr)))
+     equation
+       v = ass2[eqnIndx];
+       v_1 = v - 1;
+       (var) = DAELow.vararrayNth(vararr, v_1);
+       b = hasDiscreteVar({var});
+       eqnLst = selectContinuousEquations(eqnLst,eqnIndx+1,ass2,daelow);
+       eqnLst = Util.if_(b,eqnLst,e::eqnLst);       
+     then eqnLst;
+  end matchcontinue;
+end selectContinuousEquations;
+  
 protected function generateInitialResidualEqn "function generateInitialResidualEqn
  
   Helper function to generate_initial_value_code2
@@ -4345,6 +4375,7 @@ algorithm
         res_func = Codegen.cMakeFunction("void", func_name, {}, 
           {"int *n","double* xloc","double* res","int* iflag"});
         func = Codegen.cMergeFns({res_func,s1});
+        func = addMemoryManagement(func);
         (f2,cg_id2) = generateOdeSystem2NonlinearSetvector(crs, 0, cg_id1);
         (f3,cg_id3) = generateOdeSystem2NonlinearCall(mixedEvent,str_id, cg_id2);
         (f4,cg_id4) = generateOdeSystem2NonlinearStoreResults(crs, 0, cg_id3);
