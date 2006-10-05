@@ -153,8 +153,7 @@ uniontype ClassDef "name"
   end PARTS;
 
   record DERIVED
-    Path path "path" ;
-    Option<ArrayDim> arrayDim "arrayDim" ;
+    TypeSpec typeSpec "typeSpec specification includes array dimensions" ;
     ElementAttributes attributes "attributes" ;
     list<ElementArg> arguments "arguments" ;
     Option<Comment> comment "comment" ;
@@ -183,6 +182,21 @@ uniontype ClassDef "name"
   end PDER;
 
 end ClassDef;
+
+public 
+uniontype TypeSpec "new meta-modelica type specification!"
+  record TPATH
+    Path path "path" ;
+    Option<ArrayDim> arrayDim "arrayDim" ;
+  end TPATH;
+
+  record TCOMPLEX
+    Path path "path" ;
+    list<TypeSpec> typeSpecs "typeSpecs" ;
+    Option<ArrayDim> arrayDim "arrayDim" ;
+  end TCOMPLEX;
+
+end TypeSpec;
 
 public 
 uniontype EnumDef "The definition of an enumeration is either a list of literals
@@ -313,7 +327,7 @@ uniontype ElementSpec "An element is something that occurs in a public or protec
 
   record COMPONENTS
     ElementAttributes attributes "attributes" ;
-    Path typeName "typeName" ;
+    TypeSpec typeSpec "typeSpec" ;
     list<ComponentItem> components "components" ;
   end COMPONENTS;
 
@@ -649,7 +663,7 @@ uniontype Exp "The `Exp\' datatype is the container of a Modelica expression.
   end ARRAY;
 
   record MATRIX
-    list<list<Exp>> matrix "matrix Range expressions, " ;
+    list<list<Exp>> matrix "matrix Range expressions, e.g. 1:10 or 1:0.5:10" ;
   end MATRIX;
 
   record RANGE "e.g. 1:10 or 1:0.5:10"
@@ -664,14 +678,18 @@ uniontype Exp "The `Exp\' datatype is the container of a Modelica expression.
 
   record END end END;
 
+  record MATCHCONTINUE
+    String not_ "not implemented right now" ;
+  end MATCHCONTINUE;
+
   record CODE
-    Code code "code ;  Modelica AST Code constructors" ;
+    CodeNode code "code ;  Modelica AST Code constructors" ;
   end CODE;
 
 end Exp;
 
 public 
-uniontype Code "The \'Code\' datatype is used for Meta-programming. It orgiginates from the Code quotation."
+uniontype CodeNode "The \'Code\' datatype is used for Meta-programming. It orgiginates from the Code quotation."
   record C_TYPENAME
     Path path;
   end C_TYPENAME;
@@ -702,7 +720,7 @@ uniontype Code "The \'Code\' datatype is used for Meta-programming. It orgiginat
     Modification modification;
   end C_MODIFICATION;
 
-end Code;
+end CodeNode;
 
 public 
 uniontype FunctionArgs "The `FunctionArgs\' datatype consists of a list of positional arguments
@@ -798,6 +816,10 @@ uniontype ComponentRef "A component reference is the fully or partially qualifie
     list<Subscript> subscripts "subscripts" ;
   end CREF_IDENT;
 
+  record WILD
+    String not_ "not implemented right now" ;
+  end WILD;
+
 end ComponentRef;
 
 public 
@@ -853,6 +875,8 @@ uniontype Restriction "These constructors each correspond to a different kind of
   record R_PREDEFINED_BOOL end R_PREDEFINED_BOOL;
 
   record R_PREDEFINED_ENUM end R_PREDEFINED_ENUM;
+  
+  record R_UNIONTYPE "MetaModelica uniontype" end R_UNIONTYPE;
 
 end Restriction;
 

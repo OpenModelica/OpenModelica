@@ -533,5 +533,35 @@ algorithm
     case (_,_) then false; 
   end matchcontinue;
 end pathEqual;
+
+public function typeSpecEqual "function: typeSpecEqual
+ 
+  Returns true if two type specifications are equal.
+"
+  input Absyn.TypeSpec inTySpec1;
+  input Absyn.TypeSpec inTySpec2;
+  output Boolean outBoolean;
+algorithm 
+  outBoolean:=
+  matchcontinue (inTySpec1,inTySpec2)
+    local
+      String id1,id2;
+      Boolean res;
+      Absyn.TypeSpec tySpec1, tySpec2;
+    case (tySpec1, tySpec2)
+      equation 
+        equality(tySpec1 = tySpec1);
+      then
+        true;
+    case (tySpec1, tySpec2)
+      equation 
+        failure(equality(tySpec1 = tySpec2));
+      then
+        false;
+    case (_,_) then false; 
+  end matchcontinue;
+end typeSpecEqual;
+
+
 end ModUtil;
 

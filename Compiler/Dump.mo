@@ -238,13 +238,13 @@ algorithm
       Absyn.Restriction r;
       list<Absyn.ClassPart> parts;
       Option<Ident> optcmt;
-      Absyn.Path fname;
-      Option<list<Absyn.Subscript>> dim;
+      Absyn.TypeSpec tspec;
       Absyn.ElementAttributes attr;
       list<Absyn.ElementArg> m,cmod;
       Option<Absyn.Comment> cmt;
       list<Absyn.EnumLiteral> l;
       Absyn.EnumDef ENUM_COLON;
+      Absyn.Path fname;
       list<Ident> vars;
     case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restricion = r,body = Absyn.PARTS(classParts = parts,comment = optcmt)),fi,re,io)
       equation 
@@ -259,10 +259,8 @@ algorithm
         str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n,s5,"\n",s4,is,"end ",n});
       then
         str;
-    case (indent,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restricion = r,body = Absyn.DERIVED(path = i,arrayDim = dim,attributes = attr,arguments = m,comment = optcmt)),fi,re,io)
-      local
-        Absyn.Path i;
-        Option<Absyn.Comment> optcmt;
+    case (indent,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restricion = r,body = Absyn.DERIVED(typeSpec = tspec,attributes = attr,arguments = m,comment = optcmt)),fi,re,io)
+      local Option<Absyn.Comment> optcmt;
       equation 
         is = indentStr(indent);
         s1 = selectString(p, "partial ", "");
@@ -271,11 +269,10 @@ algorithm
         s3 = unparseRestrictionStr(r);
         s4 = unparseElementattrStr(attr);
         s5 = stringAppend(s1, s2);
-        s6 = Absyn.pathString(i);
-        s7 = getOptionStr(dim, printArraydimStr);
+        s6 = unparseTypeSpec(tspec);
         s8 = unparseMod1Str(m);
         s9 = unparseCommentOption(optcmt);
-        str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n,"= ",s4,s5,s6,s7,s8,s9});
+        str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n,"= ",s4,s5,s6,s8,s9});
       then
         str;
     case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restricion = r,body = Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(enumLiterals = l),comment = cmt)),fi,re,io)
@@ -708,8 +705,7 @@ algorithm
       list<Absyn.ClassPart> parts;
       Option<Ident> comment;
       Ident s;
-      Absyn.Path path;
-      Option<list<Absyn.Subscript>> arrdim;
+      Absyn.TypeSpec tspec;
       Absyn.ElementAttributes attr;
       list<Absyn.ElementArg> earg;
       list<Absyn.EnumLiteral> enumlst;
@@ -722,13 +718,12 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case (Absyn.DERIVED(path = path,arrayDim = arrdim,attributes = attr,arguments = earg,comment = comment))
+    case (Absyn.DERIVED(typeSpec = tspec,attributes = attr,arguments = earg,comment = comment))
       local Option<Absyn.Comment> comment;
       equation 
         Print.printBuf("Absyn.DERIVED(");
-        dumpPath(path);
-        Print.printBuf(", ");
-        printArraydimOpt(arrdim);
+        s = unparseTypeSpec(tspec);
+        Print.printBuf(s);
         Print.printBuf(", ");
         printElementattr(attr);
         Print.printBuf(",[");
@@ -1729,9 +1724,11 @@ algorithm
     local
       Boolean repl;
       Absyn.Class cl;
-      Absyn.Path p,t;
+      Absyn.Path p;
       list<Absyn.ElementArg> l;
+      Ident s;
       Absyn.ElementAttributes attr;
+      Absyn.TypeSpec t;
       list<Absyn.ComponentItem> cs;
       Absyn.Import i;
     case (Absyn.CLASSDEF(replaceable_ = repl,class_ = cl))
@@ -1752,12 +1749,13 @@ algorithm
         Print.printBuf("])");
       then
         ();
-    case (Absyn.COMPONENTS(attributes = attr,typeName = t,components = cs))
+    case (Absyn.COMPONENTS(attributes = attr,typeSpec = t,components = cs))
       equation 
         Print.printBuf("Absyn.COMPONENTS(");
         printElementattr(attr);
         Print.printBuf(",");
-        dumpPath(t);
+        s = unparseTypeSpec(t);
+        Print.printBuf(s);
         Print.printBuf(",[");
         printListDebug("print_elementspec", cs, printComponentitem, ",");
         Print.printBuf("])");
@@ -1796,9 +1794,10 @@ algorithm
       Integer i,indent;
       Boolean repl;
       Absyn.Class cl;
-      Absyn.Path p,t;
+      Absyn.Path p;
       list<Absyn.ElementArg> l;
       Absyn.ElementAttributes attr;
+      Absyn.TypeSpec t;
       list<Absyn.ComponentItem> cs;
     case (i,Absyn.CLASSDEF(replaceable_ = repl,class_ = cl),f,r,io) /* indent */ 
       equation 
@@ -1822,9 +1821,9 @@ algorithm
         str = Util.stringAppendList({is,f,r,io,s2,"(",s3,")"});
       then
         str;
-    case (i,Absyn.COMPONENTS(attributes = attr,typeName = t,components = cs),f,r,io)
+    case (i,Absyn.COMPONENTS(attributes = attr,typeSpec = t,components = cs),f,r,io)
       equation 
-        s1 = Absyn.pathString(t);
+        s1 = unparseTypeSpec(t);
         s2 = unparseElementattrStr(attr);
         ad = unparseArraydimInAttr(attr);
         s3 = getStringList(cs, unparseComponentitemStr, ",");
@@ -2874,8 +2873,8 @@ algorithm
         Print.printBuf("}");
       then
         ();
-    case Absyn.ALG_WHEN_A(whenStmt = e,whenBody = al,elseWhenAlgorithmBranch = el) /* rule	Print.printBuf \"WHEN_E \" & print_exp(e) &
-	Print.printBuf \" {\" & print_list_debug(\"print_algorithm\",al, print_algorithmitem, \";\") & Print.printBuf \"}\"
+    case Absyn.ALG_WHEN_A(whenStmt = e,whenBody = al,elseWhenAlgorithmBranch = el) /* rule	Print.print_buf \"WHEN_E \" & print_exp(e) &
+	Print.print_buf \" {\" & print_list_debug(\"print_algorithm\",al, print_algorithmitem, \";\") & Print.print_buf \"}\"
 	 ----------------------------------------------------------
 	print_algorithm Absyn.ALG_WHEN_E(e,al)
  */ 
@@ -3986,7 +3985,7 @@ algorithm
       then
         s;
     case (Absyn.CODE(code = c))
-      local Absyn.Code c;
+      local Absyn.CodeNode c;
       equation 
         res = printCodeStr(c);
         res_1 = Util.stringAppendList({"Code(",res,")"});
@@ -4001,7 +4000,7 @@ public function printCodeStr "function: printCodeStr
  
    Prettyprint Code to a string.
 "
-  input Absyn.Code inCode;
+  input Absyn.CodeNode inCode;
   output String outString;
 algorithm 
   outString:=
@@ -4562,6 +4561,69 @@ algorithm
         res;
   end matchcontinue;
 end indentStr;
+
+public function unparseTypeSpec "adrpo added metamodelica stuff"
+  input Absyn.TypeSpec inTypeSpec;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inTypeSpec)
+    local
+      Ident str,s,str1,str2,str3;
+      Absyn.Path path;
+      Option<list<Absyn.Subscript>> adim;
+      list<Absyn.TypeSpec> typeSpecLst;
+    case (Absyn.TPATH(path = path,arrayDim = adim))
+      equation 
+        str = Absyn.pathString(path);
+        s = getOptionStr(adim, printArraydimStr);
+        str = stringAppend(str, s);
+      then
+        str;
+    case (Absyn.TCOMPLEX(path = path,typeSpecs = typeSpecLst,arrayDim = adim))
+      equation 
+        str1 = Absyn.pathString(path);
+        str2 = unparseTypeSpecLst(typeSpecLst);
+        str3 = Util.stringAppendList({str1,"<",str2,">"});
+        s = getOptionStr(adim, printArraydimStr);
+        str = stringAppend(str3, s);
+      then
+        str;
+  end matchcontinue;
+end unparseTypeSpec;
+
+public function unparseTypeSpecLst
+  input list<Absyn.TypeSpec> inTypeSpecLst;
+  output String outString;
+algorithm
+  outString:=
+  matchcontinue (inTypeSpecLst)
+    local
+      String str, str1, str2, str3;
+      Absyn.TypeSpec x;
+      list<Absyn.TypeSpec> rest;
+    case ({x})
+      equation 
+        str = unparseTypeSpec(x);
+      then
+        str;
+    case (x::rest)
+      equation 
+        str1 = unparseTypeSpec(x);
+        str2 = unparseTypeSpecLst(rest);
+        str3 = Util.stringAppendList({str1,", ",str2});
+      then
+        str3;
+  end matchcontinue;  
+end unparseTypeSpecLst;
+
+public function printTypeSpec
+  input Absyn.TypeSpec typeSpec;
+  Ident str;
+algorithm 
+  str := unparseTypeSpec(typeSpec);
+  print(str);
+end printTypeSpec;
 
 public function stdout "function: stdout
  

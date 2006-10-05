@@ -678,7 +678,7 @@ algorithm
       Absyn.Path path,p;
       Boolean c;
       Integer b,i;
-      Absyn.Code a;
+      Absyn.CodeNode a;
       String id;
     case ((e as Exp.CREF(componentRef = cr,ty = t)),repl,cond)
       equation 

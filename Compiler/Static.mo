@@ -500,7 +500,7 @@ algorithm
           Types.T_ARRAY(Types.DIM(dim1),
           (Types.T_ARRAY(Types.DIM(dim2),t_2),NONE)),NONE),c),st);
     case (cache,env,Absyn.CODE(code = c),impl,st)
-      local Absyn.Code c;
+      local Absyn.CodeNode c;
       equation 
         tp = elabCodeType(env, c) "Code expressions" ;
         tp_1 = Types.elabType(tp);
@@ -756,7 +756,7 @@ protected function elabCodeType "function: elabCodeType
   of Code expressions corresponding to a type name Code expression. 
 "
   input Env.Env inEnv;
-  input Absyn.Code inCode;
+  input Absyn.CodeNode inCode;
   output Types.Type outType;
 algorithm 
   outType:=

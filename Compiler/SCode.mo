@@ -164,8 +164,7 @@ uniontype ClassDef "The major difference between these types and their `Absyn\'
   end PARTS;
 
   record DERIVED
-    Path short "short class definition" ;
-    Option<Absyn.ArrayDim> absynArrayDimOption;
+    Absyn.TypeSpec typeSpec "typeSpec: type specification" ;
     Mod mod;
   end DERIVED;
 
@@ -291,7 +290,7 @@ uniontype Element "- Elements
     Boolean replaceable_ "replaceable" ;
     Boolean protected_ "protected" ;
     Attributes attributes;
-    Path type_ "type name" ;
+    Absyn.TypeSpec typeSpec "typeSpec : type specification" ;
     Mod mod;
     Option<Path> baseclass "baseclass name if in baseclass" ;
     Option<Absyn.Comment> this "this if for extraction comments and annotations from Absyn" ;
@@ -488,8 +487,7 @@ algorithm
   matchcontinue (inClassDef)
     local
       Mod mod;
-      Absyn.Path p,path;
-      Option<list<Subscript>> d;
+      Absyn.TypeSpec t;
       Absyn.ElementAttributes attr;
       list<Absyn.ElementArg> a,cmod;
       Option<Absyn.Comment> cmt;
@@ -501,11 +499,12 @@ algorithm
       list<String> lst_1,vars;
       list<Absyn.EnumLiteral> lst;
       String name;
-    case (Absyn.DERIVED(path = p,arrayDim = d,attributes = attr,arguments = a,comment = cmt))
+      Absyn.Path path;
+    case (Absyn.DERIVED(typeSpec = t,attributes = attr,arguments = a,comment = cmt))
       equation 
         mod = buildMod(SOME(Absyn.CLASSMOD(a,NONE)), false, Absyn.NON_EACH()) "TODO: attributes of derived classes" ;
       then
-        DERIVED(p,d,mod);
+        DERIVED(t,mod);
     case (Absyn.PARTS(classParts = parts,comment = cmt))
       local Option<String> cmt;
       equation 
@@ -922,13 +921,13 @@ algorithm
       Absyn.ClassDef de;
       Absyn.Info file_info;
       Mod mod;
-      Absyn.Path t;
       list<Absyn.ElementArg> args;
       list<Element> xs_1;
       Variability pa_1;
       list<Subscript> tot_dim,ad,d;
       Absyn.ElementAttributes attr;
       Absyn.Direction di;
+      Absyn.TypeSpec t;
       Option<Absyn.Modification> m;
       Option<Absyn.Comment> comment;
       list<Absyn.ComponentItem> xs;
@@ -947,7 +946,7 @@ algorithm
       then
         {EXTENDS(n,mod)};
     case (_,_,_,Absyn.COMPONENTS(components = {})) then {}; 
-    case (final_,repl,prot,Absyn.COMPONENTS(attributes = (attr as Absyn.ATTR(flow_ = fl,variability = pa,direction = di,arrayDim = ad)),typeName = t,components = (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment) :: xs)))
+    case (final_,repl,prot,Absyn.COMPONENTS(attributes = (attr as Absyn.ATTR(flow_ = fl,variability = pa,direction = di,arrayDim = ad)),typeSpec = t,components = (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment) :: xs)))
       local Absyn.Variability pa;
       equation 
         xs_1 = elabElementspec(final_, repl, prot, Absyn.COMPONENTS(attr,t,xs));
@@ -1661,6 +1660,7 @@ algorithm
       Boolean final_,repl,prot;
       Class cl;
       Variability var;
+      Absyn.TypeSpec tySpec;
       Option<Absyn.Comment> comment;
       Attributes attr;
     case EXTENDS(path = path,mod = mod)
@@ -1675,10 +1675,10 @@ algorithm
         res = Util.stringAppendList({"CLASSDEF(",n,", from basclass: ",str,")"});
       then
         res;
-    case COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = ATTR(parameter_ = var),type_ = typath,mod = mod,baseclass = SOME(path),this = comment)
+    case COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = ATTR(parameter_ = var),typeSpec = tySpec,mod = mod,baseclass = SOME(path),this = comment)
       equation 
         mod_str = printModStr(mod);
-        s = Absyn.pathString(typath);
+        s = Dump.unparseTypeSpec(tySpec);
         vs = variabilityString(var);
         str = Absyn.pathString(path);
         res = Util.stringAppendList(
@@ -1692,10 +1692,10 @@ algorithm
         res = Util.stringAppendList({"CLASSDEF(",n,",...,",str,")"});
       then
         res;
-    case COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = attr,type_ = typath,mod = mod,baseclass = NONE,this = comment)
+    case COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = attr,typeSpec = tySpec,mod = mod,baseclass = NONE,this = comment)
       equation 
         mod_str = printModStr(mod);
-        s = Absyn.pathString(typath);
+        s = Dump.unparseTypeSpec(tySpec);
         res = Util.stringAppendList({"COMPONENT(",n," mod:",mod_str,", tp: ",s,")"});
       then
         res;
@@ -1714,7 +1714,8 @@ algorithm
   matchcontinue (inElement)
     local
       String str,res,n,mod_str,s,vs;
-      Absyn.Path path,typath;
+      Absyn.Path path;
+      Absyn.TypeSpec typath;
       Mod mod;
       Boolean final_,repl,prot;
       Class cl;
@@ -1727,10 +1728,10 @@ algorithm
         res = Util.stringAppendList({"extends ",str,";"});
       then
         res;
-    case COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = ATTR(parameter_ = var),type_ = typath,mod = mod,baseclass = SOME(path),this = comment)
+    case COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = ATTR(parameter_ = var),typeSpec = typath,mod = mod,baseclass = SOME(path),this = comment)
       equation 
         mod_str = printModStr(mod);
-        s = Absyn.pathString(typath);
+        s = Dump.unparseTypeSpec(typath);
         vs = unparseVariability(var);
         str = Absyn.pathString(path);
         res = Util.stringAppendList(
@@ -1744,10 +1745,10 @@ algorithm
         res = Util.stringAppendList({"class ",n,"\n",str,"end ",n,";\n"});
       then
         res;
-    case COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = ATTR(parameter_ = var),type_ = typath,mod = mod,baseclass = NONE,this = comment)
+    case COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = ATTR(parameter_ = var),typeSpec = typath,mod = mod,baseclass = NONE,this = comment)
       equation 
-          mod_str = printModStr(mod);
-        s = Absyn.pathString(typath);
+        mod_str = printModStr(mod);
+        s = Dump.unparseTypeSpec(typath);
         vs = unparseVariability(var);
         res = Util.stringAppendList(
           {vs," ",s," ",n,mod_str,";\n"});
@@ -1790,8 +1791,7 @@ algorithm
       list<Equation> eqns,ieqns;
       list<Algorithm> alg,ial;
       Option<Absyn.ExternalDecl> ext;
-      Absyn.Path path;
-      list<Subscript> ad;
+      Absyn.TypeSpec typeSpec;
       Mod mod;
     case (PARTS(elementLst = elts,equationLst = eqns,initialEquation = ieqns,algorithmLst = alg,initialAlgorithm = ial,used = ext))
       equation 
@@ -1800,19 +1800,11 @@ algorithm
         res = Util.stringAppendList({"PARTS(",s1,",_,_,_,_,_)"});
       then
         res;
-    case (DERIVED(short = path,absynArrayDimOption = SOME(ad),mod = mod))
+    case (DERIVED(typeSpec = typeSpec,mod = mod))
       equation 
-        s1 = Absyn.pathString(path);
-        s2 = Dump.printArraydimStr(ad);
+        s2 = Dump.unparseTypeSpec(typeSpec);
         s3 = printModStr(mod);
-        res = Util.stringAppendList({"DERIVED(",s1,",",s2,",",s3,")"});
-      then
-        res;
-    case (DERIVED(short = path,absynArrayDimOption = NONE,mod = mod))
-      equation 
-        s1 = Absyn.pathString(path);
-        s3 = printModStr(mod);
-        res = Util.stringAppendList({"DERIVED(",s1,",NONE,",s3,")"});
+        res = Util.stringAppendList({"DERIVED(",s2,",",s3,")"});
       then
         res;
   end matchcontinue;
@@ -2048,7 +2040,7 @@ algorithm
      case (COMPONENT(name1,f1,r1,p1,attr1,tp1,mod1,_,_), COMPONENT(name2,f2,r2,p2,attr2,tp2,mod2,_,_))
        local
          Boolean b1,b2,b3,b4,b5,b6,f1,f2,r1,r2,p1,p2; Ident name1,name2; 
-         Attributes attr1,attr2; Mod mod1,mod2; Absyn.Path tp1,tp2;
+         Attributes attr1,attr2; Mod mod1,mod2; Absyn.TypeSpec tp1,tp2;
        equation
          b1 = Util.stringEqual(name1,name2);
          b2 = Util.boolEqual(f1,f2);
@@ -2134,35 +2126,33 @@ end classEqual;
          blst = Util.listFlatten({blst1,blst2,blst3,blst4,blst5});
          equal = Util.boolAndList(blst);
        then equal;
-         case (DERIVED(path1,adopt1,mod1),DERIVED(path2,adopt2,mod2))
-           local 
-             Absyn.Path path1,path2;
-             Option<Absyn.ArrayDim> adopt1,adopt2;
-             Mod mod1,mod2;
-             Boolean b1,b2,b3;
-           equation
-            b1 = ModUtil.pathEqual(path1,path2);
-            b2 = arraydimOptEqual(adopt1,adopt2);
-            b3 = modEqual(mod1,mod2);
-            equal = Util.boolAndList({b1,b2,b3});
-           then equal;
-         case (ENUMERATION(ilst1),ENUMERATION(ilst2))
-           local list<Ident> ilst1,ilst2;
-             list<Boolean> blst;
-             equation
-               blst = Util.listThreadMap(ilst1,ilst2,Util.stringEqual);
-               equal = Util.boolAndList(blst);
-             then equal;
-         case (CLASS_EXTENDS(_,_,_,_,_,_,_),CLASS_EXTENDS(_,_,_,_,_,_,_))
-            equation
-           print("classDefEqual on CLASS_EXTENDS not implemented yet\n");
-           then false;
-           case (PDER(_,_),PDER(_,_)) equation
-             print("classDefEqual on PDER not impl. yet\n");
-             then false;
-           case(_,_) then false;
+     case (DERIVED(tySpec1,mod1),DERIVED(tySpec2,mod2))
+       local 
+         Absyn.TypeSpec tySpec1, tySpec2;
+         Mod mod1,mod2;
+         Boolean b1,b2;
+       equation
+         b1 = ModUtil.typeSpecEqual(tySpec1, tySpec2);
+         b2 = modEqual(mod1,mod2);
+         equal = Util.boolAndList({b1,b2});
+       then equal;
+     case (ENUMERATION(ilst1),ENUMERATION(ilst2))
+       local list<Ident> ilst1,ilst2;
+         list<Boolean> blst;
+       equation
+         blst = Util.listThreadMap(ilst1,ilst2,Util.stringEqual);
+         equal = Util.boolAndList(blst);
+       then equal;
+     case (CLASS_EXTENDS(_,_,_,_,_,_,_),CLASS_EXTENDS(_,_,_,_,_,_,_))
+       equation
+         print("classDefEqual on CLASS_EXTENDS not implemented yet\n");
+       then false;
+     case (PDER(_,_),PDER(_,_)) equation
+       print("classDefEqual on PDER not impl. yet\n");
+     then false;
+     case(_,_) then false;
    end matchcontinue;
- end classDefEqual;
+end classDefEqual;
  
  protected function arraydimOptEqual " Returns true if two Option<ArrayDim> are equal"
    input Option<Absyn.ArrayDim> adopt1;

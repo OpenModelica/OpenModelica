@@ -451,7 +451,7 @@ derived_class returns [void *ast]
 				pfx.direction,
  				mk_nil());
 
-				ast = Absyn__DERIVED(p, as, attr, cmod, cmt? mk_some(cmt) : mk_none());
+				ast = Absyn__DERIVED(Absyn__TPATH(p, as), attr, cmod, cmt? mk_some(cmt) : mk_none());
 			}
 		)
 	;
@@ -871,7 +871,7 @@ component_clause returns [void* ast]
 				pfx.direction,
  				arr);
 
-			ast = Absyn__COMPONENTS(attr, path, comp_list);
+			ast = Absyn__COMPONENTS(attr, Absyn__TPATH(path, mk_none()), comp_list);
 		}
 	;
 
@@ -1196,7 +1196,7 @@ component_clause1 returns [void* ast]
 				pfx.direction,
 				arr);
 
-			ast = Absyn__COMPONENTS(attr, path, comp_list);
+			ast = Absyn__COMPONENTS(attr, Absyn__TPATH(path, mk_none()), comp_list);
 		}
 	;
 
@@ -2111,6 +2111,38 @@ comment returns [void* ast]
 		}
 	;
 
+
+string_comment returns [void *ast] :
+	{
+	  std::string cmt;
+	  ast = 0;	   
+	}
+		#(STRING_COMMENT cmt=string_concatenation)
+		{
+			ast = mk_scon(const_cast<char*>(cmt.c_str()));
+		}
+	|
+		{
+			ast = 0;
+		}
+	;
+
+string_concatenation returns [std::string ast] 
+{ 
+	std::string s1;
+}
+		:
+		s:STRING 
+		{
+	  		ast = s->getText();
+		}
+	|#(p:PLUS s1=string_concatenation s2:STRING)
+		{
+			ast = s1+s2->getText();
+		}
+	;
+	
+/* adrpo - 2006-10-02 older version left here for reference
 string_comment returns [void *ast] :
 	{
 			void *cmt=0;
@@ -2139,6 +2171,7 @@ string_concatenation returns [void * ast] :
 		}
 	;
 
+*/
 annotation returns [ void *ast]
 {
     void *cmod=0;

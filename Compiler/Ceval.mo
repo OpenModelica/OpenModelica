@@ -327,7 +327,7 @@ algorithm
       list<Env.Frame> env;
       Msg msg;
       Absyn.Element elt_1,elt;
-      Absyn.Code c;
+      Absyn.CodeNode c;
       list<Values.Value> es_1,elts,vallst,vlst1,vlst2,reslst,aval,rhvals,lhvals,arr,arr_1,ivals,rvals,vallst_1,vals;
       list<Exp.Exp> es,expl;
       list<list<tuple<Exp.Exp, Boolean>>> expll;
@@ -1436,14 +1436,14 @@ algorithm
       Absyn.InnerOuter io;
       String id,file;
       Absyn.ElementAttributes attr;
-      Absyn.Path tp;
+      Absyn.TypeSpec tp;
       Absyn.Info info;
       Integer sline,scolumn,eline,ecolumn;
       Option<Absyn.ConstrainClass> c;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,Absyn.ELEMENT(final_ = f,redeclareKeywords = r,innerOuter = io,name = id,specification = Absyn.COMPONENTS(attributes = attr,typeName = tp,components = citems),info = (info as Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scolumn,lineNumberEnd = eline,columnNumberEnd = ecolumn)),constrainClass = c),impl,st,msg)
+    case (cache,env,Absyn.ELEMENT(final_ = f,redeclareKeywords = r,innerOuter = io,name = id,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = tp,components = citems),info = (info as Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scolumn,lineNumberEnd = eline,columnNumberEnd = ecolumn)),constrainClass = c),impl,st,msg)
       equation 
         (cache,citems_1) = cevalAstCitems(cache,env, citems, impl, st, msg);
       then

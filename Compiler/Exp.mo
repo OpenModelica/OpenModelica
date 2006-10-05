@@ -207,7 +207,7 @@ uniontype Exp "Expressions
   end SIZE;
 
   record CODE "Modelica AST constructor"
-    Absyn.Code code;
+    Absyn.CodeNode code;
     Type ty;
   end CODE;
 
@@ -5919,7 +5919,7 @@ algorithm
       Absyn.Path path,p;
       Boolean t;
       Type tp;
-      Absyn.Code a;
+      Absyn.CodeNode a;
       Ident id;
     case (expr,source,target) /* expr source expr target expr */ 
       equation 

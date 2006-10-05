@@ -1149,7 +1149,7 @@ algorithm
       Boolean f1,f,r,p,f2,final_;
       Ident id1,id2;
       SCode.Attributes attr;
-      Absyn.Path tp;
+      Absyn.TypeSpec tp;
       SCode.Mod m1,m2;
       Option<Absyn.Path> bc,bc2;
       Option<Absyn.Comment> comment,comment2;
@@ -1162,7 +1162,7 @@ algorithm
     case (Types.NOMOD(),Types.NOMOD(),_,_) then Types.NOMOD(); 
     case (Types.NOMOD(),m,_,_) then m; 
     case (m,Types.NOMOD(),_,_) then m; 
-    case (Types.REDECL(final_ = f1,tplSCodeElementModLst = {(SCode.COMPONENT(component = id1,final_ = f,replaceable_ = r,protected_ = p,attributes = attr,type_ = tp,mod = m1,baseclass = bc,this = comment),_)}),Types.REDECL(final_ = f2,tplSCodeElementModLst = {(SCode.COMPONENT(component = id2,mod = m2,baseclass = bc2,this = comment2),_)}),env,pre) /* redeclaring same component */ 
+    case (Types.REDECL(final_ = f1,tplSCodeElementModLst = {(SCode.COMPONENT(component = id1,final_ = f,replaceable_ = r,protected_ = p,attributes = attr,typeSpec = tp,mod = m1,baseclass = bc,this = comment),_)}),Types.REDECL(final_ = f2,tplSCodeElementModLst = {(SCode.COMPONENT(component = id2,mod = m2,baseclass = bc2,this = comment2),_)}),env,pre) /* redeclaring same component */ 
       equation 
         equality(id1 = id2);
         m1_1 = elabUntypedMod(m2, env, pre);

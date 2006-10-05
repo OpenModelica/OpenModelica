@@ -323,7 +323,9 @@ algorithm
       list<Absyn.ElementArg> l;
       list<Node> cns;
       Absyn.ElementAttributes attr;
+      Absyn.TypeSpec tspec;      
       list<Absyn.ComponentItem> cs;
+      String s;
     case (Absyn.CLASSDEF(replaceable_ = repl,class_ = cl))
       equation 
         nl = printClass(cl);
@@ -335,9 +337,10 @@ algorithm
         en = printPath(p);
       then
         Graphviz.NODE("EXTENDS",{},{en});
-    case (Absyn.COMPONENTS(attributes = attr,typeName = p,components = cs))
+    case (Absyn.COMPONENTS(attributes = attr,typeSpec = tspec,components = cs))
       equation 
-        pn = printPath(p);
+        s = Dump.unparseTypeSpec(tspec);
+        pn = makeLeaf(s, {});
         cns = printComponents(cs);
       then
         Graphviz.NODE("COMPONENTS",{},(pn :: cns));

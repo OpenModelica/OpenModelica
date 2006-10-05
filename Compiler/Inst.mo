@@ -154,7 +154,7 @@ uniontype DimExp
 
 end DimExp;
 
-protected import OpenModelica.Compiler.System;
+//protected import OpenModelica.Compiler.System;
 
 protected import OpenModelica.Compiler.Debug;
 
@@ -1452,7 +1452,7 @@ algorithm
    
       
         /* This rule describes how to instantiate a derived class definition */ 
-    case (cache,env,mods,pre,csets,ci_state,SCode.DERIVED(short = cn,absynArrayDimOption = ad,mod = mod),re,prot,inst_dims,impl) 
+    case (cache,env,mods,pre,csets,ci_state,SCode.DERIVED(Absyn.TPATH(path = cn,arrayDim = ad),mod = mod),re,prot,inst_dims,impl) 
       equation 
         (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = Lookup.lookupClass(cache,env, cn, true);
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
@@ -1473,7 +1473,7 @@ algorithm
         
         /* If the class is derived from a class that can not be found in the environment, this rule prints an error message. */ 
    
-    case (cache,env,mods,pre,csets,ci_state,SCode.DERIVED(short = cn,absynArrayDimOption = ad,mod = mod),re,prot,inst_dims,impl) 
+    case (cache,env,mods,pre,csets,ci_state,SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),mod = mod),re,prot,inst_dims,impl) 
       equation 
         failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
         cns = Absyn.pathString(cn);
@@ -1951,7 +1951,7 @@ algorithm
 				 
       then
         (cache,env3,ci_state2);
-    case (cache,env,mods,pre,csets,ci_state,SCode.DERIVED(short = cn,absynArrayDimOption = ad,mod = mod),re,prot,inst_dims) /* This rule describes how to instantiate a derived class definition */ 
+    case (cache,env,mods,pre,csets,ci_state,SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),mod = mod),re,prot,inst_dims) /* This rule describes how to instantiate a derived class definition */ 
       equation 
         (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = Lookup.lookupClass(cache,env, cn, true);
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
@@ -1964,7 +1964,7 @@ algorithm
           inst_dims);
       then
         (cache,env_2,new_ci_state_1);
-    case (cache,env,mods,pre,csets,ci_state,SCode.DERIVED(short = cn,absynArrayDimOption = ad,mod = mod),re,prot,inst_dims) /* If the class is derived from a class that can not be found in the environment, this rule prints an error message. */ 
+    case (cache,env,mods,pre,csets,ci_state,SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),mod = mod),re,prot,inst_dims) /* If the class is derived from a class that can not be found in the environment, this rule prints an error message. */ 
       equation 
         failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
         cns = Absyn.pathString(cn);
@@ -2269,12 +2269,13 @@ algorithm
       String a;
       Boolean b,c,d;
       SCode.Attributes e;
-      Absyn.Path f,tp;
+      Absyn.TypeSpec f;
+      Absyn.Path tp;
       SCode.Mod g;
       Option<Absyn.Comment> comment;
       SCode.Element x;
     case ({},_) then {}; 
-    case ((SCode.COMPONENT(component = a,final_ = b,replaceable_ = c,protected_ = d,attributes = e,type_ = f,mod = g,this = comment) :: xs),tp)
+    case ((SCode.COMPONENT(component = a,final_ = b,replaceable_ = c,protected_ = d,attributes = e,typeSpec = f,mod = g,this = comment) :: xs),tp)
       equation 
         res = addInheritScope(xs, tp);
       then
@@ -2499,7 +2500,7 @@ algorithm
         elt_1 = noImportElements(elt);
       then
         (cache,env,elt_1,eq,ieq,alg,ialg);
-    case (cache,env,mod,SCode.CLASS(parts = SCode.DERIVED(short = tp,mod = dmod)),impl)
+    case (cache,env,mod,SCode.CLASS(parts = SCode.DERIVED(typeSpec = Absyn.TPATH(tp, _),mod = dmod)),impl)
       equation 
         (cache,c,cenv) = Lookup.lookupClass(cache,env, tp, true);
         (cache,env,elt,eq,ieq,alg,ialg) = instDerivedClasses(cache,cenv, mod, c, impl) "Mod.lookup_modification_p(mod, c) => innermod & We have to merge and apply modifications as well!" ;
@@ -2884,7 +2885,7 @@ algorithm
       SCode.Accessibility acc;
       SCode.Variability param;
       Absyn.Direction dir;
-      Absyn.Path t;
+      Absyn.TypeSpec t;
       SCode.Mod m;
       Option<Absyn.Path> bc;
       Option<Absyn.Comment> comment;
@@ -2892,7 +2893,7 @@ algorithm
       list<SCode.Equation> eqns;
       InstDims instdims;
     case (env,_,_,_,_,{},_,_,_,_) then env;  /* implicit inst. */ 
-    case (env,mod,pre,csets,cistate,(((comp as SCode.COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = (attr as SCode.ATTR(arrayDim = ad,flow_ = flow_,RW = acc,parameter_ = param,input_ = dir)),type_ = t,mod = m,baseclass = bc,this = comment)),cmod) :: xs),allcomps,eqns,instdims,impl) /* Check if the component is a structural parameter, change it\'s
+    case (env,mod,pre,csets,cistate,(((comp as SCode.COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = (attr as SCode.ATTR(arrayDim = ad,flow_ = flow_,RW = acc,parameter_ = param,input_ = dir)),typeSpec = t,mod = m,baseclass = bc,this = comment)),cmod) :: xs),allcomps,eqns,instdims,impl) /* Check if the component is a structural parameter, change it\'s
 	 attribute to STRUCTPARAM. Not structural parameter. No Change. */ 
       equation 
         failure(ClassInf.isFunction(cistate));
@@ -2907,7 +2908,7 @@ algorithm
           instdims, impl);
       then
         env_2;
-    case (env,mod,pre,csets,cistate,(((comp as SCode.COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = (attr as SCode.ATTR(arrayDim = ad,flow_ = flow_,RW = acc,parameter_ = param,input_ = dir)),type_ = t,mod = m,baseclass = bc,this = comment)),cmod) :: xs),allcomps,eqns,instdims,impl) /* Not structural parameter. No Change. Import statements */ 
+    case (env,mod,pre,csets,cistate,(((comp as SCode.COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = (attr as SCode.ATTR(arrayDim = ad,flow_ = flow_,RW = acc,parameter_ = param,input_ = dir)),typeSpec = t,mod = m,baseclass = bc,this = comment)),cmod) :: xs),allcomps,eqns,instdims,impl) /* Not structural parameter. No Change. Import statements */ 
       equation 
         env_1 = addComponentsToEnv2(env, mod, pre, csets, cistate, 
           {
@@ -2974,13 +2975,13 @@ algorithm
       SCode.Accessibility acc;
       SCode.Variability param;
       Absyn.Direction dir;
-      Absyn.Path t;
+      Absyn.TypeSpec t;
       SCode.Mod m;
       Option<Absyn.Path> bc;
       Option<Absyn.Comment> comment;
       list<tuple<SCode.Element, Mod>> xs,comps;
       InstDims inst_dims;
-    case (env,mods,pre,csets,ci_state,(((comp as SCode.COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = (attr as SCode.ATTR(arrayDim = ad,flow_ = flow_,RW = acc,parameter_ = param,input_ = dir)),type_ = t,mod = m,baseclass = bc,this = comment)),cmod) :: xs),inst_dims,impl)
+    case (env,mods,pre,csets,ci_state,(((comp as SCode.COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = (attr as SCode.ATTR(arrayDim = ad,flow_ = flow_,RW = acc,parameter_ = param,input_ = dir)),typeSpec = t,mod = m,baseclass = bc,this = comment)),cmod) :: xs),inst_dims,impl)
       equation 
         compmod = Mod.lookupCompModification(mods, n) "PA: PROBLEM, Modifiers should be merged in this phase, but
 	   since undeclared components can not be found (is done in this phase)
@@ -3186,10 +3187,10 @@ algorithm
 	 */
     case (cache,env,mods,pre,csets,ci_state,((comp as SCode.COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,
       		attributes = (attr as SCode.ATTR(arrayDim = ad,flow_ = flow_,RW = acc,parameter_ = param,input_ = dir)),
-      		type_ = t,mod = m,baseclass = bc,this = comment)),cmod),inst_dims,impl)  
-      		  local String s;
-      		    Boolean allreadyDeclared;
-      		    list<Types.Var> vars;
+      		typeSpec = Absyn.TPATH(t, _), mod = m,baseclass = bc,this = comment)),cmod),inst_dims,impl)  
+      local String s;
+        Boolean allreadyDeclared;
+        list<Types.Var> vars;
       equation 
         allreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl); // Fails if multiple decls not identical
         checkRecursiveDefinition(env,t);
@@ -3215,7 +3216,7 @@ algorithm
         mod = Mod.merge(classmod_1, mm_1, env2, pre);
         mod1 = Mod.merge(mod, m_1, env2, pre);
         mod1_1 = Mod.merge(cmod, mod1, env2, pre);
-        (cache,SCode.COMPONENT(n,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,acc,param,dir)),t,m,bc,comment),mod_1,env2_1,csets) 
+        (cache,SCode.COMPONENT(n,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,acc,param,dir)),Absyn.TPATH(t, _),m,bc,comment),mod_1,env2_1,csets) 
         	= redeclareType(cache,mod1_1, comp, env2, pre, ci_state, csets, impl);
         (cache,env_1) = getDerivedEnv(cache,env, bc);
         (cache,cl,cenv) = Lookup.lookupClass(cache,env_1, t, true);
@@ -3239,7 +3240,7 @@ algorithm
          rule catches the error and prints an error message about
          the unknown class. 
          Failure => ({},env,csets,ci_state,{}) */ 
-    case (cache,env,_,pre,csets,ci_state,(SCode.COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,type_ = t),_),_,_) 
+    case (cache,env,_,pre,csets,ci_state,(SCode.COMPONENT(component = n,final_ = final_,replaceable_ = repl,protected_ = prot,typeSpec = Absyn.TPATH(t,_)),_),_,_) 
       equation 
         failure((_,cl,cenv) = Lookup.lookupClass(cache,env, t, false));
         s = Absyn.pathString(t);
@@ -3490,7 +3491,7 @@ algorithm
       SCode.Element redecl,newcomp,comp;
       String n1,n2;
       Boolean final_,repl,prot,repl2,prot2,impl,redfin;
-      Absyn.Path t,t2;
+      Absyn.TypeSpec t,t2;
       SCode.Mod mod,old_mod;
       Option<Absyn.Path> bc;
       Option<Absyn.Comment> comment,comment2;
@@ -3498,7 +3499,7 @@ algorithm
       Prefix.Prefix pre;
       ClassInf.State ci_state;
       Env.Cache cache;
-    case (cache,(m as Types.REDECL(tplSCodeElementModLst = (((redecl as SCode.COMPONENT(component = n1,final_ = final_,replaceable_ = repl,protected_ = prot,type_ = t,mod = mod,baseclass = bc,this = comment)),rmod) :: rest))),SCode.COMPONENT(component = n2,final_ = false,replaceable_ = repl2,protected_ = prot2,type_ = t2,mod = old_mod),env,pre,ci_state,csets,impl) /* Implicit instantation */ 
+    case (cache,(m as Types.REDECL(tplSCodeElementModLst = (((redecl as SCode.COMPONENT(component = n1,final_ = final_,replaceable_ = repl,protected_ = prot,typeSpec = t,mod = mod,baseclass = bc,this = comment)),rmod) :: rest))),SCode.COMPONENT(component = n2,final_ = false,replaceable_ = repl2,protected_ = prot2,typeSpec = t2,mod = old_mod),env,pre,ci_state,csets,impl) /* Implicit instantation */ 
       equation 
         equality(n1 = n2);
         crefs = getCrefFromMod(mod);
@@ -3509,7 +3510,7 @@ algorithm
         m_3 = Mod.merge(m_2, old_m_1, env_1, pre);
       then
         (cache,redecl,m_3,env_1,csets);
-    case (cache,(mod as Types.REDECL(final_ = redfin,tplSCodeElementModLst = (((redecl as SCode.COMPONENT(component = n1,final_ = final_,replaceable_ = repl,protected_ = prot,type_ = t,baseclass = bc,this = comment)),rmod) :: rest))),(comp as SCode.COMPONENT(component = n2,final_ = false,replaceable_ = repl2,protected_ = prot2,type_ = t2,this = comment2)),env,pre,ci_state,csets,impl)
+    case (cache,(mod as Types.REDECL(final_ = redfin,tplSCodeElementModLst = (((redecl as SCode.COMPONENT(component = n1,final_ = final_,replaceable_ = repl,protected_ = prot,typeSpec = t,baseclass = bc,this = comment)),rmod) :: rest))),(comp as SCode.COMPONENT(component = n2,final_ = false,replaceable_ = repl2,protected_ = prot2,typeSpec = t2,this = comment2)),env,pre,ci_state,csets,impl)
       local Types.Mod mod;
       equation 
         failure(equality(n1 = n2));
@@ -3924,7 +3925,7 @@ algorithm
     case (cache,_,_,_,SCode.CLASS(name = "Integer"),_,_) then (cache,{}); 
     case (cache,_,_,_,SCode.CLASS(name = "String"),_,_) then (cache,{}); 
     case (cache,_,_,_,SCode.CLASS(name = "Boolean"),_,_) then (cache,{}); 
-    case (cache,env,mods,pre,SCode.CLASS(name = id,restricion = SCode.R_TYPE(),parts = SCode.DERIVED(short = cn,absynArrayDimOption = ad,mod = mod)),dims,impl) /* Derived classes with restriction type, e.g. type Point = Real{3}; */ 
+    case (cache,env,mods,pre,SCode.CLASS(name = id,restricion = SCode.R_TYPE(),parts = SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),mod = mod)),dims,impl) /* Derived classes with restriction type, e.g. type Point = Real{3}; */ 
       equation 
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, cn, true);
         owncref = Absyn.CREF_IDENT(id,{});
@@ -4149,7 +4150,7 @@ algorithm
     case (cache,mods,(cref as Absyn.CREF_IDENT(name = id,subscripts = subscr)),env,ci_state,csets,impl) /* Variables that have Element in Environment, i.e. no type 
 	    information are instnatiated here to get the type. */ 
       equation 
-        (cache,ty,SOME((SCode.COMPONENT(n,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,acc,param,dir)),t,m,bc,comment),cmod)),_) 
+        (cache,ty,SOME((SCode.COMPONENT(n,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,acc,param,dir)),Absyn.TPATH(t, _),m,bc,comment),cmod)),_) 
         	= Lookup.lookupIdent(cache,env, id);
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, t, false);
         crefs = getCrefFromMod(m);
@@ -4204,7 +4205,7 @@ algorithm
 
     case (cache,mods,Absyn.CREF_QUAL(name = id),env,ci_state,csets,impl) /* For qualified names, e.g. a.b.c, instanitate component a */ 
       equation 
-        (cache,ty,SOME((SCode.COMPONENT(n,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,acc,param,dir)),t,m,_,comment),cmod)),_) 
+        (cache,ty,SOME((SCode.COMPONENT(n,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,acc,param,dir)),Absyn.TPATH(t,_),m,_,comment),cmod)),_) 
         	= Lookup.lookupIdent(cache,env, id);
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, t, false);
         crefs = getCrefFromMod(m);
@@ -4310,7 +4311,7 @@ algorithm
       tuple<Types.TType, Option<Absyn.Path>> tp;
       Types.Binding bind;
       list<Absyn.Subscript> e;
-      Absyn.Path i;
+      Absyn.TypeSpec i;
       SCode.Mod j;
       Option<Absyn.Path> k;
       Option<Absyn.Comment> l;
@@ -4667,7 +4668,6 @@ algorithm
       SCode.Accessibility acc;
       SCode.Variability param;
       Absyn.Direction dir;
-      Absyn.Path t;
       SCode.Mod m,m_1;
       Option<Absyn.Path> bc;
       Option<Absyn.Comment> comment;
@@ -4679,7 +4679,7 @@ algorithm
       Env.Cache cache;
     case (cache,env,(cref as Exp.CREF_IDENT(ident = id)))
       equation 
-        (cache,ty,SOME((SCode.COMPONENT(n,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,acc,param,dir)),t,m,bc,comment),cmod)),_) 
+        (cache,ty,SOME((SCode.COMPONENT(n,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,acc,param,dir)),_,m,bc,comment),cmod)),_) 
         	= Lookup.lookupIdent(cache,env, id);
         cmod_1 = Types.stripSubmod(cmod);
         m_1 = SCode.stripSubmod(m);
@@ -5485,7 +5485,7 @@ algorithm
       String id;
       Boolean p,e;
       SCode.Restriction r;
-      option<Absyn.ExternalDecl> extDecl;
+      Option<Absyn.ExternalDecl> extDecl;
       list<SCode.Element> elts;
       Env.Cache cache;
     case (cache,env,SCode.CLASS(name = id,partial_ = p,encapsulated_ = e,restricion = r,parts = SCode.PARTS(elementLst = elts,used=extDecl))) /* The function type can be determined without the body. */ 
@@ -5749,10 +5749,10 @@ algorithm
       String id;
       Boolean fi,re,pr;
       list<Absyn.Subscript> dims;
-      Absyn.Path path;
+      Absyn.TypeSpec path;
       SCode.Mod mod;
       Option<Absyn.Comment> comment;
-    case SCode.COMPONENT(component = id,final_ = fi,replaceable_ = re,protected_ = pr,attributes = SCode.ATTR(arrayDim = dims),type_ = path,mod = mod,this = comment)
+    case SCode.COMPONENT(component = id,final_ = fi,replaceable_ = re,protected_ = pr,attributes = SCode.ATTR(arrayDim = dims),typeSpec = path,mod = mod,this = comment)
       equation 
         sizelist = instExtMakeCrefs2(id, dims, 1);
         crlist = (Absyn.CREF(Absyn.CREF_IDENT(id,{})) :: sizelist);
@@ -6130,13 +6130,13 @@ algorithm
       list<String> x;
     case ({str}) then {
           SCode.COMPONENT(str,true,false,false,
-          SCode.ATTR({},false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.IDENT("EnumType"),SCode.NOMOD(),NONE,NONE)}; 
+          SCode.ATTR({},false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE)}; 
     case ((str :: (x as (_ :: _))))
       equation 
         els = makeEnumComponents(x);
       then
         (SCode.COMPONENT(str,true,false,false,
-          SCode.ATTR({},false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.IDENT("EnumType"),SCode.NOMOD(),NONE,NONE) :: els);
+          SCode.ATTR({},false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE) :: els);
   end matchcontinue;
 end makeEnumComponents;
 
@@ -8965,7 +8965,7 @@ algorithm
       Option<Absyn.Comment> comment;
       SCode.Element elt;
       Env.Cache cache;
-    case (cache,env,SCode.COMPONENT(component = id,replaceable_ = repl,protected_ = prot,attributes = (attr as SCode.ATTR(arrayDim = dim,flow_ = f,RW = acc,parameter_ = var,input_ = dir)),type_ = t,mod = mod,baseclass = bc,this = comment),impl) /* impl */ 
+    case (cache,env,SCode.COMPONENT(component = id,replaceable_ = repl,protected_ = prot,attributes = (attr as SCode.ATTR(arrayDim = dim,flow_ = f,RW = acc,parameter_ = var,input_ = dir)),typeSpec = Absyn.TPATH(t, _),mod = mod,baseclass = bc,this = comment),impl) /* impl */ 
       equation 
         //Debug.fprint("recconst", "inst_record_constructor_elt called\n");
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, t, true);

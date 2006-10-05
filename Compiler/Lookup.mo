@@ -1578,12 +1578,12 @@ algorithm
       SCode.Accessibility ac;
       SCode.Variability var;
       Absyn.Direction dir;
-      Absyn.Path tp;
+      Absyn.TypeSpec tp;
       SCode.Mod mod;
       Option<Absyn.Path> bc;
       Option<Absyn.Comment> comment;
       list<Env.Frame> env;
-    case (((comp as SCode.COMPONENT(component = id,final_ = fl,replaceable_ = repl,protected_ = prot,attributes = SCode.ATTR(arrayDim = d,flow_ = f,RW = ac,parameter_ = var,input_ = dir),type_ = tp,mod = mod,baseclass = bc,this = comment)) :: rest),env)
+    case (((comp as SCode.COMPONENT(component = id,final_ = fl,replaceable_ = repl,protected_ = prot,attributes = SCode.ATTR(arrayDim = d,flow_ = f,RW = ac,parameter_ = var,input_ = dir),typeSpec = tp,mod = mod,baseclass = bc,this = comment)) :: rest),env)
       equation 
         res = buildRecordConstructorElts(rest, env);
       then
@@ -1607,7 +1607,7 @@ protected function buildRecordConstructorResultElt "function: buildRecordConstru
 algorithm 
   submodlst := buildRecordConstructorResultMod(elts);
   outElement := SCode.COMPONENT("result",false,false,false,
-          SCode.ATTR({},false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),Absyn.IDENT(id),SCode.MOD(false,Absyn.NON_EACH(),submodlst,NONE),
+          SCode.ATTR({},false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),Absyn.TPATH(Absyn.IDENT(id),NONE),SCode.MOD(false,Absyn.NON_EACH(),submodlst,NONE),
           NONE,NONE);
 end buildRecordConstructorResultElt;
 

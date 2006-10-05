@@ -88,52 +88,52 @@ protected constant SCode.Class enumType=SCode.CLASS("EnumType",false,false,SCode
           SCode.PARTS({},{},{},{},{},NONE));
 
 protected constant SCode.Element unit=SCode.COMPONENT("unit",true,false,false,
-          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.IDENT("StringType"),
+          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("StringType"),NONE),
           SCode.MOD(false,Absyn.NON_EACH(),{},SOME(Absyn.STRING(""))),NONE,NONE) "This `unit\' component is used in several places below, and it is
   declared once here to make the definitions below easier to read." ;
 
 protected constant SCode.Element quantity=SCode.COMPONENT("quantity",true,false,false,
-          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.IDENT("StringType"),
+          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("StringType"),NONE),
           SCode.MOD(false,Absyn.NON_EACH(),{},SOME(Absyn.STRING(""))),NONE,NONE);
 
 protected constant SCode.Element displayUnit=SCode.COMPONENT("displayUnit",true,false,false,
-          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.IDENT("StringType"),
+          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("StringType"),NONE),
           SCode.MOD(false,Absyn.NON_EACH(),{},SOME(Absyn.STRING(""))),NONE,NONE);
 
 protected constant SCode.Element min=SCode.COMPONENT("min",true,false,false,
-          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.IDENT("RealType"),
+          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("RealType"),NONE),
           SCode.MOD(false,Absyn.NON_EACH(),{},SOME(Absyn.REAL(-1e+099))),NONE,NONE);
 
 protected constant SCode.Element max=SCode.COMPONENT("max",true,false,false,
-          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.IDENT("RealType"),
+          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("RealType"),NONE),
           SCode.MOD(false,Absyn.NON_EACH(),{},SOME(Absyn.REAL(1e+099))),NONE,NONE);
 
 protected constant SCode.Element realStart=SCode.COMPONENT("start",true,false,false,
-          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.IDENT("RealType"),
+          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("RealType"),NONE),
           SCode.MOD(false,Absyn.NON_EACH(),{},SOME(Absyn.REAL(0.0))),NONE,NONE);
 
 protected constant SCode.Element integerStart=SCode.COMPONENT("start",true,false,false,
-          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.IDENT("IntegerType"),
+          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("IntegerType"),NONE),
           SCode.MOD(false,Absyn.NON_EACH(),{},SOME(Absyn.INTEGER(0))),NONE,NONE);
 
 protected constant SCode.Element stringStart=SCode.COMPONENT("start",true,false,false,
-          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.IDENT("StringType"),
+          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("StringType"),NONE),
           SCode.MOD(false,Absyn.NON_EACH(),{},SOME(Absyn.STRING(""))),NONE,NONE);
 
 protected constant SCode.Element booleanStart=SCode.COMPONENT("start",true,false,false,
-          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.IDENT("BooleanType"),
+          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("BooleanType"),NONE),
           SCode.MOD(false,Absyn.NON_EACH(),{},SOME(Absyn.BOOL(false))),NONE,NONE);
 
 protected constant SCode.Element fixed=SCode.COMPONENT("fixed",true,false,false,
-          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.IDENT("BooleanType"),
+          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("BooleanType"),NONE),
           SCode.MOD(false,Absyn.NON_EACH(),{},SOME(Absyn.BOOL(false))),NONE,NONE) "Should be true for variables" ;
 
 protected constant SCode.Element nominal=SCode.COMPONENT("nominal",true,false,false,
-          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.IDENT("RealType"),SCode.MOD(false,Absyn.NON_EACH(),{},NONE),
-          NONE,NONE);
+          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("RealType"),NONE),
+          SCode.MOD(false,Absyn.NON_EACH(),{},NONE),NONE,NONE);
 
 protected constant SCode.Element stateSelect=SCode.COMPONENT("stateSelect",true,false,false,
-          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.IDENT("StateSelect"),
+          SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("StateSelect"),NONE),
           SCode.MOD(false,Absyn.NON_EACH(),{},
           SOME(
           Absyn.CREF(
@@ -141,15 +141,15 @@ protected constant SCode.Element stateSelect=SCode.COMPONENT("stateSelect",true,
 
 protected constant list<SCode.Element> stateSelectComps={
           SCode.COMPONENT("never",true,false,false,
-          SCode.ATTR({},false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.IDENT("EnumType"),SCode.NOMOD(),NONE,NONE),
+          SCode.ATTR({},false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE),
           SCode.COMPONENT("avoid",true,false,false,
-          SCode.ATTR({},false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.IDENT("EnumType"),SCode.NOMOD(),NONE,NONE),
+          SCode.ATTR({},false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE),
           SCode.COMPONENT("default",true,false,false,
-          SCode.ATTR({},false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.IDENT("EnumType"),SCode.NOMOD(),NONE,NONE),
+          SCode.ATTR({},false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE),
           SCode.COMPONENT("prefer",true,false,false,
-          SCode.ATTR({},false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.IDENT("EnumType"),SCode.NOMOD(),NONE,NONE),
+          SCode.ATTR({},false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE),
           SCode.COMPONENT("always",true,false,false,
-          SCode.ATTR({},false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.IDENT("EnumType"),SCode.NOMOD(),NONE,NONE)} "The StateSelect enumeration" ;
+          SCode.ATTR({},false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE)} "The StateSelect enumeration" ;
 
 protected constant SCode.Class stateSelectType=SCode.CLASS("StateSelect",false,false,SCode.R_ENUMERATION(),
           SCode.PARTS(stateSelectComps,{},{},{},{},NONE)) "The State Select Type" ;

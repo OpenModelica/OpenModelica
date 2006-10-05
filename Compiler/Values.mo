@@ -95,7 +95,7 @@ uniontype Value
   end RECORD;
 
   record CODE
-    Absyn.Code A "A record consist of value  Ident pairs" ;
+    Absyn.CodeNode A "A record consist of value  Ident pairs" ;
   end CODE;
 
 end Value;
@@ -1208,7 +1208,7 @@ algorithm
       Real x;
       list<Value> vs;
       Value r;
-      Absyn.Code c;
+      Absyn.CodeNode c;
     case INTEGER(integer = n)
       equation 
         s = intString(n);
