@@ -59,7 +59,7 @@ public import OpenModelica.Compiler.DAELow;
 
 public import OpenModelica.Compiler.Exp;
 
-protected import OpenModelica.Compiler.Absyn;
+public import OpenModelica.Compiler.Absyn;
 
 protected import OpenModelica.Compiler.Util;
 
@@ -417,14 +417,18 @@ algorithm
         Exp.BINARY(Exp.BINARY(e1,Exp.MUL(tp),e2_1),Exp.ADD(tp),
           Exp.BINARY(e1_1,Exp.MUL(tp),e2));
 
-    case (Exp.BINARY(exp1 = e1,operator = Exp.DIV(ty = tp),exp2 = e2),tv) /* (f\'g - fg\' ) / g^2 */ 
+    case (Exp.BINARY(exp1 = e1,operator = Exp.DIV(ty = tp),exp2 = e2),tv) /* (f'g - fg' ) / g^2 */ 
       equation 
         e1_1 = differentiateExp(e1, tv);
         e2_1 = differentiateExp(e2, tv);
       then
         Exp.BINARY(
-          Exp.BINARY(Exp.BINARY(e1_1,Exp.MUL(tp),e2),Exp.SUB(tp),
-          Exp.BINARY(e1,Exp.MUL(tp),e2_1)),Exp.DIV(tp),Exp.BINARY(e2,Exp.MUL(tp),e2));
+          Exp.BINARY(
+          	Exp.BINARY(e1_1,Exp.MUL(tp),e2),
+          	Exp.SUB(tp),
+          	Exp.BINARY(e1,Exp.MUL(tp),e2_1)),
+          Exp.DIV(tp),
+          Exp.BINARY(e2,Exp.MUL(tp),e2));
 
     case (Exp.UNARY(operator = op,exp = e),tv)
       equation 
@@ -632,7 +636,7 @@ algorithm
   end matchcontinue;
 end differentiateExp;
 
-protected function isTanh
+public function isTanh
   input Absyn.Path inPath;
 algorithm 
   _:=
@@ -642,7 +646,7 @@ algorithm
   end matchcontinue;
 end isTanh;
 
-protected function isCosh
+public function isCosh
   input Absyn.Path inPath;
 algorithm 
   _:=
@@ -652,7 +656,47 @@ algorithm
   end matchcontinue;
 end isCosh;
 
-protected function isSinh
+public function isACos
+  input Absyn.Path inPath;
+algorithm 
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "acos")) then (); 
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "acos")))) then (); 
+  end matchcontinue;
+end isACos;
+
+public function isASin
+  input Absyn.Path inPath;
+algorithm 
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "asin")) then (); 
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "asin")))) then (); 
+  end matchcontinue;
+end isASin;
+
+public function isATan
+  input Absyn.Path inPath;
+algorithm 
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "atan")) then (); 
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "atan")))) then (); 
+  end matchcontinue;
+end isATan;
+
+public function isATan2
+  input Absyn.Path inPath;
+algorithm 
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "atan2")) then (); 
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "atan2")))) then (); 
+  end matchcontinue;
+end isATan2;
+
+public function isSinh
   input Absyn.Path inPath;
 algorithm 
   _:=
@@ -662,7 +706,7 @@ algorithm
   end matchcontinue;
 end isSinh;
 
-protected function isSin
+public function isSin
   input Absyn.Path inPath;
 algorithm 
   _:=
@@ -672,7 +716,7 @@ algorithm
   end matchcontinue;
 end isSin;
 
-protected function isCos
+public function isCos
   input Absyn.Path inPath;
 algorithm 
   _:=
@@ -682,7 +726,7 @@ algorithm
   end matchcontinue;
 end isCos;
 
-protected function isExp
+public function isExp
   input Absyn.Path inPath;
 algorithm 
   _:=
@@ -692,7 +736,7 @@ algorithm
   end matchcontinue;
 end isExp;
 
-protected function isLog
+public function isLog
   input Absyn.Path inPath;
 algorithm 
   _:=
@@ -702,7 +746,7 @@ algorithm
   end matchcontinue;
 end isLog;
 
-protected function isLog10
+public function isLog10
   input Absyn.Path inPath;
 algorithm 
   _:=
@@ -712,7 +756,7 @@ algorithm
   end matchcontinue;
 end isLog10;
 
-protected function isSqrt
+public function isSqrt
   input Absyn.Path inPath;
 algorithm 
   _:=
@@ -722,7 +766,7 @@ algorithm
   end matchcontinue;
 end isSqrt;
 
-protected function isTan
+public function isTan
   input Absyn.Path inPath;
 algorithm 
   _:=

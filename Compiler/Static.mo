@@ -3892,6 +3892,81 @@ algorithm
   end matchcontinue;
 end elabBuiltinScalar;
 
+protected function elabBuiltinCross "
+  author: PA
+ 
+  This function handles the built in cross operator.
+  For example, scalar({x[1],x[2],x[3]},{y[1],y[2],y[3]}) 
+  => {x[2]*y[3]-x[3]*y[2],x[3]*y[1]-x[1]*y[3],x[1]*y[2]-x[2]*y[1]}
+"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input Boolean inBoolean;
+  output Env.Cache outCache;
+  output Exp.Exp outExp;
+  output Types.Properties outProperties;
+algorithm 
+  (outCache,outExp,outProperties):=
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+    local
+      Exp.Exp e1,e2;
+      tuple<Types.TType, Option<Absyn.Path>> tp1,tp2;
+      Types.Const c1,c2,c;
+      Boolean scalar1,scalar2;
+      list<Env.Frame> env;
+      Boolean impl;
+      Env.Cache cache;
+      Absyn.Exp v1,v2;
+      list<Exp.Exp> expl1,expl2,expl3;
+      Exp.Type etp1,etp2,etp,etp3;
+      Types.Type eltTp;
+      
+			//First, try symbolic simplification      
+    case (cache,env,{v1,v2},impl) equation
+      (cache,Exp.ARRAY(etp1,scalar1,expl1),Types.PROP(tp1,c1),_) = elabExp(cache,env, v1, impl, NONE);
+      (cache,Exp.ARRAY(etp2,scalar2,expl2),Types.PROP(tp2,c2),_) = elabExp(cache,env, v2, impl, NONE);
+      {3} = Types.getDimensionSizes(tp1);
+      {3} = Types.getDimensionSizes(tp2);
+      expl3 = elabBuiltinCross2(expl1,expl2);
+      c = Types.constAnd(c1,c2);
+      etp3 = Types.elabType(tp1);
+      then 
+        (cache,Exp.ARRAY(etp3,scalar1,expl3),Types.PROP(tp1,c));
+
+		//Fallback, use builtin function cross
+    case (cache,env,{v1,v2},impl) equation
+      (cache,e1,Types.PROP(tp1,c1),_) = elabExp(cache,env, v1, impl, NONE);
+      (cache,e2,Types.PROP(tp2,c2),_) = elabExp(cache,env, v2, impl, NONE);
+       {3} = Types.getDimensionSizes(tp1);
+       {3} = Types.getDimensionSizes(tp2);
+       etp = Exp.typeof(e1);
+       eltTp = Types.arrayElementType(tp1);
+       then (cache,Exp.CALL(Absyn.IDENT("cross"),{e1,e2},false,true,Exp.T_ARRAY(etp,{SOME(3)})),
+         		 Types.PROP((Types.T_ARRAY(Types.DIM(SOME(3)),eltTp),NONE),Types.C_VAR()));
+  end matchcontinue;
+end elabBuiltinCross;
+  
+protected function elabBuiltinCross2 "help function to elabBuiltinCross"
+	input list<Exp.Exp> v1;
+	input list<Exp.Exp> v2;
+	output list<Exp.Exp> res;
+algorithm
+  res := matchcontinue(v1,v2)
+  local Exp.Exp x1,x2,x3,y1,y2,y3,p1,p2,r1,r2,r3;
+ 		
+ 		// {x[2]*y[3]-x[3]*y[2],x[3]*y[1]-x[1]*y[3],x[1]*y[2]-x[2]*y[1]}
+    case({x1,x2,x3},{y1,y2,y3}) equation
+        p1 = Exp.makeProduct({x2,y2});
+        p2 = Exp.makeProduct({x3,y2});
+    	  r1 = Exp.makeDiff(p1,p2);
+    	  r2 = Exp.makeDiff(Exp.makeProduct({x3,y1}),Exp.makeProduct({x1,y3}));
+    	  r3 = Exp.makeDiff(Exp.makeProduct({x1,y2}),Exp.makeProduct({x2,y1}));
+    then {r1,r2,r3};
+  end matchcontinue;
+end elabBuiltinCross2;
+
+  
 protected function elabBuiltinVector "function: elabBuiltinVector
   author: PA
  
@@ -4109,6 +4184,8 @@ algorithm
     case "vector" then elabBuiltinVector; 
 
     case "scalar" then elabBuiltinScalar; 
+      
+    case "cross" then elabBuiltinCross;
 
     case "dymTableTimeIni" then elabBuiltinDymtabletimeini; 
   end matchcontinue;

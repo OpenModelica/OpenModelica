@@ -2908,7 +2908,7 @@ algorithm
   end matchcontinue;
 end inverseFactors;
 
-protected function makeProduct "function: makeProduct
+public function makeProduct "function: makeProduct
  
   Takes a list of expressions an makes a product expression multiplying all 
   elements in the list.
@@ -2979,6 +2979,24 @@ algorithm
     case (inTp) then inTp;
   end matchcontinue;
 end checkIfOther;
+
+public function makeDiff "Takes two expressions and create the difference between them"
+  input Exp e1;
+  input Exp e2;
+  output Exp res;
+algorithm
+  res := matchcontinue(e1,e2)
+    local
+      Type etp;
+      Boolean scalar;
+      Operator op;
+    case(e1,e2) equation
+      etp = typeof(e1);
+      scalar = typeBuiltin(etp);
+      op = Util.if_(scalar,SUB(etp),SUB_ARR(etp));
+    then BINARY(e1,op,e2);      
+  end matchcontinue;
+end makeDiff;
 
 public function makeSum "function: makeSum
  
@@ -4977,12 +4995,12 @@ algorithm
     case (MUL(ty = _)) then " * "; 
     case (DIV(ty = _)) then " / "; 
     case (POW(ty = _)) then " ^ "; 
-    case (ADD_ARR(ty = _)) then " + "; 
-    case (SUB_ARR(ty = _)) then " - "; 
-    case (MUL_SCALAR_ARRAY(ty = _)) then " * "; 
-    case (MUL_ARRAY_SCALAR(ty = _)) then " * "; 
-    case (MUL_SCALAR_PRODUCT(ty = _)) then " * "; 
-    case (MUL_MATRIX_PRODUCT(ty = _)) then " * "; 
+    case (ADD_ARR(ty = _)) then " +ARR "; 
+    case (SUB_ARR(ty = _)) then " -ARR "; 
+    case (MUL_SCALAR_ARRAY(ty = _)) then " *ARR "; 
+    case (MUL_ARRAY_SCALAR(ty = _)) then " *ARR "; 
+    case (MUL_SCALAR_PRODUCT(ty = _)) then " *ARR "; 
+    case (MUL_MATRIX_PRODUCT(ty = _)) then " *ARR "; 
     case (DIV_ARRAY_SCALAR(ty = _)) then " / "; 
   end matchcontinue;
 end binopSymbol1;
