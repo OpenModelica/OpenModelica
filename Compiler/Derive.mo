@@ -204,7 +204,6 @@ algorithm
         exp = Exp.BINARY(
           Exp.BINARY(d_e1,Exp.MUL(tp),e2),Exp.MUL(tp),
           Exp.BINARY(e1,Exp.POW(tp),Exp.BINARY(e2,Exp.SUB(tp),Exp.RCONST(1.0))));  
-        print(Exp.printExpStr(e0) +& " => " +& Exp.printExpStr(exp)+&"\n");
       then
         exp;  
           

@@ -3957,11 +3957,11 @@ algorithm
  		
  		// {x[2]*y[3]-x[3]*y[2],x[3]*y[1]-x[1]*y[3],x[1]*y[2]-x[2]*y[1]}
     case({x1,x2,x3},{y1,y2,y3}) equation
-    	  r1 = Exp.makeDiff(Exp.makeProduct({x2,y3}),Exp.makeProduct({x3,y2}));
-    	  r2 = Exp.makeDiff(Exp.makeProduct({x3,y1}),Exp.makeProduct({x1,y3}));
-    	  r3 = Exp.makeDiff(Exp.makeProduct({x1,y2}),Exp.makeProduct({x2,y1}));
+    	  r1 = Exp.makeDiff(Exp.makeProductLst({x2,y3}),Exp.makeProductLst({x3,y2}));
+    	  r2 = Exp.makeDiff(Exp.makeProductLst({x3,y1}),Exp.makeProductLst({x1,y3}));
+    	  r3 = Exp.makeDiff(Exp.makeProductLst({x1,y2}),Exp.makeProductLst({x2,y1}));
     then {r1,r2,r3};
-  end matchcontinue;
+  end matchcontinue; 
 end elabBuiltinCross2;
 
   

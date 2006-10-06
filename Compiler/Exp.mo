@@ -1839,7 +1839,7 @@ algorithm
         notconst_es1 = Util.listSelect(e_lst_1, isNotConst);
         const_es1_1 = simplifyBinaryMulConstants(const_es1);
         e_lst_2 = listAppend(const_es1_1, notconst_es1);
-        res = makeProduct(e_lst_2);
+        res = makeProductLst(e_lst_2);
       then
         res;
     case ((e as BINARY(exp1 = e1,operator = ADD(ty = tp),exp2 = e2)))
@@ -1875,7 +1875,7 @@ algorithm
       equation 
         e_lst = factors(e);
         e_lst_1 = simplifyMul(e_lst);
-        res = makeProduct(e_lst_1);
+        res = makeProductLst(e_lst_1);
       then
         res;
     case ((e as BINARY(exp1 = e1,operator = DIV(ty = tp),exp2 = e2)))
@@ -1885,7 +1885,7 @@ algorithm
         e2_lst_1 = inverseFactors(e2_lst);
         e_lst = listAppend(e1_lst, e2_lst_1);
         e_lst_1 = simplifyMul(e_lst);
-        res = makeProduct(e_lst_1);
+        res = makeProductLst(e_lst_1);
       then
         res;
     case ((e as BINARY(exp1 = e1,operator = ADD(ty = tp),exp2 = e2)))
@@ -2296,14 +2296,14 @@ algorithm
         const_es1 = Util.listSelect(es1, isConst);
         notconst_es1 = Util.listSelect(es1, isNotConst);
         es1_1 = listAppend(const_es1, notconst_es1);
-        res = makeProduct(es1_1);
+        res = makeProductLst(es1_1);
         res_1 = simplify(res);
       then
         res_1;
     case (es1,{e1}) /* e1...en / 1.0 => e1...en */ 
       equation 
         true = isConstOne(e1);
-        res = makeProduct(es1);
+        res = makeProductLst(es1);
       then
         res;
     case ({},es2)
@@ -2311,7 +2311,7 @@ algorithm
         const_es2 = Util.listSelect(es2, isConst);
         notconst_es2 = Util.listSelect(es2, isNotConst);
         es2_1 = listAppend(const_es2, notconst_es2);
-        q = makeProduct(es2_1);
+        q = makeProductLst(es2_1);
         q_1 = simplify(q);
       then
         BINARY(RCONST(1.0),DIV(REAL()),q_1);
@@ -2323,8 +2323,8 @@ algorithm
         const_es2 = Util.listSelect(es2, isConst);
         notconst_es2 = Util.listSelect(es2, isNotConst);
         es2_1 = listAppend(const_es2, notconst_es2);
-        p = makeProduct(es1_1);
-        q = makeProduct(es2_1);
+        p = makeProductLst(es1_1);
+        q = makeProductLst(es2_1);
         p_1 = simplify(p);
         q_1 = simplify(q);
       then
@@ -2653,8 +2653,8 @@ algorithm
       equation 
         (e1 :: rest) = factors(factor);
         e2s = factors(expr);
-        factor1 = makeProduct((e1 :: rest));
-        expr1 = makeProduct(e2s);
+        factor1 = makeProductLst((e1 :: rest));
+        expr1 = makeProductLst(e2s);
         {} = Util.listSetdifferenceP(e2s, (e1 :: rest), expEqual);
         tp = typeof(e1);
         one = makeConstOne(tp);
@@ -2665,7 +2665,7 @@ algorithm
         e1s = factors(factor);
         e2s = factors(expr);
         factors_1 = Util.listSetdifferenceP(e2s, e1s, expEqual);
-        exp = makeProduct(factors_1);
+        exp = makeProductLst(factors_1);
       then
         exp;
     case (factor,expr)
@@ -2702,7 +2702,7 @@ algorithm
   e1s := factors(e1);
   e2s := factors(e2);
   ((factor as (_ :: _))) := Util.listIntersectionP(e1s, e2s, expEqual);
-  product := makeProduct(factor);
+  product := makeProductLst(factor);
 end gcd;
 
 protected function noFactors "function noFactors
@@ -2739,6 +2739,70 @@ algorithm
   outExp := UNARY(UMINUS(t),e);
 end negate;
 
+public function allTerms "simliar to terms, but also perform expansion of multiplications to reveal more terms,
+like for instance allTerms((a+b)*(b+c)) => {a*b,a*c,b*b,b*c}"
+     
+  input Exp inExp;
+  output list<Exp> outExpLst;
+algorithm 
+  outExpLst:=
+  matchcontinue (inExp)
+    local
+      list<Exp> f1,f2,res,f2_1;
+      Exp e1,e2,e;
+      Type tp;
+      ComponentRef cr;
+    
+   case (BINARY(exp1 = e1,operator = ADD(ty = _),exp2 = e2))
+      equation 
+        f1 = allTerms(e1);
+        f2 = allTerms(e2);
+        res = listAppend(f1, f2);
+      then
+        res;
+   case (BINARY(exp1 = e1,operator = SUB(ty = _),exp2 = e2))
+     equation 
+       f1 = allTerms(e1);
+       f2 = allTerms(e2);
+       f2_1 = Util.listMap(f2, negate);
+       res = listAppend(f1, f2_1);
+     then
+       res;     
+       
+       /* terms( a*(b+c)) => {a*b, c*b} */
+   case (e as BINARY(e1,MUL(tp),e2)) equation
+     (f1 as _::_::_) = allTerms(e2);
+     f1 = Util.listMap1(f1,makeProduct,e1);
+     f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+   then f1;
+     
+     /* terms( (b+c)*a) => {b*a, c*a} */
+   case (e as BINARY(e1,MUL(tp),e2)) equation
+     (f1 as _::_::_) = allTerms(e1);
+     f1 = Util.listMap1(f1,makeProduct,e1);
+     f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+   then f1;
+   case ((e as BINARY(operator = MUL(ty = _)))) then {e}; 
+   case ((e as BINARY(operator = DIV(ty = _)))) then {e}; 
+   case ((e as BINARY(operator = POW(ty = _)))) then {e}; 
+   case ((e as CREF(componentRef = cr))) then {e}; 
+   case ((e as ICONST(integer = _))) then {e}; 
+   case ((e as RCONST(real = _))) then {e}; 
+   case ((e as SCONST(string = _))) then {e}; 
+   case ((e as UNARY(operator = _))) then {e}; 
+   case ((e as IFEXP(expCond = _))) then {e}; 
+   case ((e as CALL(path = _))) then {e}; 
+   case ((e as ARRAY(ty = _))) then {e}; 
+   case ((e as MATRIX(ty = _))) then {e}; 
+   case ((e as RANGE(ty = _))) then {e}; 
+   case ((e as CAST(ty = _))) then {e}; 
+   case ((e as ASUB(exp = _))) then {e}; 
+   case ((e as SIZE(exp = _))) then {e}; 
+   case ((e as REDUCTION(path = _))) then {e}; 
+    case (_) then {}; 
+  end matchcontinue;
+end allTerms;
+  
 public function terms "function: terms
   author: PA
  
@@ -2752,6 +2816,7 @@ algorithm
     local
       list<Exp> f1,f2,res,f2_1;
       Exp e1,e2,e;
+      Type tp;
       ComponentRef cr;
     case (BINARY(exp1 = e1,operator = ADD(ty = _),exp2 = e2))
       equation 
@@ -2767,7 +2832,7 @@ algorithm
         f2_1 = Util.listMap(f2, negate);
         res = listAppend(f1, f2_1);
       then
-        res;
+        res;     
     case ((e as BINARY(operator = MUL(ty = _)))) then {e}; 
     case ((e as BINARY(operator = DIV(ty = _)))) then {e}; 
     case ((e as BINARY(operator = POW(ty = _)))) then {e}; 
@@ -2908,7 +2973,15 @@ algorithm
   end matchcontinue;
 end inverseFactors;
 
-public function makeProduct "function: makeProduct
+public function makeProduct "Makes a product of two expressions"
+  input Exp e1;
+  input Exp e2;
+  output Exp product;
+algorithm
+  product := makeProductLst({e1,e2});
+end makeProduct;
+
+public function makeProductLst "function: makeProductLst
  
   Takes a list of expressions an makes a product expression multiplying all 
   elements in the list.
@@ -2929,7 +3002,7 @@ algorithm
     case ((e :: es)) /* to prevent infinite recursion, disregard constant 1. */ 
       equation 
         true = isConstOne(e);
-        res = makeProduct(es);
+        res = makeProductLst(es);
       then
         res;
     case ({BINARY(exp1 = e1,operator = DIV(ty = tp),exp2 = e),e2})
@@ -2946,12 +3019,12 @@ algorithm
     case ((BINARY(exp1 = e1,operator = DIV(ty = tp),exp2 = e) :: es))
       equation 
         true = isConstOne(e1);
-        p1 = makeProduct(es);
+        p1 = makeProductLst(es);
       then
         BINARY(p1,DIV(tp),e);
     case ((e1 :: rest))
       equation 
-        e2 = makeProduct(rest);
+        e2 = makeProductLst(rest);
         tp = typeof(e1);
         tp = checkIfOther(tp);
       then
@@ -2966,7 +3039,7 @@ algorithm
       then
         fail();
   end matchcontinue;
-end makeProduct;
+end makeProductLst;
 
 protected function checkIfOther "Checks if a type is OTHER and in that case returns REAL instead.
 THis is used to make proper transformations in case OTHER is retrieved from subexpression where it should instead be 
@@ -3810,7 +3883,7 @@ algorithm
       equation 
         ((exp_lst as (_ :: (_ :: _)))) = factors(e1);
         exp_lst_1 = simplifyBinaryDistributePow(exp_lst, e2);
-        res = makeProduct(exp_lst_1);
+        res = makeProductLst(exp_lst_1);
       then
         res;
 

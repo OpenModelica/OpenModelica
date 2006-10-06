@@ -3941,7 +3941,6 @@ algorithm
       local list<tuple<Integer, Integer, DAELow.Equation>> jac;
       equation 
         eqn_size = DAELow.equationSize(eqn);
-        print("Symbolic gaussian elimination required\n");
         (s1,cg_id_1,f1) = generateOdeSystem2(mixedEvent,d, SOME(jac), DAELow.JAC_TIME_VARYING(), cg_id) "NOTE: Not impl. yet, use time_varying..." ;
       then
         (s1,cg_id_1,f1);
@@ -3953,6 +3952,7 @@ algorithm
       equation 
         //print("linearSystem of equations:");
         //DAELow.dump(d);
+        //print("Jacobian:");print(DAELow.dumpJacobianStr(SOME(jac)));print("\n");
         eqn_size = DAELow.equationSize(eqn);
         unique_id = tick();
         (s1,cg_id1) = generateOdeSystem2Declaration(mixedEvent,eqn_size, unique_id, cg_id);
@@ -4935,7 +4935,7 @@ end generateOdeSystem2PopulateA2;
 protected function generateOdeSystem2PopulateB "function: generateOdeSystem2PopulateB
   author: PA
  
-  Generates code for the population of A 
+  Generates code for the population of b 
   solving linear system of equations.
 "
   input list<tuple<Integer, Integer, DAELow.Equation>> inTplIntegerIntegerDAELowEquationLst1;

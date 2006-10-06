@@ -9951,7 +9951,7 @@ algorithm
       Variables vars;
     case (exp,vars)
       equation 
-        term_lst = Exp.terms(exp);
+        term_lst = Exp.allTerms(exp);
         rhs_lst = Util.listSelect1(term_lst, vars, freeFromAnyVar);
         new_exp = Exp.makeSum(rhs_lst);
         res = Exp.simplify(new_exp);
