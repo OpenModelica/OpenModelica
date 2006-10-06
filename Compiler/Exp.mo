@@ -4995,12 +4995,12 @@ algorithm
     case (MUL(ty = _)) then " * "; 
     case (DIV(ty = _)) then " / "; 
     case (POW(ty = _)) then " ^ "; 
-    case (ADD_ARR(ty = _)) then " +ARR "; 
-    case (SUB_ARR(ty = _)) then " -ARR "; 
-    case (MUL_SCALAR_ARRAY(ty = _)) then " *ARR "; 
-    case (MUL_ARRAY_SCALAR(ty = _)) then " *ARR "; 
-    case (MUL_SCALAR_PRODUCT(ty = _)) then " *ARR "; 
-    case (MUL_MATRIX_PRODUCT(ty = _)) then " *ARR "; 
+    case (ADD_ARR(ty = _)) then " + "; 
+    case (SUB_ARR(ty = _)) then " - "; 
+    case (MUL_SCALAR_ARRAY(ty = _)) then " * "; 
+    case (MUL_ARRAY_SCALAR(ty = _)) then " * "; 
+    case (MUL_SCALAR_PRODUCT(ty = _)) then " * "; 
+    case (MUL_MATRIX_PRODUCT(ty = _)) then " * "; 
     case (DIV_ARRAY_SCALAR(ty = _)) then " / "; 
   end matchcontinue;
 end binopSymbol1;
