@@ -57,6 +57,6 @@ MISC
 
 > Probably the path to the file "omc_communicator.cc" in the OMNotebook project has
   to be change, because this path is relative also. The file is added to the project
-  to avoid link error and the file is located in modelicas winruntime library.
+  to avoid link error and the file is located in modelicas runtime library.
 
 
