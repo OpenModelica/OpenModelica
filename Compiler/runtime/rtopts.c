@@ -1,7 +1,7 @@
 /*
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet, Department of
+Copyright (c) 1998-2006, Linköpings universitet, Department of
 Computer and Information Science, PELAB
 
 All rights reserved.
@@ -366,3 +366,4 @@ RML_BEGIN_LABEL(RTOpts__versionRequest)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+

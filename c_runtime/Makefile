@@ -6,7 +6,7 @@ builddir_inc=$(top_builddir)/build/include
 CC = gcc
 FC = g77
 AR = ar -ru 
-CFLAGS = -g -Wall -ansi -pedantic -I$(top_builddir)/mosh/src/ $(EXTRA_CFLAGS)
+CFLAGS = -O1 -Wall -ansi -pedantic -I$(top_builddir)/mosh/src/ $(EXTRA_CFLAGS)
 CPPFLAGS = $(CFLAGS)
 FFLAGS  = -O
 # P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.

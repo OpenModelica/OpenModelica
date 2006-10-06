@@ -160,7 +160,7 @@ tokens {
        	if (s.empty()) return 0;
         int size=3; // space for '\0' and '[' and ']'
         while(!tmpStack.empty()) {
-        	size +=strlen((const char*)tmpStack.top());
+        	size += (int)strlen((const char*)tmpStack.top());
         	tmpStack.pop();
         } 
         buf = (char*)malloc(sizeof(char)*size);

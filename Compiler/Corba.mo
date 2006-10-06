@@ -1,7 +1,7 @@
 package Corba "
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet, Department of
+Copyright (c) 1998-2006, Linköpings universitet, Department of
 Computer and Information Science, PELAB
 
 All rights reserved.
@@ -48,8 +48,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   This is the CORBA connection module of the compiler
   
   The actual implementation differs between Windows and Unix versions. 
-  The Windows implementation is located in ./winruntime and the Unix
-  version lies in ./runtime
+  The Windows implementation and the Unix
+  version lies in ./runtime but they use C ifdefs to provide different
+  implementation
   
   OpenModelica does not in itself include a complete CORBA implementaton.
   You need to download one, for example MICO from http://www.mico.org.

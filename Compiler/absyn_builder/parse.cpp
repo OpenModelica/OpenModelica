@@ -1,7 +1,7 @@
 /*
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linköpings universitet, Department of
+Copyright (c) 1998-2006, Linköpings universitet, Department of
 Computer and Information Science, PELAB
 
 All rights reserved.
@@ -89,8 +89,9 @@ extern "C"
 	{
 		char* filename = RML_STRINGDATA(rmlA0);
 		string filestring(filename);
-		bool debug = check_debug_flag("parsedebug");
-		bool parsedump = check_debug_flag("parsedump");
+		bool debug = false, parsedump = false;
+		debug      = check_debug_flag("parsedebug");
+		parsedump  = check_debug_flag("parsedump");
 		/* 2004-10-05 adrpo moved this declaration here to 
 		* have the ast initialized before getting 
 		* into the code. This way, if this relation fails at least the 
@@ -378,7 +379,7 @@ extern "C"
 		string str = s.str();
 		if (str.length() >= size) 
 		{
-			size = 2*str.length();
+			size = (unsigned int)2*str.length();
 			if (buf)
 				delete [] buf;
 			buf = new char[size];

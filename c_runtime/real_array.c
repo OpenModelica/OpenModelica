@@ -1461,7 +1461,7 @@ double max_real_array(real_array_t* a)
 {
   size_t i;
   size_t nr_of_elements;
-  double max_element;
+  double max_element = 0;
   
   assert(real_array_ok(a));
 
@@ -1486,7 +1486,7 @@ double min_real_array(real_array_t* a)
 {
   size_t i;
   size_t nr_of_elements;
-  double min_element;
+  double min_element = 0;
   
   assert(real_array_ok(a));
 
