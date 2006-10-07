@@ -62,7 +62,7 @@ void Socket_5finit(void)
 
 extern int errno;
 int serversocket;
-int fromlen;
+unsigned int fromlen;
 
 
 RML_BEGIN_LABEL(Socket__waitforconnect)
@@ -150,7 +150,7 @@ void Socket_5finit(void)
 
 extern int errno;
 int serversocket;
-int fromlen;
+unsigned int fromlen;
 struct sockaddr_in clientAddr;
 
 
