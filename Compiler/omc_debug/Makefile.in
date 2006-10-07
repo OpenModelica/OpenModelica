@@ -60,10 +60,9 @@ all : $(ALLMO) subdirs $(PROG)
 
 .SUFFIXES:
 .SUFFIXES: .o .mo .h
-.PHONY: all subdirs report vctarget absyn_subdir clean reallyclean
+.PHONY: all subdirs $(SUBDIRS) report vctarget absyn_subdir clean reallyclean
 
 SRCHSRCDIR = $(SRCH:%.h=$(srcdir)/%.h)
-
 
 $(ALLMO): %.mo : $(srcdir)/%.mo
 	cp $< $@
@@ -88,19 +87,19 @@ vctarget: $(SRCC) absyn_subdir
 
 
 absyn_subdir:
-	@(cd $(srcdir)/absyn_builder ; $(MAKE) vctarget)
+	(cd $(srcdir)/absyn_builder && $(MAKE) vctarget)
 
 $(PROG): $(SRCO) $(AST) $(RTOBJ)
 	g++ -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS)
 
-subdirs: $(SRCHSRCDIR)
-	@for d in $(SUBDIRS); do \
-		(cd $$d ; $(MAKE)) \
-	done
+subdirs: $(SRCHSRCDIR) $(SUBDIRS)
+
+$(SUBDIRS):
+	$(MAKE) -C $@
 
 clean:
-	@for d in $(SUBDIRS); do \
-		(cd $$d ; $(MAKE) clean) \
+	for d in $(SUBDIRS); do \
+		(cd $$d && $(MAKE) clean) \
 	done
 	(cd $(srcdir) && $(RM) $(SRCH))
 	$(RM) $(SRCO) $(SRCC) $(SRCH) $(PROG)$(EXEXT) *~

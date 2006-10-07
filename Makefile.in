@@ -34,17 +34,17 @@ debug: omcd
 release: omc
 
 omcd:	
-	(cd c_runtime; $(MAKE) -f Makefile)
-	(cd Compiler/rml2sig; $(MAKE) -f Makefile)
-	(cd Compiler; $(MAKE) -f Makefile debug)
+	(cd c_runtime && $(MAKE) -f Makefile)
+	(cd Compiler/rml2sig && $(MAKE) -f Makefile)
+	(cd Compiler && $(MAKE) -f Makefile debug)
 	(cp -p doc/*.pdf $(builddir_doc)/)
 	(cp -p Examples/*.* $(builddir_doc)/testmodels/)
 
 
 omc:	
-	(cd c_runtime; $(MAKE) -f Makefile)
-	(cd Compiler/rml2sig; $(MAKE) -f Makefile)
-	(cd Compiler; $(MAKE) -f Makefile release)
+	(cd c_runtime && $(MAKE) -f Makefile)
+	(cd Compiler/rml2sig && $(MAKE) -f Makefile)
+	(cd Compiler && $(MAKE) -f Makefile release)
 	(cp doc/*.pdf $(builddir_doc)/)
 	(cp -p Examples/*.* $(builddir_doc)/testmodels/)
 
@@ -53,14 +53,14 @@ mosh:
 
 
 clean:
-	(cd c_runtime; $(MAKE) -f Makefile clean)
-	(cd Compiler/rml2sig; $(MAKE) -f Makefile clean)
-	(cd Compiler; $(MAKE) -f Makefile clean)
-	(cd Compiler/omc_debug; $(MAKE) -f Makefile clean)
-	(cd Compiler/omc_release; $(MAKE) -f Makefile clean)
-	(cd mosh/src; $(MAKE) -f Makefile clean)
-	(cd modelica_parser/src; $(MAKE) -f Makefile clean)
-	(cd flat_modelica_parser/src; $(MAKE) -f Makefile clean)
+	(cd c_runtime && $(MAKE) -f Makefile clean)
+	(cd Compiler/rml2sig && $(MAKE) -f Makefile clean)
+	(cd Compiler && $(MAKE) -f Makefile clean)
+	(cd Compiler/omc_debug && $(MAKE) -f Makefile clean)
+	(cd Compiler/omc_release && $(MAKE) -f Makefile clean)
+	(cd mosh/src && $(MAKE) -f Makefile clean)
+	(cd modelica_parser/src && $(MAKE) -f Makefile clean)
+	(cd flat_modelica_parser/src && $(MAKE) -f Makefile clean)
 	(rm -f $(builddir_doc)/*.pdf)
 	(rm -f $(builddir_doc)/testmodels/*.*)
 

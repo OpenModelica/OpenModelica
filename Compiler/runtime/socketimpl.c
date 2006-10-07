@@ -43,9 +43,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // windows and mingw32
 #if defined(__MINGW32__) || defined(_MSC_VER)
 
-#include "rml.h"
 #include <stdio.h>
 #include <assert.h>
+#include "rml.h"
 
 int 
 make_socket (unsigned short int port)
@@ -99,11 +99,15 @@ RML_END_LABEL
 
 #else /* *********************************** UNIX IMPLEMENTATION ***********************************/
 
-#include "rml.h"
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdio.h>
 #include <netinet/in.h>
+#include <string.h>
+#include <stdlib.h>
+
+#include "rml.h"
 
 int 
 make_socket (unsigned short int port)

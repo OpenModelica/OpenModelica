@@ -38,10 +38,11 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-
 #include <stdio.h>
-#include "rml.h"
+#include <string.h>
+#include <stdlib.h>
 #include <errno.h>
+#include "rml.h"
 
 static int type_info;
 static int split_arrays;
@@ -230,7 +231,7 @@ RML_BEGIN_LABEL(RTOpts__args)
 	  fprintf(stderr, "# Flag Usage:  +l=<latency value>") ;
 	  RML_TAILCALLK(rmlFC);
 	}
-	latency = (double)atoi(&arg[3],NULL);
+	latency = (double)atoi(&arg[3]); /* ,NULL); */
 	if (latency == 0.0) {
 	  fprintf(stderr, "Error, integer expected for latency.\n") ;
 	  RML_TAILCALLK(rmlFC);
