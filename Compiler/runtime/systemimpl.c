@@ -42,7 +42,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // windows and mingw32
 #if defined(__MINGW32__) || defined(_MSC_VER)
 
-#include "rml.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <direct.h>
@@ -50,11 +49,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
-#include "../Values.h"
-#include "../absyn_builder/yacclib.h"
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include "read_write.h"
+#include "rml.h"
+#include "../Values.h"
+#include "../absyn_builder/yacclib.h"
 
 #define MAXPATHLEN MAX_PATH
 
@@ -1198,20 +1198,21 @@ for(; RML_GETHDR(timeValues) == RML_CONSHDR && valueFound == 0; timeValues = RML
 RML_END_LABEL
 
 
-#else
+#else /* Linux part */
 
-#include "rml.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/unistd.h>
 #include <sys/stat.h>
-#include "read_write.h"
-#include "../Values.h"
 #include <dirent.h>
 #include <time.h>
 #include <sys/param.h> /* MAXPATHLEN */
 #include <malloc.h>
+#include "read_write.h"
+#include "rml.h"
+#include "../Values.h"
+#include "../absyn_builder/yacclib.h"
 
 #ifndef _IFDIR
 # ifdef S_IFDIR

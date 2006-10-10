@@ -72,8 +72,12 @@ char * omc_message;
 #ifndef NOMICO
 CORBA::ORB_var orb;
 PortableServer::POA_var poa;
-
-OmcCommunication_impl * server;
+CORBA::Object_var poaobj;
+PortableServer::POAManager_var mgr;
+CORBA::Object_var ref;
+CORBA::String_var str;
+PortableServer::ObjectId_var oid;
+OmcCommunication_impl* server;
 #endif
 
 extern "C" {
@@ -107,23 +111,23 @@ RML_BEGIN_LABEL(Corba__initialize)
 
   
 
-  orb = CORBA::ORB_init(argc, dummyArgv,"mico-local-orb");
-  CORBA::Object_var poaobj = orb->resolve_initial_references("RootPOA");
+  orb = CORBA::ORB_init(argc, dummyArgv, "mico-local-orb");
+  poaobj = orb->resolve_initial_references("RootPOA");
   
   poa = PortableServer::POA::_narrow(poaobj);
-  PortableServer::POAManager_var mgr = poa->the_POAManager();
+  mgr = poa->the_POAManager();
 
   server = new OmcCommunication_impl(); 
 
-  PortableServer::ObjectId_var oid = poa->activate_object(server);
+  oid = poa->activate_object(server);
 
   /* Write reference to file */
   char tempPath[1024];
   GetTempPath(1000,tempPath);
   sprintf(obj_ref,"%sopenmodelica.objid", tempPath);
   ofstream of (obj_ref);
-  CORBA::Object_var ref = poa->id_to_reference (oid.in());
-  CORBA::String_var str = orb->object_to_string (ref.in());
+  ref = poa->id_to_reference (oid.in());
+  str = orb->object_to_string (ref.in());
   of << str.in() << endl;
   of.close ();
 
@@ -145,11 +149,12 @@ RML_END_LABEL
 //void* runOrb(void* arg) 
 DWORD WINAPI runOrb(void* arg) {
 #ifndef NOMICO
-	try {
-    orb->run();
-  } catch (CORBA::Exception) {
-    // run can throw exception when other side closes.
-  }
+	try 
+	{
+		orb->run();
+	} catch (CORBA::Exception) {
+		// run can throw exception when other side closes.
+	}
 
   poa->destroy(TRUE,TRUE);
   delete server;
@@ -225,7 +230,11 @@ ostringstream objref_file;
 
 CORBA::ORB_var orb;
 PortableServer::POA_var poa;
-
+CORBA::Object_var poaobj;
+PortableServer::POAManager_var mgr;
+CORBA::Object_var ref;
+CORBA::String_var str;
+PortableServer::ObjectId_var oid;
 OmcCommunication_impl * server;
 
 extern "C" {
@@ -246,14 +255,14 @@ RML_BEGIN_LABEL(Corba__initialize)
   pthread_mutex_init(&omc_waitlock,NULL);
   
   orb = CORBA::ORB_init(zero, 0,"mico-local-orb");
-  CORBA::Object_var poaobj = orb->resolve_initial_references("RootPOA");
+  poaobj = orb->resolve_initial_references("RootPOA");
   
   poa = PortableServer::POA::_narrow(poaobj);
-  PortableServer::POAManager_var mgr = poa->the_POAManager();
+  mgr = poa->the_POAManager();
 
   server = new OmcCommunication_impl(); 
 
-  PortableServer::ObjectId_var oid = poa->activate_object(server);
+  oid = poa->activate_object(server);
 
   /* Write reference to file */
   char *user = getenv("USER");
@@ -262,8 +271,8 @@ RML_BEGIN_LABEL(Corba__initialize)
   
   objref_file << "/tmp/openmodelica." << user << ".objid";
   ofstream of (objref_file.str().c_str());
-  CORBA::Object_var ref = poa->id_to_reference (oid.in());
-  CORBA::String_var str = orb->object_to_string (ref.in());
+  ref = poa->id_to_reference (oid.in());
+  str = orb->object_to_string (ref.in());
   of << str.in() << endl;
   of.close ();
 
