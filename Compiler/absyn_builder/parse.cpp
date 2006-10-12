@@ -89,14 +89,17 @@ extern "C"
 	{
 		char* filename = RML_STRINGDATA(rmlA0);
 		string filestring(filename);
-		bool debug = false, parsedump = false;
+		bool debug = false, parsedump = false, parseonly = false;
 		debug      = check_debug_flag("parsedebug");
 		parsedump  = check_debug_flag("parsedump");
+		parseonly  = check_debug_flag("parseonly");
 		/* 2004-10-05 adrpo moved this declaration here to 
 		* have the ast initialized before getting 
 		* into the code. This way, if this relation fails at least the 
 		* ast is initialized */
 		void* ast = mk_nil();
+		
+		if (debug) { std::cerr << "Starting parsing of file:" << filename << std::endl; }
 
 		// Set global filename, used to populate elements with
 		// corresponding file name.
@@ -104,11 +107,14 @@ extern "C"
 
 		//For parsing flat modelica (mof) files, if such is given
 		bool parseFlatModelica=false;
-		if (filestring.size()-4 == filestring.rfind(".mof")){
+		if (filestring.size()-4 == filestring.rfind(".mof"))
+		{
 			parseFlatModelica=true;
+			if (debug) { std::cerr << "File:" << filename << " is a flat Modelica file." << std::endl; }			
 		}
 		std::ifstream checkROfile(filename,ios::out); // open file in write mode to check if readonly
 		modelicafileReadOnly = !checkROfile;
+		if (debug && modelicafileReadOnly) { std::cerr << "File:" << filename << " is read-only." << std::endl; }	
 		
 		std::ifstream stream(filename);
 		if (!stream) 
@@ -280,13 +286,13 @@ extern "C"
 				       filename);
 		    ast = mk_nil();
 		}
-		
+				
 		//Parsing complete
 		if (debug) 
 		{
-			std::cerr << "Parsing complete. Starting to traverse ast." << std::endl;
+			std::cerr << "Parsing of: [" << filename << "] complete. Starting to traverse ast." << std::endl;
 		}
-
+				
 		if (t) //Did we get at AST?
 		{ 
 			if (parsedump) 
@@ -296,6 +302,14 @@ extern "C"
 				//dumper.setASTFactory(&factory);
 				dumper.dump(t);
 			}
+			
+			if (parseonly) /* only do the parsing, do not build the AST and return a null ast! */ 
+			{
+				rmlA0 = Absyn__PROGRAM(mk_nil(), Absyn__TOP);
+				RML_TAILCALLK(rmlSC);
+			}		
+			
+			
 			modelica_tree_parser build;      
 			try 
 			{
@@ -314,7 +328,7 @@ extern "C"
 				RML_TAILCALLK(rmlFC);
 			}
 			catch (ANTLR_USE_NAMESPACE(antlr)MismatchedTokenException &e) 
-			{
+			{				
 				if (e.node) 
 				{
 					std::cerr << "2 Error walking AST while  building RML data: " 

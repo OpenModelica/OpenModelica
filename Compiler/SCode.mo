@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 scode.rml
+  file:	 SCode.mo
   module:      SCode
   description: SCode intermediate form
  
@@ -335,15 +335,10 @@ uniontype Accessibility "These are attributes that apply to a declared component
 end Accessibility;
 
 protected import OpenModelica.Compiler.Dump;
-
 protected import OpenModelica.Compiler.Debug;
-
 protected import OpenModelica.Compiler.Print;
-
 protected import OpenModelica.Compiler.Util;
-
 protected import OpenModelica.Compiler.Error;
-
 protected import OpenModelica.Compiler.ModUtil;
 
 public function elaborate "function: elaborate
@@ -1126,7 +1121,7 @@ protected function elabEquation "function: elabEquation
   exception.  `If\' clauses are translated so that the SCode only
   contains simple `if\'-`else\' constructs, and no `elseif\'.
 
-  PR Arrays seem to keep their Absyn.rml structure."
+  PR Arrays seem to keep their Absyn.mo structure."
   input Absyn.Equation inEquation;
   output EEquation outEEquation;
 algorithm 
@@ -1172,8 +1167,8 @@ algorithm
         l_1 = elabEEquations(l);
       then
         EQ_FOR(i,e,l_1);
-    case Absyn.EQ_NORETCALL(functionName = "assert",functionArgs = Absyn.FUNCTIONARGS(args = {e1,e2},argNames = {})) then EQ_ASSERT(e1,e2); 
-    case Absyn.EQ_NORETCALL(functionName = "reinit",functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),e2},argNames = {})) then EQ_REINIT(cr,e2); 
+    case Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("assert", _),functionArgs = Absyn.FUNCTIONARGS(args = {e1,e2},argNames = {})) then EQ_ASSERT(e1,e2); 
+    case Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("reinit", _),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),e2},argNames = {})) then EQ_REINIT(cr,e2); 
   end matchcontinue;
 end elabEquation;
 

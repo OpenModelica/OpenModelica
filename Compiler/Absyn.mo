@@ -39,24 +39,24 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 absyn.rml
+  file:	 Absyn.mo
   module:      Absyn
   description: Abstract syntax
  
   RCS: $Id$
  
-  This file defines the abstract syntax for Modelica in RML.  It mainly
+  This file defines the abstract syntax for Modelica in MetaModelica Compiler (MMC).  It mainly
   contains datatypes for constructing the abstract syntax tree
-  (AST), functions for building and altering RML datatypes and a few functions 
+  (AST), functions for building and altering MetaModelica Compiler (MMC) datatypes and a few functions 
   for printing the AST.
    
-  absyn.rml\'s constructors are primarily used by the walker 
+  Absyn.mo\'s constructors are primarily used by the walker 
   (Compiler/absyn_builder/walker.g) which takes an ANTLR internal syntax tree and
-  converts it into an RML abstract syntax tree.
+  converts it into an MetaModelica Compiler (MMC) abstract syntax tree.
  
-  When the AST has been built, it is normaly used by explode.rml in order to
-  build the scode (See explode.rml). It is also possile to send the AST do 
-  the dumper (dump.rml) in order to print it.
+  When the AST has been built, it is normaly used by SCode.mo in order to
+  build the SCode (See SCode.mo). It is also possile to send the AST do 
+  the dumper (Dump.mo) in order to print it.
   
   For details regarding the abstract syntax tree, check out the grammar in 
   the Modelica language specification.
@@ -449,9 +449,17 @@ uniontype Equation "Information on one (kind) of equation, different constructor
   end EQ_WHEN_E;
 
   record EQ_NORETCALL
-    Ident functionName "functionName" ;
+    ComponentRef functionName "functionName" ;
     FunctionArgs functionArgs "functionArgs; fcalls without return value" ;
   end EQ_NORETCALL;
+  
+  record EQ_FAILURE
+    Equation equ;
+  end EQ_FAILURE;
+
+  record EQ_EQUALITY
+    Equation equ;
+  end EQ_EQUALITY;
 
 end Equation;
 
@@ -498,6 +506,14 @@ uniontype Algorithm "The `Algorithm\' type describes one algorithm statement in 
     ComponentRef functionCall "functionCall" ;
     FunctionArgs functionArgs "functionArgs; general fcalls without return value" ;
   end ALG_NORETCALL;
+
+  record ALG_FAILURE
+    Algorithm equ;
+  end ALG_FAILURE;
+
+  record ALG_EQUALITY
+    Algorithm equ;
+  end ALG_EQUALITY;
 
 end Algorithm;
 
@@ -678,15 +694,55 @@ uniontype Exp "The `Exp\' datatype is the container of a Modelica expression.
 
   record END end END;
 
-  record MATCHCONTINUE
-    String not_ "not implemented right now" ;
-  end MATCHCONTINUE;
-
   record CODE
     CodeNode code "code ;  Modelica AST Code constructors" ;
   end CODE;
 
+	record NIL end NIL;
+
+  record AS
+    ComponentRef id " component reference (actually only an id) " ;
+    Exp exp         " expression to bind to the id ";
+  end AS;
+  
+  record CONS
+    Exp head " head of the list ";
+    Exp rest " rest of the list ";
+  end CONS;
+
+  record MATCHEXP
+		MatchType matchTy            " match or matchcontinue      ";
+		Exp inputExps                " match expression of         ";
+		list<ElementItem> localDecls " local declarations          ";
+		list<Case> cases             " case list + else in the end ";
+		Option<String> comment       " match expr comment_optional ";		
+  end MATCHEXP;
+  
 end Exp;
+
+public
+uniontype Case
+  record CASE 
+    list<Exp> pattern " patterns to be matched "; 
+		list<ElementItem> localDecls " local decls ";
+		list<Equation>  equations " equations [] for no equations ";
+		Exp result " result ";
+		Option<String> comment " comment after case like: case pattern string_comment ";
+  end CASE;
+
+  record ELSE 
+		list<ElementItem> localDecls " local decls ";
+		list<Equation>  equations " equations [] for no equations ";
+		Exp result " result ";
+		Option<String> comment " comment after case like: case pattern string_comment ";
+  end ELSE;
+end Case;           
+
+public 
+uniontype MatchType
+  record MATCH end MATCH;
+  record MATCHCONTINUE end MATCHCONTINUE;	       
+end MatchType;
 
 public 
 uniontype CodeNode "The \'Code\' datatype is used for Meta-programming. It orgiginates from the Code quotation."
@@ -816,9 +872,7 @@ uniontype ComponentRef "A component reference is the fully or partially qualifie
     list<Subscript> subscripts "subscripts" ;
   end CREF_IDENT;
 
-  record WILD
-    String not_ "not implemented right now" ;
-  end WILD;
+  record WILD end WILD;
 
 end ComponentRef;
 
@@ -911,19 +965,15 @@ uniontype ExternalDecl "Declaration of an external function call
 
 end ExternalDecl;
 
-protected import OpenModelica.Compiler.Debug "From here down, only absyn helper functions should be present. 
- Thus,no actual absyn datatype definitions." ;
+/* "From here down, only absyn helper functions should be present. 
+ Thus, no actual absyn datatype definitions." */
 
+protected import OpenModelica.Compiler.Debug;
 protected import OpenModelica.Compiler.Util;
-
 protected import OpenModelica.Compiler.Print;
-
 protected import OpenModelica.Compiler.ModUtil;
 
-public function elementSpecName "adrpo -- not used
-with \"Dump.rml\"
-
-  function: elementSpecName
+public function elementSpecName "function: elementSpecName
  
   The `ElementSpec\' type contans the name of the element, and this
   function extracts this name.

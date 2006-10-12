@@ -51,17 +51,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 "
 
 public import OpenModelica.Compiler.Absyn;
-
 public import OpenModelica.Compiler.SCode;
-
 public import OpenModelica.Compiler.DAE;
-
 public import OpenModelica.Compiler.Types;
-
 public import OpenModelica.Compiler.Values;
-
 public import OpenModelica.Compiler.Env;
-
 public import OpenModelica.Compiler.Settings;
 
 public 
@@ -166,39 +160,22 @@ uniontype ComponentReplacementRules
 end ComponentReplacementRules;
 
 protected import OpenModelica.Compiler.Connect;
-
 protected import OpenModelica.Compiler.Dump;
-
 protected import OpenModelica.Compiler.Debug;
-
 protected import OpenModelica.Compiler.Util;
-
 protected import OpenModelica.Compiler.Parser;
-
 protected import OpenModelica.Compiler.Prefix;
-
 protected import OpenModelica.Compiler.Mod;
-
 protected import OpenModelica.Compiler.Lookup;
-
 protected import OpenModelica.Compiler.ClassInf;
-
 protected import OpenModelica.Compiler.Exp;
-
 protected import OpenModelica.Compiler.Inst;
-
 protected import OpenModelica.Compiler.Static;
-
 protected import OpenModelica.Compiler.ModUtil;
-
 protected import OpenModelica.Compiler.Print;
-
 protected import OpenModelica.Compiler.System;
-
 protected import OpenModelica.Compiler.ClassLoader;
-
 protected import OpenModelica.Compiler.Ceval;
-
 protected import OpenModelica.Compiler.Error;
 
 public constant InteractiveSymbolTable emptySymboltable=SYMBOLTABLE(Absyn.PROGRAM({},Absyn.TOP()),{},{},
@@ -212,7 +189,7 @@ public function evaluate "function: evaluate
   outputs:   string:  
                      The resulting string after evaluation. If an error has occurred, this string
                      will be empty. The error messages can be retrieved by calling print_messages_str()
-                     in Error.rml.
+                     in Error.mo.
              InteractiveSymbolTable 
 "
   input InteractiveStmts inInteractiveStmts;
@@ -304,7 +281,7 @@ public function typeCheckFunction "function: typeCheckFunction
  
   Type check a function. 
   The function will fail iff a function has illegally typed. Errors are handled
-  using side effects in Error.rml
+  using side effects in Error.mo
 "
   input Absyn.Program inProgram;
   input InteractiveSymbolTable inInteractiveSymbolTable;
@@ -801,7 +778,7 @@ protected function evaluateExprToStr "function: evaluateExprToStr
   
    This function is similar to evaluate_expr, with the difference that it returns a string
    and that it never fails. If the expression contain errors, an empty string will be returned
-   and the errors will be stated using Error.rml
+   and the errors will be stated using Error.mo
   
    Input:  Absyn.Exp - Expression to be evaluated
            InteractiveSymbolTable - The symbol table
@@ -1167,7 +1144,7 @@ protected function evaluateGraphicalApi2 "function: evaluateGraphicalApi2
   Second function for evaluating graphical api. 
   The reason for having two function is that the generated c-code can
   not be complied in Visual studio if the number of rules are large.
-  This was actually fixed in the latest version of RML!
+  This was actually fixed in the latest version of MetaModelica Compiler (MMC)!
 "
   input InteractiveStmts inInteractiveStmts;
   input InteractiveSymbolTable inInteractiveSymbolTable;
@@ -1274,6 +1251,7 @@ algorithm
       equation 
         0 = System.regularFileExists(name);
         p1 = Parser.parse(name);
+        //debug_print("Program:", p1);
         newp = updateProgram(p1, p);
         top_names_str = getTopQualifiedClassnames(p1);
       then
@@ -2325,7 +2303,7 @@ algorithm
       Absyn.Exp exp_1,exp,exp1_1,exp2_1,exp1,exp2;
       list<Absyn.EquationItem> true_items_1,elses_1,true_items,elses,equations_1,equations;
       list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> exp_elseifs_1,exp_elseifs,exp_equations_1,exp_equations;
-      Absyn.ComponentRef old_comp,new_comp,cref1_1,cref2_1,cref1,cref2;
+      Absyn.ComponentRef old_comp,new_comp,cref1_1,cref2_1,cref1,cref2,cref;
       String ident;
       Absyn.FunctionArgs function_args;
     case (Absyn.EQ_IF(ifExp = exp,equationTrueItems = true_items,elseIfBranches = exp_elseifs,equationElseItems = elses),old_comp,new_comp) /* the old name for the component */ 
@@ -2361,12 +2339,12 @@ algorithm
         exp_equations_1 = renameComponentInExpEquationitemList(exp_equations, old_comp, new_comp);
       then
         Absyn.EQ_WHEN_E(exp_1,equations_1,exp_equations_1);
-    case (Absyn.EQ_NORETCALL(functionName = ident,functionArgs = function_args),old_comp,new_comp)
+    case (Absyn.EQ_NORETCALL(functionName = cref,functionArgs = function_args),old_comp,new_comp)
       equation 
         print(
           "-rename_component_in_equation EQ_NORETCALL not implemented yet\n");
       then
-        Absyn.EQ_NORETCALL(ident,function_args);
+        Absyn.EQ_NORETCALL(cref,function_args);
     case (_,old_comp,new_comp)
       equation 
         print("-rename_component_in_equation failed\n");
@@ -5569,7 +5547,7 @@ algorithm
     case ({}) then {}; 
     case ((Absyn.ELEMENTITEM(element = elt) :: rest))
       equation 
-        elt = getExtendsElementspecInElement(elt) "Bug in RML. If the two premisses below are in swapped order
+        elt = getExtendsElementspecInElement(elt) "Bug in MetaModelica Compiler (MMC). If the two premisses below are in swapped order
 	  the compiler enters infinite loop (but no stack overflow)" ;
         res = getExtendsElementspecInElementitems(rest);
       then
@@ -14796,7 +14774,8 @@ protected function transformFlatEquation "Help function to transformFlatEquation
 algorithm
   outEqn := matchcontinue(eqn)
   local Absyn.Exp e,e1,e2,e11,e21;
-    Absyn.Ident id,name;
+    Absyn.Ident id;
+    Absyn.ComponentRef name;
     list<Absyn.EquationItem> thenpart,thenpart1,elsepart,elsepart1,forEqns,forEqns1,whenEqns,whenEqns1;
     list<tuple<Absyn.Exp,list<Absyn.EquationItem>>> elseifpart,elseifpart1,elseWhenEqns,elseWhenEqns1;
     Absyn.ComponentRef cr1,cr2,cr11,cr21;

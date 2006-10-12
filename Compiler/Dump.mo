@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 Dump.rml
+  file:	 Dump.mo
   module:      Dump
   description: debug printing
  
@@ -55,16 +55,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 "
 
 public import OpenModelica.Compiler.Absyn;
-
 public import OpenModelica.Compiler.Interactive;
 
 public 
 type Ident = String;
 
 protected import OpenModelica.Compiler.Print;
-
 protected import OpenModelica.Compiler.Util;
-
 protected import OpenModelica.Compiler.Debug;
 
 public function dumpExpStr
@@ -90,11 +87,7 @@ end dumpExp;
 
 
 
-public function dump "adrpo -- not used
-with \"RTOpts.rml\"
-with \"ClassInf.rml\"
-
-  function: dump
+public function dump "function: dump
  
   Prints a program, i.e. the whole AST, to the Print buffer.
 "
@@ -2559,6 +2552,7 @@ algorithm
   matchcontinue (inInteger,inEquation)
     local
       Ident s1,s2,is,str,s3,s4,id;
+      Absyn.ComponentRef cref;
       Integer i_1,i,indent;
       Absyn.Exp e,e1,e2,exp;
       list<Absyn.EquationItem> tb,fb,el,eql;
@@ -2612,9 +2606,10 @@ algorithm
         str = Util.stringAppendList({is,"for ",i," in ",s1," loop\n",s2,"\n",is,"end for"});
       then
         str;
-    case (i,Absyn.EQ_NORETCALL(functionName = id,functionArgs = fargs))
+    case (i,Absyn.EQ_NORETCALL(functionName = cref,functionArgs = fargs))
       equation 
         s2 = printFunctionArgsStr(fargs);
+        id = printComponentRefStr(cref);
         str = Util.stringAppendList({id,"(",s2,")"});
       then
         str;
@@ -4627,8 +4622,8 @@ end printTypeSpec;
 
 public function stdout "function: stdout
  
-  Prints the text sent to the print buffer (Print.rml) to stdout (i.e. 
-  using RML standard print). After printing, the print buffer is cleared.
+  Prints the text sent to the print buffer (Print.mo) to stdout (i.e. 
+  using MetaModelica Compiler (MMC) standard print). After printing, the print buffer is cleared.
 "
   Ident str;
 algorithm 

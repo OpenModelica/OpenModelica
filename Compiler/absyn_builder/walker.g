@@ -1288,7 +1288,7 @@ equation_funcall returns [void* ast]
 }
 	:
 		i:IDENT fcall = function_call 
-		{ ast = Absyn__EQ_5fNORETCALL(to_rml_str(i),fcall); }
+		{ ast = Absyn__EQ_5fNORETCALL(Absyn__CREF_5fIDENT(to_rml_str(i), mk_nil()),fcall); }
 	;
 
 algorithm returns [void* ast]
