@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 SimCodegen.rml
+  file:	 SimCodegen.mo
   module:      SimCodegen
   description: Generate Simulation code for connecting to solver.
   This can be done in two different ways.
@@ -60,13 +60,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 "
 
 public import OpenModelica.Compiler.DAE;
-
 public import OpenModelica.Compiler.DAELow;
-
 public import OpenModelica.Compiler.Absyn;
-
 public import OpenModelica.Compiler.Exp;
-
 public import OpenModelica.Compiler.SCode;
 
 protected 
@@ -102,35 +98,20 @@ protected constant String paramInGetNameFunction="ptr";
 
 
 protected import OpenModelica.Compiler.Util;
-
 protected import OpenModelica.Compiler.RTOpts;
-
 protected import OpenModelica.Compiler.Debug;
-
 protected import OpenModelica.Compiler.System;
-
 protected import OpenModelica.Compiler.Values;
-
 protected import OpenModelica.Compiler.Codegen;
-
 protected import OpenModelica.Compiler.Print;
-
 protected import OpenModelica.Compiler.ModUtil;
-
 protected import OpenModelica.Compiler.VarTransform;
-
 protected import OpenModelica.Compiler.Dump;
-
 protected import OpenModelica.Compiler.Inst;
-
 protected import OpenModelica.Compiler.Error;
-
 protected import OpenModelica.Compiler.Settings;
-
 protected import OpenModelica.Compiler.Algorithm;
-
 protected import OpenModelica.Compiler.Types;
-
 protected import OpenModelica.Compiler.Env;
 
 public function generateMakefile "function: generateMakefile

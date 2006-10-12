@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 Codegen.rml
+  file:	 Codegen.mo
   module:      Codegen
   description: Generate C code from DAE (Flat Modelica) for Modelica 
   functions. This code is compiled and linked to the simulation code or when
@@ -56,11 +56,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   -------------------------------------------------------------------------"
 
 public import OpenModelica.Compiler.DAE;
-
 public import OpenModelica.Compiler.Print;
-
 public import OpenModelica.Compiler.Exp;
-
 public import OpenModelica.Compiler.Absyn;
 
 public 
@@ -142,31 +139,17 @@ uniontype ExpContext
 end ExpContext;
 
 protected import OpenModelica.Compiler.Debug;
-
-
-
 protected import OpenModelica.Compiler.Algorithm;
-
 protected import OpenModelica.Compiler.ClassInf;
-
 protected import OpenModelica.Compiler.ModUtil;
-
 protected import OpenModelica.Compiler.Types;
-
 protected import OpenModelica.Compiler.Util;
-
 protected import OpenModelica.Compiler.Inst;
-
 protected import OpenModelica.Compiler.Interactive;
-
 protected import OpenModelica.Compiler.System;
-
 protected import OpenModelica.Compiler.Error;
 
-public constant CFunction cEmptyFunction=CFUNCTION("","",{},{},{},{},{},{}) "adrpo -- not used
-with \"Dump.rml\"
-
--------------------------------------------------------------------------" ;
+public constant CFunction cEmptyFunction=CFUNCTION("","",{},{},{},{},{},{}) " empty function ";
 
 public function cMakeFunction "function: cMakeFunction
  
@@ -5767,14 +5750,14 @@ algorithm
         res = stringAppend(name, ".data");
       then
         res;
-  /*  case arg /* INPUT/OUTPUT STRING */ 
-      equation 
-        DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
-        true = Types.isString(ty);
-        (name,_) = compRefCstr(cref);
-        res = stringAppend(name, ".data");
-      then
-        res;*/
+//  case arg /* INPUT/OUTPUT STRING */
+//      equation 
+//        DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
+//        true = Types.isString(ty);
+//        (name,_) = compRefCstr(cref);
+//        res = stringAppend(name, ".data");
+//      then
+//        res;
     case arg /* INPUT/OUTPUT NON-ARRAY */ 
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;

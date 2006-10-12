@@ -39,12 +39,12 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 Settings.rml
+  file:	 Settings.mo
   module:      Settings
   description: This file contains settings for omc which are implemented in 
   C.
  
-  RCS: $Id: Settings.rml 2066 2006-02-02 09:04:10Z kajny $
+  RCS: $Id: Settings.mo 2066 2006-02-02 09:04:10Z kajny $
  
  
   

@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 Derive.rml
+  file:	 Derive.mo
   module:      Derive
   description: Differentiation of equations from DAELow
  
@@ -56,24 +56,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 "
 
 public import OpenModelica.Compiler.DAELow;
-
 public import OpenModelica.Compiler.Exp;
-
 public import OpenModelica.Compiler.Absyn;
 
 protected import OpenModelica.Compiler.Util;
-
 protected import OpenModelica.Compiler.Error;
-
 protected import OpenModelica.Compiler.Debug;
-
 protected import OpenModelica.Compiler.SimCodegen;
 
-public function differentiateEquationTime "adrpo -- not used
-with \"Print.rml\" 
-with \"Graphviz.rml\" 
-
-  function: differentiateEquationTime
+public function differentiateEquationTime "function: differentiateEquationTime
  
   Differentiates an equation with respect to the time variable.
 "
@@ -353,7 +344,7 @@ algorithm
     case (Exp.CREF(componentRef = cr),crx)
       equation 
         true = Exp.crefEqual(cr, crx) "D(x)/dx => 1" ;
-        rval = intReal(1) "Since bug in RML makes 1.0 into 0.0" ;
+        rval = intReal(1) "Since bug in MetaModelica Compiler (MMC) makes 1.0 into 0.0" ;
       then
         Exp.RCONST(rval);
 

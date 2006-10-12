@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 Algorithm.rml
+  file:	 Algorithm.mo
   module:      Algorithm
   description: Algorithm datatypes
  
@@ -47,19 +47,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  
   This file contains data types and functions for managing
   algorithm sections. The algorithms in the AST are analyzed by the `Inst\'
-  module (Inst.rml) which uses this module to represent the algorithms. No
+  module (Inst.mo) which uses this module to represent the algorithms. No
   processing of any kind, except for building the datastructure is 
   done in this module.
   
-  It is used primarily by Inst.rml which both provides its input data
+  It is used primarily by Inst.mo which both provides its input data
   and uses its \"output\" data.
   
 "
 
 public import OpenModelica.Compiler.Exp;
-
 public import OpenModelica.Compiler.Types;
-
 public import OpenModelica.Compiler.SCode;
 
 public 
@@ -146,19 +144,12 @@ uniontype Else "An if statements can one or more `elseif\' branches and an
 end Else;
 
 protected import OpenModelica.Compiler.Util;
-
 protected import OpenModelica.Compiler.Print;
-
 protected import OpenModelica.Compiler.Debug;
-
 protected import OpenModelica.Compiler.Error;
-
 protected import OpenModelica.Compiler.Absyn;
 
-public function makeAssignment "adrpo -- not used
-with \"Dump.rml\" 
-
-  function: makeAssignment
+public function makeAssignment "function: makeAssignment
  
   This function creates an `ASSIGN\' construct, and checks that the
   assignment is semantically valid, which means that the component
@@ -526,7 +517,7 @@ algorithm
   outStatement:=
   matchcontinue (inExp1,inExp2,inProperties3,inProperties4)
     local Exp.Exp cond,msg;
-    case (cond,msg,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),Types.PROP(type_ = (Types.T_STRING(varLstString = _),_))) then ASSERT(cond,msg);  /* RML does not handle the pattern below T_BOOL(_), hence we need to
+    case (cond,msg,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),Types.PROP(type_ = (Types.T_STRING(varLstString = _),_))) then ASSERT(cond,msg);  /* MetaModelica Compiler (MMC) does not handle the pattern below T_BOOL(_), hence we need to
 	     implement this differently. rule	not let T_BOOL(_) = condt &  
 	 Print.printBuf \"# Type error in assert condition.\\n\" &
 	 Print.printBuf \" Expected Boolean, got \" &

@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 Connect.rml
+  file:	 Connect.mo
   module:      Connect
   description: Connection set management
  
@@ -50,18 +50,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   set is generated, it is used to create a number of equations. 
   The kind of equations created depends on the type of the set. 
   
-  Connect.rml is called from Inst.rml and is responsible for 
+  Connect.mo is called from Inst.mo and is responsible for 
   creation of all connect-equations later passed to the DAE module 
-  in DAE.rml.
+  in DAE.mo.
   
 "
 
 public import OpenModelica.Compiler.Exp;
-
 public import OpenModelica.Compiler.Static;
-
 public import OpenModelica.Compiler.DAE;
-
 public import OpenModelica.Compiler.Env;
 
 public 
@@ -924,28 +921,21 @@ algorithm
   end matchcontinue;
 end getOuterFlowVariables2;
 
-protected import OpenModelica.Compiler.Print "
+protected import OpenModelica.Compiler.Print;
+protected import OpenModelica.Compiler.Util;
+protected import OpenModelica.Compiler.Types;
+protected import OpenModelica.Compiler.Lookup;
+protected import OpenModelica.Compiler.Absyn;
+
+/*
   - Printing
  
   These are a few functions used for printing a description of the
   connection sets.  The implementation is excluded from the report
   for brevity.
-" ;
+*/
 
-protected import OpenModelica.Compiler.Util;
-
-protected import OpenModelica.Compiler.Types;
-
-protected import OpenModelica.Compiler.Lookup;
-
-protected import OpenModelica.Compiler.Absyn;
-
-
-public function printSets "adrpo -- not used
-with \"Debug.rml\"
-with \"Dump.rml\"
-
-  function: printSets
+public function printSets "function: printSets
  
   Prints a description of a number of connection sets to the
   standard output.

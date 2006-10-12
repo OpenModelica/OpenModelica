@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 Builtin.rml
+  file:	 Builtin.mo
   module:      Builtin
   description: Builting tyepes and variables
  
@@ -55,25 +55,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 "
 
 public import OpenModelica.Compiler.Absyn;
-
 public import OpenModelica.Compiler.SCode;
-
 public import OpenModelica.Compiler.Env;
 
-protected import OpenModelica.Compiler.Types "protected imports" ;
-
+/* protected imports */
+protected import OpenModelica.Compiler.Types;
 protected import OpenModelica.Compiler.ClassInf;
 
-public constant SCode.Class rlType=SCode.CLASS("RealType",false,false,SCode.R_PREDEFINED_REAL(),
-          SCode.PARTS({},{},{},{},{},NONE)) "adrpo -- not used
-with \"Debug.rml\"
-with \"Print.rml\"
-
+/*
 - The primitive types 
- 
   These are the primitive types that are used to build the types
   `Real\', `Integer\' etc. 
-" ;
+*/
+public constant SCode.Class rlType=SCode.CLASS("RealType",false,false,SCode.R_PREDEFINED_REAL(),
+          SCode.PARTS({},{},{},{},{},NONE)) " real type ";
 
 public constant SCode.Class intType=SCode.CLASS("IntegerType",false,false,SCode.R_PREDEFINED_INT(),
           SCode.PARTS({},{},{},{},{},NONE));

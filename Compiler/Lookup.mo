@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 Lookup.rml
+  file:	 Lookup.mo
   module:      Lookup
   description: Scoping rules
  
@@ -56,33 +56,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 "
 
 public import OpenModelica.Compiler.ClassInf;
-
 public import OpenModelica.Compiler.Types;
-
 public import OpenModelica.Compiler.Absyn;
-
 public import OpenModelica.Compiler.Exp;
-
 public import OpenModelica.Compiler.Env;
-
 public import OpenModelica.Compiler.SCode;
 
 protected import OpenModelica.Compiler.Debug;
-
 protected import OpenModelica.Compiler.Inst;
-
 protected import OpenModelica.Compiler.Mod;
-
 protected import OpenModelica.Compiler.Prefix;
-
 protected import OpenModelica.Compiler.Builtin;
-
 protected import OpenModelica.Compiler.ModUtil;
-
 protected import OpenModelica.Compiler.Static;
-
 protected import OpenModelica.Compiler.Connect;
-
 protected import OpenModelica.Compiler.Error;
 
 /*   - Lookup functions
@@ -281,8 +268,8 @@ algorithm
         
         (cache,env4,cistate1) = Inst.partialInstClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}); 
-        /*(cache,_,env4,_,cistate1,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-           ci_state, c, false/*FIXME:prot*/, {}, false);*/
+        //(cache,_,env4,_,cistate1,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+        //  ci_state, c, false/*FIXME:prot*/, {}, false);
         ClassInf.valid(cistate1, SCode.R_PACKAGE());
         (cache,c_1,env5) = lookupClass(cache,env4, path, msgflag) "Has NOT to do additional check for encapsulated classes, see rule above" ;
       then
@@ -451,8 +438,8 @@ algorithm
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,{fr}, path, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
-        /*(cache,_,f::_,_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-           ci_state, c, false/*FIXME:prot*/, {}, false);*/
+        //(cache,_,f::_,_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+        //   ci_state, c, false/*FIXME:prot*/, {}, false);
          (cache,(f :: _),_) = Inst.partialInstClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}); 
         (cache,_,_,_,_) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,{}));
@@ -664,8 +651,8 @@ algorithm
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,{fr}, path, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
-/*        (cache,_,f::_,_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-           ci_state, c, false/*FIXME:prot*/, {}, false);         */
+//        (cache,_,f::_,_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+//           ci_state, c, false/*FIXME:prot*/, {}, false);         
        (cache,(f :: _),_) = Inst.partialInstClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {});
         (cache,_,_) = lookupClass(cache,{f}, Absyn.IDENT(ident), false);
@@ -725,8 +712,8 @@ algorithm
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,{fr}, path, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
-        /*(cache,_,f::fs_1,_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-           ci_state, c, false/*FIXME:prot*/, {}, false);*/
+        //(cache,_,f::fs_1,_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+        //   ci_state, c, false/*FIXME:prot*/, {}, false);
         (cache,(f :: fs_1),cistate1) = Inst.partialInstClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}); 
         (cache,c_1,(f_1 :: _)) = lookupClass(cache,{f}, Absyn.IDENT(ident), false) "Restrict import to the imported scope only, not its parents..." ;
@@ -777,7 +764,7 @@ found since Constants is not a variable (it is a type and/or class).
 2) Another option is to add a lookup rule that also looks in types.
 
 Now implicitly instantiated packages exists both as a class and as a
-type (see implicit_instantiation in Inst.rml). Is this correct?
+type (see implicit_instantiation in Inst.mo). Is this correct?
 
 lookup_var is modified to implement 2. Is this correct?
 
@@ -1247,8 +1234,8 @@ algorithm
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
         
-        /*(cache,_,env_2,_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-           ci_state, c, false/*FIXME:prot*/, {}, false);*/
+        //(cache,_,env_2,_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+        //   ci_state, c, false/*FIXME:prot*/, {}, false);
         
         (cache,env_2,cistate1) = Inst.partialInstClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {});

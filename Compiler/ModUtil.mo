@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 ModUtil.rml
+  file:	 ModUtil.mo
   module:      ModUtil
   description: Miscellanous modelica related utilities (The horror, THE HORROR)
  
@@ -50,27 +50,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   It is used pretty much everywhere. The difference between this 
   module and the Util module is that ModUtil contains modelica 
   related utilities. The Util module only contains \"low-level\" 
-  rml utilities, for example finding elements in lists.
+  mmc utilities, for example finding elements in lists.
   
 "
 
 public import OpenModelica.Compiler.Absyn;
-
 public import OpenModelica.Compiler.DAE;
-
 public import OpenModelica.Compiler.Exp;
 
 protected import OpenModelica.Compiler.RTOpts;
-
 protected import OpenModelica.Compiler.Util;
-
 protected import OpenModelica.Compiler.Algorithm;
-
 protected import OpenModelica.Compiler.Types;
 
-protected function stringPrefixComponentRefs "adrpo -- not used
-with \"Print.rml\"
-"
+protected function stringPrefixComponentRefs ""
   input String inString;
   input FuncTypeExp_ComponentRefType_bTo inFuncTypeExpComponentRefTypeBTo;
   input Type_b inTypeB;

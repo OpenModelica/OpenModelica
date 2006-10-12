@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 DumpGraphviz.rml
+  file:	 DumpGraphviz.mo
   module:      DumpGraphviz
   description: Dumps the AST to a graph representation that can be read
  		 by the graphviz tool.
@@ -49,24 +49,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 "
 
 public import OpenModelica.Compiler.Absyn;
-
 public import OpenModelica.Compiler.Graphviz;
 
 public 
-type Ident = String "adrpo -- not used
-  with \"Debug.rml\"
-" ;
+type Ident = String " An identifier is just a string " ;
 
 public 
 type Node = Graphviz.Node;
 
 protected import OpenModelica.Compiler.Dump;
 
-public function dump "adrpo -- not used
-with \"ClassInf.rml\"
-
-  Relations
-  function: dump
+public function dump "function: dump
  
   Dumps a Program to a Graphviz graph.
 "

@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 VarTransform.rml
+  file:	 VarTransform.mo
   module:      VarTransform
   description: VarTransform contains a Binary Tree representation of variable replacements.
  
@@ -52,7 +52,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 "
 
 public import OpenModelica.Compiler.Exp;
-
 public import OpenModelica.Compiler.DAELow;
 
 public 
@@ -119,13 +118,9 @@ public
 type Value2 = list<Exp.ComponentRef>;
 
 protected import OpenModelica.Compiler.System;
-
 protected import OpenModelica.Compiler.Util;
-
 protected import OpenModelica.Compiler.Algorithm;
-
 protected import OpenModelica.Compiler.Debug;
-
 protected import OpenModelica.Compiler.Absyn;
 
 public function applyReplacements "function: applyReplacements

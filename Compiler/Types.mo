@@ -39,14 +39,14 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 Types.rml
+  file:	 Types.mo
   module:      Types
   description: Type system
  
   RCS: $Id$
  
   This file specifies the type system, as defined in the modelica
-  specification. It contains an RML type called `Type\' which 
+  specification. It contains an MetaModelica Compiler (MMC) type called `Type\' which 
   defines types. It also contains functions for
   determining subtyping etc.
  
@@ -57,13 +57,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 "
 
 public import OpenModelica.Compiler.ClassInf;
-
 public import OpenModelica.Compiler.Absyn;
-
 public import OpenModelica.Compiler.Exp;
-
 public import OpenModelica.Compiler.Values;
-
 public import OpenModelica.Compiler.SCode;
 
 public 

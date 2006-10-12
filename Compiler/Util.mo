@@ -39,29 +39,36 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 Util.rml
+  file:	 Util.mo
   module:      Util
-  description: Miscellanous RML utilities
+  description: Miscellanous MetaModelica Compiler (MMC) utilities
  
   RCS: $Id$
   
-  This module contains various RML utilities sigh, mosly 
+  This module contains various MetaModelica Compiler (MMC) utilities sigh, mosly 
   related to lists.
   It is used pretty much everywhere. The difference between this 
   module and the ModUtil module is that ModUtil contains modelica 
   related utilities. The Util module only contains \"low-level\" 
-  rml utilities, for example finding elements in lists.
+  MetaModelica Compiler (MMC) utilities, for example finding elements in lists.
   
-  This modules contains many functions that uses \'type variables\' in RML.
+  This modules contains many functions that uses \'type variables\' in MetaModelica Compiler (MMC).
   A type variable is exactly what it sounds like, a type bound to a variable.
-  It is used for higher order functions, i.e. in RML the possibility to pass a 
+  It is used for higher order functions, i.e. in MetaModelica Compiler (MMC) the possibility to pass a 
   \"pointer\" to a function into another function. But it can also be used for 
   generic data types, like in  C++ templates.
 
-  A type variable in RML is written as \'a
+  A type variable in MetaModelica Compiler (MMC) is written as:
+  replaceable type TyVar;
   For instance,
-  function list_fill (\'a,int) => \'a list
-  the type variable \'a is here used as a generic type for the function list_fill, 
+  function listFill
+    replaceable type TyVar; 
+  	input TyVar in;
+  	input Integer i;
+  	output list<TyVar>
+  ...
+  end listFill;
+  the type variable TyVar is here used as a generic type for the function listFill, 
   which returns a list of n elements of a certain type.
 "
 
@@ -80,9 +87,7 @@ protected constant list<ReplacePattern> replaceStringPatterns={REPLACEPATTERN(".
           REPLACEPATTERN(",","$comma")};
 
 protected import OpenModelica.Compiler.System;
-
 protected import OpenModelica.Compiler.Print;
-
 protected import OpenModelica.Compiler.Debug;
 
 public function flagValue "function flagValue
@@ -101,8 +106,8 @@ algorithm
    local 
       String flag,arg,value;
       list<String> args;
-   case(flag,[]) then "";
-   case(flag,arg::[])
+   case(flag,{}) then "";
+   case(flag,arg::{})
       equation
         0 = System.strcmp(flag,arg);
       then

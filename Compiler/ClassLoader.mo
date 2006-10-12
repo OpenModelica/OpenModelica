@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 ClassLoader.rml
+  file:	 ClassLoader.mo
   module:      ClassLoader
   description: Loading of classes from $OPENMODELICALIBRARY.
  
@@ -55,23 +55,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 public import OpenModelica.Compiler.Absyn;
 
 protected import OpenModelica.Compiler.System;
-
 protected import OpenModelica.Compiler.Interactive;
-
 protected import OpenModelica.Compiler.Util;
-
 protected import OpenModelica.Compiler.Parser;
-
 protected import OpenModelica.Compiler.Print;
-
 protected import OpenModelica.Compiler.Debug;
 
-public function loadClass "adrpo -- not used
-with \"Lookup.rml\"
-with \"Env.rml\"
-with \"Dump.rml\"
-
-  function: loadClass
+public function loadClass "function: loadClass
   This function takes a \'Path\' and the $OPENMODELICALIBRARY as a string
   and tries to load the class from the path.
   If the classname is qualified, the complete package is loaded. 

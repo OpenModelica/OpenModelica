@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 Inst.rml
+  file:	 Inst.mo
   module:      Inst
   description: Model instantiation
  
@@ -85,23 +85,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   4. Fu"
 
 public import OpenModelica.Compiler.ClassInf;
-
 public import OpenModelica.Compiler.Connect;
-
 public import OpenModelica.Compiler.DAE;
-
 public import OpenModelica.Compiler.Env;
-
 public import OpenModelica.Compiler.Exp;
-
 public import OpenModelica.Compiler.SCode;
-
 public import OpenModelica.Compiler.Mod;
-
 public import OpenModelica.Compiler.Prefix;
-
 public import OpenModelica.Compiler.Types;
-
 public import OpenModelica.Compiler.Absyn;
 
 public 
@@ -154,39 +145,21 @@ uniontype DimExp
 
 end DimExp;
 
-//protected import OpenModelica.Compiler.System;
-
 protected import OpenModelica.Compiler.Debug;
-
 protected import OpenModelica.Compiler.Interactive;
-
 protected import OpenModelica.Compiler.Util;
-
 protected import OpenModelica.Compiler.Algorithm;
-
 protected import OpenModelica.Compiler.Builtin;
-
 protected import OpenModelica.Compiler.Dump;
-
 protected import OpenModelica.Compiler.Lookup;
-
 protected import OpenModelica.Compiler.Static;
-
 protected import OpenModelica.Compiler.Values;
-
 protected import OpenModelica.Compiler.Print;
-
 protected import OpenModelica.Compiler.Ceval;
-
 protected import OpenModelica.Compiler.Error;
-
 protected import OpenModelica.Compiler.ErrorExt;
 
-protected constant String forScopeName="$for loop scope$" "adrpo -- not used
-with \"System.rml\"
-with \"RTOpts.rml\"
-with \"ModUtil.rml\"
-" ;
+protected constant String forScopeName="$for loop scope$";
 
 protected function printDims "function: printDims
   
@@ -8022,7 +7995,7 @@ algorithm
         ((Types.T_ENUM(),somep));
     case (p,(st as ClassInf.FUNCTION(string = name)),vl,_) /* Insert function type construction here
 	   after checking input/output arguments? 
-	   see Types.rml T_FUNCTION */ 
+	   see Types.mo T_FUNCTION */ 
       equation 
         functype = Types.makeFunctionType(p, vl);
       then
@@ -8097,7 +8070,7 @@ algorithm
         ((Types.T_ENUM(),somep));
     case (p,(st as ClassInf.FUNCTION(string = name)),vl,_) /* Insert function type construction here
 	   after checking input/output arguments? 
-	   see Types.rml T_FUNCTION */ 
+	   see Types.mo T_FUNCTION */ 
       equation 
         functype = Types.makeFunctionType(p, vl);
       then

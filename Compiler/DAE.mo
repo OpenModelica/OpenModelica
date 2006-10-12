@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 DAE.rml
+  file:	 DAE.mo
   module:      DAE
   description: DAE management and output
  
@@ -56,15 +56,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   - Module header"
 
 public import OpenModelica.Compiler.Absyn;
-
 public import OpenModelica.Compiler.Exp;
-
 public import OpenModelica.Compiler.Algorithm;
-
 public import OpenModelica.Compiler.Types;
-
 public import OpenModelica.Compiler.Values;
-
 public import OpenModelica.Compiler.ClassInf;
 
 public 
@@ -338,25 +333,15 @@ uniontype DAElist "A DAElist is a list of Elements. Variables, equations, functi
 end DAElist;
 
 protected import OpenModelica.Compiler.RTOpts;
-
 protected import OpenModelica.Compiler.Graphviz;
-
 protected import OpenModelica.Compiler.Dump;
-
 protected import OpenModelica.Compiler.Print;
-
 protected import OpenModelica.Compiler.Util;
-
 protected import OpenModelica.Compiler.Ceval;
-
 protected import OpenModelica.Compiler.ModUtil;
-
 protected import OpenModelica.Compiler.Debug;
-
 protected import OpenModelica.Compiler.Error;
-
 protected import OpenModelica.Compiler.SCode;
-
 protected import OpenModelica.Compiler.Env;
 
 public function dump "function: dump

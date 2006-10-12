@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:        Mod.rml
+  file:        Mod.mo
   module:      Mod
   description: Modification handling
  
@@ -52,42 +52,29 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   that it uses `Exp.Exp\' for the expressions.  Expressions stored
   here are prefixed and typechecked.
  
-  The datatype itself is moved to the Types module, in Types.rml, to prevent
+  The datatype itself is moved to the Types module, in Types.mo, to prevent
   circular dependencies.
  
 "
 
 public import OpenModelica.Compiler.Absyn;
-
 public import OpenModelica.Compiler.Env;
-
 public import OpenModelica.Compiler.Exp;
-
 public import OpenModelica.Compiler.Prefix;
-
 public import OpenModelica.Compiler.SCode;
-
 public import OpenModelica.Compiler.Types;
 
 public 
 type Ident = String;
 
 protected import OpenModelica.Compiler.Dump;
-
 protected import OpenModelica.Compiler.Debug;
-
 protected import OpenModelica.Compiler.Inst;
-
 protected import OpenModelica.Compiler.Static;
-
 protected import OpenModelica.Compiler.Values;
-
 protected import OpenModelica.Compiler.Util;
-
 protected import OpenModelica.Compiler.Ceval;
-
 protected import OpenModelica.Compiler.Error;
-
 protected import OpenModelica.Compiler.Print;
 
 public function elabMod "function: elabMod

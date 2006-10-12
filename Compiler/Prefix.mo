@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 Prefix.rml
+  file:	 Prefix.mo
   module:      Prefix
   description: Prefix management
  
@@ -55,11 +55,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 "
 
 public import OpenModelica.Compiler.Absyn;
-
 public import OpenModelica.Compiler.Exp;
-
 public import OpenModelica.Compiler.Env;
-
 public import OpenModelica.Compiler.Lookup;
 
 public 
@@ -75,10 +72,9 @@ uniontype Prefix "A \'Prefix\' has a name an a list of constant valued subscript
 end Prefix;
 
 protected import OpenModelica.Compiler.Util;
-
 protected import OpenModelica.Compiler.Print;
-
 protected import OpenModelica.Compiler.Debug;
+
 
 public function printPrefixStr "function: printPrefixStr
   

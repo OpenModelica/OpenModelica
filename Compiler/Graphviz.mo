@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 Graphviz.rml
+  file:	 Graphviz.mo
   module:      Graphviz
   description: Graphviz is a tool for drawing graphs from a textual
   representation. This module generates the textual input to graphviz from a

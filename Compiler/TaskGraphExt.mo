@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 TaskGraphExt.rml
+  file:	 TaskGraphExt.mo
   module:      TaskGraphExt
   description: The external representation of a task graph, using Boost Graph Library
   in C++.
@@ -53,7 +53,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 "
 
 public import OpenModelica.Compiler.Exp;
-
 public import OpenModelica.Compiler.DAELow;
 
 public function newTask

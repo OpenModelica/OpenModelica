@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 static.rml
+  file:	 Static.mo
   module:      Static
   description: Static analysis of expressions
  
@@ -73,17 +73,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 "
 
 public import OpenModelica.Compiler.Absyn;
-
 public import OpenModelica.Compiler.Exp;
-
 public import OpenModelica.Compiler.SCode;
-
 public import OpenModelica.Compiler.Types;
-
 public import OpenModelica.Compiler.Env;
-
 public import OpenModelica.Compiler.Values;
-
 public import OpenModelica.Compiler.Interactive;
 
 public 
@@ -101,35 +95,20 @@ uniontype Slot
 end Slot;
 
 protected import OpenModelica.Compiler.ClassInf;
-
 protected import OpenModelica.Compiler.Dump;
-
 protected import OpenModelica.Compiler.Print;
-
 protected import OpenModelica.Compiler.System;
-
 protected import OpenModelica.Compiler.Lookup;
-
 protected import OpenModelica.Compiler.Debug;
-
 protected import OpenModelica.Compiler.Inst;
-
 protected import OpenModelica.Compiler.Codegen;
-
 protected import OpenModelica.Compiler.ModUtil;
-
 protected import OpenModelica.Compiler.DAE;
-
 protected import OpenModelica.Compiler.Util;
-
 protected import OpenModelica.Compiler.Mod;
-
 protected import OpenModelica.Compiler.Prefix;
-
 protected import OpenModelica.Compiler.Ceval;
-
 protected import OpenModelica.Compiler.Connect;
-
 protected import OpenModelica.Compiler.Error;
 
 public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. lists of expressions."

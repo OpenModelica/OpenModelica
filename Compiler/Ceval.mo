@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 Ceval.rml
+  file:	 Ceval.mo
   module:      Ceval
   description: Constant propagation of expressions
  
@@ -65,18 +65,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 "
 
 public import OpenModelica.Compiler.Env;
-
 public import OpenModelica.Compiler.Exp;
-
 public import OpenModelica.Compiler.Interactive;
-
 public import OpenModelica.Compiler.Values;
-
 public import OpenModelica.Compiler.DAELow;
-
 public import OpenModelica.Compiler.Absyn;
+public import OpenModelica.Compiler.Types;
 
-public  import OpenModelica.Compiler.Types;
 public 
 uniontype Msg
   record MSG "Give error message" end MSG;
@@ -86,53 +81,30 @@ uniontype Msg
 end Msg;
 
 protected import OpenModelica.Compiler.SimCodegen;
-
 protected import OpenModelica.Compiler.Static;
-
 protected import OpenModelica.Compiler.Print;
-
 protected import OpenModelica.Compiler.ModUtil;
-
 protected import OpenModelica.Compiler.System;
-
 protected import OpenModelica.Compiler.SCode;
-
 protected import OpenModelica.Compiler.Inst;
-
 protected import OpenModelica.Compiler.Lookup;
-
 protected import OpenModelica.Compiler.Dump;
-
 protected import OpenModelica.Compiler.DAE;
-
 protected import OpenModelica.Compiler.Debug;
-
 protected import OpenModelica.Compiler.Util;
-
 protected import OpenModelica.Compiler.ClassInf;
-
 protected import OpenModelica.Compiler.RTOpts;
-
 protected import OpenModelica.Compiler.Parser;
-
 protected import OpenModelica.Compiler.Prefix;
-
 protected import OpenModelica.Compiler.Codegen;
-
 protected import OpenModelica.Compiler.ClassLoader;
-
 protected import OpenModelica.Compiler.Derive;
-
 protected import OpenModelica.Compiler.Connect;
-
 protected import OpenModelica.Compiler.Error;
-
 protected import OpenModelica.Compiler.Settings;
 
-protected function cevalBuiltin "adrpo -- not used
-with \"ErrorExt.rml\"
 
-  function: cevalBuiltin
+protected function cevalBuiltin "function: cevalBuiltin
  
   Helper for ceval. Parts for builtin calls are moved here, for readability.
   See ceval for documentation.
@@ -776,7 +748,7 @@ algorithm
         (cache,Values.REAL(stop_1),st_2) = ceval(cache,env, stop, impl, st_1, dim, msg);
         diff = stop_1 -. start_1;
         step = intReal(1);
-        arr = cevalRangeReal(start_1, step, stop_1) "bug in rml, 1.0 => 0.0 in cygwin" ;
+        arr = cevalRangeReal(start_1, step, stop_1) "bug in MetaModelica Compiler (MMC), 1.0 => 0.0 in cygwin" ;
       then
         (cache,Values.ARRAY(arr),st_2);
 
@@ -2889,7 +2861,7 @@ algorithm
         command = Settings.getCompileCommand();
         false = Util.isEmptyString(command);
         retVal = System.regularFileExists(command);
-        true = retVal != 0; 
+        true = retVal <> 0; 
         str=Util.stringAppendList({"command ",command," not found. Check OPENMODELICAHOME"});
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
         then fail();
@@ -2906,7 +2878,7 @@ algorithm
          */
         s_call = Util.stringAppendList({"\"",omhome_1,pd,"bin",pd,"Compile","\""});
         retVal = System.regularFileExists(s_call);
-        true = retVal != 0; 
+        true = retVal <> 0; 
         str=Util.stringAppendList({"command ",s_call," not found. Check OPENMODELICAHOME"});
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
       then
@@ -4033,7 +4005,7 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg) /* tan is not implemented in RML for some strange reason. */ 
+    case (cache,env,{exp},impl,st,msg) /* tan is not implemented in MetaModelica Compiler (MMC) for some strange reason. */ 
       equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         sv = realSin(rv);
@@ -4137,7 +4109,7 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg) /* atan is not implemented in RML for some strange reason. */ 
+    case (cache,env,{exp},impl,st,msg) /* atan is not implemented in MetaModelica Compiler (MMC) for some strange reason. */ 
       equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         rv_1 = System.atan(rv);

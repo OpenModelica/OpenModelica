@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 Debug.rml
+  file:	 Debug.mo
   module:      Debug
   description: debug printing
  
@@ -56,9 +56,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 "
 
 protected import OpenModelica.Compiler.RTOpts;
-
 protected import OpenModelica.Compiler.Print;
-
 protected import OpenModelica.Compiler.Util;
 
 public function print "function: print

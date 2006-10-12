@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 Error.rml
+  file:	 Error.mo
   module:      Error
   description: Error handling
  
@@ -61,7 +61,7 @@ uniontype Severity "severity of message"
 end Severity;
 
 public 
-uniontype MessageType
+uniontype MessageType "runtime scripting /interpretation error" 
   record SYNTAX "syntax errors" end SYNTAX;
 
   record GRAMMAR "grammar errors" end GRAMMAR;
@@ -79,209 +79,117 @@ uniontype MessageType
 end MessageType;
 
 public 
-type ErrorID = Integer "runtime scripting /interpretation error" ;
+type ErrorID = Integer "Unique error id. Used to 
+			  look up message string and type and severity";
 
 public 
-type MessageTokens = list<String> "Unique error id. Used to 
-			  look up message string and type and severity" ;
-
-public import OpenModelica.Compiler.Absyn "\"Tokens\" to insert into message at 
+type MessageTokens = list<String>   "\"Tokens\" to insert into message at 
 				    positions identified by 
 				    - %s for string 
 				    - %l for line no.
-				    - %c for col. no.
-				" ;
+				    - %c for col. no." ;
+
+public import OpenModelica.Compiler.Absyn;
+
+/*
+"Errors WARNINGS Notifications" 
+*/
 
 public constant ErrorID SYNTAX_ERROR=1 "module" ;
-
 public constant ErrorID GRAMMATIC_ERROR=2;
-
 public constant ErrorID LOOKUP_ERROR=3;
-
 public constant ErrorID LOOKUP_ERROR_COMPNAME=4;
-
 public constant ErrorID LOOKUP_VARIABLE_ERROR=5;
-
 public constant ErrorID ASSIGN_CONSTANT_ERROR=6;
-
 public constant ErrorID ASSIGN_PARAM_ERROR=7;
-
 public constant ErrorID ASSIGN_READONLY_ERROR=8;
-
 public constant ErrorID ASSIGN_TYPE_MISMATCH_ERROR=9;
-
 public constant ErrorID IF_CONDITION_TYPE_ERROR=10;
-
 public constant ErrorID FOR_EXPRESSION_TYPE_ERROR=11;
-
 public constant ErrorID WHEN_CONDITION_TYPE_ERROR=12;
-
 public constant ErrorID WHILE_CONDITION_TYPE_ERROR=13;
-
 public constant ErrorID END_ILLEGAL_USE_ERROR=14;
-
 public constant ErrorID DIVISION_BY_ZERO=15;
-
 public constant ErrorID MODULO_BY_ZERO=16;
-
 public constant ErrorID REM_ARG_ZERO=17;
-
 public constant ErrorID SCRIPT_READ_SIM_RES_ERROR=18;
-
 public constant ErrorID SCRIPT_READ_SIM_RES_SIZE_ERROR=19;
-
 public constant ErrorID LOAD_MODEL_ERROR=20;
-
 public constant ErrorID WRITING_FILE_ERROR=21;
-
 public constant ErrorID SIMULATOR_BUILD_ERROR=22;
-
 public constant ErrorID DIMENSION_NOT_KNOWN=23;
-
 public constant ErrorID UNBOUND_VALUE=24;
-
 public constant ErrorID NEGATIVE_SQRT=25;
-
 public constant ErrorID NO_CONSTANT_BINDING=26;
-
 public constant ErrorID TYPE_NOT_FROM_PREDEFINED=27;
-
 public constant ErrorID EQUATION_IN_RECORD=28;
-
 public constant ErrorID EQUATION_IN_CONNECTOR=29;
-
 public constant ErrorID UNKNOWN_EXTERNAL_LANGUAGE=30;
-
 public constant ErrorID DIFFERENT_NO_EQUATION_IF_BRANCHES=31;
-
 public constant ErrorID UNDERDET_EQN_SYSTEM=32;
-
 public constant ErrorID OVERDET_EQN_SYSTEM=33;
-
 public constant ErrorID STRUCT_SINGULAR_SYSTEM=34;
-
 public constant ErrorID UNSUPPORTED_LANGUAGE_FEATURE=35;
-
 public constant ErrorID NON_EXISTING_DERIVATIVE=36;
-
 public constant ErrorID NO_CLASSES_LOADED=37;
-
 public constant ErrorID INST_PARTIAL_CLASS=38;
-
 public constant ErrorID LOOKUP_BASECLASS_ERROR=39;
-
 public constant ErrorID REDECLARE_CLASS_AS_VAR=40;
-
 public constant ErrorID REDECLARE_NON_REPLACEABLE=41;
-
 public constant ErrorID COMPONENT_INPUT_OUTPUT_MISMATCH=42;
-
 public constant ErrorID ARRAY_DIMENSION_MISMATCH=43;
-
 public constant ErrorID ARRAY_DIMENSION_INTEGER=44;
-
 public constant ErrorID EQUATION_TYPE_MISMATCH_ERROR=45;
-
 public constant ErrorID INST_ARRAY_EQ_UNKNOWN_SIZE=46;
-
 public constant ErrorID TUPLE_ASSIGN_FUNCALL_ONLY=47;
-
 public constant ErrorID INVALID_CONNECTOR_TYPE=48;
-
 public constant ErrorID CONNECT_TWO_INPUTS=49;
-
 public constant ErrorID CONNECT_TWO_OUTPUTS=50;
-
 public constant ErrorID CONNECT_FLOW_TO_NONFLOW=51;
-
 public constant ErrorID INVALID_CONNECTOR_VARIABLE=52;
-
 public constant ErrorID TYPE_ERROR=53;
-
 public constant ErrorID MODIFY_PROTECTED=54;
-
 public constant ErrorID INVALID_TUPLE_CONTENT=55;
-
 public constant ErrorID IMPORT_PACKAGES_ONLY=56;
-
 public constant ErrorID IMPORT_SEVERAL_NAMES=57;
-
 public constant ErrorID LOOKUP_TYPE_FOUND_COMP=58;
-
 public constant ErrorID LOOKUP_ENCAPSULATED_RESTRICTION_VIOLATION=59;
-
 public constant ErrorID REFERENCE_PROTECTED=60;
-
 public constant ErrorID ILLEGAL_SLICE_MOD=61;
-
 public constant ErrorID ILLEGAL_MODIFICATION=62;
-
 public constant ErrorID INTERNAL_ERROR=63;
-
 public constant ErrorID TYPE_MISMATCH_ARRAY_EXP=64;
-
 public constant ErrorID TYPE_MISMATCH_MATRIX_EXP=65;
-
 public constant ErrorID MATRIX_EXP_ROW_SIZE=66;
-
 public constant ErrorID OPERAND_BUILTIN_TYPE=67;
-
 public constant ErrorID WRONG_TYPE_OR_NO_OF_ARGS=68;
-
 public constant ErrorID DIFFERENT_DIM_SIZE_IN_ARGUMENTS=69;
-
 public constant ErrorID DER_APPLIED_TO_CONST=70;
-
 public constant ErrorID ARGUMENT_MUST_BE_INTEGER_OR_REAL=71;
-
 public constant ErrorID ARGUMENT_MUST_BE_INTEGER=72;
-
 public constant ErrorID ARGUMENT_MUST_BE_DISCRETE_VAR=73;
-
 public constant ErrorID TYPE_MUST_BE_SIMPLE=74;
-
 public constant ErrorID ARGUMENT_MUST_BE_VARIABLE=75;
-
 public constant ErrorID NO_MATCHING_FUNCTION_FOUND=76;
-
 public constant ErrorID FUNCTION_COMPS_MUST_HAVE_DIRECTION=77;
-
 public constant ErrorID FUNCTION_SLOT_ALLREADY_FILLED=78;
-
 public constant ErrorID NO_SUCH_ARGUMENT=79;
-
 public constant ErrorID CONSTANT_OR_PARAM_WITH_NONCONST_BINDING=80;
-
 public constant ErrorID SUBSCRIPT_NOT_INT_OR_INT_ARRAY=81;
-
 public constant ErrorID TYPE_MISMATCH_IF_EXP=82;
-
 public constant ErrorID UNRESOLVABLE_TYPE=83;
-
 public constant ErrorID INCOMPATIBLE_TYPES=84;
-
 public constant ErrorID ERROR_OPENING_FILE=85;
-
 public constant ErrorID INHERIT_BASIC_WITH_COMPS=86;
-
 public constant ErrorID MODIFIER_TYPE_MISMATCH_ERROR=87;
-
 public constant ErrorID ERROR_FLATTENING=88;
-
 public constant ErrorID DUPLICATE_ELEMENTS_NOT_IDENTICAL=89;
-
 public constant ErrorID PACKAGE_VARIABLE_NOT_CONSTANT=90;
-
 public constant ErrorID RECURSIVE_DEFINITION= 91; 
- 
 public constant ErrorID NOT_ARRAY_TYPE_IN_FOR_STATEMENT= 92;
-
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
-
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
-
 public constant ErrorID INDEX_REDUCTION_NOTIFICATION=1000;
-
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable={(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
           (GRAMMATIC_ERROR,GRAMMAR(),ERROR(),"error: %s"),
           (LOOKUP_ERROR,TRANSLATION(),ERROR(),
@@ -467,12 +375,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (INDEX_REDUCTION_NOTIFICATION,SYMBOLIC(),NOTIFICATION(),
           "Notification, differentiated equation %s to %s for index reduction")};
 
-protected import OpenModelica.Compiler.ErrorExt "Errors
-WARNING		
-Notification" ;
- 
+protected import OpenModelica.Compiler.ErrorExt;
 protected import OpenModelica.Compiler.Util;
-
 protected import OpenModelica.Compiler.Print;
 
 public function addMessage "Implementation of Relations

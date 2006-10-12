@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 Env.rml
+  file:	 Env.mo
   module:      Env
   description: Environmane management
  
@@ -91,19 +91,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 "
 
 public import OpenModelica.Compiler.Absyn;
-
 public import OpenModelica.Compiler.SCode;
-
 public import OpenModelica.Compiler.Types;
-
 public import OpenModelica.Compiler.ClassInf;
-
 public import OpenModelica.Compiler.Exp;
 
 public 
-type Ident = String "adrpo -- not used
-  with \"Values.rml\"
-" ;
+type Ident = String " An identifier is just a string " ;
 
 public uniontype Cache
   record CACHE 
@@ -189,7 +183,7 @@ public
 uniontype BinTree "The binary tree data structure
   ==============================
   The binary tree data structure used for the environment is generic and can 
-  be used in any RML application.
+  be used in any MetaModelica Compiler (MMC) application.
   The Tree data structure BinTree is defined as:"
   record TREENODE
     Option<TreeValue> value "Value" ;
@@ -217,15 +211,10 @@ type Value = Item;
 public 
 
 protected import OpenModelica.Compiler.Dump;
-
 protected import OpenModelica.Compiler.Graphviz;
-
 protected import OpenModelica.Compiler.DAE;
-
 protected import OpenModelica.Compiler.Print;
-
 protected import OpenModelica.Compiler.Util;
-
 protected import OpenModelica.Compiler.System;
 
 public constant Env emptyEnv={} "- Values" ;

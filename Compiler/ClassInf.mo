@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 ClassInf.rml
+  file:	 ClassInf.mo
   module:      ClassInf
   description: Class restrictions
  
@@ -140,13 +140,9 @@ uniontype Event "- Events"
 end Event;
 
 protected import OpenModelica.Compiler.Print;
-
 protected import OpenModelica.Compiler.Error;
 
-public function printStateStr "adrpo -- not used
-with \"Absyn.rml\"
-
-  - Printing
+public function printStateStr "- Printing
   
   Some functions for printing error and debug information about the
   state machine.

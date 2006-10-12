@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 TaskGraph.rml
+  file:	 TaskGraph.mo
   module:      TaskGraph
   description: Building of task graphs from expressions, and equation systems.
  
@@ -58,26 +58,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 "
 
 public import OpenModelica.Compiler.Exp;
-
 public import OpenModelica.Compiler.DAELow;
 
 protected import OpenModelica.Compiler.TaskGraphExt;
-
 protected import OpenModelica.Compiler.Util;
-
 protected import OpenModelica.Compiler.Absyn;
-
 protected import OpenModelica.Compiler.DAE;
-
 protected import OpenModelica.Compiler.Values;
-
 protected import OpenModelica.Compiler.VarTransform;
-
 protected import OpenModelica.Compiler.SimCodegen;
 
-public function buildTaskgraph "adrpo -- not used
-with \"Print.rml\"
-"
+public function buildTaskgraph ""
   input DAELow.DAELow inDAELow1;
   input Integer[:] inIntegerArray2;
   input Integer[:] inIntegerArray3;

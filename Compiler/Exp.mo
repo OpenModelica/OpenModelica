@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:	 Exp.rml
+  file:	 Exp.mo
   module:      Exp
   description: Expressions
  
@@ -64,7 +64,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 "
 
 public import OpenModelica.Compiler.Absyn;
-
 public import OpenModelica.Compiler.Graphviz;
 
 public 
@@ -365,23 +364,14 @@ uniontype Subscript "The `Subscript\' and `ComponentRef\' datatypes are simple
 end Subscript;
 
 protected import OpenModelica.Compiler.RTOpts;
-
 protected import OpenModelica.Compiler.Util;
-
 protected import OpenModelica.Compiler.Print;
-
 protected import OpenModelica.Compiler.ModUtil;
-
 protected import OpenModelica.Compiler.Derive;
-
 protected import OpenModelica.Compiler.Dump;
-
 protected import OpenModelica.Compiler.Error;
-
 protected import OpenModelica.Compiler.Debug;
-
 protected import OpenModelica.Compiler.Static;
-
 protected import OpenModelica.Compiler.Env;
 
 protected constant Exp rconstone=RCONST(1.0);
@@ -817,7 +807,7 @@ algorithm
         true;
     case (RCONST(real = rval))
       equation 
-        rzero = intReal(1) "Due to bug in rml, go trough a cast from int" ;
+        rzero = intReal(1) "Due to bug in mmc, go trough a cast from int" ;
         (rzero ==. rval) = true;
       then
         true;
@@ -853,7 +843,7 @@ algorithm
         true;
     case (RCONST(real = rval))
       equation 
-        rzero = intReal(0) "Due to bug in rml, go trough a cast from int" ;
+        rzero = intReal(0) "Due to bug in mmc, go trough a cast from int" ;
         (rzero ==. rval) = true;
       then
         true;
@@ -1056,7 +1046,7 @@ algorithm
         true;
     case (cr1,cr2)
       equation 
-        s1 = printComponentRefStr(cr1) "There is a bug here somewhere or in RML.
+        s1 = printComponentRefStr(cr1) "There is a bug here somewhere or in MetaModelica Compiler (MMC).
 	  Therefore as a last resort, print the strings and compare.
 	" ;
         s2 = printComponentRefStr(cr2);

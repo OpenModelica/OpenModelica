@@ -39,7 +39,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
-  file:        Values.rml
+  file:        Values.mo
   module:      Values
   description: Evaluated expression values
  
@@ -55,7 +55,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 "
 
 public import OpenModelica.Compiler.Exp;
-
 public import OpenModelica.Compiler.Absyn;
 
 public 
@@ -101,13 +100,9 @@ uniontype Value
 end Value;
 
 protected import OpenModelica.Compiler.Print;
-
 protected import OpenModelica.Compiler.System;
-
 protected import OpenModelica.Compiler.Util;
-
 protected import OpenModelica.Compiler.Dump;
-
 protected import OpenModelica.Compiler.Error;
 
 public function typeConvert "function: typeConvert
