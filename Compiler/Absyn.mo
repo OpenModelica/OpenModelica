@@ -47,20 +47,35 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  
   This file defines the abstract syntax for Modelica in MetaModelica Compiler (MMC).  It mainly
   contains datatypes for constructing the abstract syntax tree
-  (AST), functions for building and altering MetaModelica Compiler (MMC) datatypes and a few functions 
-  for printing the AST.
+  (AST), functions for building and altering AST nodes and a few functions 
+  for printing the AST:
+  
+  * Abstract Syntax Tree (Close to Modelica)
+     – Complete Modelica 2.2 
+     – Including annotations and comments
+  * Primary AST for e.g. the Interactive module
+     - Model editor related representations (must use annotations)
+  * Functions
+     - A few small functions, only working on Absyn types, e.g.:
+       - pathToCref(Path) => ComponentRef
+       - joinPaths(Path, Path) => (Path)
+       - etc.
+  
    
   Absyn.mo\'s constructors are primarily used by the walker 
   (Compiler/absyn_builder/walker.g) which takes an ANTLR internal syntax tree and
   converts it into an MetaModelica Compiler (MMC) abstract syntax tree.
  
-  When the AST has been built, it is normaly used by SCode.mo in order to
+  When the AST has been built, it is normally used by SCode.mo in order to
   build the SCode (See SCode.mo). It is also possile to send the AST do 
-  the dumper (Dump.mo) in order to print it.
+  the unparser (Dump.mo) in order to print it.
   
   For details regarding the abstract syntax tree, check out the grammar in 
   the Modelica language specification.
-   
+  
+  
+  The following are the types and uniontypes that are used for the AST:
+  
 "
 
 public 
@@ -72,40 +87,46 @@ uniontype Program "- Programs, the top level construct
     level in the source file, combined with a within statement that
     indicates the hieractical position of the program. 
 "
-  record PROGRAM
-    list<Class> classes "classes ; List of classes" ;
-    Within within_ "within ; Within statement" ;
+  record PROGRAM  "PROGRAM, the top level construct"
+    list<Class>  classes "List of classes" ;
+    Within       within_ "Within clause" ;
   end PROGRAM;
 
+
+/* ModExtension: The following 3 nodes are not standard Modelica
+   Nodes such as BEGIN_DEFINITION and END_DEFINITION 
+   can be used for representing packages and classes that are entered piecewise, 
+   e.g., first entering the package head (as BEGIN_DEFINITION), 
+   then the contained definitions, then an end package repesented as END_DEFINITION.
+ */   
+
   record BEGIN_DEFINITION
-    Path path "path ; For split definitions" ;
-    Restriction restriction "restriction ; Class restriction" ;
-    Boolean partial_ "partial" ;
-    Boolean encapsulated_ "encapsulated" ;
+    Path         path  "path for split definitions" ;
+    Restriction  restriction   "Class restriction" ;
+    Boolean      partial_      "true if partial" ;
+    Boolean      encapsulated_ "true if encapsulated" ;
   end BEGIN_DEFINITION;
 
   record END_DEFINITION
-    Ident name "name ; For split definitions" ;
+    Ident  name   "name for split definitions" ;
   end END_DEFINITION;
 
   record COMP_DEFINITION
-    ElementSpec element "element ; For split definitions" ;
-    Option<Path> insertInto "insertInto ;  
-						       Default, NONE" ;
+    ElementSpec  element    "element for split definitions" ;
+    Option<Path> insertInto "insert into, Default: NONE" ;
   end COMP_DEFINITION;
 
   record IMPORT_DEFINITION
-    ElementSpec importElementFor "importElementFor split definitions" ;
-    Option<Path> insertInto "insertInto ;  
-						       Default, NONE" ;
+    ElementSpec   importElementFor "For split definitions" ;
+    Option<Path>  insertInto       "Insert into, Default: NONE" ;
   end IMPORT_DEFINITION;
 
 end Program;
 
 public 
-uniontype Within "Within statements"
+uniontype Within "Within Clauses"
   record WITHIN
-    Path path "path" ;
+    Path   path;
   end WITHIN;
 
   record TOP end TOP;
@@ -126,83 +147,90 @@ uniontype Info "adrpo added 2005-10-29, changed 2006-02-05"
 end Info;
 
 public 
-uniontype Class "- Classes
-  A class definition consists of a name, a flag to indicate if this
-  class is declared as `partial\', the declared class restriction,
+uniontype Class 
+ "A class definition consists of a name, a flag to indicate 
+  if this class is declared as partial, the declared class restriction, 
   and the body of the declaration."
-  record CLASS
-    Ident name "name" ;
-    Boolean partial_ "partial" ;
-    Boolean final_ "final" ;
-    Boolean encapsulated_ "encapsulated" ;
-    Restriction restricion "restricion" ;
-    ClassDef body "body" ;
-    Info info "info ; FileName the class is defined in + 
-			                               isReadOnly bool + 
-			                               start line no + start column no +
-			                               end line no + end column no The `ClassDef\' type contains the definition part of a class declaration.  The definition is either explicit, with a list of parts (`public\', `protected\', `equationc\' and `algorithm\'), or it is a definition derived from another class or an enumeration type. For a derived type, the  type contains the name of the derived class and an optional array dimension and a list of modifications. An enumeration type contains a list of" ;
+ record CLASS
+    Ident name;
+    Boolean     partial_   "true if partial" ;
+    Boolean     final_     "true if final" ;
+    Boolean     encapsulated_ "true if encapsulated" ;
+    Restriction restricion  "Restriction" ;
+    ClassDef    body;
+    Info        info    "Information: FileName the class is defined in + 
+               isReadOnly bool + start line no + start column no +
+               end line no + end column no";
   end CLASS;
 
 end Class;
 
-public 
-uniontype ClassDef "name"
+public
+uniontype ClassDef 
+"The ClassDef type contains the definition part of a class declaration. 
+ The definition is either explicit, with a list of parts 
+ (public, protected, equation, and algorithm), or it is a definition
+ derived from another class or an enumeration type. 
+ For a derived type, the  type contains the name of the derived class 
+ and an optional array dimension and a list of modifications.
+ "
   record PARTS
-    list<ClassPart> classParts "classParts" ;
-    Option<String> comment "comment" ;
+    list<ClassPart> classParts;
+    Option<String>  comment;
   end PARTS;
 
   record DERIVED
-    TypeSpec typeSpec "typeSpec specification includes array dimensions" ;
-    ElementAttributes attributes "attributes" ;
-    list<ElementArg> arguments "arguments" ;
-    Option<Comment> comment "comment" ;
+    TypeSpec          typeSpec "typeSpec specification includes array dimensions" ;
+    ElementAttributes attributes ;
+    list<ElementArg>  arguments;
+    Option<Comment>   comment;
   end DERIVED;
 
   record ENUMERATION
-    EnumDef enumLiterals "enumLiterals" ;
-    Option<Comment> comment "comment" ;
+    EnumDef         enumLiterals;
+    Option<Comment> comment;
   end ENUMERATION;
 
   record OVERLOAD
-    list<Path> functionNames "functionNames" ;
-    Option<Comment> comment "comment" ;
+    list<Path>      functionNames;
+    Option<Comment> comment;
   end OVERLOAD;
 
   record CLASS_EXTENDS
-    Ident name "name ; class to extend" ;
-    list<ElementArg> arguments "arguments" ;
-    Option<String> comment "comment" ;
-    list<ClassPart> parts "parts" ;
+    Ident            name  "name of class to extend" ;
+    list<ElementArg> arguments;
+    Option<String>   comment;
+    list<ClassPart>  parts;
   end CLASS_EXTENDS;
 
   record PDER
-    Path functionName "functionName" ;
-    list<Ident> vars "vars ; derived variables" ;
+    Path         functionName;
+    list<Ident>  vars "derived variables" ;
   end PDER;
 
 end ClassDef;
 
 public 
-uniontype TypeSpec "new meta-modelica type specification!"
+uniontype TypeSpec "ModExtension: new MetaModelica type specification!"
   record TPATH
-    Path path "path" ;
-    Option<ArrayDim> arrayDim "arrayDim" ;
+    Path path;
+    Option<ArrayDim> arrayDim;
   end TPATH;
 
   record TCOMPLEX
-    Path path "path" ;
-    list<TypeSpec> typeSpecs "typeSpecs" ;
-    Option<ArrayDim> arrayDim "arrayDim" ;
+    Path             path;
+    list<TypeSpec>   typeSpecs;
+    Option<ArrayDim> arrayDim;
   end TCOMPLEX;
 
 end TypeSpec;
 
 public 
-uniontype EnumDef "The definition of an enumeration is either a list of literals
+uniontype EnumDef 
+  "The definition of an enumeration is either a list of literals
      or a colon, \':\', which defines a supertype of all enumerations"
   record ENUMLITERALS
-    list<EnumLiteral> enumLiterals "enumLiterals" ;
+    list<EnumLiteral> enumLiterals;
   end ENUMLITERALS;
 
   record ENUM_COLON end ENUM_COLON;
@@ -213,8 +241,8 @@ public
 uniontype EnumLiteral "EnumLiteral, which is a name in an enumeration and an optional
    Comment."
   record ENUMLITERAL
-    Ident literal "literal" ;
-    Option<Comment> comment "comment" ;
+    Ident           literal;
+    Option<Comment> comment;
   end ENUMLITERAL;
 
 end EnumLiteral;
@@ -226,27 +254,27 @@ uniontype ClassPart "A class definition contains several parts.  There are publi
   sections and algorithm sections. The EXTERNAL part is used only by functions
   which can be declared as external C or FORTRAN functions."
   record PUBLIC
-    list<ElementItem> contents "contents" ;
+    list<ElementItem> contents ;
   end PUBLIC;
 
   record PROTECTED
-    list<ElementItem> contents "contents" ;
+    list<ElementItem> contents;
   end PROTECTED;
 
   record EQUATIONS
-    list<EquationItem> contents "contents" ;
+    list<EquationItem> contents;
   end EQUATIONS;
 
   record INITIALEQUATIONS
-    list<EquationItem> contents "contents" ;
+    list<EquationItem> contents;
   end INITIALEQUATIONS;
 
   record ALGORITHMS
-    list<AlgorithmItem> contents "contents" ;
+    list<AlgorithmItem> contents;
   end ALGORITHMS;
 
   record INITIALALGORITHMS
-    list<AlgorithmItem> contents "contents" ;
+    list<AlgorithmItem> contents;
   end INITIALALGORITHMS;
 
   record EXTERNAL
@@ -259,25 +287,25 @@ end ClassPart;
 public 
 uniontype ElementItem "An element item is either an element or an annotation"
   record ELEMENTITEM
-    Element element "element" ;
+    Element  element;
   end ELEMENTITEM;
 
   record ANNOTATIONITEM
-    Annotation annotation_ "annotation" ;
+    Annotation  annotation_ ;
   end ANNOTATIONITEM;
 
 end ElementItem;
 
 public 
-uniontype Element "- Elements
+uniontype Element "Elements
   The basic element type in Modelica"
   record ELEMENT
-    Boolean final_ "final" ;
-    Option<RedeclareKeywords> redeclareKeywords "redeclareKeywords ; replaceable, redeclare" ;
-    InnerOuter innerOuter "innerOuter ; inner/outer" ;
-    Ident name "name" ;
-    ElementSpec specification "specification ; Actual element specification" ;
-    Info info "info ; File name the class is defined in + line no + column no" ;
+    Boolean                   final_;
+    Option<RedeclareKeywords> redeclareKeywords "replaceable, redeclare" ;
+    InnerOuter                innerOuter "inner/outer" ;
+    Ident                     name;
+    ElementSpec               specification "Actual element specification" ;
+    Info                      info  "File name the class is defined in + line no + column no" ;
     Option<ConstrainClass> constrainClass "constrainClass ; only valid for classdef and component" ;
   end ELEMENT;
 
