@@ -134,6 +134,10 @@ void read_input(int argc, char **argv,
 		double *start, double *stop,
 		double *step);
 
+// To retrive the last two values of a variable.
+double old(double*);
+double old2(double*);
+
 extern int sim_verbose; // control debug output during simulation.
 
 /* extern double* h; */
@@ -213,6 +217,13 @@ typedef struct sim_DATA {
   double* outputVars; //out_y OUTPUTVARS
   double* helpVars;
   double* initialResiduals;
+  
+  // Old values used for extrapolation
+  double* oldStates,*oldStates2;
+  double* oldStatesDerivatives,*oldStatesDerivatives2; 
+  double* oldAlgebraics,*oldAlgebraics2;
+  double oldTime,oldTime2; 
+  
   char* initFixed; // Fixed attribute for all variables and parameters
   int init; // =1 during initialization, 0 otherwise.
   void** extObjs; // External objects	
@@ -224,7 +235,6 @@ typedef struct sim_DATA {
   long nHelpVars/* NHELP */;
   //extern char init_fixed[];
     DATA_STRING stringVariables;
-
 
   char*  modelName;
   char** statesNames;
@@ -280,6 +290,8 @@ function_zeroCrossing(long *neqm, double *t, double *x, long *ng, double *gout, 
 
 int
 handleZeroCrossing(long index);
+
+void storeExtrapolationData();
 
 // function for calculating ouput values 
 /*used in DDASRT fortran function*/

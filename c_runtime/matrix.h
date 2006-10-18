@@ -22,6 +22,12 @@ void hybrd_(void (*) (int*, double *, double*, int*),
 	    int* nprint,int* info,int* nfev,double* fjac,
 	    int* ldfjac,double* r, int* lr, double* qtf,
 	    double* wa1,double* wa2,double* wa3,double* wa4);
+	    
+void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
+	    int *n,double*x,double*fvec,double*fjac,int *ldfjac,double*xtol,int* maxfev,
+	    double* diag,int *mode,double*factor,int *nprint,int*info,int*nfev,int*njev,
+	    double* r,int *lr,double*qtf,double*wa1,double*wa2,
+        double* wa3,double* wa4);
   
 #if defined(__cplusplus)
 }
@@ -106,6 +112,35 @@ void hybrd_(void (*) (int*, double *, double*, int*),
 	 }\
 } while(0) /* (no trailing ;)*/ 
 
+#define solve_nonlinear_system_analytic_jac(residual,no) do { \
+	 int giveUp=0; \
+	 int retries = 0; \
+	 while(!giveUp) { \
+		 giveUp = 1; \
+		 hybrj_(residual,&n, nls_x,nls_fvec,nls_fjac,&ldfjac,&xtol,&maxfev,\
+    	    nls_diag,&mode,&factor,&nprint,&info,&nfev,&njev, \
+        nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4); \
+    	if (info == 0) { \
+    	    printf("improper input parameters to nonlinear eq. syst.\n"); \
+    	} \
+    	if ((info == 4 || info == 5 )&& retries < 3) { /* First try to decrease factor*/ \
+    		retries++; giveUp = 0; \
+    		factor = factor / 10.0; \
+    		 	if (sim_verbose)  \
+	    		printf("Solving nonlinear system: iteration not making progress, trying to decrease factor to %f\n",factor); \
+    	} else if ((info == 4 || info == 5) && retries < 5) { /* Secondly, try with different starting point*/  \
+    		int i; \
+    		for (i=0; i < n; i++) { nls_x[i]+=0.1; }; \
+    		retries++; giveUp=0; \
+    		if (sim_verbose) \
+   		 		printf("Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)"); \
+    	} \
+    	else if (info >= 2 && info <= 5) { \
+    	    printf("error solving nonlinear system nr. %d at time %f\n",no,time); \
+    	} \
+	 }\
+} while(0) /* (no trailing ;)*/ 
+
 #define declare_matrix(A,nrows,ncols) double *A = new double[nrows*ncols]; \
 assert(A!=0); \
 for (int i=0;i<nrows*ncols;i++) A[i]=0.0;
@@ -166,8 +201,8 @@ double nls_wa1[size]; \
 double nls_wa2[size]; \
 double nls_wa3[size]; \
 double nls_wa4[size]; \
-double xtol = 1e-9; \
-double epsfcn=1e-9; \
+double xtol = 1e-12; \
+double epsfcn=1e-12; \
 int maxfev=8000; \
 int n=size; \
 int ml=size-1; \
@@ -180,8 +215,34 @@ int lr = (size*(size+1))/2; \
 int ldfjac = size; \
 double nls_fjac[size*size]
 
+#define start_nonlinear_system_analytic_jac(size) { double nls_x[size]; \
+double nls_fvec[size]; \
+double nls_fjac[size*size]; \
+double nls_diag[size]; \
+double nls_r[(size*(size+1)/2)]; \
+double nls_qtf[size]; \
+double nls_wa1[size]; \
+double nls_wa2[size]; \
+double nls_wa3[size]; \
+double nls_wa4[size]; \
+double xtol = 1e-12; \
+double epsfcn=1e-12; \
+int maxfev=8000; \
+int n=size; \
+int ml=size-1; \
+int mu = size-1; \
+int mode=1; \
+int info,nfev,njev; \
+double factor=100.0; \
+int nprint = 0; \
+int lr = (size*(size+1))/2; \
+int ldfjac = size; 
 #define end_nonlinear_system() } do {} while(0)
 
+#define extraPolate(v) (localData->oldTime == localData->oldTime2 ) ? v: \
+((old(&v)-old2(&v))/(localData->oldTime-localData->oldTime2)*localData->timeValue \
++(localData->oldTime*old2(&v)-localData->oldTime2*old(&v))/ \
+(localData->oldTime-localData->oldTime2))
 
 #define mixed_equation_system(size) do { \
 int found_solution = 0; \

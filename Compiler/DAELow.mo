@@ -110,20 +110,6 @@ uniontype Var "- Variables"
 end Var;
 
 public 
-uniontype StateSelect "- State Selection"
-  record NEVER end NEVER;
-
-  record AVOID end AVOID;
-
-  record DEFAULT end DEFAULT;
-
-  record PREFER end PREFER;
-
-  record ALWAYS end ALWAYS;
-
-end StateSelect;
-
-public 
 uniontype Equation "- Equation"
   record EQUATION
     Exp.Exp exp;
@@ -2249,6 +2235,27 @@ algorithm
     case (_) then false;  /* rest defaults to false*/ 
   end matchcontinue;
 end varFixed;
+
+public function varStateSelect "
+  author: PA
+ 
+  Extacts the state select attribute of a variable. If no stateselect explicilty set, return 
+  StateSelect.default 
+ 
+"
+  input Var inVar;
+  output DAE.StateSelect outStateSelect;
+algorithm 
+  outStateSelect:=
+  matchcontinue (inVar)
+    local
+      DAE.StateSelect stateselect;
+      Var v;
+    case (VAR(values = SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,_,_,SOME(stateselect))))) 
+    then stateselect; 
+      case (_) then DAE.DEFAULT();
+  end matchcontinue;
+end varStateSelect;
 
 public function vararrayList "function: vararrayList
  
@@ -7757,8 +7764,8 @@ protected function selectDummyState "function: selectDummyState
               IncidenceMatrixT) 
   outputs: (Exp.ComponentRef, int)
 "
-  input list<Exp.ComponentRef> inExpComponentRefLst;
-  input list<Integer> inIntegerLst;
+  input list<Exp.ComponentRef> varCrefs;
+  input list<Integer> varIndices;
   input DAELow inDAELow;
   input IncidenceMatrix inIncidenceMatrix;
   input IncidenceMatrixT inIncidenceMatrixT;
@@ -7766,11 +7773,16 @@ protected function selectDummyState "function: selectDummyState
   output Integer outInteger;
 algorithm 
   (outComponentRef,outInteger):=
-  matchcontinue (inExpComponentRefLst,inIntegerLst,inDAELow,inIncidenceMatrix,inIncidenceMatrixT)
+  matchcontinue (varCrefs,varIndices,inDAELow,inIncidenceMatrix,inIncidenceMatrixT)
     local
       Exp.ComponentRef s;
       Value sn;
-    case ((s :: _),(sn :: _),_,_,_) then (s,sn);  /* for now, select the first one... */ 
+      Variables vars;
+      list<tuple<Exp.ComponentRef,Integer,Real>> prioTuples;
+    case (varCrefs,varIndices,DAELOW(orderedVars=vars),_,_)  equation
+ 		  prioTuples = calculateVarPriorities(varCrefs,varIndices,vars);
+ 		  (s,sn) = selectMinPrio(prioTuples);     
+   	then (s,sn);  
     case ({},_,_,_,_)
       equation 
         print("Error, no state to select\n");
@@ -7778,6 +7790,87 @@ algorithm
         fail();
   end matchcontinue;
 end selectDummyState;
+
+protected function selectMinPrio "Selects the state with lowest priority. This will become a dummy state"
+  input list<tuple<Exp.ComponentRef,Integer,Real>> tuples;
+  output Exp.ComponentRef s;
+  output Integer sn;
+algorithm
+  (s,sn) := matchcontinue(tuples)
+    case(tuples) equation
+      ((s,sn,_)) = Util.listReduce(tuples,ssPrioTupleMin);
+      then (s,sn);
+  end matchcontinue;
+end selectMinPrio;
+
+protected function ssPrioTupleMin "Select the minimum tuple of two tuples"
+  input tuple<Exp.ComponentRef,Integer,Real> tuple1;
+  input tuple<Exp.ComponentRef,Integer,Real> tuple2;
+  output tuple<Exp.ComponentRef,Integer,Real> tuple3;
+algorithm
+  tuple3 := matchcontinue(tuple1,tuple2)
+    local Exp.ComponentRef cr1,cr2;
+      Integer ns1,ns2;
+      Real rs1,rs2;      
+    case((cr1,ns1,rs1),(cr2,ns2,rs2)) equation
+      true = (rs1 <. rs2);
+    then ((cr1,ns1,rs1));
+      
+    case ((cr1,ns1,rs1),(cr2,ns2,rs2)) equation
+      true = (rs2 <. rs1);
+    then ((cr2,ns2,rs2));
+      //exactly equal, choose first one.
+      
+    case ((cr1,ns1,rs1),(cr2,ns2,rs2)) then ((cr1,ns1,rs1));
+  end matchcontinue;
+end ssPrioTupleMin;
+
+protected function calculateVarPriorities "Calculates state selection priorities"
+	input list<Exp.ComponentRef> varCrefs;
+  input list<Integer> varIndices; 
+  input Variables vars;
+  output list<tuple<Exp.ComponentRef,Integer,Real>> tuples;
+algorithm
+  tuples := matchcontinue(varCrefs,varIndices,vars)
+  local Exp.ComponentRef varCref;
+    Integer varIndx;
+    Var v;
+    Real prio;
+    list<tuple<Exp.ComponentRef,Integer,Real>> prios;
+    case({},{},_) then {};
+    case (varCref::varCrefs,varIndx::varIndices,vars) equation
+      prios = calculateVarPriorities(varCrefs,varIndices,vars);
+      (v::_,_) = getVar(varCref,vars);
+      prio = varStateSelectPrio(v);
+    then ((varCref,varIndx,prio)::prios);
+  end matchcontinue;
+end calculateVarPriorities;
+
+protected function varStateSelectPrio "helper function to calculateVarPriorities"
+	input Var v;
+	output Real prio;
+	protected
+	DAE.StateSelect ss;
+algorithm
+  ss := varStateSelect(v);
+  prio := varStateSelectPrio2(ss);
+end varStateSelectPrio;
+
+
+protected function varStateSelectPrio2 "helper function to varStateSelectPrio"
+	input DAE.StateSelect ss;
+	output Real prio;
+algorithm
+	ss := matchcontinue(ss)
+	  case (DAE.NEVER()) then -10.0;
+	  case (DAE.AVOID()) then 0.0;
+	  case (DAE.DEFAULT()) then 10.0;
+	  case (DAE.PREFER()) then 50.0;
+	  case (DAE.ALWAYS()) then 100.0;
+	end matchcontinue;
+end varStateSelectPrio2;
+
+
 
 protected function calculateDummyStatePriorities "function: calculate_dummy_state_priority
  

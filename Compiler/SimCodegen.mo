@@ -643,13 +643,22 @@ extObjConstructorsDecl_str,
   returnData->nHelpVars = NHELP;\n
   if(flags & STATES && returnData->nStates){\n
     returnData->states = (double*) malloc(sizeof(double)*returnData->nStates);\n
+    returnData->oldStates = (double*) malloc(sizeof(double)*returnData->nStates);\n
+    returnData->oldStates2 = (double*) malloc(sizeof(double)*returnData->nStates);\n
   }else{\n
     returnData->states = 0;\n
+    returnData->oldStates = 0;\n
+    returnData->oldStates2 = 0;\n
   }\n
   if(flags & STATESDERIVATIVES && returnData->nStates){\n
     returnData->statesDerivatives = (double*) malloc(sizeof(double)*returnData->nStates);\n
+    returnData->oldStatesDerivatives = (double*) malloc(sizeof(double)*returnData->nStates);\n
+    returnData->oldStatesDerivatives2 = (double*) malloc(sizeof(double)*returnData->nStates);\n
+
   }else{\n
     returnData->statesDerivatives = 0;\n
+    returnData->oldStatesDerivatives = 0;\n
+    returnData->oldStatesDerivatives2 = 0;\n
   }\n
   if(flags & HELPVARS && returnData->nHelpVars){\n
     returnData->helpVars = (double*) malloc(sizeof(double)*returnData->nHelpVars);\n
@@ -658,8 +667,12 @@ extObjConstructorsDecl_str,
   }\n", "
   if(flags & ALGEBRAICS && returnData->nAlgebraic){\n
     returnData->algebraics = (double*) malloc(sizeof(double)*returnData->nAlgebraic);\n
+    returnData->oldAlgebraics = (double*) malloc(sizeof(double)*returnData->nAlgebraic);\n
+    returnData->oldAlgebraics2 = (double*) malloc(sizeof(double)*returnData->nAlgebraic);\n        
   }else{\n
     returnData->algebraics = 0;\n
+    returnData->oldAlgebraics = 0;\n
+    returnData->oldAlgebraics2 = 0;\n    
   }\n
   if(flags & PARAMETERS && returnData->nParameters){\n
     returnData->parameters = (double*) malloc(sizeof(double)*returnData->nParameters);\n
@@ -4448,7 +4461,7 @@ algorithm
         indx_str = intString(indx);
         indx_1 = indx + 1;
         (func,cg_id_1) = generateOdeSystem2NonlinearSetvector(crs, indx_1, cg_id);
-        stmt = Util.stringAppendList({"nls_x[",indx_str,"] = ",cr_str,";"});
+        stmt = Util.stringAppendList({"nls_x[",indx_str,"] = extraPolate(",cr_str,");"});
         func_1 = Codegen.cAddStatements(func, {stmt});
       then
         (func_1,cg_id_1);

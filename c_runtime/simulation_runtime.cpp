@@ -172,8 +172,67 @@ inline void calcEnabledZeroCrossings()
   }
 }
 
+/** function storeExtrapolationData
+ * author: PA
+ * 
+ * Stores variables (states, derivatives and algebraic) to be used
+ * by e.g. numerical solvers to extrapolate values as start values.
+ * 
+ * The storing is done in two steps, so the two latest values of a variable can 
+ * be retrieved.
+ */ 
+void storeExtrapolationData()
+{
+	int i;
+	for(i=0;i<globalData->nStates;i++) {
+		globalData->oldStates2[i]=globalData->oldStates[i];
+		globalData->oldStatesDerivatives2[i]=globalData->oldStatesDerivatives[i];	
+		globalData->oldStates[i]=globalData->states[i];
+		globalData->oldStatesDerivatives[i]=globalData->statesDerivatives[i];	
+	}
+	for(i=0;i<globalData->nAlgebraic;i++) {
+		globalData->oldAlgebraics2[i]=globalData->oldAlgebraics[i];
+		globalData->oldAlgebraics[i]=globalData->algebraics[i];
+	}
+	globalData->oldTime2 = globalData->oldTime;
+	globalData->oldTime = globalData->timeValue;
+}
+
+double old(double* ptr)
+{
+	int index;
+	
+	index = (int)(ptr-globalData->states);
+	if (index >=0 && index < globalData->nStates) 
+		return globalData->oldStates[index];
+	index = (int)(ptr-globalData->statesDerivatives);
+	if (index >=0 && index < globalData->nStates) 
+		return globalData->oldStatesDerivatives[index];
+	index = (int)(ptr-globalData->algebraics);
+	if (index >=0 && index < globalData->nAlgebraic) 
+		return globalData->oldAlgebraics[index];
+	return 0.0;
+}
+
+double old2(double* ptr)
+{
+	int index;
+	
+	index = (int)(ptr-globalData->states);
+	if (index >=0 && index < globalData->nStates) 
+		return globalData->oldStates2[index];
+	index = (int)(ptr-globalData->statesDerivatives);
+	if (index >=0 && index < globalData->nStates) 
+		return globalData->oldStatesDerivatives2[index];
+	index = (int)(ptr-globalData->algebraics);
+	if (index >=0 && index < globalData->nAlgebraic) 
+		return globalData->oldAlgebraics2[index];
+	return 0.0;
+}
+
 int emit()
 {
+  storeExtrapolationData();
   if (actual_points < maxpoints) {
     add_result(data,&actual_points);
     return 0;
@@ -183,6 +242,7 @@ int emit()
     return -1;
   }
 }
+
 
 int euler_main(int, char **);
 int dassl_main(int, char **);
@@ -310,7 +370,7 @@ void euler (DATA * data,
 
 void leastSquare(long *nz, double *z, double *funcValue)
 {
-  int ind, indAct, indz; /* adrpo commented out 2006-10-06: indy; */
+  int ind, indAct, indz;
   for (ind=0, indAct=0, indz=0; ind<globalData->nStates; ind++)
   	if (globalData->initFixed[indAct++]==0)
           globalData->states[ind] = z[indz++];
@@ -456,7 +516,7 @@ int newuoa_initialization(long& nz,double *z)
 int initialize(const std::string*method)
 {
   long nz;
-  int ind, indAct, indz; /* adrpo commented out 2006-10-06: indy; */
+  int ind, indAct, indz;
   std::string init_method;
 
   if (method == NULL) { 
