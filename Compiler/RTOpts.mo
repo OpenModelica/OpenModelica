@@ -96,6 +96,12 @@ public function noProc
   external "C" ;
 end noProc;
 
+public function eliminationLevel
+  output Integer level;
+
+  external "C" ;
+end eliminationLevel;
+
 public function latency
   output Real outReal;
 

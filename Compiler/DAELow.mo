@@ -382,6 +382,7 @@ public
 type MatchingOptions = tuple<IndexReduction, EquationConstraints, EquationReduction> "- Matching Options" ;
 
 protected import OpenModelica.Compiler.Util;
+protected import OpenModelica.Compiler.RTOpts;
 protected import OpenModelica.Compiler.DAEEXT;
 protected import OpenModelica.Compiler.Print;
 protected import OpenModelica.Compiler.Derive;
@@ -2796,22 +2797,28 @@ algorithm
         Exp.Exp e;
         Exp.Type t;
       // a = b;
-      case (EQUATION(e1 as Exp.CREF(componentRef = _),e2 as  Exp.CREF(componentRef = _)),swap) then (e1,e2); 
+      case (EQUATION(e1 as Exp.CREF(componentRef = _),e2 as  Exp.CREF(componentRef = _)),swap) 
+        equation 
+					true = RTOpts.eliminationLevel() > 0;
+        then (e1,e2); 
         // a-b = 0
     case (EQUATION(Exp.BINARY(e1 as  Exp.CREF(_,_),Exp.SUB(_),e2 as Exp.CREF(_,_)),e),false)
       equation 
+        true = RTOpts.eliminationLevel() > 0;
         true = Exp.isZero(e);
       then
         (e1,e2);
     	// a-b = 0 swap
     case (EQUATION(Exp.BINARY(e1 as  Exp.CREF(_,_),Exp.SUB(_),e2 as Exp.CREF(_,_)),e),true)
       equation 
+        true = RTOpts.eliminationLevel() > 0;
         true = Exp.isZero(e);
       then
         (e2,e1);
         // 0 = a-b  
     case (EQUATION(e,Exp.BINARY(e1 as  Exp.CREF(_,_),Exp.SUB(_),e2 as Exp.CREF(_,_))),false)
       equation 
+        true = RTOpts.eliminationLevel() > 0;
         true = Exp.isZero(e);
       then
         (e1,e2);
@@ -2819,72 +2826,89 @@ algorithm
         // 0 = a-b  swap
     case (EQUATION(e,Exp.BINARY(e1 as  Exp.CREF(_,_),Exp.SUB(_),e2 as Exp.CREF(_,_))),false)
       equation 
+        true = RTOpts.eliminationLevel() > 0;
         true = Exp.isZero(e);
       then
         (e2,e1);
        
         // a + b = 0
      case (EQUATION(Exp.BINARY(e1 as Exp.CREF(_,_),Exp.ADD(t),e2 as Exp.CREF(_,_)),e),false) equation
+       true = RTOpts.eliminationLevel() > 1;       
       true = Exp.isZero(e);
       then (e1,Exp.UNARY(Exp.UMINUS(t),e2));
    
            // a + b = 0 swap
      case (EQUATION(Exp.BINARY(e1 as Exp.CREF(_,_),Exp.ADD(t),e2 as Exp.CREF(_,_)),e),true) equation
-      true = Exp.isZero(e);
-      then (e2,Exp.UNARY(Exp.UMINUS(t),e1));
+       true = RTOpts.eliminationLevel() > 1;
+       true = Exp.isZero(e);
+     then (e2,Exp.UNARY(Exp.UMINUS(t),e1));
         
       // 0 = a+b
     case (EQUATION(e,Exp.BINARY(e1 as Exp.CREF(_,_),Exp.ADD(t),e2 as Exp.CREF(_,_))),false) equation
+      true = RTOpts.eliminationLevel() > 1;
       true = Exp.isZero(e);
       then (e1,Exp.UNARY(Exp.UMINUS(t),e2)); 
      
       // 0 = a+b swap
     case (EQUATION(e,Exp.BINARY(e1 as Exp.CREF(_,_),Exp.ADD(t),e2 as Exp.CREF(_,_))),true) equation
+      true = RTOpts.eliminationLevel() > 1;
       true = Exp.isZero(e);
       then (e2,Exp.UNARY(Exp.UMINUS(t),e1)); 
         
      // a = -b
     case (EQUATION(e1 as Exp.CREF(_,_),e2 as Exp.UNARY(Exp.UMINUS(_),Exp.CREF(_,_))),swap) 
+      equation
+        true = RTOpts.eliminationLevel() > 1;
       then (e1,e2);
         
       // -a = b => a = -b
     case (EQUATION(Exp.UNARY(Exp.UMINUS(t),e1 as Exp.CREF(_,_)),e2 as Exp.CREF(_,_)),swap) 
-      then (e1,Exp.UNARY(Exp.UMINUS(t),e2));
+      equation
+      true = RTOpts.eliminationLevel() > 1;
+    then (e1,Exp.UNARY(Exp.UMINUS(t),e2));
         
       // -b - a = 0 => a = -b
     case (EQUATION(Exp.BINARY(e2 as Exp.UNARY(Exp.UMINUS(_),Exp.CREF(_,_)),Exp.SUB(_),e1 as Exp.CREF(_,_)),e),false) 
       equation
+        true = RTOpts.eliminationLevel() > 1;
         true = Exp.isZero(e);
       then (e1,e2);   
         
           // -b - a = 0 => a = -b swap
     case (EQUATION(Exp.BINARY(Exp.UNARY(Exp.UMINUS(t),e2 as Exp.CREF(_,_)),Exp.SUB(_),e1 as Exp.CREF(_,_)),e),true) 
       equation
+        true = RTOpts.eliminationLevel() > 1;
         true = Exp.isZero(e);
       then (e2,Exp.UNARY(Exp.UMINUS(t),e1)); 
 
         // 0 = -b - a => a = -b
     case (EQUATION(e,Exp.BINARY(e2 as Exp.UNARY(Exp.UMINUS(_),Exp.CREF(_,_)),Exp.SUB(_),e1 as Exp.CREF(_,_))),false)
       equation
+        true = RTOpts.eliminationLevel() > 1;
         true = Exp.isZero(e);
       then (e1,e2);   
         
         // 0 = -b - a => a = -b swap
     case (EQUATION(e,Exp.BINARY(Exp.UNARY(Exp.UMINUS(t),e2 as Exp.CREF(_,_)),Exp.SUB(_),e1 as Exp.CREF(_,_))),true)
       equation
+        true = RTOpts.eliminationLevel() > 1;
         true = Exp.isZero(e);
       then (e2,Exp.UNARY(Exp.UMINUS(t),e1));   
         
         // -a = -b
     case (EQUATION(Exp.UNARY(Exp.UMINUS(_),e1 as Exp.CREF(_,_)),Exp.UNARY(Exp.UMINUS(_),e2 as Exp.CREF(_,_))),swap)
+      equation
+        true = RTOpts.eliminationLevel() > 1;
       then (e1,e2);
         // a = constant
     case (EQUATION(e1 as Exp.CREF(_,_),e),swap) equation
+      true = RTOpts.eliminationLevel() > 1;
       true = Exp.isConst(e);
       then (e1,e);
         
         // -a = constant
     case (EQUATION(Exp.UNARY(Exp.UMINUS(t),e1 as Exp.CREF(_,_)),e),swap) equation
+      true = RTOpts.eliminationLevel() > 1;
       true = Exp.isConst(e);
       then (e1,Exp.UNARY(Exp.UMINUS(t),e));        
   end matchcontinue;

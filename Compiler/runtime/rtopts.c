@@ -52,6 +52,13 @@ static int debug_flag_info;
 static int params_struct;
 static int version_request;
 
+/* Level of eliminations of equations. 
+ * 0 - None
+ * 1 - Only aliases (a=b)
+ * 2 - Full (default) (a=-b, a=b, a=constant)
+ * */
+static int elimination_level=2; 
+
 static char **debug_flags;
 static char *debug_flagstr;
 static int debug_flagc;
@@ -249,6 +256,18 @@ RML_BEGIN_LABEL(RTOpts__args)
 	  RML_TAILCALLK(rmlFC);
 	} 
 	break;
+	// Which level of algebraic elimination to use.
+	  case 'e':
+	if (arg[2] != '=') {
+	  fprintf(stderr, "# Flag Usage:  +e=<algebraic_elimination_level 0, 1 or 2>") ;
+	  RML_TAILCALLK(rmlFC);
+	}
+	elimination_level = (int)atoi(&arg[3]);
+	if (elimination_level < 0 || elimination_level > 2) {
+		elimination_level = 2;
+	  fprintf(stderr, "Warning, wrong value of elimination level, will use default = %d\n",elimination_level) ;
+	} 
+	break;
       default:
 	fprintf(stderr, "# Unknown option: %s\n", arg);
 	RML_TAILCALLK(rmlFC);
@@ -296,6 +315,13 @@ RML_BEGIN_LABEL(RTOpts__silent)
 {
   rmlA0 = RML_PRIM_MKBOOL(silent);
   RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__eliminationLevel)
+{
+	rmlA0 = mk_icon(elimination_level);
+	RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
