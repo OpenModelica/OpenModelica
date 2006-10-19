@@ -15123,7 +15123,7 @@ algorithm
  	  list<Absyn.NamedArg> nargs;
  	  list<Absyn.Exp> expl,expl_1;
  	  case(Absyn.FUNCTIONARGS(expl,nargs),rel,ext_arg) equation
- 	    	(expl_1,ext_arg) = Util.listFoldMap(expl, rel, ext_arg);
+ 	    	((expl_1,ext_arg)) = traverseExpPosArgs(expl,rel,ext_arg);
  	    	((nargs,ext_arg)) = traverseExpNamedArgs(nargs,rel,ext_arg);
  	  then ((Absyn.FUNCTIONARGS(expl_1,nargs),ext_arg));
  	      
@@ -15157,6 +15157,31 @@ algorithm
  	  then((Absyn.NAMEDARG(id,e11)::nargs,ext_arg));
   end matchcontinue;
 end traverseExpNamedArgs;
+
+protected function traverseExpPosArgs "Help function to traverseExpFunctionArgs"
+  input list<Absyn.Exp> pargs;
+  input FuncTypeTplExpType_aToTplExpType_a rel;
+  input Type_a ext_arg;
+  output tuple<list<Absyn.Exp>, Type_a> outTplExpTypeA;
+  partial function FuncTypeTplExpType_aToTplExpType_a
+    input tuple<Absyn.Exp, Type_a> inTplExpTypeA;
+    output tuple<Absyn.Exp, Type_a> outTplExpTypeA;
+    replaceable type Type_a;
+  end FuncTypeTplExpType_aToTplExpType_a;
+  replaceable type Type_a;
+algorithm
+  outTplExpTypeA:= matchcontinue(pargs,rel,ext_arg)
+ 	local Absyn.Exp e1,e2,e11,e21;
+ 	 	Absyn.Ident id; 	  
+ 	  list<Absyn.Exp> pargs;
+ 	  case({},rel,ext_arg)
+		then (({},ext_arg));
+ 	  case(e1::pargs,rel,ext_arg) equation
+ 	    ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
+ 	    ((pargs,ext_arg)) = traverseExpPosArgs(pargs,rel,ext_arg);
+ 	  then((e11::pargs,ext_arg));
+  end matchcontinue;
+end traverseExpPosArgs;
 
 protected constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           {
