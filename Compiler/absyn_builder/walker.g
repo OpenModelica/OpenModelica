@@ -130,9 +130,16 @@ tokens {
 		return keywords;
 	}
 
-    int str_to_int(mstring const& str)
+    int str_to_int(mstring const& str, int *res)
     {
-		return atoi(str.c_str());
+    	unsigned long int ltmp;
+    	char *rest;
+    	ltmp = strtoul(str.c_str(),&rest,10);
+    	if (ltmp > (1<<30)) { /* Rml can only handle 31 bits signed integers, i.e. 30 bits signed*/
+    		return -1;
+    	}
+    	*res = (int) ltmp;
+     	return 0;
     }
     
     double str_to_double(std::string const& str)
@@ -1854,7 +1861,12 @@ primary returns [void* ast]
 	:
 		( ui:UNSIGNED_INTEGER 
 			{ 
-				ast = Absyn__INTEGER(mk_icon(str_to_int(ui->getText()))); 
+				int v;
+				if(str_to_int(ui->getText(),&v)== 0) {
+					ast = Absyn__INTEGER(mk_icon(v)); 
+				} else {
+					ast = Absyn__REAL(mk_rcon(str_to_double(ui->getText()))); 
+				}
 			}
 		| ur:UNSIGNED_REAL
 			{ 
