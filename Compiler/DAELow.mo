@@ -6875,10 +6875,16 @@ algorithm
     case (dae,m,mt,nv,nf,i)
       equation 
         eqns = DAEEXT.getMarkedEqns();
+        //print("marked equations:");print(Util.stringDelimitList(Util.listMap(eqns,intString),","));
+        //print("\n");
         diff_eqns = DAEEXT.getDifferentiatedEqns();
         eqns_1 = Util.listSetdifferenceP(eqns, diff_eqns, int_eq);
-        (states,stateindx) = statesInEqns(eqns_1, dae, m, mt) "Collect the states in the equations that are singular, i.e. composing
-	 a constraint between states." ;
+        //print("differentiating equations:");print(Util.stringDelimitList(Util.listMap(eqns_1,intString),","));
+        //print("\n");
+				
+				// Collect the states in the equations that are singular, i.e. composing a constraint between states.
+				// Note that states are collected from -all- marked equations, not only the differentiated ones.
+        (states,stateindx) = statesInEqns(eqns, dae, m, mt) "" ;
         (dae,m,mt,nv,nf,deqns) = differentiateEqns(dae, m, mt, nv, nf, eqns_1);
         (state,stateno) = selectDummyState(states, stateindx, dae, m, mt);
         //print("Selected ");print(Exp.printComponentRefStr(state));print(" as state\n");
@@ -7807,9 +7813,11 @@ algorithm
  		  prioTuples = calculateVarPriorities(varCrefs,varIndices,vars);
  		  (s,sn) = selectMinPrio(prioTuples);     
    	then (s,sn);  
-    case ({},_,_,_,_)
+    case ({},_,dae,_,_)
+      local DAELow dae;
       equation 
-        print("Error, no state to select\n");
+        print("Error, no state to select\nDAE:");
+        //dump(dae);
       then
         fail();
   end matchcontinue;
