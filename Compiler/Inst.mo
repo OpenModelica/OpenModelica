@@ -1435,7 +1435,7 @@ algorithm
         mods_1 = Mod.merge(mods, m, cenv_2, pre) "merge modifiers" ;
         mods_2 = Mod.merge(mods_1, mod_1, cenv_2, pre);
         eq = Mod.modEquation(mods_2) "instantiate array dimensions" ;
-        (cache,dims) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}), ad, eq, impl, NONE) "owncref not valid here" ;
+        (cache,dims) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}), ad, eq, impl, NONE,true) "owncref not valid here" ;
         inst_dims2 = instDimExpLst(dims, impl);
         inst_dims_1 = listAppend(inst_dims, inst_dims2);
         (cache,dae,env_2,csets_1,ci_state_1,tys,bc) = instClassIn(cache,cenv_2, mods_2, pre, csets, new_ci_state, c, prot, 
@@ -3195,7 +3195,7 @@ algorithm
         (cache,cl,cenv) = Lookup.lookupClass(cache,env_1, t, true);
         checkProt(prot, mm_1, vn) "If the element is `protected\', and an external modification is applied, it is an error." ;
         eq = Mod.modEquation(mod_1);
-        (cache,dims) = elabArraydim(cache,env2_1, owncref, ad, eq, impl, NONE) "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;
+        (cache,dims) = elabArraydim(cache,env2_1, owncref, ad, eq, impl, NONE,true) "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;
         (cache,compenv,dae,csets_1,ty) = instVar(cache,cenv, ci_state, mod_1, pre, csets, n, cl, attr, dims, {}, 
           inst_dims, impl, comment) "Instantiate the component" ;    
         (cache,binding) = makeBinding(cache,env2_1, attr, mod_1, ty) "The environment is extended (updated) with the new variable 
@@ -3908,7 +3908,7 @@ algorithm
         eq = Mod.modEquation(mods_2);
         mods_3 = Mod.lookupCompModification(mods_2, id);
         (cache,dim1) = getUsertypeDimensions(cache,cenv, mods_3, pre, cl, dims, impl);
-        (cache,dim2) = elabArraydim(cache,env, owncref, ad_1, eq, impl, NONE);
+        (cache,dim2) = elabArraydim(cache,env, owncref, ad_1, eq, impl, NONE,true);
         res = listAppend(dim2, dim1);
       then
         (cache,res);
@@ -4140,7 +4140,7 @@ algorithm
         mod_2 = Mod.merge(cmod, mod_1, env2, Prefix.NOPRE());
         (cache,mod_3) = Mod.updateMod(cache,env2, Prefix.NOPRE(), mod_2, impl);
         eq = Mod.modEquation(mod_3);
-        (cache,dims) = elabArraydim(cache,env2, cref, ad, eq, impl, NONE) "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;
+        (cache,dims) = elabArraydim(cache,env2, cref, ad, eq, impl, NONE,true) "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;
         (cache,compenv,dae1,csets_1,ty) = instVar(cache,cenv, ci_state, mod_3, Prefix.NOPRE(), csets, n, cl, attr, 
           dims, {}, {}, impl, NONE) "Instantiate the component" ;
         (cache,binding) = makeBinding(cache,env2, attr, mod_3, ty) "The environment is extended with the new variable binding." ;
@@ -4195,7 +4195,7 @@ algorithm
         (cache,mod_3) = Mod.updateMod(cache,env2, Prefix.NOPRE(), mod_2, impl);
         eq = Mod.modEquation(mod_3);
         owncref = Absyn.CREF_IDENT(n,{}) "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;
-        (cache,dims) = elabArraydim(cache,env2, owncref, ad, eq, impl, NONE);
+        (cache,dims) = elabArraydim(cache,env2, owncref, ad, eq, impl, NONE,true);
         (cache,compenv,dae1,csets_1,ty) = instVar(cache,cenv, ci_state, mod_3, Prefix.NOPRE(), csets, n, cl, attr, 
           dims, {}, {}, false, NONE) "Instantiate the component" ;
         (cache,binding) = makeBinding(cache,env2, attr, mod_3, ty) "The environment is extended with the new variable binding." ;
@@ -4722,11 +4722,12 @@ protected function elabArraydimOpt "function: elabArraydimOpt
   input Option<Types.EqMod> inTypesEqModOption;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Boolean performVectorization;
   output Env.Cache outCache;
   output list<DimExp> outDimExpLst;
 algorithm 
   (outCache,outDimExpLst) :=
-  matchcontinue (inCache,inEnv,inComponentRef,inAbsynArrayDimOption,inTypesEqModOption,inBoolean,inInteractiveInteractiveSymbolTableOption)
+  matchcontinue (inCache,inEnv,inComponentRef,inAbsynArrayDimOption,inTypesEqModOption,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization)
     local
       list<DimExp> res;
       list<Env.Frame> env;
@@ -4736,12 +4737,13 @@ algorithm
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Env.Cache cache;
-    case (cache,env,owncref,SOME(ad),eq,impl,st) /* optional arraydim impl */ 
+      Boolean doVect;
+    case (cache,env,owncref,SOME(ad),eq,impl,st,doVect) /* optional arraydim impl */ 
       equation 
-        (cache,res) = elabArraydim(cache,env, owncref, ad, eq, impl, st);
+        (cache,res) = elabArraydim(cache,env, owncref, ad, eq, impl, st,doVect);
       then
         (cache,res);
-    case (cache,env,owncref,NONE,eq,impl,st) then (cache,{}); 
+    case (cache,env,owncref,NONE,eq,impl,st,doVect) then (cache,{}); 
   end matchcontinue;
 end elabArraydimOpt;
 
@@ -4766,11 +4768,12 @@ protected function elabArraydim "function: elabArraydim
   input Option<Types.EqMod> inTypesEqModOption;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Boolean performVectorization;
   output Env.Cache outCache;
   output list<DimExp> outDimExpLst;
 algorithm 
   (outCache,outDimExpLst) :=
-  matchcontinue (inCache,inEnv,inComponentRef,inArrayDim,inTypesEqModOption,inBoolean,inInteractiveInteractiveSymbolTableOption)
+  matchcontinue (inCache,inEnv,inComponentRef,inArrayDim,inTypesEqModOption,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization)
     local
       list<Option<DimExp>> dim,dim1,dim2;
       list<DimExp> dim_1,dim3;
@@ -4783,31 +4786,32 @@ algorithm
       tuple<Types.TType, Option<Absyn.Path>> t;
       String e_str,t_str,dim_str;
       Env.Cache cache;
-    case (cache,env,cref,ad,NONE,impl,st) /* impl */ 
+      Boolean doVect;
+    case (cache,env,cref,ad,NONE,impl,st,doVect) /* impl */ 
       equation 
-        (cache,dim) = elabArraydimDecl(cache,env, cref, ad, impl, st);
+        (cache,dim) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect);
         dim_1 = completeArraydim(dim);
       then
         (cache,dim_1);
-    case (cache,env,cref,ad,SOME(Types.TYPED(e,_,Types.PROP(t,_))),impl,st) /* Untyped expressions must be elaborated. */ 
+    case (cache,env,cref,ad,SOME(Types.TYPED(e,_,Types.PROP(t,_))),impl,st,doVect) /* Untyped expressions must be elaborated. */ 
       equation 
-        (cache,dim1) = elabArraydimDecl(cache,env, cref, ad, impl, st);
+        (cache,dim1) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect);
         dim2 = elabArraydimType(t, ad);
         dim3 = compatibleArraydim(dim1, dim2);
       then
         (cache,dim3);
-    case (cache,env,cref,ad,SOME(Types.UNTYPED(e)),impl,st)
+    case (cache,env,cref,ad,SOME(Types.UNTYPED(e)),impl,st,doVect)
       local Absyn.Exp e;
       equation 
-        (cache,e_1,Types.PROP(t,_),_) = Static.elabExp(cache,env, e, impl, st);
-        (cache,dim1) = elabArraydimDecl(cache,env, cref, ad, impl, st);
+        (cache,e_1,Types.PROP(t,_),_) = Static.elabExp(cache,env, e, impl, st,doVect);
+        (cache,dim1) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect);
         dim2 = elabArraydimType(t, ad);
         dim3 = compatibleArraydim(dim1, dim2);
       then
         (cache,dim3);
-    case (cache,env,cref,ad,SOME(Types.TYPED(e,_,Types.PROP(t,_))),impl,st)
+    case (cache,env,cref,ad,SOME(Types.TYPED(e,_,Types.PROP(t,_))),impl,st,doVect)
       equation 
-        (cache,dim1) = elabArraydimDecl(cache,env, cref, ad, impl, st);
+        (cache,dim1) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect);
         dim2 = elabArraydimType(t, ad);
         failure(dim3 = compatibleArraydim(dim1, dim2));
         e_str = Exp.printExpStr(e);
@@ -4816,7 +4820,7 @@ algorithm
         Error.addMessage(Error.ARRAY_DIMENSION_MISMATCH, {e_str,t_str,dim_str});
       then
         fail();
-    case (_,_,cref,ad,_,_,_)
+    case (_,_,cref,ad,_,_,_,_)
       equation 
         Debug.fprint("failtrace", "- elab_arraydim failed\n cref:");
         Debug.fcall("failtrace", Dump.printComponentRef, cref);
@@ -4947,11 +4951,12 @@ protected function elabArraydimDecl "function: elabArraydimDecl
   input Absyn.ArrayDim inArrayDim;
   input Boolean inBoolean;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Boolean performVectorization;
   output Env.Cache outCache;
   output list<Option<DimExp>> outDimExpOptionLst;
 algorithm 
   (outCache,outDimExpOptionLst) :=
-  matchcontinue (inCache,inEnv,inComponentRef,inArrayDim,inBoolean,inInteractiveInteractiveSymbolTableOption)
+  matchcontinue (inCache,inEnv,inComponentRef,inArrayDim,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization)
     local
       list<Option<DimExp>> l;
       list<Env.Frame> env;
@@ -4966,61 +4971,62 @@ algorithm
       String str,e_str,t_str;
       tuple<Types.TType, Option<Absyn.Path>> t;
       Env.Cache cache;
-    case (cache,_,_,{},_,_) then (cache,{}); 
-    case (cache,env,cref,(Absyn.NOSUB() :: ds),impl,st)
+      Boolean doVect;
+    case (cache,_,_,{},_,_,_) then (cache,{}); 
+    case (cache,env,cref,(Absyn.NOSUB() :: ds),impl,st,doVect)
       equation 
-        (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st);
+        (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect);
       then
         (cache,NONE :: l);
-    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),_}))) :: ds),impl,st) /* For functions, this can occur: Real x{:,size(x,1)} ,i.e. 
+    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),_}))) :: ds),impl,st,doVect) /* For functions, this can occur: Real x{:,size(x,1)} ,i.e. 
 	  refering to  the variable itself but a different dimension. */ 
       equation 
         true = Absyn.crefEqual(cref, cr);
-        (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st);
+        (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect);
       then
         (cache,NONE :: l);
-    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st) /* Constant dimension creates DIMINT, valid for both implicit and 
+    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st,doVect) /* Constant dimension creates DIMINT, valid for both implicit and 
 	  nonimplicit instantiation.
 	 as false */ 
       equation 
         //Debug.fprintln("insttr", "elab_arraydim_decl5");
-        (cache,e,Types.PROP((Types.T_INTEGER(_),_),cnst),_) = Static.elabExp(cache,env, d, impl, st);
+        (cache,e,Types.PROP((Types.T_INTEGER(_),_),cnst),_) = Static.elabExp(cache,env, d, impl, st,doVect);
         failure(equality(cnst = Types.C_VAR()));
         (cache,Values.INTEGER(i),_) = Ceval.ceval(cache,env, e, impl, st, NONE, Ceval.MSG());
-        (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st);
+        (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect);
       then
         (cache,SOME(DIMINT(i)) :: l);
-    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),(impl as false),st) /* when not implicit instantiation, array dim. must be constant. */ 
+    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),(impl as false),st,doVect) /* when not implicit instantiation, array dim. must be constant. */ 
       equation 
         //Debug.fprintln("insttr", "elab_arraydim_decl5");
-        (cache,e,Types.PROP((Types.T_INTEGER(_),_),Types.C_VAR()),_) = Static.elabExp(cache,env, d, impl, st);
+        (cache,e,Types.PROP((Types.T_INTEGER(_),_),Types.C_VAR()),_) = Static.elabExp(cache,env, d, impl, st,doVect);
         str = Dump.printExpStr(d);
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {str});
       then
         fail();
-    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),(impl as true),st) /* Non-constant dimension creates DIMEXP */ 
+    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),(impl as true),st,doVect) /* Non-constant dimension creates DIMEXP */ 
       equation 
         //Debug.fprintln("insttr", "elab_arraydim_decl6");
-        (cache,e,Types.PROP((Types.T_INTEGER(_),_),cnst),_) = Static.elabExp(cache,env, d, impl, st);
-        (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st);
+        (cache,e,Types.PROP((Types.T_INTEGER(_),_),cnst),_) = Static.elabExp(cache,env, d, impl, st,doVect);
+        (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect);
       then
         (cache,SOME(DIMEXP(Exp.INDEX(e),NONE)) :: l);
 
-    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st) /* Size(x,1) in e.g. functions => Unknown dimension */ 
+    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st,doVect) /* Size(x,1) in e.g. functions => Unknown dimension */ 
       equation 
-        (cache,(e as Exp.SIZE(_,_)),Types.PROP(t,_),_) = Static.elabExp(cache,env, d, impl, st);
-        (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st);
+        (cache,(e as Exp.SIZE(_,_)),Types.PROP(t,_),_) = Static.elabExp(cache,env, d, impl, st,doVect);
+        (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect);
       then
         (cache,SOME(DIMEXP(Exp.INDEX(e),NONE)) :: l);
-    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st)
+    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st,doVect)
       equation 
-        (cache,e,Types.PROP(t,_),_) = Static.elabExp(cache,env, d, impl, st);
+        (cache,e,Types.PROP(t,_),_) = Static.elabExp(cache,env, d, impl, st,doVect);
         e_str = Exp.printExpStr(e);
         t_str = Types.unparseType(t);
         Error.addMessage(Error.ARRAY_DIMENSION_INTEGER, {e_str,t_str});
       then
         fail();
-    case (_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_)
       equation 
         Debug.fprint("failtrace", "- elab_arraydim_decl failed\n");
       then
@@ -5883,15 +5889,15 @@ algorithm
       Env.Cache cache;
     case (cache,env,(call as Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),functionArgs = Absyn.FUNCTIONARGS(args = (args as {arraycr,dim}),argNames = nargs))),impl,st) /* special case for  size */ 
       equation         
-        (cache,dimp,Types.PROP(dimty,_),_) = Static.elabExp(cache,env, dim, impl, NONE);
-        (cache,arraycrefe,arraycrprop,_) = Static.elabExp(cache,env, arraycr, impl, NONE);
+        (cache,dimp,Types.PROP(dimty,_),_) = Static.elabExp(cache,env, dim, impl, NONE,true);
+        (cache,arraycrefe,arraycrprop,_) = Static.elabExp(cache,env, arraycr, impl, NONE,true);
         exp = Exp.SIZE(arraycrefe,SOME(dimp));
       then
         (cache,exp,Types.PROP((Types.T_INTEGER({}),NONE),Types.C_VAR()),st);
     case (cache,env,exp,impl,st) /* For all other expressions, use normal elaboration */ 
       local Absyn.Exp exp;
       equation 
-        (cache,e,prop,st) = Static.elabExp(cache,env, exp, impl, st);
+        (cache,e,prop,st) = Static.elabExp(cache,env, exp, impl, st,true);
       then
         (cache,e,prop,st);
     case (cache,env,exp,impl,st)
@@ -6058,7 +6064,7 @@ algorithm
     case (cache,_,Absyn.EXTERNALDECL(output_ = NONE),_) then (cache,DAE.NOEXTARG());  /* impl */ 
     case (cache,env,Absyn.EXTERNALDECL(funcName = n,lang = lang,output_ = SOME(cref),args = args),impl)
       equation 
-        (cache,exp,prop,acc) = Static.elabCref(cache,env, cref, impl);
+        (cache,exp,prop,acc) = Static.elabCref(cache,env, cref, impl,true);
         (cache,extarg) = instExtGetFargsSingle(cache,env, exp, prop);
       then
         (cache,extarg);
@@ -6600,7 +6606,7 @@ algorithm
     case (cache,env,mods,pre,csets,ci_state,SCode.EQ_EQUALS(exp1 = e1,exp2 = e2),initial_,impl)
       local Option<Interactive.InteractiveSymbolTable> c1,c2;
       equation 
-        (cache,e1_1,prop1,c1) = Static.elabExp(cache,env, e1, impl, NONE) "
+        (cache,e1_1,prop1,c1) = Static.elabExp(cache,env, e1, impl, NONE,true /*do vectorization*/) "
 	 Do static analysis and constant evaluation of expressions. 
 	 Gives expression and properties 
 	 (Type  bool | (Type  Const as (bool | Const list))).
@@ -6611,7 +6617,8 @@ algorithm
 
 	 Returns the output parameters from the function.
 	" ;
-        (cache,e2_1,prop2,c2) = Static.elabExp(cache,env, e2, impl, NONE);
+        (cache,e2_1,prop2,c2) = Static.elabExp(cache,env, e2, impl, NONE,true/* do vectorization*/);
+        (cache,e1_1,e2_1) = condenseArrayEquation(cache,env,e1,e2,e1_1,e2_1,prop1,impl);
         (cache,e1_2) = Prefix.prefixExp(cache,env, e1_1, pre);
         (cache,e2_2) = Prefix.prefixExp(cache,env, e2_1, pre);
         dae = instEqEquation(e1_2, prop1, e2_2, prop2, initial_, impl) "Check that the lefthandside and the righthandside get along." ;
@@ -6628,7 +6635,7 @@ algorithm
 	  select the correct branch */ 
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_IF(conditional = e,true_ = tb,false_ = fb),NON_INITIAL(),impl) 
       equation 
-        (cache,e_1,Types.PROP((Types.T_BOOL(_),_),_),_) = Static.elabExp(cache,env, e, impl, NONE);
+        (cache,e_1,Types.PROP((Types.T_BOOL(_),_),_),_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e_1, impl, NONE, NONE, Ceval.NO_MSG());
         b = select(cond, tb, fb);
         (cache,dae,env_1,csets_1,ci_state_1) = instList(cache,env, mod, pre, csets, ci_state, instEEquation, b, impl);
@@ -6639,7 +6646,7 @@ algorithm
          select the correct branch */ 
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_IF(conditional = e,true_ = tb,false_ = fb),INITIAL(),impl) 
       equation 
-        (cache,e_1,Types.PROP((Types.T_BOOL(_),_),_),_) = Static.elabExp(cache,env, e, impl, NONE);
+        (cache,e_1,Types.PROP((Types.T_BOOL(_),_),_),_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e_1, impl, NONE, NONE, Ceval.NO_MSG());
         b = select(cond, tb, fb);
         (cache,dae,env_1,csets_1,ci_state_1) = instList(cache,env, mod, pre, csets, ci_state, instEInitialequation, b, 
@@ -6650,7 +6657,7 @@ algorithm
         /* IF_EQUATION */ 
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_IF(conditional = e,true_ = tb,false_ = fb),NON_INITIAL(),impl) 
       equation 
-        (cache,e_1,Types.PROP((Types.T_BOOL(_),_),Types.C_VAR()),_) = Static.elabExp(cache,env, e, impl, NONE);
+        (cache,e_1,Types.PROP((Types.T_BOOL(_),_),Types.C_VAR()),_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,dae1,env_1,_,ci_state_1) = instList(cache,env, mod, pre, csets, ci_state, instEEquation, tb, impl);
         (cache,dae2,env_2,_,ci_state_2) = instList(cache,env_1, mod, pre, csets, ci_state, instEEquation, fb, impl) "There are no connections inside if-clauses." ;
       then
@@ -6659,7 +6666,7 @@ algorithm
         /* Initial IF_EQUATION */ 
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_IF(conditional = e,true_ = tb,false_ = fb),INITIAL(),impl) 
       equation 
-        (cache,e_1,Types.PROP((Types.T_BOOL(_),_),Types.C_VAR()),_) = Static.elabExp(cache,env, e, impl, NONE);
+        (cache,e_1,Types.PROP((Types.T_BOOL(_),_),Types.C_VAR()),_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,dae1,env_1,_,ci_state_1) = instList(cache,env, mod, pre, csets, ci_state, instEInitialequation, tb, 
           impl);
         (cache,dae2,env_2,_,ci_state_2) = instList(cache,env_1, mod, pre, csets, ci_state, instEInitialequation, 
@@ -6674,7 +6681,7 @@ algorithm
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_WHEN(exp = e,eEquationLst = el,tplAbsynExpEEquationLstLst = ((ee,eel) :: eex)),(initial_ as NON_INITIAL()),impl) 
       local DAE.Element dae2;
       equation 
-        (cache,e_1,_,_) = Static.elabExp(cache,env, e, impl, NONE);
+        (cache,e_1,_,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
         (cache,dae1,env_1,_,_) = instList(cache,env, mod, pre, csets, ci_state, instEEquation, el, impl);
         (cache,(dae2 :: _),env_2,_,ci_state_1) = instEquationCommon(cache,env_1, mod, pre, csets, ci_state, 
@@ -6685,7 +6692,7 @@ algorithm
         
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_WHEN(exp = e,eEquationLst = el,tplAbsynExpEEquationLstLst = {}),(initial_ as NON_INITIAL()),impl)
       equation 
-        (cache,e_1,_,_) = Static.elabExp(cache,env, e, impl, NONE);
+        (cache,e_1,_,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
         (cache,dae1,env_1,_,_) = instList(cache,env, mod, pre, csets, ci_state, instEEquation, el, impl);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
@@ -6699,7 +6706,7 @@ algorithm
 	 */ 
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_FOR(ident = i,exp = e,eEquationLst = el),initial_,impl) 
       equation 
-        (cache,e_1,Types.PROP((Types.T_ARRAY(Types.DIM(_),id_t),_),_),_) = Static.elabExp(cache,env, e, impl, NONE) "//Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1\") &" ;
+        (cache,e_1,Types.PROP((Types.T_ARRAY(Types.DIM(_),id_t),_),_),_) = Static.elabExp(cache,env, e, impl, NONE,true) "//Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1\") &" ;
         env_1 = addForLoopScope(env, i, id_t) "//Debug.fprintln (\"insti\", \"for expression elaborated\") &" ;
         (cache,Types.ATTR(false,SCode.RW(),SCode.VAR(),_),(Types.T_INTEGER(_),_),Types.UNBOUND()) 
         	= Lookup.lookupVar(cache,env_1, Exp.CREF_IDENT(i,{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
@@ -6715,7 +6722,7 @@ algorithm
         (cache,Types.ATTR(false,SCode.RW(),SCode.VAR(),_),(Types.T_INTEGER(_),_),Types.UNBOUND()) 
         	= Lookup.lookupVar(cache,env, Exp.CREF_IDENT(i,{})) "for loops with non-constant iteration bounds" ;
         (cache,e_1,Types.PROP((Types.T_ARRAY(Types.DIM(_),(Types.T_INTEGER(_),_)),_),Types.C_VAR()),_) 
-        	= Static.elabExp(cache,env, e, impl, NONE);
+        	= Static.elabExp(cache,env, e, impl, NONE,true);
         Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, 
           {"Non-constant iteration bounds","No suggestion"});
       then
@@ -6723,8 +6730,8 @@ algorithm
         /* assert statements*/
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_ASSERT(exp = e1,condition = e2),initial_,impl)
       equation 
-        (cache,e1_1,Types.PROP((Types.T_BOOL(_),_),_),_) = Static.elabExp(cache,env, e1, impl, NONE) "assert statement" ;
-        (cache,e2_1,Types.PROP((Types.T_STRING(_),_),_),_) = Static.elabExp(cache,env, e2, impl, NONE);
+        (cache,e1_1,Types.PROP((Types.T_BOOL(_),_),_),_) = Static.elabExp(cache,env, e1, impl, NONE,true) "assert statement" ;
+        (cache,e2_1,Types.PROP((Types.T_STRING(_),_),_),_) = Static.elabExp(cache,env, e2, impl, NONE,true);
       then
         (cache,{
           DAE.ASSERT(Exp.CALL(Absyn.IDENT("assert"),{e1_1,e2_1},false,false,Exp.OTHER()))},env,csets,ci_state);
@@ -6732,8 +6739,8 @@ algorithm
         /* reinit statement */
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_REINIT(componentRef = cr,state = e2),initial_,impl)
       equation 
-        (cache,Exp.CREF(cr_1,_),_,_) = Static.elabCref(cache,env, cr, impl) "reinit statement" ;
-        (cache,e2_1,_,_) = Static.elabExp(cache,env, e2, impl, NONE);
+        (cache,Exp.CREF(cr_1,_),_,_) = Static.elabCref(cache,env, cr, impl,false) "reinit statement" ;
+        (cache,e2_1,_,_) = Static.elabExp(cache,env, e2, impl, NONE,true);
       then
         (cache,{DAE.REINIT(cr_1,e2_1)},env,csets,ci_state);
     case (_,env,_,_,_,_,eqn,_,impl)
@@ -6747,6 +6754,42 @@ algorithm
         fail();
   end matchcontinue;
 end instEquationCommon;
+
+protected function condenseArrayEquation "This function transforms makes the two sides of an array equation
+into its condense form. By default, most array variables are vectorized,
+i.e. v becomes {v[1],v[2],..,v[n]}. But for array equations containing function calls this is not wanted.
+This function detect this case and elaborates expressions without vectorization.
+"
+	input Env.Cache inCache;
+	input Env.Env env;
+	input Absyn.Exp e1;
+	input Absyn.Exp e2;
+	input Exp.Exp elabedE1;
+	input Exp.Exp elabedE2;
+	input Types.Properties prop "To determine if array equation";
+	input Boolean impl;
+	output Env.Cache outCache;
+  output Exp.Exp outE1;
+  output Exp.Exp outE2;
+algorithm
+  (outCache,outE1,outE2) := matchcontinue(inCache,env,e1,e2,prop,impl)
+    local Env.Cache cache;
+      Boolean b1,b2;
+    case(cache,env,e1,e2,elabedE1,elabedE2,prop,impl) equation
+      true = Types.isPropArray(prop);
+      b1 = Exp.containFunctioncall(elabedE1);
+      b2 = Exp.containFunctioncall(elabedE2);
+      true = boolOr(b1,b2);
+      (cache,elabedE1,_,_) = Static.elabExp(cache,env, e1, impl, NONE,false);
+      (cache,elabedE2,_,_) = Static.elabExp(cache,env, e2, impl, NONE,false);
+      then
+        (cache,elabedE1,elabedE2);
+      
+    case(cache,env,e1,e2,elabedE1,elabedE2,prop,impl)
+    then (cache,elabedE1,elabedE2);
+      
+  end matchcontinue;
+end condenseArrayEquation;
 
 protected function instEquationCommonCiTrans "function: instEquationCommonCiTrans
   
@@ -7416,26 +7459,33 @@ algorithm
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> eib,el;
       Absyn.Algorithm alg;
       Env.Cache cache;
+       
+       // v := expr;
+       
     case (cache,env,Absyn.ALG_ASSIGN(assignComponent = cr,value = e),impl) /* impl */ 
       equation 
-        (cache,Exp.CREF(ce,t),cprop,acc) = Static.elabCref(cache,env, cr, impl);
+        (cache,Exp.CREF(ce,t),cprop,acc) = Static.elabCref(cache,env, cr, impl,false);
         (cache,ce_1) = Static.canonCref(cache,env, ce, impl);
-        (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl, NONE);
+        (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         stmt = Algorithm.makeAssignment(Exp.CREF(ce_1,t), cprop, e_1, eprop, acc);
       then
         (cache,stmt);
+
+			// v[i] := expr (in e.g. for loops
     case (cache,env,Absyn.ALG_ASSIGN(assignComponent = cr,value = e),impl)
       local Exp.Exp ce;
       equation 
-        (cache,ce,cprop,acc) = Static.elabCref(cache,env, cr, impl);
-        (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl, NONE);
+        (cache,ce,cprop,acc) = Static.elabCref(cache,env, cr, impl,false);
+        (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         stmt = Algorithm.makeAssignment(ce, cprop, e_1, eprop, acc);
       then
         (cache,stmt);
+
+        // (v1,v2,..,vn) := func(...)
     case (cache,env,Absyn.ALG_TUPLE_ASSIGN(tuple_ = Absyn.TUPLE(expressions = expl),value = e),impl)
       equation 
-        (cache,(e_1 as Exp.CALL(_,_,_,_,_)),eprop,_) = Static.elabExp(cache,env, e, impl, NONE);
-        (cache,expl_1,cprops,_) = Static.elabExpList(cache,env, expl, impl, NONE);
+        (cache,(e_1 as Exp.CALL(_,_,_,_,_)),eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
+        (cache,expl_1,cprops,_) = Static.elabExpList(cache,env, expl, impl, NONE,true);
         stmt = Algorithm.makeTupleAssignment(expl_1, cprops, e_1, eprop);
       then
         (cache,stmt);
@@ -7447,7 +7497,7 @@ algorithm
         fail();
     case (cache,env,Absyn.ALG_IF(ifExp = e,trueBranch = tb,elseIfAlgorithmBranch = eib,elseBranch = fb),impl)
       equation 
-        (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE);
+        (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,tb_1 )= instAlgorithmitems(cache,env, tb, impl);
         (cache,eib_1) = instElseifs(cache,env, eib, impl);
         (cache,fb_1) = instAlgorithmitems(cache,env, fb, impl);
@@ -7457,7 +7507,7 @@ algorithm
     case (cache,env,Absyn.ALG_FOR(forVariable = i,forStmt = e,forBody = sl),impl)
       local tuple<Types.TType, Option<Absyn.Path>> t;
       equation 
-        (cache,e_1,(prop as Types.PROP((Types.T_ARRAY(_,t),_),_)),_) = Static.elabExp(cache,env, e, impl, NONE);
+        (cache,e_1,(prop as Types.PROP((Types.T_ARRAY(_,t),_),_)),_) = Static.elabExp(cache,env, e, impl, NONE,true);
         env_1 = addForLoopScope(env, i, t);
         (cache,sl_1) = instAlgorithmitems(cache,env_1, sl, impl);
         stmt = Algorithm.makeFor(i, e_1, prop, sl_1);
@@ -7465,22 +7515,22 @@ algorithm
         (cache,stmt);
     case (cache,env,Absyn.ALG_WHILE(whileStmt = e,whileBody = sl),impl)
       equation 
-        (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE);
+        (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,sl_1) = instAlgorithmitems(cache,env, sl, impl);
         stmt = Algorithm.makeWhile(e_1, prop, sl_1);
       then
         (cache,stmt);
     case (cache,env,Absyn.ALG_WHEN_A(whenStmt = e,whenBody = sl,elseWhenAlgorithmBranch = el),impl)
       equation 
-        (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE);
+        (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,sl_1) = instAlgorithmitems(cache,env, sl, impl);
         stmt = Algorithm.makeWhenA(e_1, prop, sl_1) "TODO elsewhen" ;
       then
         (cache,stmt);
     case (cache,env,Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg},argNames = {})),impl)
       equation 
-        (cache,cond_1,cprop,_) = Static.elabExp(cache,env, cond, impl, NONE);
-        (cache,msg_1,msgprop,_) = Static.elabExp(cache,env, msg, impl, NONE);
+        (cache,cond_1,cprop,_) = Static.elabExp(cache,env, cond, impl, NONE,true);
+        (cache,msg_1,msgprop,_) = Static.elabExp(cache,env, msg, impl, NONE,true);
         stmt = Algorithm.makeAssert(cond_1, msg_1, cprop, msgprop);
       then
         (cache,stmt);
@@ -7521,7 +7571,7 @@ algorithm
     case (cache,env,{},impl) then (cache,{}); 
     case (cache,env,((e,l) :: tail),impl)
       equation 
-        (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE);
+        (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,stmts) = instAlgorithmitems(cache,env, l, impl);
         (cache,tail_1) = instElseifs(cache,env, tail, impl);
       then
@@ -7568,14 +7618,11 @@ algorithm
       list<Env.Frame> env;
       Prefix.Prefix pre;
       Absyn.ComponentRef c1,c2;
-      Exp.Exp crefOrArray1,crefOrArray2;
       Env.Cache cache;
     case (cache,sets,env,pre,c1,c2,impl) /* impl */ 
       equation 
-        (cache,crefOrArray1,prop1,acc) = Static.elabCref(cache,env, c1, impl);
-        (cache,crefOrArray2,prop2,acc) = Static.elabCref(cache,env, c2, impl);
-        Exp.CREF(c1_1,t2) = getVectorizedCref(crefOrArray1);
-        Exp.CREF(c2_1,t2) = getVectorizedCref(crefOrArray2);
+        (cache, Exp.CREF(c1_1,t1),prop1,acc) = Static.elabCref(cache,env, c1, impl,false);
+        (cache,Exp.CREF(c2_1,t2),prop2,acc) = Static.elabCref(cache,env, c2, impl,false);
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
         (cache,(attr1 as Types.ATTR(flow1,_,_,_)),ty1,_) = Lookup.lookupVarLocal(cache,env, c1_2);
@@ -8945,7 +8992,7 @@ algorithm
         //Debug.fprint("recconst", "looked up class\n");
         (cache,mod_1) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod, impl);
         owncref = Absyn.CREF_IDENT(id,{});
-        (cache,dimexp) = elabArraydim(cache,env, owncref, dim, NONE, false, NONE);
+        (cache,dimexp) = elabArraydim(cache,env, owncref, dim, NONE, false, NONE,true);
         //Debug.fprint("recconst", "calling inst_var\n");
         (cache,_,_,_,tp_1) = instVar(cache,cenv, ClassInf.FUNCTION(""), mod_1, Prefix.NOPRE(), 
           Connect.emptySet, id, cl, attr, dimexp, {}, {}, impl, comment);

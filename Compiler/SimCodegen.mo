@@ -4093,6 +4093,7 @@ algorithm
         // Since we use origname we need to replace '.' with '$point' manually.
         cr_1_str = stringAppend("$",Util.modelicaStringToCStr(Exp.printComponentRefStr(cr_1)));
         cr_1 = Exp.CREF_IDENT(cr_1_str,{});
+        (e1,e2) = solveTrivialArrayEquation(cr_1,e1,e2);
         (s1,cg_id_1,f1) = generateSingleArrayEqnCode2(cr_1, cr_1, e1, e2, cg_id);
       then
         (s1,cg_id_1,f1);
@@ -4105,6 +4106,32 @@ algorithm
         fail();
   end matchcontinue;
 end generateSingleArrayEqnCode;
+
+protected function solveTrivialArrayEquation "Solves some trivial array equations, like v+v2=foo(...), w.r.t. v is v=foo(...)-v2"
+	input Exp.ComponentRef v;
+	input Exp.Exp e1;
+	input Exp.Exp e2;
+	output Exp.Exp outE1;
+	output Exp.Exp outE2;
+algorithm
+  (outE1,outE2) := matchcontinue(v,e1,e2)
+  local Exp.Exp e12,e22,vTerm,res,rhs;
+    list<Exp.Exp> terms;
+    Exp.Type tp;
+    // Solve simple linear equations.
+    case(v,e1,e2) equation
+      tp = Exp.typeof(e1);
+      res = Exp.simplify(Exp.BINARY(e1,Exp.SUB_ARR(tp),e2));
+      //print("simplified to :");print(Exp.printExpStr(res));print("\n");
+      (vTerm as Exp.CREF(_,_),rhs) = Exp.getTermsContainingX(res,Exp.CREF(v,Exp.OTHER()));
+      //print("solved array equation to :");print(Exp.printExpStr(e1));print("=");
+      //print(Exp.printExpStr(e2));print("\n");
+    then (vTerm,rhs);
+      
+      // not succeded to solve, return unsolved equation., catched later.
+    case(v,e1,e2) then (e1,e2);
+  end matchcontinue;
+end solveTrivialArrayEquation;
 
 protected function generateSingleArrayEqnCode2 "function generateSingleArrayEqnCode2
   author: PA
@@ -4147,7 +4174,7 @@ algorithm
         func_1 = Codegen.cAddStatements(cfunc, {stmt});
       then
         (func_1,cg_id_1,{});
-    case (cr,eltcr,e1,e2,cg_id) /* array of crefs, {v{1},v{2},...v{n}} */ 
+    case (cr,eltcr,e1,e2,cg_id) /* e2 is array of crefs, {v{1},v{2},...v{n}} */ 
       equation 
         cr2 = getVectorizedCrefFromExp(e2);
         s1 = Exp.printComponentRefStr(eltcr);
@@ -4156,7 +4183,7 @@ algorithm
         func_1 = Codegen.cAddStatements(cfunc, {stmt});
       then
         (func_1,cg_id_1,{});
-    case (cr,eltcr,e1,e2,cg_id) /* array of crefs, {v{1},v{2},...v{n}} */ 
+    case (cr,eltcr,e1,e2,cg_id) /* e1 is array of crefs, {v{1},v{2},...v{n}} */ 
       equation 
         cr2 = getVectorizedCrefFromExp(e1);
         s1 = Exp.printComponentRefStr(eltcr);

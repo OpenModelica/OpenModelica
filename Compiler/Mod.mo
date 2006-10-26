@@ -119,7 +119,7 @@ algorithm
     case (cache,env,pre,(m as SCode.MOD(final_ = final_,each_ = each_,subModLst = subs,absynExpOption = SOME(e))),impl)
       equation 
         (cache,subs_1) = elabSubmods(cache,env, pre, subs, impl);
-        (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE);
+        (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,e_val) = elabModValue(cache,env, e_1);
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre) "Bug: will cause elaboration of parameters without value to fail,
 	 But this can be ok, since a modifier is present, giving it a value 
@@ -331,7 +331,7 @@ algorithm
     case (cache,env,pre,(m as Types.MOD(final_ = f,each_ = each_,subModLst = subs,eqModOption = SOME(Types.UNTYPED(e)))),impl)
       equation 
         (cache,subs_1) = updateSubmods(cache,env, pre, subs, impl);
-        (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE);
+        (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,e_val) = elabModValue(cache,env, e_1);
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
         Debug.fprint("updmod", "Updated mod: ");

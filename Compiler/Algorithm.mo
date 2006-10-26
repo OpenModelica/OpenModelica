@@ -231,9 +231,9 @@ algorithm
       equation 
         Print.printErrorBuf("- Algorithm.make_assignment failed\n");
         Print.printErrorBuf("    ");
-        Exp.printExp(lhs);
+        Print.printErrorBuf(Exp.printExpStr(lhs));
         Print.printErrorBuf(" := ");
-        Exp.printExp(rhs);
+        Print.printErrorBuf(Exp.printExpStr(rhs));
         Print.printErrorBuf("\n");
       then
         fail();

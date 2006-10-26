@@ -1230,7 +1230,7 @@ algorithm
     case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "Eval",subscripts = {}),functionArgs = Absyn.FUNCTIONARGS(args = {e},argNames = {})),impl,st,msg)
       local Exp.Exp e_1;
       equation 
-        (cache,e_1,_,_) = Static.elabExp(cache,env, e, impl, st);
+        (cache,e_1,_,_) = Static.elabExp(cache,env, e, impl, st,true);
         (cache,Values.CODE(Absyn.C_EXPRESSION(exp)),_) = ceval(cache,env, e_1, impl, st, NONE, msg);
       then
         (cache,exp);

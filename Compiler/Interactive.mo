@@ -417,21 +417,21 @@ algorithm
       		(st as SYMBOLTABLE(ast = p)))
       equation  
         env = buildEnvFromSymboltable(st);
-        (_,econd,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache,env, cond, true, SOME(st));
+        (_,econd,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache,env, cond, true, SOME(st),true);
         (_,Values.BOOL(true),SOME(st_2)) = Ceval.ceval(Env.emptyCache,env, econd, true, SOME(st_1), NONE, Ceval.MSG());
       then 
         ("",st_2);
     case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg}))),(st as SYMBOLTABLE(ast = p)))
       equation 
         env = buildEnvFromSymboltable(st);
-        (_,msg_1,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache,env, msg, true, SOME(st));
+        (_,msg_1,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache,env, msg, true, SOME(st),true);
         (_,Values.STRING(str),SOME(st_2)) = Ceval.ceval(Env.emptyCache,env, msg_1, true, SOME(st_1), NONE, Ceval.MSG());
       then
         (str,st_2);
     case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF_IDENT(name = ident,subscripts = {}),value = exp)),(st as SYMBOLTABLE(ast = p)))
       equation 
         env = buildEnvFromSymboltable(st);
-        (_,sexp,Types.PROP(t,_),SOME(st_1)) = Static.elabExp(Env.emptyCache,env, exp, true, SOME(st));
+        (_,sexp,Types.PROP(t,_),SOME(st_1)) = Static.elabExp(Env.emptyCache,env, exp, true, SOME(st),true);
         (_,value,SOME(st_2)) = Ceval.ceval(Env.emptyCache,env, sexp, true, SOME(st_1), NONE, Ceval.MSG());
         str = Values.valString(value);
         newst = addVarToSymboltable(ident, value, t, st_2);
@@ -440,7 +440,7 @@ algorithm
     case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_TUPLE_ASSIGN(tuple_ = Absyn.TUPLE(expressions = crefexps),value = rexp)),(st as SYMBOLTABLE(ast = p))) /* Since expressions cannot be tuples an empty string is returned */ 
       equation 
         env = buildEnvFromSymboltable(st);
-        (_,srexp,rprop,SOME(st_1)) = Static.elabExp(Env.emptyCache,env, rexp, true, SOME(st));
+        (_,srexp,rprop,SOME(st_1)) = Static.elabExp(Env.emptyCache,env, rexp, true, SOME(st),true);
         ((Types.T_TUPLE(types),_)) = Types.getPropType(rprop);
         idents = Util.listMap(crefexps, getIdentFromTupleCrefexp);
         (_,Values.TUPLE(values),SOME(st_2)) = Ceval.ceval(Env.emptyCache,env, srexp, true, SOME(st_1), NONE, Ceval.MSG());
@@ -749,7 +749,7 @@ algorithm
     case (exp,(st as SYMBOLTABLE(ast = p)))
       equation 
         env = buildEnvFromSymboltable(st);
-        (_,sexp,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache,env, exp, true, SOME(st));
+        (_,sexp,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache,env, exp, true, SOME(st),true);
         (_,value,SOME(st_2)) = Ceval.ceval(Env.emptyCache,env, sexp, true, SOME(st_1), NONE, Ceval.MSG());
       then
         (value,st_2);
@@ -770,7 +770,7 @@ protected function stringRepresOfExpr "function: stringRepresOfExpr
   InteractiveSymbolTable st_1;
 algorithm 
   env := buildEnvFromSymboltable(st);
-  (_,sexp,prop,SOME(st_1)) := Static.elabExp(Env.emptyCache,env, exp, true, SOME(st));
+  (_,sexp,prop,SOME(st_1)) := Static.elabExp(Env.emptyCache,env, exp, true, SOME(st),true);
   estr := Exp.printExpStr(sexp);
 end stringRepresOfExpr;
 

@@ -1485,6 +1485,21 @@ algorithm
         res = simplifyVectorBinary(e1, SUB(tp), e2);
       then
         res;
+        
+        // v1 - -v2 => v1 + v2
+    case(e1,SUB_ARR(ty=tp),e2)
+      equation
+        (UNARY(_,e2)) = simplify(e2);
+				e1 = simplify(e1);
+      then BINARY(e1,ADD_ARR(tp),e2);
+        
+     // v1 + -v2 => v1 - v2
+    case(e1,ADD_ARR(ty=tp),e2)
+      equation
+        (UNARY(_,e2)) = simplify(e2);
+        e1 = simplify(e1);
+      then BINARY(e1,SUB_ARR(tp),e2);
+        
     case (s1,MUL_SCALAR_ARRAY(ty = tp),a1)
       equation 
         tp = typeof(s1);
@@ -6976,7 +6991,7 @@ algorithm
   end matchcontinue;
 end solve2;
 
-protected function getTermsContainingX "function getTermsContainingX
+public function getTermsContainingX "function getTermsContainingX
  
   Retrieves all terms of an expression containng a variable, given
   as second argument (in the form of an Exp)
