@@ -780,7 +780,7 @@ onecase:
 	;
 
 pattern:
-	expression
+	expression_or_empty
 	;
 
 if_expression :

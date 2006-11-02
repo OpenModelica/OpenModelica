@@ -1809,7 +1809,7 @@ cases returns [void* ast]
 	;
 
 pattern returns [void* ast]:
-	ast = expression
+	ast = expression_or_empty
 	;
 
 

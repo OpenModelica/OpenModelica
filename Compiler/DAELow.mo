@@ -425,7 +425,7 @@ protected function dumpDAELowEqnList2
   input list<Equation> inDAELowEqnList;
   input Boolean printExpTree;
 algorithm
-  ():=
+  _ :=
    matchcontinue (inDAELowEqnList,printExpTree)
     local
       Exp.Exp e1_1,e2_1,e1,e2,e_1,e;
