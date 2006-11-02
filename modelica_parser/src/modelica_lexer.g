@@ -149,7 +149,7 @@ LBRACE		: '{'	;
 RBRACE		: '}'	;
 EQUALS		: '='	;
 ASSIGN		: ":="	;
-PLUS		: '+'|"+." ;
+PLUS		: '+'|"+."|"+&" ;
 MINUS		: '-'|"-." ;
 STAR		: '*'|"*." ;
 SLASH		: '/'|"/." ;
