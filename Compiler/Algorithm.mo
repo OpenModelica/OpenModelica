@@ -56,9 +56,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   
 "
 
-public import OpenModelica.Compiler.Exp;
-public import OpenModelica.Compiler.Types;
-public import OpenModelica.Compiler.SCode;
+public import Exp;
+public import Types;
+public import SCode;
 
 public 
 type Ident = String;
@@ -143,11 +143,11 @@ uniontype Else "An if statements can one or more `elseif\' branches and an
 
 end Else;
 
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.Print;
-protected import OpenModelica.Compiler.Debug;
-protected import OpenModelica.Compiler.Error;
-protected import OpenModelica.Compiler.Absyn;
+protected import Util;
+protected import Print;
+protected import Debug;
+protected import Error;
+protected import Absyn;
 
 public function makeAssignment "function: makeAssignment
  

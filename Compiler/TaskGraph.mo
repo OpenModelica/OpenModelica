@@ -57,16 +57,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   is implemented using Boost Graph Library in C++
 "
 
-public import OpenModelica.Compiler.Exp;
-public import OpenModelica.Compiler.DAELow;
+public import Exp;
+public import DAELow;
 
-protected import OpenModelica.Compiler.TaskGraphExt;
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.Absyn;
-protected import OpenModelica.Compiler.DAE;
-protected import OpenModelica.Compiler.Values;
-protected import OpenModelica.Compiler.VarTransform;
-protected import OpenModelica.Compiler.SimCodegen;
+protected import TaskGraphExt;
+protected import Util;
+protected import Absyn;
+protected import DAE;
+protected import Values;
+protected import VarTransform;
+protected import SimCodegen;
 
 public function buildTaskgraph ""
   input DAELow.DAELow inDAELow1;

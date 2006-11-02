@@ -54,10 +54,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  
 "
 
-public import OpenModelica.Compiler.Absyn;
-public import OpenModelica.Compiler.Exp;
-public import OpenModelica.Compiler.Env;
-public import OpenModelica.Compiler.Lookup;
+public import Absyn;
+public import Exp;
+public import Env;
+public import Lookup;
 
 public 
 uniontype Prefix "A \'Prefix\' has a name an a list of constant valued subscripts."
@@ -71,9 +71,9 @@ uniontype Prefix "A \'Prefix\' has a name an a list of constant valued subscript
 
 end Prefix;
 
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.Print;
-protected import OpenModelica.Compiler.Debug;
+protected import Util;
+protected import Print;
+protected import Debug;
 
 
 public function printPrefixStr "function: printPrefixStr

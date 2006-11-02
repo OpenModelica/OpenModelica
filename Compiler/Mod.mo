@@ -57,25 +57,25 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  
 "
 
-public import OpenModelica.Compiler.Absyn;
-public import OpenModelica.Compiler.Env;
-public import OpenModelica.Compiler.Exp;
-public import OpenModelica.Compiler.Prefix;
-public import OpenModelica.Compiler.SCode;
-public import OpenModelica.Compiler.Types;
+public import Absyn;
+public import Env;
+public import Exp;
+public import Prefix;
+public import SCode;
+public import Types;
 
 public 
 type Ident = String;
 
-protected import OpenModelica.Compiler.Dump;
-protected import OpenModelica.Compiler.Debug;
-protected import OpenModelica.Compiler.Inst;
-protected import OpenModelica.Compiler.Static;
-protected import OpenModelica.Compiler.Values;
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.Ceval;
-protected import OpenModelica.Compiler.Error;
-protected import OpenModelica.Compiler.Print;
+protected import Dump;
+protected import Debug;
+protected import Inst;
+protected import Static;
+protected import Values;
+protected import Util;
+protected import Ceval;
+protected import Error;
+protected import Print;
 
 public function elabMod "function: elabMod
  

@@ -52,8 +52,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   Graph Library in C++
 "
 
-public import OpenModelica.Compiler.Exp;
-public import OpenModelica.Compiler.DAELow;
+public import Exp;
+public import DAELow;
 
 public function newTask
   input String inString;

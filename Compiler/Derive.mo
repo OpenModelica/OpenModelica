@@ -55,14 +55,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   
 "
 
-public import OpenModelica.Compiler.DAELow;
-public import OpenModelica.Compiler.Exp;
-public import OpenModelica.Compiler.Absyn;
+public import DAELow;
+public import Exp;
+public import Absyn;
 
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.Error;
-protected import OpenModelica.Compiler.Debug;
-protected import OpenModelica.Compiler.SimCodegen;
+protected import Util;
+protected import Error;
+protected import Debug;
+protected import SimCodegen;
 
 public function differentiateEquationTime "function: differentiateEquationTime
  

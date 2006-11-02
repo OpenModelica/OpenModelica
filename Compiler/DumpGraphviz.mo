@@ -48,8 +48,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  
 "
 
-public import OpenModelica.Compiler.Absyn;
-public import OpenModelica.Compiler.Graphviz;
+public import Absyn;
+public import Graphviz;
 
 public 
 type Ident = String " An identifier is just a string " ;
@@ -57,7 +57,7 @@ type Ident = String " An identifier is just a string " ;
 public 
 type Node = Graphviz.Node;
 
-protected import OpenModelica.Compiler.Dump;
+protected import Dump;
 
 public function dump "function: dump
  
@@ -516,7 +516,7 @@ algorithm
     local
       Absyn.ComponentRef cr;
       Absyn.Exp e;
-    case (Absyn.ALG_ASSIGN(assignComponent = cr,value = e))
+    case (Absyn.ALG_ASSIGN(assignComponent = _,value = e))
       equation 
         print("");
       then

@@ -72,7 +72,8 @@ tokens {
 	UNARY_PLUS	;
 	UNQUALIFIED;
 	FLAT_IDENT;
-
+	TYPE_LIST;
+	EMPTY;
 }
 
 
@@ -82,7 +83,6 @@ tokens {
 
 
 stored_definition :
-
 			(within_clause SEMICOLON!)?
 			((FINAL)? cd:class_definition s:SEMICOLON!
 			{
@@ -117,8 +117,8 @@ within_clause :
 class_definition :
 		(ENCAPSULATED)? 
 		(PARTIAL)?
-		class_type     
-        class_specifier
+		class_type 
+		class_specifier
 		{ 
 			#class_definition = #([CLASS_DEFINITION, "CLASS_DEFINITION"], 
 				class_definition); 
@@ -127,13 +127,13 @@ class_definition :
 
 class_type :
 		( CLASS | MODEL | RECORD | BLOCK | ( EXPANDABLE )? CONNECTOR | TYPE 
-        | PACKAGE | FUNCTION 
+        | PACKAGE | FUNCTION | UNIONTYPE
 		)
 		;
 
 class_specifier: 	
         IDENT class_specifier2 
-    |   EXTENDS! IDENT (class_modification)? string_comment composition
+    |   EXTENDS! IDENT (class_modification)? string_comment composition 
             END! IDENT! 
         {
             #class_specifier = #([CLASS_EXTENDS,"CLASS_EXTENDS"],#class_specifier);
@@ -142,12 +142,14 @@ class_specifier:
 
 class_specifier2 :
 		( string_comment composition END! IDENT!
-		| EQUALS^  base_prefix name_path ( array_subscripts )? ( class_modification )? comment
+		| EQUALS^ base_prefix type_specifier ( class_modification )? comment
 		| EQUALS^ enumeration
         | EQUALS^ pder    
 		| EQUALS^ overloading
-		)
+		| SUBTYPEOF^ type_specifier 		
+		) 
 		;
+
 
 pder:   DER^ LPAR! name_path COMMA! ident_list RPAR! comment ;
 
@@ -175,6 +177,7 @@ name_list:
 enumeration :
 		ENUMERATION^ LPAR! (enum_list | COLON ) RPAR! comment 
 		;
+		
 enum_list :
 		enumeration_literal ( COMMA! enumeration_literal)*
 		;
@@ -364,7 +367,7 @@ constraining_clause :
  */
 
 component_clause :
-		type_prefix type_specifier (array_subscripts)? component_list
+		tp: type_prefix np:type_specifier clst:component_list
 		;
 
 type_prefix :
@@ -379,9 +382,18 @@ type_prefix :
 		;
 
 type_specifier :
-		name_path
+		np:name_path
+		(type_specifier_list)?
+		(as:array_subscripts)?
 		;
 
+type_specifier_list:
+		(LESS! np1:type_specifier (COMMA np2:type_specifier)* GREATER!)
+		{
+			#type_specifier_list = #([TYPE_LIST, "TYPE_LIST"], #type_specifier_list);
+		}
+	;
+	
 component_list :
 		component_declaration (COMMA! component_declaration)*
 		;
@@ -466,7 +478,7 @@ component_declaration1 :
  */
 
 initial_equation_clause :
-		{ LA(2)==EQUATION}?
+		{ LA(2)==EQUATION}? 
 		INITIAL! ec:equation_clause
         {
             #initial_equation_clause = #([INITIAL_EQUATION,"INTIAL_EQUATION"], ec);
@@ -475,7 +487,7 @@ initial_equation_clause :
 		;
 
 equation_clause :
-		EQUATION^  
+		EQUATION^ 
 		    equation_annotation_list
   		;
 
@@ -505,40 +517,24 @@ equation_annotation_list :
         }
 
 algorithm_clause :
-		ALGORITHM^
-		(algorithm SEMICOLON!
-		|annotation SEMICOLON!
-		)*
+		ALGORITHM^ 
+		    algorithm_annotation_list
 		;
-        exception
-        catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
-        {
-          BEFORE_SYNC;
-
-          // Sync to {END, EQUATION, ALGORITHM, INITIAL, PROTECTED, PUBLIC}
-          while(LA(1) != END && LA(1) != EQUATION && LA(1) != ALGORITHM && LA(1) != INITIAL
-                && LA(1) != PROTECTED && LA(1) != PUBLIC)
-          {
-            if(LA(1) == EOF_)
-            {
-              throw ANTLR_USE_NAMESPACE(antlr)RecognitionException("unexpected end of file", modelicafilename, LT(1)->getLine(), LT(1)->getColumn());
-            }
-            consume();
-          }
-
-          AFTER_SYNC;
-        }
 
 initial_algorithm_clause :
-		{ LA(2)==ALGORITHM}?
-		INITIAL! ALGORITHM^
-		(algorithm SEMICOLON!
-		|annotation SEMICOLON!
-		)*
-		{
-	            #initial_algorithm_clause = #([INITIAL_ALGORITHM,"INTIAL_ALGORITHM"], #initial_algorithm_clause);
-		}
+		{ LA(2)==ALGORITHM }? 
+		INITIAL! ac: algorithm_clause
+        {
+            #initial_algorithm_clause = #([INITIAL_ALGORITHM,"INTIAL_ALGORITHM"], ac);
+        } 
 		;
+        
+algorithm_annotation_list :
+		{ LA(1) == END || LA(1) == EQUATION || LA(1) == ALGORITHM || LA(1)==INITIAL 
+		 || LA(1) == PROTECTED || LA(1) == PUBLIC }?
+		|
+		( algorithm SEMICOLON! | annotation SEMICOLON!) algorithm_annotation_list
+		; 
         exception
         catch [ANTLR_USE_NAMESPACE(antlr)RecognitionException &e]
         {
@@ -557,6 +553,7 @@ initial_algorithm_clause :
 
           AFTER_SYNC;
         }
+        
 
 equation :
 		(   (simple_expression EQUALS) => equality_equation
@@ -564,7 +561,9 @@ equation :
 		|	for_clause_e
 		|	connect_clause
 		|	when_clause_e
-		|   IDENT function_call
+		|   component_reference function_call // function call	
+		|   FAILURE^ LPAR! equation RPAR!
+		|   EQUALITY^ LPAR! equation RPAR!		
 		)
         {
             #equation = #([EQUATION_STATEMENT,"EQUATION_STATEMENT"], #equation);
@@ -590,12 +589,14 @@ equation :
         }
 
 algorithm :
-		( assign_clause_a
-		|	multi_assign_clause_a
+		(	(simple_expression ASSIGN) => assign_clause_a
+		|	component_reference function_call		
 		|	conditional_equation_a
 		|	for_clause_a
 		|	while_clause
 		|	when_clause_a
+		|   FAILURE^ LPAR! algorithm RPAR!
+		|   EQUALITY^ LPAR! algorithm RPAR!		
 		)
 		comment
         {
@@ -620,13 +621,12 @@ algorithm :
           AFTER_SYNC;
         }
 
-assign_clause_a : component_reference	( ASSIGN^ expression | function_call );
-
-multi_assign_clause_a :
-        LPAR! expression_list RPAR! ASSIGN^ component_reference function_call;
+assign_clause_a : 
+		   simple_expression ASSIGN^ expression
+		;
 
 equality_equation :
-		simple_expression EQUALS^ expression 
+		simple_expression EQUALS^ expression
 		;
 
 conditional_equation_e :
@@ -695,14 +695,22 @@ algorithm_elseif :
 		algorithm_list
 		;
 
+equation_list_then :
+          { LA(1) == THEN }?
+		| (equation SEMICOLON! equation_list_then)
+		;
+
+
 equation_list :
 		{LA(1) != END || (LA(1) == END && LA(2) != IDENT)}?
-		|
-		(equation SEMICOLON! equation_list)
+		| 
+		( equation SEMICOLON! equation_list )
 		;
 
 algorithm_list :
-		( algorithm SEMICOLON! )*
+		{LA(1) != END || (LA(1) == END && LA(2) != IDENT)}?
+		|
+		( algorithm SEMICOLON! algorithm_list )
 		;
 
 connect_clause :
@@ -720,13 +728,52 @@ connector_ref_2 :
 /*
  * 2.2.7 Expressions
  */
-
 expression :
-		( if_expression 
-        | simple_expression
+		( if_expression
+		| simple_expression (COLONCOLON^ simple_expression)*
+		| IDENT AS^ expression		
 		| code_expression
+		| (MATCHCONTINUE^ expression_or_empty
+		   local_clause
+		   cases
+		   END! MATCHCONTINUE!
+ 	       )		
+		| (MATCH^ expression_or_empty
+		   local_clause
+		   cases
+		   END! MATCH!
+ 	       )		
 		)
 		;
+
+expression_or_empty !:
+	e:expression 
+	{
+		#expression_or_empty = #e;
+	}
+	| LPAR! RPAR!
+	{
+		#expression_or_empty = #([EMPTY,"EMPTY"], #expression_or_empty); 
+	} 
+	;
+
+local_clause:
+	(LOCAL^ element_list)? 
+	;
+
+cases:
+	(onecase)+ (ELSE^ local_clause (EQUATION! equation_list_then)? 
+	THEN! expression_or_empty SEMICOLON!)?
+	;
+
+onecase:
+	(CASE^ pattern local_clause (EQUATION! equation_list_then)? 
+	THEN! expression_or_empty SEMICOLON!)
+	;
+
+pattern:
+	expression
+	;
 
 if_expression :
 		IF^ expression THEN! expression (elseif_expression)* ELSE! expression
@@ -750,14 +797,14 @@ for_index:
 ;
 
 
-simple_expression ! :
+simple_expression !:
 		l1:logical_expression 
 		( COLON l2:logical_expression 
-			( COLON l3:logical_expression 
-			)? 
+		    ( COLON l3:logical_expression 
+		    )? 
 		)?
 		{ 
-			if (#l3 != null) 
+			if (#l3 != null)
 			{ 
 				#simple_expression = #([RANGE3,"RANGE3"], l1, l2, l3); 
 			}
@@ -765,12 +812,13 @@ simple_expression ! :
 			{ 
 				#simple_expression = #([RANGE2,"RANGE2"], l1, l2); 
 			}
-			else 
-			{ 
+			else
+			{
 				#simple_expression = #l1; 
 			}
 		}
 		;
+		
 /* Code quotation mechanism */
 code_expression ! :
 		CODE LPAR ((expression RPAR)=> e:expression | m:modification | el:element (SEMICOLON!)?
@@ -801,7 +849,7 @@ code_equation_clause :
 		;
 
 code_initial_equation_clause :
- 		{ LA(2)==EQUATION}?
+ 		{ LA(2)==EQUATION }? 
  		INITIAL! ec:code_equation_clause
          {
              #code_initial_equation_clause = #([INITIAL_EQUATION,"INTIAL_EQUATION"], ec);
@@ -811,11 +859,12 @@ code_initial_equation_clause :
 code_algorithm_clause :
 		ALGORITHM^ (algorithm SEMICOLON! | annotation SEMICOLON!)*
 		;
+
 code_initial_algorithm_clause :
-		{ LA(2) == ALGORITHM }?
-		INITIAL! ALGORITHM^
-		(algorithm SEMICOLON!
-		|annotation SEMICOLON!
+		{ LA(2) == ALGORITHM }? 
+		INITIAL! ALGORITHM^ 
+		(algorithm SEMICOLON! 
+		| annotation SEMICOLON!
 		)*
 		{
 			#code_initial_algorithm_clause = #([INITIAL_ALGORITHM,"INTIAL_ALGORITHM"], #code_initial_algorithm_clause);
@@ -825,7 +874,7 @@ code_initial_algorithm_clause :
 /* End Code quotation mechanism */
 
 logical_expression :
-		logical_term ( OR^ logical_term )*
+		logical_term   ( OR^ logical_term )*
 		;
 
 logical_term :
@@ -838,12 +887,9 @@ logical_factor :
 		;
 
 relation :
-		arithmetic_expression ( ( LESS^ | LESSEQ^ | GREATER^ | GREATEREQ^ | EQEQ^ | LESSGT^ ) arithmetic_expression )?
+		arithmetic_expression ( ( LESS^ | LESSEQ^ | GREATER^ | GREATEREQ^ | EQEQ^ | LESSGT^ | RLESS^ | RGREATER^ ) arithmetic_expression )?
 		;
 
-rel_op :
-		( LESS^ | LESSEQ^ | GREATER^ | GREATEREQ^ | EQEQ^ | LESSGT^ )
-		;
 
 arithmetic_expression :
 		unary_arithmetic_expression ( ( PLUS^ | MINUS^ ) term )*
@@ -888,6 +934,7 @@ primary :
 		)
     ;
 
+
 component_reference__function_call ! :
 		cr:component_reference ( fc:function_call )? 
 		{ 
@@ -899,21 +946,21 @@ component_reference__function_call ! :
 			{ 
 				#component_reference__function_call = #cr;
 			} 
-		}
+		}		
 	| i:INITIAL LPAR! RPAR! {
 			#component_reference__function_call = #([INITIAL_FUNCTION_CALL,"INITIAL_FUNCTION_CALL"],i);
 		}
 	;
 
 name_path :
-		{ LA(2)!=DOT }? IDENT |
+		{ LA(2)!=DOT }? IDENT | 
 		IDENT DOT^ name_path
 		;
 
 name_path_star returns [bool val=false]
 		: 
-		{ LA(2)!=DOT }? IDENT { val=false;}|
-		{ LA(2)!=DOT }? STAR! { val=true;}|
+		{ LA(2)!=DOT }? IDENT { val=false; }|
+		{ LA(2)!=DOT }? STAR! { val=true;  }|
 		i:IDENT DOT^ val = np:name_path_star
 		{
 			if(!(#np))
@@ -925,6 +972,7 @@ name_path_star returns [bool val=false]
 
 component_reference :
 		IDENT^ ( array_subscripts )? ( DOT^ component_reference )?
+		| WILD
 		;
 
 function_call :
@@ -942,7 +990,7 @@ function_arguments :
 for_or_expression_list 
     :
 		(
-			{LA(1)==IDENT && LA(2) == EQUALS|| LA(1) == RPAR}?
+			{LA(1)==IDENT && LA(2) == EQUALS || LA(1) == RPAR || LA(1) == RBRACE}?
 		|
 			(
 				e:expression
@@ -990,6 +1038,7 @@ expression_list :
 			#expression_list=#([EXPRESSION_LIST,"EXPRESSION_LIST"],#expression_list);
 		}
 		;
+		
 expression_list2 :
 		expression (COMMA! expression_list2)?
 	    ;

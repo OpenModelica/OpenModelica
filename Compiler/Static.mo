@@ -72,13 +72,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   The elaboration also contain function deoverloading which will be added to Modelica in the future.
 "
 
-public import OpenModelica.Compiler.Absyn;
-public import OpenModelica.Compiler.Exp;
-public import OpenModelica.Compiler.SCode;
-public import OpenModelica.Compiler.Types;
-public import OpenModelica.Compiler.Env;
-public import OpenModelica.Compiler.Values;
-public import OpenModelica.Compiler.Interactive;
+public import Absyn;
+public import Exp;
+public import SCode;
+public import Types;
+public import Env;
+public import Values;
+public import Interactive;
 
 public 
 type Ident = String;
@@ -94,22 +94,22 @@ uniontype Slot
 
 end Slot;
 
-protected import OpenModelica.Compiler.ClassInf;
-protected import OpenModelica.Compiler.Dump;
-protected import OpenModelica.Compiler.Print;
-protected import OpenModelica.Compiler.System;
-protected import OpenModelica.Compiler.Lookup;
-protected import OpenModelica.Compiler.Debug;
-protected import OpenModelica.Compiler.Inst;
-protected import OpenModelica.Compiler.Codegen;
-protected import OpenModelica.Compiler.ModUtil;
-protected import OpenModelica.Compiler.DAE;
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.Mod;
-protected import OpenModelica.Compiler.Prefix;
-protected import OpenModelica.Compiler.Ceval;
-protected import OpenModelica.Compiler.Connect;
-protected import OpenModelica.Compiler.Error;
+protected import ClassInf;
+protected import Dump;
+protected import Print;
+protected import System;
+protected import Lookup;
+protected import Debug;
+protected import Inst;
+protected import Codegen;
+protected import ModUtil;
+protected import DAE;
+protected import Util;
+protected import Mod;
+protected import Prefix;
+protected import Ceval;
+protected import Connect;
+protected import Error;
 
 public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. lists of expressions."
 	input Env.Cache inCache;

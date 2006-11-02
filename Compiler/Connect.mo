@@ -56,10 +56,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   
 "
 
-public import OpenModelica.Compiler.Exp;
-public import OpenModelica.Compiler.Static;
-public import OpenModelica.Compiler.DAE;
-public import OpenModelica.Compiler.Env;
+public import Exp;
+public import Static;
+public import DAE;
+public import Env;
 
 public 
 uniontype Face "This type indicates whether a connector is an inner or an outer
@@ -921,11 +921,11 @@ algorithm
   end matchcontinue;
 end getOuterFlowVariables2;
 
-protected import OpenModelica.Compiler.Print;
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.Types;
-protected import OpenModelica.Compiler.Lookup;
-protected import OpenModelica.Compiler.Absyn;
+protected import Print;
+protected import Util;
+protected import Types;
+protected import Lookup;
+protected import Absyn;
 
 /*
   - Printing

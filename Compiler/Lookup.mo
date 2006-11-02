@@ -55,22 +55,22 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   lookup_var - to find a variable in the instance hierarchy.
 "
 
-public import OpenModelica.Compiler.ClassInf;
-public import OpenModelica.Compiler.Types;
-public import OpenModelica.Compiler.Absyn;
-public import OpenModelica.Compiler.Exp;
-public import OpenModelica.Compiler.Env;
-public import OpenModelica.Compiler.SCode;
+public import ClassInf;
+public import Types;
+public import Absyn;
+public import Exp;
+public import Env;
+public import SCode;
 
-protected import OpenModelica.Compiler.Debug;
-protected import OpenModelica.Compiler.Inst;
-protected import OpenModelica.Compiler.Mod;
-protected import OpenModelica.Compiler.Prefix;
-protected import OpenModelica.Compiler.Builtin;
-protected import OpenModelica.Compiler.ModUtil;
-protected import OpenModelica.Compiler.Static;
-protected import OpenModelica.Compiler.Connect;
-protected import OpenModelica.Compiler.Error;
+protected import Debug;
+protected import Inst;
+protected import Mod;
+protected import Prefix;
+protected import Builtin;
+protected import ModUtil;
+protected import Static;
+protected import Connect;
+protected import Error;
 
 /*   - Lookup functions
  

@@ -54,13 +54,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   
 "
 
-public import OpenModelica.Compiler.Absyn;
-public import OpenModelica.Compiler.SCode;
-public import OpenModelica.Compiler.Env;
+public import Absyn;
+public import SCode;
+public import Env;
 
 /* protected imports */
-protected import OpenModelica.Compiler.Types;
-protected import OpenModelica.Compiler.ClassInf;
+protected import Types;
+protected import ClassInf;
 
 /*
 - The primitive types 
@@ -171,7 +171,7 @@ protected constant Types.Var timeVar=Types.VAR("time",
           Types.ATTR(false,SCode.RO(),SCode.VAR(),Absyn.BIDIR()),false,(Types.T_REAL({}),NONE),Types.UNBOUND()) "- The `time\' variable" ;
 
 protected 
-replaceable type Type_a;
+replaceable type Type_a subtypeof Any;
 constant tuple<Types.TType, Option<Type_a>> nil2real=(Types.T_FUNCTION({},(Types.T_REAL({}),NONE)),NONE) "- Some assorted function types" ;
 
 protected constant tuple<Types.TType, Option<Type_a>> nil2bool=(Types.T_FUNCTION({},(Types.T_REAL({}),NONE)),NONE);

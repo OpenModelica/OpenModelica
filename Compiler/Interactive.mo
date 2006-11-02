@@ -50,13 +50,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   - Modelica models in SCode form (to speed up instantiation. not impl. yet)
 "
 
-public import OpenModelica.Compiler.Absyn;
-public import OpenModelica.Compiler.SCode;
-public import OpenModelica.Compiler.DAE;
-public import OpenModelica.Compiler.Types;
-public import OpenModelica.Compiler.Values;
-public import OpenModelica.Compiler.Env;
-public import OpenModelica.Compiler.Settings;
+public import Absyn;
+public import SCode;
+public import DAE;
+public import Types;
+public import Values;
+public import Env;
+public import Settings;
 
 public 
 uniontype InteractiveStmt "An Statement given in the interactive environment can either be 
@@ -159,24 +159,24 @@ uniontype ComponentReplacementRules
 
 end ComponentReplacementRules;
 
-protected import OpenModelica.Compiler.Connect;
-protected import OpenModelica.Compiler.Dump;
-protected import OpenModelica.Compiler.Debug;
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.Parser;
-protected import OpenModelica.Compiler.Prefix;
-protected import OpenModelica.Compiler.Mod;
-protected import OpenModelica.Compiler.Lookup;
-protected import OpenModelica.Compiler.ClassInf;
-protected import OpenModelica.Compiler.Exp;
-protected import OpenModelica.Compiler.Inst;
-protected import OpenModelica.Compiler.Static;
-protected import OpenModelica.Compiler.ModUtil;
-protected import OpenModelica.Compiler.Print;
-protected import OpenModelica.Compiler.System;
-protected import OpenModelica.Compiler.ClassLoader;
-protected import OpenModelica.Compiler.Ceval;
-protected import OpenModelica.Compiler.Error;
+protected import Connect;
+protected import Dump;
+protected import Debug;
+protected import Util;
+protected import Parser;
+protected import Prefix;
+protected import Mod;
+protected import Lookup;
+protected import ClassInf;
+protected import Exp;
+protected import Inst;
+protected import Static;
+protected import ModUtil;
+protected import Print;
+protected import System;
+protected import ClassLoader;
+protected import Ceval;
+protected import Error;
 
 public constant InteractiveSymbolTable emptySymboltable=SYMBOLTABLE(Absyn.PROGRAM({},Absyn.TOP()),{},{},
           {},{}) "Empty Interactive Symbol Table" ;
@@ -428,7 +428,7 @@ algorithm
         (_,Values.STRING(str),SOME(st_2)) = Ceval.ceval(Env.emptyCache,env, msg_1, true, SOME(st_1), NONE, Ceval.MSG());
       then
         (str,st_2);
-    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF_IDENT(name = ident,subscripts = {}),value = exp)),(st as SYMBOLTABLE(ast = p)))
+    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(Absyn.CREF_IDENT(name = ident,subscripts = {})),value = exp)),(st as SYMBOLTABLE(ast = p)))
       equation 
         env = buildEnvFromSymboltable(st);
         (_,sexp,Types.PROP(t,_),SOME(st_1)) = Static.elabExp(Env.emptyCache,env, exp, true, SOME(st),true);
@@ -437,7 +437,7 @@ algorithm
         newst = addVarToSymboltable(ident, value, t, st_2);
       then
         (str,newst);
-    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_TUPLE_ASSIGN(tuple_ = Absyn.TUPLE(expressions = crefexps),value = rexp)),(st as SYMBOLTABLE(ast = p))) /* Since expressions cannot be tuples an empty string is returned */ 
+    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = crefexps),value = rexp)),(st as SYMBOLTABLE(ast = p))) /* Since expressions cannot be tuples an empty string is returned */ 
       equation 
         env = buildEnvFromSymboltable(st);
         (_,srexp,rprop,SOME(st_1)) = Static.elabExp(Env.emptyCache,env, rexp, true, SOME(st),true);
@@ -1251,7 +1251,7 @@ algorithm
       equation 
         0 = System.regularFileExists(name);
         p1 = Parser.parse(name);
-        //debug_print("Program:", p1);
+        //p1 = expandUnionTypes(p1);
         newp = updateProgram(p1, p);
         top_names_str = getTopQualifiedClassnames(p1);
       then
@@ -1267,6 +1267,16 @@ algorithm
         failure(p1 = Parser.parse(name));
       then
         ("error",st);
+
+    /* adrpo added 2006-10-16
+     * - i think this function is needed here!
+     */         
+    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getErrorString"),functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf))) 
+      equation 
+        resstr = Error.printMessagesStr();
+      then
+        (resstr,st);
+        
   end matchcontinue;
 end evaluateGraphicalApi2;
 
@@ -1617,6 +1627,12 @@ algorithm
         resstr = getClassInformation(cr, p);
       then
         (resstr,st);
+        
+    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getClassInformation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+      equation 
+        failure(resstr = getClassInformation(cr, p));
+      then
+        ("error",st);
 
     case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setClassComment"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.STRING(value = str)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
@@ -1776,6 +1792,13 @@ algorithm
         resstr = Util.stringAppendList({"\"",resstr,"\""});
       then
         (resstr,st);
+    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "list"),
+           functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+          (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))  
+      equation 
+        failure(resstr = listClass(cr, p));
+      then
+        ("",st);
   end matchcontinue;
 end evaluateGraphicalApi;
 
@@ -2771,18 +2794,18 @@ algorithm
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> exp_algs_list_1,exp_algs_list;
       String id;
       Absyn.FunctionArgs func_args_1,func_args;
-    case (Absyn.ALG_ASSIGN(assignComponent = cr,value = exp),old_comp,new_comp) /* the old name for the component */ 
+    case (Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = exp),old_comp,new_comp) /* the old name for the component */ 
       equation 
         cr_1 = replaceStartInComponentRef(cr, old_comp, new_comp);
         exp_1 = renameComponentInExp(exp, old_comp, new_comp);
       then
-        Absyn.ALG_ASSIGN(cr_1,exp_1);
-    case (Absyn.ALG_TUPLE_ASSIGN(tuple_ = exp1,value = exp2),old_comp,new_comp)
+        Absyn.ALG_ASSIGN(Absyn.CREF(cr_1),exp_1);
+    case (Absyn.ALG_ASSIGN(assignComponent = exp1 as Absyn.TUPLE(_),value = exp2),old_comp,new_comp)
       equation 
         exp1_1 = renameComponentInExp(exp1, old_comp, new_comp);
         exp2_1 = renameComponentInExp(exp2, old_comp, new_comp);
       then
-        Absyn.ALG_TUPLE_ASSIGN(exp1_1,exp2_1);
+        Absyn.ALG_ASSIGN(exp1_1, exp2_1);
     case (Absyn.ALG_IF(ifExp = exp,trueBranch = algs1,elseIfAlgorithmBranch = exp_algs_list,elseBranch = algs2),old_comp,new_comp)
       equation 
         exp_1 = renameComponentInExp(exp, old_comp, new_comp);
@@ -4796,7 +4819,8 @@ algorithm
   matchcontinue (inElementSpec)
     local
       String path_str,str,import_str,typename,flow_str,variability_str,dir_str,names_str;
-      Absyn.Path path,path_type;
+      Absyn.Path path;
+      Absyn.TypeSpec typeSpec;
       Absyn.Import import_;
       list<String> names;
       Absyn.ElementAttributes attr;
@@ -4813,9 +4837,9 @@ algorithm
         str = Util.stringAppendList({"elementtype=import, ",import_str});
       then
         str;
-    case (Absyn.COMPONENTS(attributes = attr,typeSpec = Absyn.TPATH(path_type,_),components = lst))
+    case (Absyn.COMPONENTS(attributes = attr,typeSpec = typeSpec,components = lst))
       equation 
-        typename = Absyn.pathString(path_type);
+        typename = Dump.unparseTypeSpec(typeSpec);
         names = getComponentitemsName(lst);
         flow_str = attrFlowStr(attr);
         variability_str = attrVariabilityStr(attr);
@@ -7002,9 +7026,9 @@ public function traverseClasses "function: traverseClasses
   partial function FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a
     input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTplAbsynClassAbsynPathOptionTypeA;
     output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTplAbsynClassAbsynPathOptionTypeA;
-    replaceable type Type_a;
+    replaceable type Type_a subtypeof Any;
   end FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTplAbsynProgramAbsynPathOptionTypeA:=
   matchcontinue (inProgram,inAbsynPathOption,inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA,inTypeA,inBoolean)
@@ -7043,9 +7067,9 @@ protected function traverseClasses2 "function: traverseClasses2
   partial function FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a
     input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTplAbsynClassAbsynPathOptionTypeA;
     output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTplAbsynClassAbsynPathOptionTypeA;
-    replaceable type Type_a;
+    replaceable type Type_a subtypeof Any;
   end FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTplAbsynClassLstAbsynPathOptionTypeA:=
   matchcontinue (inAbsynClassLst,inAbsynPathOption,inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA,inTypeA,inBoolean)
@@ -7093,9 +7117,9 @@ protected function traverseInnerClass "function: traverseInnerClass
   partial function FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a
     input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTplAbsynClassAbsynPathOptionTypeA;
     output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTplAbsynClassAbsynPathOptionTypeA;
-    replaceable type Type_a;
+    replaceable type Type_a subtypeof Any;
   end FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTplAbsynClassAbsynPathOptionTypeA:=
   matchcontinue (inClass,inAbsynPathOption,inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA,inTypeA,inBoolean)
@@ -7158,9 +7182,9 @@ protected function traverseInnerClassParts "function: traverseInnerClassParts
   partial function FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a
     input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTplAbsynClassAbsynPathOptionTypeA;
     output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTplAbsynClassAbsynPathOptionTypeA;
-    replaceable type Type_a;
+    replaceable type Type_a subtypeof Any;
   end FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTplAbsynClassPartLstAbsynPathOptionTypeA:=
   matchcontinue (inAbsynClassPartLst,inAbsynPathOption,inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA,inTypeA,inBoolean)
@@ -7213,9 +7237,9 @@ protected function traverseInnerClassElements "function traverseInnerClassElemen
   partial function FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a
     input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTplAbsynClassAbsynPathOptionTypeA;
     output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTplAbsynClassAbsynPathOptionTypeA;
-    replaceable type Type_a;
+    replaceable type Type_a subtypeof Any;
   end FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTplAbsynElementItemLstAbsynPathOptionTypeA:=
   matchcontinue (inAbsynElementItemLst,inAbsynPathOption,inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA,inTypeA,inBoolean)
@@ -7268,9 +7292,9 @@ protected function traverseInnerClassElementspec "function: traverseInnerClassEl
   partial function FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a
     input tuple<Absyn.Class, Option<Absyn.Path>, Type_a> inTplAbsynClassAbsynPathOptionTypeA;
     output tuple<Absyn.Class, Option<Absyn.Path>, Type_a> outTplAbsynClassAbsynPathOptionTypeA;
-    replaceable type Type_a;
+    replaceable type Type_a subtypeof Any;
   end FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTplAbsynElementSpecAbsynPathOptionTypeA:=
   matchcontinue (inElementSpec,inAbsynPathOption,inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA,inTypeA,inBoolean)
@@ -8233,7 +8257,7 @@ algorithm
   outProgram:=
   matchcontinue (inProgram1,inProgram2)
     local
-      Absyn.Program prg,newp,oldp,pnew,p2,pnew_1,a,b;
+      Absyn.Program prg,newp,oldp,pnew,p2,pnew_1,a,b, p1;
       Absyn.Class newclass,c1,cdef,newcdef;
       String name;
       Absyn.Restriction restr;
@@ -8259,16 +8283,20 @@ algorithm
         newp = updateProgram(Absyn.PROGRAM({newclass},Absyn.WITHIN(w)), oldp);
       then
         newp;
-    case (Absyn.PROGRAM(classes = ((c1 as Absyn.CLASS(name = name)) :: c2),within_ = (w as Absyn.TOP())),(p2 as Absyn.PROGRAM(classes = c3,within_ = w2)))
+    case (p1 as Absyn.PROGRAM(classes = ((c1 as Absyn.CLASS(name = name)) :: c2),within_ = (w as Absyn.TOP())),(p2 as Absyn.PROGRAM(classes = c3,within_ = w2)))
       local Absyn.Within w;
-      equation 
+      equation        
+        //debug_print("name", name); 
+        //Dump.dump(p1);        
         false = classInProgram(name, p2);
         pnew = updateProgram(Absyn.PROGRAM(c2,w), Absyn.PROGRAM((c1 :: c3),w2));
       then
         pnew;
-    case (Absyn.PROGRAM(classes = ((c1 as Absyn.CLASS(name = name)) :: c2),within_ = (w as Absyn.TOP())),p2)
+    case (p1 as Absyn.PROGRAM(classes = ((c1 as Absyn.CLASS(name = name)) :: c2),within_ = (w as Absyn.TOP())),p2)
       local Absyn.Within w;
       equation 
+        //debug_print("name", name);         
+        //Dump.dump(p1);
         true = classInProgram(name, p2);
         pnew = updateProgram(Absyn.PROGRAM(c2,w), p2);
         pnew_1 = replaceClassInProgram(c1, pnew);
@@ -14897,15 +14925,15 @@ algorithm
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> elseIfPart,elseIfPart1,whenBranch,whenBranch1;
       Absyn.Ident id;
       Absyn.FunctionArgs fargs,fargs1;
-    case(Absyn.ALG_ASSIGN(cr,e1))  equation
+    case(Absyn.ALG_ASSIGN(Absyn.CREF(cr),e1))  equation
       ((e11,_)) = traverseExp(e1,transformFlatExp,0);
       cr1 = transformFlatComponentRef(cr);
-      then (Absyn.ALG_ASSIGN(cr1,e1));
+      then (Absyn.ALG_ASSIGN(Absyn.CREF(cr1),e1));
         
-    case(Absyn.ALG_TUPLE_ASSIGN(e1,e2)) equation
+    case(Absyn.ALG_ASSIGN(e1 as Absyn.TUPLE(_),e2)) equation
       ((e11,_)) = traverseExp(e1,transformFlatExp,0);
       ((e21,_)) = traverseExp(e2,transformFlatExp,0);
-    then (Absyn.ALG_TUPLE_ASSIGN(e11,e21));
+    then (Absyn.ALG_ASSIGN(e11,e21));
       
     case(Absyn.ALG_IF(e1,thenPart,elseIfPart,elsePart)) equation
       thenPart1 = Util.listMap(thenPart,transformFlatAlgorithmItem);
@@ -14965,9 +14993,9 @@ public function traverseExp "
   partial function FuncTypeTplExpType_aToTplExpType_a
     input tuple<Absyn.Exp, Type_a> inTplExpTypeA;
     output tuple<Absyn.Exp, Type_a> outTplExpTypeA;
-    replaceable type Type_a;
+    replaceable type Type_a subtypeof Any;
   end FuncTypeTplExpType_aToTplExpType_a;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTplExpTypeA:=
   matchcontinue (inExp,inFuncTypeTplExpTypeAToTplExpTypeA,inTypeA)
@@ -15088,9 +15116,9 @@ Help function for traverseExp
   partial function FuncTypeTplExpType_aToTplExpType_a
     input tuple<Absyn.Exp, Type_a> inTplExpTypeA;
     output tuple<Absyn.Exp, Type_a> outTplExpTypeA;
-    replaceable type Type_a;
+    replaceable type Type_a subtypeof Any;
   end FuncTypeTplExpType_aToTplExpType_a;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm
   outTplExpTypeA:= matchcontinue(inLst,rel,ext_arg)
  	local Absyn.Exp e1,e2,e11,e21;
@@ -15114,9 +15142,9 @@ Help function for traverseExp
   partial function FuncTypeTplExpType_aToTplExpType_a
     input tuple<Absyn.Exp, Type_a> inTplExpTypeA;
     output tuple<Absyn.Exp, Type_a> outTplExpTypeA;
-    replaceable type Type_a;
+    replaceable type Type_a subtypeof Any;
   end FuncTypeTplExpType_aToTplExpType_a;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm
   outTplExpTypeA:= matchcontinue(inArgs,rel,ext_arg)
  	local Absyn.Exp e1,e2,e11,e21;
@@ -15141,9 +15169,9 @@ protected function traverseExpNamedArgs "Help function to traverseExpFunctionArg
   partial function FuncTypeTplExpType_aToTplExpType_a
     input tuple<Absyn.Exp, Type_a> inTplExpTypeA;
     output tuple<Absyn.Exp, Type_a> outTplExpTypeA;
-    replaceable type Type_a;
+    replaceable type Type_a subtypeof Any;
   end FuncTypeTplExpType_aToTplExpType_a;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm
   outTplExpTypeA:= matchcontinue(nargs,rel,ext_arg)
  	local Absyn.Exp e1,e2,e11,e21;
@@ -15166,9 +15194,9 @@ protected function traverseExpPosArgs "Help function to traverseExpFunctionArgs"
   partial function FuncTypeTplExpType_aToTplExpType_a
     input tuple<Absyn.Exp, Type_a> inTplExpTypeA;
     output tuple<Absyn.Exp, Type_a> outTplExpTypeA;
-    replaceable type Type_a;
+    replaceable type Type_a subtypeof Any;
   end FuncTypeTplExpType_aToTplExpType_a;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm
   outTplExpTypeA:= matchcontinue(pargs,rel,ext_arg)
  	local Absyn.Exp e1,e2,e11,e21;
@@ -15182,6 +15210,17 @@ algorithm
  	  then((e11::pargs,ext_arg));
   end matchcontinue;
 end traverseExpPosArgs;
+
+/*
+protected function expandUnionTypes " extracts records from uniontypes to the upper level"
+  input  Absyn.Program inProgram;
+  output Absyn.Program outProgram;
+algorithm
+  outProgram := matchcontinue(inProgram)
+  case (x as Absyn.PROGRAM(_)) then x;
+  end matchcontinue;
+end expandUnionTypes;  
+*/
 
 protected constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
           {

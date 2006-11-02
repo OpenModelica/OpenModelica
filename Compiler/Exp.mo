@@ -63,8 +63,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   strings. Also graphviz output is supported.
 "
 
-public import OpenModelica.Compiler.Absyn;
-public import OpenModelica.Compiler.Graphviz;
+public import Absyn;
+public import Graphviz;
 
 public 
 type Ident = String "- Identifiers 
@@ -363,16 +363,16 @@ uniontype Subscript "The `Subscript\' and `ComponentRef\' datatypes are simple
 
 end Subscript;
 
-protected import OpenModelica.Compiler.RTOpts;
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.Print;
-protected import OpenModelica.Compiler.ModUtil;
-protected import OpenModelica.Compiler.Derive;
-protected import OpenModelica.Compiler.Dump;
-protected import OpenModelica.Compiler.Error;
-protected import OpenModelica.Compiler.Debug;
-protected import OpenModelica.Compiler.Static;
-protected import OpenModelica.Compiler.Env;
+protected import RTOpts;
+protected import Util;
+protected import Print;
+protected import ModUtil;
+protected import Derive;
+protected import Dump;
+protected import Error;
+protected import Debug;
+protected import Static;
+protected import Env;
 
 protected constant Exp rconstone=RCONST(1.0);
 
@@ -5208,7 +5208,7 @@ public function printList "function: printList
   input list<Type_a> inTypeALst;
   input FuncTypeType_aTo inFuncTypeTypeATo;
   input String inString;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aTo
     input Type_a inTypeA;
   end FuncTypeType_aTo;
@@ -5345,7 +5345,7 @@ public function printListStr "function: printListStr
   input FuncTypeType_aToString inFuncTypeTypeAToString;
   input String inString;
   output String outString;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aToString
     input Type_a inTypeA;
     output String outString;
@@ -7514,9 +7514,9 @@ public function traverseExp "function traverseExp
   partial function FuncTypeTplExpType_aToTplExpType_a
     input tuple<Exp, Type_a> inTplExpTypeA;
     output tuple<Exp, Type_a> outTplExpTypeA;
-    replaceable type Type_a;
+    replaceable type Type_a subtypeof Any;
   end FuncTypeTplExpType_aToTplExpType_a;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTplExpTypeA:=
   matchcontinue (inExp,inFuncTypeTplExpTypeAToTplExpTypeA,inTypeA)
@@ -7668,9 +7668,9 @@ protected function traverseExpMatrix "function: traverseExpMatrix
   partial function FuncTypeTplExpType_aToTplExpType_a
     input tuple<Exp, Type_a> inTplExpTypeA;
     output tuple<Exp, Type_a> outTplExpTypeA;
-    replaceable type Type_a;
+    replaceable type Type_a subtypeof Any;
   end FuncTypeTplExpType_aToTplExpType_a;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   (outTplExpBooleanLstLst,outTypeA):=
   matchcontinue (inTplExpBooleanLstLst,inFuncTypeTplExpTypeAToTplExpTypeA,inTypeA)
@@ -7702,9 +7702,9 @@ protected function traverseExpMatrix2 "function: traverseExpMatrix2
   partial function FuncTypeTplExpType_aToTplExpType_a
     input tuple<Exp, Type_a> inTplExpTypeA;
     output tuple<Exp, Type_a> outTplExpTypeA;
-    replaceable type Type_a;
+    replaceable type Type_a subtypeof Any;
   end FuncTypeTplExpType_aToTplExpType_a;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   (outTplExpBooleanLst,outTypeA):=
   matchcontinue (inTplExpBooleanLst,inFuncTypeTplExpTypeAToTplExpTypeA,inTypeA)
@@ -7738,9 +7738,9 @@ protected function matrixExpMap1 "function: matrixExpMap1
     input Exp inExp;
     input Type_b inTypeB;
     output Exp outExp;
-    replaceable type Type_b;
+    replaceable type Type_b subtypeof Any;
   end FuncTypeExpType_bToExp;
-  replaceable type Type_b;
+  replaceable type Type_b subtypeof Any;
 algorithm 
   outTplExpBooleanLstLst:=
   matchcontinue (inTplExpBooleanLstLst,inFuncTypeExpTypeBToExp,inTypeB)
@@ -7771,9 +7771,9 @@ protected function matrixExpMap1Help "function: matrixExpMap1Help
     input Exp inExp;
     input Type_b inTypeB;
     output Exp outExp;
-    replaceable type Type_b;
+    replaceable type Type_b subtypeof Any;
   end FuncTypeExpType_bToExp;
-  replaceable type Type_b;
+  replaceable type Type_b subtypeof Any;
 algorithm 
   outTplExpBooleanLst:=
   matchcontinue (inTplExpBooleanLst,inFuncTypeExpTypeBToExp,inTypeB)

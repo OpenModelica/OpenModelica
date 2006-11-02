@@ -60,11 +60,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   in the BLT sorting.
 "
 
-public import OpenModelica.Compiler.DAE;
-public import OpenModelica.Compiler.Exp;
-public import OpenModelica.Compiler.Values;
-public import OpenModelica.Compiler.Absyn;
-public import OpenModelica.Compiler.Algorithm;
+public import DAE;
+public import Exp;
+public import Values;
+public import Absyn;
+public import Algorithm;
 
 public 
 uniontype VarKind "- Variabile kind"
@@ -381,22 +381,22 @@ end EquationReduction;
 public 
 type MatchingOptions = tuple<IndexReduction, EquationConstraints, EquationReduction> "- Matching Options" ;
 
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.RTOpts;
-protected import OpenModelica.Compiler.DAEEXT;
-protected import OpenModelica.Compiler.Print;
-protected import OpenModelica.Compiler.Derive;
-protected import OpenModelica.Compiler.Debug;
-protected import OpenModelica.Compiler.Env;
-protected import OpenModelica.Compiler.Builtin;
-protected import OpenModelica.Compiler.Ceval;
-protected import OpenModelica.Compiler.Types;
-protected import OpenModelica.Compiler.SCode;
-protected import OpenModelica.Compiler.Dump;
-protected import OpenModelica.Compiler.System;
-protected import OpenModelica.Compiler.VarTransform;
-protected import OpenModelica.Compiler.Error;
-protected import OpenModelica.Compiler.SimCodegen;
+protected import Util;
+protected import RTOpts;
+protected import DAEEXT;
+protected import Print;
+protected import Derive;
+protected import Debug;
+protected import Env;
+protected import Builtin;
+protected import Ceval;
+protected import Types;
+protected import SCode;
+protected import Dump;
+protected import System;
+protected import VarTransform;
+protected import Error;
+protected import SimCodegen;
 
 
 protected constant BinTree emptyBintree=TREENODE(NONE,NONE,NONE) " Empty binary tree " ;

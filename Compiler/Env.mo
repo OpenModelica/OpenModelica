@@ -90,11 +90,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   uniform lookup mechanism
 "
 
-public import OpenModelica.Compiler.Absyn;
-public import OpenModelica.Compiler.SCode;
-public import OpenModelica.Compiler.Types;
-public import OpenModelica.Compiler.ClassInf;
-public import OpenModelica.Compiler.Exp;
+public import Absyn;
+public import SCode;
+public import Types;
+public import ClassInf;
+public import Exp;
 
 public 
 type Ident = String " An identifier is just a string " ;
@@ -210,12 +210,12 @@ type Value = Item;
   
 public 
 
-protected import OpenModelica.Compiler.Dump;
-protected import OpenModelica.Compiler.Graphviz;
-protected import OpenModelica.Compiler.DAE;
-protected import OpenModelica.Compiler.Print;
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.System;
+protected import Dump;
+protected import Graphviz;
+protected import DAE;
+protected import Print;
+protected import Util;
+protected import System;
 
 public constant Env emptyEnv={} "- Values" ;
 
@@ -977,7 +977,7 @@ protected function isVarItem "function: isVarItem
   Succeeds if item is a VAR.
 "
   input tuple<Type_a, Item> inTplTypeAItem;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   _:=
   matchcontinue (inTplTypeAItem)
@@ -990,7 +990,7 @@ protected function isClassItem "function: isClassItem
   Succeeds if item is a CLASS.
 "
   input tuple<Type_a, Item> inTplTypeAItem;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   _:=
   matchcontinue (inTplTypeAItem)
@@ -1003,7 +1003,7 @@ protected function isTypeItem "function: isTypeItem
   Succeds if item is a TYPE.
 "
   input tuple<Type_a, Item> inTplTypeAItem;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   _:=
   matchcontinue (inTplTypeAItem)

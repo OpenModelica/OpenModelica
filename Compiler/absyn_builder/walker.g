@@ -1,7 +1,7 @@
 /*
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2005, Linkopings universitet, Department of
+Copyright (c) 1998-2006, Linkopings universitet, Department of
 Computer and Information Science, PELAB
 
 All rights reserved.
@@ -57,14 +57,14 @@ header "post_include_hpp" {
     extern "C" {
 		#include <stdio.h>
 		#include "yacclib.h"
+		#include "rml.h"
+		#include "../Absyn.h"
+		#include "../Interactive.h"
     }
     
 	#include <cstdlib>
 	#include <iostream>
     
-	#include "rml.h"
-	#include "../Absyn.h"
-	#include "../Interactive.h"
 	#include <stack>
 	#include <string>
 	#include "MyAST.h"
@@ -149,6 +149,18 @@ tokens {
     
     typedef std::stack<void*> l_stack;
     
+    void* make_rml_cons_from_stack(l_stack& s)
+    {
+        void *l = mk_nil();
+        
+        while (!s.empty())
+        {
+            l = Absyn__CONS(s.top(), l);
+            s.pop();
+        }   
+        return l;
+    }    
+    
     void* make_rml_list_from_stack(l_stack& s)
     {
         void *l = mk_nil();
@@ -160,6 +172,7 @@ tokens {
         }   
         return l;
     }
+    
     void* string_append_from_stack(l_stack& s)
     {
     	char* buf;
@@ -315,8 +328,8 @@ class_definition [bool final] returns [ void* ast ]
             (p:PARTIAL )?
             (ex:EXPANDABLE)?
             restr = class_restriction
-            (name = flat_name_path)? 
-            class_spec = class_specifier
+            (name = flat_name_path)?
+            class_spec = class_specifier            
         )
         {   
             classDef = cd;
@@ -324,7 +337,7 @@ class_definition [bool final] returns [ void* ast ]
                 restr = Absyn__R_5fEXP_5fCONNECTOR;
             }
             ast = Absyn__CLASS(
-                name? mk_scon((char*)name): mk_scon(""),
+                name?mk_scon((char*)name):mk_scon(""),
                 RML_PRIM_MKBOOL(p != 0),
                 RML_PRIM_MKBOOL(final),
                 RML_PRIM_MKBOOL(e != 0), 
@@ -353,6 +366,7 @@ class_restriction returns [void* ast]
         | TYPE      { ast = Absyn__R_5fTYPE; }
         | PACKAGE   { ast = Absyn__R_5fPACKAGE; }
         | FUNCTION  { ast = Absyn__R_5fFUNCTION; }
+        | UNIONTYPE { ast = Absyn__R_5fUNIONTYPE; }
         )
     ;
 
@@ -361,29 +375,35 @@ class_specifier returns [void* ast]
 	void *comp = 0;
 	void *cmt = 0;
     void *cmod = 0;
+    void *typeSpecifier = 0;
 }
 	:
-		( (cmt = string_comment )
-			comp = composition		
+        ( (cmt = string_comment ) 
+            comp = composition 
 			{
 				ast = Absyn__PARTS(comp,cmt ? mk_some(cmt) : mk_none());
 			}
 		)
-	| #(EQUALS ( ast = derived_class 
-            | ast = enumeration 
-            | ast = overloading
-            | ast = pder )) 
-    | #(CLASS_EXTENDS i:IDENT (cmod = class_modification)? 
-                        cmt = string_comment comp = composition)
-        {
-            if (!cmod) { cmod = mk_nil(); }
-            ast = Absyn__CLASS_5fEXTENDS(
-                to_rml_str(i),
-                cmod,
-                cmt ? mk_some(cmt) : mk_none(),
-                comp);
-        }
-	;
+		| #(SUBTYPEOF typeSpecifier = type_specifier)
+			{
+				// adrpo: ignore the type_specifier here
+				ast = Absyn__PARTS(mk_nil(), mk_none());
+			}		
+		| #(EQUALS  ( ast = derived_class 
+	            	| ast = enumeration 
+	            	| ast = overloading
+	            	| ast = pder )) 
+	    | #(CLASS_EXTENDS i:IDENT (cmod = class_modification)? 
+	                        cmt = string_comment comp = composition)
+	        {
+	            if (!cmod) { cmod = mk_nil(); }
+	            ast = Absyn__CLASS_5fEXTENDS(
+	                to_rml_str(i),
+	                cmod,
+	                cmt ? mk_some(cmt) : mk_none(),
+	                comp);
+	        }
+        ;
 
 pder returns [void* ast] 
 {
@@ -435,30 +455,27 @@ overloading returns [void *ast]
 
 derived_class returns [void *ast]
 {
-	void *p = 0;
-	void *as = 0;
 	void *cmod = 0;
   	void *cmt = 0;
 	void *attr = 0;
 	type_prefix_t pfx;
+	void *path = 0;
+	l_stack el_stack;
 }
 	:
-		(   type_prefix[pfx]
-			p = name_path 
-			( as = array_subscripts )? 
-			( cmod = class_modification )? 
-			(cmt = comment)?
+		(	bp:type_prefix[pfx] 
+		    path = np:type_specifier 
+		    ( cmod = cm:class_modification )? 
+		    ( cmt = comment )?
 			{
-				if (as) { as = mk_some(as); }
-				else { as = mk_none(); }
 				if (!cmod) { cmod = mk_nil(); }
 				attr = Absyn__ATTR(
 				pfx.flow,
 				pfx.variability,
 				pfx.direction,
  				mk_nil());
-
-				ast = Absyn__DERIVED(Absyn__TPATH(p, as), attr, cmod, cmt? mk_some(cmt) : mk_none());
+ 				
+ 				ast = Absyn__DERIVED(path, attr, cmod, cmt? mk_some(cmt) : mk_none());
 			}
 		)
 	;
@@ -858,27 +875,57 @@ component_clause returns [void* ast]
 	type_prefix_t pfx;
 	void* attr = 0;
 	void* path = 0;
-	void* arr = 0;
 	void* comp_list = 0;
+	l_stack el_stack;	
+	void* ar_option = 0;
+	void* arr = 0;
 }
-	:
-		type_prefix[pfx] 
-		path = type_specifier 
-		(arr = array_subscripts)? 
-		comp_list = component_list
+	:	(
+		tp:type_prefix[pfx] 
+		path=np:type_specifier
+		comp_list = clst:component_list
+		)
 		{
+			// here we do so:
+			// - take the last (array subscripts) from type and move it to ATTR
+			if (RML_GETHDR(path) == RML_STRUCTHDR(2, Absyn__TPATH_3dBOX2)) // is TPATH(path, arr)
+			{
+				struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(path);
+				ar_option = p->data[1];         // get the array option
+				p->data[1] = mk_none();  // replace the array with nothing
+			}
+			else if (RML_GETHDR(path) == RML_STRUCTHDR(3, Absyn__TCOMPLEX_3dBOX3))
+			{
+				struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(path);
+				ar_option = p->data[2];         // get the array option
+				p->data[2] = mk_none();  // replace the array with nothing					
+			}
+			else // kinda' error here
+			{
+				arr = mk_nil();		
+			}
+			
 			if (!arr)
 			{
-				arr = mk_nil();
+				// no arr was set, inspect ar_option and fix it
+				struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(ar_option);
+				if (RML_GETHDR(ar_option) == RML_STRUCTHDR(0,0)) // is NONE
+				{
+					arr = mk_nil();
+				}
+				else // is SOME(arr)
+				{
+					arr = p->data[0];	
+				}
 			}
-
+			
 			attr = Absyn__ATTR(
 				pfx.flow,
 				pfx.variability,
 				pfx.direction,
  				arr);
-
-			ast = Absyn__COMPONENTS(attr, Absyn__TPATH(path, mk_none()), comp_list);
+ 				
+			ast = Absyn__COMPONENTS(attr, path, comp_list);
 		}
 	;
 
@@ -909,9 +956,40 @@ type_prefix [type_prefix_t& prefix]
 
 // returns datatype Path
 type_specifier returns [void* ast]
-	:
-		ast = name_path;
+{
+	void *tlist = 0;
+    void *path = 0;
+    void *arr = 0;
+}
+	:  (path=np:name_path)
+	   (#(x:TYPE_LIST tlist=t:type_specifier_list))?
+	   (arr=as:array_subscripts)?
+			{
+			    if (arr) { arr = mk_some(arr); } else { arr = mk_none(); }
+ 				if (tlist)
+ 				{
+ 				  ast = Absyn__TCOMPLEX(path,tlist?tlist:mk_nil(),arr);
+				}
+ 				else 
+ 				{
+ 				  ast = Absyn__TPATH(path,arr);
+ 				}
+			}
+		;
 
+
+type_specifier_list returns [void *ast]
+{
+    l_stack el_stack;
+    void *e=0;
+    ast = 0;
+}:
+	   e=type_specifier { el_stack.push(e); }
+	   (COMMA e=type_specifier { el_stack.push(e); })*
+		{
+			ast = make_rml_list_from_stack(el_stack);
+		}
+	;
 
 // returns datatype Component list
 component_list returns [void* ast]
@@ -1189,12 +1267,13 @@ component_clause1 returns [void* ast]
 }
 	:
 		type_prefix[pfx]
-		path = type_specifier 
+		path = name_path 
 		comp_decl = component_declaration
 		{
+			
 			if (!arr)
 			{
-				arr = mk_nil();
+					arr = mk_nil();
 			}
 			comp_list = mk_cons(comp_decl,mk_nil());
 			attr = Absyn__ATTR(
@@ -1280,54 +1359,75 @@ equation returns [void* ast]
 			|	ast = for_clause_e
 			|	ast = when_clause_e
 			|	ast = connect_clause
-			|  ast = equation_funcall	
+			|	ast = equation_funcall
+			|   #(FAILURE  ast = fa:equation)
+			|   #(EQUALITY ast = eq:equation)			
 			)
 			(cmt = comment)?
 			{
-				ast = Absyn__EQUATIONITEM(ast,cmt ? mk_some(cmt) : mk_none());
+				if (fa)
+				{
+					ast = Absyn__EQUATIONITEM(Absyn__EQ_5fFAILURE(ast),cmt ? mk_some(cmt) : mk_none());
+				}
+				else if (eq)
+				{
+					ast = Absyn__EQUATIONITEM(Absyn__EQ_5fEQUALITY(ast),cmt ? mk_some(cmt) : mk_none());					
+				}
+				else 
+				{
+					ast = Absyn__EQUATIONITEM(ast,cmt ? mk_some(cmt) : mk_none());
+				}
 			}
 		)
 	;
 
 equation_funcall returns [void* ast]
 {
-  void *fcall = 0;
+	void* cref  = 0;
+	void* fcall = 0;	
 }
 	:
-		i:IDENT fcall = function_call 
-		{ ast = Absyn__EQ_5fNORETCALL(Absyn__CREF_5fIDENT(to_rml_str(i), mk_nil()),fcall); }
+	 (cref = component_reference fcall = function_call) /* here will be a no-ret function call */
+		{
+			ast = Absyn__EQ_5fNORETCALL(cref, fcall);
+		} 
 	;
 
 algorithm returns [void* ast]
 {
-	void* cref;
-	void* expr;
-	void* tuple;
-	void* args;
-  	void* cmt=0;
+  	void* cmt = 0;
+  	void* e1  = 0;
+  	void* e2  = 0;
 }
-	:
+	:		
 		#(ALGORITHM_STATEMENT 
-			(#(ASSIGN 
-					(cref = component_reference expr = expression
-						{
-							ast = Absyn__ALG_5fASSIGN(cref,expr);
-						}
-					|	(tuple = expression_list cref = component_reference args = function_call)
-						{
-							ast = Absyn__ALG_5fTUPLE_5fASSIGN(Absyn__TUPLE(tuple),Absyn__CALL(cref,args));
-						}
-					)
-				)
+			(#(ASSIGN e1 = simple_expression e2 = expression
+				{
+					ast = Absyn__ALG_5fASSIGN(e1,e2);
+				}
+			)			
 			| ast = algorithm_function_call
 			| ast = conditional_equation_a
 			| ast = for_clause_a
 			| ast = while_clause
 			| ast = when_clause_a
+			| #(FAILURE  ast = fa:algorithm)
+			| #(EQUALITY ast = eq:algorithm)			
 			)
 			(cmt = comment)?
 	  		{	
-				ast = Absyn__ALGORITHMITEM(ast, cmt ?  mk_some(cmt) : mk_none());
+				if (fa)
+				{
+					ast = Absyn__ALGORITHMITEM(Absyn__ALG_5fFAILURE(ast),cmt ? mk_some(cmt) : mk_none());
+				}
+				else if (eq)
+				{
+					ast = Absyn__ALGORITHMITEM(Absyn__ALG_5fEQUALITY(ast),cmt ? mk_some(cmt) : mk_none());					
+				}
+				else 
+				{
+					ast = Absyn__ALGORITHMITEM(ast,cmt ? mk_some(cmt) : mk_none());
+				}	  			
 	  		}
 		)
 	;
@@ -1338,9 +1438,9 @@ algorithm_function_call returns [void* ast]
 	void* args;
 }
 	:
-		cref = component_reference args = function_call
+		cref = component_reference args = function_call /* here will be a no-ret function call */
 		{
-			ast = Absyn__ALG_5fNORETCALL(cref,args);
+		  ast = Absyn__ALG_5fNORETCALL(cref, args);
 		}
 	;
 
@@ -1352,6 +1452,16 @@ equality_equation returns [void* ast]
 	:
 		#(EQUALS e1 = simple_expression e2 = expression)
 		{
+
+			//printf ("%s=[", "e1");
+			//rmldb_var_print(e1);
+			//printf ("]\n");
+			//fflush(stdout);
+			//printf ("%s=[", "e2");
+			//rmldb_var_print(e2);
+			//printf ("]\n");
+			//fflush(stdout);
+						
 			ast = Absyn__EQ_5fEQUALS(e1,e2);
 		}
 	;
@@ -1618,12 +1728,90 @@ connector_ref_2 returns [void* ast]
 	;
 
 expression returns [void* ast]
+{
+	void* inputs = 0;
+	void* local  = 0;
+	void* cas    = 0;
+	void* e1     = 0;
+	void* e2     = 0;
+	void* exp    = 0;
+}
 	:
 		(	ast = simple_expression
+		|   #(COLONCOLON e1 = expression e2 = simple_expression)
+			{
+				ast = Absyn__CONS(e1, e2);
+			}
+		| #(AS i:IDENT exp = expression)
+			{
+				ast = Absyn__AS(to_rml_str(i),exp);
+			}			
 		|	ast = if_expression
 		|   ast = code_expression
+		|   #(MATCHCONTINUE inputs=imc:expression_or_empty local=local_clause cas=cases
+			{ 
+				ast = Absyn__MATCHEXP(Absyn__MATCHCONTINUE, inputs, local, cas, mk_none()); 
+			} )
+		|   #(MATCH inputs=im:expression_or_empty local=local_clause cas=cases
+			{ 
+				ast = Absyn__MATCHEXP(Absyn__MATCH, inputs, local, cas, mk_none()); 
+			} )
+		
 		)
 	;
+
+expression_or_empty returns [void* ast]
+{
+}:
+	  ast = expression
+	| #(EMPTY { ast = Absyn__TUPLE(mk_nil()); } )
+	;
+	
+
+local_clause returns [void* ast]
+{
+	ast = mk_nil();
+}
+:
+	(#(LOCAL ast = e:element_list))?
+	{
+		if (!e) ast = mk_nil();
+	}
+	;
+
+cases returns [void* ast]
+{
+	l_stack el_stack;
+	void* pat       = 0;
+	void* local     = 0;
+	void* eqs       = 0;
+	void* result    = 0;
+	void* caseEl    = 0;
+	void* elseEl    = 0;
+	ast       = mk_nil();
+}	:
+	(
+	(#(CASE pat=pattern local=local_clause eqs=equation_list result=expression_or_empty)
+	{
+		caseEl = Absyn__CASE(pat, local?local:mk_nil(), eqs?eqs:mk_nil(), result, mk_none());
+		el_stack.push(caseEl);
+	}
+	)+
+	(#(ELSE local=local_clause eqs=equation_list result=expression_or_empty)
+	{
+		caseEl = Absyn__ELSE(local?local:mk_nil(), eqs?eqs:mk_nil(), result, mk_none());
+		el_stack.push(elseEl);		
+	})?
+	)
+	{
+		ast = make_rml_list_from_stack(el_stack);
+	}
+	;
+
+pattern returns [void* ast]:
+	ast = expression
+	;
+
 
 code_expression returns [void* ast]
 	:
@@ -1708,8 +1896,8 @@ simple_expression returns [void* ast]
 }
 	:
 		(#(RANGE3 e1 = logical_expression 
-				e2 = logical_expression 
-				e3 = logical_expression)
+				  e2 = logical_expression 
+				  e3 = logical_expression)
 			{
 				ast = Absyn__RANGE(e1,mk_some(e2),e3);
 			}
@@ -1766,9 +1954,13 @@ relation returns [void* ast]
 		| 
 			( #(LESS e1=arithmetic_expression e2=arithmetic_expression)
 				{ op = Absyn__LESS; }                    
+			| #(RLESS e1=arithmetic_expression e2=arithmetic_expression)
+				{ op = Absyn__LESS; }				                    
 			| #(LESSEQ e1=arithmetic_expression e2=arithmetic_expression)
 				{ op = Absyn__LESSEQ; }                    
 			| #(GREATER e1=arithmetic_expression e2=arithmetic_expression)
+				{ op = Absyn__GREATER; }                    
+			| #(RGREATER e1=arithmetic_expression e2=arithmetic_expression)
 				{ op = Absyn__GREATER; }                    
 			| #(GREATEREQ e1=arithmetic_expression e2=arithmetic_expression)
 				{ op = Absyn__GREATEREQ; }                    
@@ -1855,7 +2047,7 @@ factor returns [void* ast]
 primary returns [void* ast]
 {
 	l_stack el_stack;
-	void* e;
+	void* e = 0;
     ast = 0;
 }
 	:
@@ -1883,10 +2075,8 @@ primary returns [void* ast]
             {
                 ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("der"), mk_nil()),e);
             }
-		| #(LPAR ast = tuple_expression_list)
-
-		| #(LBRACK  e = expression_list { el_stack.push(e); }
-				(e = expression_list { el_stack.push(e); } )* )
+		| #(LPAR ast = tuple_expression_list )
+		| #(LBRACK (e = expression_list { el_stack.push(e); } )*)
 			{
 				ast = Absyn__MATRIX(make_rml_list_from_stack(el_stack));
 			}
@@ -1897,6 +2087,7 @@ primary returns [void* ast]
                         /* for unified handling in compiler */
                         ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("array"), mk_nil()),ast);
                     }
+                   | { ast = Absyn__ARRAY(mk_nil()); }
                 ))
 		| END { ast = Absyn__END; }
 		)
@@ -1904,8 +2095,8 @@ primary returns [void* ast]
 
 component_reference__function_call returns [void* ast]
 {
-	void* cref;
-	void* fnc = 0;
+	void* cref = 0;
+	void* fnc  = 0;
 }
 	:
 		(#(FUNCTION_CALL cref = component_reference (fnc = function_call)?)
@@ -1968,6 +2159,10 @@ component_reference	returns [void* ast]
 					arr,
 					ast);
 
+			}
+		| WILD
+			{
+				ast = Absyn__WILD;
 			}
 		)
 	;
@@ -2123,7 +2318,6 @@ comment returns [void* ast]
 		}
 	;
 
-
 string_comment returns [void *ast] :
 	{
 	  std::string cmt;
@@ -2153,38 +2347,8 @@ string_concatenation returns [std::string ast]
 			ast = s1+s2->getText();
 		}
 	;
-	
-/* adrpo - 2006-10-02 older version left here for reference
-string_comment returns [void *ast] :
-	{
-			void *cmt=0;
-	  ast = 0;	   
-	}
-		#(STRING_COMMENT cmt=string_concatenation)
-		{
-			ast = cmt;
-		}
-	|
-		{
-			ast = 0;
-		}
-	;
 
-string_concatenation returns [void * ast] :
-		{ 
-			ast = 0;
-		}
-		s:STRING {
-	  		ast = to_rml_str(s);
-		}
-	|#(p:PLUS string_concatenation s2:STRING)
-		{
-			ast = to_rml_str(s2);
-		}
-	;
-
-*/
-annotation returns [ void *ast]
+annotation returns [void *ast]
 {
     void *cmod=0;
 }
@@ -2287,7 +2451,7 @@ flat_name_path returns [void* ast]
 	|#(d:DOT i2:IDENT ast = flat_name_path )
 		{
 			buf = (char*) malloc(strlen(i2->getText().c_str())
-					+strlen((const char*)ast)+2);
+			        +strlen((const char*)ast)+2);
 			if (!buf) return 0;
 			buf[0]='\0';
 			buf = strcat(buf,i2->getText().c_str());

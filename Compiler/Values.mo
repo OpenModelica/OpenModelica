@@ -54,8 +54,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   semantic information.
 "
 
-public import OpenModelica.Compiler.Exp;
-public import OpenModelica.Compiler.Absyn;
+public import Exp;
+public import Absyn;
 
 public 
 uniontype Value
@@ -99,11 +99,11 @@ uniontype Value
 
 end Value;
 
-protected import OpenModelica.Compiler.Print;
-protected import OpenModelica.Compiler.System;
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.Dump;
-protected import OpenModelica.Compiler.Error;
+protected import Print;
+protected import System;
+protected import Util;
+protected import Dump;
+protected import Error;
 
 public function typeConvert "function: typeConvert
  

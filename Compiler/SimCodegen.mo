@@ -59,11 +59,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  
 "
 
-public import OpenModelica.Compiler.DAE;
-public import OpenModelica.Compiler.DAELow;
-public import OpenModelica.Compiler.Absyn;
-public import OpenModelica.Compiler.Exp;
-public import OpenModelica.Compiler.SCode;
+public import DAE;
+public import DAELow;
+public import Absyn;
+public import Exp;
+public import SCode;
 
 protected 
 type CFunction = Codegen.CFunction;
@@ -97,22 +97,22 @@ protected constant String paramComments="param_comments";
 protected constant String paramInGetNameFunction="ptr";
 
 
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.RTOpts;
-protected import OpenModelica.Compiler.Debug;
-protected import OpenModelica.Compiler.System;
-protected import OpenModelica.Compiler.Values;
-protected import OpenModelica.Compiler.Codegen;
-protected import OpenModelica.Compiler.Print;
-protected import OpenModelica.Compiler.ModUtil;
-protected import OpenModelica.Compiler.VarTransform;
-protected import OpenModelica.Compiler.Dump;
-protected import OpenModelica.Compiler.Inst;
-protected import OpenModelica.Compiler.Error;
-protected import OpenModelica.Compiler.Settings;
-protected import OpenModelica.Compiler.Algorithm;
-protected import OpenModelica.Compiler.Types;
-protected import OpenModelica.Compiler.Env;
+protected import Util;
+protected import RTOpts;
+protected import Debug;
+protected import System;
+protected import Values;
+protected import Codegen;
+protected import Print;
+protected import ModUtil;
+protected import VarTransform;
+protected import Dump;
+protected import Inst;
+protected import Error;
+protected import Settings;
+protected import Algorithm;
+protected import Types;
+protected import Env;
 
 public function generateMakefile "function: generateMakefile
  

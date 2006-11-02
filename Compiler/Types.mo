@@ -56,11 +56,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   modules are constants that could be moved to their own modules.
 "
 
-public import OpenModelica.Compiler.ClassInf;
-public import OpenModelica.Compiler.Absyn;
-public import OpenModelica.Compiler.Exp;
-public import OpenModelica.Compiler.Values;
-public import OpenModelica.Compiler.SCode;
+public import ClassInf;
+public import Absyn;
+public import Exp;
+public import Values;
+public import SCode;
 
 public 
 type Ident = String "- Identifiers" ;
@@ -281,15 +281,15 @@ uniontype Mod "Modification"
 
 end Mod;
 
-protected import OpenModelica.Compiler.Dump;
+protected import Dump;
 
-protected import OpenModelica.Compiler.Debug;
+protected import Debug;
 
-protected import OpenModelica.Compiler.Print;
+protected import Print;
 
-protected import OpenModelica.Compiler.Util;
+protected import Util;
 
-protected import OpenModelica.Compiler.Static;
+protected import Static;
 
 public function discreteType "function: discreteType
   author: PA

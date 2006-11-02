@@ -55,9 +55,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  
 "
 
-protected import OpenModelica.Compiler.RTOpts;
-protected import OpenModelica.Compiler.Print;
-protected import OpenModelica.Compiler.Util;
+protected import RTOpts;
+protected import Print;
+protected import Util;
 
 public function print "function: print
   author: PR
@@ -143,9 +143,9 @@ public function fcall "function: fcall
   input Type_a inTypeA;
   partial function FuncTypeType_aTo
     input Type_a inTypeA;
-    replaceable type Type_a;
+    replaceable type Type_a subtypeof Any;
   end FuncTypeType_aTo;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   _:=
   matchcontinue (inString,inFuncTypeTypeATo,inTypeA)
@@ -200,11 +200,11 @@ public function fcallret "function: fcallret
   partial function FuncTypeType_aToType_b
     input Type_a inTypeA;
     output Type_b outTypeB;
-    replaceable type Type_a;
-    replaceable type Type_b;
+    replaceable type Type_a subtypeof Any;
+    replaceable type Type_b subtypeof Any;
   end FuncTypeType_aToType_b;
-  replaceable type Type_a;
-  replaceable type Type_b;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
 algorithm 
   outTypeB:=
   matchcontinue (inString,inFuncTypeTypeAToTypeB,inTypeA,inTypeB)
@@ -232,9 +232,9 @@ public function bcall "function: bcall
   input Type_a inTypeA;
   partial function FuncTypeType_aTo
     input Type_a inTypeA;
-    replaceable type Type_a;
+    replaceable type Type_a subtypeof Any;
   end FuncTypeType_aTo;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   _:=
   matchcontinue (inBoolean,inFuncTypeTypeATo,inTypeA)
@@ -261,11 +261,11 @@ public function bcall2 "function: bcall2
   partial function FuncTypeType_aType_bTo
     input Type_a inTypeA;
     input Type_b inTypeB;
-    replaceable type Type_a;
-    replaceable type Type_b;
+    replaceable type Type_a subtypeof Any;
+    replaceable type Type_b subtypeof Any;
   end FuncTypeType_aType_bTo;
-  replaceable type Type_a;
-  replaceable type Type_b;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
 algorithm 
   _:=
   matchcontinue (inBoolean,inFuncTypeTypeATypeBTo,inTypeA,inTypeB)
@@ -292,9 +292,9 @@ public function notfcall "function: notfcall
   input Type_a inTypeA;
   partial function FuncTypeType_aTo
     input Type_a inTypeA;
-    replaceable type Type_a;
+    replaceable type Type_a subtypeof Any;
   end FuncTypeType_aTo;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   _:=
   matchcontinue (inString,inFuncTypeTypeATo,inTypeA)
@@ -321,7 +321,7 @@ public function fprintList "function: fprintList
   input list<Type_a> inTypeALst2;
   input FuncTypeType_aTo inFuncTypeTypeATo3;
   input String inString4;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aTo
     input Type_a inTypeA;
   end FuncTypeType_aTo;
@@ -350,7 +350,7 @@ protected function printList "function: fprintList
   input list<Type_a> inTypeALst;
   input FuncTypeType_aTo inFuncTypeTypeATo;
   input String inString;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aTo
     input Type_a inTypeA;
   end FuncTypeType_aTo;

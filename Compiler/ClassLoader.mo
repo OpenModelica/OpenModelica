@@ -52,14 +52,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   
 "
 
-public import OpenModelica.Compiler.Absyn;
+public import Absyn;
 
-protected import OpenModelica.Compiler.System;
-protected import OpenModelica.Compiler.Interactive;
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.Parser;
-protected import OpenModelica.Compiler.Print;
-protected import OpenModelica.Compiler.Debug;
+protected import System;
+protected import Interactive;
+protected import Util;
+protected import Parser;
+protected import Print;
+protected import Debug;
 
 public function loadClass "function: loadClass
   This function takes a \'Path\' and the $OPENMODELICALIBRARY as a string

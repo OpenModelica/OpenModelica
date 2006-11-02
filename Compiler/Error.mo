@@ -89,7 +89,7 @@ type MessageTokens = list<String>   "\"Tokens\" to insert into message at
 				    - %l for line no.
 				    - %c for col. no." ;
 
-public import OpenModelica.Compiler.Absyn;
+public import Absyn;
 
 /*
 "Errors WARNINGS Notifications" 
@@ -375,9 +375,9 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (INDEX_REDUCTION_NOTIFICATION,SYMBOLIC(),NOTIFICATION(),
           "Notification, differentiated equation %s to %s for index reduction")};
 
-protected import OpenModelica.Compiler.ErrorExt;
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.Print;
+protected import ErrorExt;
+protected import Util;
+protected import Print;
 
 public function addMessage "Implementation of Relations
   function: addMessage

@@ -50,7 +50,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    
 "
 
-public import OpenModelica.Compiler.Error;
+public import Error;
 
 public function addMessage
   input Error.ErrorID inErrorID1;

@@ -55,10 +55,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   -------------------------------------------------------------------------"
 
-public import OpenModelica.Compiler.DAE;
-public import OpenModelica.Compiler.Print;
-public import OpenModelica.Compiler.Exp;
-public import OpenModelica.Compiler.Absyn;
+public import DAE;
+public import Print;
+public import Exp;
+public import Absyn;
 
 public 
 type Ident = String;
@@ -138,16 +138,16 @@ uniontype ExpContext
   record EXP_EXTERNAL "for expressions in external calls" end EXP_EXTERNAL;
 end ExpContext;
 
-protected import OpenModelica.Compiler.Debug;
-protected import OpenModelica.Compiler.Algorithm;
-protected import OpenModelica.Compiler.ClassInf;
-protected import OpenModelica.Compiler.ModUtil;
-protected import OpenModelica.Compiler.Types;
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.Inst;
-protected import OpenModelica.Compiler.Interactive;
-protected import OpenModelica.Compiler.System;
-protected import OpenModelica.Compiler.Error;
+protected import Debug;
+protected import Algorithm;
+protected import ClassInf;
+protected import ModUtil;
+protected import Types;
+protected import Util;
+protected import Inst;
+protected import Interactive;
+protected import System;
+protected import Error;
 
 public constant CFunction cEmptyFunction=CFUNCTION("","",{},{},{},{},{},{}) " empty function ";
 

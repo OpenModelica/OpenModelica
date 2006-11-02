@@ -54,8 +54,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  
 "
 
-public import OpenModelica.Compiler.Absyn;
-public import OpenModelica.Compiler.Interactive;
+public import Absyn;
+public import Interactive;
 
 public function parse
   input String inString;

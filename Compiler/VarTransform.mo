@@ -51,8 +51,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   along with some functions for performing replacements of variables in equations
 "
 
-public import OpenModelica.Compiler.Exp;
-public import OpenModelica.Compiler.DAELow;
+public import Exp;
+public import DAELow;
 
 public 
 uniontype VariableReplacements "
@@ -117,11 +117,11 @@ type Value = Exp.Exp;
 public 
 type Value2 = list<Exp.ComponentRef>;
 
-protected import OpenModelica.Compiler.System;
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.Algorithm;
-protected import OpenModelica.Compiler.Debug;
-protected import OpenModelica.Compiler.Absyn;
+protected import System;
+protected import Util;
+protected import Algorithm;
+protected import Debug;
+protected import Absyn;
 
 public function applyReplacements "function: applyReplacements
  

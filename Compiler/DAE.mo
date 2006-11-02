@@ -55,12 +55,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   - Module header"
 
-public import OpenModelica.Compiler.Absyn;
-public import OpenModelica.Compiler.Exp;
-public import OpenModelica.Compiler.Algorithm;
-public import OpenModelica.Compiler.Types;
-public import OpenModelica.Compiler.Values;
-public import OpenModelica.Compiler.ClassInf;
+public import Absyn;
+public import Exp;
+public import Algorithm;
+public import Types;
+public import Values;
+public import ClassInf;
 
 public 
 type Ident = String;
@@ -332,17 +332,17 @@ uniontype DAElist "A DAElist is a list of Elements. Variables, equations, functi
 
 end DAElist;
 
-protected import OpenModelica.Compiler.RTOpts;
-protected import OpenModelica.Compiler.Graphviz;
-protected import OpenModelica.Compiler.Dump;
-protected import OpenModelica.Compiler.Print;
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.Ceval;
-protected import OpenModelica.Compiler.ModUtil;
-protected import OpenModelica.Compiler.Debug;
-protected import OpenModelica.Compiler.Error;
-protected import OpenModelica.Compiler.SCode;
-protected import OpenModelica.Compiler.Env;
+protected import RTOpts;
+protected import Graphviz;
+protected import Dump;
+protected import Print;
+protected import Util;
+protected import Ceval;
+protected import ModUtil;
+protected import Debug;
+protected import Error;
+protected import SCode;
+protected import Env;
 
 public function dump "function: dump
  
@@ -2772,7 +2772,7 @@ public function buildGrStrlist "function buildGrStrlist
   input Integer inInteger;
   output list<String> outStringLst;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aToString
     input Type_a inTypeA;
     output String outString;

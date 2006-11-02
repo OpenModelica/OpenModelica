@@ -57,8 +57,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   
 "
 
-public import OpenModelica.Compiler.SCode;
-public import OpenModelica.Compiler.Absyn;
+public import SCode;
+public import Absyn;
 
 public 
 uniontype State "- Machine states, the string contains the classname."
@@ -139,8 +139,8 @@ uniontype Event "- Events"
 
 end Event;
 
-protected import OpenModelica.Compiler.Print;
-protected import OpenModelica.Compiler.Error;
+protected import Print;
+protected import Error;
 
 public function printStateStr "- Printing
   

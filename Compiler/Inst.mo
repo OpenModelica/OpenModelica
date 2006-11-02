@@ -84,16 +84,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
      future.
   4. Fu"
 
-public import OpenModelica.Compiler.ClassInf;
-public import OpenModelica.Compiler.Connect;
-public import OpenModelica.Compiler.DAE;
-public import OpenModelica.Compiler.Env;
-public import OpenModelica.Compiler.Exp;
-public import OpenModelica.Compiler.SCode;
-public import OpenModelica.Compiler.Mod;
-public import OpenModelica.Compiler.Prefix;
-public import OpenModelica.Compiler.Types;
-public import OpenModelica.Compiler.Absyn;
+public import ClassInf;
+public import Connect;
+public import DAE;
+public import Env;
+public import Exp;
+public import SCode;
+public import Mod;
+public import Prefix;
+public import Types;
+public import Absyn;
 
 public 
 type Prefix = Prefix.Prefix "
@@ -145,19 +145,19 @@ uniontype DimExp
 
 end DimExp;
 
-protected import OpenModelica.Compiler.Debug;
-protected import OpenModelica.Compiler.Interactive;
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.Algorithm;
-protected import OpenModelica.Compiler.Builtin;
-protected import OpenModelica.Compiler.Dump;
-protected import OpenModelica.Compiler.Lookup;
-protected import OpenModelica.Compiler.Static;
-protected import OpenModelica.Compiler.Values;
-protected import OpenModelica.Compiler.Print;
-protected import OpenModelica.Compiler.Ceval;
-protected import OpenModelica.Compiler.Error;
-protected import OpenModelica.Compiler.ErrorExt;
+protected import Debug;
+protected import Interactive;
+protected import Util;
+protected import Algorithm;
+protected import Builtin;
+protected import Dump;
+protected import Lookup;
+protected import Static;
+protected import Values;
+protected import Print;
+protected import Ceval;
+protected import Error;
+protected import ErrorExt;
 
 protected constant String forScopeName="$for loop scope$";
 
@@ -206,7 +206,7 @@ protected function select "function: select
   input Type_a inTypeA2;
   input Type_a inTypeA3;
   output Type_a outTypeA;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeA:=
   matchcontinue (inBoolean1,inTypeA2,inTypeA3)
@@ -7447,7 +7447,7 @@ algorithm
       Algorithm.Statement stmt;
       list<Env.Frame> env,env_1;
       Absyn.ComponentRef cr;
-      Absyn.Exp e,cond,msg;
+      Absyn.Exp e,cond,msg, assignComp;
       Boolean impl;
       list<Exp.Exp> expl_1;
       list<Types.Properties> cprops;
@@ -7462,7 +7462,7 @@ algorithm
        
        // v := expr;
        
-    case (cache,env,Absyn.ALG_ASSIGN(assignComponent = cr,value = e),impl) /* impl */ 
+    case (cache,env,Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e),impl) /* impl */ 
       equation 
         (cache,Exp.CREF(ce,t),cprop,acc) = Static.elabCref(cache,env, cr, impl,false);
         (cache,ce_1) = Static.canonCref(cache,env, ce, impl);
@@ -7472,7 +7472,7 @@ algorithm
         (cache,stmt);
 
 			// v[i] := expr (in e.g. for loops
-    case (cache,env,Absyn.ALG_ASSIGN(assignComponent = cr,value = e),impl)
+    case (cache,env,Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e),impl)
       local Exp.Exp ce;
       equation 
         (cache,ce,cprop,acc) = Static.elabCref(cache,env, cr, impl,false);
@@ -7482,14 +7482,14 @@ algorithm
         (cache,stmt);
 
         // (v1,v2,..,vn) := func(...)
-    case (cache,env,Absyn.ALG_TUPLE_ASSIGN(tuple_ = Absyn.TUPLE(expressions = expl),value = e),impl)
+    case (cache,env,Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),impl)
       equation 
         (cache,(e_1 as Exp.CALL(_,_,_,_,_)),eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,expl_1,cprops,_) = Static.elabExpList(cache,env, expl, impl, NONE,true);
         stmt = Algorithm.makeTupleAssignment(expl_1, cprops, e_1, eprop);
       then
         (cache,stmt);
-    case (cache,env,Absyn.ALG_TUPLE_ASSIGN(tuple_ = Absyn.TUPLE(expressions = expl),value = e),impl)
+    case (cache,env,Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),impl)
       equation 
         s = Dump.printExpStr(e);
         Error.addMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY, {s});
@@ -8184,11 +8184,11 @@ protected function instList "function: instList
     output Env outEnv;
     output Connect.Sets outSets;
     output ClassInf.State outState;
-    replaceable type Type_a;
-    replaceable type Type_b;
+    replaceable type Type_a subtypeof Any;
+    replaceable type Type_b subtypeof Any;
   end InstFunc;
-  replaceable type Type_a;
-  replaceable type Type_b;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
 algorithm 
   (outCache,outTypeBLst,outEnv,outSets,outState):=
   matchcontinue (inCache,inEnv,inMod,inPrefix,inSets,inState,instFunc,inTypeALst,inBoolean)

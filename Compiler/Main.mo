@@ -51,31 +51,31 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   (The Win32 implementation only implements CORBA)
 "
 
-protected import OpenModelica.Compiler.Absyn;
-protected import OpenModelica.Compiler.Parser;
-protected import OpenModelica.Compiler.Dump;
-protected import OpenModelica.Compiler.DumpGraphviz;
-protected import OpenModelica.Compiler.SCode;
-protected import OpenModelica.Compiler.DAE;
-protected import OpenModelica.Compiler.DAELow;
-protected import OpenModelica.Compiler.Inst;
-protected import OpenModelica.Compiler.Interactive;
-protected import OpenModelica.Compiler.RTOpts;
-protected import OpenModelica.Compiler.Debug;
-protected import OpenModelica.Compiler.Socket;
-protected import OpenModelica.Compiler.Print;
-protected import OpenModelica.Compiler.Corba;
-protected import OpenModelica.Compiler.System;
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.TaskGraph;
-protected import OpenModelica.Compiler.TaskGraphExt;
-protected import OpenModelica.Compiler.SimCodegen;
-protected import OpenModelica.Compiler.ErrorExt;
-protected import OpenModelica.Compiler.Error;
-protected import OpenModelica.Compiler.Types;
-protected import OpenModelica.Compiler.Ceval;
-protected import OpenModelica.Compiler.Env;
-protected import OpenModelica.Compiler.Settings;
+protected import Absyn;
+protected import Parser;
+protected import Dump;
+protected import DumpGraphviz;
+protected import SCode;
+protected import DAE;
+protected import DAELow;
+protected import Inst;
+protected import Interactive;
+protected import RTOpts;
+protected import Debug;
+protected import Socket;
+protected import Print;
+protected import Corba;
+protected import System;
+protected import Util;
+protected import TaskGraph;
+protected import TaskGraphExt;
+protected import SimCodegen;
+protected import ErrorExt;
+protected import Error;
+protected import Types;
+protected import Ceval;
+protected import Env;
+protected import Settings;
 
 
 protected function serverLoop "function: serverLoop
@@ -211,6 +211,7 @@ algorithm
     case (str,(isymb as Interactive.SYMBOLTABLE(ast = iprog,explodedAst = a,instClsLst = b,lstVarVal = vars,compiledFunctions = cf))) /* Add a class or function to the interactive symbol table.
 	   If it is a function, type check it. */ 
       equation 
+        //debug_print("Command: typeCheck", str);
         Debug.fcall0("dump", Print.clearBuf);
         Debug.fcall0("dumpgraphviz", Print.clearBuf);
         Debug.fprint("dump", "\nTrying to parse class definition...\n");
@@ -231,6 +232,7 @@ algorithm
         (true,res,Interactive.SYMBOLTABLE(newprog,a,b,vars_1,cf_1));
     case (str,isymb) /* Interactively evaluate an algorithm statement or expression */ 
       equation 
+        //debug_print("Command: don't typeCheck", str);      
         Debug.fcall0("dump", Print.clearBuf);
         Debug.fcall0("dumpgraphviz", Print.clearBuf);
         Debug.fprint("dump", 
@@ -248,6 +250,7 @@ algorithm
     case (str,isymb)
       local Interactive.InteractiveStmts p;
       equation 
+        //debug_print("Command: fail", str);      
         Debug.fcall0("failtrace", Print.clearBuf);
         (p,msg) = Parser.parsestring(str);
         (p,expmsg) = Parser.parsestringexp(str);

@@ -53,7 +53,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   The SCode representaion is used as input to the Inst module
 "
 
-public import OpenModelica.Compiler.Absyn;
+public import Absyn;
 
 public 
 type Ident = Absyn.Ident "Some definitions are borrowed from `Absyn\'" ;
@@ -334,12 +334,12 @@ uniontype Accessibility "These are attributes that apply to a declared component
 
 end Accessibility;
 
-protected import OpenModelica.Compiler.Dump;
-protected import OpenModelica.Compiler.Debug;
-protected import OpenModelica.Compiler.Print;
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.Error;
-protected import OpenModelica.Compiler.ModUtil;
+protected import Dump;
+protected import Debug;
+protected import Print;
+protected import Util;
+protected import Error;
+protected import ModUtil;
 
 public function elaborate "function: elaborate
  
@@ -392,9 +392,10 @@ algorithm
       Absyn.ClassDef d;
       Absyn.Info file_info;
     case ((c as Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restricion = r,body = d,info = file_info)))
-      equation 
+      equation
+        //debug_print("elaborating-class:", n);
+        r_1 = elabRestriction(c, r); // uniontype will not get elaborated!
         d_1 = elabClassdef(d);
-        r_1 = elabRestriction(c, r);
       then
         CLASS(n,p,e,r_1,d_1);
   end matchcontinue;
@@ -497,12 +498,14 @@ algorithm
       Absyn.Path path;
     case (Absyn.DERIVED(typeSpec = t,attributes = attr,arguments = a,comment = cmt))
       equation 
+        //debug_print("elaborating-derived:", t);      
         mod = buildMod(SOME(Absyn.CLASSMOD(a,NONE)), false, Absyn.NON_EACH()) "TODO: attributes of derived classes" ;
       then
         DERIVED(t,mod);
     case (Absyn.PARTS(classParts = parts,comment = cmt))
       local Option<String> cmt;
       equation 
+        //debug_print("elaborating-parts:", Dump.unparseClassPartStrLst(1, parts, true));
         els = elabClassdefElements(parts);
         eqs = elabClassdefEquations(parts);
         initeqs = elabClassdefInitialequations(parts);
@@ -525,6 +528,7 @@ algorithm
     case (Absyn.CLASS_EXTENDS(name = name,arguments = cmod,comment = cmt,parts = parts))
       local Option<String> cmt;
       equation 
+        //debug_print("elaborating-extends:", name);      
         els = elabClassdefElements(parts);
         eqs = elabClassdefEquations(parts);
         initeqs = elabClassdefInitialequations(parts);
@@ -639,15 +643,15 @@ algorithm
     case {} then {}; 
     case ((Absyn.PUBLIC(contents = es) :: rest))
       equation 
+        es_1 = elabEitemlist(es, false);      
         els = elabClassdefElements(rest);
-        es_1 = elabEitemlist(es, false);
         els_1 = listAppend(es_1, els);
       then
         els_1;
     case ((Absyn.PROTECTED(contents = es) :: rest))
       equation 
+        es_1 = elabEitemlist(es, true);      
         els = elabClassdefElements(rest);
-        es_1 = elabEitemlist(es, true);
         els_1 = listAppend(es_1, els);
       then
         els_1;
@@ -675,8 +679,8 @@ algorithm
     case {} then {}; 
     case ((Absyn.EQUATIONS(contents = eql) :: rest))
       equation 
-        eqs = elabClassdefEquations(rest);
         eql_1 = elabEquations(eql);
+        eqs = elabClassdefEquations(rest);        
         eqs_1 = listAppend(eqs, eql_1);
       then
         eqs_1;
@@ -704,8 +708,8 @@ algorithm
     case {} then {}; 
     case ((Absyn.INITIALEQUATIONS(contents = eql) :: rest))
       equation 
+        eql_1 = elabEquations(eql);      
         eqs = elabClassdefInitialequations(rest);
-        eql_1 = elabEquations(eql);
         eqs_1 = listAppend(eqs, eql_1);
       then
         eqs_1;
@@ -734,8 +738,8 @@ algorithm
     case {} then {}; 
     case ((Absyn.ALGORITHMS(contents = al) :: rest))
       equation 
+        al_1 = elabClassdefAlgorithmitems(al);      
         als = elabClassdefAlgorithms(rest);
-        al_1 = elabClassdefAlgorithmitems(al);
         als_1 = (ALGORITHM(al_1,NONE) :: als);
       then
         als_1;
@@ -764,8 +768,8 @@ algorithm
     case {} then {}; 
     case ((Absyn.INITIALALGORITHMS(contents = al) :: rest))
       equation 
+        al_1 = elabClassdefAlgorithmitems(al);      
         als = elabClassdefInitialalgorithms(rest);
-        al_1 = elabClassdefAlgorithmitems(al);
         als_1 = (ALGORITHM(al_1,NONE) :: als);
       then
         als_1;
@@ -856,6 +860,7 @@ algorithm
         l;
     case ((Absyn.ELEMENTITEM(element = e) :: es),prot)
       equation 
+        //debug_print("elaborating-element:", Dump.unparseElementStr(1, e));
         e_1 = elabElement(e, prot);
         es_1 = elabEitemlist(es, prot);
         l = listAppend(e_1, es_1);
@@ -929,8 +934,9 @@ algorithm
       Absyn.Import imp;
     case (final_,repl,prot,Absyn.CLASSDEF(replaceable_ = rp,class_ = (cl as Absyn.CLASS(name = n,partial_ = pa,final_ = fi,encapsulated_ = e,restricion = re,body = de,info = file_info))))
       equation 
+        //debug_print("elaborating-class:", n);        
+        re_1 = elabRestriction(cl, re); // uniontype will not get elaborated!
         de_1 = elabClassdef(de);
-        re_1 = elabRestriction(cl, re);
       then
         {CLASSDEF(n,final_,rp,CLASS(n,pa,e,re_1,de_1),NONE)};
     case (final_,repl,prot,Absyn.EXTENDS(path = n,elementArg = args))
@@ -2208,7 +2214,7 @@ protected function algorithmEqual2 "Returns true if two Absyn.Algorithm's are eq
  output Boolean equal;
  algorithm 
    equal := matchcontinue(a1,a2)
-     case(Absyn.ALG_ASSIGN(cr1,e1),Absyn.ALG_ASSIGN(cr2,e2)) 
+     case(Absyn.ALG_ASSIGN(Absyn.CREF(cr1),e1),Absyn.ALG_ASSIGN(Absyn.CREF(cr2),e2)) 
        local 
          Absyn.ComponentRef cr1,cr2;
          Absyn.Exp e1,e2;
@@ -2218,7 +2224,7 @@ protected function algorithmEqual2 "Returns true if two Absyn.Algorithm's are eq
            b2 = Absyn.expEqual(e1,e2);
            equal = boolAnd(b1,b2);
        then equal;
-     case(Absyn.ALG_TUPLE_ASSIGN(e11,e12),Absyn.ALG_TUPLE_ASSIGN(e21,e22)) 
+     case(Absyn.ALG_ASSIGN(e11 as Absyn.TUPLE(_),e12),Absyn.ALG_ASSIGN(e21 as Absyn.TUPLE(_),e22)) 
        local 
          Absyn.Exp e11,e12,e21,e22;
          Boolean b1,b2;

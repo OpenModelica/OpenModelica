@@ -497,14 +497,9 @@ uniontype Algorithm "The `Algorithm\' type describes one algorithm statement in 
   reason this type is named like this is that the name of the
   grammar rule for algorithm statements is `algorithm\'."
   record ALG_ASSIGN
-    ComponentRef assignComponent "assignComponent" ;
+    Exp assignComponent "assignComponent" ;
     Exp value "value" ;
   end ALG_ASSIGN;
-
-  record ALG_TUPLE_ASSIGN
-    Exp tuple_ "tuple" ;
-    Exp value "value" ;
-  end ALG_TUPLE_ASSIGN;
 
   record ALG_IF
     Exp ifExp "ifExp" ;
@@ -726,11 +721,10 @@ uniontype Exp "The `Exp\' datatype is the container of a Modelica expression.
     CodeNode code "code ;  Modelica AST Code constructors" ;
   end CODE;
 
-	record NIL end NIL;
-
+  // MetaModelica expression follows!
   record AS
-    ComponentRef id " component reference (actually only an id) " ;
-    Exp exp         " expression to bind to the id ";
+    Ident id " only an id " ;
+    Exp exp  " expression to bind to the id ";
   end AS;
   
   record CONS
@@ -740,7 +734,7 @@ uniontype Exp "The `Exp\' datatype is the container of a Modelica expression.
 
   record MATCHEXP
 		MatchType matchTy            " match or matchcontinue      ";
-		Exp inputExps                " match expression of         ";
+		Exp inputExp                 " match expression of         ";
 		list<ElementItem> localDecls " local declarations          ";
 		list<Case> cases             " case list + else in the end ";
 		Option<String> comment       " match expr comment_optional ";		
@@ -751,16 +745,16 @@ end Exp;
 public
 uniontype Case
   record CASE 
-    list<Exp> pattern " patterns to be matched "; 
+    Exp pattern " patterns to be matched "; 
 		list<ElementItem> localDecls " local decls ";
-		list<Equation>  equations " equations [] for no equations ";
+		list<EquationItem>  equations " equations [] for no equations ";
 		Exp result " result ";
 		Option<String> comment " comment after case like: case pattern string_comment ";
   end CASE;
 
   record ELSE 
 		list<ElementItem> localDecls " local decls ";
-		list<Equation>  equations " equations [] for no equations ";
+		list<EquationItem>  equations " equations [] for no equations ";
 		Exp result " result ";
 		Option<String> comment " comment after case like: case pattern string_comment ";
   end ELSE;
@@ -996,10 +990,10 @@ end ExternalDecl;
 /* "From here down, only absyn helper functions should be present. 
  Thus, no actual absyn datatype definitions." */
 
-protected import OpenModelica.Compiler.Debug;
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.Print;
-protected import OpenModelica.Compiler.ModUtil;
+protected import Debug;
+protected import Util;
+protected import Print;
+protected import ModUtil;
 
 public function elementSpecName "function: elementSpecName
  
@@ -1597,6 +1591,9 @@ algorithm
     case R_PREDEFINED_REAL() then "PREDEFINED_REAL"; 
     case R_PREDEFINED_STRING() then "PREDEFINED_STRING"; 
     case R_PREDEFINED_BOOL() then "PREDEFINED_BOOL"; 
+      
+    /* MetaModelica restriction */
+    case R_UNIONTYPE() then "UNIONTYPE";             
   end matchcontinue;
 end restrString;
 

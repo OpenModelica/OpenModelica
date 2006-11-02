@@ -64,13 +64,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       Subscript list : Evaluates subscripts and generates constant expressions. 
 "
 
-public import OpenModelica.Compiler.Env;
-public import OpenModelica.Compiler.Exp;
-public import OpenModelica.Compiler.Interactive;
-public import OpenModelica.Compiler.Values;
-public import OpenModelica.Compiler.DAELow;
-public import OpenModelica.Compiler.Absyn;
-public import OpenModelica.Compiler.Types;
+public import Env;
+public import Exp;
+public import Interactive;
+public import Values;
+public import DAELow;
+public import Absyn;
+public import Types;
 
 public 
 uniontype Msg
@@ -80,28 +80,28 @@ uniontype Msg
 
 end Msg;
 
-protected import OpenModelica.Compiler.SimCodegen;
-protected import OpenModelica.Compiler.Static;
-protected import OpenModelica.Compiler.Print;
-protected import OpenModelica.Compiler.ModUtil;
-protected import OpenModelica.Compiler.System;
-protected import OpenModelica.Compiler.SCode;
-protected import OpenModelica.Compiler.Inst;
-protected import OpenModelica.Compiler.Lookup;
-protected import OpenModelica.Compiler.Dump;
-protected import OpenModelica.Compiler.DAE;
-protected import OpenModelica.Compiler.Debug;
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.ClassInf;
-protected import OpenModelica.Compiler.RTOpts;
-protected import OpenModelica.Compiler.Parser;
-protected import OpenModelica.Compiler.Prefix;
-protected import OpenModelica.Compiler.Codegen;
-protected import OpenModelica.Compiler.ClassLoader;
-protected import OpenModelica.Compiler.Derive;
-protected import OpenModelica.Compiler.Connect;
-protected import OpenModelica.Compiler.Error;
-protected import OpenModelica.Compiler.Settings;
+protected import SimCodegen;
+protected import Static;
+protected import Print;
+protected import ModUtil;
+protected import System;
+protected import SCode;
+protected import Inst;
+protected import Lookup;
+protected import Dump;
+protected import DAE;
+protected import Debug;
+protected import Util;
+protected import ClassInf;
+protected import RTOpts;
+protected import Parser;
+protected import Prefix;
+protected import Codegen;
+protected import ClassLoader;
+protected import Derive;
+protected import Connect;
+protected import Error;
+protected import Settings;
 
 
 protected function cevalBuiltin "function: cevalBuiltin

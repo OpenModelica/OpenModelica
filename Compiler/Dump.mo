@@ -54,15 +54,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   to print smaller portions of a program.
 "
 
-public import OpenModelica.Compiler.Absyn;
-public import OpenModelica.Compiler.Interactive;
+public import Absyn;
+public import Interactive;
 
 public 
 type Ident = String;
 
-protected import OpenModelica.Compiler.Print;
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.Debug;
+protected import Print;
+protected import Util;
+protected import Debug;
 
 public function dumpExpStr
   input Absyn.Exp exp;
@@ -211,7 +211,7 @@ algorithm
   end matchcontinue;
 end dumpWithin;
 
-protected function unparseClassStr "function: unparseClassStr
+public function unparseClassStr "function: unparseClassStr
  
   Prettyprints a Class.
 "
@@ -527,6 +527,7 @@ algorithm
     case Absyn.R_CONNECTOR() then "connector"; 
     case Absyn.R_EXP_CONNECTOR() then "expandable connector"; 
     case Absyn.R_TYPE() then "type"; 
+    case Absyn.R_UNIONTYPE() then "uniontype";       
     case Absyn.R_PACKAGE() then "package"; 
     case Absyn.R_FUNCTION() then "function"; 
     case Absyn.R_PREDEFINED_INT() then "Integer"; 
@@ -794,6 +795,11 @@ algorithm
     case Absyn.R_TYPE()
       equation 
         Print.printBuf("Absyn.R_TYPE");
+      then
+        ();
+    case Absyn.R_UNIONTYPE()
+      equation 
+        Print.printBuf("Absyn.R_UNIONTYPE");
       then
         ();
     case Absyn.R_PACKAGE()
@@ -1123,7 +1129,7 @@ algorithm
   end matchcontinue;
 end printExternalDecl;
 
-protected function unparseClassPartStrLst "function: unparseClassPartStrLst
+public function unparseClassPartStrLst "function: unparseClassPartStrLst
  
   Prettyprints a ClassPart list to a string.
 "
@@ -1140,7 +1146,7 @@ algorithm
       Absyn.ClassPart x;
       list<Absyn.ClassPart> xs;
       Boolean skippublic;
-    case (_,{},false) then ""; 
+    case (_,{},_) then ""; 
     case (i,(x :: xs),skippublic)
       equation 
         s1 = unparseClassPartStr(i, x, skippublic);
@@ -1397,7 +1403,7 @@ algorithm
   end matchcontinue;
 end unparseElementitemStrLst;
 
-protected function unparseElementitemStr "function: unparseElementitemStr
+public function unparseElementitemStr "function: unparseElementitemStr
  
   Prettyprints and ElementItem.
 "
@@ -1555,7 +1561,7 @@ algorithm
   end matchcontinue;
 end printElement;
 
-protected function unparseElementStr "function: unparseElementStr
+public function unparseElementStr "function: unparseElementStr
  
   Prettyprints and Element to a string.
   changed by adrpo 2006-02-05 to print also Absyn.TEXT as a comment
@@ -2581,7 +2587,7 @@ algorithm
       then
         str;
     case (i,Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2))
-      equation 
+      equation
         s1 = printExpStr(e1);
         s2 = printExpStr(e2);
         is = indentStr(i);
@@ -2815,25 +2821,16 @@ algorithm
   matchcontinue (inAlgorithm)
     local
       Absyn.ComponentRef cr;
-      Absyn.Exp exp,e1,e2,e;
+      Absyn.Exp exp,e1,e2,e, assignComp;
       list<Absyn.AlgorithmItem> tb,fb,el,al;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> eb;
       Ident i;
-    case (Absyn.ALG_ASSIGN(assignComponent = cr,value = exp))
+    case (Absyn.ALG_ASSIGN(assignComponent = assignComp,value = exp))
       equation 
         Print.printBuf("ALG_ASSIGN(");
-        printComponentRef(cr);
+        printExp(assignComp);
         Print.printBuf(" := ");
         printExp(exp);
-        Print.printBuf(")");
-      then
-        ();
-    case (Absyn.ALG_TUPLE_ASSIGN(tuple_ = e1,value = e2))
-      equation 
-        Print.printBuf("ALG_TUPLE_ASSIGN(");
-        printExp(e1);
-        Print.printBuf(" := ");
-        printExp(e2);
         Print.printBuf(")");
       then
         ();
@@ -2931,28 +2928,19 @@ algorithm
       Ident s1,s2,s3,is,str,s4,s5,str_1;
       Integer i,i_1,ident_1,ident;
       Absyn.ComponentRef cr;
-      Absyn.Exp exp,e1,e2,e;
+      Absyn.Exp exp,e1,e2,e, assignComp;
       Option<Absyn.Comment> optcmt;
       list<Absyn.AlgorithmItem> tb,fb,el,al;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> eb,al2;
       Absyn.FunctionArgs fargs;
       Absyn.Annotation ann;
-    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_ASSIGN(assignComponent = cr,value = exp),comment = optcmt)) /* ALG_ASSIGN */ 
+    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_ASSIGN(assignComponent = assignComp,value = exp),comment = optcmt)) /* ALG_ASSIGN */ 
       equation 
-        s1 = printComponentRefStr(cr);
+        s1 = printExpStr(assignComp);
         s2 = printExpStr(exp);
         s3 = unparseCommentOption(optcmt);
         is = indentStr(i);
         str = Util.stringAppendList({is,s1,":=",s2,s3,";"});
-      then
-        str;
-    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_TUPLE_ASSIGN(tuple_ = e1,value = e2),comment = optcmt)) /* ALG_TUPLE_ASSIGN */ 
-      equation 
-        s1 = printExpStr(e1);
-        s2 = printExpStr(e2);
-        s3 = unparseCommentOption(optcmt);
-        is = indentStr(i);
-        str = Util.stringAppendList({is,s1," := ",s2,s3,";"});
       then
         str;
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_IF(ifExp = e,trueBranch = tb,elseIfAlgorithmBranch = eb,elseBranch = fb),comment = optcmt)) /* ALG_IF */ 
@@ -3266,6 +3254,12 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    /* MetaModelica wildcard */
+    case Absyn.WILD()
+      equation 
+        Print.printBuf("Absyn.WILD");
+      then
+        ();        
   end matchcontinue;
 end printComponentRef;
 
@@ -3321,6 +3315,7 @@ algorithm
         s_3 = stringAppend(s_2, crs);
       then
         s_3;
+    case Absyn.WILD() then "_";        
   end matchcontinue;
 end printComponentRefStr;
 
@@ -3416,6 +3411,12 @@ algorithm
       list<tuple<Absyn.Exp, Absyn.Exp>> lst;
       Absyn.FunctionArgs args;
       list<Absyn.Exp> es;
+      Absyn.MatchType matchType;
+      Absyn.Exp head, rest;
+      Absyn.Exp inputExp;
+      list<Absyn.ElementItem> localDecls;
+      list<Absyn.Case> cases;
+      Option<String> comment;
     case (Absyn.INTEGER(value = x))
       equation 
         s = intString(x);
@@ -3582,6 +3583,42 @@ algorithm
         Print.printBuf("Absyn.END");
       then
         ();
+        
+    /* MetaModelica expressions! */
+    case Absyn.CONS(head, rest)
+      equation 
+        Print.printBuf("Absyn.CONS(");
+        printExp(head);
+        Print.printBuf(", ");
+        printExp(rest);
+        Print.printBuf(")");        
+      then
+        ();
+    case Absyn.AS(s, rest)
+      equation 
+        Print.printBuf("Absyn.AS(");
+        Print.printBuf(s);
+        Print.printBuf(", ");
+        printExp(rest);
+        Print.printBuf(")");        
+      then
+        ();
+    case Absyn.MATCHEXP(matchType, inputExp, localDecls, cases, comment)
+      equation 
+        Print.printBuf("Absyn.MATCHEXP(MatchType(");
+        s = printMatchType(matchType);
+        Print.printBuf(s);
+        Print.printBuf("), Input Exps(");
+        printExp(inputExp);
+        Print.printBuf("), \nLocal Decls(");
+        printElementitems(localDecls);
+        Print.printBuf("), \nCASES(");
+        printListDebug("CASE", cases, printCase, ";");
+        Print.printBuf(")");
+        printStringCommentOption(comment);
+        Print.printBuf(")");
+      then
+        ();        
     case (_)
       equation 
         Print.printBuf("#UNKNOWN EXPRESSION#");
@@ -3590,9 +3627,59 @@ algorithm
   end matchcontinue;
 end printExp;
 
+public function printMatchType "
+MetaModelica construct printing 
+@author Adrian Pop "
+  input Absyn.MatchType matchType;
+  output String out;
+algorithm
+  out := matchcontinue matchType
+    case Absyn.MATCH() then "match";
+    case Absyn.MATCHCONTINUE() then "matchcontinue";
+  end matchcontinue;
+end printMatchType;
 
-
-
+public function printCase "
+MetaModelica construct printing 
+@author Adrian Pop "
+  input Absyn.Case cas;
+algorithm
+  _ := matchcontinue cas
+    local
+      Absyn.Exp p;
+      list<Absyn.ElementItem> l;
+      list<Absyn.EquationItem> e;
+      Absyn.Exp r;
+      Option<String> c;
+    case Absyn.CASE(p, l, e, r, c)
+      equation
+        Print.printBuf("Absyn.CASE(");
+        Print.printBuf("Pattern(");
+        printExp(p);
+        Print.printBuf("), \nLocal Decls(");
+        printElementitems(l);
+        Print.printBuf("), \nEQUATIONS(");
+        printListDebug("EQUATION", e, printEquationitem, ";");
+        Print.printBuf("), ");
+        printExp(r);
+        Print.printBuf(", ");
+        printStringCommentOption(c);
+        Print.printBuf(")");        
+      then ();
+    case Absyn.ELSE(l, e, r, c)
+      equation
+        Print.printBuf("Absyn.ELSE(\nLocal Decls(");
+        printElementitems(l);
+        Print.printBuf("), \nEQUATIONS(");
+        printListDebug("EQUATION", e, printEquationitem, ";");
+        Print.printBuf("), ");
+        printExp(r);
+        Print.printBuf(", ");
+        printStringCommentOption(c);
+        Print.printBuf(")");        
+      then ();
+  end matchcontinue;
+end printCase;
 
 protected function printFunctionArgs "function: printFunctionArgs
  
@@ -3806,7 +3893,8 @@ algorithm
   outString:=
   matchcontinue (inExp)
     local
-      Ident s,s_1,s_2,sym,s1,s2,s1_1,s2_1,cs,ts,fs,cs_1,ts_1,fs_1,el,str,argsstr,s3,s3_1,res,res_1;
+      String s,s_1,s_2,sym,s1,s2,s1_1,s2_1,cs,ts,fs,cs_1,ts_1,fs_1,el,str,argsstr,s3,s3_1,res,res_1;
+      String s4, s5, s6;
       Integer x,p,p1,p2,pc,pt,pf,pstart,pstop,pstep;
       Absyn.ComponentRef c,fcn;
       Boolean b;
@@ -3815,6 +3903,12 @@ algorithm
       list<tuple<Absyn.Exp, Absyn.Exp>> elseif_;
       Absyn.FunctionArgs args;
       list<Absyn.Exp> es;
+      Absyn.MatchType matchType;
+      Absyn.Exp head, rest;
+      Absyn.Exp inputExp;
+      list<Absyn.ElementItem> localDecls;
+      list<Absyn.Case> cases;
+      Option<String> comment;      
     case (Absyn.INTEGER(value = x))
       equation 
         s = intString(x);
@@ -3987,9 +4081,66 @@ algorithm
       then
         res_1;
     case Absyn.END() then "end"; 
+    
+    /* MetaModelica expressions */
+    case Absyn.CONS(head, rest)
+      equation 
+        s1 = printExpStr(head);
+        s2 = printExpStr(rest);
+        s = Util.stringAppendList({s1, "::", s2});
+      then
+        s;
+    case Absyn.AS(s1, rest)
+      equation 
+        s2 = printExpStr(rest);
+        s = Util.stringAppendList({s1, " as ", s2});
+      then
+        s;
+    case Absyn.MATCHEXP(matchType, inputExp, localDecls, cases, comment)
+      equation
+        s1 = printMatchType(matchType);
+        s2 = printExpStr(inputExp);
+        s3 = unparseStringCommentOption(comment);
+        s4 = unparseElementitemStrLst(3, localDecls);
+        s5 = getStringList(cases, printCaseStr, "\n"); 
+        s = Util.stringAppendList({s1, " ", s2, s3, "\n\tlocal ", s3, "\n\t", s4, s5, "\n\tend ", s1});
+      then
+        s;              
     case (_) then "#UNKNOWN EXPRESSION#"; 
   end matchcontinue;
 end printExpStr;
+
+public function printCaseStr "
+MetaModelica construct printing 
+@author Adrian Pop "
+  input Absyn.Case cas;
+  output String out;
+algorithm
+  out := matchcontinue cas
+    local
+      String s1, s2, s3, s4, s; 
+      Absyn.Exp p;
+      list<Absyn.ElementItem> l;
+      list<Absyn.EquationItem> eq;
+      Absyn.Exp r;
+      Option<String> c;
+    case Absyn.CASE(p, l, eq, r, c)
+      equation
+        s1 = printExpStr(p);
+        s2 = unparseElementitemStrLst(4, l);
+        s3 = unparseEquationitemStrLst(4, eq, ";\n");
+        s4 = printExpStr(r);        
+        s = Util.stringAppendList({"\n\tcase (", s1, ")\n\tlocal ", s2, "\n\t", s3, "\n\tthen ", s4, ";"});
+      then s;
+    case Absyn.ELSE(l, eq, r, c)
+      equation
+        s2 = unparseElementitemStrLst(4, l);
+        s3 = unparseEquationitemStrLst(4, eq, ";\n");
+        s4 = printExpStr(r);        
+        s = Util.stringAppendList({"\n\telse", "\n\t", s2, "\n\tlocal ", s3, "\n\tthen ", s4, ";"});
+      then s;
+  end matchcontinue;
+end printCaseStr;
 
 public function printCodeStr "function: printCodeStr
  
@@ -4096,7 +4247,7 @@ protected function printListStr "function: printListStr
   input FuncTypeType_aToString inFuncTypeTypeAToString;
   input String inString;
   output String outString;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aToString
     input Type_a inTypeA;
     output String outString;
@@ -4223,7 +4374,7 @@ public function printOption "function: printOption
 "
   input Option<Type_a> inTypeAOption;
   input FuncTypeType_aTo inFuncTypeTypeATo;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aTo
     input Type_a inTypeA;
   end FuncTypeType_aTo;
@@ -4256,7 +4407,7 @@ public function printListDebug "function: printListDebug
   input list<Type_a> inTypeALst2;
   input FuncTypeType_aTo inFuncTypeTypeATo3;
   input String inString4;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aTo
     input Type_a inTypeA;
   end FuncTypeType_aTo;
@@ -4300,7 +4451,7 @@ public function printList "function: printList
   input list<Type_a> inTypeALst;
   input FuncTypeType_aTo inFuncTypeTypeATo;
   input String inString;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aTo
     input Type_a inTypeA;
   end FuncTypeType_aTo;
@@ -4337,7 +4488,7 @@ public function getStringList "function getStringList
   input FuncTypeType_aToString inFuncTypeTypeAToString;
   input String inString;
   output String outString;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aToString
     input Type_a inTypeA;
     output String outString;
@@ -4384,7 +4535,7 @@ public function getOptionStr "function getOptionStr
   input Option<Type_a> inTypeAOption;
   input FuncTypeType_aToString inFuncTypeTypeAToString;
   output String outString;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aToString
     input Type_a inTypeA;
     output String outString;
@@ -4414,7 +4565,7 @@ public function getOptionStrDefault "function getOptionStrDefault
   input FuncTypeType_aToString inFuncTypeTypeAToString;
   input String inString;
   output String outString;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aToString
     input Type_a inTypeA;
     output String outString;
@@ -4444,7 +4595,7 @@ public function getOptionWithConcatStr "function: getOptionWithConcatStr
   input FuncTypeType_aToString inFuncTypeTypeAToString;
   input String inString;
   output String outString;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aToString
     input Type_a inTypeA;
     output String outString;
@@ -4514,7 +4665,7 @@ protected function identity "function: identity
 "
   input Type_a inTypeA;
   output Type_a outTypeA;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeA:=
   matchcontinue (inTypeA)

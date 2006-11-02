@@ -86,9 +86,9 @@ protected constant list<ReplacePattern> replaceStringPatterns={REPLACEPATTERN(".
           REPLACEPATTERN("(","$leftParanthesis"),REPLACEPATTERN(")","$rightParanthesis"),
           REPLACEPATTERN(",","$comma")};
 
-protected import OpenModelica.Compiler.System;
-protected import OpenModelica.Compiler.Print;
-protected import OpenModelica.Compiler.Debug;
+protected import System;
+protected import Print;
+protected import Debug;
 
 public function flagValue "function flagValue
   author: x02lucpo
@@ -138,7 +138,7 @@ public function listFill "function: listFill
   input Type_a inTypeA;
   input Integer inInteger;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeALst:=
   matchcontinue (inTypeA,inInteger)
@@ -163,7 +163,7 @@ public function listMake2 "function listMake2
   input Type_a inTypeA1;
   input Type_a inTypeA2;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeALst:=
   matchcontinue (inTypeA1,inTypeA2)
@@ -211,7 +211,7 @@ public function listFirst "function: listFirst
 "
   input list<Type_a> inTypeALst;
   output Type_a outTypeA;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeA:=
   matchcontinue (inTypeALst)
@@ -227,7 +227,7 @@ public function listRest "function: listRest
 "
   input list<Type_a> inTypeALst;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeALst:=
   matchcontinue (inTypeALst)
@@ -245,7 +245,7 @@ public function listLast "function: listLast
 "
   input list<Type_a> inTypeALst;
   output Type_a outTypeA;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeA:=
   matchcontinue (inTypeALst)
@@ -269,7 +269,7 @@ public function listCons "function: listCons
   input list<Type_a> inTypeALst;
   input Type_a inTypeA;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeALst:=
   matchcontinue (inTypeALst,inTypeA)
@@ -286,7 +286,7 @@ public function listCreate "function: listCreate
 "
   input Type_a inTypeA;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeALst:=
   matchcontinue (inTypeA)
@@ -304,7 +304,7 @@ public function listStripLast "function: listStripLast
 "
   input list<Type_a> inTypeALst;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeALst:=
   matchcontinue (inTypeALst)
@@ -331,7 +331,7 @@ public function listFlatten "function: listFlatten
 "
   input list<list<Type_a>> inTypeALstLst;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeALst:=
   matchcontinue (inTypeALstLst)
@@ -356,7 +356,7 @@ public function listAppendElt "function: listAppendElt
   input Type_a inTypeA;
   input list<Type_a> inTypeALst;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeALst:=
   matchcontinue (inTypeA,inTypeALst)
@@ -381,13 +381,13 @@ public function listMap "function: listMap
   input list<Type_a> inTypeALst;
   input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
   output list<Type_b> outTypeBLst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aToType_b
     input Type_a inTypeA;
     output Type_b outTypeB;
-    replaceable type Type_b;
+    replaceable type Type_b subtypeof Any;
   end FuncTypeType_aToType_b;
-  replaceable type Type_b;
+  replaceable type Type_b subtypeof Any;
 algorithm 
   outTypeBLst:=
   matchcontinue (inTypeALst,inFuncTypeTypeAToTypeB)
@@ -419,16 +419,16 @@ public function listMap_2 "function listMap_2
   input FuncTypeType_aToType_bType_c inFuncTypeTypeAToTypeBTypeC;
   output list<Type_b> outTypeBLst;
   output list<Type_c> outTypeCLst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aToType_bType_c
     input Type_a inTypeA;
     output Type_b outTypeB;
     output Type_c outTypeC;
-    replaceable type Type_b;
-    replaceable type Type_c;
+    replaceable type Type_b subtypeof Any;
+    replaceable type Type_c subtypeof Any;
   end FuncTypeType_aToType_bType_c;
-  replaceable type Type_b;
-  replaceable type Type_c;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
 algorithm 
   (outTypeBLst,outTypeCLst):=
   matchcontinue (inTypeALst,inFuncTypeTypeAToTypeBTypeC)
@@ -460,16 +460,16 @@ public function listMap1 "function listMap1
   input FuncTypeType_aType_bToType_c inFuncTypeTypeATypeBToTypeC;
   input Type_b inTypeB;
   output list<Type_c> outTypeCLst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aType_bToType_c
     input Type_a inTypeA;
     input Type_b inTypeB;
     output Type_c outTypeC;
-    replaceable type Type_b;
-    replaceable type Type_c;
+    replaceable type Type_b subtypeof Any;
+    replaceable type Type_c subtypeof Any;
   end FuncTypeType_aType_bToType_c;
-  replaceable type Type_b;
-  replaceable type Type_c;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
 algorithm 
   outTypeCLst:=
   matchcontinue (inTypeALst,inFuncTypeTypeATypeBToTypeC,inTypeB)
@@ -497,16 +497,16 @@ public function listMap1r "function listMap1r
   input FuncTypeType_bType_aToType_c inFuncTypeTypeBTypeAToTypeC;
   input Type_b inTypeB;
   output list<Type_c> outTypeCLst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_bType_aToType_c
     input Type_b inTypeB;
     input Type_a inTypeA;
     output Type_c outTypeC;
-    replaceable type Type_b;
-    replaceable type Type_c;
+    replaceable type Type_b subtypeof Any;
+    replaceable type Type_c subtypeof Any;
   end FuncTypeType_bType_aToType_c;
-  replaceable type Type_b;
-  replaceable type Type_c;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
 algorithm 
   outTypeCLst:=
   matchcontinue (inTypeALst,inFuncTypeTypeBTypeAToTypeC,inTypeB)
@@ -539,19 +539,19 @@ public function listMap2 "function listMap2
   input Type_b inTypeB;
   input Type_c inTypeC;
   output list<Type_d> outTypeDLst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aType_bType_cToType_d
     input Type_a inTypeA;
     input Type_b inTypeB;
     input Type_c inTypeC;
     output Type_d outTypeD;
-    replaceable type Type_b;
-    replaceable type Type_c;
-    replaceable type Type_d;
+    replaceable type Type_b subtypeof Any;
+    replaceable type Type_c subtypeof Any;
+    replaceable type Type_d subtypeof Any;
   end FuncTypeType_aType_bType_cToType_d;
-  replaceable type Type_b;
-  replaceable type Type_c;
-  replaceable type Type_d;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
 algorithm 
   outTypeDLst:=
   matchcontinue (inTypeALst,inFuncTypeTypeATypeBTypeCToTypeD,inTypeB,inTypeC)
@@ -583,22 +583,22 @@ public function listMap3 "function listMap3
   input Type_c inTypeC;
   input Type_d inTypeD;
   output list<Type_e> outTypeELst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aType_bType_cType_dToType_e
     input Type_a inTypeA;
     input Type_b inTypeB;
     input Type_c inTypeC;
     input Type_d inTypeD;
     output Type_e outTypeE;
-    replaceable type Type_b;
-    replaceable type Type_c;
-    replaceable type Type_d;
-    replaceable type Type_e;
+    replaceable type Type_b subtypeof Any;
+    replaceable type Type_c subtypeof Any;
+    replaceable type Type_d subtypeof Any;
+    replaceable type Type_e subtypeof Any;
   end FuncTypeType_aType_bType_cType_dToType_e;
-  replaceable type Type_b;
-  replaceable type Type_c;
-  replaceable type Type_d;
-  replaceable type Type_e;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
 algorithm 
   outTypeELst:=
   matchcontinue (inTypeALst,inFuncTypeTypeATypeBTypeCTypeDToTypeE,inTypeB,inTypeC,inTypeD)
@@ -632,7 +632,7 @@ public function listMap32 "function listMap32
   input Type_d inTypeD;
   output list<Type_e> outTypeELst;
   output list<Type_f> outTypeFLst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aType_bType_cType_dToType_eType_f
     input Type_a inTypeA;
     input Type_b inTypeB;
@@ -640,17 +640,17 @@ public function listMap32 "function listMap32
     input Type_d inTypeD;
     output Type_e outTypeE;
     output Type_f outTypeF;
-    replaceable type Type_b;
-    replaceable type Type_c;
-    replaceable type Type_d;
-    replaceable type Type_e;
-    replaceable type Type_f;
+    replaceable type Type_b subtypeof Any;
+    replaceable type Type_c subtypeof Any;
+    replaceable type Type_d subtypeof Any;
+    replaceable type Type_e subtypeof Any;
+    replaceable type Type_f subtypeof Any;
   end FuncTypeType_aType_bType_cType_dToType_eType_f;
-  replaceable type Type_b;
-  replaceable type Type_c;
-  replaceable type Type_d;
-  replaceable type Type_e;
-  replaceable type Type_f;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
+  replaceable type Type_f subtypeof Any;
 algorithm 
   (outTypeELst,outTypeFLst):=
   matchcontinue (inTypeALst,inFuncTypeTypeATypeBTypeCTypeDToTypeETypeF,inTypeB,inTypeC,inTypeD)
@@ -685,19 +685,19 @@ public function listMap12 "function: listMap12
   input Type_b inTypeB;
   output list<Type_c> outTypeCLst;
   output list<Type_d> outTypeDLst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aType_bToType_cType_d
     input Type_a inTypeA;
     input Type_b inTypeB;
     output Type_c outTypeC;
     output Type_d outTypeD;
-    replaceable type Type_b;
-    replaceable type Type_c;
-    replaceable type Type_d;
+    replaceable type Type_b subtypeof Any;
+    replaceable type Type_c subtypeof Any;
+    replaceable type Type_d subtypeof Any;
   end FuncTypeType_aType_bToType_cType_d;
-  replaceable type Type_b;
-  replaceable type Type_c;
-  replaceable type Type_d;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
 algorithm 
   (outTypeCLst,outTypeDLst):=
   matchcontinue (inTypeALst,inFuncTypeTypeATypeBToTypeCTypeD,inTypeB)
@@ -733,22 +733,22 @@ public function listMap22 "function: listMap22
   input Type_b inTypeB;
   input Type_c inTypeC;
   output list<tuple<Type_d, Type_e>> outTplTypeDTypeELst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aType_bType_cToType_dType_e
     input Type_a inTypeA;
     input Type_b inTypeB;
     input Type_c inTypeC;
     output Type_d outTypeD;
     output Type_e outTypeE;
-    replaceable type Type_b;
-    replaceable type Type_c;
-    replaceable type Type_d;
-    replaceable type Type_e;
+    replaceable type Type_b subtypeof Any;
+    replaceable type Type_c subtypeof Any;
+    replaceable type Type_d subtypeof Any;
+    replaceable type Type_e subtypeof Any;
   end FuncTypeType_aType_bType_cToType_dType_e;
-  replaceable type Type_b;
-  replaceable type Type_c;
-  replaceable type Type_d;
-  replaceable type Type_e;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
 algorithm 
   outTplTypeDTypeELst:=
   matchcontinue (inTypeALst,inFuncTypeTypeATypeBTypeCToTypeDTypeE,inTypeB,inTypeC)
@@ -779,7 +779,7 @@ public function listMap0 "function: listMap0
 "
   input list<Type_a> inTypeALst;
   input FuncTypeType_aTo inFuncTypeTypeATo;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aTo
     input Type_a inTypeA;
   end FuncTypeType_aTo;
@@ -810,13 +810,13 @@ public function listListMap "function: listListMap
   input list<list<Type_a>> inTypeALstLst;
   input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
   output list<list<Type_b>> outTypeBLstLst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aToType_b
     input Type_a inTypeA;
     output Type_b outTypeB;
-    replaceable type Type_b;
+    replaceable type Type_b subtypeof Any;
   end FuncTypeType_aToType_b;
-  replaceable type Type_b;
+  replaceable type Type_b subtypeof Any;
 algorithm 
   outTypeBLstLst:=
   matchcontinue (inTypeALstLst,inFuncTypeTypeAToTypeB)
@@ -845,16 +845,16 @@ public function listListMap1 "function listListMap1
   input FuncTypeType_aType_bToType_c inFuncTypeTypeATypeBToTypeC;
   input Type_b inTypeB;
   output list<list<Type_c>> outTypeCLstLst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aType_bToType_c
     input Type_a inTypeA;
     input Type_b inTypeB;
     output Type_c outTypeC;
-    replaceable type Type_b;
-    replaceable type Type_c;
+    replaceable type Type_b subtypeof Any;
+    replaceable type Type_c subtypeof Any;
   end FuncTypeType_aType_bToType_c;
-  replaceable type Type_b;
-  replaceable type Type_c;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
 algorithm 
   outTypeCLstLst:=
   matchcontinue (inTypeALstLst,inFuncTypeTypeATypeBToTypeC,inTypeB)
@@ -887,14 +887,14 @@ public function listFold "function: listFold
   input FuncTypeType_aType_bToType_b inFuncTypeTypeATypeBToTypeB;
   input Type_b inTypeB;
   output Type_b outTypeB;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aType_bToType_b
     input Type_a inTypeA;
     input Type_b inTypeB;
     output Type_b outTypeB;
-    replaceable type Type_b;
+    replaceable type Type_b subtypeof Any;
   end FuncTypeType_aType_bToType_b;
-  replaceable type Type_b;
+  replaceable type Type_b subtypeof Any;
 algorithm 
   outTypeB:=
   matchcontinue (inTypeALst,inFuncTypeTypeATypeBToTypeB,inTypeB)
@@ -924,9 +924,9 @@ public function listFold_2 "function: listFold_2
   input Type_b foldArg;
   input Type_c extraArg;
   output Type_b res;
-  replaceable type Type_a;
-  replaceable type Type_b;
-  replaceable type Type_c;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
   partial function FoldFunc
     input Type_b foldArg;
     input Type_c extraArg;
@@ -958,13 +958,13 @@ public function listlistFoldMap "function: listlistFoldMap
   input Type_b inTypeB;
   output list<list<Type_a>> outTypeALst;
   output Type_b outTypeB;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeTplType_aType_bToTplType_aType_b
     input tuple<Type_a, Type_b> inTplTypeATypeB;
     output tuple<Type_a, Type_b> outTplTypeATypeB;
-    replaceable type Type_b;
+    replaceable type Type_b subtypeof Any;
   end FuncTypeTplType_aType_bToTplType_aType_b;
-  replaceable type Type_b;
+  replaceable type Type_b subtypeof Any;
 algorithm 
   (outTypeALst,outTypeB):=
   matchcontinue (inTypeALst,inFuncTypeTplTypeATypeBToTplTypeATypeB,inTypeB)
@@ -993,13 +993,13 @@ public function listFoldMap "function: listFoldMap
   input Type_b inTypeB;
   output list<Type_a> outTypeALst;
   output Type_b outTypeB;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeTplType_aType_bToTplType_aType_b
     input tuple<Type_a, Type_b> inTplTypeATypeB;
     output tuple<Type_a, Type_b> outTplTypeATypeB;
-    replaceable type Type_b;
+    replaceable type Type_b subtypeof Any;
   end FuncTypeTplType_aType_bToTplType_aType_b;
-  replaceable type Type_b;
+  replaceable type Type_b subtypeof Any;
 algorithm 
   (outTypeALst,outTypeB):=
   matchcontinue (inTypeALst,inFuncTypeTplTypeATypeBToTplTypeATypeB,inTypeB)
@@ -1026,7 +1026,7 @@ public function listListReverse "function: listListReverse
 "
   input list<list<Type_a>> lsts;
   output list<list<Type_a>> lsts_2;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   list<list<Type_a>> lsts_1,lsts_2;
 algorithm 
   lsts_1 := listMap(lsts, list_reverse);
@@ -1041,7 +1041,7 @@ public function listThread "function: listThread
   input list<Type_a> inTypeALst1;
   input list<Type_a> inTypeALst2;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeALst:=
   matchcontinue (inTypeALst1,inTypeALst2)
@@ -1068,7 +1068,7 @@ public function listThread3 "function: listThread
   input list<Type_a> inTypeALst2;
   input list<Type_a> inTypeALst3;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeALst:=
   matchcontinue (inTypeALst1,inTypeALst2,inTypeALst2)
@@ -1094,15 +1094,15 @@ public function listThreadMap "function: listThreadMap
   input list<Type_b> inTypeBLst;
   input FuncTypeType_aType_bToType_c inFuncTypeTypeATypeBToTypeC;
   output list<Type_c> outTypeCLst;
-  replaceable type Type_a;
-  replaceable type Type_b;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
   partial function FuncTypeType_aType_bToType_c
     input Type_a inTypeA;
     input Type_b inTypeB;
     output Type_c outTypeC;
-    replaceable type Type_c;
+    replaceable type Type_c subtypeof Any;
   end FuncTypeType_aType_bToType_c;
-  replaceable type Type_c;
+  replaceable type Type_c subtypeof Any;
 algorithm 
   outTypeCLst:=
   matchcontinue (inTypeALst,inTypeBLst,inFuncTypeTypeATypeBToTypeC)
@@ -1134,15 +1134,15 @@ public function listListThreadMap "function: listListThreadMap
   input list<list<Type_b>> inTypeBLst;
   input FuncTypeType_aType_bToType_c inFuncTypeTypeATypeBToTypeC;
   output list<list<Type_c>> outTypeCLst;
-  replaceable type Type_a;
-  replaceable type Type_b;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
   partial function FuncTypeType_aType_bToType_c
     input Type_a inTypeA;
     input Type_b inTypeB;
     output Type_c outTypeC;
-    replaceable type Type_c;
+    replaceable type Type_c subtypeof Any;
   end FuncTypeType_aType_bToType_c;
-  replaceable type Type_c;
+  replaceable type Type_c subtypeof Any;
 algorithm 
   outTypeCLst:=
   matchcontinue (inTypeALst,inTypeBLst,inFuncTypeTypeATypeBToTypeC)
@@ -1173,8 +1173,8 @@ public function listThreadTuple "function: listThreadTuple
   input list<Type_a> inTypeALst;
   input list<Type_b> inTypeBLst;
   output list<tuple<Type_a, Type_b>> outTplTypeATypeBLst;
-  replaceable type Type_a;
-  replaceable type Type_b;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
 algorithm 
   outTplTypeATypeBLst:=
   matchcontinue (inTypeALst,inTypeBLst)
@@ -1202,8 +1202,8 @@ public function listListThreadTuple "function: listListThreadTuple
   input list<list<Type_a>> inTypeALstLst;
   input list<list<Type_b>> inTypeBLstLst;
   output list<list<tuple<Type_a, Type_b>>> outTplTypeATypeBLstLst;
-  replaceable type Type_a;
-  replaceable type Type_b;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
 algorithm 
   outTplTypeATypeBLstLst:=
   matchcontinue (inTypeALstLst,inTypeBLstLst)
@@ -1232,7 +1232,7 @@ public function listSelect "function: listSelect
   input list<Type_a> inTypeALst;
   input FuncTypeType_aToBoolean inFuncTypeTypeAToBoolean;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aToBoolean
     input Type_a inTypeA;
     output Boolean outBoolean;
@@ -1267,8 +1267,8 @@ public function listSelect1 "function listSelect1
   input Type_b inTypeB;
   input FuncTypeType_aType_bToBoolean inFuncTypeTypeATypeBToBoolean;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
-  replaceable type Type_b;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
   partial function FuncTypeType_aType_bToBoolean
     input Type_a inTypeA;
     input Type_b inTypeB;
@@ -1305,8 +1305,8 @@ public function listSelect1R "function listSelect1R
   input Type_b inTypeB;
   input FuncTypeType_bType_aToBoolean inFuncTypeTypeBTypeAToBoolean;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
-  replaceable type Type_b;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
   partial function FuncTypeType_bType_aToBoolean
     input Type_b inTypeB;
     input Type_a inTypeA;
@@ -1346,7 +1346,7 @@ public function listPosition "function: listPosition
   input Type_a x;
   input list<Type_a> ys;
   output Integer n;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   n := listPos(x, ys, 0);
 end listPosition;
@@ -1356,7 +1356,7 @@ protected function listPos "helper function to listPosition"
   input list<Type_a> inTypeALst;
   input Integer inInteger;
   output Integer outInteger;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outInteger:=
   matchcontinue (inTypeA,inTypeALst,inInteger)
@@ -1390,7 +1390,7 @@ public function listGetmember "function: listGetmember
   input Type_a inTypeA;
   input list<Type_a> inTypeALst;
   output Type_a outTypeA;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeA:=
   matchcontinue (inTypeA,inTypeALst)
@@ -1420,7 +1420,7 @@ public function listDeletemember "function: listDeletemember
   input list<Type_a> inTypeALst;
   input Type_a inTypeA;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeALst:=
   matchcontinue (inTypeALst,inTypeA)
@@ -1448,7 +1448,7 @@ public function listDeletememberP "function: listDeletememberP
   input Type_a inTypeA;
   input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aType_aToBoolean
     input Type_a inTypeA1;
     input Type_a inTypeA2;
@@ -1485,7 +1485,7 @@ public function listGetmemberP "function listGetmemberP
   input list<Type_a> inTypeALst;
   input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean;
   output Type_a outTypeA;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aType_aToBoolean
     input Type_a inTypeA1;
     input Type_a inTypeA2;
@@ -1524,7 +1524,7 @@ public function listUnionElt "function: listUnionElt
   input Type_a inTypeA;
   input list<Type_a> inTypeALst;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeALst:=
   matchcontinue (inTypeA,inTypeALst)
@@ -1553,7 +1553,7 @@ public function listUnion "function listUnion
   input list<Type_a> inTypeALst1;
   input list<Type_a> inTypeALst2;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeALst:=
   matchcontinue (inTypeALst1,inTypeALst2)
@@ -1578,7 +1578,7 @@ public function listListUnion "function: listListUnion
 "
   input list<list<Type_a>> inTypeALstLst;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeALst:=
   matchcontinue (inTypeALstLst)
@@ -1607,7 +1607,7 @@ public function listUnionEltP "function: listUnionEltP
   input list<Type_a> inTypeALst;
   input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aType_aToBoolean
     input Type_a inTypeA1;
     input Type_a inTypeA2;
@@ -1645,7 +1645,7 @@ public function listUnionP "function: listUnionP
   input list<Type_a> inTypeALst2;
   input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean3;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aType_aToBoolean
     input Type_a inTypeA1;
     input Type_a inTypeA2;
@@ -1680,7 +1680,7 @@ public function listIntersectionP "function: listIntersectionP
   input list<Type_a> inTypeALst2;
   input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean3;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aType_aToBoolean
     input Type_a inTypeA1;
     input Type_a inTypeA2;
@@ -1716,7 +1716,7 @@ public function listSetEqualP "function: listSetEqualP
   input list<Type_a> lst2;
   input CompareFunc compare;
   output Boolean equal;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function CompareFunc
     input Type_a inTypeA1;
     input Type_a inTypeA2;
@@ -1747,7 +1747,7 @@ public function listSetdifferenceP "function: listSetdifferenceP
   input list<Type_a> inTypeALst2;
   input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean3;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aType_aToBoolean
     input Type_a inTypeA1;
     input Type_a inTypeA2;
@@ -1784,7 +1784,7 @@ public function listListUnionP "function: listListUnionP
   input list<list<Type_a>> inTypeALstLst;
   input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aType_aToBoolean
     input Type_a inTypeA1;
     input Type_a inTypeA2;
@@ -1818,7 +1818,7 @@ public function listReplaceat "function: listReplaceat
   input Integer inInteger;
   input list<Type_a> inTypeALst;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeALst:=
   matchcontinue (inTypeA,inInteger,inTypeALst)
@@ -1857,7 +1857,7 @@ public function listReplaceatWithFill "function: listReplaceatWithFill
   input list<Type_a> inTypeALst3;
   input Type_a inTypeA4;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeALst:=
   matchcontinue (inTypeA1,inInteger2,inTypeALst3,inTypeA4)
@@ -1904,7 +1904,7 @@ public function listReduce "function: listReduce
   input list<Type_a> inTypeALst;
   input FuncTypeType_aType_aToType_a inFuncTypeTypeATypeAToTypeA;
   output Type_a outTypeA;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aType_aToType_a
     input Type_a inTypeA1;
     input Type_a inTypeA2;
@@ -1951,7 +1951,7 @@ public function arrayReplaceatWithFill "function: arrayReplaceatWithFill
   input Type_a[:] inTypeAArray3;
   input Type_a inTypeA4;
   output Type_a[:] outTypeAArray;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeAArray:=
   matchcontinue (inTypeA1,inInteger2,inTypeAArray3,inTypeA4)
@@ -1990,7 +1990,7 @@ public function arrayExpand "function: arrayExpand
   input Type_a[:] arr;
   input Type_a v;
   output Type_a[:] newarr_1;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   Integer len,newlen;
   Type_a[:] newarr,newarr_1;
 algorithm 
@@ -2008,7 +2008,7 @@ public function arrayNCopy "function arrayNCopy
   input Type_a[:] dst;
   input Integer n;
   output Type_a[:] dst_1;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   Integer n_1;
   Type_a[:] dst_1;
 algorithm 
@@ -2023,7 +2023,7 @@ public function arrayCopy "function: arrayCopy
   input Type_a[:] inTypeAArray1;
   input Type_a[:] inTypeAArray2;
   output Type_a[:] outTypeAArray;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeAArray:=
   matchcontinue (inTypeAArray1,inTypeAArray2)
@@ -2054,7 +2054,7 @@ protected function arrayCopy2
   input Type_a[:] inTypeAArray2;
   input Integer inInteger3;
   output Type_a[:] outTypeAArray;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeAArray:=
   matchcontinue (inTypeAArray1,inTypeAArray2,inInteger3)
@@ -2081,8 +2081,8 @@ public function tuple21 "function: tuple21
 "
   input tuple<Type_a, Type_b> inTplTypeATypeB;
   output Type_a outTypeA;
-  replaceable type Type_a;
-  replaceable type Type_b;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
 algorithm 
   outTypeA:=
   matchcontinue (inTplTypeATypeB)
@@ -2098,8 +2098,8 @@ public function tuple22 "function: tuple22
 "
   input tuple<Type_a, Type_b> inTplTypeATypeB;
   output Type_b outTypeB;
-  replaceable type Type_a;
-  replaceable type Type_b;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
 algorithm 
   outTypeB:=
   matchcontinue (inTplTypeATypeB)
@@ -2116,8 +2116,8 @@ public function splitTuple2List "function: splitTuple2List
   input list<tuple<Type_a, Type_b>> inTplTypeATypeBLst;
   output list<Type_a> outTypeALst;
   output list<Type_b> outTypeBLst;
-  replaceable type Type_a;
-  replaceable type Type_b;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
 algorithm 
   (outTypeALst,outTypeBLst):=
   matchcontinue (inTplTypeATypeBLst)
@@ -2147,7 +2147,7 @@ public function if_ "function: if
   input Type_a inTypeA2;
   input Type_a inTypeA3;
   output Type_a outTypeA;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeA:=
   matchcontinue (inBoolean1,inTypeA2,inTypeA3)
@@ -2606,7 +2606,7 @@ public function listMatching "function: listMatching
   input list<Type_a> inTypeALst;
   input FuncTypeType_aTo inFuncTypeTypeATo;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aTo
     input Type_a inTypeA;
   end FuncTypeType_aTo;
@@ -2644,13 +2644,13 @@ public function applyOption "function: applyOption
   input Option<Type_a> inTypeAOption;
   input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
   output Option<Type_b> outTypeBOption;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
   partial function FuncTypeType_aToType_b
     input Type_a inTypeA;
     output Type_b outTypeB;
-    replaceable type Type_b;
+    replaceable type Type_b subtypeof Any;
   end FuncTypeType_aToType_b;
-  replaceable type Type_b;
+  replaceable type Type_b subtypeof Any;
 algorithm 
   outTypeBOption:=
   matchcontinue (inTypeAOption,inFuncTypeTypeAToTypeB)
@@ -2672,7 +2672,7 @@ public function makeOption "function makeOption
 "
   input Type_a inTypeA;
   output Option<Type_a> outTypeAOption;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeAOption:=
   matchcontinue (inTypeA)
@@ -2707,7 +2707,7 @@ public function listSplit "function: listSplit
   input Integer inInteger;
   output list<Type_a> outTypeALst1;
   output list<Type_a> outTypeALst2;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   (outTypeALst1,outTypeALst2):=
   matchcontinue (inTypeALst,inInteger)
@@ -2748,7 +2748,7 @@ protected function listSplit2 "helper function to list_split
   input Integer inInteger3;
   output list<Type_a> outTypeALst1;
   output list<Type_a> outTypeALst2;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   (outTypeALst1,outTypeALst2):=
   matchcontinue (inTypeALst1,inTypeALst2,inInteger3)
@@ -2792,7 +2792,7 @@ public function optionToList "function: optionToList
 "
   input Option<Type_a> inTypeAOption;
   output list<Type_a> outTypeALst;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeALst:=
   matchcontinue (inTypeAOption)
@@ -2809,7 +2809,7 @@ public function flattenOption "function: flattenOption
   input Option<Type_a> inTypeAOption;
   input Type_a inTypeA;
   output Type_a outTypeA;
-  replaceable type Type_a;
+  replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeA:=
   matchcontinue (inTypeAOption,inTypeA)

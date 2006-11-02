@@ -54,14 +54,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   
 "
 
-public import OpenModelica.Compiler.Absyn;
-public import OpenModelica.Compiler.DAE;
-public import OpenModelica.Compiler.Exp;
+public import Absyn;
+public import DAE;
+public import Exp;
 
-protected import OpenModelica.Compiler.RTOpts;
-protected import OpenModelica.Compiler.Util;
-protected import OpenModelica.Compiler.Algorithm;
-protected import OpenModelica.Compiler.Types;
+protected import RTOpts;
+protected import Util;
+protected import Algorithm;
+protected import Types;
 
 protected function stringPrefixComponentRefs ""
   input String inString;
@@ -72,9 +72,9 @@ protected function stringPrefixComponentRefs ""
   partial function FuncTypeExp_ComponentRefType_bTo
     input Exp.ComponentRef inComponentRef;
     input Type_b inTypeB;
-    replaceable type Type_b;
+    replaceable type Type_b subtypeof Any;
   end FuncTypeExp_ComponentRefType_bTo;
-  replaceable type Type_b;
+  replaceable type Type_b subtypeof Any;
 algorithm 
   outExpExpLst:=
   matchcontinue (inString,inFuncTypeExpComponentRefTypeBTo,inTypeB,inExpExpLst)
@@ -103,9 +103,9 @@ protected function stringPrefixComponentRef
   partial function FuncTypeExp_ComponentRefType_bTo
     input Exp.ComponentRef inComponentRef;
     input Type_b inTypeB;
-    replaceable type Type_b;
+    replaceable type Type_b subtypeof Any;
   end FuncTypeExp_ComponentRefType_bTo;
-  replaceable type Type_b;
+  replaceable type Type_b subtypeof Any;
 algorithm 
   outExp:=
   matchcontinue (inString,inFuncTypeExpComponentRefTypeBTo,inTypeB,inExp)
@@ -232,9 +232,9 @@ protected function stringPrefixComponentRefsList
   partial function FuncTypeExp_ComponentRefType_bTo
     input Exp.ComponentRef inComponentRef;
     input Type_b inTypeB;
-    replaceable type Type_b;
+    replaceable type Type_b subtypeof Any;
   end FuncTypeExp_ComponentRefType_bTo;
-  replaceable type Type_b;
+  replaceable type Type_b subtypeof Any;
 algorithm 
   outExpExpLstLst:=
   matchcontinue (inString,inFuncTypeExpComponentRefTypeBTo,inTypeB,inExpExpLstLst)
