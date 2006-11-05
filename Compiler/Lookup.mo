@@ -1535,7 +1535,7 @@ algorithm
       String id;
       SCode.Restriction restr;
       list<Env.Frame> env;
-    case ((cl as SCode.CLASS(name = id,restricion = restr,parts = SCode.PARTS(elementLst = elts))),env) /* record class function class */ 
+    case ((cl as SCode.CLASS(name = id,restriction = restr,parts = SCode.PARTS(elementLst = elts))),env) /* record class function class */ 
       equation 
         funcelts = buildRecordConstructorElts(elts, env);
         reselt = buildRecordConstructorResultElt(elts, id, env);
@@ -2051,7 +2051,7 @@ protected function assertPackage "function: assertPackage
 algorithm 
   _:=
   matchcontinue (inClass)
-    case SCode.CLASS(restricion = SCode.R_PACKAGE()) then ();  /* Break the generalize-to-class rule */ 
+    case SCode.CLASS(restriction = SCode.R_PACKAGE()) then ();  /* Break the generalize-to-class rule */ 
   end matchcontinue;
 end assertPackage;
 end Lookup;

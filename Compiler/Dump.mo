@@ -239,7 +239,7 @@ algorithm
       Absyn.EnumDef ENUM_COLON;
       Absyn.Path fname;
       list<Ident> vars;
-    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restricion = r,body = Absyn.PARTS(classParts = parts,comment = optcmt)),fi,re,io)
+    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = Absyn.PARTS(classParts = parts,comment = optcmt)),fi,re,io)
       equation 
         is = indentStr(i);
         s1 = selectString(p, "partial ", "");
@@ -252,7 +252,7 @@ algorithm
         str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n,s5,"\n",s4,is,"end ",n});
       then
         str;
-    case (indent,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restricion = r,body = Absyn.DERIVED(typeSpec = tspec,attributes = attr,arguments = m,comment = optcmt)),fi,re,io)
+    case (indent,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = Absyn.DERIVED(typeSpec = tspec,attributes = attr,arguments = m,comment = optcmt)),fi,re,io)
       local Option<Absyn.Comment> optcmt;
       equation 
         is = indentStr(indent);
@@ -268,7 +268,7 @@ algorithm
         str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n,"= ",s4,s5,s6,s8,s9});
       then
         str;
-    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restricion = r,body = Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(enumLiterals = l),comment = cmt)),fi,re,io)
+    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(enumLiterals = l),comment = cmt)),fi,re,io)
       equation 
         is = indentStr(i);
         s1 = selectString(p, "partial ", "");
@@ -280,7 +280,7 @@ algorithm
         str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n,"= enumeration(",s4,")",s5});
       then
         str;
-    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restricion = r,body = Absyn.ENUMERATION(enumLiterals = ENUM_COLON,comment = cmt)),fi,re,io)
+    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = Absyn.ENUMERATION(enumLiterals = ENUM_COLON,comment = cmt)),fi,re,io)
       equation 
         is = indentStr(i);
         s1 = selectString(p, "partial ", "");
@@ -291,7 +291,7 @@ algorithm
         str = Util.stringAppendList({is,s2_1,s1,s2,re,io,s3," ",n,"= enumeration(:)",s5});
       then
         str;
-    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restricion = r,body = Absyn.CLASS_EXTENDS(name = name,arguments = cmod,comment = optcmt,parts = parts)),fi,re,io)
+    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = Absyn.CLASS_EXTENDS(name = name,arguments = cmod,comment = optcmt,parts = parts)),fi,re,io)
       equation 
         is = indentStr(i);
         s1 = selectString(p, "partial ", "");
@@ -307,7 +307,7 @@ algorithm
           "end ",name});
       then
         str;
-    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restricion = r,body = Absyn.PDER(functionName = fname,vars = vars)),fi,re,io)
+    case (i,Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = Absyn.PDER(functionName = fname,vars = vars)),fi,re,io)
       equation 
         is = indentStr(i);
         s1 = selectString(p, "partial ", "");
@@ -665,7 +665,7 @@ algorithm
       Absyn.Restriction r;
       Absyn.ClassDef cdef;
       Absyn.Info info;
-    case (Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restricion = r,body = cdef,info = info))
+    case (Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = cdef,info = info))
       equation 
         Print.printBuf("Absyn.CLASS(\"");
         Print.printBuf(n);

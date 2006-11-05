@@ -148,6 +148,7 @@ tokens {
     }
     
     typedef std::stack<void*> l_stack;
+	typedef std::stack<std::string> string_stack;
     
     void* make_rml_cons_from_stack(l_stack& s)
     {
@@ -173,14 +174,15 @@ tokens {
         return l;
     }
     
-    void* string_append_from_stack(l_stack& s)
+    void* string_append_from_stack(string_stack& s)
     {
     	char* buf;
-        l_stack tmpStack = s; // copy stack
+        string_stack tmpStack = s; // copy stack
        	if (s.empty()) return 0;
         int size=3; // space for '\0' and '[' and ']'
         while(!tmpStack.empty()) {
-        	size += (int)strlen((const char*)tmpStack.top());
+        	size += (int)strlen(tmpStack.top().c_str());
+			//printf("FlatArrraySubs:%s\n", tmpStack.top().c_str());
         	tmpStack.pop();
         } 
         buf = (char*)malloc(sizeof(char)*size);
@@ -190,7 +192,7 @@ tokens {
         
         while (!s.empty())
         {
-            buf = strcat(buf, (const char*)s.top());
+            buf = strcat(buf, s.top().c_str());
             s.pop();
         }   
         buf = strcat(buf,"]");
@@ -526,7 +528,7 @@ composition returns [void* ast]
 {
     void* el = 0;
     l_stack el_stack;
-    void * ann = 0;	
+    void* ann = 0;	
 }
     :
         el = element_list
@@ -1452,16 +1454,6 @@ equality_equation returns [void* ast]
 	:
 		#(EQUALS e1 = simple_expression e2 = expression)
 		{
-
-			//printf ("%s=[", "e1");
-			//rmldb_var_print(e1);
-			//printf ("]\n");
-			//fflush(stdout);
-			//printf ("%s=[", "e2");
-			//rmldb_var_print(e2);
-			//printf ("]\n");
-			//fflush(stdout);
-						
 			ast = Absyn__EQ_5fEQUALS(e1,e2);
 		}
 	;
@@ -1732,20 +1724,9 @@ expression returns [void* ast]
 	void* inputs = 0;
 	void* local  = 0;
 	void* cas    = 0;
-	void* e1     = 0;
-	void* e2     = 0;
-	void* exp    = 0;
 }
 	:
 		(	ast = simple_expression
-		|   #(COLONCOLON e1 = expression e2 = simple_expression)
-			{
-				ast = Absyn__CONS(e1, e2);
-			}
-		| #(AS i:IDENT exp = expression)
-			{
-				ast = Absyn__AS(to_rml_str(i),exp);
-			}			
 		|	ast = if_expression
 		|   ast = code_expression
 		|   #(MATCHCONTINUE inputs=imc:expression_or_empty local=local_clause cas=cases
@@ -1890,9 +1871,28 @@ elseif_expression returns [void* ast]
 
 simple_expression returns [void* ast]
 {
-	void* e1;
-	void* e2;
-	void* e3;
+	void* e1  = 0;
+	void* e2  = 0;
+	void* exp = 0;
+}
+:
+		  ast = simple_expr
+		| #(COLONCOLON e1 = simple_expression e2 = simple_expr)
+			{
+				ast = Absyn__CONS(e1, e2);
+			}
+		| #(AS i:IDENT exp = simple_expression)
+			{
+				ast = Absyn__AS(to_rml_str(i),exp);
+			}
+		;
+
+
+simple_expr returns [void* ast]
+{
+	void* e1 = 0;
+	void* e2 = 0;
+	void* e3 = 0;
 }
 	:
 		(#(RANGE3 e1 = logical_expression 
@@ -2361,17 +2361,18 @@ annotation returns [void *ast]
 
 flat_array_subscripts returns [void* ast]
 {
-	l_stack el_stack;
-	void* s = 0;
-	
+	string_stack el_stack;
+	std::string s;
 }
 	:
 		#(LBRACK s = flat_subscript 
 			{
+				//printf("FSubscript:%s\n", s.c_str());
 				el_stack.push(s);
 			}
 			(s = flat_subscript
 				{
+					//printf("FSubscript:%s\n", s.c_str());
 					el_stack.push(s);
 				}
 			)* )
@@ -2380,23 +2381,23 @@ flat_array_subscripts returns [void* ast]
 		}
 	;
 /* Flat subscript currently only works for UNSIGNED_INTEGER or IDENT */
-flat_subscript returns [void* ast]
+flat_subscript returns [std::string ast]
 {
 }
 	:
 		(
 			ui:UNSIGNED_INTEGER 
 			{ 
-				ast = (void*)ui->getText().c_str(); 
+				ast = ui->getText().c_str(); 
 			}
 			|
 			i:IDENT
 			{
-				ast = (void*)i->getText().c_str();
+				ast = i->getText().c_str();
 			}
 		| c:COLON 
 			{
-				ast = (void*)":";
+				ast = ":";
 			}
 		)
 	;

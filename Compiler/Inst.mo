@@ -800,7 +800,7 @@ algorithm
       SCode.Restriction restr;
       list<SCode.Class> cs;
       Env.Cache cache;
-    case (cache,env,((c as SCode.CLASS(name = n,restricion = restr)) :: cs))
+    case (cache,env,((c as SCode.CLASS(name = n,restriction = restr)) :: cs))
       local String s;
       equation 
         //Debug.fprint("insttr", "inst_program_implicit: ");
@@ -882,7 +882,7 @@ algorithm
         /* Instantiation of a class. Create new scope and call instClassIn.
         	Then generate equations from connects.
         */
-    case (cache,env,mod,pre,csets,(c as SCode.CLASS(name = n,encapsulated_ = encflag,restricion = r)),inst_dims,impl,callscope)
+    case (cache,env,mod,pre,csets,(c as SCode.CLASS(name = n,encapsulated_ = encflag,restriction = r)),inst_dims,impl,callscope)
       local String str;
       equation 
 
@@ -967,7 +967,7 @@ algorithm
       InstDims inst_dims;
       CallingScope callscope;
       Env.Cache cache;
-    case (cache,env,mod,pre,csets,(c as SCode.CLASS(name = n,encapsulated_ = encflag,restricion = r)),inst_dims,impl,callscope) /* impl */ 
+    case (cache,env,mod,pre,csets,(c as SCode.CLASS(name = n,encapsulated_ = encflag,restriction = r)),inst_dims,impl,callscope) /* impl */ 
       equation 
         env_1 = Env.openScope(env, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
@@ -1070,7 +1070,7 @@ algorithm
       then
         (cache,{},env,Connect.SETS({},crs),ci_state,{},NONE);
     
-    case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restricion = r,parts = d)),prot,inst_dims,impl)
+    case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,parts = d)),prot,inst_dims,impl)
       local String s; Absyn.Path fullPath;
         Boolean b;
         Absyn.Path scope;
@@ -1083,7 +1083,7 @@ algorithm
         fail();
         
     
-    case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restricion = r,parts = d)),prot,inst_dims,impl)
+    case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,parts = d)),prot,inst_dims,impl)
       local String s; Absyn.Path fullPath;
         Boolean b;
       equation 
@@ -1112,7 +1112,7 @@ algorithm
         cache = addCachedEnv(cache,n,env_1);
       then
         (cache,l,env_1,csets_1,ci_state_1,tys,bc);
-    case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restricion = r,parts = d)),prot,inst_dims,impl)
+    case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,parts = d)),prot,inst_dims,impl)
       equation 
         //print("instClassIn(");print(n);print("failed\n");
         //Debug.fprint("failtrace", "- inst_class_in failed\n");
@@ -1229,7 +1229,7 @@ algorithm
     case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = "Integer")),_,_) then (cache,env,ci_state); 
     case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = "String")),_,_) then (cache,env,ci_state); 
     case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = "Boolean")),_,_) then (cache,env,ci_state); 
-    case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restricion = r,parts = d)),prot,inst_dims)
+    case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,parts = d)),prot,inst_dims)
       local
         Absyn.Path fullPath;
         Real t1,t2,time; String s,s2; Boolean b;
@@ -3898,7 +3898,7 @@ algorithm
     case (cache,_,_,_,SCode.CLASS(name = "Integer"),_,_) then (cache,{}); 
     case (cache,_,_,_,SCode.CLASS(name = "String"),_,_) then (cache,{}); 
     case (cache,_,_,_,SCode.CLASS(name = "Boolean"),_,_) then (cache,{}); 
-    case (cache,env,mods,pre,SCode.CLASS(name = id,restricion = SCode.R_TYPE(),parts = SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),mod = mod)),dims,impl) /* Derived classes with restriction type, e.g. type Point = Real{3}; */ 
+    case (cache,env,mods,pre,SCode.CLASS(name = id,restriction = SCode.R_TYPE(),parts = SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),mod = mod)),dims,impl) /* Derived classes with restriction type, e.g. type Point = Real{3}; */ 
       equation 
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, cn, true);
         owncref = Absyn.CREF_IDENT(id,{});
@@ -5232,7 +5232,7 @@ algorithm
       SCode.Restriction restr;
       InstDims inst_dims;
       Env.Cache cache;
-    case (cache,env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = restr)),inst_dims)  
+    case (cache,env,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = restr)),inst_dims)  
       local String s;
       equation 
         env_1 = Env.extendFrameC(env, c);
@@ -5287,7 +5287,7 @@ algorithm
       list<SCode.Element> els;
       list<String> l;
       Env.Cache cache;
-     case (cache,env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = SCode.R_TYPE(),parts = SCode.ENUMERATION(identLst = l))),inst_dims) /* enumerations */ 
+     case (cache,env,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = SCode.R_TYPE(),parts = SCode.ENUMERATION(identLst = l))),inst_dims) /* enumerations */ 
       equation 
         enumclass = instEnumeration(n, l);
         env_2 = Env.extendFrameC(env, enumclass); 
@@ -5388,7 +5388,7 @@ algorithm
       list<SCode.Element> els;
       list<Absyn.Path> funcnames;
       Env.Cache cache;
-    case (cache,env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = SCode.R_FUNCTION())),inst_dims)
+    case (cache,env,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = SCode.R_FUNCTION())),inst_dims)
    local String s;
       equation 
         (cache,dae,cenv,csets_1,ty,st) = instClass(cache,env, mod, pre, csets, c, inst_dims, true, INNER_CALL());
@@ -5402,7 +5402,7 @@ algorithm
 
         /* External functions should also have their type in env, 
          but no dae. */ 
-    case (cache,env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = (restr as SCode.R_EXT_FUNCTION()),parts = (parts as SCode.PARTS(elementLst = els)))),inst_dims)
+    case (cache,env,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = (restr as SCode.R_EXT_FUNCTION()),parts = (parts as SCode.PARTS(elementLst = els)))),inst_dims)
       equation 
         (cache,dae,cenv,csets_1,ty,st) = instClass(cache,env, mod, pre, csets, c, inst_dims, true, INNER_CALL());
         //env_11 = Env.extendFrameC(cenv,c); // Only created to be able to get FQ path.  
@@ -5415,7 +5415,7 @@ algorithm
         (cache,extdecl) = instExtDecl(cache,tempenv, n, parts, true) "impl" ;
       then
         (cache,env_1,{DAE.EXTFUNCTION(fpath,DAE.DAE(dae),ty1,extdecl)});
-    case (cache,env,mod,pre,csets,(c as SCode.CLASS(name = n,restricion = (restr as SCode.R_FUNCTION()),parts = SCode.OVERLOAD(absynPathLst = funcnames))),inst_dims)
+    case (cache,env,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = (restr as SCode.R_FUNCTION()),parts = SCode.OVERLOAD(absynPathLst = funcnames))),inst_dims)
       equation 
         (cache,env_1,daefuncs) = instOverloadedFunctions(cache,env, n, funcnames) "Overloaded functions" ;
       then
@@ -5467,7 +5467,7 @@ algorithm
       Option<Absyn.ExternalDecl> extDecl;
       list<SCode.Element> elts;
       Env.Cache cache;
-    case (cache,env,SCode.CLASS(name = id,partial_ = p,encapsulated_ = e,restricion = r,parts = SCode.PARTS(elementLst = elts,used=extDecl))) /* The function type can be determined without the body. */ 
+    case (cache,env,SCode.CLASS(name = id,partial_ = p,encapsulated_ = e,restriction = r,parts = SCode.PARTS(elementLst = elts,used=extDecl))) /* The function type can be determined without the body. */ 
       equation 
         stripped_class = SCode.CLASS(id,p,e,r,SCode.PARTS(elts,{},{},{},{},extDecl));
         (cache,env_1,_) = implicitFunctionInstantiation(cache,env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, stripped_class, {});

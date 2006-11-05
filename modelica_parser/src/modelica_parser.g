@@ -622,7 +622,7 @@ algorithm :
         }
 
 assign_clause_a : 
-		   simple_expression ASSIGN^ expression
+		simple_expression ASSIGN^ expression
 		;
 
 equality_equation :
@@ -730,8 +730,7 @@ connector_ref_2 :
  */
 expression :
 		( if_expression
-		| simple_expression (COLONCOLON^ simple_expression)*
-		| IDENT AS^ expression		
+		| simple_expression
 		| code_expression
 		| (MATCHCONTINUE^ expression_or_empty
 		   local_clause
@@ -796,8 +795,12 @@ for_index:
         (IDENT (IN^ expression)?)
 ;
 
+simple_expression :
+		  simple_expr (COLONCOLON^ simple_expr)*
+		| IDENT AS^ simple_expression
+		;
 
-simple_expression !:
+simple_expr !:
 		l1:logical_expression 
 		( COLON l2:logical_expression 
 		    ( COLON l3:logical_expression 
@@ -806,15 +809,15 @@ simple_expression !:
 		{ 
 			if (#l3 != null)
 			{ 
-				#simple_expression = #([RANGE3,"RANGE3"], l1, l2, l3); 
+				#simple_expr = #([RANGE3,"RANGE3"], l1, l2, l3); 
 			}
 			else if (#l2 != null) 
 			{ 
-				#simple_expression = #([RANGE2,"RANGE2"], l1, l2); 
+				#simple_expr = #([RANGE2,"RANGE2"], l1, l2); 
 			}
 			else
 			{
-				#simple_expression = #l1; 
+				#simple_expr = #l1; 
 			}
 		}
 		;

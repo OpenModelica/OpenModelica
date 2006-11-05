@@ -4950,7 +4950,7 @@ algorithm
       equation 
         path = Absyn.crefToPath(fn);
         (cache,cdef,env_1) = Lookup.lookupClass(cache,env, path, false);
-        SCode.CLASS(name = fid,restricion = SCode.R_EXT_FUNCTION(),parts = SCode.PARTS(used = extdecl)) = cdef;
+        SCode.CLASS(name = fid,restriction = SCode.R_EXT_FUNCTION(),parts = SCode.PARTS(used = extdecl)) = cdef;
         SOME(Absyn.EXTERNALDECL(id,lan,out,args,_)) = extdecl;
         Ceval.isKnownExternalFunc(fid, id);
       then

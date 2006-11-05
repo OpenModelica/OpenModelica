@@ -144,7 +144,7 @@ uniontype Class "- Classes"
     Ident name "Name" ;
     Boolean partial_ "Partial" ;
     Boolean encapsulated_ "Encapsulated" ;
-    Restriction restricion "Restricion" ;
+    Restriction restriction "Restricion" ;
     ClassDef parts "Parts" ;
   end CLASS;
 
@@ -391,7 +391,7 @@ algorithm
       Absyn.Restriction r;
       Absyn.ClassDef d;
       Absyn.Info file_info;
-    case ((c as Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restricion = r,body = d,info = file_info)))
+    case ((c as Absyn.CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = d,info = file_info)))
       equation
         //debug_print("elaborating-class:", n);
         r_1 = elabRestriction(c, r); // uniontype will not get elaborated!
@@ -456,7 +456,7 @@ algorithm
       Option<String> cmt;
       Absyn.Info file_info;
     case (Absyn.CLASS(body = Absyn.PARTS(classParts = (Absyn.EXTERNAL(externalDecl = _) :: _)))) then true; 
-    case (Absyn.CLASS(name = a,partial_ = b,final_ = c,encapsulated_ = d,restricion = e,body = Absyn.PARTS(classParts = (_ :: rest),comment = cmt),info = file_info))
+    case (Absyn.CLASS(name = a,partial_ = b,final_ = c,encapsulated_ = d,restriction = e,body = Absyn.PARTS(classParts = (_ :: rest),comment = cmt),info = file_info))
       equation 
         res = containExternalFuncDecl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS(rest,cmt),file_info));
       then
@@ -932,7 +932,7 @@ algorithm
       Option<Absyn.Comment> comment;
       list<Absyn.ComponentItem> xs;
       Absyn.Import imp;
-    case (final_,repl,prot,Absyn.CLASSDEF(replaceable_ = rp,class_ = (cl as Absyn.CLASS(name = n,partial_ = pa,final_ = fi,encapsulated_ = e,restricion = re,body = de,info = file_info))))
+    case (final_,repl,prot,Absyn.CLASSDEF(replaceable_ = rp,class_ = (cl as Absyn.CLASS(name = n,partial_ = pa,final_ = fi,encapsulated_ = e,restriction = re,body = de,info = file_info))))
       equation 
         //debug_print("elaborating-class:", n);        
         re_1 = elabRestriction(cl, re); // uniontype will not get elaborated!
@@ -1770,7 +1770,7 @@ algorithm
       Boolean p,en;
       Restriction rest;
       ClassDef def;
-    case (CLASS(name = id,partial_ = p,encapsulated_ = en,restricion = rest,parts = def))
+    case (CLASS(name = id,partial_ = p,encapsulated_ = en,restriction = rest,parts = def))
       equation 
         s = printClassdefStr(def);
         res = Util.stringAppendList({"CLASS(",id,",_,_,_,",s,")"});
@@ -1963,8 +1963,8 @@ algorithm
     local
       String n;
       ClassDef def;
-    case CLASS(name = n,restricion = R_FUNCTION(),parts = def) then true; 
-    case CLASS(name = n,restricion = R_EXT_FUNCTION(),parts = def) then true; 
+    case CLASS(name = n,restriction = R_FUNCTION(),parts = def) then true; 
+    case CLASS(name = n,restriction = R_EXT_FUNCTION(),parts = def) then true; 
     case _ then false; 
   end matchcontinue;
 end isFunction;
@@ -2000,7 +2000,7 @@ algorithm
       Boolean enc,partial_;
       Restriction restr;
       ClassDef def;
-    case (CLASS(name = id,encapsulated_ = enc,restricion = restr,parts = def),partial_) then CLASS(id,partial_,enc,restr,def); 
+    case (CLASS(name = id,encapsulated_ = enc,restriction = restr,parts = def),partial_) then CLASS(id,partial_,enc,restr,def); 
   end matchcontinue;
 end classSetPartial;
 

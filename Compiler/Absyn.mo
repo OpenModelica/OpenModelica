@@ -156,7 +156,7 @@ uniontype Class
     Boolean     partial_   "true if partial" ;
     Boolean     final_     "true if final" ;
     Boolean     encapsulated_ "true if encapsulated" ;
-    Restriction restricion  "Restriction" ;
+    Restriction restriction  "Restriction" ;
     ClassDef    body;
     Info        info    "Information: FileName the class is defined in + 
                isReadOnly bool + start line no + start column no +
@@ -1660,7 +1660,7 @@ algorithm
       Boolean p,f,e;
       Restriction r;
       ClassDef body;
-    case (CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restricion = r,body = body),filename) then CLASS(n,p,f,e,r,body,INFO(filename,false,0,0,0,0)); 
+    case (CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = body),filename) then CLASS(n,p,f,e,r,body,INFO(filename,false,0,0,0,0)); 
   end matchcontinue;
 end setClassFilename;
 
