@@ -1770,18 +1770,28 @@ cases returns [void* ast]
 	void* caseEl    = 0;
 	void* elseEl    = 0;
 	ast       = mk_nil();
+	void* cmt = 0;
 }	:
 	(
-	(#(CASE pat=pattern local=local_clause eqs=equation_list result=expression_or_empty)
+	(#(CASE pat=pattern cmt=string_comment local=local_clause eqs=equation_list result=expression_or_empty)
 	{
-		caseEl = Absyn__CASE(pat, local?local:mk_nil(), eqs?eqs:mk_nil(), result, mk_none());
+		caseEl = Absyn__CASE(
+					pat, 
+					local?local:mk_nil(), 
+					eqs?eqs:mk_nil(), 
+					result, 
+					cmt ? mk_some(cmt) : mk_none());
 		el_stack.push(caseEl);
 	}
 	)+
-	(#(ELSE local=local_clause eqs=equation_list result=expression_or_empty)
+	(#(ELSE cmt=string_comment local=local_clause eqs=equation_list result=expression_or_empty)
 	{
-		caseEl = Absyn__ELSE(local?local:mk_nil(), eqs?eqs:mk_nil(), result, mk_none());
-		el_stack.push(elseEl);		
+		caseEl = Absyn__ELSE(
+					local?local:mk_nil(), 
+					eqs?eqs:mk_nil(), 
+					result, 
+					cmt ? mk_some(cmt) : mk_none());
+		el_stack.push(elseEl);
 	})?
 	)
 	{

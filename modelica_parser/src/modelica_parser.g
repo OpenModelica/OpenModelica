@@ -761,12 +761,12 @@ local_clause:
 	;
 
 cases:
-	(onecase)+ (ELSE^ local_clause (EQUATION! equation_list_then)? 
+	(onecase)+ (ELSE^ string_comment local_clause (EQUATION! equation_list_then)? 
 	THEN! expression_or_empty SEMICOLON!)?
 	;
 
 onecase:
-	(CASE^ pattern local_clause (EQUATION! equation_list_then)? 
+	(CASE^ pattern string_comment local_clause (EQUATION! equation_list_then)? 
 	THEN! expression_or_empty SEMICOLON!)
 	;
 
