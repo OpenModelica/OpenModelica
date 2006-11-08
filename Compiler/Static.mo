@@ -5151,9 +5151,17 @@ algorithm
           slots, prop);
       then
         (cache,call_exp,prop);*/
-    case (cache,env,fn,args,nargs,impl,st) /* no matching type found. */ 
+    case (cache,env,fn,args,nargs,impl,st) /* no matching type found, no candidates. */ 
       equation 
-        (cache,typelist) = Lookup.lookupFunctionsInEnv(cache,env, fn);
+        (cache,{}) = Lookup.lookupFunctionsInEnv(cache,env, fn);
+        fn_str = Absyn.pathString(fn);
+        Error.addMessage(Error.NO_MATCHING_FUNCTION_FOUND_NO_CANDIDATE, {fn_str});
+      then
+        fail();
+
+    case (cache,env,fn,args,nargs,impl,st) /* no matching type found, with candidates */ 
+      equation 
+        (cache,typelist as _::_) = Lookup.lookupFunctionsInEnv(cache,env, fn);
         t_lst = Util.listMap(typelist, Types.unparseType);
         fn_str = Absyn.pathString(fn);
         types_str = Util.stringDelimitList(t_lst, "\n -");

@@ -171,22 +171,23 @@ public constant ErrorID ARGUMENT_MUST_BE_DISCRETE_VAR=73;
 public constant ErrorID TYPE_MUST_BE_SIMPLE=74;
 public constant ErrorID ARGUMENT_MUST_BE_VARIABLE=75;
 public constant ErrorID NO_MATCHING_FUNCTION_FOUND=76;
-public constant ErrorID FUNCTION_COMPS_MUST_HAVE_DIRECTION=77;
-public constant ErrorID FUNCTION_SLOT_ALLREADY_FILLED=78;
-public constant ErrorID NO_SUCH_ARGUMENT=79;
-public constant ErrorID CONSTANT_OR_PARAM_WITH_NONCONST_BINDING=80;
-public constant ErrorID SUBSCRIPT_NOT_INT_OR_INT_ARRAY=81;
-public constant ErrorID TYPE_MISMATCH_IF_EXP=82;
-public constant ErrorID UNRESOLVABLE_TYPE=83;
-public constant ErrorID INCOMPATIBLE_TYPES=84;
-public constant ErrorID ERROR_OPENING_FILE=85;
-public constant ErrorID INHERIT_BASIC_WITH_COMPS=86;
-public constant ErrorID MODIFIER_TYPE_MISMATCH_ERROR=87;
-public constant ErrorID ERROR_FLATTENING=88;
-public constant ErrorID DUPLICATE_ELEMENTS_NOT_IDENTICAL=89;
-public constant ErrorID PACKAGE_VARIABLE_NOT_CONSTANT=90;
-public constant ErrorID RECURSIVE_DEFINITION= 91; 
-public constant ErrorID NOT_ARRAY_TYPE_IN_FOR_STATEMENT= 92;
+public constant ErrorID NO_MATCHING_FUNCTION_FOUND_NO_CANDIDATE = 77;
+public constant ErrorID FUNCTION_COMPS_MUST_HAVE_DIRECTION=78;
+public constant ErrorID FUNCTION_SLOT_ALLREADY_FILLED=79;
+public constant ErrorID NO_SUCH_ARGUMENT=80;
+public constant ErrorID CONSTANT_OR_PARAM_WITH_NONCONST_BINDING=81;
+public constant ErrorID SUBSCRIPT_NOT_INT_OR_INT_ARRAY=82;
+public constant ErrorID TYPE_MISMATCH_IF_EXP=83;
+public constant ErrorID UNRESOLVABLE_TYPE=84;
+public constant ErrorID INCOMPATIBLE_TYPES=85;
+public constant ErrorID ERROR_OPENING_FILE=86;
+public constant ErrorID INHERIT_BASIC_WITH_COMPS=87;
+public constant ErrorID MODIFIER_TYPE_MISMATCH_ERROR=88;
+public constant ErrorID ERROR_FLATTENING=89;
+public constant ErrorID DUPLICATE_ELEMENTS_NOT_IDENTICAL=90;
+public constant ErrorID PACKAGE_VARIABLE_NOT_CONSTANT=91;
+public constant ErrorID RECURSIVE_DEFINITION=92; 
+public constant ErrorID NOT_ARRAY_TYPE_IN_FOR_STATEMENT= 93;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
 public constant ErrorID INDEX_REDUCTION_NOTIFICATION=1000;
@@ -338,6 +339,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "%s argument to %s must be a variable"),
           (NO_MATCHING_FUNCTION_FOUND,TRANSLATION(),ERROR(),
           "No matching function found for %s, candidates are %s"),
+          (NO_MATCHING_FUNCTION_FOUND_NO_CANDIDATE,TRANSLATION(),ERROR(),
+          "No matching function found for %s"),
           (FUNCTION_COMPS_MUST_HAVE_DIRECTION,TRANSLATION(),ERROR(),
           "Component %s in function is neither input nor output"),
           (FUNCTION_SLOT_ALLREADY_FILLED,TRANSLATION(),ERROR(),
