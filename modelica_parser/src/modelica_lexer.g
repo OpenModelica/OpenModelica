@@ -166,7 +166,7 @@ LESSGT		: ("!=")('.')?;
 GREATER		: '>' ;
 RGREATER	: ">." ;
 GREATEREQ	: ">="(".")?;
-EQEQ		: "=="('.')?;
+EQEQ		: "=="(('.')|('&'))?;
 COLON		: ':'	;
 SEMICOLON	: ';'	;
 POWER		: '^'('.')?;

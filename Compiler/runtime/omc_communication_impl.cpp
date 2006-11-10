@@ -51,7 +51,9 @@ HANDLE clientlock;
 extern HANDLE omc_client_request_event;
 extern HANDLE omc_return_value_ready;
 
-extern char * omc_message;
+extern char* omc_cmd_message;
+extern char* omc_reply_message;
+
 using namespace std;
 
 //This is the implementation of the omc communication using mico (CORBA)
@@ -63,37 +65,37 @@ OmcCommunication_impl::OmcCommunication_impl()
 
 char* OmcCommunication_impl::sendExpression( const char* expr )
 {
-  char* retval;
   WaitForSingleObject(clientlock,INFINITE); // Lock so no other tread can talk to omc.
+  //const char* retval = "";
 
-	
-	// Signal to omc that message has arrived. 
+  // Signal to omc that message has arrived. 
 
-  omc_message = (char*)expr;
+  omc_cmd_message = (char*)expr;
   SetEvent(omc_client_request_event);
 
   // Wait for omc to process message
   while(WAIT_OBJECT_0 != WaitForSingleObject(omc_return_value_ready, INFINITE));
-  retval = omc_message;
+  //retval = CORBA::string_dup(omc_reply_message); // dup the string here on this thread!
   ReleaseMutex(clientlock);
   
-  return retval; // Has already been string_dup (prepared for CORBA)
+  return CORBA::string_dup(omc_reply_message); // Has already been string_dup (prepared for CORBA)
 } 
 
 char* OmcCommunication_impl::sendClass( const char* expr )
 {
-  char* retval;
   WaitForSingleObject(clientlock,INFINITE); // Lock so no other tread can talk to omc.
+  char* retval = "";
+
   // Signal to omc that message has arrived. 
-  omc_message = (char*)expr;
+  omc_cmd_message = (char*)expr;
   SetEvent(omc_client_request_event);
 
   // Wait for omc to process message
   while(WAIT_OBJECT_0 != WaitForSingleObject(omc_return_value_ready, INFINITE));
-  retval = omc_message;
+  retval = CORBA::string_dup(omc_reply_message); // dup the string here on this thread!
   ReleaseMutex(clientlock);
   
-  return retval; // Has already been string_dup (prepared for CORBA)
+  return retval; // Has already been string_dup (prepared for CORBA) 
 }
 
 #else /* linux stuff here! */
@@ -112,7 +114,9 @@ extern pthread_mutex_t corba_waitlock;
 
 extern bool corba_waiting;
 
-extern char * omc_message;
+extern char* omc_cmd_message;
+extern char* omc_reply_message;
+
 using namespace std;
 
 //This is the implementation of the omc communication using mico (CORBA)
@@ -127,7 +131,7 @@ char* OmcCommunication_impl::sendExpression( const char* expr )
   // Signal to omc that message has arrived. 
   pthread_mutex_lock(&omc_waitlock);
   omc_waiting=true;
-  omc_message = (char*)expr;
+  omc_cmd_message = (char*)expr;
   pthread_cond_signal(&omc_waitformsg);
   pthread_mutex_unlock(&omc_waitlock);
 
@@ -139,7 +143,7 @@ char* OmcCommunication_impl::sendExpression( const char* expr )
   corba_waiting = false;
   pthread_mutex_unlock(&corba_waitlock);
   
-  return omc_message; // Has already been string_dup (prepared for CORBA)
+  return CORBA::string_dup(omc_reply_message); // Has already been string_dup (prepared for CORBA)
 } 
 
 char* OmcCommunication_impl::sendClass( const char* expr )
@@ -147,7 +151,7 @@ char* OmcCommunication_impl::sendClass( const char* expr )
   // Signal to omc that message has arrived. 
   pthread_mutex_lock(&omc_waitlock);
   omc_waiting=true;
-  omc_message = (char*)expr;
+  omc_cmd_message = (char*)expr;
   pthread_cond_signal(&omc_waitformsg);
   pthread_mutex_unlock(&omc_waitlock);
 
@@ -160,7 +164,7 @@ char* OmcCommunication_impl::sendClass( const char* expr )
   corba_waiting = false;
   pthread_mutex_unlock(&corba_waitlock);
   
-  return omc_message; // Has already been string_dup (prepared for CORBA)
+  return CORBA::string_dup(omc_reply_message); // dup the string here on this thread!
 
 }
 

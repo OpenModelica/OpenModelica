@@ -167,8 +167,14 @@ extern "C"
     int nvars = RML_UNTAGFIXNUM(rmlA0);
     //cout << "init lowlink n= " << nvars << endl;
     lowlink.reserve(nvars);
+    
+    while (lowlink.size() < (unsigned int)nvars)
+    {
+    	lowlink.push_back(0);
+    }
 
-    for (int i =0; i < nvars; i++) {
+    for (int i =0; i < nvars; i++) 
+    {
       lowlink[i]=0;
     }
     RML_TAILCALLK(rmlSC);
@@ -180,8 +186,14 @@ extern "C"
     int nvars = RML_UNTAGFIXNUM(rmlA0);
     //cout << "init number n= " << nvars << endl;
     number.reserve(nvars);
+    
+    while (number.size() < (unsigned int)nvars)
+    {
+    	number.push_back(0);
+    }    
 
-    for (int i =0; i < nvars; i++) {
+    for (int i =0; i < nvars; i++) 
+    {
       number[i]=0;
     }
     RML_TAILCALLK(rmlSC);

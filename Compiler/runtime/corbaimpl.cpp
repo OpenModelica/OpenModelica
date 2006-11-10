@@ -67,7 +67,8 @@ HANDLE lock;
 HANDLE omc_client_request_event;
 HANDLE omc_return_value_ready;
 
-char * omc_message;
+char * omc_cmd_message = "";
+char * omc_reply_message = "";
 
 #ifndef NOMICO
 CORBA::ORB_var orb;
@@ -165,11 +166,14 @@ DWORD WINAPI runOrb(void* arg) {
 
 RML_BEGIN_LABEL(Corba__waitForCommand)
 {
+#ifndef NOMICO
   while (WAIT_OBJECT_0 != WaitForSingleObject(omc_client_request_event,INFINITE) );
   
-  rmlA0=mk_scon(omc_message);
+  rmlA0=mk_scon(omc_cmd_message);
   
   WaitForSingleObject(lock,INFINITE); // Lock so no other tread can talk to omc.
+
+#endif // NOMICO
 
   RML_TAILCALLK(rmlSC);
 }
@@ -178,15 +182,15 @@ RML_END_LABEL
 RML_BEGIN_LABEL(Corba__sendreply)
 {
 #ifndef NOMICO
-	char *msg=RML_STRINGDATA(rmlA0);
+  char *msg=RML_STRINGDATA(rmlA0);
 
   // Signal to Corba that it can return, taking the value in message
-  omc_message = CORBA::string_dup(msg);
-
+  omc_reply_message = msg;
   SetEvent(omc_return_value_ready);
 
   ReleaseMutex(lock); // Unlock, so other threads can ask omc stuff.
-#endif
+#endif // NOMICO
+
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -224,7 +228,8 @@ pthread_cond_t corba_waitformsg;
 pthread_mutex_t corba_waitlock;
 bool corba_waiting=false;
 
-char *omc_message;
+char * omc_cmd_message = "";
+char * omc_reply_message = "";
 
 ostringstream objref_file;
 
@@ -314,7 +319,7 @@ RML_BEGIN_LABEL(Corba__waitForCommand)
   omc_waiting = false;
   pthread_mutex_unlock(&omc_waitlock);
 
-  rmlA0=mk_scon(omc_message);
+  rmlA0=mk_scon(omc_cmd_message);
   pthread_mutex_lock(&lock); // Lock so no other tread can talk to omc.
   RML_TAILCALLK(rmlSC);
 }
@@ -327,7 +332,7 @@ RML_BEGIN_LABEL(Corba__sendreply)
   // Signal to Corba that it can return, taking the value in message
   pthread_mutex_lock(&corba_waitlock); 
   corba_waiting=true;
-  omc_message =CORBA::string_dup(msg);
+  omc_message = msg;
 
   pthread_cond_signal(&corba_waitformsg);
   pthread_mutex_unlock(&corba_waitlock);
