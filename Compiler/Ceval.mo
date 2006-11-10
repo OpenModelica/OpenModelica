@@ -2555,9 +2555,13 @@ algorithm
 				varSizeStr," variable(s)."});
       then
         (cache,Values.STRING(retStr),st);
- case (cache,_,_,st,_)
-   
-   then (cache,Values.STRING("Check of model failed."),st);  
+    case (cache,_,_,st,_) local
+      String errorMsg; Boolean strEmpty;
+      equation
+      errorMsg = Error.printMessagesStr();
+      strEmpty = (System.strcmp("",errorMsg)==0);
+      errorMsg = Util.if_(strEmpty,"Internal error, check of model failed with no error message.",errorMsg);
+    then (cache,Values.STRING(errorMsg),st);  
            
   end matchcontinue;
 end checkModel;
