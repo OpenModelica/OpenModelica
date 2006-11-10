@@ -332,7 +332,7 @@ RML_BEGIN_LABEL(Corba__sendreply)
   // Signal to Corba that it can return, taking the value in message
   pthread_mutex_lock(&corba_waitlock); 
   corba_waiting=true;
-  omc_message = msg;
+  omc_reply_message = msg;
 
   pthread_cond_signal(&corba_waitformsg);
   pthread_mutex_unlock(&corba_waitlock);
