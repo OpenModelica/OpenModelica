@@ -325,6 +325,14 @@ RML_BEGIN_LABEL(RTOpts__eliminationLevel)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(RTOpts__setEliminationLevel)
+{
+	int level = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA0));
+	elimination_level = level;
+	RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(RTOpts__debugFlag)
 {
     void *str = rmlA0;

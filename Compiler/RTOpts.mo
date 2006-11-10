@@ -96,6 +96,12 @@ public function noProc
   external "C" ;
 end noProc;
 
+public function setEliminationLevel
+  input Integer level;
+
+  external "C" ;
+end setEliminationLevel;
+
 public function eliminationLevel
   output Integer level;
 
