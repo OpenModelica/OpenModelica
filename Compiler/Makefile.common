@@ -37,6 +37,7 @@ SRCMO= Absyn.mo \
 	Debug.mo \
 	Dump.mo \
 	DumpGraphviz.mo \
+	Constants.mo \
 	Env.mo \
 	Error.mo \
 	Exp.mo \

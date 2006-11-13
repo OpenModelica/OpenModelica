@@ -103,6 +103,18 @@ uniontype InteractiveVariable "- Interactive Variable"
 
 end InteractiveVariable;
 
+public
+uniontype LoadedFile 
+  "@author adrpo
+   A file entry holder, needed to cache the file information 
+   so files are not loaded if not really necessary"
+  record FILE
+    String  fileName            "The path of the file";
+    Real    loadTime            "The time the file was loaded";
+    String  classNamesQualified "The names of the classes from the file";
+  end FILE;
+end LoadedFile;  
+
 public 
 uniontype InteractiveSymbolTable "- Interactive Symbol Table"
   record SYMBOLTABLE
@@ -111,6 +123,7 @@ uniontype InteractiveSymbolTable "- Interactive Symbol Table"
     list<InstantiatedClass> instClsLst "instClsLst ;  List of instantiated classes" ;
     list<InteractiveVariable> lstVarVal "lstVarVal ; List of variables with values" ;
     list<tuple<Absyn.Path, Types.Type>> compiledFunctions "compiledFunctions ; List of compiled functions, F.Q name + type" ;
+    list<LoadedFile> loadedFiles "The list of the loaded files with their load time." ;
   end SYMBOLTABLE;
 
 end InteractiveSymbolTable;
@@ -177,9 +190,10 @@ protected import System;
 protected import ClassLoader;
 protected import Ceval;
 protected import Error;
+protected import Constants;
 
 public constant InteractiveSymbolTable emptySymboltable=SYMBOLTABLE(Absyn.PROGRAM({},Absyn.TOP()),{},{},
-          {},{}) "Empty Interactive Symbol Table" ;
+          {},{},{}) "Empty Interactive Symbol Table" ;
 
 public function evaluate "function: evaluate
  
@@ -344,7 +358,12 @@ algorithm
       Absyn.AlgorithmItem algitem;
       Boolean outres;
       Absyn.Exp exp;
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "listVariables"),functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = {})))}),(st as SYMBOLTABLE(lstVarVal = vars)))
+    case 
+      (ISTMTS(
+      interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "listVariables"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = {})))}),
+      (st as SYMBOLTABLE(lstVarVal = vars)))
       equation 
         vars = getVariableNames(vars);
         str = stringAppend(vars, "\n");
@@ -362,7 +381,10 @@ algorithm
         str_1 = stringAppend(str, "\n");
       then
         (str_1,newst);
-    case (ISTMTS(interactiveStmtLst = {IALG(algItem = (algitem as Absyn.ALGORITHMITEM(algorithm_ = _)))},semicolon = outres),st) /* Evaluate algorithm statements in  evaluate_alg_stmt() */ 
+    case 
+      (ISTMTS(interactiveStmtLst = 
+      {IALG(algItem = (algitem as Absyn.ALGORITHMITEM(algorithm_ = _)))},
+      semicolon = outres),st) /* Evaluate algorithm statements in  evaluate_alg_stmt() */ 
       equation 
         (str,st_1) = evaluateAlgStmt(algitem, st);
         str_1 = stringAppend(str, "\n");
@@ -421,14 +443,22 @@ algorithm
         (_,Values.BOOL(true),SOME(st_2)) = Ceval.ceval(Env.emptyCache,env, econd, true, SOME(st_1), NONE, Ceval.MSG());
       then 
         ("",st_2);
-    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg}))),(st as SYMBOLTABLE(ast = p)))
+    case 
+      (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg}))),
+      (st as SYMBOLTABLE(ast = p)))
       equation 
         env = buildEnvFromSymboltable(st);
         (_,msg_1,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache,env, msg, true, SOME(st),true);
-        (_,Values.STRING(str),SOME(st_2)) = Ceval.ceval(Env.emptyCache,env, msg_1, true, SOME(st_1), NONE, Ceval.MSG());
+        (_,Values.STRING(str),SOME(st_2)) = 
+        Ceval.ceval(Env.emptyCache,env, msg_1, true, SOME(st_1), NONE, Ceval.MSG());
       then
         (str,st_2);
-    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(Absyn.CREF_IDENT(name = ident,subscripts = {})),value = exp)),(st as SYMBOLTABLE(ast = p)))
+    case 
+      (Absyn.ALGORITHMITEM(algorithm_ = 
+        Absyn.ALG_ASSIGN(assignComponent = 
+        Absyn.CREF(Absyn.CREF_IDENT(name = ident,subscripts = {})),value = exp)),
+        (st as SYMBOLTABLE(ast = p)))
       equation 
         env = buildEnvFromSymboltable(st);
         (_,sexp,Types.PROP(t,_),SOME(st_1)) = Static.elabExp(Env.emptyCache,env, exp, true, SOME(st),true);
@@ -437,7 +467,11 @@ algorithm
         newst = addVarToSymboltable(ident, value, t, st_2);
       then
         (str,newst);
-    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = crefexps),value = rexp)),(st as SYMBOLTABLE(ast = p))) /* Since expressions cannot be tuples an empty string is returned */ 
+    case 
+      (Absyn.ALGORITHMITEM(algorithm_ = 
+        Absyn.ALG_ASSIGN(assignComponent = 
+        Absyn.TUPLE(expressions = crefexps),value = rexp)),
+        (st as SYMBOLTABLE(ast = p))) /* Since expressions cannot be tuples an empty string is returned */ 
       equation 
         env = buildEnvFromSymboltable(st);
         (_,srexp,rprop,SOME(st_1)) = Static.elabExp(Env.emptyCache,env, rexp, true, SOME(st),true);
@@ -447,7 +481,13 @@ algorithm
         newst = addVarsToSymboltable(idents, values, types, st_2);
       then
         ("",newst);
-    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_IF(ifExp = exp,trueBranch = algitemlist,elseIfAlgorithmBranch = elseifexpitemlist,elseBranch = elseitemlist)),st) /* IF-statement */ 
+    case 
+      (Absyn.ALGORITHMITEM(algorithm_ = 
+        Absyn.ALG_IF(
+        ifExp = exp,
+        trueBranch = algitemlist,
+        elseIfAlgorithmBranch = elseifexpitemlist,
+        elseBranch = elseitemlist)),st) /* IF-statement */ 
       equation 
         cond1 = (exp,algitemlist);
         cond2 = (cond1 :: elseifexpitemlist);
@@ -951,11 +991,19 @@ algorithm
       list<SCode.Class> sp;
       list<InstantiatedClass> id;
       list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
-    case (ident,v,t,SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = id,lstVarVal = vars,compiledFunctions = cf))
+      list<LoadedFile> lf;
+    case (ident,v,t,
+      SYMBOLTABLE(
+      ast = p,
+      explodedAst = sp,
+      instClsLst = id,
+      lstVarVal = vars,
+      compiledFunctions = cf,
+      loadedFiles = lf))
       equation 
         vars_1 = addVarToVarlist(ident, v, t, vars);
       then
-        SYMBOLTABLE(p,sp,id,vars_1,cf);
+        SYMBOLTABLE(p,sp,id,vars_1,cf,lf);
   end matchcontinue;
 end addVarToSymboltable;
 
@@ -981,11 +1029,19 @@ algorithm
       list<SCode.Class> sp;
       list<InstantiatedClass> id;
       list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
-    case (ident,v,t,SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = id,lstVarVal = vars,compiledFunctions = cf))
+      list<LoadedFile> lf;
+    case (ident,v,t,
+      SYMBOLTABLE(
+      ast = p,
+      explodedAst = sp,
+      instClsLst = id,
+      lstVarVal = vars,
+      compiledFunctions = cf,
+      loadedFiles = lf))
       equation 
         vars_1 = (IVAR(ident,v,t))::vars;
       then
-        SYMBOLTABLE(p,sp,id,vars_1,cf);
+        SYMBOLTABLE(p,sp,id,vars_1,cf,lf);
   end matchcontinue;
 end appendVarToSymboltable;
 
@@ -1005,11 +1061,19 @@ algorithm
       list<SCode.Class> sp;
       list<InstantiatedClass> id;
       list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
-    case (ident,SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = id,lstVarVal = vars,compiledFunctions = cf))
+      list<LoadedFile> lf;
+    case (ident,
+      SYMBOLTABLE(
+      ast = p,
+      explodedAst = sp,
+      instClsLst = id,
+      lstVarVal = vars,
+      compiledFunctions = cf,
+      loadedFiles = lf))
       equation 
         vars_1 = deleteVarFromVarlist(ident, vars);
       then
-        SYMBOLTABLE(p,sp,id,vars_1,cf);
+        SYMBOLTABLE(p,sp,id,vars_1,cf,lf);
   end matchcontinue;
 end deleteVarFromSymboltable;
 
@@ -1091,7 +1155,9 @@ algorithm
       list<InstantiatedClass> ic;
       list<InteractiveVariable> vars;
       list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
-    case (SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = vars,compiledFunctions = cf))
+      list<LoadedFile> lf;
+    case (
+      SYMBOLTABLE(ast = p, explodedAst = sp, instClsLst = ic, lstVarVal = vars, compiledFunctions = cf))
       equation 
         p_1 = SCode.elaborate(p);
         (_,env) = Inst.makeEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT(""));
@@ -1158,7 +1224,7 @@ algorithm
       String resstr,ident,filename,cmt,variability,causality,name,value,top_names_str;
       Absyn.ComponentRef class_,subident,comp_ref,cr;
       Absyn.Modification mod;
-      InteractiveSymbolTable st;
+      InteractiveSymbolTable st, newst;
       list<SCode.Class> s;
       list<InstantiatedClass> ic;
       list<InteractiveVariable> iv;
@@ -1166,12 +1232,27 @@ algorithm
       Absyn.Path p_class;
       Boolean final_,flow_,protected_,repl,dref1,dref2;
       Integer rest;
+      list<LoadedFile> lf;
       
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setExtendsModifierValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.CREF(componentReg = Absyn.CREF_QUAL(name = ident,componentRef = subident)),Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case 
+      (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = 
+      Absyn.CREF_IDENT(name = "setExtendsModifierValue"),
+      functionArgs = Absyn.FUNCTIONARGS(args = 
+        {Absyn.CREF(componentReg = class_),
+        Absyn.CREF(componentReg = Absyn.CREF_QUAL(name = ident,componentRef = subident)),
+        Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))},argNames = {})))}),
+      (st as SYMBOLTABLE(
+        ast = p,
+        explodedAst = s,
+        instClsLst = ic,
+        lstVarVal = iv,
+        compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         (newp,resstr) = setExtendsModifierValue(class_, Absyn.CREF_IDENT(ident,{}), subident, mod, p);
       then
-        (resstr,SYMBOLTABLE(newp,s,ic,iv,cf));
+        (resstr,SYMBOLTABLE(newp,s,ic,iv,cf,lf));
     case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getExtendsModifierNames"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.CREF(componentReg = ident)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       local Absyn.ComponentRef ident;
       equation 
@@ -1204,70 +1285,113 @@ algorithm
         resstr = getSourceFile(class_, p);
       then
         (resstr,st);
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setSourceFile"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.STRING(value = filename)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setSourceFile"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
+        Absyn.STRING(value = filename)},argNames = {})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         (resstr,newp) = setSourceFile(class_, filename, p);
       then
-        (resstr,SYMBOLTABLE(newp,s,ic,iv,cf));
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentComment"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.CREF(componentReg = comp_ref),Absyn.STRING(value = cmt)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+        (resstr,SYMBOLTABLE(newp,s,ic,iv,cf,lf));
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentComment"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
+        Absyn.CREF(componentReg = comp_ref),Absyn.STRING(value = cmt)},argNames = {})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         (resstr,newp) = setComponentComment(class_, comp_ref, cmt, p);
       then
-        (resstr,SYMBOLTABLE(newp,s,ic,iv,cf));
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentProperties"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.CREF(componentReg = comp_ref),Absyn.ARRAY(arrayExp = {Absyn.BOOL(value = final_),Absyn.BOOL(value = flow_),Absyn.BOOL(value = protected_),Absyn.BOOL(value = repl)}),Absyn.ARRAY(arrayExp = {Absyn.STRING(value = variability)}),Absyn.ARRAY(arrayExp = {Absyn.BOOL(value = dref1),Absyn.BOOL(value = dref2)}),Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+        (resstr,SYMBOLTABLE(newp,s,ic,iv,cf,lf));
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentProperties"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
+        Absyn.CREF(componentReg = comp_ref),Absyn.ARRAY(arrayExp = 
+        {Absyn.BOOL(value = final_),Absyn.BOOL(value = flow_),Absyn.BOOL(value = protected_),
+        Absyn.BOOL(value = repl)}),Absyn.ARRAY(arrayExp = {Absyn.STRING(value = variability)}),
+        Absyn.ARRAY(arrayExp = {Absyn.BOOL(value = dref1),Absyn.BOOL(value = dref2)}),
+        Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})},argNames = {})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         p_class = Absyn.crefToPath(class_);
         (resstr,p_1) = setComponentProperties(p_class, comp_ref, final_, flow_, protected_, repl, 
           variability, {dref1,dref2}, causality, p);
       then
-        (resstr,SYMBOLTABLE(p_1,s,ic,iv,cf));
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getElementsInfo"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf))) /* adrpo added 2005-11-03 */ 
+        (resstr,SYMBOLTABLE(p_1,s,ic,iv,cf,lf));
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getElementsInfo"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf))) /* adrpo added 2005-11-03 */ 
       equation 
         resstr = getElementsInfo(cr, p);
       then
         (resstr,st);
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getEnvironmentVar"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf))) /* adrpo added 2005-11-24 */ 
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getEnvironmentVar"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf))) /* adrpo added 2005-11-24 */ 
       equation 
         resstr = System.readEnv(name);
       then
         (resstr,st);
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getEnvironmentVar"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf))) /* adrpo added 2005-11-24 */ 
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getEnvironmentVar"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf))) /* adrpo added 2005-11-24 */ 
       equation 
         failure(resstr = System.readEnv(name));
       then
         ("error",st);
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setEnvironmentVar"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name),Absyn.STRING(value = value)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf))) /* adrpo added 2005-11-24 */ 
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setEnvironmentVar"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name),Absyn.STRING(value = value)},argNames = {})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf))) /* adrpo added 2005-11-24 */ 
       equation 
         0 = System.setEnv(name, value, 1) "overwrite" ;
       then
         ("Ok",st);
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setEnvironmentVar"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name),Absyn.STRING(value = value)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf))) /* adrpo added 2005-11-24 */ 
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setEnvironmentVar"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name),
+        Absyn.STRING(value = value)},argNames = {})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf))) /* adrpo added 2005-11-24 */ 
       equation 
         rest = System.setEnv(name, value, 1) "overwrite" ;
         (rest == 0) = false;
       then
         ("error",st);
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractiveQualified"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf))) /* adrpo added 2005-12-16 */ 
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractiveQualified"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
+      st) /* adrpo added 2005-12-16 */ 
       equation 
-        0 = System.regularFileExists(name);
-        p1 = Parser.parse(name);
-        p1 = expandUnionTypes(p1);
-        newp = updateProgram(p1, p);
-        top_names_str = getTopQualifiedClassnames(p1);
+        (top_names_str, newst) = loadFileInteractiveQualified(name, st);        
       then
-        (top_names_str,SYMBOLTABLE(newp,s,ic,iv,cf));
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractiveQualified"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf))) /* adrpo added 2005-12-16 it the rule above have failed then check if file exists without this omc crashes */ 
-      equation 
-        rest = System.regularFileExists(name);
-        (rest > 0) = true;
-      then
-        ("error",st);
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractiveQualified"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf))) /* adrpo added 2005-12-16 check if the parse went wrong */ 
-      equation 
-        failure(p1 = Parser.parse(name));
-      then
-        ("error",st);
-
+        (top_names_str,newst);
     /* adrpo added 2006-10-16
      * - i think this function is needed here!
      */         
@@ -1311,57 +1435,118 @@ algorithm
       Integer rest,count,n;
       list<Absyn.NamedArg> nargs;
       Boolean b1,b2;
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentModifierValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.CREF(componentReg = (ident as Absyn.CREF_IDENT(name = _))),Absyn.CODE(code = Absyn.C_MODIFICATION(modification = Absyn.CLASSMOD(expOption = SOME(exp))))},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+      list<LoadedFile> lf;
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentModifierValue"),
+      functionArgs = Absyn.FUNCTIONARGS(args = 
+        {Absyn.CREF(componentReg = class_),Absyn.CREF(componentReg = 
+        (ident as Absyn.CREF_IDENT(name = _))),
+        Absyn.CODE(code = Absyn.C_MODIFICATION(modification = Absyn.CLASSMOD(expOption = SOME(exp))))},
+        argNames = {})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         (p_1,resstr) = setParameterValue(class_, ident, exp, p) "expressions" ;
       then
-        (resstr,SYMBOLTABLE(p_1,s,ic,iv,cf));
+        (resstr,SYMBOLTABLE(p_1,s,ic,iv,cf,lf));
 
 			//special case for clearing modifier simple name.	
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentModifierValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.CREF(componentReg = (ident as Absyn.CREF_IDENT(name = _))),Absyn.CODE(code = Absyn.C_MODIFICATION(modification = (mod as Absyn.CLASSMOD(elementArgLst = {},expOption = NONE))))},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentModifierValue"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
+        Absyn.CREF(componentReg = (ident as Absyn.CREF_IDENT(name = _))),
+        Absyn.CODE(code = Absyn.C_MODIFICATION(modification = 
+        (mod as Absyn.CLASSMOD(elementArgLst = {},expOption = NONE))))},argNames = {})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         (p_1,resstr) = setComponentModifier(class_, ident, Absyn.CREF_IDENT("",{}),mod, p)  ;
       then
-        (resstr,SYMBOLTABLE(p_1,s,ic,iv,cf));
+        (resstr,SYMBOLTABLE(p_1,s,ic,iv,cf,lf));
         
           
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentModifierValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.CREF(componentReg = Absyn.CREF_QUAL(name = ident,componentRef = subident)),Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentModifierValue"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
+        Absyn.CREF(componentReg = Absyn.CREF_QUAL(name = ident,componentRef = subident)),
+        Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))},argNames = {})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       local String ident;
       equation 
         (p_1,resstr) = setComponentModifier(class_, Absyn.CREF_IDENT(ident,{}), subident, mod, p);
       then
-        (resstr,SYMBOLTABLE(p_1,s,ic,iv,cf));
+        (resstr,SYMBOLTABLE(p_1,s,ic,iv,cf,lf));
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getParameterValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.CREF(componentReg = ident)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getParameterValue"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
+        Absyn.CREF(componentReg = ident)},argNames = {})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf)))
       equation 
         resstr = getComponentBinding(class_, ident, p);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setParameterValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.CREF(componentReg = ident),exp},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setParameterValue"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
+        Absyn.CREF(componentReg = ident),exp},argNames = {})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         (p_1,resstr) = setParameterValue(class_, ident, exp, p);
       then
-        (resstr,SYMBOLTABLE(p_1,s,ic,iv,cf));
+        (resstr,SYMBOLTABLE(p_1,s,ic,iv,cf,lf));
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getParameterNames"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getParameterNames"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)},argNames = {})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         resstr = getParameterNames(cr, p);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "createModel"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = name))},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "createModel"),
+      functionArgs = Absyn.FUNCTIONARGS(args = 
+      {Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = name))},argNames = {})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         newp = updateProgram(
           Absyn.PROGRAM(
           {
           Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),
           Absyn.PARTS({Absyn.PUBLIC({})},NONE),Absyn.INFO("",false,0,0,0,0))},Absyn.TOP()), p);
-        newst = SYMBOLTABLE(newp,s,ic,iv,cf);
+        newst = SYMBOLTABLE(newp,s,ic,iv,cf,lf);
       then
         ("true",newst);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "createModel"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = (path as Absyn.CREF_QUAL(name = _)))},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "createModel"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = 
+      (path as Absyn.CREF_QUAL(name = _)))},argNames = {})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         path_1 = Absyn.crefToPath(path);
         name = Absyn.pathLastIdent(path_1);
@@ -1371,11 +1556,18 @@ algorithm
           {
           Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),
           Absyn.PARTS({Absyn.PUBLIC({})},NONE),Absyn.INFO("",false,0,0,0,0))},Absyn.WITHIN(wpath)), p);
-        newst = SYMBOLTABLE(newp,s,ic,iv,cf);
+        newst = SYMBOLTABLE(newp,s,ic,iv,cf,lf);
       then
         ("true",newst);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "newModel"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = name)),Absyn.CREF(componentReg = cr)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "newModel"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = name)),
+      Absyn.CREF(componentReg = cr)},argNames = {})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       local Absyn.Path path;
       equation 
         path = Absyn.crefToPath(cr);
@@ -1384,180 +1576,334 @@ algorithm
           {
           Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),
           Absyn.PARTS({Absyn.PUBLIC({})},NONE),Absyn.INFO("",false,0,0,0,0))},Absyn.WITHIN(path)), p);
-        newst = SYMBOLTABLE(newp,s,ic,iv,cf);
+        newst = SYMBOLTABLE(newp,s,ic,iv,cf,lf);
         resstr = stringAppend(name, "\n");
       then
         ("true",newst);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractive"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractive"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         p1 = ClassLoader.loadFile(name) "System.regularFileExists(name) => 0 & 	 Parser.parse(name) => p1 &" ;
         newp = updateProgram(p1, p);
         top_names_str = getTopClassnames(p1);
       then
-        (top_names_str,SYMBOLTABLE(newp,s,ic,iv,cf));
+        (top_names_str,SYMBOLTABLE(newp,s,ic,iv,cf,lf));
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractive"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf))) /* it the rule above have failed then check if file exists without this omc crashes */ 
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractive"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf))) /* it the rule above have failed then check if file exists without this omc crashes */ 
       equation 
         rest = System.regularFileExists(name);
         (rest > 0) = true;
       then
         ("error",st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractive"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf))) /* check if the parse went wrong */ 
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractive"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf))) /* check if the parse went wrong */ 
       equation 
         failure(p1 = Parser.parse(name));
       then
         ("error",st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "deleteClass"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "deleteClass"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)},argNames = {})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         (resstr,newp) = deleteClass(cr, p);
       then
-        (resstr,SYMBOLTABLE(newp,s,ic,iv,cf));
+        (resstr,SYMBOLTABLE(newp,s,ic,iv,cf,lf));
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "addComponent"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = name)),Absyn.CREF(componentReg = tp),Absyn.CREF(componentReg = model_)},argNames = nargs)))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "addComponent"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = name)),
+      Absyn.CREF(componentReg = tp),Absyn.CREF(componentReg = model_)},argNames = nargs)))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         (newp,resstr) = addComponent(name, tp, model_, nargs, p);
         str = Print.getString();
         resstr_1 = stringAppend(resstr, str);
       then
-        ("true",SYMBOLTABLE(newp,s,ic,iv,cf));
+        ("true",SYMBOLTABLE(newp,s,ic,iv,cf,lf));
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "updateComponent"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = name)),Absyn.CREF(componentReg = tp),Absyn.CREF(componentReg = model_)},argNames = nargs)))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "updateComponent"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = name)),
+      Absyn.CREF(componentReg = tp),Absyn.CREF(componentReg = model_)},argNames = nargs)))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         (newp,res) = updateComponent(name, tp, model_, nargs, p) "delete_component(name,model,p) => (newp,resstr) &
 	 add_component(name,tp,model,nargs,newp) => (newp2,resstr)" ;
       then
-        (res,SYMBOLTABLE(newp,s,ic,iv,cf));
+        (res,SYMBOLTABLE(newp,s,ic,iv,cf,lf));
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "deleteComponent"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = name)),Absyn.CREF(componentReg = model_)},argNames = nargs)))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "deleteComponent"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = name)),
+      Absyn.CREF(componentReg = model_)},argNames = nargs)))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         (newp,resstr) = deleteComponent(name, model_, p);
         str = Print.getString();
         resstr_1 = stringAppend(resstr, str);
       then
-        ("true",SYMBOLTABLE(newp,s,ic,iv,cf));
+        ("true",SYMBOLTABLE(newp,s,ic,iv,cf,lf));
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "addClassAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)},argNames = nargs)))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "addClassAnnotation"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)},argNames = nargs)))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         newp = addClassAnnotation(cr, nargs, p);
-        newst = SYMBOLTABLE(newp,s,ic,iv,cf);
+        newst = SYMBOLTABLE(newp,s,ic,iv,cf,lf);
       then
         ("true",newst);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getComponentCount"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getComponentCount"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         count = getComponentCount(cr, p);
         resstr = intString(count);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthComponent"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthComponent"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         resstr = getNthComponent(cr, p, n);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getComponents"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getComponents"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         resstr = getComponents(cr, p);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getComponentAnnotations"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getComponentAnnotations"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         resstr = getComponentAnnotations(cr, p);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthComponentAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthComponentAnnotation"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         resstr = getNthComponentAnnotation(cr, p, n);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthComponentModification"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthComponentModification"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
+      (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
         resstr = getNthComponentModification(cr, p, n);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getInheritanceCount"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getInheritanceCount"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
         count = getInheritanceCount(cr, p);
         resstr = intString(count);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthInheritedClass"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthInheritedClass"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
+      (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
         resstr = getNthInheritedClass(cr, n, p);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getConnectionCount"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getConnectionCount"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
         resstr = getConnectionCount(cr, p);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthConnection"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthConnection"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
+      (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
         resstr = getNthConnection(cr, p, n);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setConnectionComment"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.CREF(componentReg = cr1),Absyn.CREF(componentReg = cr2),Absyn.STRING(value = cmt)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setConnectionComment"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),
+      Absyn.CREF(componentReg = cr1),Absyn.CREF(componentReg = cr2),Absyn.STRING(value = cmt)})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         (newp,resstr) = setConnectionComment(cr, cr1, cr2, cmt, p);
       then
-        (resstr,SYMBOLTABLE(newp,s,ic,iv,cf));
+        (resstr,SYMBOLTABLE(newp,s,ic,iv,cf,lf));
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "addConnection"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = c1),Absyn.CREF(componentReg = c2),Absyn.CREF(componentReg = cr)},argNames = nargs)))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "addConnection"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = c1),
+      Absyn.CREF(componentReg = c2),Absyn.CREF(componentReg = cr)},argNames = nargs)))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         (resstr,newp) = addConnection(cr, c1, c2, nargs, p);
       then
-        (resstr,SYMBOLTABLE(newp,s,ic,iv,cf));
+        (resstr,SYMBOLTABLE(newp,s,ic,iv,cf,lf));
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "deleteConnection"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = c1),Absyn.CREF(componentReg = c2),Absyn.CREF(componentReg = cr)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "deleteConnection"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = c1),
+      Absyn.CREF(componentReg = c2),Absyn.CREF(componentReg = cr)})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         (resstr,newp) = deleteConnection(cr, c1, c2, p);
       then
-        (resstr,SYMBOLTABLE(newp,s,ic,iv,cf));
+        (resstr,SYMBOLTABLE(newp,s,ic,iv,cf,lf));
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "updateConnection"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = c1),Absyn.CREF(componentReg = c2),Absyn.CREF(componentReg = cr)},argNames = nargs)))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "updateConnection"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = c1),
+      Absyn.CREF(componentReg = c2),Absyn.CREF(componentReg = cr)},argNames = nargs)))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         (s1,newp) = deleteConnection(cr, c1, c2, p);
         (resstr,newp_1) = addConnection(cr, c1, c2, nargs, newp);
       then
-        (resstr,SYMBOLTABLE(newp_1,s,ic,iv,cf));
+        (resstr,SYMBOLTABLE(newp_1,s,ic,iv,cf,lf));
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthConnectionAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthConnectionAnnotation"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         resstr = getNthConnectionAnnotation(cr, p, n);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getConnectorCount"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getConnectorCount"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         resstr = getConnectorCount(cr, p);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthConnector"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthConnector"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         resstr = getNthConnector(cr, p, n);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthConnectorIconAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthConnectorIconAnnotation"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         resstr = getNthConnectorIconAnnotation(cr, p, n);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getIconAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getIconAnnotation"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       local Absyn.Path path;
       equation 
         path = Absyn.crefToPath(cr);
@@ -1565,7 +1911,13 @@ algorithm
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getDiagramAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getDiagramAnnotation"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       local Absyn.Path path;
       equation 
         path = Absyn.crefToPath(cr);
@@ -1573,7 +1925,10 @@ algorithm
       then
         (resstr,st);
 
-     case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getDocumentationAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+     case (ISTMTS(interactiveStmtLst = 
+       {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getDocumentationAnnotation"),
+       functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+       (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       local Absyn.Path path;
       equation 
         path = Absyn.crefToPath(cr);
@@ -1581,7 +1936,10 @@ algorithm
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getPackages"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getPackages"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       local Absyn.Path path;
       equation 
         path = Absyn.crefToPath(cr);
@@ -1589,14 +1947,20 @@ algorithm
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getPackages"),functionArgs = Absyn.FUNCTIONARGS(args = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getPackages"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {})))}),
+      (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
         s1 = getTopPackages(p);
         resstr = stringAppend(s1, "\n");
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getClassNames"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getClassNames"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       local Absyn.Path path;
       equation 
         path = Absyn.crefToPath(cr);
@@ -1636,11 +2000,17 @@ algorithm
       then
         ("error",st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setClassComment"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.STRING(value = str)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setClassComment"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.STRING(value = str)})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         (p_1,resstr) = setClassComment(class_, str, p);
       then
-        (resstr,SYMBOLTABLE(p_1,s,ic,iv,cf));
+        (resstr,SYMBOLTABLE(p_1,s,ic,iv,cf,lf));
 
     case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getClassRestriction"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
@@ -1759,19 +2129,33 @@ algorithm
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "renameClass"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = old_cname),Absyn.CREF(componentReg = new_cname)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "renameClass"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = old_cname),
+        Absyn.CREF(componentReg = new_cname)})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         (res,p_1) = renameClass(p, old_cname, new_cname) "For now, renaming a class clears all caches... Substantial analysis required to find out what to keep in cache
 	   and what must be thrown out" ;
         s_1 = SCode.elaborate(p_1);
       then
-        (res,SYMBOLTABLE(p_1,s_1,{},{},{}));
+        (res,SYMBOLTABLE(p_1,s_1,{},{},{},lf));
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "renameComponent"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cname),Absyn.CREF(componentReg = from_ident),Absyn.CREF(componentReg = to_ident)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "renameComponent"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cname),
+        Absyn.CREF(componentReg = from_ident),Absyn.CREF(componentReg = to_ident)})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)))
       equation 
         (res_str,p_1) = renameComponent(p, cname, from_ident, to_ident);
       then
-        (res_str,SYMBOLTABLE(p_1,s,{},{},{}));
+        (res_str,SYMBOLTABLE(p_1,s,{},{},{},lf));
 
     case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getCrefInfo"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf))) /* adrpo added 2005-11-03 */ 
       equation 
@@ -11341,7 +11725,7 @@ algorithm
       list<Absyn.ElementArg> xs;
     case (((ann as Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "Icon"),modification = mod)) :: _))
       equation 
-        str = getAnnotationString(iconProgram, Absyn.ANNOTATION({ann}));
+        str = getAnnotationString(Constants.iconProgram, Absyn.ANNOTATION({ann}));
       then
         str;
     case ((_ :: xs))
@@ -11495,7 +11879,7 @@ algorithm
       list<Absyn.ElementArg> xs;
     case (((ann as Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "Diagram"),modification = mod)) :: _))
       equation 
-        str = getAnnotationString(diagramProgram, Absyn.ANNOTATION({ann}));
+        str = getAnnotationString(Constants.diagramProgram, Absyn.ANNOTATION({ann}));
       then
         str;
     case ((_ :: xs))
@@ -11826,7 +12210,7 @@ algorithm
     case (Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = _),comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION({Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Line",_),SOME(Absyn.CLASSMOD(elts,NONE)),_)})),_))))
       equation 
         fargs = createFuncargsFromElementargs(elts);
-        p_1 = SCode.elaborate(lineProgram);
+        p_1 = SCode.elaborate(Constants.lineProgram);
         (_,env) = Inst.makeEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT(""));
         (_,newexp,_) = Static.elabGraphicsExp(Env.emptyCache,env, Absyn.CALL(Absyn.CREF_IDENT("Line",{}),fargs), false) "impl" ;
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
@@ -12072,7 +12456,7 @@ protected function getComponentAnnotationsFromElts "function: getComponentAnnota
   list<String> res;
   String res_1;
 algorithm 
-  p_1 := SCode.elaborate(placementProgram);
+  p_1 := SCode.elaborate(Constants.placementProgram);
   (_,env) := Inst.makeEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT(""));
   res := getComponentitemsAnnotations(comps, env);
   res_1 := Util.stringDelimitList(res, ",");
@@ -12201,7 +12585,7 @@ algorithm
       list<Absyn.ComponentItem> rest;
     case ((Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION((mod as (Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Placement",_),_,_) :: _)))),_))) :: (rest as (_ :: _))))
       equation 
-        s1 = getAnnotationString(placementProgram, Absyn.ANNOTATION(mod));
+        s1 = getAnnotationString(Constants.placementProgram, Absyn.ANNOTATION(mod));
         s2 = stringAppend("{", s1);
         s3 = stringAppend(s2, "},");
         str = getComponentitemsAnnotation(rest);
@@ -12210,7 +12594,7 @@ algorithm
         res;
     case ({Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION((mod as (Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Placement",_),_,_) :: _)))),_)))})
       equation 
-        s1 = getAnnotationString(placementProgram, Absyn.ANNOTATION(mod));
+        s1 = getAnnotationString(Constants.placementProgram, Absyn.ANNOTATION(mod));
         s2 = stringAppend("{", s1);
         res = stringAppend(s2, "}");
       then
@@ -15214,7 +15598,9 @@ algorithm
 end traverseExpPosArgs;
 
 
-protected function expandUnionTypes " adds records from uniontypes to the upper level class/package "
+protected function expandUnionTypes 
+"@auhtor adrpo
+ adds records from uniontypes to the upper level class/package "
   input  Absyn.Program inProgram;
   output Absyn.Program outProgram;
 algorithm
@@ -15234,7 +15620,9 @@ algorithm
   end matchcontinue;
 end expandUnionTypes;
 
-protected function expandUnionTypesInClass " adds records from uniontypes to the upper level class/package "
+protected function expandUnionTypesInClass 
+"@author adrpo 
+ adds records from uniontypes to the upper level class/package "
   input  Absyn.Class inClass;
   output Absyn.Class outClass;
 algorithm
@@ -15270,7 +15658,9 @@ algorithm
 end expandUnionTypesInClass;
 
 
-function getRecordsFromUnionTypes " returns the records from uniontypes "
+function getRecordsFromUnionTypes 
+"@author adrpo
+ returns the records from uniontypes "
   input  list<Absyn.ClassPart> inClassParts;
   output list<Absyn.ClassPart> outClassParts;
 algorithm
@@ -15296,7 +15686,9 @@ algorithm
   end matchcontinue;     
 end getRecordsFromUnionTypes;
 
-function makeRecordsClassParts " constructs the list if any of the input is not nil "
+function makeRecordsClassParts 
+"@author adrpo
+ constructs the list if any of the input is not nil "
   input  list<Absyn.ElementItem> inPublicElItems;
   input  list<Absyn.ElementItem> inProtectedElItems;  
   output list<Absyn.ClassPart> outElementItems;
@@ -15314,7 +15706,9 @@ algorithm
 end makeRecordsClassParts;
 
 
-function filterUnionTypeElementItems " gets the elementitems contained in uniontypes "
+function filterUnionTypeElementItems 
+"@author adrpo
+ gets the elementitems contained in uniontypes "
   input  list<Absyn.ElementItem> inElementItems;
   output list<Absyn.ElementItem> outElementItems;
 algorithm
@@ -15349,7 +15743,9 @@ algorithm
     end matchcontinue;
 end filterUnionTypeElementItems;
 
-function getRecordElementItems " filters the elementitems containing records "
+function getRecordElementItems 
+"@author adrpo 
+ filters the elementitems containing records "
   input  list<Absyn.ElementItem> inElementItems;
   output list<Absyn.ElementItem> outElementItems;
 algorithm
@@ -15374,1841 +15770,178 @@ algorithm
     end matchcontinue;
 end getRecordElementItems;
 
+protected function updateLoadedFiles
+"@author adrpo
+ This function updates the loaded files cache.
+ It works like this: move from loadedFiles to tempList all
+ the elements that do not need update. Then put the new update
+ in front of the tempList and return the list"
+  input String fileName                      "Filename to load";
+  input list<LoadedFile> loadedFiles         "The already loaded files";
+  input String qualifiedClasses              "The qualified classes";
+  input list<LoadedFile> tempList            "A temp list to build the new one";   
+  output list<LoadedFile> updatedLoadedFiles "Update file info cache";
+algorithm
+  updatedLoadedFiles := matchcontinue (fileName, loadedFiles, qualifiedClasses, tempList)
+    local
+      String f,f1;
+      list<LoadedFile> rest, tmp, newTemp; 
+      String qc;
+      LoadedFile x;
+      Real now;
+      
+    case (f, {}, qc, tmp) // we reached the end, put the updated element in front.
+      equation
+        now = System.getCurrentTime();
+      then // put it as the first in the list
+        FILE(f,now,qc)::tmp;
+         
+    case (f, FILE(f1,_,_)::rest, qc, tmp) // found it, and ignore it
+      equation
+        true = stringEqual(f, f1);
+        newTemp = updateLoadedFiles(f, rest, qc, tmp);
+      then
+        newTemp;
 
-protected constant Absyn.Program graphicsProgram=Absyn.PROGRAM(
-          {
-          Absyn.CLASS("LinePattern",false,false,false,Absyn.R_TYPE(),
-          Absyn.ENUMERATION(
-          Absyn.ENUMLITERALS(
-          {Absyn.ENUMLITERAL("None",NONE),
-          Absyn.ENUMLITERAL("Solid",NONE),Absyn.ENUMLITERAL("Dash",NONE),Absyn.ENUMLITERAL("Dot",NONE),
-          Absyn.ENUMLITERAL("DashDot",NONE),Absyn.ENUMLITERAL("DashDot",NONE),
-          Absyn.ENUMLITERAL("DashDotDot",NONE)}),NONE),Absyn.INFO("graphics.mo",true,0,0,0,0)),
-          Absyn.CLASS("Arrow",false,false,false,Absyn.R_TYPE(),
-          Absyn.ENUMERATION(
-          Absyn.ENUMLITERALS(
-          {Absyn.ENUMLITERAL("None",NONE),
-          Absyn.ENUMLITERAL("Open",NONE),Absyn.ENUMLITERAL("Filled",NONE),Absyn.ENUMLITERAL("Filled",NONE),
-          Absyn.ENUMLITERAL("Half",NONE)}),NONE),Absyn.INFO("graphics.mo",true,0,0,0,0)),
-          Absyn.CLASS("FillPattern",false,false,false,Absyn.R_TYPE(),
-          Absyn.ENUMERATION(
-          Absyn.ENUMLITERALS(
-          {Absyn.ENUMLITERAL("None",NONE),
-          Absyn.ENUMLITERAL("Solid",NONE),Absyn.ENUMLITERAL("Horizontal",NONE),
-          Absyn.ENUMLITERAL("Vertical",NONE),Absyn.ENUMLITERAL("Cross",NONE),Absyn.ENUMLITERAL("Forward",NONE),
-          Absyn.ENUMLITERAL("Backward",NONE),Absyn.ENUMLITERAL("CrossDiag",NONE),
-          Absyn.ENUMLITERAL("HorizontalCylinder",NONE),Absyn.ENUMLITERAL("VerticalCylinder",NONE),
-          Absyn.ENUMLITERAL("VerticalCylinder",NONE),Absyn.ENUMLITERAL("Sphere",NONE)}),NONE),Absyn.INFO("graphics.mo",true,0,0,0,0)),
-          Absyn.CLASS("BorderPattern",false,false,false,Absyn.R_TYPE(),
-          Absyn.ENUMERATION(
-          Absyn.ENUMLITERALS(
-          {Absyn.ENUMLITERAL("None",NONE),
-          Absyn.ENUMLITERAL("Raised",NONE),Absyn.ENUMLITERAL("Sunken",NONE),Absyn.ENUMLITERAL("Sunken",NONE),
-          Absyn.ENUMLITERAL("Engraved",NONE)}),NONE),Absyn.INFO("graphics.mo",true,0,0,0,0)),
-          Absyn.CLASS("TextStyle",false,false,false,Absyn.R_TYPE(),
-          Absyn.ENUMERATION(
-          Absyn.ENUMLITERALS(
-          {Absyn.ENUMLITERAL("Bold",NONE),
-          Absyn.ENUMLITERAL("Italic",NONE),Absyn.ENUMLITERAL("Italic",NONE),Absyn.ENUMLITERAL("Underline",NONE)}),NONE),Absyn.INFO("graphics.mo",true,0,0,0,0)),
-          Absyn.CLASS("Line",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("visible",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,6,0,6,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("points",{Absyn.NOSUB(),Absyn.SUBSCRIPT(Absyn.INTEGER(2))},
-          NONE),NONE,NONE)}),Absyn.INFO("graphics.mo",true,6,0,6,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("color",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,6,0,6,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("pattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,6,0,6,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("thickness",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,6,0,6,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Arrow"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("arrow",{Absyn.SUBSCRIPT(Absyn.INTEGER(2))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY(
-          {
-          Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT("None",{}))),Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT("None",{})))}))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,6,0,6,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("arrowSize",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(3.0))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,6,0,6,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("smooth",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(false))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,6,0,6,0),NONE))})},NONE),Absyn.INFO("graphics.mo",true,0,0,0,0)),
-          Absyn.CLASS("Polygon",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("visible",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,7,0,7,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,7,0,7,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,7,0,7,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("pattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,7,0,7,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillPattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,7,0,7,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineThickness",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,7,0,7,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("points",{Absyn.NOSUB(),Absyn.SUBSCRIPT(Absyn.INTEGER(2))},
-          NONE),NONE,NONE)}),Absyn.INFO("graphics.mo",true,7,0,7,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("smooth",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(false))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,7,0,7,0),NONE))})},NONE),Absyn.INFO("graphics.mo",true,0,0,0,0)),
-          Absyn.CLASS("Rectangle",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("visible",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,8,0,8,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,8,0,8,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,8,0,8,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("pattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,8,0,8,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillPattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,8,0,8,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineThickness",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,8,0,8,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("BorderPattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("borderPattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("BorderPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,8,0,8,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("extent",
-          {Absyn.SUBSCRIPT(Absyn.INTEGER(2)),
-          Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("graphics.mo",true,8,0,8,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("radius",{},SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.0))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,8,0,8,0),NONE))})},NONE),Absyn.INFO("graphics.mo",true,0,0,0,0)),
-          Absyn.CLASS("Ellipse",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("visible",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,9,0,9,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,9,0,9,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,9,0,9,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("pattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,9,0,9,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillPattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,9,0,9,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineThickness",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,9,0,9,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("extent",
-          {Absyn.SUBSCRIPT(Absyn.INTEGER(2)),
-          Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("graphics.mo",true,9,0,9,0),NONE))})},NONE),Absyn.INFO("graphics.mo",true,0,0,0,0)),
-          Absyn.CLASS("Text",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("visible",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("pattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillPattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineThickness",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("extent",
-          {Absyn.SUBSCRIPT(Absyn.INTEGER(2)),
-          Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("graphics.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("String"),NONE),
-          {
-          Absyn.COMPONENTITEM(Absyn.COMPONENT("textString",{},NONE),NONE,NONE)}),Absyn.INFO("graphics.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fontSize",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.0))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("String"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fontName",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.STRING(""))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("TextStyle"),NONE),
-          {
-          Absyn.COMPONENTITEM(Absyn.COMPONENT("textStyle",{Absyn.NOSUB()},NONE),NONE,NONE)}),Absyn.INFO("graphics.mo",true,10,0,10,0),NONE))})},NONE),Absyn.INFO("graphics.mo",true,0,0,0,0)),
-          Absyn.CLASS("Bitmap",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("visible",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,11,0,11,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("extent",
-          {Absyn.SUBSCRIPT(Absyn.INTEGER(2)),
-          Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("graphics.mo",true,11,0,11,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("String"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fileName",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.STRING(""))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,11,0,11,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("String"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("imageSource",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.STRING(""))))),NONE,NONE)}),Absyn.INFO("graphics.mo",true,11,0,11,0),NONE))})},NONE),Absyn.INFO("graphics.mo",true,0,0,0,0)),
-          Absyn.CLASS("test",false,false,false,Absyn.R_MODEL(),
-          Absyn.PARTS({Absyn.PUBLIC({})},NONE),Absyn.INFO("graphics.mo",true,0,0,0,0))},Absyn.TOP()) "AST for the builtin graphical classes" ;
+    case (f, x::rest, qc, tmp) // not an interesting element, just add it to the tmp
+      equation
+        newTemp = updateLoadedFiles(f, rest, qc, x::tmp);
+      then
+        newTemp; // report none so that it gets loaded                
+  end matchcontinue;
+end updateLoadedFiles;
 
-protected constant Absyn.Program iconProgram=Absyn.PROGRAM(
-          {
-          Absyn.CLASS("GraphicItem",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("visible",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,1,0,1,0),NONE))})},NONE),Absyn.INFO("icon.mo",true,0,0,0,0)),
-          Absyn.CLASS("CoordinateSystem",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("extent",
-          {Absyn.SUBSCRIPT(Absyn.INTEGER(2)),
-          Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("icon.mo",true,1,0,1,0),NONE))})},NONE),Absyn.INFO("icon.mo",true,0,0,0,0)),
-          Absyn.CLASS("Icon",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("CoordinateSystem"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("coordinateSystem",{},
-          SOME(
-          Absyn.CLASSMOD(
-          {
-          Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("extent",{}),
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY(
-          {
-          Absyn.ARRAY(
-          {Absyn.UNARY(Absyn.UMINUS(),Absyn.REAL(10.0)),
-          Absyn.UNARY(Absyn.UMINUS(),Absyn.REAL(10.0))}),Absyn.ARRAY({Absyn.REAL(10.0),Absyn.REAL(10.0)})})))),NONE)},NONE))),NONE,NONE)}),Absyn.INFO("icon.mo",true,1,0,1,0),NONE))})},NONE),Absyn.INFO("icon.mo",true,0,0,0,0)),
-          Absyn.CLASS("LinePattern",false,false,false,Absyn.R_TYPE(),
-          Absyn.ENUMERATION(
-          Absyn.ENUMLITERALS(
-          {Absyn.ENUMLITERAL("None",NONE),
-          Absyn.ENUMLITERAL("Solid",NONE),Absyn.ENUMLITERAL("Dash",NONE),Absyn.ENUMLITERAL("Dot",NONE),
-          Absyn.ENUMLITERAL("DashDot",NONE),Absyn.ENUMLITERAL("DashDot",NONE),
-          Absyn.ENUMLITERAL("DashDotDot",NONE)}),NONE),Absyn.INFO("icon.mo",true,0,0,0,0)),
-          Absyn.CLASS("Arrow",false,false,false,Absyn.R_TYPE(),
-          Absyn.ENUMERATION(
-          Absyn.ENUMLITERALS(
-          {Absyn.ENUMLITERAL("None",NONE),
-          Absyn.ENUMLITERAL("Open",NONE),Absyn.ENUMLITERAL("Filled",NONE),Absyn.ENUMLITERAL("Filled",NONE),
-          Absyn.ENUMLITERAL("Half",NONE)}),NONE),Absyn.INFO("icon.mo",true,0,0,0,0)),
-          Absyn.CLASS("FillPattern",false,false,false,Absyn.R_TYPE(),
-          Absyn.ENUMERATION(
-          Absyn.ENUMLITERALS(
-          {Absyn.ENUMLITERAL("None",NONE),
-          Absyn.ENUMLITERAL("Solid",NONE),Absyn.ENUMLITERAL("Horizontal",NONE),
-          Absyn.ENUMLITERAL("Vertical",NONE),Absyn.ENUMLITERAL("Cross",NONE),Absyn.ENUMLITERAL("Forward",NONE),
-          Absyn.ENUMLITERAL("Backward",NONE),Absyn.ENUMLITERAL("CrossDiag",NONE),
-          Absyn.ENUMLITERAL("HorizontalCylinder",NONE),Absyn.ENUMLITERAL("VerticalCylinder",NONE),
-          Absyn.ENUMLITERAL("VerticalCylinder",NONE),Absyn.ENUMLITERAL("Sphere",NONE)}),NONE),Absyn.INFO("icon.mo",true,0,0,0,0)),
-          Absyn.CLASS("BorderPattern",false,false,false,Absyn.R_TYPE(),
-          Absyn.ENUMERATION(
-          Absyn.ENUMLITERALS(
-          {Absyn.ENUMLITERAL("None",NONE),
-          Absyn.ENUMLITERAL("Raised",NONE),Absyn.ENUMLITERAL("Sunken",NONE),Absyn.ENUMLITERAL("Sunken",NONE),
-          Absyn.ENUMLITERAL("Engraved",NONE)}),NONE),Absyn.INFO("icon.mo",true,0,0,0,0)),
-          Absyn.CLASS("TextStyle",false,false,false,Absyn.R_TYPE(),
-          Absyn.ENUMERATION(
-          Absyn.ENUMLITERALS(
-          {Absyn.ENUMLITERAL("Bold",NONE),
-          Absyn.ENUMLITERAL("Italic",NONE),Absyn.ENUMLITERAL("Italic",NONE),Absyn.ENUMLITERAL("Underline",NONE)}),NONE),Absyn.INFO("icon.mo",true,0,0,0,0)),
-          Absyn.CLASS("Line",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("visible",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,8,0,8,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("points",{Absyn.NOSUB(),Absyn.SUBSCRIPT(Absyn.INTEGER(2))},
-          NONE),NONE,NONE)}),Absyn.INFO("icon.mo",true,8,0,8,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("color",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,8,0,8,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("pattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,8,0,8,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("thickness",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,8,0,8,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Arrow"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("arrow",{Absyn.SUBSCRIPT(Absyn.INTEGER(2))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY(
-          {
-          Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT("None",{}))),Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT("None",{})))}))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,8,0,8,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("arrowSize",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(3.0))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,8,0,8,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("smooth",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(false))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,8,0,8,0),NONE))})},NONE),Absyn.INFO("icon.mo",true,0,0,0,0)),
-          Absyn.CLASS("Polygon",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("visible",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,9,0,9,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,9,0,9,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,9,0,9,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("pattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,9,0,9,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillPattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,9,0,9,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineThickness",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,9,0,9,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("points",{Absyn.NOSUB(),Absyn.SUBSCRIPT(Absyn.INTEGER(2))},
-          NONE),NONE,NONE)}),Absyn.INFO("icon.mo",true,9,0,9,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("smooth",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(false))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,9,0,9,0),NONE))})},NONE),Absyn.INFO("icon.mo",true,0,0,0,0)),
-          Absyn.CLASS("Rectangle",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("visible",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("pattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillPattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineThickness",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("BorderPattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("borderPattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("BorderPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("extent",
-          {Absyn.SUBSCRIPT(Absyn.INTEGER(2)),
-          Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("icon.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("radius",{},SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.0))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,10,0,10,0),NONE))})},NONE),Absyn.INFO("icon.mo",true,0,0,0,0)),
-          Absyn.CLASS("Ellipse",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("visible",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,11,0,11,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,11,0,11,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,11,0,11,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("pattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,11,0,11,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillPattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,11,0,11,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineThickness",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,11,0,11,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("extent",
-          {Absyn.SUBSCRIPT(Absyn.INTEGER(2)),
-          Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("icon.mo",true,11,0,11,0),NONE))})},NONE),Absyn.INFO("icon.mo",true,0,0,0,0)),
-          Absyn.CLASS("Text",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("visible",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,12,0,12,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,12,0,12,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,12,0,12,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("pattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,12,0,12,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillPattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,12,0,12,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineThickness",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,12,0,12,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("extent",
-          {Absyn.SUBSCRIPT(Absyn.INTEGER(2)),
-          Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("icon.mo",true,12,0,12,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("String"),NONE),
-          {
-          Absyn.COMPONENTITEM(Absyn.COMPONENT("textString",{},NONE),NONE,NONE)}),Absyn.INFO("icon.mo",true,12,0,12,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fontSize",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.0))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,12,0,12,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("String"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fontName",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.STRING(""))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,12,0,12,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("TextStyle"),NONE),
-          {
-          Absyn.COMPONENTITEM(Absyn.COMPONENT("textStyle",{Absyn.NOSUB()},NONE),NONE,NONE)}),Absyn.INFO("icon.mo",true,12,0,12,0),NONE))})},NONE),Absyn.INFO("icon.mo",true,0,0,0,0)),
-          Absyn.CLASS("Bitmap",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("visible",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,13,0,13,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("extent",
-          {Absyn.SUBSCRIPT(Absyn.INTEGER(2)),
-          Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("icon.mo",true,13,0,13,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("String"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fileName",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.STRING(""))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,13,0,13,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("String"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("imageSource",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.STRING(""))))),NONE,NONE)}),Absyn.INFO("icon.mo",true,13,0,13,0),NONE))})},NONE),Absyn.INFO("icon.mo",true,0,0,0,0)),
-          Absyn.CLASS("test",false,false,false,Absyn.R_MODEL(),
-          Absyn.PARTS({Absyn.PUBLIC({})},NONE),Absyn.INFO("icon.mo",true,0,0,0,0)),
-          Absyn.CLASS("test",false,false,false,Absyn.R_MODEL(),
-          Absyn.PARTS({Absyn.PUBLIC({})},NONE),Absyn.INFO("icon.mo",true,0,0,0,0))},Absyn.TOP());
+protected function getLoadedFileInfo
+"@author adrpo
+ This function checks if the file is already 
+ loaded and if the one on the disk is not newer.
+ - if YES take the info from cache and return SOME(info)
+ - if NOT report that as NONE"
+  input String fileName                   "Filename to load";
+  input list<LoadedFile> loadedFiles      "The already loaded files";
+  output Option<String> qualifiedClasses  "The qualified classes"; 
+algorithm
+  (qualifiedClasses) := matchcontinue (fileName, loadedFiles)
+    local
+      String f,f1;
+      list<LoadedFile> rest;
+      String info;
+      Real loadTime, modificationTime;
+      Option<String> optInfo;
+    case (f, {}) // we did not find it
+      then
+        NONE;
+    case (f, FILE(f1,loadTime,info)::rest) // found it
+      equation
+        true = stringEqual(f,f1);
+        SOME(modificationTime) = System.getFileModificationTime(f);
+        // The file is loaded and is not changed since the last load
+        true = realGt(loadTime, modificationTime); 
+      then
+        SOME(info);  
 
-protected constant Absyn.Program diagramProgram=Absyn.PROGRAM(
-          {
-          Absyn.CLASS("GraphicItem",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("visible",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,1,0,1,0),NONE))})},NONE),Absyn.INFO("diagram.mo",true,0,0,0,0)),
-          Absyn.CLASS("CoordinateSystem",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("extent",
-          {Absyn.SUBSCRIPT(Absyn.INTEGER(2)),
-          Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("diagram.mo",true,1,0,1,0),NONE))})},NONE),Absyn.INFO("diagram.mo",true,0,0,0,0)),
-          Absyn.CLASS("Diagram",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("CoordinateSystem"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("coordinateSystem",{},
-          SOME(
-          Absyn.CLASSMOD(
-          {
-          Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("extent",{}),
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY(
-          {
-          Absyn.ARRAY(
-          {Absyn.UNARY(Absyn.UMINUS(),Absyn.REAL(100.0)),
-          Absyn.UNARY(Absyn.UMINUS(),Absyn.REAL(100.0))}),Absyn.ARRAY({Absyn.REAL(100.0),Absyn.REAL(100.0)})})))),NONE)},NONE))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,1,0,1,0),NONE))})},NONE),Absyn.INFO("diagram.mo",true,0,0,0,0)),
-          Absyn.CLASS("LinePattern",false,false,false,Absyn.R_TYPE(),
-          Absyn.ENUMERATION(
-          Absyn.ENUMLITERALS(
-          {Absyn.ENUMLITERAL("None",NONE),
-          Absyn.ENUMLITERAL("Solid",NONE),Absyn.ENUMLITERAL("Dash",NONE),Absyn.ENUMLITERAL("Dot",NONE),
-          Absyn.ENUMLITERAL("DashDot",NONE),Absyn.ENUMLITERAL("DashDot",NONE),
-          Absyn.ENUMLITERAL("DashDotDot",NONE)}),NONE),Absyn.INFO("diagram.mo",true,0,0,0,0)),
-          Absyn.CLASS("Arrow",false,false,false,Absyn.R_TYPE(),
-          Absyn.ENUMERATION(
-          Absyn.ENUMLITERALS(
-          {Absyn.ENUMLITERAL("None",NONE),
-          Absyn.ENUMLITERAL("Open",NONE),Absyn.ENUMLITERAL("Filled",NONE),Absyn.ENUMLITERAL("Filled",NONE),
-          Absyn.ENUMLITERAL("Half",NONE)}),NONE),Absyn.INFO("diagram.mo",true,0,0,0,0)),
-          Absyn.CLASS("FillPattern",false,false,false,Absyn.R_TYPE(),
-          Absyn.ENUMERATION(
-          Absyn.ENUMLITERALS(
-          {Absyn.ENUMLITERAL("None",NONE),
-          Absyn.ENUMLITERAL("Solid",NONE),Absyn.ENUMLITERAL("Horizontal",NONE),
-          Absyn.ENUMLITERAL("Vertical",NONE),Absyn.ENUMLITERAL("Cross",NONE),Absyn.ENUMLITERAL("Forward",NONE),
-          Absyn.ENUMLITERAL("Backward",NONE),Absyn.ENUMLITERAL("CrossDiag",NONE),
-          Absyn.ENUMLITERAL("HorizontalCylinder",NONE),Absyn.ENUMLITERAL("VerticalCylinder",NONE),
-          Absyn.ENUMLITERAL("VerticalCylinder",NONE),Absyn.ENUMLITERAL("Sphere",NONE)}),NONE),Absyn.INFO("diagram.mo",true,0,0,0,0)),
-          Absyn.CLASS("BorderPattern",false,false,false,Absyn.R_TYPE(),
-          Absyn.ENUMERATION(
-          Absyn.ENUMLITERALS(
-          {Absyn.ENUMLITERAL("None",NONE),
-          Absyn.ENUMLITERAL("Raised",NONE),Absyn.ENUMLITERAL("Sunken",NONE),Absyn.ENUMLITERAL("Sunken",NONE),
-          Absyn.ENUMLITERAL("Engraved",NONE)}),NONE),Absyn.INFO("diagram.mo",true,0,0,0,0)),
-          Absyn.CLASS("TextStyle",false,false,false,Absyn.R_TYPE(),
-          Absyn.ENUMERATION(
-          Absyn.ENUMLITERALS(
-          {Absyn.ENUMLITERAL("Bold",NONE),
-          Absyn.ENUMLITERAL("Italic",NONE),Absyn.ENUMLITERAL("Italic",NONE),Absyn.ENUMLITERAL("Underline",NONE)}),NONE),Absyn.INFO("diagram.mo",true,0,0,0,0)),
-          Absyn.CLASS("Line",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("visible",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,8,0,8,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("points",{Absyn.NOSUB(),Absyn.SUBSCRIPT(Absyn.INTEGER(2))},
-          NONE),NONE,NONE)}),Absyn.INFO("diagram.mo",true,8,0,8,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("color",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,8,0,8,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("pattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,8,0,8,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("thickness",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,8,0,8,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Arrow"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("arrow",{Absyn.SUBSCRIPT(Absyn.INTEGER(2))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY(
-          {
-          Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT("None",{}))),Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT("None",{})))}))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,8,0,8,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("arrowSize",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(3.0))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,8,0,8,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("smooth",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(false))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,8,0,8,0),NONE))})},NONE),Absyn.INFO("diagram.mo",true,0,0,0,0)),
-          Absyn.CLASS("Polygon",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("visible",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,9,0,9,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,9,0,9,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,9,0,9,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("pattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,9,0,9,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillPattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,9,0,9,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineThickness",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,9,0,9,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("points",{Absyn.NOSUB(),Absyn.SUBSCRIPT(Absyn.INTEGER(2))},
-          NONE),NONE,NONE)}),Absyn.INFO("diagram.mo",true,9,0,9,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("smooth",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(false))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,9,0,9,0),NONE))})},NONE),Absyn.INFO("diagram.mo",true,0,0,0,0)),
-          Absyn.CLASS("Rectangle",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("visible",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("pattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillPattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineThickness",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("BorderPattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("borderPattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("BorderPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("extent",
-          {Absyn.SUBSCRIPT(Absyn.INTEGER(2)),
-          Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("diagram.mo",true,10,0,10,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("radius",{},SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.0))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,10,0,10,0),NONE))})},NONE),Absyn.INFO("diagram.mo",true,0,0,0,0)),
-          Absyn.CLASS("Ellipse",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("visible",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,11,0,11,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,11,0,11,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,11,0,11,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("pattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,11,0,11,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillPattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,11,0,11,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineThickness",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,11,0,11,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("extent",
-          {Absyn.SUBSCRIPT(Absyn.INTEGER(2)),
-          Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("diagram.mo",true,11,0,11,0),NONE))})},NONE),Absyn.INFO("diagram.mo",true,0,0,0,0)),
-          Absyn.CLASS("Text",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("visible",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,12,0,12,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,12,0,12,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillColor",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,12,0,12,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("pattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,12,0,12,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("FillPattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fillPattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("FillPattern",{},Absyn.CREF_IDENT("None",{}))))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,12,0,12,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("lineThickness",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,12,0,12,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("extent",
-          {Absyn.SUBSCRIPT(Absyn.INTEGER(2)),
-          Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("diagram.mo",true,12,0,12,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("String"),NONE),
-          {
-          Absyn.COMPONENTITEM(Absyn.COMPONENT("textString",{},NONE),NONE,NONE)}),Absyn.INFO("diagram.mo",true,12,0,12,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fontSize",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.0))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,12,0,12,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("String"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fontName",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.STRING(""))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,12,0,12,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("TextStyle"),NONE),
-          {
-          Absyn.COMPONENTITEM(Absyn.COMPONENT("textStyle",{Absyn.NOSUB()},NONE),NONE,NONE)}),Absyn.INFO("diagram.mo",true,12,0,12,0),NONE))})},NONE),Absyn.INFO("diagram.mo",true,0,0,0,0)),
-          Absyn.CLASS("Bitmap",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("visible",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,13,0,13,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("extent",
-          {Absyn.SUBSCRIPT(Absyn.INTEGER(2)),
-          Absyn.SUBSCRIPT(Absyn.INTEGER(2))},NONE),NONE,NONE)}),Absyn.INFO("diagram.mo",true,13,0,13,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("String"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("fileName",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.STRING(""))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,13,0,13,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("String"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("imageSource",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.STRING(""))))),NONE,NONE)}),Absyn.INFO("diagram.mo",true,13,0,13,0),NONE))})},NONE),Absyn.INFO("diagram.mo",true,0,0,0,0)),
-          Absyn.CLASS("test",false,false,false,Absyn.R_MODEL(),
-          Absyn.PARTS({Absyn.PUBLIC({})},NONE),Absyn.INFO("diagram.mo",true,0,0,0,0)),
-          Absyn.CLASS("test",false,false,false,Absyn.R_MODEL(),
-          Absyn.PARTS({Absyn.PUBLIC({})},NONE),Absyn.INFO("diagram.mo",true,0,0,0,0))},Absyn.TOP());
+    case (f, FILE(f1,loadTime,info)::rest) // found it
+      equation
+        true = stringEqual(f,f1);        
+        // we could not get the modification time
+        NONE = System.getFileModificationTime(f); 
+      then
+        NONE; // report none so that it gets loaded  
+                
+    case (f, _::rest) // searching in the rest
+      equation 
+        optInfo = getLoadedFileInfo(f, rest);
+      then
+        optInfo; // loading
+  end matchcontinue;
+end getLoadedFileInfo;
 
-protected constant Absyn.Program lineProgram=Absyn.PROGRAM(
-          {
-          Absyn.CLASS("LinePattern",false,false,false,Absyn.R_TYPE(),
-          Absyn.ENUMERATION(
-          Absyn.ENUMLITERALS(
-          {Absyn.ENUMLITERAL("None",NONE),
-          Absyn.ENUMLITERAL("Solid",NONE),Absyn.ENUMLITERAL("Dash",NONE),Absyn.ENUMLITERAL("Dot",NONE),
-          Absyn.ENUMLITERAL("DashDot",NONE),Absyn.ENUMLITERAL("DashDot",NONE),
-          Absyn.ENUMLITERAL("DashDotDot",NONE)}),NONE),Absyn.INFO("line.mo",true,0,0,0,0)),
-          Absyn.CLASS("Arrow",false,false,false,Absyn.R_TYPE(),
-          Absyn.ENUMERATION(
-          Absyn.ENUMLITERALS(
-          {Absyn.ENUMLITERAL("None",NONE),
-          Absyn.ENUMLITERAL("Open",NONE),Absyn.ENUMLITERAL("Filled",NONE),Absyn.ENUMLITERAL("Filled",NONE),
-          Absyn.ENUMLITERAL("Half",NONE)}),NONE),Absyn.INFO("line.mo",true,0,0,0,0)),
-          Absyn.CLASS("Line",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("visible",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("line.mo",true,1,0,1,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("points",{Absyn.NOSUB(),Absyn.SUBSCRIPT(Absyn.INTEGER(2))},
-          NONE),NONE,NONE)}),Absyn.INFO("line.mo",true,1,0,1,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Integer"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("color",{Absyn.SUBSCRIPT(Absyn.INTEGER(3))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(0)}))))),NONE,NONE)}),Absyn.INFO("line.mo",true,1,0,1,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("LinePattern"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("pattern",{},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.CREF(
-          Absyn.CREF_QUAL("LinePattern",{},Absyn.CREF_IDENT("Solid",{}))))))),NONE,NONE)}),Absyn.INFO("line.mo",true,1,0,1,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("thickness",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.25))))),NONE,NONE)}),Absyn.INFO("line.mo",true,1,0,1,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Arrow"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("arrow",{Absyn.SUBSCRIPT(Absyn.INTEGER(2))},
-          SOME(
-          Absyn.CLASSMOD({},
-          SOME(
-          Absyn.ARRAY(
-          {
-          Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT("None",{}))),Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT("None",{})))}))))),NONE,NONE)}),Absyn.INFO("line.mo",true,1,0,1,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("arrowSize",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(3.0))))),NONE,NONE)}),Absyn.INFO("line.mo",true,1,0,1,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("smooth",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(false))))),NONE,NONE)}),Absyn.INFO("line.mo",true,1,0,1,0),NONE))})},NONE),Absyn.INFO("line.mo",true,0,0,0,0)),
-          Absyn.CLASS("test",false,false,false,Absyn.R_MODEL(),
-          Absyn.PARTS({Absyn.PUBLIC({})},NONE),Absyn.INFO("line.mo",true,0,0,0,0))},Absyn.TOP());
+protected function checkLoadedFiles
+"@author adrpo
+ This function checks if the file is already loaded:
+ - if loaded then take the info from cache
+ - if not, load it, add the info to cache"
+  input String fileName                   "Filename to load";
+  input list<LoadedFile> loadedFiles      "The already loaded files";
+  input Absyn.Program ast                 "The program from the symboltable"; 
+  output String topClassNamesQualified    "The names of the classes from file, qualified!";
+  output list<LoadedFile> newLoadedFiles  "The new loaded files";
+  output Absyn.Program newAst             "The new program to put it in the symboltable"; 
+algorithm
+  (topClassNamesQualified, newLoadedFiles, newAst) := matchcontinue (fileName, loadedFiles, ast)
+    local
+      String f;
+      String topNamesStr;
+      Absyn.Program pAst,newP,parsed;
+      list<LoadedFile> lf, newLF;
+      Integer result;
+    case (f, lf, pAst)
+      equation
+        // did the file was loaded since it was last saved? 
+        SOME(topNamesStr) = getLoadedFileInfo(f, lf);
+      then
+        (topNamesStr, lf, pAst); // not worth loading 
+        
+    case (f, lf, pAst)
+      equation 
+        // it seems the file was not loaded yet or the one on the disk is newer
+        NONE = getLoadedFileInfo(f, lf);
+        // fall back to basis :)
+        parsed = Parser.parse(f);
+        parsed = expandUnionTypes(parsed);
+        newP = updateProgram(parsed, pAst);
+        topNamesStr = getTopQualifiedClassnames(parsed);
+        // fix the modification and topNames in the list<LoadedFile> cache
+        newLF = updateLoadedFiles(f, lf, topNamesStr, {});
+      then
+        (topNamesStr, newLF, newP); // loading
+        
+    case (f, lf, pAst)
+      equation          
+        failure(p1 = Parser.parse(f)); // failed to parse!
+      then
+        ("error",lf,pAst); // return error    
+  end matchcontinue;
+end checkLoadedFiles;
 
-protected constant Absyn.Program placementProgram=Absyn.PROGRAM(
-          {
-          Absyn.CLASS("Transformation",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("x",{},SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.0))))),NONE,NONE)}),Absyn.INFO("placement.mo",true,2,0,2,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("y",{},SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.0))))),NONE,NONE)}),Absyn.INFO("placement.mo",true,2,0,2,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("scale",{},SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(1.0))))),NONE,NONE)}),Absyn.INFO("placement.mo",true,2,0,2,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("aspectRatio",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(1.0))))),NONE,NONE)}),Absyn.INFO("placement.mo",true,2,0,2,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("flipHorizontal",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(false))))),NONE,NONE)}),Absyn.INFO("placement.mo",true,2,0,2,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("flipVertical",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(false))))),NONE,NONE)}),Absyn.INFO("placement.mo",true,2,0,2,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Real"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("rotation",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(0.0))))),NONE,NONE)}),Absyn.INFO("placement.mo",true,2,0,2,0),NONE))})},NONE),Absyn.INFO("placement.mo",true,0,0,0,0)),
-          Absyn.CLASS("Placement",false,false,false,Absyn.R_RECORD(),
-          Absyn.PARTS(
-          {
-          Absyn.PUBLIC(
-          {
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Boolean"),NONE),
-          {
-          Absyn.COMPONENTITEM(
-          Absyn.COMPONENT("visible",{},
-          SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(true))))),NONE,NONE)}),Absyn.INFO("placement.mo",true,2,0,2,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Transformation"),NONE),
-          {
-          Absyn.COMPONENTITEM(Absyn.COMPONENT("transformation",{},NONE),NONE,NONE)}),Absyn.INFO("placement.mo",true,2,0,2,0),NONE)),
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-          Absyn.TPATH(Absyn.IDENT("Transformation"),NONE),
-          {
-          Absyn.COMPONENTITEM(Absyn.COMPONENT("iconTransformation",{},NONE),NONE,NONE)}),Absyn.INFO("placement.mo",true,2,0,2,0),NONE))})},NONE),Absyn.INFO("placement.mo",true,0,0,0,0))},Absyn.TOP());
+protected function loadFileInteractiveQualified
+"@author adrpo
+ This function loads a file ONLY if the 
+ file is newer than the one already loaded."
+  input  String fileName               "Filename to load";
+  input  InteractiveSymbolTable st     "The symboltable where to load the file";
+  output String topClassNamesQualified "The names of the classes from file, qualified!";
+  output InteractiveSymbolTable newst  "The new interactive symboltable";
+algorithm
+  (topClassNamesQualified, newst) := matchcontinue (fileName, st)
+    local
+      String file               "Filename to load";
+      InteractiveSymbolTable s  "The symboltable where to load the file";
+      String topNamesStr;
+      Absyn.Program pAst,newP;
+      list<SCode.Class> eAst;
+      list<InstantiatedClass> ic;
+      list<InteractiveVariable> iv;
+      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+      list<LoadedFile> lf, newLF;
+      Integer result;
+
+    // See that the file exists
+    case (file, s as SYMBOLTABLE(pAst,eAst,ic,iv,cf,lf))
+      equation
+        result = System.regularFileExists(file);
+        (result > 0) = true;
+      then
+        ("error",s);
+    
+    // check if we have the stuff in the loadedFiles!
+    case (file, s as SYMBOLTABLE(pAst,eAst,ic,iv,cf,lf))
+      equation
+        (topNamesStr,newLF,newP) = checkLoadedFiles(file, lf, pAst);
+      then
+        (topNamesStr, SYMBOLTABLE(newP,eAst,ic,iv,cf,lf));        
+  end matchcontinue;
+end loadFileInteractiveQualified;
+
 end Interactive;
 

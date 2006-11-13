@@ -203,12 +203,17 @@ algorithm
       list<SCode.Class> a;
       list<Interactive.InstantiatedClass> b;
       Interactive.InteractiveStmts exp;
+      list<Interactive.LoadedFile> lf;
     case (str,isymb)
       equation 
         true = Util.strncmp("quit()", str, 6);
       then
         (false,"Ok\n",isymb);
-    case (str,(isymb as Interactive.SYMBOLTABLE(ast = iprog,explodedAst = a,instClsLst = b,lstVarVal = vars,compiledFunctions = cf))) /* Add a class or function to the interactive symbol table.
+    case (str,
+    (isymb as Interactive.SYMBOLTABLE(
+      ast = iprog,explodedAst = a,instClsLst = b,
+      lstVarVal = vars,compiledFunctions = cf,
+      loadedFiles = lf))) /* Add a class or function to the interactive symbol table.
 	   If it is a function, type check it. */ 
       equation 
         //debug_print("Command: typeCheck", str);
@@ -229,7 +234,7 @@ algorithm
         res_1 = makeDebugResult("dump", "Ok");
         res = makeDebugResult("dumpgraphviz", res_1);
       then
-        (true,res,Interactive.SYMBOLTABLE(newprog,a,b,vars_1,cf_1));
+        (true,res,Interactive.SYMBOLTABLE(newprog,a,b,vars_1,cf_1,lf));
     case (str,isymb) /* Interactively evaluate an algorithm statement or expression */ 
       equation 
         //debug_print("Command: don't typeCheck", str);      

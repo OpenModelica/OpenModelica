@@ -4938,7 +4938,8 @@ algorithm
       list<Interactive.InstantiatedClass> b;
       list<Interactive.InteractiveVariable> c;
       Env.Cache cache;
-    case (cache,env,fn,e,prop,SOME((st as Interactive.SYMBOLTABLE(p,_,_,_,cflist)))) /* axiom generate_compiled_function(_,_,_,_,NONE) => NONE */ 
+      list<Interactive.LoadedFile> lf;
+    case (cache,env,fn,e,prop,SOME((st as Interactive.SYMBOLTABLE(p,_,_,_,cflist,_)))) /* axiom generate_compiled_function(_,_,_,_,NONE) => NONE */ 
       equation 
         Debug.fprintln("sei", "generate_compiled_function: start1");
         pfn = Absyn.crefToPath(fn);
@@ -4955,7 +4956,7 @@ algorithm
         Ceval.isKnownExternalFunc(fid, id);
       then
         (cache,st);
-    case (cache,env,fn,e,prop,SOME((st as Interactive.SYMBOLTABLE(p,a,b,c,cflist))))
+    case (cache,env,fn,e,prop,SOME((st as Interactive.SYMBOLTABLE(p,a,b,c,cflist,lf))))
       equation 
         Debug.fprintln("sei", "generate_compiled_function: start2");
         path = Absyn.crefToPath(fn);
@@ -4986,7 +4987,7 @@ algorithm
         System.compileCFile(filename);
         t = Types.getPropType(prop) "	& Debug.fprintln(\"sei\", \"generate_compiled_function: compiled\")" ;
       then
-        (cache,SOME(Interactive.SYMBOLTABLE(p,a,b,c,((path,t) :: cflist))));
+        (cache,SOME(Interactive.SYMBOLTABLE(p,a,b,c,((path,t) :: cflist),lf)));
     case (cache,env,fn,e,prop,NONE) /* PROP_TUPLE? */ 
       equation 
         Debug.fprintln("sei", "generate_compiled_function: start3");

@@ -361,5 +361,29 @@ public function getVariableValue
   external "C" ;
 end getVariableValue;
 
+public function getFileModificationTime 
+"@author adrpo
+ this system function returns the modification time of a file as a 
+ SOME(Real) which represents the time elapsed since the 
+ Epoch (00:00:00 UTC, January 1, 1970).
+ If the file does not exist or if there is an error the returned value 
+ will be NONE.
+"
+  input  String       fileName;
+  output Option<Real> outValue;
+
+  external "C" ;
+end getFileModificationTime;
+
+public function getCurrentTime 
+"@author adrpo
+ this system function returns current time elapsed 
+ since the Epoch (00:00:00 UTC, January 1, 1970)."
+  output Real outValue;
+
+  external "C" ;
+end getCurrentTime;
+
+
 end System;
 

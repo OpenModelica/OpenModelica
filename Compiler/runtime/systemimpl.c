@@ -42,13 +42,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // windows and mingw32
 #if defined(__MINGW32__) || defined(_MSC_VER)
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <direct.h>
 #include <assert.h>
 #include <string.h>
-#include <sys/stat.h>
 #include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include "read_write.h"
@@ -1197,16 +1198,47 @@ for(; RML_GETHDR(timeValues) == RML_CONSHDR && valueFound == 0; timeValues = RML
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__getFileModificationTime)
+{
+  char* fileName = RML_STRINGDATA(rmlA0);
+  struct _stat attrib;			  // create a file attribute structure
+  double elapsedTime;             // the time elapsed as double
+  int result;					  // the result of the function call
+  
+  result = _stat( fileName, &attrib );
+  
+  if( result != 0 )
+  {
+  	rmlA0 = mk_none();     // we couldn't get the time, return NONE
+  }  
+  else
+  {
+    rmlA0 = mk_some(mk_rcon(difftime(attrib.st_mtime, 0))); // the file modification time 
+  }  
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getCurrentTime)
+{
+  time_t t;
+  double elapsedTime;             // the time elapsed as double
+  time( &t );
+  rmlA0 = mk_rcon(difftime(t, 0)); // the file modification time  
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 #else /* Linux part */
 
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/unistd.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
-#include <time.h>
 #include <sys/param.h> /* MAXPATHLEN */
 #include <malloc.h>
 #include "read_write.h"
@@ -2423,6 +2455,38 @@ for(; RML_GETHDR(timeValues) == RML_CONSHDR && valueFound == 0; timeValues = RML
   		rmlA0 = (void*)mk_rcon(returnValue);
   		RML_TAILCALLK(rmlSC);
   }
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getFileModificationTime)
+{
+  char* fileName = RML_STRINGDATA(rmlA0);
+  struct stat attrib;			      // create a file attribute structure
+  double elapsedTime;                 // the time elapsed as double
+  int result;					      // the result of the function call
+  
+  result =   stat(fileName, &attrib); // get the attributes of the file
+  
+  if( result != 0 )
+  {
+  	rmlA0 = mk_none();     // we couldn't get the time, return NONE
+  }  
+  else
+  {
+    rmlA0 = mk_some(mk_rcon(difftime(attrib.st_mtime, 0))); // the file modification time 
+  }  
+  
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getCurrentTime)
+{
+  time_t t;
+  double elapsedTime;             // the time elapsed as double
+  time( &t );
+  rmlA0 = mk_rcon(difftime(t, 0)); // the file modification time  
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
