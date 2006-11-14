@@ -132,16 +132,36 @@ class_type :
 		;
 
 class_specifier: 	
-        IDENT class_specifier2 
-    |   EXTENDS! IDENT (class_modification)? string_comment composition 
-            END! IDENT! 
+        i:IDENT class_specifier2[#i] 
+    |   EXTENDS! i1:IDENT (class_modification)? string_comment composition 
+            END! i2:IDENT! 
         {
+        	// check if the identifiers at the start and end are the same!
+        	if (i1->getText() != i2->getText())
+        	{
+        		throw 
+        		ANTLR_USE_NAMESPACE(antlr)
+        		RecognitionException(
+        		"The identifier at start and end are different", 
+        		modelicafilename, i2->getLine(), i2->getColumn());
+        	}        	
             #class_specifier = #([CLASS_EXTENDS,"CLASS_EXTENDS"],#class_specifier);
         }
         ;
 
-class_specifier2 :
-		( string_comment composition END! IDENT!
+class_specifier2 [RefMyAST i1]:
+		( string_comment composition END! i2:IDENT!
+		  {
+		    // check if the identifiers at the start and end are the same!	
+		  	if (RefMyAST(i1)->getText() != RefMyAST(#i2)->getText())
+		  	{
+        		throw 
+        		ANTLR_USE_NAMESPACE(antlr)
+        		RecognitionException(
+        		"The identifier at start and end are different", 
+        		modelicafilename, i2->getLine(), i2->getColumn());		  		
+		  	}
+		  }		
 		| EQUALS^ base_prefix type_specifier ( class_modification )? comment
 		| EQUALS^ enumeration
         | EQUALS^ pder    
