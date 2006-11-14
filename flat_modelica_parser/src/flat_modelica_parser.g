@@ -134,16 +134,36 @@ class_type :
 		;
 
 class_specifier: 	
-        name_path /*was IDENT in modelica_parser*/ class_specifier2 
-    |   EXTENDS! IDENT (class_modification)? string_comment composition
-            END! IDENT! 
+        n1:name_path /*was IDENT in modelica_parser*/ class_specifier2[#n1]
+    |   EXTENDS! i1:IDENT (class_modification)? string_comment composition
+            END! i2:IDENT! 
         {
+        	// check if the identifiers at the start and end are the same!
+        	if (i1->getText() != i2->getText())
+        	{
+        		throw 
+        		ANTLR_USE_NAMESPACE(antlr)
+        		RecognitionException(
+        		"The identifier at start and end are different", 
+        		modelicafilename, i2->getLine(), i2->getColumn());
+        	}
             #class_specifier = #([CLASS_EXTENDS,"CLASS_EXTENDS"],#class_specifier);
         }
         ;
 
-class_specifier2 :
-		( string_comment composition END! /* was IDENT! */ name_path!
+class_specifier2 [RefMyAST name_path1]:
+		( string_comment composition e:END! /* was IDENT! */ n2:name_path!
+		  {
+		    // check if the identifiers at the start and end are the same!	
+		    if (RefMyAST(name_path1)->getText() != RefMyAST(#n2)->getText())
+		  	{
+        		throw 
+        		ANTLR_USE_NAMESPACE(antlr)
+        		RecognitionException(
+        		"The identifier at start and end are different", 
+        		modelicafilename, e->getLine(), e->getColumn());		  		
+		  	}
+		  }
 		| EQUALS^ base_prefix type_specifier ( class_modification )? comment
 		| EQUALS^ enumeration
         | EQUALS^ pder    
