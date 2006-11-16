@@ -1286,8 +1286,7 @@ algorithm
       then
         (resstr,st);
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setSourceFile"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setSourceFile"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
         Absyn.STRING(value = filename)},argNames = {})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
@@ -1298,8 +1297,7 @@ algorithm
       then
         (resstr,SYMBOLTABLE(newp,s,ic,iv,cf,lf));
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentComment"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentComment"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
         Absyn.CREF(componentReg = comp_ref),Absyn.STRING(value = cmt)},argNames = {})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
@@ -1310,8 +1308,7 @@ algorithm
       then
         (resstr,SYMBOLTABLE(newp,s,ic,iv,cf,lf));
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentProperties"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentProperties"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
         Absyn.CREF(componentReg = comp_ref),Absyn.ARRAY(arrayExp = 
         {Absyn.BOOL(value = final_),Absyn.BOOL(value = flow_),Absyn.BOOL(value = protected_),
         Absyn.BOOL(value = repl)}),Absyn.ARRAY(arrayExp = {Absyn.STRING(value = variability)}),
@@ -1328,8 +1325,7 @@ algorithm
       then
         (resstr,SYMBOLTABLE(p_1,s,ic,iv,cf,lf));
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getElementsInfo"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getElementsInfo"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -1339,8 +1335,7 @@ algorithm
       then
         (resstr,st);
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getEnvironmentVar"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getEnvironmentVar"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -1350,8 +1345,7 @@ algorithm
       then
         (resstr,st);
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getEnvironmentVar"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getEnvironmentVar"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -1361,8 +1355,7 @@ algorithm
       then
         ("error",st);
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setEnvironmentVar"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name),Absyn.STRING(value = value)},argNames = {})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setEnvironmentVar"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name),Absyn.STRING(value = value)},argNames = {})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -1372,8 +1365,7 @@ algorithm
       then
         ("Ok",st);
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setEnvironmentVar"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setEnvironmentVar"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name),
         Absyn.STRING(value = value)},argNames = {})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
@@ -1385,8 +1377,7 @@ algorithm
       then
         ("error",st);
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractiveQualified"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractiveQualified"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
       st) /* adrpo added 2005-12-16 */ 
       equation 
         (top_names_str, newst) = loadFileInteractiveQualified(name, st);        
@@ -1437,8 +1428,7 @@ algorithm
       Boolean b1,b2;
       list<LoadedFile> lf;
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentModifierValue"),
-      functionArgs = Absyn.FUNCTIONARGS(args = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentModifierValue"),functionArgs = Absyn.FUNCTIONARGS(args = 
         {Absyn.CREF(componentReg = class_),Absyn.CREF(componentReg = 
         (ident as Absyn.CREF_IDENT(name = _))),
         Absyn.CODE(code = Absyn.C_MODIFICATION(modification = Absyn.CLASSMOD(expOption = SOME(exp))))},
@@ -1454,8 +1444,7 @@ algorithm
 
 			//special case for clearing modifier simple name.	
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentModifierValue"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentModifierValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
         Absyn.CREF(componentReg = (ident as Absyn.CREF_IDENT(name = _))),
         Absyn.CODE(code = Absyn.C_MODIFICATION(modification = 
         (mod as Absyn.CLASSMOD(elementArgLst = {},expOption = NONE))))},argNames = {})))}),
@@ -1470,8 +1459,7 @@ algorithm
         
           
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentModifierValue"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentModifierValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
         Absyn.CREF(componentReg = Absyn.CREF_QUAL(name = ident,componentRef = subident)),
         Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))},argNames = {})))}),
       (st as SYMBOLTABLE(
@@ -1485,8 +1473,7 @@ algorithm
         (resstr,SYMBOLTABLE(p_1,s,ic,iv,cf,lf));
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getParameterValue"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getParameterValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
         Absyn.CREF(componentReg = ident)},argNames = {})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
@@ -1497,8 +1484,7 @@ algorithm
         (resstr,st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setParameterValue"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setParameterValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),
         Absyn.CREF(componentReg = ident),exp},argNames = {})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
@@ -1510,8 +1496,7 @@ algorithm
         (resstr,SYMBOLTABLE(p_1,s,ic,iv,cf,lf));
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getParameterNames"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)},argNames = {})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getParameterNames"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)},argNames = {})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -1522,8 +1507,7 @@ algorithm
         (resstr,st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "createModel"),
-      functionArgs = Absyn.FUNCTIONARGS(args = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "createModel"),functionArgs = Absyn.FUNCTIONARGS(args = 
       {Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = name))},argNames = {})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
@@ -1540,8 +1524,7 @@ algorithm
         ("true",newst);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "createModel"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "createModel"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = 
       (path as Absyn.CREF_QUAL(name = _)))},argNames = {})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
@@ -1561,8 +1544,7 @@ algorithm
         ("true",newst);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "newModel"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = name)),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "newModel"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = name)),
       Absyn.CREF(componentReg = cr)},argNames = {})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
@@ -1582,8 +1564,7 @@ algorithm
         ("true",newst);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractive"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractive"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -1596,8 +1577,7 @@ algorithm
         (top_names_str,SYMBOLTABLE(newp,s,ic,iv,cf,lf));
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractive"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractive"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -1609,8 +1589,7 @@ algorithm
         ("error",st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractive"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractive"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -1621,8 +1600,7 @@ algorithm
         ("error",st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "deleteClass"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)},argNames = {})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "deleteClass"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)},argNames = {})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -1633,8 +1611,7 @@ algorithm
         (resstr,SYMBOLTABLE(newp,s,ic,iv,cf,lf));
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "addComponent"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = name)),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "addComponent"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = name)),
       Absyn.CREF(componentReg = tp),Absyn.CREF(componentReg = model_)},argNames = nargs)))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
@@ -1648,8 +1625,7 @@ algorithm
         ("true",SYMBOLTABLE(newp,s,ic,iv,cf,lf));
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "updateComponent"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = name)),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "updateComponent"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = name)),
       Absyn.CREF(componentReg = tp),Absyn.CREF(componentReg = model_)},argNames = nargs)))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
@@ -1662,8 +1638,7 @@ algorithm
         (res,SYMBOLTABLE(newp,s,ic,iv,cf,lf));
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "deleteComponent"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = name)),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "deleteComponent"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = name)),
       Absyn.CREF(componentReg = model_)},argNames = nargs)))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
@@ -1677,8 +1652,7 @@ algorithm
         ("true",SYMBOLTABLE(newp,s,ic,iv,cf,lf));
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "addClassAnnotation"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)},argNames = nargs)))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "addClassAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)},argNames = nargs)))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -1690,8 +1664,7 @@ algorithm
         ("true",newst);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getComponentCount"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getComponentCount"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -1703,8 +1676,7 @@ algorithm
         (resstr,st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthComponent"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthComponent"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -1715,8 +1687,7 @@ algorithm
         (resstr,st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getComponents"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getComponents"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -1727,8 +1698,7 @@ algorithm
         (resstr,st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getComponentAnnotations"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getComponentAnnotations"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -1739,8 +1709,7 @@ algorithm
         (resstr,st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthComponentAnnotation"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthComponentAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -1751,8 +1720,7 @@ algorithm
         (resstr,st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthComponentModification"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthComponentModification"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
       (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
         resstr = getNthComponentModification(cr, p, n);
@@ -1760,8 +1728,7 @@ algorithm
         (resstr,st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getInheritanceCount"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getInheritanceCount"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
       (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
         count = getInheritanceCount(cr, p);
@@ -1770,8 +1737,7 @@ algorithm
         (resstr,st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthInheritedClass"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthInheritedClass"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
       (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
         resstr = getNthInheritedClass(cr, n, p);
@@ -1779,8 +1745,7 @@ algorithm
         (resstr,st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getConnectionCount"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getConnectionCount"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
       (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
         resstr = getConnectionCount(cr, p);
@@ -1788,8 +1753,7 @@ algorithm
         (resstr,st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthConnection"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthConnection"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
       (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
         resstr = getNthConnection(cr, p, n);
@@ -1797,8 +1761,7 @@ algorithm
         (resstr,st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setConnectionComment"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setConnectionComment"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),
       Absyn.CREF(componentReg = cr1),Absyn.CREF(componentReg = cr2),Absyn.STRING(value = cmt)})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
@@ -1810,8 +1773,7 @@ algorithm
         (resstr,SYMBOLTABLE(newp,s,ic,iv,cf,lf));
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "addConnection"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = c1),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "addConnection"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = c1),
       Absyn.CREF(componentReg = c2),Absyn.CREF(componentReg = cr)},argNames = nargs)))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
@@ -1823,8 +1785,7 @@ algorithm
         (resstr,SYMBOLTABLE(newp,s,ic,iv,cf,lf));
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "deleteConnection"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = c1),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "deleteConnection"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = c1),
       Absyn.CREF(componentReg = c2),Absyn.CREF(componentReg = cr)})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
@@ -1836,8 +1797,7 @@ algorithm
         (resstr,SYMBOLTABLE(newp,s,ic,iv,cf,lf));
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "updateConnection"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = c1),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "updateConnection"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = c1),
       Absyn.CREF(componentReg = c2),Absyn.CREF(componentReg = cr)},argNames = nargs)))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
@@ -1850,8 +1810,7 @@ algorithm
         (resstr,SYMBOLTABLE(newp_1,s,ic,iv,cf,lf));
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthConnectionAnnotation"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthConnectionAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -1862,8 +1821,7 @@ algorithm
         (resstr,st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getConnectorCount"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getConnectorCount"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -1874,8 +1832,7 @@ algorithm
         (resstr,st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthConnector"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthConnector"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -1886,8 +1843,7 @@ algorithm
         (resstr,st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthConnectorIconAnnotation"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthConnectorIconAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),Absyn.INTEGER(value = n)})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -1898,8 +1854,7 @@ algorithm
         (resstr,st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getIconAnnotation"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getIconAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -1912,8 +1867,7 @@ algorithm
         (resstr,st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getDiagramAnnotation"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getDiagramAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -1926,8 +1880,7 @@ algorithm
         (resstr,st);
 
      case (ISTMTS(interactiveStmtLst = 
-       {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getDocumentationAnnotation"),
-       functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+       {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getDocumentationAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
        (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       local Absyn.Path path;
       equation 
@@ -1937,8 +1890,7 @@ algorithm
         (resstr,st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getPackages"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getPackages"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
       (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       local Absyn.Path path;
       equation 
@@ -1948,8 +1900,7 @@ algorithm
         (resstr,st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getPackages"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getPackages"),functionArgs = Absyn.FUNCTIONARGS(args = {})))}),
       (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
         s1 = getTopPackages(p);
@@ -1958,8 +1909,7 @@ algorithm
         (resstr,st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getClassNames"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getClassNames"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
       (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       local Absyn.Path path;
       equation 
@@ -2001,8 +1951,7 @@ algorithm
         ("error",st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setClassComment"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.STRING(value = str)})))}),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setClassComment"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.STRING(value = str)})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -2130,8 +2079,7 @@ algorithm
         (resstr,st);
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "renameClass"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = old_cname),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "renameClass"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = old_cname),
         Absyn.CREF(componentReg = new_cname)})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
@@ -2145,8 +2093,7 @@ algorithm
         (res,SYMBOLTABLE(p_1,s_1,{},{},{},lf));
 
     case (ISTMTS(interactiveStmtLst = 
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "renameComponent"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cname),
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "renameComponent"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cname),
         Absyn.CREF(componentReg = from_ident),Absyn.CREF(componentReg = to_ident)})))}),
       (st as SYMBOLTABLE(
         ast = p,explodedAst = s,instClsLst = ic,
@@ -2170,16 +2117,14 @@ algorithm
         (resstr,st);
 
         // list(cr) added here to speed up model editor. Also exists in Ceval
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "list"),
-           functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "list"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
           (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))  
       equation 
         resstr = listClass(cr, p); 
         resstr = Util.stringAppendList({"\"",resstr,"\""});
       then
         (resstr,st);
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "list"),
-           functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "list"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
           (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))  
       equation 
         failure(resstr = listClass(cr, p));
@@ -7044,7 +6989,9 @@ end renameClass;
 
 protected function renameClassVisitor "function: renameClassVisitor
   
-   This visitor renames a class given a new name
+   This visitor renames a class given a new name. It returns a list of strings of renamed classes.
+   The 'traversal-tuple' is therefore tuple<oldname, newname, program, string list, env>.
+   
 "
   input tuple<Absyn.Class, Option<Absyn.Path>, tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<String>, Env.Env>> inTplAbsynClassAbsynPathOptionTplAbsynPathAbsynPathAbsynProgramStringLstEnvEnv;
   output tuple<Absyn.Class, Option<Absyn.Path>, tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<String>, Env.Env>> outTplAbsynClassAbsynPathOptionTplAbsynPathAbsynPathAbsynProgramStringLstEnvEnv;
@@ -7063,6 +7010,15 @@ algorithm
       list<Env.Frame> env,cenv;
       Absyn.Class class_1,class_;
       tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<String>, list<Env.Frame>> args;
+      
+      // Skip readonly classes.
+    case ((class_ as Absyn.CLASS(name = id,partial_ = a,final_ = b,encapsulated_ = c,restriction = d,body = e,info = file_info),pa,args))
+      local Option<Absyn.Path> pa;
+      equation
+        true = isReadOnly(file_info);
+      then
+        ((class_,pa,args));        
+      
     case ((Absyn.CLASS(name = id,partial_ = a,final_ = b,encapsulated_ = c,restriction = d,body = e,info = file_info),SOME(pa),(old_class_path,new_class_path,p,path_str_lst,env)))
       equation 
         path_1 = Absyn.joinPaths(pa, Absyn.IDENT(id));
