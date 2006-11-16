@@ -2220,6 +2220,7 @@ algorithm
     Components comps;
     Absyn.Path class_path;
     ComponentReplacementRules comp_repsrules;
+    Real t1,t2,t3;
     case(p,class_,cref1,cref2) 
       equation
         comps = extractAllComponents(p) "class in package" ;
@@ -2266,11 +2267,12 @@ algorithm
       list<String> paths;
       String paths_1,paths_2;
       Absyn.ComponentRef class_,old_comp,new_comp;
+      Real t1,t2,t3;
     case (p,class_,old_comp,new_comp)
       equation 
         class_path = Absyn.crefToPath(class_) "class in package" ;
         comp_reps = extractAllComponentreplacements(p, class_, old_comp, new_comp);
-        p_1 = renameComponentFromComponentreplacements(p, comp_reps);
+        p_1 = renameComponentFromComponentreplacements(p, comp_reps);        
         paths = extractRenamedClassesAsStringList(comp_reps);
         paths_1 = Util.stringDelimitList(paths, ",");
         paths_2 = Util.stringAppendList({"{",paths_1,"}"});
@@ -3423,6 +3425,7 @@ algorithm
   outComponentReplacementRules:=
   matchcontinue (inComponents,inComponentReplacementRules,inInteger)
     local
+      Real t1,t2,t3,t4;
       Integer len,old_len;
       Components comps;
       ComponentReplacementRules comp_reps,comp_reps_1,comp_reps_2,comp_reps_res;
@@ -3437,7 +3440,7 @@ algorithm
         old_len = lengthComponentReplacementRules(comp_reps);
         comp_reps_1 = getNewComponentreplacementsrulesForEachRule(comps, comp_reps);
         comp_reps_2 = joinComponentReplacementRules(comp_reps_1, comp_reps);
-        comp_reps_res = getComponentreplacementsrules(comps, comp_reps_2, old_len);
+        comp_reps_res = getComponentreplacementsrules(comps, comp_reps_2, old_len);        
       then
         comp_reps_res;
     case (comps,comp_reps,_)
@@ -3961,6 +3964,8 @@ protected function extractAllComponents "
   output Components comps;
   Absyn.Program p_1;
   list<Env.Frame> env;
+protected
+  Real t1,t2,t3;
 algorithm 
   p_1 := SCode.elaborate(p);
   (_,env) := Inst.makeEnvFromProgram(Env.emptyCache,p_1, Absyn.IDENT(""));
@@ -3991,6 +3996,7 @@ algorithm
       Absyn.ClassDef e;
       Absyn.Info file_info;
       Absyn.Program p;
+      Real t1,t2,t3;
     case (((class_ as Absyn.CLASS(name = id,partial_ = a,final_ = b,encapsulated_ = c,restriction = d,body = e,info = file_info)),SOME(pa),(comps,p,env)))
       equation 
         false = isReadOnly(file_info);
@@ -4004,6 +4010,7 @@ algorithm
       equation 
         false = isReadOnly(file_info);
         path_1 = Absyn.IDENT(id);
+
         cenv = getClassEnvNoElaboration(p, path_1, env);
         (_,pa_1) = Inst.makeFullyQualified(Env.emptyCache,cenv, path_1);
         comps_1 = extractComponentsFromClass(class_, pa_1, comps, cenv);
@@ -4150,6 +4157,7 @@ algorithm
       Absyn.ElementSpec elementspec;
       list<Absyn.ElementItem> res;
       Absyn.ElementItem element;
+      Real t1,t2;
     case (_,{},comps,env) then comps;  /* the QUALIFIED path for the class */ 
     case (pa,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = elementspec)) :: res),comps,env)
       equation 
@@ -4186,6 +4194,7 @@ algorithm
       list<Absyn.ComponentItem> comp_items;
       Component comp;
       list<Absyn.ElementArg> elementargs;
+      Real t1,t2,t3,t4;
     case (pa,Absyn.COMPONENTS(typeSpec = Absyn.TPATH(path_1,_),components = comp_items),comps,env) /* the QUALIFIED path for the class */ 
       equation 
         (_,SCode.CLASS(id,_,_,_,_),cenv) = Lookup.lookupClass(Env.emptyCache,env, path_1, false);
@@ -4621,12 +4630,15 @@ protected function getClassEnvNoElaboration "function: getClassEnvNoElaboration
   SCode.Restriction restr;
   list<Env.Frame> env_1,env2,env_2;
   ClassInf.State ci_state;
+  Real t1,t2;
 algorithm 
   (_,(cl as SCode.CLASS(id,_,encflag,restr,_)),env_1) := Lookup.lookupClass(Env.emptyCache,env, p_class, false);
   env2 := Env.openScope(env_1, encflag, SOME(id));
   ci_state := ClassInf.start(restr, id);
-  (_,_,env_2,_,_,_,_) := Inst.instClassIn(Env.emptyCache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, cl, false, {},false);
+  /* Use partial instantiation. Env is only used to retrieve class names not lookup variables
+    therefore OK.*/
+  (_,env_2,_) := Inst.partialInstClassIn(Env.emptyCache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          ci_state, cl, false, {});
 end getClassEnvNoElaboration;
 
 protected function setComponentProperties "function: setComponentProperties
