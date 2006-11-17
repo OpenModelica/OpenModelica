@@ -7475,7 +7475,7 @@ algorithm
         s4 = Exp.printRightparStr(pri1, pri2);
         s = stringAppend(s1, s2);
         s_1 = stringAppend("pow(", s);
-        s_2 = stringAppend(s_1, ",");
+        s_2 = stringAppend(s_1, ", ");
         s_3 = stringAppend(s_2, s3);
         res = stringAppend(s_3, ")");
         res_1 = stringAppend(res, s4);

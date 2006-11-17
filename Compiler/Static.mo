@@ -2033,6 +2033,47 @@ algorithm
   end matchcontinue;
 end elabBuiltinSize;
 
+protected function elabBuiltinNDims
+"@author Stefan Vorkoetter <svorkoetter@maplesoft.com>
+ ndims(A) : Returns the number of dimensions k of array expression A, with k >= 0.
+"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input Boolean inBoolean;
+  output Env.Cache outCache;
+  output Exp.Exp outExp;
+  output Types.Properties outProperties;
+algorithm 
+  (outCache,outExp,outProperties):=
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+    local
+      Exp.Exp arraycrefe,exp;
+      Types.Const c;
+      tuple<Types.TType, Option<Absyn.Path>> arrtp;
+      Boolean c2,impl;
+      list<Env.Frame> env;
+      Absyn.Exp arraycr;
+      Env.Cache cache;
+      list<Absyn.Exp> expl;
+      Integer nd;
+    case (cache,env,{arraycr},impl)
+      equation 
+        (cache,arraycrefe,Types.PROP(arrtp,_),_) = elabExp(cache,env, arraycr, impl, NONE,true) "ndims(A)" ;
+        c2 = Types.dimensionsKnown(arrtp);
+        c = Types.boolConst(c2);
+        nd = Types.ndims(arrtp);
+        exp = Exp.ICONST(nd);
+      then
+        (cache,exp,Types.PROP((Types.T_INTEGER({}),NONE),c));
+    case (cache,env,expl,impl)
+      equation 
+        Debug.fprint("failtrace", "- elab_builtin_ndims failed\n");
+      then
+        fail();
+  end matchcontinue;
+end elabBuiltinNDims;
+
 protected function elabBuiltinFill "function: elabBuiltinFill
  
   This function elaborates the builtin operator fill.
@@ -4120,6 +4161,8 @@ algorithm
   outFuncTypeEnvEnvAbsynExpLstBooleanToExpExpTypesProperties:=
   matchcontinue (inIdent)
     case "size" then elabBuiltinSize;  /* impl */ 
+
+    case "ndims" then elabBuiltinNDims;
 
     case "zeros" then elabBuiltinZeros; 
 

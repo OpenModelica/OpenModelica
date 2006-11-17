@@ -65,11 +65,16 @@ Adrian Pop, adrpo@ida.liu.se, 2006-04-06
 
 11. To run the OpenModelica testsuite you have to:
     Copy OMDev/tools/mingw to OpenModelica/build/MinGW
+    If you don't have an OpenModelicaX.Y.Z release installed
+     then create a directory called OpenModelica/build/ModelicaLibrary 
+    in which you unpack the Modelica Standard Library you 
+    can take from: OpenModelica/Compiler/VC7/Setup/zips/ModelicaLib.tar.gz
     To run the testsuite from Eclipse:
     - Ctrl+B and type: test
     To run the testsuite from MSYS terminal:
     - run OMDev/tools/msys/msys.bat and in the terminal you write
       >export OPENMODELICAHOME="c:\\path\\to\\your\\OpenModelica\\build"
+      >export OPENMODELICALIBRARY="c:\\path\\to\\your\\OpenModelica\\build\ModelicaLibrary"
       >cd testsuite
       testsuite> make 
 

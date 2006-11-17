@@ -3697,7 +3697,7 @@ algorithm
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
-        var = Util.stringAppendList({"pow(",var1,", ",var2,")"});
+        var = Util.stringAppendList({"pow((modelica_real)",var1,", (modelica_real)",var2,")"});
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
