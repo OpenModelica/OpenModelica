@@ -71,7 +71,10 @@ long* zeroCrossingEnabled;
 // this is the globalData that is used in all the functions
 DATA *globalData = 0;
 
-
+/* Flags for controlling logging to stdout */
+const int LOG_EVENTS =	1;
+const int LOG_NONLIN_SYS = 2;
+const int LOG_DEBUG = 4;
 
 #define MAXORD 5
 

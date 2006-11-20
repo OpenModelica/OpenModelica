@@ -1222,7 +1222,7 @@ algorithm
     local
       Absyn.Program newp,p,p_1,p1;
       String resstr,ident,filename,cmt,variability,causality,name,value,top_names_str;
-      Absyn.ComponentRef class_,subident,comp_ref,cr;
+      Absyn.ComponentRef class_,subident,comp_ref,cr,crident;
       Absyn.Modification mod;
       InteractiveSymbolTable st, newst;
       list<SCode.Class> s;
@@ -1237,10 +1237,10 @@ algorithm
     case 
       (ISTMTS(interactiveStmtLst = 
       {IEXP(exp = Absyn.CALL(function_ = 
-      Absyn.CREF_IDENT(name = "setExtendsModifierValue"),
-      functionArgs = Absyn.FUNCTIONARGS(args = 
+      Absyn.CREF_IDENT(name = "setExtendsModifierValue"),functionArgs = Absyn.FUNCTIONARGS(args = 
         {Absyn.CREF(componentReg = class_),
-        Absyn.CREF(componentReg = Absyn.CREF_QUAL(name = ident,componentRef = subident)),
+        Absyn.CREF(componentReg = crident),
+        Absyn.CREF(componentReg = subident),
         Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))},argNames = {})))}),
       (st as SYMBOLTABLE(
         ast = p,
@@ -1250,7 +1250,7 @@ algorithm
         compiledFunctions = cf,
         loadedFiles = lf)))
       equation 
-        (newp,resstr) = setExtendsModifierValue(class_, Absyn.CREF_IDENT(ident,{}), subident, mod, p);
+        (newp,resstr) = setExtendsModifierValue(class_, crident, subident, mod, p);
       then
         (resstr,SYMBOLTABLE(newp,s,ic,iv,cf,lf));
     case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getExtendsModifierNames"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.CREF(componentReg = ident)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
@@ -1259,9 +1259,9 @@ algorithm
         resstr = getExtendsModifierNames(class_, ident, p);
       then
         (resstr,st);
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getExtendsModifierValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.CREF(componentReg = Absyn.CREF_QUAL(name = ident,componentRef = subident))},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getExtendsModifierValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.CREF(componentReg = crident),Absyn.CREF(componentReg = subident)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
-        resstr = getExtendsModifierValue(class_, Absyn.CREF_IDENT(ident,{}), subident, p);
+        resstr = getExtendsModifierValue(class_, crident, subident, p);
       then
         (resstr,st);
     case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getComponentModifierNames"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.CREF(componentReg = ident)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
@@ -4581,7 +4581,7 @@ algorithm
   env2 := Env.openScope(env_1, encflag, SOME(id));
   ci_state := ClassInf.start(restr, id);
   /* Use partial instantiation. Env is only used to retrieve class names not lookup variables
-    therefore OK.*/
+    therefore OK. */
   (_,env_2,_) := Inst.partialInstClassIn(Env.emptyCache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, cl, false, {});
 end getClassEnvNoElaboration;
@@ -4640,7 +4640,7 @@ algorithm
           dyn_ref, causality);
         newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
       then
-        ("Ok",newp);
+        ("Ok",newp); 
     case (_,_,_,_,_,_,_,_,_,p) then ("Error",p); 
   end matchcontinue;
 end setComponentProperties;
@@ -4704,7 +4704,7 @@ protected function setComponentPropertiesInClassparts "function: setComponentPro
               bool list, /* dynamic_ref, two booleans */
               string) /* causality */
    outputs: Absyn.ClassPart list
-"
+" 
   input list<Absyn.ClassPart> inAbsynClassPartLst1;
   input Absyn.Ident inIdent2;
   input Boolean inBoolean3;
@@ -6620,6 +6620,17 @@ algorithm
         res = Dump.printExpStr(exp);
       then
         res;
+      case (class_,name,p)
+      equation 
+        p_class = Absyn.crefToPath(class_);
+        Absyn.IDENT(name) = Absyn.crefToPath(name);
+        cdef = getPathedClassInProgram(p_class, p);
+        comps = getComponentsInClass(cdef);
+        compelts = Util.listMap(comps, getComponentitemsInElement);
+        compelts_1 = Util.listFlatten(compelts);
+        {compitem} = Util.listSelect1(compelts_1, name, componentitemNamed);
+        failure(_ = getVariableBindingInComponentitem(compitem));
+      then "";
     case (_,_,_) then "Error"; 
   end matchcontinue;
 end getComponentBinding;

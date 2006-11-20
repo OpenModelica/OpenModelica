@@ -97,13 +97,13 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
     	if ((info == 4 || info == 5 )&& retries < 3) { /* First try to decrease factor*/ \
     		retries++; giveUp = 0; \
     		factor = factor / 10.0; \
-    		 	if (sim_verbose)  \
+    		 	if (sim_verbose & LOG_NONLIN_SYS)  \
 	    		printf("Solving nonlinear system: iteration not making progress, trying to decrease factor to %f\n",factor); \
     	} else if ((info == 4 || info == 5) && retries < 5) { /* Secondly, try with different starting point*/  \
     		int i; \
     		for (i=0; i < n; i++) { nls_x[i]+=0.1; }; \
     		retries++; giveUp=0; \
-    		if (sim_verbose) \
+    		if (sim_verbose & LOG_NONLIN_SYS) \
    		 		printf("Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)"); \
     	} \
     	else if (info >= 2 && info <= 5) { \
@@ -133,7 +133,7 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
     		for (i=0; i < n; i++) { nls_x[i]+=0.1; }; \
     		retries++; giveUp=0; \
     		if (sim_verbose) \
-   		 		printf("Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)"); \
+   		 		printf("Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)\n"); \
     	} \
     	else if (info >= 2 && info <= 5) { \
     	    printf("error solving nonlinear system nr. %d at time %f\n",no,time); \

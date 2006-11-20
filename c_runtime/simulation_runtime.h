@@ -140,6 +140,12 @@ double old2(double*);
 
 extern int sim_verbose; // control debug output during simulation.
 
+/* Flags for controlling logging to stdout */
+extern const int LOG_EVENTS;
+extern const int LOG_NONLIN_SYS;
+extern const int LOG_DEBUG;
+
+
 /* extern double* h; */
 /* extern double* x; */
 /* extern double* xd; */
