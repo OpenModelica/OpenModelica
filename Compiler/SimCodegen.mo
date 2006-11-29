@@ -1345,11 +1345,14 @@ algorithm
         state_arr = fill("\"state  ERROR\"", nx);
         derivative_arr = fill("\"derivative ERROR\"", nx);
         algvar_arr = fill("\"algvar ERROR\"", ny);
-        param_arr = fill("\"param ERROR\"", np) "	array_create(ni,\"\") => input_arr & 	array_create(no,\"\") => output_arr &" ;
+        param_arr = fill("\"param ERROR\"", np);
+        //input_arr = array_create(ni,\"\") => input_arr  	array_create(no,\"\") => output_arr &" ;
         state_comment_arr = fill("\" ERROR\"", nx);
         derivative_comment_arr = fill("\" ERROR\"", nx);
         algvar_comment_arr = fill("\" ERROR\"", ny);
-        param_comment_arr = fill("\" ERROR\"", np) "	array_create(ni,\"\") => input_comment_arr & 	array_create(no,\"\") => output_comment_arr &" ;
+        param_comment_arr = fill("\" ERROR\"", np);
+        
+        //"	array_create(ni,\"\") => input_comment_arr & 	array_create(no,\"\") => output_comment_arr &" ;
         /* Variable list*/
         (state_arr,state_comment_arr,num_state_2,derivative_arr,derivative_comment_arr,
           num_derivative_2,algvar_arr,algvar_comment_arr,num_algvars_2,input_arr,input_comment_arr,
@@ -3953,8 +3956,7 @@ algorithm
         (s2,cg_id2) = generateOdeSystem2PopulateAb(mixedEvent,jac, v, eqn, unique_id, cg_id1);
         (s3,cg_id3) = generateOdeSystem2SolveCall(mixedEvent,eqn_size, unique_id, cg_id2);
         (s4,cg_id4) = generateOdeSystem2CollectResults(mixedEvent,v, unique_id, cg_id3);
-        (s5,cg_id5) = generateOdeSystem2Cleanup(mixedEvent,eqn_size, unique_id, cg_id4);
-        s = Codegen.cMergeFns({s1,s2,s3,s4,s5});
+        s = Codegen.cMergeFns({s1,s2,s3,s4});
       then
         (s,cg_id4,{});
     case (mixedEvent,DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),SOME(jac),DAELow.JAC_NONLINEAR(),cg_id) /* Time varying nonlinear jacobian. Non-linear system of equations */ 
@@ -4770,7 +4772,7 @@ algorithm
         id_str = intString(unique_id);
         stmt1 = Util.stringAppendList({"declare_matrix(A",id_str,",",size_str,",",size_str,");"});
         stmt2 = Util.stringAppendList({"declare_vector(b",id_str,",",size_str,");"});
-        res = Codegen.cAddVariables(Codegen.cEmptyFunction, {stmt1,stmt2});
+        res = Codegen.cAddStatements(Codegen.cEmptyFunction, {stmt1,stmt2});
       then
         (res,cg_id);
     case (mixedEvent,size,unique_id,cg_id)
@@ -5595,16 +5597,17 @@ public function generateInitData "function generateInitData
   input Real inReal5;
   input Real inReal6;
   input Real inReal7;
+  input String method;
 algorithm 
   _:=
-  matchcontinue (inDAELow1,inPath2,inString3,inString4,inReal5,inReal6,inReal7)
+  matchcontinue (inDAELow1,inPath2,inString3,inString4,inReal5,inReal6,inReal7,method)
     local
       Real delta_time,step,start,stop,intervals;
       String start_str,stop_str,step_str,nx_str,ny_str,np_str,init_str,str,exe,filename;
       Integer nx,ny,np;
       DAELow.DAELow dlow;
       Absyn.Path class_;
-    case (dlow,class_,exe,filename,start,stop,intervals) /* classname executable file name filename start time stop time íntervals */ 
+    case (dlow,class_,exe,filename,start,stop,intervals,method) /* classname executable file name filename start time stop time íntervals */ 
       equation 
         delta_time = stop -. start;
         step = delta_time/.intervals;
@@ -5618,12 +5621,12 @@ algorithm
         init_str = generateInitData2(dlow, nx, ny, np);
         str = Util.stringAppendList(
           {start_str," // start value\n",stop_str," // stop value\n",
-          step_str," // step value\n",nx_str," // n states\n",ny_str," // n alg vars\n",
+          step_str," // step value\n","\"",method,"\" // method\n", nx_str," // n states\n",ny_str," // n alg vars\n",
           np_str," //n parameters\n",init_str});
         System.writeFile(filename, str);
       then
         ();
-    case (_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_)
       equation 
         print("-generate_init_data failed\n");
       then
@@ -6684,6 +6687,10 @@ algorithm
 //            "localData->states = statesBackup;",
             "localData->statesDerivatives = statesDerivativesBackup;",
             "localData->timeValue = timeBackup;",
+            "if (modelErrorCode) {",
+				  	"*ires = -1;",
+  					"modelErrorCode =0;",
+  					"}",
            "return 0;"});
             res = Codegen.cPrintFunctionsStr({cfn});
           then

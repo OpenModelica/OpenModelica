@@ -3054,7 +3054,7 @@ algorithm
         (cache,init_filename,starttime_r,stoptime_r,interval_r,method_str) = calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
         SimCodegen.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename, 
-          starttime_r, stoptime_r, interval_r);
+          starttime_r, stoptime_r, interval_r,method_str);
         makefilename = generateMakefilename(filenameprefix);
         compileModel(filenameprefix, libs, file_dir);
         _ = System.cd(oldDir);

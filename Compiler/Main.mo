@@ -666,7 +666,7 @@ algorithm
         SimCodegen.generateSimulationCode(dae, indexed_dlow_1, ass1, ass2, m, mt, comps, classname, 
           filename, funcfilename);
         SimCodegen.generateInitData(indexed_dlow_1, classname, cname_str, init_filename, 0.0, 
-          1.0, 500.0);
+          1.0, 500.0,"dassl");
         SimCodegen.generateMakefile(makefilename, cname_str, libs, file_dir);
       then
         ();

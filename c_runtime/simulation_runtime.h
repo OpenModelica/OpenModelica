@@ -46,93 +46,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _SIMULATION_RUNTIME_H
 #define _SIMULATION_RUNTIME_H
 
+#include "simulation_events.h"
 
 #include <fstream>
 #include <iostream>
 
 
 using namespace std;
-#ifdef _MSC_VER
-#  define NEWUOA NEWUOA
-#else
-#  define NEWUOA newuoa_
-#endif
-extern "C" {
-	void  NEWUOA(
-	long *nz,
-	long *NPT,
-	double *z,
-	double *RHOBEG,
-	double *RHOEND,
-	long *IPRINT,
-	long *MAXFUN,
-	double *W,
-	void (*leastSquare) (long *nz, double *z, double *funcValue)
-	);
-} // extern C
-
-#ifdef _MSC_VER
-#  define NELMEAD NELMEAD
-#else
-#  define NELMEAD nelmead_
-#endif
-
-extern "C" {
-	void  NELMEAD(
-	   double *z,
-	   double *STEP,
-	   long *nz,
-	   double *funcValue,
-	   long *MAXF,
-	   long *IPRINT,
-	   double *STOPCR,
-	   long *NLOOP,
-	   long *IQUAD,
-	   double *SIMP,
-	   double *VAR,
-	   void (*leastSquare) (long *nz, double *z, double *funcValue), 
-	   long *IFAULT);
-} // extern "C"
-
-#ifdef _MSC_VER
-#  define DDASRT DDASRT
-#else
-#  define DDASRT ddasrt_
-#endif
-
-extern "C" {
-  void  DDASRT(
-	       int (*res) (double *t, double *y, double *yprime, double *delta, long *ires, double *rpar, long* ipar), 
-	       long *neq, 
-	       double *t,
-	       double *y,
-	       double *yprime, 
-	       double *tout, 
-	       long *info,
-	       double *rtol, 
-	       double *atol, 
-	       long *idid, 
-	       double *rwork,
-	       long *lrw, 
-	       long *iwork, 
-	       long *liw, 
-	       double *rpar, 
-	       long *ipar, 
-	       int (*jac) (double *t, double *y, double *yprime, double *delta, long *ires, double *rpar, long* ipar),
-	       int (*g) (long *neqm, double *t, double *y, long *ng, double *gout, double *rpar, long* ipar),
-	       long *ng,
-	       long *jroot
-	       );
-} // extern "C"
-
-inline void read_commented_value( ifstream &f, double *res);
-inline void read_commented_value( ifstream &f, int *res);
-
-void read_input(int argc, char **argv,
-		double* x,double*xd,double*y,
-		double *p, int nx,int ny, int np,
-		double *start, double *stop,
-		double *step);
 
 // To retrive the last two values of a variable.
 double old(double*);
@@ -140,28 +60,16 @@ double old2(double*);
 
 extern int sim_verbose; // control debug output during simulation.
 
+extern int userTermination; //// Becomes non-zero when user terminates simulation.
+
 /* Flags for controlling logging to stdout */
 extern const int LOG_EVENTS;
 extern const int LOG_NONLIN_SYS;
 extern const int LOG_DEBUG;
 
-
-/* extern double* h; */
-/* extern double* x; */
-/* extern double* xd; */
-/* extern double* dummy_delta; */
-/* extern double* y; */
-/* extern double* p; */
-/* extern long* jroot; */
-/* extern long liw; */
-/* extern long lrw; */
-/* extern double* rwork; */
-/* extern long* iwork; */
-/* extern long nhelp,nx,ny,np,ng,nr; */
-/* extern char *model_name; */
-/* extern char** varnames; */
-/* extern int init; */
-
+/* Flags for modelErrorCodes */ 
+extern const int ERROR_NONLINSYS;
+extern const int ERROR_LINSYS;
 
 typedef enum {
 /*   These are flags for the generated 
@@ -261,6 +169,12 @@ typedef struct sim_DATA {
   // this is not changed by initializeDataStruc
 } DATA;
 
+/* Global data */
+extern DATA *globalData;
+
+
+extern long numpoints;
+extern int modelErrorCode; 
 
 /*
  * this is used for initialize the DATA structure that is used in 
@@ -290,13 +204,6 @@ void setLocalData(DATA* data);
 // defined in model code. Used to get name of variable by investigating its pointer in the state or alg vectors.
 char* getName(double* ptr);
 
-/*used in DDASRT fortran function*/
-int 
-function_zeroCrossing(long *neqm, double *t, double *x, long *ng, double *gout, double *rpar, long* ipar);
-
-int
-handleZeroCrossing(long index);
-
 void storeExtrapolationData();
 
 // function for calculating ouput values 
@@ -309,8 +216,6 @@ functionDAE_output();
 int
 functionDAE_res(double *t, double *x, double *xprime, double *delta, long int *ires, double *rpar, long int* ipar);
 
-int
-function_when(int i);
 
 int
 function_updateDependents();
@@ -323,8 +228,6 @@ int functionODE();
 // and fixed start attibutes
 int initial_function(); 
 
-int checkForDiscreteVarChanges();
-
 // function for calculating bound parameters that depend on other
 // parameters, e.g. parameter Real n=1/m;
 int bound_parameters(); 
@@ -333,48 +236,11 @@ int bound_parameters();
 // and fixed start attibutes
 int initial_residual();
 
-int initialize(const std::string*method);
-
-// Adds a result to the simulation result data.
-void add_result(double *data, long *actual_points); 
-
-// stores the result on file.
-void store_result(const char * filename, double*data,
-		  long numpoints);
-
-// euler numerical solver
-void euler ( DATA * data,
-             double* step,
-	     int (*f)() // time
-	     );
- 
-void saveall();
-void save(double & var);
-double pre(double & var);
-bool edge(double& var);
-bool change(double& var);
-
-double Sample(double t, double start ,double interval);
-double sample(double start ,double interval);
-
-void CheckForNewEvents(double *t);
-void CheckForInitialEvents(double *t);
-void StartEventIteration(double *t);
-void StateEventHandler(long jroot[], double *t);
-
-void AddEvent(long);
-
-extern long* zeroCrossingEnabled;
-
-double Less(double a,double b);
-double LessEq(double a,double b);
-double Greater(double a,double b);
-double GreaterEq(double a,double b);
-#define ZEROCROSSING(ind,exp) gout[ind] = (zeroCrossingEnabled[ind])?double(zeroCrossingEnabled[ind])*exp:1.0
-#define noEvent(arg) arg
+double newTime(double t, double step);
 
 #define MODELICA_ASSERT(cond,msg) do { if (!(cond)) { printf(msg); \
-exit(-1);} } while(0)
+userTermination=1;} } while(0)
+
 #define initial() localData->init
 
 #endif

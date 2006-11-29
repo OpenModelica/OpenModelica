@@ -107,6 +107,7 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
    		 		printf("Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)"); \
     	} \
     	else if (info >= 2 && info <= 5) { \
+    		modelErrorCode=ERROR_NONLINSYS; \
     	    printf("error solving nonlinear system nr. %d at time %f\n",no,time); \
     	} \
 	 }\
@@ -136,19 +137,17 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
    		 		printf("Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)\n"); \
     	} \
     	else if (info >= 2 && info <= 5) { \
+    		modelErrorCode=ERROR_NONLINSYS; \
     	    printf("error solving nonlinear system nr. %d at time %f\n",no,time); \
     	} \
 	 }\
 } while(0) /* (no trailing ;)*/ 
 
-#define declare_matrix(A,nrows,ncols) double *A = new double[nrows*ncols]; \
+#define declare_matrix(A,nrows,ncols) double *A = real_alloc(nrows*ncols); \
 assert(A!=0); \
 for (int i=0;i<nrows*ncols;i++) A[i]=0.0;
 
-#define free_matrix(A) delete []A;
-#define free_vector(A) delete []A;
-
-#define declare_vector(v,nelts) double *v=new double[nelts];\
+#define declare_vector(v,nelts) double *v=real_alloc(nelts);\
 assert(v!=0); \
 for (int i=0;i<nelts;i++) v[i]=0.0;
 
@@ -208,7 +207,7 @@ int n=size; \
 int ml=size-1; \
 int mu = size-1; \
 int mode=1; \
-int info,nfev; \
+int info,nfev,njev; \
 double factor=100.0; \
 int nprint = 0; \
 int lr = (size*(size+1))/2; \

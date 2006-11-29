@@ -44,11 +44,12 @@ FOBJS = $(patsubst %.f,%.o,$(FSRCS))
 
 OBJS = $(FOBJS) boolean_array.o index_spec.o integer_array.o memory_pool.o \
 	real_array.o string_array.o read_write.o utility.o modelica_string.o $(EXTRA_OBJS)
-SIMOBJS = $(FOBJS) simulation_runtime.o ../mosh/src/options.o dgesv_aux.o $(EXTRA_SIMOBJS)
+SIMOBJS = $(FOBJS) simulation_runtime.o simulation_init.o simulation_input.o simulation_events.o \
+solver_dasrt.o solver_euler.o simulation_result.o ../mosh/src/options.o dgesv_aux.o $(EXTRA_SIMOBJS)
 
 HFILES = blaswrap.h f2c.h integer_array.h memory_pool.h modelica_string.h \
 	real_array.h string_array.h boolean_array.h index_spec.h matrix.h \
-	modelica.h read_write.h simulation_runtime.h utility.h
+	modelica.h read_write.h simulation_runtime.h simulation_events.h utility.h
 
 LIBS = libc_runtime.a libsim.a 
 
