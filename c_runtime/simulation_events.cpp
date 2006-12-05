@@ -41,17 +41,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "simulation_runtime.h"
 #include "simulation_result.h"
 #include <math.h>
+#include <string.h> // adrpo - 2006-12-05 -> for memset
 #include <list>
 using namespace std;
 
 // vectors with saved values used by pre(v)
-double* h_saved;
-double* x_saved;
-double* xd_saved;
-double* y_saved;
+double* h_saved  = 0;
+double* x_saved  = 0;
+double* xd_saved = 0;
+double* y_saved  = 0;
 
-double* gout;
-long* zeroCrossingEnabled;
+double* gout     = 0;
+long* zeroCrossingEnabled = 0;
 
 static list<long> EventQueue; 
 
@@ -72,6 +73,13 @@ int initializeEventData()
     cerr << "Could not allocate memory for global event data structures" << endl;
     return -1;
   }
+  // adrpo 2006-11-30 -> init the damn structures!
+  memset(gout, 0, sizeof(double)*globalData->nZeroCrossing);
+  memset(h_saved, 0, sizeof(double)*globalData->nHelpVars);
+  memset(x_saved, 0, sizeof(double)*globalData->nStates);
+  memset(xd_saved, 0, sizeof(double)*globalData->nStates);
+  memset(y_saved, 0, sizeof(double)*globalData->nAlgebraic);
+  memset(zeroCrossingEnabled, 0, sizeof(long)*globalData->nZeroCrossing);
   return 0;
 }
 
@@ -250,8 +258,15 @@ void StateEventHandler(long* jroot, double *t)
   emit();
 }
 
-
-inline void calcEnabledZeroCrossings()
+#if defined(__GNUC__) // for GNUC
+// adrpo - 2006-12-05 
+// for GNUC the inline is a bit more involved
+// read here:
+// http://gcc.gnu.org/onlinedocs/gcc-3.2.3/gcc/Inline.html
+#else /* for other compilers */
+inline 
+#endif
+void calcEnabledZeroCrossings()
 {
   int i;
   for (i=0;i<globalData->nZeroCrossing;i++) {
