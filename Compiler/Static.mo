@@ -552,7 +552,6 @@ algorithm
       equation 
         mexpl = elabMatrixToMatrixExp2(expl);
         d1 = listLength(mexpl); 
-        a = Exp.liftArray(a,SOME(d1));
       then
         Exp.MATRIX(a,d1,mexpl);
     case (e) then e;  /* if fails, skip conversion, use generic array expression as is. */ 

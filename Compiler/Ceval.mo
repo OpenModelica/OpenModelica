@@ -221,9 +221,9 @@ algorithm
     case "sin" then cevalBuiltinSin; 
     case "cos" then cevalBuiltinCos;
     case "log" then cevalBuiltinLog;   
-    case "asin" then cevalBuiltinAsin; 
-    case "acos" then cevalBuiltinAcos; 
-    case "atan" then cevalBuiltinAtan; 
+    case "arcsin" then cevalBuiltinAsin; 
+    case "arccos" then cevalBuiltinAcos; 
+    case "arctan" then cevalBuiltinAtan; 
     case "tan" then cevalBuiltinTan; 
     case "integer" then cevalBuiltinInteger; 
     case "mod" then cevalBuiltinMod; 

@@ -83,8 +83,7 @@ algorithm
         e1_1 = differentiateExpTime(e1, timevars);
         e2_1 = differentiateExpTime(e2, timevars);
         e1_2 = Exp.simplify(e1_1);
-        e2_2 = Exp.simplify(e2_1) "& Exp.simplify(e1\'\') => e1\'\' &
-	Exp.simplify(e2\'\') => e2\'\'" ;
+        e2_2 = Exp.simplify(e2_1);
       then
         DAELow.EQUATION(e1_2,e2_2);
     case (DAELow.ALGORITHM(index = _),_)
@@ -163,6 +162,32 @@ algorithm
       then
         Exp.UNARY(Exp.UMINUS(Exp.REAL()),Exp.BINARY(e_1,Exp.MUL(Exp.REAL()),
           Exp.CALL(Absyn.IDENT("sin"),{e},false,true,Exp.REAL())));
+        
+        // der(arccos(x)) = -der(x)/sqrt(1-x^2) 
+    case (Exp.CALL(path = fname,expLst = {e}),timevars)
+      equation 
+        isACos(fname);
+        e_1 = differentiateExpTime(e, timevars)  ;
+      then
+        Exp.UNARY(Exp.UMINUS(Exp.REAL()),Exp.BINARY(e_1,Exp.DIV(Exp.REAL()),
+          Exp.CALL(Absyn.IDENT("sqrt"),{Exp.BINARY(Exp.RCONST(1.0),Exp.SUB(Exp.REAL()),Exp.BINARY(e,Exp.MUL(Exp.REAL()),e))},false,true,Exp.REAL())));
+     
+        // der(arcsin(x)) = der(x)/sqrt(1-x^2)
+      case (Exp.CALL(path = fname,expLst = {e}),timevars)
+      equation 
+        isASin(fname);
+        e_1 = differentiateExpTime(e, timevars)  ;
+      then
+       Exp.BINARY(e_1,Exp.DIV(Exp.REAL()),
+          Exp.CALL(Absyn.IDENT("sqrt"),{Exp.BINARY(Exp.RCONST(1.0),Exp.SUB(Exp.REAL()),Exp.BINARY(e,Exp.MUL(Exp.REAL()),e))},false,true,Exp.REAL()));
+    
+        // der(arctan(x)) = der(x)/1+x^2
+      case (Exp.CALL(path = fname,expLst = {e}),timevars)
+      equation 
+        isATan(fname);
+        e_1 = differentiateExpTime(e, timevars)  ;
+      then
+       Exp.BINARY(e_1,Exp.DIV(Exp.REAL()),Exp.BINARY(Exp.RCONST(1.0),Exp.ADD(Exp.REAL()),Exp.BINARY(e,Exp.MUL(Exp.REAL()),e)));            
           
     case (Exp.CALL(path = fname,expLst = {e}),timevars)
       equation 
@@ -179,7 +204,6 @@ algorithm
       then
         Exp.BINARY(e_1,Exp.DIV(Exp.REAL()),e);    
               
-    // *** Addition by JA 20060621      
     case (Exp.CALL(path = fname,expLst = {e},tuple_ = false,builtin = true),timevars)
       equation 
         isLog(fname);
@@ -198,7 +222,6 @@ algorithm
       then
         exp;  
           
-    // *** End of addition by JA 20060621      
     case ((e as Exp.CREF(componentRef = cr,ty = tp)),timevars) /* list_member(cr,timevars) => false */  then Exp.RCONST(0.0); 
     case (Exp.BINARY(exp1 = e1,operator = Exp.ADD(ty = tp),exp2 = e2),tv)
       equation 
@@ -329,7 +352,7 @@ algorithm
     local
       Real rval;
       Exp.ComponentRef cr,crx,tv;
-      Exp.Exp e,e1_1,e2_1,e1,e2,const_one,d_e1,exp,e_1,exp_1,e3_1,e3;
+      Exp.Exp e,e1_1,e2_1,e1,e2,const_one,d_e1,d_e2,exp,e_1,exp_1,e3_1,e3;
       Exp.Type tp;
       Absyn.Path a,fname;
       Boolean b,c;
@@ -370,7 +393,7 @@ algorithm
 
     case (Exp.BINARY(exp1 = (e1 as Exp.CREF(componentRef = cr)),operator = Exp.POW(ty = tp),exp2 = e2),tv) /* ax^(a-1) */ 
       equation 
-        true = Exp.crefEqual(cr, tv) "a^x => ax^(a-1)" ;
+        true = Exp.crefEqual(cr, tv) "x^a => ax^(a-1)" ;
         false = Exp.expContains(e2, Exp.CREF(tv,tp));
         const_one = differentiateExp(Exp.CREF(tv,tp), tv);
       then
@@ -385,6 +408,17 @@ algorithm
         exp = Exp.BINARY(
           Exp.BINARY(d_e1,Exp.MUL(tp),Exp.BINARY(e2,Exp.SUB(tp),Exp.RCONST(1.0))),Exp.MUL(tp),
           Exp.BINARY(e1,Exp.POW(tp),Exp.BINARY(e2,Exp.SUB(tp),const_one)));
+      then
+        exp;
+        
+      case (e as Exp.BINARY(exp1 = e1,operator = Exp.POW(ty = tp),exp2 = e2),tv) /* a^x => a^x * log(A) */ 
+      equation 
+        false = Exp.expContains(e1, Exp.CREF(tv,tp));
+        true  = Exp.expContains(e2,Exp.CREF(tv,tp));
+        d_e2 = differentiateExp(e2, tv);
+        exp = Exp.BINARY(d_e2,Exp.MUL(tp),
+	        Exp.BINARY(e,Exp.MUL(tp),Exp.CALL(Absyn.IDENT("log"),{e1},false,true,tp))
+          );
       then
         exp;
 
@@ -476,6 +510,35 @@ algorithm
         Exp.BINARY(
           Exp.UNARY(Exp.UMINUS(Exp.REAL()),
           Exp.CALL(Absyn.IDENT("sin"),{exp},b,c,tp)),Exp.MUL(Exp.REAL()),exp_1);
+
+       // der(arccos(x)) = -der(x)/sqrt(1-x^2) 
+    case (Exp.CALL(path = fname,expLst = {e}),tv)
+      equation 
+        isACos(fname);
+        true = Exp.expContains(e, Exp.CREF(tv,Exp.REAL()));
+        e_1 = differentiateExp(e, tv)  ;
+      then
+        Exp.UNARY(Exp.UMINUS(Exp.REAL()),Exp.BINARY(e_1,Exp.DIV(Exp.REAL()),
+          Exp.CALL(Absyn.IDENT("sqrt"),{Exp.BINARY(Exp.RCONST(1.0),Exp.SUB(Exp.REAL()),Exp.BINARY(e,Exp.MUL(Exp.REAL()),e))},false,true,Exp.REAL())));
+     
+        // der(arcsin(x)) = der(x)/sqrt(1-x^2)
+      case (Exp.CALL(path = fname,expLst = {e}),tv)
+      equation 
+        isASin(fname);
+        true = Exp.expContains(e, Exp.CREF(tv,Exp.REAL()));        
+        e_1 = differentiateExp(e, tv)  ;
+      then
+       Exp.BINARY(e_1,Exp.DIV(Exp.REAL()),
+          Exp.CALL(Absyn.IDENT("sqrt"),{Exp.BINARY(Exp.RCONST(1.0),Exp.SUB(Exp.REAL()),Exp.BINARY(e,Exp.MUL(Exp.REAL()),e))},false,true,Exp.REAL()));
+    
+        // der(arctan(x)) = der(x)/1+x^2
+      case (Exp.CALL(path = fname,expLst = {e}),tv)
+      equation 
+        isATan(fname);
+        true = Exp.expContains(e, Exp.CREF(tv,Exp.REAL()));        
+        e_1 = differentiateExp(e, tv)  ;
+      then
+       Exp.BINARY(e_1,Exp.DIV(Exp.REAL()),Exp.BINARY(Exp.RCONST(1.0),Exp.ADD(Exp.REAL()),Exp.BINARY(e,Exp.MUL(Exp.REAL()),e)));            
 
     case (Exp.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp),tv)
       local Exp.Type tp;
@@ -620,6 +683,7 @@ algorithm
         s = Exp.printExpStr(e);
         s2 = Exp.printComponentRefStr(cr);
         str = Util.stringAppendList({"differentiate_exp ",s," w.r.t:",s2," failed\n"});
+        //print(str);
         Debug.fprint("failtrace", str);
       then
         fail();
@@ -651,7 +715,7 @@ public function isACos
 algorithm 
   _:=
   matchcontinue (inPath)
-    case (Absyn.IDENT(name = "acos")) then (); 
+    case (Absyn.IDENT(name = "arccos")) then (); 
     case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "acos")))) then (); 
   end matchcontinue;
 end isACos;
@@ -661,7 +725,7 @@ public function isASin
 algorithm 
   _:=
   matchcontinue (inPath)
-    case (Absyn.IDENT(name = "asin")) then (); 
+    case (Absyn.IDENT(name = "arcsin")) then (); 
     case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "asin")))) then (); 
   end matchcontinue;
 end isASin;
@@ -671,7 +735,7 @@ public function isATan
 algorithm 
   _:=
   matchcontinue (inPath)
-    case (Absyn.IDENT(name = "atan")) then (); 
+    case (Absyn.IDENT(name = "arctan")) then (); 
     case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "atan")))) then (); 
   end matchcontinue;
 end isATan;
@@ -681,7 +745,7 @@ public function isATan2
 algorithm 
   _:=
   matchcontinue (inPath)
-    case (Absyn.IDENT(name = "atan2")) then (); 
+    case (Absyn.IDENT(name = "arctan2")) then (); 
     case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "atan2")))) then (); 
   end matchcontinue;
 end isATan2;

@@ -2557,9 +2557,9 @@ algorithm
       env = Env.extendFrameT(env, "sin", real2real) "Not in the report" ;
       env = Env.extendFrameT(env, "cos", real2real);
       env = Env.extendFrameT(env, "tan", real2real);
-      env = Env.extendFrameT(env, "asin", real2real);
-      env = Env.extendFrameT(env, "acos", real2real);
-      env = Env.extendFrameT(env, "atan", real2real);
+      env = Env.extendFrameT(env, "arcsin", real2real);
+      env = Env.extendFrameT(env, "arccos", real2real);
+      env = Env.extendFrameT(env, "arctan", real2real);
       env = Env.extendFrameT(env, "exp", real2real);
       env = Env.extendFrameT(env, "log", real2real);
       env = Env.extendFrameT(env, "log10", real2real);

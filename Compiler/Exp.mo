@@ -869,10 +869,10 @@ algorithm
     local
       Integer ival;
       Real rval;
-      Boolean bval,res;
+      Boolean bval,res,b1,b2;
       Ident sval;
       Operator op;
-      Exp e;
+      Exp e,e1,e2;
       Type t;
     case (ICONST(integer = ival)) then true; 
     case (RCONST(real = rval)) then true; 
@@ -886,6 +886,13 @@ algorithm
     case (CAST(ty = t,exp = e)) /* Casting to zero is still zero */ 
       equation 
         res = isConst(e);
+      then
+        res;
+        case (BINARY(e1,op,e2))
+      equation 
+        b1 = isConst(e1);
+        b2 = isConst(e2);
+        res = boolAnd(b1,b2);
       then
         res;
     case (_) then false; 
@@ -1276,15 +1283,20 @@ algorithm
   end matchcontinue;
 end subscriptsInt;
 
-public function simplify "function: simplify
+public function simplify " Simplifies expressions
+"
+  input Exp inExp;
+  output Exp outExp;
+algorithm 
+  outExp:= simplify1(inExp); // Basic local simplifications 
+  outExp:= simplify2(outExp); // Advanced (global) simplifications 
+ end simplify;
+
+protected function simplify1 "function: simplify1
  
-  This function does some very basic simplification on expressions.
-  It is not intended to be used to simplify expressions provided by
-  the model, but to simplify unnecessarily complex expressions
-  constructed during instantiation. 
-  PA. Added rules for binary, unary operations
-  and multiplication with zero, addition with zero, etc. Useful when deriving 
-  equations and then want to simplify
+  This function does some very basic simplification on expressions, like 0*a = a
+  {1}[1] => 1, etc.
+ 
 "
   input Exp inExp;
   output Exp outExp;
@@ -1304,37 +1316,38 @@ algorithm
       ComponentRef c_1;
       Operator op;
       String before, after;
+      Real time1,time2;
 
     case (CAST(ty = REAL(),exp=e ))
       local Exp e; Real v;
       equation
-        RCONST(v) = simplify(e);
+        RCONST(v) = simplify1(e);
        then RCONST(v); 
          
     case (CAST(ty = REAL(),exp = e))
       local Integer v;
       equation 
-        ICONST(v) = simplify(e);
+        ICONST(v) = simplify1(e);
         rv = intReal(v);
       then
         RCONST(rv);
     case (CAST(ty = tp,exp = e)) /* cast of array */ 
       equation 
-        ARRAY(t,b,exps) = simplify(e);
+        ARRAY(t,b,exps) = simplify1(e);
         tp_1 = unliftArray(tp);
         exps_1 = Util.listMap1(exps, addCast, tp_1);
-    		exps_1 = Util.listMap(exps_1,simplify);
+    		exps_1 = Util.listMap(exps_1,simplify1);
         res = ARRAY(tp,b,exps_1);
       then
         res;
     case (CAST(ty = tp,exp = e))
       local list<list<tuple<Exp, Boolean>>> exps,exps_1;
       equation 
-        MATRIX(t,n,exps) = simplify(e);
+        MATRIX(t,n,exps) = simplify1(e);
         tp1 = unliftArray(tp);
         tp2 = unliftArray(tp1);
         exps_1 = matrixExpMap1(exps, addCast, tp2);
-        res = simplify(MATRIX(tp,n,exps_1));
+        res = simplify1(MATRIX(tp,n,exps_1));
       then
         res;
         
@@ -1343,7 +1356,7 @@ algorithm
 	      local ComponentRef cr; Exp e1; Type t1,t2;
       equation 
         t1 = arrayEltType(tp);
-				e1 = simplify(e);
+				e1 = simplify1(e);
 				t2 = arrayEltType(typeof(e1));
 				equality(t1 = t2);
       then
@@ -1351,7 +1364,7 @@ algorithm
        
     case ASUB(exp = e,sub = i) /* Array and Matrix stuff */ 
       equation 
-        ARRAY(t,b,exps) = simplify(e);
+        ARRAY(t,b,exps) = simplify1(e);
         i_1 = i - 1;
         exp = listNth(exps, i_1);
       then
@@ -1359,7 +1372,7 @@ algorithm
     case ASUB(exp = e,sub = i)
       local list<list<tuple<Exp, Boolean>>> exps;
       equation 
-        MATRIX(t,n,exps) = simplify(e);
+        MATRIX(t,n,exps) = simplify1(e);
         t1 = unliftArray(t);
         i_1 = i - 1;
         (expl) = listNth(exps, i_1);
@@ -1370,15 +1383,15 @@ algorithm
     case ASUB(exp = e,sub = i)
       local Exp t;
       equation 
-        IFEXP(c,t,f) = simplify(e);
-        t_1 = simplify(ASUB(t,i));
-        f_1 = simplify(ASUB(f,i));
+        IFEXP(c,t,f) = simplify1(e);
+        t_1 = simplify1(ASUB(t,i));
+        f_1 = simplify1(ASUB(f,i));
       then
         IFEXP(c,t_1,f_1);
     case ASUB(exp = e,sub = i)
       local Ident n;
       equation 
-        CREF(CREF_IDENT(n,s),t) = simplify(e);
+        CREF(CREF_IDENT(n,s),t) = simplify1(e);
         s_1 = subscriptsAppend(s, i);
       then
         CREF(CREF_IDENT(n,s_1),t);
@@ -1387,8 +1400,8 @@ algorithm
         Ident n;
         ComponentRef c;
       equation 
-        CREF(CREF_QUAL(n,s,c),t) = simplify(e);
-        CREF(c_1,t) = simplify(ASUB(CREF(c,t),i));
+        CREF(CREF_QUAL(n,s,c),t) = simplify1(e);
+        CREF(c_1,t) = simplify1(ASUB(CREF(c,t),i));
       then
         CREF(CREF_QUAL(n,s,c_1),t);
     case ASUB(exp = e,sub = i)
@@ -1398,7 +1411,7 @@ algorithm
         e;
     case ((exp as UNARY(operator = op,exp = e1))) /* Operations */ 
       equation 
-        e1_1 = simplify(e1);
+        e1_1 = simplify1(e1);
         exp_1 = UNARY(op,e1_1);
         e = simplifyUnary(exp_1, op, e1_1);
       then
@@ -1409,50 +1422,73 @@ algorithm
       then
         e_1;
     case ((exp as BINARY(exp1 = e1,operator = op,exp2 = e2))) /* binary scalar simplifications */ 
+      local String s1,s2; Boolean b;
       equation
-        e1_1 = simplify(e1);
-        e2_1 = simplify(e2);        
+        /*exp_2 = simplifyBinarySortConstants(exp);
+        e_1 = simplifyBinaryCoeff(exp_2);*/
+        e1_1 = simplify1(e1);
+        e2_1 = simplify1(e2);
         exp_1 = BINARY(e1_1,op,e2_1);
-        exp_2 = simplifyBinarySortConstants(exp_1);
-        exp_3 = trySimplifyBinary(exp_2);        
-        e_1 = simplifyBinaryCoeff(exp_3);
+        e_1 = simplifyBinary(exp_1, op, e1_1, e2_1);
       then
         e_1;
     case ((exp as RELATION(exp1 = e1,operator = op,exp2 = e2)))
       equation 
-        e1_1 = simplify(e1);
-        e2_1 = simplify(e2);
+        e1_1 = simplify1(e1);
+        e2_1 = simplify1(e2);
         exp_1 = RELATION(e1_1,op,e2_1);
         e = simplifyBinary(exp_1, op, e1_1, e2_1);
       then
         e;
     case ((exp as LUNARY(operator = op,exp = e1)))
       equation 
-        e1_1 = simplify(e1);
+        e1_1 = simplify1(e1);
         exp_1 = LUNARY(op,e1_1);
         e = simplifyUnary(exp_1, op, e1_1);
       then
         e;
     case ((exp as LBINARY(exp1 = e1,operator = op,exp2 = e2)))
       equation 
-        e1_1 = simplify(e1);
-        e2_1 = simplify(e2);
+        e1_1 = simplify1(e1);
+        e2_1 = simplify1(e2);
         exp_1 = LBINARY(e1_1,op,e2_1);
         e = simplifyBinary(exp_1, op, e1_1, e2_1);
       then
         e;
     case (IFEXP(expCond = e1,expThen = e2,expElse = e3))
       equation 
-        e1_1 = simplify(e1);
-        e2_1 = simplify(e2);
-        e3_1 = simplify(e3);
+        e1_1 = simplify1(e1);
+        e2_1 = simplify1(e2);
+        e3_1 = simplify1(e3);
         remove_if = expEqual(e2, e3);
         res = Util.if_(remove_if, e2_1, IFEXP(e1,e2_1,e3_1));
       then
         res;
     case e then e; 
   end matchcontinue;
-end simplify;
+end simplify1;
+
+protected function simplify2 " Advanced simplifications covering several terms or factors, like a +2a +3a = 5a "
+  input Exp inExp;
+  output Exp outExp;
+algorithm
+  outExp := matchcontinue(inExp)
+  local Exp e,exp,e1,e2,e1_1,e2_1,exp_2,exp_3;
+     Operator op;
+    case ((exp as BINARY(exp1 = e1,operator = op,exp2 = e2))) /* multiple terms/factor simplifications */ 
+      local String s1,s2; Boolean b;
+      equation
+        e1_1 = simplify2(e1);
+        e2_1 = simplify2(e2);
+        /* Sorting constants, 1+a+2+b => 3+a+b */
+        exp_2 = simplifyBinarySortConstants(exp);
+        /* Merging coefficients 2a+4b+3a+b => 5a+5b */
+        exp_3 = simplifyBinaryCoeff(exp_2);
+      then
+        exp_3;
+    case (e) then e;
+  end matchcontinue;
+end simplify2;
 
 protected function simplifyBinaryArray "function: simplifyBinaryArray
  
@@ -1489,33 +1525,49 @@ algorithm
         // v1 - -v2 => v1 + v2
     case(e1,SUB_ARR(ty=tp),e2)
       equation
-        (UNARY(_,e2)) = simplify(e2);
-				e1 = simplify(e1);
+        (UNARY(_,e2)) = simplify1(e2);
+				e1 = simplify1(e1);
       then BINARY(e1,ADD_ARR(tp),e2);
         
      // v1 + -v2 => v1 - v2
     case(e1,ADD_ARR(ty=tp),e2)
       equation
-        (UNARY(_,e2)) = simplify(e2);
-        e1 = simplify(e1);
+        (UNARY(_,e2)) = simplify1(e2);
+        e1 = simplify1(e1);
       then BINARY(e1,SUB_ARR(tp),e2);
         
     case (s1,MUL_SCALAR_ARRAY(ty = tp),a1)
+      local Boolean b; Operator op2; Type atp,atp2;
       equation 
         tp = typeof(s1);
-        res = simplifyVectorScalar(s1, MUL(tp), a1);
+        atp = typeof(a1);
+        atp2 = unliftArray(atp);
+        b = typeBuiltin(atp2);
+        op2 = Util.if_(b,MUL(tp),MUL_SCALAR_ARRAY(atp2));
+        res = simplifyVectorScalar(s1, op2, a1);
       then
         res;
     case (a1,MUL_ARRAY_SCALAR(ty = tp),s1)
+      local Boolean b; Operator op2; Type atp,atp2;
       equation 
         tp = typeof(s1);
-        res = simplifyVectorScalar(s1, MUL(tp), a1);        
+        atp = typeof(a1);
+        atp2 = unliftArray(atp);
+        b = typeBuiltin(atp2);
+        op2 = Util.if_(b,MUL(tp),MUL_ARRAY_SCALAR(atp2));
+        res = simplifyVectorScalar(s1, op2, a1);        
       then
         res;
     case (a1,DIV_ARRAY_SCALAR(ty = tp),s1)
+      local Boolean b; Operator op2; Type atp,atp2;
       equation 
         tp = typeof(s1);
-        res = simplifyVectorScalar(a1, DIV(tp), s1);
+        atp = typeof(a1);
+        atp2 = unliftArray(atp);
+        b = typeBuiltin(atp2);
+        op2 = Util.if_(b,DIV(tp),DIV_ARRAY_SCALAR(atp2));
+        tp = typeof(s1);
+        res = simplifyVectorScalar(a1, op2, s1);
       then
         res;
     case (e1,MUL_SCALAR_PRODUCT(ty = tp),e2)
@@ -1796,7 +1848,7 @@ algorithm
         e = simplifyMatrixProduct4(es1, es2);
         tp = typeof(e);
         tp_1 = arrayEltType(tp);
-        res = simplify(BINARY(BINARY(e1,MUL(tp_1),e2),ADD(tp_1),e));
+        res = simplify1(BINARY(BINARY(e1,MUL(tp_1),e2),ADD(tp_1),e));
       then
         res;
   end matchcontinue;
@@ -1837,28 +1889,32 @@ algorithm
        String str;
 
     case ((e as BINARY(exp1 = e1,operator = MUL(ty = tp),exp2 = e2)))
+        local Exp res1,res2,zero;
+          Boolean b1,b2,b;
       equation 
-        e_lst = factors(e);
-        e_lst_1 = Util.listMap(e_lst, simplify);
+        e_lst  = factors(e);
+        e_lst_1 = Util.listMap(e_lst,simplify2); // simplify2 for recursive 
         const_es1 = Util.listSelect(e_lst_1, isConst);
         notconst_es1 = Util.listSelect(e_lst_1, isNotConst);
         const_es1_1 = simplifyBinaryMulConstants(const_es1);
-        e_lst_2 = listAppend(const_es1_1, notconst_es1);
-        res = makeProductLst(e_lst_2);
+        res1 = simplify1(makeProductLst(const_es1_1)); // simplify1 for basic constant evaluation.
+        res2 = makeProductLst(notconst_es1); // Cannot simplify this, if const_es1_1 empty => infinite recursion.
+        res = makeProductLst({res1,res2});
       then
         res;
     case ((e as BINARY(exp1 = e1,operator = ADD(ty = tp),exp2 = e2)))
+      local Exp res1,res2;
       equation 
         e_lst = terms(e);
-        e_lst_1 = Util.listMap(e_lst, simplify);
-        const_es1 = Util.listSelect(e_lst_1, isConst);
+        e_lst_1 = Util.listMap(e_lst,simplify2);
+        (const_es1 ) = Util.listSelect(e_lst_1, isConst);
         notconst_es1 = Util.listSelect(e_lst_1, isNotConst);
         const_es1_1 = simplifyBinaryAddConstants(const_es1);
-        e_lst_2 = listAppend(const_es1_1, notconst_es1);
-        res = makeSum(e_lst_2);
+        res1 = simplify1(makeSum(const_es1_1));
+        res2 = makeSum(notconst_es1); // Cannot simplify this, if const_es1_1 empty => infinite recursion.
+        res = makeSum({res1,res2});
       then
-        res;
-    case (e) then e; 
+        res;        
   end matchcontinue;
 end simplifyBinarySortConstants;
 
@@ -2302,7 +2358,7 @@ algorithm
         notconst_es1 = Util.listSelect(es1, isNotConst);
         es1_1 = listAppend(const_es1, notconst_es1);
         res = makeProductLst(es1_1);
-        res_1 = simplify(res);
+        res_1 = simplify1(res);
       then
         res_1;
     case (es1,{e1}) /* e1...en / 1.0 => e1...en */ 
@@ -2317,7 +2373,7 @@ algorithm
         notconst_es2 = Util.listSelect(es2, isNotConst);
         es2_1 = listAppend(const_es2, notconst_es2);
         q = makeProductLst(es2_1);
-        q_1 = simplify(q);
+        q_1 = simplify1(q);
       then
         BINARY(RCONST(1.0),DIV(REAL()),q_1);
     case (es1,es2)
@@ -2330,8 +2386,8 @@ algorithm
         es2_1 = listAppend(const_es2, notconst_es2);
         p = makeProductLst(es1_1);
         q = makeProductLst(es2_1);
-        p_1 = simplify(p);
-        q_1 = simplify(q);
+        p_1 = simplify1(p);
+        q_1 = simplify1(q);
       then
         BINARY(p_1,DIV(REAL()),q_1);
   end matchcontinue;
@@ -2360,7 +2416,7 @@ algorithm
       equation 
         (BINARY(_,POW(_),e2),es2_1) = findPowFactor(cr, es2);
         (es1_1,es2_2) = removeCommonFactors(es1, es2_1);
-        pow_e = simplify(BINARY(CREF(cr,tp),POW(REAL()),BINARY(e1,SUB(REAL()),e2)));
+        pow_e = simplify1(BINARY(CREF(cr,tp),POW(REAL()),BINARY(e1,SUB(REAL()),e2)));
       then
         ((pow_e :: es1_1),es2_2);
     case ((e :: es1),es2)
@@ -2544,10 +2600,10 @@ algorithm
         op2 = Util.if_(b,SUB(t2),SUB_ARR(t2));
       then
         BINARY(e1_1,op2,e2_1);
-    case (BINARY(exp1 = e1,operator = MUL_SCALAR_ARRAY(ty = t),exp2 = e2),indx)
+    case (exp as BINARY(exp1 = e1,operator = MUL_SCALAR_ARRAY(ty = t),exp2 = e2),indx)
       equation 
         e2_1 = simplifyAsub(e2, indx);
-        e1_1 = simplify(e1);
+        e1_1 = simplify1(e1);
         t2 = typeof(e2_1);
         b = typeBuiltin(t2);
         op = Util.if_(b,MUL(t2),MUL_SCALAR_ARRAY(t2));
@@ -2556,7 +2612,7 @@ algorithm
     case (BINARY(exp1 = e1,operator = MUL_ARRAY_SCALAR(ty = t),exp2 = e2),indx)
       equation 
         e1_1 = simplifyAsub(e1, indx);
-        e2_1 = simplify(e2);
+        e2_1 = simplify1(e2);
         t2 = typeof(e1_1);
         b = typeBuiltin(t2);
         op = Util.if_(b,MUL(t2),MUL_SCALAR_ARRAY(t2));
@@ -2565,7 +2621,7 @@ algorithm
     case (BINARY(exp1 = e1,operator = DIV_ARRAY_SCALAR(ty = t),exp2 = e2),indx)
       equation 
         e1_1 = simplifyAsub(e1, indx);
-        e2_1 = simplify(e2);
+        e2_1 = simplify1(e2);
         t2 = typeof(e1_1);
         b = typeBuiltin(t2);
         op = Util.if_(b,DIV(t2),DIV_ARRAY_SCALAR(t2));
@@ -2600,7 +2656,7 @@ algorithm
         ARRAY(t_1,b,expl_1);
     case ((e as CREF(componentRef = cr,ty = t)),indx)
       equation 
-        e_1 = simplify(ASUB(e,indx));
+        e_1 = simplify1(ASUB(e,indx));
       then
         e_1;
   end matchcontinue;
@@ -3002,14 +3058,27 @@ algorithm
       Type tp;
       list<Ident> explst;
       Ident str;
+      Boolean isZero,b1,b2;
     case ({}) then RCONST(1.0); 
-    case ({e1}) then e1; 
+    case ({e1}) 
+      equation
+        isZero = isZero(e1);
+        res = Util.if_(isZero,makeConstZero(typeof(e1)),e1);
+      then res; 
     case ((e :: es)) /* to prevent infinite recursion, disregard constant 1. */ 
       equation 
         true = isConstOne(e);
         res = makeProductLst(es);
+        isZero = isZero(res);
+        res = Util.if_(isZero,makeConstZero(typeof(e)),res);
       then
         res;
+     case ((e :: es)) /* to prevent infinite recursion, disregard constant 0. */ 
+      equation 
+        true = isZero(e);
+        res = makeConstZero(typeof(e));
+      then
+        res;    
     case ({BINARY(exp1 = e1,operator = DIV(ty = tp),exp2 = e),e2})
       equation 
         true = isConstOne(e1);
@@ -3017,23 +3086,36 @@ algorithm
         BINARY(e2,DIV(tp),e);
     case ({e1,e2})
       equation 
+        b1 = isZero(e1);
+        b2 = isZero(e2);
+        isZero = boolOr(b1,b2);
         tp = typeof(e1) "Take type info from e1, ok since type checking already performed." ;
         tp = checkIfOther(tp);
+        res = BINARY(e1,MUL(tp),e2);
+        res = Util.if_(isZero,makeConstZero(tp),res);
       then
-        BINARY(e1,MUL(tp),e2);
+        res;
     case ((BINARY(exp1 = e1,operator = DIV(ty = tp),exp2 = e) :: es))
       equation 
         true = isConstOne(e1);
         p1 = makeProductLst(es);
+        res = BINARY(p1,DIV(tp),e);
+        isZero = isZero(p1);
+        res = Util.if_(isZero,makeConstZero(typeof(e)),res);
       then
-        BINARY(p1,DIV(tp),e);
+			  res;
     case ((e1 :: rest))
       equation 
         e2 = makeProductLst(rest);
         tp = typeof(e1);
         tp = checkIfOther(tp);
+        res = BINARY(e1,MUL(tp),e2);
+        b1 = isZero(e1);
+        b2 = isZero(e2);
+        isZero = boolOr(b1,b2);
+        res = Util.if_(isZero,makeConstZero(typeof(e1)),res);
       then
-        BINARY(e1,MUL(tp),e2);
+				res;
     case (lst)
       equation 
         Debug.fprint("failtrace","-make_product failed, exp lst:");
@@ -3087,7 +3169,8 @@ algorithm
   outExp:=
   matchcontinue (inExpLst)
     local
-      Exp e1,e2;
+      Exp e1,e2,res;
+      Boolean b1;
       Type tp;
       list<Exp> rest,lst;
       list<Ident> explst;
@@ -3096,15 +3179,21 @@ algorithm
     case ({e1}) then e1; 
     case ({e1,e2})
       equation 
+        b1 = isZero(e1);
         tp = typeof(e1) "Take type info from e1, ok since type checking already performed." ;
+        res = BINARY(e1,ADD(tp),e2);
+				res = Util.if_(b1,e2,res);
       then
-        BINARY(e1,ADD(tp),e2);
+        res;
     case ((e1 :: rest))
       equation 
+        b1 = isZero(e1);
         e2 = makeSum(rest);
         tp = typeof(e2);
+        res = BINARY(e1,ADD(tp),e2);
+        res = Util.if_(b1,e2,res);
       then
-        BINARY(e1,ADD(tp),e2);
+        res;
     case (lst)
       equation 
         Debug.fprint("failtrace","-make_sum failed, exp lst:");
@@ -3618,8 +3707,8 @@ algorithm
       list<Exp> exp_lst,exp_lst_1;
     case (e,oper,e1,e2)
       equation 
-        e1_1 = simplify(e1);
-        e2_1 = simplify(e2);
+        e1_1 = simplify1(e1);
+        e2_1 = simplify1(e2);
         true = isConst(e1_1);
         true = isConst(e2_1);
         e3 = simplifyBinaryConst(oper, e1_1, e2_1);
@@ -3629,7 +3718,7 @@ algorithm
     case (_,DIV(ty = ty),BINARY(exp1 = e1,operator = ADD(ty = ty2),exp2 = e2),e3) /* (a+b)/c1 => a/c1+b/c1, for constant c1 */ 
       equation 
         true = isConst(e3);
-        res = simplify(
+        res = simplify1(
           BINARY(BINARY(e1,DIV(ty),e3),ADD(ty2),BINARY(e2,DIV(ty),e3)));
       then
         res;
@@ -3637,7 +3726,7 @@ algorithm
     case (_,DIV(ty = ty),BINARY(exp1 = e1,operator = SUB(ty = ty2),exp2 = e2),e3) /* (a-b)/c1 => a/c1-b/c1, for constant c1 */ 
       equation 
         true = isConst(e3);
-        res = simplify(
+        res = simplify1(
           BINARY(BINARY(e1,DIV(ty),e3),SUB(ty2),BINARY(e2,DIV(ty),e3)));
       then
         res;
@@ -3645,7 +3734,7 @@ algorithm
     case (_,MUL(ty = ty),BINARY(exp1 = e1,operator = ADD(ty = ty2),exp2 = e2),e3) /* (a+b)c1 => ac1+bc1, for constant c1 */ 
       equation 
         true = isConst(e3);
-        res = simplify(
+        res = simplify1(
           BINARY(BINARY(e1,MUL(ty),e3),ADD(ty2),BINARY(e2,MUL(ty),e3)));
       then
         res;
@@ -3653,47 +3742,46 @@ algorithm
     case (_,MUL(ty = ty),BINARY(exp1 = e1,operator = SUB(ty = ty2),exp2 = e2),e3) /* (a-b)c1 => a/c1-b/c1, for constant c1 */ 
       equation 
         true = isConst(e3);
-        res = simplify(
+        res = simplify1(
           BINARY(BINARY(e1,MUL(ty),e3),SUB(ty2),BINARY(e2,MUL(ty),e3)));
       then
         res;
 
     case (_,ADD(ty = tp),e1,UNARY(operator = UMINUS(ty = tp2),exp = e2)) /* a+(-b) */ 
       equation 
-        e = simplify(BINARY(e1,SUB(tp),e2));
+        e = simplify1(BINARY(e1,SUB(tp),e2));
       then
         e;
 
-    /* adrpo - here was a copy paste error!, the case was just like the one above ---> fixed */
     case (_,ADD(ty = tp),UNARY(operator = UMINUS(ty = tp2),exp = e2), e1) /* (-b)+a */ 
       equation 
-        e1 = simplify(BINARY(e1,SUB(tp),e2));
+        e1 = simplify1(BINARY(e1,SUB(tp),e2));
       then
         e1;
 
     case (_,DIV(ty = tp),e1,BINARY(exp1 = e2,operator = DIV(ty = tp2),exp2 = e3))
       equation 
-        e = simplify(BINARY(BINARY(e1,MUL(tp),e3),DIV(tp2),e2)) "a/b/c => (ac)/b)" ;
+        e = simplify1(BINARY(BINARY(e1,MUL(tp),e3),DIV(tp2),e2)) "a/b/c => (ac)/b)" ;
       then
         e;
 
     case (_,DIV(ty = tp),BINARY(exp1 = e1,operator = DIV(ty = tp2),exp2 = e2),e3)
       equation 
-        e = simplify(BINARY(e1,DIV(tp2),BINARY(e2,MUL(tp),e3))) "(a/b)/c => a/(bc))" ;
+        e = simplify1(BINARY(e1,DIV(tp2),BINARY(e2,MUL(tp),e3))) "(a/b)/c => a/(bc))" ;
       then
         e;
 
     case (_,ADD(ty = ty),e1,e2)
       equation 
         true = isZero(e1);
-        e2_1 = simplify(e2);
+        e2_1 = simplify1(e2);
       then
         e2_1;
 
     case (_,ADD(ty = ty),e1,e2)
       equation 
         true = isZero(e2);
-        e1_1 = simplify(e1);
+        e1_1 = simplify1(e1);
       then
         e1_1;
 
@@ -3701,39 +3789,39 @@ algorithm
       equation 
         true = isZero(e1);
         e = UNARY(UMINUS(ty),e2);
-        e_1 = simplify(e);
+        e_1 = simplify1(e);
       then
         e_1;
 
     case (_,SUB(ty = ty),e1,e2)
       equation 
         true = isZero(e2);
-        e1_1 = simplify(e1);
+        e1_1 = simplify1(e1);
       then
         e1_1;
 
     case (_,SUB(ty = ty),e1,e2)
       equation 
         true = isZero(e2);
-        e1_1 = simplify(e1);
+        e1_1 = simplify1(e1);
       then
         e1_1;
 
     case (_,SUB(ty = ty),e1,UNARY(operator = UMINUS(ty = ty2),exp = e2))
       equation 
-        e = simplify(BINARY(e1,ADD(ty),e2)) "a-(-b) = a+b" ;
+        e = simplify1(BINARY(e1,ADD(ty),e2)) "a-(-b) = a+b" ;
       then
         e;
 
     case (_,MUL(ty = tp),BINARY(exp1 = e1,operator = DIV(ty = tp2),exp2 = e2),e3) /* (e1/e2)e3 => (e1e3)/e2 */ 
       equation 
-        res = simplify(BINARY(BINARY(e1,MUL(tp),e3),DIV(tp2),e2));
+        res = simplify1(BINARY(BINARY(e1,MUL(tp),e3),DIV(tp2),e2));
       then
         res;
 
     case (_,MUL(ty = tp),e1,BINARY(exp1 = e2,operator = DIV(ty = tp2),exp2 = e3)) /* e1(e2/e3) => (e1e2)/e3 */ 
       equation 
-        res = simplify(BINARY(BINARY(e1,MUL(tp),e2),DIV(tp2),e3));
+        res = simplify1(BINARY(BINARY(e1,MUL(tp),e2),DIV(tp2),e3));
       then
         res;
 
@@ -3752,41 +3840,41 @@ algorithm
     case (_,MUL(ty = ty),e1,e2)
       equation 
         true = isConstOne(e1);
-        e2_1 = simplify(e2);
+        e2_1 = simplify1(e2);
       then
         e2_1;
 
     case (_,MUL(ty = ty),e1,e2)
       equation 
         true = isConstOne(e2);
-        e1_1 = simplify(e1);
+        e1_1 = simplify1(e1);
       then
         e1_1;
 
     case (_,MUL(ty = ty),e1,e2)
       equation 
         true = isConstMinusOne(e1);
-        e = simplify(UNARY(UMINUS(ty),e2));
+        e = simplify1(UNARY(UMINUS(ty),e2));
       then
         e;
 
     case (_,MUL(ty = ty),e1,e2)
       equation 
         true = isConstMinusOne(e2);
-        e1_1 = simplify(e1);
+        e1_1 = simplify1(e1);
       then
         UNARY(UMINUS(ty),e1_1);
 
     case (_,MUL(ty = ty),UNARY(operator = UMINUS(ty = ty1),exp = e1),UNARY(operator = UMINUS(ty = ty2),exp = e2))
       equation 
-        e = simplify(BINARY(e1,MUL(ty),e2));
+        e = simplify1(BINARY(e1,MUL(ty),e2));
       then
         e;
 
     case (_,MUL(ty = ty),e1,UNARY(operator = UMINUS(ty = ty2),exp = e2))
       equation 
-        e1_1 = simplify(UNARY(UMINUS(ty),e1)) "e1  -e2 => -e1  e2" ;
-        e2_1 = simplify(e2);
+        e1_1 = simplify1(UNARY(UMINUS(ty),e1)) "e1  -e2 => -e1  e2" ;
+        e2_1 = simplify1(e2);
       then
         BINARY(e1_1,MUL(ty),e2_1);
 
@@ -3808,28 +3896,28 @@ algorithm
     case (_,DIV(ty = ty),e1,e2)
       equation 
         true = isConstOne(e2);
-        e1_1 = simplify(e1);
+        e1_1 = simplify1(e1);
       then
         e1_1;
 
     case (_,DIV(ty = ty),e1,e2)
       equation 
         true = isConstMinusOne(e2);
-        e1_1 = simplify(e1);
+        e1_1 = simplify1(e1);
       then
         UNARY(UMINUS(ty),e1_1);
 
     case (_,DIV(ty = ty),UNARY(operator = UMINUS(ty = ty1),exp = e1),UNARY(operator = UMINUS(ty = ty2),exp = e2))
       equation 
-        e1_1 = simplify(e1);
-        e2_1 = simplify(e2);
+        e1_1 = simplify1(e1);
+        e2_1 = simplify1(e2);
       then
         BINARY(e1_1,DIV(ty),e2_1);
 
     case (_,DIV(ty = ty),e1,UNARY(operator = UMINUS(ty = ty2),exp = e2))
       equation 
-        e1_1 = simplify(UNARY(UMINUS(ty),e1)) "e1 / -e2  => -e1 / e2" ;
-        e2_1 = simplify(e2);
+        e1_1 = simplify1(UNARY(UMINUS(ty),e1)) "e1 / -e2  => -e1 / e2" ;
+        e2_1 = simplify1(e2);
       then
         BINARY(e1_1,DIV(ty),e2_1);
 
@@ -3837,7 +3925,7 @@ algorithm
       equation 
         true = isConst(e3) "(c1x)/c2" ;
         true = isConst(e1);
-        e = simplify(BINARY(BINARY(e1,DIV(tp2),e3),MUL(tp),e2));
+        e = simplify1(BINARY(BINARY(e1,DIV(tp2),e3),MUL(tp),e2));
       then
         e;
 
@@ -3845,22 +3933,22 @@ algorithm
       equation 
         true = isConst(e3) "(xc1)/c2" ;
         true = isConst(e2);
-        e = simplify(BINARY(BINARY(e2,DIV(tp2),e3),MUL(tp),e1));
+        e = simplify1(BINARY(BINARY(e2,DIV(tp2),e3),MUL(tp),e1));
       then
         e;
 
     case (_,POW(ty = _),e1,e)
       equation 
-        e_1 = simplify(e) "e1^e2, where e2 is one" ;
-        e1_1 = simplify(e1);
+        e_1 = simplify1(e) "e1^e2, where e2 is one" ;
+        e1_1 = simplify1(e1);
         true = isConstOne(e_1);
       then
         e1_1;
 
     case (_,POW(ty = tp),e2,e)
       equation 
-        e2_1 = simplify(e2) "e1^e2, where e2 is minus one" ;
-        e_1 = simplify(e);
+        e2_1 = simplify1(e2) "e1^e2, where e2 is minus one" ;
+        e_1 = simplify1(e);
         true = isConstMinusOne(e_1);
         one = makeConstOne(tp);
       then
@@ -3868,21 +3956,19 @@ algorithm
 
     case (_,POW(ty = _),e1,e)
       equation 
-        e_1 = simplify(e) "e1^e2, where e2 is zero" ;
+        e_1 = simplify1(e) "e1^e2, where e2 is zero" ;
         tp = typeof(e1);
         true = isZero(e_1);
         res = createConstOne(tp);
       then
         res;
 
-    /* 2006-05-15 -> adrpo added */
     case (_,POW(ty = _),e1,e)
       equation 
-        e_1 = simplify(e1) "e1^e2, where e1 is one" ;
+        e_1 = simplify1(e1) "e1^e2, where e1 is one" ;
         true = isConstOne(e_1);
       then
         e_1;
-    /* 2006-05-15 -> end adrpo added */        
 
     case (_,POW(ty = _),e1,e2) /* (a1a2...an)^e2 => a1^e2a2^e2..an^e2 */ 
       equation 
@@ -3969,40 +4055,40 @@ algorithm
         RCONST(r_1);
     case (_,UMINUS(ty = ty),BINARY(exp1 = e1,operator = MUL(ty = ty1),exp2 = e2))
       equation 
-         e_1 = simplify(BINARY(UNARY(UMINUS(ty),e1),MUL(ty1),e2)) "-(a*b) => (-a)*b" ;
+         e_1 = simplify1(BINARY(UNARY(UMINUS(ty),e1),MUL(ty1),e2)) "-(a*b) => (-a)*b" ;
       then
         e_1;
 
     case (_,UMINUS(ty = ty),e1)
       equation 
-        e1_1 = simplify(e1);
+        e1_1 = simplify1(e1);
         true = isZero(e1_1);
       then
         e1_1;
     case (_,UMINUS(ty = ty),BINARY(exp1 = e1,operator = SUB(ty = ty1),exp2 = e2))
       equation 
-        e_1 = simplify(BINARY(e2,SUB(ty1),e1)) "-(a-b) => b-a" ;
+        e_1 = simplify1(BINARY(e2,SUB(ty1),e1)) "-(a-b) => b-a" ;
       then
         e_1;
 
     case (_,UMINUS(ty = ty),BINARY(exp1 = e1,operator = ADD(ty = ty1),exp2 = e2))
       equation 
-        e_1 = simplify(BINARY(UNARY(UMINUS(ty),e1),ADD(ty1),UNARY(UMINUS(ty),e2))) "-(a+b) => -b-a" ;
+        e_1 = simplify1(BINARY(UNARY(UMINUS(ty),e1),ADD(ty1),UNARY(UMINUS(ty),e2))) "-(a+b) => -b-a" ;
       then
         e_1;
     case (_,UMINUS(ty = ty),BINARY(exp1 = e1,operator = DIV(ty = ty1),exp2 = e2))
       equation 
-        e_1 = simplify(BINARY(UNARY(UMINUS(ty),e1),DIV(ty1),e2)) "-(a/b) => -a/b" ;
+        e_1 = simplify1(BINARY(UNARY(UMINUS(ty),e1),DIV(ty1),e2)) "-(a/b) => -a/b" ;
       then
         e_1;
     case (_,UMINUS(ty = ty),BINARY(exp1 = e1,operator = MUL(ty = ty1),exp2 = e2))
       equation 
-        e_1 = simplify(BINARY(UNARY(UMINUS(ty),e1),MUL(ty1),e2)) "-(ab) => -ab" ;
+        e_1 = simplify1(BINARY(UNARY(UMINUS(ty),e1),MUL(ty1),e2)) "-(ab) => -ab" ;
       then
         e_1;
     case (_,UMINUS(ty = _),UNARY(operator = UMINUS(ty = _),exp = e1)) /* --a => a */ 
       equation 
-        e1_1 = simplify(e1);
+        e1_1 = simplify1(e1);
       then
         e1_1;
     case (e,_,_) then e; 
@@ -4458,7 +4544,7 @@ algorithm
     case ({WHOLEDIM()},i) then {INDEX(ICONST(i))}; 
     case ({SLICE(exp = e)},i)
       equation 
-        e_1 = simplify(ASUB(e,i));
+        e_1 = simplify1(ASUB(e,i));
       then
         {INDEX(e_1)};
     case ({(s as INDEX(exp = _))},i) then {s,INDEX(ICONST(i))}; 
@@ -5274,7 +5360,8 @@ algorithm
       Ident s,str,strrest,str_1,str_2;
       list<Subscript> subs;
       ComponentRef cr;
-    case (CREF_IDENT(ident = s,subscriptLst = {})) then s;  /* optimize */ 
+    case (CREF_IDENT(ident = s,subscriptLst = {})) 
+      then s;  /* optimize */ 
     case CREF_IDENT(ident = s,subscriptLst = subs)
       equation 
         str = printComponentRef2Str(s, subs);
@@ -6911,7 +6998,7 @@ algorithm
     case (lhs,rhs,(cr as CREF(componentRef = _)))
       equation 
         res = solve2(lhs, rhs, cr);
-        res_1 = simplify(res);
+        res_1 = simplify1(res);
       then
         res_1;
     case (e1,e2,e3)

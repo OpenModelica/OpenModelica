@@ -3426,6 +3426,14 @@ algorithm
         rest_1 = removeCrefFromCrefs(rest, cr2);
       then
         rest_1;
+      case ((cr1 :: rest),cr2) // If modifier like on comp like: T t(x=t.y) => t.y must be removed
+      equation 
+        Absyn.CREF_QUAL(name = n1) = cr1;
+        Absyn.CREF_IDENT(name = n2) = cr2;
+        equality(n1 = n2);
+        rest_1 = removeCrefFromCrefs(rest, cr2);
+      then
+        rest_1;
     case ((cr1 :: rest),cr2)
       equation 
         rest_1 = removeCrefFromCrefs(rest, cr2);

@@ -864,8 +864,7 @@ algorithm
         bind_str = Types.printBindingStr(bind);
         res = Util.stringAppendList(
           {"v:",n," ",s,"(",elt_str,") [",tp_str,"] {",var_str,
-          "}, binding:",bind_str}) ",\", compframe:\",
-				 frame_str" ;
+          "}, binding:",bind_str});
       then
         res;
     case ((n,VAR(instantiated = (tv as Types.VAR(attributes = Types.ATTR(parameter_ = var),type_ = tp)),declaration = SOME((elt,_)),instStatus = i,env = {})))

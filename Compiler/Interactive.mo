@@ -14999,7 +14999,7 @@ algorithm
     case(Absyn.ELEMENT(f,r,io,name,spec,info,constr)) equation
       spec1=transformFlatElementSpec(spec);
       //TODO: constr clause might need transformation too.
-      then (Absyn.ELEMENT(f,r,io,name,spec,info,constr));
+      then (Absyn.ELEMENT(f,r,io,name,spec1,info,constr));
     case (elt as Absyn.TEXT(optName=_)) then elt;
   end matchcontinue;
 end transformFlatElement;
@@ -15229,7 +15229,7 @@ algorithm
   local list<Absyn.Exp> expl,expl1;
     list<Absyn.NamedArg> namedArgs,namedArgs1;
     case( Absyn.FUNCTIONARGS(expl,namedArgs)) equation
-       (expl1,_) = Util.listFoldMap(expl, transformFlatExp, 0);
+       (expl1,_) = Util.listFoldMap(expl, transformFlatExpTrav, 0);
        namedArgs1 = Util.listMap(namedArgs,transformFlatNamedArg);
       then Absyn.FUNCTIONARGS(expl1,namedArgs1);
     case(fargs as Absyn.FOR_ITER_FARG(from = _)) then fargs;
@@ -15248,13 +15248,27 @@ algorithm
   end matchcontinue;
 end transformFlatNamedArg;
 
+protected function transformFlatExpTrav "Transforms a flat expression by calling traverseExp"
+	input tuple<Absyn.Exp,Integer> inExp;
+	output tuple<Absyn.Exp,Integer> outExp;
+algorithm
+  outExp := matchcontinue(inExp)
+  local Absyn.ComponentRef cr,cr1;
+    Absyn.Exp e,e1;
+    Integer i;
+    case( (e,i)) equation
+      ((e1,i)) = traverseExp(e,transformFlatExp,0);
+      then ((e1,i));
+  end matchcontinue;
+end transformFlatExpTrav;
+
 protected function transformFlatExp
 	input tuple<Absyn.Exp,Integer> inExp;
 	output tuple<Absyn.Exp,Integer> outExp;
 algorithm
   outExp := matchcontinue(inExp)
   local Absyn.ComponentRef cr,cr1;
-    Absyn.Exp e;
+    Absyn.Exp e,e1;
     Integer i;
     case( (Absyn.CREF(cr),i)) equation
       cr1 = transformFlatComponentRef(cr);

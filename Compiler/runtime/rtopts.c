@@ -56,6 +56,7 @@ static int version_request;
  * 0 - None
  * 1 - Only aliases (a=b)
  * 2 - Full (default) (a=-b, a=b, a=constant)
+ * 3 - Only constants (a = constant)
  * */
 static int elimination_level=2; 
 
@@ -259,11 +260,11 @@ RML_BEGIN_LABEL(RTOpts__args)
 	// Which level of algebraic elimination to use.
 	  case 'e':
 	if (arg[2] != '=') {
-	  fprintf(stderr, "# Flag Usage:  +e=<algebraic_elimination_level 0, 1 or 2>") ;
+	  fprintf(stderr, "# Flag Usage:  +e=<algebraic_elimination_level 0, 1, 2(default) or 3>") ;
 	  RML_TAILCALLK(rmlFC);
 	}
 	elimination_level = (int)atoi(&arg[3]);
-	if (elimination_level < 0 || elimination_level > 2) {
+	if (elimination_level < 0 || elimination_level > 3) {
 		elimination_level = 2;
 	  fprintf(stderr, "Warning, wrong value of elimination level, will use default = %d\n",elimination_level) ;
 	} 
