@@ -1,2 +1,2 @@
 #!/bin/sh
-make -f $1.makefile > /dev/null
+make -f $1.makefile > $1.log 2>&1
