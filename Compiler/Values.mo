@@ -143,6 +143,23 @@ algorithm
   end matchcontinue;
 end typeConvert;
 
+public function isZero "Returns true if value is zero"
+  input Value inValue;
+  output Boolean isZero;
+algorithm
+  isZero := matchcontinue(inValue)
+  local Real rval; Integer ival;
+    case(REAL(rval)) equation
+      isZero = rval ==. 0.0;
+      then isZero;
+    case(INTEGER(ival)) equation
+      isZero = ival == 0;
+      then isZero;
+    case(_) then false;
+  end matchcontinue;
+end isZero;
+
+
 public function isArray "function: isArray
  
   Return true if Value is an array.

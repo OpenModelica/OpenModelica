@@ -104,7 +104,10 @@ uniontype Mod "- Modifications"
     Boolean final_ "final" ;
     Absyn.Each each_;
     list<SubMod> subModLst;
-    Option<Absyn.Exp> absynExpOption;
+    Option<tuple<Absyn.Exp,Boolean>> absynExpOption "The binding expression of a modification
+    has an expression and a Boolean delayElaboration which is true if elaboration(type checking) 
+    should be delayed. This can for instance be used when having A a(x = a.y) where a.y can not be 
+    type checked -before- a is instantiated, which is the current design in instantiation process."; 
   end MOD;
 
   record REDECL
@@ -1192,18 +1195,24 @@ algorithm
   outMod:=
   matchcontinue (inAbsynModificationOption,inBoolean,inEach)
     local
-      Option<Absyn.Exp> e;
+      Absyn.Exp e;
       Boolean final_;
       Absyn.Each each_;
       list<SubMod> subs;
       list<Absyn.ElementArg> l;
     case (NONE,_,_) then NOMOD();  /* final */ 
-    case (SOME(Absyn.CLASSMOD({},(e as SOME(_)))),final_,each_) then MOD(final_,each_,{},e); 
-    case (SOME(Absyn.CLASSMOD(l,e)),final_,each_)
+    case (SOME(Absyn.CLASSMOD({},(SOME(e)))),final_,each_) then MOD(final_,each_,{},SOME((e,false))); 
+    case (SOME(Absyn.CLASSMOD({},(NONE))),final_,each_) then MOD(final_,each_,{},NONE); 
+    case (SOME(Absyn.CLASSMOD(l,SOME(e))),final_,each_)
       equation 
         subs = buildArgs(l);
       then
-        MOD(final_,each_,subs,e);
+        MOD(final_,each_,subs,SOME((e,false)));
+    case (SOME(Absyn.CLASSMOD(l,NONE)),final_,each_)
+      equation 
+        subs = buildArgs(l);
+      then
+        MOD(final_,each_,subs,NONE);        
   end matchcontinue;
 end buildMod;
 
@@ -1221,7 +1230,7 @@ algorithm
       Boolean f;
       Absyn.Each each_;
       list<SubMod> subs;
-      Option<Absyn.Exp> e;
+      Option<tuple<Absyn.Exp,Boolean>> e;
       Mod m;
     case (MOD(final_ = f,each_ = each_,subModLst = subs,absynExpOption = e)) then MOD(f,each_,{},e); 
     case (m) then m; 
@@ -1439,7 +1448,7 @@ algorithm
       list<Element> elist;
       Absyn.Each each_;
       list<SubMod> subs;
-      Option<Absyn.Exp> ass;
+      Option<tuple<Absyn.Exp,Boolean>> ass;
     case (NOMOD()) then ""; 
     case REDECL(final_ = b,elementLst = elist)
       equation 
@@ -1595,7 +1604,7 @@ protected function printEqmodStr "function: printEqmodStr
  
   Helper function to print_mod_str.
 "
-  input Option<Absyn.Exp> inAbsynExpOption;
+  input Option<tuple<Absyn.Exp,Boolean>> inAbsynExpOption;
   output String outString;
 algorithm 
   outString:=
@@ -1603,8 +1612,9 @@ algorithm
     local
       String str,res;
       Absyn.Exp e;
+      Boolean b;
     case NONE then ""; 
-    case SOME(e)
+    case SOME((e,b))
       equation 
         str = Dump.printExpStr(e);
         res = stringAppend(" = ", str);
@@ -2349,7 +2359,7 @@ protected function algorithmEqual2 "Returns true if two Absyn.Algorithm's are eq
  algorithm
    equal := matchcontinue(mod1,mod2)
    local 
-     case (MOD(f1,each1,submodlst1,SOME(e1)),MOD(f2,each2,submodlst2,SOME(e2)))  
+     case (MOD(f1,each1,submodlst1,SOME((e1,_))),MOD(f2,each2,submodlst2,SOME((e2,_))))  
        local Boolean f1,f2,b1,b2,b3,b4; Absyn.Each each1,each2;
          list<SubMod> submodlst1,submodlst2;
          Absyn.Exp e1,e2;

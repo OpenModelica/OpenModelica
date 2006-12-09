@@ -601,13 +601,15 @@ algorithm
       local
         Real lhv,rhv;
         Option<Integer> dim;
+        Values.Value res1;
       equation 
+         (cache,res1,st_1) = ceval(cache,env, rh, impl, st, dim, msg);
+         true = Values.isZero(res1);
         lh_str = Exp.printExpStr(lh);
         rh_str = Exp.printExpStr(rh);
         Error.addMessage(Error.DIVISION_BY_ZERO, {lh_str,rh_str});
       then
         fail();
-
 
 		//ADD (integer or real)
     case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.ADD(ty=_),exp2 = rh),impl,st,dim,msg)
@@ -633,27 +635,8 @@ algorithm
       then
         (cache,res3,st_2);
 
-
-/*
-    case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.DIV(ty = Exp.REAL()),exp2 = rh),impl,st,dim,msg)
-      local
-        Real lhv,rhv;
-        Option<Integer> dim;
-      equation 
-        (cache,Values.REAL(lhv),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
-        (cache,Values.REAL(rhv),st_2) = ceval(cache,env, rh, impl, st_1, dim, msg);
-        failure(_ = realDiv(lhv, rhv));
-        lh_str = Exp.printExpStr(lh);
-        rh_str = Exp.printExpStr(rh);
-        Error.addMessage(Error.DIVISION_BY_ZERO, {lh_str,rh_str});
-      then
-        fail();
-*/
- 
- 
- 
- 
-    case (cache,env,Exp.UNARY(operator = Exp.UMINUS_ARR(ty = _),exp = exp),impl,st,dim,msg) /*  unary minus of array */ 
+        /*  unary minus of array */  
+    case (cache,env,Exp.UNARY(operator = Exp.UMINUS_ARR(ty = _),exp = exp),impl,st,dim,msg) 
       local
         Exp.Exp exp;
         Option<Integer> dim;
@@ -682,7 +665,8 @@ algorithm
       then
         (cache,v,st_1);
 
-    case (cache,env,Exp.LBINARY(exp1 = lh,operator = Exp.AND(),exp2 = rh),impl,st,dim,msg) /* Logical */ 
+        /* Logical */ 
+    case (cache,env,Exp.LBINARY(exp1 = lh,operator = Exp.AND(),exp2 = rh),impl,st,dim,msg) 
       local
         Boolean lhv,rhv,x;
         Option<Integer> dim;
@@ -712,7 +696,8 @@ algorithm
       then
         (cache,Values.BOOL(b_1),st_1);
 
-    case (cache,env,Exp.RELATION(exp1 = lhs,operator = relop,exp2 = rhs),impl,st,dim,msg) /* Relations */ 
+        /* Relations */ 
+    case (cache,env,Exp.RELATION(exp1 = lhs,operator = relop,exp2 = rhs),impl,st,dim,msg) 
       local Option<Integer> dim;
       equation 
         (cache,lhs_1,st_1) = ceval(cache,env, lhs, impl, st, dim, msg);
@@ -852,7 +837,8 @@ algorithm
       then
         fail();
 
-    case (cache,env,e,_,_,_,MSG()) /* ceval can apparently fa-il and that is ok, catched by other rules... */ 
+        /* ceval can fail and that is ok, catched by other rules... */ 
+    case (cache,env,e,_,_,_,MSG()) 
       equation 
         Debug.fprint("failtrace", "- ceval failed: ");
         str = Exp.printExpStr(e);
@@ -2027,14 +2013,13 @@ algorithm
         lstVarVal = iv,
         compiledFunctions = cf)),msg)
       equation 
-        (cache,executable,method_str,st,_) = buildModel(cache,env, exp, st_1, msg) "FIXME: Should ceval be called with impl=true here? Build and simulate model" ;
+        (cache,executable,method_str,st,_) = buildModel(cache,env, exp, st_1, msg) "Build and simulate model" ;
         cit = winCitation();
         pd = System.pathDelimiter();
         executableSuffixedExe = stringAppend(executable, ".exe");
         sim_call = Util.stringAppendList(
-          {cit,executableSuffixedExe,cit," -m ",method_str,
-          " > output.log 2>&1"});
-          //print(sim_call);
+          {cit,executableSuffixedExe,cit," > output.log 2>&1"});
+        //print(sim_call);
         0 = System.systemCall(sim_call);
         result_file = Util.stringAppendList({executable,"_res.plt"});
         simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),

@@ -1626,7 +1626,7 @@ algorithm
           {
           SCode.NAMEMOD(id,
           SCode.MOD(false,Absyn.NON_EACH(),{},
-          SOME(Absyn.CREF(Absyn.CREF_IDENT(id,{})))))},NONE)) :: restmod);
+          SOME((Absyn.CREF(Absyn.CREF_IDENT(id,{})),false))))},NONE)) :: restmod);
     case ({}) then {}; 
   end matchcontinue;
 end buildRecordConstructorResultMod;

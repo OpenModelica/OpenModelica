@@ -213,7 +213,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
 					      // alg vars too.
   functionDAE_output();
 
-  tout += step;
+  tout = newTime(tout,step,stop);
   while(globalData->timeValue<stop && idid>0) {
     // TODO: check here if time event has been reached.
 
@@ -228,7 +228,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
       saveall();
     // Make a tiny step so we are sure that crossings have really occured.
       info[0]=1;
-      tout=globalData->timeValue+1.0e-6;
+      tout=globalData->timeValue+calcTinyStep(start,stop);
       {
 	long *tmp_jroot = new long[globalData->nZeroCrossing];
 	int i;
@@ -260,7 +260,8 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
 
       // Restart simulation
       info[0] = 0;
-      if (tout-globalData->timeValue < atol) tout = newTime(globalData->timeValue,step);
+      if (tout-globalData->timeValue < atol) tout = newTime(globalData->timeValue,step,stop);
+      if (tout == stop) goto exit; // If already at end of simulation disregard event.
       calcEnabledZeroCrossings();
       DDASRT(functionDAE_res, 
              &globalData->nStates,   &globalData->timeValue, 
@@ -287,7 +288,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
     }
     
     saveall();
-    tout = newTime(globalData->timeValue,step); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
+    tout = newTime(globalData->timeValue,step,stop); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
         
     calcEnabledZeroCrossings();
     DDASRT(functionDAE_res, 

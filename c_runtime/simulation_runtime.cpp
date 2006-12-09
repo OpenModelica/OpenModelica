@@ -83,10 +83,17 @@ extern const int ERROR_LINSYS=-2;
  * Returns the next simulation time when an output data is requested.
  * \param t is the current time
  * \param step defines the step size between two consecutive result data.
+ * \param stop defines the stop time of the simulation, should not be exceeded.
 */
-double newTime(double t, double step)
-{
-  return (floor( (t+1e-10) / step) + 1.0)*step;
+double newTime(double t, double step,double stop)
+{ 
+	double newTime=(floor( (t+1e-10) / step) + 1.0)*step;
+	
+	// Do not exceed the stop time.
+	if (newTime > stop) {
+		newTime = stop;
+	}
+	return newTime; 
 }
 
 

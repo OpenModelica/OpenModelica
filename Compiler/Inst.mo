@@ -158,6 +158,7 @@ protected import Print;
 protected import Ceval;
 protected import Error;
 protected import ErrorExt;
+protected import System;
 
 protected constant String forScopeName="$for loop scope$";
 
@@ -3185,6 +3186,7 @@ algorithm
 	  might have changed.. comp used in redeclare_type below..." ;
         classmod_1 = Mod.lookupModificationP(mods_1, t);
         mm_1 = Mod.lookupCompModification(mods_1, n);
+        (cache,m) = removeSelfModReference(cache,n,m); // Remove self-reference i.e. A a(x=a.y);
         (cache,m_1) = Mod.elabMod(cache,env2, pre, m, impl);
         mod = Mod.merge(classmod_1, mm_1, env2, pre);
         mod1 = Mod.merge(mod, m_1, env2, pre);
@@ -3233,6 +3235,90 @@ algorithm
         fail();
   end matchcontinue;
 end instElement;
+
+protected function removeSelfModReference "Help function to elabMod, removes self-references in modifiers.
+For instance, A a(x = a.y)
+the modifier references the component itself. This is removed to avoid a circular dependency, resulting in
+A a(x=y);
+"
+	input Env.Cache inCache;
+	input Ident preId;
+	input SCode.Mod inMod;
+	output Env.Cache outCache;
+  output SCode.Mod outMod;
+algorithm
+  outExp := matchcontinue(inCache,preId,inMod)
+    local Absyn.Exp e,e1; String id;
+      Absyn.Each ea;
+      Boolean fi;
+      list<SCode.SubMod> subs;
+      Env.Cache cache;
+      Integer cnt;
+      Boolean delayTpCheck;
+    case(cache,id,SCode.MOD(fi,ea,subs,SOME((e,_)))) equation
+        ((e1,(_,cnt))) = Interactive.traverseExp(e,removeSelfModReferenceExp,(id,0));
+        (cache,subs) = removeSelfModReferenceSubs(cache,id,subs);
+        delayTpCheck = cnt > 0 ;
+    then (cache,SCode.MOD(fi,ea,subs,SOME((e1,delayTpCheck)))); // true to delay type checking/elabExp
+      
+    case(cache,id,SCode.MOD(fi,ea,subs,NONE)) equation
+      (cache,subs) = removeSelfModReferenceSubs(cache,id,subs);
+    then (cache,SCode.MOD(fi,ea,subs,NONE));
+    case(cache,id,inMod) then (cache,inMod);
+  end matchcontinue;
+end removeSelfModReference;
+
+protected function removeSelfModReferenceSubs "Help function to removeSelfModeReference" 
+	input Env.Cache inCache;
+	input String id;
+  input list<SCode.SubMod> inSubs;
+  output Env.Cache outCache;
+  output list<SCode.SubMod> outSubs;
+algorithm
+ (outCache,outSubs) := 
+ matchcontinue(inCache,id,inSubs)
+     local Env.Cache cache;
+       list<SCode.Subscript> idxs;
+       list<SCode.SubMod> subs;
+       SCode.Mod mod;
+       Env.Cache cache;
+       String ident;
+   case (cache,id,{}) then (cache,{});
+     
+   case(cache, id,SCode.NAMEMOD(ident,mod)::subs) equation
+     (cache,mod) = removeSelfModReference(cache,id,mod);
+     (cache,subs) = removeSelfModReferenceSubs(cache,id,subs);
+   then (cache,SCode.NAMEMOD(ident,mod)::subs);
+     
+   case(cache,id,SCode.IDXMOD(idxs,mod)::subs) equation
+      (cache,mod) = removeSelfModReference(cache,id,mod);
+     (cache,subs) = removeSelfModReferenceSubs(cache,id,subs);
+     then (cache,SCode.IDXMOD(idxs,mod)::subs);     
+  end matchcontinue;
+end removeSelfModReferenceSubs;
+
+protected function removeSelfModReferenceExp "Help function to removeSelfModReference."
+	input tuple<Absyn.Exp,tuple<String,Integer>> inExp;
+	output tuple<Absyn.Exp,tuple<String,Integer>> outExp;
+algorithm
+  outExp := matchcontinue(inExp)
+  local Absyn.ComponentRef cr,cr1;
+    Absyn.Exp e,e1;
+    String id,id2;
+    Absyn.ComponentRef cr1;
+    Integer cnt;
+    case( (Absyn.CREF(cr),(id,cnt))) equation
+      Absyn.CREF_IDENT(id2,_) = Absyn.crefGetFirst(cr);
+      // prefix == first part of cref
+      0 = System.strcmp(id2,id); 
+      cr1 = Absyn.crefStripFirst(cr);      
+    then ((Absyn.CREF(cr1),(id,cnt+1)));
+
+		// other expressions falltrough
+    case((e,(id,cnt))) then ((e,(id,cnt)));
+  end matchcontinue;
+end removeSelfModReferenceExp;  
+
 
 protected function checkRecursiveDefinition "Checks that a class does not have a recursive definition, 
 i.e. an instance of itself. This is not allowed in Modelica."
@@ -3961,7 +4047,7 @@ algorithm
       then
         res;
     case (SCode.REDECL(final_ = b,elementLst = {})) then {}; 
-    case ((mod as SCode.MOD(subModLst = submods,absynExpOption = SOME(e)))) /* Find in sub modifications e.g A(B=3) find B */ 
+    case ((mod as SCode.MOD(subModLst = submods,absynExpOption = SOME((e,_))))) /* Find in sub modifications e.g A(B=3) find B */ 
       equation 
         l1 = getCrefFromSubmods(submods);
         l2 = Absyn.getCrefFromExp(e);
@@ -8739,9 +8825,9 @@ algorithm
         Debug.fprint("failtrace", "- inst_mod_equation failed\n type: ");
         Debug.fcall("failtrace", Types.printType, t);
         Debug.fprint("failtrace", "\n  cref: ");
-        Debug.fcall("failtrace", Exp.printComponentRef, c);
+        Debug.fprint("failtrace", Exp.printComponentRefStr(c));
         Debug.fprint("failtrace", "\n mod:");
-        Debug.fcall("failtrace", Mod.printMod, m);
+        Debug.fprint("failtrace", Mod.printModStr(m));
         Debug.fprint("failtrace", "\n");
       then
         fail();

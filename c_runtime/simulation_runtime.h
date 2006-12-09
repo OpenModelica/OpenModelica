@@ -236,7 +236,7 @@ int bound_parameters();
 // and fixed start attibutes
 int initial_residual();
 
-double newTime(double t, double step);
+double newTime(double t, double step,double stop);
 
 #define MODELICA_ASSERT(cond,msg) do { if (!(cond)) { printf(msg); \
 userTermination=1;} } while(0)

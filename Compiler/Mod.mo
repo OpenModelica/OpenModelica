@@ -76,6 +76,7 @@ protected import Util;
 protected import Ceval;
 protected import Error;
 protected import Print;
+protected import Interactive;
 
 public function elabMod "function: elabMod
  
@@ -105,7 +106,7 @@ algorithm
       Exp.Exp e_1,e_2;
       Types.Properties prop;
       Option<Values.Value> e_val;
-      Absyn.Exp e;
+      Absyn.Exp e,e1;
       list<tuple<SCode.Element, Types.Mod>> elist_1;
       list<SCode.Element> elist;
       Ident str;
@@ -116,7 +117,9 @@ algorithm
         (cache,subs_1) = elabSubmods(cache,env, pre, subs, impl);
       then
         (cache,Types.MOD(final_,each_,subs_1,NONE));
-    case (cache,env,pre,(m as SCode.MOD(final_ = final_,each_ = each_,subModLst = subs,absynExpOption = SOME(e))),impl)
+        
+        // Only elaborate expressions with non-delayed type checking, see SCode.MOD.
+    case (cache,env,pre,(m as SCode.MOD(final_ = final_,each_ = each_,subModLst = subs,absynExpOption = SOME((e,false)))),impl)
       equation 
         (cache,subs_1) = elabSubmods(cache,env, pre, subs, impl);
         (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
@@ -126,6 +129,14 @@ algorithm
 	 from outer modifications.." ;
       then
         (cache,Types.MOD(final_,each_,subs_1,SOME(Types.TYPED(e_2,e_val,prop))));
+     
+     // Delayed type checking
+     case (cache,env,pre,(m as SCode.MOD(final_ = final_,each_ = each_,subModLst = subs,absynExpOption = SOME((e,true)))),impl)
+      equation 
+        (cache,subs_1) = elabSubmods(cache,env, pre, subs, impl);
+      then
+        (cache,Types.MOD(final_,each_,subs_1,SOME(Types.UNTYPED(e))));   
+        
     case (cache,env,pre,(m as SCode.REDECL(final_ = final_,elementLst = elist)),impl)
       equation 
         elist_1 = Inst.addNomod(elist);
@@ -201,7 +212,7 @@ algorithm
       equation 
         subs_1 = unelabSubmods(subs);
       then
-        SCode.MOD(final_,each_,subs_1,SOME(e));
+        SCode.MOD(final_,each_,subs_1,SOME((e,false))); // Default type checking non-delayed
     case ((m as Types.MOD(final_ = final_,each_ = each_,subModLst = subs,eqModOption = SOME(Types.TYPED(e,_,p)))))
       local Exp.Exp e;
       equation 
@@ -209,7 +220,7 @@ algorithm
         subs_1 = unelabSubmods(subs);
         e_1 = Exp.unelabExp(e);
       then
-        SCode.MOD(final_,each_,subs_1,SOME(e_1));
+        SCode.MOD(final_,each_,subs_1,SOME((e_1,false))); // default typechecking non-delayed
     case ((m as Types.REDECL(final_ = final_,tplSCodeElementModLst = elist)))
       equation 
         elist_1 = Util.listMap(elist, Util.tuple21);
@@ -459,7 +470,7 @@ algorithm
         subs_1 = elabUntypedSubmods(subs, env, pre);
       then
         Types.MOD(final_,each_,subs_1,NONE);
-    case ((m as SCode.MOD(final_ = final_,each_ = each_,subModLst = subs,absynExpOption = SOME(e))),env,pre)
+    case ((m as SCode.MOD(final_ = final_,each_ = each_,subModLst = subs,absynExpOption = SOME((e,_)))),env,pre)
       equation 
         subs_1 = elabUntypedSubmods(subs, env, pre);
       then

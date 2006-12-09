@@ -84,44 +84,44 @@ protected constant SCode.Class enumType=SCode.CLASS("EnumType",false,false,SCode
 
 protected constant SCode.Element unit=SCode.COMPONENT("unit",true,false,false,
           SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("StringType"),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME(Absyn.STRING(""))),NONE,NONE) "This `unit\' component is used in several places below, and it is
+          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.STRING(""),false))),NONE,NONE) "This `unit\' component is used in several places below, and it is
   declared once here to make the definitions below easier to read." ;
 
 protected constant SCode.Element quantity=SCode.COMPONENT("quantity",true,false,false,
           SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("StringType"),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME(Absyn.STRING(""))),NONE,NONE);
+          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.STRING(""),false))),NONE,NONE);
 
 protected constant SCode.Element displayUnit=SCode.COMPONENT("displayUnit",true,false,false,
           SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("StringType"),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME(Absyn.STRING(""))),NONE,NONE);
+          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.STRING(""),false))),NONE,NONE);
 
 protected constant SCode.Element min=SCode.COMPONENT("min",true,false,false,
           SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("RealType"),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME(Absyn.REAL(-1e+099))),NONE,NONE);
+          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.REAL(-1e+099),false))),NONE,NONE);
 
 protected constant SCode.Element max=SCode.COMPONENT("max",true,false,false,
           SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("RealType"),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME(Absyn.REAL(1e+099))),NONE,NONE);
+          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.REAL(1e+099),false))),NONE,NONE);
 
 protected constant SCode.Element realStart=SCode.COMPONENT("start",true,false,false,
           SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("RealType"),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME(Absyn.REAL(0.0))),NONE,NONE);
+          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.REAL(0.0),false))),NONE,NONE);
 
 protected constant SCode.Element integerStart=SCode.COMPONENT("start",true,false,false,
           SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("IntegerType"),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME(Absyn.INTEGER(0))),NONE,NONE);
+          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.INTEGER(0),false))),NONE,NONE);
 
 protected constant SCode.Element stringStart=SCode.COMPONENT("start",true,false,false,
           SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("StringType"),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME(Absyn.STRING(""))),NONE,NONE);
+          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.STRING(""),false))),NONE,NONE);
 
 protected constant SCode.Element booleanStart=SCode.COMPONENT("start",true,false,false,
           SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("BooleanType"),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME(Absyn.BOOL(false))),NONE,NONE);
+          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.BOOL(false),false))),NONE,NONE);
 
 protected constant SCode.Element fixed=SCode.COMPONENT("fixed",true,false,false,
           SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("BooleanType"),NONE),
-          SCode.MOD(false,Absyn.NON_EACH(),{},SOME(Absyn.BOOL(false))),NONE,NONE) "Should be true for variables" ;
+          SCode.MOD(false,Absyn.NON_EACH(),{},SOME((Absyn.BOOL(false),false))),NONE,NONE) "Should be true for variables" ;
 
 protected constant SCode.Element nominal=SCode.COMPONENT("nominal",true,false,false,
           SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("RealType"),NONE),
@@ -130,9 +130,9 @@ protected constant SCode.Element nominal=SCode.COMPONENT("nominal",true,false,fa
 protected constant SCode.Element stateSelect=SCode.COMPONENT("stateSelect",true,false,false,
           SCode.ATTR({},false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("StateSelect"),NONE),
           SCode.MOD(false,Absyn.NON_EACH(),{},
-          SOME(
+          SOME((
           Absyn.CREF(
-          Absyn.CREF_QUAL("StateSelect",{},Absyn.CREF_IDENT("default",{}))))),NONE,NONE);
+          Absyn.CREF_QUAL("StateSelect",{},Absyn.CREF_IDENT("default",{}))),false))),NONE,NONE);
 
 protected constant list<SCode.Element> stateSelectComps={
           SCode.COMPONENT("never",true,false,false,

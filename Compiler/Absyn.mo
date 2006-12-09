@@ -1570,6 +1570,19 @@ algorithm
   end matchcontinue;
 end crefGetFirst;
 
+public function crefStripFirst "
+  Strip the first ident from a ComponentRef
+"
+  input ComponentRef inComponentRef;
+  output ComponentRef outComponentRef;
+algorithm 
+  outComponentRef:=
+  matchcontinue (inComponentRef)
+    local ComponentRef cr;
+    case (CREF_QUAL(componentRef =cr )) then cr;
+  end matchcontinue;
+end crefStripFirst;
+
 public function restrString "function: restrString
   
   Maps a class restriction to the corresponding string for printing
