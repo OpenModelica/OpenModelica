@@ -49,7 +49,8 @@ solver_dasrt.o solver_euler.o simulation_result.o ../mosh/src/options.o dgesv_au
 
 HFILES = blaswrap.h f2c.h integer_array.h memory_pool.h modelica_string.h \
 	real_array.h string_array.h boolean_array.h index_spec.h matrix.h \
-	modelica.h read_write.h simulation_runtime.h simulation_events.h utility.h
+	modelica.h read_write.h simulation_runtime.h simulation_events.h utility.h \
+	simulation_init.h simulation_input.h solver_dasrt.h solver_euler.h simulation_result.h
 
 LIBS = libc_runtime.a libsim.a 
 
