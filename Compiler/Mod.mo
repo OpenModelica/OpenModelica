@@ -76,7 +76,7 @@ protected import Util;
 protected import Ceval;
 protected import Error;
 protected import Print;
-protected import Interactive;
+//protected import Interactive;
 
 public function elabMod "function: elabMod
  
