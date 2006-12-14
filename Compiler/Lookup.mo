@@ -211,10 +211,20 @@ algorithm
       equation        
         SOME(scope) = Env.getEnvPath(env);
         f::fs = Env.cacheGet(scope,path,cache);
-        id = Absyn.pathLastIdent(path);        
+        id = Absyn.pathLastIdent(path);
         (cache,c,env) = lookupClassInEnv(cache,fs,Absyn.IDENT(id),msg);
+        //print("HIT:");print(Absyn.pathString(path));print("\n");        
     then
       (cache,c,env);
+
+	  // Capture cache misses for debug, PA
+/*   case (cache,env,path,msg)
+      equation        
+        SOME(scope) = Env.getEnvPath(env);
+        failure(_ = Env.cacheGet(scope,path,cache));
+        //print("MISS:");print(Absyn.pathString(path));print("scope: ");print(Absyn.pathString(scope));print("\n");        
+    then
+      fail();*/
 
       /* Builtin classes Integer, Real, String, Boolean can not be overridden
        search top environment directly. */   
@@ -225,31 +235,30 @@ algorithm
         (cache,c,env) = lookupClassInFrame(cache,f, {f}, id, msg);
       then
         (cache,c,env);
-    case (cache,env,path,msg)
-      equation 
-        true = isPrimitive(path);
-        print("ERROR, primitive class not found on top env: ");
-        s = Env.printEnvStr(env);
-        print(s);
-      then
-        fail();
+        
+        // Simple names
     case (cache,env,(path as Absyn.IDENT(name = name)),msgflag)
       equation 
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClassInEnv(cache,env, path, msgflag) "print \"lookup_class \" & print name  & print \"\\nenv:\" & Env.print_env_str env => s & print s & print \"\\n\" &" ;
         //print("found class ");print(name);print("\n");
       then
         (cache,c,env_1);
+        
+        // Qualified names
+        /* If we search for A1.A2....An.x while in scope A1.A2...An, 
+        just search for x. Must do like this to ensure finite recursion */
     case (cache,env,(p as Absyn.QUALIFIED(name = _)),msgflag)
       equation 
-        SOME(ep) = Env.getEnvPath(env) "If we search for A1.A2....An.x while in scope A1.A2...An
-	 , just search for x. Must do like this to ensure finite recursion" ;
+        SOME(ep) = Env.getEnvPath(env)  ;
         packp = Absyn.stripLast(p);
         true = ModUtil.pathEqual(ep, packp);
         id = Absyn.pathLastIdent(p);
         (cache,c,env_1) = lookupClass(cache,env, Absyn.IDENT(id), msgflag);
       then
         (cache,c,env_1);
-    case (cache,env,(p as Absyn.QUALIFIED(name = pack,path = path)),msgflag) /* Qualified name in non package */ 
+
+       // Qualified names in non package 
+    case (cache,env,(p as Absyn.QUALIFIED(name = pack,path = path)),msgflag) 
       equation 
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,env, Absyn.IDENT(pack), msgflag);
         env2 = Env.openScope(env_1, encflag, SOME(id));
@@ -260,7 +269,9 @@ algorithm
         (cache,c_1,env_3) = lookupClass(cache,env_2, path, msgflag) "Has to do additional check for encapsulated classes, see rule below" ;
       then
         (cache,c_1,env_3);
-    case (cache,env,(p as Absyn.QUALIFIED(name = pack,path = path)),msgflag) /* Qualified names in package */ 
+        
+        // Qualified names in package  
+    case (cache,env,(p as Absyn.QUALIFIED(name = pack,path = path)),msgflag) 
       equation 
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env1) = lookupClass(cache,env, Absyn.IDENT(pack), msgflag);
         env2 = Env.openScope(env1, encflag, SOME(id));
