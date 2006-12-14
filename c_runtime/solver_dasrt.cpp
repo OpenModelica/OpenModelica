@@ -261,7 +261,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
       // Restart simulation
       info[0] = 0;
       if (tout-globalData->timeValue < atol) tout = newTime(globalData->timeValue,step,stop);
-      if (tout == stop) goto exit; // If already at end of simulation disregard event.
+      if (globalData->timeValue >= stop ) goto exit;
       calcEnabledZeroCrossings();
       DDASRT(functionDAE_res, 
              &globalData->nStates,   &globalData->timeValue, 
@@ -289,7 +289,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
     
     saveall();
     tout = newTime(globalData->timeValue,step,stop); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
-        
+    if (globalData->timeValue >= stop) goto exit;    
     calcEnabledZeroCrossings();
     DDASRT(functionDAE_res, 
            &globalData->nStates, &globalData->timeValue, 
