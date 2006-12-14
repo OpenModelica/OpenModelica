@@ -641,8 +641,8 @@ extObjConstructorsDecl_str,
   returnData->nOutputVars = NO;\n
   returnData->nZeroCrossing = NG;\n
   returnData->nInitialResiduals = NR;\n
-  returnData->nHelpVars = NHELP;\n
-  if(flags & STATES && returnData->nStates){\n
+  returnData->nHelpVars = NHELP;\n",
+"  if(flags & STATES && returnData->nStates){\n
     returnData->states = (double*) malloc(sizeof(double)*returnData->nStates);\n
     returnData->oldStates = (double*) malloc(sizeof(double)*returnData->nStates);\n
     returnData->oldStates2 = (double*) malloc(sizeof(double)*returnData->nStates);\n
@@ -654,8 +654,8 @@ extObjConstructorsDecl_str,
     returnData->states = 0;\n
     returnData->oldStates = 0;\n
     returnData->oldStates2 = 0;\n
-  }\n
-  if(flags & STATESDERIVATIVES && returnData->nStates){\n
+  }\n",
+"  if(flags & STATESDERIVATIVES && returnData->nStates){\n
     returnData->statesDerivatives = (double*) malloc(sizeof(double)*returnData->nStates);\n
     returnData->oldStatesDerivatives = (double*) malloc(sizeof(double)*returnData->nStates);\n
     returnData->oldStatesDerivatives2 = (double*) malloc(sizeof(double)*returnData->nStates);\n
@@ -667,15 +667,15 @@ extObjConstructorsDecl_str,
     returnData->statesDerivatives = 0;\n
     returnData->oldStatesDerivatives = 0;\n
     returnData->oldStatesDerivatives2 = 0;\n
-  }\n
-  if(flags & HELPVARS && returnData->nHelpVars){\n
+  }\n",
+"  if(flags & HELPVARS && returnData->nHelpVars){\n
     returnData->helpVars = (double*) malloc(sizeof(double)*returnData->nHelpVars);\n
     assert(returnData->helpVars);
     memset(returnData->helpVars,0,sizeof(double)*returnData->nHelpVars);
   }else{\n
     returnData->helpVars = 0;\n
-  }\n", "
-  if(flags & ALGEBRAICS && returnData->nAlgebraic){\n
+  }\n", 
+"  if(flags & ALGEBRAICS && returnData->nAlgebraic){\n
     returnData->algebraics = (double*) malloc(sizeof(double)*returnData->nAlgebraic);\n
     returnData->oldAlgebraics = (double*) malloc(sizeof(double)*returnData->nAlgebraic);\n
     returnData->oldAlgebraics2 = (double*) malloc(sizeof(double)*returnData->nAlgebraic);\n        
@@ -687,36 +687,36 @@ extObjConstructorsDecl_str,
     returnData->algebraics = 0;\n
     returnData->oldAlgebraics = 0;\n
     returnData->oldAlgebraics2 = 0;\n    
-  }\n
-  if(flags & PARAMETERS && returnData->nParameters){\n
+  }\n",
+"  if(flags & PARAMETERS && returnData->nParameters){\n
     returnData->parameters = (double*) malloc(sizeof(double)*returnData->nParameters);\n
     assert(returnData->parameters);
     memset(returnData->parameters,0,sizeof(double)*returnData->nParameters);
   }else{\n
     returnData->parameters = 0;\n
-  }\n
-  if(flags & OUTPUTVARS && returnData->nOutputVars){\n
+  }\n",
+" if(flags & OUTPUTVARS && returnData->nOutputVars){\n
     returnData->outputVars = (double*) malloc(sizeof(double)*returnData->nOutputVars);\n
     assert(returnData->outputVars);
     memset(returnData->outputVars,0,sizeof(double)*returnData->nOutputVars);
   }else{\n
     returnData->outputVars = 0;\n
-  }\n
-  if(flags & INPUTVARS && returnData->nInputVars){\n
+  }\n",
+"  if(flags & INPUTVARS && returnData->nInputVars){\n
     returnData->inputVars = (double*) malloc(sizeof(double)*returnData->nInputVars);\n
     assert(returnData->inputVars);
     memset(returnData->inputVars,0,sizeof(double)*returnData->nInputVars);
   }else{\n
     returnData->inputVars = 0;\n
-  }\n
-  if(flags & INITIALRESIDUALS && returnData->nInitialResiduals){\n
+  }\n",
+"  if(flags & INITIALRESIDUALS && returnData->nInitialResiduals){\n
     returnData->initialResiduals = (double*) malloc(sizeof(double)*returnData->nInitialResiduals);\n
     assert(returnData->initialResiduals);
     memset(returnData->initialResiduals,0,sizeof(double)*returnData->nInitialResiduals);
   }else{\n
     returnData->initialResiduals = 0;\n
-  }\n
-  if(flags & INITFIXED){\n
+  }\n",
+"  if(flags & INITFIXED){\n
     returnData->initFixed = init_fixed;\n
   }else{\n
     returnData->initFixed = 0;\n
@@ -731,28 +731,28 @@ extObjConstructorsDecl_str,
     returnData->statesNames = state_names;\n
   }else{\n
     returnData->statesNames = 0;\n
-  }\n
-  if(flags & STATESDERIVATIVESNAMES){\n
+  }\n",
+  "if(flags & STATESDERIVATIVESNAMES){\n
     returnData->stateDerivativesNames = derivative_names;\n
   }else{\n
     returnData->stateDerivativesNames = 0;\n
-  }\n
-  if(flags & ALGEBRAICSNAMES){\n
+  }\n",
+  "if(flags & ALGEBRAICSNAMES){\n
     returnData->algebraicsNames = algvars_names;\n
   }else{\n
     returnData->algebraicsNames = 0;\n
-  }\n
-  if(flags & PARAMETERSNAMES){\n
+  }\n",
+  "if(flags & PARAMETERSNAMES){\n
     returnData->parametersNames = param_names;\n
   }else{\n
     returnData->parametersNames = 0;\n
-  }\n
-  if(flags & INPUTNAMES){\n
+  }\n",
+  "if(flags & INPUTNAMES){\n
     returnData->inputNames = input_names;\n
   }else{\n
     returnData->inputNames = 0;\n
-  }\n
-  if(flags & OUTPUTNAMES){\n
+  }\n",
+  "if(flags & OUTPUTNAMES){\n
     returnData->outputNames = output_names;\n
   }else{\n
     returnData->outputNames = 0;\n
@@ -762,69 +762,69 @@ extObjConstructorsDecl_str,
     returnData->statesComments = state_comments;\n
   }else{\n
     returnData->statesComments = 0;\n
-  }\n
-  if(flags & STATESDERIVATIVESCOMMENTS){\n
+  }\n",
+  "if(flags & STATESDERIVATIVESCOMMENTS){\n
     returnData->stateDerivativesComments = derivative_comments;\n
   }else{\n
     returnData->stateDerivativesComments = 0;\n
-  }\n
-  if(flags & ALGEBRAICSCOMMENTS){\n
+  }\n",
+  "if(flags & ALGEBRAICSCOMMENTS){\n
     returnData->algebraicsComments = algvars_comments;\n
   }else{\n
     returnData->algebraicsComments = 0;\n
-  }\n
-  if(flags & PARAMETERSCOMMENTS){\n
+  }\n",
+  "if(flags & PARAMETERSCOMMENTS){\n
     returnData->parametersComments = param_comments;\n
   }else{\n
     returnData->parametersComments = 0;\n
-  }\n
-  if(flags & INPUTCOMMENTS){\n
+  }\n",
+  "if(flags & INPUTCOMMENTS){\n
     returnData->inputComments = input_comments;\n
   }else{\n
     returnData->inputComments = 0;\n
-  }\n
-  if(flags & OUTPUTCOMMENTS){\n
+  }\n",
+  "if(flags & OUTPUTCOMMENTS){\n
     returnData->outputComments = output_comments;\n
   }else{\n
     returnData->outputComments = 0;\n
-  }\n
-  if (flags & EXTERNALVARS) {\n
+  }\n",
+  "if (flags & EXTERNALVARS) {\n
   returnData->extObjs = (void**)malloc(sizeof(void*)*NEXT);\n
   if (!returnData->extObjs) { \n
      printf(\"error allocating external objects\\n\");\n
      exit(-2);\n
-  }\n
-  setLocalData(returnData); /* must be set since used by constructors*/\n",
+  }\n",
+  "setLocalData(returnData); /* must be set since used by constructors*/\n",
   extObjConstructors_str,
   extObjConstructorAliases_str,
 "  }\n
   return returnData;\n
-}\n
-void deInitializeDataStruc(DATA* data, DATA_FLAGS flags)\n
-{\n
-  if(!data)\n
-    return;\n
-  if(flags & STATES && data->states){\n
-    free(data->states);\n
-    data->states = 0;\n
-  }\n
-  if(flags & STATESDERIVATIVES && data->statesDerivatives){\n
-    free(data->statesDerivatives);\n
-    data->statesDerivatives = 0;\n
-  }\n
-  if(flags & ALGEBRAICS && data->algebraics){\n
-    free(data->algebraics);\n
-    data->algebraics = 0;\n
-  }\n
-  if(flags & PARAMETERS && data->parameters){\n
-    free(data->parameters);\n
-    data->parameters = 0;\n
-  }\n
-  if(flags & OUTPUTVARS && data->inputVars){\n
-    free(data->inputVars);\n
-    data->inputVars = 0;\n
-  }\n
-  if(flags & INPUTVARS && data->outputVars){\n
+}\n",
+"void deInitializeDataStruc(DATA* data, DATA_FLAGS flags)\n
+{\n",
+"  if(!data)\n
+    return;\n",
+"  if(flags & STATES && data->states){\n",
+"    free(data->states);\n",
+"    data->states = 0;\n",
+"  }\n",
+"  if(flags & STATESDERIVATIVES && data->statesDerivatives){\n",
+"    free(data->statesDerivatives);\n",
+"    data->statesDerivatives = 0;\n",
+"  }\n",
+"  if(flags & ALGEBRAICS && data->algebraics){\n",
+"    free(data->algebraics);\n",
+"    data->algebraics = 0;\n",
+"  }\n",
+"  if(flags & PARAMETERS && data->parameters){\n",
+"    free(data->parameters);\n",
+"    data->parameters = 0;\n",
+"  }\n",
+"  if(flags & OUTPUTVARS && data->inputVars){\n",
+"    free(data->inputVars);\n",
+"    data->inputVars = 0;\n",
+"  }\n",
+"  if(flags & INPUTVARS && data->outputVars){\n
     free(data->outputVars);\n
     data->outputVars = 0;\n
   }\n
