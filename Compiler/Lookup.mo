@@ -1571,7 +1571,7 @@ algorithm
       list<SCode.Element> res,rest;
       SCode.Element comp;
       String id;
-      Boolean fl,repl,prot,f;
+      Boolean inner_,outer_,fl,repl,prot,f;
       list<Absyn.Subscript> d;
       SCode.Accessibility ac;
       SCode.Variability var;
@@ -1581,11 +1581,11 @@ algorithm
       Option<Absyn.Path> bc;
       Option<Absyn.Comment> comment;
       list<Env.Frame> env;
-    case (((comp as SCode.COMPONENT(component = id,final_ = fl,replaceable_ = repl,protected_ = prot,attributes = SCode.ATTR(arrayDim = d,flow_ = f,RW = ac,parameter_ = var,input_ = dir),typeSpec = tp,mod = mod,baseclass = bc,this = comment)) :: rest),env)
+    case (((comp as SCode.COMPONENT(component = id,inner_=inner_,outer_=outer_,final_ = fl,replaceable_ = repl,protected_ = prot,attributes = SCode.ATTR(arrayDim = d,flow_ = f,RW = ac,parameter_ = var,input_ = dir),typeSpec = tp,mod = mod,baseclass = bc,this = comment)) :: rest),env)
       equation 
         res = buildRecordConstructorElts(rest, env);
       then
-        (SCode.COMPONENT(id,fl,repl,prot,SCode.ATTR(d,f,ac,var,Absyn.INPUT()),tp,
+        (SCode.COMPONENT(id,inner_,outer_,fl,repl,prot,SCode.ATTR(d,f,ac,var,Absyn.INPUT()),tp,
           mod,bc,comment) :: res);
     case ({},_) then {}; 
   end matchcontinue;
@@ -1604,7 +1604,7 @@ protected function buildRecordConstructorResultElt "function: buildRecordConstru
   list<SCode.SubMod> submodlst;
 algorithm 
   submodlst := buildRecordConstructorResultMod(elts);
-  outElement := SCode.COMPONENT("result",false,false,false,
+  outElement := SCode.COMPONENT("result",false,false,false,false,false,
           SCode.ATTR({},false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),Absyn.TPATH(Absyn.IDENT(id),NONE),SCode.MOD(false,Absyn.NON_EACH(),submodlst,NONE),
           NONE,NONE);
 end buildRecordConstructorResultElt;

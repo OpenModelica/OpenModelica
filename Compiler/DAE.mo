@@ -344,6 +344,30 @@ protected import Error;
 protected import SCode;
 protected import Env;
 
+
+public function printDAE "function: printDEA
+ 
+  This function prints out a list of elements (i.e. a DAE)
+  to the stdout. Useful for example when called from Inst.instClass"
+  input DAElist inDAElist;
+algorithm  
+  _:=
+  matchcontinue (inDAElist)
+    local
+    	DAElist dae;
+    	String str;
+    case dae 
+      equation
+        Print.clearBuf();
+        dump2(dae);
+        str = Print.getString();
+        print(str);
+      then 
+        ();
+  end matchcontinue;
+end printDAE;        
+
+
 public function dump "function: dump
  
   This function prints the DAE in the standard output format.
@@ -365,7 +389,7 @@ end dump;
 
 public function dump2 "function: dump2
  
-  Helper function to dump
+  Helper function to dump. Prints the DAE using module Print.
 "
   input DAElist inDAElist;
 algorithm 

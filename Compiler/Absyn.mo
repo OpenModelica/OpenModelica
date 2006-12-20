@@ -595,6 +595,8 @@ public
 uniontype ElementAttributes "- Component attributes"
   record ATTR
     Boolean flow_ "flow" ;
+//    Boolean inner_ "inner";
+//    Boolean outer_ "outer";
     Variability variability "variability ; parameter, constant etc." ;
     Direction direction "direction" ;
     ArrayDim arrayDim "arrayDim" ;

@@ -1144,7 +1144,7 @@ algorithm
   matchcontinue (inMod1,inMod2,inEnv3,inPrefix4)
     local
       Types.Mod m,m1_1,m2_1,m_2,mod,mods,outer_,inner_;
-      Boolean f1,f,r,p,f2,final_;
+      Boolean i1,o1,f1,f,r,p,f2,final_;
       Ident id1,id2;
       SCode.Attributes attr;
       Absyn.TypeSpec tp;
@@ -1160,7 +1160,7 @@ algorithm
     case (Types.NOMOD(),Types.NOMOD(),_,_) then Types.NOMOD(); 
     case (Types.NOMOD(),m,_,_) then m; 
     case (m,Types.NOMOD(),_,_) then m; 
-    case (Types.REDECL(final_ = f1,tplSCodeElementModLst = {(SCode.COMPONENT(component = id1,final_ = f,replaceable_ = r,protected_ = p,attributes = attr,typeSpec = tp,mod = m1,baseclass = bc,this = comment),_)}),Types.REDECL(final_ = f2,tplSCodeElementModLst = {(SCode.COMPONENT(component = id2,mod = m2,baseclass = bc2,this = comment2),_)}),env,pre) /* redeclaring same component */ 
+    case (Types.REDECL(final_ = f1,tplSCodeElementModLst = {(SCode.COMPONENT(component = id1,inner_=i1,outer_=o1,final_ = f,replaceable_ = r,protected_ = p,attributes = attr,typeSpec = tp,mod = m1,baseclass = bc,this = comment),_)}),Types.REDECL(final_ = f2,tplSCodeElementModLst = {(SCode.COMPONENT(component = id2,mod = m2,baseclass = bc2,this = comment2),_)}),env,pre) /* redeclaring same component */ 
       equation 
         equality(id1 = id2);
         m1_1 = elabUntypedMod(m2, env, pre);
@@ -1170,7 +1170,7 @@ algorithm
         Types.REDECL(f1,
           {
           (
-          SCode.COMPONENT(id1,f,r,p,attr,tp,SCode.NOMOD(),bc,comment),m_2)});
+          SCode.COMPONENT(id1,i1,o1,f,r,p,attr,tp,SCode.NOMOD(),bc,comment),m_2)});
     case ((mod as Types.REDECL(final_ = f1,tplSCodeElementModLst = (els as {(SCode.COMPONENT(component = id1),_)}))),(mods as Types.MOD(subModLst = subs)),env,pre) then mod;  /* luc_pop : this shoud return the first mod because it have been merged in merge_subs */ 
     case (Types.MOD(subModLst = subs),Types.REDECL(final_ = f1,tplSCodeElementModLst = (els as {(SCode.COMPONENT(component = id1),_)})),env,pre) then Types.MOD(false,Absyn.NON_EACH(),
           (Types.NAMEMOD(id1,Types.REDECL(f1,els)) :: subs),NONE);  /* luc_pop : this shoud return the first mod because it have been merged in merge_subs When modifiers are identical */ 

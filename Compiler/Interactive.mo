@@ -526,7 +526,7 @@ algorithm
       then
         ("",st_4);
         
-    /* for-statement, general case */ //DABR
+    /* for-statement, general case */ 
     case (Absyn.ALGORITHMITEM(algorithm_ = 
       	Absyn.ALG_FOR(forVariable = iter, forStmt = exp,forBody = algItemList)),st) 
       local
