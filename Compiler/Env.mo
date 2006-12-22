@@ -1140,12 +1140,33 @@ end treeNew;
 
 public function treeAdd "function: treeAdd
  
+  Add a tree to a binary tree."
+
+  input BinTree inBinTree;
+  input Key inKey;
+  input Value inValue;
+  input HashFuncType hashfunc;
+  output BinTree outBinTree;
+  partial function HashFuncType
+    input Key inKey;
+    output Integer outInteger;
+  end HashFuncType;
+protected 
+  Integer hashVal;
+algorithm 
+	hashVal := hashfunc(inKey) "Calculate hashvalue only once";
+	outBinTree := treeAdd2(inBinTree,inKey,inValue,hashfunc,hashVal);
+end treeAdd;
+
+public function treeAdd2 "function: treeAdd
+ 
   Add a tree to a binary tree.
 "
   input BinTree inBinTree;
   input Key inKey;
   input Value inValue;
   input FuncTypeKeyToInteger inFuncTypeKeyToInteger;
+  input Integer hval;
   output BinTree outBinTree;
   partial function FuncTypeKeyToInteger
     input Key inKey;
@@ -1153,7 +1174,7 @@ public function treeAdd "function: treeAdd
   end FuncTypeKeyToInteger;
 algorithm 
   outBinTree:=
-  matchcontinue (inBinTree,inKey,inValue,inFuncTypeKeyToInteger)
+  matchcontinue (inBinTree,inKey,inValue,inFuncTypeKeyToInteger,hval)
     local
       partial function FuncTypeStringToInteger
         input String inString;
@@ -1163,53 +1184,62 @@ algorithm
       Value value,rval;
       Option<BinTree> left,right;
       FuncTypeStringToInteger hashfunc;
-      Integer hval,rhval;
+      Integer rhval;
       BinTree t_1,t,right_1,left_1;
-    case (TREENODE(value = NONE,left = NONE,right = NONE),key,value,_) then TREENODE(SOME(TREEVALUE(key,value)),NONE,NONE);  /* hash func */ 
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = right),key,value,hashfunc) /* Replace this node */ 
+      /* empty tree*/
+    case (TREENODE(value = NONE,left = NONE,right = NONE),key,value,_,_) 
+    	then TREENODE(SOME(TREEVALUE(key,value)),NONE,NONE);  
+		
+		/* Replace this node */     	  
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = right),key,value,hashfunc,hval) 
       equation 
         equality(rkey = key);
       then
         TREENODE(SOME(TREEVALUE(rkey,value)),left,right);
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = (right as SOME(t))),key,value,hashfunc) /* Insert to right subtree */ 
+
+        /* Insert to right subtree */         
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = (right as SOME(t))),key,value,hashfunc,hval) 
       equation 
-        hval = hashfunc(key);
         rhval = hashfunc(rkey);
         (hval > rhval) = true;
-        t_1 = treeAdd(t, key, value, hashfunc);
+        t_1 = treeAdd2(t, key, value, hashfunc,hval);
       then
         TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(t_1));
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = (right as NONE)),key,value,hashfunc) /* Insert to right node */ 
+
+        /* Insert to right node */         
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = (right as NONE)),key,value,hashfunc,hval) 
       equation 
-        hval = hashfunc(key);
         rhval = hashfunc(rkey);
         (hval > rhval) = true;
-        right_1 = treeAdd(TREENODE(NONE,NONE,NONE), key, value, hashfunc);
+        right_1 = treeAdd2(TREENODE(NONE,NONE,NONE), key, value, hashfunc,hval);
       then
         TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(right_1));
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = (left as SOME(t)),right = right),key,value,hashfunc) /* Insert to left subtree */ 
+        
+        /* Insert to left subtree */ 
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = (left as SOME(t)),right = right),key,value,hashfunc,hval) 
       equation 
-        hval = hashfunc(key);
         rhval = hashfunc(rkey);
         (hval <= rhval) = true;
-        t_1 = treeAdd(t, key, value, hashfunc);
+        t_1 = treeAdd2(t, key, value, hashfunc,hval);
       then
         TREENODE(SOME(TREEVALUE(rkey,rval)),SOME(t_1),right);
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = (left as NONE),right = right),key,value,hashfunc) /* Insert to left node */ 
+        
+        /* Insert to left node */ 
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = (left as NONE),right = right),key,value,hashfunc,hval) 
       equation 
-        hval = hashfunc(key);
         rhval = hashfunc(rkey);
         (hval <= rhval) = true;
-        left_1 = treeAdd(TREENODE(NONE,NONE,NONE), key, value, hashfunc);
+        left_1 = treeAdd2(TREENODE(NONE,NONE,NONE), key, value, hashfunc,hval);
       then
         TREENODE(SOME(TREEVALUE(rkey,rval)),SOME(left_1),right);
-    case (_,_,_,_)
+
+    case (_,_,_,_,_)
       equation 
         print("tree_add failed\n");
       then
         fail();
   end matchcontinue;
-end treeAdd;
+end treeAdd2;
 
 public function getCachedInitialEnv "get the initial environment from the cache"
   input Cache cache;
@@ -1296,33 +1326,13 @@ algorithm
     	Ident id;
     	list<CacheTree> children;
     	
-			// Search this scope.
+			// Search only current scope. Since scopes higher up might not be cached, we cannot search upwards.
     case (path2,path,tree)
       equation
         env = cacheGetEnv2(path2,path,tree);
         //print("found ");print(Absyn.pathString(path));print(" in cache at scope");
 				//print(Absyn.pathString(path2));print("\n");
       then env;
-
-		   // Go up one level. Only if we search for e.g. M.C.E and in scope M
- /*   case (path2,path,tree)
-      local Ident id1,id2;
-      equation
-        id1=Absyn.pathFirstIdent(path2);
-        id2 = Absyn.pathFirstIdent(path);
-        id1 = id2; // only then because otherwise we might lookup wrong class (Eg. Modelica.Math instead of Modelica.Blocks.Math)
-        path2 =Absyn.stripLast(path2);
-        env = cacheGetEnv(path2,path,tree);
-        //print("found in cache\n");
-      then env;      
-   */     
-/*        // Finally try top level
-    case (Absyn.IDENT(_),path,CACHETREE(_,_,children))
-      equation
-        env = cacheGetEnv3(path,children);
-        //print("found in cache\n");
-      then env;      
-  */     
   end matchcontinue;
 end cacheGetEnv;
  
@@ -1507,7 +1517,7 @@ algorithm
       s = printCacheTreeStr(tree,1); 
       str = Util.stringAppendList({"Cache:\n",s,"\n"});
       then str;
-    case CACHE(NONE,_) then "EMPTY CACHE";
+    case CACHE(NONE,_) then "EMPTY CACHE\n";
   end matchcontinue;
 end printCacheStr;
 
@@ -1681,7 +1691,25 @@ public function treeGet "function: treeGet
 "
   input BinTree inBinTree;
   input Key inKey;
+  input HashFuncType hashFunc;
+  output Value outValue;
+  partial function HashFuncType
+    input Key inKey;
+    output Integer outInteger;
+  end HashFuncType;
+  protected 
+    Integer hval;
+algorithm 
+  hval := hashFunc(inKey);
+  outValue:= treeGet2(inBinTree,inKey,hashFunc,hval);
+end treeGet;
+
+public function treeGet2 "  Get a value from the binary tree given a key.
+"
+  input BinTree inBinTree;
+  input Key inKey;
   input FuncTypeKeyToInteger inFuncTypeKeyToInteger;
+  input Integer hval;
   output Value outValue;
   partial function FuncTypeKeyToInteger
     input Key inKey;
@@ -1689,7 +1717,7 @@ public function treeGet "function: treeGet
   end FuncTypeKeyToInteger;
 algorithm 
   outValue:=
-  matchcontinue (inBinTree,inKey,inFuncTypeKeyToInteger)
+  matchcontinue (inBinTree,inKey,inFuncTypeKeyToInteger,hval)
     local
       partial function FuncTypeStringToInteger
         input String inString;
@@ -1699,32 +1727,35 @@ algorithm
       Value rval,res;
       Option<BinTree> left,right;
       FuncTypeStringToInteger hashfunc;
-      Integer hval,rhval;
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = right),key,hashfunc) /* hash func Search to the right */ 
+      Integer rhval;
+      /* hash func Search to the right */ 
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = right),key,hashfunc,hval) 
       equation 
         equality(rkey = key);
       then
         rval;
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = SOME(right)),key,hashfunc) /* Search to the right */ 
+        
+        /* Search to the right */ 
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = SOME(right)),key,hashfunc,hval) 
       local BinTree right;
-      equation 
-        hval = hashfunc(key);
+      equation
         rhval = hashfunc(rkey);
         (hval > rhval) = true;
-        res = treeGet(right, key, hashfunc);
+        res = treeGet2(right, key, hashfunc,hval);
       then
         res;
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = SOME(left),right = right),key,hashfunc) /* Search to the left */ 
+
+        /* Search to the left */         
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = SOME(left),right = right),key,hashfunc,hval) 
       local BinTree left;
       equation 
-        hval = hashfunc(key);
         rhval = hashfunc(rkey);
         (hval <= rhval) = true;
-        res = treeGet(left, key, hashfunc);
+        res = treeGet2(left, key, hashfunc,hval);
       then
         res;
   end matchcontinue;
-end treeGet;
+end treeGet2;
 
 protected function printBintreeStr "function: printBintreeStr
  

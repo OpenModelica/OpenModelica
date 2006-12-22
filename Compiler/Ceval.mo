@@ -2849,22 +2849,29 @@ algorithm
       Exp.Exp fileprefix;
       Env.Cache cache;
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)  
-      local Integer eqnSize,varSize;
-        String eqnSizeStr,varSizeStr,retStr,classNameStr;
+      local Integer eqnSize,varSize,simpleEqnSize;
+        String eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr;
         DAELow.EquationArray eqns;
+        Integer elimLevel;
       equation 
         p_1 = SCode.elaborate(p);
         (cache,dae_1,env) = Inst.instantiateClass(cache,p_1, className);
         ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
+        elimLevel = RTOpts.eliminationLevel();
+        RTOpts.setEliminationLevel(0); // No variable eliminiation
         (dlow as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(numberOfVars = varSize),orderedEqs = eqns)) 
         	= DAELow.lower(dae, true);
+        RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
         	eqnSize = DAELow.equationSize(eqns);
+				simpleEqnSize = DAELow.countSimpleEquations(eqns);
 				eqnSizeStr = intString(eqnSize);
 				varSizeStr = intString(varSize);
+				simpleEqnSizeStr = intString(simpleEqnSize);
+				
 				classNameStr = Absyn.pathString(className);
-				retStr=Util.stringAppendList({"model ",classNameStr," has ",eqnSizeStr," equation(s) and ",
-				varSizeStr," variable(s)."});
+				retStr=Util.stringAppendList({"Check of ",classNameStr," successful.\n\n","model ",classNameStr," has ",eqnSizeStr," equation(s) and ",
+				varSizeStr," variable(s).\n","Of these are ",simpleEqnSizeStr, " trivial equation(s).\n"});
       then
         (cache,Values.STRING(retStr),st);
     case (cache,_,_,st,_) local

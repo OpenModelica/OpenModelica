@@ -14835,7 +14835,7 @@ end removeClassDiffFiledInElementitemlist;
 protected function getSurroundingPackage "function: getSurroundingPackage
    author: PA
   
-   Thisfunction investigates the surrounding packages and returns the outermost package
+   This function investigates the surrounding packages and returns the outermost package
    that has the same filename as the class
 "
   input Absyn.Path inPath;

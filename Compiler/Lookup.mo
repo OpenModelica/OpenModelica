@@ -71,6 +71,7 @@ protected import ModUtil;
 protected import Static;
 protected import Connect;
 protected import Error;
+protected import Util;
 
 /*   - Lookup functions
  
@@ -117,12 +118,12 @@ algorithm
       then
         (cache,t,env_1);
     
-	/* Classes that are external objects. Implicityly instantiate to get type */
- case (cache,env,path ,msg) local String ident,s;
+        /* Classes that are external objects. Implicityly instantiate to get type */
+    case (cache,env,path ,msg) local String ident,s;
       equation 
-        (cache,c ,env_1) = lookupClass(cache,env, path, false);
+        (cache,c ,env_1) = lookupClass2(cache,env, path, false);
         true = Inst.classIsExternalObject(c);
-       (cache,_,_::env_1,_,_,_) = Inst.instClass(cache,env_1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
+        (cache,_,_::env_1,_,_,_) = Inst.instClass(cache,env_1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
           {}, false, Inst.TOP_CALL());
         ident = Absyn.pathLastIdent(path); /* Once class has instantiated we only need to look up the last
         	part of the name as a type */
@@ -137,7 +138,7 @@ algorithm
       local String s,ident;
       SCode.Restriction restr;
       equation 
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,env, path, false);
+        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,env, path, false);
         true = SCode.isFunctionOrExtFunction(restr);
         (cache,env_2) = Inst.implicitFunctionTypeInstantiation(cache,env_1, c);
         ident = Absyn.pathLastIdent(path);
@@ -176,15 +177,36 @@ algorithm
   end matchcontinue;
 end isPrimitive;
 
-public function lookupClass "function: lookupClass
-  
-  Tries to find a specified class in an environment
+public function lookupClass "Tries to find a specified class in an environment
   
   Arg1: The enviroment where to look
   Arg2: The path for the class
   Arg3: A Bool to control the output of error-messages. If it is true
-        then it outputs a error message if the class is not found.
-"
+        then it outputs a error message if the class is not found."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Path inPath;
+  input Boolean inBoolean;
+  output Env.Cache outCache;
+  output SCode.Class outClass;
+  output Env.Env outEnv;
+protected
+  Real t1,t2,time;
+  Boolean b;
+  String s,s2;
+algorithm 
+  //t1:= clock();
+  (outCache,outClass,outEnv) := lookupClass2(inCache,inEnv, inPath, inBoolean);
+  /*t2 := clock();
+  time := t2 -. t1;
+  b:=realGt(time,0.05);
+  s := realString(time);
+  s2 := Absyn.pathString(inPath);
+  s:=Util.stringAppendList({"lookupClass ",s2," ",s," s\n"});
+  //print(Util.if_(b,s,""));*/
+end lookupClass;
+    
+public function lookupClass2 "help function to lookupClass, does all the work."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path inPath;
@@ -200,7 +222,7 @@ algorithm
       Env.Cache cache;
       SCode.Class c,c_1;
       list<Env.Frame> env,env_1,env2,env_2,env_3,env1,env4,env5,fs;
-      Absyn.Path path,ep,packp,p,scope;
+      Absyn.Path path,ep,packp,p,scope,restPath;
       String id,s,name,pack;
       Boolean msg,encflag,msgflag;
       SCode.Restriction restr;
@@ -212,20 +234,22 @@ algorithm
         SOME(scope) = Env.getEnvPath(env);
         f::fs = Env.cacheGet(scope,path,cache);
         id = Absyn.pathLastIdent(path);
-        (cache,c,env) = lookupClassInEnv(cache,fs,Absyn.IDENT(id),msg);
-        //print("HIT:");print(Absyn.pathString(path));print("\n");        
+        (cache,c,env) = lookupClassInEnv(cache,fs,Absyn.IDENT(id),msg); 
+        //print("HIT:");print(Absyn.pathString(path));print(" scope"); print(Absyn.pathString(scope));print("\n");
+        //print(Env.printCacheStr(cache));       
     then
       (cache,c,env);
-
-	  // Capture cache misses for debug, PA
-/*   case (cache,env,path,msg)
-      equation        
+      
+          // Qualified names first identifier cached
+    case (cache,env,(p as Absyn.QUALIFIED(name = pack,path = path)),msgflag) 
+      equation 
         SOME(scope) = Env.getEnvPath(env);
-        failure(_ = Env.cacheGet(scope,path,cache));
-        //print("MISS:");print(Absyn.pathString(path));print("scope: ");print(Absyn.pathString(scope));print("\n");        
-    then
-      fail();*/
-
+        env_1 = Env.cacheGet(scope,Absyn.IDENT(pack),cache);
+        (cache,c_1,env_2) = lookupClass2(cache,env_1,path,msgflag);
+        //print("Qualified cache hit on ");print(Absyn.pathString(p));print("\n");
+      then
+        (cache,c_1,env_2);
+        
       /* Builtin classes Integer, Real, String, Boolean can not be overridden
        search top environment directly. */   
     case (cache,env,(path as Absyn.IDENT(name = id)),msg) 
@@ -239,8 +263,7 @@ algorithm
         // Simple names
     case (cache,env,(path as Absyn.IDENT(name = name)),msgflag)
       equation 
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClassInEnv(cache,env, path, msgflag) "print \"lookup_class \" & print name  & print \"\\nenv:\" & Env.print_env_str env => s & print s & print \"\\n\" &" ;
-        //print("found class ");print(name);print("\n");
+        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClassInEnv(cache,env, path, msgflag);
       then
         (cache,c,env_1);
         
@@ -253,41 +276,40 @@ algorithm
         packp = Absyn.stripLast(p);
         true = ModUtil.pathEqual(ep, packp);
         id = Absyn.pathLastIdent(p);
-        (cache,c,env_1) = lookupClass(cache,env, Absyn.IDENT(id), msgflag);
+        (cache,c,env_1) = lookupClass2(cache,env, Absyn.IDENT(id), msgflag);
       then
         (cache,c,env_1);
-
-       // Qualified names in non package 
-    case (cache,env,(p as Absyn.QUALIFIED(name = pack,path = path)),msgflag) 
-      equation 
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,env, Absyn.IDENT(pack), msgflag);
-        env2 = Env.openScope(env_1, encflag, SOME(id));
-        ci_state = ClassInf.start(restr, id);
-          (cache,_,env_2,_,cistate1,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-           ci_state, c, false/*FIXME:prot*/, {}, false);
-        failure(ClassInf.valid(cistate1, SCode.R_PACKAGE()));
-        (cache,c_1,env_3) = lookupClass(cache,env_2, path, msgflag) "Has to do additional check for encapsulated classes, see rule below" ;
-      then
-        (cache,c_1,env_3);
         
         // Qualified names in package  
     case (cache,env,(p as Absyn.QUALIFIED(name = pack,path = path)),msgflag) 
       equation 
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env1) = lookupClass(cache,env, Absyn.IDENT(pack), msgflag);
+        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env1) = lookupClass2(cache,env, Absyn.IDENT(pack), msgflag);
         env2 = Env.openScope(env1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id); 
         
         (cache,env4,cistate1) = Inst.partialInstClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}); 
-        //(cache,_,env4,_,cistate1,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-        //  ci_state, c, false/*FIXME:prot*/, {}, false);
         ClassInf.valid(cistate1, SCode.R_PACKAGE());
-        (cache,c_1,env5) = lookupClass(cache,env4, path, msgflag) "Has NOT to do additional check for encapsulated classes, see rule above" ;
+        (cache,c_1,env5) = lookupClass2(cache,env4, path, msgflag) "Has NOT to do additional check for encapsulated classes, see rule above" ;
       then
         (cache,c_1,env5);
+        
+       // Qualified names in non package 
+    case (cache,env,(p as Absyn.QUALIFIED(name = pack,path = path)),msgflag) 
+      equation 
+        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,env, Absyn.IDENT(pack), msgflag);
+        env2 = Env.openScope(env_1, encflag, SOME(id));
+        ci_state = ClassInf.start(restr, id);
+          (cache,_,env_2,_,cistate1,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+           ci_state, c, false/*FIXME:prot*/, {}, false);
+        failure(ClassInf.valid(cistate1, SCode.R_PACKAGE()));
+        (cache,c_1,env_3) = lookupClass2(cache,env_2, path, msgflag) "Has to do additional check for encapsulated classes, see rule below" ;
+      then
+        (cache,c_1,env_3);
+        
     case (cache,env,path,true)
       equation 
-        s = Absyn.pathString(path) ;
+        /*s = Absyn.pathString(path) ;
         Debug.fprint("failtrace", "- lookup_class failed\n  - looked for ") ;
         //print("lookup class ");print(s);print("failed\n");
         Debug.fprint("failtrace", s);
@@ -297,16 +319,18 @@ algorithm
         //print("Cache:");print(Env.printCacheStr(cache));print("\n");
         Debug.fprint("failtrace", s);
         Debug.fprint("failtrace", "\n");
+        */
       then
         fail();
+        
     case (cache,env,path,false)
       equation 
-        //print("lookupClass(");print(Absyn.pathString(path));print(",msg=false failed, env:");
+        //print("lookupClass2(");print(Absyn.pathString(path));print(",msg=false failed, env:");
         //print(Env.printEnvStr(env));print("\n");
       then
         fail();
   end matchcontinue;
-end lookupClass;
+end lookupClass2;
 
 
 protected function lookupQualifiedImportedVarInFrame "function: lookupQualifiedImportedVarInFrame
@@ -339,15 +363,19 @@ algorithm
       Absyn.Path strippath,path;
       SCode.Class c2;
       Env.Cache cache;
-    case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = Absyn.IDENT(name = id))) :: fs),env,ident) /* For imported simple name, e.g. A, not possible to assert 
-	    sub-path package */ 
+      
+      /* For imported simple name, e.g. A, not possible to assert 
+       sub-path package */ 
+    case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = Absyn.IDENT(name = id))) :: fs),env,ident) 
       equation 
         equality(id = ident);
         fr = Env.topFrame(env);
         (cache,attr,ty,bind) = lookupVar(cache,{fr}, Exp.CREF_IDENT(ident,{}));
       then
         (cache,{fr},attr,ty,bind);
-    case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = path)) :: fs),env,ident) /* For imported qualified name, e.g. A.B.C, assert A.B is package */ 
+
+        /* For imported qualified name, e.g. A.B.C, assert A.B is package */ 
+    case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = path)) :: fs),env,ident) 
       equation 
         id = Absyn.pathLastIdent(path);
         equality(id = ident);
@@ -355,11 +383,13 @@ algorithm
         cref = Exp.pathToCref(path);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{fr}, cref);
         strippath = Absyn.stripLast(path);
-        (cache,c2,_) = lookupClass(cache,{fr}, strippath, true);
+        (cache,c2,_) = lookupClass2(cache,{fr}, strippath, true);
         assertPackage(c2);
       then
         (cache,p_env,attr,ty,bind);
-    case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = path)) :: fs),env,ident) /* importing qualified name, If not package, error */ 
+
+        /* importing qualified name, If not package, error */         
+    case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = path)) :: fs),env,ident) 
       equation 
         id = Absyn.pathLastIdent(path);
         equality(id = ident);
@@ -367,37 +397,43 @@ algorithm
         cref = Exp.pathToCref(path);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{fr}, cref);
         strippath = Absyn.stripLast(path);
-        (cache,c2,_) = lookupClass(cache,{fr}, strippath, true);
+        (cache,c2,_) = lookupClass2(cache,{fr}, strippath, true);
         failure(assertPackage(c2));
         str = Absyn.pathString(strippath);
         Error.addMessage(Error.IMPORT_PACKAGES_ONLY, {str});
       then
         fail();
-    case (cache,(Env.IMPORT(import_ = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs),env,ident) /* Named imports */ 
+        
+        /* Named imports, e.g. import A = B.C; */ 
+    case (cache,(Env.IMPORT(import_ = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs),env,ident) 
       equation 
         equality(id = ident);
         fr = Env.topFrame(env);
         cref = Exp.pathToCref(path);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{fr}, cref);
         strippath = Absyn.stripLast(path);
-        (cache,c2,_) = lookupClass(cache,{fr}, strippath, true);
+        (cache,c2,_) = lookupClass2(cache,{fr}, strippath, true);
         assertPackage(c2);
       then
         (cache,p_env,attr,ty,bind);
-    case (cache,(Env.IMPORT(import_ = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs),env,ident) /* Assert package for Named imports */ 
+
+        /* Error message if named import is not package. */         
+    case (cache,(Env.IMPORT(import_ = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs),env,ident) 
       equation 
         equality(id = ident);
         fr = Env.topFrame(env);
         cref = Exp.pathToCref(path);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{fr}, cref);
         strippath = Absyn.stripLast(path);
-        (cache,c2,_) = lookupClass(cache,{fr}, strippath, true);
+        (cache,c2,_) = lookupClass2(cache,{fr}, strippath, true);
         failure(assertPackage(c2));
         str = Absyn.pathString(strippath);
         Error.addMessage(Error.IMPORT_PACKAGES_ONLY, {str});
       then
         fail();
-    case (cache,(_ :: fs),env,ident) /* Check next frame. */ 
+        
+        /* Check next frame. */ 
+    case (cache,(_ :: fs),env,ident) 
       equation 
         (cache,p_env,attr,ty,bind) = lookupQualifiedImportedVarInFrame(cache,fs, env, ident);
       then
@@ -446,16 +482,14 @@ algorithm
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident)
       equation  
         fr = Env.topFrame(env);
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,{fr}, path, false);
+        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,{fr}, path, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
-        //(cache,_,f::_,_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-        //   ci_state, c, false/*FIXME:prot*/, {}, false);
          (cache,(f :: _),_) = Inst.partialInstClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}); 
         (cache,_,_,_,_) = lookupVarInPackages(cache,{f}, Exp.CREF_IDENT(ident,{}));
       then
-        (cache,true);
+        (cache,true);        
     case (cache,(_ :: fs),env,ident)
       equation 
         (cache,res) = moreLookupUnqualifiedImportedVarInFrame(cache,fs, env, ident);
@@ -518,7 +552,7 @@ algorithm
        equation 
         fr = Env.topFrame(env);
         cref = Exp.pathToCref(path);
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,{fr}, path, false);
+        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,{fr}, path, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
         (cache,_,(f :: _),_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
@@ -562,7 +596,7 @@ algorithm
       equation 
         equality(id = ident) "For imported paths A, not possible to assert sub-path package" ;
         fr = Env.topFrame(env);
-        (cache,c,env_1) = lookupClass(cache,{fr}, Absyn.IDENT(id), true);
+        (cache,c,env_1) = lookupClass2(cache,{fr}, Absyn.IDENT(id), true);
       then
         (cache,c,env_1);
     case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = path)) :: fs),env,ident)
@@ -570,9 +604,9 @@ algorithm
         id = Absyn.pathLastIdent(path) "For imported path A.B.C, assert A.B is package" ;
         equality(id = ident);
         fr = Env.topFrame(env);
-        (cache,c,env_1) = lookupClass(cache,{fr}, path, true);
+        (cache,c,env_1) = lookupClass2(cache,{fr}, path, true);
         strippath = Absyn.stripLast(path);
-        (cache,c2,_) = lookupClass(cache,{fr}, strippath, true);
+        (cache,c2,_) = lookupClass2(cache,{fr}, strippath, true);
         assertPackage(c2);
       then
         (cache,c,env_1);
@@ -581,9 +615,9 @@ algorithm
         id = Absyn.pathLastIdent(path) "If not package, error" ;
         equality(id = ident);
         fr = Env.topFrame(env);
-        (cache,c,env_1) = lookupClass(cache,{fr}, path, true);
+        (cache,c,env_1) = lookupClass2(cache,{fr}, path, true);
         strippath = Absyn.stripLast(path);
-        (cache,c2,_) = lookupClass(cache,{fr}, strippath, true);
+        (cache,c2,_) = lookupClass2(cache,{fr}, strippath, true);
         failure(assertPackage(c2));
         str = Absyn.pathString(strippath);
         Error.addMessage(Error.IMPORT_PACKAGES_ONLY, {str});
@@ -593,20 +627,20 @@ algorithm
       equation 
         equality(id = ident) "Named imports" ;
         fr = Env.topFrame(env);
-        (cache,c,env_1) = lookupClass(cache,{fr}, path, true) "	Print.print_buf \"NAMED IMPORT, top frame:\" & 
-	Env.print_env {fr} &" ;
+        (cache,c,env_1) = lookupClass2(cache,{fr}, path, true);
         strippath = Absyn.stripLast(path);
-        (cache,c2,_) = lookupClass(cache,{fr}, strippath, true);
+        (cache,c2,_) = lookupClass2(cache,{fr}, strippath, true);
         assertPackage(c2);
       then
         (cache,c,env_1);
+        /* Error message if named import is not package */
     case (cache,(Env.IMPORT(import_ = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs),env,ident)
       equation 
         equality(id = ident) "Assert package for Named imports" ;
         fr = Env.topFrame(env);
-        (cache,c,env_1) = lookupClass(cache,{fr}, path, true);
+        (cache,c,env_1) = lookupClass2(cache,{fr}, path, true);
         strippath = Absyn.stripLast(path);
-        (cache,c2,_) = lookupClass(cache,{fr}, strippath, true);
+        (cache,c2,_) = lookupClass2(cache,{fr}, strippath, true);
         failure(assertPackage(c2));
         str = Absyn.pathString(strippath);
         Error.addMessage(Error.IMPORT_PACKAGES_ONLY, {str});
@@ -651,7 +685,7 @@ algorithm
       equation
         firstIdent = Absyn.pathFirstIdent(path);
           f::_= Env.cacheGet(Absyn.IDENT(firstIdent),path,cache);
-        (cache,_,_) = lookupClass(cache,{f}, Absyn.IDENT(ident), false);
+        (cache,_,_) = lookupClass2(cache,{f}, Absyn.IDENT(ident), false);
       then
         (cache,true);
         
@@ -659,14 +693,12 @@ algorithm
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident)
       equation 
         fr = Env.topFrame(env);
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,{fr}, path, false);
+        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,{fr}, path, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
-//        (cache,_,f::_,_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-//           ci_state, c, false/*FIXME:prot*/, {}, false);         
        (cache,(f :: _),_) = Inst.partialInstClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {});
-        (cache,_,_) = lookupClass(cache,{f}, Absyn.IDENT(ident), false);
+        (cache,_,_) = lookupClass2(cache,{f}, Absyn.IDENT(ident), false);
       then
         (cache,true);
     case (cache,(_ :: fs),env,ident)
@@ -710,7 +742,7 @@ algorithm
       equation
         firstIdent = Absyn.pathFirstIdent(path);
         f::fs_1 = Env.cacheGet(Absyn.IDENT(firstIdent),path,cache);
-        (cache,c_1,(f_1 :: _)) = lookupClass(cache,{f}, Absyn.IDENT(ident), false) "Restrict import to the imported scope only, not its parents..." ;
+        (cache,c_1,(f_1 :: _)) = lookupClass2(cache,{f}, Absyn.IDENT(ident), false) "Restrict import to the imported scope only, not its parents..." ;
         (cache,more) = moreLookupUnqualifiedImportedClassInFrame(cache,fs, env, ident);
         unique = boolNot(more);
       then
@@ -720,14 +752,13 @@ algorithm
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident) /* unique */ 
       equation 
         fr = Env.topFrame(env);
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,{fr}, path, false);
+        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,{fr}, path, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
-        //(cache,_,f::fs_1,_,_,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-        //   ci_state, c, false/*FIXME:prot*/, {}, false);
         (cache,(f :: fs_1),cistate1) = Inst.partialInstClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}); 
-        (cache,c_1,(f_1 :: _)) = lookupClass(cache,{f}, Absyn.IDENT(ident), false) "Restrict import to the imported scope only, not its parents..." ;
+        // Restrict import to the imported scope only, not its parents, thus {f} below
+        (cache,c_1,(f_1 :: _)) = lookupClass2(cache,{f}, Absyn.IDENT(ident), false) "Restrict import to the imported scope only, not its parents..." ;
         (cache,more) = moreLookupUnqualifiedImportedClassInFrame(cache,fs, env, ident);
         unique = boolNot(more);
       then
@@ -929,7 +960,7 @@ algorithm
     case (cache,env,Exp.CREF_QUAL(ident = id1,subscriptLst = {},componentRef = (id2 as Exp.CREF_IDENT(ident = _))))
       equation 
         (cache,(c as SCode.CLASS(n,_,encflag,(r as SCode.R_ENUMERATION()),_)),env2) 
-        	= lookupClass(cache,env, Absyn.IDENT(id1), false) "Special case for looking up enumerations" ;
+        	= lookupClass2(cache,env, Absyn.IDENT(id1), false) "Special case for looking up enumerations" ;
         env3 = Env.openScope(env2, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
         (cache,_,env5,_,_,types,_) = Inst.instClassIn(cache,env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
@@ -971,7 +1002,7 @@ algorithm
       // lookup of constants on form A.B in packages. instantiate package and look inside.
     case (cache,env,cr as Exp.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref)) /* First part of name is a class. */ 
       equation 
-        (cache,(c as SCode.CLASS(n,_,encflag,r,_)),env2) = lookupClass(cache,env, Absyn.IDENT(id), false);
+        (cache,(c as SCode.CLASS(n,_,encflag,r,_)),env2) = lookupClass2(cache,env, Absyn.IDENT(id), false);
         env3 = Env.openScope(env2, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
         (cache,_,env5,_,_,types,_) = Inst.instClassIn(cache,env3, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
@@ -1125,7 +1156,7 @@ algorithm
       // Try to find in cache.
     case(cache,env,path,msg)
       equation
-        (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = lookupClass(cache,env, path, msg);
+        (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = lookupClass2(cache,env, path, msg);
         SOME(scope) = Env.getEnvPath(cenv);
         ident = Absyn.pathLastIdent(path);
        classEnv = Env.cacheGet(scope,Absyn.IDENT(ident),cache);
@@ -1134,7 +1165,7 @@ algorithm
       // Not found in cache, lookup and instantiate.
     case(cache,env,path,msg)
       equation
-        (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = lookupClass(cache,env, path, msg);
+        (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = lookupClass2(cache,env, path, msg);
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
         new_ci_state = ClassInf.start(r, cn2);     
         (cache,classEnv,_) = Inst.partialInstClassIn(cache,cenv_2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
@@ -1142,7 +1173,6 @@ algorithm
       then (cache,classEnv);
   end matchcontinue;
 end lookupAndInstantiate;
-
 
 public function lookupIdent "function: lookupIdent
  
@@ -1241,7 +1271,7 @@ algorithm
     case (cache,(env as (Env.FRAME(class_1 = sid,list_2 = ht,list_3 = httypes) :: fs)),(iid as Absyn.QUALIFIED(name = pack,path = path)))
       local String id,s;
       equation 
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass(cache,env, Absyn.IDENT(pack), false) ;
+        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,env, Absyn.IDENT(pack), false) ;
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
         
@@ -1805,6 +1835,7 @@ algorithm
       equation 
         //print("searching parent scope\n");
         (cache,c,env_1) = lookupClassInEnv(cache,fs, id, msgflag);
+        //(cache,c,env_1) = lookupClass2(cache,fs,id,msgflag); // Test PA cache
       then
         (cache,c,env_1);
   end matchcontinue;
@@ -1851,7 +1882,7 @@ algorithm
         /* Search base classes */ 
     case (cache,Env.FRAME(list_5 = (bcframes as (_ :: _))),totenv,name,_) 
       equation 
-        (cache,c,env) = lookupClass(cache,bcframes, Absyn.IDENT(name), false);
+        (cache,c,env) = lookupClass2(cache,bcframes, Absyn.IDENT(name), false);
       then
         (cache,c,env);
         

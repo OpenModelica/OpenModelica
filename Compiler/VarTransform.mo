@@ -401,6 +401,42 @@ algorithm
   end matchcontinue;
 end addReplacement;
 
+protected function addReplacementNoTransitive "Similar to addReplacement but 
+does not make transitive replacement rules.
+"
+  input VariableReplacements repl;
+  input Exp.ComponentRef inSrc;
+  input Exp.Exp inDst;
+  output VariableReplacements outRepl;
+algorithm 
+  outRepl:=
+  matchcontinue (repl,inSrc,inDst)
+    local
+      Exp.ComponentRef src,src_1,dst_1;
+      Exp.Exp dst,dst_1,olddst;
+      VariableReplacements repl;
+      BinTree bt,bt_1;
+      BinTree2 invbt,invbt_1;
+      String s1,s2,s3,s4,s;
+    case ((repl as REPLACEMENTS(src = bt,binTree2 = invbt)),src,dst) /* source dest */ 
+      equation 
+        olddst = treeGet(bt, src) "if rule a->b exists, fail" ;
+      then
+        fail();
+    case ((repl as REPLACEMENTS(src = bt,binTree2 = invbt)),src,dst)
+      equation 
+        bt_1 = treeAdd(bt, src, dst);
+        invbt_1 = addReplacementInv(invbt, src, dst);
+      then
+        REPLACEMENTS(bt_1,invbt_1);
+    case (_,_,_)
+      equation 
+        print("-add_replacement failed\n");
+      then
+        fail();
+  end matchcontinue;
+end addReplacementNoTransitive;
+
 protected function addReplacementInv "function: addReplacementInv
  
   Helper function to addReplacement
@@ -489,7 +525,7 @@ algorithm
       VariableReplacements repl_1,repl_2,repl;
       Exp.ComponentRef src_1,src_2;
       Exp.Exp dst_1,dst_2,dst_3;
-    case (repl,src,dst) /* replacement rules src dst updated replacement rules src updated dst */ 
+    case (repl,src,dst)  
       equation 
         (repl_1,src_1,dst_1) = makeTransitive1(repl, src, dst);
         (repl_2,src_2,dst_2) = makeTransitive2(repl_1, src_1, dst_1);
@@ -523,7 +559,7 @@ algorithm
     case ((repl as REPLACEMENTS(src = bt,binTree2 = invbt)),src,dst)  
       equation 
         lst = treeGet2(invbt, src);
-        singleRepl = addReplacement(emptyReplacements(),src,dst);
+        singleRepl = addReplacementNoTransitive(emptyReplacements(),src,dst);
         repl_1 = makeTransitive12(lst,repl,singleRepl);
       then
         (repl_1,src,dst);
@@ -551,7 +587,7 @@ algorithm
     case(cr::crs,repl as REPLACEMENTS(src = bt,binTree2 = invbt),singleRepl) equation
       crDst = treeGet(bt,cr);
       crDst = replaceExp(crDst,singleRepl,NONE);
-      repl1=addReplacement(repl,cr,crDst) "add updated old rule";
+      repl1=addReplacementNoTransitive(repl,cr,crDst) "add updated old rule";
       repl2 = makeTransitive12(crs,repl1,singleRepl);
     then repl2;
   end matchcontinue;

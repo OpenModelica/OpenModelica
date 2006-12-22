@@ -887,10 +887,10 @@ RML_BEGIN_LABEL(System__hash)
 {
   char *str = RML_STRINGDATA(rmlA0);
   int res=0,i=0;
-  while( str[i])
+  while( str[i]&& i<4)
     res+=(int)str[i++];
 
-  rmlA0 = (void*) mk_icon(res);
+  rmlA0 = RML_IMMEDIATE(RML_TAGFIXNUM(res)); //(void*) mk_icon(res);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -2145,10 +2145,10 @@ RML_BEGIN_LABEL(System__hash)
 {
   char *str = RML_STRINGDATA(rmlA0);
   int res=0,i=0;
-  while( str[i])
+  while( str[i]&& i<4)
     res+=(int)str[i++];
 
-  rmlA0 = (void*) mk_icon(res);
+  rmlA0 = RML_IMMEDIATE(RML_TAGFIXNUM(res));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

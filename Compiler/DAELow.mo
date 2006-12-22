@@ -2627,6 +2627,45 @@ algorithm
   end matchcontinue;
 end removeSimpleEquations2;
 
+public function countSimpleEquations "Counts the number of trivial/simple equations
+e.g on form a=b, a=-b or a=constant
+"
+  input EquationArray eqns;
+  output Integer numEqns;
+protected Integer elimLevel;
+algorithm
+ elimLevel := RTOpts.eliminationLevel();
+ RTOpts.setEliminationLevel(2) "Full elimination"; 
+ numEqns := countSimpleEquations2(equationList(eqns),0);
+ RTOpts.setEliminationLevel(elimLevel);
+end countSimpleEquations;
+
+protected function countSimpleEquations2
+	input list<Equation> eqns;
+	input Integer partialSum "to enable tail-recursion";
+	output Integer numEqns;
+algorithm
+  numEqns := matchcontinue(eqns)
+  local Equation e;    
+    case({},partialSum) then partialSum;
+      
+    case (e::eqns,partialSum) equation
+        (_,_) = simpleEquation(e,false);
+        partialSum = partialSum +1;
+    then countSimpleEquations2(eqns,partialSum);
+
+      // Swaped args in simpleEquation
+    case (e::eqns,partialSum) equation
+      (_,_) = simpleEquation(e,true);
+      partialSum = partialSum +1;
+    then countSimpleEquations2(eqns,partialSum);  
+
+      //Not simple eqn.
+    case (e::eqns,partialSum)
+    then countSimpleEquations2(eqns,partialSum);
+  end matchcontinue;
+end countSimpleEquations2;
+
 public function simpleEquation "Returns the two sides of an equation as expressions if it is a 
 simple equation. Simple equations are
 a+b=0, a-b=0, a=constant, a=-b, etc.

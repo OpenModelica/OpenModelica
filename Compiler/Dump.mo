@@ -128,8 +128,7 @@ algorithm
       equation 
         s1 = unparseWithin(0, w);
         s2 = unparseClassList(0, cs);
-        s3 = stringAppend(s1, s2);
-        str = stringAppend(s3, "\n");
+        str = Util.stringAppendList({s1,s2,"\n"});
       then
         str;
     case (_) then "unparsing failed\n"; 

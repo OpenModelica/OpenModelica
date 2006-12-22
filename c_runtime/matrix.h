@@ -173,6 +173,7 @@ dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
  else if (info > 0) { \
    printf("Error sovling linear system of equations (no. %d) at time %f, system is singular.\n",id,localData->timeValue); \
  } \
+delete [] ipiv; \
 } while (0) /* (no trailing ; ) */ 
 
 #define solve_linear_equation_system_mixed(A,b,size,id) do { long int n=size; \
@@ -189,6 +190,7 @@ dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
  else if (info > 0) { \
      found_solution=-1; \
  } \
+ delete [] ipiv;\
 } while (0) /* (no trailing ; ) */ 
 
 #define start_nonlinear_system(size) { double nls_x[size]; \
