@@ -136,12 +136,12 @@ int read_modelica_complex(FILE *file, modelica_complex data)
 
 int read_modelica_real(FILE* file, modelica_real* data)
 {
-  float f;
+  modelica_real f;
   type_description desc;
   if (read_type_description(file,&desc)) { in_report("rs type_desc"); return 1; }
   if ((desc.type != 'r') && (desc.type != 'i')) { cleanup_description(&desc); in_report("rs type"); return 1; }
   if (desc.ndims != 0) { cleanup_description(&desc); in_report("rs dims"); return 1; }
-  if (fscanf(file,"%e",&f) != 1) { cleanup_description(&desc); in_report("rs parse"); return 1; }
+  if (fscanf(file,"%le",&f) != 1) { cleanup_description(&desc); in_report("rs parse"); return 1; }
   *data = f;
   read_to_eol(file);
   cleanup_description(&desc);
@@ -176,7 +176,7 @@ int read_real_array(FILE* file, real_array_t* arr)
 {
   int nr_elements;
   int i;
-  float f;
+  modelica_real f;
   real_array_t tmp;
   type_description desc;
 
@@ -193,7 +193,7 @@ int read_real_array(FILE* file, real_array_t* arr)
   nr_elements = real_array_nr_of_elements(arr);
   for (i = 0; i < nr_elements; ++i)
     {
-      if (fscanf(file,"%e",&f) != 1) { in_report("ra parse"); return 1; }
+      if (fscanf(file,"%le",&f) != 1) { in_report("ra parse"); return 1; }
       arr->data[i] = f;
     }
   read_to_eol(file);
@@ -271,6 +271,7 @@ int write_modelica_boolean(FILE* file, modelica_boolean* data)
   fprintf(file,"%e\n",*data);
   return 0;
 }
+
 int write_modelica_integer(FILE* file, modelica_integer* data)
 {
   fprintf(file,"# i!\n");

@@ -65,7 +65,7 @@ char * cflags=NULL;
 void * read_ptolemy_dataset(char*filename, int size,char**vars,int datasize);
 int read_ptolemy_dataset_size(char*filename);
 void * generate_array(char,int,type_description *,void *data);
-float next_realelt(float*);
+double next_realelt(double*);
 int next_intelt(int*);
 
 void set_cc(char *str)
@@ -690,8 +690,8 @@ void* read_one_value_from_file(FILE* file, type_description* desc)
 {
   void *res=NULL;
   int ival;
-  float rval;
-  float *rval_arr;
+  double rval;
+  double *rval_arr;
   int *ival_arr;
   int size;
   if (desc->ndims == 0) /* Scalar value */ 
@@ -700,7 +700,7 @@ void* read_one_value_from_file(FILE* file, type_description* desc)
       fscanf(file,"%d",&ival);
       res =(void*) Values__INTEGER(mk_icon(ival));
     } else if (desc->type == 'r') {
-      fscanf(file,"%e",&rval);
+      fscanf(file,"%le",&rval);
       res = (void*) Values__REAL(mk_rcon(rval));
     }
   } else if (desc->ndims == 1 && desc->type == 's') { /* Scalar String */   
@@ -726,13 +726,13 @@ void* read_one_value_from_file(FILE* file, type_description* desc)
 	for (currdim=0;currdim < desc->ndims; currdim++) {
 	  size *= desc->dim_size[currdim];
 	}
-	rval_arr = (float*)malloc(sizeof(float)*size);
+	rval_arr = (double*)malloc(sizeof(double)*size);
 	if(rval_arr == NULL) {
 	  return NULL;
 	}
 	/* Fill the array in reversed order */
 	for(i=size-1;i>=0;i--) {
-	  fscanf(file,"%e",&rval_arr[i]);
+	  fscanf(file,"%le",&rval_arr[i]);
 	}
 	
 	next_realelt(NULL);
@@ -870,12 +870,12 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__time)
 {
-  float _time;
+  double _time;
   clock_t cl;
   
   cl=clock();
   
-  _time = (float)cl / (float)CLOCKS_PER_SEC;
+  _time = (double)cl / (double)CLOCKS_PER_SEC;
   /*  printf("clock : %d\n",cl); */
   /* printf("returning time: %f\n",time);  */
   rmlA0 = (void*) mk_rcon(_time);
@@ -1043,7 +1043,7 @@ RML_BEGIN_LABEL(System__tanh)
 }
 RML_END_LABEL
 
-float next_realelt(float *arr)
+double next_realelt(double *arr)
 {
   static int curpos;
   
@@ -1071,14 +1071,14 @@ void * generate_array(char type, int curdim, type_description *desc, void *data)
 
 {
   void *lst;
-  float rval;
+  double rval;
   int ival;
   int i;
   lst = (void*)mk_nil();
   if (curdim == desc->ndims) {
     for (i=0; i< desc->dim_size[curdim-1]; i++) {
       if (type == 'r') {
-	rval = next_realelt((float*)data);
+	rval = next_realelt((double*)data);
 	lst = (void*)mk_cons(Values__REAL(mk_rcon(rval)),lst);
 	
       } else if (type == 'i') {
@@ -1325,7 +1325,7 @@ char * cc=NULL;
 char * cflags=NULL;
 
 void * generate_array(char,int,type_description *,void *data);
-float next_realelt(float*);
+double next_realelt(double*);
 int next_intelt(int*);
 
 int set_cc(char *str)
@@ -1948,8 +1948,8 @@ void* read_one_value_from_file(FILE* file, type_description* desc)
 {
   void *res=NULL;
   int ival;
-  float rval;
-  float *rval_arr;
+  double rval;
+  double *rval_arr;
   int *ival_arr;
   int size;
   if (desc->ndims == 0) /* Scalar value */ 
@@ -1958,7 +1958,7 @@ void* read_one_value_from_file(FILE* file, type_description* desc)
       fscanf(file,"%d",&ival);
       res =(void*) Values__INTEGER(mk_icon(ival));
     } else if (desc->type == 'r') {
-      fscanf(file,"%e",&rval);
+      fscanf(file,"%le",&rval);
       res = (void*) Values__REAL(mk_rcon(rval));
     }
   } else if (desc->ndims == 1 && desc->type == 's') { /* Scalar String */   
@@ -1984,13 +1984,13 @@ void* read_one_value_from_file(FILE* file, type_description* desc)
 	for (currdim=0;currdim < desc->ndims; currdim++) {
 	  size *= desc->dim_size[currdim];
 	}
-	rval_arr = (float*)malloc(sizeof(float)*size);
+	rval_arr = (double*)malloc(sizeof(double)*size);
 	if(rval_arr == NULL) {
 	  return NULL;
 	}
 	/* Fill the array in reversed order */
 	for(i=size-1;i>=0;i--) {
-	  fscanf(file,"%e",&rval_arr[i]);
+	  fscanf(file,"%le",&rval_arr[i]);
 	}
 	
 	next_realelt(NULL);
@@ -2128,12 +2128,12 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__time)
 {
-  float time;
+  double time;
   clock_t cl;
   
   cl=clock();
   
-  time = (float)cl / (float)CLOCKS_PER_SEC;
+  time = (double)cl / (double)CLOCKS_PER_SEC;
   /*  printf("clock : %d\n",cl); */
   /* printf("returning time: %f\n",time);  */
   rmlA0 = (void*) mk_rcon(time);
@@ -2302,7 +2302,7 @@ RML_BEGIN_LABEL(System__tanh)
 }
 RML_END_LABEL
 
-float next_realelt(float *arr)
+double next_realelt(double *arr)
 {
   static int curpos;
   
@@ -2330,14 +2330,14 @@ void * generate_array(char type, int curdim, type_description *desc, void *data)
 
 {
   void *lst;
-  float rval;
+  double rval;
   int ival;
   int i;
   lst = (void*)mk_nil();
   if (curdim == desc->ndims) {
     for (i=0; i< desc->dim_size[curdim-1]; i++) {
       if (type == 'r') {
-	rval = next_realelt((float*)data);
+	rval = next_realelt((double*)data);
 	lst = (void*)mk_cons(Values__REAL(mk_rcon(rval)),lst);
 	
       } else if (type == 'i') {
