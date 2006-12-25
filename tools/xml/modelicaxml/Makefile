@@ -1,13 +1,18 @@
 CC=gcc
 CXX=g++
 
-ANTLR_HOME = "./antlr-2.7.2/lib/cpp/"
+ANTLR_HOME = /home/adrpo/dev/antlr-2.7.6
 
-ANTLR_INCP = -I"./antlr-2.7.2/lib/cpp"
-ANTLR_LIBP = -L"./lib":"./xercesc/lib/"
+ANTLR_INCP = -I${ANTLR_HOME}/lib/cpp
+ANTLR_LIBP = -L${ANTLR_HOME}/lib/cpp/src
 
-PARSE_INCP = -I"./":"./xercesc/include"
-PARSE_LIBP = -L./
+XERCESC_HOME = /home/adrpo/dev/xercesc
+XERCESC_INCP = -I${XERCESC_HOME}/include
+XERCESC_LIBP = -L${XERCESC_HOME}/lib
+
+
+PARSE_INCP = -I"./" ${ANTLR_INCP} ${XERCESC_INCP}
+PARSE_LIBP = -L"./" ${ANTLR_LIBP} ${XERCESC_LIBP}
 
 INCP = $(ANTLR_INCP) $(PARSE_INCP)
 LIBP = $(ANTLR_LIBP) $(PARSE_LIBP)
@@ -18,6 +23,8 @@ LINKFLAGS = $(LIBP)
 
 LIBS = -lantlr -lmodelica_parser -lxerces-c
 
+DIRWALK_OBJS = dirwalk.o
+
 PARSER_OBJS = modelica_parser.o modelica_lexer.o token_names.o parse_tree_dumper.o
 
 walkergen= modelica_tree_parser.cpp modelica_tree_parser.hpp \
@@ -26,21 +33,22 @@ walkergen= modelica_tree_parser.cpp modelica_tree_parser.hpp \
 walkersrcs=$(filter %.cpp,$(walkergen))
 walkerobjs=$(walkersrcs:.cpp=.o)
 
-OBJS += $(walkerobjs) walker.o $(PARSER_OBJS) 
+OBJS += $(walkerobjs) $(PARSER_OBJS) $(DIRWALK_OBJS)
 
 ANTLR = java -cp $(ANTLR_HOME) antlr.Tool
 
-all : parser walker
+all : parser main
 
 parser:
 	$(MAKE) -f Makefile_parser
 
-walker : $(OBJS) 
-	$(CXX) -o modelicaxml $(OBJS) $(LINKFLAGS) $(LIBS) 
-
 $(walkergen): walker.g modelica_parserTokenTypes.txt
 	java antlr.Tool $(ANTLRFLAGS) $<
 
+dirwalk.o: dirwalk.cpp dirwalk.h
+
+main: $(OBJS) 
+	$(CXX) ModelicaXML.cpp -o modelicaxml $(OBJS) $(LINKFLAGS) $(LIBS) ${INCP}
 
 clean:
 	rm -f modelicaxml modelicaxml.exe *.o *.obj *~ core *.core 
@@ -50,6 +58,5 @@ reallyclean: clean
 	$(MAKE) -f Makefile_parser reallyclean
 
 
-walker.o : walker.cpp modelica_lexer.hpp modelica_parser.hpp
 
 

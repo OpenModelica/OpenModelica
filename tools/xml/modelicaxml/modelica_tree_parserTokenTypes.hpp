@@ -1,7 +1,7 @@
 #ifndef INC_modelica_tree_parserTokenTypes_hpp_
 #define INC_modelica_tree_parserTokenTypes_hpp_
 
-/* $ANTLR 2.7.5rc2 (20050108): "walker.g" -> "modelica_tree_parserTokenTypes.hpp"$ */
+/* $ANTLR 2.7.6 (2005-12-22): "walker.g" -> "modelica_tree_parserTokenTypes.hpp"$ */
 
 #ifndef CUSTOM_API
 # define CUSTOM_API

@@ -16,7 +16,7 @@
 #line 17 "modelica_tree_parser.hpp"
 #include <antlr/config.hpp>
 #include "modelica_tree_parserTokenTypes.hpp"
-/* $ANTLR 2.7.5rc2 (20050108): "walker.g" -> "modelica_tree_parser.hpp"$ */
+/* $ANTLR 2.7.6 (2005-12-22): "walker.g" -> "modelica_tree_parser.hpp"$ */
 #include <antlr/TreeParser.hpp>
 
 #line 15 "walker.g"
@@ -42,7 +42,7 @@ Comments: we walk on the modelica tree, buil a XML DOM tree and serialize
   #include <string>
 
 #ifndef __MODELICAXML_H_
-#include "ModelicaXml.h"
+#include "ModelicaXML.h"
 #endif
 
 #include "MyAST.h"
@@ -61,6 +61,15 @@ class CUSTOM_API modelica_tree_parser : public ANTLR_USE_NAMESPACE(antlr)TreePar
 	DOMElement* pRootElementModelicaXML;
 	char stmp[500];
 
+
+    char* itoa( int value, char* buffer, int radix )
+    {
+      /* 
+      char* x = (char*)malloc(sizeof(char)*21);
+      */
+      sprintf(buffer, "%d", value);
+      return buffer;
+    }
 
     typedef std::deque<DOMElement*> l_stack;
     typedef std::string mstring;

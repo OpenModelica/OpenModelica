@@ -2,11 +2,10 @@ CC=gcc
 CXX=g++
 AR=ar -r
 
-ANTLR_HOME="./antlr-2.7.2/lib/cpp"
+ANTLR_HOME=/home/adrpo/dev/antlr-2.7.6
+INCLUDES=-I${ANTLR_HOME}/lib/cpp
 
-INCLUDES=-I"./antlr-2.7.2/lib/cpp"
-
-LIBP=-L"./lib/"
+LIBP=-L${ANTLR_HOME}/lib/cpp/src
 
 CFLAGS =-g -Wall $(INCLUDES) -D DEBUG
 CXXFLAGS = $(CFLAGS)

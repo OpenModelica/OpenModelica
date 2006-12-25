@@ -1,4 +1,4 @@
-/* $ANTLR 2.7.5rc2 (20050108): "walker.g" -> "modelica_tree_parser.cpp"$ */
+/* $ANTLR 2.7.6 (2005-12-22): "walker.g" -> "modelica_tree_parser.cpp"$ */
 #include "modelica_tree_parser.hpp"
 #include <antlr/Token.hpp>
 #include <antlr/AST.hpp>
@@ -19,16 +19,16 @@ modelica_tree_parser::modelica_tree_parser()
 DOMElement * modelica_tree_parser::stored_definition(RefMyAST _t,
 	mstring moFilename, DOMDocument* pModelicaXMLDocParam
 ) {
-#line 170 "walker.g"
+#line 179 "walker.g"
 	DOMElement *ast;
 #line 25 "modelica_tree_parser.cpp"
-	RefMyAST stored_definition_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST stored_definition_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST stored_definition_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST f = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST f_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 170 "walker.g"
+#line 179 "walker.g"
 	
 	DOMElement *within = 0;
 	l_stack el_stack;
@@ -105,13 +105,13 @@ DOMElement * modelica_tree_parser::stored_definition(RefMyAST _t,
 			}
 			}
 			}
-#line 185 "walker.g"
+#line 194 "walker.g"
 			pDefinitionElement = pModelicaXMLDoc->createElement(X("definition"));
 #line 111 "modelica_tree_parser.cpp"
 			pDefinitionElement=class_definition(_t,f != NULL, pDefinitionElement);
 			_t = _retTree;
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 187 "walker.g"
+#line 196 "walker.g"
 			
 			if (pDefinitionElement /* adrpo modified 2004-10-27 && pDefinitionElement->hasChildNodes()*/)
 			{   
@@ -130,7 +130,7 @@ DOMElement * modelica_tree_parser::stored_definition(RefMyAST _t,
 	currentAST = __currentAST2;
 	_t = __t2;
 	_t = _t->getNextSibling();
-#line 195 "walker.g"
+#line 204 "walker.g"
 	
 				//pRootElementModelicaXML = within; 
 				pRootElementModelicaXML = (DOMElement*)appendKids(el_stack, pRootElementModelicaXML);
@@ -146,14 +146,14 @@ DOMElement * modelica_tree_parser::stored_definition(RefMyAST _t,
 DOMElement*  modelica_tree_parser::within_clause(RefMyAST _t,
 	DOMElement* parent
 ) {
-#line 205 "walker.g"
+#line 214 "walker.g"
 	DOMElement* ast;
 #line 152 "modelica_tree_parser.cpp"
-	RefMyAST within_clause_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST within_clause_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST within_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 205 "walker.g"
+#line 214 "walker.g"
 	
 		void* pNamePath = 0;
 	
@@ -195,7 +195,7 @@ DOMElement*  modelica_tree_parser::within_clause(RefMyAST _t,
 	currentAST = __currentAST8;
 	_t = __t8;
 	_t = _t->getNextSibling();
-#line 210 "walker.g"
+#line 219 "walker.g"
 	
 			    if (pNamePath) parent->setAttribute(X("within"), X(((mstring *)pNamePath)->c_str())); 
 				ast = parent;
@@ -210,10 +210,10 @@ DOMElement*  modelica_tree_parser::within_clause(RefMyAST _t,
 DOMElement*  modelica_tree_parser::class_definition(RefMyAST _t,
 	bool final, DOMElement *definitionElement
 ) {
-#line 219 "walker.g"
+#line 228 "walker.g"
 	DOMElement* ast;
 #line 216 "modelica_tree_parser.cpp"
-	RefMyAST class_definition_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST class_definition_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST class_definition_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -229,7 +229,7 @@ DOMElement*  modelica_tree_parser::class_definition(RefMyAST _t,
 	RefMyAST r = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 219 "walker.g"
+#line 228 "walker.g"
 	
 	class_specifier_t sClassSpec;
 	sClassSpec.composition = definitionElement;
@@ -237,7 +237,7 @@ DOMElement*  modelica_tree_parser::class_definition(RefMyAST _t,
 #line 238 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t11 = _t;
-	cd = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	cd = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST cd_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	cd_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(cd));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(cd_AST));
@@ -391,13 +391,13 @@ DOMElement*  modelica_tree_parser::class_definition(RefMyAST _t,
 	class_specifier(_t,sClassSpec);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 230 "walker.g"
+#line 239 "walker.g"
 	definitionElement=sClassSpec.composition;
 #line 397 "modelica_tree_parser.cpp"
 	currentAST = __currentAST11;
 	_t = __t11;
 	_t = _t->getNextSibling();
-#line 232 "walker.g"
+#line 241 "walker.g"
 				
 	definitionElement->setAttribute(
 					X("ident"), 
@@ -450,10 +450,10 @@ DOMElement*  modelica_tree_parser::class_definition(RefMyAST _t,
 }
 
 void * modelica_tree_parser::name_path(RefMyAST _t) {
-#line 2322 "walker.g"
+#line 2331 "walker.g"
 	void *ast;
 #line 456 "modelica_tree_parser.cpp"
-	RefMyAST name_path_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST name_path_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST name_path_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -463,7 +463,7 @@ void * modelica_tree_parser::name_path(RefMyAST _t) {
 	RefMyAST d_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i2 = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i2_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 2322 "walker.g"
+#line 2331 "walker.g"
 	
 		void *s1=0;
 		void *s2=0;
@@ -481,7 +481,7 @@ void * modelica_tree_parser::name_path(RefMyAST _t) {
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(i_AST));
 		match(ANTLR_USE_NAMESPACE(antlr)RefAST(_t),IDENT);
 		_t = _t->getNextSibling();
-#line 2329 "walker.g"
+#line 2338 "walker.g"
 		
 					ast = (void*)new mstring(i->getText()); 
 				
@@ -492,7 +492,7 @@ void * modelica_tree_parser::name_path(RefMyAST _t) {
 	case DOT:
 	{
 		RefMyAST __t324 = _t;
-		d = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		d = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST d_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		d_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(d));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(d_AST));
@@ -513,7 +513,7 @@ void * modelica_tree_parser::name_path(RefMyAST _t) {
 		currentAST = __currentAST324;
 		_t = __t324;
 		_t = _t->getNextSibling();
-#line 2333 "walker.g"
+#line 2342 "walker.g"
 		
 					s1 = (void*)new mstring(i2->getText());
 					ast = (void*)new mstring(mstring(((mstring*)s1)->c_str())+mstring(".")+mstring(((mstring*)s2)->c_str()));
@@ -533,7 +533,7 @@ void * modelica_tree_parser::name_path(RefMyAST _t) {
 }
 
 void modelica_tree_parser::class_restriction(RefMyAST _t) {
-	RefMyAST class_restriction_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST class_restriction_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST class_restriction_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -644,13 +644,13 @@ void modelica_tree_parser::class_restriction(RefMyAST _t) {
 void modelica_tree_parser::class_specifier(RefMyAST _t,
 	class_specifier_t& sClassSpec
 ) {
-	RefMyAST class_specifier_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST class_specifier_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST class_specifier_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 299 "walker.g"
+#line 308 "walker.g"
 	
 		DOMElement *comp = 0;
 		DOMElement *cmt = 0;
@@ -689,7 +689,7 @@ void modelica_tree_parser::class_specifier(RefMyAST _t,
 		comp=composition(_t,sClassSpec.composition);
 		_t = _retTree;
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 312 "walker.g"
+#line 321 "walker.g"
 		
 		if (cmt) sClassSpec.string_comment = cmt;				
 						sClassSpec.composition = comp;
@@ -760,7 +760,7 @@ void modelica_tree_parser::class_specifier(RefMyAST _t,
 		currentAST = __currentAST22;
 		_t = __t22;
 		_t = _t->getNextSibling();
-#line 323 "walker.g"
+#line 332 "walker.g"
 		
 					sClassSpec.derived = d;
 					sClassSpec.enumeration = e;
@@ -824,7 +824,7 @@ void modelica_tree_parser::class_specifier(RefMyAST _t,
 		}
 		}
 		}
-#line 330 "walker.g"
+#line 339 "walker.g"
 		
 								  sClassSpec.classExtends = pModelicaXMLDoc->createElement(X("extended_class"));
 								  if (cmod) sClassSpec.classExtends = 
@@ -840,7 +840,7 @@ void modelica_tree_parser::class_specifier(RefMyAST _t,
 		currentAST = __currentAST24;
 		_t = __t24;
 		_t = _t->getNextSibling();
-#line 336 "walker.g"
+#line 345 "walker.g"
 		
 					sClassSpec.classExtends = pModelicaXMLDoc->createElement(X("extended_class"));
 		if (cmt) sClassSpec.classExtends->appendChild(cmt);
@@ -862,10 +862,10 @@ void modelica_tree_parser::class_specifier(RefMyAST _t,
 }
 
 DOMElement*  modelica_tree_parser::string_comment(RefMyAST _t) {
-#line 2574 "walker.g"
+#line 2583 "walker.g"
 	DOMElement* ast;
 #line 868 "modelica_tree_parser.cpp"
-	RefMyAST string_comment_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST string_comment_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST string_comment_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -877,14 +877,14 @@ DOMElement*  modelica_tree_parser::string_comment(RefMyAST _t) {
 	switch ( _t->getType()) {
 	case STRING_COMMENT:
 	{
-#line 2575 "walker.g"
+#line 2584 "walker.g"
 		
 			  DOMElement* cmt=0;
 			  ast = 0;	   
 			
 #line 886 "modelica_tree_parser.cpp"
 		RefMyAST __t371 = _t;
-		sc = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		sc = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST sc_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		sc_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(sc));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(sc_AST));
@@ -899,7 +899,7 @@ DOMElement*  modelica_tree_parser::string_comment(RefMyAST _t) {
 		currentAST = __currentAST371;
 		_t = __t371;
 		_t = _t->getNextSibling();
-#line 2580 "walker.g"
+#line 2589 "walker.g"
 		
 					DOMElement *pStringComment = pModelicaXMLDoc->createElement(X("string_comment"));
 		
@@ -927,7 +927,7 @@ DOMElement*  modelica_tree_parser::string_comment(RefMyAST _t) {
 	case INITIAL_EQUATION:
 	case INITIAL_ALGORITHM:
 	{
-#line 2590 "walker.g"
+#line 2599 "walker.g"
 		
 					ast = 0;
 				
@@ -948,14 +948,14 @@ DOMElement*  modelica_tree_parser::string_comment(RefMyAST _t) {
 DOMElement*  modelica_tree_parser::composition(RefMyAST _t,
 	DOMElement* definition
 ) {
-#line 512 "walker.g"
+#line 521 "walker.g"
 	DOMElement* ast;
 #line 954 "modelica_tree_parser.cpp"
-	RefMyAST composition_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST composition_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST composition_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 512 "walker.g"
+#line 521 "walker.g"
 	
 	DOMElement* el = 0;
 	l_stack el_stack;
@@ -1037,7 +1037,7 @@ DOMElement*  modelica_tree_parser::composition(RefMyAST _t,
 		currentAST.child = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		match(ANTLR_USE_NAMESPACE(antlr)RefAST(_t),EXTERNAL);
 		_t = _t->getFirstChild();
-#line 529 "walker.g"
+#line 538 "walker.g"
 		pExternalFunctionCall = pModelicaXMLDoc->createElement(X("external"));
 #line 1043 "modelica_tree_parser.cpp"
 		{
@@ -1072,7 +1072,7 @@ DOMElement*  modelica_tree_parser::composition(RefMyAST _t,
 			if (_t == RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) )
 				_t = ASTNULL;
 			if ((_t->getType() == EXTERNAL_ANNOTATION)) {
-#line 533 "walker.g"
+#line 542 "walker.g"
 				pExternalFunctionCall->appendChild(pModelicaXMLDoc->createElement(X("semicolon")));
 #line 1078 "modelica_tree_parser.cpp"
 				RefMyAST __t62 = _t;
@@ -1115,7 +1115,7 @@ DOMElement*  modelica_tree_parser::composition(RefMyAST _t,
 	}
 	}
 	}
-#line 538 "walker.g"
+#line 547 "walker.g"
 	
 				if (pExternalFunctionCall) definition->appendChild(pExternalFunctionCall);
 	ast = definition; 
@@ -1128,14 +1128,14 @@ DOMElement*  modelica_tree_parser::composition(RefMyAST _t,
 }
 
 DOMElement*  modelica_tree_parser::derived_class(RefMyAST _t) {
-#line 388 "walker.g"
+#line 397 "walker.g"
 	DOMElement* ast;
 #line 1134 "modelica_tree_parser.cpp"
-	RefMyAST derived_class_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST derived_class_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST derived_class_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 388 "walker.g"
+#line 397 "walker.g"
 	
 		void* p = 0;
 		DOMElement* as = 0;
@@ -1220,7 +1220,7 @@ DOMElement*  modelica_tree_parser::derived_class(RefMyAST _t) {
 	}
 	}
 	}
-#line 404 "walker.g"
+#line 413 "walker.g"
 							
 					if (p)               pDerived->setAttribute(X("type"), X(((mstring*)p)->c_str())); 
 					if (as)              pDerived->appendChild(as); 
@@ -1237,10 +1237,10 @@ DOMElement*  modelica_tree_parser::derived_class(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::enumeration(RefMyAST _t) {
-#line 417 "walker.g"
+#line 426 "walker.g"
 	DOMElement* ast;
 #line 1243 "modelica_tree_parser.cpp"
-	RefMyAST enumeration_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST enumeration_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST enumeration_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -1248,7 +1248,7 @@ DOMElement*  modelica_tree_parser::enumeration(RefMyAST _t) {
 	RefMyAST en_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST c = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST c_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 417 "walker.g"
+#line 426 "walker.g"
 	
 		l_stack el_stack;
 		DOMElement* el = 0;
@@ -1257,7 +1257,7 @@ DOMElement*  modelica_tree_parser::enumeration(RefMyAST _t) {
 #line 1258 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t39 = _t;
-	en = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	en = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST en_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	en_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(en));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(en_AST));
@@ -1276,7 +1276,7 @@ DOMElement*  modelica_tree_parser::enumeration(RefMyAST _t) {
 		el=enumeration_literal(_t);
 		_t = _retTree;
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 426 "walker.g"
+#line 435 "walker.g"
 		el_stack.push_back(el);
 #line 1282 "modelica_tree_parser.cpp"
 		{ // ( ... )*
@@ -1287,7 +1287,7 @@ DOMElement*  modelica_tree_parser::enumeration(RefMyAST _t) {
 				el=enumeration_literal(_t);
 				_t = _retTree;
 				astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 429 "walker.g"
+#line 438 "walker.g"
 				el_stack.push_back(el);
 #line 1293 "modelica_tree_parser.cpp"
 			}
@@ -1341,7 +1341,7 @@ DOMElement*  modelica_tree_parser::enumeration(RefMyAST _t) {
 	currentAST = __currentAST39;
 	_t = __t39;
 	_t = _t->getNextSibling();
-#line 437 "walker.g"
+#line 446 "walker.g"
 	
 				DOMElement* pEnumeration = pModelicaXMLDoc->createElement(X("enumeration"));
 				pEnumeration->setAttribute(X("sline"), X(itoa(en->getLine(),stmp,10)));
@@ -1365,16 +1365,16 @@ DOMElement*  modelica_tree_parser::enumeration(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::overloading(RefMyAST _t) {
-#line 480 "walker.g"
+#line 489 "walker.g"
 	DOMElement* ast;
 #line 1371 "modelica_tree_parser.cpp"
-	RefMyAST overloading_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST overloading_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST overloading_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST ov = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST ov_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 480 "walker.g"
+#line 489 "walker.g"
 	
 		std::deque<void*> el_stack;
 		void* el = 0;
@@ -1383,7 +1383,7 @@ DOMElement*  modelica_tree_parser::overloading(RefMyAST _t) {
 #line 1384 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t49 = _t;
-	ov = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	ov = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST ov_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ov_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(ov));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(ov_AST));
@@ -1395,7 +1395,7 @@ DOMElement*  modelica_tree_parser::overloading(RefMyAST _t) {
 	el=name_path(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 489 "walker.g"
+#line 498 "walker.g"
 	el_stack.push_back(el);
 #line 1401 "modelica_tree_parser.cpp"
 	{ // ( ... )*
@@ -1406,7 +1406,7 @@ DOMElement*  modelica_tree_parser::overloading(RefMyAST _t) {
 			el=name_path(_t);
 			_t = _retTree;
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 492 "walker.g"
+#line 501 "walker.g"
 			el_stack.push_back(el);
 #line 1412 "modelica_tree_parser.cpp"
 		}
@@ -1441,7 +1441,7 @@ DOMElement*  modelica_tree_parser::overloading(RefMyAST _t) {
 	currentAST = __currentAST49;
 	_t = __t49;
 	_t = _t->getNextSibling();
-#line 497 "walker.g"
+#line 506 "walker.g"
 	
 				DOMElement* pOverload = pModelicaXMLDoc->createElement(X("overload"));
 				if (cmt) pOverload->appendChild(cmt);
@@ -1459,14 +1459,14 @@ DOMElement*  modelica_tree_parser::overloading(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::pder(RefMyAST _t) {
-#line 345 "walker.g"
+#line 354 "walker.g"
 	DOMElement* ast;
 #line 1465 "modelica_tree_parser.cpp"
-	RefMyAST pder_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST pder_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST pder_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 345 "walker.g"
+#line 354 "walker.g"
 	
 	void* func=0;
 	DOMElement* var_lst=0;
@@ -1493,7 +1493,7 @@ DOMElement*  modelica_tree_parser::pder(RefMyAST _t) {
 	currentAST = __currentAST27;
 	_t = __t27;
 	_t = _t->getNextSibling();
-#line 351 "walker.g"
+#line 360 "walker.g"
 	
 				ast = pModelicaXMLDoc->createElement(X("pder"));
 				if (func) ast->setAttribute(X("type"), X(((mstring*)func)->c_str()));
@@ -1507,14 +1507,14 @@ DOMElement*  modelica_tree_parser::pder(RefMyAST _t) {
 }
 
 void * modelica_tree_parser::class_modification(RefMyAST _t) {
-#line 1043 "walker.g"
+#line 1052 "walker.g"
 	void *stack;
 #line 1513 "modelica_tree_parser.cpp"
-	RefMyAST class_modification_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST class_modification_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST class_modification_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1043 "walker.g"
+#line 1052 "walker.g"
 		
 		stack = 0;
 	
@@ -1562,10 +1562,10 @@ void * modelica_tree_parser::class_modification(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::ident_list(RefMyAST _t) {
-#line 358 "walker.g"
+#line 367 "walker.g"
 	DOMElement* ast;
 #line 1568 "modelica_tree_parser.cpp"
-	RefMyAST ident_list_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST ident_list_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST ident_list_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -1573,7 +1573,7 @@ DOMElement*  modelica_tree_parser::ident_list(RefMyAST _t) {
 	RefMyAST i_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i2 = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i2_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 358 "walker.g"
+#line 367 "walker.g"
 	
 	l_stack el_stack;
 		DOMElement* pIdent = 0; 
@@ -1598,7 +1598,7 @@ DOMElement*  modelica_tree_parser::ident_list(RefMyAST _t) {
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(i_AST));
 	match(ANTLR_USE_NAMESPACE(antlr)RefAST(_t),IDENT);
 	_t = _t->getNextSibling();
-#line 365 "walker.g"
+#line 374 "walker.g"
 	
 					pIdent = pModelicaXMLDoc->createElement(X("pder_var"));
 					pIdent->setAttribute(X("ident"), X(i->getText().c_str()));
@@ -1617,7 +1617,7 @@ DOMElement*  modelica_tree_parser::ident_list(RefMyAST _t) {
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(i2_AST));
 			match(ANTLR_USE_NAMESPACE(antlr)RefAST(_t),IDENT);
 			_t = _t->getNextSibling();
-#line 371 "walker.g"
+#line 380 "walker.g"
 			
 							pIdent = pModelicaXMLDoc->createElement(X("pder_var"));
 							pIdent->setAttribute(X("ident"), X(i2->getText().c_str()));
@@ -1635,7 +1635,7 @@ DOMElement*  modelica_tree_parser::ident_list(RefMyAST _t) {
 	currentAST = __currentAST29;
 	_t = __t29;
 	_t = _t->getNextSibling();
-#line 377 "walker.g"
+#line 386 "walker.g"
 	
 	
 				DOMElement* pIdentList = pModelicaXMLDoc->createElement(X("variables"));
@@ -1652,7 +1652,7 @@ DOMElement*  modelica_tree_parser::ident_list(RefMyAST _t) {
 void modelica_tree_parser::type_prefix(RefMyAST _t,
 	DOMElement* parent
 ) {
-	RefMyAST type_prefix_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST type_prefix_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST type_prefix_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -1781,7 +1781,7 @@ void modelica_tree_parser::type_prefix(RefMyAST _t,
 	}
 	}
 	}
-#line 907 "walker.g"
+#line 916 "walker.g"
 	
 				if (f != NULL) { parent->setAttribute(X("flow"), X("true")); }
 				//else { parent->setAttribute(X("flow"), X("none")); }
@@ -1802,16 +1802,16 @@ void modelica_tree_parser::type_prefix(RefMyAST _t,
 DOMElement*  modelica_tree_parser::array_subscripts(RefMyAST _t,
 	int kind
 ) {
-#line 2507 "walker.g"
+#line 2516 "walker.g"
 	DOMElement* ast;
 #line 1808 "modelica_tree_parser.cpp"
-	RefMyAST array_subscripts_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST array_subscripts_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST array_subscripts_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST lbk = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST lbk_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 2507 "walker.g"
+#line 2516 "walker.g"
 	
 		l_stack el_stack;
 		DOMElement* s = 0;
@@ -1824,7 +1824,7 @@ DOMElement*  modelica_tree_parser::array_subscripts(RefMyAST _t,
 #line 1825 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t362 = _t;
-	lbk = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	lbk = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST lbk_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	lbk_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(lbk));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(lbk_AST));
@@ -1855,7 +1855,7 @@ DOMElement*  modelica_tree_parser::array_subscripts(RefMyAST _t,
 	currentAST = __currentAST362;
 	_t = __t362;
 	_t = _t->getNextSibling();
-#line 2520 "walker.g"
+#line 2529 "walker.g"
 				
 	
 				pArraySubscripts->setAttribute(X("sline"), X(itoa(lbk->getLine(),stmp,10)));
@@ -1871,16 +1871,16 @@ DOMElement*  modelica_tree_parser::array_subscripts(RefMyAST _t,
 }
 
 DOMElement*  modelica_tree_parser::comment(RefMyAST _t) {
-#line 2553 "walker.g"
+#line 2562 "walker.g"
 	DOMElement* ast;
 #line 1877 "modelica_tree_parser.cpp"
-	RefMyAST comment_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST comment_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST comment_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST c = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST c_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 2553 "walker.g"
+#line 2562 "walker.g"
 	
 		DOMElement* ann=0;
 		DOMElement* cmt=0;
@@ -1891,7 +1891,7 @@ DOMElement*  modelica_tree_parser::comment(RefMyAST _t) {
 #line 1892 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t368 = _t;
-	c = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	c = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST c_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	c_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(c));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(c_AST));
@@ -1903,7 +1903,7 @@ DOMElement*  modelica_tree_parser::comment(RefMyAST _t) {
 	cmt=string_comment(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 2561 "walker.g"
+#line 2570 "walker.g"
 	if (cmt) pComment->appendChild(cmt);
 #line 1909 "modelica_tree_parser.cpp"
 	{
@@ -1915,7 +1915,7 @@ DOMElement*  modelica_tree_parser::comment(RefMyAST _t) {
 		pComment=annotation(_t,0 /* none */, pComment, INSIDE_COMMENT);
 		_t = _retTree;
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 2562 "walker.g"
+#line 2571 "walker.g"
 		bAnno = true;
 #line 1921 "modelica_tree_parser.cpp"
 		break;
@@ -1933,7 +1933,7 @@ DOMElement*  modelica_tree_parser::comment(RefMyAST _t) {
 	currentAST = __currentAST368;
 	_t = __t368;
 	_t = _t->getNextSibling();
-#line 2563 "walker.g"
+#line 2572 "walker.g"
 	
 				if (c)
 				{
@@ -1951,17 +1951,17 @@ DOMElement*  modelica_tree_parser::comment(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::enumeration_literal(RefMyAST _t) {
-#line 458 "walker.g"
+#line 467 "walker.g"
 	DOMElement* ast;
 #line 1957 "modelica_tree_parser.cpp"
-	RefMyAST enumeration_literal_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST enumeration_literal_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST enumeration_literal_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i1 = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i1_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	
-#line 459 "walker.g"
+#line 468 "walker.g"
 	
 	DOMElement* c1=0;
 	
@@ -2007,7 +2007,7 @@ DOMElement*  modelica_tree_parser::enumeration_literal(RefMyAST _t) {
 	currentAST = __currentAST46;
 	_t = __t46;
 	_t = _t->getNextSibling();
-#line 463 "walker.g"
+#line 472 "walker.g"
 	
 				DOMElement* pEnumerationLiteral = pModelicaXMLDoc->createElement(X("enumeration_literal"));
 				pEnumerationLiteral->setAttribute(X("ident"), str2xml(i1));
@@ -2028,14 +2028,14 @@ DOMElement*  modelica_tree_parser::enumeration_literal(RefMyAST _t) {
 DOMElement*  modelica_tree_parser::element_list(RefMyAST _t,
 	int iSwitch, DOMElement*definition
 ) {
-#line 638 "walker.g"
+#line 647 "walker.g"
 	DOMElement* ast;
 #line 2034 "modelica_tree_parser.cpp"
-	RefMyAST element_list_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST element_list_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST element_list_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 638 "walker.g"
+#line 647 "walker.g"
 	
 	DOMElement* e = 0;
 	l_stack el_stack;
@@ -2077,7 +2077,7 @@ DOMElement*  modelica_tree_parser::element_list(RefMyAST _t,
 	}
 	_loop81:;
 	} // ( ... )*
-#line 647 "walker.g"
+#line 656 "walker.g"
 	
 				ast = definition;
 	
@@ -2091,23 +2091,23 @@ DOMElement*  modelica_tree_parser::element_list(RefMyAST _t,
 DOMElement*  modelica_tree_parser::public_element_list(RefMyAST _t,
 	DOMElement* definition
 ) {
-#line 544 "walker.g"
+#line 553 "walker.g"
 	DOMElement* ast;
 #line 2097 "modelica_tree_parser.cpp"
-	RefMyAST public_element_list_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST public_element_list_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST public_element_list_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST p = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST p_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 544 "walker.g"
+#line 553 "walker.g"
 	
 	DOMElement* el;    
 	
 #line 2108 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t65 = _t;
-	p = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	p = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST p_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	p_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(p));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(p_AST));
@@ -2122,7 +2122,7 @@ DOMElement*  modelica_tree_parser::public_element_list(RefMyAST _t,
 	currentAST = __currentAST65;
 	_t = __t65;
 	_t = _t->getNextSibling();
-#line 552 "walker.g"
+#line 561 "walker.g"
 	
 				ast = definition;
 	
@@ -2136,23 +2136,23 @@ DOMElement*  modelica_tree_parser::public_element_list(RefMyAST _t,
 DOMElement*  modelica_tree_parser::protected_element_list(RefMyAST _t,
 	DOMElement* definition
 ) {
-#line 557 "walker.g"
+#line 566 "walker.g"
 	DOMElement* ast;
 #line 2142 "modelica_tree_parser.cpp"
-	RefMyAST protected_element_list_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST protected_element_list_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST protected_element_list_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST p = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST p_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 557 "walker.g"
+#line 566 "walker.g"
 	
 	DOMElement* el;
 	
 #line 2153 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t67 = _t;
-	p = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	p = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST p_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	p_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(p));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(p_AST));
@@ -2167,7 +2167,7 @@ DOMElement*  modelica_tree_parser::protected_element_list(RefMyAST _t,
 	currentAST = __currentAST67;
 	_t = __t67;
 	_t = _t->getNextSibling();
-#line 566 "walker.g"
+#line 575 "walker.g"
 	
 				ast = definition;
 	
@@ -2181,16 +2181,16 @@ DOMElement*  modelica_tree_parser::protected_element_list(RefMyAST _t,
 DOMElement*  modelica_tree_parser::equation_clause(RefMyAST _t,
 	DOMElement *definition
 ) {
-#line 1186 "walker.g"
+#line 1195 "walker.g"
 	DOMElement* ast;
 #line 2187 "modelica_tree_parser.cpp"
-	RefMyAST equation_clause_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST equation_clause_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST equation_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST eq = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST eq_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1186 "walker.g"
+#line 1195 "walker.g"
 	
 		l_stack el_stack;
 		DOMElement* e = 0;
@@ -2204,7 +2204,7 @@ DOMElement*  modelica_tree_parser::equation_clause(RefMyAST _t,
 	case EQUATION:
 	{
 		RefMyAST __t168 = _t;
-		eq = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		eq = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST eq_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		eq_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(eq));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(eq_AST));
@@ -2245,7 +2245,7 @@ DOMElement*  modelica_tree_parser::equation_clause(RefMyAST _t,
 		currentAST = __currentAST168;
 		_t = __t168;
 		_t = _t->getNextSibling();
-#line 1200 "walker.g"
+#line 1209 "walker.g"
 		
 					ast = definition;
 				
@@ -2307,7 +2307,7 @@ DOMElement*  modelica_tree_parser::equation_clause(RefMyAST _t,
 		currentAST = __currentAST173;
 		_t = __t173;
 		_t = _t->getNextSibling();
-#line 1210 "walker.g"
+#line 1219 "walker.g"
 		
 						ast = definition; 
 					
@@ -2331,14 +2331,14 @@ DOMElement*  modelica_tree_parser::equation_clause(RefMyAST _t,
 DOMElement*  modelica_tree_parser::algorithm_clause(RefMyAST _t,
 	DOMElement* definition
 ) {
-#line 1216 "walker.g"
+#line 1225 "walker.g"
 	DOMElement* ast;
 #line 2337 "modelica_tree_parser.cpp"
-	RefMyAST algorithm_clause_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST algorithm_clause_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST algorithm_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1216 "walker.g"
+#line 1225 "walker.g"
 	
 		l_stack el_stack;
 		DOMElement* e;
@@ -2392,7 +2392,7 @@ DOMElement*  modelica_tree_parser::algorithm_clause(RefMyAST _t,
 		currentAST = __currentAST177;
 		_t = __t177;
 		_t = _t->getNextSibling();
-#line 1227 "walker.g"
+#line 1236 "walker.g"
 		
 					ast = definition; 
 				
@@ -2454,7 +2454,7 @@ DOMElement*  modelica_tree_parser::algorithm_clause(RefMyAST _t,
 		currentAST = __currentAST181;
 		_t = __t181;
 		_t = _t->getNextSibling();
-#line 1236 "walker.g"
+#line 1245 "walker.g"
 		
 						ast = definition;
 					
@@ -2478,10 +2478,10 @@ DOMElement*  modelica_tree_parser::algorithm_clause(RefMyAST _t,
 DOMElement*  modelica_tree_parser::external_function_call(RefMyAST _t,
 	DOMElement *pExternalFunctionCall
 ) {
-#line 582 "walker.g"
+#line 591 "walker.g"
 	DOMElement* ast;
 #line 2484 "modelica_tree_parser.cpp"
-	RefMyAST external_function_call_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST external_function_call_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST external_function_call_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -2493,7 +2493,7 @@ DOMElement*  modelica_tree_parser::external_function_call(RefMyAST _t,
 	RefMyAST e_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i2 = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i2_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 582 "walker.g"
+#line 591 "walker.g"
 	
 		DOMElement* temp=0;
 		DOMElement* temp2=0;
@@ -2582,7 +2582,7 @@ DOMElement*  modelica_tree_parser::external_function_call(RefMyAST _t,
 			}
 			}
 			}
-#line 595 "walker.g"
+#line 604 "walker.g"
 			
 									if (s != NULL) pExternalFunctionCall->setAttribute(X("language_specification"), str2xml(s));  
 									if (i != NULL) pExternalFunctionCall->setAttribute(X("ident"), str2xml(i));
@@ -2599,7 +2599,7 @@ DOMElement*  modelica_tree_parser::external_function_call(RefMyAST _t,
 		case EQUALS:
 		{
 			RefMyAST __t75 = _t;
-			e = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+			e = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 			RefMyAST e_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 			e_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(e));
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(e_AST));
@@ -2641,7 +2641,7 @@ DOMElement*  modelica_tree_parser::external_function_call(RefMyAST _t,
 			currentAST = __currentAST75;
 			_t = __t75;
 			_t = _t->getNextSibling();
-#line 606 "walker.g"
+#line 615 "walker.g"
 			
 									if (s != NULL) pExternalFunctionCall->setAttribute(X("language_specification"), str2xml(s));  
 									if (i2 != NULL) pExternalFunctionCall->setAttribute(X("ident"), str2xml(i2));
@@ -2680,7 +2680,7 @@ DOMElement*  modelica_tree_parser::external_function_call(RefMyAST _t,
 	}
 	}
 	}
-#line 620 "walker.g"
+#line 629 "walker.g"
 	
 				if (!ast) 
 				{ 
@@ -2698,23 +2698,23 @@ DOMElement*  modelica_tree_parser::external_function_call(RefMyAST _t,
 DOMElement*  modelica_tree_parser::annotation(RefMyAST _t,
 	int iSwitch, DOMElement *parent, enum anno awhere
 ) {
-#line 2634 "walker.g"
+#line 2643 "walker.g"
 	DOMElement* ast;
 #line 2704 "modelica_tree_parser.cpp"
-	RefMyAST annotation_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST annotation_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST annotation_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST a = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST a_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 2634 "walker.g"
+#line 2643 "walker.g"
 	
 	void* cmod=0;
 	
 #line 2715 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t375 = _t;
-	a = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	a = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST a_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	a_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(a));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(a_AST));
@@ -2729,7 +2729,7 @@ DOMElement*  modelica_tree_parser::annotation(RefMyAST _t,
 	currentAST = __currentAST375;
 	_t = __t375;
 	_t = _t->getNextSibling();
-#line 2640 "walker.g"
+#line 2649 "walker.g"
 	
 				DOMElement *pAnnotation = pModelicaXMLDoc->createElement(X("annotation"));
 	
@@ -2767,16 +2767,16 @@ DOMElement*  modelica_tree_parser::annotation(RefMyAST _t,
 }
 
 DOMElement*  modelica_tree_parser::expression_list(RefMyAST _t) {
-#line 2459 "walker.g"
+#line 2468 "walker.g"
 	DOMElement* ast;
 #line 2773 "modelica_tree_parser.cpp"
-	RefMyAST expression_list_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST expression_list_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST expression_list_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST el = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST el_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 2459 "walker.g"
+#line 2468 "walker.g"
 	
 		l_stack el_stack;
 		DOMElement* e;
@@ -2786,7 +2786,7 @@ DOMElement*  modelica_tree_parser::expression_list(RefMyAST _t) {
 	
 	{
 	RefMyAST __t353 = _t;
-	el = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	el = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST el_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	el_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(el));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(el_AST));
@@ -2798,7 +2798,7 @@ DOMElement*  modelica_tree_parser::expression_list(RefMyAST _t) {
 	e=expression(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 2467 "walker.g"
+#line 2476 "walker.g"
 	el_stack.push_back(e);
 #line 2804 "modelica_tree_parser.cpp"
 	{ // ( ... )*
@@ -2809,7 +2809,7 @@ DOMElement*  modelica_tree_parser::expression_list(RefMyAST _t) {
 			e=expression(_t);
 			_t = _retTree;
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 2468 "walker.g"
+#line 2477 "walker.g"
 			el_stack.push_back(pModelicaXMLDoc->createElement(X("comma"))); el_stack.push_back(e);
 #line 2815 "modelica_tree_parser.cpp"
 		}
@@ -2824,7 +2824,7 @@ DOMElement*  modelica_tree_parser::expression_list(RefMyAST _t) {
 	_t = __t353;
 	_t = _t->getNextSibling();
 	}
-#line 2471 "walker.g"
+#line 2480 "walker.g"
 	
 				ast = (DOMElement*)stack2DOMNode(el_stack, "expression_list");
 	
@@ -2839,10 +2839,10 @@ DOMElement*  modelica_tree_parser::expression_list(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::component_reference(RefMyAST _t) {
-#line 2339 "walker.g"
+#line 2348 "walker.g"
 	DOMElement* ast;
 #line 2845 "modelica_tree_parser.cpp"
-	RefMyAST component_reference_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST component_reference_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST component_reference_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -2850,7 +2850,7 @@ DOMElement*  modelica_tree_parser::component_reference(RefMyAST _t) {
 	RefMyAST i_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i2 = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i2_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 2339 "walker.g"
+#line 2348 "walker.g"
 	
 		DOMElement* arr = 0;
 		DOMElement* id = 0;
@@ -2864,7 +2864,7 @@ DOMElement*  modelica_tree_parser::component_reference(RefMyAST _t) {
 	case IDENT:
 	{
 		RefMyAST __t327 = _t;
-		i = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		i = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST i_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		i_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(i));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(i_AST));
@@ -2897,7 +2897,7 @@ DOMElement*  modelica_tree_parser::component_reference(RefMyAST _t) {
 		currentAST = __currentAST327;
 		_t = __t327;
 		_t = _t->getNextSibling();
-#line 2346 "walker.g"
+#line 2355 "walker.g"
 		
 						DOMElement *pCref = pModelicaXMLDoc->createElement(X("component_reference"));
 		
@@ -2925,7 +2925,7 @@ DOMElement*  modelica_tree_parser::component_reference(RefMyAST _t) {
 		match(ANTLR_USE_NAMESPACE(antlr)RefAST(_t),DOT);
 		_t = _t->getFirstChild();
 		RefMyAST __t330 = _t;
-		i2 = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		i2 = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST i2_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		i2_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(i2));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(i2_AST));
@@ -2964,7 +2964,7 @@ DOMElement*  modelica_tree_parser::component_reference(RefMyAST _t) {
 		currentAST = __currentAST329;
 		_t = __t329;
 		_t = _t->getNextSibling();
-#line 2358 "walker.g"
+#line 2367 "walker.g"
 		
 						DOMElement *pCref = pModelicaXMLDoc->createElement(X("component_reference"));
 						pCref->setAttribute(X("ident"), str2xml(i2));
@@ -2994,10 +2994,10 @@ DOMElement*  modelica_tree_parser::component_reference(RefMyAST _t) {
 DOMElement*  modelica_tree_parser::element(RefMyAST _t,
 	int iSwitch, DOMElement *parent
 ) {
-#line 656 "walker.g"
+#line 665 "walker.g"
 	DOMElement* ast;
 #line 3000 "modelica_tree_parser.cpp"
-	RefMyAST element_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST element_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST element_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -3021,7 +3021,7 @@ DOMElement*  modelica_tree_parser::element(RefMyAST _t,
 	RefMyAST od_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST rd = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST rd_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 656 "walker.g"
+#line 665 "walker.g"
 	
 		DOMElement* class_def = 0;
 		DOMElement* e_spec = 0;
@@ -3042,7 +3042,7 @@ DOMElement*  modelica_tree_parser::element(RefMyAST _t,
 		parent=import_clause(_t,iSwitch, parent);
 		_t = _retTree;
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 668 "walker.g"
+#line 677 "walker.g"
 		
 						ast = parent;				
 					
@@ -3054,7 +3054,7 @@ DOMElement*  modelica_tree_parser::element(RefMyAST _t,
 		parent=extends_clause(_t,iSwitch, parent);
 		_t = _retTree;
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 672 "walker.g"
+#line 681 "walker.g"
 		
 						ast = parent;
 					
@@ -3110,7 +3110,7 @@ DOMElement*  modelica_tree_parser::element(RefMyAST _t,
 		}
 		}
 		}
-#line 677 "walker.g"
+#line 686 "walker.g"
 		
 						   DOMElement* componentElement = pModelicaXMLDoc->createElement(X("component_clause")); 
 						   setVisibility(iSwitch, componentElement);
@@ -3151,7 +3151,7 @@ DOMElement*  modelica_tree_parser::element(RefMyAST _t,
 		}
 		}
 		}
-#line 682 "walker.g"
+#line 691 "walker.g"
 		if (f) componentElement->setAttribute(X("final"), X("true"));
 #line 3157 "modelica_tree_parser.cpp"
 		{
@@ -3219,7 +3219,7 @@ DOMElement*  modelica_tree_parser::element(RefMyAST _t,
 		}
 		}
 		}
-#line 684 "walker.g"
+#line 693 "walker.g"
 		
 								  if (i && o) componentElement->setAttribute(X("innerouter"), X("innerouter"));
 								  else
@@ -3245,7 +3245,7 @@ DOMElement*  modelica_tree_parser::element(RefMyAST _t,
 			parent=component_clause(_t,parent, componentElement);
 			_t = _retTree;
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 693 "walker.g"
+#line 702 "walker.g"
 			
 										ast = parent;
 									
@@ -3260,7 +3260,7 @@ DOMElement*  modelica_tree_parser::element(RefMyAST _t,
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(r_AST));
 			match(ANTLR_USE_NAMESPACE(antlr)RefAST(_t),REPLACEABLE);
 			_t = _t->getNextSibling();
-#line 696 "walker.g"
+#line 705 "walker.g"
 			if (r) componentElement->setAttribute(X("replaceable"), X("true"));
 #line 3266 "modelica_tree_parser.cpp"
 			parent=component_clause(_t,parent, componentElement);
@@ -3290,7 +3290,7 @@ DOMElement*  modelica_tree_parser::element(RefMyAST _t,
 			}
 			}
 			}
-#line 699 "walker.g"
+#line 708 "walker.g"
 										
 			if (constr) 
 										{
@@ -3357,7 +3357,7 @@ DOMElement*  modelica_tree_parser::element(RefMyAST _t,
 		}
 		}
 		}
-#line 713 "walker.g"
+#line 722 "walker.g"
 		
 								DOMElement* definitionElement = pModelicaXMLDoc->createElement(X("definition")); 
 								setVisibility(iSwitch, definitionElement);
@@ -3391,7 +3391,7 @@ DOMElement*  modelica_tree_parser::element(RefMyAST _t,
 		}
 		}
 		}
-#line 718 "walker.g"
+#line 727 "walker.g"
 		if (fd) definitionElement->setAttribute(X("final"), X("true"));
 #line 3397 "modelica_tree_parser.cpp"
 		{
@@ -3445,7 +3445,7 @@ DOMElement*  modelica_tree_parser::element(RefMyAST _t,
 		}
 		}
 		}
-#line 720 "walker.g"
+#line 729 "walker.g"
 		
 								  if (i && o) definitionElement->setAttribute(X("innerouter"), X("outer"));
 								  else
@@ -3464,7 +3464,7 @@ DOMElement*  modelica_tree_parser::element(RefMyAST _t,
 			definitionElement=class_definition(_t,fd != NULL, definitionElement);
 			_t = _retTree;
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 730 "walker.g"
+#line 739 "walker.g"
 			
 										if (definitionElement && definitionElement->hasChildNodes())
 											parent->appendChild(definitionElement);
@@ -3510,7 +3510,7 @@ DOMElement*  modelica_tree_parser::element(RefMyAST _t,
 			}
 			}
 			}
-#line 740 "walker.g"
+#line 749 "walker.g"
 			
 										if (definitionElement)
 										{
@@ -3557,16 +3557,16 @@ DOMElement*  modelica_tree_parser::element(RefMyAST _t,
 DOMElement*  modelica_tree_parser::import_clause(RefMyAST _t,
 	int iSwitch, DOMElement *parent
 ) {
-#line 765 "walker.g"
+#line 774 "walker.g"
 	DOMElement* ast;
 #line 3563 "modelica_tree_parser.cpp"
-	RefMyAST import_clause_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST import_clause_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST import_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 765 "walker.g"
+#line 774 "walker.g"
 	
 		DOMElement* imp = 0;
 		DOMElement* cmt = 0;
@@ -3574,7 +3574,7 @@ DOMElement*  modelica_tree_parser::import_clause(RefMyAST _t,
 #line 3575 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t102 = _t;
-	i = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	i = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST i_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	i_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(i));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(i_AST));
@@ -3632,7 +3632,7 @@ DOMElement*  modelica_tree_parser::import_clause(RefMyAST _t,
 	currentAST = __currentAST102;
 	_t = __t102;
 	_t = _t->getNextSibling();
-#line 777 "walker.g"
+#line 786 "walker.g"
 	
 				DOMElement* pImport = pModelicaXMLDoc->createElement(X("import"));
 				setVisibility(iSwitch, pImport);
@@ -3655,16 +3655,16 @@ DOMElement*  modelica_tree_parser::import_clause(RefMyAST _t,
 DOMElement*  modelica_tree_parser::extends_clause(RefMyAST _t,
 	int iSwitch, DOMElement* parent
 ) {
-#line 846 "walker.g"
+#line 855 "walker.g"
 	DOMElement* ast;
 #line 3661 "modelica_tree_parser.cpp"
-	RefMyAST extends_clause_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST extends_clause_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST extends_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST e = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST e_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 846 "walker.g"
+#line 855 "walker.g"
 	
 		void *path = 0;
 		void *mod = 0;	
@@ -3673,7 +3673,7 @@ DOMElement*  modelica_tree_parser::extends_clause(RefMyAST _t,
 	
 	{
 	RefMyAST __t113 = _t;
-	e = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	e = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST e_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	e_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(e));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(e_AST));
@@ -3709,7 +3709,7 @@ DOMElement*  modelica_tree_parser::extends_clause(RefMyAST _t,
 	currentAST = __currentAST113;
 	_t = __t113;
 	_t = _t->getNextSibling();
-#line 856 "walker.g"
+#line 865 "walker.g"
 					
 					DOMElement* pExtends = pModelicaXMLDoc->createElement(X("extends"));
 					setVisibility(iSwitch, pExtends);
@@ -3733,14 +3733,14 @@ DOMElement*  modelica_tree_parser::extends_clause(RefMyAST _t,
 DOMElement*  modelica_tree_parser::component_clause(RefMyAST _t,
 	DOMElement* parent, DOMElement* attributes
 ) {
-#line 885 "walker.g"
+#line 894 "walker.g"
 	DOMElement* ast;
 #line 3739 "modelica_tree_parser.cpp"
-	RefMyAST component_clause_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST component_clause_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST component_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 885 "walker.g"
+#line 894 "walker.g"
 	
 		type_prefix_t pfx;
 		void* path = 0;
@@ -3755,7 +3755,7 @@ DOMElement*  modelica_tree_parser::component_clause(RefMyAST _t,
 	path=type_specifier(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 894 "walker.g"
+#line 903 "walker.g"
 	if (path) attributes->setAttribute(X("type"), X(((mstring*)path)->c_str()));
 #line 3761 "modelica_tree_parser.cpp"
 	{
@@ -3782,7 +3782,7 @@ DOMElement*  modelica_tree_parser::component_clause(RefMyAST _t,
 	parent=component_list(_t,parent, attributes, arr);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 897 "walker.g"
+#line 906 "walker.g"
 	
 				ast = parent; 
 			
@@ -3794,14 +3794,14 @@ DOMElement*  modelica_tree_parser::component_clause(RefMyAST _t,
 }
 
 DOMElement*  modelica_tree_parser::constraining_clause(RefMyAST _t) {
-#line 874 "walker.g"
+#line 883 "walker.g"
 	DOMElement* ast;
 #line 3800 "modelica_tree_parser.cpp"
-	RefMyAST constraining_clause_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST constraining_clause_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST constraining_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 874 "walker.g"
+#line 883 "walker.g"
 	
 	DOMElement* pConstrain = pModelicaXMLDoc->createElement(X("constrain"));
 	
@@ -3819,16 +3819,16 @@ DOMElement*  modelica_tree_parser::constraining_clause(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::explicit_import_name(RefMyAST _t) {
-#line 794 "walker.g"
+#line 803 "walker.g"
 	DOMElement* ast;
 #line 3825 "modelica_tree_parser.cpp"
-	RefMyAST explicit_import_name_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST explicit_import_name_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST explicit_import_name_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 794 "walker.g"
+#line 803 "walker.g"
 	
 		void* path;
 	
@@ -3857,7 +3857,7 @@ DOMElement*  modelica_tree_parser::explicit_import_name(RefMyAST _t) {
 	currentAST = __currentAST106;
 	_t = __t106;
 	_t = _t->getNextSibling();
-#line 800 "walker.g"
+#line 809 "walker.g"
 	
 				DOMElement* pExplicitImport = pModelicaXMLDoc->createElement(X("named_import"));
 				pExplicitImport->setAttribute(X("ident"), str2xml(i));
@@ -3876,10 +3876,10 @@ DOMElement*  modelica_tree_parser::explicit_import_name(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::implicit_import_name(RefMyAST _t) {
-#line 814 "walker.g"
+#line 823 "walker.g"
 	DOMElement* ast;
 #line 3882 "modelica_tree_parser.cpp"
-	RefMyAST implicit_import_name_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST implicit_import_name_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST implicit_import_name_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -3887,7 +3887,7 @@ DOMElement*  modelica_tree_parser::implicit_import_name(RefMyAST _t) {
 	RefMyAST unq_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST qua = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST qua_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 814 "walker.g"
+#line 823 "walker.g"
 	
 		void* path;
 	
@@ -3900,7 +3900,7 @@ DOMElement*  modelica_tree_parser::implicit_import_name(RefMyAST _t) {
 	case UNQUALIFIED:
 	{
 		RefMyAST __t109 = _t;
-		unq = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		unq = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST unq_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		unq_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(unq));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(unq_AST));
@@ -3915,7 +3915,7 @@ DOMElement*  modelica_tree_parser::implicit_import_name(RefMyAST _t) {
 		currentAST = __currentAST109;
 		_t = __t109;
 		_t = _t->getNextSibling();
-#line 820 "walker.g"
+#line 829 "walker.g"
 		
 						DOMElement* pUnqImport = pModelicaXMLDoc->createElement(X("unqualified_import"));
 						if (path) pUnqImport->setAttribute(X("name"), X(((mstring*)path)->c_str()));
@@ -3931,7 +3931,7 @@ DOMElement*  modelica_tree_parser::implicit_import_name(RefMyAST _t) {
 	case QUALIFIED:
 	{
 		RefMyAST __t110 = _t;
-		qua = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		qua = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST qua_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		qua_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(qua));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(qua_AST));
@@ -3946,7 +3946,7 @@ DOMElement*  modelica_tree_parser::implicit_import_name(RefMyAST _t) {
 		currentAST = __currentAST110;
 		_t = __t110;
 		_t = _t->getNextSibling();
-#line 830 "walker.g"
+#line 839 "walker.g"
 		
 						DOMElement* pQuaImport = pModelicaXMLDoc->createElement(X("qualified_import"));
 						if (path) pQuaImport->setAttribute(X("name"), X(((mstring*)path)->c_str()));
@@ -3972,10 +3972,10 @@ DOMElement*  modelica_tree_parser::implicit_import_name(RefMyAST _t) {
 }
 
 void*  modelica_tree_parser::type_specifier(RefMyAST _t) {
-#line 921 "walker.g"
+#line 930 "walker.g"
 	void* ast;
 #line 3978 "modelica_tree_parser.cpp"
-	RefMyAST type_specifier_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST type_specifier_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST type_specifier_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -3992,14 +3992,14 @@ void*  modelica_tree_parser::type_specifier(RefMyAST _t) {
 DOMElement*  modelica_tree_parser::component_list(RefMyAST _t,
 	DOMElement* parent, DOMElement *attributes, DOMElement* type_array
 ) {
-#line 927 "walker.g"
+#line 936 "walker.g"
 	DOMElement* ast;
 #line 3998 "modelica_tree_parser.cpp"
-	RefMyAST component_list_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST component_list_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST component_list_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 927 "walker.g"
+#line 936 "walker.g"
 	
 		l_stack el_stack;
 		DOMElement* e=0;
@@ -4025,7 +4025,7 @@ DOMElement*  modelica_tree_parser::component_list(RefMyAST _t,
 	}
 	_loop126:;
 	} // ( ... )*
-#line 936 "walker.g"
+#line 945 "walker.g"
 	
 				ast = parent; 
 			
@@ -4039,14 +4039,14 @@ DOMElement*  modelica_tree_parser::component_list(RefMyAST _t,
 DOMElement*  modelica_tree_parser::component_declaration(RefMyAST _t,
 	DOMElement* parent, DOMElement *attributes, DOMElement *type_array
 ) {
-#line 957 "walker.g"
+#line 966 "walker.g"
 	DOMElement* ast;
 #line 4045 "modelica_tree_parser.cpp"
-	RefMyAST component_declaration_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST component_declaration_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST component_declaration_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 957 "walker.g"
+#line 966 "walker.g"
 	
 		DOMElement* cmt = 0;
 		DOMElement* dec = 0;
@@ -4106,7 +4106,7 @@ DOMElement*  modelica_tree_parser::component_declaration(RefMyAST _t,
 	}
 	}
 	}
-#line 968 "walker.g"
+#line 977 "walker.g"
 	
 				if (cmt) dec->appendChild(cmt);
 				if (cda) dec->appendChild(cda);
@@ -4121,16 +4121,16 @@ DOMElement*  modelica_tree_parser::component_declaration(RefMyAST _t,
 }
 
 DOMElement*  modelica_tree_parser::conditional_attribute(RefMyAST _t) {
-#line 941 "walker.g"
+#line 950 "walker.g"
 	DOMElement* ast;
 #line 4127 "modelica_tree_parser.cpp"
-	RefMyAST conditional_attribute_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST conditional_attribute_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST conditional_attribute_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 941 "walker.g"
+#line 950 "walker.g"
 	
 		DOMElement* cda = 0;
 		DOMElement* e = 0;
@@ -4138,7 +4138,7 @@ DOMElement*  modelica_tree_parser::conditional_attribute(RefMyAST _t) {
 #line 4139 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t128 = _t;
-	i = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	i = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST i_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	i_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(i));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(i_AST));
@@ -4153,7 +4153,7 @@ DOMElement*  modelica_tree_parser::conditional_attribute(RefMyAST _t) {
 	currentAST = __currentAST128;
 	_t = __t128;
 	_t = _t->getNextSibling();
-#line 947 "walker.g"
+#line 956 "walker.g"
 	
 		cda = pModelicaXMLDoc->createElement(X("conditional"));			
 		cda->setAttribute(X("sline"), X(itoa(i->getLine(),stmp,10)));
@@ -4169,10 +4169,10 @@ DOMElement*  modelica_tree_parser::conditional_attribute(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::expression(RefMyAST _t) {
-#line 1776 "walker.g"
+#line 1785 "walker.g"
 	DOMElement* ast;
 #line 4175 "modelica_tree_parser.cpp"
-	RefMyAST expression_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST expression_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST expression_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -4254,16 +4254,16 @@ DOMElement*  modelica_tree_parser::expression(RefMyAST _t) {
 DOMElement*  modelica_tree_parser::declaration(RefMyAST _t,
 	DOMElement* parent, DOMElement* type_array
 ) {
-#line 978 "walker.g"
+#line 987 "walker.g"
 	DOMElement* ast;
 #line 4260 "modelica_tree_parser.cpp"
-	RefMyAST declaration_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST declaration_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST declaration_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 978 "walker.g"
+#line 987 "walker.g"
 	
 		DOMElement* arr = 0;
 		DOMElement* mod = 0;
@@ -4272,7 +4272,7 @@ DOMElement*  modelica_tree_parser::declaration(RefMyAST _t,
 #line 4273 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t134 = _t;
-	i = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	i = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST i_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	i_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(i));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(i_AST));
@@ -4331,7 +4331,7 @@ DOMElement*  modelica_tree_parser::declaration(RefMyAST _t,
 	currentAST = __currentAST134;
 	_t = __t134;
 	_t = _t->getNextSibling();
-#line 986 "walker.g"
+#line 995 "walker.g"
 	
 				DOMElement *pComponent = pModelicaXMLDoc->createElement(X("component"));
 				pComponent->setAttribute(X("ident"), str2xml(i));			
@@ -4351,10 +4351,10 @@ DOMElement*  modelica_tree_parser::declaration(RefMyAST _t,
 }
 
 DOMElement*  modelica_tree_parser::modification(RefMyAST _t) {
-#line 999 "walker.g"
+#line 1008 "walker.g"
 	DOMElement* ast;
 #line 4357 "modelica_tree_parser.cpp"
-	RefMyAST modification_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST modification_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST modification_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -4362,7 +4362,7 @@ DOMElement*  modelica_tree_parser::modification(RefMyAST _t) {
 	RefMyAST eq_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST as = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST as_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 999 "walker.g"
+#line 1008 "walker.g"
 	
 		DOMElement* e = 0;
 		void *cm = 0;
@@ -4445,7 +4445,7 @@ DOMElement*  modelica_tree_parser::modification(RefMyAST _t) {
 	case EQUALS:
 	{
 		RefMyAST __t140 = _t;
-		eq = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		eq = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST eq_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		eq_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(eq));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(eq_AST));
@@ -4460,7 +4460,7 @@ DOMElement*  modelica_tree_parser::modification(RefMyAST _t) {
 		currentAST = __currentAST140;
 		_t = __t140;
 		_t = _t->getNextSibling();
-#line 1007 "walker.g"
+#line 1016 "walker.g"
 		iswitch = 1;
 #line 4466 "modelica_tree_parser.cpp"
 		break;
@@ -4468,7 +4468,7 @@ DOMElement*  modelica_tree_parser::modification(RefMyAST _t) {
 	case ASSIGN:
 	{
 		RefMyAST __t141 = _t;
-		as = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		as = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST as_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		as_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(as));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(as_AST));
@@ -4483,7 +4483,7 @@ DOMElement*  modelica_tree_parser::modification(RefMyAST _t) {
 		currentAST = __currentAST141;
 		_t = __t141;
 		_t = _t->getNextSibling();
-#line 1008 "walker.g"
+#line 1017 "walker.g"
 		iswitch = 2;
 #line 4489 "modelica_tree_parser.cpp"
 		break;
@@ -4494,7 +4494,7 @@ DOMElement*  modelica_tree_parser::modification(RefMyAST _t) {
 	}
 	}
 	}
-#line 1010 "walker.g"
+#line 1019 "walker.g"
 	
 				DOMElement *pModificationEQorASorARG = null;
 				if (iswitch == 1) pModificationEQorASorARG = pModelicaXMLDoc->createElement(X("modification_equals"));
@@ -4534,14 +4534,14 @@ DOMElement*  modelica_tree_parser::modification(RefMyAST _t) {
 }
 
 void * modelica_tree_parser::argument_list(RefMyAST _t) {
-#line 1051 "walker.g"
+#line 1060 "walker.g"
 	void *stack;
 #line 4540 "modelica_tree_parser.cpp"
-	RefMyAST argument_list_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST argument_list_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST argument_list_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1051 "walker.g"
+#line 1060 "walker.g"
 	
 		l_stack *el_stack = new l_stack;
 		DOMElement* e;
@@ -4562,7 +4562,7 @@ void * modelica_tree_parser::argument_list(RefMyAST _t) {
 	e=argument(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1058 "walker.g"
+#line 1067 "walker.g"
 	el_stack->push_back(e);
 #line 4568 "modelica_tree_parser.cpp"
 	{ // ( ... )*
@@ -4573,7 +4573,7 @@ void * modelica_tree_parser::argument_list(RefMyAST _t) {
 			e=argument(_t);
 			_t = _retTree;
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1059 "walker.g"
+#line 1068 "walker.g"
 			el_stack->push_back(e);
 #line 4579 "modelica_tree_parser.cpp"
 		}
@@ -4587,7 +4587,7 @@ void * modelica_tree_parser::argument_list(RefMyAST _t) {
 	currentAST = __currentAST146;
 	_t = __t146;
 	_t = _t->getNextSibling();
-#line 1061 "walker.g"
+#line 1070 "walker.g"
 	
 				if (el_stack->size()) stack = (void*)el_stack;
 				else (stack = 0);
@@ -4600,10 +4600,10 @@ void * modelica_tree_parser::argument_list(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::argument(RefMyAST _t) {
-#line 1067 "walker.g"
+#line 1076 "walker.g"
 	DOMElement* ast;
 #line 4606 "modelica_tree_parser.cpp"
-	RefMyAST argument_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST argument_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST argument_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -4618,7 +4618,7 @@ DOMElement*  modelica_tree_parser::argument(RefMyAST _t) {
 	case ELEMENT_MODIFICATION:
 	{
 		RefMyAST __t150 = _t;
-		em = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		em = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST em_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		em_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(em));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(em_AST));
@@ -4633,7 +4633,7 @@ DOMElement*  modelica_tree_parser::argument(RefMyAST _t) {
 		currentAST = __currentAST150;
 		_t = __t150;
 		_t = _t->getNextSibling();
-#line 1070 "walker.g"
+#line 1079 "walker.g"
 		
 					if (em) 
 					{
@@ -4648,7 +4648,7 @@ DOMElement*  modelica_tree_parser::argument(RefMyAST _t) {
 	case ELEMENT_REDECLARATION:
 	{
 		RefMyAST __t151 = _t;
-		er = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		er = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST er_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		er_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(er));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(er_AST));
@@ -4663,7 +4663,7 @@ DOMElement*  modelica_tree_parser::argument(RefMyAST _t) {
 		currentAST = __currentAST151;
 		_t = __t151;
 		_t = _t->getNextSibling();
-#line 1078 "walker.g"
+#line 1087 "walker.g"
 		
 					if (er) 
 					{
@@ -4686,10 +4686,10 @@ DOMElement*  modelica_tree_parser::argument(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::element_modification(RefMyAST _t) {
-#line 1087 "walker.g"
+#line 1096 "walker.g"
 	DOMElement* ast;
 #line 4692 "modelica_tree_parser.cpp"
-	RefMyAST element_modification_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST element_modification_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST element_modification_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -4697,7 +4697,7 @@ DOMElement*  modelica_tree_parser::element_modification(RefMyAST _t) {
 	RefMyAST e_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST f = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST f_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1087 "walker.g"
+#line 1096 "walker.g"
 	
 		DOMElement* cref;
 		DOMElement* mod=0;
@@ -4786,7 +4786,7 @@ DOMElement*  modelica_tree_parser::element_modification(RefMyAST _t) {
 	cmt=string_comment(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1099 "walker.g"
+#line 1108 "walker.g"
 	
 				DOMElement *pModification = pModelicaXMLDoc->createElement(X("element_modification"));
 				if (f) pModification->setAttribute(X("final"), X("true"));
@@ -4804,10 +4804,10 @@ DOMElement*  modelica_tree_parser::element_modification(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::element_redeclaration(RefMyAST _t) {
-#line 1110 "walker.g"
+#line 1119 "walker.g"
 	DOMElement* ast;
 #line 4810 "modelica_tree_parser.cpp"
-	RefMyAST element_redeclaration_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST element_redeclaration_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST element_redeclaration_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -4819,7 +4819,7 @@ DOMElement*  modelica_tree_parser::element_redeclaration(RefMyAST _t) {
 	RefMyAST f_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST re = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST re_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1110 "walker.g"
+#line 1119 "walker.g"
 	
 		DOMElement* class_def = 0;
 		DOMElement* e_spec = 0; 
@@ -4832,7 +4832,7 @@ DOMElement*  modelica_tree_parser::element_redeclaration(RefMyAST _t) {
 	
 	{
 	RefMyAST __t158 = _t;
-	r = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	r = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST r_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	r_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(r));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(r_AST));
@@ -4931,7 +4931,7 @@ DOMElement*  modelica_tree_parser::element_redeclaration(RefMyAST _t) {
 			class_def=class_definition(_t,false, class_def);
 			_t = _retTree;
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1123 "walker.g"
+#line 1132 "walker.g"
 			
 										DOMElement *pElementRedeclaration = pModelicaXMLDoc->createElement(X("element_redeclaration"));
 										if (class_def && class_def->hasChildNodes())
@@ -4952,13 +4952,13 @@ DOMElement*  modelica_tree_parser::element_redeclaration(RefMyAST _t) {
 		case DOT:
 		case IDENT:
 		{
-#line 1131 "walker.g"
+#line 1140 "walker.g"
 			DOMElement *pElementRedeclaration = pModelicaXMLDoc->createElement(X("element_redeclaration"));
 #line 4958 "modelica_tree_parser.cpp"
 			pElementRedeclaration=component_clause1(_t,pElementRedeclaration);
 			_t = _retTree;
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1133 "walker.g"
+#line 1142 "walker.g"
 										
 										if (f) pElementRedeclaration->setAttribute(X("final"), X("true"));
 										if (each) pElementRedeclaration->setAttribute(X("each"), X("true"));
@@ -4984,7 +4984,7 @@ DOMElement*  modelica_tree_parser::element_redeclaration(RefMyAST _t) {
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(re_AST));
 		match(ANTLR_USE_NAMESPACE(antlr)RefAST(_t),REPLACEABLE);
 		_t = _t->getNextSibling();
-#line 1141 "walker.g"
+#line 1150 "walker.g"
 		DOMElement *pElementRedeclaration = pModelicaXMLDoc->createElement(X("element_redeclaration"));
 #line 4990 "modelica_tree_parser.cpp"
 		{
@@ -5039,7 +5039,7 @@ DOMElement*  modelica_tree_parser::element_redeclaration(RefMyAST _t) {
 		}
 		}
 		}
-#line 1146 "walker.g"
+#line 1155 "walker.g"
 			
 									if (f) pElementRedeclaration->setAttribute(X("final"), X("true"));
 									if (f) pElementRedeclaration->setAttribute(X("final"), X("true"));
@@ -5078,14 +5078,14 @@ DOMElement*  modelica_tree_parser::element_redeclaration(RefMyAST _t) {
 DOMElement*  modelica_tree_parser::component_clause1(RefMyAST _t,
 	DOMElement *parent
 ) {
-#line 1167 "walker.g"
+#line 1176 "walker.g"
 	DOMElement* ast;
 #line 5084 "modelica_tree_parser.cpp"
-	RefMyAST component_clause1_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST component_clause1_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST component_clause1_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1167 "walker.g"
+#line 1176 "walker.g"
 	
 		type_prefix_t pfx;
 		DOMElement* attr = pModelicaXMLDoc->createElement(X("tmp"));
@@ -5102,13 +5102,13 @@ DOMElement*  modelica_tree_parser::component_clause1(RefMyAST _t,
 	path=type_specifier(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1178 "walker.g"
+#line 1187 "walker.g"
 	if (path) attr->setAttribute(X("type"), X(((mstring*)path)->c_str()));
 #line 5108 "modelica_tree_parser.cpp"
 	parent=component_declaration(_t,parent, attr, null);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1180 "walker.g"
+#line 1189 "walker.g"
 				
 				ast = parent;
 			
@@ -5122,23 +5122,23 @@ DOMElement*  modelica_tree_parser::component_clause1(RefMyAST _t,
 DOMElement*  modelica_tree_parser::equation(RefMyAST _t,
 	DOMElement* definition
 ) {
-#line 1242 "walker.g"
+#line 1251 "walker.g"
 	DOMElement* ast;
 #line 5128 "modelica_tree_parser.cpp"
-	RefMyAST equation_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST equation_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST equation_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST es = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST es_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1242 "walker.g"
+#line 1251 "walker.g"
 	
 		DOMElement* cmt = 0;
 	
 #line 5139 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t185 = _t;
-	es = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	es = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST es_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	es_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(es));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(es_AST));
@@ -5220,7 +5220,7 @@ DOMElement*  modelica_tree_parser::equation(RefMyAST _t,
 	}
 	}
 	}
-#line 1256 "walker.g"
+#line 1265 "walker.g"
 	
 					DOMElement*  pEquation = pModelicaXMLDoc->createElement(X("equation"));
 					pEquation->appendChild(ast);
@@ -5246,10 +5246,10 @@ DOMElement*  modelica_tree_parser::equation(RefMyAST _t,
 DOMElement*  modelica_tree_parser::algorithm(RefMyAST _t,
 	DOMElement *definition
 ) {
-#line 1287 "walker.g"
+#line 1296 "walker.g"
 	DOMElement* ast;
 #line 5252 "modelica_tree_parser.cpp"
-	RefMyAST algorithm_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST algorithm_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST algorithm_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -5257,7 +5257,7 @@ DOMElement*  modelica_tree_parser::algorithm(RefMyAST _t,
 	RefMyAST as_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST az = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST az_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1287 "walker.g"
+#line 1296 "walker.g"
 	
 		DOMElement* cref;
 		DOMElement* expr;
@@ -5268,7 +5268,7 @@ DOMElement*  modelica_tree_parser::algorithm(RefMyAST _t,
 #line 5269 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t190 = _t;
-	as = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	as = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST as_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	as_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(as));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(as_AST));
@@ -5284,7 +5284,7 @@ DOMElement*  modelica_tree_parser::algorithm(RefMyAST _t,
 	case ASSIGN:
 	{
 		RefMyAST __t192 = _t;
-		az = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		az = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST az_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		az_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(az));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(az_AST));
@@ -5306,7 +5306,7 @@ DOMElement*  modelica_tree_parser::algorithm(RefMyAST _t,
 			expr=expression(_t);
 			_t = _retTree;
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1299 "walker.g"
+#line 1308 "walker.g"
 			
 										DOMElement*  pAlgAssign = pModelicaXMLDoc->createElement(X("alg_assign"));
 										if (az)
@@ -5334,7 +5334,7 @@ DOMElement*  modelica_tree_parser::algorithm(RefMyAST _t,
 			_t = _retTree;
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
 			}
-#line 1311 "walker.g"
+#line 1320 "walker.g"
 			
 										DOMElement*  pAlgAssign = pModelicaXMLDoc->createElement(X("alg_assign"));
 										DOMElement*  pCall = pModelicaXMLDoc->createElement(X("call"));
@@ -5437,7 +5437,7 @@ DOMElement*  modelica_tree_parser::algorithm(RefMyAST _t,
 	}
 	}
 	}
-#line 1345 "walker.g"
+#line 1354 "walker.g"
 		
 					DOMElement* pAlgorithm = pModelicaXMLDoc->createElement(X("algorithm"));
 					if (as)
@@ -5468,16 +5468,16 @@ DOMElement*  modelica_tree_parser::algorithm(RefMyAST _t,
 }
 
 DOMElement*  modelica_tree_parser::equality_equation(RefMyAST _t) {
-#line 1388 "walker.g"
+#line 1397 "walker.g"
 	DOMElement* ast;
 #line 5474 "modelica_tree_parser.cpp"
-	RefMyAST equality_equation_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST equality_equation_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST equality_equation_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST eq = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST eq_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1388 "walker.g"
+#line 1397 "walker.g"
 	
 		DOMElement* e1;
 		DOMElement* e2;
@@ -5485,7 +5485,7 @@ DOMElement*  modelica_tree_parser::equality_equation(RefMyAST _t) {
 #line 5486 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t198 = _t;
-	eq = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	eq = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST eq_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	eq_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(eq));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(eq_AST));
@@ -5503,7 +5503,7 @@ DOMElement*  modelica_tree_parser::equality_equation(RefMyAST _t) {
 	currentAST = __currentAST198;
 	_t = __t198;
 	_t = _t->getNextSibling();
-#line 1395 "walker.g"
+#line 1404 "walker.g"
 	
 				DOMElement*  pEquEqual = pModelicaXMLDoc->createElement(X("equ_equal"));
 				pEquEqual->setAttribute(X("sline"), X(itoa(eq->getLine(),stmp,10)));
@@ -5526,16 +5526,16 @@ DOMElement*  modelica_tree_parser::equality_equation(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::conditional_equation_e(RefMyAST _t) {
-#line 1411 "walker.g"
+#line 1420 "walker.g"
 	DOMElement* ast;
 #line 5532 "modelica_tree_parser.cpp"
-	RefMyAST conditional_equation_e_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST conditional_equation_e_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST conditional_equation_e_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1411 "walker.g"
+#line 1420 "walker.g"
 	
 		DOMElement* e1;
 		DOMElement* then_b;
@@ -5553,7 +5553,7 @@ DOMElement*  modelica_tree_parser::conditional_equation_e(RefMyAST _t) {
 #line 5554 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t200 = _t;
-	i = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	i = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST i_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	i_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(i));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(i_AST));
@@ -5565,13 +5565,13 @@ DOMElement*  modelica_tree_parser::conditional_equation_e(RefMyAST _t) {
 	e1=expression(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1428 "walker.g"
+#line 1437 "walker.g"
 	pEquIf->appendChild(e1);
 #line 5571 "modelica_tree_parser.cpp"
 	pEquThen=equation_list(_t,pEquThen);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1429 "walker.g"
+#line 1438 "walker.g"
 	pEquIf->appendChild(pEquThen);
 #line 5577 "modelica_tree_parser.cpp"
 	{ // ( ... )*
@@ -5582,7 +5582,7 @@ DOMElement*  modelica_tree_parser::conditional_equation_e(RefMyAST _t) {
 			e=equation_elseif(_t);
 			_t = _retTree;
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1430 "walker.g"
+#line 1439 "walker.g"
 			el_stack.push_back(e);
 #line 5588 "modelica_tree_parser.cpp"
 		}
@@ -5609,7 +5609,7 @@ DOMElement*  modelica_tree_parser::conditional_equation_e(RefMyAST _t) {
 		pEquElse=equation_list(_t,pEquElse);
 		_t = _retTree;
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1431 "walker.g"
+#line 1440 "walker.g"
 		fbElse = true;
 #line 5615 "modelica_tree_parser.cpp"
 		break;
@@ -5627,7 +5627,7 @@ DOMElement*  modelica_tree_parser::conditional_equation_e(RefMyAST _t) {
 	currentAST = __currentAST200;
 	_t = __t200;
 	_t = _t->getNextSibling();
-#line 1433 "walker.g"
+#line 1442 "walker.g"
 	
 				pEquIf->setAttribute(X("sline"), X(itoa(i->getLine(),stmp,10)));
 				pEquIf->setAttribute(X("scolumn"), X(itoa(i->getColumn(),stmp,10)));
@@ -5644,16 +5644,16 @@ DOMElement*  modelica_tree_parser::conditional_equation_e(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::for_clause_e(RefMyAST _t) {
-#line 1484 "walker.g"
+#line 1493 "walker.g"
 	DOMElement* ast;
 #line 5650 "modelica_tree_parser.cpp"
-	RefMyAST for_clause_e_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST for_clause_e_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST for_clause_e_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1484 "walker.g"
+#line 1493 "walker.g"
 	
 		DOMElement* f;
 		DOMElement* eq;
@@ -5662,7 +5662,7 @@ DOMElement*  modelica_tree_parser::for_clause_e(RefMyAST _t) {
 #line 5663 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t210 = _t;
-	i = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	i = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST i_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	i_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(i));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(i_AST));
@@ -5674,7 +5674,7 @@ DOMElement*  modelica_tree_parser::for_clause_e(RefMyAST _t) {
 	f=for_indices(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1491 "walker.g"
+#line 1500 "walker.g"
 	pEquFor->appendChild(f);
 #line 5680 "modelica_tree_parser.cpp"
 	pEquFor=equation_list(_t,pEquFor);
@@ -5683,7 +5683,7 @@ DOMElement*  modelica_tree_parser::for_clause_e(RefMyAST _t) {
 	currentAST = __currentAST210;
 	_t = __t210;
 	_t = _t->getNextSibling();
-#line 1493 "walker.g"
+#line 1502 "walker.g"
 	
 				pEquFor->setAttribute(X("sline"), X(itoa(i->getLine(),stmp,10)));
 				pEquFor->setAttribute(X("scolumn"), X(itoa(i->getColumn(),stmp,10)));
@@ -5698,16 +5698,16 @@ DOMElement*  modelica_tree_parser::for_clause_e(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::when_clause_e(RefMyAST _t) {
-#line 1601 "walker.g"
+#line 1610 "walker.g"
 	DOMElement* ast;
 #line 5704 "modelica_tree_parser.cpp"
-	RefMyAST when_clause_e_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST when_clause_e_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST when_clause_e_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST wh = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST wh_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1601 "walker.g"
+#line 1610 "walker.g"
 	
 		l_stack el_stack;
 		DOMElement* e;
@@ -5719,7 +5719,7 @@ DOMElement*  modelica_tree_parser::when_clause_e(RefMyAST _t) {
 #line 5720 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t224 = _t;
-	wh = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	wh = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST wh_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	wh_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(wh));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(wh_AST));
@@ -5731,13 +5731,13 @@ DOMElement*  modelica_tree_parser::when_clause_e(RefMyAST _t) {
 	e=expression(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1612 "walker.g"
+#line 1621 "walker.g"
 	pEquWhen->appendChild(e);
 #line 5737 "modelica_tree_parser.cpp"
 	pEquThen=equation_list(_t,pEquThen);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1613 "walker.g"
+#line 1622 "walker.g"
 	pEquWhen->appendChild(pEquThen);
 #line 5743 "modelica_tree_parser.cpp"
 	{ // ( ... )*
@@ -5748,7 +5748,7 @@ DOMElement*  modelica_tree_parser::when_clause_e(RefMyAST _t) {
 			el=else_when_e(_t);
 			_t = _retTree;
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1614 "walker.g"
+#line 1623 "walker.g"
 			el_stack.push_back(el);
 #line 5754 "modelica_tree_parser.cpp"
 		}
@@ -5762,7 +5762,7 @@ DOMElement*  modelica_tree_parser::when_clause_e(RefMyAST _t) {
 	currentAST = __currentAST224;
 	_t = __t224;
 	_t = _t->getNextSibling();
-#line 1616 "walker.g"
+#line 1625 "walker.g"
 	
 				pEquWhen->setAttribute(X("sline"), X(itoa(wh->getLine(),stmp,10)));
 				pEquWhen->setAttribute(X("scolumn"), X(itoa(wh->getColumn(),stmp,10)));
@@ -5778,16 +5778,16 @@ DOMElement*  modelica_tree_parser::when_clause_e(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::connect_clause(RefMyAST _t) {
-#line 1753 "walker.g"
+#line 1762 "walker.g"
 	DOMElement* ast;
 #line 5784 "modelica_tree_parser.cpp"
-	RefMyAST connect_clause_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST connect_clause_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST connect_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST c = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST c_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1753 "walker.g"
+#line 1762 "walker.g"
 	
 		DOMElement* r1;
 		DOMElement* r2;
@@ -5795,7 +5795,7 @@ DOMElement*  modelica_tree_parser::connect_clause(RefMyAST _t) {
 #line 5796 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t246 = _t;
-	c = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	c = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST c_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	c_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(c));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(c_AST));
@@ -5813,7 +5813,7 @@ DOMElement*  modelica_tree_parser::connect_clause(RefMyAST _t) {
 	currentAST = __currentAST246;
 	_t = __t246;
 	_t = _t->getNextSibling();
-#line 1763 "walker.g"
+#line 1772 "walker.g"
 	
 				DOMElement* pEquConnect = pModelicaXMLDoc->createElement(X("equ_connect"));
 	
@@ -5832,16 +5832,16 @@ DOMElement*  modelica_tree_parser::connect_clause(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::equation_funcall(RefMyAST _t) {
-#line 1271 "walker.g"
+#line 1280 "walker.g"
 	DOMElement* ast;
 #line 5838 "modelica_tree_parser.cpp"
-	RefMyAST equation_funcall_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST equation_funcall_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST equation_funcall_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1271 "walker.g"
+#line 1280 "walker.g"
 	
 	DOMElement* fcall = 0;
 	
@@ -5856,7 +5856,7 @@ DOMElement*  modelica_tree_parser::equation_funcall(RefMyAST _t) {
 	fcall=function_call(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1277 "walker.g"
+#line 1286 "walker.g"
 	
 				 DOMElement*  pEquCall = pModelicaXMLDoc->createElement(X("equ_call"));
 				 pEquCall->setAttribute(X("ident"), str2xml(i));
@@ -5873,10 +5873,10 @@ DOMElement*  modelica_tree_parser::equation_funcall(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::function_call(RefMyAST _t) {
-#line 2372 "walker.g"
+#line 2381 "walker.g"
 	DOMElement* ast;
 #line 5879 "modelica_tree_parser.cpp"
-	RefMyAST function_call_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST function_call_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST function_call_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -5884,7 +5884,7 @@ DOMElement*  modelica_tree_parser::function_call(RefMyAST _t) {
 	RefMyAST fa_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	
 	RefMyAST __t333 = _t;
-	fa = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	fa = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST fa_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	fa_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(fa));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(fa_AST));
@@ -5896,7 +5896,7 @@ DOMElement*  modelica_tree_parser::function_call(RefMyAST _t) {
 	ast=function_arguments(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 2375 "walker.g"
+#line 2384 "walker.g"
 	
 				ast->setAttribute(X("sline"), X(itoa(fa->getLine(),stmp,10)));
 				ast->setAttribute(X("scolumn"), X(itoa(fa->getColumn(),stmp,10)));
@@ -5912,16 +5912,16 @@ DOMElement*  modelica_tree_parser::function_call(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::tuple_expression_list(RefMyAST _t) {
-#line 2479 "walker.g"
+#line 2488 "walker.g"
 	DOMElement* ast;
 #line 5918 "modelica_tree_parser.cpp"
-	RefMyAST tuple_expression_list_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST tuple_expression_list_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST tuple_expression_list_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST el = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST el_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 2479 "walker.g"
+#line 2488 "walker.g"
 	
 		l_stack el_stack;
 		DOMElement* e;
@@ -5931,7 +5931,7 @@ DOMElement*  modelica_tree_parser::tuple_expression_list(RefMyAST _t) {
 	
 	{
 	RefMyAST __t358 = _t;
-	el = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	el = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST el_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	el_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(el));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(el_AST));
@@ -5943,7 +5943,7 @@ DOMElement*  modelica_tree_parser::tuple_expression_list(RefMyAST _t) {
 	e=expression(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 2487 "walker.g"
+#line 2496 "walker.g"
 	el_stack.push_back(e);
 #line 5949 "modelica_tree_parser.cpp"
 	{ // ( ... )*
@@ -5954,7 +5954,7 @@ DOMElement*  modelica_tree_parser::tuple_expression_list(RefMyAST _t) {
 			e=expression(_t);
 			_t = _retTree;
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 2488 "walker.g"
+#line 2497 "walker.g"
 			el_stack.push_back(pModelicaXMLDoc->createElement(X("comma"))); el_stack.push_back(e);
 #line 5960 "modelica_tree_parser.cpp"
 		}
@@ -5969,7 +5969,7 @@ DOMElement*  modelica_tree_parser::tuple_expression_list(RefMyAST _t) {
 	_t = __t358;
 	_t = _t->getNextSibling();
 	}
-#line 2491 "walker.g"
+#line 2500 "walker.g"
 	
 				if (el_stack.size() == 1)
 				{
@@ -5992,14 +5992,14 @@ DOMElement*  modelica_tree_parser::tuple_expression_list(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::algorithm_function_call(RefMyAST _t) {
-#line 1367 "walker.g"
+#line 1376 "walker.g"
 	DOMElement* ast;
 #line 5998 "modelica_tree_parser.cpp"
-	RefMyAST algorithm_function_call_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST algorithm_function_call_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST algorithm_function_call_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1367 "walker.g"
+#line 1376 "walker.g"
 	
 		DOMElement* cref;
 		DOMElement* args;
@@ -6012,7 +6012,7 @@ DOMElement*  modelica_tree_parser::algorithm_function_call(RefMyAST _t) {
 	args=function_call(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1374 "walker.g"
+#line 1383 "walker.g"
 	
 				DOMElement*  pAlgCall = pModelicaXMLDoc->createElement(X("alg_call"));
 				pAlgCall->appendChild(cref);
@@ -6033,16 +6033,16 @@ DOMElement*  modelica_tree_parser::algorithm_function_call(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::conditional_equation_a(RefMyAST _t) {
-#line 1443 "walker.g"
+#line 1452 "walker.g"
 	DOMElement* ast;
 #line 6039 "modelica_tree_parser.cpp"
-	RefMyAST conditional_equation_a_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST conditional_equation_a_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST conditional_equation_a_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1443 "walker.g"
+#line 1452 "walker.g"
 	
 		DOMElement* e1;
 		DOMElement* then_b;
@@ -6058,7 +6058,7 @@ DOMElement*  modelica_tree_parser::conditional_equation_a(RefMyAST _t) {
 #line 6059 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t205 = _t;
-	i = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	i = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST i_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	i_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(i));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(i_AST));
@@ -6070,13 +6070,13 @@ DOMElement*  modelica_tree_parser::conditional_equation_a(RefMyAST _t) {
 	e1=expression(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1458 "walker.g"
+#line 1467 "walker.g"
 	pAlgIf->appendChild(e1);
 #line 6076 "modelica_tree_parser.cpp"
 	pAlgThen=algorithm_list(_t,pAlgThen);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1460 "walker.g"
+#line 1469 "walker.g"
 	
 					if (pAlgThen)
 					pAlgIf->appendChild(pAlgThen); 
@@ -6090,7 +6090,7 @@ DOMElement*  modelica_tree_parser::conditional_equation_a(RefMyAST _t) {
 			e=algorithm_elseif(_t);
 			_t = _retTree;
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1464 "walker.g"
+#line 1473 "walker.g"
 			el_stack.push_back(e);
 #line 6096 "modelica_tree_parser.cpp"
 		}
@@ -6117,7 +6117,7 @@ DOMElement*  modelica_tree_parser::conditional_equation_a(RefMyAST _t) {
 		pAlgElse=algorithm_list(_t,pAlgElse);
 		_t = _retTree;
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1465 "walker.g"
+#line 1474 "walker.g"
 		fbElse = true;
 #line 6123 "modelica_tree_parser.cpp"
 		break;
@@ -6135,7 +6135,7 @@ DOMElement*  modelica_tree_parser::conditional_equation_a(RefMyAST _t) {
 	currentAST = __currentAST205;
 	_t = __t205;
 	_t = _t->getNextSibling();
-#line 1467 "walker.g"
+#line 1476 "walker.g"
 	
 				pAlgIf->setAttribute(X("sline"), X(itoa(i->getLine(),stmp,10)));
 				pAlgIf->setAttribute(X("scolumn"), X(itoa(i->getColumn(),stmp,10)));
@@ -6151,16 +6151,16 @@ DOMElement*  modelica_tree_parser::conditional_equation_a(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::for_clause_a(RefMyAST _t) {
-#line 1502 "walker.g"
+#line 1511 "walker.g"
 	DOMElement* ast;
 #line 6157 "modelica_tree_parser.cpp"
-	RefMyAST for_clause_a_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST for_clause_a_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST for_clause_a_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1502 "walker.g"
+#line 1511 "walker.g"
 	
 		DOMElement* f;
 		DOMElement* eq;
@@ -6169,7 +6169,7 @@ DOMElement*  modelica_tree_parser::for_clause_a(RefMyAST _t) {
 #line 6170 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t212 = _t;
-	i = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	i = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST i_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	i_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(i));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(i_AST));
@@ -6181,7 +6181,7 @@ DOMElement*  modelica_tree_parser::for_clause_a(RefMyAST _t) {
 	f=for_indices(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1510 "walker.g"
+#line 1519 "walker.g"
 	
 					f->setAttribute(X("sline"), X(itoa(i->getLine(),stmp,10)));
 					f->setAttribute(X("scolumn"), X(itoa(i->getColumn(),stmp,10)));
@@ -6194,7 +6194,7 @@ DOMElement*  modelica_tree_parser::for_clause_a(RefMyAST _t) {
 	currentAST = __currentAST212;
 	_t = __t212;
 	_t = _t->getNextSibling();
-#line 1516 "walker.g"
+#line 1525 "walker.g"
 	
 				pAlgFor->setAttribute(X("sline"), X(itoa(i->getLine(),stmp,10)));
 				pAlgFor->setAttribute(X("scolumn"), X(itoa(i->getColumn(),stmp,10)));
@@ -6209,16 +6209,16 @@ DOMElement*  modelica_tree_parser::for_clause_a(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::while_clause(RefMyAST _t) {
-#line 1571 "walker.g"
+#line 1580 "walker.g"
 	DOMElement* ast;
 #line 6215 "modelica_tree_parser.cpp"
-	RefMyAST while_clause_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST while_clause_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST while_clause_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST w = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST w_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1571 "walker.g"
+#line 1580 "walker.g"
 	
 		DOMElement* e;
 		DOMElement* body;
@@ -6227,7 +6227,7 @@ DOMElement*  modelica_tree_parser::while_clause(RefMyAST _t) {
 #line 6228 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t222 = _t;
-	w = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	w = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST w_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	w_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(w));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(w_AST));
@@ -6239,7 +6239,7 @@ DOMElement*  modelica_tree_parser::while_clause(RefMyAST _t) {
 	e=expression(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1580 "walker.g"
+#line 1589 "walker.g"
 	
 				  pAlgWhile->appendChild(e); 
 			
@@ -6250,7 +6250,7 @@ DOMElement*  modelica_tree_parser::while_clause(RefMyAST _t) {
 	currentAST = __currentAST222;
 	_t = __t222;
 	_t = _t->getNextSibling();
-#line 1584 "walker.g"
+#line 1593 "walker.g"
 	
 				pAlgWhile->setAttribute(X("sline"), X(itoa(w->getLine(),stmp,10)));
 				pAlgWhile->setAttribute(X("scolumn"), X(itoa(w->getColumn(),stmp,10)));
@@ -6265,16 +6265,16 @@ DOMElement*  modelica_tree_parser::while_clause(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::when_clause_a(RefMyAST _t) {
-#line 1644 "walker.g"
+#line 1653 "walker.g"
 	DOMElement* ast;
 #line 6271 "modelica_tree_parser.cpp"
-	RefMyAST when_clause_a_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST when_clause_a_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST when_clause_a_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST wh = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST wh_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1644 "walker.g"
+#line 1653 "walker.g"
 	
 		l_stack el_stack;
 		DOMElement* e;
@@ -6286,7 +6286,7 @@ DOMElement*  modelica_tree_parser::when_clause_a(RefMyAST _t) {
 #line 6287 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t230 = _t;
-	wh = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	wh = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST wh_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	wh_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(wh));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(wh_AST));
@@ -6298,13 +6298,13 @@ DOMElement*  modelica_tree_parser::when_clause_a(RefMyAST _t) {
 	e=expression(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1655 "walker.g"
+#line 1664 "walker.g"
 	pAlgWhen->appendChild(e);
 #line 6304 "modelica_tree_parser.cpp"
 	pAlgThen=algorithm_list(_t,pAlgThen);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1656 "walker.g"
+#line 1665 "walker.g"
 	pAlgWhen->appendChild(pAlgThen);
 #line 6310 "modelica_tree_parser.cpp"
 	{ // ( ... )*
@@ -6315,7 +6315,7 @@ DOMElement*  modelica_tree_parser::when_clause_a(RefMyAST _t) {
 			el=else_when_a(_t);
 			_t = _retTree;
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1657 "walker.g"
+#line 1666 "walker.g"
 			el_stack.push_back(el);
 #line 6321 "modelica_tree_parser.cpp"
 		}
@@ -6329,7 +6329,7 @@ DOMElement*  modelica_tree_parser::when_clause_a(RefMyAST _t) {
 	currentAST = __currentAST230;
 	_t = __t230;
 	_t = _t->getNextSibling();
-#line 1659 "walker.g"
+#line 1668 "walker.g"
 	
 				pAlgWhen->setAttribute(X("sline"), X(itoa(wh->getLine(),stmp,10)));
 				pAlgWhen->setAttribute(X("scolumn"), X(itoa(wh->getColumn(),stmp,10)));
@@ -6345,10 +6345,10 @@ DOMElement*  modelica_tree_parser::when_clause_a(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::simple_expression(RefMyAST _t) {
-#line 1837 "walker.g"
+#line 1846 "walker.g"
 	DOMElement* ast;
 #line 6351 "modelica_tree_parser.cpp"
-	RefMyAST simple_expression_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST simple_expression_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST simple_expression_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -6356,7 +6356,7 @@ DOMElement*  modelica_tree_parser::simple_expression(RefMyAST _t) {
 	RefMyAST r3_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST r2 = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST r2_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1837 "walker.g"
+#line 1846 "walker.g"
 	
 		DOMElement* e1;
 		DOMElement* e2;
@@ -6371,7 +6371,7 @@ DOMElement*  modelica_tree_parser::simple_expression(RefMyAST _t) {
 	case RANGE3:
 	{
 		RefMyAST __t257 = _t;
-		r3 = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		r3 = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST r3_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		r3_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(r3));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(r3_AST));
@@ -6392,7 +6392,7 @@ DOMElement*  modelica_tree_parser::simple_expression(RefMyAST _t) {
 		currentAST = __currentAST257;
 		_t = __t257;
 		_t = _t->getNextSibling();
-#line 1847 "walker.g"
+#line 1856 "walker.g"
 		
 						DOMElement* pRange = pModelicaXMLDoc->createElement(X("range"));
 		
@@ -6416,7 +6416,7 @@ DOMElement*  modelica_tree_parser::simple_expression(RefMyAST _t) {
 	case RANGE2:
 	{
 		RefMyAST __t258 = _t;
-		r2 = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		r2 = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST r2_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		r2_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(r2));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(r2_AST));
@@ -6434,7 +6434,7 @@ DOMElement*  modelica_tree_parser::simple_expression(RefMyAST _t) {
 		currentAST = __currentAST258;
 		_t = __t258;
 		_t = _t->getNextSibling();
-#line 1865 "walker.g"
+#line 1874 "walker.g"
 		
 						DOMElement* pRange = pModelicaXMLDoc->createElement(X("range"));
 		
@@ -6499,14 +6499,14 @@ DOMElement*  modelica_tree_parser::simple_expression(RefMyAST _t) {
 DOMElement*  modelica_tree_parser::equation_list(RefMyAST _t,
 	DOMElement* pEquationList
 ) {
-#line 1729 "walker.g"
+#line 1738 "walker.g"
 	DOMElement* ast;
 #line 6505 "modelica_tree_parser.cpp"
-	RefMyAST equation_list_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST equation_list_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST equation_list_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1729 "walker.g"
+#line 1738 "walker.g"
 	
 		DOMElement* e;
 		l_stack el_stack;
@@ -6529,7 +6529,7 @@ DOMElement*  modelica_tree_parser::equation_list(RefMyAST _t,
 	}
 	_loop241:;
 	} // ( ... )*
-#line 1736 "walker.g"
+#line 1745 "walker.g"
 	
 				ast = pEquationList; 
 			
@@ -6541,16 +6541,16 @@ DOMElement*  modelica_tree_parser::equation_list(RefMyAST _t,
 }
 
 DOMElement*  modelica_tree_parser::equation_elseif(RefMyAST _t) {
-#line 1687 "walker.g"
+#line 1696 "walker.g"
 	DOMElement* ast;
 #line 6547 "modelica_tree_parser.cpp"
-	RefMyAST equation_elseif_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST equation_elseif_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST equation_elseif_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST els = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST els_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1687 "walker.g"
+#line 1696 "walker.g"
 	
 		DOMElement* e;
 		DOMElement* eq;
@@ -6560,7 +6560,7 @@ DOMElement*  modelica_tree_parser::equation_elseif(RefMyAST _t) {
 #line 6561 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t236 = _t;
-	els = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	els = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST els_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	els_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(els));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(els_AST));
@@ -6572,7 +6572,7 @@ DOMElement*  modelica_tree_parser::equation_elseif(RefMyAST _t) {
 	e=expression(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1696 "walker.g"
+#line 1705 "walker.g"
 	pEquElseIf->appendChild(e);
 #line 6578 "modelica_tree_parser.cpp"
 	pEquThen=equation_list(_t,pEquThen);
@@ -6581,7 +6581,7 @@ DOMElement*  modelica_tree_parser::equation_elseif(RefMyAST _t) {
 	currentAST = __currentAST236;
 	_t = __t236;
 	_t = _t->getNextSibling();
-#line 1699 "walker.g"
+#line 1708 "walker.g"
 	
 				pEquElseIf->setAttribute(X("sline"), X(itoa(els->getLine(),stmp,10)));
 				pEquElseIf->setAttribute(X("scolumn"), X(itoa(els->getColumn(),stmp,10)));
@@ -6599,14 +6599,14 @@ DOMElement*  modelica_tree_parser::equation_elseif(RefMyAST _t) {
 DOMElement*  modelica_tree_parser::algorithm_list(RefMyAST _t,
 	DOMElement*  pAlgorithmList
 ) {
-#line 1741 "walker.g"
+#line 1750 "walker.g"
 	DOMElement* ast;
 #line 6605 "modelica_tree_parser.cpp"
-	RefMyAST algorithm_list_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST algorithm_list_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST algorithm_list_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1741 "walker.g"
+#line 1750 "walker.g"
 	
 		DOMElement* e;
 		l_stack el_stack;
@@ -6629,7 +6629,7 @@ DOMElement*  modelica_tree_parser::algorithm_list(RefMyAST _t,
 	}
 	_loop244:;
 	} // ( ... )*
-#line 1748 "walker.g"
+#line 1757 "walker.g"
 				
 				ast = pAlgorithmList; 
 			
@@ -6641,16 +6641,16 @@ DOMElement*  modelica_tree_parser::algorithm_list(RefMyAST _t,
 }
 
 DOMElement*  modelica_tree_parser::algorithm_elseif(RefMyAST _t) {
-#line 1708 "walker.g"
+#line 1717 "walker.g"
 	DOMElement* ast;
 #line 6647 "modelica_tree_parser.cpp"
-	RefMyAST algorithm_elseif_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST algorithm_elseif_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST algorithm_elseif_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST els = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST els_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1708 "walker.g"
+#line 1717 "walker.g"
 	
 		DOMElement* e;
 		DOMElement* body;
@@ -6660,7 +6660,7 @@ DOMElement*  modelica_tree_parser::algorithm_elseif(RefMyAST _t) {
 #line 6661 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t238 = _t;
-	els = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	els = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST els_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	els_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(els));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(els_AST));
@@ -6672,7 +6672,7 @@ DOMElement*  modelica_tree_parser::algorithm_elseif(RefMyAST _t) {
 	e=expression(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1717 "walker.g"
+#line 1726 "walker.g"
 	pAlgElseIf->appendChild(e);
 #line 6678 "modelica_tree_parser.cpp"
 	pAlgThen=algorithm_list(_t,pAlgThen);
@@ -6681,7 +6681,7 @@ DOMElement*  modelica_tree_parser::algorithm_elseif(RefMyAST _t) {
 	currentAST = __currentAST238;
 	_t = __t238;
 	_t = _t->getNextSibling();
-#line 1720 "walker.g"
+#line 1729 "walker.g"
 	
 				pAlgElseIf->setAttribute(X("sline"), X(itoa(els->getLine(),stmp,10)));
 				pAlgElseIf->setAttribute(X("scolumn"), X(itoa(els->getColumn(),stmp,10)));
@@ -6697,16 +6697,16 @@ DOMElement*  modelica_tree_parser::algorithm_elseif(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::for_indices(RefMyAST _t) {
-#line 1545 "walker.g"
+#line 1554 "walker.g"
 	DOMElement* ast;
 #line 6703 "modelica_tree_parser.cpp"
-	RefMyAST for_indices_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST for_indices_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST for_indices_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1545 "walker.g"
+#line 1554 "walker.g"
 	
 		DOMElement* f;
 		DOMElement* e;
@@ -6799,7 +6799,7 @@ DOMElement*  modelica_tree_parser::for_indices(RefMyAST _t) {
 			currentAST = __currentAST218;
 			_t = __t218;
 			_t = _t->getNextSibling();
-#line 1553 "walker.g"
+#line 1562 "walker.g"
 			
 					DOMElement* pForIndex = pModelicaXMLDoc->createElement(X("for_index"));
 					pForIndex->setAttribute(X("ident"), str2xml(i));
@@ -6819,7 +6819,7 @@ DOMElement*  modelica_tree_parser::for_indices(RefMyAST _t) {
 	}
 	_loop220:;
 	} // ( ... )*
-#line 1564 "walker.g"
+#line 1573 "walker.g"
 	
 			DOMElement*  pForIndices = pModelicaXMLDoc->createElement(X("for_indices"));
 			pForIndices = (DOMElement*)appendKids(el_stack, pForIndices);
@@ -6833,10 +6833,10 @@ DOMElement*  modelica_tree_parser::for_indices(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::for_iterator(RefMyAST _t) {
-#line 1525 "walker.g"
+#line 1534 "walker.g"
 	DOMElement* ast;
 #line 6839 "modelica_tree_parser.cpp"
-	RefMyAST for_iterator_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST for_iterator_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST for_iterator_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -6844,7 +6844,7 @@ DOMElement*  modelica_tree_parser::for_iterator(RefMyAST _t) {
 	RefMyAST f_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1525 "walker.g"
+#line 1534 "walker.g"
 	
 		DOMElement* expr;
 		DOMElement* iter;
@@ -6852,7 +6852,7 @@ DOMElement*  modelica_tree_parser::for_iterator(RefMyAST _t) {
 #line 6853 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t214 = _t;
-	f = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	f = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST f_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	f_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(f));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(f_AST));
@@ -6890,7 +6890,7 @@ DOMElement*  modelica_tree_parser::for_iterator(RefMyAST _t) {
 	currentAST = __currentAST214;
 	_t = __t214;
 	_t = _t->getNextSibling();
-#line 1532 "walker.g"
+#line 1541 "walker.g"
 	
 			    DOMElement*  pForIter = pModelicaXMLDoc->createElement(X("for_iterator"));
 				pForIter->appendChild(expr);
@@ -6910,16 +6910,16 @@ DOMElement*  modelica_tree_parser::for_iterator(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::else_when_e(RefMyAST _t) {
-#line 1625 "walker.g"
+#line 1634 "walker.g"
 	DOMElement* ast;
 #line 6916 "modelica_tree_parser.cpp"
-	RefMyAST else_when_e_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST else_when_e_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST else_when_e_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST e = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST e_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1625 "walker.g"
+#line 1634 "walker.g"
 	
 		DOMElement*  expr;
 		DOMElement*  eqn;
@@ -6929,7 +6929,7 @@ DOMElement*  modelica_tree_parser::else_when_e(RefMyAST _t) {
 #line 6930 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t228 = _t;
-	e = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	e = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST e_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	e_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(e));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(e_AST));
@@ -6941,7 +6941,7 @@ DOMElement*  modelica_tree_parser::else_when_e(RefMyAST _t) {
 	expr=expression(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1633 "walker.g"
+#line 1642 "walker.g"
 	pEquElseWhen->appendChild(expr);
 #line 6947 "modelica_tree_parser.cpp"
 	pEquThen=equation_list(_t,pEquThen);
@@ -6950,7 +6950,7 @@ DOMElement*  modelica_tree_parser::else_when_e(RefMyAST _t) {
 	currentAST = __currentAST228;
 	_t = __t228;
 	_t = _t->getNextSibling();
-#line 1635 "walker.g"
+#line 1644 "walker.g"
 	
 				pEquElseWhen->setAttribute(X("sline"), X(itoa(e->getLine(),stmp,10)));
 				pEquElseWhen->setAttribute(X("scolumn"), X(itoa(e->getColumn(),stmp,10)));
@@ -6966,16 +6966,16 @@ DOMElement*  modelica_tree_parser::else_when_e(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::else_when_a(RefMyAST _t) {
-#line 1668 "walker.g"
+#line 1677 "walker.g"
 	DOMElement* ast;
 #line 6972 "modelica_tree_parser.cpp"
-	RefMyAST else_when_a_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST else_when_a_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST else_when_a_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST e = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST e_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1668 "walker.g"
+#line 1677 "walker.g"
 	
 		DOMElement*  expr;
 		DOMElement*  alg;
@@ -6985,7 +6985,7 @@ DOMElement*  modelica_tree_parser::else_when_a(RefMyAST _t) {
 #line 6986 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t234 = _t;
-	e = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	e = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST e_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	e_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(e));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(e_AST));
@@ -6997,7 +6997,7 @@ DOMElement*  modelica_tree_parser::else_when_a(RefMyAST _t) {
 	expr=expression(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1676 "walker.g"
+#line 1685 "walker.g"
 	pAlgElseWhen->appendChild(expr);
 #line 7003 "modelica_tree_parser.cpp"
 	pAlgThen=algorithm_list(_t,pAlgThen);
@@ -7006,7 +7006,7 @@ DOMElement*  modelica_tree_parser::else_when_a(RefMyAST _t) {
 	currentAST = __currentAST234;
 	_t = __t234;
 	_t = _t->getNextSibling();
-#line 1678 "walker.g"
+#line 1687 "walker.g"
 	
 				pAlgElseWhen->setAttribute(X("sline"), X(itoa(e->getLine(),stmp,10)));
 				pAlgElseWhen->setAttribute(X("scolumn"), X(itoa(e->getColumn(),stmp,10)));
@@ -7022,16 +7022,16 @@ DOMElement*  modelica_tree_parser::else_when_a(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::if_expression(RefMyAST _t) {
-#line 1784 "walker.g"
+#line 1793 "walker.g"
 	DOMElement* ast;
 #line 7028 "modelica_tree_parser.cpp"
-	RefMyAST if_expression_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST if_expression_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST if_expression_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1784 "walker.g"
+#line 1793 "walker.g"
 	
 		DOMElement* cond;
 		DOMElement* thenPart;
@@ -7043,7 +7043,7 @@ DOMElement*  modelica_tree_parser::if_expression(RefMyAST _t) {
 #line 7044 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t250 = _t;
-	i = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	i = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST i_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	i_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(i));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(i_AST));
@@ -7066,7 +7066,7 @@ DOMElement*  modelica_tree_parser::if_expression(RefMyAST _t) {
 			e=elseif_expression(_t);
 			_t = _retTree;
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1795 "walker.g"
+#line 1804 "walker.g"
 			el_stack.push_back(e);
 #line 7072 "modelica_tree_parser.cpp"
 		}
@@ -7080,7 +7080,7 @@ DOMElement*  modelica_tree_parser::if_expression(RefMyAST _t) {
 	elsePart=expression(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1796 "walker.g"
+#line 1805 "walker.g"
 	
 					DOMElement* pIf = pModelicaXMLDoc->createElement(X("if"));
 					DOMElement* pThen = pModelicaXMLDoc->createElement(X("then"));
@@ -7108,14 +7108,14 @@ DOMElement*  modelica_tree_parser::if_expression(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::code_expression(RefMyAST _t) {
-#line 1880 "walker.g"
+#line 1889 "walker.g"
 	DOMElement* ast;
 #line 7114 "modelica_tree_parser.cpp"
-	RefMyAST code_expression_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST code_expression_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST code_expression_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1880 "walker.g"
+#line 1889 "walker.g"
 	
 		DOMElement*pCode = pModelicaXMLDoc->createElement(X("code"));
 	
@@ -7145,7 +7145,7 @@ DOMElement*  modelica_tree_parser::code_expression(RefMyAST _t) {
 		currentAST = __currentAST260;
 		_t = __t260;
 		_t = _t->getNextSibling();
-#line 1887 "walker.g"
+#line 1896 "walker.g"
 		
 					// ?? what the hack is this?
 					DOMElement* pModification = pModelicaXMLDoc->createElement(X("modification"));
@@ -7180,7 +7180,7 @@ DOMElement*  modelica_tree_parser::code_expression(RefMyAST _t) {
 		currentAST = __currentAST262;
 		_t = __t262;
 		_t = _t->getNextSibling();
-#line 1898 "walker.g"
+#line 1907 "walker.g"
 		
 					// ?? what the hack is this?
 					DOMElement* pExpression = pModelicaXMLDoc->createElement(X("expression"));
@@ -7213,7 +7213,7 @@ DOMElement*  modelica_tree_parser::code_expression(RefMyAST _t) {
 		currentAST = __currentAST264;
 		_t = __t264;
 		_t = _t->getNextSibling();
-#line 1907 "walker.g"
+#line 1916 "walker.g"
 		
 					// ?? what the hack is this?
 					DOMElement* pElement = pModelicaXMLDoc->createElement(X("element"));
@@ -7246,7 +7246,7 @@ DOMElement*  modelica_tree_parser::code_expression(RefMyAST _t) {
 		currentAST = __currentAST266;
 		_t = __t266;
 		_t = _t->getNextSibling();
-#line 1916 "walker.g"
+#line 1925 "walker.g"
 		
 					// ?? what the hack is this?
 					DOMElement* pEquationSection = pModelicaXMLDoc->createElement(X("equation_section"));
@@ -7280,7 +7280,7 @@ DOMElement*  modelica_tree_parser::code_expression(RefMyAST _t) {
 		currentAST = __currentAST268;
 		_t = __t268;
 		_t = _t->getNextSibling();
-#line 1926 "walker.g"
+#line 1935 "walker.g"
 		
 					// ?? what the hack is this?
 					DOMElement* pEquationSection = pModelicaXMLDoc->createElement(X("equation_section"));
@@ -7317,7 +7317,7 @@ DOMElement*  modelica_tree_parser::code_expression(RefMyAST _t) {
 		currentAST = __currentAST270;
 		_t = __t270;
 		_t = _t->getNextSibling();
-#line 1938 "walker.g"
+#line 1947 "walker.g"
 		
 					// ?? what the hack is this?
 					DOMElement* pAlgorithmSection = pModelicaXMLDoc->createElement(X("algorithm_section"));
@@ -7353,7 +7353,7 @@ DOMElement*  modelica_tree_parser::code_expression(RefMyAST _t) {
 		currentAST = __currentAST272;
 		_t = __t272;
 		_t = _t->getNextSibling();
-#line 1949 "walker.g"
+#line 1958 "walker.g"
 		
 					// ?? what the hack is this?
 					DOMElement* pAlgorithmSection = pModelicaXMLDoc->createElement(X("algorithm_section"));
@@ -7380,16 +7380,16 @@ DOMElement*  modelica_tree_parser::code_expression(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::elseif_expression(RefMyAST _t) {
-#line 1815 "walker.g"
+#line 1824 "walker.g"
 	DOMElement* ast;
 #line 7386 "modelica_tree_parser.cpp"
-	RefMyAST elseif_expression_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST elseif_expression_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST elseif_expression_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST els = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST els_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1815 "walker.g"
+#line 1824 "walker.g"
 	
 		DOMElement* cond;
 		DOMElement* thenPart;
@@ -7397,7 +7397,7 @@ DOMElement*  modelica_tree_parser::elseif_expression(RefMyAST _t) {
 #line 7398 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t254 = _t;
-	els = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	els = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST els_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	els_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(els));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(els_AST));
@@ -7412,7 +7412,7 @@ DOMElement*  modelica_tree_parser::elseif_expression(RefMyAST _t) {
 	thenPart=expression(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 1822 "walker.g"
+#line 1831 "walker.g"
 	
 				DOMElement* pElseIf = pModelicaXMLDoc->createElement(X("elseif"));
 	
@@ -7436,16 +7436,16 @@ DOMElement*  modelica_tree_parser::elseif_expression(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::logical_expression(RefMyAST _t) {
-#line 1962 "walker.g"
+#line 1971 "walker.g"
 	DOMElement* ast;
 #line 7442 "modelica_tree_parser.cpp"
-	RefMyAST logical_expression_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST logical_expression_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST logical_expression_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST o = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST o_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1962 "walker.g"
+#line 1971 "walker.g"
 	
 		DOMElement* e1;
 		DOMElement* e2;
@@ -7494,7 +7494,7 @@ DOMElement*  modelica_tree_parser::logical_expression(RefMyAST _t) {
 	case OR:
 	{
 		RefMyAST __t276 = _t;
-		o = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		o = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST o_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		o_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(o));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(o_AST));
@@ -7512,7 +7512,7 @@ DOMElement*  modelica_tree_parser::logical_expression(RefMyAST _t) {
 		currentAST = __currentAST276;
 		_t = __t276;
 		_t = _t->getNextSibling();
-#line 1970 "walker.g"
+#line 1979 "walker.g"
 		
 						DOMElement* pOr = pModelicaXMLDoc->createElement(X("or"));
 		
@@ -7539,16 +7539,16 @@ DOMElement*  modelica_tree_parser::logical_expression(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::logical_term(RefMyAST _t) {
-#line 1984 "walker.g"
+#line 1993 "walker.g"
 	DOMElement* ast;
 #line 7545 "modelica_tree_parser.cpp"
-	RefMyAST logical_term_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST logical_term_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST logical_term_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST a = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST a_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 1984 "walker.g"
+#line 1993 "walker.g"
 	
 		DOMElement* e1;
 		DOMElement* e2;
@@ -7596,7 +7596,7 @@ DOMElement*  modelica_tree_parser::logical_term(RefMyAST _t) {
 	case AND:
 	{
 		RefMyAST __t279 = _t;
-		a = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		a = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST a_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		a_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(a));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(a_AST));
@@ -7614,7 +7614,7 @@ DOMElement*  modelica_tree_parser::logical_term(RefMyAST _t) {
 		currentAST = __currentAST279;
 		_t = __t279;
 		_t = _t->getNextSibling();
-#line 1992 "walker.g"
+#line 2001 "walker.g"
 		
 						DOMElement* pAnd = pModelicaXMLDoc->createElement(X("and"));
 		
@@ -7641,10 +7641,10 @@ DOMElement*  modelica_tree_parser::logical_term(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::logical_factor(RefMyAST _t) {
-#line 2005 "walker.g"
+#line 2014 "walker.g"
 	DOMElement* ast;
 #line 7647 "modelica_tree_parser.cpp"
-	RefMyAST logical_factor_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST logical_factor_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST logical_factor_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -7657,7 +7657,7 @@ DOMElement*  modelica_tree_parser::logical_factor(RefMyAST _t) {
 	case NOT:
 	{
 		RefMyAST __t281 = _t;
-		n = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		n = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST n_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		n_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(n));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(n_AST));
@@ -7669,7 +7669,7 @@ DOMElement*  modelica_tree_parser::logical_factor(RefMyAST _t) {
 		ast=relation(_t);
 		_t = _retTree;
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 2008 "walker.g"
+#line 2017 "walker.g"
 		
 				DOMElement* pNot = pModelicaXMLDoc->createElement(X("not"));
 		
@@ -7731,10 +7731,10 @@ DOMElement*  modelica_tree_parser::logical_factor(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::relation(RefMyAST _t) {
-#line 2019 "walker.g"
+#line 2028 "walker.g"
 	DOMElement* ast;
 #line 7737 "modelica_tree_parser.cpp"
-	RefMyAST relation_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST relation_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST relation_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -7750,7 +7750,7 @@ DOMElement*  modelica_tree_parser::relation(RefMyAST _t) {
 	RefMyAST eq_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST ne = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST ne_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 2019 "walker.g"
+#line 2028 "walker.g"
 	
 		DOMElement* e1;
 		DOMElement* op = 0;
@@ -7803,7 +7803,7 @@ DOMElement*  modelica_tree_parser::relation(RefMyAST _t) {
 		case LESS:
 		{
 			RefMyAST __t285 = _t;
-			lt = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+			lt = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 			RefMyAST lt_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 			lt_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(lt));
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(lt_AST));
@@ -7821,7 +7821,7 @@ DOMElement*  modelica_tree_parser::relation(RefMyAST _t) {
 			currentAST = __currentAST285;
 			_t = __t285;
 			_t = _t->getNextSibling();
-#line 2029 "walker.g"
+#line 2038 "walker.g"
 			op = pModelicaXMLDoc->createElement(X("lt")); /* Absyn__LESS; */
 #line 7827 "modelica_tree_parser.cpp"
 			break;
@@ -7829,7 +7829,7 @@ DOMElement*  modelica_tree_parser::relation(RefMyAST _t) {
 		case LESSEQ:
 		{
 			RefMyAST __t286 = _t;
-			lte = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+			lte = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 			RefMyAST lte_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 			lte_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(lte));
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(lte_AST));
@@ -7847,7 +7847,7 @@ DOMElement*  modelica_tree_parser::relation(RefMyAST _t) {
 			currentAST = __currentAST286;
 			_t = __t286;
 			_t = _t->getNextSibling();
-#line 2031 "walker.g"
+#line 2040 "walker.g"
 			op = pModelicaXMLDoc->createElement(X("lte")); /* Absyn__LESSEQ; */
 #line 7853 "modelica_tree_parser.cpp"
 			break;
@@ -7855,7 +7855,7 @@ DOMElement*  modelica_tree_parser::relation(RefMyAST _t) {
 		case GREATER:
 		{
 			RefMyAST __t287 = _t;
-			gt = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+			gt = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 			RefMyAST gt_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 			gt_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(gt));
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(gt_AST));
@@ -7873,7 +7873,7 @@ DOMElement*  modelica_tree_parser::relation(RefMyAST _t) {
 			currentAST = __currentAST287;
 			_t = __t287;
 			_t = _t->getNextSibling();
-#line 2033 "walker.g"
+#line 2042 "walker.g"
 			op = pModelicaXMLDoc->createElement(X("gt")); /* Absyn__GREATER; */
 #line 7879 "modelica_tree_parser.cpp"
 			break;
@@ -7881,7 +7881,7 @@ DOMElement*  modelica_tree_parser::relation(RefMyAST _t) {
 		case GREATEREQ:
 		{
 			RefMyAST __t288 = _t;
-			gte = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+			gte = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 			RefMyAST gte_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 			gte_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(gte));
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(gte_AST));
@@ -7899,7 +7899,7 @@ DOMElement*  modelica_tree_parser::relation(RefMyAST _t) {
 			currentAST = __currentAST288;
 			_t = __t288;
 			_t = _t->getNextSibling();
-#line 2035 "walker.g"
+#line 2044 "walker.g"
 			op = pModelicaXMLDoc->createElement(X("gte")); /* Absyn__GREATEREQ; */
 #line 7905 "modelica_tree_parser.cpp"
 			break;
@@ -7907,7 +7907,7 @@ DOMElement*  modelica_tree_parser::relation(RefMyAST _t) {
 		case EQEQ:
 		{
 			RefMyAST __t289 = _t;
-			eq = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+			eq = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 			RefMyAST eq_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 			eq_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(eq));
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(eq_AST));
@@ -7925,7 +7925,7 @@ DOMElement*  modelica_tree_parser::relation(RefMyAST _t) {
 			currentAST = __currentAST289;
 			_t = __t289;
 			_t = _t->getNextSibling();
-#line 2037 "walker.g"
+#line 2046 "walker.g"
 			op = pModelicaXMLDoc->createElement(X("eq")); /* Absyn__EQUAL; */
 #line 7931 "modelica_tree_parser.cpp"
 			break;
@@ -7933,7 +7933,7 @@ DOMElement*  modelica_tree_parser::relation(RefMyAST _t) {
 		case LESSGT:
 		{
 			RefMyAST __t290 = _t;
-			ne = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+			ne = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 			RefMyAST ne_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 			ne_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(ne));
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(ne_AST));
@@ -7951,7 +7951,7 @@ DOMElement*  modelica_tree_parser::relation(RefMyAST _t) {
 			currentAST = __currentAST290;
 			_t = __t290;
 			_t = _t->getNextSibling();
-#line 2039 "walker.g"
+#line 2048 "walker.g"
 			op = pModelicaXMLDoc->createElement(X("ne")); /* op = Absyn__NEQUAL; */
 #line 7957 "modelica_tree_parser.cpp"
 			break;
@@ -7962,7 +7962,7 @@ DOMElement*  modelica_tree_parser::relation(RefMyAST _t) {
 		}
 		}
 		}
-#line 2041 "walker.g"
+#line 2050 "walker.g"
 		
 						op->appendChild(e1);
 						op->appendChild(e2);
@@ -7990,10 +7990,10 @@ DOMElement*  modelica_tree_parser::relation(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::arithmetic_expression(RefMyAST _t) {
-#line 2055 "walker.g"
+#line 2064 "walker.g"
 	DOMElement* ast;
 #line 7996 "modelica_tree_parser.cpp"
-	RefMyAST arithmetic_expression_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST arithmetic_expression_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST arithmetic_expression_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -8001,7 +8001,7 @@ DOMElement*  modelica_tree_parser::arithmetic_expression(RefMyAST _t) {
 	RefMyAST add_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST sub = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST sub_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 2055 "walker.g"
+#line 2064 "walker.g"
 	
 		DOMElement* e1;
 		DOMElement* e2;
@@ -8040,7 +8040,7 @@ DOMElement*  modelica_tree_parser::arithmetic_expression(RefMyAST _t) {
 	case PLUS:
 	{
 		RefMyAST __t293 = _t;
-		add = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		add = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST add_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		add_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(add));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(add_AST));
@@ -8058,7 +8058,7 @@ DOMElement*  modelica_tree_parser::arithmetic_expression(RefMyAST _t) {
 		currentAST = __currentAST293;
 		_t = __t293;
 		_t = _t->getNextSibling();
-#line 2063 "walker.g"
+#line 2072 "walker.g"
 		
 						DOMElement* pAdd = pModelicaXMLDoc->createElement(X("add"));
 		
@@ -8076,7 +8076,7 @@ DOMElement*  modelica_tree_parser::arithmetic_expression(RefMyAST _t) {
 	case MINUS:
 	{
 		RefMyAST __t294 = _t;
-		sub = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		sub = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST sub_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		sub_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(sub));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(sub_AST));
@@ -8094,7 +8094,7 @@ DOMElement*  modelica_tree_parser::arithmetic_expression(RefMyAST _t) {
 		currentAST = __currentAST294;
 		_t = __t294;
 		_t = _t->getNextSibling();
-#line 2075 "walker.g"
+#line 2084 "walker.g"
 		
 						DOMElement* pSub = pModelicaXMLDoc->createElement(X("sub"));
 		
@@ -8122,10 +8122,10 @@ DOMElement*  modelica_tree_parser::arithmetic_expression(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::unary_arithmetic_expression(RefMyAST _t) {
-#line 2089 "walker.g"
+#line 2098 "walker.g"
 	DOMElement* ast;
 #line 8128 "modelica_tree_parser.cpp"
-	RefMyAST unary_arithmetic_expression_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST unary_arithmetic_expression_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST unary_arithmetic_expression_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -8141,7 +8141,7 @@ DOMElement*  modelica_tree_parser::unary_arithmetic_expression(RefMyAST _t) {
 	case UNARY_PLUS:
 	{
 		RefMyAST __t297 = _t;
-		add = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		add = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST add_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		add_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(add));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(add_AST));
@@ -8156,7 +8156,7 @@ DOMElement*  modelica_tree_parser::unary_arithmetic_expression(RefMyAST _t) {
 		currentAST = __currentAST297;
 		_t = __t297;
 		_t = _t->getNextSibling();
-#line 2092 "walker.g"
+#line 2101 "walker.g"
 		
 					DOMElement* pAdd = pModelicaXMLDoc->createElement(X("add"));
 		
@@ -8173,7 +8173,7 @@ DOMElement*  modelica_tree_parser::unary_arithmetic_expression(RefMyAST _t) {
 	case UNARY_MINUS:
 	{
 		RefMyAST __t298 = _t;
-		sub = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		sub = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST sub_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		sub_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(sub));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(sub_AST));
@@ -8188,7 +8188,7 @@ DOMElement*  modelica_tree_parser::unary_arithmetic_expression(RefMyAST _t) {
 		currentAST = __currentAST298;
 		_t = __t298;
 		_t = _t->getNextSibling();
-#line 2103 "walker.g"
+#line 2112 "walker.g"
 		
 					DOMElement* pSub = pModelicaXMLDoc->createElement(X("sub"));
 					
@@ -8238,10 +8238,10 @@ DOMElement*  modelica_tree_parser::unary_arithmetic_expression(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::term(RefMyAST _t) {
-#line 2117 "walker.g"
+#line 2126 "walker.g"
 	DOMElement* ast;
 #line 8244 "modelica_tree_parser.cpp"
-	RefMyAST term_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST term_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST term_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -8249,7 +8249,7 @@ DOMElement*  modelica_tree_parser::term(RefMyAST _t) {
 	RefMyAST mul_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST div = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST div_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 2117 "walker.g"
+#line 2126 "walker.g"
 	
 		DOMElement* e1;
 		DOMElement* e2;
@@ -8284,7 +8284,7 @@ DOMElement*  modelica_tree_parser::term(RefMyAST _t) {
 	case STAR:
 	{
 		RefMyAST __t301 = _t;
-		mul = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		mul = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST mul_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		mul_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(mul));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(mul_AST));
@@ -8302,7 +8302,7 @@ DOMElement*  modelica_tree_parser::term(RefMyAST _t) {
 		currentAST = __currentAST301;
 		_t = __t301;
 		_t = _t->getNextSibling();
-#line 2125 "walker.g"
+#line 2134 "walker.g"
 		
 						DOMElement* pMul = pModelicaXMLDoc->createElement(X("mul"));
 		
@@ -8319,7 +8319,7 @@ DOMElement*  modelica_tree_parser::term(RefMyAST _t) {
 	case SLASH:
 	{
 		RefMyAST __t302 = _t;
-		div = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		div = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST div_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		div_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(div));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(div_AST));
@@ -8337,7 +8337,7 @@ DOMElement*  modelica_tree_parser::term(RefMyAST _t) {
 		currentAST = __currentAST302;
 		_t = __t302;
 		_t = _t->getNextSibling();
-#line 2136 "walker.g"
+#line 2145 "walker.g"
 		
 						DOMElement* pDiv = pModelicaXMLDoc->createElement(X("div"));
 		
@@ -8364,16 +8364,16 @@ DOMElement*  modelica_tree_parser::term(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::factor(RefMyAST _t) {
-#line 2149 "walker.g"
+#line 2158 "walker.g"
 	DOMElement* ast;
 #line 8370 "modelica_tree_parser.cpp"
-	RefMyAST factor_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST factor_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST factor_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST pw = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST pw_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 2149 "walker.g"
+#line 2158 "walker.g"
 	
 		DOMElement* e1;
 		DOMElement* e2;
@@ -8407,7 +8407,7 @@ DOMElement*  modelica_tree_parser::factor(RefMyAST _t) {
 	case POWER:
 	{
 		RefMyAST __t305 = _t;
-		pw = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		pw = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST pw_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		pw_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(pw));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(pw_AST));
@@ -8425,7 +8425,7 @@ DOMElement*  modelica_tree_parser::factor(RefMyAST _t) {
 		currentAST = __currentAST305;
 		_t = __t305;
 		_t = _t->getNextSibling();
-#line 2157 "walker.g"
+#line 2166 "walker.g"
 		
 						DOMElement* pPow = pModelicaXMLDoc->createElement(X("pow"));
 		
@@ -8452,10 +8452,10 @@ DOMElement*  modelica_tree_parser::factor(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::primary(RefMyAST _t) {
-#line 2170 "walker.g"
+#line 2179 "walker.g"
 	DOMElement* ast;
 #line 8458 "modelica_tree_parser.cpp"
-	RefMyAST primary_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST primary_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST primary_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -8477,7 +8477,7 @@ DOMElement*  modelica_tree_parser::primary(RefMyAST _t) {
 	RefMyAST lbr_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST tend = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST tend_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 2170 "walker.g"
+#line 2179 "walker.g"
 	
 		l_stack* el_stack = new l_stack;
 		DOMElement* e;
@@ -8498,7 +8498,7 @@ DOMElement*  modelica_tree_parser::primary(RefMyAST _t) {
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(ui_AST));
 		match(ANTLR_USE_NAMESPACE(antlr)RefAST(_t),UNSIGNED_INTEGER);
 		_t = _t->getNextSibling();
-#line 2179 "walker.g"
+#line 2188 "walker.g"
 		
 						DOMElement* pIntegerLiteral = pModelicaXMLDoc->createElement(X("integer_literal"));
 						pIntegerLiteral->setAttribute(X("value"), str2xml(ui));
@@ -8519,7 +8519,7 @@ DOMElement*  modelica_tree_parser::primary(RefMyAST _t) {
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(ur_AST));
 		match(ANTLR_USE_NAMESPACE(antlr)RefAST(_t),UNSIGNED_REAL);
 		_t = _t->getNextSibling();
-#line 2189 "walker.g"
+#line 2198 "walker.g"
 		
 						DOMElement* pRealLiteral = pModelicaXMLDoc->createElement(X("real_literal"));
 						pRealLiteral->setAttribute(X("value"), str2xml(ur));
@@ -8540,7 +8540,7 @@ DOMElement*  modelica_tree_parser::primary(RefMyAST _t) {
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(str_AST));
 		match(ANTLR_USE_NAMESPACE(antlr)RefAST(_t),STRING);
 		_t = _t->getNextSibling();
-#line 2199 "walker.g"
+#line 2208 "walker.g"
 		
 						DOMElement* pStringLiteral = pModelicaXMLDoc->createElement(X("string_literal"));
 						pStringLiteral->setAttribute(X("value"), str2xml(str));
@@ -8561,7 +8561,7 @@ DOMElement*  modelica_tree_parser::primary(RefMyAST _t) {
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(f_AST));
 		match(ANTLR_USE_NAMESPACE(antlr)RefAST(_t),FALSE);
 		_t = _t->getNextSibling();
-#line 2209 "walker.g"
+#line 2218 "walker.g"
 		
 					DOMElement* pBoolLiteral = pModelicaXMLDoc->createElement(X("bool_literal"));
 					pBoolLiteral->setAttribute(X("value"), X("false"));
@@ -8582,7 +8582,7 @@ DOMElement*  modelica_tree_parser::primary(RefMyAST _t) {
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(t_AST));
 		match(ANTLR_USE_NAMESPACE(antlr)RefAST(_t),TRUE);
 		_t = _t->getNextSibling();
-#line 2219 "walker.g"
+#line 2228 "walker.g"
 		
 					DOMElement* pBoolLiteral = pModelicaXMLDoc->createElement(X("bool_literal"));
 					pBoolLiteral->setAttribute(X("value"), X("true"));
@@ -8608,7 +8608,7 @@ DOMElement*  modelica_tree_parser::primary(RefMyAST _t) {
 	case DER:
 	{
 		RefMyAST __t308 = _t;
-		d = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		d = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST d_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		d_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(d));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(d_AST));
@@ -8623,7 +8623,7 @@ DOMElement*  modelica_tree_parser::primary(RefMyAST _t) {
 		currentAST = __currentAST308;
 		_t = __t308;
 		_t = _t->getNextSibling();
-#line 2230 "walker.g"
+#line 2239 "walker.g"
 		
 						DOMElement* pDer = pModelicaXMLDoc->createElement(X("der"));
 						pDer->setAttribute(X("sline"), X(itoa(d->getLine(),stmp,10)));
@@ -8658,7 +8658,7 @@ DOMElement*  modelica_tree_parser::primary(RefMyAST _t) {
 	case LBRACK:
 	{
 		RefMyAST __t310 = _t;
-		lbk = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		lbk = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST lbk_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		lbk_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(lbk));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(lbk_AST));
@@ -8670,7 +8670,7 @@ DOMElement*  modelica_tree_parser::primary(RefMyAST _t) {
 		e=expression_list(_t);
 		_t = _retTree;
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 2238 "walker.g"
+#line 2247 "walker.g"
 		el_stack->push_back(e);
 #line 8676 "modelica_tree_parser.cpp"
 		{ // ( ... )*
@@ -8681,7 +8681,7 @@ DOMElement*  modelica_tree_parser::primary(RefMyAST _t) {
 				e=expression_list(_t);
 				_t = _retTree;
 				astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 2239 "walker.g"
+#line 2248 "walker.g"
 				el_stack->push_back(e);
 #line 8687 "modelica_tree_parser.cpp"
 			}
@@ -8695,7 +8695,7 @@ DOMElement*  modelica_tree_parser::primary(RefMyAST _t) {
 		currentAST = __currentAST310;
 		_t = __t310;
 		_t = _t->getNextSibling();
-#line 2240 "walker.g"
+#line 2249 "walker.g"
 		
 						DOMElement* pConcat = pModelicaXMLDoc->createElement(X("concat"));
 		
@@ -8712,7 +8712,7 @@ DOMElement*  modelica_tree_parser::primary(RefMyAST _t) {
 	case LBRACE:
 	{
 		RefMyAST __t313 = _t;
-		lbr = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		lbr = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST lbr_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		lbr_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(lbr));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(lbr_AST));
@@ -8766,7 +8766,7 @@ DOMElement*  modelica_tree_parser::primary(RefMyAST _t) {
 		currentAST = __currentAST313;
 		_t = __t313;
 		_t = _t->getNextSibling();
-#line 2252 "walker.g"
+#line 2261 "walker.g"
 		
 					/* was before: ast = function_arguments */
 					DOMElement* pArray = pModelicaXMLDoc->createElement(X("array"));
@@ -8795,7 +8795,7 @@ DOMElement*  modelica_tree_parser::primary(RefMyAST _t) {
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(tend_AST));
 		match(ANTLR_USE_NAMESPACE(antlr)RefAST(_t),END);
 		_t = _t->getNextSibling();
-#line 2270 "walker.g"
+#line 2279 "walker.g"
 		
 					DOMElement* pEnd = pModelicaXMLDoc->createElement(X("end"));
 					pEnd->setAttribute(X("sline"), X(itoa(tend->getLine(),stmp,10)));
@@ -8818,10 +8818,10 @@ DOMElement*  modelica_tree_parser::primary(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::component_reference__function_call(RefMyAST _t) {
-#line 2279 "walker.g"
+#line 2288 "walker.g"
 	DOMElement* ast;
 #line 8824 "modelica_tree_parser.cpp"
-	RefMyAST component_reference__function_call_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST component_reference__function_call_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST component_reference__function_call_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -8831,7 +8831,7 @@ DOMElement*  modelica_tree_parser::component_reference__function_call(RefMyAST _
 	RefMyAST ifc_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 2279 "walker.g"
+#line 2288 "walker.g"
 	
 		DOMElement* cref;
 		DOMElement* fnc = 0;
@@ -8852,7 +8852,7 @@ DOMElement*  modelica_tree_parser::component_reference__function_call(RefMyAST _
 		case FUNCTION_CALL:
 		{
 			RefMyAST __t320 = _t;
-			fc = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+			fc = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 			RefMyAST fc_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 			fc_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(fc));
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(fc_AST));
@@ -8888,7 +8888,7 @@ DOMElement*  modelica_tree_parser::component_reference__function_call(RefMyAST _
 			currentAST = __currentAST320;
 			_t = __t320;
 			_t = _t->getNextSibling();
-#line 2286 "walker.g"
+#line 2295 "walker.g"
 			
 							DOMElement* pCall = pModelicaXMLDoc->createElement(X("call"));
 			
@@ -8908,7 +8908,7 @@ DOMElement*  modelica_tree_parser::component_reference__function_call(RefMyAST _
 			cref=component_reference(_t);
 			_t = _retTree;
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 2297 "walker.g"
+#line 2306 "walker.g"
 			
 							if (fnc && cref) cref->appendChild(fnc);
 							ast = cref;
@@ -8928,7 +8928,7 @@ DOMElement*  modelica_tree_parser::component_reference__function_call(RefMyAST _
 	case INITIAL_FUNCTION_CALL:
 	{
 		RefMyAST __t322 = _t;
-		ifc = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		ifc = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST ifc_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		ifc_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(ifc));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(ifc_AST));
@@ -8946,7 +8946,7 @@ DOMElement*  modelica_tree_parser::component_reference__function_call(RefMyAST _
 		currentAST = __currentAST322;
 		_t = __t322;
 		_t = _t->getNextSibling();
-#line 2304 "walker.g"
+#line 2313 "walker.g"
 		
 						// calling function initial
 						DOMElement* pCall = pModelicaXMLDoc->createElement(X("call"));
@@ -8978,14 +8978,14 @@ DOMElement*  modelica_tree_parser::component_reference__function_call(RefMyAST _
 }
 
 DOMElement*  modelica_tree_parser::function_arguments(RefMyAST _t) {
-#line 2403 "walker.g"
+#line 2412 "walker.g"
 	DOMElement* ast;
 #line 8984 "modelica_tree_parser.cpp"
-	RefMyAST function_arguments_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST function_arguments_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST function_arguments_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 2403 "walker.g"
+#line 2412 "walker.g"
 	
 		l_stack el_stack;
 		DOMElement* e=0;
@@ -9045,7 +9045,7 @@ DOMElement*  modelica_tree_parser::function_arguments(RefMyAST _t) {
 		}
 		}
 		}
-#line 2414 "walker.g"
+#line 2423 "walker.g"
 			
 					ast = pFunctionArguments;
 			
@@ -9088,16 +9088,16 @@ DOMElement*  modelica_tree_parser::function_arguments(RefMyAST _t) {
 DOMElement*  modelica_tree_parser::expression_list2(RefMyAST _t,
 	DOMElement *parent
 ) {
-#line 2383 "walker.g"
+#line 2392 "walker.g"
 	DOMElement* ast;
 #line 9094 "modelica_tree_parser.cpp"
-	RefMyAST expression_list2_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST expression_list2_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST expression_list2_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST el = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST el_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 2383 "walker.g"
+#line 2392 "walker.g"
 	
 		l_stack el_stack;
 		DOMElement* e;
@@ -9106,7 +9106,7 @@ DOMElement*  modelica_tree_parser::expression_list2(RefMyAST _t,
 	
 	{
 	RefMyAST __t336 = _t;
-	el = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	el = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST el_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	el_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(el));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(el_AST));
@@ -9118,7 +9118,7 @@ DOMElement*  modelica_tree_parser::expression_list2(RefMyAST _t,
 	e=expression(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 2390 "walker.g"
+#line 2399 "walker.g"
 	parent->appendChild(e);
 #line 9124 "modelica_tree_parser.cpp"
 	{ // ( ... )*
@@ -9129,7 +9129,7 @@ DOMElement*  modelica_tree_parser::expression_list2(RefMyAST _t,
 			e=expression(_t);
 			_t = _retTree;
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 2391 "walker.g"
+#line 2400 "walker.g"
 			parent->appendChild(e);
 #line 9135 "modelica_tree_parser.cpp"
 		}
@@ -9144,7 +9144,7 @@ DOMElement*  modelica_tree_parser::expression_list2(RefMyAST _t,
 	_t = __t336;
 	_t = _t->getNextSibling();
 	}
-#line 2394 "walker.g"
+#line 2403 "walker.g"
 	
 				ast = parent;
 			
@@ -9158,16 +9158,16 @@ DOMElement*  modelica_tree_parser::expression_list2(RefMyAST _t,
 DOMElement*  modelica_tree_parser::named_arguments(RefMyAST _t,
 	DOMElement *parent
 ) {
-#line 2424 "walker.g"
+#line 2433 "walker.g"
 	DOMElement* ast;
 #line 9164 "modelica_tree_parser.cpp"
-	RefMyAST named_arguments_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST named_arguments_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST named_arguments_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST na = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST na_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 2424 "walker.g"
+#line 2433 "walker.g"
 	
 		l_stack el_stack;
 		DOMElement* n;
@@ -9175,7 +9175,7 @@ DOMElement*  modelica_tree_parser::named_arguments(RefMyAST _t,
 #line 9176 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t345 = _t;
-	na = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	na = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST na_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	na_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(na));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(na_AST));
@@ -9188,7 +9188,7 @@ DOMElement*  modelica_tree_parser::named_arguments(RefMyAST _t,
 	n=named_argument(_t);
 	_t = _retTree;
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 2430 "walker.g"
+#line 2439 "walker.g"
 	parent->appendChild(n);
 #line 9194 "modelica_tree_parser.cpp"
 	}
@@ -9200,7 +9200,7 @@ DOMElement*  modelica_tree_parser::named_arguments(RefMyAST _t,
 			n=named_argument(_t);
 			_t = _retTree;
 			astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 2431 "walker.g"
+#line 2440 "walker.g"
 			parent->appendChild(n);
 #line 9206 "modelica_tree_parser.cpp"
 		}
@@ -9214,7 +9214,7 @@ DOMElement*  modelica_tree_parser::named_arguments(RefMyAST _t,
 	currentAST = __currentAST345;
 	_t = __t345;
 	_t = _t->getNextSibling();
-#line 2432 "walker.g"
+#line 2441 "walker.g"
 	
 				ast = parent;
 			
@@ -9226,10 +9226,10 @@ DOMElement*  modelica_tree_parser::named_arguments(RefMyAST _t,
 }
 
 DOMElement*  modelica_tree_parser::named_argument(RefMyAST _t) {
-#line 2437 "walker.g"
+#line 2446 "walker.g"
 	DOMElement* ast;
 #line 9232 "modelica_tree_parser.cpp"
-	RefMyAST named_argument_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST named_argument_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST named_argument_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -9237,14 +9237,14 @@ DOMElement*  modelica_tree_parser::named_argument(RefMyAST _t) {
 	RefMyAST eq_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST i_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 2437 "walker.g"
+#line 2446 "walker.g"
 	
 		DOMElement* temp;
 	
 #line 9245 "modelica_tree_parser.cpp"
 	
 	RefMyAST __t350 = _t;
-	eq = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	eq = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	RefMyAST eq_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	eq_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(eq));
 	astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(eq_AST));
@@ -9265,7 +9265,7 @@ DOMElement*  modelica_tree_parser::named_argument(RefMyAST _t) {
 	currentAST = __currentAST350;
 	_t = __t350;
 	_t = _t->getNextSibling();
-#line 2443 "walker.g"
+#line 2452 "walker.g"
 	
 				DOMElement *pNamedArgument = pModelicaXMLDoc->createElement(X("named_argument"));
 				pNamedArgument->setAttribute(X("ident"), str2xml(i));
@@ -9286,16 +9286,16 @@ DOMElement*  modelica_tree_parser::named_argument(RefMyAST _t) {
 DOMElement*  modelica_tree_parser::subscript(RefMyAST _t,
 	DOMElement* parent
 ) {
-#line 2529 "walker.g"
+#line 2538 "walker.g"
 	DOMElement* ast;
 #line 9292 "modelica_tree_parser.cpp"
-	RefMyAST subscript_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST subscript_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST subscript_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST c = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST c_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 2529 "walker.g"
+#line 2538 "walker.g"
 	
 		DOMElement* e;
 		DOMElement* pColon = pModelicaXMLDoc->createElement(X("colon"));
@@ -9350,7 +9350,7 @@ DOMElement*  modelica_tree_parser::subscript(RefMyAST _t,
 		e=expression(_t);
 		_t = _retTree;
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(returnAST));
-#line 2537 "walker.g"
+#line 2546 "walker.g"
 		
 						parent->appendChild(e);
 						ast = parent;
@@ -9366,7 +9366,7 @@ DOMElement*  modelica_tree_parser::subscript(RefMyAST _t,
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(c_AST));
 		match(ANTLR_USE_NAMESPACE(antlr)RefAST(_t),COLON);
 		_t = _t->getNextSibling();
-#line 2542 "walker.g"
+#line 2551 "walker.g"
 		
 		
 						pColon->setAttribute(X("sline"), X(itoa(c->getLine(),stmp,10)));
@@ -9391,10 +9391,10 @@ DOMElement*  modelica_tree_parser::subscript(RefMyAST _t,
 }
 
 DOMElement*  modelica_tree_parser::string_concatenation(RefMyAST _t) {
-#line 2595 "walker.g"
+#line 2604 "walker.g"
 	DOMElement* ast;
 #line 9397 "modelica_tree_parser.cpp"
-	RefMyAST string_concatenation_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST string_concatenation_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST string_concatenation_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
@@ -9404,7 +9404,7 @@ DOMElement*  modelica_tree_parser::string_concatenation(RefMyAST _t) {
 	RefMyAST p_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST s2 = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST s2_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 2595 "walker.g"
+#line 2604 "walker.g"
 	
 			DOMElement*pString1;
 			l_stack el_stack;
@@ -9422,7 +9422,7 @@ DOMElement*  modelica_tree_parser::string_concatenation(RefMyAST _t) {
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(s_AST));
 		match(ANTLR_USE_NAMESPACE(antlr)RefAST(_t),STRING);
 		_t = _t->getNextSibling();
-#line 2602 "walker.g"
+#line 2611 "walker.g"
 		
 					DOMElement *pString = pModelicaXMLDoc->createElement(X("string_literal"));
 					pString->setAttribute(X("value"), str2xml(s));
@@ -9439,7 +9439,7 @@ DOMElement*  modelica_tree_parser::string_concatenation(RefMyAST _t) {
 	case PLUS:
 	{
 		RefMyAST __t373 = _t;
-		p = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+		p = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 		RefMyAST p_AST_in = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 		p_AST = astFactory->create(ANTLR_USE_NAMESPACE(antlr)RefAST(p));
 		astFactory->addASTChild(currentAST, ANTLR_USE_NAMESPACE(antlr)RefAST(p_AST));
@@ -9460,7 +9460,7 @@ DOMElement*  modelica_tree_parser::string_concatenation(RefMyAST _t) {
 		currentAST = __currentAST373;
 		_t = __t373;
 		_t = _t->getNextSibling();
-#line 2612 "walker.g"
+#line 2621 "walker.g"
 		
 					 DOMElement *pString = pModelicaXMLDoc->createElement(X("add_string"));
 		
@@ -9492,16 +9492,16 @@ DOMElement*  modelica_tree_parser::string_concatenation(RefMyAST _t) {
 }
 
 DOMElement*  modelica_tree_parser::interactive_stmt(RefMyAST _t) {
-#line 2672 "walker.g"
+#line 2681 "walker.g"
 	DOMElement* ast;
 #line 9498 "modelica_tree_parser.cpp"
-	RefMyAST interactive_stmt_AST_in = (_t == ASTNULL) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
+	RefMyAST interactive_stmt_AST_in = (_t == RefMyAST(ASTNULL)) ? RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST) : _t;
 	returnAST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	RefMyAST interactive_stmt_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST s = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
 	RefMyAST s_AST = RefMyAST(ANTLR_USE_NAMESPACE(antlr)nullAST);
-#line 2672 "walker.g"
+#line 2681 "walker.g"
 	
 	DOMElement* al=0; 
 	DOMElement* el=0;
@@ -9537,7 +9537,7 @@ DOMElement*  modelica_tree_parser::interactive_stmt(RefMyAST _t) {
 			currentAST = __currentAST378;
 			_t = __t378;
 			_t = _t->getNextSibling();
-#line 2683 "walker.g"
+#line 2692 "walker.g"
 							
 							//pInteractiveALG->appendChild(al);
 							el_stack.push_back(pInteractiveALG);
@@ -9566,7 +9566,7 @@ DOMElement*  modelica_tree_parser::interactive_stmt(RefMyAST _t) {
 			currentAST = __currentAST380;
 			_t = __t380;
 			_t = _t->getNextSibling();
-#line 2689 "walker.g"
+#line 2698 "walker.g"
 			
 							DOMElement *pInteractiveEXP = pModelicaXMLDoc->createElement(X("IEXP"));
 							pInteractiveEXP->appendChild(el);
@@ -9607,7 +9607,7 @@ DOMElement*  modelica_tree_parser::interactive_stmt(RefMyAST _t) {
 	}
 	}
 	}
-#line 2696 "walker.g"
+#line 2705 "walker.g"
 				
 				pInteractiveSTMT = (DOMElement*)appendKids(el_stack, pInteractiveSTMT);
 				if (s) pInteractiveSTMT->setAttribute(X("semicolon"),X("true"));

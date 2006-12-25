@@ -34,7 +34,7 @@ Comments: we walk on the modelica tree, buil a XML DOM tree and serialize
   #include <string>
 
 #ifndef __MODELICAXML_H_
-#include "ModelicaXml.h"
+#include "ModelicaXML.h"
 #endif
 
 #include "MyAST.h"
@@ -59,10 +59,10 @@ class modelica_tree_parser extends TreeParser;
 options 
 {
     importVocab = modelica_parser;
-    k = 2;
+    k = 1;
     buildAST = true;
     defaultErrorHandler = false;
-	ASTLabelType = "RefMyAST";
+    ASTLabelType = "RefMyAST";
 }
 
 tokens 
@@ -78,6 +78,15 @@ tokens
 	DOMElement* pRootElementModelicaXML;
 	char stmp[500];
 
+
+    char* itoa( int value, char* buffer, int radix )
+    {
+      /* 
+      char* x = (char*)malloc(sizeof(char)*21);
+      */
+      sprintf(buffer, "%d", value);
+      return buffer;
+    }
 
     typedef std::deque<DOMElement*> l_stack;
     typedef std::string mstring;
