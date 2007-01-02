@@ -894,16 +894,14 @@ algorithm
         ci_state = ClassInf.start(r, n);
         (cache,dae1,env_3,(csets_1 as Connect.SETS(_,crs)),ci_state_1,tys,bc_ty) 
         			= instClassIn(cache,env_1, mod, pre, csets, ci_state, c, false, inst_dims, impl) ;
-        //print("makeFullyQualified926\n");
         (cache,fq_class) = makeFullyQualified(cache,env, Absyn.IDENT(n));
 				//str = Absyn.pathString(fq_class); print("------------------- CLASS makeFullyQualified instClass-----------------\n");print(n); print("  ");print(str);print("\n===============================================\n");
 
         dae1_1 = DAE.setComponentType(dae1, fq_class);
         callscope_1 = isTopCall(callscope);
         dae2 = Connect.equations(csets_1);
-        (cache,dae3) = Connect.unconnectedFlowEquations(cache,csets_1, dae1, env_3, callscope_1);
+        (cache,dae3) = Connect.unconnectedFlowEquations(cache,csets_1, dae1, env_3, pre,callscope_1);
         dae = Util.listFlatten({dae1_1,dae2,dae3});
-        //print("makeFullyQualified936\n");
         (cache,typename) = makeFullyQualified(cache,env, Absyn.IDENT(n));
         ty = mktype(typename, ci_state_1, tys, bc_ty) ;
         //print("\n---- DAE ----\n"); DAE.printDAE(DAE.DAE(dae));  //Print out flat modelica
@@ -976,14 +974,12 @@ algorithm
         c_1 = SCode.classSetPartial(c, false);
         (cache,dae1,env_3,(csets_1 as Connect.SETS(_,crs)),ci_state_1,tys,bc_ty) 
          			= instClassIn(cache,env_1, mod, pre, csets, ci_state, c_1, false, inst_dims, impl) ;
-        //print("makeFullyQualified1007\n");
         (cache,fq_class) = makeFullyQualified(cache,env_3, Absyn.IDENT(n));
         dae1_1 = DAE.setComponentType(dae1, fq_class);
         callscope_1 = isTopCall(callscope);
         dae2 = Connect.equations(csets_1);
-        (cache,dae3) = Connect.unconnectedFlowEquations(cache,csets_1, dae1, env_3, callscope_1);
+        (cache,dae3) = Connect.unconnectedFlowEquations(cache,csets_1, dae1, env_3, pre,callscope_1);
         dae = Util.listFlatten({dae1_1,dae2,dae3});
-        //print("makeFullyQualified1014\n");
         (cache,typename) = makeFullyQualified(cache,env_3, Absyn.IDENT(n));
         ty = mktypeWithArrays(typename, ci_state_1, tys, bc_ty);
       then
@@ -5560,7 +5556,6 @@ algorithm
       equation 
         (cache,dae,cenv,csets_1,ty,st) = instClass(cache,env, mod, pre, csets, c, inst_dims, true, INNER_CALL());
         env_1 = Env.extendFrameC(env,c);
-        //print("makeFullyQualified5275\n");
         (cache,fpath) = makeFullyQualified(cache,env_1, Absyn.IDENT(n));
         ty1 = setFullyQualifiedTypename(ty,fpath);
         env_1 = Env.extendFrameT(env_1, n, ty1); 

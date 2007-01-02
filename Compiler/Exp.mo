@@ -622,6 +622,30 @@ algorithm
   end matchcontinue;
 end crefLastSubs;
 
+public function crefStripPrefix "Strips a prefix/cref from a component reference
+"
+  input ComponentRef cref;
+  input ComponentRef prefix;
+  output ComponentRef outCref;
+algorithm
+	outCref := matchcontinue(cref,prefix)
+	local
+	  list<Subscript> subs1,subs2;
+	  ComponentRef cr1,cr2;
+	  Ident id1,id2;
+	  case(CREF_QUAL(id1,subs1,cr1),CREF_IDENT(id2,subs2))
+	    equation
+	      equality(id1=id2);
+	      true = subscriptEqual(subs1,subs2);
+	    then cr1;
+	  case(CREF_QUAL(id1,subs1,cr1),CREF_QUAL(id2,subs2,cr2)) 
+	    equation
+	      equality(id1=id2);
+	      true = subscriptEqual(subs1,subs2);
+	      then crefStripPrefix(cr1,cr2);   
+	end matchcontinue;
+end crefStripPrefix;
+
 public function crefStripLastSubs "function: crefStripLastSubs
  
   Strips the last subscripts of a ComponentRef

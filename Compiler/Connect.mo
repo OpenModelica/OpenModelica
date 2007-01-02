@@ -60,6 +60,7 @@ public import Exp;
 public import Static;
 public import DAE;
 public import Env;
+public import Prefix;
 
 public 
 uniontype Face "This type indicates whether a connector is an inner or an outer
@@ -652,19 +653,21 @@ public function unconnectedFlowEquations "Unconnected flow variables.
   input Sets inSets;
   input list<DAE.Element> inDAEElementLst;
   input Env.Env inEnv;
+  input Prefix.Prefix prefix;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   (outCache,outDAEElementLst) :=
-  matchcontinue (inCache,inSets,inDAEElementLst,inEnv,inBoolean)
+  matchcontinue (inCache,inSets,inDAEElementLst,inEnv,prefix,inBoolean)
     local
       list<Exp.ComponentRef> v1,v2,vars,vars2,unconnectedvars;
       list<DAE.Element> dae_1,dae;
       Sets csets;
       list<Env.Frame> env;
       Env.Cache cache;
-    case (cache,csets,dae,env,true)
+      Exp.ComponentRef prefixCref;
+    case (cache,csets,dae,env,prefix,true)
       equation 
         v1 = Env.localOutsideConnectorFlowvars(env) "if outermost call look at both inner and outer unconnected connectors" ;
         v2 = Env.localInsideConnectorFlowvars(env);
@@ -672,11 +675,42 @@ algorithm
         vars2 = getOuterFlowVariables(csets);
         // last array subscripts are not present in vars, therefor removed from vars2 too.
         vars2 = Util.listMap(vars2,Exp.crefStripLastSubs); 
+/*        print("scope =");print(Env.printEnvPathStr(env));print("\n");
+        print("v1:");print(Util.stringDelimitList(Util.listMap(v1,Exp.printComponentRefStr),","));print("\n");
+        print("v2:");print(Util.stringDelimitList(Util.listMap(v2,Exp.printComponentRefStr),","));print("\n");
+        print("vars :");print(Util.stringDelimitList(Util.listMap(vars,Exp.printComponentRefStr),","));print("\n");
+        print("vars2 :");print(Util.stringDelimitList(Util.listMap(vars2,Exp.printComponentRefStr),","));print("\n");
+  */
         unconnectedvars = removeVariables(vars, vars2);
-        (cache,dae_1) = generateZeroflowEquations(cache,unconnectedvars,env);
+       
+        // no prefix for top level
+        (cache,dae_1) = generateZeroflowEquations(cache,unconnectedvars,env,Prefix.NOPRE());
       then
         (cache,dae_1);
-    case (cache,csets,dae,env,_) /* Debug.fprint(\"failtrace\",\"-unconnected_flow_equations failed\\n\") */  
+
+      case (cache,csets,dae,env,prefix,false)
+      equation 
+        vars = Env.localInsideConnectorFlowvars(env);
+        vars2 = getInnerFlowVariables(csets);
+/*				print("inner call scope:");print(Env.printEnvPathStr(env));print(" ");
+				print("prefix :");print(Prefix.printPrefixStr(prefix));print("\n");
+        print("vars:");print(Util.stringDelimitList(Util.listMap(vars,Exp.printComponentRefStr),","));print("\n");
+        print("vars2:");print(Util.stringDelimitList(Util.listMap(vars2,Exp.printComponentRefStr),","));print("\n");
+*/
+        prefixCref = Prefix.prefixToCref(prefix);
+        vars2 = Util.listMap1(vars2,Exp.crefStripPrefix,prefixCref);
+        
+        // last array subscripts are not present in vars, therefor removed from vars2 too.
+        vars2 = Util.listMap(vars2,Exp.crefStripLastSubs);
+        unconnectedvars = removeVariables(vars, vars2);
+
+				// Add prefix that was "removed" above
+        (cache,dae_1) = generateZeroflowEquations(cache,unconnectedvars,env,prefix);
+        
+      then
+        (cache,dae_1);
+        
+    case (cache,csets,dae,env,_,_) 
     then (cache,{}); 
   end matchcontinue;
 end unconnectedFlowEquations;
@@ -739,11 +773,12 @@ protected function generateZeroflowEquations "function: generateZeroflowEquation
 	input Env.Cache inCache;
   input list<Exp.ComponentRef> inExpComponentRefLst;
   input Env.Env inEnv;
+  input Prefix.Prefix prefix;
   output Env.Cache outCache;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   (outCache,outDAEElementLst) :=
-  matchcontinue (inCache,inExpComponentRefLst,inEnv)
+  matchcontinue (inCache,inExpComponentRefLst,inEnv,prefix)
     local
       list<DAE.Element> res;
       Exp.ComponentRef cr;
@@ -754,25 +789,28 @@ algorithm
       list<Option<Integer>> dimSizesOpt;
       list<Exp.Exp> dimExps;
       Env.Cache cache;
-    case (cache,{},_) then (cache,{}); 
-    case (cache,(cr :: xs),env)
+      Exp.ComponentRef cr2;
+    case (cache,{},_,_) then (cache,{}); 
+    case (cache,(cr :: xs),env,prefix)
       equation
         (cache,_,tp,_) = Lookup.lookupVar(cache,env,cr);
         true = Types.isArray(tp); // For variables that are arrays, generate cr = fill(0,dims);
         dimSizes = Types.getDimensionSizes(tp);
         (_,dimSizesOpt) = Types.flattenArrayTypeOpt(tp); 
         dimExps = Util.listMap(dimSizes,Exp.makeIntegerExp);
-        (cache,res) = generateZeroflowEquations(cache,xs,env);
+        (cache,res) = generateZeroflowEquations(cache,xs,env,prefix);
+        cr2 = Prefix.prefixCref(prefix,cr);
       then
-        (cache,DAE.EQUATION(Exp.CREF(cr,Exp.REAL()),Exp.CALL(Absyn.IDENT("fill"),Exp.RCONST(0.0)::dimExps,false,true,Exp.T_ARRAY(Exp.REAL(),dimSizesOpt))) :: res);        
+        (cache,DAE.EQUATION(Exp.CREF(cr2,Exp.REAL()),Exp.CALL(Absyn.IDENT("fill"),Exp.RCONST(0.0)::dimExps,false,true,Exp.T_ARRAY(Exp.REAL(),dimSizesOpt))) :: res);         
  
-    case (cache,(cr :: xs),env) // For scalars.
+    case (cache,(cr :: xs),env,prefix) // For scalars.
       equation
         (cache,_,tp,_) = Lookup.lookupVar(cache,env,cr);
         false = Types.isArray(tp); // scalar
-        (cache,res) = generateZeroflowEquations(cache,xs,env);
+        (cache,res) = generateZeroflowEquations(cache,xs,env,prefix);
+        cr2 = Prefix.prefixCref(prefix,cr);
       then
-        (cache,DAE.EQUATION(Exp.CREF(cr,Exp.REAL()),Exp.RCONST(0.0)) :: res);
+        (cache,DAE.EQUATION(Exp.CREF(cr2,Exp.REAL()),Exp.RCONST(0.0)) :: res);
   end matchcontinue;
 end generateZeroflowEquations;
 
@@ -912,7 +950,7 @@ algorithm
         res = getOuterFlowVariables2(xs);
       then
         (cr :: res);
-    case ((_ :: xs))
+    case (( _ :: xs))
       equation 
         res = getOuterFlowVariables2(xs);
       then
