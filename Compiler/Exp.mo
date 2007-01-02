@@ -3972,7 +3972,7 @@ algorithm
 
     case (_,POW(ty = _),e1,e2) /* (a1a2...an)^e2 => a1^e2a2^e2..an^e2 */ 
       equation 
-        ((exp_lst as (_ :: (_ :: _)))) = factors(e1);
+        ((exp_lst as (_ :: _ :: _ :: _))) = factors(e1);
         exp_lst_1 = simplifyBinaryDistributePow(exp_lst, e2);
         res = makeProductLst(exp_lst_1);
       then
@@ -3999,6 +3999,14 @@ algorithm
       Type tp;
       Exp e,pow_e;
     case ({},_) then {}; 
+
+   	// Remove 1^pow_e
+    case ((e :: es),pow_e) 
+      equation
+        true = isConstOne(e);
+        es_1 = simplifyBinaryDistributePow(es, pow_e);
+    then es_1;
+
     case ((e :: es),pow_e)
       equation 
         es_1 = simplifyBinaryDistributePow(es, pow_e);
