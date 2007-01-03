@@ -2861,7 +2861,7 @@ algorithm
         elimLevel = RTOpts.eliminationLevel();
         RTOpts.setEliminationLevel(0); // No variable eliminiation
         (dlow as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(numberOfVars = varSize),orderedEqs = eqns)) 
-        	= DAELow.lower(dae, true);
+        	= DAELow.lower(dae, false/* no dummy variable*/);
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
         	eqnSize = DAELow.equationSize(eqns);
 				simpleEqnSize = DAELow.countSimpleEquations(eqns);
@@ -2871,7 +2871,7 @@ algorithm
 				
 				classNameStr = Absyn.pathString(className);
 				retStr=Util.stringAppendList({"Check of ",classNameStr," successful.\n\n","model ",classNameStr," has ",eqnSizeStr," equation(s) and ",
-				varSizeStr," variable(s).\n","Of these are ",simpleEqnSizeStr, " trivial equation(s).\n"});
+				varSizeStr," variable(s).\n",simpleEqnSizeStr," of these are trivial equation(s).\n"});
       then
         (cache,Values.STRING(retStr),st);
     case (cache,_,_,st,_) local
