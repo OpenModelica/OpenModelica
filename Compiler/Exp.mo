@@ -7592,6 +7592,14 @@ algorithm
   outExp := BINARY(e1,MUL(tp),e2);
 end expMul;
 
+public function makeCrefExp "makes an expression of a component reference, given also a type"
+  input ComponentRef cref;
+  input Type tp;
+  output Exp e;
+algorithm
+  e := CREF(cref,tp);
+end makeCrefExp;
+
 public function expCref "function: expCref
  
   Returns the componentref if exp is a CREF,

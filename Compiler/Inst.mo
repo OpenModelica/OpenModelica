@@ -1081,7 +1081,6 @@ algorithm
       then
         fail();
         
-    
     case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,parts = d)),prot,inst_dims,impl)
       local String s; Absyn.Path fullPath;
         Boolean b;
@@ -1094,20 +1093,16 @@ algorithm
         //Debug.fprint("insttr", clsname);
         //Debug.fprint("insttr", "\n");
        //print("instClassDef, ");print(n);print(" env:");print(Env.printEnvStr(env));
-       
 
-				t1 = clock();
-				
+				//t1 = clock();
 
         (cache,l,env_1,csets_1,ci_state_1,tys,bc) = instClassdef(cache,env, mods, pre, csets, ci_state, d, r, prot, inst_dims, impl);
-        t2 = clock();
+        /*t2 = clock();
         time = t2 -. t1;
         b=realGt(time,0.05);
         s = realString(time);
-        s=Util.stringAppendList({"instClassIn ",n," ",s," s\n"});
-        //print(s);
+        s=Util.stringAppendList({"instClassIn ",n," ",s," s\n"});*/
         //print(Util.if_(b,s,""));
-        //print("instClassDef, outenv:");print(Env.printEnvStr(env_1));
         cache = addCachedEnv(cache,n,env_1);
       then
         (cache,l,env_1,csets_1,ci_state_1,tys,bc);
@@ -1334,9 +1329,9 @@ algorithm
       SCode.Mod mod;
       Env.Cache cache;
       /* This rule describes how to instantiate a class definition
-	  that extends a basic type. */ 
-    case (cache,env,mods,pre,csets,ci_state,SCode.PARTS(elementLst = els,equationLst = eqs,
-      																						initialEquation = initeqs,algorithmLst = alg,initialAlgorithm = initalg)
+	  that extends a basic type. (No equations or algorithms allowed) */ 
+    case (cache,env,mods,pre,csets,ci_state,SCode.PARTS(elementLst = els,equationLst = {},
+      																						initialEquation = {},algorithmLst = {},initialAlgorithm = {})
       		,re,prot,inst_dims,impl) 
       		local String s;
       equation 
@@ -1375,8 +1370,9 @@ algorithm
         compelts = componentElts(els);
         extendselts = extendsElts(els);
         env1 = addClassdefsToEnv(env, cdefelts, impl) "1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)" ;
-        (cache,env2,emods,extcomps,eqs2,initeqs2,alg2,initalg2) = instExtendsList(cache,env1, mods, extendselts, ci_state, impl) "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations." ;
 
+        (cache,env2,emods,extcomps,eqs2,initeqs2,alg2,initalg2) = instExtendsList(cache,env1, mods, extendselts, ci_state, impl) "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations." ;
+             
         compelts_1 = addNomod(compelts) "Problem. Modifiers on inherited components are unelabed, loosing their 
 	   type information. This will not work, since the modifier type can not always be found.
 	   for instance. 
@@ -2103,7 +2099,7 @@ algorithm
       Env.Cache cache;
     case (cache,env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,impl) 
       equation 
-        (cache,(c as SCode.CLASS(cn,_,encf,r,_)),cenv) = Lookup.lookupClass(cache,env, tp, true);
+        (cache,(c as SCode.CLASS(cn,_,encf,r,_)),cenv) = Lookup.lookupClass(cache,env, tp, false);
         outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
         (cache,cenv1,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv, outermod, c, impl);
         (cache,tp_1) = makeFullyQualified(cache,cenv1, tp);
@@ -2131,7 +2127,7 @@ algorithm
         (cache,env2,mods_1,compelts3,eq,ieq,alg,ialg);
     case (cache,env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,impl) /* base class not found */ 
       equation 
-        failure((_,(c as SCode.CLASS(cn,_,encf,r,_)),cenv) = Lookup.lookupClass(cache,env, tp, true));
+        failure((_,(c as SCode.CLASS(cn,_,encf,r,_)),cenv) = Lookup.lookupClass(cache,env, tp, false));
         s = Absyn.pathString(tp);
         scope_str = Env.printEnvPathStr(env);
         Error.addMessage(Error.LOOKUP_BASECLASS_ERROR, {s,scope_str});
@@ -3202,6 +3198,7 @@ algorithm
         crefs2 = getCrefFromDim(ad);
         crefs_1 = Util.listFlatten({crefs,crefs2});
         crefs_2 = removeCrefFromCrefs(crefs_1, owncref);
+
         (cache,env) = getDerivedEnv(cache,env, bc);
         (cache,env2,csets) = updateComponentsInEnv(cache,mods, crefs_2, env, ci_state, csets, impl);
         
@@ -3213,7 +3210,6 @@ algorithm
 		  	//might have changed.. comp used in redeclare_type below...	  
         (cache,_,SOME((comp,_)),_,_) = Lookup.lookupIdentLocal(cache,env2, n);
         
-				// print(SCode.printElementStr(comp));       
         classmod_1 = Mod.lookupModificationP(mods_1, t);
         mm_1 = Mod.lookupCompModification(mods_1, n);
         (cache,m) = removeSelfModReference(cache,n,m); // Remove self-reference i.e. A a(x=a.y);
@@ -3222,7 +3218,7 @@ algorithm
         mod1 = Mod.merge(mod, m_1, env2, pre);
         mod1_1 = Mod.merge(cmod, mod1, env2, pre);
         (cache,SCode.COMPONENT(n,inner_,outer_
-        ,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,acc,param,dir)),Absyn.TPATH(t, _),m,bc,comment),mod_1,env2_1,csets) 
+        	,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,acc,param,dir)),Absyn.TPATH(t, _),m,bc,comment),mod_1,env2_1,csets) 
         	= redeclareType(cache,mod1_1, comp, env2, pre, ci_state, csets, impl);
         (cache,env_1) = getDerivedEnv(cache,env, bc);
         (cache,cl,cenv) = Lookup.lookupClass(cache,env_1, t, true);
@@ -3525,6 +3521,7 @@ algorithm
       equation 
         top_frame = Env.topFrame(env);
         (cache,env_2) = Lookup.lookupAndInstantiate(cache,{top_frame},tp,true);
+        
       then
         (cache,Env.FRAME(id,cl,tps,imps,env_2,crs,enc) :: fs);
     case (_,_,_)
