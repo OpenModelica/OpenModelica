@@ -4141,19 +4141,90 @@ algorithm
       Exp.Type tp;
       Exp.ComponentRef cr;
       Exp.Exp e;
+      list<Exp.Exp> expl;
+      list<Algorithm.Statement> stmts;
+      Algorithm.Else elsebranch;
+      list<Exp.Exp> inputs,inputs1,inputs2,inputs3,outputs,outputs1,outputs2;
+      list<Exp.ComponentRef> crefs;
+			// a := expr;
     case (vars,Algorithm.ASSIGN(type_ = tp,componentRef = cr,exp = e))
       equation 
         inputs = statesAndVarsExp(e, vars);
       then
         (inputs,{Exp.CREF(cr,tp)});
-    case (_,_)
+			// (a,b,c) := foo(...)
+    case (vars,Algorithm.TUPLE_ASSIGN(tp,expl,e))
       equation 
-        print("lower_statement_input_outputs finished yet\n");
+        inputs = statesAndVarsExp(e,vars);
+        crefs = Util.listFlatten(Util.listMap(expl,Exp.getCrefFromExp));
+        outputs =  Util.listMap1(crefs,Exp.makeCrefExp,Exp.OTHER());
       then
-        fail();
+        (inputs,outputs);
+        // v := expr   where v is array.
+    case (vars,Algorithm.ASSIGN_ARR(tp,cr,e)) 
+      equation
+        inputs = statesAndVarsExp(e,vars);
+      then (inputs,{Exp.CREF(cr,tp)});
+        
+    case(vars,Algorithm.IF(e,stmts,elsebranch))
+      equation
+        (inputs1,outputs1) = lowerAlgorithmInputsOutputs(vars,Algorithm.ALGORITHM(stmts));
+        (inputs2,outputs2) = lowerElseAlgorithmInputsOutputs(vars,elsebranch);
+        inputs3 = statesAndVarsExp(e,vars);
+        inputs = Util.listListUnionP({inputs1, inputs2,inputs3}, Exp.expEqual);
+        outputs = Util.listUnionP(outputs1, outputs2, Exp.expEqual);    
+      then (inputs,outputs);          
+
+			// Features not yet supported.
+    case(vars,Algorithm.FOR(type_=_))
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"For statements in algorithms not supported yet. Suggested workaround: place for statement in a Modelica function"});
+     then fail();
+    case(vars,Algorithm.WHILE(exp=_))
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"While statements in algorithms not supported yet. Suggested workaround: place while statement in a Modelica function"});
+     then fail();  
+    case(vars,Algorithm.WHEN(exp=_))
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"When statements in algorithms not supported yet. Suggested workaround: If possible, use when in equation section instead"});
+     then fail();  
+    case(vars,Algorithm.ASSERT(exp1 = _))
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"assert statements in algorithms not supported yet. Suggested workaround: If possible, use assert in equation section instead"});
+     then fail();  
   end matchcontinue;
 end lowerStatementInputsOutputs;
 
+protected function lowerElseAlgorithmInputsOutputs "Helper function to lowerStatementInputsOutputs"
+  input Variables vars;
+  input Algorithm.Else elseBranch;
+  output list<Exp.Exp> inputs;
+  output list<Exp.Exp> outputs;
+algorithm 
+  (inputs,outputs):=
+  matchcontinue (vars,elseBranch)	
+      local 
+        list<Algorithm.Statement> stmts;
+        list<Exp.Exp> inputs1,inputs2,inputs3,outputs1,outputs2;
+        Exp.Exp e;
+    case(vars,Algorithm.NOELSE()) then ({},{});
+    
+    case(vars,Algorithm.ELSEIF(e,stmts,elseBranch))
+       equation  
+      (inputs1, outputs1) = lowerElseAlgorithmInputsOutputs(vars,elseBranch);
+      (inputs2, outputs2) = lowerAlgorithmInputsOutputs(vars,Algorithm.ALGORITHM(stmts));
+      inputs3 = statesAndVarsExp(e,vars);
+      inputs = Util.listListUnionP({inputs1, inputs2, inputs3}, Exp.expEqual);
+      outputs = Util.listUnionP(outputs1, outputs2, Exp.expEqual);
+    then (inputs,outputs);
+    
+      case(vars,Algorithm.ELSE(stmts)) 
+        equation
+          (inputs, outputs) = lowerAlgorithmInputsOutputs(vars,Algorithm.ALGORITHM(stmts));
+        then (inputs,outputs);
+  end matchcontinue;
+end lowerElseAlgorithmInputsOutputs;
+      
 protected function statesAndVarsExp "function: statesAndVarsExp
  
   This function investigates an expression and returns as subexpressions
