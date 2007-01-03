@@ -1267,6 +1267,18 @@ algorithm
       then
         (cache,c1);
       
+          /* Simple name, if class  with restriction function found in frame instantiate to get type. */
+    case (cache,f::fs ,(iid as Absyn.IDENT(name = id)))
+      local String id,s;
+      equation 
+        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,f::fs, iid, false);
+        true = SCode.isFunctionOrExtFunction(restr);
+        (cache,(env_2 as (Env.FRAME(class_1 = sid,list_2 = ht,list_3 = httypes)::_))) 
+           = Inst.implicitFunctionTypeInstantiation(cache,env_1, c);
+        (cache,c1 as _::_)= lookupFunctionsInFrame(cache,ht, httypes, env_2, id);
+      then
+        (cache,c1);
+      
       /*For qualified function names, e.g. Modelica.Math.sin */  
     case (cache,(env as (Env.FRAME(class_1 = sid,list_2 = ht,list_3 = httypes) :: fs)),(iid as Absyn.QUALIFIED(name = pack,path = path)))
       local String id,s;
@@ -1465,14 +1477,14 @@ algorithm
         (cache,{ftype});
         
         /* Found class that is function, instantiate to get type*/
-    case (cache,ht,httypes,env,id) local SCode.Restriction restr;
+/*    case (cache,ht,httypes,env,id) local SCode.Restriction restr;
       equation 
         Env.CLASS((cdef as SCode.CLASS(_,_,_,restr,_)),cenv) = Env.treeGet(ht, id, Env.myhash) "If found class that is function." ;        
         true = SCode.isFunctionOrExtFunction(restr);
         (cache,env_1) = Inst.implicitFunctionTypeInstantiation(cache,cenv, cdef);
         (cache,tps) = lookupFunctionsInEnv(cache,env_1, Absyn.IDENT(id)); 
       then
-        (cache,tps);
+        (cache,tps);*/
         
      /* Found class that is is external object*/
      case (cache,ht,httypes,env,id)  
