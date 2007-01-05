@@ -7710,7 +7710,7 @@ algorithm
       equation 
         false = RTOpts.modelicaOutput();
         s = printExpCppStr(e);
-        s_1 = stringAppend("(float)(", s);
+        s_1 = stringAppend("(double)(", s);
         s_2 = stringAppend(s_1, ")");
       then
         s_2;
