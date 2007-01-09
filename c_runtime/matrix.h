@@ -104,11 +104,18 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
     		for (i=0; i < n; i++) { nls_x[i]+=0.1; }; \
     		retries++; giveUp=0; \
     		if (sim_verbose & LOG_NONLIN_SYS) \
-   		 		printf("Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)"); \
+   		 		printf("Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)\n"); \
     	} \
     	else if (info >= 2 && info <= 5) { \
+    		int i; \
     		modelErrorCode=ERROR_NONLINSYS; \
-    	    printf("error solving nonlinear system nr. %d at time %f\n",no,time); \
+    		printf("error solving nonlinear system nr. %d at time %f\n",no,time); \
+    	    if (sim_verbose& LOG_NONLIN_SYS) { \
+    	    	for (i = 0; i<no; i++) { \
+    	    	printf(" residual[%d] = %f\n",i,nls_fvec[i]); \
+    	    	printf(" x[%d] = %f\n",i,nls_x[i]); \
+    	    	} \
+    	    } \
     	} \
 	 }\
 } while(0) /* (no trailing ;)*/ 

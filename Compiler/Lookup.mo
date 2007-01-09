@@ -239,7 +239,13 @@ algorithm
         //print(Env.printCacheStr(cache));       
     then
       (cache,c,env);
-      
+      // Fully qualified names are looked up in top scope.
+   case (cache,env,Absyn.FULLYQUALIFIED(path),msg) equation
+     f = Env.topFrame(env);
+     (cache,c,env_1) = lookupClass2(cache,{f},path,msg);
+     then       
+       (cache,c,env_1);
+       
           // Qualified names first identifier cached
     case (cache,env,(p as Absyn.QUALIFIED(name = pack,path = path)),msgflag) 
       equation 
@@ -1171,6 +1177,10 @@ algorithm
         (cache,classEnv,_) = Inst.partialInstClassIn(cache,cenv_2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           new_ci_state, c, false, {});
       then (cache,classEnv);
+    case(cache,env,path,msg)
+      equation
+        Debug.fprint("failtrace", "-lookupAndInstantiate failed\n");
+     then fail();
   end matchcontinue;
 end lookupAndInstantiate;
 

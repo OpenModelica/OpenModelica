@@ -4911,6 +4911,7 @@ algorithm
       Ident s,id;
       Exp.ComponentRef cref;
       Absyn.Path path;
+    case (Absyn.FULLYQUALIFIED(path)) then pathToComponentRef(path);
     case (Absyn.IDENT(name = s)) then Exp.CREF_IDENT(s,{}); 
     case (Absyn.QUALIFIED(name = id,path = path))
       equation 

@@ -913,6 +913,12 @@ uniontype Path "The type `Path\', on the other hand,
     Ident name "name" ;
   end IDENT;
 
+  record FULLYQUALIFIED "Used during instantiation for names that are fully qualified,
+    i.e. the names are looked up from top scope directly like for instance Modelica.SIunits.Voltage
+    Note: Not created during parsing, only during instantation to speedup/simplify lookup.
+  "
+    Path path;
+  end FULLYQUALIFIED;
 end Path;
 
 public 
@@ -1070,6 +1076,10 @@ algorithm
         ss = stringAppend(s1, ns);
       then
         ss;
+    case(FULLYQUALIFIED(path=n),str)
+      equation
+        ss = pathString2(n,str);
+      then ss;
   end matchcontinue;
 end pathString2;
 
@@ -1085,6 +1095,11 @@ algorithm
     local
       Ident res,n;
       Path p;
+     case (FULLYQUALIFIED(path = p))
+      equation 
+        res = pathLastIdent(p);
+      then
+        res;
     case (QUALIFIED(path = p))
       equation 
         res = pathLastIdent(p);
@@ -1106,6 +1121,7 @@ algorithm
     local
       Ident n;
       Path p;
+    case (FULLYQUALIFIED(path = p)) then pathFirstIdent(p); 
     case (QUALIFIED(name = n,path = p)) then n; 
     case (IDENT(name = n)) then n; 
   end matchcontinue;
@@ -1122,6 +1138,8 @@ algorithm
       equation
       true = ModUtil.pathEqual(suffix_path,path);
       then true;
+    case(suffix_path,FULLYQUALIFIED(path = p)) 
+      then pathSuffixOf(suffix_path,p);
     case(suffix_path,QUALIFIED(name=_,path = p)) 
       then pathSuffixOf(suffix_path,p);
     case(_,_) then false;
@@ -1154,6 +1172,8 @@ public function removePrefix "removes the prefix_path from path, and returns the
 algorithm
   newPath := matchcontinue(prefix_path,path)
   local Path p,p2; Ident id1,id2;
+    case (p,FULLYQUALIFIED(p2)) 
+      then removePrefix(p,p2);
     case (QUALIFIED(name=id1,path=p),QUALIFIED(name=id2,path=p2)) equation
       equality(id1=id2);
       then removePrefix(p,p2);
@@ -1377,6 +1397,8 @@ algorithm
         p_1 = joinPaths(p, p2);
       then
         QUALIFIED(str,p_1);
+    case(FULLYQUALIFIED(p),p2) then joinPaths(p,p2);
+    case(p,FULLYQUALIFIED(p2)) then joinPaths(p,p2);
   end matchcontinue;
 end joinPaths;
 
@@ -1423,6 +1445,9 @@ algorithm
         p_1 = stripLast(p);
       then
         QUALIFIED(str,p_1);
+    case (FULLYQUALIFIED(p)) equation
+      p_1 = stripLast(p);
+    then FULLYQUALIFIED(p_1);
   end matchcontinue;
 end stripLast;
 
@@ -1439,6 +1464,7 @@ algorithm
     local
       Path p;
     case (QUALIFIED(name = _,path = p)) then p; 
+    case(FULLYQUALIFIED(p)) then stripFirst(p);
   end matchcontinue;
 end stripFirst;
 
@@ -1486,6 +1512,8 @@ algorithm
         c = pathToCref(p);
       then
         CREF_QUAL(i,{},c);
+    case(FULLYQUALIFIED(p)) 
+      then pathToCref(p);
   end matchcontinue;
 end pathToCref;
 

@@ -697,6 +697,7 @@ algorithm
   matchcontinue (inPath)
     case (Absyn.IDENT(name = "tanh")) then (); 
     case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "tanh")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isTanh(inPath); then ();
   end matchcontinue;
 end isTanh;
 
@@ -707,6 +708,7 @@ algorithm
   matchcontinue (inPath)
     case (Absyn.IDENT(name = "cosh")) then (); 
     case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "cosh")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isCosh(inPath); then ();
   end matchcontinue;
 end isCosh;
 
@@ -717,6 +719,7 @@ algorithm
   matchcontinue (inPath)
     case (Absyn.IDENT(name = "arccos")) then (); 
     case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "acos")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isACos(inPath); then ();
   end matchcontinue;
 end isACos;
 
@@ -727,6 +730,7 @@ algorithm
   matchcontinue (inPath)
     case (Absyn.IDENT(name = "arcsin")) then (); 
     case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "asin")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isASin(inPath); then ();
   end matchcontinue;
 end isASin;
 
@@ -737,6 +741,7 @@ algorithm
   matchcontinue (inPath)
     case (Absyn.IDENT(name = "arctan")) then (); 
     case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "atan")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isATan(inPath); then ();
   end matchcontinue;
 end isATan;
 
@@ -747,6 +752,7 @@ algorithm
   matchcontinue (inPath)
     case (Absyn.IDENT(name = "arctan2")) then (); 
     case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "atan2")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isATan2(inPath); then ();
   end matchcontinue;
 end isATan2;
 
@@ -757,6 +763,7 @@ algorithm
   matchcontinue (inPath)
     case (Absyn.IDENT(name = "sinh")) then (); 
     case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "sinh")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isSinh(inPath); then ();
   end matchcontinue;
 end isSinh;
 
@@ -767,6 +774,7 @@ algorithm
   matchcontinue (inPath)
     case (Absyn.IDENT(name = "sin")) then (); 
     case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "sin")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isSin(inPath); then ();
   end matchcontinue;
 end isSin;
 
@@ -777,6 +785,7 @@ algorithm
   matchcontinue (inPath)
     case (Absyn.IDENT(name = "cos")) then (); 
     case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "cos")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isCos(inPath); then ();
   end matchcontinue;
 end isCos;
 
@@ -787,6 +796,7 @@ algorithm
   matchcontinue (inPath)
     case (Absyn.IDENT(name = "exp")) then (); 
     case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "exp")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isExp(inPath);  then ();
   end matchcontinue;
 end isExp;
 
@@ -796,7 +806,8 @@ algorithm
   _:=
   matchcontinue (inPath)
     case (Absyn.IDENT(name = "log")) then (); 
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "log")))) then (); 
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "log")))) then ();    
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isLog(inPath); then ();  
   end matchcontinue;
 end isLog;
 
@@ -807,6 +818,7 @@ algorithm
   matchcontinue (inPath)
     case (Absyn.IDENT(name = "log10")) then (); 
     case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "log10")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isLog10(inPath); then ();    
   end matchcontinue;
 end isLog10;
 
@@ -817,6 +829,7 @@ algorithm
   matchcontinue (inPath)
     case (Absyn.IDENT(name = "sqrt")) then (); 
     case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "sqrt")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isSqrt(inPath); then ();
   end matchcontinue;
 end isSqrt;
 
@@ -827,6 +840,7 @@ algorithm
   matchcontinue (inPath)
     case (Absyn.IDENT(name = "tan")) then (); 
     case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "tan")))) then (); 
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isTan(inPath); then ();
   end matchcontinue;
 end isTan;
 end Derive;

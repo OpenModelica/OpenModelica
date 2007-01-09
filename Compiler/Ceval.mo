@@ -5197,7 +5197,7 @@ algorithm
         resstr = Util.stringDelimitList(calledfuncsstrs_1, "\n\n");
       then
         (cache,resstr,(path :: gflist));
-    case (_,_,_,_)
+    case (_,_,env,_)
       equation 
         Debug.fprint("failtrace", "/*- ceval_generate_function_str failed*/\n");
       then

@@ -524,6 +524,7 @@ algorithm
       ComponentRef c;
       Absyn.Path p;
     case Absyn.IDENT(name = i) then CREF_IDENT(i,{}); 
+    case (Absyn.FULLYQUALIFIED(p)) then pathToCref(p);
     case Absyn.QUALIFIED(name = i,path = p)
       equation 
         c = pathToCref(p);

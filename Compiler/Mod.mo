@@ -862,6 +862,7 @@ algorithm
         mod = lookupCompModification(m, n);
       then
         mod;
+    case (m,Absyn.FULLYQUALIFIED(p)) then lookupModificationP(m,p);
     case (m,Absyn.QUALIFIED(name = n,path = p))
       equation 
         mod = lookupCompModification(m, n);

@@ -478,6 +478,7 @@ algorithm
       String s,ns,s1,ss,str;
       Absyn.Path n;
     case (Absyn.IDENT(name = s),_) then s; 
+    case(Absyn.FULLYQUALIFIED(n),str) then pathString2(n,str);
     case (Absyn.QUALIFIED(name = s,path = n),str)
       equation 
         ns = pathString2(n, str);
@@ -502,22 +503,30 @@ algorithm
       String id1,id2;
       Boolean res;
       Absyn.Path path1,path2;
+      
+    case (Absyn.FULLYQUALIFIED(path1),path2) then pathEqual(path1,path2);
+
+    case (path1,Absyn.FULLYQUALIFIED(path2)) then pathEqual(path1,path2);
+        
     case (Absyn.IDENT(name = id1),Absyn.IDENT(name = id2))
       equation 
         equality(id1 = id2);
       then
         true;
+
     case (Absyn.IDENT(name = id1),Absyn.IDENT(name = id2))
       equation 
         failure(equality(id1 = id2));
       then
         false;
+
     case (Absyn.QUALIFIED(name = id1,path = path1),Absyn.QUALIFIED(name = id2,path = path2))
       equation 
         equality(id1 = id2);
         res = pathEqual(path1, path2);
       then
         res;
+
     case (Absyn.QUALIFIED(name = id1,path = path1),Absyn.QUALIFIED(name = id2,path = path2))
       equation 
         failure(equality(id1 = id2));

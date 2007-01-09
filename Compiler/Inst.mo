@@ -447,11 +447,20 @@ algorithm
       String name2,n,name;
       SCode.Class cdef;
       Env.Cache cache;
+      DAE.DAElist daelst;
+      // Fully qualified paths
+      case (cache,cdecls,Absyn.FULLYQUALIFIED(path)) 
+        equation
+          (cache,daelst,env) = instantiateFunctionImplicit(cache,cdecls,path);
+        then       
+          (cache,daelst,env);
+          
     case (cache,{},cr)
       equation 
         Error.addMessage(Error.NO_CLASSES_LOADED, {});
       then
         fail();
+        
     case (cache,(cdecls as (_ :: _)),(path as Absyn.IDENT(name = name2))) /* top level class */ 
       equation 
         (cache,env) = Builtin.initialEnv(cache); 
@@ -470,9 +479,9 @@ algorithm
           cdef, {});
       then
         (cache,DAE.DAE(dae),env);
-    case (_,_,_)
+    case (_,_,path)
       equation 
-        print("-instantiateFunctionImplicit failed\n");
+        print("-instantiateFunctionImplicit ");print(Absyn.pathString(path));print(" failed\n");
       then
         fail();
   end matchcontinue;
@@ -1470,6 +1479,17 @@ algorithm
         Error.addMessage(Error.LOOKUP_ERROR, {cns,scope_str});
       then
         fail();
+        
+   case (cache,env,mods,pre,csets,ci_state,SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),mod = mod),re,prot,inst_dims,impl) 
+  equation 
+    failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
+        Debug.fprint("failtrace", "- inst_classdef DERIVED( ");
+        Debug.fprint("failtrace", Absyn.pathString(cn));
+        Debug.fprint("failtrace", ") lookup failed\n ENV:");
+        Debug.fprint("failtrace",Env.printEnvStr(env));
+      then
+        fail();
+        
     case (_,env,_,_,_,_,_,_,_,_,_)
       equation 
         Debug.fprint("failtrace", "- inst_classdef failed\n class :");
@@ -5484,15 +5504,7 @@ algorithm
         NONE = Env.getEnvPath(env);
       then
         (cache,path);
-        
-  /*  case (cache,env,path)
-      local Absyn.Path envpath,newPath;
-        equation
-          SOME(envpath) = Env.getEnvPath(env);
-         newPath = Absyn.pathContainedIn(path,envpath);
-         //print("makeFullyQualified( contained =");print(Absyn.pathString(newPath));print("\n");
-          then (cache,newPath);*/
-      
+           
     case (cache,env,path) /* To make a class fully qualified, the class path
 	  is looked up in the environment.
 	  The FQ path consist of the simple class name
@@ -5505,7 +5517,7 @@ algorithm
         class_name = Absyn.pathLastIdent(path);
         path_2 = Absyn.joinPaths(path_1, Absyn.IDENT(class_name));
       then
-        (cache,path_2);
+        (cache,Absyn.FULLYQUALIFIED(path_2));
     case (cache,env,path) then (cache,path);  /* If it fails, leave name unchanged. */ 
   end matchcontinue;
 end makeFullyQualified;
