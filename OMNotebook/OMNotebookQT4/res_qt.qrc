@@ -1,5 +1,5 @@
 <RCC>
     <qresource prefix="/" >
-        <file>Resources\omnotebook_png.png</file>
+        <file>Resources/omnotebook_png.png</file>
     </qresource>
 </RCC>

@@ -56,6 +56,9 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtCore/QObject>
 #include <QtGui/QMessageBox>
 
+#include <exception>
+#include <stdexcept>
+
 //IAEX Headers
 #include "cellfactory.h"
 #include "textcell.h"

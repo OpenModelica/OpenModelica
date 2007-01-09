@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2006, Linköpings universitet,
+Copyright (c) 1998-2006, LinkÃ¶pings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -23,7 +23,7 @@ this list of conditions and the following disclaimer.
 this list of conditions and the following disclaimer in the documentation
 and/or other materials provided with the distribution.
 
-* Neither the name of Linköpings universitet nor the names of its contributors
+* Neither the name of LinkÃ¶pings universitet nor the names of its contributors
 may be used to endorse or promote products derived from this software without
 specific prior written permission.
 
@@ -47,7 +47,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 /*! 
  * \file notebook.h
- * \author Ingemar Axelsson and Anders Fernström
+ * \author Ingemar Axelsson and Anders FernstrÃ¶m
  * \date 2005-02-07
  */
 
@@ -99,7 +99,7 @@ namespace IAEX
 {
 	/*! 
 	 * \class NotebookWindow 
-	 * \author Ingemar Axelsson and Anders Fernström
+	 * \author Ingemar Axelsson and Anders FernstrÃ¶m
 	 *
 	 * \brief This class describes a mainwindow using the CellDocument
 	 * 
@@ -127,7 +127,7 @@ namespace IAEX
 
 
 	/*! 
-	 * \author Ingemar Axelsson and Anders Fernström
+	 * \author Ingemar Axelsson and Anders FernstrÃ¶m
 	 * \date 2006-01-17 (update)
 	 *
 	 * \brief The class constructor
@@ -180,7 +180,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Ingemar Axelsson and Anders Fernström
+	 * \author Ingemar Axelsson and Anders FernstrÃ¶m
 	 * \date 2006-08-24 (update)
 	 *
 	 * \brief The class destructor
@@ -364,7 +364,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-30
 	 *
 	 * \brief Return the notebook windons document
@@ -383,7 +383,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-12-01 (update)
 	 *
 	 * \brief Method for creating file nemu.
@@ -473,7 +473,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-08-24 (update)
 	 *
 	 * \brief Method for creating edit nemu.
@@ -578,7 +578,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-04-27 (update)
 	 *
 	 * \brief Method for creating cell nemu.
@@ -715,7 +715,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-10-07
 	 * \date 2005-11-03 (update)
 	 *
@@ -1346,7 +1346,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-18
 	 *
 	 * \brief Method for creating insert nemu.
@@ -1377,7 +1377,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-01-27
 	 *
 	 * \brief Method for creating window nemu.
@@ -1393,7 +1393,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-02-03 (update)
 	 *
 	 * \brief Method for creating about nemu.
@@ -1439,7 +1439,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-11
 	 *
 	 * \brief Check if the currentCell is editable
@@ -1450,7 +1450,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-02-14
 	 *
 	 * \brief eval all selected cell
@@ -1478,7 +1478,7 @@ namespace IAEX
 
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-07
 	 * \date 2005-11-15 (update)
 	 *
@@ -1518,7 +1518,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Ingemar Axelsson and Anders Fernström
+	 * \author Ingemar Axelsson and Anders FernstrÃ¶m
 	 * \date 2005-11-02 (update)
 	 *
 	 * \brief Method for unpdating the style menu
@@ -1547,7 +1547,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-02
 	 * \date 2006-04-27 (update)
 	 *
@@ -1573,7 +1573,7 @@ namespace IAEX
 			else
 				redoAction->setEnabled( false );
 
-			// cut & copy (special fall för input)
+			// cut & copy (special fall fÃ¶r input)
 			Cell *cell = document()->getCursor()->currentCell();
 			if( cell )
 			{
@@ -1633,7 +1633,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-02-03
 	 * \date 2006-04-26 (update)
 	 *
@@ -1687,7 +1687,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-03
 	 *
 	 * \brief Method for updating the font menu
@@ -1716,7 +1716,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-03
 	 *
 	 * \brief Method for updating the face menu
@@ -1744,7 +1744,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-04
 	 *
 	 * \brief Method for updating the size menu
@@ -1782,7 +1782,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-04
 	 *
 	 * \brief Method for updating the stretch menu
@@ -1809,7 +1809,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-07
 	 *
 	 * \brief Method for updating the color menu
@@ -1843,7 +1843,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-07
 	 *
 	 * \brief Method for updating the alignment menu
@@ -1871,7 +1871,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-07
 	 *
 	 * \brief Method for updating the vertical alignment menu
@@ -1898,7 +1898,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-07
 	 *
 	 * \brief Method for updating the border menu
@@ -1931,7 +1931,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-07
 	 *
 	 * \brief Method for updating the margin menu
@@ -1964,7 +1964,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-07
 	 *
 	 * \brief Method for updating the padding menu
@@ -1997,7 +1997,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-01-27
 	 *
 	 * \brief Method for updating the window menu
@@ -2024,7 +2024,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-01-17
 	 *
 	 * \brief Method for updateing the window title
@@ -2049,7 +2049,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-03-02
 	 *
 	 * \brief Method for updateing the chapter counters
@@ -2061,7 +2061,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-02-10
 	 *
 	 * \brief Set the status message to msg, if msg is empty the default
@@ -2078,7 +2078,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-04-27
 	 *
 	 * \brief handles forwarded actions
@@ -2102,7 +2102,7 @@ namespace IAEX
 	}
 
 	/*!
-	 * \author Ingemar Axelsson and Anders Fernström
+	 * \author Ingemar Axelsson and Anders FernstrÃ¶m
 	 *
 	 */
 	void NotebookWindow::keyPressEvent(QKeyEvent *event)
@@ -2127,7 +2127,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Ingemar Axelsson and Anders Fernström
+	 * \author Ingemar Axelsson and Anders FernstrÃ¶m
 	 * \date 2005-11-22 (update)
 	 *
 	 * \brief Method for catching some keyevent, and given them 
@@ -2176,7 +2176,7 @@ namespace IAEX
 	}
 
 	/*!
-	 * \author Ingemar Axelsson and Anders Fernström
+	 * \author Ingemar Axelsson and Anders FernstrÃ¶m
 	 *
 	 * \todo Fix the code, when the window dosen't have any file open,
 	 * the command should create the new document, not this function //AF
@@ -2217,7 +2217,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Ingemar Axelsson and Anders Fernström
+	 * \author Ingemar Axelsson and Anders FernstrÃ¶m
 	 *
 	 * \brief Open a file. Shows a file dialog.
 	 */
@@ -2261,7 +2261,7 @@ namespace IAEX
 	}
 
 	/*!
-	 * \author Ingemar Axelsson and Anders Fernström
+	 * \author Ingemar Axelsson and Anders FernstrÃ¶m
 	 * 
 	 */
 	void NotebookWindow::closeFile()
@@ -2283,7 +2283,7 @@ namespace IAEX
 	}
 
 	/*!
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-01-19
 	 *
 	 * \brief Reimplemented closeEvent so all close event are handled 
@@ -2330,7 +2330,8 @@ namespace IAEX
 
 				if( result == QMessageBox::Yes )
 				{
-					omc->evalExpression( QString("quit()") );
+				  QString quit = "quit()";
+				  omc->evalExpression( quit );
 				}
 			}
 			catch( exception &e )
@@ -2340,7 +2341,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström and Ingemar Axelsson
+	 * \author Anders FernstrÃ¶m and Ingemar Axelsson
 	 *
 	 * \brief display an ABOUT message box with information about
 	 * OMNotebook.
@@ -2350,13 +2351,13 @@ namespace IAEX
 		QString version = OmcInteractiveEnvironment::OMCVersion();
 		QString abouttext = QString("OMNotebook version 2.0 (for OpenModelica ") + version + 
 			QString(")\r\n") + QString("Copyright 2004-2006, PELAB, Linkoping University\r\n\r\n") + 
-			QString("Created by Ingemar Axelsson (2004-2005) and Anders Fernström (2005-2006) as part of their final theses.");
+			QString("Created by Ingemar Axelsson (2004-2005) and Anders FernstrÃ¶m (2005-2006) as part of their final theses.");
 
 		QMessageBox::about( this, "OMNotebook", abouttext );
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 *
 	 * \brief display an ABOUT message box with information about
 	 * Qt.
@@ -2367,7 +2368,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-02-03
 	 *
 	 * \brief open the help document, if it exists
@@ -2396,7 +2397,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström and Ingemar Axelsson
+	 * \author Anders FernstrÃ¶m and Ingemar Axelsson
 	 * \date 2005-09-30 (update)
 	 * 
 	 * \breif Save As function
@@ -2458,7 +2459,7 @@ namespace IAEX
 	}
 
 	/*!
-	 * \author Anders Fernström and Ingemar Axelsson
+	 * \author Anders FernstrÃ¶m and Ingemar Axelsson
 	 *
 	 * Added a check that controlls if the user have saved before, 
 	 * if not the function saveas should be used insted. //AF
@@ -2482,7 +2483,7 @@ namespace IAEX
 	}
 
 	/*!
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-01-18
 	 *
 	 * \brief Quit OMNotebook
@@ -2494,7 +2495,7 @@ namespace IAEX
 	}
 
 	/*!
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-12-19
 	 * \date 2006-02-23 (update)
 	 *
@@ -2535,7 +2536,7 @@ namespace IAEX
 	}
 
 	/*!
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-07
 	 *
 	 * \brief Method for changing the font
@@ -2553,7 +2554,7 @@ namespace IAEX
 			subject_->textcursorChangeFontFamily( font.family() );
 			subject_->textcursorChangeFontSize( font.pointSize() );
 
-			// sätt först plain text
+			// sÃ¤tt fÃ¶rst plain text
 			subject_->textcursorChangeFontFace( 0 );
 
 			if( font.underline() )
@@ -2595,7 +2596,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Ingemar Axelsson (and Anders Fernström)
+	 * \author Ingemar Axelsson (and Anders FernstrÃ¶m)
 	 */
 	void NotebookWindow::changeStyle()
 	{ 
@@ -2618,7 +2619,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-03
 	 *
 	 * \brief Method for changing font on selected text
@@ -2632,7 +2633,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-03
 	 *
 	 * \brief Method for changing face on selected text
@@ -2653,7 +2654,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-04
 	 *
 	 * \brief Method for changing size on selected text
@@ -2718,7 +2719,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-04
 	 *
 	 * \brief Method for changing stretch on selected text
@@ -2749,7 +2750,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-07
 	 *
 	 * \brief Method for changing color on selected text
@@ -2779,7 +2780,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-07
 	 *
 	 * \brief Method for changing alignment on selected paragraf
@@ -2810,7 +2811,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-07
 	 *
 	 * \brief Method for changing vertical alignment on selected text
@@ -2841,7 +2842,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-07
 	 *
 	 * \brief Method for changing border on selected cell
@@ -2884,7 +2885,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-07
 	 *
 	 * \brief Method for changing margin on selected cell
@@ -2927,7 +2928,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-07
 	 *
 	 * \brief Method for changing padding on selected cell
@@ -2970,7 +2971,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-01-27
 	 *
 	 * \brief Method for changing the current notebook window
@@ -2985,7 +2986,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-02-03
 	 *
 	 * \brief Method for doing undo on text
@@ -3000,7 +3001,7 @@ namespace IAEX
 	}
 	
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-02-03
 	 *
 	 * \brief Method for doing redo on text
@@ -3015,7 +3016,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-02-03
 	 * \date 2006-04-27 (update)
 	 *
@@ -3036,7 +3037,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-02-03
 	 * \date 2006-04-27 (update)
 	 *
@@ -3057,7 +3058,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-02-03
 	 * \date 2006-04-27 (update)
 	 *
@@ -3078,7 +3079,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-08-24
 	 *
 	 * \brief Menu function, perform find
@@ -3100,7 +3101,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-08-24
 	 *
 	 * \brief Menu function, perform replace
@@ -3122,7 +3123,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-18
 	 *
 	 * \brief Method for inserting an image into the cell
@@ -3164,7 +3165,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-12-05
 	 *
 	 * \brief Method for inserting an link to the selected cell
@@ -3202,7 +3203,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-12-01
 	 *
 	 * \brief Method for opening an old file, saved with OMNotebook (QT3)
@@ -3235,7 +3236,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2005-11-21
 	 * \date 2006-03-24 (update)
 	 *
@@ -3329,7 +3330,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-04-26
 	 *
 	 * \brief Ungroup all selected groupcells
@@ -3343,7 +3344,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-04-26
 	 *
 	 * \brief Split current cell
@@ -3370,7 +3371,7 @@ namespace IAEX
 	}
 
 	/*!
-	 * \author Ingemar Axelsson and Anders Fernström
+	 * \author Ingemar Axelsson and Anders FernstrÃ¶m
 	 * \date 2005-11-29 (update)
 	 *
 	 * 2005-11-29 AF, addad call to updateScrollArea, so the scrollarea
@@ -3395,7 +3396,7 @@ namespace IAEX
 	}
 
 	/*!
-	 * \author Ingemar Axelsson and Anders Fernström
+	 * \author Ingemar Axelsson and Anders FernstrÃ¶m
 	 * \date 2005-11-29 (update)
 	 *
 	 * 2005-11-29 AF, addad call to updateScrollArea, so the scrollarea

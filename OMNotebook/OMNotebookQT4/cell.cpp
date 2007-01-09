@@ -55,6 +55,9 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtGui/QResizeEvent>
 #include <QtGui/QTextCursor>
 
+#include <exception>
+#include <stdexcept>
+
 //IAEX Headers
 #include "cell.h"
 #include "stylesheet.h"

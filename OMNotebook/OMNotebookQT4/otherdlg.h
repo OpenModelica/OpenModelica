@@ -56,7 +56,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #define OTHERDLG_H
 
 
-#include "ui_otherdlg.h"
+#include "ui_OtherDlg.h"
 
 
 namespace IAEX

@@ -11,6 +11,8 @@
 
 // STD Headers
 #include <iostream>
+#include <exception>
+#include <stdexcept>
 
 // QT Headers
 #include <QtNetwork/QHostAddress>

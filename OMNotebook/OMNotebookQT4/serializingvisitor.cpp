@@ -185,7 +185,8 @@ namespace IAEX
 
 		// Check if any image have been include in the text and add them
 		// to the the the textcell element
-		saveImages( textcell, node->textHtml() );
+		QString xoyz = node->textHtml();
+		saveImages( textcell, xoyz );
 
 		// Add textcell element to current element
 		currentElement_.appendChild( textcell );
@@ -244,7 +245,8 @@ namespace IAEX
 
 		// Check if any image have been include in the text and add them
 		// to the the the inputcell element
-		saveImages( inputcell, node->textOutputHtml() );
+		QString xoyz = node->textOutputHtml();
+		saveImages( inputcell, xoyz );
 	
 		// Add inputcell element to current element
 		currentElement_.appendChild( inputcell );

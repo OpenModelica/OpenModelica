@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2006, Linköpings universitet,
+Copyright (c) 1998-2006, LinkÃ¶pings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -23,7 +23,7 @@ this list of conditions and the following disclaimer.
 this list of conditions and the following disclaimer in the documentation
 and/or other materials provided with the distribution.
 
-* Neither the name of Linköpings universitet nor the names of its contributors
+* Neither the name of LinkÃ¶pings universitet nor the names of its contributors
 may be used to endorse or promote products derived from this software without
 specific prior written permission.
 
@@ -97,7 +97,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-02-02
 	 *
 	 *\brief Method for get error message from OMC
@@ -127,7 +127,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Ingemar Axelsson and Anders Fernström
+	 * \author Ingemar Axelsson and Anders FernstrÃ¶m
 	 * \date 2006-02-02 (update)
 	 *
 	 *\brief Method for evaluationg expressions
@@ -148,7 +148,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-02-02
 	 *
 	 *\brief Method for closing connection to OMC
@@ -159,7 +159,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-02-02
 	 *
 	 *\brief Method for closing reconnection to OMC
@@ -177,7 +177,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-02-09
 	 *
 	 *\brief Method for starting OMC
@@ -195,7 +195,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-02-09
 	 * \date 2006-03-14 (update)
 	 *
@@ -311,7 +311,7 @@ namespace IAEX
 	}
 
 	/*! 
-	 * \author Anders Fernström
+	 * \author Anders FernstrÃ¶m
 	 * \date 2006-08-17
 	 *
 	 *\brief Ststic method for returning the version of omc
@@ -323,7 +323,8 @@ namespace IAEX
 		try
 		{
 			OmcInteractiveEnvironment *env = new OmcInteractiveEnvironment();
-			env->evalExpression( QString( "getVersion()" ));
+			QString getVersion = "getVersion()";
+			env->evalExpression( getVersion );
 			version = env->getResult();
 			version.remove( "\"" );
 			delete env;

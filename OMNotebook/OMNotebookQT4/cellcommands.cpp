@@ -63,6 +63,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 //IAEX Headers
 #include "cellcommands.h"
 #include "inputcell.h"
+#include "textcell.h"
 #include "cellgroup.h"
 
 

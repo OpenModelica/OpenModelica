@@ -439,7 +439,7 @@ namespace IAEX
 		}
 
 	private:
-		evalCell( Cell *cell )
+		void evalCell( Cell *cell )
 		{
 			if( typeid( InputCell ) == typeid( *cell ) )
 			{

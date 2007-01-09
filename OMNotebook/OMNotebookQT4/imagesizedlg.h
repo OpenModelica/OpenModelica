@@ -56,7 +56,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #define IMAGESIZEDLG_H
 
 
-#include "ui_imagesizedlg.h"
+#include "ui_ImageSizeDlg.h"
 
 
 namespace IAEX

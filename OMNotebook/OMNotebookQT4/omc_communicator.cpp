@@ -53,6 +53,8 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <stdlib.h> //This should be cstdlib, if it even should be used!! 
 #include <fstream>
 #include <sstream>
+#include <exception>
+#include <stdexcept>
 
 // MME includes
 //#include "annotation.hpp"
@@ -62,7 +64,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 //#include "modification.hpp"
 
 // Windows includes
-#include "windows.h"
+//#include "windows.h"
 
 // QT includes
 #include <QtGui/QApplication>
@@ -164,7 +166,7 @@ bool OmcCommunicator::establishConnection()
 	char *user = getenv("USER");
 	if (!user) { user = "nobody"; }
 
-	objectRefFile.setName("/tmp/openmodelica." + *(new QString(user)) + ".objid");
+	objectRefFile.setFileName("/tmp/openmodelica." + *(new QString(user)) + ".objid");
 
 #endif
 

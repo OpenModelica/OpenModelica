@@ -48,6 +48,9 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #ifndef _CURSORCOMMANDS_H
 #define _CURSORCOMMANDS_H
 
+#include <exception>
+#include <stdexcept>
+
 #include "command.h"
 #include "factory.h"
 #include "document.h"

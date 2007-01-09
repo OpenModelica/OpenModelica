@@ -7,7 +7,9 @@ INCLUDEPATH += . \
                /usr/local/include
 #OBJECTS += 
 
-unix:LIBS += -L/usr/local/lib -lantlr
+unix:LIBS += -L${ANTLRHOME}/src -lantlr \
+             -rdynamic -L/home/adrpo/dev/mico-2.3.12//lib -lmico2.3.12   -lssl -lcrypto -ldl -lm  -lpthread
+
 TARGET = qtnotebook
 
 ## For debugging
@@ -15,82 +17,117 @@ QMAKE_CFLAGS+=-pg
 QMAKE_CXXFLAGS+=-pg
 QMAKE_LFLAGS+=-pg
 
-#If modeq is installed on system. Set includepath and objects
-#correctly. If modeq not is installed on the system. Comment out
+#If omc is installed on system. Set includepath and objects
+#correctly. If omc not is installed on the system. Comment out
 #theese three lines below.
-DEFINES += MODEQ
-INCLUDEPATH += /home/x04ingax/modelica/modeq/runtime
-OBJECTS += /home/x04ingax/modelica/modeq/runtime/modeq_communication.o
-unix:LIBS += -lmico2.3.11
+DEFINES += OMC
+INCLUDEPATH += /home/adrpo/dev/trunk/Compiler/runtime\
+               ${ANTLRHOME} \
+               ${MICOHOME}/include \
+               ../NotebookParser
+OBJECTS += /home/adrpo/dev/trunk/Compiler/runtime/omc_communication.o
+unix:LIBS += -lmico -lantlr
+QT += network xml
 
 # Input
-HEADERS += application.h\
-           cell.h \
-           cellapplication.h\
-           commandcenter.h\
-           cellcommandcenter.h\
-           cellcursor.h \
-           celldocument.h \
-           cellgroup.h \
-           command.h\
-           cursor.h\
-           document.h\
-           documentview.h\
-           factory.h\
-           cellfactory.h\
-           notebookcommands.h\
-           cellcommands.h\
-           cursorcommands.h\
+HEADERS += ../NotebookParser/AntlrNotebookLexer.hpp\
+           ../NotebookParser/AntlrNotebookParser.hpp\
+           ../NotebookParser/AntlrNotebookTreeParser.hpp\
+           omc_communicator.hpp \
+           application.h \
+           command.h \
+           notebookparser.h \
+           serializingvisitor.h \
+           cellapplication.h \
+           commandunit.h \
+           notebooksocket.h \
+           stripstring.h \
+           cellcommandcenter.h \
+           cursorcommands.h \
+           omcinteractiveenvironment.h\
            stylesheet.h \
+           cellcommands.h \
+           cursorposvisitor.h \
+           openmodelicahighlighter.h \
+           syntaxhighlighter.h \
+           cellcursor.h \
+           document.h \
+           otherdlg.h \
            textcell.h \
+           celldocument.h \
+           documentview.h \
+           parserfactory.h \
+           textcursorcommands.h \
+           celldocumentview.h \
+           factory.h \
+           printervisitor.h\
            treeview.h \
-           inputcell.h \
-           inputcelldelegate.h\
-           imagecell.h\
-           notebook.h \
+           cellfactory.h \
+           highlighterthread.h \
+           puretextvisitor.h \
+           updategroupcellvisitor.h \
+           cellgroup.h \
+           imagesizedlg.h \
+           qcombobox_search.h \
+           updatelinkvisitor.h \
+           cell.h \
+           inputcelldelegate.h \
+           removehighlightervisitor.h \
            visitor.h \
-           parser.h\
-           parserfactory.h\
-           xmlparser.h\
-           notebookparser.h\
-           selectingvisitor.h\
-           AntlrNotebookLexer.hpp\
-           AntlrNotebookParser.hpp\
-           AntlrNotebookTreeParser.hpp\
-           modeq_communicator.hpp\
-           modeqinteractiveenvironment.h\
-           syntax_highlighter.hpp\
-           syntaxhighlighter.h\
-           modelicahighlighter.h\
-           serializingvisitor.h\
-           smlsyntaxhighlighter.h\
-           smlinteractiveenvironment.h
+           cellstyle.h \
+           inputcell.h \
+           replaceallvisitor.h \
+           xmlnodename.h \
+           chaptercountervisitor.h \ 
+           nbparser.h \
+           resource1.h \
+           xmlparser.h \
+           commandcenter.h \
+           notebookcommands.h \
+           rule.h \
+           commandcompletion.h \
+           notebook.h \
+           searchform.h \
            
-SOURCES += cell.cpp \
-           cellcursor.cpp \
-           celldocument.cpp \
-           cellgroup.cpp \
-           cellfactory.cpp\
-           cellapplication.cpp\
-           cellcommands.cpp\
-           cellcommandcenter.cpp\
-           notebookparser.cpp\
-           qtapp.cpp \
+SOURCES += ../NotebookParser/AntlrNotebookLexer.cpp\
+           ../NotebookParser/AntlrNotebookParser.cpp\
+           ../NotebookParser/AntlrNotebookTreeParser.cpp\
+           cellapplication.cpp \
+           cellparserfactory.cpp \    
+           omc_communicator.cpp \
            stylesheet.cpp \
+           cellcommandcenter.cpp \
+           chaptercountervisitor.cpp \
+           omcinteractiveenvironment.cpp \
            textcell.cpp \
-           inputcell.cpp \
-           imagecell.cpp\
-           xmlparser.cpp\
-           cellparserfactory.cpp\
-           notebook.cpp \
+           cellcommands.cpp \
+           commandcompletion.cpp \
+           openmodelicahighlighter.cpp \
+           textcursorcommands.cpp \
+           cell.cpp \
+           printervisitor.cpp \
            treeview.cpp \
-           selectingvisitor.cpp\
-           AntlrNotebookLexer.cpp\
-           AntlrNotebookParser.cpp\
-           AntlrNotebookTreeParser.cpp\
-           modeq_communicator.cpp\
-           modeqinteractiveenvironment.cpp\
-           syntax_highlighter.cpp\
-           serializingvisitor.cpp\
-           smlsyntaxhighlighter.cpp\
-           smlinteractiveenvironment.cpp
+           cellcursor.cpp \
+           highlighterthread.cpp \
+           puretextvisitor.cpp \
+           updategroupcellvisitor.cpp \
+           celldocument.cpp \
+           inputcell.cpp  \
+           qcombobox_search.cpp \
+           updatelinkvisitor.cpp \
+           cellfactory.cpp \
+           notebook.cpp \
+           qtapp.cpp \
+           xmlparser.cpp \
+           notebookparser.cpp \
+           searchform.cpp \
+           cellgroup.cpp \
+           notebooksocket.cpp \
+           serializingvisitor.cpp \
+
+FORMS += ImageSizeDlg.ui \
+         OtherDlg.ui \
+         searchform.ui
+
+RESOURCES += res_qt.qrc
+

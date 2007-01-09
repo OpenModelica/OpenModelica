@@ -61,6 +61,9 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtGui/QTextEdit>
 #include <QtGui/QTextFrame>
 
+#include <exception>
+#include <stdexcept>
+
 //IAEX Headers
 #include "textcursorcommands.h"
 #include "cellcursor.h"
