@@ -1101,7 +1101,7 @@ algorithm
         //Debug.fprint("insttr", implstr);
         //Debug.fprint("insttr", clsname);
         //Debug.fprint("insttr", "\n");
-       //print("instClassDef, ");print(n);print(" env:");print(Env.printEnvStr(env));
+       //print("instClassDef, ");print(n);print("mods =");print(Mod.printModStr(mods)); print(" \n"); 
 
 				//t1 = clock();
 
@@ -1706,7 +1706,7 @@ algorithm
   end matchcontinue;
 end getExternalObjectConstructor;
  
-protected function printExtcomps " prints the tuple of elements and modifiers to stdout"
+public function printExtcomps " prints the tuple of elements and modifiers to stdout"
   input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst;
 algorithm 
   _:=

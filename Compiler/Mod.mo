@@ -139,7 +139,9 @@ algorithm
         
     case (cache,env,pre,(m as SCode.REDECL(final_ = final_,elementLst = elist)),impl)
       equation 
-        elist_1 = Inst.addNomod(elist);
+        
+        //elist_1 = Inst.addNomod(elist);
+        elist_1 = elabModRedeclareElements(cache,env,pre,final_,elist,impl);
       then
         (cache,Types.REDECL(final_,elist_1));
     case (cache,_,pre,mod,impl)
@@ -153,6 +155,69 @@ algorithm
   end matchcontinue;
 end elabMod;
 
+protected function elabModRedeclareElements
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Prefix.Prefix inPrefix;
+	input Boolean final_;
+	input list<SCode.Element> elts;
+	input Boolean impl;
+	output list<tuple<SCode.Element, Types.Mod>> modElts "the elaborated modifiers";
+algorithm
+	(modElts) := matchcontinue(inCache,inEnv,inPrefix,final_,elts,impl)
+	local 
+	  Env.Cache cache; Env.Env env; Prefix.Prefix pre; Boolean f,fi,repl,p,enc,i,o,prot;
+	  list<SCode.Element> elts;
+	  SCode.Ident cn,cn2,compname; 
+	  Option<Absyn.Path> bc;
+	  Option<Absyn.Comment> cmt;
+	  SCode.Restriction restr;
+	  Absyn.TypeSpec tp,tp1;
+	  Types.Mod emod;
+	  SCode.Attributes attr;
+	  SCode.Mod mod;
+	  case(cache,env,pre,f,{},_) then {};
+	 
+	 	// Only derived classdefinitions supported in redeclares for now. TODO: What is allowed according to spec?
+	  case(cache,env,pre,f,SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn2,p,enc,restr,SCode.DERIVED(tp,mod)),bc)::elts,impl) 
+	    equation
+	     (cache,emod) = elabMod(cache,env,pre,mod,impl); 
+	     modElts = elabModRedeclareElements(cache,env,pre,f,elts,impl);
+	     (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
+	 then (SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn,p,enc,restr,SCode.DERIVED(tp1,mod)),bc),emod)::modElts;
+
+		// redeclare of component declaration		 
+	  case(cache,env,pre,f,SCode.COMPONENT(compname,i,o,fi,repl,prot,attr,tp,mod,bc,cmt)::elts,impl) equation
+	    (cache,emod) = elabMod(cache,env,pre,mod,impl); 
+	    modElts = elabModRedeclareElements(cache,env,pre,f,elts,impl);
+	    (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
+	  then ((SCode.COMPONENT(compname,i,o,fi,repl,prot,attr,tp1,mod,bc,cmt),emod)::modElts);
+	end matchcontinue;  
+end elabModRedeclareElements;
+
+protected function elabModQualifyTypespec "Help function to elabModRedeclareElements. 
+This function makes sure that type specifiers, i.e. class names, in 
+redeclarations are looked up in the correct environment. This is achieved by making them 
+fully qualified"
+input Env.Cache inCache;
+input Env.Env inEnv;
+input Absyn.TypeSpec tp;
+output Env.Cache outCache;
+output Absyn.TypeSpec outTp;
+
+algorithm
+  (outCache,outTp) := matchcontinue(inCache,inEnv,tp)
+  	local
+  	  Env.Cache cache; Env.Env env;
+  	  Option<Absyn.ArrayDim> ad;
+  	  Absyn.Path p,p1;
+    case (cache, env,Absyn.TPATH(p,ad)) equation
+      (cache,p1) = Inst.makeFullyQualified(cache,env,p);
+    then (cache,Absyn.TPATH(p1,ad));
+    
+  end matchcontinue;
+end elabModQualifyTypespec;
+  
 protected function elabModValue "function: elabModValue
   author: PA
  

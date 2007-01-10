@@ -306,8 +306,8 @@ algorithm
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,env, Absyn.IDENT(pack), msgflag);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
-          (cache,_,env_2,_,cistate1,_,_) = Inst.instClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-           ci_state, c, false/*FIXME:prot*/, {}, false);
+        (cache,env_2,cistate1) = Inst.partialInstClassIn(cache,env2, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          ci_state, c, false, {}); 
         failure(ClassInf.valid(cistate1, SCode.R_PACKAGE()));
         (cache,c_1,env_3) = lookupClass2(cache,env_2, path, msgflag) "Has to do additional check for encapsulated classes, see rule below" ;
       then
@@ -1857,7 +1857,6 @@ algorithm
       equation 
         //print("searching parent scope\n");
         (cache,c,env_1) = lookupClassInEnv(cache,fs, id, msgflag);
-        //(cache,c,env_1) = lookupClass2(cache,fs,id,msgflag); // Test PA cache
       then
         (cache,c,env_1);
   end matchcontinue;
