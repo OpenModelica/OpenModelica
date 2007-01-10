@@ -279,7 +279,7 @@ namespace IAEX
 			{
 				// 2006-02-27 AF, use environment variable to find DrModelica
 				// 2006-03-24 AF, First try to find DrModelica.onb, then .nb
-				QString drmodelica = openmodelica;
+        QString drmodelica = getEnv("DRMODELICAHOME"); // openmodelica;
 
 				// ONB
 				if( drmodelica.endsWith("/") || drmodelica.endsWith( "\\") )
@@ -297,7 +297,7 @@ namespace IAEX
 					cout << "Unable to find (2): DrModelica/DrModelica.onb" << endl;
 
 					// NB
-					drmodelica = getenv( "OPENMODELICAHOME" );
+					drmodelica = getenv( "DRMODELICAHOME" );
 					if( drmodelica.endsWith("/") || drmodelica.endsWith( "\\") )
 						drmodelica += "DrModelica/DrModelica.nb";
 					else

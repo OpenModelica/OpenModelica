@@ -1176,8 +1176,8 @@ namespace IAEX
 				openmodelica += "/bin/";
 
 			//QDir dir( openmodelica );
-			QDir dir;
-			dir.setPath( openmodelica );
+			QDir dir = QDir::current();
+			//dir.setPath( openmodelica );
 			QString imagename = "omc_tmp_plot.png";
 
 			QString filename = dir.absolutePath();
