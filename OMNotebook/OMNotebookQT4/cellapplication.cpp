@@ -279,7 +279,7 @@ namespace IAEX
 			{
 				// 2006-02-27 AF, use environment variable to find DrModelica
 				// 2006-03-24 AF, First try to find DrModelica.onb, then .nb
-        QString drmodelica = getEnv("DRMODELICAHOME"); // openmodelica;
+        QString drmodelica = getenv("DRMODELICAHOME"); // openmodelica;
 
 				// ONB
 				if( drmodelica.endsWith("/") || drmodelica.endsWith( "\\") )
