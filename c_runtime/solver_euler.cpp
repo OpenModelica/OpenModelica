@@ -100,15 +100,14 @@ int euler_main( int argc, char** argv,double &start,  double &stop, double &step
     }
   } 
 
-
-  string * result_file =(string*)getFlagValue("r",argc,argv);
-  const char * result_file_cstr;
+  string* result_file =(string*)getFlagValue("r",argc,argv);
+  string result_file_cstr;
   if (!result_file) {
-    result_file_cstr = string(string(globalData->modelName)+string("_res.plt")).c_str();
+    result_file_cstr = string(globalData->modelName)+string("_res.plt");
   } else {
-    result_file_cstr = result_file->c_str();
+    result_file_cstr = *result_file;
   }
-  if (deinitializeResult(result_file_cstr)) {
+  if (deinitializeResult(result_file_cstr.c_str())) {
  	return -1;
  }
   return 0;
