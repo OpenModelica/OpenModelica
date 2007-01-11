@@ -1632,6 +1632,21 @@ algorithm
   end matchcontinue;
 end isStateVar;
 
+public function isDummyStateVar "
+ 
+  Returns true for dummy state variables, false otherwise.
+"
+  input Var inVar;
+  output Boolean outBoolean;
+algorithm 
+  outBoolean:=
+  matchcontinue (inVar)
+    local DAE.Flow flow_;
+    case (VAR(varKind = DUMMY_STATE(),flow_ = flow_)) then true; 
+    case (_) then false; 
+  end matchcontinue;
+end isDummyStateVar;
+
 public function isNonState "function: isNonState 
  
   this equation checks if the the varkind is state of variable
@@ -1823,6 +1838,23 @@ algorithm
     case (VAR(varName = cr,flow_ = flow_)) then cr; 
   end matchcontinue;
 end varCref;
+
+public function varOrigCref "
+  author: PA
+ 
+  extracts the original ComponentRef name of a variable.
+"
+  input Var inVar;
+  output Exp.ComponentRef outComponentRef;
+algorithm 
+  outComponentRef:=
+  matchcontinue (inVar)
+    local
+      Exp.ComponentRef cr;
+      DAE.Flow flow_;
+    case (VAR(origVarName = cr)) then cr; 
+  end matchcontinue;
+end varOrigCref;
 
 public function varCrefPrefixStates "
   author: PA
@@ -2085,6 +2117,19 @@ algorithm
     case (_) then false;  /* rest defaults to false*/ 
   end matchcontinue;
 end varFixed;
+
+public function varStartValue "
+  author: PA
+  
+  Returns the DAE.StartValue of a variable.
+  "
+  input Var v;
+  output DAE.StartValue sv;
+algorithm
+   sv := matchcontinue(v)
+     case (VAR(startValue = sv)) then sv;
+   end matchcontinue;
+end varStartValue;
 
 public function varStateSelect "
   author: PA
@@ -6862,7 +6907,8 @@ algorithm
         (states,stateindx) = statesInEqns(eqns, dae, m, mt) "" ;
         (dae,m,mt,nv,nf,deqns) = differentiateEqns(dae, m, mt, nv, nf, eqns_1);
         (state,stateno) = selectDummyState(states, stateindx, dae, m, mt);
-        //print("Selected ");print(Exp.printComponentRefStr(state));print(" as state\n");
+        //print("Selected ");print(Exp.printComponentRefStr(state));print(" as dummy state\n");
+       // print(" From candidates:");print(Util.stringDelimitList(Util.listMap(states,Exp.printComponentRefStr),", "));print("\n");
         dae = propagateDummyFixedAttribute(dae, eqns_1, state, stateno);
         (dummy_der,dae) = newDummyVar(state, dae)  ;
         //print("Chosen dummy: ");print(Exp.printComponentRefStr(dummy_der));print("\n");
@@ -7783,9 +7829,13 @@ algorithm
       Exp.ComponentRef s;
       Value sn;
       Variables vars;
+      IncidenceMatrix m;
+      IncidenceMatrixT mt;
+      EquationArray eqns;
       list<tuple<Exp.ComponentRef,Integer,Real>> prioTuples;
-    case (varCrefs,varIndices,DAELOW(orderedVars=vars),_,_)  equation
- 		  prioTuples = calculateVarPriorities(varCrefs,varIndices,vars);
+    case (varCrefs,varIndices,DAELOW(orderedVars=vars,orderedEqs = eqns),m,mt) equation
+ 		  prioTuples = calculateVarPriorities(varCrefs,varIndices,vars,eqns,m,mt);
+ 		  //print("priorities:");print(Util.stringDelimitList(Util.listMap(prioTuples,printPrioTuplesStr),","));print("\n");
  		  (s,sn) = selectMinPrio(prioTuples);     
    	then (s,sn);  
     case ({},_,dae,_,_)
@@ -7798,6 +7848,22 @@ algorithm
   end matchcontinue;
 end selectDummyState;
 
+protected function printPrioTuplesStr "Debug function for printing the priorities of state selection to a string"
+  input tuple<Exp.ComponentRef,Integer,Real> prioTuples;
+  output String str;
+  algorithm
+    str := matchcontinue(prioTuples)
+    case((cr,_,prio)) 
+        local Exp.ComponentRef cr;
+          Real prio; String s1,s2;
+      equation
+        s1 = Exp.printComponentRefStr(cr);
+        s2 = realString(prio);
+        str = Util.stringAppendList({"(",s1,", ",s2,")"});
+      then str;
+  end matchcontinue;
+end printPrioTuplesStr;
+				
 protected function selectMinPrio "Selects the state with lowest priority. This will become a dummy state"
   input list<tuple<Exp.ComponentRef,Integer,Real>> tuples;
   output Exp.ComponentRef s;
@@ -7834,26 +7900,164 @@ end ssPrioTupleMin;
 
 protected function calculateVarPriorities "Calculates state selection priorities"
 	input list<Exp.ComponentRef> varCrefs;
-  input list<Integer> varIndices; 
+  input list<Integer> varIndices;
   input Variables vars;
+  input EquationArray eqns; 
+  input IncidenceMatrix m;
+  input IncidenceMatrixT mt;
   output list<tuple<Exp.ComponentRef,Integer,Real>> tuples;
 algorithm
-  tuples := matchcontinue(varCrefs,varIndices,vars)
+  tuples := matchcontinue(varCrefs,varIndices,vars,eqns,m,mt)
   local Exp.ComponentRef varCref;
     Integer varIndx;
     Var v;
-    Real prio;
+    Real prio,prio1,prio2;
     list<tuple<Exp.ComponentRef,Integer,Real>> prios;
-    case({},{},_) then {};
-    case (varCref::varCrefs,varIndx::varIndices,vars) equation
-      prios = calculateVarPriorities(varCrefs,varIndices,vars);
+    case({},{},_,_,_,_) then {};
+    case (varCref::varCrefs,varIndx::varIndices,vars,eqns,m,mt) equation
+      prios = calculateVarPriorities(varCrefs,varIndices,vars,eqns,m,mt);
       (v::_,_) = getVar(varCref,vars);
-      prio = varStateSelectPrio(v);
+      prio1 = varStateSelectPrio(v);
+      prio2 = varStateSelectHeuristicPrio(v,vars,eqns,m,mt);
+      prio = prio1 +. prio2;
     then ((varCref,varIndx,prio)::prios);
   end matchcontinue;
 end calculateVarPriorities;
 
-protected function varStateSelectPrio "helper function to calculateVarPriorities"
+protected function varStateSelectHeuristicPrio "A heuristic for selecting states when no stateSelect information is available.
+author: PA
+
+This heuristic is based on.
+1. If a state variable s has an equation on the form s = expr(s1,s2,...,sn) where s1..sn are states 
+   it should be a candiate for dummy state. Like for instance phi_rel = J1.phi-J2.phi will make phi_rel 
+   a candidate for dummy state whereas J1.phi and J2.phi would be candidates for states.
+
+2. If a state variable komponent_x.s has been selected as a dummy state then komponent_x.s2 could also 
+   be a dummy_state. Rationale: This will increase probability that all states belong to the same component
+   which is more likely what a user expects.
+"
+  input Var v;
+  input Variables vars;
+  input EquationArray eqns;
+  input IncidenceMatrix m;
+  input IncidenceMatrixT mt;
+  output Real prio;
+protected 
+  list<Integer> vEqns;
+  Exp.ComponentRef vCr,origVCr;
+  
+  Integer vindx;
+  Real prio1,prio2;
+algorithm
+  (_,vindx::_) := getVar(varCref(v),vars); // Variable index not stored in var itself => lookup required
+  vEqns := eqnsForVarWithStates(mt,vindx);
+  vCr := varCref(v); 
+  origVCr := varOrigCref(v);
+  prio1 := varStateSelectHeuristicPrio1(vCr,vEqns,vars,eqns);
+  prio2 := varStateSelectHeuristicPrio2(origVCr,vars);
+  prio:= prio1 +. prio2;
+end varStateSelectHeuristicPrio;
+
+protected function varStateSelectHeuristicPrio2 "Helper function to varStateSelectHeuristicPrio
+author: PA
+"
+  input Exp.ComponentRef cr;
+  input Variables vars;
+  output Real prio;
+algorithm
+  prio := matchcontinue(cr,vars) 
+    local 
+      list<Var> varLst,sameCompVarLst;
+    case(cr,vars) equation
+      varLst = varList(vars);
+      sameCompVarLst = Util.listSelect1(varLst,cr,varInSameComponent);
+      _::_ = Util.listSelect(sameCompVarLst,isDummyStateVar);
+      then -1.0;
+    case(cr,vars) then 0.0;
+  end matchcontinue;
+end varStateSelectHeuristicPrio2;
+
+protected function varInSameComponent " Helper funciton to varStateSelectHeuristicPrio2.
+
+Returns true if the variable is defined in the same sub component
+as the variable name given as second argument.
+"
+input Var v;
+input Exp.ComponentRef cr;
+output Boolean b;
+algorithm
+  b := matchcontinue(v,cr)
+  local Exp.ComponentRef cr2;
+    Exp.Ident id1,id2;
+    case(VAR(origVarName=cr2 ),cr ) equation
+			true = Exp.crefEqual(Exp.crefStripLastIdent(cr2),Exp.crefStripLastIdent(cr));
+	    then true;
+    case(_,_) then false;
+  end matchcontinue;
+end varInSameComponent;
+  
+protected function varStateSelectHeuristicPrio1 "Helper function to varStateSelectHeuristicPrio
+author:  PA
+ 
+"
+input Exp.ComponentRef cr;
+input list<Integer> eqnLst;
+input Variables vars;
+input EquationArray eqns;
+output Real prio;
+algorithm
+ prio := matchcontinue(cr,eqnLst,vars,eqns)
+ local Integer e; Equation eqn;
+   case(cr,{},_,_) then 0.0;
+   case(cr,e::eqnLst,vars,eqns) equation
+     eqn = equationNth(eqns,e-1);
+     true = isStateConstraintEquation(cr,eqn,vars);
+     then -1.0;
+   case(cr,_::eqnLst,vars,eqns) then varStateSelectHeuristicPrio1(cr,eqnLst,vars,eqns);
+ end matchcontinue;
+end varStateSelectHeuristicPrio1;
+
+protected function isStateConstraintEquation "Help function to varStateSelectHeuristicPrio2
+author: PA
+
+Returns true if an equation is on the form cr = expr(s1,s2...sn) for states cr, s1,s2..,sn
+"
+  input Exp.ComponentRef cr;
+  input	Equation eqn;
+  input Variables vars;
+  output Boolean res;
+algorithm
+  res := matchcontinue(cr,eqn,vars)
+  local Exp.ComponentRef cr2;
+    list<Exp.ComponentRef> crs;
+    list<list<Var>> crVars;
+    list<Boolean> blst;
+    Exp.Exp e2;
+
+    case(cr,EQUATION(Exp.CREF(cr2,_),e2),vars) equation
+      true = Exp.crefEqual(cr,cr2);
+      _::_::_ = Exp.terms(e2);
+      crs = Exp.getCrefFromExp(e2);
+      (crVars,_) = Util.listMap12(crs,getVar,vars);
+      blst = Util.listMap(Util.listFlatten(crVars),isStateVar);
+      res = Util.boolAndList(blst);
+     then res;
+       
+    case(cr,EQUATION(e2,Exp.CREF(cr2,_)),vars) equation
+      true = Exp.crefEqual(cr,cr2);
+      _::_::_ = Exp.terms(e2);
+      crs = Exp.getCrefFromExp(e2);
+      (crVars,_) = Util.listMap12(crs,getVar,vars);
+      blst = Util.listMap(Util.listFlatten(crVars),isStateVar);
+      res = Util.boolAndList(blst);
+     then res;
+    case(cr,eqn,vars) then false;
+  end matchcontinue;
+end isStateConstraintEquation;
+
+protected function varStateSelectPrio "helper function to calculateVarPriorities.
+Calculates a priority contribution bases on the stateSelect attribute.
+"
 	input Var v;
 	output Real prio;
 	protected
@@ -7862,7 +8066,6 @@ algorithm
   ss := varStateSelect(v);
   prio := varStateSelectPrio2(ss);
 end varStateSelectPrio;
-
 
 protected function varStateSelectPrio2 "helper function to varStateSelectPrio"
 	input DAE.StateSelect ss;
@@ -8558,6 +8761,7 @@ public function varsInEqn "function: varsInEqn
   equation, given as an equation index. (1...n)
   Negative indexes are removed.
  
+  See also: eqnsForVar and eqnsForVarWithStates
   inputs:  (IncidenceMatrix, int /* equation */) 
   outputs:  int list /* variables */
 "
@@ -8607,6 +8811,7 @@ protected function eqnsForVar "function: eqnsForVar
  
   This function returns all equations as a list of equation indices
   given a variable as a variable index.
+  See also: eqnsForVarWithStates and varsInEqn
  
   inputs:  (IncidenceMatrixT, int /* variable */) 
   outputs:  int list /* equations */
@@ -8631,7 +8836,7 @@ algorithm
         res_1;
     case (_,indx)
       equation 
-        print("eqns_for_var failed, indx=");
+        print("eqnsForVar failed, indx=");
         s = intString(indx);
         print(s);
         print("\n");
@@ -8674,7 +8879,7 @@ algorithm
         res_1;
     case (_,indx)
       equation 
-        print("eqns_for_var failed, indx=");
+        print("eqnsForVarWithStates failed, indx=");
         s = intString(indx);
         print(s);
         print("\n");

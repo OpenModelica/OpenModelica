@@ -647,6 +647,23 @@ algorithm
 	end matchcontinue;
 end crefStripPrefix;
 
+public function crefStripLastIdent "Strips the last part of a component reference, i.e ident and subs"
+  input ComponentRef inCr;
+  output ComponentRef outCr;
+algorithm
+  outCr := matchcontinue(inCr)
+  local Ident id; 
+    list<Subscript> subs;
+    ComponentRef cr1,cr;
+    
+    case( CREF_QUAL(id,subs,CREF_IDENT(_,_))) then CREF_IDENT(id,subs);    
+    
+    case(CREF_QUAL(id,subs,cr)) equation
+      cr1 = crefStripLastIdent(cr);
+    then CREF_QUAL(id,subs,cr1);
+  end matchcontinue;
+end crefStripLastIdent;
+
 public function crefStripLastSubs "function: crefStripLastSubs
  
   Strips the last subscripts of a ComponentRef
