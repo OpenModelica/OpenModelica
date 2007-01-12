@@ -115,7 +115,14 @@ int initializeResult(long numpoints,long nx, long ny, long np)
 {
   maxPoints = numpoints;
   
- simulationResultData = new double[numpoints*(nx*2+ny+1)];
+  if (numpoints < 0 ) { // Automatic number of output steps
+  	cerr << "Warning automatic output steps not supported in OpenModelica yet." << endl;
+  	cerr << "Attempt to solve this by allocating large amount of result data." << endl;
+	numpoints = abs(numpoints);
+	maxPoints = abs(numpoints);   	
+  }
+  
+  simulationResultData = new double[numpoints*(nx*2+ny+1)];
   if (!simulationResultData) {
     cerr << "Error allocating simulation result data of size " << numpoints *(nx*2+ny)
 	      << endl;

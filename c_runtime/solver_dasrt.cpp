@@ -119,9 +119,13 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
   	atol = tolerance;
   	rtol = tolerance;
   }
-  if (outputSteps != 0) { // Use outputSteps if set, otherwise use step size.
+  if (outputSteps > 0) { // Use outputSteps if set, otherwise use step size.
   	  numpoints = outputSteps;
   	  step = (stop-start)/outputSteps;
+  } if (outputSteps < 0) { // Negative outputSteps means use automatic stepsize  	
+  	info[2]=1; // INFO(3) =1 => intermediate-output mode
+  	numpoints = - (long((stop-start)*10000)+2); // Try to estimate how many points will be used.
+  	step = stop-start; // Only take one step
   } else {
   	if (step == 0) { // outputsteps not defined and zero step, use default 1e-3
   	  step = 1e-3;

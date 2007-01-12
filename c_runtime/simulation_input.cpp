@@ -79,8 +79,12 @@ void read_commented_value(ifstream &f, string *str);
   read_commented_value(file,stop);
   read_commented_value(file,stepSize);
   
-  // Calculate outputSteps from stepSize, start and stop
+  if (stepSize < 0) { // stepSize < 0 => Automatic number of outputs 
+  	*outputSteps = -1;
+  } else {
+  	// Calculate outputSteps from stepSize, start and stop
   *outputSteps = (long)(int(*stop-*start) /(*stepSize));
+  }
   read_commented_value(file,method);
   int nxchk,nychk,npchk;
   read_commented_value(file,&nxchk);
