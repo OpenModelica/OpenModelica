@@ -5750,14 +5750,14 @@ algorithm
         res = stringAppend(name, ".data");
       then
         res;
-//  case arg /* INPUT/OUTPUT STRING */
-//      equation 
-//        DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
-//        true = Types.isString(ty);
-//        (name,_) = compRefCstr(cref);
-//        res = stringAppend(name, ".data");
-//      then
-//        res;
+		case arg /* INPUT/OUTPUT STRING */
+		      equation 
+		        DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
+		        true = Types.isString(ty);
+		        (res,_) = compRefCstr(cref);
+		        print("\n true = Types.isString(ty); \n");
+		      then
+		        res;
     case arg /* INPUT/OUTPUT NON-ARRAY */ 
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
