@@ -7935,6 +7935,11 @@ This heuristic is based on.
 2. If a state variable komponent_x.s has been selected as a dummy state then komponent_x.s2 could also 
    be a dummy_state. Rationale: This will increase probability that all states belong to the same component
    which is more likely what a user expects.
+   
+3. A priority based on the number of selectable states with the same name. 
+For example
+  if the state candidates are: m1.s, m1.v, m2.s, m2.v sd.s_rel (Two translational masses and a springdamper)
+  then sd.s_rel should have lower priority than the others.
 "
   input Var v;
   input Variables vars;
@@ -7947,7 +7952,7 @@ protected
   Exp.ComponentRef vCr,origVCr;
   
   Integer vindx;
-  Real prio1,prio2;
+  Real prio1,prio2,prio3;
 algorithm
   (_,vindx::_) := getVar(varCref(v),vars); // Variable index not stored in var itself => lookup required
   vEqns := eqnsForVarWithStates(mt,vindx);
@@ -7955,8 +7960,49 @@ algorithm
   origVCr := varOrigCref(v);
   prio1 := varStateSelectHeuristicPrio1(vCr,vEqns,vars,eqns);
   prio2 := varStateSelectHeuristicPrio2(origVCr,vars);
-  prio:= prio1 +. prio2;
+  prio3 := varStateSelectHeuristicPrio3(origVCr,vars);
+  prio:= prio1 +. prio2 +. prio3;
 end varStateSelectHeuristicPrio;
+
+protected function varStateSelectHeuristicPrio3 "Helper function to varStateSelectHeuristicPrio
+author: PA
+"
+  input Exp.ComponentRef cr;
+  input Variables vars;
+  output Real prio;
+algorithm
+	prio := matchcontinue(cr,vars)
+	     local list<Var> varLst,sameIdentVarLst; Real c,prio;
+	  case(cr,vars) equation
+	    varLst = varList(vars);
+      sameIdentVarLst = Util.listSelect1(varLst,cr,varHasSameLastIdent);
+	    c = intReal(listLength(sameIdentVarLst));
+	    prio = c *. 0.01;
+	    then prio;
+	  end matchcontinue;
+end varStateSelectHeuristicPrio3;    
+
+protected function varHasSameLastIdent " Helper funciton to varStateSelectHeuristicPrio3.
+
+Returns true if the variable has the same name (the last identifier)
+as the variable name given as second argument.
+"
+input Var v;
+input Exp.ComponentRef cr;
+output Boolean b;
+algorithm
+  b := matchcontinue(v,cr)
+  local Exp.ComponentRef cr2;
+    Exp.Ident id1,id2;
+    case(VAR(origVarName=cr2 ),cr ) equation
+      id1 = Exp.crefLastIdent(cr);
+      id2 = Exp.crefLastIdent(cr2);
+			equality(id1 = id2);
+	    then true;
+    case(_,_) then false;
+  end matchcontinue;
+end varHasSameLastIdent;
+
 
 protected function varStateSelectHeuristicPrio2 "Helper function to varStateSelectHeuristicPrio
 author: PA
@@ -8034,6 +8080,7 @@ algorithm
     list<Boolean> blst;
     Exp.Exp e2;
 
+			// s = expr(s1,..,sn)  where s1 .. sn are states
     case(cr,EQUATION(Exp.CREF(cr2,_),e2),vars) equation
       true = Exp.crefEqual(cr,cr2);
       _::_::_ = Exp.terms(e2);
@@ -8051,6 +8098,8 @@ algorithm
       blst = Util.listMap(Util.listFlatten(crVars),isStateVar);
       res = Util.boolAndList(blst);
      then res;
+       
+       
     case(cr,eqn,vars) then false;
   end matchcontinue;
 end isStateConstraintEquation;

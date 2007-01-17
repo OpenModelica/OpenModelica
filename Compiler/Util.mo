@@ -2157,6 +2157,19 @@ algorithm
   end matchcontinue;
 end if_;
 
+public function stringContainChar "Returns true if a string contains a specified character"
+  input String str;
+  input String char;
+  output Boolean res;
+algorithm
+  res := matchcontinue(str,char)
+    case(str,char) equation
+      _::_::_ = stringSplitAtChar(str,char);
+      then true;
+    case(str,char) then false;
+  end matchcontinue;
+end stringContainChar;
+
 public function stringAppendList "function stringAppendList
   Takes a list of strings and appends them.
   For example,
