@@ -353,6 +353,18 @@ algorithm
   end matchcontinue;
 end simpleType;
 
+public function isReal "Returns true if type is Real"
+input Type tp;
+output Boolean res;
+algorithm
+ res := matchcontinue(tp)
+   case(tp) equation
+      ((T_REAL(_),_)) = arrayElementType(tp);
+     then true; 
+   case(_) then false;
+ end matchcontinue;
+end isReal;
+
 public function integerOrReal "function: integerOrReal 
   author: PA
   

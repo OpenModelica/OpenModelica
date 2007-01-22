@@ -124,6 +124,10 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
     Exp.Exp exp2;
   end ASSERT;
 
+  record REINIT
+    Exp.Exp var "Variable"; 
+    Exp.Exp value "Value "; 
+  end REINIT;
 end Statement;
 
 public 
@@ -497,6 +501,31 @@ algorithm
         fail();
   end matchcontinue;
 end makeWhenA;
+
+public function makeReinit "creates a reinit statement in an algorithm statement,
+only valid in when algorithm sections."
+  input Exp.Exp inExp1;
+  input Exp.Exp inExp2;
+  input Types.Properties inProperties3;
+  input Types.Properties inProperties4;
+  output Statement outStatement;
+algorithm
+  outStatement:=
+  matchcontinue (inExp1,inExp2,inProperties3,inProperties4)
+    local Exp.Exp var,val,var_1,val_1; Types.Properties prop1,prop2;
+      Types.Type tp1,tp2;
+    case (var as Exp.CREF(_,_),val,Types.PROP(tp1,_),Types.PROP(tp2,_))  equation
+     (val_1,_) = Types.matchType(val,tp2,(Types.T_REAL({}),NONE()));
+      (var_1,_) = Types.matchType(var,tp1,(Types.T_REAL({}),NONE()));
+    then REINIT(var_1,val_1);  
+  
+   case (_,_,prop1,prop2)  equation
+			Error.addMessage(Error.INTERNAL_ERROR(),{"reinit called with wrong args"});
+    then fail();
+  
+  	// TODO: Add checks for reinit here. 1. First argument must be variable. 2. Expressions must be real.
+  end matchcontinue;      
+end makeReinit;
 
 public function makeAssert "function: makeAssert
  

@@ -7613,13 +7613,13 @@ algorithm
     local
       Exp.ComponentRef ce,ce_1;
       Exp.Type t;
-      Types.Properties cprop,eprop,prop,msgprop;
+      Types.Properties cprop,eprop,prop,msgprop,varprop,valprop;
       SCode.Accessibility acc;
-      Exp.Exp e_1,cond_1,msg_1;
+      Exp.Exp e_1,cond_1,msg_1,var_1,value_1;
       Algorithm.Statement stmt;
       list<Env.Frame> env,env_1;
       Absyn.ComponentRef cr;
-      Absyn.Exp e,cond,msg, assignComp;
+      Absyn.Exp e,cond,msg, assignComp,var,value;
       Boolean impl;
       list<Exp.Exp> expl_1;
       list<Types.Properties> cprops;
@@ -7699,6 +7699,8 @@ algorithm
         stmt = Algorithm.makeWhenA(e_1, prop, sl_1) "TODO elsewhen" ;
       then
         (cache,stmt);
+        
+        // assert(cond,msg)
     case (cache,env,Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg},argNames = {})),impl)
       equation 
         (cache,cond_1,cprop,_) = Static.elabExp(cache,env, cond, impl, NONE,true);
@@ -7706,11 +7708,23 @@ algorithm
         stmt = Algorithm.makeAssert(cond_1, msg_1, cprop, msgprop);
       then
         (cache,stmt);
+        
+        // reinit(variable,value)
+	   case (cache,env,Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "reinit"),functionArgs = Absyn.FUNCTIONARGS(args = {var,value},argNames = {})),impl)
+      equation 
+        (cache,var_1,varprop,_) = Static.elabExp(cache,env, var, impl, NONE,true);
+        (cache,value_1,valprop,_) = Static.elabExp(cache,env, value, impl, NONE,true);
+        stmt = Algorithm.makeReinit(var_1, value_1, varprop, valprop);
+      then
+        (cache,stmt);
+        
     case (cache,env,alg,impl)
       equation 
         Debug.fprint("failtrace", "- inst_statement failed\n alg:");
         Debug.fcall("failtrace", Dump.printAlgorithm, alg);
         Debug.fprint("failtrace", "\n");
+        print("instStatement ");print(Dump.unparseAlgorithmStr(0,Absyn.ALGORITHMITEM(alg,NONE())));
+        print(" failed\n");
       then
         fail();
   end matchcontinue;
