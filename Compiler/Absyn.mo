@@ -46,7 +46,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   RCS: $Id$
  
   This file defines the abstract syntax for Modelica in MetaModelica Compiler (MMC).  It mainly
-  contains datatypes for constructing the abstract syntax tree
+  contains uniontypes for constructing the abstract syntax tree
   (AST), functions for building and altering AST nodes and a few functions 
   for printing the AST:
   
@@ -158,7 +158,7 @@ uniontype Class
     Boolean     encapsulated_ "true if encapsulated" ;
     Restriction restriction  "Restriction" ;
     ClassDef    body;
-    Info        info    "Information: FileName the class is defined in + 
+    Info       info    "Information: FileName is the class is defined in + 
                isReadOnly bool + start line no + start column no +
                end line no + end column no";
   end CLASS;
@@ -492,7 +492,7 @@ uniontype Equation "Information on one (kind) of equation, different constructor
 end Equation;
 
 public 
-uniontype Algorithm "The `Algorithm\' type describes one algorithm statement in an
+uniontype Algorithm "The Algorithm type describes one algorithm statement in an
   algorithm section.  It does not describe a whole algorithm.  The
   reason this type is named like this is that the name of the
   grammar rule for algorithm statements is `algorithm\'."
@@ -564,16 +564,16 @@ uniontype ElementArg "Wrapper for things that modify elements, modifications and
 
   record REDECLARATION
     Boolean finalItem "finalItem" ;
-    RedeclareKeywords redeclareKeywords "redeclareKeywords ; \'redeclare\' \'replaceable\'" ;
+    RedeclareKeywords redeclareKeywords "redeclare  or replaceable " ;
     Each each_ "each" ;
     ElementSpec elementSpec "elementSpec" ;
-    Option<ConstrainClass> constrainClass "constrainClass ; class definition or declaration" ;
+    Option<ConstrainClass> constrainClass "class definition or declaration" ;
   end REDECLARATION;
 
 end ElementArg;
 
 public 
-uniontype RedeclareKeywords "The keywords \'redeclare\' and \'replacable\' can be given in three different kombinations, each one by themself or the both combined."
+uniontype RedeclareKeywords "The keywords redeclare and replacable can be given in three different kombinations, each one by themself or the both combined."
   record REDECLARE end REDECLARE;
 
   record REPLACEABLE end REPLACEABLE;
@@ -628,44 +628,44 @@ end Direction;
 
 public 
 type ArrayDim = list<Subscript> "Component attributes are
-properties of components which are applied by type prefixes.
-As an example, declaring a component as `input Real x;\' will
-give the attributes `ATTR({},false,VAR,INPUT)\'.
-Components in Modelica can be scalar or arrays with one or more
-dimensions. This datatype is used to indicate the dimensionality
-of a component or a type definition.
+  properties of components which are applied by type prefixes.
+  As an example, declaring a component as `input Real x;\' will
+  give the attributes `ATTR({},false,VAR,INPUT)\'.
+  Components in Modelica can be scalar or arrays with one or more
+  dimensions. This type is used to indicate the dimensionality
+  of a component or a type definition.
 - Array dimensions" ;
 
 public 
-uniontype Exp "The `Exp\' datatype is the container of a Modelica expression.
+uniontype Exp "The Exp uniontype is the container of a Modelica expression.
   - Expressions"
   record INTEGER
-    Integer value "value" ;
+    Integer value;
   end INTEGER;
 
   record REAL
-    Real value "value" ;
+    Real value;
   end REAL;
 
   record CREF
-    ComponentRef componentReg "componentReg" ;
+    ComponentRef componentReg;
   end CREF;
 
   record STRING
-    String value "value" ;
+    String value;
   end STRING;
 
   record BOOL
-    Boolean value "value Binary operations, e.g. ab" ;
+    Boolean value;
   end BOOL;
 
-  record BINARY
-    Exp exp1 "exp1" ;
-    Operator op "op" ;
-    Exp exp2 "exp2 Unary operations, e.g. -(x)" ;
+  record BINARY   "Binary operations, e.g. a*b" 
+    Exp exp1;
+    Operator op;
+    Exp exp2;
   end BINARY;
 
-  record UNARY
+  record UNARY  "Unary operations, e.g. -(x)"
     Operator op "op" ;
     Exp exp "exp Logical binary operations: and, or" ;
   end UNARY;
@@ -673,10 +673,10 @@ uniontype Exp "The `Exp\' datatype is the container of a Modelica expression.
   record LBINARY
     Exp exp1 "exp1" ;
     Operator op "op" ;
-    Exp exp2 "exp2 Logical unary operations: not" ;
+    Exp exp2 ;
   end LBINARY;
 
-  record LUNARY
+  record LUNARY  "Logical unary operations: not" 
     Operator op "op" ;
     Exp exp "exp Relations, e.g. a >= 0" ;
   end LUNARY;
@@ -684,10 +684,10 @@ uniontype Exp "The `Exp\' datatype is the container of a Modelica expression.
   record RELATION
     Exp exp1 "exp1" ;
     Operator op "op" ;
-    Exp exp2 "exp2 If expressions" ;
+    Exp exp2  ;
   end RELATION;
 
-  record IFEXP
+  record IFEXP  "If expressions"
     Exp ifExp "ifExp" ;
     Exp trueBranch "trueBranch" ;
     Exp elseBranch "elseBranch" ;
@@ -696,45 +696,48 @@ uniontype Exp "The `Exp\' datatype is the container of a Modelica expression.
 
   record CALL
     ComponentRef function_ "function" ;
-    FunctionArgs functionArgs "functionArgs Array construction using \'{\',\'}\' or \'array\'" ;
+    FunctionArgs functionArgs ;
   end CALL;
 
-  record ARRAY
-    list<Exp> arrayExp "arrayExp Matrix construction using \'{\', \'}\'" ;
+  record ARRAY   "Array construction using {, }, or array" 
+    list<Exp> arrayExp ;
   end ARRAY;
 
-  record MATRIX
-    list<list<Exp>> matrix "matrix Range expressions, e.g. 1:10 or 1:0.5:10" ;
+  record MATRIX  "Matrix construction using {, } " 
+    list<list<Exp>> matrix ;
   end MATRIX;
 
-  record RANGE "e.g. 1:10 or 1:0.5:10"
+  record RANGE  "Range expressions, e.g. 1:10 or 1:0.5:10" 
     Exp start "start" ;
     Option<Exp> step "step" ;
-    Exp stop "stop Tuples used in function calls returning several values" ;
+    Exp stop "stop";
   end RANGE;
 
-  record TUPLE
-    list<Exp> expressions "expressions array access operator for last element, e.g. a{end}:=1;" ;
+  record TUPLE " Tuples used in function calls returning several values"
+    list<Exp> expressions "comma-separated expressions" ;
   end TUPLE;
 
-  record END end END;
+  record END "array access operator for last element, e.g. a{end}:=1;" 
+  end END;
 
-  record CODE
-    CodeNode code "code ;  Modelica AST Code constructors" ;
+
+  record CODE  "Modelica AST Code constructors - MetaModelica extension" 
+    CodeNode code;
   end CODE;
 
-  // MetaModelica expression follows!
-  record AS
+  // MetaModelica expressions follow below!
+
+  record AS  "as operator"
     Ident id " only an id " ;
     Exp exp  " expression to bind to the id ";
   end AS;
   
-  record CONS
+  record CONS  "list cons or :: operator"
     Exp head " head of the list ";
     Exp rest " rest of the list ";
   end CONS;
 
-  record MATCHEXP
+  record MATCHEXP "matchcontinue expression"
 		MatchType matchTy            " match or matchcontinue      ";
 		Exp inputExp                 " match expression of         ";
 		list<ElementItem> localDecls " local declarations          ";
@@ -744,8 +747,9 @@ uniontype Exp "The `Exp\' datatype is the container of a Modelica expression.
   
 end Exp;
 
-public
-uniontype Case
+
+
+uniontype Case "case in match or matchcontinue"
   record CASE 
     Exp pattern " patterns to be matched "; 
 		list<ElementItem> localDecls " local decls ";
@@ -754,7 +758,7 @@ uniontype Case
 		Option<String> comment " comment after case like: case pattern string_comment ";
   end CASE;
 
-  record ELSE 
+  record ELSE "else in match or matchcontinue"
 		list<ElementItem> localDecls " local decls ";
 		list<EquationItem>  equations " equations [] for no equations ";
 		Exp result " result ";
@@ -762,14 +766,14 @@ uniontype Case
   end ELSE;
 end Case;           
 
-public 
+
 uniontype MatchType
   record MATCH end MATCH;
   record MATCHCONTINUE end MATCHCONTINUE;	       
 end MatchType;
 
-public 
-uniontype CodeNode "The \'Code\' datatype is used for Meta-programming. It orgiginates from the Code quotation."
+
+uniontype CodeNode "The Code uniontype is used for Meta-programming. It originates from the Code quoting mechanism. See paper in Modelica2003 conference"
   record C_TYPENAME
     Path path;
   end C_TYPENAME;
@@ -802,8 +806,9 @@ uniontype CodeNode "The \'Code\' datatype is used for Meta-programming. It orgig
 
 end CodeNode;
 
-public 
-uniontype FunctionArgs "The `FunctionArgs\' datatype consists of a list of positional arguments
+
+
+uniontype FunctionArgs "The FunctionArgs uniontype consists of a list of positional arguments
   followed by a list of named arguments (Modelica v2.0)"
   record FUNCTIONARGS
     list<Exp> args "args" ;
@@ -818,8 +823,8 @@ uniontype FunctionArgs "The `FunctionArgs\' datatype consists of a list of posit
 
 end FunctionArgs;
 
-public 
-uniontype NamedArg "The `NamedArg\' datatype consist of an Identifier for the argument and an expression
+
+uniontype NamedArg "The NamedArg uniontype consist of an Identifier for the argument and an expression
   giving the value of the argument"
   record NAMEDARG
     Ident argName "argName" ;
@@ -828,7 +833,7 @@ uniontype NamedArg "The `NamedArg\' datatype consist of an Identifier for the ar
 
 end NamedArg;
 
-public 
+
 uniontype Operator "Expression operators"
   record ADD end ADD;
 
@@ -864,10 +869,10 @@ uniontype Operator "Expression operators"
 
 end Operator;
 
-public 
-uniontype Subscript "The `Subscript\' datatype is used both in array declarations and
+
+uniontype Subscript "The Subscript uniontype is used both in array declarations and
   component references.  This might seem strange, but it is
-  inherited from the grammar.  The `NOSUB\' constructor means that
+  inherited from the grammar.  The NOSUB constructor means that
   the dimension size is undefined when used in a declaration, and
   when it is used in a component reference it means a slice of the
   whole dimension.
@@ -880,7 +885,7 @@ uniontype Subscript "The `Subscript\' datatype is used both in array declaration
 
 end Subscript;
 
-public 
+
 uniontype ComponentRef "A component reference is the fully or partially qualified name of
   a component.  It is represented as a list of
   identifier--subscript pairs.
@@ -900,7 +905,7 @@ uniontype ComponentRef "A component reference is the fully or partially qualifie
 
 end ComponentRef;
 
-public 
+
 uniontype Path "The type `Path\', on the other hand,
   is used to store references to class names, or names inside
   class definitions."
@@ -921,15 +926,15 @@ uniontype Path "The type `Path\', on the other hand,
   end FULLYQUALIFIED;
 end Path;
 
-public 
+
 uniontype Restriction "These constructors each correspond to a different kind of class
   declaration in Modelica, except the last four, which are used
   for the predefined types.  The parser assigns each class
   declaration one of the restrictions, and the actual class
   definition is checked for conformance during translation.  The
-  predefined types are created in the `Builtin\' module and are
+  predefined types are created in the Builtin module and are
   assigned special restrictions.
-  - Restrictions"
+ "
   record R_CLASS end R_CLASS;
 
   record R_MODEL end R_MODEL;
@@ -983,20 +988,21 @@ uniontype Comment "Comment"
 end Comment;
 
 public 
-uniontype ExternalDecl "Declaration of an external function call
-  - ExternalDecl"
+uniontype ExternalDecl "Declaration of an external function call - ExternalDecl"
   record EXTERNALDECL
-    Option<Ident> funcName "funcName ; The name of the external function" ;
-    Option<String> lang "lang ; Lanugage of the external function" ;
-    Option<ComponentRef> output_ "output ; ouput parameter as return value" ;
-    list<Exp> args "args ; only positional arguments, i.e. expression list" ;
-    Option<Annotation> annotation_ "annotation" ;
+    Option<Ident>        funcName "The name of the external function" ;
+    Option<String>       lang     "Language of the external function" ;
+    Option<ComponentRef> output_  "output parameter as return value" ;
+    list<Exp>            args     "only positional arguments, i.e. expression list" ;
+    Option<Annotation>   annotation_ ;
   end EXTERNALDECL;
 
 end ExternalDecl;
 
-/* "From here down, only absyn helper functions should be present. 
- Thus, no actual absyn datatype definitions." */
+
+
+/* "From here down, only Absyn helper functions should be present. 
+ Thus, no actual absyn uniontype definitions." */
 
 protected import Debug;
 protected import Util;
@@ -1005,7 +1011,7 @@ protected import ModUtil;
 
 public function elementSpecName "function: elementSpecName
  
-  The `ElementSpec\' type contans the name of the element, and this
+  The ElementSpec type contans the name of the element, and this
   function extracts this name.
 "
   input ElementSpec inElementSpec;
@@ -1026,7 +1032,7 @@ end elementSpecName;
 
 public function pathString "function: pathString
  
-  This function simply converts a `Path\' to a `string\'.
+  This function simply converts a Path to a string.
 "
   input Path path;
   output String s;
@@ -1901,4 +1907,3 @@ algorithm
  end matchcontinue;
 end functionArgsEqual;
 end Absyn;
-
