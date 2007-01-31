@@ -2364,7 +2364,7 @@ algorithm
       equation 
         (cache,exp_1,Types.PROP((Types.T_INTEGER({}),_),c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
         str = Dump.printExpStr(arrexp);
-        Error.addMessage(Error.BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER, {str});
+        Error.addMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str});
       then
          (cache,exp_1,Types.PROP((Types.T_INTEGER({}),NONE),c));
     case (cache,env,{arrexp},impl) /* impl */ 
@@ -2372,7 +2372,7 @@ algorithm
       equation 
         (cache,exp_1,Types.PROP((Types.T_REAL({}),_),c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
         str = Dump.printExpStr(arrexp);
-        Error.addMessage(Error.BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER, {str});
+        Error.addMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str});
       then
          (cache,exp_1,Types.PROP((Types.T_REAL({}),NONE),c));
     case (cache,env,{arrexp},impl) /* impl */ 
@@ -2412,6 +2412,85 @@ algorithm
     case (e) then e;
   end matchcontinue;
 end elabBuiltinSum2;
+
+protected function elabBuiltinProduct "function: elabBuiltinProduct
+ 
+  This function elaborates the builtin operator product.
+  The input is the arguments to fill as Absyn.Exp expressions and the environment Env.Env
+"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input Boolean inBoolean;
+	output Env.Cache outCache;
+  output Exp.Exp outExp;
+  output Types.Properties outProperties;
+algorithm 
+  (outCache,outExp,outProperties):=
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+    local
+      Exp.Exp exp_1,exp_2;
+      Types.ArrayDim dim;
+      tuple<Types.TType, Option<Absyn.Path>> tp;
+      Types.Const c;
+      list<Env.Frame> env;
+      Absyn.Exp arrexp;
+      Boolean impl;
+      Env.Cache cache;
+    case (cache,env,{arrexp},impl) /* impl */ 
+      local String str;
+      equation 
+        (cache,exp_1,Types.PROP((Types.T_INTEGER({}),_),c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
+        str = Dump.printExpStr(arrexp);
+        Error.addMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str});
+      then
+         (cache,exp_1,Types.PROP((Types.T_INTEGER({}),NONE),c));
+    case (cache,env,{arrexp},impl) /* impl */ 
+      local String str;
+      equation 
+        (cache,exp_1,Types.PROP((Types.T_REAL({}),_),c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
+        str = Dump.printExpStr(arrexp);
+        Error.addMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str});
+      then
+         (cache,exp_1,Types.PROP((Types.T_REAL({}),NONE),c));
+    case (cache,env,{arrexp},impl) /* impl */ 
+      local Exp.Type etp; Types.Type t;
+      equation 
+        (cache,exp_1,Types.PROP(t as (Types.T_ARRAY(dim,tp),_),c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
+        tp = Types.arrayElementType(t);        
+        etp = Types.elabType(tp);
+        exp_2 = elabBuiltinProduct2(Exp.CALL(Absyn.IDENT("product"),{exp_1},false,true,etp));  
+      then
+        (cache,exp_2,Types.PROP(tp,c)); 
+  end matchcontinue;
+end elabBuiltinProduct;
+
+protected function elabBuiltinProduct2 " replaces product({a1,a2,...an}) 
+with a1*a2*...*an} and
+product([a11,a12,...,a1n;...,am1,am2,..amn]) with a11*a12*...*amn
+"
+input Exp.Exp inExp;
+output Exp.Exp outExp;
+algorithm
+  outExp := matchcontinue(inExp)
+    local 
+      Exp.Type ty;
+      Boolean sc;
+      list<Exp.Exp> expl;
+      Exp.Exp e;
+      list<list<tuple<Exp.Exp, Boolean>>> mexpl;
+      Integer dim;
+    case(Exp.CALL(_,{Exp.ARRAY(ty,sc,expl)},_,_,_)) equation
+      e = Exp.makeProductLst(expl);
+    then e;
+    case(Exp.CALL(_,{Exp.MATRIX(ty,dim,mexpl)},_,_,_)) equation
+      expl = Util.listMap(Util.listFlatten(mexpl), Util.tuple21);
+      e = Exp.makeProductLst(expl);
+    then e;
+      
+    case (e) then e;
+  end matchcontinue;
+end elabBuiltinProduct2;
 
 protected function elabBuiltinPre "function: elabBuiltinPre
  
@@ -4178,6 +4257,8 @@ algorithm
     case "array" then elabBuiltinArray; 
 
     case "sum" then elabBuiltinSum; 
+
+    case "product" then elabBuiltinProduct; 
 
     case "pre" then elabBuiltinPre; 
 

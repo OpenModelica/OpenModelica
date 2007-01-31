@@ -49,7 +49,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    
 "
 
-public 
+public
 uniontype Severity "severity of message"
   record ERROR "Error when tool can not succed in translation" end ERROR;
 
@@ -190,6 +190,7 @@ public constant ErrorID RECURSIVE_DEFINITION=92;
 public constant ErrorID NOT_ARRAY_TYPE_IN_FOR_STATEMENT= 93;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
+public constant ErrorID BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER=502;
 public constant ErrorID INDEX_REDUCTION_NOTIFICATION=1000;
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable={(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
           (GRAMMATIC_ERROR,GRAMMAR(),ERROR(),"error: %s"),
@@ -375,6 +376,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Warning, parameter %s has no value"),
           (BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER,TRANSLATION(),WARNING(),
           "Warning, function \"sum\" has scalar as argument in sum(%s)"),
+          (BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER,TRANSLATION(),WARNING(),
+          "Warning, function \"product\" has scalar as argument in sum(%s)"),       
           (INDEX_REDUCTION_NOTIFICATION,SYMBOLIC(),NOTIFICATION(),
           "Notification, differentiated equation %s to %s for index reduction")};
 
