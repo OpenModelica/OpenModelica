@@ -53,6 +53,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 public import Exp;
 public import DAELow;
+public import DAE;
 
 public 
 uniontype VariableReplacements "
@@ -122,7 +123,187 @@ protected import Util;
 protected import Algorithm;
 protected import Debug;
 protected import Absyn;
+protected import Types;
 
+public function applyReplacementsDAE "Apply a set of replacement rules on a DAE "
+	input list<DAE.Element> inDae;
+	input VariableReplacements repl;
+	output list<DAE.Element> outDae;
+algorithm
+  outDae := matchcontinue(inDae)
+    local
+      Exp.ComponentRef cr,cr2;
+      list<DAE.Element> dae,dae2,elist,elist2,elist22,elist1,elist11;
+      DAE.Element elt,elt2,elt22,elt1,elt11;
+      DAE.VarKind kind;
+      DAE.VarDirection dir;
+      DAE.Type tp;
+      Exp.Exp bindExp,bindExp2,e,e2,e22,e1,e11;
+      DAE.InstDims dims;
+      DAE.StartValue start;
+      DAE.Flow fl;
+      list<Absyn.Path> clsLst;
+      Option<DAE.VariableAttributes> attr;
+      Option<Absyn.Comment> cmt;
+      Absyn.InnerOuter io;
+      Types.Type ftp;
+      list<Integer> idims;
+      DAE.ExternalDecl extDecl;
+      DAE.Ident id;
+      Absyn.Path path;
+      list<Algorithm.Statement> stmts,stmts2;
+
+      // if no replacements, return dae, no need to traverse.
+    case(dae,REPLACEMENTS(TREENODE(NONE,NONE,NONE),TREENODE2(NONE,NONE,NONE))) then dae;
+
+    case({},repl) then {};
+      
+    case(DAE.VAR(cr,kind,dir,tp,SOME(bindExp),dims,start,fl,clsLst,attr,cmt,io,ftp)::dae,repl) 
+      equation
+        (bindExp2) = replaceExp(bindExp, repl, NONE);
+  			dae2 = applyReplacementsDAE(dae,repl);
+  			start = applyReplacementsStartValue(start,repl);
+  	then DAE.VAR(cr,kind,dir,tp,SOME(bindExp),dims,start,fl,clsLst,attr,cmt,io,ftp)::dae2;
+
+    case(DAE.VAR(cr,kind,dir,tp,NONE,dims,start,fl,clsLst,attr,cmt,io,ftp)::dae,repl) 
+      equation
+  			dae2 = applyReplacementsDAE(dae,repl);
+        start = applyReplacementsStartValue(start,repl);
+  	then DAE.VAR(cr,kind,dir,tp,NONE,dims,start,fl,clsLst,attr,cmt,io,ftp)::dae2;
+
+    case(DAE.DEFINE(cr,e)::dae,repl) 
+      equation
+          (e2) = replaceExp(e, repl, NONE);
+        (Exp.CREF(cr2,_)) = replaceExp(Exp.CREF(cr,Exp.REAL()), repl, NONE);
+        dae2 = applyReplacementsDAE(dae,repl);
+      then DAE.DEFINE(cr2,e2)::dae2;
+   
+    case(DAE.INITIALDEFINE(cr,e)::dae,repl) 
+      equation
+          (e2) = replaceExp(e, repl, NONE);
+        (Exp.CREF(cr2,_)) = replaceExp(Exp.CREF(cr,Exp.REAL()), repl, NONE);
+        dae2 = applyReplacementsDAE(dae,repl);
+      then DAE.INITIALDEFINE(cr2,e2)::dae2;
+
+    case(DAE.EQUATION(e1,e2)::dae,repl) 
+      equation
+          (e11) = replaceExp(e1, repl, NONE);
+        (e22) = replaceExp(e2, repl, NONE);
+        dae2 = applyReplacementsDAE(dae,repl);
+      then DAE.EQUATION(e11,e22)::dae2;
+     
+    case(DAE.ARRAY_EQUATION(idims,e1,e2)::dae,repl) 
+      equation
+          (e11) = replaceExp(e1, repl, NONE);
+        (e22) = replaceExp(e2, repl, NONE);
+        dae2 = applyReplacementsDAE(dae,repl);
+      then DAE.ARRAY_EQUATION(idims,e11,e22)::dae2;
+       
+    case(DAE.WHEN_EQUATION(e1,elist,SOME(elt))::dae,repl) 
+      equation
+          (e11) = replaceExp(e1, repl, NONE);
+        {elt2}= applyReplacementsDAE({elt},repl);
+        elist2 = applyReplacementsDAE(elist,repl);
+        dae2 = applyReplacementsDAE(dae,repl);
+      then DAE.WHEN_EQUATION(e11,elist2,SOME(elt2))::dae2;
+
+    case(DAE.WHEN_EQUATION(e1,elist,NONE)::dae,repl) 
+      equation
+          (e11) = replaceExp(e1, repl, NONE);
+        elist2 = applyReplacementsDAE(elist,repl);
+        dae2 = applyReplacementsDAE(dae,repl);
+      then DAE.WHEN_EQUATION(e11,elist2,NONE)::dae2;
+
+    case(DAE.IF_EQUATION(e1,elist1,elist2)::dae,repl) 
+      equation
+        (e11) = replaceExp(e1, repl, NONE);
+        elist11 = applyReplacementsDAE(elist1,repl);
+        elist22 = applyReplacementsDAE(elist2,repl);
+        dae2 = applyReplacementsDAE(dae,repl);
+      then DAE.IF_EQUATION(e11,elist11,elist22)::dae2;
+
+    case(DAE.INITIAL_IF_EQUATION(e1,elist1,elist2)::dae,repl) 
+      equation
+        (e11) = replaceExp(e1, repl, NONE);
+        elist11 = applyReplacementsDAE(elist1,repl);
+        elist22 = applyReplacementsDAE(elist2,repl);
+        dae2 = applyReplacementsDAE(dae,repl);
+      then DAE.INITIAL_IF_EQUATION(e11,elist11,elist22)::dae2;
+
+    case(DAE.INITIALEQUATION(e1,e2)::dae,repl) 
+      equation
+          (e11) = replaceExp(e1, repl, NONE);
+        (e22) = replaceExp(e2, repl, NONE);
+        dae2 = applyReplacementsDAE(dae,repl);
+      then DAE.INITIALEQUATION(e11,e22)::dae2;
+        
+     case(DAE.ALGORITHM(Algorithm.ALGORITHM(stmts))::dae,repl) 
+      equation
+        stmts2 = replaceEquationsStmts(stmts,repl);
+        dae2 = applyReplacementsDAE(dae,repl);
+      then DAE.ALGORITHM(Algorithm.ALGORITHM(stmts2))::dae2;
+
+     case(DAE.INITIALALGORITHM(Algorithm.ALGORITHM(stmts))::dae,repl) 
+      equation
+        stmts2 = replaceEquationsStmts(stmts,repl);
+        dae2 = applyReplacementsDAE(dae,repl);
+      then DAE.INITIALALGORITHM(Algorithm.ALGORITHM(stmts2))::dae2;
+        
+     case(DAE.COMP(id,DAE.DAE(elist))::dae,repl) 
+      equation
+        elist2 = applyReplacementsDAE(elist,repl);
+        dae2 = applyReplacementsDAE(dae,repl);
+      then DAE.COMP(id,DAE.DAE(elist))::dae2;
+        
+     case(DAE.FUNCTION(path,DAE.DAE(elist),ftp)::dae,repl) 
+      equation
+        elist2 = applyReplacementsDAE(elist,repl);
+        dae2 = applyReplacementsDAE(dae,repl);
+      then DAE.FUNCTION(path,DAE.DAE(elist2),ftp)::dae2;
+        
+     case(DAE.EXTFUNCTION(path,DAE.DAE(elist),ftp,extDecl)::dae,repl) 
+      equation
+        elist2 = applyReplacementsDAE(elist,repl);
+        dae2 = applyReplacementsDAE(dae,repl);
+      then DAE.EXTFUNCTION(path,DAE.DAE(elist2),ftp,extDecl)::dae2;
+        
+     case(DAE.EXTOBJECTCLASS(path,elt1,elt2)::dae,repl) 
+      equation
+        {elt11,elt22} =  applyReplacementsDAE({elt1,elt2},repl);
+        dae2 = applyReplacementsDAE(dae,repl);
+      then DAE.EXTOBJECTCLASS(path,elt1,elt2)::dae2;
+        
+     case(DAE.ASSERT(e1)::dae,repl) 
+      equation
+          (e11) = replaceExp(e1, repl, NONE);
+        dae2 = applyReplacementsDAE(dae,repl);
+      then DAE.ASSERT(e11)::dae2;
+        
+     case(DAE.REINIT(cr,e1)::dae,repl) 
+      equation
+          (e11) = replaceExp(e1, repl, NONE);
+        (Exp.CREF(cr2,_)) = replaceExp(Exp.CREF(cr,Exp.REAL()), repl, NONE);
+        dae2 = applyReplacementsDAE(dae,repl);
+      then DAE.REINIT(cr2,e11)::dae2;
+  end matchcontinue;
+end applyReplacementsDAE;
+
+protected function applyReplacementsStartValue "Help function to applyReplacementsDAE"
+  input Option<Exp.Exp> startValue;
+  input VariableReplacements repl;
+  output Option<Exp.Exp> outStartValue;
+algorithm
+    outStartValue := matchcontinue(startValue,repl)
+    local Exp.Exp e,e1;
+      case(SOME(e),repl) equation
+         (e1) = replaceExp(e, repl, NONE);
+      then SOME(e1);
+        
+      case(NONE,repl) then NONE;
+        
+    end matchcontinue;
+end applyReplacementsStartValue;
+  
 public function applyReplacements "function: applyReplacements
  
   This function takes a VariableReplacements and two component references.
@@ -350,6 +531,38 @@ algorithm
         ();
   end matchcontinue;
 end dumpReplacements;
+
+public function replacementSources "Returns all sources of the replacement rules"
+  input VariableReplacements repl;
+  output list<Exp.ComponentRef> sources;
+algorithm
+  sources := matchcontinue(repl)
+  local list<Exp.Exp> srcs;
+    BinTree bt;
+    case (REPLACEMENTS(bt,_)) 
+      equation
+          (srcs,_) = bintreeToExplist(bt);
+          sources = Util.listMap(srcs,Exp.expCref);          
+      then  sources;
+  end matchcontinue;
+end replacementSources;
+
+public function replacementTargets "Returns all targets of the replacement rules"
+  input VariableReplacements repl;
+  output list<Exp.ComponentRef> sources;
+algorithm
+  sources := matchcontinue(repl)
+  local 
+    list<Exp.Exp> targets;
+    list<Exp.ComponentRef> targets2;
+    BinTree bt;
+    case (REPLACEMENTS(bt,_)) 
+      equation
+          (_,targets) = bintreeToExplist(bt);
+          targets2 = Util.listFlatten(Util.listMap(targets,Exp.getCrefFromExp));          
+      then  targets2;
+  end matchcontinue;
+end replacementTargets;
 
 public function addReplacement "function: addReplacement
  

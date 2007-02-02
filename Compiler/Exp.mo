@@ -664,6 +664,36 @@ algorithm
   end matchcontinue;
 end crefStripLastIdent;
 
+public function crefStripFirstIdent "Strips the first part of a component reference, 
+i.e the identifier and eventual subscripts
+"
+  input ComponentRef inCr;
+  output ComponentRef outCr;
+algorithm
+  outCr := matchcontinue(inCr)
+  local Ident id; 
+    list<Subscript> subs;
+    ComponentRef cr;
+    case( CREF_QUAL(id,subs,cr)) then cr;    
+  end matchcontinue;
+end crefStripFirstIdent;
+
+public function crefFirstIdent "Returns the first part of a component reference, 
+i.e the identifier 
+"
+  input ComponentRef inCr;
+  output ComponentRef outCr;
+algorithm
+  outCr := matchcontinue(inCr)
+  local Ident id; 
+    list<Subscript> subs;
+    ComponentRef cr;
+    case( CREF_QUAL(id,subs,cr)) then CREF_IDENT(id,{});
+    case( CREF_IDENT(id,subs)) then CREF_IDENT(id,{});
+  end matchcontinue;
+end crefFirstIdent;
+
+
 public function crefStripLastSubs "function: crefStripLastSubs
  
   Strips the last subscripts of a ComponentRef
@@ -735,7 +765,7 @@ algorithm
         true;
     case (CREF_QUAL(componentRef = cr2),y)
       equation 
-        res = crefContainedIn(y, cr2);
+        res = crefContainedIn(cr2,y);
       then
         res;
     case (_,_) then false; 

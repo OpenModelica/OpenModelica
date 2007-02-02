@@ -300,8 +300,7 @@ uniontype Element "- Elements
 
   record COMPONENT
     Ident component "component name" ;
-    Boolean inner_ "inner";
-    Boolean outer_ "outer";
+    Absyn.InnerOuter innerOuter; 
     Boolean final_ "final" ;
     Boolean replaceable_ "replaceable" ;
     Boolean protected_ "protected" ;
@@ -884,22 +883,6 @@ algorithm
         l;
   end matchcontinue;
 end elabEitemlist;
-
-protected function sepInnerOuter "function: sepInnerOuter
-  Separates out the element of inner and outer into two booleans
-"
-	input Absyn.InnerOuter io;
-	output Boolean inner_;
-	output Boolean outer_;
-algorithm
-	(inner_,outer_) :=
-	matchcontinue io
-	     case Absyn.INNER then (true,false);
-	     case Absyn.OUTER then (false,true);
-	     case Absyn.INNEROUTER then (true,true);
-	     case Absyn.UNSPECIFIED then (false,false);	       
-	end matchcontinue;
-end sepInnerOuter;  
   
 protected function elabElement "function: elabElement
  
@@ -924,8 +907,7 @@ algorithm
       Absyn.Info info;
     case (Absyn.ELEMENT(final_ = f,innerOuter = io, redeclareKeywords = repl,specification = s,info = info),prot)
       equation 
-        (inner_, outer_) = sepInnerOuter(io);
-        es = elabElementspec(f, inner_, outer_, repl,  prot, s);
+        es = elabElementspec(f, io, repl,  prot, s);
       then
         es;
   end matchcontinue;
@@ -938,15 +920,14 @@ protected function elabElementspec "function: elabElementspec
   protected, respectively.
 "
   input Boolean final_;
-  input Boolean inner_;
-  input	Boolean outer_;
+  input Absyn.InnerOuter io;
   input Option<Absyn.RedeclareKeywords> inAbsynRedeclareKeywordsOption2;
   input Boolean inBoolean3;
   input Absyn.ElementSpec inElementSpec4;
   output list<Element> outElementLst;
 algorithm 
   outElementLst:=
-  matchcontinue (final_,inner_,outer_,inAbsynRedeclareKeywordsOption2,inBoolean3,inElementSpec4)
+  matchcontinue (final_,io,inAbsynRedeclareKeywordsOption2,inBoolean3,inElementSpec4)
     local
       ClassDef de_1;
       Restriction re_1;
@@ -969,34 +950,34 @@ algorithm
       Option<Absyn.Comment> comment;
       list<Absyn.ComponentItem> xs;
       Absyn.Import imp;
-    case (final_,_,_,repl,prot,Absyn.CLASSDEF(replaceable_ = rp,class_ = (cl as Absyn.CLASS(name = n,partial_ = pa,final_ = fi,encapsulated_ = e,restriction = re,body = de,info = file_info))))
+    case (final_,_,repl,prot,Absyn.CLASSDEF(replaceable_ = rp,class_ = (cl as Absyn.CLASS(name = n,partial_ = pa,final_ = fi,encapsulated_ = e,restriction = re,body = de,info = file_info))))
       equation 
         //debug_print("elaborating-class:", n);        
         re_1 = elabRestriction(cl, re); // uniontype will not get elaborated!
         de_1 = elabClassdef(de);
       then
         {CLASSDEF(n,final_,rp,CLASS(n,pa,e,re_1,de_1),NONE)};
-    case (final_,_,_,repl,prot,Absyn.EXTENDS(path = n,elementArg = args))
+    case (final_,_,repl,prot,Absyn.EXTENDS(path = n,elementArg = args))
       local Absyn.Path n;
       equation 
         mod = buildMod(SOME(Absyn.CLASSMOD(args,NONE)), false, Absyn.NON_EACH());
         ns = Absyn.pathString(n);
       then
         {EXTENDS(n,mod)};
-    case (_,_,_,_,_,Absyn.COMPONENTS(components = {})) then {}; 
-    case (final_,inner_,outer_,repl,prot,Absyn.COMPONENTS(attributes = (attr as Absyn.ATTR(flow_ = fl,variability = pa,direction = di,arrayDim = ad)),typeSpec = t,components = (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment) :: xs)))
+    case (_,_,_,_,Absyn.COMPONENTS(components = {})) then {}; 
+    case (final_,io,repl,prot,Absyn.COMPONENTS(attributes = (attr as Absyn.ATTR(flow_ = fl,variability = pa,direction = di,arrayDim = ad)),typeSpec = t,components = (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment) :: xs)))
       local Absyn.Variability pa;
       equation 
-        xs_1 = elabElementspec(final_, inner_, outer_, repl, prot, Absyn.COMPONENTS(attr,t,xs));
+        xs_1 = elabElementspec(final_, io, repl, prot, Absyn.COMPONENTS(attr,t,xs));
         mod = buildMod(m, false, Absyn.NON_EACH());
         pa_1 = elabVariability(pa) "PR. This adds the arraydimension that may be specified together with
 	 the type of the component." ;
         tot_dim = listAppend(d, ad);
         repl_1 = elabRedeclarekeywords(repl);
       then
-        (COMPONENT(n,inner_,outer_,final_,repl_1,prot,ATTR(tot_dim,fl,RW(),pa_1,di),t,mod,
+        (COMPONENT(n,io,final_,repl_1,prot,ATTR(tot_dim,fl,RW(),pa_1,di),t,mod,
           NONE,comment) :: xs_1);
-    case (final_,_,_,repl,prot,Absyn.IMPORT(import_ = imp)) then {IMPORT(imp)}; 
+    case (final_,_,repl,prot,Absyn.IMPORT(import_ = imp)) then {IMPORT(imp)}; 
   end matchcontinue;
 end elabElementspec;
 
@@ -1308,7 +1289,7 @@ algorithm
       equation 
         subs = buildArgs(xs);
         n = Absyn.elementSpecName(spec);
-        elist = elabElementspec(final_, false, false, NONE, false, spec) "LS:: don\'t know what to use for \"protected\", so using false LS:: don\'t know what to use for \"replaceable\", so using false" ;
+        elist = elabElementspec(final_, Absyn.UNSPECIFIED(), NONE, false, spec) "LS:: don\'t know what to use for \"protected\", so using false LS:: don\'t know what to use for \"replaceable\", so using false" ;
       then
         (NAMEMOD(n,REDECL(final_,elist)) :: subs);
   end matchcontinue;
@@ -1702,7 +1683,8 @@ algorithm
       String str,str2,res,n,mod_str,s,vs;
       Absyn.Path path,typath;
       Mod mod;
-      Boolean inner_,outer_,final_,repl,prot;
+      Boolean final_,repl,prot;
+      Absyn.InnerOuter io;
       Class cl;
       Variability var;
       Absyn.TypeSpec tySpec;
@@ -1720,13 +1702,13 @@ algorithm
         res = Util.stringAppendList({"CLASSDEF(",n,", from basclass: ",str,")"});
       then
         res;
-    case COMPONENT(component = n,inner_=inner_,outer_=outer_,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = ATTR(parameter_ = var),typeSpec = tySpec,mod = mod,baseclass = SOME(path),this = comment)
+    case COMPONENT(component = n,innerOuter=io,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = ATTR(parameter_ = var),typeSpec = tySpec,mod = mod,baseclass = SOME(path),this = comment)
       equation 
         mod_str = printModStr(mod);
         s = Dump.unparseTypeSpec(tySpec);
         vs = variabilityString(var);
         str = Absyn.pathString(path);
-        str2 = innerouterString(inner_,outer_);
+        str2 = innerouterString(io);
         res = Util.stringAppendList(
           {"COMPONENT(",n,mod_str,s," ",str2,"var :",vs,", from baseclass: ",
           str,")"});
@@ -1738,11 +1720,11 @@ algorithm
         res = Util.stringAppendList({"CLASSDEF(",n,",...,",str,")"});
       then
         res;
-    case COMPONENT(component = n,inner_=inner_,outer_=outer_,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = attr,typeSpec = tySpec,mod = mod,baseclass = NONE,this = comment)
+    case COMPONENT(component = n,innerOuter=io,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = attr,typeSpec = tySpec,mod = mod,baseclass = NONE,this = comment)
       equation 
         mod_str = printModStr(mod);
         s = Dump.unparseTypeSpec(tySpec);
-        str2 = innerouterString(inner_,outer_);        
+        str2 = innerouterString(io);        
         res = Util.stringAppendList({"COMPONENT(",n," ",str2," mod:",mod_str,", tp: ",s,")"});
       then
         res;
@@ -1888,19 +1870,17 @@ public function innerouterString "function: inner/outer String
  
   Print a inner outer info to a string.
 "
-  input Boolean inner_;
-  input Boolean outer_;
+  input Absyn.InnerOuter innerOuter;
   output String outString;
 algorithm 
   outString:=
   matchcontinue (inner_,outer_)
-    case (true,true) then "INNER/OUTER"; 
-    case (true,false) then "INNER"; 
-    case (false,true) then "OUTER"; 
-    case (false,false) then ""; 
+    case (Absyn.INNEROUTER()) then "INNER/OUTER"; 
+    case (Absyn.INNER()) then "INNER"; 
+    case (Absyn.OUTER()) then "OUTER"; 
+    case (Absyn.UNSPECIFIED()) then ""; 
   end matchcontinue;
 end innerouterString;
-
 
 public function unparseVariability "function: variabilityString
  
@@ -2102,20 +2082,20 @@ algorithm
          equal = Util.boolAndList({b1,b2,b3});
        then equal;
          
-     case (COMPONENT(name1,i1,o1,f1,r1,p1,attr1,tp1,mod1,_,_), COMPONENT(name2,i2,o2,f2,r2,p2,attr2,tp2,mod2,_,_))
+     case (COMPONENT(name1,io,f1,r1,p1,attr1,tp1,mod1,_,_), COMPONENT(name2,io2,f2,r2,p2,attr2,tp2,mod2,_,_))
        local
-         Boolean i1,i2,o1,o2,b1,b1a,b1b,b2,b3,b4,b5,b6,f1,f2,r1,r2,p1,p2; Ident name1,name2; 
+         Boolean b1,b1a,b1b,b2,b3,b4,b5,b6,f1,f2,r1,r2,p1,p2; Ident name1,name2; 
+         Absyn.InnerOuter io,io2;
          Attributes attr1,attr2; Mod mod1,mod2; Absyn.TypeSpec tp1,tp2;
        equation
          b1 = Util.stringEqual(name1,name2);
-         b1a = Util.boolEqual(i1,i2);
-         b1b = Util.boolEqual(o1,o2);
+         b1a = ModUtil.innerOuterEqual(io,io2);
          b2 = Util.boolEqual(f1,f2);
          b3 = Util.boolEqual(r1,r2);
          b4 = Util.boolEqual(p1,p2);
          b5 = attributesEqual(attr1,attr2);
          b6 = modEqual(mod1,mod2);
-         equal = Util.boolAndList({b1,b1a,b1b,b2,b3,b4,b5,b6});
+         equal = Util.boolAndList({b1,b1a,b2,b3,b4,b5,b6});
          then equal;
      case(_,_) then false;
    end matchcontinue;

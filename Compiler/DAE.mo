@@ -141,6 +141,8 @@ uniontype Element
 						unconnected flow variables" ;
     Option<VariableAttributes> variableAttributesOption;
     Option<Absyn.Comment> absynCommentOption;
+    Absyn.InnerOuter innerOuter "inner/outer required to 'change' outer references";
+    Types.Type fullType "Full type information required to analyze inner/outer elements";
   end VAR;
 
   record DEFINE "A solved equation"
@@ -344,6 +346,145 @@ protected import Error;
 protected import SCode;
 protected import Env;
 
+public function removeEquations "Removes all equations and algorithms, from the dae"
+	input list<Element> inDae;
+	output list<Element> outDae;
+algorithm
+	inDae := matchcontinue(inDae)
+	local Element v,e;
+	      list<Element> elts,elts2,elts22,elts1,elts11;
+	      Ident  id;
+	  case({}) then  {};
+	    
+	  case((v as VAR(componentRef=_))::elts) equation
+	    elts2=removeEquations(elts);
+	    then v::elts2;
+	  case(COMP(id,DAE(elts1))::elts2) equation
+	    elts11 = removeEquations(elts1);
+	    elts22 = removeEquations(elts2);
+	  then COMP(id,DAE(elts11))::elts22;
+	  case(EQUATION(_,_)::elts2) then removeEquations(elts2);
+	  case(INITIALEQUATION(_,_)::elts2) then removeEquations(elts2);
+	  case(ARRAY_EQUATION(_,_,_)::elts2) then removeEquations(elts2);
+	  case(INITIALDEFINE(_,_)::elts2) then removeEquations(elts2);	    
+	  case(DEFINE(_,_)::elts2) then removeEquations(elts2);	    	    
+	  case(WHEN_EQUATION(_,_,_)::elts2) then removeEquations(elts2);	    	    
+	  case(IF_EQUATION(_,_,_)::elts2) then removeEquations(elts2);	    	    	    
+	  case(INITIAL_IF_EQUATION(_,_,_)::elts2) then removeEquations(elts2);	    	    	    	    
+	  case(ALGORITHM(_)::elts2) then removeEquations(elts2);
+	  case(INITIALALGORITHM(_)::elts2) then removeEquations(elts2);
+	  case((e as FUNCTION(path=_))::elts2) equation
+	    elts22 = removeEquations(elts2);
+    then e::elts22;
+	  case((e as EXTFUNCTION(path=_))::elts2) equation
+	    elts22 = removeEquations(elts2);
+    then e::elts22;	      
+	  case((e as EXTOBJECTCLASS(path=_))::elts2) equation
+	    elts22 = removeEquations(elts2);
+    then e::elts22;	            
+	  case(ASSERT(_)::elts2) then removeEquations(elts2);
+	  case(REINIT(_,_)::elts2) then removeEquations(elts2);	    
+	end matchcontinue;  
+  
+end removeEquations;
+
+public function removeVariables "Remove the variables in the list from the DAE"
+  input list<Element> dae;
+  input list<Exp.ComponentRef> vars;
+  output list<Element> outDae;
+algorithm
+  outDae := Util.listFold(vars,removeVariable,dae);
+end removeVariables;
+
+public function removeVariable "Remove the variable from the DAE"
+  input Exp.ComponentRef var;
+  input list<Element> dae;
+  output list<Element> outDae;
+algorithm
+   outDae := matchcontinue(var,dae)
+   			local Exp.ComponentRef cr;
+   			  list<Element> elist,elist2;
+   			  Element e,v;
+   			  Ident id;
+     case(var,{}) then {};
+     case(var,(v as VAR(componentRef = cr))::dae) equation
+       true = Exp.crefEqual(var,cr);
+     then dae;
+     case(var,COMP(id,DAE(elist))::dae) equation
+       elist2=removeVariable(var,elist);
+       dae = removeVariable(var,dae);
+     then COMP(id,DAE(elist2))::dae;
+     case(var,e::dae) equation
+         dae = removeVariable(var,dae);
+      then e::dae;        
+   end matchcontinue;
+end removeVariable;
+
+public function removeInnerAttrs "Remove the inner attribute of all vars in list"
+  input list<Element> dae;
+  input list<Exp.ComponentRef> vars;
+  output list<Element> outDae;
+algorithm
+  outDae := Util.listFold(vars,removeInnerAttr,dae);
+end removeInnerAttrs;
+
+public function removeInnerAttr "Remove the inner attribute from variable in the DAE"
+  input Exp.ComponentRef var;
+  input list<Element> dae;
+  output list<Element> outDae;
+algorithm
+   outDae := matchcontinue(var,dae)
+   			local Exp.ComponentRef cr;
+   			  list<Element> elist,elist2;
+   			  Element e,v;
+   			  Ident id;
+   			  Exp.ComponentRef cr;
+   			  VarKind kind;
+   			  VarDirection dir;
+    			Type tp;
+   			  Option<Exp.Exp> bind;
+   			  InstDims dim;
+    			StartValue start;
+    			Flow flow_;
+   			  list<Absyn.Path> cls;
+    			Option<VariableAttributes> attr;
+   			  Option<Absyn.Comment> cmt;
+    			Absyn.InnerOuter io,io2;
+   			  Types.Type ftp;
+     case(var,{}) then {};
+     case(var,VAR(cr,kind,dir,tp,bind,dim,start,flow_,cls,attr,cmt,io,ftp)::dae) equation
+       true = Exp.crefEqual(var,cr);
+       io2 = removeInnerAttribute(io);
+     then VAR(cr,kind,dir,tp,bind,dim,start,flow_,cls,attr,cmt,io2,ftp)::dae;
+     case(var,COMP(id,DAE(elist))::dae) equation
+       elist2=removeInnerAttr(var,elist);
+       dae = removeInnerAttr(var,dae);
+     then COMP(id,DAE(elist2))::dae;
+     case(var,e::dae) equation
+         dae = removeInnerAttr(var,dae);
+      then e::dae;        
+   end matchcontinue;
+end removeInnerAttr;
+
+protected function removeInnerAttribute "Help function to removeInnerAttr"
+	 input Absyn.InnerOuter io;
+	 output Absyn.InnerOuter ioOut;
+algorithm
+  ioOut := matchcontinue(io)
+    case(Absyn.INNER()) then Absyn.UNSPECIFIED();
+    case(Absyn.INNEROUTER()) then Absyn.OUTER();
+    case(io) then io;
+  end matchcontinue;
+end removeInnerAttribute;
+
+public function varCref " returns the component reference of a variable"
+input Element elt;
+output Exp.ComponentRef cr;
+algorithm
+  cr := matchcontinue(elt)
+    case(VAR(componentRef = cr)) then cr;
+  end matchcontinue;
+end varCref;
 
 public function printDAE "function: printDEA
  
@@ -2287,6 +2428,39 @@ algorithm
   elist := Util.listMatching(elist, cond);
 end getMatchingElements;
 
+public function getAllMatchingElements "function getAllMatchingElements
+  author:  PA 
+ 
+  Similar to getMatchingElements but traverses down in COMP elements also.
+"
+  input list<Element> elist;
+  input FuncTypeElementTo cond;
+  output list<Element> elist;
+  partial function FuncTypeElementTo
+    input Element inElement;
+  end FuncTypeElementTo;
+algorithm 
+  
+  elist := matchcontinue(elist,cond)
+  local list<Element> elist2; Element e;
+    case({},_) then {};
+    case(COMP(_,DAE(elist))::elist2,cond) equation
+      elist= getAllMatchingElements(elist,cond);
+      elist2 = getAllMatchingElements(elist2,cond);
+      elist2 = listAppend(elist,elist2);
+      then elist2;
+    case(e::elist,cond) equation
+      cond(e);
+      elist = getAllMatchingElements(elist,cond);
+    then e::elist;
+
+    case(e::elist,cond) equation
+      elist = getAllMatchingElements(elist,cond);
+    then elist;
+  end matchcontinue;
+end getAllMatchingElements;
+
+
 public function isParameter "function isParameter
   author: LS 
  
@@ -2299,6 +2473,34 @@ algorithm
     case VAR(varible = PARAM()) then (); 
   end matchcontinue;
 end isParameter;
+
+public function isInnerVar "function isInnerVar
+  author: PA 
+ 
+  Succeeds if element is a variable with prefix inner.
+"
+  input Element inElement;
+algorithm 
+  _:=
+  matchcontinue (inElement)
+    case VAR(innerOuter = Absyn.INNER()) then (); 
+    case VAR(innerOuter = Absyn.INNEROUTER()) then ();       
+  end matchcontinue;
+end isInnerVar;
+
+public function isOuterVar "function isOuterVar
+  author: PA 
+ 
+  Succeeds if element is a variable with prefix outer.
+"
+  input Element inElement;
+algorithm 
+  _:=
+  matchcontinue (inElement)
+    case VAR(innerOuter = Absyn.OUTER()) then (); 
+    case VAR(innerOuter = Absyn.INNEROUTER()) then ();       
+  end matchcontinue;
+end isOuterVar;
 
 public function isComp "function isComp
   author: LS 
@@ -2392,13 +2594,15 @@ algorithm
       Option<Absyn.Comment> comment;
       Absyn.Path newtype;
       Element x;
+			Absyn.InnerOuter io;
+			Types.Type ftp;
     case ({},_) then {}; 
-    case ((VAR(componentRef = cr,varible = kind,variable = dir,input_ = tp,one = bind,binding = dim,dimension = start,value = flow_,flow_ = lst,variableAttributesOption = dae_var_attr,absynCommentOption = comment) :: xs),newtype)
+    case ((VAR(componentRef = cr,varible = kind,variable = dir,input_ = tp,one = bind,binding = dim,dimension = start,value = flow_,flow_ = lst,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=ftp) :: xs),newtype)
       equation 
         xs_1 = setComponentType(xs, newtype);
       then
         (VAR(cr,kind,dir,tp,bind,dim,start,flow_,(newtype :: lst),
-          dae_var_attr,comment) :: xs_1);
+          dae_var_attr,comment,io,ftp) :: xs_1);
     case ((x :: xs),newtype)
       equation 
         xs_1 = setComponentType(xs, newtype);
@@ -2994,11 +3198,13 @@ algorithm
       list<Absyn.Path> i;
       Option<VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-    case (VAR(componentRef = a,varible = b,variable = c,input_ = d,one = e,binding = f,dimension = g,value = h,flow_ = i,variableAttributesOption = dae_var_attr,absynCommentOption = comment) :: lst)
+      Absyn.InnerOuter io;
+      Types.Type tp;
+    case (VAR(componentRef = a,varible = b,variable = c,input_ = d,one = e,binding = f,dimension = g,value = h,flow_ = i,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp) :: lst)
       equation 
         res = getVariableList(lst);
       then
-        (VAR(a,b,c,d,e,f,g,h,i,dae_var_attr,comment) :: res);
+        (VAR(a,b,c,d,e,f,g,h,i,dae_var_attr,comment,io,tp) :: res);
     case (_ :: lst)
       equation 
         res = getVariableList(lst);
@@ -3212,8 +3418,10 @@ algorithm
       DAElist dae_1,dae;
       Absyn.Path p;
       tuple<Types.TType, Option<Absyn.Path>> t;
+      Types.Type tp;
+      Absyn.InnerOuter io;
     case ({}) then {}; 
-    case ((VAR(componentRef = cr,varible = a,variable = b,input_ = c,one = d,binding = e,dimension = f,value = g,flow_ = h,variableAttributesOption = dae_var_attr,absynCommentOption = comment) :: elts))
+    case ((VAR(componentRef = cr,varible = a,variable = b,input_ = c,one = d,binding = e,dimension = f,value = g,flow_ = h,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp) :: elts))
       equation 
         str = Exp.printComponentRefStr(cr);
         str_1 = Util.stringReplaceChar(str, ".", "_");
@@ -3221,7 +3429,7 @@ algorithm
         d_1 = toModelicaFormExpOpt(d);
       then
         (VAR(Exp.CREF_IDENT(str_1,{}),a,b,c,d_1,e,f,g,h,dae_var_attr,
-          comment) :: elts_1);
+          comment,io,tp) :: elts_1);
     case ((DEFINE(componentRef = cr,exp = e) :: elts))
       local Exp.Exp e;
       equation 

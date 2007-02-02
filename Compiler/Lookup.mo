@@ -801,8 +801,6 @@ algorithm
   end matchcontinue;
 end lookupRecordConstructorClass;
 
-
-
 public function lookupVar "LS: when looking up qualified component reference, lookupVar only
 checks variables when looking for the prefix, i.e. for Constants.PI
 where Constants is a package and is implicitly instantiated, PI is not
@@ -908,7 +906,6 @@ algorithm
       Env.Cache cache;
     case (cache,((frame as Env.FRAME(class_1 = sid,list_2 = ht,list_4 = imps)) :: fs),ref)
       equation 
-        //print("lookup var in frame:");print(Env.printEnvStr({frame}));print("end lookupVar frame\n");
         (cache,attr,ty,binding) = lookupVarF(cache,ht, ref);
       then
         (cache,attr,ty,binding);
@@ -919,7 +916,6 @@ algorithm
         (cache,attr,ty,binding);
   end matchcontinue;
 end lookupVarInternal;
-
 
 
 protected function lookupVarInPackages "function: lookupVarInPackages
@@ -1126,13 +1122,14 @@ algorithm
       Types.Var fv;
       Option<tuple<SCode.Element, Types.Mod>> c;
       Env.InstStatus i;
-      list<Env.Frame> env;
+      list<Env.Frame> env,fs;
       Option<String> sid;
       Env.BinTree ht;
       String id;
       Env.Cache cache;
-    case (cache,(Env.FRAME(class_1 = sid,list_2 = ht) :: _),id) /* component environment */ 
+    case (cache,env as (Env.FRAME(class_1 = sid,list_2 = ht) :: fs),id) /* component environment */ 
       equation 
+        //print("lookupIdentLocal ");print(id);print(" , fs =");print(Env.printEnvStr(env));print("\n");
         (cache,fv,c,i,env) = lookupVar2(cache,ht, id);
       then
         (cache,fv,c,i,env);
@@ -1623,7 +1620,8 @@ algorithm
       list<SCode.Element> res,rest;
       SCode.Element comp;
       String id;
-      Boolean inner_,outer_,fl,repl,prot,f;
+      Boolean fl,repl,prot,f;
+      Absyn.InnerOuter io;
       list<Absyn.Subscript> d;
       SCode.Accessibility ac;
       SCode.Variability var;
@@ -1633,11 +1631,11 @@ algorithm
       Option<Absyn.Path> bc;
       Option<Absyn.Comment> comment;
       list<Env.Frame> env;
-    case (((comp as SCode.COMPONENT(component = id,inner_=inner_,outer_=outer_,final_ = fl,replaceable_ = repl,protected_ = prot,attributes = SCode.ATTR(arrayDim = d,flow_ = f,RW = ac,parameter_ = var,input_ = dir),typeSpec = tp,mod = mod,baseclass = bc,this = comment)) :: rest),env)
+    case (((comp as SCode.COMPONENT(component = id,innerOuter=io,final_ = fl,replaceable_ = repl,protected_ = prot,attributes = SCode.ATTR(arrayDim = d,flow_ = f,RW = ac,parameter_ = var,input_ = dir),typeSpec = tp,mod = mod,baseclass = bc,this = comment)) :: rest),env)
       equation 
         res = buildRecordConstructorElts(rest, env);
       then
-        (SCode.COMPONENT(id,inner_,outer_,fl,repl,prot,SCode.ATTR(d,f,ac,var,Absyn.INPUT()),tp,
+        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,ac,var,Absyn.INPUT()),tp,
           mod,bc,comment) :: res);
     case ({},_) then {}; 
   end matchcontinue;
@@ -1656,7 +1654,7 @@ protected function buildRecordConstructorResultElt "function: buildRecordConstru
   list<SCode.SubMod> submodlst;
 algorithm 
   submodlst := buildRecordConstructorResultMod(elts);
-  outElement := SCode.COMPONENT("result",false,false,false,false,false,
+  outElement := SCode.COMPONENT("result",Absyn.UNSPECIFIED(),false,false,false,
           SCode.ATTR({},false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),Absyn.TPATH(Absyn.IDENT(id),NONE),SCode.MOD(false,Absyn.NON_EACH(),submodlst,NONE),
           NONE,NONE);
 end buildRecordConstructorResultElt;

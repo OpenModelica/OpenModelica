@@ -325,12 +325,14 @@ algorithm
       Algorithm.Algorithm alg;
       DAE.ExternalDecl decl;
       DAE.Element e;
-    case (str,dae,DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = ty,one = SOME(exp),binding = inst_dims,dimension = start,value = flow_,flow_ = cl,variableAttributesOption = dae_var_attr,absynCommentOption = comment))
+      Absyn.InnerOuter io;
+      Types.Type ftp;
+    case (str,dae,DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = ty,one = SOME(exp),binding = inst_dims,dimension = start,value = flow_,flow_ = cl,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=ftp))
       equation 
         exp_1 = stringPrefixComponentRef(str, isParameterDaelist, dae, exp);
       then
         DAE.VAR(cr,vk,vd,ty,SOME(exp_1),inst_dims,start,flow_,cl,
-          dae_var_attr,comment);
+          dae_var_attr,comment,io,ftp);
     case (str,dae,DAE.DEFINE(componentRef = cr,exp = exp))
       equation 
         exp_1 = stringPrefixComponentRef(str, isParameterDaelist, dae, exp);
@@ -400,6 +402,53 @@ algorithm
         ();
   end matchcontinue;
 end isParameterDaelist;
+
+public function isOuter "Returns true if InnerOuter specification is outer or innerouter"
+	input Absyn.InnerOuter io;
+	output Boolean res;
+	algorithm
+	  res := matchcontinue(io)
+	    case(Absyn.OUTER()) then true;
+	    case(Absyn.INNEROUTER()) then true;
+	    case(_) then false;	  
+	  end matchcontinue;
+end isOuter;
+
+public function isInner "Returns true if InnerOuter specification is inner or innerouter"
+	input Absyn.InnerOuter io;
+	output Boolean res;
+	algorithm
+	  res := matchcontinue(io)
+	    case(Absyn.INNER()) then true;
+ 	    case(Absyn.INNEROUTER()) then true;
+	    case(_) then false;	  
+	  end matchcontinue;
+end isInner;
+
+public function isUnspecified "Returns true if InnerOuter specification is unspecified, 
+i.e. neither inner, outer or inner outer"
+	input Absyn.InnerOuter io;
+	output Boolean res;
+	algorithm
+	  res := matchcontinue(io)
+	    case(Absyn.UNSPECIFIED()) then true;
+	    case(_) then false;	  
+	  end matchcontinue;
+end isUnspecified;
+
+public function innerOuterEqual "Returns true if two InnerOuter's are equal"
+	input Absyn.InnerOuter io1;
+  input Absyn.InnerOuter io2;
+  output Boolean res;
+algorithm
+  res := matchcontinue(io1,io2)
+    case(Absyn.INNER(),Absyn.INNER()) then true;
+    case(Absyn.OUTER(),Absyn.OUTER()) then true;
+    case(Absyn.INNEROUTER(),Absyn.INNEROUTER()) then true;
+    case(Absyn.UNSPECIFIED(),Absyn.UNSPECIFIED()) then true;      
+    case(_,_) then false;
+  end matchcontinue;
+end innerOuterEqual;
 
 public function stringPrefixParams
   input DAE.DAElist inDAElist;

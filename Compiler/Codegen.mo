@@ -2918,6 +2918,8 @@ algorithm
       Option<Absyn.Comment> comment;
       Context context;
       Exp.Exp e;
+      Types.Type tp;
+      Absyn.InnerOuter io;
     case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = NONE,binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),tnr,context)
       equation 
         is_a = isArray(var);
@@ -2933,11 +2935,11 @@ algorithm
         cfn = cAddVariables(cEmptyFunction, {decl_str});
       then
         (cfn,tnr);
-    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = SOME(e),binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),tnr,context)
+    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = SOME(e),binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp)),tnr,context)
       equation 
         (cfn,tnr1) = generateVarDecl(
           DAE.VAR(id,vk,vd,typ,NONE,inst_dims,start,flow_,class_,
-          dae_var_attr,comment), tnr, context);
+          dae_var_attr,comment,io,tp), tnr, context);
       then
         (cfn,tnr1);
     case (e,_,_)
@@ -5249,15 +5251,16 @@ algorithm
       DAE.Element extvar,var;
       CFunction fn,restfn,resfn;
       list<DAE.Element> rest;
+      Types.Type tp;
     case ({},tnr) then (cEmptyFunction,tnr); 
     case ((var :: rest),tnr)
       equation 
-        DAE.VAR(componentRef = cref,varible = vk,variable = vd,input_ = ty,one = value,binding = dims,dimension = start) = var;
+        DAE.VAR(componentRef = cref,varible = vk,variable = vd,input_ = ty,one = value,binding = dims,dimension = start,fullType=tp) = var;
         true = isArray(var);
         cref_1 = varNameExternalCref(cref);
         dims_1 = listReverse(dims);
         extvar = DAE.VAR(cref_1,vk,vd,ty,value,dims_1,NONE,DAE.NON_FLOW(),{},NONE,
-          NONE);
+          NONE,Absyn.UNSPECIFIED(),tp);
         (fn,tnr_1) = generateVarDecl(extvar, tnr, CONTEXT(FUNCTION(),NORMAL()));
         (restfn,tnr_3) = generateExtcallCopydeclsF77(rest, tnr_1);
         resfn = cMergeFn(fn, restfn);

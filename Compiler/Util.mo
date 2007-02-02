@@ -950,6 +950,41 @@ algorithm
   end matchcontinue;
 end listFold_2;
 
+public function listFold_2r "function: listFold_2
+  Similar to listFold_2 but reversed argument order in function.
+"
+  input list<Type_a> lst;
+  input FoldFunc foldFunc;
+  input Type_b foldArg;
+  input Type_c extraArg;
+  output Type_b res;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  partial function FoldFunc
+    input Type_b foldArg;
+    input Type_a iterated;
+    input Type_c extraArg;
+    output Type_b foldArg;
+  end FoldFunc;
+algorithm 
+  res:=
+  matchcontinue (lst,foldFunc,foldArg,extraArg)
+    local
+      Type_b foldArg1,foldArg2;
+      Type_a l;
+      list<Type_a> lst;
+    case ({},foldFunc,foldArg,extraArg) then foldArg; 
+    case ((l :: lst),foldFunc,foldArg,extraArg)
+      equation 
+        foldArg1 = foldFunc(foldArg,l,extraArg);
+        foldArg2 = listFold_2r(lst, foldFunc,foldArg1, extraArg);
+      then
+        foldArg2;
+  end matchcontinue;
+end listFold_2r;
+
+
 public function listlistFoldMap "function: listlistFoldMap
   For example see Absyn.traverse_exp.
 "
