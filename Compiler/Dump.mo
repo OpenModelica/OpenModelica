@@ -3008,6 +3008,12 @@ algorithm
         str_1 = stringAppend(str, ";");
       then
         str_1;
+    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_RETURN(),comment = optcmt)) /* ALG_RETURN */ 
+      then
+        "return;";
+    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_BREAK(),comment = optcmt)) /* ALG_BREAK */ 
+      then
+        "break;";
     case (_,_)
       equation 
         Print.printErrorBuf("#Error, unparse_algorithm_str failed\n");

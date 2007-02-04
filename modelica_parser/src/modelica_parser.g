@@ -615,6 +615,8 @@ algorithm :
 		|	for_clause_a
 		|	while_clause
 		|	when_clause_a
+		|   BREAK
+		|   RETURN
 		|   FAILURE^ LPAR! algorithm RPAR!
 		|   EQUALITY^ LPAR! algorithm RPAR!		
 		)

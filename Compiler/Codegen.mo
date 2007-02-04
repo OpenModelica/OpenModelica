@@ -1930,6 +1930,7 @@ algorithm
   (res_var_fn,tnr_res) := generateResultVars(dae, ret_var, tnr_alg, CONTEXT(FUNCTION(),NORMAL()));
   cfn_1 := cMergeFn(mem_fn, var_fn);
   cfn_2 := cMergeFn(cfn_1, alg_fn);
+  cfn_2 := cAddStatements(cfn_2, {"", "_return:"});
   cfn_3 := cMergeFn(cfn_2, res_var_fn);
   cfn := cAddCleanups(cfn_3, {mem_stmt2,ret_stmt});
 end generateFunctionBody;
@@ -2521,6 +2522,18 @@ algorithm
         cfn = cMergeFns({cfn1,cfn2_1});
       then
         (cfn,tnr2);
+    case (Algorithm.RETURN(),tnr,_)
+      local Lib retStmt;
+      equation 
+        cfn = cAddStatements(cEmptyFunction, {"goto _return;"});
+      then
+        (cfn,tnr);
+    case (Algorithm.BREAK(),tnr,_)
+      local Lib retStmt;
+      equation 
+        cfn = cAddStatements(cEmptyFunction, {"break;"});
+      then
+        (cfn,tnr);
     case (stmt,_,_)
       local Algorithm.Statement stmt;
       equation 

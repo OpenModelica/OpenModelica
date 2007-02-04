@@ -128,6 +128,13 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
     Exp.Exp var "Variable"; 
     Exp.Exp value "Value "; 
   end REINIT;
+  
+  record RETURN
+  end RETURN;
+  
+  record BREAK
+  end BREAK;
+
 end Statement;
 
 public 

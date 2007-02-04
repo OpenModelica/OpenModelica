@@ -538,6 +538,12 @@ uniontype Algorithm "The Algorithm type describes one algorithm statement in an
     Algorithm equ;
   end ALG_EQUALITY;
 
+  record ALG_RETURN
+  end ALG_RETURN;
+
+  record ALG_BREAK
+  end ALG_BREAK;
+
 end Algorithm;
 
 public 

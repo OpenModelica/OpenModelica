@@ -115,6 +115,8 @@ tokens {
 	WHEN		= "when"	;
 	WHILE		= "while"	;
 	WITHIN		= "within" 	;
+	RETURN		= "return"  ;
+	BREAK		= "break"	;
 	/* MetaModelica keywords. I guess not all are needed here. */	
 	AS		= "as"	;
 	CASE		= "case"	;

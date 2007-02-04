@@ -2100,6 +2100,12 @@ algorithm
         Print.printBuf(");\n");
       then
         ();
+    case (Algorithm.BREAK(),i)
+      equation 
+        indent(i);
+        Print.printBuf("break;\n");
+      then
+        ();
     case (_,i)
       equation 
         indent(i);
@@ -2229,6 +2235,12 @@ algorithm
         cond_str = Exp.printExpStr(cond);
         msg_str = Exp.printExpStr(msg);
         str = Util.stringAppendList({s1,"assert(",cond_str,", ",msg_str,");\n"});
+      then
+        str;
+    case (Algorithm.BREAK(),i)
+      equation 
+        s1 = indentStr(i);
+        str = stringAppend(s1, "break;\n");
       then
         str;
     case (_,i)

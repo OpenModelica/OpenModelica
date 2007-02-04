@@ -1413,6 +1413,8 @@ algorithm returns [void* ast]
 			| ast = for_clause_a
 			| ast = while_clause
 			| ast = when_clause_a
+			| BREAK  { ast = Absyn__ALG_5fBREAK; }
+			| RETURN { ast = Absyn__ALG_5fRETURN; }
 			| #(FAILURE  ast = fa:algorithm)
 			| #(EQUALITY ast = eq:algorithm)			
 			)

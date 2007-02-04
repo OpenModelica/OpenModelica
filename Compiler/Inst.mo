@@ -7917,6 +7917,20 @@ algorithm
       then
         (cache,stmt);
         
+        // break
+	   case (cache,env,Absyn.ALG_BREAK,impl)
+      equation 
+        stmt = Algorithm.BREAK();
+      then
+        (cache,stmt);
+        
+        // return
+	   case (cache,env,Absyn.ALG_RETURN,impl)
+      equation 
+        stmt = Algorithm.RETURN();
+      then
+        (cache,stmt);
+        
     case (cache,env,alg,impl)
       equation 
         Debug.fprint("failtrace", "- inst_statement failed\n alg:");
