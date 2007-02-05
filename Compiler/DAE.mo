@@ -318,7 +318,7 @@ uniontype ExternalDecl
     Ident ident;
     list<ExtArg> external_ "external function name" ;
     ExtArg parameters "parameters" ;
-    String return "return type" ;
+    String returnType "return type" ;
     Option<Absyn.Annotation> language "language e.g. Library" ;
   end EXTERNALDECL;
 
@@ -731,7 +731,7 @@ algorithm
       list<ExtArg> extargs;
       ExtArg retty;
       Option<Absyn.Annotation> ann;
-    case EXTERNALDECL(ident = id,external_ = extargs,parameters = retty,return = lang,language = ann)
+    case EXTERNALDECL(ident = id,external_ = extargs,parameters = retty,returnType = lang,language = ann)
       equation 
         extargsstr = Dump.getStringList(extargs, dumpExtArgStr, ",");
         rettystr = dumpExtArgStr(retty);
@@ -3845,7 +3845,7 @@ algorithm
         exps = listAppend(exps1, exps2);
       then
         exps;
-    case EXTFUNCTION(path = path,dAElist = DAE(elementLst = elements),type_ = ty,externalDecl = EXTERNALDECL(ident = fname,external_ = args,parameters = retarg,return = lang,language = ann))
+    case EXTFUNCTION(path = path,dAElist = DAE(elementLst = elements),type_ = ty,externalDecl = EXTERNALDECL(ident = fname,external_ = args,parameters = retarg,returnType = lang,language = ann))
       local tuple<Types.TType, Option<Absyn.Path>> ty;
       equation 
         exps1 = getAllExps(elements);

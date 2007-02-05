@@ -1011,7 +1011,7 @@ algorithm
         fn_name_str = generateFunctionName(fpath);
         fn_name_str = stringAppend("_", fn_name_str);
         Debug.fprintl("cgtr", {"generating external function ",fn_name_str,"\n"});
-        DAE.EXTERNALDECL(ident = extfnname,external_ = extargs,parameters = extretarg,return = lang,language = ann) = extdecl;
+        DAE.EXTERNALDECL(ident = extfnname,external_ = extargs,parameters = extretarg,returnType = lang,language = ann) = extdecl;
         Debug.fprintln("cgtrdumpdae1", "Dumping DAE:");
         Debug.fcall("cgtrdumpdae1", DAE.dump2, DAE.DAE(orgdae));
         dae = Inst.initVarsModelicaOutput(orgdae);
@@ -2080,7 +2080,7 @@ algorithm
     case ({},rv,tnr,extdecl) then (cEmptyFunction,tnr); 
     case (((var as DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = t,one = e,binding = id,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)) :: r),rv,tnr,extdecl)
       equation 
-        DAE.EXTERNALDECL(return = "C") = extdecl;
+        DAE.EXTERNALDECL(returnType = "C") = extdecl;
         (cfn1,tnr1) = generateAllocOutvar(var, rv, tnr, CONTEXT(FUNCTION(),NORMAL()));
         (cfn2,tnr2) = generateAllocOutvarsExt(r, rv, tnr1, extdecl);
         cfn = cMergeFn(cfn1, cfn2);
@@ -2088,7 +2088,7 @@ algorithm
         (cfn,tnr2);
     case (((var as DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = t,one = e,binding = id,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)) :: r),rv,tnr,extdecl)
       equation 
-        DAE.EXTERNALDECL(return = "FORTRAN 77") = extdecl;
+        DAE.EXTERNALDECL(returnType = "FORTRAN 77") = extdecl;
         (cfn1,tnr1) = generateAllocOutvarF77(var, rv, tnr);
         (cfn2,tnr2) = generateAllocOutvarsExt(r, rv, tnr1, extdecl);
         cfn = cMergeFn(cfn1, cfn2);
@@ -5064,7 +5064,7 @@ algorithm
       Option<Absyn.Annotation> ann;
       list<tuple<Lib, tuple<Types.TType, Option<Absyn.Path>>>> args;
       tuple<Types.TType, Option<Absyn.Path>> restype;
-    case (fnname,outvars,retstr,invars,(extdecl as DAE.EXTERNALDECL(ident = extfnname,external_ = extargs,parameters = extretarg,return = lang,language = ann)),bivars,(Types.T_FUNCTION(funcArg = args,funcResultType = restype),_)) /* function name output variables return type input variables external declaration bidirectional vars function type */ 
+    case (fnname,outvars,retstr,invars,(extdecl as DAE.EXTERNALDECL(ident = extfnname,external_ = extargs,parameters = extretarg,returnType = lang,language = ann)),bivars,(Types.T_FUNCTION(funcArg = args,funcResultType = restype),_)) /* function name output variables return type input variables external declaration bidirectional vars function type */ 
       equation 
         tnr = 1;
         arg_strs = Util.listMap(args, generateFunctionArg);
@@ -5181,7 +5181,7 @@ algorithm
       DAE.ExternalDecl extdecl;
       DAE.ExtArg retarg;
       Option<Absyn.Annotation> ann;
-    case (vars,(extdecl as DAE.EXTERNALDECL(ident = n,external_ = arglist,parameters = retarg,return = lang,language = ann)),tnr)
+    case (vars,(extdecl as DAE.EXTERNALDECL(ident = n,external_ = arglist,parameters = retarg,returnType = lang,language = ann)),tnr)
       equation 
         Debug.fcall("cgtrdumpdaeextcall", DAE.dump2, DAE.DAE(vars));
         extdeclstr = DAE.dumpExtDeclStr(extdecl);
