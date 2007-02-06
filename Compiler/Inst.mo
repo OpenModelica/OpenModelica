@@ -3990,9 +3990,10 @@ algorithm
         dae1_1 = propagateAttributes(dae1, dir,io);
         subs = Exp.intSubscripts(idxs_1);
         cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,subs));
+        start = instStartBindingExp(mod, ty, idxs_1);
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
         dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flow_,acc,vt,dir), 
-          SOME(e), inst_dims, NONE, dae_var_attr, comment,io);
+          SOME(e), inst_dims, start, dae_var_attr, comment,io);
         dae = listAppend(dae1_1, dae3);
       then
         (cache,env_1,dae,csets_1,ty);
