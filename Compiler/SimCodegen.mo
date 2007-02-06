@@ -594,7 +594,7 @@ algorithm
         vStr = Exp.printComponentRefStr(varName);
         /* TODO: cfn1 might contain additional code  that is needed, also 0 must be propagated to prevent
         resuing same variable name */
-        (cfunc,vars1,cg_out) = Codegen.generateExpressions(args, cg_in, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.EXP_EXTERNAL()));        
+        (cfunc,vars1,cg_out) = Codegen.generateExpressions(args, cg_in, Codegen.extContext);        
         argsStr = Util.stringDelimitList(vars1,", ");
         str = Util.stringAppendList({"    ",vStr," = ",funcStr,"(",argsStr,");"});
         cfunc = Codegen.cAddStatements(cfunc,{str});
@@ -2471,7 +2471,7 @@ algorithm
       equation 
         // if exp is a string just increase the index;
         Exp.STRING() = Exp.typeof(e);
-        (cfunc,var,cg_id) = Codegen.generateExpression(e, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+        (cfunc,var,cg_id) = Codegen.generateExpression(e, cg_id, Codegen.simContext);
         assign = Util.stringAppendList({"localData->initialResiduals[i++] = 0;//",var,";"});
         cfunc = Codegen.cAddStatements(cfunc, {assign});
         (cfunc2,cg_id) = generateInitialResidualEqn(es, cg_id);
@@ -2480,7 +2480,7 @@ algorithm
         (cfn,cg_id);
     case ((DAELow.RESIDUAL_EQUATION(exp = e) :: es),cg_id)
       equation 
-        (cfunc,var,cg_id) = Codegen.generateExpression(e, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+        (cfunc,var,cg_id) = Codegen.generateExpression(e, cg_id, Codegen.simContext);
         assign = Util.stringAppendList({"localData->initialResiduals[i++] = ",var,";"});
         cfunc = Codegen.cAddStatements(cfunc, {assign});
         (cfunc2,cg_id) = generateInitialResidualEqn(es, cg_id);
@@ -2566,7 +2566,7 @@ algorithm
       equation 
         false = Exp.isConst(e);
         cr_str = Exp.printComponentRefStr(cr);
-        (exp_func,e_str,cg_id_1) = Codegen.generateExpression(e, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+        (exp_func,e_str,cg_id_1) = Codegen.generateExpression(e, cg_id, Codegen.simContext);
         (func,cg_id_2) = generateParameterAssignments(vs, cg_id_1);
         stmt = Util.stringAppendList({cr_str," = ",e_str,";"});
         func_1 = Codegen.cAddStatements(func, {stmt});
@@ -2645,7 +2645,7 @@ algorithm
         false = Exp.isConst(startv);
         (func,cg_id_1) = generateInitialAssignmentsFromStart(vars, cg_id);
         cr_str = Exp.printComponentRefStr(cr);
-        (exp_func,startv_str,cg_id_2) = Codegen.generateExpression(startv, cg_id_1, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+        (exp_func,startv_str,cg_id_2) = Codegen.generateExpression(startv, cg_id_1, Codegen.simContext);
         stmt = Util.stringAppendList({cr_str," = ",startv_str,";"});
         func_1 = Codegen.cAddStatements(func, {stmt});
         func_2 = Codegen.cMergeFns({exp_func,func_1});
@@ -3747,7 +3747,7 @@ algorithm
         cr = DAELow.varCref(v);
         varexp = Exp.CREF(cr,Exp.REAL());
         expr = Exp.solve(e1, e2, varexp);
-        (exp_func,var,cg_id_2) = Codegen.generateExpression(expr, cg_id_1, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+        (exp_func,var,cg_id_2) = Codegen.generateExpression(expr, cg_id_1, Codegen.simContext);
         indx_str = intString(indx);
         cr_str = Exp.printComponentRefStr(cr);
         stmt = Util.stringAppendList({cr_str," = ",var,";"});
@@ -4048,7 +4048,7 @@ algorithm
         // The variables solved for and the output variables of the algorithm must be the same.
         true = Util.listSetEqualP(solvedVars,algOutVars,Exp.crefEqual);
         
-        (s1,cg_id) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), 1, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+        (s1,cg_id) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), 1, Codegen.simContext);
       then (s1,cg_id,{});
 
         /* Error message, inverse algorithms not supported yet */
@@ -4184,7 +4184,7 @@ algorithm
       equation 
         true = Exp.crefEqual(cr, cr2);
         s1 = Exp.printComponentRefStr(eltcr);
-        (cfunc,s2,cg_id_1) = Codegen.generateExpression(e2, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+        (cfunc,s2,cg_id_1) = Codegen.generateExpression(e2, cg_id, Codegen.simContext);
         stmt = Util.stringAppendList({"copy_real_array_data_mem(&",s2,", &",s1,");"});
         func_1 = Codegen.cAddStatements(cfunc, {stmt});
       then
@@ -4193,7 +4193,7 @@ algorithm
       equation 
         true = Exp.crefEqual(cr, cr2);
         s1 = Exp.printComponentRefStr(eltcr);
-        (cfunc,s2,cg_id_1) = Codegen.generateExpression(e1, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+        (cfunc,s2,cg_id_1) = Codegen.generateExpression(e1, cg_id, Codegen.simContext);
         stmt = Util.stringAppendList({"copy_real_array_data_mem(&",s1,", &",s2,");"});
         func_1 = Codegen.cAddStatements(cfunc, {stmt});
       then
@@ -4202,7 +4202,7 @@ algorithm
       equation 
         cr2 = getVectorizedCrefFromExp(e2);
         s1 = Exp.printComponentRefStr(eltcr);
-        (cfunc,s2,cg_id_1) = Codegen.generateExpression(e1, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+        (cfunc,s2,cg_id_1) = Codegen.generateExpression(e1, cg_id, Codegen.simContext);
         stmt = Util.stringAppendList({"copy_real_array_data_mem(&",s1,", &",s2,");"});
         func_1 = Codegen.cAddStatements(cfunc, {stmt});
       then
@@ -4211,7 +4211,7 @@ algorithm
       equation 
         cr2 = getVectorizedCrefFromExp(e1);
         s1 = Exp.printComponentRefStr(eltcr);
-        (cfunc,s2,cg_id_1) = Codegen.generateExpression(e2, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+        (cfunc,s2,cg_id_1) = Codegen.generateExpression(e2, cg_id, Codegen.simContext);
         stmt = Util.stringAppendList({"copy_real_array_data_mem(&",s2,", &",s1,");"});
         func_1 = Codegen.cAddStatements(cfunc, {stmt});
       then
@@ -4628,7 +4628,7 @@ algorithm
         res_exp = Exp.BINARY(e1,Exp.SUB(tp),e2);
         res_exp_1 = Exp.simplify(res_exp);
         res_exp_2 = VarTransform.replaceExp(res_exp_1, repl, SOME(skipPreOperator));
-        (exp_func,var,cg_id_1) = Codegen.generateExpression(res_exp_2, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+        (exp_func,var,cg_id_1) = Codegen.generateExpression(res_exp_2, cg_id, Codegen.simContext);
         indx_str = intString(indx);
         indx_1 = indx + 1;
         (cfunc,cg_id_2) = generateOdeSystem2NonlinearResiduals2(rest, aeqns,indx_1, repl, cg_id_1);
@@ -4641,7 +4641,7 @@ algorithm
       equation 
         res_exp_1 = Exp.simplify(e);
         res_exp_2 = VarTransform.replaceExp(res_exp_1, repl, SOME(skipPreOperator));
-        (exp_func,var,cg_id_1) = Codegen.generateExpression(res_exp_2, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+        (exp_func,var,cg_id_1) = Codegen.generateExpression(res_exp_2, cg_id, Codegen.simContext);
         indx_str = intString(indx);
         indx_1 = indx + 1;
         (cfunc,cg_id_2) = generateOdeSystem2NonlinearResiduals2(rest, aeqns,indx_1, repl, cg_id_1);
@@ -4719,8 +4719,8 @@ algorithm
       Exp.Exp e1,e2;
     case (indx,e1 ,e2,cg_id)
       equation 
-        (cfunc1,s1,cg_id_1) = Codegen.generateExpression(e1, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
-				(cfunc2,s2,cg_id_2) = Codegen.generateExpression(e2, cg_id_1, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+        (cfunc1,s1,cg_id_1) = Codegen.generateExpression(e1, cg_id, Codegen.simContext);
+				(cfunc2,s2,cg_id_2) = Codegen.generateExpression(e2, cg_id_1, Codegen.simContext);
         cfunc = Codegen.cMergeFns({cfunc1,cfunc2});
         indxStr = intString(indx);
         stmt = Util.stringAppendList({"sub_real_array_data_mem(&",s1,", &",s2,", &res[",indxStr,"]);"});
@@ -4960,7 +4960,7 @@ algorithm
         rc = intString(c_1);
         n_rows_str = intString(n_rows);
         id_str = intString(unique_id);
-        (cfunc1,var,cg_id_1) = Codegen.generateExpression(exp, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+        (cfunc1,var,cg_id_1) = Codegen.generateExpression(exp, cg_id, Codegen.simContext);
         (cfunc,cg_id_2) = generateOdeSystem2PopulateA(jac, vars, eqn, unique_id, cg_id_1);
         stmt = Util.stringAppendList(
           {"set_matrix_elt(A",id_str,",",rs,", ",rc,", ",n_rows_str,
@@ -5044,7 +5044,7 @@ algorithm
         rhs_exp = DAELow.getEqnsysRhsExp(new_exp, v);
         rhs_exp_1 = Exp.UNARY(Exp.UMINUS(tp),rhs_exp);
         rhs_exp_2 = Exp.simplify(rhs_exp_1);
-        (exp_func,var,cg_id_1) = Codegen.generateExpression(rhs_exp_2, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+        (exp_func,var,cg_id_1) = Codegen.generateExpression(rhs_exp_2, cg_id, Codegen.simContext);
         index_str = intString(index);
         id_str = intString(unique_id);
         index_1 = index + 1;
@@ -5058,7 +5058,7 @@ algorithm
       equation 
         rhs_exp = DAELow.getEqnsysRhsExp(res_exp, v);
         rhs_exp_1 = Exp.simplify(rhs_exp);
-        (exp_func,var,cg_id_1) = Codegen.generateExpression(rhs_exp_1, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+        (exp_func,var,cg_id_1) = Codegen.generateExpression(rhs_exp_1, cg_id, Codegen.simContext);
         index_str = intString(index);
         id_str = intString(unique_id);
         index_1 = index + 1;
@@ -5315,7 +5315,7 @@ algorithm
         isNonState(kind);
         varexp = Exp.CREF(cr,Exp.REAL());
         expr = Exp.solve(e1, e2, varexp);
-        (exp_func,var,cg_id_1) = Codegen.generateExpression(expr, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+        (exp_func,var,cg_id_1) = Codegen.generateExpression(expr, cg_id, Codegen.simContext);
         cr_str = Exp.printComponentRefStr(cr);
         stmt = Util.stringAppendList({cr_str," = ",var,";"});
         res = Codegen.cAddStatements(exp_func, {stmt});
@@ -5332,7 +5332,7 @@ algorithm
         cr_1 = Exp.CREF_IDENT(id,{});
         varexp = Exp.CREF(cr_1,Exp.REAL());
         expr = Exp.solve(e1, e2, varexp);
-        (exp_func,var,cg_id_1) = Codegen.generateExpression(expr, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+        (exp_func,var,cg_id_1) = Codegen.generateExpression(expr, cg_id, Codegen.simContext);
         cr_str = Exp.printComponentRefStr(cr_1);
         stmt = Util.stringAppendList({cr_str," = ",var,";"});
         res = Codegen.cAddStatements(exp_func, {stmt});
@@ -5387,7 +5387,7 @@ algorithm
 				// solve an inverse problem of an algorithm section.
       true = Exp.crefEqual(DAELow.varCref(v),varOutput);
       alg = alg[indx + 1];
-      (cfunc,cg_id) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), 1, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+      (cfunc,cg_id) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), 1, Codegen.simContext);
       then (cfunc,cg_id,{});
         
         /* inverse Algorithm for single variable . */
@@ -6914,7 +6914,7 @@ algorithm
         e_1 = e - 1;
         DAELow.ALGORITHM(indx,inputs,outputs) = DAELow.equationNth(eqns, e_1);
         alg = alg[indx + 1];
-        (Codegen.CFUNCTION(_,_,_,_,_,_,stmt_strs,_),_) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), 1, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+        (Codegen.CFUNCTION(_,_,_,_,_,_,stmt_strs,_),_) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), 1, Codegen.simContext);
         res = Util.stringDelimitList(stmt_strs, "\n");
       then
         res;
@@ -7121,7 +7121,7 @@ algorithm
         e_1 = e - 1 "Algorithms Each algorithm should only be genated once." ;
         DAELow.ALGORITHM(indx,inputs,outputs) = DAELow.equationNth(eqns, e_1);
         alg = algs[indx + 1];
-        (cfn,cg_id_1) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+        (cfn,cg_id_1) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), cg_id, Codegen.simContext);
       then
         (cfn,cg_id_1);
     case (_,_,_,_,_,_)
@@ -7286,7 +7286,7 @@ algorithm
     case ((dae as DAE.DAE(elementLst = elements)),cr,(exp as Exp.CALL(path = path,expLst = args,tuple_ = (tuple_ as false),builtin = builtin)),origname,cg_id) /* varname expression orig. name cg var_id cg var_id */ 
       equation 
         cr_str = Exp.printComponentRefStr(cr);
-        (cfn,var,cg_id_1) = Codegen.generateExpression(exp, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+        (cfn,var,cg_id_1) = Codegen.generateExpression(exp, cg_id, Codegen.simContext);
         stmt = Util.stringAppendList({cr_str," = ",var,";\n"});
         cfn = Codegen.cAddStatements(cfn, {stmt});
       then
@@ -7300,7 +7300,7 @@ algorithm
     case (dae,cr,exp,origname,cg_id)
       equation 
         cr_str = Exp.printComponentRefStr(cr);
-        (cfn,var,cg_id_1) = Codegen.generateExpression(exp, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(),Codegen.NORMAL()));
+        (cfn,var,cg_id_1) = Codegen.generateExpression(exp, cg_id, Codegen.simContext);
         stmt = Util.stringAppendList({cr_str," = ",var,";\n"});
         cfn = Codegen.cAddStatements(cfn, {stmt});
       then

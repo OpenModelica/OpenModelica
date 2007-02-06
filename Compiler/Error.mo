@@ -188,6 +188,7 @@ public constant ErrorID DUPLICATE_ELEMENTS_NOT_IDENTICAL=90;
 public constant ErrorID PACKAGE_VARIABLE_NOT_CONSTANT=91;
 public constant ErrorID RECURSIVE_DEFINITION=92; 
 public constant ErrorID NOT_ARRAY_TYPE_IN_FOR_STATEMENT= 93;
+public constant ErrorID BREAK_OUT_OF_LOOP= 94;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
 public constant ErrorID BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER=502;
@@ -367,7 +368,9 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (ERROR_FLATTENING,TRANSLATION(),ERROR(),
           "Error occured while flattening model %s"),
 		      (NOT_ARRAY_TYPE_IN_FOR_STATEMENT, TRANSLATION(), ERROR(),
-		      "Expression %s in for-statement must be an array type"),    
+		      "Expression %s in for-statement must be an array type"),  
+		      (BREAK_OUT_OF_LOOP, GRAMMAR(), WARNING(),
+		      "A break statement not inside a loop"),  
           (DUPLICATE_ELEMENTS_NOT_IDENTICAL,TRANSLATION(),ERROR(),
           "Error duplicate elements (due to inherited elements) not identical, first element is: %s, second element is: %s"),
           (PACKAGE_VARIABLE_NOT_CONSTANT, TRANSLATION(),ERROR(),"Variable %s in package %s is not constant"),

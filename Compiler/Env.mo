@@ -238,7 +238,7 @@ end newFrame;
 
 public function openScope "function: openScope
  
-  Opening a new scope in the environment mans adding a new frame on
+  Opening a new scope in the environment means adding a new frame on
   top of the stack of frames. If the scope is not the top scope a classname
   of the scope should be provided such that a name for the scope can be
   derived, see name_scope.
