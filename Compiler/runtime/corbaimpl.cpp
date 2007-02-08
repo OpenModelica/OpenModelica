@@ -368,7 +368,7 @@ RML_BEGIN_LABEL(Corba__initialize)
       server = new OmcCommunication_impl(); 
   	  oid = poa->activate_object(server);
   	  ref = poa->id_to_reference (oid.in());
-  	  objref_file << /tmp/openmodelica." << user << ".objid";	  
+  	  objref_file << "/tmp/openmodelica." << user << ".objid";	  
   }
 
   str = orb->object_to_string (ref.in());
