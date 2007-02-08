@@ -60,8 +60,9 @@ extern "C" {
  * This variable is set in rtopts by function setCorbaSessionName(char* name);
  * system independent Corba Session Name
  */
-char* corbaSessionName = 0;
-
+extern "C" {
+char* corbaSessionName=0;
+}
 /* the file in which we have to dump the Corba IOR ID */
 std::ostringstream objref_file;
 
