@@ -361,11 +361,11 @@ algorithm
       Interactive.InteractiveStmts stmts;
       Interactive.InteractiveSymbolTable newst;
       /* Version requested using --version*/
-      case (_) 
-        equation
+    case (_) // try first to see if we had a version request among flags.
+      equation
         versionRequest();
         print(Settings.getVersionNr());
-        then ();
+      then ();
        
     case {f} /* A Modelica file .mo */ 
       local String s;

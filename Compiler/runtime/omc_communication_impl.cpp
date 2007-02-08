@@ -46,7 +46,7 @@ extern "C" {
 
 #include <windows.h>
 
-HANDLE clientlock;
+extern HANDLE clientlock;
 
 extern HANDLE omc_client_request_event;
 extern HANDLE omc_return_value_ready;
@@ -60,7 +60,6 @@ using namespace std;
 
 OmcCommunication_impl::OmcCommunication_impl()
 {
-	clientlock = CreateMutex(NULL, FALSE, "clientlock");
 }
 
 char* OmcCommunication_impl::sendExpression( const char* expr )

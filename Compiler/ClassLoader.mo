@@ -433,7 +433,6 @@ end loadSubpackageFiles;
 
 public function loadFile "function loadFile
   author: x02lucpo
- 
   load the file or the directory structure if the file is a
   package.mo
 "

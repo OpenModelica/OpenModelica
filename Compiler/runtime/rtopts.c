@@ -71,6 +71,14 @@ double bandwidth=0.0;
 int simulation_cg;
 int silent;
 
+/*
+ * @author adrpo
+ * @date 2007-02-08
+ * This variable is defined in corbaimpl.cpp and set 
+ * here by function setCorbaSessionName(char* name);
+ */
+extern char* corbaSessionName;
+
 void RTOpts_5finit(void)
 {
   type_info = 0;
@@ -84,7 +92,31 @@ void RTOpts_5finit(void)
   simulation_cg = 0;
   silent = 0;
   version_request = 0;
+  corbaSessionName = 0;
 }
+
+/* 
+ * @author adrpo
+ * this fuctions sets the name that should be appended to the Corba IOR file dumped by omc
+ * by default the file has the name: 
+ * - on Windows: /tmp/openmodelica.objid
+ * - on Linux  : /tmp/openmodelica.user.objid
+ * To this filename a ".$corba_session_name" is appended where
+ * $corba_session_name is set in this function if omc is called:
+ * ./omc +c=corba_session_name +d=interactiveCorba
+ * By default the corba_session_name is set to "".
+ * see more into corbaimpl.cpp function Corba__initialize
+ */
+static int setCorbaSessionName(char *name)
+{
+  int i;
+  int len=strlen(name);
+  if (len==0) return -1;
+
+  corbaSessionName = strdup(name);
+  return 0;
+}
+
 
 static int set_debug_flags(char *flagstr)
 {
@@ -212,6 +244,13 @@ RML_BEGIN_LABEL(RTOpts__args)
       case 'q':
 	silent = 1;
 	break;
+	  case 'c':
+	if (arg[2]!='=' || setCorbaSessionName(&(arg[3])) != 0) 
+	{
+	  fprintf(stderr, "# Flag Usage:  +c=corbaSessionName\n") ;
+	  RML_TAILCALLK(rmlFC);
+	}
+	break;	  
       case 'd':
 	if (arg[2]=='d') {
 	  debug_flag_info = 1;
