@@ -2204,6 +2204,8 @@ algorithm
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
         vars_2 = Util.listUnionElt("time", vars_1);
+        
+    
         (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env, 
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         value = System.readPtolemyplotDataset(filename, vars_2, 0);
@@ -2268,7 +2270,7 @@ algorithm
       local list<Exp.Exp> vars;
       then
         (cache,Values.STRING("Unknown error while plotting"),st);
-        
+   
     case (cache,env,
       Exp.CALL(
         path = Absyn.IDENT(name = "val"),
@@ -2284,18 +2286,26 @@ algorithm
         Real timeStamp;
         list<Values.Value> varValues, timeValues;
         list<Real> tV, vV; 
-        Real val; 
-        
+        Real val;
       equation 
-        var = Exp.printExpStr(Exp.CodeVarToCref(varName));      
-        (cache,Values.REAL(timeStamp),SOME(st)) = ceval(cache,env, varTimeStamp, true, SOME(st), NONE, msg);        
+        
+        {varName} = Util.listMap({varName},Exp.CodeVarToCref);
+        vars_1 = Util.listMap({varName}, Exp.printExpStr);
+        // Util.listMap0(vars_1,print);
+        
+        (cache,Values.REAL(timeStamp),SOME(st)) = ceval(cache,env, varTimeStamp, true, SOME(st), NONE, msg);
+        
         (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env, 
-          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg);
-        Values.ARRAY({Values.ARRAY(varValues)}) = System.readPtolemyplotDataset(filename, {var}, 0);
-        Values.ARRAY({Values.ARRAY(timeValues)}) = System.readPtolemyplotDataset(filename, {"time"}, 0);               
+        Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+
+        Values.ARRAY({Values.ARRAY(varValues)}) = System.readPtolemyplotDataset(filename, vars_1, 0);
+        Values.ARRAY({Values.ARRAY(timeValues)}) = System.readPtolemyplotDataset(filename, {"time"}, 0); 
+
+				
         tV = Values.valueReals(timeValues);
-        vV = Values.valueReals(varValues);      
+        vV = Values.valueReals(varValues);  
         val = System.getVariableValue(timeStamp, tV, vV);
+        
       then
         (cache,Values.REAL(val),st);
         
