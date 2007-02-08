@@ -361,14 +361,14 @@ RML_BEGIN_LABEL(Corba__initialize)
 	   * build the reference to store in the file
 	   */  
 	  ref = omcpoa->id_to_reference (oid.in());
-	  objref_file << tempPath << "openmodelica." << user << ".objid." << corbaSessionName;
+	  objref_file << "/tmp/openmodelica." << user << ".objid." << corbaSessionName;
   }  
   else /* we don't have a session name, start OMC normaly */
   {
       server = new OmcCommunication_impl(); 
   	  oid = poa->activate_object(server);
   	  ref = poa->id_to_reference (oid.in());
-  	  objref_file << tempPath << "openmodelica." << user << ".objid";	  
+  	  objref_file << /tmp/openmodelica." << user << ".objid";	  
   }
 
   str = orb->object_to_string (ref.in());
