@@ -97,6 +97,33 @@ OmcCommunication_impl* server;
 extern "C" {
 DWORD WINAPI runOrb(void* arg);
 
+void display_omc_error(DWORD lastError, LPTSTR lpszMessage)
+{ 
+    LPVOID lpMsgBuf;
+    LPVOID lpDisplayBuf;
+    
+    FormatMessage(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+        FORMAT_MESSAGE_FROM_SYSTEM |
+        FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL,
+        lastError,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPTSTR) &lpMsgBuf,
+        0, NULL );
+
+    lpDisplayBuf = (LPVOID)LocalAlloc(LMEM_ZEROINIT, 
+        (lstrlen((LPCTSTR)lpMsgBuf)+lstrlen((LPCTSTR)lpszMessage)+40)*sizeof(TCHAR)); 
+    wsprintf((LPTSTR)lpDisplayBuf, 
+        TEXT("%s failed with error %d:\n%s"), 
+        lpszMessage, lastError, lpMsgBuf); 
+    MessageBox(NULL, (LPCTSTR)lpDisplayBuf, TEXT("OpenModelica OMC Error"), MB_ICONERROR); 
+
+    LocalFree(lpMsgBuf);
+    LocalFree(lpDisplayBuf);
+    ExitProcess(lastError); 
+}
+
 void Corba_5finit(void)
 {
 
@@ -112,8 +139,11 @@ RML_BEGIN_LABEL(Corba__initialize)
   int argc=3;
   string omc_client_request_event_name 	= "omc_client_request_event";
   string omc_return_value_ready_name   	= "omc_return_value_ready";
-  string lock_name 						= "lock";
-  string clientlock_name 				= "clientlock";
+  string lock_name 						= "omc_lock";
+  string clientlock_name 				= "omc_clientlock";
+  DWORD lastError = 0;
+  char* errorMessage = "OpenModelica OMC could not be started.\nAnother OMC is already running.\n\n\
+Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit.\n\nCorba.initialize()";
 
   /* create the events and locks with different names if we have a corba session */
   if (corbaSessionName != NULL) /* yehaa, we have a session name */
@@ -124,31 +154,38 @@ RML_BEGIN_LABEL(Corba__initialize)
   	clientlock_name 				+= corbaSessionName;
   }
   omc_client_request_event = CreateEvent(NULL,FALSE,FALSE,omc_client_request_event_name.c_str());
-  if (omc_client_request_event == NULL) 
+  lastError = GetLastError();
+  if (omc_client_request_event == NULL || (omc_client_request_event != NULL && lastError == ERROR_ALREADY_EXISTS)) 
   {
-    fprintf(stderr, "CreateEvent '%s' error: %d\n", omc_client_request_event_name.c_str(), GetLastError());	
+  	display_omc_error(lastError, errorMessage);
+    fprintf(stderr, "CreateEvent '%s' error: %d\n", omc_client_request_event_name.c_str(), lastError);	
 	RML_TAILCALLK(rmlFC);
   }
   omc_return_value_ready = CreateEvent(NULL,FALSE,FALSE,omc_return_value_ready_name.c_str());
-  if (omc_return_value_ready == NULL) 
+  lastError = GetLastError();  
+  if (omc_return_value_ready == NULL && (omc_return_value_ready != NULL && lastError == ERROR_ALREADY_EXISTS)) 
   {
-    fprintf(stderr, "CreateEvent '%s' error: %d\n", omc_return_value_ready_name.c_str(), GetLastError());		
+  	display_omc_error(lastError, errorMessage);
+  	fprintf(stderr, "CreateEvent '%s' error: %d\n", omc_return_value_ready_name.c_str(), lastError);		
 	RML_TAILCALLK(rmlFC);
   }
   lock = CreateMutex(NULL, FALSE, lock_name.c_str());
-  if (lock == NULL)
+  lastError = GetLastError();  
+  if (lock == NULL || (lock != NULL && lastError == ERROR_ALREADY_EXISTS))
   {
+  	display_omc_error(lastError, errorMessage);
     fprintf(stderr, "CreateMutex '%s' error: %d\n", lock_name.c_str(), GetLastError());
 	RML_TAILCALLK(rmlFC);    
   }  
   clientlock = CreateMutex(NULL, FALSE, clientlock_name.c_str());
-  if (clientlock == NULL)
+  lastError = GetLastError();    
+  if (clientlock == NULL || (clientlock != NULL && lastError == ERROR_ALREADY_EXISTS))
   {
+  	display_omc_error(lastError, errorMessage);
     fprintf(stderr, "CreateMutex '%s' error: %d\n", clientlock_name.c_str(), GetLastError());
 	RML_TAILCALLK(rmlFC);    
   }  
   
-
   orb = CORBA::ORB_init(argc, dummyArgv, "mico-local-orb");
   poaobj = orb->resolve_initial_references("RootPOA");
   poa = PortableServer::POA::_narrow(poaobj);

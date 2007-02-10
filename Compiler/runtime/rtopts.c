@@ -70,6 +70,7 @@ double latency=0.0;
 double bandwidth=0.0;
 int simulation_cg;
 int silent;
+char* simulation_code_target = "gcc";
 
 /*
  * @author adrpo
@@ -90,6 +91,7 @@ void RTOpts_5finit(void)
   debug_none = 1;
   nproc = 0;
   simulation_cg = 0;
+  simulation_code_target = "gcc";
   silent = 0;
   version_request = 0;
   corbaSessionName = 0;
@@ -217,7 +219,20 @@ RML_BEGIN_LABEL(RTOpts__args)
     char *arg = RML_STRINGDATA(RML_CAR(args));
     if(strcmp(arg,"++version") == 0 || strcmp(arg,"++v") == 0) {
     	version_request = 1;
-    } else if (arg[0] == '+')
+    }
+    else if(strncmp(arg,"+target",7) == 0)
+    {
+    	if (strlen(arg) >= 7 && strcmp(&arg[7], "=gcc") == 0)
+    		simulation_code_target = "gcc";
+    	else if (strlen(arg) >= 7 && strcmp(&arg[7], "=msvc") == 0)
+    		simulation_code_target = "msvc";    	
+    	else
+    	{
+			fprintf(stderr, "# Wrong option: usage: omc [+target=gcc|msvc], default to 'gcc'.\n");
+			RML_TAILCALLK(rmlFC);
+    	}
+    } 
+    else if (arg[0] == '+')
     {
       if (strlen(arg) < 2)
       {
@@ -435,6 +450,14 @@ RML_BEGIN_LABEL(RTOpts__simulationCg)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__simulationCodeTarget)
+{
+  rmlA0 = mk_scon(simulation_code_target);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 
 RML_BEGIN_LABEL(RTOpts__versionRequest)
 {

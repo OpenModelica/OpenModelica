@@ -126,6 +126,12 @@ public function simulationCg
   external "C" ;
 end simulationCg;
 
+public function simulationCodeTarget
+  output String outCodeTarget;
+
+  external "C" ;
+end simulationCodeTarget;
+
 public function silent
   output Boolean outBoolean;
 

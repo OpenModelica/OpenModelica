@@ -758,6 +758,13 @@ algorithm
         _ = serverLoopCorba(symbolTable/*Interactive.emptySymboltable*/);
       then
         ();
+    case (_,symbolTable)
+      equation 
+        failure(Corba.initialize());
+        Print.printBuf("Failed to initialize Corba! Is another OMC already running?\n");
+        Print.printBuf("Exiting!\n");        
+      then
+        ();
   end matchcontinue;
 end interactivemodeCorba;
 
