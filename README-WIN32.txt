@@ -4,10 +4,12 @@
 
            
              Last update 2005-09-26 David Broman
-             Last update 2006-09-19 Adrian Pop
+             Last update 2007-02-10 Adrian Pop
 
 The following step-by-step guides explain how to compile the 
-Open Modelica Compiler using rml-mmc and Microsoft Visual Studio .NET 2003
+Open Modelica Compiler using:
+- rml-mmc
+- Microsoft Visual Studio .NET 2003 Pro, 2005 Express, 2005 Pro
 under Windows XP. 
 See the file:
 - README.Cygwin.or.Linux.txt 
@@ -17,15 +19,20 @@ See the file:
    OMDev:http://www.ida.liu.se/~adrpo/omc/omdev/mingw/ 
    which contains the gcc compiler, mico, antlr, rml packed togheter.
 
----------------------------------------------------------------------------
-       Compiling OMC using  Microsoft Visual Studio .NET 2003
----------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------
+       Compiling OMC using  Microsoft Visual Studio .NET 2003 Pro, 2005 Express, 2005 Pro
+------------------------------------------------------------------------------------------------
 
 1.  Install OMDev from http://www.ida.liu.se/~adrpo/omc/omdev/mingw/
-    Do all the steps in trunk\README-OMDev-MINGW.txt    
+    Do all the steps in trunk\README-OMDev-MINGW.txt
+    This is needed to build the simulation runtime.
     We consider OMDev installed into $(OMDEV) environment variable
 
-2.  Install MS Visual Studio .NET 2003
+2.  Install MS Visual Studio .NET one of these:  
+    - 2003 Pro
+    - 2005 Express (free)
+      + also install Platform SDK 
+    - 2005 Pro
 
 3.  In the windows control panel, select "system". Select the "Advanced"
     tab and click on the button "Environment Variables". 
@@ -34,6 +41,9 @@ See the file:
  
 4.  Open the visual studio solution located at path:
     trunk\Compiler\VC7\omc\omc.sln
+    - if opened with VS 2005 Express or Pro it will convert the project
+    - VS 2005 Express will not be able to build the Setup project
+      as there are no deployment projects available in this version.
 
 5. In the VS development environment, select from the menu:
     Build->Configuration Manager and select "Release" as the active
@@ -46,6 +56,7 @@ See the file:
 
 8. Copy:
     a) omc.exe from directory at step 7 to: C:\code\omc\trunk\build\bin
+       + this step is already automated
     b) $(OMDEV)\lib\mico-win32-msvc\mico2311.dll to C:\code\omc\trunk\build\bin
     
 9. To test omc.exe follow the step 11 in README-OMDev-MINGW.txt 
