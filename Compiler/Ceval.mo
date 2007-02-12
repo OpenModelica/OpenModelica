@@ -220,11 +220,14 @@ algorithm
     case "div" then cevalBuiltinDiv; 
     case "sin" then cevalBuiltinSin; 
     case "cos" then cevalBuiltinCos;
+    case "tan" then cevalBuiltinTan;
+    case "sinh" then cevalBuiltinSinh; 
+    case "cosh" then cevalBuiltinCosh;
+    case "tanh" then cevalBuiltinTanh;                    
     case "log" then cevalBuiltinLog;   
     case "arcsin" then cevalBuiltinAsin; 
     case "arccos" then cevalBuiltinAcos; 
     case "arctan" then cevalBuiltinAtan; 
-    case "tan" then cevalBuiltinTan; 
     case "integer" then cevalBuiltinInteger; 
     case "mod" then cevalBuiltinMod; 
     case "max" then cevalBuiltinMax; 
@@ -4272,6 +4275,40 @@ algorithm
   end matchcontinue;
 end cevalBuiltinSin;
 
+protected function cevalBuiltinSinh "function cevalBuiltinSin
+  author: PA
+ 
+  Evaluates the builtin sinh function.
+"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Exp.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      Real rv,rv_1;
+      list<Env.Frame> env;
+      Exp.Exp exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+    case (cache,env,{exp},impl,st,msg)
+      equation 
+        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
+        rv_1 = System.sinh(rv);
+      then
+        (cache,Values.REAL(rv_1),st);
+  end matchcontinue;
+end cevalBuiltinSinh;
+
 protected function cevalBuiltinCos "function cevalBuiltinCos
   author: LP
  
@@ -4305,6 +4342,40 @@ algorithm
         (cache,Values.REAL(rv_1),st);
   end matchcontinue;
 end cevalBuiltinCos;
+
+protected function cevalBuiltinCosh "function cevalBuiltinCos
+  author: PA
+ 
+  Evaluates the builtin cosh function.
+"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Exp.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      Real rv,rv_1;
+      list<Env.Frame> env;
+      Exp.Exp exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+    case (cache,env,{exp},impl,st,msg)
+      equation 
+        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
+        rv_1 = System.cosh(rv);
+      then
+        (cache,Values.REAL(rv_1),st);
+  end matchcontinue;
+end cevalBuiltinCosh;
 
 protected function cevalBuiltinLog "function cevalBuiltinLog
   author: LP
@@ -4375,6 +4446,40 @@ algorithm
         (cache,Values.REAL(rv_1),st);
   end matchcontinue;
 end cevalBuiltinTan;
+
+protected function cevalBuiltinTanh "function cevalBuiltinTan
+  author: PA
+ 
+  Evaluates the builtin tanh function.
+"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Exp.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      Real rv,sv,cv,rv_1;
+      list<Env.Frame> env;
+      Exp.Exp exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+    case (cache,env,{exp},impl,st,msg) /* tanh is not implemented in MetaModelica Compiler (MMC) for some strange reason. */ 
+      equation 
+        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
+         rv_1 = System.tanh(rv);
+      then
+        (cache,Values.REAL(rv_1),st);
+  end matchcontinue;
+end cevalBuiltinTanh;
 
 protected function cevalBuiltinAsin "function cevalBuiltinAsin
   author: PA

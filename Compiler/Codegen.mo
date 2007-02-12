@@ -2492,7 +2492,7 @@ algorithm
         array_type_str = expTypeStr(t, true);
         (cfn3,evar,tnr3) = generateExpression(e, tnr2, context);
         for_begin = Util.stringAppendList(
-          {"for (",tvar," = 0; ",tvar," < size_of_dimension_",
+          {"for (",tvar," = 1; ",tvar," <= size_of_dimension_",
           array_type_str,"(",evar,", 1); ","++",tvar,") {"});
         def_beg1 = Util.stringAppendList({"{\n  ",ident_type_str," ",i,";\n"});
         mem_begin = Util.stringAppendList({svar," = get_memory_state();"});
