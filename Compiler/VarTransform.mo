@@ -387,6 +387,7 @@ algorithm
       Exp.ComponentRef cr;
       Integer indx;
       list<Exp.Exp> expl,expl1,expl2;
+      DAELow.WhenEquation whenEqn,whenEqn1;
     case ({},_) then {}; 
     case ((DAELow.ARRAY_EQUATION(indx,expl)::es),repl)
       equation
@@ -423,6 +424,14 @@ algorithm
         es_1 = replaceEquations(es, repl);
       then
         (DAELow.RESIDUAL_EQUATION(e_2) :: es_1);
+
+    case ((DAELow.WHEN_EQUATION(whenEqn) :: es),repl)
+      equation 
+				whenEqn1 = replaceWhenEquation(whenEqn,repl);
+        es_1 = replaceEquations(es, repl);
+      then
+        (DAELow.WHEN_EQUATION(whenEqn1) :: es_1);        
+        
     case ((a :: es),repl)
       equation 
         es_1 = replaceEquations(es, repl);
@@ -430,6 +439,33 @@ algorithm
         (a :: es_1);
   end matchcontinue;
 end replaceEquations;
+
+protected function replaceWhenEquation "Replaces variables in a when equation"
+	input DAELow.WhenEquation whenEqn;
+  input VariableReplacements repl;
+  output DAELow.WhenEquation outWhenEqn;
+algorithm
+  outWhenEqn := matchcontinue(whenEqn,repl)
+  local Integer i;
+    Exp.ComponentRef cr,cr1;
+    Exp.Exp e,e1,e2;
+    Exp.Type tp;
+    case (DAELow.WHEN_EQ(i,cr,e),repl) equation
+        e1 = replaceExp(e, repl, NONE);
+        e2 = Exp.simplify(e1);
+        Exp.CREF(cr1,_) = replaceExp(Exp.CREF(cr,Exp.OTHER()),repl,NONE);
+    then DAELow.WHEN_EQ(i,cr1,e2);
+		
+			// Replacements makes cr negative, a = -b
+	  case (DAELow.WHEN_EQ(i,cr,e),repl) equation
+        Exp.UNARY(Exp.UMINUS(tp),Exp.CREF(cr1,_)) = replaceExp(Exp.CREF(cr,Exp.OTHER()),repl,NONE);
+        e1 = replaceExp(e, repl, NONE);
+        e2 = Exp.simplify(Exp.UNARY(Exp.UMINUS(tp),e1));
+    then DAELow.WHEN_EQ(i,cr1,e2);      
+        
+  end matchcontinue;
+end replaceWhenEquation;
+
 
 public function replaceMultiDimEquations "function: replaceMultiDimEquations
  
