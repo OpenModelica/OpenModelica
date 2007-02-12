@@ -45,3 +45,10 @@ fdjac1.f		- helper routines
 enorm.f			- helper routines 
 dpmpar.f		- helper routines 
 dogleg.f		- helper routines 
+nelmead.f		- least square solver for initialization 
+newuoa.f		- least square solver for initialization
+newuob.f 		- least square solver for initialization
+bigden.f		- helper routines (used in newoub.f)
+biglag.f		- helper routines (used in newoub.f)
+trsapp.f		- helper routines (used in newoub.f)
+update.f		- helper routines (used in dassl.f, newoub.f)
