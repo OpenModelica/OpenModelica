@@ -4509,7 +4509,7 @@ algorithm
         name_1 = Exp.crefStripLastSubs(name);
         origname = Exp.printComponentRefStr(name_1);
         newname = Exp.CREF_IDENT(origname,subs);
-        kind_1 = lowerVarkind(kind, tp, newname, dir, flow_, states);
+        kind_1 = lowerVarkind(kind, tp, newname, dir, flow_, states,dae_var_attr);
         bind_1 = lowerBinding(bind);
         start_1 = lowerBinding(start);
       then
@@ -4636,46 +4636,52 @@ protected function lowerVarkind "function: lowerVarkind
   input DAE.VarDirection inVarDirection;
   input DAE.Flow inFlow;
   input BinTree inBinTree;
+  input option<DAE.VariableAttributes> daeAttr;
   output VarKind outVarKind;
 algorithm 
   outVarKind:=
-  matchcontinue (inVarKind,inType,inComponentRef,inVarDirection,inFlow,inBinTree)
+  matchcontinue (inVarKind,inType,inComponentRef,inVarDirection,inFlow,inBinTree,daeAttr)
     local
       Exp.ComponentRef v,cr;
       BinTree states;
       DAE.VarDirection dir;
       DAE.Flow flow_;
-    case (DAE.VARIABLE(),_,v,_,_,states)
+      // States appear differentiated among equations
+    case (DAE.VARIABLE(),_,v,_,_,states,daeAttr)
       equation 
         _ = treeGet(states, v);
       then
         STATE();
-    case (DAE.VARIABLE(),DAE.BOOL(),cr,dir,flow_,_)
+       // Or states have StateSelect.always 
+    case (DAE.VARIABLE(),_,v,_,_,states,SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,_,_,SOME(DAE.ALWAYS()))))
+    then STATE();
+        
+    case (DAE.VARIABLE(),DAE.BOOL(),cr,dir,flow_,_,_)
       equation 
         failure(topLevelInput(cr, dir, flow_));
       then
         DISCRETE();
-    case (DAE.DISCRETE(),DAE.BOOL(),cr,dir,flow_,_)
+    case (DAE.DISCRETE(),DAE.BOOL(),cr,dir,flow_,_,_)
       equation 
         failure(topLevelInput(cr, dir, flow_));
       then
         DISCRETE();
-    case (DAE.VARIABLE(),DAE.INT(),cr,dir,flow_,_)
+    case (DAE.VARIABLE(),DAE.INT(),cr,dir,flow_,_,_)
       equation 
         failure(topLevelInput(cr, dir, flow_));
       then
         DISCRETE();
-    case (DAE.DISCRETE(),DAE.INT(),cr,dir,flow_,_)
+    case (DAE.DISCRETE(),DAE.INT(),cr,dir,flow_,_,_)
       equation 
         failure(topLevelInput(cr, dir, flow_));
       then
         DISCRETE();
-    case (DAE.VARIABLE(),_,cr,dir,flow_,_)
+    case (DAE.VARIABLE(),_,cr,dir,flow_,_,_)
       equation 
         failure(topLevelInput(cr, dir, flow_));
       then
         VARIABLE();
-    case (DAE.DISCRETE(),_,cr,dir,flow_,_)
+    case (DAE.DISCRETE(),_,cr,dir,flow_,_,_)
       equation 
         failure(topLevelInput(cr, dir, flow_));
       then
@@ -6908,7 +6914,7 @@ algorithm
         (dae,m,mt,nv,nf,deqns) = differentiateEqns(dae, m, mt, nv, nf, eqns_1);
         (state,stateno) = selectDummyState(states, stateindx, dae, m, mt);
         //print("Selected ");print(Exp.printComponentRefStr(state));print(" as dummy state\n");
-       // print(" From candidates:");print(Util.stringDelimitList(Util.listMap(states,Exp.printComponentRefStr),", "));print("\n");
+       //print(" From candidates:");print(Util.stringDelimitList(Util.listMap(states,Exp.printComponentRefStr),", "));print("\n");
         dae = propagateDummyFixedAttribute(dae, eqns_1, state, stateno);
         (dummy_der,dae) = newDummyVar(state, dae)  ;
         //print("Chosen dummy: ");print(Exp.printComponentRefStr(dummy_der));print("\n");

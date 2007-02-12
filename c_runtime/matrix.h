@@ -110,8 +110,8 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
     		int i; \
     		modelErrorCode=ERROR_NONLINSYS; \
     		printf("error solving nonlinear system nr. %d at time %f\n",no,time); \
-    	    if (sim_verbose& LOG_NONLIN_SYS) { \
-    	    	for (i = 0; i<no; i++) { \
+    	    if (sim_verbose & LOG_NONLIN_SYS) { \
+    	    	for (i = 0; i<n; i++) { \
     	    	printf(" residual[%d] = %f\n",i,nls_fvec[i]); \
     	    	printf(" x[%d] = %f\n",i,nls_x[i]); \
     	    	} \
