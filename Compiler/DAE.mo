@@ -2083,7 +2083,7 @@ algorithm
         indent(i);
         Print.printBuf("when ");
         Exp.printExp(e);
-        Print.printBuf(" do\n");
+        Print.printBuf(" then\n");
         i_1 = i + 2;
         ppStmtList(stmts, i_1);
         indent(i);
@@ -2104,6 +2104,17 @@ algorithm
       equation 
         indent(i);
         Print.printBuf("break;\n");
+      then
+        ();
+    case (Algorithm.REINIT(e1,e2),i)
+           local Exp.Exp e1,e2;
+      equation 
+        indent(i);
+        Print.printBuf("reinit(");
+        Exp.printExp(e1); 
+        Print.printBuf(",");
+        Exp.printExp(e2);
+        Print.printBuf(");\n");         
       then
         ();
     case (_,i)
@@ -2243,6 +2254,14 @@ algorithm
         str = stringAppend(s1, "break;\n");
       then
         str;
+    case (Algorithm.REINIT(e1,e2),i)
+      local Exp.Exp e1,e2; String e1_str,e2_str;
+        equation
+          s1 = indentStr(i);
+          e1_str = Exp.printExpStr(e1);
+          e2_str = Exp.printExpStr(e2);
+          str = Util.stringAppendList({s1,"reinit(",e1_str,", ",e2_str,");\n"});
+        then str;
     case (_,i)
       equation 
         s1 = indentStr(i);
