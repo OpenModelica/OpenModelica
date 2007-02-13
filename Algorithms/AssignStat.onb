@@ -16,17 +16,16 @@ protected
   Real y1 := cos(1.84) + x - 1.2E-2;
 algorithm
   res := y1;
-end foo;    
-</Input>
+end foo;    </Input>
     <Output>Ok</Output>
    </InputCell>
    <GroupCell closed="false" >
     <TextCell style="Section" >
-     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Simulation of foo&lt;/p>&lt;/body>&lt;/html></Text>
+     <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:18pt; font-weight:600; color:#000000;">Calling foo&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
     <InputCell style="Input" closed="false" >
-     <Input>foo(3.0)  //??? Error, wrong result</Input>
-     <Output>0.0</Output>
+     <Input>foo(3.0)  //??? Error, wrong result, should be 1.722 - Error if using default values or declaration assignments</Input>
+     <Output>5.28326e-308</Output>
     </InputCell>
    </GroupCell>
   </GroupCell>

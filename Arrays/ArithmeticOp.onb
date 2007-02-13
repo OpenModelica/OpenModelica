@@ -45,8 +45,8 @@ end AddSub2;  </Input>
      <Output>{{1,1},{2,2}}</Output>
     </InputCell>
     <InputCell style="Input" closed="false" >
-     <Input>2.0*{{1, 1}, {2, 2}}  // ??Error - no value interactively</Input>
-     <Output>[done]</Output>
+     <Input>2.0*{{1, 1}, {2, 2}}  // Works</Input>
+     <Output>{{2.0,2.0},{4.0,4.0}}</Output>
     </InputCell>
     <InputCell style="Input" closed="false" >
      <Input>{{1, 1}, {2, 2}} + {{1, 2}, {3, 4}}   // ??Error - no value  interactively</Input>
@@ -89,7 +89,7 @@ end record</Output>
     </TextCell>
     <InputCell style="Input" closed="false" >
      <Input>class Div
-  Real Div1[1, 3], Div2, Div3;
+  Real[3] Div1, Div2, Div3;
 equation
   Div1 = {2, 4, 6} / 2;                  // Result: {1, 2, 3}
   Div2 = 6 / {1, 2, 3};                  // Not allowed!
@@ -99,7 +99,7 @@ end Div;</Input>
     </InputCell>
     <InputCell style="Input" closed="false" >
      <Input>class Div2
-  Real Div1[1, 3];
+  Real Div1[3];
 equation
   Div1 = {2, 4, 6} / 2;                  // Result: {1, 2, 3}
 end Div2;</Input>
@@ -113,19 +113,20 @@ end Div2;</Input>
       <Input>simulate( Div )  //Error in model</Input>
       <Output>record
     resultFile = "Simulation failed.
-Type mismatch in equation {{Div1[1,1],Div1[1,2],Div1[1,3]}}={1.0,2.0,3.0} of type Real[1, 3]=Real[3]
+Cannot resolve type of expression 6/{1,2,3} (expressions :6, {1,2,3} types: Integer, Integer[3])
 Error occured while flattening model Div
 "
 end record</Output>
      </InputCell>
      <InputCell style="Input" closed="false" >
-      <Input>simulate( Div2 )    //??Error - not yet implemented</Input>
+      <Input>simulate( Div2 )</Input>
       <Output>record
-    resultFile = "Simulation failed.
-Type mismatch in equation {{Div1[1,1],Div1[1,2],Div1[1,3]}}={1.0,2.0,3.0} of type Real[1, 3]=Real[3]
-Error occured while flattening model Div2
-"
+    resultFile = "Div2_res.plt"
 end record</Output>
+     </InputCell>
+     <InputCell style="Input" closed="false" >
+      <Input>val(Div1[2],0.)</Input>
+      <Output>2.0</Output>
      </InputCell>
     </GroupCell>
    </GroupCell>
@@ -153,6 +154,10 @@ end Multiplication;  </Input>
      <Input>{{1, 2}, {3, 4}} * {1, 2}  //??Error - no value interactively</Input>
      <Output>[done]</Output>
     </InputCell>
+    <InputCell style="Input" closed="false" >
+     <Input>{1, 2, 3} * [1; 2; 10]</Input>
+     <Output>{35}</Output>
+    </InputCell>
     <GroupCell closed="false" >
      <TextCell style="Subsection" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of Multiplication&lt;/p>&lt;/body>&lt;/html></Text>
@@ -163,9 +168,14 @@ end Multiplication;  </Input>
     resultFile = "Multiplication_res.plt"
 end record</Output>
      </InputCell>
-     <TextCell style="Text" >
-      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">??val should be used to look at results&lt;/p>&lt;/body>&lt;/html></Text>
-     </TextCell>
+     <InputCell style="Input" closed="false" >
+      <Input>val(m1[2],0.)</Input>
+      <Output>4.0</Output>
+     </InputCell>
+     <InputCell style="Input" closed="false" >
+      <Input>val(m3,0.)</Input>
+      <Output>11.0</Output>
+     </InputCell>
     </GroupCell>
    </GroupCell>
    <GroupCell closed="false" >
@@ -175,7 +185,7 @@ end record</Output>
     <TextCell style="Text" >
      <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">Array exponentiation is the same as repeated matrix multiplication and is therefore only defined when the first operand is a square matrix and the second operand is a non-negative integer.&lt;/p>&lt;/body>&lt;/html></Text>
     </TextCell>
-    <InputCell style="Input" closed="true" >
+    <InputCell style="Input" closed="false" >
      <Input>class Exp
   Real e1[2, 2];
   Real e2[2, 2];
@@ -183,16 +193,19 @@ equation
   e1 = {{1, 2}, {1, 2}}  ^ 0;        // Result: {{1, 0}, {0, 1}}
   e2 = [1, 2; 1, 2]  ^ 2;            // Result: {{3, 6}, {3, 6}}
 end Exp;</Input>
-     <Output></Output>
+     <Output>Ok</Output>
     </InputCell>
     <GroupCell closed="false" >
      <TextCell style="Subsection" >
       <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times; font-size:14pt; font-weight:600; color:#000000;">Simulation of Exponentiation&lt;/p>&lt;/body>&lt;/html></Text>
      </TextCell>
      <InputCell style="Input" closed="false" >
-      <Input>simulate( Exp )</Input>
+      <Input>simulate( Exp )  //??Error</Input>
       <Output>record
-    resultFile = "Exp_res.plt"
+    resultFile = "Simulation failed.
+Cannot resolve type of expression {{1,2},{1,2}}^0 (expressions :{{1,2},{1,2}}, 0 types: Integer[2, 2], Integer)
+Error occured while flattening model Exp
+"
 end record</Output>
      </InputCell>
      <TextCell style="Text" >
