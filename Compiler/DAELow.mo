@@ -516,13 +516,6 @@ algorithm
   end matchcontinue;
 end dumpDAELowEqnList2;
 
-
-
-
-
-
-
-
 public function lower "function: lower
  
   This function translates a DAE, which is the result from instantiating a 
@@ -3823,14 +3816,27 @@ algorithm
         knvars_1 = addVar(v_1, knvars);
       then
         (vars,knvars_1,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
-    case (DAE.DAE(elementLst = ((e as DAE.EQUATION(exp = e1,scalar = e2)) :: xs)),states,whenclauses) /* scalar equations */ 
+
+      /* tuple equations are rewritten to algorihm tuple assign. */ 
+    case (DAE.DAE(elementLst = ((e as DAE.EQUATION(exp = e1,scalar = e2)) :: xs)),states,whenclauses) 
+      equation 
+        a = lowerTupleEquation(e);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls) 
+        	= lower2(DAE.DAE(xs), states, whenclauses);
+      then
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,a::algs,whenclauses_1,extObjCls);
+
+        /* scalar equations */ 
+    case (DAE.DAE(elementLst = ((e as DAE.EQUATION(exp = e1,scalar = e2)) :: xs)),states,whenclauses) 
       equation 
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls) 
         = lower2(DAE.DAE(xs), states, whenclauses);
         e_1 = lowerEqn(e);
       then
         (vars,knvars,extVars,(e_1 :: eqns),reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
-    case (DAE.DAE(elementLst = ((e as DAE.ARRAY_EQUATION(dimension = ds,exp = e1,array = e2)) :: xs)),states,whenclauses) /* array equations */ 
+
+        /* array equations */ 
+    case (DAE.DAE(elementLst = ((e as DAE.ARRAY_EQUATION(dimension = ds,exp = e1,array = e2)) :: xs)),states,whenclauses) 
       local MultiDimEquation e_1;
       equation 
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls) 
@@ -3838,6 +3844,8 @@ algorithm
         e_1 = lowerArrEqn(e);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,(e_1 :: aeqns),algs,whenclauses_1,extObjCls);
+
+        /* When equations */        
     case (DAE.DAE(elementLst = ((e as DAE.WHEN_EQUATION(condition = c,equations = eqns,elsewhen_ = NONE)) :: xs)),states,whenclauses)
       equation 
         (vars1,knvars,extVars,eqns1,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls) 
@@ -3848,6 +3856,8 @@ algorithm
         eqns = listAppend(eqns1, eqns2);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_2,extObjCls);
+        
+        /* initial equations*/
     case (DAE.DAE(elementLst = ((e as DAE.INITIALEQUATION(exp1 = e1,exp2 = e2)) :: xs)),states,whenclauses)
       equation 
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls) 
@@ -3855,12 +3865,16 @@ algorithm
         e_1 = lowerEqn(e);
       then
         (vars,knvars,extVars,eqns,reqns,(e_1 :: ieqns),aeqns,algs,whenclauses_1,extObjCls);
+        
+        /* Algorithm */
     case (DAE.DAE(elementLst = (DAE.ALGORITHM(algorithm_ = a) :: xs)),states,whenclauses)
       equation 
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls) 
         = lower2(DAE.DAE(xs), states, whenclauses);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,(a :: algs),whenclauses_1,extObjCls);
+        
+        /* flat class / COMP */
     case (DAE.DAE(elementLst = (DAE.COMP(dAElist = dae) :: xs)),states,whenclauses)
       equation 
         (vars1,knvars1,extVars1,eqns1,reqns1,ieqns1,aeqns1,algs1,whenclauses_1,extObjCls1) = lower2(dae, states, whenclauses);
@@ -3876,18 +3890,23 @@ algorithm
         extObjCls = listAppend(extObjCls1,extObjCls2);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_2,extObjCls);
+        
+        /* If equation */
     case (DAE.DAE(elementLst = (DAE.IF_EQUATION(condition1 = _) :: xs)),states,whenclauses)
       equation 
         Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, 
           {"if-equations","rewrite equations using if-expressions"});
       then
         fail();
+        /* Initial if equation */
     case (DAE.DAE(elementLst = (DAE.INITIAL_IF_EQUATION(condition1 = _) :: xs)),states,whenclauses)
       equation 
         Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, 
           {"if-equations","rewrite equations using if-expressions"});
       then
         fail();
+        
+        /* assert */
     case (DAE.DAE(elementLst = (DAE.ASSERT(exp = _) :: xs)),states,whenclauses)
       local
         Variables v;
@@ -3911,6 +3930,26 @@ algorithm
         fail();
   end matchcontinue;
 end lower2;
+
+protected function lowerTupleEquation "Lowers a tuple equation, e.g. (a,b) = foo(x,y)
+by transforming it to an algorithm (TUPLE_ASSIGN), e.g. (a,b) := foo(x,y);
+
+author: PA
+"
+	input DAE.Element eqn;
+	output Algorithm.Algorithm alg;
+algorithm
+  alg := matchcontinue(eqn)
+    local Exp.Exp e1,e2;
+      list<Exp.Exp> expl;
+      /* Only succeds for tuple equations, i.e. (a,b,c) = foo(x,y,z) or foo(x,y,z) = (a,b,c) */
+    case(DAE.EQUATION(Exp.TUPLE(expl),e2 as Exp.CALL(path =_))) 
+    then Algorithm.ALGORITHM({Algorithm.TUPLE_ASSIGN(Exp.OTHER(),expl,e2)});
+      
+    case(DAE.EQUATION(e2 as Exp.CALL(path =_),Exp.TUPLE(expl))) 
+    then Algorithm.ALGORITHM({Algorithm.TUPLE_ASSIGN(Exp.OTHER(),expl,e2)});
+  end matchcontinue;  
+end lowerTupleEquation;
 
 protected function lowerMultidimeqns "function: lowerMultidimeqns
   author: PA

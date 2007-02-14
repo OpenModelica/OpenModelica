@@ -4042,12 +4042,10 @@ algorithm
       equation 
         (DAELow.ALGORITHM(indx,_,algOutExpVars) :: _) = DAELow.equationList(eqns);
         alg = al[indx + 1];
-        solvedVars = Util.listMap(DAELow.varList(vars),DAELow.varCref);
+        solvedVars = Util.listMap(DAELow.varList(vars),DAELow.varCref);        
         algOutVars = Util.listMap(algOutExpVars,Exp.expCref);
-        
         // The variables solved for and the output variables of the algorithm must be the same.
         true = Util.listSetEqualP(solvedVars,algOutVars,Exp.crefEqual);
-        
         (s1,cg_id) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), 1, Codegen.simContext);
       then (s1,cg_id,{});
 
@@ -4058,10 +4056,9 @@ algorithm
         alg = al[indx + 1];
         solvedVars = Util.listMap(DAELow.varList(vars),DAELow.varCref);
         algOutVars = Util.listMap(algOutExpVars,Exp.expCref);
-        
+
         // The variables solved for and the output variables of the algorithm must be the same.
         false = Util.listSetEqualP(solvedVars,algOutVars,Exp.crefEqual);
-
         algStr =	DAE.dumpAlgorithmsStr({DAE.ALGORITHM(alg)});	
         message = Util.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,
           ". This is not implemented yet.\n"});

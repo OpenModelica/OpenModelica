@@ -153,10 +153,10 @@ uniontype TType "-TType contains the actual type"
   end T_FUNCTION;
 
   record T_TUPLE
-    list<Type> tupleType "tupleType ; For functions returning multiple values. Used when type is not yet determined" ;
+    list<Type> tupleType "tupleType ; For functions returning multiple values."  ;
   end T_TUPLE;
 
-  record T_NOTYPE end T_NOTYPE;
+  record T_NOTYPE "Used when type is not yet determined" end T_NOTYPE;
 
   record T_ANYTYPE
     Option<ClassInf.State> anyClassType "anyClassType - used for generic types. When class state present the type is assumed to be a complex type which has that restriction." ;
@@ -2517,8 +2517,11 @@ algorithm
         (_,dims) = flattenArrayTypeOpt(t);
       then
         Exp.T_ARRAY(t_1,dims);
+
+    // Complext type that is subtype of primitive type.
     case ( (T_COMPLEX(_,_,SOME(t)),_))
     then elabType(t);
+
     case ((_,_)) then Exp.OTHER(); 
   end matchcontinue;
 end elabType;

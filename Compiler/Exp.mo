@@ -4653,6 +4653,9 @@ algorithm
       Ident s1,ts,res;
       Type t;
       list<Option<Integer>> dims;
+      list<tuple<Type,Ident>> varlst;
+      list<String> strLst;
+      String s1,s2;
     case INT() then "INT"; 
     case REAL() then "REAL"; 
     case BOOL() then "BOOL"; 

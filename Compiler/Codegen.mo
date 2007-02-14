@@ -1158,7 +1158,7 @@ protected function generateResultStruct "function generate_results_struct
   list<Lib> var_strs,var_names,defs,var_strs_1;
 algorithm 
   ptname := generateReturnType(fpath);
-  (var_strs,var_names) := generateReturnDecls(outvars);
+  (var_strs,var_names) := generateReturnDecls(outvars,1);
   defs := generateReturnDefs(ptname, var_names, 1);
   var_strs_1 := indentStrings(var_strs);
   first_row := Util.stringAppendList({"typedef struct ",ptname,"_s"});
@@ -1196,30 +1196,31 @@ end generateReturnDefs;
 
 protected function generateReturnDecls "function: generateReturnDecls
   
-  Helper function to generate_result_struct. 
+  Helper function to generate_result_struct. Generates the variable names of the result structure.
 "
   input list<DAE.Element> inDAEElementLst;
+  input Integer i;
   output list<String> outStringLst1;
   output list<String> outStringLst2;
 algorithm 
   (outStringLst1,outStringLst2):=
-  matchcontinue (inDAEElementLst)
+  matchcontinue (inDAEElementLst,i)
     local
       list<Lib> rs,rd;
       DAE.Element first;
       list<DAE.Element> rest;
       Lib fs,fd;
-    case {} then ({},{}); 
-    case (first :: rest)
+    case ({},i) then ({},{}); 
+    case (first :: rest,i)
       equation 
-        ("",_) = generateReturnDecl(first);
-        (rs,rd) = generateReturnDecls(rest);
+        ("",_) = generateReturnDecl(first,i);
+        (rs,rd) = generateReturnDecls(rest,i);
       then
         (rs,rd);
-    case (first :: rest)
+    case (first :: rest,i)
       equation 
-        (fs,fd) = generateReturnDecl(first);
-        (rs,rd) = generateReturnDecls(rest);
+        (fs,fd) = generateReturnDecl(first,i);
+        (rs,rd) = generateReturnDecls(rest,i+1);
       then
         ((fs :: rs),(fd :: rd));
   end matchcontinue;
@@ -1252,14 +1253,15 @@ protected function generateReturnDecl "function: generateReturnDecl
   Helper function to generate_return_decls
 "
   input DAE.Element inElement;
+  input Integer i;
   output String outString1;
   output String outString2;
 algorithm 
   (outString1,outString2):=
-  matchcontinue (inElement)
+  matchcontinue (inElement,i)
     local
       Boolean is_a;
-      Lib typ_str,id_str,dims_str,decl_str_1,expstr,decl_str;
+      Lib typ_str,id_str,dims_str,decl_str_1,expstr,decl_str,iStr;
       list<Lib> dim_strs;
       DAE.Element var;
       Exp.ComponentRef id;
@@ -1270,11 +1272,12 @@ algorithm
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-    case ((var as DAE.VAR(componentRef = id,varible = DAE.VARIABLE(),variable = DAE.OUTPUT(),input_ = typ,one = initopt,binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)))
+    case ((var as DAE.VAR(componentRef = id,varible = DAE.VARIABLE(),variable = DAE.OUTPUT(),input_ = typ,one = initopt,binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),i)
       equation 
         is_a = isArray(var);
         typ_str = daeTypeStr(typ, is_a);
-        (id_str,_) = compRefCstr(id);
+        iStr = intString(i);
+        id_str = Util.stringAppendList({"targ",iStr});
         dim_strs = Util.listMap(inst_dims, dimString);
         dims_str = Util.stringDelimitList(dim_strs, ", ");
         decl_str_1 = Util.stringAppendList({typ_str," ",id_str,";"," /* [",dims_str,"] */"});
@@ -1282,7 +1285,7 @@ algorithm
         decl_str = stringAppend(decl_str_1, expstr);
       then
         (decl_str,id_str);
-    case (_) then ("",""); 
+    case (_,_) then ("",""); 
   end matchcontinue;
 end generateReturnDecl;
 
@@ -1932,7 +1935,7 @@ algorithm
   (ret_decl,ret_var,tnr_ret_1) := generateTempDecl(ret_type_str, tnr);
   ret_stmt := Util.stringAppendList({"return ",ret_var,";"});
   outvars := DAE.getOutputVars(dae);
-  (out_fn,tnr_ret) := generateAllocOutvars(outvars, ret_decl, ret_var, tnr_ret_1, funContext);
+  (out_fn,tnr_ret) := generateAllocOutvars(outvars, ret_decl, ret_var, 1,tnr_ret_1, funContext);
   (mem_decl,mem_var,tnr_mem) := generateTempDecl("state", tnr_ret);
   mem_stmt1 := Util.stringAppendList({mem_var," = get_memory_state();"});
   mem_stmt2 := Util.stringAppendList({"restore_memory_state(",mem_var,");"});
@@ -1940,7 +1943,7 @@ algorithm
   mem_fn := cAddInits(mem_fn_1, {mem_stmt1});
   (var_fn,tnr_var) := generateVars(dae, isVarQ, tnr_mem, funContext);
   (alg_fn,tnr_alg) := generateAlgorithms(dae, tnr_var, funContext);
-  (res_var_fn,tnr_res) := generateResultVars(dae, ret_var, tnr_alg, funContext);
+  (res_var_fn,tnr_res) := generateResultVars(dae, ret_var, 1,tnr_alg, funContext);
   cfn_1 := cMergeFn(mem_fn, var_fn);
   cfn_2 := cMergeFn(cfn_1, alg_fn);
   cfn_2 := cAddStatements(cfn_2, {"", "_return:"});
@@ -1955,13 +1958,14 @@ protected function generateAllocOutvars "function: generateAllocOutvars
   input list<DAE.Element> inDAEElementLst1;
   input String inString2;
   input String inString3;
+  input Integer i "nth tuple elt";
   input Integer inInteger4;
   input Context inContext5;
   output CFunction outCFunction;
   output Integer outInteger;
 algorithm 
   (outCFunction,outInteger):=
-  matchcontinue (inDAEElementLst1,inString2,inString3,inInteger4,inContext5)
+  matchcontinue (inDAEElementLst1,inString2,inString3,i,inInteger4,inContext5)
     local
       Lib rv,rd;
       Integer tnr,tnr1,tnr2;
@@ -1979,22 +1983,22 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       list<DAE.Element> r;
-    case ({},"",rv,tnr,context) then (cEmptyFunction,tnr); 
-    case ({},rd,rv,tnr,context)
+    case ({},"",rv,i,tnr,context) then (cEmptyFunction,tnr); 
+    case ({},rd,rv,i,tnr,context)
       equation 
         cfn = cAddVariables(cEmptyFunction, {rd});
       then
         (cfn,tnr);
-    case (((var as DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = t,one = e,binding = id,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)) :: r),rd,rv,tnr,context)
+    case (((var as DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = t,one = e,binding = id,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)) :: r),rd,rv,i,tnr,context)
       equation 
-        (cfn1,tnr1) = generateAllocOutvar(var, rv, tnr, context);
-        (cfn2,tnr2) = generateAllocOutvars(r, rd, rv, tnr1, context);
+        (cfn1,tnr1) = generateAllocOutvar(var, rv, i,tnr, context);
+        (cfn2,tnr2) = generateAllocOutvars(r, rd, rv, i+1,tnr1, context);
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,tnr2);
-    case ((_ :: r),rd,rv,tnr,context)
+    case ((_ :: r),rd,rv,i,tnr,context)
       equation 
-        (cfn2,tnr2) = generateAllocOutvars(r, rd, rv, tnr, context);
+        (cfn2,tnr2) = generateAllocOutvars(r, rd, rv, i,tnr, context);
       then
         (cfn2,tnr2);
   end matchcontinue;
@@ -2006,13 +2010,14 @@ protected function generateAllocOutvar "function: generateAllocOutvar
 "
   input DAE.Element inElement;
   input String inString;
+  input Integer i "nth tuple elt";
   input Integer inInteger;
   input Context inContext;
   output CFunction outCFunction;
   output Integer outInteger;
 algorithm 
   (outCFunction,outInteger):=
-  matchcontinue (inElement,inString,inInteger,inContext)
+  matchcontinue (inElement,inString,i,inInteger,inContext)
     local
       Boolean is_a,emptypre;
       Lib typ_str,cref_str1,cref_str2,cref_str,ndims_str,dims_str,alloc_str,prefix;
@@ -2031,12 +2036,14 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       Context context;
-    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = e,binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),prefix,tnr,context)
+      String iStr;
+    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = e,binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),prefix,i,tnr,context)
       equation 
         is_a = isArray(var);
+        iStr = intString(i);
         typ_str = daeTypeStr(typ, is_a);
         (cref_str1,_) = compRefCstr(id);
-        cref_str2 = Util.stringAppendList({prefix,".",cref_str1});
+        cref_str2 = Util.stringAppendList({prefix,".","targ",iStr});
         emptypre = Util.isEmptyString(prefix);
         cref_str = Util.if_(emptypre, cref_str1, cref_str2);
         (cfn1,dim_strs,tnr1) = generateSizeSubscripts(cref_str, inst_dims, tnr, context);
@@ -2051,7 +2058,7 @@ algorithm
         cfn = Util.if_(is_a, cfn_1, cfn1_1);
       then
         (cfn,tnr1);
-    case (e,_,tnr,context)
+    case (e,_,_,tnr,context)
       local DAE.Element e;
       equation 
         failure(DAE.isVar(e));
@@ -2066,13 +2073,14 @@ protected function generateAllocOutvarsExt "function: generate_alloc_outvar_ext
 "
   input list<DAE.Element> inDAEElementLst;
   input String inString;
+  input Integer i "nth tuple elt";
   input Integer inInteger;
   input DAE.ExternalDecl inExternalDecl;
   output CFunction outCFunction;
   output Integer outInteger;
 algorithm 
   (outCFunction,outInteger):=
-  matchcontinue (inDAEElementLst,inString,inInteger,inExternalDecl)
+  matchcontinue (inDAEElementLst,inString,i,inInteger,inExternalDecl)
     local
       Lib rv;
       Integer tnr,tnr1,tnr2;
@@ -2090,26 +2098,26 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       list<DAE.Element> r;
-    case ({},rv,tnr,extdecl) then (cEmptyFunction,tnr); 
-    case (((var as DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = t,one = e,binding = id,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)) :: r),rv,tnr,extdecl)
+    case ({},rv,i,tnr,extdecl) then (cEmptyFunction,tnr); 
+    case (((var as DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = t,one = e,binding = id,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)) :: r),rv,i,tnr,extdecl)
       equation 
         DAE.EXTERNALDECL(returnType = "C") = extdecl;
-        (cfn1,tnr1) = generateAllocOutvar(var, rv, tnr, funContext);
-        (cfn2,tnr2) = generateAllocOutvarsExt(r, rv, tnr1, extdecl);
+        (cfn1,tnr1) = generateAllocOutvar(var, rv, i,tnr, funContext);
+        (cfn2,tnr2) = generateAllocOutvarsExt(r, rv,i+1,tnr1, extdecl);
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,tnr2);
-    case (((var as DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = t,one = e,binding = id,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)) :: r),rv,tnr,extdecl)
+    case (((var as DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = t,one = e,binding = id,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)) :: r),rv,i,tnr,extdecl)
       equation 
         DAE.EXTERNALDECL(returnType = "FORTRAN 77") = extdecl;
-        (cfn1,tnr1) = generateAllocOutvarF77(var, rv, tnr);
-        (cfn2,tnr2) = generateAllocOutvarsExt(r, rv, tnr1, extdecl);
+        (cfn1,tnr1) = generateAllocOutvarF77(var, rv,i,tnr);
+        (cfn2,tnr2) = generateAllocOutvarsExt(r, rv, i+1,tnr1, extdecl);
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,tnr2);
-    case ((_ :: r),rv,tnr,extdecl)
+    case ((_ :: r),rv,i,tnr,extdecl)
       equation 
-        (cfn2,tnr2) = generateAllocOutvarsExt(r, rv, tnr, extdecl);
+        (cfn2,tnr2) = generateAllocOutvarsExt(r, rv, i, tnr, extdecl);
       then
         (cfn2,tnr2);
   end matchcontinue;
@@ -2121,15 +2129,16 @@ protected function generateAllocOutvarF77 "function: generateAllocOutvarF77
 "
   input DAE.Element inElement;
   input String inString;
+  input Integer i "nth tuple elt";
   input Integer inInteger;
   output CFunction outCFunction;
   output Integer outInteger;
 algorithm 
   (outCFunction,outInteger):=
-  matchcontinue (inElement,inString,inInteger)
+  matchcontinue (inElement,inString,i,inInteger)
     local
       Boolean is_a,emptypre;
-      Lib typ_str,cref_str1,cref_str2,cref_str,ndims_str,dims_str,alloc_str,prefix;
+      Lib typ_str,cref_str1,cref_str2,cref_str,ndims_str,dims_str,alloc_str,prefix,iStr;
       CFunction cfn1,cfn1_1,cfn_1,cfn;
       list<Lib> dim_strs;
       Integer tnr1,ndims,tnr;
@@ -2144,15 +2153,16 @@ algorithm
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = e,binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),prefix,tnr)
+    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = e,binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),prefix,i,tnr)
       equation 
         is_a = isArray(var);
         typ_str = daeTypeStr(typ, is_a);
         emptypre = Util.stringEqual(prefix, "");
         (cref_str1,_) = compRefCstr(id);
-        cref_str2 = Util.stringAppendList({prefix,".",cref_str1});
+				iStr = intString(i);        
+        cref_str2 = Util.stringAppendList({prefix,".","targ",iStr});
         cref_str = Util.if_(emptypre, cref_str1, cref_str2);
-        (cfn1,dim_strs,tnr1) = generateSizeSubscripts(cref_str, inst_dims, tnr, funContext) "	list_reverse inst_dims => inst_dims\' &" ;
+        (cfn1,dim_strs,tnr1) = generateSizeSubscripts(cref_str, inst_dims, tnr, funContext);
         cfn1_1 = cMoveStatementsToInits(cfn1);
         ndims = listLength(dim_strs);
         ndims_str = intString(ndims);
@@ -2164,7 +2174,7 @@ algorithm
         cfn = Util.if_(is_a, cfn_1, cfn1_1);
       then
         (cfn,tnr1);
-    case (e,_,tnr)
+    case (e,_,_,tnr)
       local DAE.Element e;
       equation 
         failure(DAE.isVar(e));
@@ -2535,11 +2545,18 @@ algorithm
         Debug.fprint("failtrace", "# when statement not implemented\n");
       then
         fail();
-    case (Algorithm.TUPLE_ASSIGN(type_ = _),_,_)
+    case (Algorithm.TUPLE_ASSIGN(t,expl,e as Exp.CALL(path=_)),tnr,context)
+      local Context context;
+        list<Exp.Exp> args,expl; Absyn.Path fn;
+        list<String> lhsVars,vars1;
+        String tupleVar;
       equation 
-        Debug.fprint("failtrace", "# tuple assign statement not implemented\n");
+        (cfn1,tupleVar,tnr1) = generateExpression(e, tnr, context);
+				(cfn,tnr1) = generateTupleLhsAssignment(expl,tupleVar,1,tnr1,context);
+				cfn = cMergeFn(cfn1,cfn);
       then
-        fail();
+        (cfn,tnr1);
+        
     case (Algorithm.ASSERT(exp1 = e1,exp2 = e2),tnr,CONTEXT(codeContext,_,loopContext))
       local CodeContext codeContext;
             LoopContext loopContext;
@@ -2575,6 +2592,37 @@ algorithm
         fail();
   end matchcontinue;
 end generateAlgorithmStatement;
+
+protected function generateTupleLhsAssignment "Generates the assignment of output args in a tuple call
+ given a variable containing the tuple represented as a struct.
+author: PA
+"
+  input list<Exp.Exp> expl;
+  input String tupleVar;
+  input Integer i "nth tuple elt";
+  input Integer tnr;
+  input Context context;
+  output CFunction cfn;
+  output Integer outTnr;
+algorithm
+  (cfn,outTnr) := matchcontinue(expl,tupleVar,i,tnr,context) 
+  local Exp.ComponentRef cr;
+    String res1,stmt,iStr;
+    CFunction cfn2;
+    Exp.Ident id;
+    Exp.Type tp;
+    list<tuple<Exp.Type,Exp.Ident>> vars;
+    case({},tupleVar,i,tnr,context) then (cEmptyFunction,tnr);
+    case(Exp.CREF(cr,tp)::expl,tupleVar,i,tnr,context) equation
+      (cfn,res1,tnr) = generateScalarLhsCref(tp,cr,tnr,context);
+      iStr = intString(i);
+      stmt = Util.stringAppendList({res1," = ",tupleVar,".","targ",iStr,";"});
+      cfn = cAddStatements(cfn, {stmt});
+      (cfn2,tnr) = generateTupleLhsAssignment(expl,tupleVar,i+1,tnr,context);
+      cfn = cMergeFn(cfn,cfn2);
+    then (cfn,tnr);  
+  end matchcontinue;
+end generateTupleLhsAssignment;
 
 protected function isSimulationContext "Returns true is context is Simulation."
   input Context context;
@@ -2786,6 +2834,7 @@ protected function generateVarInits "function: generateVarInits
 "
   input list<DAE.Element> inDAEElementLst;
   input FuncTypeDAE_ElementTo inFuncTypeDAEElementTo;
+  input Integer i "nth tuple only used if output variable";
   input Integer inInteger;
   input String inString;
   input Context inContext;
@@ -2796,7 +2845,7 @@ protected function generateVarInits "function: generateVarInits
   end FuncTypeDAE_ElementTo;
 algorithm 
   (outCFunction,outInteger):=
-  matchcontinue (inDAEElementLst,inFuncTypeDAEElementTo,inInteger,inString,inContext)
+  matchcontinue (inDAEElementLst,inFuncTypeDAEElementTo,i,inInteger,inString,inContext)
     local
       Integer tnr,tnr1,tnr2;
       CFunction cfn1,cfn2,cfn;
@@ -2805,22 +2854,22 @@ algorithm
       FuncTypeDAE_ElementTo verify;
       Lib pre;
       Context context;
-    case ({},_,tnr,_,_) then (cEmptyFunction,tnr);  /* elements verifying function variable prefix */ 
-    case ((first :: rest),verify,tnr,pre,context)
+    case ({},_,_,tnr,_,_) then (cEmptyFunction,tnr);  /* elements verifying function variable prefix */ 
+    case ((first :: rest),verify,i,tnr,pre,context)
       equation 
         verify(first);
-        (cfn1,tnr1) = generateVarInit(first, tnr, pre, context);
-        (cfn2,tnr2) = generateVarInits(rest, verify, tnr1, pre, context);
+        (cfn1,tnr1) = generateVarInit(first, i, tnr, pre, context);
+        (cfn2,tnr2) = generateVarInits(rest, verify, i+1, tnr1, pre, context);
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,tnr2);
-    case ((first :: rest),verify,tnr,pre,context)
+    case ((first :: rest),verify,i,tnr,pre,context)
       equation 
         failure(verify(first));
-        (cfn,tnr2) = generateVarInits(rest, verify, tnr, pre, context);
+        (cfn,tnr2) = generateVarInits(rest, verify, i, tnr, pre, context);
       then
         (cfn,tnr2);
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation 
         Debug.fprint("failtrace", "# generate_var_inits failed\n");
       then
@@ -3002,6 +3051,7 @@ protected function generateVarInit "function: generateVarInit
   Generates code for the initialization of a variable.
 "
   input DAE.Element inElement;
+  input Integer i "nth tuple elt, only used for output vars";
   input Integer inInteger;
   input String inString;
   input Context inContext;
@@ -3009,7 +3059,7 @@ protected function generateVarInit "function: generateVarInit
   output Integer outInteger;
 algorithm 
   (outCFunction,outInteger):=
-  matchcontinue (inElement,inInteger,inString,inContext)
+  matchcontinue (inElement,i,inInteger,inString,inContext)
     local
       DAE.Element var;
       Exp.ComponentRef id,id_1,idstr;
@@ -3030,13 +3080,20 @@ algorithm
       Algorithm.Statement scalarassign,arrayassign,assign;
       CFunction cfn;
       Exp.Exp e;
-    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = NONE,binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),tnr,pre,context) then (cEmptyFunction,tnr);  /* No binding */ 
-    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = SOME(e),binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),tnr,pre,context) /* Has binding */ 
+      String iStr,id_1_str;
+      /* No binding */ 
+    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = NONE,binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),i,tnr,pre,context) 
+      then (cEmptyFunction,tnr);  
+
+      /* Has binding */     
+    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = SOME(e),binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),i,tnr,pre,context) 
       equation 
         is_a = isArray(var);
+        // pre can be "" or "out", the later for output variables.
         emptyprep = Util.stringEqual(pre, "");
-        id_1 = Exp.prependStringCref("out.", id);
-        idstr = Util.if_(emptyprep, id, id_1);
+        iStr = intString(i);
+        id_1_str = Util.stringAppendList({"out.","targ",iStr});
+        idstr = Util.if_(emptyprep, id, Exp.CREF_IDENT(id_1_str,{}));
         exptype = daeExpType(typ);
         scalarassign = Algorithm.ASSIGN(exptype,idstr,e);
         arrayassign = Algorithm.ASSIGN_ARR(exptype,idstr,e);
@@ -3044,7 +3101,7 @@ algorithm
         (cfn,tnr1) = generateAlgorithmStatement(assign, tnr, context);
       then
         (cfn,tnr1);
-    case (e,_,_,_)
+    case (e,_,_,_,_)
       local DAE.Element e;
       equation 
         Debug.fprint("failtrace", "# generate_var_init failed\n");
@@ -3137,13 +3194,14 @@ protected function generateResultVars "function: generaet_result_vars
 "
   input list<DAE.Element> inDAEElementLst;
   input String inString;
+  input Integer i;
   input Integer inInteger;
   input Context inContext;
   output CFunction outCFunction;
   output Integer outInteger;
 algorithm 
   (outCFunction,outInteger):=
-  matchcontinue (inDAEElementLst,inString,inInteger,inContext)
+  matchcontinue (inDAEElementLst,inString,i,inInteger,inContext)
     local
       Integer tnr,tnr1,tnr2;
       Context context;
@@ -3151,14 +3209,19 @@ algorithm
       DAE.Element first;
       list<DAE.Element> rest;
       Lib varname;
-    case ({},_,tnr,context) then (cEmptyFunction,tnr); 
-    case ((first :: rest),varname,tnr,context)
+    case ({},_,_,tnr,context) then (cEmptyFunction,tnr); 
+    case ((first :: rest),varname,i,tnr,context)
       equation 
-        (cfn1,tnr1) = generateResultVar(first, varname, tnr, context);
-        (cfn2,tnr2) = generateResultVars(rest, varname, tnr1, context);
+        (cfn1,tnr1) = generateResultVar(first, varname, i,tnr, context);
+        (cfn2,tnr2) = generateResultVars(rest, varname, i+1,tnr1, context);
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,tnr2);
+    case ((_ :: rest),varname,i,tnr,context)
+      equation 
+        (cfn,tnr1) = generateResultVars(rest, varname, i,tnr, context);
+      then
+        (cfn,tnr1);        
   end matchcontinue;
 end generateResultVars;
 
@@ -3168,13 +3231,14 @@ protected function generateResultVar "function: generateResultVar
 "
   input DAE.Element inElement;
   input String inString;
+  input Integer i;
   input Integer inInteger;
   input Context inContext;
   output CFunction outCFunction;
   output Integer outInteger;
 algorithm 
   (outCFunction,outInteger):=
-  matchcontinue (inElement,inString,inInteger,inContext)
+  matchcontinue (inElement,inString,i,inInteger,inContext)
     local
       Lib cref_str1,cref_str2,stmt,varname,typ_str;
       CFunction cfn;
@@ -3183,28 +3247,29 @@ algorithm
       DAE.Type typ;
       Integer tnr;
       Context context;
-    case ((var as DAE.VAR(componentRef = id,varible = DAE.VARIABLE(),variable = DAE.OUTPUT(),input_ = typ)),varname,tnr,context) /* varname non-arrays */ 
+      /* varname non-arrays */ 
+    case ((var as DAE.VAR(componentRef = id,varible = DAE.VARIABLE(),variable = DAE.OUTPUT(),input_ = typ)),varname,i,tnr,context) 
       equation 
         false = isArray(var);
-        (cref_str1,_) = compRefCstr(id);
+        cref_str1 = stringAppend("targ",intString(i));
         (cref_str2,_) = compRefCstr(id);
         stmt = Util.stringAppendList({varname,".",cref_str1," = ",cref_str2,";"});
         cfn = cAddCleanups(cEmptyFunction, {stmt});
       then
         (cfn,tnr);
-    case ((var as DAE.VAR(componentRef = id,varible = DAE.VARIABLE(),variable = DAE.OUTPUT(),input_ = typ)),varname,tnr,context) /* arrays */ 
+        /* arrays */ 
+    case ((var as DAE.VAR(componentRef = id,varible = DAE.VARIABLE(),variable = DAE.OUTPUT(),input_ = typ)),varname,i,tnr,context) 
       equation 
         true = isArray(var);
         typ_str = daeTypeStr(typ, true);
         (cref_str1,_) = compRefCstr(id);
-        (cref_str2,_) = compRefCstr(id);
+        cref_str2 = stringAppend("targ",intString(i));
         stmt = Util.stringAppendList(
           {"copy_",typ_str,"_data(&",cref_str1,", &",varname,".",
           cref_str2,");"});
         cfn = cAddCleanups(cEmptyFunction, {stmt});
       then
         (cfn,tnr);
-    case (_,_,tnr,_) then (cEmptyFunction,tnr); 
   end matchcontinue;
 end generateResultVar;
 
@@ -4010,7 +4075,9 @@ algorithm
         (cfn,var,tnr_1) = generateScalarRhsCref(cref_str, t, subs, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (t,Exp.CREF_IDENT(ident = id,subscriptLst = idx),tnr,context) /* two special cases rules for 1 and 2 dimensions for faster code (no vararg) */ 
+
+        /* two special cases rules for 1 and 2 dimensions for faster code (no vararg) */ 
+    case (t,Exp.CREF_IDENT(ident = id,subscriptLst = idx),tnr,context) 
       equation 
         Debug.fprintln("gcge", "generating cref ccode");
         (cfn1,idxs1,tnr1) = generateIndices(idx, tnr, context);
@@ -5056,7 +5123,7 @@ algorithm
   out_decl := Util.stringAppendList({retstr," out;"});
   cfn1_1 := cAddInits(cfn1, {"PRE_VARIABLES",out_decl});
   (cfn31,tnr21) := generateVarDecls(invars, isRcwInput, 1, funContext) "generate_vars(outvars,is_rcw_output,1) => (cfn2,tnr1) &" ;
-  (cfn32,tnr2) := generateVarInits(invars, isRcwInput, tnr21, "", funContext);
+  (cfn32,tnr2) := generateVarInits(invars, isRcwInput, 1,tnr21, "", funContext);
   cfn3 := cMergeFns({cfn31,cfn32});
   cfn3_1 := cAddInits(cfn3, {"PRE_OPEN_INFILE"});
   in_names := invarNames(invars);
@@ -5064,7 +5131,7 @@ algorithm
   cfn4 := generateRead(invars);
   fn_call := Util.stringAppendList({"out = ",fnname,"(",in_args,");"});
   cfn4_1 := cAddStatements(cfn4, {"PRE_READ_DONE",fn_call,"PRE_OPEN_OUTFILE"});
-  cfn5 := generateWrite(outvars);
+  cfn5 := generateWriteOutvars(outvars,1);
   cfn5_1 := cAddStatements(cfn5, {"PRE_WRITE_DONE","return 0;"});
   cfn := cMergeFns({cfn1_1,cfn3_1,cfn4_1,cfn5_1});
 end generateReadCallWrite;
@@ -5105,9 +5172,9 @@ algorithm
         out_decl = Util.stringAppendList({retstr," out;"});
         cfn1_1 = cAddVariables(cfn1, {out_decl});
         (cfn31,tnr_invars1) = generateVarDecls(invars, isRcwInput, tnr, funContext);
-        (cfn32,tnr_invars) = generateVarInits(invars, isRcwInput, tnr_invars1, "", funContext);
+        (cfn32,tnr_invars) = generateVarInits(invars, isRcwInput, 1,tnr_invars1, "", funContext);
         (cfn33,tnr_bivars1) = generateVarDecls(bivars, isRcwBidir, tnr_invars, funContext);
-        (cfn34,tnr_bivars) = generateVarInits(bivars, isRcwBidir, tnr_bivars1, "", funContext);
+        (cfn34,tnr_bivars) = generateVarInits(bivars, isRcwBidir, 1,tnr_bivars1, "", funContext);
         cfn3 = cMergeFns({cfn1_1,cfn31,cfn32,cfn33,cfn34});
         vars_1 = listAppend(invars, outvars);
         vars = listAppend(vars_1, bivars);
@@ -5154,10 +5221,10 @@ algorithm
           {"char const* in_filename","char const* out_filename"});
         out_decl = Util.stringAppendList({retstr," out;"});
         cfn1_1 = cAddInits(cfn1, {"PRE_VARIABLES"});
-        (allocstmts_1,tnr_ret) = generateAllocOutvarsExt(outvars, "out", tnr, extdecl) "generate_vars(outvars,is_rcw_output,1) => (cfn2,tnr1) &" ;
+        (allocstmts_1,tnr_ret) = generateAllocOutvarsExt(outvars, "out", 1,tnr, extdecl) "generate_vars(outvars,is_rcw_output,1) => (cfn2,tnr1) &" ;
         allocstmts = cAddVariables(allocstmts_1, {out_decl});
-        (biallocstmts,tnr_bialloc_1) = generateAllocOutvarsExt(bivars, "", tnr_ret, extdecl);
-        (cfnoutinit,tnr_bialloc) = generateVarInits(outvars, isRcwOutput, tnr_bialloc_1, "out", funContext);
+        (biallocstmts,tnr_bialloc_1) = generateAllocOutvarsExt(bivars, "", 1,tnr_ret, extdecl);
+        (cfnoutinit,tnr_bialloc) = generateVarInits(outvars, isRcwOutput, 1,tnr_bialloc_1, "out", funContext);
         cfnoutbialloc = cMergeFns({allocstmts,biallocstmts,cfnoutinit});
         (mem_decl,mem_var,tnr_mem) = generateTempDecl("state", tnr_bialloc);
         get_mem_stmt = Util.stringAppendList({mem_var," = get_memory_state();"});
@@ -5166,9 +5233,9 @@ algorithm
         mem_fn_2 = cAddInits(mem_fn_1, {get_mem_stmt});
         mem_fn = cMergeFns({mem_fn_2,cfnoutbialloc});
         (cfn31,tnr_invars1) = generateVarDecls(invars, isRcwInput, tnr_mem, funContext);
-        (cfn32,tnr_invars) = generateVarInits(invars, isRcwInput, tnr_invars1, "", funContext);
+        (cfn32,tnr_invars) = generateVarInits(invars, isRcwInput, 1,tnr_invars1, "", funContext);
         (cfn33,tnr_bivars1) = generateVarDecls(bivars, isRcwBidir, tnr_invars, funContext);
-        (cfn34,tnr_bivars) = generateVarInits(bivars, isRcwBidir, tnr_bivars1, "", funContext);
+        (cfn34,tnr_bivars) = generateVarInits(bivars, isRcwBidir, 1,tnr_bivars1, "", funContext);
         cfn3 = cMergeFns({cfn31,cfn32,cfn33,cfn34});
         cfn3_1 = cAddInits(cfn3, {"PRE_OPEN_INFILE"});
         readinvars = generateRead(invars);
@@ -5177,7 +5244,7 @@ algorithm
         vars = listAppend(vars_1, bivars);
         (extcall,tnr_extcall) = generateExtCall(vars, extdecl, tnr_bivars);
         cfn4_1 = cAddStatements(extcall, {"PRE_OPEN_OUTFILE"});
-        cfn5 = generateWrite(outvars);
+        cfn5 = generateWriteOutvars(outvars,1);
         cfn5_1 = cAddStatements(cfn5, {"PRE_WRITE_DONE"});
         cfn_1 = cMergeFns({cfn1_1,cfn3_1,readdone,mem_fn,cfn4_1,cfn5_1});
         cfn = cAddCleanups(cfn_1, {rest_mem_stmt,"return 0;"});
@@ -5219,10 +5286,10 @@ algorithm
         Debug.fcall("cgtrdumpdaeextcall", DAE.dump2, DAE.DAE(vars));
         extdeclstr = DAE.dumpExtDeclStr(extdecl);
         Debug.fprintln("cgtrdumpdaeextcall", extdeclstr);
-        (argdecls,arglist_1,tnr_1) = generateExtcallVardecls(vars, arglist, retarg, lang, tnr);
+        (argdecls,arglist_1,tnr_1) = generateExtcallVardecls(vars, arglist, retarg, lang, 1,tnr);
         fcall = generateExtCallFcall(n, arglist_1, retarg, lang);
         outbiarglist = Util.listMatching(arglist_1, isExtargOutputOrBidir);
-        (argcopies,tnr_2) = generateExtcallVarcopy(outbiarglist, retarg, lang, tnr_1);
+        (argcopies,tnr_2) = generateExtcallVarcopy(outbiarglist, retarg, lang, 1,tnr_1);
         extcall = cMergeFns({argdecls,fcall,argcopies});
       then
         (extcall,tnr_2);
@@ -5242,34 +5309,35 @@ protected function generateExtcallVardecls "function: generateExtcallVardecls
   input list<DAE.ExtArg> inDAEExtArgLst;
   input DAE.ExtArg inExtArg;
   input String inString;
+  input Integer i "nth tuple elt, only used for output vars";
   input Integer inInteger;
   output CFunction outCFunction;
   output list<DAE.ExtArg> outDAEExtArgLst;
   output Integer outInteger;
 algorithm 
   (outCFunction,outDAEExtArgLst,outInteger):=
-  matchcontinue (inDAEElementLst,inDAEExtArgLst,inExtArg,inString,inInteger)
+  matchcontinue (inDAEElementLst,inDAEExtArgLst,inExtArg,inString,i,inInteger)
     local
       CFunction decls,copydecls,res;
       list<DAE.Element> vars;
       list<DAE.ExtArg> args,args_1;
       DAE.ExtArg retarg;
       Integer tnr,tnr_1,tnr_2;
-    case (vars,args,retarg,"C",tnr)
+    case (vars,args,retarg,"C",i,tnr)
       equation 
-        (decls) = generateExtcallVardecls2(args, retarg);
+        (decls) = generateExtcallVardecls2(args, retarg,i);
       then
         (decls,args,tnr);
-    case (vars,args,retarg,"FORTRAN 77",tnr)
+    case (vars,args,retarg,"FORTRAN 77",i,tnr)
       equation 
-        (copydecls,tnr_1) = generateExtcallCopydeclsF77(vars, tnr);
-        (decls,args_1,tnr_2) = generateExtcallVardecls2F77(args, retarg, tnr_1);
+        (copydecls,tnr_1) = generateExtcallCopydeclsF77(vars, i, tnr);
+        (decls,args_1,tnr_2) = generateExtcallVardecls2F77(args, retarg, i, tnr_1);
         res = cMergeFn(copydecls, decls);
       then
         (res,args_1,tnr_2);
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "#-- generate_extcall_vardecls failed\n");
+        Debug.fprint("failtrace", "#-- generateExtcallVardecls2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -5280,12 +5348,13 @@ protected function generateExtcallCopydeclsF77 "function: generateExtcallCopydec
   Helper function to generate_extcall_vardecls
 "
   input list<DAE.Element> inDAEElementLst;
+  input Integer i "nth tuple elt, only used for outputs";
   input Integer inInteger;
   output CFunction outCFunction;
   output Integer outInteger;
 algorithm 
   (outCFunction,outInteger):=
-  matchcontinue (inDAEElementLst,inInteger)
+  matchcontinue (inDAEElementLst,i,inInteger)
     local
       Integer tnr,tnr_1,tnr_3;
       Exp.ComponentRef cref,cref_1;
@@ -5298,26 +5367,31 @@ algorithm
       CFunction fn,restfn,resfn;
       list<DAE.Element> rest;
       Types.Type tp;
-    case ({},tnr) then (cEmptyFunction,tnr); 
-    case ((var :: rest),tnr)
+      Boolean isOutput;
+      Integer i1;
+      
+    case ({},i,tnr) then (cEmptyFunction,tnr); 
+    case ((var :: rest),i,tnr)
       equation 
         DAE.VAR(componentRef = cref,varible = vk,variable = vd,input_ = ty,one = value,binding = dims,dimension = start,fullType=tp) = var;
         true = isArray(var);
+        isOutput = isOutput(var);
+        i1 = Util.if_(isOutput,i+1,i);
         cref_1 = varNameExternalCref(cref);
         dims_1 = listReverse(dims);
         extvar = DAE.VAR(cref_1,vk,vd,ty,value,dims_1,NONE,DAE.NON_FLOW(),{},NONE,
           NONE,Absyn.UNSPECIFIED(),tp);
         (fn,tnr_1) = generateVarDecl(extvar, tnr, funContext);
-        (restfn,tnr_3) = generateExtcallCopydeclsF77(rest, tnr_1);
+        (restfn,tnr_3) = generateExtcallCopydeclsF77(rest, i1,tnr_1);
         resfn = cMergeFn(fn, restfn);
       then
         (resfn,tnr_3);
-    case ((var :: rest),tnr)
+    case ((var :: rest),i,tnr)
       equation 
         Debug.fprint("cgtr", "#--Ignoring: ");
         Debug.fcall("cgtr", DAE.dump2, DAE.DAE({var}));
         Debug.fprintln("cgtr", "");
-        (fn,tnr_1) = generateExtcallCopydeclsF77(rest, tnr);
+        (fn,tnr_1) = generateExtcallCopydeclsF77(rest,i, tnr);
       then
         (fn,tnr_1);
   end matchcontinue;
@@ -5329,28 +5403,33 @@ protected function generateExtcallVardecls2 "function: generateExtcallVardecls2
 "
   input list<DAE.ExtArg> inDAEExtArgLst;
   input DAE.ExtArg inExtArg;
+  input Integer i "nth tuple elt, only used for outputs";
   output CFunction outCFunction;
 algorithm 
   outCFunction:=
-  matchcontinue (inDAEExtArgLst,inExtArg)
+  matchcontinue (inDAEExtArgLst,inExtArg,i)
     local
       CFunction retdecl,decl,decls,res;
       DAE.ExtArg retarg,var;
       list<DAE.ExtArg> rest;
-    case ({},DAE.NOEXTARG()) then cEmptyFunction; 
-    case ({},retarg)
+      Boolean isOutput;
+      Integer i1;
+    case ({},DAE.NOEXTARG(),i) then cEmptyFunction; 
+    case ({},retarg,i)
       equation 
-        retdecl = generateExtcallVardecl(retarg);
+        retdecl = generateExtcallVardecl(retarg,i);
       then
         retdecl;
-    case ((var :: rest),retarg)
+    case ((var :: rest),retarg,i)
       equation 
-        decl = generateExtcallVardecl(var);
-        decls = generateExtcallVardecls2(rest, retarg);
+        decl = generateExtcallVardecl(var,i);
+        isOutput = isOutputExtArg(var);
+        i1 = Util.if_(isOutput,i+1,i);
+        decls = generateExtcallVardecls2(rest, retarg, i1);
         res = cMergeFn(decl, decls);
       then
         res;
-    case (_,_)
+    case (_,_,_)
       equation 
         Debug.fprint("failtrace", "#-- generate_extcall_vardecls2 failed\n");
       then
@@ -5394,10 +5473,11 @@ protected function generateExtcallVardecl "function: generateExtcallVardecl
   Helper function to generate_extcall_vardecls.
 "
   input DAE.ExtArg inExtArg;
+  input Integer i "nth tuple elt, only used for outputs";
   output CFunction outCFunction;
 algorithm 
   outCFunction:=
-  matchcontinue (inExtArg)
+  matchcontinue (inExtArg,i)
     local
       Exp.ComponentRef cref,cr;
       tuple<Types.TType, Option<Absyn.Path>> ty;
@@ -5406,7 +5486,9 @@ algorithm
       DAE.ExtArg arg;
       Types.Attributes attr;
       Exp.Exp exp;
-    case arg /* INPUT NON-ARRAY */ 
+
+      /* INPUT NON-ARRAY */ 
+    case (arg,i)
       equation 
         DAE.EXTARG(componentRef = cref,attributes = Types.ATTR(direction = Absyn.INPUT()),type_ = ty) = arg;
         false = Types.isArray(ty);
@@ -5417,13 +5499,16 @@ algorithm
         res = generateVardeclFunc(tystr, name, SOME(orgname));
       then
         res;
-    case arg /* INPUT NON-ARRAY STRING do nothing INPUT ARRAY */ 
+        /* INPUT NON-ARRAY STRING do nothing INPUT ARRAY */ 
+    case (arg,i)
       equation 
         DAE.EXTARG(componentRef = cref,attributes = Types.ATTR(direction = Absyn.INPUT()),type_ = ty) = arg;
         true = Types.isArray(ty);
       then
         cEmptyFunction;
-    case arg /* OUTPUT NON-ARRAY */ 
+        
+        /* OUTPUT NON-ARRAY */ 
+    case (arg, i)
       equation 
         DAE.EXTARG(componentRef = cref,attributes = Types.ATTR(direction = Absyn.OUTPUT()),type_ = ty) = arg;
         false = Types.isArray(ty);
@@ -5432,24 +5517,18 @@ algorithm
         res = generateVardeclFunc(tystr, name, NONE);
       then
         res;
-    case arg /* OUTPUT ARRAY */ 
+
+        /* OUTPUT ARRAY */ 
+    case (arg, i)
       equation 
         DAE.EXTARG(componentRef = cref,attributes = Types.ATTR(direction = Absyn.OUTPUT()),type_ = ty) = arg;
         true = Types.isArray(ty);
       then
         cEmptyFunction;
-    case DAE.EXTARG(componentRef = cr,attributes = attr,type_ = ty) then cEmptyFunction;  /* 
-	INPUT/OUTPUT ARRAY/NON-ARRAY
-  rule	let DAE.EXTARG(cref, attr, ty) = arg &
-	generate_type_external ty => tystr &
-	comp_ref_cstr cref => (name,_) &
-        generate_vardecl_func (tystr, name, NONE) => res
-	---------------------------
-	generate_extcall_vardecl arg => res
- */ 
-    case DAE.EXTARGEXP(exp = exp,type_ = ty) then cEmptyFunction; 
-    case DAE.EXTARGSIZE(componentRef = _) then cEmptyFunction;  /* SIZE */ 
-    case _
+    case (DAE.EXTARG(componentRef = cr,attributes = attr,type_ = ty),i) then cEmptyFunction;       
+    case (DAE.EXTARGEXP(exp = exp,type_ = ty),i) then cEmptyFunction; 
+    case (DAE.EXTARGSIZE(componentRef = _),i) then cEmptyFunction;  /* SIZE */ 
+    case (_,i)
       equation 
         Debug.fprint("failtrace", "#-- generate_extcall_vardecl failed\n");
       then
@@ -5463,32 +5542,34 @@ protected function generateExtcallVardecls2F77 "function: generateExtcallVardecl
 "
   input list<DAE.ExtArg> inDAEExtArgLst;
   input DAE.ExtArg inExtArg;
+  input Integer i "nth tuple elt, only for outputs";
   input Integer inInteger;
   output CFunction outCFunction;
   output list<DAE.ExtArg> outDAEExtArgLst;
   output Integer outInteger;
 algorithm 
-  (outCFunction,outDAEExtArgLst,outInteger):=
+  (outCFunction,outDAEExtArgLst,i,outInteger):=
   matchcontinue (inDAEExtArgLst,inExtArg,inInteger)
     local
-      Integer tnr,tnr_1,tnr_2;
+      Integer tnr,tnr_1,tnr_2,i2;
       CFunction retdecl,decl,decls,res;
       DAE.ExtArg retarg,var_1,var;
       list<DAE.ExtArg> varr,rest;
-    case ({},DAE.NOEXTARG(),tnr) then (cEmptyFunction,{},tnr); 
-    case ({},retarg,tnr)
+    case ({},DAE.NOEXTARG(),i,tnr) then (cEmptyFunction,{},tnr); 
+    case ({},retarg,i,tnr)
       equation 
-        (retdecl,_,tnr_1) = generateExtcallVardeclF77(retarg, tnr);
+        (retdecl,_,tnr_1) = generateExtcallVardeclF77(retarg, i,tnr);
       then
         (retdecl,{},tnr_1);
-    case ((var :: rest),retarg,tnr)
+    case ((var :: rest),retarg,i,tnr)
       equation 
-        (decl,var_1,tnr_1) = generateExtcallVardeclF77(var, tnr);
-        (decls,varr,tnr_2) = generateExtcallVardecls2F77(rest, retarg, tnr_1);
+        (decl,var_1,tnr_1) = generateExtcallVardeclF77(var, i,tnr);
+        i2 = Util.if_(isOutputExtArg(var),i+1,i);
+        (decls,varr,tnr_2) = generateExtcallVardecls2F77(rest, retarg, i2, tnr_1);
         res = cMergeFn(decl, decls);
       then
         (res,(var_1 :: varr),tnr_2);
-    case (_,_,_)
+    case (_,_,_,_)
       equation 
         Debug.fprint("failtrace", "#-- generate_extcall_vardecls2_f77 failed\n");
       then
@@ -5565,13 +5646,14 @@ protected function generateExtcallVardeclF77 "function: generateExtcallVardeclF7
  
 "
   input DAE.ExtArg inExtArg;
+  input Integer i "nth tuple elt, only for outputs";
   input Integer inInteger;
   output CFunction outCFunction;
   output DAE.ExtArg outExtArg;
   output Integer outInteger;
 algorithm 
   (outCFunction,outExtArg,outInteger):=
-  matchcontinue (inExtArg,inInteger)
+  matchcontinue (inExtArg,i,inInteger)
     local
       Exp.ComponentRef cref,cr,tmpcref;
       Types.Attributes attr;
@@ -5581,16 +5663,21 @@ algorithm
       Integer tnr,tnr_1;
       Lib tystr,name,orgname,converter,initstr,tmpname_1,tnrstr,tmpstr,callstr,declstr;
       Exp.Exp exp,dim;
-    case (arg,tnr) /* INPUT NON-ARRAY */ 
+      String iStr;
+
+      /* INPUT NON-ARRAY */ 
+    case (arg,i,tnr) 
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
         Debug.fprintln("cgtr", "generate_extcall_vardecl_f77_1");
         true = Types.isInputAttr(attr);
         false = Types.isArray(ty);
-        res = generateExtcallVardecl(arg);
+        res = generateExtcallVardecl(arg,i);
       then
         (res,arg,tnr);
-    case (extarg,tnr) /* INPUT ARRAY */ 
+
+        /* INPUT ARRAY */         
+    case (extarg,i,tnr) 
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = extarg;
         Debug.fprintln("cgtr", "generate_extcall_vardecl_f77_2");
@@ -5604,16 +5691,20 @@ algorithm
         res = cAddStatements(cEmptyFunction, {initstr});
       then
         (res,extarg,tnr);
-    case (arg,tnr) /* OUTPUT NON-ARRAY */ 
+
+        /* OUTPUT NON-ARRAY */         
+    case (arg,i,tnr) 
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
         Debug.fprintln("cgtr", "generate_extcall_vardecl_f77_3");
         true = Types.isOutputAttr(attr);
         false = Types.isArray(ty);
-        res = generateExtcallVardecl(arg);
+        res = generateExtcallVardecl(arg,i);
       then
         (res,arg,tnr);
-    case (extarg,tnr) /* OUTPUT ARRAY */ 
+
+        /* OUTPUT ARRAY */ 
+    case (extarg,i,tnr)
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = extarg;
         Debug.fprintln("cgtr", "generate_extcall_vardecl_f77_4");
@@ -5621,13 +5712,15 @@ algorithm
         true = Types.isOutputAttr(attr);
         tystr = generateType(ty);
         name = varNameExternal(cref);
-        (orgname,_) = compRefCstr(cref);
+        iStr = stringAppend("targ",intString(i));
         converter = generateCToF77Converter(ty);
-        initstr = Util.stringAppendList({converter,"(&out.",orgname,", &",name,");"});
+        initstr = Util.stringAppendList({converter,"(&out.",iStr,", &",name,");"});
         res = cAddStatements(cEmptyFunction, {initstr});
       then
         (res,extarg,tnr);
-    case (arg,tnr) /* INPUT/OUTPUT ARRAY */ 
+
+        /* INPUT/OUTPUT ARRAY */         
+    case (arg,i,tnr) 
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
         true = Types.isArray(ty);
@@ -5635,30 +5728,36 @@ algorithm
         tystr = generateType(ty);
         name = varNameExternal(cref);
         (orgname,_) = compRefCstr(cref);
+         iStr = stringAppend("targ",intString(i));
         converter = generateCToF77Converter(ty);
         initstr = Util.stringAppendList({converter,"(&",orgname,", &",name,");"});
         res = cAddStatements(cEmptyFunction, {initstr});
       then
         (res,arg,tnr);
-    case (arg,tnr) /* INPUT/OUTPUT NON-ARRAY */ 
+
+        /* INPUT/OUTPUT NON-ARRAY */         
+    case (arg,i,tnr) 
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
         false = Types.isArray(ty);
         Debug.fprintln("cgtr", "generate_extcall_vardecl_f77_41");
-        res = generateExtcallVardecl(arg);
+        res = generateExtcallVardecl(arg,i);
       then
         (res,arg,tnr);
-    case (arg,tnr)
+        
+    case (arg,i,tnr)
       equation 
         DAE.EXTARGEXP(exp = exp,type_ = ty) = arg;
-        res = generateExtcallVardecl(arg);
+        res = generateExtcallVardecl(arg,i);
       then
         (res,arg,tnr);
-    case (arg,tnr) /* SIZE */ 
+
+        /* SIZE */         
+    case (arg,i,tnr) 
       equation 
         DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim) = arg;
         Debug.fprintln("cgtr", "generate_extcall_vardecl_f77_5");
-        tmpname_1 = varNameArray(cr, attr);
+        tmpname_1 = varNameArray(cr, attr,i);
         tnrstr = intString(tnr);
         tnr_1 = tnr + 1;
         tmpstr = Util.stringAppendList({tmpname_1,"_size_",tnrstr});
@@ -5671,7 +5770,7 @@ algorithm
         newarg = DAE.EXTARGSIZE(tmpcref,attr,ty,dim);
       then
         (res,newarg,tnr_1);
-    case (arg,_)
+    case (arg,_,_)
       equation 
         Debug.fprint("failtrace", "#-- generate_extcall_vardecl_f77 failed\n");
       then
@@ -5696,14 +5795,18 @@ algorithm
       list<DAE.ExtArg> args;
       Exp.ComponentRef cr;
       tuple<Types.TType, Option<Absyn.Path>> ty;
-    case (fnname,args,DAE.NOEXTARG(),lang) /* language call without return value */ 
+
+      /* language call without return value */ 
+    case (fnname,args,DAE.NOEXTARG(),lang) 
       equation 
         fcall2 = generateExtCallFcall2(fnname, args, lang);
         str = stringAppend(fcall2, ";");
         res = cAddStatements(cEmptyFunction, {str});
       then
         res;
-    case (fnname,args,DAE.EXTARG(componentRef = cr,type_ = ty),lang) /* return value assignment, shouldn\'t happen for arrays */ 
+      
+        /* return value assignment, shouldn\'t happen for arrays */ 
+    case (fnname,args,DAE.EXTARG(componentRef = cr,type_ = ty),lang) 
       equation 
         false = Types.isArray(ty);
         fcall2 = generateExtCallFcall2(fnname, args, lang);
@@ -5737,14 +5840,14 @@ algorithm
       list<DAE.ExtArg> args;
     case (n,args,"C")
       equation 
-        strlist = Util.listMap(args, generateExtCallFcallArg);
+        strlist = generateExtCallFcallArgs(args,1);
         str = Util.stringDelimitList(strlist, ", ");
         res = Util.stringAppendList({n,"(",str,")"});
       then
         res;
     case (n,args,"FORTRAN 77")
       equation 
-        strlist = Util.listMap(args, generateExtCallFcallArgF77);
+        strlist = generateExtCallFcallArgsF77(args,1);
         str = Util.stringDelimitList(strlist, ", ");
         res = Util.stringAppendList({n,"_(",str,")"});
       then
@@ -5757,15 +5860,50 @@ algorithm
   end matchcontinue;
 end generateExtCallFcall2;
 
+protected function generateExtCallFcallArgs "helper function to generateExtCallFcall2"
+  input list<DAE.ExtArg> args;
+  input Integer i "nth tuple elt, only used for outputs";
+  output list<String> strLst;
+algorithm
+  strLst := matchcontinue(args,i)
+  local String str; Integer i1; DAE.ExtArg a; Boolean b;
+    case({},i) then {};
+    case(a::args,i) equation
+      b = isOutputExtArg(a);
+      str = generateExtCallFcallArg(a,i);
+      i1 = Util.if_(b,i+1,i);
+      strLst = generateExtCallFcallArgs(args,i1);
+    then str::strLst;    
+  end matchcontinue;
+end generateExtCallFcallArgs;
+
+protected function generateExtCallFcallArgsF77 "helper function to generateExtCallFcall2"
+  input list<DAE.ExtArg> args;
+  input Integer i "nth tuple elt, only used for outputs";
+  output list<String> strLst;
+algorithm
+  strLst := matchcontinue(args,i)
+  local String str; Integer i1; DAE.ExtArg a; Boolean b;
+    case({},i) then {};
+    case(a::args,i) equation
+      b= isOutputExtArg(a);
+      str = generateExtCallFcallArgF77(a,i);
+      i1 = Util.if_(b,i+1,i);
+      strLst = generateExtCallFcallArgsF77(args,i1);
+    then str::strLst;    
+  end matchcontinue;
+end generateExtCallFcallArgsF77;
+
 protected function generateExtCallFcallArg "function: generateExtCallFcallArg
  
   LS: is_array AND is_string
 "
   input DAE.ExtArg inExtArg;
+  input Integer i "nth tuple elt, used in outputs";
   output String outString;
 algorithm 
   outString:=
-  matchcontinue (inExtArg)
+  matchcontinue (inExtArg,i)
     local
       Exp.ComponentRef cref;
       Types.Attributes attr;
@@ -5773,7 +5911,9 @@ algorithm
       Lib res,name,str;
       DAE.ExtArg arg;
       Exp.Exp exp;
-    case arg /* INPUT NON-ARRAY NON-STRING */ 
+
+      /* INPUT NON-ARRAY NON-STRING */ 
+    case (arg,i) 
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
         true = Types.isInputAttr(attr);
@@ -5782,7 +5922,9 @@ algorithm
         res = varNameExternal(cref);
       then
         res;
-    case arg /* OUTPUT NON-ARRAY */ 
+        
+        /* OUTPUT NON-ARRAY */ 
+    case (arg,i) 
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
         false = Types.isArray(ty);
@@ -5791,22 +5933,28 @@ algorithm
         res = stringAppend("&", name);
       then
         res;
-    case arg /* INPUT/OUTPUT ARRAY */ 
+
+        /* INPUT/OUTPUT ARRAY */ 
+    case (arg,i) 
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
         true = Types.isArray(ty);
-        name = varNameArray(cref, attr);
+        name = varNameArray(cref, attr,i);
         res = stringAppend(name, ".data");
       then
         res;
-		case arg /* INPUT/OUTPUT STRING */
-		      equation 
-		        DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
-		        true = Types.isString(ty);
-		        (res,_) = compRefCstr(cref);
-		      then
-		        res;
-    case arg /* INPUT/OUTPUT NON-ARRAY */ 
+
+        /* INPUT/OUTPUT STRING */
+		case (arg,i)
+		  equation 
+		    DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
+		    true = Types.isString(ty);
+		    (res,_) = compRefCstr(cref);
+		  then
+		    res;
+
+		    /* INPUT/OUTPUT NON-ARRAY */ 
+    case (arg,i)
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
         false = Types.isArray(ty);
@@ -5814,18 +5962,22 @@ algorithm
         res = stringAppend("&", name);
       then
         res;
-    case arg
+
+    case (arg,i)
       equation 
         DAE.EXTARGEXP(exp = exp,type_ = ty) = arg;
         (_,res,_) = generateExpression(exp, 1, funContext);
       then
         res;
-    case ((arg as DAE.EXTARGSIZE(componentRef = _))) /* SIZE */ 
+
+        /* SIZE */ 
+    case ((arg as DAE.EXTARGSIZE(componentRef = _)),i) 
       equation 
         str = generateArraySizeCall(arg);
       then
         str;
-    case arg
+
+    case (arg,i)
       equation 
         Debug.fprint("failtrace", "#-- generate_ext_call_fcall_arg failed\n");
       then
@@ -5833,14 +5985,28 @@ algorithm
   end matchcontinue;
 end generateExtCallFcallArg;
 
+protected function isOutputExtArg "Returns true if external arg is an output argument"
+   input DAE.ExtArg extArg;
+   output Boolean isOutput;
+ algorithm
+   isOutput := matchcontinue(extArg)
+   local Types.Attributes attr;
+     case(DAE.EXTARG(attributes = attr)) equation
+        isOutput = Types.isOutputAttr(attr);
+      then isOutput;
+     case(_) then false;
+   end matchcontinue;
+end isOutputExtArg;
+
 protected function generateExtCallFcallArgF77 "function: generateExtCallFcallArgF77
  
 "
   input DAE.ExtArg inExtArg;
+  input Integer i "nth tuple elt, only for outputs";
   output String outString;
 algorithm 
   outString:=
-  matchcontinue (inExtArg)
+  matchcontinue (inExtArg,i)
     local
       Exp.ComponentRef cref;
       Types.Attributes attr;
@@ -5848,7 +6014,9 @@ algorithm
       Lib name,res;
       DAE.ExtArg arg;
       Exp.Exp exp,dim;
-    case arg /* INPUT NON-ARRAY */ 
+
+      /* INPUT NON-ARRAY */ 
+    case (arg,i) 
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
         true = Types.isInputAttr(attr);
@@ -5857,7 +6025,9 @@ algorithm
         res = stringAppend("&", name);
       then
         res;
-    case arg /* OUTPUT NON-ARRAY */ 
+
+        /* OUTPUT NON-ARRAY */ 
+    case(arg,i)
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
         true = Types.isOutputAttr(attr);
@@ -5866,7 +6036,9 @@ algorithm
         res = stringAppend("&", name);
       then
         res;
-    case arg /* INPUT ARRAY */ 
+        
+        /* INPUT ARRAY */ 
+    case (arg,i)
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
         true = Types.isInputAttr(attr);
@@ -5875,7 +6047,9 @@ algorithm
         res = stringAppend(name, ".data");
       then
         res;
-    case arg /* OUTPUT ARRAY */ 
+
+        /* OUTPUT ARRAY */ 
+    case (arg ,i)
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
         true = Types.isOutputAttr(attr);
@@ -5884,7 +6058,9 @@ algorithm
         res = stringAppend(name, ".data");
       then
         res;
-    case arg /* INPUT/OUTPUT ARRAY */ 
+
+        /* INPUT/OUTPUT ARRAY */ 
+    case (arg,i)
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
         true = Types.isArray(ty);
@@ -5892,7 +6068,9 @@ algorithm
         res = stringAppend(name, ".data");
       then
         res;
-    case arg /* INPUT/OUTPUT NON-ARRAY */ 
+
+        /* INPUT/OUTPUT NON-ARRAY */         
+    case (arg,i) 
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
         false = Types.isArray(ty);
@@ -5900,19 +6078,23 @@ algorithm
         res = stringAppend("&", name);
       then
         res;
-    case arg
+
+    case (arg,i)
       equation 
         DAE.EXTARGEXP(exp = exp,type_ = ty) = arg;
-        res = generateExtCallFcallArg(arg);
+        res = generateExtCallFcallArg(arg,i);
       then
         res;
-    case DAE.EXTARGSIZE(componentRef = cref,attributes = attr,type_ = ty,exp = dim) /* SIZE */ 
+
+        /* SIZE */ 
+    case (DAE.EXTARGSIZE(componentRef = cref,attributes = attr,type_ = ty,exp = dim), i)
       equation 
         (name,_) = compRefCstr(cref);
         res = stringAppend("&", name);
       then
         res;
-    case arg
+
+    case (arg,i)
       equation 
         Debug.fprint("failtrace", "#-- generate_ext_call_fcall_arg_f77 failed\n");
       then
@@ -5937,7 +6119,8 @@ algorithm
     case DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
       equation 
         ((Types.T_INTEGER(_),_)) = Types.arrayElementType(ty);
-        crstr = varNameArray(cr, attr);
+        /* 1 is dummy since can not be output*/        
+        crstr = varNameArray(cr, attr,1);
         dimstr = Exp.printExpStr(dim);
         str = Util.stringAppendList({"size_of_dimension_integer_array(",crstr,", ",dimstr,")"});
       then
@@ -5945,7 +6128,8 @@ algorithm
     case DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
       equation 
         ((Types.T_REAL(_),_)) = Types.arrayElementType(ty);
-        crstr = varNameArray(cr, attr);
+        /* 1 is dummy since can not be output*/
+        crstr = varNameArray(cr, attr,1);
         dimstr = Exp.printExpStr(dim);
         str = Util.stringAppendList({"size_of_dimension_real_array(",crstr,", ",dimstr,")"});
       then
@@ -5976,7 +6160,8 @@ algorithm
     case DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
       equation 
         ((Types.T_INTEGER(_),_)) = Types.arrayElementType(ty);
-        crstr = varNameArray(cr, attr);
+        /* 1 is dummy since can not be output*/
+        crstr = varNameArray(cr, attr,1);
         dimstr = Exp.printExpStr(dim);
         str = Util.stringAppendList({"size_of_dimension_integer_array(",crstr,", ",dimstr,")"});
       then
@@ -5984,7 +6169,8 @@ algorithm
     case DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
       equation 
         ((Types.T_REAL(_),_)) = Types.arrayElementType(ty);
-        crstr = varNameArray(cr, attr);
+        /* 1 is dummy since can not be output*/
+        crstr = varNameArray(cr, attr,1);
         dimstr = Exp.printExpStr(dim);
         str = Util.stringAppendList({"size_of_dimension_real_array(",crstr,", ",dimstr,")"});
       then
@@ -6050,45 +6236,47 @@ protected function generateExtcallVarcopy "function: generateExtcallVarcopy
   input list<DAE.ExtArg> inDAEExtArgLst;
   input DAE.ExtArg inExtArg;
   input String inString;
+  input Integer i "nth tuple elt";
   input Integer inInteger;
   output CFunction outCFunction;
   output Integer outInteger;
 algorithm 
   (outCFunction,outInteger):=
-  matchcontinue (inDAEExtArgLst,inExtArg,inString,inInteger)
+  matchcontinue (inDAEExtArgLst,inExtArg,inString,i,inInteger)
     local
       Integer tnr,tnr_1;
       CFunction retcopy,vc,vcr,res;
       DAE.ExtArg retarg,var;
       Lib lang;
       list<DAE.ExtArg> rest;
-    case ({},DAE.NOEXTARG(),_,tnr) then (cEmptyFunction,tnr);  /* language */ 
-    case ({},retarg,lang,tnr)
+    case ({},DAE.NOEXTARG(),_,_,tnr) then (cEmptyFunction,tnr);  /* language */ 
+    case ({},retarg,lang,i,tnr)
       equation 
         isExtargOutput(retarg);
-        retcopy = generateExtcallVarcopySingle(retarg);
+        retcopy = generateExtcallVarcopySingle(retarg,i);
       then
         (retcopy,tnr);
-    case ({},retarg,lang,tnr)
+    case ({},retarg,lang,i,tnr)
       equation 
         failure(isExtargOutput(retarg));
       then
         (cEmptyFunction,tnr);
-    case ((var :: rest),retarg,(lang as "C"),tnr) /* extarg list is already filtered and contains only outputs */ 
+        /* extarg list is already filtered and contains only outputs */ 
+    case ((var :: rest),retarg,(lang as "C"),i, tnr) 
       equation 
-        vc = generateExtcallVarcopySingle(var);
-        (vcr,tnr_1) = generateExtcallVarcopy(rest, retarg, lang, tnr);
+        vc = generateExtcallVarcopySingle(var,i);
+        (vcr,tnr_1) = generateExtcallVarcopy(rest, retarg, lang, i+1,tnr);
         res = cMergeFn(vc, vcr);
       then
         (res,tnr_1);
-    case ((var :: rest),retarg,(lang as "FORTRAN 77"),tnr)
+    case ((var :: rest),retarg,(lang as "FORTRAN 77"),i,tnr)
       equation 
-        vc = generateExtcallVarcopySingleF77(var);
-        (vcr,tnr_1) = generateExtcallVarcopy(rest, retarg, lang, tnr);
+        vc = generateExtcallVarcopySingleF77(var,i);
+        (vcr,tnr_1) = generateExtcallVarcopy(rest, retarg, lang, i,tnr);
         res = cMergeFn(vc, vcr);
       then
         (res,tnr_1);
-    case (_,_,_,_)
+    case (_,_,_,_,_)
       equation 
         Debug.fprint("failtrace", "#-- generate_extcall_varcopy failed\n");
       then
@@ -6101,35 +6289,36 @@ protected function generateExtcallVarcopySingle "function: generateExtcallVarcop
   Helper function to generate_extcall_varcopy
 "
   input DAE.ExtArg inExtArg;
+  input Integer i "nth tuple elt";
   output CFunction outCFunction;
 algorithm 
   outCFunction:=
-  matchcontinue (inExtArg)
+  matchcontinue (inExtArg,i)
     local
-      Lib name,orgname,typcast,str;
+      Lib name,orgname,typcast,str,iStr;
       CFunction res;
       Exp.ComponentRef cref;
       Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
-    case DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty)
+      tuple<Types.TType, Option<Absyn.Path>> ty;      
+    case (DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty),i)
       equation 
         false = Types.isArray(ty);
         true = Types.isOutputAttr(attr);
         name = varNameExternal(cref);
-        (orgname,_) = compRefCstr(cref);
+				iStr = intString(i);	
         typcast = generateType(ty);
-        str = Util.stringAppendList({"out.",orgname," = (",typcast,")",name,";"});
+        str = Util.stringAppendList({"out.","targ",iStr," = (",typcast,")",name,";"});
         res = cAddStatements(cEmptyFunction, {str});
       then
         res;
-    case DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty)
+    case (DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty),i)
       equation 
         true = Types.isArray(ty);
         true = Types.isOutputAttr(attr);
       then
         cEmptyFunction;
-    case DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) then cEmptyFunction; 
-    case _
+    case( DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty),_) then cEmptyFunction; 
+    case (_,_)
       equation 
         Debug.fprint("failtrace", "#-- generate_extcall_varcopy_single failed\n");
       then
@@ -6142,10 +6331,11 @@ protected function generateExtcallVarcopySingleF77 "function: generateExtcallVar
   Helper function to generate_extcall_varcopy
 "
   input DAE.ExtArg inExtArg;
+  input Integer i "nth tuple elt";
   output CFunction outCFunction;
 algorithm 
   outCFunction:=
-  matchcontinue (inExtArg)
+  matchcontinue (inExtArg,i)
     local
       Exp.ComponentRef cref;
       Types.Attributes attr;
@@ -6153,7 +6343,8 @@ algorithm
       Lib name,orgname,converter,str,typcast,tystr;
       CFunction res;
       DAE.ExtArg extarg;
-    case extarg /* INPUT ARRAY */ 
+      String iStr;
+    case (extarg,i) /* INPUT ARRAY */ 
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = extarg;
         true = Types.isArray(ty);
@@ -6165,31 +6356,31 @@ algorithm
         res = cAddStatements(cEmptyFunction, {str});
       then
         res;
-    case DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) /* OUTPUT NON-ARRAY */ 
+    case (DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty),i) /* OUTPUT NON-ARRAY */ 
       equation 
         false = Types.isArray(ty);
         true = Types.isOutputAttr(attr);
         name = varNameExternal(cref);
-        (orgname,_) = compRefCstr(cref);
+				iStr = intString(i);
         typcast = generateType(ty);
-        str = Util.stringAppendList({"out.",orgname," = (",typcast,")",name,";"});
+        str = Util.stringAppendList({"out.","targ",iStr," = (",typcast,")",name,";"});
         res = cAddStatements(cEmptyFunction, {str});
       then
         res;
-    case extarg /* OUTPUT ARRAY */ 
+    case (extarg,i) /* OUTPUT ARRAY */ 
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = extarg;
         true = Types.isArray(ty);
         true = Types.isOutputAttr(attr);
         tystr = generateType(ty);
         name = varNameExternal(cref);
-        (orgname,_) = compRefCstr(cref);
+       	iStr = intString(i);
         converter = generateF77ToCConverter(ty);
-        str = Util.stringAppendList({converter,"(&",name,", &out.",orgname,");"});
+        str = Util.stringAppendList({converter,"(&",name,", &out.","targ",iStr,");"});
         res = cAddStatements(cEmptyFunction, {str});
       then
         res;
-    case extarg /* BIDIR ARRAY */ 
+    case (extarg,i) /* BIDIR ARRAY */ 
       equation 
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = extarg;
         true = Types.isArray(ty);
@@ -6202,8 +6393,8 @@ algorithm
         res = cAddStatements(cEmptyFunction, {str});
       then
         res;
-    case DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) then cEmptyFunction; 
-    case _
+    case (DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty),_) then cEmptyFunction; 
+    case (_,_)
       equation 
         Debug.fprint("failtrace", 
           "#-- generate_extcall_varcopy_single_f77 failed\n");
@@ -6299,28 +6490,29 @@ protected function varNameArray "function: varNameArray
 "
   input Exp.ComponentRef inComponentRef;
   input Types.Attributes inAttributes;
+  input Integer i "nth tuple elt, only used for output vars";
   output String outString;
 algorithm 
   outString:=
-  matchcontinue (inComponentRef,inAttributes)
+  matchcontinue (inComponentRef,inAttributes,i)
     local
-      Lib str,cref_str;
+      Lib str,cref_str,iStr;
       Exp.ComponentRef cref;
       Types.Attributes attr;
-    case (cref,attr) /* INPUT */ 
+    case (cref,attr,i) /* INPUT */ 
       equation 
         (str,_) = compRefCstr(cref);
         true = Types.isInputAttr(attr);
       then
         str;
-    case (cref,attr) /* OUTPUT */ 
+    case (cref,attr,i) /* OUTPUT */ 
       equation 
-        (cref_str,_) = compRefCstr(cref);
+				iStr = stringAppend("targ",intString(i));
         true = Types.isOutputAttr(attr);
-        str = stringAppend("out.", cref_str);
+        str = stringAppend("out.", iStr);
       then
         str;
-    case (cref,attr) /* INPUT/OUTPUT */ 
+    case (cref,attr,_) /* BIDIRECTIONAL */ 
       equation 
         (str,_) = compRefCstr(cref);
       then
@@ -6413,14 +6605,16 @@ algorithm
   end matchcontinue;
 end generateRead;
 
-protected function generateWrite "function: generateWrite
+protected function generateWriteOutvars "function: generateWriteOutvars
  
+ generates code for writing output variables in return struct to file.
 "
   input list<DAE.Element> inDAEElementLst;
+  input Integer i "nth tuple elt";
   output CFunction outCFunction;
 algorithm 
   outCFunction:=
-  matchcontinue (inDAEElementLst)
+  matchcontinue (inDAEElementLst,i)
     local
       Lib cref_str,type_string,stmt;
       CFunction cfn1,cfn2,cfn;
@@ -6428,34 +6622,47 @@ algorithm
       DAE.VarKind vk;
       DAE.Type t;
       list<DAE.Element> r;
-    case {} then cEmptyFunction; 
-    case (DAE.VAR(componentRef = id,varible = vk,variable = DAE.OUTPUT(),input_ = t,binding = {}) :: r)
+      String iStr;
+    case ({},_) then cEmptyFunction; 
+    case (DAE.VAR(componentRef = id,varible = vk,variable = DAE.OUTPUT(),input_ = t,binding = {}) :: r,i)
       equation 
-        (cref_str,_) = compRefCstr(id);
+        iStr = intString(i);
         type_string = daeTypeStr(t, false);
-        stmt = Util.stringAppendList({"write_",type_string,"(out_file, &out.",cref_str,");"});
+        stmt = Util.stringAppendList({"write_",type_string,"(out_file, &out.","targ",iStr,");"});
         cfn1 = cAddStatements(cEmptyFunction, {stmt});
-        cfn2 = generateWrite(r);
+        cfn2 = generateWriteOutvars(r,i+1);
         cfn = cMergeFn(cfn1, cfn2);
       then
         cfn;
-    case (DAE.VAR(componentRef = id,varible = vk,variable = DAE.OUTPUT(),input_ = t,binding = (_ :: _)) :: r)
+    case (DAE.VAR(componentRef = id,varible = vk,variable = DAE.OUTPUT(),input_ = t,binding = (_ :: _)) :: r,i)
       equation 
-        (cref_str,_) = compRefCstr(id);
+        iStr = intString(i);
         type_string = daeTypeStr(t, true);
-        stmt = Util.stringAppendList({"write_",type_string,"(out_file, &out.",cref_str,");"});
+        stmt = Util.stringAppendList({"write_",type_string,"(out_file, &out.","targ",iStr,");"});
         cfn1 = cAddStatements(cEmptyFunction, {stmt});
-        cfn2 = generateWrite(r);
+        cfn2 = generateWriteOutvars(r,i+1);
         cfn = cMergeFn(cfn1, cfn2);
       then
         cfn;
-    case (_ :: r)
+    case (_ :: r,i)
       equation 
-        cfn = generateWrite(r);
+        cfn = generateWriteOutvars(r,i);
       then
         cfn;
   end matchcontinue;
-end generateWrite;
+end generateWriteOutvars;
+
+protected function isOutput "Returns true if variable is output"
+  input DAE.Element e;
+  output Boolean isOutput;
+algorithm
+  isOutput := matchcontinue(e)
+    case(e) equation
+      DAE.isOutputVar(e);
+    then true;
+    case(_) then false;
+  end matchcontinue;
+end isOutput;
 
 protected function isRcwOutput "function: isRcwOutput
  

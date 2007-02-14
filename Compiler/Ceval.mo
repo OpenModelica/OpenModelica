@@ -253,14 +253,6 @@ algorithm
   end matchcontinue;
 end cevalBuiltinHandler;
 
-
-
-
-
-
-
-
-
 public function ceval "function: ceval
  
   This function is used when the value of a constant expression is
@@ -559,9 +551,6 @@ algorithm
       then
         (cache,Values.ARRAY(res),st_2);
 
-
-
-
 		//POW (integer or real)
     case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.POW(ty=_),exp2 = rh),impl,st,dim,msg)
       local
@@ -573,7 +562,6 @@ algorithm
 				res3 = Values.safeIntRealOp(res1, res2, Values.POWOP);
       then 
         (cache,res3,st_2);
-
 
 		//MUL (integer or real)
     case (cache,env,Exp.BINARY(exp1 = lh,operator = Exp.MUL(ty=_),exp2 = rh),impl,st,dim,msg)
@@ -907,7 +895,7 @@ algorithm
 	 and write another rule for the false case that generates the function */ 
       equation
  				failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
-        cache = cevalGenerateFunction(cache,env, funcpath) "Static.is_function_in_cflist(cflist,funcpath) => true &" ;
+        cache = cevalGenerateFunction(cache,env, funcpath);
         funcstr = ModUtil.pathString2(funcpath, "_");
         infilename = stringAppend(funcstr, "_in.txt");
         outfilename = stringAppend(funcstr, "_out.txt");
@@ -5222,11 +5210,7 @@ algorithm
         filename = stringAppend(pathstr, ".c");
         Print.clearBuf();
         Print.printBuf(
-          "#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n") "
-	 string_append(\"CEVALGENFUNC_\", pathstr) => defmacro &
-	 Print.printBuf \"#ifndef \" & Print.printBuf defmacro & Print.printBuf \"\\n\" &
-	 Print.printBuf \"#define \" & Print.printBuf defmacro & Print.printBuf \"\\n\" &
-" ;
+          "#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n");
         Print.printBuf(gencodestr);
         Print.printBuf("\nint main(int argc, char** argv)\n");
         Print.printBuf("{\n\n  if (argc != 3)\n");
@@ -5236,9 +5220,7 @@ algorithm
         Print.printBuf("_");
         Print.printBuf(pathstr);
         Print.printBuf("_read_call_write(argv[1],argv[2]);\n  return 0;\n}\n");
-        Print.writeBuf(filename) "
-	 Print.printBuf \"#endif /*\" & Print.printBuf defmacro & Print.printBuf \"*/\\n\" & 
-" ;
+        Print.writeBuf(filename);
         System.compileCFile(filename);
       then
         (cache);
