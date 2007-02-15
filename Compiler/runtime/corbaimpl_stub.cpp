@@ -13,9 +13,16 @@ using namespace std;
 
 
 extern "C" {
-  
+/*
+ * @author adrpo
+ * @date 2007-02-08
+ * This variable is set in rtopts by function setCorbaSessionName(char* name);
+ * system independent Corba Session Name
+ */	
+char* corbaSessionName=0;
+
 void Corba_5finit(void)
-{
+{	
 }
 
 void errmsg() {
