@@ -5367,7 +5367,7 @@ algorithm
       CFunction fn,restfn,resfn;
       list<DAE.Element> rest;
       Types.Type tp;
-      Boolean isOutput;
+      Boolean b_isOutput;
       Integer i1;
       
     case ({},i,tnr) then (cEmptyFunction,tnr); 
@@ -5375,8 +5375,8 @@ algorithm
       equation 
         DAE.VAR(componentRef = cref,varible = vk,variable = vd,input_ = ty,one = value,binding = dims,dimension = start,fullType=tp) = var;
         true = isArray(var);
-        isOutput = isOutput(var);
-        i1 = Util.if_(isOutput,i+1,i);
+        b_isOutput = isOutput(var);
+        i1 = Util.if_(b_isOutput,i+1,i);
         cref_1 = varNameExternalCref(cref);
         dims_1 = listReverse(dims);
         extvar = DAE.VAR(cref_1,vk,vd,ty,value,dims_1,NONE,DAE.NON_FLOW(),{},NONE,

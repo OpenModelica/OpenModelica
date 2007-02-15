@@ -2029,7 +2029,7 @@ algorithm
       list<SCode.Element> cdefelts,extendselts,els,allEls;
       list<Env.Frame> env1,env2,env,cenv,cenv_2,env_2,env3;
       Types.Mod emods,mods,m,mod_1,mods_1,mods_2;
-      list<tuple<SCode.Element, Mod>> extcomps,allEls2,constantEls;
+      list<tuple<SCode.Element, Mod>> extcomps,allEls2,lst_constantEls;
       list<SCode.Equation> eqs2,initeqs2,eqs,initeqs;
       list<SCode.Algorithm> alg2,initalg2,alg,initalg;
       Prefix.Prefix pre;
@@ -2055,13 +2055,14 @@ algorithm
         (cache,env2,emods,extcomps,eqs2,initeqs2,alg2,initalg2) = partialInstExtendsList(cache,env1, mods, extendselts, ci_state, true) "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations." ;
 				allEls = listAppend(extendselts,els);
 				allEls2=addNomod(allEls);
-				constantEls = constantEls(allEls2) " Retrieve all constants";
-				env3 = addComponentsToEnv(env2, mods, pre, csets, ci_state, constantEls, constantEls, 
-          {}, inst_dims, false);
-				 (cache,_,env3,_,ci_state2,_) = instElementList(cache,env3, mods, pre, csets, ci_state1, constantEls, inst_dims, true) "instantiate constants";
-				 
+				lst_constantEls = constantEls(allEls2) " Retrieve all constants";
+				env3 = addComponentsToEnv(env2, mods, pre, csets, ci_state, 
+				  lst_constantEls, lst_constantEls, {}, inst_dims, false);
+				(cache,_,env3,_,ci_state2,_) = 
+				instElementList(cache,env3, mods, pre, csets, ci_state1, lst_constantEls, inst_dims, true) "instantiate constants";
       then
         (cache,env3,ci_state2);
+        
     case (cache,env,mods,pre,csets,ci_state,SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),mod = mod),re,prot,inst_dims) /* This rule describes how to instantiate a derived class definition */ 
       equation 
         (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = Lookup.lookupClass(cache,env, cn, true);

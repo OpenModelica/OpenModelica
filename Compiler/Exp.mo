@@ -3130,19 +3130,19 @@ algorithm
       Type tp;
       list<Ident> explst;
       Ident str;
-      Boolean isZero,b1,b2;
+      Boolean b_isZero,b1,b2;
     case ({}) then RCONST(1.0); 
     case ({e1}) 
       equation
-        isZero = isZero(e1);
-        res = Util.if_(isZero,makeConstZero(typeof(e1)),e1);
+        b_isZero = isZero(e1);
+        res = Util.if_(b_isZero,makeConstZero(typeof(e1)),e1);
       then res; 
     case ((e :: es)) /* to prevent infinite recursion, disregard constant 1. */ 
       equation 
         true = isConstOne(e);
         res = makeProductLst(es);
-        isZero = isZero(res);
-        res = Util.if_(isZero,makeConstZero(typeof(e)),res);
+        b_isZero = isZero(res);
+        res = Util.if_(b_isZero,makeConstZero(typeof(e)),res);
       then
         res;
      case ((e :: es)) /* to prevent infinite recursion, disregard constant 0. */ 
@@ -3160,11 +3160,11 @@ algorithm
       equation 
         b1 = isZero(e1);
         b2 = isZero(e2);
-        isZero = boolOr(b1,b2);
+        b_isZero = boolOr(b1,b2);
         tp = typeof(e1) "Take type info from e1, ok since type checking already performed." ;
         tp = checkIfOther(tp);
         res = BINARY(e1,MUL(tp),e2);
-        res = Util.if_(isZero,makeConstZero(tp),res);
+        res = Util.if_(b_isZero,makeConstZero(tp),res);
       then
         res;
     case ((BINARY(exp1 = e1,operator = DIV(ty = tp),exp2 = e) :: es))
@@ -3172,8 +3172,8 @@ algorithm
         true = isConstOne(e1);
         p1 = makeProductLst(es);
         res = BINARY(p1,DIV(tp),e);
-        isZero = isZero(p1);
-        res = Util.if_(isZero,makeConstZero(typeof(e)),res);
+        b_isZero = isZero(p1);
+        res = Util.if_(b_isZero,makeConstZero(typeof(e)),res);
       then
 			  res;
     case ((e1 :: rest))
@@ -3184,8 +3184,8 @@ algorithm
         res = BINARY(e1,MUL(tp),e2);
         b1 = isZero(e1);
         b2 = isZero(e2);
-        isZero = boolOr(b1,b2);
-        res = Util.if_(isZero,makeConstZero(typeof(e1)),res);
+        b_isZero = boolOr(b1,b2);
+        res = Util.if_(b_isZero,makeConstZero(typeof(e1)),res);
       then
 				res;
     case (lst)
