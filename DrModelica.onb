@@ -2,7 +2,7 @@
 <Notebook>
  <GroupCell closed="false" >
   <TextCell style="Text" >
-   <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p align='right' style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-style:italic;">Version 2006-09-07&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
+   <Text>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;/head>&lt;body style=" white-space: pre-wrap; font-family:MS Shell Dlg; font-size:8.25pt; font-weight:400; font-style:normal; text-decoration:none;">&lt;p align='right' style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:Times New Roman; font-size:12pt; color:#000000;">&lt;span style=" font-style:italic;">Version 2007-02-16&lt;/span>&lt;/p>&lt;/body>&lt;/html></Text>
    <Rule name="TextAlignment" >Right</Rule>
   </TextCell>
   <GroupCell closed="false" >
