@@ -3787,7 +3787,8 @@ algorithm
       then
         e3; 
 
-    case (_,DIV(ty = ty),BINARY(exp1 = e1,operator = ADD(ty = ty2),exp2 = e2),e3) /* (a+b)/c1 => a/c1+b/c1, for constant c1 */ 
+        /* (a+b)/c1 => a/c1+b/c1, for constant c1 */ 
+    case (_,DIV(ty = ty),BINARY(exp1 = e1,operator = ADD(ty = ty2),exp2 = e2),e3) 
       equation 
         true = isConst(e3);
         res = simplify1(
@@ -3795,15 +3796,17 @@ algorithm
       then
         res;
 
-    case (_,DIV(ty = ty),BINARY(exp1 = e1,operator = SUB(ty = ty2),exp2 = e2),e3) /* (a-b)/c1 => a/c1-b/c1, for constant c1 */ 
+        /* (a-b)/c1 => a/c1-b/c1, for constant c1 */ 
+    case (_,DIV(ty = ty),BINARY(exp1 = e1,operator = SUB(ty = ty2),exp2 = e2),e3) 
       equation 
         true = isConst(e3);
         res = simplify1(
           BINARY(BINARY(e1,DIV(ty),e3),SUB(ty2),BINARY(e2,DIV(ty),e3)));
       then
         res;
-
-    case (_,MUL(ty = ty),BINARY(exp1 = e1,operator = ADD(ty = ty2),exp2 = e2),e3) /* (a+b)c1 => ac1+bc1, for constant c1 */ 
+        
+        /* (a+b)c1 => ac1+bc1, for constant c1 */ 
+    case (_,MUL(ty = ty),BINARY(exp1 = e1,operator = ADD(ty = ty2),exp2 = e2),e3) 
       equation 
         true = isConst(e3);
         res = simplify1(
@@ -3811,7 +3814,8 @@ algorithm
       then
         res;
 
-    case (_,MUL(ty = ty),BINARY(exp1 = e1,operator = SUB(ty = ty2),exp2 = e2),e3) /* (a-b)c1 => a/c1-b/c1, for constant c1 */ 
+        /* (a-b)c1 => a/c1-b/c1, for constant c1 */ 
+    case (_,MUL(ty = ty),BINARY(exp1 = e1,operator = SUB(ty = ty2),exp2 = e2),e3) 
       equation 
         true = isConst(e3);
         res = simplify1(
@@ -3819,27 +3823,31 @@ algorithm
       then
         res;
 
-    case (_,ADD(ty = tp),e1,UNARY(operator = UMINUS(ty = tp2),exp = e2)) /* a+(-b) */ 
+        /* a+(-b) */ 
+    case (_,ADD(ty = tp),e1,UNARY(operator = UMINUS(ty = tp2),exp = e2)) 
       equation 
         e = simplify1(BINARY(e1,SUB(tp),e2));
       then
         e;
 
-    case (_,ADD(ty = tp),UNARY(operator = UMINUS(ty = tp2),exp = e2), e1) /* (-b)+a */ 
+        /* (-b)+a */ 
+    case (_,ADD(ty = tp),UNARY(operator = UMINUS(ty = tp2),exp = e2), e1) 
       equation 
         e1 = simplify1(BINARY(e1,SUB(tp),e2));
       then
         e1;
 
+        /* a/b/c => (ac)/b)*/
     case (_,DIV(ty = tp),e1,BINARY(exp1 = e2,operator = DIV(ty = tp2),exp2 = e3))
       equation 
-        e = simplify1(BINARY(BINARY(e1,MUL(tp),e3),DIV(tp2),e2)) "a/b/c => (ac)/b)" ;
+        e = simplify1(BINARY(BINARY(e1,MUL(tp),e3),DIV(tp2),e2))  ;
       then
         e;
 
+        /* (a/b)/c => a/(bc)) */
     case (_,DIV(ty = tp),BINARY(exp1 = e1,operator = DIV(ty = tp2),exp2 = e2),e3)
       equation 
-        e = simplify1(BINARY(e1,DIV(tp2),BINARY(e2,MUL(tp),e3))) "(a/b)/c => a/(bc))" ;
+        e = simplify1(BINARY(e1,DIV(tp2),BINARY(e2,MUL(tp),e3)));
       then
         e;
 
@@ -3885,13 +3893,15 @@ algorithm
       then
         e;
 
-    case (_,MUL(ty = tp),BINARY(exp1 = e1,operator = DIV(ty = tp2),exp2 = e2),e3) /* (e1/e2)e3 => (e1e3)/e2 */ 
+        /* (e1/e2)e3 => (e1e3)/e2 */ 
+    case (_,MUL(ty = tp),BINARY(exp1 = e1,operator = DIV(ty = tp2),exp2 = e2),e3) 
       equation 
         res = simplify1(BINARY(BINARY(e1,MUL(tp),e3),DIV(tp2),e2));
       then
         res;
 
-    case (_,MUL(ty = tp),e1,BINARY(exp1 = e2,operator = DIV(ty = tp2),exp2 = e3)) /* e1(e2/e3) => (e1e2)/e3 */ 
+        /* e1(e2/e3) => (e1e2)/e3 */ 
+    case (_,MUL(ty = tp),e1,BINARY(exp1 = e2,operator = DIV(ty = tp2),exp2 = e3)) 
       equation 
         res = simplify1(BINARY(BINARY(e1,MUL(tp),e2),DIV(tp2),e3));
       then
@@ -3992,20 +4002,20 @@ algorithm
         e2_1 = simplify1(e2);
       then
         BINARY(e1_1,DIV(ty),e2_1);
-
+    /* e2*e3 / e1 => e3/e1 * e2 */
     case (_,DIV(ty = tp2),BINARY(exp1 = e2,operator = MUL(ty = tp),exp2 = e3),e1)
       equation 
         true = isConst(e3) "(c1x)/c2" ;
         true = isConst(e1);
-        e = simplify1(BINARY(BINARY(e1,DIV(tp2),e3),MUL(tp),e2));
+        e = simplify1(BINARY(BINARY(e3,DIV(tp2),e1),MUL(tp),e2));
       then
         e;
-
+        /* e2*e3 / e1 => e2 / e1 * e3 */
     case (_,DIV(ty = tp2),BINARY(exp1 = e2,operator = MUL(ty = tp),exp2 = e3),e1)
       equation 
-        true = isConst(e3) "(xc1)/c2" ;
-        true = isConst(e2);
-        e = simplify1(BINARY(BINARY(e2,DIV(tp2),e3),MUL(tp),e1));
+        true = isConst(e2) ;
+        true = isConst(e1);
+        e = simplify1(BINARY(BINARY(e2,DIV(tp2),e1),MUL(tp),e3));
       then
         e;
 
@@ -5238,7 +5248,7 @@ algorithm
   outString:=
   matchcontinue (inOperator)
     case (ADD(ty = _)) then " + "; 
-    case (SUB(ty = _)) then " - "; 
+    case (SUB(ty = _)) then " - ";       
     case (MUL(ty = _)) then " * "; 
     case (DIV(ty = _)) then " / "; 
     case (POW(ty = _)) then " ^ "; 
@@ -5578,7 +5588,7 @@ public function printExpStr "function: printExpStr
   input Exp e;
   output String s;
 algorithm 
-  s := printExp2Str(e, 0);
+  s := printExp2Str(e);
 end printExpStr;
 
 protected function printExp2Str "function: printExp2Str
@@ -5586,137 +5596,124 @@ protected function printExp2Str "function: printExp2Str
   Helper function to print_exp_str.
 "
   input Exp inExp;
-  input Integer inInteger;
   output String outString;
 algorithm 
   outString:=
-  matchcontinue (inExp,inInteger)
+  matchcontinue (inExp)
     local
       Ident s,s_1,s_2,sym,s1,s2,s3,s4,s_3,ifstr,thenstr,elsestr,res,fs,argstr,s5,s_4,s_5,res2,str,crstr,dimstr,expstr,iterstr,id;
-      Integer x,pri2_1,pri2,pri3,pri1,ival,i;
+      Ident s1_1,s2_1,s1_2,s2_2,cs,ts,fs,cs_1,ts_1,fs_1,s3_1;
+      Integer x,pri2_1,pri2,pri3,pri1,ival,i,pe1,p1,p2,pc,pt,pf,p,pstop,pstart,pstep;
       Real rval;
       ComponentRef c;
       Type t,ty,ty2,tp;
-      Exp e1,e2,e21,e22,e,f,start,stop,step,cr,dim,exp,iterexp;
+      Exp e1,e2,e21,e22,e,f,start,stop,step,cr,dim,exp,iterexp,cond,tb,fb;
       Operator op;
       Absyn.Path fcn;
       list<Exp> args,es;
-    case (END(),_) then "end"; 
-    case (ICONST(integer = x),_)
+    case (END()) then "end"; 
+    case (ICONST(integer = x))
       equation 
         s = intString(x);
       then
         s;
-    case (RCONST(real = x),_)
+    case (RCONST(real = x))
       local Real x;
       equation 
         s = realString(x);
       then
         s;
-    case (SCONST(string = s),_)
+    case (SCONST(string = s))
       equation 
         s_1 = stringAppend("\"", s);
         s_2 = stringAppend(s_1, "\"");
       then
         s_2;
-    case (BCONST(bool = false),_) then "false"; 
-    case (BCONST(bool = true),_) then "true"; 
-    case (CREF(componentRef = c,ty = t),_)
+    case (BCONST(bool = false)) then "false"; 
+    case (BCONST(bool = true)) then "true"; 
+    case (CREF(componentRef = c,ty = t))
       equation 
         s = printComponentRefStr(c);
       then
         s;
-    case (BINARY(exp1 = e1,operator = (op as SUB(ty = ty)),exp2 = (e2 as BINARY(exp1 = e21,operator = SUB(ty = ty2),exp2 = e22))),pri1)
+    case (e as BINARY(e1,op,e2))
       equation 
         sym = binopSymbol(op);
-        pri2_1 = binopPriority(op);
-        pri2 = pri2_1 + 1;
-        (s1,pri3) = printLeftparStr(pri1, pri2) "binary minus have higher priority than itself" ;
-        s2 = printExp2Str(e1, pri3);
-        s3 = printExp2Str(e2, pri2);
-        s4 = printRightparStr(pri1, pri2);
-        s = stringAppend(s1, s2);
-        s_1 = stringAppend(s, sym);
-        s_2 = stringAppend(s_1, s3);
-        s_3 = stringAppend(s_2, s4);
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
+        p = expPriority(e);
+        p1 = expPriority(e1);
+        p2 = expPriority(e2);
+        s1_1 = parenthesize(s1, p1, p);
+        s2_1 = parenthesize(s2, p2, p);
+        s = stringAppend(s1_1, sym);
+        s_1 = stringAppend(s, s2_1);
       then
-        s_3;
-    case (BINARY(exp1 = e1,operator = op,exp2 = e2),pri1)
-      equation 
-        sym = binopSymbol(op);
-        pri2 = binopPriority(op);
-        (s1,pri3) = printLeftparStr(pri1, pri2);
-        s2 = printExp2Str(e1, pri3);
-        s3 = printExp2Str(e2, pri2);
-        s4 = printRightparStr(pri1, pri2);
-        s = stringAppend(s1, s2);
-        s_1 = stringAppend(s, sym);
-        s_2 = stringAppend(s_1, s3);
-        s_3 = stringAppend(s_2, s4);
-      then
-        s_3;
-    case (UNARY(operator = op,exp = e),pri1)
+        s_1;
+     case ((e as UNARY(op,e1)))
       equation 
         sym = unaryopSymbol(op);
-        pri2 = unaryopPriority(op);
-        (s1,pri3) = printLeftparStr(pri1, pri2);
-        s2 = printExp2Str(e, pri3);
-        s3 = printRightparStr(pri1, pri2);
-        s = stringAppend(sym, s1);
-        s_1 = stringAppend(s, s2);
-        s_2 = stringAppend(s_1, s3);
+        s = printExpStr(e1);
+        p = expPriority(e);
+        p1 = expPriority(e1);
+        s_1 = parenthesize(s, p1, p);
+        s_2 = stringAppend(sym, s_1);
       then
         s_2;
-    case (LBINARY(exp1 = e1,operator = op,exp2 = e2),pri1)
+   case ((e as LBINARY(e1,op,e2)))
       equation 
         sym = lbinopSymbol(op);
-        pri2 = lbinopPriority(op);
-        (s1,pri3) = printLeftparStr(pri1, pri2);
-        s2 = printExp2Str(e1, pri3);
-        s3 = printExp2Str(e2, pri2);
-        s4 = printRightparStr(pri1, pri2);
-        s = stringAppend(s1, s2);
-        s_1 = stringAppend(s, sym);
-        s_2 = stringAppend(s_1, s3);
-        s_3 = stringAppend(s_2, s4);
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
+        p = expPriority(e);
+        p1 = expPriority(e1);
+        p2 = expPriority(e2);
+        s1_1 = parenthesize(s1, p1, p);
+        s2_1 = parenthesize(s2, p2, p);
+        s = stringAppend(s1_1, sym);
+        s_1 = stringAppend(s, s2_1);
       then
-        s_3;
-    case (LUNARY(operator = op,exp = e),pri1)
+        s_1;
+   case ((e as LUNARY(op,e1)))
       equation 
         sym = lunaryopSymbol(op);
-        pri2 = lunaryopPriority(op);
-        (s1,pri3) = printLeftparStr(pri1, pri2);
-        s2 = printExp2Str(e, pri3);
-        s3 = printRightparStr(pri1, pri2);
-        s = stringAppend(s1, sym);
-        s_1 = stringAppend(s, s2);
-        s_2 = stringAppend(s_1, s3);
+        s = printExpStr(e1);
+        p = expPriority(e);
+        p1 = expPriority(e1);
+        s_1 = parenthesize(s, p1, p);
+        s_2 = stringAppend(sym, s_1);
       then
         s_2;
-    case (RELATION(exp1 = e1,operator = op,exp2 = e2),pri1)
+   case ((e as RELATION(e1,op,e2)))
       equation 
         sym = relopSymbol(op);
-        pri2 = relopPriority(op);
-        (s1,pri3) = printLeftparStr(pri1, pri2);
-        s2 = printExp2Str(e1, pri3);
-        s3 = printExp2Str(e2, pri2);
-        s4 = printRightparStr(pri1, pri2);
-        s = stringAppend(s1, s2);
-        s_1 = stringAppend(s, sym);
-        s_2 = stringAppend(s_1, s3);
-        s_3 = stringAppend(s_2, s4);
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
+        p = expPriority(e);
+        p1 = expPriority(e1);
+        p2 = expPriority(e2);
+        s1_1 = parenthesize(s1, p1, p);
+        s2_1 = parenthesize(s2, p1, p);
+        s = stringAppend(s1_1, sym);
+        s_1 = stringAppend(s, s2_1);
       then
-        s_3;
-    case (IFEXP(expCond = c,expThen = t,expElse = f),_)
-      local Exp c,t;
+        s_1;
+    case ((e as IFEXP(cond,tb,fb)))
       equation 
-        ifstr = printExp2Str(c, 0);
-        thenstr = printExp2Str(t, 0);
-        elsestr = printExp2Str(f, 0);
-        res = Util.stringAppendList({"if ",ifstr," then ",thenstr," else ",elsestr});
+        cs = printExpStr(cond);
+        ts = printExpStr(tb);
+        fs = printExpStr(fb);
+        p = expPriority(e);
+        pc = expPriority(cond);
+        pt = expPriority(tb);
+        pf = expPriority(fb);
+        cs_1 = parenthesize(cs, pc, p);
+        ts_1 = parenthesize(ts, pt, p);
+        fs_1 = parenthesize(fs, pf, p);
+        str = Util.stringAppendList({"if ",cs_1," then ",ts_1," else ",fs_1});
       then
-        res;
-    case (CALL(path = fcn,expLst = args),_)
+        str;
+    case (CALL(path = fcn,expLst = args))
       equation 
         fs = Absyn.pathString(fcn);
         argstr = printListStr(args, printExpStr, ",");
@@ -5725,7 +5722,7 @@ algorithm
         s_2 = stringAppend(s_1, ")");
       then
         s_2;
-    case (ARRAY(array = es,ty=tp),_)
+    case (ARRAY(array = es,ty=tp))
       local Type tp; String s3; 
       equation 
         s3 = typeString(tp);
@@ -5733,14 +5730,14 @@ algorithm
         s_2 = Util.stringAppendList({"{",s,"}"});
       then
         s_2;
-    case (TUPLE(PR = es),_)
+    case (TUPLE(PR = es))
       equation 
         s = printListStr(es, printExpStr, ",");
         s_1 = stringAppend("(", s);
         s_2 = stringAppend(s_1, ")");
       then
         s_2;
-    case (MATRIX(scalar = es,ty=tp),_)
+    case (MATRIX(scalar = es,ty=tp))
       local list<list<tuple<Exp, Boolean>>> es;
         Type tp; String s3;        
       equation 
@@ -5749,43 +5746,41 @@ algorithm
         s_2 = Util.stringAppendList({"{{",s,"}}"}); 
       then
         s_2;
-    case (RANGE(exp = start,expOption = NONE,range = stop),pri1)
+    case (e as RANGE(_,start,NONE,stop))
       equation 
-        pri2 = 41;
-        (s1,pri3) = printLeftparStr(pri1, pri2);
-        s2 = printExp2Str(start, pri3);
-        s3 = printExp2Str(stop, pri3);
-        s4 = printRightparStr(pri1, pri2);
-        s = stringAppend(s1, s2);
-        s_1 = stringAppend(s, ":");
-        s_2 = stringAppend(s_1, s3);
-        s_3 = stringAppend(s_2, s4);
+        s1 = printExpStr(start);
+        s3 = printExpStr(stop);
+        p = expPriority(e);
+        pstart = expPriority(start);
+        pstop = expPriority(stop);
+        s1_1 = parenthesize(s1, pstart, p);
+        s3_1 = parenthesize(s3, pstop, p);
+        s = Util.stringAppendList({s1_1,":",s3_1});
       then
-        s_3;
-    case (RANGE(exp = start,expOption = SOME(step),range = stop),pri1)
+        s;
+    case ((e as RANGE(_,start,SOME(step),stop)))
       equation 
-        pri2 = 41;
-        (s1,pri3) = printLeftparStr(pri1, pri2);
-        s2 = printExp2Str(start, pri3);
-        s3 = printExp2Str(step, pri3);
-        s4 = printExp2Str(stop, pri3);
-        s5 = printRightparStr(pri1, pri2);
-        s = stringAppend(s1, s2);
-        s_1 = stringAppend(s, ":");
-        s_2 = stringAppend(s_1, s3);
-        s_3 = stringAppend(s_2, ":");
-        s_4 = stringAppend(s_3, s4);
-        s_5 = stringAppend(s_4, s5);
+        s1 = printExpStr(start);
+        s2 = printExpStr(step);
+        s3 = printExpStr(stop);
+        p = expPriority(e);
+        pstart = expPriority(start);
+        pstop = expPriority(stop);
+        pstep = expPriority(step);
+        s1_1 = parenthesize(s1, pstart, p);
+        s3_1 = parenthesize(s3, pstop, p);
+        s2_1 = parenthesize(s2, pstep, p);
+        s = Util.stringAppendList({s1_1,":",s2_1,":",s3_1});
       then
-        s_5;
-    case (CAST(ty = REAL(),exp = ICONST(integer = ival)),_)
+        s;
+    case (CAST(ty = REAL(),exp = ICONST(integer = ival)))
       equation 
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
         res = realString(rval);
       then
         res;
-    case (CAST(ty = REAL(),exp = UNARY(operator = UMINUS(ty = _),exp = ICONST(integer = ival))),_)
+    case (CAST(ty = REAL(),exp = UNARY(operator = UMINUS(ty = _),exp = ICONST(integer = ival))))
       equation 
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
@@ -5793,54 +5788,50 @@ algorithm
         res2 = stringAppend("-", res);
       then
         res2;
-    case (CAST(ty = REAL(),exp = e),_)
+    case (CAST(ty = REAL(),exp = e))
       equation 
         false = RTOpts.modelicaOutput();
         s = printExpStr(e);
         s_2 = Util.stringAppendList({"Real(",s,")"});
       then
         s_2;
-    case (CAST(ty = REAL(),exp = e),_)
+    case (CAST(ty = REAL(),exp = e))
       equation 
         true = RTOpts.modelicaOutput();
         s = printExpStr(e);
       then
         s;
-    case (CAST(ty = tp,exp = e),_)
+    case (CAST(ty = tp,exp = e))
       equation 
         str = typeString(tp);
         s = printExpStr(e);
         res = Util.stringAppendList({"CAST(",str,", ",s,")"});
       then
         res;
-    case (ASUB(exp = e,sub = i),pri1)
+    case (e as ASUB(exp = e1,sub = i))
       equation 
-        pri2 = 51;
-        (s1,pri3) = printLeftparStr(pri1, pri2);
-        s2 = printExp2Str(e, pri3);
-        s3 = printRightparStr(pri1, pri2);
+        p = expPriority(e);
+        pe1 = expPriority(e1);
+        s1 = printExp2Str(e1);
+        s1_1 = parenthesize(s1, pe1, p);
         s4 = intString(i);
-        s = stringAppend(s1, s2);
-        s_1 = stringAppend(s, s3);
-        s_2 = stringAppend(s_1, "[");
-        s_3 = stringAppend(s_2, s4);
-        s_4 = stringAppend(s_3, "]");
+        s_4 = Util.stringAppendList({s1_1,"[",s4,"]"});
       then
         s_4;
-    case (SIZE(exp = cr,sz = SOME(dim)),_)
+    case (SIZE(exp = cr,sz = SOME(dim)))
       equation 
         crstr = printExpStr(cr);
         dimstr = printExpStr(dim);
         str = Util.stringAppendList({"size(",crstr,",",dimstr,")"});
       then
         str;
-    case (SIZE(exp = cr,sz = NONE),_)
+    case (SIZE(exp = cr,sz = NONE))
       equation 
         crstr = printExpStr(cr);
         str = Util.stringAppendList({"size(",crstr,")"});
       then
         str;
-    case (REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp),_)
+    case (REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp))
       equation 
         fs = Absyn.pathString(fcn);
         expstr = printExpStr(exp);
@@ -5848,9 +5839,90 @@ algorithm
         str = Util.stringAppendList({"<reduction>",fs,"(",expstr," for ",id," in ",iterstr,")"});
       then
         str;
-    case (_,_) then "#UNKNOWN EXPRESSION# ----eee "; 
+    case (_) then "#UNKNOWN EXPRESSION# ----eee "; 
   end matchcontinue;
 end printExp2Str;
+
+protected function parenthesize "function: parenthesize
+ 
+  Adds parentheisis to a string if expression and parent expression 
+  priorities requires it.
+"
+  input String inString1;
+  input Integer inInteger2;
+  input Integer inInteger3;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inString1,inInteger2,inInteger3)
+    local
+      Ident str_1,str;
+      Integer pparent,pexpr;
+    case (str,pparent,pexpr) /* expr, prio. parent expr, prio. expr */ 
+      equation 
+        (pparent > pexpr) = true;
+        str_1 = Util.stringAppendList({"(",str,")"});
+      then
+        str_1;
+    case (str,_,_) then str; 
+  end matchcontinue;
+end parenthesize;
+
+
+protected function expPriority "function: expPriority
+
+ Returns a priority number for an expression.
+ This function is used to output parenthesis when needed, e.g., 3(1+2) should output 3(1+2) 
+ and not 31+2.
+"
+  input Exp inExp;
+  output Integer outInteger;
+algorithm 
+  outInteger:=
+  matchcontinue (inExp)
+    case (ICONST(_)) then 0; 
+    case (RCONST(_)) then 0; 
+    case (SCONST(_)) then 0; 
+    case (BCONST(_)) then 0; 
+    case (CREF(_,_)) then 0; 
+    case (ASUB(_,_)) then 0;
+    case (END()) then 0; 
+    case (CAST(_,_)) then 0;
+    case (CALL(path=_)) then 0; 
+    case (ARRAY(ty = _)) then 0; 
+    case (MATRIX(ty= _)) then 0; 
+    case (BINARY(operator = POW(_))) then 1; 
+    case (BINARY(operator = POW_ARR(_))) then 1;       
+    case (BINARY(operator = DIV(_))) then 2; 
+    case (BINARY(operator = DIV_ARRAY_SCALAR(_))) then 2;
+    case (BINARY(operator = MUL(_))) then 3; 
+    case (BINARY(operator = MUL_SCALAR_ARRAY(_))) then 3;   
+    case (BINARY(operator = MUL_ARRAY_SCALAR(_))) then 3;             
+    case (BINARY(operator = MUL_SCALAR_PRODUCT(_))) then 3;                   
+    case (BINARY(operator = MUL_MATRIX_PRODUCT(_))) then 3;                         
+    case (UNARY(operator = UPLUS(_))) then 4; 
+    case (UNARY(operator = UMINUS(_))) then 4; 
+    case (UNARY(operator = UMINUS_ARR(_))) then 4;
+    case (UNARY(operator = UPLUS_ARR(_))) then 4;        
+    case (BINARY(operator = ADD(_))) then 5; 
+    case (BINARY(operator = ADD_ARR(_))) then 5;       
+    case (BINARY(operator = SUB(_))) then 5; 
+    case (BINARY(operator = SUB_ARR(_))) then 5;             
+    case (RELATION(operator = LESS(_))) then 6; 
+    case (RELATION(operator = LESSEQ(_))) then 6; 
+    case (RELATION(operator = GREATER(_))) then 6; 
+    case (RELATION(operator = GREATEREQ(_))) then 6; 
+    case (RELATION(operator = EQUAL(_))) then 6; 
+    case (RELATION(operator = NEQUAL(_))) then 6; 
+    case (LUNARY(operator = NOT())) then 7; 
+    case (LBINARY(operator = AND())) then 8; 
+    case (LBINARY(operator = OR())) then 9; 
+    case (RANGE(ty = _)) then 10; 
+    case (IFEXP(expCond = _)) then 11; 
+    case (TUPLE(_)) then 12;  /* Not valid in inner expressions, only included here for completeness */ 
+    case (_) then 13; 
+  end matchcontinue;
+end expPriority;
 
 
 public function printRowStr "function: printRowStr
