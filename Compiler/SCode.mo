@@ -2075,7 +2075,7 @@ algorithm
            Boolean f1,f2,r1,r2,b1,b2,b3;
            Class cl1,cl2;
        equation
-         b1 = Util.stringEqual(name1,name2);
+         b1 = stringEqual(name1,name2);
          b2 = Util.boolEqual(f1,f2);
          b3 = Util.boolEqual(r1,r2);
          b3 = classEqual(cl1,cl2);
@@ -2088,7 +2088,7 @@ algorithm
          Absyn.InnerOuter io,io2;
          Attributes attr1,attr2; Mod mod1,mod2; Absyn.TypeSpec tp1,tp2;
        equation
-         b1 = Util.stringEqual(name1,name2);
+         b1 = stringEqual(name1,name2);
          b1a = ModUtil.innerOuterEqual(io,io2);
          b2 = Util.boolEqual(f1,f2);
          b3 = Util.boolEqual(r1,r2);
@@ -2115,7 +2115,7 @@ algorithm
         Restriction restr1,restr2;
         ClassDef parts1,parts2;
         equation
-          b1 = Util.stringEqual(name1,name2);
+          b1 = stringEqual(name1,name2);
           b2 = Util.boolEqual(p1,p2);
           b3 = Util.boolEqual(e1,e2); 
           b4 = restrictionEqual(restr1,restr2);
@@ -2187,7 +2187,7 @@ end classEqual;
        local list<Ident> ilst1,ilst2;
          list<Boolean> blst;
        equation
-         blst = Util.listThreadMap(ilst1,ilst2,Util.stringEqual);
+         blst = Util.listThreadMap(ilst1,ilst2,stringEqual);
          equal = Util.boolAndList(blst);
        then equal;
      case (CLASS_EXTENDS(_,_,_,_,_,_,_),CLASS_EXTENDS(_,_,_,_,_,_,_))
@@ -2350,7 +2350,7 @@ protected function algorithmEqual2 "Returns true if two Absyn.Algorithm's are eq
        equation
          blst1 = Util.listThreadMap(eq1,eq2,equationEqual2);
          b1 = Absyn.expEqual(exp1,exp2);
-         b2 = Util.stringEqual(id1,id2);
+         b2 = stringEqual(id1,id2);
          equal = Util.boolAndList(b1::b2::blst1);
        then equal;
          case (EQ_WHEN(cond1,elst1,_),EQ_WHEN(cond2,elst2,_)) // TODO: elsewhen not checked yet.
@@ -2439,7 +2439,7 @@ algorithm
     case (NAMEMOD(id1,mod1)::subModLst1,NAMEMOD(id2,mod2)::subModLst2)
       local Ident id1,id2; Mod mod1,mod2; Boolean b1,b2,b3; 
         equation
-          b1 = Util.stringEqual(id1,id2);
+          b1 = stringEqual(id1,id2);
           b2 = modEqual(mod1,mod2);
           b3 = subModsEqual(subModLst1,subModLst2);
           equal = Util.boolAndList({b1,b2,b3});

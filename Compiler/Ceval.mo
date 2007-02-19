@@ -5260,13 +5260,13 @@ algorithm
       Env.Cache cache;
     case (cache,path,env,gflist) /* If getmember succeeds, path is in generated functions list, so do nothing */ 
       equation 
-        gfmember = Util.listGetmemberP(path, gflist, ModUtil.pathEqual);
+        gfmember = Util.listGetMemberOnTrue(path, gflist, ModUtil.pathEqual);
       then
         (cache,"",gflist);
     case (cache,path,env,gflist) /* If getmember fails, path is not in generated functions list, hence
 	  generate it */ 
       equation 
-        failure(_ = Util.listGetmemberP(path, gflist, ModUtil.pathEqual));
+        failure(_ = Util.listGetMemberOnTrue(path, gflist, ModUtil.pathEqual));
         Debug.fprintln("ceval", "/*- ceval_generate_function_str starting*/");
         (cache,cls,env_1) = Lookup.lookupClass(cache,env, path, false);
         Debug.fprintln("ceval", "/*- ceval_generate_function_str instantiating*/");
@@ -5428,7 +5428,7 @@ algorithm
         correctDim = matrixDimension - 1;
         zeroList = Util.listFill(Values.REAL(0.0), correctDim);
         correctPlace = row - 1;
-        listWithElement = Util.listReplaceat(Values.REAL(rv2), correctPlace, zeroList);
+        listWithElement = Util.listReplaceAt(Values.REAL(rv2), correctPlace, zeroList);
         newRow = row + 1;
         (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, 
           {Values.ARRAY(listWithElement)}, msg);
@@ -5441,7 +5441,7 @@ algorithm
         correctDim = matrixDimension - 1;
         zeroList = Util.listFill(Values.REAL(0.0), correctDim);
         correctPlace = row - 1;
-        listWithElement = Util.listReplaceat(Values.REAL(rv2), correctPlace, zeroList);
+        listWithElement = Util.listReplaceAt(Values.REAL(rv2), correctPlace, zeroList);
         newRow = row + 1;
         appendedList = listAppend(listIN, {Values.ARRAY(listWithElement)});
         (cache,retExp)= cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, appendedList, 
@@ -5455,7 +5455,7 @@ algorithm
         correctDim = matrixDimension - 1;
         zeroList = Util.listFill(Values.INTEGER(0), correctDim);
         correctPlace = row - 1;
-        listWithElement = Util.listReplaceat(Values.INTEGER(rv2), correctPlace, zeroList);
+        listWithElement = Util.listReplaceAt(Values.INTEGER(rv2), correctPlace, zeroList);
         newRow = row + 1;
         (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, 
           {Values.ARRAY(listWithElement)}, msg);
@@ -5470,7 +5470,7 @@ algorithm
         correctDim = matrixDimension - 1;
         zeroList = Util.listFill(Values.INTEGER(0), correctDim);
         correctPlace = row - 1;
-        listWithElement = Util.listReplaceat(Values.INTEGER(rv2), correctPlace, zeroList);
+        listWithElement = Util.listReplaceAt(Values.INTEGER(rv2), correctPlace, zeroList);
         newRow = row + 1;
         appendedList = listAppend(listIN, {Values.ARRAY(listWithElement)});
         (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, appendedList, 

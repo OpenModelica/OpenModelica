@@ -924,15 +924,15 @@ algorithm
   s3 := dumpEquationsStr(l);
   s4 := dumpInitialalgorithmsStr(l);
   s5 := dumpAlgorithmsStr(l);
-  noiniteq := Util.stringEqual(s2, "");
-  noinitalg := Util.stringEqual(s4, "");
-  noeq := Util.stringEqual(s3, "");
-  noalg := Util.stringEqual(s5, "");
+  noiniteq := stringEqual(s2, "");
+  noinitalg := stringEqual(s4, "");
+  noeq := stringEqual(s3, "");
+  noalg := stringEqual(s5, "");
   initeqstr := Dump.selectString(noiniteq, "", "initial equation\n");
   initalgstr := Dump.selectString(noinitalg, "", "initial algorithm\n");
   eqstr := Dump.selectString(noeq, "", "equation\n");
   algstr := Dump.selectString(noalg, "", "algorithm\n");
-  s0 := Util.stringDelimitListNoEmpty(Util.listMap(l,dumpExtObjClassStr),"\n");
+  s0 := Util.stringDelimitListNonEmptyElts(Util.listMap(l,dumpExtObjClassStr),"\n");
   str := Util.stringAppendList({s0,s1,initeqstr,s2,initalgstr,s4,eqstr,s3,algstr,s5});
 end dumpElementsStr;
 
@@ -1374,7 +1374,7 @@ algorithm
         nominal_str = Dump.getOptionWithConcatStr(nominal, real_string, "nominal = ");
         Initial_str = Dump.getOptionWithConcatStr(Initial, real_string, "start = ");
         fixed_str = Dump.getOptionWithConcatStr(fixed, Dump.printBoolStr, "fixed = ");
-        res_1 = Util.stringDelimitListNoEmpty(
+        res_1 = Util.stringDelimitListNonEmptyElts(
           {quantity,unit_str,displayUnit_str,min_str,max_str,
           Initial_str,fixed_str,nominal_str,stateSel_str}, ", ");
         res1 = Util.stringAppendList({"(",res_1,")"});
@@ -1390,7 +1390,7 @@ algorithm
         max_str = Dump.getOptionWithConcatStr(max, int_string, "max = ");
         Initial_str = Dump.getOptionWithConcatStr(Initial, int_string, "start = ");
         fixed_str = Dump.getOptionWithConcatStr(fixed, Dump.printBoolStr, "fixed = ");
-        res_1 = Util.stringDelimitListNoEmpty({quantity,min_str,max_str,Initial_str,fixed_str}, ", ");
+        res_1 = Util.stringDelimitListNonEmptyElts({quantity,min_str,max_str,Initial_str,fixed_str}, ", ");
         res1 = Util.stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
         res = Util.if_(is_empty, "", res1);
@@ -1402,7 +1402,7 @@ algorithm
         quantity = Dump.getOptionWithConcatStr(quant, stringToString, "quantity = ");
         Initial_str = Dump.getOptionWithConcatStr(Initial, Dump.printBoolStr, "start = ");
         fixed_str = Dump.getOptionWithConcatStr(fixed, Dump.printBoolStr, "fixed = ");
-        res_1 = Util.stringDelimitListNoEmpty({quantity,Initial_str,fixed_str}, ", ");
+        res_1 = Util.stringDelimitListNonEmptyElts({quantity,Initial_str,fixed_str}, ", ");
         res1 = Util.stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
         res = Util.if_(is_empty, "", res1);
@@ -1413,7 +1413,7 @@ algorithm
       equation 
         quantity = Dump.getOptionWithConcatStr(quant, stringToString, "quantity = ");
         Initial_str = Dump.getOptionWithConcatStr(Initial, stringToString, "start = ");
-        res_1 = Util.stringDelimitListNoEmpty({quantity,Initial_str}, ", ");
+        res_1 = Util.stringDelimitListNonEmptyElts({quantity,Initial_str}, ", ");
         res1 = Util.stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
         res = Util.if_(is_empty, "", res1);
@@ -1427,7 +1427,7 @@ algorithm
         max_str = Dump.getOptionWithConcatStr(max, Exp.printExpStr, "max = ");
         Initial_str = Dump.getOptionWithConcatStr(Initial, Exp.printExpStr, "start = ");
         fixed_str = Dump.getOptionWithConcatStr(fixed, Dump.printBoolStr, "fixed = ");
-        res_1 = Util.stringDelimitListNoEmpty({quantity,min_str,max_str,Initial_str,fixed_str}, ", ");
+        res_1 = Util.stringDelimitListNonEmptyElts({quantity,min_str,max_str,Initial_str,fixed_str}, ", ");
         res1 = Util.stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
         res = Util.if_(is_empty, "", res1);
@@ -2456,7 +2456,7 @@ public function getMatchingElements "function getMatchingElements
     input Element inElement;
   end FuncTypeElementTo;
 algorithm 
-  elist := Util.listMatching(elist, cond);
+  elist := Util.listFilter(elist, cond);
 end getMatchingElements;
 
 public function getAllMatchingElements "function getAllMatchingElements

@@ -3320,7 +3320,7 @@ algorithm
         sc = Exp.typeBuiltin(tp);
         scs = Util.listFill(sc, dim);
         expl = Util.listFill(Exp.ICONST(0), dim);
-        expl_1 = Util.listReplaceat(e, indx, expl);
+        expl_1 = Util.listReplaceAt(e, indx, expl);
         row = Util.listThreadTuple(expl_1, scs);
       then
         Exp.MATRIX(tp,dim,{row});
@@ -3332,7 +3332,7 @@ algorithm
         sc = Exp.typeBuiltin(tp);
         scs = Util.listFill(sc, dim);
         expl = Util.listFill(Exp.ICONST(0), dim);
-        expl_1 = Util.listReplaceat(e, indx, expl);
+        expl_1 = Util.listReplaceAt(e, indx, expl);
         row = Util.listThreadTuple(expl_1, scs);
       then
         Exp.MATRIX(tp,mdim,(row :: rows));

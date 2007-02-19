@@ -6977,7 +6977,7 @@ algorithm
         (_,env) = Inst.makeEnvFromProgram(Env.emptyCache,pa_1, Absyn.IDENT(""));
         ((p_1,_,(_,_,_,path_str_lst,_))) = traverseClasses(p, NONE, renameClassVisitor, (old_path,new_path,p,{},env), 
           true) "traverse protected" ;
-        path_str_lst_no_empty = Util.stringDelimitListNoEmpty(path_str_lst, ",");
+        path_str_lst_no_empty = Util.stringDelimitListNonEmptyElts(path_str_lst, ",");
         res = Util.stringAppendList({"{",path_str_lst_no_empty,"}"});
       then
         (res,p_1);
@@ -6991,7 +6991,7 @@ algorithm
         (_,env) = Inst.makeEnvFromProgram(Env.emptyCache,pa_1, Absyn.IDENT(""));
         ((p_1,_,(_,_,_,path_str_lst,_))) = traverseClasses(p, NONE, renameClassVisitor, (old_path,new_path,p,{},env), 
           true) "traverse protected" ;
-        path_str_lst_no_empty = Util.stringDelimitListNoEmpty(path_str_lst, ",");
+        path_str_lst_no_empty = Util.stringDelimitListNonEmptyElts(path_str_lst, ",");
         res = Util.stringAppendList({"{",path_str_lst_no_empty,"}"});
       then
         (res,p_1);
@@ -9921,7 +9921,7 @@ algorithm
         s1 = getComponentsInfo(comps1, "\"public\"", env_2);
         comps2 = getProtectedComponentsInClass(cdef);
         s2 = getComponentsInfo(comps2, "\"protected\"", env_2);
-        str = Util.stringDelimitListNoEmpty({s1,s2}, ",");
+        str = Util.stringDelimitListNonEmptyElts({s1,s2}, ",");
         res = Util.stringAppendList({"{",str,"}"});
       then
         res;

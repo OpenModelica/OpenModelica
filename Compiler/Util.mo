@@ -45,32 +45,31 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  
   RCS: $Id$
   
-  This module contains various MetaModelica Compiler (MMC) utilities sigh, mosly 
+  This module contains various MetaModelica Compiler (MMC) utilities sigh, mostly 
   related to lists.
   It is used pretty much everywhere. The difference between this 
   module and the ModUtil module is that ModUtil contains modelica 
   related utilities. The Util module only contains \"low-level\" 
   MetaModelica Compiler (MMC) utilities, for example finding elements in lists.
   
-  This modules contains many functions that uses \'type variables\' in MetaModelica Compiler (MMC).
+  This modules contains many functions that use \'type variables\' in MetaModelica Compiler (MMC).
   A type variable is exactly what it sounds like, a type bound to a variable.
   It is used for higher order functions, i.e. in MetaModelica Compiler (MMC) the possibility to pass a 
   \"pointer\" to a function into another function. But it can also be used for 
   generic data types, like in  C++ templates.
 
   A type variable in MetaModelica Compiler (MMC) is written as:
-  replaceable type TyVar;
+  replaceable type TyVar subtypeof Any;
   For instance,
   function listFill
-    replaceable type TyVar; 
+    replaceable type TyVar subtypeof Any; 
   	input TyVar in;
   	input Integer i;
   	output list<TyVar>
   ...
   end listFill;
   the type variable TyVar is here used as a generic type for the function listFill, 
-  which returns a list of n elements of a certain type.
-"
+  which returns a list of n elements of a certain type."
 
 public 
 uniontype ReplacePattern
@@ -78,7 +77,6 @@ uniontype ReplacePattern
     String from "from string (ie \".\"" ;
     String to "to string (ie \"$p\") ))" ;
   end REPLACEPATTERN;
-
 end ReplacePattern;
 
 protected constant list<ReplacePattern> replaceStringPatterns={REPLACEPATTERN(".","$point"),
@@ -93,10 +91,8 @@ protected import Debug;
 public function flagValue "function flagValue
   author: x02lucpo
   Extracts the flagvalue from an argument list:
-  flagvalue('-s',{'-d','hej','-s','file'}) => 'file'
-
+  flagValue('-s',{'-d','hej','-s','file'}) => 'file'
 "
-
   input String flag;
   input list<String> arguments;
   output String flagVal;
@@ -132,9 +128,7 @@ end flagValue;
 
 public function listFill "function: listFill
   Returns a list of n elements of type \'a.
-  For example,
-  list_fill(\"foo\",3) => {\"foo\",\"foo\",\"foo\"}
-"
+  Example: listFill(\"foo\",3) => {\"foo\",\"foo\",\"foo\"}"
   input Type_a inTypeA;
   input Integer inInteger;
   output list<Type_a> outTypeALst;
@@ -157,26 +151,18 @@ algorithm
 end listFill;
 
 public function listMake2 "function listMake2
- 
-  Takes two arguments of same type and returns a list containing the two.
-"
+  Takes two arguments of same type and returns a list containing the two."
   input Type_a inTypeA1;
   input Type_a inTypeA2;
   output list<Type_a> outTypeALst;
   replaceable type Type_a subtypeof Any;
 algorithm 
-  outTypeALst:=
-  matchcontinue (inTypeA1,inTypeA2)
-    local Type_a a,b;
-    case (a,b) then {a,b}; 
-  end matchcontinue;
+  outTypeALst := {inTypeA1, inTypeA2};
 end listMake2;
 
 public function listIntRange "function: listIntRange
   Returns a list of n integers from 1 to N.
-  For example,
-  list_int_range(3) => {1,2,3}
-"
+  Example: listIntRange(3) => {1,2,3}"
   input Integer n;
   output list<Integer> res;
 algorithm 
@@ -206,25 +192,17 @@ end listIntRange2;
 
 public function listFirst "function: listFirst 
   Returns the first element of a list
-  For example,
-  list_first({3,5,7,11,13}) => 3
-"
+  Example: listFirst({3,5,7,11,13}) => 3"
   input list<Type_a> inTypeALst;
   output Type_a outTypeA;
   replaceable type Type_a subtypeof Any;
 algorithm 
-  outTypeA:=
-  matchcontinue (inTypeALst)
-    local Type_a x;
-    case ((x :: _)) then x; 
-  end matchcontinue;
+  outTypeA:= listNth(inTypeALst, 0);
 end listFirst;
 
 public function listRest "function: listRest
   Returns the rest of a list.
-  For example,
-  list_rest({3,5,7,11,13}) => {5,7,11,13}
-"
+  Example: listRest({3,5,7,11,13}) => {5,7,11,13}"
   input list<Type_a> inTypeALst;
   output list<Type_a> outTypeALst;
   replaceable type Type_a subtypeof Any;
@@ -237,12 +215,10 @@ algorithm
 end listRest;
 
 public function listLast "function: listLast
-  Returns the last element of a list. If the list is the empty list, the function 
-  fails.
-  For example,
-  list_last({3,5,7,11,13}) => 13
-  list_last({}) => fail
-"
+  Returns the last element of a list. If the list is the empty list, the function fails.
+  Example:
+    listLast({3,5,7,11,13}) => 13
+    listLast({}) => fail"
   input list<Type_a> inTypeALst;
   output Type_a outTypeA;
   replaceable type Type_a subtypeof Any;
@@ -263,45 +239,30 @@ algorithm
 end listLast;
 
 public function listCons "function: listCons
- 
-  Performs the cons operation, i.e. elt::list.
-"
+  Performs the cons operation, i.e. elt::list."
   input list<Type_a> inTypeALst;
   input Type_a inTypeA;
   output list<Type_a> outTypeALst;
   replaceable type Type_a subtypeof Any;
 algorithm 
-  outTypeALst:=
-  matchcontinue (inTypeALst,inTypeA)
-    local
-      list<Type_a> lst;
-      Type_a elt;
-    case (lst,elt) then (elt :: lst); 
-  end matchcontinue;
+  outTypeALst:= (inTypeA::inTypeALst);
 end listCons;
 
-public function listCreate "function: listCreate
- 
-  Create a list from an element.
-"
+public function listCreate "function: listCreate 
+  Create a list from an element."
   input Type_a inTypeA;
   output list<Type_a> outTypeALst;
   replaceable type Type_a subtypeof Any;
 algorithm 
-  outTypeALst:=
-  matchcontinue (inTypeA)
-    local Type_a a;
-    case (a) then {a}; 
-  end matchcontinue;
+  outTypeALst:= {inTypeA};
 end listCreate;
 
 public function listStripLast "function: listStripLast
   Remove the last element of a list. If the list is the empty list, the function 
   returns empty list
-  For example,
-  list_strip_last({3,5,7,11,13}) => {3,5,7,11}
-  list_strip_last({}) => {}
-"
+  Example:
+    listStripLast({3,5,7,11,13}) => {3,5,7,11}
+    listStripLast({}) => {}"
   input list<Type_a> inTypeALst;
   output list<Type_a> outTypeALst;
   replaceable type Type_a subtypeof Any;
@@ -309,26 +270,22 @@ algorithm
   outTypeALst:=
   matchcontinue (inTypeALst)
     local
-      Type_a a,b;
-      list<Type_a> rev_lst,lst;
+      Type_a a;
+      list<Type_a> lstTmp,lst;
     case {} then {}; 
-    case {a} then {}; 
-    case (lst)
-      local list<Type_a> a;
+    case {a} then {};
+    case a::lst 
       equation 
-        (b :: rev_lst) = listReverse(lst);
-        a = listReverse(rev_lst);
+        lstTmp = listStripLast(lst);
       then
-        a;
+        a::lstTmp;
   end matchcontinue;
 end listStripLast;
 
 public function listFlatten "function: listFlatten
-  Takes a list of lists and flattens it out, producing one list of all 
-  elements of the sublists.
-  For example
-  list_flatten({ {1,2},{3,4,5},{6},{} }) => {1,2,3,4,5,6}
-"
+  Takes a list of lists and flattens it out, 
+  producing one list of all elements of the sublists.
+  Example: listFlatten({ {1,2},{3,4,5},{6},{} }) => {1,2,3,4,5,6}"
   input list<list<Type_a>> inTypeALstLst;
   output list<Type_a> outTypeALst;
   replaceable type Type_a subtypeof Any;
@@ -350,9 +307,7 @@ end listFlatten;
 
 public function listAppendElt "function: listAppendElt
   This function adds an element last to the list
-  For example
-  list_append_elt(1,{2,3}) => {2,3,1}
-"
+  Example: listAppendElt(1,{2,3}) => {2,3,1}"
   input Type_a inTypeA;
   input list<Type_a> inTypeALst;
   output list<Type_a> outTypeALst;
@@ -375,9 +330,7 @@ end listAppendElt;
 public function listMap "function: listMap
   Takes a list and a function over the elements of the lists, which is applied
   for each element, producing a new list.
-  For example
-  list_map({1,2,3}, int_string) => { \"1\", \"2\", \"3\"}
-"
+  Example: listMap({1,2,3}, intString) => { \"1\", \"2\", \"3\"}"
   input list<Type_a> inTypeALst;
   input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
   output list<Type_b> outTypeBLst;
@@ -408,13 +361,12 @@ algorithm
 end listMap;
 
 public function listMap_2 "function listMap_2
-  Takes a list and a function over the elements returning a tuple of two types,
-  which is applied for each element producing two new lists.
-  For example
-  function split_real_string (real) => (string,string)  returns the string value at 
-  each side of the decimal point.
-  list_map__2({1.5,2.01,3.1415}, split_real_string) => ({\"1\",\"2\",\"3\"},{\"5\",\"01\",\"1415\"})
-"
+  Takes a list and a function over the elements returning a tuple of 
+  two types, which is applied for each element producing two new lists.
+  Example:
+    function split_real_string (real) => (string,string)  returns the string value at 
+    each side of the decimal point.
+    listMap_2({1.5,2.01,3.1415}, split_real_string) => ({\"1\",\"2\",\"3\"},{\"5\",\"01\",\"1415\"})"
   input list<Type_a> inTypeALst;
   input FuncTypeType_aToType_bType_c inFuncTypeTypeAToTypeBTypeC;
   output list<Type_b> outTypeBLst;
@@ -453,9 +405,7 @@ end listMap_2;
 public function listMap1 "function listMap1
   Takes a list and a function over the list plus an extra argument sent to the function.
   The function produces a new value which is used for creating a new list.
-  For example,
-  list_map_1({1,2,3},int_add,2) => {3,4,5}
-"
+  Example: listMap1({1,2,3},intAdd,2) => {3,4,5}"
   input list<Type_a> inTypeALst;
   input FuncTypeType_aType_bToType_c inFuncTypeTypeATypeBToTypeC;
   input Type_b inTypeB;
@@ -491,8 +441,7 @@ algorithm
 end listMap1;
 
 public function listMap1r "function listMap1r
-  Same as list_map_1 but swapped arguments on function.
-"
+  Same as listMap1 but swapped arguments on function."
   input list<Type_a> inTypeALst;
   input FuncTypeType_bType_aToType_c inFuncTypeTypeBTypeAToTypeC;
   input Type_b inTypeB;
@@ -530,10 +479,10 @@ end listMap1r;
 public function listMap2 "function listMap2
   Takes a list and a function and two extra arguments passed to the function.
   The function produces one new value which is used for creating a new list.
-  For example,
-  function if:(bool,\'a,\'a) => \'a
-  list_map_2({true,false,false},1,0,if) => {1,0,0}
-"
+  Example:
+    replaceable type Type_a subtypeof Any;
+    function select:(Boolean,Type_a,Type_a) => Type_a
+    listMap2({true,false,false},1,0,select) => {1,0,0}"
   input list<Type_a> inTypeALst;
   input FuncTypeType_aType_bType_cToType_d inFuncTypeTypeATypeBTypeCToTypeD;
   input Type_b inTypeB;
@@ -575,8 +524,7 @@ end listMap2;
 
 public function listMap3 "function listMap3
   Takes a list and a function and three extra arguments passed to the function.
-  The function produces one new value which is used for creating a new list.
-"
+  The function produces one new value which is used for creating a new list."
   input list<Type_a> inTypeALst;
   input FuncTypeType_aType_bType_cType_dToType_e inFuncTypeTypeATypeBTypeCTypeDToTypeE;
   input Type_b inTypeB;
@@ -623,8 +571,7 @@ end listMap3;
 
 public function listMap32 "function listMap32
   Takes a list and a function and three extra arguments passed to the function.
-  The function produces two values which is used for creating two new lists.
-"
+  The function produces two values which is used for creating two new lists."
   input list<Type_a> inTypeALst;
   input FuncTypeType_aType_bType_cType_dToType_eType_f inFuncTypeTypeATypeBTypeCTypeDToTypeETypeF;
   input Type_b inTypeB;
@@ -678,8 +625,7 @@ end listMap32;
 public function listMap12 "function: listMap12
   Takes a list and a function with one extra arguments passed to the function.
   The function returns a tuple of two values which are used for creating 
-  two new lists
-"
+  two new lists."
   input list<Type_a> inTypeALst;
   input FuncTypeType_aType_bToType_cType_d inFuncTypeTypeATypeBToTypeCTypeD;
   input Type_b inTypeB;
@@ -723,11 +669,10 @@ end listMap12;
 public function listMap22 "function: listMap22
   Takes a list and a function with two extra arguments passed to the function.
   The function returns a tuple of two values which are used for creating two new lists
-  For example,
-  function foo(int,string,string) => (string,string) concatenates each string with 
-  itself n times. foo(2,\"a\",b\") => (\"aa\",\"bb\")
-  list_map_2_2 ({2,3},foo,\"a\",\"b\") => {(\"aa\",\"bb\"),(\"aa\",\"bbb\")}
-"
+  Example:
+    function foo(int,string,string) => (string,string) 
+      concatenates each string with itself n times. foo(2,\"a\",b\") => (\"aa\",\"bb\")
+    listMap22 ({2,3},foo,\"a\",\"b\") => {(\"aa\",\"bb\"),(\"aa\",\"bbb\")}"
   input list<Type_a> inTypeALst;
   input FuncTypeType_aType_bType_cToType_dType_e inFuncTypeTypeATypeBTypeCToTypeDTypeE;
   input Type_b inTypeB;
@@ -774,9 +719,7 @@ end listMap22;
 public function listMap0 "function: listMap0
   Takes a list and a function which does not return a value
   The function is probably a function with side effects, like print.
-  For example,
-  list_map_0({\"a\",\"b\",\"c\"},print) => ()
-"
+  Example: listMap0({\"a\",\"b\",\"c\"},print) => ()"
   input list<Type_a> inTypeALst;
   input FuncTypeType_aTo inFuncTypeTypeATo;
   replaceable type Type_a subtypeof Any;
@@ -804,9 +747,7 @@ public function listListMap "function: listListMap
   Takes a list of lists and a function producing one value.
   The function is applied to each element of the lists resulting
   in a new list of lists.
-  For example,
-  list_list_map({ {1,2},{3},{4}},int_string) => { {\"1\",\"2\"},{\"3\"},{\"4\"} }
-"
+  Example: listListMap({ {1,2},{3},{4}},int_string) => { {\"1\",\"2\"},{\"3\"},{\"4\"} }"
   input list<list<Type_a>> inTypeALstLst;
   input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
   output list<list<Type_b>> outTypeBLstLst;
@@ -838,9 +779,8 @@ end listListMap;
 
 public function listListMap1 "function listListMap1
   author: PA
-  similar to list_list_map but for functions taking two arguments.
-  The second argument is passed as an extra argument.
-"
+  similar to listListMap but for functions taking two arguments.
+  The second argument is passed as an extra argument."
   input list<list<Type_a>> inTypeALstLst;
   input FuncTypeType_aType_bToType_c inFuncTypeTypeATypeBToTypeC;
   input Type_b inTypeB;
@@ -878,11 +818,10 @@ end listListMap1;
 public function listFold "function: listFold
   Takes a list and a function operating on list elements having an extra argument that is \'updated\'
   thus returned from the function. The third argument is the startvalue for the updated value.
-  list_fold will call the function for each element in a sequence, updating the startvalue 
-  For example,
-  list_fold({1,2,3},int_add,2) =>  8
-  int_add(1,2) => 3, int_add(2,3) => 5, int_add(3,5) => 8 
-"
+  listFold will call the function for each element in a sequence, updating the startvalue 
+  Example:
+    listFold({1,2,3},intAdd,2) =>  8
+    intAdd(1,2) => 3, intAdd(2,3) => 5, intAdd(3,5) => 8"
   input list<Type_a> inTypeALst;
   input FuncTypeType_aType_bToType_b inFuncTypeTypeATypeBToTypeB;
   input Type_b inTypeB;
@@ -917,8 +856,7 @@ public function listFold_2 "function: listFold_2
   Similar to listFold but relation takes three arguments. 
   The first argument is folded (i.e. passed through each relation)
   The second argument is constant (given as argument)
-  The third argument is iterated over list.
-"
+  The third argument is iterated over list."
   input list<Type_a> lst;
   input FoldFunc foldFunc;
   input Type_b foldArg;
@@ -951,8 +889,7 @@ algorithm
 end listFold_2;
 
 public function listFold_2r "function: listFold_2
-  Similar to listFold_2 but reversed argument order in function.
-"
+  Similar to listFold_2 but reversed argument order in function."
   input list<Type_a> lst;
   input FoldFunc foldFunc;
   input Type_b foldArg;
@@ -986,8 +923,7 @@ end listFold_2r;
 
 
 public function listlistFoldMap "function: listlistFoldMap
-  For example see Absyn.traverse_exp.
-"
+  For example see Interactive.traverseExp."
   input list<list<Type_a>> inTypeALst;
   input FuncTypeTplType_aType_bToTplType_aType_b inFuncTypeTplTypeATypeBToTplTypeATypeB;
   input Type_b inTypeB;
@@ -1020,9 +956,7 @@ end listlistFoldMap;
 
 public function listFoldMap "function: listFoldMap
   author: PA
- 
-  For example see Exp.traverse_exp.
-"
+  For example see Exp.traverseExp."
   input list<Type_a> inTypeALst;
   input FuncTypeTplType_aType_bToTplType_aType_b inFuncTypeTplTypeATypeBToTplTypeATypeB;
   input Type_b inTypeB;
@@ -1054,25 +988,21 @@ algorithm
 end listFoldMap;
 
 public function listListReverse "function: listListReverse
-  Takes a list of lists and reverses it at both levels, i.e. both the list itself
-  and each sublist
-  For example,
-  list_list_reverse({{1,2},{3,4,5},{6} }) => { {6}, {5,4,3}, {2,1} }
-"
+  Takes a list of lists and reverses it at both 
+  levels, i.e. both the list itself and each sublist
+  Example: listListReverse({{1,2},{3,4,5},{6} }) => { {6}, {5,4,3}, {2,1} }"
   input list<list<Type_a>> lsts;
   output list<list<Type_a>> lsts_2;
   replaceable type Type_a subtypeof Any;
   list<list<Type_a>> lsts_1,lsts_2;
 algorithm 
-  lsts_1 := listMap(lsts, list_reverse);
+  lsts_1 := listMap(lsts, listReverse);
   lsts_2 := listReverse(lsts_1);
 end listListReverse;
 
 public function listThread "function: listThread
-  Takes two lists of the same type and threads them togheter.
-  For eample,
-  list_thread({1,2,3},{4,5,6}) => {4,1,5,2,6,3}
-"
+  Takes two lists of the same type and threads (interleaves) them togheter.
+  Example: listThread({1,2,3},{4,5,6}) => {4,1,5,2,6,3}"
   input list<Type_a> inTypeALst1;
   input list<Type_a> inTypeALst2;
   output list<Type_a> outTypeALst;
@@ -1095,10 +1025,8 @@ algorithm
 end listThread;
 
 public function listThread3 "function: listThread
-  Takes three lists of the same type and threads them togheter.
-  For eample,
-  list_thread({1,2,3},{4,5,6},{7,8,9}) => {7,4,1,8,5,2,9,6,3}
-"
+  Takes three lists of the same type and threads (interleaves) them togheter.
+  Example: listThread3({1,2,3},{4,5,6},{7,8,9}) => {7,4,1,8,5,2,9,6,3}"
   input list<Type_a> inTypeALst1;
   input list<Type_a> inTypeALst2;
   input list<Type_a> inTypeALst3;
@@ -1120,11 +1048,9 @@ algorithm
 end listThread3;
 
 public function listThreadMap "function: listThreadMap
-  Takes two lists and a function and threads and maps the elements of the two lists
+  Takes two lists and a function and threads (interleaves) and maps the elements of the two lists
   creating a new list.
-  For example,
-  list_thread_map({1,2},{3,4},int_add) => {1+3, 2+4}
-"
+  Example: listThreadMap({1,2},{3,4},intAdd) => {1+3, 2+4}"
   input list<Type_a> inTypeALst;
   input list<Type_b> inTypeBLst;
   input FuncTypeType_aType_bToType_c inFuncTypeTypeATypeBToTypeC;
@@ -1160,11 +1086,9 @@ algorithm
 end listThreadMap;
 
 public function listListThreadMap "function: listListThreadMap
-  Takes two lists of lists and a function and threads and maps the elements  of the elements of the 
-  two lists creating a new list.
-  For example,
-  listListThreadMap({{1,2}},{{3,4}},int_add) => {{1+3, 2+4}}
-"
+  Takes two lists of lists and a function and threads (interleaves) 
+  and maps the elements  of the elements of the two lists creating a new list.
+  Example: listListThreadMap({{1,2}},{{3,4}},int_add) => {{1+3, 2+4}}"
   input list<list<Type_a>> inTypeALst;
   input list<list<Type_b>> inTypeBLst;
   input FuncTypeType_aType_bToType_c inFuncTypeTypeATypeBToTypeC;
@@ -1200,11 +1124,9 @@ algorithm
 end listListThreadMap;
 
 public function listThreadTuple "function: listThreadTuple
-  Takes two lists and threads the arguments into a list of tuples
-  consisting of the two element types.
-  For example,
-  list_thread_tuple({1,2,3},{true,false,true}) => {(1,true),(2,false),(3,true)}
-"
+  Takes two lists and threads (interleaves) the arguments into 
+  a list of tuples consisting of the two element types.
+  Example: listThreadTuple({1,2,3},{true,false,true}) => {(1,true),(2,false),(3,true)}"
   input list<Type_a> inTypeALst;
   input list<Type_b> inTypeBLst;
   output list<tuple<Type_a, Type_b>> outTplTypeATypeBLst;
@@ -1229,11 +1151,10 @@ algorithm
 end listThreadTuple;
 
 public function listListThreadTuple "function: listListThreadTuple
-  Takes two list of lists as arguments and produces a list of lists of a two tuple
-  of the element types of each list.
-  For example,
-  list_list_thread_tuple({{1},{2,3}},{{\"a\"},{\"b\",\"c\"}}) => { {(1,\"a\")},{(2,\"b\"),(3,\"c\")} }
-"
+  Takes two list of lists as arguments and produces a list of 
+  lists of a two tuple of the element types of each list.
+  Example:
+    listListThreadTuple({{1},{2,3}},{{\"a\"},{\"b\",\"c\"}}) => { {(1,\"a\")},{(2,\"b\"),(3,\"c\")} }"
   input list<list<Type_a>> inTypeALstLst;
   input list<list<Type_b>> inTypeBLstLst;
   output list<list<tuple<Type_a, Type_b>>> outTplTypeATypeBLstLst;
@@ -1261,9 +1182,8 @@ end listListThreadTuple;
 
 public function listSelect "function: listSelect
   This function retrieves all elements of a list for which
-  the passed function evaluates to true. The elements that evaluates to false 
-  are thus removed from the list.
-"
+  the passed function evaluates to true. The elements that 
+  evaluates to false are thus removed from the list."
   input list<Type_a> inTypeALst;
   input FuncTypeType_aToBoolean inFuncTypeTypeAToBoolean;
   output list<Type_a> outTypeALst;
@@ -1296,8 +1216,7 @@ algorithm
 end listSelect;
 
 public function listSelect1 "function listSelect1
-  Same as list_select above, but with extra argument to testing function.
-"
+  Same as listSelect above, but with extra argument to testing function."
   input list<Type_a> inTypeALst;
   input Type_b inTypeB;
   input FuncTypeType_aType_bToBoolean inFuncTypeTypeATypeBToBoolean;
@@ -1334,8 +1253,7 @@ algorithm
 end listSelect1;
 
 public function listSelect1R "function listSelect1R
-  Same as list_select_1 above, but with swapped arguments.
-"
+  Same as listSelect1 above, but with swapped arguments."
   input list<Type_a> inTypeALst;
   input Type_b inTypeB;
   input FuncTypeType_bType_aToBoolean inFuncTypeTypeBTypeAToBoolean;
@@ -1373,11 +1291,9 @@ end listSelect1R;
 
 public function listPosition "function: listPosition
   Takes a value and a list of values and returns the (first) position
-  the value has in the list. Position index start at zero, such that list_nth can
-  be used on the resulting position directly.
-  For example,
-  list_position(2,{0,1,2,3}) => 2
-"
+  the value has in the list. Position index start at zero, such that 
+  listNth can be used on the resulting position directly.
+  Example: listPosition(2,{0,1,2,3}) => 2"
   input Type_a x;
   input list<Type_a> ys;
   output Integer n;
@@ -1415,13 +1331,12 @@ algorithm
   end matchcontinue;
 end listPos;
 
-public function listGetmember "function: listGetmember
+public function listGetMember "function: listGetMember
   Takes a value and a list of values and returns the value 
   if present in the list. If not present, the function will fail.
-  For example,
-  list_getmember(0,{1,2,3}) => fail
-  list_getmember(1,{1,2,3}) => 1
-"
+  Example:
+    listGetMember(0,{1,2,3}) => fail
+    listGetMember(1,{1,2,3}) => 1"
   input Type_a inTypeA;
   input list<Type_a> inTypeALst;
   output Type_a outTypeA;
@@ -1441,17 +1356,15 @@ algorithm
     case (x,(y :: ys))
       equation 
         failure(equality(x = y));
-        res = listGetmember(x, ys);
+        res = listGetMember(x, ys);
       then
         res;
   end matchcontinue;
-end listGetmember;
+end listGetMember;
 
-public function listDeletemember "function: listDeletemember
+public function listDeleteMember "function: listDeleteMember
   Takes a list and a value and deletes the first occurence of the value in the list
-  For example,
-  list_deletemember({1,2,3,2},2) => {1,3,2}
-"
+  Example: listDeleteMember({1,2,3,2},2) => {1,3,2}"
   input list<Type_a> inTypeALst;
   input Type_a inTypeA;
   output list<Type_a> outTypeALst;
@@ -1471,14 +1384,12 @@ algorithm
         lst_1;
     case (lst,_) then lst; 
   end matchcontinue;
-end listDeletemember;
+end listDeleteMember;
 
-public function listDeletememberP "function: listDeletememberP
-  Takes a list and a value and a comparison function and deletes the first occurence of 
-  the value in the list
-  For example,
-  list_deletemember({1,2,3,2},2,int_eq) => {1,3,2}
-"
+public function listDeleteMemberOnTrue "function: listDeleteMemberOnTrue
+  Takes a list and a value and a comparison function and deletes the first 
+  occurence of the value in the list for which the function returns true.
+  Example: listDeleteMemberOnTrue({1,2,3,2},2,intEq) => {1,3,2}"
   input list<Type_a> inTypeALst;
   input Type_a inTypeA;
   input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean;
@@ -1499,23 +1410,22 @@ algorithm
       FuncTypeType_aType_aToBoolean cond;
     case (lst,elt,cond)
       equation 
-        elt_1 = listGetmemberP(elt, lst, cond) "A bit ugly" ;
+        elt_1 = listGetMemberOnTrue(elt, lst, cond) "A bit ugly" ;
         pos = listPosition(elt_1, lst);
         lst_1 = listDelete(lst, pos);
       then
         lst_1;
     case (lst,_,_) then lst; 
   end matchcontinue;
-end listDeletememberP;
+end listDeleteMemberOnTrue;
 
-public function listGetmemberP "function listGetmemberP
+public function listGetMemberOnTrue "function listGetmemberOnTrue
   Takes a value and a list of values and a comparison function over two values.
   If the value is present in the list (using the comparison function returning true)
   the value is returned, otherwise the function fails.
-  For example,
-  function equal_lenght(string,string) returns true if the strings are of same length
-  list_getmember_p(\"a\",{\"bb\",\"b\",\"ccc\"},equal_length) => \"b\"
-"
+  Example:
+    function equalLength(string,string) returns true if the strings are of same length
+    listGetMemberOnTrue(\"a\",{\"bb\",\"b\",\"ccc\"},equalLength) => \"b\""
   input Type_a inTypeA;
   input list<Type_a> inTypeALst;
   input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean;
@@ -1542,20 +1452,19 @@ algorithm
     case (x,(y :: ys),p)
       equation 
         false = p(x, y);
-        res = listGetmemberP(x, ys, p);
+        res = listGetMemberOnTrue(x, ys, p);
       then
         res;
   end matchcontinue;
-end listGetmemberP;
+end listGetMemberOnTrue;
 
 public function listUnionElt "function: listUnionElt
-  Takes a value and a list of values and inserts the value into the list if 
-  it is not already in the list.
+  Takes a value and a list of values and inserts the 
+  value into the list if it is not already in the list.
   If it is in the list it is not inserted.
-  For example,
-  list_union_elt(1,{2,3}) => {1,2,3}
-  list_union_elt(0,{0,1,2}) => {0,1,2}
-"
+  Example:
+    listUnionElt(1,{2,3}) => {1,2,3}
+    listUnionElt(0,{0,1,2}) => {0,1,2}"
   input Type_a inTypeA;
   input list<Type_a> inTypeALst;
   output list<Type_a> outTypeALst;
@@ -1568,23 +1477,21 @@ algorithm
       list<Type_a> lst;
     case (x,lst)
       equation 
-        _ = listGetmember(x, lst);
+        _ = listGetMember(x, lst);
       then
         lst;
     case (x,lst)
       equation 
-        failure(_ = listGetmember(x, lst));
+        failure(_ = listGetMember(x, lst));
       then
         (x :: lst);
   end matchcontinue;
 end listUnionElt;
 
 public function listUnion "function listUnion
-  Takes two lists and returns the union of the two lists, i.e. a list of all elements combined
-  without duplicates.
-  For example,
-  list_union({0,1},{2,1}) => {0,1,2}
-"
+  Takes two lists and returns the union of the two lists, 
+  i.e. a list of all elements combined without duplicates.
+  Example: listUnion({0,1},{2,1}) => {0,1,2}"
   input list<Type_a> inTypeALst1;
   input list<Type_a> inTypeALst2;
   output list<Type_a> outTypeALst;
@@ -1608,9 +1515,7 @@ end listUnion;
 
 public function listListUnion "function: listListUnion
   Takes a list of lists and returns the union of the sublists
-  For example,
-  list_list_union({{1},{1,2},{3,4},{5}}) => {1,2,3,4,5}
-"
+  Example: listListUnion({{1},{1,2},{3,4},{5}}) => {1,2,3,4,5}"
   input list<list<Type_a>> inTypeALstLst;
   output list<Type_a> outTypeALst;
   replaceable type Type_a subtypeof Any;
@@ -1631,13 +1536,11 @@ algorithm
   end matchcontinue;
 end listListUnion;
 
-public function listUnionEltP "function: listUnionEltP
+public function listUnionEltOnTrue "function: listUnionEltOnTrue
   Takes an elemement and a list and a comparison function over the two values.
   It returns the list with the element inserted if not already present in the
   list, according to the comparison function.
-  For example,
-  list_union_elt_p(1,{2,3},int_eq) => {1,2,3}
-"
+  Example: listUnionEltOnTrue(1,{2,3},intEq) => {1,2,3}"
   input Type_a inTypeA;
   input list<Type_a> inTypeALst;
   input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean;
@@ -1657,25 +1560,24 @@ algorithm
       FuncTypeType_aType_aToBoolean p;
     case (x,lst,p)
       equation 
-        _ = listGetmemberP(x, lst, p);
+        _ = listGetMemberOnTrue(x, lst, p);
       then
         lst;
     case (x,lst,p)
       equation 
-        failure(_ = listGetmemberP(x, lst, p));
+        failure(_ = listGetMemberOnTrue(x, lst, p));
       then
         (x :: lst);
   end matchcontinue;
-end listUnionEltP;
+end listUnionEltOnTrue;
 
-public function listUnionP "function: listUnionP
+public function listUnionOnTrue "function: listUnionOnTrue
   Takes two lists and a comparison function over two elements of the list.
-  It returns the union of the two lists, using the comparison function passed as argument
-  to determine identity between two elements.
-  For example
-  given the function equal_lenght(string,string) returning true if the strings are of same length
-  list_union_p({\"a\",\"aa\"},{\"b\",\"bbb\"},equal_length) => {\"a\",\"aa\",\"bbb\"}
-"
+  It returns the union of the two lists, using the comparison function passed 
+  as argument to determine identity between two elements.
+  Example:
+    given the function equalLength(string,string) returning true if the strings are of same length
+    listUnionOnTrue({\"a\",\"aa\"},{\"b\",\"bbb\"},equalLength) => {\"a\",\"aa\",\"bbb\"}"
   input list<Type_a> inTypeALst1;
   input list<Type_a> inTypeALst2;
   input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean3;
@@ -1696,21 +1598,20 @@ algorithm
     case ({},res,p) then res; 
     case ((x :: xs),lst2,p)
       equation 
-        r1 = listUnionEltP(x, lst2, p);
-        res = listUnionP(xs, r1, p);
+        r1 = listUnionEltOnTrue(x, lst2, p);
+        res = listUnionOnTrue(xs, r1, p);
       then
         res;
   end matchcontinue;
-end listUnionP;
+end listUnionOnTrue;
 
-public function listIntersectionP "function: listIntersectionP
+public function listIntersectionOnTrue "function: listIntersectionOnTrue
   Takes two lists and a comparison function over two elements of the list.
   It returns the intersection of the two lists, using the comparison function passed as 
   argument to determine identity between two elements.
-  For example
-  given the function string_equal(string,string) returning true if the strings are equal
-  list_intersection_p({\"a\",\"aa\"},{\"b\",\"aa\"},string_equal) => {\"aa\"}
-"
+  Example:
+    given the function stringEqual(string,string) returning true if the strings are equal
+    listIntersectionOnTrue({\"a\",\"aa\"},{\"b\",\"aa\"},stringEqual) => {\"aa\"}"
   input list<Type_a> inTypeALst1;
   input list<Type_a> inTypeALst2;
   input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean3;
@@ -1731,22 +1632,21 @@ algorithm
     case ({},_,_) then {}; 
     case ((x1 :: xs1),xs2,cond)
       equation 
-        _ = listGetmemberP(x1, xs2, cond);
-        res = listIntersectionP(xs1, xs2, cond);
+        _ = listGetMemberOnTrue(x1, xs2, cond);
+        res = listIntersectionOnTrue(xs1, xs2, cond);
       then
         (x1 :: res);
     case ((x1 :: xs1),xs2,cond)
       equation 
-        res = listIntersectionP(xs1, xs2, cond) "not list_getmember_p(x1,xs2,cond) => _" ;
+        res = listIntersectionOnTrue(xs1, xs2, cond) "not list_getmember_p(x1,xs2,cond) => _" ;
       then
         res;
   end matchcontinue;
-end listIntersectionP;
+end listIntersectionOnTrue;
 
-public function listSetEqualP "function: listSetEqualP
+public function listSetEqualOnTrue "function: listSetEqualOnTrue
   Takes two lists and a comparison function over two elements of the list.
-  It returns true if the two sets are equal, false otherwise.
-"
+  It returns true if the two sets are equal, false otherwise."
   input list<Type_a> lst1;
   input list<Type_a> lst2;
   input CompareFunc compare;
@@ -1762,22 +1662,21 @@ algorithm
      case (lst1,lst2,compare) 
        local list<Type_a> lst;
        equation
-       	lst = listIntersectionP(lst1,lst2,compare);
+       	lst = listIntersectionOnTrue(lst1,lst2,compare);
        	true = intEq(listLength(lst), listLength(lst1));
        	true = intEq(listLength(lst), listLength(lst2));
        then true;
      case (_,_,_) then false;
   end matchcontinue;
-end listSetEqualP;
+end listSetEqualOnTrue;
 
-public function listSetdifferenceP "function: listSetdifferenceP
+public function listSetDifferenceOnTrue "function: listSetDifferenceOnTrue
   Takes two lists and a comparison function over two elements of the list.
-  It returns the set difference of the two lists A-B, using the comparison function passed as 
-  argument to determine identity between two elements.
-  For example
-  given the function string_equal(string,string) returning true if the strings are equal
-  list_setdifference_p({\"a\",\"b\",\"c\"},{\"a\",\"c\"},string_equal) => {\"b\"}
-"
+  It returns the set difference of the two lists A-B, using the comparison 
+  function passed as argument to determine identity between two elements.
+  Example:
+    given the function string_equal(string,string) returning true if the strings are equal
+    listSetDifferenceOnTrue({\"a\",\"b\",\"c\"},{\"a\",\"c\"},string_equal) => {\"b\"}"
   input list<Type_a> inTypeALst1;
   input list<Type_a> inTypeALst2;
   input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean3;
@@ -1798,24 +1697,22 @@ algorithm
     case (a,{},cond) then a;  /* A B */ 
     case (a,(x1 :: xs),cond)
       equation 
-        a_1 = listDeletememberP(a, x1, cond);
-        a_2 = listSetdifferenceP(a_1, xs, cond);
+        a_1 = listDeleteMemberOnTrue(a, x1, cond);
+        a_2 = listSetDifferenceOnTrue(a_1, xs, cond);
       then
         a_2;
     case (_,_,_)
       equation 
-        print("-list_setdifference_p failed\n");
+        print("-listSetDifferenceOnTrue failed\n");
       then
         fail();
   end matchcontinue;
-end listSetdifferenceP;
+end listSetDifferenceOnTrue;
 
-public function listListUnionP "function: listListUnionP
+public function listListUnionOnTrue "function: listListUnionOnTrue
   Takes a list of lists and a comparison function over two elements of the lists.
   It returns the union of all sublists using the comparison function for identity.
-  For example,
-  list_list_union_p({{1},{1,2},{3,4}},int_eq) => {1,2,3,4}
-"
+  Example: listListUnionOnTrue({{1},{1,2},{3,4}},intEq) => {1,2,3,4}"
   input list<list<Type_a>> inTypeALstLst;
   input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean;
   output list<Type_a> outTypeALst;
@@ -1836,19 +1733,17 @@ algorithm
     case ({x},p) then x; 
     case ((x1 :: (x2 :: rest)),p)
       equation 
-        r1 = listUnionP(x1, x2, p);
-        res = listListUnionP((r1 :: rest), p);
+        r1 = listUnionOnTrue(x1, x2, p);
+        res = listListUnionOnTrue((r1 :: rest), p);
       then
         res;
   end matchcontinue;
-end listListUnionP;
+end listListUnionOnTrue;
 
-public function listReplaceat "function: listReplaceat
+public function listReplaceAt "function: listReplaceAt
   Takes an element, a position and a list and replaces the value at the given position in 
   the list. Position is an integer between 0 and n-1 for a list of n elements
-  For example,
-  list_replaceat(\"A\", 2, {\"a\",\"b\",\"c\"}) => {\"a\",\"b\",\"A\"}
-"
+  Example: listReplaceAt(\"A\", 2, {\"a\",\"b\",\"c\"}) => {\"a\",\"b\",\"A\"}"
   input Type_a inTypeA;
   input Integer inInteger;
   input list<Type_a> inTypeALst;
@@ -1861,20 +1756,18 @@ algorithm
       Type_a x,y;
       list<Type_a> ys,res;
       Integer nn,n;
-    case (x,0,(y :: ys)) then (x :: ys);  /* axiom list_replaceat(x,-1,{}) => {} */ 
-    case (x,n,(y :: ys)) /* rule	print \"-list_replaceat failed\\n\" 
-	-----------------------
-	list_replaceat(_,_,_) => fail */ 
+    case (x,0,(y :: ys)) then (x :: ys);
+    case (x,n,(y :: ys))  
       equation 
         (n >= 1) = true;
         nn = n - 1;
-        res = listReplaceat(x, nn, ys);
+        res = listReplaceAt(x, nn, ys);
       then
         (y :: res);
   end matchcontinue;
-end listReplaceat;
+end listReplaceAt;
 
-public function listReplaceatWithFill "function: listReplaceatWithFill
+public function listReplaceAtWithFill "function: listReplaceatWithFill
   Takes 
   - an element, 
   - a position 
@@ -1883,10 +1776,7 @@ public function listReplaceatWithFill "function: listReplaceatWithFill
   The function replaces the value at the given position in the list, if the given position is 
   out of range, the fill value is used to padd the list up to that element position and then
   insert the value at the position
-  
-  For example,
-  list_replaceat_withfill(\"A\", 5, {\"a\",\"b\",\"c\"},\"dummy\") => {\"a\",\"b\",\"c\",\"dummy\",\"A\"}
-"
+  Example: listReplaceAtWithFill(\"A\", 5, {\"a\",\"b\",\"c\"},\"dummy\") => {\"a\",\"b\",\"c\",\"dummy\",\"A\"}"
   input Type_a inTypeA1;
   input Integer inInteger2;
   input list<Type_a> inTypeALst3;
@@ -1916,26 +1806,24 @@ algorithm
       equation 
         (n >= 1) = true;
         nn = n - 1;
-        res = listReplaceatWithFill(x, nn, ys, fillv);
+        res = listReplaceAtWithFill(x, nn, ys, fillv);
       then
         (y :: res);
     case (_,p,_,_)
       equation 
-        print("-list_replaceat_with_fill failed row: ");
+        print("-listReplaceAtWithFill failed row: ");
         pos = intString(p);
         print(pos);
         print("\n");
       then
         fail();
   end matchcontinue;
-end listReplaceatWithFill;
+end listReplaceAtWithFill;
 
 public function listReduce "function: listReduce
   Takes a list and a function operating on two elements of the list.
   The function performs a reduction of the lists to a single value using the function.
-  For example,
-  list_reduce({1,2,3},int_add) => 6
-"
+  Example: listReduce({1,2,3},int_add) => 6"
   input list<Type_a> inTypeALst;
   input FuncTypeType_aType_aToType_a inFuncTypeTypeATypeAToTypeA;
   output Type_a outTypeA;
@@ -1968,7 +1856,7 @@ algorithm
   end matchcontinue;
 end listReduce;
 
-public function arrayReplaceatWithFill "function: arrayReplaceatWithFill
+public function arrayReplaceAtWithFill "function: arrayReplaceAtWithFill
   Takes 
   - an element, 
   - a position 
@@ -1976,11 +1864,9 @@ public function arrayReplaceatWithFill "function: arrayReplaceatWithFill
   - a fill value 
   The function replaces the value at the given position in the array, if the given position is 
   out of range, the fill value is used to padd the array up to that element position and then
-  insert the value at the position
-  
-  For example,
-  array_replaceat_withfill(\"A\", 5, {\"a\",\"b\",\"c\"},\"dummy\") => {\"a\",\"b\",\"c\",\"dummy\",\"A\"}
-"
+  insert the value at the position.
+  Example:
+    arrayReplaceAtWithFill(\"A\", 5, {\"a\",\"b\",\"c\"},\"dummy\") => {\"a\",\"b\",\"c\",\"dummy\",\"A\"}"
   input Type_a inTypeA1;
   input Integer inInteger2;
   input Type_a[:] inTypeAArray3;
@@ -2011,16 +1897,15 @@ algorithm
         res_1;
     case (_,_,_,_)
       equation 
-        print("-array_replaceat_with_fill failed\n");
+        print("-arrayReplaceAtWithFill failed\n");
       then
         fail();
   end matchcontinue;
-end arrayReplaceatWithFill;
+end arrayReplaceAtWithFill;
 
 public function arrayExpand "function: arrayExpand
   Increases the number of elements of a list with n.
-  Each of the new elements have the value v.
-"
+  Each of the new elements have the value v."
   input Integer n;
   input Type_a[:] arr;
   input Type_a v;
@@ -2037,8 +1922,7 @@ end arrayExpand;
 
 public function arrayNCopy "function arrayNCopy
   Copeis n elements in src array into dest array
-  The function fails if all elements can not be fit into dest array.
-"
+  The function fails if all elements can not be fit into dest array."
   input Type_a[:] src;
   input Type_a[:] dst;
   input Integer n;
@@ -2053,8 +1937,7 @@ end arrayNCopy;
 
 public function arrayCopy "function: arrayCopy
   copies all values in src array into dest array.
-  The function fails if all elements can not be fit into dest array.
-"
+  The function fails if all elements can not be fit into dest array."
   input Type_a[:] inTypeAArray1;
   input Type_a[:] inTypeAArray2;
   output Type_a[:] outTypeAArray;
@@ -2071,7 +1954,7 @@ algorithm
         dstlen = arrayLength(dst);
         (srclen > dstlen) = true;
         print(
-          "-array_copy failed. Can not fit elements into dest array\n");
+          "-arrayCopy failed. Can not fit elements into dest array\n");
       then
         fail();
     case (src,dst)
@@ -2111,9 +1994,7 @@ end arrayCopy2;
 
 public function tuple21 "function: tuple21
   Takes a tuple of two values and returns the first value.
-  For example,
-  tuple2_1((\"a\",1)) => \"a\"
-"
+  Example: tuple21((\"a\",1)) => \"a\""
   input tuple<Type_a, Type_b> inTplTypeATypeB;
   output Type_a outTypeA;
   replaceable type Type_a subtypeof Any;
@@ -2128,9 +2009,7 @@ end tuple21;
 
 public function tuple22 "function: tuple22
   Takes a tuple of two values and returns the second value.
-  For example,
-  tuple2_2((\"a\",1)) => 1
-"
+  Example: tuple22((\"a\",1)) => 1"
   input tuple<Type_a, Type_b> inTplTypeATypeB;
   output Type_b outTypeB;
   replaceable type Type_a subtypeof Any;
@@ -2145,9 +2024,7 @@ end tuple22;
 
 public function splitTuple2List "function: splitTuple2List
   Takes a list of two-tuples and splits it into two lists.
-  For example,
-  split_tuple2_list({(\"a\",1),(\"b\",2),(\"c\",3)}) => ({\"a\",\"b\",\"c\"}, {1,2,3})
-"
+  Example: splitTuple2List({(\"a\",1),(\"b\",2),(\"c\",3)}) => ({\"a\",\"b\",\"c\"}, {1,2,3})"
   input list<tuple<Type_a, Type_b>> inTplTypeATypeBLst;
   output list<Type_a> outTypeALst;
   output list<Type_b> outTypeBLst;
@@ -2171,12 +2048,11 @@ algorithm
   end matchcontinue;
 end splitTuple2List;
 
-public function if_ "function: if
+public function if_ "function: if_
   Takes a boolean and two values.
-  Returns the first value (second argument) if the boolean value is true, otherwise 
-  the second value (third argument) is returned.
-  For example,
-  if(true,\"a\",\"b\") => \"a\"
+  Returns the first value (second argument) if the boolean value is 
+  true, otherwise the second value (third argument) is returned.
+  Example: if_(true,\"a\",\"b\") => \"a\"
 "
   input Boolean inBoolean1;
   input Type_a inTypeA2;
@@ -2192,7 +2068,7 @@ algorithm
   end matchcontinue;
 end if_;
 
-public function stringContainChar "Returns true if a string contains a specified character"
+public function stringContainsChar "Returns true if a string contains a specified character"
   input String str;
   input String char;
   output Boolean res;
@@ -2203,13 +2079,11 @@ algorithm
       then true;
     case(str,char) then false;
   end matchcontinue;
-end stringContainChar;
+end stringContainsChar;
 
 public function stringAppendList "function stringAppendList
   Takes a list of strings and appends them.
-  For example,
-  string_append_list({\"foo\", \" \", \"bar\"}) => \"foo bar\"
-"
+  Example: stringAppendList({\"foo\", \" \", \"bar\"}) => \"foo bar\""
   input list<String> inStringLst;
   output String outString;
 algorithm 
@@ -2230,11 +2104,9 @@ algorithm
 end stringAppendList;
 
 public function stringDelimitList "function stringDelimitList
-  Takes a list of strings and a string delimiter and appends all list elements with
-  the string delimiter inserted between elements.
-  For example,
-  string_delimit_list({\"x\",\"y\",\"z\"}, \", \") => \"x, y, z\"
-"
+  Takes a list of strings and a string delimiter and appends all 
+  list elements with the string delimiter inserted between elements.
+  Example: stringDelimitList({\"x\",\"y\",\"z\"}, \", \") => \"x, y, z\""
   input list<String> inStringLst;
   input String inString;
   output String outString;
@@ -2256,28 +2128,24 @@ algorithm
   end matchcontinue;
 end stringDelimitList;
 
-public function stringDelimitList2sep "function: stringDelimitList2sep
+public function stringDelimitListAndSeparate "function: stringDelimitListAndSeparate
   author: PA
- 
-  This function is similar to string_delimit_list, i.e it inserts string delimiters between 
+  This function is similar to stringDelimitList, i.e it inserts string delimiters between 
   consecutive strings in a list. But it also count the lists and inserts a second string delimiter
   when the counter is reached. This can be used when for instance outputting large lists of values
-  and a newline is needed after ten or so items.
-"
+  and a newline is needed after ten or so items."
   input list<String> str;
   input String sep1;
   input String sep2;
   input Integer n;
   output String res;
 algorithm 
-  res := stringDelimitList2sep2(str, sep1, sep2, n, 0);
-end stringDelimitList2sep;
+  res := stringDelimitListAndSeparate2(str, sep1, sep2, n, 0);
+end stringDelimitListAndSeparate;
 
-protected function stringDelimitList2sep2 "function: stringDelimitList2sep2
+protected function stringDelimitListAndSeparate2 "function: stringDelimitListAndSeparate2
   author: PA
- 
-  Helper function to string_delimit_list_2sep
-"
+  Helper function to stringDelimitListAndSeparate"
   input list<String> inStringLst1;
   input String inString2;
   input String inString3;
@@ -2295,7 +2163,7 @@ algorithm
     case ({s},_,_,_,_) then s; 
     case ((f :: r),sep1,sep2,n,0)
       equation 
-        str1 = stringDelimitList2sep2(r, sep1, sep2, n, 1) "special case for first element" ;
+        str1 = stringDelimitListAndSeparate2(r, sep1, sep2, n, 1) "special case for first element" ;
         str = stringAppendList({f,sep1,str1});
       then
         str;
@@ -2303,31 +2171,29 @@ algorithm
       equation 
         0 = intMod(iter, n) "insert second delimiter" ;
         iter_1 = iter + 1;
-        str1 = stringDelimitList2sep2(r, sep1, sep2, n, iter_1);
+        str1 = stringDelimitListAndSeparate2(r, sep1, sep2, n, iter_1);
         str = stringAppendList({f,sep1,sep2,str1});
       then
         str;
     case ((f :: r),sep1,sep2,n,iter)
       equation 
         iter_1 = iter + 1 "not inserting second delimiter" ;
-        str1 = stringDelimitList2sep2(r, sep1, sep2, n, iter_1);
+        str1 = stringDelimitListAndSeparate2(r, sep1, sep2, n, iter_1);
         str = stringAppendList({f,sep1,str1});
       then
         str;
     case (_,_,_,_,_)
       equation 
-        print("string_delimit_list_2sep2 failed\n");
+        print("stringDelimitListAndSeparate2 failed\n");
       then
         fail();
   end matchcontinue;
-end stringDelimitList2sep2;
+end stringDelimitListAndSeparate2;
 
-public function stringDelimitListNoEmpty "function stringDelimitListNoEmpty
+public function stringDelimitListNonEmptyElts "function stringDelimitListNonEmptyElts
   Takes a list of strings and a string delimiter and appends all list elements with
-  the string delimiter inserted between elements.
-  For example,
-  string_delimit_list({\"x\",\"y\",\"z\"}, \", \") => \"x, y, z\"
-"
+  the string delimiter inserted between those elements that are not empty.
+  Example: stringDelimitListNonEmptyElts({\"x\",\"\",\"z\"}, \", \") => \"x, z\""
   input list<String> lst;
   input String delim;
   output String str;
@@ -2335,13 +2201,11 @@ public function stringDelimitListNoEmpty "function stringDelimitListNoEmpty
 algorithm 
   lst1 := listSelect(lst, isNotEmptyString);
   str := stringDelimitList(lst1, delim);
-end stringDelimitListNoEmpty;
+end stringDelimitListNonEmptyElts;
 
 public function stringReplaceChar "function stringReplaceChar
-  Takes a string and two chars and replaces the first char to 
-  second char:
-  example: string_replace_char(\"hej.b.c\",#\".\",#\"_\") => \"hej_b_c\"
-"
+  Takes a string and two chars and replaces the first char with the second char:
+  Example: string_replace_char(\"hej.b.c\",\".\",\"_\") => \"hej_b_c\""
   input String inString1;
   input String inString2;
   input String inString3;
@@ -2363,7 +2227,7 @@ algorithm
     case (strList,_,_)
       local String strList;
       equation 
-        print("string_replace_char failed\n");
+        print("stringReplaceChar failed\n");
       then
         strList;
   end matchcontinue;
@@ -2395,16 +2259,15 @@ algorithm
         (firstChar :: res);
     case (strList,_,_)
       equation 
-        print("string_replace_char2 failed\n");
+        print("stringReplaceChar2 failed\n");
       then
         strList;
   end matchcontinue;
 end stringReplaceChar2;
 
 public function stringSplitAtChar "function stringSplitAtChar
-  Takes a string and a char and split the string at the char
-  example: string_split_at_char(\"hej.b.c\",#\".\") => {\"hej,\"b\",\"c\"}
-"
+  Takes a string and a char and split the string at the char returning the list of components.
+  Example: stringSplitAtChar(\"hej.b.c\",\".\") => {\"hej,\"b\",\"c\"}"
   input String inString1;
   input String inString2;
   output list<String> outStringLst;
@@ -2419,10 +2282,10 @@ algorithm
     case (str,chr)
       equation 
         chrList = string_list_string_char(str);
-        stringList = stringSplitAtChar2(chrList, chr, {}) "list_string(resList) => res" ;
+        stringList = stringSplitAtChar2(chrList, chr, {}) "listString(resList) => res" ;
       then
         stringList;
-    case (strList,_) /* print \"string_split_at_char failed\\n\" */  then {strList}; 
+    case (strList,_) /* print \"stringSplitAtChar failed\\n\" */  then {strList}; 
   end matchcontinue;
 end stringSplitAtChar;
 
@@ -2462,7 +2325,7 @@ algorithm
         res;
     case (strList,_,_)
       equation 
-        print("string_split_at_char2 failed\n");
+        print("stringSplitAtChar2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -2471,8 +2334,7 @@ end stringSplitAtChar2;
 public function modelicaStringToCStr "function modelicaStringToCStr
  this replaces symbols that are illegal in C to legal symbols
  see replaceStringPatterns to see the format. (example: \".\" becomes \"$p\")
-  author: x02lucpo
-"
+  author: x02lucpo"
   input String str;
   output String res_str;
 algorithm 
@@ -2498,7 +2360,7 @@ algorithm
         res_str;
     case (_,_)
       equation 
-        print("-modelica_string_to_c_str1 failed\n");
+        print("-modelicaStringToCStr1 failed\n");
       then
         fail();
   end matchcontinue;
@@ -2507,8 +2369,7 @@ end modelicaStringToCStr1;
 public function cStrToModelicaString "function cStrToModelicaString
  this replaces symbols that have been replace to correct value for modelica string
  see replaceStringPatterns to see the format. (example: \"$p\" becomes \".\")
-  author: x02lucpo
-"
+  author: x02lucpo"
   input String str;
   output String res_str;
 algorithm 
@@ -2536,11 +2397,10 @@ algorithm
 end cStrToModelicaString1;
 
 public function boolOrList "function boolOrList
-  Takes a list of boolean values and applies the boolean \'or\' operator  to the list elements
-  For example
-  bool_or_list({true,false,false}) => true
-  bool_or_list({false,false,false}) => false
-"
+  Takes a list of boolean values and applies the boolean OR operator  to the list elements
+  Example:
+    boolOrList({true,false,false})  => true
+    boolOrList({false,false,false}) => false"
   input list<Boolean> inBooleanLst;
   output Boolean outBoolean;
 algorithm 
@@ -2550,27 +2410,17 @@ algorithm
       Boolean b,res;
       list<Boolean> rest;
     case ({b}) then b; 
-    case ((b :: rest))
-      equation 
-        equality(b = true);
-      then
-        true;
-    case ((b :: rest))
-      equation 
-        equality(b = false);
-        res = boolOrList(rest);
-      then
-        res;
+    case ((true :: rest))  then true;
+    case ((false :: rest)) then boolOrList(rest);
   end matchcontinue;
 end boolOrList;
 
 public function boolAndList "function: boolAndList
-  Takes a list of boolean values and applies the boolean \'and\' operator on the elements
-  For example,
+  Takes a list of boolean values and applies the boolean AND operator on the elements
+  Example:
   boolAndList({}) => true
   boolAndList({true, true}) => true
-  boolAndList({false,false,true}) => false
-"
+  boolAndList({false,false,true}) => false"
   input list<Boolean> inBooleanLst;
   output Boolean outBoolean;
 algorithm 
@@ -2581,31 +2431,20 @@ algorithm
       list<Boolean> rest;
     case({}) then true;
     case ({b}) then b; 
-    case ((b :: rest))
-      equation 
-        equality(b = false);
-      then
-        false;
-    case ((b :: rest))
-      equation 
-        equality(b = true);
-        res = boolAndList(rest);
-      then
-        res;
+    case ((false :: rest)) then false;
+    case ((true :: rest))  then boolAndList(rest);
   end matchcontinue;
 end boolAndList;
 
 public function boolString "function: boolString
   Takes a boolean value and returns a string representation of the boolean value.
-  For example,
-  bool_string(true) => \"true\"
-"
+  Example: boolString(true) => \"true\""
   input Boolean inBoolean;
   output String outString;
 algorithm 
   outString:=
   matchcontinue (inBoolean)
-    case true then "true"; 
+    case true  then "true"; 
     case false then "false"; 
   end matchcontinue;
 end boolString;
@@ -2616,41 +2455,31 @@ public function boolEqual "Returns true if two booleans are equal, false otherwi
 	output Boolean res;
 algorithm
   res := matchcontinue(b1,b2)
-    case (true,true) then true;
-    case (false,false) then true;
+    case (true,  true)  then true;
+    case (false, false) then true;
     case (_,_) then false;
   end matchcontinue;
 end boolEqual;
 
+/*
+adrpo - 2007-02-19 this function already exists in MMC/RML
 public function stringEqual "function: stringEqual
   Takes two strings and returns true if the strings are equal
-  For example,
-  string_equal(\"a\",\"a\") => true
-"
+  Example: stringEqual(\"a\",\"a\") => true"
   input String inString1;
   input String inString2;
   output Boolean outBoolean;
 algorithm 
-  outBoolean:=
-  matchcontinue (inString1,inString2)
-    local String a,b;
-    case (a,b)
-      equation 
-        equality(a = b);
-      then
-        true;
-    case (_,_) then false; 
-  end matchcontinue;
+  outBoolean:= inString1 ==& intString2;
 end stringEqual;
+*/
 
-public function listMatching "function: listMatching
-  For example,
-  Takes a list of values and a matching function over the values and returns a
-  sub list of values for which the matching function succeeds.
-  For example,
-  given function is_numeric(string) => ()  which succeeds if the string is numeric.
-  list_matching({\"foo\",\"1\",\"bar\",\"4\"},is_numeric) => {\"1\",\"4\"}
-"
+public function listFilter "function: listFilter
+  Takes a list of values and a filter function over the values and 
+  returns a sub list of values for which the matching function succeeds.
+  Example:
+    given function is_numeric(string) => ()  which succeeds if the string is numeric.
+    listFilter({\"foo\",\"1\",\"bar\",\"4\"},is_numeric) => {\"1\",\"4\"}"
   input list<Type_a> inTypeALst;
   input FuncTypeType_aTo inFuncTypeTypeATo;
   output list<Type_a> outTypeALst;
@@ -2669,26 +2498,25 @@ algorithm
     case ((v :: vl),cond)
       equation 
         cond(v);
-        vl_1 = listMatching(vl, cond);
+        vl_1 = listFilter(vl, cond);
       then
         (v :: vl_1);
     case ((v :: vl),cond)
       equation 
         failure(cond(v));
-        vl_1 = listMatching(vl, cond);
+        vl_1 = listFilter(vl, cond);
       then
         vl_1;
   end matchcontinue;
-end listMatching;
+end listFilter;
 
 public function applyOption "function: applyOption
   Takes an option value and a function over the value. 
   It returns in another option value, resulting 
   from the application of the function on the value.
-  For example,
-  apply_option(SOME(1), int_string) => SOME(\"1\")
-  apply_option(NONE, int_string) => NONE
-"
+  Example:
+    applyOption(SOME(1), intString) => SOME(\"1\")
+    applyOption(NONE,    intString) => NONE"
   input Option<Type_a> inTypeAOption;
   input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
   output Option<Type_b> outTypeBOption;
@@ -2716,24 +2544,17 @@ algorithm
 end applyOption;
 
 public function makeOption "function makeOption
-  Makes a value into value option, using SOME(value) 
-"
+  Makes a value into value option, using SOME(value)"
   input Type_a inTypeA;
   output Option<Type_a> outTypeAOption;
   replaceable type Type_a subtypeof Any;
 algorithm 
-  outTypeAOption:=
-  matchcontinue (inTypeA)
-    local Type_a v;
-    case (v) then SOME(v); 
-  end matchcontinue;
+  outTypeAOption:= SOME(inTypeA);
 end makeOption;
 
 public function stringOption "function: stringOption
   author: PA
- 
-  Returns string value or empty string from string option.
-"
+  Returns string value or empty string from string option."
   input Option<String> inStringOption;
   output String outString;
 algorithm 
@@ -2748,9 +2569,7 @@ end stringOption;
 public function listSplit "function: listSplit
   Takes a list of values and an position value.
   The function returns the list splitted into two lists at the position given as argument.
-  For example,
-  list_split({1,2,5,7},2) => ({1,2},{5,7})
-"
+  Example: listSplit({1,2,5,7},2) => ({1,2},{5,7})"
   input list<Type_a> inTypeALst;
   input Integer inInteger;
   output list<Type_a> outTypeALst1;
@@ -2767,15 +2586,13 @@ algorithm
       equation 
         length = listLength(a);
         (index > length) = true;
-        print(
-          "Index out of bounds (greater than list length) in relation list_split\n");
+        print("Index out of bounds (greater than list length) in relation listSplit\n");
       then
         fail();
     case (a,index)
       equation 
         (index < 0) = true;
-        print(
-          "Index out of bounds (less than zero) in relation list_split\n");
+        print("Index out of bounds (less than zero) in relation listSplit\n");
       then
         fail();
     case (a,index)
@@ -2789,8 +2606,7 @@ algorithm
   end matchcontinue;
 end listSplit;
 
-protected function listSplit2 "helper function to list_split
-"
+protected function listSplit2 "helper function to listSplit"
   input list<Type_a> inTypeALst1;
   input list<Type_a> inTypeALst2;
   input Integer inInteger3;
@@ -2818,16 +2634,14 @@ algorithm
         (c,d);
     case (_,_,_)
       equation 
-        print("list_split2 failed\n");
+        print("listSplit2 failed\n");
       then
         fail();
   end matchcontinue;
 end listSplit2;
 
 public function intPositive "function: intPositive
-  Returns true if integer value is positive (>= 0)
- 
-"
+  Returns true if integer value is positive (>= 0)"
   input Integer v;
   output Boolean res;
 algorithm 
@@ -2836,8 +2650,7 @@ end intPositive;
 
 public function optionToList "function: optionToList
   Returns an empty list for NONE and a list containing
-  the one element for SOME. To use with list_append
-"
+  the element for SOME(element). To use with listAppend"
   input Option<Type_a> inTypeAOption;
   output list<Type_a> outTypeALst;
   replaceable type Type_a subtypeof Any;
@@ -2851,56 +2664,38 @@ algorithm
 end optionToList;
 
 public function flattenOption "function: flattenOption
-  Returns the second argument if NONE and
-  the contents of SOME if SOME
-"
+  Returns the second argument if NONE or the element in SOME(element)"
   input Option<Type_a> inTypeAOption;
   input Type_a inTypeA;
   output Type_a outTypeA;
   replaceable type Type_a subtypeof Any;
 algorithm 
-  outTypeA:=
-  matchcontinue (inTypeAOption,inTypeA)
+  outTypeA := matchcontinue (inTypeAOption,inTypeA)
     local Type_a n,c;
     case (NONE,n) then n; 
-    case (SOME(c),n) then c; 
+    case (SOME(c),n) then c;
   end matchcontinue;
 end flattenOption;
 
 public function isEmptyString "function: isEmptyString
- 
-  Returns true if string is the empty string.
-"
+  Returns true if string is the empty string."
   input String inString;
   output Boolean outBoolean;
 algorithm 
-  outBoolean:=
-  matchcontinue (inString)
-    case "" then true; 
-    case _ then false; 
-  end matchcontinue;
+  outBoolean := stringEqual(inString, "");
 end isEmptyString;
 
-public function isNotEmptyString "function: isNotEmptyString
- 
-  Returns true if string is not the empty string.
-"
+public function isNotEmptyString "function: isNotEmptyString 
+  Returns true if string is not the empty string."
   input String inString;
   output Boolean outBoolean;
 algorithm 
-  outBoolean:=
-  matchcontinue (inString)
-    case "" then false; 
-    case _ then true; 
-  end matchcontinue;
+  outBoolean := boolNot(stringEqual(inString, ""));
 end isNotEmptyString;
 
 public function writeFileOrErrorMsg "function: writeFileOrErrorMsg
- 
-  This function tries to write to a file and if it
-  fails then it outputs \"# Cannot write to file: <filename>.\" to 
-  errorbuf
-"
+  This function tries to write to a file and if it fails then it 
+  outputs \"# Cannot write to file: <filename>.\" to errorBuf"
   input String inString1;
   input String inString2;
 algorithm 
@@ -2921,17 +2716,17 @@ algorithm
   end matchcontinue;
 end writeFileOrErrorMsg;
 
-public function systemCallWithErrorMsg "this function executes a command with System.systemCall 
-  if System.systemCall does not return 0 then the msg is outputed to
-  error_buf and the function fails
-"
+public function systemCallWithErrorMsg "
+  This function executes a command with System.systemCall 
+  if System.systemCall does not return 0 then the msg 
+  is outputed to errorBuf and the function fails."
   input String inString1;
   input String inString2;
 algorithm 
   _:=
   matchcontinue (inString1,inString2)
     local String s_call,e_msg;
-    case (s_call,_) /* command error_msg to error_buf if fail */ 
+    case (s_call,_) /* command errorMsg to errorBuf if fail */ 
       equation 
         0 = System.systemCall(s_call);
       then
@@ -2944,11 +2739,10 @@ algorithm
   end matchcontinue;
 end systemCallWithErrorMsg;
 
-public function charlistcompare "function: charlistcompare
- 
-  Compares two char lists up to the nth potision and
-  returns true if they are equal.
-"
+/* adrpo - 2007-02-19 - not used anymore
+public function charListCompare "function: charListCompare
+  Compares two char lists up to the nth 
+  position and returns true if they are equal."
   input list<String> inStringLst1;
   input list<String> inStringLst2;
   input Integer inInteger3;
@@ -2960,38 +2754,28 @@ algorithm
       String a,b;
       Integer n1,n;
       list<String> l1,l2;
-    case ((a :: _),(b :: _),1)
-      equation 
-        equality(a = b);
-      then
-        true;
-    case ((a :: _),(b :: _),1)
-      equation 
-        failure(equality(a = b));
-      then
-        false;
+    case ((a :: _),(b :: _),1) then stringEqual(a, b);
     case ((a :: l1),(b :: l2),n)
       equation 
         n1 = n - 1;
-        equality(a = b);
-        true = charlistcompare(l1, l2, n1);
+        true = stringEqual(a, b);
+        true = charListCompare(l1, l2, n1);
       then
         true;
     case (_,_,_) then false; 
   end matchcontinue;
-end charlistcompare;
-
+end charListCompare;
+*/
 public function strncmp "function: strncmp
- 
-  Comparse two strings up to the nth character
-  Returns true if they are equal.
-"
+  Compare two strings up to the nth character
+  Returns true if they are equal."
   input String inString1;
   input String inString2;
   input Integer inInteger3;
   output Boolean outBoolean;
 algorithm 
-  outBoolean:=
+  outBoolean := (0==System.strncmp(inString1,inString2,inInteger3));
+  /*
   matchcontinue (inString1,inString2,inInteger3)
     local
       list<String> clst1,clst2;
@@ -3005,31 +2789,26 @@ algorithm
         s2len = stringLength(s2);
         (s1len >= n) = true;
         (s2len >= n) = true;
-        true = charlistcompare(clst1, clst2, n);
+        true = charListCompare(clst1, clst2, n);
       then
         true;
     case (_,_,_) then false; 
   end matchcontinue;
+  */
 end strncmp;
 
 public function tickStr "function: tickStr
-  author: PA
- 
-  Returns tick as a string, i.e. an unique number.
-"
+  author: PA 
+  Returns tick as a string, i.e. an unique number."
   output String s;
-  Integer i;
 algorithm 
-  i := tick();
-  s := intString(i);
+  s := intString(tick());
 end tickStr;
 
 protected function replaceSlashWithPathDelimiter "function replaceSlashWithPathDelimiter
   author: x02lucpo
-  
-  replace the \"/\" with the system-pathdelimiter.
-  On window must be \\ so that the get_absolute_directory_and_file works
-"
+  replace the / with the system-pathdelimiter.
+  On Windows must be \\ so that the function getAbsoluteDirectoryAndFile works"
   input String str;
   output String ret_string;
   String pd;
@@ -3040,11 +2819,9 @@ end replaceSlashWithPathDelimiter;
 
 public function getAbsoluteDirectoryAndFile "function getAbsoluteDirectoryAndFile
   author: x02lucpo
- 
   splits the filepath in directory and filename
   (\"c:\\programs\\file.mo\") => (\"c:\\programs\",\"file.mo\")
-  (\"..\\work\\file.mo\") => (\"c:\\openmodelica123\\work\", \"file.mo\")
-"
+  (\"..\\work\\file.mo\") => (\"c:\\openmodelica123\\work\", \"file.mo\")"
   input String inString;
   output String outString1;
   output String outString2;
@@ -3059,8 +2836,8 @@ algorithm
       equation 
         file = replaceSlashWithPathDelimiter(file_1);
         pd = System.pathDelimiter();
-        (pd_chr :: {}) = string_list_string_char(pd);
-        (list_path :: {}) = stringSplitAtChar(file, pd_chr) "same dir only filename as param" ;
+        /* (pd_chr :: {}) = string_list_string_char(pd); */
+        (list_path :: {}) = stringSplitAtChar(file, pd) "same dir only filename as param" ;
         res = System.pwd();
       then
         (res,list_path);
@@ -3069,8 +2846,8 @@ algorithm
       equation 
         file = replaceSlashWithPathDelimiter(file_1);
         pd = System.pathDelimiter();
-        (pd_chr :: {}) = string_list_string_char(pd);
-        list_path = stringSplitAtChar(file, pd_chr);
+        /* (pd_chr :: {}) = string_list_string_char(pd); */
+        list_path = stringSplitAtChar(file, pd);
         file_path = listLast(list_path);
         list_path_1 = listStripLast(list_path);
         dir_path = stringDelimitList(list_path_1, pd);
@@ -3082,7 +2859,7 @@ algorithm
         (res,file_path);
     case (name)
       equation 
-        Debug.fprint("failtrace", "-get_absolute_directory_and_file  failed");
+        Debug.fprint("failtrace", "-getAbsoluteDirectoryAndFile failed");
       then
         fail();
   end matchcontinue;
@@ -3091,9 +2868,7 @@ end getAbsoluteDirectoryAndFile;
 
 public function rawStringToInputString "function: rawStringToInputString
   author: x02lucpo
- 
-  replace the double-backslash with backslash
-"
+  replace the double-backslash with backslash"
   input String inString;
   output String s;
 algorithm 
@@ -3109,8 +2884,6 @@ algorithm
         (retString);
   end matchcontinue;
 end  rawStringToInputString;
-
-
 
 end Util;
 

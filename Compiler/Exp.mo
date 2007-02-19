@@ -2493,8 +2493,8 @@ algorithm
         ((pow_e :: es1_1),es2_2);
     case ((e :: es1),es2)
       equation 
-        _ = Util.listGetmemberP(e, es2, expEqual);
-        es2_1 = Util.listDeletememberP(es2, e, expEqual);
+        _ = Util.listGetMemberOnTrue(e, es2, expEqual);
+        es2_1 = Util.listDeleteMemberOnTrue(es2, e, expEqual);
         (es1_1,es2_2) = removeCommonFactors(es1, es2_1);
       then
         (es1_1,es2_2);
@@ -2788,7 +2788,7 @@ algorithm
         e2s = factors(expr);
         factor1 = makeProductLst((e1 :: rest));
         expr1 = makeProductLst(e2s);
-        {} = Util.listSetdifferenceP(e2s, (e1 :: rest), expEqual);
+        {} = Util.listSetDifferenceOnTrue(e2s, (e1 :: rest), expEqual);
         tp = typeof(e1);
         one = makeConstOne(tp);
       then
@@ -2797,7 +2797,7 @@ algorithm
       equation 
         e1s = factors(factor);
         e2s = factors(expr);
-        factors_1 = Util.listSetdifferenceP(e2s, e1s, expEqual);
+        factors_1 = Util.listSetDifferenceOnTrue(e2s, e1s, expEqual);
         exp = makeProductLst(factors_1);
       then
         exp;
@@ -2834,7 +2834,7 @@ protected function gcd "function: gcd
 algorithm 
   e1s := factors(e1);
   e2s := factors(e2);
-  ((factor as (_ :: _))) := Util.listIntersectionP(e1s, e2s, expEqual);
+  ((factor as (_ :: _))) := Util.listIntersectionOnTrue(e1s, e2s, expEqual);
   product := makeProductLst(factor);
 end gcd;
 
@@ -4674,7 +4674,7 @@ algorithm
     case (T_ARRAY(ty = t,arrayDimensions = dims))
       equation 
         ss = Util.listMap(Util.listMap1(dims, Util.applyOption,int_string),Util.stringOption);
-        s1 = Util.stringDelimitListNoEmpty(ss, ", ");
+        s1 = Util.stringDelimitListNonEmptyElts(ss, ", ");
         ts = typeString(t);
         res = Util.stringAppendList({"/tp:",ts,"[",s1,"]/"});
       then

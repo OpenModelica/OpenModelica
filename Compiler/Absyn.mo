@@ -1809,7 +1809,7 @@ algorithm
         then crefEqual(cr1,cr2);
     case(STRING(s1),STRING(s2))
       local String s1,s2;
-        then Util.stringEqual(s1,s2);
+        then stringEqual(s1,s2);
     case (BOOL(b1),BOOL(b2)) 
       local Boolean b1,b2;
         then Util.boolEqual(b1,b2);

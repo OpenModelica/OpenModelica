@@ -1045,7 +1045,7 @@ protected function buildItemListnode "function: buildItemListnode
   list<tuple<Ident, Value>> selitems;
   Graphviz.Node node;
 algorithm 
-  selitems := Util.listMatching(items, cond);
+  selitems := Util.listFilter(items, cond);
   node := buildItemListnode2(selitems, 1);
   outNode := Graphviz.NODE(name,{},{node});
 end buildItemListnode;

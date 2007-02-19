@@ -4194,8 +4194,8 @@ algorithm
       equation 
         (inputs1,outputs1) = lowerStatementInputsOutputs(vars, s);
         (inputs2,outputs2) = lowerAlgorithmInputsOutputs(vars, Algorithm.ALGORITHM(ss));
-        inputs = Util.listUnionP(inputs1, inputs2, Exp.expEqual);
-        outputs = Util.listUnionP(outputs1, outputs2, Exp.expEqual);
+        inputs = Util.listUnionOnTrue(inputs1, inputs2, Exp.expEqual);
+        outputs = Util.listUnionOnTrue(outputs1, outputs2, Exp.expEqual);
       then
         (inputs,outputs);
   end matchcontinue;
@@ -4255,8 +4255,8 @@ algorithm
         (inputs1,outputs1) = lowerAlgorithmInputsOutputs(vars,Algorithm.ALGORITHM(stmts));
         (inputs2,outputs2) = lowerElseAlgorithmInputsOutputs(vars,elsebranch);
         inputs3 = statesAndVarsExp(e,vars);
-        inputs = Util.listListUnionP({inputs1, inputs2,inputs3}, Exp.expEqual);
-        outputs = Util.listUnionP(outputs1, outputs2, Exp.expEqual);    
+        inputs = Util.listListUnionOnTrue({inputs1, inputs2,inputs3}, Exp.expEqual);
+        outputs = Util.listUnionOnTrue(outputs1, outputs2, Exp.expEqual);    
       then (inputs,outputs);          
 
 			// Features not yet supported.
@@ -4298,8 +4298,8 @@ algorithm
       (inputs1, outputs1) = lowerElseAlgorithmInputsOutputs(vars,elseBranch);
       (inputs2, outputs2) = lowerAlgorithmInputsOutputs(vars,Algorithm.ALGORITHM(stmts));
       inputs3 = statesAndVarsExp(e,vars);
-      inputs = Util.listListUnionP({inputs1, inputs2, inputs3}, Exp.expEqual);
-      outputs = Util.listUnionP(outputs1, outputs2, Exp.expEqual);
+      inputs = Util.listListUnionOnTrue({inputs1, inputs2, inputs3}, Exp.expEqual);
+      outputs = Util.listUnionOnTrue(outputs1, outputs2, Exp.expEqual);
     then (inputs,outputs);
     
       case(vars,Algorithm.ELSE(stmts)) 
@@ -4341,7 +4341,7 @@ algorithm
       equation 
         s1 = statesAndVarsExp(e1, vars);
         s2 = statesAndVarsExp(e2, vars);
-        res = Util.listUnionP(s1, s2, Exp.expEqual);
+        res = Util.listUnionOnTrue(s1, s2, Exp.expEqual);
       then
         res;
     case (Exp.UNARY(exp = e),vars)
@@ -4353,7 +4353,7 @@ algorithm
       equation 
         s1 = statesAndVarsExp(e1, vars);
         s2 = statesAndVarsExp(e2, vars);
-        res = Util.listUnionP(s1, s2, Exp.expEqual);
+        res = Util.listUnionOnTrue(s1, s2, Exp.expEqual);
       then
         res;
     case (Exp.LUNARY(exp = e),vars)
@@ -4373,7 +4373,7 @@ algorithm
         s1 = statesAndVarsExp(e1, vars);
         s2 = statesAndVarsExp(e2, vars);
         s3 = statesAndVarsExp(e3, vars);
-        res = Util.listListUnionP({s1,s2,s3}, Exp.expEqual);
+        res = Util.listListUnionOnTrue({s1,s2,s3}, Exp.expEqual);
       then
         res;
     case ((e as Exp.CALL(path = Absyn.IDENT(name = "der"),expLst = {Exp.CREF(componentRef = cr)})),vars)
@@ -4389,13 +4389,13 @@ algorithm
     case (Exp.CALL(expLst = expl),vars)
       equation 
         lst = Util.listMap1(expl, statesAndVarsExp, vars);
-        res = Util.listListUnionP(lst, Exp.expEqual);
+        res = Util.listListUnionOnTrue(lst, Exp.expEqual);
       then
         res;
     case (Exp.ARRAY(array = expl),vars)
       equation 
         lst = Util.listMap1(expl, statesAndVarsExp, vars);
-        res = Util.listListUnionP(lst, Exp.expEqual);
+        res = Util.listListUnionOnTrue(lst, Exp.expEqual);
       then
         res;
     case (Exp.MATRIX(scalar = mexp),vars)
@@ -4406,7 +4406,7 @@ algorithm
     case (Exp.TUPLE(PR = expl),vars)
       equation 
         lst = Util.listMap1(expl, statesAndVarsExp, vars);
-        res = Util.listListUnionP(lst, Exp.expEqual);
+        res = Util.listListUnionOnTrue(lst, Exp.expEqual);
       then
         res;
     case (Exp.CAST(exp = e),vars)
@@ -4423,7 +4423,7 @@ algorithm
       equation 
         s1 = statesAndVarsExp(e1, vars);
         s2 = statesAndVarsExp(e2, vars);
-        res = Util.listUnionP(s1, s2, Exp.expEqual);
+        res = Util.listUnionOnTrue(s1, s2, Exp.expEqual);
       then
         res;
     case (_,_) then {}; 
@@ -4451,7 +4451,7 @@ algorithm
         expl_1 = Util.listMap(expl, Util.tuple21);
         lst = Util.listMap1(expl_1, statesAndVarsExp, vars);
         ms_1 = statesAndVarsMatrixExp(ms, vars);
-        res = Util.listListUnionP((ms_1 :: lst), Exp.expEqual);
+        res = Util.listListUnionOnTrue((ms_1 :: lst), Exp.expEqual);
       then
         res;
   end matchcontinue;
@@ -6943,7 +6943,7 @@ algorithm
         //print("marked equations:");print(Util.stringDelimitList(Util.listMap(eqns,intString),","));
         //print("\n");
         diff_eqns = DAEEXT.getDifferentiatedEqns();
-        eqns_1 = Util.listSetdifferenceP(eqns, diff_eqns, int_eq);
+        eqns_1 = Util.listSetDifferenceOnTrue(eqns, diff_eqns, intEq);
         //print("differentiating equations:");print(Util.stringDelimitList(Util.listMap(eqns_1,intString),","));
         //print("\n");
 				
@@ -6958,7 +6958,7 @@ algorithm
         (dummy_der,dae) = newDummyVar(state, dae)  ;
         //print("Chosen dummy: ");print(Exp.printComponentRefStr(dummy_der));print("\n");
         reqns = eqnsForVarWithStates(mt, stateno);
-        changedeqns = Util.listUnionP(deqns, reqns, int_eq);
+        changedeqns = Util.listUnionOnTrue(deqns, reqns, int_eq);
         (dae,m,mt) = replaceDummyDer(state, dummy_der, dae, m, mt, changedeqns) "We need to change variables in the differentiated equations and in the 
 	  equations having the dummy derivative" ;
         dae = makeAlgebraic(dae, state);
@@ -6973,7 +6973,7 @@ algorithm
       equation 
         eqns = DAEEXT.getMarkedEqns();
         diff_eqns = DAEEXT.getDifferentiatedEqns();
-        eqns_1 = Util.listSetdifferenceP(eqns, diff_eqns, int_eq);
+        eqns_1 = Util.listSetDifferenceOnTrue(eqns, diff_eqns, intEq);
         es = Util.listMap(eqns_1, int_string);
         es_1 = Util.stringDelimitList(es, ", ");
         print("eqns =");print(es_1);print("\n");
@@ -7041,7 +7041,7 @@ algorithm
         eqns_1 = Util.listMap1(eqns, int_sub, 1);
         eqns_lst = Util.listMap1r(eqns_1, equationNth, e);
         crefs = equationsCrefs(eqns_lst);
-        crefs = Util.listDeletememberP(crefs, dummy, Exp.crefEqual);
+        crefs = Util.listDeleteMemberOnTrue(crefs, dummy, Exp.crefEqual);
         state = findState(vars, crefs);
         ({v},{indx}) = getVar(dummy, vars);
         (dummy_fixed as false) = varFixed(v);
@@ -7056,7 +7056,7 @@ algorithm
         eqns_1 = Util.listMap1(eqns, int_sub, 1);
         eqns_lst = Util.listMap1r(eqns_1, equationNth, e);
         crefs = equationsCrefs(eqns_lst);
-        crefs = Util.listDeletememberP(crefs, dummy, Exp.crefEqual);
+        crefs = Util.listDeleteMemberOnTrue(crefs, dummy, Exp.crefEqual);
         state = findState(vars, crefs);
         ({v},{indx}) = getVar(dummy, vars);
        true = varFixed(v);
@@ -7249,7 +7249,7 @@ algorithm
         e_1 = e - 1;
         eqn = equationNth(daeeqns, e_1);
         row = incidenceRow(vars, eqn);
-        m_1 = Util.arrayReplaceatWithFill(row, e_1, m, {});
+        m_1 = Util.arrayReplaceAtWithFill(row, e_1, m, {});
         changedvars1 = varsInEqn(m_1, e);
         (m_2,changedvars2) = updateIncidenceMatrix2(dae, m_1, eqns);
       then
@@ -7291,7 +7291,7 @@ algorithm
         mlst = arrayList(m);
         row_1 = transposeRow(mlst, v, 1);
         v_1 = v - 1;
-        mt_1 = Util.arrayReplaceatWithFill(row_1, v_1, mt, {});
+        mt_1 = Util.arrayReplaceAtWithFill(row_1, v_1, mt, {});
         mt_2 = updateTransposedMatrix(vars, m, mt_1);
       then
         mt_2;
@@ -9118,7 +9118,7 @@ algorithm
     case (m,mt,i,ass1,ass2)
       equation 
         vars = varsInEqn(m, i);
-        vars_1 = Util.listMatching(vars, isNotVMarked);
+        vars_1 = Util.listFilter(vars, isNotVMarked);
         (ass1_1,ass2_1) = forallUnmarkedVarsInEqnBody(m, mt, i, vars_1, ass1, ass2);
       then
         (ass1_1,ass2_1);
@@ -10731,7 +10731,7 @@ algorithm
     case (RESIDUAL_EQUATION(exp = e),vars,ae,m,mt,eqn_indx)
       equation 
         var_indxs = varsInEqn(m, eqn_indx) "residual equations" ;
-        var_indxs_1 = Util.listUnionP(var_indxs, {}, int_eq) "Remove duplicates and get in correct order: acsending index" ;
+        var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, int_eq) "Remove duplicates and get in correct order: acsending index" ;
         var_indxs_2 = listReverse(var_indxs_1);
         SOME(eqns) = calculateJacobianRow2(e, vars, eqn_indx, var_indxs_2);
       then
@@ -10742,7 +10742,7 @@ algorithm
         MULTIDIM_EQUATION(ds,e1,e2) = ae[indx + 1];
         new_exp = Exp.BINARY(e1,Exp.SUB(Exp.REAL()),e2);
         var_indxs = varsInEqn(m, eqn_indx);
-        var_indxs_1 = Util.listUnionP(var_indxs, {}, int_eq) "Remove duplicates and get in correct order: acsending index" ;
+        var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, int_eq) "Remove duplicates and get in correct order: acsending index" ;
         var_indxs_2 = listReverse(var_indxs_1);
         SOME(eqns) = calculateJacobianRow2(new_exp, vars, eqn_indx, var_indxs_2);
       then
@@ -13020,14 +13020,14 @@ algorithm
     case ({},_,_) then {}; 
     case ((ZERO_CROSSING(occurWhenLst = whenClauseList) :: rest),count,when_index)
       equation 
-        _ = Util.listGetmember(when_index, whenClauseList);
+        _ = Util.listGetMember(when_index, whenClauseList);
         count_1 = count + 1;
         resx = getZeroCrossingIndicesFromWhenClause2(rest, count_1, when_index);
       then
         (count :: resx);
     case ((ZERO_CROSSING(occurWhenLst = whenClauseList) :: rest),count,when_index)
       equation 
-        failure(_ = Util.listGetmember(when_index, whenClauseList));
+        failure(_ = Util.listGetMember(when_index, whenClauseList));
         count_1 = count + 1;
         resx = getZeroCrossingIndicesFromWhenClause2(rest, count_1, when_index);
       then

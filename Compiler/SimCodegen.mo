@@ -878,7 +878,7 @@ algorithm
         str_arr1 = generateAttrVectorType(dae, str_arr, nx, ny, np);
         str_arr2 = generateAttrVectorDiscrete(dae, str_arr1, nx, ny, np);
         str_lst = arrayList(str_arr1);
-        str = Util.stringDelimitList2sep(str_lst, ", ", "\n", 3);
+        str = Util.stringDelimitListAndSeparate(str_lst, ", ", "\n", 3);
         res = Util.stringAppendList({"char var_attr[NX+NY+NP]={",str,"};"});
       then
         res;
@@ -1122,7 +1122,7 @@ algorithm
         str_arr = fill("1/*default*/", arr_size);
         str_arr_1 = generateFixedVector2(dae, str_arr, nx, ny, np);
         str_lst = arrayList(str_arr_1);
-        str = Util.stringDelimitList2sep(str_lst, ", ", "\n", 3);
+        str = Util.stringDelimitListAndSeparate(str_lst, ", ", "\n", 3);
         res = Util.stringAppendList({"static char init_fixed[NX+NX+NY+NP]={",str,"};"});
       then
         res;
@@ -1804,7 +1804,7 @@ algorithm
       equation 
         kind_lst = {DAELow.VARIABLE(),DAELow.DISCRETE(),DAELow.DUMMY_DER(),
           DAELow.DUMMY_STATE()};
-        _ = Util.listGetmember(kind, kind_lst);
+        _ = Util.listGetMember(kind, kind_lst);
         origname_str = Exp.printComponentRefStr(origname) "if this fails then the var is not added to list" ;
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
         comment = Dump.unparseCommentOptionNoAnnotation(comment);
@@ -2173,7 +2173,7 @@ algorithm
         res1 = generateInputFunctionCode2(knvars_lst, 0);
         res1_1 = Util.listSelect(res1, Util.isNotEmptyString);
         lst_lenght = listLength(res1_1);
-        res1_1 = Util.stringDelimitListNoEmpty(res1_1, "\n  ");
+        res1_1 = Util.stringDelimitListNonEmptyElts(res1_1, "\n  ");
         res = Util.stringAppendList(
           {
           "\n/*\n*/\nint input_function()\n","{\n  ",res1_1,
@@ -2263,7 +2263,7 @@ algorithm
         res1 = generateOutputFunctionCode2(vars_lst_1, 0);
         res1_1 = Util.listSelect(res1, Util.isNotEmptyString);
         lst_lenght = listLength(res1_1);
-        res1_1 = Util.stringDelimitListNoEmpty(res1_1, "\n  ");
+        res1_1 = Util.stringDelimitListNonEmptyElts(res1_1, "\n  ");
         res = Util.stringAppendList(
           {
           "\n/*\n*/\nint output_function()\n","{\n  ",res1_1,
@@ -2899,7 +2899,7 @@ algorithm
       equation 
         n_1 = n - 1;
         lst_1 = addMissingEquations(n_1, lst);
-        _ = Util.listGetmember(n, lst);
+        _ = Util.listGetMember(n, lst);
       then
         lst_1;
     case (n,lst) /* missing equations must be added in correct order,
@@ -3793,9 +3793,9 @@ algorithm
   matchcontinue (eqnLst,varLst)
       case (eqnLst,varLst) equation
         discVarLst = Util.listSelect(varLst,DAELow.isVarDiscrete);
-        contVarLst = Util.listSetdifferenceP(varLst,discVarLst,DAELow.varEqual);
+        contVarLst = Util.listSetDifferenceOnTrue(varLst,discVarLst,DAELow.varEqual);
 			  discEqnLst = Util.listMap1(discVarLst,findDiscreteEquation,eqnLst);
-			  contEqnLst = Util.listSetdifferenceP(eqnLst,discEqnLst,DAELow.equationEqual);       
+			  contEqnLst = Util.listSetDifferenceOnTrue(eqnLst,discEqnLst,DAELow.equationEqual);       
 			  then (contEqnLst,contVarLst,discEqnLst,discVarLst);
   end matchcontinue;
 end splitMixedEquations;
@@ -4045,7 +4045,7 @@ algorithm
         solvedVars = Util.listMap(DAELow.varList(vars),DAELow.varCref);        
         algOutVars = Util.listMap(algOutExpVars,Exp.expCref);
         // The variables solved for and the output variables of the algorithm must be the same.
-        true = Util.listSetEqualP(solvedVars,algOutVars,Exp.crefEqual);
+        true = Util.listSetEqualOnTrue(solvedVars,algOutVars,Exp.crefEqual);
         (s1,cg_id) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), 1, Codegen.simContext);
       then (s1,cg_id,{});
 
@@ -4058,7 +4058,7 @@ algorithm
         algOutVars = Util.listMap(algOutExpVars,Exp.expCref);
 
         // The variables solved for and the output variables of the algorithm must be the same.
-        false = Util.listSetEqualP(solvedVars,algOutVars,Exp.crefEqual);
+        false = Util.listSetEqualOnTrue(solvedVars,algOutVars,Exp.crefEqual);
         algStr =	DAE.dumpAlgorithmsStr({DAE.ALGORITHM(alg)});	
         message = Util.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,
           ". This is not implemented yet.\n"});
@@ -5589,13 +5589,13 @@ algorithm
     case ({},allpaths,iterpaths) then (allpaths,iterpaths);  /* paths to append all paths iterated paths updated all paths update iterated paths */ 
     case ((path :: paths),allpaths,iterpaths)
       equation 
-        _ = Util.listGetmemberP(path, allpaths, ModUtil.pathEqual);
+        _ = Util.listGetMemberOnTrue(path, allpaths, ModUtil.pathEqual);
         (allpaths,iterpaths) = appendNonpresentPaths(paths, allpaths, iterpaths);
       then
         (allpaths,iterpaths);
     case ((path :: paths),allpaths,iterpaths)
       equation 
-        failure(_ = Util.listGetmemberP(path, allpaths, ModUtil.pathEqual));
+        failure(_ = Util.listGetMemberOnTrue(path, allpaths, ModUtil.pathEqual));
         allpaths_1 = listAppend(allpaths, {path});
         iterpaths_1 = listAppend(iterpaths, {path});
         (allpaths_2,iterpaths_2) = appendNonpresentPaths(paths, allpaths_1, iterpaths_1);
@@ -5694,7 +5694,7 @@ algorithm
         ny_lst = arrayList(nyarr3);
         np_lst = arrayList(nparr3);
         whole_lst = Util.listFlatten({nx_lst,nxd_lst,ny_lst,np_lst});
-        res = Util.stringDelimitListNoEmpty(whole_lst, "\n");
+        res = Util.stringDelimitListNonEmptyElts(whole_lst, "\n");
       then
         res;
   end matchcontinue;
@@ -6248,7 +6248,7 @@ algorithm
       equation 
         whenClauseIndex_1 = whenClauseIndex + 1;
         zeroCrossings = DAELow.getZeroCrossingIndicesFromWhenClause(dlow, whenClauseIndex_1);
-        _ = Util.listGetmember(zcIndex, zeroCrossings);
+        _ = Util.listGetMember(zcIndex, zeroCrossings);
       then
         true;
     case (_,_) then false; 

@@ -6008,8 +6008,8 @@ algorithm
     case (id,els,Absyn.EXTERNALDECL(lang = lang)) /* the case with only one output var, and that cannot be array, otherwise
       inst_ext_make_crefs outvar will fail */ 
       equation 
-        (outvar :: {}) = Util.listMatching(els, isOutputVar);
-        invars = Util.listMatching(els, isInputVar);
+        (outvar :: {}) = Util.listFilter(els, isOutputVar);
+        invars = Util.listFilter(els, isInputVar);
         explists = Util.listMap(invars, instExtMakeCrefs);
         exps = Util.listFlatten(explists);
         {Absyn.CREF(retcref)} = instExtMakeCrefs(outvar);
@@ -6018,7 +6018,7 @@ algorithm
         extdecl;
     case (id,els,Absyn.EXTERNALDECL(lang = lang))
       equation 
-        inoutvars = Util.listMatching(els, isInoutVar);
+        inoutvars = Util.listFilter(els, isInoutVar);
         explists = Util.listMap(inoutvars, instExtMakeCrefs);
         exps = Util.listFlatten(explists);
         extdecl = Absyn.EXTERNALDECL(SOME(id),lang,NONE,exps,NONE);

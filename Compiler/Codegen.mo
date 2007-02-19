@@ -943,7 +943,7 @@ algorithm
   Debug.fprintln("cgtr", "generate_functions_elist");
   Debug.fprintln("cgtrdumpdae", "Dumping DAE:");
   Debug.fcall("cgtrdumpdae", DAE.dump2, DAE.DAE(els));
-  fns := Util.listMatching(els, DAE.isFunction);
+  fns := Util.listFilter(els, DAE.isFunction);
   cfns := generateFunctionsElist2(fns);
 end generateFunctionsElist;
 
@@ -2157,7 +2157,7 @@ algorithm
       equation 
         is_a = isArray(var);
         typ_str = daeTypeStr(typ, is_a);
-        emptypre = Util.stringEqual(prefix, "");
+        emptypre = stringEqual(prefix, "");
         (cref_str1,_) = compRefCstr(id);
 				iStr = intString(i);        
         cref_str2 = Util.stringAppendList({prefix,".","targ",iStr});
@@ -2284,7 +2284,7 @@ algorithm
       Context context;
     case (els,tnr,context)
       equation 
-        algs = Util.listMatching(els, DAE.isAlgorithm);
+        algs = Util.listFilter(els, DAE.isAlgorithm);
         (cfn,tnr_1) = generateAlgorithms2(algs, tnr, context);
       then
         (cfn,tnr_1);
@@ -3090,7 +3090,7 @@ algorithm
       equation 
         is_a = isArray(var);
         // pre can be "" or "out", the later for output variables.
-        emptyprep = Util.stringEqual(pre, "");
+        emptyprep = stringEqual(pre, "");
         iStr = intString(i);
         id_1_str = Util.stringAppendList({"out.","targ",iStr});
         idstr = Util.if_(emptyprep, id, Exp.CREF_IDENT(id_1_str,{}));
@@ -4163,7 +4163,7 @@ algorithm
         ndims_str = intString(ndims);
         // Assumes that all dimensions are known, i.e. no NONE in dims.
         dims_strs = Util.listMap(Util.listMap1(dims,Util.applyOption, int_string),Util.stringOption);
-        dims_str = Util.stringDelimitListNoEmpty(dims_strs, ", ");
+        dims_str = Util.stringDelimitListNonEmptyElts(dims_strs, ", ");
         (cref_str,_) = compRefCstr(cref);
         stmt = Util.stringAppendList(
           {e_sh_tp_str,"_array_create(&",vstr,", ","&",cref_str,", ",
@@ -5288,7 +5288,7 @@ algorithm
         Debug.fprintln("cgtrdumpdaeextcall", extdeclstr);
         (argdecls,arglist_1,tnr_1) = generateExtcallVardecls(vars, arglist, retarg, lang, 1,tnr);
         fcall = generateExtCallFcall(n, arglist_1, retarg, lang);
-        outbiarglist = Util.listMatching(arglist_1, isExtargOutputOrBidir);
+        outbiarglist = Util.listFilter(arglist_1, isExtargOutputOrBidir);
         (argcopies,tnr_2) = generateExtcallVarcopy(outbiarglist, retarg, lang, 1,tnr_1);
         extcall = cMergeFns({argdecls,fcall,argcopies});
       then
