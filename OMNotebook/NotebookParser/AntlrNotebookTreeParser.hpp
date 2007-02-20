@@ -23,6 +23,7 @@
 #include "rule.h"
 #include "factory.h"
 #include "stripstring.h"
+#include "xmlnodename.h"
 
 using namespace std;
 using namespace IAEX;
@@ -58,7 +59,9 @@ class CUSTOM_API AntlrNotebookTreeParser : public ANTLR_USE_NAMESPACE(antlr)Tree
     //This is not very nice.   
     
     // AF
-    bool imagePartOfText; 
+    bool imagePartOfText;
+    bool convertingToONB;
+    int readmode_;
 public:
 	AntlrNotebookTreeParser();
 	static void initializeASTFactory( ANTLR_USE_NAMESPACE(antlr)ASTFactory& factory );
@@ -76,7 +79,7 @@ public:
 		return AntlrNotebookTreeParser::tokenNames;
 	}
 	public: void document(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
-		Cell *ws, Factory *f
+		Cell *ws, Factory *f, int readmode
 	);
 	public: void expr(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 		result_t &result
@@ -104,10 +107,10 @@ protected:
 private:
 	static const char* tokenNames[];
 #ifndef NO_STATIC_CONSTS
-	static const int NUM_TOKENS = 111;
+	static const int NUM_TOKENS = 179;
 #else
 	enum {
-		NUM_TOKENS = 111
+		NUM_TOKENS = 179
 	};
 #endif
 	

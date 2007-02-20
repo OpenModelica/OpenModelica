@@ -107,6 +107,8 @@ namespace IAEX{
 		setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
 		style_.setName( "cellgroup" );
+	
+		
 	}
 
 	/*! 

@@ -73,6 +73,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "textcell.h"
 #include "celldocument.h"
 
+#include <QMessageBox>
 
 using namespace std;
 
@@ -284,6 +285,8 @@ namespace IAEX
 						traverseTextCell( parent, element );
 					else if( element.tagName() == XML_INPUTCELL )
 						traverseInputCell( parent, element );
+					else if( element.tagName() == XML_GRAPHCELL )
+						traverseGraphCell( parent, element );
 					else
 					{
 						string msg = "Unknow tag name: " + element.tagName().toStdString() + ", in file " + filename_.toStdString();
@@ -458,6 +461,75 @@ namespace IAEX
 		// set style, before set text, so all rules are applied to the style
 		inputcell->setStyle( *inputcell->style() );
 		inputcell->setText( text );
+
+		// 2006-01-17 AF, check if the inputcell is open or closed
+		QString closed = element.attribute( XML_CLOSED, XML_FALSE );
+		if( closed == XML_TRUE )
+			inputcell->setClosed( true );
+		else if( closed == XML_FALSE )
+			inputcell->setClosed( false );
+		else
+			throw runtime_error( "Unknown closed value in inputcell" );
+
+		parent->addChild( inputcell );
+	}
+
+
+		void XMLParser::traverseGraphCell( Cell *parent, QDomElement &element )
+	{
+
+		// Get the style value
+		QString style = element.attribute( XML_STYLE, "Graph" );
+		
+
+		// create inputcell with the saved style
+		Cell *inputcell = factory_->createCell( style, parent );
+
+		// go through all children in input cell/element
+		QString text;
+		QDomNode node = element.firstChild();
+		while( !node.isNull() )
+		{
+			QDomElement e = node.toElement();
+			if( !e.isNull() )
+			{
+				if( e.tagName() == XML_INPUTPART )
+				{
+					text = e.text();
+					inputcell->setText( text );
+				}
+				else if( e.tagName() == XML_OUTPUTPART )
+				{
+					InputCell *iCell = dynamic_cast<InputCell*>(inputcell);
+
+					if( iCell->isPlot() )
+						iCell->setTextOutputHtml( e.text() );
+					else
+						iCell->setTextOutput( e.text() );
+				}
+				else if( e.tagName() == XML_RULE )
+				{
+					inputcell->addRule( 
+						new Rule( e.attribute( XML_NAME, "" ), e.text() ));
+				}
+				else if( e.tagName() == XML_IMAGE )
+				{
+					addImage( inputcell, e );
+				}
+				else
+				{
+					string msg = "Unknown tagname " + e.tagName().toStdString() + ", in input cell";
+					throw runtime_error( msg.c_str() );
+				}
+			}
+
+			node = node.nextSibling();
+		}
+
+		// set style, before set text, so all rules are applied to the style
+		inputcell->setStyle( *inputcell->style() );
+
+				inputcell->setText( text ); //fjass
 
 		// 2006-01-17 AF, check if the inputcell is open or closed
 		QString closed = element.attribute( XML_CLOSED, XML_FALSE );

@@ -59,6 +59,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "textcell.h"
 #include "inputcell.h"
 #include "cellcursor.h"
+#include "graphcell.h"
 
 
 namespace IAEX
@@ -177,6 +178,44 @@ namespace IAEX
 	void ChapterCounterVisitor::visitInputCellNodeAfter(InputCell *)
 	{}
 
+
+	//GRAPHCELL
+
+	void ChapterCounterVisitor::visitGraphCellNodeBefore(GraphCell *node)
+	{
+		int level = node->style()->chapterLevel();
+		if( level > 0 && level <= COUNTERS )
+		{
+			// Add on chapter couner
+			counters_[ level - 1 ]++;
+
+			QString counter;
+			QString number;
+			for( int i = 0; i < level; ++i )
+			{
+				number.setNum( counters_[i] );
+
+				if( !counter.isEmpty() )
+					counter += ".";
+
+				counter += number;
+			}
+
+			// reset all counters avter counter[level]
+			for( int i = level; i < COUNTERS; ++i )
+				counters_[i] = 0;
+
+			node->setChapterCounter( counter );
+		}
+		else
+		{
+			// clear chapter counter
+			node->setChapterCounter( "" );
+		}
+	}
+
+	void ChapterCounterVisitor::visitGraphCellNodeAfter(GraphCell *)
+	{}
 	//CELLCURSOR
 	void ChapterCounterVisitor::visitCellCursorNodeBefore(CellCursor *)
 	{}      

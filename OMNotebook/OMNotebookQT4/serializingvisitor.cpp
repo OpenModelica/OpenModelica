@@ -75,7 +75,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "cellcursor.h"
 #include "celldocument.h"
 #include "xmlnodename.h"
-
+#include "graphcell.h"
 
 
 
@@ -255,6 +255,63 @@ namespace IAEX
 	void SerializingVisitor::visitInputCellNodeAfter(InputCell *)
 	{}
 
+	//GRAPHCELL
+	// ******************************************************************
+	void SerializingVisitor::visitGraphCellNodeBefore(GraphCell *node)
+	{
+		QDomElement graphcell = domdoc_.createElement( XML_GRAPHCELL );
+
+		// Add style setting to inputcell element
+		graphcell.setAttribute( XML_STYLE, node->style()->name() );
+
+		// Add close setting to inputcell element
+		if( node->isClosed() )
+			graphcell.setAttribute( XML_CLOSED, XML_TRUE );
+		else
+			graphcell.setAttribute( XML_CLOSED, XML_FALSE );
+
+		// Create an text element (for input) and append it to the element
+		QDomElement graphelement = domdoc_.createElement( XML_INPUTPART );
+		QDomText graphnode = domdoc_.createTextNode( node->text() );
+		graphelement.appendChild( graphnode );
+		graphcell.appendChild( graphelement );
+
+		// Create an text element (for output) and append it to the element
+		QDomElement outputelement = domdoc_.createElement( XML_OUTPUTPART );
+		
+		QDomText outputnode;
+		if( node->isPlot() )
+			outputnode = domdoc_.createTextNode( node->textOutputHtml() );
+		else
+			outputnode = domdoc_.createTextNode( node->textOutput() );
+
+		outputelement.appendChild( outputnode );
+		graphcell.appendChild( outputelement );
+
+		// Creates ruleelemetns
+		Cell::rules_t r = node->rules();
+		Cell::rules_t::const_iterator r_iter = r.begin();
+		for( ; r_iter != r.end(); ++r_iter )
+		{
+			QDomElement ruleelement = domdoc_.createElement( XML_RULE );
+			ruleelement.setAttribute( XML_NAME, (*r_iter)->attribute() );
+
+			QDomText rulenode = domdoc_.createTextNode( (*r_iter)->value() );
+			ruleelement.appendChild( rulenode );
+
+			graphcell.appendChild( ruleelement );
+		}
+
+		// Check if any image have been include in the text and add them
+		// to the the the inputcell element
+		saveImages( graphcell, node->textOutputHtml() );
+	
+		// Add inputcell element to current element
+		currentElement_.appendChild( graphcell );
+	}
+
+	void SerializingVisitor::visitGraphCellNodeAfter(GraphCell *)
+	{}
 
 	//CELLCURSOR
 	// ******************************************************************

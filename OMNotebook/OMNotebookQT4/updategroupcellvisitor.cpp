@@ -113,6 +113,16 @@ namespace IAEX
 	void UpdateGroupcellVisitor::visitInputCellNodeAfter(InputCell *)
 	{}
 
+
+	//GRAPHCELL
+
+	void UpdateGroupcellVisitor::visitGraphCellNodeBefore(GraphCell *node)
+	{}
+
+	void UpdateGroupcellVisitor::visitGraphCellNodeAfter(GraphCell *)
+	{}
+
+
 	//CELLCURSOR
 	void UpdateGroupcellVisitor::visitCellCursorNodeBefore(CellCursor *)
 	{}      

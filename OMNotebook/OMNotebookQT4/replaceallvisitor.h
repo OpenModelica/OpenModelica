@@ -64,6 +64,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "document.h"
 #include "inputcell.h"
 #include "textcell.h"
+#include "graphcell.h"
 
 
 namespace IAEX
@@ -145,7 +146,39 @@ namespace IAEX
 			}
 		}
 		void visitInputCellNodeAfter( InputCell *node ){}
-		
+
+
+		// Visitor function - GRAPHCELL
+		void visitGraphCellNodeBefore( GraphCell *node )
+		{
+			if( node->textEdit() )
+			{
+				int options( 0 );
+
+				// move cursor to start of text
+				QTextCursor cursor = node->textEdit()->textCursor();
+				cursor.movePosition( QTextCursor::Start );
+				node->textEdit()->setTextCursor( cursor );
+
+				// match case & match word
+				if( matchCase_ && matchWord_ )
+					options = QTextDocument::FindCaseSensitively | QTextDocument::FindWholeWords;
+				else if( matchCase_ )
+					options = QTextDocument::FindCaseSensitively;
+				else if( matchWord_ )
+					options = QTextDocument::FindWholeWords;
+
+				// replace all
+				while( node->textEdit()->find( findText_, (QTextDocument::FindFlag)options ))
+				{
+					node->textEdit()->textCursor().insertText( replaceText_ );
+					if( count_ )
+						(*count_)++;
+				}
+			}
+		}
+		void visitGraphCellNodeAfter( GraphCell *node ){}
+
 		// Visitor function - CURSORCELL
 		void visitCellCursorNodeBefore( CellCursor *cursor ){}
 		void visitCellCursorNodeAfter( CellCursor *cursor ){}

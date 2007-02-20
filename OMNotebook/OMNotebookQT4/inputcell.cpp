@@ -179,6 +179,7 @@ namespace IAEX
 	 */
 	void MyTextEdit::keyPressEvent(QKeyEvent *event )
 	{
+
 		// EVAL, key: SHIFT + RETURN || SHIFT + ENTER
 		if( event->modifiers() == Qt::ShiftModifier && 
 			(event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) )
@@ -280,6 +281,7 @@ namespace IAEX
 			event->ignore();
 			emit forwardAction( 3 );
 		}
+
 		// TAB
 		else if( event->key() == Qt::Key_Tab )
 		{
@@ -452,7 +454,8 @@ namespace IAEX
 
 		connect( input_, SIGNAL( textChanged() ),
 			this, SLOT( contentChanged() ));
-		connect( input_, SIGNAL( clickOnCell() ),
+
+			connect( input_, SIGNAL( clickOnCell() ),
 			this, SLOT( clickEvent() ));
 		connect( input_, SIGNAL( wheelMove(QWheelEvent*) ),
 			this, SLOT( wheelEvent(QWheelEvent*) ));
@@ -711,6 +714,7 @@ namespace IAEX
 				break;
 			
 			pos = startpos;
+			
 		}
 
 		// set the text
@@ -718,8 +722,8 @@ namespace IAEX
 
 		// 2005-12-16 AF, unblock signals and tell highlighter to highlight
 		input_->document()->blockSignals(false);
-		//input_->document()->setHtml( input_->toHtml() );
-		input_->document()->setPlainText( input_->toPlainText() );
+//      input_->document()->setHtml( input_->toHtml() ); 
+//	    input_->document()->setPlainText( input_->toPlainText() );   // This causes a crash with Qt >= 4.2
 		input_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
 
 		contentChanged();

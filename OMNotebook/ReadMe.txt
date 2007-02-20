@@ -12,7 +12,7 @@ open source is used. Version 4.1 open soure don't have any support for visual
 studio, but a patch can be downloaded from sourceforge.net that allows you to
 compile qt to be used together with visual studio. For more information about
 this patch: http://sourceforge.net/projects/qtwin/
-
+A guide is available at http://qtnode.net/wiki/Qt4_with_Visual_Studio
 
 MICO CORBA
 Mico Corba is needed to communicate with OMC. Currently the project is using

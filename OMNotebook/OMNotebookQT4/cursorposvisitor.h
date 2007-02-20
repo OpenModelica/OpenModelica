@@ -60,7 +60,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "textcell.h"
 #include "inputcell.h"
 #include "cellcursor.h"
-
+#include "graphcell.h"
 
 using namespace std;
 
@@ -103,6 +103,13 @@ namespace IAEX
 
 		virtual void visitTextCellNodeBefore(TextCell *node){}
 		virtual void visitTextCellNodeAfter(TextCell *node)
+		{
+			if( count_ && !closed_ )
+				position_ += node->height(); 
+		}
+
+		virtual void visitGraphCellNodeBefore(GraphCell *node) {}
+		virtual void visitGraphCellNodeAfter(GraphCell *node)
 		{
 			if( count_ && !closed_ )
 				position_ += node->height(); 

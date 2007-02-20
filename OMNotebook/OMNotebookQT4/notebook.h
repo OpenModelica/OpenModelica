@@ -115,6 +115,7 @@ namespace IAEX
 		void setStatusMessage( QString msg );	// Added 2006-02-10 AF
 		void forwardedAction( int action );		// Added 2006-04-27 AF
 
+		void recentTriggered();
 	protected:
 		void keyPressEvent(QKeyEvent *event);
 		void keyReleaseEvent(QKeyEvent *event);
@@ -170,6 +171,9 @@ namespace IAEX
 		void moveCursorDown();
 		void groupCellsAction();
 		void inputCellsAction();
+		void graphCellsAction();
+
+		void updateRecentFiles(QString);
 
 	private:
 		void createFileMenu();
@@ -187,6 +191,7 @@ namespace IAEX
 	private:
 		// 2005-10-07 AF, Porting, Added this menus
 		QMenu *fileMenu;
+		QMenu *recentMenu;
 		QMenu *editMenu;
 		QMenu *cellMenu;
 		QMenu *formatMenu;
@@ -253,6 +258,7 @@ namespace IAEX
 		
 		QAction *groupAction;
 		QAction *inputAction;
+		QAction *graphAction;
 
 		QAction *aboutAction;
 		QAction *helpAction;				// Added 2006-02-03 AF

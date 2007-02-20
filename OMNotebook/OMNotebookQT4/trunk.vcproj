@@ -15,40 +15,51 @@
 			IntermediateDirectory="Release\"
 			ConfigurationType="1"
 			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			WholeProgramOptimization="FALSE">
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalOptions="-Zm200 -w34100 -w34189"
-				Optimization="1"
-				AdditionalIncludeDirectories="&quot;$(QNBHOME)\NotebookParser&quot;;&quot;$(MODELICAHOME)&quot;;&quot;$(MICOHOME)\include&quot;;&quot;$(ANTLRHOME)\lib\cpp&quot;;.;&quot;$(QTHOME)\include&quot;;&quot;$(QTHOME)\include\QtGui&quot;;&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot;"
+				Optimization="2"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="TRUE"
+				FavorSizeOrSpeed="1"
+				OptimizeForProcessor="0"
+				OptimizeForWindowsApplication="TRUE"
+				AdditionalIncludeDirectories="&quot;$(QNBHOME)\NotebookParser&quot;;&quot;$(MODELICAHOME)&quot;;&quot;$(MICOHOME)\include&quot;;&quot;$(ANTLRHOME)\lib\cpp&quot;;.;&quot;$(QTHOME)\include&quot;;&quot;$(QTHOME)\include\QtGui&quot;;&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot;;..\..\OMShell"
 				PreprocessorDefinitions="WIN32;NDEBUG;;QT_NO_DEBUG"
 				GeneratePreprocessedFile="0"
 				MinimalRebuild="FALSE"
 				ExceptionHandling="TRUE"
 				RuntimeLibrary="2"
 				BufferSecurityCheck="FALSE"
+				EnableEnhancedInstructionSet="2"
 				RuntimeTypeInfo="TRUE"
 				AssemblerListingLocation="Release\"
 				ObjectFile="Release\"
 				ProgramDataBaseFileName=".\"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="0"/>
+				DebugInformationFormat="0"
+				CallingConvention="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="TRUE"
-				AdditionalDependencies="qtmain.lib QtCore4.lib QtGui4.lib QtNetwork4.lib QtXml4.lib NotebookParser.lib mico2311.lib antlr.lib msvcprt.lib msvcrt.lib"
+				AdditionalDependencies="qtmain.lib QtCore4.lib QtGui4.lib QtNetwork4.lib QtXml4.lib NotebookParser.lib mico2311.lib antlr.lib msvcprt.lib msvcrt.lib pltpkg2.lib"
 				OutputFile="Release\\OMNotebook.exe"
+				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="&quot;$(QNBHOME)\antlr\Release&quot;;&quot;$(QNBHOME)\NotebookParser\Release&quot;;&quot;$(QTHOME)\lib&quot;;&quot;$(MICOHOME)\win32-bin\lib&quot;"
+				AdditionalLibraryDirectories="..\ANTLR\Release;..\NotebookParser\Release;&quot;$(QTHOME)\lib&quot;;..\Pltpkg2\release;&quot;$(MICOHOME)\win32-bin\lib&quot;"
 				IgnoreDefaultLibraryNames=""
 				DelayLoadDLLs=""
 				GenerateDebugInformation="FALSE"
 				ProgramDatabaseFile=""
 				SubSystem="2"
-				StackReserveSize="6000000"/>
+				StackReserveSize="6000000"
+				OptimizeReferences="2"/>
 			<Tool
 				Name="VCMIDLTool"
 				WarningLevel="0"
@@ -85,7 +96,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="-Zm200 -w34100 -w34189"
 				Optimization="1"
-				AdditionalIncludeDirectories="&quot;$(QNBHOME)\NotebookParser&quot;;&quot;$(MODELICAHOME)&quot;;&quot;$(MICOHOME)\include&quot;;&quot;$(ANTLRHOME)\lib\cpp&quot;;.;&quot;$(QTHOME)\include&quot;;&quot;$(QTHOME)\include\QtGui&quot;;&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot;;$(NOINHERIT)"
+				AdditionalIncludeDirectories="&quot;$(QNBHOME)\NotebookParser&quot;;&quot;$(MODELICAHOME)&quot;;&quot;$(MICOHOME)\include&quot;;&quot;$(ANTLRHOME)\lib\cpp&quot;;.;&quot;$(QTHOME)\include&quot;;&quot;$(QTHOME)\include\QtGui&quot;;&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot;;..\..\OMShell"
 				PreprocessorDefinitions="WIN32;QT_DEBUG"
 				GeneratePreprocessedFile="0"
 				MinimalRebuild="TRUE"
@@ -105,10 +116,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="TRUE"
-				AdditionalDependencies="qtmaind.lib QtCored4.lib QtGuid4.lib QtNetworkd4.lib QtXmld4.lib antlr.lib NotebookParser.lib mico2311.lib"
+				AdditionalDependencies="qtmaind.lib QtCored4.lib QtGuid4.lib QtNetworkd4.lib QtXmld4.lib antlr.lib NotebookParser.lib mico2311.lib pltpkg2.lib"
 				OutputFile="Debug\\OMNotebook.exe"
 				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="&quot;$(QNBHOME)\antlr\Debug&quot;;&quot;$(MICOHOME)\win32-bin\lib&quot;;&quot;$(QNBHOME)\NotebookParser\Debug&quot;;&quot;$(QTHOME)\lib&quot;"
+				AdditionalLibraryDirectories="..\ANTLR\Release;..\NotebookParser\Release;&quot;$(QTHOME)\lib&quot;;..\Pltpkg2\debug;&quot;$(MICOHOME)\win32-bin\lib&quot;"
 				IgnoreDefaultLibraryNames=""
 				DelayLoadDLLs=""
 				GenerateDebugInformation="TRUE"
@@ -183,6 +194,9 @@
 				RelativePath=".\commandcompletion.cpp">
 			</File>
 			<File
+				RelativePath=".\graphcell.cpp">
+			</File>
+			<File
 				RelativePath=".\highlighterthread.cpp">
 			</File>
 			<File
@@ -198,7 +212,7 @@
 				RelativePath=".\notebooksocket.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\[anders]\[ exjobb ]\modelica_omc\omc_communication.cc">
+				RelativePath="..\..\OMShell\omc_communication.cc">
 			</File>
 			<File
 				RelativePath=".\omc_communicator.cpp">
@@ -479,6 +493,56 @@
 				RelativePath="factory.h">
 			</File>
 			<File
+				RelativePath=".\graphcell.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing graphcell.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe graphcell.h -o moc_graphcell.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_graphcell.cpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Moc&apos;ing graphcell.h..."
+						CommandLine="$(QTHOME)\bin\moc.exe graphcell.h -o moc_graphcell.cpp
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="moc_graphcell.cpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\graphcell2.h">
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCustomBuildTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\graphcelldelegate.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description=""
+						CommandLine=""
+						AdditionalDependencies=""
+						Outputs=""/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath=".\highlighterthread.h">
 			</File>
 			<File
@@ -509,6 +573,9 @@
 			</File>
 			<File
 				RelativePath="inputcelldelegate.h">
+			</File>
+			<File
+				RelativePath=".\menuItem.h">
 			</File>
 			<File
 				RelativePath=".\nbparser.h">
@@ -613,7 +680,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Moc&apos;ing qcombobox_search.h..."
-						CommandLine="$(QTHOME)\bin\moc.exe qcombobox_search.h -o moc_qcomboboxsearch.cpp"
+						CommandLine="$(QTHOME)\bin\moc.exe qcombobox_search.h -o moc_qcomboboxsearch.cpp
+"
 						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
 						Outputs="moc_qcomboboxsearch.cpp"/>
 				</FileConfiguration>
@@ -622,7 +690,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Moc&apos;ing qcombobox_search.h..."
-						CommandLine="$(QTHOME)\bin\moc.exe qcombobox_search.h -o moc_qcomboboxsearch.cpp"
+						CommandLine="$(QTHOME)\bin\moc.exe qcombobox_search.h -o moc_qcomboboxsearch.cpp
+"
 						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
 						Outputs="moc_qcomboboxsearch.cpp"/>
 				</FileConfiguration>
@@ -649,7 +718,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Moc&apos;ing searchform.h..."
-						CommandLine="$(QTHOME)\bin\moc.exe searchform.h -o moc_searchform.cpp"
+						CommandLine="$(QTHOME)\bin\moc.exe searchform.h -o moc_searchform.cpp
+"
 						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
 						Outputs="moc_searchform.cpp"/>
 				</FileConfiguration>
@@ -658,7 +728,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Moc&apos;ing searchform.h..."
-						CommandLine="$(QTHOME)\bin\moc.exe searchform.h -o moc_searchform.cpp"
+						CommandLine="$(QTHOME)\bin\moc.exe searchform.h -o moc_searchform.cpp
+"
 						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
 						Outputs="moc_searchform.cpp"/>
 				</FileConfiguration>
@@ -788,6 +859,9 @@
 				RelativePath="moc_documentview.cpp">
 			</File>
 			<File
+				RelativePath=".\moc_graphcell.cpp">
+			</File>
+			<File
 				RelativePath="moc_inputcell.cpp">
 			</File>
 			<File
@@ -880,7 +954,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Uic&apos;ing searchform.ui..."
-						CommandLine="$(QTHOME)\bin\uic.exe -o ui_searchform.h searchform.ui"
+						CommandLine="$(QTHOME)\bin\uic.exe -o ui_searchform.h searchform.ui
+"
 						AdditionalDependencies="$(QTHOME)\bin\uic.exe"
 						Outputs="ui_searchform.h"/>
 				</FileConfiguration>
@@ -889,7 +964,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Uic&apos;ing searchform.ui..."
-						CommandLine="$(QTHOME)\bin\uic.exe -o ui_searchform.h searchform.ui"
+						CommandLine="$(QTHOME)\bin\uic.exe -o ui_searchform.h searchform.ui
+"
 						AdditionalDependencies="$(QTHOME)\bin\uic.exe"
 						Outputs="ui_searchform.h"/>
 				</FileConfiguration>

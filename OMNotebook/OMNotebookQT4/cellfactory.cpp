@@ -67,8 +67,10 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "cellcursor.h"
 #include "stylesheet.h"
 
+#include <string>
+#include "graphcell.h"
 #include "omcinteractiveenvironment.h"
-
+using namespace std;
 
 namespace IAEX
 {
@@ -148,6 +150,7 @@ namespace IAEX
 			QObject::connect( text, SIGNAL( forwardAction(int) ),
 				doc_, SIGNAL( forwardAction(int) ));
 
+			
 
 			return text;
 		}
@@ -168,6 +171,53 @@ namespace IAEX
 			QObject::connect(text, SIGNAL(openLink(const QUrl*)),
 				doc_, SLOT(linkClicked(const QUrl*)));
 			
+			return text;
+		}
+		else if (style == "Graph")
+		{
+			GraphCell *text = new GraphCell(doc_, parent);
+			try
+			{
+				Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
+				CellStyle cstyle = sheet->getStyle( "Input" );
+
+				if( cstyle.name() != "null" )
+					text->setStyle( cstyle );
+				else
+					throw runtime_error("No Input style defened, the inputcell may not work correctly, please define a Input style in stylesheet.xml");
+			}
+			catch( exception e )
+			{
+				QMessageBox::warning( 0, "Warrning", e.what(), "OK" );
+			}
+
+			try
+			{
+				text->setDelegate(new OmcInteractiveEnvironment());
+			}
+			catch( exception e )
+			{}
+
+			QObject::connect(text, SIGNAL(cellselected(Cell *,Qt::KeyboardModifiers)),
+				doc_, SLOT(selectedACell(Cell*,Qt::KeyboardModifiers)));
+			QObject::connect(text, SIGNAL(clicked(Cell *)),
+				doc_, SLOT(mouseClickedOnCell(Cell*)));
+			QObject::connect(text, SIGNAL(clickedOutput(Cell *)),
+				doc_, SLOT(mouseClickedOnCellOutput(Cell*)));
+
+			// 2005-11-29 AF
+			QObject::connect( text, SIGNAL( heightChanged() ),
+				doc_, SLOT( updateScrollArea() ));
+
+			// 2006-01-17 AF
+			QObject::connect( text, SIGNAL( textChanged(bool) ),
+				doc_, SLOT( setChanged(bool) ));
+
+			// 2006-04-27 AF
+			QObject::connect( text, SIGNAL( forwardAction(int) ),
+				doc_, SIGNAL( forwardAction(int) ));
+
+
 			return text;
 		}
 		else //All other styles will be implemented with a TextCell.

@@ -94,6 +94,7 @@ namespace IAEX
 		void traverseGroupCell( Cell *parent, QDomElement &element );
 		void traverseTextCell( Cell *parent, QDomElement &element );
 		void traverseInputCell( Cell *parent, QDomElement &element );
+		void traverseGraphCell( Cell *parent, QDomElement &element );
 		void addImage( Cell *parent, QDomElement &element );
 
 		// READMODE_OLD

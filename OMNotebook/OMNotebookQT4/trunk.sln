@@ -1,7 +1,11 @@
 Microsoft Visual Studio Solution File, Format Version 8.00
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OMNotebookQT4", "trunk.vcproj", "{259725BE-54D2-3C8D-A8A8-4CF7BD839D28}"
 	ProjectSection(ProjectDependencies) = postProject
+		{9E68472B-29D8-4C20-9304-051C2C5C11B6} = {9E68472B-29D8-4C20-9304-051C2C5C11B6}
 		{3700A59E-E33B-4AC7-8385-35D486AEE4E0} = {3700A59E-E33B-4AC7-8385-35D486AEE4E0}
+		{D98C1DD4-008F-34B2-A980-0998ECF8427E} = {D98C1DD4-008F-34B2-A980-0998ECF8427E}
+		{D98C1DD4-008F-34B2-A980-0998ECF8427E} = {D98C1DD4-008F-34B2-A980-0998ECF8427E}
+		{D98C1DD4-008F-34B2-A980-0998ECF8427E} = {D98C1DD4-008F-34B2-A980-0998ECF8427E}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "antlr", "..\antlr\antlr.vcproj", "{9E68472B-29D8-4C20-9304-051C2C5C11B6}"
@@ -13,10 +17,20 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NotebookParser", "..\Notebo
 		{9E68472B-29D8-4C20-9304-051C2C5C11B6} = {9E68472B-29D8-4C20-9304-051C2C5C11B6}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Pltpkg2", "..\Pltpkg2\Pltpkg2.vcproj", "{D98C1DD4-008F-34B2-A980-0998ECF8427E}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sendData", "..\sendData\sendData.vcproj", "{25089714-9E42-4E5D-A68E-1FCA14A4891B}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
 		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectDependencies) = postSolution
 	EndGlobalSection
 	GlobalSection(ProjectConfiguration) = postSolution
 		{259725BE-54D2-3C8D-A8A8-4CF7BD839D28}.Debug.ActiveCfg = Debug|Win32
@@ -31,6 +45,14 @@ Global
 		{3700A59E-E33B-4AC7-8385-35D486AEE4E0}.Debug.Build.0 = Debug|Win32
 		{3700A59E-E33B-4AC7-8385-35D486AEE4E0}.Release.ActiveCfg = Release|Win32
 		{3700A59E-E33B-4AC7-8385-35D486AEE4E0}.Release.Build.0 = Release|Win32
+		{D98C1DD4-008F-34B2-A980-0998ECF8427E}.Debug.ActiveCfg = Debug|Win32
+		{D98C1DD4-008F-34B2-A980-0998ECF8427E}.Debug.Build.0 = Debug|Win32
+		{D98C1DD4-008F-34B2-A980-0998ECF8427E}.Release.ActiveCfg = Release|Win32
+		{D98C1DD4-008F-34B2-A980-0998ECF8427E}.Release.Build.0 = Release|Win32
+		{25089714-9E42-4E5D-A68E-1FCA14A4891B}.Debug.ActiveCfg = Debug|Win32
+		{25089714-9E42-4E5D-A68E-1FCA14A4891B}.Debug.Build.0 = Debug|Win32
+		{25089714-9E42-4E5D-A68E-1FCA14A4891B}.Release.ActiveCfg = Release|Win32
+		{25089714-9E42-4E5D-A68E-1FCA14A4891B}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionItems) = postSolution
 		trunk.vsd = trunk.vsd

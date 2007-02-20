@@ -61,6 +61,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "inputcell.h"
 #include "cellcursor.h"
 #include "celldocument.h"
+#include "graphcell.h"
 
 
 namespace IAEX
@@ -167,6 +168,28 @@ namespace IAEX
 	}
 
 	void PureTextVisitor::visitInputCellNodeAfter(InputCell *)
+	{}
+
+	//GRAPHCELL
+
+	void PureTextVisitor::visitGraphCellNodeBefore(GraphCell *node)
+	{
+		// 2006-03-03 AF, export chapter counter
+		if( !node->ChapterCounter().isNull() )
+			(*ts_) << node->ChapterCounter() << QString(" ");
+
+		(*ts_) << node->text();
+		(*ts_) << QString( "\r\n\r\n" );
+
+		// 2006-03-03 AF, export output if not an image
+		if( node->textOutputHtml().indexOf( "<img src=", 0, Qt::CaseInsensitive ) < 0 )
+		{
+			(*ts_) << node->textOutput();
+			(*ts_) << QString( "\r\n\r\n\r\n" );
+		}
+	}
+
+	void PureTextVisitor::visitGraphCellNodeAfter(GraphCell *)
 	{}
 
 	//CELLCURSOR

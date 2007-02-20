@@ -63,8 +63,10 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 //#include "modelica_class.hpp"
 //#include "modification.hpp"
 
+#ifdef WIN32
 // Windows includes
-//#include "windows.h"
+#include "windows.h"
+#endif
 
 // QT includes
 #include <QtGui/QApplication>

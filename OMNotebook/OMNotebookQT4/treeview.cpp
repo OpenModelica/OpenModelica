@@ -51,7 +51,8 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtGui/QPolygon>
 //Added by qt3to4:
 #include <QtGui/QPaintEvent>
-
+#include <QRectF>
+#include <QMessageBox>
 namespace IAEX
 {
    
@@ -144,6 +145,7 @@ namespace IAEX
 		else
 		{
 			painter.setPen( QPen( QBrush( backgroundColor() ), 10 ));
+
 			painter.drawRect( this->rect() );
 
 			painter.setPen(QPen(Qt::black,1, Qt::SolidLine));
@@ -193,17 +195,28 @@ namespace IAEX
 			painter.drawRect( this->rect() );
 
 			painter.setPen(QPen( QBrush( QColor(160,0,0) ), 1, Qt::SolidLine));
+
+			painter.drawRect(this->rect().x()-1, this->rect().y(), this->rect().width()-1, this->rect().height()-2);
+			painter.setPen(QPen(Qt::black,1, Qt::SolidLine));
+
 		}
 		else
 		{
 			painter.setPen( QPen( QBrush( backgroundColor() ), 10 ));
-			painter.drawRect( this->rect() );
+
 			
+
+
+//			painter.drawRect( this->rect() );	//This does not seem to work			
+
+			painter.setPen(QPen(Qt::black,1, Qt::SolidLine)); 
+			painter.drawRect(this->rect().x()-1, this->rect().y(), this->rect().width()-1, this->rect().height()-2);
 			painter.setPen(QPen(Qt::black,1, Qt::SolidLine));
 		}
 
 		if(isVisible())
 		{
+
 			QWidget::paintEvent(event);
 
 			QPolygon points(4);
@@ -213,7 +226,7 @@ namespace IAEX
 			points[2] = QPoint(5,height()-2);
 			points[3] = QPoint(1,height()-2);
 
-			painter.drawPolyline(points);
+			painter.drawPolyline(points);  //This seems to be broken 
 		}
 	}
 }

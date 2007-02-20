@@ -78,6 +78,8 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtGui/QTextEdit>
 #include <QtGui/QTextFrame>
 
+#include <QSettings>
+
 //IAEX Headers
 #include "command.h"
 #include "cellcommands.h"
@@ -430,6 +432,8 @@ namespace IAEX
 		printAction->setStatusTip( tr("Print the document") );
 		connect(printAction, SIGNAL(triggered()), this, SLOT(print()));
 
+
+
 		// QUIT WINDOW
 		quitWindowAction = new QAction( tr("&Quit"), this );
 		quitWindowAction->setShortcut( tr("Ctrl+Q") );
@@ -446,6 +450,24 @@ namespace IAEX
 		fileMenu->addSeparator();
 		fileMenu->addAction( printAction );
 		fileMenu->addSeparator();
+
+		// RECENT FILES
+		recentMenu = fileMenu->addMenu("Recent &Files"); 
+
+		QSettings s("PELAB", "OMNotebook");
+		QString recentFile;
+		for(int i = 0; i < 4; ++i)
+		{
+			if((recentFile = s.value(QString("Recent")+QString(i), QString()).toString()) != QString())
+			{
+				QAction* tmpAction = recentMenu->addAction(recentFile);
+				connect(tmpAction, SIGNAL(triggered()), this, SLOT(recentTriggered()));
+
+			}
+		}
+
+		fileMenu->addSeparator();
+
 		importMenu = fileMenu->addMenu( tr("&Import") );
 		exportMenu = fileMenu->addMenu( tr("E&xport") );
 		fileMenu->addSeparator();
@@ -632,6 +654,15 @@ namespace IAEX
 		inputAction->setStatusTip( tr("Add a input cell") );
 		connect(inputAction, SIGNAL(triggered()), this, SLOT(inputCellsAction()));
 
+		/// fjass
+
+		graphAction = new QAction( tr("Add &Graphcell"), this);
+		graphAction->setShortcut( tr("Ctrl+Shift+R") );
+		graphAction->setStatusTip( tr("Add a graph cell") );
+		connect(graphAction, SIGNAL(triggered()), this, SLOT(graphCellsAction()));
+
+		// \fjass
+
 		// 2005-10-07 AF, Porting, replaced this
 		//QAction *groupAction = new QAction("Group Cells", "&Group cells", CTRL+SHIFT+Key_G, this, "groupcells");
 		//QObject::connect(groupAction, SIGNAL(activated()), this, SLOT(groupCellsAction()));
@@ -687,6 +718,7 @@ namespace IAEX
 		//cellMenu->addSeparator();
 		cellMenu->addAction( addCellAction );
 		cellMenu->addAction( inputAction );
+		cellMenu->addAction( graphAction );
 		cellMenu->addAction( groupAction );
 		cellMenu->addAction( ungroupCellAction );
 		cellMenu->addAction( splitCellAction );
@@ -2216,6 +2248,29 @@ namespace IAEX
 		}
 	}
 
+	void NotebookWindow::updateRecentFiles(QString filename)
+	{
+		QSettings s("PELAB", "OMNotebook");
+		QStringList tmpLst;
+		QString tmp;
+		for(int i = 0; i < 4; ++i)
+		{	
+			if((tmp = s.value(QString("Recent") + QString(i), QString()).toString()) != QString())
+				tmpLst.push_back(tmp);
+			else
+				break;
+		}
+
+		if(tmpLst.indexOf(filename) != -1)
+			tmpLst.move(tmpLst.indexOf(filename), 0);
+		else
+			tmpLst.push_front(filename);
+
+		for(int i = 0; i < 4 && i < tmpLst.size(); ++i)
+			s.setValue(QString("Recent") + QString(i), tmpLst[i]);
+
+	}
+
 	/*! 
 	 * \author Ingemar Axelsson and Anders Fernström
 	 *
@@ -2244,6 +2299,13 @@ namespace IAEX
 			{
 				// 2006-03-01 AF, Update openDir_
 				openDir_ = QFileInfo( filename_ ).absolutePath();
+
+
+				updateRecentFiles(filename_);
+
+
+
+
 
 				application()->commandCenter()->executeCommand(new OpenFileCommand(filename_));
 			}
@@ -2303,17 +2365,26 @@ namespace IAEX
 		// user wants to save the document
 		while( subject_->hasChanged() )
 		{
+			int res = QMessageBox::question(this, "Document is unsaved", QString("The document \"") + filename + QString("\" is unsaved, do you want to save the document?"),
+				QMessageBox::Yes | QMessageBox::Default, QMessageBox::No,  QMessageBox::Cancel);
+
+/*
 			int res = QMessageBox::question( this, "Document is unsaved",
 				QString( "The document \"") + filename + 
 					QString( "\" is unsaved, do you want to save the document" ),
 				QMessageBox::Yes | QMessageBox::Default, 
 				QMessageBox::No, QMessageBox::NoButton );
-
+*/
 			if( res == QMessageBox::No )
 				break;
-			else
+			else if(res == QMessageBox::Yes)
 				save();
-		}
+			else if(res == QMessageBox::Cancel)
+			{
+				event->ignore();
+				return;
+			}
+			}
 
 
 		// 2006-02-09 AF, if last window, ask if OMC also should be closed
@@ -2449,6 +2520,9 @@ namespace IAEX
 
 			filename_ = filename;
 			statusBar()->showMessage("Ready");
+
+			updateRecentFiles(filename_);
+
 
 			// 2006-03-01 AF, Update saveDir_
 			saveDir_ = QFileInfo( filename_ ).absolutePath();
@@ -2612,6 +2686,7 @@ namespace IAEX
 				CellStyle style = sheet->getStyle( (*cs).first );
 				if( style.name() != "null" )
 					subject_->cursorChangeStyle( style );
+				
 			}
 		}
 
@@ -3408,7 +3483,21 @@ namespace IAEX
 		subject_->updateScrollArea();
 		updateChapterCounters();
 	}
+
+
+	void NotebookWindow::graphCellsAction()
+	{
+		subject_->executeCommand(new CreateNewCellCommand("Graph"));
+		subject_->updateScrollArea();
+		updateChapterCounters();
+	}
 	
-	
+	void NotebookWindow::recentTriggered() //Should only be called from the submenu "recent files"
+	{
+		QObject* s = QObject::sender();
+		if(s)
+			emit openFile(static_cast<QAction*>(s)->text());
+	}
+
 
 }

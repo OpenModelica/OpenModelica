@@ -167,6 +167,14 @@ namespace IAEX
 	void UpdateLinkVisitor::visitInputCellNodeAfter(InputCell *)
 	{}
 
+	//GRAPHCELL
+	void UpdateLinkVisitor::visitGraphCellNodeBefore(GraphCell *node)
+	{}
+
+	void UpdateLinkVisitor::visitGraphCellNodeAfter(GraphCell *)
+	{}
+
+
 	//CELLCURSOR
 	void UpdateLinkVisitor::visitCellCursorNodeBefore(CellCursor *)
 	{}      

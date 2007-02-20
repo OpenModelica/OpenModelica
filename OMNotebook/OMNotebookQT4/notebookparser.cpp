@@ -162,7 +162,7 @@ namespace IAEX
       
       AntlrNotebookTreeParser *walker = new AntlrNotebookTreeParser();
             
-      walker->document(t, workspace, factory_); //, readmode_);
+      walker->document(t, workspace, factory_, readmode_);
       anotebook.close();
       
       return workspace;

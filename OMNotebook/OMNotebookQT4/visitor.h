@@ -62,6 +62,7 @@ namespace IAEX{
    class InputCell;
    class ImageCell;
    class CellCursor;
+   class GraphCell;
 
    /*! \interface Visitor
     * \author Ingemar Axelsson (and Anders Ferström)
@@ -87,6 +88,9 @@ namespace IAEX{
 
       virtual void visitInputCellNodeBefore(InputCell *node) = 0;
       virtual void visitInputCellNodeAfter(InputCell *node) = 0;
+
+	  virtual void visitGraphCellNodeBefore(GraphCell *node) = 0;
+      virtual void visitGraphCellNodeAfter(GraphCell *node) = 0;
 
       virtual void visitCellCursorNodeBefore(CellCursor *cursor) = 0;
       virtual void visitCellCursorNodeAfter(CellCursor *cursor) = 0;

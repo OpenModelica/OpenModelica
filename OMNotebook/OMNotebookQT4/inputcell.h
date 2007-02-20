@@ -194,6 +194,7 @@ namespace IAEX
 		void eval();						// Added 2005-12-15 AF
 		void forwardAction( int );			// Added 2006-04-27 AF
 
+
 	protected:
 		void mousePressEvent(QMouseEvent *event);			// Added 2005-11-01 AF
 		void wheelEvent(QWheelEvent *event);				// Added 2005-11-28 AF

@@ -61,7 +61,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "inputcell.h"
 #include "cellcursor.h"
 #include "highlighterthread.h"
-
+#include "graphcell.h"
 
 using namespace std;
 namespace IAEX
@@ -88,6 +88,14 @@ namespace IAEX
 			thread->removeEditor( node->textEdit() );
 		}
 		virtual void visitInputCellNodeAfter(InputCell *node){}
+
+		virtual void visitGraphCellNodeBefore(GraphCell *node)
+		{
+			HighlighterThread *thread = HighlighterThread::instance();
+			thread->removeEditor( node->textEdit() );
+		}
+		virtual void visitGraphCellNodeAfter(GraphCell *node){}
+
 
 		virtual void visitCellCursorNodeBefore(CellCursor *cursor){}      
 		virtual void visitCellCursorNodeAfter(CellCursor *cursor){}

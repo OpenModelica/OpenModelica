@@ -61,6 +61,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #define XML_GROUPCELL			"GroupCell"
 #define XML_TEXTCELL			"TextCell"
 #define XML_INPUTCELL			"InputCell"
+#define XML_GRAPHCELL			"GraphCell"
 
 // attribute
 #define XML_CLOSED				"closed"

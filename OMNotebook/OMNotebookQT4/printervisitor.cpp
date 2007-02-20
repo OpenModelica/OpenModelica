@@ -67,6 +67,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "textcell.h"
 #include "inputcell.h"
 #include "cellcursor.h"
+#include "graphcell.h"
 
 
 namespace IAEX
@@ -290,6 +291,87 @@ namespace IAEX
 	}
 
 	void PrinterVisitor::visitInputCellNodeAfter(InputCell *)
+	{}
+
+	//GRAPHCELL
+
+	void PrinterVisitor::visitGraphCellNodeBefore(GraphCell *node)
+	{
+		if( !ignore_ || firstChild_ )
+		{
+			++currentTableRow_;
+			table_->insertRows( currentTableRow_, 1 );
+			
+			// first column
+			QTextTableCell tableCell( table_->cellAt( currentTableRow_, 0 ) );
+			if( tableCell.isValid() )
+			{
+				if( !node->ChapterCounterHtml().isNull() )
+				{
+					QTextCursor cursor( tableCell.firstCursorPosition() );
+					cursor.insertFragment( QTextDocumentFragment::fromHtml(
+						node->ChapterCounterHtml() ));
+				}
+			}
+
+			// second column
+			tableCell = table_->cellAt( currentTableRow_, 1 );
+			if( tableCell.isValid() )
+			{
+				QTextCursor cursor( tableCell.firstCursorPosition() );
+
+				// input table
+				QTextTableFormat tableFormatInput;
+				tableFormatInput.setBorder( 0 );
+				tableFormatInput.setMargin( 6 );
+				tableFormatInput.setColumns( 1 );
+				tableFormatInput.setCellPadding( 8 );
+				tableFormatInput.setBackground( QColor(245, 245, 255) ); // 200, 200, 255
+				QVector<QTextLength> constraints;
+				constraints << QTextLength(QTextLength::PercentageLength, 100);
+                tableFormatInput.setColumnWidthConstraints(constraints);
+				cursor.insertTable( 1, 1, tableFormatInput );
+			
+				QString html = node->textHtml();
+				html += "<br>";
+				if( !node->isEvaluated() || node->isClosed() )
+					html += "<br>";
+				cursor.insertFragment( QTextDocumentFragment::fromHtml( html ));
+
+				// output table
+				if( node->isEvaluated() && !node->isClosed() )
+				{
+					QTextTableFormat tableFormatOutput;
+					tableFormatOutput.setBorder( 0 );
+					tableFormatOutput.setMargin( 6 );
+					tableFormatOutput.setColumns( 1 );
+					tableFormatOutput.setCellPadding( 8 );
+					QVector<QTextLength> constraints;
+					constraints << QTextLength(QTextLength::PercentageLength, 100);
+					tableFormatOutput.setColumnWidthConstraints(constraints);
+
+					cursor = tableCell.lastCursorPosition();
+					cursor.insertTable( 1, 1, tableFormatOutput );
+					
+					QString outputHtml( node->textOutputHtml() );
+					outputHtml += "<br><br>";
+					outputHtml.remove( "file:///" );
+                    cursor.insertFragment( QTextDocumentFragment::fromHtml( outputHtml ));
+				}
+			}
+
+			/*
+			QString html = doc_->toHtml();
+			html += "<br><br>" + node->textHtml() + "<br>" + node->textOutputHtml();
+			html.remove( "file:///" );
+			doc_->setHtml( html );*/
+
+			if( firstChild_ )
+				firstChild_ = false;
+		}
+	}
+
+	void PrinterVisitor::visitGraphCellNodeAfter(GraphCell *)
 	{}
 
 	//CELLCURSOR
