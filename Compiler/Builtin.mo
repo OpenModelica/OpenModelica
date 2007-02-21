@@ -2507,7 +2507,7 @@ public function initialEnv "function: initialEnv
     the type system, since they e.g. have arbitrary arguments, etc.
 	- fill
 	- cat
-    These operators are catched in the elab_builtin_handler, along with all 
+    These operators are catched in the elabBuiltinHandler, along with all 
     others.
 "
   input Env.Cache inCache;

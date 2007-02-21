@@ -91,8 +91,7 @@ protected import Debug;
 public function flagValue "function flagValue
   author: x02lucpo
   Extracts the flagvalue from an argument list:
-  flagValue('-s',{'-d','hej','-s','file'}) => 'file'
-"
+  flagValue('-s',{'-d','hej','-s','file'}) => 'file'"
   input String flag;
   input list<String> arguments;
   output String flagVal;
@@ -120,14 +119,14 @@ algorithm
         value;
    case(_,_)
       equation
-       print("-flagValue failed\n");
+       print("- Util.flagValue failed\n");
       then
        fail();
    end matchcontinue;
 end flagValue;
 
 public function listFill "function: listFill
-  Returns a list of n elements of type \'a.
+  Returns a list of n elements of variable type: replaceable type X subtypeof Any.
   Example: listFill(\"foo\",3) => {\"foo\",\"foo\",\"foo\"}"
   input Type_a inTypeA;
   input Integer inInteger;
@@ -1703,7 +1702,7 @@ algorithm
         a_2;
     case (_,_,_)
       equation 
-        print("-listSetDifferenceOnTrue failed\n");
+        print("- Util.listSetDifferenceOnTrue failed\n");
       then
         fail();
   end matchcontinue;
@@ -1811,7 +1810,7 @@ algorithm
         (y :: res);
     case (_,p,_,_)
       equation 
-        print("-listReplaceAtWithFill failed row: ");
+        print("- Util.listReplaceAtWithFill failed row: ");
         pos = intString(p);
         print(pos);
         print("\n");
@@ -1897,7 +1896,7 @@ algorithm
         res_1;
     case (_,_,_,_)
       equation 
-        print("-arrayReplaceAtWithFill failed\n");
+        print("- Util.arrayReplaceAtWithFill failed\n");
       then
         fail();
   end matchcontinue;
@@ -1954,7 +1953,7 @@ algorithm
         dstlen = arrayLength(dst);
         (srclen > dstlen) = true;
         print(
-          "-arrayCopy failed. Can not fit elements into dest array\n");
+          "- Util.arrayCopy failed. Can not fit elements into dest array\n");
       then
         fail();
     case (src,dst)
@@ -2184,7 +2183,7 @@ algorithm
         str;
     case (_,_,_,_,_)
       equation 
-        print("stringDelimitListAndSeparate2 failed\n");
+        print("- Util.stringDelimitListAndSeparate2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -2227,7 +2226,7 @@ algorithm
     case (strList,_,_)
       local String strList;
       equation 
-        print("stringReplaceChar failed\n");
+        print("- Util.stringReplaceChar failed\n");
       then
         strList;
   end matchcontinue;
@@ -2259,7 +2258,7 @@ algorithm
         (firstChar :: res);
     case (strList,_,_)
       equation 
-        print("stringReplaceChar2 failed\n");
+        print("- Util.stringReplaceChar2 failed\n");
       then
         strList;
   end matchcontinue;
@@ -2285,7 +2284,7 @@ algorithm
         stringList = stringSplitAtChar2(chrList, chr, {}) "listString(resList) => res" ;
       then
         stringList;
-    case (strList,_) /* print \"stringSplitAtChar failed\\n\" */  then {strList}; 
+    case (strList,_) then {strList}; 
   end matchcontinue;
 end stringSplitAtChar;
 
@@ -2325,7 +2324,7 @@ algorithm
         res;
     case (strList,_,_)
       equation 
-        print("stringSplitAtChar2 failed\n");
+        print("- Util.stringSplitAtChar2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -2360,7 +2359,7 @@ algorithm
         res_str;
     case (_,_)
       equation 
-        print("-modelicaStringToCStr1 failed\n");
+        print("- Util.modelicaStringToCStr1 failed\n");
       then
         fail();
   end matchcontinue;
@@ -2634,7 +2633,7 @@ algorithm
         (c,d);
     case (_,_,_)
       equation 
-        print("listSplit2 failed\n");
+        print("- Util.listSplit2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -2859,7 +2858,7 @@ algorithm
         (res,file_path);
     case (name)
       equation 
-        Debug.fprint("failtrace", "-getAbsoluteDirectoryAndFile failed");
+        Debug.fprint("failtrace", "- Util.getAbsoluteDirectoryAndFile failed");
       then
         fail();
   end matchcontinue;

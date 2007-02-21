@@ -108,19 +108,12 @@ protected function cevalBuiltin "function: cevalBuiltin
  
   Helper for ceval. Parts for builtin calls are moved here, for readability.
   See ceval for documentation.
- 
-  inputs: (Env.Env, Exp.Exp, bool /* impl */,
-			  Interactive.InteractiveSymbolTable option, 
-			  int option,
-			  Msg) 
-  outputs: (Values.Value, Interactive.InteractiveSymbolTable option)
-  
-  NOTE:    It\'s ok if ceval_builtin fails. Just means the call wasn\'t a builtin function 
-"
+   
+  NOTE:    It\'s ok if cevalBuiltin fails. Just means the call was not a builtin function"
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Exp.Exp inExp;
-  input Boolean inBoolean;
+  input Boolean inBoolean "impl";
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Option<Integer> inIntegerOption;
   input Msg inMsg;
@@ -180,22 +173,13 @@ algorithm
 end cevalBuiltin;
 
 protected function cevalBuiltinHandler "function: cevalBuiltinHandler
- 
   This function dispatches builtin functions and operators to a dedicated
   function that evaluates that particular function.
   It takes an identifier as input and returns a function that evaluates that
   function or operator.
- 
-  inputs: Absyn.Ident  /* operator/function name */
-  outputs: ((Env.Env, 
-		Exp.Exp list, 
-		bool, 
-		Interactive.InteractiveSymbolTable option,
-		Msg) => (Values.Value, Interactive.InteractiveSymbolTable option))
- 
-  NOTE:   size handled specially. see ceval_builtin:
-            removed: axiom	ceval_builtin_handler \"size\" => ceval_builtin_size
-"
+  
+  NOTE: size handled specially. see cevalBuiltin:
+        removed: case (\"size\") => cevalBuiltinSize"
   input Absyn.Ident inIdent;
   output HandlerFunc handler;
   partial function HandlerFunc
@@ -246,7 +230,7 @@ algorithm
     case "promote" then cevalBuiltinPromote; 
     case id
       equation 
-        Debug.fprint("ceval", "No ceval_builtin_handler found for: ");
+        Debug.fprint("ceval", "No Ceval.cevalBuiltinHandler found for: ");
         Debug.fprintln("ceval", id);
       then
         fail();
@@ -254,7 +238,6 @@ algorithm
 end cevalBuiltinHandler;
 
 public function ceval "function: ceval
- 
   This function is used when the value of a constant expression is
   needed.  It takes an environment and an expression and calculates
   its value.
@@ -262,19 +245,12 @@ public function ceval "function: ceval
   The third argument indicates whether the evaluation is performed in the
   interactive environment (implicit instantiation), in which case function
   calls are evaluated.
- 
-  The last argument is an optional dimension.
   
-  inputs: (Env.Env, Exp.Exp, bool /* impl */,
-			Interactive.InteractiveSymbolTable option, 
-			int option,
-			Msg) 
-  outputs: (Values.Value, Interactive.InteractiveSymbolTable option)
-"
+  The last argument is an optional dimension."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Exp.Exp inExp;
-  input Boolean inBoolean;
+  input Boolean inBoolean "impl";
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Option<Integer> inIntegerOption;
   input Msg inMsg;
@@ -361,7 +337,7 @@ algorithm
 
     case (cache,env,Exp.MATRIX(scalar = expll),impl,st,_,msg)
       equation 
-        (cache,elts) = cevalMatrixelt(cache,env, expll, impl, msg);
+        (cache,elts) = cevalMatrixElt(cache,env, expll, impl, msg);
       then
         (cache,Values.ARRAY(elts),st);
 
@@ -391,7 +367,6 @@ algorithm
         (cache,v,st_1) = cevalBuiltin(cache,env, exp, impl, st, dim, msg);
       then
         (cache,v,st_1);
-
 
     case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),impl,st,_,msg) 
       /* Call functions FIXME: functions are always generated. Put back the check
@@ -816,7 +791,7 @@ algorithm
         Exp.Exp exp;
         Option<Integer> dim;
       equation 
-        Print.printBuf("#-- ceval reduction\n");
+        Print.printBuf("#-- Ceval.ceval reduction\n");
       then
         fail();
 
@@ -831,29 +806,24 @@ algorithm
         /* ceval can fail and that is ok, catched by other rules... */ 
     case (cache,env,e,_,_,_,MSG()) 
       equation 
-        Debug.fprint("failtrace", "- ceval failed: ");
+        Debug.fprint("failtrace", "- Ceval.ceval failed: ");
         str = Exp.printExpStr(e);
         Debug.fprint("failtrace", str);
-        Debug.fprint("failtrace", "\n") "& Debug.fprint(\"failtrace\", \" Env:\" )
-	  & Debug.fcall(\"failtrace\",Env.print_env, env)" ;
+        Debug.fprint("failtrace", "\n");
+        /*
+        Debug.fprint("failtrace", " Env:" );
+        Debug.fcall("failtrace", Env.printEnv, env);
+        */
       then
         fail();
   end matchcontinue;
 end ceval;
 
 protected function cevalCallFunction "function: cevalCallFunction
- 
   This function evaluates CALL expressions, i.e. function calls.
   They are currently evaluated by generating code for the function and
-  then write input to file and execute the generated code. Finally, the
-  result is read back from file and returned.
-  
-  inputs:(Env.Env, 
-			Exp.Exp, /* the call expression*/
-			Values.Value list, /* input parameter values*/
-			Msg) /* Should error messages be printed. */
-  outputs: Values.Value /* resulting value */
-"
+  then write the function input to a file and execute the generated code. 
+  Finally, the result is read back from the ressult file and returned."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Exp.Exp inExp;
@@ -875,8 +845,10 @@ algorithm
       Msg msg;
       String funcstr,infilename,outfilename,str;
       Env.Cache cache;
-   /* External functions that are \"known\" should be evaluated without
-	  compilation, e.g. all math functions */ 
+   /* 
+   External functions that are "known" should be evaluated without
+	 compilation, e.g. all math functions 
+	 */ 
     case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg) 
       equation 
         (cache,newval) = cevalKnownExternalFuncs(cache,env, funcpath, vallst, msg);
@@ -906,7 +878,7 @@ algorithm
         (cache,newval);
     case (cache,env,e,_,_)
       equation 
-        Debug.fprint("failtrace", "- ceval_call_function failed: ");
+        Debug.fprint("failtrace", "- Ceval.cevalCallFunction failed: ");
         str = Exp.printExpStr(e);
         Debug.fprintln("failtrace", str);
       then
@@ -929,9 +901,7 @@ algorithm
 end cevalIsExternalObjectConstructor;
 
 protected function cevalKnownExternalFuncs "function: cevalKnownExternalFuncs
- 
-  Evaluates external functions that are known, e.g. all math functions.
-"
+  Evaluates external functions that are known, e.g. all math functions."
 	input Env.Cache inCache;
   input Env.Env env;
   input Absyn.Path funcpath;
@@ -955,16 +925,8 @@ algorithm
 end cevalKnownExternalFuncs;
 
 public function isKnownExternalFunc "function isKnownExternalFunc
- 
-  Succeds if external function name is \"known\", i.e. no compilation
-  required.
- 
-  NOTE:    adrpo changed the inputs to not include SCode and Absyn in the
-             public impots
- 
-  inputs:  (SCode.Ident /* string */, Absyn.Ident option /* string option */) 
-  outputs: ()
-"
+  Succeds if external function name is 
+  \"known\", i.e. no compilation required."
   input String inString;
   input Option<String> inStringOption;
 algorithm 
@@ -988,9 +950,7 @@ end isKnownExternalFunc;
 
 protected function cevalKnownExternalFuncs2 "function: cevalKnownExternalFuncs2
   author: PA
- 
-  Helper function to ceval_known_external_funcs, does the evaluation.
-"
+  Helper function to cevalKnownExternalFuncs, does the evaluation."
   input SCode.Ident inIdent;
   input Option<Absyn.Ident> inAbsynIdentOption;
   input list<Values.Value> inValuesValueLst;
@@ -1071,14 +1031,8 @@ algorithm
 end cevalKnownExternalFuncs2;
 
 protected function cevalFunction "function: cevalFunction 
-  
-  For constant evaluation of functions returning a single value. For now only
-  record constructors.
-  
-  inputs: (Env.Env, Absyn.Path, Values.Value list, 
-			  bool /*impl*/, Msg ) 
-  outputs: Values.Value =
-"
+  For constant evaluation of functions returning a single value. 
+  For now only record constructors."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path inPath;
@@ -1116,8 +1070,7 @@ algorithm
         (cache,value);
     case (cache,env,funcname,vallst,(impl as true),msg)
       equation 
-        Debug.fprint("failtrace", 
-          "ceval_function: Don't know what to do. impl was always false before:");
+        Debug.fprint("failtrace", "- Ceval.cevalFunction: Don't know what to do. impl was always false before:");
         s = Absyn.pathString(funcname);
         Debug.fprintln("failtrace", s);
       then
@@ -1126,21 +1079,12 @@ algorithm
 end cevalFunction;
 
 protected function cevalAstExp "relaton: cevalAstExp
- 
   Part of meta-programming using CODE.
- 
   This function evaluates a piece of Expression AST, replacing Eval(variable)
   with the value of the variable, given that it is of type \"Expression\".
   
   Example: y = Code(1 + x)
-           2 + 5  ( x + Eval(y) )  =>   2 + 5  ( x + 1 + x )
- 
-  inputs:  (Env.Env, Absyn.Exp, 
-			  bool /* impl */, 
-			  Interactive.InteractiveSymbolTable option,
-			  Msg)
-  outputs: Absyn.Exp 
-"
+           2 + 5  ( x + Eval(y) )  =>   2 + 5  ( x + 1 + x )"
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Exp inExp;
@@ -1248,14 +1192,7 @@ algorithm
 end cevalAstExp;
 
 protected function cevalAstExpList "function: cevalAstExpList
-  
-  List version of ceval_ast_exp
-  
-  inputs: (Env.Env, Absyn.Exp list, 
-			 bool /* impl */ , Interactive.InteractiveSymbolTable option,
-			 Msg) 
-  outputs: (Absyn.Exp list)
-"
+  List version of cevalAstExp"
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -1285,14 +1222,7 @@ algorithm
   end matchcontinue;
 end cevalAstExpList;
 
-protected function cevalAstExpListList "function: cevalAstExpListList
-  
-  inputs: (Env.Env, Absyn.Exp list list, 
-			 bool /* impl */, 
-			 Interactive.InteractiveSymbolTable option,
-			 Msg) 
-  outputs: (Absyn.Exp list list)
-"
+protected function cevalAstExpListList "function: cevalAstExpListList"
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<list<Absyn.Exp>> inAbsynExpLstLst;
@@ -1323,9 +1253,7 @@ algorithm
 end cevalAstExpListList;
 
 protected function cevalAstExpexpList "function: cevalAstExpexpList
- 
-  For IFEXP
-"
+  For IFEXP"
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<tuple<Absyn.Exp, Absyn.Exp>> inTplAbsynExpAbsynExpLst;
@@ -1357,16 +1285,8 @@ algorithm
 end cevalAstExpexpList;
 
 protected function cevalAstElt "function: cevalAstElt
- 
   Evaluates an ast constructor for Element nodes, e.g. 
-  Code(parameter Real x=1;)
- 
-  inputs:  (Env.Env, Absyn.Element, 
-			 bool /* impl */, 
-			 Interactive.InteractiveSymbolTable option,
-			 Msg)
-  outputs: (Absyn.Element)
-"
+  Code(parameter Real x=1;)"
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Element inElement;
@@ -1402,15 +1322,7 @@ algorithm
 end cevalAstElt;
 
 protected function cevalAstCitems "function: cevalAstCitems
- 
-  Helper function to ceval_ast_elt.
- 
-  inputs: (Env.Env, Absyn.ComponentItem list, 
-			 bool /* impl */, 
-			 Interactive.InteractiveSymbolTable option,
-			 Msg)
-  outputs: Absyn.ComponentItem list
-"
+  Helper function to cevalAstElt."
  	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
@@ -1451,13 +1363,7 @@ algorithm
   end matchcontinue;
 end cevalAstCitems;
 
-protected function cevalAstModopt "function: cevalAstModopt
- 
-  inputs:  (Env.Env, Absyn.Modification option,
-			  bool /* impl */, Interactive.InteractiveSymbolTable option,
-			  Msg)
-  outputs: Absyn.Modification option
-"
+protected function cevalAstModopt "function: cevalAstModopt"
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Option<Absyn.Modification> inAbsynModificationOption;
@@ -1486,16 +1392,8 @@ algorithm
 end cevalAstModopt;
 
 protected function cevalAstModification "function: cevalAstModification
- 
   This function evaluates Eval(variable) inside an AST Modification  and replaces 
-  the Eval operator with the value of the variable if it has a type \"Expression\"
- 
-  inputs:  (Env.Env, Absyn.Modification, 
-		      bool /* impl */, 
-			  Interactive.InteractiveSymbolTable option,
-			  Msg)
-  outputs: (Absyn.Modification)
-"
+  the Eval operator with the value of the variable if it has a type \"Expression\""
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Modification inModification;
@@ -1530,9 +1428,7 @@ algorithm
 end cevalAstModification;
 
 protected function cevalAstEltargs "function: cevalAstEltargs
- 
-  Helper function to ceval_ast_modification.
-"
+  Helper function to cevalAstModification."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.ElementArg> inAbsynElementArgLst;
@@ -1557,7 +1453,8 @@ algorithm
       Absyn.ElementArg m;
       Env.Cache cache;
     case (cache,env,{},_,_,msg) then (cache,{}); 
-    case (cache,env,(Absyn.MODIFICATION(finalItem = b,each_ = e,componentReg = cr,modification = SOME(mod),comment = stropt) :: args),impl,st,msg) /* TODO: look through redeclarations for Eval(var) as well */ 
+    /* TODO: look through redeclarations for Eval(var) as well */   
+    case (cache,env,(Absyn.MODIFICATION(finalItem = b,each_ = e,componentReg = cr,modification = SOME(mod),comment = stropt) :: args),impl,st,msg) 
       equation 
         (cache,mod_1) = cevalAstModification(cache,env, mod, impl, st, msg);
         (cache,res) = cevalAstEltargs(cache,env, args, impl, st, msg);
@@ -1572,15 +1469,7 @@ algorithm
 end cevalAstEltargs;
 
 protected function cevalAstArraydim "function: cevalAstArraydim
- 
-  Helper function to ceva_ast_citems
- 
-  inputs:  (Env.Env, Absyn.ArrayDim, 
-			  bool /* impl */, 
-			  Interactive.InteractiveSymbolTable option,
-			  Msg)
-  outputs: (Absyn.ArrayDim) 
-"
+  Helper function to cevaAstCitems"
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.ArrayDim inArrayDim;
@@ -1616,19 +1505,11 @@ algorithm
 end cevalAstArraydim;
 
 protected function cevalInteractiveFunctions "function cevalInteractiveFunctions
- 
-  This function evaluates the functions defined in the interactive 
-  environment.
- 
-  inputs:  (Env.Env, 
-			  Exp.Exp, /* exp to evaluate */
-			  Interactive.InteractiveSymbolTable,
-			  Msg)
-  outputs: (Values.Value, Interactive.InteractiveSymbolTable)
-"
+  This function evaluates the functions 
+  defined in the interactive environment."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input Exp.Exp inExp;
+  input Exp.Exp inExp "expression to evaluate";
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Msg inMsg;
   output Env.Cache outCache;
@@ -2693,7 +2574,6 @@ end cevalInteractiveFunctions;
 
 protected function setEcho 
   input Boolean echo;
-
 algorithm
   _:=
   matchcontinue (echo)
@@ -2711,9 +2591,7 @@ algorithm
   end matchcontinue; 
 end setEcho;
 
-protected function generateMakefilename "function generateMakefilename
- 
-"
+protected function generateMakefilename "function generateMakefilename"
   input String filenameprefix;
   output String makefilename;
 algorithm 
@@ -2722,22 +2600,10 @@ end generateMakefilename;
 
 public function translateModel "function translateModel
  author: x02lucpo
- 
- translates a model into cpp code and writes also a makefile 
- 
-  inputs:  (Env.Env, 
-			  Exp.ComponentRef, /* component ref for model */
-			  Interactive.InteractiveSymbolTable,
-              Msg,
-              Exp.Exp)
-  outputs:  (Values.Value, 
-              Interactive.InteractiveSymbolTable,
-              DAELow.DAELow,
-              string list /*libs */)
-"
+ translates a model into cpp code and writes also a makefile"
 	input Env.Cache inCache;
 	input Env.Env inEnv;
-  input Absyn.Path className;
+  input Absyn.Path className "path for the model";
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Msg inMsg;
   input Exp.Exp inExp;
@@ -2804,18 +2670,17 @@ algorithm
         libs = SimCodegen.generateFunctions(p_1, dae, indexed_dlow_1, className, funcfilename);
         SimCodegen.generateSimulationCode(dae, indexed_dlow_1, ass1, ass2, m, mT, comps, className, 
           filename, funcfilename);
-        SimCodegen.generateMakefile(makefilename, filenameprefix, libs, file_dir) "	Util.string_append_list({\"make -f \",cname_str, \".makefile\\n\"}) => s_call &
-" ;
+        SimCodegen.generateMakefile(makefilename, filenameprefix, libs, file_dir);
+        /* 
+        s_call = Util.stringAppendList({"make -f ",cname_str, ".makefile\n"}) 
+        */
       then
-        (cache,Values.STRING("The model have been translated"),st,indexed_dlow_1,libs,file_dir);
+        (cache,Values.STRING("The model has been translated"),st,indexed_dlow_1,libs,file_dir);
   end matchcontinue;
 end translateModel;
 
-public function checkModel "
- 
- checks a model and returns number of variables and equations 
- 
-"
+public function checkModel "function: checkModel
+ checks a model and returns number of variables and equations"
 	input Env.Cache inCache;
 	input Env.Env inEnv;
   input Absyn.Path className;
@@ -2882,16 +2747,14 @@ algorithm
       strEmpty = (System.strcmp("",errorMsg)==0);
       errorMsg = Util.if_(strEmpty,"Internal error, check of model failed with no error message.",errorMsg);
     then (cache,Values.STRING(errorMsg),st);  
-           
+
   end matchcontinue;
 end checkModel;
 
 
 protected function extractFilePrefix "function extractFilePrefix
-  author: x02lucpo
- 
-  extracts the file_prefix from Exp.Exp as string
-"
+  author: x02lucpo 
+  extracts the file prefix from Exp.Exp as string"
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Exp.Exp inExp;
@@ -2925,19 +2788,7 @@ end extractFilePrefix;
 
 protected function calculateSimulationSettings "function calculateSimulationSettings
  author: x02lucpo
- 
- calculates the start,end,interval,stepsize, method and init_file_name
- 
-  inputs:  (Env.Env,Exp.Exp,
-			  Interactive.InteractiveSymbolTable,
-              Msg,
-              string)
-  outputs:  (string/* filename */,
-              real, /* start time*/
-              real, /* stop time */
-              real, /* step size */
-              string /* method*/) 
-"
+ calculates the start,end,interval,stepsize, method and initFileName"
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Exp.Exp inExp;
@@ -2945,11 +2796,11 @@ protected function calculateSimulationSettings "function calculateSimulationSett
   input Msg inMsg;
   input String inString;
   output Env.Cache outCache;
-  output String outString1;
-  output Real outReal2;
-  output Real outReal3;
-  output Real outReal4;
-  output String outString5;
+  output String outString1 "filename";
+  output Real outReal2 "start time";
+  output Real outReal3 "stop time";
+  output Real outReal4 "step size";
+  output String outString5 "method";
 algorithm 
   (outCache,outString1,outReal2,outReal3,outReal4,outString5):=
   matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg,inString)
@@ -2985,36 +2836,25 @@ algorithm
         (cache,init_filename,starttime_r,stoptime_r,interval_r,method_str);
     case (_,_,_,_,_,_)
       equation 
-        Print.printErrorBuf("# calculate_simulation_settings failed\n");
+        Print.printErrorBuf("#- Ceval.calculateSimulationSettings failed\n");
       then
         fail();
   end matchcontinue;
 end calculateSimulationSettings;
 
 public function buildModel "function buildModel
-author: x02lucpo
-
-translates and builds the model through the compiler script
-
- inputs: (Env.Env,  
-		    Exp.Exp, /* component ref for model */
-		    Interactive.InteractiveSymbolTable,
-            Msg)
- outputs: (string, /*classname*/
-             string, /*method*/
-             Interactive.InteractiveSymbolTable, 
-             string) /*initfilename*/
-"
+ author: x02lucpo
+ translates and builds the model by running compiler script on the generated makefile"
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Exp.Exp inExp;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Msg inMsg;
   output Env.Cache outCache;
-  output String outString1;
-  output String outString2;
+  output String outString1 "className";
+  output String outString2 "method";
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable3;
-  output String outString4;
+  output String outString4 "initFileName";
 algorithm 
   (outCache,outString1,outString2,outInteractiveSymbolTable3,outString4):=
   matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg)
@@ -3051,7 +2891,7 @@ algorithm
         makefilename = generateMakefilename(filenameprefix);
         compileModel(filenameprefix, libs, file_dir);
         _ = System.cd(oldDir);
-        //"	Util.string_append_list({\"make -f \",cname_str, \".makefile\\n\"}) => s_call &"
+        // s_call = Util.stringAppendList({"make -f ",cname_str, ".makefile\n"});
       then
         (cache,filenameprefix,method_str,st,init_filename);
     case (_,_,_,_,_)
@@ -3060,7 +2900,9 @@ algorithm
   end matchcontinue;
 end buildModel;
 
-protected function changeToTempDirectory "changes to temp directory (from Settings.mo) if boolean flag is true"
+protected function changeToTempDirectory "function changeToTempDirectory
+changes to temp directory (set using the functions from Settings.mo) 
+if the boolean flag given as input is true"
 	input Boolean cdToTemp;
 algorithm
   _ := matchcontinue(cdToTemp)
@@ -3075,15 +2917,9 @@ end changeToTempDirectory;
 
 public function getFileDir "function: getFileDir
   author: x02lucpo
- 
-  returns the dir where class-file (.mo) is saved or 
-  OPENMODELICAHOMe/work if not saved
- 
-  inputs: (Absyn.ComponentRef, /* class */
-			    Absyn.Program) 
-  outputs: string 
-"
-  input Absyn.ComponentRef inComponentRef;
+  returns the dir where class file (.mo) was saved or 
+  $OPENMODELICAHOME/work if the file was not saved yet"
+  input Absyn.ComponentRef inComponentRef "class";
   input Absyn.Program inProgram;
   output String outString;
 algorithm 
@@ -3111,7 +2947,7 @@ algorithm
         dir_1;
     case (class_,p)
       equation 
-        omhome = Settings.getInstallationDirectoryPath() "model no saved! change to OPENMODELICAHOME/work" ;
+        omhome = Settings.getInstallationDirectoryPath() "model not yet saved! change to $OPENMODELICAHOME/work" ;
         omhome_1 = System.trim(omhome, "\"");
         pd = System.pathDelimiter();
         cit = winCitation();
@@ -3124,20 +2960,17 @@ end getFileDir;
 
 protected function compileModel "function: compileModel
   author: PA, x02lucpo
- 
-  Compiles a model given a file-prefix, helper function to build_model.
-"
+  Compiles a model given a file-prefix, helper function to buildModel."
   input String inString1;
   input list<String> inStringLst2;
   input String inString3;
 algorithm 
-  _:=
-  matchcontinue (inString1,inStringLst2,inString3)
+  _:= matchcontinue (inString1,inStringLst2,inString3)
     local
       String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,s_call,fileprefix,file_dir,command,filename,str;
       list<String> libs;
       
-      // If compileCommand not set, use <installationDirectory>\bin\Compile
+      // If compileCommand not set, use $OPENMODELICAHOME\bin\Compile
     case (fileprefix,libs,file_dir) 
       equation 
         "" = Settings.getCompileCommand();
@@ -3149,9 +2982,9 @@ algorithm
         libs_str = Util.stringDelimitList(libs, " ");
         System.writeFile(libsfilename, libs_str);
         s_call = Util.stringAppendList({"set OPENMODELICAHOME=",omhome_1,"&& \"",
-        omhome_1,pd,"bin",pd,"Compile","\""," ",fileprefix});
+          omhome_1,pd,"bin",pd,"Compile","\""," ",fileprefix});
         //print(s_call);
-      	0 = System.systemCall(s_call)  ;
+        0 = System.systemCall(s_call)  ;
       then
         ();
         // If compileCommand is set.
@@ -3166,12 +2999,12 @@ algorithm
         libsfilename = stringAppend(fileprefix, ".libs");
         System.writeFile(libsfilename, libs_str);
         s_call = Util.stringAppendList({"set OPENMODELICAHOME=",omhome_1,"&& ",command," ",fileprefix});
-//         print(s_call);
+        // print(s_call);
         0 = System.systemCall(s_call) ;
       then
         ();     
         
-    case (fileprefix,libs,file_dir) /* compilation failed\\n */ 
+    case (fileprefix,libs,file_dir) /* compilation failed */ 
       equation 
         filename = Util.stringAppendList({fileprefix,".log"});
         0 = System.regularFileExists(filename);
@@ -3179,19 +3012,19 @@ algorithm
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
       then
         fail();
-       case (fileprefix,libs,file_dir)
-         local Integer retVal;
+    case (fileprefix,libs,file_dir)
+      local Integer retVal;
       equation 
         command = Settings.getCompileCommand();
         false = Util.isEmptyString(command);
         retVal = System.regularFileExists(command);
         true = retVal <> 0; 
-        str=Util.stringAppendList({"command ",command," not found. Check OPENMODELICAHOME"});
+        str=Util.stringAppendList({"command ",command," not found. Check $OPENMODELICAHOME"});
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
-        then fail();
+      then fail();
         
-        case (fileprefix,libs,file_dir) /* compilation failed\\n */ 
-          local Integer retVal;
+    case (fileprefix,libs,file_dir) /* compilation failed\\n */ 
+      local Integer retVal;
       equation  
         omhome = Settings.getInstallationDirectoryPath();
         omhome_1 = System.stringReplace(omhome, "\"", "");
@@ -3203,13 +3036,13 @@ algorithm
         s_call = Util.stringAppendList({"\"",omhome_1,pd,"bin",pd,"Compile","\""});
         retVal = System.regularFileExists(s_call);
         true = retVal <> 0; 
-        str=Util.stringAppendList({"command ",s_call," not found. Check OPENMODELICAHOME"});
+        str=Util.stringAppendList({"command ",s_call," not found. Check $OPENMODELICAHOME"});
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
       then
         fail();
     case (fileprefix,libs,file_dir)
       equation 
-        Print.printErrorBuf("#Error building simulation code.\n ");
+        Print.printErrorBuf("#- Error building simulation code. Ceval.compileModel failed.\n ");
       then
         fail();
   end matchcontinue;
@@ -3217,10 +3050,8 @@ end compileModel;
 
 protected function winCitation "function: winCitation
   author: PA
- 
-  Returns a cition mark if platform is windows, otherwise empty string. Used
-  by simulate to make whitespaces work in filepaths for WIN32
-"
+  Returns a citation mark if platform is windows, otherwise empty string. 
+  Used by simulate to make whitespaces work in filepaths for WIN32"
   output String outString;
 algorithm 
   outString:=
@@ -3235,10 +3066,8 @@ algorithm
 end winCitation;
 
 protected function getBuiltinAttribute "function: getBuiltinAttribute
- 
   Retrieves a builtin attribute of a variable in a class by instantiating 
-  the class and retrieving the attribute value from the flat variable.
-"	
+  the class and retrieving the attribute value from the flat variable."	
 	input Env.Cache inCache;
   input Exp.ComponentRef inComponentRef1;
   input Exp.ComponentRef inComponentRef2;
@@ -3351,20 +3180,12 @@ algorithm
   end matchcontinue;
 end getBuiltinAttribute;
 
-protected function cevalMatrixelt "function: cevalMatrixelt
- 
-  Evaluates the expression of a matrix constructor, e.g. {1,2;3,4}
- 
-  signature: (Env.Env,
-			  (Exp.Expbool) list list, /* matrix constr. elts*/
-			  bool, /*impl*/ 
-			  Msg) 
-	  => Values.Value list
-"
+protected function cevalMatrixElt "function: cevalMatrixElt
+  Evaluates the expression of a matrix constructor, e.g. {1,2;3,4}"
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<list<tuple<Exp.Exp, Boolean>>> inTplExpExpBooleanLstLst;
-  input Boolean inBoolean;
+  input list<list<tuple<Exp.Exp, Boolean>>> inTplExpExpBooleanLstLst "matrix constr. elts";
+  input Boolean inBoolean "impl";
   input Msg inMsg;
   output Env.Cache outCache;
   output list<Values.Value> outValuesValueLst;
@@ -3382,21 +3203,16 @@ algorithm
       Env.Cache cache;
     case (cache,env,(expl :: expll),impl,msg)
       equation 
-        (cache,v) = cevalMatrixeltrow(cache,env, expl, impl, msg);
-        (cache,vl)= cevalMatrixelt(cache,env, expll, impl, msg);
+        (cache,v) = cevalMatrixEltRow(cache,env, expl, impl, msg);
+        (cache,vl)= cevalMatrixElt(cache,env, expll, impl, msg);
       then
         (cache,v :: vl);
     case (cache,_,{},_,msg) then (cache,{}); 
   end matchcontinue;
-end cevalMatrixelt;
+end cevalMatrixElt;
 
-protected function cevalMatrixeltrow "function: cevalMatrixeltrow
- 
-  Helper function to ceval_matrixelt
- 
-  signature: (Env.Env, (Exp.Expbool) list, bool, /*impl*/ 
-			     Msg) => Values.Value
-"
+protected function cevalMatrixEltRow "function: cevalMatrixEltRow
+  Helper function to cevalMatrixElt"
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<tuple<Exp.Exp, Boolean>> inTplExpExpBooleanLst;
@@ -3419,17 +3235,15 @@ algorithm
     case (cache,env,((e,_) :: rest),impl,msg)
       equation 
         (cache,res,_) = ceval(cache,env, e, impl, NONE, NONE, msg);
-        (cache,Values.ARRAY(resl)) = cevalMatrixeltrow(cache,env, rest, impl, msg);
+        (cache,Values.ARRAY(resl)) = cevalMatrixEltRow(cache,env, rest, impl, msg);
       then
         (cache,Values.ARRAY((res :: resl)));
     case (cache,env,{},_,msg) then (cache,Values.ARRAY({})); 
   end matchcontinue;
-end cevalMatrixeltrow;
+end cevalMatrixEltRow;
 
 protected function cevalBuiltinSize "function: cevalBuiltinSize
- 
-  Evaluates the size operator.
-"
+  Evaluates the size operator."
 	input Env.Cache inCache;
   input Env.Env inEnv1;
   input Exp.Exp inExp2;
@@ -3569,7 +3383,7 @@ algorithm
     case (cache,env,exp,dim,impl,st,MSG())
       local Exp.Exp dim;
       equation 
-        Print.printErrorBuf("#-- ceval_builtin_size failed: ");
+        Print.printErrorBuf("#-- Ceval.cevalBuiltinSize failed: ");
         expstr = Exp.printExpStr(exp);
         Print.printErrorBuf(expstr);
         Print.printErrorBuf("\n");
@@ -3578,10 +3392,8 @@ algorithm
   end matchcontinue;
 end cevalBuiltinSize;
 
-protected function cevalBuiltinSize2 "function: ceval_bultin_size_2
-  
-  Helper function to ceval_builtin_size
-"
+protected function cevalBuiltinSize2 "function: cevalBultinSize2
+  Helper function to cevalBuiltinSize"
   input Values.Value inValue;
   input Integer inInteger;
   output Values.Value outValue;
@@ -3606,7 +3418,7 @@ algorithm
         dim;
     case (_,_)
       equation 
-        Debug.fprint("failtrace", "- ceval_builtin_size_2 failed\n");
+        Debug.fprint("failtrace", "- Ceval.cevalBuiltinSize2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -3614,10 +3426,8 @@ end cevalBuiltinSize2;
 
 protected function cevalBuiltinSize3 "function: cevalBuiltinSize3
   author: PA
-  
-  Helper function to ceval_builtin_size. Used when recursive definition
-  (attribute modifiers using size) is used.
-"
+  Helper function to cevalBuiltinSize. 
+  Used when recursive definition (attribute modifiers using size) is used."
   input list<Inst.DimExp> inInstDimExpLst;
   input Integer inInteger;
   output Values.Value outValue;
@@ -3639,7 +3449,7 @@ algorithm
       equation 
         n_1 = n - 1;
         Inst.DIMEXP(sub,eopt) = listNth(dims, n_1);
-        print("ceval_builtin_size_3 failed DIMEXP in dimesion\n");
+        print("- Ceval.cevalBuiltinSize_3 failed DIMEXP in dimesion\n");
       then
         fail();
   end matchcontinue;
@@ -3647,9 +3457,7 @@ end cevalBuiltinSize3;
 
 protected function cevalBuiltinAbs "function: cevalBuiltinAbs
   author: LP
-  
-  Evaluates the abs operator.
-"
+  Evaluates the abs operator."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -3688,9 +3496,7 @@ end cevalBuiltinAbs;
 
 protected function cevalBuiltinSign "function: cevalBuiltinSign
   author: PA
-  
-  Evaluates the sign operator.
-"
+  Evaluates the sign operator."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -3735,9 +3541,7 @@ end cevalBuiltinSign;
 
 protected function cevalBuiltinExp "function: cevalBuiltinExp
   author: PA
-  
-  Evaluates the exp function
-"
+  Evaluates the exp function"
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -3769,11 +3573,9 @@ end cevalBuiltinExp;
 
 protected function cevalBuiltinNoevent "function: cevalBuiltinNoevent
   author: PA
-  
   Evaluates the noEvent operator. During constant evaluation events are not
   considered, so evaluation will simply remove the operator and evaluate the
-  operand.
-"
+  operand."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -3804,11 +3606,9 @@ end cevalBuiltinNoevent;
 
 protected function cevalBuiltinCardinality "function: cevalBuiltinCardinality
   author: PA
-  
   Evaluates the cardinality operator. The cardinality of a connector 
   instance is its number of (inside and outside) connections, i.e. 
-  number of occurences in connect equations.
-"
+  number of occurences in connect equations."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -3839,10 +3639,8 @@ end cevalBuiltinCardinality;
 
 protected function cevalCardinality "function: cevalCardinality 
   author: PA
-  
-  counts the number of connect occurences of the component ref in 
-  equations in current scope.
-"
+  counts the number of connect occurences of the 
+  component ref in equations in current scope."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Exp.ComponentRef inComponentRef;
@@ -3873,12 +3671,14 @@ algorithm
         
         cr_totlst = listAppend(cr_lst,cr_lst2);
         res = listLength(cr_totlst);
-      /*  print("cardinality(");print(Exp.printComponentRefStr(cr));print(")=");print(intString(res));
+        /*  
+        print("cardinality(");print(Exp.printComponentRefStr(cr));print(")=");print(intString(res));
         print("\n");
         print("icrefs =");print(Util.stringDelimitList(Util.listMap(crs,Exp.printComponentRefStr),","));
         print("crefs =");print(Util.stringDelimitList(Util.listMap(cr_totlst,Exp.printComponentRefStr),","));
         print("\n");
-       	print("prefix =");print(Exp.printComponentRefStr(prefix));print("\n");*/
+       	print("prefix =");print(Exp.printComponentRefStr(prefix));print("\n");
+       	*/
       then
         (cache,res);
   end matchcontinue;
@@ -3886,9 +3686,7 @@ end cevalCardinality;
 
 protected function cevalBuiltinCat "function: cevalBuiltinCat
   author: PA
-  
-  Evaluates the cat operator, for matrix concatenation.
-"
+  Evaluates the cat operator, for matrix concatenation."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -3924,9 +3722,7 @@ end cevalBuiltinCat;
 
 protected function cevalBuiltinIdentity "function: cevalBuiltinIdentity
   author: PA
-  
-  Evaluates the cat operator, for matrix concatenation.
-"
+  Evaluates the identity operator."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -3963,9 +3759,7 @@ end cevalBuiltinIdentity;
 
 protected function cevalBuiltinPromote "function: cevalBuiltinPromote
   author: PA
-  
-  Evaluates the internal promote operator, for promotion of arrays
-"
+  Evaluates the internal promote operator, for promotion of arrays"
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -3998,9 +3792,7 @@ algorithm
 end cevalBuiltinPromote;
 
 protected function cevalBuiltinPromote2 "function: cevalBuiltinPromote2
- 
-  Helper function to ceval_builtin_promote
-"
+  Helper function to cevalBuiltinPromote"
   input Values.Value inValue;
   input Integer inInteger;
   output Values.Value outValue;
@@ -4022,10 +3814,8 @@ algorithm
 end cevalBuiltinPromote2;
 
 protected function cevalCat "function: cevalCat
- 
-  evaluates the cat operator given a list of array values and a 
-  concatenation dimension.
-"
+  evaluates the cat operator given a list of 
+  array values and a concatenation dimension."
   input list<Values.Value> v_lst;
   input Integer dim;
   output Values.Value outValue;
@@ -4036,10 +3826,8 @@ algorithm
 end cevalCat;
 
 protected function catDimension "function: catDimension
-  
-  Helper function to ceval_cat, concatenates a list arrays as
-  Values, given a dimension as integer.
-"
+  Helper function to cevalCat, concatenates a list 
+  arrays as Values, given a dimension as integer."
   input list<Values.Value> inValuesValueLst;
   input Integer inInteger;
   output list<Values.Value> outValuesValueLst;
@@ -4072,9 +3860,7 @@ end catDimension;
 
 protected function catDimension2 "function: catDimension2
   author: PA
- 
-  Helper function to cat_dimension.
-"
+  Helper function to catDimension."
   input list<list<Values.Value>> inValuesValueLstLst;
   input Integer inInteger;
   output list<list<Values.Value>> outValuesValueLstLst;
@@ -4108,9 +3894,7 @@ end catDimension2;
 
 protected function cevalBuiltinFloor "function: cevalBuiltinFloor
   author: LP
-  
-  evaluates the floor operator.
-"
+  evaluates the floor operator."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -4144,9 +3928,7 @@ end cevalBuiltinFloor;
 
 protected function cevalBuiltinCeil "function cevalBuiltinCeil
   author: LP
-  
-  evaluates the ceil operator.
-"
+  evaluates the ceil operator."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -4190,9 +3972,7 @@ end cevalBuiltinCeil;
 
 protected function cevalBuiltinSqrt "function: cevalBuiltinSqrt
   author: LP
-  
-  Evaluates the builtin sqrt operator.
-"
+  Evaluates the builtin sqrt operator."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -4231,9 +4011,7 @@ end cevalBuiltinSqrt;
 
 protected function cevalBuiltinSin "function cevalBuiltinSin
   author: LP
- 
-  Evaluates the builtin sin function.
-"
+  Evaluates the builtin sin function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -4263,11 +4041,9 @@ algorithm
   end matchcontinue;
 end cevalBuiltinSin;
 
-protected function cevalBuiltinSinh "function cevalBuiltinSin
+protected function cevalBuiltinSinh "function cevalBuiltinSinh
   author: PA
- 
-  Evaluates the builtin sinh function.
-"
+  Evaluates the builtin sinh function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -4299,9 +4075,7 @@ end cevalBuiltinSinh;
 
 protected function cevalBuiltinCos "function cevalBuiltinCos
   author: LP
- 
-  Evaluates the builtin cos function.
-"
+  Evaluates the builtin cos function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -4331,11 +4105,9 @@ algorithm
   end matchcontinue;
 end cevalBuiltinCos;
 
-protected function cevalBuiltinCosh "function cevalBuiltinCos
+protected function cevalBuiltinCosh "function cevalBuiltinCosh
   author: PA
- 
-  Evaluates the builtin cosh function.
-"
+  Evaluates the builtin cosh function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -4367,9 +4139,7 @@ end cevalBuiltinCosh;
 
 protected function cevalBuiltinLog "function cevalBuiltinLog
   author: LP
- 
-  Evaluates the builtin Log function.
-"
+  Evaluates the builtin Log function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -4401,9 +4171,7 @@ end cevalBuiltinLog;
 
 protected function cevalBuiltinTan "function cevalBuiltinTan
   author: LP
- 
-  Evaluates the builtin tan function.
-"
+  Evaluates the builtin tan function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -4435,11 +4203,9 @@ algorithm
   end matchcontinue;
 end cevalBuiltinTan;
 
-protected function cevalBuiltinTanh "function cevalBuiltinTan
+protected function cevalBuiltinTanh "function cevalBuiltinTanh
   author: PA
- 
-  Evaluates the builtin tanh function.
-"
+  Evaluates the builtin tanh function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -4471,9 +4237,7 @@ end cevalBuiltinTanh;
 
 protected function cevalBuiltinAsin "function cevalBuiltinAsin
   author: PA
- 
-  Evaluates the builtin asin function.
-"
+  Evaluates the builtin asin function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -4505,9 +4269,7 @@ end cevalBuiltinAsin;
 
 protected function cevalBuiltinAcos "function cevalBuiltinAcos
   author: PA
- 
-  Evaluates the builtin acos function.
-"
+  Evaluates the builtin acos function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -4539,9 +4301,7 @@ end cevalBuiltinAcos;
 
 protected function cevalBuiltinAtan "function cevalBuiltinAtan
   author: PA
- 
-  Evaluates the builtin atan function.
-"
+  Evaluates the builtin atan function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -4573,9 +4333,7 @@ end cevalBuiltinAtan;
 
 protected function cevalBuiltinDiv "function cevalBuiltinDiv
   author: LP
- 
-  Evaluates the builtin div operator.
-"
+  Evaluates the builtin div operator."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -4669,9 +4427,7 @@ end cevalBuiltinDiv;
 
 protected function cevalBuiltinMod "function cevalBuiltinMod
   author: LP
- 
-  Evaluates the builtin mod operator.
-"
+  Evaluates the builtin mod operator."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -4774,9 +4530,7 @@ end cevalBuiltinMod;
 
 protected function cevalBuiltinMax "function cevalBuiltinMax
   author: LP
- 
-  Evaluates the builtin max function.
-"
+  Evaluates the builtin max function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -4823,9 +4577,7 @@ algorithm
 end cevalBuiltinMax;
 
 protected function cevalBuiltinMax2 "function: cevalBuiltinMax2
- 
-  Helper function to ceval_builtin_max.
-"
+  Helper function to cevalBuiltinMax."
   input Values.Value inValue;
   output Values.Value outValue;
 algorithm 
@@ -4862,7 +4614,7 @@ algorithm
         Values.REAL(i);
     case (_)
       equation 
-        print("ceval_builtin_max2 failed\n");
+        print("- Ceval.cevalBuiltinMax2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -4870,9 +4622,7 @@ end cevalBuiltinMax2;
 
 protected function cevalBuiltinMin "function: cevalBuiltinMin
   author: PA
- 
-  Constant evaluation of builtin min function.
-"
+  Constant evaluation of builtin min function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -4919,9 +4669,7 @@ algorithm
 end cevalBuiltinMin;
 
 protected function cevalBuiltinMin2 "function: cevalBuiltinMin2
- 
-  Helper function to ceval_builtin_min.
-"
+  Helper function to cevalBuiltinMin."
   input Values.Value inValue;
   output Values.Value outValue;
 algorithm 
@@ -4961,9 +4709,7 @@ end cevalBuiltinMin2;
 
 protected function cevalBuiltinDifferentiate "function cevalBuiltinDifferentiate
   author: LP
-  
-  This function differentiates an equation: x^2 + x => 2x + 1
-"
+  This function differentiates an equation: x^2 + x => 2x + 1"
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -4989,13 +4735,16 @@ algorithm
       equation 
         differentiated_exp = Derive.differentiateExp(exp1, cr);
         differentiated_exp_1 = Exp.simplify(differentiated_exp);
-        ret_val = Exp.printExpStr(differentiated_exp_1) "this is wrong... this should be used instead but unelab_exp must be able to unelaborate a complete exp 
-           now it doesn\'t so the expression is returned as string Exp.unelab_exp(differentiated_exp\') => absyn_exp" ;
+        /*
+         this is wrong... this should be used instead but unelabExp must be able to unelaborate a complete exp 
+         now it doesn't so the expression is returned as string Exp.unelabExp(differentiated_exp') => absyn_exp
+        */        
+        ret_val = Exp.printExpStr(differentiated_exp_1);
       then
         (cache,Values.STRING(ret_val),st);
     case (_,_,_,_,st,msg) /* =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) */ 
       equation 
-        Print.printBuf("#Differentiation failed\n");
+        Print.printBuf("#- Differentiation failed. Celab.cevalBuiltinDifferentiate failed.\n");
       then
         fail();
   end matchcontinue;
@@ -5003,9 +4752,7 @@ end cevalBuiltinDifferentiate;
 
 protected function cevalBuiltinSimplify "function cevalBuiltinSimplify
   author: LP
- 
-  this function simplifies an equation: x^2 + x => 2x + 1
-"
+  this function simplifies an equation: x^2 + x => 2x + 1"
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -5034,7 +4781,7 @@ algorithm
         (cache,Values.STRING(ret_val),st);
     case (_,_,_,_,st,MSG()) /* =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) */ 
       equation 
-        Print.printBuf("#simplification failed\n");
+        Print.printBuf("#- Simplification failed. Ceval.cevalBuildinSimplify failed.\n");
       then
         fail();
   end matchcontinue;
@@ -5042,9 +4789,7 @@ end cevalBuiltinSimplify;
 
 protected function cevalBuiltinRem "function cevalBuiltinRem
   author: LP
- 
-  Evaluates the builtin rem operator
-"
+  Evaluates the builtin rem operator"
 	input Env.Cache inCache;
 	input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -5151,9 +4896,7 @@ end cevalBuiltinRem;
 
 protected function cevalBuiltinInteger "function cevalBuiltinInteger
   author: LP
- 
-  Evaluates the builtin integer operator
-"
+  Evaluates the builtin integer operator"
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -5185,10 +4928,7 @@ algorithm
 end cevalBuiltinInteger;
 
 protected function cevalGenerateFunction "function: cevalGenerateFunction
-  
- 
-  Generates code for a given function name.
-"
+  Generates code for a given function name."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path inPath;
@@ -5204,18 +4944,16 @@ algorithm
     case (cache,env,path)
       equation 
          (cache,false) = Static.isExternalObjectFunction(cache,env,path); //ext objs functions not possible to ceval.
-        Debug.fprintln("ceval", "/*- ceval_generate_function starting*/");
+        Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunction starting*/");
         pathstr = ModUtil.pathString2(path, "_");
         (cache,gencodestr,_) = cevalGenerateFunctionStr(cache,path, env, {});
         filename = stringAppend(pathstr, ".c");
         Print.clearBuf();
-        Print.printBuf(
-          "#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n");
+        Print.printBuf("#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n");
         Print.printBuf(gencodestr);
         Print.printBuf("\nint main(int argc, char** argv)\n");
         Print.printBuf("{\n\n  if (argc != 3)\n");
-        Print.printBuf(
-          "{\n      fprintf(stderr,\"# Incorrect number of arguments\\n\");\n");
+        Print.printBuf("{\n      fprintf(stderr,\"# Incorrect number of arguments\\n\");\n");
         Print.printBuf("return 1;\n    }\n");
         Print.printBuf("_");
         Print.printBuf(pathstr);
@@ -5226,18 +4964,16 @@ algorithm
         (cache);
     case (cache,_,_)
       equation 
-        Debug.fprint("failtrace", "/*- ceval_generate_function failed*/\n");
+        Debug.fprint("failtrace", "/*- Ceval.cevalGenerateFunction failed*/\n");
       then
         fail();
   end matchcontinue;
 end cevalGenerateFunction;
 
 protected function cevalGenerateFunctionStr "function: cevalGenerateFunctionStr
- 
   Generates a function with the given path, and all functions that are called
-   within that function. The string list contains names of functions already
-  generated, which won\'t be generated again 
-"
+  within that function. The string list contains names of functions already
+  generated, which won\'t be generated again."
  	input Env.Cache inCache;
   input Absyn.Path inPath;
   input Env.Env inEnv;
@@ -5263,31 +4999,28 @@ algorithm
         gfmember = Util.listGetMemberOnTrue(path, gflist, ModUtil.pathEqual);
       then
         (cache,"",gflist);
-    case (cache,path,env,gflist) /* If getmember fails, path is not in generated functions list, hence
-	  generate it */ 
+    case (cache,path,env,gflist) /* If getmember fails, path is not in generated functions list, hence generate it */ 
       equation 
         failure(_ = Util.listGetMemberOnTrue(path, gflist, ModUtil.pathEqual));
-        Debug.fprintln("ceval", "/*- ceval_generate_function_str starting*/");
+        Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunctionStr starting*/");
         (cache,cls,env_1) = Lookup.lookupClass(cache,env, path, false);
         Debug.fprintln("ceval", "/*- ceval_generate_function_str instantiating*/");
         (cache,env_2,d) = Inst.implicitFunctionInstantiation(cache,env_1, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           cls, {});
-        Debug.fprint("ceval", 
-          "/*- ceval_generate_function_str getting functions: ");
+        Debug.fprint("ceval", "/*- Ceval.cevalGenerateFunctionStr getting functions: ");
         calledfuncs = SimCodegen.getCalledFunctionsInFunction(path, DAE.DAE(d));
         debugfuncs = Util.listMap(calledfuncs, Absyn.pathString);
         debugfuncsstr = Util.stringDelimitList(debugfuncs, ", ");
         Debug.fprint("ceval", debugfuncsstr);
         Debug.fprintln("ceval", "*/");
         (cache,calledfuncsstrs,gflist_1) = cevalGenerateFunctionStrList(cache,calledfuncs, env, gflist);
-        Debug.fprint("ceval", "/*- ceval_generate_function_str prefixing dae */");
+        Debug.fprint("ceval", "/*- Ceval.cevalGenerateFunctionStr prefixing dae */");
         d_1 = ModUtil.stringPrefixParams(DAE.DAE(d));
         Print.clearBuf();
         funcname = Absyn.pathString(path);
         funccom = Util.stringAppendList({"/*---FUNC: ",funcname," ---*/\n\n"});
         Print.printBuf(funccom);
-        Debug.fprintln("ceval", 
-          "/* - ceval_generate_function_str generating functions */");
+        Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunctionStr generating functions */");
         libs = Codegen.generateFunctions(d_1);
         thisfuncstr = Print.getString();
         calledfuncsstrs_1 = Util.listAppendElt(thisfuncstr, calledfuncsstrs);
@@ -5296,16 +5029,14 @@ algorithm
         (cache,resstr,(path :: gflist));
     case (_,_,env,_)
       equation 
-        Debug.fprint("failtrace", "/*- ceval_generate_function_str failed*/\n");
+        Debug.fprint("failtrace", "/*- Ceval.cevalGenerateFunctionStr failed*/\n");
       then
         fail();
   end matchcontinue;
 end cevalGenerateFunctionStr;
 
 protected function cevalGenerateFunctionStrList "function: cevalGenerateFunctionStrList
- 
-  Generates code for several functions.
-"
+  Generates code for several functions."
 	input Env.Cache inCache;
   input list<Absyn.Path> inAbsynPathLst1;
   input Env.Env inEnv2;
@@ -5334,11 +5065,9 @@ algorithm
 end cevalGenerateFunctionStrList;
 
 protected function cevalBuiltinDiagonal "function cevalBuiltinDiagonal
- 
   This function generates a matrix{n,n} (A) of the vector {a,b,...,n}
   where the diagonal of A is the vector {a,b,...,n}
-  ie A{1,1} == a, A{2,2} == b ...
-"
+  ie A{1,1} == a, A{2,2} == b ..."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -5375,35 +5104,23 @@ algorithm
         (cache,Values.ARRAY(retExp),st);
     case (_,_,_,_,_,MSG())
       equation 
-        Print.printErrorBuf("#Error, could not evaulate diagonal.\n");
+        Print.printErrorBuf("#- Error, could not evaulate diagonal. Ceval.cevalBuiltinDiagonal failed.\n");
       then
         fail();
   end matchcontinue;
 end cevalBuiltinDiagonal;
 
 protected function cevalBuiltinDiagonal2 "function: cevalBuiltinDiagonal2
-  
    This is a help function that is calling itself recursively to 
    generate the a nxn matrix with some special diagonal elements. 
-  see ceval_builtin_diagonal 
- 
-  signature : (Env.Env, 
-				    Exp.Exp, 
-				    bool, 
-				    Interactive.InteractiveSymbolTable option, 
-				    int, /* matrix dimension */
-				    int,  /* row */
-				    Values.Value list,
-				    Msg) 
-	  =>  Values.Value list 
-"
+   See cevalBuiltinDiagonal."
 	input Env.Cache inCache;
   input Env.Env inEnv1;
   input Exp.Exp inExp2;
   input Boolean inBoolean3;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption4;
-  input Integer inInteger5;
-  input Integer inInteger6;
+  input Integer inInteger5 "matrix dimension";
+  input Integer inInteger6 "row";
   input list<Values.Value> inValuesValueLst7;
   input Msg inMsg8;
   output Env.Cache outCache;
@@ -5484,8 +5201,7 @@ algorithm
         (cache,listIN);
     case (_,_,_,_,_,matrixDimension,row,list_,MSG())
       equation 
-        print(
-          "#-- ceval_builtin_diagonal2: Couldn't elaborate ceval_builtin_diagonal2()\n");
+        print("#- Ceval.cevalBuiltinDiagonal2: Couldn't elaborate Ceval.cevalBuiltinDiagonal2()\n");
         RowString = intString(row);
         matrixDimensionString = intString(matrixDimension);
       then
@@ -5494,9 +5210,7 @@ algorithm
 end cevalBuiltinDiagonal2;
 
 protected function cevalBuiltinTranspose "function cevalBuiltinTranspose
- 
-  This function transposes the two first dimension of an array A.
-"
+  This function transposes the two first dimension of an array A."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -5528,7 +5242,7 @@ algorithm
         (cache,Values.ARRAY(vlst_1),st);
     case (_,_,_,_,_,MSG())
       equation 
-        Print.printErrorBuf("#Error, could not evaulate transpose.\n");
+        Print.printErrorBuf("#- Error, could not evaluate transpose. Celab.cevalBuildinTranspose failed.\n");
       then
         fail();
   end matchcontinue;
@@ -5536,17 +5250,10 @@ end cevalBuiltinTranspose;
 
 protected function cevalBuiltinTranspose2 "function: cevalBuiltinTranspose2
   author: PA
- 
-  Helper function to ceval_builtin_transpose
- 
-  signature: (Values.Value list, 
-				    int /* index */,
-				    int) /* dim1 */
-	  => Values.Value list 
-"
+  Helper function to cevalBuiltinTranspose"
   input list<Values.Value> inValuesValueLst1;
-  input Integer inInteger2;
-  input Integer inInteger3;
+  input Integer inInteger2 "index";
+  input Integer inInteger3 "dimension";
   output list<Values.Value> outValuesValueLst;
 algorithm 
   outValuesValueLst:=
@@ -5567,10 +5274,7 @@ algorithm
 end cevalBuiltinTranspose2;
 
 protected function cevalBuiltinSizeMatrix "function: cevalBuiltinSizeMatrix
- 
-  Helper function for ceval_builtin_size, for size(A) where 
-  A is a matrix.
-"
+  Helper function for cevalBuiltinSize, for size(A) where A is a matrix."
 	input Env.Cache inCache;
 	input Env.Env inEnv;
   input Exp.Exp inExp;
@@ -5615,9 +5319,7 @@ algorithm
 end cevalBuiltinSizeMatrix;
 
 protected function cevalRelation "function: cevalRelation
- 
-  Performs the function check and gives a boolean result.
-"
+  Performs the arithmetic relation check and gives a boolean result."
   input Values.Value inValue1;
   input Exp.Operator inOperator2;
   input Values.Value inValue3;
@@ -5712,17 +5414,16 @@ algorithm
     case (Values.BOOL(boolean = _),Exp.LESS(ty = Exp.BOOL()),Values.BOOL(boolean = _)) then Values.BOOL(false); 
     case (_,_,_)
       equation 
-        Debug.fprint("failtrace", "- ceval_relation failed\n");
-        print("-ceval_relation failed\n");
+        Debug.fprint("failtrace", "- Ceval.cevalRelation failed\n");
+        print("- Ceval.cevalRelation failed\n");
       then
         fail();
   end matchcontinue;
 end cevalRelation;
 
 protected function cevalRange "function: cevalRange
- 
-  This re-lation evaluates a range expression.  It only handles integers.
-"
+  This function evaluates a range expression. 
+  It only handles integers."
   input Integer inInteger1;
   input Integer inInteger2;
   input Integer inInteger3;
@@ -5759,9 +5460,7 @@ algorithm
 end cevalRange;
 
 protected function cevalRange2 "function: cevalRange2
- 
-  Helper function to ceval_range.
-"
+  Helper function to cevalRange."
   input Integer inInteger1;
   input Integer inInteger2;
   input Integer inInteger3;
@@ -5788,9 +5487,8 @@ algorithm
 end cevalRange2;
 
 protected function cevalRangeReal "function: cevalRangeReal
- 
-  This function evaluates a range expression.  It only handles reals
-"
+  This function evaluates a range expression.  
+  It only handles reals."
   input Real inReal1;
   input Real inReal2;
   input Real inReal3;
@@ -5827,9 +5525,7 @@ algorithm
 end cevalRangeReal;
 
 protected function cevalRangeReal2 "function: cevalRangeReal2
- 
-  Helper function to ceval_range_real.
-"
+  Helper function to cevalRangeReal."
   input Real inReal1;
   input Real inReal2;
   input Real inReal3;
@@ -5856,9 +5552,8 @@ algorithm
 end cevalRangeReal2;
 
 public function cevalList "function: cevalList
- 
-  This function does a constant evaluation on a number of expressions.
-"
+  This function does constant 
+  evaluation on a list of expressions."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Exp> inExpExpLst;
@@ -5896,17 +5591,12 @@ algorithm
 end cevalList;
 
 protected function cevalCref "function: cevalCref
- 
-  Evaluates ComponentRef, i.e. variables, by looking up variables in the
-  environment.
- 
-  signature: (Env.Env, Exp.ComponentRef, bool, /*impl*/ Msg) 
-	  => Values.Value
-"
+  Evaluates ComponentRef, i.e. variables, by 
+  looking up variables in the environment."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Exp.ComponentRef inComponentRef;
-  input Boolean inBoolean;
+  input Boolean inBoolean "impl";
   input Msg inMsg;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -5954,21 +5644,13 @@ algorithm
 end cevalCref;
 
 public function cevalCrefBinding "function: cevalCrefBinding
- 
-  Helper function to ceval_cref. Evaluates variables by evaluating 
-  their bindings.
- 
-  signature: ceval_cref_binding : (Env.Env, Exp.ComponentRef,
-			       Types.Binding, 
-			       bool, /*impl*/
-			       Msg) 
-	  => Values.Value
-"
+  Helper function to cevalCref. 
+  Evaluates variables by evaluating their bindings."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Exp.ComponentRef inComponentRef;
   input Types.Binding inBinding;
-  input Boolean inBoolean;
+  input Boolean inBoolean "impl";
   input Msg inMsg;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -5989,7 +5671,7 @@ algorithm
       Env.Cache cache;
     case (cache,env,cr,Types.VALBOUND(valBound = v),impl,msg) /* Exp.CREF_IDENT(id,subsc) */ 
       equation 
-        Debug.fprint("tcvt", "+++++++ cevalCrefBinding Types.VALBOUND\n");
+        Debug.fprint("tcvt", "+++++++ Ceval.cevalCrefBinding Types.VALBOUND\n");
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
         (cache,_,tp,_) = Lookup.lookupVar(cache,env, cr_1) "Exp.CREF_IDENT(id,{})" ;
@@ -5999,20 +5681,19 @@ algorithm
         (cache,res);
     case (cache,env,_,Types.UNBOUND(),(impl as false),MSG())
       equation 
-        Print.printBuf("- ceval_cref_binding failed (UNBOUND)\n");
+        Print.printBuf("- Ceval.cevalCrefBinding failed (UNBOUND)\n");
       then
         fail();
     case (cache,env,_,Types.UNBOUND(),(impl as true),MSG())
       equation 
-        Debug.fprint("ceval", 
-          "#- ceval_cref__binding: Ignoring unbound when implicit");
+        Debug.fprint("ceval", "#- Ceval.cevalCrefBinding: Ignoring unbound when implicit");
       then
         fail();
     case (cache,env,Exp.CREF_IDENT(ident = id,subscriptLst = subsc),Types.EQBOUND(exp = exp,constant_ = Types.C_CONST()),impl,MSG()) /* REDUCTION bindings */ 
       equation 
         Exp.REDUCTION(path = Absyn.IDENT(name = rfn),expr = elexp,ident = iter,range = iterexp) = exp;
         equality(rfn = "array");
-        Debug.fprintln("ceval", "#-- ceval_cref_binding Array evaluation");
+        Debug.fprintln("ceval", "#- Ceval.cevalCrefBinding: Array evaluation");
       then
         fail();
     case (cache,env,cr,Types.EQBOUND(exp = exp,constant_ = Types.C_CONST()),impl,msg) /* REDUCTION bindings Exp.CREF_IDENT(id,subsc) */ 
@@ -6067,8 +5748,7 @@ algorithm
         (cache,res);
     case (cache,env,_,Types.EQBOUND(exp = exp,constant_ = Types.C_VAR()),impl,MSG())
       equation 
-        Debug.fprint("ceval", 
-          "#- ceval_cref__binding failed (nonconstant EQBOUND(");
+        Debug.fprint("ceval", "#- Ceval.cevalCrefBinding failed (nonconstant EQBOUND(");
         expstr = Exp.printExpStr(exp);
         Debug.fprint("ceval", expstr);
         Debug.fprintln("ceval", "))");
@@ -6078,7 +5758,7 @@ algorithm
       equation 
         s1 = Exp.printComponentRefStr(e1);
         s2 = Exp.printExpStr(exp);
-        str = Util.stringAppendList({"-ceval_cref_binding : ",s1," = ",s2," failed\n"});
+        str = Util.stringAppendList({"- Ceval.cevalCrefBinding: ",s1," = ",s2," failed\n"});
         Debug.fprint("failtrace", str);
       then
         fail();
@@ -6086,24 +5766,14 @@ algorithm
 end cevalCrefBinding;
 
 protected function cevalSubscriptValue "function: cevalSubscriptValue
- 
-  Helper function to ceval_cref_binding, applies subscrupts to array values
-  to extract array elements.
- 
-  signature: (Env.Env,
-				 Exp.Subscript list, /* subscript to extract*/
-				 Values.Value, 
-				 int list, /* dimension sizes */
-				 bool, /*impl*/
-				 Msg) 
-	  => Values.Value
-"
+  Helper function to cevalCrefBinding. It applies 
+  subscripts to array values to extract array elements."
 	input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Exp.Subscript> inExpSubscriptLst;
+  input list<Exp.Subscript> inExpSubscriptLst "subscripts to extract";
   input Values.Value inValue;
-  input list<Integer> inIntegerLst;
-  input Boolean inBoolean;
+  input list<Integer> inIntegerLst "dimension sizes";
+  input Boolean inBoolean "impl";
   input Msg inMsg;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -6132,28 +5802,21 @@ algorithm
     case (cache,env,{},v,_,_,_) then (cache,v); 
     case (_,_,_,_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "-ceval_subscript_value failed\n");
+        Debug.fprint("failtrace", "- Ceval.cevalSubscriptValue failed\n");
       then
         fail();
   end matchcontinue;
 end cevalSubscriptValue;
 
 public function cevalSubscripts "function: cevalSubscripts
- 
   This function relates a list of subscripts to their canonical
   forms, which is when all expressions are evaluated to constant
-  values.
- 
-  signature: (Env.Env, Exp.Subscript list, int list, 
-			     bool, /*impl*/
-			     Msg)
-	  => Exp.Subscript list
-"
+  values."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Exp.Subscript> inExpSubscriptLst;
   input list<Integer> inIntegerLst;
-  input Boolean inBoolean;
+  input Boolean inBoolean "impl";
   input Msg inMsg;
   output Env.Cache outCache;
   output list<Exp.Subscript> outExpSubscriptLst;
@@ -6180,19 +5843,13 @@ algorithm
 end cevalSubscripts;
 
 protected function cevalSubscript "function: cevalSubscript
- 
-  This function relates a subscript to its canonical forms, which is
-  when all expressions are evaluated to constant values.
- 
-  signature: (Env.Env, Exp.Subscript, int, 
-			    bool, /*impl*/ 
-			    Msg) => Exp.Subscript
-"
+  This function relates a subscript to its canonical forms, which 
+  is when all expressions are evaluated to constant values."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Exp.Subscript inSubscript;
   input Integer inInteger;
-  input Boolean inBoolean;
+  input Boolean inBoolean "impl";
   input Msg inMsg;
   output Env.Cache outCache;
   output Exp.Subscript outSubscript;
@@ -6222,5 +5879,6 @@ algorithm
         (cache,Exp.SLICE(e1_1));
   end matchcontinue;
 end cevalSubscript;
+
 end Ceval;
 

@@ -1798,6 +1798,19 @@ public function expEqual "Returns true if two expressions are equal"
   output Boolean equal;
 algorithm
   equal := matchcontinue(exp1,exp2)
+    local Exp x, y;
+    case (x, y) equation equality(x = y);          then true;
+    case (x, y) equation failure(equality(x = y)); then false;
+  end matchcontinue;
+end expEqual;
+
+/* adrpo - 2007-02-20 equality can be implemented using structural equality! 
+public function expEqual "Returns true if two expressions are equal"
+  input Exp exp1;
+  input Exp exp2;
+  output Boolean equal;
+algorithm
+  equal := matchcontinue(exp1,exp2)
     case(INTEGER(i1),INTEGER(i2))
       local Integer i1,i2;
         then intEq(i1,i2);
@@ -1883,6 +1896,7 @@ algorithm
     case(_,_) then false;
   end matchcontinue;
 end expEqual;
+*/
 
 public function eachEqual "Returns true if two each attributes are equal"
   input Each each1;
@@ -1912,4 +1926,5 @@ algorithm
    case(_,_) then false;       
  end matchcontinue;
 end functionArgsEqual;
+
 end Absyn;
