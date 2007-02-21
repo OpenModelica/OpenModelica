@@ -181,7 +181,7 @@ algorithm
       equation 
         s1 = printDimStr({SOME(x)});
         s2 = printDimsStr(xs);
-        str = Util.stringDelimitListNoEmpty({s1,s2},",");
+        str = Util.stringDelimitListNonEmptyElts({s1,s2},",");
       then
         str;
     case ({}) then ""; 
