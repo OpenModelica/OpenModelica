@@ -191,7 +191,7 @@ protected import ClassLoader;
 protected import Ceval;
 protected import Error;
 protected import Constants;
-
+protected import Refactor;
 public constant InteractiveSymbolTable emptySymboltable=SYMBOLTABLE(Absyn.PROGRAM({},Absyn.TOP()),{},{},
           {},{},{}) "Empty Interactive Symbol Table" ;
 
@@ -1917,7 +1917,35 @@ algorithm
         resstr = getClassnamesInPath(path, p);
       then
         (resstr,st);
-
+/***********************zxzc****************************************************/
+/*      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getClassNamesRecursive"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+      local 
+        String fulString;
+        Absyn.Path path;
+        equation 
+            path = Absyn.crefToPath(cr);
+        		resstr = getClassNamesRecursive(path, p, "  ");
+    then
+         (resstr,st);
+*/
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "refactorClass"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf,loadedFiles = lf)))
+      local Absyn.Path path; Absyn.Class cls, refactoredClass;
+      equation 
+  			path = Absyn.crefToPath(cr);
+	  		cls = getPathedClassInProgram(path, p);
+        
+        refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
+        p = updateProgram(Absyn.PROGRAM({refactoredClass}, Absyn.TOP), p);
+   //     Dump.dump(Absyn.PROGRAM({cls}, Absyn.TOP));      
+	 //   Dump.dump(p);        
+        resstr = Dump.unparseStr(Absyn.PROGRAM({refactoredClass}, Absyn.TOP));       
+   //     resstr = "Test Körning";
+      then
+        (resstr,SYMBOLTABLE(p,s,ic,iv,cf,lf));
+/*******************************************************************************/
     case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getClassNames"),functionArgs = Absyn.FUNCTIONARGS(args = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
         resstr = getTopClassnames(p);
@@ -4520,7 +4548,7 @@ algorithm
   end matchcontinue;
 end getParameterNames;
 
-protected function getClassEnv "function: getClassEnv
+public function getClassEnv "function: getClassEnv
   
    Retrieves the environment of the class, including the frame of the class
    itself by partially instantiating it.
@@ -14232,6 +14260,12 @@ algorithm
         c1 = getClassInProgram(str, p);
       then
         c1;
+         case (Absyn.FULLYQUALIFIED(path),(p))
+      local String c1;
+      equation 
+        res = getPathedClassInProgram(path,p);
+      then
+        res;
     case ((path as Absyn.QUALIFIED(name = c1,path = prest)),(p as Absyn.PROGRAM(within_ = w)))
       local String c1;
       equation 
@@ -15937,4 +15971,3 @@ algorithm
 end loadFileInteractiveQualified;
 
 end Interactive;
-

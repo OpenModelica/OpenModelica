@@ -973,7 +973,7 @@ algorithm
         s3 = unparseRedeclarekeywords(keywords);
         s4 = unparseElementspecStr(0, spec, s2, "", "");
         s5 = unparseConstrainclassOptStr(constr);
-        str = Util.stringAppendList({s1,s2,s3,s4," ",s5});
+        str = Util.stringAppendList({s3,s2,s1,s4," ",s5});
       then
         str;
   end matchcontinue;
