@@ -570,6 +570,7 @@ algorithm
     case ((REAL(real = _) :: _)) then "r"; 
     case ((STRING(string = _) :: _)) then "s"; 
     case ((BOOL(boolean = _) :: _)) then "b"; 
+    case ({}) then "{}";
     case (_) then "error"; 
   end matchcontinue;
 end unparsePrimType;

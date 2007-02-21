@@ -139,7 +139,13 @@ algorithm
       Type_a a;
       Integer n_1,n;
       list<Type_a> res;
+    case(a,n) equation
+      true = n < 0;
+      print("Internal Error, negative value to Util.listFill\n");
+    then {};
+    case (a,0) then {}; 
     case (a,1) then {a}; 
+      
     case (a,n)
       equation 
         n_1 = n - 1;

@@ -3313,6 +3313,7 @@ algorithm
       local Exp.Exp dim;
       equation 
         (cache,attr,tp,bind) = Lookup.lookupVar(cache,env, cr) "If dimensions not known and impl=false, error message" ;
+
         false = Types.dimensionsKnown(tp);
         cr_str = Exp.printComponentRefStr(cr);
         dim_str = Exp.printExpStr(dim);
@@ -3347,12 +3348,15 @@ algorithm
         (cache,attr,tp,Types.UNBOUND()) = Lookup.lookupVar(cache,env, cr) "For crefs without value binding. If impl=true just silently fail" ;
       then
         fail();
+               
+		/* For crefs with value binding
+		e.g. size(x,1) when Real x[:]=fill(0,1); */
     case (cache,env,(exp as Exp.CREF(componentRef = cr,ty = crtp)),dim,impl,st,msg)
       local
         Values.Value v;
         Exp.Exp dim;
       equation 
-        (cache,attr,tp,binding) = Lookup.lookupVar(cache,env, cr) "For crefs with value binding" ;
+        (cache,attr,tp,binding) = Lookup.lookupVar(cache,env, cr)  ;     
         (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env, dim, impl, st, NONE, msg);
         (cache,v) = cevalCrefBinding(cache,env, cr, binding, impl, msg);
         v2 = cevalBuiltinSize2(v, dimv);
@@ -3370,6 +3374,24 @@ algorithm
         len = listLength((e :: es));
       then
         (cache,Values.INTEGER(len),st_1);
+        
+       /* For expressions with value binding that can not determine type
+		e.g. size(x,2) when Real x[:,:]=fill(0.0,0,2); empty array with second dimension == 2, no way of 
+		knowing that from the value. Must investigate the expression itself.*/
+    case (cache,env,exp,dim,impl,st,msg)
+      local
+        Values.Value v;
+        Exp.Exp dim;
+        list<Option<Integer>> adims;
+        Integer i;
+      equation 
+        (cache,Values.ARRAY({}),st_1) = ceval(cache,env, exp, impl, st, NONE, msg) "try to ceval expression, for constant expressions" ;
+        (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env, dim, impl, st, NONE, msg);
+        adims = Exp.arrayTypeDimensions(Exp.typeof(exp));
+				SOME(i) = listNth(adims,dimv-1);
+      then
+        (cache,Values.INTEGER(i),st_1);
+        
     case (cache,env,exp,dim,impl,st,msg)
       local
         Values.Value v;

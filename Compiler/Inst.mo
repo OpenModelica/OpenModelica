@@ -164,26 +164,29 @@ protected import VarTransform;
 
 protected constant String forScopeName="$for loop scope$";
 
-protected function printDims "function: printDims
+protected function printDimsStr "function: printDims
   
-  Print DimExp list
+  Print DimExp list to a string
 "
   input list<DimExp> inDimExpLst;
+  output String str;
 algorithm 
-  _:=
+  str:=
   matchcontinue (inDimExpLst)
     local
       DimExp x;
       list<DimExp> xs;
+      String s1,s2;
     case ((x :: xs))
       equation 
-        printDim({SOME(x)});
-        printDims(xs);
+        s1 = printDimStr({SOME(x)});
+        s2 = printDimsStr(xs);
+        str = Util.stringDelimitListNoEmpty({s1,s2},",");
       then
-        ();
-    case ({}) then (); 
+        str;
+    case ({}) then ""; 
   end matchcontinue;
-end printDims;
+end printDimsStr;
 
 public function newIdent "function: newIdent
  
@@ -3323,18 +3326,15 @@ algorithm
         crefs2 = getCrefFromDim(ad);
         crefs_1 = Util.listFlatten({crefs,crefs2});
         crefs_2 = removeCrefFromCrefs(crefs_1, owncref);
-
         (cache,env) = getDerivedEnv(cache,env, bc);
         (cache,env2,csets) = updateComponentsInEnv(cache,mods, crefs_2, env, ci_state, csets, impl);
-        
 				//Update the untyped modifiers to typed ones, and extract class and 
 				//component modifiers again. 
         (cache,mods_1) = Mod.updateMod(cache,env2, pre, mods, impl) ;
-        
+
         //Refetch the component from environment, since attributes, etc.
 		  	//might have changed.. comp used in redeclare_type below...	  
         (cache,_,SOME((comp,_)),_,_) = Lookup.lookupIdentLocal(cache,env2, n);
-        
         classmod_1 = Mod.lookupModificationP(mods_1, t);
         mm_1 = Mod.lookupCompModification(mods_1, n);
         (cache,m) = removeSelfModReference(cache,n,m); // Remove self-reference i.e. A a(x=a.y);
@@ -3342,11 +3342,12 @@ algorithm
         mod = Mod.merge(classmod_1, mm_1, env2, pre);
         mod1 = Mod.merge(mod, m_1, env2, pre);
         mod1_1 = Mod.merge(cmod, mod1, env2, pre);
+
+				/* Apply redeclaration modifier to component */
         (cache,SCode.COMPONENT(n,io,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,acc,param,dir)),Absyn.TPATH(t, _),m,bc,comment),mod_1,env2_1,csets) 
         	= redeclareType(cache,mod1_1, comp, env2, pre, ci_state, csets, impl);
         (cache,env_1) = getDerivedEnv(cache,env, bc);
         (cache,cl,cenv) = Lookup.lookupClass(cache,env_1, t, true);
-
 				//If the element is `protected\', and an external modification 
 				//is applied, it is an error. 
         checkProt(prot, mm_1, vn) ;
@@ -3360,10 +3361,10 @@ algorithm
 
 				//The environment is extended (updated) with the new variable binding. 
         (cache,binding) = makeBinding(cache,env2_1, attr, mod_1, ty) ;
-        
+
         //true in update_frame means the variable is now instantiated. 
         new_var = Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding) ;
-        
+
         //type info present Now we can also put the binding into the dae.
         //If the type is one of the simple, predifined types a simple variable 
         //declaration is added to the DAE. 
@@ -3374,6 +3375,7 @@ algorithm
         // If an outer element, remove this variable from the DAE. Variable references will be bound to 
         // corresponding inner element instead.
         //dae2 = Util.if_(ModUtil.isOuter(io),{},dae);
+
       then
         (cache,dae,env_1,csets_1,ci_state,vars);
 
@@ -3838,6 +3840,7 @@ algorithm
         (cache,compenv,dae,csets_1,ty_1) = instVar2(cache,env, ci_state, mod, pre, csets, n, cl, attr, dims_1, idxs, 
           inst_dims, impl, comment,io);
         ty = makeArrayType(dims_1, ty_1);
+                  print("making array type:");print(Types.unparseType(ty));print("\n");
       then
         (cache,compenv,dae,csets_1,ty);
     // Generic case: fall trough 
@@ -3949,7 +3952,7 @@ algorithm
       then
         (cache,env_1,dae,csets_1,ty_1);
    
-    // Array vars without binding in functions , e.g. input Real x{:} 
+          /* Array vars without binding in functions , e.g. input Real x[:]  */
     case (cache,env,(ci_state as ClassInf.FUNCTION(string = _)),mod,pre,csets,n,cl,attr,(dims as (_ :: _)),idxs,inst_dims,impl,comment,io) 
        equation 
         //Do not flatten because it is a function  
@@ -3986,7 +3989,7 @@ algorithm
          {},idxs,inst_dims,impl,comment,io) 
       equation 
         idxs_1 = listReverse(idxs);
-        pre_1 = Prefix.prefixAdd(n, idxs_1, pre);
+        pre_1 = Prefix.prefixAdd(n, idxs_1, pre);        
         (cache,dae1,env_1,csets_1,ty,st) = instClass(cache,env, mod, pre_1, csets, cl, inst_dims, impl, INNER_CALL());
         dae1_1 = propagateAttributes(dae1, dir,io);
         subs = Exp.intSubscripts(idxs_1);
@@ -4047,10 +4050,10 @@ algorithm
       then
         (cache,env_1,dae,csets_1,ty);
     
-    /* FIXME: make a similar rule: if implicit=true and we fail to flatten, we should leave it unflattened */   
+        /* Array variables , e.g. Real x[3]*/
     case (cache,env,ci_state,mod,pre,csets,n,cl,attr,(dim :: dims),idxs,inst_dims,impl,comment,io) 
       equation 
-        dime = instDimExp(dim, impl) "Array variables , e.g. Real x{3} flatten" ;
+        dime = instDimExp(dim, impl);
         inst_dims_1 = listAppend(inst_dims, {dime});
         (cache,compenv,dae,Connect.SETS(_,crs),ty) = instArray(cache,env, ci_state, mod, pre, csets, n, (cl,attr), 1, dim, 
           dims, idxs, inst_dims_1, impl, comment,io);
@@ -4064,6 +4067,7 @@ algorithm
     // parameters and protected variables) 
     case (_,_,_,_,_,_,n,_,_,_,_,_,_,_,_) 
       equation 
+        print("instVar2 failed\n");
         Debug.fprint("failtrace", "- inst_var2 failed: ");
         Debug.fprint("failtrace", n);
         Debug.fprint("failtrace", "\n");
@@ -4888,7 +4892,7 @@ algorithm
   matchcontinue (inCache,inEnv,inState,inMod,inPrefix,inSets,inIdent,inTplSCodeClassSCodeAttributes,inInteger,inDimExp,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io)
     local
       Exp.Exp e,e_1;
-      Types.Properties p;
+      Types.Properties p,p2;
       list<Env.Frame> env_1,env,compenv;
       Connect.Sets csets,csets_1,csets_2;
       tuple<Types.TType, Option<Absyn.Path>> ty,arrty;
@@ -4929,11 +4933,19 @@ algorithm
       then
         (cache,compenv,dae,csets,ty);
 
+		/* Special case when instantiating Real[0]. We need to know the type */
+    case (cache,env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMINT(0),dims,idxs,inst_dims,impl,comment,io)
+      equation 
+			 (cache,compenv,_,csets,ty) = instVar2(cache,env, ci_state, mod, pre, csets, n, cl, attr, dims, 
+          (0 :: idxs), inst_dims, impl, comment,io);
+      then
+        (cache,compenv,{},csets,ty);
+
     case (cache,env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMINT(integer = stop),dims,idxs,inst_dims,impl,comment,io)
       equation 
         (i > stop) = true;
       then
-        (cache,{},{},csets,(Types.T_NOTYPE(),NONE));
+        (cache,env,{},csets,(Types.T_NOTYPE(),NONE));
 
         /* Modifiers of arrays that are functioncall, eg. 
          Real x{:}=foo(...) Should only generate -one- functioncall */     
@@ -5259,60 +5271,6 @@ algorithm
   end matchcontinue;
 end printDimStr;
 
-protected function printDim "function: printDim
- 
-  Prints a dimension expression option list to the print buffer.
-"
-  input list<Option<DimExp>> dims;
-  String str;
-algorithm 
-  str := printDimStr(dims);
-  Print.printBuf(str);
-end printDim;
-
-protected function printDim2 "function printDim2
- 
-  Helper function to print_dim
-"
-  input list<DimExp> inDimExpLst;
-algorithm 
-  _:=
-  matchcontinue (inDimExpLst)
-    local
-      String s;
-      Integer x;
-      list<DimExp> xs;
-    case {DIMINT(integer = x)}
-      equation 
-        s = intString(x);
-        Print.printBuf(s);
-      then
-        ();
-    case {DIMEXP(subscript = x)}
-      local Exp.Subscript x;
-      equation 
-        Exp.printSubscript(x);
-      then
-        ();
-    case (DIMINT(integer = x) :: xs)
-      equation 
-        s = intString(x);
-        Print.printBuf(s);
-        Print.printBuf(",");
-        printDim2(xs);
-      then
-        ();
-    case (DIMEXP(subscript = x) :: xs)
-      local Exp.Subscript x;
-      equation 
-        Exp.printSubscript(x);
-        Print.printBuf(",");
-        printDim2(xs);
-      then
-        ();
-    case {} then (); 
-  end matchcontinue;
-end printDim2;
 
 protected function elabArraydimDecl "function: elabArraydimDecl
  

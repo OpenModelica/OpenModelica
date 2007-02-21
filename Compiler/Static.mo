@@ -440,8 +440,10 @@ algorithm
         (start_2,NONE,stop_2,rt) = deoverloadRange((start_1,start_t), NONE, (stop_1,stop_t));
         const = Types.constAnd(c_start, c_stop);
         (cache,t) = elabRangeType(cache,env, start_2, NONE, stop_2, const, rt, impl);
+        (cache,exp_2,prop_1) = cevalIfConstant(cache,Exp.RANGE(rt,start_2,NONE,stop_2), Types.PROP(t,const), const, impl, env);        
       then 
-        (cache,Exp.RANGE(rt,start_1,NONE,stop_1),Types.PROP(t,const),st_2);
+        (cache,exp_2,prop_1,st_2);
+        
     case (cache,env,Absyn.RANGE(start = start,step = SOME(step),stop = stop),impl,st,doVect)
       equation 
         (cache,start_1,Types.PROP(start_t,c_start),st_1) = elabExp(cache,env, start, impl, st,doVect) "Range expressions with step value, e.g. 1:0.5:4" ;
@@ -451,8 +453,10 @@ algorithm
         c1 = Types.constAnd(c_start, c_step);
         const = Types.constAnd(c1, c_stop);
         (cache,t) = elabRangeType(cache,env, start_2, SOME(step_2), stop_2, const, rt, impl);
+        (cache,exp_2,prop_1) = cevalIfConstant(cache,Exp.RANGE(rt,start_2,SOME(step_2),stop_2), Types.PROP(t,const), const, impl, env);
       then
-        (cache,Exp.RANGE(rt,start_2,SOME(step_2),stop_2),Types.PROP(t,const),st_3);
+        (cache,exp_2,prop_1,st_3);
+        
     case (cache,env,Absyn.ARRAY(arrayExp = es),impl,st,doVect)
       equation 
         (cache,es_1,Types.PROP(t,const)) = elabArray(cache,env, es, impl, st,doVect) "array expressions, e.g. {1,2,3}" ;
@@ -2003,9 +2007,11 @@ algorithm
       Absyn.Exp arraycr,dim;
       list<Absyn.Exp> expl;
       Env.Cache cache;
-    case (cache,env,{arraycr,dim},impl) /* impl */ 
+
+      /*size(A,x) that returns size of x:th dimension */
+    case (cache,env,{arraycr,dim},impl)
       equation 
-        (cache,dimp,Types.PROP(_,c1),_) = elabExp(cache,env, dim, impl, NONE,true) "size(A,x) that returns size of x:th dimension" ;
+        (cache,dimp,Types.PROP(_,c1),_) = elabExp(cache,env, dim, impl, NONE,true)  ;
         (cache,arraycrefe,Types.PROP(arrtp,_),_) = elabExp(cache,env, arraycr, impl, NONE,true);
         c2 = Types.dimensionsKnown(arrtp);
         c2_1 = Types.boolConst(c2);
@@ -2013,10 +2019,12 @@ algorithm
         exp = Exp.SIZE(arraycrefe,SOME(dimp));
       then
         (cache,exp,Types.PROP((Types.T_INTEGER({}),NONE),c));
+        
+        /* size(A) */
     case (cache,env,{arraycr},impl)
       local Boolean c;
       equation 
-        (cache,arraycrefe,Types.PROP(arrtp,_),_) = elabExp(cache,env, arraycr, impl, NONE,true) "size(A)" ;
+        (cache,arraycrefe,Types.PROP(arrtp,_),_) = elabExp(cache,env, arraycr, impl, NONE,true)  ;
         c = Types.dimensionsKnown(arrtp);
         c_1 = Types.boolConst(c);
         exp = Exp.SIZE(arraycrefe,NONE);
@@ -2108,7 +2116,7 @@ algorithm
         (cache,dims_1,dimprops,_) = elabExpList(cache,env, dims, impl, NONE,true);
         sty = Types.getPropType(prop);
         (cache,dimvals) = Ceval.cevalList(cache,env, dims_1, impl, NONE, Ceval.MSG());
-        (cache,exp,prop) = elabBuiltinFill2(cache,env, s_1, sty, dimvals);
+        (cache,exp,prop) = elabBuiltinFill2(cache,env, s_1, sty, dimvals);        
       then
         (cache,exp,prop);
     case (cache,env,dims,impl)
@@ -2147,7 +2155,7 @@ algorithm
       Boolean a;
       list<Env.Frame> env;
       Exp.Exp s,exp;
-      tuple<Types.TType, Option<Absyn.Path>> sty,ty;
+      tuple<Types.TType, Option<Absyn.Path>> sty,ty,sty2;
       Integer v;
       Types.Const con;
       list<Values.Value> rest;
@@ -2156,20 +2164,21 @@ algorithm
       equation 
         arraylist = buildExpList(s, v);
         dimension = intString(v);
-        at = Types.elabType(sty);
-        a = Types.isArray(sty);
+        sty2 = (Types.T_ARRAY(Types.DIM(SOME(v)),sty),NONE);
+        at = Types.elabType(sty2);
+        a = Types.isArray(sty2);
       then
-        (cache,Exp.ARRAY(at,a,arraylist),Types.PROP((Types.T_ARRAY(Types.DIM(SOME(v)),sty),NONE),
-          Types.C_CONST()));
+        (cache,Exp.ARRAY(at,a,arraylist),Types.PROP(sty2,Types.C_CONST()));
     case (cache,env,s,sty,(Values.INTEGER(integer = v) :: rest))
       equation 
         (cache,exp,Types.PROP(ty,con)) = elabBuiltinFill2(cache,env, s, sty, rest);
         arraylist = buildExpList(exp, v);
         dimension = intString(v);
-        at = Types.elabType(ty);
-        a = Types.isArray(ty);
+        sty2 = (Types.T_ARRAY(Types.DIM(SOME(v)),ty),NONE);
+        at = Types.elabType(sty2);
+        a = Types.isArray(sty2);
       then
-        (cache,Exp.ARRAY(at,a,arraylist),Types.PROP((Types.T_ARRAY(Types.DIM(SOME(v)),ty),NONE),Types.C_CONST()));
+        (cache,Exp.ARRAY(at,a,arraylist),Types.PROP(sty2,Types.C_CONST()));
     case (_,_,_,_,_)
       equation 
         Error.addMessage(Error.INTERNAL_ERROR, {"elab_builtin_fill_2 failed"});
@@ -6821,7 +6830,6 @@ algorithm
         b1 = (ds < 20);
         b2 = (ds2 < 20);
         true = boolAnd(b1, b2);
-        //elt_tp = Exp.arrayEltType(exptp);
         e = createCrefArray2d(cr, 1, ds, ds2, exptp, t);
       then
         e;
@@ -6831,7 +6839,6 @@ algorithm
       equation 
         false = Types.isArray(t);
         (ds < 20) = true;
-        //elt_tp = Exp.arrayEltType(exptp);
         e = createCrefArray(cr, 1, ds, exptp, t);
       then
         e;

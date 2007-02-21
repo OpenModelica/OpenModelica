@@ -1111,7 +1111,7 @@ algorithm
         (mod,(x :: xs_1));
     case (_,_,_)
       equation 
-        Print.printBuf("- lookup_idx_modification2 failed\n");
+       Debug.fprint("failtrace", "-lookupIdxModification2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -1142,6 +1142,9 @@ algorithm
       then
         Types.MOD(f,Absyn.NON_EACH(),subs,eq_1);
     case (Types.MOD(final_ = f,each_ = Absyn.EACH(),subModLst = subs,eqModOption = eq),idx) then Types.MOD(f,Absyn.EACH(),subs,eq); 
+    case (_,_) equation
+      Debug.fprint("failtrace", "-lookupIdxModification3 failed\n");
+    then fail();   
   end matchcontinue;
 end lookupIdxModification3;
 
@@ -1169,6 +1172,10 @@ algorithm
       list<Integer> xs;
     case (NONE,_) then NONE; 
     case (e,{}) then e; 
+      /* Subscripting empty array gives no value. This is needed in e.g. fill(1.0,0,2) */
+    case (SOME(Types.TYPED(_,SOME(Values.ARRAY({})),_)),xs) then NONE;      
+      
+      /* For modifiers with value, retrieve nth element*/
     case (SOME(Types.TYPED(e,SOME(e_val),Types.PROP(t,c))),(x :: xs))
       equation 
         t_1 = Types.unliftArray(t);
@@ -1177,13 +1184,18 @@ algorithm
         e = indexEqmod(SOME(Types.TYPED(exp,SOME(e_val_1),Types.PROP(t_1,c))), xs);
       then
         e;
+        
+			/* For modifiers without value, apply subscript operaor */
     case (SOME(Types.TYPED(e,NONE,Types.PROP(t,c))),(x :: xs))
       equation 
         t_1 = Types.unliftArray(t);
         exp = Exp.simplify(Exp.ASUB(e,x));
         e = indexEqmod(SOME(Types.TYPED(exp,NONE,Types.PROP(t_1,c))), xs);
       then
-        e;
+        e;        
+    case (_,_) equation
+      Debug.fprint("failtrace", "-indexEqmod failed\n");
+    then fail();
   end matchcontinue;
 end indexEqmod;
 

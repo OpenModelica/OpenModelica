@@ -714,7 +714,7 @@ algorithm
     case (v)
       local Ident vs;
       equation 
-        Debug.fprint("failtrace", "-type_of_values failed: ");
+        Debug.fprint("failtrace", "-typeOfValue failed: ");
         vs = Values.valString(v);
         Debug.fprintln("failtrace", vs);
       then

@@ -3319,6 +3319,15 @@ algorithm
   end matchcontinue;
 end abs;
 
+public function arrayTypeDimensions "Return the array dimensions of a type."
+	input Type tp;
+	output list<Option<Integer>> dims;
+algorithm
+  dims := matchcontinue(tp)
+    case(T_ARRAY(_,dims)) then dims;
+  end matchcontinue;
+end arrayTypeDimensions;
+
 public function typeBuiltin "function: typeBuiltin
  
   Returns true if type is one of the builtin types.
