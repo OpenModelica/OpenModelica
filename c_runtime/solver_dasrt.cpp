@@ -167,7 +167,8 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
   if (sim_verbose) { cout << "Checking events at initialization (at time "<< globalData->timeValue << ")." << endl; }
 
   // Need to check for events at init=1 since e.g. initial() generate event at initialization.
-  //calcEnabledZeroCrossings();  
+  //calcEnabledZeroCrossings();
+  function_updateDependents();  
   CheckForInitialEvents(&globalData->timeValue);
   StartEventIteration(&globalData->timeValue);
   
