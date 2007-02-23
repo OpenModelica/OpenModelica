@@ -2010,6 +2010,7 @@ algorithm
       list<Ident> es;
       list<Exp.Exp> expl;
       list<Algorithm.Statement> then_,stmts;
+      Algorithm.Statement stmt;
       Algorithm.Else else_;
     case (Algorithm.ASSIGN(componentRef = c,exp = e),i)
       equation 
@@ -2078,16 +2079,10 @@ algorithm
         Print.printBuf("end while;\n");
       then
         ();
-    case (Algorithm.WHEN(exp = e,statementLst = stmts),i)
+    case (stmt as Algorithm.WHEN(exp = _),i)
       equation 
         indent(i);
-        Print.printBuf("when ");
-        Exp.printExp(e);
-        Print.printBuf(" then\n");
-        i_1 = i + 2;
-        ppStmtList(stmts, i_1);
-        indent(i);
-        Print.printBuf("end when;\n");
+        Print.printBuf(ppWhenStmtStr(stmt,1));
       then
         ();
     case (Algorithm.ASSERT(exp1 = cond,exp2 = msg),i)
@@ -2126,6 +2121,53 @@ algorithm
   end matchcontinue;
 end ppStmt;
 
+
+protected function ppWhenStmtStr
+  input Algorithm.Statement inStatement;
+  input Integer inInteger;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inStatement,inInteger)
+    local
+      Ident s1,s2,s3,s4,s5,s6,str,s7,s8,s9,s10,s11,id,cond_str,msg_str;
+      Exp.ComponentRef c;
+      Exp.Exp e,cond,msg;
+      Integer i,i_1;
+      list<Ident> es;
+      list<Exp.Exp> expl;
+      list<Algorithm.Statement> then_,stmts;
+      Algorithm.Statement stmt;
+      Algorithm.Else else_;
+    case (Algorithm.WHEN(exp = e,statementLst = stmts, elseWhen=NONE),i)
+      equation 
+        s3 = stringAppend("when ",Exp.printExpStr(e));
+        s5 = stringAppend(s3, " then\n");
+        i_1 = i + 2;
+        s6 = ppStmtListStr(stmts, i_1);
+        s7 = stringAppend(s5, s6);
+        s8 = indentStr(i);
+        s9 = stringAppend(s7, s8);
+        str = stringAppend(s9, "end when;\n");
+      then
+        str;
+    case (Algorithm.WHEN(exp = e,statementLst = stmts, elseWhen=SOME(stmt)),i)
+      equation 
+        s3 = Exp.printExpStr(e);
+        s4 = stringAppend("when ", s3);
+        s5 = stringAppend(s4, " then\n");
+        i_1 = i + 2;
+        s6 = ppStmtListStr(stmts, i_1);
+        s7 = stringAppend(s5, s6);
+        s8 = ppWhenStmtStr(stmt,i);
+        s9 = stringAppend(indentStr(i),"else");
+        s10= stringAppend(s7,s9);
+        str = stringAppend(s10, s8);
+      then
+        str;
+   end matchcontinue;
+end ppWhenStmtStr;
+
 protected function ppStmtStr "function: ppStmtStr
  
   Helper function to pp_statement_str
@@ -2144,6 +2186,7 @@ algorithm
       list<Ident> es;
       list<Exp.Exp> expl;
       list<Algorithm.Statement> then_,stmts;
+      Algorithm.Statement stmt;
       Algorithm.Else else_;
     case (Algorithm.ASSIGN(componentRef = c,exp = e),i)
       equation 
@@ -2225,19 +2268,11 @@ algorithm
         str = stringAppend(s9, "end while;\n");
       then
         str;
-    case (Algorithm.WHEN(exp = e,statementLst = stmts),i)
+    case (stmt as Algorithm.WHEN(exp = _),i)
       equation 
         s1 = indentStr(i);
-        s2 = stringAppend(s1, "when ");
-        s3 = Exp.printExpStr(e);
-        s4 = stringAppend(s2, s3);
-        s5 = stringAppend(s4, " do\n");
-        i_1 = i + 2;
-        s6 = ppStmtListStr(stmts, i_1);
-        s7 = stringAppend(s5, s6);
-        s8 = indentStr(i);
-        s9 = stringAppend(s7, s8);
-        str = stringAppend(s9, "end when;\n");
+        s2 = ppWhenStmtStr(stmt,i);
+        str = stringAppend(s1,s2);
       then
         str;
     case (Algorithm.ASSERT(exp1 = cond,exp2 = msg),i)

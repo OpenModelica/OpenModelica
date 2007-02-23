@@ -79,7 +79,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
                 double &tolerance)
 {
   int status;
-
+  
   long info[15];
   status = 0;
   double tout;
@@ -114,6 +114,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
   
    const string *init_method = getFlagValue("im",argc,argv);
 
+   inUpdate = 0;
               
   if (tolerance != 0.0) {
   	atol = tolerance;
@@ -156,7 +157,8 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
   // sections
   globalData->init=1;
   initial_function(); // calculates e.g. start values depending on e.g parameters.
-  
+  storeExtrapolationData();
+  storeExtrapolationData();
   if (initialize(init_method)) {
     printf("Error in initialization. Storing results and exiting.\n");
     goto exit;
@@ -231,8 +233,10 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
 	
       saveall();
     // Make a tiny step so we are sure that crossings have really occured.
-      info[0]=1;
-      tout=globalData->timeValue+calcTinyStep(start,stop);
+/*
+       info[0]=1;
+
+       tout=globalData->timeValue+calcTinyStep(start,stop);
       {
 	long *tmp_jroot = new long[globalData->nZeroCrossing];
 	int i;
@@ -251,12 +255,14 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
 	}
         delete[] tmp_jroot;
       } // end tiny step
-      
+ */     
       if (sim_verbose) { cout << "Checking events at time " << globalData->timeValue << endl; }
+//      emit();
       calcEnabledZeroCrossings();
       StateEventHandler(jroot, &globalData->timeValue);
       CheckForNewEvents(&globalData->timeValue);
       StartEventIteration(&globalData->timeValue);
+      emit();
       if (sim_verbose) {
       	cout << "Done checking events at time " << globalData->timeValue << endl; 
       }
@@ -264,7 +270,8 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
 
       // Restart simulation
       info[0] = 0;
-      if (tout-globalData->timeValue < atol) tout = newTime(globalData->timeValue,step,stop);
+//      if (tout-globalData->timeValue < atol) tout = newTime(globalData->timeValue,step,stop);
+	  tout = globalData->timeValue + 1e-13;	
       if (globalData->timeValue >= stop ) goto exit;
       calcEnabledZeroCrossings();
       DDASRT(functionDAE_res, 
@@ -278,7 +285,8 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
       if(!continue_with_dassl(idid,&atol,&rtol))
         goto exit;
     
-      functionDAE_res(&globalData->timeValue,globalData->states,
+
+        functionDAE_res(&globalData->timeValue,globalData->states,
                       globalData->statesDerivatives,
                       dummy_delta,0,0,0); // Since residual function calculates 
 					      // alg vars too.

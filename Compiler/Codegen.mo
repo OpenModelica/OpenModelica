@@ -127,8 +127,9 @@ public uniontype Context
 
 public 
 uniontype CodeContext "Which context is the code generated in."
-  record SIMULATION "when generating simulation code" end SIMULATION;
-
+  record SIMULATION "when generating simulation code" 
+    Boolean genDiscrete;
+  end SIMULATION;
   record FUNCTION "when generating function code" end FUNCTION;
 
 end CodeContext;
@@ -161,8 +162,8 @@ public constant CFunction cEmptyFunction=CFUNCTION("","",{},{},{},{},{},{}) " em
 
 public constant Context
    funContext = CONTEXT(FUNCTION(),NORMAL(),NO_LOOP()),
-   simContext = CONTEXT(SIMULATION(),NORMAL(),NO_LOOP()),
-   extContext = CONTEXT(SIMULATION(),EXP_EXTERNAL(),NO_LOOP());
+   simContext = CONTEXT(SIMULATION(true),NORMAL(),NO_LOOP()),
+   extContext = CONTEXT(SIMULATION(true),EXP_EXTERNAL(),NO_LOOP());
 
 public function cMakeFunction "function: cMakeFunction
  
@@ -2380,6 +2381,99 @@ algorithm
   end matchcontinue;
 end generateAlgorithmStatements;
 
+protected function generateAlgorithmWhenStatement "
+	Generates code for algorithm when-statements.
+	The condition expression is exchanged with help variables
+	and code for updateing the help variable is generated prior 
+	to the if expression. 
+"
+  input Algorithm.Statement whenStatement;
+  input Integer nextTemp;
+  input Context inContext;
+  output CFunction block1;
+  output CFunction block2;
+  output Integer outNextTemp;
+algorithm
+  (block1, block2, outNextTemp) :=
+  matchcontinue (whenStatement,nextTemp,inContext)
+    local
+      CFunction cfn, cfn1, cfn2, cfn3, cfn4, cfn5, elseBlock1, elseBlock2;
+      Exp.Exp e, e1;
+      list<Exp.Exp> el;
+      list<Algorithm.Statement> stmts;
+      Algorithm.Statement algStmt;
+      Integer tnr, tnr1, tnr2, tnr3, tnr4;
+      Lib crit_stmt, var1, var2;
+      list<Lib> vars;
+      Context context;
+			list<Integer> helpVarIndices;
+			Integer helpInd;
+    case (Algorithm.WHEN(exp = e as Exp.ARRAY(array = el),statementLst = stmts, elseWhen=SOME(algStmt),helpVarIndices=helpVarIndices), tnr, context)
+      equation
+        // First generate code for updating the help variables in helpVarIndices
+        // and the condition expression substitute the condition expression with a call to
+        // edge(localData->helpVars[i])
+        
+        (cfn2, vars, tnr2) = generateWhenConditionExpressions(helpVarIndices,el,tnr,context);
+
+				var1 = Util.stringDelimitList(vars," || ");
+        crit_stmt = Util.stringAppendList({"if (",var1,") {"});
+        cfn3 = cAddStatements(cEmptyFunction, {crit_stmt});
+
+        (cfn4,tnr3) = generateAlgorithmStatements(stmts, tnr2, context);
+        cfn5 = cAddStatements(cfn4, {"} else"});
+        
+        (elseBlock1, elseBlock2, tnr4) = generateAlgorithmWhenStatement(algStmt,tnr3,context);
+        
+        cfn4 = cMergeFns({cfn3, cfn5, elseBlock2});  
+        cfn  = cMergeFns({cfn2, elseBlock1});
+      then (cfn,cfn4,tnr4);
+    case (Algorithm.WHEN(exp = e,statementLst = stmts, elseWhen=SOME(algStmt), helpVarIndices=helpInd::_), tnr, context)
+      equation
+        (cfn2,var2,tnr2) = generateWhenConditionExpression(helpInd, e, tnr, context);
+        
+        crit_stmt = Util.stringAppendList({"if (",var2,") {"});
+        cfn3 = cAddStatements(cEmptyFunction, {crit_stmt});
+
+        (cfn4,tnr3) = generateAlgorithmStatements(stmts, tnr2, context);
+        cfn5 = cAddStatements(cfn4, {"} else"});
+        
+        (elseBlock1, elseBlock2, tnr4) = generateAlgorithmWhenStatement(algStmt,tnr3,context);
+        
+        cfn4 = cMergeFns({cfn3, cfn5, elseBlock2});  
+        cfn  = cMergeFns({cfn2, elseBlock1});
+      then (cfn,cfn4,tnr4);
+    case (Algorithm.WHEN(exp = e as Exp.ARRAY(array = el),statementLst = stmts, elseWhen=NONE,helpVarIndices=helpVarIndices), tnr, context)
+      equation
+        (cfn2, vars, tnr2) = generateWhenConditionExpressions(helpVarIndices,el,tnr,context);
+
+				var1 = Util.stringDelimitList(vars," || ");
+        crit_stmt = Util.stringAppendList({"if (",var1,") {"});
+        cfn3 = cAddStatements(cEmptyFunction, {crit_stmt});
+
+        (cfn4,tnr3) = generateAlgorithmStatements(stmts, tnr2, context);
+        cfn5 = cAddStatements(cfn4, {"}"});
+        
+        
+        cfn4 = cMergeFns({cfn3, cfn5});  
+      then (cfn2,cfn4,tnr3);
+    case (Algorithm.WHEN(exp = e,statementLst = stmts, elseWhen=NONE,helpVarIndices=helpInd::_), tnr, context)
+      equation
+        (cfn2,var2,tnr2) = generateWhenConditionExpression(helpInd, e, tnr, context);
+        
+        crit_stmt = Util.stringAppendList({"if (",var2,") {"});
+        cfn3 = cAddStatements(cEmptyFunction, {crit_stmt});
+
+        (cfn4,tnr3) = generateAlgorithmStatements(stmts, tnr2, context);
+        cfn5 = cAddStatements(cfn4, {"}"});
+        
+        
+        cfn4 = cMergeFns({cfn3, cfn5});  
+      then (cfn2,cfn4,tnr3);
+        
+  end matchcontinue; 
+end generateAlgorithmWhenStatement;
+
 protected function generateAlgorithmStatement "function : generateAlgorithmStatement
  
    returns:
@@ -2405,6 +2499,7 @@ algorithm
       list<Exp.Subscript> subs;
       list<Algorithm.Statement> then_,stmts;
       Algorithm.Else else_;
+      Algorithm.Statement algStmt;
       Boolean a;
     case (Algorithm.ASSIGN(type_ = typ,componentRef = cref,exp = exp),tnr,context)
       equation 
@@ -2540,11 +2635,14 @@ algorithm
         cfn = cMergeFns({cfn1,cfn2_1,cfn3_1});
       then
         (cfn,tnr3);
-    case (Algorithm.WHEN(exp = _),_,_)
+    case (algStmt as Algorithm.WHEN(exp = _),tnr,context as CONTEXT(SIMULATION(true),_,_))
       equation 
-        Debug.fprint("failtrace", "# when statement not implemented\n");
+        (cfn1,cfn2,tnr1) = generateAlgorithmWhenStatement(algStmt,tnr,context);
+        cfn = cMergeFns({cfn1,cfn2});
       then
-        fail();
+        (cfn,tnr1);
+    case (algStmt as Algorithm.WHEN(exp = _),tnr,CONTEXT(SIMULATION(false),_,_))
+      then (cEmptyFunction,tnr);
     case (Algorithm.TUPLE_ASSIGN(t,expl,e as Exp.CALL(path=_)),tnr,context)
       local Context context;
         list<Exp.Exp> args,expl; Absyn.Path fn;
@@ -2629,7 +2727,7 @@ protected function isSimulationContext "Returns true is context is Simulation."
   output Boolean res;
 algorithm
   res := matchcontinue(context)
-    case(CONTEXT(SIMULATION(),_,_)) then true;
+    case(CONTEXT(SIMULATION(_),_,_)) then true;
     case(_) then false;
   end matchcontinue;
 end isSimulationContext;
@@ -3273,6 +3371,70 @@ algorithm
   end matchcontinue;
 end generateResultVar;
 
+protected function generateWhenConditionExpressions
+	input list<Integer> helpVarIndices;
+	input list<Exp.Exp> exprLst;
+	input Integer tempNr;
+  input Context inContext;
+  output CFunction outCFunction;
+  output list<String> outStringLst;
+  output Integer outInteger;
+algorithm 
+  (outCFunction,outStringLst,outInteger):=
+  matchcontinue (helpVarIndices,exprLst,tempNr,inContext)
+    local
+      Context context;
+      Integer ind;
+      list<Integer> indRest;
+      Integer tnr, tnr2, tnr3;
+      Exp.Exp e;      
+      list<Exp.Exp> eRest;
+      String var;
+      list<String> vars;
+			CFunction cfn,cfn1,cfn2;
+    case ({},{},tnr,context) then (cEmptyFunction, {}, tnr);
+
+    case (ind::indRest,e::eRest,tnr,context)
+      equation
+        (cfn1,var,tnr2) = generateWhenConditionExpression(ind,e,tnr,context);
+        (cfn2,vars,tnr3) = generateWhenConditionExpressions(indRest,eRest,tnr2,context);
+				cfn = cMergeFn(cfn1,cfn2);
+      then (cfn, var::vars, tnr3); 
+  end matchcontinue;
+end generateWhenConditionExpressions;
+
+protected function generateWhenConditionExpression
+	input Integer helpVarIndex;
+	input Exp.Exp expr;
+	input Integer tempNr;
+  input Context inContext;
+  output CFunction outCFunction;
+  output String outString;
+  output Integer outInteger;
+algorithm 
+  (outCFunction,outString,outInteger):=
+  matchcontinue (helpVarIndex,expr,tempNr,inContext)
+    local
+      Context context;
+      Integer ind;
+      Integer tnr, tnr2;
+      Exp.Exp e;
+      String edgeExprStr;
+      String helpUpdateStr;
+      String var;
+      String indStr;
+      CFunction cfn, cfn2;
+    case (ind,e,tnr,context)
+      equation
+        (cfn,var,tnr2) = generateExpression(e,tnr,context);
+        indStr = intString(ind);
+        helpUpdateStr = Util.stringAppendList({"localData->helpVars[",indStr,"] = ", var, ";"});
+        edgeExprStr = Util.stringAppendList({"edge(localData->helpVars[",indStr,"])"});
+        cfn2 = cAddStatements(cfn, {helpUpdateStr});
+      then (cfn2, edgeExprStr, tnr2);
+  end matchcontinue;
+end generateWhenConditionExpression;
+  
 public function generateExpressions "function: generateExpressions
  
   Generates code for a list of expressions.
@@ -3324,11 +3486,13 @@ algorithm
   matchcontinue (inExp,inInteger,inContext)
     local
       Lib istr,rstr,sstr,s,var,var1,decl,tvar,b_stmt,if_begin,var2,var3,ret_type,fn_name,tdecl,args_str,underscore,stmt,var_not_bi,typestr,nvars_str,array_type_str,short_type_str,scalar,scalar_ref,scalar_delimit,type_string,var_1,msg;
-      Integer i,tnr,tnr_1,tnr1,tnr1_1,tnr2,tnr3,nvars,maxn,tnr4;
+      Lib tvar1, tvar2, tvar3, decl1, decl2, decl3, decl4;
+      Lib assign_str;
+      Integer i,tnr,tnr_1,tnr1,tnr1_1,tnr2,tnr3,nvars,maxn,tnr4,tnr5,tnr6;
       Context context;
       Real r;
       Boolean b,builtin,a;
-      CFunction cfn,cfn1,cfn1_2,cfn1_1,cfn2,cfn2_1,cfn3,cfn3_1,cfn4,cfn_1;
+      CFunction cfn,cfn1,cfn1_2,cfn1_1,cfn2,cfn2_1,cfn3,cfn3_1,cfn4,cfn_1,cfn5;
       Exp.ComponentRef cref,cr;
       Exp.Type t,ty;
       Exp.Exp e1,e2,e,then_,else_,crexp,dim,e3;
@@ -3387,6 +3551,21 @@ algorithm
         (cfn,var,tnr_1) = generateLunary(op, e, tnr, context);
       then
         (cfn,var,tnr_1);
+    case (Exp.RELATION(exp1 = e1,operator = op,exp2 = e2),tnr,context as CONTEXT(codeContext=SIMULATION(true)))
+      local
+        String op_str;
+      equation 
+        true = isRealTypedRelation(op);
+        op_str = relOpStr(op);
+        (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
+        (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
+        cfn3 = cMergeFns({cfn1,cfn2});
+        (decl1,var,tnr3) = generateTempDecl("modelica_boolean", tnr2);
+				assign_str = Util.stringAppendList({op_str,"(",var,",",var1,",",var2,");"});
+				cfn4 = cAddStatements(cfn3,{assign_str});
+				cfn5 = cAddVariables(cfn4,{decl1});    
+      then
+        (cfn5,var,tnr3);
     case (Exp.RELATION(exp1 = e1,operator = op,exp2 = e2),tnr,context)
       equation 
         (cfn,var,tnr_1) = generateRelation(e1, op, e2, tnr, context);
@@ -4152,7 +4331,7 @@ algorithm
       list<Option<Integer>> dims;
       Context context;
       list<Exp.Subscript> subs;
-    case (cref,Exp.T_ARRAY(ty = t,arrayDimensions = dims),tnr,CONTEXT(SIMULATION(),_,_)) /* For context simulation array variables must be boxed 
+    case (cref,Exp.T_ARRAY(ty = t,arrayDimensions = dims),tnr,CONTEXT(SIMULATION(_),_,_)) /* For context simulation array variables must be boxed 
 	    into a real_array object since they are represented only
 	    in a double array. */ 
       equation 
@@ -4668,6 +4847,32 @@ algorithm
   end matchcontinue;
 end generateLunary;
 
+protected function relOpStr
+  input Exp.Operator op;
+  output String opStr;
+algorithm
+	isReal := matchcontinue (op)
+	  case (Exp.LESS(ty = _)) then "RELATIONLESS";
+	  case (Exp.LESSEQ(ty = _)) then "RELATIONLESSEQ";
+	  case (Exp.GREATER(ty = _)) then "RELATIONGREATER";
+	  case (Exp.GREATEREQ(ty = _)) then "RELATIONGREATEREQ";
+	  case (_) then fail();
+  end matchcontinue;
+end relOpStr;
+
+protected function isRealTypedRelation
+  input Exp.Operator op;
+  output Boolean isReal;
+algorithm
+	isReal := matchcontinue (op)
+	  case (Exp.LESS(ty = Exp.REAL())) then true;
+	  case (Exp.LESSEQ(ty = Exp.REAL())) then true;
+	  case (Exp.GREATER(ty = Exp.REAL())) then true;
+	  case (Exp.GREATEREQ(ty = Exp.REAL())) then true;
+	  case (_) then false;
+  end matchcontinue;
+end isRealTypedRelation;
+	      
 protected function generateRelation "function: generateRelation
   
   Generates code for function expressions.

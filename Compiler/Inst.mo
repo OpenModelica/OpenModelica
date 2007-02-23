@@ -7775,10 +7775,11 @@ algorithm
       Types.Properties cprop,eprop,prop,msgprop,varprop,valprop;
       SCode.Accessibility acc;
       Exp.Exp e_1,cond_1,msg_1,var_1,value_1;
-      Algorithm.Statement stmt;
+      Algorithm.Statement stmt, stmt1;
       list<Env.Frame> env,env_1;
       Absyn.ComponentRef cr;
       Absyn.Exp e,cond,msg, assignComp,var,value;
+      Absyn.Exp e,cond,msg, assignComp,elseWhenC;
       Boolean impl;
       list<Exp.Exp> expl_1;
       list<Types.Properties> cprops;
@@ -7786,8 +7787,8 @@ algorithm
       String s,i;
       list<Algorithm.Statement> tb_1,fb_1,sl_1;
       list<tuple<Exp.Exp, Types.Properties, list<Algorithm.Statement>>> eib_1;
-      list<Absyn.AlgorithmItem> tb,fb,sl;
-      list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> eib,el;
+      list<Absyn.AlgorithmItem> tb,fb,sl,elseWhenSt;
+      list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> eib,el,elseWhenRest;
       Absyn.Algorithm alg;
       Env.Cache cache;
        
@@ -7851,15 +7852,22 @@ algorithm
         stmt = Algorithm.makeWhile(e_1, prop, sl_1);
       then
         (cache,stmt);
-    case (cache,env,Absyn.ALG_WHEN_A(whenStmt = e,whenBody = sl,elseWhenAlgorithmBranch = el),impl)
+    case (cache,env,Absyn.ALG_WHEN_A(whenStmt = e,whenBody = sl,elseWhenAlgorithmBranch = {}),impl)
       equation 
         (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,sl_1) = instAlgorithmitems(cache,env, sl, impl);
-        stmt = Algorithm.makeWhenA(e_1, prop, sl_1) "TODO elsewhen" ;
+        stmt = Algorithm.makeWhenA(e_1, prop, sl_1, NONE);
       then
         (cache,stmt);
-        
-        // assert(cond,msg)
+    case (cache,env,Absyn.ALG_WHEN_A(whenStmt = e,whenBody = sl,
+      		elseWhenAlgorithmBranch = (elseWhenC,elseWhenSt)::elseWhenRest),impl)
+      equation 
+        (cache,stmt1) = instStatement(cache,env,Absyn.ALG_WHEN_A(elseWhenC,elseWhenSt,elseWhenRest),impl);
+        (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
+        (cache,sl_1) = instAlgorithmitems(cache,env, sl, impl);
+        stmt = Algorithm.makeWhenA(e_1, prop, sl_1, SOME(stmt1));
+      then
+        (cache,stmt);
     case (cache,env,Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg},argNames = {})),impl)
       equation 
         (cache,cond_1,cprop,_) = Static.elabExp(cache,env, cond, impl, NONE,true);
@@ -7868,7 +7876,9 @@ algorithm
       then
         (cache,stmt);
         
+        // assert(cond,msg)
         // reinit(variable,value)
+
 	   case (cache,env,Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "reinit"),functionArgs = Absyn.FUNCTIONARGS(args = {var,value},argNames = {})),impl)
       equation 
         (cache,var_1,varprop,_) = Static.elabExp(cache,env, var, impl, NONE,true);

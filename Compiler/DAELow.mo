@@ -131,9 +131,9 @@ uniontype Equation "- Equation"
   end RESIDUAL_EQUATION;
 
   record ALGORITHM
-    Integer index "index ; index in algorithms, 0..n-1" ;
-    list<Exp.Exp> in_ "in ; inputs CREF or der(CREF)" ;
-    list<Exp.Exp> out "out ; outputs CREF or der(CREF)" ;
+    Integer index      "Index in algorithms, 0..n-1" ;
+    list<Exp.Exp> in_  "Inputs CREF or der(CREF)" ;
+    list<Exp.Exp> out  "Outputs CREF or der(CREF)" ;
   end ALGORITHM;
 
   record WHEN_EQUATION
@@ -145,9 +145,10 @@ end Equation;
 public 
 uniontype WhenEquation "- When Equation"
   record WHEN_EQ
-    Integer index "index ; index in when clauses" ;
-    Exp.ComponentRef left "left ; Left hand side of equation" ;
-    Exp.Exp right "right ; Right hand side of equation" ;
+    Integer index         "Index in when clauses" ;
+    Exp.ComponentRef left "Left hand side of equation" ;
+    Exp.Exp right         "Right hand side of equation" ;
+    Option<WhenEquation> elsewhenPart "elsewhen equation with the same cref on the left hand side.";
   end WHEN_EQ;
 
 end WhenEquation;
@@ -155,17 +156,24 @@ end WhenEquation;
 public 
 uniontype ReinitStatement "- Reinit Statement"
   record REINIT
-    Exp.ComponentRef stateVar "stateVar ; state variable to reinit" ;
-    Exp.Exp value "value ; value after reinit" ;
+    Exp.ComponentRef stateVar "State variable to reinit" ;
+    Exp.Exp value             "Value after reinit" ;
   end REINIT;
-
+  record EMPTY_REINIT
+  end EMPTY_REINIT;
 end ReinitStatement;
 
 public 
 uniontype WhenClause "- When Clause"
   record WHEN_CLAUSE
-    Exp.Exp condition "condition" ;
-    list<ReinitStatement> reinitStmtLst "reinitStmtLst" ;
+    Exp.Exp condition                   "The when-condition" ;
+    list<ReinitStatement> reinitStmtLst "List of reinit statements associated to the when clause." ;
+    Option<Integer> elseClause          "index of elsewhen clause" ;
+  
+  // HL only needs to know if it is an elsewhen the equations take care of which clauses are related.
+  
+    // The equations associated to the clause are linked to this when clause by the index in the 
+    // when clause list where this when clause is stored.
   end WHEN_CLAUSE;
 
 end WhenClause;
@@ -173,9 +181,9 @@ end WhenClause;
 public 
 uniontype ZeroCrossing "- Zero Crossing"
   record ZERO_CROSSING
-    Exp.Exp relation_ "function" ;
-    list<Integer> occurEquLst "occurEquLst ; list of equations where the function occurs" ;
-    list<Integer> occurWhenLst "occurWhenLst ; list of when clauses where the function occurs" ;
+    Exp.Exp relation_          "function" ;
+    list<Integer> occurEquLst  "List of equations where the function occurs" ;
+    list<Integer> occurWhenLst "List of when clauses where the function occurs" ;
   end ZERO_CROSSING;
 
 end ZeroCrossing;
@@ -183,7 +191,7 @@ end ZeroCrossing;
 public 
 uniontype EventInfo "- EventInfo"
   record EVENT_INFO
-    list<WhenClause> whenClauseLst "whenClauseLst ; List of when clauses. The WhenEquation datatype refer to this list by position" ;
+    list<WhenClause> whenClauseLst     "List of when clauses. The WhenEquation datatype refer to this list by position" ;
     list<ZeroCrossing> zeroCrossingLst "zeroCrossingLst" ;
   end EVENT_INFO;
 
@@ -497,7 +505,7 @@ algorithm
         print("\n");
       then
         ();
-     case (WHEN_EQUATION(WHEN_EQ(_,_,e))::res,printExpTree)
+     case (WHEN_EQUATION(WHEN_EQ(_,_,e,_/*TODO handle elsewhe also*/))::res,printExpTree)
       equation 
         dumpDAELowEqnList2(res,printExpTree);
         print("WHEN_EQUATION: ");
@@ -556,7 +564,7 @@ algorithm
   (vars,knvars,eqns,reqns,ieqns,aeqns1) := removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, s);
   vars_1 := detectImplicitDiscrete(vars, eqns);
   eqns_1 := sortEqn(eqns);
-  (zero_crossings) := findZeroCrossings(vars_1, eqns_1, whenclauses_1);
+  (zero_crossings) := findZeroCrossings(vars_1, eqns_1, whenclauses_1,algs);
   eqnarr := listEquation(eqns_1);
   reqnarr := listEquation(reqns);
   ieqnarr := listEquation(ieqns);
@@ -776,16 +784,17 @@ end differentZeroCrossing;
 
 protected function findZeroCrossings "function: findZeroCrossings
  
-  This function finds all zerocrossings in the list ogf equations and
+  This function finds all zerocrossings in the list of equations and
   the list of when clauses. Used in lower2.
 "
   input Variables vars;
   input list<Equation> eq;
   input list<WhenClause> wc;
+  input list<Algorithm.Algorithm> algs;
   output list<ZeroCrossing> res_1;
   list<ZeroCrossing> res,res_1;
 algorithm 
-  res := findZeroCrossings2(vars, eq, 1, wc, 1);
+  res := findZeroCrossings2(vars, eq, 1, wc, 1, algs);
   res_1 := mergeZeroCrossings(res);
 end findZeroCrossings;
 
@@ -798,10 +807,12 @@ protected function findZeroCrossings2 "function: findZeroCrossings2
   input Integer inInteger3;
   input list<WhenClause> inWhenClauseLst4;
   input Integer inInteger5;
+  input list<Algorithm.Algorithm> algs;
+  
   output list<ZeroCrossing> outZeroCrossingLst;
 algorithm 
   outZeroCrossingLst:=
-  matchcontinue (inVariables1,inEquationLst2,inInteger3,inWhenClauseLst4,inInteger5)
+  matchcontinue (inVariables1,inEquationLst2,inInteger3,inWhenClauseLst4,inInteger5,algs)
     local
       Variables v;
       list<Exp.Exp> rellst1,rellst2,rel;
@@ -811,32 +822,64 @@ algorithm
       Exp.Exp e1,e2;
       list<Equation> xs,el;
       WhenClause wc;
-    case (v,{},_,{},_) then {}; 
-    case (v,((e as EQUATION(exp = e1,scalar = e2)) :: xs),eq_count,{},_)
-      equation 
+      Integer ind;
+    case (v,{},_,{},_,_) then {}; 
+    case (v,((e as EQUATION(exp = e1,scalar = e2)) :: xs),eq_count,{},_,algs)
+      equation
         rellst1 = findZeroCrossings3(e1, v);
         zc1 = makeZeroCrossings(rellst1, {eq_count}, {});
         rellst2 = findZeroCrossings3(e2, v);
         zc2 = makeZeroCrossings(rellst2, {eq_count}, {});
         eq_count_1 = eq_count + 1;
-        zc3 = findZeroCrossings2(v, xs, eq_count_1, {}, 0);
+        zc3 = findZeroCrossings2(v, xs, eq_count_1, {}, 0,algs);
         zc4 = listAppend(zc1, zc2);
         res = listAppend(zc3, zc4);
       then
         res;
-    case (v,(e :: xs),eq_count,{},_)
-      equation 
+    case (v,((e as SOLVED_EQUATION(exp = e1)) :: xs),eq_count,{},_,algs)
+      equation
+        rellst1 = findZeroCrossings3(e1, v);
+        zc1 = makeZeroCrossings(rellst1, {eq_count}, {});
         eq_count_1 = eq_count + 1;
-        (res) = findZeroCrossings2(v, xs, eq_count_1, {}, 0);
+        zc3 = findZeroCrossings2(v, xs, eq_count_1, {}, 0,algs);
+        res = listAppend(zc3, zc1);
       then
         res;
-    case (v,el,eq_count,((wc as WHEN_CLAUSE(condition = e)) :: xs),wc_count)
+    case (v,((e as RESIDUAL_EQUATION(exp = e1)) :: xs),eq_count,{},_,algs)
+      equation
+        rellst1 = findZeroCrossings3(e1, v);
+        zc1 = makeZeroCrossings(rellst1, {eq_count}, {});
+        eq_count_1 = eq_count + 1;
+        zc3 = findZeroCrossings2(v, xs, eq_count_1, {}, 0,algs);
+        res = listAppend(zc3, zc1);
+      then
+        res;
+    case (v,((e as ALGORITHM(index = ind)) :: xs),eq_count,{},_,algs)
+      local
+        list<Algorithm.Statement> stmts;
+      equation
+        eq_count_1 = eq_count + 1;
+        zc1 = findZeroCrossings2(v, xs, eq_count_1, {}, 0,algs);
+        Algorithm.ALGORITHM(stmts) = listNth(algs,ind);
+        rel = Algorithm.getAllExpsStmts(stmts);
+        rellst1 = Util.listFlatten(Util.listMap1(rel,findZeroCrossings3, v));
+        zc2 = makeZeroCrossings(rellst1, {eq_count}, {});
+        res = listAppend(zc2, zc1);
+      then
+        res;
+    case (v,(e :: xs),eq_count,{},_,algs)
+      equation 
+        eq_count_1 = eq_count + 1;
+        (res) = findZeroCrossings2(v, xs, eq_count_1, {}, 0,algs);
+      then
+        res;
+    case (v,el,eq_count,((wc as WHEN_CLAUSE(condition = e)) :: xs),wc_count,algs)
       local
         Exp.Exp e;
         list<WhenClause> xs;
       equation 
         wc_count_1 = wc_count + 1;
-        (res1) = findZeroCrossings2(v, el, eq_count, xs, wc_count_1);
+        (res1) = findZeroCrossings2(v, el, eq_count, xs, wc_count_1,algs);
         rel = findZeroCrossings3(e, v);
         res2 = makeZeroCrossings(rel, {}, {wc_count});
         res = listAppend(res1, res2);
@@ -861,7 +904,7 @@ algorithm
       Exp.Operator op;
       Exp.Type tp;
       Boolean scalar;
-    case (((e as Exp.CALL(path = Absyn.IDENT(name = "noEvent"))),(_,vars))) then ((e,({},vars))); 
+    case (((e as Exp.CALL(path = Absyn.IDENT(name = "noEvent"))),(zeroCrossings,vars))) then ((e,({},vars))); 
     case (((e as Exp.CALL(path = Absyn.IDENT(name = "sample"))),(zeroCrossings,vars))) then ((e,((e :: zeroCrossings),vars))); 
       
     case (((e as Exp.RELATION(exp1 = e1,operator = op,exp2 = e2)),(zeroCrossings,vars))) /* function with discrete expressions generate no zerocrossing */ 
@@ -870,16 +913,22 @@ algorithm
         true = isDiscreteExp(e2, vars);
       then
         ((e,(zeroCrossings,vars)));
-    case (((e as Exp.RELATION(exp1 = e1,operator = op,exp2 = e2)),(zeroCrossings,vars))) then ((e,((e :: zeroCrossings),vars)));  /* All other functions generate zerocrossing. */ 
-    case (((e as Exp.ARRAY(array = {})),(zeroCrossings,vars))) then ((e,(zeroCrossings,vars))); 
-    case ((Exp.ARRAY(ty = tp,scalar = scalar,array = (e :: el)),(zeroCrossings,vars)))
+    case (((e as Exp.RELATION(exp1 = e1,operator = op,exp2 = e2)),(zeroCrossings,vars))) 
+      equation
+      then ((e,((e :: zeroCrossings),vars)));  /* All other functions generate zerocrossing. */ 
+    case (((e as Exp.ARRAY(array = {})),(zeroCrossings,vars))) 
+      equation
+      then ((e,(zeroCrossings,vars))); 
+    case ((e1 as Exp.ARRAY(ty = tp,scalar = scalar,array = (e :: el)),(zeroCrossings,vars)))
       equation 
         ((_,(zeroCrossings_1,vars))) = Exp.traverseExp(e, collectZeroCrossings, (zeroCrossings,vars));
         ((e_1,(zeroCrossings_2,vars))) = collectZeroCrossings((Exp.ARRAY(tp,scalar,el),(zeroCrossings,vars)));
         zeroCrossings_3 = listAppend(zeroCrossings_1, zeroCrossings_2);
       then
-        ((e,(zeroCrossings_3,vars)));
-    case ((e,(zeroCrossings,vars))) then ((e,(zeroCrossings,vars))); 
+        ((e1,(zeroCrossings_3,vars)));
+    case ((e,(zeroCrossings,vars))) 
+      equation
+      then ((e,(zeroCrossings,vars))); 
   end matchcontinue;
 end collectZeroCrossings;
 
@@ -3602,8 +3651,7 @@ algorithm
   end matchcontinue;
 end statesExpMatrix;
 
-protected function lowerWhenEqn "function: lowerWhenEqn
- 
+protected function lowerWhenEqn "
   This function lowers a when clause. The condition expresion is put in the 
   WhenClause list and the equations inside are put in the equation list.
   For each equation in the clause a new entry in the WhenClause list is generated
@@ -3612,25 +3660,29 @@ protected function lowerWhenEqn "function: lowerWhenEqn
   outputs: (Equation list, Variables, int /* when-clause index */, WhenClause list)
 "
   input DAE.Element inElement;
-  input Integer inInteger;
+  input Integer inWhenClauseIndex;
   input list<WhenClause> inWhenClauseLst;
   output list<Equation> outEquationLst;
   output Variables outVariables;
-  output Integer outInteger;
+  output Integer outWhenClauseIndex;
   output list<WhenClause> outWhenClauseLst;
 algorithm 
-  (outEquationLst,outVariables,outInteger,outWhenClauseLst):=
-  matchcontinue (inElement,inInteger,inWhenClauseLst)
+  (outEquationLst,outVariables,outwhenClauseIndex,outWhenClauseLst):=
+  matchcontinue (inElement,inWhenClauseIndex,inWhenClauseLst)
     local
       Variables vars;
-      list<Equation> res;
+      Variables elseVars;
+      list<Equation> res, res1;
+      list<Equation> trueEqnLst, elseEqnLst;
       list<ReinitStatement> reinit;
-      Value equation_count,reinit_count,extra,tot_count,i_1,i;
+      Integer equation_count,reinit_count,extra,tot_count,i_1,i,nextWhenIndex;
       Boolean hasReinit;
-      list<WhenClause> whenClauseList1,whenClauseList2,whenClauseList3,whenClauseList4,whenList;
+      list<WhenClause> whenClauseList1,whenClauseList2,whenClauseList3,whenClauseList4,whenList,elseClauseList;
       Exp.Exp cond;
       list<DAE.Element> eqnl;
-    case (DAE.WHEN_EQUATION(condition = cond,equations = eqnl,elsewhen_ = NONE),i,whenList) /* No elsewhen yet */ 
+      DAE.Element elsePart;
+      
+    case (DAE.WHEN_EQUATION(condition = cond,equations = eqnl,elsewhen_ = NONE),i,whenList) 
       equation 
         vars = emptyVars();
         (res,reinit) = lowerWhenEqn2(eqnl, i);
@@ -3646,25 +3698,119 @@ algorithm
         whenClauseList4 = listAppend(whenClauseList3, whenList);
       then
         (res,vars,i_1,whenClauseList4);
+        
+    case (DAE.WHEN_EQUATION(condition = cond,equations = eqnl,elsewhen_ = SOME(elsePart)),i,whenList)
+      equation 
+        vars = emptyVars();
+        (elseEqnLst,_,nextWhenIndex,elseClauseList) = lowerWhenEqn(elsePart,i,whenList);
+        (trueEqnLst,reinit) = lowerWhenEqn2(eqnl, nextWhenIndex);
+        equation_count = listLength(trueEqnLst);
+        reinit_count = listLength(reinit);
+        hasReinit = (reinit_count > 0);
+        extra = Util.if_(hasReinit, 1, 0);
+        whenClauseList1 = makeWhenClauses(equation_count, cond, {});
+        whenClauseList2 = makeWhenClauses(extra, cond, reinit);
+        tot_count = equation_count + extra;
+        (res1,i_1,whenClauseList3) = mergeClauses(trueEqnLst,elseEqnLst,whenClauseList2,
+          elseClauseList,nextWhenIndex + tot_count);
+      then
+        (res1,vars,i_1,whenClauseList3);
+    case (DAE.WHEN_EQUATION(condition = cond),_,_)
+      equation
+        print("fel i lowerWhenEqn");
+      then fail();  
   end matchcontinue;
 end lowerWhenEqn;
+
+protected function mergeClauses "
+merges the true part end the elsewhen part of a set of when equations.
+For each equation in trueEqnList, find an equation in elseEqnList solving the same variable
+and put it in the else elseWhenPart of the first equation.
+"
+  input list<Equation> trueEqnList "List of equations in the true part of the when clause.";
+  input list<Equation> elseEqnList "List of equations in the elsewhen part of the when clause.";
+  input list<WhenClause> trueClauses "List of when clauses from the true part.";
+  input list<WhenClause> elseClauses "List of when clauses from the elsewhen part.";
+  input Integer nextWhenClauseIndex  "Next available when clause index.";
+  output list<Equation> outEquationLst;
+  output Integer outWhenClauseIndex;
+  output list<WhenClause> outWhenClauseLst;
+algorithm
+  (outEquationLst,outWhenClauseIndex,outWhenClauseLst) := 
+  matchcontinue (trueEqnList, elseEqnList, trueClauses, elseClauses, nextWhenClauseIndex)
+    local
+      Exp.ComponentRef cr;
+      Exp.Exp rightSide;
+      Integer ind;
+      Equation res;
+      list<Equation> trueEqns;
+      list<Equation> elseEqns;
+      list<WhenClause> trueCls;
+      list<WhenClause> elseCls;
+      Integer nextInd;
+      list<Equation> resRest;
+      Integer outNextIndex;
+      list<WhenClause> outClauseList;
+      WhenEquation foundEquation;
+      list<Equation> elseEqnsRest;      
+    case (WHEN_EQUATION(WHEN_EQ(index = ind,left = cr,right=rightSide))::trueEqns, elseEqns,trueCls,elseCls,nextInd)
+      equation
+        (foundEquation, elseEqnsRest) = getWhenEquationFromVariable(cr,elseEqns);
+        res = WHEN_EQUATION(WHEN_EQ(ind,cr,rightSide,SOME(foundEquation)));
+        (resRest, outNextIndex, outClauseList) = mergeClauses(trueEqns,elseEqnsRest,trueCls, elseCls,nextInd);
+      then (res::resRest, outNextIndex, outClauseList);
+    case ({},{},trueCls,elseCls,nextInd)
+    then ({},nextInd,listAppend(trueCls,elseCls));
+        
+  end matchcontinue;
+end mergeClauses;
+
+protected function getWhenEquationFromVariable
+"Finds the when equation solving the variable given by inCr among equations in inEquations
+ the found equation is then taken out of the list."
+  input Exp.ComponentRef inCr;
+  input list<Equation> inEquations;
+  output WhenEquation outEquation;
+  output list<Equation> outEquations;
+algorithm
+  (outEquation, outEquations) := matchcontinue(cr,euqations)
+    local
+      Exp.ComponentRef cr1,cr2;
+      WhenEquation eq;
+      Equation eq2;
+      list<Equation> rest, rest2;
+    case (cr1,WHEN_EQUATION(eq as WHEN_EQ(left=cr2))::rest)
+      equation
+        true = Exp.crefEqual(cr1,cr2);
+      then (eq, rest);
+    case (cr1,(eq2 as WHEN_EQUATION(WHEN_EQ(left=cr2)))::rest)
+      equation
+        false = Exp.crefEqual(cr1,cr2);
+        (eq,rest2) = getWhenEquationFromVariable(cr1,rest);
+      then (eq, eq2::rest2);
+    case (_,{}) 
+      equation
+        Error.addMessage(Error.DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN, 
+          {});
+      then
+        fail();
+        
+  end matchcontinue;
+end getWhenEquationFromVariable;
 
 protected function makeWhenClauses "function: makeWhenClauses
   Constructs a list of identical WhenClause elements
   Arg1: Number of elements to construct
   Arg2: condition expression of the when clause
-  inputs:  (int, /* number of copies to make */
-              Exp.Exp, 
-              ReinitStatement list) 
   outputs: (WhenClause list)
 "
-  input Integer inInteger;
-  input Exp.Exp inExp;
+  input Integer n           "Number of copies to make.";
+  input Exp.Exp inCondition "the condition expression";
   input list<ReinitStatement> inReinitStatementLst;
   output list<WhenClause> outWhenClauseLst;
 algorithm 
   outWhenClauseLst:=
-  matchcontinue (inInteger,inExp,inReinitStatementLst)
+  matchcontinue (n,inCondition,inReinitStatementLst)
     local
       Value i_1,i;
       list<WhenClause> res;
@@ -3676,43 +3822,39 @@ algorithm
         i_1 = i - 1;
         res = makeWhenClauses(i_1, cond, reinit);
       then
-        (WHEN_CLAUSE(cond,reinit) :: res);
+        (WHEN_CLAUSE(cond,reinit,NONE) :: res);
   end matchcontinue;
 end makeWhenClauses;
 
-protected function lowerWhenEqn2 "function: lowerWhenEqn2
- 
-  Helper function to lower_when_eqn.
+protected function lowerWhenEqn2 "
+  Helper function to lower_when_eqn. Lowers the equations inside a when clause
 "
-  input list<DAE.Element> inDAEElementLst;
-  input Integer inInteger;
+  input list<DAE.Element> inDAEElementLst "The List of equations inside a when clause";
+  input Integer inWhenClauseIndex;
   output list<Equation> outEquationLst;
   output list<ReinitStatement> outReinitStatementLst;
 algorithm 
   (outEquationLst,outReinitStatementLst):=
-  matchcontinue (inDAEElementLst,inInteger)
+  matchcontinue (inDAEElementLst,inWhenClauseIndex)
     local
-      Value i_1,i;
+      Value i;
       list<Equation> eqnl;
       list<ReinitStatement> reinit;
-      Exp.Exp e_1,e_2,cre,e;
+      Exp.Exp e_2,cre,e;
       Exp.ComponentRef cr_1,cr;
       list<DAE.Element> xs;
     case ({},_) then ({},{}); 
     case ((DAE.EQUATION(exp = (cre as Exp.CREF(componentRef = cr)),scalar = e) :: xs),i)
       equation 
-        i_1 = i + 1;
-        (eqnl,reinit) = lowerWhenEqn2(xs, i_1);
-        e_1 = Exp.simplify(e);
-        e_2 = Exp.stringifyCrefs(e_1);
+        (eqnl,reinit) = lowerWhenEqn2(xs, i + 1);
+        e_2 = Exp.stringifyCrefs(Exp.simplify(e));
         cr_1 = Exp.stringifyComponentRef(cr);
       then
-        ((WHEN_EQUATION(WHEN_EQ(i,cr_1,e_2)) :: eqnl),reinit);
+        ((WHEN_EQUATION(WHEN_EQ(i,cr_1,e_2,NONE)) :: eqnl),reinit);
     case ((DAE.REINIT(componentRef = cr,exp = e) :: xs),i)
       equation 
         (eqnl,reinit) = lowerWhenEqn2(xs, i);
-        e_1 = Exp.simplify(e);
-        e_2 = Exp.stringifyCrefs(e_1);
+        e_2 = Exp.stringifyCrefs(Exp.simplify(e));
         cr_1 = Exp.stringifyComponentRef(cr);
       then
         (eqnl,(REINIT(cr_1,e_2) :: reinit));
@@ -4221,10 +4363,17 @@ algorithm
   matchcontinue (inVariables,inStatement)
     local
       list<Exp.Exp> inputs;
+      list<Exp.Exp> inputs1;
+      list<Exp.Exp> inputs2;
+      list<Exp.Exp> outputs;
+      list<Exp.Exp> outputs1;
+      list<Exp.Exp> outputs2;
       Variables vars;
       Exp.Type tp;
       Exp.ComponentRef cr;
       Exp.Exp e;
+      list<Algorithm.Statement> statements;
+      Algorithm.Statement stmt;
       list<Exp.Exp> expl;
       list<Algorithm.Statement> stmts;
       Algorithm.Else elsebranch;
@@ -4236,6 +4385,20 @@ algorithm
         inputs = statesAndVarsExp(e, vars);
       then
         (inputs,{Exp.CREF(cr,tp)});
+    case (vars,Algorithm.WHEN(exp = e,statementLst = statements,elseWhen = NONE))
+      equation 
+        (inputs,outputs) = lowerAlgorithmInputsOutputs(vars,Algorithm.ALGORITHM(statements));
+        inputs2 = list_append(statesAndVarsExp(e, vars),inputs);
+      then
+        (inputs2,outputs);
+    case (vars,Algorithm.WHEN(exp = e,statementLst = statements,elseWhen = SOME(stmt)))
+      equation 
+				(inputs1, outputs1) = lowerStatementInputsOutputs(vars,stmt);
+        (inputs,outputs) = lowerAlgorithmInputsOutputs(vars,Algorithm.ALGORITHM(statements));
+        inputs2 = list_append(statesAndVarsExp(e, vars),inputs);
+        outputs2 = list_append(outputs, outputs1);
+      then
+        (inputs2,outputs2);
 			// (a,b,c) := foo(...)
     case (vars,Algorithm.TUPLE_ASSIGN(tp,expl,e))
       equation 
@@ -4267,10 +4430,6 @@ algorithm
     case(vars,Algorithm.WHILE(exp=_))
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"While statements in algorithms not supported yet. Suggested workaround: place while statement in a Modelica function"});
-     then fail();  
-    case(vars,Algorithm.WHEN(exp=_))
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"When statements in algorithms not supported yet. Suggested workaround: If possible, use when in equation section instead"});
      then fail();  
     case(vars,Algorithm.ASSERT(exp1 = _))
       equation
@@ -7117,6 +7276,7 @@ algorithm
       Exp.ComponentRef cr;
       Value indx;
       list<Exp.Exp> expl,expl1,expl2;
+      WhenEquation weq;
     case ({}) then {}; 
     case ((EQUATION(exp = e1,scalar = e2) :: es))
       equation 
@@ -7160,11 +7320,12 @@ algorithm
         crs = Util.listFlatten({crs1,crs2_1,crs3_1});
       then
         crs;
-    case ((WHEN_EQUATION(whenEquation = WHEN_EQ(index = indx,left = cr,right = e)) :: es))
+    case ((WHEN_EQUATION(whenEquation = WHEN_EQ(index = indx,left = cr,right = e,elsewhenPart=SOME(weq))) :: es))
       equation 
         crs1 = equationsCrefs(es);
         crs2 = Exp.getCrefFromExp(e);
-        crs = listAppend(crs1, crs2);
+        crs3 = equationsCrefs({WHEN_EQUATION(weq)});
+        crs = listAppend(crs1, listAppend(crs2, crs3));
       then
         (cr :: crs);
   end matchcontinue;
@@ -7510,6 +7671,8 @@ algorithm
       Value ds,indx,i;
       list<Exp.Exp> expl,in_,out;
       Equation res;
+      WhenEquation elsepartRes;
+      WhenEquation elsepart;
     case (st,dummyder,EQUATION(exp = e1,scalar = e2))
       equation 
         dercall = Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(st,Exp.REAL())},false,true,Exp.REAL()) "scalar equation" ;
@@ -7519,11 +7682,19 @@ algorithm
         EQUATION(e1_1,e2_1);
     case (st,dummyder,ARRAY_EQUATION(index = ds,crefOrDerCref = expl)) /* TODO: We need to go through MultiDimEquation array here.. */  then ARRAY_EQUATION(ds,expl);  /* array equation */ 
     case (st,dummyder,ALGORITHM(index = indx,in_ = in_,out = out)) /* TODO: We need to go through Algorithm.Algorithm here.. */  then ALGORITHM(indx,in_,out);  /* Algorithms */ 
-    case (st,dummyder,WHEN_EQUATION(whenEquation = WHEN_EQ(index = i,left = cr,right = e1)))
+    case (st,dummyder,WHEN_EQUATION(whenEquation = WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=NONE)))
       equation 
         dercall = Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(st,Exp.REAL())},false,true,Exp.REAL());
         (e1_1,_) = Exp.replaceExp(e1, dercall, Exp.CREF(dummyder,Exp.REAL()));
-        res = WHEN_EQUATION(WHEN_EQ(i,cr,e1_1));
+        res = WHEN_EQUATION(WHEN_EQ(i,cr,e1_1,NONE));
+      then
+        res;
+    case (st,dummyder,WHEN_EQUATION(whenEquation = WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=SOME(elsepart))))
+      equation 
+        dercall = Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(st,Exp.REAL())},false,true,Exp.REAL());
+        (e1_1,_) = Exp.replaceExp(e1, dercall, Exp.CREF(dummyder,Exp.REAL()));
+        WHEN_EQUATION(elsepartRes) = replaceDummyDer2(st,dummyder, WHEN_EQUATION(elsepart));
+        res = WHEN_EQUATION(WHEN_EQ(i,cr,e1_1,SOME(elsepartRes)));
       then
         res;
     case (_,_,_)
@@ -7586,6 +7757,8 @@ algorithm
       Value ds,i;
       list<Exp.Exp> expl;
       Exp.ComponentRef cr;
+      WhenEquation elsePartRes;
+      WhenEquation elsePart;
     case (EQUATION(exp = e1,scalar = e2),vars)
       equation 
         (e1_1,vars_1) = replaceDummyDerOthersExp(e1, vars) "scalar equation" ;
@@ -7593,11 +7766,17 @@ algorithm
       then
         (EQUATION(e1_1,e2_1),vars_2);
     case (ARRAY_EQUATION(index = ds,crefOrDerCref = expl),vars) /* TODO */  then (ARRAY_EQUATION(ds,expl),vars);  /* array equation */ 
-    case (WHEN_EQUATION(whenEquation = WHEN_EQ(index = i,left = cr,right = e2)),vars)
+    case (WHEN_EQUATION(whenEquation = WHEN_EQ(index = i,left = cr,right = e2,elsewhenPart=NONE)),vars)
       equation 
         (e2_1,vars_1) = replaceDummyDerOthersExp(e2, vars);
       then
-        (WHEN_EQUATION(WHEN_EQ(i,cr,e2_1)),vars_1);
+        (WHEN_EQUATION(WHEN_EQ(i,cr,e2_1,NONE)),vars_1);
+    case (WHEN_EQUATION(whenEquation = WHEN_EQ(index = i,left = cr,right = e2,elsewhenPart=SOME(elsePart))),vars)
+      equation 
+        (e2_1,vars_1) = replaceDummyDerOthersExp(e2, vars);
+        (WHEN_EQUATION(elsePartRes), vars_2) = replaceDummyDerOthers(WHEN_EQUATION(elsePart),vars_1);
+      then
+        (WHEN_EQUATION(WHEN_EQ(i,cr,e2_1,SOME(elsePartRes))),vars_2);
     case (_,_)
       equation 
         print("-replace_dummy_der_others failed\n");
@@ -7755,7 +7934,7 @@ algorithm
     case(ALGORITHM(i1,_,_),ALGORITHM(i2,_,_)) equation
       res = intEq(i1,i2);
     then res;
-    case (WHEN_EQUATION(WHEN_EQ(i1,_,_)),WHEN_EQUATION(WHEN_EQ(i2,_,_))) equation
+    case (WHEN_EQUATION(WHEN_EQ(i1,_,_,_)),WHEN_EQUATION(WHEN_EQ(i2,_,_,_))) equation
       res = intEq(i1,i2);
     then res;
     case(_,_) then false;
@@ -9871,12 +10050,13 @@ algorithm
       Exp.Exp e_1,e;
       list<ReinitStatement> reinit_1,reinit;
       list<Exp.Exp> s,t;
-    case (WHEN_CLAUSE(condition = e,reinitStmtLst = reinit),s,t)
+      Option<Integer> elseClause_;
+    case (WHEN_CLAUSE(condition = e,reinitStmtLst = reinit,elseClause=elseClause_),s,t)
       equation 
         (e_1,_) = Exp.replaceExpList(e, s, t);
         reinit_1 = Util.listMap2(reinit, replaceVariableInReinit, s, t);
       then
-        WHEN_CLAUSE(e_1,reinit_1);
+        WHEN_CLAUSE(e_1,reinit_1,elseClause_);
   end matchcontinue;
 end replaceVariablesInWhenClause;
 
@@ -10147,7 +10327,8 @@ algorithm
       Algorithm.Else else_branch_1,else_branch;
       Boolean b;
       String id;
-      Algorithm.Statement a;
+      Algorithm.Statement a, stmt1, stmt;
+      list<Integer> helpVarLst;
     case (Algorithm.ASSIGN(type_ = tp,componentRef = cr,exp = e),s,t)
       equation 
         (e_1,_) = Exp.replaceExpList(e, s, t);
@@ -10184,7 +10365,20 @@ algorithm
         (e_1,_) = Exp.replaceExpList(e, s, t);
         stmts_1 = replaceVariablesInStmts(stmts, s, t);
       then
-        Algorithm.WHILE(e,stmts);
+        Algorithm.WHILE(e_1,stmts_1);
+    case (Algorithm.WHEN(exp = e,statementLst = stmts,elseWhen = NONE,helpVarIndices=helpVarLst),s,t)
+      equation 
+        (e_1,_) = Exp.replaceExpList(e, s, t);
+        stmts_1 = replaceVariablesInStmts(stmts, s, t);
+      then
+        Algorithm.WHEN(e_1,stmts_1,NONE,helpVarLst);
+    case (Algorithm.WHEN(exp = e,statementLst = stmts,elseWhen = SOME(stmt),helpVarIndices=helpVarLst),s,t)
+      equation 
+        stmt1 = replaceVariablesInStmt(stmt,s,t);
+        (e_1,_) = Exp.replaceExpList(e, s, t);
+        stmts_1 = replaceVariablesInStmts(stmts, s, t);
+      then
+        Algorithm.WHEN(e_1,stmts_1,SOME(stmt1),helpVarLst);
     case (Algorithm.ASSERT(exp1 = e1,exp2 = e2),s,t)
       equation 
         (e1_1,_) = Exp.replaceExpList(e1, s, t);
@@ -11113,6 +11307,8 @@ algorithm
       list<Exp.Exp> s,t,inputs,outputs,expl;
       Exp.ComponentRef cr_1,cr;
       Value i,indx;
+      WhenEquation elsePartRes;
+      WhenEquation elsePart;
     case ({},_,_) then {}; 
     case ((EQUATION(exp = e1,scalar = e2) :: es),s,t)
       equation 
@@ -11128,14 +11324,24 @@ algorithm
         es_1 = replaceVariables(es, s, t);
       then
         (SOLVED_EQUATION(cr_1,e1_1) :: es_1);
-    case ((WHEN_EQUATION(whenEquation = WHEN_EQ(index = i,left = cr,right = e2)) :: es),s,t)
+    case ((WHEN_EQUATION(whenEquation = WHEN_EQ(index = i,left = cr,right = e2, elsewhenPart = NONE)) :: es),s,t)
       equation 
         e1 = Exp.CREF(cr,Exp.OTHER());
         ((e1_1 as Exp.CREF(cr_1,_)),_) = Exp.replaceExpList(e1, s, t);
         (e2_1,_) = Exp.replaceExpList(e2, s, t);
         es_1 = replaceVariables(es, s, t);
       then
-        (WHEN_EQUATION(WHEN_EQ(i,cr_1,e2_1)) :: es_1);
+        (WHEN_EQUATION(WHEN_EQ(i,cr_1,e2_1,NONE)) :: es_1);
+
+    case ((WHEN_EQUATION(whenEquation = WHEN_EQ(index = i,left = cr,right = e2, elsewhenPart = SOME(elsePart))) :: es),s,t)
+      equation 
+        WHEN_EQUATION(elsePartRes) = Util.listFirst(replaceVariables({WHEN_EQUATION(elsePart)},s,t));
+        e1 = Exp.CREF(cr,Exp.OTHER());
+        ((e1_1 as Exp.CREF(cr_1,_)),_) = Exp.replaceExpList(e1, s, t);
+        (e2_1,_) = Exp.replaceExpList(e2, s, t);
+        es_1 = replaceVariables(es, s, t);
+      then
+        (WHEN_EQUATION(WHEN_EQ(i,cr_1,e2_1,SOME(elsePartRes))) :: es_1);
         
         /* algorithms are replaced also in translateDaeReplace */         
     case ((ALGORITHM(index = indx,in_ = inputs,out = outputs) :: es),s,t) 
@@ -12835,6 +13041,8 @@ algorithm
       Exp.Type tp;
       Exp.ComponentRef cr;
       Value ind;
+    WhenEquation elsePart;
+      
     case EQUATION(exp = e1,scalar = e2) then {e1,e2}; 
     case ARRAY_EQUATION(crefOrDerCref = expl) then expl; 
     case SOLVED_EQUATION(componentRef = cr,exp = e)
@@ -12842,11 +13050,18 @@ algorithm
         tp = Exp.typeof(e);
       then
         {Exp.CREF(cr,tp),e};
-    case WHEN_EQUATION(whenEquation = WHEN_EQ(left = cr,right = e))
+    case WHEN_EQUATION(whenEquation = WHEN_EQ(left = cr,right = e,elsewhenPart=NONE))
       equation 
         tp = Exp.typeof(e);
       then
         {Exp.CREF(cr,tp),e};
+    case WHEN_EQUATION(whenEquation = WHEN_EQ(_,cr,e,SOME(elsePart)))
+      equation 
+        tp = Exp.typeof(e);
+        expl = getAllExpsEqn(WHEN_EQUATION(elsePart));
+        exps = listAppend({Exp.CREF(cr,tp),e},expl);
+      then
+        exps;
     case ALGORITHM(index = ind,in_ = e1,out = e2)
       local list<Exp.Exp> e1,e2;
       equation 

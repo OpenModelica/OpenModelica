@@ -450,18 +450,35 @@ algorithm
     Exp.ComponentRef cr,cr1;
     Exp.Exp e,e1,e2;
     Exp.Type tp;
-    case (DAELow.WHEN_EQ(i,cr,e),repl) equation
+    DAELow.WhenEquation elsePart,elsePart2;
+    
+    case (DAELow.WHEN_EQ(i,cr,e,NONE),repl) equation
         e1 = replaceExp(e, repl, NONE);
         e2 = Exp.simplify(e1);
         Exp.CREF(cr1,_) = replaceExp(Exp.CREF(cr,Exp.OTHER()),repl,NONE);
-    then DAELow.WHEN_EQ(i,cr1,e2);
+    then DAELow.WHEN_EQ(i,cr1,e2,NONE);
 		
 			// Replacements makes cr negative, a = -b
-	  case (DAELow.WHEN_EQ(i,cr,e),repl) equation
+	  case (DAELow.WHEN_EQ(i,cr,e,NONE),repl) equation
         Exp.UNARY(Exp.UMINUS(tp),Exp.CREF(cr1,_)) = replaceExp(Exp.CREF(cr,Exp.OTHER()),repl,NONE);
         e1 = replaceExp(e, repl, NONE);
         e2 = Exp.simplify(Exp.UNARY(Exp.UMINUS(tp),e1));
-    then DAELow.WHEN_EQ(i,cr1,e2);      
+    then DAELow.WHEN_EQ(i,cr1,e2,NONE);
+
+    case (DAELow.WHEN_EQ(i,cr,e,SOME(elsePart)),repl) equation
+        elsePart2 = replaceWhenEquation(elsePart,repl);
+        e1 = replaceExp(e, repl, NONE);
+        e2 = Exp.simplify(e1);
+        Exp.CREF(cr1,_) = replaceExp(Exp.CREF(cr,Exp.OTHER()),repl,NONE);
+    then DAELow.WHEN_EQ(i,cr1,e2,SOME(elsePart2));
+		
+			// Replacements makes cr negative, a = -b
+	  case (DAELow.WHEN_EQ(i,cr,e,SOME(elsePart)),repl) equation
+        elsePart2 = replaceWhenEquation(elsePart,repl);
+        Exp.UNARY(Exp.UMINUS(tp),Exp.CREF(cr1,_)) = replaceExp(Exp.CREF(cr,Exp.OTHER()),repl,NONE);
+        e1 = replaceExp(e, repl, NONE);
+        e2 = Exp.simplify(Exp.UNARY(Exp.UMINUS(tp),e1));
+    then DAELow.WHEN_EQ(i,cr1,e2,SOME(elsePart2));
         
   end matchcontinue;
 end replaceWhenEquation;

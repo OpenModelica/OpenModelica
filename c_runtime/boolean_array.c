@@ -90,3 +90,37 @@ void clone_boolean_array_spec(boolean_array_t* source, boolean_array_t* dest)
       dest->dim_size[i] = source->dim_size[i];
     }
 }
+
+/* array_alloc_scalar_boolean_array
+ *
+ * Creates(incl allocation) an array from scalar elements.
+ */
+
+void array_alloc_scalar_boolean_array(boolean_array_t* dest,int n,modelica_boolean first,...)
+{
+  int i;
+  va_list ap;
+  simple_alloc_1d_boolean_array(dest,n);
+  va_start(ap,first);      
+  put_boolean_element(first,0,dest);
+  for (i = 1; i < n; ++i)
+    {
+      put_boolean_element(va_arg(ap,modelica_boolean),i,dest);
+    }
+  va_end(ap);
+}
+void simple_alloc_1d_boolean_array(boolean_array_t* dest, int n)
+{
+  dest->ndims = 1;
+  dest->dim_size = size_alloc(1);
+  dest->dim_size[0] = n;
+  dest->data = boolean_alloc(n);
+}
+
+void put_boolean_element(modelica_boolean value,int i1,boolean_array_t* dest)
+{
+  /* Assert that dest has correct dimension */
+  /* Assert that i1 is a valid index */
+  dest->data[i1] = value;
+}
+

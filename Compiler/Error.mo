@@ -189,6 +189,7 @@ public constant ErrorID PACKAGE_VARIABLE_NOT_CONSTANT=91;
 public constant ErrorID RECURSIVE_DEFINITION=92; 
 public constant ErrorID NOT_ARRAY_TYPE_IN_FOR_STATEMENT= 93;
 public constant ErrorID BREAK_OUT_OF_LOOP= 94;
+public constant ErrorID DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN= 95;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
 public constant ErrorID BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER=502;
@@ -382,7 +383,9 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER,TRANSLATION(),WARNING(),
           "Warning, function \"product\" has scalar as argument in sum(%s)"),       
           (INDEX_REDUCTION_NOTIFICATION,SYMBOLIC(),NOTIFICATION(),
-          "Notification, differentiated equation %s to %s for index reduction")};
+          "Notification, differentiated equation %s to %s for index reduction"),
+          (DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN,SYMBOLIC(),ERROR(),
+          "Error, The same variables must me solved in elsewhen clause as in the when clause")};
 
 protected import ErrorExt;
 protected import Util;

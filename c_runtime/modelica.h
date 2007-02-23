@@ -74,6 +74,7 @@ typedef void* modelica_complex; /* currently only External objects are represent
 typedef real_array_t real_array;
 typedef integer_array_t integer_array;
 typedef modelica_string_t modelica_string;
+typedef boolean_array_t boolean_array;
 
 typedef modelica_integer size_real_array_rettype;
 typedef modelica_integer size_integer_array_rettype;
@@ -98,6 +99,7 @@ typedef modelica_real edge_rettype;
 typedef modelica_real initial_rettype;
 typedef modelica_real noEvent_rettype;
 typedef modelica_real floor_rettype;
+typedef modelica_real ceil_rettype;
 typedef modelica_real sample_rettype;
 
 #if defined(__cplusplus)

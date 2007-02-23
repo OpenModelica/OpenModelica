@@ -71,7 +71,48 @@ double Less(double a,double b);
 double LessEq(double a,double b);
 double Greater(double a,double b);
 double GreaterEq(double a,double b);
+
+extern long inUpdate;
+
 #define ZEROCROSSING(ind,exp) gout[ind] = (zeroCrossingEnabled[ind])?double(zeroCrossingEnabled[ind])*exp:1.0
+
+
+#define RELATION(res,x,y,op1,op2)  { \
+	double res1,res2,*statesBackup,*statesDerivativesBackup,*algebraicsBackup,timeBackup;\
+	if (!inUpdate) { \
+		res = (x) op1 (y); \
+	}\
+	else {\
+		res = (x) op2 (y); \
+		if (!res && ((x) op2##= (y))) { \
+			timeBackup = localData->timeValue;\
+			localData->timeValue = localData->oldTime;\
+			statesBackup = localData->states; \
+			localData->states = localData->oldStates; \
+			statesDerivativesBackup = localData->statesDerivatives; \
+			localData->statesDerivatives = localData->oldStatesDerivatives; \
+			algebraicsBackup = localData->algebraics; \
+			localData->algebraics = localData->oldAlgebraics; \
+			res1 = (x)-(y);\
+			localData->timeValue = localData->oldTime2;\
+			localData->states = localData->oldStates2; \
+			localData->statesDerivatives = localData->oldStatesDerivatives2; \
+			localData->algebraics = localData->oldAlgebraics2; \
+			res2 = (x)-(y);\
+			localData->timeValue = timeBackup;\
+			localData->states = statesBackup; \
+			localData->statesDerivatives = statesDerivativesBackup; \
+			localData->algebraics = algebraicsBackup; \
+			res = res1 op2##= res2; \
+		}\
+	}\
+}
+
+#define RELATIONGREATER(res,x,y)    RELATION(res,x,y,>,>)
+#define RELATIONLESS(res,x,y)       RELATION(res,x,y,<,<)
+#define RELATIONGREATEREQ(res,x,y)  RELATION(res,x,y,>=,>)
+#define RELATIONLESSEQ(res,x,y)     RELATION(res,x,y,<=,<)
+
 #define noEvent(arg) arg
 #define initial() localData->init
 

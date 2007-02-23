@@ -117,6 +117,8 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
   record WHEN
     Exp.Exp exp;
     list<Statement> statementLst;
+    Option<Statement> elseWhen;
+    list<Integer> helpVarIndices;
   end WHEN;
 
   record ASSERT
@@ -473,6 +475,7 @@ public function makeWhenA "function: makeWhenA
   input Exp.Exp inExp;
   input Types.Properties inProperties;
   input list<Statement> inStatementLst;
+  input Option<Statement> elseWhenStmt;
   output Statement outStatement;
 algorithm 
   outStatement:=
@@ -480,11 +483,12 @@ algorithm
     local
       Exp.Exp e;
       list<Statement> stmts;
+      Option<Statement> elsew;
       Ident e_str,t_str;
       tuple<Types.TType, Option<Absyn.Path>> t;
-    case (e,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),stmts) then WHEN(e,stmts); 
-    case (e,Types.PROP(type_ = (Types.T_ARRAY(arrayType = (Types.T_BOOL(varLstBool = _),_)),_)),stmts) then WHEN(e,stmts); 
-    case (e,Types.PROP(type_ = t),_)
+    case (e,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),stmts,elsew) then WHEN(e,stmts,elsew,{}); 
+    case (e,Types.PROP(type_ = (Types.T_ARRAY(arrayType = (Types.T_BOOL(varLstBool = _),_)),_)),stmts,elsew) then WHEN(e,stmts,elsew,{}); 
+    case (e,Types.PROP(type_ = t),_,_)
       equation 
         e_str = Exp.printExpStr(e);
         t_str = Types.unparseType(t);
@@ -569,7 +573,7 @@ algorithm
   end matchcontinue;
 end getAllExps;
 
-protected function getAllExpsStmts "function: getAllExpsStmts
+public function getAllExpsStmts "function: getAllExpsStmts
   
   This function takes a list of statements and returns all expressions
   in all statements.
@@ -598,6 +602,7 @@ algorithm
       Else else_;
       Boolean flag;
       Ident id;
+      Statement elsew;
     case ASSIGN(type_ = expty,componentRef = cr,exp = exp)
       equation 
         crexp = crefToExp(cr);
@@ -628,6 +633,12 @@ algorithm
     case WHILE(exp = exp,statementLst = stmts)
       equation 
         exps = getAllExpsStmts(stmts);
+      then
+        (exp :: exps);
+    case WHEN(exp = exp,statementLst = stmts, elseWhen=SOME(elsew))
+      equation 
+				exps1 = getAllExpsStmt(elsew);
+        exps = list_append(getAllExpsStmts(stmts),exps1);
       then
         (exp :: exps);
     case WHEN(exp = exp,statementLst = stmts)

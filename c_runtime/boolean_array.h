@@ -59,6 +59,10 @@ typedef struct boolean_array_s boolean_array_t;
 size_t boolean_array_nr_of_elements(boolean_array_t* a);
 
 void alloc_boolean_array_data(boolean_array_t* a);
+void array_alloc_scalar_boolean_array(boolean_array_t* dest,int n,modelica_boolean first,...);
+void simple_alloc_1d_boolean_array(boolean_array_t* dest, int n);
+void put_boolean_element(modelica_boolean value,int i1,boolean_array_t* dest);
+
 
 void clone_boolean_array_spec(boolean_array_t* source, boolean_array_t* dest);
 

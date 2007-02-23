@@ -65,6 +65,8 @@ public import Absyn;
 public import Exp;
 public import SCode;
 
+public type HelpVarInfo = tuple<Integer, Exp.Exp, Integer>; // helpvarindex, expression, whenclause index
+
 protected 
 type CFunction = Codegen.CFunction;
 
@@ -188,9 +190,9 @@ algorithm
       String extObjInclude; list<String> extObjIncludes;
       list<list<Integer>> blt_states,blt_no_states,comps;
       Integer n_o,n_i,n_h,nres;
-      list<tuple<Integer, Exp.Exp, Integer>> helpVarInfo;
+      list<HelpVarInfo> helpVarInfo,helpVarInfo1;
       DAE.DAElist dae;
-      DAELow.DAELow dlow;
+      DAELow.DAELow dlow,dlow2;
       Integer[:] ass1,ass2;
       list<Integer>[:] m,mt;
       Absyn.Path class_;
@@ -203,20 +205,21 @@ algorithm
 				Debug.fcall("bltdump",print," algebraic blocks (accepted section):");
 				Debug.fcall("bltdump",DAELow.dumpComponents,blt_no_states);
 
-        (out_str,n_o) = generateOutputFunctionCode(dlow);
-        (in_str,n_i) = generateInputFunctionCode(dlow);
-        (c_eventchecking,helpVarInfo) = generateEventCheckingCode(dlow, blt_states, ass1, ass2, m, mt, class_);
+        (c_eventchecking,helpVarInfo1) = generateEventCheckingCode(dlow, comps, ass1, ass2, m, mt, class_);
+        (helpVarInfo,dlow2) = generateHelpVarsForWhenStatements(helpVarInfo1,dlow);
+        (out_str,n_o) = generateOutputFunctionCode(dlow2);
+        (in_str,n_i) = generateInputFunctionCode(dlow2);
         n_h = listLength(helpVarInfo);
-        (s_code2,nres) = generateInitialValueCode2(dlow,ass1,ass2);
-        (s_code3) = generateInitialBoundParameterCode(dlow);
-        cglobal = generateGlobalData(class_, dlow, n_o, n_i, n_h, nres);
-        coutput = generateComputeOutput(cname, dae, dlow, ass1, ass2, blt_no_states);
-        cstate = generateComputeResidualState(cname, dae, dlow, ass1, ass2, blt_states);
-        c_ode = generateOdeCode(dlow, blt_states, ass1, ass2, m, mt, class_);
-        s_code = generateInitialValueCode(dlow);
-        cwhen = generateWhenClauses(cname, dae, dlow, ass1, ass2, comps);
-        czerocross = generateZeroCrossing(cname, dae, dlow, ass1, ass2, comps, helpVarInfo);
-        (extObjIncludes,_) = generateExternalObjectIncludes(dlow);
+        (s_code2,nres) = generateInitialValueCode2(dlow2,ass1,ass2);
+        (s_code3) = generateInitialBoundParameterCode(dlow2);
+        cglobal = generateGlobalData(class_, dlow2, n_o, n_i, n_h, nres);
+        coutput = generateComputeOutput(cname, dae, dlow2, ass1, ass2, blt_no_states);
+        cstate = generateComputeResidualState(cname, dae, dlow2, ass1, ass2, blt_states);
+        c_ode = generateOdeCode(dlow2, blt_states, ass1, ass2, m, mt, class_);
+        s_code = generateInitialValueCode(dlow2);
+        cwhen = generateWhenClauses(cname, dae, dlow2, ass1, ass2, comps);
+        czerocross = generateZeroCrossing(cname, dae, dlow2, ass1, ass2, comps, helpVarInfo);
+        (extObjIncludes,_) = generateExternalObjectIncludes(dlow2);
         extObjInclude = Util.stringDelimitList(extObjIncludes,"\n");
         res = Util.stringAppendList(
           {"//Simulation code for ",cname,
@@ -239,6 +242,195 @@ algorithm
   end matchcontinue;
 end generateSimulationCode;
 
+protected function generateHelpVarsForWhenStatements
+	input list<HelpVarInfo> inHelpVarInfo;
+	input DAELow.DAELow inDAELow;
+	output list<HelpVarInfo> outHelpVarInfo;
+	output DAELow.DAELow outDAELow;
+algorithm	
+  (outHelpVarInfo,outDAELow) := 
+  matchcontinue (inHelpVarInfo,inDAELow)
+    local
+      list<HelpVarInfo> helpvars, helpvars1;
+      DAELow.Variables orderedVars;
+      DAELow.Variables knownVars;
+      DAELow.Variables externalObjects;
+      DAELow.EquationArray orderedEqs;
+      DAELow.EquationArray removedEqs;
+      DAELow.EquationArray initialEqs;
+      DAELow.MultiDimEquation[:] arrayEqs;
+      Algorithm.Algorithm[:] algorithms,algorithms2;
+      list<Algorithm.Algorithm> algLst;
+      DAELow.EventInfo eventInfo;
+      DAELow.ExternalObjectClasses extObjClasses;
+    case	(helpvars,DAELow.DAELOW(orderedVars,knownVars,externalObjects,orderedEqs,
+      removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
+      equation
+        (helpvars1,algLst,_) = generateHelpVarsInAlgorithms(listLength(helpvars),arrayList(algorithms));
+        algorithms2 = listArray(algLst);
+      then (listAppend(helpvars,helpvars1),DAELow.DAELOW(orderedVars,knownVars,externalObjects,orderedEqs,
+        removedEqs,initialEqs,arrayEqs,algorithms2,eventInfo,extObjClasses));	 
+    case (_,_)
+      equation 
+        Error.addMessage(Error.INTERNAL_ERROR, 
+          {"generateHelpVarsForWhenStatements failed"});
+      then
+        fail();
+  end matchcontinue;
+end generateHelpVarsForWhenStatements;
+
+protected function generateHelpVarsInAlgorithms
+  input Integer n "Index of next help variable";
+  input list<Algorithm.Algorithm> inAlgLst;
+  output list<HelpVarInfo> outHelpVars;
+  output list<Algorithm.Algorithm> outAlgLst;
+  output Integer n2; 
+algorithm
+  (outHelpVars,outAlgLst,n2) := matchcontinue(nextInd,algLst)
+    local	
+      Integer nextInd,nextInd2,nextInd3;
+      list<Algorithm.Statement> stmts, stmts2;
+      list<Algorithm.Algorithm> rest,rest2;
+      list<HelpVarInfo> helpvars1,helpvars2,helpvars;
+    case (nextInd, {}) then ({},{},nextInd);
+    case (nextInd, (Algorithm.ALGORITHM(stmts))::rest)
+      equation
+        (helpvars1,rest2,nextInd2) = generateHelpVarsInAlgorithms(nextInd,rest);
+        (helpvars2,stmts2,nextInd3) = generateHelpVarsInStatements(nextInd2,stmts);
+        helpvars = listAppend(helpvars1,helpvars2);
+      then (helpvars,Algorithm.ALGORITHM(stmts2)::rest2,nextInd3);
+    case (_,_)
+      equation 
+        Error.addMessage(Error.INTERNAL_ERROR, 
+          {"generateHelpVarsInAlgorithms failed"});
+      then
+        fail();
+  end matchcontinue; 
+end generateHelpVarsInAlgorithms;
+
+protected function generateHelpVarsInStatements
+  input Integer n "Index of next help variable";
+  input list<Algorithm.Statement> inStmtLst;
+  output list<HelpVarInfo> outHelpVars;
+  output list<Algorithm.Statement> outStmtLst;
+  output Integer n1;
+algorithm
+  (outHelpVars,outStmtLst,n1) := matchcontinue(n,inStmtLst)
+    local
+      list<Algorithm.Statement> rest, rest1;
+      Integer nextInd, nextInd1, nextInd2;
+	    Algorithm.Statement statement,statement1;
+	    list<HelpVarInfo> helpvars,helpvars1,helpvars2;
+	    
+    case (nextInd, {}) then ({},{},nextInd);
+
+    case (nextInd, statement::rest)
+      equation 
+        (helpvars1,rest1,nextInd1) = generateHelpVarsInStatements(nextInd,rest);
+        (helpvars2,statement1,nextInd2) = generateHelpVarsInStatement(nextInd1,statement);
+        helpvars = listAppend(helpvars1,helpvars2);
+      then (helpvars,statement1::rest1,nextInd2);
+
+    case (_,_)
+      equation 
+        Error.addMessage(Error.INTERNAL_ERROR, 
+          {"generateHelpVarsInStatements failed"});
+      then
+        fail();
+  end matchcontinue; 
+end generateHelpVarsInStatements;
+
+protected function generateHelpVarsInStatement
+  input Integer n "Index of next help variable";
+  input Algorithm.Statement inStmt;
+  output list<HelpVarInfo> outHelpVars;
+  output Algorithm.Statement outStmt;
+  output Integer n1;
+algorithm
+  (outHelpVars,outStmt,n1) := matchcontinue(n,inStmt)
+    local
+      list<Algorithm.Statement> rest, rest1;
+      Integer nextInd, nextInd1, nextInd2;
+      list<Integer> helpVarIndices, helpVarIndices1;
+      Exp.Exp condition;
+      list<Exp.Exp> el, el1;
+	    list<Algorithm.Statement> statementLst;
+	    Algorithm.Statement statement;
+  	  Algorithm.Statement elseWhen;
+	    list<HelpVarInfo> helpvars,helpvars1,helpvars2;
+      String newIdent;
+      String nextIndStr; 
+      Exp.Type ty;
+      Boolean scalar;
+      list<Integer> helpVarIndices1,helpVarIndices;
+    case (nextInd, Algorithm.WHEN(Exp.ARRAY(ty,scalar,el),statementLst,NONE,_))
+      equation 
+				(helpvars1,el1,nextInd1) = generateHelpVarsInArrayCondition(nextInd,el);
+				helpVarIndices1 = Util.listIntRange(nextInd1-nextInd);
+				helpVarIndices = Util.listMap1(helpVarIndices1,intAdd,nextInd-1);
+      then (helpvars1,Algorithm.WHEN(Exp.ARRAY(ty,scalar,el1), statementLst,NONE,helpVarIndices),nextInd1);
+
+    case (nextInd, Algorithm.WHEN(condition,statementLst,NONE,_)) 
+      then ({(nextInd,condition,-1)},Algorithm.WHEN(condition, statementLst,NONE,{nextInd}),nextInd+1);
+
+    case (nextInd, Algorithm.WHEN(Exp.ARRAY(ty,scalar,el),statementLst,SOME(elseWhen),_))
+      equation 
+				(helpvars1,el1,nextInd1) = generateHelpVarsInArrayCondition(nextInd,el);
+				helpVarIndices1 = Util.listIntRange(nextInd1-nextInd);
+				helpVarIndices = Util.listMap1(helpVarIndices1,intAdd,nextInd-1);
+        (helpvars2,statement,nextInd2) = generateHelpVarsInStatement(nextInd1,elseWhen);
+        helpvars = listAppend(helpvars1,helpvars2);
+      then (helpvars,Algorithm.WHEN(Exp.ARRAY(ty,scalar,el1), statementLst,SOME(statement),helpVarIndices),nextInd1);
+
+    case (nextInd, Algorithm.WHEN(condition,statementLst,SOME(elseWhen),_))
+      equation
+        (helpvars1,statement,nextInd1) = generateHelpVarsInStatement(nextInd+1,elseWhen);
+      then ((nextInd,condition,-1)::helpvars1,
+        Algorithm.WHEN(condition, statementLst,SOME(statement),{nextInd}),nextInd1);
+
+    case (nextInd, statement) then ({},statement,nextInd);
+
+    case (_,_)
+      equation 
+        Error.addMessage(Error.INTERNAL_ERROR, 
+          {"generateHelpVarsInStatements failed"});
+      then
+        fail();
+  end matchcontinue; 
+end generateHelpVarsInStatement;
+
+protected function generateHelpVarsInArrayCondition
+  input Integer n "Index of next help variable";
+  input list<Exp.Exp> inExp;
+  output list<HelpVarInfo> outHelpVars;
+  output list<Exp.Exp> outExp;
+  output Integer n1;
+algorithm
+  (outHelpVars,outExp,n2) := matchcontinue(n,inExp)
+    local
+      list<Exp.Exp> rest, el, el1;
+      Integer nextInd, nextInd1;
+      Exp.Exp condition;
+	    list<HelpVarInfo> helpvars1;
+      String newIdent;
+      String nextIndStr; 
+      
+    case (nextInd, {}) then ({},{},nextInd);
+
+    case (nextInd, condition::rest)
+      equation 
+				(helpvars1,el1,nextInd1) = generateHelpVarsInArrayCondition(nextInd+1,rest);
+      then ((nextInd,condition,-1)::helpvars1,condition::el1,nextInd1);
+        
+    case (_,_)
+      equation 
+        Error.addMessage(Error.INTERNAL_ERROR, 
+          {"generateHelpVarsInArrayCondition failed"});
+      then
+        fail();
+  end matchcontinue; 
+end generateHelpVarsInArrayCondition;
+
 protected function filterNg "function: filterNg
   This function sets the number of zero crossings to zero if events are disabled
 "
@@ -257,8 +449,8 @@ algorithm
   end matchcontinue;
 end filterNg;
 
-protected function generateGlobalData "function: generateGlobalData
- 
+protected function generateGlobalData 
+"
   This function generates the C-code for the global data: arrays for states,
   derivatives and algebraic variables, etc.
   arg1
@@ -268,16 +460,16 @@ protected function generateGlobalData "function: generateGlobalData
   arg5 an int which shows the number of help variables
   arg5 integer - number of residuals in initialization function.
 "
-  input Absyn.Path inPath1;
-  input DAELow.DAELow inDAELow2;
-  input Integer inInteger3;
-  input Integer inInteger4;
-  input Integer inInteger5;
-  input Integer inInteger6;
+  input Absyn.Path class_               "Path to the instatiated model";
+  input DAELow.DAELow loweredDAE			  "The lowered DAE";
+  input Integer numberOfOutputVariables "The number of output variables on top level";
+  input Integer numberOfInputVariables  "The number of input variables on top level";
+  input Integer numberOfHelpVariables   "The number of help variables";
+  input Integer numberOfResidulas       "Number of residuals in initialization function";
   output String outString;
 algorithm 
   outString:=
-  matchcontinue (inPath1,inDAELow2,inInteger3,inInteger4,inInteger5,inInteger6)
+  matchcontinue (class_,loweredDAE,numberOfOutputVariables,numberOfInputVariables,numberOfHelpVariables,numberOfResidulas)
     local
       Integer nx,ny,np,ng,ng_1,no,ni,nh,nres,next,ny_string,np_string;
       String initDeinitDataStructFunction,class_str,nx_str,ny_str,np_str,ng_str,no_str,ni_str,nh_str;
@@ -2720,26 +2912,28 @@ algorithm
   cfunc := Codegen.cAddCleanups(cfunc, {"restore_memory_state(mem_state);"});
 end addMemoryManagement;
 
-protected function buildWhenConditionChecks3 "function: buildWhenConditionChecks3
-  Helper function to build_when_condition_checks
+protected function buildWhenConditionChecks3 
+" Helper function to build_when_condition_checks. 
+  Generates code for checking one equation of one when clause.
 "
-  input list<Exp.Exp> inExpExpLst1;
-  input Integer inInteger2;
-  input Integer inInteger3;
-  output String outString;
-  output list<tuple<Integer, Exp.Exp, Integer>> outTplIntegerExpExpIntegerLst;
+  input list<Exp.Exp> whenConditions   "List of expressions from \"when {exp1, exp2, ...}\" ";
+  input Integer whenClauseIndex        "When clause index";
+  input Integer nextHelpIndex          "Next available help variable index";
+  input Boolean isElseWhen					   "Whether this lase is an elsewhen or not";
+  output String outString              "Generated c-code";
+  output list<HelpVarInfo> helpVarLst;
 algorithm 
-  (outString,outTplIntegerExpExpIntegerLst):=
-  matchcontinue (inExpExpLst1,inInteger2,inInteger3)
+  (outString,helpVarLst):=
+  matchcontinue (whenConditions,whenClauseIndex,nextHelpIndex,isElseWhen)
     local
       String i_str,helpVarIndexStr,res,resx,res_1;
-      tuple<Integer, Exp.Exp, Integer> helpInfo;
+      HelpVarInfo helpInfo;
       Integer helpVarIndex_1,i,helpVarIndex;
-      list<tuple<Integer, Exp.Exp, Integer>> helpVarInfoList;
+      list<HelpVarInfo> helpVarInfoList;
       Exp.Exp e;
       list<Exp.Exp> el;
-    case ({},_,_) then ("",{}); 
-    case ((e :: el),i,helpVarIndex)
+    case ({},_,_,_) then ("",{}); 
+    case ((e :: el),i,helpVarIndex, false)
       equation 
         i_str = intString(i);
         helpVarIndexStr = intString(helpVarIndex);
@@ -2748,11 +2942,24 @@ algorithm
           {"  if (edge(localData->helpVars[",helpVarIndexStr,"])) AddEvent(",i_str,
           " + localData->nZeroCrossing);\n"});
         helpVarIndex_1 = helpVarIndex + 1;
-        (resx,helpVarInfoList) = buildWhenConditionChecks3(el, i, helpVarIndex_1);
+        (resx,helpVarInfoList) = buildWhenConditionChecks3(el, i, helpVarIndex_1,false);
         res_1 = stringAppend(res, resx);
       then
         (res_1,(helpInfo :: helpVarInfoList));
-    case (_,_,_)
+    case ((e :: el),i,helpVarIndex, true)
+      equation 
+        i_str = intString(i);
+        helpVarIndexStr = intString(helpVarIndex);
+        helpInfo = (helpVarIndex,e,i);
+        res = Util.stringAppendList(
+          {"  else if (edge(localData->helpVars[",helpVarIndexStr,"])) AddEvent(",i_str,
+          " + localData->nZeroCrossing);\n"});
+        helpVarIndex_1 = helpVarIndex + 1;
+        (resx,helpVarInfoList) = buildWhenConditionChecks3(el, i, helpVarIndex_1,false);
+        res_1 = stringAppend(res, resx);
+      then
+        (res_1,(helpInfo :: helpVarInfoList));
+    case (_,_,_,_)
       equation 
         print("-build_when_condition_checks3 failed.\n");
       then
@@ -2760,21 +2967,21 @@ algorithm
   end matchcontinue;
 end buildWhenConditionChecks3;
 
-protected function buildWhenConditionChecks2 "
-  This function outputs checks for all when clauses that do not have equations but reinit statements
+protected function buildWhenConditionChecks2 
+" This function outputs checks for all when clauses that do not have equations but reinit statements.
 "
-  input list<DAELow.WhenClause> inDAELowWhenClauseLst1;
-  input Integer inInteger2;
-  input Integer inInteger3;
+  input list<DAELow.WhenClause> inDAELowWhenClauseLst1 "List of when clauses";
+  input Integer whenClauseIndex "index of the first when clause in inDAELowWhenClauseLst1";
+  input Integer nextHelpVarIndex;
   output String outString;
-  output list<tuple<Integer, Exp.Exp, Integer>> outTplIntegerExpExpIntegerLst;
+  output list<HelpVarInfo> helpVarLst;
 algorithm 
-  (outString,outTplIntegerExpExpIntegerLst):=
-  matchcontinue (inDAELowWhenClauseLst1,inInteger2,inInteger3)
+  (outString,helpVarLst):=
+  matchcontinue (inDAELowWhenClauseLst1,whenClauseIndex,nextHelpVarIndex)
     local
       Integer i_1,i,nextHelpIndex,numberOfNewHelpVars,nextHelpIndex_1;
       String res,res2,res1;
-      list<tuple<Integer, Exp.Exp, Integer>> helpVarInfoList,helpVarInfoList2,helpVarInfoList1;
+      list<HelpVarInfo> helpVarInfoList,helpVarInfoList2,helpVarInfoList1;
       DAELow.WhenClause wc;
       list<DAELow.WhenClause> xs;
       list<Exp.Exp> el;
@@ -2792,7 +2999,7 @@ algorithm
         (res2,helpVarInfoList2) = buildWhenConditionChecks2(xs, i_1, nextHelpIndex);
         numberOfNewHelpVars = listLength(helpVarInfoList2);
         nextHelpIndex_1 = nextHelpIndex + numberOfNewHelpVars;
-        (res1,helpVarInfoList1) = buildWhenConditionChecks3(el, i, nextHelpIndex_1);
+        (res1,helpVarInfoList1) = buildWhenConditionChecks3(el, i, nextHelpIndex_1,false);
         res = stringAppend(res1, res2);
         helpVarInfoList = listAppend(helpVarInfoList1, helpVarInfoList2);
       then
@@ -2803,7 +3010,7 @@ algorithm
         (res2,helpVarInfoList2) = buildWhenConditionChecks2(xs, i_1, nextHelpIndex);
         numberOfNewHelpVars = listLength(helpVarInfoList2);
         nextHelpIndex_1 = nextHelpIndex + numberOfNewHelpVars;
-        (res1,helpVarInfoList1) = buildWhenConditionChecks3({e}, i, nextHelpIndex_1);
+        (res1,helpVarInfoList1) = buildWhenConditionChecks3({e}, i, nextHelpIndex_1,false);
         res = stringAppend(res1, res2);
         helpVarInfoList = listAppend(helpVarInfoList1, helpVarInfoList2);
       then
@@ -2816,57 +3023,43 @@ algorithm
   end matchcontinue;
 end buildWhenConditionChecks2;
 
-protected function buildWhenConditionChecks4 "function: buildWhenConditionChecks4
-  Helper function to build_when_condition_checks
+protected function buildWhenConditionChecks4 
+" Helper function to build_when_condition_checks
+  This function generates checks for each when clause, sorted according to the order in which 
+  the equations inside them are sorted. The function buildWhenConditionChecks2 takes care
+  of all the when clauses that does not contain equations (only reinit).
 "
-  input list<Integer> inIntegerLst;
-  input list<DAELow.Equation> inDAELowEquationLst;
-  input list<DAELow.WhenClause> inDAELowWhenClauseLst;
-  input Integer inInteger;
-  output String outString;
-  output list<tuple<Integer, Exp.Exp, Integer>> outTplIntegerExpExpIntegerLst;
+  input list<Integer> orderOfEquations                "The sorting order of the equations.";
+  input list<DAELow.Equation> inDAELowEquationLst     "List of equations.";
+  input list<DAELow.WhenClause> inDAELowWhenClauseLst "List of when clauses.";
+  input Integer nextHelpVarIndex                      "index of the next generated help variable.";
+  output String outString                             "Generated event checking code";
+  output list<HelpVarInfo> helpVarLst									"List of help variables introduced in this function.";		
 algorithm 
-  (outString,outTplIntegerExpExpIntegerLst):=
-  matchcontinue (inIntegerLst,inDAELowEquationLst,inDAELowWhenClauseLst,inInteger)
+  (outString,helpVarLst):=
+  matchcontinue (orderOfEquations,inDAELowEquationLst,inDAELowWhenClauseLst,nextHelpVarIndex)
     local
-      Integer eqn_1,ind,ind_1,numberOfNewHelpVars,nextHelpIndex_1,eqn,nextHelpIndex;
-      Exp.ComponentRef cr;
-      Exp.Exp e;
-      list<Exp.Exp> el;
+      Integer eqn,nextHelpIndex;
       String res2,res1,res;
-      list<tuple<Integer, Exp.Exp, Integer>> helpVarInfoList2,helpVarInfoList1,helpVarInfoList;
+      list<HelpVarInfo> helpVarInfoList2,helpVarInfoList1,helpVarInfoList;
       list<Integer> rest;
       list<DAELow.Equation> eqnl;
       list<DAELow.WhenClause> whenClauseList;
+      DAELow.WhenEquation whenEq;
+
     case ({},_,_,_) then ("",{}); 
+
     case ((eqn :: rest),eqnl,whenClauseList,nextHelpIndex)
-      equation 
-        eqn_1 = eqn - 1;
-        DAELow.WHEN_EQUATION(DAELow.WHEN_EQ(ind,cr,e)) = listNth(eqnl, eqn_1);
-        ind_1 = ind - 1;
-        DAELow.WHEN_CLAUSE(Exp.ARRAY(_,_,el),_) = listNth(whenClauseList, ind);
-        (res2,helpVarInfoList2) = buildWhenConditionChecks4(rest, eqnl, whenClauseList, nextHelpIndex);
-        numberOfNewHelpVars = listLength(helpVarInfoList2);
-        nextHelpIndex_1 = nextHelpIndex + numberOfNewHelpVars;
-        (res1,helpVarInfoList1) = buildWhenConditionChecks3(el, ind, nextHelpIndex_1);
+      equation
+        DAELow.WHEN_EQUATION(whenEq) = listNth(eqnl, eqn-1);
+        (res2, helpVarInfoList2) = buildWhenConditionChecks4(rest, eqnl, whenClauseList, nextHelpIndex);
+        (res1, helpVarInfoList1) = buildWhenConditionCheckForEquation(SOME(whenEq), whenClauseList, false,
+                                       nextHelpIndex + listLength(helpVarInfoList2));
         res = stringAppend(res1, res2);
         helpVarInfoList = listAppend(helpVarInfoList1, helpVarInfoList2);
       then
         (res,helpVarInfoList);
-    case ((eqn :: rest),eqnl,whenClauseList,nextHelpIndex)
-      equation 
-        eqn_1 = eqn - 1;
-        DAELow.WHEN_EQUATION(DAELow.WHEN_EQ(ind,cr,e)) = listNth(eqnl, eqn_1);
-        ind_1 = ind - 1;
-        DAELow.WHEN_CLAUSE(e,_) = listNth(whenClauseList, ind);
-        (res2,helpVarInfoList2) = buildWhenConditionChecks4(rest, eqnl, whenClauseList, nextHelpIndex);
-        numberOfNewHelpVars = listLength(helpVarInfoList2);
-        nextHelpIndex_1 = nextHelpIndex + numberOfNewHelpVars;
-        (res1,helpVarInfoList1) = buildWhenConditionChecks3({e}, ind, nextHelpIndex_1);
-        res = stringAppend(res1, res2);
-        helpVarInfoList = listAppend(helpVarInfoList1, helpVarInfoList2);
-      then
-        (res,helpVarInfoList);
+                
     case ((_ :: rest),eqnl,whenClauseList,nextHelpIndex)
       equation 
         (res,helpVarInfoList) = buildWhenConditionChecks4(rest, eqnl, whenClauseList, nextHelpIndex);
@@ -2879,6 +3072,68 @@ algorithm
         fail();
   end matchcontinue;
 end buildWhenConditionChecks4;
+
+protected function buildWhenConditionCheckForEquation "
+	Generates eventchecking code given a when equation.
+"
+  input Option<DAELow.WhenEquation> whenEq            "The equation to check for";
+  input list<DAELow.WhenClause> inDAELowWhenClauseLst "List of when clauses.";
+  input Boolean isElseWhen                            "Whether the equation is inside an elsewhen or not.";
+  input Integer nextHelpIndex                         "Next avalable help variable index.";
+  output String outString                             "Generated event checking code";
+  output list<HelpVarInfo> helpVarLst									"List of help variables introduced in this function.";		
+algorithm
+  (outString, helpVarLst) :=
+  matchcontinue (whenEq,inDAELowWhenClauseLst,isElseWhen, nextHelpIndex)
+    local
+      Boolean isElseWhen;
+      Integer nextHelpInd, ind;
+      Exp.ComponentRef cr;
+      Exp.Exp exp;
+      String res1,res2,res;
+      Option<DAELow.WhenEquation> elsePart;
+      list<Exp.Exp> conditionList;
+      list<HelpVarInfo> helpVars1,helpVars2, helpVars;
+      list<DAELow.WhenClause> whenClauseList;
+    case (SOME(DAELow.WHEN_EQ(ind,cr,exp,elsePart)),whenClauseList,isElseWhen,nextHelpInd)
+      equation
+        conditionList = getConditionList(whenClauseList, ind);
+        (res1,helpVars1) = buildWhenConditionChecks3(conditionList, ind, nextHelpInd,isElseWhen);
+        (res2,helpVars2) = buildWhenConditionCheckForEquation(elsePart, whenClauseList, true, 
+          nextHelpInd + listLength(helpVars1));
+        res = stringAppend(res1,res2);
+        helpVars = listAppend(helpVars1,helpVars2);
+      then
+        (res,helpVars);
+    case (NONE,_,_,_) 
+      then ("",{});
+  end matchcontinue;
+end buildWhenConditionCheckForEquation;
+
+protected function getConditionList "
+"
+
+  input list<DAELow.WhenClause> whenClauseList;
+  input Integer index;
+  output list<Exp.Exp> conditionList;
+algorithm
+  conditionList := matchcontinue (whenClauseList, index)
+    local
+      list<DAELow.WhenClause> whenClauseList;
+      Integer ind;
+      list<Exp.Exp> conditionList;
+      Exp.Exp e;
+      
+    case (whenClauseList, ind)
+      equation
+        DAELow.WHEN_CLAUSE(condition=Exp.ARRAY(_,_,conditionList)) = listNth(whenClauseList, ind);
+      then conditionList;
+    case (whenClauseList, ind)
+      equation
+        DAELow.WHEN_CLAUSE(condition=e) = listNth(whenClauseList, ind);
+      then {e}; 
+  end matchcontinue;
+end getConditionList;
 
 protected function addMissingEquations "function: addMissingEquations
   Helper function to build_when_condition_checks
@@ -2903,7 +3158,7 @@ algorithm
       then
         lst_1;
     case (n,lst) /* missing equations must be added in correct order,
-	 required in building when_condiriont_cheks4 */ 
+	 required in building whenConditionChecks4 */ 
       equation 
         n_1 = n - 1;
         lst_1 = addMissingEquations(n_1, lst);
@@ -2987,7 +3242,8 @@ algorithm
     Boolean b1,b2;
     case(cr,daelow,{}) then true;
     case(cr,daelow as DAELow.DAELOW(orderedEqs=eqs),e::eqns) equation
-      DAELow.WHEN_EQUATION(DAELow.WHEN_EQ(_,cr2,exp)) = DAELow.equationNth(eqs,intAbs(e)-1);
+      DAELow.WHEN_EQUATION(DAELow.WHEN_EQ(_,cr2,exp,_)) = DAELow.equationNth(eqs,intAbs(e)-1);
+      //We can asume the same component refs are solved in any else-branch.
       b1 = Exp.crefEqual(cr,cr2);
      b2 = Exp.expContains(exp,Exp.CREF(cr,Exp.OTHER()));
      true = boolOr(b1,b2);
@@ -3048,7 +3304,8 @@ algorithm
   end matchcontinue;
 end zeroCrossingsContainIndex;
 
-protected function buildDiscreteVarChangesAddEvent "help function to buildDiscreteVarChangesVar2
+protected function buildDiscreteVarChangesAddEvent 
+"help function to buildDiscreteVarChangesVar2
 Generates 'if (change(v)) needToIterate=1 for and index i and variable v"
   input Integer indx;
   input Exp.ComponentRef cr;
@@ -3061,21 +3318,22 @@ algorithm
 	str := Util.stringAppendList({"if (change(",crStr,")) { needToIterate=1; }"});
 end buildDiscreteVarChangesAddEvent;
   
-protected function buildWhenConditionChecks "function:  buildWhenConditionChecks
-"
-  input DAELow.DAELow inDAELow;
-  input list<list<Integer>> inIntegerLstLst;
-  output String outString;
-  output list<tuple<Integer, Exp.Exp, Integer>> outTplIntegerExpExpIntegerLst;
+protected function buildWhenConditionChecks 
+"function:  buildWhenConditionChecks
+Generates simulation code that checks whether a when condition has become true."
+  input DAELow.DAELow inDAELow          "The lowered DAE";
+  input list<list<Integer>> comps       "The order of the sorted equations";
+  output String outString               "The generated C-code";
+  output list<HelpVarInfo> helpVarList  "List of help variables that were introduced by this function.";
 algorithm 
-  (outString,outTplIntegerExpExpIntegerLst):=
-  matchcontinue (inDAELow,inIntegerLstLst)
+  (outString,helpVarLst):=
+  matchcontinue (inDAELow,comps)
     local
       list<Integer> orderOfEquations,orderOfEquations_1;
       list<DAELow.Equation> eqnl;
       Integer n;
       String res1,res2,res;
-      list<tuple<Integer, Exp.Exp, Integer>> helpVarInfo1,helpVarInfo2,helpVarInfo;
+      list<HelpVarInfo> helpVarInfo1,helpVarInfo2,helpVarInfo;
       DAELow.DAELow dlow;
       DAELow.EquationArray eqns;
       list<DAELow.WhenClause> whenClauseList;
@@ -3086,8 +3344,10 @@ algorithm
         eqnl = DAELow.equationList(eqns);
         n = listLength(eqnl);
         orderOfEquations_1 = addMissingEquations(n, orderOfEquations);
+        // First generate checks for all when equations, in the order of the sorted equations.
         (res1,helpVarInfo1) = buildWhenConditionChecks4(orderOfEquations_1, eqnl, whenClauseList, 0);
         n = listLength(helpVarInfo1);
+        // Generate checks also for when clauses without equations but containing reinit statements.
         (res2,helpVarInfo2) = buildWhenConditionChecks2(whenClauseList, 0, n);
         res = stringAppend(res1, res2);
         helpVarInfo = listAppend(helpVarInfo1, helpVarInfo2);
@@ -3111,15 +3371,15 @@ protected function generateEventCheckingCode "function:  generateEventCheckingCo
   input DAELow.IncidenceMatrix inIncidenceMatrix5;
   input DAELow.IncidenceMatrixT inIncidenceMatrixT6;
   input Absyn.Path inPath7;
-  output String outString;
-  output list<tuple<Integer, Exp.Exp, Integer>> outTplIntegerExpExpIntegerLst;
+  output String outString "Generated event checking code";
+  output list<HelpVarInfo> helpVarLst "List of introduced help variables";
 algorithm 
-  (outString,outTplIntegerExpExpIntegerLst):=
+  (outString,helpVarLst):=
   matchcontinue (inDAELow1,inIntegerLstLst2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inPath7)
     local
       Boolean usezc;
       String check_code,check_code_1,res,check_code2,check_code2_1;
-      list<tuple<Integer, Exp.Exp, Integer>> helpVarInfo;
+      list<HelpVarInfo> helpVarInfo;
       DAELow.DAELow dlow;
       list<list<Integer>> comps;
       Integer[:] ass1,ass2;
@@ -3292,7 +3552,7 @@ algorithm
         //s = DAELow.dumpJacobianStr(jac);
         //print("jacobian ="); print(s); print("\n");       
         
-        (s2,cg_id_1,f1) = generateOdeSystem2(false,cont_subsystem_dae, jac, jac_tp, cg_id);
+        (s2,cg_id_1,f1) = generateOdeSystem2(false,false,cont_subsystem_dae, jac, jac_tp, cg_id);
       then
         (s2,cg_id_1,f1);
         
@@ -3315,7 +3575,7 @@ algorithm
         jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_1, mt_1) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
         jac_tp = DAELow.analyzeJacobian(cont_subsystem_dae, jac);
         (s0,cg_id1,numValues) = generateMixedHeader(cont_eqn, cont_var, disc_eqn, disc_var, cg_id);
-        (Codegen.CFUNCTION(rettp,fn,retrec,arg,locvars,init,stmts,cleanups),cg_id2,extra_funcs1) = generateOdeSystem2(true/*mixed system*/,cont_subsystem_dae, jac, jac_tp, cg_id1);
+        (Codegen.CFUNCTION(rettp,fn,retrec,arg,locvars,init,stmts,cleanups),cg_id2,extra_funcs1) = generateOdeSystem2(true/*mixed system*/,true,cont_subsystem_dae, jac, jac_tp, cg_id1);
         stmts_1 = Util.listFlatten({{"{"},locvars,stmts,{"}"}}) "initialization of e.g. matrices for linsys must be done in each
 	    iteration, create new scope and put them first." ;
         s2_1 = Codegen.CFUNCTION(rettp,fn,retrec,arg,{},init,stmts_1,cleanups);
@@ -3339,7 +3599,7 @@ algorithm
         mt_1 = DAELow.transposeMatrix(m_1);
         jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_1, mt_1) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
         jac_tp = DAELow.analyzeJacobian(subsystem_dae, jac);
-        (s1,cg_id_1,f1) = generateOdeSystem2(false,subsystem_dae, jac, jac_tp, cg_id) "	print \"generating subsystem :\" &
+        (s1,cg_id_1,f1) = generateOdeSystem2(false,genDiscrete,subsystem_dae, jac, jac_tp, cg_id) "	print \"generating subsystem :\" &
 	DAELow.dump subsystem_dae &" ;
       then
         (s1,cg_id_1,f1);
@@ -3913,6 +4173,7 @@ protected function generateOdeSystem2 "function: generateOdeSystem2
   its jacobian and type has been given.
 "
   input Boolean mixedEvent "true if generating the mixed system event code";
+  input Boolean genDiscrete;
   input DAELow.DAELow inDAELow;
   input Option<list<tuple<Integer, Integer, DAELow.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
   input DAELow.JacobianType inJacobianType;
@@ -3922,7 +4183,7 @@ protected function generateOdeSystem2 "function: generateOdeSystem2
   output list<CFunction> outCFunctionLst;
 algorithm 
   (outCFunction,outInteger,outCFunctionLst):=
-  matchcontinue (mixedEvent,inDAELow,inTplIntegerIntegerDAELowEquationLstOption,inJacobianType,inInteger)
+  matchcontinue (mixedEvent,genDiscrete,inDAELow,inTplIntegerIntegerDAELowEquationLstOption,inJacobianType,inInteger)
     local
       Codegen.CFunction s1,s2,s3,s4,s5,s;
       Integer cg_id_1,cg_id,eqn_size,unique_id,cg_id1,cg_id2,cg_id3,cg_id4,cg_id5;
@@ -3936,9 +4197,10 @@ algorithm
       list<DAELow.Var> var_lst;
       list<Exp.ComponentRef> crefs;
       DAELow.MultiDimEquation[:] ae;
-     
+      Boolean genDiscrete;
+      
       /* A single array equation */ 
-    case (mixedEvent,dae,jac,jac_tp,cg_id) 
+    case (mixedEvent,_,dae,jac,jac_tp,cg_id) 
       equation 
         singleArrayEquation(dae);
         (s1,cg_id_1,f1) = generateSingleArrayEqnCode(dae, jac, cg_id);
@@ -3946,27 +4208,27 @@ algorithm
         (s1,cg_id_1,f1);
         
         /* A single algorithm section for several variables. */ 
-    case (mixedEvent,dae,jac,jac_tp,cg_id) 
+    case (mixedEvent,genDiscrete,dae,jac,jac_tp,cg_id) 
       equation 
         singleAlgorithmSection(dae);
-        (s1,cg_id_1,f1) = generateSingleAlgorithmCode(dae, jac, cg_id);
+        (s1,cg_id_1,f1) = generateSingleAlgorithmCode(genDiscrete, dae, jac, cg_id);
       then
         (s1,cg_id_1,f1);
  
         /* constant jacobians. Linear system of equations (A x = b) where
          A and b are constants. TODO: implement symbolic gaussian elimination here. Currently uses dgesv as 
          for next case */ 
-    case (mixedEvent,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_CONSTANT(),cg_id) 
+    case (mixedEvent,genDiscrete,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_CONSTANT(),cg_id) 
       local list<tuple<Integer, Integer, DAELow.Equation>> jac;
       equation 
         eqn_size = DAELow.equationSize(eqn);
-        (s1,cg_id_1,f1) = generateOdeSystem2(mixedEvent,d, SOME(jac), DAELow.JAC_TIME_VARYING(), cg_id) "NOTE: Not impl. yet, use time_varying..." ;
+        (s1,cg_id_1,f1) = generateOdeSystem2(mixedEvent,genDiscrete,d, SOME(jac), DAELow.JAC_TIME_VARYING(), cg_id) "NOTE: Not impl. yet, use time_varying..." ;
       then
         (s1,cg_id_1,f1);
 
 	/* Time varying jacobian. Linear system of equations that needs to 
 		  be solved during runtime. */
-    case (mixedEvent,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_TIME_VARYING(),cg_id)  
+    case (mixedEvent,_,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_TIME_VARYING(),cg_id)  
       local list<tuple<Integer, Integer, DAELow.Equation>> jac;
       equation 
         //print("linearSystem of equations:");
@@ -3981,7 +4243,7 @@ algorithm
         s = Codegen.cMergeFns({s1,s2,s3,s4});
       then
         (s,cg_id4,{});
-    case (mixedEvent,DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),SOME(jac),DAELow.JAC_NONLINEAR(),cg_id) /* Time varying nonlinear jacobian. Non-linear system of equations */ 
+    case (mixedEvent,_,DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),SOME(jac),DAELow.JAC_NONLINEAR(),cg_id) /* Time varying nonlinear jacobian. Non-linear system of equations */ 
       local list<tuple<Integer, Integer, DAELow.Equation>> jac;
       equation 
  
@@ -3991,7 +4253,7 @@ algorithm
         (s1,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(mixedEvent,crefs, eqn_lst,ae, cg_id);
       then
         (s1,cg_id_1,f1);
-    case (mixedEvent,DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),NONE,DAELow.JAC_NO_ANALYTIC(),cg_id) /* no analythic jacobian available. Generate non-linear system */ 
+    case (mixedEvent,_,DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),NONE,DAELow.JAC_NO_ANALYTIC(),cg_id) /* no analythic jacobian available. Generate non-linear system */ 
       equation 
         eqn_lst = DAELow.equationList(eqn);
         var_lst = DAELow.varList(v);
@@ -3999,7 +4261,7 @@ algorithm
         (s1,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(mixedEvent,crefs, eqn_lst, ae, cg_id);
       then
         (s1,cg_id_1,f1);
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation 
         Debug.fprint("failtrace", "-generate_ode_system2 failed \n");
       then
@@ -4012,6 +4274,7 @@ protected function generateSingleAlgorithmCode "function: generateSingleAlgorith
  
   Generates code for a system consisting of a  single algorithm.
 "
+  input Boolean genDiscrete;
   input DAELow.DAELow inDAELow;
   input Option<list<tuple<Integer, Integer, DAELow.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
   input Integer inInteger;
@@ -4020,7 +4283,7 @@ protected function generateSingleAlgorithmCode "function: generateSingleAlgorith
   output list<CFunction> outCFunctionLst;
 algorithm 
   (outCFunction,outInteger,outCFunctionLst):=
-  matchcontinue (inDAELow,inTplIntegerIntegerDAELowEquationLstOption,inInteger)
+  matchcontinue (genDiscrete,inDAELow,inTplIntegerIntegerDAELowEquationLstOption,inInteger)
     local
       Integer indx,cg_id_1,cg_id;
       list<Integer> ds;
@@ -4038,7 +4301,8 @@ algorithm
       list<Exp.Exp> algOutExpVars;
       Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
       String message,algStr;
-    case (DAELow.DAELOW(orderedVars = vars,knownVars = knvars,orderedEqs = eqns,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = ev),jac,cg_id) /* eqn code cg var_id extra functions */ 
+      Boolean genDiscrete;
+    case (genDiscrete, DAELow.DAELOW(orderedVars = vars,knownVars = knvars,orderedEqs = eqns,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = ev),jac,cg_id) /* eqn code cg var_id extra functions */ 
       equation 
         (DAELow.ALGORITHM(indx,_,algOutExpVars) :: _) = DAELow.equationList(eqns);
         alg = al[indx + 1];
@@ -4046,11 +4310,11 @@ algorithm
         algOutVars = Util.listMap(algOutExpVars,Exp.expCref);
         // The variables solved for and the output variables of the algorithm must be the same.
         true = Util.listSetEqualOnTrue(solvedVars,algOutVars,Exp.crefEqual);
-        (s1,cg_id) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), 1, Codegen.simContext);
-      then (s1,cg_id,{});
+        (s1,cg_id_1) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), cg_id, Codegen.CONTEXT(Codegen.SIMULATION(genDiscrete),Codegen.NORMAL(),Codegen.NO_LOOP));
+      then (s1,cg_id_1,{});
 
         /* Error message, inverse algorithms not supported yet */
- 	 case (DAELow.DAELOW(orderedVars = vars,knownVars = knvars,orderedEqs = eqns,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = ev),jac,cg_id) 
+ 	 case (genDiscrete,DAELow.DAELOW(orderedVars = vars,knownVars = knvars,orderedEqs = eqns,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = ev),jac,cg_id) 
       equation 
         (DAELow.ALGORITHM(indx,_,algOutExpVars) :: _) = DAELow.equationList(eqns);
         alg = al[indx + 1];
@@ -4066,7 +4330,7 @@ algorithm
           {message});
       then fail();
         
-    case (_,_,_)
+    case (_,_,_,_)
       equation 
         Error.addMessage(Error.INTERNAL_ERROR, 
           {
@@ -5312,7 +5576,7 @@ algorithm
         isNonState(kind);
         varexp = Exp.CREF(cr,Exp.REAL());
         expr = Exp.solve(e1, e2, varexp);
-        (exp_func,var,cg_id_1) = Codegen.generateExpression(expr, cg_id, Codegen.simContext);
+        (exp_func,var,cg_id_1) = Codegen.generateExpression(expr, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(genDiscrete),Codegen.NORMAL(),Codegen.NO_LOOP));
         cr_str = Exp.printComponentRefStr(cr);
         stmt = Util.stringAppendList({cr_str," = ",var,";"});
         res = Codegen.cAddStatements(exp_func, {stmt});
@@ -5329,7 +5593,7 @@ algorithm
         cr_1 = Exp.CREF_IDENT(id,{});
         varexp = Exp.CREF(cr_1,Exp.REAL());
         expr = Exp.solve(e1, e2, varexp);
-        (exp_func,var,cg_id_1) = Codegen.generateExpression(expr, cg_id, Codegen.simContext);
+        (exp_func,var,cg_id_1) = Codegen.generateExpression(expr, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(genDiscrete),Codegen.NORMAL(),Codegen.NO_LOOP));
         cr_str = Exp.printComponentRefStr(cr_1);
         stmt = Util.stringAppendList({cr_str," = ",var,";"});
         res = Codegen.cAddStatements(exp_func, {stmt});
@@ -5384,8 +5648,8 @@ algorithm
 				// solve an inverse problem of an algorithm section.
       true = Exp.crefEqual(DAELow.varCref(v),varOutput);
       alg = alg[indx + 1];
-      (cfunc,cg_id) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), 1, Codegen.simContext);
-      then (cfunc,cg_id,{});
+      (cfunc,cg_id_1) = Codegen.generateAlgorithm(DAE.ALGORITHM(alg), cg_id, Codegen.CONTEXT(Codegen.SIMULATION(genDiscrete),Codegen.NORMAL(),Codegen.NO_LOOP));
+      then (cfunc,cg_id_1,{});
         
         /* inverse Algorithm for single variable . */
     case (genDiscrete,DAELow.DAELOW(orderedVars = vars, orderedEqs = eqns,algorithms=alg),ass1,ass2,e,cg_id)
@@ -5937,40 +6201,6 @@ algorithm
   end matchcontinue;
 end dumpWhenClauseStr;
 
-protected function generateHelpvarUpdates "function: generateHelpvarUpdates
-  Gerates code for updating help variables
-"
-  input list<tuple<Integer, Exp.Exp, Integer>> inTplIntegerExpExpIntegerLst;
-  output String outString;
-algorithm 
-  outString:=
-  matchcontinue (inTplIntegerExpExpIntegerLst)
-    local
-      String eStr,hindStr,restStr,res;
-      tuple<Integer, Exp.Exp, Integer> helpvar;
-      Integer hindex;
-      Exp.Exp e;
-      list<tuple<Integer, Exp.Exp, Integer>> rest;
-    case ({}) then ""; 
-    case (((helpvar as (hindex,e,_)) :: rest))
-      equation 
-        // new design: We should generate all helpvar vars, not just ones without relations.
-        //{} = Exp.getRelations(e); 
-        
-        eStr = printExpCppStr(e);
-        hindStr = intString(hindex);
-        restStr = generateHelpvarUpdates(rest);
-        res = Util.stringAppendList({"  localData->helpVars[",hindStr,"] = ",eStr,";\n",restStr});
-      then
-        res;
-    case ((_ :: rest))
-      equation 
-        restStr = generateHelpvarUpdates(rest);
-      then
-        restStr;
-  end matchcontinue;
-end generateHelpvarUpdates;
-
 protected function generateZeroCrossing "function: generateZeroCrossing
   Generates code for handling zerocrossings as well as the 
   zero crossing function given to the solver
@@ -5981,14 +6211,15 @@ protected function generateZeroCrossing "function: generateZeroCrossing
   input Integer[:] inIntegerArray4;
   input Integer[:] inIntegerArray5;
   input list<list<Integer>> inIntegerLstLst6;
-  input list<tuple<Integer, Exp.Exp, Integer>> inTplIntegerExpExpIntegerLst7;
+  input list<HelpVarInfo> helpVarLst; 
   output String outString;
 algorithm 
   outString:=
-  matchcontinue (inString1,inDAElist2,inDAELow3,inIntegerArray4,inIntegerArray5,inIntegerLstLst6,inTplIntegerExpExpIntegerLst7)
+  matchcontinue (inString1,inDAElist2,inDAELow3,inIntegerArray4,inIntegerArray5,inIntegerLstLst6,helpVarLst)
     local
-      Codegen.CFunction func_zc,func_handle_zc,cfunc,cfunc0_1,cfunc0,cfunc_1,cfunc_2,func_zc0,func_handle_zc0,func_handle_zc0_1,func_handle_zc0_2,func_handle_zc0_3,func_zc0_1,func_zc_1,func_handle_zc_1;
-      Integer cg_id1,cg_id2;
+      Codegen.CFunction func_zc,func_handle_zc,cfunc,cfunc0_1,cfunc0,cfunc_1,cfunc_2,func_zc0,func_handle_zc0,func_handle_zc0_1;
+      Codegen.CFunction func_handle_zc0_2,func_handle_zc0_3,func_zc0_1,func_zc_1,func_handle_zc_1,cfuncHelpvars;
+      Integer cg_id1,cg_id2,cg_id;
       list<CFunction> extra_funcs1,extra_funcs2,extra_funcs;
       String extra_funcs_str,helpvarUpdateStr,func_str,res,cname;
       DAE.DAElist dae;
@@ -5996,25 +6227,28 @@ algorithm
       list<DAELow.ZeroCrossing> zc;
       Integer[:] ass1,ass2;
       list<list<Integer>> blocks;
-      list<tuple<Integer, Exp.Exp, Integer>> helpVarInfo;
+      list<HelpVarInfo> helpVarInfo;
     case (cname,dae,(dlow as DAELow.DAELOW(eventInfo = DAELow.EVENT_INFO(zeroCrossingLst = zc))),ass1,ass2,blocks,helpVarInfo)
       equation 
-        (func_zc,cg_id1,func_handle_zc,cg_id2,extra_funcs1) = generateZeroCrossing2(zc, 0, dae, dlow, ass1, ass2, blocks, helpVarInfo, 0, 0);
-        (cfunc,_,extra_funcs2) = generateOdeBlocks(true,dlow, ass1, ass2, blocks, 0);
+        (cfunc,cg_id,extra_funcs2) = generateOdeBlocks(true,dlow, ass1, ass2, blocks, 0);
+        (func_zc,cg_id1,func_handle_zc,cg_id2,extra_funcs1) = generateZeroCrossing2(zc, 0, dae, dlow, ass1, ass2, blocks, helpVarInfo, 0, 0); // testing here
+        (cfuncHelpvars,cg_id) = generateHelpVarAssignments(helpVarInfo,cg_id);
         extra_funcs = listAppend(extra_funcs1, extra_funcs2);
         extra_funcs_str = Codegen.cPrintFunctionsStr(extra_funcs);
         cfunc0_1 = Codegen.cMakeFunction("int", "function_updateDependents", {}, {""});
         cfunc0_1 = addMemoryManagement(cfunc0_1);
-        cfunc0 = Codegen.cAddCleanups(cfunc0_1, {"return 0;"});
-        cfunc_1 = Codegen.cMergeFns({cfunc0,cfunc});
-        helpvarUpdateStr = generateHelpvarUpdates(helpVarInfo);
-        cfunc_2 = Codegen.cAddStatements(cfunc_1, {helpvarUpdateStr});
+        cfunc0_1 = Codegen.cAddInits(cfunc0_1, {"inUpdate=initial()?0:1;"});
+        cfunc0 = Codegen.cAddCleanups(cfunc0_1, {"inUpdate=0;","return 0;"});
+        cfunc_2 = Codegen.cMergeFns({cfunc0,cfunc,cfuncHelpvars});
+
         func_zc0 = Codegen.cMakeFunction("int", "function_zeroCrossing", {}, 
           {"long *neqm","double *t","double *x","long *ng",
           "double *gout","double *rpar","long* ipar"});
         func_zc0 = Codegen.cAddVariables(func_zc0,{"double timeBackup;"});
         func_zc0 = Codegen.cAddStatements(func_zc0,{"timeBackup = localData->timeValue;",
-                                                    "localData->timeValue = *t;"});
+                                                    "localData->timeValue = *t;"
+                                                    ,"functionODE();"
+                                                    });
 
 
         func_handle_zc0 = Codegen.cMakeFunction("int", "handleZeroCrossing", {}, {"long index"});
@@ -6050,7 +6284,7 @@ protected function generateZeroCrossing2 "function: generateZeroCrossing2
   input Integer[:] inIntegerArray5;
   input Integer[:] inIntegerArray6;
   input list<list<Integer>> inIntegerLstLst7;
-  input list<tuple<Integer, Exp.Exp, Integer>> inTplIntegerExpExpIntegerLst8;
+  input list<HelpVarInfo> helpVarLst;  // not used her anymore
   input Integer inInteger9;
   input Integer inInteger10;
   output CFunction outCFunction1;
@@ -6060,13 +6294,13 @@ protected function generateZeroCrossing2 "function: generateZeroCrossing2
   output list<CFunction> outCFunctionLst5;
 algorithm 
   (outCFunction1,outInteger2,outCFunction3,outInteger4,outCFunctionLst5):=
-  matchcontinue (inDAELowZeroCrossingLst1,inInteger2,inDAElist3,inDAELow4,inIntegerArray5,inIntegerArray6,inIntegerLstLst7,inTplIntegerExpExpIntegerLst8,inInteger9,inInteger10)
+  matchcontinue (inDAELowZeroCrossingLst1,inInteger2,inDAElist3,inDAELow4,inIntegerArray5,inIntegerArray6,inIntegerLstLst7,helpVarLst,inInteger9,inInteger10)
     local
       Integer cg_id1,cg_id2,index_1,cg_id1_1,cg_id2_1,cg_id2_2,index;
       String zc_str,index_str,stmt1,rettp,fn,case_stmt,help_var_str,res;
       Codegen.CFunction cfunc1,cfunc2,cfunc2_1,cfunc2_2,cfunc1_1;
       list<CFunction> extra_funcs1,extra_funcs2,extra_funcs;
-      list<tuple<Integer, Exp.Exp, Integer>> usedHelpVars,helpVarInfo;
+      list<HelpVarInfo> usedHelpVars,helpVarInfo;
       list<String> retrec,arg,init,stmts,vars,cleanups,stmts_1,stmts_2;
       DAELow.ZeroCrossing zc;
       list<Integer> eql;
@@ -6090,24 +6324,14 @@ algorithm
         (cfunc1,cg_id1_1,cfunc2,cg_id2_1,extra_funcs1) = generateZeroCrossing2(xs, index_1, dae, dlow, ass1, ass2, blocks, helpVarInfo, 
           cg_id1, cg_id2);
         stmt1 = Util.stringAppendList({"ZEROCROSSING(",index_str,",",zc_str,");\n"});
-				
-				// new design, we should generate code for all helpvars, not just the affected ones.
-        //usedHelpVars = Util.listSelect1(helpVarInfo, (index,dlow), isZeroCrossingAffectingHelpVar);
-        usedHelpVars = helpVarInfo;
-        
-        
         (Codegen.CFUNCTION(rettp,fn,retrec,arg,vars,init,stmts,cleanups),saveStmts,cg_id2_2,extra_funcs2) = buildZeroCrossingEqns(dae, dlow, ass1, ass2, eql, blocks, cg_id2_1);
         case_stmt = Util.stringAppendList({"case ",index_str,":\n"});
         stmts = listAppend(saveStmts,stmts); // save statements before all equations
         //stmts_1 = (case_stmt :: stmts);  
         stmts_1 = case_stmt :: saveStmts; // new design: only save in case section, rest is done in updateDependents
 	    	
-	    	// new design. Skip this in handleZeroCrossing
-	      help_var_str = buildHelpVarAssignments(usedHelpVars);
-	      help_var_str = "";
 	      
-	      
-        stmts_2 = listAppend(stmts_1, {help_var_str,"break;"});
+        stmts_2 = listAppend(stmts_1, {"break;"});
         cfunc2_1 = Codegen.CFUNCTION(rettp,fn,retrec,arg,vars,init,stmts_2,cleanups);
         cfunc2_2 = Codegen.cMergeFns({cfunc2_1,cfunc2});
         cfunc1_1 = Codegen.cPrependStatements(cfunc1, {stmt1});
@@ -6232,57 +6456,35 @@ algorithm
   end matchcontinue;
 end dumpZeroCrossingStr;
 
-protected function isZeroCrossingAffectingHelpVar
-  input tuple<Integer, Exp.Exp, Integer> inTplIntegerExpExpInteger;
-  input tuple<Integer, DAELow.DAELow> inTplIntegerDAELowDAELow;
-  output Boolean outBoolean;
-algorithm 
-  outBoolean:=
-  matchcontinue (inTplIntegerExpExpInteger,inTplIntegerDAELowDAELow)
-    local
-      Integer whenClauseIndex_1,whenClauseIndex,zcIndex;
-      list<Integer> zeroCrossings;
-      Exp.Exp e;
-      DAELow.DAELow dlow;
-    case ((_,e,whenClauseIndex),(zcIndex,dlow))
-      equation 
-        whenClauseIndex_1 = whenClauseIndex + 1;
-        zeroCrossings = DAELow.getZeroCrossingIndicesFromWhenClause(dlow, whenClauseIndex_1);
-        _ = Util.listGetMember(zcIndex, zeroCrossings);
-      then
-        true;
-    case (_,_) then false; 
-  end matchcontinue;
-end isZeroCrossingAffectingHelpVar;
+protected function generateHelpVarAssignments 
 
-protected function buildHelpVarAssignments
-  input list<tuple<Integer, Exp.Exp, Integer>> inTplIntegerExpExpIntegerLst;
-  output String outString;
+  input list<HelpVarInfo> helpVarLst;
+  input Integer inInteger;
+  output CFunction outCFunction;
+  output Integer outInteger;
 algorithm 
-  outString:=
-  matchcontinue (inTplIntegerExpExpIntegerLst)
+  (outCFunction,outInteger):=
+  matchcontinue (inDAELowVarLst,inInteger)
     local
-      String expr_str,ind_str,res1,res2,res;
+      Integer cg_id,cg_id_1;
+      String ind_str, assign,var;
+      CFunction cfunc,cfunc1,cfunc2,cfn;
       Integer helpVarIndex;
+      list<HelpVarInfo> rest;
       Exp.Exp e;
-      list<tuple<Integer, Exp.Exp, Integer>> rest;
-    case ({}) then ""; 
-    case (((helpVarIndex,e,_) :: rest))
-      equation 
-        expr_str = printExpCppStr(e);
+    case ({},cg_id) then (Codegen.cEmptyFunction,cg_id);  /* cg_id cg var_id */ 
+    case (((helpVarIndex,e,_) :: rest),cg_id)
+      equation
         ind_str = intString(helpVarIndex);
-        res1 = Util.stringAppendList({"    localData->helpVars[",ind_str,"] = ",expr_str,";\n"});
-        res2 = buildHelpVarAssignments(rest);
-        res = stringAppend(res1, res2);
+        (cfunc,var,cg_id) = Codegen.generateExpression(e, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(true),Codegen.NORMAL(),Codegen.NO_LOOP));
+        assign = Util.stringAppendList({"localData->helpVars[",ind_str,"] = ",var,";"});
+        cfunc1 = Codegen.cAddStatements(cfunc, {assign});
+        (cfunc2,cg_id_1) = generateHelpVarAssignments(rest, cg_id);
+        cfn = Codegen.cMergeFns({cfunc1,cfunc2});
       then
-        res;
-    case (_)
-      equation 
-        Error.addMessage(Error.INTERNAL_ERROR, {"build_help_var_assignments failed"});
-      then
-        fail();
+        (cfn,cg_id_1);
   end matchcontinue;
-end buildHelpVarAssignments;
+end generateHelpVarAssignments;
 
 protected function printZeroCrossingOpStr
   input Exp.Operator inOperator;
@@ -6475,14 +6677,14 @@ algorithm
       String cr_str,save_stmt,rettp,fn,stmt;
       list<DAELow.Equation> eqn_lst,cont_eqn,disc_eqn;
       list<DAELow.Var> var_lst,cont_var,disc_var,cont_var1;
-      DAELow.Variables vars_1,knvars,exvars;
+      DAELow.Variables vars, vars_1,knvars,exvars;
       DAELow.EquationArray eqns_1,eqns,se,ie;
       DAELow.DAELow cont_subsystem_dae,dlow;
       list<Integer>[:] m,m_1,mt_1;
       Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
       DAELow.JacobianType jac_tp;
       Codegen.CFunction s0,s2_1,s4,s3,s1,cfn3,cfn,cfn2,cfn1;
-      list<String> retrec,arg,vars,init,stmts,cleanups,stmts_1;
+      list<String> retrec,arg,init,stmts,cleanups,stmts_1;
       list<CFunction> extra_funcs1,extra_funcs2,extra_funcs;
       DAE.DAElist dae;
       DAELow.MultiDimEquation[:] ae;
@@ -6506,38 +6708,42 @@ algorithm
         eqn_lst = Util.listMap(eqn_lst,replaceEqnGreaterWithGreaterEq); //temporary fix to make events occur. Remove once mixed systems are solved analythically"        
         (cont_eqn,cont_var,disc_eqn,disc_var) = splitMixedEquations(eqn_lst, var_lst);
 				cont_var1 = Util.listMap(cont_var, transformXToXd); // States are solved for der(x) not x.
-        vars_1 = DAELow.listVar(cont_var1) "dump_mixed_system(cont_eqn,cont_var,disc_eqn,disc_var) &" ;
+        vars_1 = DAELow.listVar(cont_var1);
         eqns_1 = DAELow.listEquation(cont_eqn);
         cont_subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,eqns_1,se,ie,ae,al,ev,eoc);
-        m = DAELow.incidenceMatrix(cont_subsystem_dae);
+/*        m = DAELow.incidenceMatrix(cont_subsystem_dae);
         m_1 = DAELow.absIncidenceMatrix(m);
         mt_1 = DAELow.transposeMatrix(m_1);
         jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_1, mt_1) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
         jac_tp = DAELow.analyzeJacobian(cont_subsystem_dae, jac);
         (s0,cg_id1,numValues) = generateMixedHeader(cont_eqn, cont_var, disc_eqn, disc_var, cg_id);
-        (Codegen.CFUNCTION(rettp,fn,retrec,arg,vars,init,stmts,cleanups),cg_id2,extra_funcs1) = generateOdeSystem2(true/*mixed system*/,cont_subsystem_dae, jac, jac_tp, cg_id1);
+        (Codegen.CFUNCTION(rettp,fn,retrec,arg,vars,init,stmts,cleanups),cg_id2,extra_funcs1) = generateOdeSystem2(true,true,cont_subsystem_dae, jac, jac_tp, cg_id1);
         stmts_1 = Util.listFlatten({{"{"},vars,stmts,{"}"}}) "initialization of e.g. matrices for linsys must be done in each
 	    iteration, create new scope and put them first." ;
         s2_1 = Codegen.CFUNCTION(rettp,fn,retrec,arg,{},init,stmts_1,cleanups);
         (s4,cg_id3) = generateMixedFooter(cont_eqn, cont_var, disc_eqn, disc_var, cg_id2);
         (s3,cg_id4,_) = generateMixedSystemDiscretePartCheck(disc_eqn, disc_var, cg_id3,numValues);
         (s1,cg_id5,_) = generateMixedSystemStoreDiscrete(disc_var, 0, cg_id4);
+        */
+        cg_id5 = cg_id;
         (cfn3,saveStmts,cg_id6,extra_funcs2) = buildZeroCrossingEqns(dae, dlow, ass1, ass2, rest, blocks, cg_id5);
-        cfn = Codegen.cMergeFns({s0,s1,s2_1,s3,s4,cfn3});
-        extra_funcs = listAppend(extra_funcs1, extra_funcs2);
+        cfn = Codegen.cMergeFns({cfn3});
+        extra_funcs = listAppend(/*extra_funcs1*/{}, extra_funcs2);
       then
         (cfn,save_stmt::saveStmts,cg_id6,extra_funcs);
     case (dae,(dlow as DAELow.DAELOW(orderedVars = vars)),ass1,ass2,(eqn :: rest),blocks,cg_id) /* Zero crossing for single equation */ 
       local DAELow.Variables vars;
       equation 
-        (cfn2,cg_id_1) = buildEquation(dae, dlow, ass1, ass2, eqn, cg_id);
+//        (cfn2,cg_id_1) = buildEquation(dae, dlow, ass1, ass2, eqn, cg_id);
+        cfn2 = Codegen.cEmptyFunction;
+        cg_id_1 = cg_id;
         eqn_1 = eqn - 1;
         v = ass2[eqn_1 + 1];
         (DAELow.VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,_)) = DAELow.getVarAt(vars, v);
         cr_str = Exp.printComponentRefStr(cr);
         (cfn3,saveStmts,cg_id_2,extra_funcs) = buildZeroCrossingEqns(dae, dlow, ass1, ass2, rest, blocks, cg_id_1);
         stmt = Util.stringAppendList({"save(",cr_str,");"});
-        cfn = Codegen.cMergeFns({cfn2,cfn3});
+       cfn = Codegen.cMergeFns({cfn2,cfn3});
       then
         (cfn,stmt::saveStmts,cg_id_2,extra_funcs);
     case (_,_,_,_,_,_,cg_id) then (Codegen.cEmptyFunction,{},cg_id,{}); 
@@ -6581,6 +6787,7 @@ algorithm
     case((e1,dummyArg)) then ((e1,dummyArg));
   end matchcontinue;
 end replaceExpGTWithGE;
+
   
 protected function dumpMixedSystem "function: dumpMixedSystem
 
@@ -6638,7 +6845,7 @@ algorithm
     case (dae,DAELow.DAELOW(orderedVars = DAELow.VARIABLES(varArr = vararr),orderedEqs = eqns),ass1,ass2,e,index,cg_id) /* assignments1 assignments2 equation no. cg var_id cg var_id */ 
       equation 
         e_1 = e - 1;
-        DAELow.WHEN_EQUATION(DAELow.WHEN_EQ(wc_ind,cr,expr)) = DAELow.equationNth(eqns, e_1);
+        DAELow.WHEN_EQUATION(DAELow.WHEN_EQ(wc_ind,cr,expr,_)) = DAELow.equationNth(eqns, e_1); //TODO: elsewhen
         (index == wc_ind) = true;
         v = ass2[e_1 + 1];
         v_1 = v - 1;
@@ -7101,6 +7308,8 @@ algorithm
       then
         (cfn,cg_id_1);
     case (dae,DAELow.DAELOW(orderedVars = DAELow.VARIABLES(varArr = vararr),orderedEqs = eqns),ass1,ass2,e,cg_id)
+      local 
+        String s1,s2;
       equation 
         e_1 = e - 1 "probably, solved failed in rule above. This means that we have 
 	 a non-linear equation." ;
@@ -7111,6 +7320,9 @@ algorithm
         varexp = Exp.CREF(cr,Exp.REAL());
         failure(_ = Exp.solve(e1, e2, varexp));
         print("nonlinear equation not implemented yet\n");
+        s1 = Exp.printExpStr(e1);
+        s2 = Exp.printExpStr(e2);
+        print(Util.stringAppendList({s1," = ", s2, "\n\n"})); 
       then
         fail();
     case (dae,DAELow.DAELOW(orderedVars = DAELow.VARIABLES(varArr = vararr),orderedEqs = eqns,algorithms = algs),ass1,ass2,e,cg_id)
@@ -7574,7 +7786,7 @@ algorithm
         s_2 = stringAppend(s_1, s3);
       then
         s_2;
-
+				
     case (Exp.RELATION(exp1 = e1,operator = op,exp2 = e2),pri1)
       equation 
         sym = relopSymbol(op);
@@ -7992,5 +8204,6 @@ algorithm
         fail();
   end matchcontinue;
 end generateEquationOrder;
+
 end SimCodegen;
 

@@ -53,6 +53,7 @@ double* y_saved  = 0;
 
 double* gout     = 0;
 long* zeroCrossingEnabled = 0;
+long inUpdate = 0;
 
 static list<long> EventQueue; 
 
@@ -225,6 +226,7 @@ ExecuteNextEvent(double *t)
       function_updateDependents();
       functionDAE_output();
     }
+    function_updateDependents();
     emit();
     EventQueue.pop_front();
     return true;
@@ -237,7 +239,7 @@ StartEventIteration(double *t)
 {
   while (EventQueue.begin() != EventQueue.end()) {
     calcEnabledZeroCrossings();
-    while (ExecuteNextEvent(t)) {}
+    while (ExecuteNextEvent(t)) { }
     for (long i = 0; i < globalData->nHelpVars; i++) save(globalData->helpVars[i]);
     globalData->timeValue = *t;
     function_updateDependents();
@@ -255,7 +257,7 @@ void StateEventHandler(long* jroot, double *t)
       functionDAE_output();
     }
   }
-  emit();
+//  emit();
 }
 
 #if defined(__GNUC__) // for GNUC
@@ -394,7 +396,10 @@ double pre(double & var)
     return y_saved[ind];
   }
   ind = long(pvar - globalData->helpVars);
-  return h_saved[ind];
+  if (ind >= 0 && ind < globalData->nHelpVars) {
+  	return h_saved[ind];
+  }
+  return var;
 }
 bool edge(double& var) 
 {
