@@ -6248,6 +6248,7 @@ algorithm
         func_zc0 = Codegen.cAddStatements(func_zc0,{"timeBackup = localData->timeValue;",
                                                     "localData->timeValue = *t;"
                                                     ,"functionODE();"
+                                                    ,"functionDAE_output();"
                                                     });
 
 
