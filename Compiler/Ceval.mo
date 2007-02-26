@@ -102,6 +102,7 @@ protected import Derive;
 protected import Connect;
 protected import Error;
 protected import Settings;
+protected import Refactor;
 
 
 protected function cevalBuiltin "function: cevalBuiltin
@@ -1696,6 +1697,21 @@ algorithm
         (cache,ret_val,st_1) = checkModel(cache,env, className, st, msg);
       then
         (cache,ret_val,st_1);
+        
+         case (cache,env,
+        Exp.CALL(
+          path = Absyn.IDENT(name = "translateGraphics"),
+          expLst = {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())}),
+        (st as Interactive.SYMBOLTABLE(
+          ast = p,
+          explodedAst = sp,
+          instClsLst = ic,
+          lstVarVal = iv,
+          compiledFunctions = cf)),msg)
+           equation 
+        (cache,ret_val,st_1) = translateGraphics(cache,env, className, st, msg);
+      then
+        (cache,ret_val,st_1);
 
     case (cache,env,
       Exp.CALL(
@@ -2749,7 +2765,70 @@ algorithm
     then (cache,Values.STRING(errorMsg),st);  
 
   end matchcontinue;
-end checkModel;
+end checkModel; 
+
+public function translateGraphics "function: translates the graphical annotations from old to new version"
+	input Env.Cache inCache;
+	input Env.Env inEnv;
+  input Absyn.Path className;
+  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+algorithm 
+  (outCache,outValue,outInteractiveSymbolTable):=
+  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
+    local
+      String filenameprefix,cname_str,filename,funcfilename,makefilename,file_dir;
+      Absyn.Path classname;
+      list<SCode.Class> p_1,sp;
+      DAE.DAElist dae_1,dae;
+      list<Env.Frame> env;
+      list<DAE.Element> dael;
+      list<Interactive.InstantiatedClass> ic_1,ic;
+      DAELow.DAELow dlow,dlow_1,indexed_dlow,indexed_dlow_1;
+      list<Integer>[:] m,mT;
+      Integer[:] ass1,ass2;
+      list<list<Integer>> comps;
+      Absyn.ComponentRef a_cref;
+      list<String> libs;
+      Exp.ComponentRef cr;
+      Interactive.InteractiveSymbolTable st;
+      Absyn.Program p;
+      list<Interactive.InteractiveVariable> iv;
+      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+      Msg msg;
+      Exp.Exp fileprefix;
+      Env.Cache cache;
+      list<Interactive.LoadedFile> lf;
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(p,sp,ic,iv,cf,lf)),msg)  
+      local Integer eqnSize,varSize,simpleEqnSize;
+        String eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr,s1;
+        DAELow.EquationArray eqns;
+        Absyn.Class cls, refactoredClass;
+        Absyn.Within within_;
+        Integer elimLevel;
+        Absyn.Program p1;
+      equation         
+	  		cls = Interactive.getPathedClassInProgram(className, p);        
+        refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
+        within_ = Interactive.buildWithin(className);
+        p1 = Interactive.updateProgram(Absyn.PROGRAM({refactoredClass}, within_), p);
+        s1 = Absyn.pathString(className);
+				retStr=Util.stringAppendList({"Translation of ",s1," successful.\n"});
+      then
+        (cache,Values.STRING(retStr),Interactive.SYMBOLTABLE(p1,sp,ic,iv,cf,lf));
+    case (cache,_,_,st,_) local
+      String errorMsg; Boolean strEmpty;
+      equation
+      errorMsg = Error.printMessagesStr();
+      strEmpty = (System.strcmp("",errorMsg)==0);
+      errorMsg = Util.if_(strEmpty,"Internal error, translating graphics to new version",errorMsg);
+    then (cache,Values.STRING(errorMsg),st);  
+
+  end matchcontinue;
+end translateGraphics; 
 
 
 protected function extractFilePrefix "function extractFilePrefix
