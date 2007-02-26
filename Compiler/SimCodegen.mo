@@ -2761,8 +2761,8 @@ algorithm
         (exp_func,e_str,cg_id_1) = Codegen.generateExpression(e, cg_id, Codegen.simContext);
         (func,cg_id_2) = generateParameterAssignments(vs, cg_id_1);
         stmt = Util.stringAppendList({cr_str," = ",e_str,";"});
-        func_1 = Codegen.cAddStatements(func, {stmt});
-        func_2 = Codegen.cMergeFns({exp_func,func_1});
+        exp_func = Codegen.cAddStatements(exp_func, {stmt});
+        func_2 = Codegen.cMergeFns({exp_func,func});
       then
         (func_2,cg_id_2);
     case ((_ :: vs),cg_id)

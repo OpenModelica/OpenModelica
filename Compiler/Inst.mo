@@ -3840,7 +3840,6 @@ algorithm
         (cache,compenv,dae,csets_1,ty_1) = instVar2(cache,env, ci_state, mod, pre, csets, n, cl, attr, dims_1, idxs, 
           inst_dims, impl, comment,io);
         ty = makeArrayType(dims_1, ty_1);
-                  print("making array type:");print(Types.unparseType(ty));print("\n");
       then
         (cache,compenv,dae,csets_1,ty);
     // Generic case: fall trough 

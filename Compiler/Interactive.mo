@@ -1939,13 +1939,20 @@ algorithm
         
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
         p = updateProgram(Absyn.PROGRAM({refactoredClass}, Absyn.TOP), p);
-   //     Dump.dump(Absyn.PROGRAM({cls}, Absyn.TOP));      
-	 //   Dump.dump(p);        
-        resstr = Dump.unparseStr(Absyn.PROGRAM({refactoredClass}, Absyn.TOP));       
-   //     resstr = "Test Körning";
+	 			resstr = Dump.unparseStr(Absyn.PROGRAM({refactoredClass},Absyn.TOP())) ",false";
       then
         (resstr,SYMBOLTABLE(p,s,ic,iv,cf,lf));
-/*******************************************************************************/
+        
+		case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "refactorClass"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf,loadedFiles = lf)))
+      local Absyn.Path path; Absyn.Class cls, refactoredClass;
+      equation 
+        s1 = Dump.printComponentRefStr(cr);
+        resstr = Util.stringAppendList({"Failed in translating", s1, " to Modelica v2.0 graphicall annotations"});
+      then
+        (resstr,SYMBOLTABLE(p,s,ic,iv,cf,lf));        
+
     case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getClassNames"),functionArgs = Absyn.FUNCTIONARGS(args = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
         resstr = getTopClassnames(p);

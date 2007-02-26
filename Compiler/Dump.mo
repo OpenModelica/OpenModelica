@@ -881,7 +881,7 @@ algorithm
     case (Absyn.CLASSMOD(elementArgLst = {})) then ""; 
     case (Absyn.CLASSMOD(elementArgLst = l,expOption = NONE))
       equation 
-        s1 = getStringList(l, unparseElementArgStr, ",");
+        s1 = getStringList(l, unparseElementArgStr, ", ");
         s2 = stringAppend("(", s1);
         str = stringAppend(s2, ")");
       then
@@ -1814,7 +1814,7 @@ algorithm
       equation 
         s1 = Absyn.pathString(p);
         s2 = stringAppend("extends ", s1);
-        s3 = getStringList(l, unparseElementArgStr, ",");
+        s3 = getStringList(l, unparseElementArgStr, ", ");
         is = indentStr(i);
         str = Util.stringAppendList({is,f,r,io,s2,"(",s3,")"});
       then
@@ -2428,7 +2428,7 @@ algorithm
     case {} then ""; 
     case l
       equation 
-        s1 = getStringList(l, unparseElementArgStr, ",");
+        s1 = getStringList(l, unparseElementArgStr, ", ");
         s2 = stringAppend("(", s1);
         str = stringAppend(s2, ")");
       then

@@ -602,9 +602,17 @@ algorithm
           SOME(
           DAE.VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,SOME(true),NONE,NONE)),NONE,DAE.NON_CONNECTOR()), vars);
       then
+        /*(vars_1,(EQUATION(
+          Exp.CALL(Absyn.IDENT("der"),
+          {Exp.CREF(Exp.CREF_IDENT("$dummy",{}),Exp.REAL())},false,true,Exp.REAL()),Exp.RCONST(0.0)) :: eqns));*/
+          
         (vars_1,(EQUATION(
           Exp.CALL(Absyn.IDENT("der"),
-          {Exp.CREF(Exp.CREF_IDENT("$dummy",{}),Exp.REAL())},false,true,Exp.REAL()),Exp.RCONST(0.0)) :: eqns));
+          {Exp.CREF(Exp.CREF_IDENT("$dummy",{}),Exp.REAL())},false,true,Exp.REAL()),
+          Exp.CALL(Absyn.IDENT("sin"),{Exp.BINARY(
+          	Exp.CREF(Exp.CREF_IDENT("time",{}),Exp.REAL()),
+          	Exp.MUL(Exp.REAL()),
+          	Exp.RCONST(628.318530717))},false,true,Exp.REAL()))  :: eqns));
   end matchcontinue;
 end addDummyState;
 
