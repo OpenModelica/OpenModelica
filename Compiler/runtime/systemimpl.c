@@ -415,7 +415,7 @@ RML_BEGIN_LABEL(System__compileCFile)
   memcpy(exename,str,strlen(str)-2);
   exename[strlen(str)-2]='\0';
 
-  sprintf(command,"%s %s -o %s %s",cc,str,exename,cflags);
+  sprintf(command,"%s %s -o %s %s > compilelog.txt 2>&1",cc,str,exename,cflags);
   //printf("compile using: %s\n",command);
   _putenv("GCC_EXEC_PREFIX="); 
   tmp = getenv("MODELICAUSERCFLAGS");

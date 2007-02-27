@@ -601,11 +601,11 @@ algorithm
           NONE,NONE,{},NONE,-1,Exp.CREF_IDENT("$dummy",{}),{},
           SOME(
           DAE.VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,SOME(true),NONE,NONE)),NONE,DAE.NON_CONNECTOR()), vars);
-      then
-        /*(vars_1,(EQUATION(
-          Exp.CALL(Absyn.IDENT("der"),
-          {Exp.CREF(Exp.CREF_IDENT("$dummy",{}),Exp.REAL())},false,true,Exp.REAL()),Exp.RCONST(0.0)) :: eqns));*/
-          
+      then  
+        /* Add equation der(dummy) = sin(time*6628.318530717). This so the solver has something to solve 
+        if the model does not contain states. To prevent the solver from taking larger and larger steps
+        (which would happen if der(dymmy) = 0) when using automatic, we have a osciallating derivative.
+        */
         (vars_1,(EQUATION(
           Exp.CALL(Absyn.IDENT("der"),
           {Exp.CREF(Exp.CREF_IDENT("$dummy",{}),Exp.REAL())},false,true,Exp.REAL()),
@@ -613,6 +613,7 @@ algorithm
           	Exp.CREF(Exp.CREF_IDENT("time",{}),Exp.REAL()),
           	Exp.MUL(Exp.REAL()),
           	Exp.RCONST(628.318530717))},false,true,Exp.REAL()))  :: eqns));
+          	
   end matchcontinue;
 end addDummyState;
 

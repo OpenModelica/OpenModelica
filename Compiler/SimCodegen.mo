@@ -474,6 +474,7 @@ algorithm
       Integer nx,ny,np,ng,ng_1,no,ni,nh,nres,next,ny_string,np_string;
       String initDeinitDataStructFunction,class_str,nx_str,ny_str,np_str,ng_str,no_str,ni_str,nh_str;
       String nres_str,c_code2_str,c_code3_str,c_code_str,macros_str,global_bufs,str1,str,next_str;
+      String nystring_str, npstring_str;
       list<String> c_code;
       Absyn.Path class_;
       DAELow.DAELow dlow;
@@ -493,6 +494,8 @@ algorithm
         nh_str = intString(nh);
         nres_str = intString(nres);
         next_str = intString(next);
+        nystring_str = intString(ny_string);
+        npstring_str = intString(np_string);
         c_code = generateVarNamesAndComments(dlow, nx, ny, ni, no, np,next);
         initDeinitDataStructFunction = generateInitializeDeinitializationDataStruc(dlow);
         (c_code2_str) = generateFixedVector(dlow, nx, ny, np);
@@ -507,7 +510,10 @@ algorithm
           " // number of outputvar on topmodel\n","#define NI ",ni_str," // number of inputvar on topmodel\n",
           "#define NR ",nres_str," // number of residuals for initialialization function\n",
           "#define NEXT ", next_str," // number of external objects\n",
-          "#define MAXORD 5\n","\n",
+          "#define MAXORD 5\n",
+          "#define NYSTR ",nystring_str, " // number of alg. string variables\n",
+          "#define NPSTR ",npstring_str, " // number of alg. string variables\n",
+          "\n",
            global_bufs,"char *model_name=\"",
           class_str,"\";\n",c_code_str,c_code2_str,"\n",c_code3_str,"\n"});
         str = Util.stringAppendList({str1,macros_str,"\n",initDeinitDataStructFunction,"\n"}) "this is done here and not in the above Util.string_append_list VC7.1 cannot compile too complicated c-programs this is removed for now \"typedef struct equation {\\n\", \"  char equation;\\n\", \"  char fileName;\\n\", \"  int   lineNumber;\\n\", \"} equation;\\n\"," ;
@@ -834,6 +840,8 @@ extObjConstructorsDecl_str,
   returnData->nZeroCrossing = NG;\n
   returnData->nInitialResiduals = NR;\n
   returnData->nHelpVars = NHELP;\n",
+"  returnData->stringVariables.nParameters = NPSTR;\n
+  returnData->stringVariables.nAlgebraic = NYSTR;\n",
 "  if(flags & STATES && returnData->nStates){\n
     returnData->states = (double*) malloc(sizeof(double)*returnData->nStates);\n
     returnData->oldStates = (double*) malloc(sizeof(double)*returnData->nStates);\n
@@ -874,12 +882,20 @@ extObjConstructorsDecl_str,
      assert(returnData->algebraics&&returnData->oldAlgebraics&&returnData->oldAlgebraics2);
     memset(returnData->algebraics,0,sizeof(double)*returnData->nAlgebraic);\n
     memset(returnData->oldAlgebraics,0,sizeof(double)*returnData->nAlgebraic);\n
-    memset(returnData->oldAlgebraics2,0,sizeof(double)*returnData->nAlgebraic);\n    
+    memset(returnData->oldAlgebraics2,0,sizeof(double)*returnData->nAlgebraic);\n
   }else{\n
     returnData->algebraics = 0;\n
     returnData->oldAlgebraics = 0;\n
     returnData->oldAlgebraics2 = 0;\n    
+    returnData->stringVariables.algebraics = 0;
   }\n",
+  "if (flags & ALGEBRAICS && returnData->stringVariables.nAlgebraic) {
+    returnData->stringVariables.algebraics = (char**)malloc(sizeof(char*)*returnData->stringVariables.nAlgebraic);\n
+    assert(returnData->stringVariables.algebraics);\n
+    memset(returnData->stringVariables.algebraics,0,sizeof(char*)*returnData->stringVariables.nAlgebraic);\n
+    } else {
+    returnData->stringVariables.algebraics=0;\n
+    }",        
 "  if(flags & PARAMETERS && returnData->nParameters){\n
     returnData->parameters = (double*) malloc(sizeof(double)*returnData->nParameters);\n
     assert(returnData->parameters);
@@ -887,6 +903,13 @@ extObjConstructorsDecl_str,
   }else{\n
     returnData->parameters = 0;\n
   }\n",
+  "if (flags & PARAMETERS && returnData->stringVariables.nParameters) {
+  	  returnData->stringVariables.parameters = (char**)malloc(sizeof(char*)*returnData->stringVariables.nParameters);\n
+      assert(returnData->stringVariables.parameters);\n
+      memset(returnData->stringVariables.parameters,0,sizeof(char*)*returnData->stringVariables.nParameters);\n
+    } else {
+      returnData->stringVariables.parameters=0;\n
+    }",
 " if(flags & OUTPUTVARS && returnData->nOutputVars){\n
     returnData->outputVars = (double*) malloc(sizeof(double)*returnData->nOutputVars);\n
     assert(returnData->outputVars);
@@ -5887,7 +5910,8 @@ algorithm
     local
       Real delta_time,step,start,stop,intervals;
       String start_str,stop_str,step_str,nx_str,ny_str,np_str,init_str,str,exe,filename;
-      Integer nx,ny,np;
+      String ny_str,np_str,npstring_str,nystring_str;
+      Integer nx,ny,np,npstring,nystring;
       DAELow.DAELow dlow;
       Absyn.Path class_;
     case (dlow,class_,exe,filename,start,stop,intervals,method) /* classname executable file name filename start time stop time íntervals */ 
@@ -5897,15 +5921,18 @@ algorithm
         start_str = realString(start);
         stop_str = realString(stop);
         step_str = realString(step);
-        (nx,ny,np,_,_,_,_) = DAELow.calculateSizes(dlow);
+        (nx,ny,np,_,_,nystring,npstring) = DAELow.calculateSizes(dlow);
         nx_str = intString(nx);
         ny_str = intString(ny);
         np_str = intString(np);
-        init_str = generateInitData2(dlow, nx, ny, np);
+        npstring_str = intString(npstring);
+        nystring_str = intString(nystring);
+        init_str = generateInitData2(dlow, nx, ny, np, nystring, npstring);
         str = Util.stringAppendList(
           {start_str," // start value\n",stop_str," // stop value\n",
           step_str," // step value\n","\"",method,"\" // method\n", nx_str," // n states\n",ny_str," // n alg vars\n",
-          np_str," //n parameters\n",init_str});
+          np_str," //n parameters\n",npstring_str," // n string-parameters\n",nystring_str, " // n string variables\n",
+          init_str});          
         System.writeFile(filename, str);
       then
         ();
@@ -5929,6 +5956,8 @@ protected function generateInitData2 "function: generateInitData2
   input Integer inInteger2;
   input Integer inInteger3;
   input Integer inInteger4;
+  input Integer ny_string;
+  input Integer np_string;
   output String outString;
 algorithm 
   outString:=
@@ -5936,13 +5965,14 @@ algorithm
     local
       list<DAELow.Var> var_lst,knvar_lst;
       String[:] nxarr,nxdarr,nyarr,nparr,nxarr1,nxdarr1,nyarr1,nparr1,nxarr2,nxdarr2,nyarr2,nparr2,nxarr3,nxdarr3,nyarr3,nparr3;
-      list<String> nx_lst,nxd_lst,ny_lst,np_lst,whole_lst;
+      String[:] nystrarr,npstrarr;
+      list<String> nx_lst,nxd_lst,ny_lst,np_lst,whole_lst,nystr_lst,npstr_lst;
       String res;
       DAELow.Variables vars,knvars;
       DAELow.EquationArray initeqn;
       Algorithm.Algorithm[:] alg;
       Integer nx,ny,np;
-    case (DAELow.DAELOW(orderedVars = vars,knownVars = knvars,initialEqs = initeqn,algorithms = alg),nx,ny,np) /* nx ny np */ 
+    case (DAELow.DAELOW(orderedVars = vars,knownVars = knvars,initialEqs = initeqn,algorithms = alg),nx,ny,np,ny_string,np_string) 
       equation 
         var_lst = DAELow.varList(vars);
         knvar_lst = DAELow.varList(knvars);
@@ -5950,14 +5980,18 @@ algorithm
         nxdarr = fill("0.0", nx);
         nyarr = fill("", ny);
         nparr = fill("", np);
-        (nxarr1,nxdarr1,nyarr1,nparr1) = generateInitData3(var_lst, nxarr, nxdarr, nyarr, nparr);
-        (nxarr2,nxdarr2,nyarr2,nparr2) = generateInitData3(knvar_lst, nxarr1, nxdarr1, nyarr1, nparr1);
-        (nxarr3,nxdarr3,nyarr3,nparr3) = generateInitData4(knvar_lst, nxarr2, nxdarr2, nyarr2, nparr2);
+        nystrarr = fill("\"\"",ny_string);
+        npstrarr = fill("\"\"",np_string);
+        (nxarr1,nxdarr1,nyarr1,nparr1,nystrarr,npstrarr) = generateInitData3(var_lst, nxarr, nxdarr, nyarr, nparr,nystrarr,npstrarr);
+        (nxarr2,nxdarr2,nyarr2,nparr2,nystrarr,npstrarr) = generateInitData3(knvar_lst, nxarr1, nxdarr1, nyarr1, nparr1,nystrarr,npstrarr);
+        (nxarr3,nxdarr3,nyarr3,nparr3,nystrarr,npstrarr) = generateInitData4(knvar_lst, nxarr2, nxdarr2, nyarr2, nparr2,nystrarr,npstrarr);
         nx_lst = arrayList(nxarr3);
         nxd_lst = arrayList(nxdarr3);
         ny_lst = arrayList(nyarr3);
         np_lst = arrayList(nparr3);
-        whole_lst = Util.listFlatten({nx_lst,nxd_lst,ny_lst,np_lst});
+        nystr_lst = arrayList(nystrarr);
+        npstr_lst = arrayList(npstrarr);
+        whole_lst = Util.listFlatten({nx_lst,nxd_lst,ny_lst,np_lst,nystr_lst,npstr_lst});
         res = Util.stringDelimitListNonEmptyElts(whole_lst, "\n");
       then
         res;
@@ -6000,15 +6034,19 @@ protected function generateInitData3 "function: generateInitData3
   input String[:] inStringArray3;
   input String[:] inStringArray4;
   input String[:] inStringArray5;
+  input String[:] inStringArray6;
+  input String[:] inStringArray7;  
   output String[:] outStringArray1;
   output String[:] outStringArray2;
   output String[:] outStringArray3;
   output String[:] outStringArray4;
+  output String[:] outStringArray5;
+  output String[:] outStringArray6;  
 algorithm 
-  (outStringArray1,outStringArray2,outStringArray3,outStringArray4):=
-  matchcontinue (inDAELowVarLst1,inStringArray2,inStringArray3,inStringArray4,inStringArray5)
+  (outStringArray1,outStringArray2,outStringArray3,outStringArray4,outStringArray5,outStringArray6):=
+  matchcontinue (inDAELowVarLst1,inStringArray2,inStringArray3,inStringArray4,inStringArray5,inStringArray6,inStringArray7)
     local
-      String[:] nxarr,nxdarr,nyarr,nparr,nxarr_1,nxdarr_1,nyarr_1,nparr_1;
+      String[:] nxarr,nxdarr,nyarr,nparr,nxarr_1,nxdarr_1,nyarr_1,nparr_1,nystrarr,npstrarr;
       String v,origname_str,str;
       Exp.ComponentRef cr,origname;
       Option<Exp.Exp> start;
@@ -6017,57 +6055,68 @@ algorithm
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
       list<DAELow.Var> rest;
-    case ({},nxarr,nxdarr,nyarr,nparr) then (nxarr,nxdarr,nyarr,nparr);  /* state strings derivative strings alg. var strings param. strings updated state strings updated derivative strings updated alg. var strings updated param. strings */ 
-    case ((DAELow.VAR(varName = cr,varKind = DAELow.VARIABLE(),startValue = start,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest),nxarr,nxdarr,nyarr,nparr)
+    case ({},nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr) then (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr);  /* state strings derivative strings alg. var strings param. strings updated state strings updated derivative strings updated alg. var strings updated param. strings */ 
+    /* Strings handled separately */
+    case ((DAELow.VAR(varName = cr,varKind = DAELow.VARIABLE(),varType = DAE.STRING(),startValue = start,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest),nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
+      equation 
+        v = printExpOptStrIfConst(start);
+        origname_str = Exp.printComponentRefStr(origname);
+        str = Util.stringAppendList({v," // ",origname_str});
+        nystrarr = arrayUpdate(nystrarr, indx + 1, str);
+        (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr) = generateInitData3(rest, nxarr, nxdarr, nyarr, nparr,nystrarr,npstrarr);
+      then
+        (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr);
+    case ((DAELow.VAR(varName = cr,varKind = DAELow.VARIABLE(),startValue = start,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest),nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation 
         v = printExpOptStrIfConst(start) "algebraic variables" ;
         origname_str = Exp.printComponentRefStr(origname);
         str = Util.stringAppendList({v," // ",origname_str});
         nyarr = arrayUpdate(nyarr, indx + 1, str);
-        (nxarr,nxdarr,nyarr,nparr) = generateInitData3(rest, nxarr, nxdarr, nyarr, nparr);
+        (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr) = generateInitData3(rest, nxarr, nxdarr, nyarr, nparr,nystrarr,npstrarr);
       then
-        (nxarr,nxdarr,nyarr,nparr);
-    case ((DAELow.VAR(varName = cr,varKind = DAELow.DISCRETE(),startValue = start,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest),nxarr,nxdarr,nyarr,nparr)
+        (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr);
+    case ((DAELow.VAR(varName = cr,varKind = DAELow.DISCRETE(),startValue = start,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest),nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation 
         v = printExpOptStrIfConst(start) "algebraic variables" ;
         origname_str = Exp.printComponentRefStr(origname);
         str = Util.stringAppendList({v," // ",origname_str});
         nyarr = arrayUpdate(nyarr, indx + 1, str);
-        (nxarr,nxdarr,nyarr,nparr) = generateInitData3(rest, nxarr, nxdarr, nyarr, nparr);
+        (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr) = generateInitData3(rest, nxarr, nxdarr, nyarr, nparr,nystrarr,npstrarr);
       then
-        (nxarr,nxdarr,nyarr,nparr);
-    case ((DAELow.VAR(varKind = DAELow.STATE(),startValue = start,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest),nxarr,nxdarr,nyarr,nparr)
+        (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr);
+    case ((DAELow.VAR(varKind = DAELow.STATE(),startValue = start,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest),nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation 
         v = printExpOptStrIfConst(start) "State variables" ;
         origname_str = Exp.printComponentRefStr(origname);
         str = Util.stringAppendList({v," // ",origname_str});
         nxarr = arrayUpdate(nxarr, indx + 1, str);
-        (nxarr,nxdarr,nyarr,nparr) = generateInitData3(rest, nxarr, nxdarr, nyarr, nparr);
+        (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr) = generateInitData3(rest, nxarr, nxdarr, nyarr, nparr,nystrarr,npstrarr);
       then
-        (nxarr,nxdarr,nyarr,nparr);
-    case ((DAELow.VAR(varKind = DAELow.DUMMY_DER(),startValue = start,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest),nxarr,nxdarr,nyarr,nparr)
+        (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr);
+
+    case ((DAELow.VAR(varKind = DAELow.DUMMY_DER(),startValue = start,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest),nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation 
         v = printExpOptStrIfConst(start) "dummy derivatives => algebraic variables" ;
         origname_str = Exp.printComponentRefStr(origname);
         str = Util.stringAppendList({v," // ",origname_str});
         nyarr = arrayUpdate(nyarr, indx + 1, str);
-        (nxarr,nxdarr,nyarr,nparr) = generateInitData3(rest, nxarr, nxdarr, nyarr, nparr);
+        (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr) = generateInitData3(rest, nxarr, nxdarr, nyarr, nparr,nystrarr,npstrarr);
       then
-        (nxarr,nxdarr,nyarr,nparr);
-    case ((DAELow.VAR(varKind = DAELow.DUMMY_STATE(),startValue = start,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest),nxarr,nxdarr,nyarr,nparr)
+        (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr);
+    case ((DAELow.VAR(varKind = DAELow.DUMMY_STATE(),startValue = start,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest),nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation 
         v = printExpOptStrIfConst(start) "Dummy states => algebraic variables" ;
         origname_str = Exp.printComponentRefStr(origname);
         str = Util.stringAppendList({v," // ",origname_str});
         nyarr = arrayUpdate(nyarr, indx + 1, str);
-        (nxarr,nxdarr,nyarr,nparr) = generateInitData3(rest, nxarr, nxdarr, nyarr, nparr);
+        (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr) = generateInitData3(rest, nxarr, nxdarr, nyarr, nparr,nystrarr,npstrarr);
       then
-        (nxarr,nxdarr,nyarr,nparr);
-    case ((_ :: rest),nxarr,nxdarr,nyarr,nparr)
+        (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr);
+    case ((_ :: rest),nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation 
-        (nxarr_1,nxdarr_1,nyarr_1,nparr_1) = generateInitData3(rest, nxarr, nxdarr, nyarr, nparr);
+        (nxarr_1,nxdarr_1,nyarr_1,nparr_1,nystrarr,npstrarr) = generateInitData3(rest, nxarr, nxdarr, nyarr, nparr,nystrarr,npstrarr);
       then
-        (nxarr_1,nxdarr_1,nyarr_1,nparr_1);
+        (nxarr_1,nxdarr_1,nyarr_1,nparr_1,nystrarr,npstrarr);
   end matchcontinue;
 end generateInitData3;
 
@@ -6107,15 +6156,19 @@ protected function generateInitData4 "function: generateInitData4
   input String[:] inStringArray3;
   input String[:] inStringArray4;
   input String[:] inStringArray5;
+  input String[:] inStringArray6;
+  input String[:] inStringArray7;
   output String[:] outStringArray1;
   output String[:] outStringArray2;
   output String[:] outStringArray3;
   output String[:] outStringArray4;
+  output String[:] outStringArray5;
+  output String[:] outStringArray6;  
 algorithm 
-  (outStringArray1,outStringArray2,outStringArray3,outStringArray4):=
-  matchcontinue (inDAELowVarLst1,inStringArray2,inStringArray3,inStringArray4,inStringArray5)
+  (outStringArray1,outStringArray2,outStringArray3,outStringArray4,outStringArray5,outStringArray6):=
+  matchcontinue (inDAELowVarLst1,inStringArray2,inStringArray3,inStringArray4,inStringArray5,inStringArray6,inStringArray7)
     local
-      String[:] nxarr,nxdarr,nyarr,nparr,nxarr_1,nxdarr_1,nyarr_1,nparr_1;
+      String[:] nxarr,nxdarr,nyarr,nparr,nxarr_1,nxdarr_1,nyarr_1,nparr_1,nystrarr,npstrarr;
       String v,origname_str,str;
       Values.Value value;
       Integer indx;
@@ -6125,34 +6178,58 @@ algorithm
       DAE.Flow flow_;
       list<DAELow.Var> rest,vs;
       Option<Exp.Exp> start;
-    case ({},nxarr,nxdarr,nyarr,nparr) then (nxarr,nxdarr,nyarr,nparr); 
-    case ((DAELow.VAR(varKind = DAELow.PARAM(),bindValue = SOME(value),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest),nxarr,nxdarr,nyarr,nparr)
+    case ({},nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr) then (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr); 
+		/* String-Parameters handled separately*/
+    case ((DAELow.VAR(varKind = DAELow.PARAM(),varType = DAE.STRING(),bindValue = SOME(value),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest),nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation 
-        v = Values.valString(value) "Parameters" ;
+        v = Values.valString(value);
+        origname_str = Exp.printComponentRefStr(origname);
+        str = Util.stringAppendList({v," // ",origname_str});
+        npstrarr = arrayUpdate(npstrarr, indx + 1, str);
+        (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr) = generateInitData4(rest, nxarr, nxdarr, nyarr, nparr,nystrarr,npstrarr);
+      then
+        (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr);      
+		/* Parameters */
+    case ((DAELow.VAR(varKind = DAELow.PARAM(),bindValue = SOME(value),index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest),nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
+      equation 
+        v = Values.valString(value);
         origname_str = Exp.printComponentRefStr(origname);
         str = Util.stringAppendList({v," // ",origname_str});
         nparr = arrayUpdate(nparr, indx + 1, str);
-        (nxarr,nxdarr,nyarr,nparr) = generateInitData4(rest, nxarr, nxdarr, nyarr, nparr);
+        (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr) = generateInitData4(rest, nxarr, nxdarr, nyarr, nparr,nystrarr,npstrarr);
       then
-        (nxarr,nxdarr,nyarr,nparr);
-    case ((DAELow.VAR(varKind = DAELow.PARAM(),bindValue = NONE,startValue = start,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest),nxarr,nxdarr,nyarr,nparr)
+        (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr);
+
+        /* String - Parameters without value binding. Investigate if it has start value */
+    case ((DAELow.VAR(varKind = DAELow.PARAM(),bindValue = NONE,startValue = start,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest),nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation 
-        v = printExpOptStrIfConst(start) "Parameters without value binding. Investigate if it has start value" ;
+        v = printExpOptStrIfConst(start)  ;
+        origname_str = Exp.printComponentRefStr(origname);
+        str = Util.stringAppendList({v," // ",origname_str});
+        npstrarr = arrayUpdate(npstrarr, indx + 1, str);
+        (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr) = generateInitData4(rest, nxarr, nxdarr, nyarr, nparr,nystrarr,npstrarr);
+      then
+        (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr);
+
+        /* Parameters without value binding. Investigate if it has start value */
+    case ((DAELow.VAR(varKind = DAELow.PARAM(),bindValue = NONE,startValue = start,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_) :: rest),nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
+      equation 
+        v = printExpOptStrIfConst(start)  ;
         origname_str = Exp.printComponentRefStr(origname);
         str = Util.stringAppendList({v," // ",origname_str});
         nparr = arrayUpdate(nparr, indx + 1, str);
-        (nxarr,nxdarr,nyarr,nparr) = generateInitData4(rest, nxarr, nxdarr, nyarr, nparr);
+        (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr) = generateInitData4(rest, nxarr, nxdarr, nyarr, nparr,nystrarr,npstrarr);
       then
-        (nxarr,nxdarr,nyarr,nparr);
-    case ((_ :: vs),nxarr,nxdarr,nyarr,nparr)
+        (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr);
+    case ((_ :: vs),nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr)
       equation 
-        (nxarr_1,nxdarr_1,nyarr_1,nparr_1) = generateInitData4(vs, nxarr, nxdarr, nyarr, nparr) "Skip alg. vars that are removed 
+        (nxarr_1,nxdarr_1,nyarr_1,nparr_1,nystrarr,npstrarr) = generateInitData4(vs, nxarr, nxdarr, nyarr, nparr,nystrarr,npstrarr) "Skip alg. vars that are removed 
 	 In future we should compare eliminated variables 
 	 intial values to their aliases to detect inconsistent
 	 initial values.
 	" ;
       then
-        (nxarr_1,nxdarr_1,nyarr_1,nparr_1);
+        (nxarr_1,nxdarr_1,nyarr_1,nparr_1,nystrarr,npstrarr);
   end matchcontinue;
 end generateInitData4;
 

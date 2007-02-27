@@ -48,6 +48,7 @@ using namespace std;
 void read_commented_value( ifstream &f, double *res);
 void read_commented_value( ifstream &f, int *res);
 void read_commented_value(ifstream &f, string *str);
+void read_commented_value(ifstream &f, char **str);
 
 
 /* \brief
@@ -87,14 +88,21 @@ void read_commented_value(ifstream &f, string *str);
   }
   read_commented_value(file,method);
   int nxchk,nychk,npchk;
+  int nystrchk,npstrchk;
   read_commented_value(file,&nxchk);
   read_commented_value(file,&nychk);
   read_commented_value(file,&npchk);
-  if (nxchk != simData->nStates || nychk != simData->nAlgebraic || npchk != simData->nParameters) {
+  read_commented_value(file,&npstrchk);
+  read_commented_value(file,&nystrchk);
+  	  
+  if (nxchk != simData->nStates || nychk != simData->nAlgebraic || npchk != simData->nParameters 
+  		|| npstrchk != simData->stringVariables.nParameters || nystrchk != simData->stringVariables.nAlgebraic ) {
     cerr << "Error, input data file does not match model." << endl;
-    cerr << "nx from file: "<<nxchk<<endl;
-    cerr << "ny from file: "<<nychk<<endl;
-    cerr << "np from file: "<<npchk<<endl;
+    cerr << "nx in initfile: " << nxchk << " from model code :" << simData->nStates << endl;
+    cerr << "ny in initfile: " << nychk << " from model code :" << simData->nAlgebraic << endl;
+    cerr << "np in initfile: " << npchk << " from model code :" << simData->nParameters << endl;
+	cerr << "npstr in initfile: " << npstrchk << " from model code: " << simData->stringVariables.nParameters << endl;
+	cerr << "nystr in initfile: " << nystrchk << " from model code: " << simData->stringVariables.nAlgebraic <<  endl;    
     exit(-1);
   }
   for(int i = 0; i < simData->nStates; i++) { // Read x initial values  	
@@ -125,6 +133,18 @@ void read_commented_value(ifstream &f, string *str);
     << simData->parameters[i] << " from init file." << endl;
     }
   }
+  for(int i=0; i < simData->stringVariables.nParameters; i++) { // Read string parameter values
+    read_commented_value(file,&simData->stringVariables.parameters[i]);
+    if (sim_verbose) {
+    cout << "read" <<simData->stringVariables.parameters[i] << " from init file." << endl;
+    }
+  }
+  for(int i=0; i < simData->stringVariables.nAlgebraic; i++) { // Read string parameter values
+    read_commented_value(file,&simData->stringVariables.algebraics[i]);
+    if (sim_verbose) {
+    cout << "read" <<simData->stringVariables.algebraics[i] << " from init file." << endl;
+    }
+  }
  file.close();
  if (sim_verbose) {
  	cout << "Read parameter data from file " << *filename << endl;
@@ -141,6 +161,26 @@ inline void read_commented_value(ifstream &f, string *str)
 	if (line.find("\"") != line.npos) {	
 		pos = line.rfind("\""); // find end of string
 		*str = string(line.substr(1,pos-1));	// Remove " at beginning and end
+	}
+}
+
+inline void read_commented_value(ifstream &f, char **str)
+{
+	if (str == NULL) {
+		cerr << "error read_commented_value, no data allocated for storing string" << endl;
+		return;
+	} 
+	string line;
+	read_commented_value(f,&line);
+	*str = new char[line.length()+1];
+	int i;
+	for (i=0;i<(int)line.length();i++) {
+		(*str)[i] = line.c_str()[i];	
+	}
+	(*str)[i]='\0';
+	
+	if (!str) {
+		cerr << "Error reading string value from init file" << endl;
 	}
 }
 

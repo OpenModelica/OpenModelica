@@ -3647,6 +3647,23 @@ algorithm
           "#-- Codegen.generate_expression: size(X) not implemented");
       then
         fail();
+        /* Special case for empty arrays, create null pointer*/
+   case (e as Exp.ARRAY(ty = t,scalar = a,array = {}),tnr,context)
+      local Exp.Exp e;
+      equation 
+        array_type_str = expTypeStr(t, true);
+        short_type_str = expShortTypeStr(t);
+        (tdecl,tvar,tnr1) = generateTempDecl(array_type_str, tnr);
+        scalar = Util.if_(a, "scalar_", "");
+        scalar_ref = Util.if_(a, "", "&");
+        scalar_delimit = stringAppend(", ", scalar_ref);
+        stmt = Util.stringAppendList(
+          {"array_alloc_",scalar,array_type_str,"(&",tvar,", 0, ",scalar_ref,",0);"});
+        cfn_1 = cAddVariables(cEmptyFunction, {tdecl});
+        cfn = cAddStatements(cfn_1, {stmt});
+      then
+        (cfn,tvar,tnr1);
+        /* array */
     case (e as Exp.ARRAY(ty = t,scalar = a,array = elist),tnr,context)
       local Exp.Exp e;
       equation 
@@ -3672,6 +3689,7 @@ algorithm
         (cfn,var,tnr_1) = generateMatrix(t, maxn, ell, tnr, context);
       then
         (cfn,var,tnr_1);
+        
     case (Exp.RANGE(ty = t,exp = e1,expOption = NONE,range = e2),tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
@@ -5098,6 +5116,26 @@ algorithm
       Exp.Type typ;
       list<list<tuple<Exp.Exp, Boolean>>> exps;
       Context context;
+      /* Special case for empty array { {} } */
+    case (typ,maxn,{{}},tnr,context) equation
+        array_type_str = expTypeStr(typ, true);
+        (tdecl,tvar,tnr1) = generateTempDecl(array_type_str, tnr);
+        /* Create dimensional array Real[0,1]; */
+        stmt = Util.stringAppendList(
+          {"alloc_",array_type_str,"(&",tvar,",2,0,1);"});
+        cfn_1 = cAddVariables(cEmptyFunction, {tdecl});
+        cfn_2 = cAddStatements(cfn_1, {stmt});
+    then (cfn_2,tvar,tnr1);
+      /* Special case from emtpy array: {} */
+   case (typ,maxn,{},tnr,context) equation
+        array_type_str = expTypeStr(typ, true);
+        (tdecl,tvar,tnr1) = generateTempDecl(array_type_str, tnr);
+        stmt = Util.stringAppendList(
+          {"alloc_",array_type_str,"(&",tvar,",2,0,1);"});
+        cfn_1 = cAddVariables(cEmptyFunction, {tdecl});
+        cfn_2 = cAddStatements(cfn_1, {stmt});
+   then (cfn_2,tvar,tnr1);
+         
     case (typ,maxn,exps,tnr,context)
       equation 
         (cfn1,vars1,tnr1) = generateMatrixExpressions(typ, exps, maxn, tnr, context);
