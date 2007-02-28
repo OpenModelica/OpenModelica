@@ -2049,7 +2049,7 @@ algorithm
     case (t,s)
       equation 
         Debug.fprint("failtrace", "- check_subscripts failed ( ");
-        Debug.fcall("failtrace", Types.printType, t);
+        Debug.fprint("failtrace", Types.printTypeStr(t));
         Debug.fprint("failtrace", ")\n");
       then
         fail();

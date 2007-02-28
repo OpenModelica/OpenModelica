@@ -650,7 +650,7 @@ algorithm
         Print.printBuf(", ");
         dump2(dae);
         Print.printBuf(", ");
-        Types.printType(tp);
+        Print.printBuf(Types.printTypeStr(tp));
         Print.printBuf(", ");
         extdeclstr = dumpExtDeclStr(extdecl);
         Print.printBuf(extdeclstr);
@@ -2929,7 +2929,7 @@ algorithm
         fstr = Absyn.pathString(fpath);
         Print.printBuf(fstr);
         Print.printBuf(",");
-        Types.printType(t);
+        Print.printBuf(Types.printTypeStr(t));
         Print.printBuf(",");
         dumpDebug(l);
         Print.printBuf(")");

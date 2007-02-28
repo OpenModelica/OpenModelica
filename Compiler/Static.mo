@@ -6314,7 +6314,7 @@ algorithm
         farg_str = Types.printFargStr(farg);
         filled = Util.if_(filled, "filled", "not filled");
         str = Dump.getOptionStr(exp, Exp.printExpStr);
-        str_lst = Util.listMap(ds, Types.getArraydimStr);
+        str_lst = Util.listMap(ds, Types.printArraydimStr);
         s = Util.stringDelimitList(str_lst, ", ");
         s1 = Util.stringAppendList({"SLOT(",farg_str,", ",filled,", ",str,", [",s,"])\n"});
         s2 = printSlotsStr(xs);
@@ -7312,7 +7312,7 @@ algorithm
     case (t,_)
       equation 
         Print.printBuf("- subscript_type failed (");
-        Types.printType(t);
+        Print.printBuf(Types.printTypeStr(t));
         Print.printBuf(" , [...])\n");
       then
         fail();
@@ -7763,7 +7763,8 @@ algorithm
       list<Ident> exps_str,tps_str;
     case (((op,params,rtype) :: _),args,_)
       equation 
-        Debug.fprintList("dovl", params, Types.printType, "\n");
+        
+        Debug.fprint("dovl", Util.stringDelimitList(Util.listMap(params, Types.printTypeStr),"\n"));
         Debug.fprint("dovl", "\n===\n");
         (args_1,types_1) = elabArglist(params, args);
         rtype_1 = computeReturnType(op, types_1, rtype);

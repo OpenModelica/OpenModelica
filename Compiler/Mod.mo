@@ -964,16 +964,6 @@ algorithm
         mod = lookupCompModification2(subs, n);
       then
         mod;
-    case (mod,i)
-      equation 
-        Print.printBuf("# Mod.lookup_comp_modification(");
-        printMod(mod);
-        Print.printBuf(",");
-        Print.printBuf(i);
-        Print.printBuf(") failed\n");
-        print("- lookup_comp_modification failed\n");
-      then
-        fail();
   end matchcontinue;
 end lookupCompModification;
 
@@ -1333,7 +1323,8 @@ algorithm
       Prefix.Prefix pre;
       list<Integer> i1,i2;
     case ({},m,_,_) then ({},m); 
-    case ((Types.NAMEMOD(ident = n1,mod = m1) :: ss),Types.NAMEMOD(ident = n2,mod = m2),env,pre) /* Modifications in the list take precedence */ 
+      /* Modifications in the list take precedence */
+    case ((Types.NAMEMOD(ident = n1,mod = m1) :: ss),Types.NAMEMOD(ident = n2,mod = m2),env,pre)  
       local Types.Mod m;
       equation 
         equality(n1 = n2);

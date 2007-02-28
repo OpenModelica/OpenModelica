@@ -456,10 +456,10 @@ algorithm
         (FRAME(sid,ht,httypes,imps,bcframes,crs,encflag) :: fs);
     case (_,(v as Types.VAR(name = id)),_,_)
       equation 
-        Print.printBuf("- update_frame_v failed\n");
-        Print.printBuf("  - variable: ");
-        Types.printVar(v);
-        Print.printBuf("\n");
+        print("- update_frame_v failed\n");
+        print("  - variable: ");
+        print(Types.printVarStr(v));
+        print("\n");
       then
         fail();
   end matchcontinue;

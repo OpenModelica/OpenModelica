@@ -1058,43 +1058,48 @@ algorithm
       SCode.ClassDef d;
       Env.Cache cache;
       Real t1,t2,time; Boolean b;
-      /*  implicit instantiation - No DAE */ 
-    case (cache,env,mods,pre,Connect.SETS(connection = crs),ci_state,(c as SCode.CLASS(name = "Real")),_,inst_dims,impl) 
+
+      /*  Real class */ 
+    case (cache,env,mods,pre,csets as Connect.SETS(connection = crs),ci_state,(c as SCode.CLASS(name = "Real",restriction = r,parts = d)),prot,inst_dims,impl) 
       equation 
-        
-        bc = arrayBasictypeBaseclass(inst_dims, (Types.T_REAL({}),NONE));
+       (_,_,_,_,_,tys,_) = instClassdef(cache,env, mods, pre, csets, ci_state, d, r, prot, inst_dims, impl);
+       tys = removeDefaultValuedAttributes(tys,mods) "speedup: no need to keep default valued attributes";
+        bc = arrayBasictypeBaseclass(inst_dims, (Types.T_REAL(tys),NONE));        
       then
-        (cache,{},env,Connect.SETS({},crs),ci_state,{},bc);
-    case (cache,env,mods,pre,Connect.SETS(connection = crs),ci_state,(c as SCode.CLASS(name = "Integer")),_,_,impl) 
-      then (cache,{},env,Connect.SETS({},crs),ci_state,{},NONE);  /* No DAE csets should be emtpy, but crs must be propagated to \"next component\" No DAE */ 
-    case (cache,env,mods,pre,Connect.SETS(connection = crs),ci_state,(c as SCode.CLASS(name = "String")),_,_,impl) 
-      then (cache,{},env,Connect.SETS({},crs),ci_state,{},NONE);  /* No DAE No DAE */ 
-    case (cache,env,mods,pre,Connect.SETS(connection = crs),ci_state,(c as SCode.CLASS(name = "Boolean")),_,_,impl) 
-      then (cache,{},env,Connect.SETS({},crs),ci_state,{},NONE);  /* No DAE No DAE */ 
+        (cache,{},env,Connect.SETS({},crs),ci_state,tys,bc);       
+        
+        /* Integer class */
+    case (cache,env,mods,pre,csets as Connect.SETS(connection = crs),ci_state,(c as SCode.CLASS(name = "Integer",restriction = r,parts = d)),prot,inst_dims,impl) 
+      equation
+        (_,_,_,_,_,tys,_) = instClassdef(cache,env, mods, pre, csets, ci_state, d, r, prot, inst_dims, impl);
+       tys = removeDefaultValuedAttributes(tys,mods) "speedup: no need to keep default valued attributes";
+        bc = arrayBasictypeBaseclass(inst_dims, (Types.T_INTEGER(tys),NONE));
+      then (cache,{},env,Connect.SETS({},crs),ci_state,tys,NONE);   
+
+        /* String class */
+    case (cache,env,mods,pre,csets as Connect.SETS(connection = crs),ci_state,(c as SCode.CLASS(name = "String",restriction = r,parts = d)),prot,inst_dims,impl) 
+      equation
+        (_,_,_,_,_,tys,_) = instClassdef(cache,env, mods, pre, csets, ci_state, d, r, prot, inst_dims, impl);
+        tys = removeDefaultValuedAttributes(tys,mods) "speedup: no need to keep default valued attributes";
+        bc = arrayBasictypeBaseclass(inst_dims, (Types.T_STRING(tys),NONE));        
+      then (cache,{},env,Connect.SETS({},crs),ci_state,tys,NONE);   
+
+        /* Boolean class */
+    case (cache,env,mods,pre,csets as Connect.SETS(connection = crs),ci_state,(c as SCode.CLASS(name = "Boolean",restriction = r,parts = d)),prot,inst_dims,impl) 
+      equation
+        (_,_,_,_,_,tys,_) = instClassdef(cache,env, mods, pre, csets, ci_state, d, r, prot, inst_dims, impl);
+        tys = removeDefaultValuedAttributes(tys,mods) "speedup: no need to keep default valued attributes";
+        bc = arrayBasictypeBaseclass(inst_dims, (Types.T_BOOL(tys),NONE));        
+      then (cache,{},env,Connect.SETS({},crs),ci_state,tys,NONE);           
   
-   	/* No DAE Ignore functions if not implicit instantiation No DAE */ 
+   	/* Ignore functions if not implicit instantiation */ 
     case (cache,env,mods,pre,Connect.SETS(connection = crs),ci_state,cls,_,_,(impl as false)) 
       equation 
         true = SCode.isFunction(cls);
-        //Debug.fprint("insttr", "Ignoring function in explicit instantiation: ");
         clsname = SCode.className(cls);
-        //Debug.fprint("insttr", clsname);
-        //Debug.fprint("insttr", "\n");
       then
         (cache,{},env,Connect.SETS({},crs),ci_state,{},NONE);
-    
-    case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,parts = d)),prot,inst_dims,impl)
-      local String s; Absyn.Path fullPath;
-        Boolean b;
-        Absyn.Path scope;
-      equation 
-        //clsname = SCode.className(c); 
-        SOME(scope) = Env.getEnvPath(env);
-        _ = Env.cacheGet(scope,Absyn.IDENT(n),cache);
-        //print("instClassIn ");print(n);print(" that already exist in class!\n");
-      then
-        fail();
-        
+         
     case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,parts = d)),prot,inst_dims,impl)
       local String s; Absyn.Path fullPath;
         Boolean b;
@@ -1128,6 +1133,34 @@ algorithm
         fail();
   end matchcontinue;
 end instClassIn;
+
+protected function removeDefaultValuedAttributes "Removes the Types.Var 
+( which are attributes of builtin types)  that have default value. 
+This is determined to investigate modifiers.
+"
+input list<Types.Var> varLst;
+input Types.Mod mods;
+output list<Types.Var> outVarLst;
+algorithm
+  outVarLst := matchcontinue(varLst,mods)
+  local Types.Var v; Ident id;
+    // Found no modification
+    case((v as Types.VAR(name=id))::varLst,mods) equation
+      Types.NOMOD() = Mod.lookupCompModification(mods,id);
+      varLst = removeDefaultValuedAttributes(varLst,mods);
+    then varLst;
+      // Found modification
+    case((v as Types.VAR(name=id))::varLst,mods) equation
+      Types.MOD(subModLst=_) = Mod.lookupCompModification(mods,id);  
+      varLst = removeDefaultValuedAttributes(varLst,mods);
+    then v::varLst;
+     // Failed to lookup modification. 
+    case(v::varLst,mods) equation
+      varLst = removeDefaultValuedAttributes(varLst,mods);
+      then varLst;
+    case({},mods) then {};
+  end matchcontinue;
+end removeDefaultValuedAttributes;
 
 protected function arrayBasictypeBaseclass "function: 
   author: PA
@@ -1462,16 +1495,15 @@ algorithm
       equation 
         (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = Lookup.lookupClass(cache,env, cn, true);
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
-        m = Mod.lookupModificationP(mods, cn);
         (cache,mod_1) = Mod.elabMod(cache,env, pre, mod, impl);
         new_ci_state = ClassInf.start(r, cn2);
-        mods_1 = Mod.merge(mods, m, cenv_2, pre) "merge modifiers" ;
-        mods_2 = Mod.merge(mods_1, mod_1, cenv_2, pre);
-        eq = Mod.modEquation(mods_2) "instantiate array dimensions" ;
+        mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
+        eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
         (cache,dims) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}), ad, eq, impl, NONE,true) "owncref not valid here" ;
         inst_dims2 = instDimExpLst(dims, impl);
         inst_dims_1 = listAppend(inst_dims, inst_dims2);
-        (cache,dae,env_2,csets_1,ci_state_1,tys,bc) = instClassIn(cache,cenv_2, mods_2, pre, csets, new_ci_state, c, prot, 
+        
+        (cache,dae,env_2,csets_1,ci_state_1,tys,bc) = instClassIn(cache,cenv_2, mods_1, pre, csets, new_ci_state, c, prot, 
           inst_dims_1, impl) "instantiate class in opened scope. " ;
         ClassInf.assertValid(ci_state_1, re) "Check for restriction violations" ;
       then
@@ -2070,12 +2102,10 @@ algorithm
       equation 
         (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = Lookup.lookupClass(cache,env, cn, true);
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
-        m = Mod.lookupModificationP(mods, cn);
         (cache,mod_1) = Mod.elabMod(cache,env, pre, mod, false) "FIXME: impl" ;
         new_ci_state = ClassInf.start(r, cn2);
-        mods_1 = Mod.merge(mods, m, cenv_2, pre);
-        mods_2 = Mod.merge(mods_1, mod_1, cenv_2, pre);
-        (cache,env_2,new_ci_state_1) = partialInstClassIn(cache,cenv_2, mods_2, pre, csets, new_ci_state, c, prot, 
+        mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
+        (cache,env_2,new_ci_state_1) = partialInstClassIn(cache,cenv_2, mods_1, pre, csets, new_ci_state, c, prot, 
           inst_dims);
       then
         (cache,env_2,new_ci_state_1);
@@ -5524,7 +5554,8 @@ algorithm
       equation 
         Debug.fprint("failtrace", "Undefined!");
         Debug.fprint("failtrace", " The type detected: ");
-        Debug.fcall("failtrace", Types.printType, t);
+        
+        Debug.fprint("failtrace", Types.printTypeStr(t));
       then
         fail();
   end matchcontinue;
@@ -7390,7 +7421,7 @@ algorithm
         //Debug.fprint("failtrace", " exp2=");
         Debug.fcall("failtrace", Exp.printExp, e2);
         //Debug.fprint("failtrace", " type =");
-        Debug.fcall("failtrace", Types.printType, t);
+        Debug.fprint("failtrace", Types.printTypeStr(t));
         //Debug.fprint("failtrace", "\n");
       then
         fail();
@@ -8618,22 +8649,27 @@ protected function instBinding "function: instBinding
  
   This function investigates a modification and extracts the 
   <...> modification. E.g. Real x(<...>=1+3) => 1+3
-  It also handles the case Integer T0{2}(final <...>={5,6})={9,10} becomes
-  Integer T0{1}(<...>=5); Integer T0{2}(<...>=6);
+  It also handles the case Integer T0[2](final <...>={5,6})={9,10} becomes
+  Integer T0[1](<...>=5); Integer T0[2](<...>=6);
+ 
+ 	If no modifier is given it also investigates the type to check for binding there.
+ 	I.e. type A = Real(start=1); A a; will set the start attribute since it's found in the type.
  
   Arg 1 is the modification  
-  Arg 2 is the expected type that the modification should have
-  Arg 3 is the index list for the element: for T0{1,2} is {1,2} 
+  Arg 2 are the type variables.
+  Arg 3 is the expected type that the modification should have
+  Arg 4 is the index list for the element: for T0{1,2} is {1,2} 
  
 "
   input Mod inMod;
+  input list<Types.Var> varLst;
   input Types.Type inType;
   input list<Integer> inIntegerLst;
   input String inString;
   output Option<Exp.Exp> outExpExpOption;
 algorithm 
   outExpExpOption:=
-  matchcontinue (inMod,inType,inIntegerLst,inString)
+  matchcontinue (inMod,varLst,inType,inIntegerLst,inString)
     local
       Types.Mod mod2,mod;
       Exp.Exp e,e_1;
@@ -8641,27 +8677,49 @@ algorithm
       String bind_name;
       Option<Exp.Exp> result;
       list<Integer> index_list;
-    case (mod,expected_type,{},bind_name) /* No subscript/index */ 
+      Types.Binding binding;
+      Ident name;
+    case (mod,varLst,expected_type,{},bind_name) /* No subscript/index */ 
       equation 
         mod2 = Mod.lookupCompModification(mod, bind_name);
         SOME(Types.TYPED(e,_,Types.PROP(ty2,_))) = Mod.modEquation(mod2);
         (e_1,ty_1) = Types.matchType(e, ty2, expected_type);
       then
         SOME(e_1);
-    case (mod,etype,index_list,bind_name) /* Have subscript/index */ 
+    case (mod,varLst,etype,index_list,bind_name) /* Have subscript/index */ 
       equation 
         mod2 = Mod.lookupCompModification(mod, bind_name);
         result = instBinding2(mod2, etype, index_list, bind_name);
       then
         result;
-    case (mod,expected_type,{},bind_name) /* No modifier for this name. */ 
+    case (mod,varLst,expected_type,{},bind_name) /* No modifier for this name. */ 
       equation 
         failure(mod2 = Mod.lookupCompModification(mod, bind_name));
       then
         NONE;
-    case (mod,etype,_,_) then NONE; 
+    case (mod,Types.VAR(name,binding=binding)::_,etype,index_list,bind_name) equation
+      equality(name=bind_name);
+      then bindingExp(binding);
+    case (mod,_::varLst,etype,index_list,bind_name)      
+    then instBinding(mod,varLst,etype,index_list,bind_name);  
+    case (mod,{},etype,index_list,bind_name)
+    then NONE;                
   end matchcontinue;
 end instBinding;
+
+protected function bindingExp "help function to instBinding, returns the expression of a binding"
+input Types.Binding bind;
+output option<Exp.Exp> exp;
+algorithm
+  exp := matchcontinue(bind)
+  local Exp.Exp e; Values.Value v;
+    case(Types.UNBOUND()) then NONE;
+    case(Types.EQBOUND(exp=e)) then SOME(e);
+    case(Types.VALBOUND(v)) equation
+      e = Static.valueExp(v);
+    then SOME(e);  
+  end matchcontinue;
+end bindingExp;
 
 protected function instBinding2 "function: instBinding2
  
@@ -8727,7 +8785,7 @@ algorithm
   eltType := Types.arrayElementType(etype); // When instantiating arrays, the array type is passed
   // But binding is performed on the element type.
 	// Also removed index, since indexing is already performed on the modifier.
-  result := instBinding(mod, eltType, {}, "start");
+  result := instBinding(mod, {},eltType, {}, "start");
 end instStartBindingExp;
 
 protected function instDaeVariableAttributes "function: instDaeVariableAttributes 
@@ -8758,55 +8816,57 @@ algorithm
       list<Integer> index_list;
       tuple<Types.TType, Option<Absyn.Path>> enumtype;
       Env.Cache cache;
-    case (cache,env,mod,(Types.T_REAL(varLstReal = _),path),index_list) /* Real */ 
+      Types.Type tp;
+      list<Types.Var> varLst;
+    case (cache,env,mod,tp as (Types.T_REAL(varLstReal = varLst),path),index_list) /* Real */ 
       equation 
-        (cache,quantity_str) = instStringBinding(cache,env, mod, index_list, "quantity");
-        (cache,unit_str) = instStringBinding(cache,env, mod, index_list, "unit");
-        (cache,displayunit_str) = instStringBinding(cache,env, mod, index_list, "displayUnit");
-        (cache,min_val) = instRealBinding(cache,env, mod, index_list, "min");
-        (cache,max_val) = instRealBinding(cache,env, mod, index_list, "max");
-        (cache,start_val) = instRealBinding(cache,env, mod, index_list, "start");
-        (cache,fixed_val) = instBoolBinding(cache,env, mod, index_list, "fixed");
-        (cache,nominal_val) = instRealBinding(cache,env, mod, index_list, "nominal");
-        (cache,exp_bind_select) = instEnumerationBinding(cache,env, mod, index_list, "stateSelect");
+        (cache,quantity_str) = instStringBinding(cache,env, mod, varLst, index_list, "quantity");
+        (cache,unit_str) = instStringBinding(cache,env, mod, varLst, index_list, "unit");
+        (cache,displayunit_str) = instStringBinding(cache,env, mod, varLst, index_list, "displayUnit");
+        (cache,min_val) = instRealBinding(cache,env, mod, varLst, index_list, "min");
+        (cache,max_val) = instRealBinding(cache,env, mod, varLst, index_list, "max");
+        (cache,start_val) = instRealBinding(cache,env, mod, varLst, index_list, "start");
+        (cache,fixed_val) = instBoolBinding(cache,env, mod, varLst, index_list, "fixed");
+        (cache,nominal_val) = instRealBinding(cache,env, mod, varLst, index_list, "nominal");
+        (cache,exp_bind_select) = instEnumerationBinding(cache,env, mod, varLst, index_list, "stateSelect");
         (stateSelect_value) = getStateSelectFromExpOption(exp_bind_select);
       then
         (cache,SOME(
           DAE.VAR_ATTR_REAL(quantity_str,unit_str,displayunit_str,(min_val,max_val),
           start_val,fixed_val,nominal_val,stateSelect_value)));
-    case (cache,env,mod,(Types.T_INTEGER(varLstInt = _),_),index_list) /* Integer */ 
+    case (cache,env,mod,(Types.T_INTEGER(varLstInt = varLst),_),index_list) /* Integer */ 
       local Option<Integer> min_val,max_val,start_val;
       equation 
-        (cache,quantity_str) = instStringBinding(cache,env, mod, index_list, "quantity");
-        (cache,min_val) = instIntBinding(cache,env, mod, index_list, "min");
-        (cache,max_val) = instIntBinding(cache,env, mod, index_list, "max");
-        (cache,start_val) = instIntBinding(cache,env, mod, index_list, "start");
-        (cache,fixed_val) = instBoolBinding(cache,env, mod, index_list, "fixed");
+        (cache,quantity_str) = instStringBinding(cache,env, mod, varLst, index_list, "quantity");
+        (cache,min_val) = instIntBinding(cache,env, mod, varLst, index_list, "min");
+        (cache,max_val) = instIntBinding(cache,env, mod, varLst, index_list, "max");
+        (cache,start_val) = instIntBinding(cache,env, mod, varLst, index_list, "start");
+        (cache,fixed_val) = instBoolBinding(cache,env, mod, varLst, index_list, "fixed");
       then
         (cache,SOME(
           DAE.VAR_ATTR_INT(quantity_str,(min_val,max_val),start_val,fixed_val)));
-    case (cache,env,mod,(Types.T_BOOL(varLstBool = _),_),index_list) /* Boolean */ 
+    case (cache,env,mod,(Types.T_BOOL(varLstBool = varLst),_),index_list) /* Boolean */ 
       local Option<Boolean> start_val;
       equation 
-        (cache,quantity_str) = instStringBinding(cache,env, mod, index_list, "quantity");
-        (cache,start_val) = instBoolBinding(cache,env, mod, index_list, "start");
-        (cache,fixed_val) = instBoolBinding(cache,env, mod, index_list, "fixed");
+        (cache,quantity_str) = instStringBinding(cache,env, mod, varLst, index_list, "quantity");
+        (cache,start_val) = instBoolBinding(cache,env, mod, varLst, index_list, "start");
+        (cache,fixed_val) = instBoolBinding(cache,env, mod, varLst, index_list, "fixed");
       then
         (cache,SOME(DAE.VAR_ATTR_BOOL(quantity_str,start_val,fixed_val)));
-    case (cache,env,mod,(Types.T_STRING(varLstString = _),_),index_list) /* String */ 
+    case (cache,env,mod,(Types.T_STRING(varLstString = varLst),_),index_list) /* String */ 
       local Option<String> start_val;
       equation 
-        (cache,quantity_str) = instStringBinding(cache,env, mod, index_list, "quantity");
-        (cache,start_val) = instStringBinding(cache,env, mod, index_list, "start");
+        (cache,quantity_str) = instStringBinding(cache,env, mod, varLst, index_list, "quantity");
+        (cache,start_val) = instStringBinding(cache,env, mod, varLst, index_list, "start");
       then
         (cache,SOME(DAE.VAR_ATTR_STRING(quantity_str,start_val)));
-    case (cache,env,mod,(enumtype as (Types.T_ENUMERATION(names = _),_)),index_list) /* Enumeration */ 
+    case (cache,env,mod,(enumtype as (Types.T_ENUMERATION(names = _,varLst=varLst),_)),index_list) /* Enumeration */ 
       equation 
-        (cache,quantity_str) = instStringBinding(cache,env, mod, index_list, "quantity");
-        (exp_bind_min) = instBinding(mod, enumtype, index_list, "min");
-        (exp_bind_max) = instBinding(mod, enumtype, index_list, "max");
-        (exp_bind_start) = instBinding(mod, enumtype, index_list, "start");
-        (cache,fixed_val) = instBoolBinding(cache,env, mod, index_list, "fixed");
+        (cache,quantity_str) = instStringBinding(cache,env, mod, varLst, index_list, "quantity");
+        (exp_bind_min) = instBinding(mod, varLst, enumtype, index_list, "min");
+        (exp_bind_max) = instBinding(mod, varLst, enumtype, index_list, "max");
+        (exp_bind_start) = instBinding(mod, varLst, enumtype, index_list, "start");
+        (cache,fixed_val) = instBoolBinding(cache,env, mod, varLst, index_list, "fixed");
       then
         (cache,SOME(
           DAE.VAR_ATTR_ENUMERATION(quantity_str,(exp_bind_min,exp_bind_max),exp_bind_start,
@@ -8826,13 +8886,14 @@ protected function instBoolBinding "function instBoolBinding
   input Env.Cache inCache;
   input Env inEnv;
   input Mod inMod;
+  input list<Types.Var> varLst;
   input list<Integer> inIntegerLst;
   input String inString;
   output Env.Cache outCache;
   output Option<Boolean> outBooleanOption;
 algorithm 
   (outCache,outBooleanOption) :=
-  matchcontinue (inCache,inEnv,inMod,inIntegerLst,inString)
+  matchcontinue (inCache,inEnv,inMod,varLst,inIntegerLst,inString)
     local
       Exp.Exp e;
       Boolean result;
@@ -8841,23 +8902,23 @@ algorithm
       list<Integer> index_list;
       String bind_name;
       Env.Cache cache;
-    case (cache,env,mod,index_list,bind_name)
+    case (cache,env,mod,varLst,index_list,bind_name)
       equation 
-        SOME(e) = instBinding(mod, (Types.T_BOOL({}),NONE), index_list, bind_name);
+        SOME(e) = instBinding(mod,varLst, (Types.T_BOOL({}),NONE), index_list, bind_name);
         (cache,Values.BOOL(result),_) = Ceval.ceval(cache,env, e, false, NONE, NONE, Ceval.NO_MSG());
       then
         (cache,SOME(result));
-    case (cache,env,mod,index_list,bind_name) /* Non constant expression return NONE */ 
+    case (cache,env,mod,varLst,index_list,bind_name) /* Non constant expression return NONE */ 
       equation 
-        SOME(e) = instBinding(mod, (Types.T_BOOL({}),NONE), index_list, bind_name);
+        SOME(e) = instBinding(mod, varLst,(Types.T_BOOL({}),NONE), index_list, bind_name);
       then
         (cache,NONE);
-    case (cache,env,mod,index_list,bind_name)
+    case (cache,env,mod,varLst,index_list,bind_name)
       equation 
-        NONE = instBinding(mod, (Types.T_BOOL({}),NONE), index_list, bind_name);
+        NONE = instBinding(mod, varLst, (Types.T_BOOL({}),NONE), index_list, bind_name);
       then
         (cache,NONE);
-    case (cache,env,mod,index_list,bind_name)
+    case (cache,env,mod,varLst,index_list,bind_name)
       equation 
         Error.addMessage(Error.TYPE_ERROR, {bind_name,"Boolean"});
       then
@@ -8873,13 +8934,14 @@ protected function instRealBinding "function: instRealBinding
 	input Env.Cache inCache;
   input Env inEnv;
   input Mod inMod;
+  input list<Types.Var> varLst;
   input list<Integer> inIntegerLst;
   input String inString;
   output Env.Cache outCache;
   output Option<Real> outRealOption;
 algorithm 
   (outCache,outRealOption) :=
-  matchcontinue (outCache,inEnv,inMod,inIntegerLst,inString)
+  matchcontinue (outCache,inEnv,inMod,varLst,inIntegerLst,inString)
     local
       Exp.Exp e;
       Real result;
@@ -8888,23 +8950,23 @@ algorithm
       list<Integer> index_list;
       String bind_name;
       Env.Cache cache;
-    case (cache,env,mod,index_list,bind_name)
+    case (cache,env,mod,varLst,index_list,bind_name)
       equation 
-        SOME(e) = instBinding(mod, (Types.T_REAL({}),NONE), index_list, bind_name);
+        SOME(e) = instBinding(mod, varLst, (Types.T_REAL({}),NONE), index_list, bind_name);
         (cache,Values.REAL(result),_) = Ceval.ceval(cache,env, e, false, NONE, NONE, Ceval.NO_MSG());
       then
         (cache,SOME(result));
-    case (cache,env,mod,index_list,bind_name) /* non constant expression, return NONE */ 
+    case (cache,env,mod,varLst,index_list,bind_name) /* non constant expression, return NONE */ 
       equation 
-        SOME(e) = instBinding(mod, (Types.T_REAL({}),NONE), index_list, bind_name);
+        SOME(e) = instBinding(mod, varLst,(Types.T_REAL({}),NONE), index_list, bind_name);
       then
         (cache,NONE);
-    case (cache,env,mod,index_list,bind_name)
+    case (cache,env,mod,varLst,index_list,bind_name)
       equation 
-        NONE = instBinding(mod, (Types.T_REAL({}),NONE), index_list, bind_name);
+        NONE = instBinding(mod, varLst,(Types.T_REAL({}),NONE), index_list, bind_name);
       then
         (cache,NONE);
-    case (cache,env,mod,index_list,bind_name)
+    case (cache,env,mod,varLst,index_list,bind_name)
       equation 
         Error.addMessage(Error.TYPE_ERROR, {bind_name,"Real"});
       then
@@ -8920,13 +8982,14 @@ protected function instIntBinding "function: instIntBinding
 	input Env.Cache inCache;
   input Env inEnv;
   input Mod inMod;
+  input list<Types.Var> varLst;
   input list<Integer> inIntegerLst;
   input String inString;
   output Env.Cache outCache;
   output Option<Integer> outIntegerOption;
 algorithm 
   (outCache,outIntegerOption) :=
-  matchcontinue (outCache,inEnv,inMod,inIntegerLst,inString)
+  matchcontinue (outCache,inEnv,inMod,varLst,inIntegerLst,inString)
     local
       Exp.Exp e;
       Integer result;
@@ -8935,23 +8998,23 @@ algorithm
       list<Integer> index_list;
       String bind_name;
       Env.Cache cache;
-    case (cache,env,mod,index_list,bind_name)
+    case (cache,env,mod,varLst,index_list,bind_name)
       equation 
-        SOME(e) = instBinding(mod, (Types.T_INTEGER({}),NONE), index_list, bind_name);
+        SOME(e) = instBinding(mod, varLst, (Types.T_INTEGER({}),NONE), index_list, bind_name);
         (cache,Values.INTEGER(result),_) = Ceval.ceval(cache,env, e, false, NONE, NONE, Ceval.NO_MSG());
       then
         (cache,SOME(result));
-    case (cache,env,mod,index_list,bind_name) /* got non-constant expression, return NONE */ 
+    case (cache,env,mod,varLst,index_list,bind_name) /* got non-constant expression, return NONE */ 
       equation 
-        SOME(e) = instBinding(mod, (Types.T_INTEGER({}),NONE), index_list, bind_name);
+        SOME(e) = instBinding(mod, varLst,(Types.T_INTEGER({}),NONE), index_list, bind_name);
       then
         (cache,NONE);
-    case (cache,env,mod,index_list,bind_name)
+    case (cache,env,mod,varLst,index_list,bind_name)
       equation 
-        NONE = instBinding(mod, (Types.T_INTEGER({}),NONE), index_list, bind_name);
+        NONE = instBinding(mod, varLst,(Types.T_INTEGER({}),NONE), index_list, bind_name);
       then
         (cache,NONE);
-    case (cache,env,mod,index_list,bind_name)
+    case (cache,env,mod,varLst,index_list,bind_name)
       equation 
         Error.addMessage(Error.TYPE_ERROR, {bind_name,"Integer"});
       then
@@ -8967,13 +9030,14 @@ protected function instStringBinding "function: instStringBinding
 	input Env.Cache inCache;
   input Env inEnv;
   input Mod inMod;
+  input list<Types.Var> varLst;
   input list<Integer> inIntegerLst;
   input String inString;
   output Env.Cache outCache;
   output Option<String> outStringOption;
 algorithm 
   (outCache,outStringOption) :=
-  matchcontinue (inCache,inEnv,inMod,inIntegerLst,inString)
+  matchcontinue (inCache,inEnv,inMod,varLst,inIntegerLst,inString)
     local
       Exp.Exp e;
       String result,bind_name;
@@ -8981,23 +9045,23 @@ algorithm
       Types.Mod mod;
       list<Integer> index_list;
       Env.Cache cache;
-    case (cache,env,mod,index_list,bind_name)
+    case (cache,env,mod,varLst,index_list,bind_name)
       equation 
-        SOME(e) = instBinding(mod, (Types.T_STRING({}),NONE), index_list, bind_name);
+        SOME(e) = instBinding(mod, varLst,(Types.T_STRING({}),NONE), index_list, bind_name);
         (cache,Values.STRING(result),_) = Ceval.ceval(cache,env, e, false, NONE, NONE, Ceval.NO_MSG());
       then
         (cache,SOME(result));
-    case (cache,env,mod,index_list,bind_name) /* Non constant expression return NONE */ 
+    case (cache,env,mod,varLst,index_list,bind_name) /* Non constant expression return NONE */ 
       equation 
-        SOME(e) = instBinding(mod, (Types.T_STRING({}),NONE), index_list, bind_name);
+        SOME(e) = instBinding(mod, varLst,(Types.T_STRING({}),NONE), index_list, bind_name);
       then
         (cache,NONE);
-    case (cache,env,mod,index_list,bind_name)
+    case (cache,env,mod,varLst,index_list,bind_name)
       equation 
-        NONE = instBinding(mod, (Types.T_STRING({}),NONE), index_list, bind_name);
+        NONE = instBinding(mod, varLst,(Types.T_STRING({}),NONE), index_list, bind_name);
       then
         (cache,NONE);
-    case (cache,env,mod,index_list,bind_name)
+    case (cache,env,mod,varLst,index_list,bind_name)
       equation 
         Error.addMessage(Error.TYPE_ERROR, {bind_name,"String"});
       then
@@ -9013,13 +9077,14 @@ protected function instEnumerationBinding "function: instEnumerationBinding
 	input Env.Cache inCache;
   input Env inEnv;
   input Mod inMod;
+  input list<Types.Var> varLst;
   input list<Integer> inIntegerLst;
   input String inString;
   output Env.Cache outCache;
   output Option<Exp.Exp> outExpExpOption;
 algorithm 
   (outCache,outExpExpOption) :=
-  matchcontinue (inCache,inEnv,inMod,inIntegerLst,inString)
+  matchcontinue (inCache,inEnv,inMod,varLst,inIntegerLst,inString)
     local
       Option<Exp.Exp> result;
       list<Env.Frame> env;
@@ -9027,13 +9092,13 @@ algorithm
       list<Integer> index_list;
       String bind_name;
       Env.Cache cache;
-    case (cache,env,mod,index_list,bind_name)
+    case (cache,env,mod,varLst,index_list,bind_name)
       equation 
-        result = instBinding(mod, (Types.T_ENUMERATION({},{}),NONE), index_list, 
+        result = instBinding(mod, varLst, (Types.T_ENUMERATION({},{}),NONE), index_list, 
           bind_name);
       then
         (cache,result);
-    case (cache,env,mod,index_list,bind_name)
+    case (cache,env,mod,varLst,index_list,bind_name)
       equation 
         Error.addMessage(Error.TYPE_ERROR, {bind_name,"enumeration type"});
       then
@@ -9097,7 +9162,7 @@ algorithm
       local tuple<Types.TType, Option<Absyn.Path>> t;
       equation 
         Debug.fprint("failtrace", "- inst_mod_equation failed\n type: ");
-        Debug.fcall("failtrace", Types.printType, t);
+        Debug.fprint("failtrace", Types.printTypeStr(t));
         Debug.fprint("failtrace", "\n  cref: ");
         Debug.fprint("failtrace", Exp.printComponentRefStr(c));
         Debug.fprint("failtrace", "\n mod:");
@@ -9369,7 +9434,7 @@ algorithm
         (cache,_,_,_,tp_1) = instVar(cache,cenv, ClassInf.FUNCTION(""), mod_1, Prefix.NOPRE(), 
           Connect.emptySet, id, cl, attr, dimexp, {}, {}, impl, comment,io);
         //Debug.fprint("recconst", "Type of argument:");
-        Debug.fcall("recconst", Types.printType, tp_1);
+        Debug.fprint("recconst", Types.printTypeStr(tp_1));
         //Debug.fprint("recconst", "\nMod=");
         Debug.fcall("recconst", Mod.printMod, mod_1);
         (cache,bind) = makeBinding(cache,env, attr, mod_1, tp_1);

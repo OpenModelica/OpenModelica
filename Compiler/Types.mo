@@ -1433,15 +1433,16 @@ algorithm
   end matchcontinue;
 end unparseTupleconst;
 
-public function printType "function: printType
+public function printTypeStr "function: printType
  
-  This function prints a textual description of a Modelica type.  If
+  This function prints a textual description of a Modelica type to a string.  If
   the type is not one of the primitive types, it simply prints
-  `composite\'.  The actual code is expluded from the report.
+  `composite\'.
 "
   input Type inType;
+  output String str;
 algorithm 
-  _:=
+  str :=
   matchcontinue (inType)
     local
       list<Var> vars;
@@ -1452,121 +1453,79 @@ algorithm
       Type t,restype;
       list<FuncArg> params;
       list<Type> tys;
+      String s1,s2;
     case ((T_INTEGER(varLstInt = vars),_))
       equation 
-        Print.printErrorBuf("Integer");
-        Print.printErrorBuf(" (");
-        Dump.printList(vars, printVar, ", ");
-        Print.printErrorBuf(")");
+        s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
+        str = Util.stringAppendList({"Integer(",s1,")"});
       then
-        ();
+        str;
     case ((T_REAL(varLstReal = vars),_))
       equation 
-        Print.printErrorBuf("Real");
-        Print.printErrorBuf(" (");
-        Dump.printList(vars, printVar, ", ");
-        Print.printErrorBuf(")");
+        s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
+        str = Util.stringAppendList({"Real(",s1,")"});
       then
-        ();
+        str;
     case ((T_STRING(varLstString = vars),_))
       equation 
-        Print.printErrorBuf("String");
-        Print.printErrorBuf(" (");
-        Dump.printList(vars, printVar, ", ");
-        Print.printErrorBuf(")");
+      s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
+      str = Util.stringAppendList({"String(",s1,")"});
       then
-        ();
+        str;
     case ((T_BOOL(varLstBool = vars),_))
       equation 
-        Print.printErrorBuf("Boolean");
-        Print.printErrorBuf(" (");
-        Dump.printList(vars, printVar, ", ");
-        Print.printErrorBuf(")");
+        s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
+        str = Util.stringAppendList({"Boolean(",s1,")"});
       then
-        ();
+       str;
     case ((T_ENUM(),_))
-      equation 
-        Print.printErrorBuf("EnumType");
       then
-        ();
+        "EnumType";
     case ((T_ENUMERATION(names = l,varLst = vars),_))
       equation 
-        Print.printErrorBuf("enumeration((");
-        Dump.printList(l, print, ", ");
-        Print.printErrorBuf(") ");
-        Print.printErrorBuf(", (");
-        Dump.printList(vars, printVar, ", ");
-        Print.printErrorBuf(")");
+       s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
+       str = Util.stringAppendList({"Enumeration(",s1,")"});  
       then
-        ();
+        str;
     case ((T_COMPLEX(complexClassType = st,complexVarLst = vars,complexTypeOption = bc),_))
       equation 
-        Print.printErrorBuf("composite(");
-        Print.printErrorBuf(", (");
-        ClassInf.printState(st);
-        Print.printErrorBuf(", (");
-        Dump.printList(vars, printVar, ", ");
-        Print.printErrorBuf(")");
+       s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
+       str = Util.stringAppendList({"composite(",s1,")"});  
       then
-        ();
+        str;
     case ((T_ARRAY(arrayDim = dim,arrayType = t),_))
       equation 
-        Print.printErrorBuf("array[");
-        printArraydim(dim);
-        Print.printErrorBuf("] of ");
-        printType(t);
-        Print.printErrorBuf(")");
+        s1 = printArraydimStr(dim);
+        s2 = printTypeStr(t);
+        str = Util.stringAppendList({"array[", s1,", of type",s2,"]"});
       then
-        ();
+        str;
     case ((T_FUNCTION(funcArg = params,funcResultType = restype),_))
       equation 
-        Print.printErrorBuf("function(");
-        printParams(params);
-        Print.printErrorBuf(" => ");
-        printType(restype);
-        Print.printErrorBuf(")");
+        s1 = printParamsStr(params);
+        s2 = printTypeStr(restype);
+        str = Util.stringAppendList({"function(", s1,") => ",s2});        
       then
-        ();
+        str;
     case ((T_TUPLE(tupleType = tys),_))
       equation 
-        Print.printErrorBuf("(");
-        Dump.printList(tys, printType, ", ");
-        Print.printErrorBuf(")");
+        s1 = Util.stringDelimitList(Util.listMap(tys, printTypeStr),", ");
+   			str = Util.stringAppendList({"(",s1,")"});        
       then
-        ();
+        str;
     case ((T_NOTYPE(),_))
-      equation 
-        Print.printErrorBuf("#NOTYPE#");
       then
-        ();
+        "NOTYPE";
     case ((T_ANYTYPE(anyClassType = _),_))
       equation 
-        Print.printErrorBuf("#T_ANYTYPE#");
       then
-        ();
+        "ANYTYPE";
     case ((_,_))
-      equation 
-        Print.printErrorBuf("print_type failed!\n");
-      then
-        ();
+    then "printTypeStr failed";
   end matchcontinue;
-end printType;
+end printTypeStr;
 
-protected function printArraydim "function: printArraydim
- 
-  Prints an ArrayDim to the Print buffer.
-"
-  input ArrayDim ad;
-  Ident s;
-algorithm 
-  s := getArraydimStr(ad);
-  Print.printErrorBuf(s);
-end printArraydim;
-
-public function getArraydimStr "function: getArraydimStr
- 
-  Prints ArrayDim to a string.
-"
+public function printArraydimStr " Prints ArrayDim to a string"
   input ArrayDim inArrayDim;
   output String outString;
 algorithm 
@@ -1583,7 +1542,7 @@ algorithm
         s;
     case _ then "#STRANGE#"; 
   end matchcontinue;
-end getArraydimStr;
+end printArraydimStr;
 
 public function arraydimInt "function: arraydimInt
  
@@ -1599,37 +1558,36 @@ algorithm
   end matchcontinue;
 end arraydimInt;
 
-public function printParams "function: printParams
+public function printParamsStr "function: printParams
   
-  Prints function arguments to the Print buffer.
+  Prints function arguments to a string.
 "
   input list<FuncArg> inFuncArgLst;
+  output String str;
 algorithm 
-  _:=
+  str :=
   matchcontinue (inFuncArgLst)
     local
       Ident n;
       Type t;
       list<FuncArg> params;
-    case {} then (); 
+      String s1,s2;
+    case {} then ""; 
     case {(n,t)}
       equation 
-        Print.printErrorBuf(n);
-        Print.printErrorBuf(" :: ");
-        printType(t);
+        s1 = printTypeStr(t);
+        str = Util.stringAppendList({n," :: ",s1});
       then
-        ();
+        str;
     case (((n,t) :: params))
       equation 
-        Print.printErrorBuf(n);
-        Print.printErrorBuf(" :: ");
-        printType(t);
-        Print.printErrorBuf(" * ");
-        printParams(params);
+        s1 = printTypeStr(t);
+        s2 = printParamsStr(params);
+        str = Util.stringAppendList({n," :: ",s1, " * ",s2});
       then
-        ();
+       str;
   end matchcontinue;
-end printParams;
+end printParamsStr;
 
 public function unparseVar "function: unparseVar
  
@@ -1676,14 +1634,15 @@ algorithm
   end matchcontinue;
 end unparseParam;
 
-public function printVar "function: printVar
+public function printVarStr "function: printVar
   author: LS
  
-  Prints a Var to the Print buffer.
+  Prints a Var to the a string.
 "
   input Var inVar;
+  output String str;
 algorithm 
-  _:=
+  str :=
   matchcontinue (inVar)
     local
       Ident vs,n;
@@ -1691,56 +1650,22 @@ algorithm
       Boolean prot;
       Type typ;
       Binding bind;
+      String s1,s2,s3;
     case VAR(name = n,attributes = ATTR(parameter_ = var),protected_ = prot,type_ = typ,binding = bind)
       equation 
-        printType(typ);
-        Print.printErrorBuf(" ");
-        Print.printErrorBuf(n);
-        Print.printErrorBuf(" ");
+        s1 = printTypeStr(typ);
         vs = SCode.variabilityString(var);
-        Print.printErrorBuf(vs);
-        Print.printErrorBuf(" ");
-        printBinding(bind);
+        s2 = printBindingStr(bind);
+        str = Util.stringAppendList({s1," ",n," ",vs," ",s2});
       then
-        ();
+        str;
+ 	case VAR(name = n,attributes = ATTR(parameter_ = var),protected_ = prot,type_ = typ,binding = bind)
+      equation 
+      str = Util.stringAppendList({n});
+      then
+        str;        
   end matchcontinue;
-end printVar;
-
-public function printBinding "function: printBinding
-  author: LS
- 
-  Print a variable binding to the Print buffer.
-"
-  input Binding inBinding;
-algorithm 
-  _:=
-  matchcontinue (inBinding)
-    local
-      Ident str;
-      Exp.Exp exp;
-      Const f;
-      Values.Value v;
-    case UNBOUND()
-      equation 
-        Print.printErrorBuf("UNBOUND");
-      then
-        ();
-    case EQBOUND(exp = exp,constant_ = f)
-      equation 
-        Print.printErrorBuf("EQBOUND: ");
-        Exp.printExp(exp);
-        str = unparseConst(f);
-        Print.printErrorBuf(str);
-      then
-        ();
-    case VALBOUND(valBound = v)
-      equation 
-        Print.printErrorBuf("VALBOUND: ");
-        Values.printVal(v);
-      then
-        ();
-  end matchcontinue;
-end printBinding;
+end printVarStr;
 
 public function printBindingStr "function: pritn_binding_str
  
@@ -1778,6 +1703,7 @@ algorithm
         res = Util.stringAppendList({"VALBOUND(",s,")"});
       then
         res;
+    case(_) then "";
   end matchcontinue;
 end printBindingStr;
 
@@ -1845,7 +1771,7 @@ algorithm
       Type ty;
     case ((n,ty))
       equation 
-        printType(ty);
+        Print.printErrorBuf(printTypeStr(ty));
         Print.printErrorBuf(" ");
         Print.printErrorBuf(n);
       then
@@ -2828,9 +2754,11 @@ algorithm
          str = Exp.printExpStr(exp);
         Debug.fprint("tcvt", str);
         Debug.fprint("tcvt", "  ");
-         Debug.fcall("tcvt", printType, t1);
+        str = printTypeStr(t1);
+        Debug.fprint("tcvt", str);
         Debug.fprint("tcvt", ", ");
-        Debug.fcall("tcvt", printType, t2);
+        str = printTypeStr(t1);
+        Debug.fprint("tcvt", str);        
         Debug.fprint("tcvt", "\n");
       then
         fail();
