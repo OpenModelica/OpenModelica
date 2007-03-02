@@ -2650,10 +2650,10 @@ algorithm
         String tupleVar;
       equation 
         (cfn1,tupleVar,tnr1) = generateExpression(e, tnr, context);
-				(cfn,tnr1) = generateTupleLhsAssignment(expl,tupleVar,1,tnr1,context);
+				(cfn,tnr2) = generateTupleLhsAssignment(expl,tupleVar,1,tnr1,context);
 				cfn = cMergeFn(cfn1,cfn);
       then
-        (cfn,tnr1);
+        (cfn,tnr2);
         
     case (Algorithm.ASSERT(exp1 = e1,exp2 = e2),tnr,CONTEXT(codeContext,_,loopContext))
       local CodeContext codeContext;
@@ -2819,7 +2819,7 @@ algorithm
         cfn2_1 = cAddStatements(cfn2, {"}"});
         cfn = cMergeFn(cfn1, cfn2_1);
       then
-        (cfn,tnr);
+        (cfn,tnr2);
     case (_,_,_)
       equation 
         Debug.fprint("failtrace", "-generate_else failed\n");
