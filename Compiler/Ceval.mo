@@ -2685,7 +2685,7 @@ algorithm
         file_dir = getFileDir(a_cref, p);
         libs = SimCodegen.generateFunctions(p_1, dae, indexed_dlow_1, className, funcfilename);
         SimCodegen.generateSimulationCode(dae, indexed_dlow_1, ass1, ass2, m, mT, comps, className, 
-          filename, funcfilename);
+          filename, funcfilename,file_dir);
         SimCodegen.generateMakefile(makefilename, filenameprefix, libs, file_dir);
         /* 
         s_call = Util.stringAppendList({"make -f ",cname_str, ".makefile\n"}) 

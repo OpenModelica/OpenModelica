@@ -50,6 +50,8 @@ extern "C"
 {
 #endif
 
+extern char *model_dir; /*Model directory defined in modelname.cpp */
+
 int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
 	char *tableName,char* fileName, double *table,int tableDim1,int tableDim2,int colWise);
 

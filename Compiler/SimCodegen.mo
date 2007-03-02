@@ -181,12 +181,13 @@ public function generateSimulationCode "function: generateSimulationCode
   input Absyn.Path inPath8;
   input String inString9;
   input String inString10;
+  input String inString11;
 algorithm 
   _:=
-  matchcontinue (inDAElist1,inDAELow2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inIntegerLstLst7,inPath8,inString9,inString10)
+  matchcontinue (inDAElist1,inDAELow2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inIntegerLstLst7,inPath8,inString9,inString10,inString11)
     local
       String cname,out_str,in_str,c_eventchecking,s_code2,s_code3,cglobal,coutput,cstate,c_ode,s_code,cwhen,
-      	czerocross,res,filename,funcfilename;
+      	czerocross,res,filename,funcfilename,fileDir;
       String extObjInclude; list<String> extObjIncludes;
       list<list<Integer>> blt_states,blt_no_states,comps;
       Integer n_o,n_i,n_h,nres;
@@ -196,7 +197,8 @@ algorithm
       Integer[:] ass1,ass2;
       list<Integer>[:] m,mt;
       Absyn.Path class_;
-    case (dae,dlow,ass1,ass2,m,mt,comps,class_,filename,funcfilename) /* ass1 ass2 blocks classname */ 
+
+    case (dae,dlow,ass1,ass2,m,mt,comps,class_,filename,funcfilename,fileDir) 
       equation 
         cname = Absyn.pathString(class_);
         (blt_states,blt_no_states) = DAELow.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
@@ -212,7 +214,7 @@ algorithm
         n_h = listLength(helpVarInfo);
         (s_code2,nres) = generateInitialValueCode2(dlow2,ass1,ass2);
         (s_code3) = generateInitialBoundParameterCode(dlow2);
-        cglobal = generateGlobalData(class_, dlow2, n_o, n_i, n_h, nres);
+        cglobal = generateGlobalData(class_, dlow2, n_o, n_i, n_h, nres,fileDir);
         coutput = generateComputeOutput(cname, dae, dlow2, ass1, ass2, blt_no_states);
         cstate = generateComputeResidualState(cname, dae, dlow2, ass1, ass2, blt_states);
         c_ode = generateOdeCode(dlow2, blt_states, ass1, ass2, m, mt, class_);
@@ -233,7 +235,7 @@ algorithm
         System.writeFile(filename, res);
       then
         ();
-    case (_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_)
       equation 
         Error.addMessage(Error.INTERNAL_ERROR, 
           {"Generation of simulation code  failed"});
@@ -459,6 +461,7 @@ protected function generateGlobalData
   arg4 an int which shows the number of input variables on top level
   arg5 an int which shows the number of help variables
   arg5 integer - number of residuals in initialization function.
+  arg6 String - the directory where the model is saved
 "
   input Absyn.Path class_               "Path to the instatiated model";
   input DAELow.DAELow loweredDAE			  "The lowered DAE";
@@ -466,10 +469,11 @@ protected function generateGlobalData
   input Integer numberOfInputVariables  "The number of input variables on top level";
   input Integer numberOfHelpVariables   "The number of help variables";
   input Integer numberOfResidulas       "Number of residuals in initialization function";
+  input String fileDir "The directory where the model is saved";
   output String outString;
 algorithm 
   outString:=
-  matchcontinue (class_,loweredDAE,numberOfOutputVariables,numberOfInputVariables,numberOfHelpVariables,numberOfResidulas)
+  matchcontinue (class_,loweredDAE,numberOfOutputVariables,numberOfInputVariables,numberOfHelpVariables,numberOfResidulas,fileDir)
     local
       Integer nx,ny,np,ng,ng_1,no,ni,nh,nres,next,ny_string,np_string;
       String initDeinitDataStructFunction,class_str,nx_str,ny_str,np_str,ng_str,no_str,ni_str,nh_str;
@@ -478,7 +482,7 @@ algorithm
       list<String> c_code;
       Absyn.Path class_;
       DAELow.DAELow dlow;
-    case (class_,dlow,no,ni,nh,nres)
+    case (class_,dlow,no,ni,nh,nres,fileDir)
       equation 
         (nx,ny,np,ng,next,ny_string,np_string) = DAELow.calculateSizes(dlow);
         //DAELow.dump(dlow);
@@ -514,12 +518,14 @@ algorithm
           "#define NYSTR ",nystring_str, " // number of alg. string variables\n",
           "#define NPSTR ",npstring_str, " // number of alg. string variables\n",
           "\n",
-           global_bufs,"char *model_name=\"",
-          class_str,"\";\n",c_code_str,c_code2_str,"\n",c_code3_str,"\n"});
+           global_bufs,
+           "char *model_name=\"",class_str,"\";\n",
+           "char *model_dir=\"",fileDir,"\";\n",            
+           c_code_str,c_code2_str,"\n",c_code3_str,"\n"});
         str = Util.stringAppendList({str1,macros_str,"\n",initDeinitDataStructFunction,"\n"}) "this is done here and not in the above Util.string_append_list VC7.1 cannot compile too complicated c-programs this is removed for now \"typedef struct equation {\\n\", \"  char equation;\\n\", \"  char fileName;\\n\", \"  int   lineNumber;\\n\", \"} equation;\\n\"," ;
       then
         str;
-    case (_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_)
       equation 
         Error.addMessage(Error.INTERNAL_ERROR, {"generate_global_data failed"});
       then
@@ -5961,7 +5967,7 @@ protected function generateInitData2 "function: generateInitData2
   output String outString;
 algorithm 
   outString:=
-  matchcontinue (inDAELow1,inInteger2,inInteger3,inInteger4)
+  matchcontinue (inDAELow1,inInteger2,inInteger3,inInteger4,ny_string,np_string)
     local
       list<DAELow.Var> var_lst,knvar_lst;
       String[:] nxarr,nxdarr,nyarr,nparr,nxarr1,nxdarr1,nyarr1,nparr1,nxarr2,nxdarr2,nyarr2,nparr2,nxarr3,nxdarr3,nyarr3,nparr3;
@@ -6186,6 +6192,7 @@ algorithm
         origname_str = Exp.printComponentRefStr(origname);
         str = Util.stringAppendList({v," // ",origname_str});
         npstrarr = arrayUpdate(npstrarr, indx + 1, str);
+
         (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr) = generateInitData4(rest, nxarr, nxdarr, nyarr, nparr,nystrarr,npstrarr);
       then
         (nxarr,nxdarr,nyarr,nparr,nystrarr,npstrarr);      

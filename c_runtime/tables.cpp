@@ -140,13 +140,17 @@ InterpolationTable::InterpolationTable(double time,double startTime, int ipoType
 	string tableStr = string(tableName);
 	if (string(fileName) != string("NoName")) { // data in file
 		if ( fileStr.length()> 4 && fileStr.substr(fileStr.length()-4,4) == string(".mat")) {
+			fileStr = string(model_dir)+string("/")+fileStr;
 			readMatFile(fileStr,tableStr);
 		} else if ( fileStr.length()> 4 && fileStr.substr(fileStr.length()-4,4) == string(".txt")) {
+			fileStr = string(model_dir)+string("/")+fileStr;			
 			readTextFile(fileStr,tableStr);
 		} else if (fileStr.length()> 4 && fileStr.substr(fileStr.length()-4,4) == string(".csv")) {
+			fileStr = string(model_dir)+string("/")+fileStr;
 			readCSVFile(fileStr,tableStr);
 		} else {
-			cerr << "Error, unsupported file extension. Filename must end with .mat, .txt or .csv" << endl;
+			cerr << "Error, unsupported file extension. Filename must end with .mat, .txt or .csv, filename is " 
+			<< fileName << endl;
 		}		
 	}
 }	
@@ -283,7 +287,6 @@ void InterpolationTable::readTextFile(string& fileName, string& columnName)
 		return;
 	}	
 	if (readTableHeader(string(buf))) {
-		cout << "read header, nRows =" << nRows_ << " nCols = " << nCols_ << endl;
 		data_ = new double[nRows_*nCols_];
 		for (int r = 0,i=0; r < nRows_; r++) {
 			for (int c = 0; c < nCols_; c++) {
@@ -291,6 +294,7 @@ void InterpolationTable::readTextFile(string& fileName, string& columnName)
 			}
 		}	 
 	} else { // Error reading data.
+		cerr << "Error reading data from file " << fileName << endl;
 	nRows_=0;
 	nCols_=0;
 	data_=0;	
