@@ -7019,21 +7019,23 @@ algorithm
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_IF(conditional = e,true_ = tb,false_ = fb),NON_INITIAL(),impl) 
       equation 
         (cache,e_1,Types.PROP((Types.T_BOOL(_),_),Types.C_VAR()),_) = Static.elabExp(cache,env, e, impl, NONE,true);
+        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
         (cache,dae1,env_1,_,ci_state_1) = instList(cache,env, mod, pre, csets, ci_state, instEEquation, tb, impl);
         (cache,dae2,env_2,_,ci_state_2) = instList(cache,env_1, mod, pre, csets, ci_state, instEEquation, fb, impl) "There are no connections inside if-clauses." ;
       then
-        (cache,{DAE.IF_EQUATION(e_1,dae1,dae2)},env_1,csets,ci_state_1);
+        (cache,{DAE.IF_EQUATION(e_2,dae1,dae2)},env_1,csets,ci_state_1);
 
         /* Initial IF_EQUATION */ 
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_IF(conditional = e,true_ = tb,false_ = fb),INITIAL(),impl) 
       equation 
         (cache,e_1,Types.PROP((Types.T_BOOL(_),_),Types.C_VAR()),_) = Static.elabExp(cache,env, e, impl, NONE,true);
+        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);        
         (cache,dae1,env_1,_,ci_state_1) = instList(cache,env, mod, pre, csets, ci_state, instEInitialequation, tb, 
           impl);
         (cache,dae2,env_2,_,ci_state_2) = instList(cache,env_1, mod, pre, csets, ci_state, instEInitialequation, 
           fb, impl) "There are no connections inside if-clauses." ;
       then
-        (cache,{DAE.INITIAL_IF_EQUATION(e_1,dae1,dae2)},env_1,csets,ci_state_1);
+        (cache,{DAE.INITIAL_IF_EQUATION(e_2,dae1,dae2)},env_1,csets,ci_state_1);
         
         /* `when equation\' statement, modelica 1.1 
          When statements are instantiated by evaluating the
@@ -7657,10 +7659,11 @@ algorithm
       Option<Absyn.Path> bc;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,_,_,csets,ci_state,SCode.ALGORITHM(absynAlgorithmLst = statements,baseclass = bc),impl) /* impl */ 
+      Prefix pre;
+    case (cache,env,_,pre,csets,ci_state,SCode.ALGORITHM(absynAlgorithmLst = statements,baseclass = bc),impl) /* impl */ 
       equation 
         (cache,env_1) = getDerivedEnv(cache,env, bc) "If algorithm is inherited, find base class environment" ;
-        (cache,statements_1) = instStatements(cache,env_1, statements, impl);
+        (cache,statements_1) = instStatements(cache,env_1,pre, statements, impl);
       then
         (cache,{DAE.ALGORITHM(Algorithm.ALGORITHM(statements_1))},env,csets,ci_state);
     case (_,_,_,_,_,_,_,_)
@@ -7703,10 +7706,11 @@ algorithm
       Option<Absyn.Path> bc;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,_,_,csets,ci_state,SCode.ALGORITHM(absynAlgorithmLst = statements,baseclass = bc),impl) /* impl */ 
+      Prefix pre;
+    case (cache,env,_,pre,csets,ci_state,SCode.ALGORITHM(absynAlgorithmLst = statements,baseclass = bc),impl) /* impl */ 
       equation 
         (cache,env_1) = getDerivedEnv(cache,env, bc);
-        (cache,statements_1) = instStatements(cache,env, statements, impl);
+        (cache,statements_1) = instStatements(cache,env, pre,statements, impl);
       then
         (cache,{DAE.INITIALALGORITHM(Algorithm.ALGORITHM(statements_1))},env,csets,ci_state);
     case (_,_,_,_,_,_,_,_)
@@ -7723,13 +7727,14 @@ protected function instStatements "function: instStatements
 "
 	input Env.Cache inCache;
   input Env inEnv;
+  input Prefix inPre;
   input list<Absyn.Algorithm> inAbsynAlgorithmLst;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output list<Algorithm.Statement> outAlgorithmStatementLst;
 algorithm 
   (outCache,outAlgorithmStatementLst):=
-  matchcontinue (inCache,inEnv,inAbsynAlgorithmLst,inBoolean)
+  matchcontinue (inCache,inEnv,inPre,inAbsynAlgorithmLst,inBoolean)
     local
       list<Env.Frame> env;
       Boolean impl;
@@ -7738,11 +7743,12 @@ algorithm
       Absyn.Algorithm x;
       list<Absyn.Algorithm> xs;
       Env.Cache cache;
-    case (cache,env,{},impl) then (cache,{});  /* impl */ 
-    case (cache,env,(x :: xs),impl)
+      Prefix pre;
+    case (cache,env,pre,{},impl) then (cache,{});  /* impl */ 
+    case (cache,env,pre,(x :: xs),impl)
       equation 
-        (cache,x_1) = instStatement(cache,env, x, impl);
-        (cache,xs_1) = instStatements(cache,env, xs, impl);
+        (cache,x_1) = instStatement(cache,env, pre, x, impl);
+        (cache,xs_1) = instStatements(cache,env, pre, xs, impl);
       then
         (cache,x_1 :: xs_1);
   end matchcontinue;
@@ -7754,13 +7760,14 @@ protected function instAlgorithmitems "function: instAlgorithmitems
 "
 	input Env.Cache inCache;
   input Env inEnv;
+  input Prefix inPre;
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output list<Algorithm.Statement> outAlgorithmStatementLst;
 algorithm 
   (outCache,outAlgorithmStatementLst) :=
-  matchcontinue (inCache,inEnv,inAbsynAlgorithmItemLst,inBoolean)
+  matchcontinue (inCache,inEnv,inPre,inAbsynAlgorithmItemLst,inBoolean)
     local
       list<Env.Frame> env;
       Boolean impl;
@@ -7769,16 +7776,17 @@ algorithm
       Absyn.Algorithm x;
       list<Absyn.AlgorithmItem> xs;
       Env.Cache cache;
-    case (cache,env,{},impl) then (cache,{});  /* impl */ 
-    case (cache,env,(Absyn.ALGORITHMITEM(algorithm_ = x) :: xs),impl)
+      Prefix pre;
+    case (cache,env,pre,{},impl) then (cache,{});  /* impl */ 
+    case (cache,env,pre,(Absyn.ALGORITHMITEM(algorithm_ = x) :: xs),impl)
       equation 
-        (cache,x_1) = instStatement(cache,env, x, impl);
-        (cache,xs_1) = instAlgorithmitems(cache,env, xs, impl);
+        (cache,x_1) = instStatement(cache,env, pre, x, impl);
+        (cache,xs_1) = instAlgorithmitems(cache,env, pre, xs, impl);
       then
         (cache,x_1 :: xs_1);
-    case (cache,env,(Absyn.ALGORITHMITEMANN(annotation_ = _) :: xs),impl)
+    case (cache,env,pre,(Absyn.ALGORITHMITEMANN(annotation_ = _) :: xs),impl)
       equation 
-        (cache,xs_1) = instAlgorithmitems(cache,env, xs, impl);
+        (cache,xs_1) = instAlgorithmitems(cache,env, pre, xs, impl);
       then
         (cache,xs_1);
   end matchcontinue;
@@ -7792,26 +7800,27 @@ protected function instStatement "function: instStatement
 "
 	input Env.Cache inCache;
   input Env inEnv;
+  input Prefix inPre;
   input Absyn.Algorithm inAlgorithm;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Algorithm.Statement outStatement;
 algorithm 
   (outCache,outStatement) :=
-  matchcontinue (inCache,inEnv,inAlgorithm,inBoolean)
+  matchcontinue (inCache,inEnv,inPre,inAlgorithm,inBoolean)
     local
       Exp.ComponentRef ce,ce_1;
       Exp.Type t;
       Types.Properties cprop,eprop,prop,msgprop,varprop,valprop;
       SCode.Accessibility acc;
-      Exp.Exp e_1,cond_1,msg_1,var_1,value_1;
+      Exp.Exp e_1,e_2,cond_1,cond_2,msg_1,msg_2,var_1,var_2,value_1,value_2,cre,cre2;
       Algorithm.Statement stmt, stmt1;
       list<Env.Frame> env,env_1;
       Absyn.ComponentRef cr;
       Absyn.Exp e,cond,msg, assignComp,var,value;
       Absyn.Exp e,cond,msg, assignComp,elseWhenC;
       Boolean impl;
-      list<Exp.Exp> expl_1;
+      list<Exp.Exp> expl_1,expl_2;
       list<Types.Properties> cprops;
       list<Absyn.Exp> expl;
       String s,i;
@@ -7821,117 +7830,143 @@ algorithm
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> eib,el,elseWhenRest;
       Absyn.Algorithm alg;
       Env.Cache cache;
-       
-       // v := expr;
-       
-    case (cache,env,Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e),impl) /* impl */ 
+      Prefix pre; 
+
+       /* v := expr; */       
+    case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e),impl) 
       equation 
-        (cache,Exp.CREF(ce,t),cprop,acc) = Static.elabCref(cache,env, cr, impl,false);
+        (cache,cre,cprop,acc) = Static.elabCref(cache,env, cr, impl,false);
+        (cache,Exp.CREF(ce,t)) = Prefix.prefixExp(cache,env, cre, pre);        
         (cache,ce_1) = Static.canonCref(cache,env, ce, impl);
         (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
-        stmt = Algorithm.makeAssignment(Exp.CREF(ce_1,t), cprop, e_1, eprop, acc);
+        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);                
+        stmt = Algorithm.makeAssignment(Exp.CREF(ce_1,t), cprop, e_2, eprop, acc);
       then
         (cache,stmt);
 
-			// v[i] := expr (in e.g. for loops
-    case (cache,env,Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e),impl)
-      local Exp.Exp ce;
+			// v[i] := expr (in e.g. for loops)
+    case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e),impl)
       equation 
-        (cache,ce,cprop,acc) = Static.elabCref(cache,env, cr, impl,false);
+        (cache,cre,cprop,acc) = Static.elabCref(cache,env, cr, impl,false);
+       (cache,cre2) = Prefix.prefixExp(cache,env, cre, pre);
         (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
-        stmt = Algorithm.makeAssignment(ce, cprop, e_1, eprop, acc);
+       (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);        
+        stmt = Algorithm.makeAssignment(cre2, cprop, e_2, eprop, acc);
       then
         (cache,stmt);
 
         // (v1,v2,..,vn) := func(...)
-    case (cache,env,Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),impl)
+    case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),impl)
       equation 
         (cache,(e_1 as Exp.CALL(_,_,_,_,_)),eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
+         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
         (cache,expl_1,cprops,_) = Static.elabExpList(cache,env, expl, impl, NONE,true);
-        stmt = Algorithm.makeTupleAssignment(expl_1, cprops, e_1, eprop);
+        (cache,expl_2) = Prefix.prefixExpList(cache,env,expl_1,pre);
+        stmt = Algorithm.makeTupleAssignment(expl_2, cprops, e_1, eprop);
       then
         (cache,stmt);
-    case (cache,env,Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),impl)
+        
+        /* Tuple with rhs not CALL => Error */
+    case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),impl)
       equation 
         s = Dump.printExpStr(e);
         Error.addMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY, {s});
       then
         fail();
-    case (cache,env,Absyn.ALG_IF(ifExp = e,trueBranch = tb,elseIfAlgorithmBranch = eib,elseBranch = fb),impl)
+        
+        /* If statement*/
+    case (cache,env,pre,Absyn.ALG_IF(ifExp = e,trueBranch = tb,elseIfAlgorithmBranch = eib,elseBranch = fb),impl)
       equation 
         (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
-        (cache,tb_1 )= instAlgorithmitems(cache,env, tb, impl);
-        (cache,eib_1) = instElseifs(cache,env, eib, impl);
-        (cache,fb_1) = instAlgorithmitems(cache,env, fb, impl);
-        stmt = Algorithm.makeIf(e_1, prop, tb_1, eib_1, fb_1);
+        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);        
+        (cache,tb_1 )= instAlgorithmitems(cache,env,pre, tb, impl);
+        (cache,eib_1) = instElseifs(cache,env,pre, eib, impl);
+        (cache,fb_1) = instAlgorithmitems(cache,env,pre, fb, impl);
+        stmt = Algorithm.makeIf(e_2, prop, tb_1, eib_1, fb_1);
       then
         (cache,stmt);
-    case (cache,env,Absyn.ALG_FOR(forVariable = i,forStmt = e,forBody = sl),impl)
+        
+        /* For loop */
+    case (cache,env,pre,Absyn.ALG_FOR(forVariable = i,forStmt = e,forBody = sl),impl)
       local tuple<Types.TType, Option<Absyn.Path>> t;
       equation 
         (cache,e_1,(prop as Types.PROP((Types.T_ARRAY(_,t),_),_)),_) = Static.elabExp(cache,env, e, impl, NONE,true);
+        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
         env_1 = addForLoopScope(env, i, t);
-        (cache,sl_1) = instAlgorithmitems(cache,env_1, sl, impl);
-        stmt = Algorithm.makeFor(i, e_1, prop, sl_1);
+        (cache,sl_1) = instAlgorithmitems(cache,env_1,pre, sl, impl);
+        stmt = Algorithm.makeFor(i, e_2, prop, sl_1);
       then
         (cache,stmt);
-    case (cache,env,Absyn.ALG_WHILE(whileStmt = e,whileBody = sl),impl)
+        
+        /* While loop */
+    case (cache,env,pre,Absyn.ALG_WHILE(whileStmt = e,whileBody = sl),impl)
       equation 
         (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
-        (cache,sl_1) = instAlgorithmitems(cache,env, sl, impl);
-        stmt = Algorithm.makeWhile(e_1, prop, sl_1);
+        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);        
+        (cache,sl_1) = instAlgorithmitems(cache,env,pre, sl, impl);
+        stmt = Algorithm.makeWhile(e_2, prop, sl_1);
       then
         (cache,stmt);
-    case (cache,env,Absyn.ALG_WHEN_A(whenStmt = e,whenBody = sl,elseWhenAlgorithmBranch = {}),impl)
+
+        /* When clause without elsewhen */
+    case (cache,env,pre,Absyn.ALG_WHEN_A(whenStmt = e,whenBody = sl,elseWhenAlgorithmBranch = {}),impl)
       equation 
         (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
-        (cache,sl_1) = instAlgorithmitems(cache,env, sl, impl);
-        stmt = Algorithm.makeWhenA(e_1, prop, sl_1, NONE);
+        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
+        (cache,sl_1) = instAlgorithmitems(cache,env,pre, sl, impl);
+        stmt = Algorithm.makeWhenA(e_2, prop, sl_1, NONE);
       then
         (cache,stmt);
-    case (cache,env,Absyn.ALG_WHEN_A(whenStmt = e,whenBody = sl,
+        
+        /* When clause with elsewhen branch */
+    case (cache,env,pre,Absyn.ALG_WHEN_A(whenStmt = e,whenBody = sl,
       		elseWhenAlgorithmBranch = (elseWhenC,elseWhenSt)::elseWhenRest),impl)
       equation 
-        (cache,stmt1) = instStatement(cache,env,Absyn.ALG_WHEN_A(elseWhenC,elseWhenSt,elseWhenRest),impl);
+        (cache,stmt1) = instStatement(cache,env,pre,Absyn.ALG_WHEN_A(elseWhenC,elseWhenSt,elseWhenRest),impl);
         (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
-        (cache,sl_1) = instAlgorithmitems(cache,env, sl, impl);
-        stmt = Algorithm.makeWhenA(e_1, prop, sl_1, SOME(stmt1));
+        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);        
+        (cache,sl_1) = instAlgorithmitems(cache,env,pre, sl, impl);
+        stmt = Algorithm.makeWhenA(e_2, prop, sl_1, SOME(stmt1));
       then
         (cache,stmt);
-    case (cache,env,Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg},argNames = {})),impl)
+        
+        /* assert(cond,msg) */
+    case (cache,env,pre,Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg},argNames = {})),impl)
       equation 
         (cache,cond_1,cprop,_) = Static.elabExp(cache,env, cond, impl, NONE,true);
+        (cache,cond_2) = Prefix.prefixExp(cache,env, cond_1, pre);        
         (cache,msg_1,msgprop,_) = Static.elabExp(cache,env, msg, impl, NONE,true);
-        stmt = Algorithm.makeAssert(cond_1, msg_1, cprop, msgprop);
+        (cache,msg_2) = Prefix.prefixExp(cache,env, msg_1, pre);        
+        stmt = Algorithm.makeAssert(cond_2, msg_2, cprop, msgprop);
       then
         (cache,stmt);
         
-        // assert(cond,msg)
-        // reinit(variable,value)
-
-	   case (cache,env,Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "reinit"),functionArgs = Absyn.FUNCTIONARGS(args = {var,value},argNames = {})),impl)
+        /* reinit(variable,value) */
+	   case (cache,env,pre,Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "reinit"),functionArgs = Absyn.FUNCTIONARGS(args = {var,value},argNames = {})),impl)
       equation 
         (cache,var_1,varprop,_) = Static.elabExp(cache,env, var, impl, NONE,true);
+        (cache,var_2) = Prefix.prefixExp(cache,env, var_1, pre);                
         (cache,value_1,valprop,_) = Static.elabExp(cache,env, value, impl, NONE,true);
-        stmt = Algorithm.makeReinit(var_1, value_1, varprop, valprop);
+        (cache,value_2) = Prefix.prefixExp(cache,env, value_1, pre);                        
+        stmt = Algorithm.makeReinit(var_2, value_2, varprop, valprop);
       then
         (cache,stmt);
         
-        // break
-	   case (cache,env,Absyn.ALG_BREAK,impl)
+        /* break */
+	   case (cache,env,pre,Absyn.ALG_BREAK,impl)
       equation 
         stmt = Algorithm.BREAK();
       then
         (cache,stmt);
         
-        // return
-	   case (cache,env,Absyn.ALG_RETURN,impl)
+        /* return */
+	   case (cache,env,pre,Absyn.ALG_RETURN,impl)
       equation 
         stmt = Algorithm.RETURN();
       then
         (cache,stmt);
         
-    case (cache,env,alg,impl)
+    case (cache,env,pre,alg,impl)
       equation 
         Debug.fprint("failtrace", "- inst_statement failed\n alg:");
         Debug.fcall("failtrace", Dump.printAlgorithm, alg);
@@ -7949,17 +7984,18 @@ protected function instElseifs "function: instElseifs
 "
 	input Env.Cache inCache;
   input Env inEnv;
+  input Prefix inPre;
   input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output list<tuple<Exp.Exp, Types.Properties, list<Algorithm.Statement>>> outTplExpExpTypesPropertiesAlgorithmStatementLstLst;
 algorithm 
   (outCache,outTplExpExpTypesPropertiesAlgorithmStatementLstLst) :=
-  matchcontinue (inCache,inEnv,inTplAbsynExpAbsynAlgorithmItemLstLst,inBoolean)
+  matchcontinue (inCache,inEnv,inPre,inTplAbsynExpAbsynAlgorithmItemLstLst,inBoolean)
     local
       list<Env.Frame> env;
       Boolean impl;
-      Exp.Exp e_1;
+      Exp.Exp e_1,e_2;
       Types.Properties prop;
       list<Algorithm.Statement> stmts;
       list<tuple<Exp.Exp, Types.Properties, list<Algorithm.Statement>>> tail_1;
@@ -7967,15 +8003,17 @@ algorithm
       list<Absyn.AlgorithmItem> l;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> tail;
       Env.Cache cache;
-    case (cache,env,{},impl) then (cache,{}); 
-    case (cache,env,((e,l) :: tail),impl)
+      Prefix pre;
+    case (cache,env,pre,{},impl) then (cache,{}); 
+    case (cache,env,pre,((e,l) :: tail),impl)
       equation 
         (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
-        (cache,stmts) = instAlgorithmitems(cache,env, l, impl);
-        (cache,tail_1) = instElseifs(cache,env, tail, impl);
+        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);                            
+        (cache,stmts) = instAlgorithmitems(cache,env,pre, l, impl);
+        (cache,tail_1) = instElseifs(cache,env,pre,tail, impl);
       then
-        (cache,(e_1,prop,stmts) :: tail_1);
-    case (_,_,_,_)
+        (cache,(e_2,prop,stmts) :: tail_1);
+    case (_,_,_,_,_)
       equation 
         Debug.fprint("failtrace", "- instElseifs failed\n");
       then
