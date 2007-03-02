@@ -1016,10 +1016,8 @@ protected import Print;
 protected import ModUtil;
 
 public function elementSpecName "function: elementSpecName
- 
   The ElementSpec type contans the name of the element, and this
-  function extracts this name.
-"
+  function extracts this name."
   input ElementSpec inElementSpec;
   output Ident outIdent;
 algorithm 
@@ -1030,16 +1028,14 @@ algorithm
     case COMPONENTS(components = {COMPONENTITEM(component = COMPONENT(name = n))}) then n; 
     case EXTENDS(path = _)
       equation 
-        Print.printBuf("# element_spec_name EXTENDS\n");
+        Print.printBuf("#- Absyn.elementSpecName EXTENDS\n");
       then
         fail();
   end matchcontinue;
 end elementSpecName;
 
 public function pathString "function: pathString
- 
-  This function simply converts a Path to a string.
-"
+  This function simply converts a Path to a string."
   input Path path;
   output String s;
 algorithm 
@@ -1047,9 +1043,7 @@ algorithm
 end pathString;
 
 public function optPathString "function: optPathString
- 
-  Returns a path converted to string or an empty string if nothing exist
-"
+  Returns a path converted to string or an empty string if nothing exist"
   input Option<Path> inPathOption;
   output String outString;
 algorithm 
@@ -1068,9 +1062,7 @@ algorithm
 end optPathString;
 
 public function pathString2 "function: 
- 
-  Helper function to path_string
-"
+  Helper function to pathString"
   input Path inPath;
   input String inString;
   output String outString;
@@ -1096,9 +1088,7 @@ algorithm
 end pathString2;
 
 public function pathLastIdent "function: pathLastIdent
- 
-  Returns the last ident (After last dot) in a paht
-"
+  Returns the last ident (After last dot) in a path"
   input Path inPath;
   output Ident outIdent;
 algorithm 
@@ -1122,9 +1112,7 @@ algorithm
 end pathLastIdent;
 
 public function pathFirstIdent "function: pathFirstIdent
- 
-  Returns the last ident (After last dot) in a paht
-"
+  Returns the first ident (before first dot) in a path"
   input Path inPath;
   output Ident outIdent;
 algorithm 
@@ -1201,8 +1189,7 @@ For example,
 pathContainedIn( C.D, A.B.C) => A.B.C.D
 pathContainedIn(C.D, A.B.C.D) => A.B.C.D
 pathContainedIn(A.B.C.D, A.B.C.D) => A.B.C.D
-pathContainedIn(B.C,A.B) => A.B.C
-"
+pathContainedIn(B.C,A.B) => A.B.C"
 	input Path subPath;
 	input Path path;
 	output Path completePath;
@@ -1221,7 +1208,7 @@ algorithm
         newPath = stripLast(path);
         newPath=pathContainedIn(subPath,newPath);    
       then joinPaths(newPath,IDENT(ident));
-        
+       
         // strip last ident of subpath and recursively check if suffix.
     case (subPath,path)
       local Ident ident; Path newSubPath;
@@ -1234,10 +1221,8 @@ algorithm
 end pathContainedIn;
 
 public function getCrefFromExp "function: getCrefFromExp
- 
-  Returns a flattened list of the component references 
-  in an expression
-"
+  Returns a flattened list of the 
+  component references in an expression"
   input Exp inExp;
   output list<ComponentRef> outComponentRefLst;
 algorithm 
@@ -1300,7 +1285,7 @@ algorithm
         res;
     case (CALL(functionArgs = farg))
       equation 
-        res = getCrefFromFarg(farg) "Util.list_map(expl,get_cref_from_exp) => res" ;
+        res = getCrefFromFarg(farg) "res = Util.listMap(expl,get_cref_from_exp)" ;
       then
         res;
     case (ARRAY(arrayExp = expl))
@@ -1336,17 +1321,16 @@ algorithm
         res;
     case (TUPLE(expressions = expl))
       equation 
-        Print.printBuf("Not implemented yet\n") "Util.list_map(expl,get_cref_from_exp) => res" ;
+        Print.printBuf("#- Absyn.getCrefFromExp is not implemented yet for Abyn.TUPLE\n") 
+        "res = Util.listMap(expl,getCrefFromExp)" ;
       then
         {};
   end matchcontinue;
 end getCrefFromExp;
 
 protected function getCrefFromFarg "function: getCrefFromFarg
-  
   Returns the flattened list of all component references 
-  present in a list of function arguments.
-"
+  present in a list of function arguments."
   input FunctionArgs inFunctionArgs;
   output list<ComponentRef> outComponentRefLst;
 algorithm 
@@ -1370,10 +1354,8 @@ algorithm
 end getCrefFromFarg;
 
 protected function getCrefFromNarg "function: getCrefFromNarg
-  
   Returns the flattened list of all component references 
-  present in a list of named function arguments.
-"
+  present in a list of named function arguments."
   input NamedArg inNamedArg;
   output list<ComponentRef> outComponentRefLst;
 algorithm 
@@ -1391,9 +1373,7 @@ algorithm
 end getCrefFromNarg;
 
 public function joinPaths "function: joinPaths
- 
-  This function joins two paths
-"
+  This function joins two paths"
   input Path inPath1;
   input Path inPath2;
   output Path outPath;
@@ -1416,8 +1396,7 @@ end joinPaths;
 
 public function pathAppendList "function: pathAppendList
   author Lucian
-  This function joins a path list
-"
+  This function joins a path list"
   input list<Path> inPathLst;
   output Path outPath;
 algorithm 
@@ -1438,10 +1417,8 @@ algorithm
 end pathAppendList;
 
 public function stripLast "function: stripLast
- 
-  Returns the path given as argument to the function
-  minus the last ident.
-"
+  Returns the path given as argument to 
+  the function minus the last ident."
   input Path inPath;
   output Path outPath;
 algorithm 
@@ -1464,10 +1441,8 @@ algorithm
 end stripLast;
 
 public function stripFirst "function: stripFirst
- 
-  Returns the path given as argument to the function
-  minus the first ident.
-"
+  Returns the path given as argument 
+  to the function minus the first ident."
   input Path inPath;
   output Path outPath;
 algorithm 
@@ -1481,11 +1456,8 @@ algorithm
 end stripFirst;
 
 public function crefToPath "function: crefToPath
- 
-  This function converts a `ComponentRef\' to a `Path\', if possible.
-  If the component reference contains subscripts, it will silently
-  fail.
-"
+  This function converts a ComponentRef to a Path, if possible.
+  If the component reference contains subscripts, it will silently fail."
   input ComponentRef inComponentRef;
   output Path outPath;
 algorithm 
@@ -1505,10 +1477,7 @@ algorithm
 end crefToPath;
 
 public function pathToCref "function: pathToCref
- 
-  This function converts a Path to a ComponentRef.
-  
-"
+  This function converts a Path to a ComponentRef."
   input Path inPath;
   output ComponentRef outComponentRef;
 algorithm 
@@ -1530,9 +1499,7 @@ algorithm
 end pathToCref;
 
 public function crefLastSubs "function: crefLastSubs
- 
-  Return the last subscripts of an Absyn.ComponentRef
-"
+  Return the last subscripts of an Absyn.ComponentRef"
   input ComponentRef inComponentRef;
   output list<Subscript> outSubscriptLst;
 algorithm 
@@ -1552,9 +1519,7 @@ algorithm
 end crefLastSubs;
 
 public function crefStripLastSubs "function: crefStripLastSubs
- 
-  Strips the last subscripts of a ComponentRef
-"
+  Strips the last subscripts of a ComponentRef"
   input ComponentRef inComponentRef;
   output ComponentRef outComponentRef;
 algorithm 
@@ -1574,10 +1539,7 @@ algorithm
 end crefStripLastSubs;
 
 public function joinCrefs "function: joinCrefs
- 
-  This function joins two ComponentRefs.
-  
-"
+  This function joins two ComponentRefs."
   input ComponentRef inComponentRef1;
   input ComponentRef inComponentRef2;
   output ComponentRef outComponentRef;
@@ -1598,9 +1560,7 @@ algorithm
 end joinCrefs;
 
 public function crefGetFirst "function: crefGetFirst
- 
-  Returns first ident from a ComponentRef
-"
+  Returns first ident from a ComponentRef"
   input ComponentRef inComponentRef;
   output ComponentRef outComponentRef;
 algorithm 
@@ -1612,9 +1572,8 @@ algorithm
   end matchcontinue;
 end crefGetFirst;
 
-public function crefStripFirst "
-  Strip the first ident from a ComponentRef
-"
+public function crefStripFirst "function: crefStripFirst
+  Strip the first ident from a ComponentRef"
   input ComponentRef inComponentRef;
   output ComponentRef outComponentRef;
 algorithm 
@@ -1626,9 +1585,7 @@ algorithm
 end crefStripFirst;
 
 public function restrString "function: restrString
-  
-  Maps a class restriction to the corresponding string for printing
-"
+  Maps a class restriction to the corresponding string for printing"
   input Restriction inRestriction;
   output String outString;
 algorithm 
@@ -1653,10 +1610,7 @@ algorithm
 end restrString;
 
 public function printRestr "function: printRestr
- 
-  This is a utility function for printing a `Restriction\'.  The code
-  is excluded for brevity.
-"
+  This is a utility function for printing an Absyn.Restriction."
   input Restriction restr;
   Ident str;
 algorithm 
@@ -1665,9 +1619,7 @@ algorithm
 end printRestr;
 
 public function lastClassname "function: lastClassname
- 
-  Returns the path (=namse) of the last class in a program
-"
+  Returns the path (=name) of the last class in a program"
   input Program inProgram;
   output Path outPath;
 algorithm 
@@ -1686,9 +1638,7 @@ end lastClassname;
 
 public function classFilename "function classFilename
   author: PA
- 
-  Retrieves the filename where the class is stored.
-"
+  Retrieves the filename where the class is stored."
   input Class inClass;
   output String outString;
 algorithm 
@@ -1701,9 +1651,7 @@ end classFilename;
 
 public function setClassFilename "function setClassFilename
   author: PA
- 
-  Sets the filename where the class is stored.
-"
+  Sets the filename where the class is stored."
   input Class inClass;
   input String inString;
   output Class outClass;
@@ -1720,9 +1668,7 @@ algorithm
 end setClassFilename;
 
 public function printAbsynExp "function: printAbsynExp 
- 
-  Prints an Exp
-"
+  Prints an Exp"
   input Exp inExp;
 algorithm 
   _:=
@@ -1750,11 +1696,8 @@ algorithm
 end printAbsynExp;
 
 public function crefEqual "function: crefEqual
- 
-  Checks if the name of a ComponentRef is equal to the name of 
-  another ComponentRef
-  
-"
+  Checks if the name of a ComponentRef is 
+  equal to the name of another ComponentRef"
   input ComponentRef inComponentRef1;
   input ComponentRef inComponentRef2;
   output Boolean outBoolean;
@@ -1780,8 +1723,7 @@ algorithm
 end crefEqual;
 
 public function isPackageRestriction "function isPackageRestriction
-  checks if the provided parameter is a package or not
-"
+  checks if the provided parameter is a package or not"
   input Restriction inRestriction;
   output Boolean outBoolean;
 algorithm 
@@ -1803,6 +1745,19 @@ algorithm
     case (x, y) equation failure(equality(x = y)); then false;
   end matchcontinue;
 end expEqual;
+
+public function eachEqual "Returns true if two each attributes are equal"
+  input Each each1;
+  input Each each2;
+  output Boolean equal;
+algorithm
+  equal := matchcontinue(each1,each2)
+    case(NON_EACH(),NON_EACH()) then true;
+    case(EACH(),EACH()) then true;
+    case(_,_) then false;
+  end matchcontinue;
+end eachEqual;
+
 
 /* adrpo - 2007-02-20 equality can be implemented using structural equality! 
 public function expEqual "Returns true if two expressions are equal"
@@ -1896,21 +1851,10 @@ algorithm
     case(_,_) then false;
   end matchcontinue;
 end expEqual;
+
 */
 
-public function eachEqual "Returns true if two each attributes are equal"
-  input Each each1;
-  input Each each2;
-  output Boolean equal;
-algorithm
-  equal := matchcontinue(each1,each2)
-    case(NON_EACH(),NON_EACH()) then true;
-    case(EACH(),EACH()) then true;
-    case(_,_) then false;
-  end matchcontinue;
-end eachEqual;
-
-protected function functionArgsEqual "Retirms true if two FunctionArgs are equal"
+protected function functionArgsEqual "Returns true if two FunctionArgs are equal"
   input FunctionArgs args1;
   input FunctionArgs args2;
   output Boolean equal;
@@ -1926,5 +1870,6 @@ algorithm
    case(_,_) then false;       
  end matchcontinue;
 end functionArgsEqual;
+
 
 end Absyn;
