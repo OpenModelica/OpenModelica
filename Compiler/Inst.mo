@@ -3380,7 +3380,7 @@ algorithm
         (cache,dims) = elabArraydim(cache,env2_1, owncref, ad, eq, impl, NONE,true)  ;
         
         //Instantiate the component 
-        (cache,compenv,dae,csets_1,ty) = instVar(cache,cenv, ci_state, mod_1, pre, csets, n, cl, attr, dims, {}, inst_dims, impl, comment,io);    
+        (cache,compenv,dae,csets_1,ty) = instVar(cache,cenv, ci_state, mod_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io);    
 
 				//The environment is extended (updated) with the new variable binding. 
         (cache,binding) = makeBinding(cache,env2_1, attr, mod_1, ty) ;
@@ -3821,6 +3821,7 @@ protected function instVar "function: instVar
   input Ident inIdent;
   input SCode.Class inClass;
   input SCode.Attributes inAttributes;
+  input Boolean protection;
   input list<DimExp> inDimExpLst;
   input list<Integer> inIntegerLst;
   input InstDims inInstDims;
@@ -3834,7 +3835,7 @@ protected function instVar "function: instVar
   output Types.Type outType;
 algorithm 
   (outCache,outEnv,outDAEElementLst,outSets,outType):=
-  matchcontinue (outCache,inEnv,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io)
+  matchcontinue (outCache,inEnv,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io)
     local
       list<DimExp> dims_1,dims;
       list<Env.Frame> compenv,env;
@@ -3852,23 +3853,24 @@ algorithm
       Boolean impl;
       Option<Absyn.Comment> comment;
       Env.Cache cache;
+      Boolean prot;
    	// impl component environment dae elements for component Variables of userdefined type, 
    	// e.g. Point p => Real p{3}; These must be handled separately since even if they do not 
 	 	// appear to be an array, they can. Therefore we need to collect
  	 	// the full dimensionality and call inst_var2 
-    case (cache,env,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id)),attr,dims,idxs,inst_dims,impl,comment,io) 
+    case (cache,env,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id)),attr,prot,dims,idxs,inst_dims,impl,comment,io) 
       equation 
 				// Collect dimensions
         (cache,(dims_1 as (_ :: _))) = getUsertypeDimensions(cache,env, mod, pre, cl, inst_dims, impl);
-        (cache,compenv,dae,csets_1,ty_1) = instVar2(cache,env, ci_state, mod, pre, csets, n, cl, attr, dims_1, idxs, 
+        (cache,compenv,dae,csets_1,ty_1) = instVar2(cache,env, ci_state, mod, pre, csets, n, cl, attr, prot, dims_1, idxs, 
           inst_dims, impl, comment,io);
         ty = makeArrayType(dims_1, ty_1);
       then
         (cache,compenv,dae,csets_1,ty);
     // Generic case: fall trough 
-    case (cache,env,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id)),attr,dims,idxs,inst_dims,impl,comment,io) 
+    case (cache,env,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id)),attr,prot,dims,idxs,inst_dims,impl,comment,io) 
       equation 
-        (cache,compenv,dae,csets_1,ty_1) = instVar2(cache,env, ci_state, mod, pre, csets, n, cl, attr, dims, idxs, 
+        (cache,compenv,dae,csets_1,ty_1) = instVar2(cache,env, ci_state, mod, pre, csets, n, cl, attr, prot, dims, idxs, 
           inst_dims, impl, comment,io);
       then
         (cache,compenv,dae,csets_1,ty_1);
@@ -3888,6 +3890,7 @@ protected function instVar2 "function: instVar2
   input Ident inIdent;
   input SCode.Class inClass;
   input SCode.Attributes inAttributes;
+	input Boolean protection;
   input list<DimExp> inDimExpLst;
   input list<Integer> inIntegerLst;
   input InstDims inInstDims;
@@ -3901,7 +3904,7 @@ protected function instVar2 "function: instVar2
   output Types.Type outType;
 algorithm 
   (outCache,outEnv,outDAEElementLst,outSets,outType):=
-  matchcontinue (inCache,inEnv,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io)
+  matchcontinue (inCache,inEnv,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io)
     local
       InstDims dims_1,inst_dims,subs,inst_dims_1;
       Exp.Exp e,e_1;
@@ -3934,13 +3937,14 @@ algorithm
       Option<Integer> dimt;
       DimExp dim;
       Env.Cache cache;
+      Boolean prot;
        
     // Function variables with modifiers (outputs or local/protected variables)
     // For Functions we cannot always find dimensional sizes. e.g. 
 	  // input Real x[:]; component environement The class is instantiated 
 	  // with the calculated modification, and an extended prefix. 
     //     
-	    case (cache,env,ci_state,mod,pre,csets,n,cl,attr,dims,idxs,inst_dims,impl,comment,io) 
+	    case (cache,env,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io) 
         equation 
         ClassInf.isFunction(ci_state);
         
@@ -3962,12 +3966,12 @@ algorithm
         
         //Generate variable with default binding
         cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,{}));
-        dae = daeDeclare(cr, ci_state, ty, attr, SOME(e_1), dims_1, NONE, NONE, comment,io);
+        dae = daeDeclare(cr, ci_state, ty, attr, prot, SOME(e_1), dims_1, NONE, NONE, comment,io);
       then
         (cache,env_1,dae,csets_1,ty_1);
    
           /* Function variables without binding */
-    case (cache,env,ci_state,mod,pre,csets,n,cl,attr,dims,idxs,inst_dims,impl,comment,io) 
+    case (cache,env,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io) 
        equation 
         ClassInf.isFunction(ci_state);
 
@@ -3976,14 +3980,14 @@ algorithm
         cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,{}));
         //Do all dimensions...
         dims_1 = instDimExpLst(dims, impl)  ;
-        dae = daeDeclare(cr, ci_state, ty, attr, NONE, dims_1, NONE, NONE, comment,io);
+        dae = daeDeclare(cr, ci_state, ty, attr,prot, NONE, dims_1, NONE, NONE, comment,io);
         arrty = makeArrayType(dims, ty);
       then
         (cache,env_1,dae,csets,arrty);
 
     /* Constants */ 
     case (cache,env,ci_state,(mod as Types.MOD(eqModOption = SOME(Types.TYPED(e,_,_)))),
-          pre,csets,n,cl,SCode.ATTR(flow_ = flow_,RW = acc,parameter_ = (vt as SCode.CONST()),input_ = dir),
+          pre,csets,n,cl,SCode.ATTR(flow_ = flow_,RW = acc,parameter_ = (vt as SCode.CONST()),input_ = dir),prot,
           {},idxs,inst_dims,impl,comment,io) 
       equation 
         idxs_1 = listReverse(idxs);
@@ -3993,7 +3997,7 @@ algorithm
         subs = Exp.intSubscripts(idxs_1);
         cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,subs));
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {}) "inst_mod_equation(cr,ty,mod) => dae2 &" ;
-        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flow_,acc,vt,dir), 
+        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flow_,acc,vt,dir),prot, 
           SOME(e), inst_dims, NONE, dae_var_attr, comment,io);
         dae = listAppend(dae1_1, dae3);
       then
@@ -4001,7 +4005,7 @@ algorithm
 
     /* Parameters */ 
     case (cache,env,ci_state,(mod as Types.MOD(eqModOption = SOME(Types.TYPED(e,_,_)))),
-         pre,csets,n,cl,SCode.ATTR(flow_ = flow_,RW = acc,parameter_ = (vt as SCode.PARAM()),input_ = dir),
+         pre,csets,n,cl,SCode.ATTR(flow_ = flow_,RW = acc,parameter_ = (vt as SCode.PARAM()),input_ = dir),prot,
          {},idxs,inst_dims,impl,comment,io) 
       equation 
         idxs_1 = listReverse(idxs);
@@ -4012,7 +4016,7 @@ algorithm
         cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,subs));
         start = instStartBindingExp(mod, ty, idxs_1);
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
-        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flow_,acc,vt,dir), 
+        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flow_,acc,vt,dir),prot, 
           SOME(e), inst_dims, start, dae_var_attr, comment,io);
         dae = listAppend(dae1_1, dae3);
       then
@@ -4020,7 +4024,7 @@ algorithm
            
         /* Scalar Variables, different from the ones above since variable binings are expanded to equations.
         Exception: external objects, see below.*/         
-    case (cache,env,ci_state,mod,pre,csets,n,cl,SCode.ATTR(flow_ = flow_,RW = acc,parameter_ = vt,input_ = dir),{},idxs,inst_dims,impl,comment,io) 
+    case (cache,env,ci_state,mod,pre,csets,n,cl,SCode.ATTR(flow_ = flow_,RW = acc,parameter_ = vt,input_ = dir),prot,{},idxs,inst_dims,impl,comment,io) 
       local Option<Exp.Exp> eOpt "for external objects";
       equation 
         idxs_1 = listReverse(idxs);
@@ -4043,7 +4047,7 @@ algorithm
         start = instStartBindingExp(mod, ty, idxs_1);
         eOpt = makeExternalObjectBinding(ty,mod);
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {}) "idxs\'" ;
-        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flow_,acc,vt,dir), eOpt, 
+        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flow_,acc,vt,dir),prot, eOpt, 
           inst_dims, start, dae_var_attr, comment,io);
         daex = listAppend(dae1_1, dae2);
         dae = listAppend(daex, dae3);
@@ -4051,11 +4055,11 @@ algorithm
         (cache,env_1,dae,csets_1,ty);
     
         /* Array variables , e.g. Real x[3]*/
-    case (cache,env,ci_state,mod,pre,csets,n,cl,attr,(dim :: dims),idxs,inst_dims,impl,comment,io) 
+    case (cache,env,ci_state,mod,pre,csets,n,cl,attr,prot,(dim :: dims),idxs,inst_dims,impl,comment,io) 
       equation 
         dime = instDimExp(dim, impl);
         inst_dims_1 = listAppend(inst_dims, {dime});
-        (cache,compenv,dae,Connect.SETS(_,crs),ty) = instArray(cache,env, ci_state, mod, pre, csets, n, (cl,attr), 1, dim, 
+        (cache,compenv,dae,Connect.SETS(_,crs),ty) = instArray(cache,env, ci_state, mod, pre, csets, n, (cl,attr),prot, 1, dim, 
           dims, idxs, inst_dims_1, impl, comment,io);
         dimt = instDimType(dim);
         ty_1 = liftNonBasicTypes(ty,dimt); // Do not lift types extending basic type, they are already array types.
@@ -4065,7 +4069,7 @@ algorithm
                 
     // Rules for instantation of function variables (e.g. input and output 
     // parameters and protected variables) 
-    case (_,_,_,_,_,_,n,_,_,_,_,_,_,_,_) 
+    case (_,_,_,_,_,_,n,_,_,_,_,_,_,_,_,_) 
       equation 
         print("instVar2 failed\n");
         Debug.fprint("failtrace", "- inst_var2 failed: ");
@@ -4437,7 +4441,7 @@ algorithm
         (cache,dims) = elabArraydim(cache,env2, cref, ad, eq, impl, NONE,true) "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;
 
         /* Instantiate the component */
-        (cache,compenv,dae1,csets_1,ty) = instVar(cache,cenv, ci_state, mod_3, Prefix.NOPRE(), csets, n, cl, attr, 
+        (cache,compenv,dae1,csets_1,ty) = instVar(cache,cenv, ci_state, mod_3, Prefix.NOPRE(), csets, n, cl, attr, prot,
           dims, {}, {}, impl, NONE,io)  ;
 
         /* The environment is extended with the new variable binding. */
@@ -4501,7 +4505,7 @@ algorithm
         (cache,dims) = elabArraydim(cache,env2, owncref, ad, eq, impl, NONE,true);
 
         /* Instantiate the component */
-        (cache,compenv,dae1,csets_1,ty) = instVar(cache,cenv, ci_state, mod_3, Prefix.NOPRE(), csets, n, cl, attr, 
+        (cache,compenv,dae1,csets_1,ty) = instVar(cache,cenv, ci_state, mod_3, Prefix.NOPRE(), csets, n, cl, attr, prot,
           dims, {}, {}, false, NONE,io)  ;
           
         /*The environment is extended with the new variable binding.*/
@@ -4656,17 +4660,18 @@ end propagateAttributes;
       DAE.Element x;
       Types.Type tp;
       Absyn.InnerOuter io;
+      DAE.VarProtection prot;
     case (lst,Absyn.BIDIR()) then lst;  /* Component that is bidirectional does not change direction 
 	    on subcomponents */ 
     case ({},_) then {}; 
-    case ((DAE.VAR(componentRef = cr,varible = vk,variable = DAE.BIDIR(),input_ = t,one = e,binding = id,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp) :: r),dir) /* Bidirectional variables are changed to input or output if 
+    case ((DAE.VAR(componentRef = cr,varible = vk,protection=prot,variable = DAE.BIDIR(),input_ = t,one = e,binding = id,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp) :: r),dir) /* Bidirectional variables are changed to input or output if 
 	  component has such prefix. */ 
       equation 
         dir_1 = absynDirToDaeDir(dir);
         r_1 = propagateDirection(r, dir);
       then
-        (DAE.VAR(cr,vk,dir_1,t,e,id,start,flow_,class_,dae_var_attr,comment,io,tp) :: r_1);
-    case ((DAE.VAR(componentRef = cr,varible = vk,variable = DAE.INPUT(),input_ = t,one = e,binding = id,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp) :: r),dir) /* Error, component declared as input or output  when containing 
+        (DAE.VAR(cr,vk,dir_1,prot,t,e,id,start,flow_,class_,dae_var_attr,comment,io,tp) :: r_1);
+    case ((DAE.VAR(componentRef = cr,varible = vk,protection=prot,variable = DAE.INPUT(),input_ = t,one = e,binding = id,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp) :: r),dir) /* Error, component declared as input or output  when containing 
 	    variable that has prefix input. */ 
       equation 
         s1 = Dump.directionSymbol(dir);
@@ -4724,6 +4729,7 @@ end propagateDirection;
       DAE.Element x;
       Types.Type tp;
       Absyn.InnerOuter io;
+      DAE.VarProtection prot;
       /* Component that is unspecified does not change inner/outer 
 	    on subcomponents */ 
     case (lst,Absyn.UNSPECIFIED()) then lst;  
@@ -4731,12 +4737,12 @@ end propagateDirection;
     case ({},_) then {}; 
       
       /* unspecified variables are changed to inner/outer if component has such prefix. */ 
-    case ((DAE.VAR(componentRef = cr,varible = vk,variable = dir,input_ = t,one = e,binding = id,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=Absyn.UNSPECIFIED(),fullType=tp) :: r),io) 
+    case ((DAE.VAR(componentRef = cr,varible = vk,variable = dir,protection=prot,input_ = t,one = e,binding = id,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=Absyn.UNSPECIFIED(),fullType=tp) :: r),io) 
       equation 
 				false = ModUtil.isUnspecified(io);
         r_1 = propagateInnerOuter(r, io);
       then
-        (DAE.VAR(cr,vk,dir,t,e,id,start,flow_,class_,dae_var_attr,comment,io,tp) :: r_1);
+        (DAE.VAR(cr,vk,dir,prot,t,e,id,start,flow_,class_,dae_var_attr,comment,io,tp) :: r_1);
 
 			/* If var already have inner/outer, keep it. */
     case ( (v as DAE.VAR(componentRef = _)) :: r,io) 
@@ -4793,6 +4799,7 @@ protected function instArray "function: instArray
   input Connect.Sets inSets;
   input Ident inIdent;
   input tuple<SCode.Class, SCode.Attributes> inTplSCodeClassSCodeAttributes;
+  input Boolean protection;
   input Integer inInteger;
   input DimExp inDimExp;
   input list<DimExp> inDimExpLst;
@@ -4808,7 +4815,7 @@ protected function instArray "function: instArray
   output Types.Type outType;
 algorithm 
   (outCache,outEnv,outDAEElementLst,outSets,outType):=
-  matchcontinue (inCache,inEnv,inState,inMod,inPrefix,inSets,inIdent,inTplSCodeClassSCodeAttributes,inInteger,inDimExp,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io)
+  matchcontinue (inCache,inEnv,inState,inMod,inPrefix,inSets,inIdent,inTplSCodeClassSCodeAttributes,protection,inInteger,inDimExp,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io)
     local
       Exp.Exp e,e_1;
       Types.Properties p,p2;
@@ -4832,7 +4839,8 @@ algorithm
       Option<Absyn.Comment> comment;
       list<DAE.Element> dae1,dae2;
       Initial eqn_place;
-    case (cache,env,(ci_state as ClassInf.FUNCTION(string = _)),mod,pre,csets,n,(cl,attr),i,DIMEXP(subscript = _),dims,idxs,inst_dims,impl,comment,io) /* component environment If is a function var. */ 
+      Boolean prot;
+    case (cache,env,(ci_state as ClassInf.FUNCTION(string = _)),mod,pre,csets,n,(cl,attr),prot,i,DIMEXP(subscript = _),dims,idxs,inst_dims,impl,comment,io) /* component environment If is a function var. */ 
       equation 
         SOME(Types.TYPED(e,_,p)) = Mod.modEquation(mod);
         (cache,_,env_1,csets,ty,st) = instClass(cache,env, mod, pre, csets, cl, inst_dims, true, INNER_CALL()) "Which has an 
@@ -4844,23 +4852,23 @@ algorithm
       then
         (cache,env_1,{dae},csets,ty);
 
-    case (cache,env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMEXP(subscript = _),dims,idxs,inst_dims,impl,comment,io)
+    case (cache,env,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMEXP(subscript = _),dims,idxs,inst_dims,impl,comment,io)
       local list<DAE.Element> dae;
       equation 
-        (cache,compenv,dae,csets,ty) = instVar2(cache,env, ci_state, mod, pre, csets, n, cl, attr, dims, 
+        (cache,compenv,dae,csets,ty) = instVar2(cache,env, ci_state, mod, pre, csets, n, cl, attr, prot, dims, 
           (i :: idxs), inst_dims, impl, comment,io);
       then
         (cache,compenv,dae,csets,ty);
 
 		/* Special case when instantiating Real[0]. We need to know the type */
-    case (cache,env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMINT(0),dims,idxs,inst_dims,impl,comment,io)
+    case (cache,env,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMINT(0),dims,idxs,inst_dims,impl,comment,io)
       equation 
-			 (cache,compenv,_,csets,ty) = instVar2(cache,env, ci_state, mod, pre, csets, n, cl, attr, dims, 
+			 (cache,compenv,_,csets,ty) = instVar2(cache,env, ci_state, mod, pre, csets, n, cl, attr,prot, dims, 
           (0 :: idxs), inst_dims, impl, comment,io);
       then
         (cache,compenv,{},csets,ty);
 
-    case (cache,env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMINT(integer = stop),dims,idxs,inst_dims,impl,comment,io)
+    case (cache,env,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMINT(integer = stop),dims,idxs,inst_dims,impl,comment,io)
       equation 
         (i > stop) = true;
       then
@@ -4868,15 +4876,15 @@ algorithm
 
         /* Modifiers of arrays that are functioncall, eg. 
          Real x{:}=foo(...) Should only generate -one- functioncall */     
-    case (cache,env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMINT(integer = stop),dims,idxs,inst_dims,impl,comment,io) 
+    case (cache,env,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMINT(integer = stop),dims,idxs,inst_dims,impl,comment,io) 
       local list<DAE.Element> dae;
       equation 
         SOME(Types.TYPED(e,_,p)) = Mod.modEquation(mod);
         true = Exp.containFunctioncall(e);
-        (cache,env_1,dae1,csets_1,ty) = instVar2(cache,env, ci_state, Types.NOMOD(), pre, csets, n, cl, attr, 
+        (cache,env_1,dae1,csets_1,ty) = instVar2(cache,env, ci_state, Types.NOMOD(), pre, csets, n, cl, attr,prot, 
           dims, (i :: idxs), inst_dims, impl, comment,io);
         i_1 = i + 1;
-        (cache,_,dae2,csets_2,arrty) = instArray(cache,env, ci_state, Types.NOMOD(), pre, csets_1, n, (cl,attr), 
+        (cache,_,dae2,csets_2,arrty) = instArray(cache,env, ci_state, Types.NOMOD(), pre, csets_1, n, (cl,attr),prot, 
           i_1, DIMINT(stop), dims, idxs, inst_dims, impl, comment,io);
         cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,{})) "Make the equation containing the functioncall" ;
         arrty_1 = Types.elabType(arrty);
@@ -4886,19 +4894,19 @@ algorithm
         dae = Util.listFlatten({dae1,dae2,{dae3}});
       then
         (cache,env_1,dae,csets_2,ty);
-    case (cache,env,ci_state,mod,pre,csets,n,(cl,attr),i,DIMINT(integer = stop),dims,idxs,inst_dims,impl,comment,io)
+    case (cache,env,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMINT(integer = stop),dims,idxs,inst_dims,impl,comment,io)
       local list<DAE.Element> dae;
       equation 
         mod_1 = Mod.lookupIdxModification(mod, i);
-        (cache,env_1,dae1,csets_1,ty) = instVar2(cache,env, ci_state, mod_1, pre, csets, n, cl, attr, dims, 
+        (cache,env_1,dae1,csets_1,ty) = instVar2(cache,env, ci_state, mod_1, pre, csets, n, cl, attr, prot,dims, 
           (i :: idxs), inst_dims, impl, comment,io);
         i_1 = i + 1;
-        (cache,_,dae2,csets_2,_) = instArray(cache,env, ci_state, mod, pre, csets_1, n, (cl,attr), i_1, 
+        (cache,_,dae2,csets_2,_) = instArray(cache,env, ci_state, mod, pre, csets_1, n, (cl,attr), prot, i_1, 
           DIMINT(stop), dims, idxs, inst_dims, impl, comment,io);
         dae = listAppend(dae1, dae2);
       then
         (cache,env_1,dae,csets_2,ty);
-    case (_,_,_,_,_,_,n,(_,_),_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,n,(_,_),_,_,_,_,_,_,_,_,_)
       equation 
        Debug.fprint("failtrace", "- inst_array failed: ");
         Debug.fcall("failtrace", Print.printBuf, n);
@@ -6378,6 +6386,7 @@ protected function daeDeclare "function: daeDeclare
   input ClassInf.State inState;
   input Types.Type inType;
   input SCode.Attributes inAttributes;
+  input Boolean protection;
   input Option<Exp.Exp> inExpExpOption;
   input InstDims inInstDims;
   input DAE.StartValue inStartValue;
@@ -6387,28 +6396,28 @@ protected function daeDeclare "function: daeDeclare
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   outDAEElementLst:=
-  matchcontinue (inComponentRef,inState,inType,inAttributes,inExpExpOption,inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io)
+  matchcontinue (inComponentRef,inState,inType,inAttributes,protection,inExpExpOption,inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io)
     local
       DAE.Flow flow_1;
       list<DAE.Element> dae;
       Exp.ComponentRef vn;
       ClassInf.State ci_state;
       tuple<Types.TType, Option<Absyn.Path>> ty;
-      Boolean flow_;
+      Boolean flow_,prot;
       SCode.Variability par;
       Absyn.Direction dir;
       Option<Exp.Exp> e,start;
       InstDims inst_dims;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-    case (vn,ci_state,ty,SCode.ATTR(flow_ = flow_,parameter_ = par,input_ = dir),e,inst_dims,start,dae_var_attr,comment,io)
+    case (vn,ci_state,ty,SCode.ATTR(flow_ = flow_,parameter_ = par,input_ = dir),prot,e,inst_dims,start,dae_var_attr,comment,io)
       equation 
         flow_1 = DAE.toFlow(flow_, ci_state);
-        dae = daeDeclare2(vn, ty, flow_1, par, dir, e, inst_dims, start, 
+        dae = daeDeclare2(vn, ty, flow_1, par, dir,prot, e, inst_dims, start, 
           dae_var_attr, comment,io);
       then
         dae;
-    case (_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_)
       equation 
         Debug.fprint("failtrace", "- dae_declare failed\n");
       then
@@ -6425,6 +6434,7 @@ protected function daeDeclare2 "function: daeDeclare2
   input DAE.Flow inFlow;
   input SCode.Variability inVariability;
   input Absyn.Direction inDirection;
+  input Boolean protection;
   input Option<Exp.Exp> inExpExpOption;
   input InstDims inInstDims;
   input DAE.StartValue inStartValue;
@@ -6434,7 +6444,7 @@ protected function daeDeclare2 "function: daeDeclare2
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   outDAEElementLst:=
-  matchcontinue (inComponentRef,inType,inFlow,inVariability,inDirection,inExpExpOption,inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io)
+  matchcontinue (inComponentRef,inType,inFlow,inVariability,inDirection,protection,inExpExpOption,inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io)
     local
       list<DAE.Element> dae;
       Exp.ComponentRef vn;
@@ -6445,31 +6455,32 @@ algorithm
       InstDims inst_dims;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-    case (vn,ty,flow_,SCode.VAR(),dir,e,inst_dims,start,dae_var_attr,comment,io)
+      Boolean prot;
+    case (vn,ty,flow_,SCode.VAR(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io)
       equation 
-        dae = daeDeclare3(vn, ty, flow_, DAE.VARIABLE(), dir, e, inst_dims, start, 
+        dae = daeDeclare3(vn, ty, flow_, DAE.VARIABLE(), dir,prot, e, inst_dims, start, 
           dae_var_attr, comment,io);
       then
         dae;
-    case (vn,ty,flow_,SCode.DISCRETE(),dir,e,inst_dims,start,dae_var_attr,comment,io)
+    case (vn,ty,flow_,SCode.DISCRETE(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io)
       equation 
-        dae = daeDeclare3(vn, ty, flow_, DAE.DISCRETE(), dir, e, inst_dims, start, 
+        dae = daeDeclare3(vn, ty, flow_, DAE.DISCRETE(), dir,prot, e, inst_dims, start, 
           dae_var_attr, comment,io);
       then
         dae;
-    case (vn,ty,flow_,SCode.PARAM(),dir,e,inst_dims,start,dae_var_attr,comment,io)
+    case (vn,ty,flow_,SCode.PARAM(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io)
       equation 
-        dae = daeDeclare3(vn, ty, flow_, DAE.PARAM(), dir, e, inst_dims, start, 
+        dae = daeDeclare3(vn, ty, flow_, DAE.PARAM(), dir,prot, e, inst_dims, start, 
           dae_var_attr, comment,io);
       then
         dae;
-    case (vn,ty,flow_,SCode.CONST(),dir,e,inst_dims,start,dae_var_attr,comment,io)
+    case (vn,ty,flow_,SCode.CONST(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io)
       equation 
-        dae = daeDeclare3(vn, ty, flow_, DAE.CONST(), dir, e, inst_dims, start, 
+        dae = daeDeclare3(vn, ty, flow_, DAE.CONST(), dir,prot, e, inst_dims, start, 
           dae_var_attr, comment,io);
       then
         dae;
-    case (_,_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_,_)
       equation 
         Debug.fprint("failtrace", "- daeDeclare2 failed\n");
       then
@@ -6486,6 +6497,7 @@ protected function daeDeclare3 "function: daeDeclare3
   input DAE.Flow inFlow;
   input DAE.VarKind inVarKind;
   input Absyn.Direction inDirection;
+  input Boolean protection;
   input Option<Exp.Exp> inExpExpOption;
   input InstDims inInstDims;
   input DAE.StartValue inStartValue;
@@ -6495,7 +6507,7 @@ protected function daeDeclare3 "function: daeDeclare3
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   outDAEElementLst:=
-  matchcontinue (inComponentRef,inType,inFlow,inVarKind,inDirection,inExpExpOption,inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io)
+  matchcontinue (inComponentRef,inType,inFlow,inVarKind,inDirection,protection,inExpExpOption,inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io)
     local
       list<DAE.Element> dae;
       Exp.ComponentRef vn;
@@ -6506,31 +6518,43 @@ algorithm
       InstDims inst_dims;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-    case (vn,ty,fl,vk,Absyn.INPUT(),e,inst_dims,start,dae_var_attr,comment,io)
+      Boolean prot;
+      DAE.VarProtection prot1;
+    case (vn,ty,fl,vk,Absyn.INPUT(),prot,e,inst_dims,start,dae_var_attr,comment,io)
       equation 
-        dae = daeDeclare4(vn, ty, fl, vk, DAE.INPUT(), e, inst_dims, start, 
+        prot1 = makeDaeProt(prot);
+        dae = daeDeclare4(vn, ty, fl, vk, DAE.INPUT(),prot1, e, inst_dims, start, 
           dae_var_attr, comment,io);
       then
         dae;
-    case (vn,ty,fl,vk,Absyn.OUTPUT(),e,inst_dims,start,dae_var_attr,comment,io)
+    case (vn,ty,fl,vk,Absyn.OUTPUT(),prot,e,inst_dims,start,dae_var_attr,comment,io)
       equation 
-        dae = daeDeclare4(vn, ty, fl, vk, DAE.OUTPUT(), e, inst_dims, start, 
+        prot1 = makeDaeProt(prot);
+        dae = daeDeclare4(vn, ty, fl, vk, DAE.OUTPUT(),prot1, e, inst_dims, start, 
           dae_var_attr, comment,io);
       then
         dae;
-    case (vn,ty,fl,vk,Absyn.BIDIR(),e,inst_dims,start,dae_var_attr,comment,io)
+    case (vn,ty,fl,vk,Absyn.BIDIR(),prot,e,inst_dims,start,dae_var_attr,comment,io)
       equation 
-        dae = daeDeclare4(vn, ty, fl, vk, DAE.BIDIR(), e, inst_dims, start, 
+        prot1 = makeDaeProt(prot);
+        dae = daeDeclare4(vn, ty, fl, vk, DAE.BIDIR(),prot1, e, inst_dims, start, 
           dae_var_attr, comment,io);
       then
         dae;
-    case (_,_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_,_)
       equation 
         //Debug.fprint("failtrace", "- daeDeclare3 failed\n");
       then
         fail();
   end matchcontinue;
 end daeDeclare3;
+
+protected function makeDaeProt "Creates a DAE.VarProtection from a Boolean"
+ input Boolean prot;
+ output DAE.VarProtection res;
+algorithm
+  res := Util.if_(prot,DAE.PROTECTED(),DAE.PUBLIC());
+end makeDaeProt;
 
 protected function daeDeclare4 "function: daeDeclare4
   
@@ -6541,6 +6565,7 @@ protected function daeDeclare4 "function: daeDeclare4
   input DAE.Flow inFlow;
   input DAE.VarKind inVarKind;
   input DAE.VarDirection inVarDirection;
+  input DAE.VarProtection protection;
   input Option<Exp.Exp> inExpExpOption;
   input InstDims inInstDims;
   input DAE.StartValue inStartValue;
@@ -6550,7 +6575,7 @@ protected function daeDeclare4 "function: daeDeclare4
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   outDAEElementLst:=
-  matchcontinue (inComponentRef,inType,inFlow,inVarKind,inVarDirection,inExpExpOption,inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io)
+  matchcontinue (inComponentRef,inType,inFlow,inVarKind,inVarDirection,protection,inExpExpOption,inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io)
     local
       Exp.ComponentRef vn,c;
       DAE.Flow fl;
@@ -6567,52 +6592,53 @@ algorithm
       Integer dim;
       String s;
       Types.Type ty;
-    case (vn,ty as(Types.T_INTEGER(varLstInt = _),_),fl,kind,dir,e,inst_dims,start,dae_var_attr,comment,io) then {
-          DAE.VAR(vn,kind,dir,DAE.INT(),e,inst_dims,start,fl,{},dae_var_attr,
+      DAE.VarProtection prot;
+    case (vn,ty as(Types.T_INTEGER(varLstInt = _),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) then {
+          DAE.VAR(vn,kind,dir,prot,DAE.INT(),e,inst_dims,start,fl,{},dae_var_attr,
           comment,io,ty)}; 
-    case (vn,ty as(Types.T_REAL(varLstReal = _),_),fl,kind,dir,e,inst_dims,start,dae_var_attr,comment,io) then {
-          DAE.VAR(vn,kind,dir,DAE.REAL(),e,inst_dims,start,fl,{},
+    case (vn,ty as(Types.T_REAL(varLstReal = _),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) then {
+          DAE.VAR(vn,kind,dir,prot,DAE.REAL(),e,inst_dims,start,fl,{},
           dae_var_attr,comment,io,ty)}; 
-    case (vn,ty as(Types.T_BOOL(varLstBool = _),_),fl,kind,dir,e,inst_dims,start,dae_var_attr,comment,io) then {
-          DAE.VAR(vn,kind,dir,DAE.BOOL(),e,inst_dims,start,fl,{},
+    case (vn,ty as(Types.T_BOOL(varLstBool = _),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) then {
+          DAE.VAR(vn,kind,dir,prot,DAE.BOOL(),e,inst_dims,start,fl,{},
           dae_var_attr,comment,io,ty)}; 
-    case (vn,ty as(Types.T_STRING(varLstString = _),_),fl,kind,dir,e,inst_dims,start,dae_var_attr,comment,io) then {
-          DAE.VAR(vn,kind,dir,DAE.STRING(),e,inst_dims,start,fl,{},
+    case (vn,ty as(Types.T_STRING(varLstString = _),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) then {
+          DAE.VAR(vn,kind,dir,prot,DAE.STRING(),e,inst_dims,start,fl,{},
           dae_var_attr,comment,io,ty)}; 
-    case (vn,ty as(Types.T_ENUM(),_),fl,kind,dir,e,inst_dims,start,dae_var_attr,comment,io) then {}; 
+    case (vn,ty as(Types.T_ENUM(),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) then {}; 
 
 			/* We should not declare each enumeration value of an enumeration when instantiating,
   		e.g Myenum my !=> constant EnumType my.enum1,... {DAE.VAR(vn, kind, dir, DAE.ENUM, e, inst_dims)} 
   		instantiation of complex type extending from basic type */ 
-    case (vn,ty as(Types.T_ENUMERATION(names = l),_),fl,kind,dir,e,inst_dims,start,dae_var_attr,comment,io) 
-      then {DAE.VAR(vn,kind,dir,DAE.ENUMERATION(l),e,inst_dims,start,fl,{}, dae_var_attr,comment,io,ty)};  
+    case (vn,ty as(Types.T_ENUMERATION(names = l),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) 
+      then {DAE.VAR(vn,kind,dir,prot,DAE.ENUMERATION(l),e,inst_dims,start,fl,{}, dae_var_attr,comment,io,ty)};  
 
           /* Complex type that is ExternalObject*/
-     case (vn, ty as (Types.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_),fl,kind,dir,e,inst_dims,start,dae_var_attr,comment,io)    
+     case (vn, ty as (Types.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io)    
        local Absyn.Path path;
        equation
-          then {DAE.VAR(vn,kind,dir,DAE.EXT_OBJECT(path),e,inst_dims,start,fl,{}, dae_var_attr,comment,io,ty)};
+          then {DAE.VAR(vn,kind,dir,prot,DAE.EXT_OBJECT(path),e,inst_dims,start,fl,{}, dae_var_attr,comment,io,ty)};
             
       /* instantiation of complex type extending from basic type */ 
-    case (vn,(Types.T_COMPLEX(complexClassType = ci,complexVarLst = {},complexTypeOption = SOME(tp)),_),fl,kind,dir,e,inst_dims,start,dae_var_attr,comment,io) 
+    case (vn,(Types.T_COMPLEX(complexClassType = ci,complexVarLst = {},complexTypeOption = SOME(tp)),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) 
       equation
-        dae = daeDeclare4(vn,tp,fl,kind,dir,e,inst_dims,start,dae_var_attr,comment,io);
+        dae = daeDeclare4(vn,tp,fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io);
     then dae;
 		
 		/* Array that extends basic type */          
-    case (vn,(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(dim)),arrayType = tp),_),fl,kind,dir,e,inst_dims,start,dae_var_attr,comment,io) 
+    case (vn,(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(dim)),arrayType = tp),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) 
       equation 
-        dae = daeDeclare4(vn, tp, fl, kind, dir, e, inst_dims, start, dae_var_attr, 
+        dae = daeDeclare4(vn, tp, fl, kind, dir, prot,e, inst_dims, start, dae_var_attr, 
           comment,io);
       then
         dae;
-    case (vn,(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = NONE),arrayType = tp),_),fl,kind,dir,e,inst_dims,start,dae_var_attr,comment,io)
+    case (vn,(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = NONE),arrayType = tp),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io)
       equation 
         s = Exp.printComponentRefStr(vn);
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {s});
       then
         fail();
-    case (c,ty,_,_,_,_,_,_,_,_,_) then {}; 
+    case (c,ty,_,_,_,_,_,_,_,_,_,_) then {}; 
   end matchcontinue;
 end daeDeclare4;
 
@@ -7279,7 +7305,7 @@ algorithm
       equation 
         n = newIdent();
         decl = daeDeclare(n, ClassInf.UNKNOWN(""), t, 
-          SCode.ATTR({},false,SCode.RW(),SCode.VAR(),Absyn.BIDIR()), NONE, {}, NONE, NONE, NONE,Absyn.UNSPECIFIED());
+          SCode.ATTR({},false,SCode.RW(),SCode.VAR(),Absyn.BIDIR()),true, NONE, {}, NONE, NONE, NONE,Absyn.UNSPECIFIED());
         tp = Exp.typeof(e2);
         dae1 = instEqEquation2(Exp.CREF(n,tp), e2, t, initial_);
         dae = listAppend(decl, (DAE.DEFINE(n,e1) :: dae1));
@@ -7293,7 +7319,7 @@ algorithm
       equation 
         n = newIdent();
         decl = daeDeclare(n, ClassInf.UNKNOWN(""), t, 
-          SCode.ATTR({},false,SCode.RW(),SCode.VAR(),Absyn.BIDIR()), NONE, {}, NONE, NONE, NONE,Absyn.UNSPECIFIED());
+          SCode.ATTR({},false,SCode.RW(),SCode.VAR(),Absyn.BIDIR()),true, NONE, {}, NONE, NONE, NONE,Absyn.UNSPECIFIED());
         tp = Exp.typeof(e2);
         dae1 = instEqEquation2(e1, Exp.CREF(n,tp), t, initial_);
         dae = listAppend(decl, (DAE.DEFINE(n,e2) :: dae1));
@@ -9227,15 +9253,16 @@ algorithm
       Absyn.Path fpath;
       Absyn.InnerOuter io;
       Types.Type ftp;
+      DAE.VarProtection prot;
       
     case (done,{}) then done; 
-    case (done,((v as DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = ty,one = exp,binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=ftp)) :: todorest))
+    case (done,((v as DAE.VAR(componentRef = cr,varible = vk,variable = vd,protection=prot,input_ = ty,one = exp,binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=ftp)) :: todorest))
       equation 
         (exp_1,done_1) = initVarsModelicaOutput2(cr, exp, done);
         (exp_2,todorest_1) = initVarsModelicaOutput2(cr, exp_1, todorest);
         done_2 = listAppend(done_1, 
           {
-          DAE.VAR(cr,vk,vd,ty,exp_2,inst_dims,start,flow_,class_,
+          DAE.VAR(cr,vk,vd,prot,ty,exp_2,inst_dims,start,flow_,class_,
           dae_var_attr,comment,io,ftp)});
         done_3 = initVarsModelicaOutput1(done_2, todorest_1);
       then
@@ -9354,7 +9381,7 @@ algorithm
         (cache,dimexp) = elabArraydim(cache,env, owncref, dim, NONE, false, NONE,true);
         //Debug.fprint("recconst", "calling inst_var\n");
         (cache,_,_,_,tp_1) = instVar(cache,cenv, ClassInf.FUNCTION(""), mod_1, Prefix.NOPRE(), 
-          Connect.emptySet, id, cl, attr, dimexp, {}, {}, impl, comment,io);
+          Connect.emptySet, id, cl, attr, prot,dimexp, {}, {}, impl, comment,io);
         //Debug.fprint("recconst", "Type of argument:");
         Debug.fprint("recconst", Types.printTypeStr(tp_1));
         //Debug.fprint("recconst", "\nMod=");

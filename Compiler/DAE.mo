@@ -126,12 +126,18 @@ uniontype VarDirection
 
 end VarDirection;
 
+uniontype VarProtection
+  record PUBLIC "public variables" end PUBLIC; 
+  record PROTECTED "protected variables" end PROTECTED;
+end VarProtection;
+
 public 
 uniontype Element
   record VAR
     Exp.ComponentRef componentRef " The variable name";
     VarKind varible "varible kind" ;
     VarDirection variable "variable, constant, parameter, etc." ;
+    VarProtection protection "if protected or public";
     Type input_ "input, output or bidir" ;
     Option<Exp.Exp> one "one of the builtin types" ;
     InstDims binding "Binding expression e.g. for parameters" ;
@@ -451,11 +457,12 @@ algorithm
    			  Option<Absyn.Comment> cmt;
     			Absyn.InnerOuter io,io2;
    			  Types.Type ftp;
+   			  VarProtection prot;
      case(var,{}) then {};
-     case(var,VAR(cr,kind,dir,tp,bind,dim,start,flow_,cls,attr,cmt,io,ftp)::dae) equation
+     case(var,VAR(cr,kind,dir,prot,tp,bind,dim,start,flow_,cls,attr,cmt,io,ftp)::dae) equation
        true = Exp.crefEqual(var,cr);
        io2 = removeInnerAttribute(io);
-     then VAR(cr,kind,dir,tp,bind,dim,start,flow_,cls,attr,cmt,io2,ftp)::dae;
+     then VAR(cr,kind,dir,prot,tp,bind,dim,start,flow_,cls,attr,cmt,io2,ftp)::dae;
      case(var,COMP(id,DAE(elist))::dae) equation
        elist2=removeInnerAttr(var,elist);
        dae = removeInnerAttr(var,dae);
@@ -2662,12 +2669,13 @@ algorithm
       Element x;
 			Absyn.InnerOuter io;
 			Types.Type ftp;
+			VarProtection prot;
     case ({},_) then {}; 
-    case ((VAR(componentRef = cr,varible = kind,variable = dir,input_ = tp,one = bind,binding = dim,dimension = start,value = flow_,flow_ = lst,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=ftp) :: xs),newtype)
+    case ((VAR(componentRef = cr,varible = kind,variable = dir, protection=prot,input_ = tp,one = bind,binding = dim,dimension = start,value = flow_,flow_ = lst,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=ftp) :: xs),newtype)
       equation 
         xs_1 = setComponentType(xs, newtype);
       then
-        (VAR(cr,kind,dir,tp,bind,dim,start,flow_,(newtype :: lst),
+        (VAR(cr,kind,dir,prot,tp,bind,dim,start,flow_,(newtype :: lst),
           dae_var_attr,comment,io,ftp) :: xs_1);
     case ((x :: xs),newtype)
       equation 
@@ -3257,6 +3265,7 @@ algorithm
       Exp.ComponentRef a;
       VarKind b;
       VarDirection c;
+      VarProtection prot;
       Type d;
       Option<Exp.Exp> e,g;
       InstDims f;
@@ -3266,11 +3275,11 @@ algorithm
       Option<Absyn.Comment> comment;
       Absyn.InnerOuter io;
       Types.Type tp;
-    case (VAR(componentRef = a,varible = b,variable = c,input_ = d,one = e,binding = f,dimension = g,value = h,flow_ = i,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp) :: lst)
+    case (VAR(componentRef = a,varible = b,variable = c,protection = prot,input_ = d,one = e,binding = f,dimension = g,value = h,flow_ = i,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp) :: lst)
       equation 
         res = getVariableList(lst);
       then
-        (VAR(a,b,c,d,e,f,g,h,i,dae_var_attr,comment,io,tp) :: res);
+        (VAR(a,b,c,prot,d,e,f,g,h,i,dae_var_attr,comment,io,tp) :: res);
     case (_ :: lst)
       equation 
         res = getVariableList(lst);
@@ -3486,15 +3495,16 @@ algorithm
       tuple<Types.TType, Option<Absyn.Path>> t;
       Types.Type tp;
       Absyn.InnerOuter io;
+      VarProtection prot;
     case ({}) then {}; 
-    case ((VAR(componentRef = cr,varible = a,variable = b,input_ = c,one = d,binding = e,dimension = f,value = g,flow_ = h,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp) :: elts))
+    case ((VAR(componentRef = cr,varible = a,variable = b,protection=prot,input_ = c,one = d,binding = e,dimension = f,value = g,flow_ = h,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp) :: elts))
       equation 
         str = Exp.printComponentRefStr(cr);
         str_1 = Util.stringReplaceChar(str, ".", "_");
         elts_1 = toModelicaFormElts(elts);
         d_1 = toModelicaFormExpOpt(d);
       then
-        (VAR(Exp.CREF_IDENT(str_1,{}),a,b,c,d_1,e,f,g,h,dae_var_attr,
+        (VAR(Exp.CREF_IDENT(str_1,{}),a,b,prot,c,d_1,e,f,g,h,dae_var_attr,
           comment,io,tp) :: elts_1);
     case ((DEFINE(componentRef = cr,exp = e) :: elts))
       local Exp.Exp e;

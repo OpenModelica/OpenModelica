@@ -327,11 +327,12 @@ algorithm
       DAE.Element e;
       Absyn.InnerOuter io;
       Types.Type ftp;
-    case (str,dae,DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = ty,one = SOME(exp),binding = inst_dims,dimension = start,value = flow_,flow_ = cl,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=ftp))
+      DAE.VarProtection prot;
+    case (str,dae,DAE.VAR(componentRef = cr,varible = vk,variable = vd,protection=prot,input_ = ty,one = SOME(exp),binding = inst_dims,dimension = start,value = flow_,flow_ = cl,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=ftp))
       equation 
         exp_1 = stringPrefixComponentRef(str, isParameterDaelist, dae, exp);
       then
-        DAE.VAR(cr,vk,vd,ty,SOME(exp_1),inst_dims,start,flow_,cl,
+        DAE.VAR(cr,vk,vd,prot,ty,SOME(exp_1),inst_dims,start,flow_,cl,
           dae_var_attr,comment,io,ftp);
     case (str,dae,DAE.DEFINE(componentRef = cr,exp = exp))
       equation 

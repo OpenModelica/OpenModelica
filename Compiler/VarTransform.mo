@@ -152,24 +152,25 @@ algorithm
       DAE.Ident id;
       Absyn.Path path;
       list<Algorithm.Statement> stmts,stmts2;
+      DAE.VarProtection prot;
 
       // if no replacements, return dae, no need to traverse.
     case(dae,REPLACEMENTS(TREENODE(NONE,NONE,NONE),TREENODE2(NONE,NONE,NONE))) then dae;
 
     case({},repl) then {};
       
-    case(DAE.VAR(cr,kind,dir,tp,SOME(bindExp),dims,start,fl,clsLst,attr,cmt,io,ftp)::dae,repl) 
+    case(DAE.VAR(cr,kind,dir,prot,tp,SOME(bindExp),dims,start,fl,clsLst,attr,cmt,io,ftp)::dae,repl) 
       equation
         (bindExp2) = replaceExp(bindExp, repl, NONE);
   			dae2 = applyReplacementsDAE(dae,repl);
   			start = applyReplacementsStartValue(start,repl);
-  	then DAE.VAR(cr,kind,dir,tp,SOME(bindExp),dims,start,fl,clsLst,attr,cmt,io,ftp)::dae2;
+  	then DAE.VAR(cr,kind,dir,prot,tp,SOME(bindExp),dims,start,fl,clsLst,attr,cmt,io,ftp)::dae2;
 
-    case(DAE.VAR(cr,kind,dir,tp,NONE,dims,start,fl,clsLst,attr,cmt,io,ftp)::dae,repl) 
+    case(DAE.VAR(cr,kind,dir,prot,tp,NONE,dims,start,fl,clsLst,attr,cmt,io,ftp)::dae,repl) 
       equation
   			dae2 = applyReplacementsDAE(dae,repl);
         start = applyReplacementsStartValue(start,repl);
-  	then DAE.VAR(cr,kind,dir,tp,NONE,dims,start,fl,clsLst,attr,cmt,io,ftp)::dae2;
+  	then DAE.VAR(cr,kind,dir,prot,tp,NONE,dims,start,fl,clsLst,attr,cmt,io,ftp)::dae2;
 
     case(DAE.DEFINE(cr,e)::dae,repl) 
       equation
