@@ -2912,7 +2912,7 @@ algorithm
      /* terms( (b+c)*a) => {b*a, c*a} */
    case (e as BINARY(e1,MUL(tp),e2)) equation
      (f1 as _::_::_) = allTerms(e1);
-     f1 = Util.listMap1(f1,makeProduct,e1);
+     f1 = Util.listMap1(f1,makeProduct,e2);
      f1 = Util.listFlatten(Util.listMap(f1,allTerms));
    then f1;
    case ((e as BINARY(operator = MUL(ty = _)))) then {e}; 
