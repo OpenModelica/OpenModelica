@@ -3559,7 +3559,7 @@ algorithm
     case (false,(daelow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,cg_id) 
       equation 
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
-        true = isMixedSystem(var_lst);
+        true = isMixedSystem(var_lst,eqn_lst);       
         (cont_eqn,cont_var,disc_eqn,disc_var) = splitMixedEquations(eqn_lst, var_lst);
  				cont_var1 = Util.listMap(cont_var, transformXToXd); // States are solved for der(x) not x.
         vars_1 = DAELow.listVar(cont_var1);
@@ -3590,8 +3590,7 @@ algorithm
       local Integer numValues;
       equation 
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
-        true = isMixedSystem(var_lst);
-        //eqn_lst = Util.listMap(eqn_lst,replaceEqnGreaterWithGreaterEq); //temporary fix to make events occur. Remove once mixed systems are solved analythically"        
+        true = isMixedSystem(var_lst,eqn_lst);
         (cont_eqn,cont_var,disc_eqn,disc_var) = splitMixedEquations(eqn_lst, var_lst);
 				cont_var1 = Util.listMap(cont_var, transformXToXd); // States are solved for der(x) not x.
         vars_1 = DAELow.listVar(cont_var1);
@@ -4109,8 +4108,10 @@ algorithm
     case(v,_::eqnLst) equation
       eqn = findDiscreteEquation(v,eqnLst);
     then eqn;
-    case(_,_) equation
-      print("findDiscreteEquationFailed\n");
+    case(v,_) equation
+      print("findDiscreteEquation failed, searching for ");
+      print(Exp.printComponentRefStr(DAELow.varCref(v)));
+      print("\n");
     then fail();
   end matchcontinue;
 end findDiscreteEquation;
@@ -4119,22 +4120,28 @@ end findDiscreteEquation;
 protected function isMixedSystem "function: isMixedSystem
   author: PA
   
-  Returns true if the list of variables if an equation system contains
+  Returns true if the list of variables is an equation system contains
   both discrete and continuous variables.
 "
   input list<DAELow.Var> inDAELowVarLst;
+  input list<DAELow.Equation> inEqns;
   output Boolean outBoolean;
 algorithm 
   outBoolean:=
-  matchcontinue (inDAELowVarLst)
+  matchcontinue (inDAELowVarLst,inEqns)
     local list<DAELow.Var> vs;
-    case (vs)
+      list<DAELow.Equation> eqns;
+				/* A single algorithm section (consists of several eqns) is not mixed system */
+      case (vs,eqns) equation
+        singleAlgorithmSection2(eqns);
+      then false;
+    case (vs,eqns)
       equation 
         true = hasDiscreteVar(vs);
         true = hasContinousVar(vs);
       then
         true;
-    case (_) then false; 
+    case (_,_) then false; 
   end matchcontinue;
 end isMixedSystem;
 
@@ -6462,7 +6469,7 @@ algorithm
       equation 
         block_ = DAELow.getEquationBlock(e, blocks);
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
-        res = isMixedSystem(var_lst);
+        res = isMixedSystem(var_lst,eqn_lst);
       then
         res;
     case (_,_,_,_) then false; 
@@ -6497,7 +6504,7 @@ algorithm
       equation 
         block_ = DAELow.getEquationBlock(e, blocks);
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
-        true = isMixedSystem(var_lst);
+        true = isMixedSystem(var_lst,eqn_lst);
       then
         block_;
   end matchcontinue;
@@ -6789,7 +6796,7 @@ algorithm
         cr_str = Exp.printComponentRefStr(cr);
         save_stmt = Util.stringAppendList({"save(",cr_str,");"});
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
-        true = isMixedSystem(var_lst);
+        true = isMixedSystem(var_lst,eqn_lst);
         eqn_lst = Util.listMap(eqn_lst,replaceEqnGreaterWithGreaterEq); //temporary fix to make events occur. Remove once mixed systems are solved analythically"        
         (cont_eqn,cont_var,disc_eqn,disc_var) = splitMixedEquations(eqn_lst, var_lst);
 				cont_var1 = Util.listMap(cont_var, transformXToXd); // States are solved for der(x) not x.

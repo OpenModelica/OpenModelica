@@ -6726,14 +6726,7 @@ algorithm
         e_1 = crefVectorize(doVect,Exp.CREF(cr_1,t), tt);
       then
         (cache,e_1,const,acc);
-    case (cache,env,cr,acc,SCode.STRUCTPARAM(),tt,Types.EQBOUND(exp = exp,constant_ = const),doVect)
-      local Exp.Type t;
-      equation 
-        t = Types.elabType(tt) "...the same goes for structural parameters." ;
-        cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,Exp.CREF(cr_1,t), tt);
-      then
-        (cache,e_1,const,acc);
+
     case (cache,env,cr,acc,SCode.PARAM(),tt,Types.EQBOUND(exp = exp,constant_ = const),doVect)
       local Exp.Type t;
       equation 

@@ -333,8 +333,6 @@ uniontype Variability
 
   record PARAM end PARAM;
 
-  record STRUCTPARAM end STRUCTPARAM;
-
   record CONST end CONST;
 
 end Variability;
@@ -1861,7 +1859,6 @@ algorithm
     case (VAR()) then "VAR"; 
     case (DISCRETE()) then "DISCRETE"; 
     case (PARAM()) then "PARAM"; 
-    case (STRUCTPARAM()) then "STRUCTPARAM"; 
     case (CONST()) then "CONST"; 
   end matchcontinue;
 end variabilityString;
@@ -1894,7 +1891,6 @@ algorithm
     case (VAR()) then ""; 
     case (DISCRETE()) then "discrete"; 
     case (PARAM()) then "parameter"; 
-    case (STRUCTPARAM()) then "parameter"; 
     case (CONST()) then "constant"; 
   end matchcontinue;
 end unparseVariability;
@@ -2521,7 +2517,6 @@ algorithm
     case(VAR(),VAR()) then true;
     case(DISCRETE(),DISCRETE()) then true;
     case(PARAM(),PARAM()) then true;
-    case(STRUCTPARAM(),STRUCTPARAM()) then true;
     case(CONST(),CONST()) then true;
     case(_,_) then false;
   end matchcontinue;

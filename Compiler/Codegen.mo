@@ -945,6 +945,7 @@ algorithm
   Debug.fprintln("cgtrdumpdae", "Dumping DAE:");
   Debug.fcall("cgtrdumpdae", DAE.dump2, DAE.DAE(els));
   fns := Util.listFilter(els, DAE.isFunction);
+  //print("functions=");print(DAE.dumpStr(DAE.DAE(fns)));print("\n");
   cfns := generateFunctionsElist2(fns);
 end generateFunctionsElist;
 
@@ -3006,7 +3007,9 @@ algorithm
       Option<Absyn.Comment> comment;
       Context context;
       Exp.Exp e;
-    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = NONE,binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),tnr,context) /* variables without binding */ 
+
+      /* variables without binding */ 
+    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = NONE,binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),tnr,context) 
       equation 
         is_a = isArray(var);
         typ_str = daeTypeStr(typ, is_a);
@@ -3029,7 +3032,9 @@ algorithm
         cfn = Util.if_(is_a, cfn_2, cfn_1);
       then
         (cfn,tnr1);
-    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = SOME(e),binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),tnr,context) /* variables with binding */ 
+
+        /* variables with binding */ 
+    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = SOME(e),binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),tnr,context) 
       equation 
         is_a = isArray(var);
         typ_str = daeTypeStr(typ, is_a);
@@ -5365,9 +5370,7 @@ algorithm
           {"char const* in_filename","char const* out_filename"});
   out_decl := Util.stringAppendList({retstr," out;"});
   cfn1_1 := cAddInits(cfn1, {"PRE_VARIABLES",out_decl});
-  (cfn31,tnr21) := generateVarDecls(invars, isRcwInput, 1, funContext) "generate_vars(outvars,is_rcw_output,1) => (cfn2,tnr1) &" ;
-  (cfn32,tnr2) := generateVarInits(invars, isRcwInput, 1,tnr21, "", funContext);
-  cfn3 := cMergeFns({cfn31,cfn32});
+  (cfn3,tnr21) := generateVarDecls(invars, isRcwInput, 1, funContext);
   cfn3_1 := cAddInits(cfn3, {"PRE_OPEN_INFILE"});
   in_names := invarNames(invars);
   in_args := Util.stringDelimitList(in_names, ", ");
@@ -5378,7 +5381,7 @@ algorithm
   cfn5_1 := cAddStatements(cfn5, {"PRE_WRITE_DONE","return 0;"});
   cfn := cMergeFns({cfn1_1,cfn3_1,cfn4_1,cfn5_1});
 end generateReadCallWrite;
-
+ 
 protected function generateExternalWrapperCall "function: generateExternalWrapperCall
  
   This function generates the wrapper function for external functions

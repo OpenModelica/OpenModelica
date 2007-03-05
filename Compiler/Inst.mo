@@ -3037,22 +3037,9 @@ algorithm
       list<SCode.Equation> eqns;
       InstDims instdims;
     case (env,_,_,_,_,{},_,_,_,_) then env;  /* implicit inst. */ 
-    case (env,mod,pre,csets,cistate,(((comp as SCode.COMPONENT(component = n,innerOuter=io,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = (attr as SCode.ATTR(arrayDim = ad,flow_ = flow_,RW = acc,parameter_ = param,input_ = dir)),typeSpec = t,mod = m,baseclass = bc,this = comment)),cmod) :: xs),allcomps,eqns,instdims,impl) /* Check if the component is a structural parameter, change it\'s
-	 attribute to STRUCTPARAM. Not structural parameter. No Change. */ 
-      equation 
-        failure(ClassInf.isFunction(cistate));
-        (1 == 0) = true "Functions not considered" ;
-        true = isStructuralParameter(param, Absyn.CREF_IDENT(n,{}), allcomps, eqns);
-        env_1 = addComponentsToEnv2(env, mod, pre, csets, cistate, 
-          {
-          (
-          SCode.COMPONENT(n,io,final_,repl,prot,
-          SCode.ATTR(ad,flow_,acc,SCode.STRUCTPARAM(),dir),t,m,bc,comment),cmod)}, instdims, impl);
-        env_2 = addComponentsToEnv(env_1, mod, pre, csets, cistate, xs, allcomps, eqns, 
-          instdims, impl);
-      then
-        env_2;
-    case (env,mod,pre,csets,cistate,(((comp as SCode.COMPONENT(component = n,innerOuter=io,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = (attr as SCode.ATTR(arrayDim = ad,flow_ = flow_,RW = acc,parameter_ = param,input_ = dir)),typeSpec = t,mod = m,baseclass = bc,this = comment)),cmod) :: xs),allcomps,eqns,instdims,impl) /* Not structural parameter. No Change. Import statements */ 
+
+      /* A component */ 
+    case (env,mod,pre,csets,cistate,(((comp as SCode.COMPONENT(component = n,innerOuter=io,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = (attr as SCode.ATTR(arrayDim = ad,flow_ = flow_,RW = acc,parameter_ = param,input_ = dir)),typeSpec = t,mod = m,baseclass = bc,this = comment)),cmod) :: xs),allcomps,eqns,instdims,impl) 
       equation 
         env_1 = addComponentsToEnv2(env, mod, pre, csets, cistate, 
           {
@@ -3063,19 +3050,25 @@ algorithm
           instdims, impl);
       then
         env_2;
-    case (env,mod,pre,csets,cistate,((SCode.IMPORT(import_ = _),_) :: xs),allcomps,eqns,instdims,impl) /* Import statements Extends elements */ 
+        
+        /* Import statement */
+    case (env,mod,pre,csets,cistate,((SCode.IMPORT(import_ = _),_) :: xs),allcomps,eqns,instdims,impl) 
       equation 
         env_2 = addComponentsToEnv(env, mod, pre, csets, cistate, xs, allcomps, eqns, 
           instdims, impl);
       then
         env_2;
-    case (env,mod,pre,csets,cistate,((SCode.EXTENDS(path = _),_) :: xs),allcomps,eqns,instdims,impl) /* Extends elements Class definitions */ 
+        
+        /* Extends elements */ 
+    case (env,mod,pre,csets,cistate,((SCode.EXTENDS(path = _),_) :: xs),allcomps,eqns,instdims,impl) 
       equation 
         env_2 = addComponentsToEnv(env, mod, pre, csets, cistate, xs, allcomps, eqns, 
           instdims, impl);
       then
         env_2;
-    case (env,mod,pre,csets,cistate,((SCode.CLASSDEF(name = _),_) :: xs),allcomps,eqns,instdims,impl) /* Class definitions */ 
+
+        /* Class definitions */ 
+    case (env,mod,pre,csets,cistate,((SCode.CLASSDEF(name = _),_) :: xs),allcomps,eqns,instdims,impl)
       equation 
         env_2 = addComponentsToEnv(env, mod, pre, csets, cistate, xs, allcomps, eqns, 
           instdims, impl);
@@ -3942,22 +3935,14 @@ algorithm
       DimExp dim;
       Env.Cache cache;
        
-    // Function. 
+    // Function variables with modifiers (outputs or local/protected variables)
     // For Functions we cannot always find dimensional sizes. e.g. 
-	  // input Real x{:}; component environement The class is instantiated 
+	  // input Real x[:]; component environement The class is instantiated 
 	  // with the calculated modification, and an extended prefix. 
     //     
-	  // LS: Removed the part which checks if modelica_output is true
-	  // and generates variables with initialization expression from the
-	  // modifications, because it cannot handle right hand side which is a
-	  // component (T_COMPLEX) anyway. This case is handled by the rule below
-	  // which generates correct equations according to the modification.
-	  // Separate code can parse the DAE and put the rhs of the latest
-	  // equation inside the variable declaration, and discard all the equations.
-	  // Rules for normal instantiation, will resolv dimensional sizes, etc. 
-	  // Array vars with binding in functions,e.g. input Real x{:}=Y       
-    case (cache,env,(ci_state as ClassInf.FUNCTION(string = _)),mod,pre,csets,n,cl,attr,(dims as (_ :: _)),idxs,inst_dims,impl,comment,io) 
+	    case (cache,env,ci_state,mod,pre,csets,n,cl,attr,dims,idxs,inst_dims,impl,comment,io) 
         equation 
+        ClassInf.isFunction(ci_state);
         
         //Do not flatten because it is a function 
         dims_1 = instDimExpLst(dims, impl) ;
@@ -3965,26 +3950,28 @@ algorithm
         //get the equation modification 
         SOME(Types.TYPED(e,_,p)) = Mod.modEquation(mod) ;				
         
-				//Instantiate type of the component" 
+				//Instantiate type of the component, skip dae/not flattening
         (cache,_,env_1,csets_1,ty,st) = instClass(cache,env, mod, pre, csets, cl, inst_dims, impl, INNER_CALL());        
         
         //Make it an array type since we are not flattening
         ty_1 = makeArrayType(dims, ty);
-        cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,{}));
-        ty_2 = Types.elabType(ty_1);
+
+        
+        // Check binding type matches variable type
         (e_1,_) = Types.matchProp(e, Types.PROP(ty_1,Types.C_VAR()), p);
         
-        //Put the mod equation in the dae so that code will be generated
-        daeeq = makeDaeEquation(Exp.CREF(cr,ty_2), e_1, NON_INITIAL());
-        dae1 = daeDeclare(cr, ci_state, ty, attr, NONE, dims_1, NONE, NONE, comment,io);
-        dae = listAppend(dae1, {daeeq});
+        //Generate variable with default binding
+        cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,{}));
+        dae = daeDeclare(cr, ci_state, ty, attr, SOME(e_1), dims_1, NONE, NONE, comment,io);
       then
         (cache,env_1,dae,csets_1,ty_1);
    
-          /* Array vars without binding in functions , e.g. input Real x[:]  */
-    case (cache,env,(ci_state as ClassInf.FUNCTION(string = _)),mod,pre,csets,n,cl,attr,(dims as (_ :: _)),idxs,inst_dims,impl,comment,io) 
+          /* Function variables without binding */
+    case (cache,env,ci_state,mod,pre,csets,n,cl,attr,dims,idxs,inst_dims,impl,comment,io) 
        equation 
-        //Do not flatten because it is a function  
+        ClassInf.isFunction(ci_state);
+
+         //Instantiate type of the component, skip dae/not flattening
         (cache,_,env_1,csets,ty,st) = instClass(cache,env, mod, pre, csets, cl, inst_dims, impl, INNER_CALL()) ;
         cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,{}));
         //Do all dimensions...
@@ -4030,22 +4017,6 @@ algorithm
         dae = listAppend(dae1_1, dae3);
       then
         (cache,env_1,dae,csets_1,ty);
-
-        /* Structural Parameters */ 
-    case (cache,env,ci_state,(mod as Types.MOD(eqModOption = SOME(Types.TYPED(e,_,_)))),pre,csets,n,cl,SCode.ATTR(flow_ = flow_,RW = acc,parameter_ = (vt as SCode.STRUCTPARAM()),input_ = dir),{},idxs,inst_dims,impl,comment,io) 
-      equation 
-        idxs_1 = listReverse(idxs);
-        pre_1 = Prefix.prefixAdd(n, idxs_1, pre);
-        (cache,dae1,env_1,csets_1,ty,st) = instClass(cache,env, mod, pre_1, csets, cl, inst_dims, impl, INNER_CALL());
-        dae1_1 = propagateAttributes(dae1, dir,io);
-        subs = Exp.intSubscripts(idxs_1);
-        cr = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,subs));
-        (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
-        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flow_,acc,vt,dir), 
-          SOME(e), inst_dims, NONE, dae_var_attr, comment,io);
-        dae = listAppend(dae1_1, dae3);
-      then
-        (cache,env_1,dae,csets_1,ty);        
            
         /* Scalar Variables, different from the ones above since variable binings are expanded to equations.
         Exception: external objects, see below.*/         
@@ -4464,20 +4435,21 @@ algorithm
         (cache,mod_3) = Mod.updateMod(cache,env2, Prefix.NOPRE(), mod_2, impl);
         eq = Mod.modEquation(mod_3);
         (cache,dims) = elabArraydim(cache,env2, cref, ad, eq, impl, NONE,true) "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;
+
+        /* Instantiate the component */
         (cache,compenv,dae1,csets_1,ty) = instVar(cache,cenv, ci_state, mod_3, Prefix.NOPRE(), csets, n, cl, attr, 
-          dims, {}, {}, impl, NONE,io) "Instantiate the component" ;
-        (cache,binding) = makeBinding(cache,env2, attr, mod_3, ty) "The environment is extended with the new variable binding." ;
-        (cache,env2_1,binding_1) = checkStructuralParamBinding(cache,param, binding, env2) "Check if binding makes other variables into structural parameters
-	  For example input Integer n=p;
-	  If p is known to be a structural parameter, n should also become
-	  one. 
-	" ;
-        env_1 = Env.updateFrameV(env2_1, 
-          Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding_1), Env.VAR_TYPED(), compenv) "type info present" ;
+          dims, {}, {}, impl, NONE,io)  ;
+
+        /* The environment is extended with the new variable binding. */
+        (cache,binding) = makeBinding(cache,env2, attr, mod_3, ty)  ;
+
+        /* type info present */
+        env_1 = Env.updateFrameV(env2, 
+          Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding), Env.VAR_TYPED(), compenv);
       then
         (cache,env_1,csets_1);
 
-        /* Variable with NONE element is allready instantiated. */ 
+        /* Variable with NONE element is already instantiated. */ 
     case (cache,mods,(cref as Absyn.CREF_IDENT(name = id,subscripts = subscr)),env,ci_state,csets,impl) 
       local Types.Var ty;
       equation 
@@ -4485,21 +4457,23 @@ algorithm
       then
         (cache,env,csets);
 
-        /* If first part of ident is a class, e.g StateSelect.None, nothing  to update*/
+        /* If first part of ident is a class, e.g StateSelect.None, nothing to update*/
     case (cache,mods,Absyn.CREF_QUAL(name = id),env,ci_state,csets,impl) 
       equation 
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, Absyn.IDENT(id), false);
       then
         (cache,env,csets);
 
-    case (cache,mods,Absyn.CREF_QUAL(name = id),env,ci_state,csets,impl) /* Nothing to update. */ 
+        /* Nothing to update. */ 
+    case (cache,mods,Absyn.CREF_QUAL(name = id),env,ci_state,csets,impl) 
       local Types.Var ty;
       equation 
         (cache,ty,NONE,_) = Lookup.lookupIdent(cache,env, id);
       then
         (cache,env,csets);
 
-    case (cache,mods,Absyn.CREF_QUAL(name = id),env,ci_state,csets,impl) /* For qualified names, e.g. a.b.c, instanitate component a */ 
+        /* For qualified names, e.g. a.b.c, instanitate component a */
+    case (cache,mods,Absyn.CREF_QUAL(name = id),env,ci_state,csets,impl)  
       equation 
         (cache,ty,SOME((SCode.COMPONENT(n,io,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,acc,param,dir)),Absyn.TPATH(t,_),m,_,comment),cmod)),_) 
         	= Lookup.lookupIdent(cache,env, id);
@@ -4508,22 +4482,34 @@ algorithm
         (cache,env2_1,csets) = updateComponentsInEnv(cache,mods, crefs, env, ci_state, csets, impl);
         crefs2 = getCrefFromDim(ad);
         (cache,env2,csets) = updateComponentsInEnv(cache,mods, crefs2, env2_1, ci_state, csets, impl);
-        (cache,m_1) = Mod.elabMod(cache,env2, Prefix.NOPRE(), m, impl) "Prefix does not matter, since we only update types in env, and does
-	   not make any dae elements, etc.." ;
-        classmod = Mod.lookupModificationP(mods, t) "lookup and merge modifications" ;
+        
+        /* Prefix does not matter, since we only update types in env, and does
+	   		not make any dae elements, etc.. */
+        (cache,m_1) = Mod.elabMod(cache,env2, Prefix.NOPRE(), m, impl) ;
+
+        /* lookup and merge modifications */
+        classmod = Mod.lookupModificationP(mods, t) ;
         mm = Mod.lookupCompModification(mods, n);
         mod = Mod.merge(classmod, mm, env2, Prefix.NOPRE());
         mod_1 = Mod.merge(mod, m_1, env2, Prefix.NOPRE());
         mod_2 = Mod.merge(cmod, mod_1, env2, Prefix.NOPRE());
         (cache,mod_3) = Mod.updateMod(cache,env2, Prefix.NOPRE(), mod_2, impl);
         eq = Mod.modEquation(mod_3);
-        owncref = Absyn.CREF_IDENT(n,{}) "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;
+        owncref = Absyn.CREF_IDENT(n,{})  ;
+
+        /* The variable declaration and the (optional) equation modification are inspected for array dimensions.*/
         (cache,dims) = elabArraydim(cache,env2, owncref, ad, eq, impl, NONE,true);
+
+        /* Instantiate the component */
         (cache,compenv,dae1,csets_1,ty) = instVar(cache,cenv, ci_state, mod_3, Prefix.NOPRE(), csets, n, cl, attr, 
-          dims, {}, {}, false, NONE,io) "Instantiate the component" ;
-        (cache,binding) = makeBinding(cache,env2, attr, mod_3, ty) "The environment is extended with the new variable binding." ;
+          dims, {}, {}, false, NONE,io)  ;
+          
+        /*The environment is extended with the new variable binding.*/
+        (cache,binding) = makeBinding(cache,env2, attr, mod_3, ty);
+
+        /* type info present */        
         env_1 = Env.updateFrameV(env2, 
-          Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding), Env.VAR_TYPED(), compenv) "type info present" ;
+          Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding), Env.VAR_TYPED(), compenv);
       then
         (cache,env_1,csets_1);
     case (cache,mod,cref,env,ci_state,csets,impl)
@@ -4542,102 +4528,6 @@ algorithm
         (cache,env,csets);
   end matchcontinue;
 end updateComponentInEnv;
-
-protected function checkStructuralParamBinding "function: checkStructuralParamBinding
-  author: PA
-  
-  Checks if the binding of a structural parameter makes other parameters 
-  structural. For instance,
-  parameter Integer m=n
-  if m is structural, so will n be.
-"
-	input Env.Cache inCache;
-  input SCode.Variability inVariability;
-  input Types.Binding inBinding;
-  input Env inEnv;
-  output Env.Cache outCache;
-  output Env outEnv;
-  output Types.Binding outBinding;
-algorithm 
-  (outCache,outEnv,outBinding):=
-  matchcontinue (inCache,inVariability,inBinding,inEnv)
-    local
-      list<Exp.ComponentRef> crefs;
-      String str;
-      list<Env.Frame> env_1,env;
-      Exp.Exp exp;
-      Option<Values.Value> e_val;
-      Types.Const const;
-      Types.Binding bind;
-      Env.Cache cache;
-
-      /* collect varnames from binding and make them structural. Also 
-       make sure that binding has constant = true.
-       */ 
-    case (cache,SCode.STRUCTPARAM(),Types.EQBOUND(exp = exp,evaluatedExp = e_val,constant_ = const),env) 
-      equation 
-        crefs = Exp.getCrefFromExp(exp);
-        str = Exp.printExpStr(exp);
-        ((cache,env_1)) = Util.listFold(crefs, makeStructuralInEnv, (cache,env));
-      then
-        (cache,env_1,Types.EQBOUND(exp,e_val,Types.C_CONST()));
-    case (cache,_,bind,env) then (cache,env,bind); 
-  end matchcontinue;
-end checkStructuralParamBinding;
-
-protected function makeStructuralInEnv "function: makeStructuralInEnv
-  author: PA
- 
-  This function is used to update a parameter in the environment to a 
-  structural parameter.
-"
-  input Exp.ComponentRef inComponentRef;
-  input tuple<Env.Cache,Env> inTuple;
-  output tuple<Env.Cache,Env> outTuple;
-algorithm 
-  outTuple:=
-  matchcontinue (inComponentRef,inTuple)
-    local
-      list<Env.Frame> env,env_1;
-      String n,a,id,s;
-      Boolean flow_,prot,b,c,d,f;
-      Absyn.InnerOuter io;
-      Env.InstStatus typed;
-      SCode.Accessibility acc,g;
-      Absyn.Direction dir,h;
-      tuple<Types.TType, Option<Absyn.Path>> tp;
-      Types.Binding bind;
-      list<Absyn.Subscript> e;
-      Absyn.TypeSpec i;
-      SCode.Mod j;
-      Option<Absyn.Path> k;
-      Option<Absyn.Comment> l;
-      Types.Mod m;
-      Exp.ComponentRef cr;
-      Env.Cache cache;
-    case (_,(cache,env)) then ((cache,env)); 
-    case (Exp.CREF_IDENT(ident = id),(cache,env))
-      equation 
-        (cache,Types.VAR(n,Types.ATTR(flow_,acc,SCode.PARAM(),dir),prot,tp,bind),SOME((SCode.COMPONENT(a,io,b,c,d,SCode.ATTR(e,f,g,SCode.PARAM(),h),i,j,k,l),m)),typed) 
-        	= Lookup.lookupIdent(cache,env, id);
-        env_1 = Env.extendFrameV(env, 
-          Types.VAR(n,Types.ATTR(flow_,acc,SCode.STRUCTPARAM(),dir),prot,tp,
-          bind), 
-          SOME(
-          (
-          SCode.COMPONENT(a,io,b,c,d,SCode.ATTR(e,f,g,SCode.STRUCTPARAM(),h),i,j,k,l),m)), Env.VAR_UNTYPED(), {}) "replace variable, relies on hash_add to replace node. comp env" ;
-      then
-        ((cache,env_1));
-    case (cr,(cache,env))
-      equation 
-        print("make_structural_in_env failed for component ");
-        s = Exp.printComponentRefStr(cr);
-        print(s);
-        print("\n");
-      then
-        ((cache,env));
-  end matchcontinue;
-end makeStructuralInEnv;
 
 protected function instDimExpLst "function: instDimExpLst
  
@@ -6579,12 +6469,6 @@ algorithm
           dae_var_attr, comment,io);
       then
         dae;
-    case (vn,ty,flow_,SCode.STRUCTPARAM(),dir,e,inst_dims,start,dae_var_attr,comment,io)
-      equation 
-        dae = daeDeclare3(vn, ty, flow_, DAE.PARAM(), dir, e, inst_dims, start, 
-          dae_var_attr, comment,io);
-      then
-        dae;
     case (_,_,_,_,_,_,_,_,_,_,_)
       equation 
         Debug.fprint("failtrace", "- daeDeclare2 failed\n");
@@ -7862,7 +7746,7 @@ algorithm
          (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
         (cache,expl_1,cprops,_) = Static.elabExpList(cache,env, expl, impl, NONE,true);
         (cache,expl_2) = Prefix.prefixExpList(cache,env,expl_1,pre);
-        stmt = Algorithm.makeTupleAssignment(expl_2, cprops, e_1, eprop);
+        stmt = Algorithm.makeTupleAssignment(expl_2, cprops, e_2, eprop);
       then
         (cache,stmt);
         
