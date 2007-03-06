@@ -83,6 +83,7 @@ protected function serverLoop "function: serverLoop
   This function is the main loop of the server listening to a port
   which recieves modelica expressions.  
 "
+
   input Integer inInteger;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;

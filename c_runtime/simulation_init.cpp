@@ -84,7 +84,7 @@ void leastSquare(long *nz, double *z, double *funcValue)
 int reportResidualValue(double funcValue)
 {
 	int i;
-  if (funcValue > 1e-3) {
+  if (funcValue > 1e-5) {
     std::cerr << "Error in initialization. System of initial equations are not consistent." << std::endl;
     std::cerr << "(Least Square function value is " << funcValue << ")" << std::endl;
     for (i=0; i<globalData->nInitialResiduals; i++) {
@@ -196,7 +196,8 @@ int initialize(const std::string*method)
   std::string init_method;
 
   if (method == NULL) { 
-    init_method = std::string("newuoa");
+//    init_method = std::string("newuoa");
+    init_method = std::string("simplex");
   } else {
     init_method = *method;
   }
