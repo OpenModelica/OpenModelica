@@ -229,34 +229,10 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
     		cout << "found event at time " << globalData->timeValue << endl;
     	}
       if (emit()) {printf("Too many points\n");
-	idid = -99; break;}
+	   idid = -99; break;}
 
-	
       saveall();
-    // Make a tiny step so we are sure that crossings have really occured.
-/*
-       info[0]=1;
-
-       tout=globalData->timeValue+calcTinyStep(start,stop);
-      {
-	long *tmp_jroot = new long[globalData->nZeroCrossing];
-	int i;
-	for (i=0;i<globalData->nZeroCrossing;i++) {
-	  tmp_jroot[i]=jroot[i];
-	}
-	if (sim_verbose) { cout << "Taking tiny step to time " << tout << " to pass time at event " << globalData->timeValue << endl;
-	}
-	DDASRT(functionDAE_res, &globalData->nStates,   
-               &globalData->timeValue, globalData->states, globalData->statesDerivatives, &tout, 
-               info,&rtol, &atol, 
-	       &idid,rwork,&lrw, iwork, &liw, globalData->algebraics, &ipar, dummyJacobianDASSL, 
-	       function_zeroCrossing, &globalData->nZeroCrossing, jroot);
-	for (i=0;i<globalData->nZeroCrossing;i++) {
-	  jroot[i]=tmp_jroot[i];
-	}
-        delete[] tmp_jroot;
-      } // end tiny step
- */     
+        
       if (sim_verbose) { cout << "Checking events at time " << globalData->timeValue << endl; }
 //      emit();
       calcEnabledZeroCrossings();
@@ -294,13 +270,15 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
       functionDAE_output();
 
       info[0] = 1;
+
     }
   
     if(emit()) {
       printf("Error, could not save data. Not enought space.\n"); 
     }
-    
-    saveall();
+
+    saveall();      
+	      
     tout = newTime(globalData->timeValue,step,stop); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
     if (globalData->timeValue >= stop) goto exit;    
     calcEnabledZeroCrossings();

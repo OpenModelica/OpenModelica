@@ -11536,10 +11536,10 @@ protected function variableReplacements "function: variableReplacements
   author: PA
  
   Returns a two list of replacement expressions for variable transformations.
-  For instance, replacing state s with %x{3} and der(s) with %xd{3},
+  For instance, replacing state s with %x[3] and der(s) with %xd[3],
   NOTE: The derivative expressions must be first, so they are replaced first
   i.e der(s) is replaced before s is replaced which gives a wrong 
-  variable like der(%x{5})
+  variable like der(%x[5])
 "
   input list<Var> inVarLst;
   input list<Equation> inEquationLst;
@@ -11628,23 +11628,28 @@ algorithm
       String name,xd_t,xd_s,str,str_1;
       Exp.ComponentRef cr;
       list<Var> vs;
+      Exp.Type etp;
+      DAE.Type tp;
     case ({}) then ({},{}); 
-    case ((VAR(varName = (cr as Exp.CREF_IDENT(ident = str,subscriptLst = {})),varKind = STATE()) :: vs)) /* Special case for states, add %xd{indx} too . */ 
+    case ((VAR(varName = (cr as Exp.CREF_IDENT(ident = str,subscriptLst = {})),varType=tp,varKind = STATE()) :: vs)) /* Special case for states, add %xd{indx} too . */ 
       equation 
         (s,t) = variableReplacementsRemoveDollar(vs);
+        etp = makeExpType(tp);        
         ("%" :: rest) = string_list_string_char(str) "print str & print \"<++++++++++++\\n\" & #\"x\"::" ;
         name = string_char_list_string(rest);
         xd_t = stringAppend(derivativeNamePrefix, name) "print name & print \"<++++++++++++\\n\" & 	string_append(\"x\",str\') => str\'\' &" ;
         xd_s = stringAppend("%derivative", name);
       then
-        ((Exp.CREF(cr,Exp.REAL()) :: (Exp.CREF(Exp.CREF_IDENT(xd_s,{}),Exp.REAL()) :: s)),(Exp.CREF(Exp.CREF_IDENT(name,{}),Exp.REAL()) :: (Exp.CREF(Exp.CREF_IDENT(xd_t,{}),Exp.REAL()) :: t)));
-    case ((VAR(varName = (cr as Exp.CREF_IDENT(ident = str,subscriptLst = {}))) :: vs))
+        ((Exp.CREF(cr,etp) :: (Exp.CREF(Exp.CREF_IDENT(xd_s,{}),etp) :: s)),(Exp.CREF(Exp.CREF_IDENT(name,{}),etp) :: (Exp.CREF(Exp.CREF_IDENT(xd_t,{}),etp) :: t)));
+        
+    case ((VAR(varName = (cr as Exp.CREF_IDENT(ident = str,subscriptLst = {})),varType=tp) :: vs))
       equation 
         (s,t) = variableReplacementsRemoveDollar(vs);
+        etp = makeExpType(tp);
         ("%" :: rest) = string_list_string_char(str);
         str_1 = string_char_list_string(rest) "first character dollar sign." ;
       then
-        ((Exp.CREF(cr,Exp.REAL()) :: s),(Exp.CREF(Exp.CREF_IDENT(str_1,{}),Exp.REAL()) :: t));
+        ((Exp.CREF(cr,etp) :: s),(Exp.CREF(Exp.CREF_IDENT(str_1,{}),etp) :: t));
     case ((VAR(varName = (cr as Exp.CREF_IDENT(ident = str,subscriptLst = {}))) :: vs))
       equation 
         failure(("%" :: _) = string_list_string_char(str));
@@ -11658,6 +11663,22 @@ algorithm
         fail();
   end matchcontinue;
 end variableReplacementsRemoveDollar;
+
+protected function makeExpType "Transforms a DAE.Type to Exp.Type"
+  input DAE.Type inType;
+  output Exp.Type expType;
+algorithm
+  expType := matchcontinue(inType)
+    case(DAE.REAL()) then Exp.REAL();
+    case(DAE.INT()) then Exp.INT();
+    case(DAE.BOOL()) then Exp.BOOL();
+    case(DAE.STRING()) then Exp.STRING();
+    case(DAE.ENUM()) then Exp.ENUM();
+    case(DAE.ENUMERATION(_)) then Exp.OTHER();
+    case(DAE.EXT_OBJECT(_)) then Exp.OTHER();
+  end matchcontinue;
+end makeExpType;
+
 
 protected function algVariableReplacements "function: algVariableReplacements
   author: PA
@@ -11682,16 +11703,19 @@ algorithm
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
       list<Var> vs;
+      Exp.Type etp;
+      DAE.Type tp;
     case ({}) then ({},{}); 
-    case ((VAR(varName = cr,index = indx,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs))
+    case ((VAR(varName = cr,varType=tp,index = indx,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs))
       equation 
         (s1,t1) = algVariableReplacements(vs);
         indxs = intString(indx);
         name = Exp.printComponentRefStr(cr);
         c_name = Util.modelicaStringToCStr(name);
         newid = Util.stringAppendList({"%$",c_name});
+        etp = makeExpType(tp);
       then
-        ((Exp.CREF(cr,Exp.REAL()) :: s1),(Exp.CREF(Exp.CREF_IDENT(newid,{}),Exp.REAL()) :: t1));
+        ((Exp.CREF(cr,etp) :: s1),(Exp.CREF(Exp.CREF_IDENT(newid,{}),etp) :: t1));
     case (_)
       equation 
         print("-alg_variable_replacements failed\n");
@@ -11726,8 +11750,10 @@ algorithm
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
       list<Var> vs;
+      DAE.Type tp;
+      Exp.Type etp;
     case ({}) then ({},{}); 
-    case ((VAR(varName = cr,arryDim = (instdims as (_ :: _)),index = indx,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs))
+    case ((VAR(varName = cr,varType = tp,arryDim = (instdims as (_ :: _)),index = indx,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs))
       equation 
         true = Exp.crefIsFirstArrayElt(cr);
         cr_1 = Exp.crefStripLastSubs(cr);
@@ -11736,9 +11762,10 @@ algorithm
         c_name = Util.modelicaStringToCStr(name);
         int_dims = Util.listMap(Exp.subscriptsInt(instdims),Util.makeOption);
         newid = Util.stringAppendList({"$",c_name});
+        etp = makeExpType(tp);
         (s1,t1) = algVariableArrayReplacements(vs);
       then
-        ((Exp.CREF(cr_1,Exp.REAL()) :: s1),(Exp.CREF(Exp.CREF_IDENT(newid,{}),Exp.T_ARRAY(Exp.REAL(),int_dims)) :: t1));
+        ((Exp.CREF(cr_1,etp) :: s1),(Exp.CREF(Exp.CREF_IDENT(newid,{}),Exp.T_ARRAY(etp,int_dims)) :: t1));
     case ((_ :: vs))
       equation 
         (s1,t1) = algVariableArrayReplacements(vs);
@@ -11829,6 +11856,7 @@ algorithm
         name = Exp.printComponentRefStr(s);
         c_name = Util.modelicaStringToCStr(name);
         newid = Util.stringAppendList({derivativeNamePrefix,"$",c_name})  ;
+        // Derivatives are always or REAL type
       then
         ((Exp.CALL(Absyn.IDENT("der"),{Exp.CREF(s,Exp.REAL())},false,true,Exp.REAL()) :: s1),(Exp.CREF(Exp.CREF_IDENT(newid,{}),Exp.REAL()) :: t1));
     case (_)

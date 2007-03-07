@@ -3485,51 +3485,6 @@ algorithm
   end matchcontinue;
 end absynCrefListToInteractiveVarList;
 
-protected function elabBuiltinDymtabletimeini "function: elabBuiltinDymtabletimeini
- 
-  This function elaborates on the function dymtabletimeini, which is a Dymola
-  builtin function for table initialization. Should probably be removed in the future.
-"
-	input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input Boolean inBoolean;
-  output Env.Cache outCache;
-  output Exp.Exp outExp;
-  output Types.Properties outProperties;
-algorithm 
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
-    local
-      Exp.Exp e1_1,e2_1,e3_1,e4_1,e5_1,e6_1;
-      Types.Const c;
-      Types.ArrayDim dim;
-      tuple<Types.TType, Option<Absyn.Path>> arrType;
-      list<Env.Frame> env;
-      Absyn.Exp e1,e2,e3,e4,e5,e6;
-      Boolean impl;
-      Env.Cache cache;
-    case (cache,env,{e1,e2,e3,e4,e5,e6},impl) /* impl */ 
-      equation 
-        (cache,e1_1,Types.PROP((Types.T_REAL({}),NONE),c),_) = elabExp(cache,env, e1, impl, NONE,true);
-        (cache,e2_1,Types.PROP((Types.T_INTEGER({}),NONE),c),_) = elabExp(cache,env, e2, impl, NONE,true);
-        (cache,e3_1,Types.PROP((Types.T_STRING({}),NONE),c),_) = elabExp(cache,env, e3, impl, NONE,true);
-        (cache,e4_1,Types.PROP((Types.T_STRING({}),NONE),c),_) = elabExp(cache,env, e4, impl, NONE,true);
-        (cache,e5_1,Types.PROP((Types.T_ARRAY(dim,arrType),NONE),c),_) = elabExp(cache,env, e5, impl, NONE,true);
-        (cache,e6_1,Types.PROP((Types.T_INTEGER({}),NONE),c),_) = elabExp(cache,env, e6, impl, NONE,true);
-         /* print \"# integer function not implemented yet REAL\\n\" */ 
-      then
-        (cache,Exp.CALL(Absyn.IDENT("dymTableTimeIni"),
-          {e1_1,e2_1,e3_1,e4_1,e5_1,e6_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),Types.C_VAR()));
-    case (_,_,_,_)
-      equation 
-        print(
-          "#-- elab_builtin_dymtabletimeini: Couldn't elaborate diagonal()\n");
-      then
-        fail();
-  end matchcontinue;
-end elabBuiltinDymtabletimeini;
-
 protected function elabBuiltinNoevent "function: elabBuiltinNoevent
  
   The builtin operator noevent makes sure that events are not generated
@@ -4319,7 +4274,6 @@ algorithm
       
     case "cross" then elabBuiltinCross;
 
-    case "dymTableTimeIni" then elabBuiltinDymtabletimeini; 
   end matchcontinue;
 end elabBuiltinHandler;
 

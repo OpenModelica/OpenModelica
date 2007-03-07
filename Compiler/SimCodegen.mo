@@ -3078,6 +3078,7 @@ algorithm
 
     case ({},_,_,_) then ("",{}); 
 
+		/* equation is a WHEN_EQUATION */
     case ((eqn :: rest),eqnl,whenClauseList,nextHelpIndex)
       equation
         DAELow.WHEN_EQUATION(whenEq) = listNth(eqnl, eqn-1);
@@ -5047,6 +5048,24 @@ algorithm
   end matchcontinue;
 end removeArrayEquationIndex;
 
+protected function removeAlgorithmIndex "removes all algorithm 'equation':s with index equal to algIndex"
+  input list<DAELow.Equation> eqns;
+  input Integer algIndex;
+  output list<DAELow.Equation> outEqns;
+algorithm
+  outEqns := matchcontinue(eqns,algIndex)
+    local Integer index; 
+      DAELow.Equation e;
+      list<DAELow.Equation> rest,res;
+    case ({},_) then {};
+    case (DAELow.ALGORITHM(index,_,_)::rest,algIndex) equation
+      equality(index = algIndex);        
+      then removeAlgorithmIndex(rest,algIndex);
+    case (e::rest,algIndex) equation
+      res = removeAlgorithmIndex(rest,algIndex); 
+    then e::res;
+  end matchcontinue;
+end removeAlgorithmIndex;
 
 protected function skipPreOperator "function: skipPreOperator
  

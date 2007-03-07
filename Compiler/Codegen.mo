@@ -945,7 +945,6 @@ algorithm
   Debug.fprintln("cgtrdumpdae", "Dumping DAE:");
   Debug.fcall("cgtrdumpdae", DAE.dump2, DAE.DAE(els));
   fns := Util.listFilter(els, DAE.isFunction);
-  //print("functions=");print(DAE.dumpStr(DAE.DAE(fns)));print("\n");
   cfns := generateFunctionsElist2(fns);
 end generateFunctionsElist;
 
@@ -2989,7 +2988,7 @@ algorithm
     local
       Boolean is_a;
       Lib typ_str,cref_str,dimvars_str,dims_str,dim_comment,dim_comment_1,ndims_str,decl_str,alloc_str,init_stmt;
-      CFunction cfn1_1,cfn1,cfn_1,cfn_2,cfn;
+      CFunction cfn1_1,cfn1,cfn_1,cfn_2,cfn,cfn2;
       list<Lib> vars1,dim_strs;
       Integer tnr1,ndims,tnr;
       DAE.Element var;
@@ -3005,6 +3004,7 @@ algorithm
       Option<Absyn.Comment> comment;
       Context context;
       Exp.Exp e;
+      Exp.Type etp;
 
       /* variables without binding */ 
     case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = NONE,binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),tnr,context) 
@@ -3053,9 +3053,9 @@ algorithm
         cfn_1 = cAddVariables(cfn1, {decl_str});
         cfn_2 = cAddInits(cfn_1, {alloc_str});
         cfn = Util.if_(is_a, cfn_2, cfn_1);
-        Print.printBuf("# default value not implemented yet: ");
-        Exp.printExp(e);
-        Print.printBuf("\n");
+        etp = Exp.typeof(e);     
+        (cfn2,tnr1) = generateAlgorithmStatement(Algorithm.ASSIGN(etp,id,e),tnr1,context);
+        cfn = cMergeFn(cfn,cfn2);
       then
         (cfn,tnr1);
     case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = SOME(e),binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),tnr,context)
@@ -3266,14 +3266,14 @@ end isVarQ;
 
 protected function generateVarQ "function: generateVarQ
  
-  Helper function to is_var_q.
+  Helper function to isVarQ.
 "
   input DAE.VarKind inVarKind;
 algorithm 
   _:=
   matchcontinue (inVarKind)
-    case DAE.VARIABLE() then ();  /* axiom	generate_var_q DAE.PARAM */ 
-    case DAE.CONST() then (); 
+    case DAE.VARIABLE() then ();  
+    case DAE.PARAM() then (); 
   end matchcontinue;
 end generateVarQ;
 
@@ -3781,6 +3781,24 @@ algorithm
       Integer tnr1,tnr2,tnr,tnr3;
       Exp.Exp arg,s1,s2;
       Context context;
+    
+    /* pre(var) must make sure that var is not cast to e.g modelica_integer, since pre expects double& */  
+    case (Exp.CALL(path = Absyn.IDENT(name = "pre"),expLst = {arg as Exp.CREF(cr,_)},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */ 
+      local String cref_str; Exp.ComponentRef cr; Boolean needCast; String castStr;
+      equation 
+        tp = Exp.typeof(arg);
+        tp_str = expTypeStr(tp, false);
+        (cref_str,{}) = compRefCstr(cr);
+        (tdecl,tvar,tnr1) = generateTempDecl(tp_str, tnr);
+        cfn1 = cAddVariables(cEmptyFunction, {tdecl});
+        needCast = stringEqual(tp_str,"modelica_integer");
+        castStr = Util.if_(needCast,"(modelica_integer)","");
+        stmt = Util.stringAppendList({tvar," = ",castStr,"pre(",cref_str,");"});
+        cfn = cAddStatements(cfn1, {stmt});
+      then
+        (cfn,tvar,tnr1);
+      
+      /* max */
     case (Exp.CALL(path = Absyn.IDENT(name = "max"),expLst = {arg},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */ 
       equation 
         tp = Exp.typeof(arg);
@@ -4353,9 +4371,10 @@ algorithm
       list<Option<Integer>> dims;
       Context context;
       list<Exp.Subscript> subs;
-    case (cref,Exp.T_ARRAY(ty = t,arrayDimensions = dims),tnr,CONTEXT(SIMULATION(_),_,_)) /* For context simulation array variables must be boxed 
+      /* For context simulation array variables must be boxed 
 	    into a real_array object since they are represented only
 	    in a double array. */ 
+    case (cref,Exp.T_ARRAY(ty = t,arrayDimensions = dims),tnr,CONTEXT(SIMULATION(_),_,_)) 
       equation 
         e_tp_str = expTypeStr(t, true);
         e_sh_tp_str = expShortTypeStr(t);
@@ -4373,9 +4392,17 @@ algorithm
         cfunc = cAddInits(cfunc, {vdecl});
       then
         (cfunc,vstr,tnr1);
+
+        /* Cast integers to doubles in simulation context */
+    case (cref,Exp.INT(),tnr,context)
+      equation 
+        (cref_str,{}) = compRefCstr(cref);
+        cref_str = stringAppend("(modelica_integer)",cref_str);
+      then
+        (cEmptyFunction,cref_str,tnr);
                 
     case (cref,crt,tnr,context)
-      equation 
+      equation
         (cref_str,{}) = compRefCstr(cref);
       then
         (cEmptyFunction,cref_str,tnr);

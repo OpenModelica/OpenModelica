@@ -1582,7 +1582,7 @@ algorithm
   outString:=
   matchcontinue (inElement)
     local
-      Ident s1,s2,s3,s4,comment_str,s5,str,s6;
+      Ident s1,s2,s3,s4,comment_str,s5,str,s6,s7;
       Exp.ComponentRef id;
       VarKind kind;
       VarDirection dir;
@@ -1593,19 +1593,21 @@ algorithm
       Option<VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       Exp.Exp e;
-    case VAR(componentRef = id,varible = kind,variable = dir,input_ = typ,one = NONE,dimension = start,value = flow_,flow_ = classlst,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
+      VarProtection prot;
+    case VAR(componentRef = id,varible = kind,variable = dir,protection=prot,input_ = typ,one = NONE,dimension = start,value = flow_,flow_ = classlst,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
       equation 
         s1 = dumpKindStr(kind);
         s2 = dumpDirectionStr(dir);
         s3 = dumpTypeStr(typ);
         s4 = Exp.printComponentRefStr(id);
+        s7 = dumpVarProtectionStr(prot);
         comment_str = dumpCommentOptionStr(comment) "	dump_start_value_str start => s5 &" ;
         s5 = dumpVariableAttributesStr(dae_var_attr);
-        str = Util.stringAppendList({s1,s2,s3,s4,s5,comment_str,";\n"}) "	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
+        str = Util.stringAppendList({s7,s1,s2,s3,s4,s5,comment_str,";\n"}) "	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
 	Util.string_delimit_list(classstrlst, \", \") => classstr &" ;
       then
         str;
-    case VAR(componentRef = id,varible = kind,variable = dir,input_ = typ,one = SOME(e),dimension = start,value = flow_,flow_ = classlst,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
+    case VAR(componentRef = id,varible = kind,variable = dir,protection=prot,input_ = typ,one = SOME(e),dimension = start,value = flow_,flow_ = classlst,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
       equation 
         s1 = dumpKindStr(kind);
         s2 = dumpDirectionStr(dir);
@@ -1614,13 +1616,24 @@ algorithm
         s5 = Exp.printExpStr(e);
         comment_str = dumpCommentOptionStr(comment) "	dump_start_value_str start => s6 &" ;
         s6 = dumpVariableAttributesStr(dae_var_attr);
-        str = Util.stringAppendList({s1,s2,s3,s4,s6," = ",s5,comment_str,";\n"}) "	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
+        s7 = dumpVarProtectionStr(prot);
+        str = Util.stringAppendList({s7,s1,s2,s3,s4,s6," = ",s5,comment_str,";\n"}) "	Util.list_map(classlst,Absyn.path_string) => classstrlst & 
 	Util.string_delimit_list(classstrlst, \", \") => classstr &" ;
       then
         str;
     case (_) then ""; 
   end matchcontinue;
 end dumpVarStr;
+
+protected function dumpVarProtectionStr "Prints 'protected' to a string for protected variables"
+  input VarProtection prot;
+  output String str;
+algorithm
+  str := matchcontinue(prot)
+    case(PUBLIC()) then "";
+    case(PROTECTED()) then "protected ";  
+  end matchcontinue;
+end dumpVarProtectionStr;
 
 protected function dumpCommentOptionStr "function: dumpCommentOptionStr
  
@@ -2600,6 +2613,18 @@ algorithm
   vl_1 := getMatchingElements(vl, isOutputVar);
 end getOutputVars;
 
+public function getProtectedVars "
+  author: PA
+ 
+  Retrieve all protected variables from an Element list.
+"
+  input list<Element> vl;
+  output list<Element> vl_1;
+  list<Element> vl_1;
+algorithm 
+  vl_1 := getMatchingElements(vl, isProtectedVar);
+end getProtectedVars;
+
 public function getBidirVars "function get_output_vars
   author: LS 
  
@@ -2700,6 +2725,38 @@ algorithm
     case VAR(componentRef = n,varible = VARIABLE(),variable = OUTPUT(),input_ = ty) then (); 
   end matchcontinue;
 end isOutputVar;
+
+public function isProtectedVar "
+  author: PA 
+ 
+  Succeeds if Element is a protected variable.
+"
+  input Element inElement;
+algorithm 
+  _:=
+  matchcontinue (inElement)
+    local
+      Exp.ComponentRef n;
+      Type ty;
+    case VAR(protection=PROTECTED()) then (); 
+  end matchcontinue;
+end isProtectedVar;
+
+public function isPublicVar "
+  author: PA 
+ 
+  Succeeds if Element is a public variable.
+"
+  input Element inElement;
+algorithm 
+  _:=
+  matchcontinue (inElement)
+    local
+      Exp.ComponentRef n;
+      Type ty;
+    case VAR(protection=PUBLIC()) then (); 
+  end matchcontinue;
+end isPublicVar;
 
 public function isBidirVar "function: isBidirVar 
   author: LS 

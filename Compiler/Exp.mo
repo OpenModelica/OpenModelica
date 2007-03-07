@@ -3465,6 +3465,8 @@ algorithm
       then
         tp;
     case (END()) then OTHER();  /* Can be any type. */ 
+    case (SIZE(_,NONE)) then INT();
+    case (SIZE(_,SOME(_))) then T_ARRAY(INT(),{NONE});
   end matchcontinue;
 end typeof;
 
