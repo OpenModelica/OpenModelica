@@ -55,6 +55,7 @@ Adrian Pop, adrpo@ida.liu.se, 2006-04-06
    To run the OMDev-MINGW-OpenModelicaBuilder press Ctrl+B.
    Then the OMDev-MINGW-OpenModelicaBuilder will start
    and compile an OpenModelica/build/omc.exe.
+   If the builder refuse to start, please check the ***NOTES*** below.
 
 10. Available options for OMDev-MINGW-OpenModelicaBuilder
     In the Environment tab of the OMDev-MINGW-OpenModelicaBuilder
@@ -78,9 +79,41 @@ Adrian Pop, adrpo@ida.liu.se, 2006-04-06
       >cd testsuite
       testsuite> make 
 
+
+***NOTES*** ON PROBLEMS WITH THE ECLIPSE PROJECT/OMDev BUILDER:
+---------------------------------------------------------------
+If something does not work in Eclipse, please check:
+1. is OMDev installed into c:\OMDev?
+   Be sure in C:\OMDev you have directories "tools", "bin", "include"
+   and not another OMDev directory.
+   Set a OMDEV variable to point to it. Right Click on
+   My Computer->Properties->Advanced Tab->Environment Variables
+   Add variable OMDEV and set the text to C:\OMDev
+   Close and restart Eclipse to pick up the OMDEV variable.
+2. rename the:
+/OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder.launch-sample
+to:
+/OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder.launch
+3. right click on the OpenModelica project in Eclipse and say Refresh
+4. right click on the OpenModelica project in Eclipse and say Properties
+  + go to Builders and see if you have the builder :
+    OMDev-MINGW-OpenModelicaBuilder available.
+5. right click on the OpenModelica project and say "Rebuild"
+
+If these do not work, look into your OpenModelica/.project
+to see if you have any reference to: OMDev-MINGW-OpenModelicaBuilder
+there. If you don't, then:
+- close Eclipse
+- copy your .project-sample to .project again from DOS:
+  Start->Run->cmd
+  $ cd \path\to\OpenModelica
+  $ ren ".project-sample" ".project"
+- open Eclipse and do step 3-5 above.
+
+
 For problems with OMDev package, contact:
 Adrian Pop, 
 adrpo@ida.liu.se
            
-Last Update:2006-09-19
+Last Update:2007-03-09
 
