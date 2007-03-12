@@ -229,6 +229,7 @@ algorithm
     case "cat" then cevalBuiltinCat; 
     case "identity" then cevalBuiltinIdentity; 
     case "promote" then cevalBuiltinPromote; 
+    case "String" then cevalBuiltinString;
     case id
       equation 
         Debug.fprint("ceval", "No Ceval.cevalBuiltinHandler found for: ");
@@ -3913,6 +3914,57 @@ algorithm
         Values.ARRAY(vs_1);
   end matchcontinue;
 end cevalBuiltinPromote2;
+
+
+protected function cevalBuiltinString "
+  author: PA
+  Evaluates the String operator String(r), String(i), String(b), String(e)"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Exp.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      Values.Value arr_val,res;
+      Integer dim_val;
+      list<Env.Frame> env;
+      Exp.Exp exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+      String str;
+      Integer i; Real r; Boolean b;
+    case (cache,env,{exp,_,_,_},impl,st,msg)
+      equation 
+        (cache,Values.INTEGER(i),_) = ceval(cache,env, exp, impl, st, NONE, msg);
+				str = intString(i);
+      then
+        (cache,Values.STRING(str),st);
+
+    case (cache,env,{exp,_,_,_},impl,st,msg)
+      equation 
+        (cache,Values.REAL(r),_) = ceval(cache,env, exp, impl, st, NONE, msg);
+				str = realString(r);
+      then
+        (cache,Values.STRING(str),st); 
+        
+    case (cache,env,{exp,_,_,_},impl,st,msg)
+      equation 
+        (cache,Values.BOOL(b),_) = ceval(cache,env, exp, impl, st, NONE, msg);
+				str = Util.boolString(b);
+      then
+        (cache,Values.STRING(str),st);                 
+        
+  end matchcontinue;
+end cevalBuiltinString;
 
 protected function cevalCat "function: cevalCat
   evaluates the cat operator given a list of 

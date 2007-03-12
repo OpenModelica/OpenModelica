@@ -84,6 +84,10 @@ protected constant String outputNames="output_names";
 
 protected constant String paramNames="param_names";
 
+protected constant String stringParamNames="string_param_names";
+
+protected constant String stringAlgNames="string_alg_names";
+
 protected constant String stateComments="state_comments";
 
 protected constant String derivativeComments="derivative_comments";
@@ -95,6 +99,10 @@ protected constant String inputComments="input_comments";
 protected constant String outputComments="output_comments";
 
 protected constant String paramComments="param_comments";
+
+protected constant String stringParamComments="string_param_comments";
+
+protected constant String stringAlgComments="string_alg_comments";
 
 protected constant String paramInGetNameFunction="ptr";
 
@@ -500,7 +508,7 @@ algorithm
         next_str = intString(next);
         nystring_str = intString(ny_string);
         npstring_str = intString(np_string);
-        c_code = generateVarNamesAndComments(dlow, nx, ny, ni, no, np,next);
+        c_code = generateVarNamesAndComments(dlow, nx, ny, ni, no, np,next,ny_string,np_string);
         initDeinitDataStructFunction = generateInitializeDeinitializationDataStruc(dlow);
         (c_code2_str) = generateFixedVector(dlow, nx, ny, np);
         (c_code3_str) = generateAttrVector(dlow, nx, ny, np);
@@ -1567,20 +1575,25 @@ protected function generateVarNamesAndComments "function: generateVarNamesAndCom
   input Integer inInteger5 "no - number outputs";
   input Integer inInteger6 "ni - number of inputs";
   input Integer inInteger7 "next - number of external objects";
+  input Integer inInteger8 "num_stralg - number of string variables";
+  input Integer inInteger9 "num_strparam - number of string parameters";
   output list<String> outStringLst;
 algorithm 
   outStringLst:=
-  matchcontinue (inDAELow1,inInteger2,inInteger3,inInteger4,inInteger5,inInteger6,inInteger7)
+  matchcontinue (inDAELow1,inInteger2,inInteger3,inInteger4,inInteger5,inInteger6,inInteger7,inInteger8,inInteger9)
     local
       list<DAELow.Var> var_lst,knvar_lst,extvar_lst;
-      String[:] state_arr,derivative_arr,algvar_arr,param_arr,state_comment_arr,derivative_comment_arr,algvar_comment_arr,param_comment_arr;
+      String[:] state_arr,derivative_arr,algvar_arr,param_arr,state_comment_arr,derivative_comment_arr,algvar_comment_arr,param_comment_arr,strparam_arr,strparam_comment_arr,stralg_arr,stralg_comment_arr;
       Integer num_state_2,num_derivative_2,num_algvars_2,num_input_2,num_output_2,num_param_2;
-      Integer num_var_names,num_var_names_1,nx,ny,ni,no,np,next;
+      Integer num_var_names,num_var_names_1,nx,ny,ni,no,np,next,num_stralg,num_strparam;
       list<String> input_arr,input_comment_arr,output_arr,output_comment_arr,get_name_function_ifs,var_defines,var_defines_1,state_str_1,derivative_str_1,algvars_str_1,param_str_1,state_comment_str_1,derivative_comment_str_1,algvars_comment_str_1,param_comment_str_1;
+      list<String> stralg_str_1,strparam_str_1,stralg_comment_str_1,strparam_comment_str_1;
       String get_name_function_ifs_1,state_str_2,derivative_str_2,algvars_str_2,input_str_2,output_str_2,param_str_2,state_comment_str_2,derivative_comment_str_2,algvars_comment_str_2,input_comment_str_2,output_comment_str_2,param_comment_str_2,var_names,var_names_1,state_str_3,der_str_3,algvar_str_3,inputvar_str_3,outputvar_str_3,paramvar_str_3,res,state_comment_lst_1,der_comment_lst_1,algvar_comment_lst_1,inputvar_comment_lst_1,outputvar_comment_lst_1,paramvar_comment_lst_1,res2,get_name_function,var_defines_str;
+      String strparam_comment_str_2,stralg_comment_str_2,stralg_str_2,strparam_str_2,stralg_str_3,strparam_str_3;
+      String strparam_comment_lst_1,stralg_comment_lst_1;
       DAELow.Variables vars,knvars,extvars;
     case (DAELow.DAELOW(orderedVars = vars,knownVars = knvars,externalObjects = extvars),
-      nx,ny,ni,no,np,next)  
+      nx,ny,ni,no,np,next,num_stralg,num_strparam)  
       equation 
         var_lst = DAELow.varList(vars);
         knvar_lst = DAELow.varList(knvars);
@@ -1594,87 +1607,126 @@ algorithm
         derivative_comment_arr = fill("\" ERROR\"", nx);
         algvar_comment_arr = fill("\" ERROR\"", ny);
         param_comment_arr = fill("\" ERROR\"", np);
+        stralg_arr = fill("\" stringalg ERROR\"", num_stralg);
+        stralg_comment_arr = fill("\" ERROR\"", num_stralg);
+        strparam_arr = fill("\" stringalg ERROR\"", num_strparam);
+        strparam_comment_arr = fill("\" ERROR\"", num_strparam);
         
-        //"	array_create(ni,\"\") => input_comment_arr & 	array_create(no,\"\") => output_comment_arr &" ;
+        
         /* Variable list*/
         (state_arr,state_comment_arr,num_state_2,derivative_arr,derivative_comment_arr,
           num_derivative_2,algvar_arr,algvar_comment_arr,num_algvars_2,input_arr,input_comment_arr,
           num_input_2,output_arr,output_comment_arr,num_output_2,param_arr,param_comment_arr,
-          num_param_2,get_name_function_ifs,var_defines) 
+          num_param_2,stralg_arr,stralg_comment_arr,num_stralg,strparam_arr,strparam_comment_arr,num_strparam,
+          get_name_function_ifs,var_defines) 
             = generateVarNamesAndComments2(var_lst, state_arr, state_comment_arr, 0, derivative_arr, 
           		derivative_comment_arr, 0, algvar_arr, algvar_comment_arr, 0, {}, {}, 0, {}, {}, 0, 
-         		 param_arr, param_comment_arr, 0, {}, {})  ;
+         		 param_arr, param_comment_arr, 0, 
+         		 stralg_arr,stralg_comment_arr,num_stralg,strparam_arr,strparam_comment_arr,num_strparam,
+         		 {}, {})  ;
       
       /* Known variable list*/ 
         (state_arr,state_comment_arr,num_state_2,derivative_arr,derivative_comment_arr,
         	num_derivative_2,algvar_arr,algvar_comment_arr,num_algvars_2,input_arr,input_comment_arr,
         	num_input_2,output_arr,output_comment_arr,num_output_2,param_arr,param_comment_arr,
-        	num_param_2,get_name_function_ifs_1,var_defines_1) 
+        	num_param_2,
+        	stralg_arr,stralg_comment_arr,num_stralg,strparam_arr,strparam_comment_arr,num_strparam,
+        	get_name_function_ifs_1,var_defines_1) 
         = generateVarNamesAndComments2(knvar_lst, state_arr, state_comment_arr, num_state_2, 
           derivative_arr, derivative_comment_arr, num_derivative_2, algvar_arr, 
           algvar_comment_arr, num_algvars_2, input_arr, input_comment_arr, num_input_2, 
           output_arr, output_comment_arr, num_output_2, param_arr, param_comment_arr, 
-          num_param_2, get_name_function_ifs, var_defines) ;
+          num_param_2, 
+          stralg_arr,stralg_comment_arr,num_stralg,strparam_arr,strparam_comment_arr,num_strparam,
+          get_name_function_ifs, var_defines) ;
          
          /* External object list*/
           (state_arr,state_comment_arr,num_state_2,derivative_arr,derivative_comment_arr,
         	num_derivative_2,algvar_arr,algvar_comment_arr,num_algvars_2,input_arr,input_comment_arr,
         	num_input_2,output_arr,output_comment_arr,num_output_2,param_arr,param_comment_arr,
-        	num_param_2,get_name_function_ifs_1,var_defines_1) 
+        	num_param_2,
+        	stralg_arr,stralg_comment_arr,num_stralg,strparam_arr,strparam_comment_arr,num_strparam,
+        	get_name_function_ifs_1,var_defines_1) 
         = generateVarNamesAndComments2(extvar_lst, state_arr, state_comment_arr, num_state_2, 
           derivative_arr, derivative_comment_arr, num_derivative_2, algvar_arr, 
           algvar_comment_arr, num_algvars_2, input_arr, input_comment_arr, num_input_2, 
           output_arr, output_comment_arr, num_output_2, param_arr, param_comment_arr, 
-          num_param_2, get_name_function_ifs, var_defines_1);
+          num_param_2, 
+          stralg_arr,stralg_comment_arr,num_stralg,strparam_arr,strparam_comment_arr,num_strparam,
+          get_name_function_ifs, var_defines_1);
         num_state_2 = nx " TODO: CHECK THE RETURN TO BE THE SAME INSTEAD OF SETTING WITH let " ;
         num_derivative_2 = nx;
         num_algvars_2 = ny;
         num_output_2 = no;
         num_input_2 = ni;
         num_param_2 = np;
+
+				// Generate array of variable names
+				
         state_str_1 = arrayList(state_arr);
         derivative_str_1 = arrayList(derivative_arr);
         algvars_str_1 = arrayList(algvar_arr);
-        param_str_1 = arrayList(param_arr) "array_list(input_arr) => input_str\' & array_list(output_arr) => output_str\' &" ;
+        param_str_1 = arrayList(param_arr) ;
+				stralg_str_1 = arrayList(stralg_arr);
+				strparam_str_1 = arrayList(strparam_arr);
+				
         state_str_2 = Util.stringDelimitList(state_str_1, ", ");
         derivative_str_2 = Util.stringDelimitList(derivative_str_1, ", ");
         algvars_str_2 = Util.stringDelimitList(algvars_str_1, ", ");
         input_str_2 = Util.stringDelimitList(input_arr, ", ");
         output_str_2 = Util.stringDelimitList(output_arr, ", ");
         param_str_2 = Util.stringDelimitList(param_str_1, ", ");
-        state_comment_str_1 = arrayList(state_comment_arr);
-        derivative_comment_str_1 = arrayList(derivative_comment_arr);
-        algvars_comment_str_1 = arrayList(algvar_comment_arr);
-        param_comment_str_1 = arrayList(param_comment_arr) "array_list(input_comment_arr) => input_comment_str\' & array_list(output_comment_arr) => output_comment_str\' &" ;
-        state_comment_str_2 = Util.stringDelimitList(state_comment_str_1, ", ");
-        derivative_comment_str_2 = Util.stringDelimitList(derivative_comment_str_1, ", ");
-        algvars_comment_str_2 = Util.stringDelimitList(algvars_comment_str_1, ", ");
-        input_comment_str_2 = Util.stringDelimitList(input_comment_arr, ", ");
-        output_comment_str_2 = Util.stringDelimitList(output_comment_arr, ", ");
-        param_comment_str_2 = Util.stringDelimitList(param_comment_str_1, ", ");
-        //var_names = Util.stringDelimitList({state_str_2,derivative_str_2,algvars_str_2}, ", ") "this is for backwards-compatibility" ;
-        //num_var_names = num_state_2 + num_derivative_2;
-        //num_var_names_1 = num_var_names + num_algvars_2;
-        //var_names_1 = generateCDeclForStringArray("varnamesbuf", var_names, num_var_names_1);
+        stralg_str_2 = Util.stringDelimitList(stralg_str_1, ", ");
+        strparam_str_2 = Util.stringDelimitList(strparam_str_1, ", ");
+        
         state_str_3 = generateCDeclForStringArray(stateNames, state_str_2, num_state_2);
         der_str_3 = generateCDeclForStringArray(derivativeNames, derivative_str_2, num_derivative_2);
         algvar_str_3 = generateCDeclForStringArray(algvarsNames, algvars_str_2, num_algvars_2);
         inputvar_str_3 = generateCDeclForStringArray(inputNames, input_str_2, num_input_2);
         outputvar_str_3 = generateCDeclForStringArray(outputNames, output_str_2, num_output_2);
         paramvar_str_3 = generateCDeclForStringArray(paramNames, param_str_2, num_param_2);
+        stralg_str_3 = generateCDeclForStringArray(stringAlgNames, stralg_str_2, num_stralg);
+        strparam_str_3 = generateCDeclForStringArray(stringParamNames, stralg_str_2, num_stralg); 
+               
         res = Util.stringAppendList(
           {state_str_3,der_str_3,algvar_str_3,inputvar_str_3,
-          outputvar_str_3,paramvar_str_3});
-        state_comment_lst_1 = generateCDeclForStringArray(stateComments, state_comment_str_2, num_state_2);
+          outputvar_str_3,paramvar_str_3,stralg_str_3,strparam_str_3});
+      
+      
+				// Generate array of comment strings	
+				
+        state_comment_str_1 = arrayList(state_comment_arr);
+        derivative_comment_str_1 = arrayList(derivative_comment_arr);
+        algvars_comment_str_1 = arrayList(algvar_comment_arr);
+        param_comment_str_1 = arrayList(param_comment_arr) ;
+				stralg_comment_str_1 = arrayList(stralg_comment_arr);        
+				strparam_comment_str_1 = arrayList(strparam_comment_arr);  
+        
+        state_comment_str_2 = Util.stringDelimitList(state_comment_str_1, ", ");
+        derivative_comment_str_2 = Util.stringDelimitList(derivative_comment_str_1, ", ");
+        algvars_comment_str_2 = Util.stringDelimitList(algvars_comment_str_1, ", ");
+        input_comment_str_2 = Util.stringDelimitList(input_comment_arr, ", ");
+        output_comment_str_2 = Util.stringDelimitList(output_comment_arr, ", ");
+        param_comment_str_2 = Util.stringDelimitList(param_comment_str_1, ", ");
+        strparam_comment_str_2 = Util.stringDelimitList(strparam_comment_str_1, ", ");
+        stralg_comment_str_2 = Util.stringDelimitList(stralg_comment_str_1, ", ");   
+         
+  			state_comment_lst_1 = generateCDeclForStringArray(stateComments, state_comment_str_2, num_state_2);
         der_comment_lst_1 = generateCDeclForStringArray(derivativeComments, derivative_comment_str_2, 
           num_derivative_2);
         algvar_comment_lst_1 = generateCDeclForStringArray(algvarsComments, algvars_comment_str_2, num_algvars_2);
         inputvar_comment_lst_1 = generateCDeclForStringArray(inputComments, input_comment_str_2, num_input_2);
         outputvar_comment_lst_1 = generateCDeclForStringArray(outputComments, output_comment_str_2, num_output_2);
         paramvar_comment_lst_1 = generateCDeclForStringArray(paramComments, param_comment_str_2, num_param_2);
-        res2 = Util.stringAppendList(
+        strparam_comment_lst_1 = generateCDeclForStringArray(stringParamComments, param_comment_str_2, num_param_2);        
+        stralg_comment_lst_1 = generateCDeclForStringArray(stringAlgComments, param_comment_str_2, num_param_2);        
+				
+				res2 = Util.stringAppendList(
           {state_comment_lst_1,der_comment_lst_1,algvar_comment_lst_1,
-          inputvar_comment_lst_1,outputvar_comment_lst_1,paramvar_comment_lst_1});
+          inputvar_comment_lst_1,outputvar_comment_lst_1,paramvar_comment_lst_1,strparam_comment_lst_1,stralg_comment_lst_1});
+      				     
+      	// generate #defines for each variable
+        
         get_name_function_ifs_1 = Util.stringAppendList(get_name_function_ifs) "generate getName function" ;
         get_name_function = Util.stringAppendList(
           {"char* getName( double* ",paramInGetNameFunction,")\n",
@@ -1741,6 +1793,13 @@ protected function generateVarNamesAndComments2 "function: generateVarNamesAndCo
   input String[:] inStringArray17;
   input String[:] inStringArray18;
   input Integer inInteger19;
+  input String[:] inStrAlgArr;
+  input String[:] inStrAlgArrCmt;
+  input Integer inNumStrAlg;
+  input String[:] inStrParamArr;
+  input String[:] inStrParamArrCmt;
+  input Integer inNumStrParam;
+  
   input list<String> inStringLst20;
   input list<String> inStringLst21;
   output String[:] outStringArray1;
@@ -1761,13 +1820,22 @@ protected function generateVarNamesAndComments2 "function: generateVarNamesAndCo
   output String[:] outStringArray16;
   output String[:] outStringArray17;
   output Integer outInteger18;
+  output String[:] outStrAlgArr;
+  output  String[:] outStrAlgArrCmt;
+  output Integer outNumStrAlg;
+  output String[:] outStrParamArr;
+  output String[:] outStrParamArrCmt;
+  output Integer outNumStrParam;
   output list<String> outStringLst19;
   output list<String> outStringLst20;
 algorithm 
-  (outStringArray1,outStringArray2,outInteger3,outStringArray4,outStringArray5,outInteger6,outStringArray7,outStringArray8,outInteger9,outStringLst10,outStringLst11,outInteger12,outStringLst13,outStringLst14,outInteger15,outStringArray16,outStringArray17,outInteger18,outStringLst19,outStringLst20):=
-  matchcontinue (inDAELowVarLst1,inStringArray2,inStringArray3,inInteger4,inStringArray5,inStringArray6,inInteger7,inStringArray8,inStringArray9,inInteger10,inStringLst11,inStringLst12,inInteger13,inStringLst14,inStringLst15,inInteger16,inStringArray17,inStringArray18,inInteger19,inStringLst20,inStringLst21)
+  (outStringArray1,outStringArray2,outInteger3,outStringArray4,outStringArray5,outInteger6,outStringArray7,outStringArray8,outInteger9,outStringLst10,outStringLst11,outInteger12,outStringLst13,outStringLst14,outInteger15,outStringArray16,outStringArray17,outInteger18,
+  outStrAlgArr,outStrAlgArrCmt,outNumStrAlg,outStrParamArr,outStrParamArrCmt,outNumStrParam,outStringLst19,outStringLst20):=
+  matchcontinue (inDAELowVarLst1,inStringArray2,inStringArray3,inInteger4,inStringArray5,inStringArray6,inInteger7,inStringArray8,inStringArray9,inInteger10,inStringLst11,inStringLst12,inInteger13,inStringLst14,inStringLst15,inInteger16,inStringArray17,inStringArray18,inInteger19,
+      outStrAlgArr,outStrAlgArrCmt,outNumStrAlg,outStrParamArr,outStrParamArrCmt,outNumStrParam,inStringLst20,inStringLst21)
     local
       String[:] state_str,stateComments,derivative_str,derivativeComments,algvars_str,algvarsComments,param_str,paramComments,state_str_1,state_comments_1,derivative_str_1,derivative_comments_1,algvars_str_1,algvars_comments_1,param_str_1,param_comments_1,state_str_2,state_comments_2,derivative_str_2,derivative_comments_2,algvars_str_2,algvars_comments_2,param_str_2,param_comments_2;
+			String[:] stralg_comment_arr,stralg_arr,strparam_comment_arr,strparam_arr;
       Integer num_state,num_derivative,num_algvars,num_input,num_output,num_param,num_state_1,num_derivative_1,num_algvars_1,num_input_1,num_output_1,num_param_1,num_state_2,num_derivative_2,num_algvars_2,num_input_2,num_output_2,num_param_2,indx;
       list<String> input_str,inputComments,output_str,outputComments,get_name_function_ifs,var_defines,input_str_1,input_comments_1,output_str_1,output_comments_1,get_name_function_ifs_1,var_defines_1,get_name_function_ifs1,var_defines1,get_name_function_ifs2,var_defines2,input_str_2,input_comments_2,get_name_function_ifs3,var_defines3,output_str_2,output_comments_2,get_name_function_ifs4,var_defines4,get_name_function_ifs5,var_defines5, var_defines6;
       DAELow.Var var;
@@ -1779,29 +1847,37 @@ algorithm
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
       list<DAELow.Var> vs;
+      Integer num_stralg,num_strparam;
     case ({},state_str,stateComments,num_state,derivative_str,derivativeComments,num_derivative,
       algvars_str,algvarsComments,num_algvars,input_str,inputComments,num_input,output_str,
-      outputComments,num_output,param_str,paramComments,num_param,get_name_function_ifs,var_defines)
+      outputComments,num_output,param_str,paramComments,num_param,
+      stralg_arr,stralg_comment_arr,num_stralg,strparam_arr,strparam_comment_arr,num_strparam,        
+      get_name_function_ifs,var_defines)
        then 
          (state_str,stateComments,num_state,derivative_str,derivativeComments,num_derivative,
              algvars_str,algvarsComments,num_algvars,input_str,inputComments,num_input,output_str,
-             outputComments,num_output,param_str,paramComments,num_param,get_name_function_ifs,var_defines);
-             
-               
+             outputComments,num_output,param_str,paramComments,num_param,
+             stralg_arr,stralg_comment_arr,num_stralg,strparam_arr,strparam_comment_arr,num_strparam,        
+             get_name_function_ifs,var_defines);
+                            
     case (((var as DAELow.VAR(cr,kind,dir,_, value,_,_,_,indx,origname,_,dae_var_attr,comment,flow_)) :: vs),
       	state_str,stateComments,num_state,derivative_str,derivativeComments,num_derivative,algvars_str,
       	algvarsComments,num_algvars,input_str,inputComments,num_input,output_str,outputComments,
-      	num_output,param_str,paramComments,num_param,get_name_function_ifs,var_defines) 
+      	num_output,param_str,paramComments,num_param,
+      	stralg_arr,stralg_comment_arr,num_stralg,strparam_arr,strparam_comment_arr,num_strparam,
+        get_name_function_ifs,var_defines) 
       equation 
         /* Recursive call*/
         (state_str_1,state_comments_1,num_state_1,derivative_str_1,derivative_comments_1,num_derivative_1,
         algvars_str_1,algvars_comments_1,num_algvars_1,input_str_1,input_comments_1,num_input_1,output_str_1,
-        output_comments_1,num_output_1,param_str_1,param_comments_1,num_param_1,get_name_function_ifs_1,
-        var_defines_1) 
+        output_comments_1,num_output_1,param_str_1,param_comments_1,num_param_1,
+        stralg_arr,stralg_comment_arr,num_stralg,strparam_arr,strparam_comment_arr,num_strparam,
+        get_name_function_ifs_1, var_defines_1) 
         = generateVarNamesAndComments2(vs, state_str, stateComments, num_state, derivative_str, 
           derivativeComments, num_derivative, algvars_str, algvarsComments, num_algvars, 
           input_str, inputComments, num_input, output_str, outputComments, num_output, 
-          param_str, paramComments, num_param, get_name_function_ifs, var_defines) ;
+          param_str, paramComments, num_param, stralg_arr,stralg_comment_arr,num_stralg,strparam_arr,
+          strparam_comment_arr,num_strparam,get_name_function_ifs, var_defines) ;
           
         /* States and derivatives*/
         (state_str_2,state_comments_2,derivative_str_2,derivative_comments_2,num_state_2,
@@ -1811,8 +1887,9 @@ algorithm
         num_derivative_2 = num_state_2;
         
         /* Algebraic variables*/
-        (algvars_str_2,algvars_comments_2,num_algvars_2,get_name_function_ifs2,var_defines2) 
+        (algvars_str_2,algvars_comments_2,num_algvars_2,stralg_arr,stralg_comment_arr,num_stralg,get_name_function_ifs2,var_defines2) 
         	= generateVarNamesAndCommentsAlgvars(var, algvars_str_1, algvars_comments_1, num_algvars_1, 
+        	stralg_arr,stralg_comment_arr,num_stralg,
          	 get_name_function_ifs1, var_defines1) "generate ALGVARS names" ;
          	 
          	 /* INPUT variables*/
@@ -1826,9 +1903,11 @@ algorithm
           get_name_function_ifs3, var_defines3) "generate OUTPUT names" ;
         
         /* Parameters */  
-        (param_str_2,param_comments_2,num_param_2,get_name_function_ifs5,var_defines5) 
+        (param_str_2,param_comments_2,num_param_2,
+          strparam_arr,strparam_comment_arr,num_strparam,
+          get_name_function_ifs5,var_defines5) 
         	= generateVarNamesAndCommentsParams(var, param_str_1, param_comments_1, num_param_1, 
-          get_name_function_ifs4, var_defines4) "generate PARAM names" ;
+						strparam_arr,strparam_comment_arr,num_strparam, get_name_function_ifs4, var_defines4);
           
         /* External Objects*/  
         (_,_,_,_,var_defines6) 
@@ -1838,10 +1917,10 @@ algorithm
         (state_str_2,state_comments_2,num_state_2,derivative_str_2,derivative_comments_2,
         num_derivative_2,algvars_str_2,algvars_comments_2,num_algvars_2,input_str_2,input_comments_2,
         num_input_2,output_str_2,output_comments_2,num_output_2,param_str_2,param_comments_2,num_param_2,
+        stralg_arr,stralg_comment_arr,num_stralg,strparam_arr,strparam_comment_arr,num_strparam,
         get_name_function_ifs5,var_defines6);
-
         
-    case ((_ :: vs),state_str,stateComments,num_state,derivative_str,derivativeComments,num_derivative,algvars_str,algvarsComments,num_algvars,input_str,inputComments,num_input,output_str,outputComments,num_output,param_str,paramComments,num_param,get_name_function_ifs_1,var_defines) /* state derivative algvars input output param state derivative algvars input output param derivative algvars input output param */ 
+    case ((_ :: vs),state_str,stateComments,num_state,derivative_str,derivativeComments,num_derivative,algvars_str,algvarsComments,num_algvars,input_str,inputComments,num_input,output_str,outputComments,num_output,param_str,paramComments,num_param,stralg_arr,stralg_comment_arr,num_stralg,strparam_arr,strparam_comment_arr,num_strparam,get_name_function_ifs_1,var_defines) 
       equation 
         print("generate_var_names_and_comments2 failed \n");
       then
@@ -1997,21 +2076,27 @@ protected function generateVarNamesAndCommentsAlgvars "function generateVarNames
   input String[:] inStringArray2;
   input String[:] inStringArray3;
   input Integer inInteger4;
+  input String[:] inAlgStrArr;
+  input String[:] inAlgStrArrCmt;
+  input Integer inNumAlgStr;  
   input list<String> inStringLst5;
   input list<String> inStringLst6;
   output String[:] outStringArray1;
   output String[:] outStringArray2;
   output Integer outInteger3;
+  output String[:] outAlgStrArr;
+  output String[:] outAlgStrArrCmt;
+  output Integer outNumAlgStr;    
   output list<String> outStringLst4;
   output list<String> outStringLst5;
 algorithm 
-  (outStringArray1,outStringArray2,outInteger3,outStringLst4,outStringLst5):=
-  matchcontinue (inVar1,inStringArray2,inStringArray3,inInteger4,inStringLst5,inStringLst6)
+  (outStringArray1,outStringArray2,outInteger3,outAlgStrArr,outAlgStrArrCmt,outNumAlgStr,outStringLst4,outStringLst5):=
+  matchcontinue (inVar1,inStringArray2,inStringArray3,inInteger4,inAlgStrArr,inAlgStrArrCmt,inNumAlgStr,inStringLst5,inStringLst6)
     local
       list<DAELow.VarKind> kind_lst;
       String origname_str,name_1,comment,comment_1,if_str,is,name,define_str,array_define;
       Integer n_vars_1,indx,n_vars;
-      String[:] name_arr_1,comment_arr_1,name_arr,comment_arr;
+      String[:] name_arr_1,comment_arr_1,name_arr,comment_arr,stralg_arr,stralg_comment_arr;
       Exp.ComponentRef cr,origname;
       DAELow.VarKind kind;
       DAE.VarDirection dir;
@@ -2021,7 +2106,32 @@ algorithm
       DAE.Flow flow_;
       list<String> get_name_function_ifs,var_defines;
       DAE.Type typeVar;
-    case (DAELow.VAR(varName = cr,varKind = kind,varDirection = dir,varType = typeVar,arryDim = inst_dims,startValue = value,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_),name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines) /* the variable to checked the old number of variables generated name of the from \"a\" comment of the from \"a afhalk\" number of generated strings */ 
+      Integer num_stralg;
+    /* String variables*/  
+    case (DAELow.VAR(varName = cr,varKind = kind,varDirection = dir,varType = typeVar as DAE.STRING(),arryDim = inst_dims,startValue = value,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_),name_arr,comment_arr,n_vars,stralg_arr,stralg_comment_arr,num_stralg,get_name_function_ifs,var_defines) 
+      equation 
+        kind_lst = {DAELow.VARIABLE(),DAELow.DISCRETE(),DAELow.DUMMY_DER(),
+          DAELow.DUMMY_STATE()};
+        _ = Util.listGetMember(kind, kind_lst);
+        origname_str = Exp.printComponentRefStr(origname) "if this fails then the var is not added to list" ;
+        name_1 = Util.stringAppendList({"\"",origname_str,"\""});
+        comment = Dump.unparseCommentOptionNoAnnotation(comment);
+        num_stralg = num_stralg + 1;
+        comment_1 = generateEmptyString(comment);
+        stralg_arr = arrayUpdate(stralg_arr, indx + 1, name_1);
+        stralg_comment_arr = arrayUpdate(stralg_comment_arr, indx + 1, comment_1);
+        if_str = generateGetnameFunctionIf(cr, typeVar,indx, algvarsNames);
+        is = intString(indx);
+        name = Exp.printComponentRefStr(cr);        
+        define_str = generateNameDependentOnType("algebraics",typeVar);
+        define_str = Util.stringAppendList({"#define ",name," localData->",define_str,"[",is,"]","\n"});
+        array_define = generateArrayDefine(origname, inst_dims, indx, "localData->algebraics");
+        define_str = stringAppend(define_str, array_define);
+      then
+        (name_arr,comment_arr,n_vars,stralg_arr,stralg_comment_arr,num_stralg,(if_str :: get_name_function_ifs),(define_str :: var_defines));
+      
+      /* Non-string variables*/
+    case (DAELow.VAR(varName = cr,varKind = kind,varDirection = dir,varType = typeVar,arryDim = inst_dims,startValue = value,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_),name_arr,comment_arr,n_vars,stralg_arr,stralg_comment_arr,num_stralg,get_name_function_ifs,var_defines) 
       equation 
         kind_lst = {DAELow.VARIABLE(),DAELow.DISCRETE(),DAELow.DUMMY_DER(),
           DAELow.DUMMY_STATE()};
@@ -2043,11 +2153,12 @@ algorithm
         array_define = generateArrayDefine(origname, inst_dims, indx, "localData->algebraics");
         define_str = stringAppend(define_str, array_define);
       then
-        (name_arr_1,comment_arr_1,n_vars_1,(if_str :: get_name_function_ifs),(define_str :: var_defines));
-    case (DAELow.VAR(varName = cr,varKind = kind,varDirection = dir,startValue = value,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_),name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines)
+        (name_arr_1,comment_arr_1,n_vars_1,stralg_arr,stralg_comment_arr,num_stralg,(if_str :: get_name_function_ifs),(define_str :: var_defines));
+        
+    case (DAELow.VAR(varName = cr,varKind = kind,varDirection = dir,startValue = value,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_),name_arr,comment_arr,n_vars,stralg_arr,stralg_comment_arr,num_stralg,get_name_function_ifs,var_defines)
       local Option<Absyn.Comment> comment;
       then
-        (name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines);
+        (name_arr,comment_arr,n_vars,stralg_arr,stralg_comment_arr,num_stralg,get_name_function_ifs,var_defines);
   end matchcontinue;
 end generateVarNamesAndCommentsAlgvars;
 
@@ -2104,7 +2215,6 @@ algorithm
 end generateNameDependentOnType;
 
 
-
 protected function generateVarNamesAndCommentsParams "function generateVarNamesAndCommentsParams
   Checks and generates a comment and input for a param variable
   author x02lucpo
@@ -2113,20 +2223,26 @@ protected function generateVarNamesAndCommentsParams "function generateVarNamesA
   input String[:] inStringArray2;
   input String[:] inStringArray3;
   input Integer inInteger4;
+  input String[:] inParamStrArr;
+  input String[:] inParamStrArrCmt;
+  input Integer inParamAlgStr;    
   input list<String> inStringLst5;
   input list<String> inStringLst6;
   output String[:] outStringArray1;
   output String[:] outStringArray2;
   output Integer outInteger3;
+  output String[:] outParamStrArr;
+  output String[:] outParamStrArrCmt;
+  output Integer outParamAlgStr;    
   output list<String> outStringLst4;
   output list<String> outStringLst5;
 algorithm 
-  (outStringArray1,outStringArray2,outInteger3,outStringLst4,outStringLst5):=
-  matchcontinue (inVar1,inStringArray2,inStringArray3,inInteger4,inStringLst5,inStringLst6)
+  (outStringArray1,outStringArray2,outInteger3,outParamStrArr,outParamStrArrCmt,outParamAlgStr,outStringLst4,outStringLst5):=
+  matchcontinue (inVar1,inStringArray2,inStringArray3,inInteger4,inParamStrArr,inParamStrArrCmt,inParamAlgStr,inStringLst5,inStringLst6)
     local
       String origname_str,name_1,comment,comment_1,if_str,is,name,define_str,array_define;
-      Integer n_vars_1,indx,n_vars;
-      String[:] name_arr_1,comment_arr_1,name_arr,comment_arr;
+      Integer n_vars_1,indx,n_vars,num_strparam;
+      String[:] name_arr_1,comment_arr_1,name_arr,comment_arr,strparam_arr,strparam_comment_arr;
       DAELow.Var var;
       Exp.ComponentRef cr,origname;
       DAELow.VarKind kind;
@@ -2137,7 +2253,32 @@ algorithm
       DAE.Flow flow_;
       list<String> get_name_function_ifs,var_defines;
       DAE.Type typeVar;
-    case ((var as DAELow.VAR(varName = cr,varKind = kind,varDirection = dir,varType = typeVar,arryDim = inst_dims,startValue = value,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_)),name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines) /* the variable to checked the old number of variables generated name of the from \"a\" comment of the from \"a afhalk\" number of generated strings */ 
+      
+      /* String parameters */
+    case ((var as DAELow.VAR(varName = cr,varKind = kind,varDirection = dir,varType = typeVar as DAE.STRING(),arryDim = inst_dims,startValue = value,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_)),name_arr,comment_arr,n_vars,strparam_arr,strparam_comment_arr,num_strparam,get_name_function_ifs,var_defines) 
+      equation 
+        true = DAELow.isParam(var);
+        origname_str = Exp.printComponentRefStr(origname);
+        name_1 = Util.stringAppendList({"\"",origname_str,"\""});
+        comment = Dump.unparseCommentOptionNoAnnotation(comment);
+        num_strparam = num_strparam + 1;
+        comment_1 = generateEmptyString(comment);
+        strparam_arr = arrayUpdate(strparam_arr, indx + 1, name_1);
+        strparam_comment_arr = arrayUpdate(strparam_comment_arr, indx + 1, comment_1);
+        if_str = generateGetnameFunctionIf(cr, typeVar, indx, paramNames);
+        is = intString(indx);
+        name = Exp.printComponentRefStr(cr);
+        
+        define_str = generateNameDependentOnType("parameters",typeVar);
+
+        define_str = Util.stringAppendList({"#define ",name," localData->",define_str,"[",is,"]","\n"});
+        array_define = generateArrayDefine(origname, inst_dims, indx, "localData->parameters");
+        define_str = stringAppend(define_str, array_define);
+      then
+        (name_arr,comment_arr,n_vars,strparam_arr,strparam_comment_arr,num_strparam,(if_str :: get_name_function_ifs),(define_str :: var_defines));
+
+			/* Non-string parameters */
+    case ((var as DAELow.VAR(varName = cr,varKind = kind,varDirection = dir,varType = typeVar,arryDim = inst_dims,startValue = value,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_)),name_arr,comment_arr,n_vars,strparam_arr,strparam_comment_arr,num_strparam,get_name_function_ifs,var_defines) 
       equation 
         true = DAELow.isParam(var);
         origname_str = Exp.printComponentRefStr(origname);
@@ -2157,10 +2298,10 @@ algorithm
         array_define = generateArrayDefine(origname, inst_dims, indx, "localData->parameters");
         define_str = stringAppend(define_str, array_define);
       then
-        (name_arr_1,comment_arr_1,n_vars_1,(if_str :: get_name_function_ifs),(define_str :: var_defines));
+        (name_arr_1,comment_arr_1,n_vars_1,strparam_arr,strparam_comment_arr,num_strparam,(if_str :: get_name_function_ifs),(define_str :: var_defines));
         
-    case (var,name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines)
-    then (name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines);
+    case (var,name_arr,comment_arr,n_vars,strparam_arr,strparam_comment_arr,num_strparam,get_name_function_ifs,var_defines)
+    then (name_arr,comment_arr,n_vars,strparam_arr,strparam_comment_arr,num_strparam,get_name_function_ifs,var_defines);
   end matchcontinue;
 end generateVarNamesAndCommentsParams;
 
@@ -2458,7 +2599,7 @@ end generateInputFunctionCode2;
 protected function generateOutputFunctionCode "function: generateOutputFunctionCode
  
    Generates the output_function for all the variables
-   that are OUTPUT and on top model
+   that are OUTPUT and on top model.
 "
   input DAELow.DAELow inDAELow;
   output String outString;
@@ -7043,7 +7184,7 @@ end generateComputeResidualState;
 protected function generateComputeOutput "function: generateComputeOutput
  
   This function generates the code for the calculation of the output
-  variables.
+  variables and for asserts.
 "
   input String inString1;
   input DAE.DAElist inDAElist2;
@@ -7056,7 +7197,7 @@ algorithm
   outString:=
   matchcontinue (inString1,inDAElist2,inDAELow3,inIntegerArray4,inIntegerArray5,inIntegerLstLst6)
     local
-      Codegen.CFunction cfunc_1,cfunc,body,cfunc_2;
+      Codegen.CFunction cfunc_1,cfunc,body,cfunc_2,assertBody;
       list<CFunction> extra_funcs;
       list<String> stmts2;
       String coutput,cname;
@@ -7064,15 +7205,17 @@ algorithm
       DAELow.DAELow dlow;
       Integer[:] ass1,ass2;
       list<list<Integer>> blocks;
+      Integer cg_id;
     case (cname,dae,dlow,ass1,ass2,blocks)
       equation 
         cfunc_1 = Codegen.cMakeFunction("int", "functionDAE_output", {}, 
           {""});
         cfunc_1 = addMemoryManagement(cfunc_1);
         cfunc = Codegen.cAddCleanups(cfunc_1, {"return 0;"});
-        (body,_,extra_funcs) = buildSolvedBlocks(dae, dlow, ass1, ass2, blocks, 0);
+        (body,cg_id,extra_funcs) = buildSolvedBlocks(dae, dlow, ass1, ass2, blocks, 0);
+        (assertBody,cg_id) = generateAlgorithmAsserts(dlow,cg_id);
         stmts2 = generateComputeRemovedEqns(dlow);
-        cfunc_1 = Codegen.cMergeFns({cfunc,body});
+        cfunc_1 = Codegen.cMergeFns({cfunc,body,assertBody});
         cfunc_2 = Codegen.cAddStatements(cfunc_1, stmts2);
         
         coutput = Codegen.cPrintFunctionsStr((listAppend(extra_funcs,{cfunc_2})));
@@ -7085,6 +7228,46 @@ algorithm
         fail();
   end matchcontinue;
 end generateComputeOutput;
+
+protected function generateAlgorithmAsserts "Generates assert statements from equations and algorithms into computeOutput function
+
+equation asserts are transformed to algorithm asserts, so this function goes through all algorithms and 
+generate code for the asserts it finds (which are not part of 'complex' algorithm
+"
+  input DAELow.DAELow dlow;
+  input Integer cg_id;
+  output Codegen.CFunction cfunc;
+  output Integer outCg_id;
+algorithm
+	(cfunc,outCg_id) := matchcontinue(dlow,cg_id)
+	local Algorithm.Algorithm[:] algs;
+	  case(DAELow.DAELOW(algorithms = algs),cg_id) equation
+	    (cfunc,cg_id) = generateAlgorithmAsserts2(arrayList(algs),cg_id);
+	  then (cfunc,cg_id);
+	end matchcontinue;
+end generateAlgorithmAsserts;
+
+protected function generateAlgorithmAsserts2 "Help function to generateAlgorithmAsserts"
+  input list<Algorithm.Algorithm> algs;
+  input Integer cg_id;
+  output Codegen.CFunction cfunc;
+  output Integer outCg_id;  
+algorithm
+  (cfunc,outCg_id) := matchcontinue(algs,cg_id)
+  local Codegen.CFunction cfunc1,cfunc2;
+    Algorithm.Algorithm a;
+    case ({},cg_id) then (Codegen.cEmptyFunction,cg_id);
+    case((a as Algorithm.ALGORITHM({Algorithm.ASSERT(cond =_)}))::algs,cg_id) equation
+      (cfunc1,cg_id) = Codegen.generateAlgorithm(DAE.ALGORITHM(a),cg_id,Codegen.simContext);
+      (cfunc2,cg_id) = generateAlgorithmAsserts2(algs,cg_id);
+      cfunc = Codegen.cMergeFns({cfunc1,cfunc2});
+      then (cfunc,cg_id);
+    case(_::algs,cg_id) equation
+      (cfunc,cg_id) = generateAlgorithmAsserts2(algs,cg_id);
+      then (cfunc,cg_id);        
+  end matchcontinue;
+end generateAlgorithmAsserts2;
+	
 
 protected function generateComputeRemovedEqns "function: generateComputeRemovedEqns
   author: PA

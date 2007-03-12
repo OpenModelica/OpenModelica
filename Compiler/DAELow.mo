@@ -1820,10 +1820,28 @@ algorithm
         print("===============\n");
         ae_lst = arrayList(ae);
         dumpArrayEqns(ae_lst);
+        
+        print("Algorithms:\n");
+        print("===============\n");
+				dumpAlgorithms(arrayList(algs));
       then
         ();
   end matchcontinue;
 end dump;
+
+protected function dumpAlgorithms "Help function to dump, prints algorithms to stdout"
+  input list<Algorithm.Algorithm> algs;
+algorithm
+  _ := matchcontinue(algs)
+    local list<Algorithm.Statement> stmts;
+    case({}) then ();
+    case(Algorithm.ALGORITHM(stmts)::algs) equation
+      print(DAE.dumpAlgorithmStr(DAE.ALGORITHM(Algorithm.ALGORITHM(stmts))));
+      dumpAlgorithms(algs);
+    then ();
+  end matchcontinue;
+end dumpAlgorithms;
+
 
 public function varList "function: varList
  
@@ -4057,15 +4075,30 @@ algorithm
       then
         fail();
         
-        /* assert */
-    case (DAE.DAE(elementLst = (DAE.ASSERT(exp = _) :: xs)),states,whenclauses)
+        /* assert in equation section is converted to ALGORITHM */
+    case (DAE.DAE(elementLst = (DAE.ASSERT(cond,msg) :: xs)),states,whenclauses)
       local
         Variables v;
         list<Equation> e;
+        Exp.Exp cond,msg;
+        
       equation 
         (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls) = lower2(DAE.DAE(xs), states, whenclauses) "Print.print_error_buf \"#Warning, Asserts are not supported/checked for.\\n\" &" ;
       then
-        (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls);
+        (v,kv,extVars,e,re,ie,ae,Algorithm.ALGORITHM({Algorithm.ASSERT(cond,msg)})::al,whenclauses_1,extObjCls);
+  
+       /* terminate in equation section is converted to ALGORITHM */
+    case (DAE.DAE(elementLst = (DAE.ASSERT(cond,msg) :: xs)),states,whenclauses)
+      local
+        Variables v;
+        list<Equation> e;
+        Exp.Exp cond,msg;
+        
+      equation 
+        (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls) = lower2(DAE.DAE(xs), states, whenclauses) ;
+      then
+        (v,kv,extVars,e,re,ie,ae,Algorithm.ALGORITHM({Algorithm.ASSERT(cond,msg)})::al,whenclauses_1,extObjCls);    
+        
     case (DAE.DAE(elementLst = (_ :: xs)),states,whenclauses)
       local
         Variables v;
@@ -4431,6 +4464,14 @@ algorithm
         outputs = Util.listUnionOnTrue(outputs1, outputs2, Exp.expEqual);    
       then (inputs,outputs);          
 
+    case(vars,Algorithm.ASSERT(cond = e1,msg=e2))
+      local Exp.Exp e1,e2;
+      equation
+        inputs1 = statesAndVarsExp(e1,vars);
+        inputs2 = statesAndVarsExp(e1,vars);
+        inputs = Util.listListUnionOnTrue({inputs1, inputs2}, Exp.expEqual);
+     then (inputs,{});  
+
 			// Features not yet supported.
     case(vars,Algorithm.FOR(type_=_))
       equation
@@ -4439,10 +4480,6 @@ algorithm
     case(vars,Algorithm.WHILE(exp=_))
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"While statements in algorithms not supported yet. Suggested workaround: place while statement in a Modelica function"});
-     then fail();  
-    case(vars,Algorithm.ASSERT(exp1 = _))
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"assert statements in algorithms not supported yet. Suggested workaround: If possible, use assert in equation section instead"});
      then fail();  
   end matchcontinue;
 end lowerStatementInputsOutputs;
@@ -5235,7 +5272,7 @@ algorithm
         print("incidence_row_stmts on WHEN not implemented\n");
       then
         {};
-    case ((Algorithm.ASSERT(exp1 = _) :: rest),vars)
+    case ((Algorithm.ASSERT(cond = _) :: rest),vars)
       equation 
         print("incidence_row_stmts on ASSERT not implemented\n");
       then
@@ -10388,7 +10425,7 @@ algorithm
         stmts_1 = replaceVariablesInStmts(stmts, s, t);
       then
         Algorithm.WHEN(e_1,stmts_1,SOME(stmt1),helpVarLst);
-    case (Algorithm.ASSERT(exp1 = e1,exp2 = e2),s,t)
+    case (Algorithm.ASSERT(cond = e1,msg = e2),s,t)
       equation 
         (e1_1,_) = Exp.replaceExpList(e1, s, t);
         (e2_1,_) = Exp.replaceExpList(e2, s, t);

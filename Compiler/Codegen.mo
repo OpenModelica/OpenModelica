@@ -2653,7 +2653,7 @@ algorithm
       then
         (cfn,tnr2);
         
-    case (Algorithm.ASSERT(exp1 = e1,exp2 = e2),tnr,CONTEXT(codeContext,_,loopContext))
+    case (Algorithm.ASSERT(cond = e1,msg = e2),tnr,CONTEXT(codeContext,_,loopContext))
       local CodeContext codeContext;
             LoopContext loopContext;
       equation 
@@ -3884,6 +3884,24 @@ algorithm
       then
         (cfn,tvar,tnr2);
         
+     case (Exp.CALL(path = Absyn.IDENT(name = "String"),expLst = {s,minlen,leftjust,signdig},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */ 
+      local String cref_str; Exp.Exp s,minlen,leftjust,signdig; Boolean needCast; String var1,var2,var3,var4;
+        CFunction cfn3,cfn4;
+      equation 
+        tp = Exp.typeof(s);
+        tp_str = expTypeStr(tp, false);
+        (tdecl,tvar,tnr1) = generateTempDecl("modelica_string", tnr);
+        (cfn1,var1,tnr1) = generateExpression(s, tnr1, context);
+        (cfn2,var2,tnr1) = generateExpression(minlen, tnr1, context);
+        (cfn3,var3,tnr1) = generateExpression(leftjust, tnr1, context);
+        (cfn4,var4,tnr1) = generateExpression(signdig, tnr1, context);                        
+        cfn = cAddVariables(cEmptyFunction, {tdecl});
+        stmt = Util.stringAppendList({tp_str,"_to_modelica_string(&",tvar,",",var1,",",var2,",",var3,",",var4,");"});
+        cfn = cAddStatements(cfn, {stmt});
+        cfn = cMergeFns({cfn1,cfn2,cfn3,cfn4,cfn});
+      then
+        (cfn,tvar,tnr1);
+        
   end matchcontinue;
 end generateBuiltinFunction;
 
@@ -3993,6 +4011,22 @@ algorithm
       Integer tnr1,tnr2,tnr,tnr3;
       Exp.Exp e1,e2;
       Context context;
+      
+      /* str + str */
+    case (e1,Exp.ADD(ty = Exp.STRING()),e2,tnr,context)
+      local String tdecl,tvar,stmt;
+      equation 
+        (tdecl,tvar,tnr) = generateTempDecl("modelica_string", tnr);
+        (cfn1,var1,tnr) = generateExpression(e1, tnr, context);
+        (cfn2,var2,tnr) = generateExpression(e2, tnr, context);
+        stmt = Util.stringAppendList({"cat_modelica_string(&",tvar,",&",var1,",&",var2,");"});
+        cfn = cAddVariables(cEmptyFunction,{tdecl});
+        cfn = cAddStatements(cfn,{stmt});
+        cfn = cMergeFns({cfn1, cfn2,cfn});
+      then
+        (cfn,tvar,tnr);
+
+      /* value + value */
     case (e1,Exp.ADD(ty = _),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);

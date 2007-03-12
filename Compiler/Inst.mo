@@ -7001,21 +7001,33 @@ algorithm
       then
         fail();
         /* assert statements*/
-    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_ASSERT(exp = e1,condition = e2),initial_,impl)
+    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_ASSERT(condition = e1,message= e2),initial_,impl)
       equation 
         (cache,e1_1,Types.PROP((Types.T_BOOL(_),_),_),_) = Static.elabExp(cache,env, e1, impl, NONE,true) "assert statement" ;
         (cache,e2_1,Types.PROP((Types.T_STRING(_),_),_),_) = Static.elabExp(cache,env, e2, impl, NONE,true);
+        (cache,e1_2) = Prefix.prefixExp(cache,env, e1_1, pre);                
+        (cache,e2_2) = Prefix.prefixExp(cache,env, e2_1, pre);                
       then
-        (cache,{
-          DAE.ASSERT(Exp.CALL(Absyn.IDENT("assert"),{e1_1,e2_1},false,false,Exp.OTHER()))},env,csets,ci_state);
+        (cache,{DAE.ASSERT(e1_2,e2_2)},env,csets,ci_state);
+
+        /* terminate statements */
+    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_TERMINATE(message= e1),initial_,impl)
+      equation 
+        (cache,e1_1,Types.PROP((Types.T_STRING(_),_),_),_) = Static.elabExp(cache,env, e1, impl, NONE,true);
+        (cache,e1_2) = Prefix.prefixExp(cache,env, e1_1, pre);          
+      then
+        (cache,{DAE.TERMINATE(e1_2)},env,csets,ci_state);
 
         /* reinit statement */
     case (cache,env,mod,pre,csets,ci_state,SCode.EQ_REINIT(componentRef = cr,state = e2),initial_,impl)
+      local Exp.ComponentRef cr_2; Exp.Type t;
       equation 
-        (cache,Exp.CREF(cr_1,_),_,_) = Static.elabCref(cache,env, cr, impl,false) "reinit statement" ;
+        (cache,Exp.CREF(cr_1,t),_,_) = Static.elabCref(cache,env, cr, impl,false) "reinit statement" ;
         (cache,e2_1,_,_) = Static.elabExp(cache,env, e2, impl, NONE,true);
+        (cache,e2_2) = Prefix.prefixExp(cache,env, e2_1, pre);
+        (cache,Exp.CREF(cr_2,_)) = Prefix.prefixExp(cache,env, Exp.CREF(cr_1,t), pre);        
       then
-        (cache,{DAE.REINIT(cr_1,e2_1)},env,csets,ci_state);
+        (cache,{DAE.REINIT(cr_2,e2_2)},env,csets,ci_state);
     case (_,env,_,_,_,_,eqn,_,impl)
       equation 
         Debug.fprint("failtrace", "- inst_equation_common failed for eqn: ");
@@ -7851,6 +7863,15 @@ algorithm
       then
         (cache,stmt);
         
+             /* terminate(msg) */
+    case (cache,env,pre,Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "terminate"),functionArgs = Absyn.FUNCTIONARGS(args = {msg},argNames = {})),impl)
+      equation 
+        (cache,msg_1,msgprop,_) = Static.elabExp(cache,env, msg, impl, NONE,true);
+        (cache,msg_2) = Prefix.prefixExp(cache,env, msg_1, pre);        
+        stmt = Algorithm.makeTerminate(msg_2, msgprop);
+      then
+        (cache,stmt);
+        
         /* reinit(variable,value) */
 	   case (cache,env,pre,Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "reinit"),functionArgs = Absyn.FUNCTIONARGS(args = {var,value},argNames = {})),impl)
       equation 
@@ -8205,10 +8226,9 @@ algorithm
       then
         (cache,sets,{
           DAE.ASSERT(
-          Exp.CALL(Absyn.IDENT("assert"),
-          {
           Exp.RELATION(Exp.CREF(c1_1,Exp.REAL()),Exp.EQUAL(Exp.BOOL()),
-          Exp.CREF(c2_1,Exp.REAL())),Exp.SCONST("automatically generated from connect")},false,true,Exp.OTHER()))});
+          Exp.CREF(c2_1,Exp.REAL())),Exp.SCONST("automatically generated from connect")
+          )});
     case (cache,sets,env,pre,c1,_,(Types.T_REAL(varLstReal = _),_),c2,_,(Types.T_REAL(varLstReal = _),_),false)
       equation 
         c1_1 = Prefix.prefixCref(pre, c1);

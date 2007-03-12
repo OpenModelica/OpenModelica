@@ -37,8 +37,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+
 #ifndef MODELICA_STRING_H_
 #define MODELICA_STRING_H_
+
+#include "real_array.h"
+#include "integer_array.h"
+#include "boolean_array.h"
 
 typedef char* modelica_string_t;
 
@@ -50,10 +55,21 @@ void init_modelica_string(modelica_string_t* dest, const char* str);
 
 void alloc_modelica_string(modelica_string_t* dest,int length);
 
+void modelica_real_to_modelica_string(modelica_string_t* dest,modelica_real r,modelica_integer minLen,
+modelica_boolean leftJustified,modelica_integer signDigits);
+
+void modelica_integer_to_modelica_string(modelica_string_t* dest,modelica_integer i,
+	modelica_integer minLen,modelica_boolean leftJustified,modelica_integer signDigits);
+
+void modelica_boolean_to_modelica_string(modelica_string_t* dest,modelica_boolean b,
+modelica_integer minLen, modelica_boolean leftJustified, modelica_integer signDigits);
+
 /* Frees memory*/
 void free_modelica_string(modelica_string_t*);
 
 /* Copy string*/
 void copy_modelica_string(modelica_string_t* source, modelica_string_t* dest);
 
+/* Concatenate strings */
+void cat_modelica_string(modelica_string_t* dest, modelica_string_t *s1, modelica_string_t *s2);
 #endif

@@ -54,8 +54,8 @@ using namespace std;
 /* Global Data */
 /***************/
 
-// Becomes non-zero when user terminates simulation.
-int userTermination=0;
+// Becomes non-zero when model terminates simulation.
+int modelTermination=0;
 
 long numpoints; // the number of points requested by init file
 
@@ -230,7 +230,7 @@ int main(int argc, char**argv)
   } else {
     cout << "Unrecognized solver: "<< method <<", using dassl." << endl;
     retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);    
-  }
+  }  
   deInitializeDataStruc(globalData,ALL);
   return retVal;	
 }

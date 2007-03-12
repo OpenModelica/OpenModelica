@@ -249,10 +249,14 @@ uniontype EEquation "These are almost identical to the `Absyn\' versions.  In `E
   end EQ_WHEN;
 
   record EQ_ASSERT
-    Absyn.Exp exp;
-    Absyn.Exp condition "condition message string" ;
+    Absyn.Exp condition;
+    Absyn.Exp message;
   end EQ_ASSERT;
 
+  record EQ_TERMINATE
+    Absyn.Exp message;
+  end EQ_TERMINATE;
+  
   record EQ_REINIT
     Absyn.ComponentRef componentRef;
     Absyn.Exp state "state variable the new value" ;
@@ -1120,7 +1124,7 @@ algorithm
       then
         res;
     case (EQ_WHEN(exp = _)) then "EQ_WHEN(... not impl ...)"; 
-    case (EQ_ASSERT(exp = e1,condition = e2))
+    case (EQ_ASSERT(condition = e1,message = e2))
       equation 
         s1 = Dump.printExpStr(e1);
         s2 = Dump.printExpStr(e2);
@@ -1190,6 +1194,7 @@ algorithm
       then
         EQ_FOR(i,e,l_1);
     case Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("assert", _),functionArgs = Absyn.FUNCTIONARGS(args = {e1,e2},argNames = {})) then EQ_ASSERT(e1,e2); 
+    case Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("terminate", _),functionArgs = Absyn.FUNCTIONARGS(args = {e1},argNames = {})) then EQ_TERMINATE(e1); 
     case Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("reinit", _),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),e2},argNames = {})) then EQ_REINIT(cr,e2); 
   end matchcontinue;
 end elabEquation;

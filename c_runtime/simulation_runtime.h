@@ -60,7 +60,7 @@ double old2(double*);
 
 extern int sim_verbose; // control debug output during simulation.
 
-extern int userTermination; //// Becomes non-zero when user terminates simulation.
+extern int modelTermination; //// Becomes non-zero when user terminates simulation.
 
 /* Flags for controlling logging to stdout */
 extern const int LOG_EVENTS;
@@ -238,9 +238,32 @@ int initial_residual();
 
 double newTime(double t, double step,double stop);
 
-#define MODELICA_ASSERT(cond,msg) do { if (!(cond)) { printf(msg); \
-userTermination=1;} } while(0)
+#define MODELICA_ASSERT(cond,msg) do { if (!(cond)) { modelTermination=1; \
+throw TerminateSimulationException(string(msg)); } } while(0)
+
+#define MODELICA_TERMINATE(msg) do { modelTermination=1; \
+throw TerminateSimulationException(string(msg)); } } while(0)
 
 #define initial() localData->init
+
+#include <string>
+
+/* \brief This class is used for throwing an exception when simulation code should be terminated. 
+ * For instance, when a terminate call occurse or if an assert becomes active
+ */
+
+class TerminateSimulationException {
+ public:	
+ 	TerminateSimulationException(std::string msg) : currentTime(0.0), errorMessage(std::string(msg)) {} ;
+	TerminateSimulationException(double time) : currentTime(time), errorMessage(std::string("")) {} ;
+	TerminateSimulationException(double time, std::string msg) : currentTime(time), errorMessage(msg) {};
+	TerminateSimulationException() : currentTime(0.0) {};
+	~TerminateSimulationException() {};
+	std::string getMessage() { return errorMessage; };
+	double getTime() { return currentTime; };
+	private :
+	double currentTime;	
+	std::string errorMessage;
+};
 
 #endif

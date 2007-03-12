@@ -1958,6 +1958,7 @@ protected function elabBuiltinCardinality "function: elabBuiltinCardinality
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
@@ -1974,7 +1975,7 @@ algorithm
       Absyn.ComponentRef cr;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},impl) /* impl */ 
+    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl) /* impl */ 
       equation 
         (cache,(exp_1 as Exp.CREF(cr_1,_)),Types.PROP(tp1,_),_) = elabExp(cache,env, exp, impl, NONE,true);
       then
@@ -1991,13 +1992,14 @@ protected function elabBuiltinSize "function: elabBuiltinSize
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp dimp,arraycrefe,exp;
       Types.Const c1,c2_1,c,c_1;
@@ -2009,7 +2011,7 @@ algorithm
       Env.Cache cache;
 
       /*size(A,x) that returns size of x:th dimension */
-    case (cache,env,{arraycr,dim},impl)
+    case (cache,env,{arraycr,dim},_,impl)
       equation 
         (cache,dimp,Types.PROP(_,c1),_) = elabExp(cache,env, dim, impl, NONE,true)  ;
         (cache,arraycrefe,Types.PROP(arrtp,_),_) = elabExp(cache,env, arraycr, impl, NONE,true);
@@ -2021,7 +2023,7 @@ algorithm
         (cache,exp,Types.PROP((Types.T_INTEGER({}),NONE),c));
         
         /* size(A) */
-    case (cache,env,{arraycr},impl)
+    case (cache,env,{arraycr},_,impl)
       local Boolean c;
       equation 
         (cache,arraycrefe,Types.PROP(arrtp,_),_) = elabExp(cache,env, arraycr, impl, NONE,true)  ;
@@ -2032,7 +2034,7 @@ algorithm
         (cache,exp,Types.PROP(
           (
           Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE),c_1));
-    case (cache,env,expl,impl)
+    case (cache,env,expl,_,impl)
       equation 
         Debug.fprint("failtrace", "- elab_builtin_size failed\n");
       then
@@ -2047,13 +2049,14 @@ protected function elabBuiltinNDims
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp arraycrefe,exp;
       Types.Const c;
@@ -2064,7 +2067,7 @@ algorithm
       Env.Cache cache;
       list<Absyn.Exp> expl;
       Integer nd;
-    case (cache,env,{arraycr},impl)
+    case (cache,env,{arraycr},_,impl)
       equation 
         (cache,arraycrefe,Types.PROP(arrtp,_),_) = elabExp(cache,env, arraycr, impl, NONE,true) "ndims(A)" ;
         c2 = Types.dimensionsKnown(arrtp);
@@ -2073,7 +2076,7 @@ algorithm
         exp = Exp.ICONST(nd);
       then
         (cache,exp,Types.PROP((Types.T_INTEGER({}),NONE),c));
-    case (cache,env,expl,impl)
+    case (cache,env,expl,_,impl)
       equation 
         Debug.fprint("failtrace", "- elab_builtin_ndims failed\n");
       then
@@ -2089,13 +2092,14 @@ protected function elabBuiltinFill "function: elabBuiltinFill
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
 	output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp s_1,exp;
       Types.Properties prop;
@@ -2110,7 +2114,7 @@ algorithm
       Ident implstr,expstr,str;
       list<Ident> expstrs;
       Env.Cache cache;
-    case (cache,env,(s :: dims),impl) /* impl */ 
+    case (cache,env,(s :: dims),_,impl) /* impl */ 
       equation 
         (cache,s_1,prop,_) = elabExp(cache,env, s, impl, NONE,true);
         (cache,dims_1,dimprops,_) = elabExpList(cache,env, dims, impl, NONE,true);
@@ -2119,7 +2123,7 @@ algorithm
         (cache,exp,prop) = elabBuiltinFill2(cache,env, s_1, sty, dimvals);        
       then
         (cache,exp,prop);
-    case (cache,env,dims,impl)
+    case (cache,env,dims,_,impl)
       equation 
         Debug.fprint("failtrace", 
           "- elab_builtin_fill: Couldn't elaborate fill(): ");
@@ -2195,13 +2199,14 @@ protected function elabBuiltinTranspose "function: elabBuiltinTranspose
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Type tp;
       Boolean sc,impl;
@@ -2214,7 +2219,7 @@ algorithm
       Absyn.Exp matexp;
       Exp.Exp exp_1,exp;
       Env.Cache cache;
-    case (cache,env,{matexp},impl) /* impl try symbolically transpose the ARRAY expression */ 
+    case (cache,env,{matexp},_,impl) /* impl try symbolically transpose the ARRAY expression */ 
       equation 
         (cache,Exp.ARRAY(tp,sc,expl),Types.PROP((Types.T_ARRAY(d1,(Types.T_ARRAY(d2,eltp),_)),_),_),_) 
         	= elabExp(cache,env, matexp, impl, NONE,true);
@@ -2224,7 +2229,7 @@ algorithm
         prop = Types.PROP(newtp,Types.C_VAR());
       then
         (cache,Exp.ARRAY(tp,sc,exp_2),prop);
-    case (cache,env,{matexp},impl) /* try symbolically transpose the MATRIX expression */ 
+    case (cache,env,{matexp},_,impl) /* try symbolically transpose the MATRIX expression */ 
       local
         Integer sc;
         list<list<tuple<Exp.Exp, Boolean>>> expl,exp_2;
@@ -2237,7 +2242,7 @@ algorithm
         prop = Types.PROP(newtp,Types.C_VAR());
       then
         (cache,Exp.MATRIX(tp,sc,exp_2),prop);
-    case (cache,env,{matexp},impl) /* .. otherwise create transpose call */ 
+    case (cache,env,{matexp},_,impl) /* .. otherwise create transpose call */ 
       local Exp.Type tp;
       equation 
         (cache,exp_1,Types.PROP((Types.T_ARRAY(d1,(Types.T_ARRAY(d2,eltp),_)),_),_),_) 
@@ -2352,13 +2357,14 @@ protected function elabBuiltinSum "function: elabBuiltinSum
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+    input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
 	output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp exp_1,exp_2;
       Types.ArrayDim dim;
@@ -2368,7 +2374,7 @@ algorithm
       Absyn.Exp arrexp;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{arrexp},impl) /* impl */ 
+    case (cache,env,{arrexp},_,impl) /* impl */ 
       local String str;
       equation 
         (cache,exp_1,Types.PROP((Types.T_INTEGER({}),_),c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
@@ -2376,7 +2382,7 @@ algorithm
         Error.addMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str});
       then
          (cache,exp_1,Types.PROP((Types.T_INTEGER({}),NONE),c));
-    case (cache,env,{arrexp},impl) /* impl */ 
+    case (cache,env,{arrexp},_,impl) /* impl */ 
       local String str;
       equation 
         (cache,exp_1,Types.PROP((Types.T_REAL({}),_),c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
@@ -2384,7 +2390,7 @@ algorithm
         Error.addMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str});
       then
          (cache,exp_1,Types.PROP((Types.T_REAL({}),NONE),c));
-    case (cache,env,{arrexp},impl) /* impl */ 
+    case (cache,env,{arrexp},_,impl) /* impl */ 
       local Exp.Type etp; Types.Type t;
       equation 
         (cache,exp_1,Types.PROP(t as (Types.T_ARRAY(dim,tp),_),c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
@@ -2430,13 +2436,14 @@ protected function elabBuiltinProduct "function: elabBuiltinProduct
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
 	output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp exp_1,exp_2;
       Types.ArrayDim dim;
@@ -2446,7 +2453,7 @@ algorithm
       Absyn.Exp arrexp;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{arrexp},impl) /* impl */ 
+    case (cache,env,{arrexp},_,impl) /* impl */ 
       local String str;
       equation 
         (cache,exp_1,Types.PROP((Types.T_INTEGER({}),_),c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
@@ -2454,7 +2461,7 @@ algorithm
         Error.addMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str});
       then
          (cache,exp_1,Types.PROP((Types.T_INTEGER({}),NONE),c));
-    case (cache,env,{arrexp},impl) /* impl */ 
+    case (cache,env,{arrexp},_,impl) /* impl */ 
       local String str;
       equation 
         (cache,exp_1,Types.PROP((Types.T_REAL({}),_),c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
@@ -2462,7 +2469,7 @@ algorithm
         Error.addMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str});
       then
          (cache,exp_1,Types.PROP((Types.T_REAL({}),NONE),c));
-    case (cache,env,{arrexp},impl) /* impl */ 
+    case (cache,env,{arrexp},_,impl) /* impl */ 
       local Exp.Type etp; Types.Type t;
       equation 
         (cache,exp_1,Types.PROP(t as (Types.T_ARRAY(dim,tp),_),c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
@@ -2509,13 +2516,14 @@ protected function elabBuiltinPre "function: elabBuiltinPre
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp exp_1,exp_2;
       tuple<Types.TType, Option<Absyn.Path>> tp;
@@ -2526,7 +2534,7 @@ algorithm
       Ident s,el_str;
       list<Absyn.Exp> expl;
       Env.Cache cache;
-    case (cache,env,{exp},impl) /* impl */ 
+    case (cache,env,{exp},_,impl) /* impl */ 
       local Exp.Type t;
       equation 
         (cache,exp_1,Types.PROP(tp,c),_) = elabExp(cache,env, exp, impl, NONE,true);
@@ -2535,7 +2543,7 @@ algorithm
         exp_2 = Exp.CALL(Absyn.IDENT("pre"),{exp_1},false,true,t);
       then
         (cache,exp_2,Types.PROP(tp,c));
-    case (cache,env,{exp},impl)
+    case (cache,env,{exp},_,impl)
       local Exp.Exp exp;
       equation 
         (cache,exp,Types.PROP(tp,c),_) = elabExp(cache,env, exp, impl, NONE,true);
@@ -2544,7 +2552,7 @@ algorithm
         Error.addMessage(Error.OPERAND_BUILTIN_TYPE, {"pre",s});
       then
         fail();
-    case (cache,env,expl,_)
+    case (cache,env,expl,_,_)
       equation 
         el_str = Exp.printListStr(expl, Dump.printExpStr, ", ");
         s = Util.stringAppendList({"pre(",el_str,")"});
@@ -2562,19 +2570,20 @@ protected function elabBuiltinInitial "function: elabBuiltinInitial
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       list<Env.Frame> env;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{},impl) then (cache,Exp.CALL(Absyn.IDENT("initial"),{},false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()));  /* impl */ 
-    case (cache,env,_,_)
+    case (cache,env,{},{},impl) then (cache,Exp.CALL(Absyn.IDENT("initial"),{},false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()));  /* impl */ 
+    case (cache,env,_,_,_)
       equation 
         Error.addMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, 
           {"initial takes no arguments"});
@@ -2591,19 +2600,20 @@ protected function elabBuiltinTerminal "function: elabBuiltinTerminal
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       list<Env.Frame> env;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{},impl) then (cache,Exp.CALL(Absyn.IDENT("terminal"),{},false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()));  /* impl */ 
-    case (cache,env,_,impl)
+    case (cache,env,{},{},impl) then (cache,Exp.CALL(Absyn.IDENT("terminal"),{},false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()));  /* impl */ 
+    case (cache,env,_,_,impl)
       equation 
         Error.addMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, 
           {"terminal takes no arguments"});
@@ -2621,13 +2631,14 @@ protected function elabBuiltinArray "function: elabBuiltinArray
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       list<Exp.Exp> exp_1,exp_2;
       list<Types.Properties> typel;
@@ -2640,7 +2651,7 @@ algorithm
       list<Env.Frame> env;
       list<Absyn.Exp> expl;
       Env.Cache cache;
-    case (cache,env,expl,impl) /* impl */ 
+    case (cache,env,expl,_,impl) /* impl */ 
       equation 
         (cache,exp_1,typel,_) = elabExpList(cache,env, expl, impl, NONE,true);
         (exp_2,Types.PROP(tp,c)) = elabBuiltinArray2(exp_1, typel);
@@ -2728,13 +2739,14 @@ protected function elabBuiltinZeros "function: elabBuiltinZeros
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp e;
       Types.Properties p;
@@ -2742,9 +2754,9 @@ algorithm
       list<Absyn.Exp> args;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,args,impl) /* impl */ 
+    case (cache,env,args,_,impl) /* impl */ 
       equation 
-        (cache,e,p) = elabBuiltinFill(cache,env, (Absyn.INTEGER(0) :: args), impl);
+        (cache,e,p) = elabBuiltinFill(cache,env, (Absyn.INTEGER(0) :: args),{}, impl);
       then
         (cache,e,p);
   end matchcontinue;
@@ -2825,13 +2837,14 @@ protected function elabBuiltinOnes "function: elabBuiltinOnes
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp e;
       Types.Properties p;
@@ -2839,9 +2852,9 @@ algorithm
       list<Absyn.Exp> args;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,args,impl) /* impl */ 
+    case (cache,env,args,_,impl) /* impl */ 
       equation 
-        (cache,e,p) = elabBuiltinFill(cache,env, (Absyn.INTEGER(1) :: args), impl);
+        (cache,e,p) = elabBuiltinFill(cache,env, (Absyn.INTEGER(1) :: args), {}, impl);
       then
         (cache,e,p);
   end matchcontinue;
@@ -2854,13 +2867,14 @@ protected function elabBuiltinMax "function: elabBuiltinMax
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp arrexp_1,s1_1,s2_1;
       tuple<Types.TType, Option<Absyn.Path>> ty,elt_ty;
@@ -2869,7 +2883,7 @@ algorithm
       Absyn.Exp arrexp,s1,s2;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{arrexp},impl) /* impl max(vector) */ 
+    case (cache,env,{arrexp},_,impl) /* impl max(vector) */ 
       local Exp.Type tp;
       equation 
         (cache,arrexp_1,Types.PROP(ty,c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
@@ -2877,7 +2891,7 @@ algorithm
         tp = Types.elabType(ty);
       then
         (cache,Exp.CALL(Absyn.IDENT("max"),{arrexp_1},false,true,tp),Types.PROP(elt_ty,c));
-    case (cache,env,{s1,s2},impl)
+    case (cache,env,{s1,s2},_,impl)
       local Exp.Type tp;
       equation 
         (cache,s1_1,Types.PROP(ty,c1),_) = elabExp(cache,env, s1, impl, NONE,true) "max(x,y) where x & y are scalars" ;
@@ -2896,13 +2910,14 @@ protected function elabBuiltinMin "function: elabBuiltinMin
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp arrexp_1,s1_1,s2_1;
       tuple<Types.TType, Option<Absyn.Path>> ty,elt_ty;
@@ -2912,14 +2927,14 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       Exp.Type tp;
-    case (cache,env,{arrexp},impl) /* impl min(vector) */ 
+    case (cache,env,{arrexp},_,impl) /* impl min(vector) */ 
       equation 
         (cache,arrexp_1,Types.PROP(ty,c),_) = elabExp(cache,env, arrexp, impl, NONE,true);
         elt_ty = Types.arrayElementType(ty);
         tp = Types.elabType(ty);
       then
         (cache,Exp.CALL(Absyn.IDENT("min"),{arrexp_1},false,true,tp),Types.PROP(elt_ty,c));
-    case (cache,env,{s1,s2},impl)
+    case (cache,env,{s1,s2},_,impl)
       equation 
         (cache,s1_1,Types.PROP(ty,c1),_) = elabExp(cache,env, s1, impl, NONE,true) "min(x,y) where x & y are scalars" ;
         (cache,s2_1,Types.PROP(_,c2),_) = elabExp(cache,env, s2, impl, NONE,true);
@@ -2937,13 +2952,14 @@ protected function elabBuiltinFloor "function: elabBuiltinFloor
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp s1_1;
       Types.Const c;
@@ -2951,7 +2967,7 @@ algorithm
       Absyn.Exp s1;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{s1},impl) /* impl */ 
+    case (cache,env,{s1},_,impl) /* impl */ 
       equation 
         (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c),_) = elabExp(cache,env, s1, impl, NONE,true) "print \"# floor function not implemented yet\\n\" &" ;
       then
@@ -2966,13 +2982,14 @@ protected function elabBuiltinCeil "function: elabBuiltinCeil
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp s1_1;
       Types.Const c;
@@ -2980,7 +2997,7 @@ algorithm
       Absyn.Exp s1;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{s1},impl) /* impl */ 
+    case (cache,env,{s1},_,impl) /* impl */ 
       equation 
         (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c),_) = elabExp(cache,env, s1, impl, NONE,true);
       then
@@ -2995,13 +3012,14 @@ protected function elabBuiltinAbs "function: elabBuiltinAbs
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp s1_1;
       Types.Const c;
@@ -3009,12 +3027,12 @@ algorithm
       Absyn.Exp s1;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{s1},impl) /* impl */ 
+    case (cache,env,{s1},_,impl) /* impl */ 
       equation 
         (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c),_) = elabExp(cache,env, s1, impl, NONE,true);
       then
         (cache,Exp.CALL(Absyn.IDENT("abs"),{s1_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),c));
-    case (cache,env,{s1},impl)
+    case (cache,env,{s1},_,impl)
       equation 
         (cache,s1_1,Types.PROP((Types.T_INTEGER({}),NONE),c),_) = elabExp(cache,env, s1, impl, NONE,true);
       then
@@ -3029,13 +3047,14 @@ protected function elabBuiltinSqrt "function: elabBuiltinSqrt
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp s1_1;
       Types.Const c;
@@ -3043,7 +3062,7 @@ algorithm
       Absyn.Exp s1;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{s1},impl) /* impl */ 
+    case (cache,env,{s1},_,impl) /* impl */ 
       equation 
         (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c),_) = elabExp(cache,env, s1, impl, NONE,true);
          /* print \"# sqrt function not implemented yet REAL\\n\" */ 
@@ -3059,13 +3078,14 @@ protected function elabBuiltinDiv "function: elabBuiltinDiv
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp s1_1,s2_1;
       Types.Const c1,c2,c;
@@ -3073,28 +3093,28 @@ algorithm
       Absyn.Exp s1,s2;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{s1,s2},impl) /* impl */ 
+    case (cache,env,{s1,s2},_,impl) /* impl */ 
       equation 
         (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
         (cache,s2_1,Types.PROP((Types.T_REAL({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         c = Types.constAnd(c1, c2);
       then
         (cache,Exp.CALL(Absyn.IDENT("div"),{s1_1,s2_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),c));
-    case (cache,env,{s1,s2},impl)
+    case (cache,env,{s1,s2},_,impl)
       equation 
         (cache,s1_1,Types.PROP((Types.T_INTEGER({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
         (cache,s2_1,Types.PROP((Types.T_REAL({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         c = Types.constAnd(c1, c2);
       then
         (cache,Exp.CALL(Absyn.IDENT("div"),{s1_1,s2_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),c));
-    case (cache,env,{s1,s2},impl)
+    case (cache,env,{s1,s2},_,impl)
       equation 
         (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
         (cache,s2_1,Types.PROP((Types.T_INTEGER({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         c = Types.constAnd(c1, c2);
       then
         (cache,Exp.CALL(Absyn.IDENT("div"),{s1_1,s2_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),c));
-    case (cache,env,{s1,s2},impl)
+    case (cache,env,{s1,s2},_,impl)
       equation 
         (cache,s1_1,Types.PROP((Types.T_INTEGER({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
         (cache,s2_1,Types.PROP((Types.T_INTEGER({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
@@ -3110,13 +3130,14 @@ protected function elabBuiltinMod "function: elabBuiltinMod
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp s1_1,s2_1;
       Types.Const c1,c2,c;
@@ -3124,28 +3145,28 @@ algorithm
       Absyn.Exp s1,s2;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{s1,s2},impl) /* impl */ 
+    case (cache,env,{s1,s2},_,impl) /* impl */ 
       equation 
         (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
         (cache,s2_1,Types.PROP((Types.T_REAL({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         c = Types.constAnd(c1, c2);
       then
         (cache,Exp.CALL(Absyn.IDENT("mod"),{s1_1,s2_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),c));
-    case (cache,env,{s1,s2},impl)
+    case (cache,env,{s1,s2},_,impl)
       equation 
         (cache,s1_1,Types.PROP((Types.T_INTEGER({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
         (cache,s2_1,Types.PROP((Types.T_REAL({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         c = Types.constAnd(c1, c2);
       then
         (cache,Exp.CALL(Absyn.IDENT("mod"),{s1_1,s2_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),c));
-    case (cache,env,{s1,s2},impl)
+    case (cache,env,{s1,s2},_,impl)
       equation 
         (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
         (cache,s2_1,Types.PROP((Types.T_INTEGER({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         c = Types.constAnd(c1, c2);
       then
         (cache,Exp.CALL(Absyn.IDENT("mod"),{s1_1,s2_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),c));
-    case (cache,env,{s1,s2},impl)
+    case (cache,env,{s1,s2},_,impl)
       equation 
         (cache,s1_1,Types.PROP((Types.T_INTEGER({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
         (cache,s2_1,Types.PROP((Types.T_INTEGER({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
@@ -3162,13 +3183,14 @@ protected function elabBuiltinRem "function: elab_builtin_sqrt
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp s1_1,s2_1;
       Types.Const c1,c2,c;
@@ -3176,28 +3198,28 @@ algorithm
       Absyn.Exp s1,s2;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{s1,s2},impl) /* impl */ 
+    case (cache,env,{s1,s2},_,impl) /* impl */ 
       equation 
         (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
         (cache,s2_1,Types.PROP((Types.T_REAL({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         c = Types.constAnd(c1, c2);
       then
         (cache,Exp.CALL(Absyn.IDENT("rem"),{s1_1,s2_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),c));
-    case (cache,env,{s1,s2},impl)
+    case (cache,env,{s1,s2},_,impl)
       equation 
         (cache,s1_1,Types.PROP((Types.T_INTEGER({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
         (cache,s2_1,Types.PROP((Types.T_REAL({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         c = Types.constAnd(c1, c2);
       then
         (cache,Exp.CALL(Absyn.IDENT("rem"),{s1_1,s2_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),c));
-    case (cache,env,{s1,s2},impl)
+    case (cache,env,{s1,s2},_,impl)
       equation 
         (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
         (cache,s2_1,Types.PROP((Types.T_INTEGER({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
         c = Types.constAnd(c1, c2);
       then
         (cache,Exp.CALL(Absyn.IDENT("rem"),{s1_1,s2_1},false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),c));
-    case (cache,env,{s1,s2},impl)
+    case (cache,env,{s1,s2},_,impl)
       equation 
         (cache,s1_1,Types.PROP((Types.T_INTEGER({}),NONE),c1),_) = elabExp(cache,env, s1, impl, NONE,true);
         (cache,s2_1,Types.PROP((Types.T_INTEGER({}),NONE),c2),_) = elabExp(cache,env, s2, impl, NONE,true);
@@ -3215,13 +3237,14 @@ protected function elabBuiltinInteger "function: elabBuiltinInteger
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp s1_1;
       Types.Const c;
@@ -3229,7 +3252,7 @@ algorithm
       Absyn.Exp s1;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{s1},impl) /* impl */ 
+    case (cache,env,{s1},_,impl) /* impl */ 
       equation 
         (cache,s1_1,Types.PROP((Types.T_REAL({}),NONE),c),_) = elabExp(cache,env, s1, impl, NONE,true);
          /* print \"# integer function not implemented yet REAL\\n\" */ 
@@ -3246,13 +3269,14 @@ protected function elabBuiltinDiagonal "function: elabBuiltinDiagonal
 	input Env.Cache cache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Type tp;
       Boolean sc,impl;
@@ -3265,7 +3289,7 @@ algorithm
       list<Env.Frame> env;
       Absyn.Exp v1,s1;
       Env.Cache cache;
-    case (cache,env,{v1},impl) /* impl */ 
+    case (cache,env,{v1},_,impl) /* impl */ 
       equation 
         (cache,Exp.ARRAY(tp,sc,expl),Types.PROP((Types.T_ARRAY((dim as Types.DIM(SOME(dimension))),arrType),NONE),c),_) 
         	= elabExp(cache,env, v1, impl, NONE,true);
@@ -3273,7 +3297,7 @@ algorithm
       then
         (cache,res,Types.PROP(
           (Types.T_ARRAY(dim,(Types.T_ARRAY(dim,arrType),NONE)),NONE),c));
-    case (cache,env,{s1},impl)
+    case (cache,env,{s1},_,impl)
       local Types.Type t; Exp.Type tp;
       equation 
         (cache,s1_1,Types.PROP((Types.T_ARRAY((dim as Types.DIM(SOME(dimension))),arrType),NONE),c),_) 
@@ -3283,7 +3307,7 @@ algorithm
          tp = Types.elabType(t);
       then
         (cache,Exp.CALL(Absyn.IDENT("diagonal"),{s1_1},false,true,tp),Types.PROP(t,c));
-    case (_,_,_,_)
+    case (_,_,_,_,_)
       equation 
         print(
           "#-- elab_builtin_diagonal: Couldn't elaborate diagonal()\n");
@@ -3356,13 +3380,14 @@ protected function elabBuiltinDifferentiate "function: elabBuiltinDifferentiate
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       list<Absyn.ComponentRef> cref_list1,cref_list2,cref_list;
       Interactive.InteractiveSymbolTable symbol_table;
@@ -3372,7 +3397,7 @@ algorithm
       Absyn.Exp s1,s2;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{s1,s2},impl) /* impl */ 
+    case (cache,env,{s1,s2},_,impl) /* impl */ 
       equation 
         cref_list1 = Absyn.getCrefFromExp(s1);
         cref_list2 = Absyn.getCrefFromExp(s2);
@@ -3384,7 +3409,7 @@ algorithm
         (cache,s2_1,st,_) = elabExp(cache,gen_env, s2, impl, NONE,true);
       then
         (cache,Exp.CALL(Absyn.IDENT("differentiate"),{s1_1,s2_1},false,true,Exp.REAL()),st);
-    case (_,_,_,_)
+    case (_,_,_,_,_)
       equation 
         print(
           "#-- elab_builtin_differentiate: Couldn't elaborate differentiate()\n");
@@ -3403,13 +3428,14 @@ protected function elabBuiltinSimplify "function: elabBuiltinSimplify
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       list<Absyn.ComponentRef> cref_list;
       Interactive.InteractiveSymbolTable symbol_table;
@@ -3419,7 +3445,7 @@ algorithm
       Absyn.Exp s1;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{s1,Absyn.STRING(value = "Real")},impl) /* impl */ 
+    case (cache,env,{s1,Absyn.STRING(value = "Real")},_,impl) /* impl */ 
       equation 
         cref_list = Absyn.getCrefFromExp(s1);
         symbol_table = absynCrefListToInteractiveVarList(cref_list, Interactive.emptySymboltable, 
@@ -3428,7 +3454,7 @@ algorithm
         (cache,s1_1,st,_) = elabExp(cache,gen_env, s1, impl, NONE,true);
       then
         (cache,Exp.CALL(Absyn.IDENT("simplify"),{s1_1},false,true,Exp.REAL()),st);
-    case (cache,env,{s1,Absyn.STRING(value = "Integer")},impl)
+    case (cache,env,{s1,Absyn.STRING(value = "Integer")},_,impl)
       equation 
         cref_list = Absyn.getCrefFromExp(s1);
         symbol_table = absynCrefListToInteractiveVarList(cref_list, Interactive.emptySymboltable, 
@@ -3437,7 +3463,7 @@ algorithm
         (cache,s1_1,st,_) = elabExp(cache,gen_env, s1, impl, NONE,true);
       then
         (cache,Exp.CALL(Absyn.IDENT("simplify"),{s1_1},false,true,Exp.INT()),st);
-    case (_,_,_,_)
+    case (_,_,_,_,_)
       equation 
         print("#-- elab_builtin_simplify: Couldn't elaborate simplify()\n");
       then
@@ -3493,13 +3519,14 @@ protected function elabBuiltinNoevent "function: elabBuiltinNoevent
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp exp_1;
       Types.Properties prop;
@@ -3507,7 +3534,7 @@ algorithm
       Absyn.Exp exp;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{exp},impl) /* impl */ 
+    case (cache,env,{exp},_,impl) /* impl */ 
       equation 
         (cache,exp_1,prop,_) = elabExp(cache,env, exp, impl, NONE,true);
       then
@@ -3523,13 +3550,14 @@ protected function elabBuiltinEdge "function: elabBuiltinEdge
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp exp_1,exp_2;
       list<Env.Frame> env;
@@ -3537,18 +3565,18 @@ algorithm
       Boolean impl;
       Types.Const c;
       Env.Cache cache;
-    case (cache,env,{exp},impl) /* impl Constness: C_VAR */ 
+    case (cache,env,{exp},_,impl) /* impl Constness: C_VAR */ 
       equation 
         (cache,exp_1,Types.PROP((Types.T_BOOL({}),_),Types.C_VAR()),_) = elabExp(cache,env, exp, impl, NONE,true);
       then
         (cache,Exp.CALL(Absyn.IDENT("edge"),{exp_1},false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()));
-    case (cache,env,{exp},impl) /* constness: C_PARAM & C_CONST */ 
+    case (cache,env,{exp},_,impl) /* constness: C_PARAM & C_CONST */ 
       equation 
         (cache,exp_1,Types.PROP((Types.T_BOOL({}),_),c),_) = elabExp(cache,env, exp, impl, NONE,true);
         exp_2 = valueExp(Values.BOOL(false));
       then
         (cache,exp_2,Types.PROP((Types.T_BOOL({}),NONE),c));
-    case (_,env,_,_)
+    case (_,env,_,_,_)
       equation 
         Error.addMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {"edge"});
       then
@@ -3564,13 +3592,14 @@ protected function elabBuiltinSign "function: elabBuiltinSign
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp exp_1,exp_2;
       list<Env.Frame> env;
@@ -3582,7 +3611,7 @@ algorithm
       Exp.Type tp_1;
       Exp.Exp zero,one;
       Env.Cache cache;
-    case (cache,env,{exp},impl) /* Argument to sign must be an Integer or Real expression */ 
+    case (cache,env,{exp},_,impl) /* Argument to sign must be an Integer or Real expression */ 
       equation 
         (cache,exp_1,Types.PROP(tp1,c),_) = elabExp(cache,env, exp, impl, NONE,true);
         Types.integerOrReal(tp1);
@@ -3598,7 +3627,7 @@ algorithm
         										Exp.UNARY(Exp.UMINUS(tp_1),one),
         										zero)),
         Types.PROP(tp1,c));
-    case (cache,env,expl,_)
+    case (cache,env,expl,_,_)
       local String s;
       equation 
         s = Util.stringDelimitList(Util.listMap(expl, Dump.printExpStr),", ");
@@ -3616,13 +3645,14 @@ protected function elabBuiltinDer "function: elabBuiltinDer
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsaynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsaynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp e,exp_1;
       Types.Properties prop;
@@ -3635,18 +3665,18 @@ algorithm
       Ident s;
       list<Absyn.Exp> expl;
       Env.Cache cache;
-    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},impl) /* impl use elab_call_args to also try vectorized calls */ 
+    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl) /* impl use elab_call_args to also try vectorized calls */ 
       equation 
         (cache,e,(prop as Types.PROP(_,Types.C_VAR()))) = elabCallArgs(cache,env, Absyn.IDENT("der"), {exp}, {}, impl, NONE);
       then
         (cache,e,prop);
-    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},impl) /* Constant expressions should fail */ 
+    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl) /* Constant expressions should fail */ 
       equation 
         (cache,exp_1,Types.PROP((Types.T_REAL({}),_),c),_) = elabExp(cache,env, exp, impl, NONE,true);
         Error.addMessage(Error.DER_APPLIED_TO_CONST, {});
       then
         fail();
-    case (cache,env,expl,_)
+    case (cache,env,expl,_,_)
       equation 
         lst = Util.listMap(expl, Dump.printExpStr);
         s = Util.stringDelimitList(lst, ", ");
@@ -3665,13 +3695,14 @@ protected function elabBuiltinSample "function: elabBuiltinSample
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp start_1,interval_1;
       tuple<Types.TType, Option<Absyn.Path>> tp1,tp2;
@@ -3679,7 +3710,7 @@ algorithm
       Absyn.Exp start,interval;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{start,interval},impl) /* impl */ 
+    case (cache,env,{start,interval},_,impl) /* impl */ 
       equation 
         (cache,start_1,Types.PROP(tp1,_),_) = elabExp(cache,env, start, impl, NONE,true);
         (cache,interval_1,Types.PROP(tp2,_),_) = elabExp(cache,env, interval, impl, NONE,true);
@@ -3687,14 +3718,14 @@ algorithm
         Types.integerOrReal(tp2);
       then
         (cache,Exp.CALL(Absyn.IDENT("sample"),{start_1,interval_1},false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()));
-    case (cache,env,{start,interval},impl)
+    case (cache,env,{start,interval},_,impl)
       equation 
         (cache,start_1,Types.PROP(tp1,_),_) = elabExp(cache,env, start, impl, NONE,true);
         failure(Types.integerOrReal(tp1));
         Error.addMessage(Error.ARGUMENT_MUST_BE_INTEGER_OR_REAL, {"First","sample"});
       then
         fail();
-    case (cache,env,{start,interval},impl)
+    case (cache,env,{start,interval},_,impl)
       equation 
         (cache,start_1,Types.PROP(tp1,_),_) = elabExp(cache,env, interval, impl, NONE,true);
         failure(Types.integerOrReal(tp1));
@@ -3712,13 +3743,14 @@ protected function elabBuiltinChange "function: elabBuiltinChange
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp exp_1;
       Exp.ComponentRef cr_1;
@@ -3728,7 +3760,7 @@ algorithm
       Absyn.ComponentRef cr;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},impl) /* impl simple type, \'discrete\' variable */ 
+    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl) /* impl simple type, \'discrete\' variable */ 
       equation 
         (cache,(exp_1 as Exp.CREF(cr_1,_)),Types.PROP(tp1,_),_) = elabExp(cache,env, exp, impl, NONE,true);
         Types.simpleType(tp1);
@@ -3736,26 +3768,26 @@ algorithm
       then
         (cache,Exp.CALL(Absyn.IDENT("change"),{exp_1},false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()));
 
-    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},impl) /* simple type, boolean or integer => discrete variable */ 
+    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl) /* simple type, boolean or integer => discrete variable */ 
       equation 
         (cache,(exp_1 as Exp.CREF(cr_1,_)),Types.PROP(tp1,_),_) = elabExp(cache,env, exp, impl, NONE,true);
         Types.simpleType(tp1);
         Types.discreteType(tp1);
       then
         (cache,Exp.CALL(Absyn.IDENT("change"),{exp_1},false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()));
-    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},impl) /* simple type, constant variability */ 
+    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl) /* simple type, constant variability */ 
       equation 
         (cache,(exp_1 as Exp.CREF(cr_1,_)),Types.PROP(tp1,Types.C_CONST()),_) = elabExp(cache,env, exp, impl, NONE,true);
         Types.simpleType(tp1);
       then
         (cache,Exp.CALL(Absyn.IDENT("change"),{exp_1},false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()));
-    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},impl) /* simple type, param variability */ 
+    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl) /* simple type, param variability */ 
       equation 
         (cache,(exp_1 as Exp.CREF(cr_1,_)),Types.PROP(tp1,Types.C_PARAM()),_) = elabExp(cache,env, exp, impl, NONE,true);
         Types.simpleType(tp1);
       then
         (cache,Exp.CALL(Absyn.IDENT("change"),{exp_1},false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()));
-    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},impl)
+    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl)
       equation 
         (cache,(exp_1 as Exp.CREF(cr_1,_)),Types.PROP(tp1,_),_) = elabExp(cache,env, exp, impl, NONE,true);
         Types.simpleType(tp1);
@@ -3763,14 +3795,14 @@ algorithm
         Error.addMessage(Error.ARGUMENT_MUST_BE_DISCRETE_VAR, {"First","change"});
       then
         fail();
-    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},impl)
+    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl)
       equation 
         (cache,exp_1,Types.PROP(tp1,_),_) = elabExp(cache,env, exp, impl, NONE,true);
         failure(Types.simpleType(tp1));
         Error.addMessage(Error.TYPE_MUST_BE_SIMPLE, {"operand to change"});
       then
         fail();
-    case (cache,env,{exp},impl)
+    case (cache,env,{exp},_,impl)
       equation 
         Error.addMessage(Error.ARGUMENT_MUST_BE_VARIABLE, {"First","change"});
       then
@@ -3786,13 +3818,14 @@ protected function elabBuiltinCat "function: elabBuiltinCat
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp dim_exp;
       Types.Const const1,const2,const;
@@ -3808,7 +3841,7 @@ algorithm
       Ident s,str;
       Env.Cache cache;
       Exp.Type etp;
-    case (cache,env,(dim :: matrices),impl) /* impl */ 
+    case (cache,env,(dim :: matrices),_,impl) /* impl */ 
       equation 
         (cache,dim_exp,Types.PROP((Types.T_INTEGER(_),_),const1),_) = elabExp(cache,env, dim, impl, NONE,true);
         (cache,Values.INTEGER(dim),_) = Ceval.ceval(cache,env, dim_exp, false, NONE, NONE, Ceval.MSG());
@@ -3822,7 +3855,7 @@ algorithm
         etp = Types.elabType(result_type_1);
       then
         (cache,Exp.CALL(Absyn.IDENT("cat"),(dim_exp :: matrices_1),false,true,etp),Types.PROP(result_type_1,const));
-    case (cache,env,(dim :: matrices),impl)
+    case (cache,env,(dim :: matrices),_,impl)
       local Absyn.Exp dim;
       equation 
         (cache,dim_exp,tp,_) = elabExp(cache,env, dim, impl, NONE,true);
@@ -3830,7 +3863,7 @@ algorithm
         Error.addMessage(Error.ARGUMENT_MUST_BE_INTEGER, {"First","cat"});
       then
         fail();
-    case (cache,env,(dim :: matrices),impl)
+    case (cache,env,(dim :: matrices),_,impl)
       local Absyn.Exp dim;
       equation 
         (cache,dim_exp,Types.PROP((Types.T_INTEGER(_),_),const1),_) = elabExp(cache,env, dim, impl, NONE,true);
@@ -3885,13 +3918,14 @@ protected function elabBuiltinIdentity "function: elabBuiltinIdentity
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp dim_exp;
       Integer size;
@@ -3899,7 +3933,7 @@ algorithm
       Absyn.Exp dim;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{dim},impl) /* impl */ 
+    case (cache,env,{dim},_,impl) /* impl */ 
       equation 
         (cache,dim_exp,Types.PROP((Types.T_INTEGER(_),_),Types.C_CONST()),_) = elabExp(cache,env, dim, impl, NONE,true);
         (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, dim_exp, false, NONE, NONE, Ceval.MSG());
@@ -3909,7 +3943,7 @@ algorithm
           Types.T_ARRAY(Types.DIM(SOME(size)),
           (
           Types.T_ARRAY(Types.DIM(SOME(size)),(Types.T_INTEGER({}),NONE)),NONE)),NONE),Types.C_CONST()));
-    case (cache,env,{dim},impl)
+    case (cache,env,{dim},_,impl)
       equation 
         (cache,dim_exp,Types.PROP((Types.T_INTEGER(_),_),Types.C_PARAM()),_) = elabExp(cache,env, dim, impl, NONE,true);
         (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, dim_exp, false, NONE, NONE, Ceval.MSG());
@@ -3919,7 +3953,7 @@ algorithm
           Types.T_ARRAY(Types.DIM(SOME(size)),
           (
           Types.T_ARRAY(Types.DIM(SOME(size)),(Types.T_INTEGER({}),NONE)),NONE)),NONE),Types.C_PARAM()));
-    case (cache,env,{dim},impl)
+    case (cache,env,{dim},_,impl)
       equation 
         (cache,dim_exp,Types.PROP((Types.T_INTEGER(_),_),Types.C_VAR()),_) = elabExp(cache,env, dim, impl, NONE,true);
       then
@@ -3928,7 +3962,7 @@ algorithm
           Types.T_ARRAY(Types.DIM(NONE),
           (Types.T_ARRAY(Types.DIM(NONE),(Types.T_INTEGER({}),NONE)),
           NONE)),NONE),Types.C_VAR()));
-    case (cache,env,{dim},impl)
+    case (cache,env,{dim},_,impl)
       equation 
         print("-elab_builtin_identity failed\n");
       then
@@ -3945,13 +3979,14 @@ protected function elabBuiltinScalar "function: elab_builtin_
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp e;
       tuple<Types.TType, Option<Absyn.Path>> tp,scalar_tp,tp_1;
@@ -3959,14 +3994,14 @@ algorithm
       list<Env.Frame> env;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{e},impl) /* impl scalar({a}) => a */ 
+    case (cache,env,{e},_,impl) /* impl scalar({a}) => a */ 
       equation 
         (cache,Exp.ARRAY(_,_,{e}),Types.PROP(tp,c),_) = elabExp(cache,env, e, impl, NONE,true);
         scalar_tp = Types.unliftArray(tp);
         Types.simpleType(scalar_tp);
       then
         (cache,e,Types.PROP(scalar_tp,c));
-    case (cache,env,{e},impl) /* scalar({a}) => a */ 
+    case (cache,env,{e},_,impl) /* scalar({a}) => a */ 
       equation 
         (cache,Exp.MATRIX(_,_,{{(e,_)}}),Types.PROP(tp,c),_) = elabExp(cache,env, e, impl, NONE,true);
         tp_1 = Types.unliftArray(tp);
@@ -3987,13 +4022,14 @@ protected function elabBuiltinCross "
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp e1,e2;
       tuple<Types.TType, Option<Absyn.Path>> tp1,tp2;
@@ -4008,7 +4044,7 @@ algorithm
       Types.Type eltTp;
       
 			//First, try symbolic simplification      
-    case (cache,env,{v1,v2},impl) equation
+    case (cache,env,{v1,v2},_,impl) equation
       (cache,Exp.ARRAY(etp1,scalar1,expl1),Types.PROP(tp1,c1),_) = elabExp(cache,env, v1, impl, NONE,true);
       (cache,Exp.ARRAY(etp2,scalar2,expl2),Types.PROP(tp2,c2),_) = elabExp(cache,env, v2, impl, NONE,true);
       {3} = Types.getDimensionSizes(tp1);
@@ -4020,7 +4056,7 @@ algorithm
         (cache,Exp.ARRAY(etp3,scalar1,expl3),Types.PROP(tp1,c));
 
 		//Fallback, use builtin function cross
-    case (cache,env,{v1,v2},impl) equation
+    case (cache,env,{v1,v2},_,impl) equation
       (cache,e1,Types.PROP(tp1,c1),_) = elabExp(cache,env, v1, impl, NONE,true);
       (cache,e2,Types.PROP(tp2,c2),_) = elabExp(cache,env, v2, impl, NONE,true);
        {3} = Types.getDimensionSizes(tp1);
@@ -4049,6 +4085,55 @@ algorithm
   end matchcontinue; 
 end elabBuiltinCross2;
 
+
+protected function elabBuiltinString "
+  author: PA
+ 
+  This function handles the built-in String operator.
+"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
+  input Boolean inBoolean;
+  output Env.Cache outCache;
+  output Exp.Exp outExp;
+  output Types.Properties outProperties;
+algorithm 
+  (outCache,outExp,outProperties):=
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
+    local
+      Exp.Exp exp;
+      tuple<Types.TType, Option<Absyn.Path>> tp,arr_tp;
+      Types.Const c,const;
+      list<Types.Const> constlist;
+      Exp.Type tp_1,etp;
+      list<Env.Frame> env;
+      Absyn.Exp e;
+      Boolean impl,scalar;
+      list<Exp.Exp> expl,expl_1,args_1;
+      list<Integer> dims;
+      Env.Cache cache;
+      Types.Properties prop;
+      list<Absyn.Exp> args;
+      list<Absyn.NamedArg> nargs;
+      list<Slot> slots,newslots;
+    case (cache,env,args as e::_,nargs,impl) 
+      equation 
+        (cache,exp,Types.PROP(tp,c),_) = elabExp(cache,env, e, impl, NONE,true);
+				/* Create argument slots for String function */	
+        slots = {SLOT(("x",tp),false,NONE,{}),
+        				 SLOT(("minimumLength",(Types.T_INTEGER({}),NONE)),false,SOME(Exp.ICONST(0)),{}),
+        				 SLOT(("leftJustified",(Types.T_BOOL({}),NONE)),false,SOME(Exp.BCONST(true)),{}),
+        				 SLOT(("significantDigits",(Types.T_INTEGER({}),NONE)),false,SOME(Exp.ICONST(6)),{})};        				 
+        (cache,args_1,newslots,constlist) = elabInputArgs(cache,env, args, nargs, slots, impl);
+        c = Util.listReduce(constlist, Types.constAnd);         
+      then
+				(cache, 
+				Exp.CALL(Absyn.IDENT("String"),args_1,false,true,Exp.STRING()),        
+				Types.PROP((Types.T_STRING({}),NONE),c));		
+  end matchcontinue;
+end elabBuiltinString;
   
 protected function elabBuiltinVector "function: elabBuiltinVector
   author: PA
@@ -4058,13 +4143,14 @@ protected function elabBuiltinVector "function: elabBuiltinVector
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;  
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp exp;
       tuple<Types.TType, Option<Absyn.Path>> tp,arr_tp;
@@ -4076,7 +4162,7 @@ algorithm
       list<Exp.Exp> expl,expl_1;
       list<Integer> dims;
       Env.Cache cache;
-    case (cache,env,{e},impl) /* impl vector(scalar) = {scalar} */ 
+    case (cache,env,{e},_,impl) /* impl vector(scalar) = {scalar} */ 
       equation 
         (cache,exp,Types.PROP(tp,c),_) = elabExp(cache,env, e, impl, NONE,true);
         Types.simpleType(tp);
@@ -4084,13 +4170,13 @@ algorithm
         arr_tp = Types.liftArray(tp, SOME(1));
       then
         (cache,Exp.ARRAY(tp_1,true,{exp}),Types.PROP(arr_tp,c));
-    case (cache,env,{e},impl) /* vector(array of scalars) = array of scalars */ 
+    case (cache,env,{e},_,impl) /* vector(array of scalars) = array of scalars */ 
       equation 
         (cache,Exp.ARRAY(etp,scalar,expl),Types.PROP(tp,c),_) = elabExp(cache,env, e, impl, NONE,true);
         1 = Types.ndims(tp);
       then
         (cache,Exp.ARRAY(etp,scalar,expl),Types.PROP(tp,c));
-    case (cache,env,{e},impl) /* vector of multi dimensional array, at most one dim > 1 */ 
+    case (cache,env,{e},_,impl) /* vector of multi dimensional array, at most one dim > 1 */ 
       local tuple<Types.TType, Option<Absyn.Path>> tp_1;
       equation 
         (cache,Exp.ARRAY(_,_,expl),Types.PROP(tp,c),_) = elabExp(cache,env, e, impl, NONE,true);
@@ -4170,6 +4256,7 @@ public function elabBuiltinHandlerGeneric "function: elabBuiltinHandlerGeneric
 	  input Env.Cache inCache;
     input Env.Env inEnv;
     input list<Absyn.Exp> inAbsynExpLst;
+    input list<Absyn.NamedArg> inNamedArg;    
     input Boolean inBoolean;
     output Env.Cache outCache;
     output Exp.Exp outExp;
@@ -4194,6 +4281,7 @@ public function elabBuiltinHandler "function: elabBuiltinHandler
 	  input Env.Cache inCache;
     input Env.Env inEnv;
     input list<Absyn.Exp> inAbsynExpLst;
+    input list<Absyn.NamedArg> inNamedArg;
     input Boolean inBoolean;
     output Env.Cache outCache;
     output Exp.Exp outExp;
@@ -4273,7 +4361,9 @@ algorithm
     case "scalar" then elabBuiltinScalar; 
       
     case "cross" then elabBuiltinCross;
-
+      
+    case "String" then elabBuiltinString;
+      
   end matchcontinue;
 end elabBuiltinHandler;
 
@@ -4317,18 +4407,20 @@ protected function elabCallBuiltin "function: elabCallBuiltin
   input Env.Env inEnv;
   input Absyn.ComponentRef inComponentRef;
   input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArgs;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Exp.Exp outExp;
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inComponentRef,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inComponentRef,inAbsynExpLst,inNamedArgs,inBoolean)
     local
       partial function handlerFunc
       	input Env.Cache inCache;
         input list<Env.Frame> inEnvFrameLst;
         input list<Absyn.Exp> inAbsynExpLst;
+        input list<Absyn.NamedArg> inNamedArgs;
         input Boolean inBoolean;
         output Env.Cache outCache;
         output Exp.Exp outExp;
@@ -4340,18 +4432,21 @@ algorithm
       list<Env.Frame> env;
       Ident name;
       list<Absyn.Exp> args;
+      list<Absyn.NamedArg> nargs;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,Absyn.CREF_IDENT(name = name,subscripts = {}),args,impl) /* impl for normal builtin operators and functions */ 
+      /* impl for normal builtin operators and functions */ 
+    case (cache,env,Absyn.CREF_IDENT(name = name,subscripts = {}),args,nargs,impl) 
       equation 
         handler = elabBuiltinHandler(name);
-        (cache,exp,prop) = handler(cache,env, args, impl);
+        (cache,exp,prop) = handler(cache,env, args, nargs, impl);
       then
         (cache,exp,prop);
-    case (cache,env,Absyn.CREF_IDENT(name = name,subscripts = {}),args,impl) /* For generic types, like e.g. cardinality */ 
+        /* For generic types, like e.g. cardinality */ 
+    case (cache,env,Absyn.CREF_IDENT(name = name,subscripts = {}),args,nargs,impl) 
       equation 
         handler = elabBuiltinHandlerGeneric(name);
-        (cache,exp,prop) = handler(cache,env, args, impl);
+        (cache,exp,prop) = handler(cache,env, args, nargs, impl);
       then
         (cache,exp,prop);
   end matchcontinue;
@@ -4399,7 +4494,7 @@ algorithm
         (cache,e,prop,st);
     case (cache,env,fn,args,nargs,impl,st)
       equation 
-        (cache,e,prop) = elabCallBuiltin(cache,env, fn, args, impl) "Built in functions (e.g. \"pre\", \"der\"), have only possitional arguments" ;
+        (cache,e,prop) = elabCallBuiltin(cache,env, fn, args, nargs, impl) "Built in functions (e.g. \"pre\", \"der\"), have only possitional arguments" ;
       then
         (cache,e,prop,st);
     case (cache,env,fn,args,nargs,(impl as true),st) /* Interactive mode */ 
@@ -6114,7 +6209,6 @@ algorithm
         farg = funcargLstFromSlots(slots);
         s = printSlotsStr(slots);
         (cache,newslots,clist) = elabNamedInputArgs(cache,env, narg, farg, slots, impl);
-            s = printSlotsStr(newslots);
         newexp = expListFromSlots(newslots);
       then
         (cache,newexp,newslots,clist);

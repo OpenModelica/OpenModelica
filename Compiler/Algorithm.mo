@@ -121,10 +121,14 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
     list<Integer> helpVarIndices;
   end WHEN;
 
-  record ASSERT
-    Exp.Exp exp1;
-    Exp.Exp exp2;
+  record ASSERT "assert(cond,msg)"
+    Exp.Exp cond;
+    Exp.Exp msg;
   end ASSERT;
+  
+  record TERMINATE "terminate(msg)"
+    Exp.Exp msg;
+  end TERMINATE;
 
   record REINIT
     Exp.Exp var "Variable"; 
@@ -541,16 +545,24 @@ algorithm
   matchcontinue (inExp1,inExp2,inProperties3,inProperties4)
     local Exp.Exp cond,msg;
     case (cond,msg,Types.PROP(type_ = (Types.T_BOOL(varLstBool = _),_)),Types.PROP(type_ = (Types.T_STRING(varLstString = _),_))) then ASSERT(cond,msg);  
-      /* MetaModelica Compiler (MMC) does not handle the pattern below T_BOOL(_), hence we need to
-	     implement this differently. rule	not let T_BOOL(_) = condt &  
-	 Print.printBuf \"# Type error in assert condition.\\n\" &
-	 Print.printBuf \" Expected Boolean, got \" &
-	 Types.print_type condt & Print.printBuf \"\\n\"
-	 --------------------------------------------
-	 make_assert(_,_,Types.PROP(condt,_),_) => fail 
-	 */ 
   end matchcontinue;
 end makeAssert;
+
+public function makeTerminate "
+  Creates a terminate statement from message expression.
+  inputs: Exp.Exp message 
+		      Types.Properties 
+  outputs: Statement"
+  input Exp.Exp inExp1;
+  input Types.Properties inProperties3;
+  output Statement outStatement;
+algorithm 
+  outStatement:=
+  matchcontinue (inExp1,inProperties3)
+    local Exp.Exp cond,msg;
+    case (msg,Types.PROP(type_ = (Types.T_STRING(varLstString = _),_))) then TERMINATE(msg);  
+  end matchcontinue;
+end makeTerminate;
 
 public function getAllExps "function: getAllExps
   
@@ -646,7 +658,7 @@ algorithm
         exps = getAllExpsStmts(stmts);
       then
         (exp :: exps);
-    case ASSERT(exp1 = e1,exp2 = e2) then {e1,e2}; 
+    case ASSERT(cond = e1,msg= e2) then {e1,e2}; 
     case _
       equation 
         Debug.fprintln("failtrace", "- Algorithm.getAllExpsStmt failed");

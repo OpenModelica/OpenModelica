@@ -176,6 +176,15 @@ constant tuple<Types.TType, Option<Type_a>> nil2real=(Types.T_FUNCTION({},(Types
 
 protected constant tuple<Types.TType, Option<Type_a>> nil2bool=(Types.T_FUNCTION({},(Types.T_REAL({}),NONE)),NONE);
 
+protected constant tuple<Types.TType, Option<Type_a>> real2string=(
+          Types.T_FUNCTION({("x",(Types.T_REAL({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> int2string =(
+          Types.T_FUNCTION({("x",(Types.T_INTEGER({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
+          
+protected constant tuple<Types.TType, Option<Type_a>> bool2string =(
+          Types.T_FUNCTION({("x",(Types.T_BOOL({}),NONE))},(Types.T_STRING({}),NONE)),NONE);          
+          
 protected constant tuple<Types.TType, Option<Type_a>> real2real=(
           Types.T_FUNCTION({("x",(Types.T_REAL({}),NONE))},(Types.T_REAL({}),NONE)),NONE);
 

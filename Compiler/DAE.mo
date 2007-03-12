@@ -230,8 +230,13 @@ uniontype Element
   end EXTOBJECTCLASS;
   
   record ASSERT " The Modelica builtin assert"
-    Exp.Exp exp;
+    Exp.Exp condition;
+    Exp.Exp message;
   end ASSERT;
+
+  record TERMINATE " The Modelica builtin terminate(msg)"
+    Exp.Exp message;
+  end TERMINATE;
 
   record REINIT " reinit operator for reinitialization of states"
     Exp.ComponentRef componentRef;
@@ -388,7 +393,7 @@ algorithm
 	  case((e as EXTOBJECTCLASS(path=_))::elts2) equation
 	    elts22 = removeEquations(elts2);
     then e::elts22;	            
-	  case(ASSERT(_)::elts2) then removeEquations(elts2);
+	  case(ASSERT(_,_)::elts2) then removeEquations(elts2);
 	  case(REINIT(_,_)::elts2) then removeEquations(elts2);	    
 	end matchcontinue;  
   
@@ -665,10 +670,12 @@ algorithm
         dump2(DAE(xs));
       then
         ();
-    case (DAE(elementLst = (ASSERT(exp = e) :: xs)))
+    case (DAE(elementLst = (ASSERT(condition=e1,message=e2) :: xs)))
       equation 
         Print.printBuf("ASSERT(\n");
-        Exp.printExp(e);
+        Exp.printExp(e1);
+        Print.printBuf(",");
+        Exp.printExp(e2);
         Print.printBuf(")\n");
         dump2(DAE(xs));
       then
@@ -1053,11 +1060,12 @@ algorithm
         str = stringAppend(s5, s6);
       then
         str;
-    case ((ASSERT(exp = e) :: xs))
+    case ((ASSERT(condition=e1,message = e2) :: xs))
       equation 
-        s = Exp.printExpStr(e);
-        s2 = dumpEquationsStr(xs);
-        str = Util.stringAppendList({s,";\n",s2});
+        s1 = Exp.printExpStr(e1);
+        s2 = Exp.printExpStr(e2);
+        s3 = dumpEquationsStr(xs);
+        str = Util.stringAppendList({"assert(",s1,",",s2,");\n",s3});
       then
         str;
     case ((IF_EQUATION(condition1 = c,equations2 = xs1,equations3 = xs2) :: xs))
@@ -1697,10 +1705,13 @@ algorithm
         Print.printBuf(";\n");
       then
         ();
-    case (ASSERT(exp = e))
+    case (ASSERT(condition=e1,message=e2))
       equation 
-        Exp.printExp(e);
-        Print.printBuf(";\n");
+        Print.printBuf("assert(");
+        Exp.printExp(e1);
+        Print.printBuf(",");
+        Exp.printExp(e2);
+        Print.printBuf(");\n");
       then
         ();
     case _ then (); 
@@ -1773,10 +1784,11 @@ algorithm
         str = stringAppend(s5, ";\n");
       then
         str;
-    case (ASSERT(exp = e))
+    case (ASSERT(condition=e1,message = e2))
       equation 
-        s = Exp.printExpStr(e);
-        str = stringAppend(s, ";\n");
+        s1 = Exp.printExpStr(e1);
+        s2 = Exp.printExpStr(e2);
+        str = Util.stringAppendList({"assert(",s1, ",",s2,");\n"});
       then
         str;
     case _ then ""; 
@@ -2105,7 +2117,7 @@ algorithm
         Print.printBuf(ppWhenStmtStr(stmt,1));
       then
         ();
-    case (Algorithm.ASSERT(exp1 = cond,exp2 = msg),i)
+    case (Algorithm.ASSERT(cond = cond,msg = msg),i)
       equation 
         indent(i);
         Print.printBuf("assert( ");
@@ -2295,7 +2307,7 @@ algorithm
         str = stringAppend(s1,s2);
       then
         str;
-    case (Algorithm.ASSERT(exp1 = cond,exp2 = msg),i)
+    case (Algorithm.ASSERT(cond = cond,msg = msg),i)
       equation 
         s1 = indentStr(i);
         cond_str = Exp.printExpStr(cond);
@@ -3657,13 +3669,14 @@ algorithm
         dae_1 = toModelicaForm(dae);
       then
         (EXTFUNCTION(p,dae,t,d) :: elts_1);
-    case ((ASSERT(exp = e) :: elts))
-      local Exp.Exp e;
+    case ((ASSERT(condition = e1,message=e2) :: elts))
+      local Exp.Exp e1,e2,e_1,e_2;
       equation 
         elts_1 = toModelicaFormElts(elts);
-        e_1 = toModelicaFormExp(e);
+        e_1 = toModelicaFormExp(e1);
+        e_2 = toModelicaFormExp(e2);
       then
-        (ASSERT(e_1) :: elts_1);
+        (ASSERT(e_1,e_2) :: elts_1);
   end matchcontinue;
 end toModelicaFormElts;
 
@@ -3977,7 +3990,7 @@ algorithm
         exps = Util.listFlatten(expslist);
       then
         exps;
-    case ASSERT(exp = exp) then {exp}; 
+    case ASSERT(condition=e1,message=e2) local Exp.Exp e1,e2; then {e1,e2}; 
     case _
       equation 
         Debug.fprintln("failtrace", "-- get_all_exps_element failed");

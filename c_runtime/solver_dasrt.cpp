@@ -78,7 +78,7 @@ int dummyJacobianDASSL(double *t, double *y, double *yprime, double *pd, long *c
 int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, long &outputSteps,
                 double &tolerance)
 {
-  int status;
+  int status=0;
   
   long info[15];
   status = 0;
@@ -99,6 +99,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
   long *iwork = new long[liw];
   double *rwork = new double[lrw];
   long *jroot = new long[globalData->nZeroCrossing];
+  
   
   // Used when calculating residual for its side effects. (alg. var calc)
   double *dummy_delta = new double[globalData->nStates];
@@ -134,6 +135,8 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
   	numpoints = long((stop-start)/step)+2;
   }
 
+  try {
+  	
   // Set starttime for simulation.
   globalData->timeValue=start;	
  
@@ -160,8 +163,8 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
   storeExtrapolationData();
   storeExtrapolationData();
   if (initialize(init_method)) {
-    printf("Error in initialization. Storing results and exiting.\n");
-    goto exit;
+	throw TerminateSimulationException(globalData->timeValue,
+	  string("Error in initialization. Storing results and exiting.\n"));    
   }
   
   if (sim_verbose) { cout << "Checking events at initialization (at time "<< globalData->timeValue << ")." << endl; }
@@ -178,13 +181,12 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
   
   // Calculate initial derivatives
   if(functionODE()) { 
-    printf("Error calculating initial derivatives\n");
-    goto exit;
+  	throw TerminateSimulationException(globalData->timeValue,string("Error calculating initial derivatives\n"));
   }
   // Calculate initial output values 
   if(functionDAE_output()) {
-    printf("Error calculating initial derivatives\n");
-    goto exit;
+    throw TerminateSimulationException(globalData->timeValue,
+	  string("Error calculating initial derivatives\n"));    
   }
   tout = globalData->timeValue+calcTinyStep(start,stop); // take tiny step.
     //saveall();
@@ -211,7 +213,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
   checkForInitialZeroCrossings(jroot);
   
   if(!continue_with_dassl(idid,&atol,&rtol))
-    goto exit;
+  throw TerminateSimulationException(globalData->timeValue);    
   
   info[0] = 1;
 
@@ -223,7 +225,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
   tout = newTime(tout,step,stop);
   while(globalData->timeValue<stop && idid>0) {
     // TODO: check here if time event has been reached.
-
+	
     while (idid == 4) {
     	if (sim_verbose) { 
     		cout << "found event at time " << globalData->timeValue << endl;
@@ -244,12 +246,11 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
       	cout << "Done checking events at time " << globalData->timeValue << endl; 
       }
       saveall();
-
       // Restart simulation
       info[0] = 0;
 //      if (tout-globalData->timeValue < atol) tout = newTime(globalData->timeValue,step,stop);
 	  tout = globalData->timeValue + 1e-13;	
-      if (globalData->timeValue >= stop ) goto exit;
+      if (globalData->timeValue >= stop ) TerminateSimulationException(globalData->timeValue);;
       calcEnabledZeroCrossings();
       DDASRT(functionDAE_res, 
              &globalData->nStates,   &globalData->timeValue, 
@@ -260,18 +261,18 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
 	     function_zeroCrossing, &globalData->nZeroCrossing, jroot);
 
       if(!continue_with_dassl(idid,&atol,&rtol))
-        goto exit;
-    
+        TerminateSimulationException(globalData->timeValue);
+   
 
         functionDAE_res(&globalData->timeValue,globalData->states,
                       globalData->statesDerivatives,
                       dummy_delta,0,0,0); // Since residual function calculates 
 					      // alg vars too.
       functionDAE_output();
-
+	 
       info[0] = 1;
 
-    }
+    } 
   
     if(emit()) {
       printf("Error, could not save data. Not enought space.\n"); 
@@ -280,7 +281,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
     saveall();      
 	      
     tout = newTime(globalData->timeValue,step,stop); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
-    if (globalData->timeValue >= stop) goto exit;    
+    if (globalData->timeValue >= stop) throw TerminateSimulationException(globalData->timeValue);    
     calcEnabledZeroCrossings();
     DDASRT(functionDAE_res, 
            &globalData->nStates, &globalData->timeValue, 
@@ -296,8 +297,12 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
 
   	if (sim_verbose) { cout << "Simulation stopped at time " << globalData->timeValue << endl; }		
 
-
- exit:
+  } catch (TerminateSimulationException &e) {
+ 	cout << e.getMessage() << endl;
+  	if (modelTermination) { // terminated from assert, etc.
+   		cout << "Simulation terminated at time " << globalData->timeValue << endl;
+  	}
+  }
   if(emit()) {
       printf("Error, could not save data. Not enought space.\n"); 
   }
