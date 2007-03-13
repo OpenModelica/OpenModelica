@@ -108,6 +108,9 @@ double newTime(double t, double step,double stop)
  */ 
 void storeExtrapolationData()
 {
+	if (globalData->timeValue == globalData->oldTime)
+	  return;
+	  
 	int i;
 	for(i=0;i<globalData->nStates;i++) {
 		globalData->oldStates2[i]=globalData->oldStates[i];

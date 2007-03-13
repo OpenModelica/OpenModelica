@@ -178,17 +178,24 @@ void CheckForInitialEvents(double *t)
 
 void CheckForNewEvents(double *t)
 {
-	int discVarChange=0;
+//	int discVarChange=0;
   // Check for changes in discrete variables
   globalData->timeValue = *t;
   // if discrete variable not in when equation has changed, saveall and solve equations again.
+/*
   while(checkForDiscreteVarChanges()) { 
   	discVarChange=1;
   	saveall();
-  	function_updateDependents(); }
+  	function_updateDependents(); 
+  }
 
 	if(!discVarChange) function_updateDependents();	
+*/
 
+  if (checkForDiscreteVarChanges()) {
+  	AddEvent(-1);
+  }
+  
   function_zeroCrossing(&globalData->nStates,
                         &globalData->timeValue,
                         globalData->states,
@@ -216,11 +223,14 @@ ExecuteNextEvent(double *t)
 {
   if (EventQueue.begin() != EventQueue.end()) {
     long nextEvent = EventQueue.front();
-    if (nextEvent >= globalData->nZeroCrossing) {
+    if (sim_verbose) { 
+		printf("Executing event id:%d\n",nextEvent);
+    }
+	if (nextEvent >= globalData->nZeroCrossing) {
       globalData->timeValue = *t;
       function_when(nextEvent-globalData->nZeroCrossing);
     }
-    else {
+    else if (nextEvent >= 0) {
       globalData->timeValue = *t;
       handleZeroCrossing(nextEvent);
       function_updateDependents();
@@ -240,10 +250,15 @@ StartEventIteration(double *t)
   while (EventQueue.begin() != EventQueue.end()) {
     calcEnabledZeroCrossings();
     while (ExecuteNextEvent(t)) { }
-    for (long i = 0; i < globalData->nHelpVars; i++) save(globalData->helpVars[i]);
+//    for (long i = 0; i < globalData->nHelpVars; i++) save(globalData->helpVars[i]);
+	saveall();
     globalData->timeValue = *t;
     function_updateDependents();
     CheckForNewEvents(t);
+  }
+  for (long i = 0; i < globalData->nHelpVars; i++) {
+//  	globalData->helpVars[i] = 0;
+//  	save(globalData->helpVars[i]);
   }
   //  cout << "EventIteration done" << endl;
 }

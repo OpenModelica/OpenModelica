@@ -3363,7 +3363,7 @@ algorithm
       equation
       vLst = DAELow.varList(v);
       vLst = Util.listSelect(vLst,DAELow.isVarDiscrete); // select all discrete vars.
-			outString = Util.stringDelimitList(Util.listMap2(vLst, buildDiscreteVarChangesVar,daelow,mT),"\n");
+			outString = Util.stringDelimitList(Util.listMap2(vLst, buildDiscreteVarChangesVar,daelow,mT),"\n  ");
     then outString;
     case(_,_,_,_,_,_) equation
       print("buildDiscreteVarChanges failed\n");
@@ -3568,7 +3568,10 @@ algorithm
         res = Util.stringAppendList(
           {"int checkForDiscreteVarChanges()\n{\n",
           "  int needToIterate=0;\n",
-          check_code_1,check_code2_1,"\n  return needToIterate;\n","}\n"});
+          check_code_1,"  ",check_code2_1,
+				  "\n  for (long i = 0; i < localData->nHelpVars; i++) {\n",
+				  "    if (change(localData->helpVars[i])) { needToIterate=1; }\n  }",          
+          "\n  return needToIterate;\n","}\n"});
       then
         (res,helpVarInfo);
     case (_,_,_,_,_,_,_)
