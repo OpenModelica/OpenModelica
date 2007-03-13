@@ -15,7 +15,7 @@
 .SUFFIXES: .c .o
 CC = cc
 SHELL = /bin/sh
-CFLAGS = -O
+CFLAGS = -O -fexceptions
 
 # compile, then strip unnecessary symbols
 .c.o:

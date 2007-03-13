@@ -6,9 +6,9 @@ builddir_inc=$(top_builddir)/build/include
 CC = gcc
 FC = g77
 AR = ar -ru 
-CFLAGS = -O1 -Wall -ansi -pedantic -I$(top_builddir)/mosh/src/ $(EXTRA_CFLAGS)
+CFLAGS = -O1 -fexceptions -Wall -ansi -pedantic -I$(top_builddir)/mosh/src/ $(EXTRA_CFLAGS)
 CPPFLAGS = $(CFLAGS)
-FFLAGS  = -O
+FFLAGS  = -O -fexceptions
 # P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.
 # Adrian Pop, adrpo@ida.liu.se
 # - please leave makefile.u as if you don't it breaks the compilation on UNIX/LINUX
