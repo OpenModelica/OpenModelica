@@ -274,11 +274,18 @@ algorithm
         dae2 = applyReplacementsDAE(dae,repl);
       then DAE.EXTOBJECTCLASS(path,elt1,elt2)::dae2;
         
-     case(DAE.ASSERT(e1)::dae,repl) 
+     case(DAE.ASSERT(e1,e2)::dae,repl) 
       equation
           (e11) = replaceExp(e1, repl, NONE);
+          (e22) = replaceExp(e2, repl, NONE);          
         dae2 = applyReplacementsDAE(dae,repl);
-      then DAE.ASSERT(e11)::dae2;
+      then DAE.ASSERT(e11,e22)::dae2;
+
+     case(DAE.TERMINATE(e1)::dae,repl) 
+      equation
+        (e11) = replaceExp(e1, repl, NONE);
+        dae2 = applyReplacementsDAE(dae,repl);
+      then DAE.TERMINATE(e11)::dae2;        
         
      case(DAE.REINIT(cr,e1)::dae,repl) 
       equation
