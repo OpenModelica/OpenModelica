@@ -13,6 +13,7 @@ SRCC=	$(SRCMO:.mo=.c)
 SRCH=	$(SRCMO:.mo=.h)
 OBJS=    $(SRCMO:.mo=.obj)
 SIGS=    $(ALLMO:.mo=.sig)
+SRZS=    $(ALLMO:.mo=.srz)
 
 .SUFFIXES :
 .SUFFIXES : .obj .mo
@@ -32,7 +33,7 @@ VC7\Release\main.obj: main.obj
 	copy /B /Y main.obj VC7\Release\main.obj
 
 clean:
-	del /Q /F $(OBJS) $(SRCC) $(SRCH) $(SIGS) VC7\Release\main.obj VC7\Release\omcrml.lib
+	del /Q /F $(OBJS) $(SRCC) $(SRCH) $(SIGS) $(SRZS) VC7\Release\main.obj VC7\Release\omcrml.lib
 
 
 Absyn.obj: Absyn.mo Util.sig ModUtil.sig Debug.sig Print.sig 
