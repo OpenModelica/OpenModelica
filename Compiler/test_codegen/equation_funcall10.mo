@@ -5,7 +5,7 @@ end test2;
 function test3
   input Real a;
   output Real x := a+5;
-end test2;
+end test3;
 
 function test
   input  Real x;
