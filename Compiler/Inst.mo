@@ -944,7 +944,7 @@ protected function instClassBasictype "function: instClassBasictype
   NOTE: This function should only be called from inst_basictype_baseclass.
   This is new functionality in Modelica v 2.2.
 "
-	input Env.Cache inEnv;
+	input Env.Cache inCache;
   input Env inEnv;
   input Mod inMod;
   input Prefix inPrefix;
@@ -1567,7 +1567,7 @@ to the inner variable"
 	input VarTransform.VariableReplacements inRepl;
 	output VarTransform.VariableReplacements outRepl;
 algorithm
-  repl := matchcontinue(innerVars,outerVars)
+  repl := matchcontinue(innerVars,outerVars,inRepl)
   local VarTransform.VariableReplacements repl;
     DAE.Element v;
     case({},_,repl) then repl;
@@ -2693,7 +2693,7 @@ protected function instElementList "function: instElementList
   output list<Types.Var> outTypesVarLst;
 algorithm 
   (outCache,outDAEElementLst,outEnv,outSets,outState,outTypesVarLst):=
-  matchcontinue (inCache,inEnv1,inMod2,inPrefix3,inSets4,inState5,inTplSCodeElementModLst6,inInstDims7,inBoolean8,inBoolean9)
+  matchcontinue (inCache,inEnv1,inMod2,inPrefix3,inSets4,inState5,inTplSCodeElementModLst6,inInstDims7,inBoolean8)
     local
       list<Env.Frame> env,env_1,env_2;
       Connect.Sets csets,csets_1,csets_2;
@@ -4808,14 +4808,14 @@ protected function instArray "function: instArray
   input Boolean inBoolean;
   input Option<Absyn.Comment> inAbsynCommentOption;
   input Absyn.InnerOuter io;
-  output Env.Cache cache;
+  output Env.Cache outCache;
   output Env outEnv;
   output list<DAE.Element> outDAEElementLst;
   output Connect.Sets outSets;
   output Types.Type outType;
 algorithm 
   (outCache,outEnv,outDAEElementLst,outSets,outType):=
-  matchcontinue (inCache,inEnv,inState,inMod,inPrefix,inSets,inIdent,inTplSCodeClassSCodeAttributes,protection,inInteger,inDimExp,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io)
+  matchcontinue (cache,inEnv,inState,inMod,inPrefix,inSets,inIdent,inTplSCodeClassSCodeAttributes,protection,inInteger,inDimExp,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io)
     local
       Exp.Exp e,e_1;
       Types.Properties p,p2;
@@ -4945,7 +4945,7 @@ public function elabComponentArraydimFromEnv "function elabComponentArraydimFrom
   output list<DimExp> outDimExpLst;
 algorithm 
   (outCache,outDimExpLst) :=
-  matchcontinue (inEnv,inComponentRef)
+  matchcontinue (inCache,inEnv,inComponentRef)
     local
       Types.Var ty;
       String n,id;
@@ -5482,7 +5482,7 @@ public function instClassDecl "function: instClassDecl
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   (outCache,outEnv,outDAEElementLst):=
-  matchcontinue (inCache,inEnv,inMod,inPrefix,inSets,inClass,inInstDims,inBoolean)
+  matchcontinue (inCache,inEnv,inMod,inPrefix,inSets,inClass,inInstDims)
     local
       list<Env.Frame> env_1,env_2,env;
       list<DAE.Element> dae;
@@ -6049,7 +6049,7 @@ protected function instExtGetAnnotation "function: instExtGetAnnotation
   output Option<Absyn.Annotation> outAbsynAnnotationOption;
 algorithm 
   outAbsynAnnotationOption:=
-  matchcontinue (inExternalDecl,els)
+  matchcontinue (inExternalDecl)
     local Option<Absyn.Annotation> ann;
     case (Absyn.EXTERNALDECL(annotation_ = ann)) then ann; 
   end matchcontinue;
@@ -7057,7 +7057,7 @@ This function detect this case and elaborates expressions without vectorization.
   output Exp.Exp outE1;
   output Exp.Exp outE2;
 algorithm
-  (outCache,outE1,outE2) := matchcontinue(inCache,env,e1,e2,prop,impl)
+  (outCache,outE1,outE2) := matchcontinue(inCache,env,e1,e2,elabedE1,elabedE2,prop,impl)
     local Env.Cache cache;
       Boolean b1,b2;
     case(cache,env,e1,e2,elabedE1,elabedE2,prop,impl) equation
@@ -9360,7 +9360,7 @@ public function instRecordConstructorElt "function: instRecordConstructorElt
   a record constructor.
   E.g if the element is Real x; the resulting Var is \"input Real x;\"
 "
-	input Env.Cache inCaache;
+	input Env.Cache inCache;
   input Env inEnv;
   input SCode.Element inElement;
   input Boolean inBoolean;

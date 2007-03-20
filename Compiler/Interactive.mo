@@ -277,7 +277,7 @@ protected function getEcho "function: getEcho
   output Boolean outBoolean;
 algorithm 
   outBoolean:=
-  matchcontinue (inInteractiveSymbolTable)
+  matchcontinue ()
     local
       list<Env.Frame> env;
       Boolean res;
@@ -558,7 +558,7 @@ protected function evaluateForStmt "evaluates a for-statement in an algorithm se
   output InteractiveSymbolTable outInteractiveSymbolTable;
 algorithm 
   outInteractiveSymbolTable:=
-  matchcontinue (forVar,valList,algItemList, inInteractiveSymbolTable)
+  matchcontinue (iter,valList,algItemList, inInteractiveSymbolTable)
     local
       Values.Value val;
       list<Values.Value> vallst;
@@ -591,7 +591,7 @@ protected function evaluateForStmtRangeOpt
   output InteractiveSymbolTable outInteractiveSymbolTable;
 algorithm 
   outInteractiveSymbolTable:=
-  matchcontinue (forVar, startVal, stepVal, stopVal, algItemList, inInteractiveSymbolTable)
+  matchcontinue (iter, startVal, stepVal, stopVal, algItemList, inInteractiveSymbolTable)
     local
       Values.Value startv, stepv, stopv, nextv;
       list<Values.Value> vallst;

@@ -1965,7 +1965,7 @@ protected function elabBuiltinCardinality "function: elabBuiltinCardinality
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp exp_1;
       Exp.ComponentRef cr_1;
@@ -3266,7 +3266,7 @@ protected function elabBuiltinDiagonal "function: elabBuiltinDiagonal
   This function elaborates on the builtin operator diagonal, creating a
   matrix with a value of the diagonal. The other elements are zero.
 "
-	input Env.Cache cache;
+	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inNamedArg;  
@@ -3652,7 +3652,7 @@ protected function elabBuiltinDer "function: elabBuiltinDer
   output Types.Properties outProperties;
 algorithm 
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsaynExpLst,inNamedArg,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       Exp.Exp e,exp_1;
       Types.Properties prop;
@@ -5245,7 +5245,7 @@ protected function elabCallArgs "function: elabCallArgs
   function finds the function definition and matches the actual
   arguments to the formal parameters.
 "
-	input Env.Cache cache;
+	input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path inPath;
   input list<Absyn.Exp> inAbsynExpLst;

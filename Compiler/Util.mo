@@ -1039,7 +1039,7 @@ public function listThread3 "function: listThread
   replaceable type Type_a subtypeof Any;
 algorithm 
   outTypeALst:=
-  matchcontinue (inTypeALst1,inTypeALst2,inTypeALst2)
+  matchcontinue (inTypeALst1,inTypeALst2,inTypeALst3)
     local
       list<Type_a> r_1,c,d,ra,rb,rc;
       Type_a fa,fb,fc;

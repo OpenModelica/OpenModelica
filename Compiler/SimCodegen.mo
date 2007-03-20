@@ -290,13 +290,13 @@ algorithm
 end generateHelpVarsForWhenStatements;
 
 protected function generateHelpVarsInAlgorithms
-  input Integer n "Index of next help variable";
+  input Integer nextInd "Index of next help variable";
   input list<Algorithm.Algorithm> inAlgLst;
   output list<HelpVarInfo> outHelpVars;
   output list<Algorithm.Algorithm> outAlgLst;
   output Integer n2; 
 algorithm
-  (outHelpVars,outAlgLst,n2) := matchcontinue(nextInd,algLst)
+  (outHelpVars,outAlgLst,n2) := matchcontinue(nextInd,inAlgLst)
     local	
       Integer nextInd,nextInd2,nextInd3;
       list<Algorithm.Statement> stmts, stmts2;
@@ -590,7 +590,7 @@ protected function generateExternalObjectDestructorCall "help function to genera
   output CFunction outCFunction;
   output Integer cg_out;
 algorithm
-	(outCFunction,cg_out) := matchcontinue (cg_in,v,eclasses) 
+	(outCFunction,cg_out) := matchcontinue (cg_in,var,eclasses) 
 	  case (_,_,{}) equation print("generateExternalObjectDestructorCall failed\n"); then fail();
 	
 		// found class
@@ -621,7 +621,7 @@ protected function generateExternalObjectDestructorCall2 "Help funciton to gener
   output CFunction outCFunction;
   output Integer cg_out;
 algorithm
-  (cg_out,outCFunction) := matchcontinue(cg_in,var,destructor) 
+  (cg_out,outCFunction) := matchcontinue(cg_in,varName,destructor) 
     case (cg_in,varName,destructor as DAE.EXTFUNCTION(externalDecl = DAE.EXTERNALDECL(ident=funcStr)))
       local String vStr,funcStr,str;
         Codegen.CFunction cfunc;
@@ -720,12 +720,12 @@ end generateExternalObjectConstructorAliases2;
 
 protected function generateExternalObjectConstructorAlias 
 "Help function to generateExternalObjectConstructorAliases"
-	 input Integer cg_in;
+	input Integer cg_in;
   input DAELow.Var var;
   output CFunction outCFunction;
   output Integer cg_out;
   algorithm
-    (outCFunction,cg_out) := matchcontinue (cg_in,v)
+    (outCFunction,cg_out) := matchcontinue (cg_in,var)
 	       
 	  // 	external object aliased to another external object.
 	  case (cg_in, DAELow.VAR(varName= name,bindExp = SOME(Exp.CREF(cr,_)),varKind = DAELow.EXTOBJ(path1))) 
@@ -751,7 +751,7 @@ protected function generateExternalObjectConstructorCall "help function to gener
   output CFunction outCFunction;
   output Integer cg_out;
 algorithm
-	(outCFunction,cg_out) := matchcontinue (cg_in,v,eclasses)
+	(outCFunction,cg_out) := matchcontinue (cg_in,var,eclasses)
 	
 		// Skip aliases now, they are handled in generateExternalObjectConstructorAlias
 	  case (cg_in, DAELow.VAR(bindExp = SOME(Exp.CREF(_,_)),varKind = DAELow.EXTOBJ(_)),_) 
@@ -795,7 +795,7 @@ protected function generateExternalObjectConstructorCall2 "Help funciton to gene
   output CFunction outCFunction;
   output Integer cg_out;
 algorithm
-  (outCFunction,cg_out) := matchcontinue(cg_in,var,constructor,constrCallExp) 
+  (outCFunction,cg_out) := matchcontinue(cg_in,varName,constructor,constrCallExp) 
     case (cg_in,varName,constructor as DAE.EXTFUNCTION(externalDecl = DAE.EXTERNALDECL(ident=funcStr)),Exp.CALL(expLst = args))
       local 
         String vStr,funcStr,argsStr,str;
@@ -3377,7 +3377,7 @@ protected function buildDiscreteVarChangesVar "help function to buildDiscreteVar
   input DAELow.IncidenceMatrixT mT;
   output String outString;
 algorithm
-  outString := matchcontinue(var,daelow,ass1) 
+  outString := matchcontinue(var,daelow,mT) 
   local list<String> strLst;
     Exp.ComponentRef cr;
     Integer varIndx;
@@ -3462,7 +3462,7 @@ given by input index."
   input	list<DAELow.ZeroCrossing> zcLst;
   output list<Integer> eqns;
 algorithm
-  eqns := matchcontinue(eqn,zcLst)
+  eqns := matchcontinue(eqn,i,zcLst)
     local list<Integer> eqnLst;
     case (_,_,{}) then {};
     case(eqn,i,DAELow.ZERO_CROSSING(occurEquLst=eqnLst)::zcLst) equation
@@ -4977,7 +4977,7 @@ protected function generateOdeSystem2NonlinearCall "function: generateOdeSystem2
   output Integer outInteger;
 algorithm 
   (mixedEvent,outCFunction,outInteger):=
-  matchcontinue (inString,inInteger)
+  matchcontinue (mixedEvent,inString,inInteger)
     local
       String stmt,func_id;
       Codegen.CFunction func;
@@ -6719,7 +6719,7 @@ protected function generateHelpVarAssignments
   output Integer outInteger;
 algorithm 
   (outCFunction,outInteger):=
-  matchcontinue (inDAELowVarLst,inInteger)
+  matchcontinue (helpVarLst,inInteger)
     local
       Integer cg_id,cg_id_1;
       String ind_str, assign,var;

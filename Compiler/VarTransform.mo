@@ -130,7 +130,7 @@ public function applyReplacementsDAE "Apply a set of replacement rules on a DAE 
 	input VariableReplacements repl;
 	output list<DAE.Element> outDae;
 algorithm
-  outDae := matchcontinue(inDae)
+  outDae := matchcontinue(inDae,repl)
     local
       Exp.ComponentRef cr,cr2;
       list<DAE.Element> dae,dae2,elist,elist2,elist22,elist1,elist11;
@@ -849,7 +849,7 @@ in singleRepl."
   input VariableReplacements singleRepl "contain one replacement rule: the rule to be added";
   output VariableReplacements outRepl;
 algorithm
-  outRepl := matchcontinue(lst,repl,src,dst)
+  outRepl := matchcontinue(lst,repl,singleRepl)
     local 
       Exp.Exp crDst;
       Exp.ComponentRef cr;

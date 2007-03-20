@@ -1388,7 +1388,7 @@ protected function cacheGetEnv3 "Help function to cacheGetEnv2, searches down in
   input list<CacheTree> children;
   output Env env;
 algorithm
-  env := matchcontinue(path,tree)
+  env := matchcontinue(path,children)
 
     local
       Ident id,id2;
@@ -1455,7 +1455,7 @@ end cacheAddEnv;
 
 protected function cacheAddEnv2
   input Absyn.Path path;
-  input list<CacheTree> inChilren;
+  input list<CacheTree> inChildren;
   input Env env;
   output list<CacheTree> outChildren;
 algorithm

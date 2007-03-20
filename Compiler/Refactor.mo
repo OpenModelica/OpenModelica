@@ -13,7 +13,7 @@ public function refactorGraphicalAnnotation "function: refactorGraphicalAnnnotat
   input Absyn.Class classToRefactor;
   output Absyn.Class changedClass; //Manipulerad AST
 algorithm
-  changedClass := matchcontinue inProgram
+  changedClass := matchcontinue (wholeAST, classToRefactor)
     local 
       list<Absyn.Class> classList, other;
       Absyn.Class c;
@@ -142,7 +142,7 @@ protected function refactorGraphAnnInClassParts "function: refactorGraphAnnInCla
   input Env.Env env;
   output list<Absyn.ClassPart> outParts;
 algorithm
-  outParts := matchcontinue (inParts,inProgram,classPath,inClassEnv)
+  outParts := matchcontinue (inParts,inProgram,classPath,env)
     local
       Absyn.Program p;
       list<Absyn.ClassPart> restParts,resParts,resultParts;
@@ -262,13 +262,13 @@ end refactorGraphAnnInContentList;
 protected function refactorGraphAnnInElItem"function: refactorGraphAnnInElItem
 	Helper function to refactorGraphAnnInClassPart. Part of the AST traverse.
 "
-  input Absyn.ElementItem inIntem;
+  input Absyn.ElementItem inItem;
   input Absyn.Program inProgram;
   input Absyn.Path classPath;
   input Env.Env inClassEnv;
   output Absyn.ElementItem outItem;
 algorithm
-  outItem := matchcontinue (inItem ,inProgram,classPath,inClassEnv)
+  outItem := matchcontinue (inItem,inProgram,classPath,inClassEnv)
     local
       Absyn.Program p;
       Context context;
@@ -421,7 +421,7 @@ protected function refactorConstrainClass "function: refactorGraphAnnInElement
   
 algorithm
   
-  outCC := matchcontinue (inElement,inProgram,classPath,inClassEnv)
+  outCC := matchcontinue (inCC,inProgram,classPath,inClassEnv)
 	
 	local
       Absyn.Program p;	  
@@ -683,7 +683,7 @@ protected function getRestrictionInClass"function: getRestrictionFromClass
 	argument and then returns the restriction to that class.
 "		
   
-  input Absyn.Class inClasS;
+  input Absyn.Class inClass;
   output Absyn.Restriction outRestriction;
   
 algorithm
@@ -767,7 +767,7 @@ protected function getIconTransformation"function: getIconTransformation
   
 algorithm
   
-  iconTrans := matchcontinue(ax1,ay1,ax2,ay2,inRotation,inPath,inProg,inClassEnv)
+  iconTrans := matchcontinue(ax1,ay1,ax2,ay2,inRotation,classPath,inPath,inProg,inClassEnv)
     
     local 
       
@@ -1364,7 +1364,7 @@ protected function getCoordsFromAlgs"function: getCoordsFromAlgs
   
 algorithm
   
-  (x1,y1,x2,y2) := matchcontinue(inAlgs,contextToGetCoordsFrom,context)
+  (x1,y1,x2,y2) := matchcontinue(inAlgs,contextToGetCoordsFrom)
     
     local
       
@@ -2815,7 +2815,7 @@ protected function getValueFromExp
   
 algorithm
   
-  value := matchcontinue(realExpr)
+  value := matchcontinue(expr)
     
     local
       
@@ -2930,7 +2930,7 @@ protected function fixPaths
   input Absyn.Path  inPath2;
   output Absyn.Path outPath;
 algorithm
-  outPath := matchcontinue (inPath1, inPath2, temp)
+  outPath := matchcontinue (inPath1, inPath2)
     local
       Absyn.Path ip1, ip2, p1, p2;
       String str1, str2;

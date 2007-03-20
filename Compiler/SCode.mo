@@ -1876,7 +1876,7 @@ public function innerouterString "function: inner/outer String
   output String outString;
 algorithm 
   outString:=
-  matchcontinue (inner_,outer_)
+  matchcontinue (innerOuter)
     case (Absyn.INNEROUTER()) then "INNER/OUTER"; 
     case (Absyn.INNER()) then "INNER"; 
     case (Absyn.OUTER()) then "OUTER"; 
@@ -2532,7 +2532,7 @@ protected function directionEqual "Returns true if two Direction:s are equal"
   input Absyn.Direction dir2;
   output Boolean equal;
 algorithm 
-  equal := matchcontinue(var1,var2)
+  equal := matchcontinue(dir1,dir2)
     case(Absyn.INPUT(),Absyn.INPUT()) then true;
     case(Absyn.OUTPUT(),Absyn.OUTPUT()) then true;
     case(Absyn.BIDIR(),Absyn.BIDIR()) then true;

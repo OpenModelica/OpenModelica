@@ -2759,7 +2759,7 @@ protected function countSimpleEquations2
 	input Integer partialSum "to enable tail-recursion";
 	output Integer numEqns;
 algorithm
-  numEqns := matchcontinue(eqns)
+  numEqns := matchcontinue(eqns,partialSum)
   local Equation e;    
     case({},partialSum) then partialSum;
       
@@ -2794,7 +2794,7 @@ If the equation is not simple, this function will fail.
   output Exp.Exp e2;
 algorithm 
   (e1,e2):=
-  matchcontinue (eqn)
+  matchcontinue (eqn,swap)
       local 
         Exp.Exp e;
         Exp.Type t;
@@ -3800,7 +3800,7 @@ protected function getWhenEquationFromVariable
   output WhenEquation outEquation;
   output list<Equation> outEquations;
 algorithm
-  (outEquation, outEquations) := matchcontinue(cr,euqations)
+  (outEquation, outEquations) := matchcontinue(inCr,inEquations)
     local
       Exp.ComponentRef cr1,cr2;
       WhenEquation eq;
@@ -6533,7 +6533,7 @@ protected function dumpIncidenceRow "function: dumpIncidenceRow
   input list<Integer> inIntegerLst;
 algorithm 
   _:=
-  matchcontinue (inIntegerLst,rowIndex)
+  matchcontinue (inIntegerLst)
     local
       String s;
       Value x;
@@ -7962,7 +7962,7 @@ public function equationEqual "Returns true if two equations are equal"
 algorithm
   res := matchcontinue(e1,e2)
     local 
-      Exp.Exp e11,e12,e21,e22,e1,e2;
+      Exp.Exp e11,e12,e21,e22,exp1,exp2;
       Integer i1,i2;
       Exp.ComponentRef cr1,cr2;
     case (EQUATION(e11,e12),EQUATION(e21,e22)) equation
@@ -7971,11 +7971,11 @@ algorithm
     case(ARRAY_EQUATION(i1,_),ARRAY_EQUATION(i2,_)) equation
       res = intEq(i1,i2);
     then res;
-    case(SOLVED_EQUATION(cr1,e1),SOLVED_EQUATION(cr2,e2)) equation
-      res = boolAnd(Exp.crefEqual(cr1,cr2),Exp.expEqual(e1,e2));
+    case(SOLVED_EQUATION(cr1,exp1),SOLVED_EQUATION(cr2,exp2)) equation
+      res = boolAnd(Exp.crefEqual(cr1,cr2),Exp.expEqual(exp1,exp2));
     then res;
-    case(RESIDUAL_EQUATION(e1),RESIDUAL_EQUATION(e2)) equation
-      res = Exp.expEqual(e1,e2);
+    case(RESIDUAL_EQUATION(exp1),RESIDUAL_EQUATION(exp2)) equation
+      res = Exp.expEqual(exp1,exp2);
     then res;
     case(ALGORITHM(i1,_,_),ALGORITHM(i2,_,_)) equation
       res = intEq(i1,i2);
@@ -11626,7 +11626,7 @@ protected function variableReplacementsNoDollar "function: variableReplacementsN
   output list<Exp.Exp> outExpExpLst2;
 algorithm 
   (outExpExpLst1,outExpExpLst2):=
-  matchcontinue (inVarLst1,inVarLst2)
+  matchcontinue (inVarLst1,inVarLst2,inVarLst3)
     local
       list<Exp.Exp> s1,t1,s2,t2,s,t,s3,t3;
       list<Var> vars,knvars,extvars;

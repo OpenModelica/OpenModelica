@@ -483,7 +483,7 @@ public function makeWhenA "function: makeWhenA
   output Statement outStatement;
 algorithm 
   outStatement:=
-  matchcontinue (inExp,inProperties,inStatementLst)
+  matchcontinue (inExp,inProperties,inStatementLst,elseWhenStmt)
     local
       Exp.Exp e;
       list<Statement> stmts;

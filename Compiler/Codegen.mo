@@ -5855,7 +5855,7 @@ protected function generateExtcallVardecls2F77 "function: generateExtcallVardecl
   output Integer outInteger;
 algorithm 
   (outCFunction,outDAEExtArgLst,i,outInteger):=
-  matchcontinue (inDAEExtArgLst,inExtArg,inInteger)
+  matchcontinue (inDAEExtArgLst,inExtArg,i,inInteger)
     local
       Integer tnr,tnr_1,tnr_2,i2;
       CFunction retdecl,decl,decls,res;
