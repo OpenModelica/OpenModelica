@@ -224,7 +224,7 @@ ExecuteNextEvent(double *t)
   if (EventQueue.begin() != EventQueue.end()) {
     long nextEvent = EventQueue.front();
     if (sim_verbose) { 
-		printf("Executing event id:%d\n",nextEvent);
+		printf("Executing event id:%ld\n",nextEvent);
     }
 	if (nextEvent >= globalData->nZeroCrossing) {
       globalData->timeValue = *t;
