@@ -3331,24 +3331,12 @@ algorithm
   matchcontinue (inElementLst)
     local
       list<Element> res,lst;
-      Exp.ComponentRef a;
-      VarKind b;
-      VarDirection c;
-      VarProtection prot;
-      Type d;
-      Option<Exp.Exp> e,g;
-      InstDims f;
-      Flow h;
-      list<Absyn.Path> i;
-      Option<VariableAttributes> dae_var_attr;
-      Option<Absyn.Comment> comment;
-      Absyn.InnerOuter io;
-      Types.Type tp;
-    case (VAR(componentRef = a,varible = b,variable = c,protection = prot,input_ = d,one = e,binding = f,dimension = g,value = h,flow_ = i,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp) :: lst)
+      Element x;
+    case ((x as VAR(_,_,_,_,_,_,_,_,_,_,_,_,_,_)) :: lst)
       equation 
         res = getVariableList(lst);
       then
-        (VAR(a,b,c,prot,d,e,f,g,h,i,dae_var_attr,comment,io,tp) :: res);
+        (x :: res);
     case (_ :: lst)
       equation 
         res = getVariableList(lst);

@@ -3039,15 +3039,13 @@ algorithm
     case (env,_,_,_,_,{},_,_,_,_) then env;  /* implicit inst. */ 
 
       /* A component */ 
-    case (env,mod,pre,csets,cistate,(((comp as SCode.COMPONENT(component = n,innerOuter=io,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = (attr as SCode.ATTR(arrayDim = ad,flow_ = flow_,RW = acc,parameter_ = param,input_ = dir)),typeSpec = t,mod = m,baseclass = bc,this = comment)),cmod) :: xs),allcomps,eqns,instdims,impl) 
+    case (env,mod,pre,csets,cistate,
+        (((comp as SCode.COMPONENT(component = n,innerOuter=io,final_ = final_,replaceable_ = repl,protected_ = prot,attributes = 
+        (attr as SCode.ATTR(arrayDim = ad,flow_ = flow_,RW = acc,parameter_ = param,input_ = dir)),typeSpec = t,mod = m,baseclass = bc,this = comment)),cmod) :: xs),
+        allcomps,eqns,instdims,impl) 
       equation 
-        env_1 = addComponentsToEnv2(env, mod, pre, csets, cistate, 
-          {
-          (
-          SCode.COMPONENT(n,io,final_,repl,prot,SCode.ATTR(ad,flow_,acc,param,dir),t,m,
-          bc,comment),cmod)}, instdims, impl);
-        env_2 = addComponentsToEnv(env_1, mod, pre, csets, cistate, xs, allcomps, eqns, 
-          instdims, impl);
+        env_1 = addComponentsToEnv2(env, mod, pre, csets, cistate, {(comp,cmod)}, instdims, impl);
+        env_2 = addComponentsToEnv(env_1, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
       then
         env_2;
         

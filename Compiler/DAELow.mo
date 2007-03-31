@@ -2070,8 +2070,8 @@ algorithm
       Option<Absyn.Comment> s;
       DAE.Flow t;
       Boolean fixed;
-    case (VAR(varName = a,varKind = b,varDirection = c,varType = d,bindExp = e,bindValue = f,arryDim = g,startValue = h,index = i,origVarName = j,className = k,values = SOME(DAE.VAR_ATTR_REAL(l,m,n,o,p,_,q,r)),comment = s,flow_ = t),fixed) then VAR(a,b,c,d,e,f,g,h,i,j,k,
-          SOME(DAE.VAR_ATTR_REAL(l,m,n,o,p,SOME(fixed),q,r)),s,t); 
+    case (VAR(varName = a,varKind = b,varDirection = c,varType = d,bindExp = e,bindValue = f,arryDim = g,startValue = h,index = i,origVarName = j,className = k,values = SOME(DAE.VAR_ATTR_REAL(l,m,n,o,p,_,q,r)),comment = s,flow_ = t),fixed) 
+      then VAR(a,b,c,d,e,f,g,h,i,j,k,SOME(DAE.VAR_ATTR_REAL(l,m,n,o,p,SOME(fixed),q,r)),s,t); 
     case (VAR(varName = a,varKind = b,varDirection = c,varType = d,bindExp = e,bindValue = f,arryDim = g,startValue = h,index = i,origVarName = j,className = k,values = SOME(DAE.VAR_ATTR_INT(l,m,n,_)),comment = o,flow_ = p),fixed)
       local
         tuple<Option<Value>, Option<Value>> m;
@@ -6181,8 +6181,9 @@ algorithm
       Option<DAE.VariableAttributes> attr;
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
-    case (VAR(varName = cr,varKind = kind,varDirection = dir,varType = tp,bindExp = bind,bindValue = v,arryDim = dim,startValue = st,index = i,origVarName = origname,className = classes,values = attr,comment = comment,flow_ = flow_),new_kind) then VAR(cr,new_kind,dir,tp,bind,v,dim,st,i,origname,classes,attr,
-          comment,flow_); 
+    case (VAR(varName = cr,varKind = kind,varDirection = dir,varType = tp,bindExp = bind,bindValue = v,arryDim = dim,startValue = st,
+              index = i,origVarName = origname,className = classes,values = attr,comment = comment,flow_ = flow_),new_kind) 
+      then VAR(cr,new_kind,dir,tp,bind,v,dim,st,i,origname,classes,attr,comment,flow_); 
   end matchcontinue;
 end setVarKind;
 
@@ -11971,20 +11972,11 @@ end calculateIndexes;
 
 protected function transformVariables "function: transformVariables
   author: PA
- 
-  Helper function to translate_dae
- 
-  
-  inputs:  (Var list, 
-              Exp.Exp list, 
-              Exp.Exp list,
-              string /* varible prefix, \"$\" or \"\" */)
-  outputs: (Var list) 
-"
+  Helper function to translateDae"
   input list<Var> inVarLst1;
   input list<Exp.Exp> inExpExpLst2;
   input list<Exp.Exp> inExpExpLst3;
-  input String inString4;
+  input String inString4 "variable prefix, '$' or ''";
   output list<Var> outVarLst;
 algorithm 
   outVarLst:=
@@ -12152,7 +12144,8 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       DAE.Flow flow_;
-    case ({},x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType) then ({},x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType); 
+    case ({},x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType) 
+      then ({},x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType); 
 
     case ((VAR(varName = cr,varKind = VARIABLE(),varDirection = d,varType = DAE.STRING(),bindExp = b,bindValue = value,arryDim = dim,startValue = start,origVarName = name,className = cl,values = dae_var_attr,comment = comment,flow_ = flow_) :: vs),x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       equation 

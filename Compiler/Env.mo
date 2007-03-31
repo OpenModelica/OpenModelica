@@ -385,7 +385,7 @@ algorithm
       BinTree ht_1,ht,httypes;
       Option<Ident> id;
       list<Value> imps;
-      Env bcframes,fs,env;
+      Env bcframes,fs,env,remember;
       tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
       Boolean encflag;
       InstStatus i;
@@ -400,11 +400,12 @@ algorithm
         (FRAME(id,ht_1,httypes,imps,bcframes,crs,encflag) :: fs);
 
         // Variable already added, perhaps from baseclass
-    case ((FRAME(class_1 = id,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs),(v as Types.VAR(name = n)),c,i,env) /* environment of component */ 
+    case (remember as (FRAME(class_1 = id,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs),
+          (v as Types.VAR(name = n)),c,i,env) /* environment of component */ 
       equation 
         (_)= treeGet(ht, n, System.hash); 
       then
-        (FRAME(id,ht,httypes,imps,bcframes,crs,encflag) :: fs);
+        (remember);
   end matchcontinue;
 end extendFrameV;
 
@@ -574,7 +575,8 @@ algorithm
       tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crefs;
       Boolean enc;
       Frame f;
-    case ((FRAME(class_1 = sid,list_2 = cls,list_3 = tps,list_4 = imps,list_5 = bc,current6 = crefs,encapsulated_7 = enc) :: fs),(f :: _)) then (FRAME(sid,cls,tps,imps,(f :: bc),crefs,enc) :: fs);  /* env bc env */ 
+    case ((FRAME(class_1 = sid,list_2 = cls,list_3 = tps,list_4 = imps,list_5 = bc,current6 = crefs,encapsulated_7 = enc) :: fs),(f :: _)) 
+      then (FRAME(sid,cls,tps,imps,(f :: bc),crefs,enc) :: fs);  /* env bc env */ 
   end matchcontinue;
 end addBcFrame;
 
@@ -1539,6 +1541,7 @@ algorithm
 	    then str;
 	end matchcontinue;
 end printCacheTreeStr;
+
 public function localOutsideConnectorFlowvars "function: localOutsideConnectorFlowvars
  
   Return the outside connector variables that are flow in the local scope.
