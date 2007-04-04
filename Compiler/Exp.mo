@@ -6217,6 +6217,23 @@ algorithm
   end matchcontinue;
 end operatorEqual;
 
+public function replaceExpListOpt "similar to replaceExpList but with Option<Exp> instead of Exp."
+  input Option<Exp> inExp1;
+  input list<Exp> s;
+  input list<Exp> t;
+  output Option<Exp> outExp;
+  output Integer outInteger;
+algorithm 
+  (outExp,outInteger):=
+  matchcontinue (inExp1,s,t)
+    local Exp e;
+    case (NONE(),_,_) then (NONE(),0);
+    case (SOME(e),s,t) equation
+      (e,outInteger) = replaceExpList(e,s,t);
+     then (SOME(e),outInteger);
+  end matchcontinue; 
+end replaceExpListOpt;  
+
 public function replaceExpList "function: replaceExpList.
  
   Replaces an expression with a list of several expressions. 

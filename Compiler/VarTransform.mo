@@ -159,18 +159,18 @@ algorithm
 
     case({},repl) then {};
       
-    case(DAE.VAR(cr,kind,dir,prot,tp,SOME(bindExp),dims,start,fl,clsLst,attr,cmt,io,ftp)::dae,repl) 
+    case(DAE.VAR(cr,kind,dir,prot,tp,SOME(bindExp),dims,fl,clsLst,attr,cmt,io,ftp)::dae,repl) 
       equation
         (bindExp2) = replaceExp(bindExp, repl, NONE);
   			dae2 = applyReplacementsDAE(dae,repl);
-  			start = applyReplacementsStartValue(start,repl);
-  	then DAE.VAR(cr,kind,dir,prot,tp,SOME(bindExp),dims,start,fl,clsLst,attr,cmt,io,ftp)::dae2;
+        attr = applyReplacementsVarAttr(attr,repl);
+      then DAE.VAR(cr,kind,dir,prot,tp,SOME(bindExp),dims,fl,clsLst,attr,cmt,io,ftp)::dae2;
 
-    case(DAE.VAR(cr,kind,dir,prot,tp,NONE,dims,start,fl,clsLst,attr,cmt,io,ftp)::dae,repl) 
+    case(DAE.VAR(cr,kind,dir,prot,tp,NONE,dims,fl,clsLst,attr,cmt,io,ftp)::dae,repl) 
       equation
-  			dae2 = applyReplacementsDAE(dae,repl);
-        start = applyReplacementsStartValue(start,repl);
-  	then DAE.VAR(cr,kind,dir,prot,tp,NONE,dims,start,fl,clsLst,attr,cmt,io,ftp)::dae2;
+        dae2 = applyReplacementsDAE(dae,repl);
+        attr = applyReplacementsVarAttr(attr,repl);
+  	then DAE.VAR(cr,kind,dir,prot,tp,NONE,dims,fl,clsLst,attr,cmt,io,ftp)::dae2;
 
     case(DAE.DEFINE(cr,e)::dae,repl) 
       equation
@@ -296,22 +296,48 @@ algorithm
   end matchcontinue;
 end applyReplacementsDAE;
 
-protected function applyReplacementsStartValue "Help function to applyReplacementsDAE"
-  input Option<Exp.Exp> startValue;
+protected function applyReplacementsVarAttr "Help function to applyReplacementsDAE"
+  input Option<DAE.VariableAttributes> attr;
   input VariableReplacements repl;
-  output Option<Exp.Exp> outStartValue;
+  output Option<DAE.VariableAttributes> outAttr;
 algorithm
-    outStartValue := matchcontinue(startValue,repl)
-    local Exp.Exp e,e1;
-      case(SOME(e),repl) equation
-         (e1) = replaceExp(e, repl, NONE);
-      then SOME(e1);
-        
-      case(NONE,repl) then NONE;
-        
-    end matchcontinue;
-end applyReplacementsStartValue;
-  
+  outAttr := matchcontinue(attr,repl)
+    local Option<Exp.Exp> quantity,unit,displayUnit,min,max,initial_,fixed,nominal;
+      Option<DAE.StateSelect> stateSelect;
+    case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect)),repl) equation      
+      (quantity) = replaceExpOpt(quantity,repl,NONE);
+      (unit) = replaceExpOpt(unit,repl,NONE);
+      (displayUnit) = replaceExpOpt(displayUnit,repl,NONE);      
+      (min) = replaceExpOpt(min,repl,NONE);
+      (max) = replaceExpOpt(max,repl,NONE);
+      (initial_) = replaceExpOpt(initial_,repl,NONE);
+      (fixed) = replaceExpOpt(fixed,repl,NONE);
+      (nominal) = replaceExpOpt(nominal,repl,NONE);                                          
+      then SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect));
+   
+    case(SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed)),repl) equation
+      (quantity) = replaceExpOpt(quantity,repl,NONE);
+      (min) = replaceExpOpt(min,repl,NONE);
+      (max) = replaceExpOpt(max,repl,NONE);
+      (initial_) = replaceExpOpt(initial_,repl,NONE);
+      (fixed) = replaceExpOpt(fixed,repl,NONE);
+      then SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed));
+    
+      case(SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed)),repl) equation
+      (quantity) = replaceExpOpt(quantity,repl,NONE);
+      (initial_) = replaceExpOpt(initial_,repl,NONE);
+      (fixed) = replaceExpOpt(fixed,repl,NONE);
+      then SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed));
+
+      case(SOME(DAE.VAR_ATTR_STRING(quantity,initial_)),repl) equation
+      (quantity) = replaceExpOpt(quantity,repl,NONE);
+      (initial_) = replaceExpOpt(initial_,repl,NONE);
+      then SOME(DAE.VAR_ATTR_STRING(quantity,initial_));
+
+      case (NONE(),repl) then NONE();        
+  end matchcontinue; 
+end  applyReplacementsVarAttr; 
+
 public function applyReplacements "function: applyReplacements
  
   This function takes a VariableReplacements and two component references.
@@ -952,6 +978,26 @@ algorithm
   end matchcontinue;
 end getReplacement;
 
+
+protected function replaceExpOpt "Similar to replaceExp but takes Option<Exp> instead of Exp"
+ input Option<Exp.Exp> inExp;
+  input VariableReplacements repl;
+  input Option<FuncTypeExp_ExpToBoolean> funcOpt;
+  output Option<Exp.Exp> outExp;
+  partial function FuncTypeExp_ExpToBoolean
+    input Exp.Exp inExp;
+    output Boolean outBoolean;
+  end FuncTypeExp_ExpToBoolean;
+algorithm 
+  outExp := matchcontinue (inExp,repl,funcOpt)
+  local Exp.Exp e;
+    case(NONE(),_,_) then NONE();
+    case(SOME(e),repl,funcOpt) equation
+      e = replaceExp(e,repl,funcOpt);
+    then SOME(e);      
+  end matchcontinue;
+end replaceExpOpt;  
+ 
 public function replaceExp "function: replaceExp
  
   Takes a set of replacement rules and an expression and a function

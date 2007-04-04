@@ -141,7 +141,6 @@ uniontype Element
     Type input_ "input, output or bidir" ;
     Option<Exp.Exp> one "one of the builtin types" ;
     InstDims binding "Binding expression e.g. for parameters" ;
-    StartValue dimension "dimension of original component" ;
     Flow value "value of start attribute" ;
     list<Absyn.Path> flow_ "Flow of connector variable. Needed for 
 						unconnected flow variables" ;
@@ -248,39 +247,39 @@ end Element;
 public 
 uniontype VariableAttributes
   record VAR_ATTR_REAL
-    Option<String> quantity "quantity" ;
-    Option<String> unit "unit" ;
-    Option<String> displayUnit "displayUnit" ;
-    tuple<Option<Real>, Option<Real>> min "min , max" ;
-    Option<Real> initial_ "Initial value" ;
-    Option<Boolean> fixed "fixed - true: default for parameter/constant, false - default for other variables" ;
-    Option<Real> nominal "nominal" ;
+    Option<Exp.Exp> quantity "quantity" ;
+    Option<Exp.Exp> unit "unit" ;
+    Option<Exp.Exp> displayUnit "displayUnit" ;
+    tuple<Option<Exp.Exp>, Option<Exp.Exp>> min "min , max" ;
+    Option<Exp.Exp> initial_ "Initial value" ;
+    Option<Exp.Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables" ;
+    Option<Exp.Exp> nominal "nominal" ;
     Option<StateSelect> stateSelectOption;
   end VAR_ATTR_REAL;
 
   record VAR_ATTR_INT
-    Option<String> quantity "quantity" ;
-    tuple<Option<Integer>, Option<Integer>> min "min , max" ;
-    Option<Integer> initial_ "Initial value" ;
-    Option<Boolean> fixed "fixed - true: default for parameter/constant, false - default for other variables" ;
+    Option<Exp.Exp> quantity "quantity" ;
+    tuple<Option<Exp.Exp>, Option<Exp.Exp>> min "min , max" ;
+    Option<Exp.Exp> initial_ "Initial value" ;
+    Option<Exp.Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables" ;
   end VAR_ATTR_INT;
 
   record VAR_ATTR_BOOL
-    Option<String> quantity "quantity" ;
-    Option<Boolean> initial_ "Initial value" ;
-    Option<Boolean> fixed "fixed - true: default for parameter/constant, false - default for other variables" ;
+    Option<Exp.Exp> quantity "quantity" ;
+    Option<Exp.Exp> initial_ "Initial value" ;
+    Option<Exp.Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables" ;
   end VAR_ATTR_BOOL;
 
   record VAR_ATTR_STRING
-    Option<String> quantity "quantity" ;
-    Option<String> initial_ "Initial value" ;
+    Option<Exp.Exp> quantity "quantity" ;
+    Option<Exp.Exp> initial_ "Initial value" ;
   end VAR_ATTR_STRING;
 
   record VAR_ATTR_ENUMERATION
-    Option<String> quantity "quantity" ;
+    Option<Exp.Exp> quantity "quantity" ;
     tuple<Option<Exp.Exp>, Option<Exp.Exp>> min "min , max" ;
     Option<Exp.Exp> start "start" ;
-    Option<Boolean> fixed "fixed - true: default for parameter/constant, false - default for other variables" ;
+    Option<Exp.Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables" ;
   end VAR_ATTR_ENUMERATION;
 
 end VariableAttributes;
@@ -455,7 +454,6 @@ algorithm
     			Type tp;
    			  Option<Exp.Exp> bind;
    			  InstDims dim;
-    			StartValue start;
     			Flow flow_;
    			  list<Absyn.Path> cls;
     			Option<VariableAttributes> attr;
@@ -464,10 +462,10 @@ algorithm
    			  Types.Type ftp;
    			  VarProtection prot;
      case(var,{}) then {};
-     case(var,VAR(cr,kind,dir,prot,tp,bind,dim,start,flow_,cls,attr,cmt,io,ftp)::dae) equation
+     case(var,VAR(cr,kind,dir,prot,tp,bind,dim,flow_,cls,attr,cmt,io,ftp)::dae) equation
        true = Exp.crefEqual(var,cr);
        io2 = removeInnerAttribute(io);
-     then VAR(cr,kind,dir,prot,tp,bind,dim,start,flow_,cls,attr,cmt,io2,ftp)::dae;
+     then VAR(cr,kind,dir,prot,tp,bind,dim,flow_,cls,attr,cmt,io2,ftp)::dae;
      case(var,COMP(id,DAE(elist))::dae) equation
        elist2=removeInnerAttr(var,elist);
        dae = removeInnerAttr(var,dae);
@@ -553,7 +551,6 @@ algorithm
       Exp.ComponentRef cr;
       Exp.Exp e,e1,e2;
       InstDims dims;
-      Option<Exp.Exp> start;
       Option<VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       list<Element> xs;
@@ -561,7 +558,7 @@ algorithm
       Absyn.Path path;
       tuple<Types.TType, Option<Absyn.Path>> tp;
       ExternalDecl extdecl;
-    case DAE(elementLst = (VAR(componentRef = cr,one = SOME(e),binding = dims,dimension = start,variableAttributesOption = dae_var_attr,absynCommentOption = comment) :: xs))
+    case DAE(elementLst = (VAR(componentRef = cr,one = SOME(e),binding = dims,variableAttributesOption = dae_var_attr,absynCommentOption = comment) :: xs))
       equation 
         Print.printBuf("VAR(");
         Exp.printComponentRef(cr);
@@ -578,7 +575,7 @@ algorithm
         dump2(DAE(xs));
       then
         ();
-    case DAE(elementLst = (VAR(componentRef = cr,one = NONE,dimension = start,variableAttributesOption = dae_var_attr,absynCommentOption = comment) :: xs))
+    case DAE(elementLst = (VAR(componentRef = cr,one = NONE,variableAttributesOption = dae_var_attr,absynCommentOption = comment) :: xs))
       equation 
         Print.printBuf("VAR(");
         Exp.printComponentRef(cr);
@@ -709,7 +706,7 @@ algorithm
   end matchcontinue;
 end dumpStartValue;
 
-protected function dumpStartValueStr "function: dumpStartValueStr
+public function dumpStartValueStr "function: dumpStartValueStr
  
   Dumps the start value for a variable to a string.
 "
@@ -724,7 +721,7 @@ algorithm
     case (SOME(e))
       equation 
         s = Exp.printExpStr(e);
-        res = Util.stringAppendList({"(start=",s,")"});
+        res = Util.stringAppendList({"(peterstart=",s,")"});
       then
         res;
     case (_) then ""; 
@@ -1323,6 +1320,24 @@ algorithm
   Print.printBuf(res);
 end dumpVariableAttributes;
 
+public function getStartAttr " 
+  Return the start attribute.
+"
+  input Option<VariableAttributes> inVariableAttributesOption;
+  output Exp.Exp start;
+algorithm 
+  start:=
+  matchcontinue (inVariableAttributesOption)
+    local
+      Exp.Exp r;
+    case (SOME(VAR_ATTR_REAL(_,_,_,_,SOME(r),_,_,_))) then r;
+    case (SOME(VAR_ATTR_INT(_,_,SOME(r),_))) then r;
+    case (SOME(VAR_ATTR_BOOL(initial_=SOME(r)))) then r;
+    case (SOME(VAR_ATTR_STRING(initial_=SOME(r)))) then r;
+    case (_) then Exp.RCONST(0.0); 
+  end matchcontinue;
+end getStartAttr;
+
 public function getStartAttrString "function: getStartAttrString
  
   Return the start attribute as a string.
@@ -1334,17 +1349,16 @@ algorithm
   matchcontinue (inVariableAttributesOption)
     local
       Ident s;
-      Real r;
-      Integer i;
+      Exp.Exp r;
     case (NONE) then ""; 
     case (SOME(VAR_ATTR_REAL(_,_,_,_,SOME(r),_,_,_)))
       equation 
-        s = realString(r);
+        s = Exp.printExpStr(r);
       then
         s;
-    case (SOME(VAR_ATTR_INT(_,_,SOME(i),_)))
+    case (SOME(VAR_ATTR_INT(_,_,SOME(r),_)))
       equation 
-        s = intString(i);
+        s = Exp.printExpStr(r);        
       then
         s;
     case (_) then ""; 
@@ -1374,21 +1388,21 @@ algorithm
     local
       Ident quantity,unit_str,displayUnit_str,stateSel_str,min_str,max_str,nominal_str,Initial_str,fixed_str,res_1,res1,res;
       Boolean is_empty;
-      Option<Ident> quant,unit,displayUnit;
-      Option<Real> min,max,Initial,nominal;
-      Option<Boolean> fixed;
+      Option<Exp.Exp> quant,unit,displayUnit;
+      Option<Exp.Exp> min,max,Initial,nominal;
+      Option<Exp.Exp> fixed;
       Option<StateSelect> stateSel;
     case (SOME(VAR_ATTR_REAL(quant,unit,displayUnit,(min,max),Initial,fixed,nominal,stateSel)))
       equation 
-        quantity = Dump.getOptionWithConcatStr(quant, stringToString, "quantity = ");
-        unit_str = Dump.getOptionWithConcatStr(unit, stringToString, "unit = ");
-        displayUnit_str = Dump.getOptionWithConcatStr(displayUnit, stringToString, "displayUnit = ");
-        stateSel_str = Dump.getOptionWithConcatStr(stateSel, dumpStateSelectStr, "StateSelect = ");
-        min_str = Dump.getOptionWithConcatStr(min, real_string, "min = ");
-        max_str = Dump.getOptionWithConcatStr(max, real_string, "max = ");
-        nominal_str = Dump.getOptionWithConcatStr(nominal, real_string, "nominal = ");
-        Initial_str = Dump.getOptionWithConcatStr(Initial, real_string, "start = ");
-        fixed_str = Dump.getOptionWithConcatStr(fixed, Dump.printBoolStr, "fixed = ");
+        quantity = Dump.getOptionWithConcatStr(quant, Exp.printExpStr, "quantity = ");
+        unit_str = Dump.getOptionWithConcatStr(unit, Exp.printExpStr, "unit = ");
+        displayUnit_str = Dump.getOptionWithConcatStr(displayUnit, Exp.printExpStr, "displayUnit = ");
+        stateSel_str = Dump.getOptionWithConcatStr(stateSel, dumpStateSelectStr , "StateSelect = ");
+        min_str = Dump.getOptionWithConcatStr(min, Exp.printExpStr, "min = ");
+        max_str = Dump.getOptionWithConcatStr(max, Exp.printExpStr, "max = ");
+        nominal_str = Dump.getOptionWithConcatStr(nominal, Exp.printExpStr, "nominal = ");
+        Initial_str = Dump.getOptionWithConcatStr(Initial, Exp.printExpStr, "start = ");
+        fixed_str = Dump.getOptionWithConcatStr(fixed, Exp.printExpStr, "fixed = ");
         res_1 = Util.stringDelimitListNonEmptyElts(
           {quantity,unit_str,displayUnit_str,min_str,max_str,
           Initial_str,fixed_str,nominal_str,stateSel_str}, ", ");
@@ -1398,13 +1412,13 @@ algorithm
       then
         res;
     case (SOME(VAR_ATTR_INT(quant,(min,max),Initial,fixed)))
-      local Option<Integer> min,max,Initial;
+      local Option<Exp.Exp> min,max,Initial;
       equation 
-        quantity = Dump.getOptionWithConcatStr(quant, stringToString, "quantity = ");
-        min_str = Dump.getOptionWithConcatStr(min, int_string, "min = ");
-        max_str = Dump.getOptionWithConcatStr(max, int_string, "max = ");
-        Initial_str = Dump.getOptionWithConcatStr(Initial, int_string, "start = ");
-        fixed_str = Dump.getOptionWithConcatStr(fixed, Dump.printBoolStr, "fixed = ");
+        quantity = Dump.getOptionWithConcatStr(quant, Exp.printExpStr, "quantity = ");
+        min_str = Dump.getOptionWithConcatStr(min, Exp.printExpStr, "min = ");
+        max_str = Dump.getOptionWithConcatStr(max, Exp.printExpStr, "max = ");
+        Initial_str = Dump.getOptionWithConcatStr(Initial, Exp.printExpStr, "start = ");
+        fixed_str = Dump.getOptionWithConcatStr(fixed, Exp.printExpStr, "fixed = ");
         res_1 = Util.stringDelimitListNonEmptyElts({quantity,min_str,max_str,Initial_str,fixed_str}, ", ");
         res1 = Util.stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
@@ -1412,11 +1426,11 @@ algorithm
       then
         res;
     case (SOME(VAR_ATTR_BOOL(quant,Initial,fixed)))
-      local Option<Boolean> Initial;
+      local Option<Exp.Exp> Initial;
       equation 
-        quantity = Dump.getOptionWithConcatStr(quant, stringToString, "quantity = ");
-        Initial_str = Dump.getOptionWithConcatStr(Initial, Dump.printBoolStr, "start = ");
-        fixed_str = Dump.getOptionWithConcatStr(fixed, Dump.printBoolStr, "fixed = ");
+        quantity = Dump.getOptionWithConcatStr(quant, Exp.printExpStr, "quantity = ");
+        Initial_str = Dump.getOptionWithConcatStr(Initial, Exp.printExpStr, "start = ");
+        fixed_str = Dump.getOptionWithConcatStr(fixed, Exp.printExpStr, "fixed = ");
         res_1 = Util.stringDelimitListNonEmptyElts({quantity,Initial_str,fixed_str}, ", ");
         res1 = Util.stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
@@ -1424,10 +1438,10 @@ algorithm
       then
         res;
     case (SOME(VAR_ATTR_STRING(quant,Initial)))
-      local Option<Ident> Initial;
+      local Option<Exp.Exp> Initial;
       equation 
-        quantity = Dump.getOptionWithConcatStr(quant, stringToString, "quantity = ");
-        Initial_str = Dump.getOptionWithConcatStr(Initial, stringToString, "start = ");
+        quantity = Dump.getOptionWithConcatStr(quant, Exp.printExpStr, "quantity = ");
+        Initial_str = Dump.getOptionWithConcatStr(Initial, Exp.printExpStr, "start = ");
         res_1 = Util.stringDelimitListNonEmptyElts({quantity,Initial_str}, ", ");
         res1 = Util.stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
@@ -1437,11 +1451,11 @@ algorithm
     case (SOME(VAR_ATTR_ENUMERATION(quant,(min,max),Initial,fixed)))
       local Option<Exp.Exp> min,max,Initial;
       equation 
-        quantity = Dump.getOptionWithConcatStr(quant, stringToString, "quantity = ");
+        quantity = Dump.getOptionWithConcatStr(quant, Exp.printExpStr, "quantity = ");
         min_str = Dump.getOptionWithConcatStr(min, Exp.printExpStr, "min = ");
         max_str = Dump.getOptionWithConcatStr(max, Exp.printExpStr, "max = ");
         Initial_str = Dump.getOptionWithConcatStr(Initial, Exp.printExpStr, "start = ");
-        fixed_str = Dump.getOptionWithConcatStr(fixed, Dump.printBoolStr, "fixed = ");
+        fixed_str = Dump.getOptionWithConcatStr(fixed, Exp.printExpStr, "fixed = ");
         res_1 = Util.stringDelimitListNonEmptyElts({quantity,min_str,max_str,Initial_str,fixed_str}, ", ");
         res1 = Util.stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
@@ -1543,13 +1557,12 @@ algorithm
       VarKind kind;
       VarDirection dir;
       Type typ;
-      Option<Exp.Exp> start;
       Flow flow_;
       list<Absyn.Path> classlst,class_;
       Option<VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       Exp.Exp e;
-    case VAR(componentRef = id,varible = kind,variable = dir,input_ = typ,one = NONE,dimension = start,value = flow_,flow_ = classlst,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
+    case VAR(componentRef = id,varible = kind,variable = dir,input_ = typ,one = NONE,value = flow_,flow_ = classlst,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
       equation 
         dumpKind(kind);
         dumpDirection(dir);
@@ -1564,7 +1577,7 @@ algorithm
 	Print.printBuf \"}\" \" &" ;
       then
         ();
-    case VAR(componentRef = id,varible = kind,variable = dir,input_ = typ,one = SOME(e),dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
+    case VAR(componentRef = id,varible = kind,variable = dir,input_ = typ,one = SOME(e),value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
       equation 
         dumpKind(kind);
         dumpDirection(dir);
@@ -1595,14 +1608,13 @@ algorithm
       VarKind kind;
       VarDirection dir;
       Type typ;
-      Option<Exp.Exp> start;
       Flow flow_;
       list<Absyn.Path> classlst;
       Option<VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
       Exp.Exp e;
       VarProtection prot;
-    case VAR(componentRef = id,varible = kind,variable = dir,protection=prot,input_ = typ,one = NONE,dimension = start,value = flow_,flow_ = classlst,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
+    case VAR(componentRef = id,varible = kind,variable = dir,protection=prot,input_ = typ,one = NONE,value = flow_,flow_ = classlst,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
       equation 
         s1 = dumpKindStr(kind);
         s2 = dumpDirectionStr(dir);
@@ -1615,7 +1627,7 @@ algorithm
 	Util.string_delimit_list(classstrlst, \", \") => classstr &" ;
       then
         str;
-    case VAR(componentRef = id,varible = kind,variable = dir,protection=prot,input_ = typ,one = SOME(e),dimension = start,value = flow_,flow_ = classlst,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
+    case VAR(componentRef = id,varible = kind,variable = dir,protection=prot,input_ = typ,one = SOME(e),value = flow_,flow_ = classlst,variableAttributesOption = dae_var_attr,absynCommentOption = comment)
       equation 
         s1 = dumpKindStr(kind);
         s2 = dumpDirectionStr(dir);
@@ -2696,7 +2708,7 @@ algorithm
       VarKind kind;
       VarDirection dir;
       Type tp;
-      Option<Exp.Exp> bind,start;
+      Option<Exp.Exp> bind;
       InstDims dim;
       Flow flow_;
       list<Absyn.Path> lst;
@@ -2708,11 +2720,11 @@ algorithm
 			Types.Type ftp;
 			VarProtection prot;
     case ({},_) then {}; 
-    case ((VAR(componentRef = cr,varible = kind,variable = dir, protection=prot,input_ = tp,one = bind,binding = dim,dimension = start,value = flow_,flow_ = lst,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=ftp) :: xs),newtype)
+    case ((VAR(componentRef = cr,varible = kind,variable = dir, protection=prot,input_ = tp,one = bind,binding = dim,value = flow_,flow_ = lst,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=ftp) :: xs),newtype)
       equation 
         xs_1 = setComponentType(xs, newtype);
       then
-        (VAR(cr,kind,dir,prot,tp,bind,dim,start,flow_,(newtype :: lst),
+        (VAR(cr,kind,dir,prot,tp,bind,dim,flow_,(newtype :: lst),
           dae_var_attr,comment,io,ftp) :: xs_1);
     case ((x :: xs),newtype)
       equation 
@@ -3331,8 +3343,21 @@ algorithm
   matchcontinue (inElementLst)
     local
       list<Element> res,lst;
-      Element x;
-    case ((x as VAR(_,_,_,_,_,_,_,_,_,_,_,_,_,_)) :: lst)
+      Exp.ComponentRef a;
+      VarKind b;
+      Element x;    
+      VarDirection c;
+      VarProtection prot;
+      Type d;
+      Option<Exp.Exp> e,g;
+      InstDims f;
+      Flow h;
+      list<Absyn.Path> i;
+      Option<VariableAttributes> dae_var_attr;
+      Option<Absyn.Comment> comment;
+      Absyn.InnerOuter io;
+      Types.Type tp;
+    case ((x as VAR(_,_,_,_,_,_,_,_,_,_,_,_,_)) :: lst)
       equation 
         res = getVariableList(lst);
       then
@@ -3554,14 +3579,14 @@ algorithm
       Absyn.InnerOuter io;
       VarProtection prot;
     case ({}) then {}; 
-    case ((VAR(componentRef = cr,varible = a,variable = b,protection=prot,input_ = c,one = d,binding = e,dimension = f,value = g,flow_ = h,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp) :: elts))
+    case ((VAR(componentRef = cr,varible = a,variable = b,protection=prot,input_ = c,one = d,binding = e,value = g,flow_ = h,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp) :: elts))
       equation 
         str = Exp.printComponentRefStr(cr);
         str_1 = Util.stringReplaceChar(str, ".", "_");
         elts_1 = toModelicaFormElts(elts);
         d_1 = toModelicaFormExpOpt(d);
       then
-        (VAR(Exp.CREF_IDENT(str_1,{}),a,b,prot,c,d_1,e,f,g,h,dae_var_attr,
+        (VAR(Exp.CREF_IDENT(str_1,{}),a,b,prot,c,d_1,e,g,h,dae_var_attr,
           comment,io,tp) :: elts_1);
     case ((DEFINE(componentRef = cr,exp = e) :: elts))
       local Exp.Exp e;
@@ -3895,14 +3920,13 @@ algorithm
       list<ExtArg> args;
       ExtArg retarg;
       Option<Absyn.Annotation> ann;
-    case VAR(componentRef = cref,varible = vk,variable = vd,input_ = ty,one = bndexp,binding = instdims,dimension = startvalexp,value = flow_,flow_ = pathlist,variableAttributesOption = dae_var_attr,absynCommentOption = comment) /* VAR */ 
+    case VAR(componentRef = cref,varible = vk,variable = vd,input_ = ty,one = bndexp,binding = instdims,value = flow_,flow_ = pathlist,variableAttributesOption = dae_var_attr,absynCommentOption = comment) /* VAR */ 
       equation 
         e1 = Util.optionToList(bndexp);
-        e2 = Util.optionToList(startvalexp);
         e3 = Util.listMap(instdims, getAllExpsSubscript);
         e3 = Util.listFlatten(e3);
         crefexp = crefToExp(cref);
-        exps = Util.listFlatten({e1,e2,e3,{crefexp}});
+        exps = Util.listFlatten({e1,e3,{crefexp}});
       then
         exps;
     case DEFINE(componentRef = cref,exp = exp)

@@ -1120,8 +1120,8 @@ algorithm
         time = t2 -. t1;
         b=realGt(time,0.05);
         s = realString(time);
-        s=Util.stringAppendList({"instClassIn ",n," ",s," s\n"});*/
-        //print(Util.if_(b,s,""));
+        s=Util.stringAppendList({"instClassIn ",n," ",s," s\n"});
+        print(Util.if_(b,s,""));*/
         cache = addCachedEnv(cache,n,env_1);
       then
         (cache,l,env_1,csets_1,ci_state_1,tys,bc);
@@ -4647,7 +4647,7 @@ end propagateAttributes;
       Exp.ComponentRef cr;
       DAE.VarKind vk;
       DAE.Type t;
-      Option<Exp.Exp> e,start;
+      Option<Exp.Exp> e;
       InstDims id;
       DAE.Flow flow_;
       list<Absyn.Path> class_;
@@ -4662,14 +4662,14 @@ end propagateAttributes;
     case (lst,Absyn.BIDIR()) then lst;  /* Component that is bidirectional does not change direction 
 	    on subcomponents */ 
     case ({},_) then {}; 
-    case ((DAE.VAR(componentRef = cr,varible = vk,protection=prot,variable = DAE.BIDIR(),input_ = t,one = e,binding = id,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp) :: r),dir) /* Bidirectional variables are changed to input or output if 
+    case ((DAE.VAR(componentRef = cr,varible = vk,protection=prot,variable = DAE.BIDIR(),input_ = t,one = e,binding = id,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp) :: r),dir) /* Bidirectional variables are changed to input or output if 
 	  component has such prefix. */ 
       equation 
         dir_1 = absynDirToDaeDir(dir);
         r_1 = propagateDirection(r, dir);
       then
-        (DAE.VAR(cr,vk,dir_1,prot,t,e,id,start,flow_,class_,dae_var_attr,comment,io,tp) :: r_1);
-    case ((DAE.VAR(componentRef = cr,varible = vk,protection=prot,variable = DAE.INPUT(),input_ = t,one = e,binding = id,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp) :: r),dir) /* Error, component declared as input or output  when containing 
+        (DAE.VAR(cr,vk,dir_1,prot,t,e,id,flow_,class_,dae_var_attr,comment,io,tp) :: r_1);
+    case ((DAE.VAR(componentRef = cr,varible = vk,protection=prot,variable = DAE.INPUT(),input_ = t,one = e,binding = id,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp) :: r),dir) /* Error, component declared as input or output  when containing 
 	    variable that has prefix input. */ 
       equation 
         s1 = Dump.directionSymbol(dir);
@@ -4677,7 +4677,7 @@ end propagateAttributes;
         Error.addMessage(Error.COMPONENT_INPUT_OUTPUT_MISMATCH, {s1,s2});
       then
         fail();
-    case ((DAE.VAR(componentRef = cr,varible = vk,variable = DAE.OUTPUT(),input_ = t,one = e,binding = id,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment) :: r),dir) /* Error, component declared as input or output  when containing 
+    case ((DAE.VAR(componentRef = cr,varible = vk,variable = DAE.OUTPUT(),input_ = t,one = e,binding = id,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment) :: r),dir) /* Error, component declared as input or output  when containing 
 	    variable that has prefix output. */ 
       equation 
         s1 = Dump.directionSymbol(dir);
@@ -4716,7 +4716,7 @@ end propagateDirection;
       Exp.ComponentRef cr;
       DAE.VarKind vk;
       DAE.Type t;
-      Option<Exp.Exp> e,start;
+      Option<Exp.Exp> e;
       InstDims id;
       DAE.Flow flow_;
       list<Absyn.Path> class_;
@@ -4735,12 +4735,12 @@ end propagateDirection;
     case ({},_) then {}; 
       
       /* unspecified variables are changed to inner/outer if component has such prefix. */ 
-    case ((DAE.VAR(componentRef = cr,varible = vk,variable = dir,protection=prot,input_ = t,one = e,binding = id,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=Absyn.UNSPECIFIED(),fullType=tp) :: r),io) 
+    case ((DAE.VAR(componentRef = cr,varible = vk,variable = dir,protection=prot,input_ = t,one = e,binding = id,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=Absyn.UNSPECIFIED(),fullType=tp) :: r),io) 
       equation 
 				false = ModUtil.isUnspecified(io);
         r_1 = propagateInnerOuter(r, io);
       then
-        (DAE.VAR(cr,vk,dir,prot,t,e,id,start,flow_,class_,dae_var_attr,comment,io,tp) :: r_1);
+        (DAE.VAR(cr,vk,dir,prot,t,e,id,flow_,class_,dae_var_attr,comment,io,tp) :: r_1);
 
 			/* If var already have inner/outer, keep it. */
     case ( (v as DAE.VAR(componentRef = _)) :: r,io) 
@@ -6592,16 +6592,16 @@ algorithm
       Types.Type ty;
       DAE.VarProtection prot;
     case (vn,ty as(Types.T_INTEGER(varLstInt = _),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) then {
-          DAE.VAR(vn,kind,dir,prot,DAE.INT(),e,inst_dims,start,fl,{},dae_var_attr,
+          DAE.VAR(vn,kind,dir,prot,DAE.INT(),e,inst_dims,fl,{},dae_var_attr,
           comment,io,ty)}; 
     case (vn,ty as(Types.T_REAL(varLstReal = _),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) then {
-          DAE.VAR(vn,kind,dir,prot,DAE.REAL(),e,inst_dims,start,fl,{},
+          DAE.VAR(vn,kind,dir,prot,DAE.REAL(),e,inst_dims,fl,{},
           dae_var_attr,comment,io,ty)}; 
     case (vn,ty as(Types.T_BOOL(varLstBool = _),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) then {
-          DAE.VAR(vn,kind,dir,prot,DAE.BOOL(),e,inst_dims,start,fl,{},
+          DAE.VAR(vn,kind,dir,prot,DAE.BOOL(),e,inst_dims,fl,{},
           dae_var_attr,comment,io,ty)}; 
     case (vn,ty as(Types.T_STRING(varLstString = _),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) then {
-          DAE.VAR(vn,kind,dir,prot,DAE.STRING(),e,inst_dims,start,fl,{},
+          DAE.VAR(vn,kind,dir,prot,DAE.STRING(),e,inst_dims,fl,{},
           dae_var_attr,comment,io,ty)}; 
     case (vn,ty as(Types.T_ENUM(),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) then {}; 
 
@@ -6609,13 +6609,13 @@ algorithm
   		e.g Myenum my !=> constant EnumType my.enum1,... {DAE.VAR(vn, kind, dir, DAE.ENUM, e, inst_dims)} 
   		instantiation of complex type extending from basic type */ 
     case (vn,ty as(Types.T_ENUMERATION(names = l),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) 
-      then {DAE.VAR(vn,kind,dir,prot,DAE.ENUMERATION(l),e,inst_dims,start,fl,{}, dae_var_attr,comment,io,ty)};  
+      then {DAE.VAR(vn,kind,dir,prot,DAE.ENUMERATION(l),e,inst_dims,fl,{}, dae_var_attr,comment,io,ty)};  
 
           /* Complex type that is ExternalObject*/
      case (vn, ty as (Types.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io)    
        local Absyn.Path path;
        equation
-          then {DAE.VAR(vn,kind,dir,prot,DAE.EXT_OBJECT(path),e,inst_dims,start,fl,{}, dae_var_attr,comment,io,ty)};
+          then {DAE.VAR(vn,kind,dir,prot,DAE.EXT_OBJECT(path),e,inst_dims,fl,{}, dae_var_attr,comment,io,ty)};
             
       /* instantiation of complex type extending from basic type */ 
     case (vn,(Types.T_COMPLEX(complexClassType = ci,complexVarLst = {},complexTypeOption = SOME(tp)),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) 
@@ -8771,9 +8771,9 @@ algorithm
   (outCache,outDAEVariableAttributesOption) :=
   matchcontinue (inCache,inEnv,inMod,inType,inIntegerLst)
     local
-      Option<String> quantity_str,unit_str,displayunit_str;
-      Option<Real> min_val,max_val,start_val,nominal_val;
-      Option<Boolean> fixed_val;
+      Option<Exp.Exp> quantity_str,unit_str,displayunit_str;
+      Option<Exp.Exp> min_val,max_val,start_val,nominal_val;
+      Option<Exp.Exp> fixed_val;
       Option<Exp.Exp> exp_bind_select,exp_bind_min,exp_bind_max,exp_bind_start;
       Option<DAE.StateSelect> stateSelect_value;
       list<Env.Frame> env;
@@ -8786,53 +8786,53 @@ algorithm
       list<Types.Var> varLst;
     case (cache,env,mod,tp as (Types.T_REAL(varLstReal = varLst),path),index_list) /* Real */ 
       equation 
-        (cache,quantity_str) = instStringBinding(cache,env, mod, varLst, index_list, "quantity");
-        (cache,unit_str) = instStringBinding(cache,env, mod, varLst, index_list, "unit");
-        (cache,displayunit_str) = instStringBinding(cache,env, mod, varLst, index_list, "displayUnit");
-        (cache,min_val) = instRealBinding(cache,env, mod, varLst, index_list, "min");
-        (cache,max_val) = instRealBinding(cache,env, mod, varLst, index_list, "max");
-        (cache,start_val) = instRealBinding(cache,env, mod, varLst, index_list, "start");
-        (cache,fixed_val) = instBoolBinding(cache,env, mod, varLst, index_list, "fixed");
-        (cache,nominal_val) = instRealBinding(cache,env, mod, varLst, index_list, "nominal");
+        (quantity_str) = instBinding(mod, varLst, (Types.T_STRING({}),NONE),index_list, "quantity");
+        (unit_str) = instBinding( mod, varLst, (Types.T_STRING({}),NONE), index_list, "unit");
+        (displayunit_str) = instBinding(mod, varLst,(Types.T_STRING({}),NONE), index_list, "displayUnit");
+        (min_val) = instBinding( mod, varLst, (Types.T_REAL({}),NONE),index_list, "min");
+        (max_val) = instBinding(mod, varLst, (Types.T_REAL({}),NONE),index_list, "max");
+        (start_val) = instBinding(mod, varLst, (Types.T_REAL({}),NONE),index_list, "start");
+        (fixed_val) = instBinding( mod, varLst, (Types.T_BOOL({}),NONE),index_list, "fixed");
+        (nominal_val) = instBinding(mod, varLst, (Types.T_REAL({}),NONE),index_list, "nominal");
         (cache,exp_bind_select) = instEnumerationBinding(cache,env, mod, varLst, index_list, "stateSelect");
         (stateSelect_value) = getStateSelectFromExpOption(exp_bind_select);
       then
         (cache,SOME(
           DAE.VAR_ATTR_REAL(quantity_str,unit_str,displayunit_str,(min_val,max_val),
           start_val,fixed_val,nominal_val,stateSelect_value)));
-    case (cache,env,mod,(Types.T_INTEGER(varLstInt = varLst),_),index_list) /* Integer */ 
-      local Option<Integer> min_val,max_val,start_val;
+    case (cache,env,mod,tp as (Types.T_INTEGER(varLstInt = varLst),_),index_list) /* Integer */ 
+      local Option<Exp.Exp> min_val,max_val,start_val;
       equation 
-        (cache,quantity_str) = instStringBinding(cache,env, mod, varLst, index_list, "quantity");
-        (cache,min_val) = instIntBinding(cache,env, mod, varLst, index_list, "min");
-        (cache,max_val) = instIntBinding(cache,env, mod, varLst, index_list, "max");
-        (cache,start_val) = instIntBinding(cache,env, mod, varLst, index_list, "start");
-        (cache,fixed_val) = instBoolBinding(cache,env, mod, varLst, index_list, "fixed");
+        (quantity_str) = instBinding(mod, varLst, (Types.T_STRING({}),NONE), index_list, "quantity");
+        (min_val) = instBinding(mod, varLst, (Types.T_INTEGER({}),NONE), index_list, "min");
+        (max_val) = instBinding(mod, varLst, (Types.T_INTEGER({}),NONE), index_list, "max");
+        (start_val) = instBinding(mod, varLst, (Types.T_INTEGER({}),NONE), index_list, "start");
+        (fixed_val) = instBinding(mod, varLst, (Types.T_BOOL({}),NONE),index_list, "fixed");
       then
         (cache,SOME(
           DAE.VAR_ATTR_INT(quantity_str,(min_val,max_val),start_val,fixed_val)));
-    case (cache,env,mod,(Types.T_BOOL(varLstBool = varLst),_),index_list) /* Boolean */ 
-      local Option<Boolean> start_val;
+    case (cache,env,mod,tp as (Types.T_BOOL(varLstBool = varLst),_),index_list) /* Boolean */ 
+      local Option<Exp.Exp> start_val;
       equation 
-        (cache,quantity_str) = instStringBinding(cache,env, mod, varLst, index_list, "quantity");
-        (cache,start_val) = instBoolBinding(cache,env, mod, varLst, index_list, "start");
-        (cache,fixed_val) = instBoolBinding(cache,env, mod, varLst, index_list, "fixed");
+        (quantity_str) = instBinding( mod, varLst, (Types.T_STRING({}),NONE), index_list, "quantity");
+        (start_val) = instBinding(mod, varLst, tp, index_list, "start");
+        (fixed_val) = instBinding(mod, varLst, tp, index_list, "fixed");
       then
         (cache,SOME(DAE.VAR_ATTR_BOOL(quantity_str,start_val,fixed_val)));
-    case (cache,env,mod,(Types.T_STRING(varLstString = varLst),_),index_list) /* String */ 
-      local Option<String> start_val;
+    case (cache,env,mod,tp as (Types.T_STRING(varLstString = varLst),_),index_list) /* String */ 
+      local Option<Exp.Exp> start_val;
       equation 
-        (cache,quantity_str) = instStringBinding(cache,env, mod, varLst, index_list, "quantity");
-        (cache,start_val) = instStringBinding(cache,env, mod, varLst, index_list, "start");
+        (quantity_str) = instBinding(mod, varLst, tp, index_list, "quantity");
+        (start_val) = instBinding(mod, varLst, tp, index_list, "start");
       then
         (cache,SOME(DAE.VAR_ATTR_STRING(quantity_str,start_val)));
     case (cache,env,mod,(enumtype as (Types.T_ENUMERATION(names = _,varLst=varLst),_)),index_list) /* Enumeration */ 
       equation 
-        (cache,quantity_str) = instStringBinding(cache,env, mod, varLst, index_list, "quantity");
+        (quantity_str) = instBinding(mod, varLst, (Types.T_STRING({}),NONE),index_list, "quantity");        
         (exp_bind_min) = instBinding(mod, varLst, enumtype, index_list, "min");
         (exp_bind_max) = instBinding(mod, varLst, enumtype, index_list, "max");
         (exp_bind_start) = instBinding(mod, varLst, enumtype, index_list, "start");
-        (cache,fixed_val) = instBoolBinding(cache,env, mod, varLst, index_list, "fixed");
+        (fixed_val) = instBinding( mod, varLst, (Types.T_BOOL({}),NONE), index_list, "fixed");
       then
         (cache,SOME(
           DAE.VAR_ATTR_ENUMERATION(quantity_str,(exp_bind_min,exp_bind_max),exp_bind_start,
@@ -9274,13 +9274,13 @@ algorithm
       DAE.VarProtection prot;
       
     case (done,{}) then done; 
-    case (done,((v as DAE.VAR(componentRef = cr,varible = vk,variable = vd,protection=prot,input_ = ty,one = exp,binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=ftp)) :: todorest))
+    case (done,((v as DAE.VAR(componentRef = cr,varible = vk,variable = vd,protection=prot,input_ = ty,one = exp,binding = inst_dims,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=ftp)) :: todorest))
       equation 
         (exp_1,done_1) = initVarsModelicaOutput2(cr, exp, done);
         (exp_2,todorest_1) = initVarsModelicaOutput2(cr, exp_1, todorest);
         done_2 = listAppend(done_1, 
           {
-          DAE.VAR(cr,vk,vd,prot,ty,exp_2,inst_dims,start,flow_,class_,
+          DAE.VAR(cr,vk,vd,prot,ty,exp_2,inst_dims,flow_,class_,
           dae_var_attr,comment,io,ftp)});
         done_3 = initVarsModelicaOutput1(done_2, todorest_1);
       then

@@ -1267,13 +1267,13 @@ algorithm
       DAE.Element var;
       Exp.ComponentRef id;
       DAE.Type typ;
-      Option<Exp.Exp> initopt,start;
+      Option<Exp.Exp> initopt;
       list<Exp.Subscript> inst_dims;
       DAE.Flow flow_;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-    case ((var as DAE.VAR(componentRef = id,varible = DAE.VARIABLE(),variable = DAE.OUTPUT(),input_ = typ,one = initopt,binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),i)
+    case ((var as DAE.VAR(componentRef = id,varible = DAE.VARIABLE(),variable = DAE.OUTPUT(),input_ = typ,one = initopt,binding = inst_dims,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),i)
       equation 
         is_a = isArray(var);
         typ_str = daeTypeStr(typ, is_a);
@@ -1310,13 +1310,13 @@ algorithm
       list<Absyn.Path> cl;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-    case ((el as DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = ty,binding = {},dimension = st,value = fl,flow_ = cl,variableAttributesOption = dae_var_attr,absynCommentOption = comment))) 
+    case ((el as DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = ty,binding = {},value = fl,flow_ = cl,variableAttributesOption = dae_var_attr,absynCommentOption = comment))) 
     
       equation 
         Debug.fcall("isarrdb", DAE.dump2, DAE.DAE({el}));
       then
         false;
-    case ((el as DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = ty,binding = (_ :: _),dimension = st,value = fl,flow_ = cl,variableAttributesOption = dae_var_attr,absynCommentOption = comment)))
+    case ((el as DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = ty,binding = (_ :: _),value = fl,flow_ = cl,variableAttributesOption = dae_var_attr,absynCommentOption = comment)))
       equation 
         Debug.fcall("isarrdb", DAE.dump2, DAE.DAE({el}));
       then
@@ -1975,7 +1975,7 @@ algorithm
       DAE.VarKind vk;
       DAE.VarDirection vd;
       DAE.Type t;
-      Option<Exp.Exp> e,start;
+      Option<Exp.Exp> e;
       list<Exp.Subscript> id;
       DAE.Flow flow_;
       list<Absyn.Path> class_;
@@ -1988,7 +1988,7 @@ algorithm
         cfn = cAddVariables(cEmptyFunction, {rd});
       then
         (cfn,tnr);
-    case (((var as DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = t,one = e,binding = id,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)) :: r),rd,rv,i,tnr,context)
+    case (((var as DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = t,one = e,binding = id,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)) :: r),rd,rv,i,tnr,context)
       equation 
         (cfn1,tnr1) = generateAllocOutvar(var, rv, i,tnr, context);
         (cfn2,tnr2) = generateAllocOutvars(r, rd, rv, i+1,tnr1, context);
@@ -2028,7 +2028,7 @@ algorithm
       DAE.VarKind vk;
       DAE.VarDirection vd;
       DAE.Type typ;
-      Option<Exp.Exp> e,start;
+      Option<Exp.Exp> e;
       list<Exp.Subscript> inst_dims;
       DAE.Flow flow_;
       list<Absyn.Path> class_;
@@ -2036,7 +2036,7 @@ algorithm
       Option<Absyn.Comment> comment;
       Context context;
       String iStr;
-    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = e,binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),prefix,i,tnr,context)
+    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = e,binding = inst_dims,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),prefix,i,tnr,context)
       equation 
         is_a = isArray(var);
         iStr = intString(i);
@@ -2090,7 +2090,7 @@ algorithm
       DAE.VarKind vk;
       DAE.VarDirection vd;
       DAE.Type t;
-      Option<Exp.Exp> e,start;
+      Option<Exp.Exp> e;
       list<Exp.Subscript> id;
       DAE.Flow flow_;
       list<Absyn.Path> class_;
@@ -2098,7 +2098,7 @@ algorithm
       Option<Absyn.Comment> comment;
       list<DAE.Element> r;
     case ({},rv,i,tnr,extdecl) then (cEmptyFunction,tnr); 
-    case (((var as DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = t,one = e,binding = id,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)) :: r),rv,i,tnr,extdecl)
+    case (((var as DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = t,one = e,binding = id,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)) :: r),rv,i,tnr,extdecl)
       equation 
         DAE.EXTERNALDECL(returnType = "C") = extdecl;
         (cfn1,tnr1) = generateAllocOutvar(var, rv, i,tnr, funContext);
@@ -2106,7 +2106,7 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,tnr2);
-    case (((var as DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = t,one = e,binding = id,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)) :: r),rv,i,tnr,extdecl)
+    case (((var as DAE.VAR(componentRef = cr,varible = vk,variable = vd,input_ = t,one = e,binding = id,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)) :: r),rv,i,tnr,extdecl)
       equation 
         DAE.EXTERNALDECL(returnType = "FORTRAN 77") = extdecl;
         (cfn1,tnr1) = generateAllocOutvarF77(var, rv,i,tnr);
@@ -2146,13 +2146,13 @@ algorithm
       DAE.VarKind vk;
       DAE.VarDirection vd;
       DAE.Type typ;
-      Option<Exp.Exp> e,start;
+      Option<Exp.Exp> e;
       list<Exp.Subscript> inst_dims;
       DAE.Flow flow_;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<Absyn.Comment> comment;
-    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = e,binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),prefix,i,tnr)
+    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = e,binding = inst_dims,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),prefix,i,tnr)
       equation 
         is_a = isArray(var);
         typ_str = daeTypeStr(typ, is_a);
@@ -2997,7 +2997,6 @@ algorithm
       DAE.VarDirection vd;
       DAE.Type typ;
       list<Exp.Subscript> inst_dims;
-      Option<Exp.Exp> start;
       DAE.Flow flow_;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
@@ -3007,7 +3006,7 @@ algorithm
       Exp.Type etp;
 
       /* variables without binding */ 
-    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = NONE,binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),tnr,context) 
+    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = NONE,binding = inst_dims,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),tnr,context) 
       equation 
         is_a = isArray(var);
         typ_str = daeTypeStr(typ, is_a);
@@ -3032,7 +3031,7 @@ algorithm
         (cfn,tnr1);
 
         /* variables with binding */ 
-    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = SOME(e),binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),tnr,context) 
+    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = SOME(e),binding = inst_dims,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),tnr,context) 
       equation 
         is_a = isArray(var);
         typ_str = daeTypeStr(typ, is_a);
@@ -3058,7 +3057,7 @@ algorithm
         cfn = cMergeFn(cfn,cfn2);
       then
         (cfn,tnr1);
-    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = SOME(e),binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),tnr,context)
+    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = SOME(e),binding = inst_dims,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),tnr,context)
       local Lib var;
       equation 
         is_a = isArray(var);
@@ -3107,7 +3106,6 @@ algorithm
       DAE.VarDirection vd;
       DAE.Type typ;
       list<Exp.Subscript> inst_dims;
-      Option<Exp.Exp> start;
       DAE.Flow flow_;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
@@ -3117,7 +3115,7 @@ algorithm
       Types.Type tp;
       Absyn.InnerOuter io;
       DAE.VarProtection prot;
-    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = NONE,binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),tnr,context)
+    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = NONE,binding = inst_dims,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),tnr,context)
       equation 
         is_a = isArray(var);
         typ_str = daeTypeStr(typ, is_a);
@@ -3132,10 +3130,10 @@ algorithm
         cfn = cAddVariables(cEmptyFunction, {decl_str});
       then
         (cfn,tnr);
-    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,protection=prot,input_ = typ,one = SOME(e),binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp)),tnr,context)
+    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,protection=prot,input_ = typ,one = SOME(e),binding = inst_dims,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment,innerOuter=io,fullType=tp)),tnr,context)
       equation 
         (cfn,tnr1) = generateVarDecl(
-          DAE.VAR(id,vk,vd,prot,typ,NONE,inst_dims,start,flow_,class_,
+          DAE.VAR(id,vk,vd,prot,typ,NONE,inst_dims,flow_,class_,
           dae_var_attr,comment,io,tp), tnr, context);
       then
         (cfn,tnr1);
@@ -3169,7 +3167,6 @@ algorithm
       DAE.VarDirection vd;
       DAE.Type typ;
       list<Exp.Subscript> inst_dims;
-      Option<Exp.Exp> start;
       DAE.Flow flow_;
       list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
@@ -3184,11 +3181,11 @@ algorithm
       Exp.Exp e;
       String iStr,id_1_str;
       /* No binding */ 
-    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = NONE,binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),i,tnr,pre,context) 
+    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = NONE,binding = inst_dims,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),i,tnr,pre,context) 
       then (cEmptyFunction,tnr);  
 
       /* Has binding */     
-    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = SOME(e),binding = inst_dims,dimension = start,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),i,tnr,pre,context) 
+    case ((var as DAE.VAR(componentRef = id,varible = vk,variable = vd,input_ = typ,one = SOME(e),binding = inst_dims,value = flow_,flow_ = class_,variableAttributesOption = dae_var_attr,absynCommentOption = comment)),i,tnr,pre,context) 
       equation 
         is_a = isArray(var);
         // pre can be "" or "out", the later for output variables.
@@ -5667,7 +5664,7 @@ algorithm
       DAE.VarKind vk;
       DAE.VarDirection vd;
       DAE.Type ty;
-      Option<Exp.Exp> value,start;
+      Option<Exp.Exp> value;
       list<Exp.Subscript> dims,dims_1;
       DAE.Element extvar,var;
       CFunction fn,restfn,resfn;
@@ -5679,13 +5676,13 @@ algorithm
     case ({},i,tnr) then (cEmptyFunction,tnr); 
     case ((var :: rest),i,tnr)
       equation 
-        DAE.VAR(componentRef = cref,varible = vk,variable = vd,protection=prot,input_ = ty,one = value,binding = dims,dimension = start,fullType=tp) = var;
+        DAE.VAR(componentRef = cref,varible = vk,variable = vd,protection=prot,input_ = ty,one = value,binding = dims,fullType=tp) = var;
         true = isArray(var);
         b_isOutput = isOutput(var);
         i1 = Util.if_(b_isOutput,i+1,i);
         cref_1 = varNameExternalCref(cref);
         dims_1 = listReverse(dims);
-        extvar = DAE.VAR(cref_1,vk,vd,prot,ty,value,dims_1,NONE,DAE.NON_FLOW(),{},NONE,
+        extvar = DAE.VAR(cref_1,vk,vd,prot,ty,value,dims_1,DAE.NON_FLOW(),{},NONE,
           NONE,Absyn.UNSPECIFIED(),tp);
         (fn,tnr_1) = generateVarDecl(extvar, tnr, funContext);
         (restfn,tnr_3) = generateExtcallCopydeclsF77(rest, i1,tnr_1);

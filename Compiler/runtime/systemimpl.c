@@ -1737,6 +1737,19 @@ RML_BEGIN_LABEL(System__cd)
 }
 RML_END_LABEL
 
+#ifdef WIN32
+
+RML_BEGIN_LABEL(System__pwd)
+{
+  char buf[MAXPATHLEN];
+  GetCurrentDirectory(buf,MAXPATHLEN);
+  rmlA0 = (void*) mk_scon(buf);
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+#else
+// Unix based systems use getcwd
 RML_BEGIN_LABEL(System__pwd)
 {
   char buf[MAXPATHLEN];
@@ -1746,6 +1759,8 @@ RML_BEGIN_LABEL(System__pwd)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+#endif
 
 
 RML_BEGIN_LABEL(System__writeFile)

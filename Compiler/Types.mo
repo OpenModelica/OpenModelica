@@ -1325,14 +1325,17 @@ algorithm
       Option<Type> bc;
       ClassInf.State ci_state;
       list<FuncArg> params;
+      
     case ((T_INTEGER(varLstInt = _),_)) then "Integer"; 
     case ((T_REAL(varLstReal = _),_)) then "Real"; 
     case ((T_STRING(varLstString = _),_)) then "String"; 
     case ((T_BOOL(varLstBool = _),_)) then "Boolean"; 
-    case ((T_ENUMERATION(names = l),_))
+    case ((T_ENUMERATION(names = l,varLst=vs),_))
+      local String s2;
       equation 
         s1 = Util.stringDelimitList(l, ",");
-        str = Util.stringAppendList({"enumeration(",s1,")"});
+        s2 = Util.stringAppendList(Util.listMap(vs, unparseVar));
+        str = Util.stringAppendList({"enumeration(",s1,")(",s2,")"});
       then
         str;
     case ((t as (T_ARRAY(arrayDim = _),_)))
@@ -1385,6 +1388,7 @@ algorithm
         res;
     case ((T_NOTYPE(),_)) then "#NOTYPE#"; 
     case ((T_ANYTYPE(anyClassType = _),_)) then "#ANYTYPE#"; 
+    case ((T_ENUM(),_)) then "#T_ENUM#";
     case (ty) then "Internal error unparse_type: not implemented yet\n"; 
   end matchcontinue;
 end unparseType;
