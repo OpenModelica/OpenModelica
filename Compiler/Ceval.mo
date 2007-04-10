@@ -1683,6 +1683,21 @@ algorithm
         (cache,ret_val,st_1,_,_,_) = translateModel(cache,env, className, st, msg, filenameprefix);
       then
         (cache,ret_val,st_1);
+
+    case (cache,env,
+      Exp.CALL(
+        path = Absyn.IDENT(name = "getIncidenceMatrix"),
+        expLst = {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),filenameprefix}),
+      (st as Interactive.SYMBOLTABLE(
+        ast = p,
+        explodedAst = sp,
+        instClsLst = ic,
+        lstVarVal = iv,
+        compiledFunctions = cf)),msg)
+      equation 
+        (cache,ret_val,st_1,_) = getIncidenceMatrix(cache,env, className, st, msg, filenameprefix);
+      then
+        (cache,ret_val,st_1);
         
       case (cache,env,
         Exp.CALL(
@@ -2608,12 +2623,86 @@ algorithm
   end matchcontinue; 
 end setEcho;
 
+
 protected function generateMakefilename "function generateMakefilename"
   input String filenameprefix;
   output String makefilename;
 algorithm 
   makefilename := Util.stringAppendList({filenameprefix,".makefile"});
 end generateMakefilename;
+
+
+public function getIncidenceMatrix "function getIncidenceMatrix
+ author: adrpo
+ translates a model and returns the incidence matrix"
+	input Env.Cache inCache;
+	input Env.Env inEnv;
+  input Absyn.Path className "path for the model";
+  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Msg inMsg;
+  input Exp.Exp inExp;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  output String outString;
+algorithm 
+  (outCache,outValue,outInteractiveSymbolTable,outString):=
+  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg,inExp)
+    local
+      String filenameprefix,cname_str,filename,funcfilename,makefilename,file_dir;
+      Absyn.Path classname;
+      list<SCode.Class> p_1,sp;
+      DAE.DAElist dae_1,dae;
+      list<Env.Frame> env;
+      list<DAE.Element> dael;
+      list<Interactive.InstantiatedClass> ic_1,ic;
+      DAELow.DAELow dlow,dlow_1,indexed_dlow,indexed_dlow_1;
+      list<Integer>[:] m,mT;
+      Integer[:] ass1,ass2;
+      list<list<Integer>> comps;
+      Absyn.ComponentRef a_cref;
+      list<String> libs;
+      Exp.ComponentRef cr;
+      Interactive.InteractiveSymbolTable st;
+      Absyn.Program p;
+      list<Interactive.InteractiveVariable> iv;
+      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+      Msg msg;
+      Exp.Exp fileprefix;
+      Env.Cache cache;
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,fileprefix) /* mo file directory */ 
+      equation 
+        print("getIncidenceMatrix:" +& Absyn.pathString(className) +& "\n");
+        (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
+        p_1 = SCode.elaborate(p);
+        (cache,dae_1,env) = Inst.instantiateClass(cache,p_1, className);
+        ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1);
+        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
+        DAE.printDAE(dae);
+        a_cref = Absyn.pathToCref(className);
+        file_dir = getFileDir(a_cref, p);        
+        dlow = DAELow.lower(dae, false);
+        Debug.fprint("bltdump", "Lowered DAE:\n");
+        Debug.fcall("bltdump", DAELow.dump, dlow);
+        m = DAELow.incidenceMatrix(dlow);
+        Debug.fprint("bltdump", "indexed DAE:\n");
+        Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
+        /*
+        cname_str = Absyn.pathString(className);
+        filename = Util.stringAppendList({filenameprefix,"_imatrix.txt"});
+        funcfilename = Util.stringAppendList({filenameprefix,"_functions.cpp"});
+        makefilename = generateMakefilename(filenameprefix);
+        libs = SimCodegen.generateFunctions(p_1, dae, indexed_dlow_1, className, funcfilename);
+        SimCodegen.generateSimulationCode(dae, indexed_dlow_1, ass1, ass2, m, mT, comps, className, 
+          filename, funcfilename,file_dir);
+        SimCodegen.generateMakefile(makefilename, filenameprefix, libs, file_dir);
+        s_call = Util.stringAppendList({"make -f ",cname_str, ".makefile\n"}) 
+        */
+      then
+        (cache,Values.STRING("The model has been translated"),st,file_dir);
+  end matchcontinue;
+end getIncidenceMatrix;
+
 
 public function translateModel "function translateModel
  author: x02lucpo

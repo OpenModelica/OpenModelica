@@ -4623,6 +4623,25 @@ algorithm
         (cache,Exp.CALL(Absyn.IDENT("translateModel"),
           {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),filenameprefix},false,true,Exp.STRING()),Types.PROP(recordtype,Types.C_VAR()),SOME(st));
 
+    case (cache,env,Absyn.CREF_IDENT(name = "getIncidenceMatrix"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
+      local
+        Absyn.Path className;
+      equation 
+        className = Absyn.crefToPath(cr); 
+        cname_str = Absyn.pathString(className);
+        (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix", 
+          (Types.T_STRING({}),NONE), args, Exp.SCONST(cname_str));
+        recordtype = (
+          Types.T_COMPLEX(ClassInf.RECORD("SimulationObject"),
+          {
+          Types.VAR("flatClass",
+          Types.ATTR(false,SCode.RO(),SCode.VAR(),Absyn.BIDIR()),false,(Types.T_STRING({}),NONE),Types.UNBOUND()),
+          Types.VAR("exeFile",
+          Types.ATTR(false,SCode.RO(),SCode.VAR(),Absyn.BIDIR()),false,(Types.T_STRING({}),NONE),Types.UNBOUND())},NONE),NONE);
+      then
+        (cache,Exp.CALL(Absyn.IDENT("getIncidenceMatrix"),
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),filenameprefix},false,true,Exp.STRING()),Types.PROP(recordtype,Types.C_VAR()),SOME(st));
+        
     case (cache,env,Absyn.CREF_IDENT(name = "instantiateModel"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
       local Absyn.Path className;
       equation

@@ -95,23 +95,18 @@ public import Prefix;
 public import Types;
 public import Absyn;
 
-public 
-type Prefix = Prefix.Prefix "
+public type Prefix = Prefix.Prefix "
   These type aliases are introduced to make the code a little more
   readable.
 " ;
 
-public 
-type Mod = Types.Mod;
+public type Mod = Types.Mod;
 
-public 
-type Ident = Exp.Ident;
+public type Ident = Exp.Ident;
 
-public 
-type Env = Env.Env;
+public type Env = Env.Env;
 
-public 
-uniontype CallingScope "Calling scope is used to determine when unconnected flow variables 
+public uniontype CallingScope "Calling scope is used to determine when unconnected flow variables 
     should be set to zero."
   record TOP_CALL end TOP_CALL;
 
@@ -119,8 +114,7 @@ uniontype CallingScope "Calling scope is used to determine when unconnected flow
 
 end CallingScope;
 
-public 
-type InstDims = list<Exp.Subscript>;
+public type InstDims = list<Exp.Subscript>;
 
 public 
 uniontype Initial "Intial is used in functions for instantiating equations to 

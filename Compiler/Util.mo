@@ -1,45 +1,47 @@
-package Util "
-This file is part of OpenModelica.
+/*
+ * This file is part of OpenModelica.
+ * 
+ * Copyright (c) 1998-2007, Linköpings universitet, Department of
+ * Computer and Information Science, PELAB
+ * 
+ * All rights reserved.
+ * 
+ * (The new BSD license, see also
+ * http://www.opensource.org/licenses/bsd-license.php)
+ * 
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ * 
+ *  Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * 
+ *  Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * 
+ *  Neither the name of Linköpings universitet nor the names of its
+ *   contributors may be used to endorse or promote products derived from
+ *   this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ */
 
-Copyright (c) 1998-2006, Linköpings universitet, Department of
-Computer and Information Science, PELAB
-
-All rights reserved.
-
-(The new BSD license, see also
-http://www.opensource.org/licenses/bsd-license.php)
-
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
- Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer.
-
- Redistributions in binary form must reproduce the above copyright
-  notice, this list of conditions and the following disclaimer in
-  the documentation and/or other materials provided with the
-  distribution.
-
- Neither the name of Linköpings universitet nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-  
-  file:	 Util.mo
+package Util 
+" file:	 Util.mo
   module:      Util
   description: Miscellanous MetaModelica Compiler (MMC) utilities
  
@@ -71,8 +73,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   the type variable TyVar is here used as a generic type for the function listFill, 
   which returns a list of n elements of a certain type."
 
-public 
-uniontype ReplacePattern
+public uniontype ReplacePattern
   record REPLACEPATTERN
     String from "from string (ie \".\"" ;
     String to "to string (ie \"$p\") ))" ;
@@ -133,27 +134,40 @@ public function listFill "function: listFill
   output list<Type_a> outTypeALst;
   replaceable type Type_a subtypeof Any;
 algorithm 
+  outTypeALst:= listFill_tail(inTypeA, inInteger, {});
+end listFill;
+
+public function listFill_tail 
+"function: listFill_tail
+ @author adrpo
+ tail recursive implementation for listFill"
+  input Type_a inTypeA;
+  input Integer inInteger;
+  input list<Type_a> accumulator;
+  output list<Type_a> outTypeALst;
+  replaceable type Type_a subtypeof Any;
+algorithm 
   outTypeALst:=
-  matchcontinue (inTypeA,inInteger)
+  matchcontinue (inTypeA,inInteger, accumulator)
     local
       Type_a a;
       Integer n_1,n;
       list<Type_a> res;
-    case(a,n) equation
-      true = n < 0;
-      print("Internal Error, negative value to Util.listFill\n");
-    then {};
-    case (a,0) then {}; 
-    case (a,1) then {a}; 
-      
-    case (a,n)
+    case(a,n,_) 
+      equation
+        true = n < 0;
+        print("Internal Error, negative value to Util.listFill_tail\n");
+      then {};
+    case (a,0,accumulator) then accumulator; 
+    case (a,n,accumulator)
       equation 
         n_1 = n - 1;
-        res = listFill(a, n_1);
+        accumulator = a::accumulator;
+        res = listFill_tail(a, n_1, accumulator);
       then
-        (a :: res);
+        res;
   end matchcontinue;
-end listFill;
+end listFill_tail;
 
 public function listMake2 "function listMake2
   Takes two arguments of same type and returns a list containing the two."
@@ -171,8 +185,35 @@ public function listIntRange "function: listIntRange
   input Integer n;
   output list<Integer> res;
 algorithm 
-  res := listIntRange2(1, n);
+  res := listIntRange2(1,n); /* listIntRange_tail(1, n, {}); */
 end listIntRange;
+
+protected function listIntRange_tail
+  input Integer startInt;
+  input Integer endInt;
+  input list<Integer> accIntegerLst;
+  output list<Integer> outIntegerLst;
+algorithm 
+  outIntegerLst:=
+  matchcontinue (startInt,endInt,accIntegerLst)
+    local
+      Integer i_1,i,n,hd;
+      list<Integer> res;
+    case (i,n,accIntegerLst)
+      equation 
+        (i < n) = true;
+        i_1 = i + 1;
+        hd = n-i+1;
+        accIntegerLst = hd::accIntegerLst;
+        res = listIntRange_tail(i_1, n, accIntegerLst);
+      then
+        res;
+    case (i,n,accIntegerLst) 
+      equation
+        hd = n-i+1; 
+      then hd::accIntegerLst;
+  end matchcontinue;
+end listIntRange_tail;
 
 protected function listIntRange2
   input Integer inInteger1;
@@ -188,6 +229,7 @@ algorithm
       equation 
         (i < n) = true;
         i_1 = i + 1;
+        
         res = listIntRange2(i_1, n);
       then
         (i :: res);
@@ -295,20 +337,33 @@ public function listFlatten "function: listFlatten
   output list<Type_a> outTypeALst;
   replaceable type Type_a subtypeof Any;
 algorithm 
+  outTypeALst:= listFlatten_tail(inTypeALstLst, {});
+end listFlatten;
+
+
+public function listFlatten_tail 
+"function: listFlatten_tail
+ tail recursive helper to listFlatten"
+  input list<list<Type_a>> inTypeALstLst;
+  input list<Type_a> accTypeALst;
+  output list<Type_a> outTypeALst;
+  replaceable type Type_a subtypeof Any;
+algorithm 
   outTypeALst:=
-  matchcontinue (inTypeALstLst)
+  matchcontinue (inTypeALstLst, accTypeALst)
     local
       list<Type_a> r_1,l,f;
       list<list<Type_a>> r;
-    case {} then {}; 
-    case (f :: r)
+    case ({},accTypeALst) then accTypeALst; 
+    case (f :: r,accTypeALst)
       equation 
-        r_1 = listFlatten(r);
-        l = listAppend(f, r_1);
+        r_1 = listAppend(accTypeALst, f);
+        l = listFlatten_tail(r, r_1);
       then
         l;
   end matchcontinue;
-end listFlatten;
+end listFlatten_tail;
+
 
 public function listAppendElt "function: listAppendElt
   This function adds an element last to the list
@@ -318,7 +373,8 @@ public function listAppendElt "function: listAppendElt
   output list<Type_a> outTypeALst;
   replaceable type Type_a subtypeof Any;
 algorithm 
-  outTypeALst:=
+  outTypeALst:= listAppend(inTypeALst, {inTypeA});
+  /*
   matchcontinue (inTypeA,inTypeALst)
     local
       Type_a elt,x;
@@ -330,7 +386,101 @@ algorithm
       then
         (x :: xs_1);
   end matchcontinue;
+  */
 end listAppendElt;
+
+public function applyAndAppend
+"@author adrpo
+ fun f(x) => y
+ fun applyAndAppend(x,f,a) => a @ {(f x)})"
+  input Type_a element;
+  input FuncTypeType_aToType_b f;
+  input list<Type_b> accLst;
+  output list<Type_b> outLst;
+  replaceable type Type_b subtypeof Any;    
+  replaceable type Type_b subtypeof Any;  
+  partial function FuncTypeType_aToType_b
+    input Type_a inTypeA;
+    output Type_b outTypeB;
+  end FuncTypeType_aToType_b;
+algorithm 
+  outLst := matchcontinue(element, f, accLst)
+    case(element, f, accLst)
+      local Type_b result;
+      equation
+        result = f(element);
+        accLst = listAppend(accLst, {result});
+      then accLst;
+  end matchcontinue;
+end applyAndAppend;
+
+
+public function applyAndCons
+"@author adrpo
+ fun f(x) => y
+ fun applyAndCons(x,f,a) => (f x)::a)"
+  input Type_a element;
+  input FuncTypeType_aToType_b f;
+  input list<Type_b> accLst;
+  output list<Type_b> outLst;
+  replaceable type Type_b subtypeof Any;    
+  replaceable type Type_b subtypeof Any;  
+  partial function FuncTypeType_aToType_b
+    input Type_a inTypeA;
+    output Type_b outTypeB;
+  end FuncTypeType_aToType_b;
+algorithm 
+  outLst := matchcontinue(element, f, accLst)
+    case(element, f, accLst)
+      local Type_b result;
+      equation
+        result = f(element);
+      then result::accLst;
+  end matchcontinue;
+end applyAndCons;
+
+
+public function listApplyAndFold 
+"@author adrpo
+ listApplyAndFold(list<'a>, apply:(x,f,a) => (f x)::a, f:a=>b, accumulator) => list<'b>"
+  input list<Type_a> lst;
+  input FoldFunc foldFunc;
+  input FuncType_a2Type_b typeA2typeB;
+  input list<Type_b> accumulator;
+  output list<Type_b> result;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  partial function FoldFunc
+    input Type_a inElement;
+    input FuncType_a2Type_b typeA2typeB;
+    input list<Type_b> accumulator;
+    output list<Type_b> outLst;
+    partial function FuncType_a2Type_b
+      input Type_a inElement;
+      output Type_b outElement;
+    end FuncType_a2Type_b;      
+  end FoldFunc;
+  partial function FuncType_a2Type_b
+    input Type_a inElement;
+    output Type_b outElement;
+  end FuncType_a2Type_b;  
+algorithm 
+  result :=
+  matchcontinue (lst,foldFunc,typeA2typeB,accumulator)
+    local
+      list<Type_b> foldArg1, foldArg2;
+      list<Type_a> rest;
+      Type_a hd;
+    case ({},_,_,accumulator) then accumulator; 
+    case (hd :: rest,foldFunc,typeA2typeB,accumulator)
+      equation 
+        foldArg1 = foldFunc(hd,typeA2typeB,accumulator);
+        foldArg2 = listApplyAndFold(rest, foldFunc, typeA2typeB, foldArg1);        
+      then
+        foldArg2;
+  end matchcontinue;
+end listApplyAndFold;
+
 
 public function listMap "function: listMap
   Takes a list and a function over the elements of the lists, which is applied
@@ -347,7 +497,13 @@ public function listMap "function: listMap
   end FuncTypeType_aToType_b;
   replaceable type Type_b subtypeof Any;
 algorithm 
-  outTypeBLst:=
+  /* implementation 0 - adrpo: seems to be the fastest */
+  outTypeBLst := listApplyAndFold(inTypeALst, applyAndAppend, inFuncTypeTypeAToTypeB, {});
+  /* implementation 1 
+  outTypeBLst := listReverse(listApplyAndFold(inTypeALst, applyAndCons, inFuncTypeTypeAToTypeB, {}));
+  */
+  /* implementation 2
+  outTypeBLst := 
   matchcontinue (inTypeALst,inFuncTypeTypeAToTypeB)
     local
       Type_b f_1;
@@ -361,8 +517,9 @@ algorithm
         f_1 = fn(f);
         r_1 = listMap(r, fn);
       then
-        (f_1 :: r_1);
+        (f_1::r_1);
   end matchcontinue;
+  */
 end listMap;
 
 public function listMap_2 "function listMap_2
@@ -426,7 +583,8 @@ public function listMap1 "function listMap1
   replaceable type Type_b subtypeof Any;
   replaceable type Type_c subtypeof Any;
 algorithm 
-  outTypeCLst:=
+  outTypeCLst:= listMap1_tail(inTypeALst,inFuncTypeTypeATypeBToTypeC,inTypeB,{});
+  /*
   matchcontinue (inTypeALst,inFuncTypeTypeATypeBToTypeC,inTypeB)
     local
       Type_c f_1;
@@ -443,7 +601,47 @@ algorithm
       then
         (f_1 :: r_1);
   end matchcontinue;
+  */
 end listMap1;
+
+public function listMap1_tail 
+"function listMap1_tail
+ tail recurstive implmentation of listMap1"
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aType_bToType_c inFuncTypeTypeATypeBToTypeC;
+  input Type_b inTypeB;
+  input list<Type_c> accTypeCLst;
+  output list<Type_c> outTypeCLst;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aType_bToType_c
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    output Type_c outTypeC;
+    replaceable type Type_b subtypeof Any;
+    replaceable type Type_c subtypeof Any;
+  end FuncTypeType_aType_bToType_c;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm 
+  outTypeCLst:=
+  matchcontinue (inTypeALst,inFuncTypeTypeATypeBToTypeC,inTypeB,accTypeCLst)
+    local
+      Type_c f_1;
+      list<Type_c> r_1;
+      Type_a f;
+      list<Type_a> r;
+      FuncTypeType_aType_bToType_c fn;
+      Type_b extraarg;
+    case ({},_,_,accTypeCLst) then accTypeCLst; 
+    case ((f :: r),fn,extraarg,accTypeCLst)
+      equation 
+        f_1 = fn(f, extraarg);
+        accTypeCLst = listAppend(accTypeCLst, {f_1});
+        r_1 = listMap1_tail(r, fn, extraarg, accTypeCLst);
+      then
+        r_1;
+  end matchcontinue;
+end listMap1_tail;
 
 public function listMap1r "function listMap1r
   Same as listMap1 but swapped arguments on function."
@@ -462,7 +660,8 @@ public function listMap1r "function listMap1r
   replaceable type Type_b subtypeof Any;
   replaceable type Type_c subtypeof Any;
 algorithm 
-  outTypeCLst:=
+  outTypeCLst:= listMap1r_tail(inTypeALst,inFuncTypeTypeBTypeAToTypeC,inTypeB,{});
+  /*
   matchcontinue (inTypeALst,inFuncTypeTypeBTypeAToTypeC,inTypeB)
     local
       Type_c f_1;
@@ -479,7 +678,48 @@ algorithm
       then
         (f_1 :: r_1);
   end matchcontinue;
+  */
 end listMap1r;
+
+public function listMap1r_tail 
+"function listMap1r
+ tail recursive implementation of listMap1r"
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_bType_aToType_c inFuncTypeTypeBTypeAToTypeC;
+  input Type_b inTypeB;
+  input list<Type_c> accTypeCLst;
+  output list<Type_c> outTypeCLst;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_bType_aToType_c
+    input Type_b inTypeB;
+    input Type_a inTypeA;
+    output Type_c outTypeC;
+    replaceable type Type_b subtypeof Any;
+    replaceable type Type_c subtypeof Any;
+  end FuncTypeType_bType_aToType_c;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm 
+  outTypeCLst:=
+  matchcontinue (inTypeALst,inFuncTypeTypeBTypeAToTypeC,inTypeB,accTypeCLst)
+    local
+      Type_c f_1;
+      list<Type_c> r_1;
+      Type_a f;
+      list<Type_a> r;
+      FuncTypeType_bType_aToType_c fn;
+      Type_b extraarg;
+    case ({},_,_,accTypeCLst) then accTypeCLst; 
+    case ((f :: r),fn,extraarg,accTypeCLst)
+      equation 
+        f_1 = fn(extraarg, f);
+        accTypeCLst = listAppend(accTypeCLst, {f_1});
+        r_1 = listMap1r_tail(r, fn, extraarg, accTypeCLst);
+      then
+        (r_1);
+  end matchcontinue;
+end listMap1r_tail;
+
 
 public function listMap2 "function listMap2
   Takes a list and a function and two extra arguments passed to the function.
@@ -1854,12 +2094,50 @@ algorithm
     case ((a :: (b :: (xs as (_ :: _)))),r)
       equation 
         res1 = r(a, b);
-        res2 = listReduce(xs, r);
-        res = r(res1, res2);
+        res = listReduce_tail(xs, r, res1);
       then
         res;
   end matchcontinue;
 end listReduce;
+
+
+public function listReduce_tail 
+"function: listReduce_tail
+ Takes a list and a function operating on two elements of the list and an accumulator value.
+ The function performs a reduction of the lists to a single value using the function.
+ Example: listReduce_tail({1,2,3},int_add, 0) => 6"
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aType_aToType_a inFuncTypeTypeATypeAToTypeA;
+  input Type_a accumulator;
+  output Type_a outTypeA;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aType_aToType_a
+    input Type_a inTypeA1;
+    input Type_a inTypeA2;
+    output Type_a outTypeA;
+  end FuncTypeType_aType_aToType_a;
+algorithm 
+  outTypeA:=
+  matchcontinue (inTypeALst,inFuncTypeTypeATypeAToTypeA,accumulator)
+    local
+      Type_a e,res,a,b,res1,res2;
+      FuncTypeType_aType_aToType_a r;
+      list<Type_a> xs;
+    case ({},r,accumulator) then accumulator;
+    case ({a},r,accumulator)
+      equation 
+        res = r(accumulator, a);
+      then
+        res;
+    case (a::xs,r,accumulator)
+      equation 
+        res1 = r(accumulator, a);
+        res = listReduce_tail(xs, r, res1);
+      then
+        res;
+  end matchcontinue;
+end listReduce_tail;
+
 
 public function arrayReplaceAtWithFill "function: arrayReplaceAtWithFill
   Takes 
@@ -2479,7 +2757,8 @@ algorithm
 end stringEqual;
 */
 
-public function listFilter "function: listFilter
+public function listFilter 
+"function: listFilter
   Takes a list of values and a filter function over the values and 
   returns a sub list of values for which the matching function succeeds.
   Example:
@@ -2493,7 +2772,8 @@ public function listFilter "function: listFilter
     input Type_a inTypeA;
   end FuncTypeType_aTo;
 algorithm 
-  outTypeALst:=
+  outTypeALst:= listFilter_tail(inTypeALst, inFuncTypeTypeATo, {});
+  /*
   matchcontinue (inTypeALst,inFuncTypeTypeATo)
     local
       list<Type_a> vl_1,vl;
@@ -2513,7 +2793,101 @@ algorithm
       then
         vl_1;
   end matchcontinue;
+  */
 end listFilter;
+
+public function listFilter_tail 
+"function: listFilter_tail
+ @author adrpo
+ tail recursive implementation of listFilter"
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aTo inFuncTypeTypeATo;
+  input list<Type_a> accTypeALst;
+  output list<Type_a> outTypeALst;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aTo
+    input Type_a inTypeA;
+  end FuncTypeType_aTo;
+algorithm 
+  outTypeALst:=
+  matchcontinue (inTypeALst,inFuncTypeTypeATo,accTypeALst)
+    local
+      list<Type_a> vl_1,vl;
+      Type_a v;
+      FuncTypeType_aTo cond;
+    case ({},_,accTypeALst) then accTypeALst; 
+    case ((v :: vl), cond, accTypeALst)
+      equation 
+        cond(v);
+        accTypeALst = listAppend(accTypeALst, {v});
+        vl_1 = listFilter_tail(vl, cond, accTypeALst);
+      then
+        (vl_1);
+    case ((v :: vl),cond, accTypeALst)
+      equation 
+        failure(cond(v));
+        vl_1 = listFilter_tail(vl, cond, accTypeALst);
+      then
+        vl_1;
+  end matchcontinue;
+end listFilter_tail;
+
+public function listFilterBoolean 
+"function: listFilterBoolean
+ @author adrpo
+  Takes a list of values and a filter function over the values and 
+  returns a sub list of values for which the matching function returns true.
+  Example:
+    given function is_numeric(string) => Boolean  which returns true if the string is numeric.
+    listFilter({\"foo\",\"1\",\"bar\",\"4\"},is_numeric) => {\"1\",\"4\"}"
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aToBoolean inFuncTypeTypeAToBoolean;
+  output list<Type_a> outTypeALst;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aToBoolean
+    input Type_a inTypeA;
+    output Boolean result;
+  end FuncTypeType_aToBoolean;
+algorithm 
+  outTypeALst:= listFilterBoolean_tail(inTypeALst, inFuncTypeTypeAToBoolean, {});
+end listFilterBoolean;
+
+public function listFilterBoolean_tail 
+"function: listFilter_tail
+ @author adrpo
+ tail recursive implementation of listFilterBoolean"
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aToBoolean inFuncTypeTypeAToBoolean;
+  input list<Type_a> accTypeALst;
+  output list<Type_a> outTypeALst;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aToBoolean
+    input Type_a inTypeA;
+    output Boolean result;
+  end FuncTypeType_aToBoolean;
+algorithm 
+  outTypeALst:=
+  matchcontinue (inTypeALst,inFuncTypeTypeAToBoolean,accTypeALst)
+    local
+      list<Type_a> vl_1,vl;
+      Type_a v;
+      FuncTypeType_aToBoolean cond;
+    case ({}, _, accTypeALst) then accTypeALst; 
+    case ((v :: vl), cond, accTypeALst)
+      equation 
+        true = cond(v);
+        accTypeALst = listAppend(accTypeALst, {v});
+        vl_1 = listFilterBoolean_tail(vl, cond, accTypeALst);
+      then
+        (vl_1);
+    case ((v :: vl), cond, accTypeALst)
+      equation 
+        false = cond(v);
+        vl_1 = listFilterBoolean_tail(vl, cond, accTypeALst);
+      then
+        vl_1;
+  end matchcontinue;
+end listFilterBoolean_tail;
 
 public function applyOption "function: applyOption
   Takes an option value and a function over the value. 
