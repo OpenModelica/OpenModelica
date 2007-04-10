@@ -502,6 +502,26 @@ RML_BEGIN_LABEL(System__cd)
 }
 RML_END_LABEL
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#include <Windows.h>
+RML_BEGIN_LABEL(System__pwd)
+{
+  char buf[MAXPATHLEN];
+  char* buf2;
+  LPTSTR bufPtr=buf;
+  DWORD bufLen = MAXPATHLEN;
+  GetCurrentDirectory(bufLen,bufPtr);
+  
+  /* Make sure windows paths use fronslash and not backslash */
+  buf2=_replace(buf,"\\","/");
+  
+  rmlA0 = (void*) mk_scon(buf2);
+  free(buf2);	
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+#else
+
 RML_BEGIN_LABEL(System__pwd)
 {
   char buf[MAXPATHLEN];
@@ -511,6 +531,7 @@ RML_BEGIN_LABEL(System__pwd)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+#endif
 
 
 RML_BEGIN_LABEL(System__writeFile)
@@ -1736,32 +1757,6 @@ RML_BEGIN_LABEL(System__cd)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
-
-#ifdef WIN32
-
-RML_BEGIN_LABEL(System__pwd)
-{
-  char buf[MAXPATHLEN];
-  GetCurrentDirectory(buf,MAXPATHLEN);
-  rmlA0 = (void*) mk_scon(buf);
-
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-#else
-// Unix based systems use getcwd
-RML_BEGIN_LABEL(System__pwd)
-{
-  char buf[MAXPATHLEN];
-  getcwd(buf,MAXPATHLEN);
-  rmlA0 = (void*) mk_scon(buf);
-
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-#endif
-
 
 RML_BEGIN_LABEL(System__writeFile)
 {

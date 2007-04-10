@@ -7302,7 +7302,7 @@ algorithm
   end matchcontinue;
 end findState;
 
-protected function equationsCrefs "function: equationsCrefs
+public function equationsCrefs "function: equationsCrefs
   author: PA
  
   From a list of equations return all occuring variables/component 

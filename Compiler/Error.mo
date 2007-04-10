@@ -193,6 +193,7 @@ public constant ErrorID DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN= 95;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
 public constant ErrorID BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER=502;
+public constant ErrorID SETTING_FIXED_ATTRIBUTE = 503;
 public constant ErrorID INDEX_REDUCTION_NOTIFICATION=1000;
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable={(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
           (GRAMMATIC_ERROR,GRAMMAR(),ERROR(),"error: %s"),
@@ -385,7 +386,10 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (INDEX_REDUCTION_NOTIFICATION,SYMBOLIC(),NOTIFICATION(),
           "Notification, differentiated equation %s to %s for index reduction"),
           (DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN,SYMBOLIC(),ERROR(),
-          "Error, The same variables must me solved in elsewhen clause as in the when clause")};
+          "Error, The same variables must me solved in elsewhen clause as in the when clause"),
+          (SETTING_FIXED_ATTRIBUTE,TRANSLATION(),WARNING(),
+          "Warning, no variable has fixed=false but model contains initial equations. Setting fixed=false to the following variables: %s")
+          };
 
 protected import ErrorExt;
 protected import Util;

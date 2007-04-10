@@ -1338,6 +1338,24 @@ algorithm
   end matchcontinue;
 end getStartAttr;
 
+public function hasStartAttr " 
+  Returns true if variable attributes defines a start value.
+"
+  input Option<VariableAttributes> inVariableAttributesOption;
+  output Boolean hasStart;
+algorithm 
+  hasStart:=
+  matchcontinue (inVariableAttributesOption)
+    local
+      Exp.Exp r;
+    case (SOME(VAR_ATTR_REAL(_,_,_,_,SOME(r),_,_,_))) then true;
+    case (SOME(VAR_ATTR_INT(_,_,SOME(r),_))) then true;
+    case (SOME(VAR_ATTR_BOOL(initial_=SOME(r)))) then true;
+    case (SOME(VAR_ATTR_STRING(initial_=SOME(r)))) then true;
+    case (_) then false; 
+  end matchcontinue;
+end hasStartAttr;
+
 public function getStartAttrString "function: getStartAttrString
  
   Return the start attribute as a string.

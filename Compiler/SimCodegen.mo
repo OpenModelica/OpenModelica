@@ -1328,7 +1328,7 @@ end generateAttrVectorDiscrete2;
 
 protected function generateFixedVector "function: generateFixedVector
  
-  Generates a vector, fixed{nx+nx+ny+np} where the fixed attribute is stored
+  Generates a vector, fixed[nx+nx+ny+np] where the fixed attribute is stored
   It is collected for states, derivatives, variables and parameters.
 "
   input DAELow.DAELow inDAELow1;
@@ -1381,17 +1381,84 @@ algorithm
       list<DAELow.Var> v_lst,kv_lst;
       String[:] str_arr_1,str_arr_2,str_arr;
       DAELow.Variables v,kv;
+      DAELow.EquationArray ie;
+      list<DAELow.Equation> ie_lst;
       Integer nx,ny,np;
-    case (DAELow.DAELOW(orderedVars = v,knownVars = kv),str_arr,nx,ny,np) /* nx ny np */ 
+    case (DAELow.DAELOW(orderedVars = v,knownVars = kv,initialEqs=ie),str_arr,nx,ny,np) /* nx ny np */ 
       equation 
         v_lst = DAELow.varList(v);
         kv_lst = DAELow.varList(kv);
+        ie_lst = DAELow.equationList(ie);
+        
+        /* If initial equations present and no variable or parameter has fixed = false, set states
+        present in initial equations to fixed=false and issue warning. This will make "standard Modelica models" 
+        with initial equations work. */
+        
         str_arr_1 = generateFixedVector3(v_lst, str_arr, nx, ny, np);
         str_arr_2 = generateFixedVector3(kv_lst, str_arr_1, nx, ny, np);
+        str_arr_2 = generateFixedVectorDefault(str_arr_2,ie_lst,v_lst,kv_lst);         
       then
         str_arr_2;
   end matchcontinue;
 end generateFixedVector2;
+
+protected function generateFixedVectorDefault "Help function to generateFixedVector2, sets fixed = false for all states
+that are present in initial equations, iff no variables has fixed=false"
+  input String[:] fixedArr;
+  input list<DAELow.Equation> ieLst;
+  input list<DAELow.Var> varLst;
+  input list<DAELow.Var> knvarLst;
+  output String[:] fixedArrOut;
+algorithm
+  fixedArrOut := matchcontinue(fixedArr,ieLst,varLst,knvarLst)
+    local list<Boolean> fixedLst; Boolean noFalse;
+      list<Exp.ComponentRef> crefs;
+      String str;
+      list<String> vars;
+      /* No initial equations, do nothing */ 
+    case(fixedArr,{},varLst,knvarLst) then fixedArr;      
+      
+    case(fixedArr,ieLst,varLst,knvarLst) equation
+      fixedLst = Util.listMap(listAppend(knvarLst,varLst),DAELow.varFixed);
+      true = Util.boolAndList(fixedLst); /* No fixed = false */
+      crefs = DAELow.equationsCrefs(ieLst);
+      (fixedArr,vars) = generateFixedVectorDefault2(fixedArr,varLst,crefs);
+      str = Util.stringDelimitList(vars,", ");
+      Error.addMessage(Error.SETTING_FIXED_ATTRIBUTE,{str});
+    then fixedArr;
+      
+      /* Has fixed = false, do nothing */
+    case(fixedArr,ieLst,varLst,knvarLst) then fixedArr;
+    end matchcontinue;
+end generateFixedVectorDefault;  
+
+protected function generateFixedVectorDefault2 "Help function to generateFixedVectorDefault, 
+traverses all states and if state is present in crefs, set fixed=false"
+  input String[:] fixedArr;
+  input list<DAELow.Var> varLst;
+  input list<Exp.ComponentRef> crefs;
+  output String[:] fixedArrOut;
+  output list<String> changedVars;
+algorithm  
+  (fixedArrOut,changedVars) := matchcontinue(fixedArr,varLst,crefs)
+    local DAELow.Var v; list<DAELow.Var> vs;
+      Integer indx; Exp.ComponentRef cr; String crStr;
+    case(fixedArr,v::vs,crefs) equation
+      true = DAELow.isStateVar(v);
+      cr = DAELow.varCref(v);
+      _::_ = Util.listSelect1(crefs,cr,Exp.crefEqual);
+      indx = DAELow.varIndex(v); // Should use calcFixedOffset, but kind is always state so we skip that            
+      fixedArr =  arrayUpdate(fixedArr, indx + 1, "0 /* changed due to init eqns */");
+      (fixedArr,changedVars) = generateFixedVectorDefault2(fixedArr,vs,crefs);
+      crStr = DAELow.varOrigName(v);
+    then (fixedArr,crStr::changedVars);
+      
+    case(fixedArr,v::vs,crefs) equation
+      (fixedArr,changedVars) = generateFixedVectorDefault2(fixedArr,vs,crefs);
+    then (fixedArr,changedVars);
+    case(fixedArr,{},_) then (fixedArr,{});
+  end matchcontinue;
+end generateFixedVectorDefault2;
 
 protected function generateFixedVector3 "function: generateFixedVector3
   author: PA
@@ -2967,6 +3034,7 @@ algorithm
     case (((v as DAELow.VAR(varName = cr,varKind = kind,values = attr)) :: vars)) /* add equations for variables with fixed = true */ 
       equation 
         true = DAELow.varFixed(v);
+        true = DAE.hasStartAttr(attr);
         startv = DAE.getStartAttr(attr);
         eqns = generateInitialEquationsFromStart(vars);
       then
