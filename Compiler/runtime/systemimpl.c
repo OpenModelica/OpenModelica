@@ -502,8 +502,6 @@ RML_BEGIN_LABEL(System__cd)
 }
 RML_END_LABEL
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
-#include <Windows.h>
 RML_BEGIN_LABEL(System__pwd)
 {
   char buf[MAXPATHLEN];
@@ -520,19 +518,6 @@ RML_BEGIN_LABEL(System__pwd)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
-#else
-
-RML_BEGIN_LABEL(System__pwd)
-{
-  char buf[MAXPATHLEN];
-  getcwd(buf,MAXPATHLEN);
-  rmlA0 = (void*) mk_scon(buf);
-
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-#endif
-
 
 RML_BEGIN_LABEL(System__writeFile)
 {
@@ -992,7 +977,19 @@ RML_BEGIN_LABEL(System__platform)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
-#else
+
+#else /********************************* LINUX PART!!! *************************************/
+
+RML_BEGIN_LABEL(System__pwd)
+{
+  char buf[MAXPATHLEN];
+  getcwd(buf,MAXPATHLEN);
+  rmlA0 = (void*) mk_scon(buf);
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__platform)
 {
   rmlA0 = (void*) mk_scon("");
