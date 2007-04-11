@@ -977,18 +977,7 @@ RML_BEGIN_LABEL(System__platform)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
-
-#else /********************************* LINUX PART!!! *************************************/
-
-RML_BEGIN_LABEL(System__pwd)
-{
-  char buf[MAXPATHLEN];
-  getcwd(buf,MAXPATHLEN);
-  rmlA0 = (void*) mk_scon(buf);
-
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
+#else
 
 RML_BEGIN_LABEL(System__platform)
 {
@@ -1247,7 +1236,7 @@ RML_BEGIN_LABEL(System__getCurrentTime)
 }
 RML_END_LABEL
 
-#else /* Linux part */
+#else /********************************* LINUX PART!!! *************************************/
 
 #include <time.h>
 #include <stdio.h>
@@ -1750,6 +1739,16 @@ RML_BEGIN_LABEL(System__cd)
   ret_val = chdir(str);
 
   rmlA0 = (void*) mk_icon(ret_val);
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__pwd)
+{
+  char buf[MAXPATHLEN];
+  getcwd(buf,MAXPATHLEN);
+  rmlA0 = (void*) mk_scon(buf);
 
   RML_TAILCALLK(rmlSC);
 }
