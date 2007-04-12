@@ -223,7 +223,7 @@ algorithm
         (s_code2,nres) = generateInitialValueCode2(dlow2,ass1,ass2);
         (s_code3) = generateInitialBoundParameterCode(dlow2);
         cglobal = generateGlobalData(class_, dlow2, n_o, n_i, n_h, nres,fileDir);
-        coutput = generateComputeOutput(cname, dae, dlow2, ass1, ass2, blt_no_states);
+        coutput = generateComputeOutput(cname, dae, dlow2, ass1, ass2,m,mt, blt_no_states);
         cstate = generateComputeResidualState(cname, dae, dlow2, ass1, ass2, blt_states);
         c_ode = generateOdeCode(dlow2, blt_states, ass1, ass2, m, mt, class_);
         s_code = generateInitialValueCode(dlow2);
@@ -7275,37 +7275,53 @@ protected function generateComputeOutput "function: generateComputeOutput
   input DAELow.DAELow inDAELow3;
   input Integer[:] inIntegerArray4;
   input Integer[:] inIntegerArray5;
+  input DAELow.IncidenceMatrix m;
+  input DAELow.IncidenceMatrixT mT;  
   input list<list<Integer>> inIntegerLstLst6;
   output String outString;
 algorithm 
   outString:=
-  matchcontinue (inString1,inDAElist2,inDAELow3,inIntegerArray4,inIntegerArray5,inIntegerLstLst6)
+  matchcontinue (inString1,inDAElist2,inDAELow3,inIntegerArray4,inIntegerArray5,m,mT,inIntegerLstLst6)
     local
-      Codegen.CFunction cfunc_1,cfunc,body,cfunc_2,assertBody;
-      list<CFunction> extra_funcs;
+      Codegen.CFunction cfunc_1,cfunc,cfunc1,cfunc2,body,cfunc_2,assertBody;
+      list<CFunction> extra_funcs,extra_funcs1,extra_funcs2;
       list<String> stmts2;
       String coutput,cname;
       DAE.DAElist dae;
       DAELow.DAELow dlow;
       Integer[:] ass1,ass2;
-      list<list<Integer>> blocks;
+      list<list<Integer>> blocks,blocks1,blocks2;
       Integer cg_id;
-    case (cname,dae,dlow,ass1,ass2,blocks)
+    case (cname,dae,dlow,ass1,ass2,m,mT,blocks)
       equation 
+        (blocks1,blocks2) = splitOutputBlocks(dlow,ass1,ass2,m,mT,blocks);
+        
+        /* Create output function + asserts */
         cfunc_1 = Codegen.cMakeFunction("int", "functionDAE_output", {}, 
           {""});
         cfunc_1 = addMemoryManagement(cfunc_1);
-        cfunc = Codegen.cAddCleanups(cfunc_1, {"return 0;"});
-        (body,cg_id,extra_funcs) = buildSolvedBlocks(dae, dlow, ass1, ass2, blocks, 0);
+        cfunc1 = Codegen.cAddCleanups(cfunc_1, {"return 0;"});        
+        (body,cg_id,extra_funcs1) = buildSolvedBlocks(dae, dlow, ass1, ass2, blocks1, 0);
         (assertBody,cg_id) = generateAlgorithmAsserts(dlow,cg_id);
         stmts2 = generateComputeRemovedEqns(dlow);
-        cfunc_1 = Codegen.cMergeFns({cfunc,body,assertBody});
-        cfunc_2 = Codegen.cAddStatements(cfunc_1, stmts2);
+        cfunc_1 = Codegen.cMergeFns({cfunc1,body,assertBody});
+        cfunc_1 = Codegen.cAddStatements(cfunc_1, stmts2);
         
-        coutput = Codegen.cPrintFunctionsStr((listAppend(extra_funcs,{cfunc_2})));
+        /* Create output2 function for discrete vars.*/
+        cfunc_2 = Codegen.cMakeFunction("int", "functionDAE_output2", {}, 
+          {""});
+        cfunc_2 = addMemoryManagement(cfunc_2);
+        cfunc2 = Codegen.cAddCleanups(cfunc_2, {"return 0;"});        
+        (body,cg_id,extra_funcs2) = buildSolvedBlocks(dae, dlow, ass1, ass2, blocks2, 0);
+        stmts2 = generateComputeRemovedEqns(dlow);
+        cfunc_2 = Codegen.cMergeFns({cfunc2,body});
+        cfunc_2 = Codegen.cAddStatements(cfunc_2, stmts2);
+        
+        extra_funcs = listAppend(extra_funcs1,extra_funcs2);
+        coutput = Codegen.cPrintFunctionsStr((listAppend(extra_funcs,{cfunc_1,cfunc_2})));
       then
         coutput;
-    case (_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_)
       equation 
         Error.addMessage(Error.INTERNAL_ERROR, {"generate_compute_output failed"});
       then
@@ -7313,6 +7329,95 @@ algorithm
   end matchcontinue;
 end generateComputeOutput;
 
+protected function splitOutputBlocks "Help function to generateComputeOutput, 
+splits the output blocks into two parts, one for continous output variables and one
+for discrete output values. This must be done to ensure that discrete variables are calculated before
+and after a discrete event."
+  input DAELow.DAELow dlow;
+  input Integer[:] ass1;
+  input Integer[:] ass2;
+  input DAELow.IncidenceMatrix m;
+  input DAELow.IncidenceMatrix mT;
+  input list<list<Integer>> blocks;
+  output list<list<Integer>> contBlocks;
+  output list<list<Integer>> discBlocks;
+algorithm
+  (contBlocks,discBlocks) := matchcontinue(dlow,ass1,ass2,m,mT,blocks)
+    local DAELow.Variables vars,vars2,knvars;
+      list<DAELow.Var> varLst;
+      DAELow.EquationArray eqns;
+    case (dlow as DAELow.DAELOW(orderedVars=vars,knownVars = knvars,orderedEqs=eqns),ass1,ass2,m,mT,blocks) equation
+      varLst = DAELow.varList(vars);
+      varLst = Util.listSelect(varLst,DAELow.isVarDiscrete);
+      vars2 = DAELow.listVar(varLst);
+      (contBlocks,discBlocks,_) = splitOutputBlocks2(vars2,vars,knvars,eqns,ass1,ass2,m,mT,blocks);
+    then (contBlocks,discBlocks);  
+  end matchcontinue;
+end splitOutputBlocks;
+
+protected function splitOutputBlocks2 "Help function to splitOutputBlocks"
+  input DAELow.Variables discVars;
+  input DAELow.Variables vars;
+  input DAELow.Variables knvars;
+  input DAELow.EquationArray eqns;  
+  input Integer[:] ass1;
+  input Integer[:] ass2;
+  input DAELow.IncidenceMatrix m;
+  input DAELow.IncidenceMatrix mT; 
+  input list<list<Integer>> blocks;
+  output list<list<Integer>> contBlocks;
+  output list<list<Integer>> discBlocks;
+  output DAELow.Variables discVars;
+algorithm
+  (contBlocks,discBlocks,discVars) := matchcontinue(discVars,vars,knvars,eqns,ass1,ass2,m,mT,blocks)
+    local list<Integer> blck;
+      /* discrete block */
+    case(discVars,vars,knvars,eqns,ass1,ass2,m,mT,blck::blocks)  equation
+      discVars = blockSolvesDiscrete(discVars,vars,knvars,eqns,blck,ass2,mT);  
+      (contBlocks,discBlocks,discVars) = splitOutputBlocks2(discVars,vars,knvars,eqns,ass1,ass2,m,mT,blocks);    
+    then (contBlocks,blck::discBlocks,discVars);
+      
+      /* continous block */
+  case(discVars,vars,knvars,eqns,ass1,ass2,m,mT,blck::blocks)  equation
+      (contBlocks,discBlocks,discVars) = splitOutputBlocks2(discVars,vars,knvars,eqns,ass1,ass2,m,mT,blocks);    
+  then (blck::contBlocks,discBlocks,discVars);
+ 
+  case(discVars,vars,knvars,eqns,ass1,ass2,m,mT,{}) then ({},{},discVars);
+  end matchcontinue;
+end splitOutputBlocks2;
+
+protected function blockSolvesDiscrete "Help function to splitOutputBlocks
+succeds if the block solves for any discrete variable."
+  input DAELow.Variables discVars;
+  input DAELow.Variables vars;  
+  input DAELow.Variables knvars;
+  input DAELow.EquationArray eqns;  
+  input list<Integer> blck;
+  input Integer[:] ass2;
+  input DAELow.IncidenceMatrixT mT;
+  output DAELow.Variables outDiscVars;
+algorithm
+  outDiscVars := matchcontinue(discVars,vars,knvars,eqns,blck,ass2,mT)
+    local list<DAELow.Equation> eqn_lst; list<DAELow.Var> var_lst;
+      /* Solves a discrete variable, typically in when-clause */
+    case(discVars,vars,knvars,eqns,blck,ass2,mT)
+      equation
+      (eqn_lst,var_lst) = Util.listMap32(blck, getEquationAndSolvedVar, eqns, vars, ass2);
+        _::_ = Util.listSelect(var_lst,DAELow.isVarDiscrete);
+        discVars = DAELow.addVars(var_lst,discVars);        
+      then discVars;        
+      
+      /* Equation has variablity discrete time */
+    case(discVars,vars,knvars,eqns,blck,ass2,mT) equation
+      (eqn_lst,var_lst) = Util.listMap32(blck, getEquationAndSolvedVar, eqns, vars, ass2);
+      var_lst = Util.listMap1(var_lst,DAELow.setVarKind,DAELow.DISCRETE());
+      discVars = DAELow.addVars(var_lst,discVars);              
+      _::_ = Util.listSelect2(eqn_lst,discVars,knvars,DAELow.isDiscreteEquation);
+      discVars = DAELow.addVars(var_lst,discVars);                    
+      then discVars;
+  end matchcontinue;  
+end blockSolvesDiscrete;
+  
 protected function generateAlgorithmAsserts "Generates assert statements from equations and algorithms into computeOutput function
 
 equation asserts are transformed to algorithm asserts, so this function goes through all algorithms and 

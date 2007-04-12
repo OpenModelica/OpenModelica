@@ -563,7 +563,7 @@ algorithm
   (vars,knvars,eqns,reqns,ieqns,aeqns1) := removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, s);
   vars_1 := detectImplicitDiscrete(vars, eqns);
   eqns_1 := sortEqn(eqns);
-  (zero_crossings) := findZeroCrossings(vars_1, eqns_1, whenclauses_1,algs);
+  (zero_crossings) := findZeroCrossings(vars_1, knvars,eqns_1, whenclauses_1,algs);
   eqnarr := listEquation(eqns_1);
   reqnarr := listEquation(reqns);
   ieqnarr := listEquation(ieqns);
@@ -796,13 +796,14 @@ protected function findZeroCrossings "function: findZeroCrossings
   the list of when clauses. Used in lower2.
 "
   input Variables vars;
+  input Variables knvars;
   input list<Equation> eq;
   input list<WhenClause> wc;
   input list<Algorithm.Algorithm> algs;
   output list<ZeroCrossing> res_1;
   list<ZeroCrossing> res,res_1;
 algorithm 
-  res := findZeroCrossings2(vars, eq, 1, wc, 1, algs);
+  res := findZeroCrossings2(vars, knvars,eq, 1, wc, 1, algs);
   res_1 := mergeZeroCrossings(res);
 end findZeroCrossings;
 
@@ -811,6 +812,7 @@ protected function findZeroCrossings2 "function: findZeroCrossings2
   Helper function to find_zero_crossing.
 "
   input Variables inVariables1;
+  input Variables knvars;
   input list<Equation> inEquationLst2;
   input Integer inInteger3;
   input list<WhenClause> inWhenClauseLst4;
@@ -820,7 +822,7 @@ protected function findZeroCrossings2 "function: findZeroCrossings2
   output list<ZeroCrossing> outZeroCrossingLst;
 algorithm 
   outZeroCrossingLst:=
-  matchcontinue (inVariables1,inEquationLst2,inInteger3,inWhenClauseLst4,inInteger5,algs)
+  matchcontinue (inVariables1,knvars,inEquationLst2,inInteger3,inWhenClauseLst4,inInteger5,algs)
     local
       Variables v;
       list<Exp.Exp> rellst1,rellst2,rel;
@@ -831,64 +833,64 @@ algorithm
       list<Equation> xs,el;
       WhenClause wc;
       Integer ind;
-    case (v,{},_,{},_,_) then {}; 
-    case (v,((e as EQUATION(exp = e1,scalar = e2)) :: xs),eq_count,{},_,algs)
+    case (v,knvars,{},_,{},_,_) then {}; 
+    case (v,knvars,((e as EQUATION(exp = e1,scalar = e2)) :: xs),eq_count,{},_,algs)
       equation
-        rellst1 = findZeroCrossings3(e1, v);
+        rellst1 = findZeroCrossings3(e1, v,knvars);
         zc1 = makeZeroCrossings(rellst1, {eq_count}, {});
-        rellst2 = findZeroCrossings3(e2, v);
+        rellst2 = findZeroCrossings3(e2, v,knvars);
         zc2 = makeZeroCrossings(rellst2, {eq_count}, {});
         eq_count_1 = eq_count + 1;
-        zc3 = findZeroCrossings2(v, xs, eq_count_1, {}, 0,algs);
+        zc3 = findZeroCrossings2(v, knvars,xs, eq_count_1, {}, 0,algs);
         zc4 = listAppend(zc1, zc2);
         res = listAppend(zc3, zc4);
       then
         res;
-    case (v,((e as SOLVED_EQUATION(exp = e1)) :: xs),eq_count,{},_,algs)
+    case (v,knvars,((e as SOLVED_EQUATION(exp = e1)) :: xs),eq_count,{},_,algs)
       equation
-        rellst1 = findZeroCrossings3(e1, v);
+        rellst1 = findZeroCrossings3(e1, v,knvars);
         zc1 = makeZeroCrossings(rellst1, {eq_count}, {});
         eq_count_1 = eq_count + 1;
-        zc3 = findZeroCrossings2(v, xs, eq_count_1, {}, 0,algs);
+        zc3 = findZeroCrossings2(v, knvars,xs, eq_count_1, {}, 0,algs);
         res = listAppend(zc3, zc1);
       then
         res;
-    case (v,((e as RESIDUAL_EQUATION(exp = e1)) :: xs),eq_count,{},_,algs)
+    case (v,knvars,((e as RESIDUAL_EQUATION(exp = e1)) :: xs),eq_count,{},_,algs)
       equation
-        rellst1 = findZeroCrossings3(e1, v);
+        rellst1 = findZeroCrossings3(e1, v,knvars);
         zc1 = makeZeroCrossings(rellst1, {eq_count}, {});
         eq_count_1 = eq_count + 1;
-        zc3 = findZeroCrossings2(v, xs, eq_count_1, {}, 0,algs);
+        zc3 = findZeroCrossings2(v, knvars,xs, eq_count_1, {}, 0,algs);
         res = listAppend(zc3, zc1);
       then
         res;
-    case (v,((e as ALGORITHM(index = ind)) :: xs),eq_count,{},_,algs)
+    case (v,knvars,((e as ALGORITHM(index = ind)) :: xs),eq_count,{},_,algs)
       local
         list<Algorithm.Statement> stmts;
       equation
         eq_count_1 = eq_count + 1;
-        zc1 = findZeroCrossings2(v, xs, eq_count_1, {}, 0,algs);
+        zc1 = findZeroCrossings2(v, knvars,xs, eq_count_1, {}, 0,algs);
         Algorithm.ALGORITHM(stmts) = listNth(algs,ind);
         rel = Algorithm.getAllExpsStmts(stmts);
-        rellst1 = Util.listFlatten(Util.listMap1(rel,findZeroCrossings3, v));
+        rellst1 = Util.listFlatten(Util.listMap2(rel,findZeroCrossings3, v,knvars));
         zc2 = makeZeroCrossings(rellst1, {eq_count}, {});
         res = listAppend(zc2, zc1);
       then
         res;
-    case (v,(e :: xs),eq_count,{},_,algs)
+    case (v,knvars,(e :: xs),eq_count,{},_,algs)
       equation 
         eq_count_1 = eq_count + 1;
-        (res) = findZeroCrossings2(v, xs, eq_count_1, {}, 0,algs);
+        (res) = findZeroCrossings2(v,knvars, xs, eq_count_1, {}, 0,algs);
       then
         res;
-    case (v,el,eq_count,((wc as WHEN_CLAUSE(condition = e)) :: xs),wc_count,algs)
+    case (v,knvars,el,eq_count,((wc as WHEN_CLAUSE(condition = e)) :: xs),wc_count,algs)
       local
         Exp.Exp e;
         list<WhenClause> xs;
       equation 
         wc_count_1 = wc_count + 1;
-        (res1) = findZeroCrossings2(v, el, eq_count, xs, wc_count_1,algs);
-        rel = findZeroCrossings3(e, v);
+        (res1) = findZeroCrossings2(v, knvars,el, eq_count, xs, wc_count_1,algs);
+        rel = findZeroCrossings3(e, v,knvars);
         res2 = makeZeroCrossings(rel, {}, {wc_count});
         res = listAppend(res1, res2);
       then
@@ -900,43 +902,43 @@ protected function collectZeroCrossings "function: collectZeroCrossings
  
   Collects zero crossings 
 "
-  input tuple<Exp.Exp, tuple<list<Exp.Exp>, Variables>> inTplExpExpTplExpExpLstVariables;
-  output tuple<Exp.Exp, tuple<list<Exp.Exp>, Variables>> outTplExpExpTplExpExpLstVariables;
+  input tuple<Exp.Exp, tuple<list<Exp.Exp>, tuple<Variables,Variables>>> inTplExpExpTplExpExpLstVariables;
+  output tuple<Exp.Exp, tuple<list<Exp.Exp>, tuple<Variables,Variables>>> outTplExpExpTplExpExpLstVariables;
 algorithm 
   outTplExpExpTplExpExpLstVariables:=
   matchcontinue (inTplExpExpTplExpExpLstVariables)
     local
       Exp.Exp e,e1,e2,e_1;
-      Variables vars;
+      Variables vars,knvars;
       list<Exp.Exp> zeroCrossings,zeroCrossings_1,zeroCrossings_2,zeroCrossings_3,el;
       Exp.Operator op;
       Exp.Type tp;
       Boolean scalar;
-    case (((e as Exp.CALL(path = Absyn.IDENT(name = "noEvent"))),(zeroCrossings,vars))) then ((e,({},vars))); 
-    case (((e as Exp.CALL(path = Absyn.IDENT(name = "sample"))),(zeroCrossings,vars))) then ((e,((e :: zeroCrossings),vars))); 
+    case (((e as Exp.CALL(path = Absyn.IDENT(name = "noEvent"))),(zeroCrossings,(vars,knvars)))) then ((e,({},(vars,knvars)))); 
+    case (((e as Exp.CALL(path = Absyn.IDENT(name = "sample"))),(zeroCrossings,(vars,knvars)))) then ((e,((e :: zeroCrossings),(vars,knvars)))); 
       
-    case (((e as Exp.RELATION(exp1 = e1,operator = op,exp2 = e2)),(zeroCrossings,vars))) /* function with discrete expressions generate no zerocrossing */ 
+    case (((e as Exp.RELATION(exp1 = e1,operator = op,exp2 = e2)),(zeroCrossings,(vars,knvars)))) /* function with discrete expressions generate no zerocrossing */ 
       equation 
-        true = isDiscreteExp(e1, vars);
-        true = isDiscreteExp(e2, vars);
+        true = isDiscreteExp(e1, vars,knvars);
+        true = isDiscreteExp(e2, vars,knvars);
       then
-        ((e,(zeroCrossings,vars)));
-    case (((e as Exp.RELATION(exp1 = e1,operator = op,exp2 = e2)),(zeroCrossings,vars))) 
+        ((e,(zeroCrossings,(vars,knvars))));
+    case (((e as Exp.RELATION(exp1 = e1,operator = op,exp2 = e2)),(zeroCrossings,(vars,knvars)))) 
       equation
-      then ((e,((e :: zeroCrossings),vars)));  /* All other functions generate zerocrossing. */ 
-    case (((e as Exp.ARRAY(array = {})),(zeroCrossings,vars))) 
+      then ((e,((e :: zeroCrossings),(vars,knvars))));  /* All other functions generate zerocrossing. */ 
+    case (((e as Exp.ARRAY(array = {})),(zeroCrossings,(vars,knvars)))) 
       equation
-      then ((e,(zeroCrossings,vars))); 
-    case ((e1 as Exp.ARRAY(ty = tp,scalar = scalar,array = (e :: el)),(zeroCrossings,vars)))
+      then ((e,(zeroCrossings,(vars,knvars)))); 
+    case ((e1 as Exp.ARRAY(ty = tp,scalar = scalar,array = (e :: el)),(zeroCrossings,(vars,knvars))))
       equation 
-        ((_,(zeroCrossings_1,vars))) = Exp.traverseExp(e, collectZeroCrossings, (zeroCrossings,vars));
-        ((e_1,(zeroCrossings_2,vars))) = collectZeroCrossings((Exp.ARRAY(tp,scalar,el),(zeroCrossings,vars)));
+        ((_,(zeroCrossings_1,(vars,knvars)))) = Exp.traverseExp(e, collectZeroCrossings, (zeroCrossings,(vars,knvars)));
+        ((e_1,(zeroCrossings_2,(vars,knvars)))) = collectZeroCrossings((Exp.ARRAY(tp,scalar,el),(zeroCrossings,(vars,knvars))));
         zeroCrossings_3 = listAppend(zeroCrossings_1, zeroCrossings_2);
       then
-        ((e1,(zeroCrossings_3,vars)));
-    case ((e,(zeroCrossings,vars))) 
+        ((e1,(zeroCrossings_3,(vars,knvars))));
+    case ((e,(zeroCrossings,(vars,knvars)))) 
       equation
-      then ((e,(zeroCrossings,vars))); 
+      then ((e,(zeroCrossings,(vars,knvars)))); 
   end matchcontinue;
 end collectZeroCrossings;
 
@@ -973,10 +975,11 @@ protected function isDiscreteExp "function: isDiscreteExp
 "
   input Exp.Exp inExp;
   input Variables inVariables;
+  input Variables knvars;
   output Boolean outBoolean;
 algorithm 
   outBoolean:=
-  matchcontinue (inExp,inVariables)
+  matchcontinue (inExp,inVariables,knvars)
     local
       Variables vars;
       Exp.ComponentRef cr,orig;
@@ -998,130 +1001,185 @@ algorithm
       list<Exp.Exp> expl,expl_2;
       Exp.Type tp;
       list<tuple<Exp.Exp, Boolean>> expl_1;
-    case (Exp.ICONST(integer = _),vars) then true; 
-    case (Exp.RCONST(real = _),vars) then true; 
-    case (Exp.SCONST(string = _),vars) then true; 
-    case (Exp.BCONST(bool = _),vars) then true; 
-    case (Exp.CREF(componentRef = cr),vars)
+    case (Exp.ICONST(integer = _),vars,knvars) then true; 
+    case (Exp.RCONST(real = _),vars,knvars) then true; 
+    case (Exp.SCONST(string = _),vars,knvars) then true; 
+    case (Exp.BCONST(bool = _),vars,knvars) then true; 
+    case (Exp.CREF(componentRef = cr),vars,knvars)
       equation 
         ((VAR(cr,kind,dir,vartype,bind,value,dims,ind,orig,clname,attr,comment,flow_) :: _),_) = getVar(cr, vars);
         res = isKindDiscrete(kind);
       then
         res;
-    case (Exp.BINARY(exp1 = e1,operator = op,exp2 = e2),vars)
+        /* builtin variable time is not discrete */
+    case (Exp.CREF(componentRef = Exp.CREF_IDENT("time",_)),vars,knvars)
+      then false;            
+        
+        /* Known variables that are input are continous */
+    case (Exp.CREF(componentRef = cr),vars,knvars)
+      local Var v;
       equation 
-        b1 = isDiscreteExp(e1, vars);
-        b2 = isDiscreteExp(e2, vars);
-        res = boolOr(b1, b2);
+        failure((_,_) = getVar(cr, vars));
+        (v::_,_) = getVar(cr,knvars);
+        true = isInput(v); 
+      then
+        false;
+        
+        /* parameters & constants */
+    case (Exp.CREF(componentRef = cr),vars,knvars)
+      equation 
+        failure((_,_) = getVar(cr, vars));
+        (_,_) = getVar(cr,knvars);
+      then
+        true;        
+    case (Exp.BINARY(exp1 = e1,operator = op,exp2 = e2),vars,knvars)
+      equation 
+        b1 = isDiscreteExp(e1, vars,knvars);
+        b2 = isDiscreteExp(e2, vars,knvars);
+        res = boolAnd(b1, b2);
       then
         res;
-    case (Exp.LBINARY(exp1 = e1,operator = op,exp2 = e2),vars)
+    case (Exp.LBINARY(exp1 = e1,operator = op,exp2 = e2),vars,knvars)
       equation 
-        b1 = isDiscreteExp(e1, vars);
-        b2 = isDiscreteExp(e2, vars);
-        res = boolOr(b1, b2);
+        b1 = isDiscreteExp(e1, vars,knvars);
+        b2 = isDiscreteExp(e2, vars,knvars);
+        res = boolAnd(b1, b2);
       then
         res;
-    case (Exp.UNARY(operator = op,exp = e),vars)
+    case (Exp.UNARY(operator = op,exp = e),vars,knvars)
       equation 
-        res = isDiscreteExp(e, vars);
+        res = isDiscreteExp(e, vars,knvars);
       then
         res;
-    case (Exp.LUNARY(operator = op,exp = e),vars)
+    case (Exp.LUNARY(operator = op,exp = e),vars,knvars)
       equation 
-        res = isDiscreteExp(e, vars);
+        res = isDiscreteExp(e, vars,knvars);
       then
         res;
-    case (Exp.RELATION(exp1 = e1,operator = op,exp2 = e2),vars)
+    case (Exp.RELATION(exp1 = e1,operator = op,exp2 = e2),vars,knvars) then true;
+    case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3),vars,knvars)
       equation 
-        b1 = isDiscreteExp(e1, vars);
-        b2 = isDiscreteExp(e2, vars);
-        res = boolOr(b1, b2);
+        b1 = isDiscreteExp(e1, vars,knvars);
+        b2 = isDiscreteExp(e2, vars,knvars);
+        b3 = isDiscreteExp(e3, vars,knvars);
+        res = Util.boolAndList({b1,b2,b3});
       then
         res;
-    case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3),vars)
+    case (Exp.CALL(path = Absyn.IDENT(name = "pre")),vars,knvars) then true; 
+    case (Exp.CALL(path = Absyn.IDENT(name = "edge")),vars,knvars) then true; 
+    case (Exp.CALL(path = Absyn.IDENT(name = "change")),vars,knvars) then true; 
+
+    case (Exp.CALL(path = Absyn.IDENT(name = "ceil")),vars,knvars) then true; 
+    case (Exp.CALL(path = Absyn.IDENT(name = "floor")),vars,knvars) then true;       
+    case (Exp.CALL(path = Absyn.IDENT(name = "div")),vars,knvars) then true;           
+    case (Exp.CALL(path = Absyn.IDENT(name = "mod")),vars,knvars) then true;
+    case (Exp.CALL(path = Absyn.IDENT(name = "rem")),vars,knvars) then true;       
+    case (Exp.CALL(path = Absyn.IDENT(name = "abs")),vars,knvars) then true;           
+    case (Exp.CALL(path = Absyn.IDENT(name = "sign")),vars,knvars) then true;
+        
+    case (Exp.CALL(path = Absyn.IDENT(name = "noEvent")),vars,knvars) then false;
+                            
+    case (Exp.CALL(expLst = expl),vars,knvars)
       equation 
-        b1 = isDiscreteExp(e1, vars);
-        b2 = isDiscreteExp(e2, vars);
-        b3 = isDiscreteExp(e3, vars);
-        res = Util.boolOrList({b1,b2,b3});
+        blst = Util.listMap2(expl, isDiscreteExp, vars,knvars);
+        res = Util.boolAndList(blst);
       then
         res;
-    case (Exp.CALL(path = Absyn.IDENT(name = "pre")),vars) then true; 
-    case (Exp.CALL(expLst = expl),vars)
+    case (Exp.ARRAY(ty = tp,array = expl),vars,knvars)
       equation 
-        blst = Util.listMap1(expl, isDiscreteExp, vars);
-        res = Util.boolOrList(blst);
+        blst = Util.listMap2(expl, isDiscreteExp, vars,knvars);
+        res = Util.boolAndList(blst);
       then
         res;
-    case (Exp.ARRAY(ty = tp,array = expl),vars)
-      equation 
-        blst = Util.listMap1(expl, isDiscreteExp, vars);
-        res = Util.boolOrList(blst);
-      then
-        res;
-    case (Exp.MATRIX(ty = tp,scalar = expl),vars)
+    case (Exp.MATRIX(ty = tp,scalar = expl),vars,knvars)
       local list<list<tuple<Exp.Exp, Boolean>>> expl;
       equation 
         expl_1 = Util.listFlatten(expl);
         expl_2 = Util.listMap(expl_1, Util.tuple21);
-        blst = Util.listMap1(expl_2, isDiscreteExp, vars);
-        res = Util.boolOrList(blst);
+        blst = Util.listMap2(expl_2, isDiscreteExp, vars,knvars);
+        res = Util.boolAndList(blst);
       then
         res;
-    case (Exp.RANGE(ty = tp,exp = e1,expOption = SOME(e2),range = e3),vars)
+    case (Exp.RANGE(ty = tp,exp = e1,expOption = SOME(e2),range = e3),vars,knvars)
       equation 
-        b1 = isDiscreteExp(e1, vars);
-        b2 = isDiscreteExp(e2, vars);
-        b3 = isDiscreteExp(e3, vars);
-        res = Util.boolOrList({b1,b2,b3});
+        b1 = isDiscreteExp(e1, vars,knvars);
+        b2 = isDiscreteExp(e2, vars,knvars);
+        b3 = isDiscreteExp(e3, vars,knvars);
+        res = Util.boolAndList({b1,b2,b3});
       then
         res;
-    case (Exp.RANGE(ty = tp,exp = e1,expOption = NONE,range = e2),vars)
+    case (Exp.RANGE(ty = tp,exp = e1,expOption = NONE,range = e2),vars,knvars)
       equation 
-        b1 = isDiscreteExp(e1, vars);
-        b2 = isDiscreteExp(e2, vars);
-        res = boolOr(b1, b2);
+        b1 = isDiscreteExp(e1, vars,knvars);
+        b2 = isDiscreteExp(e2, vars,knvars);
+        res = boolAnd(b1, b2);
       then
         res;
-    case (Exp.TUPLE(PR = expl),vars)
+    case (Exp.TUPLE(PR = expl),vars,knvars)
       equation 
-        blst = Util.listMap1(expl, isDiscreteExp, vars);
-        res = Util.boolOrList(blst);
+        blst = Util.listMap2(expl, isDiscreteExp, vars,knvars);
+        res = Util.boolAndList(blst);
       then
         res;
-    case (Exp.CAST(ty = tp,exp = e1),vars)
+    case (Exp.CAST(ty = tp,exp = e1),vars,knvars)
       equation 
-        res = isDiscreteExp(e1, vars);
+        res = isDiscreteExp(e1, vars,knvars);
       then
         res;
-    case (Exp.ASUB(exp = e),vars)
+    case (Exp.ASUB(exp = e),vars,knvars)
       equation 
-        res = isDiscreteExp(e, vars);
+        res = isDiscreteExp(e, vars,knvars);
       then
         res;
-    case (Exp.SIZE(exp = e1,sz = SOME(e2)),vars)
+    case (Exp.SIZE(exp = e1,sz = SOME(e2)),vars,knvars)
       equation 
-        b1 = isDiscreteExp(e1, vars);
-        b2 = isDiscreteExp(e2, vars);
-        res = boolOr(b1, b2);
+        b1 = isDiscreteExp(e1, vars,knvars);
+        b2 = isDiscreteExp(e2, vars,knvars);
+        res = boolAnd(b1, b2);
       then
         res;
-    case (Exp.SIZE(exp = e1,sz = NONE),vars)
+    case (Exp.SIZE(exp = e1,sz = NONE),vars,knvars)
       equation 
-        res = isDiscreteExp(e1, vars);
+        res = isDiscreteExp(e1, vars,knvars);
       then
         res;
-    case (Exp.REDUCTION(expr = e1,range = e2),vars)
+    case (Exp.REDUCTION(expr = e1,range = e2),vars,knvars)
       equation 
-        b1 = isDiscreteExp(e1, vars);
-        b2 = isDiscreteExp(e2, vars);
-        res = boolOr(b1, b2);
+        b1 = isDiscreteExp(e1, vars,knvars);
+        b2 = isDiscreteExp(e2, vars,knvars);
+        res = boolAnd(b1, b2);
       then
         res;
-    case (_,vars) then false; 
+    case (_,vars,knvars) then false; 
   end matchcontinue;
 end isDiscreteExp;
+
+public function isDiscreteEquation
+  input Equation eqn;
+  input Variables vars;
+  input Variables knvars;
+  output Boolean b;
+algorithm
+  b := matchcontinue(eqn,vars,knvars)
+  local Exp.Exp e1,e2; Exp.ComponentRef cr; list<Exp.Exp> expl;
+    case(EQUATION(e1,e2),vars,knvars) equation
+      b = boolAnd(isDiscreteExp(e1,vars,knvars), isDiscreteExp(e2,vars,knvars)); 
+    then b;
+    case(ARRAY_EQUATION(_,expl),vars,knvars) equation 
+      b = Util.boolAndList(Util.listMap2(expl,isDiscreteExp,vars,knvars));
+    then b; 
+    case(SOLVED_EQUATION(cr,e2),vars,knvars) equation
+      b = boolAnd(isDiscreteExp(Exp.CREF(cr,Exp.OTHER()),vars,knvars), isDiscreteExp(e2,vars,knvars));
+    then b;
+    case(RESIDUAL_EQUATION(e1),vars,knvars) equation
+      b = isDiscreteExp(e1,vars,knvars);
+    then b;
+    case(ALGORITHM(_,expl,_),vars,knvars) equation 
+      b = Util.boolAndList(Util.listMap2(expl,isDiscreteExp,vars,knvars));
+    then b; 
+    case(WHEN_EQUATION(_),vars,knvars) then true;         
+  end matchcontinue;    
+end isDiscreteEquation;
 
 protected function findZeroCrossings3 "function: findZeroCrossings3
  
@@ -1129,9 +1187,10 @@ protected function findZeroCrossings3 "function: findZeroCrossings3
 "
   input Exp.Exp e;
   input Variables vars;
+  input Variables knvars;
   output list<Exp.Exp> zeroCrossings;
 algorithm 
-  ((_,(zeroCrossings,_))) := Exp.traverseExp(e, collectZeroCrossings, ({},vars));
+  ((_,(zeroCrossings,_))) := Exp.traverseExp(e, collectZeroCrossings, ({},(vars,knvars)));
 end findZeroCrossings3;
 
 protected function makeZeroCrossing "function: makeZeroCrossing
@@ -1217,6 +1276,7 @@ algorithm
         v_2 = detectImplicitDiscrete(v_1, xs);
       then
         v_2;
+        /* TODO: should also check when-algorithms */
     case (v,(_ :: xs))
       equation 
         v_1 = detectImplicitDiscrete(v, xs);
@@ -5682,23 +5742,6 @@ algorithm
         print("vararray_nth has NONE!!!\n");
       then
         fail();
-    case ((arr as VARIABLE_ARRAY(numberOfElements = n)),pos)
-      local VariableArray arr;
-      equation 
-        print("-vararray_nth , pos : ");
-        ps = intString(pos);
-        print(ps);
-        print("\n  array_length:");
-        len = vararrayLength(arr);
-        lens = intString(len);
-        print(lens);
-        print("\n");
-        ns = intString(n);
-        print("n :");
-        print(ns);
-        print("\n");
-      then
-        fail();
   end matchcontinue;
 end vararrayNth;
 
@@ -5877,19 +5920,6 @@ algorithm
         indx_1 = indx + 1;
       then
         (v,indx_1);
-    case (cr,VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
-      equation 
-        hval = hashComponentRef(cr);
-        hashindx = intMod(hval, bsize);
-        indexes = hashvec[hashindx + 1];
-        indx = getVar3(cr, indexes);
-        failure((_) = vararrayNth(varr, indx));
-        print("get var failed because vararray_nth failed, cr:");
-        str = Exp.printComponentRefStr(cr);
-        print(str);
-        print("\n");
-      then
-        fail();
   end matchcontinue;
 end getVar2;
 
@@ -6139,19 +6169,6 @@ algorithm
         indx_1 = indx + 1;
       then
         (v,indx_1);
-    case (cr,VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
-      equation 
-        hval = hashString(cr);
-        hashindx = intMod(hval, bsize);
-        indexes = oldhashvec[hashindx + 1];
-        indx = getVarUsingName2(cr, indexes);
-        failure((_) = vararrayNth(varr, indx));
-        print(
-          "get var using name failed because vararray_nth failed, name:");
-        print(cr);
-        print("\n");
-      then
-        fail();
   end matchcontinue;
 end getVarUsingName;
 
@@ -10477,7 +10494,7 @@ algorithm
   end matchcontinue;
 end replaceVariablesInElseBranch;
 
-protected function addVars "function: addVars
+public function addVars "function: addVars
   author: PA
  
   Adds a list of \'Var\' to \'Variables\'

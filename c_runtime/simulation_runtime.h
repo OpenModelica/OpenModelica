@@ -211,6 +211,11 @@ void storeExtrapolationData();
 int 
 functionDAE_output();
 
+/* Function for calculating discrete variables, called when event has occured 
+to get new values of discrete varibles*/
+int 
+functionDAE_output2();
+
 // function for calculating state values on residual form
 /*used in DDASRT fortran function*/
 int

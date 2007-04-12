@@ -65,7 +65,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * \return zero on sucess, non-zero otherwise
  */ 
 int emit()
-{
+{	
   storeExtrapolationData();
   if (actualPoints < maxPoints) {
     add_result(simulationResultData,&actualPoints);

@@ -268,7 +268,7 @@ void StateEventHandler(long* jroot, double *t)
   for(int i=0;i<globalData->nZeroCrossing;i++) {
     if (jroot[i] ) {
       handleZeroCrossing(i);
-      function_updateDependents();
+      function_updateDependents();      
       functionDAE_output();
     }
   }

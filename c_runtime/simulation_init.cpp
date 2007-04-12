@@ -57,7 +57,7 @@ void leastSquare(long *nz, double *z, double *funcValue)
 
   functionODE();
   functionDAE_output();
-
+  functionDAE_output2();
 /*  for (ind=0,indy=0,indAct=2*globalData->nStates; ind<globalData->nAlgebraic; ind++)
     if (globalData->initFixed[indAct++]==1)
       globalData->algebraics [ind] = static_y[indy++];
@@ -196,7 +196,7 @@ int initialize(const std::string*method)
   std::string init_method;
 
   if (method == NULL) { 
-//    init_method = std::string("newuoa");
+   // init_method = std::string("newuoa");
     init_method = std::string("simplex");
   } else {
     init_method = *method;

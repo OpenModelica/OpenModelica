@@ -1497,6 +1497,46 @@ algorithm
   end matchcontinue;
 end listSelect1;
 
+public function listSelect2 "function listSelect1
+  Same as listSelect above, but with extra argument to testing function."
+  input list<Type_a> inTypeALst;
+  input Type_b inTypeB;
+  input Type_c inTypeC;
+  input FuncTypeType_aType_bToBoolean inFuncTypeTypeATypeBToBoolean;
+  output list<Type_a> outTypeALst;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;  
+  partial function FuncTypeType_aType_bToBoolean
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_c inTypeB;
+    output Boolean outBoolean;
+  end FuncTypeType_aType_bToBoolean;
+algorithm 
+  outTypeALst:=
+  matchcontinue (inTypeALst,inTypeB,inTypeC,inFuncTypeTypeATypeBToBoolean)
+    local
+      Type_b arg1; Type_c arg2;
+      list<Type_a> xs_1,xs;
+      Type_a x;
+      FuncTypeType_aType_bToBoolean cond;
+    case ({},arg1,arg2,_) then {}; 
+    case ((x :: xs),arg1,arg2,cond)
+      equation 
+        true = cond(x, arg1,arg2);
+        xs_1 = listSelect2(xs, arg1,arg2, cond);
+      then
+        (x :: xs_1);
+    case ((x :: xs),arg1,arg2,cond)
+      equation 
+        false = cond(x, arg1,arg2);
+        xs_1 = listSelect2(xs, arg1,arg2, cond);
+      then
+        xs_1;
+  end matchcontinue;
+end listSelect2;
+
 public function listSelect1R "function listSelect1R
   Same as listSelect1 above, but with swapped arguments."
   input list<Type_a> inTypeALst;
