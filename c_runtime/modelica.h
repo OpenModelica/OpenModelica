@@ -93,6 +93,7 @@ typedef modelica_real abs_rettype;
 typedef modelica_real max_rettype;
 typedef modelica_real min_rettype;
 
+
 /* Special Modelica builtin functions*/
 typedef modelica_real pre_rettype;
 typedef modelica_real edge_rettype;
@@ -101,6 +102,7 @@ typedef modelica_real noEvent_rettype;
 typedef modelica_real floor_rettype;
 typedef modelica_real ceil_rettype;
 typedef modelica_real sample_rettype;
+typedef modelica_integer integer_rettype;
 
 #if defined(__cplusplus)
 }
