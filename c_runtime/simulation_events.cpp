@@ -54,6 +54,7 @@ double* y_saved  = 0;
 double* gout     = 0;
 long* zeroCrossingEnabled = 0;
 long inUpdate = 0;
+long inSample = 0;
 
 static list<long> EventQueue; 
 
@@ -250,6 +251,7 @@ StartEventIteration(double *t)
   while (EventQueue.begin() != EventQueue.end()) {
     calcEnabledZeroCrossings();
     while (ExecuteNextEvent(t)) { }
+    inSample = 0;
 //    for (long i = 0; i < globalData->nHelpVars; i++) save(globalData->helpVars[i]);
 	saveall();
     globalData->timeValue = *t;
@@ -265,6 +267,7 @@ StartEventIteration(double *t)
 
 void StateEventHandler(long* jroot, double *t) 
 {
+  inSample = 1;	
   for(int i=0;i<globalData->nZeroCrossing;i++) {
     if (jroot[i] ) {
       handleZeroCrossing(i);
@@ -335,11 +338,13 @@ double Sample(double t, double start ,double interval)
 double sample(double start ,double interval)
 {
   //  double sloop = 4.0/interval;
-  int count = int((globalData->timeValue - start) / interval);
-  if (globalData->timeValue < (start-interval*0.25)) return 0;
-  if (( globalData->timeValue-start-count*interval) < 0) return 0;
-  if (( globalData->timeValue-start-count*interval) > interval*0.5) return 0;
-  return 1;
+  if (inSample == 0) return 0;
+  double tmp = ((globalData->timeValue - start)/interval);
+  tmp-= floor(tmp);
+  if (tmp >= 0 && tmp < 0.1) 
+  	return 1;
+  else  
+    return 0;
 }
 
 void saveall()
