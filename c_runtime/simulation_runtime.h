@@ -167,6 +167,8 @@ typedef struct sim_DATA {
   double timeValue; //the time for the simulation
   //used in some generated function
   // this is not changed by initializeDataStruc
+  double lastEmittedTime; // The last time value that has been emitted.
+  int forceEmit; // when != 0 force emit, set e.g. by newTime for equidistant output signal.
 } DATA;
 
 /* Global data */

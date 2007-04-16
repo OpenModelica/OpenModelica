@@ -42,6 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <limits>
 #include <list>
 #include <math.h>
+#include <iomanip>
 #include "simulation_runtime.h"
 #include "simulation_input.h"
 #include "solver_dasrt.h"
@@ -87,7 +88,24 @@ extern const int ERROR_LINSYS=-2;
 */
 double newTime(double t, double step,double stop)
 { 
-	double newTime=(floor( (t+1e-10) / step) + 1.0)*step;
+	const double maxSolverStep=0.001;
+	double newTime;
+	if (step > maxSolverStep) { /* Prevent solver from taking larger step than maxSolverStep
+	NOTE: DASSL run into problems if the stepsize (TOUT-T) is too large, since it internally keeps track
+	of number of iterations and explain if it goes over 500.
+	 */
+		/* Take a max step size forward */			
+		newTime=(floor( (t+1e-10) / maxSolverStep) + 1.0)*maxSolverStep;
+
+		/* If output interval point reached, choose that time instead. */
+		if (newTime >= globalData->lastEmittedTime + step) {
+			newTime = globalData->lastEmittedTime+step;
+			globalData->lastEmittedTime = newTime;
+			globalData->forceEmit = 1;	
+		} 							
+	} else { 
+	 newTime=(floor( (t+1e-10) / step) + 1.0)*step;
+	}
 	
 	// Do not exceed the stop time.
 	if (newTime > stop) {
@@ -220,7 +238,8 @@ int main(int argc, char**argv)
   read_input(argc,argv,
              globalData,
              &start,&stop,&stepSize,&outputSteps,&tolerance,&method);
-  
+  globalData->lastEmittedTime = start;
+  globalData->forceEmit=0;
   /* the main method identifies which solver to use and then calls 
      respecive solver main function*/
   if (method == "") {

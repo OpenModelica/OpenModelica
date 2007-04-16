@@ -47,6 +47,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <math.h>
 #include <string>
 #include <iostream>
+#include <iomanip>
+
 using namespace std;
 
 #define MAXORD 5
@@ -230,7 +232,8 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
 	
     while (idid == 4) {
     	if (sim_verbose) { 
-    		cout << "found event at time " << globalData->timeValue << endl;
+    		cout  << std::setprecision(20) << 
+    		"found event at time " << globalData->timeValue << endl;
        	}
       if (emit()) {printf("Too many points\n");
 	   idid = -99; break;}
@@ -245,7 +248,8 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
       StartEventIteration(&globalData->timeValue);
       emit();
       if (sim_verbose) {
-      	cout << "Done checking events at time " << globalData->timeValue << endl; 
+      	cout << "Done checking events at time " << globalData->timeValue << endl;
+      	
       }
       saveall();
       // Restart simulation
@@ -275,11 +279,12 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
       info[0] = 1;
 
     } 
-  
-    if(emit()) {
-      printf("Error, could not save data. Not enought space.\n"); 
-    }
-
+   if (step < 0 || globalData->forceEmit) { /* Only emit if automatic or at "sample time" */
+   	 if (globalData->forceEmit) globalData->forceEmit=0;
+     if(emit()) {
+       printf("Error, could not save data. Not enought space.\n"); 
+     }
+  	}
     saveall();      
 	      
     tout = newTime(globalData->timeValue,step,stop); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
