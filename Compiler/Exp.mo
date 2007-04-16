@@ -1381,6 +1381,7 @@ algorithm
       Exp e,res,exp,c,f,t_1,f_1,e1_1,exp_1,e1,e_1,e2,e2_1,exp_2,exp_3,e3_1,e3;
       Type t,tp_1,tp,tp1,tp2,t1;
       Boolean b,remove_if;
+      Ident idn;
       list<Exp> exps,exps_1,expl_1;
       list<tuple<Exp, Boolean>> expl;
       list<Boolean> bls;
@@ -1389,7 +1390,7 @@ algorithm
       Operator op;
       String before, after;
       Real time1,time2;
-
+//case ASUB(exp = e,sub = i) /* Array and Matrix stuff */ 
     case (CAST(ty = REAL(),exp=e ))
       local Exp e; Real v;
       equation
@@ -1461,21 +1462,21 @@ algorithm
       then
         IFEXP(c,t_1,f_1);
     case ASUB(exp = e,sub = i)
-      local Ident n;
+      //local Ident n;
       equation 
-        CREF(CREF_IDENT(n,s),t) = simplify1(e);
+        CREF(CREF_IDENT(idn,s),t) = simplify1(e);
         s_1 = subscriptsAppend(s, i);
       then
-        CREF(CREF_IDENT(n,s_1),t);
+        CREF(CREF_IDENT(idn,s_1),t);
     case ASUB(exp = e,sub = i)
       local
-        Ident n;
+        //Ident n;
         ComponentRef c;
       equation 
-        CREF(CREF_QUAL(n,s,c),t) = simplify1(e);
+        CREF(CREF_QUAL(idn,s,c),t) = simplify1(e);
         CREF(c_1,t) = simplify1(ASUB(CREF(c,t),i));
       then
-        CREF(CREF_QUAL(n,s,c_1),t);
+        CREF(CREF_QUAL(idn,s,c_1),t);
     case ASUB(exp = e,sub = i)
       equation 
         e = simplifyAsub(e, i) "For arbitrary vector operations, e.g (a+b-c){1} => a{1}+b{1}-c{1}" ;
@@ -1536,9 +1537,93 @@ algorithm
         res = Util.if_(remove_if, e2_1, IFEXP(e1,e2_1,e3_1));
       then
         res;
-    case e then e; 
+    case CREF(componentRef = c_1 as CREF_IDENT(idn,s),ty=t) 
+      local        
+        Integer lInt;
+        list<Exp> expl_1;
+        Exp exp1;
+      equation
+        exp1 = simplifyCref(c_1,t);
+      then
+        exp1;
+    case e 
+      then 
+        e;
   end matchcontinue;
 end simplify1;
+
+protected function simplifyCref " Function for simplifying 
+x[{y,z,q}] to {x[y], x[z], x[q]}
+"
+input ComponentRef inCREF;
+input Type inType;
+output Exp exp;
+
+algorithm
+  outExpLst := matchcontinue(inCREF, inType)
+  local 
+    Type t;
+    list<Subscript> ssl;
+
+    case(CREF_IDENT(idn,(ssl as ((SLICE(ARRAY(_,_,expl_1))) :: _))),t) 
+      local
+        Ident idn;
+        list<Exp> expl_1;
+      equation
+        exp = simplifyCref2(CREF(CREF_IDENT(idn,{}),t),ssl);
+      then
+        exp;         
+  end matchcontinue;
+end simplifyCref;
+
+protected function simplifyCref2 " helper function for simplifyCref
+Does the recursion.
+"
+input Exp inExp;
+input list<Subscript> inSsl;
+output Exp outExp;
+
+algorithm  
+  outExp := matchcontinue(inExp,inSsl)
+
+    case(exp_1,{})
+      local Exp exp_1;
+      then
+        exp_1;
+
+    case(CREF(cr as CREF_IDENT(idn,ssl_2),t), ((ss as (SLICE(ARRAY(_,_,(expl_1))))) :: ssl))
+      local
+        Ident idn;
+        Type t;
+        Exp exp_1, crefExp, exp;
+        list<Exp> expl_1,expl;
+        Subscript ss;
+        list<Subscript> ssl,ssl_2,subs;
+        list<ComponentRef> crefs;
+        ComponentRef cr;
+        Integer dim;
+      equation
+        subs = Util.listMap(expl_1,makeIndexSubscript); 
+        crefs = Util.listMap1r(Util.listMap(subs,Util.listCreate),subscriptCref,cr);
+        expl = Util.listMap1(crefs,makeCrefExp,t);        
+        dim = listLength(expl);
+        exp = simplifyCref2(ARRAY(T_ARRAY(t,{SOME(dim)}),true,expl),ssl);
+      then
+        exp;
+ 	case(crefExp as ARRAY(tp,sc,expl), ssl )
+ 	  local
+ 	    Exp crefExp;
+ 	    list<Exp> expl;
+ 	    Boolean sc;
+ 	    Type tp;
+ 	    list<Subscript> ssl;
+ 	  equation
+     expl = Util.listMap1(expl,simplifyCref2,ssl);
+   then 
+     ARRAY(tp,sc,expl);
+ 
+  end matchcontinue;
+end simplifyCref2;
 
 protected function simplify2 " Advanced simplifications covering several terms or factors, like a +2a +3a = 5a "
   input Exp inExp;
@@ -1723,8 +1808,7 @@ algorithm
 end simplifyScalarProductMatrixVector;
 
 protected function simplifyScalarProductVectorMatrix "function: simplifyScalarProductVectorMatrix
- 
-  
+
   Simplifies scalar product of vector  matrix 
 "
   input list<Exp> inExpLst;
@@ -1732,19 +1816,34 @@ protected function simplifyScalarProductVectorMatrix "function: simplifyScalarPr
   output list<Exp> outExpLst;
 algorithm 
   outExpLst:=
-  matchcontinue (inExpLst,inTplExpBooleanLstLst)
+  matchcontinue (inExpLst,inTplExpBooleanLstLst) // non working
     local
-      list<Exp> row_1,expl,res,v1;
+      list<Exp> row_1,expl,res,v1,expl;
       Exp exp;
+      tuple<Exp, Boolean> texp;
       list<tuple<Exp, Boolean>> row;
       list<list<tuple<Exp, Boolean>>> rows;
-    case ({},_) then {}; 
-    case (v1,(row :: rows))
-      equation 
-        row_1 = Util.listMap(row, Util.tuple21);
+    case (v1,  ((texp :: {}) :: rows)    )
+      local 
+        list<tuple<Exp, Boolean>> heads;
+      equation
+        heads = Util.listMap(((texp :: {}) :: rows),Util.listFirst);
+        row_1 = Util.listMap(heads, Util.tuple21);
         expl = Util.listThreadMap(v1, row_1, expMul);
         exp = Util.listReduce(expl, expAdd);
-        res = simplifyScalarProductVectorMatrix(v1, rows);
+      then
+        (exp :: {});    
+    case (v1,(rows))
+      local 
+        list<tuple<Exp, Boolean>> heads;
+        list<list<tuple<Exp, Boolean>>> tails;
+      equation
+        heads = Util.listMap((rows),Util.listFirst);
+        tails = Util.listMap((rows),Util.listRest);
+        row_1 = Util.listMap(heads, Util.tuple21);
+        expl = Util.listThreadMap(v1, row_1, expMul);
+        exp = Util.listReduce(expl, expAdd);
+        res = simplifyScalarProductVectorMatrix(v1, tails);
       then
         (exp :: res);
   end matchcontinue;
@@ -4327,7 +4426,7 @@ end containVectorFunctioncall;
 public function containFunctioncall "function: containFunctioncall
   Returns true if expression or subexpression is a functioncall.
   otherwise false.
-  Note: the \'der\' operator is represented as a function call but still return 
+  Note: the der and pre operators are represented as function calls but still returns 
   false.
 "
   input Exp inExp;
@@ -4337,13 +4436,14 @@ algorithm
   matchcontinue (inExp)
     local
       Exp e1,e2,e,e3;
-      Boolean res;
+      Boolean res;		
       list<Boolean> blst;
       list<Exp> elst;
       list<tuple<Exp, Boolean>> flatexplst;
       list<list<tuple<Exp, Boolean>>> explst;
       Option<Exp> optexp;
-    case (CALL(path = Absyn.IDENT(name = "der"))) then false; 
+    case (CALL(path = Absyn.IDENT(name = "der"))) then false;
+    case (CALL(path = Absyn.IDENT(name = "pre"))) then false;   
     case (CALL(path = _)) then true; 
     case (BINARY(exp1 = e1,exp2 = e2)) /* Binary */ 
       equation 
@@ -7750,6 +7850,13 @@ public function makeCrefExp "makes an expression of a component reference, given
 algorithm
   e := CREF(cref,tp);
 end makeCrefExp;
+
+public function makeIndexSubscript "Creates a Subscript INDEX from an Exp."
+  input Exp exp;
+  output Subscript subscript;
+algorithm
+  subscript := INDEX(exp);
+end makeIndexSubscript;
 
 public function expCref "function: expCref
  

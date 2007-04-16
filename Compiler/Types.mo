@@ -1221,7 +1221,9 @@ algorithm
     local
       Type ty;
       Option<Integer> i;
-    case (ty,i) /* print(\"\\nDebug: lifts the array.\") */  then ((T_ARRAY(DIM(i),ty),NONE));  /* PR  axiom	lift_array (ty,i) => T_ARRAY(DIM(i),ty) */ 
+    case (ty,i) /* print(\"\\nDebug: lifts the array.\") */  
+    
+    then ((T_ARRAY(DIM(i),ty),NONE));  /* PR  axiom	lift_array (ty,i) => T_ARRAY(DIM(i),ty) */ 
   end matchcontinue;
 end liftArray;
 

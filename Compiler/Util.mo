@@ -3303,6 +3303,22 @@ algorithm
         (retString);
   end matchcontinue;
 end  rawStringToInputString;
-
+/*
+public function matrixToVector "function: matrixToVector
+  Convert a 1-X // X-1 dimensional Matrix to a one-dimensional vector "
+  input Matrix inMatrix;
+	output Vector v;
+algorithm
+  (v):=
+  matchcontinue(inMatrix)
+  local 
+  
+  equation
+    
+    then
+  	(tail);    
+  end matchcontinue
+end matrixToVektor
+*/		
 end Util;
 

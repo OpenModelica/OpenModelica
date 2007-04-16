@@ -2530,19 +2530,41 @@ algorithm
       Types.Const c;
       list<Env.Frame> env;
       Absyn.Exp exp;
+      Types.ArrayDim dim;
       Boolean impl;
       Ident s,el_str;
       list<Absyn.Exp> expl;
       Env.Cache cache;
     case (cache,env,{exp},_,impl) /* impl */ 
-      local Exp.Type t;
-      equation 
+      local Exp.Type t; String str;
+      equation
         (cache,exp_1,Types.PROP(tp,c),_) = elabExp(cache,env, exp, impl, NONE,true);
         true = Types.basicType(tp);
         t = Types.elabType(tp);
         exp_2 = Exp.CALL(Absyn.IDENT("pre"),{exp_1},false,true,t);
       then
         (cache,exp_2,Types.PROP(tp,c));
+        case (cache,env,{exp},_,impl) /* impl */ 
+      local 
+        Types.Type t,t2; 
+        Exp.Type etp,etp_org; 
+        list<Exp.Exp> expl_1;
+        Boolean sc;
+      equation
+        (cache,exp_1,Types.PROP(t as (Types.T_ARRAY(dim,tp),_),c),_) = elabExp(cache, env, exp, impl, NONE,true);
+
+        true = Types.isArray(t);
+        
+        t2 = Types.unliftArray(t);
+        etp = Types.elabType(t2);
+        
+        (expl_1,sc) = elabBuiltinPre2(Exp.CALL(Absyn.IDENT("pre"),{exp_1},false,true,etp),t2);
+        
+        etp_org = Types.elabType(t);
+        exp_2 = Exp.ARRAY(etp_org,  sc,  expl_1);
+
+      then
+        (cache,exp_2,Types.PROP(t,c));
     case (cache,env,{exp},_,impl)
       local Exp.Exp exp;
       equation 
@@ -2561,6 +2583,67 @@ algorithm
         fail();
   end matchcontinue;
 end elabBuiltinPre;
+
+protected function elabBuiltinPre2 "function: elabBuiltinPre
+  Help function for elabBuiltinPre, when type is array, send it here.
+"
+input Exp.Exp inExp;
+input Types.Type t;
+output list<Exp.Exp> outExp;
+output Boolean sc;
+algorithm
+  (outExp) := matchcontinue(inExp,t)
+    local 
+      Exp.Type ty;
+      Boolean sc;
+      list<Exp.Exp> expl,e;
+      Exp.Exp exp_1;
+    case(Exp.CALL(_,{Exp.ARRAY(ty,sc,expl)},_,_,_),t) 
+      equation
+      (e) = makePreLst(expl, t);
+    then (e,sc);
+    case (exp_1,t) 
+      equation
+      then 
+        (exp_1 :: {},false);
+          
+  end matchcontinue;
+end elabBuiltinPre2;
+
+protected function makePreLst "function: makePreLst
+ 
+  Takes a list of expressions and makes a list of pre - expressions
+"
+  input list<Exp.Exp> inExpLst;
+  input Types.Type t;
+  output list<Exp.Exp> outExp;
+algorithm 
+  (outExp):=
+  matchcontinue (inExpLst,t)
+      local
+        Exp.Exp exp_1;
+        list<Exp.Exp> expl_1;
+    case((exp_1 :: expl_1),t)   
+      local 
+        Exp.Exp exp_2;
+        list<Exp.Exp> expl_2;
+        Exp.Type ttt;
+        Types.Type ttY;
+      equation
+        ttt = Types.elabType(t);
+        exp_2 = Exp.CALL(Absyn.IDENT("pre"),{exp_1},false,true,ttt); 
+        (expl_2) = makePreLst(expl_1,t);
+      then
+        ((exp_2 :: expl_2)); 
+
+      case ({},t)
+        equation
+      then 
+        ( {}); 
+        
+      
+  end matchcontinue;
+end makePreLst;
 
 protected function elabBuiltinInitial "function: elabBuiltinInitial
  
@@ -4159,11 +4242,13 @@ algorithm
       list<Env.Frame> env;
       Absyn.Exp e;
       Boolean impl,scalar;
-      list<Exp.Exp> expl,expl_1;
+      list<Exp.Exp> expl,expl_1,expl_2;
+      list<list<tuple<Exp.Exp, Boolean>>> explm;
+      String s,str;
       list<Integer> dims;
       Env.Cache cache;
     case (cache,env,{e},_,impl) /* impl vector(scalar) = {scalar} */ 
-      equation 
+      equation
         (cache,exp,Types.PROP(tp,c),_) = elabExp(cache,env, e, impl, NONE,true);
         Types.simpleType(tp);
         tp_1 = Types.elabType(tp);
@@ -4182,12 +4267,60 @@ algorithm
         (cache,Exp.ARRAY(_,_,expl),Types.PROP(tp,c),_) = elabExp(cache,env, e, impl, NONE,true);
         tp_1 = Types.arrayElementType(tp);
         etp = Types.elabType(tp_1);
-        dims = Types.getDimensionSizes(tp);
+        dims = Types.getDimensionSizes(tp);                
         expl_1 = elabBuiltinVector2(expl, dims);
-      then
+      then        
         (cache,Exp.ARRAY(etp,true,expl_1),Types.PROP(tp,c));
+      
+      case (cache,env,{e},_,impl) /* vector of multi dimensional matrix, at most one dim > 1 */ 
+      local 
+        tuple<Types.TType, Option<Absyn.Path>> tp_1;        
+        Integer dimtmp;
+      equation 
+        (cache,Exp.MATRIX(_,_,explm),Types.PROP(tp,c),_) = elabExp(cache,env, e, impl, NONE,true);
+        tp_1 = Types.arrayElementType(tp);
+        etp = Types.elabType(tp_1);
+        dims = Types.getDimensionSizes(tp);        
+        expl_2 = Util.listMap(Util.listFlatten(explm),Util.tuple21);   
+        expl_1 = elabBuiltinVector2(expl_2, dims);
+        dimtmp = listLength(expl_1);
+        tp_1 = Types.liftArray(tp_1, SOME(dimtmp));
+      then        
+        (cache,Exp.ARRAY(etp,true,expl_1),Types.PROP(tp_1,c));
   end matchcontinue;
 end elabBuiltinVector;
+
+
+protected function dimensionListMaxOne "function: elabBuiltinVector2
+ 
+  Helper function to elab_builtin_vector.
+"
+  input list<Integer> inIntegerLst;
+  output Integer dimensions;
+algorithm 
+  outExpExpLst:=
+  matchcontinue (inIntegerLst)
+    local
+      Integer dim;
+      list<Integer> dims;
+      case ({})
+        then
+          0;
+      case ((dim :: dims))
+        equation 
+          (dim > 1) = true;        
+          Error.addMessage(Error.ERROR_FLATTENING, {"Vector may only be 1x2 or 2x1 dimensions"});
+        then
+          10;
+      case((dim :: dims))
+        local
+         Integer x;
+        equation
+        x = dimensionListMaxOne(dims);
+        then
+          x;    
+  end matchcontinue;
+end dimensionListMaxOne;
 
 protected function elabBuiltinVector2 "function: elabBuiltinVector2
  
@@ -4203,15 +4336,18 @@ algorithm
       list<Exp.Exp> expl_1,expl;
       Integer dim;
       list<Integer> dims;
+      Exp.Exp e;
     case (expl,(dim :: dims))
       equation 
         (dim > 1) = true;
-        expl_1 = elabBuiltinVector3(expl) "Util.list_map_1(dims,int_gt,1) => b_lst &
-	Util.bool_or_list(b_lst) => false &" ;
-      then
+        (1 > dimensionListMaxOne(dims)) = true;
+        expl_1 = elabBuiltinVector3(expl);/* "Util.list_map_1(dims,int_gt,1) => b_lst &
+	Util.bool_or_list(b_lst) => false &" ;*/
+	      then
         expl_1;
-    case ({Exp.ARRAY(array = expl)},(dim :: dims))
+    case ({e as Exp.ARRAY(array = expl)},(dim :: dims))      
       equation 
+        (1 > dimensionListMaxOne(dims) ) = false;
         expl_1 = elabBuiltinVector2(expl, dims);
       then
         expl_1;
@@ -4232,10 +4368,12 @@ algorithm
       equation 
         {e} = elabBuiltinVector3({expl});
         es = elabBuiltinVector3(es);
-      then
+      then  
         (e :: es);
     case ((e :: es))
-      equation 
+      local 
+        String str2 ;
+      equation
         es_1 = elabBuiltinVector3(es);
       then
         (e :: es_1);
@@ -8703,4 +8841,3 @@ algorithm
   end matchcontinue;
 end arrayTypeList;
 end Static;
-
