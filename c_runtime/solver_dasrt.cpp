@@ -279,7 +279,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
       info[0] = 1;
 
     } 
-   if (step < 0 || globalData->forceEmit) { /* Only emit if automatic or at "sample time" */
+   if (numpoints < 0 || globalData->forceEmit) { /* Only emit if automatic or at "sample time" */
    	 if (globalData->forceEmit) globalData->forceEmit=0;
      if(emit()) {
        printf("Error, could not save data. Not enought space.\n"); 
