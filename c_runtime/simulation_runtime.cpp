@@ -95,10 +95,10 @@ double newTime(double t, double step,double stop)
 	of number of iterations and explain if it goes over 500.
 	 */
 		/* Take a max step size forward */			
-		newTime=(floor( (t+1e-10) / maxSolverStep) + 1.0)*maxSolverStep;
+		newTime=t+maxSolverStep;
 
 		/* If output interval point reached, choose that time instead. */
-		if (newTime >= globalData->lastEmittedTime + step) {
+		if (newTime - (globalData->lastEmittedTime+step) >= -1e-10) {
 			newTime = globalData->lastEmittedTime+step;
 			globalData->lastEmittedTime = newTime;
 			globalData->forceEmit = 1;	
@@ -113,7 +113,6 @@ double newTime(double t, double step,double stop)
 	}
 	return newTime; 
 }
-
 
 /** function storeExtrapolationData
  * author: PA
