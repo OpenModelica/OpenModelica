@@ -1056,8 +1056,7 @@ algorithm
       /*  Real class */ 
     case (cache,env,mods,pre,csets as Connect.SETS(connection = crs),ci_state,(c as SCode.CLASS(name = "Real",restriction = r,parts = d)),prot,inst_dims,impl) 
       equation 
-       (_,_,_,_,_,tys,_) = instClassdef(cache,env, mods, pre, csets, ci_state, d, r, prot, inst_dims, impl);
-       tys = removeDefaultValuedAttributes(tys,mods) "speedup: no need to keep default valued attributes";
+        tys = instRealClass(cache,env,mods,pre);     
         bc = arrayBasictypeBaseclass(inst_dims, (Types.T_REAL(tys),NONE));        
       then
         (cache,{},env,Connect.SETS({},crs),ci_state,tys,bc);       
@@ -1065,24 +1064,21 @@ algorithm
         /* Integer class */
     case (cache,env,mods,pre,csets as Connect.SETS(connection = crs),ci_state,(c as SCode.CLASS(name = "Integer",restriction = r,parts = d)),prot,inst_dims,impl) 
       equation
-        (_,_,_,_,_,tys,_) = instClassdef(cache,env, mods, pre, csets, ci_state, d, r, prot, inst_dims, impl);
-       tys = removeDefaultValuedAttributes(tys,mods) "speedup: no need to keep default valued attributes";
+        tys =  instIntegerClass(cache,env,mods,pre);       
         bc = arrayBasictypeBaseclass(inst_dims, (Types.T_INTEGER(tys),NONE));
       then (cache,{},env,Connect.SETS({},crs),ci_state,tys,NONE);   
 
         /* String class */
     case (cache,env,mods,pre,csets as Connect.SETS(connection = crs),ci_state,(c as SCode.CLASS(name = "String",restriction = r,parts = d)),prot,inst_dims,impl) 
       equation
-        (_,_,_,_,_,tys,_) = instClassdef(cache,env, mods, pre, csets, ci_state, d, r, prot, inst_dims, impl);
-        tys = removeDefaultValuedAttributes(tys,mods) "speedup: no need to keep default valued attributes";
+        tys =  instStringClass(cache,env,mods,pre);    
         bc = arrayBasictypeBaseclass(inst_dims, (Types.T_STRING(tys),NONE));        
       then (cache,{},env,Connect.SETS({},crs),ci_state,tys,NONE);   
 
         /* Boolean class */
     case (cache,env,mods,pre,csets as Connect.SETS(connection = crs),ci_state,(c as SCode.CLASS(name = "Boolean",restriction = r,parts = d)),prot,inst_dims,impl) 
       equation
-        (_,_,_,_,_,tys,_) = instClassdef(cache,env, mods, pre, csets, ci_state, d, r, prot, inst_dims, impl);
-        tys = removeDefaultValuedAttributes(tys,mods) "speedup: no need to keep default valued attributes";
+        tys =  instBooleanClass(cache,env,mods,pre); 
         bc = arrayBasictypeBaseclass(inst_dims, (Types.T_BOOL(tys),NONE));        
       then (cache,{},env,Connect.SETS({},crs),ci_state,tys,NONE);           
   
@@ -1128,33 +1124,229 @@ algorithm
   end matchcontinue;
 end instClassIn;
 
-protected function removeDefaultValuedAttributes "Removes the Types.Var 
-( which are attributes of builtin types)  that have default value. 
-This is determined to investigate modifiers.
-"
-input list<Types.Var> varLst;
-input Types.Mod mods;
-output list<Types.Var> outVarLst;
+protected function instRealClass "Instantiation of the Real class"
+  input Env.Cache cache;
+  input Env.Env env;
+  input Mod mods;
+  input Prefix.Prefix pre;
+  output list<Types.Var> varLst;
 algorithm
-  outVarLst := matchcontinue(varLst,mods)
-  local Types.Var v; Ident id;
-    // Found no modification
-    case((v as Types.VAR(name=id))::varLst,mods) equation
-      Types.NOMOD() = Mod.lookupCompModification(mods,id);
-      varLst = removeDefaultValuedAttributes(varLst,mods);
-    then varLst;
-      // Found modification
-    case((v as Types.VAR(name=id))::varLst,mods) equation
-      Types.MOD(subModLst=_) = Mod.lookupCompModification(mods,id);  
-      varLst = removeDefaultValuedAttributes(varLst,mods);
-    then v::varLst;
-     // Failed to lookup modification. 
-    case(v::varLst,mods) equation
-      varLst = removeDefaultValuedAttributes(varLst,mods);
+  varLst := matchcontinue(cache,env,mods,pre)
+    local Boolean f; Absyn.Each e; list<Types.SubMod> submods; Option<Types.EqMod> eqmod; Exp.Exp exp;
+      Types.Var v;
+      Types.Properties p;
+    case(cache,env,Types.MOD(f,e,Types.NAMEMOD("quantity",Types.MOD(_,_,_,SOME(Types.TYPED(exp,_,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instRealClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"quantity",exp,(Types.T_STRING({}),NONE),p);
+        then v::varLst;
+    case(cache,env,Types.MOD(f,e,Types.NAMEMOD("unit",Types.MOD(_,_,_,SOME(Types.TYPED(exp,_,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instRealClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"unit",exp,(Types.T_STRING({}),NONE),p);
+        then v::varLst;
+    case(cache,env,Types.MOD(f,e,Types.NAMEMOD("displayUnit",Types.MOD(_,_,_,SOME(Types.TYPED(exp,_,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instRealClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"displayUnit",exp,(Types.T_STRING({}),NONE),p);
+        then v::varLst;  
+    case(cache,env,Types.MOD(f,e,Types.NAMEMOD("min",Types.MOD(_,_,_,SOME(Types.TYPED(exp,_,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instRealClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"min",exp,(Types.T_REAL({}),NONE),p);
+        then v::varLst;                    
+    case(cache,env,Types.MOD(f,e,Types.NAMEMOD("max",Types.MOD(_,_,_,SOME(Types.TYPED(exp,_,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instRealClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"max",exp,(Types.T_REAL({}),NONE),p);
+        then v::varLst;                    
+    case(cache,env,Types.MOD(f,e,Types.NAMEMOD("start",Types.MOD(_,_,_,SOME(Types.TYPED(exp,_,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instRealClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"start",exp,(Types.T_REAL({}),NONE),p);
+        then v::varLst;
+    case(cache,env,Types.MOD(f,e,Types.NAMEMOD("fixed",Types.MOD(_,_,_,SOME(Types.TYPED(exp,_,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instRealClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"fixed",exp,(Types.T_BOOL({}),NONE),p);
+        then v::varLst;                
+    case(cache,env,Types.MOD(f,e,Types.NAMEMOD("nominal",Types.MOD(_,_,_,SOME(Types.TYPED(exp,_,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instRealClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"nominal",exp,(Types.T_REAL({}),NONE),p);
+        then v::varLst;          
+    case(cache,env,Types.MOD(f,e,Types.NAMEMOD("stateSelect",Types.MOD(_,_,_,SOME(Types.TYPED(exp,_,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instRealClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"stateSelect",exp,(Types.T_ENUMERATION({"never","avoid","default","prefer","always"},
+          {Types.VAR("never",Types.ATTR(false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR()),false,(Types.T_ENUM(),NONE),Types.UNBOUND()),
+          Types.VAR("avoid",Types.ATTR(false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR()),false,(Types.T_ENUM(),NONE),Types.UNBOUND()),
+          Types.VAR("default",Types.ATTR(false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR()),false,(Types.T_ENUM(),NONE),Types.UNBOUND()),
+          Types.VAR("prefer",Types.ATTR(false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR()),false,(Types.T_ENUM(),NONE),Types.UNBOUND()),
+          Types.VAR("always",Types.ATTR(false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR()),false,(Types.T_ENUM(),NONE),Types.UNBOUND())
+          }),NONE),p);
+      then v::varLst;   
+    case(cache,env,Types.MOD(f,e,_::submods,eqmod),pre) 
+      equation
+        varLst = instRealClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
       then varLst;
-    case({},mods) then {};
+    case(cache,env,Types.MOD(f,e,{},eqmod),pre) then {};
+    case(cache,env,Types.NOMOD(),pre) then {};
+    case(cache,env,Types.REDECL(_,_),pre) then fail(); /*TODO, report error when redeclaring in Real*/
   end matchcontinue;
-end removeDefaultValuedAttributes;
+end instRealClass;  
+
+protected function instIntegerClass "Instantiation of the Integer class"
+  input Env.Cache cache;
+  input Env.Env env;
+  input Mod mods;
+  input Prefix.Prefix pre;
+  output list<Types.Var> varLst;
+algorithm
+  varLst := matchcontinue(cache,env,mods,pre)
+    local Boolean f; Absyn.Each e; list<Types.SubMod> submods; Option<Types.EqMod> eqmod; Exp.Exp exp;
+      Types.Var v;
+      Types.Properties p;
+    case(cache,env,Types.MOD(f,e,Types.NAMEMOD("quantity",Types.MOD(_,_,_,SOME(Types.TYPED(exp,_,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instIntegerClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"quantity",exp,(Types.T_STRING({}),NONE),p);
+        then v::varLst;
+     
+    case(cache,env,Types.MOD(f,e,Types.NAMEMOD("min",Types.MOD(_,_,_,SOME(Types.TYPED(exp,_,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instIntegerClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"min",exp,(Types.T_INTEGER({}),NONE),p);
+        then v::varLst;                    
+    case(cache,env,Types.MOD(f,e,Types.NAMEMOD("max",Types.MOD(_,_,_,SOME(Types.TYPED(exp,_,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instIntegerClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"max",exp,(Types.T_INTEGER({}),NONE),p);
+        then v::varLst;                    
+    case(cache,env,Types.MOD(f,e,Types.NAMEMOD("start",Types.MOD(_,_,_,SOME(Types.TYPED(exp,_,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instIntegerClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"start",exp,(Types.T_INTEGER({}),NONE),p);
+        then v::varLst;
+    case(cache,env,Types.MOD(f,e,Types.NAMEMOD("fixed",Types.MOD(_,_,_,SOME(Types.TYPED(exp,_,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instIntegerClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"fixed",exp,(Types.T_BOOL({}),NONE),p);
+        then v::varLst;                
+    case(cache,env,Types.MOD(f,e,Types.NAMEMOD("nominal",Types.MOD(_,_,_,SOME(Types.TYPED(exp,_,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instIntegerClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"nominal",exp,(Types.T_INTEGER({}),NONE),p);
+        then v::varLst;           
+    case(cache,env,Types.MOD(f,e,_::submods,eqmod),pre) 
+      equation
+        varLst = instIntegerClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+      then varLst;
+    case(cache,env,Types.MOD(f,e,{},eqmod),pre) then {};
+    case(cache,env,Types.NOMOD(),pre) then {};
+    case(cache,env,Types.REDECL(_,_),pre) then fail(); /*TODO, report error when redeclaring in Real*/
+  end matchcontinue;
+end instIntegerClass;
+
+protected function instStringClass "Instantiation of the String class"
+  input Env.Cache cache;
+  input Env.Env env;
+  input Mod mods;
+  input Prefix.Prefix pre;
+  output list<Types.Var> varLst;
+algorithm
+  varLst := matchcontinue(cache,env,mods,pre)
+    local Boolean f; Absyn.Each e; list<Types.SubMod> submods; Option<Types.EqMod> eqmod; Exp.Exp exp;
+      Types.Var v;
+      Types.Properties p;
+    case(cache,env,Types.MOD(f,e,Types.NAMEMOD("quantity",Types.MOD(_,_,_,SOME(Types.TYPED(exp,_,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instStringClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"quantity",exp,(Types.T_STRING({}),NONE),p);
+        then v::varLst;                    
+    case(cache,env,Types.MOD(f,e,Types.NAMEMOD("start",Types.MOD(_,_,_,SOME(Types.TYPED(exp,_,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instStringClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"start",exp,(Types.T_STRING({}),NONE),p);
+        then v::varLst;      
+    case(cache,env,Types.MOD(f,e,_::submods,eqmod),pre) 
+      equation
+        varLst = instStringClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+      then varLst;
+    case(cache,env,Types.MOD(f,e,{},eqmod),pre) then {};
+    case(cache,env,Types.NOMOD(),pre) then {};
+    case(cache,env,Types.REDECL(_,_),pre) then fail(); /*TODO, report error when redeclaring in Real*/
+  end matchcontinue;
+end instStringClass;
+
+protected function instBooleanClass "Instantiation of the String class"
+  input Env.Cache cache;
+  input Env.Env env;
+  input Mod mods;
+  input Prefix.Prefix pre;
+  output list<Types.Var> varLst;
+algorithm
+  varLst := matchcontinue(cache,env,mods,pre)
+    local Boolean f; Absyn.Each e; list<Types.SubMod> submods; Option<Types.EqMod> eqmod; Exp.Exp exp;
+      Types.Var v;
+      Types.Properties p;
+    case(cache,env,Types.MOD(f,e,Types.NAMEMOD("quantity",Types.MOD(_,_,_,SOME(Types.TYPED(exp,_,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instBooleanClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"quantity",exp,(Types.T_STRING({}),NONE),p);
+        then v::varLst;                    
+    case(cache,env,Types.MOD(f,e,Types.NAMEMOD("start",Types.MOD(_,_,_,SOME(Types.TYPED(exp,_,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instBooleanClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"start",exp,(Types.T_BOOL({}),NONE),p);
+      then v::varLst;     
+    case(cache,env,Types.MOD(f,e,Types.NAMEMOD("fixed",Types.MOD(_,_,_,SOME(Types.TYPED(exp,_,p))))::submods,eqmod),pre) 
+      equation
+        varLst = instIntegerClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+        v = instBuiltinAttribute(cache,env,"fixed",exp,(Types.T_BOOL({}),NONE),p);
+      then v::varLst;              
+    case(cache,env,Types.MOD(f,e,_::submods,eqmod),pre) 
+      equation
+        varLst = instBooleanClass(cache,env,Types.MOD(f,e,submods,eqmod),pre);
+      then varLst;
+    case(cache,env,Types.MOD(f,e,{},eqmod),pre) then {};
+    case(cache,env,Types.NOMOD(),pre) then {};
+    case(cache,env,Types.REDECL(_,_),pre) then fail(); /*TODO, report error when redeclaring in Real*/
+  end matchcontinue;
+end instBooleanClass;
+
+protected function instBuiltinAttribute "Help function to e.g. instRealClass, etc."
+  input Env.Cache cache;
+  input Env.Env env;
+  input Ident id;
+  input Exp.Exp bind;
+  input Types.Type expectedTp;
+  input Types.Properties bindProp;
+  output Types.Var var;
+algorithm
+  var := matchcontinue(cache,env,id,bind,expectedTp,bindProp)
+local Values.Value v; Types.Type t_1,bindTp; Exp.Exp bind1; 
+    case(cache,env,id,bind,expectedTp,Types.PROP(bindTp,_)) equation
+      (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp);
+      (cache,v,_) = Ceval.ceval(cache,env, bind1, false, NONE, NONE, Ceval.NO_MSG());
+      
+    then Types.VAR(id,Types.ATTR(false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR()),
+      false,t_1,Types.EQBOUND(bind1,SOME(v),Types.C_PARAM()));
+
+    case(cache,env,id,bind,expectedTp,Types.PROP(bindTp,_)) equation
+       (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp);   
+    then Types.VAR(id,Types.ATTR(false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR()),
+      false,t_1,Types.EQBOUND(bind1,NONE(),Types.C_PARAM()));
+      
+    case(cache,env,id,bind,expectedTp,Types.PROP(bindTp,_)) local String s1,s2;
+      equation 
+        failure((_,_) = Types.matchType(bind,bindTp,expectedTp));
+        s1 = "builtin attribute " +& id;
+        s2 = Types.unparseType(expectedTp);
+        Error.addMessage(Error.TYPE_ERROR,{s1,s2});
+      then fail();      
+  end matchcontinue;
+end instBuiltinAttribute;
 
 protected function arrayBasictypeBaseclass "function: 
   author: PA
