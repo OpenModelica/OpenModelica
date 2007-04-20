@@ -6,7 +6,7 @@ builddir_inc=$(top_builddir)/build/include
 CC = gcc
 FC = g77
 AR = ar -ru 
-CFLAGS = -O1 -fexceptions -Wall -ansi -pedantic -I$(top_builddir)/mosh/src/ $(EXTRA_CFLAGS)
+CFLAGS = -O -fexceptions -Wall -ansi -pedantic -I$(top_builddir)/mosh/src/ $(EXTRA_CFLAGS)
 CPPFLAGS = $(CFLAGS)
 FFLAGS  = -O -fexceptions
 # P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.
@@ -15,35 +15,13 @@ FFLAGS  = -O -fexceptions
 # - use make -f Makefile.omdev.mingw if you want to compile on MinGW
 
 
-FSRCS = daux.f \
-    ddasrt.f \
-    ddassl.f \
-    dlamch.f \
-    dlinpk.f \
-    lsame.f \
-    dogleg.f \
-    dpmpar.f \
-	enorm.f \
-	fdjac1.f \
-	hybrd1.f \
-	hybrd.f \
-	hybrj.f \
-	qform.f \
-	qrfac.f \
-	r1mpyq.f \
-	r1updt.f \
-	nelmead.f \
-	newuoa.f \
-	newuob.f \
-	biglag.f \
-	bigden.f \
-	trsapp.f \
-	update.f
-
-FOBJS = $(patsubst %.f,%.o,$(FSRCS))
 
 OBJS = $(FOBJS) boolean_array.o index_spec.o integer_array.o memory_pool.o \
-	real_array.o string_array.o read_write.o utility.o modelica_string.o $(EXTRA_OBJS)
+real_array.o string_array.o read_write.o utility.o modelica_string.o bigden.o \
+ddasrt.o  dlinpk.o  enorm.o   hybrd1.o  nelmead.o  qform.o   r1updt.o \
+biglag.o  ddassl.o  dogleg.o  fdjac1.o  hybrj.o   newuoa.o   qrfac.o   trsapp.o \
+daux.o    dlamch.o  dpmpar.o  hybrd.o   lsame.o   newuob.o   r1mpyq.o  update.o $(EXTRA_OBJS)
+
 SIMOBJS = $(FOBJS) simulation_runtime.o simulation_init.o simulation_input.o simulation_events.o \
 solver_dasrt.o solver_euler.o simulation_result.o ../mosh/src/options.o dgesv_aux.o $(EXTRA_SIMOBJS)
 
