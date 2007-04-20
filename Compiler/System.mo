@@ -201,7 +201,7 @@ public function pwd
   external "C" ;
 end pwd;
 
-public function readEnv
+public function readEnv "Reads the environment variable given as string, fails if variable not found"
   input String inString;
   output String outString;
 

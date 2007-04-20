@@ -49,10 +49,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, long &outputSteps,
                 double &tolerance);
 
-#ifdef _MSC_VER
-#  define DDASRT DDASRT
-#else
-#  define DDASRT ddasrt_
+#ifndef DDASRT
+#define DDASRT ddasrt_
 #endif
 
 extern "C" {

@@ -48,11 +48,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int initialize(const std::string*method);
 
-#ifdef _MSC_VER
-#  define NEWUOA NEWUOA
-#else
-#  define NEWUOA newuoa_
+#ifndef NEWUOA
+#define NEWUOA newuoa_
 #endif
+
 #ifdef __cplusplus
 extern "C" {
 	void  NEWUOA(
@@ -69,11 +68,8 @@ extern "C" {
 } // extern C
 #endif
 
-
-#ifdef _MSC_VER
-#  define NELMEAD NELMEAD
-#else
-#  define NELMEAD nelmead_
+#ifndef NELMEAD
+#define NELMEAD nelmead_
 #endif
 
 #ifdef __cplusplus
