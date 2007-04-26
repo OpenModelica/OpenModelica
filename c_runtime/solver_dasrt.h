@@ -76,6 +76,10 @@ extern "C" {
 	       long *ng,
 	       long *jroot
 	       );
+	       
+	       double dlamch_(char*,int);
 } // extern "C"
+
+
 
 #endif

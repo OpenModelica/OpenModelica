@@ -42,6 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "options.h"
 
 #include <fstream>
+#include <iomanip>
 
 using namespace std;
 
@@ -79,7 +80,7 @@ void read_commented_value(ifstream &f, char **str);
   read_commented_value(file,start);
   read_commented_value(file,stop);
   read_commented_value(file,stepSize);
-  
+    
   if (stepSize < 0) { // stepSize < 0 => Automatic number of outputs 
   	*outputSteps = -1;
   } else {

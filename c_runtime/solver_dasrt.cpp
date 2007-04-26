@@ -87,6 +87,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
   double tout;
   double rtol = 1.0e-5;
   double atol = 1.0e-5;
+  double uround = dlamch_("P",1);
   long idid = 0;
   
 
@@ -254,8 +255,8 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
       saveall();
       // Restart simulation
       info[0] = 0;
-//      if (tout-globalData->timeValue < atol) tout = newTime(globalData->timeValue,step,stop);
-	  tout = globalData->timeValue + 1e-13;	
+	  // Take a tiny step forward, but > HMIN in dassl.
+	  tout = globalData->timeValue +  8.0 * uround * fabs(globalData->timeValue); 	
       if (globalData->timeValue >= stop ) throw TerminateSimulationException(globalData->timeValue);
       calcEnabledZeroCrossings();
       DDASRT(functionDAE_res, 
