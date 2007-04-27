@@ -331,8 +331,6 @@ void GraphWidget::getData()
 		QString command;
 		ds >> command;
 
-		//		cout << "getData" << ": " <<  QVariant(activeSocket->bytesAvailable()).toString().toStdString() << endl;
-
 		if(command == QString("clear"))
 			//		clear(in);
 			;
@@ -1543,7 +1541,6 @@ void GraphWidget::plotPtolemyDataStream()
 					p->setVisible(temporaryCurves[currentYVar]->drawPoints);
 					temporaryCurves[currentYVar]->dataPoints.append(p);
 
-//					variables[currentYVar]->currentIndex++;
 				}
 			}
 		}
