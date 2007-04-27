@@ -28,74 +28,89 @@
       <attribute name="title" >
        <string>Labels</string>
       </attribute>
-      <widget class="QLabel" name="label" >
+      <widget class="QWidget" name="layoutWidget" >
        <property name="geometry" >
         <rect>
          <x>20</x>
          <y>40</y>
-         <width>46</width>
-         <height>14</height>
+         <width>241</width>
+         <height>42</height>
         </rect>
        </property>
-       <property name="text" >
-        <string>Plot title</string>
-       </property>
+       <layout class="QVBoxLayout" >
+        <property name="margin" >
+         <number>0</number>
+        </property>
+        <property name="spacing" >
+         <number>6</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="label" >
+          <property name="text" >
+           <string>Plot title</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="plotTitle" />
+        </item>
+       </layout>
       </widget>
-      <widget class="QLabel" name="label_2" >
+      <widget class="QWidget" name="layoutWidget" >
        <property name="geometry" >
         <rect>
          <x>20</x>
-         <y>110</y>
-         <width>101</width>
-         <height>16</height>
+         <y>100</y>
+         <width>241</width>
+         <height>42</height>
         </rect>
        </property>
-       <property name="text" >
-        <string>Vertical label</string>
-       </property>
+       <layout class="QVBoxLayout" >
+        <property name="margin" >
+         <number>0</number>
+        </property>
+        <property name="spacing" >
+         <number>6</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="label_2" >
+          <property name="text" >
+           <string>Vertical label</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="vLabel" />
+        </item>
+       </layout>
       </widget>
-      <widget class="QLabel" name="label_3" >
+      <widget class="QWidget" name="layoutWidget" >
        <property name="geometry" >
         <rect>
          <x>20</x>
-         <y>170</y>
-         <width>141</width>
-         <height>16</height>
+         <y>160</y>
+         <width>241</width>
+         <height>42</height>
         </rect>
        </property>
-       <property name="text" >
-        <string>Horizontal label</string>
-       </property>
-      </widget>
-      <widget class="QLineEdit" name="vLabel" >
-       <property name="geometry" >
-        <rect>
-         <x>20</x>
-         <y>130</y>
-         <width>113</width>
-         <height>20</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QLineEdit" name="hLabel" >
-       <property name="geometry" >
-        <rect>
-         <x>20</x>
-         <y>190</y>
-         <width>113</width>
-         <height>20</height>
-        </rect>
-       </property>
-      </widget>
-      <widget class="QLineEdit" name="plotTitle" >
-       <property name="geometry" >
-        <rect>
-         <x>20</x>
-         <y>60</y>
-         <width>113</width>
-         <height>20</height>
-        </rect>
-       </property>
+       <layout class="QVBoxLayout" >
+        <property name="margin" >
+         <number>0</number>
+        </property>
+        <property name="spacing" >
+         <number>6</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="label_3" >
+          <property name="text" >
+           <string>Horizontal label</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="hLabel" />
+        </item>
+       </layout>
       </widget>
      </widget>
      <widget class="QWidget" name="tab_2" >
@@ -120,348 +135,395 @@
       <attribute name="title" >
        <string>Ranges</string>
       </attribute>
-      <widget class="QGroupBox" name="groupBox" >
-       <property name="geometry" >
-        <rect>
-         <x>10</x>
-         <y>20</y>
-         <width>291</width>
-         <height>161</height>
-        </rect>
+      <layout class="QVBoxLayout" >
+       <property name="margin" >
+        <number>9</number>
        </property>
-       <property name="title" >
-        <string>Vertical range</string>
+       <property name="spacing" >
+        <number>6</number>
        </property>
-       <widget class="QCheckBox" name="vLog" >
-        <property name="geometry" >
-         <rect>
-          <x>20</x>
-          <y>130</y>
-          <width>101</width>
-          <height>18</height>
-         </rect>
-        </property>
-        <property name="text" >
-         <string>Logarithmic</string>
-        </property>
-       </widget>
-       <widget class="QFrame" name="frame_2" >
-        <property name="enabled" >
-         <bool>false</bool>
-        </property>
-        <property name="geometry" >
-         <rect>
-          <x>20</x>
-          <y>60</y>
-          <width>171</width>
-          <height>51</height>
-         </rect>
-        </property>
-        <property name="frameShape" >
-         <enum>QFrame::StyledPanel</enum>
-        </property>
-        <property name="frameShadow" >
-         <enum>QFrame::Raised</enum>
-        </property>
-        <widget class="QLabel" name="label_5" >
-         <property name="geometry" >
-          <rect>
-           <x>10</x>
-           <y>30</y>
-           <width>46</width>
-           <height>14</height>
-          </rect>
+       <item>
+        <widget class="QGroupBox" name="groupBox" >
+         <property name="title" >
+          <string>Vertical range</string>
          </property>
-         <property name="text" >
-          <string>Max:</string>
-         </property>
+         <layout class="QVBoxLayout" >
+          <property name="margin" >
+           <number>9</number>
+          </property>
+          <property name="spacing" >
+           <number>6</number>
+          </property>
+          <item>
+           <widget class="QCheckBox" name="checkBox_5" >
+            <property name="text" >
+             <string>Automatic</string>
+            </property>
+            <property name="checked" >
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="frame_2" >
+            <property name="enabled" >
+             <bool>false</bool>
+            </property>
+            <property name="frameShape" >
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow" >
+             <enum>QFrame::Raised</enum>
+            </property>
+            <layout class="QVBoxLayout" >
+             <property name="margin" >
+              <number>9</number>
+             </property>
+             <property name="spacing" >
+              <number>6</number>
+             </property>
+             <item>
+              <layout class="QHBoxLayout" >
+               <property name="margin" >
+                <number>0</number>
+               </property>
+               <property name="spacing" >
+                <number>6</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="label_4" >
+                 <property name="text" >
+                  <string>Min:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="vMin" />
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" >
+               <property name="margin" >
+                <number>0</number>
+               </property>
+               <property name="spacing" >
+                <number>6</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="label_5" >
+                 <property name="text" >
+                  <string>Max:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="vMax" />
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="vLog" >
+            <property name="text" >
+             <string>Logarithmic</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </widget>
-        <widget class="QLabel" name="label_4" >
-         <property name="geometry" >
-          <rect>
-           <x>10</x>
-           <y>10</y>
-           <width>46</width>
-           <height>14</height>
-          </rect>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupBox_2" >
+         <property name="title" >
+          <string>Horizontal range</string>
          </property>
-         <property name="text" >
-          <string>Min:</string>
-         </property>
+         <layout class="QVBoxLayout" >
+          <property name="margin" >
+           <number>9</number>
+          </property>
+          <property name="spacing" >
+           <number>6</number>
+          </property>
+          <item>
+           <widget class="QCheckBox" name="checkBox_6" >
+            <property name="text" >
+             <string>Automatic</string>
+            </property>
+            <property name="checked" >
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="frame_3" >
+            <property name="enabled" >
+             <bool>false</bool>
+            </property>
+            <property name="frameShape" >
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow" >
+             <enum>QFrame::Raised</enum>
+            </property>
+            <layout class="QVBoxLayout" >
+             <property name="margin" >
+              <number>9</number>
+             </property>
+             <property name="spacing" >
+              <number>6</number>
+             </property>
+             <item>
+              <layout class="QHBoxLayout" >
+               <property name="margin" >
+                <number>0</number>
+               </property>
+               <property name="spacing" >
+                <number>6</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="label_7" >
+                 <property name="text" >
+                  <string>Min:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="hMin" />
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" >
+               <property name="margin" >
+                <number>0</number>
+               </property>
+               <property name="spacing" >
+                <number>6</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="label_6" >
+                 <property name="text" >
+                  <string>Max:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="hMax" />
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="hLog" >
+            <property name="text" >
+             <string>Logarithmic</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </widget>
-        <widget class="QLineEdit" name="vMax" >
-         <property name="geometry" >
-          <rect>
-           <x>50</x>
-           <y>30</y>
-           <width>113</width>
-           <height>20</height>
-          </rect>
-         </property>
-        </widget>
-        <widget class="QLineEdit" name="vMin" >
-         <property name="geometry" >
-          <rect>
-           <x>50</x>
-           <y>10</y>
-           <width>113</width>
-           <height>20</height>
-          </rect>
-         </property>
-        </widget>
-       </widget>
-       <widget class="QCheckBox" name="checkBox_5" >
-        <property name="geometry" >
-         <rect>
-          <x>30</x>
-          <y>40</y>
-          <width>141</width>
-          <height>18</height>
-         </rect>
-        </property>
-        <property name="text" >
-         <string>Automatic</string>
-        </property>
-        <property name="checked" >
-         <bool>true</bool>
-        </property>
-       </widget>
-      </widget>
-      <widget class="QGroupBox" name="groupBox_2" >
-       <property name="geometry" >
-        <rect>
-         <x>20</x>
-         <y>210</y>
-         <width>281</width>
-         <height>141</height>
-        </rect>
-       </property>
-       <property name="title" >
-        <string>Horizontal range</string>
-       </property>
-       <widget class="QCheckBox" name="hLog" >
-        <property name="geometry" >
-         <rect>
-          <x>20</x>
-          <y>110</y>
-          <width>101</width>
-          <height>18</height>
-         </rect>
-        </property>
-        <property name="text" >
-         <string>Logarithmic</string>
-        </property>
-       </widget>
-       <widget class="QCheckBox" name="checkBox_6" >
-        <property name="geometry" >
-         <rect>
-          <x>20</x>
-          <y>20</y>
-          <width>141</width>
-          <height>18</height>
-         </rect>
-        </property>
-        <property name="text" >
-         <string>Automatic</string>
-        </property>
-        <property name="checked" >
-         <bool>true</bool>
-        </property>
-       </widget>
-       <widget class="QFrame" name="frame_3" >
-        <property name="enabled" >
-         <bool>false</bool>
-        </property>
-        <property name="geometry" >
-         <rect>
-          <x>10</x>
-          <y>40</y>
-          <width>181</width>
-          <height>71</height>
-         </rect>
-        </property>
-        <property name="frameShape" >
-         <enum>QFrame::StyledPanel</enum>
-        </property>
-        <property name="frameShadow" >
-         <enum>QFrame::Raised</enum>
-        </property>
-        <widget class="QLabel" name="label_7" >
-         <property name="geometry" >
-          <rect>
-           <x>10</x>
-           <y>20</y>
-           <width>46</width>
-           <height>14</height>
-          </rect>
-         </property>
-         <property name="text" >
-          <string>Min:</string>
-         </property>
-        </widget>
-        <widget class="QLabel" name="label_6" >
-         <property name="geometry" >
-          <rect>
-           <x>10</x>
-           <y>40</y>
-           <width>46</width>
-           <height>14</height>
-          </rect>
-         </property>
-         <property name="text" >
-          <string>Max:</string>
-         </property>
-        </widget>
-        <widget class="QLineEdit" name="hMin" >
-         <property name="geometry" >
-          <rect>
-           <x>50</x>
-           <y>20</y>
-           <width>113</width>
-           <height>20</height>
-          </rect>
-         </property>
-        </widget>
-        <widget class="QLineEdit" name="hMax" >
-         <property name="geometry" >
-          <rect>
-           <x>50</x>
-           <y>40</y>
-           <width>113</width>
-           <height>20</height>
-          </rect>
-         </property>
-        </widget>
-       </widget>
-      </widget>
+       </item>
+      </layout>
      </widget>
      <widget class="QWidget" name="tab_4" >
       <attribute name="title" >
        <string>Grid</string>
       </attribute>
-      <widget class="QGroupBox" name="groupBox_3" >
-       <property name="enabled" >
-        <bool>false</bool>
+      <layout class="QVBoxLayout" >
+       <property name="margin" >
+        <number>9</number>
        </property>
-       <property name="geometry" >
-        <rect>
-         <x>30</x>
-         <y>80</y>
-         <width>251</width>
-         <height>181</height>
-        </rect>
+       <property name="spacing" >
+        <number>6</number>
        </property>
-       <property name="title" >
-        <string>Step size</string>
-       </property>
-       <widget class="QRadioButton" name="radioButton" >
-        <property name="geometry" >
-         <rect>
-          <x>20</x>
-          <y>30</y>
-          <width>83</width>
-          <height>18</height>
-         </rect>
-        </property>
-        <property name="text" >
-         <string>Automatic</string>
-        </property>
-        <property name="checked" >
-         <bool>true</bool>
-        </property>
-       </widget>
-       <widget class="QFrame" name="frame" >
-        <property name="enabled" >
-         <bool>false</bool>
-        </property>
-        <property name="geometry" >
-         <rect>
-          <x>20</x>
-          <y>70</y>
-          <width>201</width>
-          <height>80</height>
-         </rect>
-        </property>
-        <property name="frameShape" >
-         <enum>QFrame::StyledPanel</enum>
-        </property>
-        <property name="frameShadow" >
-         <enum>QFrame::Raised</enum>
-        </property>
-        <widget class="QLabel" name="label_8" >
-         <property name="geometry" >
-          <rect>
-           <x>20</x>
-           <y>20</y>
-           <width>46</width>
-           <height>14</height>
-          </rect>
-         </property>
+       <item>
+        <widget class="QCheckBox" name="showGrid" >
          <property name="text" >
-          <string>Vertical:</string>
+          <string>Show grid</string>
+         </property>
+         <property name="checked" >
+          <bool>true</bool>
          </property>
         </widget>
-        <widget class="QLabel" name="label_9" >
-         <property name="geometry" >
-          <rect>
-           <x>10</x>
-           <y>50</y>
-           <width>52</width>
-           <height>16</height>
-          </rect>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupBox_5" >
+         <property name="title" >
+          <string>Horizontal step size</string>
          </property>
-         <property name="text" >
-          <string>Horizontal:</string>
-         </property>
+         <layout class="QVBoxLayout" >
+          <property name="margin" >
+           <number>9</number>
+          </property>
+          <property name="spacing" >
+           <number>6</number>
+          </property>
+          <item>
+           <widget class="QCheckBox" name="hAutoGrid" >
+            <property name="text" >
+             <string>Automatic</string>
+            </property>
+            <property name="checked" >
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="frame_5" >
+            <property name="enabled" >
+             <bool>false</bool>
+            </property>
+            <property name="frameShape" >
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow" >
+             <enum>QFrame::Raised</enum>
+            </property>
+            <layout class="QVBoxLayout" >
+             <property name="margin" >
+              <number>9</number>
+             </property>
+             <property name="spacing" >
+              <number>6</number>
+             </property>
+             <item>
+              <layout class="QHBoxLayout" >
+               <property name="margin" >
+                <number>0</number>
+               </property>
+               <property name="spacing" >
+                <number>6</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="label_12" >
+                 <property name="text" >
+                  <string>Major step size:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="hMajorSize" />
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" >
+               <property name="margin" >
+                <number>0</number>
+               </property>
+               <property name="spacing" >
+                <number>6</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="label_13" >
+                 <property name="text" >
+                  <string>Minor step size:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="hMinorSize" />
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
         </widget>
-        <widget class="QLineEdit" name="lineEdit_9" >
-         <property name="geometry" >
-          <rect>
-           <x>70</x>
-           <y>50</y>
-           <width>113</width>
-           <height>20</height>
-          </rect>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupBox_4" >
+         <property name="title" >
+          <string>Vertical step size</string>
          </property>
+         <layout class="QVBoxLayout" >
+          <property name="margin" >
+           <number>9</number>
+          </property>
+          <property name="spacing" >
+           <number>6</number>
+          </property>
+          <item>
+           <widget class="QCheckBox" name="vAutoGrid" >
+            <property name="text" >
+             <string>Automatic</string>
+            </property>
+            <property name="checked" >
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QFrame" name="frame_4" >
+            <property name="enabled" >
+             <bool>false</bool>
+            </property>
+            <property name="frameShape" >
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow" >
+             <enum>QFrame::Raised</enum>
+            </property>
+            <layout class="QVBoxLayout" >
+             <property name="margin" >
+              <number>9</number>
+             </property>
+             <property name="spacing" >
+              <number>6</number>
+             </property>
+             <item>
+              <layout class="QHBoxLayout" >
+               <property name="margin" >
+                <number>0</number>
+               </property>
+               <property name="spacing" >
+                <number>6</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="label_10" >
+                 <property name="text" >
+                  <string>Major step size:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="vMajorSize" />
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" >
+               <property name="margin" >
+                <number>0</number>
+               </property>
+               <property name="spacing" >
+                <number>6</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="label_11" >
+                 <property name="text" >
+                  <string>Minor step size:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="vMinorSize" />
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
         </widget>
-        <widget class="QLineEdit" name="lineEdit_8" >
-         <property name="geometry" >
-          <rect>
-           <x>70</x>
-           <y>20</y>
-           <width>113</width>
-           <height>20</height>
-          </rect>
-         </property>
-        </widget>
-       </widget>
-       <widget class="QRadioButton" name="radioButton_2" >
-        <property name="geometry" >
-         <rect>
-          <x>20</x>
-          <y>50</y>
-          <width>83</width>
-          <height>18</height>
-         </rect>
-        </property>
-        <property name="text" >
-         <string>Fixed</string>
-        </property>
-       </widget>
-      </widget>
-      <widget class="QCheckBox" name="showGrid" >
-       <property name="geometry" >
-        <rect>
-         <x>40</x>
-         <y>30</y>
-         <width>71</width>
-         <height>18</height>
-        </rect>
-       </property>
-       <property name="text" >
-        <string>Show grid</string>
-       </property>
-      </widget>
+       </item>
+      </layout>
      </widget>
     </widget>
    </item>
@@ -514,45 +576,13 @@
  <resources/>
  <connections>
   <connection>
-   <sender>radioButton_2</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>frame</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel" >
-     <x>116</x>
-     <y>179</y>
-    </hint>
-    <hint type="destinationlabel" >
-     <x>128</x>
-     <y>218</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>showGrid</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>groupBox_3</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel" >
-     <x>94</x>
-     <y>79</y>
-    </hint>
-    <hint type="destinationlabel" >
-     <x>100</x>
-     <y>155</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>checkBox_5</sender>
    <signal>toggled(bool)</signal>
    <receiver>frame_2</receiver>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel" >
-     <x>130</x>
+     <x>137</x>
      <y>109</y>
     </hint>
     <hint type="destinationlabel" >
@@ -600,12 +630,76 @@
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel" >
-     <x>95</x>
-     <y>273</y>
+     <x>102</x>
+     <y>279</y>
     </hint>
     <hint type="destinationlabel" >
-     <x>81</x>
-     <y>290</y>
+     <x>92</x>
+     <y>322</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>hAutoGrid</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>frame_5</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>62</x>
+     <y>190</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>117</x>
+     <y>231</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>vAutoGrid</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>frame_4</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>77</x>
+     <y>314</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>86</x>
+     <y>356</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>showGrid</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>groupBox_5</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>77</x>
+     <y>73</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>60</x>
+     <y>170</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>showGrid</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>groupBox_4</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>85</x>
+     <y>71</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>38</x>
+     <y>310</y>
     </hint>
    </hints>
   </connection>

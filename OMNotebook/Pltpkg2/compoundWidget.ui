@@ -466,26 +466,6 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="2" >
-      <widget class="QLabel" name="plotTitle" >
-       <property name="font" >
-        <font>
-         <pointsize>10</pointsize>
-         <weight>75</weight>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="styleSheet" >
-        <string>background-color:white</string>
-       </property>
-       <property name="text" >
-        <string>Plot title</string>
-       </property>
-       <property name="alignment" >
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
      <item row="2" column="2" >
       <widget class="QGraphicsView" name="gvBottom" >
        <property name="sizePolicy" >
@@ -519,27 +499,11 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="2" >
-      <widget class="QLabel" name="xLabel" >
-       <property name="layoutDirection" >
-        <enum>Qt::LeftToRight</enum>
-       </property>
-       <property name="styleSheet" >
-        <string>background-color: white</string>
-       </property>
-       <property name="text" >
-        <string>x</string>
-       </property>
-       <property name="alignment" >
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
      <item row="1" column="1" >
       <widget class="QGraphicsView" name="gvLeft" >
        <property name="sizePolicy" >
         <sizepolicy>
-         <hsizetype>0</hsizetype>
+         <hsizetype>5</hsizetype>
          <vsizetype>7</vsizetype>
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
@@ -998,11 +962,51 @@
      </item>
      <item row="1" column="0" >
       <widget class="VerticalLabel" name="yLabel" >
+       <property name="sizePolicy" >
+        <sizepolicy>
+         <hsizetype>0</hsizetype>
+         <vsizetype>7</vsizetype>
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="styleSheet" >
         <string>background-color: white</string>
        </property>
        <property name="text" >
         <string>y</string>
+       </property>
+       <property name="alignment" >
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2" >
+      <widget class="Label" name="plotTitle" >
+       <property name="font" >
+        <font/>
+       </property>
+       <property name="styleSheet" >
+        <string>background-color:white</string>
+       </property>
+       <property name="text" >
+        <string>Plot title</string>
+       </property>
+       <property name="alignment" >
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="2" >
+      <widget class="Label" name="xLabel" >
+       <property name="layoutDirection" >
+        <enum>Qt::LeftToRight</enum>
+       </property>
+       <property name="styleSheet" >
+        <string>background-color: white</string>
+       </property>
+       <property name="text" >
+        <string>x</string>
        </property>
        <property name="alignment" >
         <set>Qt::AlignCenter</set>
@@ -1023,6 +1027,11 @@
    <class>VerticalLabel</class>
    <extends>QLabel</extends>
    <header>verticalLabel.h</header>
+  </customwidget>
+  <customwidget>
+   <class>Label</class>
+   <extends>QLabel</extends>
+   <header>label.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

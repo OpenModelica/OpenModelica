@@ -46,38 +46,91 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 */
 
 //Qt headers
-#include <QStringList>
-
-//Std headers
-#include <iostream>
+#include <QColor>
+#include <QColorDialog>
 
 //IAEX headers
-#include "dataSelect.h"
+#include "LegendLabel.h"
+#include "curve.h"
 
-using namespace std;
-
-
-DataSelect::DataSelect(QWidget* parent): QDialog(parent)
+LegendLabel::LegendLabel(QColor color_, QString& s, QWidget* parent): QLabel(s, parent), color(color_)
 {
-	setupUi(this);
+	state = true;
+	setContextMenuPolicy(Qt::ActionsContextMenu);
+	QAction* tmp;
+	tmp =  new QAction(QString("Show line"), this);
+	tmp->setCheckable(true);
+	connect(tmp, SIGNAL(toggled(bool)), this, SLOT(setLineVisible(bool)));
+	connect(this, SIGNAL(showLine(bool)), tmp, SLOT(setChecked(bool)));
+	addAction(tmp);
+
+	tmp = new QAction("Show data points", this);
+	tmp->setCheckable(true);
+	connect(tmp, SIGNAL(toggled(bool)), this, SLOT(setPointsVisible(bool)));
+	connect(this, SIGNAL(showPoints(bool)), tmp, SLOT(setChecked(bool)));
+	addAction(tmp);
+
+	tmp = new QAction("Change color", this);
+	connect(tmp, SIGNAL(triggered()), this, SLOT(selectColor()));
+	addAction(tmp);
+}
+
+LegendLabel::~LegendLabel()
+{
 
 }
 
-DataSelect::~DataSelect()
+void LegendLabel::selectColor()
 {
-
+	QColor c = QColorDialog::getColor(color);
+	if(c.isValid())
+	{
+		color = c;
+		curve->setColor(color);
+	}
 }
 
-bool DataSelect::getVariables(const QStringList& vars, QString& xVar, QString& yVar)
+void LegendLabel::setLineVisible(bool b)
 {
-	vData->addItems(vars);
-	hData->addItems(vars);
+	curve->showLine(b);
+	curve->dataPoints[0]->scene()->update();				
+	emit showLine(b);
+}
 
-	if(exec() == QDialog::Rejected)
-		return false;
+void LegendLabel::setPointsVisible(bool b)
+{
+	curve->showPoints(b);
+	curve->dataPoints[0]->scene()->update();				
+	emit showPoints(b);
+}
 
-	xVar = hData->currentText();
-	yVar = vData->currentText();
 
-	return true;
+void LegendLabel::paintEvent ( QPaintEvent * event )
+{
+	QPainter painter(this);
+
+	render(&painter);
+}
+
+void LegendLabel::render(QPainter* painter, QPointF pos)
+{
+	painter->save();
+	painter->translate(pos.x(), pos.y());
+
+	painter->setPen(Qt::black);
+	QBrush b;
+	if(state)
+		b = QBrush(color);
+
+	painter->setBrush(b);
+	painter->setRenderHints(QPainter::Antialiasing);
+	painter->drawEllipse(1, 1, max(0,height()-2), max(0,height()-2));
+
+	painter->setFont(font());
+	setMinimumWidth(fontMetrics().width(text()));
+	QRectF r = rect();
+	r.setLeft(r.left() + height()+2);
+	painter->drawText(r, Qt::AlignVCenter, text());
+
+	painter->restore();
 }

@@ -46,38 +46,56 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 */
 
 //Qt headers
-#include <QStringList>
-
-//Std headers
-#include <iostream>
+#include <QColor>
 
 //IAEX headers
-#include "dataSelect.h"
+#include "curve.h"
+#include "point.h"
+#include "LegendLabel.h"
+#include "line2D.h"
 
-using namespace std;
 
-
-DataSelect::DataSelect(QWidget* parent): QDialog(parent)
+Curve::Curve(VariableData* x_, VariableData* y_, QColor& color, LegendLabel* ll): x(x_), y(y_), color_(color), label(ll)
 {
-	setupUi(this);
+	line = new QGraphicsItemGroup;
 
 }
 
-DataSelect::~DataSelect()
+Curve::~Curve()
 {
-
+	delete line;
+	delete label;
+	dataPoints.clear();
 }
 
-bool DataSelect::getVariables(const QStringList& vars, QString& xVar, QString& yVar)
+
+void Curve::showPoints(bool b)
 {
-	vData->addItems(vars);
-	hData->addItems(vars);
+	foreach(Point* p, dataPoints)
+		p->setVisible(b);
 
-	if(exec() == QDialog::Rejected)
-		return false;
+	drawPoints = b;
+}
 
-	xVar = hData->currentText();
-	yVar = vData->currentText();
+void Curve::showLine(bool b)
+{
+	line->setVisible(b);
+	line->update();
+	visible = b;
+}
 
-	return true;
+void Curve::setColor(QColor c)
+{
+	color_ = c;
+	QPen p(c);
+	QList<QGraphicsItem*> l = line->children();
+
+	for(int i = 0; i < l.size(); ++i)
+		static_cast<Line2D*>(l[i])->setPen(c);
+
+	for(int i = 0; i < dataPoints.size(); ++i)
+	{
+		dataPoints[i]->color = c;
+		dataPoints[i]->setPen(p);
+	}
 }

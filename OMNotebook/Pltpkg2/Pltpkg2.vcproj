@@ -76,7 +76,7 @@
 				InlineFunctionExpansion="2"
 				FavorSizeOrSpeed="1"
 				OptimizeForProcessor="3"
-				AdditionalIncludeDirectories="c:\Qt\4.2.1-vc\include\QtCore,c:\Qt\4.2.1-vc\include\QtCore,c:\Qt\4.2.1-vc\include\QtGui,c:\Qt\4.2.1-vc\include\QtGui,c:\Qt\4.2.1-vc\include,.,c:\Qt\4.2.1-vc\include\ActiveQt,release,.,..\..\..\..\Qt\4.2.1-vc\mkspecs\win32-msvc.net"
+				AdditionalIncludeDirectories="&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(QTHOME)\include\QtGui&quot;;&quot;$(QTHOME)\include&quot;;.;&quot;$(QTHOME)\include\ActiveQt&quot;;release;&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot;"
 				PreprocessorDefinitions="NDEBUG,_WINDOWS,UNICODE,QT_LARGEFILE_SUPPORT,WIN32,QT_DLL,QT_NO_DEBUG,QT_GUI_LIB,QT_CORE_LIB,QT_THREAD_SUPPORT"
 				GeneratePreprocessedFile="0"
 				ExceptionHandling="TRUE"
@@ -127,6 +127,9 @@
 				RelativePath="compoundWidget.cpp">
 			</File>
 			<File
+				RelativePath=".\curve.cpp">
+			</File>
+			<File
 				RelativePath="dataSelect.cpp">
 			</File>
 			<File
@@ -134,6 +137,9 @@
 			</File>
 			<File
 				RelativePath="graphWindow.cpp">
+			</File>
+			<File
+				RelativePath=".\legendLabel.cpp">
 			</File>
 			<File
 				RelativePath="line2D.cpp">
@@ -169,18 +175,18 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="debug\moc_graphWidget.cpp">
+				RelativePath="release\moc_graphWidget.cpp">
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Debug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="release\moc_graphWidget.cpp">
+				RelativePath="debug\moc_graphWidget.cpp">
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -205,7 +211,10 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\release\moc_preferenceWindow.cpp">
+				RelativePath=".\debug\moc_legendLabel.cpp">
+			</File>
+			<File
+				RelativePath=".\debug\moc_preferenceWindow.cpp">
 			</File>
 			<File
 				RelativePath="Point.cpp">
@@ -241,6 +250,14 @@
 "
 						AdditionalDependencies="c:\Qt\4.2.1-vc\bin\moc.exe"
 						Outputs="release\moc_compoundWidget.cpp"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\curve.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -296,7 +313,28 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\label.h">
+			</File>
+			<File
 				RelativePath=".\LegendLabel.h">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="c:\Qt\4.2.1-vc\bin\moc.exe -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include&quot; -I &quot;.&quot; -I &quot;C:\Qt\4.2.1-vc\include\ActiveQt&quot; -I &quot;debug&quot; -I &quot;.&quot; -I&quot;..\..\..\..\Qt\4.2.1-vc\mkspecs\win32-msvc.net&quot; legendLabel.h -o debug\moc_legendLabel.cpp
+"
+						AdditionalDependencies="c:\Qt\4.2.1-vc\bin\moc.exe"
+						Outputs="debug\moc_legendLabel.cpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="c:\Qt\4.2.1-vc\bin\moc.exe -DNDEBUG -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include&quot; -I &quot;.&quot; -I &quot;C:\Qt\4.2.1-vc\include\ActiveQt&quot; -I &quot;release&quot; -I &quot;.&quot; -I&quot;..\..\..\..\Qt\4.2.1-vc\mkspecs\win32-msvc.net&quot; legendLabel.h -o release\moc_legendLabel.cpp
+"
+						AdditionalDependencies="c:\Qt\4.2.1-vc\bin\moc.exe"
+						Outputs="release\moc_legendLabel.cpp"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="line2D.h">
@@ -309,6 +347,17 @@
 			</File>
 			<File
 				RelativePath=".\preferenceWindow.h">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="MOC preferenceWindow.h"
+						CommandLine="c:\Qt\4.2.1-vc\bin\moc.exe -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include&quot; -I &quot;.&quot; -I &quot;C:\Qt\4.2.1-vc\include\ActiveQt&quot; -I &quot;debug&quot; -I &quot;.&quot; -I&quot;..\..\..\..\Qt\4.2.1-vc\mkspecs\win32-msvc.net&quot; preferenceWindow.h -o debug\moc_preferenceWindow.cpp
+
+"
+						AdditionalDependencies="c:\Qt\4.2.1-vc\bin\moc.exe"
+						Outputs="debug\moc_preferenceWindow.cpp"/>
+				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32">
 					<Tool

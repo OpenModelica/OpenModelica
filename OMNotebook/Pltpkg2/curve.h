@@ -45,39 +45,42 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 ------------------------------------------------------------------------------------
 */
 
-//Qt headers
-#include <QStringList>
+#ifndef CURVE_H
+#define CURVE_H
 
-//Std headers
-#include <iostream>
+//Qt headers
+#include <QColor>
+#include <QGraphicsItemGroup>
 
 //IAEX headers
-#include "dataSelect.h"
+#include "variableData.h"
 
-using namespace std;
+class LegendLabel;
+class VariableData;
+class Point;
 
-
-DataSelect::DataSelect(QWidget* parent): QDialog(parent)
-{
-	setupUi(this);
-
-}
-
-DataSelect::~DataSelect()
+class Curve
 {
 
-}
+public:
+	Curve(VariableData* x_, VariableData* y_, QColor& color, LegendLabel* ll);
+	~Curve();
 
-bool DataSelect::getVariables(const QStringList& vars, QString& xVar, QString& yVar)
-{
-	vData->addItems(vars);
-	hData->addItems(vars);
+public slots:
+	void showLine(bool b);
+	void showPoints(bool b);
+	void setColor(QColor c);
 
-	if(exec() == QDialog::Rejected)
-		return false;
+public:
+	QGraphicsItemGroup *line;
+	QList<Point*> dataPoints;
+	LegendLabel* label;
+	bool visible;
+	bool drawPoints;
+	int interpolation;
+	QColor color_;
 
-	xVar = hData->currentText();
-	yVar = vData->currentText();
+	VariableData* x, *y;
+};
 
-	return true;
-}
+#endif
