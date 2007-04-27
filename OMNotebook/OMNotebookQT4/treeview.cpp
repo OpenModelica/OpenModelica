@@ -207,10 +207,10 @@ namespace IAEX
 			
 
 
-//			painter.drawRect( this->rect() );	//This does not seem to work			
+			painter.drawRect( this->rect() );	//This does not seem to work			
 
-			painter.setPen(QPen(Qt::black,1, Qt::SolidLine)); 
-			painter.drawRect(this->rect().x()-1, this->rect().y(), this->rect().width()-1, this->rect().height()-2);
+//			painter.setPen(QPen(Qt::black,1, Qt::SolidLine)); 
+//			painter.drawRect(this->rect().x()-1, this->rect().y(), this->rect().width()-1, this->rect().height()-2);
 			painter.setPen(QPen(Qt::black,1, Qt::SolidLine));
 		}
 

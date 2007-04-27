@@ -189,6 +189,7 @@ namespace IAEX
 		void createSavingTimer();
 
 	private:
+		QToolBar* toolBar;
 		// 2005-10-07 AF, Porting, Added this menus
 		QMenu *fileMenu;
 		QMenu *recentMenu;

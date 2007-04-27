@@ -79,7 +79,8 @@ namespace IAEX
 
 	  
 	  if( filename.endsWith(".onb", Qt::CaseInsensitive) ||
-		  filename.endsWith(".xml", Qt::CaseInsensitive) )
+		  filename.endsWith(".xml", Qt::CaseInsensitive) ||
+		  filename.endsWith(".onbz", Qt::CaseInsensitive))
       { 
 		 return new XMLParser(filename, f, document, readmode);//openXMLFile(filename);
       }

@@ -194,6 +194,9 @@
 				RelativePath=".\commandcompletion.cpp">
 			</File>
 			<File
+				RelativePath=".\evalthread.cpp">
+			</File>
+			<File
 				RelativePath=".\graphcell.cpp">
 			</File>
 			<File
@@ -490,6 +493,9 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\evalthread.h">
+			</File>
+			<File
 				RelativePath="factory.h">
 			</File>
 			<File
@@ -513,21 +519,6 @@
 "
 						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
 						Outputs="moc_graphcell.cpp"/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\graphcell2.h">
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCustomBuildTool"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCustomBuildTool"/>
 				</FileConfiguration>
 			</File>
 			<File

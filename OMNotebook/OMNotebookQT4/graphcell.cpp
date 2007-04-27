@@ -72,6 +72,8 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtGui/QResizeEvent>
 #include <QtGui/QFrame>
 #include <QtGui/QTextFrame>
+#include <QAction>
+#include <QActionGroup>
 
 //IAEX Headers
 #include "graphcell.h"
@@ -80,13 +82,10 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "commandcompletion.h"
 #include "highlighterthread.h"
 #include "omcinteractiveenvironment.h"
-
-//#include <QSlider>
-//#include "../graphWidget/graphWidget.h"
 #include "../Pltpkg2/graphWidget.h"
 #include "../Pltpkg2/compoundWidget.h"
-#include <QAction>
-#include <QActionGroup>
+
+#include "evalthread.h"
 
 namespace IAEX
 {
@@ -749,8 +748,9 @@ namespace IAEX
 		input_->document()->blockSignals(false);
 //		input_->document()->setHtml( input_->toHtml() );
 		bool b = input_->document()->isEmpty();
-		input_->document()->setPlainText(QString("uu"));
+		input_->document()->setPlainText(text);
 		//		input_->document()->setPlainText( input_->toPlainText() );
+
 		input_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
 
 		contentChanged();
@@ -999,11 +999,18 @@ namespace IAEX
 	void GraphCell::setClosed(const bool closed, bool update)
 	{
 		if( closed )
+		{
 			output_->hide();
+			compoundwidget->hide();
+		
+		}
 		else
 		{
 			if( evaluated_ )
+			{
 				output_->show();
+				compoundwidget->show();
+			}
 		}
 
 		closed_ = closed;
@@ -1207,7 +1214,7 @@ namespace IAEX
 			QString expr = input_->toPlainText();
 			//expr = expr.simplified();
 
-
+/*
 			QString openmodelica( getenv( "OPENMODELICAHOME" ) );
 			if( openmodelica.isEmpty() )
 				QMessageBox::critical( 0, "OpenModelica Error", "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
@@ -1227,7 +1234,7 @@ namespace IAEX
 				filename += "/";
 			filename += imagename;
 
-			// 2006-02-17 AF, 
+*/			// 2006-02-17 AF, 
 			evaluated_ = true;
 			setClosed(false);
 
@@ -1266,7 +1273,10 @@ namespace IAEX
 			// 2006-02-02 AF, Added try-catch
 			try
 			{
-				delegate()->evalExpression( expr );
+				EvalThread* et = new EvalThread(delegate(), expr);
+				connect(et, SIGNAL(finished()), this, SLOT(delegateFinished()));
+				et->start();
+				//				delegate()->evalExpression( expr );
 			}
 			catch( exception &e )
 			{
@@ -1284,7 +1294,7 @@ namespace IAEX
 				output_->blockSignals(false);
 				return;
 			}
-
+/*
 			// get the result
 			QString res = delegate()->getResult();
 			QString error;
@@ -1301,7 +1311,7 @@ namespace IAEX
 				output_->blockSignals(false);
 				return;
 			}
-
+*/
 			// if the expression is a plot command and the is no errors
 			// in the result, find the image and insert it into the 
 			// output part of the cell.
@@ -1376,7 +1386,8 @@ namespace IAEX
 			{
 */			
 			// check if resualt is empty
-				if( res.isEmpty() && error.isEmpty() )
+/*
+			if( res.isEmpty() && error.isEmpty() )
 					res = "[done]";
 
 				if( !error.isEmpty() )
@@ -1401,8 +1412,63 @@ namespace IAEX
 
 		input_->blockSignals(false);
 		output_->blockSignals(false);
+*/
+		}
+
+
+		else
+			cout << "Not delegate on GraphCell" << endl;
+
+			input_->blockSignals(false);
+			output_->blockSignals(false);
+
+
+
 	}
 
+	void GraphCell::delegateFinished()
+	{
+//		QMessageBox::information(0, "uu", "vv");
+
+		delete sender();
+
+		QString res = delegate()->getResult();
+		QString error;
+
+		// 2006-02-02 AF, Added try-catch
+		try
+		{
+			error = delegate()->getError();
+		}
+		catch( exception &e )
+		{
+			exceptionInEval(e);
+			input_->blockSignals(false);
+			output_->blockSignals(false);
+			return;
+		}
+
+
+		if( res.isEmpty() && error.isEmpty() )
+			res = "[done]";
+
+		if( !error.isEmpty() )
+			res += QString("\n") + error;
+
+		output_->selectAll();
+		output_->textCursor().insertText( res );
+		//output_->setPlainText( res );
+		//			}
+
+		++numEvals_;
+//		dir.remove( imagename );
+
+
+		contentChanged();
+
+		//Emit that the text have changed
+		emit textChanged(true);
+	}
 	/*! 
 	 * \author Anders Fernström
 	 * \date 2006-02-02

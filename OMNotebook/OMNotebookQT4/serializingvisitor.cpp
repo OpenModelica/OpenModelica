@@ -76,7 +76,8 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "celldocument.h"
 #include "xmlnodename.h"
 #include "graphcell.h"
-
+#include <QDataStream>
+#include <QGraphicsRectItem>
 
 
 namespace IAEX
@@ -270,20 +271,132 @@ namespace IAEX
 		else
 			graphcell.setAttribute( XML_CLOSED, XML_FALSE );
 
+		QBuffer b;
+		b.open( QBuffer::WriteOnly );
+		QDataStream ds( &b );
+
+		ds << node->compoundwidget->gwMain->mapToScene(node->compoundwidget->gwMain->rect()).boundingRect();
+		b.close();
+
+
+		graphcell.setAttribute( XML_GRAPHCELL_AREA, QString(b.data().toBase64().data()));
+
+		graphcell.setAttribute( XML_GRAPHCELL_LEGEND, node->compoundwidget->legendFrame->isVisible()?XML_TRUE:XML_FALSE);
+		graphcell.setAttribute( XML_GRAPHCELL_AA, node->compoundwidget->gwMain->antiAliasing?XML_TRUE:XML_FALSE );
+		graphcell.setAttribute( XML_GRAPHCELL_LOGX, node->compoundwidget->gwMain->xLog?XML_TRUE:XML_FALSE );
+		graphcell.setAttribute( XML_GRAPHCELL_LOGY, node->compoundwidget->gwMain->yLog?XML_TRUE:XML_FALSE );
+		graphcell.setAttribute( XML_GRAPHCELL_TITLE, node->compoundwidget->plotTitle->text());
+		graphcell.setAttribute( XML_GRAPHCELL_XLABEL, node->compoundwidget->xLabel->text() );
+		graphcell.setAttribute( XML_GRAPHCELL_YLABEL, node->compoundwidget->yLabel->text() );
+		graphcell.setAttribute( XML_GRAPHCELL_GRID, node->compoundwidget->gwMain->graphicsScene->gridVisible?XML_TRUE:XML_FALSE );
+		graphcell.setAttribute( XML_GRAPHCELL_GRIDAUTOX, node->compoundwidget->gwMain->fixedXSize?XML_FALSE:XML_TRUE );
+		graphcell.setAttribute( XML_GRAPHCELL_GRIDAUTOY, node->compoundwidget->gwMain->fixedYSize?XML_FALSE:XML_TRUE );
+
+		graphcell.setAttribute( XML_GRAPHCELL_GRIDMAJORX, QVariant(node->compoundwidget->gwMain->xMajorDist).toString());
+		graphcell.setAttribute( XML_GRAPHCELL_GRIDMAJORY, QVariant(node->compoundwidget->gwMain->yMajorDist).toString() );
+		graphcell.setAttribute( XML_GRAPHCELL_GRIDMINORX, QVariant(node->compoundwidget->gwMain->xMinorDist).toString());
+		graphcell.setAttribute( XML_GRAPHCELL_GRIDMINORY, QVariant(node->compoundwidget->gwMain->yMinorDist).toString());
+
+
+
+for(int i = 0; i < node->compoundwidget->gwMain->variableData.size(); ++i)
+{
+
+		QDomElement data = domdoc_.createElement(XML_GRAPHCELL_DATA);
+
+		data.setAttribute(XML_GRAPHCELL_LABEL, node->compoundwidget->gwMain->variableData[i]->variableName());
+		data.setAttribute(XML_GRAPHCELL_ID, "0");
+
+
+
+		QBuffer b;
+		b.open( QBuffer::WriteOnly );
+		QDataStream ds( &b );
+
+		ds << *(node->compoundwidget->gwMain->variableData[i]);
+		b.close();
+
+	
+		QDomText dnode = domdoc_.createTextNode(b.buffer().toBase64());
+		data.appendChild(dnode);
+		graphcell.appendChild(data);
+}
+
+for(int i = 0; i < node->compoundwidget->gwMain->curves.size(); ++i)
+{
+		QDomElement graph = domdoc_.createElement(XML_GRAPHCELL_GRAPH);
+		if(node->compoundwidget->gwMain->curves[i]->visible)
+			graph.setAttribute(XML_GRAPHCELL_LINE, XML_TRUE);
+		else
+			graph.setAttribute(XML_GRAPHCELL_LINE, XML_FALSE);
+
+		if(node->compoundwidget->gwMain->curves[i]->drawPoints)
+			graph.setAttribute(XML_GRAPHCELL_POINTS, XML_TRUE);
+		else
+			graph.setAttribute(XML_GRAPHCELL_POINTS, XML_FALSE);
+
+		graph.setAttribute(XML_GRAPHCELL_COLOR, QVariant(node->compoundwidget->gwMain->curves[i]->color_).toString());
+		
+		if(node->compoundwidget->gwMain->curves[i]->interpolation = INTERPOLATION_NONE)
+			graph.setAttribute(XML_GRAPHCELL_INTERPOLATION, XML_GRAPHCELL_NONE);
+		else if(node->compoundwidget->gwMain->curves[i]->interpolation = INTERPOLATION_LINEAR)
+			graph.setAttribute(XML_GRAPHCELL_INTERPOLATION, XML_GRAPHCELL_LINEAR);
+		else if(node->compoundwidget->gwMain->curves[i]->interpolation = INTERPOLATION_CONSTANT)
+			graph.setAttribute(XML_GRAPHCELL_INTERPOLATION, XML_GRAPHCELL_CONSTANT);
+
+		graph.setAttribute(XML_GRAPHCELL_X, node->compoundwidget->gwMain->curves[i]->x->variableName());
+		graph.setAttribute(XML_GRAPHCELL_Y, node->compoundwidget->gwMain->curves[i]->y->variableName());
+
+		graphcell.appendChild(graph);
+}
+
+QList<QGraphicsItem*> l = node->compoundwidget->gwMain->graphicsItems->children();
+
+for(int i = 0; i < l.size(); ++i)
+{
+	QBuffer b;
+	b.open( QBuffer::WriteOnly );
+	QDataStream ds( &b );
+
+	QDomElement shape = domdoc_.createElement(XML_GRAPHCELL_SHAPE);
+	QString type;
+
+	if(QGraphicsRectItem* r =dynamic_cast<QGraphicsRectItem*>(l[i]))
+	{
+		type = XML_GRAPHCELL_RECT;		
+		ds << r->rect() << r->pen() << r->brush();
+	}
+	else if(QGraphicsEllipseItem* r =dynamic_cast<QGraphicsEllipseItem*>(l[i]))
+	{
+		type = XML_GRAPHCELL_ELLIPSE;		
+		ds << r->rect() << r->pen() << r->brush();
+
+	}
+	else if(QGraphicsLineItem* r =dynamic_cast<QGraphicsLineItem*>(l[i]))
+	{
+		type = XML_GRAPHCELL_LINE;		
+		ds << r->line() << r->pen();
+	}
+
+	shape.setAttribute(XML_GRAPHCELL_SHAPETYPE, type);		
+
+	b.close();
+	shape.setAttribute( XML_GRAPHCELL_SHAPEDATA, QString(b.data().toBase64().data()));
+
+	graphcell.appendChild(shape);
+}
+
 		// Create an text element (for input) and append it to the element
-		QDomElement graphelement = domdoc_.createElement( XML_INPUTPART );
-		QDomText graphnode = domdoc_.createTextNode( node->text() );
-		graphelement.appendChild( graphnode );
-		graphcell.appendChild( graphelement );
+		QDomElement textelement = domdoc_.createElement( XML_INPUTPART );
+		QDomText textnode = domdoc_.createTextNode( node->text() );
+		textelement.appendChild( textnode );
+		graphcell.appendChild( textelement );
 
 		// Create an text element (for output) and append it to the element
 		QDomElement outputelement = domdoc_.createElement( XML_OUTPUTPART );
 		
 		QDomText outputnode;
-		if( node->isPlot() )
-			outputnode = domdoc_.createTextNode( node->textOutputHtml() );
-		else
-			outputnode = domdoc_.createTextNode( node->textOutput() );
+		outputnode = domdoc_.createTextNode( node->textOutput() );
 
 		outputelement.appendChild( outputnode );
 		graphcell.appendChild( outputelement );
@@ -304,8 +417,7 @@ namespace IAEX
 
 		// Check if any image have been include in the text and add them
 		// to the the the inputcell element
-		saveImages( graphcell, node->textOutputHtml() );
-	
+
 		// Add inputcell element to current element
 		currentElement_.appendChild( graphcell );
 	}

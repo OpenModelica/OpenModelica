@@ -65,17 +65,15 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtGui/QGridLayout>
 #include <QtGui/QResizeEvent>
 #include <QtCore/QEvent>
-//#include <QSlider>
-//#include "../Pltpkg2/graphWidget.h"
 #include "../Pltpkg2/compoundWidget.h"
+
 //IAEX Headers
 #include "cell.h"
-//#include "graphcelldelegate.h"
 #include "inputcelldelegate.h"
 #include "syntaxhighlighter.h"
 //#include "highlighter.h"
 #include "document.h"
-#include <QToolBar>
+//#include <QToolBar>
 
 namespace IAEX
 {   
@@ -138,6 +136,7 @@ namespace IAEX
 		virtual void setFocus(const bool focus);
 		virtual void setFocusOutput(const bool focus);	// Added 2006-02-03 AF
 		
+		void delegateFinished();
 		
 
 	protected:
@@ -179,8 +178,9 @@ namespace IAEX
 		Document *document_;
 
 //		GraphWidget* graphwidget;
+	public:
 		CompoundWidget* compoundwidget;
-		QToolBar *toolbar;
+//		QToolBar *toolbar;
 		//		QSlider* slider;
 	};
 

@@ -69,7 +69,11 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "cellcursor.h"
 #include "graphcell.h"
 
-
+#include <QImage>
+#include <QPainter>
+#include <QTemporaryFile>
+#include <QGraphicsRectItem>
+#include "../Pltpkg2/LegendLabel.h"
 namespace IAEX
 {
 	/*! 
@@ -274,6 +278,8 @@ namespace IAEX
 					
 					QString outputHtml( node->textOutputHtml() );
 					outputHtml += "<br><br>";
+
+
 					outputHtml.remove( "file:///" );
                     cursor.insertFragment( QTextDocumentFragment::fromHtml( outputHtml ));
 				}
@@ -353,18 +359,73 @@ namespace IAEX
 					cursor = tableCell.lastCursorPosition();
 					cursor.insertTable( 1, 1, tableFormatOutput );
 					
-					QString outputHtml( node->textOutputHtml() );
-					outputHtml += "<br><br>";
-					outputHtml.remove( "file:///" );
-                    cursor.insertFragment( QTextDocumentFragment::fromHtml( outputHtml ));
+
+					QRect r2 = node->compoundwidget->gwMain->rect();
+					r2.setWidth(r2.width()-1);
+					r2.setHeight(r2.height()-2);
+
+
+					QImage qi(r2.size(), QImage::Format_RGB32);
+
+					QPainter qp;
+					qp.begin(&qi);
+
+
+					//For some reason render() uses another background color for negative coordinates. A workaround is to add a white QGraphicsRectItem behind the other objects..			
+					QRectF rect = node->compoundwidget->gwMain->mapToScene(node->compoundwidget->gwMain->rect()).boundingRect();
+					rect.setWidth( rect.width() *2);
+					rect.setLeft(rect.left() - rect.width()/2);
+					rect.setTop(rect.top() - rect.height()/2);
+					rect.setHeight(rect.height() * 2);
+					QGraphicsRectItem* r = new QGraphicsRectItem(rect);
+					QBrush b(Qt::white);
+					r->setBrush(b);
+					r->setZValue(-100);
+					node->compoundwidget->gwMain->graphicsScene->addItem(r);
+
+
+					r2 = node->compoundwidget->gwMain->rect();
+					node->compoundwidget->gwMain->render(&qp, r2);
+					delete r;
+
+					qp.end();
+
+					
+					qi.save(QString("u77.bmp"),"BMP");					
+
+
+
+					QImage i3(node->compoundwidget->rect().size(),  QImage::Format_RGB32);
+					i3.fill(QColor(Qt::white).rgb());
+					QPainter p(&i3);
+					QRectF target = QRectF(node->compoundwidget->gwMain->rect());
+					target.moveTo(node->compoundwidget->gwMain->pos());
+					node->compoundwidget->gwMain->render(&p, target);
+
+					target = QRectF(node->compoundwidget->gvLeft->rect());
+					target.moveTo(node->compoundwidget->gvLeft->pos());
+					node->compoundwidget->gvLeft->render(&p, target);
+
+					target = QRectF(node->compoundwidget->gvBottom->rect());
+					target.moveTo(node->compoundwidget->gvBottom->pos());
+					node->compoundwidget->gvBottom->render(&p, target);
+
+					node->compoundwidget->yLabel->render(&p, node->compoundwidget->yLabel->pos());
+					node->compoundwidget->xLabel->render(&p, node->compoundwidget->xLabel->pos());
+					node->compoundwidget->plotTitle->render(&p, node->compoundwidget->plotTitle->pos());
+
+
+					QList<LegendLabel*> l = node->compoundwidget->legendFrame->findChildren<LegendLabel*>();
+					for(int i = 0; i < l.size(); ++i)
+						l[i]->render(&p, l[i]->pos()+node->compoundwidget->legendFrame->pos());
+
+					i3.save(QString("u78.bmp"), "BMP"); //TODO: generate unique file names and delete when finished
+
+
+
+					cursor.insertImage(QString("u78.bmp"));
 				}
 			}
-
-			/*
-			QString html = doc_->toHtml();
-			html += "<br><br>" + node->textHtml() + "<br>" + node->textOutputHtml();
-			html.remove( "file:///" );
-			doc_->setHtml( html );*/
 
 			if( firstChild_ )
 				firstChild_ = false;

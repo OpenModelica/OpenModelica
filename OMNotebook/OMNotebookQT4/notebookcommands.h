@@ -77,7 +77,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "inputcell.h"
 #include "cellgroup.h"
 #include "highlighterthread.h"
-
+#include <QDataStream>
 
 using namespace std;
 
@@ -170,8 +170,16 @@ namespace IAEX
 						// UTF-8, otherwise swedish letters didn't work.
 						// 2005-10-07 AF, Porting, changed from 'toCString()'
 						// to 'toByteArray()'
-						QTextStream filestream(&file);
-						filestream << doc.toByteArray();
+//						QTextStream filestream(&file);
+//						QDataStream filestream(&file);
+
+						if(filename_.endsWith("onbz", Qt::CaseInsensitive)) 
+//							filestream << qCompress(doc.toByteArray());
+							file.write(qCompress(doc.toByteArray(), 9));
+						else
+							//filestream << doc.toByteArray();
+							file.write(doc.toByteArray());
+
 						file.close();
 
 						// AF, Added this

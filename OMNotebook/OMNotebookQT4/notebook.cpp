@@ -77,7 +77,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtGui/QTextCursor>
 #include <QtGui/QTextEdit>
 #include <QtGui/QTextFrame>
-
+#include <QtGui/QToolBar>
 #include <QSettings>
 
 //IAEX Headers
@@ -152,6 +152,9 @@ namespace IAEX
 		subject_->attach(this);
 		setMinimumSize( 150, 220 );		//AF
 
+		toolBar = new QToolBar("Show toolbar", this);
+		
+
 		createFileMenu();
 		createEditMenu();
 		createCellMenu();
@@ -159,9 +162,11 @@ namespace IAEX
 		createInsertMenu();
 		createWindowMenu();
 		createAboutMenu();
+
+//		addToolBar(toolBar); //Add icons, update the edit menu etc.
 		
 		// 2006-01-16 AF, Added an icon to the window
-		setWindowIcon( QIcon(":/omnotebook_png.png") );
+		setWindowIcon( QIcon("./omnotebook_png.png") );
 
 		statusBar()->showMessage("Ready");
 		resize(800, 600);
@@ -349,6 +354,8 @@ namespace IAEX
 		// 2006-08-24 AF, delete findForm if it exists
 		if( findForm_ )
 			delete findForm_;
+
+		delete toolBar;
 	}
 
 	/*! 
@@ -401,12 +408,17 @@ namespace IAEX
 		newAction->setShortcut( tr("Ctrl+N") );
 		newAction->setStatusTip( tr("Create a new document") );
 		connect(newAction, SIGNAL(triggered()), this, SLOT(newFile()));
+//		newAction->setIcon(QIcon("./ico/new.png"));
+ 
+		toolBar->addAction(newAction);	
 
 		// OPEN FILE
 		openFileAction = new QAction( tr("&Open"), this );
 		openFileAction->setShortcut( tr("Ctrl+O") );
 		openFileAction->setStatusTip( tr("Open a file") );
 		connect(openFileAction, SIGNAL(triggered()), this, SLOT(openFile()));
+//		openFileAction->setIcon(QIcon("./ico/open.png"));
+		toolBar->addAction(openFileAction);	
 
 		// SAVE AS
 		saveAsAction = new QAction( tr("Save &As..."), this );
@@ -419,6 +431,9 @@ namespace IAEX
 		saveAction->setShortcut( tr("Ctrl+S") );
 		saveAction->setStatusTip( tr("Save the document") );
 		connect(saveAction, SIGNAL(triggered()), this, SLOT(save()));
+//		saveAction->setIcon(QIcon("./ico/save.png"));
+		toolBar->addAction(saveAction);	
+
 
 		// CLOSE FILE
 		closeFileAction = new QAction( tr("&Close"), this );
@@ -431,6 +446,7 @@ namespace IAEX
 		printAction->setShortcut( tr("Ctrl+P") );
 		printAction->setStatusTip( tr("Print the document") );
 		connect(printAction, SIGNAL(triggered()), this, SLOT(print()));
+		toolBar->addAction(printAction);	
 
 
 
@@ -514,6 +530,9 @@ namespace IAEX
 		connect( undoAction, SIGNAL( triggered() ),
 			this, SLOT( undoEdit() ));
 
+		toolBar->addAction(undoAction);	
+
+
 		// 2005-10-07 AF, Porting, replaced this
 		//QAction *redoAction = new QAction("Redo", "&Redo", 0, this, "redoaction");
 		redoAction = new QAction( tr("&Redo"), this);
@@ -522,12 +541,18 @@ namespace IAEX
 		connect( redoAction, SIGNAL( triggered() ),
 			this, SLOT( redoEdit() ));
 
+		toolBar->addAction(redoAction);	
+
+
 		// CUT
 		cutAction = new QAction( tr("Cu&t"), this);
 		cutAction->setShortcut( tr("Ctrl+X") );
 		cutAction->setStatusTip( tr("Cut selected text") );
 		connect( cutAction, SIGNAL( triggered() ),
 			this, SLOT( cutEdit() ));
+
+//		cutAction->setIcon(QIcon("./ico/cut.png"));
+		toolBar->addAction(cutAction);	
 
 		// COPY
 		copyAction = new QAction( tr("&Copy"), this);
@@ -536,6 +561,10 @@ namespace IAEX
 		connect( copyAction, SIGNAL( triggered() ),
 			this, SLOT( copyEdit() ));
 
+//		copyAction->setIcon(QIcon("./ico/copy.png"));
+		toolBar->addAction(copyAction);	
+
+
 		// PASTE
 		pasteAction = new QAction( tr("&Paste"), this);
 		pasteAction->setShortcut( tr("Ctrl+V") );
@@ -543,12 +572,17 @@ namespace IAEX
 		connect( pasteAction, SIGNAL( triggered() ),
 			this, SLOT( pasteEdit() ));
 		
+//		pasteAction->setIcon(QIcon("./ico/paste.png"));
+		toolBar->addAction(pasteAction);	
+
 		// FIND
 		findAction = new QAction( tr("&Find"), this);
 		findAction->setShortcut( tr("Ctrl+F") );
 		findAction->setStatusTip( tr("Search through the document") );
 		connect( findAction, SIGNAL( triggered() ),
 			this, SLOT( findEdit() ));
+
+		toolBar->addAction(findAction);	
 
 		// REPLACE, added 2006-08-24 AF
 		replaceAction = new QAction( tr("Re&place"), this);
@@ -1375,6 +1409,14 @@ namespace IAEX
 			this, SLOT(updateStyleMenu()));
 		connect( formatMenu, SIGNAL( aboutToShow() ),
 			this, SLOT( updateMenus() ));
+
+		formatMenu->addSeparator();
+		formatMenu->addAction(toolBar->toggleViewAction());
+		
+//		showToolBarAction = new QAction(formatMenu, "Show toolbar", true);
+//		connect(showToolBarAction, SIGNAL(toggled(bool)), toolBar, SLOT(setVisible(bool)));
+//		connect(toolBar->toggleViewAction(), SIGNAL(toggled(bool)), showToolBarAction
+
 	}
 
 	/*! 
@@ -1605,7 +1647,7 @@ namespace IAEX
 			else
 				redoAction->setEnabled( false );
 
-			// cut & copy (special fall för input)
+			// cut & copy (specialfall för input)
 			Cell *cell = document()->getCursor()->currentCell();
 			if( cell )
 			{
@@ -2288,7 +2330,7 @@ namespace IAEX
 					this,
 					"OMNotebook -- File Open",
 					openDir_,
-					"Notebooks (*.onb *.nb)" );
+					"Notebooks (*.onb *.onbz *.nb)" );
 			}
 			else
 			{
@@ -2397,12 +2439,17 @@ namespace IAEX
 				int result = QMessageBox::question( 0, tr("Close OMC"),
 					"OK to quit running OpenModelica Compiler process at exit?\n(Answer No if other OMShell/OMNotebook/Graphic editor is still running)", 
 					QMessageBox::Yes | QMessageBox::Default,
-					QMessageBox::No );
+					QMessageBox::No, QMessageBox::Cancel );
 
 				if( result == QMessageBox::Yes )
 				{
 				  QString quit = "quit()";
 				  omc->evalExpression( quit );
+				}
+				else if(result == QMessageBox::Cancel)
+				{
+					event->ignore();
+					return;
 				}
 			}
 			catch( exception &e )
@@ -2502,13 +2549,13 @@ namespace IAEX
 				this,
 				"Choose a filename to save under",
 				saveDir_,
-				"OpenModelica Notebooks (*.onb)");
+				"OpenModelica Notebooks (*.onb);;Compressed OM Notebooks (*.onbz)");
 		//}
 
 		if(!filename.isEmpty())
 		{
 			// 2005-09-30 AF, add check for fileend when saving.
-			if( !filename.endsWith( ".onb", Qt::CaseInsensitive ) )
+			if( !filename.endsWith( ".onb", Qt::CaseInsensitive ) && !filename.endsWith( ".onbz", Qt::CaseInsensitive ) )
 			{
 				qDebug( ".onb not found" );
 				filename.append( ".onb" );
@@ -2581,7 +2628,9 @@ namespace IAEX
 	{
 		QPrinter printer( QPrinter::HighResolution );
 	    //printer.setFullPage( true );
-		printer.setColorMode( QPrinter::GrayScale );
+
+//		printer.setColorMode( QPrinter::GrayScale ); 
+
 
 		QPrintDialog *dlg = new QPrintDialog(&printer, this);
 		if( dlg->exec() == QDialog::Accepted )
