@@ -1664,7 +1664,7 @@ algorithm
         ((daelow as DAELow.DAELOW(vars,_,_,eqnarr,_,_,ae,_,_,_))) = DAELow.lower(dae, false) "no dummy state" ;
         m = DAELow.incidenceMatrix(daelow);
         mt = DAELow.transposeMatrix(m);
-        jac = DAELow.calculateJacobian(vars, eqnarr, ae, m, mt);
+        jac = DAELow.calculateJacobian(vars, eqnarr, ae, m, mt,false);
         res = DAELow.dumpJacobianStr(jac);
       then
         (cache,Values.STRING(res),Interactive.SYMBOLTABLE(p,sp,ic_1,iv,cf,lf));
@@ -4975,7 +4975,7 @@ algorithm
       Env.Cache cache;
     case (cache,env,{exp1,Exp.CREF(componentRef = cr)},impl,st,msg)
       equation 
-        differentiated_exp = Derive.differentiateExp(exp1, cr);
+        differentiated_exp = Derive.differentiateExpCont(exp1, cr);
         differentiated_exp_1 = Exp.simplify(differentiated_exp);
         /*
          this is wrong... this should be used instead but unelabExp must be able to unelaborate a complete exp 

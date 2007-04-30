@@ -3787,7 +3787,7 @@ algorithm
         //print("mixed system, subsystem incidence matrix:\n");
         //DAELow.dumpIncidenceMatrix(m);
         //print("mixed system, calculating jacobian....\n");
-        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_1, mt_1) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
+        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_1, mt_1,true) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
         //print("mixed system, analyzing jacobian\n");
         jac_tp = DAELow.analyzeJacobian(cont_subsystem_dae, jac);
         //print("mixed syste, jacobian_str\n"); 
@@ -3815,7 +3815,7 @@ algorithm
         m = DAELow.incidenceMatrix(cont_subsystem_dae);
         m_1 = DAELow.absIncidenceMatrix(m);
         mt_1 = DAELow.transposeMatrix(m_1);
-        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_1, mt_1) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
+        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_1, mt_1,true) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
         jac_tp = DAELow.analyzeJacobian(cont_subsystem_dae, jac);
         (s0,cg_id1,numValues) = generateMixedHeader(cont_eqn, cont_var, disc_eqn, disc_var, cg_id);
         (Codegen.CFUNCTION(rettp,fn,retrec,arg,locvars,init,stmts,cleanups),cg_id2,extra_funcs1) = generateOdeSystem2(true/*mixed system*/,true,cont_subsystem_dae, jac, jac_tp, cg_id1);
@@ -3840,7 +3840,7 @@ algorithm
         m = DAELow.incidenceMatrix(subsystem_dae);
         m_1 = DAELow.absIncidenceMatrix(m);
         mt_1 = DAELow.transposeMatrix(m_1);
-        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_1, mt_1) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
+        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_1, mt_1,false) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
         jac_tp = DAELow.analyzeJacobian(subsystem_dae, jac);
         (s1,cg_id_1,f1) = generateOdeSystem2(false,genDiscrete,subsystem_dae, jac, jac_tp, cg_id) "	print \"generating subsystem :\" &
 	DAELow.dump subsystem_dae &" ;

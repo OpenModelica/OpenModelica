@@ -63,17 +63,19 @@ int dummyJacobianDASSL(double *t, double *y, double *yprime, double *pd, long *c
 }
 
 /* \brief 
- * calculates a tiny step, defaults to 1e-6.
+ * calculates a tiny step
  * 
- * A tiny step is taken at initialization to check events. If the simulation interval is small
- * < 1e-5 this step must be made relative to the simulation interval, otherwise 1e-6 is used.
+ * A tiny step is taken at initialization to check events. The tiny step is calculated as
+ * 200*uround*max(abs(T0),abs(T1)) = 200*uround*abs(T1), when simulating from T0 to T1, and uround is the machine precision. 
  */
- double calcTinyStep(double start, double stop)
+ double calcTinyStep(double tout)
  {
- 	if (fabs(stop-start) < 1e-5) {
- 		return fabs(stop-start)/1000; // Tiny step a thousand of sim interval.
+ 	double uround = dlamch_("P",1);
+ 	if (tout == 0.0) { 
+ 		return 1000.0*uround;
+ 	} else { 	
+ 		return 1000.0*uround*fabs(tout);
  	}
- 	return 1e-6;
  }
 
 /* The main function for the dassl solver*/
@@ -193,7 +195,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
 	    
   }
   
-  tout = globalData->timeValue+calcTinyStep(start,stop); // take tiny step.
+  tout = globalData->timeValue+calcTinyStep(globalData->timeValue); // take tiny step.
     //saveall();
  
   function_updateDependents(); 
@@ -240,7 +242,28 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
 	   idid = -99; break;}
 
       saveall();
-        
+    // Make a tiny step so we are sure that crossings have really occured. 
+    //This is needed since state events are found by numerical interpolation and therefore it is not 
+    // certain that the event will cause the relation to trigger, e.g x < 0 might correspond to 0.000000000000000145 < 0  
+      info[0]=1;
+      tout=globalData->timeValue+calcTinyStep(tout);
+      {
+		long *tmp_jroot = new long[globalData->nZeroCrossing];
+		int i;
+		for (i=0;i<globalData->nZeroCrossing;i++) {
+		  tmp_jroot[i]=jroot[i];
+		}
+		DDASRT(functionDAE_res, &globalData->nStates,   
+               &globalData->timeValue, globalData->states, globalData->statesDerivatives, &tout, 
+               info,&rtol, &atol, 
+	       &idid,rwork,&lrw, iwork, &liw, globalData->algebraics, &ipar, dummyJacobianDASSL, 
+	       function_zeroCrossing, &globalData->nZeroCrossing, jroot);
+		for (i=0;i<globalData->nZeroCrossing;i++) {
+	  	jroot[i]=tmp_jroot[i];
+		}
+        	delete[] tmp_jroot;
+      } // end tiny step
+      
       if (sim_verbose) { cout << "Checking events at time " << globalData->timeValue << endl; }
 //      emit();
       calcEnabledZeroCrossings();

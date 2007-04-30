@@ -10581,14 +10581,17 @@ algorithm
   outExp:=
   matchcontinue (inExp,inVariables)
     local
-      list<Exp.Exp> term_lst,rhs_lst;
+      list<Exp.Exp> term_lst,rhs_lst,rhs_lst2;
       Exp.Exp new_exp,res,exp;
       Variables vars;
     case (exp,vars)
       equation 
         term_lst = Exp.allTerms(exp);
         rhs_lst = Util.listSelect1(term_lst, vars, freeFromAnyVar);
-        new_exp = Exp.makeSum(rhs_lst);
+        /* A term can contain if-expressions that has branches that are on rhs and other branches that
+        are on lhs*/
+        rhs_lst2 = ifBranchesFreeFromVar(term_lst,vars);
+        new_exp = Exp.makeSum(listAppend(rhs_lst,rhs_lst2));
         res = Exp.simplify(new_exp);
       then
         res;
@@ -10600,6 +10603,94 @@ algorithm
   end matchcontinue;
 end getEqnsysRhsExp;
 
+public function ifBranchesFreeFromVar "Retrieves if-branches free from any of the variables passed as argument.
+
+This is done by replacing the variables with zero."
+  input list<Exp.Exp> expl;
+  input Variables vars;
+  output list<Exp.Exp> outExpl;  
+algorithm
+  outExpl := matchcontinue(expl,vars)
+    local Exp.Exp cond,t,f,e1,e2;
+      VarTransform.VariableReplacements repl;
+      Exp.Operator op;
+      Absyn.Path path;
+      list<Exp.Exp> expl2;
+      Boolean tpl ;
+      Boolean b;
+      Exp.Type ty;
+    case({},vars) then {};
+    case(Exp.IFEXP(cond,t,f)::expl,vars) equation
+      repl = makeZeroReplacements(vars);
+      t = ifBranchesFreeFromVar2(t,repl);
+      f = ifBranchesFreeFromVar2(f,repl);
+      expl = ifBranchesFreeFromVar(expl,vars);
+    then (Exp.IFEXP(cond,t,f)::expl);
+    case(Exp.BINARY(e1,op,e2)::expl,vars) equation
+      repl = makeZeroReplacements(vars);
+      {e1} = ifBranchesFreeFromVar({e1},vars);
+      {e2} = ifBranchesFreeFromVar({e2},vars);
+      expl = ifBranchesFreeFromVar(expl,vars);
+    then (Exp.BINARY(e1,op,e2)::expl);
+      
+    case(Exp.UNARY(op,e1)::expl,vars) equation
+      repl = makeZeroReplacements(vars);
+      {e1} = ifBranchesFreeFromVar({e1},vars);
+      expl = ifBranchesFreeFromVar(expl,vars);
+    then (Exp.UNARY(op,e1)::expl);
+
+    case(Exp.CALL(path,expl2,tpl,b,ty)::expl,vars) equation
+      repl = makeZeroReplacements(vars);
+      (expl2 as _::_) = ifBranchesFreeFromVar(expl2,vars);
+      expl = ifBranchesFreeFromVar(expl,vars);
+    then (Exp.CALL(path,expl2,tpl,b,ty)::expl);      
+      
+  case(_::expl,vars) equation
+      expl = ifBranchesFreeFromVar(expl,vars);
+  then expl;
+  end matchcontinue;    
+end ifBranchesFreeFromVar;
+
+protected function ifBranchesFreeFromVar2 "Help function to ifBranchesFreeFromVar, 
+replaces variables in if branches (not conditions) recursively (to include elseifs)"
+  input Exp.Exp ifBranch;
+  input VarTransform.VariableReplacements repl;
+  output Exp.Exp outIfBranch;
+algorithm
+  outIfBranch := matchcontinue(ifBranch,repl)
+  local Exp.Exp cond,t,f,e;
+    case(Exp.IFEXP(cond,t,f),repl) equation
+      t = ifBranchesFreeFromVar2(t,repl);
+      f = ifBranchesFreeFromVar2(f,repl);
+    then Exp.IFEXP(cond,t,f);
+    case(e,repl) equation
+      e = VarTransform.replaceExp(e,repl,NONE);
+    then e;
+  end matchcontinue;  
+end ifBranchesFreeFromVar2;
+
+protected function makeZeroReplacements "Help function to ifBranchesFreeFromVar, creates replacement rules
+v -> 0, for all variables"
+  input Variables vars;
+  output VarTransform.VariableReplacements repl;
+  protected list<Var> varLst;
+algorithm
+  varLst := varList(vars);
+  repl := Util.listFold(varLst,makeZeroReplacement,VarTransform.emptyReplacements());
+end makeZeroReplacements;
+
+protected function makeZeroReplacement "helper function to makeZeroReplacements.
+Creates replacement Var-> 0"  
+  input Var var;
+  input VarTransform.VariableReplacements repl;
+  output VarTransform.VariableReplacements outRepl;
+  protected
+  Exp.ComponentRef cr;
+algorithm
+  cr :=  varCref(var);
+  outRepl := VarTransform.addReplacement(repl,cr,Exp.RCONST(0.0));
+end makeZeroReplacement;
+  
 public function getEquationBlock "function: getEquationBlock
   author: PA
    
@@ -10874,10 +10965,11 @@ public function calculateJacobian "function: calculateJacobian
   input MultiDimEquation[:] inMultiDimEquationArray;
   input IncidenceMatrix inIncidenceMatrix;
   input IncidenceMatrixT inIncidenceMatrixT;
+  input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
   output Option<list<tuple<Integer, Integer, Equation>>> outTplIntegerIntegerEquationLstOption;
 algorithm 
   outTplIntegerIntegerEquationLstOption:=
-  matchcontinue (inVariables,inEquationArray,inMultiDimEquationArray,inIncidenceMatrix,inIncidenceMatrixT)
+  matchcontinue (inVariables,inEquationArray,inMultiDimEquationArray,inIncidenceMatrix,inIncidenceMatrixT,differentiateIfExp)
     local
       list<Equation> eqn_lst,eqn_lst_1;
       list<tuple<Value, Value, Equation>> jac,jac_1;
@@ -10885,15 +10977,15 @@ algorithm
       EquationArray eqns;
       MultiDimEquation[:] ae;
       list<Value>[:] m,mt;
-    case (vars,eqns,ae,m,mt)
+    case (vars,eqns,ae,m,mt,differentiateIfExp)
       equation 
         eqn_lst = equationList(eqns);
         eqn_lst_1 = Util.listMap(eqn_lst, equationToResidualForm);
-        SOME(jac) = calculateJacobianRows(eqn_lst_1, vars, ae, m, mt);
+        SOME(jac) = calculateJacobianRows(eqn_lst_1, vars, ae, m, mt,differentiateIfExp);
         jac_1 = listReverse(jac);
       then
         SOME(jac_1);
-    case (_,_,_,_,_) then NONE;  /* no analythic jacobian available */ 
+    case (_,_,_,_,_,_) then NONE;  /* no analythic jacobian available */ 
   end matchcontinue;
 end calculateJacobian;
 
@@ -10912,9 +11004,10 @@ protected function calculateJacobianRows "function: calculateJacobianRows
   input MultiDimEquation[:] ae;
   input IncidenceMatrix m;
   input IncidenceMatrixT mt;
+  input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";   
   output Option<list<tuple<Integer, Integer, Equation>>> res;
 algorithm 
-  res := calculateJacobianRows2(eqns, vars, ae, m, mt, 1);
+  res := calculateJacobianRows2(eqns, vars, ae, m, mt, 1,differentiateIfExp);
 end calculateJacobianRows;
 
 protected function calculateJacobianRows2 "function: calculateJacobianRows2
@@ -10928,10 +11021,11 @@ protected function calculateJacobianRows2 "function: calculateJacobianRows2
   input IncidenceMatrix inIncidenceMatrix;
   input IncidenceMatrixT inIncidenceMatrixT;
   input Integer inInteger;
+  input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";     
   output Option<list<tuple<Integer, Integer, Equation>>> outTplIntegerIntegerEquationLstOption;
 algorithm 
   outTplIntegerIntegerEquationLstOption:=
-  matchcontinue (inEquationLst,inVariables,inMultiDimEquationArray,inIncidenceMatrix,inIncidenceMatrixT,inInteger)
+  matchcontinue (inEquationLst,inVariables,inMultiDimEquationArray,inIncidenceMatrix,inIncidenceMatrixT,inInteger,differentiateIfExp)
     local
       Value eqn_indx_1,eqn_indx;
       list<tuple<Value, Value, Equation>> l1,l2,res;
@@ -10940,12 +11034,12 @@ algorithm
       Variables vars;
       MultiDimEquation[:] ae;
       list<Value>[:] m,mt;
-    case ({},_,_,_,_,_) then SOME({}); 
-    case ((eqn :: eqns),vars,ae,m,mt,eqn_indx)
+    case ({},_,_,_,_,_,_) then SOME({}); 
+    case ((eqn :: eqns),vars,ae,m,mt,eqn_indx,differentiateIfExp)
       equation 
         eqn_indx_1 = eqn_indx + 1;
-        SOME(l1) = calculateJacobianRows2(eqns, vars, ae, m, mt, eqn_indx_1);
-        SOME(l2) = calculateJacobianRow(eqn, vars, ae, m, mt, eqn_indx);
+        SOME(l1) = calculateJacobianRows2(eqns, vars, ae, m, mt, eqn_indx_1,differentiateIfExp);
+        SOME(l2) = calculateJacobianRow(eqn, vars, ae, m, mt, eqn_indx,differentiateIfExp);
         res = listAppend(l1, l2);
       then
         SOME(res);
@@ -10971,10 +11065,11 @@ protected function calculateJacobianRow "function: calculateJacobianRow
   input IncidenceMatrix inIncidenceMatrix;
   input IncidenceMatrixT inIncidenceMatrixT;
   input Integer inInteger;
+  input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";       
   output Option<list<tuple<Integer, Integer, Equation>>> outTplIntegerIntegerEquationLstOption;
 algorithm 
   outTplIntegerIntegerEquationLstOption:=
-  matchcontinue (inEquation,inVariables,inMultiDimEquationArray,inIncidenceMatrix,inIncidenceMatrixT,inInteger)
+  matchcontinue (inEquation,inVariables,inMultiDimEquationArray,inIncidenceMatrix,inIncidenceMatrixT,inInteger,differentiateIfExp)
     local
       list<Value> var_indxs,var_indxs_1,var_indxs_2,ds;
       list<tuple<Value, Value, Equation>> eqns;
@@ -10984,23 +11079,23 @@ algorithm
       list<Value>[:] m,mt;
       Value eqn_indx,indx;
       list<Exp.Exp> in_,out,expl;
-    case (RESIDUAL_EQUATION(exp = e),vars,ae,m,mt,eqn_indx)
+    case (RESIDUAL_EQUATION(exp = e),vars,ae,m,mt,eqn_indx,differentiateIfExp)
       equation 
         var_indxs = varsInEqn(m, eqn_indx) "residual equations" ;
         var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, int_eq) "Remove duplicates and get in correct order: acsending index" ;
         var_indxs_2 = listReverse(var_indxs_1);
-        SOME(eqns) = calculateJacobianRow2(e, vars, eqn_indx, var_indxs_2);
+        SOME(eqns) = calculateJacobianRow2(e, vars, eqn_indx, var_indxs_2,differentiateIfExp);
       then
         SOME(eqns);
-    case (ALGORITHM(index = indx,in_ = in_,out = out),vars,ae,m,mt,eqn_indx) then NONE;  /* algorithms give no jacobian */ 
-    case (ARRAY_EQUATION(index = indx,crefOrDerCref = expl),vars,ae,m,mt,eqn_indx) /* array equations */ 
+    case (ALGORITHM(index = indx,in_ = in_,out = out),vars,ae,m,mt,eqn_indx,differentiateIfExp) then NONE;  /* algorithms give no jacobian */ 
+    case (ARRAY_EQUATION(index = indx,crefOrDerCref = expl),vars,ae,m,mt,eqn_indx,differentiateIfExp) /* array equations */ 
       equation 
         MULTIDIM_EQUATION(ds,e1,e2) = ae[indx + 1];
         new_exp = Exp.BINARY(e1,Exp.SUB(Exp.REAL()),e2);
         var_indxs = varsInEqn(m, eqn_indx);
         var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, int_eq) "Remove duplicates and get in correct order: acsending index" ;
         var_indxs_2 = listReverse(var_indxs_1);
-        SOME(eqns) = calculateJacobianRow2(new_exp, vars, eqn_indx, var_indxs_2);
+        SOME(eqns) = calculateJacobianRow2(new_exp, vars, eqn_indx, var_indxs_2,differentiateIfExp);
       then
         SOME(eqns);
   end matchcontinue;
@@ -11037,10 +11132,11 @@ protected function calculateJacobianRow2 "function: calculateJacobianRow2
   input Variables inVariables;
   input Integer inInteger;
   input list<Integer> inIntegerLst;
+  input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";         
   output Option<list<tuple<Integer, Integer, Equation>>> outTplIntegerIntegerEquationLstOption;
 algorithm 
   outTplIntegerIntegerEquationLstOption:=
-  matchcontinue (inExp,inVariables,inInteger,inIntegerLst)
+  matchcontinue (inExp,inVariables,inInteger,inIntegerLst,differentiateIfExp)
     local
       Exp.Exp e,e_1,e_2;
       Var v;
@@ -11049,14 +11145,14 @@ algorithm
       Variables vars;
       Value eqn_indx,vindx;
       list<Value> vindxs;
-    case (e,_,_,{}) then SOME({}); 
-    case (e,vars,eqn_indx,(vindx :: vindxs))
+    case (e,_,_,{},_) then SOME({}); 
+    case (e,vars,eqn_indx,(vindx :: vindxs),differentiateIfExp)
       equation 
         v = getVarAt(vars, vindx);
         cr = varCref(v);
-        e_1 = Derive.differentiateExp(e, cr);
+        e_1 = Derive.differentiateExp(e, cr,differentiateIfExp);
         e_2 = Exp.simplify(e_1);
-        SOME(es) = calculateJacobianRow2(e, vars, eqn_indx, vindxs);
+        SOME(es) = calculateJacobianRow2(e, vars, eqn_indx, vindxs,differentiateIfExp);
       then
         SOME(((eqn_indx,vindx,RESIDUAL_EQUATION(e_2)) :: es));
   end matchcontinue;

@@ -7310,7 +7310,7 @@ algorithm
     case (e1,e2,(crexp as CREF(componentRef = cr))) /* e1 e2 e3 */ 
       equation 
         lhs = BINARY(e1,SUB(REAL()),e2);
-        lhsder = Derive.differentiateExp(lhs, cr);
+        lhsder = Derive.differentiateExpCont(lhs, cr);
         lhsder_1 = simplify(lhsder);
         false = expContains(lhsder_1, crexp);
         (lhszero,_) = replaceExp(lhs, crexp, RCONST(0.0));
@@ -7327,7 +7327,7 @@ algorithm
     case (e1,e2,(crexp as CREF(componentRef = cr)))
       equation 
         lhs = BINARY(e1,SUB(REAL()),e2);
-        lhsder = Derive.differentiateExp(lhs, cr);
+        lhsder = Derive.differentiateExpCont(lhs, cr);
         lhsder_1 = simplify(lhsder);
         true = expContains(lhsder_1, crexp);
         Print.printBuf("solve2 failed: Not linear: ");
@@ -7345,7 +7345,7 @@ algorithm
     case (e1,e2,(crexp as CREF(componentRef = cr)))
       equation 
         lhs = BINARY(e1,SUB(REAL()),e2);
-        lhsder = Derive.differentiateExp(lhs, cr);
+        lhsder = Derive.differentiateExpCont(lhs, cr);
         lhsder_1 = simplify(lhsder);
         Print.printBuf("solve2 failed: ");
         printExp(e1);
