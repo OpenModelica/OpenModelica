@@ -5013,7 +5013,7 @@ algorithm
   matchcontinue (inExpComponentRefLst1,inInteger2,inInteger3)
     local
       Integer cg_id,indx_1,cg_id_1,indx;
-      String cr_str,indx_str,stmt;
+      String cr_str,indx_str,stmt,stmt2;
       Codegen.CFunction func,func_1;
       Exp.ComponentRef cr;
       list<Exp.ComponentRef> crs;
@@ -5025,7 +5025,8 @@ algorithm
         indx_1 = indx + 1;
         (func,cg_id_1) = generateOdeSystem2NonlinearSetvector(crs, indx_1, cg_id);
         stmt = Util.stringAppendList({"nls_x[",indx_str,"] = extraPolate(",cr_str,");"});
-        func_1 = Codegen.cAddStatements(func, {stmt});
+        stmt2 = Util.stringAppendList({"nls_xold[",indx_str,"] = old(&",cr_str,");"});
+        func_1 = Codegen.cAddStatements(func, {stmt,stmt2});
       then
         (func_1,cg_id_1);
         
@@ -5099,7 +5100,7 @@ algorithm
         indx_str = intString(indx);
         indx_1 = indx + 1;
         (func,cg_id_1) = generateOdeSystem2NonlinearStoreResults(crs, indx_1, cg_id);
-        stmt = Util.stringAppendList({cr_str," = roundEps(nls_x[",indx_str,"]);"});
+        stmt = Util.stringAppendList({cr_str," = nls_x[",indx_str,"];"});
         func_1 = Codegen.cAddStatements(func, {stmt});
       then
         (func_1,cg_id_1);
