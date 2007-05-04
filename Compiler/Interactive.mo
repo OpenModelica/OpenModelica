@@ -6382,6 +6382,13 @@ algorithm
       then
         (Absyn.MODIFICATION(f,each_,cr,SOME(Absyn.CLASSMOD(args_1,exp)),cmt) :: rest);
         
+         // modification, m.n for m.n
+    case ((Absyn.MODIFICATION(finalItem = f,each_ = each_,componentReg = cr1,modification = SOME(Absyn.CLASSMOD(args,exp)),comment = cmt) :: rest),cr2,mod)
+      equation 
+        true = Absyn.crefEqual(cr1,cr2);
+      then
+        (Absyn.MODIFICATION(f,each_,cr1,SOME(mod),cmt) :: rest);
+        
         // next element
     case ((m :: rest),submodident,mod)
       local Absyn.ComponentRef submodident;
