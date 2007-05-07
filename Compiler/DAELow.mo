@@ -128,7 +128,7 @@ uniontype Equation "- Equation"
   record RESIDUAL_EQUATION
     Exp.Exp exp "exp ; not present from front end" ;
   end RESIDUAL_EQUATION;
-
+  
   record ALGORITHM
     Integer index      "Index in algorithms, 0..n-1" ;
     list<Exp.Exp> in_  "Inputs CREF or der(CREF)" ;
@@ -563,6 +563,7 @@ algorithm
   (vars,knvars,eqns,reqns,ieqns,aeqns1) := removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, s);
   vars_1 := detectImplicitDiscrete(vars, eqns);
   eqns_1 := sortEqn(eqns);
+  (eqns_1,ieqns,aeqns1,algs,vars_1) := expandDerOperator(vars_1,eqns_1,ieqns,aeqns1,algs);
   (zero_crossings) := findZeroCrossings(vars_1, knvars,eqns_1, whenclauses_1,algs);
   eqnarr := listEquation(eqns_1);
   reqnarr := listEquation(reqns);
@@ -572,6 +573,358 @@ algorithm
   outDAELow := DAELOW(vars_1,knvars,extVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,
           EVENT_INFO(whenclauses_1,zero_crossings),extObjCls);
 end lower;
+
+protected function expandDerOperator "expands der(expr) using Derive.differentiteExpTime. 
+This can not be done in Static, since we need all time-dependent variables, which is only available
+in DAELow."
+  input Variables vars;
+  input list<Equation> eqns;
+  input list<Equation> ieqns;
+  input list<MultiDimEquation> aeqns;
+  input list<Algorithm.Algorithm> algs;
+ 
+  output list<Equation> outEqns;
+  output list<Equation> outIeqns;
+  output list<MultiDimEquation> outAeqns;
+  output list<Algorithm.Algorithm> outAlgs;
+  output Variables outVars;  
+algorithm
+  (outEqns, outIeqns,outAeqns,outAlgs,outVars) := 
+  matchcontinue(vars,eqns,ieqns,aeqns,algs)
+    case(vars,eqns,ieqns,aeqns,algs) equation
+      (eqns,vars) = expandDerOperatorEqns(eqns,vars);
+      (ieqns,vars) = expandDerOperatorEqns(ieqns,vars); 
+      (aeqns,vars) = expandDerOperatorArrEqns(aeqns,vars);
+      (algs,vars) = expandDerOperatorAlgs(algs,vars);
+    then(eqns,ieqns,aeqns,algs,vars);
+  end matchcontinue; 
+end expandDerOperator;
+
+protected function expandDerOperatorEqns "Help function to expandDerOperator"
+  input list<Equation> eqns;
+  input Variables vars;
+  output list<Equation> outEqns;
+  output Variables outVars;
+algorithm
+  (outEqns,outVars) := matchcontinue(eqns,vars) 
+  local Equation e;
+    case({},vars) then ({},vars);
+    case(e::eqns,vars) equation
+      (e,vars) = expandDerOperatorEqn(e,vars);
+      (eqns,vars)  = expandDerOperatorEqns(eqns,vars);
+    then (e::eqns,vars);
+    case(_,_) equation
+      Debug.fprint("failtrace", "-expandDerOperatorEqns failed\n");
+      then fail();
+    end matchcontinue;
+end expandDerOperatorEqns;
+
+protected function expandDerOperatorEqn "Help function to expandDerOperator, handles Equations"
+  input Equation eqn;
+  input Variables vars;  
+  output Equation outEqn;
+  output Variables outVars; 
+algorithm
+  (outEqn,outVars) := matchcontinue(eqn,vars)
+  local Exp.Exp e1,e2; list<Exp.Exp> expl; Integer i; Exp.ComponentRef cr; WhenEquation wheneq;
+    case(EQUATION(e1,e2),vars) equation
+      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+      ((e2,vars)) = Exp.traverseExp(e2,expandDerExp,vars);            
+    then (EQUATION(e1,e2),vars);      
+    case  (ARRAY_EQUATION(i,expl),vars) then (ARRAY_EQUATION(i,expl),vars);
+    case (SOLVED_EQUATION(cr,e1),vars) equation
+      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+    then (SOLVED_EQUATION(cr,e1),vars);
+    case(RESIDUAL_EQUATION(e1),vars) equation
+      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+    then (RESIDUAL_EQUATION(e1),vars);     
+    case (eqn as ALGORITHM(_,_,_),vars) then (eqn,vars);
+    case (WHEN_EQUATION(wheneq),vars) equation
+      (wheneq,vars) = expandDerOperatorWhenEqn(wheneq,vars);
+      
+    then (WHEN_EQUATION(wheneq),vars);
+    case (eqn ,vars) equation
+      Debug.fprint("failtrace", "-expandDerOperatorEqn, eqn ="); 
+      Debug.fprint("failtrace", equationStr(eqn));
+      Debug.fprint("failtrace", " failed\n");      
+    then fail();
+  end matchcontinue;    
+end expandDerOperatorEqn;
+
+protected function expandDerOperatorWhenEqn "Helper function to expandDerOperatorWhenEqn"
+  input WhenEquation wheneq;
+  input Variables vars;
+  output WhenEquation outWheneq;
+  output Variables outVars;
+algorithm
+  (outWheneq, outVars) := matchcontinue(wheneq,vars)
+    local Exp.ComponentRef cr; Exp.Exp e1; Integer indx; WhenEquation elsewheneq;
+    case(WHEN_EQ(indx,cr,e1,SOME(elsewheneq)),vars) equation
+      print("A1\n");
+      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+      print("A2\n");
+      (elsewheneq,vars) = expandDerOperatorWhenEqn(elsewheneq,vars);
+      print("A3\n");      
+    then (WHEN_EQ(indx,cr,e1,SOME(elsewheneq)),vars);
+
+    case(WHEN_EQ(indx,cr,e1,NONE),vars) equation
+      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+    then (WHEN_EQ(indx,cr,e1,NONE),vars);
+  end matchcontinue;  
+end expandDerOperatorWhenEqn;  
+
+protected function expandDerOperatorAlgs "Help function to expandDerOperator"
+  input list<Algorithm.Algorithm> algs;
+  input Variables vars;
+  output list<Algorithm.Algorithm> outAlgs;
+  output Variables outVars;
+algorithm
+  (outAlgs,outVars) := matchcontinue(algs,vars) 
+  local Algorithm.Algorithm a; 
+    case({},vars) then ({},vars);
+    case(a::algs,vars) equation
+      (a,vars) = expandDerOperatorAlg(a,vars);
+      (algs,vars)  = expandDerOperatorAlgs(algs,vars);
+    then (a::algs,vars);
+ 
+    case(_,_) equation
+      Debug.fprint("failtrace", "-expandDerOperatorAlgs failed\n");
+      then fail();
+
+  end matchcontinue;
+end expandDerOperatorAlgs;
+
+protected function expandDerOperatorAlg "Help function to to expandDerOperator, handles Algorithms"
+  input Algorithm.Algorithm alg;
+  input Variables vars;  
+  output Algorithm.Algorithm outAlg;
+  output Variables outVars;
+algorithm
+  (outAlg,outVars) := matchcontinue(alg,vars)
+  local list<Algorithm.Statement> stmts;
+    case(Algorithm.ALGORITHM(stmts),vars) equation
+      (stmts,vars)  = expandDerOperatorStmts(stmts,vars);
+    then (Algorithm.ALGORITHM(stmts),vars);      
+  end matchcontinue;    
+end expandDerOperatorAlg; 
+
+protected function expandDerOperatorStmts "Help function to expandDerOperatorAlg"
+  input list<Algorithm.Statement> stmts;
+  input Variables vars;
+  output list<Algorithm.Statement> outStmts;
+  output Variables outVars;
+algorithm
+  (outStmts,outVars) := matchcontinue(stmts,vars) 
+  local Algorithm.Statement s; 
+    case({},vars) then ({},vars);
+    case(s::stmts,vars) equation
+      (s,vars) = expandDerOperatorStmt(s,vars);
+      (stmts,vars)  = expandDerOperatorStmts(stmts,vars);
+      then (s::stmts,vars);
+  end matchcontinue;
+end expandDerOperatorStmts;
+
+protected function expandDerOperatorStmt "Help function to expandDerOperatorAlg."
+  input Algorithm.Statement stmt;
+  input Variables vars;
+  output Algorithm.Statement outStmt;
+  output Variables outVars;
+algorithm 
+  (outStmt,outVars) := matchcontinue(stmt,vars) 
+    local Exp.Type tp; Exp.ComponentRef cr;
+      list<Exp.Exp> expl;
+      Algorithm.Ident id; Boolean b;
+      list<Algorithm.Statement> stmts;
+      list<Integer> hv;
+      Algorithm.Statement stmt;
+      Exp.Exp e1,e2;
+      Algorithm.Else elseB;
+      
+    case(Algorithm.ASSIGN(tp,cr,e1),vars) equation
+      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);         
+    then (Algorithm.ASSIGN(tp,cr,e1),vars); 
+
+    case(Algorithm.TUPLE_ASSIGN(tp,expl,e1),vars) equation
+      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+      (expl,vars) = expandDerExps(expl,vars);
+    then (Algorithm.TUPLE_ASSIGN(tp,expl,e1),vars);
+
+    case(Algorithm.ASSIGN_ARR(tp,cr,e1),vars) equation
+      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);         
+    then (Algorithm.ASSIGN_ARR(tp,cr,e1),vars); 
+
+    case(Algorithm.IF(e1,stmts,elseB),vars) equation
+      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+      (stmts,vars) = expandDerOperatorStmts(stmts,vars);
+      (elseB,vars) = expandDerOperatorElseBranch(elseB,vars);
+    then (Algorithm.IF(e1,stmts,elseB),vars);
+
+    case(Algorithm.FOR(tp,b,id,e1,stmts),vars) equation 
+      (stmts,vars) = expandDerOperatorStmts(stmts,vars);
+      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+    then (Algorithm.FOR(tp,b,id,e1,stmts),vars);      
+      
+    case(Algorithm.WHILE(e1,stmts),vars) equation
+      (stmts,vars) = expandDerOperatorStmts(stmts,vars);
+      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+    then (Algorithm.WHILE(e1,stmts),vars);
+ 
+    case(Algorithm.WHEN(e1,stmts,SOME(stmt),hv),vars) equation
+      (stmts,vars) = expandDerOperatorStmts(stmts,vars);
+      (stmt,vars) = expandDerOperatorStmt(stmt,vars);
+      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+    then (Algorithm.WHEN(e1,stmts,SOME(stmt),hv),vars);
+
+    case(Algorithm.WHEN(e1,stmts,NONE,hv),vars) equation
+      (stmts,vars) = expandDerOperatorStmts(stmts,vars);
+      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+    then (Algorithm.WHEN(e1,stmts,NONE,hv),vars);
+   
+    case(Algorithm.ASSERT(e1,e2),vars) equation
+      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+      ((e2,vars)) = Exp.traverseExp(e2,expandDerExp,vars);      
+    then (Algorithm.ASSERT(e1,e2),vars);
+      
+    case(Algorithm.TERMINATE(e1),vars) equation
+      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+    then (Algorithm.TERMINATE(e1),vars);
+
+    case(Algorithm.REINIT(e1,e2),vars) equation
+      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+      ((e1,vars)) = Exp.traverseExp(e2,expandDerExp,vars);      
+    then (Algorithm.REINIT(e1,e2),vars);      
+
+    case(stmt,vars)      then (stmt,vars);      
+
+  end matchcontinue;
+end  expandDerOperatorStmt;
+
+protected function expandDerOperatorElseBranch "Help function to expandDerOperatorStmt, for else branches in if statements"
+  input Algorithm.Else elseB;
+  input Variables vars;
+  output Algorithm.Else outElseB;
+  output Variables outVars;
+algorithm
+  (outElseB,outVars) := matchcontinue(elseB,vars)
+    local Exp.Exp e1;
+      list<Algorithm.Statement> stmts;
+      Algorithm.Else elseB;
+      
+    case(Algorithm.NOELSE(),vars) then (Algorithm.NOELSE(),vars);
+      
+    case(Algorithm.ELSEIF(e1,stmts,elseB),vars) equation
+      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+      (stmts,vars) = expandDerOperatorStmts(stmts,vars);
+      (elseB,vars) = expandDerOperatorElseBranch(elseB,vars);
+    then (Algorithm.ELSEIF(e1,stmts,elseB),vars);
+  end matchcontinue;  
+end expandDerOperatorElseBranch;
+
+protected function expandDerOperatorArrEqns "Help function to expandDerOperator"
+  input list<MultiDimEquation> eqns;
+  input Variables vars;
+  output list<MultiDimEquation> outEqns;
+  output Variables outVars;
+algorithm
+  (outEqns,outVars) := matchcontinue(eqns,vars) 
+  local MultiDimEquation e;
+    case({},vars) then ({},vars);
+    case(e::eqns,vars) equation
+      (e,vars) = expandDerOperatorArrEqn(e,vars);
+      (eqns,vars)  = expandDerOperatorArrEqns(eqns,vars);
+    then (e::eqns,vars);
+ 
+    case(_,_) equation
+      Debug.fprint("failtrace", "-expandDerOperatorArrEqns failed\n");
+    then fail();      
+  end matchcontinue;
+end expandDerOperatorArrEqns;
+
+protected function expandDerOperatorArrEqn "Help function to to expandDerOperator, handles Array equations"
+  input MultiDimEquation arrEqn;
+  input Variables vars;  
+  output MultiDimEquation outArrEqn;  
+  output Variables outVars;
+algorithm
+  (outArrEqn,outVars) := matchcontinue(arrEqn,vars)  
+  local list<Integer> dims; Exp.Exp e1,e2;
+    case(MULTIDIM_EQUATION(dims,e1,e2),vars) equation
+      ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
+      ((e2,vars)) = Exp.traverseExp(e2,expandDerExp,vars);            
+    then (MULTIDIM_EQUATION(dims,e1,e2),vars);      
+  end matchcontinue;
+end expandDerOperatorArrEqn;
+
+protected function expandDerExps "Help function to e.g. expandDerOperatorEqn"
+  input list<Exp.Exp> expl;
+  input Variables vars;
+  output list<Exp.Exp> outExpl;
+  output Variables outVars;
+algorithm
+  (outExpl,outVars) := matchcontinue(expl,vars)
+  local Exp.Exp e;
+    case({},vars) then ({},vars);
+    case(e::expl,vars) equation
+      ((e,vars)) = expandDerExp((e,vars)); 
+      (expl,vars) = expandDerExps(expl,vars);
+    then (e::expl,vars);
+  end matchcontinue;  
+end expandDerExps;
+
+protected function expandDerExp "Help function to e.g. expandDerOperatorEqn"
+  input tuple<Exp.Exp,Variables> tpl;
+  output tuple<Exp.Exp,Variables> outTpl;
+algorithm
+  outTpl := matchcontinue(tpl)
+    local Exp.Exp inExp;
+      Variables vars;
+      Exp.Exp e1;      
+      list<Exp.ComponentRef> newStates;
+    case((Exp.CALL(Absyn.IDENT(name = "der"),{e1},tuple_ = false,builtin = true),vars)) equation
+      e1 = Derive.differentiateExpTime(e1,vars);
+      e1 = Exp.simplify(e1);
+      (newStates,_) = bintreeToList(statesExp(e1,emptyBintree));
+      vars = updateStatesVars(vars,newStates);
+    then ((e1,vars));
+    case((e1,vars)) then ((e1,vars));
+  end matchcontinue;    
+end expandDerExp;
+
+protected function updateStatesVars "Help function to expandDerExp"
+  input Variables vars;
+  input list<Exp.ComponentRef> newStates;
+  output Variables outVars;
+algorithm
+  outVars := matchcontinue(vars,newStates)
+    local
+      Exp.ComponentRef cr1,orig;
+      VarKind kind;
+      DAE.VarDirection dir;
+      DAE.Type vartype;
+      Option<Exp.Exp> bind;
+      Option<Values.Value> value;
+      list<Exp.Subscript> dims;
+      Value ind;
+      list<Absyn.Path> clname;
+      Option<DAE.VariableAttributes> attr;
+      Option<Absyn.Comment> comment;
+      DAE.Flow flow_;
+      Exp.ComponentRef cr;
+     
+    case(vars,{}) then vars;
+    case(vars,cr::newStates) equation
+     ((VAR(cr1,kind,dir,vartype,bind,value,dims,ind,orig,clname,attr,comment,flow_) :: _),_) = getVar(cr, vars);
+     vars = addVar(
+          VAR(cr1,STATE(),dir,vartype,bind,value,dims,ind,orig,
+            clname,attr,comment,flow_), vars);
+      vars = updateStatesVars(vars,newStates);
+    then vars;
+    case(vars,cr::newStates) equation
+     print("Internal error, variable ");print(Exp.printComponentRefStr(cr));print("not found in variables.\n");
+      vars = updateStatesVars(vars,newStates);
+    then vars;      
+  end matchcontinue;
+end updateStatesVars;   
 
 protected function addDummyState "function: addDummyState
  

@@ -1266,6 +1266,19 @@ algorithm
         resstr = getComponentModifierNames(class_, ident, p);
       then
         (resstr,st);
+
+    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getDefaultComponentName"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+      equation         
+        resstr = getDefaultComponentName(Absyn.crefToPath(class_), p);
+      then
+        (resstr,st);
+                
+    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getDefaultComponentPrefixes"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+      equation         
+        resstr = getDefaultComponentPrefixes(Absyn.crefToPath(class_), p);
+      then
+        (resstr,st);
+                
     case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getComponentModifierValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = class_),Absyn.CREF(componentReg = Absyn.CREF_QUAL(name = ident,componentRef = subident))},argNames = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
         resstr = getComponentModifierValue(class_, Absyn.CREF_IDENT(ident,{}), subident, p);
@@ -1881,7 +1894,7 @@ algorithm
       local Absyn.Path path;
       equation 
         path = Absyn.crefToPath(cr);
-        resstr = getDocumentationAnnotation(path, p);
+        resstr = getNamedAnnotation(path, p,"Documentation",getDocumentationAnnotationString);
       then
         (resstr,st);
 
@@ -9158,6 +9171,9 @@ algorithm
       Option<Absyn.Comment> annotation_;
       Option<Absyn.Modification> modification;
       Absyn.Within w;
+      Absyn.InnerOuter io;
+      Option<Absyn.RedeclareKeywords> redecl;
+      Absyn.ElementAttributes attr;
     case (name,tp,model_,nargs,p)
       equation 
         modelpath = Absyn.crefToPath(model_);
@@ -9172,10 +9188,11 @@ algorithm
         tppath = Absyn.crefToPath(tp);
         annotation_ = annotationListToAbsynComment(nargs, NONE);
         modification = modificationToAbsyn(nargs, NONE);
+        (io,redecl,attr) = getDefaultPrefixes(p,tppath);
         newcdef = addToPublic(cdef, 
           Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),Absyn.TPATH(tppath,NONE),
+          Absyn.ELEMENT(false,redecl,io,"",
+          Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,NONE),
           {
           Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),NONE,annotation_)}),Absyn.INFO("",false,0,0,0,0),NONE)));
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
@@ -9188,10 +9205,11 @@ algorithm
         tppath = Absyn.crefToPath(tp);
         annotation_ = annotationListToAbsynComment(nargs, NONE);
         modification = modificationToAbsyn(nargs, NONE);
+        (io,redecl,attr) = getDefaultPrefixes(p,tppath);
         newcdef = addToPublic(cdef, 
           Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"",
-          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),Absyn.TPATH(tppath,NONE),
+          Absyn.ELEMENT(false,redecl,io,"",
+          Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,NONE),
           {
           Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),NONE,annotation_)}),Absyn.INFO("",false,0,0,0,0),NONE)));
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
@@ -9200,6 +9218,91 @@ algorithm
     case (_,_,_,_,p) then (p,"Error"); 
   end matchcontinue;
 end addComponent;
+
+protected function getDefaultPrefixes "Retrieves default prefixes by looking at the defaultComponentPrefixes annotation"
+  input Absyn.Program p;
+  input Absyn.Path className;
+  output Absyn.InnerOuter io;
+  output Option<Absyn.RedeclareKeywords> redecl;
+  output Absyn.ElementAttributes attr;
+algorithm
+  (io,redecl,attr) := matchcontinue(p,className)
+  local String str; 
+    case(p,className) equation
+      str = getNamedAnnotation(className,p,"defaultComponentPrefixes",getDefaultComponentPrefixesModStr);
+      io = getDefaultInnerOuter(str);
+      redecl = getDefaultReplaceable(str);
+      attr = getDefaultAttr(str);
+    then(io,redecl,attr);
+  end matchcontinue;      
+end getDefaultPrefixes;
+
+protected function getDefaultInnerOuter "helper function to getDefaultPrefixes"
+  input String str;
+  output Absyn.InnerOuter io;
+algorithm
+	  io := matchcontinue(str)	  	    
+	    case(str) equation
+	      -1 = System.stringFind(str,"inner");
+       -1 = System.stringFind(str,"outer");
+	    then Absyn.UNSPECIFIED();
+
+	    case(str) equation
+       -1 = System.stringFind(str,"outer");
+	    then Absyn.INNER();	      
+
+	    case(str) equation
+       -1 = System.stringFind(str,"inner");
+	    then Absyn.OUTER();	      	      
+	    end matchcontinue;
+end getDefaultInnerOuter;   
+
+protected function getDefaultReplaceable "helper function to getDefaultPrefixes"
+  input String str;
+  output Option<Absyn.RedeclareKeywords> repl;
+algorithm
+	  io := matchcontinue(str)	  	    
+	    case(str) equation
+	      -1 = System.stringFind(str,"replaceable");
+	    then NONE;
+	    case(str) equation
+       failure(-1 = System.stringFind(str,"replaceable"));
+	    then SOME(Absyn.REPLACEABLE());	      
+	    end matchcontinue;
+end getDefaultReplaceable; 
+
+protected function getDefaultAttr "helper function to getDefaultPrefixes"
+  input String str;
+  output Absyn.ElementAttributes attr;
+algorithm
+	  io := matchcontinue(str)	  	    
+	    case(str) equation
+	      failure(-1 = System.stringFind(str,"parameter"));	      
+	    then Absyn.ATTR(false,Absyn.PARAM(),Absyn.BIDIR(),{});
+	      
+	    case(str) equation
+	      failure(-1 = System.stringFind(str,"constant"));	      
+	    then Absyn.ATTR(false,Absyn.CONST(),Absyn.BIDIR(),{});
+	      	      
+	    case(str) equation
+	      failure(-1 = System.stringFind(str,"discrete"));	      
+	    then Absyn.ATTR(false,Absyn.DISCRETE(),Absyn.BIDIR(),{});	      	      
+	    case(str) then Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{});	      	      
+  end matchcontinue;
+end getDefaultAttr; 
+
+protected function getDefaultComponentPrefixesModStr "Extractor function for defaultComponentPrefixes modifier"
+  input Option<Absyn.Modification> mod;
+  output String docStr;
+algorithm
+  docStr := matchcontinue(mod) 
+    local Absyn.Exp e;
+    case(SOME(Absyn.CLASSMOD(expOption = SOME(e)))) equation      
+      docStr = Dump.printExpStr(e);
+    then docStr;
+    case(mod) then "";
+  end matchcontinue; 
+end getDefaultComponentPrefixesModStr;
 
 protected function updateComponent "function: updateComponent
   
@@ -10856,7 +10959,7 @@ algorithm
   end matchcontinue;
 end getDiagramAnnotation;
 
-protected function getDocumentationAnnotation "function: getDocumentationAnnotation
+protected function getNamedAnnotation "function: getNamedAnnotation
  
   Thisfunction takes a Path and a Program and returns a comma separated 
   string of values for the Documentation annotation for the class named by the 
@@ -10864,24 +10967,30 @@ protected function getDocumentationAnnotation "function: getDocumentationAnnotat
 "
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
+  input Absyn.Ident id;
+  input ModFunc f;
+  partial function ModFunc
+    input Option<Absyn.Modification> mod;
+    output String docStr;
+  end ModFunc;
   output String outString;
 algorithm 
   outString:=
-  matchcontinue (inPath,inProgram)
+  matchcontinue (inPath,inProgram,id,f)
     local
       Absyn.Class cdef;
       String str;
       Absyn.Path modelpath;
       Absyn.Program p;
-    case (modelpath,p)
+    case (modelpath,p,id,f)
       equation 
         cdef = getPathedClassInProgram(modelpath, p);
-        str = getDocumentationAnnotationInClass(cdef);
+        str = getNamedAnnotationInClass(cdef,id,f);
       then
         str;
-    case (_,_) then "{}"; 
+    case (_,_,_,_) then ""; 
   end matchcontinue;
-end getDocumentationAnnotation;
+end getNamedAnnotation;
 
 protected function getIconAnnotation "function: getIconAnnotation
   Thisfunction takes a Path and a Program and returns a comma separated
@@ -11786,38 +11895,43 @@ algorithm
   end matchcontinue;
 end getDiagramAnnotationInClass;
 
-protected function getDocumentationAnnotationInClass "function: getDocumentationAnnotationInClass
+protected function getNamedAnnotationInClass "function: getNamedAnnotationInClass
  
   Retrieve the documentation annotation as a string from the class passed as 
   argument.
 "
   input Absyn.Class inClass;
+  input Absyn.Ident id;
+  input ModFunc f;
+  partial function ModFunc
+    input Option<Absyn.Modification> mod;
+    output String docStr;
+  end ModFunc;  
   output String outString;
 algorithm 
   outString:=
-  matchcontinue (inClass)
+  matchcontinue (inClass,id,f)
     local
       list<Absyn.ElementItem> publst,protlst,lst;
       String str,res;
       list<Absyn.ClassPart> parts;
       list<Absyn.ElementArg> annlst;
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),id,f)
       equation 
         publst = getPublicList(parts) "class def." ;
         protlst = getProtectedList(parts);
         lst = listAppend(publst, protlst);
-        str = getDocumentationAnnotationInElementitemlist(lst);
+        str = getNamedAnnotationInElementitemlist(lst,id,f);
       then
         str;
-    case (Absyn.CLASS(body = Absyn.DERIVED(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_)))))
+    case (Absyn.CLASS(body = Absyn.DERIVED(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_)))),id,f)
       equation 
-        str = getDocumentationAnnotationStr(annlst);
-        res = Util.stringAppendList({"{",str,"}"});
+        res = getNamedAnnotationStr(annlst,id,f);
       then
         res;
-    case (_) then ""; 
+    case (_,_,_) then ""; 
   end matchcontinue;
-end getDocumentationAnnotationInClass;
+end getNamedAnnotationInClass;
 
 protected function getDiagramAnnotationInElementitemlist "function: getDiagramAnnotationInElementitemlist
  
@@ -11849,36 +11963,82 @@ algorithm
   end matchcontinue;
 end getDiagramAnnotationInElementitemlist;
 
-protected function getDocumentationAnnotationInElementitemlist "function: getDocumentationAnnotationInElementitemlist
+protected function getNamedAnnotationInElementitemlist "function: getNamedAnnotationInElementitemlist
  
   Retrieve the into annotation from an element item list passed as
   argument.
 "
   input list<Absyn.ElementItem> inAbsynElementItemLst;
+  input Absyn.Ident id;
+  input ModFunc f;
+  partial function ModFunc
+    input Option<Absyn.Modification> mod;
+    output String docStr;
+  end ModFunc;
   output String outString;
 algorithm 
   outString:=
-  matchcontinue (inAbsynElementItemLst)
+  matchcontinue (inAbsynElementItemLst,id,f)
     local
       String s1,s2,str;
       list<Absyn.ElementArg> annlst;
       list<Absyn.ElementItem> xs;
-    case {} then ""; 
-    case ((Absyn.ANNOTATIONITEM(annotation_ = Absyn.ANNOTATION(elementArgs = annlst)) :: _))
+    case ({},_,_) then ""; 
+    case ((Absyn.ANNOTATIONITEM(annotation_ = Absyn.ANNOTATION(elementArgs = annlst)) :: _),id,f)
       equation 
-        s1 = getDocumentationAnnotationStr(annlst);
-        s2 = stringAppend("{", s1);
-        str = stringAppend(s2, "}");
+        s1 = getNamedAnnotationStr(annlst,id,f);
       then
-        str;
-    case ((_ :: xs))
+        s1;
+    case ((_ :: xs),id,f)
       equation 
-        str = getDocumentationAnnotationInElementitemlist(xs);
+        str = getNamedAnnotationInElementitemlist(xs,id,f);
       then
         str;
   end matchcontinue;
-end getDocumentationAnnotationInElementitemlist;
+end getNamedAnnotationInElementitemlist;
 
+protected function getDefaultComponentName "Returns the default component name of a class.
+This is annotated with the annotation
+annotation(defaultComponentName=\"name\");
+in the class definition"
+  input Absyn.Path className;
+  input Absyn.Program p;
+  output String compName;
+algorithm
+  compName := matchcontinue(className,p) 
+    case(className,p) equation
+      compName = getNamedAnnotation(className,p,"defaultComponentName",getDefaultComponentNameModStr);
+      then compName;  
+  end matchcontinue;      
+end getDefaultComponentName;  
+
+protected function getDefaultComponentNameModStr "Extractor function for defaultComponentName modifier"
+  input Option<Absyn.Modification> mod;
+  output String docStr;
+algorithm
+  docStr := matchcontinue(mod) 
+    local Absyn.Exp e;
+    case(SOME(Absyn.CLASSMOD(expOption = SOME(e)))) equation      
+      docStr = Dump.printExpStr(e);
+    then docStr;
+    case(mod) then "";
+  end matchcontinue; 
+end getDefaultComponentNameModStr;
+
+protected function getDefaultComponentPrefixes "Returns the default component prefixes of a class.
+This is annotated with the annotation
+annotation(defaultComponentPrefixes=\"<prefixes>\");
+in the class definition"
+  input Absyn.Path className;
+  input Absyn.Program p;
+  output String compName;
+algorithm
+  compName := matchcontinue(className,p) 
+    case(className,p) equation
+      compName = getNamedAnnotation(className,p,"defaultComponentPrefixes",getDefaultComponentPrefixesModStr);
+      then compName;  
+  end matchcontinue;      
+end getDefaultComponentPrefixes;  
 
 protected function getDiagramAnnotationStr "function: getDiagramAnnotationStr
  
@@ -11907,32 +12067,40 @@ algorithm
   end matchcontinue;
 end getDiagramAnnotationStr;
 
-protected function getDocumentationAnnotationStr "function: getDocumentationAnnotationStr
+protected function getNamedAnnotationStr "function: getNamedAnnotationStr
  
-  Helperfunction to getDocumentationAnnotationInElementitemlist.
+  Helperfunction to getNamedAnnotationInElementitemlist.
 "
   input list<Absyn.ElementArg> inAbsynElementArgLst;
+  input Absyn.Ident id;
+  input ModFunc f;
+  partial function ModFunc
+    input Option<Absyn.Modification> mod;
+    output String docStr;
+  end ModFunc;
   output String outString;
 algorithm 
   outString:=
-  matchcontinue (inAbsynElementArgLst)
+  matchcontinue (inAbsynElementArgLst,id,f)
     local
       String str;
       Absyn.ElementArg ann;
       Option<Absyn.Modification> mod;
       list<Absyn.ElementArg> xs;
-    case (((ann as Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "Documentation"),modification = mod)) :: _))
+      Absyn.Ident id1,id2;
+    case (((ann as Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = id1),modification = mod)) :: _),id2,f)
       equation 
-        str = getDocumentationAnnotationString(mod);
+        equality(id1=id2);
+        str = f(mod);
       then
         str;
-    case ((_ :: xs))
+    case ((_ :: xs),id,f)
       equation 
-        str = getDocumentationAnnotationStr(xs);
+        str = getNamedAnnotationStr(xs,id,f);
       then
         str;
   end matchcontinue;
-end getDocumentationAnnotationStr;
+end getNamedAnnotationStr;
 
 protected function getDocumentationAnnotationString
   input Option<Absyn.Modification> mod;
@@ -11947,13 +12115,14 @@ algorithm
   	equation 
   	  strs = getDocumentationAnnotationString2(arglst);
   	  s = Util.stringDelimitList(strs,",");
+  	  s = "{" +& s +& "}";
    then 	s;
   case (_)
     then "";
   end matchcontinue;
 end getDocumentationAnnotationString;       
 
-protected function getDocumentationAnnotationString2 "Helper function to getDocumentationAnnotationString"
+protected function getDocumentationAnnotationString2 "Helper function to getNamedAnnotationString"
   input list<Absyn.ElementArg> eltArgs;
   output list<String> strs;
 algorithm

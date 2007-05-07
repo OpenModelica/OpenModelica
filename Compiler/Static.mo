@@ -3748,17 +3748,22 @@ algorithm
       Ident s;
       list<Absyn.Exp> expl;
       Env.Cache cache;
-    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl) /* impl use elab_call_args to also try vectorized calls */ 
+
+      /* use elab_call_args to also try vectorized calls */ 
+    case (cache,env,{exp},_,impl) 
       equation 
         (cache,e,(prop as Types.PROP(_,Types.C_VAR()))) = elabCallArgs(cache,env, Absyn.IDENT("der"), {exp}, {}, impl, NONE);
       then
         (cache,e,prop);
-    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl) /* Constant expressions should fail */ 
+
+        /* Constant expressions should fail */         
+    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl) 
       equation 
-        (cache,exp_1,Types.PROP((Types.T_REAL({}),_),c),_) = elabExp(cache,env, exp, impl, NONE,true);
+        (cache,exp_1,Types.PROP((Types.T_REAL({}),_),c),_) = elabExp(cache,env, exp, impl, NONE,true);        
         Error.addMessage(Error.DER_APPLIED_TO_CONST, {});
       then
         fail();
+        
     case (cache,env,expl,_,_)
       equation 
         lst = Util.listMap(expl, Dump.printExpStr);

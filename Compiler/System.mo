@@ -86,6 +86,14 @@ public function strcmp
   external "C" ;
 end strcmp;
 
+public function stringFind "locates substring searchStr in str. If succeeds return position, otherwise return -1"
+  input String str;
+  input String searchStr;
+  output Integer outInteger;
+
+  external "C" ;
+end stringFind;
+
 public function strncmp
   input String inString1;
   input String inString2;

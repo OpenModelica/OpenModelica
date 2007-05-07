@@ -2363,7 +2363,7 @@ algorithm
   end matchcontinue;
 end printMod2;
 
-protected function unparseOptModificationStr "function: unparseOptModificationStr
+public function unparseOptModificationStr "function: unparseOptModificationStr
  
   Prettyprints a Modification option to a string.
 "
