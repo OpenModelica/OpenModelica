@@ -697,7 +697,7 @@ algorithm
         Exp.RCONST(0.0);
 
         /* Differentiate if-expressions if last argument true */        
-    case (Exp.IFEXP(cond,e1,e2),tv,true) equation
+    case (Exp.IFEXP(cond,e1,e2),tv,differentiateIfExp as true) equation
       e1_1 = differentiateExp(e1, tv,differentiateIfExp);
       e2_1 = differentiateExp(e2, tv,differentiateIfExp);      
     then Exp.IFEXP(cond,e1_1,e2_1);
