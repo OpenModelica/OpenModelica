@@ -39,6 +39,12 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+/*
+ * adrpo 2007-05-09
+ * UNCOMMENT THIS ONLY IF YOU COMPILE OMC IN DEBUG MODE!!!!!
+ * #define RML_DEBUG
+ */ 
+
 // windows and mingw32
 #if defined(__MINGW32__) || defined(_MSC_VER)
 
@@ -1255,6 +1261,21 @@ RML_BEGIN_LABEL(System__getCurrentTime)
 }
 RML_END_LABEL
 
+/* 
+ * @author adrpo
+ * this function sets the depth of variable showing in Eclipse.
+ * it has no effect if is called within source not compiled in debug mode
+ */
+RML_BEGIN_LABEL(System__setDebugShowDepth)
+{
+#ifdef RML_DEBUG   
+  rmldb_depth_of_variable_print = RML_UNTAGFIXNUM(rmlA0);
+#endif  
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+
 #else /********************************* LINUX PART!!! *************************************/
 
 #include <time.h>
@@ -1630,6 +1651,25 @@ RML_BEGIN_LABEL(System__strcmp)
   rmlA0 = (void*) mk_icon(res);
 
   RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__stringFind)
+{
+  char *str = RML_STRINGDATA(rmlA0);
+  char *searchStr = RML_STRINGDATA(rmlA1);
+  int strLen = strlen(str);
+  int strSearchLen = strlen(searchStr);
+  int i,retVal=-1;
+  
+  for (i=0; i< strLen - strSearchLen+1; i++) {
+    if (strncmp(&str[i],searchStr,strSearchLen) == 0) { 
+        retVal = i; 
+        break;
+    }
+  }
+  rmlA0 = (void*) mk_icon(retVal);  
+  RML_TAILCALLK(rmlSC);  
 }
 RML_END_LABEL
 
@@ -2511,6 +2551,20 @@ RML_BEGIN_LABEL(System__getCurrentTime)
   double elapsedTime;             // the time elapsed as double
   time( &t );
   rmlA0 = mk_rcon(difftime(t, 0)); // the file modification time  
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+/* 
+ * @author adrpo
+ * this function sets the depth of variable showing in Eclipse.
+ * it has no effect if is called within source not compiled in debug mode
+ */
+RML_BEGIN_LABEL(System__setDebugShowDepth)
+{
+#ifdef RML_DEBUG   
+  rmldb_depth_of_variable_print = RML_UNTAGFIXNUM(rmlA0);
+#endif  
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
