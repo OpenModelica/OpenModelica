@@ -132,11 +132,8 @@ void Corba_5finit(void)
 RML_BEGIN_LABEL(Corba__initialize)
 {
 #ifndef NOMICO
-  char *dummyArgv[3];
-  dummyArgv[0] = "-ORBNoResolve";
-  dummyArgv[1] = "-ORBIIOPAddr";
-  dummyArgv[2] = "inet:127.0.0.1:0";
-  int argc=3;
+  char *dummyArgv[] = { "omc", "-ORBNoResolve", "-ORBIIOPAddr", "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
+  int argc=4;
   string omc_client_request_event_name 	= "omc_client_request_event";
   string omc_return_value_ready_name   	= "omc_return_value_ready";
   string lock_name 						= "omc_lock";
@@ -361,11 +358,8 @@ void Corba_5finit(void)
 RML_BEGIN_LABEL(Corba__initialize)
 {
 #ifndef NOMICO
-  char *dummyArgv[3];
-  dummyArgv[0] = "-ORBNoResolve";
-  dummyArgv[1] = "-ORBIIOPAddr";
-  dummyArgv[2] = "inet:127.0.0.1:0";
-  int argc=3;
+  char *dummyArgv[] = { "omc", "-ORBNoResolve", "-ORBIIOPAddr", "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
+  int argc=4;
   pthread_cond_init(&omc_waitformsg,NULL);
   pthread_cond_init(&corba_waitformsg,NULL);
   pthread_mutex_init(&corba_waitlock,NULL);
