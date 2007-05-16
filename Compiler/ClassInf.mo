@@ -136,7 +136,7 @@ uniontype Event "- Events"
   record FOUND_EQUATION "There are definitions inside the current definition" end FOUND_EQUATION;
 
   record NEWDEF "This is not a derived class The `Event\' type contains the different events during" end NEWDEF;
-
+  
 end Event;
 
 protected import Print;

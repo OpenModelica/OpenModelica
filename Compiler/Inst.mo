@@ -930,12 +930,12 @@ end instClass;
 protected function instClassBasictype "function: instClassBasictype
   author: PA
  
-  This function instantiates a basictype class, e.g. Real, Integer, Real{2},
+  This function instantiates a basictype class, e.g. Real, Integer, Real[2],
   etc. This function has the same functionality as inst_class except that
   it will create array types when needed. (inst_class never creates array 
   types). This is needed because this function is used to instantiate classes
   extending from basic types. See inst_basictype_baseclass. 
-  NOTE: This function should only be called from inst_basictype_baseclass.
+  NOTE: This function should only be called from instBasictypeBaseclass.
   This is new functionality in Modelica v 2.2.
 "
 	input Env.Cache inCache;
@@ -952,9 +952,10 @@ protected function instClassBasictype "function: instClassBasictype
   output Env outEnv;
   output Connect.Sets outSets;
   output Types.Type outType;
+  output list<Types.Var>  outTypeVars "attributes of builtin types";
   output ClassInf.State outState;
 algorithm 
-  (outCache,outDAEElementLst,outEnv,outSets,outType,outState):=
+  (outCache,outDAEElementLst,outEnv,outSets,outType,outTypeVars,outState):=
   matchcontinue (inCache,inEnv,inMod,inPrefix,inSets,inClass,inInstDims,inBoolean,inCallingScope)
     local
       list<Env.Frame> env_1,env_3,env;
@@ -981,7 +982,7 @@ algorithm
         ci_state = ClassInf.start(r, n);
         c_1 = SCode.classSetPartial(c, false);
         (cache,dae1,env_3,(csets_1 as Connect.SETS(_,crs)),ci_state_1,tys,bc_ty) 
-         			= instClassIn(cache,env_1, mod, pre, csets, ci_state, c_1, false, inst_dims, impl) ;
+        = instClassIn(cache,env_1, mod, pre, csets, ci_state, c_1, false, inst_dims, impl) ;
         (cache,fq_class) = makeFullyQualified(cache,env_3, Absyn.IDENT(n));
         dae1_1 = DAE.setComponentType(dae1, fq_class);
         callscope_1 = isTopCall(callscope);
@@ -991,7 +992,7 @@ algorithm
         (cache,typename) = makeFullyQualified(cache,env_3, Absyn.IDENT(n));
         ty = mktypeWithArrays(typename, ci_state_1, tys, bc_ty);
       then
-        (cache,dae,env_3,Connect.SETS({},crs),ty,ci_state_1);
+        (cache,dae,env_3,Connect.SETS({},crs),ty,tys,ci_state_1);
     case (_,_,_,_,_,SCode.CLASS(name = n),_,impl,_)
       equation 
         //Debug.fprint("failtrace", "- inst_class_basictype ");
@@ -1095,7 +1096,7 @@ algorithm
         Boolean b;
       equation 
         //clsname = SCode.className(c); 
-        //print("instClassIn");print(n);print("\n");
+        //print("instClassIn ");print(n);print("\n");
         //Debug.fprint("insttr", "Instantiating class: ");
         implstr = Util.if_(impl, " (implicit) ", " (explicit) ");
         //Debug.fprint("insttr", implstr);
@@ -1105,7 +1106,7 @@ algorithm
 
 				//t1 = clock();
 
-        (cache,l,env_1,csets_1,ci_state_1,tys,bc) = instClassdef(cache,env, mods, pre, csets, ci_state, d, r, prot, inst_dims, impl);
+        (cache,l,env_1,csets_1,ci_state_1,tys,bc) = instClassdef(cache,env, mods, pre, csets, ci_state, n,d, r, prot, inst_dims, impl);
         /*t2 = clock();
         time = t2 -. t1;
         b=realGt(time,0.05);
@@ -1522,6 +1523,7 @@ protected function instClassdef "function: instClassdef
   input Prefix inPrefix3;
   input Connect.Sets inSets4;
   input ClassInf.State inState5;
+  input String className;
   input SCode.ClassDef inClassDef6;
   input SCode.Restriction inRestriction7;
   input Boolean inBoolean8;
@@ -1536,7 +1538,7 @@ protected function instClassdef "function: instClassdef
   output Option<Types.Type> outTypesTypeOption;
 algorithm 
   (outCache,outDAEElementLst,outEnv,outSets,outState,outTypesVarLst,outTypesTypeOption):=
-  matchcontinue (inCache,inEnv1,inMod2,inPrefix3,inSets4,inState5,inClassDef6,inRestriction7,inBoolean8,inInstDims9,inBoolean10)
+  matchcontinue (inCache,inEnv1,inMod2,inPrefix3,inSets4,inState5,className,inClassDef6,inRestriction7,inBoolean8,inInstDims9,inBoolean10)
     local
       list<SCode.Element> cdefelts,compelts,extendselts,els;
       list<Env.Frame> env1,env2,env3,env,env4,env5,cenv,cenv_2,env_2;
@@ -1563,7 +1565,7 @@ algorithm
       Env.Cache cache;
       /* This rule describes how to instantiate a class definition
 	  that extends a basic type. (No equations or algorithms allowed) */ 
-    case (cache,env,mods,pre,csets,ci_state,SCode.PARTS(elementLst = els,equationLst = {},
+    case (cache,env,mods,pre,csets,ci_state,className,SCode.PARTS(elementLst = els,equationLst = {},
       																						initialEquation = {},algorithmLst = {},initialAlgorithm = {})
       		,re,prot,inst_dims,impl) 
       		local String s;
@@ -1576,14 +1578,14 @@ algorithm
         (cache,cdefelts_2,env2,csets) = updateCompeltsMods(cache,env1, pre, cdefelts_1, ci_state, csets, impl);
         (cache,dae1,env3,csets1,ci_state1,tys) = instElementList(cache,env2, mods, pre, csets, ci_state, cdefelts_2, inst_dims, 
           impl);
-        (cache,bc)= instBasictypeBaseclass(cache,env3, extendselts, compelts, mods, inst_dims);
+        (cache,bc,tys)= instBasictypeBaseclass(cache,env3, extendselts, compelts, mods, inst_dims);
         ErrorExt.errorOn();
       then
-        (cache,{},env,Connect.emptySet,ci_state,{},bc);
+        (cache,{},env,Connect.emptySet,ci_state,tys,bc);
         
         /* This case instantiates external objects. An external object inherits from ExternalOBject
          and have two local functions: constructor and destructor (and no other elements). */
-        case (cache,env,mods,pre,csets,ci_state,SCode.PARTS
+        case (cache,env,mods,pre,csets,ci_state,className,SCode.PARTS
                (elementLst = els, equationLst = eqs, initialEquation = initeqs,algorithmLst 
                 = alg,initialAlgorithm = initalg),re,prot,inst_dims,impl) 
       	equation
@@ -1594,7 +1596,7 @@ algorithm
       	  (cache,dae,env,Connect.emptySet,ci_state,{},NONE);  
         
         /* This rule describes how to instantiate an explicit class definition*/ 
-    case (cache,env,mods,pre,csets,ci_state,SCode.PARTS(elementLst = els,equationLst = eqs,initialEquation = initeqs,
+    case (cache,env,mods,pre,csets,ci_state,className,SCode.PARTS(elementLst = els,equationLst = eqs,initialEquation = initeqs,
       																					algorithmLst = alg,initialAlgorithm = initalg)
       	    ,re,prot,inst_dims,impl) 
       equation 
@@ -1677,7 +1679,7 @@ algorithm
    
       
         /* This rule describes how to instantiate a derived class definition */ 
-    case (cache,env,mods,pre,csets,ci_state,SCode.DERIVED(Absyn.TPATH(path = cn,arrayDim = ad),mod = mod),re,prot,inst_dims,impl) 
+    case (cache,env,mods,pre,csets,ci_state,className,SCode.DERIVED(Absyn.TPATH(path = cn,arrayDim = ad),mod = mod),re,prot,inst_dims,impl) 
       equation 
         (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = Lookup.lookupClass(cache,env, cn, true);
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
@@ -1697,7 +1699,7 @@ algorithm
         
         /* If the class is derived from a class that can not be found in the environment, this rule prints an error message. */ 
    
-    case (cache,env,mods,pre,csets,ci_state,SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),mod = mod),re,prot,inst_dims,impl) 
+    case (cache,env,mods,pre,csets,ci_state,className,SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),mod = mod),re,prot,inst_dims,impl) 
       equation 
         failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
         cns = Absyn.pathString(cn);
@@ -1706,7 +1708,7 @@ algorithm
       then
         fail();
         
-   case (cache,env,mods,pre,csets,ci_state,SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),mod = mod),re,prot,inst_dims,impl) 
+   case (cache,env,mods,pre,csets,ci_state,className,SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),mod = mod),re,prot,inst_dims,impl) 
   equation 
     failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
         Debug.fprint("failtrace", "- inst_classdef DERIVED( ");
@@ -1716,7 +1718,7 @@ algorithm
       then
         fail();
         
-    case (_,env,_,_,_,_,_,_,_,_,_)
+    case (_,env,_,_,_,_,_,_,_,_,_,_)
       equation 
         Debug.fprint("failtrace", "- inst_classdef failed\n class :");
         s = Env.printEnvPathStr(env);
@@ -2072,8 +2074,9 @@ protected function instBasictypeBaseclass "function: instBasictypeBaseclass
   input InstDims inInstDims5;
   output Env.Cache outCache;
   output Option<Types.Type> outTypesTypeOption;
+  output list<Types.Var> outTypeVars;
 algorithm 
-  (outCache,outTypesTypeOption) :=
+  (outCache,outTypesTypeOption,outTypeVars) :=
   matchcontinue (inCache,inEnv1,inSCodeElementLst2,inSCodeElementLst3,inMod4,inInstDims5)
     local
       Types.Mod m_1,m_2,mods;
@@ -2081,26 +2084,27 @@ algorithm
       list<Env.Frame> cenv,env_1,env;
       list<DAE.Element> dae;
       tuple<Types.TType, Option<Absyn.Path>> ty;
+      list<Types.Var> tys;
       ClassInf.State st;
-      Boolean b1,b2;
+      Boolean b1,b2,b3;
       Absyn.Path path;
       SCode.Mod mod;
       InstDims inst_dims;
       String classname;
       Env.Cache cache;
-    case (cache,env,{SCode.EXTENDS(path = path,mod = mod)},{},mods,inst_dims) /* Inherits baseclass -and- has components */ 
+    case (cache,env,{SCode.EXTENDS(path = path,mod = mod)},{},mods,inst_dims) 
       equation 
         ErrorExt.errorOff();
         (cache,m_1) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod, true) "impl" ;
         m_2 = Mod.merge(mods, m_1, env, Prefix.NOPRE());
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, true);
-        (cache,dae,env_1,_,ty,st) = instClassBasictype(cache,cenv, m_2, Prefix.NOPRE(), Connect.emptySet, cdef, 
-          inst_dims, false, INNER_CALL()) "impl" ;
+        (cache,dae,env_1,_,ty,tys,st) = instClassBasictype(cache,cenv, m_2, Prefix.NOPRE(), Connect.emptySet, cdef, inst_dims, false, INNER_CALL());
         b1 = Types.basicType(ty);
         b2 = Types.arrayType(ty);
-        true = boolOr(b1, b2);
+        b3 = Types.extendsBasicType(ty);
+        true = Util.boolOrList({b1, b2, b3});
       then
-        (cache,SOME(ty));
+        (cache,SOME(ty),tys);
     case (cache,env,{SCode.EXTENDS(path = path,mod = mod)},(_ :: _),mods,inst_dims) /* Inherits baseclass -and- has components */ 
       equation 
         ErrorExt.errorOff();
@@ -2116,7 +2120,7 @@ algorithm
         ErrorExt.errorOn();
         Error.addMessage(Error.INHERIT_BASIC_WITH_COMPS, {classname});
       then
-        fail();
+        fail();    
     case (cache,env,_,_,mods,inst_dims)
       equation 
         ErrorExt.errorOn();
@@ -5847,7 +5851,7 @@ algorithm
         ty1 = setFullyQualifiedTypename(ty,fpath);
         env_1 = Env.extendFrameT(cenv, n, ty1);
         prot = false;
-        (cache,_,tempenv,_,_,_,_) = instClassdef(cache,env_1, mod, pre, csets_1, ClassInf.FUNCTION(n), parts, 
+        (cache,_,tempenv,_,_,_,_) = instClassdef(cache,env_1, mod, pre, csets_1, ClassInf.FUNCTION(n), n,parts, 
           restr, prot, inst_dims, true) "how to get this? impl" ;
         (cache,extdecl) = instExtDecl(cache,tempenv, n, parts, true) "impl" ;
       then
@@ -6804,8 +6808,9 @@ algorithm
           then {DAE.VAR(vn,kind,dir,prot,DAE.EXT_OBJECT(path),e,inst_dims,fl,{}, dae_var_attr,comment,io,ty)};
             
       /* instantiation of complex type extending from basic type */ 
-    case (vn,(Types.T_COMPLEX(complexClassType = ci,complexVarLst = {},complexTypeOption = SOME(tp)),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) 
+    case (vn,(Types.T_COMPLEX(complexClassType = ci,complexTypeOption = SOME(tp)),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) 
       equation
+        (_,dae_var_attr) = instDaeVariableAttributes(Env.emptyCache,Env.emptyEnv, Types.NOMOD(), tp, {});
         dae = daeDeclare4(vn,tp,fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io);
     then dae;
 		
@@ -7375,7 +7380,8 @@ algorithm
         dae;
     case (e1,Types.PROP(type_ = t1),e2,Types.PROP(type_ = t2),initial_,impl)
       equation 
-        e1_str = Exp.printExpStr(e1) "Types.equivtypes(t1,t2) => false &" ;
+        
+        e1_str = Exp.printExpStr(e1);
         t1_str = Types.unparseType(t1);
         e2_str = Exp.printExpStr(e2);
         t2_str = Types.unparseType(t2);
@@ -7472,7 +7478,7 @@ algorithm
         dae = makeDaeEquation(e1, e2, initial_);
       then
         {dae};
-    case (e1,e2,(Types.T_COMPLEX(complexVarLst = {},complexTypeOption = SOME(bc)),_),initial_) /* Complex types extending basic type */ 
+    case (e1,e2,(Types.T_COMPLEX(complexTypeOption = SOME(bc)),_),initial_) /* Complex types extending basic type */ 
       local list<DAE.Element> dae;
       equation 
         dae = instEqEquation2(e1, e2, bc, initial_);
@@ -7493,21 +7499,20 @@ algorithm
         dae = listAppend(dae1, dae2);
       then
         dae;
-    case (e1,(e2 as Exp.CREF(componentRef = _)),(t as (Types.T_COMPLEX(complexClassType = _),_)),initial_) /* When the type of the expressions is a complex type, and the left-hand side of the equation is not a component reference, a new variable is introduced to be able to dereference components of the expression.  This is rather ugly, since it doesn\'t really solve the problem of describing the semantics.  Now the semantics of composite equations are defined in terms of other composite equations.  To make this a little cleaner, the equation that equates the new name to the expression is stored using DAE.DEFINE rather than DAE.EQUATION.  This makes it a little clearer. */ 
+        /* Complex type inheriting primitive type */
+/*    case (e1,e2,(Types.T_COMPLEX(complexTypeOption=SOME(t)),_),initial_) 
       local
         Exp.ComponentRef n;
         list<DAE.Element> dae;
         tuple<Types.TType, Option<Absyn.Path>> t;
       equation 
-        n = newIdent();
-        decl = daeDeclare(n, ClassInf.UNKNOWN(""), t, 
-          SCode.ATTR({},false,SCode.RW(),SCode.VAR(),Absyn.BIDIR()),true, NONE, {}, NONE, NONE, NONE,Absyn.UNSPECIFIED());
-        tp = Exp.typeof(e2);
-        dae1 = instEqEquation2(Exp.CREF(n,tp), e2, t, initial_);
-        dae = listAppend(decl, (DAE.DEFINE(n,e1) :: dae1));
+        dae = instEqEquation2(e1,e2,t,initial_);
       then
-        dae;
-    case (e1,e2,(t as (Types.T_COMPLEX(complexClassType = _),_)),initial_) /* When the right-hand side is not a component reference a similar trick is applied.  This also catched the case where none of the sides is a component reference */ 
+        dae;*/
+  
+        /* When the right-hand side is not a component reference a similar trick is applied. 
+	 This also catched the case where none of the sides is a component reference */ 
+    case (e1,e2,(t as (Types.T_COMPLEX(complexClassType = _),_)),initial_) 
       local
         Exp.ComponentRef n;
         list<DAE.Element> dae;
@@ -8683,6 +8688,12 @@ algorithm
         somep = getOptPath(p);
       then
         ((Types.T_COMPLEX(st,l,bc),somep));
+
+    case (p,st,l,bc)
+      equation 
+        print("mktypeWithArrays failed\n");     
+      then fail();
+        
   end matchcontinue;
 end mktypeWithArrays;
 

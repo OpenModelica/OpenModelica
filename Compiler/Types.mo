@@ -742,6 +742,20 @@ algorithm
   end matchcontinue;
 end basicType;
 
+public function extendsBasicType "function: basicType
+ 
+  Test whether a type extends one of the builtin types.
+"
+  input Type inType;
+  output Boolean outBoolean;
+algorithm 
+  outBoolean:=
+  matchcontinue (inType)
+    case ((T_COMPLEX(complexTypeOption=SOME(_)),_)) then true;
+    case (_) then false; 
+  end matchcontinue;
+end extendsBasicType;
+
 public function arrayType "function: arrayType
  
   Test whether a type is an array type.
@@ -1319,7 +1333,7 @@ algorithm
   outString:=
   matchcontinue (inType)
     local
-      Ident s1,str,tys,dims,res,vstr,name,st_str,bc_tp_str,paramstr,restypestr,tystr;
+      Ident s1,s2,str,tys,dims,res,vstr,name,st_str,bc_tp_str,paramstr,restypestr,tystr;
       list<Ident> l,dimlststr,dimlststr_1,vars,paramstrs,tystrs;
       Type ty,t,bc_tp,restype;
       list<Option<Integer>> dimlst;
@@ -1328,10 +1342,27 @@ algorithm
       ClassInf.State ci_state;
       list<FuncArg> params;
       
-    case ((T_INTEGER(varLstInt = _),_)) then "Integer"; 
-    case ((T_REAL(varLstReal = _),_)) then "Real"; 
-    case ((T_STRING(varLstString = _),_)) then "String"; 
-    case ((T_BOOL(varLstBool = _),_)) then "Boolean"; 
+    case ((T_INTEGER(varLstInt = {}),_)) then "Integer"; 
+    case ((T_REAL(varLstReal = {}),_)) then "Real"; 
+    case ((T_STRING(varLstString = {}),_)) then "String"; 
+    case ((T_BOOL(varLstBool = {}),_)) then "Boolean"; 
+      
+    case ((T_INTEGER(varLstInt = vs),_)) equation
+      s1 = Util.stringDelimitList(Util.listMap(vs, unparseVarAttr),", ");
+      s2 = "Integer(" +& s1 +& ")";
+    then s2; 
+    case ((T_REAL(varLstReal = vs),_)) equation
+      s1 = Util.stringDelimitList(Util.listMap(vs, unparseVarAttr),", ");
+      s2 = "Real(" +& s1 +& ")";
+    then s2;
+      case ((T_STRING(varLstString = vs),_)) equation
+      s1 = Util.stringDelimitList(Util.listMap(vs, unparseVarAttr),", ");
+      s2 = "String(" +& s1 +& ")";
+      then s2;
+      case ((T_BOOL(varLstBool = vs),_)) equation
+      s1 = Util.stringDelimitList(Util.listMap(vs, unparseVarAttr),", ");
+      s2 = "Boolean(" +& s1 +& ")";
+    then s2;   
     case ((T_ENUMERATION(names = l,varLst=vs),_))
       local String s2;
       equation 
@@ -1594,6 +1625,38 @@ algorithm
        str;
   end matchcontinue;
 end printParamsStr;
+
+public function unparseVarAttr "
+  Prints a variable which is attribute of builtin type to a string, e.g. on the form 'max = 10.0'
+"
+  input Var inVar;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inVar)
+    local
+      Ident t,res,n,bindStr,valStr;
+      Attributes attr;
+      Boolean prot;
+      Type typ;
+      Binding bind;
+      Values.Value value;
+      Exp.Exp e;
+    case VAR(name = n,attributes = attr,protected_ = prot,type_ = typ,binding = EQBOUND(exp=e))
+      equation 
+        bindStr = Exp.printExpStr(e);
+        res = Util.stringAppendList({n,"=",bindStr});
+      then
+        res;
+    case VAR(name = n,attributes = attr,protected_ = prot,type_ = typ,binding = VALBOUND(value))
+      equation 
+        valStr = Values.valString(value);
+        res = Util.stringAppendList({n,"=",valStr});
+      then
+        res;    
+    case(_) then "";    
+  end matchcontinue;
+end unparseVarAttr;
 
 public function unparseVar "function: unparseVar
  
