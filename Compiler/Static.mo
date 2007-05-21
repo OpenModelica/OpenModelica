@@ -211,6 +211,7 @@ algorithm
       Types.Properties prop;
       Boolean impl;
       Values.Value v;
+      Types.Type tp;
       tuple<Types.TType, Option<Absyn.Path>> vt;
       Types.Const c,const;
       list<Env.Frame> env;
@@ -230,22 +231,20 @@ algorithm
         e_1 = Exp.simplify(e);
       then
         (cache,e_1,prop);
-    case (cache,e,(prop as Types.PROP(constFlag = c)),Types.C_CONST(),impl,env) /* as false */ 
+    case (cache,e,(prop as Types.PROP(constFlag = c,type_=tp)),Types.C_CONST(),impl,env) /* as false */ 
       equation 
         (cache,v,_) = Ceval.ceval(cache,env, e, impl, NONE, NONE, Ceval.MSG());
         e_1 = valueExp(v);
-        vt = valueType(v);
       then
-        (cache,e_1,Types.PROP(vt,c));
+        (cache,e_1,Types.PROP(tp,c));
        
-    case (cache,e,(prop as Types.PROP_TUPLE(tupleConst = c)),Types.C_CONST(),impl,env) /* as false */ 
+    case (cache,e,(prop as Types.PROP_TUPLE(tupleConst = c,type_=tp)),Types.C_CONST(),impl,env) /* as false */ 
       local Types.TupleConst c;
       equation 
         (cache,v,_) = Ceval.ceval(cache,env, e, impl, NONE, NONE, Ceval.MSG());
         e_1 = valueExp(v);
-        vt = valueType(v);
       then
-        (cache,e_1,Types.PROP_TUPLE(vt,c));
+        (cache,e_1,Types.PROP_TUPLE(tp,c));
     case (cache,e,prop,const,impl,env)
       equation 
         e_1 = Exp.simplify(e);
@@ -1261,7 +1260,7 @@ algorithm
     case (cache,env,(e :: expl),impl,st,doVect) /* impl */ 
       equation 
         (cache,e_1,Types.PROP(tp,_),_) = elabExp(cache,env, e, impl, st,doVect);
-        ((Types.T_INTEGER({}),_)) = Types.arrayElementType(tp);
+        ((Types.T_REAL({}),_)) = Types.arrayElementType(tp);
       then
         ();
     case (cache,env,(e :: expl),impl,st,doVect)
@@ -1314,7 +1313,9 @@ algorithm
         (cache,expl_2,Types.PROP(real_tp_1,const));
     case (cache,env,expl,impl,st,doVect)
       equation 
-        Debug.fprint("failtrace", "-elab_array_real failed\n");
+        Debug.fprint("failtrace", "-elab_array_real failed, expl=");
+        Debug.fprint("failtrace", Util.stringDelimitList(Util.listMap(expl,Dump.printExpStr),","));
+        Debug.fprint("failtrace", "\n");        
       then
         fail();
   end matchcontinue;
@@ -4214,7 +4215,7 @@ algorithm
         				 SLOT(("minimumLength",(Types.T_INTEGER({}),NONE)),false,SOME(Exp.ICONST(0)),{}),
         				 SLOT(("leftJustified",(Types.T_BOOL({}),NONE)),false,SOME(Exp.BCONST(true)),{}),
         				 SLOT(("significantDigits",(Types.T_INTEGER({}),NONE)),false,SOME(Exp.ICONST(6)),{})};        				 
-        (cache,args_1,newslots,constlist) = elabInputArgs(cache,env, args, nargs, slots, impl);
+        (cache,args_1,newslots,constlist) = elabInputArgs(cache,env, args, nargs, slots, true/*checkTypes*/ ,impl);
         c = Util.listReduce(constlist, Types.constAnd);         
       then
 				(cache, 
@@ -5448,7 +5449,7 @@ algorithm
         (cache,(t as (Types.T_FUNCTION(fargs,(outtype as (Types.T_COMPLEX(ClassInf.RECORD(_),_,_),_))),_)),env_1) 
         	= Lookup.lookupType(cache,env, fn, true);
         slots = makeEmptySlots(fargs);
-        (cache,args_1,newslots,constlist) = elabInputArgs(cache,env, args, nargs, slots, impl);
+        (cache,args_1,newslots,constlist) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl);
         const = Util.listReduce(constlist, Types.constAnd);
         tyconst = elabConsts(outtype, const);
         prop = getProperties(outtype, tyconst);
@@ -5468,7 +5469,7 @@ algorithm
 	 in the funktion type of the user function and check both the
 	 funktion name and the function\'s type. 
 	" ;			
-        (cache,args_1,constlist,restype,functype,vect_dims,slots) = elabTypes(cache,env, args,nargs, typelist, impl) "The constness of a function depends on the inputs. If all inputs are
+        (cache,args_1,constlist,restype,functype,vect_dims,slots) = elabTypes(cache,env, args,nargs, typelist, true/* Check types*/,impl) "The constness of a function depends on the inputs. If all inputs are
 	  constant the call itself is constant.
 	" ;
 	
@@ -5511,9 +5512,22 @@ algorithm
       then
         fail();
 
+    case (cache,env,fn,args,nargs,impl,st) /* no matching type found, with -one- candidate */ 
+      local list<Exp.Exp> args1; String argStr; Types.Type tp1;
+      equation 
+        (cache,typelist as {tp1}) = Lookup.lookupFunctionsInEnv(cache,env, fn);
+        (cache,args_1,constlist,restype,functype,vect_dims,slots) = elabTypes(cache,env, args,nargs, typelist, false/* Do not check types*/,impl);
+        argStr = Exp.printExpListStr(args_1);
+        fn_str = Absyn.pathString(fn) +& "(" +& argStr +& ") of type " +& Types.unparseType(functype);                
+        types_str = Types.unparseType(tp1) ;
+        Error.addMessage(Error.NO_MATCHING_FUNCTION_FOUND, {fn_str,types_str});
+      then
+        fail();        
+        
     case (cache,env,fn,args,nargs,impl,st) /* no matching type found, with candidates */ 
       equation 
-        (cache,typelist as _::_) = Lookup.lookupFunctionsInEnv(cache,env, fn);
+        (cache,typelist as _::_::_) = Lookup.lookupFunctionsInEnv(cache,env, fn);
+
         t_lst = Util.listMap(typelist, Types.unparseType);
         fn_str = Absyn.pathString(fn);
         types_str = Util.stringDelimitList(t_lst, "\n -");
@@ -5918,6 +5932,7 @@ protected function elabTypes "function: elabTypes
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input list<Types.Type> inTypesTypeLst;
+  input Boolean checkTypes "if True, checks types";
   input Boolean inBoolean;
   output Env.Cache outCache;
   output list<Exp.Exp> outExpExpLst1;
@@ -5928,7 +5943,7 @@ protected function elabTypes "function: elabTypes
   output list<Slot> outSlotLst6;
 algorithm 
   (outCache,outExpExpLst1,outTypesConstLst2,outType3,outType4,outTypesArrayDimLst5,outSlotLst6):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inAbsynNamedArgLst,inTypesTypeLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inAbsynNamedArgLst,inTypesTypeLst,checkTypes,inBoolean)
     local
       list<Slot> slots,newslots;
       list<Exp.Exp> args_1;
@@ -5942,25 +5957,47 @@ algorithm
       list<tuple<Types.TType, Option<Absyn.Path>>> trest;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,args,nargs,((t as (Types.T_FUNCTION(funcArg = params,funcResultType = restype),_)) :: trest),impl) /* argument expressions function candidate types impl const result type function type Vectorized dimensions slots, needed for vectorization We found a match. */ 
+      /*We found a match. */ 
+    case (cache,env,args,nargs,((t as (Types.T_FUNCTION(funcArg = params,funcResultType = restype),_)) :: trest),checkTypes,impl) 
       equation 
         slots = makeEmptySlots(params);
-        (cache,args_1,newslots,clist) = elabInputArgs(cache,env, args, nargs, slots, impl);
+        (cache,args_1,newslots,clist) = elabInputArgs(cache,env, args, nargs, slots, checkTypes,impl);
         dims = slotsVectorizable(newslots);
+        t = createActualFunctype(t,newslots,checkTypes) "only created when not checking types for error msg";
       then
         (cache,args_1,clist,restype,t,dims,newslots);
-    case (cache,env,args,nargs,((Types.T_FUNCTION(funcArg = params,funcResultType = restype),_) :: trest),impl) /* We did not found a match, try next function type */ 
+
+        /* We did not found a match, try next function type */ 
+    case (cache,env,args,nargs,((Types.T_FUNCTION(funcArg = params,funcResultType = restype),_) :: trest),checkTypes,impl) 
       equation 
-        (cache,args_1,clist,restype,t,dims,slots) = elabTypes(cache,env, args,nargs,trest, impl);
+        (cache,args_1,clist,restype,t,dims,slots) = elabTypes(cache,env, args,nargs,trest, checkTypes,impl);
       then
         (cache,args_1,clist,restype,t,dims,slots);
-    case (cache,env,_,_,_,_)
+    case (cache,env,_,_,_,_,_)
       equation 
         Debug.fprintln("failtrace", "elabTypes failed.\n");
       then
         fail();
   end matchcontinue;
 end elabTypes;
+
+protected function createActualFunctype "Creates the actual function type of a CALL expression, used for error messages.
+This type is only created if checkTypes is false."
+  input Types.Type tp;
+  input list<Slot> slots;
+  input Boolean checkTypes;
+  output Types.Type outTp;
+algorithm
+  outTp := matchcontinue(tp,slots,checkTypes)
+    local Option<Absyn.Path> optPath;
+      list<Types.FuncArg> slotParams,params; Types.Type restype;
+    case(tp,_,true) then tp;
+      /* When not checking types, create function type by looking at the filled slots */
+    case(tp as (Types.T_FUNCTION(funcArg = params,funcResultType = restype),optPath),slots,false) equation
+      slotParams = funcargLstFromSlots(slots);
+    then ((Types.T_FUNCTION(slotParams,restype),optPath));      
+  end matchcontinue;  
+end createActualFunctype;
 
 protected function slotsVectorizable "function: slotsVectorizable
   author: PA
@@ -6338,6 +6375,7 @@ protected function elabInputArgs "function_: elabInputArgs
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input list<Slot> inSlotLst;
+  input Boolean checkTypes "if true, check types";
   input Boolean inBoolean;
   output Env.Cache outCache;
   output list<Exp.Exp> outExpExpLst;
@@ -6345,7 +6383,7 @@ protected function elabInputArgs "function_: elabInputArgs
   output list<Types.Const> outTypesConstLst;
 algorithm 
   (outCache,outExpExpLst,outSlotLst,outTypesConstLst):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inAbsynNamedArgLst,inSlotLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inAbsynNamedArgLst,inSlotLst,checkTypes,inBoolean)
     local
       list<tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>>> farg;
       list<Slot> slots_1,newslots,slots;
@@ -6356,27 +6394,27 @@ algorithm
       list<Absyn.NamedArg> narg;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,(exp as (_ :: _)),narg,slots,impl) /* impl const Fill slots with positional arguments */ 
+    case (cache,env,(exp as (_ :: _)),narg,slots,checkTypes,impl) /* impl const Fill slots with positional arguments */ 
       equation 
         farg = funcargLstFromSlots(slots);
-        (cache,slots_1,clist1) = elabPositionalInputArgs(cache,env, exp, farg, slots, impl);
-        (cache,_,newslots,clist2) = elabInputArgs(cache,env, {}, narg, slots_1, impl) "recursive call fills named arguments" ;
+        (cache,slots_1,clist1) = elabPositionalInputArgs(cache,env, exp, farg, slots, checkTypes,impl);
+        (cache,_,newslots,clist2) = elabInputArgs(cache,env, {}, narg, slots_1, checkTypes, impl) "recursive call fills named arguments" ;
         clist = listAppend(clist1, clist2);
         explst = expListFromSlots(newslots);
       then
         (cache,explst,newslots,clist);
-    case (cache,env,{},narg,slots,impl) /* Fill slots with named arguments */ 
+    case (cache,env,{},narg,slots,checkTypes,impl) /* Fill slots with named arguments */ 
        local String s;
       equation 
         farg = funcargLstFromSlots(slots);
         s = printSlotsStr(slots);
-        (cache,newslots,clist) = elabNamedInputArgs(cache,env, narg, farg, slots, impl);
+        (cache,newslots,clist) = elabNamedInputArgs(cache,env, narg, farg, slots, checkTypes, impl);
         newexp = expListFromSlots(newslots);
       then
         (cache,newexp,newslots,clist);
-    case (cache,env,{},{},slots,impl) then (cache,{},slots,{}); 
+    case (cache,env,{},{},slots,checkTypes,impl) then (cache,{},slots,{}); 
       
-    case (_,_,_,_,_,_) equation Debug.fprint("failtrace","elabInputArgs failed\n"); then fail();
+    case (_,_,_,_,_,_,_) equation Debug.fprint("failtrace","elabInputArgs failed\n"); then fail();
   end matchcontinue;
 end elabInputArgs;
 
@@ -6547,13 +6585,14 @@ protected function elabPositionalInputArgs "function: elabPositionalInputArgs
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Types.FuncArg> inTypesFuncArgLst;
   input list<Slot> inSlotLst;
+  input Boolean checkTypes "if true, check types";
   input Boolean inBoolean;
   output Env.Cache outCache;
   output list<Slot> outSlotLst;
   output list<Types.Const> outTypesConstLst;
 algorithm 
   (outCache,outSlotLst,outTypesConstLst):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inTypesFuncArgLst,inSlotLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inTypesFuncArgLst,inSlotLst,checkTypes,inBoolean)
     local
       list<Slot> slots,slots_1,newslots;
       Boolean impl;
@@ -6568,23 +6607,47 @@ algorithm
       list<tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>>> vs;
       list<Types.ArrayDim> ds;
       Env.Cache cache;
-    case (cache,_,{},_,slots,impl) then (cache,slots,{});  /* impl const */ 
-    case (cache,env,(e :: es),((farg as (_,vt)) :: vs),slots,impl) /* Exact match */ 
+      Ident id;
+    case (cache,_,{},_,slots,checkTypes,impl) then (cache,slots,{});  /* impl const */ 
+
+      /* Exact match */      
+    case (cache,env,(e :: es),((farg as (_,vt)) :: vs),slots,checkTypes as true, impl)  
       equation 
         (cache,e_1,Types.PROP(t,c1),_) = elabExp(cache,env, e, impl, NONE,true);
         (e_2,_) = Types.matchType(e_1, t, vt);
-        (cache,slots_1,clist) = elabPositionalInputArgs(cache,env, es, vs, slots, impl);
-        newslots = fillSlot(farg, e_2, {}, slots_1) "no vectorized dim" ;
+        (cache,slots_1,clist) = elabPositionalInputArgs(cache,env, es, vs, slots,checkTypes, impl);
+        newslots = fillSlot(farg, e_2, {}, slots_1,checkTypes) "no vectorized dim" ;
       then
         (cache,newslots,(c1 :: clist));
-    case (cache,env,(e :: es),((farg as (_,vt)) :: vs),slots,impl) /* check if vectorized argument */ 
+
+        /* check if vectorized argument */         
+    case (cache,env,(e :: es),((farg as (_,vt)) :: vs),slots,checkTypes as true,impl) 
       equation 
         (cache,e_1,Types.PROP(t,c1),_) = elabExp(cache,env, e, impl, NONE,true);
         (e_2,_,ds) = Types.vectorizableType(e_1, t, vt);
-        (cache,slots_1,clist) = elabPositionalInputArgs(cache,env, es, vs, slots, impl);
-        newslots = fillSlot(farg, e_2, ds, slots_1);
+        (cache,slots_1,clist) = elabPositionalInputArgs(cache,env, es, vs, slots,checkTypes, impl);
+        newslots = fillSlot(farg, e_2, ds, slots_1,checkTypes);
       then
         (cache,newslots,(c1 :: clist));
+
+        /* Not checking type*/ 
+    case (cache,env,(e :: es),((farg as (id,vt)) :: vs),slots,checkTypes as false, impl)
+      equation 
+        (cache,e_1,Types.PROP(t,c1),_) = elabExp(cache,env, e, impl, NONE,true);
+        (cache,slots_1,clist) = elabPositionalInputArgs(cache,env, es, vs, slots,checkTypes, impl);
+        /* fill slot with actual type for error message*/
+        newslots = fillSlot((id,t), e_1, {}, slots_1,checkTypes);
+      then
+        (cache,newslots,(c1 :: clist));  
+
+       
+    case (cache,env,es,_ ,slots,checkTypes , impl)
+      equation 
+        Debug.fprint("failtrace", "elabPositionalInputArgs failed: expl:");
+        Debug.fprint("failtrace", Util.stringDelimitList(Util.listMap(es,Dump.printExpStr),", "));
+        Debug.fprint("failtrace", "\n");
+      then
+        fail();               
   end matchcontinue;
 end elabPositionalInputArgs;
 
@@ -6602,13 +6665,14 @@ protected function elabNamedInputArgs "function elabNamedInputArgs
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input list<Types.FuncArg> inTypesFuncArgLst;
   input list<Slot> inSlotLst;
+  input Boolean checkTypes "if true, check types";
   input Boolean inBoolean;
   output Env.Cache outCache;
   output list<Slot> outSlotLst;
   output list<Types.Const> outTypesConstLst;
 algorithm 
   (outCache,outSlotLst,outTypesConstLst) :=
-  matchcontinue (inCache,inEnv,inAbsynNamedArgLst,inTypesFuncArgLst,inSlotLst,inBoolean)
+  matchcontinue (inCache,inEnv,inAbsynNamedArgLst,inTypesFuncArgLst,inSlotLst,checkTypes,inBoolean)
     local
       Exp.Exp e_1,e_2;
       tuple<Types.TType, Option<Absyn.Path>> t,vt;
@@ -6622,21 +6686,31 @@ algorithm
       list<tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>>> farg;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,impl) /* impl const TODO: implement check_slots_filled.
-  rule	check_slots_filled(env,slots) 
- 	----------------------------
- 	elab_named_input_args(env,{},farg,slots) => ({},slots) 
- */ 
+
+      /* Check types */      
+    case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,checkTypes as true,impl) 
       equation 
         (cache,e_1,Types.PROP(t,c1),_) = elabExp(cache,env, e, impl, NONE,true);
         vt = findNamedArgType(id, farg);
         (e_2,_) = Types.matchType(e_1, t, vt);
-        slots_1 = fillSlot((id,vt), e_2, {}, slots);
-        (cache,newslots,clist) = elabNamedInputArgs(cache,env, nas, farg, slots_1, impl);
+        slots_1 = fillSlot((id,vt), e_2, {}, slots,checkTypes);
+        (cache,newslots,clist) = elabNamedInputArgs(cache,env, nas, farg, slots_1, checkTypes,impl);
       then
         (cache,newslots,(c1 :: clist));
-    case (cache,_,{},_,slots,impl) then (cache,slots,{}); 
-    case (cache,env,narg,farg,_,impl)
+
+      /* Do not check types */      
+    case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,checkTypes as true,impl) 
+      equation 
+        (cache,e_1,Types.PROP(t,c1),_) = elabExp(cache,env, e, impl, NONE,true);
+        vt = findNamedArgType(id, farg);
+        slots_1 = fillSlot((id,vt), e_1, {}, slots,checkTypes);
+        (cache,newslots,clist) = elabNamedInputArgs(cache,env, nas, farg, slots_1, checkTypes,impl);
+      then
+        (cache,newslots,(c1 :: clist));
+        
+        
+    case (cache,_,{},_,slots,checkTypes,impl) then (cache,slots,{}); 
+    case (cache,env,narg,farg,_,checkTypes,impl)
       equation 
         Debug.fprint("failtrace", "- elab_named_input_args failed\n");
       then
@@ -6684,10 +6758,11 @@ protected function fillSlot "function: fillSlot
   input Exp.Exp inExp;
   input list<Types.ArrayDim> inTypesArrayDimLst;
   input list<Slot> inSlotLst;
+  input Boolean checkTypes "type checking only if true";
   output list<Slot> outSlotLst;
 algorithm 
   outSlotLst:=
-  matchcontinue (inFuncArg,inExp,inTypesArrayDimLst,inSlotLst)
+  matchcontinue (inFuncArg,inExp,inTypesArrayDimLst,inSlotLst,checkTypes)
     local
       Ident fa1,fa2,fa;
       Exp.Exp exp;
@@ -6696,24 +6771,31 @@ algorithm
       list<Slot> xs,newslots;
       tuple<Ident, tuple<Types.TType, Option<Absyn.Path>>> farg;
       Slot s1;
-    case ((fa1,_),exp,ds,(SLOT(an = (fa2,b),true_ = false) :: xs))
+    case ((fa1,_),exp,ds,(SLOT(an = (fa2,b),true_ = false) :: xs),checkTypes as true)
       equation 
         equality(fa1 = fa2);
       then
         (SLOT((fa2,b),true,SOME(exp),ds) :: xs);
-    case ((fa1,_),exp,ds,(SLOT(an = (fa2,b),true_ = true) :: xs))
+        /* If not checking types, store actual type in slot so error message contains actual type */
+    case ((fa1,b),exp,ds,(SLOT(an = (fa2,_),true_ = false) :: xs),checkTypes as false)
+      equation 
+        equality(fa1 = fa2);
+      then
+        (SLOT((fa2,b),true,SOME(exp),ds) :: xs); 
+               
+    case ((fa1,_),exp,ds,(SLOT(an = (fa2,b),true_ = true) :: xs),checkTypes )
       equation 
         equality(fa1 = fa2);
         Error.addMessage(Error.FUNCTION_SLOT_ALLREADY_FILLED, {fa2});
       then
         fail();
-    case ((farg as (fa1,_)),exp,ds,((s1 as SLOT(an = (fa2,_))) :: xs))
+    case ((farg as (fa1,_)),exp,ds,((s1 as SLOT(an = (fa2,_))) :: xs),checkTypes)
       equation 
         failure(equality(fa1 = fa2));
-        newslots = fillSlot(farg, exp, ds, xs);
+        newslots = fillSlot(farg, exp, ds, xs,checkTypes);
       then
         (s1 :: newslots);
-    case ((fa,_),_,_,_)
+    case ((fa,_),_,_,_,_)
       equation 
         Error.addMessage(Error.NO_SUCH_ARGUMENT, {fa});
       then

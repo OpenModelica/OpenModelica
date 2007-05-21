@@ -191,6 +191,7 @@ public constant ErrorID NOT_ARRAY_TYPE_IN_FOR_STATEMENT= 93;
 public constant ErrorID BREAK_OUT_OF_LOOP= 94;
 public constant ErrorID DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN= 95;
 public constant ErrorID GENERIC_TRANSLATION_ERROR = 96;
+public constant ErrorID MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR=97;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
 public constant ErrorID BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER=502;
@@ -368,6 +369,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Class %s inherits primary type but has components"),
           (MODIFIER_TYPE_MISMATCH_ERROR,TRANSLATION(),ERROR(),
           "Type mismatch in modifier, expected type %s, got modifier %s of type %s"),
+          (MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR,TRANSLATION(),ERROR(),
+          "Type mismatch in modifier, declared type %s, got modifier %s of type %s"),
           (ERROR_FLATTENING,TRANSLATION(),ERROR(),
           "Error occured while flattening model %s"),
 		      (NOT_ARRAY_TYPE_IN_FOR_STATEMENT, TRANSLATION(), ERROR(),

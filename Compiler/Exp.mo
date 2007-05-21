@@ -5692,6 +5692,13 @@ algorithm
   end matchcontinue;
 end printSubscriptStr;
 
+public function printExpListStr "prints a list of expressions with commas between expressions."
+  input list<Exp> expl;
+  output String res;
+algorithm
+  res := Util.stringDelimitList(Util.listMap(expl,printExpStr),", ");  
+end printExpListStr;
+  
 public function printExpStr "function: printExpStr
  
   This function prints a complete expression.

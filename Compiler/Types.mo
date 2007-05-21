@@ -838,45 +838,45 @@ algorithm
         true = subtype(t1, t2);
       then
         true;
+        /* Array */
     case ((T_ARRAY(arrayDim = DIM(integerOption = SOME(i1)),arrayType = t1),_),(T_ARRAY(arrayDim = DIM(integerOption = SOME(i2)),arrayType = t2),_))
       equation 
         equality(i1 = i2);
         true = subtype(t1, t2);
       then
         true;
+
+        /* Complex type */        
     case ((T_COMPLEX(complexClassType = st1,complexVarLst = els1,complexTypeOption = bc1),_),(T_COMPLEX(complexClassType = st2,complexVarLst = els2,complexTypeOption = bc2),_))
       equation 
         true = subtypeVarlist(els1, els2);
       then
         true;
-    case ((T_COMPLEX(complexClassType = st1,complexVarLst = els1,complexTypeOption = SOME(tp)),_),tp2) /* A complex type that extends a basic type is checked 
-	    against the baseclass basic type */ 
+  
+        /* A complex type that extends a basic type is checked 
+		    against the baseclass basic type */         
+    case ((T_COMPLEX(complexClassType = st1,complexVarLst = els1,complexTypeOption = SOME(tp)),_),tp2) 
       equation 
         res = subtype(tp, tp2);
       then
         res;
-    case (tp1,(T_COMPLEX(complexClassType = st1,complexVarLst = els1,complexTypeOption = SOME(tp2)),_)) /* A complex type that extends a basic type is checked 
-	    against the baseclass basic type */ 
+        /* A complex type that extends a basic type is checked 
+		    against the baseclass basic type */         
+    case (tp1,(T_COMPLEX(complexClassType = st1,complexVarLst = els1,complexTypeOption = SOME(tp2)),_)) 
       equation 
         res = subtype(tp1, tp2);
       then
         res;
-    case ((T_TUPLE(tupleType = type_list1),_),(T_TUPLE(tupleType = type_list2),_)) /* PR. Check of tuples, similar to complex. Just that
-	     identifier name do not have to be checked. Only types are
-	 checked. */ 
+        
+        /* Check of tuples, similar to complex. Just that
+	     identifier name do not have to be checked. Only types are checked. */ 
+    case ((T_TUPLE(tupleType = type_list1),_),(T_TUPLE(tupleType = type_list2),_)) 
       equation 
         true = subtypeTypelist(type_list1, type_list2);
       then
         true;
-    case (t1,t2) then false;  /* What? If not subtye should return false. Doesn\'t mean no matching rule
-  rule	Debug.fprint (\"tytr\", \"subtype: no matching subtype rule.\\n\") &
-	Debug.fcall (\"tytr\", print_type, t1) &
-	Debug.fprint (\"tytr\", \" <> \") &
-	Debug.fcall (\"tytr\", print_type, t2) &
-	Debug.fprint (\"tytr\", \"\\n\")
-	-----------------------------------
-	subtype(t1,t2) => false
- */ 
+        
+    case (t1,t2) then false;   
   end matchcontinue;
 end subtype;
 
@@ -2694,7 +2694,7 @@ algorithm
       list<Var> v;
       String str;
 
-      // Array expressions: expression dimension {dim1}, expected dimension {dim2}
+      /* Array expressions: expression dimension [dim1], expected dimension [dim2] */
     case (Exp.ARRAY(array = elist),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
       		ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p))
       equation 
@@ -2706,7 +2706,7 @@ algorithm
       then
         (Exp.ARRAY(at,sc,elist_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p));
 
-     // Array expressions: expression dimension {:}, expected dimension {dim2}
+     /* Array expressions: expression dimension [:], expected dimension [dim2] */
     case (Exp.ARRAY(array = elist),(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty1),_),
       	ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p2))
       equation 
@@ -2717,7 +2717,7 @@ algorithm
       then
         (Exp.ARRAY(at,sc,elist_1),(T_ARRAY(DIM(NONE),ty2),p2));
 
-        // Array expressions: expression dimension {dim1}, expected dimension {:}
+        /* Array expressions: expression dimension [dim1], expected dimension [:] */
     case (Exp.ARRAY(array = elist),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
       	ty0 as (T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty2),p2))
       equation 
@@ -2728,7 +2728,7 @@ algorithm
       then
         (Exp.ARRAY(at,sc,elist_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p2));
         
-        // Range expressions, e.g. 1:2:10
+        /* Range expressions, e.g. 1:2:10 */
     case (Exp.RANGE(ty = t,exp = begin,expOption = SOME(step),range = stop),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
       ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p))
       equation 
@@ -2740,7 +2740,7 @@ algorithm
       then
         (Exp.RANGE(at,begin_1,SOME(step_1),stop_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p));
 
-        // Range expressions, e.g. 1:10
+        /* Range expressions, e.g. 1:10 */
     case (Exp.RANGE(ty = t,exp = begin,expOption = NONE,range = stop),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
       ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p))
       equation 
@@ -2751,7 +2751,7 @@ algorithm
       then
         (Exp.RANGE(at,begin_1,NONE,stop_1),(T_ARRAY(DIM(SOME(dim1)),ty2),p));
 
-        // Matrix expressions: expression dimension {dim1,dim11}, expected dimension {dim2,dim22}
+        /* Matrix expressions: expression dimension [dim1,dim11], expected dimension [dim2,dim22] */
     case (Exp.MATRIX(integer = nmax,scalar = ell),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim11)),arrayType = t1),_)),_),
       ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim22)),arrayType = t2),p1)),p2))
       equation 
@@ -2763,7 +2763,7 @@ algorithm
         (Exp.MATRIX(at,nmax,ell_1),(T_ARRAY(DIM(SOME(dim1)),(T_ARRAY(DIM(SOME(dim11)),t2),p1)),
           p2));
           
-        // Matrix expressions: expression dimension {dim1,dim11} expected dimension {:,dim22} 
+        /* Matrix expressions: expression dimension [dim1,dim11] expected dimension [:,dim22] */
     case (Exp.MATRIX(integer = nmax,scalar = ell),(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim11)),arrayType = t1),_)),_),
       ty0 as (T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim22)),arrayType = t2),p1)),p2))
       equation 
@@ -2774,7 +2774,7 @@ algorithm
         (Exp.MATRIX(at,nmax,ell_1),(T_ARRAY(DIM(SOME(dim1)),(T_ARRAY(DIM(SOME(dim11)),t2),p1)),
           p2));
     
-        // Arbitrary expressions, expression dimension {dim1}, expected dimension {dim2}
+        /* Arbitrary expressions, expression dimension [dim1], expected dimension [dim2] */
     case (e,(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
       	ty0 as (T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p2))
       equation 
@@ -2784,7 +2784,7 @@ algorithm
       then
         (e_1,(T_ARRAY(DIM(SOME(dim2)),t_1),p2));
 
-        // Arbitrary expressions,  expression dimension {:},  expected dimension {dim2}
+        /* Arbitrary expressions,  expression dimension [:],  expected dimension [dim2]*/
     case (e,(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty1),_),
       	(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim2)),arrayType = ty2),p2))
       equation 
@@ -2793,7 +2793,7 @@ algorithm
       then
         (e_1,(T_ARRAY(DIM(NONE),t_1),p2));
         
-        // Arbitrary expressions, expression dimension {:} expected dimension {:}
+        /* Arbitrary expressions, expression dimension [:] expected dimension [:] */
     case (e,(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty1),_),
       (T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty2),p2))
       equation 
@@ -2802,7 +2802,7 @@ algorithm
       then
         (e_1,(T_ARRAY(DIM(NONE),t_1),p2));
         
-        // Arbitrary expression, expression dimension {dim1} expected dimension {:}
+        /* Arbitrary expression, expression dimension [dim1] expected dimension [:]*/
     case (e,(T_ARRAY(arrayDim = DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
       	(T_ARRAY(arrayDim = DIM(integerOption = NONE),arrayType = ty2),p2))
       equation 
@@ -2810,13 +2810,28 @@ algorithm
         e_1 = liftExpType(e_1,SOME(dim1));
       then
         (e_1,(T_ARRAY(DIM(SOME(dim1)),t_1),p2));
+        
+        /* Tuple */
     case (Exp.TUPLE(PR = elist),(T_TUPLE(tupleType = tys1),_),(T_TUPLE(tupleType = tys2),p2))
       equation 
         (elist_1,tys_1) = typeConvertList(elist, tys1, tys2);
       then
         (Exp.TUPLE(elist_1),(T_TUPLE(tys_1),p2));
+        
+        /* Enumeration */
     case (exp,(T_ENUM(),_),(T_ENUMERATION(names = l,varLst = v),p2)) then (exp,(T_ENUMERATION(l,v),p2)); 
+
+        /* Implicit conversion from Integer to Real */        
     case (e,(T_INTEGER(varLstInt = v),_),(T_REAL(varLstReal = _),p)) then (Exp.CAST(Exp.REAL(),e),(T_REAL(v),p)); 
+
+        /* Complex type inheriting primitive type */        
+    case (e, (T_COMPLEX(complexTypeOption = SOME(t1)),_),t2) equation
+      (e_1,t_1) = typeConvert(e,t1,t2);
+    then (e_1,t_1);    
+    case (e, t1,(T_COMPLEX(complexTypeOption = SOME(t2)),_)) equation
+      (e_1,t_1) = typeConvert(e,t1,t2);
+    then (e_1,t_1); 
+      
     case (exp,t1,t2)
       equation 
         Debug.fprint("tcvt", "- type conversion failed: ");

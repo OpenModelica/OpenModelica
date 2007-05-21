@@ -2826,6 +2826,7 @@ algorithm
         DAELow.EquationArray eqns;
         Integer elimLevel;
       equation 
+        _ = Error.getMessagesStr() "Clear messages";
         p_1 = SCode.elaborate(p);
         (cache,dae_1,env) = Inst.instantiateClass(cache,p_1, className);
         ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1);
@@ -3048,6 +3049,7 @@ algorithm
       Boolean cdToTemp;
     case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = _),expLst = {Exp.CODE(Absyn.C_TYPENAME(classname),_),starttime,stoptime,interval,method,fileprefix,storeInTemp})),(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
+        _ = Error.getMessagesStr() "Clear messages";
         (cache,Values.BOOL(cdToTemp),SOME(st)) = ceval(cache,env, storeInTemp, true, SOME(st_1), NONE, msg);
         oldDir = System.pwd();
         changeToTempDirectory(cdToTemp);
