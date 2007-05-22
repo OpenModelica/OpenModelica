@@ -59,6 +59,7 @@ public import DAE;
 public import Print;
 public import Exp;
 public import Absyn;
+public import Convert;
 
 public 
 type Ident = String;
@@ -3738,6 +3739,24 @@ algorithm
         var_1 = Util.stringAppendList({"((modelica_real)",var,")"});
       then
         (cfn,var_1,tnr_1);
+    case (Exp.VALUEBLOCK(localDecls = ld,body = b,
+      		result = res),tnr,context)
+      local
+        list<Exp.DAEElement> ld;
+    		Exp.DAEElement b;
+    		list<DAE.Element> ld2;
+    		DAE.Element b2;
+				Exp.Exp res;	
+      equation
+        // Convert back to DAE uniontypes from Exp uniontypes
+        ld2 = Convert.fromExpElemsToDAEElems(ld,{});
+        b2 = Convert.fromExpElemToDAEElem(b);
+        (cfn,tnr_1) = generateVars(ld2, isVarQ, tnr, funContext); 
+        (cfn1,tnr2) = generateAlgorithms(Util.listCreate(b2), tnr_1, context);           
+        (cfn1_2,var,tnr3) = generateExpression(res, tnr2, context);
+        cfn1_2 = cMergeFns({cfn,cfn1,cfn1_2});   
+      then (cfn1_2,var,tnr2);         
+        
     case (Exp.ASUB(exp = _),_,_)
       equation 
         Debug.fprint("failtrace", 

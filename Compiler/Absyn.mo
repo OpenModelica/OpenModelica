@@ -752,8 +752,24 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
 		Option<String> comment       " match expr comment_optional ";		
   end MATCHEXP;
   
+  record VALUEBLOCK "valueblock expression"
+    list<ElementItem> localDecls "local decls";
+    ValueblockBody body "block body"; 
+    Exp result "block end result"; 
+  end VALUEBLOCK; 
+  
 end Exp;
 
+public 
+uniontype ValueblockBody "body of a valueblock"
+   record VALUEBLOCKALGORITHMS
+      list<AlgorithmItem> algorithmBody "algorithm body";	
+   end VALUEBLOCKALGORITHMS;
+
+   record VALUEBLOCKEQUATIONS
+      list<EquationItem> equationBody "equation body";
+   end VALUEBLOCKEQUATIONS;
+end ValueblockBody;
 
 
 uniontype Case "case in match or matchcontinue"

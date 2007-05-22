@@ -851,7 +851,8 @@ algorithm
   end matchcontinue;
 end elabClassdefExternaldecls;
 
-protected function elabEitemlist "function: elabEitemlist
+// Changed from protected to public. KS
+public function elabEitemlist "function: elabEitemlist
  
   This function converts a list of `Absyn.ElementItem\' to a list of
   `Element\'.  The boolean argument flags whether the elements are

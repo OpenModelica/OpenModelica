@@ -79,6 +79,8 @@ public import Types;
 public import Env;
 public import Values;
 public import Interactive;
+public import Algorithm;
+public import Convert;
 
 public 
 type Ident = String;
@@ -110,6 +112,7 @@ protected import Prefix;
 protected import Ceval;
 protected import Connect;
 protected import Error;
+
 
 public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. lists of expressions."
 	input Env.Cache inCache;
@@ -494,6 +497,115 @@ algorithm
         tp_1 = Types.elabType(tp);
       then
         (cache,Exp.CODE(c,tp_1),Types.PROP(tp,Types.C_CONST()),st);
+    
+    case (cache,env,Absyn.VALUEBLOCK(ld,Absyn.VALUEBLOCKALGORITHMS(
+      b),res),impl,st,doVect)
+      local 
+        list<Absyn.ElementItem> ld;
+        list<SCode.Element> ld2;
+        list<tuple<SCode.Element, Inst.Mod>> ld_mod;
+        
+        list<Absyn.AlgorithmItem> b;
+        list<Algorithm.Statement> b_alg;   
+        list<Exp.Statement> b_alg_2;
+
+        list<DAE.Element> dae1;
+        list<Exp.DAEElement> dae2;
+        Exp.DAEElement b_alg_dae;
+        Absyn.Exp res;
+        Exp.Exp res2;
+        Env.Env env2;
+
+        Types.Properties prop;
+      equation 
+        env2 = Env.openScope(env, false, NONE());
+    
+        // Tranform declarations such as Real x,y; to Real x; Real y;
+        ld2 = SCode.elabEitemlist(ld,false);
+
+        // Filter out the components (just to be sure)
+				ld2 = Inst.componentElts(ld2);
+				
+				// Transform the element list into a list of element,NOMOD
+				ld_mod = Inst.addNomod(ld2);
+    
+        env2 = Inst.addComponentsToEnv(env2, Types.NOMOD(), Prefix.NOPRE(), 
+        Connect.SETS({},{}), ClassInf.UNKNOWN("temp"), ld_mod, {}, {}, {}, impl);    
+				    
+			 (cache,dae1,env2,_,_,_) = Inst.instElementList(cache,env2,
+			  Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{}), ClassInf.UNKNOWN("temp"),
+			  ld_mod,{},impl);
+			  
+				// Convert into Exp records
+				dae2 = Convert.fromDAEElemsToExpElems(dae1,{});
+           
+        (cache,b_alg) = Inst.instAlgorithmitems(cache,env2,Prefix.NOPRE(),b,true);
+        	
+        // Convert into Exp records
+				b_alg_2 = Convert.fromAlgStatesToExpStates(b_alg,{});		    
+				b_alg_dae = Exp.ALGORITHM(Exp.ALGORITHM2(b_alg_2));
+         
+        (cache,res2,prop as Types.PROP(_,_),st) = elabExp(cache,env2,res,impl,st,doVect);  
+             
+      then (cache,Exp.VALUEBLOCK(dae2,b_alg_dae,res2),prop,st);
+   
+   //Equations must converted into Algorithm statements
+   case (cache,env,Absyn.VALUEBLOCK(ld,Absyn.VALUEBLOCKEQUATIONS(
+      b2),res),impl,st,doVect)
+      local 
+        list<Absyn.ElementItem> ld;
+        list<SCode.Element> ld2;
+        list<tuple<SCode.Element, Inst.Mod>> ld_mod;
+        
+        list<Absyn.EquationItem> b2;
+        list<Absyn.AlgorithmItem> b;
+        list<Algorithm.Statement> b_alg;   
+        list<Exp.Statement> b_alg_2;
+
+        list<DAE.Element> dae1;
+        list<Exp.DAEElement> dae2;
+        Exp.DAEElement b_alg_dae;
+        Absyn.Exp res;
+        Exp.Exp res2;
+        Env.Env env2;
+
+        Types.Properties prop;
+     equation 
+        // Equations are transformed into algorithm assignments
+        b =  fromEquationsToAlgAssignments(b2,{});       
+
+        env2 = Env.openScope(env, false, NONE());
+    
+        // Tranform declarations such as Real x,y; to Real x; Real y;
+        ld2 = SCode.elabEitemlist(ld,false);
+
+        // Filter out the components (just to be sure)
+				ld2 = Inst.componentElts(ld2);
+				
+				// Transform the element list into a list of element,NOMOD
+				ld_mod = Inst.addNomod(ld2);
+    
+        env2 = Inst.addComponentsToEnv(env2, Types.NOMOD(), Prefix.NOPRE(), 
+        Connect.SETS({},{}), ClassInf.UNKNOWN("temp"), ld_mod, {}, {}, {}, impl);    
+				    
+			 (cache,dae1,env2,_,_,_) = Inst.instElementList(cache,env2,
+			  Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{}), ClassInf.UNKNOWN("temp"),
+			  ld_mod,{},impl);
+    
+				// Convert into Exp records   
+				dae2 = Convert.fromDAEElemsToExpElems(dae1,{});
+           
+			 (cache,b_alg) = Inst.instAlgorithmitems(cache,env2,Prefix.NOPRE(),b,true);	
+       
+       // Convert into Exp records
+ 			 b_alg_2 = Convert.fromAlgStatesToExpStates(b_alg,{});
+				    
+			 b_alg_dae = Exp.ALGORITHM(Exp.ALGORITHM2(b_alg_2));
+         
+       (cache,res2,prop as Types.PROP(_,_),st) = elabExp(cache,env2,res,impl,st,doVect);  
+             
+      then (cache,Exp.VALUEBLOCK(dae2,b_alg_dae,res2),prop,st);    
+        
     case (cache,env,e,_,_,_)
       equation 
         Debug.fprint("failtrace", "- elab_exp failed: ");
@@ -507,6 +619,49 @@ algorithm
         fail();
   end matchcontinue;
 end elabExp;
+
+public function fromEquationsToAlgAssignments "function: fromEquationsToAlgAssignments
+  Converts equations to algorithm assignments"
+	input list<Absyn.EquationItem> eqsIn;
+	input list<Absyn.AlgorithmItem> accList;
+	output list<Absyn.AlgorithmItem> algsOut;
+algorithm
+	algOut :=
+	matchcontinue (eqsIn,accList)
+	  local
+	    list<Absyn.AlgorithmItem> localAccList;  
+	  case ({},localAccList) equation then localAccList;
+	  case (Absyn.EQUATIONITEM(first,_) :: rest,localAccList)      
+	  local
+	    Absyn.Equation first;
+	    list<Absyn.EquationItem> rest;
+	    Absyn.AlgorithmItem firstAlg;
+	    list<Absyn.AlgorithmItem> restAlgs;
+	  equation    
+	  	firstAlg = fromEquationToAlgAssignment(first);
+	  	localAccList = listAppend(localAccList,Util.listCreate(firstAlg));
+	  	restAlgs = fromEquationsToAlgAssignments(rest,localAccList);    
+	  then restAlgs;  
+	end matchcontinue;
+end fromEquationsToAlgAssignments;
+
+public function fromEquationToAlgAssignment "function: fromEquationToAlgAssignment
+	 Converts an equation into an algorithm assignment"
+  input Absyn.Equation eq;
+  output Absyn.AlgorithmItem algStatement;
+algorithm
+  algStatement :=
+  matchcontinue (eq)
+    case (Absyn.EQ_EQUALS(left,right))    
+      local
+		  Absyn.Exp left,right;
+		  Absyn.AlgorithmItem algItem;
+		equation
+		algItem = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(left,right),NONE());  	
+		then algItem;
+  end matchcontinue;
+end fromEquationToAlgAssignment;
+
 
 protected function elabMatrixGetDimensions "function: elabMatrixGetDimensions
  

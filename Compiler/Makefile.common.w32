@@ -6,6 +6,7 @@ SRCMO= Absyn.mo \
 	ClassLoader.mo \
 	Codegen.mo \
 	Connect.mo \
+	Convert.mo \
 	DAE.mo \
 	DAELow.mo \
 	Derive.mo \

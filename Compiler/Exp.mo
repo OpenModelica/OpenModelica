@@ -65,6 +65,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 public import Absyn;
 public import Graphviz;
+public import SCode;
+public import ClassInf;
 
 public 
 type Ident = String "- Identifiers 
@@ -219,7 +221,576 @@ uniontype Exp "Expressions
 
   record END "array index to last element, e.g. a{end}:=1;" end END;
 
+	record VALUEBLOCK "Valueblock expression"
+    list<DAEElement> localDecls;
+    DAEElement body;
+		Exp result;	
+  end VALUEBLOCK;  
+  
 end Exp;
+
+//----------------------------------------------------------------------
+// From types.mo - Part of a work-around to avoid circular dependencies
+//                 (used by the valueblock expression)
+//----------------------------------------------------------------------
+
+public 
+uniontype VarTypes "- Variables"
+  record VARTYPES
+    Ident name "name" ;
+    AttributesTypes attributes "attributes" ;
+    Boolean protected_ "protected" ;
+    TypeTypes type_ "type" ;
+    BindingTypes binding "binding ; equation modification" ;
+  end VARTYPES;
+end VarTypes;
+
+public 
+uniontype AttributesTypes "- Attributes"
+  record ATTRTYPES
+    Boolean flow_ "flow" ;
+    SCode.Accessibility accessibility "accessibility" ;
+    SCode.Variability parameter_ "parameter" ;
+    Absyn.Direction direction "direction" ;
+  end ATTRTYPES;
+end AttributesTypes;
+
+public 
+uniontype BindingTypes "- Binding"
+  record UNBOUND end UNBOUND;
+  record EQBOUND
+    Exp exp "exp" ;
+    Option<Value> evaluatedExp "evaluatedExp; evaluated exp" ;
+    ConstTypes constant_ "constant" ;
+  end EQBOUND;
+  record VALBOUND
+    Value valBound "valBound" ;
+  end VALBOUND;
+end BindingTypes;
+
+public 
+type TypeTypes = tuple<TTypeTypes, Option<Absyn.Path>> "
+     A Type is a tuple of a TType (containing the actual type) and a optional classname
+     for the class where the type originates from.
+- Type" ;
+
+public 
+uniontype TTypeTypes "-TType contains the actual type"
+  record T_INTEGERTYPES
+    list<VarTypes> varLstInt "varLstInt" ;
+  end T_INTEGERTYPES;
+
+  record T_REALTYPES
+    list<VarTypes> varLstReal "varLstReal" ;
+  end T_REALTYPES;
+
+  record T_STRINGTYPES
+    list<VarTypes> varLstString "varLstString" ;
+  end T_STRINGTYPES;
+
+  record T_BOOLTYPES
+    list<VarTypes> varLstBool "varLstBool" ;
+  end T_BOOLTYPES;
+
+  record T_ENUMTYPES end T_ENUMTYPES;
+
+  record T_ENUMERATIONTYPES
+    list<String> names "names" ;
+    list<VarTypes> varLst "varLst" ;
+  end T_ENUMERATIONTYPES;
+
+  record T_ARRAYTYPES
+    ArrayDimTypes arrayDim "arrayDim" ;
+    TypeTypes arrayType "arrayType" ;
+  end T_ARRAYTYPES;
+
+  record T_COMPLEXTYPES
+    ClassInf.State complexClassType "complexClassType ; The type of. a class" ;
+    list<VarTypes> complexVarLst "complexVarLst ; The variables of a complex type" ;
+    Option<TypeTypes> complexTypeOption "complexTypeOption ; A complex type can be a subtype of another (primitive) type (through extends). In that case the varlist is empty" ;
+  end T_COMPLEXTYPES;
+
+  record T_FUNCTIONTYPES
+    list<FuncArgTypes> funcArg "funcArg" ;
+    TypeTypes funcResultType "funcResultType ; Only single-result" ;
+  end T_FUNCTIONTYPES;
+
+  record T_NOTYPETYPES "Used when type is not yet determined" end T_NOTYPETYPES;
+
+  record T_ANYTYPETYPES
+    Option<ClassInf.State> anyClassType "anyClassType - used for generic types. When class state present the type is assumed to be a complex type which has that restriction." ;
+  end T_ANYTYPETYPES;
+
+end TTypeTypes;
+
+public 
+uniontype ArrayDimTypes "- Array Dimensions"
+  record DIM
+    Option<Integer> integerOption;
+  end DIM;
+
+end ArrayDimTypes;
+
+public 
+type FuncArgTypes = tuple<Ident, TypeTypes> "- Function Argument" ;
+
+public 
+uniontype ConstTypes "The degree of constantness of an expression is determined by the Const 
+    datatype. Variables declared as \'constant\' will get C_CONST constantness.
+    Variables declared as \'parameter\' will get C_PARAM constantness and
+    all other variables are not constant and will get C_VAR constantness.
+
+  - Variable properties"
+  record C_CONST end C_CONST;
+
+  record C_PARAM "\'constant\'s, should always be evaluated" end C_PARAM;
+
+  record C_VAR "\'parameter\'s, evaluated if structural not constants, never evaluated" end C_VAR;
+
+end ConstTypes;
+
+// Some aditional uniontypes from Types.mo may have to be added here
+
+//--------------------------------------
+//Values, from values.mo. Part of a work-around to avoid circular dependencies
+//                 (used by the valueblock expression)
+//--------------------------------------
+public 
+uniontype Value
+  record INTEGERVAL
+    Integer integer;
+  end INTEGERVAL;
+
+  record REALVAL
+    Real real;
+  end REALVAL;
+
+  record STRINGVAL
+    String string;
+  end STRINGVAL;
+
+  record BOOLVAL
+    Boolean boolean;
+  end BOOLVAL;
+
+  record ENUMVAL
+    String string;
+  end ENUMVAL;
+
+  record ARRAYVAL
+    list<Value> valueLst;
+  end ARRAYVAL;
+
+  record TUPLEVAL
+    list<Value> valueLst;
+  end TUPLEVAL;
+
+  record RECORDVAL
+    Absyn.Path record_ "record name" ;
+    list<Value> orderd "orderd set of values" ;
+    list<Ident> comp "comp names for each value" ;
+  end RECORDVAL;
+
+  record CODEVAL
+    Absyn.CodeNode A "A record consist of value  Ident pairs" ;
+  end CODEVAL;
+
+end Value;
+// ------------
+
+
+//---------------------------------------------------
+// From DAE.mo Part of a work-around to avoid circular dependencies
+//                 (used by the valueblock expression)
+//---------------------------------------------------
+
+public 
+type InstDims = list<Subscript>;
+
+public 
+type StartValue = Option<Exp>;
+
+public 
+uniontype VarKind
+  record VARIABLE end VARIABLE;
+
+  record DISCRETE end DISCRETE;
+
+  record PARAM end PARAM;
+
+  record CONST end CONST;
+
+end VarKind;
+
+public 
+uniontype TypeExp
+  record REALEXP end REALEXP;
+
+  record INTEXP end INTEXP;
+
+  record BOOLEXP end BOOLEXP;
+
+  record STRINGEXP end STRINGEXP;
+
+  record ENUMEXP end ENUMEXP;
+
+  record ENUMERATIONEXP
+    list<String> stringLst;
+  end ENUMERATIONEXP;
+  
+  record EXT_OBJECTEXP
+    Absyn.Path fullClassName;
+  end EXT_OBJECTEXP;  
+
+end TypeExp;
+
+public 
+uniontype Flow "The Flow of a variable indicates if it is a Flow variable or not, or if
+   it is not a connector variable at all."
+  record FLOW end FLOW;
+
+  record NON_FLOW end NON_FLOW;
+
+  record NON_CONNECTOR end NON_CONNECTOR;
+
+end Flow;
+
+public 
+uniontype VarDirection
+  record INPUT end INPUT;
+
+  record OUTPUT end OUTPUT;
+
+  record BIDIR end BIDIR;
+
+end VarDirection;
+
+uniontype VarProtection
+  record PUBLIC "public variables" end PUBLIC; 
+  record PROTECTED "protected variables" end PROTECTED;
+end VarProtection;
+
+public 
+uniontype DAEElement
+  record VAR
+    ComponentRef componentRef " The variable name";
+    VarKind varible "varible kind" ;
+    VarDirection variable "variable, constant, parameter, etc." ;
+    VarProtection protection "if protected or public";
+    TypeExp input_ "input, output or bidir" ;
+    Option<Exp> one "one of the builtin types" ;
+    InstDims binding "Binding expression e.g. for parameters" ;
+    //StartValue dimension "dimension of original component" ;
+    Flow value "value of start attribute" ;
+    list<Absyn.Path> flow_ "Flow of connector variable. Needed for 
+						unconnected flow variables" ;
+    Option<VariableAttributes> variableAttributesOption;
+    Option<Absyn.Comment> absynCommentOption;
+    Absyn.InnerOuter innerOuter "inner/outer required to 'change' outer references";
+    TypeTypes fullType "Full type information required to analyze inner/outer elements";
+  end VAR;
+
+  record DEFINE "A solved equation"
+    ComponentRef componentRef;
+    Exp exp;
+  end DEFINE;
+
+  record INITIALDEFINE " A solved initial equation"
+    ComponentRef componentRef;
+    Exp exp;
+  end INITIALDEFINE;
+
+  record EQUATION "Scalar equation"
+    Exp exp;
+    Exp scalar ;
+  end EQUATION;
+
+  record ARRAY_EQUATION " an array equation"
+    list<Integer> dimension "dimension sizes" ;
+    Exp exp;
+    Exp array  ;
+  end ARRAY_EQUATION;
+
+  record WHEN_EQUATION " a when equation"
+    Exp condition "Condition" ;
+    list<DAEElement> equations "Equations" ;
+    Option<DAEElement> elsewhen_ "Elsewhen should be of type WHEN_EQUATION" ;
+  end WHEN_EQUATION;
+
+  record IF_EQUATION " an if-equation"
+    Exp condition1 "Condition" ;
+    list<DAEElement> equations2 "Equations of true branch" ;
+    list<DAEElement> equations3 "Equations of false branch" ;
+  end IF_EQUATION;
+
+  record INITIAL_IF_EQUATION "An initial if-equation"
+    Exp condition1 "Condition" ;
+    list<DAEElement> equations2 "Equations of true branch" ;
+    list<DAEElement> equations3 "Equations of false branch" ;
+  end INITIAL_IF_EQUATION;
+
+  record INITIALEQUATION " An initial equaton"
+    Exp exp1;
+    Exp exp2;
+  end INITIALEQUATION;
+
+  record ALGORITHM " An algorithm section"
+    Algorithm algorithm_;
+  end ALGORITHM;
+
+  record INITIALALGORITHM " An initial algorithm section"
+    Algorithm algorithm_;
+  end INITIALALGORITHM;
+
+  record COMP
+    Ident ident;
+    DAElist dAElist "a component with 
+						    subelements, normally 
+						    only used at top level." ;
+  end COMP;
+
+  record FUNCTION " A Modelica function"
+    Absyn.Path path;
+    DAElist dAElist;
+    TypeTypes type_;
+  end FUNCTION;
+
+  record EXTFUNCTION "An external function"
+    Absyn.Path path;
+    DAElist dAElist;
+    TypeTypes type_;
+    ExternalDecl externalDecl;
+  end EXTFUNCTION;
+  
+  record EXTOBJECTCLASS "The 'class' of an external object"
+    Absyn.Path path "className of external object";
+    DAEElement constructor "constructor is an EXTFUNCTION";
+    DAEElement destructor "destructor is an EXTFUNCTION";
+  end EXTOBJECTCLASS;
+  
+  record ASSERT " The Modelica builtin assert"
+    Exp condition;
+    Exp message;
+  end ASSERT;
+
+  record REINIT " reinit operator for reinitialization of states"
+    ComponentRef componentRef;
+    Exp exp;
+  end REINIT;
+
+end DAEElement;
+
+public 
+uniontype VariableAttributes
+  record VAR_ATTR_REAL
+    Option<Exp> quantity "quantity" ;
+    Option<Exp> unit "unit" ;
+    Option<Exp> displayUnit "displayUnit" ;
+    tuple<Option<Exp>, Option<Exp>> min "min , max" ;
+    Option<Exp> initial_ "Initial value" ;
+    Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables" ;
+    Option<Exp> nominal "nominal" ;
+    Option<StateSelect> stateSelectOption;
+  end VAR_ATTR_REAL;
+
+  record VAR_ATTR_INT
+    Option<Exp> quantity "quantity" ;
+    tuple<Option<Exp>, Option<Exp>> min "min , max" ;
+    Option<Exp> initial_ "Initial value" ;
+    Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables" ;
+  end VAR_ATTR_INT;
+
+  record VAR_ATTR_BOOL
+    Option<Exp> quantity "quantity" ;
+    Option<Exp> initial_ "Initial value" ;
+    Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables" ;
+  end VAR_ATTR_BOOL;
+
+  record VAR_ATTR_STRING
+    Option<Exp> quantity "quantity" ;
+    Option<Exp> initial_ "Initial value" ;
+  end VAR_ATTR_STRING;
+
+  record VAR_ATTR_ENUMERATION
+    Option<Exp> quantity "quantity" ;
+    tuple<Option<Exp>, Option<Exp>> min "min , max" ;
+    Option<Exp> start "start" ;
+    Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables" ;
+  end VAR_ATTR_ENUMERATION;
+
+end VariableAttributes;
+
+public 
+uniontype StateSelect
+  record NEVER end NEVER;
+
+  record AVOID end AVOID;
+
+  record DEFAULT end DEFAULT;
+
+  record PREFER end PREFER;
+
+  record ALWAYS end ALWAYS;
+
+end StateSelect;
+
+public 
+uniontype ExtArg
+  record EXTARG
+    ComponentRef componentRef;
+    AttributesTypes attributes;
+    TypeTypes type_;
+  end EXTARG;
+
+  record EXTARGEXP
+    Exp exp;
+    TypeTypes type_;
+  end EXTARGEXP;
+
+  record EXTARGSIZE
+    ComponentRef componentRef;
+    AttributesTypes attributes;
+    TypeTypes type_;
+    Exp exp;
+  end EXTARGSIZE;
+
+  record NOEXTARG end NOEXTARG;
+
+end ExtArg;
+
+public 
+uniontype ExternalDecl
+  record EXTERNALDECL
+    Ident ident;
+    list<ExtArg> external_ "external function name" ;
+    ExtArg parameters "parameters" ;
+    String returnType "return type" ;
+    Option<Absyn.Annotation> language "language e.g. Library" ;
+  end EXTERNALDECL;
+
+end ExternalDecl;
+
+public 
+uniontype DAElist "A DAElist is a list of Elements. Variables, equations, functions, 
+  algorithms, etc. are all found in this list.
+"
+  record DAE
+    list<DAEElement> elementLst;
+  end DAE;
+
+end DAElist;
+
+//---------------------------------------------------
+//From Algorithm.mo: Part of a work-around to avoid circular dependencies
+//                 (used by the valueblock expression)
+//---------------------------------------------------
+public 
+uniontype Algorithm "The `Algorithm\' type corresponds to a whole algorithm section.
+  It is simple a list of algorithm statements."
+  record ALGORITHM2
+    list<Statement> statementLst;
+  end ALGORITHM2;
+
+end Algorithm;
+
+public 
+uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\'),
+    if statements (`if A then B; elseif C; else D;\'), for loops
+    (`for i in 1:10 loop ...; end for;\') and when statements
+    (`when E do S; end when;\')."
+  record ASSIGN
+    Type type_;
+    ComponentRef componentRef;
+    Exp exp;
+  end ASSIGN;
+
+  record TUPLE_ASSIGN
+    Type type_;
+    list<Exp> expExpLst;
+    Exp exp;
+  end TUPLE_ASSIGN;
+
+  record ASSIGN_ARR
+    Type type_;
+    ComponentRef componentRef;
+    Exp exp;
+  end ASSIGN_ARR;
+
+  record IF
+    Exp exp;
+    list<Statement> statementLst;
+    Else else_;
+  end IF;
+
+  record FOR
+    Type type_;
+    Boolean boolean;
+    Ident ident;
+    Exp exp;
+    list<Statement> statementLst;
+  end FOR;
+
+  record WHILE
+    Exp exp;
+    list<Statement> statementLst;
+  end WHILE;
+
+  record WHEN
+    Exp exp;
+    list<Statement> statementLst;
+    Option<Statement> elseWhen;
+    list<Integer> helpVarIndices;
+  end WHEN;
+
+  record ASSERTSTMT
+    Exp exp1;
+    Exp exp2;
+  end ASSERTSTMT;
+
+  record REINITSTMT
+    Exp var "Variable"; 
+    Exp value "Value "; 
+  end REINITSTMT;
+  
+  record RETURN
+  end RETURN;
+  
+  record BREAK
+  end BREAK;
+  
+ /* record TRY
+    list<Statement> body;
+  end TRY;
+  
+  record CATCH
+    list<Statement> body;
+  end CATCH; 
+  
+  record THROW
+  end THROW;  */
+
+end Statement;
+
+public 
+uniontype Else "An if statements can one or more `elseif\' branches and an
+    optional `else\' branch."
+  record NOELSE end NOELSE;
+
+  record ELSEIF
+    Exp exp;
+    list<Statement> statementLst;
+    Else else_;
+  end ELSEIF;
+
+  record ELSE
+    list<Statement> statementLst;
+  end ELSE;
+
+end Else; 
+//-------------------------------------------
+
+
+
 
 public 
 uniontype Operator "Operators which are overloaded in the abstract syntax are here

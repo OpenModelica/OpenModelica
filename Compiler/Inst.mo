@@ -142,7 +142,9 @@ end DimExp;
 protected import Debug;
 protected import Interactive;
 protected import Util;
-protected import Algorithm;
+
+//CHANGED
+public import Algorithm;
 protected import Builtin;
 protected import Dump;
 protected import Lookup;
@@ -2851,7 +2853,8 @@ algorithm
   end matchcontinue;
 end instDerivedClasses;
 
-protected function instElementList "function: instElementList
+// Changed from protected to public. KS
+public function instElementList "function: instElementList
   Moved to inst_classdef, FIXME: Move commments later
   Instantiate elements one at a time, and concatenate the resulting
   lists of equations.
@@ -3002,7 +3005,8 @@ algorithm
   end matchcontinue;
 end extendsElts;
 
-protected function componentElts "function: componentElts
+// Changed from protected to public. KS
+public function componentElts "function: componentElts
   author: PA
  
   This function filters out the component Element\'s in an Element list
@@ -3171,7 +3175,8 @@ algorithm
   end matchcontinue;
 end isStructuralIfEquationParameter;
 
-protected function addComponentsToEnv "function: addComponentsToEnv
+// Changed from protected to public. KS
+public function addComponentsToEnv "function: addComponentsToEnv
   author: PA
  
   Since Modelica has removed the declare before use limitation, all 
@@ -7895,7 +7900,8 @@ algorithm
   end matchcontinue;
 end instStatements;
 
-protected function instAlgorithmitems "function: instAlgorithmitems
+// Changed from protected to public. KS
+public function instAlgorithmitems "function: instAlgorithmitems
  
   Helper function to inst_statement.
 "
