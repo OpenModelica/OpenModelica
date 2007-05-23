@@ -5054,7 +5054,7 @@ algorithm
         vars_1 = listAppend(vars_1, {cd1});        
       then
         (cache,Exp.CALL(Absyn.IDENT("val"),{Exp.ARRAY(Exp.OTHER(),false,vars_1)},
-          false,true,Exp.REAL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
+          false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),Types.C_VAR()),SOME(st));
 
    case (cache,env,Absyn.CREF_IDENT(name = "val"),{(cr as Absyn.CREF(componentReg = _)),(cd as Absyn.INTEGER(value = _))},{},impl,SOME(st))
       local 
@@ -5066,7 +5066,7 @@ algorithm
         vars_1 = listAppend(vars_1, {cd1});        
       then
         (cache,Exp.CALL(Absyn.IDENT("val"),{Exp.ARRAY(Exp.OTHER(),false,vars_1)},
-          false,true,Exp.REAL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
+          false,true,Exp.REAL()),Types.PROP((Types.T_REAL({}),NONE),Types.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "plotParametric"),vars,{},impl,SOME(st)) /* PlotParametric is similar to plot but does not allow a single CREF as an 
    argument as you are plotting at least one variable as a function of another.
