@@ -218,6 +218,7 @@ int initialize(const std::string*method)
 			cout <<	getName(&globalData->states[i]) << "(fixed=" << (globalData->initFixed[i]?"true":"false") << ")"
 			<< endl; 
 		}
+		cout << "number of non-fixed variables: " << nz << endl;		
 	}
 
   // No initial values to calculate.

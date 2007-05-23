@@ -62,6 +62,10 @@ long numpoints; // the number of points requested by init file
 
 int sim_verbose; // Flag for logging
 
+int acceptedStep=0; /* Flag for knowning when step is accepted and when solver searches for solution. 
+If solver is only searching for a solution, asserts, etc. should not be triggered, causing faulty error messages to be printed
+*/
+
 int modelErrorCode=0; // set by model calculations. Can be transferred to num. solver.
 
 const std::string *init_method; // method for  initialization.

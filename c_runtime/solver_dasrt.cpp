@@ -77,6 +77,15 @@ int dummyJacobianDASSL(double *t, double *y, double *yprime, double *pd, long *c
  		return 1000.0*uround*fabs(tout);
  	}
  }
+/* Returns the index of the first root that is active*/
+int activeEvent(int nRoots, long *jroot)
+{
+	int i;
+	for (i=0; i < nRoots; i++) {
+		if (jroot[i]) return i;
+	}
+	return -1;	
+}
 
 /* The main function for the dassl solver*/
 int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, long &outputSteps,
@@ -188,12 +197,14 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
   if(functionODE()) { 
   	throw TerminateSimulationException(globalData->timeValue,string("Error calculating initial derivatives\n"));
   }
-  // Calculate initial output values 
+  // Calculate initial output values
+    acceptedStep = 1; 
     if(functionDAE_output()|| functionDAE_output2()) {
     throw TerminateSimulationException(globalData->timeValue,
 	  string("Error calculating initial derivatives\n"));
-	    
+	acceptedStep = 0;    
   }
+  
   
   tout = globalData->timeValue+calcTinyStep(globalData->timeValue); // take tiny step.
     //saveall();
@@ -227,7 +238,9 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
   functionDAE_res(&globalData->timeValue,globalData->states,globalData->statesDerivatives,
                   dummy_delta,0,0,0); // Since residual function calculates 
 					      // alg vars too.
+	acceptedStep=1;				      
     functionDAE_output();
+    acceptedStep=0;
 
   tout = newTime(tout,step,stop);
   while(globalData->timeValue<stop && idid>0) {
@@ -236,7 +249,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
     while (idid == 4) {
     	if (sim_verbose) { 
     		cout  << std::setprecision(20) << 
-    		"found event at time " << globalData->timeValue << endl;
+    		"Found event " << activeEvent(globalData->nZeroCrossing,jroot) << " at time " << globalData->timeValue << endl;
        	}
       if (emit()) {printf("Too many points\n");
 	   idid = -99; break;}
@@ -298,7 +311,9 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
                       globalData->statesDerivatives,
                       dummy_delta,0,0,0); // Since residual function calculates 
 					      // alg vars too.
+      acceptedStep = 1;
       functionDAE_output();
+      acceptedStep = 0;
 	 
       info[0] = 1;
 
@@ -323,10 +338,14 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
            function_zeroCrossing, &globalData->nZeroCrossing, jroot);
     functionDAE_res(&globalData->timeValue,globalData->states,globalData->statesDerivatives,dummy_delta,0,0,0); // Since residual function calculates 
 					      // alg vars too.
-    functionDAE_output();  // discrete variables are seperated so that the can be emited before and after the event.    
+    acceptedStep=1;
+    functionDAE_output();  // discrete variables are seperated so that the can be emited before and after the event.
+    acceptedStep=0;    
   } // end while
    
+   acceptedStep=1;
    functionDAE_output2(); // calculate discrete varibles separately, see above
+   acceptedStep=0;
    
   	if (sim_verbose) { cout << "Simulation stopped at time " << globalData->timeValue << endl; }		
 

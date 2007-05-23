@@ -2494,9 +2494,9 @@ protected function generateArrayDefine "function: generateArrayDefine
  
   Generates a define for an array variable.
   For an array s, each scalar value is given a define, e.g. 
-  #define s{1,3} y{17}, etc. But to also be able to treat the whole array
+  #define s[1,3] y[17], etc. But to also be able to treat the whole array
   as a value this function generates a define to point to the first element
-  of the array, e.g. #deine s &y{15}.
+  of the array, e.g. #define s &y[15].
  
 "
   input Exp.ComponentRef inComponentRef;

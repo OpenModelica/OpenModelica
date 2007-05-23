@@ -59,7 +59,7 @@ double old(double*);
 double old2(double*);
 
 extern int sim_verbose; // control debug output during simulation.
-
+extern int acceptedStep; // !=0 when accepted step is calculated, 0 otherwise.
 extern int modelTermination; //// Becomes non-zero when user terminates simulation.
 
 /* Flags for controlling logging to stdout */
@@ -245,7 +245,7 @@ int initial_residual();
 
 double newTime(double t, double step,double stop);
 
-#define MODELICA_ASSERT(cond,msg) do { if (!(cond)) { modelTermination=1; \
+#define MODELICA_ASSERT(cond,msg) do { if (!(cond)&& acceptedStep) { modelTermination=1; \
 throw TerminateSimulationException(string(msg)); } } while(0)
 
 #define MODELICA_TERMINATE(msg) do { modelTermination=1; \

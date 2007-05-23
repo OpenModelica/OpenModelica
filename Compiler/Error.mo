@@ -192,6 +192,7 @@ public constant ErrorID BREAK_OUT_OF_LOOP= 94;
 public constant ErrorID DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN= 95;
 public constant ErrorID GENERIC_TRANSLATION_ERROR = 96;
 public constant ErrorID MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR=97;
+public constant ErrorID ASSERT_CONSTANT_FALSE_ERROR=98;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
 public constant ErrorID BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER=502;
@@ -391,6 +392,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Notification, differentiated equation %s to %s for index reduction"),
           (DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN,SYMBOLIC(),ERROR(),
           "Error, The same variables must me solved in elsewhen clause as in the when clause"),
+          (ASSERT_CONSTANT_FALSE_ERROR,SYMBOLIC(),ERROR(),
+          "Error, assert with constant condition during translation: %s"),
           (SETTING_FIXED_ATTRIBUTE,TRANSLATION(),WARNING(),
           "Warning, no variable has fixed=false but model contains initial equations. Setting fixed=false to the following variables: %s"),
           (GENERIC_TRANSLATION_ERROR,TRANSLATION(),ERROR(),

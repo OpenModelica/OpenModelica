@@ -46,6 +46,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace std;
 
 #include "tables.h"
+#include "simulation_runtime.h"
 
 vector<InterpolationTable*> interpolationTables;
 
@@ -95,7 +96,10 @@ double omcTableTimeIpo(int tableID,int icol,double timeIn)
     if ((int)interpolationTables.size() != 0 && tableID >= 0 && tableID < (int)interpolationTables.size()) {
     	return interpolationTables[tableID]->Interpolate(timeIn,icol-1);	
     } else { // error, unvalid tableID
-    	cerr << "in omcTableTimeIpo, tableID " << tableID << " is not a valid table ID." << endl;
+    	if (acceptedStep) {
+    		cerr << "in omcTableTimeIpo, tableID " << tableID << " is not a valid table ID." << endl;
+    		cerr << " There are currently " << interpolationTables.size() << " tables allocated" << endl;
+    	}
     	return 0.0;
     }
 }
@@ -107,7 +111,10 @@ double omcTableTimeTmax(int tableID)
 	 	InterpolationTable* table = interpolationTables[tableID];
 	 	return table->MaxTime();
     } else { // error, unvalid tableID
-    	cerr << "in omcTableTimeTmax, tableID " << tableID << " is not a valid table ID." << endl;
+    	if (acceptedStep) {
+    		cerr << "in omcTableTimeTmax, tableID " << tableID << " is not a valid table ID." << endl;
+	    	cerr << " There are currently " << interpolationTables.size() << " tables allocated" << endl;
+    	}    	
     	return 0.0;
     }	
 }
@@ -119,7 +126,10 @@ double omcTableTimeTmin(int tableID)
 	 	InterpolationTable* table = interpolationTables[tableID];
 	 	return table->MinTime();
     } else { // error, unvalid tableID
-    	cerr << "in omcTableTimeTmin, tableID " << tableID << " is not a valid table ID." << endl;
+    	if (acceptedStep) {
+    		cerr << "in omcTableTimeTmin, tableID " << tableID << " is not a valid table ID." << endl;
+    		cerr << " There are currently " << interpolationTables.size() << " tables allocated" << endl;
+    	}
     	return 0.0;
     }
 }
@@ -238,8 +248,10 @@ double InterpolationTable::getElt(int row, int col)
 {
 	// Remove this check once running. it's internal checking only.
 	if (row < 0 || row > nRows_ || col < 0 || col > nCols_) {
-		cerr << "Error, indexing out of data with data[" << row << ", " << col << "]" << endl;
-		cerr << "nRows = " << nRows_ << " nCols = " << nCols_ << endl;
+		if(acceptedStep) {
+			cerr << "Error, indexing out of data with data[" << row << ", " << col << "]" << endl;
+			cerr << "nRows = " << nRows_ << " nCols = " << nCols_ << endl;
+		}
 		return 0.0;
 	}
 	int index = 0;

@@ -4487,7 +4487,7 @@ algorithm
           {"if-equations","rewrite equations using if-expressions"});
       then
         fail();
-        
+                       
         /* assert in equation section is converted to ALGORITHM */
     case (DAE.DAE(elementLst = (DAE.ASSERT(cond,msg) :: xs)),states,whenclauses)
       local
@@ -4496,12 +4496,13 @@ algorithm
         Exp.Exp cond,msg;
         
       equation 
-        (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls) = lower2(DAE.DAE(xs), states, whenclauses) "Print.print_error_buf \"#Warning, Asserts are not supported/checked for.\\n\" &" ;
+        checkAssertCondition(cond,msg);
+        (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls) = lower2(DAE.DAE(xs), states, whenclauses);
       then
         (v,kv,extVars,e,re,ie,ae,Algorithm.ALGORITHM({Algorithm.ASSERT(cond,msg)})::al,whenclauses_1,extObjCls);
   
        /* terminate in equation section is converted to ALGORITHM */
-    case (DAE.DAE(elementLst = (DAE.ASSERT(cond,msg) :: xs)),states,whenclauses)
+    case (DAE.DAE(elementLst = (DAE.TERMINATE(msg) :: xs)),states,whenclauses)
       local
         Variables v;
         list<Equation> e;
@@ -4510,16 +4511,19 @@ algorithm
       equation 
         (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls) = lower2(DAE.DAE(xs), states, whenclauses) ;
       then
-        (v,kv,extVars,e,re,ie,ae,Algorithm.ALGORITHM({Algorithm.ASSERT(cond,msg)})::al,whenclauses_1,extObjCls);    
-        
-    case (DAE.DAE(elementLst = (_ :: xs)),states,whenclauses)
+        (v,kv,extVars,e,re,ie,ae,Algorithm.ALGORITHM({Algorithm.TERMINATE(msg)})::al,whenclauses_1,extObjCls);    
+
+    case (DAE.DAE(elementLst = (DAE.INITIALALGORITHM(_) :: xs)),states,whenclauses)
       local
         Variables v;
         list<Equation> e;
       equation 
+        Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, 
+          {"initial algorithm","rewrite initial algorithms to initial equations"});
         (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls) = lower2(DAE.DAE(xs), states, whenclauses);
       then
         (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls);
+        
     case (_,_,_)
       equation 
         print("-lower2 failed\n");
@@ -4527,6 +4531,24 @@ algorithm
         fail();
   end matchcontinue;
 end lower2;
+
+protected function checkAssertCondition "Succeds if condition of assert is not constant false"
+  input Exp.Exp cond;
+  input Exp.Exp message;
+algorithm
+  _ := matchcontinue(cond,message)
+    case(cond,message) equation
+      false = Exp.isConstFalse(cond);
+      then ();
+    case(cond,message) 
+      local String messageStr;
+      equation
+        true = Exp.isConstFalse(cond);
+        messageStr = Exp.printExpStr(message);
+        Error.addMessage(Error.ASSERT_CONSTANT_FALSE_ERROR,{messageStr});
+      then fail();  
+  end matchcontinue;
+end checkAssertCondition;  
 
 protected function lowerTupleEquation "Lowers a tuple equation, e.g. (a,b) = foo(x,y)
 by transforming it to an algorithm (TUPLE_ASSIGN), e.g. (a,b) := foo(x,y);

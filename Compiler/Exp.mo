@@ -4207,6 +4207,32 @@ algorithm
   end matchcontinue;
 end typeofOp;
 
+public function isConstFalse "  
+  Return true if expression is false
+"
+  input Exp inExp;
+  output Boolean outBoolean;
+algorithm 
+  outBoolean:=
+  matchcontinue (inExp)
+    case BCONST(false) then true; 
+    case (_) then false; 
+  end matchcontinue;
+end isConstFalse;
+
+public function isConstTrue "  
+  Return true if expression is true
+"
+  input Exp inExp;
+  output Boolean outBoolean;
+algorithm 
+  outBoolean:=
+  matchcontinue (inExp)
+    case BCONST(true) then true; 
+    case (_) then false; 
+  end matchcontinue;
+end isConstTrue;
+
 protected function isConstOne "function: isConstOne
   
   Return true if expression is 1
