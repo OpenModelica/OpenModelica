@@ -126,7 +126,10 @@ int main(int argc, char* argv[])
       int res = system(systemstr);
       if (!scriptname)
 	cout << "Started server using:"<< systemstr << "\n res = " << res << endl;
-    } 
+    }
+#ifdef __APPLE_CC__ /* sleep a bit on MacOS */
+    sleep(1);  
+#endif           
     doSocketCommunication(scriptname);
   }
 
