@@ -1287,7 +1287,15 @@ RML_END_LABEL
 #include <sys/stat.h>
 #include <dirent.h>
 #include <sys/param.h> /* MAXPATHLEN */
+
+/* MacOS malloc.h is in sys */
+#ifndef __APPLE_CC__
 #include <malloc.h>
+#else
+#define HAVE_SCANDIR
+#include <sys/malloc.h>
+#endif
+
 #include "read_write.h"
 #include "rml.h"
 #include "../Values.h"
@@ -1731,7 +1739,10 @@ RML_BEGIN_LABEL(System__compileCFile)
 
   sprintf(command,"%s %s -o %s %s",cc,str,exename,cflags);
   //printf("compile using: %s\n",command);
-  putenv("GCC_EXEC_PREFIX="); 
+  
+#ifndef __APPLE_CC__  /* seems that we need to disable this on MacOS */
+  putenv("GCC_EXEC_PREFIX=");
+#endif
   tmp = getenv("MODELICAUSERCFLAGS");
   if (tmp == NULL || tmp[0] == '\0'  ) {
 	  putenv("MODELICAUSERCFLAGS=  ");

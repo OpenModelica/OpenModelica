@@ -38,10 +38,18 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+/* malloc.h is in sys in Mac OS */
+#ifdef __APPLE_CC__
+#include <sys/malloc.h>
+#else /* Linux or Windows here */
 #include <malloc.h>
+#endif
+
 #include "../absyn_builder/yacclib.h"
 #include "rml.h"
 

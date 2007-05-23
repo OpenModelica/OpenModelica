@@ -15,12 +15,17 @@
 .SUFFIXES: .c .o
 CC = cc
 SHELL = /bin/sh
-CFLAGS = -O -fexceptions
+CFLAGS = -fexceptions -O
+OS = $(shell uname -s)
 
 # compile, then strip unnecessary symbols
 .c.o:
 	$(CC) -c -DSkip_f2c_Undefs $(CFLAGS) $*.c
+ifeq ($(OS),Darwin)
+	ld -r -o $*.xxx $*.o
+else
 	ld -r -x -o $*.xxx $*.o
+endif
 	mv $*.xxx $*.o
 ## Under Solaris (and other systems that do not understand ld -x),
 ## omit -x in the ld line above.
