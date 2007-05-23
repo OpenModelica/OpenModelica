@@ -1,45 +1,47 @@
-package Ceval "
-This file is part of OpenModelica.
+/*
+ * This file is part of OpenModelica.
+ * 
+ * Copyright (c) 1998-2007, Linköpings universitet, Department of
+ * Computer and Information Science, PELAB
+ * 
+ * All rights reserved.
+ * 
+ * (The new BSD license, see also
+ * http://www.opensource.org/licenses/bsd-license.php)
+ * 
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ * 
+ *  Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * 
+ *  Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * 
+ *  Neither the name of Linköpings universitet nor the names of its
+ *   contributors may be used to endorse or promote products derived from
+ *   this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ */
 
-Copyright (c) 1998-2006, Linköpings universitet, Department of
-Computer and Information Science, PELAB
-
-All rights reserved.
-
-(The new BSD license, see also
-http://www.opensource.org/licenses/bsd-license.php)
-
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
- Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer.
-
- Redistributions in binary form must reproduce the above copyright
-  notice, this list of conditions and the following disclaimer in
-  the documentation and/or other materials provided with the
-  distribution.
-
- Neither the name of Linköpings universitet nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-  
-  file:	 Ceval.mo
+package Ceval 
+" file:	 Ceval.mo
   module:      Ceval
   description: Constant propagation of expressions
  
@@ -103,6 +105,7 @@ protected import Connect;
 protected import Error;
 protected import Settings;
 protected import Refactor;
+protected import DAEQuery;
 
 
 protected function cevalBuiltin "function: cevalBuiltin
@@ -2649,7 +2652,7 @@ algorithm
   (outCache,outValue,outInteractiveSymbolTable,outString):=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg,inExp)
     local
-      String filenameprefix,cname_str,filename,funcfilename,makefilename,file_dir;
+      String filenameprefix,cname_str,filename,funcfilename,makefilename,file_dir, str;
       Absyn.Path classname;
       list<SCode.Class> p_1,sp;
       DAE.DAElist dae_1,dae;
@@ -2672,34 +2675,18 @@ algorithm
       Env.Cache cache;
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,fileprefix) /* mo file directory */ 
       equation 
-        print("getIncidenceMatrix:" +& Absyn.pathString(className) +& "\n");
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
         p_1 = SCode.elaborate(p);
         (cache,dae_1,env) = Inst.instantiateClass(cache,p_1, className);
         ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
-        DAE.printDAE(dae);
         a_cref = Absyn.pathToCref(className);
         file_dir = getFileDir(a_cref, p);        
         dlow = DAELow.lower(dae, false);
-        Debug.fprint("bltdump", "Lowered DAE:\n");
-        Debug.fcall("bltdump", DAELow.dump, dlow);
-        m = DAELow.incidenceMatrix(dlow);
-        Debug.fprint("bltdump", "indexed DAE:\n");
-        Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
-        /*
-        cname_str = Absyn.pathString(className);
-        filename = Util.stringAppendList({filenameprefix,"_imatrix.txt"});
-        funcfilename = Util.stringAppendList({filenameprefix,"_functions.cpp"});
-        makefilename = generateMakefilename(filenameprefix);
-        libs = SimCodegen.generateFunctions(p_1, dae, indexed_dlow_1, className, funcfilename);
-        SimCodegen.generateSimulationCode(dae, indexed_dlow_1, ass1, ass2, m, mT, comps, className, 
-          filename, funcfilename,file_dir);
-        SimCodegen.generateMakefile(makefilename, filenameprefix, libs, file_dir);
-        s_call = Util.stringAppendList({"make -f ",cname_str, ".makefile\n"}) 
-        */
+        filename = DAEQuery.writeIncidenceMatrix(dlow, filenameprefix);
+        str = stringAppend("The incidence matrix was dumped to file:", filename);
       then
-        (cache,Values.STRING("The model has been translated"),st,file_dir);
+        (cache,Values.STRING(str),st,file_dir);
   end matchcontinue;
 end getIncidenceMatrix;
 

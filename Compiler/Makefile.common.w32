@@ -33,7 +33,8 @@ SRCMO= Absyn.mo \
 	Util.mo \
 	Values.mo \
 	VarTransform.mo \
-	Refactor.mo
+	Refactor.mo \
+	DAEQuery.mo
 
 ALLMO = $(SRCMO) DAEEXT.mo Print.mo RTOpts.mo System.mo Parser.mo \
 		TaskGraphExt.mo Corba.mo Socket.mo ErrorExt.mo  Settings.mo
