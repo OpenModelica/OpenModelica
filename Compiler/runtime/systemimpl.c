@@ -384,7 +384,7 @@ RML_BEGIN_LABEL(System__strncmp)
 {
   char *str = RML_STRINGDATA(rmlA0);
   char *str2 = RML_STRINGDATA(rmlA1);
-  int len = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA2));
+  rml_sint_t len = RML_UNTAGFIXNUM(rmlA2);
   int res= strncmp(str,str2,len);
 
   rmlA0 = (void*) mk_icon(res);
@@ -642,7 +642,7 @@ RML_BEGIN_LABEL(System__setEnv)
 {
   char* envname = RML_STRINGDATA(rmlA0);
   char* envvalue = RML_STRINGDATA(rmlA1);
-  int overwrite = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA2));
+  rml_sint_t overwrite = RML_UNTAGFIXNUM(rmlA2);
   int setenv_result = 0;
   char *temp = (char*)malloc(strlen(envname)+strlen(envvalue)+2);
   sprintf(temp,"%s=%s", envname, envvalue);
@@ -846,15 +846,15 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__readPtolemyplotDataset)
 {
-  int i,size;
+  rml_sint_t i,size;
   char **vars;
   char* filename = RML_STRINGDATA(rmlA0);
   void *lst = rmlA1;
-  int datasize = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA2));
+  rml_sint_t datasize = RML_UNTAGFIXNUM(rmlA2);
   void* p;
   rmlA0 = lst;
   rml_prim_once(RML__list_5flength);
-  size = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA0));
+  size = RML_UNTAGFIXNUM(rmlA0);
   
   vars = (char**)malloc(sizeof(char*)*size);
   for (i=0,p=lst;i<size;i++) {
@@ -1379,6 +1379,8 @@ int scandir(const char* dirname,
 char * cc=NULL;
 char * cflags=NULL;
 
+void * read_ptolemy_dataset(char*filename, int size,char**vars,int datasize);
+int read_ptolemy_dataset_size(char*filename);
 void * generate_array(char,int,type_description *,void *data);
 double next_realelt(double*);
 int next_intelt(int*);
@@ -1685,7 +1687,7 @@ RML_BEGIN_LABEL(System__strncmp)
 {
   char *str = RML_STRINGDATA(rmlA0);
   char *str2 = RML_STRINGDATA(rmlA1);
-  int len = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA2));
+  rml_sint_t len = RML_UNTAGFIXNUM(rmlA2);
   int res= strncmp(str,str2,len);
 
   rmlA0 = (void*) mk_icon(res);
@@ -1738,10 +1740,10 @@ RML_BEGIN_LABEL(System__compileCFile)
   exename[strlen(str)-2]='\0';
 
   sprintf(command,"%s %s -o %s %s",cc,str,exename,cflags);
-  //printf("compile using: %s\n",command);
+  /* printf("compiled using: %s\n",command); */
   
 #ifndef __APPLE_CC__  /* seems that we need to disable this on MacOS */
-  putenv("GCC_EXEC_PREFIX=");
+  /* putenv("GCC_EXEC_PREFIX="); */
 #endif
   tmp = getenv("MODELICAUSERCFLAGS");
   if (tmp == NULL || tmp[0] == '\0'  ) {
@@ -1924,9 +1926,9 @@ RML_BEGIN_LABEL(System__setEnv)
 {
   char* envname = RML_STRINGDATA(rmlA0);
   char* envvalue = RML_STRINGDATA(rmlA1);
-  int overwrite = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA2));
+  rml_sint_t overwrite = RML_UNTAGFIXNUM(rmlA2);
   int setenv_result = 0;
-  setenv_result = setenv(envname, envvalue, overwrite); 
+  setenv_result = setenv(envname, envvalue, (int)overwrite);
   rmlA0 = (void*) mk_icon(setenv_result);
   RML_TAILCALLK(rmlSC);
 }
@@ -2149,15 +2151,15 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__readPtolemyplotDataset)
 {
-  int i,size;
+  rml_sint_t i,size;
   char **vars;
   char* filename = RML_STRINGDATA(rmlA0);
   void *lst = rmlA1;
-  int datasize = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA2));
-  void* p;
+  rml_sint_t datasize = RML_UNTAGFIXNUM(rmlA2);
+  void* p = NULL;
   rmlA0 = lst;
   rml_prim_once(RML__list_5flength);
-  size = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA0));
+  size = RML_UNTAGFIXNUM(rmlA0);
   
   vars = (char**)malloc(sizeof(char*)*size);
   for (i=0,p=lst;i<size;i++) {
@@ -2220,9 +2222,9 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__hash)
 {
   char *str = RML_STRINGDATA(rmlA0);
-  int res=0,i=0;
+  rml_sint_t res=0,i=0;
   while( str[i]&& i<4)
-    res+=(int)str[i++];
+    res+=(rml_sint_t)str[i++];
 
   rmlA0 = RML_IMMEDIATE(RML_TAGFIXNUM(res));
   RML_TAILCALLK(rmlSC);
