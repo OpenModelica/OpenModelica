@@ -176,6 +176,10 @@ constant tuple<Types.TType, Option<Type_a>> nil2real=(Types.T_FUNCTION({},(Types
 
 protected constant tuple<Types.TType, Option<Type_a>> nil2bool=(Types.T_FUNCTION({},(Types.T_REAL({}),NONE)),NONE);
 
+protected constant tuple<Types.TType, Option<Type_a>> record2str=(Types.T_FUNCTION({("x",(Types.T_COMPLEX(ClassInf.UNKNOWN(""),{},NONE()),NONE))},(Types.T_STRING({}),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> strStr2bool=(Types.T_FUNCTION({("x",(Types.T_STRING({}),NONE)),("y",(Types.T_STRING({}),NONE))},(Types.T_BOOL({}),NONE)),NONE);
+
 protected constant tuple<Types.TType, Option<Type_a>> real2string=(
           Types.T_FUNCTION({("x",(Types.T_REAL({}),NONE))},(Types.T_STRING({}),NONE)),NONE);
 
@@ -2547,6 +2551,8 @@ algorithm
       env = Env.extendFrameC(env, booleanType);
       env = Env.extendFrameC(env, stateSelectType);
       env = Env.extendFrameV(env, timeVar, NONE, Env.VAR_UNTYPED(), {});
+      env = Env.extendFrameT(env, "getTag", record2str);
+      env = Env.extendFrameT(env, "stringCmp", strStr2bool);     
       env = Env.extendFrameT(env, "initial", nil2real) "non-functions" ;
       env = Env.extendFrameT(env, "terminal", nil2real);
       env = Env.extendFrameT(env, "event", bool2bool);

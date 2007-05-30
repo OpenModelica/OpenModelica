@@ -3917,6 +3917,32 @@ algorithm
         cfn = cMergeFns({cfn1,cfn2,cfn3,cfn4,cfn});
       then
         (cfn,tvar,tnr1);
+      
+     case (Exp.CALL(path = Absyn.IDENT(name = "stringCmp"),expLst = {s1,s2},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */ 
+      local String cref_str; Exp.Exp s,minlen,leftjust,signdig; Boolean needCast; String var1,var2,var3,var4;
+        CFunction cfn3,cfn4;
+      equation 
+        (tdecl,tvar,tnr1) = generateTempDecl("modelica_integer", tnr);
+        (cfn1,var1,tnr1) = generateExpression(s1, tnr1, context);
+        (cfn2,var2,tnr1) = generateExpression(s2, tnr1, context);             
+        cfn = cAddVariables(cEmptyFunction, {tdecl});
+        stmt = Util.stringAppendList({tvar," = strcmp(",var1,",",var2,");"});
+        cfn = cAddStatements(cfn, {stmt});
+        cfn = cMergeFns({cfn1,cfn2,cfn});
+      then
+        (cfn,tvar,tnr1);
+        
+    case (Exp.CALL(path = Absyn.IDENT(name = "getTag"),expLst = {s1},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */ 
+      local String cref_str; Exp.Exp s,minlen,leftjust,signdig; Boolean needCast; String var1,var2,var3,var4;
+      equation 
+        (tdecl,tvar,tnr1) = generateTempDecl("modelica_string", tnr); 
+        (cfn1,var1,tnr1) = generateExpression(s1, tnr1, context);        
+        cfn = cAddVariables(cEmptyFunction, {tdecl});
+        stmt = Util.stringAppendList({tvar," = (modelica_string)typeid(",var1,").name();"});
+        cfn = cAddStatements(cfn, {stmt});
+        cfn = cMergeFns({cfn1,cfn});
+      then
+        (cfn,tvar,tnr1);   
         
   end matchcontinue;
 end generateBuiltinFunction;

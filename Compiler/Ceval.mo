@@ -233,6 +233,8 @@ algorithm
     case "identity" then cevalBuiltinIdentity; 
     case "promote" then cevalBuiltinPromote; 
     case "String" then cevalBuiltinString;
+    case "stringCmp" then cevalBuiltinStringCmp;  
+    case "getTag" then cevalBuiltinGetTag;    
     case id
       equation 
         Debug.fprint("ceval", "No Ceval.cevalBuiltinHandler found for: ");
@@ -4043,6 +4045,75 @@ algorithm
         
   end matchcontinue;
 end cevalBuiltinString;
+
+protected function cevalBuiltinStringCmp "
+  author: KS
+  Evaluates the comparsion between two strings"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Exp.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      Values.Value arr_val,res;
+      Integer dim_val;
+      list<Env.Frame> env;
+      Exp.Exp exp1,exp2;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+      String s1,s2;
+      Integer i; Real r; Boolean b;
+    case (cache,env,{exp1,exp2},impl,st,msg)
+      equation 
+      (cache,Values.STRING(s1),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
+      (cache,Values.STRING(s2),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
+        b = stringEqual(s1,s2);
+      then
+        (cache,Values.BOOL(b),st);
+  end matchcontinue;
+end cevalBuiltinStringCmp;
+
+protected function cevalBuiltinGetTag "
+  author: KS
+  Evaluates the getTag function. Never used?"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Exp.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm 
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      Values.Value arr_val,res;
+      Integer dim_val;
+      list<Env.Frame> env;
+      Exp.Exp exp1,exp2;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+      String s1,s2;
+      Integer i; Real r; Boolean b;
+    case (cache,env,{_},impl,st,msg)
+      equation 
+      then
+        (cache,Values.STRING("REC"),st);
+  end matchcontinue;
+end cevalBuiltinGetTag;
 
 protected function cevalCat "function: cevalCat
   evaluates the cat operator given a list of 
