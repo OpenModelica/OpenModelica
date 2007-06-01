@@ -94,6 +94,8 @@ public import Mod;
 public import Prefix;
 public import Types;
 public import Absyn;
+public import Algorithm;
+public import Patternm;
 
 public type Prefix = Prefix.Prefix "
   These type aliases are introduced to make the code a little more
@@ -143,8 +145,8 @@ protected import Debug;
 protected import Interactive;
 protected import Util;
 
-//CHANGED
-public import Algorithm;
+
+
 protected import Builtin;
 protected import Dump;
 protected import Lookup;
@@ -8002,6 +8004,40 @@ algorithm
       then
         (cache,stmt);
 
+        // v1 := matchcontinue(...)
+   case (cache,env,pre,Absyn.ALG_ASSIGN(Absyn.CREF(cr),e as Absyn.MATCHEXP(_,_,_,_,_)),impl) 
+     local
+       list<Absyn.Exp> resultVarList;
+     equation 
+        (cache,cre,cprop,acc) = Static.elabCref(cache,env, cr, impl,false);
+        (cache,Exp.CREF(ce,t)) = Prefix.prefixExp(cache,env, cre, pre);        
+        
+        resultVarList = {Absyn.CREF(cr)};
+        e = Patternm.matchMain(e,resultVarList,cache,env);
+        (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);        
+       (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);                
+
+       stmt = Algorithm.makeAssignment(Exp.CREF(ce,t), cprop, e_2, eprop, acc);
+      then
+        (cache,stmt);
+        
+        // (v1,v2,..,vn) := matchcontinue(...)
+   case (cache,env,pre,Absyn.ALG_ASSIGN(Absyn.TUPLE(expl),e as Absyn.MATCHEXP(_,_,_,_,_)),impl)
+     local
+     equation 
+        (Absyn.CREF(cr)) = Util.listFirst(expl);
+       
+        (cache,cre,cprop,acc) = Static.elabCref(cache,env, cr, impl,false);
+        (cache,Exp.CREF(ce,t)) = Prefix.prefixExp(cache,env, cre, pre);        
+        
+        e = Patternm.matchMain(e,expl,cache,env);
+        (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);        
+       (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);                
+
+       stmt = Algorithm.makeAssignment(Exp.CREF(ce,t), cprop, e_2, eprop, acc);
+      then
+        (cache,stmt);   
+        
         // (v1,v2,..,vn) := func(...)
     case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),impl)
       equation 

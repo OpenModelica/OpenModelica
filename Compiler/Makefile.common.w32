@@ -11,6 +11,7 @@ SRCMO= Absyn.mo \
 	DAELow.mo \
 	Derive.mo \
 	Debug.mo \
+	DFA.mo \
 	Dump.mo \
 	DumpGraphviz.mo \
 	Constants.mo \
@@ -23,8 +24,10 @@ SRCMO= Absyn.mo \
 	Interactive.mo \
 	Lookup.mo \
 	Main.mo \
+	Matrix.mo \
 	Mod.mo \
 	ModUtil.mo \
+	Patternm.mo \
 	Prefix.mo \
 	Static.mo \
 	SimCodegen.mo \
