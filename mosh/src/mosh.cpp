@@ -80,9 +80,6 @@ pthread_cond_t corba_waitformsg;
 pthread_mutex_t corba_waitlock;
 bool corba_waiting=false;
 
-char * omc_message;
-
-
 /* Main function, handles options: -noserv -corba 
    and calls appropriate function. */
 int main(int argc, char* argv[])
@@ -103,8 +100,8 @@ int main(int argc, char* argv[])
     cout << "Using corba communication" << endl;
   }  
   if(!scriptname) {
-    cout << "Open Source Modelica 1.3.2" << endl
-	 << "Copyright 1997-2006, PELAB, Linkoping University" << endl << endl
+    cout << "Open Source Modelica Shell" << endl
+	 << "Copyright 1997-2007, PELAB, Linkoping University" << endl << endl
 	 << "To get help on using Mosh and OpenModelica, type \"help()\" and press enter" << endl;
   }
   if (corba_comm) {
@@ -127,9 +124,7 @@ int main(int argc, char* argv[])
       if (!scriptname)
 	cout << "Started server using:"<< systemstr << "\n res = " << res << endl;
     }
-#ifdef __APPLE_CC__ /* sleep a bit on MacOS */
     sleep(1);  
-#endif           
     doSocketCommunication(scriptname);
   }
 
