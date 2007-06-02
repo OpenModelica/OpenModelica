@@ -1,5 +1,5 @@
 /*
-Copyright (c) 1998-2006, Linköpings universitet, Department of
+Copyright (c) 1998-2007, Linköpings universitet, Department of
 Computer and Information Science, PELAB
 
 All rights reserved.
@@ -51,8 +51,8 @@ extern HANDLE clientlock;
 extern HANDLE omc_client_request_event;
 extern HANDLE omc_return_value_ready;
 
-extern char* omc_cmd_message;
-extern char* omc_reply_message;
+char* omc_cmd_message = "";
+char* omc_reply_message = "";
 
 using namespace std;
 

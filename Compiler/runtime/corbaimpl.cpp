@@ -1,5 +1,5 @@
 /*
-Copyright (c) 1998-2006, Linköpings universitet, Department of
+Copyright (c) 1998-2007, Linköpings universitet, Department of
 Computer and Information Science, PELAB
 
 All rights reserved.
@@ -78,8 +78,8 @@ HANDLE omc_client_request_event;
 HANDLE omc_return_value_ready;
 HANDLE clientlock;
 
-char * omc_cmd_message = "";
-char * omc_reply_message = "";
+extern char *omc_cmd_message;
+extern char *omc_reply_message;
 
 #ifndef NOMICO
 CORBA::ORB_var orb;
@@ -330,8 +330,8 @@ pthread_cond_t corba_waitformsg;
 pthread_mutex_t corba_waitlock;
 bool corba_waiting=false;
 
-char * omc_cmd_message = "";
-char * omc_reply_message = "";
+extern char *omc_cmd_message;
+extern char *omc_reply_message;
 
 #ifndef NOMICO
 CORBA::ORB_var orb;
