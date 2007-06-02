@@ -113,8 +113,8 @@ extern pthread_mutex_t corba_waitlock;
 
 extern bool corba_waiting;
 
-extern char* omc_cmd_message;
-extern char* omc_reply_message;
+char* omc_cmd_message = "";
+char* omc_reply_message = "";
 
 using namespace std;
 
