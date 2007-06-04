@@ -457,15 +457,19 @@ algorithm
       then (temp1,temp2,temp3);        
         
         // COMPONENT REFERENCE EXPRESSION
+        // Will be interpretated as: case (var AS _) or case(var AS wildcard)
         // This expression is transformed into a wildcard but we store the variable
-        // reference as well.
-    case (Absyn.CREF(Absyn.CREF_IDENT(str,_)),localVar,localPathVars,localAsBinds,_,_)
+        // reference as well as an AS-binding.
+    case (Absyn.CREF(Absyn.CREF_IDENT(var,_)),localVar,localPathVars,localAsBinds,_,_)
       local 
-        Absyn.Ident str;   
+        Absyn.Ident var;   
         RenamedPat pat;
         list<Absyn.Ident,Absyn.Ident> temp;
       equation
-        pat = Matrix.RP_WILDCARD(localVar,SOME(str));
+        localAsBinds = listAppend(localAsBinds,Util.listCreate(Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_IDENT(var,{})),
+          Absyn.CREF(Absyn.CREF_IDENT(localVar,{}))),NONE())));
+          
+        pat = Matrix.RP_WILDCARD(localVar,NONE());
       then (pat,localPathVars,localAsBinds);
         
         // TUPLE EXPRESSION
@@ -643,7 +647,6 @@ algorithm
 end generateIdentifiers;
 
 //-----------------------------------------------------------------------
-//-----------------------------------------------------------------------
 
 
 public function matchMain "function: matchMain
@@ -775,7 +778,6 @@ algorithm
         RenamedPatList firstPatRow;
         RightHandSide v1;
         RenamedPat pat;
-        list<Absyn.Ident> varList;
         Absyn.Ident arcName;
       equation
         firstPatRow = Matrix.firstRow(localPatMat,{});
@@ -791,9 +793,9 @@ algorithm
         
         //Add a wildcard arc    
         pat = Util.listFirst(firstPatRow);
-        varList = extractRhsVarsFromWildcard(Util.listCreate(pat),{});
+        
         arcName = "Wildcard";
-        localState = DFA.addNewArc(localState,varList,arcName,newState,SOME(pat));
+        localState = DFA.addNewArc(localState,arcName,newState,SOME(pat));
         
         tempMat = Matrix.removeFirstRow(localPatMat,{});
         
@@ -806,7 +808,7 @@ algorithm
         
         // Add an else arc
         arcName = "else";
-        localState = DFA.addNewArc(localState,{},arcName,newState,NONE());
+        localState = DFA.addNewArc(localState,arcName,newState,NONE());
       then (localState,localCnt);		 	
         //CASE 3 --- THERE EXIST AT LEAST ONE CONSTRUCTOR at the top-most row of the matrix --------------      	
     case (localPatMat,localRhList,localState,localCnt)
@@ -846,7 +848,7 @@ algorithm
         pat = Util.listFirst(Util.listFirst(localPatMat));
         // Add new arc with first element
         arcName = getConstantName(pat);
-        localState = DFA.addNewArc(localState,{},arcName
+        localState = DFA.addNewArc(localState,arcName
           ,newState,SOME(pat));	    	 	  
         
         // Match the rest of the column
@@ -858,7 +860,7 @@ algorithm
         
         // Add new arc with rest of column
         arcName= "else";
-        localState = DFA.addNewArc(localState,{},arcName,newState,NONE());
+        localState = DFA.addNewArc(localState,arcName,newState,NONE());
       then (localState,localCnt);
         
         // CASE 2 - NO CONSTRUCTORS BUT NOT ALL WILDCARDS	at the top-most row of the matrix	     		  
@@ -929,7 +931,7 @@ algorithm
         (newState,localCnt) = createUnionState(indVec,tempList,
           localRhList,localCnt,newState,true);  
         arcName = "else";
-        localState = DFA.addNewArc(localState,{},arcName,newState,NONE());
+        localState = DFA.addNewArc(localState,arcName,newState,NONE());
       then (localState,localCnt);
         // MORE THAN ONE COLUMN IN THE MATRIX
     case (localPatMat,localRhList,localState,localCnt)
@@ -1079,15 +1081,14 @@ algorithm
         RenamedPatList localPatList;
         RightHandList localRhList;
         DFA.State localState,newState;
-        list<Absyn.Ident> varList;
       equation
         pat = arrayGet(listArray(localPatList),first);
         rhSide = arrayGet(listArray(localRhList),first);
         true = wildcardOrNot(pat);
         localCnt = localCnt + 1;
         newState = DFA.STATE(localCnt,0,{},SOME(rhSide));
-        varList = extractRhsVarsFromWildcard(Util.listCreate(pat),{});
-        localState = DFA.addNewArc(localState,varList,"Wildcard",newState,SOME(pat));
+        
+        localState = DFA.addNewArc(localState,"Wildcard",newState,SOME(pat));
         (localState,localCnt) = createUnionState(rest,localPatList,localRhList,localCnt,localState,false);
       then (localState,localCnt);     
         
@@ -1108,7 +1109,7 @@ algorithm
         localCnt = localCnt + 1;
         newState = DFA.STATE(localCnt,0,{},SOME(rhSide));
         arcName = getConstantName(pat);
-        localState = DFA.addNewArc(localState,{},arcName,newState,SOME(pat));
+        localState = DFA.addNewArc(localState,arcName,newState,SOME(pat));
         (localState,localCnt) = createUnionState(rest,localPatList,localRhList,localCnt,localState,false);
       then (localState,localCnt);
   end matchcontinue;      
@@ -1217,7 +1218,6 @@ algorithm
         RightHandList localRhList;
         RenamedPatList listTemp;
         Absyn.Ident var;
-        list<Absyn.Ident> varList;
         ArcName arcName;
       equation
         listTemp = arrayGet(listArray(localPatMat),localInd);
@@ -1232,11 +1232,10 @@ algorithm
         
         (newState,localCnt) = matchFuncHelper(matTemp,
           selectRightHandSides(indVec,listArray(localRhList),{}),newState,localCnt);
-        
-        varList = extractRhsVarsFromWildcard(listTemp,{});    
+            
         var = DFA.extractPathVar(arrayGet(listArray(listTemp),Util.listFirst(indVec)));   
         arcName = "Wildcard"; 
-        localState = DFA.addNewArc(localState,varList,arcName,newState,SOME(Matrix.RP_WILDCARD(var,NONE())));
+        localState = DFA.addNewArc(localState,arcName,newState,SOME(Matrix.RP_WILDCARD(var,NONE())));
       then (localState,localCnt);
     case (localState,_,_,_,localCnt) 
       local
@@ -1374,7 +1373,7 @@ algorithm
         ind = Util.listFirst(indVec);
         pat = arrayGet(listArray(tempList),ind);
         arcName = first;
-        localState = DFA.addNewArc(localState,{},arcName,newState,SOME(pat));
+        localState = DFA.addNewArc(localState,arcName,newState,SOME(pat));
         
         (localState,localCnt) = addNewArcForEachCHelper(rest,
           localState,localInd,localPatMat,localRhList,localCnt);  
@@ -1423,7 +1422,7 @@ algorithm
         pat = arrayGet(listArray(patList),ind);
         pat = simplifyPattern(pat,varList);
         arcName = constructorName;
-        localState = DFA.addNewArc(localState,{},arcName,newState,SOME(pat)); 
+        localState = DFA.addNewArc(localState,arcName,newState,SOME(pat)); 
         (localState,localCnt) = addNewArcForEachCHelper(rest,localState,localInd,
           localPatMat,localRhList,localCnt);  			
       then (localState,localCnt); 
@@ -1906,33 +1905,6 @@ algorithm
   end matchcontinue;   
 end printList;
 
-public function extractRhsVarsFromWildcard "function: extractRhsVarsFromWildcard
- This function takes a list of patterns.
- If a pattern is a wildcard it extracts the belonging variable (if any).
-"
-  input RenamedPatList patList;
-  input list<Absyn.Ident> accVarList;
-  output list<Absyn.Ident> varList;
-algorithm
-  var :=
-  matchcontinue (patList,accVarList)
-    local
-      list<Absyn.Ident> localAccVarList;  
-    case ({},localAccVarList) equation then localAccVarList; 
-    case (Matrix.RP_WILDCARD(_,SOME(rhsVar)) :: rest,localAccVarList)
-      local    
-        Absyn.Ident rhsVar;
-        RenamedPatList rest;
-      equation
-        localAccVarList = listAppend(localAccVarList,Util.listCreate(rhsVar));
-      then extractRhsVarsFromWildcard(rest,localAccVarList);
-    case (_ :: rest,localAccVarList) 
-      local
-        RenamedPatList rest; 
-      equation 
-      then extractRhsVarsFromWildcard(rest,localAccVarList);  
-  end matchcontinue;
-end extractRhsVarsFromWildcard;
 
 public function printCList "function: printCList"
   input list<Absyn.Ident,Boolean> cList;
