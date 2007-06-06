@@ -61,6 +61,7 @@ using namespace std;
 
 Point::Point(qreal x1, qreal y1,qreal h, qreal w, QColor& color_, const GraphWidget* graphwidget_, QGraphicsItem* parent, QGraphicsScene* scene, const QString& label): QGraphicsEllipseItem(x1, y1, h, w, parent, scene), graphwidget(graphwidget_)
 {
+
 	color = color_;
 	graphwidget = graphwidget_;
 	xPos = x1;
@@ -78,6 +79,11 @@ Point::Point(qreal x1, qreal y1,qreal h, qreal w, QColor& color_, const GraphWid
 		setToolTip(label);
 	else
 		setToolTip(graphwidget->currentXVar + QString(": ") + QVariant(x1).toString() + QString("\n") + graphwidget->currentYVar +QString(": ") + QVariant(y1).toString());
+
+
+
+//	setFlag(QGraphicsItem::ItemIgnoresTransformations);
+	
 }
 
 Point::~Point()
@@ -87,6 +93,8 @@ Point::~Point()
 
 void Point::updateSize()
 {
+
+
 	double xScale = graphwidget->matrix().m11()/125;
 	double yScale = graphwidget->matrix().m22()/195;
 	
@@ -94,6 +102,7 @@ void Point::updateSize()
 	double height = -200 / yScale;
 
 	scale(1/xScale, 1/yScale);
+
 }
 
 void Point::move(double x, double y)
@@ -107,7 +116,11 @@ void Point::hoverEnterEvent ( QGraphicsSceneHoverEvent * event )
 {
 	QPen qp;
 
+#if QT_VERSION >= 0x400300	
+	QBrush b(color.darker());
+#else
 	QBrush b(color);
+#endif
 	setBrush(b);
 }
 void Point::hoverLeaveEvent ( QGraphicsSceneHoverEvent * event )

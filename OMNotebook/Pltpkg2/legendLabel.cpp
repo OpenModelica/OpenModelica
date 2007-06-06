@@ -73,6 +73,8 @@ LegendLabel::LegendLabel(QColor color_, QString& s, QWidget* parent): QLabel(s, 
 	tmp = new QAction("Change color", this);
 	connect(tmp, SIGNAL(triggered()), this, SLOT(selectColor()));
 	addAction(tmp);
+
+
 }
 
 LegendLabel::~LegendLabel()
@@ -93,23 +95,40 @@ void LegendLabel::selectColor()
 void LegendLabel::setLineVisible(bool b)
 {
 	curve->showLine(b);
+	
+
 	curve->dataPoints[0]->scene()->update();				
 	emit showLine(b);
 }
 
 void LegendLabel::setPointsVisible(bool b)
 {
+
+
 	curve->showPoints(b);
+	if(b)
+		graphWidget->updatePointSizes();
+
 	curve->dataPoints[0]->scene()->update();				
 	emit showPoints(b);
 }
+/*
+void LegendLabel::showEvent(QShowEvent* event)
+{
 
+	QLabel::showEvent(event);
+	
+	graphWidget->originalZoom();
+}
+*/
 
 void LegendLabel::paintEvent ( QPaintEvent * event )
 {
 	QPainter painter(this);
 
 	render(&painter);
+
+//	graphWidget->originalZoom();
 }
 
 void LegendLabel::render(QPainter* painter, QPointF pos)
@@ -127,7 +146,7 @@ void LegendLabel::render(QPainter* painter, QPointF pos)
 	painter->drawEllipse(1, 1, max(0,height()-2), max(0,height()-2));
 
 	painter->setFont(font());
-	setMinimumWidth(fontMetrics().width(text()));
+	setMinimumWidth(fontMetrics().width(text())+height()+4);
 	QRectF r = rect();
 	r.setLeft(r.left() + height()+2);
 	painter->drawText(r, Qt::AlignVCenter, text());

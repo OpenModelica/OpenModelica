@@ -60,6 +60,7 @@ using namespace std;
 
 Line2D::Line2D(qreal x1, qreal y1, qreal x2, qreal y2, QPen& pen, QGraphicsItem* parent, QGraphicsScene* scene): QGraphicsLineItem(x1, y1, x2, y2, parent, scene)
 {
+	
 	setPen(pen);
 }
 

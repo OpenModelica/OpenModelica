@@ -153,6 +153,8 @@ public slots:
 	void setHold(bool);
 	void setHold(QDataStream& ds);
 
+	void originalZoom();
+
 signals:
 	void showPreferences2();
 	void serverState(bool);
@@ -175,6 +177,7 @@ protected:
 
 	void paintEvent(QPaintEvent* pe);
 
+	void showEvent(QShowEvent* event);
 	quint32 blockSize;
 
 	QTcpServer* server;
@@ -188,7 +191,7 @@ protected:
 	quint32 variableCount;
 	quint32 packetSize;
 
-	void createGrid();
+	void createGrid(bool numbersOnly = false);
 	qreal gridDist(qreal &min, qreal &max, qreal dist = -1);
 
 public:
@@ -218,6 +221,7 @@ private:
 
 	}
 
+	
 	void rescale()
 	{
 
@@ -237,7 +241,11 @@ private:
 
 	QRectF currentArea_;
 
+
 public:
+	QRectF originalArea;
+
+
 	QGraphicsItemGroup *graphicsItems;
 
 	QList<VariableData*> variableData;

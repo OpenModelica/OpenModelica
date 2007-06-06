@@ -93,8 +93,10 @@ protected:
 		setIndent(height() +2);
 	}
 
+//	void showEvent(QShowEvent*);
 public:
 	void render(QPainter* painter, QPointF pos = QPointF());
+	GraphWidget* graphWidget;
 
 private:
 	QColor color;

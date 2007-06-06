@@ -83,6 +83,12 @@ CompoundWidget::CompoundWidget(QWidget* parent):  QWidget(parent)
 CompoundWidget::~CompoundWidget()
 {
 
+	delete gwMain;
+	delete gvLeft;
+	delete gvBottom;
+	delete xLabel;
+	delete yLabel;
+	delete plotTitle;
 	delete layout;
 
 }

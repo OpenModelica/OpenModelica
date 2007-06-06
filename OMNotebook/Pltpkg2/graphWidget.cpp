@@ -87,12 +87,15 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "LegendLabel.h"
 #include "curve.h"
 
+#include <QtOpengL/QGLWidget>
 using namespace std;
 
 GraphWidget::GraphWidget(QWidget* parent): QGraphicsView(parent)
 {
-	tmpint = 0;
 
+
+	tmpint = 0;
+	
 	graphicsScene = new GraphScene;
 	setScene(graphicsScene);
 	scale(1, -1);
@@ -115,7 +118,10 @@ GraphWidget::GraphWidget(QWidget* parent): QGraphicsView(parent)
 	this->setMinimumHeight(150);
 
 	this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-	this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	//this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff); //fjass
+//	this->verticalScrollBar()->setMaximumWidth(1);
+	this->verticalScrollBar()->setMinimumWidth(100);
+	//	this->verticalScrollBar()->hide();
 
 	updateScaleFactors();
 
@@ -177,6 +183,10 @@ GraphWidget::GraphWidget(QWidget* parent): QGraphicsView(parent)
 	tmp->setCheckable(true);
 	connect(tmp, SIGNAL(toggled(bool)), this, SLOT(setAntiAliasing(bool)));
 
+
+	tmp = contextMenu->addAction("oZm");
+	connect(tmp, SIGNAL(triggered()), this, SLOT(originalZoom()));
+
 	graphicsItems = new QGraphicsItemGroup;
 	dataPoints = new QList<Point*>;
 
@@ -187,8 +197,18 @@ GraphWidget::GraphWidget(QWidget* parent): QGraphicsView(parent)
 	doSetArea = false;
 	doFitInView = false;
 	hold = false;
+
+#if QT_VERSION >= 0x040300
+	setOptimizationFlags(QGraphicsView::DontAdjustForAntialiasing|QGraphicsView::DontSavePainterState);
+#endif
 }
 
+void GraphWidget::originalZoom()
+{
+
+	setArea(originalArea);
+	updatePointSizes();
+}
 void GraphWidget::newWindow()
 {
 	GraphWindow* g = new GraphWindow(0);
@@ -221,16 +241,26 @@ void GraphWidget::newWindow()
 
 GraphWidget::~GraphWidget()
 {
+
 	for(map<QString, VariableData*>::iterator i = variables.begin(); i != variables.end(); ++i)
 		delete i->second;
 
 	delete contextMenu;
+
 	int nr = graphicsScene->views().count();
+
+foreach(Curve* c, curves)
+{
+	graphicsScene->removeItem(c->line);
+}
+
 	if(nr <= 1)
 		delete graphicsScene;
+	
 
 	qDeleteAll(curves);
 	qDeleteAll(variableData);
+
 }
 
 void GraphWidget::setServerState(bool listen)
@@ -414,7 +444,7 @@ void GraphWidget::resizeEvent ( QResizeEvent * event )
 
 void GraphWidget::mousePressEvent ( QMouseEvent * event )
 {
-
+ 
 
 	if(event->button() == Qt::LeftButton)
 		zoomStart = event->pos();
@@ -429,7 +459,12 @@ void GraphWidget::updatePointSizes(QRect& r)
 	if( r == QRect())
 		r = rect();
 
-	QList<QGraphicsItem*> g3 = items(rect());
+	QList<QGraphicsItem*> g3;
+
+	if(r.x() < 0)
+		g3 = items();
+	else
+		g3 = items(rect());
 
 	Point* p;
 
@@ -525,7 +560,7 @@ void GraphWidget::mouseReleaseEvent ( QMouseEvent * event )
 			}
 			}
 			*/
-			updatePointSizes();
+			updatePointSizes(QRect(-1,0,0,0));
 			update(rect());
 		}
 	}
@@ -604,7 +639,7 @@ qreal GraphWidget::gridDist(qreal &min, qreal &max, qreal dist)
 	return distance;
 }
 
-void GraphWidget::createGrid()
+void GraphWidget::createGrid(bool numbersOnly)
 {
 	QRectF scene = graphicsScene->sceneRect();
 	graphicsScene->xRulerScene->setSceneRect(0, 0, 1, 1);
@@ -640,8 +675,11 @@ void GraphWidget::createGrid()
 		yMinorDist = yMajorDist/5;
 	}
 
+if(!numbersOnly)
+{
 	delete graphicsScene->grid;
 	graphicsScene->grid = new QGraphicsItemGroup;
+}
 
 	foreach(QGraphicsItem* ti, graphicsScene->xRulerScene->items())
 		delete ti;
@@ -684,6 +722,8 @@ void GraphWidget::createGrid()
 	{
 		for(double x = xMin; x <= xMax; ++x)
 		{
+if(!numbersOnly)
+{
 			Line2D* l = new Line2D(x,yMin2, x, yMax2, pen2);
 			l->setZValue(-2);
 			graphicsScene->grid->addToGroup(l);
@@ -695,7 +735,7 @@ void GraphWidget::createGrid()
 				l->setZValue(-2);
 				graphicsScene->grid->addToGroup(l);
 			}
-
+}
 			QGraphicsTextItem* tmp2 = graphicsScene->xRulerScene->addText("1e" + QVariant(x).toString());
 			tmp2->setPos(gvBottom->mapToScene(mapFromScene(x, yMax)).x()-tmp2->boundingRect().width()/2, gvBottom->sceneRect().y());
 			tmp2->moveBy(0, -tmp2->boundingRect().height()/2.);
@@ -704,18 +744,22 @@ void GraphWidget::createGrid()
 	}
 	else
 	{
+if(!numbersOnly)
+{
 		for(qreal x = xMin-xMajorDist; x < 1.5* xMajorDist + xMax; x+= xMinorDist)	
 		{
 			Line2D* l = new Line2D(x, yMin2, x,  yMax2, pen);
 			l->setZValue(-2);
 			graphicsScene->grid->addToGroup(l);
 		}
-
+}
 		for(qreal x = xMin-xMajorDist; x < 1.5* xMajorDist + xMax; x+= xMajorDist)	
 		{
+if(!numbersOnly)
+{
 			Line2D* l = new Line2D(x, yMin2, x,  yMax2, pen2);
 			graphicsScene->grid->addToGroup(l);
-
+}
 			QGraphicsTextItem* tmp2 = graphicsScene->xRulerScene->addText(QVariant(x).toString());
 			tmp2->setPos(gvBottom->mapToScene(mapFromScene(x, yMax)).x()-tmp2->boundingRect().width()/2, gvBottom->sceneRect().y());
 			tmp2->moveBy(0, -tmp2->boundingRect().height()/2.);
@@ -734,6 +778,8 @@ void GraphWidget::createGrid()
 	{
 		for(double y = yMin-1; y <= yMax; ++y)
 		{
+if(!numbersOnly)
+{
 			Line2D* l = new Line2D(xMin2,y, xMax2, y, pen2);
 			l->setZValue(-2);
 			graphicsScene->grid->addToGroup(l);
@@ -745,7 +791,7 @@ void GraphWidget::createGrid()
 				l->setZValue(-2);
 				graphicsScene->grid->addToGroup(l);
 			}
-
+}
 			QGraphicsTextItem* tmp2 = graphicsScene->yRulerScene->addText(QString("1e") +QVariant(y).toString());
 			tmp2->setPos(gvLeft->mapToScene( gvLeft->sceneRect().x() ,mapFromScene(xMax, y).y()+tmp2->boundingRect().height()/2 ));
 
@@ -761,21 +807,23 @@ void GraphWidget::createGrid()
 	}
 	else
 	{
-
+if(!numbersOnly)
+{
 		for(qreal y = yMin-yMajorDist; y < 1.5* yMajorDist + yMax ; y+= yMinorDist)
 		{
 			Line2D* l = new Line2D(xMin2, y, xMax2, y, pen);
 			l->setZValue(-2);
 			graphicsScene->grid->addToGroup(l);
 		}	
-
+}
 		for(qreal y = yMin-yMajorDist; y < 1.5* yMajorDist + yMax ; y+= yMajorDist)
 		{
 			if(abs(y) < 1e-16)
 				y = 0;
-
+if(!numbersOnly)
+{
 			graphicsScene->grid->addToGroup(new Line2D(xMin2, y, xMax2, y, pen2));
-
+}
 			QGraphicsTextItem* tmp2 = graphicsScene->yRulerScene->addText(QVariant(y).toString());
 			tmp2->setPos(gvLeft->mapToScene( gvLeft->sceneRect().x() ,mapFromScene(xMax, y).y()+tmp2->boundingRect().height()/2 ));
 
@@ -791,9 +839,11 @@ void GraphWidget::createGrid()
 
 	if(width != gvLeft->width())
 		emit resizeY(width);
-
+if(!numbersOnly)
+{
 	graphicsScene->grid->setZValue(-1);
 	graphicsScene->addItem(graphicsScene->grid);
+}
 	graphicsScene->update(currentArea());
 
 	gvLeft->update();
@@ -809,6 +859,7 @@ void GraphWidget::paintEvent(QPaintEvent *pe)
 			setArea(currentArea());
 
 			bool visible;
+
 			if(visible = graphicsScene->gridVisible)
 			{
 				showGrid(false);
@@ -819,18 +870,24 @@ void GraphWidget::paintEvent(QPaintEvent *pe)
 
 			graphicsScene->gridVisible = visible;
 			updatePointSizes();
+
 			doFitInView = false;
 		}
 		else if(doSetArea)
 		{
-			setArea(newRect);
+			originalZoom();		
+
+//			setArea(newRect); fjass
+//			setArea(QRectF(10,-5,5,5));
 			doSetArea = false;
 		}
 		else
 			setCurrentArea(mapToScene(this->rect()).boundingRect());
 
-		if(graphicsScene->gridVisible)
-			showGrid(true);
+//		if(graphicsScene->gridVisible)
+//			showGrid(true);
+		showGrid(graphicsScene->gridVisible); //fjass
+//		updatePointSizes();
 
 		emit areaChanged(currentArea());
 
@@ -849,8 +906,16 @@ void GraphWidget::updateGrid()
 	showGrid(true);
 }
 
+void GraphWidget::showEvent(QShowEvent* event)
+{
+	QGraphicsView::showEvent(event);
+	setArea(originalArea);
+//	originalZoom();
+
+}
 void GraphWidget::setArea(const QRectF& r)
 {
+
 	QRectF current = graphicsScene->sceneRect();
 
 	if(r.left() < current.left())
@@ -897,7 +962,8 @@ void GraphWidget::showGrid(bool b)
 			delete graphicsScene->grid;
 			graphicsScene->grid = 0;
 		}
-
+		
+		createGrid(true);
 		graphicsScene->gridVisible = false;
 	}
 }
@@ -981,10 +1047,19 @@ void GraphWidget::drawLine(QDataStream& ds)
 	QColor color, fillColor;
 	qreal x0, y0, x1, y1;
 	ds >> x0 >> y0 >> x1 >> y1 >> color >> fillColor;
+
 	QPen pen(color);
 	QBrush brush(fillColor);
 
-	graphicsItems->addToGroup(graphicsScene->addLine(QLineF(x0, y0, x1, y1), pen));
+	QGraphicsLineItem *e = new QGraphicsLineItem(x0, y0, x1, y1);
+
+	e->setPen(pen);
+//	e->setBrush(brush);
+
+	graphicsItems->addToGroup(e);
+	graphicsScene->addItem(graphicsItems);
+
+//	graphicsItems->addToGroup(graphicsScene->addLine(QLineF(x0, y0, x1, y1), pen));
 	update(x0, y0, x1-x1, y1-y0);
 }
 
@@ -1019,7 +1094,14 @@ void GraphWidget::drawRect(QDataStream& ds)
 	QPen pen(color);
 	QBrush brush(fillColor);
 
-	graphicsItems->addToGroup(graphicsScene->addRect(QRectF(QPointF(x0,y0), QSizeF(x1-x0, y1-y0)), pen, brush));
+//	graphicsItems->addToGroup(graphicsScene->addRect(QRectF(QPointF(x0,y0), QSizeF(x1-x0, y1-y0)), pen, brush));
+
+	QGraphicsRectItem *e = new QGraphicsRectItem(QRectF(QPointF(x0, y0), QSizeF(x1-x0, y1-y0)));
+	e->setPen(pen);
+	e->setBrush(brush);
+
+	graphicsItems->addToGroup(e);
+	graphicsScene->addItem(graphicsItems);
 	update(x0, y0, x1-x1, y1-y0);
 }
 
@@ -1028,10 +1110,17 @@ void GraphWidget::drawEllipse(QDataStream& ds)
 	QColor color, fillColor;
 	qreal x0, y0, x1, y1;
 	ds >> x0 >> y0 >> x1 >> y1 >> color >> fillColor;
+
 	QPen pen(color);
 	QBrush brush(fillColor);
+	QGraphicsEllipseItem *e = new QGraphicsEllipseItem(QRectF(QPointF(x0, y0), QSizeF(x1-x0, y1-y0)));
+	e->setPen(pen);
+	e->setBrush(brush);
 
-	graphicsItems->addToGroup(graphicsScene->addEllipse(QRectF(QPointF(x0, y0), QSizeF(x1-x0, y1-y0)), pen, brush));
+	graphicsItems->addToGroup(e);
+	graphicsScene->addItem(graphicsItems);
+	
+//	graphicsItems->addToGroup(graphicsScene->addEllipse(QRectF(QPointF(x0, y0), QSizeF(x1-x0, y1-y0)), pen, brush));
 	update(x0, y0, x1-x1, y1-y0);
 }
 
@@ -1160,16 +1249,24 @@ void GraphWidget::readPtolemyDataStream()
 void GraphWidget::ptolemyDataStreamClosed()
 {
 	for(map<QString, Curve*>::iterator i = temporaryCurves.begin(); i != temporaryCurves.end(); ++i)
-		curves.append(i->second);	
-
+	{
+		curves.append(i->second);
+		graphicsScene->addItem(i->second->line); 
+	}
 	for(map<QString, VariableData*>::iterator i = variables.begin(); i != variables.end(); ++i)
 		variableData.append(i->second);
 
-	temporaryCurves.clear();
+//	Curve* cc = temporaryCurves.begin()->second;
+	temporaryCurves.clear(); //fjass
+
+//	cc->visible;
+
 	variables.clear();
 
 	if(stretch)
 		resetZoom();
+
+	setServerState(false);
 
 	emit newMessage("Connection closed");
 }
@@ -1273,17 +1370,17 @@ void GraphWidget::setLogarithmic(bool b)
 			if(curves[i]->interpolation == INTERPOLATION_LINEAR)
 			{
 				Line2D* l = new Line2D(x0, y0, x1, y1,pen);
-				graphicsScene->addItem(l);
+//				graphicsScene->addItem(l);
 				curves[i]->line->addToGroup(l);
 			}
 			else if(curves[i]->interpolation == INTERPOLATION_CONSTANT)
 			{
 				Line2D* l = new Line2D(x0, y0,x1, y0, pen);
-				graphicsScene->addItem(l);
+//				graphicsScene->addItem(l);
 				curves[i]->line->addToGroup(l);
 
 				l = new Line2D(x1, y0,x1, y1, pen);
-				graphicsScene->addItem(l);
+//				graphicsScene->addItem(l);
 				curves[i]->line->addToGroup(l);
 			}
 
@@ -1296,15 +1393,19 @@ void GraphWidget::setLogarithmic(bool b)
 			Point* p = new Point(x1, y1, .02, .02, pen.color(), this,0, graphicsScene, curves[i]->x->variableName() + ": " +QVariant(x1_).toString() +"\n" + curves[i]->y->variableName() + ": " + QVariant(y1_).toString());
 			curves[i]->dataPoints.append(p);
 			p->setVisible(curves[i]->drawPoints);
+				
 		}
 
 
 		curves[i]->line->setVisible(curves[i]->visible);
+		graphicsScene->addItem(curves[i]->line);
+
 		doFitInView = true;
 
 		if(truncated)
 			QMessageBox::information(0, "Truncated data", "The data has been truncated to allow logarithmic scaling.");
 	}
+
 }
 
 
@@ -1382,6 +1483,7 @@ void GraphWidget::plotPtolemyDataStream()
 					{
 						yVars.push_back(tmp); 
 						ll = new LegendLabel(color, tmp,legendFrame);
+						ll->graphWidget = this;
 
 						ll->setMaximumHeight(21);
 						legendLayout->addWidget(ll);
@@ -1514,26 +1616,33 @@ void GraphWidget::plotPtolemyDataStream()
 
 					if(temporaryCurves[currentYVar]->interpolation == INTERPOLATION_LINEAR)
 					{
+//						QGraphicsLineItem* l = new QGraphicsLineItem(x0, y0, x1, y1);
+//						l->setZValue(25);
 						Line2D* l = new Line2D(x0, y0, x1, y1,color);
-						graphicsScene->addItem(l);
-						l->show();
 						temporaryCurves[currentYVar]->line->addToGroup(l);
+						l->show();
+//						graphicsScene->addItem(l);
+
+
 					}
 					else if(temporaryCurves[currentYVar]->interpolation == INTERPOLATION_CONSTANT)
 					{
-						Line2D* l = new Line2D((*variables[currentXVar])[i], (*variables[currentYVar])[i],(*variables[currentXVar])[i+1], (*variables[currentYVar])[i]);
-						graphicsScene->addItem(l);
+//						Line2D* l = new Line2D((*variables[currentXVar])[i], (*variables[currentYVar])[i],(*variables[currentXVar])[i+1], (*variables[currentYVar])[i], color);
+						Line2D* l = new Line2D(x0, y0,x1,y0,color);
+						//						graphicsScene->addItem(l);
 						temporaryCurves[currentYVar]->line->addToGroup(l);
 
-						l = new Line2D((*variables[currentXVar])[i+1], (*variables[currentYVar])[i],(*variables[currentXVar])[i+1], (*variables[currentYVar])[i+1]);
-						graphicsScene->addItem(l);
+//						l = new Line2D((*variables[currentXVar])[i+1], (*variables[currentYVar])[i],(*variables[currentXVar])[i+1], (*variables[currentYVar])[i+1]);
+						l = new Line2D(x1, y0,x1,y1,color);
+
+						//						graphicsScene->addItem(l);
 						temporaryCurves[currentYVar]->line->addToGroup(l);
 					}
 					else if(temporaryCurves[currentYVar]->interpolation == INTERPOLATION_NONE)
 					{
 						Line2D* l = new Line2D(x0, y0, x1, y1,color);
 						l->setVisible(false);
-						graphicsScene->addItem(l);
+//						graphicsScene->addItem(l);
 						temporaryCurves[currentYVar]->line->addToGroup(l);
 					}
 
