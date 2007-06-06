@@ -662,6 +662,8 @@ algorithm
       then
         (exp :: exps);
     case ASSERT(cond = e1,msg= e2) then {e1,e2}; 
+    case BREAK() then {}; 
+    case RETURN() then {}; 
     case _
       equation 
         Debug.fprintln("failtrace", "- Algorithm.getAllExpsStmt failed");
