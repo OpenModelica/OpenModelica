@@ -104,6 +104,7 @@ namespace IAEX
 		virtual bool isEditable();
 		virtual bool isEvaluated();							// Added 2005-11-23 AF
 		virtual bool isPlot(QString text = QString::null);	// Added 2005-11-23 AF
+		virtual bool isPlot2(QString text = QString::null);	
 
 
 	signals:

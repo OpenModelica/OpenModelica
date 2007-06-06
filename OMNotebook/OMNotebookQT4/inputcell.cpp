@@ -50,7 +50,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
  * \author Ingemar Axelsson and Anders Fernström
  * \date 2005-10-27 (update)
  *
- * \brief Describes a inputcell.
+ * \brief Describes an inputcell.
  */
 
 //STD Headers
@@ -182,6 +182,7 @@ namespace IAEX
 
 		// EVAL, key: SHIFT + RETURN || SHIFT + ENTER
 		if( event->modifiers() == Qt::ShiftModifier && 
+
 			(event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) )
 		{
 			inCommand = false;
@@ -442,7 +443,7 @@ namespace IAEX
 
 		input_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 		input_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-		input_->setContextMenuPolicy( Qt::NoContextMenu );
+//		input_->setContextMenuPolicy( Qt::NoContextMenu );
 
 		QPalette palette;
 		palette.setColor(input_->backgroundRole(), QColor(200,200,255));
@@ -503,7 +504,7 @@ namespace IAEX
 
 		output_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 		output_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-		output_->setContextMenuPolicy( Qt::NoContextMenu );
+//		output_->setContextMenuPolicy( Qt::NoContextMenu );
 
 		connect( output_, SIGNAL( textChanged() ),
 			this, SLOT(contentChanged()));
@@ -511,6 +512,8 @@ namespace IAEX
 			this, SLOT( clickEventOutput() ));
 		connect( output_, SIGNAL( wheelMove(QWheelEvent*) ),
 			this, SLOT( wheelEvent(QWheelEvent*) ));
+
+		connect(output_, SIGNAL(forwardAction(int)), this, SIGNAL(forwardAction(int)));
 
 		setOutputStyle();
 		
@@ -1118,7 +1121,8 @@ namespace IAEX
 	 */
 	bool InputCell::isPlot(QString text)
 	{
-		QRegExp exp( "plot(.*)|plotParametric(.*)" );
+		QRegExp exp( "plot\\((.*)|plotParametric\\((.*)" );
+
 
 		if( text.isNull() )
 		{
@@ -1205,7 +1209,7 @@ namespace IAEX
 
 			// remove plot.png if it already exist, don't want any
 			// old plot.
-			if( isPlot() )
+			if( isPlot(input_->toPlainText()) )
 			{
 				if( dir.exists( imagename ))
 					dir.remove( imagename );
@@ -1250,11 +1254,13 @@ namespace IAEX
 				return;
 			}
 
+
 			// if the expression is a plot command and the is no errors
 			// in the result, find the image and insert it into the 
 			// output part of the cell.
-			if( isPlot() && error.isEmpty() )
+			if( isPlot(input_->toPlainText()) && error.isEmpty() )
 			{	
+
 				output_->selectAll();
 				output_->textCursor().insertText( "{creating plot}" );
 				//output_->setPlainText( "{creating plot}" );

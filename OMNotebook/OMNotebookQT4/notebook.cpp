@@ -153,7 +153,7 @@ namespace IAEX
 		setMinimumSize( 150, 220 );		//AF
 
 		toolBar = new QToolBar("Show toolbar", this);
-		
+	
 
 		createFileMenu();
 		createEditMenu();
@@ -685,7 +685,7 @@ namespace IAEX
 		//QObject::connect(inputAction, SIGNAL(activated()), this, SLOT(inputCellsAction()));  
 		inputAction = new QAction( tr("Add &Inputcell"), this);
 		inputAction->setShortcut( tr("Ctrl+Shift+I") );
-		inputAction->setStatusTip( tr("Add a input cell") );
+		inputAction->setStatusTip( tr("Add an input cell") );
 		connect(inputAction, SIGNAL(triggered()), this, SLOT(inputCellsAction()));
 
 		/// fjass
@@ -1659,11 +1659,31 @@ namespace IAEX
 					if( inputcell->textEditOutput()->hasFocus() && 
 						inputcell->isEvaluated() )
 					{
+
 						in_cursor = inputcell->textEditOutput()->textCursor();
 					}
 					else
+					{
 						in_cursor = inputcell->textEdit()->textCursor();
+					}
 				}
+				else if( typeid(GraphCell) == typeid(*cell) ) //fjass
+				{
+					GraphCell *graphcell = dynamic_cast<GraphCell*>(cell);
+					if( graphcell->textEditOutput()->hasFocus() && 
+						graphcell->isEvaluated() )
+					{
+
+						in_cursor = graphcell->textEditOutput()->textCursor();
+					}
+					else
+					{
+						in_cursor = graphcell->textEdit()->textCursor();
+						
+
+					}
+				}
+
 				else
 				{
 					in_cursor = editor->textCursor();
@@ -2159,6 +2179,7 @@ namespace IAEX
 	 */
 	void NotebookWindow::forwardedAction( int action )
 	{
+
 		switch( action )
 		{
 		case 1: //COPY

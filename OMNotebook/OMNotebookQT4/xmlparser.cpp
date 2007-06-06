@@ -517,14 +517,27 @@ namespace IAEX
 				{
 					text = e.text();
 					GraphCell *gCell = dynamic_cast<GraphCell*>(graphcell);
-					//		gCell->setText(text);
+					gCell->setText(text);
 					//fjass				gCell->setText( text );
 				}
-				else if( e.tagName() == XML_OUTPUTPART )
+/*				else if( e.tagName() == XML_OUTPUTPART )
 				{
 					GraphCell *gCell = dynamic_cast<GraphCell*>(graphcell);
 
 					gCell->setTextOutput( e.text() );
+				}
+*/				else if( e.tagName() == XML_OUTPUTPART )
+				{
+					GraphCell *iCell = dynamic_cast<GraphCell*>(graphcell);
+
+					if( iCell->isPlot() )
+						iCell->setTextOutputHtml( e.text() );
+					else
+						iCell->setTextOutput( e.text() );
+				}
+				else if( e.tagName() == XML_IMAGE )
+				{
+					addImage( graphcell, e );
 				}
 				else if( e.tagName() == XML_RULE )
 				{
@@ -569,6 +582,7 @@ namespace IAEX
 					yVar = e.attribute(XML_GRAPHCELL_Y);
 
 					LegendLabel *ll = new LegendLabel(color, yVar, gCell->compoundwidget->gwMain->legendFrame);
+					ll->graphWidget = gCell->compoundwidget->gwMain;
 
 					ll->setMaximumHeight(21);
 					gCell->compoundwidget->gwMain->legendLayout->addWidget(ll);
@@ -603,29 +617,54 @@ namespace IAEX
 					QRectF rect;
 					QPen pen;
 					QBrush brush;
-					QLine line;
+					QLineF line_;
 
 					QByteArray ba = QByteArray::fromBase64( e.attribute(XML_GRAPHCELL_SHAPEDATA).toLatin1());
 					QBuffer b(&ba);
 					b.open(QBuffer::ReadOnly);
 					QDataStream ds(&b);
+					ds.setVersion(QDataStream::Qt_4_2);
 
 					if(type == XML_GRAPHCELL_RECT)
 					{
 						ds >> rect >> pen >> brush;
-						gCell->compoundwidget->gwMain->graphicsItems->addToGroup(gCell->compoundwidget->gwMain->graphicsScene->addRect(rect, pen, brush));
-
+						QGraphicsRectItem* r = new QGraphicsRectItem(rect);
+						r->show();
+						r->setPen(pen);
+						r->setBrush(brush);
+					gCell->compoundwidget->gwMain->graphicsItems->addToGroup(r);
+					gCell->compoundwidget->gwMain->graphicsScene->addItem(gCell->compoundwidget->gwMain->graphicsItems);
 					}
 					else if(type == XML_GRAPHCELL_ELLIPSE)
 					{
 						ds >> rect >> pen >> brush;
-						gCell->compoundwidget->gwMain->graphicsItems->addToGroup(gCell->compoundwidget->gwMain->graphicsScene->addEllipse(rect, pen, brush));
+						QGraphicsEllipseItem* r = new QGraphicsEllipseItem(rect);
+						r->show();
+						r->setPen(pen);
+						r->setBrush(brush);
+					gCell->compoundwidget->gwMain->graphicsItems->addToGroup(r);
+					gCell->compoundwidget->gwMain->graphicsScene->addItem(gCell->compoundwidget->gwMain->graphicsItems);
+
+
+//						ds >> rect >> pen >> brush;
+//						gCell->compoundwidget->gwMain->graphicsItems->addToGroup(gCell->compoundwidget->gwMain->graphicsScene->addEllipse(rect, pen, brush));
 
 					}
 					else if(type == XML_GRAPHCELL_LINE)
 					{
-						ds >> line >> pen ;
-						gCell->compoundwidget->gwMain->graphicsItems->addToGroup(gCell->compoundwidget->gwMain->graphicsScene->addLine(line, pen));
+
+//						ds.setVersion(QDataStream::Qt_3_3);
+						ds >> line_ >> pen;
+
+						QGraphicsLineItem* r = new QGraphicsLineItem(line_);
+
+						r->show();
+						r->setPen(pen);
+//						r->setBrush(brush);
+					gCell->compoundwidget->gwMain->graphicsItems->addToGroup(r);
+					gCell->compoundwidget->gwMain->graphicsScene->addItem(gCell->compoundwidget->gwMain->graphicsItems);
+
+//						gCell->compoundwidget->gwMain->graphicsItems->addToGroup(gCell->compoundwidget->gwMain->graphicsScene->addLine(line_, pen));
 					}
 
 					b.close();
@@ -668,6 +707,7 @@ namespace IAEX
 
 		gCell->compoundwidget->gwMain->xLog = (element.attribute(XML_GRAPHCELL_LOGX) == XML_TRUE)?true:false;
 		gCell->compoundwidget->gwMain->yLog = (element.attribute(XML_GRAPHCELL_LOGY) == XML_TRUE)?true:false;
+		gCell->compoundwidget->legendFrame->setVisible((element.attribute(XML_GRAPHCELL_LEGEND) == XML_TRUE)?true:false);
 
 		if(element.attribute(XML_GRAPHCELL_AA) == XML_TRUE)
 		{
@@ -685,7 +725,7 @@ namespace IAEX
 		}
 		else if( closed == XML_FALSE )
 		{
-			gCell->setHeight(gCell->height() +200);
+			gCell->setHeight(gCell->height() +200); 
 			gCell->compoundwidget->show();
 			gCell->compoundwidget->setMinimumHeight(200);
 			gCell->setEvaluated(true);		
@@ -712,8 +752,14 @@ namespace IAEX
 		gCell->compoundwidget->gwMain->doFitInView = false;
 		gCell->compoundwidget->gwMain->doSetArea = true;
 		gCell->compoundwidget->gwMain->newRect = r;
+		gCell->compoundwidget->gwMain->originalArea = r;
+//		gCell->setTextOutput("fjass99");
 
+		if(!gCell->isPlot2())
+			gCell->compoundwidget->hide();
 
+//		gCell->compoundwidget->gwMain->graphicsScene->addItem(gCell->compoundwidget->gwMain->graphicsItems);		
+		
 		parent->addChild( graphcell );
 	}
 
@@ -738,6 +784,7 @@ namespace IAEX
 		QString imagename = element.attribute( XML_NAME, "" );
 		if( imagename.isEmpty() || imagename.isNull() )
 			throw runtime_error( "No name in image tag" );
+
 
 		// Get saved image data
 		QByteArray imagedata = QByteArray::fromBase64( element.text().toLatin1() );
@@ -765,8 +812,18 @@ namespace IAEX
 				InputCell *inputcell = dynamic_cast<InputCell*>(parent);
 
 				QString html = inputcell->textOutputHtml();
+
 				html.replace( imagename, newname );
 				inputcell->setTextOutputHtml( html );
+			}
+			else if( typeid(GraphCell) == typeid(*parent) )
+			{
+				GraphCell *graphcell = dynamic_cast<GraphCell*>(parent);
+
+				QString html = graphcell->textOutputHtml();
+				html.replace( imagename, newname );
+
+				graphcell->setTextOutputHtml( html );
 			}
 			else
 			{

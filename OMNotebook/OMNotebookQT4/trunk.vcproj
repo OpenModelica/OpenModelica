@@ -48,7 +48,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="TRUE"
-				AdditionalDependencies="qtmain.lib QtCore4.lib QtGui4.lib QtNetwork4.lib QtXml4.lib NotebookParser.lib mico2311.lib antlr.lib msvcprt.lib msvcrt.lib pltpkg2.lib"
+				AdditionalDependencies="qtmain.lib QtCore4.lib QtGui4.lib QtNetwork4.lib QtXml4.lib NotebookParser.lib mico2311.lib antlr.lib msvcprt.lib msvcrt.lib pltpkg2.lib QtOpenGL4.lib"
 				OutputFile="Release\\OMNotebook.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"

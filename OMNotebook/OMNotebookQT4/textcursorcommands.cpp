@@ -68,6 +68,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "textcursorcommands.h"
 #include "cellcursor.h"
 #include "inputcell.h"
+#include "graphcell.h"
 
 
 namespace IAEX
@@ -95,6 +96,19 @@ namespace IAEX
 				else
 					inputcell->textEdit()->cut();
 			}
+			else if( typeid(GraphCell) == typeid(*cell) )
+			{
+				GraphCell *graphcell = dynamic_cast<GraphCell*>(cell);
+				if( graphcell->textEditOutput()->hasFocus() && 
+					graphcell->isEvaluated() )
+				{
+					graphcell->textEditOutput()->copy();
+				}
+				else
+					graphcell->textEdit()->cut();
+			}
+
+
 			else
 			{
 				QTextEdit *editor = cell->textEdit();
@@ -129,6 +143,17 @@ namespace IAEX
 				}
 				else
 					inputcell->textEdit()->copy();
+			}
+			else if( typeid(GraphCell) == typeid(*cell) )
+			{
+				GraphCell *graphcell = dynamic_cast<GraphCell*>(cell);
+				if( graphcell->textEditOutput()->hasFocus() && 
+					graphcell->isEvaluated() )
+				{
+					graphcell->textEditOutput()->copy();
+				}
+				else
+					graphcell->textEdit()->copy();
 			}
 			else
 			{
@@ -592,7 +617,6 @@ namespace IAEX
 				QString htmlcode = "<a href=\"" + relativepath + "\">" +
 					html + "</a>";
 				cursor.insertFragment( QTextDocumentFragment::fromHtml( htmlcode ));
-				cursor.clearSelection();
 
 				// set the cursor, so there is no selection
                 QTextEdit *editor = document()->getCursor()->currentCell()->textEdit();

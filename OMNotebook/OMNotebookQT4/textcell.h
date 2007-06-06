@@ -60,6 +60,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 //QT Headers
 #include <QtGui/QTextBrowser>
 
+
 //IAEX Headers
 #include "cell.h"
 
@@ -111,10 +112,13 @@ namespace IAEX
 		void setReadOnly(const bool readonly);
 		virtual void setFocus(const bool focus);
 
+
+
 	protected slots:
 		void contentChanged();
 		void hoverOverLink(const QUrl &link);				// Added 2006-02-10 AF
 		void openLinkInternal(const QUrl *url);
+		void openLinkInternal(const QUrl &url);
 		void textChangedInternal();
 		void charFormatChanged(const QTextCharFormat &);	// Added 2006-01-17 AF
 

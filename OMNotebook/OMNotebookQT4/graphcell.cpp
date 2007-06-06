@@ -447,10 +447,11 @@ namespace IAEX
 
 		input_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 		input_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-		input_->setContextMenuPolicy( Qt::NoContextMenu );
+//		input_->setContextMenuPolicy( Qt::NoContextMenu );
 
 		QPalette palette;
-		palette.setColor(input_->backgroundRole(), QColor(Qt::green));
+		palette.setColor(input_->backgroundRole(), QColor(200,200,255));
+//		palette.setColor(input_->backgroundRole(), QColor(Qt::green));
 		input_->setPalette(palette);
 
 		// is this needed, don't know /AF
@@ -507,7 +508,7 @@ namespace IAEX
 
 		output_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 		output_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-		output_->setContextMenuPolicy( Qt::NoContextMenu );
+//		output_->setContextMenuPolicy( Qt::NoContextMenu ); 
 
 		connect( output_, SIGNAL( textChanged() ),
 			this, SLOT(contentChanged()));
@@ -516,11 +517,14 @@ namespace IAEX
 		connect( output_, SIGNAL( wheelMove(QWheelEvent*) ),
 			this, SLOT( wheelEvent(QWheelEvent*) ));
 
+		connect(output_, SIGNAL(forwardAction(int)), this, SIGNAL(forwardAction(int)));
+
 		setOutputStyle();
 		
-		QPalette palette;
-		palette.setColor(input_->backgroundRole(), QColor(Qt::gray));
-		output_->setPalette(palette);
+		output_->setTextInteractionFlags(Qt::TextSelectableByMouse|Qt::TextSelectableByKeyboard);
+//		QPalette palette;
+//		palette.setColor(input_->backgroundRole(), QColor(Qt::gray));
+//		output_->setPalette(palette);
 		output_->hide();
 	}
 
@@ -744,15 +748,19 @@ namespace IAEX
 		// set the text
 		input_->setPlainText( tmp );
 
+
 		// 2005-12-16 AF, unblock signals and tell highlighter to highlight
 		input_->document()->blockSignals(false);
 //		input_->document()->setHtml( input_->toHtml() );
+
 		bool b = input_->document()->isEmpty();
+/*
 		input_->document()->setPlainText(text);
+
 		//		input_->document()->setPlainText( input_->toPlainText() );
 
 		input_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
-
+*/
 		contentChanged();
 	}
 
@@ -814,7 +822,6 @@ namespace IAEX
 			output_->setHtml( html );
 			evaluated_ = true;
 			//setClosed( false );
-
 			contentChanged();
 		}
 	}
@@ -1009,7 +1016,7 @@ namespace IAEX
 			if( evaluated_ )
 			{
 				output_->show();
-				compoundwidget->show();
+			//	compoundwidget->show();
 			}
 		}
 
@@ -1163,8 +1170,8 @@ namespace IAEX
 	 */
 	bool GraphCell::isPlot(QString text)
 	{
-		QRegExp exp( "plot(.*)|plotParametric(.*)|simulate" );
-
+//		QRegExp exp( "plot\\((.*)|plotParametric\\((.*)|simulate" );
+		QRegExp exp( "plot\\((.*)|plotParametric\\((.*)" );
 		if( text.isNull() )
 		{
 			if( 0 <= input_->toPlainText().indexOf( exp, 0 ) )
@@ -1182,6 +1189,26 @@ namespace IAEX
 		}
 	}
 
+	bool GraphCell::isPlot2(QString text)
+	{
+		QRegExp exp( "plot2(.*)|plotParametric2(.*)" );
+
+		if( text.isNull() )
+		{
+			if( 0 <= input_->toPlainText().indexOf( exp, 0 ) )
+				return true;
+			else
+				return false;
+		}
+		else
+		{
+			if( 0 <= text.indexOf( exp, 0 ) )
+				return true;
+			else
+				return false;
+		
+		}
+	}
 
 	/*! 
 	 * \author Ingemar Axelsson and Anders Fernström
@@ -1214,11 +1241,11 @@ namespace IAEX
 			QString expr = input_->toPlainText();
 			//expr = expr.simplified();
 
-/*
+
 			QString openmodelica( getenv( "OPENMODELICAHOME" ) );
 			if( openmodelica.isEmpty() )
 				QMessageBox::critical( 0, "OpenModelica Error", "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
-	
+
 			if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
 				openmodelica += "bin/";
 			else
@@ -1234,7 +1261,7 @@ namespace IAEX
 				filename += "/";
 			filename += imagename;
 
-*/			// 2006-02-17 AF, 
+			// 2006-02-17 AF, 
 			evaluated_ = true;
 			setClosed(false);
 
@@ -1250,13 +1277,19 @@ namespace IAEX
 
 			// remove plot.png if it already exist, don't want any
 			// old plot.
-			if( isPlot() )
+			bool oldPlot = isPlot(input_->toPlainText());
+			bool newPlot = isPlot2(input_->toPlainText());
+
+			if( oldPlot )
 			{
-//				if( dir.exists( imagename ))
-//					dir.remove( imagename );
+				if( dir.exists( imagename ))
+					dir.remove( imagename );
 
+				compoundwidget->hide();
 
-
+			}
+			else if(newPlot)
+			{
 				if(!compoundwidget->gwMain->getServerState())
 					compoundwidget->gwMain->setServerState(true);
 				if(!compoundwidget->isVisible())
@@ -1264,27 +1297,11 @@ namespace IAEX
 					setHeight(height() +200);
 					compoundwidget->show();
 					compoundwidget->setMinimumHeight(200);
-
-
-
 				}
 			}
 
 			// 2006-02-02 AF, Added try-catch
-			try
-			{
-				EvalThread* et = new EvalThread(delegate(), expr);
-				connect(et, SIGNAL(finished()), this, SLOT(delegateFinished()));
-				et->start();
-				//				delegate()->evalExpression( expr );
-			}
-			catch( exception &e )
-			{
-				exceptionInEval(e);
-				input_->blockSignals(false);
-				output_->blockSignals(false);
-				return;
-			}
+			QString res, error;
 
 			// 2005-11-24 AF, added check to see if the user wants to quit
 			if( 0 == expr.indexOf( "quit()", 0, Qt::CaseSensitive ))
@@ -1294,6 +1311,155 @@ namespace IAEX
 				output_->blockSignals(false);
 				return;
 			}
+
+			if(!newPlot)
+			{
+				try
+				{
+					delegate()->evalExpression( expr );
+				}
+				catch( exception &e )
+				{
+					exceptionInEval(e);
+					input_->blockSignals(false);
+					output_->blockSignals(false);
+					return;
+				}
+
+				res = delegate()->getResult();
+
+
+				try
+				{
+					error = delegate()->getError();
+				}
+				catch( exception &e )
+				{
+					exceptionInEval(e);
+					input_->blockSignals(false);
+					output_->blockSignals(false);
+					return;
+				}
+
+
+			}
+			else
+			{
+				try
+				{
+					EvalThread* et = new EvalThread(delegate(), expr);
+					connect(et, SIGNAL(finished()), this, SLOT(delegateFinished()));
+					et->start();
+					//				delegate()->evalExpression( expr );
+				}
+				catch( exception &e )
+				{
+					exceptionInEval(e);
+					input_->blockSignals(false);
+					output_->blockSignals(false);
+					return;
+				}
+			}
+
+			//////////
+			if( oldPlot && error.isEmpty() )
+			{	
+
+				output_->selectAll();
+				output_->textCursor().insertText( "{creating plot}" );
+				//output_->setPlainText( "{creating plot}" );
+				output_->update();
+				QCoreApplication::processEvents();
+
+				int sleepTime = 1;
+				bool firstTry = true;
+				while( true )
+				{
+					if( dir.exists( imagename ))
+					{
+						QImage *image = new QImage( filename );
+						if( !image->isNull() )
+						{
+							QString newname = document_->addImage( image );
+							QTextCharFormat format = output_->currentCharFormat();
+
+							QTextImageFormat imageformat;
+							imageformat.merge( format );
+							imageformat.setHeight( image->height() );
+							imageformat.setWidth( image->width() );
+							imageformat.setName( newname );
+
+							output_->selectAll();
+							//output_->textCursor().insertText( "{Plot - Generated by PtPlot}" );
+							//output_->setPlainText("{Plot}\n");
+							QTextCursor outCursor = output_->textCursor();
+							//outCursor.movePosition( QTextCursor::End );
+							outCursor.insertImage( imageformat );
+							break;
+						}
+						else
+						{
+							if( firstTry )
+							{
+								firstTry = false;
+								delete image;
+							}
+							else
+							{
+								output_->selectAll();
+								output_->textCursor().insertText( "[Error] Unable to read plot image \"" + filename + "\". Please retry." );
+								//output_->setPlainText( "[Error] Unable to read plot image \"" + imagename + "\". Please retry." );
+								break;
+							}
+						}
+					}
+
+					if( sleepTime > 25 )
+					{
+						output_->selectAll();
+						output_->textCursor().insertText( "[Error] Unable to find plot image \"" + filename + "\"" );
+						//						output_->setPlainText( "[Error] Unable to found plot image \"" + imagename + "\"" );
+						break;
+					}
+
+					SleeperThread::msleep( 1000 );
+					sleepTime++;
+				}
+
+			}
+			else
+			{
+				// check if resualt is empty
+				if( res.isEmpty() && error.isEmpty() )
+					res = "[done]";
+
+				if( !error.isEmpty() )
+					res += QString("\n") + error;
+			
+				output_->selectAll();
+				output_->textCursor().insertText( res );
+				//output_->setPlainText( res );
+			}
+			++numEvals_;
+			dir.remove( imagename );
+
+
+			contentChanged();
+
+			//Emit that the text have changed
+			emit textChanged(true);
+
+
+		}
+		else //!hasDelegate
+		
+			cout << "Not delegate on GraphCell" << endl;
+
+			input_->blockSignals(false);
+			output_->blockSignals(false);
+		
+}
+
 /*
 			// get the result
 			QString res = delegate()->getResult();
@@ -1413,6 +1579,7 @@ namespace IAEX
 		input_->blockSignals(false);
 		output_->blockSignals(false);
 */
+/*
 		}
 
 
@@ -1425,10 +1592,9 @@ namespace IAEX
 
 
 	}
-
+*/
 	void GraphCell::delegateFinished()
 	{
-//		QMessageBox::information(0, "uu", "vv");
 
 		delete sender();
 
@@ -1447,7 +1613,95 @@ namespace IAEX
 			output_->blockSignals(false);
 			return;
 		}
+/*
+		//////////////////
+			QString openmodelica( getenv( "OPENMODELICAHOME" ) );
+			if( openmodelica.isEmpty() )
+				QMessageBox::critical( 0, "OpenModelica Error", "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
+	
+			if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
+				openmodelica += "bin/";
+			else
+				openmodelica += "/bin/";
 
+			QDir dir;
+			dir.setPath( openmodelica );
+			QString imagename = "omc_tmp_plot.png";
+
+			QString filename = dir.absolutePath();
+			if( !filename.endsWith( "/" ) )
+				filename += "/";
+			filename += imagename;
+
+		if( isPlot() && error.isEmpty() )
+			{	
+				output_->selectAll();
+				output_->textCursor().insertText( "{creating plot}" );
+				//output_->setPlainText( "{creating plot}" );
+				output_->update();
+				QCoreApplication::processEvents();
+
+				
+				int sleepTime = 1;
+				bool firstTry = true;
+				while( true )
+				{
+					if( dir.exists( imagename ))
+					{
+						QImage *image = new QImage( filename );
+						if( !image->isNull() )
+						{
+							QString newname = document_->addImage( image );
+							QTextCharFormat format = output_->currentCharFormat();
+																				
+							QTextImageFormat imageformat;
+							imageformat.merge( format );
+							imageformat.setHeight( image->height() );
+							imageformat.setWidth( image->width() );
+							imageformat.setName( newname );
+
+							output_->selectAll();
+							//output_->textCursor().insertText( "{Plot - Generated by PtPlot}" );
+							//output_->setPlainText("{Plot}\n");
+							QTextCursor outCursor = output_->textCursor();
+							//outCursor.movePosition( QTextCursor::End );
+							outCursor.insertImage( imageformat );
+							break;
+						}
+						else
+						{
+							if( firstTry )
+							{
+								firstTry = false;
+								delete image;
+							}
+							else
+							{
+								output_->selectAll();
+								output_->textCursor().insertText( "[Error] Unable to read plot image \"" + filename + "\". Please retry." );
+								//output_->setPlainText( "[Error] Unable to read plot image \"" + imagename + "\". Please retry." );
+								break;
+							}
+						}
+					}
+
+					if( sleepTime > 25 )
+					{
+						output_->selectAll();
+						output_->textCursor().insertText( "[Error] Unable to find plot image \"" + filename + "\"" );
+//						output_->setPlainText( "[Error] Unable to found plot image \"" + imagename + "\"" );
+						break;
+					}
+					
+					SleeperThread::msleep( 1000 );
+					sleepTime++;
+				}
+
+			}
+			else
+			{
+///////////////
+*/
 
 		if( res.isEmpty() && error.isEmpty() )
 			res = "[done]";
@@ -1462,7 +1716,7 @@ namespace IAEX
 
 		++numEvals_;
 //		dir.remove( imagename );
-
+			//} ////fjass
 
 		contentChanged();
 

@@ -548,7 +548,8 @@ namespace IAEX
 
 			// 2005-10-11 AF, Porting, added resize so all cells get the 
 			// correct size. Ugly way!
-			v->resize( 810, 610 );
+
+//			v->resize( 810, 610 ); //not working with Qt 4.3
 
 			// 2006-01-17 AF, when the document have been opened, set the
 			// changed variable to false.
@@ -556,6 +557,8 @@ namespace IAEX
 
 			// 2006-01-31 AF, show window again
 			v->showNormal();
+
+			v->resize( 801, 600 ); //fjass
 
 			// 2005-11-30 AF, apply hide() and show() to closed groupcells 
 			// childs in the documentview

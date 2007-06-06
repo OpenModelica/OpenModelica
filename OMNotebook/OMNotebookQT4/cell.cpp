@@ -182,6 +182,7 @@ namespace IAEX
 	 */
 	void Cell::setStyle(const QString &stylename)
 	{
+
 		Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
 		CellStyle style = sheet->getStyle( stylename );
 
@@ -203,6 +204,7 @@ namespace IAEX
 	*/
 	void Cell::setStyle(CellStyle style)
 	{
+
 		style_ = style;
 		applyRulesToStyle();
 	}
@@ -392,6 +394,7 @@ namespace IAEX
 			}
 			else if( (*current)->attribute() == "FontWeight" )
 			{
+
 				if( (*current)->value() == "Bold" )
 					style_.textCharFormat()->setFontWeight( QFont::Bold );
 				if( (*current)->value() == "Plain" )

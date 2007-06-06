@@ -357,6 +357,7 @@ for(int i = 0; i < l.size(); ++i)
 	QBuffer b;
 	b.open( QBuffer::WriteOnly );
 	QDataStream ds( &b );
+	ds.setVersion(QDataStream::Qt_4_2);
 
 	QDomElement shape = domdoc_.createElement(XML_GRAPHCELL_SHAPE);
 	QString type;
@@ -392,6 +393,19 @@ for(int i = 0; i < l.size(); ++i)
 		textelement.appendChild( textnode );
 		graphcell.appendChild( textelement );
 
+
+		// Create an text element (for output) and append it to the element
+		QDomElement outputelement = domdoc_.createElement( XML_OUTPUTPART );
+		
+		QDomText outputnode;
+		if( node->isPlot() )
+			outputnode = domdoc_.createTextNode( node->textOutputHtml() );
+		else
+			outputnode = domdoc_.createTextNode( node->textOutput() );
+
+		outputelement.appendChild( outputnode );
+		graphcell.appendChild( outputelement );
+/*
 		// Create an text element (for output) and append it to the element
 		QDomElement outputelement = domdoc_.createElement( XML_OUTPUTPART );
 		
@@ -400,7 +414,7 @@ for(int i = 0; i < l.size(); ++i)
 
 		outputelement.appendChild( outputnode );
 		graphcell.appendChild( outputelement );
-
+*/
 		// Creates ruleelemetns
 		Cell::rules_t r = node->rules();
 		Cell::rules_t::const_iterator r_iter = r.begin();
@@ -417,6 +431,8 @@ for(int i = 0; i < l.size(); ++i)
 
 		// Check if any image have been include in the text and add them
 		// to the the the inputcell element
+		QString xoyz = node->textOutputHtml();
+		saveImages( graphcell, xoyz );
 
 		// Add inputcell element to current element
 		currentElement_.appendChild( graphcell );

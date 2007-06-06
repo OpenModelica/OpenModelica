@@ -1007,12 +1007,19 @@ namespace IAEX
 			getCursor()->moveAfter(clickedCell); //Results in bus error why?
 		}
 
-		if( typeid(InputCell) == typeid(*clickedCell) )
+		if( typeid(InputCell) == typeid(*clickedCell))
 		{
 			InputCell *inputcell = dynamic_cast<InputCell*>(clickedCell);
 			inputcell->setReadOnly(false);
 			inputcell->setFocusOutput(true);
 		}
+		else if(typeid(GraphCell) == typeid(*clickedCell))
+		{
+			GraphCell *graphcell = dynamic_cast<GraphCell*>(clickedCell);
+			graphcell->setReadOnly(false);
+			graphcell->setFocusOutput(true);
+		}
+
 		else
 		{
 			clickedCell->setReadOnly(false);
@@ -1032,6 +1039,7 @@ namespace IAEX
 	 * 2006-02-10 AF, check if link path and fragment exists
 	 */
 	void CellDocument::linkClicked(const QUrl *link)
+//	void CellDocument::anchorClicked(const QUrl *link)
 	{ 
 		// 2006-02-10 AF, check if path is empty
 		if( !link->path().isEmpty() )

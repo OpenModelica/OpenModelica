@@ -168,6 +168,7 @@ namespace IAEX
 		void mouseClickedOnCell(Cell *clickedCell);
 		void mouseClickedOnCellOutput(Cell *clickedCell); //Added 2006-02-03
 		void linkClicked(const QUrl *url);
+//		void anchorClicked(const QUrl *url);
 		virtual void cursorMoveAfter(Cell *aCell, const bool open);
 		void showHTML(bool b);
 		

@@ -70,6 +70,8 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtGui/QTextDocumentFragment>
 #include <QtGui/QTextFrame>
 #include <QtGui/QResizeEvent>
+#include <QMessageBox>
+#include <QVariant>
 
 //IAEX Headers
 #include "textcell.h"
@@ -89,6 +91,7 @@ namespace IAEX
 	MyTextBrowser::MyTextBrowser(QWidget *parent)
 		: QTextBrowser(parent)
 	{
+
 	}
 
 	MyTextBrowser::~MyTextBrowser()
@@ -119,10 +122,10 @@ namespace IAEX
 	{
 		QTextBrowser::mousePressEvent(event);
 
-		if( event->modifiers() == Qt::ShiftModifier ||
+		if( event->modifiers() == Qt::ShiftModifier || 
 			textCursor().hasSelection() )
 		{
-			return;
+			return; //fjass3
 		}
 
 		emit clickOnCell();
@@ -296,15 +299,20 @@ namespace IAEX
 		text_->setFrameStyle( QFrame::NoFrame );
 		text_->setAutoFormatting( QTextEdit::AutoNone );
 
+
 		text_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed));
 		text_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 		text_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 		text_->setContextMenuPolicy( Qt::NoContextMenu );
 
+		
+
 		connect( text_, SIGNAL( textChanged() ),
 			this, SLOT( contentChanged() ));
+
 		connect( text_, SIGNAL( openLink(const QUrl *) ),
 			this, SLOT( openLinkInternal(const QUrl *) ));
+
 		connect( text_, SIGNAL( clickOnCell() ),
 			this, SLOT( clickEvent() ));
 		connect( text_, SIGNAL( wheelMove(QWheelEvent*) ),
@@ -321,6 +329,8 @@ namespace IAEX
 		connect( text_, SIGNAL( forwardAction(int) ),
 			this, SIGNAL( forwardAction(int) ));
 		
+
+//		connect(text_, SIGNAL(anchorClicked(const QUrl&)), this, SLOT(openLinkIternal(const QUrl&)));
 		contentChanged();
 	}
 
@@ -502,7 +512,7 @@ namespace IAEX
 		text_->setUndoRedoEnabled( true );
 	}
 
-	/*! 
+	/*!
 	 * \author Anders Fernström
 	 * \date 2005-10-28
 	 *
@@ -542,13 +552,15 @@ namespace IAEX
 	{
 		Cell::setStyle( style );
 
-		// select all the text,
+// select all the text,
 		// don't do it if the text contains an image, qt krasches if a 
 		// cell contains starts with a image and the entier cell is 
 		// selected.
 		// ignore this in version 4.1. of QT
 		//if( text_->toHtml().indexOf( "file:///", 0) < 0 )
-			text_->selectAll();
+
+
+		text_->selectAll();
 
 		// set the new style settings
 		text_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
@@ -560,6 +572,7 @@ namespace IAEX
 		cursor.clearSelection();
 		text_->setTextCursor( cursor );
 
+
 		// clear the undo/redo
 		text_->setUndoRedoEnabled( false );
 		text_->setUndoRedoEnabled( true );
@@ -568,22 +581,35 @@ namespace IAEX
 		//if( !text_->toPlainText().isEmpty() )
 		//	text_->setHtml( text_->toHtml() );
 
-
 		// 2006-03-02 AF, set chapter counter style
+
+		if(chaptercounter_->document()->isEmpty())
+			chaptercounter_->document()->setPlainText(" "); //070606 This seems to eliminate the style bug..
+
+	
 		chaptercounter_->selectAll();
 		chaptercounter_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
 
+
+
 		QTextFrameFormat format = chaptercounter_->document()->rootFrame()->frameFormat();
+
 		format.setMargin( style_.textFrameFormat()->margin() + 
 			style_.textFrameFormat()->border() + 
 			style_.textFrameFormat()->padding()	);
 		chaptercounter_->document()->rootFrame()->setFrameFormat( format );
 
+
 		chaptercounter_->setAlignment( (Qt::AlignmentFlag)Qt::AlignRight );
 
+
 		cursor = chaptercounter_->textCursor();
+
 		cursor.clearSelection();
 		chaptercounter_->setTextCursor( cursor );
+
+
+
 	}
 
 	/*! 
@@ -660,8 +686,8 @@ namespace IAEX
 			chaptercounter_->setTextCursor( cursor );
 		}
 
-		text_->setReadOnly(readonly);
-
+		text_->setReadOnly(readonly); 
+		text_->setTextInteractionFlags(text_->textInteractionFlags() | 	Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
 		/* Removed /AF
 		if(readonly)
 			text_->setFrameStyle(QFrame::NoFrame);
@@ -687,7 +713,21 @@ namespace IAEX
 	void TextCell::clickEvent()
 	{
 		//if( text_->isReadOnly() )
-			emit clicked(this);
+//	QTextCursor c = textCursor();
+
+//	if(textCursor().charFormat().isAnchor())
+//		openLinkInternal(QUrl(textCursor().charFormat().anchorHref())); //fjass
+//	else
+
+		emit clicked(this);
+//	{
+//		QUrl u(c.charFormat().anchorHref());
+		
+//		setReadOnly(true);
+
+//		if
+//	}
+
 	}
 
 	/*!
@@ -745,6 +785,12 @@ namespace IAEX
 	{
 		emit openLink(url);
 	}
+
+	void TextCell::openLinkInternal(const QUrl &url)
+	{
+		emit openLink(&url);
+	}
+
 
 	/*! 
 	 * \author Anders Fernström
