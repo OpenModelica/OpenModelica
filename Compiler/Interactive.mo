@@ -15554,6 +15554,13 @@ algorithm
       cr1 = transformFlatComponentRef(cr);
       fargs1 = transformFlatFunctionArgs(fargs);
     then Absyn.ALG_NORETCALL(cr1,fargs1);
+      
+    case (Absyn.ALG_BREAK())
+      then Absyn.ALG_BREAK();
+        
+    case (Absyn.ALG_RETURN())
+      then Absyn.ALG_RETURN();
+
   end matchcontinue;
 end transformFlatAlgorithm;
 
