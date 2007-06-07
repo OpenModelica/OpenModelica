@@ -5633,7 +5633,7 @@ algorithm
       Values.Value v,v1,v2;
       Exp.Type t;
       Boolean b,nb1,nb2,ba,bb,b1,b2;
-      Integer i1,i2;
+      Integer i1,i2; 
     case (v1,Exp.GREATER(ty = t),v2)
       equation 
         v = cevalRelation(v2, Exp.LESS(t), v1);
@@ -5714,6 +5714,14 @@ algorithm
         Values.BOOL(b);
     case (Values.BOOL(boolean = false),Exp.LESS(ty = Exp.BOOL()),Values.BOOL(boolean = true)) then Values.BOOL(true); 
     case (Values.BOOL(boolean = _),Exp.LESS(ty = Exp.BOOL()),Values.BOOL(boolean = _)) then Values.BOOL(false); 
+    case (Values.STRING(string = s1),Exp.EQUAL(ty = Exp.STRING()),Values.STRING(string = s2))
+      local 
+        String s1,s2;
+      equation 
+        b = (s1 ==& s2);
+      then
+        Values.BOOL(b); 
+   
     case (_,_,_)
       equation 
         Debug.fprint("failtrace", "- Ceval.cevalRelation failed\n");
