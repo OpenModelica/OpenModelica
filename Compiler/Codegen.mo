@@ -3746,7 +3746,8 @@ algorithm
     		Exp.DAEElement b;
     		list<DAE.Element> ld2;
     		DAE.Element b2;
-				Exp.Exp res;	
+        Exp.Exp res;
+        list<Algorithm.Statement> b3;	
       equation
         // Convert back to DAE uniontypes from Exp uniontypes
         ld2 = Convert.fromExpElemsToDAEElems(ld,{});
@@ -5149,9 +5150,12 @@ algorithm
         (cfn,var,tnr2);
     case (e1,Exp.EQUAL(ty = Exp.STRING()),e2,tnr,context)
       equation 
-        Print.printBuf("# string comparison not supported\n");
+        (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
+        (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
+        var = Util.stringAppendList({"(!strcmp(",var1,",",var2,"))"});
+        cfn = cMergeFn(cfn1, cfn2);
       then
-        fail();
+        (cfn,var,tnr2);
     case (e1,Exp.EQUAL(ty = Exp.INT()),e2,tnr,context)
       equation 
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
