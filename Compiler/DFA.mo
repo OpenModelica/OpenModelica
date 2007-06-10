@@ -49,6 +49,8 @@ public import Matrix;
 public import Util;
 public import Env;
 public import Lookup;
+public import Types;
+public import ClassInf;
 type Stamp = Integer;
 type ArcName = Absyn.Ident;
 public import SCode;
@@ -471,28 +473,45 @@ algorithm
         Matrix.RenamedPat first,second;
         list<Absyn.ElementItem> elem1,elem2;
         Absyn.Ident firstPathVar,secondPathVar;
+        Types.TType t;
+        Absyn.TypeSpec t2;
+        list<Absyn.AlgorithmItem> assignList;
+        Absyn.AlgorithmItem assign1,assign2; 
+        Integer arrLen;
       equation
+        (localCache,Types.VAR(_,_,_,(Types.T_ARRAY(Types.DIM(SOME(arrLen)),(t,_)),_),_),_,_) = Lookup.lookupIdent(localCache,localEnv,pathVar);
+        t2 = typeConvert(t);
+        
         firstPathVar = extractPathVar(first);  
         elem1 = Util.listCreate(Absyn.ELEMENTITEM(Absyn.ELEMENT(
           false,NONE(),Absyn.UNSPECIFIED(),"component",
           Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-            Absyn.TPATH(Absyn.IDENT("Integer"),NONE()),		
+            t2,		
             {Absyn.COMPONENTITEM(Absyn.COMPONENT(firstPathVar,{},NONE()),NONE(),NONE())}),
             Absyn.INFO("f",false,0,0,0,0),NONE())));
-     //   pathVar .first
-        
+
+        arrLen = arrLen - 1;        
         secondPathVar = extractPathVar(second);
         elem2 = Util.listCreate(Absyn.ELEMENTITEM(Absyn.ELEMENT(
           false,NONE(),Absyn.UNSPECIFIED(),"component",
           Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
-            Absyn.TPATH(Absyn.IDENT("Integer"),NONE()),		
-            {Absyn.COMPONENTITEM(Absyn.COMPONENT(secondPathVar,{},NONE()),NONE(),NONE())}),
+            t2,		
+            {Absyn.COMPONENTITEM(Absyn.COMPONENT(secondPathVar,{Absyn.SUBSCRIPT(Absyn.INTEGER(arrLen))},NONE()),NONE(),NONE())}),
             Absyn.INFO("f",false,0,0,0,0),NONE())));
         
-       // pathVar .second
-        
         elem1 = listAppend(elem1,elem2);
-      then (elem1,{});
+        
+        assign1 = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT(firstPathVar,{})),
+          Absyn.CREF(Absyn.CREF_IDENT(pathVar,{Absyn.SUBSCRIPT(Absyn.INTEGER(1))}))),NONE());
+        assign2 = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT(secondPathVar,{})),
+        Absyn.ARRAY({Absyn.CREF(Absyn.CREF_IDENT(pathVar,{Absyn.SUBSCRIPT(Absyn.INTEGER(2))}))})),NONE());
+        
+       // assign2 = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT(secondPathVar,{})),
+       //   Absyn.CALL(Absyn.CREF_IDENT("restArray",{}),Absyn.FUNCTIONARGS({
+       //     Absyn.CREF(Absyn.CREF_IDENT(pathVar,{}))},{}))),NONE());
+
+        assignList = listAppend({assign1},{assign2});
+      then (elem1,assignList);
     case (Matrix.RP_CALL(pathVar,Absyn.CREF_IDENT(recName,_),argList),localCache,localEnv)
       local
         Absyn.Ident pathVar,recName;
@@ -717,8 +736,7 @@ algorithm
         Absyn.Exp exp;
       equation
         localTrueBranch = fromStatetoAbsynCode(localResVarList,localState,SOME(pat),localCache,localEnv,localExistElse);
-        exp = Absyn.LBINARY(Absyn.RELATION(Absyn.CREF(Absyn.CREF_QUAL(localStateVar,{},Absyn.CREF_IDENT("#TAG",{}))),
-          Absyn.EQUAL(),Absyn.STRING("cons")),Absyn.AND(),Absyn.CREF(Absyn.CREF_IDENT("BOOLVAR__",{}))); // Absyn.SUBSCRIPT(Absyn.INTEGER(stamp))
+        exp = Absyn.CREF(Absyn.CREF_IDENT("BOOLVAR__",{})); 
         algList = generateIfElseifAndElse(localResVarList,rest,localStateVar,false,exp,localTrueBranch,{},localCache,localEnv,localExistElse);
       then algList;
         
@@ -742,13 +760,13 @@ algorithm
         Absyn.Ident recordName;
         list<Absyn.Exp> tempList;
       equation
-       localTrueBranch = fromStatetoAbsynCode(localResVarList,localState,SOME(pat),localCache,localEnv,localExistElse);
+        localTrueBranch = fromStatetoAbsynCode(localResVarList,localState,SOME(pat),localCache,localEnv,localExistElse);
 
         tempList = Util.listCreate(Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{})));
-        exp = Absyn.LBINARY(Absyn.CALL(Absyn.CREF_IDENT("stringCmp",{}),Absyn.FUNCTIONARGS({Absyn.CALL(Absyn.CREF_IDENT("getTag",{}),Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{}))},{}))    
+        exp = Absyn.LBINARY(Absyn.CALL(Absyn.CREF_IDENT("stringCmp",{}),Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_QUAL(localStateVar,{},Absyn.CREF_IDENT("fieldTag__",{})))    
           ,Absyn.STRING(recordName)},{})),Absyn.AND(),Absyn.CREF(Absyn.CREF_IDENT("BOOLVAR__",{})));
         algList = generateIfElseifAndElse(localResVarList,rest,localStateVar,false,exp,localTrueBranch,{},localCache,localEnv,localExistElse);  
-
+        
       then algList; 
         //Elseif, wildcard
     case(localResVarList,ARC(localState as STATE(stamp,_,_,_),_,SOME(pat as Matrix.RP_WILDCARD(_,_))) :: rest,localStateVar,false,localTrueStatement,
@@ -757,7 +775,6 @@ algorithm
         list<Absyn.AlgorithmItem> eIfBranch;
         Absyn.Exp exp;
       equation
-        
         eIfBranch = fromStatetoAbsynCode(localResVarList,localState,SOME(pat),localCache,localEnv,localExistElse);
         exp = Absyn.CREF(Absyn.CREF_IDENT("BOOLVAR__",{})); // Absyn.SUBSCRIPT(Absyn.INTEGER(stamp))
         tup = (exp,eIfBranch);
@@ -773,51 +790,46 @@ algorithm
         Absyn.Exp exp;
       equation
         eIfBranch = fromStatetoAbsynCode(localResVarList,localState,SOME(pat),localCache,localEnv,localExistElse);
-        exp = Absyn.LBINARY(Absyn.RELATION(Absyn.CREF(Absyn.CREF_QUAL(localStateVar,{},Absyn.CREF_IDENT("#TAG",{}))),
-          Absyn.EQUAL(),Absyn.STRING("cons")),Absyn.AND(),Absyn.CREF(Absyn.CREF_IDENT("BOOLVAR__",{})));
+        exp = Absyn.CREF(Absyn.CREF_IDENT("BOOLVAR__",{}));
         tup = (exp,eIfBranch);
         localElseIfBranch = listAppend(localElseIfBranch,Util.listCreate(tup));
           algList = generateIfElseifAndElse(localResVarList,rest,localStateVar,false,localTrueStatement,localTrueBranch,localElseIfBranch,localCache,localEnv,localExistElse);
-        then algList;
+      then algList;
           
           //Elseif, call
-        case(localResVarList,ARC(localState as STATE(stamp,_,_,_),_,SOME(pat as Matrix.RP_CALL(_,Absyn.CREF_IDENT(recordName,_),_))) :: rest,localStateVar,false,localTrueStatement,
-            localTrueBranch,localElseIfBranch,localCache,localEnv,localExistElse)
-          local
-            list<Absyn.AlgorithmItem> eIfBranch;
-            list<Absyn.Exp> tempList;
-            Absyn.Exp exp;
-            Absyn.Ident recordName;
-          equation
-
-            eIfBranch = fromStatetoAbsynCode(localResVarList,localState,SOME(pat),localCache,localEnv,localExistElse);
-            tempList = Util.listCreate(Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{})));
-            exp = Absyn.LBINARY(Absyn.CALL(Absyn.CREF_IDENT("stringCmp",{}),Absyn.FUNCTIONARGS({
-        Absyn.CALL(Absyn.CREF_IDENT("getTag",{}),Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{}))},{})),Absyn.STRING(recordName)},{})),Absyn.AND(),Absyn.CREF(Absyn.CREF_IDENT("BOOLVAR__",{})));
- 
-         tup = (exp,eIfBranch);
-            localElseIfBranch = listAppend(localElseIfBranch,Util.listCreate(tup));
-            algList = generateIfElseifAndElse(localResVarList,rest,localStateVar,false,localTrueStatement,localTrueBranch,localElseIfBranch,localCache,localEnv,localExistElse);
-          then algList;
+    case(localResVarList,ARC(localState as STATE(stamp,_,_,_),_,SOME(pat as Matrix.RP_CALL(_,Absyn.CREF_IDENT(recordName,_),_))) :: rest,localStateVar,false,localTrueStatement,
+        localTrueBranch,localElseIfBranch,localCache,localEnv,localExistElse)
+      local
+        list<Absyn.AlgorithmItem> eIfBranch;
+        list<Absyn.Exp> tempList;
+        Absyn.Exp exp;
+        Absyn.Ident recordName;
+      equation
+        eIfBranch = fromStatetoAbsynCode(localResVarList,localState,SOME(pat),localCache,localEnv,localExistElse);
+        tempList = Util.listCreate(Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{})));
+        exp = Absyn.LBINARY(Absyn.CALL(Absyn.CREF_IDENT("stringCmp",{}),Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_QUAL(localStateVar,{},Absyn.CREF_IDENT("fieldTag__",{}))),
+          Absyn.STRING(recordName)},{})),Absyn.AND(),Absyn.CREF(Absyn.CREF_IDENT("BOOLVAR__",{})));
+        tup = (exp,eIfBranch);
+        localElseIfBranch = listAppend(localElseIfBranch,Util.listCreate(tup));
+        algList = generateIfElseifAndElse(localResVarList,rest,localStateVar,false,localTrueStatement,localTrueBranch,localElseIfBranch,localCache,localEnv,localExistElse);
+      then algList;
           
-         
-          //Elseif, constant
-        case(localResVarList,ARC(localState as STATE(stamp,_,_,_),_,SOME(pat)) :: rest,localStateVar,false,localTrueStatement,
-            localTrueBranch,localElseIfBranch,localCache,localEnv,localExistElse)
-          local
-            list<Absyn.AlgorithmItem> eIfBranch;
-            Absyn.Exp exp,constVal,firstExp;
-          equation
-
-            constVal = getConstantValue(pat);
-            eIfBranch = fromStatetoAbsynCode(localResVarList,localState,SOME(pat),localCache,localEnv,localExistElse);
-            firstExp = getFirstExpression(constVal,localStateVar);
-            exp = Absyn.LBINARY(firstExp,Absyn.AND(),Absyn.CREF(Absyn.CREF_IDENT("BOOLVAR__",{}))); // Absyn.SUBSCRIPT(Absyn.INTEGER(stamp))
-            tup = (exp,eIfBranch);
-            localElseIfBranch = listAppend(localElseIfBranch,Util.listCreate(tup));
-            algList = generateIfElseifAndElse(localResVarList,rest,localStateVar,false,localTrueStatement,localTrueBranch,localElseIfBranch,localCache,localEnv,localExistElse);
-          then algList; 
-            
+        //Elseif, constant
+    case(localResVarList,ARC(localState as STATE(stamp,_,_,_),_,SOME(pat)) :: rest,localStateVar,false,localTrueStatement,
+        localTrueBranch,localElseIfBranch,localCache,localEnv,localExistElse)
+      local
+        list<Absyn.AlgorithmItem> eIfBranch;
+        Absyn.Exp exp,constVal,firstExp;
+      equation        
+        constVal = getConstantValue(pat);
+        eIfBranch = fromStatetoAbsynCode(localResVarList,localState,SOME(pat),localCache,localEnv,localExistElse);
+        firstExp = getFirstExpression(constVal,localStateVar);
+        exp = Absyn.LBINARY(firstExp,Absyn.AND(),Absyn.CREF(Absyn.CREF_IDENT("BOOLVAR__",{}))); // Absyn.SUBSCRIPT(Absyn.INTEGER(stamp))
+        tup = (exp,eIfBranch);
+        localElseIfBranch = listAppend(localElseIfBranch,Util.listCreate(tup));
+        algList = generateIfElseifAndElse(localResVarList,rest,localStateVar,false,localTrueStatement,localTrueBranch,localElseIfBranch,localCache,localEnv,localExistElse);
+      then algList; 
+        
   end matchcontinue;    
 end generateIfElseifAndElse;
 
@@ -846,21 +858,19 @@ algorithm
       then exp;  
     case (Absyn.REAL(r),localStateVar)
       equation
-        exp = Absyn.CALL(Absyn.CREF_IDENT("stringCmp",{}),
-          Absyn.FUNCTIONARGS({Absyn.CALL(Absyn.CREF_IDENT("String",{}),
-          Absyn.FUNCTIONARGS({Absyn.REAL(r),Absyn.INTEGER(5)},{}))
-            ,Absyn.CALL(Absyn.CREF_IDENT("String",{}),
-          Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{})),Absyn.INTEGER(5)},{}))},{}));
+        exp = Absyn.RELATION(Absyn.CALL(Absyn.CREF_IDENT("String",{}),
+          Absyn.FUNCTIONARGS({Absyn.REAL(r),Absyn.INTEGER(5)},{})),
+            Absyn.EQUAL(),Absyn.CALL(Absyn.CREF_IDENT("String",{}),
+          Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{})),Absyn.INTEGER(5)},{})));
       then exp;  
     case (Absyn.STRING(s),localStateVar)
       equation
-        exp = Absyn.CALL(Absyn.CREF_IDENT("stringCmp",{}),
-        Absyn.FUNCTIONARGS({Absyn.STRING(s),Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{}))},{}));
+        exp = Absyn.RELATION(Absyn.STRING(s),Absyn.EQUAL(),Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{})));
       then exp;
     case (Absyn.BOOL(b),localStateVar)
       equation
-      exp = Absyn.RELATION(Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{})),
-        Absyn.EQUAL(),Absyn.BOOL(b));
+        exp = Absyn.RELATION(Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{})),
+          Absyn.EQUAL(),Absyn.BOOL(b));
       then exp;  
  end matchcontinue;   
 end getFirstExpression;  
@@ -1160,5 +1170,23 @@ algorithm
     case (Absyn.TCOMPLEX(p,_,_)) then p;
   end matchcontinue;
 end getPathFromTypeSpec;
+
+
+public function typeConvert "function: typeConvert"
+  input Types.TType t;
+  output Absyn.TypeSpec outType;
+algorithm
+  outType := 
+  matchcontinue (t)
+    case (Types.T_INTEGER(_)) then Absyn.TPATH(Absyn.IDENT("Integer"),NONE());
+    case (Types.T_BOOL(_)) then Absyn.TPATH(Absyn.IDENT("Boolean"),NONE());
+    case (Types.T_STRING(_)) then Absyn.TPATH(Absyn.IDENT("String"),NONE());
+    case (Types.T_REAL(_)) then Absyn.TPATH(Absyn.IDENT("Real"),NONE()); 
+    case (Types.T_COMPLEX(ClassInf.RECORD(s), _, _)) local String s; 
+      equation
+      then Absyn.TPATH(Absyn.IDENT(s),NONE()); 
+    // ...
+  end matchcontinue;  
+end typeConvert;
 
 end DFA;

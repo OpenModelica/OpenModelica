@@ -2083,6 +2083,118 @@ algorithm
   end matchcontinue;
 end fromFuncArgToFuncArgTypes;
 
+public function fromDAEeqsToAbsynAlg "function: fromDAEeqsToAbsynAlg"
+  input list<DAE.Element> ld;
+  input list<Absyn.AlgorithmItem> accList1;
+  input list<DAE.Element> accList2;
+  output list<Absyn.AlgorithmItem> outList;
+  output list<DAE.Element> outLd;
+algorithm
+  (outList,outLd) :=
+  matchcontinue (ld,accList1,accList2)
+    local
+      list<Absyn.AlgorithmItem> localAccList1;
+      list<DAE.Element> restLd,localAccList2;
+    case ({},localAccList1,localAccList2) then (localAccList1,localAccList2);
+    case (DAE.EQUATION(exp1,exp2) :: restLd,localAccList1,localAccList2)
+      local
+        list<Absyn.AlgorithmItem> stmt;
+        Exp.Exp exp1,exp2;
+        Absyn.Exp left,right;
+      equation
+        left = fromExpExpToAbsynExp(exp1);
+        right = fromExpExpToAbsynExp(exp2);
+        stmt = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(left,right),NONE())};
+        localAccList1 = listAppend(localAccList1,stmt);
+        (localAccList1,localAccList2) = fromDAEeqsToAbsynAlg(restLd,localAccList1,localAccList2); 
+      then (localAccList1,localAccList2);
+    case (firstLd :: restLd,localAccList1,localAccList2)
+      local
+        DAE.Element firstLd;
+      equation
+        localAccList2 = listAppend(localAccList2,{firstLd});
+        (localAccList1,localAccList2) = fromDAEeqsToAbsynAlg(restLd,localAccList1,localAccList2);     
+      then (localAccList1,localAccList2);
+  end matchcontinue;  
+end fromDAEeqsToAbsynAlg;
+
+// More expressions have to be added?
+public function fromExpExpToAbsynExp "function: fromExpExpToAbsynExp"
+  input Exp.Exp exp1;
+  output Absyn.Exp expOut;
+algorithm
+  expOut := 
+  matchcontinue (exp1)
+    case (Exp.ICONST(i)) local Integer i; equation then Absyn.INTEGER(i);
+    case (Exp.RCONST(r)) local Real r; equation then Absyn.REAL(r);
+    case (Exp.SCONST(s)) local String s; equation then Absyn.STRING(s);
+    case (Exp.BCONST(b)) local Boolean b; equation then Absyn.BOOL(b);   
+    case (Exp.CREF(cr,_)) 
+      local 
+        Exp.ComponentRef cr; 
+        Absyn.ComponentRef c;
+      equation 
+        c = fromExpCrefToAbsynCref(cr);
+      then Absyn.CREF(c);    
+  end matchcontinue;
+end fromExpExpToAbsynExp; 
+
+public function fromExpCrefToAbsynCref
+  input Exp.ComponentRef cIn;
+  output Absyn.ComponentRef cOut;
+algorithm
+  cOut :=
+  matchcontinue (cIn)
+    case (Exp.CREF_QUAL(id,subScriptList,cRef))
+      local 
+        Exp.Ident id; 
+        list<Exp.Subscript> subScriptList; 
+        list<Absyn.Subscript> subScriptList2;  
+        Exp.ComponentRef cRef; 
+        Absyn.ComponentRef elem,cRef2; 
+      equation 
+        cRef2 = fromExpCrefToAbsynCref(cRef);
+        subScriptList2 = fromExpSubsToAbsynSubs(subScriptList,{});
+        elem = Absyn.CREF_QUAL(id,subScriptList2,cRef2); 
+      then elem;
+    case (Exp.CREF_IDENT(id,subScriptList))     
+      local 
+        Exp.Ident id; 
+        list<Exp.Subscript> subScriptList; 
+        list<Absyn.Subscript> subScriptList2;  
+        Absyn.ComponentRef elem; 
+      equation 
+        subScriptList2 = fromExpSubsToAbsynSubs(subScriptList,{});
+        elem = Absyn.CREF_IDENT(id,subScriptList2); 
+      then elem; 
+  end matchcontinue;
+  end fromExpCrefToAbsynCref;  
+
+public function fromExpSubsToAbsynSubs
+  input list<Exp.Subscript> inList; 
+  input list<Absyn.Subscript> accList; 
+  output list<Absyn.Subscript> outList;
+algorithm  
+  outList := 
+  matchcontinue (inList,accList)  
+    local 
+      list<Absyn.Subscript> localAccList;
+    case ({},localAccList) then localAccList;  
+    case (Exp.INDEX(e) :: restList,localAccList) 
+      local
+        Exp.Exp e;
+        Absyn.Exp e2;
+        Absyn.Subscript elem;
+        list<Exp.Subscript> restList;
+      equation  
+        e2 = fromExpExpToAbsynExp(e);
+        elem = Absyn.SUBSCRIPT(e2);      
+        localAccList = listAppend(localAccList,{elem});
+        localAccList = fromExpSubsToAbsynSubs(restList,localAccList); 
+      then localAccList;
+  end matchcontinue;    
+end fromExpSubsToAbsynSubs;
+
 end Convert;
 
 

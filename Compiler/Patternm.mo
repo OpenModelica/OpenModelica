@@ -84,10 +84,9 @@ public function ASTtoMatrixForm "function: ASTtoMatrixForm
   output list<Absyn.ElementItem> outDeclList; // The local declarations
   output RightHandVector rhVec; // The righthand side vector 
   output RenamedPatMatrix pMat; // The matrix with renamed patterns (renaming means adding the path variables)
-  output list<Absyn.Ident> pathVarList; 
   output Option<RightHandSide> outElseRhSide; // An optional else case
 algorithm
-  (outDeclList,rhVec,pMat,pathVarList,outElseRhSide) :=
+  (outDeclList,rhVec,pMat,outElseRhSide) :=
   matchcontinue (matchCont,cache,env)
     case (localMatchCont as (Absyn.MATCHEXP(_,varList2,declList,localCases,_)),localCache,localEnv)
       local
@@ -97,7 +96,6 @@ algorithm
         Absyn.Exp varList2; // The input of variables to the matchcontinue expression
         RenamedPatMatrix patMat;
         list<Absyn.ElementItem> declList; // The local variable declarations at the begining of the m.c. exp
-        list<Absyn.Ident> pathVarList; // A list of path variables
         Integer varListLength; 
         Option<RightHandSide> elseRhSide; // Used to store the optional else-case
         AsArray asBindings; // Array used for the as construct
@@ -117,11 +115,11 @@ algorithm
         // these assignments are added to the RightHandSide list
         patMat = fill({},varListLength);
         asBindings = fill({},listLength(rhsList));   
-        (patMat,pathVarList,asBindings) = 
-        fillMatrix(1,asBindings,varList,patList,patMat,{},localCache,localEnv); 
+        (patMat,asBindings) = 
+        fillMatrix(1,asBindings,varList,patList,patMat,localCache,localEnv); 
         rhsList = addAsBindings(rhsList,arrayList(asBindings));	
         
-      then (declList,listArray(rhsList),patMat,pathVarList,elseRhSide);
+      then (declList,listArray(rhsList),patMat,elseRhSide);
   end matchcontinue; 
 end ASTtoMatrixForm;
 
@@ -252,34 +250,29 @@ path is a path-variable and pattern is a renamed expression)
   input list<Absyn.Exp> varList; // The matchcontinue input variable list
   input list<Absyn.Exp> patList; // The unrenamed patterns, no path variable added
   input RenamedPatMatrix patMat;
-  input list<Absyn.Ident> pathVarList; // Used to store path variables
   input Env.Cache cache;
   input Env.Env env;
   output RenamedPatMatrix outPatMat; 
-  output list<Absyn.Ident> outPathVarList;
   output AsArray outAsBindings;
 algorithm
   (outPatMat,outPathVarList,outAsBindings) := 
-  matchcontinue (rowNum,inAsBindings,varList,patList,patMat,pathVarList,cache,env)
+  matchcontinue (rowNum,inAsBindings,varList,patList,patMat,cache,env)
     local
       RenamedPatMatrix localPatMat;
       Absyn.Exp first2;
       list<Absyn.Exp> first,rest,localVarList;
-      list<Absyn.Ident> localPathVarList;
       AsArray localAsBindings;
       Integer localRowNum;
-    case (_,localAsBindings,_,{},localPatMat,localPathVarList,_,_) 
+    case (_,localAsBindings,_,{},localPatMat,_,_) 
       equation 
-      then (localPatMat,localPathVarList,localAsBindings);    
+      then (localPatMat,localAsBindings);    
     case (localRowNum,localAsBindings,localVarList,first2 :: rest,
-        localPatMat,localPathVarList,localCache,localEnv)
+        localPatMat,localCache,localEnv)
       local
-        list<Absyn.Ident> pathVars;
         AsList asBinds;
         
         //Temp variables
         RenamedPatMatrix temp2;
-        list<Absyn.Ident> temp3;
         AsArray temp4;
         
         Env.Env localEnv;
@@ -288,16 +281,16 @@ algorithm
         first = extractListFromTuple(first2);
         
         // Add a row to the matrix, rename each pattern as well
-        (localPatMat,pathVars,asBinds) = addRow({},localVarList,1,first,localPatMat,{},localCache,localEnv);
+        (localPatMat,asBinds) = addRow({},localVarList,1,first,localPatMat,localCache,localEnv);
         
         // Store As-construct bindings for this row
         localAsBindings = arrayUpdate(localAsBindings, localRowNum, asBinds);
         
         // Add the rest of the rows to the matrix	  
-        (temp2,temp3,temp4) =
+        (temp2,temp4) =
         fillMatrix(localRowNum+1,localAsBindings,localVarList,rest,localPatMat,
-          listAppend(localPathVarList,pathVars),localCache,localEnv);   	
-      then (temp2,temp3,temp4);
+          localCache,localEnv);   	
+      then (temp2,temp4);
   end matchcontinue;
 end fillMatrix;
 
@@ -312,15 +305,13 @@ public function addRow "function: addRow
   input Integer pivot; // Position in the row
   input list<Absyn.Exp> pats; // The patterns to be stored in the row
   input RenamedPatMatrix patMat;
-  input list<Absyn.Ident> pathVars; // Used to store pathvariables
   input Env.Cache cache;
   input Env.Env env;
   output RenamedPatMatrix outPatMat; 
-  output list<Absyn.Ident> outPathVars;
   output AsList outAsBinds;
 algorithm
-  (outPatMat,outPathVars,outAsBinds) :=
-  matchcontinue (asBindings,varList,pivot,pats,patMat,pathVars,cache,env)
+  (outPatMat,outAsBinds) :=
+  matchcontinue (asBindings,varList,pivot,pats,patMat,cache,env)
     local
       Integer localPivot;
       Absyn.Exp firstPat;
@@ -328,47 +319,41 @@ algorithm
       RenamedPatMatrix localPatMat;
       Absyn.Ident firstVar;
       list<Absyn.Ident,Absyn.Ident> localVars;
-      list<Absyn.Ident> localPathVars;
       Integer localRowNum;
       AsList localAsBindings;
       Env.Cache localCache;
       Env.Env localEnv;
-    case (localAsBindings,_,_,{},localPatMat,localPathVars,_,_) 
+    case (localAsBindings,_,_,{},localPatMat,_,_) 
       equation 
-      then (localPatMat,localPathVars,localAsBindings);
+      then (localPatMat,localAsBindings);
     case(localAsBindings,Absyn.CREF(Absyn.CREF_IDENT(firstVar,{})) :: restVar,localPivot,firstPat :: restPat,
-        localPatMat,localPathVars,localCache,localEnv)     
+        localPatMat,localCache,localEnv)     
       local
         RenamedPat pat;
         list<Absyn.Ident> localPathVars2;
         AsList asBinds;
-        String str,tempStr;
+        String str;
         
         //Temp variables
         RenamedPatMatrix temp2;
-        list<Absyn.Ident> temp3;
         AsList temp4;
-        RenamedPatList temp5;   
+        RenamedPatList temp5;
       equation 
         str = "";
         
         //Rename a pattern, that is transform it into path=pattern form
-        (pat,localPathVars2,asBinds) = 
-        renameMain(firstPat,stringAppend(str,firstVar),{},{},localCache,localEnv);  	
-        localAsBindings = listAppend(localAsBindings,asBinds);
-        
-        // Store current pathvariable
-        tempStr = stringAppend("",firstVar);
-        localPathVars2 = listAppend(localPathVars2,tempStr :: {});   
+        (pat,asBinds) = 
+        renameMain(firstPat,stringAppend(str,firstVar),{},localCache,localEnv);  	
+        localAsBindings = listAppend(localAsBindings,asBinds);       
          
          // Store new element in matrix
         temp5 = listAppend(localPatMat[localPivot],pat :: {});        
         localPatMat = arrayUpdate(localPatMat, localPivot, temp5);
         
         //Add the rest of the elements for this row
-        (temp2,temp3,temp4) = addRow(localAsBindings,restVar,localPivot+1,restPat,
-        localPatMat,listAppend(localPathVars,localPathVars2),localCache,localEnv); 					         
-      then (temp2,temp3,temp4); 
+        (temp2,temp4) = addRow(localAsBindings,restVar,localPivot+1,restPat,
+        localPatMat,localCache,localEnv); 					         
+      then (temp2,temp4); 
   end matchcontinue;  
 end addRow;
 
@@ -380,118 +365,114 @@ public function renameMain "function: renameMain
 "
   input Absyn.Exp pat;
   input Absyn.Ident rootVar;
-  input list<Absyn.Ident> pathVars;
   input AsList inAsBinds;
   input Env.Cache cache;
   input Env.Env env;
   output RenamedPat renamedPat;
-  output list<Absyn.Ident> outPathVars;
   output AsList outAsBinds;
 algorithm
   (renamedPat,outPathVars,outAsBinds) :=
-  matchcontinue (pat,rootVar,pathVars,inAsBinds,cache,env)
+  matchcontinue (pat,rootVar,inAsBinds,cache,env)
     local
       Absyn.Exp localPat;
       Absyn.Ident localVar;
       list<Absyn.Ident,Absyn.Ident> localVars;
-      AsList localAsBinds;
-      list<Absyn.Ident> localPathVars;
+      AsList localAsBinds,localAsBinds2;
       Env.Cache localCache;
       Env.Env localEnv;
       // INTEGER EXPRESSION  
-    case (Absyn.INTEGER(val),localVar,localPathVars,localAsBinds,_,_)  
+    case (Absyn.INTEGER(val),localVar,localAsBinds,_,_)  
       local 
         Integer val;
         RenamedPat tempPat;   
       equation
         tempPat = Matrix.RP_INTEGER(localVar,val);
-      then (tempPat,localPathVars,localAsBinds);
+      then (tempPat,localAsBinds);
         // REAL EXPRESSION
-    case (Absyn.REAL(val),localVar,localPathVars,localAsBinds,_,_)
+    case (Absyn.REAL(val),localVar,localAsBinds,_,_)
       local 
         Real val;
         RenamedPat tempPat;   
       equation
         tempPat = Matrix.RP_REAL(localVar,val); 
-      then (tempPat,localPathVars,localAsBinds);
+      then (tempPat,localAsBinds);
         // BOOLEAN EXPRESSION
-    case (Absyn.BOOL(val),localVar,localPathVars,localAsBinds,_,_)
+    case (Absyn.BOOL(val),localVar,localAsBinds,_,_)
       local 
         Boolean val;
         RenamedPat tempPat;   
       equation
         tempPat = Matrix.RP_BOOL(localVar,val); 
-      then (tempPat,localPathVars,localAsBinds);
+      then (tempPat,localAsBinds);
         // WILDCARD EXPRESSION
-    case (Absyn.CREF(Absyn.WILD()),localVar,localPathVars,localAsBinds,_,_)
+    case (Absyn.CREF(Absyn.WILD()),localVar,localAsBinds,_,_)
       local 
         RenamedPat tempPat;   
       equation
         tempPat = Matrix.RP_WILDCARD(localVar,NONE()); 
-      then (tempPat,localPathVars,localAsBinds);
+      then (tempPat,localAsBinds);
         // STRING EXPRESSION    
-    case (Absyn.STRING(val),localVar,localPathVars,localAsBinds,_,_)
+    case (Absyn.STRING(val),localVar,localAsBinds,_,_)
       local 
         String val;
         RenamedPat pat;   
       equation
         pat = Matrix.RP_STRING(localVar,val);
-      then (pat,localPathVars,localAsBinds);
+      then (pat,localAsBinds);
         // AS BINDINGS        
         // An as-binding is collected as an equation assignment. This assigment will later be
         // added to the correspond righthand side.
-    case (Absyn.AS(var,expr),localVar,localPathVars,localAsBinds,localCache,localEnv)
+    case (Absyn.AS(var,expr),localVar,localAsBinds,localCache,localEnv)
       local
         Absyn.Exp expr;
         Absyn.Ident var;
         
         // Temp variables
         RenamedPat temp1;
-        list<Absyn.Ident> temp2;
         AsList temp3;
-      equation    
-        localAsBinds = listAppend(localAsBinds,Util.listCreate(Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_IDENT(var,{})),
-          Absyn.CREF(Absyn.CREF_IDENT(localVar,{}))),NONE())));
+      equation     
+        localAsBinds2 = Util.listCreate(Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_IDENT(var,{})),
+          Absyn.CREF(Absyn.CREF_IDENT(localVar,{}))),NONE()));
+        localAsBinds = listAppend(localAsBinds,localAsBinds2);
         
-        (temp1,temp2,temp3) = renameMain(expr,localVar,localPathVars,localAsBinds,localCache,localEnv);        	    
-      then (temp1,temp2,temp3);        
+        (temp1,temp3) = renameMain(expr,localVar,localAsBinds,localCache,localEnv);        	    
+      then (temp1,temp3);        
         
         // COMPONENT REFERENCE EXPRESSION
         // Will be interpretated as: case (var AS _) or case(var AS wildcard)
         // This expression is transformed into a wildcard but we store the variable
         // reference as well as an AS-binding.
-    case (Absyn.CREF(Absyn.CREF_IDENT(var,_)),localVar,localPathVars,localAsBinds,_,_)
+    case (Absyn.CREF(Absyn.CREF_IDENT(var,_)),localVar,localAsBinds,_,_)
       local 
         Absyn.Ident var;   
         RenamedPat pat;
-        list<Absyn.Ident,Absyn.Ident> temp;
       equation
-        localAsBinds = listAppend(localAsBinds,Util.listCreate(Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_IDENT(var,{})),
-          Absyn.CREF(Absyn.CREF_IDENT(localVar,{}))),NONE())));
+        localAsBinds2 = Util.listCreate(Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_IDENT(var,{})),
+          Absyn.CREF(Absyn.CREF_IDENT(localVar,{}))),NONE()));
+        localAsBinds = listAppend(localAsBinds,localAsBinds2);
           
         pat = Matrix.RP_WILDCARD(localVar,NONE());
-      then (pat,localPathVars,localAsBinds);
+      then (pat,localAsBinds);
         
         // TUPLE EXPRESSION
         // This is a builtin functioncall, all the function arguments are renamed       
-    case (Absyn.TUPLE(funcArgs),localVar,localPathVars,localAsBinds,localCache,localEnv)
+    case (Absyn.TUPLE(funcArgs),localVar,localAsBinds,localCache,localEnv)
       local
         Absyn.ComponentRef compRef;
         list<Absyn.Exp> funcArgs,funcArgs2;	  
         RenamedPatList renamedPatList;
-        list<Absyn.Ident> paths;  
         RenamedPat pat;
         AsList localAsBinds2;
       equation
-        (renamedPatList,paths,localAsBinds2) = renamePatList(funcArgs
-          ,localVar,1,{},{},{},localCache,localEnv);
+        (renamedPatList,localAsBinds2) = renamePatList(funcArgs
+          ,localVar,1,{},{},localCache,localEnv);
         pat = Matrix.RP_TUPLE(localVar,renamedPatList);
         
-      then (pat,listAppend(localPathVars,paths),listAppend(localAsBinds,localAsBinds2));
+      then (pat,listAppend(localAsBinds,localAsBinds2));
         
         // CONS EXPRESSION
         // This is a builtin functioncall, all the function arguments are renamed
-    case (Absyn.CONS(first,second),localVar,localPathVars,localAsBinds,localCache,localEnv)
+    case (Absyn.CONS(first,second),localVar,localAsBinds,localCache,localEnv)
       local
         Absyn.Exp first,second;	  
         RenamedPatList renamedPatList;
@@ -499,39 +480,38 @@ algorithm
         RenamedPat pat,first2,second2;
         AsList localAsBinds2;
       equation
-        (renamedPatList,paths,localAsBinds2) = renamePatList({first,second}
-          ,localVar,1,{},{},{},localCache,localEnv);
+        (renamedPatList,localAsBinds2) = renamePatList({first,second}
+          ,localVar,1,{},{},localCache,localEnv);
         first2 = Util.listFirst(renamedPatList);
         second2 = Util.listFirst(Util.listRest(renamedPatList));
         
         pat = Matrix.RP_CONS(localVar,first2,second2);
         
-      then (pat,listAppend(localPathVars,paths),listAppend(localAsBinds,localAsBinds2));   
+      then (pat,listAppend(localAsBinds,localAsBinds2));   
         // CALL EXPRESSION
         // This is a builtin functioncall, all the function arguments are renamed
         // We also must transform named function arguments into positional function 
-        // arguments
-    case (Absyn.CALL(compRef,Absyn.FUNCTIONARGS(funcArgs,{})),localVar,localPathVars,localAsBinds,localCache,localEnv)
+        // arguments 
+        // Empty constructor call
+    case (Absyn.CALL(compRef,Absyn.FUNCTIONARGS(funcArgs,{})),localVar,localAsBinds,localCache,localEnv)
       local
         Absyn.ComponentRef compRef;
         list<Absyn.Exp> funcArgs;	  
-        RenamedPatList renamedPatList;
-        list<Absyn.Ident> paths;  
+        RenamedPatList renamedPatList; 
         RenamedPat pat;
         AsList localAsBinds2;
       equation
-        (renamedPatList,paths,localAsBinds2) = renamePatList(funcArgs
-          ,localVar,1,{},{},{},localCache,localEnv);
+        (renamedPatList,localAsBinds2) = renamePatList(funcArgs
+          ,localVar,1,{},{},localCache,localEnv);
         pat = Matrix.RP_CALL(localVar,compRef,renamedPatList);
         
-      then (pat,listAppend(localPathVars,paths),listAppend(localAsBinds,localAsBinds2));
+      then (pat,listAppend(localAsBinds,localAsBinds2));
         
-    case (Absyn.CALL(compRef as Absyn.CREF_IDENT(recName,{}),Absyn.FUNCTIONARGS({},namedArgList)),localVar,localPathVars,localAsBinds,localCache,localEnv)
+    case (Absyn.CALL(compRef as Absyn.CREF_IDENT(recName,{}),Absyn.FUNCTIONARGS({},namedArgList)),localVar,localAsBinds,localCache,localEnv)
       local
         Absyn.ComponentRef compRef;
         list<Absyn.NamedArg> namedArgList;	  
         RenamedPatList renamedPatList;
-        list<Absyn.Ident> paths;  
         RenamedPat pat;
         AsList localAsBinds2;
         Absyn.Ident recName;
@@ -549,11 +529,11 @@ algorithm
         //Sorting of named arguments
         funcArgs = generatePositionalArgs(fieldNameList,namedArgList,{});
         
-        (renamedPatList,paths,localAsBinds2) = renamePatList(funcArgs
-          ,localVar,1,{},{},{},localCache,localEnv);
+        (renamedPatList,localAsBinds2) = renamePatList(funcArgs
+          ,localVar,1,{},{},localCache,localEnv);
         pat = Matrix.RP_CALL(localVar,compRef,renamedPatList);
         
-      then (pat,listAppend(localPathVars,paths),listAppend(localAsBinds,localAsBinds2));  
+      then (pat,listAppend(localAsBinds,localAsBinds2));  
   end matchcontinue;	     
 end renameMain;
 
@@ -568,25 +548,22 @@ Input is a list of patterns to remain.
   input Absyn.Ident var;
   input Integer pivot;
   input list<RenamedPat> accRenamedPatList;
-  input list<Absyn.Ident> pathVarList;
   input AsList asBindings;
   input Env.Cache cache;
   input Env.Env env;
   output list<RenamedPat> renamedPatList;
-  output list<Absyn.Ident> outPathVarList;
   output AsList outAsBindings;
 algorithm
-  (renamedPatList,outPathVarList,outAsBindings) :=
-  matchcontinue (patList,var,pivot,accRenamedPatList,pathVarList,asBindings,cache,env)
+  (renamedPatList,outAsBindings) :=
+  matchcontinue (patList,var,pivot,accRenamedPatList,asBindings,cache,env)
     local
       list<RenamedPat> localAccRenamedPatList;
-      list<Absyn.Ident> localPathVarList;
       AsList localAsBindings;
       Env.Cache localCache;
       Env.Env localEnv;
-    case ({},_,_,localAccRenamedPatList,localPathVarList,localAsBindings,_,_) 
-      equation then (localAccRenamedPatList,localPathVarList,localAsBindings);
-    case (first :: rest,localVar,localPivot,localAccRenamedPatList,localPathVarList,localAsBindings,
+    case ({},_,_,localAccRenamedPatList,localAsBindings,_,_) 
+      equation then (localAccRenamedPatList,localAsBindings);
+    case (first :: rest,localVar,localPivot,localAccRenamedPatList,localAsBindings,
       localCache,localEnv)
       local
         Absyn.Exp first;
@@ -598,23 +575,21 @@ algorithm
         RenamedPatList temp1;
         list<Absyn.Exp> pathVars;
         AsList temp3;
-        list<Absyn.Ident> temp2;
         Absyn.Ident str;
-        list<Absyn.Ident> paths;
         String tempStr;
       equation
         tempStr = stringAppend("__",intString(localPivot));     
         //Rename first pattern
-        (localRenamedPat,paths,localAsBindings2) = 
-        renameMain(first,stringAppend(localVar,tempStr),{},localAsBindings,localCache,localEnv);
+        (localRenamedPat,localAsBindings2) = 
+        renameMain(first,stringAppend(localVar,tempStr),{},localCache,localEnv);
         
       	str = stringAppend(localVar,tempStr);
-      	paths = listAppend(paths,str :: {});
+
       	localAccRenamedPatList = listAppend(localAccRenamedPatList,localRenamedPat :: {});
-      	(temp1,temp2,temp3) = renamePatList(rest,localVar,localPivot+1,
+      	(temp1,temp3) = renamePatList(rest,localVar,localPivot+1,
         	localAccRenamedPatList,
-        	listAppend(localPathVarList,paths),listAppend(localAsBindings,localAsBindings2),localCache,localEnv);
-      	then (temp1,temp2,temp3);
+        	listAppend(localAsBindings,localAsBindings2),localCache,localEnv);
+      	then (temp1,temp3);
   end matchcontinue;
 end renamePatList;
 
@@ -668,7 +643,6 @@ algorithm
         RenamedPatMatrix patMat;
         list<Absyn.ElementItem> declList;
         list<Absyn.Exp> localResultVarList;
-        list<Absyn.Ident> pathVarList;
         Option<RightHandSide> elseRhSide;
         Integer stampTemp;
         DFA.State dfaState;
@@ -679,7 +653,7 @@ algorithm
         Env.Env localEnv;
       equation	
         // Get the pattern matrix etc.
-        (declList,rhVec,patMat,pathVarList,elseRhSide) = ASTtoMatrixForm(localMatchCont,localCache,localEnv);
+        (declList,rhVec,patMat,elseRhSide) = ASTtoMatrixForm(localMatchCont,localCache,localEnv);
         patMat2 = arrayList(patMat);
         
         // A small fix.
@@ -1648,7 +1622,7 @@ algorithm
         RenamedPat first,second;
         RenamedPatList l;
       equation
-        l = listAppend({first},{second});    
+        l = {first,second};    
       then l;
   end matchcontinue;             
 end extractFuncArgs;
@@ -1766,7 +1740,7 @@ algorithm
       Absyn.Exp e;
       Absyn.Ident localFieldName,aName;
       list<Absyn.NamedArg> restNamedArgList;  
-    case (_,{}) then Absyn.INTEGER(0);  
+    case (_,{}) then Absyn.CREF(Absyn.WILD());  
     case (localFieldName,Absyn.NAMEDARG(aName,e) :: _)
       equation
         true = stringEqual(localFieldName,aName);

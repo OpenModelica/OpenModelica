@@ -497,7 +497,7 @@ algorithm
         tp_1 = Types.elabType(tp);
       then
         (cache,Exp.CODE(c,tp_1),Types.PROP(tp,Types.C_CONST()),st);
-    
+
     case (cache,env,Absyn.VALUEBLOCK(ld,Absyn.VALUEBLOCKALGORITHMS(
       b),res),impl,st,doVect)
       local 
@@ -505,11 +505,11 @@ algorithm
         list<SCode.Element> ld2;
         list<tuple<SCode.Element, Inst.Mod>> ld_mod;
         
-        list<Absyn.AlgorithmItem> b;
+        list<Absyn.AlgorithmItem> b,b2;
         list<Algorithm.Statement> b_alg;   
         list<Exp.Statement> b_alg_2;
 
-        list<DAE.Element> dae1;
+        list<DAE.Element> dae1,dae1_2;
         list<Exp.DAEElement> dae2;
         Exp.DAEElement b_alg_dae;
         Absyn.Exp res;
@@ -535,10 +535,16 @@ algorithm
 			 (cache,dae1,env2,_,_,_) = Inst.instElementList(cache,env2,
 			  Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{}), ClassInf.UNKNOWN("temp"),
 			  ld_mod,{},impl);
-			  
+     
+        //----------------------------------------------------------------------
+        // The instantiation of the components may have produced some equations
+        (b2,dae1_2) = Convert.fromDAEeqsToAbsynAlg(dae1,{},{});
+        b = listAppend(b2,b);
+        //----------------------------------------------------------------------
+			     
 				// Convert into Exp records
-				dae2 = Convert.fromDAEElemsToExpElems(dae1,{});
-           
+        dae2 = Convert.fromDAEElemsToExpElems(dae1_2,{});
+          
         (cache,b_alg) = Inst.instAlgorithmitems(cache,env2,Prefix.NOPRE(),b,true);
         	
         // Convert into Exp records
@@ -558,11 +564,11 @@ algorithm
         list<tuple<SCode.Element, Inst.Mod>> ld_mod;
         
         list<Absyn.EquationItem> b2;
-        list<Absyn.AlgorithmItem> b;
+        list<Absyn.AlgorithmItem> b,b3;
         list<Algorithm.Statement> b_alg;   
         list<Exp.Statement> b_alg_2;
 
-        list<DAE.Element> dae1;
+        list<DAE.Element> dae1,dae1_2;
         list<Exp.DAEElement> dae2;
         Exp.DAEElement b_alg_dae;
         Absyn.Exp res;
@@ -592,10 +598,16 @@ algorithm
 			  Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{}), ClassInf.UNKNOWN("temp"),
 			  ld_mod,{},impl);
     
+        //----------------------------------------------------------------------
+        // The instantiation of the components may have produced some equations
+        (b3,dae1_2) = Convert.fromDAEeqsToAbsynAlg(dae1,{},{});
+        b = listAppend(b3,b);
+        //----------------------------------------------------------------------   
+      
 				// Convert into Exp records   
-				dae2 = Convert.fromDAEElemsToExpElems(dae1,{});
-           
-			 (cache,b_alg) = Inst.instAlgorithmitems(cache,env2,Prefix.NOPRE(),b,true);	
+       dae2 = Convert.fromDAEElemsToExpElems(dae1_2,{});
+       
+       (cache,b_alg) = Inst.instAlgorithmitems(cache,env2,Prefix.NOPRE(),b,true);	
        
        // Convert into Exp records
  			 b_alg_2 = Convert.fromAlgStatesToExpStates(b_alg,{});
@@ -604,8 +616,8 @@ algorithm
          
        (cache,res2,prop as Types.PROP(_,_),st) = elabExp(cache,env2,res,impl,st,doVect);  
              
-      then (cache,Exp.VALUEBLOCK(dae2,b_alg_dae,res2),prop,st);    
-        
+      then (cache,Exp.VALUEBLOCK(dae2,b_alg_dae,res2),prop,st); 
+            
     case (cache,env,e,_,_,_)
       equation 
         Debug.fprint("failtrace", "- elab_exp failed: ");
