@@ -127,6 +127,9 @@ public function simulationCg
 end simulationCg;
 
 public function simulationCodeTarget
+"@author adrpo
+ returns: 'gcc' or 'msvc'
+ usage: omc [+target=gcc|msvc], default to 'gcc'."
   output String outCodeTarget;
 
   external "C" ;
@@ -142,7 +145,21 @@ public function versionRequest
   output Boolean outBoolean;
   
   external "C";
-  end versionRequest;
+end versionRequest;
+
+/* 
+ * adrpo 2007-06-11
+ * returns true if MetaModelica grammar is accepted
+ * returns false if only Modelica grammar is accepted
+ */
+public function acceptMetaModelicaGrammar
+"@author adrpo
+ returns: true if MetaModelica grammar is accepted or false otherwise
+ usage: omc [+g=Modelica|MetaModelica], default to 'Modelica'."
+  output Boolean outBoolean;
+  
+  external "C";
+end acceptMetaModelicaGrammar;
 
 end RTOpts;
 

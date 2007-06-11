@@ -72,6 +72,14 @@ int simulation_cg;
 int silent;
 char* simulation_code_target = "gcc";
 
+/* 
+ * adrpo 2007-06-11
+ * flag for accepting only Modelica grammar or MetaModelica grammar 
+ */
+#define GRAMMAR_MODELICA 0
+#define GRAMMAR_METAMODELICA 1
+int acceptedGrammar = GRAMMAR_MODELICA; 
+
 /*
  * @author adrpo
  * @date 2007-02-08
@@ -95,6 +103,7 @@ void RTOpts_5finit(void)
   silent = 0;
   version_request = 0;
   corbaSessionName = 0;
+  acceptedGrammar = GRAMMAR_MODELICA;
 }
 
 /* 
@@ -232,106 +241,119 @@ RML_BEGIN_LABEL(RTOpts__args)
 			RML_TAILCALLK(rmlFC);
     	}
     } 
+    else if(strncmp(arg,"+g",2) == 0)
+    {
+        if (strlen(arg) >= 2 && strcmp(&arg[2], "=MetaModelica") == 0)
+            acceptedGrammar = GRAMMAR_METAMODELICA;
+        else if (strlen(arg) >= 2 && strcmp(&arg[2], "=Modelica") == 0)
+            acceptedGrammar = GRAMMAR_MODELICA;
+        else
+        {
+            fprintf(stderr, "# Wrong option: usage: omc [+g=Modelica|MetaModelica], default to 'Modelica'.\n");
+            RML_TAILCALLK(rmlFC);
+        }
+    } 
     else if (arg[0] == '+')
     {
       if (strlen(arg) < 2)
       {
-	fprintf(stderr, "# Unknown option: -\n");
-	RML_TAILCALLK(rmlFC);
+    	fprintf(stderr, "# Unknown option: -\n");
+    	RML_TAILCALLK(rmlFC);
       }
-      switch (arg[1]) {
-      case 't':
-	type_info = 1;
-	break;
-      case 'a':
-	split_arrays = 0;
-	type_info = 0;
-	break;
-      case 's':
-	simulation_cg = 1;
-	break;
-      case 'm':
-	modelica_output = 1;
-	break;
-      case 'p':
-	params_struct = 1;
-	break;
-      case 'q':
-	silent = 1;
-	break;
-	  case 'c':
-	if (arg[2]!='=' || setCorbaSessionName(&(arg[3])) != 0) 
-	{
-	  fprintf(stderr, "# Flag Usage:  +c=corbaSessionName\n") ;
-	  RML_TAILCALLK(rmlFC);
-	}
-	break;	  
-      case 'd':
-	if (arg[2]=='d') {
-	  debug_flag_info = 1;
-	  break;
-	}
-	if (arg[2]!='=' ||
-	    set_debug_flags(&(arg[3])) != 0) {
-	  fprintf(stderr, "# Flag Usage:  +d=flg1,flg2,...\n") ;
-	  fprintf(stderr, "#              +dd for debug flag info\n");
-	  RML_TAILCALLK(rmlFC);
-	}
-	break;
-      case 'n':
-	if (arg[2] != '=') {
-	  fprintf(stderr, "# Flag Usage:  +n=<no. of proc>") ;
-	  RML_TAILCALLK(rmlFC);
-	}
-	nproc = atoi(&arg[3]);
-	if (nproc == 0) {
-	  fprintf(stderr, "Error, integer value expected for number of processors.\n") ;
-	  RML_TAILCALLK(rmlFC);
-	} 
-	break;
-      case 'l':
-	if (arg[2] != '=') {
-	  fprintf(stderr, "# Flag Usage:  +l=<latency value>") ;
-	  RML_TAILCALLK(rmlFC);
-	}
-	latency = (double)atoi(&arg[3]); /* ,NULL); */
-	if (latency == 0.0) {
-	  fprintf(stderr, "Error, integer expected for latency.\n") ;
-	  RML_TAILCALLK(rmlFC);
-	} 
-	break;
-      case 'b':
-	if (arg[2] != '=') {
-	  fprintf(stderr, "# Flag Usage:  +b=<bandwidth value>") ;
-	  RML_TAILCALLK(rmlFC);
-	}
-	bandwidth = (double)atoi(&arg[3]);
-	if (bandwidth == 0.0) {
-	  fprintf(stderr, "Error, integer expected for bandwidth.\n") ;
-	  RML_TAILCALLK(rmlFC);
-	} 
-	break;
-	// Which level of algebraic elimination to use.
-	  case 'e':
-	if (arg[2] != '=') {
-	  fprintf(stderr, "# Flag Usage:  +e=<algebraic_elimination_level 0, 1, 2(default) or 3>") ;
-	  RML_TAILCALLK(rmlFC);
-	}
-	elimination_level = (int)atoi(&arg[3]);
-	if (elimination_level < 0 || elimination_level > 3) {
-		elimination_level = 2;
-	  fprintf(stderr, "Warning, wrong value of elimination level, will use default = %d\n",elimination_level) ;
-	} 
-	break;
-      default:
-	fprintf(stderr, "# Unknown option: %s\n", arg);
-	RML_TAILCALLK(rmlFC);
+      switch (arg[1]) 
+      {
+          case 't':
+    	type_info = 1;
+    	break;
+          case 'a':
+    	split_arrays = 0;
+    	type_info = 0;
+    	break;
+          case 's':
+    	simulation_cg = 1;
+    	break;
+          case 'm':
+    	modelica_output = 1;
+    	break;
+          case 'p':
+    	params_struct = 1;
+    	break;
+          case 'q':
+    	silent = 1;
+    	break;
+    	  case 'c':
+    	if (arg[2]!='=' || setCorbaSessionName(&(arg[3])) != 0) 
+    	{
+    	  fprintf(stderr, "# Flag Usage:  +c=corbaSessionName\n") ;
+    	  RML_TAILCALLK(rmlFC);
+    	}
+    	break;	  
+          case 'd':
+    	if (arg[2]=='d') {
+    	  debug_flag_info = 1;
+    	  break;
+    	}
+    	if (arg[2]!='=' ||
+    	    set_debug_flags(&(arg[3])) != 0) {
+    	  fprintf(stderr, "# Flag Usage:  +d=flg1,flg2,...\n") ;
+    	  fprintf(stderr, "#              +dd for debug flag info\n");
+    	  RML_TAILCALLK(rmlFC);
+    	}
+    	break;
+          case 'n':
+    	if (arg[2] != '=') {
+    	  fprintf(stderr, "# Flag Usage:  +n=<no. of proc>") ;
+    	  RML_TAILCALLK(rmlFC);
+    	}
+    	nproc = atoi(&arg[3]);
+    	if (nproc == 0) {
+    	  fprintf(stderr, "Error, integer value expected for number of processors.\n") ;
+    	  RML_TAILCALLK(rmlFC);
+    	} 
+    	break;
+          case 'l':
+    	if (arg[2] != '=') {
+    	  fprintf(stderr, "# Flag Usage:  +l=<latency value>") ;
+    	  RML_TAILCALLK(rmlFC);
+    	}
+    	latency = (double)atoi(&arg[3]); /* ,NULL); */
+    	if (latency == 0.0) {
+    	  fprintf(stderr, "Error, integer expected for latency.\n") ;
+    	  RML_TAILCALLK(rmlFC);
+    	} 
+    	break;
+          case 'b':
+    	if (arg[2] != '=') {
+    	  fprintf(stderr, "# Flag Usage:  +b=<bandwidth value>") ;
+    	  RML_TAILCALLK(rmlFC);
+    	}
+    	bandwidth = (double)atoi(&arg[3]);
+    	if (bandwidth == 0.0) {
+    	  fprintf(stderr, "Error, integer expected for bandwidth.\n") ;
+    	  RML_TAILCALLK(rmlFC);
+    	} 
+    	break;
+    	// Which level of algebraic elimination to use.
+    	  case 'e':
+    	if (arg[2] != '=') {
+    	  fprintf(stderr, "# Flag Usage:  +e=<algebraic_elimination_level 0, 1, 2(default) or 3>") ;
+    	  RML_TAILCALLK(rmlFC);
+    	}
+    	elimination_level = (int)atoi(&arg[3]);
+    	if (elimination_level < 0 || elimination_level > 3) {
+    		elimination_level = 2;
+    	  fprintf(stderr, "Warning, wrong value of elimination level, will use default = %d\n",elimination_level) ;
+    	} 
+    	break;
+          default:
+    	fprintf(stderr, "# Unknown option: %s\n", arg);
+    	RML_TAILCALLK(rmlFC);
+          }
+        }
+        else
+          res = (void*)mk_cons(RML_CAR(args), res);
+        args = RML_CDR(args);
       }
-    }
-    else
-      res = (void*)mk_cons(RML_CAR(args), res);
-    args = RML_CDR(args);
-  }
 
   rmlA0 = res;
   RML_TAILCALLK(rmlSC);
@@ -466,3 +488,16 @@ RML_BEGIN_LABEL(RTOpts__versionRequest)
 }
 RML_END_LABEL
 
+/* 
+ * adrpo 2007-06-11
+ * flag for accepting only Modelica grammar or also MetaModelica grammar 
+ */
+RML_BEGIN_LABEL(RTOpts__acceptMetaModelicaGrammar)
+{
+    if (acceptedGrammar == GRAMMAR_METAMODELICA)
+        rmlA0 = RML_PRIM_MKBOOL(RML_TRUE);
+    else 
+        rmlA0 = RML_PRIM_MKBOOL(RML_FALSE);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
