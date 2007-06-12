@@ -2,14 +2,15 @@ CC=gcc
 CXX=g++
 
 ANTLR_HOME = /home/adrpo/dev/antlr-2.7.7
+CLASSPATH  = "c:\bin\cygwin\home\adrpo\dev\antlr-2.7.7\antlr.jar" 
 
 ANTLR_INCP = -I${ANTLR_HOME}/lib/cpp
 ANTLR_LIBP = -L${ANTLR_HOME}/lib/cpp/src
-CLASSPATH    = $(ANTLR_HOME)/antlr.jar
 
-XERCESC_HOME = /home/adrpo/dev/xercesc
+XERCESC_HOME = /usr
 XERCESC_INCP = -I${XERCESC_HOME}/include
 XERCESC_LIBP = -L${XERCESC_HOME}/lib
+
 
 PARSE_INCP = -I"./" ${ANTLR_INCP} ${XERCESC_INCP}
 PARSE_LIBP = -L"./" ${ANTLR_LIBP} ${XERCESC_LIBP}
@@ -21,7 +22,7 @@ CFLAGS = $(INCP) -g -Wall -DDEBUG -fpic -w -O -DAPP_NO_THREADS -DXML_USE_NO_THRE
 CXXFLAGS = $(CFLAGS)
 LINKFLAGS = $(LIBP)
 
-LIBS = -lantlr -lmodelica_parser -lxerces-c
+LIBS = -lantlr -lmodelica_parser -lxerces-c25.dll
 
 DIRWALK_OBJS = dirwalk.o
 
@@ -40,10 +41,10 @@ ANTLR = java -cp $(CLASSPATH) antlr.Tool
 all : parser main
 
 parser:
-	$(MAKE) -f Makefile_parser
+	$(MAKE) -f Makefile_parser.cygwin
 
 $(walkergen): walker.g modelica_parserTokenTypes.txt
-	$(ANTLR) $(ANTLRFLAGS) $<
+	$(ANTLR) $<
 
 dirwalk.o: dirwalk.cpp dirwalk.h
 
@@ -55,7 +56,7 @@ clean:
 
 reallyclean: clean
 	rm -f $(walkergen) modelica_parserTokenTypes.txt
-	$(MAKE) -f Makefile_parser reallyclean
+	$(MAKE) -f Makefile_parser.cygwin reallyclean
 
 
 

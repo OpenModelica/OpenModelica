@@ -5,7 +5,7 @@ AR=ar -r
 ANTLR_HOME=/home/adrpo/dev/antlr-2.7.7
 INCLUDES=-I${ANTLR_HOME}/lib/cpp
 LIBP=-L${ANTLR_HOME}/lib/cpp/src
-CLASSPATH=$(ANTLR_HOME)/antlr.jar
+CLASSPATH="c:\bin\cygwin\home\adrpo\dev\antlr-2.7.7\antlr.jar"
 
 CFLAGS =-g -Wall $(INCLUDES) -D DEBUG
 CXXFLAGS = $(CFLAGS)
