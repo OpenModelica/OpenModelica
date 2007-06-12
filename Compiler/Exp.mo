@@ -94,7 +94,11 @@ uniontype Type "- Basic types
     Type ty;
     list<Option<Integer>> arrayDimensions "arrayDimensions" ;
   end T_ARRAY;
-
+  
+  record T_LIST 
+    Type ty; 
+  end T_LIST;
+  
 end Type;
 
 public 

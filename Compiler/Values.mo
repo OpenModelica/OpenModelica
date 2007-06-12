@@ -82,6 +82,10 @@ uniontype Value
   record ARRAY
     list<Value> valueLst;
   end ARRAY;
+  
+  record LIST 
+    list<Value> valueLst;
+  end LIST;
 
   record TUPLE
     list<Value> valueLst;
@@ -140,6 +144,12 @@ algorithm
         vallst2 = typeConvert(from, to, vrest);
       then
         (ARRAY(vallst) :: vallst2);
+    case (from,to,(LIST(valueLst = vals) :: vrest))
+      equation 
+        vallst = typeConvert(from, to, vals);
+        vallst2 = typeConvert(from, to, vrest);
+      then
+        (LIST(vallst) :: vallst2);    
   end matchcontinue;
 end typeConvert;
 
@@ -174,6 +184,7 @@ algorithm
     case (STRING(string = _)) then false; 
     case (BOOL(boolean = _)) then false; 
     case (TUPLE(valueLst = _)) then false; 
+    case (LIST(valueLst = _)) then false;   
     case (ARRAY(valueLst = _)) then true; 
   end matchcontinue;
 end isArray;
@@ -249,6 +260,13 @@ algorithm
       then
         res;
     case ((ARRAY(valueLst = lst) :: xs))
+      equation 
+        s1 = unparseValueNumbers(lst);
+        s2 = unparseValueNumbers(xs);
+        res = stringAppend(s1, s2);
+      then
+        res;
+    case ((LIST(valueLst = lst) :: xs))
       equation 
         s1 = unparseValueNumbers(lst);
         s2 = unparseValueNumbers(xs);
@@ -525,6 +543,14 @@ algorithm
         str = stringAppend(s4, " \n");
       then
         str;
+    case ((LIST(valueLst = vallst) :: xs))
+      equation 
+        s1 = unparseDescription(xs);
+        s2 = unparseDescription(vallst);
+        s4 = stringAppend(s2, s1);
+        str = stringAppend(s4, " \n");
+      then
+        str;   
     case ({}) then ""; 
   end matchcontinue;
 end unparseDescription;
@@ -1240,6 +1266,13 @@ algorithm
     case BOOL(boolean = false) then "false"; 
     case BOOL(boolean = true) then "true"; 
     case ARRAY(valueLst = vs)
+      equation 
+        s = valListString(vs);
+        s_1 = stringAppend("{", s);
+        s_2 = stringAppend(s_1, "}");
+      then
+        s_2;
+    case LIST(valueLst = vs)
       equation 
         s = valListString(vs);
         s_1 = stringAppend("{", s);
