@@ -140,10 +140,6 @@ uniontype TType "-TType contains the actual type"
     ArrayDim arrayDim "arrayDim" ;
     Type arrayType "arrayType" ;
   end T_ARRAY;
-  
-  record T_LIST 
-    Type listType "listType";    
-  end T_LIST;
 
   record T_COMPLEX
     ClassInf.State complexClassType "complexClassType ; The type of. a class" ;
@@ -703,12 +699,7 @@ algorithm
         tp = typeOfValue(v);
         dim1 = listLength((v :: vs));
       then
-        ((T_ARRAY(DIM(SOME(dim1)),tp),NONE)); 
-    case ((w as Values.LIST(valueLst = (v :: _))))
-      equation 
-        tp = typeOfValue(v);
-      then
-        ((T_LIST(tp),NONE)); 
+        ((T_ARRAY(DIM(SOME(dim1)),tp),NONE));
     case ((w as Values.TUPLE(valueLst = vs)))
       equation 
         ts = Util.listMap(vs, typeOfValue);
@@ -745,8 +736,7 @@ algorithm
     case ((T_STRING(varLstString = _),_)) then true; 
     case ((T_BOOL(varLstBool = _),_)) then true; 
     case ((T_ENUM(),_)) then true; 
-    case ((T_ARRAY(arrayDim = _),_)) then false;
-    case ((T_LIST(_),_)) then false;   
+    case ((T_ARRAY(arrayDim = _),_)) then false; 
     case ((T_COMPLEX(complexClassType = _),_)) then false; 
     case ((T_ENUMERATION(names = _),_)) then false; 
   end matchcontinue;
@@ -829,8 +819,7 @@ algorithm
     case ((T_REAL(varLstReal = _),_),(T_REAL(varLstReal = _),_)) then true; 
     case ((T_STRING(varLstString = _),_),(T_STRING(varLstString = _),_)) then true; 
     case ((T_BOOL(varLstBool = _),_),(T_BOOL(varLstBool = _),_)) then true; 
-    case ((T_ENUM(),_),(T_ENUM(),_)) then true;
-    case ((T_LIST(_),_),(T_LIST(_),_)) then true;    
+    case ((T_ENUM(),_),(T_ENUM(),_)) then true; 
     case ((T_ENUMERATION(names = (l1 :: rest1),varLst = vl1),p1),(T_ENUMERATION(names = (l2 :: rest2),varLst = vl2),p2))
       equation 
         equality(l2 = l1);
@@ -1012,13 +1001,6 @@ algorithm
         ty_1 = (T_ARRAY(dim,ty),NONE);
       then
         VAR(n,attr,prot,ty_1,bnd);
-    case ((T_LIST(listType = (T_COMPLEX(complexClassType = st,complexVarLst = cs,complexTypeOption = bc),_)),_),id)
-      equation 
-        VAR(n,attr,prot,ty,bnd) = lookupComponent2(cs, id);
-        ty_1 = (T_LIST(ty),NONE);
-      then
-        VAR(n,attr,prot,ty_1,bnd);
-
     case (_,id) /* Print.print_buf \"- Looking up \" &
 	Print.print_buf id &
 	Print.print_buf \" in noncomplex type\\n\" */  then fail(); 
@@ -1398,11 +1380,6 @@ algorithm
         res = Util.stringAppendList({tys,"[",dims,"]"});
       then
         res;
-    case ((t as (T_LIST(_),_)))
-      equation 
-        res = "LIST";
-      then
-        res;    
     case (((t as T_COMPLEX(complexClassType = ClassInf.RECORD(string = name),complexVarLst = vs,complexTypeOption = bc)),_))
       local TType t;
       equation 
@@ -1560,13 +1537,6 @@ algorithm
         str = Util.stringAppendList({"array[", s1,", of type",s2,"]"});
       then
         str;
-    case ((T_LIST(listType = t),_))
-      equation 
-        s2 = printTypeStr(t);
-        str = Util.stringAppendList({"list[of type",s2,"]"});
-      then
-        str;    
-        
     case ((T_FUNCTION(funcArg = params,funcResultType = restype),_))
       equation 
         s1 = printParamsStr(params);
@@ -2308,11 +2278,6 @@ algorithm
     case ((T_REAL(varLstReal = _),_)) then "Real"; 
     case ((T_STRING(varLstString = _),_)) then "String"; 
     case ((T_BOOL(varLstBool = _),_)) then "Boolean"; 
-    case ((T_LIST(ty),_)) 
-      equation 
-        tystr = getTypeName(ty);
-        str = Util.stringAppendList({"list<",tystr,">"});
-      then str;
     case ((T_COMPLEX(complexClassType = st),_))
       equation 
         n = ClassInf.getStateName(st);
@@ -2547,11 +2512,7 @@ algorithm
         (_,dims) = flattenArrayTypeOpt(t);
       then
         Exp.T_ARRAY(t_1,dims);
-    case ((T_LIST(et),_))
-      equation 
-        t_1 = elabType(et);
-      then
-        Exp.T_LIST(t_1);
+
     // Complext type that is subtype of primitive type.
     case ( (T_COMPLEX(_,_,SOME(t)),_))
     then elabType(t);
@@ -3319,11 +3280,6 @@ algorithm
       then
         exps;
     case T_ARRAY(arrayDim = dim,arrayType = ty)
-      equation 
-        exps = getAllExps(ty);
-      then
-        exps;
-    case T_LIST(listType = ty)
       equation 
         exps = getAllExps(ty);
       then
