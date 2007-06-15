@@ -7991,6 +7991,7 @@ protected function getClassInformation "function: getClassInformation
   output String res_1;
   Absyn.Path path;
   String name,file,strPartial,strFinal,strEncapsulated,res,cmt,str_readonly,str_sline,str_scol,str_eline,str_ecol,res_1;
+  String dim_str;
   Boolean partial_,final_,encapsulated_,isReadOnly;
   Absyn.Restriction restr;
   Absyn.ClassDef cdef;
@@ -8008,11 +8009,29 @@ algorithm
   str_scol := intString(sc);
   str_eline := intString(el);
   str_ecol := intString(ec);
+  dim_str := getClassDimensions(cdef);
   res_1 := Util.stringAppendList(
           {"{\"",res,"\",",cmt,",\"",file,"\",{",strPartial,",",
           strFinal,",",strEncapsulated,"},{\"",str_readonly,"\",",str_sline,",",
-          str_scol,",",str_eline,",",str_ecol,"}}"}) "composing the final returned string" ;
+          str_scol,",",str_eline,",",str_ecol,"},",dim_str,"}"}) "composing the final returned string" ;
 end getClassInformation;
+
+protected function getClassDimensions "return the dimensions of a class 
+as vector of dimension sizes in a string.
+Note: A class can only have dimensions if it is a short class definition.
+"
+  input Absyn.ClassDef cdef;
+  output String str;
+algorithm
+  str := matchcontinue(cdef)
+  local Absyn.ArrayDim ad;
+    case(Absyn.DERIVED(typeSpec=Absyn.TPATH(arrayDim=SOME(ad)))) equation
+      str = "{"+& Util.stringDelimitList(Util.listMap(ad,Dump.printSubscriptStr),",")
+      +& "}";
+    then str;
+    case(_) then "{}";      
+  end matchcontinue;  
+end getClassDimensions;
 
 protected function getClassAttributes "function: getClassAttributes
   author: Adrian Pop, 2006-02-24
@@ -13289,6 +13308,105 @@ algorithm
   end matchcontinue;
 end getNthComponentInElementitems;
 
+protected function getComponentInfo "function: getComponentInfo
+  
+   Thisfunction takes an `Element\' and returns a list of strings 
+   of comma separated values of the 
+   type and name and comment, and attributes of  of the component, 
+   If Element is not a component, the empty string is returned
+  
+   inputs: (Absyn.Element,
+              string, /* \"public\" or \"protected\" */
+              Env.Env) 
+   outputs: string list
+"
+  input Absyn.Element inElement;
+  input String inString;
+  input Env.Env inEnv;
+  output list<String> outStringLst;
+algorithm 
+  outStringLst:=
+  matchcontinue (inElement,inString,inEnv)
+    local
+      SCode.Class c;
+      list<Env.Frame> env_1,env;
+      Absyn.Path envpath,p_1,p;
+      String tpname,typename,final_,repl,inout_str,flow_str,variability_str,dir_str,str,access;
+      String typeAdStr;
+      list<String> names,lst,lst_1,dims;
+      Boolean r_1,f;
+      Option<Absyn.RedeclareKeywords> r;
+      Absyn.InnerOuter inout;
+      Absyn.ElementAttributes attr;
+      Option<Absyn.ArrayDim> typeAd;
+    case (Absyn.ELEMENT(final_ = f,redeclareKeywords = r,innerOuter = inout,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = Absyn.TPATH(p, typeAd),components = lst)),access,env)
+      equation 
+        (_,c,env_1) = Lookup.lookupClass(Env.emptyCache,env, p, true);
+        SOME(envpath) = Env.getEnvPath(env_1);
+        tpname = Absyn.pathLastIdent(p);
+        p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
+        typename = Absyn.pathString(p_1);
+        names = getComponentitemsName(lst);
+        dims = getComponentitemsDimension(lst);
+        lst = prefixTypename(typename, names);
+        final_ = Util.boolString(f);
+        r_1 = keywordReplaceable(r);
+        repl = Util.boolString(r_1);
+        inout_str = innerOuterStr(inout);
+        flow_str = attrFlowStr(attr);
+        variability_str = attrVariabilityStr(attr);
+        dir_str = attrDirectionStr(attr);
+        typeAdStr = arrayDimensionStr(typeAd);
+        typeAdStr =  attrDimensionStr(attr); 
+        str = Util.stringDelimitList(
+          {access,final_,flow_str,repl,variability_str,inout_str,
+          dir_str}, ", ");
+        lst_1 = suffixInfos(lst,dims,typeAdStr,str);
+      then
+        lst_1;
+    case (Absyn.ELEMENT(final_ = f,redeclareKeywords = r,innerOuter = inout,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = Absyn.TPATH(p, typeAd),components = lst)),access,env)
+      equation 
+        typename = Absyn.pathString(p);
+        names = getComponentitemsName(lst);
+        dims = getComponentitemsDimension(lst);
+        lst = prefixTypename(typename, names);
+        final_ = Util.boolString(f);
+        r_1 = keywordReplaceable(r);
+        repl = Util.boolString(r_1);
+        inout_str = innerOuterStr(inout);
+        flow_str = attrFlowStr(attr);
+        variability_str = attrVariabilityStr(attr);
+        dir_str = attrDirectionStr(attr);
+        str = Util.stringDelimitList(
+          {access,final_,flow_str,repl,variability_str,inout_str,
+          dir_str}, ", ");
+        typeAdStr =  attrDimensionStr(attr);           
+        lst_1 = suffixInfos(lst,dims,typeAdStr,str);
+      then
+        lst_1;
+    case (_,_,env) then {}; 
+    case (_,_,_)
+      equation 
+        print("get_component_info failed\n");
+      then
+        fail();
+  end matchcontinue;
+end getComponentInfo;
+
+protected function arrayDimensionStr "prints array dimensions to a string"
+input Option<Absyn.ArrayDim> ad;
+output String str;
+algorithm
+  str:=matchcontinue(ad) 
+  local Absyn.ArrayDim adim;
+    case(SOME(adim)) equation
+      str = Util.stringDelimitList(Util.listMap(adim,Dump.printSubscriptStr),",");
+    then str;
+    case(_) then "";
+  end matchcontinue;
+end arrayDimensionStr; 
+
+       
 protected function getComponentsInfo "function: getComponentsInfo
  
   Helperfunction to get_components.
@@ -13365,83 +13483,6 @@ algorithm
   end matchcontinue;
 end getComponentsInfo2;
 
-protected function getComponentInfo "function: getComponentInfo
-  
-   Thisfunction takes an `Element\' and returns a list of strings 
-   of comma separated values of the 
-   type and name and comment, and attributes of  of the component, 
-   If Element is not a component, the empty string is returned
-  
-   inputs: (Absyn.Element,
-              string, /* \"public\" or \"protected\" */
-              Env.Env) 
-   outputs: string list
-"
-  input Absyn.Element inElement;
-  input String inString;
-  input Env.Env inEnv;
-  output list<String> outStringLst;
-algorithm 
-  outStringLst:=
-  matchcontinue (inElement,inString,inEnv)
-    local
-      SCode.Class c;
-      list<Env.Frame> env_1,env;
-      Absyn.Path envpath,p_1,p;
-      String tpname,typename,final_,repl,inout_str,flow_str,variability_str,dir_str,str,access;
-      list<String> names,lst,lst_1;
-      Boolean r_1,f;
-      Option<Absyn.RedeclareKeywords> r;
-      Absyn.InnerOuter inout;
-      Absyn.ElementAttributes attr;
-    case (Absyn.ELEMENT(final_ = f,redeclareKeywords = r,innerOuter = inout,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = Absyn.TPATH(p, _),components = lst)),access,env)
-      equation 
-        (_,c,env_1) = Lookup.lookupClass(Env.emptyCache,env, p, true);
-        SOME(envpath) = Env.getEnvPath(env_1);
-        tpname = Absyn.pathLastIdent(p);
-        p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
-        typename = Absyn.pathString(p_1);
-        names = getComponentitemsName(lst);
-        lst = prefixTypename(typename, names);
-        final_ = Util.boolString(f);
-        r_1 = keywordReplaceable(r);
-        repl = Util.boolString(r_1);
-        inout_str = innerOuterStr(inout);
-        flow_str = attrFlowStr(attr);
-        variability_str = attrVariabilityStr(attr);
-        dir_str = attrDirectionStr(attr);
-        str = Util.stringDelimitList(
-          {access,final_,flow_str,repl,variability_str,inout_str,
-          dir_str}, ", ");
-        lst_1 = suffixInfos(lst, str);
-      then
-        lst_1;
-    case (Absyn.ELEMENT(final_ = f,redeclareKeywords = r,innerOuter = inout,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = Absyn.TPATH(p, _),components = lst)),access,env)
-      equation 
-        typename = Absyn.pathString(p);
-        names = getComponentitemsName(lst);
-        lst = prefixTypename(typename, names);
-        final_ = Util.boolString(f);
-        r_1 = keywordReplaceable(r);
-        repl = Util.boolString(r_1);
-        inout_str = innerOuterStr(inout);
-        flow_str = attrFlowStr(attr);
-        variability_str = attrVariabilityStr(attr);
-        dir_str = attrDirectionStr(attr);
-        str = Util.stringDelimitList(
-          {access,final_,flow_str,repl,variability_str,inout_str,
-          dir_str}, ", ");
-        lst_1 = suffixInfos(lst, str);
-      then
-        lst_1;
-    case (_,_,env) then {}; 
-    case (_,_,_)
-      equation 
-        print("get_component_info failed\n");
-      then
-        fail();
-  end matchcontinue;
-end getComponentInfo;
 
 protected function keywordReplaceable "function: keywordReplaceable 
  
@@ -13563,6 +13604,21 @@ algorithm
   end matchcontinue;
 end attrVariabilityStr;
 
+protected function attrDimensionStr "
+  Helperfunction to get_component_info, retrieve dimension as a 
+  string.
+"
+  input Absyn.ElementAttributes inElementAttributes;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inElementAttributes)
+      local Absyn.ArrayDim ad;
+    case (Absyn.ATTR(arrayDim = ad)) then arrayDimensionStr(SOME(ad));
+  end matchcontinue;
+end attrDimensionStr;
+
+
 protected function attrDirectionStr "function: attrDirectionStr
  
   Helperfunction to get_component_info, retrieve direction as a 
@@ -13579,25 +13635,64 @@ algorithm
   end matchcontinue;
 end attrDirectionStr;
 
-protected function suffixInfos "function: suffixInfos
- 
-  Helperfunction to get_component_info. Add suffix info to 
-  element names, etc.
+protected function getComponentitemsDimension "helper function to getComponentInfo
+Retrieves the dimensions of a list of components as a list of strings.
 "
-  input list<String> inStringLst;
-  input String inString;
+  input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   output list<String> outStringLst;
 algorithm 
   outStringLst:=
-  matchcontinue (inStringLst,inString)
+  matchcontinue (inAbsynComponentItemLst)
+    local
+      String s1,str,c1,s2;
+      list<String> lst,res;
+      Absyn.ComponentItem c2;
+      list<Absyn.ComponentItem> rest;
+      Absyn.ArrayDim ad;
+    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(arrayDim=ad))) :: (c2 :: rest))
+      equation 
+        lst = getComponentitemsName((c2 :: rest));
+        str = Util.stringDelimitList(Util.listMap(ad,Dump.printSubscriptStr),",");
+      then (str :: lst);
+    case ((_ :: rest))
+      equation 
+        res = getComponentitemsName(rest);
+      then
+        res;
+    case ({Absyn.COMPONENTITEM(component = Absyn.COMPONENT(arrayDim = ad))})
+      local String res;
+      equation 
+        res = Util.stringDelimitList(Util.listMap(ad,Dump.printSubscriptStr),",");
+      then
+        {res};
+    case ({_}) then {}; 
+  end matchcontinue;
+end getComponentitemsDimension;
+
+protected function suffixInfos "function: suffixInfos
+ 
+  Helperfunction to get_component_info. Add suffix info (from each component) to 
+  element names, dimensions, etc.
+  
+"
+  input list<String> eltInfo;
+  input list<String> dims; 
+  input String typeAd;
+  input String suffix;
+  output list<String> outStringLst;
+algorithm 
+  outStringLst:=
+  matchcontinue (eltInfo,dims,typeAd,suffix)
     local
       list<String> res,rest;
       String str_1,str,suffix;
-    case ({},_) then {}; 
-    case ((str :: rest),suffix)
+      String dim,s1;
+    case ({},{},_,_) then {}; 
+    case ((str :: rest),dim::dims,typeAd,suffix)
       equation 
-        res = suffixInfos(rest, suffix);
-        str_1 = Util.stringAppendList({str,", ",suffix});
+        res = suffixInfos(rest, dims,typeAd,suffix);
+        s1 = Util.stringDelimitListNonEmptyElts({dim,typeAd},",");
+        str_1 = Util.stringAppendList({str,", ",suffix,",{",s1,"}"});
       then
         (str_1 :: res);
   end matchcontinue;

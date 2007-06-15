@@ -2250,7 +2250,7 @@ algorithm
   end matchcontinue;
 end printSubscript;
 
-protected function printSubscriptStr "function: printSubscriptStr
+public function printSubscriptStr "function: printSubscriptStr
  
   Prettyprints an Subscript to a string.
 "
@@ -3722,7 +3722,7 @@ algorithm
   end matchcontinue;
 end printFunctionArgs;
 
-protected function printFunctionArgsStr "function: printFunctionArgsStr
+public function printFunctionArgsStr "function: printFunctionArgsStr
  
   Prettyprint FunctionArgs to a string.
 "
