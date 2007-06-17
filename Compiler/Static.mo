@@ -81,6 +81,7 @@ public import Values;
 public import Interactive;
 public import Algorithm;
 public import Convert;
+public import MetaUtil;
 
 public 
 type Ident = String;
@@ -404,6 +405,23 @@ algorithm
          /* TODO elseif part */ 
       then
         (cache,e,prop,st_3);
+        
+       /*--------------------------------*/ 
+       /* Part of MetaModelica extension. KS */ 
+   /*     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect)
+      local Exp.Exp e;
+          equation 
+            true = RTOpts.acceptMetaModelicaGrammar();
+            (cache,env,args,nargs) = MetaUtil.fixListConstructorsInArgs(cache,env,fn,args,nargs);
+            Debug.fprintln("sei", "elab_exp CALL...") "Function calls PA. Only positional arguments are elaborated for now. TODO: Implement elaboration of named arguments." ;
+            (cache,e,prop,st_1) = elabCall(cache,env, fn, args, nargs, impl, st);
+            c = Types.propAllConst(prop);
+            (cache,e_1,prop_1) = cevalIfConstant(cache,e, prop, c, impl, env);
+            Debug.fprintln("sei", "elab_exp CALL done");
+          then
+            (cache,e_1,prop_1,st_1);    */
+     /*--------------------------------*/   
+        
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect)
       local Exp.Exp e;
       equation 
@@ -617,8 +635,68 @@ algorithm
        (cache,res2,prop as Types.PROP(_,_),st) = elabExp(cache,env2,res,impl,st,doVect);  
              
       then (cache,Exp.VALUEBLOCK(dae2,b_alg_dae,res2),prop,st); 
-            
-    case (cache,env,e,_,_,_)
+ 
+       //-------------------------------------	
+       // Part of the MetaModelica extension. KS  
+       // MetaModelica list cons	      
+   case (cache,env,Absyn.CONS(e1,Absyn.ARRAY(es)),impl,st,doVect)
+     local  
+       list<Types.Properties> propList; 
+       Boolean correctTypes;  
+       Types.Type t;
+     equation     
+       (cache,e1_1,prop2 as Types.PROP(t,_),st_1) = elabExp(cache,env, e1, impl, st,doVect);
+       (cache,es_1,propList,st_2) = elabExpList(cache,env, es, impl, st_1,doVect); 
+       correctTypes = MetaUtil.typeMatching(t,propList);  
+       true = correctTypes; 
+       es_1 = listAppend({e1_1},es_1); 
+       prop = Types.PROP((Types.T_LIST(t),NONE()),Types.C_VAR());
+     then (cache,Exp.LIST(es_1),prop,st_2);     
+             
+  case (cache,env,Absyn.CONS(e1,e2),impl,st,doVect)
+     local  
+       Boolean correctTypes;
+       Types.Type t;
+     equation     
+       (cache,e1_1,prop1 as Types.PROP(t,_),st_1) = elabExp(cache,env, e1, impl, st,doVect);
+       (cache,e2_1,prop2,st_1) = elabExp(cache,env, e2, impl, st,doVect);
+       correctTypes = MetaUtil.consMatch(prop1,prop2);
+       true = correctTypes; 
+       
+       // If the second expression is a Exp.LIST, then we can create a Exp.LIST 
+       // instead of Exp.CONS
+       exp = MetaUtil.simplifyListExp(e1_1,e2_1);
+       
+       prop = Types.PROP((Types.T_LIST(t),NONE()),Types.C_VAR()); 
+       
+     then (cache,exp,prop,st);   
+       
+       // The Absyn.LIST() node is used for list expressions in function call  
+       // An Absyn.ARRAY() node is transformed into an Absyn.LIST() when it
+       // occurs as an argument in a function call
+  case (cache,env,Absyn.LIST({}),impl,st,doVect)
+    local  
+      list<Types.Properties> propList; 
+      Boolean correctTypes;  
+      Types.Type t;
+    equation       
+      prop = Types.PROP((Types.T_LIST((Types.T_NOTYPE(),NONE())),NONE()),Types.C_VAR());
+    then (cache,Exp.LIST({}),prop,st);
+       
+  case (cache,env,Absyn.LIST(es),impl,st,doVect)
+    local  
+      list<Types.Properties> propList; 
+      Boolean correctTypes;  
+      Types.Type t;
+    equation       
+      (cache,es_1,propList as Types.PROP(t,_) :: _,st_2) = elabExpList(cache,env, es, impl, st,doVect); 
+      correctTypes = MetaUtil.typeMatching(t,propList);  
+      true = correctTypes; 
+      prop = Types.PROP((Types.T_LIST(t),NONE()),Types.C_VAR());
+    then (cache,Exp.LIST(es_1),prop,st_2);     
+       // ----------------------------------
+       
+   case (cache,env,e,_,_,_)
       equation 
         Debug.fprint("failtrace", "- elab_exp failed: ");
         expstr = Debug.fcallret("failtrace", Dump.dumpExpStr, e, "");
@@ -633,7 +711,8 @@ algorithm
 end elabExp;
 
 public function fromEquationsToAlgAssignments "function: fromEquationsToAlgAssignments
-  Converts equations to algorithm assignments"
+  Converts equations to algorithm assignments
+  "
 	input list<Absyn.EquationItem> eqsIn;
 	input list<Absyn.AlgorithmItem> accList;
 	output list<Absyn.AlgorithmItem> algsOut;
@@ -673,6 +752,59 @@ algorithm
 		then algItem;
   end matchcontinue;
 end fromEquationToAlgAssignment;
+
+
+
+/* ------------------------------- */
+// MetaModelica
+public function elabListExp "function: elabExpList
+Function that elaborates the MetaModelica list type, 
+for instance list<Integer>.
+"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inExpList;
+  input Types.Properties inProp;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Boolean performVectorization;
+  output Env.Cache outCache;
+  output Exp.Exp outExp;
+  output Types.Properties outProperties;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm
+  (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption) := 
+  matchcontinue (inCache,inEnv,inExpList,inProp,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization)
+    local 
+      Env.Cache cache; 
+      Env.Env env; 
+      Boolean impl,doVect;
+      Option<Interactive.InteractiveSymbolTable> st; 
+      Types.Properties prop;
+    case (cache,env,{},prop,_,st,_) 
+      then (cache,Exp.LIST({}),prop,st);
+    case (cache,env,expList,prop as Types.PROP((Types.T_LIST(t),_),_),impl,st,doVect) 
+      local 
+        list<Absyn.Exp> expList; 
+        list<Exp.Exp> expExpList;  
+        Types.Type t; 
+        list<Boolean> boolList;
+        list<Types.Properties> propList;
+        Boolean correctTypes;
+      equation
+        (cache,expExpList,propList,st) = elabExpList(cache,env,expList,impl,st,doVect);
+        correctTypes = MetaUtil.typeMatching(t,propList); 
+        true = correctTypes;  
+      then 
+        (cache,Exp.LIST(expExpList),prop,st);
+    case (_,_,_,_,_,_,_)  
+      equation
+        Debug.fprint("failtrace", "- elabListExp failed, non-matching args in list constructor?");
+      then
+        fail();
+  end matchcontinue;
+end elabListExp; 
+/* ------------------------------- */
 
 
 protected function elabMatrixGetDimensions "function: elabMatrixGetDimensions

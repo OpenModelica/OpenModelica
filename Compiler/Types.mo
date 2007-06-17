@@ -141,6 +141,10 @@ uniontype TType "-TType contains the actual type"
     Type arrayType "arrayType" ;
   end T_ARRAY;
 
+  record T_LIST "MetaModelica list type"
+    Type listType "listType";    
+  end T_LIST;
+  
   record T_COMPLEX
     ClassInf.State complexClassType "complexClassType ; The type of. a class" ;
     list<Var> complexVarLst "complexVarLst ; The variables of a complex type" ;
@@ -710,7 +714,15 @@ algorithm
         vars = valuesToVars(vl, ids);
         cname_str = Absyn.pathString(cname);
       then
-        ((T_COMPLEX(ClassInf.RECORD(cname_str),vars,NONE),NONE));
+        ((T_COMPLEX(ClassInf.RECORD(cname_str),vars,NONE),NONE)); 
+        
+        // MetaModelica list type		
+    case ((w as Values.LIST(valueLst = (v :: _))))
+      equation 
+        tp = typeOfValue(v);
+      then
+        ((T_LIST(tp),NONE));
+      
     case (v)
       local Ident vs;
       equation 
@@ -738,7 +750,8 @@ algorithm
     case ((T_ENUM(),_)) then true; 
     case ((T_ARRAY(arrayDim = _),_)) then false; 
     case ((T_COMPLEX(complexClassType = _),_)) then false; 
-    case ((T_ENUMERATION(names = _),_)) then false; 
+    case ((T_ENUMERATION(names = _),_)) then false;  
+    case ((T_LIST(_),_)) then false;  // MetaModelica list type
   end matchcontinue;
 end basicType;
 
@@ -874,8 +887,13 @@ algorithm
       equation 
         true = subtypeTypelist(type_list1, type_list2);
       then
-        true;
+        true;   
         
+        /* Part of MetaModelica extension. KS */
+    case ((T_LIST((T_NOTYPE(),_)),_),(T_LIST(_),_)) then true;   // The empty list is represented with NO_TYPE()
+    case ((T_LIST(_),_),(T_LIST((T_NOTYPE(),_)),_)) then true;    
+    case ((T_LIST(t1),_),(T_LIST(t2),_)) then subtype(t1,t2); 
+      
     case (t1,t2) then false;   
   end matchcontinue;
 end subtype;
@@ -1418,7 +1436,18 @@ algorithm
         tystr = Util.stringDelimitList(tystrs, ", ");
         res = Util.stringAppendList({"(",tystr,")"});
       then
-        res;
+        res;   
+        
+        /* MetaModelica list */
+    case ((T_LIST(listType = ty),_))
+      local Type ty;
+      equation 
+        tystrs = Util.listMap({ty}, unparseType);
+        tystr = Util.stringDelimitList(tystrs, ", ");
+        res = Util.stringAppendList({"list<",tystr,">"});
+      then
+        res;    
+        
     case ((T_NOTYPE(),_)) then "#NOTYPE#"; 
     case ((T_ANYTYPE(anyClassType = _),_)) then "#ANYTYPE#"; 
     case ((T_ENUM(),_)) then "#T_ENUM#";
@@ -1549,7 +1578,17 @@ algorithm
         s1 = Util.stringDelimitList(Util.listMap(tys, printTypeStr),", ");
    			str = Util.stringAppendList({"(",s1,")"});        
       then
-        str;
+        str;  
+        
+        /* MetaModelica list */
+    case ((T_LIST(listType = ty),_))   
+      local Type ty;
+      equation 
+        s1 = Util.stringDelimitList(Util.listMap({ty}, printTypeStr),", ");
+   			str = Util.stringAppendList({"list<",s1,">"});        
+      then
+        str;    
+        
     case ((T_NOTYPE(),_))
       then
         "NOTYPE";
@@ -2291,7 +2330,15 @@ algorithm
         tystr = getTypeName(ty);
         str = Util.stringAppendList({tystr,"[",dimstr,"]"});
       then
-        str;
+        str; 
+        
+        /* MetaModelica type */
+    case ((T_LIST(ty),_))
+      equation 
+        n = getTypeName(ty);
+      then
+        n; 
+        
     case ((_,_)) then "Not nameable type or no type"; 
   end matchcontinue;
 end getTypeName;
@@ -2516,7 +2563,13 @@ algorithm
     // Complext type that is subtype of primitive type.
     case ( (T_COMPLEX(_,_,SOME(t)),_))
     then elabType(t);
-
+    
+        // MetaModelica list 	    
+    case ((T_LIST(t),_))    
+      equation
+        t_1 = elabType(t);  
+      then Exp.T_LIST(t_1);
+        
     case ((_,_)) then Exp.OTHER(); 
   end matchcontinue;
 end elabType;

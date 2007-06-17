@@ -93,7 +93,12 @@ uniontype Type "- Basic types
   record T_ARRAY
     Type ty;
     list<Option<Integer>> arrayDimensions "arrayDimensions" ;
-  end T_ARRAY;
+  end T_ARRAY;  
+  
+  // MetaModelica list type. MetaModelica extension. KS
+  record T_LIST 
+    Type ty;
+  end T_LIST;
 
 end Type;
 
@@ -225,7 +230,17 @@ uniontype Exp "Expressions
     list<DAEElement> localDecls;
     DAEElement body;
 		Exp result;	
-  end VALUEBLOCK;  
+  end VALUEBLOCK;   
+  
+  /* Part of MetaModelica extension. KS */
+  record LIST "MetaModelica list" 
+    list<Exp> valList; 
+  end LIST;  
+  
+  record CONS "MetaModelica list cons"  
+    Exp car; 
+    Exp cdr;
+  end CONS;  
   
 end Exp;
 
@@ -788,8 +803,6 @@ uniontype Else "An if statements can one or more `elseif\' branches and an
 
 end Else; 
 //-------------------------------------------
-
-
 
 
 public 
@@ -5735,7 +5748,29 @@ algorithm
         str = printExpStr(e);
         Print.printBuf(str);
       then
-        ();
+        ();  
+      
+        // MetaModelica list 
+    case (LIST(es),_)
+      local list<Exp> es;
+      equation 
+        Print.printBuf("<list>{");
+        printList(es, printExp, ",");
+        Print.printBuf("}");
+      then
+        ();  
+        
+        // MetaModelica list cons 
+    case (CONS(e1,e2),_)
+      equation 
+        Print.printBuf("cons(");
+        printExp(e1);
+        Print.printBuf(",");  
+        printExp(e2);
+        Print.printBuf(")");
+      then
+        ();    
+        
     case (_,_)
       equation 
         Print.printBuf("#UNKNOWN EXPRESSION# ----eee ");
@@ -6553,7 +6588,27 @@ algorithm
         iterstr = printExpStr(iterexp);
         str = Util.stringAppendList({"<reduction>",fs,"(",expstr," for ",id," in ",iterstr,")"});
       then
-        str;
+        str;    
+      
+      // MetaModelica list  
+    case (LIST(es))
+      local list<Exp> es;
+      equation 
+        s = printListStr(es, printExpStr, ",");
+        s_1 = stringAppend("list(", s);
+        s_2 = stringAppend(s_1, ")");
+      then
+        s_2;
+        
+        // MetaModelica list cons 
+    case (CONS(e1,e2))
+      equation   
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
+        s_2 = Util.stringAppendList({"cons(",s1,",",s2,")"});
+      then
+        s_2;      
+        
     case (_) then "#UNKNOWN EXPRESSION# ----eee "; 
   end matchcontinue;
 end printExp2Str;
@@ -8273,7 +8328,25 @@ algorithm
       equation 
         res = getCrefFromExp(e);
       then
-        res;
+        res; 
+           
+        /* MetaModelica list */
+    case (CONS(e1,e2))     
+      local list<list<ComponentRef>> res;
+      equation 
+        expl = {e1,e2};
+        res = Util.listMap(expl, getCrefFromExp); 
+        res2 = Util.listFlatten(res);
+      then res2; 
+        
+    case  (LIST(expl))  
+      local list<list<ComponentRef>> res;
+      equation
+        res = Util.listMap(expl, getCrefFromExp);
+        res2 = Util.listFlatten(res);
+      then res2;
+        /* --------------------- */    
+        
     case (_) then {}; 
   end matchcontinue;
 end getCrefFromExp;
@@ -8389,7 +8462,21 @@ algorithm
         elist = listAppend(a, {e1});
         res = getFunctionCallsList(elist);
       then
-        res;
+        res;   
+        
+        /* MetaModelica list */
+    case (CONS(e1,e2))   
+      equation 
+        elist = {e1,e2};
+        res = getFunctionCallsList(elist);
+      then res; 
+        
+    case  (LIST(elist))
+      equation
+        res = getFunctionCallsList(elist);
+      then res;
+        /* --------------------- */
+        
     case (_) then {}; 
   end matchcontinue;
 end getFunctionCalls;
@@ -8635,12 +8722,30 @@ algorithm
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
         ((REDUCTION(path_1,_,id_1,_),ext_arg_3)) = rel((e,ext_arg_2));
       then
-        ((REDUCTION(path_1,e1_1,id_1,e2_1),ext_arg_3));
+        ((REDUCTION(path_1,e1_1,id_1,e2_1),ext_arg_3));    
+            
+            /* MetaModelica list */
+    case ((e as CONS(e1,e2)),rel,ext_arg)   
+      equation 
+        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
+        ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
+        ((CONS(_,_),ext_arg_3)) = rel((e,ext_arg_2));
+      then
+        ((CONS(e1_1,e2_1),ext_arg_3)); 
+        
+     case ((e as LIST(expl)),rel,ext_arg)
+      equation
+        (expl_1,ext_arg_1) = Util.listFoldMap(expl, rel, ext_arg);
+        ((e_1,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((LIST(expl_1),ext_arg_2)); 
+        /* --------------------- */     
+        
     case (e,rel,ext_arg)
       equation 
         ((e_1,ext_arg_1)) = rel((e,ext_arg));
       then
-        ((e_1,ext_arg_1));
+        ((e_1,ext_arg_1));    
   end matchcontinue;
 end traverseExp;
 

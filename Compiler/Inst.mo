@@ -96,6 +96,8 @@ public import Types;
 public import Absyn;
 public import Algorithm;
 public import Patternm;
+public import MetaUtil;
+public import RTOpts;
 
 public type Prefix = Prefix.Prefix "
   These type aliases are introduced to make the code a little more
@@ -3459,7 +3461,7 @@ algorithm
       Option<Absyn.Comment> comment;
       Option<Types.EqMod> eq;
       list<DimExp> dims;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
+      tuple<Types.TType, Option<Absyn.Path>> ty,ty2;
       Types.Binding binding;
       Types.Var new_var;
       Env.Cache cache;
@@ -3597,6 +3599,104 @@ algorithm
       then
         (cache,dae,env_1,csets_1,ci_state,vars);
 
+        //------------------------------------------------------------------------
+        // The "MetaModelica list" case, part of a MetaModelica extension. KS
+        //------------------------------------------------------------------------
+    case (cache,env,mods,pre,csets,ci_state,((comp as SCode.COMPONENT(component = n,innerOuter=io,final_ = final_,replaceable_ = repl,protected_ = prot,
+      		attributes = (attr as SCode.ATTR(arrayDim = ad,flow_ = flow_,RW = acc,parameter_ = param,input_ = dir)),
+      		typeSpec = Absyn.TCOMPLEX(Absyn.IDENT("list"),Absyn.TPATH(t,_) :: _,_), mod = m,baseclass = bc,this = comment)),cmod),inst_dims,impl)  
+      local String s;
+        Boolean allreadyDeclared;
+        list<Types.Var> vars;  
+        Absyn.TypeSpec tSpec;
+      equation 
+        //true = RTOpts.acceptMetaModelicaGrammar();
+        // Fails if multiple decls not identical
+        allreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl); 
+        checkRecursiveDefinition(env,t);
+        vn = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,{})); 
+        //Debug.fprint(\"insttr\", \"Instantiating component \") &
+				//Debug.fprint(\"insttr\", n) & //Debug.fprint(\"insttr\", \"\\n\") &" 
+				
+				//The class definition is fetched from the environment. Then the set of modifications 
+				//is calculated. The modificions is the result of merging the modifications from 
+				//several sources. The modification stored with the class definition is put in the 
+				//variable `classmod\', the modification passed to the function_ is extracted and put 
+				//in the variable `mm\', and the modification that is included in the variable declaration 
+				//is in the variable `m\'.  All of these are merged so that the correct precedence 
+				//rules are followed." 
+        classmod = Mod.lookupModificationP(mods, t) ;
+        mm = Mod.lookupCompModification(mods, n);
+        
+        //The types in the environment does not have correct Binding.
+	   		//We must update those variables that is found in m into a new environment.
+        owncref = Absyn.CREF_IDENT(n,{})  ;
+        crefs = getCrefFromMod(m);
+        crefs2 = getCrefFromDim(ad);
+        crefs_1 = Util.listFlatten({crefs,crefs2});
+        crefs_2 = removeCrefFromCrefs(crefs_1, owncref);
+        (cache,env) = getDerivedEnv(cache,env, bc);
+        (cache,env2,csets) = updateComponentsInEnv(cache,mods, crefs_2, env, ci_state, csets, impl);
+				//Update the untyped modifiers to typed ones, and extract class and 
+				//component modifiers again. 
+        (cache,mods_1) = Mod.updateMod(cache,env2, pre, mods, impl) ;
+
+        //Refetch the component from environment, since attributes, etc.
+		  	//might have changed.. comp used in redeclare_type below...	  
+        (cache,_,SOME((comp,_)),_,_) = Lookup.lookupIdentLocal(cache,env2, n);
+        classmod_1 = Mod.lookupModificationP(mods_1, t);
+        mm_1 = Mod.lookupCompModification(mods_1, n);
+        (cache,m) = removeSelfModReference(cache,n,m); // Remove self-reference i.e. A a(x=a.y);
+        (cache,m_1) = Mod.elabMod(cache,env2, pre, m, impl);
+        mod = Mod.merge(classmod_1, mm_1, env2, pre);
+        mod1 = Mod.merge(mod, m_1, env2, pre);
+        mod1_1 = Mod.merge(cmod, mod1, env2, pre);
+
+				/* Apply redeclaration modifier to component */
+        (cache,SCode.COMPONENT(n,io,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,acc,param,dir)),tSpec,m,bc,comment),mod_1,env2_1,csets) 
+        = redeclareType(cache,mod1_1, comp, env2, pre, ci_state, csets, impl); 
+        t = evalTypeSpec(tSpec);
+                 
+        (cache,env_1) = getDerivedEnv(cache,env, bc);
+        (cache,cl,cenv) = Lookup.lookupClass(cache,env_1, t, true);
+				//If the element is `protected\', and an external modification 
+				//is applied, it is an error. 
+        checkProt(prot, mm_1, vn) ;
+        eq = Mod.modEquation(mod_1);
+				
+				// The variable declaration and the (optional) equation modification are inspected for array dimensions.
+        (cache,dims) = elabArraydim(cache,env2_1, owncref, t,ad, eq, impl, NONE,true)  ;
+        
+        //Instantiate the component 
+        (cache,compenv,dae,csets_1,ty) = instVar(cache,cenv, ci_state, mod_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io);    
+        
+        //---------------------------------
+        // Add the list type to the var 
+        ty = (Types.T_LIST(ty),NONE());  
+        dae = addListTypeToDAE(dae,ty);
+        //---------------------------------
+        
+				//The environment is extended (updated) with the new variable binding. 
+        (cache,binding) = makeBinding(cache,env2_1, attr, mod_1, ty) ;
+
+        //true in update_frame means the variable is now instantiated. 
+        new_var = Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding) ;
+
+        //type info present Now we can also put the binding into the dae.
+        //If the type is one of the simple, predifined types a simple variable 
+        //declaration is added to the DAE. 
+        env_1 = Env.updateFrameV(env2_1, new_var, Env.VAR_DAE(), compenv)  ;
+        vars = Util.if_(allreadyDeclared,{},{Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding)});
+        dae = Util.if_(allreadyDeclared,{},dae);
+        dae = Util.if_(ModUtil.isOuter(io),DAE.removeEquations(dae),dae);
+        // If an outer element, remove this variable from the DAE. Variable references will be bound to 
+        // corresponding inner element instead.
+        //dae2 = Util.if_(ModUtil.isOuter(io),{},dae);
+
+      then
+        (cache,dae,env_1,csets_1,ci_state,vars);
+        //------------------------------
+        
     // If the class lookup in the previous rule fails, this rule catches the error 
     // and prints an error message about the unknown class. 
     // Failure => ({},env,csets,ci_state,{}) 
@@ -3623,6 +3723,52 @@ algorithm
 end instElement;
 
 
+//------------------------------------------
+// Part of MetaModelica list extension. KS
+//------------------------------------------
+
+public function addListTypeToDAE "function: addListTypeToDAE"
+  input list<DAE.Element> daeElem;  
+  input Types.Type inType;
+  output list<DAE.Element> outElem; 
+algorithm 
+  outElem :=   
+  matchcontinue (daeElem,inType)
+    case (DAE.VAR(vn,kind,dir,prot,_,e,inst_dims,fl,lPath,dae_var_attr,comment,io,_) :: restList,t) 
+      local 
+        list<DAE.Element> daeE,restList; 
+        Exp.ComponentRef vn;
+        DAE.VarKind kind;
+        DAE.VarDirection dir;
+        DAE.VarProtection prot;
+        Option<Exp.Exp> e;
+        DAE.InstDims inst_dims;
+        DAE.Flow fl;
+        list<Absyn.Path> lPath;
+        Option<DAE.VariableAttributes> dae_var_attr;
+        Option<Absyn.Comment> comment;
+        Absyn.InnerOuter io;
+        Types.Type t;
+      equation
+        daeE = (DAE.VAR(vn,kind,dir,prot,DAE.LIST(),e,inst_dims,fl,lPath,dae_var_attr,comment,io,t) :: restList);
+      then daeE; 
+  end matchcontinue;
+end addListTypeToDAE;
+
+
+public function evalTypeSpec "function: evalTypeSpec"
+  input Absyn.TypeSpec typeSpec;
+  output Absyn.Path outPath;
+algorithm 
+  (outPath,listBool) := 
+  matchcontinue (typeSpec) 
+    local 
+      Absyn.Path tpath;
+    case (Absyn.TPATH(tpath, _)) then tpath; 
+    case (Absyn.TCOMPLEX(_,Absyn.TPATH(tpath,_) :: _,_)) then tpath;  
+  end matchcontinue;
+end evalTypeSpec; 
+//------------------------------------------
 
 protected function removeSelfModReference "Help function to elabMod, removes self-references in modifiers.
 For instance, A a(x = a.y)
@@ -4022,7 +4168,7 @@ protected function instVar "function: instVar
   input InstDims inInstDims;
   input Boolean inBoolean;
   input Option<Absyn.Comment> inAbsynCommentOption;
-  input Absyn.InnerOuter io;
+  input Absyn.InnerOuter io;  
   output Env.Cache outCache;
   output Env outEnv;
   output list<DAE.Element> outDAEElementLst;
@@ -4048,7 +4194,7 @@ algorithm
       Boolean impl;
       Option<Absyn.Comment> comment;
       Env.Cache cache;
-      Boolean prot;
+      Boolean prot,listBool;
    	// impl component environment dae elements for component Variables of userdefined type, 
    	// e.g. Point p => Real p{3}; These must be handled separately since even if they do not 
 	 	// appear to be an array, they can. Therefore we need to collect
@@ -4091,7 +4237,7 @@ protected function instVar2 "function: instVar2
   input InstDims inInstDims;
   input Boolean inBoolean;
   input Option<Absyn.Comment> inAbsynCommentOption;
-  input Absyn.InnerOuter io;
+  input Absyn.InnerOuter io;  
 	output Env.Cache outCache;
   output Env outEnv;
   output list<DAE.Element> outDAEElementLst;
@@ -4132,7 +4278,7 @@ algorithm
       Option<Integer> dimt;
       DimExp dim;
       Env.Cache cache;
-      Boolean prot;
+      Boolean prot,listBool;
        
     // Function variables with modifiers (outputs or local/protected variables)
     // For Functions we cannot always find dimensional sizes. e.g. 
@@ -4616,7 +4762,8 @@ algorithm
 	    information are instnatiated here to get the type. */ 
       equation 
         (cache,ty,SOME((SCode.COMPONENT(n,io,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,acc,param,dir)),Absyn.TPATH(t, _),m,bc,comment),cmod)),_) 
-        	= Lookup.lookupIdent(cache,env, id);
+        = Lookup.lookupIdent(cache,env, id);  
+        
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, t, false);
         crefs = getCrefFromMod(m);
         crefs2 = getCrefFromDim(ad);
@@ -6617,7 +6764,7 @@ protected function daeDeclare "function: daeDeclare
   input DAE.StartValue inStartValue;
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
   input Option<Absyn.Comment> inAbsynCommentOption;
-  input Absyn.InnerOuter io;
+  input Absyn.InnerOuter io;  
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   outDAEElementLst:=
@@ -6665,7 +6812,7 @@ protected function daeDeclare2 "function: daeDeclare2
   input DAE.StartValue inStartValue;
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
   input Option<Absyn.Comment> inAbsynCommentOption;
-	input Absyn.InnerOuter io;
+  input Absyn.InnerOuter io;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   outDAEElementLst:=
@@ -6728,7 +6875,7 @@ protected function daeDeclare3 "function: daeDeclare3
   input DAE.StartValue inStartValue;
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
   input Option<Absyn.Comment> inAbsynCommentOption;
-  input Absyn.InnerOuter io;
+  input Absyn.InnerOuter io;  
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   outDAEElementLst:=
@@ -6796,7 +6943,7 @@ protected function daeDeclare4 "function: daeDeclare4
   input DAE.StartValue inStartValue;
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
   input Option<Absyn.Comment> inAbsynCommentOption;
-  input Absyn.InnerOuter io;
+  input Absyn.InnerOuter io;  
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   outDAEElementLst:=
@@ -6817,7 +6964,8 @@ algorithm
       Integer dim;
       String s;
       Types.Type ty;
-      DAE.VarProtection prot;
+      DAE.VarProtection prot; 
+
     case (vn,ty as(Types.T_INTEGER(varLstInt = _),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) then {
           DAE.VAR(vn,kind,dir,prot,DAE.INT(),e,inst_dims,fl,{},dae_var_attr,
           comment,io,ty)}; 
@@ -6863,7 +7011,8 @@ algorithm
         s = Exp.printComponentRefStr(vn);
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {s});
       then
-        fail();
+        fail();  
+ 
     case (c,ty,_,_,_,_,_,_,_,_,_,_) then {}; 
   end matchcontinue;
 end daeDeclare4;
@@ -7097,6 +7246,47 @@ algorithm
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
         (cache,dae,env,csets_1,ci_state_1);
+        
+        
+        //------------------------------------------------------
+        // Part of the MetaModelica extension
+        /* equality equations cref = Array(...) */ 
+        // Should be removed??
+   // case (cache,env,mods,pre,csets,ci_state,SCode.EQ_EQUALS(e1 as Absyn.CREF(cr),Absyn.ARRAY(expList)),initial_,impl)
+    //  local Option<Interactive.InteractiveSymbolTable> c1,c2; 
+    //    list<Absyn.Exp> expList; 
+    //    Absyn.ComponentRef cr; 
+    //    Types.Properties cprop;
+    //  equation  
+        //true = RTOpts.acceptMetaModelicaGrammar();
+        
+        // If this is a list assignment, then the Absyn.ARRAY expression should 
+        // be evaluated to Exp.LIST
+     
+    //    (cache,_,cprop,_) = Static.elabCref(cache,env, cr, impl,false); 
+    //    true = MetaUtil.isList(cprop);
+	 			// Do static analysis and constant evaluation of expressions. 
+			  // Gives expression and properties 
+	      // (Type  bool | (Type  Const as (bool | Const list))).
+	      // For a function, it checks the funtion name. 
+	      // Also the function call\'s in parameters are type checked with
+	      // the functions definition\'s inparameters. This is done with
+	      // regard to the position of the input arguments. 
+
+        //  Returns the output parameters from the function.
+    //    (cache,e1_1,prop1,c1) = Static.elabExp(cache,env, e1, impl, NONE,true /*do vectorization*/); 
+                
+    //    (cache,e2_1,prop2,c2) = Static.elabListExp(cache,env, expList, cprop, impl, NONE,true/* do vectorization*/);
+        //(cache,e1_1,e2_1) = condenseArrayEquation(cache,env,e1,e2,e1_1,e2_1,prop1,impl);
+     //   (cache,e1_2) = Prefix.prefixExp(cache,env, e1_1, pre);
+    //    (cache,e2_2) = Prefix.prefixExp(cache,env, e2_1, pre);
+        
+        //Check that the lefthandside and the righthandside get along.
+     //   dae = instEqEquation(e1_2, prop1, e2_2, prop2, initial_, impl);
+     //   ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
+     // then
+      //  (cache,dae,env,csets,ci_state_1);  
+        //------------------------------------------------------	
         
         /* equality equations e1 = e2 */
     case (cache,env,mods,pre,csets,ci_state,SCode.EQ_EQUALS(exp1 = e1,exp2 = e2),initial_,impl)
@@ -7514,7 +7704,16 @@ algorithm
       equation 
         dae = makeDaeEquation(e1, e2, initial_);
       then
-        {dae};
+        {dae}; 
+    
+        /* MetaModelica list */    
+    case (e1,e2,(Types.T_LIST(_),_),initial_) /* tuples */ 
+      equation 
+        dae = makeDaeEquation(e1, e2, initial_);
+      then
+        {dae};     
+        /* -------------- */
+        
     case (e1,e2,(Types.T_COMPLEX(complexTypeOption = SOME(bc)),_),initial_) /* Complex types extending basic type */ 
       local list<DAE.Element> dae;
       equation 
@@ -7981,7 +8180,35 @@ algorithm
       Env.Cache cache;
       Prefix pre; 
 
-       /* v := expr; */       
+      //------------------------------------------
+      // Part of MetaModelica list extension. KS
+      //------------------------------------------
+      /* v := Array(...); */       
+    case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = Absyn.ARRAY(expList)),impl) 
+      local
+        list<Absyn.Exp> expList;
+        Types.Type t2;
+      equation 
+        //true = RTOpts.acceptMetaModelicaGrammar();
+        
+        // If this is a list assignment, then the Array(...) expression should 
+        // be evaluated to Exp.LIST
+     
+        (cache,cre,cprop,acc) = Static.elabCref(cache,env, cr, impl,false); 
+        true = MetaUtil.isList(cprop);
+        
+        (cache,Exp.CREF(ce,t)) = Prefix.prefixExp(cache,env, cre, pre);        
+        (cache,ce_1) = Static.canonCref(cache,env, ce, impl);
+        
+        (cache,e_1,eprop,_) = Static.elabListExp(cache,env, expList, cprop, impl, NONE,true);
+        
+        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);                
+        stmt = Algorithm.makeAssignment(Exp.CREF(ce_1,t), cprop, e_2, eprop, acc);
+      then
+        (cache,stmt);  
+        //-----------------------------------------//	
+
+        /* v := expr; */       
     case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e),impl) 
       equation 
         (cache,cre,cprop,acc) = Static.elabCref(cache,env, cr, impl,false);

@@ -476,6 +476,21 @@ algorithm
       then
         (cache,Exp.VALUEBLOCK(lDecls2,b2,res2)); 
         
+        // MetaModelica list. MetaModelica extension. KS	
+    case (cache,env,Exp.LIST(es),p)  
+      local Prefix p;
+      equation   
+        (cache,es_1) = prefixExpList(cache,env, es, p);
+      then (cache,Exp.LIST(es_1));  
+        
+    case (cache,env,Exp.CONS(e1,e2),p)  
+      local Prefix p;
+      equation   
+        (cache,e1) = prefixExp(cache,env, e1, p); 
+        (cache,e2) = prefixExp(cache,env, e2, p);
+      then (cache,Exp.CONS(e1,e2));  
+          // ------------------------
+ 
     case (_,_,e,_)
       equation 
         Debug.fprint("failtrace", "-prefix_exp failed on exp:");
@@ -487,9 +502,13 @@ algorithm
   end matchcontinue;
 end prefixExp;
 
+
+//--------------------------------------------
+//   PART OF THE WORKAROUND FOR VALUEBLOCKS. KS 
 public function prefixDecls "function: prefixDecls
  
   Add the supplied prefix to the DAE elements located in Exp.mo.
+  PART OF THE WORKAROUND FOR VALUEBLOCKS
 "
   input Env.Cache cache;
   input Env.Env env;
@@ -552,6 +571,7 @@ end prefixDecls;
 public function prefixAlgorithm "function: prefixAlgorithm
   
   Prefix algorithm.
+  PART OF THE WORKAROUND FOR VALUEBLOCKS
 "
 	input Env.Cache cache;
 	input Env.Env env;
@@ -580,6 +600,7 @@ end prefixAlgorithm;
 public function prefixStatements "function: prefixStatements
   
   Prefix statements.
+  PART OF THE WORKAROUND FOR VALUEBLOCKS
 "
 	input Env.Cache cache;
 	input Env.Env env;
@@ -737,6 +758,7 @@ end prefixStatements;
 public function prefixElse "function: prefixElse
   
   Prefix else statements.
+  PART OF THE WORKAROUND FOR VALUEBLOCKS
 "
   input Env.Cache cache;
   input Env.Env env;
@@ -775,7 +797,7 @@ algorithm
       then (localCache,stmt); 
   end matchcontinue; 
 end prefixElse;  
-
+//------------------------------------------------------
 
 public function prefixExpList "function: prefixExpList
   

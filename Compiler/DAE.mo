@@ -94,7 +94,9 @@ uniontype Type
   record STRING end STRING;
 
   record ENUM end ENUM;
-
+  
+  record LIST end LIST; // MetaModelica list. KS
+  
   record ENUMERATION
     list<String> stringLst;
   end ENUMERATION;

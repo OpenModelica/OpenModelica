@@ -60,6 +60,7 @@ public import Print;
 public import Exp;
 public import Absyn;
 public import Convert;
+public import MetaUtil;
 
 public 
 type Ident = String;
@@ -1343,7 +1344,8 @@ algorithm
     case DAE.REAL() then Exp.REAL(); 
     case DAE.STRING() then Exp.STRING(); 
     case DAE.BOOL() then Exp.BOOL(); 
-    case DAE.ENUM() then Exp.ENUM(); 
+    case DAE.ENUM() then Exp.ENUM();  
+    case DAE.LIST() then Exp.T_LIST(Exp.OTHER()); // MetaModelica list
     case _ then Exp.OTHER(); 
   end matchcontinue;
 end daeExpType;
@@ -1401,7 +1403,14 @@ algorithm
   matchcontinue (inType,inBoolean)
     local
       Lib tstr,str;
-      Exp.Type t;
+      Exp.Type t;   
+ 
+      //MetaModelica list		     
+    case (Exp.T_LIST(_),_) 
+      equation  
+        str = "void*";  
+      then str;
+ 
     case (t,false) /* array */ 
       equation 
         tstr = expShortTypeStr(t);
@@ -1448,7 +1457,10 @@ algorithm
     case ((Types.T_INTEGER(varLstInt = _),_)) then "modelica_integer"; 
     case ((Types.T_REAL(varLstReal = _),_)) then "modelica_real"; 
     case ((Types.T_STRING(varLstString = _),_)) then "modelica_string"; 
-    case ((Types.T_BOOL(varLstBool = _),_)) then "modelica_boolean"; 
+    case ((Types.T_BOOL(varLstBool = _),_)) then "modelica_boolean";  
+    
+    case ((Types.T_LIST(_),_)) then "void*";  // MetaModelica list
+      
     case ty
       equation 
         Debug.fprint("failtrace", "#-- generate_type failed\n");
@@ -1473,7 +1485,10 @@ algorithm
     case ((Types.T_INTEGER(varLstInt = _),_)) then "int"; 
     case ((Types.T_REAL(varLstReal = _),_)) then "double"; 
     case ((Types.T_STRING(varLstString = _),_)) then "const char*"; 
-    case ((Types.T_BOOL(varLstBool = _),_)) then "int"; 
+    case ((Types.T_BOOL(varLstBool = _),_)) then "int";  
+      
+    case ((Types.T_LIST(_),_)) then "void*";  // MetaModelica list
+      
     case ((Types.T_ARRAY(arrayDim = dim,arrayType = ty),_))
       equation 
         str = generateTypeExternal(ty);
@@ -1605,7 +1620,10 @@ algorithm
         t_1 = Types.arrayElementType(t);
         t_str = arrayTypeString(t_1);
       then
-        t_str;
+        t_str;   
+    
+    case ((Types.T_LIST(_),_)) then "void*"; // MetaModelica list    
+        
     case ty
       equation 
         Debug.fprint("failtrace", "#--generate_simple_type failed\n");
@@ -3749,7 +3767,7 @@ algorithm
         Exp.Exp res;
         list<Algorithm.Statement> b3;	
       equation
-        // Convert back to DAE uniontypes from Exp uniontypes
+        // Convert back to DAE uniontypes from Exp uniontypes, part of a work-around
         ld2 = Convert.fromExpElemsToDAEElems(ld,{});
         b2 = Convert.fromExpElemToDAEElem(b);
         (cfn,tnr_1) = generateVars(ld2, isVarQ, tnr, funContext); 
@@ -3763,7 +3781,36 @@ algorithm
         Debug.fprint("failtrace", 
           "# Codegen.generate_expression: asub not implemented\n");
       then
-        fail();
+        fail();  
+     
+     //---------------------------------------------   
+     // MetaModelica list. MetaModelica extension   
+     //---------------------------------------------   
+    case (Exp.CONS(e1,e2),tnr,context)
+      equation 
+        (cfn1,var1,tnr_1) = generateExpression(e1, tnr, context);
+        (cfn2,var2,tnr2) = generateExpression(e2, tnr_1, context); 
+        (decl,tvar,tnr1_1) = generateTempDecl("void*", tnr2);
+        
+        stmt = Util.stringAppendList({tvar," = mk_cons(",var1,", ",var2,");"});
+        cfn2 = cAddVariables(cfn2,{decl}); 
+        cfn2 = cAddStatements(cfn2, {stmt});
+        cfn1_2 = cMergeFns({cfn1,cfn2}); 
+      then
+        (cfn1_2,tvar,tnr1_1);    
+        
+    case (Exp.LIST(elist),tnr,context)
+      equation 
+        (cfn1,vars1,tnr1) = generateExpressions(elist, tnr, context);
+        (decl,tvar,tnr1_1) = generateTempDecl("void*", tnr1);
+        s = MetaUtil.listToConsCell(vars1);
+        stmt = Util.stringAppendList({tvar," = ",s,";"});
+        cfn1_1 = cAddVariables(cfn1,{decl}); 
+        cfn1_2 = cAddStatements(cfn1_1, {stmt});
+      then
+        (cfn1_2,tvar,tnr1_1);
+     //---------------------------------------------
+        
     case (e,_,_)
       equation 
         Debug.fprintln("failtrace", "# generate_expression failed");

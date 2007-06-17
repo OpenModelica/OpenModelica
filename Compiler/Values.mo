@@ -82,6 +82,10 @@ uniontype Value
   record ARRAY
     list<Value> valueLst;
   end ARRAY;
+  
+  record LIST "MetaModelica list"
+    list<Value> valueLst;
+  end LIST;
 
   record TUPLE
     list<Value> valueLst;
@@ -173,8 +177,9 @@ algorithm
     case (REAL(real = _)) then false; 
     case (STRING(string = _)) then false; 
     case (BOOL(boolean = _)) then false; 
-    case (TUPLE(valueLst = _)) then false; 
+    case (TUPLE(valueLst = _)) then false;   
     case (ARRAY(valueLst = _)) then true; 
+    case (LIST(_)) then false; //MetaModelica list  
   end matchcontinue;
 end isArray;
 
@@ -1264,7 +1269,17 @@ algorithm
         res = Dump.printCodeStr(c);
         res_1 = Util.stringAppendList({"Code(",res,")"});
       then
-        res_1;
+        res_1; 
+
+        // MetaModelica list	        
+    case LIST(valueLst = vs)
+      equation 
+        s = valListString(vs);
+        s_1 = stringAppend("{", s);
+        s_2 = stringAppend(s_1, "}");
+      then
+        s_2;    
+        
     case _
       equation 
         Print.printBuf("- val_string failed\n");
