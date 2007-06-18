@@ -148,15 +148,6 @@
 				RelativePath="lineGroup.cpp">
 			</File>
 			<File
-				RelativePath="main.cpp">
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="release\moc_compoundWidget.cpp">
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -175,15 +166,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="release\moc_graphWidget.cpp">
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="debug\moc_graphWidget.cpp">
 				<FileConfiguration
 					Name="Release|Win32"
@@ -193,9 +175,9 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="debug\moc_graphWindow.cpp">
+				RelativePath="release\moc_graphWidget.cpp">
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Debug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -205,6 +187,15 @@
 				RelativePath="release\moc_graphWindow.cpp">
 				<FileConfiguration
 					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="debug\moc_graphWindow.cpp">
+				<FileConfiguration
+					Name="Release|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -311,9 +302,6 @@
 						AdditionalDependencies="c:\Qt\4.2.1-vc\bin\moc.exe"
 						Outputs="release\moc_graphWindow.cpp"/>
 				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\label.h">
 			</File>
 			<File
 				RelativePath=".\LegendLabel.h">
