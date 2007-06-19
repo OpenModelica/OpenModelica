@@ -408,10 +408,10 @@ algorithm
         
        /*--------------------------------*/ 
        /* Part of MetaModelica extension. KS */ 
-   /*     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect)
+      /*  case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect)
       local Exp.Exp e;
           equation 
-            true = RTOpts.acceptMetaModelicaGrammar();
+            //true = RTOpts.acceptMetaModelicaGrammar();
             (cache,env,args,nargs) = MetaUtil.fixListConstructorsInArgs(cache,env,fn,args,nargs);
             Debug.fprintln("sei", "elab_exp CALL...") "Function calls PA. Only positional arguments are elaborated for now. TODO: Implement elaboration of named arguments." ;
             (cache,e,prop,st_1) = elabCall(cache,env, fn, args, nargs, impl, st);
@@ -420,7 +420,7 @@ algorithm
             Debug.fprintln("sei", "elab_exp CALL done");
           then
             (cache,e_1,prop_1,st_1);    */
-     /*--------------------------------*/   
+     /*--------------------------------*/    
         
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect)
       local Exp.Exp e;
@@ -636,29 +636,18 @@ algorithm
              
       then (cache,Exp.VALUEBLOCK(dae2,b_alg_dae,res2),prop,st); 
  
-       //-------------------------------------	
+    //-------------------------------------	
        // Part of the MetaModelica extension. KS  
        // MetaModelica list cons	      
-   case (cache,env,Absyn.CONS(e1,Absyn.ARRAY(es)),impl,st,doVect)
-     local  
-       list<Types.Properties> propList; 
-       Boolean correctTypes;  
-       Types.Type t;
-     equation     
-       (cache,e1_1,prop2 as Types.PROP(t,_),st_1) = elabExp(cache,env, e1, impl, st,doVect);
-       (cache,es_1,propList,st_2) = elabExpList(cache,env, es, impl, st_1,doVect); 
-       correctTypes = MetaUtil.typeMatching(t,propList);  
-       true = correctTypes; 
-       es_1 = listAppend({e1_1},es_1); 
-       prop = Types.PROP((Types.T_LIST(t),NONE()),Types.C_VAR());
-     then (cache,Exp.LIST(es_1),prop,st_2);     
-             
   case (cache,env,Absyn.CONS(e1,e2),impl,st,doVect)
      local  
        Boolean correctTypes;
        Types.Type t;
-     equation     
-       (cache,e1_1,prop1 as Types.PROP(t,_),st_1) = elabExp(cache,env, e1, impl, st,doVect);
+    equation     
+      (e1 :: _) = MetaUtil.transformArrayNodesToListNodes({e1},{});
+      (e2 :: _) = MetaUtil.transformArrayNodesToListNodes({e2},{});
+      
+      (cache,e1_1,prop1 as Types.PROP(t,_),st_1) = elabExp(cache,env, e1, impl, st,doVect);
        (cache,e2_1,prop2,st_1) = elabExp(cache,env, e2, impl, st,doVect);
        correctTypes = MetaUtil.consMatch(prop1,prop2);
        true = correctTypes; 
@@ -671,9 +660,8 @@ algorithm
        
      then (cache,exp,prop,st);   
        
-       // The Absyn.LIST() node is used for list expressions in function call  
-       // An Absyn.ARRAY() node is transformed into an Absyn.LIST() when it
-       // occurs as an argument in a function call
+       // The Absyn.LIST() node is used for list expressions that are 
+       // transformed from Absyn.ARRAY()
   case (cache,env,Absyn.LIST({}),impl,st,doVect)
     local  
       list<Types.Properties> propList; 
@@ -688,8 +676,8 @@ algorithm
       list<Types.Properties> propList; 
       Boolean correctTypes;  
       Types.Type t;
-    equation       
-      (cache,es_1,propList as Types.PROP(t,_) :: _,st_2) = elabExpList(cache,env, es, impl, st,doVect); 
+    equation           
+      (cache,es_1,propList as (Types.PROP(t,_) :: _),st_2) = elabExpList(cache,env, es, impl, st,doVect); 
       correctTypes = MetaUtil.typeMatching(t,propList);  
       true = correctTypes; 
       prop = Types.PROP((Types.T_LIST(t),NONE()),Types.C_VAR());
@@ -710,56 +698,12 @@ algorithm
   end matchcontinue;
 end elabExp;
 
-public function fromEquationsToAlgAssignments "function: fromEquationsToAlgAssignments
-  Converts equations to algorithm assignments
-  "
-	input list<Absyn.EquationItem> eqsIn;
-	input list<Absyn.AlgorithmItem> accList;
-	output list<Absyn.AlgorithmItem> algsOut;
-algorithm
-	algOut :=
-	matchcontinue (eqsIn,accList)
-	  local
-	    list<Absyn.AlgorithmItem> localAccList;  
-	  case ({},localAccList) equation then localAccList;
-	  case (Absyn.EQUATIONITEM(first,_) :: rest,localAccList)      
-	  local
-	    Absyn.Equation first;
-	    list<Absyn.EquationItem> rest;
-	    Absyn.AlgorithmItem firstAlg;
-	    list<Absyn.AlgorithmItem> restAlgs;
-	  equation    
-	  	firstAlg = fromEquationToAlgAssignment(first);
-	  	localAccList = listAppend(localAccList,Util.listCreate(firstAlg));
-	  	restAlgs = fromEquationsToAlgAssignments(rest,localAccList);    
-	  then restAlgs;  
-	end matchcontinue;
-end fromEquationsToAlgAssignments;
-
-public function fromEquationToAlgAssignment "function: fromEquationToAlgAssignment
-	 Converts an equation into an algorithm assignment"
-  input Absyn.Equation eq;
-  output Absyn.AlgorithmItem algStatement;
-algorithm
-  algStatement :=
-  matchcontinue (eq)
-    case (Absyn.EQ_EQUALS(left,right))    
-      local
-		  Absyn.Exp left,right;
-		  Absyn.AlgorithmItem algItem;
-		equation
-		algItem = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(left,right),NONE());  	
-		then algItem;
-  end matchcontinue;
-end fromEquationToAlgAssignment;
-
-
-
 /* ------------------------------- */
-// MetaModelica
-public function elabListExp "function: elabExpList
+// MetaModelica 
+public function elabListExp "function: elabListExp
 Function that elaborates the MetaModelica list type, 
 for instance list<Integer>.
+This is used by Inst.mo when handling a var := {...} statement
 "
 	input Env.Cache inCache;
   input Env.Env inEnv;
@@ -805,6 +749,49 @@ algorithm
   end matchcontinue;
 end elabListExp; 
 /* ------------------------------- */
+
+public function fromEquationsToAlgAssignments "function: fromEquationsToAlgAssignments
+  Converts equations to algorithm assignments
+  "
+	input list<Absyn.EquationItem> eqsIn;
+	input list<Absyn.AlgorithmItem> accList;
+	output list<Absyn.AlgorithmItem> algsOut;
+algorithm
+	algOut :=
+	matchcontinue (eqsIn,accList)
+	  local
+	    list<Absyn.AlgorithmItem> localAccList;  
+	  case ({},localAccList) equation then localAccList;
+	  case (Absyn.EQUATIONITEM(first,_) :: rest,localAccList)      
+	  local
+	    Absyn.Equation first;
+	    list<Absyn.EquationItem> rest;
+	    Absyn.AlgorithmItem firstAlg;
+	    list<Absyn.AlgorithmItem> restAlgs;
+	  equation    
+	  	firstAlg = fromEquationToAlgAssignment(first);
+	  	localAccList = listAppend(localAccList,Util.listCreate(firstAlg));
+	  	restAlgs = fromEquationsToAlgAssignments(rest,localAccList);    
+	  then restAlgs;  
+	end matchcontinue;
+end fromEquationsToAlgAssignments;
+
+public function fromEquationToAlgAssignment "function: fromEquationToAlgAssignment
+	 Converts an equation into an algorithm assignment"
+  input Absyn.Equation eq;
+  output Absyn.AlgorithmItem algStatement;
+algorithm
+  algStatement :=
+  matchcontinue (eq)
+    case (Absyn.EQ_EQUALS(left,right))    
+      local
+		  Absyn.Exp left,right;
+		  Absyn.AlgorithmItem algItem;
+		equation
+		algItem = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(left,right),NONE());  	
+		then algItem;
+  end matchcontinue;
+end fromEquationToAlgAssignment;
 
 
 protected function elabMatrixGetDimensions "function: elabMatrixGetDimensions

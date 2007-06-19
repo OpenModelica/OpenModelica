@@ -51,7 +51,8 @@ public import Lookup;
 public import Debug; 
 public import Env;
 public import Absyn; 
-public import SCode;
+public import SCode; 
+public import DAE;
 
 public function isList "function: isList
 	author: KS
@@ -108,6 +109,7 @@ algorithm
     local
       Types.Type tLocal,t; 
       Boolean b2;
+    case (Types.PROP(tLocal,_),Types.PROP((Types.T_LIST((Types.T_NOTYPE(),_)),_),_)) then true;  
     case (Types.PROP(tLocal,_),Types.PROP((Types.T_LIST(t),_),_)) 
       equation
         b2 = Types.subtype(tLocal,t);
@@ -197,12 +199,12 @@ algorithm
       equation  
         fn2 = Absyn.crefToPath(fn);
         (cache,SCode.CLASS(_,_,_,_,SCode.PARTS(elemList,_,_,_,_,_)),env) 
-        = Lookup.lookupClass(cache,env, fn2,true);        
-        
+        = Lookup.lookupClass(cache,env, fn2,true);    
+
         typeList = Util.listMap(elemList,extractNameAndType);
         args = fixListConstructorsInArgs2(typeList,args,{});
         nargs = fixListConstructorsInArgs3(typeList,nargs,{});
-      then (cache,env,args,nargs);
+      then (cache,env,args,nargs);  
   end matchcontinue;
 end fixListConstructorsInArgs;
 
@@ -244,7 +246,8 @@ algorithm
       local 
         list<Absyn.Exp> expList,restArgs;  
         list<Option<tuple<Absyn.Ident,Absyn.TypeSpec>>> restTypes;  
-      equation 
+      equation  
+        expList = transformArrayNodesToListNodes(expList,{});
         localAccList = listAppend(localAccList,{Absyn.LIST(expList)});
         localAccList = fixListConstructorsInArgs2(restTypes,restArgs,localAccList);
       then localAccList;    
@@ -291,6 +294,7 @@ algorithm
         list<Absyn.NamedArg> restArgs;   
       equation 
         Absyn.TCOMPLEX(Absyn.IDENT("list"),_,_) = findArgType(id,argTypes); 
+        expList = transformArrayNodesToListNodes(expList,{});
         localAccList = listAppend(localAccList,{Absyn.NAMEDARG(id,Absyn.LIST(expList))});
         localAccList = fixListConstructorsInArgs3(argTypes,restArgs,localAccList);
       then localAccList;  
@@ -336,6 +340,115 @@ algorithm
       then t;   
   end matchcontinue;  
 end findArgType; 
+
+public function transformArrayNodesToListNodes
+  input list<Absyn.Exp> inList; 
+  input list<Absyn.Exp> accList; 
+  output list<Absyn.Exp> outList; 
+algorithm  
+  outList := 
+  matchcontinue (inList,accList)  
+    local 
+      list<Absyn.Exp> localAccList;
+    case ({},localAccList) then localAccList; 
+    case (Absyn.ARRAY({}) :: restList,localAccList)  
+      local  
+        list<Absyn.Exp> restList;
+      equation   
+        localAccList = listAppend(localAccList,{Absyn.LIST({})});
+        localAccList = transformArrayNodesToListNodes(restList,localAccList); 
+      then localAccList; 
+    case (Absyn.ARRAY(es) :: restList,localAccList) 
+      local
+        list<Absyn.Exp> es,restList; 
+      equation   
+        es = transformArrayNodesToListNodes(es,{});
+        localAccList = listAppend(localAccList,{Absyn.LIST(es)});
+        localAccList = transformArrayNodesToListNodes(restList,localAccList); 
+      then localAccList; 
+    case (firstExp :: restList,localAccList)  
+      local  
+        list<Absyn.Exp> restList;  
+        Absyn.Exp firstExp;
+      equation   
+        localAccList = listAppend(localAccList,{firstExp});
+        localAccList = transformArrayNodesToListNodes(restList,localAccList); 
+      then localAccList;       
+  end matchcontinue;
+end transformArrayNodesToListNodes;  
+
+
+public function evalTypeSpec "function: evalTypeSpec"
+  input Absyn.TypeSpec typeSpec; 
+  input Integer numLists;
+  output Absyn.Path outPath; 
+  output Integer outNumLists;
+algorithm 
+  (outPath,outNumLists) := 
+  matchcontinue (typeSpec,numLists) 
+    local 
+      Absyn.Path tpath; 
+      Integer n;
+    case (Absyn.TPATH(tpath, _),n) then (tpath,n); 
+    case (Absyn.TCOMPLEX(Absyn.IDENT("list"),tSpec :: _,_),n) 
+      local  
+        Absyn.TypeSpec tSpec;  
+      equation   
+        (tpath,n) = evalTypeSpec(tSpec,n+1);    
+      then (tpath,n);  
+  end matchcontinue;
+end evalTypeSpec;   
+
+public function createListType "function: createListType"
+  input Types.Type inType;
+  input Integer numLists;   
+  output Types.Type outType;
+algorithm  
+  outType :=  
+  matchcontinue (inType,numLists)    
+    local  
+      Types.Type localT;
+    case (localT,0) then localT;  
+    case (localT,n)  
+      local   
+        Integer n;  
+        Types.Type t; 
+      equation  
+        t = (Types.T_LIST(localT),NONE());
+        t = createListType(t,n-1);  
+      then t;  
+  end matchcontinue;
+end createListType;   
+
+
+public function addListTypeToDAE "function: addListTypeToDAE"
+  input list<DAE.Element> daeElem;  
+  input Types.Type inType;
+  output list<DAE.Element> outElem; 
+algorithm 
+  outElem :=   
+  matchcontinue (daeElem,inType)
+    case (DAE.VAR(vn,kind,dir,prot,_,e,inst_dims,fl,lPath,dae_var_attr,comment,io,_) :: restList,t) 
+      local 
+        list<DAE.Element> daeE,restList; 
+        Exp.ComponentRef vn;
+        DAE.VarKind kind;
+        DAE.VarDirection dir;
+        DAE.VarProtection prot;
+        Option<Exp.Exp> e;
+        DAE.InstDims inst_dims;
+        DAE.Flow fl;
+        list<Absyn.Path> lPath;
+        Option<DAE.VariableAttributes> dae_var_attr;
+        Option<Absyn.Comment> comment;
+        Absyn.InnerOuter io;
+        Types.Type t;
+      equation
+        daeE = (DAE.VAR(vn,kind,dir,prot,DAE.LIST(),e,inst_dims,fl,lPath,dae_var_attr,comment,io,t) :: restList);
+      then daeE; 
+  end matchcontinue;
+end addListTypeToDAE;
+
 
 /*
 public function typeMatching
@@ -389,5 +502,6 @@ algorithm
     case (_,_) then false;  
   end matchcontinue; 
 end typeMatching;  */
+
 
 end MetaUtil;

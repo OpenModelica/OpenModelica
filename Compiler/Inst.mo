@@ -3600,17 +3600,24 @@ algorithm
         (cache,dae,env_1,csets_1,ci_state,vars);
 
         //------------------------------------------------------------------------
-        // The "MetaModelica list" case, part of a MetaModelica extension. KS
+        // The "MetaModelica list" case, part of MetaModelica extension. KS
         //------------------------------------------------------------------------
     case (cache,env,mods,pre,csets,ci_state,((comp as SCode.COMPONENT(component = n,innerOuter=io,final_ = final_,replaceable_ = repl,protected_ = prot,
       		attributes = (attr as SCode.ATTR(arrayDim = ad,flow_ = flow_,RW = acc,parameter_ = param,input_ = dir)),
-      		typeSpec = Absyn.TCOMPLEX(Absyn.IDENT("list"),Absyn.TPATH(t,_) :: _,_), mod = m,baseclass = bc,this = comment)),cmod),inst_dims,impl)  
+      		typeSpec = Absyn.TCOMPLEX(Absyn.IDENT("list"),tSpec :: _,_), mod = m,baseclass = bc,this = comment)),cmod),inst_dims,impl)  
       local String s;
         Boolean allreadyDeclared;
         list<Types.Var> vars;  
-        Absyn.TypeSpec tSpec;
+        Absyn.TypeSpec tSpec;  
+        Integer numberOfLists;
       equation 
-        //true = RTOpts.acceptMetaModelicaGrammar();
+        true = RTOpts.acceptMetaModelicaGrammar();  
+        
+        // Derive the basic type of the list and the number of lists (since a list can be nested)
+        //------------------------------------------------
+        (t,numberOfLists) = MetaUtil.evalTypeSpec(tSpec,1);
+        //------------------------------------------------
+        
         // Fails if multiple decls not identical
         allreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl); 
         checkRecursiveDefinition(env,t);
@@ -3653,9 +3660,8 @@ algorithm
         mod1_1 = Mod.merge(cmod, mod1, env2, pre);
 
 				/* Apply redeclaration modifier to component */
-        (cache,SCode.COMPONENT(n,io,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,acc,param,dir)),tSpec,m,bc,comment),mod_1,env2_1,csets) 
+        (cache,SCode.COMPONENT(n,io,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,acc,param,dir)),_,m,bc,comment),mod_1,env2_1,csets) 
         = redeclareType(cache,mod1_1, comp, env2, pre, ci_state, csets, impl); 
-        t = evalTypeSpec(tSpec);
                  
         (cache,env_1) = getDerivedEnv(cache,env, bc);
         (cache,cl,cenv) = Lookup.lookupClass(cache,env_1, t, true);
@@ -3671,9 +3677,9 @@ algorithm
         (cache,compenv,dae,csets_1,ty) = instVar(cache,cenv, ci_state, mod_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io);    
         
         //---------------------------------
-        // Add the list type to the var 
-        ty = (Types.T_LIST(ty),NONE());  
-        dae = addListTypeToDAE(dae,ty);
+        // Add the list type to the dae 
+        ty = MetaUtil.createListType(ty,numberOfLists);  
+        dae = MetaUtil.addListTypeToDAE(dae,ty);
         //---------------------------------
         
 				//The environment is extended (updated) with the new variable binding. 
@@ -3722,53 +3728,6 @@ algorithm
   end matchcontinue;
 end instElement;
 
-
-//------------------------------------------
-// Part of MetaModelica list extension. KS
-//------------------------------------------
-
-public function addListTypeToDAE "function: addListTypeToDAE"
-  input list<DAE.Element> daeElem;  
-  input Types.Type inType;
-  output list<DAE.Element> outElem; 
-algorithm 
-  outElem :=   
-  matchcontinue (daeElem,inType)
-    case (DAE.VAR(vn,kind,dir,prot,_,e,inst_dims,fl,lPath,dae_var_attr,comment,io,_) :: restList,t) 
-      local 
-        list<DAE.Element> daeE,restList; 
-        Exp.ComponentRef vn;
-        DAE.VarKind kind;
-        DAE.VarDirection dir;
-        DAE.VarProtection prot;
-        Option<Exp.Exp> e;
-        DAE.InstDims inst_dims;
-        DAE.Flow fl;
-        list<Absyn.Path> lPath;
-        Option<DAE.VariableAttributes> dae_var_attr;
-        Option<Absyn.Comment> comment;
-        Absyn.InnerOuter io;
-        Types.Type t;
-      equation
-        daeE = (DAE.VAR(vn,kind,dir,prot,DAE.LIST(),e,inst_dims,fl,lPath,dae_var_attr,comment,io,t) :: restList);
-      then daeE; 
-  end matchcontinue;
-end addListTypeToDAE;
-
-
-public function evalTypeSpec "function: evalTypeSpec"
-  input Absyn.TypeSpec typeSpec;
-  output Absyn.Path outPath;
-algorithm 
-  (outPath,listBool) := 
-  matchcontinue (typeSpec) 
-    local 
-      Absyn.Path tpath;
-    case (Absyn.TPATH(tpath, _)) then tpath; 
-    case (Absyn.TCOMPLEX(_,Absyn.TPATH(tpath,_) :: _,_)) then tpath;  
-  end matchcontinue;
-end evalTypeSpec; 
-//------------------------------------------
 
 protected function removeSelfModReference "Help function to elabMod, removes self-references in modifiers.
 For instance, A a(x = a.y)
@@ -7247,7 +7206,7 @@ algorithm
       then
         (cache,dae,env,csets_1,ci_state_1);
         
-        
+    
         //------------------------------------------------------
         // Part of the MetaModelica extension
         /* equality equations cref = Array(...) */ 
@@ -8189,7 +8148,7 @@ algorithm
         list<Absyn.Exp> expList;
         Types.Type t2;
       equation 
-        //true = RTOpts.acceptMetaModelicaGrammar();
+        true = RTOpts.acceptMetaModelicaGrammar();
         
         // If this is a list assignment, then the Array(...) expression should 
         // be evaluated to Exp.LIST
@@ -8199,6 +8158,9 @@ algorithm
         
         (cache,Exp.CREF(ce,t)) = Prefix.prefixExp(cache,env, cre, pre);        
         (cache,ce_1) = Static.canonCref(cache,env, ce, impl);
+        
+        // In case we have a nested list expression
+        expList = MetaUtil.transformArrayNodesToListNodes(expList,{});
         
         (cache,e_1,eprop,_) = Static.elabListExp(cache,env, expList, cprop, impl, NONE,true);
         
