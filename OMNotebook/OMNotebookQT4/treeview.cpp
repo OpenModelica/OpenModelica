@@ -151,8 +151,6 @@ namespace IAEX
 			painter.setPen(QPen(Qt::black,1, Qt::SolidLine));
 		}
 
-		QWidget::paintEvent(event);
-
 		QPolygon points(4);
 
 		if(closed_)
@@ -171,6 +169,8 @@ namespace IAEX
 		}
 
 		painter.drawPolyline(points);
+
+		QWidget::paintEvent(event);
 	}
 
 //////////////////////////////////////////////////////////////////////
@@ -216,9 +216,6 @@ namespace IAEX
 
 		if(isVisible())
 		{
-
-			QWidget::paintEvent(event);
-
 			QPolygon points(4);
 
 			points[0] = QPoint(1,2);
@@ -227,6 +224,8 @@ namespace IAEX
 			points[3] = QPoint(1,height()-2);
 
 			painter.drawPolyline(points);  //This seems to be broken 
+
+			QWidget::paintEvent(event);
 		}
 	}
 }
