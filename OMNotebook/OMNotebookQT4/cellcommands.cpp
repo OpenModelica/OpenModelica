@@ -362,8 +362,8 @@ namespace IAEX
 		// create the new cell, if there exists a groupcell add the new cell to 
 		// that groupcell.
 		Cell* newCell = factory->createCell( style.name() );
-		if( groupcell )
-			groupcell->addChild( newCell );
+//		if( groupcell )
+//			groupcell->addChild( newCell );
 
 
 		// set content of cell
@@ -437,6 +437,8 @@ namespace IAEX
 		// Add cell to document
 		if( !groupcell )
 			cursor->addBefore( newCell );
+		else //if there exists a groupcell add the new cell to that groupcell.
+			groupcell->addChild( newCell );
 
 		// set focus and readonly stuff (from old implementation, IA)
 		if(cursor->currentCell()->isClosed())
