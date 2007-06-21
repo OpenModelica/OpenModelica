@@ -133,6 +133,15 @@
 			<weight>normal</weight>
 		</font>
 	</style>
+	<style name="Graph">
+		<border margin="5"/>
+		<alignment value="left"/>
+		<font>
+			<family>Courier New</family>
+			<size>11</size>
+			<weight>normal</weight>
+		</font>
+	</style>
 	<style name="Output" visible="false">
 		<border margin="5"/>
 		<alignment value="left"/>
