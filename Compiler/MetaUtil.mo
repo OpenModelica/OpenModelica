@@ -169,6 +169,7 @@ algorithm
   end matchcontinue;  
 end listToConsCell;  
 
+
 public function fixListConstructorsInArgs "function: fixListConstructorsInArgs
 	Author: KS	
 	In a function call, an Absyn.ARRAY() will be transformed into an Absyn.LIST() 
@@ -195,43 +196,76 @@ algorithm
         list<Absyn.Exp> args;  
         list<Absyn.NamedArg> nargs;
         list<SCode.Element> elemList; 
-        list<Option<tuple<Absyn.Ident,Absyn.TypeSpec>>> typeList;
+        list<Types.Type> typeList1; 
+        list<Types.FuncArg> typeList2;
       equation  
         fn2 = Absyn.crefToPath(fn);
-        (cache,SCode.CLASS(_,_,_,_,SCode.PARTS(elemList,_,_,_,_,_)),env) 
-        = Lookup.lookupClass(cache,env, fn2,true);    
+        
+        (cache,typeList1)
+        = Lookup.lookupFunctionsInEnv(cache,env, fn2);    
 
-        typeList = Util.listMap(elemList,extractNameAndType);
-        args = fixListConstructorsInArgs2(typeList,args,{});
-        nargs = fixListConstructorsInArgs3(typeList,nargs,{});
-      then (cache,env,args,nargs);  
+        typeList2 = extractFuncTypes(typeList1);
+        args = fixListConstructorsInArgs2(typeList2,args,{});
+        nargs = fixListConstructorsInArgs3(typeList2,nargs,{});
+      then (cache,env,args,nargs);
+    case (_,_,_,_,_)  
+      equation 
+        print("could not look up class");
+        Debug.fprint("failtrace", "- could not lookup class for constant list constructors.");
+      then fail();     
   end matchcontinue;
 end fixListConstructorsInArgs;
 
-public function extractNameAndType "function: extractNameAndType
+public function extractFuncTypes "function: extractNameAndType
 	Author: KS	
-	Extracts the name and type from an SCode.Component
+	Extracts the name and type.
 " 
-  input SCode.Element inElem; 
-  output Option<tuple<Absyn.Ident,Absyn.TypeSpec>> outTuple;  
+  input list<Types.Type> inElem; 
+  output list<Types.FuncArg> outList;  
 algorithm  
-  outTuple := 
+  outList := 
   matchcontinue(inElem)
-    case (SCode.COMPONENT(id,_,_,_,_,_,t,_,_,_))   
-      local   
-        Absyn.Ident id;   
-        Absyn.TypeSpec t;  
+    case ({}) then {}; 
+    case ((Types.T_FUNCTION(typeList,_),_) :: {}) 
+      local 
+        list<Types.FuncArg> typeList;  
       equation 
-      then SOME((id,t)); 
-    case (_) then NONE(); 
+      then typeList;
+    case (_) then {}; // If a function has more than one definition we do not
+                      // bother. SHOULD BE FIXED 
   end matchcontinue;   
-end extractNameAndType;   
+end extractFuncTypes;   
 
-public function fixListConstructorsInArgs2  "function: fixListConstructorsInArgs2
+public function fixListConstructorsInArgs2 "function: fixListConstructorsInArgs2
+	author: KS
+"
+  input list<Types.FuncArg> inTypes;
+  input list<Absyn.Exp> inArgs; 
+  input list<Absyn.Exp> accList; 
+  output list<Absyn.Exp> outArgs;
+algorithm 
+  outArgs :=  
+  matchcontinue (inTypes,inArgs,accList)
+    case ({},localInArgs,_)  
+      local 
+        list<Absyn.Exp> localInArgs;
+      equation  
+      then localInArgs; 
+    case (localInTypes,localInArgs,localAccList) 
+      local   
+        list<Types.FuncArg> localInTypes;   
+        list<Absyn.Exp> localInArgs,localAccList;
+      equation  
+        localInArgs = fixListConstructorsInArgs2Helper(localInTypes,localInArgs,localAccList);
+      then localInArgs;  
+  end matchcontinue;  
+end fixListConstructorsInArgs2;  
+
+public function fixListConstructorsInArgs2Helper  "function: fixListConstructorsInArgs2
 	Author: KS	
 	Helper function to fixListConstructorsInArgs 
 "
-  input list<Option<tuple<Absyn.Ident,Absyn.TypeSpec>>> inTypes;
+  input list<Types.FuncArg> inTypes;
   input list<Absyn.Exp> inArgs; 
   input list<Absyn.Exp> accList; 
   output list<Absyn.Exp> outArgs;
@@ -241,41 +275,63 @@ algorithm
     local 
       list<Absyn.Exp> localAccList;
     case (_,{},localAccList) then localAccList; 
-    case ({},_,localAccList) then localAccList;  
-    case (SOME((_,Absyn.TCOMPLEX(Absyn.IDENT("list"),_,_))) :: restTypes,Absyn.ARRAY(expList) :: restArgs,localAccList) 
+    case ({},_,localAccList) 
+      equation  
+        Debug.fprint("failtrace", "- wrong number of arguments in function call?.");
+      then fail();  
+    case ((_,(Types.T_LIST(_),_)) :: restTypes,Absyn.ARRAY(expList) :: restArgs,localAccList) 
       local 
         list<Absyn.Exp> expList,restArgs;  
-        list<Option<tuple<Absyn.Ident,Absyn.TypeSpec>>> restTypes;  
+        list<Types.FuncArg> restTypes;  
       equation  
         expList = transformArrayNodesToListNodes(expList,{});
         localAccList = listAppend(localAccList,{Absyn.LIST(expList)});
-        localAccList = fixListConstructorsInArgs2(restTypes,restArgs,localAccList);
+        localAccList = fixListConstructorsInArgs2Helper(restTypes,restArgs,localAccList);
       then localAccList;    
-    case (NONE() :: restTypes,args,localAccList)     
-      local  
-        list<Absyn.Exp> args;  
-        list<Option<tuple<Absyn.Ident,Absyn.TypeSpec>>> restTypes;
-      equation
-        localAccList = fixListConstructorsInArgs2(restTypes,args,localAccList);
-      then localAccList;
     case (_ :: restTypes,firstArg :: restArgs,localAccList) 
       local  
         Absyn.Exp firstArg; 
         list<Absyn.Exp> restArgs;
-        list<Option<tuple<Absyn.Ident,Absyn.TypeSpec>>> restTypes;  
+        list<Types.FuncArg> restTypes;  
       equation 
         localAccList = listAppend(localAccList,{firstArg});
-        localAccList = fixListConstructorsInArgs2(restTypes,restArgs,localAccList);
+        localAccList = fixListConstructorsInArgs2Helper(restTypes,restArgs,localAccList);
       then localAccList;     
   end matchcontinue;
-end fixListConstructorsInArgs2; 
+end fixListConstructorsInArgs2Helper; 
 
 
-public function fixListConstructorsInArgs3 "function: fixListConstructorsInArgs3
+public function fixListConstructorsInArgs3 "function: fixListConstructorsInArgs2
+author: KS
+"
+  input list<Types.FuncArg> inTypes;
+  input list<Absyn.NamedArg> inNamedArgs; 
+  input list<Absyn.NamedArg> accList; 
+  output list<Absyn.NamedArg> outArgs;
+algorithm 
+  outArgs :=  
+  matchcontinue (inTypes,inNamedArgs,accList)
+    case ({},localInArgs,_)  
+      local 
+        list<Absyn.NamedArg> localInArgs;
+      equation  
+      then localInArgs; 
+    case (localInTypes,localInArgs,localAccList) 
+      local   
+        list<Types.FuncArg> localInTypes;   
+        list<Absyn.NamedArg> localInArgs,localAccList;
+      equation  
+        localInArgs = fixListConstructorsInArgs3Helper(localInTypes,localInArgs,localAccList);
+      then localInArgs;  
+  end matchcontinue;  
+end fixListConstructorsInArgs3;  
+
+
+public function fixListConstructorsInArgs3Helper "function: fixListConstructorsInArgs3
 	Author: KS	
 	Helper function to fixListConstructorsInArgs 
 "
-  input list<Option<tuple<Absyn.Ident,Absyn.TypeSpec>>> inTypes; 
+  input list<Types.FuncArg> inTypes; 
   input list<Absyn.NamedArg> inNamedArgs; 
   input list<Absyn.NamedArg> accList; 
   output list<Absyn.NamedArg> outArgs;
@@ -285,30 +341,29 @@ algorithm
     local  
        list<Absyn.NamedArg> localAccList;     
     case (_,{},localAccList) then localAccList;  
-    case ({},_,localAccList) then localAccList;  
     case (argTypes,Absyn.NAMEDARG(id,Absyn.ARRAY(expList)) :: restArgs,localAccList) 
       local 
         list<Absyn.Exp> expList; 
         Absyn.Ident id; 
-        list<Option<tuple<Absyn.Ident,Absyn.TypeSpec>>> argTypes;  
+        list<Types.FuncArg> argTypes;  
         list<Absyn.NamedArg> restArgs;   
       equation 
-        Absyn.TCOMPLEX(Absyn.IDENT("list"),_,_) = findArgType(id,argTypes); 
+        ((Types.T_LIST(_),_)) = findArgType(id,argTypes); 
         expList = transformArrayNodesToListNodes(expList,{});
         localAccList = listAppend(localAccList,{Absyn.NAMEDARG(id,Absyn.LIST(expList))});
-        localAccList = fixListConstructorsInArgs3(argTypes,restArgs,localAccList);
+        localAccList = fixListConstructorsInArgs3Helper(argTypes,restArgs,localAccList);
       then localAccList;  
     case (argTypes,firstArg :: restArgs,localAccList)  
       local  
         Absyn.NamedArg firstArg;
-        list<Option<tuple<Absyn.Ident,Absyn.TypeSpec>>> argTypes;
+        list<Types.FuncArg> argTypes;
         list<Absyn.NamedArg> restArgs;
       equation 
         localAccList = listAppend(localAccList,{firstArg});
-        localAccList = fixListConstructorsInArgs3(argTypes,restArgs,localAccList);
+        localAccList = fixListConstructorsInArgs3Helper(argTypes,restArgs,localAccList);
       then localAccList;     
   end matchcontinue;
-end fixListConstructorsInArgs3;
+end fixListConstructorsInArgs3Helper;
 
 
 public function findArgType "function: findArgType
@@ -316,32 +371,32 @@ public function findArgType "function: findArgType
 	Helper function to fixListConstructorsInArgs 
 "
   input Absyn.Ident id;
-  input list<Option<tuple<Absyn.Ident,Absyn.TypeSpec>>> argTypes; 
-  output Absyn.TypeSpec outType; 
+  input list<Types.FuncArg> argTypes; 
+  output Types.Type outType; 
 algorithm  
   outType := 
   matchcontinue (id,argTypes)  
     local  
       Absyn.Ident localId;  
-    case (localId,{}) then Absyn.TPATH(Absyn.IDENT("dummie"),NONE()); // Return DUMMIE (this case should not happend)
-    case (localId,SOME((localId2,t)) :: _)  
+    case (localId,{}) then ((Types.T_INTEGER({}),NONE())); // Return DUMMIE (this case should not happend)
+    case (localId,(localId2,t) :: _)  
       local 
-        Absyn.TypeSpec t;
+        Types.Type t;
         Absyn.Ident localId2;
       equation
         true = (localId ==& localId2);
       then t;   
     case (localId,_ :: restList)  
       local 
-        list<Option<tuple<Absyn.Ident,Absyn.TypeSpec>>> restList; 
-        Absyn.TypeSpec t;
+        list<Types.FuncArg> restList; 
+        Types.Type t;
       equation 
         t = findArgType(localId,restList); 
       then t;   
   end matchcontinue;  
 end findArgType; 
 
-public function transformArrayNodesToListNodes
+public function transformArrayNodesToListNodes "function: transformArrayNodesToListNodes"
   input list<Absyn.Exp> inList; 
   input list<Absyn.Exp> accList; 
   output list<Absyn.Exp> outList; 

@@ -7247,6 +7247,27 @@ algorithm
       //  (cache,dae,env,csets,ci_state_1);  
         //------------------------------------------------------	
         
+                /* v = array(For-constructor)  */ 
+   /* case (cache,env,mods,pre,csets,ci_state,SCode.EQ_EQUALS(Absyn.CREF(arrName),
+       Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(itExp,id,e2))),initial_,impl)     
+     // Absyn.CALL(Absyn.CREF_IDENT("Array",{}),Absyn.FOR_ITER_FARG(itExp,rangeIdList))),initial_,impl) 
+      local
+        Absyn.Exp itExp,e2;
+        list<tuple<Absyn.Ident,Absyn.Exp>> rangeIdList;
+        SCode.EEquation eq;
+        Absyn.ComponentRef arrName;
+        list<Absyn.Ident> idList; 
+        Absyn.Ident id;
+      equation 
+        rangeIdList = {(id,e2)};
+        idList = extractLoopVars(rangeIdList,{});
+        
+        //Transform this function call into a number of nested for-loops
+        eq = createForIteratorEquations(itExp,rangeIdList,idList,arrName);
+        (cache,dae,env,csets_1,ci_state_1) = instEquationCommon(cache,env,mods,pre,csets,ci_state,eq,initial_,impl);
+      then
+        (cache,dae,env,csets_1,ci_state_1); */
+        
         /* equality equations e1 = e2 */
     case (cache,env,mods,pre,csets,ci_state,SCode.EQ_EQUALS(exp1 = e1,exp2 = e2),initial_,impl)
       local Option<Interactive.InteractiveSymbolTable> c1,c2;
@@ -8169,7 +8190,60 @@ algorithm
       then
         (cache,stmt);  
         //-----------------------------------------//	
-
+        
+    /* v := array(for-iterator); */       
+  /*  case (cache,env,pre,Absyn.ALG_ASSIGN(Absyn.CREF(c),
+      Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(e1,id,e2))),impl)
+      //Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(e,rangeList))),impl) 
+      local
+        Absyn.Exp e1,e2;
+        list<tuple<Absyn.Ident,Absyn.Exp>> rangeList;
+        Absyn.Algorithm absynStmt;
+        list<Absyn.Ident> idList;
+        Absyn.ComponentRef c; 
+        Absyn.Ident id;
+      equation 
+        rangeList = {(id,e2)};
+        idList = extractLoopVars(rangeList,{});
+        
+        //Transform this function call into a number of nested for-loops
+        absynStmt = createForIteratorAlgorithm(e1,rangeList,idList,c);
+        (cache,stmt) = instStatement(cache,env,pre,absynStmt,impl);
+      then
+        (cache,stmt); */
+        
+        /* v := Function(for-iterator); */       
+/*   case (cache,env,pre,Absyn.ALG_ASSIGN(Absyn.CREF(c1),
+      Absyn.CALL(c2,Absyn.FOR_ITER_FARG(e1,id,e2))),impl) 
+    //Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(e,rangeList))),impl)
+      local
+        Absyn.Exp e1,e2,vb;
+        list<tuple<Absyn.Ident,Absyn.Exp>> rangeList;
+        Absyn.Algorithm absynStmt,temp;
+        list<Absyn.Ident> idList;  
+        Absyn.Ident id;
+        Absyn.ComponentRef c1,c2;
+        list<Absyn.ElementItem> declList;
+        list<Absyn.AlgorithmItem> vb_body;
+      equation 
+        rangeList = {(id,e2)};
+        idList = extractLoopVars(rangeList,{});
+        
+        // Create temporary array to store the result from the for-iterator construct
+        (cache,declList) = createForIteratorArray(cache,env,e1,idList,rangeList,impl);
+        
+        // Create for-statements
+        temp = createForIteratorAlgorithm(e1,rangeList,idList,Absyn.CREF_IDENT("VEC__",{}));
+        
+        vb_body = Util.listCreate(Absyn.ALGORITHMITEM(temp,NONE())); 
+        vb = Absyn.VALUEBLOCK(declList,Absyn.VALUEBLOCKALGORITHMS(vb_body),
+        Absyn.CALL(c2,Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT("VEC__",{}))},{})));
+        absynStmt = Absyn.ALG_ASSIGN(Absyn.CREF(c1),vb);    
+        
+        (cache,stmt) = instStatement(cache,env,pre,absynStmt,impl);
+      then
+      (cache,stmt); */
+ 
         /* v := expr; */       
     case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e),impl) 
       equation 
@@ -9892,5 +9966,327 @@ algorithm
     case INNER_CALL() then false; 
   end matchcontinue;
 end isTopCall;
+
+/* ------------------------------------------------------ */
+// The following functions are used in the instantiation of
+// array iterator constructors. For instance, 
+// { 3*i*j for i in 1:5, j in 1:n } 
+/*
+public function createForIteratorEquations "function: createForIteratorEquations
+	author: KS
+
+ Function that creates for equations to be used in the
+  for iterator construct assignment."
+  input Absyn.Exp iterExp;
+  input list<tuple<Absyn.Ident,Absyn.Exp>> rangeIdList;
+  input list<Absyn.Ident> idList;
+  input Absyn.ComponentRef arrayId;
+  output SCode.EEquation outEq;
+algorithm
+  outEq :=
+  matchcontinue (iterExp,rangeIdList,idList,arrayId)
+    local  
+      Absyn.Ident id;
+      Absyn.Exp rangeExp,localIterExp;
+      list<Absyn.Ident> localIdList;
+      Absyn.ComponentRef localArrayId;
+    case (localIterExp,(id,rangeExp) :: {},localIdList,localArrayId)
+      local
+        list<Absyn.Subscript> subList;
+        Absyn.Exp arrayRef; 
+        list<SCode.EEquation> eqList;  
+        SCode.EEquation eq1,eq2;
+      equation
+        subList = createArrayIndexing(localIdList,{});
+        arrayRef = createArrayReference(localArrayId,subList); 
+        eq1 = SCode.EQ_EQUALS(arrayRef,localIterExp);   
+        eqList = {eq1};  
+        eq2 = SCode.EQ_FOR(id,rangeExp,eqList);       
+      then eq2;
+    case (localIterExp,(id,rangeExp) :: rest,localIdList,localArrayId)
+      local
+        list<tuple<Absyn.Ident,Absyn.Exp>> rest;
+        list<SCode.EEquation> eqList;  
+        SCode.EEquation eq1,eq2;
+      equation
+        eq1 = createForIteratorEquations(localIterExp,rest,localIdList,localArrayId);
+        eqList = {eq1};
+        eq2 = SCode.EQ_FOR(id,rangeExp,eqList);
+      then eq2;
+  end matchcontinue;   
+end createForIteratorEquations;
+
+public function createArrayIndexing "function: createArrayIndexing
+	author: KS
+ Function that creates a list of subscripts to be used when indexing an array."
+  input list<Absyn.Ident> idList;
+  input list<Absyn.Subscript> accList;
+  output list<Absyn.Subscript> outSubList;
+algorithm
+  outSubList :=
+  matchcontinue (idList,accList)
+    local
+      list<Absyn.Subscript> localAccList;
+    case ({},localAccList) then localAccList;
+    case (firstId :: restId,localAccList)    
+      local
+        Absyn.Ident firstId;
+        Absyn.Subscript subExp;
+        list<Absyn.Ident> restId;
+      equation
+        subExp = Absyn.SUBSCRIPT(Absyn.CREF(Absyn.CREF_IDENT(firstId,{})));
+        localAccList = listAppend(localAccList,Util.listCreate(subExp));
+        localAccList = createArrayIndexing(restId,localAccList);
+      then localAccList;
+  end matchcontinue;
+end createArrayIndexing;   
+
+public function createArrayReference "function: createArrayReference
+	author: KS"     
+  input Absyn.ComponentRef c; 
+  input list<Absyn.Subscript> subList;
+  output Absyn.Exp outExp; 
+algorithm  
+  outExp :=  
+  matchcontinue (c,subList)   
+    case (Absyn.CREF_IDENT(id,sl),localSubList)   
+      local  
+        Absyn.Ident id;   
+        list<Absyn.Subscript> sl,localSubList;  
+        Absyn.Exp c2; 
+      equation  
+        sl = listAppend(localSubList,sl); 
+        c2 = Absyn.CREF(Absyn.CREF_IDENT(id,sl));
+        then c2;     
+    case (Absyn.CREF_QUAL(id,sl,c),localSubList)       
+      local   
+        Absyn.Ident id;   
+        list<Absyn.Subscript> sl,localSubList;   
+        Absyn.ComponentRef c;    
+        Absyn.Exp c2; 
+      equation  
+        sl = listAppend(localSubList,sl);   
+        c2 = Absyn.CREF(Absyn.CREF_QUAL(id,sl,c)); 
+      then c2;   
+  end matchcontinue;
+end createArrayReference;  
+
+public function extractLoopVars "function: extractLoopVars
+	author: KS	
+ Function used for extracting the loop
+variables from a list of identifiers and range expressions."
+  input list<tuple<Absyn.Ident,Absyn.Exp>> rangeIdList;
+  input list<Absyn.Ident> accList;
+  output list<Absyn.Ident> outList;
+algorithm
+  outList :=
+  matchcontinue (rangeIdList,accList)
+    local
+      list<Absyn.Ident> localAccList;  
+    case ({},localAccList) then localAccList;
+    case ((id,_) :: restIdRange,localAccList)
+      local
+        list<tuple<Absyn.Ident,Absyn.Exp>> restIdRange;
+        Absyn.Ident id;
+      equation  
+        localAccList = listAppend(localAccList,{id});
+        localAccList = extractLoopVars(restIdRange,localAccList);  
+      then localAccList;
+  end matchcontinue;       
+end extractLoopVars;
+
+public function createForIteratorAlgorithm "function: createForIteratorAlgorithm
+	author: KS	
+	Function that creates for algorithm statements to be used in 
+	the for iterator constructor assignment."
+  input Absyn.Exp iterExp;
+  input list<tuple<Absyn.Ident,Absyn.Exp>> rangeIdList;
+  input list<Absyn.Ident> idList;
+  input Absyn.ComponentRef arrayId;
+  output Absyn.Algorithm outAlg;
+algorithm
+  outAlg :=
+  matchcontinue (iterExp,rangeIdList,idList,arrayId)
+    local
+      list<Absyn.AlgorithmItem> stmt1;
+      Absyn.Algorithm stmt2;  
+      Absyn.Ident id;
+      Absyn.Exp rangeExp,localIterExp;
+      list<Absyn.Ident> localIdList;
+      Absyn.ComponentRef localArrayId;
+    case (localIterExp,(id,rangeExp) :: {},localIdList,localArrayId)
+      local
+        list<Absyn.Subscript> subList;
+        Absyn.Exp arrayRef;
+      equation
+        subList = createArrayIndexing(localIdList,{});
+        arrayRef = createArrayReference(localArrayId,subList); 
+        stmt1 = Util.listCreate(Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(arrayRef,localIterExp),NONE()));  
+        stmt2 = Absyn.ALG_FOR(id,rangeExp,stmt1);       
+      then stmt2;
+    case (localIterExp,(id,rangeExp) :: rest,localIdList,localArrayId)
+      local
+        list<tuple<Absyn.Ident,Absyn.Exp>> rest;
+        Absyn.Algorithm temp;
+      equation
+        temp = createForIteratorAlgorithm(localIterExp,rest,localIdList,localArrayId);
+        stmt1 = Util.listCreate(Absyn.ALGORITHMITEM(temp,NONE()));
+        stmt2 = Absyn.ALG_FOR(id,rangeExp,stmt1);
+      then stmt2;
+  end matchcontinue;   
+end createForIteratorAlgorithm;
+
+
+public function createForIteratorArray "function: createForIteratorArray
+	author: KS	
+ Creates an array that will be used for storing temporary results in the 
+ for-iterator construct. "
+  input Env.Cache cache;
+  input Env.Env env;
+  input Absyn.Exp iterExp;
+  input list<Absyn.Ident> idList;
+  input list<tuple<Absyn.Ident,Absyn.Exp>> rangeIdList;
+  input Boolean b;  
+  output Env.Cache outCache;  
+  output list<Absyn.ElementItem> outDecls;
+algorithm
+  (outCache,outEnv,outDecls) :=
+  matchcontinue (cache,env,iterExp,idList,rangeIdList,b)
+    case (localCache,localEnv,localIterExp,localIdList,localRangeIdList,impl)
+      local
+        Env.Env env2,localEnv;
+        Env.Cache localCache,cache2;
+        list<Absyn.Ident> localIdList;
+        list<tuple<Absyn.Ident,Absyn.Exp>> localRangeIdList;
+        list<Absyn.Subscript> subscriptList;
+        Types.Type t;
+        Absyn.Path t2;
+        list<Absyn.ElementItem> ld;
+        list<SCode.Element> ld2;
+        list<tuple<SCode.Element, Types.Mod>> ld_mod;
+        list<Absyn.ElementItem> decls;
+        Boolean impl;
+        Integer i;
+        Absyn.Exp localIterExp;
+      equation  
+        ld = createTempIntegerVars(localIdList,{});
+        (localCache,subscriptList) = deriveArrayDimensions(localCache,localEnv,localRangeIdList,impl,{});
+        
+        // Temporarily add the loop variables to the environment so that we can later
+        // elaborate the main for-iterator construct expression, in order to get the array type
+        env2 = Env.openScope(localEnv, false, NONE());
+        ld2 = SCode.elabEitemlist(ld,false);
+        ld2 = componentElts(ld2);
+        ld_mod = addNomod(ld2);
+        env2 = addComponentsToEnv(env2, Types.NOMOD(), Prefix.NOPRE(), 
+        Connect.SETS({},{}), ClassInf.UNKNOWN("temp"), ld_mod, {}, {}, {}, impl);    
+			 (cache2,_,env2,_,_,_) = instElementList(cache,env2,
+			  Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{}), ClassInf.UNKNOWN("temp"),
+			  ld_mod,{},impl);
+			  
+        (cache2,_,Types.PROP(t,_),_) = Static.elabExp(cache2,env2,localIterExp,
+          impl,NONE(),false);
+          
+        t2 = convertType(t);
+ 
+        decls = Util.listCreate(Absyn.ELEMENTITEM(Absyn.ELEMENT(
+          false,NONE(),Absyn.UNSPECIFIED(),"component",
+          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+            Absyn.TPATH(t2,NONE()),		
+            {Absyn.COMPONENTITEM(Absyn.COMPONENT("VEC__",subscriptList,NONE()),NONE(),NONE())}),
+            Absyn.INFO("f",false,0,0,0,0),NONE())));
+            
+      then (localCache,decls); 
+  end matchcontinue;   
+end createForIteratorArray;
+
+public function convertType "function: convertType
+ author: KS 
+ "
+  input Types.Type t;
+  output Absyn.Path t2;
+algorithm  
+  t2 :=
+  matchcontinue (t)
+    local
+      String s;
+      Absyn.Path extObj;
+    case ((Types.T_INTEGER(_),_)) then Absyn.IDENT("Integer");
+    case ((Types.T_REAL(_),_)) then Absyn.IDENT("Real");   
+    case ((Types.T_STRING(_),_)) then Absyn.IDENT("String");
+    case ((Types.T_BOOL(_),_)) then Absyn.IDENT("Boolean");    
+    case ((Types.T_ENUM(),_)) then Absyn.IDENT("Enum");
+    case ((Types.T_COMPLEX(ClassInf.MODEL(s),_,_),_)) then Absyn.IDENT(s);
+    case ((Types.T_COMPLEX(ClassInf.RECORD(s),_,_),_)) then Absyn.IDENT(s);       
+    case ((Types.T_COMPLEX(ClassInf.BLOCK(s),_,_),_)) then Absyn.IDENT(s);       
+    case ((Types.T_COMPLEX(ClassInf.CONNECTOR(s),_,_),_)) then Absyn.IDENT(s);       
+    case ((Types.T_COMPLEX(ClassInf.EXTERNAL_OBJ(extObj),_,_),_)) then extObj;  
+ end matchcontinue;   
+end convertType;  
+
+public function createTempIntegerVars "function: createTempIntegerVars 
+author: KS
+This function creates integer variables that will be used temporarily. "
+  input list<Absyn.Ident> idList;
+  input list<Absyn.ElementItem> accList;
+  output list<Absyn.ElementItem> decls;
+algorithm
+  decls := 
+  matchcontinue (idList,accList)
+    local
+      list<Absyn.ElementItem> localAccList;     
+    case ({},localAccList) then localAccList;
+    case (id :: restList,localAccList)
+      local
+        list<Absyn.ElementItem> elem;
+        Absyn.Ident id;
+        list<Absyn.Ident> restList;
+      equation
+        elem = {Absyn.ELEMENTITEM(Absyn.ELEMENT(
+          false,NONE(),Absyn.UNSPECIFIED(),"component",
+          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+            Absyn.TPATH(Absyn.IDENT("Integer"),NONE()),		
+            {Absyn.COMPONENTITEM(Absyn.COMPONENT(id,{},NONE()),NONE(),NONE())}),
+            Absyn.INFO("f",false,0,0,0,0),NONE()))};
+        localAccList = listAppend(localAccList,elem); 
+        localAccList = createTempIntegerVars(restList,localAccList);     
+      then localAccList;
+  end matchcontinue;
+end createTempIntegerVars;
+
+public function deriveArrayDimensions "function: deriveArrayDimensions. 
+Given a list of range-expressions (tagged with loop variable identifiers), 
+we derive the dimension of each range. KS"
+  input Env.Cache cache;
+  input Env.Env env;
+  input list<tuple<Absyn.Ident,Absyn.Exp>> rangeList;
+  input Boolean impl;
+  input list<Absyn.Subscript> accList;
+  output Env.Cache cache; 
+  output list<Absyn.Subscript> outList;
+algorithm
+  outList :=
+  matchcontinue (cache,env,rangeList,impl,accList)
+    local
+      list<Absyn.Subscript> localAccList;
+      Env.Env localEnv;
+      Env.Cache localCache;
+    case (localCache,localEnv,{},_,localAccList) then (localCache,localAccList);
+    case (localCache,localEnv,(_,e) :: restList,localImpl,localAccList)
+      local
+        Absyn.Exp e;
+        list<tuple<Absyn.Ident,Absyn.Exp>> restList;
+        Boolean localImpl;
+        list<Absyn.Subscript> elem;
+        Integer i;
+      equation
+        (localCache,_,Types.PROP((Types.T_ARRAY(Types.DIM(SOME(i)),_),NONE()),_),_) = Static.elabExp(localCache,localEnv,e,localImpl,NONE(),false);
+        elem = {Absyn.SUBSCRIPT(Absyn.INTEGER(i))};
+        localAccList = listAppend(localAccList,elem);
+      then (localCache,localAccList);  
+  end matchcontinue;   
+end deriveArrayDimensions; */
+/* ------------------------------------------------------ */
+
 end Inst;
 

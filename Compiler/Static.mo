@@ -548,10 +548,10 @@ algorithm
 				ld_mod = Inst.addNomod(ld2);
     
         env2 = Inst.addComponentsToEnv(env2, Types.NOMOD(), Prefix.NOPRE(), 
-        Connect.SETS({},{}), ClassInf.UNKNOWN("temp"), ld_mod, {}, {}, {}, impl);    
+        Connect.SETS({},{}), ClassInf.FUNCTION("dummieFunc"), ld_mod, {}, {}, {}, impl);    
 				    
 			 (cache,dae1,env2,_,_,_) = Inst.instElementList(cache,env2,
-			  Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{}), ClassInf.UNKNOWN("temp"),
+			  Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{}), ClassInf.FUNCTION("dummieFunc"),
 			  ld_mod,{},impl);
      
         //----------------------------------------------------------------------
@@ -610,10 +610,10 @@ algorithm
 				ld_mod = Inst.addNomod(ld2);
     
         env2 = Inst.addComponentsToEnv(env2, Types.NOMOD(), Prefix.NOPRE(), 
-        Connect.SETS({},{}), ClassInf.UNKNOWN("temp"), ld_mod, {}, {}, {}, impl);    
+        Connect.SETS({},{}), ClassInf.FUNCTION("dummieFunc"), ld_mod, {}, {}, {}, impl);    
 				    
 			 (cache,dae1,env2,_,_,_) = Inst.instElementList(cache,env2,
-			  Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{}), ClassInf.UNKNOWN("temp"),
+			  Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{}), ClassInf.FUNCTION("dummieFunc"),
 			  ld_mod,{},impl);
     
         //----------------------------------------------------------------------

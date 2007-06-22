@@ -3770,11 +3770,15 @@ algorithm
         // Convert back to DAE uniontypes from Exp uniontypes, part of a work-around
         ld2 = Convert.fromExpElemsToDAEElems(ld,{});
         b2 = Convert.fromExpElemToDAEElem(b);
-        (cfn,tnr_1) = generateVars(ld2, isVarQ, tnr, funContext); 
+        
+        (cfn,tnr_1) = generateVars(ld2, isVarQ, tnr, funContext);  
+        cfn = cMoveDeclsAndInitsToStatements(cfn);
         (cfn1,tnr2) = generateAlgorithms(Util.listCreate(b2), tnr_1, context);           
+        
         (cfn1_2,var,tnr3) = generateExpression(res, tnr2, context);
         cfn1_2 = cMergeFns({cfn,cfn1,cfn1_2});   
-      then (cfn1_2,var,tnr2);         
+        cfn1_2 = cAddBlockAroundStatements(cfn1_2);
+      then (cfn1_2,var,tnr2);        
         
     case (Exp.ASUB(exp = _),_,_)
       equation 
@@ -3823,6 +3827,50 @@ algorithm
         fail();
   end matchcontinue;
 end generateExpression;
+
+protected function cAddBlockAroundStatements "function: cAddBlockAroundStatements
+ author: KS  
+ Used by generateExpression - Valueblock
+"
+  input CFunction inCFunction;
+  output CFunction outCFunction;
+algorithm 
+  outCFunction:=
+  matchcontinue (inCFunction)
+    local
+      list<Lib> rts,ad,vd,is,st,cl;
+      Lib rt,fn;
+    case CFUNCTION(returnType = rt,functionName = fn,returnTypeStruct = rts,argumentDeclarationLst = ad,variableDeclarationLst = vd,initStatementLst = is,statementLst = st,cleanupStatementLst = cl)
+      equation 
+        st = listAppend({"{"},st); 
+        st = listAppend(st,{"}"});
+      then
+        CFUNCTION(rt,fn,rts,ad,vd,is,st,cl);
+  end matchcontinue;
+  
+end cAddBlockAroundStatements;
+
+protected function cMoveDeclsAndInitsToStatements "function: cMoveStatementsToInits
+ 
+  Moves all statements of the body to initialization statements.
+"
+  input CFunction inCFunction;
+  output CFunction outCFunction;
+algorithm 
+  outCFunction:=
+  matchcontinue (inCFunction)
+    local
+      list<Lib> is_1,rts,ad,vd,is,st,cl;
+      Lib rt,fn;
+    case CFUNCTION(returnType = rt,functionName = fn,returnTypeStruct = rts,argumentDeclarationLst = ad,variableDeclarationLst = vd,initStatementLst = is,statementLst = st,cleanupStatementLst = cl)
+      equation 
+        st = listAppend(is,st);
+        st = listAppend(vd,st);
+      then
+        CFUNCTION(rt,fn,rts,ad,{},{},st,cl);
+  end matchcontinue;
+end cMoveDeclsAndInitsToStatements;
+
 
 protected function generateBuiltinFunction "function: generateBuiltinFunction
   author: PA
