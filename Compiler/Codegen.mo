@@ -2659,7 +2659,8 @@ algorithm
       then
         (cfn,tnr1);
     case (algStmt as Algorithm.WHEN(exp = _),tnr,CONTEXT(SIMULATION(false),_,_))
-      then (cEmptyFunction,tnr);
+    then (cEmptyFunction,tnr);
+ 
     case (Algorithm.TUPLE_ASSIGN(t,expl,e as Exp.CALL(path=_)),tnr,context)
       local Context context;
         list<Exp.Exp> args,expl; Absyn.Path fn;
@@ -2670,7 +2671,7 @@ algorithm
 				(cfn,tnr2) = generateTupleLhsAssignment(expl,tupleVar,1,tnr1,context);
 				cfn = cMergeFn(cfn1,cfn);
       then
-        (cfn,tnr2);
+        (cfn,tnr2);   
         
     case (Algorithm.ASSERT(cond = e1,msg = e2),tnr,CONTEXT(codeContext,_,loopContext))
       local CodeContext codeContext;
@@ -3776,7 +3777,8 @@ algorithm
         (cfn1,tnr2) = generateAlgorithms(Util.listCreate(b2), tnr_1, context);           
         
         (cfn1_2,var,tnr3) = generateExpression(res, tnr2, context);
-        cfn1_2 = cMergeFns({cfn,cfn1,cfn1_2});   
+
+        cfn1_2 = cMergeFns({cfn,cfn1,cfn1_2});     
         cfn1_2 = cAddBlockAroundStatements(cfn1_2);
       then (cfn1_2,var,tnr2);        
         

@@ -314,6 +314,7 @@ algorithm
     case (DAE.BOOL()) equation then Exp.BOOLEXP();
     case (DAE.STRING()) equation then Exp.STRINGEXP();
     case (DAE.ENUM()) equation then Exp.ENUMEXP();
+    case (DAE.LIST()) equation then Exp.LISTEXP();  
     case (DAE.EXT_OBJECT(p)) equation then Exp.EXT_OBJECTEXP(p);  
   end matchcontinue;
 end typeConvert;
@@ -866,6 +867,7 @@ algorithm
  		case (Exp.INTEXP()) equation then DAE.INT();
     case (Exp.BOOLEXP()) equation then DAE.BOOL();
     case (Exp.STRINGEXP()) equation then DAE.STRING();
+    case (Exp.LISTEXP()) equation then DAE.LIST();  
     case (Exp.EXT_OBJECTEXP(p)) equation then DAE.EXT_OBJECT(p);   
   end matchcontinue;
 end typeConvert2; 
@@ -1224,6 +1226,15 @@ algorithm
     	ret = ((Types.T_BOOL(lst2),p));
     then ret;        
       
+   	case ((Exp.T_LISTTYPES(lType),p))
+	  local
+    	Exp.TypeTypes lType;
+    	Types.Type lType2;
+    equation
+      lType2 = fromTypeTypesToType(lType);
+    	ret = ((Types.T_LIST(lType2),p));
+    then ret;  
+      
 	  case ((Exp.T_ENUMTYPES(),p))
     equation
       ret = ((Types.T_ENUM(),p));
@@ -1458,67 +1469,75 @@ algorithm
 	    Values.Value ret;
 	  case (Exp.INTEGERVAL(i))
 	  local
-		Integer i;
+	    Integer i;
 	  equation
 	  	ret = Values.INTEGER(i);  
 	  then ret;
 	  case (Exp.REALVAL(r))
-	  local
-		Real r;
-	  equation
-	  	ret = Values.REAL(r);  
-	  then ret;  
+	    local
+	      Real r;
+	    equation
+	      ret = Values.REAL(r);  
+	    then ret;  
 	  case (Exp.STRINGVAL(s))
-	  local
-		String s;
-	  equation
-	  ret = Values.STRING(s);  
-	  then ret;  
+	    local
+	      String s;
+	    equation
+	      ret = Values.STRING(s);  
+	    then ret;  
 	  case (Exp.BOOLVAL(b))
-	  local
-		Boolean b;
-	  equation
-	  ret = Values.BOOL(b);  
-	  then ret;  
+	    local
+	      Boolean b;
+	    equation
+	      ret = Values.BOOL(b);  
+	    then ret;  
+	  case (Exp.LISTVAL(vLst))
+	    local
+	      list<Exp.Value> vLst;
+	      list<Values.Value> vLst2;
+	    equation
+	      vLst2 = fromValueTypesLstToValueLst(vLst,{});
+	      ret = Values.LIST(vLst2);  
+	    then ret;      	      
 	  case (Exp.ENUMVAL(s))
-	 	local
-			String s;
-	  equation
-	  	ret = Values.ENUM(s);  
-	  then ret;  
+	    local
+	      String s;
+	    equation
+	      ret = Values.ENUM(s);  
+	    then ret;  
 	  case (Exp.ARRAYVAL(vLst))
-	  local
- 		list<Exp.Value> vLst;
- 		list<Values.Value> vLst2;
-	  equation
-	    vLst2 = fromValueTypesLstToValueLst(vLst,{});
-	  ret = Values.ARRAY(vLst2);  
-	  then ret;  
+	    local
+	      list<Exp.Value> vLst;
+	      list<Values.Value> vLst2;
+	    equation
+	      vLst2 = fromValueTypesLstToValueLst(vLst,{});
+	      ret = Values.ARRAY(vLst2);  
+	    then ret;  
 	  case (Exp.TUPLEVAL(vLst))
-	  local
- 		list<Exp.Value> vLst;
- 		list<Values.Value> vLst2;
-	  equation
-	  vLst2 = fromValueTypesLstToValueLst(vLst,{});
-	  ret = Values.TUPLE(vLst2); 
-	  then ret;  
+	    local
+	      list<Exp.Value> vLst;
+	      list<Values.Value> vLst2;
+	    equation
+	      vLst2 = fromValueTypesLstToValueLst(vLst,{});
+	      ret = Values.TUPLE(vLst2); 
+	    then ret;  
 	  case (Exp.RECORDVAL(p,vLst,lIdent))
-	  local
-    Absyn.Path p;
-    list<Exp.Value> vLst;
-    list<Exp.Ident> lIdent;
- 		list<Values.Value> vLst2;
-	  equation
-	    vLst2 = fromValueTypesLstToValueLst(vLst,{});
-		  ret = Values.RECORD(p,vLst2,lIdent);  
-	  then ret;  
+	    local
+	      Absyn.Path p;
+	      list<Exp.Value> vLst;
+	      list<Exp.Ident> lIdent;
+	      list<Values.Value> vLst2;
+	    equation
+	      vLst2 = fromValueTypesLstToValueLst(vLst,{});
+	      ret = Values.RECORD(p,vLst2,lIdent);  
+	    then ret;  
 	  case (Exp.CODEVAL(c))
-	  local
-		Absyn.CodeNode c;
-	  equation
-	  ret = Values.CODE(c);  
-	  then ret;                
-  end matchcontinue;
+	    local
+	      Absyn.CodeNode c;
+	    equation
+	      ret = Values.CODE(c);  
+	    then ret;                
+	end matchcontinue;
 end fromValueTypesToValue;
 
 public function fromValueTypesLstToValueLst "function: fromValueTypesLstToValueLst
@@ -1679,6 +1698,15 @@ algorithm
       temp = fromVarListToVarTypesList(lst,{});
     	ret = ((Exp.T_BOOLTYPES(temp),p));
     then ret;    
+      
+    case ((Types.T_LIST(lType),p))
+	  local
+    	Exp.TypeTypes lType2;
+    	Types.Type lType;
+    equation
+      lType2 = fromTypeToTypeTypes(lType);
+    	ret = ((Exp.T_LISTTYPES(lType2),p));
+    then ret; 
       
 	  case ((Types.T_ENUM(),p))
 	  local
@@ -1936,7 +1964,15 @@ algorithm
 		Boolean b;
 	  equation
 	  ret = Exp.BOOLVAL(b);  
-	  then ret;  
+	  then ret;    
+	  case (Values.LIST(vLst))
+	  local
+	    list<Values.Value> vLst;
+	    list<Exp.Value> vLst2;
+	  equation
+	    vLst2 = fromValueLstToValueTypesLst(vLst,{});
+	    ret = Exp.LISTVAL(vLst2);  
+	  then ret;    
 	  case (Values.ENUM(s))
 	 	local
 			String s;

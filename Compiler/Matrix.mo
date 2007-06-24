@@ -75,51 +75,16 @@ uniontype RenamedPat "The `RenamedPat\' datatype"
     Boolean value "value Binary operations, e.g. ab" ;
   end RP_BOOL;
   
-  record RP_UNARY
-    Absyn.Ident var;
-    Absyn.Operator op "op" ;
-    Absyn.Exp exp "exp Logical binary operations: and, or" ;
-  end RP_UNARY;
-  
-  record RP_LUNARY
-    Absyn.Ident var;
-    Absyn.Operator op "op" ;
-    Absyn.Exp exp "exp Relations, e.g. a >= 0" ;
-  end RP_LUNARY;
-  
   record RP_CALL
     Absyn.Ident var;
     Absyn.ComponentRef function_ "function" ;
     RenamedPatList functionArgs "functionArgs Array construction using \'{\',\'}\' or \'array\'" ;
   end RP_CALL;
   
-  record RP_ARRAY
-    Absyn.Ident var;
-    list<Absyn.Exp> arrayExp "arrayExp Matrix construction using \'{\', \'}\'" ;
-  end RP_ARRAY;
-  
-  record RP_MATRIX
-    Absyn.Ident var;
-    list<list<Absyn.Exp>> matrix "matrix Range expressions, e.g. 1:10 or 1:0.5:10" ;
-  end RP_MATRIX;
-  
-  record RP_RANGE "e.g. 1:10 or 1:0.5:10"
-    Absyn.Ident var;
-    Absyn.Exp start "start" ;
-    Option<Absyn.Exp> step "step" ;
-    Absyn.Exp stop "stop Tuples used in function calls returning several values" ;
-  end RP_RANGE;
-  
   record RP_TUPLE
     Absyn.Ident var;
     list<RenamedPat> expressions "expressions array access operator for last element, e.g. a{end}:=1;" ;
   end RP_TUPLE;
-  
-  record RP_END end RP_END;
-  
-  record RP_CODE
-    Absyn.CodeNode code "code ;  Modelica AST Code constructors" ;
-  end RP_CODE;
   
   // MetaModelica expression follows!
   record RP_CONS
@@ -127,11 +92,14 @@ uniontype RenamedPat "The `RenamedPat\' datatype"
     RenamedPat head " head of the list ";
     RenamedPat rest " rest of the list ";
   end RP_CONS;
-  
+
   record RP_WILDCARD  
     Absyn.Ident lhsVar;
-    Option<Absyn.Ident> rhsVar;
   end RP_WILDCARD;
+  
+  record RP_EMPTYLIST 
+    Absyn.Ident var; 
+  end RP_EMPTYLIST;
   
 end RenamedPat;
 
@@ -405,7 +373,7 @@ algorithm
         printPattern(rest);
         print("\n");
       then ();
-    case(RP_WILDCARD(var,NONE()))     
+    case(RP_WILDCARD(var))     
       local
         Absyn.Ident var;
       equation
@@ -414,19 +382,9 @@ algorithm
         print(" WILDCARD");
         print("\n");
       then ();
-    case(RP_WILDCARD(var,SOME(str)))     
-      local
-        Absyn.Ident var,str;
-      equation
-        print("Pathvar:");
-        print(var);
-        print(" WILDCARD: ");
-        print(str);
-        print("\n");
-      then ();
     case (_) 
       equation
-        print("Kan ej printa");
+        print("Printing of pattern not implemented");
       then ();             
   end matchcontinue;
 end printPattern;

@@ -557,6 +557,81 @@ algorithm
     case (_,_) then false;  
   end matchcontinue; 
 end typeMatching;  */
+/*
+public function createMatchcontinueResultVars "function: createMatchcontinueResultVars"
+  input Env.Cache cache;
+  input Env.Env env;
+  input list<Absyn.Exp> refList; 
+  input Integer num;  
+  input list<Absyn.ElementItem> accDeclList;  
+  input list<Absyn.Exp> accVarList; 
+  output Env.Cache outCache; 
+  output list<Absyn.ElementItem> outDecls;   
+  output list<Absyn.Exp> outVarList;
+algorithm  
+  (outCache,outDecls,outVarList) := 
+  matchcontinue (cache,env,refList,num)    
+    local  
+      Env.Cache localCache;  
+      Env.Env localEnv;  
+      list<Absyn.ElementItem> localAccDeclList;   
+      list<Absyn.Exp> localAccVarList;
+    case (localCache,_,{},_,localAccDeclList,localAccVarList)
+    then (localCache,localAccDeclList,localAccVarList);
+    case (localCache,localEnv,Absyn.CREF(Absyn.CREF_IDENT(c,{})) :: restExp,n,localAccDeclList,localAccVarList)  
+      local  
+        Absyn.Ident varName,c;  
+        list<Absyn.ElementItem> varList;          
+        list<Absyn.Exp> restExp;  
+        Integer n;
+        Types.TType t;
+        Absyn.TypeSpec t2;
+      equation 
+        (localCache,Types.VAR(_,_,_,(t,_),_),_,_) = Lookup.lookupIdent(localCache,localEnv,c);
+        t2 = typeConvert(t);
+        varName = stringAppend("RES__",intString(n));
+        
+        varList = Util.listCreate(Absyn.ELEMENTITEM(Absyn.ELEMENT(
+          false,NONE(),Absyn.UNSPECIFIED(),"component",
+          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+            t2,		
+            {Absyn.COMPONENTITEM(Absyn.COMPONENT(varName,{},NONE()),NONE(),NONE())}),
+            Absyn.INFO("f",false,0,0,0,0),NONE())));
+        
+        localAccVarList = listAppend(localAccVarList,{Absyn.CREF(Absyn.CREF_IDENT(varName,{}))});
+        localAccDeclList = listAppend(localAccDeclList,varList);
+        (localCache,localAccDeclList,localAccVarList) = createMatchcontinueResultVars(
+          localCache,localEnv,restExp,n+1,localAccDeclList,localAccVarList);    
+      then (localCache,localAccDeclList,localAccVarList);   
+    case (_,_,_,_,_,_) then fail();     
+  end matchcontinue;  
+end createMatchcontinueResultVars;  
 
+
+public function typeConvert "function: typeConvert"
+  input Types.TType t;
+  output Absyn.TypeSpec outType;
+algorithm
+  outType := 
+  matchcontinue (t)
+    case (Types.T_INTEGER(_)) then Absyn.TPATH(Absyn.IDENT("Integer"),NONE());
+    case (Types.T_BOOL(_)) then Absyn.TPATH(Absyn.IDENT("Boolean"),NONE());
+    case (Types.T_STRING(_)) then Absyn.TPATH(Absyn.IDENT("String"),NONE());
+    case (Types.T_REAL(_)) then Absyn.TPATH(Absyn.IDENT("Real"),NONE()); 
+    case (Types.T_COMPLEX(ClassInf.RECORD(s), _, _)) local String s; 
+      equation
+      then Absyn.TPATH(Absyn.IDENT(s),NONE()); 
+    case (Types.T_LIST((t,_)))  
+      local 
+        Absyn.TypeSpec tSpec; 
+        Types.TType t;  
+        list<Absyn.TypeSpec> tSpecList; 
+      equation
+        tSpec = typeConvert(t);
+        tSpecList = {tSpec};
+      then Absyn.TCOMPLEX(Absyn.IDENT("list"),tSpecList,NONE());      
+    // ...
+  end matchcontinue;  
+end typeConvert; */
 
 end MetaUtil;

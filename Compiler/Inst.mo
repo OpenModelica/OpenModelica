@@ -99,6 +99,7 @@ public import Patternm;
 public import MetaUtil;
 public import RTOpts;
 
+
 public type Prefix = Prefix.Prefix "
   These type aliases are introduced to make the code a little more
   readable.
@@ -7209,21 +7210,21 @@ algorithm
     
         //------------------------------------------------------
         // Part of the MetaModelica extension
-        /* equality equations cref = Array(...) */ 
+        /* equality equations cref = array(...) */ 
         // Should be removed??
    // case (cache,env,mods,pre,csets,ci_state,SCode.EQ_EQUALS(e1 as Absyn.CREF(cr),Absyn.ARRAY(expList)),initial_,impl)
-    //  local Option<Interactive.InteractiveSymbolTable> c1,c2; 
-    //    list<Absyn.Exp> expList; 
-    //    Absyn.ComponentRef cr; 
-    //    Types.Properties cprop;
-    //  equation  
+   //   local Option<Interactive.InteractiveSymbolTable> c1,c2; 
+   //     list<Absyn.Exp> expList; 
+   //    Absyn.ComponentRef cr; 
+   //     Types.Properties cprop;
+   //   equation  
         //true = RTOpts.acceptMetaModelicaGrammar();
         
         // If this is a list assignment, then the Absyn.ARRAY expression should 
         // be evaluated to Exp.LIST
-     
-    //    (cache,_,cprop,_) = Static.elabCref(cache,env, cr, impl,false); 
-    //    true = MetaUtil.isList(cprop);
+        
+     //   (cache,_,cprop,_) = Static.elabCref(cache,env, cr, impl,false); 
+     //   true = MetaUtil.isList(cprop);
 	 			// Do static analysis and constant evaluation of expressions. 
 			  // Gives expression and properties 
 	      // (Type  bool | (Type  Const as (bool | Const list))).
@@ -7233,18 +7234,18 @@ algorithm
 	      // regard to the position of the input arguments. 
 
         //  Returns the output parameters from the function.
-    //    (cache,e1_1,prop1,c1) = Static.elabExp(cache,env, e1, impl, NONE,true /*do vectorization*/); 
+      // (cache,e1_1,prop1,c1) = Static.elabExp(cache,env, e1, impl, NONE,true /*do vectorization*/); 
                 
-    //    (cache,e2_1,prop2,c2) = Static.elabListExp(cache,env, expList, cprop, impl, NONE,true/* do vectorization*/);
+       // (cache,e2_1,prop2,c2) = Static.elabListExp(cache,env, expList, cprop, impl, NONE,true/* do vectorization*/);
         //(cache,e1_1,e2_1) = condenseArrayEquation(cache,env,e1,e2,e1_1,e2_1,prop1,impl);
-     //   (cache,e1_2) = Prefix.prefixExp(cache,env, e1_1, pre);
-    //    (cache,e2_2) = Prefix.prefixExp(cache,env, e2_1, pre);
+      //  (cache,e1_2) = Prefix.prefixExp(cache,env, e1_1, pre);
+      //  (cache,e2_2) = Prefix.prefixExp(cache,env, e2_1, pre);
         
         //Check that the lefthandside and the righthandside get along.
-     //   dae = instEqEquation(e1_2, prop1, e2_2, prop2, initial_, impl);
-     //   ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
+       // dae = instEqEquation(e1_2, prop1, e2_2, prop2, initial_, impl);
+       // ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
      // then
-      //  (cache,dae,env,csets,ci_state_1);  
+       // (cache,dae,env,csets,ci_state_1);  
         //------------------------------------------------------	
         
                 /* v = array(For-constructor)  */ 
@@ -8267,16 +8268,15 @@ algorithm
       then
         (cache,stmt);
 
-        // v1 := matchcontinue(...)
+        // v1 := matchcontinue(...). Part of MetaModelica extension. KS
    case (cache,env,pre,Absyn.ALG_ASSIGN(Absyn.CREF(cr),e as Absyn.MATCHEXP(_,_,_,_,_)),impl) 
      local
-       list<Absyn.Exp> resultVarList;
      equation 
         (cache,cre,cprop,acc) = Static.elabCref(cache,env, cr, impl,false);
         (cache,Exp.CREF(ce,t)) = Prefix.prefixExp(cache,env, cre, pre);        
-        
-        resultVarList = {Absyn.CREF(cr)};
-        e = Patternm.matchMain(e,resultVarList,cache,env);
+       
+       expl = {Absyn.CREF(cr)};       
+       (cache,e) = Patternm.matchMain(e,expl,cache,env);
         (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);        
        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);                
 
@@ -8284,17 +8284,16 @@ algorithm
       then
         (cache,stmt);
         
-        // (v1,v2,..,vn) := matchcontinue(...)
+        // (v1,v2,..,vn) := matchcontinue(...). Part of MetaModelica extension. KS
    case (cache,env,pre,Absyn.ALG_ASSIGN(Absyn.TUPLE(expl),e as Absyn.MATCHEXP(_,_,_,_,_)),impl)
      local
-     equation 
-        (Absyn.CREF(cr)) = Util.listFirst(expl);
-       
-        (cache,cre,cprop,acc) = Static.elabCref(cache,env, cr, impl,false);
-        (cache,Exp.CREF(ce,t)) = Prefix.prefixExp(cache,env, cre, pre);        
-        
-        e = Patternm.matchMain(e,expl,cache,env);
-        (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);        
+     equation  
+       Absyn.CREF(cr) = Util.listFirst(expl);
+       (cache,cre,cprop,acc) = Static.elabCref(cache,env, cr, impl,false);
+       (cache,Exp.CREF(ce,t)) = Prefix.prefixExp(cache,env, cre, pre);        
+              
+       (cache,e) = Patternm.matchMain(e,expl,cache,env);
+       (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);        
        (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);                
 
        stmt = Algorithm.makeAssignment(Exp.CREF(ce,t), cprop, e_2, eprop, acc);

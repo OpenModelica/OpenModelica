@@ -306,7 +306,11 @@ uniontype TTypeTypes "-TType contains the actual type"
   record T_BOOLTYPES
     list<VarTypes> varLstBool "varLstBool" ;
   end T_BOOLTYPES;
-
+  
+  record T_LISTTYPES
+    TypeTypes listType "listType" ;
+  end T_LISTTYPES;
+  
   record T_ENUMTYPES end T_ENUMTYPES;
 
   record T_ENUMERATIONTYPES
@@ -387,6 +391,10 @@ uniontype Value
   record BOOLVAL
     Boolean boolean;
   end BOOLVAL;
+  
+  record LISTVAL
+    list<Value> valueLst;
+  end LISTVAL;
 
   record ENUMVAL
     String string;
@@ -446,9 +454,11 @@ uniontype TypeExp
   record BOOLEXP end BOOLEXP;
 
   record STRINGEXP end STRINGEXP;
+  
+  record LISTEXP end LISTEXP;
 
   record ENUMEXP end ENUMEXP;
-
+    
   record ENUMERATIONEXP
     list<String> stringLst;
   end ENUMERATIONEXP;
@@ -803,7 +813,8 @@ uniontype Else "An if statements can one or more `elseif\' branches and an
 
 end Else; 
 //-------------------------------------------
-
+// END OF WORKAROUND
+//-------------------------------------------
 
 public 
 uniontype Operator "Operators which are overloaded in the abstract syntax are here

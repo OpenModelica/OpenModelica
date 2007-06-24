@@ -56,6 +56,8 @@ public import Util;
 public import Env;
 public import SCode;
 public import Lookup;
+//protected import Debug; 
+//protected import Dump;
 
 //Some type simplifications
 type RenamedPat = Matrix.RenamedPat;
@@ -79,14 +81,16 @@ public function ASTtoMatrixForm "function: ASTtoMatrixForm
  when generating the DFA.
 "
   input Absyn.Exp matchCont;
-  input Env.Cache cache;
+  input Env.Cache cache;  
   input Env.Env env;
+  output Env.Cache outCache; 
+  output list<Absyn.Exp> outputVarList;
   output list<Absyn.ElementItem> outDeclList; // The local declarations
   output RightHandVector rhVec; // The righthand side vector 
   output RenamedPatMatrix pMat; // The matrix with renamed patterns (renaming means adding the path variables)
   output Option<RightHandSide> outElseRhSide; // An optional else case
 algorithm
-  (outDeclList,rhVec,pMat,outElseRhSide) :=
+  (outCache,outputVarList,outDeclList,rhVec,pMat,outElseRhSide) :=
   matchcontinue (matchCont,cache,env)
     case (localMatchCont as (Absyn.MATCHEXP(_,varList2,declList,localCases,_)),localCache,localEnv)
       local
@@ -115,11 +119,18 @@ algorithm
         // these assignments are added to the RightHandSide list
         patMat = fill({},varListLength);
         asBindings = fill({},listLength(rhsList));   
-        (patMat,asBindings) = 
+        (localCache,patMat,asBindings) = 
         fillMatrix(1,asBindings,varList,patList,patMat,localCache,localEnv); 
         rhsList = addAsBindings(rhsList,arrayList(asBindings));	
         
-      then (declList,listArray(rhsList),patMat,elseRhSide);
+        //true = patternCheck(arrayList(patMat));
+        
+      then (localCache,varList,declList,listArray(rhsList),patMat,elseRhSide);
+    case (exp,_,_) local Absyn.Exp exp;  
+      equation 
+        // Debug.fprint("failtrace", "- ASTtoMatrixForm failed, non-matching patterns in matchcase or zero input variables\n");
+       // Debug.fcall("failtrace", Dump.printExp, exp);  
+      then fail();
   end matchcontinue; 
 end ASTtoMatrixForm;
 
@@ -251,11 +262,12 @@ path is a path-variable and pattern is a renamed expression)
   input list<Absyn.Exp> patList; // The unrenamed patterns, no path variable added
   input RenamedPatMatrix patMat;
   input Env.Cache cache;
-  input Env.Env env;
+  input Env.Env env; 
+  output Env.Cache outCache;
   output RenamedPatMatrix outPatMat; 
   output AsArray outAsBindings;
 algorithm
-  (outPatMat,outPathVarList,outAsBindings) := 
+  (outCache,outPatMat,outAsBindings) := 
   matchcontinue (rowNum,inAsBindings,varList,patList,patMat,cache,env)
     local
       RenamedPatMatrix localPatMat;
@@ -263,14 +275,16 @@ algorithm
       list<Absyn.Exp> first,rest,localVarList;
       AsArray localAsBindings;
       Integer localRowNum;
-    case (_,localAsBindings,_,{},localPatMat,_,_) 
+    case (_,localAsBindings,_,{},localPatMat,localCache,_)  
+      local  
+        Env.Cache localCache; 
       equation 
-      then (localPatMat,localAsBindings);    
+      then (localCache,localPatMat,localAsBindings);    
     case (localRowNum,localAsBindings,localVarList,first2 :: rest,
         localPatMat,localCache,localEnv)
       local
         AsList asBinds;
-        
+        Integer len1,len2;
         //Temp variables
         RenamedPatMatrix temp2;
         AsArray temp4;
@@ -281,16 +295,25 @@ algorithm
         first = extractListFromTuple(first2);
         
         // Add a row to the matrix, rename each pattern as well
-        (localPatMat,asBinds) = addRow({},localVarList,1,first,localPatMat,localCache,localEnv);
+        (localCache,localPatMat,asBinds) = addRow({},localVarList,1,first,localPatMat,localCache,localEnv);
+        
+        len1 = listLength(first);  
+        len2 = listLength(localVarList);
+        true = (len1 == len2);
         
         // Store As-construct bindings for this row
         localAsBindings = arrayUpdate(localAsBindings, localRowNum, asBinds);
         
         // Add the rest of the rows to the matrix	  
-        (temp2,temp4) =
+        (localCache,temp2,temp4) =
         fillMatrix(localRowNum+1,localAsBindings,localVarList,rest,localPatMat,
           localCache,localEnv);   	
-      then (temp2,temp4);
+      then (localCache,temp2,temp4);  
+    case (_,_,_,e :: _,_,_,_)  local Absyn.Exp e; 
+      equation
+       // Debug.fprint("failtrace", "- fillMatrix failed, wrong number of patterns in case?\n");
+      //  Debug.fcall("failtrace", Dump.printExp, e);  
+      then fail();
   end matchcontinue;
 end fillMatrix;
 
@@ -306,11 +329,12 @@ public function addRow "function: addRow
   input list<Absyn.Exp> pats; // The patterns to be stored in the row
   input RenamedPatMatrix patMat;
   input Env.Cache cache;
-  input Env.Env env;
+  input Env.Env env;  
+  output Env.Cache outCache;
   output RenamedPatMatrix outPatMat; 
   output AsList outAsBinds;
 algorithm
-  (outPatMat,outAsBinds) :=
+  (outCache,outPatMat,outAsBinds) :=
   matchcontinue (asBindings,varList,pivot,pats,patMat,cache,env)
     local
       Integer localPivot;
@@ -323,9 +347,9 @@ algorithm
       AsList localAsBindings;
       Env.Cache localCache;
       Env.Env localEnv;
-    case (localAsBindings,_,_,{},localPatMat,_,_) 
+    case (localAsBindings,_,_,{},localPatMat,localCache,_) 
       equation 
-      then (localPatMat,localAsBindings);
+      then (localCache,localPatMat,localAsBindings);
     case(localAsBindings,Absyn.CREF(Absyn.CREF_IDENT(firstVar,{})) :: restVar,localPivot,firstPat :: restPat,
         localPatMat,localCache,localEnv)     
       local
@@ -342,7 +366,7 @@ algorithm
         str = "";
         
         //Rename a pattern, that is transform it into path=pattern form
-        (pat,asBinds) = 
+        (localCache,pat,asBinds) = 
         renameMain(firstPat,stringAppend(str,firstVar),{},localCache,localEnv);  	
         localAsBindings = listAppend(localAsBindings,asBinds);       
          
@@ -351,9 +375,9 @@ algorithm
         localPatMat = arrayUpdate(localPatMat, localPivot, temp5);
         
         //Add the rest of the elements for this row
-        (temp2,temp4) = addRow(localAsBindings,restVar,localPivot+1,restPat,
+        (localCache,temp2,temp4) = addRow(localAsBindings,restVar,localPivot+1,restPat,
         localPatMat,localCache,localEnv); 					         
-      then (temp2,temp4); 
+      then (localCache,temp2,temp4);   
   end matchcontinue;  
 end addRow;
 
@@ -367,11 +391,12 @@ public function renameMain "function: renameMain
   input Absyn.Ident rootVar;
   input AsList inAsBinds;
   input Env.Cache cache;
-  input Env.Env env;
+  input Env.Env env;  
+  output Env.Cache outCache;
   output RenamedPat renamedPat;
   output AsList outAsBinds;
 algorithm
-  (renamedPat,outPathVars,outAsBinds) :=
+  (outCache,renamedPat,outAsBinds) :=
   matchcontinue (pat,rootVar,inAsBinds,cache,env)
     local
       Absyn.Exp localPat;
@@ -381,44 +406,44 @@ algorithm
       Env.Cache localCache;
       Env.Env localEnv;
       // INTEGER EXPRESSION  
-    case (Absyn.INTEGER(val),localVar,localAsBinds,_,_)  
+    case (Absyn.INTEGER(val),localVar,localAsBinds,localCache,_)  
       local 
         Integer val;
         RenamedPat tempPat;   
       equation
         tempPat = Matrix.RP_INTEGER(localVar,val);
-      then (tempPat,localAsBinds);
+      then (localCache,tempPat,localAsBinds);
         // REAL EXPRESSION
-    case (Absyn.REAL(val),localVar,localAsBinds,_,_)
-      local 
+    case (Absyn.REAL(val),localVar,localAsBinds,localCache,_)
+      local
         Real val;
         RenamedPat tempPat;   
       equation
         tempPat = Matrix.RP_REAL(localVar,val); 
-      then (tempPat,localAsBinds);
+      then (localCache,tempPat,localAsBinds);
         // BOOLEAN EXPRESSION
-    case (Absyn.BOOL(val),localVar,localAsBinds,_,_)
+    case (Absyn.BOOL(val),localVar,localAsBinds,localCache,_)
       local 
         Boolean val;
         RenamedPat tempPat;   
       equation
         tempPat = Matrix.RP_BOOL(localVar,val); 
-      then (tempPat,localAsBinds);
+      then (localCache,tempPat,localAsBinds);
         // WILDCARD EXPRESSION
-    case (Absyn.CREF(Absyn.WILD()),localVar,localAsBinds,_,_)
+    case (Absyn.CREF(Absyn.WILD()),localVar,localAsBinds,localCache,_)
       local 
         RenamedPat tempPat;   
       equation
-        tempPat = Matrix.RP_WILDCARD(localVar,NONE()); 
-      then (tempPat,localAsBinds);
+        tempPat = Matrix.RP_WILDCARD(localVar); 
+      then (localCache,tempPat,localAsBinds);
         // STRING EXPRESSION    
-    case (Absyn.STRING(val),localVar,localAsBinds,_,_)
+    case (Absyn.STRING(val),localVar,localAsBinds,localCache,_)
       local 
         String val;
         RenamedPat pat;   
       equation
         pat = Matrix.RP_STRING(localVar,val);
-      then (pat,localAsBinds);
+      then (localCache,pat,localAsBinds);
         // AS BINDINGS        
         // An as-binding is collected as an equation assignment. This assigment will later be
         // added to the correspond righthand side.
@@ -435,14 +460,14 @@ algorithm
           Absyn.CREF(Absyn.CREF_IDENT(localVar,{}))),NONE()));
         localAsBinds = listAppend(localAsBinds,localAsBinds2);
         
-        (temp1,temp3) = renameMain(expr,localVar,localAsBinds,localCache,localEnv);        	    
-      then (temp1,temp3);        
+        (localCache,temp1,temp3) = renameMain(expr,localVar,localAsBinds,localCache,localEnv);        	    
+      then (localCache,temp1,temp3);        
         
         // COMPONENT REFERENCE EXPRESSION
         // Will be interpretated as: case (var AS _) or case(var AS wildcard)
         // This expression is transformed into a wildcard but we store the variable
         // reference as well as an AS-binding.
-    case (Absyn.CREF(Absyn.CREF_IDENT(var,_)),localVar,localAsBinds,_,_)
+    case (Absyn.CREF(Absyn.CREF_IDENT(var,_)),localVar,localAsBinds,localCache,_)
       local 
         Absyn.Ident var;   
         RenamedPat pat;
@@ -451,8 +476,8 @@ algorithm
           Absyn.CREF(Absyn.CREF_IDENT(localVar,{}))),NONE()));
         localAsBinds = listAppend(localAsBinds,localAsBinds2);
           
-        pat = Matrix.RP_WILDCARD(localVar,NONE());
-      then (pat,localAsBinds);
+        pat = Matrix.RP_WILDCARD(localVar);
+      then (localCache,pat,localAsBinds);
         
         // TUPLE EXPRESSION
         // This is a builtin functioncall, all the function arguments are renamed       
@@ -464,11 +489,11 @@ algorithm
         RenamedPat pat;
         AsList localAsBinds2;
       equation
-        (renamedPatList,localAsBinds2) = renamePatList(funcArgs
+        (localCache,renamedPatList,localAsBinds2) = renamePatList(funcArgs
           ,localVar,1,{},{},localCache,localEnv);
         pat = Matrix.RP_TUPLE(localVar,renamedPatList);
         
-      then (pat,listAppend(localAsBinds,localAsBinds2));
+      then (localCache,pat,listAppend(localAsBinds,localAsBinds2));
         
         // CONS EXPRESSION
         // This is a builtin functioncall, all the function arguments are renamed
@@ -480,14 +505,14 @@ algorithm
         RenamedPat pat,first2,second2;
         AsList localAsBinds2;
       equation
-        (renamedPatList,localAsBinds2) = renamePatList({first,second}
+        (localCache,renamedPatList,localAsBinds2) = renamePatList({first,second}
           ,localVar,1,{},{},localCache,localEnv);
         first2 = Util.listFirst(renamedPatList);
         second2 = Util.listFirst(Util.listRest(renamedPatList));
         
         pat = Matrix.RP_CONS(localVar,first2,second2);
         
-      then (pat,listAppend(localAsBinds,localAsBinds2));   
+      then (localCache,pat,listAppend(localAsBinds,localAsBinds2));   
         // CALL EXPRESSION
         // This is a builtin functioncall, all the function arguments are renamed
         // We also must transform named function arguments into positional function 
@@ -501,11 +526,11 @@ algorithm
         RenamedPat pat;
         AsList localAsBinds2;
       equation
-        (renamedPatList,localAsBinds2) = renamePatList(funcArgs
+        (localCache,renamedPatList,localAsBinds2) = renamePatList(funcArgs
           ,localVar,1,{},{},localCache,localEnv);
         pat = Matrix.RP_CALL(localVar,compRef,renamedPatList);
         
-      then (pat,listAppend(localAsBinds,localAsBinds2));
+      then (localCache,pat,listAppend(localAsBinds,localAsBinds2));
         
     case (Absyn.CALL(compRef as Absyn.CREF_IDENT(recName,{}),Absyn.FUNCTIONARGS({},namedArgList)),localVar,localAsBinds,localCache,localEnv)
       local
@@ -523,17 +548,29 @@ algorithm
         
         // Fetch the names of the fields
         pathName = Absyn.IDENT(recName);
-        (_,sClass,_) = Lookup.lookupClass(localCache,localEnv,pathName,true);
+        (localCache,sClass,_) = Lookup.lookupClass(localCache,localEnv,pathName,true);
         (fieldNameList,_) = DFA.extractFieldNamesAndTypes(sClass);
         
         //Sorting of named arguments
         funcArgs = generatePositionalArgs(fieldNameList,namedArgList,{});
         
-        (renamedPatList,localAsBinds2) = renamePatList(funcArgs
+        (localCache,renamedPatList,localAsBinds2) = renamePatList(funcArgs
           ,localVar,1,{},{},localCache,localEnv);
         pat = Matrix.RP_CALL(localVar,compRef,renamedPatList);
         
-      then (pat,listAppend(localAsBinds,localAsBinds2));  
+      then (localCache,pat,listAppend(localAsBinds,localAsBinds2));    
+        
+    case (Absyn.ARRAY({}),localVar,localAsBinds,localCache,_)
+      local  
+        RenamedPat pat;
+      equation
+        pat = Matrix.RP_EMPTYLIST(localVar);
+      then (localCache,pat,localAsBinds);    
+    case (e,_,_,_,_)  local Absyn.Exp e; 
+      equation
+      //  Debug.fprint("failtrace", "- renameMain failed, unvalid pattern\n");
+      //  Debug.fcall("failtrace", Dump.printExp, e);  
+      then fail();   
   end matchcontinue;	     
 end renameMain;
 
@@ -550,19 +587,20 @@ Input is a list of patterns to remain.
   input list<RenamedPat> accRenamedPatList;
   input AsList asBindings;
   input Env.Cache cache;
-  input Env.Env env;
+  input Env.Env env; 
+  output Env.Cache outCache;
   output list<RenamedPat> renamedPatList;
   output AsList outAsBindings;
 algorithm
-  (renamedPatList,outAsBindings) :=
+  (outCache,renamedPatList,outAsBindings) :=
   matchcontinue (patList,var,pivot,accRenamedPatList,asBindings,cache,env)
     local
       list<RenamedPat> localAccRenamedPatList;
       AsList localAsBindings;
       Env.Cache localCache;
       Env.Env localEnv;
-    case ({},_,_,localAccRenamedPatList,localAsBindings,_,_) 
-      equation then (localAccRenamedPatList,localAsBindings);
+    case ({},_,_,localAccRenamedPatList,localAsBindings,localCache,_) 
+      equation then (localCache,localAccRenamedPatList,localAsBindings);
     case (first :: rest,localVar,localPivot,localAccRenamedPatList,localAsBindings,
       localCache,localEnv)
       local
@@ -580,16 +618,16 @@ algorithm
       equation
         tempStr = stringAppend("__",intString(localPivot));     
         //Rename first pattern
-        (localRenamedPat,localAsBindings2) = 
+        (localCache,localRenamedPat,localAsBindings2) = 
         renameMain(first,stringAppend(localVar,tempStr),{},localCache,localEnv);
         
       	str = stringAppend(localVar,tempStr);
 
       	localAccRenamedPatList = listAppend(localAccRenamedPatList,localRenamedPat :: {});
-      	(temp1,temp3) = renamePatList(rest,localVar,localPivot+1,
+      	(localCache,temp1,temp3) = renamePatList(rest,localVar,localPivot+1,
         	localAccRenamedPatList,
         	listAppend(localAsBindings,localAsBindings2),localCache,localEnv);
-      	then (temp1,temp3);
+      	then (localCache,temp1,temp3);
   end matchcontinue;
 end renamePatList;
 
@@ -632,17 +670,18 @@ public function matchMain "function: matchMain
   input Absyn.Exp matchCont;
   input list<Absyn.Exp> resultVarList;
   input Env.Cache cache;
-  input Env.Env env;
+  input Env.Env env; 
+  output Env.Cache outCache;
   output Absyn.Exp outExpr;
 algorithm
-  outExpr := 
+  (outCache,outExpr) := 
   matchcontinue (matchCont,resultVarList,cache,env)
     case (localMatchCont,localResultVarList,localCache,localEnv)  
       local
         RightHandVector rhVec;
         RenamedPatMatrix patMat;
         list<Absyn.ElementItem> declList;
-        list<Absyn.Exp> localResultVarList;
+        list<Absyn.Exp> localResultVarList,inputVarList;
         Option<RightHandSide> elseRhSide;
         Integer stampTemp;
         DFA.State dfaState;
@@ -653,7 +692,7 @@ algorithm
         Env.Env localEnv;
       equation	
         // Get the pattern matrix etc.
-        (declList,rhVec,patMat,elseRhSide) = ASTtoMatrixForm(localMatchCont,localCache,localEnv);
+        (localCache,inputVarList,declList,rhVec,patMat,elseRhSide) = ASTtoMatrixForm(localMatchCont,localCache,localEnv);
         patMat2 = arrayList(patMat);
         
         // A small fix.
@@ -665,8 +704,15 @@ algorithm
         (dfaState,stampTemp) = matchFuncHelper(patMat2,arrayList(rhVec),DFA.STATE(1,0,{},NONE()),1);
         //print("Done with the matching");
         dfaRec = DFA.DFArec(declList,{},NONE(),dfaState,stampTemp);
-        expr = DFA.fromDFAtoIfNodes(dfaRec,localResultVarList,localCache,localEnv);
-      then expr;
+        (localCache,expr) = DFA.fromDFAtoIfNodes(dfaRec,inputVarList,localResultVarList,localCache,localEnv);
+      then (localCache,expr); 
+    case (exp,_,_,_)   
+      local  
+        Absyn.Exp exp;   
+      equation
+      //  Debug.fprint("failtrace", "- matchMain failed\n");
+      //  Debug.fcall("failtrace", Dump.printExp, exp);     
+      then fail();
   end matchcontinue;	      
 end matchMain;
 
@@ -1156,7 +1202,8 @@ algorithm
     case Matrix.RP_STRING(_,val) 
     local 
       String val;
-      equation then val;  
+      equation then val;   
+    case Matrix.RP_EMPTYLIST(_) then "EmptyList";    
   end matchcontinue;     	
 end getConstantName;
 
@@ -1209,7 +1256,7 @@ algorithm
             
         var = DFA.extractPathVar(arrayGet(listArray(listTemp),Util.listFirst(indVec)));   
         arcName = "Wildcard"; 
-        localState = DFA.addNewArc(localState,arcName,newState,SOME(Matrix.RP_WILDCARD(var,NONE())));
+        localState = DFA.addNewArc(localState,arcName,newState,SOME(Matrix.RP_WILDCARD(var)));
       then (localState,localCnt);
     case (localState,_,_,_,localCnt) 
       local
@@ -1464,7 +1511,7 @@ algorithm
         Absyn.Ident first;
         list<Absyn.Ident> rest;
       equation
-        localPatList = listAppend(localPatList,Util.listCreate(Matrix.RP_WILDCARD(first,NONE())));
+        localPatList = listAppend(localPatList,Util.listCreate(Matrix.RP_WILDCARD(first)));
       then generateWildcardList(rest,localPatList);
   end matchcontinue;
 end generateWildcardList;
@@ -1595,7 +1642,7 @@ algorithm
         RenamedPat pat;
         RenamedPatList l;
       equation
-        pat = Matrix.RP_WILDCARD(first,NONE()); 
+        pat = Matrix.RP_WILDCARD(first); 
         l = generateWildcards(rest);
       then pat :: l;
   end matchcontinue;        
@@ -1611,11 +1658,13 @@ algorithm
   matchcontinue (inPat)
     case (Matrix.RP_CALL(_,_,l)) 
       local 
-        RenamedPatList l; 
+        RenamedPatList l;  
+      equation
       then l;
     case (Matrix.RP_TUPLE(_,l)) 
       local 
-        RenamedPatList l; 
+        RenamedPatList l;
+      equation 
       then l;
     case (Matrix.RP_CONS(_,first,second)) 
       local
@@ -1790,7 +1839,7 @@ Decides wheter a Renamed Patterns is a wildcard or not
 algorithm
   val :=
   matchcontinue (pat)
-    case (Matrix.RP_WILDCARD(_,_))
+    case (Matrix.RP_WILDCARD(_))
       equation
       then true;
     case (_)
@@ -1819,7 +1868,8 @@ algorithm
       then true;
     case (Matrix.RP_REAL(_,_))
       equation
-      then true;         
+      then true;      
+    case (Matrix.RP_EMPTYLIST(_)) then true;       
     case (Matrix.RP_CREF(_,_))
       equation
       then true;
@@ -1923,5 +1973,79 @@ algorithm
       then selectRightHandSides(rest,localRhVec,localAccRhList);    
   end matchcontinue;
 end selectRightHandSides;
+
+//-----------------------------------------------
+// Some simple "type checking" is done
+/*
+public function patternCheck 
+  input RenamedPatMatrix2 mat;
+  output Boolean b;   
+algorithm
+  b := 
+  matchcontinue (mat)    
+    case ({}) then true; 
+    case ({{}}) then true;  
+    case (firstRow :: restRows) 
+      local 
+        RenamedPatMatrix2 restRows;
+        RenamedPatList firstRow;
+        RenamedPat pat; 
+        Boolean b2; 
+      equation  
+        pat = Util.listFirst(firstRow);
+        b2 = patternCheck2(pat,firstRow); 
+        true = b2; 
+        b2 = patternCheck(restRows);
+      then b2;
+    case (_) then fail(); 
+  end matchcontinue;
+end patternCheck; 
+
+public function patternCheck2 
+  input RenamedPat pat;  
+  input RenamedPatList pList; 
+  output Boolean outB;
+algorithm 
+  outB := 
+  matchcontinue (pat,pList)
+    case (_,{}) then true;  
+    case (p,firstP :: restP) 
+      local  
+      equation  
+        true = twoPatternMatch(p,firstP); 
+        b = patternCheck2(firstP,restP);
+      then b; 
+    case (_,_) fail();
+  end matchcontinue;
+end patternCheck2;  
+
+public function twoPatternMatch 
+  input RenamedPat pat1; 
+  input RenamedPat pat2;
+  output Boolean outB; 
+algorithm  
+  outB := 
+  matchcontinue (pat1,pat2) 
+    case (Matrix.RP_WILDCARD(_),_) then true;      
+    case (_,Matrix.RP_WILDCARD(_)) then true;
+    case (Matrix.RP_EMPTYLIST(_),Matrix.RP_EMPTYLIST(_)) then true;    
+    case (Matrix.RP_INTEGER(_),Matrix.RP_INTEGER(_)) then true;    
+    case (Matrix.RP_REAL(_),Matrix.RP_REAL(_)) then true;    
+    case (Matrix.RP_BOOL(_),Matrix.RP_BOOL(_)) then true;    
+    case (Matrix.RP_STRING(_),Matrix.RP_STRING(_)) then true;
+    case (Matrix.RP_CALL(_,_,_),Matrix.RP_CALL(_,_,_)) then true;  
+    case (Matrix.RP_CREF(_,_),Matrix.RP_CREF(_,_)) then true;  
+    case (Matrix.RP_TUPLE(_,_),Matrix.RP_TUPLE(_,_)) then true;  
+    case (Matrix.RP_CONS(_,_,_),Matrix.RP_CONS(_,_,_)) then true;  
+    case (p1,p2)
+      local  RenamedPat p1; RenamedPat p2;
+      equation
+        Debug.fprint("failtrace", "- twoPatternMatch failed, non-matching patterns\n"); 
+        print("Non matching patterns");
+        Matrix.printPattern(p1); print(",");
+        Matrix.printPattern(p2); print("\n");  
+      then fail();  
+  end matchcontinue; 
+end twoPatternMatch; */
 
 end Patternm;
