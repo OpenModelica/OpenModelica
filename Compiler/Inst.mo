@@ -3658,7 +3658,7 @@ algorithm
         (cache,m_1) = Mod.elabMod(cache,env2, pre, m, impl);
         mod = Mod.merge(classmod_1, mm_1, env2, pre);
         mod1 = Mod.merge(mod, m_1, env2, pre);
-        mod1_1 = Mod.merge(cmod, mod1, env2, pre);
+        mod1_1 = Mod.merge(cmod, mod1, env2, pre); 
 
 				/* Apply redeclaration modifier to component */
         (cache,SCode.COMPONENT(n,io,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,acc,param,dir)),_,m,bc,comment),mod_1,env2_1,csets) 
@@ -3701,7 +3701,7 @@ algorithm
         //dae2 = Util.if_(ModUtil.isOuter(io),{},dae);
 
       then
-        (cache,dae,env_1,csets_1,ci_state,vars);
+        (cache,dae,env_1,csets_1,ci_state,vars); 
         //------------------------------
         
     // If the class lookup in the previous rule fails, this rule catches the error 
@@ -7249,7 +7249,7 @@ algorithm
         //------------------------------------------------------	
         
                 /* v = array(For-constructor)  */ 
-   /* case (cache,env,mods,pre,csets,ci_state,SCode.EQ_EQUALS(Absyn.CREF(arrName),
+    case (cache,env,mods,pre,csets,ci_state,SCode.EQ_EQUALS(Absyn.CREF(arrName),
        Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(itExp,id,e2))),initial_,impl)     
      // Absyn.CALL(Absyn.CREF_IDENT("Array",{}),Absyn.FOR_ITER_FARG(itExp,rangeIdList))),initial_,impl) 
       local
@@ -7267,7 +7267,7 @@ algorithm
         eq = createForIteratorEquations(itExp,rangeIdList,idList,arrName);
         (cache,dae,env,csets_1,ci_state_1) = instEquationCommon(cache,env,mods,pre,csets,ci_state,eq,initial_,impl);
       then
-        (cache,dae,env,csets_1,ci_state_1); */
+        (cache,dae,env,csets_1,ci_state_1); 
         
         /* equality equations e1 = e2 */
     case (cache,env,mods,pre,csets,ci_state,SCode.EQ_EQUALS(exp1 = e1,exp2 = e2),initial_,impl)
@@ -8193,7 +8193,7 @@ algorithm
         //-----------------------------------------//	
         
     /* v := array(for-iterator); */       
-  /*  case (cache,env,pre,Absyn.ALG_ASSIGN(Absyn.CREF(c),
+    case (cache,env,pre,Absyn.ALG_ASSIGN(Absyn.CREF(c),
       Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(e1,id,e2))),impl)
       //Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(e,rangeList))),impl) 
       local
@@ -8211,10 +8211,10 @@ algorithm
         absynStmt = createForIteratorAlgorithm(e1,rangeList,idList,c);
         (cache,stmt) = instStatement(cache,env,pre,absynStmt,impl);
       then
-        (cache,stmt); */
+        (cache,stmt); 
         
         /* v := Function(for-iterator); */       
-/*   case (cache,env,pre,Absyn.ALG_ASSIGN(Absyn.CREF(c1),
+   case (cache,env,pre,Absyn.ALG_ASSIGN(Absyn.CREF(c1),
       Absyn.CALL(c2,Absyn.FOR_ITER_FARG(e1,id,e2))),impl) 
     //Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(e,rangeList))),impl)
       local
@@ -8243,7 +8243,7 @@ algorithm
         
         (cache,stmt) = instStatement(cache,env,pre,absynStmt,impl);
       then
-      (cache,stmt); */
+      (cache,stmt); 
  
         /* v := expr; */       
     case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e),impl) 
@@ -9969,8 +9969,8 @@ end isTopCall;
 /* ------------------------------------------------------ */
 // The following functions are used in the instantiation of
 // array iterator constructors. For instance, 
-// { 3*i*j for i in 1:5, j in 1:n } 
-/*
+// v := { 3*i*j for i in 1:5, j in 1:n } 
+
 public function createForIteratorEquations "function: createForIteratorEquations
 	author: KS
 
@@ -10284,7 +10284,7 @@ algorithm
         localAccList = listAppend(localAccList,elem);
       then (localCache,localAccList);  
   end matchcontinue;   
-end deriveArrayDimensions; */
+end deriveArrayDimensions; 
 /* ------------------------------------------------------ */
 
 end Inst;

@@ -46,19 +46,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 public import Absyn;
 public import Matrix;
-public import Util;
 public import Env;
-public import Lookup;
 public import Types;
 public import ClassInf;
+public import SCode;
+
 type Stamp = Integer;
 type ArcName = Absyn.Ident;
-public import SCode;
+
+protected import Lookup;
+protected import Util;
 
 public uniontype Dfa
   record DFArec
     list<Absyn.ElementItem> localVarList;
-    list<Absyn.ElementItem> pathVarList; // Onodigt?
+    list<Absyn.ElementItem> pathVarList; // Not in use
     Option<Matrix.RightHandSide> elseCase;
     State startState;
     Integer numOfStates;
@@ -68,12 +70,12 @@ end Dfa;
 public uniontype State
   record STATE
     Stamp stamp;
-    Integer refCount;
+    Integer refCount; // Not in use
     list<Arc> outgoingArcs;
     Option<Matrix.RightHandSide> rhSide;
   end STATE;
   
-  record DUMMIESTATE 
+  record DUMMIESTATE  
   end DUMMIESTATE;
 end State;
 
@@ -87,7 +89,8 @@ end Arc;
 
 
 public function addNewArc "function: addNewArc
-A function that adds a new arc to a states arc-list
+	author: KS
+	A function that adds a new arc to a states arc-list
 "
   input State firstState;
   input ArcName arcName; 
@@ -118,12 +121,13 @@ algorithm
 end addNewArc;  
 
 public function fromDFAtoIfNodes "function: fromDFAtoIfNodes
-Main function for converting a DFA into a valueblock expression containing
-if-statements.
+	author: KS
+	Main function for converting a DFA into a valueblock expression containing
+	if-statements.
 "
   input Dfa dfa;
-  input list<Absyn.Exp> inputVarList;
-  input list<Absyn.Exp> resVarList;
+  input list<Absyn.Exp> inputVarList; // matchcontinue (var1,var2,...)
+  input list<Absyn.Exp> resVarList;  // (var1,var2,...) := matchcontinue (...) ...
   input Env.Cache cache;
   input Env.Env env; 
   output Env.Cache outCache;
@@ -146,7 +150,7 @@ algorithm
       equation 
 
         // Used for catch handling		        
-       /* varList = Util.listCreate(Absyn.ELEMENTITEM(Absyn.ELEMENT(
+        /* varList = Util.listCreate(Absyn.ELEMENTITEM(Absyn.ELEMENT(
           false,NONE(),Absyn.UNSPECIFIED(),"component",
           Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
             Absyn.TPATH(Absyn.IDENT("Integer"),NONE()),		
@@ -174,6 +178,7 @@ algorithm
         localVarList = listAppend(localVarList,varList);
         */
         
+        // This variable is used for catch handling. It should be an array
         varList = Util.listCreate(Absyn.ELEMENTITEM(Absyn.ELEMENT(
           false,NONE(),Absyn.UNSPECIFIED(),"component",
           Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
@@ -182,7 +187,9 @@ algorithm
             Absyn.INFO("f",false,0,0,0,0),NONE())));
         
         localVarList = listAppend(localVarList,varList);
-          
+        
+        // This variable is a dummie variable, used when we want to use a valueblock but not
+        // return anything interesting. DUMMIE__ := VALUEBLOCK( ... )      
         varList = Util.listCreate(Absyn.ELEMENTITEM(Absyn.ELEMENT(
           false,NONE(),Absyn.UNSPECIFIED(),"component",
           Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
@@ -191,7 +198,8 @@ algorithm
             Absyn.INFO("f",false,0,0,0,0),NONE())));
         
         localVarList = listAppend(localVarList,varList);
-        
+          
+        // This variable is used if there is an else case in a matchcontinue expression
         varList = Util.listCreate(Absyn.ELEMENTITEM(Absyn.ELEMENT(
           false,NONE(),Absyn.UNSPECIFIED(),"component",
           Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
@@ -211,17 +219,18 @@ algorithm
         
         resExpr = Util.listFirst(localResVarList);
         
-        //Create a valueblock
+        //Create the main valueblock
         exp = Absyn.VALUEBLOCK(localVarList,Absyn.VALUEBLOCKALGORITHMS(algs),resExpr);
       then (localCache,exp);     
   end matchcontinue;
 end fromDFAtoIfNodes;  
 
-public function generateAlgorithmBlock "function: generateAlgorithmBlock
+protected function generateAlgorithmBlock "function: generateAlgorithmBlock
+	author: KS
  Generate the algorithm statements in the value block from the DFA
 "
   input list<Absyn.Exp> resVarList; // Component references to the return list variables
-  input list<Absyn.Exp> inputVarList;
+  input list<Absyn.Exp> inputVarList; // matchcontinue (var1,var2,...)
   input State startState;
   input Option<Matrix.RightHandSide> elseCase;
   input Env.Cache cache;
@@ -242,9 +251,11 @@ algorithm
         Absyn.AlgorithmItem algItem1,algItem2;
         list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnv;
       equation 
-        // The DFA Env is used to store the type of path variables. It is used
-        // when we want to get the type of a list variable.
+        // The DFA Environment is used to store the type of some path variables. It is used
+        // when we want to get the type of a list variable. Since the input variables
+        // are the outermost path variables, we add them to this environment. 
         (dfaEnv,localCache) = addVarsToDfaEnv(localInputVarList,{},localCache,localEnv);
+        
         (localCache,algs) = fromStatetoAbsynCode(localResVarList,localStartState,NONE(),localCache,localEnv,dfaEnv,false); 
         
         //Catch handling
@@ -269,7 +280,11 @@ algorithm
         list<Absyn.Exp> expList;
         list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnv;
       equation
+        // The DFA Environment is used to store the type of some path variables. It is used
+        // when we want to get the type of a list variable. Since the input variables
+        // are the outermost path variables, we add them to this environment. 
         (dfaEnv,localCache) = addVarsToDfaEnv(localInputVarList,{},localCache,localEnv);
+        
         (localCache,algList) = fromStatetoAbsynCode(localResVarList,localStartState,NONE(),localCache,localEnv,dfaEnv,true);
         
         algList2 = fromEquationsToAlgAssignments(eqs,{});
@@ -292,17 +307,18 @@ algorithm
 end generateAlgorithmBlock;  
 
 
-public function fromStatetoAbsynCode "function: fromStatetoAbsynCode
- Takes a DFA state and recursively generates if-else nodes by investigating 
- the outgoing arcs.
+protected function fromStatetoAbsynCode "function: fromStatetoAbsynCode
+ 	author: KS
+ 	Takes a DFA state and recursively generates if-else nodes by investigating 
+	 the outgoing arcs.
 "
-  input list<Absyn.Exp> resVarList;  
+  input list<Absyn.Exp> resVarList;  // This list will be used when we have arrived to a final state.
   input State state;
   input Option<Matrix.RenamedPat> inPat;
   input Env.Cache cache;
   input Env.Env env;
   input list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnv;
-  input Boolean existElse;  
+  input Boolean existElse;  // Variable that indicates if there exists an else-case in the matchc. exp
   output Env.Cache outCache;  
   output list<Absyn.AlgorithmItem> ifNodes;
 algorithm
@@ -318,7 +334,7 @@ algorithm
       list<Absyn.Exp> exp2,localResVarList;
       Integer localRetExpLen;
       Boolean localExistElse;
-      // JUST FOR SURE    
+      // JUST TO BE SURE    
     case (_,DUMMIESTATE(),_,localCache,_,_,_) equation then (localCache,{});
       
       //FINAL STATE  
@@ -330,11 +346,15 @@ algorithm
       equation 
         exp2 = createListFromExpression(result);
         
-        // Create the assignments that assign the return variables
+        // Create the assignments that assigns the return variables
         lastAssign = createLastAssignments(localResVarList,exp2,{});
         
         body = fromEquationsToAlgAssignments(equations,{}); 
         
+        // If we have been here, we should not enter the else case. 
+        // We have completed a matching of a whole row of patterns.
+        // Set the else-var to false. But if a an else-case does not 
+        // exist, then no assignment will be generated.
         elseVarAssign = elseVarAssignment(localExistElse);
         outList = elseVarAssign;
         outList = listAppend(outList,body);
@@ -357,7 +377,10 @@ algorithm
         
         body = fromEquationsToAlgAssignments(equations,{}); 
         
-        // Set the else-var to false
+        // If we have been here, we should not enter the else case. 
+        // We have completed a matching of a whole row of patterns.
+        // Set the else-var to false. But if a an else-case does not 
+        // exist, then no assignment will be generated.
         elseVarAssign = elseVarAssignment(localExistElse);
         outList = elseVarAssign;
         outList = listAppend(outList,body);
@@ -386,6 +409,15 @@ algorithm
       equation 
         true = constructorOrNot(localInPat);
         
+        // The following function, generatePathVarDeclarations, will
+        // generate new variables and bindings. For instance if we
+        // have a record RECNAME{ TYPE1 field1, TYPE2 field2 } :
+        // 
+        // if (getType(x) = RECNAME)
+        // TYPE1 x__1; 
+        // TYPE2 x__2;
+        // x__1 = x.field1;
+        // x__2 = x.field2;
         (localCache,localDfaEnv,declList,pathAssignList) = generatePathVarDeclarations(localInPat,localCache,localEnv,localDfaEnv);
         
         (localCache,algList) = generateIfElseifAndElse(localResVarList,arcs,extractPathVar(pat),true,Absyn.INTEGER(0),{},{},localCache,localEnv,localDfaEnv,localExistElse);
@@ -409,12 +441,13 @@ algorithm
 end fromStatetoAbsynCode;  
 
 
-public function createLastAssignments "function: createLastAssignments
-Creates the assignments that will assign the result variables
-the final values.
-(v1,v2...vN) := matchcontinue (x,y...)
+protected function createLastAssignments "function: createLastAssignments
+	author: KS
+	Creates the assignments that will assign the result variables
+	the final values.
+	(v1,v2...vN) := matchcontinue (x,y...)
                 case (...) then (1,2,...N);
-Here v1,v2,...,vN should be assigned the values 1,2,...N.                
+	Here v1,v2,...,vN should be assigned the values 1,2,...N.                
 "
   input list<Absyn.Exp> lhsList;
   input list<Absyn.Exp> rhsList;
@@ -440,10 +473,12 @@ algorithm
 end createLastAssignments;
 
 
-public function elseVarAssignment "function: elseVarAssignment
-After we have matched a complete pattern and have executed the righthand side
-we assign the value false to the ELSEEXISTS__ variable so that
-the else-case will not be executed
+protected function elseVarAssignment "function: elseVarAssignment
+	author: KS
+	After we have matched a complete pattern and have executed the righthand side
+	we assign the value false to the ELSEEXISTS__ variable so that
+	the else-case will not be executed. If an else case does not exist, we simply
+	return an empty list (no assignment needed).
 " 
   input Boolean existElse;
   output list<Absyn.AlgorithmItem> outElse;
@@ -462,9 +497,10 @@ algorithm
 end elseVarAssignment;
 
 
-public function generatePathVarDeclarations "function: generatePathVarDeclerations
-Used when we have a record constructor call in a pattern and we need to
-create path variables of the subpatterns of the record constructor.
+protected function generatePathVarDeclarations "function: generatePathVarDeclerations
+	author: KS
+	Used when we have a record constructor call in a pattern and we need to
+	create path variables of the subpatterns of the record constructor.
 "
   input Matrix.RenamedPat pat;
   input Env.Cache cache;
@@ -492,6 +528,14 @@ algorithm
         Absyn.AlgorithmItem assign1,assign2;  
         list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnvElem1,dfaEnvElem2;
       equation
+        //Example:
+        // if (pathVar = CONS)    -- (This comparison will not occure)
+        // TYPE1 pathVar__1; 
+        // list<TYPE1> pathVar__2;
+        // pathVar__1 = car(x);
+        // pathVar__2 = cdr(x);
+        
+        // The variable should be found in the DFA environment
         Absyn.TCOMPLEX(Absyn.IDENT("list"),{t},NONE()) = lookupTypeOfVar(localDfaEnv,pathVar); 
         
         firstPathVar = extractPathVar(first);  
@@ -510,6 +554,11 @@ algorithm
             {Absyn.COMPONENTITEM(Absyn.COMPONENT(secondPathVar,{},NONE()),NONE(),NONE())}),
             Absyn.INFO("f",false,0,0,0,0),NONE())));
         
+        // Add the new variables to the DFA environment
+        // For example, if we have a pattern:
+        // RP_CONS(x,RP_INTEGER(x__1,1),RP_CONS(x__2,RP_INTEGER(x__2__1,2),RP_EMPTYLIST(x__2__2)))
+        // Then we must know the type of x__2 when arriving to the second
+        // RP_CONS pattern
         dfaEnvElem1 = {(firstPathVar,t)}; 
         dfaEnvElem2 = {(secondPathVar,Absyn.TCOMPLEX(Absyn.IDENT("list"),{t},NONE()))};
         localDfaEnv = listAppend(localDfaEnv,dfaEnvElem1); 
@@ -535,6 +584,15 @@ algorithm
         list<Absyn.AlgorithmItem> assignList; 
         list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnvElem;
       equation
+        // For instance if we have 
+        // a record RECNAME{ TYPE1 field1, TYPE2 field2 } :
+        // 
+        // if (getType(pathVar) = RECNAME)
+        // TYPE1 pathVar__1; 
+        // TYPE2 pathVar__2;
+        // x__1 = pathVar.field1;
+        // x__2 = pathVar.field2;
+        
         pathVarList = Util.listMap(argList,extractPathVar);
         // Get recordnames
         pathName = Absyn.IDENT(recName);
@@ -552,7 +610,9 @@ algorithm
 end generatePathVarDeclarations;
 
 
-public function extractFieldNamesAndTypes "function: extractFieldNamesAndTypes"
+public function extractFieldNamesAndTypes "function: extractFieldNamesAndTypes
+	author: KS
+"
   input SCode.Class sClass;
   output list<Absyn.Ident> fieldNameList;
   output list<Absyn.TypeSpec> fieldTypes;  
@@ -572,7 +632,9 @@ algorithm
 end extractFieldNamesAndTypes;  
 
 
-public function extractFieldName "function: extractFieldName"
+public function extractFieldName "function: extractFieldName
+	author: KS
+"
   input SCode.Element elem;
   output Absyn.Ident id;  
 algorithm
@@ -587,7 +649,9 @@ algorithm
 end extractFieldName;
 
 
-public function extractFieldType "function: extractFieldType"
+public function extractFieldType "function: extractFieldType
+	author: KS
+"
   input SCode.Element elem;
   output Absyn.TypeSpec typeSpec;  
 algorithm
@@ -602,9 +666,10 @@ algorithm
 end extractFieldType;
 
 
-public function createPathVarDeclarations "function: createPathVarAssignments
-Used when we have a record constructor call in a pattern and we need to
-create path variables of the subpatterns of the record constructor.
+protected function createPathVarDeclarations "function: createPathVarAssignments
+	author: KS
+	Used when we have a record constructor call in a pattern and we need to
+	create path variables of the subpatterns of the record constructor.
 "
   input list<Absyn.Ident> pathVars;  
   input list<Absyn.Ident> recFieldNames;
@@ -645,10 +710,11 @@ algorithm
 end createPathVarDeclarations;  
 
 
-public function createPathVarAssignments "function: createPathVarAssignments
-Used when we have a record constructor call in a pattern and need to
-bind the path variables of the subpatterns of the record constructor
-to values.
+protected function createPathVarAssignments "function: createPathVarAssignments
+	author: KS
+	Used when we have a record constructor call in a pattern and need to
+	bind the path variables of the subpatterns of the record constructor
+	to values.
 "
   input Absyn.Ident recVarName;
   input list<Absyn.Ident> pathVarList;
@@ -680,8 +746,9 @@ algorithm
 end createPathVarAssignments;
   
 
-public function generateIfElseifAndElse "function: generateIfElseifAndElse
-Generate if-statements.
+protected function generateIfElseifAndElse "function: generateIfElseifAndElse
+	author: KS
+	Generate if-statements.
 "
   input list<Absyn.Exp> resVarList;
   input list<Arc> arcs;
@@ -850,7 +917,7 @@ algorithm
 end generateIfElseifAndElse;
 
 
-public function createConstCompareExp "function: createConstCompareExp
+protected function createConstCompareExp "function: createConstCompareExp
 Used by generateIfElseifAndElse
 when we want two write an expression for comparing constants
 "
@@ -897,7 +964,7 @@ algorithm
 end createConstCompareExp;  
 
 
-public function fromEquationsToAlgAssignments "function: fromEquationsToAlgAssignments
+protected function fromEquationsToAlgAssignments "function: fromEquationsToAlgAssignments
  Convert equations to algorithm assignments"
   input list<Absyn.EquationItem> eqsIn;
   input list<Absyn.AlgorithmItem> accList;
@@ -922,7 +989,7 @@ algorithm
   end matchcontinue;
 end fromEquationsToAlgAssignments;
 
-public function fromEquationToAlgAssignment "function: fromEquationToAlgAssignment"
+protected function fromEquationToAlgAssignment "function: fromEquationToAlgAssignment"
   input Absyn.Equation eq;
   output Absyn.AlgorithmItem algStatement;
 algorithm
@@ -1029,7 +1096,7 @@ end fromEquationToAlgAssignment;
  end getStateStamps;
  */
 
-public function createListFromExpression "function: createListFromExpression"
+protected function createListFromExpression "function: createListFromExpression"
   input Absyn.Exp exp;
   output list<Absyn.Exp> outList;
 algorithm
@@ -1047,7 +1114,7 @@ algorithm
 end createListFromExpression;
 
 
-public function generateCatchHandling "function: generatCatchHandling
+protected function generateCatchHandling "function: generatCatchHandling
 Not used right now
 "
   output list<Absyn.AlgorithmItem> outAlgs;
@@ -1110,7 +1177,7 @@ algorithm
   end matchcontinue;       
 end boolString;
 
-public function getConstantValue "function: getConstantValue"
+protected function getConstantValue "function: getConstantValue"
   input Matrix.RenamedPat pat;
   output Absyn.Exp val;
 algorithm
@@ -1161,7 +1228,7 @@ algorithm
   end matchcontinue;    
 end extractPathVar;
 
-public function constructorOrNot "function: constructorOrNot"
+protected function constructorOrNot "function: constructorOrNot"
   input Matrix.RenamedPat pat;
   output Boolean val;
 algorithm
@@ -1183,7 +1250,7 @@ algorithm
 end constructorOrNot;
 
 
-public function typeConvert "function: typeConvert"
+protected function typeConvert "function: typeConvert"
   input Types.TType t;
   output Absyn.TypeSpec outType;
 algorithm
@@ -1222,7 +1289,7 @@ algorithm
   end matchcontinue;
   end getPathFromTypeSpec; */  
 
-public function lookupTypeOfVar "function: lookupTypeOfVar"
+protected function lookupTypeOfVar "function: lookupTypeOfVar"
   input list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnv;  
   input Absyn.Ident id;  
   output Absyn.TypeSpec outTypeSpec;  
@@ -1250,7 +1317,7 @@ algorithm
 end lookupTypeOfVar;    
 
 
-public function mergeLists "function: lookupTypeOfVar" 
+protected function mergeLists "function: lookupTypeOfVar" 
   input list<Absyn.Ident> idList;   
   input list<Absyn.TypeSpec> tList; 
   input list<tuple<Absyn.Ident,Absyn.TypeSpec>> accList;
@@ -1274,7 +1341,7 @@ algorithm
   end matchcontinue;
 end mergeLists;  
 
-public function addVarsToDfaEnv "function: addVarsToDfaEnv"
+protected function addVarsToDfaEnv "function: addVarsToDfaEnv"
   input list<Absyn.Exp> expList; 
   input list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnv;
   input Env.Cache cache;  

@@ -52,10 +52,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 public import Matrix;
 public import Absyn;
 public import DFA;
-public import Util;
 public import Env;
 public import SCode;
-public import Lookup;
+
+protected import Lookup;
+protected import Util;
 //protected import Debug; 
 //protected import Dump;
 
@@ -74,35 +75,37 @@ type AsArray = AsList[:];
 type ArcName = Absyn.Ident;
 
 
-public function ASTtoMatrixForm "function: ASTtoMatrixForm
- Transforms the Abstract Syntax Tree of a matchcontinue expression into matrix form.
- The patterns in each case-branch ends up in a matrix and all the right-hand sides
- ends up in a list/vector. The match algorithm uses these datastructures when 
- when generating the DFA.
+protected function ASTtoMatrixForm "function: ASTtoMatrixForm
+	author: KS	
+ 	Transforms the Abstract Syntax Tree of a matchcontinue expression into matrix form.
+ 	The patterns in each case-branch ends up in a matrix and all the right-hand sides
+ 	ends up in a list/vector. The match algorithm uses these data structures when 
+ 	when generating the DFA. A right-hand side is simply the code occuring after
+	the case keyword: local Integer i; ... equation ... then 3*3;
 "
-  input Absyn.Exp matchCont;
-  input Env.Cache cache;  
-  input Env.Env env;
+  input Absyn.Exp matchCont; // The matchcontinue expression
+  input Env.Cache cache; // The renameMain function will need these two 
+  input Env.Env env; // when transforming named arguments in a function call into positional once
   output Env.Cache outCache; 
-  output list<Absyn.Exp> outputVarList;
-  output list<Absyn.ElementItem> outDeclList; // The local declarations
+  output list<Absyn.Exp> outVarList; // The input variables (in exp form), matchcontinue (var1,var2,var3,...) 
+  output list<Absyn.ElementItem> outDeclList; // The local declarations, matchcontinue (...) local Integer i; Real r; ... case() ...
   output RightHandVector rhVec; // The righthand side vector 
-  output RenamedPatMatrix pMat; // The matrix with renamed patterns (renaming means adding the path variables)
+  output RenamedPatMatrix pMat; // The matrix with renamed patterns (renaming means adding a path variable to each pattern)
   output Option<RightHandSide> outElseRhSide; // An optional else case
 algorithm
-  (outCache,outputVarList,outDeclList,rhVec,pMat,outElseRhSide) :=
+  (outCache,outVarList,outDeclList,rhVec,pMat,outElseRhSide) :=
   matchcontinue (matchCont,cache,env)
     case (localMatchCont as (Absyn.MATCHEXP(_,varList2,declList,localCases,_)),localCache,localEnv)
       local
         Absyn.Exp localMatchCont;
         RightHandList rhsList;
         list<Absyn.Exp> patList,varList;
-        Absyn.Exp varList2; // The input of variables to the matchcontinue expression
+        Absyn.Exp varList2; // The input variables to the matchcontinue expression
         RenamedPatMatrix patMat;
-        list<Absyn.ElementItem> declList; // The local variable declarations at the begining of the m.c. exp
+        list<Absyn.ElementItem> declList; // The local variable declarations at the begining of the matchc. exp
         Integer varListLength; 
-        Option<RightHandSide> elseRhSide; // Used to store the optional else-case
-        AsArray asBindings; // Array used for the as construct
+        Option<RightHandSide> elseRhSide; // Used to store the optional else-case of the match. exp
+        AsArray asBindings; // Array used for the as constructs, case (var as 3,...)
         list<Absyn.Case> localCases;
         Env.Cache localCache;
         Env.Env localEnv;
@@ -112,17 +115,17 @@ algorithm
         varList = extractListFromTuple(varList2);
         varListLength = listLength(varList);
         
-        false = (varListLength == 0);
+        false = (varListLength == 0); // If there are no input variables, the function will fail
         
         // Create patternmatrix. The as-bindings (  ... case (var1 as 3) ...)
         // are first collected in the fillMatrix function and then 
-        // these assignments are added to the RightHandSide list
+        // assignments of these variables are added to the RightHandSide list
         patMat = fill({},varListLength);
         asBindings = fill({},listLength(rhsList));   
         (localCache,patMat,asBindings) = 
         fillMatrix(1,asBindings,varList,patList,patMat,localCache,localEnv); 
-        rhsList = addAsBindings(rhsList,arrayList(asBindings));	
-        
+        rhsList = addAsBindings(rhsList,arrayList(asBindings));	 // Add the as-bindings (assignments) collected 
+                                                                 // to the right hand-sides.
         //true = patternCheck(arrayList(patMat));
         
       then (localCache,varList,declList,listArray(rhsList),patMat,elseRhSide);
@@ -135,7 +138,8 @@ algorithm
 end ASTtoMatrixForm;
 
 
-public function extractListFromTuple "function: extractListFromTuple
+protected function extractListFromTuple "function: extractListFromTuple
+	author: KS	
  Given an Absyn.Exp, this function will extract the list of expressions if the
  expression is a tuple, otherwise a list of length one is created"
   input Absyn.Exp inExp;
@@ -157,14 +161,18 @@ algorithm
 end extractListFromTuple;
 
 
-public function addAsBindings "function: addAsBindings
-This function will add all the collected as-bindings to a list of
-right-hand sides.
-As-binding example:
-v := matchcontinue (inInteger)
-     case (v2 as 4)
-     ...
-end matchcontinue;
+protected function addAsBindings "function: addAsBindings
+	author: KS
+	This function will add all the collected as-bindings to a list of
+	right-hand sides. A right-hand side is simply the code occuring after
+	the case keyword: local Integar i; ... equation ... then 3*3;
+	As-binding example:
+	v := matchcontinue (inInteger)
+  	   case (v2 as 4) local Integer v2; equation ... then 2;
+  	   ...
+	end matchcontinue;
+	A new assignment, v2 = pathVariable, will be added to the equation 
+	section. Remember that each pattern has a corresponding path variable.
 "
   input RightHandList rhList;
   input list<AsList> asBinds;
@@ -187,8 +195,9 @@ algorithm
   end matchcontinue;
 end addAsBindings; 
 
-public function addAsBindingsHelper "function: addAsBindingsHelper
-Helper function to addAsBindings"
+protected function addAsBindingsHelper "function: addAsBindingsHelper
+	author: KS
+	Helper function to addAsBindings"
   input RightHandSide rhSide;
   input AsList asList;
   output RightHandSide rhSideOut;
@@ -215,16 +224,17 @@ algorithm
 end addAsBindingsHelper;
 
 
-public function extractFromMatchAST "function: extractFromMatchAST
-Extract righthand sides, patterns and optional else-case from matchcontinue
-AST.
+protected function extractFromMatchAST "function: extractFromMatchAST
+	author: KS	
+	Extract righthand sides, patterns and optional else-case from matchcontinue
+	AST.
 "
   input list<Absyn.Case> matchCases;
   input RightHandList rhListIn;
-  input list<Absyn.Exp> patListIn;
+  input list<Absyn.Exp> patListIn; // All the patterns are collected in a list.
   output RightHandList rhListOut;
-  output list<Absyn.Exp> patListOut;
-  output Option<RightHandSide> elseRhSide;
+  output list<Absyn.Exp> patListOut; // All the patterns are collected in a list.
+  output Option<RightHandSide> elseRhSide; // A matchcontinue expression may contain an else-case
 algorithm
   (rhListOut,patListOut,elseRhSide) :=
   matchcontinue (matchCases,rhListIn,patListIn)
@@ -252,15 +262,16 @@ algorithm
 end extractFromMatchAST;
 
 
-public function fillMatrix "function: fillMatrix
-Fill the matrix with renamed patterns (patterns of the form path=pattern, where
-path is a path-variable and pattern is a renamed expression)
+protected function fillMatrix "function: fillMatrix
+	author: KS
+	Fill the matrix with renamed patterns (patterns of the form path=pattern, where
+	path is a path-variable and pattern is a renamed expression)
 "
   input Integer rowNum;
   input AsArray inAsBindings; // List/vector used for the as-construct in Absyn.Exp
   input list<Absyn.Exp> varList; // The matchcontinue input variable list
-  input list<Absyn.Exp> patList; // The unrenamed patterns, no path variable added
-  input RenamedPatMatrix patMat;
+  input list<Absyn.Exp> patList; // The unrenamed patterns, no path variable added yet
+  input RenamedPatMatrix patMat; // The matrix containg the renamed patterns
   input Env.Cache cache;
   input Env.Env env; 
   output Env.Cache outCache;
@@ -299,7 +310,8 @@ algorithm
         
         len1 = listLength(first);  
         len2 = listLength(localVarList);
-        true = (len1 == len2);
+        true = (len1 == len2); // The number of input variables, matchcontinue (var1,var2,...), must be
+                               // the same as the number of patterns in each case
         
         // Store As-construct bindings for this row
         localAsBindings = arrayUpdate(localAsBindings, localRowNum, asBinds);
@@ -317,11 +329,10 @@ algorithm
   end matchcontinue;
 end fillMatrix;
 
-
-
-public function addRow "function: addRow
- Adds a row to the matrix.
- This is done by adding one element at a time to the matrix row
+protected function addRow "function: addRow 
+	author: KS
+ 	Adds a row to the matrix.
+ 	This is done by adding one element at a time to the matrix row
 "
   input AsList asBindings; // Used to store AS construct bindings
   input list<Absyn.Exp> varList; // Input variable list
@@ -382,10 +393,11 @@ algorithm
 end addRow;
 
 
-public function renameMain "function: renameMain
- Input is an Absyn.Exp (corresponding to a pattern) and a root variable. 
- The function transforms the pattern into path=pattern form (Matrix.RenamedPat). 
- As a side effect we also collect the path variables and As-bindings.
+protected function renameMain "function: renameMain
+ 	author: KS
+ 	Input is an Absyn.Exp (corresponding to a pattern) and a root variable. 
+ 	The function transforms the pattern into path=pattern form (Matrix.RenamedPat). 
+ 	As a side effect we also collect the As-bindings.
 "
   input Absyn.Exp pat;
   input Absyn.Ident rootVar;
@@ -394,7 +406,7 @@ public function renameMain "function: renameMain
   input Env.Env env;  
   output Env.Cache outCache;
   output RenamedPat renamedPat;
-  output AsList outAsBinds;
+  output AsList outAsBinds; // New as bindings are added in the as-pattern case
 algorithm
   (outCache,renamedPat,outAsBinds) :=
   matchcontinue (pat,rootVar,inAsBinds,cache,env)
@@ -464,7 +476,7 @@ algorithm
       then (localCache,temp1,temp3);        
         
         // COMPONENT REFERENCE EXPRESSION
-        // Will be interpretated as: case (var AS _) or case(var AS wildcard)
+        // Will be interpretated as: case (var AS _)
         // This expression is transformed into a wildcard but we store the variable
         // reference as well as an AS-binding.
     case (Absyn.CREF(Absyn.CREF_IDENT(var,_)),localVar,localAsBinds,localCache,_)
@@ -516,8 +528,7 @@ algorithm
         // CALL EXPRESSION
         // This is a builtin functioncall, all the function arguments are renamed
         // We also must transform named function arguments into positional function 
-        // arguments 
-        // Empty constructor call
+        // arguments.
     case (Absyn.CALL(compRef,Absyn.FUNCTIONARGS(funcArgs,{})),localVar,localAsBinds,localCache,localEnv)
       local
         Absyn.ComponentRef compRef;
@@ -531,7 +542,7 @@ algorithm
         pat = Matrix.RP_CALL(localVar,compRef,renamedPatList);
         
       then (localCache,pat,listAppend(localAsBinds,localAsBinds2));
-        
+        // CALL EXPRESSION
     case (Absyn.CALL(compRef as Absyn.CREF_IDENT(recName,{}),Absyn.FUNCTIONARGS({},namedArgList)),localVar,localAsBinds,localCache,localEnv)
       local
         Absyn.ComponentRef compRef;
@@ -559,7 +570,7 @@ algorithm
         pat = Matrix.RP_CALL(localVar,compRef,renamedPatList);
         
       then (localCache,pat,listAppend(localAsBinds,localAsBinds2));    
-        
+        // EMPTY LIST EXPRESSION
     case (Absyn.ARRAY({}),localVar,localAsBinds,localCache,_)
       local  
         RenamedPat pat;
@@ -574,12 +585,11 @@ algorithm
   end matchcontinue;	     
 end renameMain;
 
-
-
-public function renamePatList "function: renamePatList
- Rename the subpatterns in a constructor call one after another.
-Input is a list of patterns to remain.
- The pivot integer is used for naming purposes.
+protected function renamePatList "function: renamePatList
+	author: KS
+ 	Rename the subpatterns in a constructor call one after another.
+	Input is a list of patterns to remain.
+	 The pivot integer is used for naming purposes.
 "
   input list<Absyn.Exp> patList;
   input Absyn.Ident var;
@@ -631,11 +641,10 @@ algorithm
   end matchcontinue;
 end renamePatList;
 
-
-
-public function generateIdentifiers "function: generateIdentifiers
- Generate pathvariables for a function call given a root variable
-Given x we get x__1,x__2,x__3 ...
+protected function generateIdentifiers "function: generateIdentifiers
+	author: KS
+ 	Generate pathvariables for a function call given a root variable.
+	Given x we get x__1,x__2,x__3 ...
 "
   input Absyn.Ident varName;
   input Integer num; // The number of variable references to be generated
@@ -661,18 +670,18 @@ end generateIdentifiers;
 
 //-----------------------------------------------------------------------
 
-
 public function matchMain "function: matchMain
- The main function for the patternmatch algorithm.
- Calls the ASTtoMatrixForm function for the generation of the pattern
- matrix. Then calls matchFuncHelper for the generation of the DFA
+	author: KS
+ 	The main function for the patternmatch algorithm.
+ 	Calls the ASTtoMatrixForm function for the generation of the pattern
+	matrix. Then calls matchFuncHelper for the generation of the DFA
 "
   input Absyn.Exp matchCont;
-  input list<Absyn.Exp> resultVarList;
+  input list<Absyn.Exp> resultVarList; // These is a list of lhs component refs, (var1,var2,...) = matchcontinue (...) ...
   input Env.Cache cache;
   input Env.Env env; 
   output Env.Cache outCache;
-  output Absyn.Exp outExpr;
+  output Absyn.Exp outExpr; // The final valueblock with nested if-else-elseif statements
 algorithm
   (outCache,outExpr) := 
   matchcontinue (matchCont,resultVarList,cache,env)
@@ -691,7 +700,7 @@ algorithm
         Env.Cache localCache;
         Env.Env localEnv;
       equation	
-        // Get the pattern matrix etc.
+        // Get the pattern matrix, etc.
         (localCache,inputVarList,declList,rhVec,patMat,elseRhSide) = ASTtoMatrixForm(localMatchCont,localCache,localEnv);
         patMat2 = arrayList(patMat);
         
@@ -704,6 +713,8 @@ algorithm
         (dfaState,stampTemp) = matchFuncHelper(patMat2,arrayList(rhVec),DFA.STATE(1,0,{},NONE()),1);
         //print("Done with the matching");
         dfaRec = DFA.DFArec(declList,{},NONE(),dfaState,stampTemp);
+        
+        // Transform the DFA into a valueblock with nested if-elseif-else statements.
         (localCache,expr) = DFA.fromDFAtoIfNodes(dfaRec,inputVarList,localResultVarList,localCache,localEnv);
       then (localCache,expr); 
     case (exp,_,_,_)   
@@ -718,58 +729,59 @@ end matchMain;
 
 /*
  The match algorithm:
- We can have tree types of patterns: wildcards, constructors and constants (can also be viewed as constructors
- with zero arguments).
- 
- Wildcards
- Constants
- Constructs
+ We can have tree types of patterns: wildcards, constructors and constants (may also sometimes be viewed
+ as constructors with zero arguments).
  
  Case 1:
  All of the top-most patterns consists of wildcards. The leftmost wildcard is used to create an arc.
- Match is invoked on this new state with what is left of the upper row. An else arc is created, Match
- is invoked on this new state with the rest of the matrix with the upper-row removed.
+ Match is invoked on a new state with what is left of the upper row. An else arc is created, Match
+ is invoked on a new state with the rest of the matrix with the upper-row removed.
  
  Case 2:
  The top-most column consists of wildcards and constants. Select the left-most column with a constant
  at the uppermost position. 
  If this is the only column in the matrix do the following:
- Create a new arc with the constant and a new final state. Create an else branch and a new state and
- invoke match on this new state with what is left of the column.
- Otherwise: Create an arc and state for each constant and constructor in the same way as case 3. For
- the wildcards create a new arc and state.
+ 		Create a new arc with the constant and a new final state. Create an else branch and a new state and
+ 		invoke match on this new state with what is left of the column. We have to do it this way because we
+ 		do not won't to loose any right-hand sides (since fail-continue may be implemented). 
+ Otherwise: Create an arc and state for each constant and constructor in the same way as case 3. For all
+ 		the wildcards we create a new arc and state.
  
  Case 3:
- There is some column whose top-most pattern is a constructor. We will create a new arc for
- each constructor c. So for each constructor c:
+ There exists a column whose top-most pattern is a constructor. Select the left-most column containing
+ a constructor. We will create a new arc for each constructor c in this column. So for each constructor c:
  Select the rows that match c (wildcards included). Extract the subpatterns, create a new
  arc and state and invoke match on what is left on the matrix appended with the extracted subpatterns.
+ 
  If this is the only column in the matrix do the following:
- Create an else arc and a new arc. Invoke match on the matrix consisting of the wildcards and constants.
+ 		Create an else arc and a new arc. Invoke match on the matrix consisting of the wildcards and constants.
+ 		
  Otherwise: create an arc and state for each constant as well, in the same way as for the constructors.
- Create a new arc and state for the wildcards. 
+ 		Create a new arc and state for all the wildcards. 
  */
 
 
-
-public function matchFuncHelper "function: matchFuncHelper
- This function is called recursively. It picks out a column and starts the pattern matching. 
- See above."
+protected function matchFuncHelper "function: matchFuncHelper
+	author: KS
+ 	This function is called recursively. It picks out a column and starts the pattern matching. 
+ 	See above.
+"
   input RenamedPatMatrix2 patMat;
   input RightHandList rhList;
   input DFA.State currentState;
-  input Integer stampCounter;
-  output DFA.State finalDfa;
+  input Integer stampCounter; // Each state will be given a stamp
+  output DFA.State outState; 
   output Integer outStampCounter;
 algorithm   
-  (finalDfa,outStampCounter) :=
+  (outState,outStampCounter) :=
   matchcontinue (patMat,rhList,currentState,stampCounter)
     case ({},{},_,localCnt) // Empty pattern matrix
       local
         Integer localCnt;
       equation
         //print("MatchFuncHelper: Two empty lists\n");
-      then (DFA.DUMMIESTATE(),localCnt-1);
+      then (DFA.DUMMIESTATE(),localCnt-1); // The dummie states will simply be discarded 
+                                           // when if-statements are created.
     case ({{}},{},_,localCnt) // Empty pattern matrix
       local
         Integer localCnt;
@@ -780,7 +792,7 @@ algorithm
         // FINAL STATE	        
     case ({},localRhList,_,localCnt) // Empty pattern matrix but one 
       // element in the righthand side list.
-      // This means that we should create a final state
+      // This means that we should create a final state.
       local 
         RightHandSide rhSide;
         Integer localCnt;
@@ -801,19 +813,18 @@ algorithm
         Absyn.Ident arcName;
       equation
         firstPatRow = Matrix.firstRow(localPatMat,{});
-        true = allWildcards(firstPatRow); // checks to see if all are wildcards, note that variables are 
-        // classified as wildcards as well                                    
+        true = allWildcards(firstPatRow); // Check to see if all are wildcards, note that variables are 
+                                          // classified as wildcards as well                                    
         localCnt = localCnt + 1;                                       
         newState = DFA.STATE(localCnt,0,{},NONE());
         
-        // start with first column
+        // Start with first column (and the first row).
         v1 = Util.listFirst(localRhList);
         tempMat = Util.listMap(Util.listRest(firstPatRow),Util.listCreate);
         (newState,localCnt) = matchFuncHelper(tempMat,{v1},newState,localCnt);
         
         //Add a wildcard arc    
         pat = Util.listFirst(firstPatRow);
-        
         arcName = "Wildcard";
         localState = DFA.addNewArc(localState,arcName,newState,SOME(pat));
         
@@ -826,7 +837,8 @@ algorithm
         (newState,localCnt) = matchFuncHelper(tempMat
           ,Util.listRest(localRhList),newState,localCnt);  
         
-        // Add an else arc
+        // Add an else arc for the result of the matching of the
+        // rest of the matrix with the first row removed
         arcName = "else";
         localState = DFA.addNewArc(localState,arcName,newState,NONE());
       then (localState,localCnt);		 	
@@ -878,7 +890,7 @@ algorithm
         (newState,localCnt) = matchFuncHelper(Util.listCreate(Util.listRest(tempPatL)),
           Util.listRest(localRhList),newState,localCnt);  
         
-        // Add new arc with rest of column
+        // Add a new arc with rest of column
         arcName= "else";
         localState = DFA.addNewArc(localState,arcName,newState,NONE());
       then (localState,localCnt);
@@ -895,7 +907,7 @@ algorithm
       equation
         
         firstR = Matrix.firstRow(localPatMat,{});
-        ind = findFirstConstant(firstR,1);
+        ind = findFirstConstant(firstR,1); // Find the left-most column containing a constant
         // Add an arc for each constant
         (localState,localCnt) = addNewArcForEachC(localState,
           ind,localPatMat,localRhList,localCnt);
@@ -908,8 +920,10 @@ algorithm
 end matchFuncHelper;
 
 
-public function matchCase3 "function: matchCase3
-Case 3, there exist at least one constructor in the top-most row
+protected function matchCase3 "function: matchCase3
+	author: KS
+	Case 3, there exist at least one constructor in the top-most row. Helper function
+	to matchFuncHelper.
 "
   input RenamedPatMatrix2 patMat;
   input RightHandList rhList;
@@ -947,7 +961,7 @@ algorithm
         localCnt = localCnt + 1;
         newState = DFA.STATE(localCnt,0,{},NONE());
         
-        // Add a new arc for the consts and wildcards 	    	
+        // Add a new arc for the constants and wildcards 	    	
         (newState,localCnt) = createUnionState(indVec,tempList,
           localRhList,localCnt,newState,true);  
         arcName = "else";
@@ -965,17 +979,22 @@ algorithm
       equation
         patList = Matrix.firstRow(localPatMat,{});
         
+        // Find the left-most column containing a constructor
         ind = findFirstConstructor(patList,1);
+        
+        // Add a new arc for each constant and constructor
         (localState,localCnt) = addNewArcForEachC(localState,ind,localPatMat,localRhList,localCnt);
         
+        // Add a new arc for all the wildcards (combined)
         (localState,localCnt) = addNewArcForWildcards(localState,ind,localPatMat,localRhList,localCnt);
       then (localState,localCnt);    
   end matchcontinue;
 end matchCase3;
 
 
-public function findConstAndWildcards "function: findConstAndWildcards
-Get the indices of all the const and wildcards from a pattern list.
+protected function findConstAndWildcards "function: findConstAndWildcards
+	author: KS	
+	Get the indices of all the const and wildcards from a pattern list.
 "
   input RenamedPatList inList;
   input IndexVector accList;
@@ -1008,8 +1027,9 @@ algorithm
   end matchcontinue;    
 end findConstAndWildcards;
 
-public function findFirstConstant "function: findFirstConstant
-Find the index number of the first column containing a constant
+protected function findFirstConstant "function: findFirstConstant
+	author: KS
+	Find the index number of the first column containing a constant.
 "
   input RenamedPatList patList;
   input Integer ind;
@@ -1030,8 +1050,9 @@ algorithm
 end findFirstConstant;
 
 
-public function findFirstConstructor "function: findFirstConstructor
-Find the index number of the first column containing a constructor
+protected function findFirstConstructor "function: findFirstConstructor
+	author: KS
+	Find the index number of the first column containing a constructor.
 "
   input RenamedPatList patList;
   input Integer ind;
@@ -1052,21 +1073,22 @@ algorithm
 end findFirstConstructor; 
 
 
-public function createUnionState "function: createUnionState
-This functions takes a list of patterns, an index vector with indices 
-to wildcard and constant patterns in the list of patterns and 
-then creates a new state with arcs for these patterns. This function
-is used in for instance the following case:
-v := matchcontinue(x)
-  case (_) then A1;
-  case (1) then A2;
-  case (_) then A3;
-	case (1) then A4;
-	case (3) then A5;
-	...
-	end matchcontinue;
-Even though we have for instance two wildcards in the above example, wa can not
-merge these two into one arc since we need to keep both righhand sides A1 and A3.
+protected function createUnionState "function: createUnionState
+	author: KS	
+	This functions takes a list of patterns, an index vector with indices 
+	to wildcard and constant patterns in the list of patterns and 
+	then creates a new state with arcs for these patterns. This function
+	is used in for instance the following case:
+	v := matchcontinue(x)
+	  case (_) then A1;
+  	case (1) then A2;
+  	case (_) then A3;
+		case (1) then A4;
+		case (3) then A5;
+		...
+		end matchcontinue;
+	Even though we have for instance two wildcards in the above example, we can not
+	merge these two into one arc since we need to keep both righ-hand sides A1 and A3.
 "
   input IndexVector indVec;
   input RenamedPatList patList;
@@ -1103,8 +1125,8 @@ algorithm
         DFA.State localState,newState;
       equation
         pat = arrayGet(listArray(localPatList),first);
-        rhSide = arrayGet(listArray(localRhList),first);
         true = wildcardOrNot(pat);
+        rhSide = arrayGet(listArray(localRhList),first);
         localCnt = localCnt + 1;
         newState = DFA.STATE(localCnt,0,{},SOME(rhSide));
         
@@ -1136,7 +1158,13 @@ algorithm
 end createUnionState; 
 
 
-public function findConstructors "function: findConstructors"
+protected function findConstructors "function: findConstructors
+	author: KS	
+	This function finds the constructors in a renamed pattern list. 
+	The boolean tells wheter it is a constructor (true) or constant (false).
+	The functions addNewArcForEachC and addNewArcForEachCHelper makes use of
+	this boolean.
+"
   input RenamedPatList patList;
   input list<Absyn.Ident,Boolean> accList;
   output list<Absyn.Ident,Boolean> outList;
@@ -1166,7 +1194,9 @@ algorithm
   end matchcontinue;
 end findConstructors;
 
-public function getConstructorName "function: getConstrucorName"
+protected function getConstructorName "function: getConstrucorName	
+	author: KS
+"
   input RenamedPat constPat;
   output Absyn.Ident name; 
 algorithm
@@ -1181,7 +1211,9 @@ algorithm
   end matchcontinue;     	
 end getConstructorName;
 
-public function getConstantName "function: getConstantName"
+protected function getConstantName "function: getConstantName
+	author: KS
+"
   input RenamedPat constPat;
   output Absyn.Ident name; 
 algorithm
@@ -1208,17 +1240,17 @@ algorithm
 end getConstantName;
 
 
-
-public function addNewArcForWildcards "function: addNewArcForWildcards
- Used in the case there is more than one column in the matrix.
- This functions adds one wildcard arc to a new state.
- Function used in the following case:
- var := matchcontinue (x,y)
+protected function addNewArcForWildcards "function: addNewArcForWildcards
+	author: KS
+ 	Used in the case there is more than one column in the matrix.
+ 	This functions adds one wildcard arc to a new state.
+	 Function used in the following case:
+ 	var := matchcontinue (x,y)
       case (_,...)
       case (3,...)
       case (_,...)
-A new arc is added for all the wildcards in a column.
-(the pattern matrix must have more than one column).
+	A new arc is added for all the wildcards in a column.
+	(the pattern matrix must have more than one column).
 "
   input DFA.State state;
   input Integer ind;
@@ -1268,9 +1300,10 @@ algorithm
 end addNewArcForWildcards;
 
 
-public function addNewArcForEachC "function: addNewArcForEachC
- Adds a new arc for each constant and constructor
- Assumes that the matrix has more than one column
+protected function addNewArcForEachC "function: addNewArcForEachC
+	author: KS
+ 	Adds a new arc for each constant and constructor
+ 	Assumes that the matrix has more than one column
 "
   input DFA.State state;
   input Integer ind;
@@ -1301,8 +1334,9 @@ algorithm
 end addNewArcForEachC;
 
 
-public function getNamesOfCs "function: getNamesOfCs
-	 Retrieve the names of all constants and constructs in a matrix column.
+protected function getNamesOfCs "function: getNamesOfCs
+	author: KS
+	Retrieve the names of all constants and constructs in a matrix column.
  	Each name is stored with a boolean indicating wheter it is constructor or not.
 "
   input RenamedPatList patList;
@@ -1342,8 +1376,23 @@ algorithm
 end getNamesOfCs;
 
 
-public function addNewArcForEachCHelper "addNewArcForEachCHelper
- Add new arc for each constructor or constant given a list with names of those.
+protected function addNewArcForEachCHelper "function: addNewArcForEachCHelper
+	author: KS
+	Add a new arc for each constructor or constant given a list with names of these.
+	Example: 
+	matchcontinue (var) 
+		case ({}) 
+		case (2 :: {})
+		case (3 :: {})
+		case (_)
+  The first pattern is a constant (empty list) and then we have two constructors (cons).
+	The input listOfC should have length 2: {EMPTYLIST,CONS}. 
+	We start with the EMPTYLIST identifer and then search the column (given by input variable ind)
+	for all the patterns containing an empty list (case 1 and case 4). Then we
+	do the same with the CONS identifer (case 2,3 and 4 matches).
+	For a constant we create a new arc and then call matchFucnHelper on extracted
+	patterns from all other columns in the matrix.
+	For a constructor we have to extract subpatterns from the constructor call as well. 
 "
   input list<Absyn.Ident,Boolean> listOfC;
   input DFA.State state;
@@ -1365,7 +1414,7 @@ algorithm
     case ({},localState,_,_,_,localCnt) equation then (localState,localCnt);
       
       // CONSTANT      
-    case ((first,second) :: rest,localState,localInd,localPatMat,localRhList,localCnt) //Constant 
+    case ((first,false) :: rest,localState,localInd,localPatMat,localRhList,localCnt) //Constant 
       local
         Absyn.Ident first;
         Boolean second;
@@ -1376,12 +1425,10 @@ algorithm
         RenamedPat pat;
         Integer ind;
         ArcName arcName;
-      equation
-        false = second; 
-        
+      equation    
         tempList = arrayGet(listArray(localPatMat),localInd);
         
-        indVec = findMatches(first,tempList,{},1);
+        indVec = findMatches(first,tempList,{},1); // Find all the matching patterns
         
         localCnt = localCnt + 1;
         newState = DFA.STATE(localCnt,0,{},NONE());
@@ -1391,11 +1438,13 @@ algorithm
         // Match the rest of the matrix
         (newState,localCnt) = matchFuncHelper(tempMat,selectRightHandSides(indVec,listArray(localRhList),{}),newState,localCnt);
         
+        // Add a new arc for the constant
         ind = Util.listFirst(indVec);
         pat = arrayGet(listArray(tempList),ind);
         arcName = first;
         localState = DFA.addNewArc(localState,arcName,newState,SOME(pat));
         
+        // Add more arcs for the other constants/constructors in the column
         (localState,localCnt) = addNewArcForEachCHelper(rest,
           localState,localInd,localPatMat,localRhList,localCnt);  
       then (localState,localCnt);
@@ -1423,7 +1472,7 @@ algorithm
         
         varList = extractPathVariables(indVec,listArray(patList));  		 
         
-        //Extract the new matrix
+        //Extract the new matrix from the constructor calls
         extractedPats2 = fill({},listLength(varList));
         extractedPats = arrayList(extractSubpatterns(varList,indVec,patList,extractedPats2));
         
@@ -1436,7 +1485,8 @@ algorithm
         localCnt = localCnt + 1;
         newState = DFA.STATE(localCnt,0,{},NONE());
         
-        // Match the matrix with the subpatterns appended to the rest of the matrix
+        // Match the matrix with the subpatterns (from the constructor call) 
+        // appended to the rest of the matrix
         (newState,localCnt) = matchFuncHelper(mat,newRhL,newState,localCnt);
         
         ind = Util.listFirst(indVec);
@@ -1451,9 +1501,12 @@ algorithm
 end addNewArcForEachCHelper;
 
 
-public function simplifyPattern "function: simplifyPattern
-This function takes a constructor pattern and transforms all the
-subpatterns into wildcards."
+protected function simplifyPattern "function: simplifyPattern
+	author: KS
+	This function takes a constructor pattern and transforms all the
+	subpatterns into wildcards. Only the path variables are left, we
+	need these names later on.
+"
   input RenamedPat pat;
   input list<Absyn.Ident> varList;
   output RenamedPat outPat;
@@ -1495,8 +1548,10 @@ algorithm
   end matchcontinue;
 end simplifyPattern;
 
-public function generateWildcardList "function: generateWildcardList
-Helper function to simplifyPattern"
+protected function generateWildcardList "function: generateWildcardList
+	author: KS
+	Helper function to simplifyPattern
+"
   input list<Absyn.Ident> varList;
   input RenamedPatList patList;
   output RenamedPatList outPatList;
@@ -1517,8 +1572,9 @@ algorithm
 end generateWildcardList;
 
 
-public function extractPathVariables "function: extractPathVariables
-Find the first construct given an IndexVector and extract the path variables.
+protected function extractPathVariables "function: extractPathVariables
+	author: KS
+	Find the first construct given an IndexVector and extract the path variables.
 "
   input IndexVector indList;
   input RenamedPatVec renamedPatVec;
@@ -1545,8 +1601,9 @@ algorithm
 end extractPathVariables;
 
 
-public function getPathVarsFromConstruct "function: getPathVarsFromConstruct
-Given a construct, extract a list of the path variables.
+protected function getPathVarsFromConstruct "function: getPathVarsFromConstruct
+	author: KS
+	Given a construct, extract a list of the path variables.
 "
   input RenamedPat pat;
   output list<Absyn.Ident> outVarList;
@@ -1579,9 +1636,21 @@ algorithm
   end matchcontinue;
 end getPathVarsFromConstruct;
 
-public function extractSubpatterns "function: extractSubpatterns
- Extract all the subpatterns from a constructor or a wildcard.
- For a wildcard, n wildcards are produced (where n is the number of arguments to the constructor). 
+protected function extractSubpatterns "function: extractSubpatterns
+	author: KS
+ 	Extract all the subpatterns from a constructor or a wildcard.
+ 	For a wildcard, n wildcards are produced (where n is the number of arguments to the constructor). 
+  All the extracted subpatterns ends up in a matrix.
+  Example: 
+  The following column (pattern list), (path) variable list {x__1,x__2}
+  and an index vector {1,2,3} ...
+  	 (pathVar1 = _)
+  	 (pathVar2 = (2 :: {}))
+  	 (pathVar3 = (4 :: (3 :: {})))
+  ... will result in the following matrix:
+  [RP_WILDCARD(x__1)  RP_WILDCARD(x__2)                                        ]
+  [RP_INTEGER(x__1,2) RP_EMPTYLIST(x__2)                                       ]
+  [RP_INTEGER(x__1,4) RP_CONS(x__2,RP_INTEGER(x__2__1,3),RP_EMPTYLIST(x__2__2) ] 
 "
   input list<Absyn.Ident> varList;
   input Matrix.IndexVector indVec;
@@ -1625,9 +1694,10 @@ algorithm
   end matchcontinue;    
 end extractSubpatterns;
 
-public function generateWildcards "function: generateWildcards
-Given a list of identifers, this function will generate a list of
-wildcard patterns with corresponding identifer (path variable)
+protected function generateWildcards "function: generateWildcards
+	author: KS
+	Given a list of identifers, this function will generate a list of
+	wildcard patterns with corresponding identifer (path variable)
 "
   input list<Absyn.Ident> varList;
   output RenamedPatList outList;
@@ -1648,8 +1718,9 @@ algorithm
   end matchcontinue;        
 end generateWildcards;
 
-public function extractFuncArgs "function: extractFuncArgs
-This function is used by extractSubPatterns
+protected function extractFuncArgs "function: extractFuncArgs
+	author: KS
+	This function is used by extractSubPatterns
 "
   input RenamedPat inPat;
   output RenamedPatList outList;
@@ -1677,7 +1748,10 @@ algorithm
 end extractFuncArgs;
 
 
-public function addNewPatRow "function: addNewPatRow"
+protected function addNewPatRow "function: addNewPatRow
+	author: KS
+	Adds a new row to a matrix.
+"
   input RenamedPatMatrix patMat;
   input RenamedPatList patList;
   input Integer pivot;
@@ -1701,10 +1775,11 @@ algorithm
   end matchcontinue;
 end addNewPatRow; 
 
-public function findMatches "function: findMatches
-This function takes an identifer and matches this identifer against
-all the patterns in a pattern list. It stores the index of the matched
-pattern in a list of integers"
+protected function findMatches "function: findMatches
+	author: KS
+	This function takes an identifer and matches this identifer against
+	all the patterns in a pattern list. It stores the index of the matched
+	pattern in a list of integers"
   input Absyn.Ident matchObj;
   input RenamedPatList patList;
   input list<Integer> accIndList;
@@ -1744,13 +1819,14 @@ algorithm
 end findMatches;
 
 
-public function generatePositionalArgs "function: generatePositionalArgs
-This function is used in the following cases:
-v := matchcontinue (x)
-    case REC(a=1,b=2)
-    ...
-The named arguments a=1 and b=2 must be sorted and transformed into 
-positional arguments (a,b is not necessarely the correct order).
+protected function generatePositionalArgs "function: generatePositionalArgs
+	author: KS
+	This function is used in the following cases:
+	v := matchcontinue (x)
+  	  case REC(a=1,b=2)
+   	 ...
+	The named arguments a=1 and b=2 must be sorted and transformed into 
+	positional arguments (a,b is not necessarely the correct order).
 "
   input list<Absyn.Ident> fieldNameList;
   input list<Absyn.NamedArg> namedArgList;
@@ -1776,8 +1852,9 @@ algorithm
   end matchcontinue;  
 end generatePositionalArgs;  
 
-public function findFieldExpInList "function: findFieldExpInList
-Helper function to generatePositionalArgs
+protected function findFieldExpInList "function: findFieldExpInList
+	author: KS
+	Helper function to generatePositionalArgs
 "
   input Absyn.Ident firstFieldName;
   input list<Absyn.NamedArg> namedArgList;
@@ -1804,7 +1881,9 @@ end findFieldExpInList;
 //-----------------------------------------------------
 // Helper functions
 
-public function allWildcards "function: allWildcards"
+protected function allWildcards "function: allWildcards
+	author: KS
+"
   input RenamedPatList lPat;
   output Boolean val;
 algorithm
@@ -1812,8 +1891,10 @@ algorithm
 end allWildcards;
 
 
-public function allConst "function: allConst
-Decides wheter a list of Renamed Patterns only contains constant patterns"
+protected function allConst "function: allConst
+	author: KS
+	Decides wheter a list of Renamed Patterns only contains constant patterns
+"
   input RenamedPatList lPat;
   output Boolean val;
 algorithm
@@ -1821,8 +1902,9 @@ algorithm
 end allConst;
 
 
-public function existConstructor "function: existConstructor
-Decides wheter a list of Renamed Patterns contains a constructor
+protected function existConstructor "function: existConstructor
+	author: KS
+	Decides wheter a list of Renamed Patterns contains a constructor
 "
   input RenamedPatList lPat;
   output Boolean val;
@@ -1831,8 +1913,9 @@ algorithm
 end existConstructor;
 
 
-public function wildcardOrNot "function: wildcardOrNot
-Decides wheter a Renamed Patterns is a wildcard or not
+protected function wildcardOrNot "function: wildcardOrNot
+	author: KS
+	Decides wheter a Renamed Patterns is a wildcard or not
 "
   input RenamedPat pat;
   output Boolean val;
@@ -1849,8 +1932,9 @@ algorithm
 end wildcardOrNot;
 
 
-public function constantOrNot "function: constantOrNot
-Decides wheter a Renamed Patterns is a constant or not
+protected function constantOrNot "function: constantOrNot
+	author: KS
+	Decides wheter a Renamed Patterns is a constant or not
 "
   input RenamedPat pat;
   output Boolean val;
@@ -1880,8 +1964,9 @@ algorithm
 end constantOrNot;
 
 
-public function constructorOrNot "function: constructorOrNot
-Decides wheter a Renamed Patterns is a constructor or not
+protected function constructorOrNot "function: constructorOrNot
+	author:KS
+	Decides wheter a Renamed Patterns is a constructor or not
 "
   input RenamedPat pat;
   output Boolean val;
@@ -1903,7 +1988,9 @@ algorithm
   end matchcontinue;    
 end constructorOrNot;
 
-public function printList "function: printList"
+protected function printList "function: printList
+	author: KS
+"
   input list<Boolean> boolList;
 algorithm
   _ :=
@@ -1930,7 +2017,9 @@ algorithm
 end printList;
 
 
-public function printCList "function: printCList"
+protected function printCList "function: printCList
+	author:KS
+"
   input list<Absyn.Ident,Boolean> cList;
 algorithm
   _ :=
@@ -1948,8 +2037,9 @@ algorithm
 end printCList;
 
 
-public function selectRightHandSides "function: selectRightHandSides
- Picks out all the elements from a right hand vector given an index vector
+protected function selectRightHandSides "function: selectRightHandSides
+	author:KS
+	Picks out all the elements from a right hand vector given an index vector.
 "
   input IndexVector indVec;
   input RightHandVector rhVec;
@@ -1975,7 +2065,7 @@ algorithm
 end selectRightHandSides;
 
 //-----------------------------------------------
-// Some simple "type checking" is done
+// Some simple "type checking"
 /*
 public function patternCheck 
   input RenamedPatMatrix2 mat;

@@ -46,7 +46,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 public import Absyn;
 public import Util;
 
-// Datastructure for a pattern of the form path=pattern
+// Data structure for a pattern of the form path=pattern
 public 
 uniontype RenamedPat "The `RenamedPat\' datatype"
   record RP_INTEGER
@@ -126,8 +126,10 @@ type RightHandVector = RightHandSide[:];
 type RightHandList = list<RightHandSide>;
 
 
-function patternsFromCol "function: patternsFromCol
-Selects patterns from a column according to the indices in the index vector"
+public function patternsFromCol "function: patternsFromCol
+	author: KS
+	Selects patterns from a column according to the indices in the index vector
+"
   input RenamedPatMatrix patMat;
   input IndexVector indices;
   input Integer colNum;
@@ -137,8 +139,10 @@ algorithm
 end patternsFromCol;
 
 
-function patternsFromColHelper "function: patternsFromColHelper
-Recursive helper function to patternsFromCol"
+public function patternsFromColHelper "function: patternsFromColHelper
+	author: KS
+	Recursive helper function to patternsFromCol
+"
   input RenamedPatList patList;
   input IndexVector indices;
   input RenamedPatList accPatList;
@@ -162,13 +166,14 @@ algorithm
         temp2 = temp[first];
       then patternsFromColHelper(localPatList,rest,listAppend(localAccPatList,temp2 :: {}));
   end matchcontinue;
-  
 end patternsFromColHelper;
 
 
-function patternsFromOtherCol "function: patternsFromOtherCol
-Selects patterns from all columns except one according to
-the indices in the index vector"
+public function patternsFromOtherCol "function: patternsFromOtherCol
+	author: KS
+	Selects patterns from all columns except one according to
+	the indices in the index vector
+"
   input RenamedPatMatrix patMat;
   input IndexVector indices;
   input Integer colNum;
@@ -178,8 +183,10 @@ algorithm
 end patternsFromOtherCol;
 
 
-function patternsFromOtherColHelper "function: patternsFromOtherColHelper
-Recursive helper function to patternsFromOtherCol"
+public function patternsFromOtherColHelper "function: patternsFromOtherColHelper
+	author: KS
+	Recursive helper function to patternsFromOtherCol
+"
   input Integer pivot;
   input Integer colNum;
   input IndexVector indices;
@@ -214,8 +221,10 @@ algorithm
 end patternsFromOtherColHelper;
 
 
-function appendMatrices "function: appendMatrices
-Appends two matrices with the same number of rows"
+public function appendMatrices "function: appendMatrices
+	author: KS
+	Appends two matrices with the same number of rows
+"
   input RenamedPatMatrix2 patMat1;
   input RenamedPatMatrix2 patMat2;
   output RenamedPatMatrix2 outPatMat;
@@ -223,8 +232,10 @@ algorithm
   outPatMat := listAppend(patMat1,patMat2);
 end appendMatrices;
 
-public function firstRow"function: firstRow
-Selects the first row of a RenamedPatMatrix and returns it as a list"
+public function firstRow "function: firstRow
+	author: KS
+	Selects the first row of a RenamedPat matrix and returns it as a list.
+"
   input RenamedPatMatrix2 patMat;
   input RenamedPatList accList;
   output RenamedPatList outList;
@@ -247,7 +258,10 @@ end firstRow;
 
 
 public function removeFirstRow "function: removeFirstRow
-Removes the first row from a matrix and returns the matrix with the first row removed"
+	author: KS
+	Removes the first row from a matrix and returns the matrix with 
+	the first row removed
+"
   input RenamedPatMatrix2 patMat;
   input RenamedPatMatrix2 accPatMat;
   output RenamedPatMatrix2 outPatMat;
@@ -279,7 +293,9 @@ algorithm
   end matchcontinue;
 end removeFirstRow;
 
-public function printMatrix "function: printMatrix"
+public function printMatrix "function: printMatrix
+	author: KS
+"
   input RenamedPatMatrix2 patMat;
 algorithm
   _ :=
@@ -296,7 +312,9 @@ algorithm
   end matchcontinue;             
 end printMatrix;
 
-public function matrixFix "function: matrixFix"
+public function matrixFix "function: matrixFix
+	author: KS
+"
   input RenamedPatMatrix2 inMat;
   output RenamedPatMatrix2 outAccMat;
 algorithm
@@ -315,7 +333,9 @@ algorithm
   end matchcontinue;
 end matrixFix;
 
-public function printList "function: printList"
+public function printList "function: printList
+	author: KS
+"
   input RenamedPatList inList;
 algorithm
   _ :=
@@ -333,7 +353,9 @@ algorithm
   end matchcontinue;
 end printList;
 
-public function printPattern "function: printPattern"
+public function printPattern "function: printPattern
+	author: KS
+"
   input RenamedPat inPat;
 algorithm
   _ :=
@@ -347,6 +369,16 @@ algorithm
         print(var);
         print(":");
         print(intString(value));
+      then ();   
+    case(RP_BOOL(var,value))
+      local
+        Absyn.Ident var;
+        Boolean value;
+      equation
+        print("Pathvar:");
+        print(var);
+        print(":");
+        print("BOOL");
       then ();   
     case(RP_STRING(var,value))
       local
@@ -380,6 +412,15 @@ algorithm
         print("Pathvar:");
         print(var);
         print(" WILDCARD");
+        print("\n");
+      then ();
+    case(RP_EMPTYLIST(var))     
+      local
+        Absyn.Ident var;
+      equation
+        print("Pathvar:");
+        print(var);
+        print(" EMPTY LIST");
         print("\n");
       then ();
     case (_) 
