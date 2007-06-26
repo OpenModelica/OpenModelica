@@ -5175,6 +5175,133 @@ algorithm
         (cache,Exp.CALL(Absyn.IDENT("plot"),{Exp.ARRAY(Exp.OTHER(),false,vars_1)},
           false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
 
+//plot2(model, x)
+  case (cache,env,Absyn.CREF_IDENT(name = "plot2"),{Absyn.CREF(componentReg = cr), cr2 as Absyn.CREF(componentReg = _)},args,impl,SOME(st)) /* Fill in rest of defaults here */ 
+    local Absyn.Path className; Exp.Exp storeInTemp; Absyn.Exp cr2;
+      		Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points;
+        
+      equation 
+        vars_1 = elabVariablenames({cr2});
+				className = Absyn.crefToPath(cr);
+        (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("linear"));
+        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("Plot by OpenModelica"));
+        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(false));
+        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(false));
+       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("time"));          
+        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST(""));
+        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+
+      then
+        (cache,Exp.CALL(Absyn.IDENT("plot2"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()), Exp.ARRAY(Exp.OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points},
+          false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
+
+//plot2(model, {x,y})
+  case (cache,env,Absyn.CREF_IDENT(name = "plot2"),{Absyn.CREF(componentReg = cr), Absyn.ARRAY(arrayExp = vars)},args,impl,SOME(st)) /* Fill in rest of defaults here */ 
+    local Absyn.Path className; Exp.Exp storeInTemp; Absyn.Exp cr2;
+        Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points;
+
+      equation 
+        vars_1 = elabVariablenames(vars);
+				className = Absyn.crefToPath(cr);
+        (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("linear"));				  
+          
+
+        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("Plot by OpenModelica"));
+        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(false));
+        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(false));
+       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("time"));          
+        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST(""));
+        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+      
+      then
+        (cache,Exp.CALL(Absyn.IDENT("plot2"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()), Exp.ARRAY(Exp.OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points},
+          false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
+
+
+
+//plot2(x)
+    case (cache,env,Absyn.CREF_IDENT(name = "plot2"),{(cr as Absyn.CREF(componentReg = _))},args,impl,SOME(st))
+      local Absyn.Exp cr;
+        Exp.Exp grid, legend, title, interpolation, logX, logY, xLabel, yLabel, points;
+      equation 
+        vars_1 = elabVariablenames({cr});
+
+        (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("linear"));
+        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("Plot by OpenModelica"));
+        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(false));
+        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(false));
+       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("time"));          
+        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST(""));
+        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+          
+      then
+        (cache,Exp.CALL(Absyn.IDENT("plot2"),{Exp.ARRAY(Exp.OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points},
+          false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
+
+//plot2({x,y})
+    case (cache,env,Absyn.CREF_IDENT(name = "plot2"),{Absyn.ARRAY(arrayExp = vars)},args,impl,SOME(st))
+						local
+						  Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points;
+            equation 
+        vars_1 = elabVariablenames(vars);
+        (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("linear"));
+        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("Plot by OpenModelica"));
+        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(false));
+        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(false));
+       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("time"));          
+        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST(""));
+        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+
+
+      then
+        (cache,Exp.CALL(Absyn.IDENT("plot2"),{Exp.ARRAY(Exp.OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points},
+          false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
+
+
    case (cache,env,Absyn.CREF_IDENT(name = "val"),{(cr as Absyn.CREF(componentReg = _)),(cd as Absyn.REAL(value = _))},{},impl,SOME(st))
       local 
         Absyn.Exp cr,cd;
@@ -5207,6 +5334,114 @@ algorithm
       then
         (cache,Exp.CALL(Absyn.IDENT("plotParametric"),
           vars_1,false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
+
+   case (cache,env,Absyn.CREF_IDENT(name = "plotParametric2"),{Absyn.CREF(componentReg = cr), cr2 as Absyn.CREF(componentReg = _), cr3 as Absyn.CREF(componentReg = _)} ,args,impl,SOME(st)) /* PlotParametric is similar to plot but does not allow a single CREF as an 
+   argument as you are plotting at least one variable as a function of another.
+   Thus, plotParametric has to take an array as an argument, or two componentRefs. */ 
+   local Absyn.Path className; list<Exp.Exp> vars_3; Absyn.Exp cr2, cr3;
+     		 Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points;
+         list<Exp.Exp> vars_2;
+      equation
+        vars_1 = elabVariablenames({cr2}); 
+        vars_2 = elabVariablenames({cr3});        
+				className = Absyn.crefToPath(cr);
+        vars_3 = listAppend(vars_1, vars_2); 
+ 
+         (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("linear"));
+
+        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("Plot by OpenModelica"));
+        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(false));
+        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(false));
+       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("time"));          
+        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST(""));          
+        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+          
+      then
+        
+        (cache,Exp.CALL(Absyn.IDENT("plotParametric2"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()), Exp.ARRAY(Exp.OTHER(),false,vars_3), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points}
+        ,false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
+
+//plotParametric2(x,y)
+   case (cache,env,Absyn.CREF_IDENT(name = "plotParametric2"),{cr2 as Absyn.CREF(componentReg = _), cr3 as Absyn.CREF(componentReg = _)} ,args,impl,SOME(st)) /* PlotParametric is similar to plot but does not allow a single CREF as an 
+   argument as you are plotting at least one variable as a function of another.
+   Thus, plotParametric has to take an array as an argument, or two componentRefs. */ 
+   local Absyn.Path className; list<Exp.Exp> vars_3; Absyn.Exp cr2, cr3;
+     Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points;
+     list<Exp.Exp> vars_2;
+      equation
+
+        vars_1 = elabVariablenames({cr2}); 
+        vars_2 = elabVariablenames({cr3});        
+        vars_3 = listAppend(vars_1, vars_2); 
+ 
+         (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("linear"));
+
+         (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("Plot by OpenModelica"));
+        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(false));
+        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(false));
+       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("time"));          
+        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST(""));               
+        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+          
+      then
+        
+        (cache,Exp.CALL(Absyn.IDENT("plotParametric2"),{Exp.ARRAY(Exp.OTHER(),false,vars_3), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points}
+        ,false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
+
+	//plotParametric2(x,y)
+    case (cache,env,Absyn.CREF_IDENT(name = "plotParametric2"),vars,args,impl,SOME(st)) /* PlotParametric is similar to plot but does not allow a single CREF as an 
+   argument as you are plotting at least one variable as a function of another.
+   Thus, plotParametric has to take an array as an argument, or two componentRefs. */ 
+			local
+			  Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points;
+      equation 
+
+        vars_1 = elabVariablenames(vars);
+        (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("linear"));
+        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("Plot by OpenModelica"));
+        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(false));
+        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(false));
+       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("time"));          
+        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST(""));
+        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+     
+      then
+        (cache,Exp.CALL(Absyn.IDENT("plotParametric2"),
+          vars_1,false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
+
 
     case (cache,env,Absyn.CREF_IDENT(name = "timing"),{exp},{},impl,SOME(st))
       equation 
@@ -5402,10 +5637,19 @@ algorithm
       list<Exp.Exp> xs_1;
       Absyn.ComponentRef cr;
       list<Absyn.Exp> xs;
+      String str, str2;
     case {} then {}; 
     case ((Absyn.CREF(componentReg = cr) :: xs))
       equation 
         
+        xs_1 = elabVariablenames(xs);
+      then
+        (Exp.CODE(Absyn.C_VARIABLENAME(cr),Exp.OTHER()) :: xs_1);
+
+    case ((Absyn.CALL(Absyn.CREF_IDENT(name="der"), Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(name = str))}, {})) :: xs))
+      equation 
+        str2 = "der(" +& str +& ")";
+        cr = Absyn.CREF_IDENT(str2,{});
         xs_1 = elabVariablenames(xs);
       then
         (Exp.CODE(Absyn.C_VARIABLENAME(cr),Exp.OTHER()) :: xs_1);

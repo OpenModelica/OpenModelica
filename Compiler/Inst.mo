@@ -10167,7 +10167,7 @@ algorithm
         Boolean impl;
         Integer i;
         Absyn.Exp localIterExp;
-      equation  
+      equation 
         ld = createTempIntegerVars(localIdList,{});
         (localCache,subscriptList) = deriveArrayDimensions(localCache,localEnv,localRangeIdList,impl,{});
         
@@ -10179,7 +10179,7 @@ algorithm
         ld_mod = addNomod(ld2);
         env2 = addComponentsToEnv(env2, Types.NOMOD(), Prefix.NOPRE(), 
         Connect.SETS({},{}), ClassInf.UNKNOWN("temp"), ld_mod, {}, {}, {}, impl);    
-			 (cache2,_,env2,_,_,_) = instElementList(cache,env2,
+			 (cache2,_,env2,_,_,_) = instElementList(localCache,env2,
 			  Types.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{}), ClassInf.UNKNOWN("temp"),
 			  ld_mod,{},impl);
 			  

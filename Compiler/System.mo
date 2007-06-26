@@ -152,6 +152,21 @@ public function executeFunction
   external "C" ;
 end executeFunction;
 
+public function sendData
+  input String inString1;
+  input String inString2; //interpolation
+  input String title;
+  input Boolean legend;
+  input Boolean grid;
+  input Boolean logX;
+  input Boolean logY;
+  input String xLabel;
+  input String yLabel;
+  input Boolean points;
+
+  external "C" ;
+end sendData;
+
 public function writeFile
   input String inString1;
   input String inString2;

@@ -1230,6 +1230,38 @@ for(; RML_GETHDR(timeValues) == RML_CONSHDR && valueFound == 0; timeValues = RML
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__sendData)
+{
+ 
+
+ 
+
+  	
+  char* data = RML_STRINGDATA(rmlA0);
+  char* interpolation = RML_STRINGDATA(rmlA1);
+ char* title = RML_STRINGDATA(rmlA2);
+ int legend = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA3)); //RML_STRINGDATA(rmlA3);
+ int grid = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA4)); //RML_STRINGDATA(rmlA4); 
+ int logX = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA5)); //RML_STRINGDATA(rmlA5);	
+ int logY = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA6)); //RML_STRINGDATA(rmlA6);	 
+ char* xLabel = RML_STRINGDATA(rmlA7);
+ char* yLabel = RML_STRINGDATA(rmlA8);
+ int points = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA9));
+ 
+//  emulateStreamData(data, 7778);
+
+//  emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, "linear", 1);
+///  emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, interpolation, 1);
+
+//  emulateStreamData(data, 7778, title, "time", "", legend, grid, 0, 0, 0, 0, logX, logY, interpolation, 1);
+  emulateStreamData(data, 7778, title, xLabel, yLabel , interpolation, legend, grid, 0, 0, 0, 0, logX, logY, points);
+  
+//	emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, "linear");
+       
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__getFileModificationTime)
 {
   char* fileName = RML_STRINGDATA(rmlA0);
@@ -2535,6 +2567,39 @@ for(; RML_GETHDR(timeValues) == RML_CONSHDR && valueFound == 0; timeValues = RML
   }
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__sendData)
+{
+ 
+
+ 
+
+  	
+  char* data = RML_STRINGDATA(rmlA0);
+  char* interpolation = RML_STRINGDATA(rmlA1);
+ char* title = RML_STRINGDATA(rmlA2);
+ int legend = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA3)); //RML_STRINGDATA(rmlA3);
+ int grid = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA4)); //RML_STRINGDATA(rmlA4); 
+ int logX = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA5)); //RML_STRINGDATA(rmlA5);	
+ int logY = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA6)); //RML_STRINGDATA(rmlA6);	 
+ char* xLabel = RML_STRINGDATA(rmlA7);
+ char* yLabel = RML_STRINGDATA(rmlA8);
+ int points = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA9));
+ 
+//  emulateStreamData(data, 7778);
+
+//  emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, "linear", 1);
+///  emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, interpolation, 1);
+
+//  emulateStreamData(data, 7778, title, "time", "", legend, grid, 0, 0, 0, 0, logX, logY, interpolation, 1);
+  emulateStreamData(data, 7778, title, xLabel, yLabel , interpolation, legend, grid, 0, 0, 0, 0, logX, logY, points);
+  
+//	emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, "linear");
+       
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 
 RML_BEGIN_LABEL(System__getFileModificationTime)
 {

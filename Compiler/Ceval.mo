@@ -2120,6 +2120,7 @@ algorithm
         value = System.readPtolemyplotDataset(filename, vars_2, 0);
         pwd = System.pwd();
         cit = winCitation();
+
         omhome = Settings.getInstallationDirectoryPath();
         omhome_1 = System.trim(omhome, "\"");
         pd = System.pathDelimiter();
@@ -2127,6 +2128,7 @@ algorithm
         tmpPlotFile = Util.stringAppendList({pwd,pd,"tmpPlot.plt"});
         res = Values.writePtolemyplotDataset(tmpPlotFile, value, vars_2, "Plot by OpenModelica");
         call = Util.stringAppendList({cit,plotCmd," \"",tmpPlotFile,"\"",cit});
+
         _ = System.systemCall(call);
       then
         (cache,Values.BOOL(true),st);
@@ -2179,6 +2181,171 @@ algorithm
       local list<Exp.Exp> vars;
       then
         (cache,Values.STRING("Unknown error while plotting"),st);
+
+// plot(model, x)
+    case (cache,env,
+      Exp.CALL(
+        path = Absyn.IDENT(name = "plot2"),
+        expLst = {
+        Exp.CODE(Absyn.C_TYPENAME(className),_),
+        Exp.ARRAY(array = vars),
+  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points)
+        }),
+      (st as Interactive.SYMBOLTABLE(
+        ast = p,explodedAst = sp,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)),msg)
+      local
+        Integer res;
+        list<Exp.Exp> vars;
+        String interpolation, title, xLabel, yLabel;
+        Boolean legend, grid, logX, logY, points;
+      equation
+
+        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
+        vars_2 = Util.listUnionElt("time", vars_1);
+				filename = Absyn.pathString(className);
+				filename = Util.stringAppendList({filename, "_res.plt"});
+         
+        value = System.readPtolemyplotDataset(filename, vars_2, 0);
+
+        res = Values.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points);
+
+      then
+        (cache,Values.BOOL(true),st);
+
+    case (cache,env,
+      Exp.CALL(
+        path = Absyn.IDENT(name = "plot2"),
+        expLst = {
+        Exp.CODE(Absyn.C_TYPENAME(className),_),
+        Exp.ARRAY(array = vars),
+  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points)
+        }),
+      (st as Interactive.SYMBOLTABLE(
+        ast = p,explodedAst = sp,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)),msg)
+
+      local
+        Integer res;
+        list<Exp.Exp> vars;
+        String interpolation, title, xLabel, yLabel;
+        Boolean legend, grid, logX, logY, points;
+       equation
+ 
+         vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
+        vars_2 = Util.listUnionElt("time", vars_1);
+ 				filename = Absyn.pathString(className);
+				filename = Util.stringAppendList({filename, "_res.plt"});
+         
+        failure(_ = System.readPtolemyplotDataset(filename, vars_2, 0));
+
+      then
+					(cache,Values.STRING("Error reading the simulation result."),st);
+
+    case (cache,env,
+      Exp.CALL(
+        path = Absyn.IDENT(name = "plot2"),
+        expLst = {Exp.ARRAY(array = vars), 
+  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points)
+        }),
+      (st as Interactive.SYMBOLTABLE(
+        ast = p,explodedAst = sp,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)),msg)
+      local
+        Integer res;
+        list<Exp.Exp> vars;
+				String interpolation, title, xLabel, yLabel;
+				Boolean legend, logX, logY, points;
+				Boolean grid;
+      equation
+        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
+        vars_2 = Util.listUnionElt("time", vars_1);
+        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env, 
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+        value = System.readPtolemyplotDataset(filename, vars_2, 0);
+        res = Values.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points);
+
+      then
+        (cache,Values.BOOL(true),st);
+
+    case (cache,env,
+      Exp.CALL(
+        path = Absyn.IDENT(name = "plot2"),
+        expLst = {Exp.ARRAY(array = vars),
+  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points)
+        }),
+      (st as Interactive.SYMBOLTABLE(
+        ast = p,explodedAst = sp,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)),msg)
+      local
+        Integer res;
+        list<Exp.Exp> vars;
+				String interpolation, title, xLabel, yLabel;
+				Boolean legend, logX, logY, points;
+				Boolean grid;        
+        
+      equation
+        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
+        vars_2 = Util.listUnionElt("time", vars_1);
+        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env, 
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+        failure(_ = System.readPtolemyplotDataset(filename, vars_2, 0));
+      then
+        (cache,Values.STRING("Error reading the simulation result."),st);
+
+    case (cache,env,
+      Exp.CALL(
+        path = Absyn.IDENT(name = "plot2"),
+        expLst = {Exp.ARRAY(array = vars), 
+  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points)
+        }),
+      (st as Interactive.SYMBOLTABLE(
+        ast = p,explodedAst = sp,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)),msg)
+      local
+        Integer res;
+        list<Exp.Exp> vars;
+        String interpolation, title, xLabel, yLabel;
+        Boolean legend, grid, logX, logY, points;
+
+      equation 
+        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
+        vars_2 = Util.listUnionElt("time", vars_1);
+        failure((_,_,_) = ceval(cache,env, 
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, NO_MSG()));
+      then
+        (cache,Values.STRING("No simulation result to plot."),st);
+
+    case (cache,env,
+      Exp.CALL(
+        path = Absyn.IDENT(name = "plot2"),
+        expLst = {Exp.ARRAY(array = vars),
+  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points)
+        }),
+      (st as Interactive.SYMBOLTABLE(
+        ast = p,explodedAst = sp,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)),msg)
+      local
+        Integer res;
+        list<Exp.Exp> vars;
+        String interpolation, title, xLabel, yLabel;
+        Boolean legend, grid, logX, logY, points;
+         
+      then
+        (cache,Values.STRING("Unknown error while plotting"),st);
+        
+        
    
     case (cache,env,
       Exp.CALL(
@@ -2322,6 +2489,149 @@ algorithm
       then
         (cache,Values.STRING("Unknown error while plotting"),st);
     /* end plotparametric */        
+
+//plotParametric2(modell, x,y,interpolation)
+    case (cache,env,
+      Exp.CALL(path = Absyn.IDENT(name = "plotParametric2"),
+      expLst = {   Exp.CODE(Absyn.C_TYPENAME(className),_),
+        Exp.ARRAY(array = vars), 
+  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points)
+        }),
+
+      (st as Interactive.SYMBOLTABLE(
+        ast = p,explodedAst = sp,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)),msg)  
+      local
+        Integer res;
+        list<Exp.Exp> vars;
+        String interpolation, title, xLabel, yLabel;
+        Boolean legend, grid, logX, logY, points;
+      equation 
+        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars_1 = Util.listMap(vars, Exp.printExpStr);
+        length = listLength(vars_1);
+        (length > 1) = true;
+				filename = Absyn.pathString(className);
+				filename = Util.stringAppendList({filename, "_res.plt"});
+				
+        value = System.readPtolemyplotDataset(filename, vars_1, 0);
+        pwd = System.pwd();
+        cit = winCitation();
+        omhome = Settings.getInstallationDirectoryPath();
+        omhome_1 = System.trim(omhome, "\"");
+        pd = System.pathDelimiter();
+        plotCmd = Util.stringAppendList({cit,omhome_1,pd,"bin",pd,"doPlot",cit});
+        tmpPlotFile = Util.stringAppendList({pwd,pd,"tmpPlot.plt"});
+         res = Values.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points);
+      then
+        (cache,Values.BOOL(true),st);
+        
+//plotParametric2(x,y,interpolation)
+   case (cache,env,
+      Exp.CALL(path = Absyn.IDENT(name = "plotParametric2"),
+      expLst = {Exp.ARRAY(array = vars), 
+  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points)
+      
+      }),
+      (st as Interactive.SYMBOLTABLE(
+        ast = p,explodedAst = sp,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)),msg)  
+      local
+        Integer res;
+        list<Exp.Exp> vars;
+        String interpolation, title, xLabel, yLabel;
+        Boolean legend, grid, logX, logY, points;
+      equation 
+
+        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars_1 = Util.listMap(vars, Exp.printExpStr);
+        length = listLength(vars_1);
+        (length > 1) = true;
+        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env, 
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+         value = System.readPtolemyplotDataset(filename, vars_1, 0);
+         res = Values.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points);
+  
+      then
+        (cache,Values.BOOL(true),st);
+
+    case (cache,env,
+      Exp.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = vars),
+      (st as Interactive.SYMBOLTABLE(
+        ast = p,explodedAst = sp,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)),msg)
+      local list<Exp.Exp> vars;
+      equation 
+        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
+        failure((_,_,_) = ceval(cache,env, 
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, NO_MSG())) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
+      then
+        (cache,Values.STRING("No simulation result to plot."),st);
+
+
+
+
+    case (cache,env,
+      Exp.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = vars),
+      (st as Interactive.SYMBOLTABLE(
+        ast = p,explodedAst = sp,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)),msg)
+      local list<Exp.Exp> vars;
+      equation 
+        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error with less than two elements (=variables) in the array.
+           This means we cannot plot var2 as a function of var1 as var2 is missing" ;
+        length = listLength(vars_1);
+        (length < 2) = true;
+      then
+        (cache,Values.STRING("Error: Less than two variables given to plotParametric."),st);
+
+    case (cache,env,
+      Exp.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = vars),
+      (st as Interactive.SYMBOLTABLE(
+        ast = p,explodedAst = sp,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)),msg)
+      local list<Exp.Exp> vars;
+      equation 
+        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
+        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env, 
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
+        failure(_ = System.readPtolemyplotDataset(filename, vars_1, 0));
+      then
+        (cache,Values.STRING("Error reading the simulation result."),st);
+
+    case (cache,env,
+      Exp.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = vars),
+      (st as Interactive.SYMBOLTABLE(
+        ast = p,explodedAst = sp,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)),msg)
+      local list<Exp.Exp> vars;
+      equation 
+        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
+        failure((_,_,_) = ceval(cache,env, 
+          Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, NO_MSG())) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
+      then
+        (cache,Values.STRING("No simulation result to plot."),st);
+
+    case (cache,env,
+      Exp.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = vars),
+      (st as Interactive.SYMBOLTABLE(
+        ast = p,explodedAst = sp,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)),msg)
+      local list<Exp.Exp> vars;
+      then
+        (cache,Values.STRING("Unknown error while plotting"),st);
+            
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "timing"),expLst = {exp}),st,msg)  
       equation 
