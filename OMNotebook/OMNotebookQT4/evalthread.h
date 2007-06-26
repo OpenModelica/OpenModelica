@@ -13,7 +13,7 @@ public:
 	~EvalThread();
 
 	void run();
-
+	void exceptionInEval(exception &e);
 
 private:
 	InputCellDelegate* delegate;

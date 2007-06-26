@@ -143,8 +143,8 @@ namespace IAEX
 		}
 		catch( exception &e )
 		{
-			string msg = string( "Unable to create socket, the application want work as supposed:\nTry restarting OMNotebook." )+ e.what();
-			QMessageBox::warning( 0, "Socket Error", msg.c_str() );
+//			string msg = string( "Unable to create socket, the application will not work as supposed:\nTry restarting OMNotebook." )+ e.what();
+//			QMessageBox::warning( 0, "Socket Error", msg.c_str() );
 		}
 
 
@@ -281,11 +281,14 @@ namespace IAEX
 				// 2006-03-24 AF, First try to find DrModelica.onb, then .nb
         QString drmodelica = getenv("DRMODELICAHOME"); // openmodelica;
 
+		drmodelica.remove("\"");
+
 				// ONB
 				if( drmodelica.endsWith("/") || drmodelica.endsWith( "\\") )
-					drmodelica += "DrModelica/DrModelica.onb";
+					drmodelica += "DrModelica.onb";
 				else
-					drmodelica += "/DrModelica/DrModelica.onb";
+					drmodelica += "/DrModelica.onb";
+
 
 				if( dir.exists( drmodelica ))
 					open(drmodelica);
@@ -299,9 +302,9 @@ namespace IAEX
 					// NB
 					drmodelica = getenv( "DRMODELICAHOME" );
 					if( drmodelica.endsWith("/") || drmodelica.endsWith( "\\") )
-						drmodelica += "DrModelica/DrModelica.nb";
+						drmodelica += "DrModelica.nb";
 					else
-						drmodelica += "/DrModelica/DrModelica.nb";
+						drmodelica += "/DrModelica.nb";
 
 					if( dir.exists( drmodelica ))
 						open(drmodelica);

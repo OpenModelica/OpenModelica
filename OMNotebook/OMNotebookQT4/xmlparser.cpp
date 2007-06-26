@@ -581,7 +581,21 @@ namespace IAEX
 					xVar = e.attribute(XML_GRAPHCELL_X);
 					yVar = e.attribute(XML_GRAPHCELL_Y);
 
-					LegendLabel *ll = new LegendLabel(color, yVar, gCell->compoundwidget->gwMain->legendFrame);
+					int interpolation_;
+					if(interpolation == QString(XML_GRAPHCELL_LINEAR))
+					{
+						interpolation_= INTERPOLATION_LINEAR;
+					}
+					else if(interpolation == QString(XML_GRAPHCELL_CONSTANT))
+					{					
+						interpolation_ = INTERPOLATION_CONSTANT;
+					}
+					else
+					{
+						interpolation_= INTERPOLATION_NONE;
+					}
+
+					LegendLabel *ll = new LegendLabel(color, yVar, gCell->compoundwidget->gwMain->legendFrame, !(interpolation_ == INTERPOLATION_NONE), points);
 					ll->graphWidget = gCell->compoundwidget->gwMain;
 
 					ll->setMaximumHeight(21);
@@ -592,19 +606,8 @@ namespace IAEX
 					ll->setCurve(curve);
 					curve->visible = line;
 					curve->drawPoints = points;
+					curve->interpolation = interpolation_;
 
-					if(interpolation == QString(XML_GRAPHCELL_LINEAR))
-					{
-						curve->interpolation= INTERPOLATION_LINEAR;
-					}
-					else if(interpolation == QString(XML_GRAPHCELL_CONSTANT))
-					{					
-						curve->interpolation = INTERPOLATION_CONSTANT;
-					}
-					else
-					{
-						curve->interpolation= INTERPOLATION_NONE;
-					}
 					gCell->compoundwidget->gwMain->curves.push_back(curve);
 
 				}				

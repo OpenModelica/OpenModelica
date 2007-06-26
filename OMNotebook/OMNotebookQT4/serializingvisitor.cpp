@@ -265,6 +265,7 @@ namespace IAEX
 		// Add style setting to inputcell element
 		graphcell.setAttribute( XML_STYLE, node->style()->name() );
 
+
 		// Add close setting to inputcell element
 		if( node->isClosed() )
 			graphcell.setAttribute( XML_CLOSED, XML_TRUE );

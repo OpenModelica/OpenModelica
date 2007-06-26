@@ -860,6 +860,7 @@ namespace IAEX
 	 */
 	void GraphCell::setStyle(CellStyle style)
 	{
+
 		if( style.name() == "Graph" )
 		{
 			Cell::setStyle( style );
@@ -1016,7 +1017,7 @@ namespace IAEX
 			if( evaluated_ )
 			{
 				output_->show();
-			//	compoundwidget->show();
+				compoundwidget->show();
 			}
 		}
 
@@ -1264,6 +1265,7 @@ namespace IAEX
 			// 2006-02-17 AF, 
 			evaluated_ = true;
 			setClosed(false);
+//QMessageBox::information(0, "uuu", "iii");
 
 			// 2006-02-17 AF, set text '{evaluation expression}" during
 			// evaluation of expressiuon
@@ -1290,6 +1292,7 @@ namespace IAEX
 			}
 			else if(newPlot)
 			{
+//QMessageBox::information(0, "uuu2", "iii");
 				if(!compoundwidget->gwMain->getServerState())
 					compoundwidget->gwMain->setServerState(true);
 				if(!compoundwidget->isVisible())
@@ -1298,6 +1301,7 @@ namespace IAEX
 					compoundwidget->show();
 					compoundwidget->setMinimumHeight(200);
 				}
+//QMessageBox::information(0, "uuu3", "iii");
 			}
 
 			// 2006-02-02 AF, Added try-catch
@@ -1359,6 +1363,7 @@ namespace IAEX
 					output_->blockSignals(false);
 					return;
 				}
+//QMessageBox::information(0, "uuu4", "iii");
 			}
 
 			//////////

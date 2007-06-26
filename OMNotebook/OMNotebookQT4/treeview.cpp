@@ -207,7 +207,7 @@ namespace IAEX
 			
 
 
-			painter.drawRect( this->rect() );	//This does not seem to work			
+			painter.drawRect( this->rect() );			
 
 //			painter.setPen(QPen(Qt::black,1, Qt::SolidLine)); 
 //			painter.drawRect(this->rect().x()-1, this->rect().y(), this->rect().width()-1, this->rect().height()-2);
@@ -223,7 +223,7 @@ namespace IAEX
 			points[2] = QPoint(5,height()-2);
 			points[3] = QPoint(1,height()-2);
 
-			painter.drawPolyline(points);  //This seems to be broken 
+			painter.drawPolyline(points);
 
 			QWidget::paintEvent(event);
 		}
