@@ -154,6 +154,7 @@ public slots:
 	void setHold(QDataStream& ds);
 
 	void originalZoom();
+	void addFocusBox();
 
 signals:
 	void showPreferences2();
@@ -241,6 +242,7 @@ private:
 
 	QRectF currentArea_;
 
+	
 
 public:
 	QRectF originalArea;

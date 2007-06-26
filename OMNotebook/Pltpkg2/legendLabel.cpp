@@ -53,19 +53,21 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "LegendLabel.h"
 #include "curve.h"
 
-LegendLabel::LegendLabel(QColor color_, QString& s, QWidget* parent): QLabel(s, parent), color(color_)
+LegendLabel::LegendLabel(QColor color_, QString& s, QWidget* parent, bool showline, bool showpoints): QLabel(s, parent), color(color_)
 {
 	state = true;
 	setContextMenuPolicy(Qt::ActionsContextMenu);
 	QAction* tmp;
 	tmp =  new QAction(QString("Show line"), this);
 	tmp->setCheckable(true);
+	tmp->setChecked(showline);
 	connect(tmp, SIGNAL(toggled(bool)), this, SLOT(setLineVisible(bool)));
 	connect(this, SIGNAL(showLine(bool)), tmp, SLOT(setChecked(bool)));
 	addAction(tmp);
 
 	tmp = new QAction("Show data points", this);
 	tmp->setCheckable(true);
+	tmp->setChecked(showpoints);
 	connect(tmp, SIGNAL(toggled(bool)), this, SLOT(setPointsVisible(bool)));
 	connect(this, SIGNAL(showPoints(bool)), tmp, SLOT(setChecked(bool)));
 	addAction(tmp);

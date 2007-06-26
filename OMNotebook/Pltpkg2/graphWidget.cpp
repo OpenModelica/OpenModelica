@@ -86,6 +86,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "point.h"
 #include "LegendLabel.h"
 #include "curve.h"
+#include "focusRect.h"
 
 #include <QtOpengL/QGLWidget>
 using namespace std;
@@ -147,6 +148,8 @@ GraphWidget::GraphWidget(QWidget* parent): QGraphicsView(parent)
 	QAction* a;
 	foreach(a, ag->actions())
 		a->setCheckable(true);
+	
+	tmp->setChecked(true);
 
 	contextMenu->addSeparator();
 
@@ -172,20 +175,28 @@ GraphWidget::GraphWidget(QWidget* parent): QGraphicsView(parent)
 	*/
 	tmp=contextMenu->addAction("New window");
 	connect(tmp, SIGNAL(triggered()), this, SLOT(newWindow()));
+	tmp->setVisible(false);
 
-	tmp=contextMenu->addAction("Preferences");
-	connect(tmp, SIGNAL(triggered()), this, SLOT(showPreferences()));
 
 	//	connect(this, SIGNAL(scrolled()), this, SLOT(updateGrid()));
-
 
 	tmp = contextMenu->addAction("Antialiasing");
 	tmp->setCheckable(true);
 	connect(tmp, SIGNAL(toggled(bool)), this, SLOT(setAntiAliasing(bool)));
 
+	contextMenu->addSeparator();
+
+	tmp=contextMenu->addAction("Preferences");
+	connect(tmp, SIGNAL(triggered()), this, SLOT(showPreferences()));
+
 
 	tmp = contextMenu->addAction("oZm");
 	connect(tmp, SIGNAL(triggered()), this, SLOT(originalZoom()));
+	tmp->setVisible(false);
+
+	tmp = contextMenu->addAction("Add focus box");
+	connect(tmp, SIGNAL(triggered()), this, SLOT(addFocusBox()));
+	tmp->setVisible(false);
 
 	graphicsItems = new QGraphicsItemGroup;
 	dataPoints = new QList<Point*>;
@@ -198,9 +209,11 @@ GraphWidget::GraphWidget(QWidget* parent): QGraphicsView(parent)
 	doFitInView = false;
 	hold = false;
 
-#if QT_VERSION >= 0x040300
-	setOptimizationFlags(QGraphicsView::DontAdjustForAntialiasing|QGraphicsView::DontSavePainterState);
-#endif
+	setZoom(true);
+
+//#if QT_VERSION >= 0x040300
+//	setOptimizationFlags(QGraphicsView::DontAdjustForAntialiasing|QGraphicsView::DontSavePainterState);
+//#endif
 }
 
 void GraphWidget::originalZoom()
@@ -208,6 +221,15 @@ void GraphWidget::originalZoom()
 
 	setArea(originalArea);
 	updatePointSizes();
+}
+
+void GraphWidget::addFocusBox()
+{
+	FocusRect* r = new FocusRect(currentArea(), this);
+
+	graphicsScene->addItem(r);
+	r->show();
+
 }
 void GraphWidget::newWindow()
 {
@@ -537,7 +559,13 @@ void GraphWidget::mouseReleaseEvent ( QMouseEvent * event )
 			bottom += mapToScene(0,0,0,this->horizontalScrollBar()->height()).boundingRect().height();
 			right += mapToScene(0,0,this->verticalScrollBar()->width(), 0).boundingRect().width();
 
-			fitInView(QRectF(left, bottom, right-left, top-bottom));
+			QRectF r(left, bottom, right-left, top-bottom);
+	
+			if(!r.width() || !r.height())
+				return;
+
+
+			fitInView(r);
 
 			double xScale = matrix().m11()/125;
 			double yScale = -matrix().m22()/200;
@@ -1479,10 +1507,23 @@ void GraphWidget::plotPtolemyDataStream()
 					currentXVar = tmp;
 				else
 				{
+
+
+
 					if(yVars.indexOf(tmp) == -1)
 					{
+						int interpolation_;
+
+						if(interpolation == QString("constant"))
+							interpolation_ = INTERPOLATION_CONSTANT;
+						else if(interpolation == QString("linear"))
+							interpolation_ = INTERPOLATION_LINEAR;
+						else
+							interpolation_ = INTERPOLATION_NONE;
+
+
 						yVars.push_back(tmp); 
-						ll = new LegendLabel(color, tmp,legendFrame);
+						ll = new LegendLabel(color, tmp,legendFrame, !(interpolation_ == INTERPOLATION_NONE), points);
 						ll->graphWidget = this;
 
 						ll->setMaximumHeight(21);
@@ -1492,8 +1533,11 @@ void GraphWidget::plotPtolemyDataStream()
 						temporaryCurves[tmp] = (new Curve(variables[currentXVar], variables[tmp], color, ll));
 						ll->setCurve(temporaryCurves[tmp]);
 
-					}
+						temporaryCurves[tmp]->drawPoints = points;
+						temporaryCurves[tmp]->interpolation = interpolation_;
 
+					}
+/*
 					if(interpolation == QString("constant"))
 						temporaryCurves[tmp]->interpolation = INTERPOLATION_CONSTANT;
 					else if(interpolation == QString("linear"))
@@ -1502,7 +1546,8 @@ void GraphWidget::plotPtolemyDataStream()
 						temporaryCurves[tmp]->interpolation = INTERPOLATION_NONE;
 
 					temporaryCurves[tmp]->drawPoints = points;
-				}
+*/
+					}
 			}
 
 			packetSize = 0;

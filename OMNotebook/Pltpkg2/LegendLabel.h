@@ -68,7 +68,7 @@ class LegendLabel: public QLabel
 	Q_OBJECT
 
 public:
-	LegendLabel(QColor color_, QString& s, QWidget* parent);
+	LegendLabel(QColor color_, QString& s, QWidget* parent, bool showline, bool showpoints);
 	~LegendLabel();
 
 	void setCurve(Curve* c)
@@ -103,6 +103,7 @@ private:
 	QMenu *menu;
 	Curve* curve;
 	bool state;
+
 };
 
 #endif
