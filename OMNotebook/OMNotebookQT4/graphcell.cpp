@@ -1192,7 +1192,7 @@ namespace IAEX
 
 	bool GraphCell::isPlot2(QString text)
 	{
-		QRegExp exp( "plot2(.*)|plotParametric2(.*)" );
+		QRegExp exp( "plot2\\(.*\\)|plotParametric2\\(.*\\)" );
 
 		if( text.isNull() )
 		{
