@@ -2471,6 +2471,7 @@ algorithm
       Absyn.Exp e,e1,e2;
       list<Absyn.EquationItem> tb,fb,el;
       list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> eb;
+      Absyn.ForIterators iterators;
       Ident i;
     case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = eb,equationElseItems = fb))
       equation 
@@ -2502,12 +2503,10 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case Absyn.EQ_FOR(forVariable = i,forExp = e,forEquations = el)
+    case Absyn.EQ_FOR(iterators=iterators,forEquations = el)
       equation 
         Print.printBuf("FOR ");
-        Print.printBuf(i);
-        Print.printBuf(" in ");
-        printExp(e);
+        printListDebug("print_iterators", iterators, printIterator, ", ");        
         Print.printBuf(" {");
         printListDebug("print_equation", el, printEquationitem, ";");
         Print.printBuf("}");
@@ -2560,6 +2559,7 @@ algorithm
       Absyn.ComponentRef cref;
       Integer i_1,i,indent;
       Absyn.Exp e,e1,e2,exp;
+      Absyn.ForIterators iterators;
       list<Absyn.EquationItem> tb,fb,el,eql;
       list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> eb,eqlelse;
       Absyn.FunctionArgs fargs;
@@ -2602,13 +2602,12 @@ algorithm
         str = Util.stringAppendList({is,"connect(",s1,",",s2,")"});
       then
         str;
-    case (indent,Absyn.EQ_FOR(forVariable = i,forExp = e,forEquations = el))
-      local Ident i;
+    case (indent,Absyn.EQ_FOR(iterators = iterators,forEquations = el))
       equation 
-        s1 = printExpStr(e);
+        s1 = printIteratorsStr(iterators);
         s2 = unparseEquationitemStrLst(indent, el, ";\n");
         is = indentStr(indent);
-        str = Util.stringAppendList({is,"for ",i," in ",s1," loop\n",s2,"\n",is,"end for"});
+        str = Util.stringAppendList({is,"for ",s1," loop\n",s2,"\n",is,"end for"});
       then
         str;
     case (i,Absyn.EQ_NORETCALL(functionName = cref,functionArgs = fargs))
@@ -2810,10 +2809,9 @@ algorithm
   end matchcontinue;
 end printAlgorithmitem;
 
-public function printAlgorithm "function: printAlgorithm
- 
-  Prints an Algorithm to the Print buffer.
-"
+public function printAlgorithm 
+"function: printAlgorithm
+  Prints an Algorithm to the Print buffer."
   input Absyn.Algorithm inAlgorithm;
 algorithm 
   _:=
@@ -2823,6 +2821,7 @@ algorithm
       Absyn.Exp exp,e1,e2,e, assignComp;
       list<Absyn.AlgorithmItem> tb,fb,el,al;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> eb;
+      Absyn.ForIterators iterators;
       Ident i;
     case (Absyn.ALG_ASSIGN(assignComponent = assignComp,value = exp))
       equation 
@@ -2844,12 +2843,10 @@ algorithm
         printListDebug("print_algorithm", fb, printAlgorithmitem, ";");
       then
         ();
-    case Absyn.ALG_FOR(forVariable = i,forStmt = e,forBody = el)
+    case Absyn.ALG_FOR(iterators=iterators,forBody = el)
       equation 
         Print.printBuf("FOR ");
-        Print.printBuf(i);
-        Print.printBuf(" in ");
-        printExp(e);
+        printListDebug("print_iterators", iterators, printIterator, ", ");        
         Print.printBuf(" {");
         printListDebug("print_algorithm", el, printAlgorithmitem, ";");
         Print.printBuf("}");
@@ -2933,6 +2930,7 @@ algorithm
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> eb,al2;
       Absyn.FunctionArgs fargs;
       Absyn.Annotation ann;
+      Absyn.ForIterators iterators;
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_ASSIGN(assignComponent = assignComp,value = exp),comment = optcmt)) /* ALG_ASSIGN */ 
       equation 
         s1 = printExpStr(assignComp);
@@ -2956,16 +2954,16 @@ algorithm
           "end if",s5,";"});
       then
         str;
-    case (ident,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_FOR(forVariable = i,forStmt = e,forBody = el),comment = optcmt)) /* ALG_FOR */ 
+    case (ident,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_FOR(iterators=iterators,forBody = el),comment = optcmt)) /* ALG_FOR */ 
       local Ident i;
       equation 
-        s1 = printExpStr(e);
         ident_1 = ident + 1;
+        s1 = printIteratorsStr(iterators);
         s2 = unparseAlgorithmStrLst(ident_1, el, "\n");
         s3 = unparseCommentOption(optcmt);
         is = indentStr(ident);
         str = Util.stringAppendList(
-          {is,"for ",i," in ",s1," loop\n",is,s2,"\n",is,"end for",s3,
+          {is,"for ",s1," loop\n",is,s2,"\n",is,"end for",s3,
           ";"});
       then
         str;
@@ -3697,8 +3695,9 @@ algorithm
     local
       list<Absyn.Exp> expargs;
       list<Absyn.NamedArg> nargs;
-      Absyn.Exp exp,iterexp;
+      Absyn.Exp exp;
       Ident id;
+      Absyn.ForIterators iterators;
     case Absyn.FUNCTIONARGS(args = expargs,argNames = nargs)
       equation 
         Print.printBuf("FUNCTIONARGS(");
@@ -3708,19 +3707,46 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case Absyn.FOR_ITER_FARG(from = exp,var = id,to = iterexp)
+    case Absyn.FOR_ITER_FARG(exp = exp,iterators = iterators)
       equation 
         Print.printBuf("FOR_ITER_FARG(");
         printExp(exp);
         Print.printBuf(", ");
-        Print.printBuf(id);
-        Print.printBuf(", ");
-        printExp(iterexp);
+        printListDebug("print_iterators", iterators, printIterator, ", ");
         Print.printBuf(")");
       then
         ();
   end matchcontinue;
 end printFunctionArgs;
+
+function printIterator
+" @author adrpo
+  prints iterator: (i,exp1)"
+  input Absyn.ForIterator iterator;
+algorithm
+  _ := matchcontinue(iterator)
+    local 
+      String s, s1, s2, s3; 
+      Absyn.Exp exp; 
+      Absyn.Ident id; 
+      list<tuple<Absyn.Ident, Absyn.Exp>> rest;
+    case ((id, SOME(exp)))
+      equation
+        Print.printBuf("(");
+        Print.printBuf(id);
+        Print.printBuf(", ");
+        printExp(exp);
+        Print.printBuf(")");
+      then ();
+    case ((id, NONE))
+      equation
+        Print.printBuf("(");
+        Print.printBuf(id);
+        Print.printBuf(")");
+      then ();
+  end matchcontinue;
+end printIterator;
+
 
 public function printFunctionArgsStr "function: printFunctionArgsStr
  
@@ -3736,6 +3762,7 @@ algorithm
       list<Absyn.Exp> expargs;
       list<Absyn.NamedArg> nargs;
       Absyn.Exp exp,iterexp;
+      Absyn.ForIterators iterators;
     case Absyn.FUNCTIONARGS(args = (expargs as (_ :: _)),argNames = (nargs as (_ :: _)))
       equation 
         s1 = printListStr(expargs, printExpStr, ", ") "Both positional and named arguments" ;
@@ -3754,20 +3781,48 @@ algorithm
         str = printListStr(expargs, printExpStr, ", ") "Only positional arguments" ;
       then
         str;
-    case Absyn.FOR_ITER_FARG(from = exp,var = id,to = iterexp)
+    case Absyn.FOR_ITER_FARG(exp = exp,iterators = iterators)
       equation 
         estr = printExpStr(exp);
-        istr = printExpStr(iterexp);
-        str = Util.stringAppendList({estr," for ",id," in ",istr});
+        istr = printIteratorsStr(iterators);
+        str = Util.stringAppendList({estr," for ", istr});
       then
         str;
   end matchcontinue;
 end printFunctionArgsStr;
 
-public function printNamedArg "function: printNamedArg
- 
-  Print NamedArg to the Print buffer.
-"
+function printIteratorsStr
+" @author adrpo
+  prints iterators: i in exp1, j in exp2, k in exp3"
+  input Absyn.ForIterators iterators;
+  output String iteratorsStr;
+algorithm
+  iteratorsStr := matchcontinue(iterators)
+    local 
+      String s, s1, s2, s3; 
+      Absyn.Exp exp; 
+      Absyn.Ident id; 
+      Absyn.ForIterators rest;
+      Absyn.ForIterator x;
+    case ({}) then "";
+    case ({(id, SOME(exp))})
+      equation
+        s1 = printExpStr(exp);
+        s = Util.stringAppendList({id, " in ", s1});
+      then s;
+    case ({(id, NONE())}) then id;
+    case (x::rest)
+      equation
+        s1 = printIteratorsStr({x});
+        s2 = printIteratorsStr(rest);
+        s = Util.stringAppendList({s1, ", ", s2});
+      then s;
+  end matchcontinue;
+end printIteratorsStr;
+
+public function printNamedArg 
+"function: printNamedArg 
+  Print NamedArg to the Print buffer."
   input Absyn.NamedArg inNamedArg;
 algorithm 
   _:=
@@ -4135,14 +4190,14 @@ algorithm
         s2 = unparseElementitemStrLst(4, l);
         s3 = unparseEquationitemStrLst(4, eq, ";\n");
         s4 = printExpStr(r);        
-        s = Util.stringAppendList({"\n\tcase (", s1, ")\n\tlocal ", s2, "\n\t", s3, "\n\tthen ", s4, ";"});
+        s = Util.stringAppendList({"\n\tcase (", s1, ")\n\tlocal ", s2, "\n\tequation\n\t", s3, "\n\tthen ", s4, ";"});
       then s;
     case Absyn.ELSE(l, eq, r, c)
       equation
         s2 = unparseElementitemStrLst(4, l);
         s3 = unparseEquationitemStrLst(4, eq, ";\n");
         s4 = printExpStr(r);        
-        s = Util.stringAppendList({"\n\telse", "\n\t", s2, "\n\tlocal ", s3, "\n\tthen ", s4, ";"});
+        s = Util.stringAppendList({"\n\telse", "\n\tlocal ", s2, "\n\tequation\n\t", s3, "\n\tthen ", s4, ";"});
       then s;
   end matchcontinue;
 end printCaseStr;

@@ -49,6 +49,12 @@ endif
 
 LDFLAGS = -lm -L$(RMLHOME)/lib/plain -lrml_g $(ANTLR_LIBP) -lantlr $(LIBSOCKET) $(CORBALIBS) 
 
+ifdef QTHOME
+PLTPKGFLAGS = -L../../build/lib -lsendData -L$(QTHOME)/lib -lqtmain -lQtNetwork4 -lQtCore4 -lQtGui4
+else
+PLTPKGFLAGS = -L../../build/lib -lsendData
+endif
+
 PROG = omcd
 RMLC	= @rmlc_bin@ -g -Wc,-O3 -Wr,-East,-Ecps,-Efol
 RML	= $(RMLHOME)/bin/rml
@@ -90,7 +96,7 @@ absyn_subdir:
 	(cd $(srcdir)/absyn_builder && $(MAKE) vctarget)
 
 $(PROG): $(SRCO) $(AST) $(RTOBJ)
-	g++ -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS)
+	g++ -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS) $(PLTPKGFLAGS)
 
 subdirs: $(SRCHSRCDIR) $(SUBDIRS)
 

@@ -1508,36 +1508,26 @@ conditional_equation_a returns [void* ast]
 
 for_clause_e returns [void* ast] 
 {
-	void* e;
+	void* iterators;
 	void* eq;
-	void* id;
 }
 	:
 
-		#(FOR #(IN i:IDENT
-			e = expression )
-			eq = equation_list
-		)
+		#(FOR iterators = for_indices eq = equation_list)
 		{
-			id = to_rml_str(i);
-			ast = Absyn__EQ_5fFOR(id,e,eq);
+			ast = Absyn__EQ_5fFOR(iterators,eq);
 		}
 	;
 
 for_clause_a returns [void* ast]
 {
-	void* e;
+	void* iterators;
 	void* eq;
-	void* id;
 }
 	:
-		#(FOR #(IN i:IDENT
-			e = expression )
-			eq = algorithm_list
-		)
+		#(FOR iterators = for_indices eq = algorithm_list)
 		{
-			id = to_rml_str(i);
-			ast = Absyn__ALG_5fFOR(id,e,eq);
+			ast = Absyn__ALG_5fFOR(iterators,eq);
 		}
 	;
 
@@ -2225,17 +2215,28 @@ named_argument returns [void* ast]
 		}
 	;
 
+for_indices returns [void *ast]
+{
+    l_stack el_stack;
+    void* e = NULL;
+}
+:
+    i1:IDENT (IN e=expression)? { el_stack.push(mk_box2(0, to_rml_str(i1), e?mk_some(e):mk_none())); }
+    (i2:IDENT (IN e=expression)? { el_stack.push(mk_box2(0, to_rml_str(i2), e?mk_some(e):mk_none())); } )*
+	{
+		ast = make_rml_list_from_stack(el_stack);
+	}
+	;
+
 for_iterator returns [void *ast]
 {
     void* expr;
-    void* iter;
-    void* id;
+    void* iterators;
 }
     :
-        #(FOR expr = expression #(IN i:IDENT iter=expression))
+        #(FOR expr = expression iterators=for_indices)
         {
-            id = to_rml_str(i);
-            ast = Absyn__FOR_5fITER_5fFARG(expr,id,iter);
+            ast = Absyn__FOR_5fITER_5fFARG(expr, iterators);
         }
     ;
 

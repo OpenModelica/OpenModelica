@@ -65,9 +65,11 @@ $(SRCRDB): %.rdb: omc_debug/%.rdb
 #	done
 
 $(PROG): omc_release
+	echo Copying $(PROG)$(EXEEXT) into $(builddir_bin)
 	cp omc_release/$(PROG)$(EXEEXT) $(builddir_bin)/
 
 $(PROGD): omc_debug
+	echo Copying $(PROGD)$(EXEEXT) into $(builddir_bin)
 	cp omc_debug/$(PROGD)$(EXEEXT) $(builddir_bin)/
 
 install_doc:
@@ -83,19 +85,14 @@ install_scripts:
 	done
 
 
-install: install_doc install_scripts
-	echo Copying $(PROG)$(EXEEXT) into $(builddir_bin)
-	cp omc_release/$(PROG)$(EXEEXT) $(builddir_bin)/
+install: install_doc install_scripts $(PROG)
 	echo Copying needed helpfiles....
 	for x in $(DOC_FILES); do \
 		echo Copying $$x into $(builddir_bin) where omc expects it...; \
 		cp doc/$$x $(builddir_bin)/; \
 	done
 
-dinstall: install_doc install_scripts $(SRCRDB)
-	cp *.rdb $(builddir_bin)/
-	echo Copying $(PROGD)$(EXEEXT) into $(builddir_bin)
-	cp omc_debug/$(PROGD)$(EXEEXT) $(builddir_bin)/
+dinstall: install_doc install_scripts $(PROGD)
 	echo Copying needed helpfiles....
 	for x in $(DOC_FILES); do \
 		echo Copying $$x into $(builddir_bin) where omc expects it...; \

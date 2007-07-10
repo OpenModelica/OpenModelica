@@ -501,7 +501,7 @@ algorithm
         
     /* for-statement, optimized case, e.g.: for i in 1:1000 loop */ 
     case (Absyn.ALGORITHMITEM(algorithm_ =  
-      	Absyn.ALG_FOR(forVariable = iter, forStmt = Absyn.RANGE(start=starte,step=NONE, stop=stope),
+      	Absyn.ALG_FOR(iterators = {(iter, SOME(Absyn.RANGE(start=starte,step=NONE, stop=stope)))},
         forBody = algItemList)),st)       
       equation 
         (startv,st_1) = evaluateExpr(starte, st);
@@ -512,7 +512,7 @@ algorithm
 
     /* for-statement, optimized case, e.g.: for i in 7.3:0.4:1000.3 loop */ 
     case (Absyn.ALGORITHMITEM(algorithm_ = 
-      	Absyn.ALG_FOR(forVariable = iter, forStmt = Absyn.RANGE(start=starte, step=SOME(stepe), stop=stope),
+      	Absyn.ALG_FOR(iterators = {(iter, SOME(Absyn.RANGE(start=starte, step=SOME(stepe), stop=stope)))},
         forBody = algItemList)),st)       
       equation 
         (startv,st_1) = evaluateExpr(starte, st);
@@ -524,7 +524,7 @@ algorithm
         
     /* for-statement, general case */ 
     case (Absyn.ALGORITHMITEM(algorithm_ = 
-      	Absyn.ALG_FOR(forVariable = iter, forStmt = exp,forBody = algItemList)),st) 
+      	Absyn.ALG_FOR(iterators = {(iter, SOME(exp))},forBody = algItemList)),st) 
       local
         input list<Values.Value> valList;
       equation 
@@ -533,7 +533,7 @@ algorithm
       then
         ("",st_2);
     /* for-statement - not an array type */ 
-    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_FOR(forStmt = exp)),st) 
+    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_FOR(iterators = {(_, SOME(exp))})),st) 
       local
         String estr;
       equation 
@@ -2726,12 +2726,12 @@ algorithm
         cref2_1 = replaceStartInComponentRef(cref2, old_comp, new_comp) "print \"-rename_component_in_equation EQ_CONNECT not implemented yet\\n\"" ;
       then
         Absyn.EQ_CONNECT(cref1_1,cref2_1);
-    case (Absyn.EQ_FOR(forVariable = ident,forExp = exp,forEquations = equations),old_comp,new_comp)
+    case (Absyn.EQ_FOR(iterators = {(ident,SOME(exp))},forEquations = equations),old_comp,new_comp)
       equation 
         exp_1 = renameComponentInExp(exp, old_comp, new_comp);
         equations_1 = renameComponentInEquationList(equations, old_comp, new_comp);
       then
-        Absyn.EQ_FOR(ident,exp_1,equations_1);
+        Absyn.EQ_FOR({(ident,SOME(exp_1))},equations_1);
     case (Absyn.EQ_WHEN_E(whenExp = exp,whenEquations = equations,elseWhenEquations = exp_equations),old_comp,new_comp)
       equation 
         exp_1 = renameComponentInExp(exp, old_comp, new_comp);
@@ -3191,12 +3191,12 @@ algorithm
         algs2_1 = renameComponentInAlgorithms(algs2, old_comp, new_comp);
       then
         Absyn.ALG_IF(exp_1,algs1_1,exp_algs_list_1,algs2_1);
-    case (Absyn.ALG_FOR(forVariable = id,forStmt = exp,forBody = algs),old_comp,new_comp)
+    case (Absyn.ALG_FOR(iterators = {(id,SOME(exp))},forBody = algs),old_comp,new_comp)
       equation 
         exp_1 = renameComponentInExp(exp, old_comp, new_comp);
         algs_1 = renameComponentInAlgorithms(algs, old_comp, new_comp);
       then
-        Absyn.ALG_FOR(id,exp_1,algs_1);
+        Absyn.ALG_FOR({(id,SOME(exp_1))},algs_1);
     case (Absyn.ALG_WHILE(whileStmt = exp,whileBody = algs),old_comp,new_comp)
       equation 
         exp_1 = renameComponentInExp(exp, old_comp, new_comp);
@@ -3268,20 +3268,21 @@ algorithm
       list<Absyn.Exp> exps_1,exps;
       list<Absyn.NamedArg> namedArg_1,namedArg;
       Absyn.ComponentRef old_comp,new_comp;
-      Absyn.Exp exp1_1,exp2_1,exp1,exp2;
+      Absyn.Exp exp1_1,exp2_1,exp1,exp2, exp;
       String id;
+      Absyn.ForIterators iterators, iteratorsRenamed;
     case (Absyn.FUNCTIONARGS(args = exps,argNames = namedArg),old_comp,new_comp) /* the old name for the component */ 
       equation 
         exps_1 = renameComponentInExpList(exps, old_comp, new_comp);
         namedArg_1 = renameComponentInNamedArgs(namedArg, old_comp, new_comp);
       then
         Absyn.FUNCTIONARGS(exps_1,namedArg_1);
-    case (Absyn.FOR_ITER_FARG(from = exp1,var = id,to = exp2),old_comp,new_comp)
+    case (Absyn.FOR_ITER_FARG(exp = exp, iterators=iterators),old_comp,new_comp)
       equation 
-        exp1_1 = renameComponentInExp(exp1, old_comp, new_comp);
-        exp2_1 = renameComponentInExp(exp2, old_comp, new_comp);
+        exp1_1 = renameComponentInExp(exp, old_comp, new_comp);
+        iteratorsRenamed = renameComponentInIterators(iterators, old_comp, new_comp);
       then
-        Absyn.FOR_ITER_FARG(exp1_1,id,exp2_1);
+        Absyn.FOR_ITER_FARG(exp1_1, iteratorsRenamed);
     case (_,_,_)
       equation 
         print("-rename_component_in_function_args failed\n");
@@ -3289,6 +3290,32 @@ algorithm
         fail();
   end matchcontinue;
 end renameComponentInFunctionArgs;
+
+protected function renameComponentInIterators
+"@author adrpo
+ renames the components from expression present in iterators:
+ i in exp1, j in exp2, etc"
+  input Absyn.ForIterators iterators;
+  input Absyn.ComponentRef oldComp;
+  input Absyn.ComponentRef newComp;
+  output Absyn.ForIterators iteratorsRenamed;
+algorithm
+  iteratorsRenamed := matchcontinue(iterators, oldComp, newComp)
+  local
+    Absyn.ForIterators rest, restNew;
+    Absyn.Exp exp, expNew; String i;
+    case ({}, _, _) then {};
+    case ((i, SOME(exp))::rest, oldComp, newComp)
+      equation
+        expNew = renameComponentInExp(exp, oldComp, newComp);
+        restNew = renameComponentInIterators(rest, oldComp, newComp);
+      then (i, SOME(expNew))::restNew;
+    case ((i, NONE())::rest, oldComp, newComp) 
+      equation
+        restNew = renameComponentInIterators(rest, oldComp, newComp);
+      then (i, NONE())::restNew;
+  end matchcontinue;
+end renameComponentInIterators;
 
 protected function renameComponentInNamedArgs "
   author: x02lucpo
@@ -15498,10 +15525,10 @@ algorithm
       cr21 = transformFlatComponentRef(cr2);
     then Absyn.EQ_CONNECT(cr11,cr21);
       
-    case(Absyn.EQ_FOR(id,e1,forEqns)) equation
+    case(Absyn.EQ_FOR({(id,SOME(e1))},forEqns)) equation
       ((e11,_)) = traverseExp(e1,transformFlatExp,0);
       forEqns1 = Util.listMap(forEqns,transformFlatEquationItem);
-    then (Absyn.EQ_FOR(id,e11,forEqns1));
+    then (Absyn.EQ_FOR({(id,SOME(e11))},forEqns1));
 	
     case(Absyn.EQ_WHEN_E(e1,whenEqns,elseWhenEqns)) equation
       ((e11,_)) = traverseExp(e1,transformFlatExp,0);
@@ -15540,7 +15567,7 @@ algorithm
        (expl1,_) = Util.listFoldMap(expl, transformFlatExpTrav, 0);
        namedArgs1 = Util.listMap(namedArgs,transformFlatNamedArg);
       then Absyn.FUNCTIONARGS(expl1,namedArgs1);
-    case(fargs as Absyn.FOR_ITER_FARG(from = _)) then fargs;
+    case(fargs as Absyn.FOR_ITER_FARG(exp = _)) then fargs;
   end matchcontinue;
 end transformFlatFunctionArgs;
 
@@ -15629,10 +15656,10 @@ algorithm
       ((e11,_)) = traverseExp(e1,transformFlatExp,0);
     then (Absyn.ALG_IF(e11,thenPart1,elseIfPart1,elsePart1));
       
-    case(Absyn.ALG_FOR(id,e1,body)) equation
+    case(Absyn.ALG_FOR({(id,SOME(e1))},body)) equation
       ((e11,_)) = traverseExp(e1,transformFlatExp,0);
       body1 = Util.listMap(body,transformFlatAlgorithmItem);
-   then Absyn.ALG_FOR(id,e11,body1);
+   then Absyn.ALG_FOR({(id,SOME(e11))},body1);
      
     case(Absyn.ALG_WHILE(e1,body)) equation
       ((e11,_)) = traverseExp(e1,transformFlatExp,0);
@@ -15849,7 +15876,7 @@ algorithm
  	    	((nargs,ext_arg)) = traverseExpNamedArgs(nargs,rel,ext_arg);
  	  then ((Absyn.FUNCTIONARGS(expl_1,nargs),ext_arg));
  	      
- 	  case(inArgs as Absyn.FOR_ITER_FARG(from = _),rel,ext_arg) 
+ 	  case(inArgs as Absyn.FOR_ITER_FARG(exp = _),rel,ext_arg) 
  	    
  	  then((inArgs,ext_arg)); 	    
   end matchcontinue;

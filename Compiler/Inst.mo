@@ -7250,17 +7250,17 @@ algorithm
         
                 /* v = array(For-constructor)  */ 
     case (cache,env,mods,pre,csets,ci_state,SCode.EQ_EQUALS(Absyn.CREF(arrName),
-       Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(itExp,id,e2))),initial_,impl)     
-     // Absyn.CALL(Absyn.CREF_IDENT("Array",{}),Absyn.FOR_ITER_FARG(itExp,rangeIdList))),initial_,impl) 
+     //  Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(itExp,id,e2))),initial_,impl)     
+         Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(itExp,rangeIdList))),initial_,impl) 
       local
         Absyn.Exp itExp,e2;
-        list<tuple<Absyn.Ident,Absyn.Exp>> rangeIdList;
+        Absyn.ForIterators rangeIdList;
         SCode.EEquation eq;
         Absyn.ComponentRef arrName;
         list<Absyn.Ident> idList; 
         Absyn.Ident id;
       equation 
-        rangeIdList = {(id,e2)};
+        // rangeIdList = {(id,e2)};
         idList = extractLoopVars(rangeIdList,{});
         
         //Transform this function call into a number of nested for-loops
@@ -7374,7 +7374,7 @@ algorithm
 	  integers, and then the loop is unrolled.	 
           FIXME: Why lookup after add_for_loop_scope ?
 	 */ 
-    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_FOR(ident = i,exp = e,eEquationLst = el),initial_,impl) 
+    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_FOR(id = i,range = e,eEquationLst = el),initial_,impl) 
       equation 
         (cache,e_1,Types.PROP((Types.T_ARRAY(Types.DIM(_),id_t),_),_),_) = Static.elabExp(cache,env, e, impl, NONE,true) "//Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1\") &" ;
         env_1 = addForLoopScope(env, i, id_t) "//Debug.fprintln (\"insti\", \"for expression elaborated\") &" ;
@@ -7387,7 +7387,7 @@ algorithm
         (cache,dae,env,csets_1,ci_state_1);
 
         
-    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_FOR(ident = i,exp = e,eEquationLst = el),initial_,impl)
+    case (cache,env,mod,pre,csets,ci_state,SCode.EQ_FOR(id = i,range = e,eEquationLst = el),initial_,impl)
       equation 
         (cache,Types.ATTR(false,SCode.RW(),SCode.VAR(),_),(Types.T_INTEGER(_),_),Types.UNBOUND()) 
         	= Lookup.lookupVar(cache,env, Exp.CREF_IDENT(i,{})) "for loops with non-constant iteration bounds" ;
@@ -8194,17 +8194,17 @@ algorithm
         
     /* v := array(for-iterator); */       
     case (cache,env,pre,Absyn.ALG_ASSIGN(Absyn.CREF(c),
-      Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(e1,id,e2))),impl)
-      //Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(e,rangeList))),impl) 
+      // Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(e1,id,e2))),impl)
+         Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(e1,rangeList))),impl) 
       local
         Absyn.Exp e1,e2;
-        list<tuple<Absyn.Ident,Absyn.Exp>> rangeList;
+        Absyn.ForIterators rangeList;
         Absyn.Algorithm absynStmt;
         list<Absyn.Ident> idList;
         Absyn.ComponentRef c; 
         Absyn.Ident id;
       equation 
-        rangeList = {(id,e2)};
+        // rangeList = {(id,e2)};
         idList = extractLoopVars(rangeList,{});
         
         //Transform this function call into a number of nested for-loops
@@ -8215,11 +8215,11 @@ algorithm
         
         /* v := Function(for-iterator); */       
    case (cache,env,pre,Absyn.ALG_ASSIGN(Absyn.CREF(c1),
-      Absyn.CALL(c2,Absyn.FOR_ITER_FARG(e1,id,e2))),impl) 
-    //Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(e,rangeList))),impl)
+      // Absyn.CALL(c2,Absyn.FOR_ITER_FARG(e1,id,e2))),impl) 
+         Absyn.CALL(c2,Absyn.FOR_ITER_FARG(e1,rangeList))),impl)
       local
         Absyn.Exp e1,e2,vb;
-        list<tuple<Absyn.Ident,Absyn.Exp>> rangeList;
+        Absyn.ForIterators rangeList;
         Absyn.Algorithm absynStmt,temp;
         list<Absyn.Ident> idList;  
         Absyn.Ident id;
@@ -8227,7 +8227,7 @@ algorithm
         list<Absyn.ElementItem> declList;
         list<Absyn.AlgorithmItem> vb_body;
       equation 
-        rangeList = {(id,e2)};
+        // rangeList = {(id,e2)};
         idList = extractLoopVars(rangeList,{});
         
         // Create temporary array to store the result from the for-iterator construct
@@ -8332,7 +8332,7 @@ algorithm
         (cache,stmt);
         
         /* For loop */
-    case (cache,env,pre,Absyn.ALG_FOR(forVariable = i,forStmt = e,forBody = sl),impl)
+    case (cache,env,pre,Absyn.ALG_FOR(iterators = {(i,SOME(e))},forBody = sl),impl)
       local tuple<Types.TType, Option<Absyn.Path>> t;
       equation 
         (cache,e_1,(prop as Types.PROP((Types.T_ARRAY(_,t),_),_)),_) = Static.elabExp(cache,env, e, impl, NONE,true);
@@ -9977,7 +9977,7 @@ public function createForIteratorEquations "function: createForIteratorEquations
  Function that creates for equations to be used in the
   for iterator construct assignment."
   input Absyn.Exp iterExp;
-  input list<tuple<Absyn.Ident,Absyn.Exp>> rangeIdList;
+  input Absyn.ForIterators rangeIdList;
   input list<Absyn.Ident> idList;
   input Absyn.ComponentRef arrayId;
   output SCode.EEquation outEq;
@@ -9989,7 +9989,7 @@ algorithm
       Absyn.Exp rangeExp,localIterExp;
       list<Absyn.Ident> localIdList;
       Absyn.ComponentRef localArrayId;
-    case (localIterExp,(id,rangeExp) :: {},localIdList,localArrayId)
+    case (localIterExp,(id,SOME(rangeExp)) :: {},localIdList,localArrayId)
       local
         list<Absyn.Subscript> subList;
         Absyn.Exp arrayRef; 
@@ -10002,9 +10002,9 @@ algorithm
         eqList = {eq1};  
         eq2 = SCode.EQ_FOR(id,rangeExp,eqList);       
       then eq2;
-    case (localIterExp,(id,rangeExp) :: rest,localIdList,localArrayId)
+    case (localIterExp,(id,SOME(rangeExp)) :: rest,localIdList,localArrayId)
       local
-        list<tuple<Absyn.Ident,Absyn.Exp>> rest;
+        Absyn.ForIterators rest;
         list<SCode.EEquation> eqList;  
         SCode.EEquation eq1,eq2;
       equation
@@ -10074,7 +10074,7 @@ public function extractLoopVars "function: extractLoopVars
 	author: KS	
  Function used for extracting the loop
 variables from a list of identifiers and range expressions."
-  input list<tuple<Absyn.Ident,Absyn.Exp>> rangeIdList;
+  input Absyn.ForIterators rangeIdList;
   input list<Absyn.Ident> accList;
   output list<Absyn.Ident> outList;
 algorithm
@@ -10085,7 +10085,7 @@ algorithm
     case ({},localAccList) then localAccList;
     case ((id,_) :: restIdRange,localAccList)
       local
-        list<tuple<Absyn.Ident,Absyn.Exp>> restIdRange;
+        Absyn.ForIterators restIdRange;
         Absyn.Ident id;
       equation  
         localAccList = listAppend(localAccList,{id});
@@ -10099,7 +10099,7 @@ public function createForIteratorAlgorithm "function: createForIteratorAlgorithm
 	Function that creates for algorithm statements to be used in 
 	the for iterator constructor assignment."
   input Absyn.Exp iterExp;
-  input list<tuple<Absyn.Ident,Absyn.Exp>> rangeIdList;
+  input Absyn.ForIterators rangeIdList;
   input list<Absyn.Ident> idList;
   input Absyn.ComponentRef arrayId;
   output Absyn.Algorithm outAlg;
@@ -10113,7 +10113,7 @@ algorithm
       Absyn.Exp rangeExp,localIterExp;
       list<Absyn.Ident> localIdList;
       Absyn.ComponentRef localArrayId;
-    case (localIterExp,(id,rangeExp) :: {},localIdList,localArrayId)
+    case (localIterExp,(id,SOME(rangeExp)) :: {},localIdList,localArrayId)
       local
         list<Absyn.Subscript> subList;
         Absyn.Exp arrayRef;
@@ -10121,16 +10121,16 @@ algorithm
         subList = createArrayIndexing(localIdList,{});
         arrayRef = createArrayReference(localArrayId,subList); 
         stmt1 = Util.listCreate(Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(arrayRef,localIterExp),NONE()));  
-        stmt2 = Absyn.ALG_FOR(id,rangeExp,stmt1);       
+        stmt2 = Absyn.ALG_FOR({(id,SOME(rangeExp))},stmt1);       
       then stmt2;
-    case (localIterExp,(id,rangeExp) :: rest,localIdList,localArrayId)
+    case (localIterExp,(id,SOME(rangeExp)) :: rest,localIdList,localArrayId)
       local
-        list<tuple<Absyn.Ident,Absyn.Exp>> rest;
+        Absyn.ForIterators rest;
         Absyn.Algorithm temp;
       equation
         temp = createForIteratorAlgorithm(localIterExp,rest,localIdList,localArrayId);
         stmt1 = Util.listCreate(Absyn.ALGORITHMITEM(temp,NONE()));
-        stmt2 = Absyn.ALG_FOR(id,rangeExp,stmt1);
+        stmt2 = Absyn.ALG_FOR({(id,SOME(rangeExp))},stmt1);
       then stmt2;
   end matchcontinue;   
 end createForIteratorAlgorithm;
@@ -10144,7 +10144,7 @@ public function createForIteratorArray "function: createForIteratorArray
   input Env.Env env;
   input Absyn.Exp iterExp;
   input list<Absyn.Ident> idList;
-  input list<tuple<Absyn.Ident,Absyn.Exp>> rangeIdList;
+  input Absyn.ForIterators rangeIdList;
   input Boolean b;  
   output Env.Cache outCache;  
   output list<Absyn.ElementItem> outDecls;
@@ -10156,7 +10156,7 @@ algorithm
         Env.Env env2,localEnv;
         Env.Cache localCache,cache2;
         list<Absyn.Ident> localIdList;
-        list<tuple<Absyn.Ident,Absyn.Exp>> localRangeIdList;
+        Absyn.ForIterators localRangeIdList;
         list<Absyn.Subscript> subscriptList;
         Types.Type t;
         Absyn.Path t2;
@@ -10258,7 +10258,7 @@ Given a list of range-expressions (tagged with loop variable identifiers),
 we derive the dimension of each range. KS"
   input Env.Cache cache;
   input Env.Env env;
-  input list<tuple<Absyn.Ident,Absyn.Exp>> rangeList;
+  input Absyn.ForIterators rangeList;
   input Boolean impl;
   input list<Absyn.Subscript> accList;
   output Env.Cache cache; 
@@ -10271,10 +10271,10 @@ algorithm
       Env.Env localEnv;
       Env.Cache localCache;
     case (localCache,localEnv,{},_,localAccList) then (localCache,localAccList);
-    case (localCache,localEnv,(_,e) :: restList,localImpl,localAccList)
+    case (localCache,localEnv,(_,SOME(e)) :: restList,localImpl,localAccList)
       local
         Absyn.Exp e;
-        list<tuple<Absyn.Ident,Absyn.Exp>> restList;
+        Absyn.ForIterators restList;
         Boolean localImpl;
         list<Absyn.Subscript> elem;
         Integer i;

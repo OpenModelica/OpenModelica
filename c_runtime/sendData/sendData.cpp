@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2006, Linköpings universitet,
+Copyright (c) 1997-2007, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 

@@ -417,10 +417,9 @@ algorithm
   end matchcontinue;
 end printEquations;
 
-protected function printEquation "function: printEquation
- 
- Create a Node from an Equation.
-"
+protected function printEquation 
+"function: printEquation 
+ Create a Node from an Equation."
   input Absyn.Equation inEquation;
   output Node outNode;
 algorithm 
@@ -432,6 +431,7 @@ algorithm
       Absyn.ComponentRef c1,c2;
       list<Node> eqn;
       list<Absyn.EquationItem> eqs;
+      Absyn.ForIterators iterators;
     case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2))
       equation 
         s1 = Dump.printExpStr(e1);
@@ -449,12 +449,12 @@ algorithm
         s_2 = stringAppend(s_1, ")");
       then
         Graphviz.LNODE("EQ_CONNECT",{s_2},{},{});
-    case (Absyn.EQ_FOR(forVariable = n,forExp = e,forEquations = eqs))
+    case (Absyn.EQ_FOR(iterators=iterators,forEquations = eqs))
       equation 
         eqn = printEquations(eqs);
-        es = Dump.printExpStr(e);
+        es = Dump.printIteratorsStr(iterators);
       then
-        Graphviz.LNODE("EQ_FOR",{n,es},{},eqn);
+        Graphviz.LNODE("EQ_FOR",{es},{},eqn);
     case (_) then Graphviz.NODE("EQ_ERROR",{},{}); 
   end matchcontinue;
 end printEquation;

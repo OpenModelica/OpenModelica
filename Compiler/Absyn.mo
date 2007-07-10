@@ -83,6 +83,24 @@ public
 type Ident = String "An identifier, for example a variable name" ;
 
 public 
+type ForIterator = tuple<Ident, Option<Exp>>
+"For Iterator - 
+   these are used in:
+   * for loops where the expression part can be NONE and then the range 
+     is taken from an array variable that the iterator is used to index, 
+     see 3.3.3.2 Several Iterators from Modelica Specification.
+   * in array iterators where the expression should always be SOME(Exp),
+     see 3.4.4.2 Array constructor with iterators from Specification";
+type ForIterators = list<ForIterator> 
+"For Iterators - 
+   these are used in:
+   * for loops where the expression part can be NONE and then the range 
+     is taken from an array variable that the iterator is used to index, 
+     see 3.3.3.2 Several Iterators from Modelica Specification.
+   * in array iterators where the expression should always be SOME(Exp),
+     see 3.4.4.2 Array constructor with iterators from Specification";
+
+public 
 uniontype Program "- Programs, the top level construct
   A program is simply a list of class definitions declared at top
     level in the source file, combined with a within statement that
@@ -466,8 +484,7 @@ uniontype Equation "Information on one (kind) of equation, different constructor
   end EQ_CONNECT;
 
   record EQ_FOR
-    Ident forVariable "forVariable" ;
-    Exp forExp "forExp" ;
+    ForIterators iterators;
     list<EquationItem> forEquations "forEquations" ;
   end EQ_FOR;
 
@@ -510,8 +527,7 @@ uniontype Algorithm "The Algorithm type describes one algorithm statement in an
   end ALG_IF;
 
   record ALG_FOR
-    Ident forVariable "forVariable" ;
-    Exp forStmt "forStmt" ;
+    ForIterators iterators;
     list<AlgorithmItem> forBody "forBody" ;
   end ALG_FOR;
 
@@ -842,13 +858,20 @@ uniontype FunctionArgs "The FunctionArgs uniontype consists of a list of positio
     list<Exp> args "args" ;
     list<NamedArg> argNames "argNames" ;
   end FUNCTIONARGS;
-
+  
+  /*
   record FOR_ITER_FARG
     Exp from "from" ;
     Ident var "var" ;
     Exp to "to" ;
   end FOR_ITER_FARG;
-
+  */
+  
+  record FOR_ITER_FARG 
+     Exp  exp "iterator expression";
+     ForIterators iterators;
+  end FOR_ITER_FARG;
+  
 end FunctionArgs;
 
 

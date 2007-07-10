@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2006, Linköpings universitet,
+Copyright (c) 1997-2007, Linköpings universitet,
 Department of Computer and Information Science, PELAB
 See also: www.ida.liu.se/projects/OpenModelica
 
@@ -47,12 +47,10 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 //IAEX headers
 #include "humbug.h"
-#include <iostream>
-
-using namespace std;
+#include <stdio.h>
 
 void emulateStreamData(const char* data, int port, const char* title, const char* xLabel, const char* yLabel, const char* interpolation5, int legend, int grid, double xMin, double xMax, double yMin, double yMax, int logX, int logY, int drawPoints)
 {
-	cout << "OMC is currently compiled without these extensions.\n";	
+	fprintf(stdout, "OMC is currently compiled without these extensions. Look into: OpenModelica/c_runtime/sendData.\n");
 }
 

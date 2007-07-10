@@ -237,8 +237,8 @@ uniontype EEquation "These are almost identical to the `Absyn\' versions.  In `E
   end EQ_CONNECT;
 
   record EQ_FOR
-    Ident ident;
-    Absyn.Exp exp;
+    Ident id;
+    Absyn.Exp range;
     list<EEquation> eEquationLst;
   end EQ_FOR;
 
@@ -1116,7 +1116,7 @@ algorithm
         res = Util.stringAppendList({"connect(",s1,", ",s2,");"});
       then
         res;
-    case (EQ_FOR(ident = id,exp = exp,eEquationLst = eqn_lst))
+    case (EQ_FOR(id = id,range = exp,eEquationLst = eqn_lst))
       equation 
         s1 = Dump.printExpStr(exp);
         str_lst = Util.listMap(eqn_lst, equationStr);
@@ -1189,7 +1189,7 @@ algorithm
         EQ_WHEN(cond,tb_1,{});
     case Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2) then EQ_EQUALS(e1,e2); 
     case Absyn.EQ_CONNECT(connector1 = c1,connector2 = c2) then EQ_CONNECT(c1,c2); 
-    case Absyn.EQ_FOR(forVariable = i,forExp = e,forEquations = l)
+    case Absyn.EQ_FOR(iterators = {(i,SOME(e))},forEquations = l)
       equation 
         l_1 = elabEEquations(l);
       then
@@ -2283,7 +2283,7 @@ protected function algorithmEqual2 "Returns true if two Absyn.Algorithm's are eq
        then equal;
      case(Absyn.ALG_IF(_,_,_,_),Absyn.ALG_IF(_,_,_,_)) // TODO: ALG_IF
 			then false;
-     case (Absyn.ALG_FOR(_,_,_),Absyn.ALG_FOR(_,_,_)) then false; // TODO: ALG_FOR
+     case (Absyn.ALG_FOR(_,_),Absyn.ALG_FOR(_,_)) then false; // TODO: ALG_FOR
      case (Absyn.ALG_WHILE(_,_),Absyn.ALG_WHILE(_,_)) then false; // TODO: ALG_WHILE
      case(Absyn.ALG_WHEN_A(_,_,_),Absyn.ALG_WHEN_A(_,_,_)) then false; //TODO: ALG_WHILE
      case (Absyn.ALG_NORETCALL(_,_),Absyn.ALG_NORETCALL(_,_)) then false; //TODO: ALG_NORETCALL
@@ -2355,38 +2355,38 @@ protected function algorithmEqual2 "Returns true if two Absyn.Algorithm's are eq
          b2 = stringEqual(id1,id2);
          equal = Util.boolAndList(b1::b2::blst1);
        then equal;
-         case (EQ_WHEN(cond1,elst1,_),EQ_WHEN(cond2,elst2,_)) // TODO: elsewhen not checked yet.
-         local 
-           Absyn.Exp cond1,cond2;
-           list<EEquation> elst1,elst2;
-           list<Boolean> blst1;
-           Boolean b1;
-           equation
-             blst1 = Util.listThreadMap(elst1,elst2,equationEqual2);
-             b1 = Absyn.expEqual(cond1,cond2);
-             equal = Util.boolAndList(b1::blst1);
-           then equal;
+     case (EQ_WHEN(cond1,elst1,_),EQ_WHEN(cond2,elst2,_)) // TODO: elsewhen not checked yet.
+       local 
+         Absyn.Exp cond1,cond2;
+         list<EEquation> elst1,elst2;
+         list<Boolean> blst1;
+         Boolean b1;
+       equation
+         blst1 = Util.listThreadMap(elst1,elst2,equationEqual2);
+         b1 = Absyn.expEqual(cond1,cond2);
+         equal = Util.boolAndList(b1::blst1);
+       then equal;
         
-         case (EQ_ASSERT(c1,m1),EQ_ASSERT(c2,m2))
-           local
-             Absyn.Exp c1,c2,m1,m2;
-             Boolean b1,b2;
-             equation
-               b1 = Absyn.expEqual(c1,c2);
-               b2 = Absyn.expEqual(m1,m2);
-               equal = boolAnd(b1,b2);
-               then equal;
-         case (EQ_REINIT(cr1,e1),EQ_REINIT(cr2,e2))
-           local 
-             Absyn.ComponentRef cr1,cr2;
-             Absyn.Exp e1,e2;
-             Boolean b1,b2;
-             equation
-               b1 = Absyn.expEqual(e1,e2);
-               b2 = Absyn.crefEqual(cr1,cr2);
-               equal = boolAnd(b1,b2);
-               then equal;
-         case(_,_) then false;         
+     case (EQ_ASSERT(c1,m1),EQ_ASSERT(c2,m2))
+       local
+         Absyn.Exp c1,c2,m1,m2;
+         Boolean b1,b2;
+       equation
+         b1 = Absyn.expEqual(c1,c2);
+         b2 = Absyn.expEqual(m1,m2);
+         equal = boolAnd(b1,b2);
+       then equal;
+     case (EQ_REINIT(cr1,e1),EQ_REINIT(cr2,e2))
+       local 
+         Absyn.ComponentRef cr1,cr2;
+         Absyn.Exp e1,e2;
+         Boolean b1,b2;
+       equation
+         b1 = Absyn.expEqual(e1,e2);
+         b2 = Absyn.crefEqual(cr1,cr2);
+         equal = boolAnd(b1,b2);
+       then equal;
+     case(_,_) then false;         
    end matchcontinue;
  end equationEqual2;
    

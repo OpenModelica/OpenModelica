@@ -822,7 +822,7 @@ algorithm
     case (args)
       equation
         outSymbolTable = Interactive.emptySymboltable;
-         "" = Util.flagValue("-s",args);
+        "" = Util.flagValue("-s",args);
 //         this is out-commented because automatically reading settings.mos
 //         can make a system bad
 //         outSymbolTable = readSettingsFile("settings.mos", Interactive.emptySymboltable);
@@ -836,8 +836,6 @@ algorithm
       then
        outSymbolTable;
   end matchcontinue;
-
-
 end readSettings;
 
 
@@ -877,11 +875,10 @@ end readSettingsFile;
 
 
 
-public function main "function: main
- 
+public function main 
+" function: main
   This is the main function that the MetaModelica Compiler (MMC) runtime system calls to
-  start the translation.
-"
+  start the translation."
   input list<String> inStringLst;
 algorithm 
   _:=

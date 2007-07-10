@@ -17,19 +17,15 @@ else
 fi
 
 if [ ! "$#" -eq 1 ]; then
-  echo "Usage: $0 <file>.(mo|rml)";
+  echo "Usage: $0 <file>.mo)";
   exit;
 fi
 
 tmp_file="$1.$$"
-if [ "mo" = "${OMC_BUILD_FROM}" ]; then
- sig_file="`basename "$1" ".mo"`.sig"
-else
- sig_file="`basename "$1" ".rml"`.sig"
-fi
+sig_file="`basename "$1" ".mo"`.sig"
 
 if [ ! -f $sig_file ]; then
-  TMPMSG="Sig file does not exist...";
+  TMPMSG="Sig file: $sig_file does not exist...";
   ${RML} -fdump-interface $1 > $sig_file;
 else 
   #echo "Generates tmp sig."
@@ -45,4 +41,4 @@ else
   fi
 fi
 TMPEND=`date +"%s"`
-echo [`expr $TMPEND - $TMPSTART` second\(s\)]
+echo [`expr $TMPEND - $TMPSTART` second\(s\) \-\> $TMPMSG] 

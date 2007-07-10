@@ -805,16 +805,11 @@ elseif_expression :
 		;
 
 for_indices :
-        for_index for_indices2
+        for_index (COMMA! for_index)*
     ;
-for_indices2 :
-	{LA(2) != IN}?
-		| 
-		(COMMA! for_index) for_indices2
-		;
 
 for_index:
-        (IDENT (IN^ expression)?)
+        (IDENT (IN expression)?)
 ;
 
 simple_expression :

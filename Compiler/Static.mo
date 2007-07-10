@@ -305,6 +305,7 @@ algorithm
       list<list<tuple<Types.TType, Option<Absyn.Path>>>> tps_1;
       Env.Cache cache;
       Boolean doVect;
+      Absyn.ForIterators iterators;
             /* The types below should contain the default values of the attributes of the builtin
        types. But since they are default, we can leave them out for now, unit=\"\" is not 
        that interesting to find out.
@@ -440,17 +441,18 @@ algorithm
       local
         list<Exp.Exp> e_1;
         list<Absyn.Exp> e;
+        list<tuple<Absyn.Ident, Absyn.Exp>> iterators;
       equation 
         (cache,e_1,props) = elabTuple(cache,env, e, impl,doVect) "Tuple function calls" ;
         (types,consts) = splitProps(props);
       then
         (cache,Exp.TUPLE(e_1),Types.PROP_TUPLE((Types.T_TUPLE(types),NONE),Types.TUPLE_CONST(consts)),st);
-    case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FOR_ITER_FARG(from = exp,var = id,to = iterexp)),impl,st,doVect) /* Array-related expressions Elab reduction expressions, including array() constructor */ 
+    case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FOR_ITER_FARG(exp = exp,iterators=iterators)),impl,st,doVect) /* Array-related expressions Elab reduction expressions, including array() constructor */ 
       local
         Exp.Exp e;
         Absyn.Exp exp;
       equation 
-        (cache,e,prop,st_1) = elabCallReduction(cache,env, fn, exp, id, iterexp, impl, st,doVect);
+        (cache,e,prop,st_1) = elabCallReduction(cache,env, fn, exp, iterators, impl, st,doVect);
       then
         (cache,e,prop,st_1);
     case (cache,env,Absyn.RANGE(start = start,step = NONE,stop = stop),impl,st,doVect)
@@ -949,17 +951,15 @@ algorithm
           false,typ,Types.VALBOUND(Values.INTEGER(1))), NONE, Env.VAR_UNTYPED(), {});
 end addForLoopScopeConst;
 
-protected function elabCallReduction "function: elabCallReduction
-  
+protected function elabCallReduction 
+"function: elabCallReduction  
   This function elaborates reduction expressions, that look like function
-  calls. For example an array constructor.
-"
+  calls. For example an array constructor."
 	input Env.Cache inCache;
   input Env.Env inEnv1;
   input Absyn.ComponentRef inComponentRef2;
   input Absyn.Exp inExp3;
-  input Ident inIdent4;
-  input Absyn.Exp inExp5;
+  input Absyn.ForIterators iterators;
   input Boolean inBoolean6;
   input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption7;
   input Boolean performVectorization;
@@ -969,7 +969,7 @@ protected function elabCallReduction "function: elabCallReduction
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm 
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv1,inComponentRef2,inExp3,inIdent4,inExp5,inBoolean6,inInteractiveInteractiveSymbolTableOption7,performVectorization)
+  matchcontinue (inCache,inEnv1,inComponentRef2,inExp3,iterators,inBoolean6,inInteractiveInteractiveSymbolTableOption7,performVectorization)
     local
       Exp.Exp iterexp_1,exp_1;
       Types.ArrayDim arraydim;
@@ -984,7 +984,7 @@ algorithm
       Ident iter;
       Boolean impl,doVect;
       Env.Cache cache;
-    case (cache,env,fn,exp,iter,iterexp,impl,st,doVect)
+    case (cache,env,fn,exp,{(iter,SOME(iterexp))},impl,st,doVect)
       equation 
         (cache,iterexp_1,Types.PROP((Types.T_ARRAY((arraydim as Types.DIM(_)),iterty),_),iterconst),_) 
         	= elabExp(cache,env, iterexp, impl, st,doVect);
@@ -995,6 +995,10 @@ algorithm
         fn_1 = Absyn.crefToPath(fn);
       then
         (cache,Exp.REDUCTION(fn_1,exp_1,iter,iterexp_1),prop,st);
+    case (cache,env,fn,exp,iterators,impl,st,doVect)        
+      equation
+        Debug.fprint("failtrace", "Static.elabCallReduction - multiple iterators, not yet handled!\n");
+      then fail();
   end matchcontinue;
 end elabCallReduction;
 
