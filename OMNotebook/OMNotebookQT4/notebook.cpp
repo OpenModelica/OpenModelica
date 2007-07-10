@@ -2517,10 +2517,21 @@ namespace IAEX
 		try
 		{
 			QDir dir;
-			if( dir.exists( "OMNotebookHelp.onb" ) )
+			QString help( getenv( "OPENMODELICAHOME" ) );
+			if( help.isEmpty() )
+				QMessageBox::critical( 0, "OpenModelica Error", "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
+
+			if( help.endsWith("/") || help.endsWith( "\\") )
+				help += "bin/";
+			else
+				help += "/bin/";
+
+			QString helpFile = "OMNotebookHelp.onb";
+			dir.setPath( help );
+			if( dir.exists( helpFile ) )
 			{
 				application()->commandCenter()->executeCommand(
-					new OpenFileCommand( "OMNotebookHelp.onb" ));
+					new OpenFileCommand( help + helpFile ));
 			}
 			else
 			{

@@ -1248,9 +1248,9 @@ namespace IAEX
 				QMessageBox::critical( 0, "OpenModelica Error", "Could not find environment variable OPENMODELICAHOME; OMNotebook will therefore not work correctly" );
 
 			if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
-				openmodelica += "bin/";
+				openmodelica += "tmp/";
 			else
-				openmodelica += "/bin/";
+				openmodelica += "/tmp/";
 
 			//QDir dir( openmodelica );
 			QDir dir;
