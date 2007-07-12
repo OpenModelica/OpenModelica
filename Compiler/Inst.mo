@@ -8202,7 +8202,6 @@ algorithm
         Absyn.Algorithm absynStmt;
         list<Absyn.Ident> idList;
         Absyn.ComponentRef c; 
-        Absyn.Ident id;
       equation 
         // rangeList = {(id,e2)};
         idList = extractLoopVars(rangeList,{});
@@ -8222,7 +8221,6 @@ algorithm
         Absyn.ForIterators rangeList;
         Absyn.Algorithm absynStmt,temp;
         list<Absyn.Ident> idList;  
-        Absyn.Ident id;
         Absyn.ComponentRef c1,c2;
         list<Absyn.ElementItem> declList;
         list<Absyn.AlgorithmItem> vb_body;
@@ -8243,7 +8241,7 @@ algorithm
         
         (cache,stmt) = instStatement(cache,env,pre,absynStmt,impl);
       then
-      (cache,stmt); 
+        (cache,stmt); 
  
         /* v := expr; */       
     case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e),impl) 
@@ -10270,7 +10268,7 @@ algorithm
       list<Absyn.Subscript> localAccList;
       Env.Env localEnv;
       Env.Cache localCache;
-    case (localCache,localEnv,{},_,localAccList) then (localCache,localAccList);
+    case (localCache,_,{},_,localAccList) then (localCache,localAccList);
     case (localCache,localEnv,(_,SOME(e)) :: restList,localImpl,localAccList)
       local
         Absyn.Exp e;
@@ -10282,6 +10280,7 @@ algorithm
         (localCache,_,Types.PROP((Types.T_ARRAY(Types.DIM(SOME(i)),_),NONE()),_),_) = Static.elabExp(localCache,localEnv,e,localImpl,NONE(),false);
         elem = {Absyn.SUBSCRIPT(Absyn.INTEGER(i))};
         localAccList = listAppend(localAccList,elem);
+        (localCache,localAccList) = deriveArrayDimensions(localCache,localEnv,restList,localImpl,localAccList);
       then (localCache,localAccList);  
   end matchcontinue;   
 end deriveArrayDimensions; 

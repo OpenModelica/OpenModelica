@@ -3758,7 +3758,7 @@ algorithm
         var_1 = Util.stringAppendList({"((modelica_real)",var,")"});
       then
         (cfn,var_1,tnr_1);
-    case (Exp.VALUEBLOCK(localDecls = ld,body = b,
+    case (Exp.VALUEBLOCK(ty,localDecls = ld,body = b,
       		result = res),tnr,context)
       local
         list<Exp.DAEElement> ld;
@@ -3778,9 +3778,14 @@ algorithm
         
         (cfn1_2,var,tnr3) = generateExpression(res, tnr2, context);
 
-        cfn1_2 = cMergeFns({cfn,cfn1,cfn1_2});     
+        //-----
+        (cfn1_2,tnr4,var) = addValueblockRetVar(ty,cfn1_2,tnr3,var,context);
+        //-----        
+        
+        cfn1_2 = cMergeFns({cfn,cfn1,cfn1_2});  
+           
         cfn1_2 = cAddBlockAroundStatements(cfn1_2);
-      then (cfn1_2,var,tnr2);        
+      then (cfn1_2,var,tnr4);        
         
     case (Exp.ASUB(exp = _),_,_)
       equation 
@@ -3851,6 +3856,70 @@ algorithm
   end matchcontinue;
   
 end cAddBlockAroundStatements;
+
+protected function addValueblockRetVar "function: addValueblockRetVar
+ author: KS  
+ Used by generateExpression - Valueblock. Adds a return variable (and return 
+ assignment) to the valueblock code.
+"
+  input Exp.Type inType;
+  input CFunction inFunc;  
+  input Integer inTnr;   
+  input String inResVar; 
+  input Context context;
+  output CFunction outFunc;  
+  output Integer outTnr; 
+  output String outVar;
+algorithm
+  (outFunc,outTnr,outVar) := 
+  matchcontinue (inType,inFunc,inTnr,inResVar,context)  
+    case (Exp.T_ARRAY(t,SOME(arrayDim) :: {}),localFunc,localTnr,localResVar,con)  
+      local  
+        String type_string,tdecl,tvar,localResVar,memStr,stmt,stmt2,tempStr;  
+        Exp.Type t;    
+        CFunction localFunc,cfn;  
+        Integer localTnr,arrayDim,tnr2; 
+        Boolean sim; 
+        Context con; 
+      equation  // ONLY 1 DIMENSIONAL ARRAYS SUPPORTED AS OF NOW
+        // Create temp array var
+        type_string = expTypeStr(t,true);       
+        (tdecl,tvar,tnr2) = generateTempDecl(type_string, localTnr);
+        cfn = cAddVariables(localFunc, {tdecl});   
+        
+        // Allocate temp array var
+        tempStr = intString(arrayDim);
+        stmt = Util.stringAppendList({"alloc_",type_string,"(&",tvar,",1,",tempStr,");"});
+        cfn = cAddInits(cfn,{stmt});
+          
+        // Create the result var assignment	        
+        sim = isSimulationContext(con);
+        memStr = Util.if_(sim,"_mem","");
+        stmt2 = Util.stringAppendList({"copy_",type_string,"_data",memStr,"(&",localResVar,", &",tvar,");"});
+        cfn = cAddStatements(cfn, {stmt2});
+      then (cfn,tnr2,tvar);  
+    case (Exp.T_ARRAY(_,SOME(_) :: _),_,_,_,_)     
+      local
+      equation
+        Debug.fprintln("failtrace", "# Codegen: Only 1 dim return arrays from Valueblock implemented");
+      then fail();
+    case (localType,localFunc,localTnr,localResVar,_)  
+      local 
+        String type_string,tdecl,tvar,localResVar;  
+        Exp.Type localType;  
+        CFunction localFunc,cfn; 
+        Integer localTnr,tnr2; 
+        String stmt;
+      equation
+        type_string = expTypeStr(localType,false);       
+        (tdecl,tvar,tnr2) = generateTempDecl(type_string, localTnr);
+        cfn = cAddVariables(localFunc, {tdecl});
+        
+        stmt = Util.stringAppendList({tvar," = ",localResVar,";"});
+        cfn = cAddStatements(cfn,{stmt}); 
+      then (cfn,tnr2,tvar);
+  end matchcontinue;
+end addValueblockRetVar;
 
 protected function cMoveDeclsAndInitsToStatements "function: cMoveStatementsToInits
  

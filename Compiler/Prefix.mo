@@ -463,18 +463,19 @@ algorithm
       then
         (cache,Exp.REDUCTION(fcn,exp_1,id,iterexp_1));
         
-    case (cache,env,Exp.VALUEBLOCK(localDecls = lDecls,body = b,result = res),p)
+    case (cache,env,Exp.VALUEBLOCK(t,localDecls = lDecls,body = b,result = res),p)
       local 
         Prefix p;
     		list<Exp.DAEElement> lDecls,lDecls2;
         Exp.DAEElement b,b2;
-        Exp.Exp res,res2;	  
+        Exp.Exp res,res2;	   
+        Exp.Type t;
       equation 
         (cache,lDecls2) = prefixDecls(cache,env,lDecls,{},p);
         (cache,b2) = prefixAlgorithm(cache,env,b,p);
         (cache,res2) = prefixExp(cache,env,res,p);
       then
-        (cache,Exp.VALUEBLOCK(lDecls2,b2,res2)); 
+        (cache,Exp.VALUEBLOCK(t,lDecls2,b2,res2)); 
         
         // MetaModelica list. MetaModelica extension. KS	
     case (cache,env,Exp.LIST(es),p)  

@@ -227,9 +227,10 @@ uniontype Exp "Expressions
   record END "array index to last element, e.g. a{end}:=1;" end END;
 
 	record VALUEBLOCK "Valueblock expression"
-    list<DAEElement> localDecls;
+	  Type ty;
+	  list<DAEElement> localDecls;
     DAEElement body;
-		Exp result;	
+	  Exp result;	
   end VALUEBLOCK;   
   
   /* Part of MetaModelica extension. KS */

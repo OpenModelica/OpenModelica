@@ -422,7 +422,7 @@ algorithm
           then
             (cache,e_1,prop_1,st_1);    */
      /*--------------------------------*/    
-        
+            
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect)
       local Exp.Exp e;
       equation 
@@ -432,7 +432,36 @@ algorithm
         (cache,e_1,prop_1) = cevalIfConstant(cache,e, prop, c, impl, env);
         Debug.fprintln("sei", "elab_exp CALL done");
       then
-        (cache,e_1,prop_1,st_1);
+        (cache,e_1,prop_1,st_1);  
+      
+      /* Array For iterator expression */  
+    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("array",{}),functionArgs = Absyn.FOR_ITER_FARG(e1,rangeList)),impl,st,doVect)
+      local Exp.Exp e; 
+        list<Absyn.Ident> idList;  
+        Absyn.Exp e1,vb;
+        Absyn.ForIterators rangeList;
+        Absyn.Algorithm absynStmt,temp;
+        list<Absyn.Ident> idList;  
+        Absyn.ComponentRef c1,c2;
+        list<Absyn.ElementItem> declList;
+        list<Absyn.AlgorithmItem> vb_body;
+      equation   
+        idList = Inst.extractLoopVars(rangeList,{});
+        
+        // Create temporary array to store the result from the for-iterator construct
+        (cache,declList) = Inst.createForIteratorArray(cache,env,e1,idList,rangeList,impl);
+        
+        // Create for-statements
+        temp = Inst.createForIteratorAlgorithm(e1,rangeList,idList,Absyn.CREF_IDENT("VEC__",{}));
+        
+        vb_body = Util.listCreate(Absyn.ALGORITHMITEM(temp,NONE())); 
+        vb = Absyn.VALUEBLOCK(declList,Absyn.VALUEBLOCKALGORITHMS(vb_body),
+        Absyn.CREF(Absyn.CREF_IDENT("VEC__",{})));   
+        
+        (cache,e_1,prop_1,st_1) = elabExp(cache,env,vb,impl,st,doVect);
+      then
+      (cache,e_1,prop_1,st_1); 
+        
     case (cache,env,Absyn.TUPLE(expressions = (e as (e1 :: rest))),impl,st,doVect) /* PR. Get the properties for each expression in the tuple. 
 	 Each expression has its own constflag.
 	 !!The output from functions does just have one const flag. 
@@ -571,9 +600,10 @@ algorithm
 				b_alg_2 = Convert.fromAlgStatesToExpStates(b_alg,{});		    
 				b_alg_dae = Exp.ALGORITHM(Exp.ALGORITHM2(b_alg_2));
          
-        (cache,res2,prop as Types.PROP(_,_),st) = elabExp(cache,env2,res,impl,st,doVect);  
-             
-      then (cache,Exp.VALUEBLOCK(dae2,b_alg_dae,res2),prop,st);
+        (cache,res2,prop as Types.PROP(tp,_),st) = elabExp(cache,env2,res,impl,st,doVect);  
+        tp_1 = Types.elabType(tp);
+    
+      then (cache,Exp.VALUEBLOCK(tp_1,dae2,b_alg_dae,res2),prop,st);
    
    //Equations must converted into Algorithm statements
    case (cache,env,Absyn.VALUEBLOCK(ld,Absyn.VALUEBLOCKEQUATIONS(
@@ -634,9 +664,10 @@ algorithm
 				    
 			 b_alg_dae = Exp.ALGORITHM(Exp.ALGORITHM2(b_alg_2));
          
-       (cache,res2,prop as Types.PROP(_,_),st) = elabExp(cache,env2,res,impl,st,doVect);  
-             
-      then (cache,Exp.VALUEBLOCK(dae2,b_alg_dae,res2),prop,st); 
+       (cache,res2,prop as Types.PROP(tp,_),st) = elabExp(cache,env2,res,impl,st,doVect);  
+       tp_1 = Types.elabType(tp);
+       
+      then (cache,Exp.VALUEBLOCK(tp_1,dae2,b_alg_dae,res2),prop,st); 
  
     //-------------------------------------	
        // Part of the MetaModelica extension. KS  
