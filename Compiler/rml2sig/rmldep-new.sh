@@ -11,7 +11,7 @@ TMPMSG=""
 mydir="`dirname $0`"
 
 if [ -z "${OMDEV}" ]; then
-  RML=rml
+  RML=${RMLHOME}/bin/rml
 else
   RML=${OMDEV}/tools/rml/bin/rml
 fi

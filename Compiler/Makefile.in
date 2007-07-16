@@ -56,14 +56,6 @@ debug:	$(PROGD) dinstall
 
 release: $(PROG) install
 
-$(SRCRDB): %.rdb: omc_debug/%.rdb 
-	cp $< $@
-
-#	@for x in $(SRCRDB); do \
-#		echo $$x;\
-#		cp omc_debug/$$x .; \
-#	done
-
 $(PROG): omc_release
 	echo Copying $(PROG)$(EXEEXT) into $(builddir_bin)
 	cp omc_release/$(PROG)$(EXEEXT) $(builddir_bin)/
@@ -139,7 +131,6 @@ dclean:
 		(cd $$d ; $(MAKE) clean) \
 	done
 	(cd omc_debug; $(MAKE) clean)
-	-$(RM) -f $(SRCRDB)
 	-$(RM) -f $(SRCH)
 	-$(RM) -f $(builddir)/$(PROGD)$(EXEEXT)
 	-cd $(builddir_bin) && rm -f $(SCRIPTS_FILES) && rm -f $(DOC_FILES)
@@ -158,7 +149,6 @@ dreallyclean:
 		(cd $$d ; $(MAKE) reallyclean) \
 	done
 	(cd omc_debug; $(MAKE) reallyclean)
-	-$(RM) -f $(SRCRDB)
 	-$(RM) -f $(SRCH)
 	-$(RM) -f $(builddir)/$(PROGD)$(EXEEXT)
 

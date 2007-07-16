@@ -70,7 +70,6 @@ ALLMO = $(SRCMO) DAEEXT.mo Print.mo RTOpts.mo System.mo Parser.mo \
 
 SRCC=	$(SRCMO:.mo=.c)
 SRCH=	$(SRCMO:.mo=.h)
-SRCSIG=	$(SRCMO:.mo=.sig)
-SRCRDB=	$(SRCMO:.mo=.rdb)
+SRCSIG=	$(ALLMO:.mo=.sig)
 SRCO=	$(SRCC:.c=.o)
 

@@ -85,9 +85,8 @@ $(SRCHSRCDIR) : $(srcdir)/%.h : %.h
 $(SRCH): %.h : %.mo
 	$(RMLC) -c $<
 
-%.sig : %.mo
-	$(RML) -fdump-interface $< > $@
-
+$(SRCSIG): %.sig : %.mo
+	$(srcdir)/rml2sig/rmldep-new.sh $<
 
 vctarget: $(SRCC) absyn_subdir
 
@@ -111,7 +110,7 @@ clean:
 	$(RM) $(SRCO) $(SRCC) $(SRCH) $(PROG)$(EXEXT) *~
 
 reallyclean: clean
-	$(RM) $(ALLMO) $(ALLMO:.mo=.sig)  $(SRCRDB) $(PROG)$(EXEEXT)
+	$(RM) $(ALLMO) $(ALLMO:.mo=.sig) $(PROG)$(EXEEXT)
 
 # don't remove these files after intermediate build steps
 .PRECIOUS: Makefile $(ALLMO)
