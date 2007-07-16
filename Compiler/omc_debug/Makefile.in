@@ -56,12 +56,12 @@ PLTPKGFLAGS = -L../../build/lib -lsendData
 endif
 
 PROG = omcd
-RMLC	= @rmlc_bin@ -g -Wc,-O3 -Wr,-East,-Ecps,-Efol
+RMLC	= @rmlc_bin@ -g -Wc,-O3 #-Wr,-East,-Ecps,-Efol
 RML	= $(RMLHOME)/bin/rml
 
 SUBDIRS	= $(srcdir)/runtime $(srcdir)/absyn_builder $(srcdir)/modpar
 
-all : $(ALLMO) subdirs $(PROG)
+all : $(ALLMO) $(SRCSIG) subdirs $(PROG)
 
 
 .SUFFIXES:

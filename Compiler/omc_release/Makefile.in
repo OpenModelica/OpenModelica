@@ -63,7 +63,7 @@ RML	= $(RMLHOME)/bin/rml
 
 SUBDIRS	= $(srcdir)/runtime $(srcdir)/absyn_builder $(srcdir)/modpar
 
-all : $(ALLMO) subdirs $(PROG)
+all : $(ALLMO) $(SRCSIG) subdirs $(PROG)
 
 
 .SUFFIXES:
