@@ -560,7 +560,28 @@ uniontype Algorithm "The Algorithm type describes one algorithm statement in an
 
   record ALG_BREAK
   end ALG_BREAK;
+  
+  // Part of MetaModelica extension. KS
+  record ALG_TRY 
+    list<AlgorithmItem> tryBody; 
+  end ALG_TRY; 
+  
+  record ALG_CATCH 
+    list<AlgorithmItem> catchBody;
+  end ALG_CATCH;
 
+  record ALG_THROW  
+  end ALG_THROW;
+  
+  record ALG_GOTO 
+    String labelName;
+  end ALG_GOTO;  
+  
+  record ALG_LABEL
+    String labelName;   
+  end ALG_LABEL;
+  //-------------------------------
+  
 end Algorithm;
 
 public 

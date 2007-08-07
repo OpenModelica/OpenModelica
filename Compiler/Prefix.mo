@@ -720,8 +720,7 @@ algorithm
         localAccList = listAppend(localAccList,Util.listCreate(elem));        
         (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
       then (localCache,elems);  	   
-
-  /*	case (localCache,localEnv,Exp.TRY(b) :: rest,localAccList,pre) 
+  	case (localCache,localEnv,Exp.TRY(b) :: rest,localAccList,pre) 
   	  local
   	    list<Exp.Statement> b;
   	    Exp.Statement elem;
@@ -732,7 +731,6 @@ algorithm
     	  localAccList = listAppend(localAccList,Util.listCreate(elem));
     	  (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
     	then (localCache,elems); 
-
   	case (localCache,localEnv,Exp.CATCH(b) :: rest,localAccList,pre) 
 			local
   	    list<Exp.Statement> b;
@@ -752,7 +750,45 @@ algorithm
     			elem = Exp.THROW();
     	  	localAccList = listAppend(localAccList,Util.listCreate(elem));
     	  	(localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
-    		then (localCache,elems);   	*/  
+    		then (localCache,elems);   	 
+  	case (localCache,localEnv,Exp.RETURN() :: rest,localAccList,pre)   	    
+  	    local
+  	    	Exp.Statement elem;
+    			list<Exp.Statement> elems;
+    		equation
+    			elem = Exp.RETURN();
+    	  	localAccList = listAppend(localAccList,Util.listCreate(elem));
+    	  	(localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
+    		then (localCache,elems);   
+  	case (localCache,localEnv,Exp.BREAK() :: rest,localAccList,pre)   	    
+  	    local
+  	    	Exp.Statement elem;
+    			list<Exp.Statement> elems;
+    		equation
+    			elem = Exp.BREAK();
+    	  	localAccList = listAppend(localAccList,Util.listCreate(elem));
+    	  	(localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
+    		then (localCache,elems); 
+  	case (localCache,localEnv,Exp.GOTO(s) :: rest,localAccList,pre)   	    
+  	  local
+  	    Exp.Statement elem;
+  	    list<Exp.Statement> elems; 
+  	    String s;
+  	  equation
+  	    elem = Exp.GOTO(s);
+  	    localAccList = listAppend(localAccList,Util.listCreate(elem));
+  	    (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
+  	  then (localCache,elems);   	 
+  	case (localCache,localEnv,Exp.LABEL(s) :: rest,localAccList,pre)   	    
+  	  local
+  	    Exp.Statement elem;
+  	    list<Exp.Statement> elems;
+  	    String s;  
+  	  equation
+  	    elem = Exp.LABEL(s);
+  	    localAccList = listAppend(localAccList,Util.listCreate(elem));
+  	    (localCache,elems) = prefixStatements(localCache,localEnv,rest,localAccList,pre);
+  	  then (localCache,elems);  
   end matchcontinue;
 end prefixStatements;
 

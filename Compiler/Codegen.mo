@@ -2699,7 +2699,53 @@ algorithm
       equation 
         cfn = cAddStatements(cEmptyFunction, {"break;"});
       then
-        (cfn,tnr);
+        (cfn,tnr);  
+        // Part of MetaModelica Extension. KS    
+    //--------------------------------    
+    case (Algorithm.TRY(stmts),tnr,context)
+      equation 
+        //cfn1 = cAddStatements(cEmptyFunction, {"{"}); // try
+        (cfn2,tnr2) = generateAlgorithmStatements(stmts, tnr,
+           context);
+        //cfn2_1 = cAddStatements(cfn2, {"}"});
+        //cfn = cMergeFns({cfn1,cfn2_1});
+      then
+        (cfn2,tnr2);  
+        
+    case (Algorithm.CATCH(stmts),tnr,context)
+      equation 
+        //cfn1 = cAddStatements(cEmptyFunction, {"{"}); //catch(int i) 
+        //(cfn2,tnr2) = generateAlgorithmStatements(stmts, tnr,
+         // context); 
+        //cfn2_1 = cAddStatements(cfn2, {"}"}); 
+        //cfn = cMergeFns({cfn1,cfn2_1});
+      then
+        (cEmptyFunction,tnr);   
+        
+    case (Algorithm.THROW(),tnr,context)
+      equation 
+        cfn = cAddStatements(cEmptyFunction, {"throw 1;"});
+      then (cfn,tnr); 
+        
+    case (Algorithm.GOTO(s),tnr,context) 
+      local 
+        String s,s2; 
+      equation 
+        s2 = stringAppend("goto ",s); 
+        s2 = stringAppend(s2,";");
+        cfn = cAddStatements(cEmptyFunction, {s2});
+      then (cfn,tnr);
+    
+    case (Algorithm.LABEL(s),tnr,context) 
+      local 
+        String s,s2; 
+      equation  
+        s2 = stringAppend(s,":");
+        cfn = cAddStatements(cEmptyFunction, {s2});
+      then (cfn,tnr);
+        
+    //-------------------------------       
+        
     case (stmt,_,_)
       local Algorithm.Statement stmt;
       equation 
@@ -3773,16 +3819,17 @@ algorithm
         b2 = Convert.fromExpElemToDAEElem(b);
         
         (cfn,tnr_1) = generateVars(ld2, isVarQ, tnr, funContext);  
-        cfn = cMoveDeclsAndInitsToStatements(cfn);
+
         (cfn1,tnr2) = generateAlgorithms(Util.listCreate(b2), tnr_1, context);           
         
-        (cfn1_2,var,tnr3) = generateExpression(res, tnr2, context);
-
-        //-----
-        (cfn1_2,tnr4,var) = addValueblockRetVar(ty,cfn1_2,tnr3,var,context);
-        //-----        
+        (cfn1_2,var,tnr3) = generateExpression(res, tnr2, context);  
         
         cfn1_2 = cMergeFns({cfn,cfn1,cfn1_2});  
+        
+        cfn1_2 = cMoveDeclsAndInitsToStatements(cfn1_2);
+        //-----
+        (cfn1_2,tnr4,var) = addValueblockRetVar(ty,cfn1_2,tnr3,var,context);
+        //-----      
            
         cfn1_2 = cAddBlockAroundStatements(cfn1_2);
       then (cfn1_2,var,tnr4);        

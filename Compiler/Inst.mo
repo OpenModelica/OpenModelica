@@ -8416,7 +8416,51 @@ algorithm
       equation 
         stmt = Algorithm.RETURN();
       then
+        (cache,stmt); 
+        
+      //------------------------------------------
+      // Part of MetaModelica extension. KS
+      //------------------------------------------
+      /* try */       
+	   case (cache,env,pre,Absyn.ALG_TRY(sl),impl)
+	     equation  
+	       (cache,sl_1) = instAlgorithmitems(cache,env,pre, sl, impl);
+	       stmt = Algorithm.TRY(sl_1);
+	     then
         (cache,stmt);
+      
+      /* catch */       
+	   case (cache,env,pre,Absyn.ALG_CATCH(sl),impl)
+	     equation  
+	       (cache,sl_1) = instAlgorithmitems(cache,env,pre, sl, impl); 
+	       stmt = Algorithm.CATCH(sl_1);
+	     then
+	       (cache,stmt);  
+	       
+            /* throw */       
+	   case (cache,env,pre,Absyn.ALG_THROW(),impl)
+	     equation  
+	       stmt = Algorithm.THROW();
+	     then
+	       (cache,stmt);   
+	       
+	       /* GOTO */
+	   case (cache,env,pre,Absyn.ALG_GOTO(s),impl) 
+	     local 
+	       String s;
+	     equation  
+	       stmt = Algorithm.GOTO(s);
+	     then
+	       (cache,stmt);   
+	     
+	   case (cache,env,pre,Absyn.ALG_LABEL(s),impl)
+	     local
+	       String s;
+	     equation  
+	       stmt = Algorithm.LABEL(s);
+	     then
+	       (cache,stmt);          
+      //------------------------------------------
         
     case (cache,env,pre,alg,impl)
       equation 

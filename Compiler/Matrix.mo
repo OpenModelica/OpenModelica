@@ -112,9 +112,15 @@ uniontype RightHandSide
   record RIGHTHANDSIDE
     list<Absyn.ElementItem> localDecls;
     list<Absyn.EquationItem> equations;
-    Absyn.Exp result;
+    Absyn.Exp result; 
+    Integer numberOfCase;
   end RIGHTHANDSIDE;
   
+  // We use this one in the pattern matching so that we do not have
+  // to carry around a lot of code all the time
+  record RIGHTHANDLIGHT 
+    Integer numberOfCase; 
+  end RIGHTHANDLIGHT;
 end RightHandSide;
 
 type RenamedPatVec = RenamedPat[:];
@@ -430,4 +436,25 @@ algorithm
   end matchcontinue;
 end printPattern;
 
+public function getRightHandSideNumbers "function: getRightHandSideNumbers"
+  input RightHandList inList;
+  input list<Integer> accList; 
+  output list<Integer> outList;
+algorithm
+  outList := 
+  matchcontinue (inList,accList) 
+    local
+      list<Integer> localAccList; 
+    case ({},localAccList) then localAccList; 
+    case (RIGHTHANDLIGHT(n) :: rest,localAccList) 
+      local  
+        Integer n; 
+        RightHandList rest;
+      equation  
+        localAccList = listAppend(localAccList,{n}); 
+        localAccList = getRightHandSideNumbers(rest,localAccList);
+      then localAccList; 
+  end matchcontinue;  
+end getRightHandSideNumbers;  
+  
 end Matrix;

@@ -548,8 +548,9 @@ algorithm
       Exp.Statement elem;
     equation
       elem = Exp.BREAK();
-      then elem;
-	/*	case (Algorithm.TRY(b))
+    then elem; 
+	// Part of MetaModelica extension	
+	  case (Algorithm.TRY(b))
 		  local       		  
     		list<Algorithm.Statement> b;
     		Exp.Statement elem;
@@ -568,11 +569,25 @@ algorithm
 	      elem = Exp.CATCH(b2);
 	      then elem;               
 		case (Algorithm.THROW())               
-		local
+		  local
       Exp.Statement elem;
     equation
       elem = Exp.THROW();
-    then elem; */
+    then elem; 
+		case (Algorithm.GOTO(s))               
+		  local
+		    Exp.Statement elem; 
+		    String s;
+		  equation
+		    elem = Exp.GOTO(s);
+		  then elem; 
+		case (Algorithm.LABEL(s))               
+		  local
+		    Exp.Statement elem; 
+		    String s;
+		  equation
+		    elem = Exp.LABEL(s);
+		  then elem; 
   end matchcontinue;
 end fromAlgStateToExpState;
 
@@ -1111,8 +1126,9 @@ algorithm
       Algorithm.Statement elem;
     equation
       elem = Algorithm.BREAK();
-      then elem;
-	/*	case (Exp.TRY(b))
+    then elem; 
+	// Part of MetaModelica extension	
+	  case (Exp.TRY(b))
 		  local       		  
     		list<Exp.Statement> b;
     		Algorithm.Statement elem;
@@ -1131,11 +1147,25 @@ algorithm
 	      elem = Algorithm.CATCH(b2);
 	      then elem;               
 		case (Exp.THROW())               
-		local
-      Algorithm.Statement elem;
-    equation
-      elem = Algorithm.THROW();
-    then elem; */
+		  local
+		    Algorithm.Statement elem;
+		  equation
+		    elem = Algorithm.THROW();
+		  then elem; 
+		case (Exp.GOTO(s))               
+		  local
+		    Algorithm.Statement elem; 
+		    String s;
+		  equation
+		    elem = Algorithm.GOTO(s);
+		  then elem; 
+		case (Exp.LABEL(s))               
+		  local
+		    String s;
+		    Algorithm.Statement elem;
+		  equation
+		    elem = Algorithm.LABEL(s);
+		  then elem; 
   end matchcontinue;
 end fromExpStateToAlgState;
 

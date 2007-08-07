@@ -143,7 +143,28 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
   
   record BREAK
   end BREAK;
-
+  
+  // MetaModelica extension. KS
+  record TRY  
+    list<Statement> tryBody;
+  end TRY;
+  
+  record CATCH 
+    list<Statement> catchBody;    
+  end CATCH; 
+  
+  record THROW 
+  end THROW; 
+  
+  record GOTO 
+    String labelName; 
+  end GOTO; 
+  
+  record LABEL 
+    String labelName;
+  end LABEL;
+  //-----
+  
 end Statement;
 
 public 
