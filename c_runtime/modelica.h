@@ -69,6 +69,7 @@ typedef void* modelica_complex; /* currently only External objects are represent
 #include <assert.h>
 #include "read_write.h"
 #include "matrix.h"
+#include "meta_modelica.h"
 
 
 typedef real_array_t real_array;
