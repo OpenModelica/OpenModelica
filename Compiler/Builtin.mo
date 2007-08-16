@@ -2471,7 +2471,16 @@ protected constant tuple<Types.TType, Option<Type_a>> array9dimbool2array1dimint
           (Types.T_ARRAY(Types.DIM(SOME(9)),(Types.T_BOOL({}),NONE)),
           NONE))},
           (
-          Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);
+              Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);  
+
+// MetaModelica extension. KS
+
+protected constant tuple<Types.TType, Option<Type_a>> list2list=(
+          Types.T_FUNCTION({("x",(Types.T_LIST((Types.T_NOTYPE(),NONE)),NONE))},(Types.T_LIST((Types.T_NOTYPE(),NONE)),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> list2boolean=(
+          Types.T_FUNCTION({("x",(Types.T_LIST((Types.T_NOTYPE(),NONE)),NONE))},(Types.T_BOOL({}),NONE)),NONE);
+//----
 
 public function simpleInitialEnv "
 val array2array=  (Types.T_FUNCTION({(\"x\",(Types.T_ARRAY)},
@@ -2551,8 +2560,13 @@ algorithm
       env = Env.extendFrameC(env, booleanType);
       env = Env.extendFrameC(env, stateSelectType);
       env = Env.extendFrameV(env, timeVar, NONE, Env.VAR_UNTYPED(), {});
-      env = Env.extendFrameT(env, "getTag", record2str);
-      env = Env.extendFrameT(env, "stringCmp", strStr2bool);     
+      
+      // MetaModelica extension
+      env = Env.extendFrameT(env, "listCar", list2list); // Should be list2any; easier this way. See also rule in Types.subType. 
+      env = Env.extendFrameT(env, "listCdr", list2list);   
+      env = Env.extendFrameT(env, "emptyListTest", list2boolean);   
+      //----
+         
       env = Env.extendFrameT(env, "initial", nil2real) "non-functions" ;
       env = Env.extendFrameT(env, "terminal", nil2real);
       env = Env.extendFrameT(env, "event", bool2bool);

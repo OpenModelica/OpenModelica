@@ -686,8 +686,9 @@ algorithm
        true = correctTypes; 
        
        // If the second expression is a Exp.LIST, then we can create a Exp.LIST 
-       // instead of Exp.CONS
-       exp = MetaUtil.simplifyListExp(e1_1,e2_1);
+       // instead of Exp.CONS 
+       tp_1 = Types.elabType(t);
+       exp = MetaUtil.simplifyListExp(tp_1,e1_1,e2_1);
        
        prop = Types.PROP((Types.T_LIST(t),NONE()),Types.C_VAR()); 
        
@@ -702,7 +703,7 @@ algorithm
       Types.Type t;
     equation       
       prop = Types.PROP((Types.T_LIST((Types.T_NOTYPE(),NONE())),NONE()),Types.C_VAR());
-    then (cache,Exp.LIST({}),prop,st);
+    then (cache,Exp.LIST(Exp.OTHER(),{}),prop,st); 
        
   case (cache,env,Absyn.LIST(es),impl,st,doVect)
     local  
@@ -713,8 +714,9 @@ algorithm
       (cache,es_1,propList as (Types.PROP(t,_) :: _),st_2) = elabExpList(cache,env, es, impl, st,doVect); 
       correctTypes = MetaUtil.typeMatching(t,propList);  
       true = correctTypes; 
-      prop = Types.PROP((Types.T_LIST(t),NONE()),Types.C_VAR());
-    then (cache,Exp.LIST(es_1),prop,st_2);     
+      prop = Types.PROP((Types.T_LIST(t),NONE()),Types.C_VAR()); 
+      tp_1 = Types.elabType(t);
+    then (cache,Exp.LIST(tp_1,es_1),prop,st_2);     
        // ----------------------------------
        
    case (cache,env,e,_,_,_)
@@ -759,7 +761,7 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st; 
       Types.Properties prop;
     case (cache,env,{},prop,_,st,_) 
-      then (cache,Exp.LIST({}),prop,st);
+      then (cache,Exp.LIST(Exp.OTHER(),{}),prop,st);
     case (cache,env,expList,prop as Types.PROP((Types.T_LIST(t),_),_),impl,st,doVect) 
       local 
         list<Absyn.Exp> expList; 
@@ -767,13 +769,15 @@ algorithm
         Types.Type t; 
         list<Boolean> boolList;
         list<Types.Properties> propList;
-        Boolean correctTypes;
+        Boolean correctTypes; 
+        Exp.Type t2;
       equation
         (cache,expExpList,propList,st) = elabExpList(cache,env,expList,impl,st,doVect);
         correctTypes = MetaUtil.typeMatching(t,propList); 
-        true = correctTypes;  
+        true = correctTypes;   
+        t2 = Types.elabType(t);
       then 
-        (cache,Exp.LIST(expExpList),prop,st);
+        (cache,Exp.LIST(t2,expExpList),prop,st);
     case (_,_,_,_,_,_,_)  
       equation
         Debug.fprint("failtrace", "- elabListExp failed, non-matching args in list constructor?");

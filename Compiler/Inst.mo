@@ -7688,7 +7688,7 @@ algorithm
         {dae}; 
     
         /* MetaModelica list */    
-    case (e1,e2,(Types.T_LIST(_),_),initial_) /* tuples */ 
+    case (e1,e2,(Types.T_LIST(_),_),initial_)  
       equation 
         dae = makeDaeEquation(e1, e2, initial_);
       then

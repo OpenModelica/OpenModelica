@@ -478,18 +478,20 @@ algorithm
         (cache,Exp.VALUEBLOCK(t,lDecls2,b2,res2)); 
         
         // MetaModelica list. MetaModelica extension. KS	
-    case (cache,env,Exp.LIST(es),p)  
-      local Prefix p;
+    case (cache,env,Exp.LIST(t,es),p)  
+      local Prefix p; 
+        Exp.Type t;
       equation   
         (cache,es_1) = prefixExpList(cache,env, es, p);
-      then (cache,Exp.LIST(es_1));  
+      then (cache,Exp.LIST(t,es_1));   
         
-    case (cache,env,Exp.CONS(e1,e2),p)  
-      local Prefix p;
+    case (cache,env,Exp.CONS(t,e1,e2),p)  
+      local Prefix p; 
+        Exp.Type t;
       equation   
         (cache,e1) = prefixExp(cache,env, e1, p); 
         (cache,e2) = prefixExp(cache,env, e2, p);
-      then (cache,Exp.CONS(e1,e2));  
+      then (cache,Exp.CONS(t,e1,e2));  
           // ------------------------
  
     case (_,_,e,_)

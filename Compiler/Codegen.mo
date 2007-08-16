@@ -3843,25 +3843,25 @@ algorithm
      
      //---------------------------------------------   
      // MetaModelica list. MetaModelica extension   
-     //---------------------------------------------   
-    case (Exp.CONS(e1,e2),tnr,context)
+     //---------------------------------------------        
+    case (Exp.CONS(_,e1,e2),tnr,context)
       equation 
         (cfn1,var1,tnr_1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr_1, context); 
         (decl,tvar,tnr1_1) = generateTempDecl("void*", tnr2);
-        
-        stmt = Util.stringAppendList({tvar," = mk_cons(",var1,", ",var2,");"});
+        var1 = MetaUtil.createConstantCExp(e1,var1);
+        stmt = Util.stringAppendList({tvar," = mmc_mk_cons(",var1,", ",var2,");"});
         cfn2 = cAddVariables(cfn2,{decl}); 
         cfn2 = cAddStatements(cfn2, {stmt});
         cfn1_2 = cMergeFns({cfn1,cfn2}); 
       then
         (cfn1_2,tvar,tnr1_1);    
         
-    case (Exp.LIST(elist),tnr,context)
+    case (Exp.LIST(_,elist),tnr,context)
       equation 
         (cfn1,vars1,tnr1) = generateExpressions(elist, tnr, context);
         (decl,tvar,tnr1_1) = generateTempDecl("void*", tnr1);
-        s = MetaUtil.listToConsCell(vars1);
+        s = MetaUtil.listToConsCell(vars1,elist);
         stmt = Util.stringAppendList({tvar," = ",s,";"});
         cfn1_1 = cAddVariables(cfn1,{decl}); 
         cfn1_2 = cAddStatements(cfn1_1, {stmt});
@@ -4131,33 +4131,41 @@ algorithm
         cfn = cMergeFns({cfn1,cfn2,cfn3,cfn4,cfn});
       then
         (cfn,tvar,tnr1);
-      
-     case (Exp.CALL(path = Absyn.IDENT(name = "stringCmp"),expLst = {s1,s2},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */ 
-      local String cref_str; Exp.Exp s,minlen,leftjust,signdig; Boolean needCast; String var1,var2,var3,var4;
-        CFunction cfn3,cfn4;
-      equation 
-        (tdecl,tvar,tnr1) = generateTempDecl("modelica_integer", tnr);
-        (cfn1,var1,tnr1) = generateExpression(s1, tnr1, context);
-        (cfn2,var2,tnr1) = generateExpression(s2, tnr1, context);             
-        cfn = cAddVariables(cEmptyFunction, {tdecl});
-        stmt = Util.stringAppendList({tvar," = strcmp(",var1,",",var2,");"});
-        cfn = cAddStatements(cfn, {stmt});
-        cfn = cMergeFns({cfn1,cfn2,cfn});
-      then
-        (cfn,tvar,tnr1);
+                
         
-    case (Exp.CALL(path = Absyn.IDENT(name = "getTag"),expLst = {s1},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */ 
+        // MetaModelica extension   
+     case (Exp.CALL(path = Absyn.IDENT(name = "listCar"),expLst = {s1},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */ 
       local String cref_str; Exp.Exp s,minlen,leftjust,signdig; Boolean needCast; String var1,var2,var3,var4;
-      equation 
-        (tdecl,tvar,tnr1) = generateTempDecl("modelica_string", tnr); 
-        (cfn1,var1,tnr1) = generateExpression(s1, tnr1, context);        
+      equation  
+        (cfn,var1,tnr1) = generateExpression(s1, tnr, context);
+        stmt = Util.stringAppendList({"MMC_CAR(",var1,")"});
+      then
+        (cfn,stmt,tnr1);       
+              
+    case (Exp.CALL(path = Absyn.IDENT(name = "listCdr"),expLst = {s1},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */ 
+      local String cref_str; Exp.Exp s,minlen,leftjust,signdig; Boolean needCast; String var1,var2,var3,var4;
+      equation  
+        (cfn1,var1,tnr1) = generateExpression(s1, tnr, context);
+        (tdecl,tvar,tnr2) = generateTempDecl("void*", tnr1);
         cfn = cAddVariables(cEmptyFunction, {tdecl});
-        stmt = Util.stringAppendList({tvar," = (modelica_string)typeid(",var1,").name();"});
+        stmt = Util.stringAppendList({tvar," = MMC_CDR(",var1,");"});
         cfn = cAddStatements(cfn, {stmt});
         cfn = cMergeFns({cfn1,cfn});
       then
-        (cfn,tvar,tnr1);   
+        (cfn,tvar,tnr2);   
         
+    case (Exp.CALL(path = Absyn.IDENT(name = "emptyListTest"),expLst = {s1},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */ 
+      local String cref_str; Exp.Exp s,minlen,leftjust,signdig; Boolean needCast; String var1,var2,var3,var4;
+      equation  
+        (cfn1,var1,tnr1) = generateExpression(s1, tnr, context);
+        (tdecl,tvar,tnr2) = generateTempDecl("modelica_boolean", tnr1);
+        cfn = cAddVariables(cEmptyFunction, {tdecl});
+        stmt = Util.stringAppendList({tvar," = MMC_NILTEST(",var1,");"});
+        cfn = cAddStatements(cfn, {stmt});
+        cfn = cMergeFns({cfn1,cfn});
+      then
+        (cfn,tvar,tnr2);  
+        //----
   end matchcontinue;
 end generateBuiltinFunction;
 
@@ -4689,7 +4697,7 @@ algorithm
         (cref_str,{}) = compRefCstr(cref);
         cref_str = stringAppend("(modelica_integer)",cref_str);
       then
-        (cEmptyFunction,cref_str,tnr);
+        (cEmptyFunction,cref_str,tnr); 
                 
     case (cref,crt,tnr,context)
       equation

@@ -893,7 +893,9 @@ algorithm
     case ((T_LIST((T_NOTYPE(),_)),_),(T_LIST(_),_)) then true;   // The empty list is represented with NO_TYPE()
     case ((T_LIST(_),_),(T_LIST((T_NOTYPE(),_)),_)) then true;    
     case ((T_LIST(t1),_),(T_LIST(t2),_)) then subtype(t1,t2); 
-      
+    case ((T_LIST((T_NOTYPE(),_)),_),_) then true; //Used for the function listCar
+    case (_,(T_LIST((T_NOTYPE(),_)),_)) then true; //Used for the function listCar
+    
     case (t1,t2) then false;   
   end matchcontinue;
 end subtype;

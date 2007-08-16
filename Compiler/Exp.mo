@@ -235,13 +235,15 @@ uniontype Exp "Expressions
   
   /* Part of MetaModelica extension. KS */
   record LIST "MetaModelica list" 
+    Type ty;
     list<Exp> valList; 
   end LIST;  
   
-  record CONS "MetaModelica list cons"  
+  record CONS "MetaModelica list cons"   
+    Type ty;
     Exp car; 
     Exp cdr;
-  end CONS;  
+  end CONS;   
   
 end Exp;
 
@@ -4170,7 +4172,12 @@ algorithm
         tp;
     case (END()) then OTHER();  /* Can be any type. */ 
     case (SIZE(_,NONE)) then INT();
-    case (SIZE(_,SOME(_))) then T_ARRAY(INT(),{NONE});
+    case (SIZE(_,SOME(_))) then T_ARRAY(INT(),{NONE}); 
+      
+        //MetaModelica extension 
+    case (LIST(ty = tp)) then tp; 
+    case (CONS(ty = tp)) then tp;  
+          
   end matchcontinue;
 end typeof;
 
@@ -5772,7 +5779,7 @@ algorithm
         ();  
       
         // MetaModelica list 
-    case (LIST(es),_)
+    case (LIST(_,es),_)
       local list<Exp> es;
       equation 
         Print.printBuf("<list>{");
@@ -5782,7 +5789,7 @@ algorithm
         ();  
         
         // MetaModelica list cons 
-    case (CONS(e1,e2),_)
+    case (CONS(_,e1,e2),_)
       equation 
         Print.printBuf("cons(");
         printExp(e1);
@@ -6612,7 +6619,7 @@ algorithm
         str;    
       
       // MetaModelica list  
-    case (LIST(es))
+    case (LIST(_,es))
       local list<Exp> es;
       equation 
         s = printListStr(es, printExpStr, ",");
@@ -6622,7 +6629,7 @@ algorithm
         s_2;
         
         // MetaModelica list cons 
-    case (CONS(e1,e2))
+    case (CONS(_,e1,e2))
       equation   
         s1 = printExpStr(e1);
         s2 = printExpStr(e2);
@@ -8352,7 +8359,7 @@ algorithm
         res; 
            
         /* MetaModelica list */
-    case (CONS(e1,e2))     
+    case (CONS(_,e1,e2))     
       local list<list<ComponentRef>> res;
       equation 
         expl = {e1,e2};
@@ -8360,7 +8367,7 @@ algorithm
         res2 = Util.listFlatten(res);
       then res2; 
         
-    case  (LIST(expl))  
+    case  (LIST(_,expl))  
       local list<list<ComponentRef>> res;
       equation
         res = Util.listMap(expl, getCrefFromExp);
@@ -8486,16 +8493,17 @@ algorithm
         res;   
         
         /* MetaModelica list */
-    case (CONS(e1,e2))   
+    case (CONS(_,e1,e2))   
       equation 
         elist = {e1,e2};
         res = getFunctionCallsList(elist);
       then res; 
-        
-    case  (LIST(elist))
+         
+    case  (LIST(_,elist))
       equation
         res = getFunctionCallsList(elist);
-      then res;
+      then res; 
+        
         /* --------------------- */
         
     case (_) then {}; 
@@ -8746,20 +8754,21 @@ algorithm
         ((REDUCTION(path_1,e1_1,id_1,e2_1),ext_arg_3));    
             
             /* MetaModelica list */
-    case ((e as CONS(e1,e2)),rel,ext_arg)   
+    case ((e as CONS(tp,e1,e2)),rel,ext_arg)   
       equation 
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
-        ((CONS(_,_),ext_arg_3)) = rel((e,ext_arg_2));
+        ((CONS(_,_,_),ext_arg_3)) = rel((e,ext_arg_2));
       then
-        ((CONS(e1_1,e2_1),ext_arg_3)); 
+        ((CONS(tp,e1_1,e2_1),ext_arg_3)); 
         
-     case ((e as LIST(expl)),rel,ext_arg)
+    case ((e as LIST(tp,expl)),rel,ext_arg)
       equation
         (expl_1,ext_arg_1) = Util.listFoldMap(expl, rel, ext_arg);
         ((e_1,ext_arg_2)) = rel((e,ext_arg_1));
       then
-        ((LIST(expl_1),ext_arg_2)); 
+        ((LIST(tp,expl_1),ext_arg_2));  
+        
         /* --------------------- */     
         
     case (e,rel,ext_arg)

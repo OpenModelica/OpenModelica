@@ -121,22 +121,24 @@ end consMatch;
 public function simplifyListExp "function: simplifyListExp  
 Author: KS 
 Used by Static.elabExp to simplify some cons/list expressions.
-"
+" 
+  input Exp.Type t;
   input Exp.Exp e1;
   input Exp.Exp e2; 
   output Exp.Exp expOut;   
 algorithm
   expOut :=
-  matchcontinue (e1,e2) 
+  matchcontinue (t,e1,e2) 
     local 
-      Exp.Exp localE1,localE2;
-    case (localE1,Exp.LIST(expList))   
+      Exp.Exp localE1,localE2; 
+      Exp.Type tLocal;
+    case (tLocal,localE1,Exp.LIST(_,expList))   
       local   
         list<Exp.Exp> expList,expList2; 
       equation
         expList2 = listAppend({localE1},expList);       
-      then Exp.LIST(expList2);   
-    case (localE1,localE2) then Exp.CONS(localE1,localE2);   
+      then Exp.LIST(tLocal,expList2);   
+    case (tLocal,localE1,localE2) then Exp.CONS(tLocal,localE1,localE2);   
   end matchcontinue;   
 end simplifyListExp;   
 
@@ -145,31 +147,61 @@ Author: KS
 In the C-code, a list constructor will consist of
 several cons constructor. For instance:
 list(1,2,3,4) will be written as 
-mk_cons(1,mk_cons(2,mk_cons(3,mk_cons(4,mk_nil()))))
+mk_cons(1,mk_cons(2,mk_cons(3,mk_cons(4,mk_nil())))),
+(the constants 1,2,3,4 each will be wrapped with a create-constant
+function call)
 "
-  input list<String> varList;   
+  input list<String> varList; 
+  input list<Exp.Exp> expList;  
   output String outString;
 algorithm  
   outString := 
-  matchcontinue (varList) 
-    case ({})  
+  matchcontinue (varList,expList) 
+    case ({},_)  
       local
         String s;
       equation 
-        s = "mk_nil()";
+        s = "mmc_mk_nil()";
       then s;
-    case (firstVar :: restVar)  
+    case (firstVar :: restVar,firstExp :: restExp)  
       local 
         String firstVar,s,s2; 
         list<String> restVar; 
+        list<Exp.Exp> restExp; 
+        Exp.Exp firstExp;
       equation  
-        s2 = listToConsCell(restVar);
-        s = Util.stringAppendList({"mk_cons(",firstVar,",",s2,")"});
+        firstVar = createConstantCExp(firstExp,firstVar);
+        s2 = listToConsCell(restVar,restExp);
+        s = Util.stringAppendList({"mmc_mk_cons(",firstVar,",",s2,")"});
       then s;
   end matchcontinue;  
 end listToConsCell;  
 
-
+public function createConstantCExp "function: createConstantCExp"
+  input Exp.Exp exp; 
+  input String inExp;
+  output String s; 
+algorithm
+  s := 
+  matchcontinue(exp,inExp)  
+    local 
+      String localInExp,outStr;
+    case (Exp.ICONST(_),localInExp) 
+      local equation 
+        outStr = Util.stringAppendList({"mmc_mk_icon(",localInExp,")"});
+      then outStr; 
+    case (Exp.RCONST(_),localInExp) 
+      local equation 
+        outStr = Util.stringAppendList({"mmc_mk_rcon(",localInExp,")"});
+      then outStr; 
+    case (Exp.BCONST(_),localInExp)   
+      local equation 
+        outStr = Util.stringAppendList({"mmc_mk_icon(",localInExp,")"});
+      then outStr; 
+    case (_,localInExp) then localInExp;      
+  end matchcontinue;
+end createConstantCExp;
+  
 public function fixListConstructorsInArgs "function: fixListConstructorsInArgs
 	Author: KS	
 	In a function call, an Absyn.ARRAY() will be transformed into an Absyn.LIST() 

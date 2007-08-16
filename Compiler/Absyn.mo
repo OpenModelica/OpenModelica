@@ -781,11 +781,11 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
     Exp rest " rest of the list ";
   end CONS;   
   
-    // This one is only used internaly in the compiler
+    // The following two are only used internaly in the compiler
   record LIST "Part of MetaModelica extension"
     list<Exp> exps;
-  end LIST;  
-
+  end LIST;   
+  
   record MATCHEXP "matchcontinue expression"
 		MatchType matchTy            " match or matchcontinue      ";
 		Exp inputExp                 " match expression of         ";
