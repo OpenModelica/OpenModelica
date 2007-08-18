@@ -2518,6 +2518,13 @@ algorithm
       Algorithm.Else else_;
       Algorithm.Statement algStmt;
       Boolean a;
+      
+      // Part of ValueBlock implementation, special treatment of _ := VB case
+    case (Algorithm.ASSIGN(_,Exp.CREF_IDENT("WILDCARD__",{}),exp as Exp.VALUEBLOCK(_,_,_,_)),tnr,context)
+      equation 
+        (cfn,_,tnr1) = generateExpression(exp, tnr, context);
+     then (cfn,tnr1);
+      
     case (Algorithm.ASSIGN(type_ = typ,componentRef = cref,exp = exp),tnr,context)
       equation 
         Debug.fprintln("cgas", "generate_algorithm_statement");
@@ -3947,8 +3954,8 @@ algorithm
       then (cfn,tnr2,tvar);  
     case (Exp.T_ARRAY(_,SOME(_) :: _),_,_,_,_)     
       local
-      equation
-        Debug.fprintln("failtrace", "# Codegen: Only 1 dim return arrays from Valueblock implemented");
+      equation  
+        Debug.fprintln("failtrace", "# Codegen.addValueblockRetVar failed, N-dim arrays not supported");
       then fail();
     case (localType,localFunc,localTnr,localResVar,_)  
       local 

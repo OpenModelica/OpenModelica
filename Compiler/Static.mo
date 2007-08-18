@@ -435,24 +435,26 @@ algorithm
         (cache,e_1,prop_1,st_1);  
       
       /* Array For iterator expression */  
-    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("array",{}),functionArgs = Absyn.FOR_ITER_FARG(e1,rangeList)),impl,st,doVect)
+    /*case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("array",{}),functionArgs = Absyn.FOR_ITER_FARG(e1,rangeList)),impl,st,doVect)
       local Exp.Exp e; 
         list<Absyn.Ident> idList;  
         Absyn.Exp e1,vb;
         Absyn.ForIterators rangeList;
         Absyn.Algorithm absynStmt,temp;
-        list<Absyn.Ident> idList;  
+        list<Absyn.Ident> tempLoopVarNames;  
         Absyn.ComponentRef c1,c2;
-        list<Absyn.ElementItem> declList;
+        list<Absyn.ElementItem> declList,tempLoopVars;
         list<Absyn.AlgorithmItem> vb_body;
       equation   
-        idList = Inst.extractLoopVars(rangeList,{});
+        (tempLoopVarNames,tempLoopVars) = Inst.createTempLoopVars(rangeList,{},{},1);
         
         // Create temporary array to store the result from the for-iterator construct
-        (cache,declList) = Inst.createForIteratorArray(cache,env,e1,idList,rangeList,impl);
+        (cache,declList) = Inst.createForIteratorArray(cache,env,e1,rangeList,impl);
+        
+        declList = listAppend(declList,tempLoopVars);
         
         // Create for-statements
-        temp = Inst.createForIteratorAlgorithm(e1,rangeList,idList,Absyn.CREF_IDENT("VEC__",{}));
+        temp = Inst.createForIteratorAlgorithm(e1,rangeList,tempLoopVarNames,tempLoopVarNames,Absyn.CREF_IDENT("VEC__",{}));
         
         vb_body = Util.listCreate(Absyn.ALGORITHMITEM(temp,NONE())); 
         vb = Absyn.VALUEBLOCK(declList,Absyn.VALUEBLOCKALGORITHMS(vb_body),
@@ -460,7 +462,7 @@ algorithm
         
         (cache,e_1,prop_1,st_1) = elabExp(cache,env,vb,impl,st,doVect);
       then
-      (cache,e_1,prop_1,st_1); 
+      (cache,e_1,prop_1,st_1); */
         
     case (cache,env,Absyn.TUPLE(expressions = (e as (e1 :: rest))),impl,st,doVect) /* PR. Get the properties for each expression in the tuple. 
 	 Each expression has its own constflag.
