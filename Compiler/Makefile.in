@@ -52,9 +52,9 @@ SUBDIRS	= runtime absyn_builder modpar
 #all : debug 
 all : release
 
-debug:	$(PROGD) dinstall
+debug:	depend $(PROGD) dinstall
 
-release: $(PROG) install
+release: depend $(PROG) install
 
 $(PROG): omc_release
 	echo Copying $(PROG)$(EXEEXT) into $(builddir_bin)
