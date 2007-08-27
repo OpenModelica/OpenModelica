@@ -241,8 +241,9 @@ private:
 	QMenu* contextMenu;
 
 	QRectF currentArea_;
-
-	
+	QString zoomStr, gridStr, aAStr;
+	QRectF range;
+	double dataStreamVersion;
 
 public:
 	QRectF originalArea;

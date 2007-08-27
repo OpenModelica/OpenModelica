@@ -76,6 +76,8 @@ LegendLabel::LegendLabel(QColor color_, QString& s, QWidget* parent, bool showli
 	connect(tmp, SIGNAL(triggered()), this, SLOT(selectColor()));
 	addAction(tmp);
 
+	
+
 
 }
 

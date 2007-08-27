@@ -282,6 +282,8 @@ namespace IAEX
 		
 		delete groupAction;
 		delete inputAction;
+		delete graphAction;
+		delete textAction;
 
 		delete aboutAction;
 		delete helpAction;
@@ -695,6 +697,10 @@ namespace IAEX
 		graphAction->setStatusTip( tr("Add a graph cell") );
 		connect(graphAction, SIGNAL(triggered()), this, SLOT(graphCellsAction()));
 
+		textAction = new QAction( tr("Add &Textcell"), this);
+		textAction->setShortcut( tr("Ctrl+Shift+T") );
+		textAction->setStatusTip( tr("Add a text cell") );
+		connect(textAction, SIGNAL(triggered()), this, SLOT(textCellsAction()));
 		// \fjass
 
 		// 2005-10-07 AF, Porting, replaced this
@@ -753,6 +759,8 @@ namespace IAEX
 		cellMenu->addAction( addCellAction );
 		cellMenu->addAction( inputAction );
 		cellMenu->addAction( graphAction );
+		cellMenu->addAction( textAction );
+
 		cellMenu->addAction( groupAction );
 		cellMenu->addAction( ungroupCellAction );
 		cellMenu->addAction( splitCellAction );
@@ -3572,7 +3580,14 @@ namespace IAEX
 		subject_->updateScrollArea();
 		updateChapterCounters();
 	}
-	
+
+	void NotebookWindow::textCellsAction()
+	{
+		subject_->executeCommand(new CreateNewCellCommand("Text"));
+		subject_->updateScrollArea();
+		updateChapterCounters();
+	}
+
 	void NotebookWindow::recentTriggered() //Should only be called from the submenu "recent files"
 	{
 		QObject* s = QObject::sender();

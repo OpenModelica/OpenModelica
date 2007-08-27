@@ -166,15 +166,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="release\moc_graphWidget.cpp">
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="debug\moc_graphWidget.cpp">
 				<FileConfiguration
 					Name="Release|Win32"
@@ -184,9 +175,9 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="debug\moc_graphWindow.cpp">
+				RelativePath="release\moc_graphWidget.cpp">
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Debug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -196,6 +187,15 @@
 				RelativePath="release\moc_graphWindow.cpp">
 				<FileConfiguration
 					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="debug\moc_graphWindow.cpp">
+				<FileConfiguration
+					Name="Release|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -237,9 +237,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC compoundWidget.h"
-						CommandLine="c:\Qt\4.2.1-vc\bin\moc.exe -DNDEBUG -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include&quot; -I &quot;.&quot; -I &quot;C:\Qt\4.2.1-vc\include\ActiveQt&quot; -I &quot;release&quot; -I &quot;.&quot; -I&quot;..\..\..\..\Qt\4.2.1-vc\mkspecs\win32-msvc.net&quot; compoundWidget.h -o release\moc_compoundWidget.cpp
+						CommandLine="c:\Qt\4.3-vc\bin\moc.exe -DNDEBUG -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include&quot; -I &quot;.&quot; -I &quot;C:\Qt\4.2.1-vc\include\ActiveQt&quot; -I &quot;release&quot; -I &quot;.&quot; -I&quot;..\..\..\..\Qt\4.2.1-vc\mkspecs\win32-msvc.net&quot; compoundWidget.h -o release\moc_compoundWidget.cpp
 "
-						AdditionalDependencies="c:\Qt\4.2.1-vc\bin\moc.exe"
+						AdditionalDependencies="c:\Qt\4.3-vc\bin\moc.exe"
 						Outputs="release\moc_compoundWidget.cpp"/>
 				</FileConfiguration>
 			</File>
@@ -277,9 +277,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC graphWidget.h"
-						CommandLine="c:\Qt\4.2.1-vc\bin\moc.exe -DNDEBUG -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include&quot; -I &quot;.&quot; -I &quot;C:\Qt\4.2.1-vc\include\ActiveQt&quot; -I &quot;release&quot; -I &quot;.&quot; -I&quot;..\..\..\..\Qt\4.2.1-vc\mkspecs\win32-msvc.net&quot; graphWidget.h -o release\moc_graphWidget.cpp
+						CommandLine="c:\Qt\4.3-vc\bin\moc.exe -DNDEBUG -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include&quot; -I &quot;.&quot; -I &quot;C:\Qt\4.2.1-vc\include\ActiveQt&quot; -I &quot;release&quot; -I &quot;.&quot; -I&quot;..\..\..\..\Qt\4.2.1-vc\mkspecs\win32-msvc.net&quot; graphWidget.h -o release\moc_graphWidget.cpp
 "
-						AdditionalDependencies="c:\Qt\4.2.1-vc\bin\moc.exe"
+						AdditionalDependencies="c:\Qt\4.3-vc\bin\moc.exe"
 						Outputs="release\moc_graphWidget.cpp"/>
 				</FileConfiguration>
 			</File>
@@ -300,9 +300,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC graphWindow.h"
-						CommandLine="c:\Qt\4.2.1-vc\bin\moc.exe -DNDEBUG -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include&quot; -I &quot;.&quot; -I &quot;C:\Qt\4.2.1-vc\include\ActiveQt&quot; -I &quot;release&quot; -I &quot;.&quot; -I&quot;..\..\..\..\Qt\4.2.1-vc\mkspecs\win32-msvc.net&quot; graphWindow.h -o release\moc_graphWindow.cpp
+						CommandLine="c:\Qt\4.3-vc\bin\moc.exe -DNDEBUG -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include&quot; -I &quot;.&quot; -I &quot;C:\Qt\4.2.1-vc\include\ActiveQt&quot; -I &quot;release&quot; -I &quot;.&quot; -I&quot;..\..\..\..\Qt\4.2.1-vc\mkspecs\win32-msvc.net&quot; graphWindow.h -o release\moc_graphWindow.cpp
 "
-						AdditionalDependencies="c:\Qt\4.2.1-vc\bin\moc.exe"
+						AdditionalDependencies="c:\Qt\4.3-vc\bin\moc.exe"
 						Outputs="release\moc_graphWindow.cpp"/>
 				</FileConfiguration>
 			</File>
@@ -321,9 +321,9 @@
 					Name="Release|Win32">
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="c:\Qt\4.2.1-vc\bin\moc.exe -DNDEBUG -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include&quot; -I &quot;.&quot; -I &quot;C:\Qt\4.2.1-vc\include\ActiveQt&quot; -I &quot;release&quot; -I &quot;.&quot; -I&quot;..\..\..\..\Qt\4.2.1-vc\mkspecs\win32-msvc.net&quot; legendLabel.h -o release\moc_legendLabel.cpp
+						CommandLine="c:\Qt\4.3-vc\bin\moc.exe -DNDEBUG -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include&quot; -I &quot;.&quot; -I &quot;C:\Qt\4.2.1-vc\include\ActiveQt&quot; -I &quot;release&quot; -I &quot;.&quot; -I&quot;..\..\..\..\Qt\4.2.1-vc\mkspecs\win32-msvc.net&quot; legendLabel.h -o release\moc_legendLabel.cpp
 "
-						AdditionalDependencies="c:\Qt\4.2.1-vc\bin\moc.exe"
+						AdditionalDependencies="c:\Qt\4.3-vc\bin\moc.exe"
 						Outputs="release\moc_legendLabel.cpp"/>
 				</FileConfiguration>
 			</File>
@@ -354,9 +354,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC preferenceWindow.h"
-						CommandLine="c:\Qt\4.2.1-vc\bin\moc.exe -DNDEBUG -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include&quot; -I &quot;.&quot; -I &quot;C:\Qt\4.2.1-vc\include\ActiveQt&quot; -I &quot;release&quot; -I &quot;.&quot; -I&quot;..\..\..\..\Qt\4.2.1-vc\mkspecs\win32-msvc.net&quot; preferenceWindow.h -o release\moc_preferenceWindow.cpp
+						CommandLine="c:\Qt\4.3-vc\bin\moc.exe -DNDEBUG -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtCore&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include\QtGui&quot; -I &quot;C:\Qt\4.2.1-vc\include&quot; -I &quot;.&quot; -I &quot;C:\Qt\4.2.1-vc\include\ActiveQt&quot; -I &quot;release&quot; -I &quot;.&quot; -I&quot;..\..\..\..\Qt\4.2.1-vc\mkspecs\win32-msvc.net&quot; preferenceWindow.h -o release\moc_preferenceWindow.cpp
 "
-						AdditionalDependencies="c:\Qt\4.2.1-vc\bin\moc.exe"
+						AdditionalDependencies="c:\Qt\4.3-vc\bin\moc.exe"
 						Outputs="release\moc_preferenceWindow.cpp"/>
 				</FileConfiguration>
 			</File>
@@ -387,9 +387,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="UIC compoundWidget.ui"
-						CommandLine="c:\Qt\4.2.1-vc\bin\uic.exe compoundWidget.ui -o ui_compoundWidget.h
+						CommandLine="c:\Qt\4.3-vc\bin\uic.exe compoundWidget.ui -o ui_compoundWidget.h
 "
-						AdditionalDependencies="c:\Qt\4.2.1-vc\bin\uic.exe;graphWidget.h"
+						AdditionalDependencies="c:\Qt\4.3-vc\bin\uic.exe;graphWidget.h"
 						Outputs="ui_compoundWidget.h"/>
 				</FileConfiguration>
 			</File>
@@ -410,9 +410,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="UIC dataSelect.ui"
-						CommandLine="c:\Qt\4.2.1-vc\bin\uic.exe dataSelect.ui -o ui_dataSelect.h
+						CommandLine="c:\Qt\4.3-vc\bin\uic.exe dataSelect.ui -o ui_dataSelect.h
 "
-						AdditionalDependencies="c:\Qt\4.2.1-vc\bin\uic.exe"
+						AdditionalDependencies="c:\Qt\4.3-vc\bin\uic.exe"
 						Outputs="ui_dataSelect.h"/>
 				</FileConfiguration>
 			</File>
@@ -433,9 +433,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="UIC graphWindow.ui"
-						CommandLine="c:\Qt\4.2.1-vc\bin\uic.exe graphWindow.ui -o ui_graphWindow.h
+						CommandLine="c:\Qt\4.3-vc\bin\uic.exe graphWindow.ui -o ui_graphWindow.h
 "
-						AdditionalDependencies="c:\Qt\4.2.1-vc\bin\uic.exe;graphWidget.h"
+						AdditionalDependencies="c:\Qt\4.3-vc\bin\uic.exe;graphWidget.h"
 						Outputs="ui_graphWindow.h"/>
 				</FileConfiguration>
 			</File>
@@ -456,9 +456,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="UIC preferences.ui"
-						CommandLine="c:\Qt\4.2.1-vc\bin\uic.exe preferences.ui -o ui_preferences.h
+						CommandLine="c:\Qt\4.3-vc\bin\uic.exe preferences.ui -o ui_preferences.h
 "
-						AdditionalDependencies="c:\Qt\4.2.1-vc\bin\uic.exe"
+						AdditionalDependencies="c:\Qt\4.3-vc\bin\uic.exe"
 						Outputs="ui_preferences.h"/>
 				</FileConfiguration>
 			</File>

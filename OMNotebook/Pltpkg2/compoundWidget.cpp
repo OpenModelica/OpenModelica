@@ -74,6 +74,8 @@ CompoundWidget::CompoundWidget(QWidget* parent):  QWidget(parent)
 	layout = new QVBoxLayout;
 	legendFrame->setLayout(layout);
 
+//	legendFrame->setMinimumWidth(50);
+
 	gwMain->legendLayout = layout;
 	gwMain->legendFrame = legendFrame;
 

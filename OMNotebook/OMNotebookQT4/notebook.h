@@ -172,7 +172,7 @@ namespace IAEX
 		void groupCellsAction();
 		void inputCellsAction();
 		void graphCellsAction();
-
+		void textCellsAction();
 		void updateRecentFiles(QString);
 
 	private:
@@ -260,6 +260,7 @@ namespace IAEX
 		QAction *groupAction;
 		QAction *inputAction;
 		QAction *graphAction;
+		QAction *textAction;
 
 		QAction *aboutAction;
 		QAction *helpAction;				// Added 2006-02-03 AF
