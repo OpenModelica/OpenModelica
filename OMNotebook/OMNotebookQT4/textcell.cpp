@@ -303,7 +303,7 @@ namespace IAEX
 		text_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed));
 		text_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 		text_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-		text_->setContextMenuPolicy( Qt::NoContextMenu );
+//		text_->setContextMenuPolicy( Qt::NoContextMenu ); //fjass
 
 		
 

@@ -595,10 +595,10 @@ namespace IAEX
 						interpolation_= INTERPOLATION_NONE;
 					}
 
-					LegendLabel *ll = new LegendLabel(color, yVar, gCell->compoundwidget->gwMain->legendFrame, !(interpolation_ == INTERPOLATION_NONE), points);
+					LegendLabel *ll = new LegendLabel(color, yVar, gCell->compoundwidget->gwMain->legendFrame, !(interpolation_ == INTERPOLATION_NONE), points, 21);
 					ll->graphWidget = gCell->compoundwidget->gwMain;
-
-					ll->setMaximumHeight(21);
+					gCell->compoundwidget->gwMain->legendFrame->setMinimumWidth(max(ll->fontMetrics().width(yVar)+41+4, gCell->compoundwidget->gwMain->legendFrame->minimumWidth()));
+//					ll->setMaximumHeight(21);
 					gCell->compoundwidget->gwMain->legendLayout->addWidget(ll);
 					ll->show();
 
