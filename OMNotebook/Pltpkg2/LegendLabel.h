@@ -68,7 +68,7 @@ class LegendLabel: public QLabel
 	Q_OBJECT
 
 public:
-	LegendLabel(QColor color_, QString& s, QWidget* parent, bool showline, bool showpoints);
+	LegendLabel(QColor color_, QString& s, QWidget* parent, bool showline, bool showpoints, int maxHeight);
 	~LegendLabel();
 
 	void setCurve(Curve* c)

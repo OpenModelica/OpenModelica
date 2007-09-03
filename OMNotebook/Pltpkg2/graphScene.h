@@ -63,6 +63,7 @@ public:
 
 		xRulerScene = new QGraphicsScene(this);
 		yRulerScene = new QGraphicsScene(this);
+		this->setSceneRect(0,0,.01,.01);
 	}
 
 	~GraphScene()

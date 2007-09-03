@@ -53,7 +53,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "LegendLabel.h"
 #include "curve.h"
 
-LegendLabel::LegendLabel(QColor color_, QString& s, QWidget* parent, bool showline, bool showpoints): QLabel(s, parent), color(color_)
+LegendLabel::LegendLabel(QColor color_, QString& s, QWidget* parent, bool showline, bool showpoints, int maxHeight): QLabel(s, parent), color(color_)
 {
 	state = true;
 	setContextMenuPolicy(Qt::ActionsContextMenu);
@@ -76,6 +76,10 @@ LegendLabel::LegendLabel(QColor color_, QString& s, QWidget* parent, bool showli
 	connect(tmp, SIGNAL(triggered()), this, SLOT(selectColor()));
 	addAction(tmp);
 
+	setMaximumHeight(maxHeight);
+	
+	setMinimumWidth((fontMetrics().width(text())+height()+4));
+	
 	
 
 
@@ -150,7 +154,8 @@ void LegendLabel::render(QPainter* painter, QPointF pos)
 	painter->drawEllipse(1, 1, max(0,height()-2), max(0,height()-2));
 
 	painter->setFont(font());
-	setMinimumWidth(fontMetrics().width(text())+height()+4);
+//	setMinimumWidth(fontMetrics().width(text())+height()+4);
+	//setMinimumWidth(50);
 	QRectF r = rect();
 	r.setLeft(r.left() + height()+2);
 	painter->drawText(r, Qt::AlignVCenter, text());

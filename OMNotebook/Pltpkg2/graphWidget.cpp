@@ -120,10 +120,7 @@ GraphWidget::GraphWidget(QWidget* parent): QGraphicsView(parent)
 	this->setMinimumHeight(150);
 
 	this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-	//this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff); //fjass
-	//	this->verticalScrollBar()->setMaximumWidth(1);
-	this->verticalScrollBar()->setMinimumWidth(100);
-	//	this->verticalScrollBar()->hide();
+	this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff); 
 
 	updateScaleFactors();
 
@@ -213,9 +210,10 @@ GraphWidget::GraphWidget(QWidget* parent): QGraphicsView(parent)
 	setZoom(true);
 	
 
-	//#if QT_VERSION >= 0x040300
-	//	setOptimizationFlags(QGraphicsView::DontAdjustForAntialiasing|QGraphicsView::DontSavePainterState);
-	//#endif
+	#if QT_VERSION >= 0x040300
+		setOptimizationFlags(QGraphicsView::DontAdjustForAntialiasing|QGraphicsView::DontSavePainterState);
+	//	setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
+	#endif
 }
 
 void GraphWidget::originalZoom()
@@ -658,21 +656,28 @@ qreal GraphWidget::gridDist(qreal &min, qreal &max, qreal dist)
 	{
 
 		distance = (max - min) / 10.;
+//		distance = (max - min) / 8.;
 
 		qreal tmp = distance;
 
 		while(tmp < 1)
 			tmp *= 10;
+//			tmp *= 8;
 
 
 		while(tmp > 10)
 			tmp /= 10;
+//		while(tmp > 8)
+//			tmp /= 8;
 
 
 		if(tmp > 5)
+//		if(tmp > 4)
 			distance = 10*distance/tmp;
+//			distance = 8*distance/tmp;
 		else if(tmp > 2)
 			distance = 5*distance/tmp;
+//			distance = 4*distance/tmp;
 		else if(tmp > 1)
 			distance = 2*distance/tmp;
 		else
@@ -809,6 +814,11 @@ void GraphWidget::createGrid(bool numbersOnly)
 				graphicsScene->grid->addToGroup(l);
 			}
 			QGraphicsTextItem* tmp2 = graphicsScene->xRulerScene->addText(QVariant(x).toString());
+			if(abs(x) < xMinorDist)
+			{
+				tmp2->setPlainText("0");
+				x = 0;
+			}
 			tmp2->setPos(gvBottom->mapToScene(mapFromScene(x, yMax)).x()-tmp2->boundingRect().width()/2, gvBottom->sceneRect().y());
 			tmp2->moveBy(0, -tmp2->boundingRect().height()/2.);
 			tmp2->show();
@@ -841,6 +851,7 @@ void GraphWidget::createGrid(bool numbersOnly)
 				}
 			}
 			QGraphicsTextItem* tmp2 = graphicsScene->yRulerScene->addText(QString("1e") +QVariant(y).toString());
+			
 			tmp2->setPos(gvLeft->mapToScene( gvLeft->sceneRect().x() ,mapFromScene(xMax, y).y()+tmp2->boundingRect().height()/2 ));
 
 			tmp2->scale(1, -1);
@@ -866,13 +877,18 @@ void GraphWidget::createGrid(bool numbersOnly)
 		}
 		for(qreal y = yMin-yMajorDist; y < 1.5* yMajorDist + yMax ; y+= yMajorDist)
 		{
-			if(abs(y) < 1e-16)
-				y = 0;
+//			if(abs(y) < 1e-16)
+//				y = 0;
 			if(!numbersOnly)
 			{
 				graphicsScene->grid->addToGroup(new Line2D(xMin2, y, xMax2, y, pen2));
 			}
 			QGraphicsTextItem* tmp2 = graphicsScene->yRulerScene->addText(QVariant(y).toString());
+			if(abs(y) < yMinorDist)
+			{
+				tmp2->setPlainText("0");
+				y = 0;
+			}
 			tmp2->setPos(gvLeft->mapToScene( gvLeft->sceneRect().x() ,mapFromScene(xMax, y).y()+tmp2->boundingRect().height()/2 ));
 
 			tmp2->scale(1, -1);
@@ -1576,6 +1592,8 @@ void GraphWidget::plotPtolemyDataStream()
 
 			LegendLabel* ll;
 
+			legendFrame->setMinimumWidth(0);
+
 			for(quint32 i = 0; i < variableCount; ++i)
 			{
 				ds >> tmp;
@@ -1607,12 +1625,22 @@ void GraphWidget::plotPtolemyDataStream()
 
 
 						yVars.push_back(tmp); 
-						ll = new LegendLabel(color, tmp,legendFrame, !(interpolation_ == INTERPOLATION_NONE), points);
+						ll = new LegendLabel(color, tmp,legendFrame, !(interpolation_ == INTERPOLATION_NONE), points, 21);
 						ll->graphWidget = this;
 
-						ll->setMaximumHeight(21);
+//						ll->setMaximumHeight(21);
+//						ll->setMinimumWidth(0);
+
+//						if(!legendLayout->count() || true)
+//						{
+//							legendFrame->setMinimumWidth(ll->minimumWidth()+5);
+							legendFrame->setMinimumWidth(max(ll->fontMetrics().width(tmp)+41+4, legendFrame->minimumWidth()));
+				//										QMessageBox::information(0, QVariant(legendFrame->minimumWidth()).toString(), QVariant(legendFrame->width()).toString());					
+//						}
 						legendLayout->addWidget(ll);
 						ll->show(); 
+						
+
 
 						temporaryCurves[tmp] = (new Curve(variables[currentXVar], variables[tmp], color, ll));
 						ll->setCurve(temporaryCurves[tmp]);
