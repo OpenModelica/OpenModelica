@@ -2311,11 +2311,26 @@ namespace IAEX
 		}
 		else
 		{
+			if(subject_->hasChanged())
+			{
+				int res = QMessageBox::question(this, QString("Save document?"), QString("The document has been modified. Do you want to save the changes?"),	QMessageBox::Yes | QMessageBox::Default, QMessageBox::No,  QMessageBox::Cancel);
+				if(res == QMessageBox::Yes)
+				{
+		
+					save();
+					if(subject_->getFilename().isNull())
+						return;
+				}
+				else if(res == QMessageBox::Cancel)
+					return;
+			}
+
 			subject_ = new CellDocument(app_, QString::null);
 			subject_->executeCommand(new NewFileCommand());
 			subject_->attach(this);
 
 			update();
+			updateWindowTitle();
 		}
 	}
 
@@ -2375,10 +2390,15 @@ namespace IAEX
 				updateRecentFiles(filename_);
 
 
-
-
-
-				application()->commandCenter()->executeCommand(new OpenFileCommand(filename_));
+				if(subject_->isOpen())
+					application()->commandCenter()->executeCommand(new OpenFileCommand(filename_));
+				else
+				{
+					QMessageBox::information(0, "uuu", "ii");
+					subject_ = new CellDocument(app_, QString::null);
+					subject_->executeCommand(new OpenFileCommand(filename_));
+					subject_->attach(this);
+				}
 			}
 			else
 			{
@@ -2498,7 +2518,7 @@ namespace IAEX
 		QString version = OmcInteractiveEnvironment::OMCVersion();
 		QString abouttext = QString("OMNotebook version 2.0 (for OpenModelica ") + version + 
 			QString(")\r\n") + QString("Copyright 2004-2006, PELAB, Linkoping University\r\n\r\n") + 
-			QString("Created by Ingemar Axelsson (2004-2005) and Anders Fernström (2005-2006) as part of their final theses.");
+			QString("Created by Ingemar Axelsson (2004-2005), Anders Fernström (2005-2006) and Henrik Eriksson (2006-2007) as part of their final theses.");
 
 		QMessageBox::about( this, "OMNotebook", abouttext );
 	}

@@ -184,6 +184,11 @@ GraphWidget::GraphWidget(QWidget* parent): QGraphicsView(parent)
 
 	contextMenu->addSeparator();
 
+	tmp=contextMenu->addAction("Save parameters");
+	connect(tmp, SIGNAL(triggered()), this, SLOT(syncCall()));
+
+	contextMenu->addSeparator();
+
 	tmp=contextMenu->addAction("Preferences");
 	connect(tmp, SIGNAL(triggered()), this, SLOT(showPreferences()));
 
@@ -214,6 +219,123 @@ GraphWidget::GraphWidget(QWidget* parent): QGraphicsView(parent)
 		setOptimizationFlags(QGraphicsView::DontAdjustForAntialiasing|QGraphicsView::DontSavePainterState);
 	//	setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
 	#endif
+}
+
+void GraphWidget::setExpr(QString expr)
+{
+	currentExpr = expr;
+}
+void GraphWidget::syncCall()
+{
+	QRegExp r("(xRange[^\\}]*\\})");
+	int i;
+
+
+	if((i = r.indexIn(currentExpr)) < 0)
+	{
+		i = currentExpr.lastIndexOf(")");
+		currentExpr.insert(i, ", ");
+		i+=2;
+	}
+	currentExpr.replace(i, r.cap().size(),QString("xRange={") + QVariant(currentArea_.x()).toString() + ", " + QVariant(currentArea_.x() + currentArea_.width()).toString() + "}");
+
+	r.setPattern("(yRange[^\\}]*\\})");
+	if((i = r.indexIn(currentExpr)) < 0)
+	{
+		i = currentExpr.lastIndexOf(")");
+		currentExpr.insert(i, ", ");
+		i+=2;
+	}
+	currentExpr.replace(i, r.cap().size(),QString("yRange={") + QVariant(currentArea_.y()).toString() + ", " + QVariant(currentArea_.y() + currentArea_.height()).toString() + "}");
+
+	r.setMinimal(true);
+	r.setPattern("(grid(.*)(true|false))");
+	if((i = r.indexIn(currentExpr)) < 0)
+	{
+		i = currentExpr.lastIndexOf(")");
+		currentExpr.insert(i, ", ");
+		i+=2;
+	}
+
+	QString b = graphicsScene->gridVisible?"true":"false";
+	currentExpr.replace(i, r.cap().size(),QString("grid=") +b);
+
+
+	r.setPattern("(antiAliasing(.*)(true|false))");
+	if((i = r.indexIn(currentExpr)) < 0)
+	{
+		i = currentExpr.lastIndexOf(")");
+		currentExpr.insert(i, ", ");
+		i+=2;
+	}
+
+	b = antiAliasing?"true":"false";
+	currentExpr.replace(i, r.cap().size(),QString("antiAliasing=") +b);
+
+
+	r.setPattern("(logX(.*)(true|false))");
+	if((i = r.indexIn(currentExpr)) < 0)
+	{
+		i = currentExpr.lastIndexOf(")");
+		currentExpr.insert(i, ", ");
+		i+=2;
+	}
+
+	b = xLog?"true":"false";
+	currentExpr.replace(i, r.cap().size(),QString("logX=") +b);
+
+	r.setPattern("(logY(.*)(true|false))");
+	if((i = r.indexIn(currentExpr)) < 0)
+	{
+		i = currentExpr.lastIndexOf(")");
+		currentExpr.insert(i, ", ");
+		i+=2;
+	}
+
+	b = yLog?"true":"false";
+	currentExpr.replace(i, r.cap().size(),QString("logY=") +b);
+
+	r.setPattern("(title(.)*(\\\")(.)*(\\\"))");
+	if((i = r.indexIn(currentExpr)) < 0)
+	{
+		i = currentExpr.lastIndexOf(")");
+		currentExpr.insert(i, ", ");
+		i+=2;
+	}
+
+	
+	currentExpr.replace(i, r.cap().size(),(QString("title=%1%2%3").arg("\"").arg(compoundwidget->plotTitle->text()).arg("\"")));
+
+
+	r.setPattern("(xLabel(.)*(\\\")(.)*(\\\"))");
+	if((i = r.indexIn(currentExpr)) < 0)
+	{
+		i = currentExpr.lastIndexOf(")");
+		currentExpr.insert(i, ", ");
+		i+=2;
+	}
+
+	
+	currentExpr.replace(i, r.cap().size(),(QString("xLabel=%1%2%3").arg("\"").arg(compoundwidget->xLabel->text()).arg("\"")));
+
+
+
+	r.setPattern("(yLabel(.)*(\\\")(.)*(\\\"))");
+	if((i = r.indexIn(currentExpr)) < 0)
+	{
+		i = currentExpr.lastIndexOf(")");
+		currentExpr.insert(i, ", ");
+		i+=2;
+	}
+
+	
+	currentExpr.replace(i, r.cap().size(),(QString("yLabel=%1%2%3").arg("\"").arg(compoundwidget->yLabel->text()).arg("\"")));
+
+
+
+	emit newExpr(currentExpr);
+
+
 }
 
 void GraphWidget::originalZoom()
@@ -533,8 +655,8 @@ void GraphWidget::resetZoom()
 
 	updatePointSizes();
 
-	if(visible)
-		showGrid(true);
+//	if(visible)
+		showGrid(visible);
 }
 void GraphWidget::mouseReleaseEvent ( QMouseEvent * event )
 {
@@ -616,8 +738,9 @@ void GraphWidget::zoomIn(QRectF r)
 	zoomStr = QString("zoom={%1, %2, %3, %4}").arg(QVariant(r.left()).toString(), QVariant(r.top()).toString(), QVariant(r.width()).toString(), QVariant(r.height()).toString());
 	setArea(r);
 
-	if(graphicsScene->gridVisible)
-		showGrid(true);
+//	if(graphicsScene->gridVisible)
+//		showGrid(true);
+	showGrid(graphicsScene->gridVisible);
 }
 
 void GraphWidget::setHold(bool b)
@@ -792,7 +915,11 @@ void GraphWidget::createGrid(bool numbersOnly)
 			QGraphicsTextItem* tmp2 = graphicsScene->xRulerScene->addText("1e" + QVariant(x).toString());
 			tmp2->setPos(gvBottom->mapToScene(mapFromScene(x, yMax)).x()-tmp2->boundingRect().width()/2, gvBottom->sceneRect().y());
 			tmp2->moveBy(0, -tmp2->boundingRect().height()/2.);
-			tmp2->show();		
+
+			if(tmp2->x() < gvBottom->mapToScene(gvBottom->rect()).boundingRect().x() || tmp2->x() + tmp2->boundingRect().width() > gvBottom->mapToScene(gvBottom->rect()).boundingRect().x() +gvBottom->mapToScene(gvBottom->rect()).boundingRect().width())
+				tmp2->hide();
+			else
+				tmp2->show();		
 		}
 	}
 	else
@@ -806,6 +933,7 @@ void GraphWidget::createGrid(bool numbersOnly)
 				graphicsScene->grid->addToGroup(l);
 			}
 		}
+
 		for(qreal x = xMin-xMajorDist; x < 1.5* xMajorDist + xMax; x+= xMajorDist)	
 		{
 			if(!numbersOnly)
@@ -821,8 +949,13 @@ void GraphWidget::createGrid(bool numbersOnly)
 			}
 			tmp2->setPos(gvBottom->mapToScene(mapFromScene(x, yMax)).x()-tmp2->boundingRect().width()/2, gvBottom->sceneRect().y());
 			tmp2->moveBy(0, -tmp2->boundingRect().height()/2.);
-			tmp2->show();
+
+			if(tmp2->x() < gvBottom->mapToScene(gvBottom->rect()).boundingRect().x() || tmp2->x() + tmp2->boundingRect().width() > gvBottom->mapToScene(gvBottom->rect()).boundingRect().x() +gvBottom->mapToScene(gvBottom->rect()).boundingRect().width())
+				tmp2->hide();
+			else
+				tmp2->show();
 		}
+
 	} // x klar
 
 	foreach(QGraphicsItem* ti, graphicsScene->yRulerScene->items())
@@ -861,6 +994,9 @@ void GraphWidget::createGrid(bool numbersOnly)
 
 			if(width < tmp2->boundingRect().width())
 				width = tmp2->boundingRect().width();
+			if(tmp2->y() > tmp2->boundingRect().height() + gvLeft->mapToScene(QPoint(gvLeft->x(), gvLeft->y())).y() || tmp2->y() < gvLeft->mapToScene(QPoint(0, gvLeft->y() +gvLeft->height() )).y() +tmp2->boundingRect().height() || tmp2->y()-1.5*tmp2->boundingRect().height() < gvLeft->mapToScene(QPoint(0, gvLeft->y()+gvLeft->height() )).y())
+				tmp2->hide();
+
 		}
 
 	}
@@ -898,6 +1034,9 @@ void GraphWidget::createGrid(bool numbersOnly)
 
 			if(width < tmp2->boundingRect().width())
 				width = tmp2->boundingRect().width();
+
+			if(tmp2->y() > tmp2->boundingRect().height() + gvLeft->mapToScene(QPoint(gvLeft->x(), gvLeft->y())).y() || tmp2->y() < gvLeft->mapToScene(QPoint(0, gvLeft->y() +gvLeft->height() )).y() +tmp2->boundingRect().height() || tmp2->y()-1.5*tmp2->boundingRect().height() < gvLeft->mapToScene(QPoint(0, gvLeft->y()+gvLeft->height() )).y())
+				tmp2->hide();
 		}
 	} ////// y klar
 
@@ -949,7 +1088,8 @@ void GraphWidget::paintEvent(QPaintEvent *pe)
 			setCurrentArea(mapToScene(this->rect()).boundingRect());
 
 		//		if(graphicsScene->gridVisible)
-		//			showGrid(true);
+//					showGrid(true);
+					
 		showGrid(graphicsScene->gridVisible); //fjass
 		//		updatePointSizes();
 
@@ -972,7 +1112,8 @@ void GraphWidget::setAntiAliasing(bool on)
 
 void GraphWidget::updateGrid()
 {
-	showGrid(true);
+//	showGrid(true);
+	showGrid(gridVisible); //uu
 }
 
 void GraphWidget::showEvent(QShowEvent* event)
@@ -1011,6 +1152,8 @@ void GraphWidget::setArea(const QRectF& r)
 void GraphWidget::showGrid(bool b)
 {
 	emit setGridVisible(b);
+
+
 
 	if(b)
 	{
@@ -1378,8 +1521,8 @@ void GraphWidget::ptolemyDataStreamClosed()
 
 	updatePointSizes();
 
-	if(b)
-		showGrid(true);
+//	if(b)
+		showGrid(b);
 
 	setServerState(false);
 
@@ -1471,6 +1614,7 @@ void GraphWidget::setLogarithmic(bool b)
 				p->setVisible(curves[i]->drawPoints);
 				drawNextPoint = !C;	
 			}
+
 
 			if(C)
 			{

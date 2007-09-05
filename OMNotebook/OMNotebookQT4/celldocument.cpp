@@ -173,7 +173,7 @@ namespace IAEX
 		}
 
 
-		open_ = true; // 2005-09-26 AF, not sure if this should be here
+//		open_ = true; // 2005-09-26 AF, not sure if this should be here //070903 HE, probably not
 	}
 
 	/*! 

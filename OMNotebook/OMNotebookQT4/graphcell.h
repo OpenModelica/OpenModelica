@@ -113,6 +113,7 @@ namespace IAEX
 		void textChanged( bool );
 		void clickedOutput( Cell* );					// Added 2006-02-03 AF
 		void forwardAction( int );						// Added 2006-04-27 AF
+		void newExpr(QString);
 
 	public slots:
 		void eval();
@@ -136,6 +137,7 @@ namespace IAEX
 		void setClosed(const bool closed, bool update = true); //Changed 2006-08-24
 		virtual void setFocus(const bool focus);
 		virtual void setFocusOutput(const bool focus);	// Added 2006-02-03 AF
+		void setExpr(QString);
 		
 		void delegateFinished();
 		

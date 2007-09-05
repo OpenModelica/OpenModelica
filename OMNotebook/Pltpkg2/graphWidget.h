@@ -106,6 +106,8 @@ public slots:
 	void newWindow();
 	void zoomIn(QRectF);
 
+	void setExpr(QString);
+
 	void setPan(bool b) 
 	{ 
 		pan = b; 
@@ -155,6 +157,7 @@ public slots:
 
 	void originalZoom();
 	void addFocusBox();
+	void syncCall();
 
 signals:
 	void showPreferences2();
@@ -167,6 +170,7 @@ signals:
 	void areaChanged(const QRectF& r);
 	void setGridVisible(bool);
 	void holdSet(bool);
+	void newExpr(QString);
 
 public:
 	GraphScene* graphicsScene;
@@ -244,6 +248,7 @@ private:
 	QString zoomStr, gridStr, aAStr;
 	QRectF range;
 	double dataStreamVersion;
+	QString currentExpr;
 
 public:
 	QRectF originalArea;

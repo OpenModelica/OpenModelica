@@ -379,6 +379,8 @@ namespace IAEX
 		createCompoundWidget();		
 
  
+		connect(compoundwidget->gwMain, SIGNAL(newExpr(QString)), this, SLOT(setExpr(QString)));
+		connect(this, SIGNAL(newExpr(QString)), compoundwidget->gwMain, SLOT(setExpr(QString)));
 	}
 
 	/*! 
@@ -1211,6 +1213,11 @@ namespace IAEX
 		}
 	}
 
+	void GraphCell::setExpr(QString expr)
+	{
+		input_->setPlainText(expr);
+	}
+
 	/*! 
 	 * \author Ingemar Axelsson and Anders Fernström
 	 * \date 2006-04-18 (update)
@@ -1243,6 +1250,7 @@ namespace IAEX
 			QString expr = input_->toPlainText();
 			//expr = expr.simplified();
 
+			emit newExpr(expr);
 
 			QString openmodelica( getenv( "OPENMODELICAHOME" ) );
 			if( openmodelica.isEmpty() )
