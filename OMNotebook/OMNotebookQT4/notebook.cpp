@@ -165,8 +165,10 @@ namespace IAEX
 
 //		addToolBar(toolBar); //Add icons, update the edit menu etc.
 		
+
 		// 2006-01-16 AF, Added an icon to the window
-		setWindowIcon( QIcon("./omnotebook_png.png") );
+//		setWindowIcon( QIcon("./omnotebook_png.png") );
+		setWindowIcon( QIcon(":/Resources/omnotebook_png.png"));
 
 		statusBar()->showMessage("Ready");
 		resize(800, 600);
@@ -2517,7 +2519,7 @@ namespace IAEX
 	{
 		QString version = OmcInteractiveEnvironment::OMCVersion();
 		QString abouttext = QString("OMNotebook version 2.0 (for OpenModelica ") + version + 
-			QString(")\r\n") + QString("Copyright 2004-2006, PELAB, Linkoping University\r\n\r\n") + 
+			QString(")\r\n") + QString("Copyright 2004-2007, PELAB, Linkoping University\r\n\r\n") + 
 			QString("Created by Ingemar Axelsson (2004-2005), Anders Fernström (2005-2006) and Henrik Eriksson (2006-2007) as part of their final theses.");
 
 		QMessageBox::about( this, "OMNotebook", abouttext );

@@ -121,8 +121,7 @@ namespace IAEX
 				if( argc > 1 )
 				{
 					QString fileToOpen( argv[1] );
-					if( dir.exists( fileToOpen ) && 
-						( fileToOpen.endsWith( ".onb" ) || fileToOpen.endsWith( ".nb" )))
+					if( dir.exists( fileToOpen ) && ( fileToOpen.endsWith( ".onb" ) || fileToOpen.endsWith( ".onbz" ) || fileToOpen.endsWith( ".nb" )))
 					{
 						if( notebooksocket_->sendFilename( fileToOpen ))
 						{
@@ -134,6 +133,8 @@ namespace IAEX
 					}
 					else
 						cout << "SOCKET: Specified filename do not exist" << endl;
+									
+					
 				}
 				else
 					cout << "SOCKET: No filename specified" << endl;
@@ -176,11 +177,16 @@ namespace IAEX
 
 		// 2006-04-10 AF, use environment variable to find xml files
 		QString openmodelica( getenv( "OPENMODELICAHOME" ) );
-		if( openmodelica.isEmpty() )
+		
+//		if( openmodelica.isEmpty() )
+		QDir d(openmodelica);
+		if(!d.exists(openmodelica))
 		{
-			QMessageBox::critical( 0, "OpenModelica Error", "Could not find environment variable OPENMODELICAHOME" );
-			open(QString::null);
-			return;
+			QMessageBox::critical( 0, "OpenModelica Error", "The environment variable OPENMODELICAHOME is missing or invalid" );
+			
+			//			open(QString::null);
+//			return;
+			exit(1);
 		}
 
 		// 2006-02-13 AF, create temp dir
@@ -269,10 +275,14 @@ namespace IAEX
 			if( argc > 1 )
 			{
 				QString fileToOpen( argv[1] );
-				if( dir.exists( fileToOpen ) && 
-					( fileToOpen.endsWith( ".onb" ) || fileToOpen.endsWith( ".nb" )))
+				if( dir.exists( fileToOpen ) && ( fileToOpen.endsWith( ".onb" ) ||  fileToOpen.endsWith( ".onbz" ) || fileToOpen.endsWith( ".nb" )))
 				{
 					open( fileToOpen );
+				}
+				else
+				{
+					cout << "File not found: " << fileToOpen.toStdString() << endl;
+					open(QString::null);
 				}
 			}
 			else

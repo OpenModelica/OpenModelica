@@ -3,7 +3,8 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="OMNotebookQT4"
-	ProjectGUID="{259725BE-54D2-3C8D-A8A8-4CF7BD839D28}">
+	ProjectGUID="{259725BE-54D2-3C8D-A8A8-4CF7BD839D28}"
+	RootNamespace="OMNotebookQT4">
 	<Platforms>
 		<Platform
 			Name="Win32"/>
@@ -48,11 +49,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="TRUE"
-				AdditionalDependencies="qtmain.lib QtCore4.lib QtGui4.lib QtNetwork4.lib QtXml4.lib NotebookParser.lib mico2311.lib antlr.lib msvcprt.lib msvcrt.lib pltpkg2.lib QtOpenGL4.lib"
+				AdditionalDependencies="qtmain.lib QtGui4.lib QtNetwork4.lib QtXml4.lib NotebookParser.lib mico2311.lib antlr.lib QtCore4.lib QtOpenGL4.lib pltpkg2.lib ws2_32.lib imm32.lib winmm.lib"
 				OutputFile="Release\\OMNotebook.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="..\ANTLR\Release;..\NotebookParser\Release;&quot;$(QTHOME)\lib&quot;;..\Pltpkg2\release;&quot;$(MICOHOME)\win32-bin\lib&quot;"
+				IgnoreAllDefaultLibraries="FALSE"
 				IgnoreDefaultLibraryNames=""
 				DelayLoadDLLs=""
 				GenerateDebugInformation="FALSE"
