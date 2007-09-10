@@ -2396,7 +2396,6 @@ namespace IAEX
 					application()->commandCenter()->executeCommand(new OpenFileCommand(filename_));
 				else
 				{
-					QMessageBox::information(0, "uuu", "ii");
 					subject_ = new CellDocument(app_, QString::null);
 					subject_->executeCommand(new OpenFileCommand(filename_));
 					subject_->attach(this);
