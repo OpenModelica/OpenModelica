@@ -42,8 +42,8 @@
  
 package Absyn 
 " 
-  file:	 Absyn.mo
-  module:      Absyn
+  file:	       Absyn.mo
+  package:     Absyn
   description: Abstract syntax
  
   RCS: $Id$
@@ -1937,5 +1937,22 @@ algorithm
  end matchcontinue;
 end functionArgsEqual;
 
+public function getClassName "function getClassName
+  author: adrpo
+  gets the name of the class."
+  input Class inClass;
+  output String outName;
+algorithm 
+  outName:=
+  matchcontinue (inClass)
+    local
+      Ident n,filename;
+      Boolean p,f,e;
+      Restriction r;
+      ClassDef body;
+    case (CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = body)) 
+    then n; 
+  end matchcontinue;
+end getClassFilename;
 
 end Absyn;
