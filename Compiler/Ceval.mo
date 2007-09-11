@@ -42,7 +42,7 @@
 
 package Ceval 
 " file:	 Ceval.mo
-  module:      Ceval
+  package:      Ceval
   description: Constant propagation of expressions
  
   RCS: $Id$
