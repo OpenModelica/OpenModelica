@@ -1,61 +1,60 @@
-package TaskGraph "
-This file is part of OpenModelica.
-
-Copyright (c) 1998-2006, Linköpings universitet, Department of
-Computer and Information Science, PELAB
-
-All rights reserved.
-
-(The new BSD license, see also
-http://www.opensource.org/licenses/bsd-license.php)
-
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
- Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer.
-
- Redistributions in binary form must reproduce the above copyright
-  notice, this list of conditions and the following disclaimer in
-  the documentation and/or other materials provided with the
-  distribution.
-
- Neither the name of Linköpings universitet nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-  
-  file:	 TaskGraph.mo
-  module:      TaskGraph
+/*
+ * This file is part of OpenModelica.
+ * 
+ * Copyright (c) 1998-2007, Linköpings universitet, Department of
+ * Computer and Information Science, PELAB
+ * 
+ * All rights reserved.
+ * 
+ * (The new BSD license, see also
+ * http://www.opensource.org/licenses/bsd-license.php)
+ * 
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ * 
+ *  Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * 
+ *  Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * 
+ *  Neither the name of Linköpings universitet nor the names of its
+ *   contributors may be used to endorse or promote products derived from
+ *   this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ */
+ 
+package TaskGraph 
+" file:	       TaskGraph.mo
+  package:     TaskGraph
   description: Building of task graphs from expressions, and equation systems.
  
-  RCS: %W% %E%
-  
-
+  RCS: $Id$
   
   This module is used in the modpar part of OpenModelica for bulding task graphs
   from the BLT decomposition for automatic parallelization.
-  The exported function \'build_taskgraph\' takes the lowered form of the DAE defined in
-  \'DAELow\' and two assignments vectors (which variable is solved in which equation) and
+  The exported function buildTaskgraph takes the lowered form of the DAE defined in
+  DAELow and two assignments vectors (which variable is solved in which equation) and
   the list of blocks given by the BLT decomposition.
 
-  The module uses \'TaskGraphExt\' for the task graph datastructure itself, which
-  is implemented using Boost Graph Library in C++
-"
+  The package uses TaskGraphExt for the task graph datastructure itself, which
+  is implemented using Boost Graph Library in C++"
 
 public import Exp;
 public import DAELow;
