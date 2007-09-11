@@ -264,7 +264,9 @@ RML_BEGIN_LABEL(Corba__waitForCommand)
 {
 #ifndef NOMICO
   while (WAIT_OBJECT_0 != WaitForSingleObject(omc_client_request_event,INFINITE) );
-  
+
+  if (rml_trace_enabled)
+    fprintf(stderr, "Corba.mo (corbaimpl.cpp): received cmd: %s\n", omc_cmd_message);
   rmlA0=mk_scon(omc_cmd_message);
   
   WaitForSingleObject(lock,INFINITE); // Lock so no other tread can talk to omc.
@@ -449,6 +451,9 @@ RML_BEGIN_LABEL(Corba__waitForCommand)
   }
   omc_waiting = false;
   pthread_mutex_unlock(&omc_waitlock);
+  
+  if (rml_trace_enabled)
+    fprintf(stderr, "Corba.mo (corbaimpl.cpp): received cmd: %s\n", omc_cmd_message);
 
   rmlA0=mk_scon(omc_cmd_message);
   pthread_mutex_lock(&lock); // Lock so no other tread can talk to omc.
