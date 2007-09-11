@@ -41,20 +41,20 @@
  */
 
 package Util 
-" file:	 Util.mo
-  module:      Util
+" file:	       Util.mo
+  package:     Util
   description: Miscellanous MetaModelica Compiler (MMC) utilities
  
   RCS: $Id$
   
-  This module contains various MetaModelica Compiler (MMC) utilities sigh, mostly 
+  This package contains various MetaModelica Compiler (MMC) utilities sigh, mostly 
   related to lists.
   It is used pretty much everywhere. The difference between this 
   module and the ModUtil module is that ModUtil contains modelica 
-  related utilities. The Util module only contains \"low-level\" 
+  related utilities. The Util module only contains *low-level* 
   MetaModelica Compiler (MMC) utilities, for example finding elements in lists.
   
-  This modules contains many functions that use \'type variables\' in MetaModelica Compiler (MMC).
+  This modules contains many functions that use *type variables* in MetaModelica Compiler (MMC).
   A type variable is exactly what it sounds like, a type bound to a variable.
   It is used for higher order functions, i.e. in MetaModelica Compiler (MMC) the possibility to pass a 
   \"pointer\" to a function into another function. But it can also be used for 
