@@ -1953,6 +1953,6 @@ algorithm
     case (CLASS(name = n,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = body)) 
     then n; 
   end matchcontinue;
-end getClassFilename;
+end getClassName;
 
 end Absyn;
