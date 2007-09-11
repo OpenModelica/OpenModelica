@@ -42,8 +42,8 @@
 
 package Algorithm 
 "
-  file:	 Algorithm.mo
-  module:      Algorithm
+  file:	       Algorithm.mo
+  package:     Algorithm
   description: Algorithm datatypes
  
   RCS: $Id$
