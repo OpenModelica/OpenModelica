@@ -43,13 +43,13 @@
 package Main 
 "  
   file:        Main.mo
-  module:      Main
+  package:     Main
   description: Modelica main program
  
   RCS: $Id$
  
   This is the main program in the Modelica specification. 
-  It either tranlates a file given as a command line argument
+  It either translates a file given as a command line argument
   or starts a server loop communicating through CORBA or sockets
   (The Win32 implementation only implements CORBA)"
 
