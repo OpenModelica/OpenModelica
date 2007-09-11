@@ -1,46 +1,47 @@
-package Static "
-This file is part of OpenModelica.
+/* This file is part of OpenModelica.
+ * 
+ * Copyright (c) 1998-2007, Linköpings universitet, Department of
+ * Computer and Information Science, PELAB
+ * 
+ * All rights reserved.
+ * 
+ * (The new BSD license, see also
+ * http://www.opensource.org/licenses/bsd-license.php)
+ * 
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ * 
+ *  Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * 
+ *  Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * 
+ *  Neither the name of Linköpings universitet nor the names of its
+ *   contributors may be used to endorse or promote products derived from
+ *   this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ */ 
 
-Copyright (c) 1998-2006, Linköpings universitet, Department of
-Computer and Information Science, PELAB
-
-All rights reserved.
-
-(The new BSD license, see also
-http://www.opensource.org/licenses/bsd-license.php)
-
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
- Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer.
-
- Redistributions in binary form must reproduce the above copyright
-  notice, this list of conditions and the following disclaimer in
-  the documentation and/or other materials provided with the
-  distribution.
-
- Neither the name of Linköpings universitet nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-  
-  file:	 Static.mo
-  module:      Static
+package Static 
+" file:	       Static.mo
+  package:     Static
   description: Static analysis of expressions
  
   RCS: $Id$
@@ -54,23 +55,22 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   If the expression is constant, the \'Ceval\' module is used to evaluate the expression
   value. A value of an expression is described using the \'Values\' module.
 
-  The main function in this module is \'eval_exp\' which takes an Absyn.Exp and transform it 
+  The main function in this module is evalExp which takes an Absyn.Exp and transform it 
   into an Exp.Exp, while performing type checking and automatic type conversions, etc.
   To determine types of builtin functions and operators, the module also contain an elaboration
-  handler for functions and operators. This function is called \'elab_builtin_handler\'. 
+  handler for functions and operators. This function is called elabBuiltinHandler. 
   NOTE: These functions should only determine the type and properties of the builtin functions and
-  operators and not evaluate them. Constant evaluation is performed by the \'Ceval\' module.
+  operators and not evaluate them. Constant evaluation is performed by the Ceval module.
   The module also contain a function for deoverloading of operators, in the \'deoverload\' function.
   It transforms operators like \'+\' to its specific form, ADD, ADD_ARR, etc.
  
-  Interactive function calls are also given their types by \'elab_exp\', which calls 
-  \'elab_call_interactive\'.
+  Interactive function calls are also given their types by elabExp, which calls 
+  elabCallInteractive.
  
   Elaboration for functions involve checking the types of the arguments by filling slots of the
   argument list with first positional and then named arguments to find a matching function. The 
   details of this mechanism can be found in the Modelica specification.
-  The elaboration also contain function deoverloading which will be added to Modelica in the future.
-"
+  The elaboration also contain function deoverloading which will be added to Modelica in the future."
 
 public import Absyn;
 public import Exp;
