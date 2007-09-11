@@ -42,7 +42,7 @@
 
 package Debug 
 " file:	 Debug.mo
-  module:      Debug
+  package:      Debug
   description: debug printing
  
   RCS: $Id$

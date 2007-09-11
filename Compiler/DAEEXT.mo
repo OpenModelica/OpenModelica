@@ -40,7 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   
   file:	 DAEEXT.mo
-  module:      DAEEXT
+  package:      DAEEXT
 
   
   The DAEEXT module is an externally implemented module (in file runtime/daeext.cpp) 
