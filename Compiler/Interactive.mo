@@ -41,8 +41,11 @@
  */
 
 package Interactive 
-" file: Interactive.mo
-
+" file:        Interactive.mo
+  package:     Interactive
+  description: This module contain functionality for model management, 
+               expression evaluation, etc. in the interactive environment.
+  
   $Id$
   
   This module contain functionality for model management, expression evaluation, etc. 
