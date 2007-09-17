@@ -212,32 +212,34 @@ namespace IAEX
 		try
 		{
 			// 2006-02-28 AF, use environment varable to find omc.exe
-			string OMCPath( getenv( "OPENMODELICAHOME" ) );
-			if( OMCPath.empty() )
+			// string OMCPath( getenv( "OPENMODELICAHOME" ) );
+			QString OMCPath( getenv( "OPENMODELICAHOME" ) );
+
+			if( OMCPath.isEmpty() )
 				throw std::runtime_error( "Could not find environment variable OPENMODELICAHOME" );
 
 			// location of omc in openmodelica folder
 			QDir dir;
 #ifdef WIN32
-			if( dir.exists( QString(OMCPath.c_str()) + "\\bin\\omc.exe" ) )
+			if( dir.exists( OMCPath + "\\bin\\omc.exe" ) )
 				OMCPath += "\\bin\\";
-			else if( dir.exists( QString(OMCPath.c_str()) + "\\omc.exe" ) )
+			else if( dir.exists( OMCPath + "\\omc.exe" ) )
 				OMCPath;
 			else if( dir.exists( "omc.exe" ))
 				OMCPath = "";
 			else
 			{
-				string msg = "Unable to find OMC, searched in:\n" +
+				QString msg = "Unable to find OMC, searched in:\n" +
 					OMCPath + "\\bin\\\n" +
 					OMCPath + "\n" +
-					dir.absolutePath().toStdString();
+					dir.absolutePath();
 
-				throw std::runtime_error( msg.c_str() );
+				throw std::runtime_error( msg.toStdString().c_str() );
 			}
 #else /* unix */
-			if( dir.exists( QString(OMCPath.c_str()) + "/bin/omc" ) )
+			if( dir.exists( OMCPath + "/bin/omc" ) )
 				OMCPath += "/bin/";
-			else if( dir.exists( QString(OMCPath.c_str()) + "/omc" ) )
+			else if( dir.exists( OMCPath + "/omc" ) )
 				OMCPath;
 			else if( dir.exists( "omc.exe" ))
 				OMCPath = "";
@@ -256,9 +258,9 @@ namespace IAEX
 			// 2006-03-14 AF, set omc loaction and parameters
 			QString omc;
 			#ifdef WIN32
-				omc = QString( OMCPath.c_str() ) + "omc.exe";
+				omc = OMCPath + "omc.exe";
 			#else
-				omc = QString( OMCPath.c_str() ) + "omc";
+				omc = OMCPath + "omc";
 			#endif
 			
 			QStringList parameters;
