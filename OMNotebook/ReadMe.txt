@@ -1,10 +1,13 @@
-EXTERNAL PROGRAM
-----------------
-The following external program are needed:
+Compilation of OMNotebook with Visual Studio (MSVC)
+---------------------------------------------------
 
-ANTLR v2.7.4
-Antlr and its code library is needed to create the files for the projects parser.
-Version 2.7.5 of antlr dosen't work correctly with this project. 
+The following external programs are needed:
+
+Take OMDev from here:
+http://www.ida.liu.se/~adrpo/omc/omdev/mingw/OMDev-mingw-msvc.zip
+It includes msvc compiled versions of:
+- ANTLR v2.7.7
+- Mico 2.3.11
 
 QT
 Qt version 4 has to be installed to compile the project. Currently version 4.1,
@@ -14,49 +17,29 @@ compile qt to be used together with visual studio. For more information about
 this patch: http://sourceforge.net/projects/qtwin/
 A guide is available at http://qtnode.net/wiki/Qt4_with_Visual_Studio
 
-MICO CORBA
-Mico Corba is needed to communicate with OMC. Currently the project is using
-version 2.3.11.
-
-MODELICA
-Modelica (OMC) is needed to evaluate the openmodelica expression in the documents.
-
 
 
 VARIABLES
 ---------
 This environment variables are needed:
 
+> OMDEV         : Should point to c:\OMDev where OMDev-mingw-msvc.zip is installed
+
+
 > QNBHOME	: Should point at the folder containing the tre sub projects,
                   for example "C:\Projects\OMNotebook",
                   > used like "$(QNBHOME)\NotebookParser".
 
-> ANTLRHOME	: Should point at the folder containing Antlr, 
-		  for example "C:\antlr\antlr-2.7.4",
-		  > used like "$(ANTLRHOME)\lib\cpp".
-
 > QTHOME	: Should point at the home folder for Qt, 
 		  for example "C:\Qt\qt-win-opensource-src-4.1.0".
-
-> MICOHOME	: Should point at the folder containing Mico Corba
-		  for example "C:\Program\mico",
-		  > used like "$(MICOHOME)\include".
-
-> MODELICAHOME	: Should point at the home folder containing c++ files for 
-                  corba communication with OMC, 
-		  for example "C:\Program\modelica_omc",
-		  > used like "$(MODELICAHOME)".
-
 
 
 MISC
 ----
-> Probably the file path for the antlr files have to be change in the antlr project
-  file (antlr.vcproj), because the paths are relative the location of the project
-  file.
-
 > Probably the path to the file "omc_communicator.cc" in the OMNotebook project has
   to be change, because this path is relative also. The file is added to the project
   to avoid link error and the file is located in modelicas runtime library.
 
 
+Adrian Pop [adrpo@ida.liu.se]
+Updated: 2007-09-19
