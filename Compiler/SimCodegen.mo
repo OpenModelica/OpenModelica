@@ -851,6 +851,7 @@ extObjConstructorsDecl_str,
 "  DATA* returnData = (DATA*)malloc(sizeof(DATA));\n
   if(!returnData) //error check\n
     return 0;\n
+  memset(returnData,0,sizeof(DATA))\n;
   returnData->nStates = NX;\n
   returnData->nAlgebraic = NY;\n
   returnData->nParameters = NP;\n
@@ -1028,6 +1029,7 @@ extObjConstructorsDecl_str,
      printf(\"error allocating external objects\\n\");\n
      exit(-2);\n
   }\n",
+  "memset(returnData->extObjs,0,sizeof(void*)*NEXT);\n",
   "setLocalData(returnData); /* must be set since used by constructors*/\n",
   extObjConstructors_str,
   extObjConstructorAliases_str,
