@@ -1,7 +1,7 @@
 #ifndef INC_notebookgrammarTokenTypes_hpp_
 #define INC_notebookgrammarTokenTypes_hpp_
 
-/* $ANTLR 2.7.4: "lexer.g" -> "notebookgrammarTokenTypes.hpp"$ */
+/* $ANTLR 2.7.7 (2006-11-01): "lexer.g" -> "notebookgrammarTokenTypes.hpp"$ */
 
 #ifndef CUSTOM_API
 # define CUSTOM_API

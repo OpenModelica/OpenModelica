@@ -5,7 +5,7 @@
 
 
 #include <antlr/config.hpp>
-/* $ANTLR 2.7.4: "parser.g" -> "AntlrNotebookParser.hpp"$ */
+/* $ANTLR 2.7.7 (2006-11-01): "parser.g" -> "AntlrNotebookParser.hpp"$ */
 #include <antlr/TokenStream.hpp>
 #include <antlr/TokenBuffer.hpp>
 #include "AntlrNotebookParserTokenTypes.hpp"

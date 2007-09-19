@@ -60,7 +60,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(ANTLRHOME)\lib\cpp"
+				AdditionalIncludeDirectories="$(OMDEV)\include\antlr"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"

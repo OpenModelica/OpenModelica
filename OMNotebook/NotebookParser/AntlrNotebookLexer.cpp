@@ -1,4 +1,4 @@
-/* $ANTLR 2.7.4: "lexer.g" -> "AntlrNotebookLexer.cpp"$ */
+/* $ANTLR 2.7.7 (2006-11-01): "lexer.g" -> "AntlrNotebookLexer.cpp"$ */
 #include "AntlrNotebookLexer.hpp"
 #include <antlr/CharBuffer.hpp>
 #include <antlr/TokenStreamException.hpp>
@@ -283,7 +283,7 @@ ANTLR_USE_NAMESPACE(antlr)RefToken AntlrNotebookLexer::nextToken()
 				theRetToken=_returnToken;
 				break;
 			}
-			case 0x22 /* '"' */ :
+			case 0x22 /* '\"' */ :
 			{
 				mQSTRING(true);
 				theRetToken=_returnToken;
@@ -353,17 +353,16 @@ tryAgain:;
 }
 
 void AntlrNotebookLexer::mRBRACK(bool _createToken) {
-	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
+	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = RBRACK;
-	int _saveIndex;
+	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
 	
 	try {      // for error handling
-		match(']');
+		match(']' /* charlit */ );
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
-		consume();
-		consumeUntil(_tokenSet_1);
+		recover(ex,_tokenSet_1);
 	}
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -374,17 +373,16 @@ void AntlrNotebookLexer::mRBRACK(bool _createToken) {
 }
 
 void AntlrNotebookLexer::mLBRACK(bool _createToken) {
-	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
+	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = LBRACK;
-	int _saveIndex;
+	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
 	
 	try {      // for error handling
-		match('[');
+		match('[' /* charlit */ );
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
-		consume();
-		consumeUntil(_tokenSet_1);
+		recover(ex,_tokenSet_1);
 	}
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -395,17 +393,16 @@ void AntlrNotebookLexer::mLBRACK(bool _createToken) {
 }
 
 void AntlrNotebookLexer::mRCURLY(bool _createToken) {
-	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
+	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = RCURLY;
-	int _saveIndex;
+	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
 	
 	try {      // for error handling
-		match('}');
+		match('}' /* charlit */ );
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
-		consume();
-		consumeUntil(_tokenSet_1);
+		recover(ex,_tokenSet_1);
 	}
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -416,17 +413,16 @@ void AntlrNotebookLexer::mRCURLY(bool _createToken) {
 }
 
 void AntlrNotebookLexer::mLCURLY(bool _createToken) {
-	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
+	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = LCURLY;
-	int _saveIndex;
+	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
 	
 	try {      // for error handling
-		match('{');
+		match('{' /* charlit */ );
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
-		consume();
-		consumeUntil(_tokenSet_1);
+		recover(ex,_tokenSet_1);
 	}
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -437,17 +433,16 @@ void AntlrNotebookLexer::mLCURLY(bool _createToken) {
 }
 
 void AntlrNotebookLexer::mCOMMA(bool _createToken) {
-	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
+	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = COMMA;
-	int _saveIndex;
+	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
 	
 	try {      // for error handling
-		match(',');
+		match(',' /* charlit */ );
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
-		consume();
-		consumeUntil(_tokenSet_1);
+		recover(ex,_tokenSet_1);
 	}
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -458,17 +453,16 @@ void AntlrNotebookLexer::mCOMMA(bool _createToken) {
 }
 
 void AntlrNotebookLexer::mTHICK(bool _createToken) {
-	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
+	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = THICK;
-	int _saveIndex;
+	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
 	
 	try {      // for error handling
-		match('`');
+		match('`' /* charlit */ );
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
-		consume();
-		consumeUntil(_tokenSet_0);
+		recover(ex,_tokenSet_0);
 	}
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -479,17 +473,16 @@ void AntlrNotebookLexer::mTHICK(bool _createToken) {
 }
 
 void AntlrNotebookLexer::mCOMMENTSTART(bool _createToken) {
-	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
+	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = COMMENTSTART;
-	int _saveIndex;
+	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
 	
 	try {      // for error handling
 		match("(*");
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
-		consume();
-		consumeUntil(_tokenSet_2);
+		recover(ex,_tokenSet_2);
 	}
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -500,17 +493,16 @@ void AntlrNotebookLexer::mCOMMENTSTART(bool _createToken) {
 }
 
 void AntlrNotebookLexer::mCOMMENTEND(bool _createToken) {
-	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
+	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = COMMENTEND;
-	int _saveIndex;
+	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
 	
 	try {      // for error handling
 		match("*)");
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
-		consume();
-		consumeUntil(_tokenSet_1);
+		recover(ex,_tokenSet_1);
 	}
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -521,16 +513,16 @@ void AntlrNotebookLexer::mCOMMENTEND(bool _createToken) {
 }
 
 void AntlrNotebookLexer::mNUMBER(bool _createToken) {
-	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
+	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = NUMBER;
-	int _saveIndex;
+	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
 	
 	try {      // for error handling
 		{
 		switch ( LA(1)) {
 		case 0x2d /* '-' */ :
 		{
-			match('-');
+			match('-' /* charlit */ );
 			break;
 		}
 		case 0x2a /* '*' */ :
@@ -571,7 +563,7 @@ void AntlrNotebookLexer::mNUMBER(bool _createToken) {
 		}  // ( ... )+
 		{
 		if ((LA(1) == 0x2e /* '.' */ )) {
-			match('.');
+			match('.' /* charlit */ );
 			{ // ( ... )+
 			int _cnt15=0;
 			for (;;) {
@@ -602,8 +594,7 @@ void AntlrNotebookLexer::mNUMBER(bool _createToken) {
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
-		consume();
-		consumeUntil(_tokenSet_1);
+		recover(ex,_tokenSet_1);
 	}
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -614,9 +605,9 @@ void AntlrNotebookLexer::mNUMBER(bool _createToken) {
 }
 
 void AntlrNotebookLexer::mDIGIT(bool _createToken) {
-	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
+	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = DIGIT;
-	int _saveIndex;
+	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
 	
 	try {      // for error handling
 		switch ( LA(1)) {
@@ -636,17 +627,17 @@ void AntlrNotebookLexer::mDIGIT(bool _createToken) {
 		}
 		case 0x60 /* '`' */ :
 		{
-			match('`');
+			match('`' /* charlit */ );
 			break;
 		}
 		case 0x2a /* '*' */ :
 		{
-			match('*');
+			match('*' /* charlit */ );
 			break;
 		}
 		case 0x5e /* '^' */ :
 		{
-			match('^');
+			match('^' /* charlit */ );
 			break;
 		}
 		default:
@@ -657,8 +648,7 @@ void AntlrNotebookLexer::mDIGIT(bool _createToken) {
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
-		consume();
-		consumeUntil(_tokenSet_4);
+		recover(ex,_tokenSet_4);
 	}
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -669,9 +659,9 @@ void AntlrNotebookLexer::mDIGIT(bool _createToken) {
 }
 
 void AntlrNotebookLexer::mEXP(bool _createToken) {
-	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
+	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = EXP;
-	int _saveIndex;
+	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
 	
 	try {      // for error handling
 		switch ( LA(1)) {
@@ -682,12 +672,12 @@ void AntlrNotebookLexer::mEXP(bool _createToken) {
 			switch ( LA(1)) {
 			case 0x65 /* 'e' */ :
 			{
-				match('e');
+				match('e' /* charlit */ );
 				break;
 			}
 			case 0x45 /* 'E' */ :
 			{
-				match('E');
+				match('E' /* charlit */ );
 				break;
 			}
 			default:
@@ -730,8 +720,7 @@ void AntlrNotebookLexer::mEXP(bool _createToken) {
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
-		consume();
-		consumeUntil(_tokenSet_1);
+		recover(ex,_tokenSet_1);
 	}
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -742,9 +731,9 @@ void AntlrNotebookLexer::mEXP(bool _createToken) {
 }
 
 void AntlrNotebookLexer::mID(bool _createToken) {
-	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
+	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = ID;
-	int _saveIndex;
+	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
 	
 	try {      // for error handling
 		{ // ( ... )+
@@ -823,8 +812,7 @@ void AntlrNotebookLexer::mID(bool _createToken) {
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
-		consume();
-		consumeUntil(_tokenSet_1);
+		recover(ex,_tokenSet_1);
 	}
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -835,12 +823,12 @@ void AntlrNotebookLexer::mID(bool _createToken) {
 }
 
 void AntlrNotebookLexer::mQSTRING(bool _createToken) {
-	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
+	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = QSTRING;
-	int _saveIndex;
+	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
 	
 	try {      // for error handling
-		match('"');
+		match('\"' /* charlit */ );
 		{ // ( ... )*
 		for (;;) {
 			switch ( LA(1)) {
@@ -851,12 +839,12 @@ void AntlrNotebookLexer::mQSTRING(bool _createToken) {
 				switch ( LA(1)) {
 				case 0xd /* '\r' */ :
 				{
-					match('\r');
+					match('\r' /* charlit */ );
 					break;
 				}
 				case 0xa /* '\n' */ :
 				{
-					match('\n');
+					match('\n' /* charlit */ );
 					break;
 				}
 				default:
@@ -999,12 +987,12 @@ void AntlrNotebookLexer::mQSTRING(bool _createToken) {
 				break;
 			}
 			default:
-				if ((LA(1) == 0x5c /* '\\' */ ) && (LA(2) == 0x22 /* '"' */ ) && ((LA(3) >= 0x0 /* '\0' */  && LA(3) <= 0x7f))) {
-					match('\\');
-					match('"');
+				if ((LA(1) == 0x5c /* '\\' */ ) && (LA(2) == 0x22 /* '\"' */ ) && ((LA(3) >= 0x0 /* '\0' */  && LA(3) <= 0x7f))) {
+					match('\\' /* charlit */ );
+					match('\"' /* charlit */ );
 				}
 				else if (((LA(1) == 0x5c /* '\\' */ ) && ((LA(2) >= 0x0 /* '\0' */  && LA(2) <= 0x7f)) && (true))&&(LA(2) != '"')) {
-					match('\\');
+					match('\\' /* charlit */ );
 				}
 			else {
 				goto _loop30;
@@ -1013,12 +1001,11 @@ void AntlrNotebookLexer::mQSTRING(bool _createToken) {
 		}
 		_loop30:;
 		} // ( ... )*
-		match('"');
+		match('\"' /* charlit */ );
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
-		consume();
-		consumeUntil(_tokenSet_1);
+		recover(ex,_tokenSet_1);
 	}
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -1029,21 +1016,21 @@ void AntlrNotebookLexer::mQSTRING(bool _createToken) {
 }
 
 void AntlrNotebookLexer::mWHITESPACE(bool _createToken) {
-	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
+	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = WHITESPACE;
-	int _saveIndex;
+	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
 	
 	try {      // for error handling
 		{
 		switch ( LA(1)) {
 		case 0x20 /* ' ' */ :
 		{
-			match(' ');
+			match(' ' /* charlit */ );
 			break;
 		}
 		case 0x9 /* '\t' */ :
 		{
-			match('\t');
+			match('\t' /* charlit */ );
 			break;
 		}
 		case 0xa /* '\n' */ :
@@ -1054,10 +1041,10 @@ void AntlrNotebookLexer::mWHITESPACE(bool _createToken) {
 				match("\r\n");
 			}
 			else if ((LA(1) == 0xd /* '\r' */ ) && (true)) {
-				match('\r');
+				match('\r' /* charlit */ );
 			}
 			else if ((LA(1) == 0xa /* '\n' */ )) {
-				match('\n');
+				match('\n' /* charlit */ );
 			}
 			else {
 				throw ANTLR_USE_NAMESPACE(antlr)NoViableAltForCharException(LA(1), getFilename(), getLine(), getColumn());
@@ -1077,8 +1064,7 @@ void AntlrNotebookLexer::mWHITESPACE(bool _createToken) {
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
-		consume();
-		consumeUntil(_tokenSet_1);
+		recover(ex,_tokenSet_1);
 	}
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -1089,9 +1075,9 @@ void AntlrNotebookLexer::mWHITESPACE(bool _createToken) {
 }
 
 void AntlrNotebookLexer::mCOMMENT(bool _createToken) {
-	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
+	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; ANTLR_USE_NAMESPACE(std)string::size_type _begin = text.length();
 	_ttype = COMMENT;
-	int _saveIndex;
+	ANTLR_USE_NAMESPACE(std)string::size_type _saveIndex;
 	
 	try {      // for error handling
 		mCOMMENTSTART(false);
@@ -1105,12 +1091,12 @@ void AntlrNotebookLexer::mCOMMENT(bool _createToken) {
 				switch ( LA(1)) {
 				case 0xd /* '\r' */ :
 				{
-					match('\r');
+					match('\r' /* charlit */ );
 					break;
 				}
 				case 0xa /* '\n' */ :
 				{
-					match('\n');
+					match('\n' /* charlit */ );
 					break;
 				}
 				default:
@@ -1154,7 +1140,7 @@ void AntlrNotebookLexer::mCOMMENT(bool _createToken) {
 			case 0x1f /* '\37' */ :
 			case 0x20 /* ' ' */ :
 			case 0x21 /* '!' */ :
-			case 0x22 /* '"' */ :
+			case 0x22 /* '\"' */ :
 			case 0x23 /* '#' */ :
 			case 0x24 /* '$' */ :
 			case 0x25 /* '%' */ :
@@ -1255,7 +1241,7 @@ void AntlrNotebookLexer::mCOMMENT(bool _createToken) {
 			}
 			default:
 				if (((LA(1) == 0x2a /* '*' */ ) && ((LA(2) >= 0x0 /* '\0' */  && LA(2) <= 0x7f)) && ((LA(3) >= 0x0 /* '\0' */  && LA(3) <= 0x7f)))&&(LA(2) != ')')) {
-					match('*');
+					match('*' /* charlit */ );
 				}
 			else {
 				goto _loop38;
@@ -1269,8 +1255,7 @@ void AntlrNotebookLexer::mCOMMENT(bool _createToken) {
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
-		consume();
-		consumeUntil(_tokenSet_1);
+		recover(ex,_tokenSet_1);
 	}
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -1289,9 +1274,9 @@ const ANTLR_USE_NAMESPACE(antlr)BitSet AntlrNotebookLexer::_tokenSet_1(_tokenSet
 const unsigned long AntlrNotebookLexer::_tokenSet_2_data_[] = { 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL };
 // 0x0 0x1 0x2 0x3 0x4 0x5 0x6 0x7 0x8 0x9 0xa 0xb 0xc 0xd 0xe 0xf 0x10 
 // 0x11 0x12 0x13 0x14 0x15 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 
-// 0x1f   ! " # $ % & \' ( ) * + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > 
-// ? @ A B C D E F G H I J K L M N O P Q R S T U V W X Y Z [ \\ ] ^ _ ` 
-// a b c d e f g h i j k l m n o p q r s t u v w x y z { | } ~ 0x7f 
+// 0x1f   ! \" # $ % & \' ( ) * + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > 
+// ? @ A B C D E F G H I J K L M N O P Q R S T U V W X Y Z [ 0x5c ] ^ _ 
+// ` a b c d e f g h i j k l m n o p q r s t u v w x y z { | } ~ 0x7f 
 const ANTLR_USE_NAMESPACE(antlr)BitSet AntlrNotebookLexer::_tokenSet_2(_tokenSet_2_data_,8);
 const unsigned long AntlrNotebookLexer::_tokenSet_3_data_[] = { 0UL, 67044352UL, 1073741824UL, 1UL, 0UL, 0UL, 0UL, 0UL };
 // * 0 1 2 3 4 5 6 7 8 9 ^ ` 
@@ -1309,8 +1294,8 @@ const ANTLR_USE_NAMESPACE(antlr)BitSet AntlrNotebookLexer::_tokenSet_5(_tokenSet
 const unsigned long AntlrNotebookLexer::_tokenSet_6_data_[] = { 4294958079UL, 4294966271UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL };
 // 0x0 0x1 0x2 0x3 0x4 0x5 0x6 0x7 0x8 0x9 0xb 0xc 0xe 0xf 0x10 0x11 0x12 
 // 0x13 0x14 0x15 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e 0x1f   ! 
-// " # $ % & \' ( ) + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @ A B C D 
-// E F G H I J K L M N O P Q R S T U V W X Y Z [ \\ ] ^ _ ` a b c d e f 
-// g h i j k l m n o p q r s t u v w x y z { | } ~ 0x7f 
+// \" # $ % & \' ( ) + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @ A B C 
+// D E F G H I J K L M N O P Q R S T U V W X Y Z [ 0x5c ] ^ _ ` a b c d 
+// e f g h i j k l m n o p q r s t u v w x y z { | } ~ 0x7f 
 const ANTLR_USE_NAMESPACE(antlr)BitSet AntlrNotebookLexer::_tokenSet_6(_tokenSet_6_data_,8);
 

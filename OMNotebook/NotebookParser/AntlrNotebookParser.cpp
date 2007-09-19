@@ -1,4 +1,4 @@
-/* $ANTLR 2.7.4: "parser.g" -> "AntlrNotebookParser.cpp"$ */
+/* $ANTLR 2.7.7 (2006-11-01): "parser.g" -> "AntlrNotebookParser.cpp"$ */
 #include "AntlrNotebookParser.hpp"
 #include <antlr/NoViableAltException.hpp>
 #include <antlr/SemanticException.hpp>
@@ -40,8 +40,7 @@ void AntlrNotebookParser::document() {
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
-		consume();
-		consumeUntil(_tokenSet_0);
+		recover(ex,_tokenSet_0);
 	}
 	returnAST = document_AST;
 }
@@ -252,8 +251,7 @@ void AntlrNotebookParser::expr() {
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
-		consume();
-		consumeUntil(_tokenSet_1);
+		recover(ex,_tokenSet_1);
 	}
 	returnAST = expr_AST;
 }
@@ -1755,8 +1753,7 @@ void AntlrNotebookParser::exprheader() {
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
-		consume();
-		consumeUntil(_tokenSet_1);
+		recover(ex,_tokenSet_1);
 	}
 	returnAST = exprheader_AST;
 }
@@ -1953,8 +1950,7 @@ void AntlrNotebookParser::value() {
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
-		consume();
-		consumeUntil(_tokenSet_1);
+		recover(ex,_tokenSet_1);
 	}
 	returnAST = value_AST;
 }
@@ -2802,8 +2798,7 @@ void AntlrNotebookParser::attribute() {
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
-		consume();
-		consumeUntil(_tokenSet_1);
+		recover(ex,_tokenSet_1);
 	}
 	returnAST = attribute_AST;
 }
@@ -2877,8 +2872,7 @@ void AntlrNotebookParser::rule() {
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
-		consume();
-		consumeUntil(_tokenSet_4);
+		recover(ex,_tokenSet_4);
 	}
 	returnAST = rule_AST;
 }
@@ -2907,8 +2901,7 @@ void AntlrNotebookParser::listbody() {
 	}
 	catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException& ex) {
 		reportError(ex);
-		consume();
-		consumeUntil(_tokenSet_4);
+		recover(ex,_tokenSet_4);
 	}
 	returnAST = listbody_AST;
 }

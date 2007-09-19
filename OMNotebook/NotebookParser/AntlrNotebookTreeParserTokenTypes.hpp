@@ -1,7 +1,7 @@
 #ifndef INC_AntlrNotebookTreeParserTokenTypes_hpp_
 #define INC_AntlrNotebookTreeParserTokenTypes_hpp_
 
-/* $ANTLR 2.7.4: "walker.g" -> "AntlrNotebookTreeParserTokenTypes.hpp"$ */
+/* $ANTLR 2.7.7 (2006-11-01): "walker.g" -> "AntlrNotebookTreeParserTokenTypes.hpp"$ */
 
 #ifndef CUSTOM_API
 # define CUSTOM_API

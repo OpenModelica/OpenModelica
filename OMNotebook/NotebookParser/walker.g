@@ -66,7 +66,7 @@ class AntlrNotebookTreeParser extends TreeParser;
 
 options
 {
-    k=2;
+    k=1;
     importVocab=notebookgrammar;
     buildAST=false;
 }

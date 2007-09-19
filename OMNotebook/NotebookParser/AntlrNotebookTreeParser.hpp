@@ -3,7 +3,7 @@
 
 #include <antlr/config.hpp>
 #include "AntlrNotebookTreeParserTokenTypes.hpp"
-/* $ANTLR 2.7.4: "walker.g" -> "AntlrNotebookTreeParser.hpp"$ */
+/* $ANTLR 2.7.7 (2006-11-01): "walker.g" -> "AntlrNotebookTreeParser.hpp"$ */
 #include <antlr/TreeParser.hpp>
 
 

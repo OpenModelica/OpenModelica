@@ -1,7 +1,7 @@
 #ifndef INC_AntlrNotebookParserTokenTypes_hpp_
 #define INC_AntlrNotebookParserTokenTypes_hpp_
 
-/* $ANTLR 2.7.4: "parser.g" -> "AntlrNotebookParserTokenTypes.hpp"$ */
+/* $ANTLR 2.7.7 (2006-11-01): "parser.g" -> "AntlrNotebookParserTokenTypes.hpp"$ */
 
 #ifndef CUSTOM_API
 # define CUSTOM_API

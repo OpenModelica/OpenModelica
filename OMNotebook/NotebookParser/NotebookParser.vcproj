@@ -19,7 +19,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(QNBHOME)\OMNotebookQT4&quot;;&quot;$(QTHOME)\include&quot;;&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(ANTLRHOME)\lib\cpp&quot;"
+				AdditionalIncludeDirectories="&quot;$(QNBHOME)\OMNotebookQT4&quot;;&quot;$(QTHOME)\include&quot;;&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(OMDEV)\include\&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -60,7 +60,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(QNBHOME)\OMNotebookQT4&quot;;&quot;$(QTHOME)\include&quot;;&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(ANTLRHOME)\lib\cpp&quot;"
+				AdditionalIncludeDirectories="&quot;$(QNBHOME)\OMNotebookQT4&quot;;&quot;$(QTHOME)\include&quot;;&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(OMDEV)\include\&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
@@ -148,7 +148,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Performing custom build for Lexer"
-						CommandLine="java antlr.Tool $(InputName).g
+						CommandLine="java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool $(InputName).g
 "
 						Outputs="AntlrNotebookLexer.hpp;AntlrNotebookLexer.cpp;notebookgrammarTokenTypes.hpp;notebookgrammarTokenTypes.txt"/>
 				</FileConfiguration>
@@ -157,7 +157,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Performing custom build for Lexer"
-						CommandLine="java antlr.Tool $(InputName).g
+						CommandLine="java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool $(InputName).g
 "
 						Outputs="AntlrNotebookLexer.hpp;AntlrNotebookLexer.cpp;notebookgrammarTokenTypes.hpp;notebookgrammarTokenTypes.txt"/>
 				</FileConfiguration>
@@ -169,7 +169,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Performing Custom Build Step for Parser"
-						CommandLine="java antlr.Tool $(InputName).g
+						CommandLine="java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool $(InputName).g
 "
 						AdditionalDependencies="notebookgrammarTokenTypes.txt"
 						Outputs="AntlrNotebookParser.hpp;AntlrNotebookParser.cpp;AntlrNotebookParserTokenTypes.hpp;AntlrNotebookParserTokenTypes.txt"/>
@@ -179,7 +179,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Performing Custom Build Step for Parser"
-						CommandLine="java antlr.Tool $(InputName).g
+						CommandLine="java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool $(InputName).g
 "
 						AdditionalDependencies="notebookgrammarTokenTypes.txt"
 						Outputs="AntlrNotebookParser.hpp;AntlrNotebookParser.cpp;AntlrNotebookParserTokenTypes.hpp;AntlrNotebookParserTokenTypes.txt"/>
@@ -192,7 +192,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Performing Custom Build Step walker"
-						CommandLine="java antlr.Tool $(InputName).g
+						CommandLine="java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool $(InputName).g
 "
 						AdditionalDependencies="AntlrNotebookParserTokenTypes.txt;notebookgrammarTokenTypes.txt"
 						Outputs="AntlrNotebookTreeParser.cpp;AntlrNotebookTreeParser.hpp;AntlrNotebookTreeParserTokenTypes.hpp;AntlrNotebookTreeParserTokenTypes.txt"/>
@@ -202,7 +202,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Performing Custom Build Step walker"
-						CommandLine="java antlr.Tool $(InputName).g
+						CommandLine="java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool $(InputName).g
 "
 						AdditionalDependencies="AntlrNotebookParserTokenTypes.txt;notebookgrammarTokenTypes.txt"
 						Outputs="AntlrNotebookTreeParser.cpp;AntlrNotebookTreeParser.hpp;AntlrNotebookTreeParserTokenTypes.hpp;AntlrNotebookTreeParserTokenTypes.txt"/>

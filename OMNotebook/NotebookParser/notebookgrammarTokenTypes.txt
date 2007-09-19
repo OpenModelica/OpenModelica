@@ -1,4 +1,4 @@
-// $ANTLR 2.7.4: lexer.g -> notebookgrammarTokenTypes.txt$
+// $ANTLR 2.7.7 (2006-11-01): lexer.g -> notebookgrammarTokenTypes.txt$
 notebookgrammar    // output token vocab name
 MODULENAME="FrontEnd"=4
 LIST="List"=5

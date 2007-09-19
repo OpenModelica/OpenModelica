@@ -2,7 +2,7 @@
 #define INC_AntlrNotebookLexer_hpp_
 
 #include <antlr/config.hpp>
-/* $ANTLR 2.7.4: "lexer.g" -> "AntlrNotebookLexer.hpp"$ */
+/* $ANTLR 2.7.7 (2006-11-01): "lexer.g" -> "AntlrNotebookLexer.hpp"$ */
 #include <antlr/CommonToken.hpp>
 #include <antlr/InputBuffer.hpp>
 #include <antlr/BitSet.hpp>

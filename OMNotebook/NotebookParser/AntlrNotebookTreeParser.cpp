@@ -1,4 +1,4 @@
-/* $ANTLR 2.7.4: "walker.g" -> "AntlrNotebookTreeParser.cpp"$ */
+/* $ANTLR 2.7.7 (2006-11-01): "walker.g" -> "AntlrNotebookTreeParser.cpp"$ */
 #include "AntlrNotebookTreeParser.hpp"
 #include <antlr/Token.hpp>
 #include <antlr/AST.hpp>
@@ -13,7 +13,7 @@ AntlrNotebookTreeParser::AntlrNotebookTreeParser()
 void AntlrNotebookTreeParser::document(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 	Cell *ws, Factory *f, int readmode
 ) {
-	ANTLR_USE_NAMESPACE(antlr)RefAST document_AST_in = (_t == ASTNULL) ? ANTLR_USE_NAMESPACE(antlr)nullAST : _t;
+	ANTLR_USE_NAMESPACE(antlr)RefAST document_AST_in = (_t == ANTLR_USE_NAMESPACE(antlr)RefAST(ASTNULL)) ? ANTLR_USE_NAMESPACE(antlr)nullAST : _t;
 	
 	//This is in NotebookTreeParser.cpp
 	factory = f;
@@ -51,7 +51,7 @@ void AntlrNotebookTreeParser::document(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 void AntlrNotebookTreeParser::expr(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 	result_t &result
 ) {
-	ANTLR_USE_NAMESPACE(antlr)RefAST expr_AST_in = (_t == ASTNULL) ? ANTLR_USE_NAMESPACE(antlr)nullAST : _t;
+	ANTLR_USE_NAMESPACE(antlr)RefAST expr_AST_in = (_t == ANTLR_USE_NAMESPACE(antlr)RefAST(ASTNULL)) ? ANTLR_USE_NAMESPACE(antlr)nullAST : _t;
 	
 	string val;
 	string attr;
@@ -273,7 +273,7 @@ void AntlrNotebookTreeParser::expr(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 	result_t &result
 ) {
-	ANTLR_USE_NAMESPACE(antlr)RefAST exprheader_AST_in = (_t == ASTNULL) ? ANTLR_USE_NAMESPACE(antlr)nullAST : _t;
+	ANTLR_USE_NAMESPACE(antlr)RefAST exprheader_AST_in = (_t == ANTLR_USE_NAMESPACE(antlr)RefAST(ASTNULL)) ? ANTLR_USE_NAMESPACE(antlr)nullAST : _t;
 	ANTLR_USE_NAMESPACE(antlr)RefAST style = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST opengroup = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST closegroup = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -2069,7 +2069,7 @@ void AntlrNotebookTreeParser::exprheader(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 
 string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 	string value;
-	ANTLR_USE_NAMESPACE(antlr)RefAST value_AST_in = (_t == ASTNULL) ? ANTLR_USE_NAMESPACE(antlr)nullAST : _t;
+	ANTLR_USE_NAMESPACE(antlr)RefAST value_AST_in = (_t == ANTLR_USE_NAMESPACE(antlr)RefAST(ASTNULL)) ? ANTLR_USE_NAMESPACE(antlr)nullAST : _t;
 	ANTLR_USE_NAMESPACE(antlr)RefAST str = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST num = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST tr = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -2316,7 +2316,7 @@ string  AntlrNotebookTreeParser::value(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 
 string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 	string value;
-	ANTLR_USE_NAMESPACE(antlr)RefAST attribute_AST_in = (_t == ASTNULL) ? ANTLR_USE_NAMESPACE(antlr)nullAST : _t;
+	ANTLR_USE_NAMESPACE(antlr)RefAST attribute_AST_in = (_t == ANTLR_USE_NAMESPACE(antlr)RefAST(ASTNULL)) ? ANTLR_USE_NAMESPACE(antlr)nullAST : _t;
 	ANTLR_USE_NAMESPACE(antlr)RefAST fontslant = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST fontsize = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST fontcolor = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -3352,7 +3352,7 @@ string  AntlrNotebookTreeParser::attribute(ANTLR_USE_NAMESPACE(antlr)RefAST _t) 
 void AntlrNotebookTreeParser::rule(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 	rules_t &rules
 ) {
-	ANTLR_USE_NAMESPACE(antlr)RefAST rule_AST_in = (_t == ASTNULL) ? ANTLR_USE_NAMESPACE(antlr)nullAST : _t;
+	ANTLR_USE_NAMESPACE(antlr)RefAST rule_AST_in = (_t == ANTLR_USE_NAMESPACE(antlr)RefAST(ASTNULL)) ? ANTLR_USE_NAMESPACE(antlr)nullAST : _t;
 	
 	ostringstream attoutput;
 	ostringstream valoutput;
@@ -3436,7 +3436,7 @@ void AntlrNotebookTreeParser::rule(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 void AntlrNotebookTreeParser::listelement(ANTLR_USE_NAMESPACE(antlr)RefAST _t,
 	result_t &list
 ) {
-	ANTLR_USE_NAMESPACE(antlr)RefAST listelement_AST_in = (_t == ASTNULL) ? ANTLR_USE_NAMESPACE(antlr)nullAST : _t;
+	ANTLR_USE_NAMESPACE(antlr)RefAST listelement_AST_in = (_t == ANTLR_USE_NAMESPACE(antlr)RefAST(ASTNULL)) ? ANTLR_USE_NAMESPACE(antlr)nullAST : _t;
 	
 	ostringstream resoutput;
 	result_t result(resoutput);

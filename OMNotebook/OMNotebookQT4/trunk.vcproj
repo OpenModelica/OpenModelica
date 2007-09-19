@@ -28,7 +28,7 @@
 				FavorSizeOrSpeed="1"
 				OptimizeForProcessor="0"
 				OptimizeForWindowsApplication="TRUE"
-				AdditionalIncludeDirectories="&quot;$(QNBHOME)\NotebookParser&quot;;&quot;$(MODELICAHOME)&quot;;&quot;$(MICOHOME)\include&quot;;&quot;$(ANTLRHOME)\lib\cpp&quot;;.;&quot;$(QTHOME)\include&quot;;&quot;$(QTHOME)\include\QtGui&quot;;&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot;;..\..\OMShell"
+				AdditionalIncludeDirectories="&quot;$(QNBHOME)\NotebookParser&quot;;&quot;$(OMDEV)\include\mico-win32-msvc\&quot;;&quot;$(OMDEV)\include\&quot;;.;&quot;$(QTHOME)\include&quot;;&quot;$(QTHOME)\include\QtGui&quot;;&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot;;..\..\OMShell"
 				PreprocessorDefinitions="WIN32;NDEBUG;;QT_NO_DEBUG"
 				GeneratePreprocessedFile="0"
 				MinimalRebuild="FALSE"
@@ -42,18 +42,18 @@
 				ProgramDataBaseFileName=".\"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="0"
+				DebugInformationFormat="3"
 				CallingConvention="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				IgnoreImportLibrary="TRUE"
-				AdditionalDependencies="qtmain.lib QtGui4.lib QtNetwork4.lib QtXml4.lib NotebookParser.lib mico2311.lib antlr.lib QtCore4.lib QtOpenGL4.lib pltpkg2.lib ws2_32.lib imm32.lib winmm.lib"
-				OutputFile="Release\\OMNotebook.exe"
-				LinkIncremental="2"
+				IgnoreImportLibrary="FALSE"
+				AdditionalDependencies="qtmain.lib QtGui4.lib QtNetwork4.lib QtXml4.lib NotebookParser.lib antlr.lib mico2311.lib QtCore4.lib QtOpenGL4.lib pltpkg2.lib ws2_32.lib imm32.lib winmm.lib"
+				OutputFile="Release\OMNotebook.exe"
+				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="..\ANTLR\Release;..\NotebookParser\Release;&quot;$(QTHOME)\lib&quot;;..\Pltpkg2\release;&quot;$(MICOHOME)\win32-bin\lib&quot;"
+				AdditionalLibraryDirectories="$(OMDEV)\lib\antlr-win32-msvc\md-mdd\;..\NotebookParser\Release;&quot;$(QTHOME)\lib&quot;;..\Pltpkg2\release;&quot;$(OMDEV)\lib\mico-win32-msvc&quot;"
 				IgnoreAllDefaultLibraries="FALSE"
 				IgnoreDefaultLibraryNames=""
 				DelayLoadDLLs=""
@@ -98,7 +98,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="-Zm200 -w34100 -w34189"
 				Optimization="1"
-				AdditionalIncludeDirectories="&quot;$(QNBHOME)\NotebookParser&quot;;&quot;$(MODELICAHOME)&quot;;&quot;$(MICOHOME)\include&quot;;&quot;$(ANTLRHOME)\lib\cpp&quot;;.;&quot;$(QTHOME)\include&quot;;&quot;$(QTHOME)\include\QtGui&quot;;&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot;;..\..\OMShell"
+				AdditionalIncludeDirectories="&quot;$(QNBHOME)\NotebookParser&quot;;&quot;$(OMDEV)\include\mico-win32-msvc\&quot;;&quot;$(OMDEV)\include\&quot;;.;&quot;$(QTHOME)\include&quot;;&quot;$(QTHOME)\include\QtGui&quot;;&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot;;..\..\OMShell"
 				PreprocessorDefinitions="WIN32;QT_DEBUG"
 				GeneratePreprocessedFile="0"
 				MinimalRebuild="TRUE"
@@ -118,10 +118,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="TRUE"
-				AdditionalDependencies="qtmaind.lib QtCored4.lib QtGuid4.lib QtNetworkd4.lib QtXmld4.lib antlr.lib NotebookParser.lib mico2311.lib pltpkg2.lib"
+				AdditionalDependencies="qtmaind.lib QtCored4.lib QtGuid4.lib QtNetworkd4.lib QtXmld4.lib antlrd.lib NotebookParser.lib mico2311.lib pltpkg2.lib"
 				OutputFile="Debug\\OMNotebook.exe"
 				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="..\ANTLR\Release;..\NotebookParser\Release;&quot;$(QTHOME)\lib&quot;;..\Pltpkg2\debug;&quot;$(MICOHOME)\win32-bin\lib&quot;"
+				AdditionalLibraryDirectories="$(OMDEV)\lib\antlr-win32-msvc\md-mdd\;..\NotebookParser\Release;&quot;$(QTHOME)\lib&quot;;..\Pltpkg2\release;&quot;$(OMDEV)\lib\mico-win32-msvc&quot;"
 				IgnoreDefaultLibraryNames=""
 				DelayLoadDLLs=""
 				GenerateDebugInformation="TRUE"
@@ -218,6 +218,12 @@
 			</File>
 			<File
 				RelativePath="..\..\OMShell\omc_communication.cc">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\omc_communicator.cpp">
@@ -624,6 +630,9 @@
 						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
 						Outputs="moc_notebooksocket.cpp"/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\OMShell\omc_communication.h">
 			</File>
 			<File
 				RelativePath=".\omc_communicator.hpp">
