@@ -1963,13 +1963,42 @@ algorithm
         s1 = Dump.printComponentRefStr(cr);
         resstr = Util.stringAppendList({"Failed in translating", s1, " to Modelica v2.0 graphicall annotations"});
       then
-        (resstr,SYMBOLTABLE(p,s,ic,iv,cf,lf));        
+        (resstr,SYMBOLTABLE(p,s,ic,iv,cf,lf));
+
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "refactorIconAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf,loadedFiles = lf)))
+      local Absyn.Path path; Absyn.Class cls, refactoredClass;
+      equation 
+  			path = Absyn.crefToPath(cr);
+	  		cls = getPathedClassInProgram(path, p);
+        
+        refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
+        
+        resstr = getIconAnnotationInClass(refactoredClass);
+      then
+        (resstr,SYMBOLTABLE(p,s,ic,iv,cf,lf));
+        
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "refactorDiagramAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      (st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf,loadedFiles = lf)))
+      local Absyn.Path path; Absyn.Class cls, refactoredClass;
+      equation 
+  			path = Absyn.crefToPath(cr);
+	  		cls = getPathedClassInProgram(path, p);
+        
+        refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
+        
+        resstr = getDiagramAnnotationInClass(refactoredClass);
+      then
+        (resstr,SYMBOLTABLE(p,s,ic,iv,cf,lf));
+                        
 
     case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getClassNames"),functionArgs = Absyn.FUNCTIONARGS(args = {})))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation 
         resstr = getTopClassnames(p);
       then
-        (resstr,st);
+        (resstr,st);        
 
     case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getClassNames"),functionArgs = Absyn.FUNCTIONARGS(args = _)))}),(st as SYMBOLTABLE(ast = p,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf))) then ("{}",st); 
 
