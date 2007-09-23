@@ -57,7 +57,8 @@ using the Microsoft Visual Studio .NET 2003
 
 10. You get a Setup.msi into trunk\Compiler\VC7\Setup\Release
 
-11. For Windows Vista release you have to edit the Setup.msi with Orca.exe: 
+11. DO NOT FORGET THIS FOR WINDOWS VISTA!!
+    For Windows Vista release you have to edit the Setup.msi with Orca.exe: 
     http://msdn2.microsoft.com/en-us/library/Aa370557.aspx
     http://download.microsoft.com/download/platformsdk/sdk/update/win98mexp/en-us/3790.0/msisdk-common.3.0.cab
     Go to CustomAction Table and change the action type from 1042 to 3090. 
