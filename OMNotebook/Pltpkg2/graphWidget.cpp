@@ -569,6 +569,7 @@ void GraphWidget::getData()
 	}
 
 	connect(activeSocket, SIGNAL(readyRead()), this, SLOT(getData()));
+	connect(activeSocket, SIGNAL(disconnected()), this, SLOT(getData()));
 }
 
 void GraphWidget::acCon()

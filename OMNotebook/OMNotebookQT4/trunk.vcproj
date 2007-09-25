@@ -121,7 +121,7 @@
 				AdditionalDependencies="qtmaind.lib QtCored4.lib QtGuid4.lib QtNetworkd4.lib QtXmld4.lib antlrd.lib NotebookParser.lib mico2311.lib pltpkg2.lib"
 				OutputFile="Debug\\OMNotebook.exe"
 				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="$(OMDEV)\lib\antlr-win32-msvc\md-mdd\;..\NotebookParser\Release;&quot;$(QTHOME)\lib&quot;;..\Pltpkg2\release;&quot;$(OMDEV)\lib\mico-win32-msvc&quot;"
+				AdditionalLibraryDirectories="&quot;$(OMDEV)\lib\antlr-win32-msvc\md-mdd\&quot;;..\NotebookParser\Debug;&quot;$(QTHOME)\lib&quot;;..\Pltpkg2\Debug;&quot;$(OMDEV)\lib\mico-win32-msvc&quot;"
 				IgnoreDefaultLibraryNames=""
 				DelayLoadDLLs=""
 				GenerateDebugInformation="TRUE"

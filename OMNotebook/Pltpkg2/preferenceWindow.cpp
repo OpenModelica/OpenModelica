@@ -106,6 +106,7 @@ void PreferenceWindow::apply()
 
 	if(vMin->isEnabled())
 	{
+		
 		top = QVariant(vMin->text()).toDouble();
 		bottom = QVariant(vMax->text()).toDouble();
 	}

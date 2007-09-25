@@ -248,9 +248,10 @@ private:
 	QString zoomStr, gridStr, aAStr;
 	QRectF range;
 	double dataStreamVersion;
-	QString currentExpr;
 
 public:
+	QString currentExpr;
+
 	QRectF originalArea;
 
 

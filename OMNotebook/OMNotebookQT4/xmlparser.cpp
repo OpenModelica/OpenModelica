@@ -518,6 +518,7 @@ namespace IAEX
 					text = e.text();
 					GraphCell *gCell = dynamic_cast<GraphCell*>(graphcell);
 					gCell->setText(text);
+					gCell->compoundwidget->gwMain->currentExpr = e.text();
 					//fjass				gCell->setText( text );
 				}
 /*				else if( e.tagName() == XML_OUTPUTPART )
@@ -696,23 +697,23 @@ namespace IAEX
 		gCell->compoundwidget->gwMain->variables.clear();
 
 		gCell->compoundwidget->plotTitle->setText(element.attribute(XML_GRAPHCELL_TITLE, "Plot by OpenModelica"));
-		gCell->compoundwidget->xLabel->setText(element.attribute(XML_GRAPHCELL_XLABEL));
-		gCell->compoundwidget->yLabel->setText(element.attribute(XML_GRAPHCELL_YLABEL));
-		gCell->compoundwidget->gwMain->showGrid((element.attribute(XML_GRAPHCELL_GRID) == XML_TRUE)?true:false);
+		gCell->compoundwidget->xLabel->setText(element.attribute(XML_GRAPHCELL_XLABEL,"" ));
+		gCell->compoundwidget->yLabel->setText(element.attribute(XML_GRAPHCELL_YLABEL, ""));
+		gCell->compoundwidget->gwMain->showGrid((element.attribute(XML_GRAPHCELL_GRID, XML_TRUE) == XML_TRUE)?true:false);
 
-		gCell->compoundwidget->gwMain->fixedXSize = (element.attribute(XML_GRAPHCELL_GRIDAUTOX) == XML_TRUE)?false:true;
-		gCell->compoundwidget->gwMain->fixedYSize = (element.attribute(XML_GRAPHCELL_GRIDAUTOY) == XML_TRUE)?false:true;
+		gCell->compoundwidget->gwMain->fixedXSize = (element.attribute(XML_GRAPHCELL_GRIDAUTOX, XML_TRUE) == XML_TRUE)?false:true;
+		gCell->compoundwidget->gwMain->fixedYSize = (element.attribute(XML_GRAPHCELL_GRIDAUTOY, XML_TRUE) == XML_TRUE)?false:true;
+		
+		gCell->compoundwidget->gwMain->xMajorDist = element.attribute(XML_GRAPHCELL_GRIDMAJORX, "1").toDouble();
+		gCell->compoundwidget->gwMain->xMinorDist = element.attribute(XML_GRAPHCELL_GRIDMINORX, ".1").toDouble();
+		gCell->compoundwidget->gwMain->yMajorDist = element.attribute(XML_GRAPHCELL_GRIDMAJORY, "1").toDouble();
+		gCell->compoundwidget->gwMain->yMinorDist = element.attribute(XML_GRAPHCELL_GRIDMINORY, ".1").toDouble();
 
-		gCell->compoundwidget->gwMain->xMajorDist = element.attribute(XML_GRAPHCELL_GRIDMAJORX).toDouble();
-		gCell->compoundwidget->gwMain->xMinorDist = element.attribute(XML_GRAPHCELL_GRIDMINORX).toDouble();
-		gCell->compoundwidget->gwMain->yMajorDist = element.attribute(XML_GRAPHCELL_GRIDMAJORY).toDouble();
-		gCell->compoundwidget->gwMain->yMinorDist = element.attribute(XML_GRAPHCELL_GRIDMINORY).toDouble();
+		gCell->compoundwidget->gwMain->xLog = (element.attribute(XML_GRAPHCELL_LOGX, XML_FALSE) == XML_TRUE)?true:false;
+		gCell->compoundwidget->gwMain->yLog = (element.attribute(XML_GRAPHCELL_LOGY, XML_FALSE) == XML_TRUE)?true:false;
+		gCell->compoundwidget->legendFrame->setVisible((element.attribute(XML_GRAPHCELL_LEGEND, XML_TRUE) == XML_TRUE)?true:false);
 
-		gCell->compoundwidget->gwMain->xLog = (element.attribute(XML_GRAPHCELL_LOGX) == XML_TRUE)?true:false;
-		gCell->compoundwidget->gwMain->yLog = (element.attribute(XML_GRAPHCELL_LOGY) == XML_TRUE)?true:false;
-		gCell->compoundwidget->legendFrame->setVisible((element.attribute(XML_GRAPHCELL_LEGEND) == XML_TRUE)?true:false);
-
-		if(element.attribute(XML_GRAPHCELL_AA) == XML_TRUE)
+		if(element.attribute(XML_GRAPHCELL_AA, XML_FALSE) == XML_TRUE)
 		{
 			gCell->compoundwidget->gwMain->setRenderHint(QPainter::Antialiasing);
 			gCell->compoundwidget->gwMain->antiAliasing = true;
