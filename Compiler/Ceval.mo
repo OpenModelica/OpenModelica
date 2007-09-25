@@ -1921,12 +1921,17 @@ algorithm
         compiledFunctions = cf)),msg)
       equation 
         (cache,executable,method_str,st,_) = buildModel(cache,env, exp, st_1, msg) "Build and simulate model" ;
+//        print("simulate1\n");
+//        _ = System.addToEnv("PATH", System.readEnv("OPENMODELICAHOME") +& "/lib");
+        print(System.readEnv("PATH"));
+        print("\n\n");
+
         cit = winCitation();
         pd = System.pathDelimiter();
         executableSuffixedExe = stringAppend(executable, ".exe");
         sim_call = Util.stringAppendList(
           {cit,executableSuffixedExe,cit," > output.log 2>&1"});
-        //print(sim_call);
+ //       print(sim_call);
         0 = System.systemCall(sim_call);
         result_file = Util.stringAppendList({executable,"_res.plt"});
         simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),
@@ -2187,7 +2192,7 @@ algorithm
         expLst = {
         Exp.CODE(Absyn.C_TYPENAME(className),_),
         Exp.ARRAY(array = vars),
-  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points)
+  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points), xRange, yRange
         }),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -2195,6 +2200,7 @@ algorithm
         loadedFiles = lf)),msg)
       local
         Integer res;
+        Exp.Exp xRange, yRange;
         list<Exp.Exp> vars;
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
@@ -2208,7 +2214,7 @@ algorithm
          
         value = System.readPtolemyplotDataset(filename, vars_2, 0);
 
-        res = Values.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points);
+        res = Values.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
 
       then
         (cache,Values.BOOL(true),st);
@@ -2219,7 +2225,7 @@ algorithm
         expLst = {
         Exp.CODE(Absyn.C_TYPENAME(className),_),
         Exp.ARRAY(array = vars),
-  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points)
+  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points), xRange, yRange
         }),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -2228,6 +2234,7 @@ algorithm
 
       local
         Integer res;
+        Exp.Exp xRange, yRange;
         list<Exp.Exp> vars;
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
@@ -2248,7 +2255,7 @@ algorithm
       Exp.CALL(
         path = Absyn.IDENT(name = "plot2"),
         expLst = {Exp.ARRAY(array = vars), 
-  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points)
+  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points), xRange, yRange
         }),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -2256,6 +2263,7 @@ algorithm
         loadedFiles = lf)),msg)
       local
         Integer res;
+        Exp.Exp xRange, yRange;
         list<Exp.Exp> vars;
 				String interpolation, title, xLabel, yLabel;
 				Boolean legend, logX, logY, points;
@@ -2267,7 +2275,7 @@ algorithm
         (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env, 
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg);
         value = System.readPtolemyplotDataset(filename, vars_2, 0);
-        res = Values.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points);
+        res = Values.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
 
       then
         (cache,Values.BOOL(true),st);
@@ -2276,7 +2284,7 @@ algorithm
       Exp.CALL(
         path = Absyn.IDENT(name = "plot2"),
         expLst = {Exp.ARRAY(array = vars),
-  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points)
+  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points), xRange, yRange
         }),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -2284,6 +2292,7 @@ algorithm
         loadedFiles = lf)),msg)
       local
         Integer res;
+        Exp.Exp xRange, yRange;
         list<Exp.Exp> vars;
 				String interpolation, title, xLabel, yLabel;
 				Boolean legend, logX, logY, points;
@@ -2303,7 +2312,7 @@ algorithm
       Exp.CALL(
         path = Absyn.IDENT(name = "plot2"),
         expLst = {Exp.ARRAY(array = vars), 
-  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points)
+  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points), xRange, yRange
         }),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -2311,6 +2320,7 @@ algorithm
         loadedFiles = lf)),msg)
       local
         Integer res;
+        Exp.Exp xRange, yRange;
         list<Exp.Exp> vars;
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
@@ -2328,7 +2338,7 @@ algorithm
       Exp.CALL(
         path = Absyn.IDENT(name = "plot2"),
         expLst = {Exp.ARRAY(array = vars),
-  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points)
+  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points), xRange, yRange
         }),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -2336,6 +2346,7 @@ algorithm
         loadedFiles = lf)),msg)
       local
         Integer res;
+        Exp.Exp xRange, yRange;
         list<Exp.Exp> vars;
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
@@ -2493,7 +2504,7 @@ algorithm
       Exp.CALL(path = Absyn.IDENT(name = "plotParametric2"),
       expLst = {   Exp.CODE(Absyn.C_TYPENAME(className),_),
         Exp.ARRAY(array = vars), 
-  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points)
+  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points), xRange, yRange
         }),
 
       (st as Interactive.SYMBOLTABLE(
@@ -2502,6 +2513,7 @@ algorithm
         loadedFiles = lf)),msg)  
       local
         Integer res;
+        Exp.Exp xRange, yRange;
         list<Exp.Exp> vars;
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
@@ -2521,7 +2533,7 @@ algorithm
         pd = System.pathDelimiter();
         plotCmd = Util.stringAppendList({cit,omhome_1,pd,"bin",pd,"doPlot",cit});
         tmpPlotFile = Util.stringAppendList({pwd,pd,"tmpPlot.plt"});
-         res = Values.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points);
+         res = Values.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
       then
         (cache,Values.BOOL(true),st);
         
@@ -2529,7 +2541,7 @@ algorithm
    case (cache,env,
       Exp.CALL(path = Absyn.IDENT(name = "plotParametric2"),
       expLst = {Exp.ARRAY(array = vars), 
-  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points)
+  			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points), xRange, yRange
       
       }),
       (st as Interactive.SYMBOLTABLE(
@@ -2538,6 +2550,7 @@ algorithm
         loadedFiles = lf)),msg)  
       local
         Integer res;
+        Exp.Exp xRange, yRange;
         list<Exp.Exp> vars;
         String interpolation, title, xLabel, yLabel;
         Boolean legend, grid, logX, logY, points;
@@ -2550,7 +2563,7 @@ algorithm
         (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env, 
           Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg);
          value = System.readPtolemyplotDataset(filename, vars_1, 0);
-         res = Values.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points);
+         res = Values.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
   
       then
         (cache,Values.BOOL(true),st);
@@ -3042,7 +3055,7 @@ algorithm
       Exp.Exp fileprefix;
       Env.Cache cache;
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,fileprefix) /* mo file directory */ 
-      equation 
+      equation
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
         p_1 = SCode.elaborate(p);
         (cache,dae_1,env) = Inst.instantiateClass(cache,p_1, className);
@@ -3359,6 +3372,7 @@ algorithm
         makefilename = generateMakefilename(filenameprefix);
         compileModel(filenameprefix, libs, file_dir);
         _ = System.cd(oldDir);
+ 
         // s_call = Util.stringAppendList({"make -f ",cname_str, ".makefile\n"});
       then
         (cache,filenameprefix,method_str,st,init_filename);
@@ -3441,6 +3455,7 @@ algorithm
       // If compileCommand not set, use $OPENMODELICAHOME\bin\Compile
     case (fileprefix,libs,file_dir) 
       equation 
+        print("compileModel");        
         "" = Settings.getCompileCommand();
         pd = System.pathDelimiter();
         omhome = Settings.getInstallationDirectoryPath();

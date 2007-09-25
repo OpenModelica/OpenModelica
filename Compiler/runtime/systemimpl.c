@@ -179,8 +179,8 @@ void System_5finit(void)
 	path = getenv("PATH");
 	omhome = getenv("OPENMODELICAHOME");
 	if (omhome) {
-		mingwpath = malloc(strlen(omhome)+20);
-		sprintf(mingwpath,"%s\\mingw\\bin", omhome); 
+		mingwpath = malloc(2*strlen(omhome)+25);
+		sprintf(mingwpath,"%s\\mingw\\bin;%s\\lib", omhome, omhome); 
 		if (strncmp(mingwpath,path,strlen(mingwpath))!=0) {
 			newPath = malloc(strlen(path)+strlen(mingwpath)+10);
 			sprintf(newPath,"PATH=%s;%s",mingwpath,path);
@@ -651,6 +651,8 @@ RML_BEGIN_LABEL(System__setEnv)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+
 
 RML_BEGIN_LABEL(System__subDirectories)
 {
@@ -1247,14 +1249,15 @@ RML_BEGIN_LABEL(System__sendData)
  char* xLabel = RML_STRINGDATA(rmlA7);
  char* yLabel = RML_STRINGDATA(rmlA8);
  int points = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA9));
- 
+  char* range = RML_STRINGDATA(rmlA10);
+ //char* yRange = RML_STRINGDATA(rmlA11);
 //  emulateStreamData(data, 7778);
 
 //  emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, "linear", 1);
 ///  emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, interpolation, 1);
 
 //  emulateStreamData(data, 7778, title, "time", "", legend, grid, 0, 0, 0, 0, logX, logY, interpolation, 1);
-  emulateStreamData(data, 7778, title, xLabel, yLabel , interpolation, legend, grid, 0, 0, 0, 0, logX, logY, points);
+  emulateStreamData(data, 7778, title, xLabel, yLabel , interpolation, legend, grid, 0, 0, 0, 0, logX, logY, points, range);
   
 //	emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, "linear");
        
@@ -1966,6 +1969,7 @@ RML_BEGIN_LABEL(System__setEnv)
 }
 RML_END_LABEL
 
+
 char *select_from_dir;
 
 int file_select_directories(const struct dirent *entry)
@@ -2585,14 +2589,15 @@ RML_BEGIN_LABEL(System__sendData)
  char* xLabel = RML_STRINGDATA(rmlA7);
  char* yLabel = RML_STRINGDATA(rmlA8);
  int points = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA9));
- 
+ char* range = RML_STRINGDATA(rmlA10);
+// char* yRange = RML_STRINGDATA(rmlA11);
 //  emulateStreamData(data, 7778);
 
 //  emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, "linear", 1);
 ///  emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, interpolation, 1);
 
 //  emulateStreamData(data, 7778, title, "time", "", legend, grid, 0, 0, 0, 0, logX, logY, interpolation, 1);
-  emulateStreamData(data, 7778, title, xLabel, yLabel , interpolation, legend, grid, 0, 0, 0, 0, logX, logY, points);
+  emulateStreamData(data, 7778, title, xLabel, yLabel , interpolation, legend, grid, 0, 0, 0, 0, logX, logY, points, range);
   
 //	emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, "linear");
        

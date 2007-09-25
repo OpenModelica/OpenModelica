@@ -160,7 +160,7 @@ public function sendData
   input String xLabel;
   input String yLabel;
   input Boolean points;
-
+  input String range;
   external "C" ;
 end sendData;
 
@@ -227,6 +227,8 @@ public function readEnv "Reads the environment variable given as string, fails i
 
   external "C" ;
 end readEnv;
+
+
 
 public function setEnv
   input String inString1;

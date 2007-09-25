@@ -49,11 +49,12 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #define SENDDATA_H
 
 //Qt headers
-#include <QApplication>
+//#include <QApplication>
 #include <QtNetwork/QTcpSocket>
+//#include <QThread>
 
 //Std headers
-#include <iostream>
+//#include <iostream>
 
 #ifdef __cplusplus
 using namespace std;
@@ -61,9 +62,9 @@ extern "C"
 {
 #endif
 
-	void emulateStreamData(const char* data, int port=7778, const char* title="Plot by OpenModelica", const char* xLabel = "time", const char* yLabel = "", const char* interpolation="linear", int legend = 1, int grid = 1, double xMin=0, double xMax=0, double yMin=0, double yMax=0, int logX=0, int logY=0, int drawPoints = 1);
+	void emulateStreamData(const char* data, int port=7778, const char* title="Plot by OpenModelica", const char* xLabel = "time", const char* yLabel = "", const char* interpolation="linear", int legend = 1, int grid = 1, double xMin=0, double xMax=0, double yMin=0, double yMax=0, int logX=0, int logY=0, int drawPoints = 1, const char* range = "0.0,0.0 0.0,0.0");
 
-	bool plt(const char* var, const char* mdl, const char* title, const char* xLabel, const char* yLabel, bool legend, bool grid, double xmin, double xmax, double ymin, double ymax, bool logX, bool logY, const char* interpolation, bool drawPoints);
+	bool plt(const char* var, const char* mdl, const char* title, const char* xLabel, const char* yLabel, bool legend, bool grid, double xmin, double xmax, double ymin, double ymax, bool logX, bool logY, const char* interpolation, bool drawPoints, const char* range);
 	bool pltParametric(const char*, const char*, const char*);
 	bool clear();
 	bool ellipse(double x0, double y0, double x1, double y1, const char* color, int colorR, int colorG, int colorB, const char* fillColor, int fillColorR, int fillColorG, int fillColorB);
@@ -71,6 +72,7 @@ extern "C"
 	bool line(double x0, double y0, double x1, double y1, const char* color, int colorR, int colorG, int colorB, const char* fillColor, int fillColorR, int fillColorG, int fillColorB);
 
 	bool hold(int = 1);
+	bool wait(unsigned long msecs);
 
 	QColor stringToColor(QString str_);
 	QColor getColor(const char* color, int colorR, int colorG, int colorB);

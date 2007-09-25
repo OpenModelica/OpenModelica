@@ -153,6 +153,7 @@ public function generateMakefile "function: generateMakefile
           omhome,"/lib/\""," -I. -I\"",omhome,"/include/\" "," -lsim -lc_runtime -lf2c ",
           libs_1," ${MODELICAUSERLFLAGS}\n"}) "\".exe\" is needed for a class that is in a package." ;
         System.writeFile(filename, str);
+
       then
         ();
     case (filename,cname,libs,file_dir)
@@ -167,6 +168,7 @@ public function generateMakefile "function: generateMakefile
           omhome,"/lib/\""," -L\"",file_dir,"\""," -I. -I\"",omhome,"/include/\" ",
           " -I\"",file_dir,"\""," -lsim -lc_runtime -lf2c ",libs_1," ${MODELICAUSERLFLAGS}\n"}) "\".exe\" is needed for a class that is in a package." ;
         System.writeFile(filename, str);
+
       then
         ();
   end matchcontinue;

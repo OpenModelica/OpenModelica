@@ -46,7 +46,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 */
 
 //Qt headeers
-#include <QCoreApplication>
+//#include <QCoreApplication>
 #include <QtNetwork/QTcpSocket>
 #include <QByteArray>
 #include <QDataStream>
@@ -54,20 +54,21 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QTextStream>
 #include <QFile>
 #include <QBuffer>
-#include <QtNetwork/QTcpServer>
-#include <QMessageBox>
+//#include <QtNetwork/QTcpServer>
+//#include <QMessageBox>
 #include <QVariant>
 #include <QColor>
 #include <QVector>
 #include <QDir>
-#include <string>
-#include <QTime>
+//#include <string>
+//#include <QTime>
 #include <QProcess>
-
+#include <QThread>
+#include <QtNetwork/QHostAddress>
 //Std headers
-#include <iostream>
+//#include <iostream>
 #include <vector>
-#include <fstream>
+//#include <fstream>
 
 //IAEX headers
 #include "sendData.h"
@@ -191,7 +192,7 @@ bool ellipse(double x0, double y0, double x1, double y1, const char* color, int 
 		out.setVersion(QDataStream::Qt_4_2);
 
 		out << (quint32)0;
-		out << QString("drawEllipse");
+		out << QString("drawEllipse-1.1");
 		out << x0 << y0 << x1 << y1;
 
 		out << getColor(color, colorR, colorG, colorB) << getColor(fillColor, fillColorR, fillColorG, fillColorB);
@@ -220,7 +221,7 @@ bool rect(double x0, double y0, double x1, double y1, const char* color, int col
 		out.setVersion(QDataStream::Qt_4_2);
 
 		out << (quint32)0;
-		out << QString("drawRect");
+		out << QString("drawRect-1.1");
 		out << x0 << y0 << x1 << y1;
 
 		out << getColor(color, colorR, colorG, colorB) << getColor(fillColor, fillColorR, fillColorG, fillColorB);
@@ -230,7 +231,7 @@ bool rect(double x0, double y0, double x1, double y1, const char* color, int col
 		socket->write(block);
 		socket->flush();
 
-		socket->disconnectFromHost();
+//		socket->disconnectFromHost();
 		if(socket->state() == QAbstractSocket::ConnectedState)
 			socket->waitForDisconnected(-1);
 		delete socket;
@@ -249,7 +250,7 @@ bool line(double x0, double y0, double x1, double y1, const char* color, int col
 		out.setVersion(QDataStream::Qt_4_2);
 
 		out << (quint32)0;
-		out << QString("drawLine");
+		out << QString("drawLine-1.1");
 		out << x0 << y0 << x1 << y1;
 
 		out << getColor(color, colorR, colorG, colorB) << getColor(fillColor, fillColorR, fillColorG, fillColorB);
@@ -279,7 +280,7 @@ bool hold(int status)
 		out.setVersion(QDataStream::Qt_4_2);
 
 		out << (quint32)0;
-		out << QString("hold");
+		out << QString("hold-1.1");
 		out << status;
 
 		out.device()->seek(0);
@@ -295,7 +296,22 @@ bool hold(int status)
 	return true;
 }
 
-void emulateStreamData(const char* data, int port, const char* title, const char* xLabel, const char* yLabel, const char* interpolation5, int legend, int grid, double xMin, double xMax, double yMin, double yMax, int logX, int logY, int drawPoints)
+bool wait(unsigned long msecs)
+{
+	class thread: public QThread
+	{
+	public:
+		static void msleep ( unsigned long msecs )
+		{
+			QThread::msleep(msecs);
+		}
+	};
+
+	thread::msleep(msecs);
+	return true;
+}
+
+void emulateStreamData(const char* data, int port, const char* title, const char* xLabel, const char* yLabel, const char* interpolation5, int legend, int grid, double xMin, double xMax, double yMin, double yMax, int logX, int logY, int drawPoints, const char* range)
 {
 	Connection c;
 	QTcpSocket* socket = c.newConnection();
@@ -351,12 +367,16 @@ void emulateStreamData(const char* data, int port, const char* title, const char
 	out.setVersion(QDataStream::Qt_4_2);
 
 	out << (quint32)0;
-	out << QString("ptolemyDataStream");
+	out << QString("ptolemyDataStream-1.1");
 	out.device()->seek(0);
 	out << (quint32)(block.size() - sizeof(quint32));
 
 	socket->write(block);
 	socket->flush();
+
+//ofstream of2("ut225.txt");
+//	of2 << title << endl << xLabel << endl << range << endl;
+//	of2.close();
 
 	block.clear();
 
@@ -374,6 +394,7 @@ void emulateStreamData(const char* data, int port, const char* title, const char
 	out << (int)logY;
 	out << QString(interpolation5);
 	out << (int)drawPoints;
+	out << QString(range);
 
 
 	out << (quint32)variableNames.size();
@@ -393,6 +414,8 @@ void emulateStreamData(const char* data, int port, const char* title, const char
 
 	block.clear();
 
+//ofstream of("ut2.txt");
+
 	for(quint32 i = 0; i < variableValues[0]->size(); ++i)
 	{
 		out.device()->seek(0);
@@ -403,14 +426,22 @@ void emulateStreamData(const char* data, int port, const char* title, const char
 		{
 			out << variableNames[j];
 			out << (*variableValues[j])[i];
+
+//			of << variableNames[j].toStdString() << endl;
+//			of << (*variableValues[j])[i] << endl;
+			
 		}
 		out.device()->seek(0);
 		out << (quint32)(block.size() - sizeof(quint32));
 
 		socket->write(block);
 		block.clear();
-	}
 
+if(!(i%100))
+	socket->flush();
+	
+	}
+//of.close();
 	socket->flush();
 
 	for(quint32 i = 0; i < variableValues.size(); ++i)
@@ -423,7 +454,7 @@ void emulateStreamData(const char* data, int port, const char* title, const char
 		delete socket;
 }
 
-bool plt(const char* var, const char* model, const char* title, const char* xLabel, const char* yLabel, bool legend, bool grid, double xmin, double xmax, double ymin, double ymax, bool logX, bool logY, const char* interpolation, bool drawPoints)
+bool plt(const char* var, const char* model, const char* title, const char* xLabel, const char* yLabel, bool legend, bool grid, double xmin, double xmax, double ymin, double ymax, bool logX, bool logY, const char* interpolation, bool drawPoints, const char* range)
 {
 	QDir dir(QString(getenv("OPENMODELICAHOME")));
 	dir.cd("bin");
@@ -493,6 +524,6 @@ bool plt(const char* var, const char* model, const char* title, const char* xLab
 
 	file.close();
 
-	emulateStreamData(res.toStdString().c_str(), 7778, title, xLabel, yLabel, interpolation, (int)legend, (int)grid, xmin, xmax, ymin, ymax, (int)logX, (int)logY, (int)drawPoints);
+	emulateStreamData(res.toStdString().c_str(), 7778, title, xLabel, yLabel, interpolation, (int)legend, (int)grid, xmin, xmax, ymin, ymax, (int)logX, (int)logY, (int)drawPoints, range);
 	return true;
 }

@@ -5219,7 +5219,7 @@ algorithm
 //plot2(model, x)
   case (cache,env,Absyn.CREF_IDENT(name = "plot2"),{Absyn.CREF(componentReg = cr), cr2 as Absyn.CREF(componentReg = _)},args,impl,SOME(st)) /* Fill in rest of defaults here */ 
     local Absyn.Path className; Exp.Exp storeInTemp; Absyn.Exp cr2;
-      		Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points;
+      		Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
         
       equation 
         vars_1 = elabVariablenames({cr2});
@@ -5242,15 +5242,21 @@ algorithm
           args, Exp.SCONST(""));
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
           args, Exp.BCONST(true));
-
+          
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
+          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
+          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));          
+    
+          
       then
-        (cache,Exp.CALL(Absyn.IDENT("plot2"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()), Exp.ARRAY(Exp.OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points},
+        (cache,Exp.CALL(Absyn.IDENT("plot2"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()), Exp.ARRAY(Exp.OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
           false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
 
 //plot2(model, {x,y})
   case (cache,env,Absyn.CREF_IDENT(name = "plot2"),{Absyn.CREF(componentReg = cr), Absyn.ARRAY(arrayExp = vars)},args,impl,SOME(st)) /* Fill in rest of defaults here */ 
     local Absyn.Path className; Exp.Exp storeInTemp; Absyn.Exp cr2;
-        Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points;
+        Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
 
       equation 
         vars_1 = elabVariablenames(vars);
@@ -5275,9 +5281,14 @@ algorithm
           args, Exp.SCONST(""));
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
           args, Exp.BCONST(true));
+
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
+          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
+          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));          
       
       then
-        (cache,Exp.CALL(Absyn.IDENT("plot2"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()), Exp.ARRAY(Exp.OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points},
+        (cache,Exp.CALL(Absyn.IDENT("plot2"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()), Exp.ARRAY(Exp.OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
           false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
 
 
@@ -5285,7 +5296,7 @@ algorithm
 //plot2(x)
     case (cache,env,Absyn.CREF_IDENT(name = "plot2"),{(cr as Absyn.CREF(componentReg = _))},args,impl,SOME(st))
       local Absyn.Exp cr;
-        Exp.Exp grid, legend, title, interpolation, logX, logY, xLabel, yLabel, points;
+        Exp.Exp grid, legend, title, interpolation, logX, logY, xLabel, yLabel, points, xRange, yRange;
       equation 
         vars_1 = elabVariablenames({cr});
 
@@ -5308,14 +5319,19 @@ algorithm
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
           args, Exp.BCONST(true));
           
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
+          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
+          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));          
+          
       then
-        (cache,Exp.CALL(Absyn.IDENT("plot2"),{Exp.ARRAY(Exp.OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points},
+        (cache,Exp.CALL(Absyn.IDENT("plot2"),{Exp.ARRAY(Exp.OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
           false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
 
 //plot2({x,y})
     case (cache,env,Absyn.CREF_IDENT(name = "plot2"),{Absyn.ARRAY(arrayExp = vars)},args,impl,SOME(st))
 						local
-						  Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points;
+						  Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
             equation 
         vars_1 = elabVariablenames(vars);
         (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", (Types.T_STRING({}),NONE), 
@@ -5336,10 +5352,15 @@ algorithm
           args, Exp.SCONST(""));
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
           args, Exp.BCONST(true));
+          
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
+          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
+          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
 
 
       then
-        (cache,Exp.CALL(Absyn.IDENT("plot2"),{Exp.ARRAY(Exp.OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points},
+        (cache,Exp.CALL(Absyn.IDENT("plot2"),{Exp.ARRAY(Exp.OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
           false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
 
 
@@ -5380,7 +5401,7 @@ algorithm
    argument as you are plotting at least one variable as a function of another.
    Thus, plotParametric has to take an array as an argument, or two componentRefs. */ 
    local Absyn.Path className; list<Exp.Exp> vars_3; Absyn.Exp cr2, cr3;
-     		 Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points;
+     		 Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
          list<Exp.Exp> vars_2;
       equation
         vars_1 = elabVariablenames({cr2}); 
@@ -5408,9 +5429,14 @@ algorithm
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
           args, Exp.BCONST(true));
           
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
+          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
+          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));          
+          
       then
         
-        (cache,Exp.CALL(Absyn.IDENT("plotParametric2"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()), Exp.ARRAY(Exp.OTHER(),false,vars_3), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points}
+        (cache,Exp.CALL(Absyn.IDENT("plotParametric2"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()), Exp.ARRAY(Exp.OTHER(),false,vars_3), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange}
         ,false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
 
 //plotParametric2(x,y)
@@ -5418,7 +5444,7 @@ algorithm
    argument as you are plotting at least one variable as a function of another.
    Thus, plotParametric has to take an array as an argument, or two componentRefs. */ 
    local Absyn.Path className; list<Exp.Exp> vars_3; Absyn.Exp cr2, cr3;
-     Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points;
+     Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
      list<Exp.Exp> vars_2;
       equation
 
@@ -5445,10 +5471,15 @@ algorithm
           args, Exp.SCONST(""));               
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
           args, Exp.BCONST(true));
+        
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
+          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
+          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
           
       then
         
-        (cache,Exp.CALL(Absyn.IDENT("plotParametric2"),{Exp.ARRAY(Exp.OTHER(),false,vars_3), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points}
+        (cache,Exp.CALL(Absyn.IDENT("plotParametric2"),{Exp.ARRAY(Exp.OTHER(),false,vars_3), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange}
         ,false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
 
 	//plotParametric2(x,y)
@@ -5456,7 +5487,7 @@ algorithm
    argument as you are plotting at least one variable as a function of another.
    Thus, plotParametric has to take an array as an argument, or two componentRefs. */ 
 			local
-			  Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points;
+			  Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
       equation 
 
         vars_1 = elabVariablenames(vars);
@@ -5478,6 +5509,11 @@ algorithm
           args, Exp.SCONST(""));
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
           args, Exp.BCONST(true));
+          
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
+          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
+          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
      
       then
         (cache,Exp.CALL(Absyn.IDENT("plotParametric2"),
@@ -5697,6 +5733,8 @@ algorithm
   end matchcontinue;
 end elabVariablenames;
 
+
+ 
 protected function getOptionalNamedArg "function: getOptionalNamedArg
    This function is used to \"elaborate\" interactive functions optional parameters, 
   e.g. simulate(A.b, startTime=1), startTime is an optional parameter 
