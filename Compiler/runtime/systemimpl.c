@@ -2588,7 +2588,7 @@ RML_BEGIN_LABEL(System__sendData)
  int logY = RML_UNTAGFIXNUM(rmlA6); //RML_STRINGDATA(rmlA6);	 
  char* xLabel = RML_STRINGDATA(rmlA7);
  char* yLabel = RML_STRINGDATA(rmlA8);
- int points = (RML_UNTAGFIXNUM(rmlA9);
+ int points = RML_UNTAGFIXNUM(rmlA9);
  char* range = RML_STRINGDATA(rmlA10);
 // char* yRange = RML_STRINGDATA(rmlA11);
 //  emulateStreamData(data, 7778);
