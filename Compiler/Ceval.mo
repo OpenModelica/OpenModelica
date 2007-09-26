@@ -1921,17 +1921,12 @@ algorithm
         compiledFunctions = cf)),msg)
       equation 
         (cache,executable,method_str,st,_) = buildModel(cache,env, exp, st_1, msg) "Build and simulate model" ;
-//        print("simulate1\n");
-//        _ = System.addToEnv("PATH", System.readEnv("OPENMODELICAHOME") +& "/lib");
-        print(System.readEnv("PATH"));
-        print("\n\n");
 
         cit = winCitation();
         pd = System.pathDelimiter();
         executableSuffixedExe = stringAppend(executable, ".exe");
         sim_call = Util.stringAppendList(
           {cit,executableSuffixedExe,cit," > output.log 2>&1"});
- //       print(sim_call);
         0 = System.systemCall(sim_call);
         result_file = Util.stringAppendList({executable,"_res.plt"});
         simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),
@@ -3455,7 +3450,6 @@ algorithm
       // If compileCommand not set, use $OPENMODELICAHOME\bin\Compile
     case (fileprefix,libs,file_dir) 
       equation 
-        print("compileModel");        
         "" = Settings.getCompileCommand();
         pd = System.pathDelimiter();
         omhome = Settings.getInstallationDirectoryPath();
@@ -3466,7 +3460,6 @@ algorithm
         System.writeFile(libsfilename, libs_str);
         s_call = Util.stringAppendList({"set OPENMODELICAHOME=",omhome_1,"&& \"",
           omhome_1,pd,"bin",pd,"Compile","\""," ",fileprefix});
-        //print(s_call);
         0 = System.systemCall(s_call)  ;
       then
         ();
