@@ -87,7 +87,7 @@ bool hold(int status)
 	return true;
 }
 
-bool wait(unsigned long msecs)
+bool pltWait(unsigned long msecs)
 {
 
 	errmsg();

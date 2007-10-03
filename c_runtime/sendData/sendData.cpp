@@ -231,7 +231,7 @@ bool rect(double x0, double y0, double x1, double y1, const char* color, int col
 		socket->write(block);
 		socket->flush();
 
-//		socket->disconnectFromHost();
+		socket->disconnectFromHost();
 		if(socket->state() == QAbstractSocket::ConnectedState)
 			socket->waitForDisconnected(-1);
 		delete socket;
@@ -296,7 +296,7 @@ bool hold(int status)
 	return true;
 }
 
-bool wait(unsigned long msecs)
+bool pltWait(unsigned long msecs)
 {
 	class thread: public QThread
 	{

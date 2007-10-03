@@ -66,7 +66,7 @@ void errmsg();
 	bool line(double x0, double y0, double x1, double y1, const char* color, int colorR, int colorG, int colorB, const char* fillColor, int fillColorR, int fillColorG, int fillColorB);
 
 	bool hold(int = 1);
-	bool wait(unsigned long msecs);
+	bool pltWait(unsigned long msecs);
 
 
 
