@@ -231,7 +231,7 @@ int initialize(const std::string*method)
 
   double *z= new double[nz];
   if(z == NULL) {return -1;}
-  /* Fill z with the non-fixed variables from x, xd, y and p*/
+  /* Fill z with the non-fixed variables from x and p*/
   for (ind=0, indAct=0, indz=0; ind<globalData->nStates; ind++)
     {
       if (globalData->initFixed[indAct++]==0)
@@ -239,6 +239,11 @@ int initialize(const std::string*method)
 	  z[indz++] = globalData->states[ind];
 	}
   }
+  for (ind=0,indAct=2*globalData->nStates+globalData->nAlgebraic; ind<globalData->nParameters; ind++) {
+    if (globalData->initFixed[indAct++]==0)
+      z[indz++] =  globalData->parameters[ind];
+  }
+  
   int retVal=0;
   if (init_method == std::string("simplex")) {
     retVal = simplex_initialization(nz,z);
