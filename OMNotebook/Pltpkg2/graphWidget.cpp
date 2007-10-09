@@ -488,6 +488,7 @@ fitInView(graphicsScene->sceneRect());
 void GraphWidget::getData()
 {
 	disconnect(activeSocket, SIGNAL(readyRead()), 0, 0);
+	connect(activeSocket, SIGNAL(readyRead()), this, SLOT(getData()));
 
 	while(activeSocket->bytesAvailable())
 	{
@@ -529,6 +530,7 @@ void GraphWidget::getData()
 		else if(command == QString("drawEllipse"))
 		{
 			drawEllipse(ds);
+			activeSocket->disconnect();
 		}
 		else if(command == QString("closeServer"))
 		{
@@ -694,17 +696,21 @@ void GraphWidget::mouseReleaseEvent ( QMouseEvent * event )
 				bottom = zoomEnd.y();
 			}
 
-			bottom += mapToScene(0,0,0,this->horizontalScrollBar()->height()).boundingRect().height();
-			right += mapToScene(0,0,this->verticalScrollBar()->width(), 0).boundingRect().width();
+//			bottom += mapToScene(0,0,0,this->horizontalScrollBar()->height()).boundingRect().height();
+//			right += mapToScene(0,0,this->verticalScrollBar()->width(), 0).boundingRect().width();
 
-			QRectF r(left, bottom, right-left, top-bottom);
 
+
+//			QRectF r(left, bottom, right-left, top-bottom);
+
+			QRectF r(QPointF(left,top),QPointF(right, bottom));
 			if(!r.width() || !r.height())
 				return;
 
 
 			//			fitInView(r);
 			//			setArea(r);
+
 			zoomIn(r);
 
 			double xScale = matrix().m11()/125;
@@ -741,6 +747,8 @@ void GraphWidget::zoomIn(QRectF r)
 
 //	if(graphicsScene->gridVisible)
 //		showGrid(true);
+
+
 	showGrid(graphicsScene->gridVisible);
 }
 
@@ -1003,6 +1011,7 @@ void GraphWidget::createGrid(bool numbersOnly)
 	}
 	else
 	{
+
 		if(!numbersOnly)
 		{
 			for(qreal y = yMin-yMajorDist; y < 1.5* yMajorDist + yMax ; y+= yMinorDist)
@@ -1141,12 +1150,14 @@ void GraphWidget::setArea(const QRectF& r)
 		current.setBottom(r.bottom());
 
 
-	graphicsScene->setSceneRect(current);
-	setSceneRect(current);
 
-	fitInView(r);
+	graphicsScene->setSceneRect(current); 
+	setSceneRect(current);                
+
+	fitInView(r); //uu
 
 	setCurrentArea(mapToScene(rect()).boundingRect());
+//	setCurrentArea(r);
 	update(rect());
 }
 
@@ -1710,7 +1721,9 @@ void GraphWidget::plotPtolemyDataStream()
 			showGrid(grid);
 
 			double xmin, xmax, ymin, ymax;
-			ds >> xmin >> xmax >> ymin >> ymax;
+			if(dataStreamVersion < 1.2)
+				ds >> xmin >> xmax >> ymin >> ymax;
+
 			int logX, logY;
 			ds >> logX >> logY;
 			QString interpolation;

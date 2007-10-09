@@ -211,7 +211,7 @@ public:
 		return currentArea_;
 	}
 
-	void setCurrentArea(QRectF& r)
+	void setCurrentArea(const QRectF& r)
 	{
 		currentArea_ = r;
 	}

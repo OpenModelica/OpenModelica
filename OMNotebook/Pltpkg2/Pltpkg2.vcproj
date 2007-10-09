@@ -77,8 +77,9 @@
 				Optimization="2"
 				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="2"
+				ImproveFloatingPointConsistency="FALSE"
 				FavorSizeOrSpeed="1"
-				OptimizeForProcessor="3"
+				OptimizeForProcessor="0"
 				AdditionalIncludeDirectories="&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(QTHOME)\include\QtGui&quot;;&quot;$(QTHOME)\include&quot;;.;&quot;$(QTHOME)\include\ActiveQt&quot;;debug;&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot;"
 				PreprocessorDefinitions="NDEBUG,_WINDOWS,UNICODE,QT_LARGEFILE_SUPPORT,WIN32,QT_DLL,QT_NO_DEBUG,QT_GUI_LIB,QT_CORE_LIB,QT_THREAD_SUPPORT"
 				GeneratePreprocessedFile="0"
@@ -160,18 +161,18 @@
 				RelativePath="lineGroup.cpp">
 			</File>
 			<File
-				RelativePath="debug\moc_compoundWidget.cpp">
+				RelativePath="release\moc_compoundWidget.cpp">
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Debug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="release\moc_compoundWidget.cpp">
+				RelativePath="debug\moc_compoundWidget.cpp">
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -196,6 +197,15 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="debug\moc_graphWindow.cpp">
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="release\moc_graphWindow.cpp">
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -205,7 +215,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="debug\moc_graphWindow.cpp">
+				RelativePath=".\debug\moc_legendLabel.cpp">
 				<FileConfiguration
 					Name="Release|Win32"
 					ExcludedFromBuild="TRUE">
@@ -227,15 +237,6 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\debug\moc_legendLabel.cpp">
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 			</File>
 			<File
