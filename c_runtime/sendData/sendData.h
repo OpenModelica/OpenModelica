@@ -62,7 +62,7 @@ extern "C"
 {
 #endif
 
-	void emulateStreamData(const char* data, int port=7778, const char* title="Plot by OpenModelica", const char* xLabel = "time", const char* yLabel = "", const char* interpolation="linear", int legend = 1, int grid = 1, double xMin=0, double xMax=0, double yMin=0, double yMax=0, int logX=0, int logY=0, int drawPoints = 1, const char* range = "0.0,0.0 0.0,0.0");
+	void emulateStreamData(const char* data, const char* title="Plot by OpenModelica", const char* xLabel = "time", const char* yLabel = "", const char* interpolation="linear", int legend = 1, int grid = 1, int logX=0, int logY=0, int drawPoints = 1, const char* range = "0.0,0.0 0.0,0.0");
 
 	bool plt(const char* var, const char* mdl, const char* title, const char* xLabel, const char* yLabel, bool legend, bool grid, double xmin, double xmax, double ymin, double ymax, bool logX, bool logY, const char* interpolation, bool drawPoints, const char* range);
 	bool pltParametric(const char*, const char*, const char*);

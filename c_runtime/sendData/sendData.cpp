@@ -311,14 +311,16 @@ bool pltWait(unsigned long msecs)
 	return true;
 }
 
-void emulateStreamData(const char* data, int port, const char* title, const char* xLabel, const char* yLabel, const char* interpolation5, int legend, int grid, double xMin, double xMax, double yMin, double yMax, int logX, int logY, int drawPoints, const char* range)
+void emulateStreamData(const char* data, const char* title, const char* xLabel, const char* yLabel, const char* interpolation5, int legend, int grid, int logX, int logY, int drawPoints, const char* range)
 {
 	Connection c;
+
 	QTcpSocket* socket = c.newConnection();
 
 	QString data_(data);
 	QTextStream ts(&data_);
 	QString tmp;
+
 	vector<vector<double>*> variableValues;
 	vector<QString> variableNames;
 
@@ -362,21 +364,19 @@ void emulateStreamData(const char* data, int port, const char* title, const char
 		}
 	}
 
+
 	QByteArray block;
 	QDataStream out(&block, QIODevice::WriteOnly);
 	out.setVersion(QDataStream::Qt_4_2);
 
 	out << (quint32)0;
-	out << QString("ptolemyDataStream-1.1");
+	out << QString("ptolemyDataStream-1.2");
 	out.device()->seek(0);
 	out << (quint32)(block.size() - sizeof(quint32));
 
 	socket->write(block);
 	socket->flush();
 
-//ofstream of2("ut225.txt");
-//	of2 << title << endl << xLabel << endl << range << endl;
-//	of2.close();
 
 	block.clear();
 
@@ -385,18 +385,14 @@ void emulateStreamData(const char* data, int port, const char* title, const char
 	out << QString(title);
 	out << QString(xLabel);
 	out << QString(yLabel);
-
 	out << (int)legend;
 	out << (int)grid;
-	out << xMin << xMax << yMin << yMax;
-
+//	out << xMin << xMax << yMin << yMax;
 	out << (int)logX;
 	out << (int)logY;
 	out << QString(interpolation5);
 	out << (int)drawPoints;
 	out << QString(range);
-
-
 	out << (quint32)variableNames.size();
 
 	for(unsigned int i = 0; i < variableNames.size(); ++i)
@@ -414,7 +410,6 @@ void emulateStreamData(const char* data, int port, const char* title, const char
 
 	block.clear();
 
-//ofstream of("ut2.txt");
 
 	for(quint32 i = 0; i < variableValues[0]->size(); ++i)
 	{
@@ -427,9 +422,6 @@ void emulateStreamData(const char* data, int port, const char* title, const char
 			out << variableNames[j];
 			out << (*variableValues[j])[i];
 
-//			of << variableNames[j].toStdString() << endl;
-//			of << (*variableValues[j])[i] << endl;
-			
 		}
 		out.device()->seek(0);
 		out << (quint32)(block.size() - sizeof(quint32));
@@ -441,20 +433,22 @@ if(!(i%100))
 	socket->flush();
 	
 	}
-//of.close();
+
 	socket->flush();
 
 	for(quint32 i = 0; i < variableValues.size(); ++i)
 		delete variableValues[i];
+
 
 	socket->disconnectFromHost();
 	if(socket->state() == QAbstractSocket::ConnectedState)
 		socket->waitForDisconnected(-1);
 	if(socket)
 		delete socket;
+
 }
 
-bool plt(const char* var, const char* model, const char* title, const char* xLabel, const char* yLabel, bool legend, bool grid, double xmin, double xmax, double ymin, double ymax, bool logX, bool logY, const char* interpolation, bool drawPoints, const char* range)
+bool plt(const char* var, const char* model, const char* title, const char* xLabel, const char* yLabel, bool legend, bool grid, bool logX, bool logY, const char* interpolation, bool drawPoints, const char* range)
 {
 	QDir dir(QString(getenv("OPENMODELICAHOME")));
 	dir.cd("bin");
@@ -524,6 +518,6 @@ bool plt(const char* var, const char* model, const char* title, const char* xLab
 
 	file.close();
 
-	emulateStreamData(res.toStdString().c_str(), 7778, title, xLabel, yLabel, interpolation, (int)legend, (int)grid, xmin, xmax, ymin, ymax, (int)logX, (int)logY, (int)drawPoints, range);
+	emulateStreamData(res.toStdString().c_str(), title, xLabel, yLabel, interpolation, (int)legend, (int)grid, (int)logX, (int)logY, (int)drawPoints, range);
 	return true;
 }
