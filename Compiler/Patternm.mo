@@ -70,7 +70,7 @@ type RightHandVector = DFA.RightHandVector;
 type RightHandList = DFA.RightHandList;  
 type RightHandSide = DFA.RightHandSide;
 type IndexVector = DFA.IndexVector;  
-type AsList = list<Absyn.EquationItem>;
+type AsList = list<Absyn.AlgorithmItem>;
 type AsArray = AsList[:];  
 type ArcName = Absyn.Ident;
 
@@ -112,7 +112,7 @@ algorithm
         Env.Env localEnv;
       equation
         // Extract from matchcontinue Abstract Syntax Tree       
-        (rhsList,rhsListLight,patList,elseRhSide) = extractFromMatchAST(localCases,{},{},{},1);
+        (localCache,rhsList,rhsListLight,patList,elseRhSide) = extractFromMatchAST(localCases,{},{},{},1,localCache,localEnv);
         varList = extractListFromTuple(varList2);
         varListLength = listLength(varList);
         
@@ -210,17 +210,17 @@ algorithm
         RightHandSide localRhSide;    
       equation 
       then localRhSide;  
-    case (DFA.RIGHTHANDSIDE(localDecls,eqs,result,cNumber),localAsList)
+    case (DFA.RIGHTHANDSIDE(localDecls,algs,result,cNumber),localAsList)
       local
         list<Absyn.ElementItem> localDecls;
-        list<Absyn.EquationItem> eqs;
+        list<Absyn.AlgorithmItem> algs;
         Absyn.Exp result;
         RightHandSide rhS;
         AsList localAsList; 
         Integer cNumber;
       equation 
-        eqs = listAppend(localAsList,eqs);  
-        rhS = DFA.RIGHTHANDSIDE(localDecls,eqs,result,cNumber);  
+        algs = listAppend(localAsList,algs);  
+        rhS = DFA.RIGHTHANDSIDE(localDecls,algs,result,cNumber);  
       then rhS;        
   end matchcontinue;
 end addAsBindingsHelper;
@@ -236,36 +236,45 @@ protected function extractFromMatchAST "function: extractFromMatchAST
   input RightHandList rhListLightIn;
   input list<Absyn.Exp> patListIn; // All the patterns are collected in a list. 
   input Integer caseNumber;  // This variable keeps track of which case-clause we are working with
+  input Env.Cache cache;
+  input Env.Env env;
+  output Env.Cache outCache;
   output RightHandList rhListOut;
   output RightHandList rhListLightOut;
   output list<Absyn.Exp> patListOut; // All the patterns are collected in a list.
   output Option<RightHandSide> elseRhSide; // A matchcontinue expression may contain an else-case
 algorithm
-  (rhListOut,rhListLightOut,patListOut,elseRhSide) :=
-  matchcontinue (matchCases,rhListIn,rhListLightIn,patListIn,caseNumber)
+  (outCache,rhListOut,rhListLightOut,patListOut,elseRhSide) :=
+  matchcontinue (matchCases,rhListIn,rhListLightIn,patListIn,caseNumber,cache,env)
     local
       list<Absyn.Case> rest;
       Absyn.Exp localPat,localRes;
       list<Absyn.ElementItem> localDecl;
       list<Absyn.EquationItem> localEq;
+      list<Absyn.AlgorithmItem> localAlg;
+      Env.Cache localCache,var1;
+      Env.Env localEnv;
       
-      // var1,var2,var3 are temp variables
-      list<Absyn.Exp> localPatListIn,var3;
-      RightHandList localRhListIn,localRhLightList,var1,var2;
-      Option<RightHandSide> var4;        
+      // var1,var2,var3,var4,var5 are temp variables
+      list<Absyn.Exp> localPatListIn,var4;
+      RightHandList localRhListIn,localRhLightList,var2,var3;
+      Option<RightHandSide> var5;        
       Integer localCaseNum;
-    case ({},localRhListIn,localRhLightList,localPatListIn,_) equation then (localRhListIn,localRhLightList,localPatListIn,NONE());
-    case (Absyn.CASE(localPat,localDecl,localEq,localRes,_) :: rest,localRhListIn,localRhLightList,localPatListIn,localCaseNum)
+    case ({},localRhListIn,localRhLightList,localPatListIn,_,localCache,_) equation then (localCache,localRhListIn,localRhLightList,localPatListIn,NONE());
+    case (Absyn.CASE(localPat,localDecl,localEq,localRes,_) :: rest,
+      localRhListIn,localRhLightList,localPatListIn,localCaseNum,localCache,localEnv)
       equation
+        (localCache,localAlg) = fromEquationsToAlgAssignments(localEq,{},localCache,localEnv);
         localPatListIn = listAppend(localPatListIn,{localPat});
-        localRhListIn = listAppend(localRhListIn,{DFA.RIGHTHANDSIDE(localDecl,localEq,localRes,localCaseNum)});   
+        localRhListIn = listAppend(localRhListIn,{DFA.RIGHTHANDSIDE(localDecl,localAlg,localRes,localCaseNum)});   
         localRhLightList = listAppend(localRhLightList,{DFA.RIGHTHANDLIGHT(localCaseNum)});
         localCaseNum = localCaseNum + 1;
-        (var1,var2,var3,var4) = extractFromMatchAST(rest,localRhListIn,localRhLightList,localPatListIn,localCaseNum);
-      then (var1,var2,var3,var4);
-    case (Absyn.ELSE(localDecl,localEq,localRes,_) :: {},localRhListIn,localRhLightList,localPatListIn,_)
+        (var1,var2,var3,var4,var5) = extractFromMatchAST(rest,localRhListIn,localRhLightList,localPatListIn,localCaseNum,localCache,localEnv);
+      then (var1,var2,var3,var4,var5);
+    case (Absyn.ELSE(localDecl,localEq,localRes,_) :: {},localRhListIn,localRhLightList,localPatListIn,_,localCache,localEnv)
       equation
-      then (localRhListIn,localRhLightList,localPatListIn,SOME(DFA.RIGHTHANDSIDE(localDecl,localEq,localRes,0)));      	        
+        (localCache,localAlg) = fromEquationsToAlgAssignments(localEq,{},localCache,localEnv);
+      then (localCache,localRhListIn,localRhLightList,localPatListIn,SOME(DFA.RIGHTHANDSIDE(localDecl,localAlg,localRes,0)));      	        
   end matchcontinue;
 end extractFromMatchAST;
 
@@ -486,7 +495,7 @@ algorithm
         RenamedPat temp1;
         AsList temp3;
       equation     
-        localAsBinds2 = {Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_IDENT(var,{})),
+        localAsBinds2 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT(var,{})),
           Absyn.CREF(Absyn.CREF_IDENT(localVar,{}))),NONE())};
         localAsBinds = listAppend(localAsBinds,localAsBinds2);
         
@@ -502,7 +511,7 @@ algorithm
         Absyn.Ident var;   
         RenamedPat pat;
       equation
-        localAsBinds2 = {Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_IDENT(var,{})),
+        localAsBinds2 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT(var,{})),
           Absyn.CREF(Absyn.CREF_IDENT(localVar,{}))),NONE())};
         localAsBinds = listAppend(localAsBinds,localAsBinds2);
           
@@ -2572,5 +2581,158 @@ algorithm
   end matchcontinue;
 end matchArcs;  
 //----------------
+
+protected function fromEquationsToAlgAssignments "function: fromEquationsToAlgAssignments
+ Converts equations to algorithm assignments. 
+ Matchcontinue expressions may contain statements that you won't find 
+ in a normal equation section. For instance:
+ 
+ case(...)
+ local
+ equation
+ 		(var1,_,MYREC(...)) = func(...);
+  	fail();
+ then 1;
+ "
+  input list<Absyn.EquationItem> eqsIn;
+  input list<Absyn.AlgorithmItem> accList;
+  input Env.Cache cache;
+  input Env.Env env;
+  output Env.Cache outCache;
+  output list<Absyn.AlgorithmItem> algsOut;
+algorithm
+  (outCache,algOut) :=
+  matchcontinue (eqsIn,accList,cache,env)
+    local
+      list<Absyn.AlgorithmItem> localAccList;  
+      Env.Cache localCache; 
+      Env.Env localEnv;
+    case ({},localAccList,localCache,localEnv) equation then (localCache,localAccList);
+    case (Absyn.EQUATIONITEM(first,_) :: rest,localAccList,localCache,localEnv)      
+      local
+        Absyn.Equation first;
+        list<Absyn.EquationItem> rest;
+        list<Absyn.AlgorithmItem> firstAlg,restAlgs;
+      equation    
+        (localCache,firstAlg) = fromEquationToAlgAssignment(first,localCache,localEnv);
+        localAccList = listAppend(localAccList,firstAlg);
+        (localCache,restAlgs) = fromEquationsToAlgAssignments(rest,localAccList,localCache,localEnv);    
+      then (localCache,restAlgs);  
+  end matchcontinue;
+end fromEquationsToAlgAssignments;
+
+protected function fromEquationToAlgAssignment "function: fromEquationToAlgAssignment"
+  input Absyn.Equation eq;
+  input Env.Cache cache; 
+  input Env.Env env;
+  output Env.Cache outCache;
+  output list<Absyn.AlgorithmItem> algStatement;
+algorithm
+  (outCache,algStatement) :=
+  matchcontinue (eq,cache,env)
+    local 
+      Env.Cache localCache; 
+      Env.Env localEnv;
+      
+    case (Absyn.EQ_EQUALS(Absyn.BOOL(true),right),localCache,_)    
+      local
+        Absyn.Exp left,right;
+        list<Absyn.AlgorithmItem> algItem1,algItem2;
+      equation
+        /* 
+        An equation such as ...
+        
+        true = exp;
+        
+        ... is transformed into ...
+        
+        DUMMIE__ := exp;
+        if (DUMMIE__ != true)
+        	throw();
+        	*/      	
+        algItem1 = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE())};
+        algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_IF(Absyn.LUNARY(Absyn.NOT(),right),algItem1,{},{}),NONE())}; 	
+      then (localCache,algItem2);
+
+    case (Absyn.EQ_EQUALS(Absyn.BOOL(false),right),localCache,_)    
+      local
+        Absyn.Exp left,right;
+        list<Absyn.AlgorithmItem> algItem1,algItem2;
+      equation
+        algItem1 = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE())};
+        algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_IF(right,algItem1,{},{}),NONE())}; 	
+      then (localCache,algItem2);
+        
+    case (Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("fail",_),_),localCache,_)    
+      local
+        list<Absyn.AlgorithmItem> algItem;
+      equation
+        algItem = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE())};  	
+      then (localCache,algItem);  
+      
+      /*
+      If we have an equation of the form (exp1,exp2,...,expN) = func(...),
+      we may have to transform it into a matchcontinue statement,
+      since the expressions should be "matched" against the return 
+      values of the function
+      
+      case (Absyn.EQ_EQUALS(Absyn.TUPLE(expL),Absyn.CALL(cRef,funcArgs)),localCache,localEnv)    
+      local
+        list<Absyn.Exp> expL;
+        Absyn.ComponentRef cRef;
+        Absyn.FunctionArgs funcArgs;
+        
+        Absyn.AlgorithmItem algItem;
+      equation
+        false = onlyCrefExpressions(expL);
+      
+      DUMMIE__ := 
+      valueblock(
+      var1,...,varN;
+      
+      (var1,...,varN) := func(...);
+      DUMMIE__ :=
+      mathcontinue (var1,...,varN)
+      	case (expL)
+      	then true;
+      	case (_) 
+      	then false;
+      end matchcontinue;
+      
+      if (DUMMIE__) 
+      	return true;
+      else
+      	throw();	
+      )
+      then (localCache,algItem); */ 
+      /*---------------------------------------*/
+      
+    case (Absyn.EQ_EQUALS(left,right),localCache,_)    
+      local
+        Absyn.Exp left,right;
+        list<Absyn.AlgorithmItem> algItem;
+      equation
+        algItem = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(left,right),NONE())};  	
+      then (localCache,algItem);
+  end matchcontinue;
+end fromEquationToAlgAssignment;
+
+/*protected function onlyCrefExpressions "function: onlyCrefExpressions"
+  input list<Absyn.Exp> expList; 
+  output Boolean boolVal;
+algorithm
+  boolVal :=
+  matchcontinue (expList) 
+    case ({}) return true;
+    case (Absyn.CREF(_) :: restList)
+      local 
+        list<Absyn.Exp> restList; 
+        Boolean b;
+      equation
+        b = onlyCrefExpressions(restList);
+      then b;  
+    case (_) return false;      
+  end matchcontinue;
+end onlyCrefExpressions; */
 
 end Patternm;

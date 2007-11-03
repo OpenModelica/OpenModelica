@@ -200,14 +200,14 @@ algorithm
         arrayOfTrue = Absyn.ARRAY(listOfTrue);
         
         // This variable is used for catch handling. It should be an array.
-      /*  varList = {Absyn.ELEMENTITEM(Absyn.ELEMENT(
+        varList = {Absyn.ELEMENTITEM(Absyn.ELEMENT(
           false,NONE(),Absyn.UNSPECIFIED(),"component",
           Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
             Absyn.TPATH(Absyn.IDENT("Integer"),NONE()),		
             {Absyn.COMPONENTITEM(Absyn.COMPONENT("BOOLVAR__",{Absyn.SUBSCRIPT(Absyn.INTEGER(numCases))},SOME(Absyn.CLASSMOD({},SOME(arrayOfTrue)))),NONE(),NONE())}),
             Absyn.INFO("f",false,0,0,0,0),NONE()))}; 
         
-        localVarList = listAppend(localVarList,varList); */
+        localVarList = listAppend(localVarList,varList); 
         
         // This variable is a dummie variable, used when we want to use a valueblock but not
         // return anything interesting. DUMMIE__ := VALUEBLOCK( ... )      
@@ -298,6 +298,8 @@ algorithm
         // BOOLVAR__[LASTRIGHTHANDSIDE__] = 0;
         //}
         // }
+        // if (NOTDONE__) throw 1;
+        //
         (localCache,algs,newVars) = fromStatetoAbsynCode(localStartState,NONE(),localCache,localEnv,dfaEnv,{}); 
         //------
         algs = listAppend(algs,{Absyn.ALGORITHMITEM(Absyn.ALG_BREAK(),NONE())});        
@@ -306,19 +308,21 @@ algorithm
         //------
 
         algItem1 = Absyn.ALGORITHMITEM(Absyn.ALG_TRY(algs),NONE());  
-      //  algItem2 = Absyn.ALGORITHMITEM(Absyn.ALG_CATCH({Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(
-      // Absyn.CREF_IDENT("BOOLVAR__",{Absyn.SUBSCRIPT(Absyn.CREF(Absyn.CREF_IDENT("LASTRIGHTHANDSIDE__",{})))})),
-      //    Absyn.INTEGER(0)),NONE())}),NONE()); 
-        algs = listAppend({algItem1},{}); //algItem2
+        algItem2 = Absyn.ALGORITHMITEM(Absyn.ALG_CATCH({Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(
+          Absyn.CREF_IDENT("BOOLVAR__",{Absyn.SUBSCRIPT(Absyn.CREF(Absyn.CREF_IDENT("LASTRIGHTHANDSIDE__",{})))})),
+          Absyn.INTEGER(0)),NONE())}),NONE()); 
+        algs = listAppend({algItem1},{algItem2}); //algItem2
         algs = {Absyn.ALGORITHMITEM(Absyn.ALG_WHILE(Absyn.BOOL(true)  
           ,algs),NONE())};
+        //algItem1 = Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE());
+        //algItem2 = Absyn.ALGORITHMITEM(Absyn.ALG_IF(Absyn.CREF(Absyn.CREF_IDENT("NOTDONE__",{})),{algItem1},{},{}),NONE());  
+        //algs = listAppend(algs,{algItem2});
         
       then (localCache,algs,newVars);
    // ELSE-CASE     
-    case (localResVarList,localInputVarList,localStartState,SOME(RIGHTHANDSIDE(localVars,eqs,res,_)), 
+    case (localResVarList,localInputVarList,localStartState,SOME(RIGHTHANDSIDE(localVars,algList2,res,_)), 
         localCache,localEnv,localRightHandList) // AN ELSE-CASE EXIST
       local
-        list<Absyn.EquationItem> eqs;
         list<Absyn.ElementItem> localVars;
         list<Absyn.AlgorithmItem> algList,algList2,algList3,bodyIf,algIf;
         Absyn.Exp res,resExpr;
@@ -333,8 +337,6 @@ algorithm
         
         (localCache,algList,newVars) = fromStatetoAbsynCode(localStartState,NONE(),localCache,localEnv,dfaEnv,{});
 
-        algList2 = fromEquationsToAlgAssignments(eqs,{});
-        
         // Create result assignments
         expList = createListFromExpression(res);  
         algList3 = createLastAssignments(localResVarList,expList,{});
@@ -374,10 +376,10 @@ algorithm
         //}
         // }
         algList2 = {Absyn.ALGORITHMITEM(Absyn.ALG_TRY(algList),NONE())}; 
-       // algList3 = {Absyn.ALGORITHMITEM(Absyn.ALG_CATCH({Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(
-       // Absyn.CREF_IDENT("BOOLVAR__",{Absyn.SUBSCRIPT(Absyn.CREF(Absyn.CREF_IDENT("LASTRIGHTHANDSIDE__",{})))})),
-       //   Absyn.INTEGER(0)),NONE())}),NONE())};
-        algList = listAppend(algList2,{}); // algList3
+        algList3 = {Absyn.ALGORITHMITEM(Absyn.ALG_CATCH({Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(
+          Absyn.CREF_IDENT("BOOLVAR__",{Absyn.SUBSCRIPT(Absyn.CREF(Absyn.CREF_IDENT("LASTRIGHTHANDSIDE__",{})))})),
+          Absyn.INTEGER(0)),NONE())}),NONE())};
+        algList = listAppend(algList2,algList3); // algList3
         algList = {Absyn.ALGORITHMITEM(Absyn.ALG_WHILE(Absyn.CREF(Absyn.CREF_IDENT("NOTDONE__",{}))  
           ,algList),NONE())};
         
@@ -408,10 +410,9 @@ algorithm
       list<Absyn.Exp> localResVarList;
     case ({},localAccList,_) then localAccList; 
       // No local variables
-    case (RIGHTHANDSIDE({},equations,result,caseNum) :: rest,localAccList,localResVarList) 
+    case (RIGHTHANDSIDE({},body,result,caseNum) :: rest,localAccList,localResVarList) 
       local
         Integer caseNum;
-        list<Absyn.EquationItem> equations;
         Absyn.Exp result,resVars;
         list<Absyn.AlgorithmItem> outList,body,lastAssign,doneAssign,stateAssign;  
         String stateName; 
@@ -432,7 +433,6 @@ algorithm
         // Create the assignments that assigns the return variables
         lastAssign = createLastAssignments(localResVarList,exp2,{});
         
-        body = fromEquationsToAlgAssignments(equations,{}); 
         stateAssign = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT("LASTRIGHTHANDSIDE__",{})),
           Absyn.INTEGER(caseNum)),NONE())};
         outList = listAppend(stateAssign,body);
@@ -454,7 +454,7 @@ algorithm
       then localAccList; 
         
         // Local variables	
-    case (RIGHTHANDSIDE(localList,equations,result,caseNum) :: rest,localAccList,localResVarList) 
+    case (RIGHTHANDSIDE(localList,body,result,caseNum) :: rest,localAccList,localResVarList) 
       local
         list<Absyn.EquationItem> equations;
         list<Absyn.ElementItem> localList;
@@ -480,8 +480,6 @@ algorithm
     
         // Create the assignments that assign the return variables
         lastAssign = createLastAssignments(localResVarList,exp2,{});
-        
-        body = fromEquationsToAlgAssignments(equations,{}); 
         
         stateAssign = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT("LASTRIGHTHANDSIDE__",{})),
           Absyn.INTEGER(caseNum)),NONE())}; 
@@ -648,6 +646,15 @@ algorithm
     local
       list<Absyn.AlgorithmItem> localAccList;
     case ({},{},localAccList) then localAccList;
+   
+    /* The case: then fail(); */
+    case(_,Absyn.CALL(Absyn.CREF_IDENT("fail",_),_) :: {},_)
+      local 
+      equation
+        localAccList = {Absyn.ALGORITHMITEM(Absyn.ALG_BREAK(),NONE)};
+      then localAccList;
+    /*------------------------*/   
+      
     case (firstLhs :: restLhs,firstRhs :: restRhs,localAccList)
       local
         Absyn.Exp firstLhs,firstRhs;
@@ -965,7 +972,7 @@ algorithm
         list<Absyn.Exp,list<Absyn.AlgorithmItem>> eIfBranch;
       equation
         // For the catch handling 
-        branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(false));
+        branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(true));
         
         (localCache,localElseBranch,localAccNewVars) = fromStatetoAbsynCode(localState,NONE(),localCache,localEnv,localDfaEnv,localAccNewVars);
         eIfBranch = {(branchCheck,localElseBranch)};
@@ -977,7 +984,7 @@ algorithm
     case(ARC(localState,_,SOME(pat as RP_WILDCARD(_)),caseNumbers) :: rest,localStateVar,true,_,_,_,localCache,localEnv,localDfaEnv,localAccNewVars)
       equation
         (localCache,localTrueBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars);
-        branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(false));
+        branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(true));
         (localCache,algList,localAccNewVars) = generateIfElseifAndElse(rest,localStateVar,false,branchCheck,localTrueBranch,{},localCache,localEnv,localDfaEnv,localAccNewVars);
       then (localCache,algList,localAccNewVars);
         
@@ -987,7 +994,7 @@ algorithm
         Absyn.Exp exp;
       equation
         (localCache,localTrueBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars);
-        branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(false));
+        branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(true));
         exp = Absyn.LBINARY(branchCheck,Absyn.AND(),Absyn.LUNARY(Absyn.NOT(),Absyn.CALL(Absyn.CREF_IDENT("emptyListTest",{}),
          Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{}))},{})))); 
         (localCache,algList,localAccNewVars) = generateIfElseifAndElse(rest,localStateVar,false,exp,localTrueBranch,{},localCache,localEnv,localDfaEnv,localAccNewVars);
@@ -1002,7 +1009,7 @@ algorithm
         (localCache,localTrueBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars);
         constVal = getConstantValue(pat);
         firstExp = createConstCompareExp(constVal,localStateVar);
-        branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(false));    
+        branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(true));    
         exp = Absyn.LBINARY(firstExp,Absyn.AND(),branchCheck);
         (localCache,algList,localAccNewVars) = generateIfElseifAndElse(rest,localStateVar,false,exp,localTrueBranch,{},localCache,localEnv,localDfaEnv,localAccNewVars);
       then (localCache,algList,localAccNewVars);
@@ -1016,7 +1023,7 @@ algorithm
         list<Absyn.Exp> tempList;
       equation
         (localCache,localTrueBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars);
-        branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(false));          
+        branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(true));          
         tempList = {Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{}))};
         exp = Absyn.LBINARY(Absyn.CALL(Absyn.CREF_IDENT("stringCmp",{}),Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_QUAL(localStateVar,{},Absyn.CREF_IDENT("fieldTag__",{})))    
           ,Absyn.STRING(recordName)},{})),Absyn.AND(),branchCheck);
@@ -1031,7 +1038,7 @@ algorithm
         Absyn.Exp exp;
       equation
         (localCache,eIfBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars);
-        branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(false));
+        branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(true));
         tup = (branchCheck,eIfBranch);
         localElseIfBranch = listAppend(localElseIfBranch,{tup});
         (localCache,algList,localAccNewVars) = generateIfElseifAndElse(rest,localStateVar,false,localTrueStatement,localTrueBranch,localElseIfBranch,localCache,localEnv,localDfaEnv,localAccNewVars);
@@ -1045,7 +1052,7 @@ algorithm
         Absyn.Exp exp;
       equation
         (localCache,eIfBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars);
-        branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(false));
+        branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(true));
         exp = Absyn.LBINARY(branchCheck,Absyn.AND(),Absyn.LUNARY(Absyn.NOT(),Absyn.CALL(Absyn.CREF_IDENT("emptyListTest",{}),
           Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{}))},{}))));    
         tup = (exp,eIfBranch);
@@ -1064,7 +1071,7 @@ algorithm
       equation
         (localCache,eIfBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars);
         tempList = {Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{}))};
-        branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(false));
+        branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(true));
         exp = Absyn.LBINARY(Absyn.CALL(Absyn.CREF_IDENT("stringCmp",{}),Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_QUAL(localStateVar,{},Absyn.CREF_IDENT("fieldTag__",{}))),
           Absyn.STRING(recordName)},{})),Absyn.AND(),branchCheck);
         tup = (exp,eIfBranch);
@@ -1082,7 +1089,7 @@ algorithm
         constVal = getConstantValue(pat);
         (localCache,eIfBranch,localAccNewVars) = fromStatetoAbsynCode(localState,SOME(pat),localCache,localEnv,localDfaEnv,localAccNewVars);
         firstExp = createConstCompareExp(constVal,localStateVar);
-        branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(false));
+        branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(true));
         exp = Absyn.LBINARY(firstExp,Absyn.AND(),branchCheck);
         tup = (exp,eIfBranch);
         localElseIfBranch = listAppend(localElseIfBranch,{tup});
@@ -1100,20 +1107,29 @@ algorithm
   matchcontinue (inList,inExp) 
     local
       Absyn.Exp localInExp; 
-    case (_,Absyn.BOOL(false)) 
-      local 
-      equation 
-        localInExp = Absyn.BOOL(true); 
-      then localInExp;  
+  
     case ({},localInExp) then localInExp;
-      
+    
+    // First time  
+    case (firstNum :: restNum,Absyn.BOOL(true)) 
+      local 
+        Integer firstNum;
+        list<Integer> restNum; 
+      equation
+        localInExp = Absyn.RELATION(Absyn.CREF(Absyn.CREF_IDENT("BOOLVAR__",{Absyn.SUBSCRIPT(Absyn.INTEGER(firstNum))})),
+          Absyn.EQUAL(),Absyn.INTEGER(1)); 
+        localInExp = generateBranchCheck(restNum,localInExp);
+      then localInExp;
+    //----------------
+        
     case (firstNum :: restNum,localInExp)   
       local 
         Integer firstNum;
         list<Integer> restNum; 
       equation
         localInExp = Absyn.LBINARY(localInExp,Absyn.OR(),
-          Absyn.CREF(Absyn.CREF_IDENT("BOOLVAR__",{Absyn.SUBSCRIPT(Absyn.INTEGER(firstNum))}))); 
+          Absyn.RELATION(Absyn.CREF(Absyn.CREF_IDENT("BOOLVAR__",{Absyn.SUBSCRIPT(Absyn.INTEGER(firstNum))})),
+          Absyn.EQUAL(),Absyn.INTEGER(1))); 
         localInExp = generateBranchCheck(restNum,localInExp);
       then localInExp;    
   end matchcontinue;   
@@ -1164,48 +1180,6 @@ algorithm
       then exp;      
  end matchcontinue;   
 end createConstCompareExp;  
-
-
-protected function fromEquationsToAlgAssignments "function: fromEquationsToAlgAssignments
- Convert equations to algorithm assignments"
-  input list<Absyn.EquationItem> eqsIn;
-  input list<Absyn.AlgorithmItem> accList;
-  output list<Absyn.AlgorithmItem> algsOut;
-algorithm
-  algOut :=
-  matchcontinue (eqsIn,accList)
-    local
-      list<Absyn.AlgorithmItem> localAccList;  
-    case ({},localAccList) equation then localAccList;
-    case (Absyn.EQUATIONITEM(first,_) :: rest,localAccList)      
-      local
-        Absyn.Equation first;
-        list<Absyn.EquationItem> rest;
-        Absyn.AlgorithmItem firstAlg;
-        list<Absyn.AlgorithmItem> restAlgs;
-      equation    
-        firstAlg = fromEquationToAlgAssignment(first);
-        localAccList = listAppend(localAccList,{firstAlg});
-        restAlgs = fromEquationsToAlgAssignments(rest,localAccList);    
-      then restAlgs;  
-  end matchcontinue;
-end fromEquationsToAlgAssignments;
-
-protected function fromEquationToAlgAssignment "function: fromEquationToAlgAssignment"
-  input Absyn.Equation eq;
-  output Absyn.AlgorithmItem algStatement;
-algorithm
-  algStatement :=
-  matchcontinue (eq)
-    case (Absyn.EQ_EQUALS(left,right))    
-      local
-        Absyn.Exp left,right;
-        Absyn.AlgorithmItem algItem;
-      equation
-        algItem = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(left,right),NONE());  	
-      then algItem;
-  end matchcontinue;
-end fromEquationToAlgAssignment;
 
 protected function createListFromExpression "function: createListFromExpression"
   input Absyn.Exp exp;
@@ -1433,7 +1407,7 @@ algorithm
         Integer n;     
         list<Absyn.Exp> e; 
       equation  
-        e = {Absyn.BOOL(true)};
+        e = {Absyn.INTEGER(1)};
         localAccList = listAppend(localAccList,e);
         localAccList = createListOfTrue(n-1,localAccList);
       then localAccList; 
@@ -1617,7 +1591,7 @@ uniontype RightHandSide
   
   record RIGHTHANDSIDE
     list<Absyn.ElementItem> localDecls;
-    list<Absyn.EquationItem> equations;
+    list<Absyn.AlgorithmItem> algs;
     Absyn.Exp result; 
     Integer numberOfCase;
   end RIGHTHANDSIDE;

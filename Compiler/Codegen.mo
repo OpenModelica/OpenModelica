@@ -2707,27 +2707,28 @@ algorithm
         cfn = cAddStatements(cEmptyFunction, {"break;"});
       then
         (cfn,tnr);  
+
         // Part of MetaModelica Extension. KS    
     //--------------------------------    
     case (Algorithm.TRY(stmts),tnr,context)
       equation 
-        //cfn1 = cAddStatements(cEmptyFunction, {"{"}); // try
+        cfn1 = cAddStatements(cEmptyFunction, {"try {"}); // try
         (cfn2,tnr2) = generateAlgorithmStatements(stmts, tnr,
            context);
-        //cfn2_1 = cAddStatements(cfn2, {"}"});
-        //cfn = cMergeFns({cfn1,cfn2_1});
+        cfn2_1 = cAddStatements(cfn2, {"}"});
+        cfn = cMergeFns({cfn1,cfn2_1});
       then
-        (cfn2,tnr2);  
+        (cfn,tnr2);  
         
     case (Algorithm.CATCH(stmts),tnr,context)
       equation 
-        //cfn1 = cAddStatements(cEmptyFunction, {"{"}); //catch(int i) 
-        //(cfn2,tnr2) = generateAlgorithmStatements(stmts, tnr,
-         // context); 
-        //cfn2_1 = cAddStatements(cfn2, {"}"}); 
-        //cfn = cMergeFns({cfn1,cfn2_1});
+        cfn1 = cAddStatements(cEmptyFunction, {"catch(int i) {"}); //catch(int i) 
+        (cfn2,tnr2) = generateAlgorithmStatements(stmts, tnr,
+          context); 
+        cfn2_1 = cAddStatements(cfn2, {"}"}); 
+        cfn = cMergeFns({cfn1,cfn2_1});
       then
-        (cEmptyFunction,tnr);   
+        (cfn,tnr);   
         
     case (Algorithm.THROW(),tnr,context)
       equation 
