@@ -873,7 +873,30 @@ algorithm
   end matchcontinue;
 end readSettingsFile;
 
-
+function printUsage
+algorithm
+  print("OpenModelica Compiler version: "); print(Settings.getVersionNr()); print("\n");
+  print("http://www.ida.liu.se/labs/pelab/modelica/OpenModelica.html\n");
+  print("Please check the System Guide for full information about flags.\n");
+  print("Usage: omc [-runtimeOptions +omcOptions] Model.mo|Model.mof|Script.mos\n");        
+  print("* runtimeOptions: call omc -help for seeing runtime options\n");
+  print("* omcOptions:\n");
+  print("\t++v                  will print the version and exit\n");  
+  print("\t+s Model.mo          will generate code for Model:\n");
+  print("\t                     Model.cpp           the model C++ code\n");
+  print("\t                     Model_functions.cpp the model functions C++ code\n");
+  print("\t                     Model.makefile      the makefile to compile the model.\n");
+  print("\t                     Model_init.txt      the initial values for parameters\n");
+  print("\t+d=interactive       will start omc as a server listening on the socket interface\n");
+  print("\t+d=interactiveCorba  will start omc as a server listening on the Corba interface\n");
+  print("\t+c=corbaName         works togheter with +d=interactiveCorba;\n"); 
+  print("\t                     will start omc with a different Corba session name; \n");
+  print("\t                     this way multiple omc compilers can be started\n");
+  print("* Examples:\n");
+  print("\tomc Model.mo         will produce flattened Model on standard output\n");
+  print("\tomc Model.mof        will produce flattened Model on standard output\n");
+  print("\tomc Script.mos       will run the commands from Script.mos\n");
+end printUsage;    
 
 public function main 
 " function: main
@@ -889,6 +912,10 @@ algorithm
       Boolean ismode,icmode,imode,imode_1;
       String s,str;
       Interactive.InteractiveSymbolTable symbolTable;
+    case {}
+      equation
+        printUsage();
+      then ();
     case args
       equation 
         args_1 = RTOpts.args(args);
@@ -908,7 +935,8 @@ algorithm
         ();
     case _
       equation 
-        print("#|Execution failed!\n");
+        print("# Error encountered! Exiting...\n");
+        print("# Please check the error message and the flags.\n");
         errstr = Print.getErrorString();
         Debug.fcall("errorbuf", print, "\n\n----\n\nError buffer:\n\n");
         Debug.fcall("errorbuf", print, errstr);
