@@ -55,8 +55,7 @@ package Interactive
   - Variable bindings
   - Compiled functions (so they do not need to be recompiled)
   - Instantiated classes (that can be reused, not impl. yet)
-  - Modelica models in SCode form (to speed up instantiation. not impl. yet)
-"
+  - Modelica models in SCode form (to speed up instantiation. not impl. yet)"
 
 public import Absyn;
 public import SCode;
