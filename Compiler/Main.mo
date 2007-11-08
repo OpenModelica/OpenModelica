@@ -522,7 +522,7 @@ algorithm
       local String str;
       equation 
         true = runBackendQ();
-        dlow = DAELow.lower(dae, true) "add dummy state" ;
+        dlow = DAELow.lower(dae, true, true) "add dummy state" ;
         Debug.fcall("dumpdaelow", DAELow.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);
@@ -666,7 +666,7 @@ algorithm
         SimCodegen.generateSimulationCode(dae, indexed_dlow_1, ass1, ass2, m, mt, comps, classname, 
           filename, funcfilename,file_dir);
         SimCodegen.generateInitData(indexed_dlow_1, classname, cname_str, init_filename, 0.0, 
-          1.0, 500.0,"dassl");
+          1.0, 500.0, 1e-10, "dassl");
         SimCodegen.generateMakefile(makefilename, cname_str, libs, file_dir);
       then
         ();

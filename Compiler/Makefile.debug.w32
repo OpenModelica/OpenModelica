@@ -5,8 +5,9 @@
 !INCLUDE Makefile.common.w32
 
 RML=$(OMDEV)\tools\rml\bin\rml
+RMLCFLAGS=-Eplain -ftrace
 CFLAGS=/Od /I "./VC7/rmlRuntime/runtime/plain" /D "WIN32" /D "_DEBUG" /D "_CONSOLE"\
-	/D "_MBCS" /Gm /EHsc /RTC1 /MTd /TC /Fd"VC7/Debug/vc70.pdb" /W3 /nologo /ZI
+	/D "_MBCS" /Gm /EHsc /RTC1 /MTd /TC /Fd"VC7/Debug/omcrml.pdb" /W3 /nologo /ZI
 
 SRCC=	$(SRCMO:.mo=.c)
 SRCH=	$(SRCMO:.mo=.h)
@@ -25,7 +26,7 @@ VC7\Debug\omcrml.lib: $(OBJS)
 	lib /NOLOGO /OUT:VC7\Debug\omcrml.lib $(OBJS)
 
 .mo.obj:
-	$(RML) -Eplain $<
+	$(RML) $(RMLCFLAGS) $<
 	$(CC) $(CFLAGS) /c $*.c
 
 VC7\Debug\main.obj: main.obj

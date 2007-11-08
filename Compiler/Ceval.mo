@@ -1528,7 +1528,8 @@ algorithm
       list<SCode.Class> p_1,sp,fp;
       list<Env.Frame> env;
       SCode.Class c;
-      String s1,str,varid,res,cmd,executable,method_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,omhome,pwd,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,scriptstr,res_1,mp,pathstr,name,cname;
+      String s1,str,varid,res,cmd,executable,method_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,
+      omhome,pwd,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,scriptstr,res_1,mp,pathstr,name,cname;
       Exp.ComponentRef cr,fcr,cref,classname;
       Interactive.InteractiveSymbolTable st,newst,st_1,st_2;
       Absyn.Program p,pnew,newp;
@@ -1547,7 +1548,7 @@ algorithm
       list<Integer>[:] m,mt;
       Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
       Values.Value ret_val,simValue,size_value,value,v;
-      Exp.Exp filenameprefix,exp,starttime,stoptime,interval,method,size_expression,funcref,bool_exp,storeInTemp;
+      Exp.Exp filenameprefix,exp,starttime,stoptime,tolerance,interval,method,size_expression,funcref,bool_exp,storeInTemp;
       Absyn.ComponentRef cr_1;
       Integer size,length,rest;
       list<String> vars_1,vars_2,args;
@@ -1664,7 +1665,7 @@ algorithm
         (cache,dae_1,env) = Inst.instantiateClass(cache,p_1, path);
         ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(path,dael,env));
-        ((daelow as DAELow.DAELOW(vars,_,_,eqnarr,_,_,ae,_,_,_))) = DAELow.lower(dae, false) "no dummy state" ;
+        ((daelow as DAELow.DAELOW(vars,_,_,eqnarr,_,_,ae,_,_,_))) = DAELow.lower(dae, false, true) "no dummy state" ;
         m = DAELow.incidenceMatrix(daelow);
         mt = DAELow.transposeMatrix(m);
         jac = DAELow.calculateJacobian(vars, eqnarr, ae, m, mt,false);
@@ -1867,6 +1868,7 @@ algorithm
          starttime,
          stoptime,
          interval,
+         tolerance,
          method,
          filenameprefix,
          storeInTemp})),
@@ -1890,6 +1892,7 @@ algorithm
         starttime,
         stoptime,
         interval,
+        tolerance,
         method,
         filenameprefix,
         storeInTemp})),
@@ -1910,6 +1913,7 @@ algorithm
         starttime,
         stoptime,
         interval,
+        tolerance,
         method,
         filenameprefix,
         storeInTemp})),
@@ -1949,6 +1953,7 @@ algorithm
         starttime,
         stoptime,
         interval,
+        tolerance,
         method,
         filenameprefix,
         storeInTemp}),
@@ -1968,7 +1973,9 @@ algorithm
       then
         (cache,simValue,st);
 
-    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "simulate"),expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,method,filenameprefix}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "simulate"),
+      expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,tolerance,method,filenameprefix}),
+      (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
         simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),
           {
@@ -2991,6 +2998,7 @@ algorithm
       Msg msg;
       Exp.Exp fileprefix;
       Env.Cache cache;
+      Integer elimLevel;
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,fileprefix) /* mo file directory */ 
       equation 
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
@@ -2999,8 +3007,11 @@ algorithm
         ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
         a_cref = Absyn.pathToCref(className);
-        file_dir = getFileDir(a_cref, p);        
-        dlow = DAELow.lower(dae, false);
+        file_dir = getFileDir(a_cref, p);    
+        elimLevel = RTOpts.eliminationLevel();
+        RTOpts.setEliminationLevel(0); // No variable eliminiation            
+        dlow = DAELow.lower(dae, false, false);
+        RTOpts.setEliminationLevel(elimLevel); // Reset elimination level
         filename = DAEQuery.writeIncidenceMatrix(dlow, filenameprefix);
         str = stringAppend("The incidence matrix was dumped to file:", filename);
       then
@@ -3056,7 +3067,7 @@ algorithm
         (cache,dae_1,env) = Inst.instantiateClass(cache,p_1, className);
         ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
-        dlow = DAELow.lower(dae, true);
+        dlow = DAELow.lower(dae, true, true);
         Debug.fprint("bltdump", "Lowered DAE:\n");
         Debug.fcall("bltdump", DAELow.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);
@@ -3139,7 +3150,7 @@ algorithm
         elimLevel = RTOpts.eliminationLevel();
         RTOpts.setEliminationLevel(0); // No variable eliminiation
         (dlow as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(numberOfVars = varSize),orderedEqs = eqns)) 
-        	= DAELow.lower(dae, false/* no dummy variable*/);
+        	= DAELow.lower(dae, false/* no dummy variable*/, true);
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
         	eqnSize = DAELow.equationSize(eqns);
 				simpleEqnSize = DAELow.countSimpleEquations(eqns);
@@ -3275,19 +3286,20 @@ protected function calculateSimulationSettings "function calculateSimulationSett
   output Real outReal2 "start time";
   output Real outReal3 "stop time";
   output Real outReal4 "step size";
+  output Real outReal5 "tolerance";
   output String outString5 "method";
 algorithm 
-  (outCache,outString1,outReal2,outReal3,outReal4,outString5):=
+  (outCache,outString1,outReal2,outReal3,outReal4,outReal5,outString5):=
   matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg,inString)
     local
       String prefix_str,method_str,init_filename,cname_str;
       Interactive.InteractiveSymbolTable st;
-      Values.Value starttime_v,stoptime_v;
+      Values.Value starttime_v,stoptime_v,tolerance_v;
       Integer interval_i;
-      Real starttime_r,stoptime_r,interval_r;
+      Real starttime_r,stoptime_r,interval_r,tolerance_r;
       list<Env.Frame> env;
       Exp.ComponentRef cr;
-      Exp.Exp starttime,stoptime,interval,method,filenameprefix;
+      Exp.Exp starttime,stoptime,interval,tolerance,method,filenameprefix;
       Absyn.Program p;
       list<SCode.Class> sp;
       list<Interactive.InstantiatedClass> ic;
@@ -3296,19 +3308,22 @@ algorithm
       Msg msg;
       Env.Cache cache;
       Absyn.Path className;
-    case (cache,env,Exp.CALL(expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,method,filenameprefix,_}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,cname_str)
+    case (cache,env,Exp.CALL(expLst = {Exp.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,tolerance,method,filenameprefix,_}),
+      (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,cname_str)
       equation 
         (cache,Values.STRING(prefix_str),SOME(st)) = ceval(cache,env, filenameprefix, true, SOME(st), NONE, msg);
         (cache,starttime_v,SOME(st)) = ceval(cache,env, starttime, true, SOME(st), NONE, msg);
         (cache,stoptime_v,SOME(st)) = ceval(cache,env, stoptime, true, SOME(st), NONE, msg);
         (cache,Values.INTEGER(interval_i),SOME(st)) = ceval(cache,env, interval, true, SOME(st), NONE, msg);
+        (cache,tolerance_v,SOME(st)) = ceval(cache,env, tolerance, true, SOME(st), NONE, msg);
         (cache,Values.STRING(method_str),SOME(st)) = ceval(cache,env, method, true, SOME(st), NONE, msg);
         starttime_r = Values.valueReal(starttime_v);
         stoptime_r = Values.valueReal(stoptime_v);
         interval_r = intReal(interval_i);
+        tolerance_r = Values.valueReal(tolerance_v);
         init_filename = Util.stringAppendList({prefix_str,"_init.txt"});
       then
-        (cache,init_filename,starttime_r,stoptime_r,interval_r,method_str);
+        (cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str);
     case (_,_,_,_,_,_)
       equation 
         Print.printErrorBuf("#- Ceval.calculateSimulationSettings failed\n");
@@ -3340,9 +3355,9 @@ algorithm
       list<String> libs;
       String file_dir,cname_str,init_filename,method_str,filenameprefix,makefilename,oldDir,tempDir;
       Absyn.Path classname;
-      Real starttime_r,stoptime_r,interval_r;
+      Real starttime_r,stoptime_r,interval_r,tolerance_r;
       list<Env.Frame> env;
-      Exp.Exp exp,starttime,stoptime,interval,method,fileprefix,storeInTemp;
+      Exp.Exp exp,starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp;
       Exp.ComponentRef cr;
       Absyn.Program p;
       list<SCode.Class> sp;
@@ -3352,7 +3367,9 @@ algorithm
       Msg msg;
       Env.Cache cache;
       Boolean cdToTemp;
-    case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = _),expLst = {Exp.CODE(Absyn.C_TYPENAME(classname),_),starttime,stoptime,interval,method,fileprefix,storeInTemp})),(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = _),
+      expLst = {Exp.CODE(Absyn.C_TYPENAME(classname),_),starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp})),
+      (st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation 
         _ = Error.getMessagesStr() "Clear messages";
         (cache,Values.BOOL(cdToTemp),SOME(st)) = ceval(cache,env, storeInTemp, true, SOME(st_1), NONE, msg);
@@ -3360,10 +3377,10 @@ algorithm
         changeToTempDirectory(cdToTemp);
         (cache,ret_val,st,indexed_dlow_1,libs,file_dir) = translateModel(cache,env, classname, st_1, msg, fileprefix);
         cname_str = Absyn.pathString(classname);
-        (cache,init_filename,starttime_r,stoptime_r,interval_r,method_str) = calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
+        (cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str) = calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
         SimCodegen.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename, 
-          starttime_r, stoptime_r, interval_r,method_str);
+          starttime_r, stoptime_r, interval_r, tolerance_r, method_str);
         makefilename = generateMakefilename(filenameprefix);
         compileModel(filenameprefix, libs, file_dir);
         _ = System.cd(oldDir);

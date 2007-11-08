@@ -537,39 +537,67 @@ public function lower "function: lower
 "
   input DAE.DAElist lst;
   input Boolean add_dummy;
+  input Boolean simplify;
   output DAELow outDAELow;
-  BinTree s;
-  Variables vars,knvars,vars_1,extVars;
-  list<Equation> eqns,reqns,ieqns,algeqns,multidimeqns,eqns_1;
-  list<MultiDimEquation> aeqns,aeqns1;
-  list<Algorithm.Algorithm> algs;
-  list<WhenClause> whenclauses,whenclauses_1;
-  list<ZeroCrossing> zero_crossings;
-  EquationArray eqnarr,reqnarr,ieqnarr;
-  MultiDimEquation[:] arr_md_eqns;
-  Algorithm.Algorithm[:] algarr;
-  ExternalObjectClasses extObjCls;
-algorithm 
-  s := states(lst, emptyBintree);
-  (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses,extObjCls) := lower2(lst, s, {});
-  (vars,eqns) := addDummyState(vars, eqns, add_dummy);
-  whenclauses_1 := listReverse(whenclauses);
-  algeqns := lowerAlgorithms(vars, algs);
-  multidimeqns := lowerMultidimeqns(vars, aeqns);
-  eqns := listAppend(algeqns, eqns);
-  eqns := listAppend(multidimeqns, eqns);
-  (vars,knvars,eqns,reqns,ieqns,aeqns1) := removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, s);
-  vars_1 := detectImplicitDiscrete(vars, eqns);
-  eqns_1 := sortEqn(eqns);
-  (eqns_1,ieqns,aeqns1,algs,vars_1) := expandDerOperator(vars_1,eqns_1,ieqns,aeqns1,algs);
-  (zero_crossings) := findZeroCrossings(vars_1, knvars,eqns_1, whenclauses_1,algs);
-  eqnarr := listEquation(eqns_1);
-  reqnarr := listEquation(reqns);
-  ieqnarr := listEquation(ieqns);
-  arr_md_eqns := listArray(aeqns1);
-  algarr := listArray(algs);
-  outDAELow := DAELOW(vars_1,knvars,extVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,
-          EVENT_INFO(whenclauses_1,zero_crossings),extObjCls);
+algorithm
+  outDAELow := matchcontinue(lst, add_dummy, simplify)  
+    local
+      BinTree s;
+      Variables vars,knvars,vars_1,extVars;
+      list<Equation> eqns,reqns,ieqns,algeqns,multidimeqns,eqns_1;
+      list<MultiDimEquation> aeqns,aeqns1;
+      list<Algorithm.Algorithm> algs;
+      list<WhenClause> whenclauses,whenclauses_1;
+      list<ZeroCrossing> zero_crossings;
+      EquationArray eqnarr,reqnarr,ieqnarr;
+      MultiDimEquation[:] arr_md_eqns;
+      Algorithm.Algorithm[:] algarr;
+      ExternalObjectClasses extObjCls;
+    case(lst, add_dummy, true) // simplify by default
+      equation
+        s = states(lst, emptyBintree);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses,extObjCls) = lower2(lst, s, {});
+        (vars,eqns) = addDummyState(vars, eqns, add_dummy);
+        whenclauses_1 = listReverse(whenclauses);
+        algeqns = lowerAlgorithms(vars, algs);
+        multidimeqns = lowerMultidimeqns(vars, aeqns);
+        eqns = listAppend(algeqns, eqns);
+        eqns = listAppend(multidimeqns, eqns);
+        (vars,knvars,eqns,reqns,ieqns,aeqns1) = removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, s);
+        vars_1 = detectImplicitDiscrete(vars, eqns);
+        eqns_1 = sortEqn(eqns);
+        (eqns_1,ieqns,aeqns1,algs,vars_1) = expandDerOperator(vars_1,eqns_1,ieqns,aeqns1,algs);
+        (zero_crossings) = findZeroCrossings(vars_1, knvars,eqns_1, whenclauses_1,algs);
+        eqnarr = listEquation(eqns_1);
+        reqnarr = listEquation(reqns);
+        ieqnarr = listEquation(ieqns);
+        arr_md_eqns = listArray(aeqns1);
+        algarr = listArray(algs);
+      then DAELOW(vars_1,knvars,extVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,
+        EVENT_INFO(whenclauses_1,zero_crossings),extObjCls);
+    case(lst, add_dummy, false) // do not simplify 
+      equation
+        s = states(lst, emptyBintree);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses,extObjCls) = lower2(lst, s, {});
+        // no simplify (vars,eqns) = addDummyState(vars, eqns, add_dummy);
+        whenclauses_1 = listReverse(whenclauses);
+        algeqns = lowerAlgorithms(vars, algs);
+        multidimeqns = lowerMultidimeqns(vars, aeqns);
+        eqns = listAppend(algeqns, eqns);
+        eqns = listAppend(multidimeqns, eqns);
+        // no simplify (vars,knvars,eqns,reqns,ieqns,aeqns1) = removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, s);
+        vars_1 = detectImplicitDiscrete(vars, eqns);
+        eqns_1 = sortEqn(eqns);
+        // no simplify (eqns_1,ieqns,aeqns1,algs,vars_1) = expandDerOperator(vars_1,eqns_1,ieqns,aeqns1,algs);
+        (zero_crossings) = findZeroCrossings(vars_1, knvars,eqns_1, whenclauses_1,algs);
+        eqnarr = listEquation(eqns_1);
+        reqnarr = listEquation(reqns);
+        ieqnarr = listEquation(ieqns);
+        arr_md_eqns = listArray(aeqns);
+        algarr = listArray(algs);
+      then DAELOW(vars_1,knvars,extVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,
+        EVENT_INFO(whenclauses_1,zero_crossings),extObjCls);
+  end matchcontinue;
 end lower;
 
 protected function expandDerOperator "expands der(expr) using Derive.differentiteExpTime. 

@@ -525,7 +525,7 @@ algorithm
         str1 = Util.stringAppendList(
           {"\n","#define NHELP ",nh_str,"\n","#define NG ",ng_str,"//number of zero crossing",
           "\n","#define NX ",nx_str,"\n","#define NY ",ny_str,"\n","#define NP ",
-          np_str," // number of paramters\n","#define NO ",no_str,
+          np_str," // number of parameters\n","#define NO ",no_str,
           " // number of outputvar on topmodel\n","#define NI ",ni_str," // number of inputvar on topmodel\n",
           "#define NR ",nres_str," // number of residuals for initialialization function\n",
           "#define NEXT ", next_str," // number of external objects\n",
@@ -6159,24 +6159,26 @@ public function generateInitData "function generateInitData
   input Real inReal5;
   input Real inReal6;
   input Real inReal7;
+  input Real inTolerance;
   input String method;
 algorithm 
   _:=
-  matchcontinue (inDAELow1,inPath2,inString3,inString4,inReal5,inReal6,inReal7,method)
+  matchcontinue (inDAELow1,inPath2,inString3,inString4,inReal5,inReal6,inReal7,inTolerance,method)
     local
-      Real delta_time,step,start,stop,intervals;
-      String start_str,stop_str,step_str,nx_str,ny_str,np_str,init_str,str,exe,filename;
+      Real delta_time,step,start,stop,intervals,tolerance;
+      String start_str,stop_str,step_str,tolerance_str,nx_str,ny_str,np_str,init_str,str,exe,filename;
       String ny_str,np_str,npstring_str,nystring_str;
       Integer nx,ny,np,npstring,nystring;
       DAELow.DAELow dlow;
       Absyn.Path class_;
-    case (dlow,class_,exe,filename,start,stop,intervals,method) /* classname executable file name filename start time stop time íntervals */ 
+    case (dlow,class_,exe,filename,start,stop,intervals,tolerance,method) /* classname executable file name filename start time stop time íntervals */ 
       equation 
         delta_time = stop -. start;
         step = delta_time/.intervals;
         start_str = realString(start);
         stop_str = realString(stop);
         step_str = realString(step);
+        tolerance_str = realString(tolerance);
         (nx,ny,np,_,_,nystring,npstring) = DAELow.calculateSizes(dlow);
         nx_str = intString(nx);
         ny_str = intString(ny);
@@ -6184,15 +6186,22 @@ algorithm
         npstring_str = intString(npstring);
         nystring_str = intString(nystring);
         init_str = generateInitData2(dlow, nx, ny, np, nystring, npstring);
-        str = Util.stringAppendList(
-          {start_str," // start value\n",stop_str," // stop value\n",
-          step_str," // step value\n","\"",method,"\" // method\n", nx_str," // n states\n",ny_str," // n alg vars\n",
-          np_str," //n parameters\n",npstring_str," // n string-parameters\n",nystring_str, " // n string variables\n",
+        str = Util.stringAppendList({
+          start_str," // start value\n",
+          stop_str," // stop value\n",
+          step_str," // step value\n",
+          tolerance_str, " // tolerance\n", 
+          "\"",method,"\" // method\n", 
+          nx_str," // n states\n",
+          ny_str," // n alg vars\n",
+          np_str," //n parameters\n",
+          npstring_str," // n string-parameters\n",
+          nystring_str," // n string variables\n", 
           init_str});          
         System.writeFile(filename, str);
       then
         ();
-    case (_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_)
       equation 
         print("-generate_init_data failed\n");
       then

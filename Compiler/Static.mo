@@ -5034,7 +5034,7 @@ algorithm
       Boolean impl;
       Interactive.InteractiveSymbolTable st;
       Ident varid,cname_str,filename,str;
-      Exp.Exp filenameprefix,startTime,stopTime,numberOfIntervals,method,size_exp,exp_1,bool_exp_1;
+      Exp.Exp filenameprefix,startTime,stopTime,numberOfIntervals,method,size_exp,exp_1,bool_exp_1,tolerance;
       tuple<Types.TType, Option<Absyn.Path>> recordtype;
       list<Absyn.NamedArg> args;
       list<Exp.Exp> vars_1;
@@ -5157,6 +5157,8 @@ algorithm
           args, Exp.RCONST(1.0));
         (cache,numberOfIntervals) = getOptionalNamedArg(cache,env, SOME(st), impl, "numberOfIntervals", 
           (Types.T_INTEGER({}),NONE), args, Exp.ICONST(500));
+        (cache,tolerance) = getOptionalNamedArg(cache,env, SOME(st), impl, "tolerance", (Types.T_REAL({}),NONE), 
+          args, Exp.RCONST(1e-10));          
         (cache,method) = getOptionalNamedArg(cache,env, SOME(st), impl, "method", (Types.T_STRING({}),NONE), 
           args, Exp.SCONST("dassl"));
         classname = componentRefToPath(cr_1) "this extracts the fileNamePrefix which is used when generating code and init-file" ;
@@ -5172,8 +5174,8 @@ algorithm
           Types.ATTR(false,SCode.RO(),SCode.VAR(),Absyn.BIDIR()),false,(Types.T_STRING({}),NONE),Types.UNBOUND())},NONE),NONE);
       then
         (cache,Exp.CALL(Absyn.IDENT("simulate"),
-          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),startTime,stopTime,
-          numberOfIntervals,method,filenameprefix,storeInTemp},false,true,Exp.OTHER()),Types.PROP(recordtype,Types.C_VAR()),SOME(st));
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),startTime,stopTime,numberOfIntervals,tolerance,
+          method,filenameprefix,storeInTemp},false,true,Exp.OTHER()),Types.PROP(recordtype,Types.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "jacobian"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */ 
       equation 
