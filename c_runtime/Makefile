@@ -44,7 +44,10 @@ g++ -c -o sendData/libsendData.o sendData/humbug.cpp && \
 ar -ru sendData/release/libsendData.a sendData/libsendData.o
 endif
 
-all : libc_runtime.a libsim.a libf2c.a libsendData.a install
+all : $(SIMOBJS) $(OBJS) libc_runtime.a libsim.a libf2c.a libsendData.a install
+
+$(SIMOBJS) : $(HFILES) *.c*
+$(OBJS) : $(HFILES) *.c*
 
 libc_runtime.a : $(OBJS)
 	$(AR) $@ $(OBJS)

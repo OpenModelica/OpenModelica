@@ -78,16 +78,21 @@ void read_commented_value(ifstream &f, char **str);
   }
   //  cerr << "opened file" << endl;
   read_commented_value(file,start);
+  if (sim_verbose) { cout << "read start = " << *start << " from init file." << endl; }
   read_commented_value(file,stop);
+  if (sim_verbose) { cout << "read stop = " << *stop << " from init file." << endl; }
   read_commented_value(file,stepSize);
-    
+  if (sim_verbose) { cout << "read stepSize = " << *stepSize << " from init file." << endl; }
   if (stepSize < 0) { // stepSize < 0 => Automatic number of outputs 
   	*outputSteps = -1;
   } else {
   	// Calculate outputSteps from stepSize, start and stop
-  *outputSteps = (long)(int(*stop-*start) /(*stepSize));
+    *outputSteps = (long)(int(*stop-*start) /(*stepSize));
   }
+  read_commented_value(file,tolerance);
+  if (sim_verbose) { cout << "read tolerance = " << *tolerance << " from init file." << endl; }
   read_commented_value(file,method);
+  if (sim_verbose) { cout << "read method = " << *method << " from init file." << endl; }
   int nxchk,nychk,npchk;
   int nystrchk,npstrchk;
   read_commented_value(file,&nxchk);
