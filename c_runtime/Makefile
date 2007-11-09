@@ -23,7 +23,7 @@ biglag.o  ddassl.o  dogleg.o  fdjac1.o  hybrj.o   newuoa.o   qrfac.o   trsapp.o 
 daux.o    dlamch.o  dpmpar.o  hybrd.o   lsame.o   newuob.o   r1mpyq.o  update.o $(EXTRA_OBJS)
 
 SIMOBJS = $(FOBJS) simulation_runtime.o simulation_init.o simulation_input.o simulation_events.o \
-solver_dasrt.o solver_euler.o simulation_result.o ../mosh/src/options.o dgesv_aux.o meta_modelica.o $(EXTRA_SIMOBJS)
+solver_dasrt.o solver_euler.o simulation_result.o tables.o ../mosh/src/options.o dgesv_aux.o meta_modelica.o $(EXTRA_SIMOBJS)
 
 HFILES = blaswrap.h f2c.h integer_array.h memory_pool.h modelica_string.h \
 	real_array.h string_array.h boolean_array.h index_spec.h matrix.h \
@@ -82,6 +82,6 @@ clean :
 	rm -f $(builddir_lib)/libsim.a
 	rm -f $(builddir_lib)/libf2c.*
 	cd $(builddir_inc)/ && rm -f $(HFILES)
-	cd sendData && rm -fr release debug Makefile* *sendData*.o *sendData*.a	
+	cd sendData && rm -fr release debug *sendData*.o *sendData*.a	
 	rm -rf sendData/release sendData/debug
-	rm -f sendData.o sendData.a sendData/Makefile* sendData/releasesendData.o
+	rm -f sendData.o sendData.a sendData/releasesendData.o
