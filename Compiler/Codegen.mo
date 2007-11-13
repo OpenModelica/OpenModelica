@@ -2707,8 +2707,8 @@ algorithm
         cfn = cAddStatements(cEmptyFunction, {"break;"});
       then
         (cfn,tnr);  
-
-        // Part of MetaModelica Extension. KS    
+        
+    // Part of MetaModelica Extension. KS    
     //--------------------------------    
     case (Algorithm.TRY(stmts),tnr,context)
       equation 
@@ -4142,11 +4142,21 @@ algorithm
                 
         
         // MetaModelica extension   
+     case (Exp.CALL(path = Absyn.IDENT(name = "listCar"),expLst = {s1 as Exp.CREF(_,Exp.T_LIST(t))},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */ 
+      local String cref_str; Exp.Exp s,minlen,leftjust,signdig; Boolean needCast; String var1,var2,var3,var4;
+        Exp.Type t;
+      equation  
+        (cfn,var1,tnr1) = generateExpression(s1, tnr, context);
+        cref_str = expTypeStr(t,false);
+        stmt = Util.stringAppendList({"(",cref_str,")","MMC_CAR(",var1,")"});
+      then
+        (cfn,stmt,tnr1);          
+        
      case (Exp.CALL(path = Absyn.IDENT(name = "listCar"),expLst = {s1},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */ 
       local String cref_str; Exp.Exp s,minlen,leftjust,signdig; Boolean needCast; String var1,var2,var3,var4;
       equation  
         (cfn,var1,tnr1) = generateExpression(s1, tnr, context);
-        stmt = Util.stringAppendList({"MMC_CAR(",var1,")"});
+        stmt = Util.stringAppendList({"(modelica_integer)MMC_CAR(",var1,")"});
       then
         (cfn,stmt,tnr1);       
               

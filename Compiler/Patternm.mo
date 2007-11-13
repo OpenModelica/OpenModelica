@@ -54,6 +54,7 @@ public import Absyn;
 public import DFA;
 public import Env;
 public import SCode;
+public import Types;
 
 protected import Lookup;
 protected import Util;
@@ -2674,37 +2675,51 @@ algorithm
       If we have an equation of the form (exp1,exp2,...,expN) = func(...),
       we may have to transform it into a matchcontinue statement,
       since the expressions should be "matched" against the return 
-      values of the function
+      values of the function */
       
-      case (Absyn.EQ_EQUALS(Absyn.TUPLE(expL),Absyn.CALL(cRef,funcArgs)),localCache,localEnv)    
+      case (Absyn.EQ_EQUALS(Absyn.TUPLE(expL),funcCall as Absyn.CALL(cRef,_)),localCache,localEnv)    
       local
         list<Absyn.Exp> expL;
+        Absyn.Exp funcCall;
         Absyn.ComponentRef cRef;
         Absyn.FunctionArgs funcArgs;
-        
-        Absyn.AlgorithmItem algItem;
+        list<Types.Type> typeList;
+        Absyn.Path p;
+        list<Absyn.AlgorithmItem> algItem;
       equation
         false = onlyCrefExpressions(expL);
-      
+        
+      /*
       DUMMIE__ := 
       valueblock(
       var1,...,varN;
       
       (var1,...,varN) := func(...);
       DUMMIE__ :=
-      mathcontinue (var1,...,varN)
-      	case (expL)
-      	then true;
-      	case (_) 
-      	then false;
-      end matchcontinue;
+      valueblock(
+      
+      
+      ) 
       
       if (DUMMIE__) 
       	return true;
       else
       	throw();	
       )
-      then (localCache,algItem); */ 
+      */
+       /* p = Absyn.crefToPath(cRef);
+        (localCache,typeList) = Lookup.lookupFunctionsInEnv(localCache,localEnv,p);
+        (varList,elemList) = createElements(typeList);
+        matchExp = createMatchContinue(expL,varList);
+        (localCache,matchExp) = matchMain(matchExp,{Absyn.CREF(Absyn.CREF_IDENT("DUMMIE__"),{})},localCache,localEnv);
+        algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(varList,funcCall),NONE()),
+          Absyn.ALGORITHMITEM(Absyn.ASSIGN(Absyn.CREF(Absyn.CREF_IDENT("DUMMIE__"),{}),
+          matchExp,NONE())};
+        algItem = {Absyn.ALGORITHMITEM(Absyn.ASSIGN(Absyn.CREF(Absyn.CREF_IDENT("DUMMIE__"),{}),
+        Absyn.VALUEBLOCK(elemList,algItem2,Absyn.BOOL(true))),NONE())}; */
+         algItem = {};
+                
+      then (localCache,algItem); 
       /*---------------------------------------*/
       
     case (Absyn.EQ_EQUALS(left,right),localCache,_)    
@@ -2717,13 +2732,14 @@ algorithm
   end matchcontinue;
 end fromEquationToAlgAssignment;
 
-/*protected function onlyCrefExpressions "function: onlyCrefExpressions"
+protected function onlyCrefExpressions "function: onlyCrefExpressions"
   input list<Absyn.Exp> expList; 
   output Boolean boolVal;
 algorithm
   boolVal :=
   matchcontinue (expList) 
-    case ({}) return true;
+    case ({}) 
+      then true;
     case (Absyn.CREF(_) :: restList)
       local 
         list<Absyn.Exp> restList; 
@@ -2731,8 +2747,8 @@ algorithm
       equation
         b = onlyCrefExpressions(restList);
       then b;  
-    case (_) return false;      
+    case (_) then false;      
   end matchcontinue;
-end onlyCrefExpressions; */
+end onlyCrefExpressions; 
 
 end Patternm;
