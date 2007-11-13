@@ -74,6 +74,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtGui/QTextFrame>
 #include <QAction>
 #include <QActionGroup>
+#include <QTextDocumentFragment>
 
 //IAEX Headers
 #include "graphcell.h"
@@ -155,6 +156,10 @@ namespace IAEX
 		}
 
 		emit clickOnCell();
+		updatePosition();
+		if(state != ERROR)
+			emit setState(MODIFIED);
+
 	}
 
 	/*! 
@@ -171,6 +176,11 @@ namespace IAEX
 		emit wheelMove( event );
 	}
 
+	void MyTextEdit2::focusInEvent(QFocusEvent* event)
+	{
+		setModified();
+		QTextBrowser::focusInEvent(event);
+	}
 	/*! 
 	 * \author Anders Fernström
 	 * \date 2005-12-15
@@ -299,6 +309,25 @@ namespace IAEX
 
 			QTextBrowser::keyPressEvent( event );
 		}
+
+		
+		updatePosition();
+
+	}
+
+	void MyTextEdit2::setModified()
+	{
+		emit setState(MODIFIED);
+	}
+
+	void MyTextEdit2::updatePosition()
+	{
+
+		int pos = textCursor().position();
+		int row = toPlainText().left(pos).count("\n") +1;
+		int col = pos - toPlainText().left(pos).lastIndexOf("\n");
+
+		emit updatePos(row, col);
 	}
 
 	/*! 
@@ -320,7 +349,54 @@ namespace IAEX
 		}
 		else
 			QTextBrowser::insertFromMimeData( source );
+
+		updatePosition();
+		if(state != ERROR)
+			emit setState(MODIFIED);
+
 	}
+
+	void MyTextEdit2::goToPos(const QUrl& u)
+	{
+		QRegExp e("\\-|:");
+		int r=u.toString().section(e, 0,0).toInt();
+		int c=u.toString().section(e, 1,1).toInt();
+		int r2=u.toString().section(e, 2,2).toInt();
+		int c2=u.toString().section(e, 3,3).toInt();
+
+		
+		int p = 0;
+		for(int i = 1; i < r; ++i)
+			p = toPlainText().indexOf("\n", p)+1;
+		p += (c-1);
+
+		QTextCursor tc(textCursor());
+		tc.setPosition(p);
+
+		int p2 = 0;
+		if(r2 > 0)
+		{
+			for(int i = 1; i < r2; ++i)
+				p2 = toPlainText().indexOf("\n", p2)+1;
+			p2 += (c2-1);
+		tc.setPosition(p2, QTextCursor::KeepAnchor);
+		}
+		
+		setTextCursor(tc);
+
+		updatePos(r, c);
+
+		setFocus(Qt::MouseFocusReason);
+	}
+
+	void MyAction::triggered2()
+	{
+		emit urlClicked(QUrl(text()));
+	}
+
+	MyAction::MyAction(const QString& text, QObject* parent): QAction(text, parent) {}
+
+//	};
 
 	/*! 
 	* \class GraphCell
@@ -336,7 +412,7 @@ namespace IAEX
 	* # omc +d=interactiveCorba
 	*
 	*
-	* \todo Make it possiblee to add and change syntax coloring of code.(Ingemar Axelsson)
+	* \todo Make it possible to add and change syntax coloring of code.(Ingemar Axelsson)
 	*/
 
 	int GraphCell::numEvals_ = 1;
@@ -381,6 +457,10 @@ namespace IAEX
  
 		connect(compoundwidget->gwMain, SIGNAL(newExpr(QString)), this, SLOT(setExpr(QString)));
 		connect(this, SIGNAL(newExpr(QString)), compoundwidget->gwMain, SLOT(setExpr(QString)));
+		connect(compoundwidget->gwMain, SIGNAL(showGraphics()), this, SLOT(showGraphics()));
+
+		connect(output_, SIGNAL(anchorClicked(const QUrl&)), input_, SLOT(goToPos(const QUrl&)));
+
 	}
 
 	/*! 
@@ -485,8 +565,14 @@ namespace IAEX
 		connect( input_, SIGNAL( forwardAction(int) ),
 			this, SIGNAL( forwardAction(int) ));
 
+		connect( input_, SIGNAL(updatePos(int, int)), this, SIGNAL(updatePos(int, int)));
 		contentChanged();
+
+		connect(input_, SIGNAL(setState(int)), this, SLOT(setState(int)));
+		connect(input_, SIGNAL(textChanged()), input_, SLOT(setModified()));
+
 	}
+
 
 	/*! 
 	 * \author Anders Fernström and Ingemar Axelsson
@@ -504,6 +590,9 @@ namespace IAEX
 		layout_->addWidget( output_, 2, 1 );
 
 		output_->setReadOnly( true );
+
+		output_->setOpenLinks(false);
+
 		//output_->setFrameShape( QFrame::Panel );
 		output_->setFrameShape( QFrame::Box );
 		output_->setAutoFormatting( QTextEdit::AutoNone );
@@ -523,7 +612,7 @@ namespace IAEX
 
 		setOutputStyle();
 		
-		output_->setTextInteractionFlags(Qt::TextSelectableByMouse|Qt::TextSelectableByKeyboard);
+		output_->setTextInteractionFlags(Qt::TextSelectableByMouse|Qt::TextSelectableByKeyboard|Qt::LinksAccessibleByMouse|Qt::LinksAccessibleByKeyboard);
 //		QPalette palette;
 //		palette.setColor(input_->backgroundRole(), QColor(Qt::gray));
 //		output_->setPalette(palette);
@@ -1019,7 +1108,7 @@ namespace IAEX
 			if( evaluated_ )
 			{
 				output_->show();
-				compoundwidget->show();
+//				compoundwidget->show();
 			}
 		}
 
@@ -1192,6 +1281,19 @@ namespace IAEX
 		}
 	}
 
+	void GraphCell::showGraphics()
+	{
+		compoundwidget->show();
+
+
+		if(!compoundwidget->isVisible())
+		{
+			setHeight(height() +200);
+			compoundwidget->show();
+			compoundwidget->setMinimumHeight(200);
+		}
+		contentChanged();
+	}
 	bool GraphCell::isPlot2(QString text)
 	{
 		QRegExp exp("plot2\\(.*\\)|plotParametric2\\(.*\\)|simulate" );
@@ -1243,6 +1345,10 @@ namespace IAEX
 		input_->blockSignals(true);
 		output_->blockSignals(true);
 
+		
+		setState(EVAL);
+		
+
 		if( hasDelegate() )
 		{
 
@@ -1292,6 +1398,8 @@ namespace IAEX
 
 			if( oldPlot )
 			{
+				setClosed(false);
+
 				if( dir.exists( imagename ))
 					dir.remove( imagename );
 
@@ -1300,6 +1408,13 @@ namespace IAEX
 			}
 			else if(newPlot)
 			{
+				setClosed(false);
+
+//				showGraphics();
+		if(!compoundwidget->gwMain->getServerState())
+			compoundwidget->gwMain->setServerState(true);
+
+/*
 				if(!compoundwidget->gwMain->getServerState())
 					compoundwidget->gwMain->setServerState(true);
 				if(!compoundwidget->isVisible())
@@ -1308,6 +1423,7 @@ namespace IAEX
 					compoundwidget->show();
 					compoundwidget->setMinimumHeight(200);
 				}
+*/
 			}
 
 			// 2006-02-02 AF, Added try-catch
@@ -1421,6 +1537,7 @@ namespace IAEX
 								{
 									output_->selectAll();
 									output_->textCursor().insertText( "[Error] Unable to read plot image \"" + filename + "\". Please retry." );
+									setState(ERROR);
 									//output_->setPlainText( "[Error] Unable to read plot image \"" + imagename + "\". Please retry." );
 									break;
 								}
@@ -1431,6 +1548,7 @@ namespace IAEX
 						{
 							output_->selectAll();
 							output_->textCursor().insertText( "[Error] Unable to find plot image \"" + filename + "\"" );
+							setState(ERROR);
 							//						output_->setPlainText( "[Error] Unable to found plot image \"" + imagename + "\"" );
 							break;
 						}
@@ -1444,10 +1562,24 @@ namespace IAEX
 				{
 					// check if resualt is empty
 					if( res.isEmpty() && error.isEmpty() )
+					{
+						setState(FINISHED);					
 						res = "[done]";
-
+					}
 					if( !error.isEmpty() )
+					{
 						res += QString("\n") + error;
+				//		palette.setColor(input_->backgroundRole(), QColor(200,00,00));
+						setState(ERROR);
+					}
+					else
+						setState(FINISHED);
+//						palette.setColor(input_->backgroundRole(), QColor(200,200,255));					
+
+//		QPalette palette;
+
+//		palette.setColor(input_->backgroundRole(), QColor(Qt::green));
+//		input_->setPalette(palette);
 
 					output_->selectAll();
 					output_->textCursor().insertText( res );
@@ -1468,9 +1600,10 @@ namespace IAEX
 
 			}
 		else //!hasDelegate
-
+		{
 			cout << "Not delegate on GraphCell" << endl;
-
+			setState(ERROR);
+		}
 			input_->blockSignals(false);
 			output_->blockSignals(false);
 		
@@ -1609,6 +1742,8 @@ namespace IAEX
 
 	}
 */
+
+
 	void GraphCell::delegateFinished()
 	{
 
@@ -1627,6 +1762,8 @@ namespace IAEX
 			exceptionInEval(e);
 			input_->blockSignals(false);
 			output_->blockSignals(false);
+
+			setState(ERROR);
 			return;
 		}
 /*
@@ -1720,13 +1857,109 @@ namespace IAEX
 */
 
 		if( res.isEmpty() && error.isEmpty() )
+		{
 			res = "[done]";
+			setState(FINISHED);
+		}
 
 		if( !error.isEmpty() )
+		{
+			setState(ERROR);
 			res += QString("\n") + error;
+		}
+		else
+			setState(FINISHED);
+		
 
-		output_->selectAll();
-		output_->textCursor().insertText( res );
+
+		QRegExp e("([\\d]+:[\\d]+-[\\d]+:[\\d]+)|([\\d]+:[\\d]+)");		
+
+		bool b;
+		int p=0;
+
+
+			output_->selectAll();
+			output_->textCursor().insertText( res );
+
+		QList<QAction*> actions;
+		while((p=res.indexOf(e, p)) > 0)
+		{
+
+			QTextCharFormat f;
+			f.setAnchor(true);
+
+
+
+
+			if(e.cap(1).size() > e.cap(2).size())
+			{
+				f.setAnchorHref(e.cap(1));
+				QTextCursor c(output_->textCursor());
+				c.setPosition(p);
+				c.setPosition(p+=e.cap(1).size(), QTextCursor::KeepAnchor);
+
+
+				f.setAnchor(true);
+				f.setFontUnderline(true);
+				c.mergeCharFormat(f);
+				c.setPosition(output_->toPlainText().size());
+				output_->setTextCursor(c);
+
+				
+				MyAction* a = new MyAction(e.cap(1), 0);
+				connect(a, SIGNAL(triggered()), a, SLOT(triggered2()));
+				connect(a, SIGNAL(urlClicked(const QUrl&)), output_, SIGNAL(anchorClicked(const QUrl&)));
+				actions.push_back(a);
+			}
+			else
+			{
+				f.setAnchorHref(e.cap(2));
+				QTextCursor c(output_->textCursor());
+				c.setPosition(p);
+				c.setPosition(p+=e.cap(2).size(), QTextCursor::KeepAnchor);
+
+
+				f.setAnchor(true);
+				f.setFontUnderline(true);
+				c.mergeCharFormat(f);
+				c.setPosition(output_->toPlainText().size());
+				output_->setTextCursor(c);
+
+				MyAction* a = new MyAction(e.cap(2), 0);
+				connect(a, SIGNAL(triggered()), a, SLOT(triggered2()));
+				connect(a, SIGNAL(urlClicked(const QUrl&)), output_, SIGNAL(anchorClicked(const QUrl&)));
+				actions.push_back(a);				
+
+/*
+				QMessageBox::information(0, "uu2", "ii");
+
+				f.setAnchorName(e.cap(2));
+				output_->textCursor().setPosition(p);
+				output_->textCursor().setPosition(p+e.cap(2).size(), QTextCursor::KeepAnchor);
+//				output_->textCursor().mergeBlockCharFormat(f);
+		output_->textCursor().charFormat().setAnchor(true);
+//				output_->textCursor().mergeCharFormat(f);
+*/
+
+			}
+
+	
+//		output_->setCurrentCharFormat(f);
+//			output_->textCursor().setBlockCharFormat(f);
+
+
+
+		}
+			emit setStatusMenu(actions);
+		/*
+		else
+		{
+			output_->selectAll();
+			output_->textCursor().insertText( res );
+
+		}
+*/
+		//		QMessageBox::information(0, QVariant(res.indexOf(e2)).toString(), QVariant(res.indexOf(e)).toString());
 		//output_->setPlainText( res );
 		//			}
 
@@ -1746,6 +1979,31 @@ namespace IAEX
 	 *
 	 *\brief Method for handleing exceptions in eval()
 	 */
+
+	void GraphCell::setState(int state_)
+	{
+		input_->state = state_;
+		switch(state_)
+		{
+		case MODIFIED:
+			emit newState("Ready");
+			break;
+		case EVAL:
+			emit newState("Evaluating...");
+			break;
+		case FINISHED:
+			emit newState("Done");
+			break;
+		case ERROR:
+			emit newState("Error");
+			break;
+
+		}
+
+
+	}
+
+
 	void GraphCell::exceptionInEval(exception &e)
 	{
 		// 2006-0-09 AF, try to reconnect to OMC first.

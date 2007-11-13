@@ -174,6 +174,9 @@ namespace IAEX
 		
 
 	signals:
+		void updatePos(int, int);
+		void newState(QString);
+		void setStatusMenu(QList<QAction*>);
 		void widthChanged(const int);
 		void cursorChanged();
 		void viewExpression(const bool);

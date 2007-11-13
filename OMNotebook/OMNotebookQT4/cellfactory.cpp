@@ -217,6 +217,9 @@ namespace IAEX
 			QObject::connect( text, SIGNAL( forwardAction(int) ),
 				doc_, SIGNAL( forwardAction(int) ));
 
+			QObject::connect( text, SIGNAL( updatePos(int, int)), doc_, SIGNAL(updatePos(int, int)));
+			QObject::connect( text, SIGNAL( newState(QString)), doc_, SIGNAL(newState(QString)));
+			QObject::connect(text, SIGNAL( setStatusMenu(QList<QAction*>)), doc_, SIGNAL(setStatusMenu(QList<QAction*>)));
 
 			return text;
 		}

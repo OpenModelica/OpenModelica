@@ -78,6 +78,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtGui/QTextEdit>
 #include <QtGui/QTextFrame>
 #include <QtGui/QToolBar>
+#include <QtGui/QLabel>
 #include <QSettings>
 
 //IAEX Headers
@@ -155,6 +156,13 @@ namespace IAEX
 		toolBar = new QToolBar("Show toolbar", this);
 	
 
+		posIndicator = new QLabel("");
+		posIndicator->setMinimumWidth(75);
+		stateIndicator = new QLabel("");
+		stateIndicator->setMinimumWidth(60);
+		
+		statusBar()->insertPermanentWidget(0,posIndicator);
+		statusBar()->insertPermanentWidget(0,stateIndicator);
 		createFileMenu();
 		createEditMenu();
 		createCellMenu();
@@ -182,6 +190,12 @@ namespace IAEX
 		// 2006-04-27 AF
 		connect( subject_, SIGNAL( forwardAction(int) ),
 			this, SLOT( forwardedAction(int) ));
+
+		connect( subject_, SIGNAL(updatePos(int, int)), this, SLOT(setPosition(int, int)));
+
+		connect( subject_, SIGNAL(newState(QString)), this, SLOT(setState(QString)));
+
+		connect( subject_, SIGNAL(setStatusMenu(QList<QAction*>)), this, SLOT(setStatusMenu(QList<QAction*>)));
 
 		updateWindowTitle();
 		updateChapterCounters();
@@ -360,6 +374,8 @@ namespace IAEX
 			delete findForm_;
 
 		delete toolBar;
+		delete posIndicator;
+		delete stateIndicator;
 	}
 
 	/*! 
@@ -2181,6 +2197,30 @@ namespace IAEX
 			statusBar()->showMessage( msg );
 	}
 
+	void NotebookWindow::setPosition(int r, int c)
+	{
+		posIndicator->setText(QString("Ln %1, Col %2").arg(r).arg(c));
+	}
+
+	void NotebookWindow::setState(QString s)
+	{
+		stateIndicator->setText(s);
+	}
+
+	void NotebookWindow::setStatusMenu(QList<QAction*> l)
+	{
+		QList<QAction*> a = stateIndicator->actions();
+		qDeleteAll(a.begin(), a.end());
+
+		if(!l.size())
+			stateIndicator->setContextMenuPolicy(Qt::NoContextMenu);
+		else
+		{
+			stateIndicator->setContextMenuPolicy(Qt::ActionsContextMenu);
+			stateIndicator->addActions(l);
+		}
+
+	}
 	/*! 
 	 * \author Anders Fernström
 	 * \date 2006-04-27

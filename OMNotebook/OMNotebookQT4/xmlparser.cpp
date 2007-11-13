@@ -717,6 +717,7 @@ namespace IAEX
 		{
 			gCell->compoundwidget->gwMain->setRenderHint(QPainter::Antialiasing);
 			gCell->compoundwidget->gwMain->antiAliasing = true;
+			gCell->compoundwidget->gwMain->aaAction->setChecked(true);
 		}
 		// 2006-01-17 AF, check if the inputcell is open or closed
 		QString closed = element.attribute( XML_CLOSED, XML_FALSE );
@@ -757,7 +758,6 @@ namespace IAEX
 		gCell->compoundwidget->gwMain->doSetArea = true;
 		gCell->compoundwidget->gwMain->newRect = r;
 		gCell->compoundwidget->gwMain->originalArea = r;
-//		gCell->setTextOutput("fjass99");
 
 		if(!gCell->isPlot2())
 			gCell->compoundwidget->hide();

@@ -175,6 +175,11 @@ namespace IAEX
 
 	public slots:
 		virtual void updateScrollArea() = 0;		// Added 2005-11-28 AF
+
+signals:
+		virtual void updatePos(int, int) = 0;
+		virtual void newState(QString) = 0;
+		virtual void setStatusMenu(QList<QAction*>) = 0;
 		
 	};
 }

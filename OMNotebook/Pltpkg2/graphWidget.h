@@ -171,6 +171,7 @@ signals:
 	void setGridVisible(bool);
 	void holdSet(bool);
 	void newExpr(QString);
+	void showGraphics();
 
 public:
 	GraphScene* graphicsScene;
@@ -283,5 +284,6 @@ public:
 
 	bool doFitInView, doSetArea;
 	QRectF newRect;
+	QAction* aaAction;
 };
 #endif

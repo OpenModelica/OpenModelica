@@ -67,6 +67,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QColor>
 #include <QToolTip>
 #include <QGraphicsRectItem>
+#include <QInputDialog>
 
 //Std headers
 #include <fstream>
@@ -178,9 +179,9 @@ GraphWidget::GraphWidget(QWidget* parent): QGraphicsView(parent)
 
 	//	connect(this, SIGNAL(scrolled()), this, SLOT(updateGrid()));
 
-	tmp = contextMenu->addAction("Antialiasing");
-	tmp->setCheckable(true);
-	connect(tmp, SIGNAL(toggled(bool)), this, SLOT(setAntiAliasing(bool)));
+	aaAction = contextMenu->addAction("Antialiasing");
+	aaAction->setCheckable(true);
+	connect(aaAction, SIGNAL(toggled(bool)), this, SLOT(setAntiAliasing(bool)));
 
 	contextMenu->addSeparator();
 
@@ -341,8 +342,7 @@ void GraphWidget::syncCall()
 void GraphWidget::originalZoom()
 {
 
-	setArea(originalArea);
-	updatePointSizes();
+
 }
 
 void GraphWidget::addFocusBox()
@@ -667,6 +667,10 @@ void GraphWidget::mouseReleaseEvent ( QMouseEvent * event )
 
 	QPointF zoomStartF = mapToScene(zoomStart);
 	QPointF zoomEnd = QPointF(mapToScene(event->pos()));
+
+	QRectF prevRect = mapToScene(rect()).boundingRect();
+
+
 
 	if(zoom)
 	{
@@ -1101,7 +1105,7 @@ void GraphWidget::paintEvent(QPaintEvent *pe)
 //					showGrid(true);
 					
 		showGrid(graphicsScene->gridVisible); //fjass
-		//		updatePointSizes();
+				updatePointSizes();
 
 //		emit areaChanged(currentArea()); //0708
 
@@ -1274,6 +1278,7 @@ QColor GraphWidget::generateColor(int index)
 
 void GraphWidget::drawLine(QDataStream& ds)
 {
+	emit showGraphics();
 	QColor color, fillColor;
 	qreal x0, y0, x1, y1;
 	ds >> x0 >> y0 >> x1 >> y1 >> color >> fillColor;
@@ -1303,11 +1308,12 @@ void GraphWidget::setHold(QDataStream& ds)
 
 void GraphWidget::drawPoint(QDataStream& ds)
 {
-
+	emit showGraphics();
 }
 
 void GraphWidget::drawText(QDataStream& ds)
 {
+	emit showGraphics();
 	QString str;
 	qreal x, y;
 	ds >> x >> y >>str;
@@ -1318,6 +1324,7 @@ void GraphWidget::drawText(QDataStream& ds)
 
 void GraphWidget::drawRect(QDataStream& ds)
 {
+	emit showGraphics();
 	QColor color, fillColor;
 	qreal x0, y0, x1, y1;
 	ds >> x0 >> y0 >> x1 >> y1 >> color >> fillColor;
@@ -1337,6 +1344,7 @@ void GraphWidget::drawRect(QDataStream& ds)
 
 void GraphWidget::drawEllipse(QDataStream& ds)
 {
+	emit showGraphics();
 	QColor color, fillColor;
 	qreal x0, y0, x1, y1;
 	ds >> x0 >> y0 >> x1 >> y1 >> color >> fillColor;
@@ -1682,6 +1690,8 @@ void GraphWidget::setLogarithmic(bool b)
 
 void GraphWidget::plotPtolemyDataStream()
 {
+	emit showGraphics();
+
 	QString tmp;
 	QColor color = QColor(Qt::color0);
 	double d;

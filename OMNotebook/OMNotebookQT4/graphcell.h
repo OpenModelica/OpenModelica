@@ -77,6 +77,9 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 namespace IAEX
 {   
+	enum graphCellStates {FINISHED, EVAL, ERROR, MODIFIED};
+
+	class MyTextEdit2;
 	class GraphCell : public Cell
 	{
 		Q_OBJECT
@@ -114,6 +117,9 @@ namespace IAEX
 		void clickedOutput( Cell* );					// Added 2006-02-03 AF
 		void forwardAction( int );						// Added 2006-04-27 AF
 		void newExpr(QString);
+		void updatePos(int, int);
+		void newState(QString);
+		void setStatusMenu(QList<QAction*>);
 
 	public slots:
 		void eval();
@@ -140,6 +146,8 @@ namespace IAEX
 		void setExpr(QString);
 		
 		void delegateFinished();
+		void setState(int state);
+		void showGraphics();
 		
 
 	protected:
@@ -169,7 +177,7 @@ namespace IAEX
 		static int numEvals_;
 		int oldHeight_;										// Added 2006-04-10 AF
 
-		QTextBrowser *input_;
+		MyTextEdit2* input_;
 		QTextBrowser *output_;
 		QTextBrowser *chaptercounter_;
 
@@ -199,6 +207,12 @@ namespace IAEX
 		virtual ~MyTextEdit2();
 
 		bool isStopingHighlighter();		// Added 2006-01-16 AF
+		int state;
+
+	public slots:
+		void goToPos(const QUrl&);
+		void updatePosition();
+		void setModified();
 
 	signals:
 		void clickOnCell();					// Added 2005-11-01 AF
@@ -208,16 +222,30 @@ namespace IAEX
 		void nextField();					// Added 2005-12-15 AF
 		void eval();						// Added 2005-12-15 AF
 		void forwardAction( int );			// Added 2006-04-27 AF
+		void updatePos(int, int);
+		void setState(int);
 
 	protected:
 		void mousePressEvent(QMouseEvent *event);			// Added 2005-11-01 AF
 		void wheelEvent(QWheelEvent *event);				// Added 2005-11-28 AF
 		void keyPressEvent(QKeyEvent *event );				// Added 2005-12-15 AF
 		void insertFromMimeData(const QMimeData *source);	// Added 2006-01-23 AF
-
+		void focusInEvent(QFocusEvent* event);
 	private:
 		bool inCommand;						// Added 2005-12-15 AF
 		bool stopHighlighter;				// Added 2006-01-16 AF
+	};
+
+	class MyAction: public QAction
+	{
+		Q_OBJECT
+	public:
+		MyAction(const QString& text, QObject* parent);
+	public slots:
+		void triggered2();
+	signals:
+		void urlClicked(const QUrl& u);
+
 	};
 
 }

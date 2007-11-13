@@ -74,6 +74,7 @@ class QMenu;
 class QMenuBar;
 class QStatusbar;
 class QWidget;
+class QLabel;
 
 
 namespace IAEX
@@ -114,7 +115,9 @@ namespace IAEX
 		void updateChapterCounters();			// Added 2006-03-02 AF
 		void setStatusMessage( QString msg );	// Added 2006-02-10 AF
 		void forwardedAction( int action );		// Added 2006-04-27 AF
-
+		void setPosition(int r, int c);
+		void setState(QString);
+		void setStatusMenu(QList<QAction*>);
 		void recentTriggered();
 	protected:
 		void keyPressEvent(QKeyEvent *event);
@@ -359,6 +362,8 @@ namespace IAEX
 		static QString saveDir_;	// Added 2006-03-01 AF
 		static QString imageDir_;	// Added 2006-03-01 AF
 		static QString linkDir_;	// Added 2006-03-01 AF
+
+		QLabel* posIndicator, *stateIndicator;
 	};
 }
 #endif
