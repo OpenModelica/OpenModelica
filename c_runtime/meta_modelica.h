@@ -69,6 +69,7 @@ extern "C" {
 #define MMC_REALHDR		(((MMC_SIZE_DBL/MMC_SIZE_INT) << 10) + 9)
 #define MMC_STRINGHDR(nbytes)	(((nbytes)<<(10-MMC_LOG2_SIZE_INT))+((1<<10)+5))
 #define MMC_HDRSLOTS(hdr)	((hdr) >> 10)
+#define MMC_GETHDR(x)		(*(mmc_uint_t*)MMC_UNTAGPTR(x))
  
 typedef unsigned int mmc_uint_t;
 typedef int mmc_sint_t;
