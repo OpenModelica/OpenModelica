@@ -109,6 +109,8 @@ double newTime(double t, double step,double stop)
 		} 							
 	} else { 
 	 newTime=(floor( (t+1e-10) / step) + 1.0)*step;
+     globalData->lastEmittedTime = newTime;
+	 globalData->forceEmit = 1;	
 	}
 	
 	// Do not exceed the stop time.
