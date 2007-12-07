@@ -1,7 +1,7 @@
 /*
 This file is part of OpenModelica.
 
-Copyright (c) 1998-2006, Linköpings universitet, Department of
+Copyright (c) 1998-2007, Linköpings universitet, Department of
 Computer and Information Science, PELAB
 
 All rights reserved.
@@ -52,8 +52,8 @@ void *alloc_bytes(unsigned nbytes)
 {
     void *p;
     if( (p = malloc(nbytes)) == 0 ) {
-	fprintf(stderr, "malloc(%u) failed: %s\n", nbytes, strerror(errno));
-	exit(1);
+    	fprintf(stderr, "yacclib.c: malloc(%u) failed: %s\n", nbytes, strerror(errno));
+    	exit(1);
     }
     return p;
 }
