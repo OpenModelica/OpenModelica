@@ -17,7 +17,7 @@
 			ConfigurationType="1">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".\GeneratedFiles\Release;.\GeneratedFiles;&quot;$(MODELICAHOME)&quot;;&quot;$(MICOHOME)\include&quot;;&quot;$(QTHOME)\include&quot;"
+				AdditionalIncludeDirectories=".\GeneratedFiles\Release;.\GeneratedFiles;&quot;$(OMDEV)\include\mico-win32-msvc\&quot;;&quot;$(QTHOME)\include\&quot;"
 				PreprocessorDefinitions="WIN32"
 				RuntimeLibrary="2"
 				DebugInformationFormat="0"/>
@@ -27,7 +27,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="qtmain.lib QtCore4.lib QtGui4.lib QtXml4.lib mico2311.lib"
 				OutputFile="$(OutDir)\OMShell.exe"
-				AdditionalLibraryDirectories="&quot;$(QTHOME)\lib&quot;;&quot;$(MICOHOME)\win32-bin\lib&quot;"
+				AdditionalLibraryDirectories="&quot;$(QTHOME)\lib&quot;;&quot;$(OMDEV)\lib\mico-win32-msvc\&quot;"
 				GenerateDebugInformation="FALSE"
 				SubSystem="2"/>
 			<Tool
@@ -59,7 +59,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".\GeneratedFiles\Debug;.\GeneratedFiles;&quot;$(MODELICAHOME)&quot;;&quot;$(MICOHOME)\include&quot;;&quot;$(QTHOME)\include&quot;"
+				AdditionalIncludeDirectories=".\GeneratedFiles\Debug;.\GeneratedFiles;&quot;;&quot;$(OMDEV)\include\mico-win32-msvc\&quot;;&quot;$(QTHOME)\include&quot;"
 				PreprocessorDefinitions="WIN32;QT_DEBUG"
 				RuntimeLibrary="3"
 				DebugInformationFormat="3"/>
@@ -69,7 +69,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="qtmaind.lib QtCored4.lib QtGuid4.lib QtXmld4.lib mico2311.lib"
 				OutputFile="$(OutDir)\OMShell.exe"
-				AdditionalLibraryDirectories="&quot;$(QTHOME)\lib&quot;;&quot;$(MICOHOME)\win32-bin\lib&quot;"
+				AdditionalLibraryDirectories="&quot;$(QTHOME)\lib&quot;;&quot;$(OMDEV)\lib\mico-win32-msvc\&quot;"
 				GenerateDebugInformation="TRUE"
 				SubSystem="2"/>
 			<Tool
@@ -239,9 +239,9 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Compiling Qt resource file: .\oms.qrc..."
-						CommandLine="&quot;$(QTDIR)\bin\rcc.exe&quot; -name &quot;oms&quot; -no-compress &quot;.\oms.qrc&quot; -o &quot;GeneratedFiles\qrc_oms.cpp&quot;
+						CommandLine="&quot;$(QTHOME)\bin\rcc.exe&quot; -name &quot;oms&quot; -no-compress &quot;.\oms.qrc&quot; -o &quot;GeneratedFiles\qrc_oms.cpp&quot;
 "
-						AdditionalDependencies="$(QTDIR)\bin\rcc.exe;Resources\OMS.bmp;Resources\OMS.ico;Resources\clear.bmp;Resources\copy.bmp;Resources\cut.bmp;Resources\help.bmp;Resources\paste.bmp;Resources\print.bmp;Resources\start.bmp;Resources\stop.bmp"
+						AdditionalDependencies="$(QTHOME)\bin\rcc.exe;Resources\OMS.bmp;Resources\OMS.ico;Resources\clear.bmp;Resources\copy.bmp;Resources\cut.bmp;Resources\help.bmp;Resources\paste.bmp;Resources\print.bmp;Resources\start.bmp;Resources\stop.bmp"
 						Outputs="&quot;GeneratedFiles\qrc_oms.cpp&quot;"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -279,22 +279,6 @@
 			Filter="moc;h;cpp"
 			UniqueIdentifier="{71ED8ED8-ACB9-4CE9-BBE1-E00B30144E11}">
 			<File
-				RelativePath=".\generatedfiles\debug\moc_commandcompletion.cpp">
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath=".\generatedfiles\release\moc_commandcompletion.cpp">
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -304,7 +288,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\generatedfiles\debug\moc_omc_communicator.cpp">
+				RelativePath=".\generatedfiles\debug\moc_commandcompletion.cpp">
 				<FileConfiguration
 					Name="Release|Win32"
 					ExcludedFromBuild="TRUE">
@@ -329,7 +313,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\GeneratedFiles\debug\moc_oms.cpp">
+				RelativePath=".\generatedfiles\debug\moc_omc_communicator.cpp">
 				<FileConfiguration
 					Name="Release|Win32"
 					ExcludedFromBuild="TRUE">
@@ -354,6 +338,22 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\GeneratedFiles\debug\moc_oms.cpp">
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath=".\GeneratedFiles\qrc_oms.cpp">
 			</File>
 			<File
@@ -367,9 +367,9 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Uic&apos;ing OtherDlg.ui..."
-					CommandLine="&quot;$(QTDIR)\bin\uic.exe&quot; -o &quot;GeneratedFiles\ui_OtherDlg.h&quot; &quot;.\OtherDlg.ui&quot;
+					CommandLine="&quot;$(QTHOME)\bin\uic.exe&quot; -o &quot;GeneratedFiles\ui_OtherDlg.h&quot; &quot;.\OtherDlg.ui&quot;
 "
-					AdditionalDependencies="$(QTDIR)\bin\uic.exe"
+					AdditionalDependencies="$(QTHOME)\bin\uic.exe"
 					Outputs="&quot;GeneratedFiles\ui_OtherDlg.h&quot;"/>
 			</FileConfiguration>
 			<FileConfiguration
@@ -382,6 +382,9 @@
 					AdditionalDependencies="$(QTDIR)\bin\uic.exe"
 					Outputs="&quot;GeneratedFiles\ui_OtherDlg.h&quot;"/>
 			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\README-UNIX.txt">
 		</File>
 		<File
 			RelativePath=".\res.rc">
