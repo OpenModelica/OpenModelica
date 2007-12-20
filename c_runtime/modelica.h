@@ -93,6 +93,8 @@ typedef modelica_real sqrt_rettype;
 typedef modelica_real abs_rettype;
 typedef modelica_real max_rettype;
 typedef modelica_real min_rettype;
+typedef modelica_real arctan_rettype;
+#define arctan atan
 
 
 /* Special Modelica builtin functions*/
