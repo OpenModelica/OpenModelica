@@ -1690,7 +1690,7 @@ algorithm
 
     case (cache,env,
       Exp.CALL(
-        path = Absyn.IDENT(name = "getIncidenceMatrix"),
+        path = Absyn.IDENT(name = "exportDAEtoMatlab"),
         expLst = {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),filenameprefix}),
       (st as Interactive.SYMBOLTABLE(
         ast = p,
@@ -3013,7 +3013,7 @@ algorithm
         dlow = DAELow.lower(dae, false, false);
         RTOpts.setEliminationLevel(elimLevel); // Reset elimination level
         filename = DAEQuery.writeIncidenceMatrix(dlow, filenameprefix);
-        str = stringAppend("The incidence matrix was dumped to file:", filename);
+        str = stringAppend("The equation system was dumped to Matlab file:", filename);
       then
         (cache,Values.STRING(str),st,file_dir);
   end matchcontinue;

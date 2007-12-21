@@ -5094,7 +5094,7 @@ algorithm
         (cache,Exp.CALL(Absyn.IDENT("translateModel"),
           {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),filenameprefix},false,true,Exp.STRING()),Types.PROP(recordtype,Types.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "getIncidenceMatrix"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "exportDAEtoMatlab"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
       local
         Absyn.Path className;
       equation 
@@ -5110,7 +5110,7 @@ algorithm
           Types.VAR("exeFile",
           Types.ATTR(false,SCode.RO(),SCode.VAR(),Absyn.BIDIR()),false,(Types.T_STRING({}),NONE),Types.UNBOUND())},NONE),NONE);
       then
-        (cache,Exp.CALL(Absyn.IDENT("getIncidenceMatrix"),
+        (cache,Exp.CALL(Absyn.IDENT("exportDAEtoMatlab"),
           {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),filenameprefix},false,true,Exp.STRING()),Types.PROP(recordtype,Types.C_VAR()),SOME(st));
         
     case (cache,env,Absyn.CREF_IDENT(name = "instantiateModel"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st))

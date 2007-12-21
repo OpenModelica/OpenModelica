@@ -56,6 +56,7 @@ import Exp;
 import Absyn;
 import DAE;
 import Algorithm;
+import RTOpts;
   
 public function writeIncidenceMatrix
   input DAELow.DAELow dlow;
@@ -65,11 +66,11 @@ algorithm
   fileName := matchcontinue(dlow, fileNamePrefix)
     local 
       String file, strIMatrix, strVariables;
-      list<Integer>[:] m;
+      list<String>[:] m;
     case (dlow, fileNamePrefix)
       equation
         file = stringAppend(fileNamePrefix, "_imatrix.m");
-        m = DAELow.incidenceMatrix(dlow);
+        m = incidenceMatrix(dlow);
         strIMatrix = getIncidenceMatrix(m);
         strVariables = getVariables(dlow);
         strIMatrix = Util.stringAppendList({strIMatrix, "\n", strVariables});
@@ -83,11 +84,11 @@ end writeIncidenceMatrix;
 protected function getIncidenceMatrix "function: getIncidenceMatrix
   gets the incidence matrix as a string
 "
-  input DAELow.IncidenceMatrix m;
+  input list<String>[:] m;
   output String strIMatrix;
   Integer mlen;
   String mlen_str;
-  list<list<Integer>> m_1;
+  list<list<String>> m_1;
   String mstr;
 algorithm 
   mlen := arrayLength(m);
@@ -96,22 +97,22 @@ algorithm
   mstr := getIncidenceMatrix2(m_1,1);  
   strIMatrix := Util.stringAppendList({"% Incidence Matrix\n", 
     "% ====================================\n", "% number of rows: ", mlen_str, "\n", 
-    "IM={", mstr, "}"});
+    "IM={", mstr, "};"});
 end getIncidenceMatrix;
   
 protected function getIncidenceMatrix2 "function: getIncidenceMatrix2
   author: adrpo 
   Helper function to getIncidenceMatrix (+_t).
 "
-  input list<list<Integer>> inIntegerLstLst;
+  input list<list<String>> inStringLstLst;
   input Integer rowIndex;
   output String strIMatrix;
 algorithm 
   strIMatrix :=
-  matchcontinue (inIntegerLstLst,rowIndex)
+  matchcontinue (inStringLstLst,rowIndex)
     local
-      list<Integer> row;
-      list<list<Integer>> rows;
+      list<String> row;
+      list<list<String>> rows;
       String str, str1, str2;
     case ({},_) then ""; 
     case ((row :: {}),rowIndex)
@@ -134,26 +135,20 @@ protected function getIncidenceRow "function: getIncidenceRow
   author: adrpo
   Helper function to getIncidenceMatrix2.
 "
-  input list<Integer> inIntegerLst;
+  input list<String> inStringLst;
   output String strRow;
 algorithm 
   strRow :=
-  matchcontinue (inIntegerLst)
+  matchcontinue (inStringLst)
     local
-      String s, s1, s2;
-      Integer x;
-      list<Integer> xs;
+      String s, s1, s2, x;
+      list<String> xs;
     case ({}) then "";
-    case ((x :: {}))
-      equation 
-        s = intString(x);
-      then
-        s;
+    case ((x :: {})) then x;
     case ((x :: xs))
       equation 
-        s1 = intString(x);
         s2 = getIncidenceRow(xs);
-        s = Util.stringAppendList({s1, ",", s2});
+        s = Util.stringAppendList({x, ",", s2});
       then
         s;
   end matchcontinue;
@@ -185,7 +180,7 @@ algorithm
       equation 
         vars = varList(vars1);
         s = dumpVars(vars);
-        s = "VL = {" +& s +& "}";
+        s = "VL = {" +& s +& "};";
       then
         s;
   end matchcontinue;
@@ -307,6 +302,33 @@ algorithm
       DAE.Type var_type;
     case ({},_) then ""; 
     case (((v as DAELow.VAR(varName = cr,varKind = kind,varDirection = dir,varType = var_type,bindExp = e,
+      index = indx,origVarName = old_name,className = paths,values = dae_var_attr,comment = comment,flow_ = flow_)) :: {}),varno)
+      equation 
+        varnostr = intString(varno);
+        dirstr = DAE.dumpDirectionStr(dir);
+        str1 = Exp.printComponentRefStr(cr);
+        /*        
+        paths_lst = Util.listMap(paths, Absyn.pathString);
+        path_str = Util.stringDelimitList(paths_lst, ", ");
+        comment_str = Dump.unparseCommentOption(comment);
+        print("= ");
+        s = Exp.printExpStr(e);
+        print(s);
+        print(" ");
+        print(path_str);
+        indx_str = intString(indx);
+        str = DAE.dumpTypeStr(var_type);print( " type: "); print(str); 
+        
+        print(" indx = ");
+        print(indx_str);
+        varno_1 = varno + 1;
+        print("fixed:");print(Util.boolString(varFixed(v)));
+        print("\n");
+        */
+        str = Util.stringAppendList({"'", str1, "'"});
+      then
+        str;
+      case (((v as DAELow.VAR(varName = cr,varKind = kind,varDirection = dir,varType = var_type,bindExp = e,
       index = indx,origVarName = old_name,className = paths,values = dae_var_attr,comment = comment,flow_ = flow_)) :: xs),varno)
       equation 
         varnostr = intString(varno);
@@ -335,34 +357,712 @@ algorithm
         str = Util.stringAppendList({"'", str1, "',", str2});
       then
         str;
-    case (((v as DAELow.VAR(varName = cr,varKind = kind,varDirection = dir,varType = var_type,bindExp = e,
-      index = indx,origVarName = old_name,className = paths,values = dae_var_attr,comment = comment,flow_ = flow_)) :: {}),varno)
-      equation 
-        varnostr = intString(varno);
-        dirstr = DAE.dumpDirectionStr(dir);
-        str1 = Exp.printComponentRefStr(cr);
-        /*        
-        paths_lst = Util.listMap(paths, Absyn.pathString);
-        path_str = Util.stringDelimitList(paths_lst, ", ");
-        comment_str = Dump.unparseCommentOption(comment);
-        print("= ");
-        s = Exp.printExpStr(e);
-        print(s);
-        print(" ");
-        print(path_str);
-        indx_str = intString(indx);
-        str = DAE.dumpTypeStr(var_type);print( " type: "); print(str); 
-        
-        print(" indx = ");
-        print(indx_str);
-        varno_1 = varno + 1;
-        print("fixed:");print(Util.boolString(varFixed(v)));
-        print("\n");
-        */
-        str = Util.stringAppendList({"'", str1, "'"});
-      then
-        str;
   end matchcontinue;
 end dumpVars2;
+
+public function incidenceMatrix "function: incidenceMatrix
+  author: PA
+ 
+  Calculates the incidence matrix, i.e. which variables are present
+  in each equation.
+"
+  input DAELow.DAELow inDAELow;
+  output list<String>[:] outIncidenceMatrix;
+algorithm 
+  outIncidenceMatrix:=
+  matchcontinue (inDAELow)
+    local
+      list<DAELow.Equation> eqnsl;
+      list<list<String>> lstlst;
+      list<String>[:] arr;
+      DAELow.Variables vars;
+      DAELow.EquationArray eqns;
+    case (DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns))
+      equation 
+        eqnsl = DAELow.equationList(eqns);
+        lstlst = incidenceMatrix2(vars, eqnsl);
+        arr = listArray(lstlst);
+      then
+        arr;
+    case (_)
+      equation 
+        print("incidence_matrix failed\n");
+      then
+        fail();
+  end matchcontinue;
+end incidenceMatrix;
+
+protected function incidenceMatrix2 "function: incidenceMatrix2
+  author: PA
+ 
+  Helper function to incidence_matrix
+  Calculates the incidence matrix as a list of list of integers
+"
+  input DAELow.Variables inVariables;
+  input list<DAELow.Equation> inEquationLst;
+  output list<list<String>> outStringLstLst;
+algorithm 
+  outStringLstLst:=
+  matchcontinue (inVariables,inEquationLst)
+    local
+      list<list<String>> lst;
+      list<String> row;
+      DAELow.Variables vars;
+      DAELow.Equation e;
+      list<DAELow.Equation> eqns;
+    case (_,{}) then {}; 
+    case (vars,(e :: eqns))
+      equation 
+        lst = incidenceMatrix2(vars, eqns);
+        row = incidenceRow(vars, e);
+      then
+        (row :: lst);
+    case (_,_)
+      equation 
+        print("incidence_matrix2 failed\n");
+      then
+        fail();
+  end matchcontinue;
+end incidenceMatrix2;
+
+protected function incidenceRow "function: incidenceRow
+  author: PA
+ 
+  Helper function to incidence_matrix. Calculates the indidence row
+  in the matrix for one equation.
+"
+  input DAELow.Variables inVariables;
+  input DAELow.Equation inEquation;
+  output list<String> outIntegerLst;
+algorithm 
+  outIntegerLst:=
+  matchcontinue (inVariables,inEquation)
+    local
+      list<String> lst1,lst2,res,res_1;
+      DAELow.Variables vars;
+      Exp.Exp e1,e2,e;
+      list<list<String>> lst3;
+      list<Exp.Exp> expl,inputs,outputs;
+      Exp.ComponentRef cr;
+      DAELow.WhenEquation we;
+      DAELow.Value indx;
+    case (vars,DAELow.EQUATION(exp = e1,scalar = e2))
+      equation 
+        lst1 = incidenceRowExp(e1, vars) "EQUATION" ;
+        lst2 = incidenceRowExp(e2, vars);
+        res = listAppend(lst1, lst2);
+      then
+        res;
+    case (vars,DAELow.ARRAY_EQUATION(crefOrDerCref = expl)) /* ARRAY_EQUATION */ 
+      equation 
+        lst3 = Util.listMap1(expl, incidenceRowExp, vars);
+        res = Util.listFlatten(lst3);
+      then
+        res;
+    case (vars,DAELow.SOLVED_EQUATION(componentRef = cr,exp = e)) /* SOLVED_EQUATION */ 
+      equation 
+        lst1 = incidenceRowExp(Exp.CREF(cr,Exp.REAL()), vars);
+        lst2 = incidenceRowExp(e, vars);
+        res = listAppend(lst1, lst2);
+      then
+        res;
+    case (vars,DAELow.SOLVED_EQUATION(componentRef = cr,exp = e)) /* SOLVED_EQUATION */ 
+      equation 
+        lst1 = incidenceRowExp(Exp.CREF(cr,Exp.REAL()), vars);
+        lst2 = incidenceRowExp(e, vars);
+        res = listAppend(lst1, lst2);
+      then
+        res;
+    case (vars,DAELow.RESIDUAL_EQUATION(exp = e)) /* RESIDUAL_EQUATION */ 
+      equation 
+        res = incidenceRowExp(e, vars);
+      then
+        res;
+    case (vars,DAELow.WHEN_EQUATION(whenEquation = we)) /* WHEN_EQUATION */ 
+      equation 
+        (cr,e2) = DAELow.getWhenEquationExpr(we);
+        e1 = Exp.CREF(cr,Exp.OTHER());
+        lst1 = incidenceRowExp(e1, vars);
+        lst2 = incidenceRowExp(e2, vars);
+        res = listAppend(lst1, lst2);
+      then
+        res;
+    case (vars,DAELow.ALGORITHM(index = indx,in_ = inputs,out = outputs)) /* ALGORITHM For now assume that algorithm will be solvable for correct
+	  variables. I.e. find all variables in algorithm and add to lst.
+	  If algorithm later on needs to be inverted, i.e. solved for 
+	  different variables than calculated, a non linear solver or
+	  analysis of algorithm itself needs to be implemented. 
+	 */ 
+      local list<list<String>> lst1,lst2,res;
+      equation 
+        lst1 = Util.listMap1(inputs, incidenceRowExp, vars);
+        lst2 = Util.listMap1(outputs, incidenceRowExp, vars);
+        res = listAppend(lst1, lst2);
+        res_1 = Util.listFlatten(res);
+      then
+        res_1;
+    case (vars,_)
+      equation 
+        print("-incidence_row failed\n");
+      then
+        fail();
+  end matchcontinue;
+end incidenceRow;
+
+protected function incidenceRowStmts "function: incidenceRowStmts
+  author: PA
+ 
+  Helper function to incidence_row, investigates statements for
+  variables, returning variable indexes.
+"
+  input list<Algorithm.Statement> inAlgorithmStatementLst;
+  input DAELow.Variables inVariables;
+  output list<String> outStringLst;
+algorithm 
+  outStringLst:=
+  matchcontinue (inAlgorithmStatementLst,inVariables)
+    local
+      list<String> lst1,lst2,lst3,res,lst3_1;
+      Exp.Type tp;
+      Exp.ComponentRef cr;
+      Exp.Exp e;
+      list<Algorithm.Statement> rest,stmts;
+      DAELow.Variables vars;
+      list<Exp.Exp> expl;
+      Algorithm.Else else_;
+    case ({},_) then {}; 
+    case ((Algorithm.ASSIGN(type_ = tp,componentRef = cr,exp = e) :: rest),vars)
+      equation 
+        lst1 = incidenceRowStmts(rest, vars);
+        lst2 = incidenceRowExp(e, vars);
+        lst3 = incidenceRowExp(Exp.CREF(cr,Exp.OTHER()), vars);
+        res = Util.listFlatten({lst1,lst2,lst3});
+      then
+        res;
+    case ((Algorithm.TUPLE_ASSIGN(type_ = tp,expExpLst = expl,exp = e) :: rest),vars)
+      local list<list<String>> lst3;
+      equation 
+        lst1 = incidenceRowStmts(rest, vars);
+        lst2 = incidenceRowExp(e, vars);
+        lst3 = Util.listMap1(expl, incidenceRowExp, vars);
+        lst3_1 = Util.listFlatten(lst3);
+        res = Util.listFlatten({lst1,lst2,lst3_1});
+      then
+        res;
+    case ((Algorithm.ASSIGN_ARR(type_ = tp,componentRef = cr,exp = e) :: rest),vars)
+      equation 
+        lst1 = incidenceRowStmts(rest, vars);
+        lst2 = incidenceRowExp(e, vars);
+        lst3 = incidenceRowExp(Exp.CREF(cr,Exp.OTHER()), vars);
+        res = Util.listFlatten({lst1,lst2,lst3});
+      then
+        res;
+    case ((Algorithm.IF(exp = e,statementLst = stmts,else_ = else_) :: rest),vars)
+      equation 
+        print("incidence_row_stmts on IF not implemented\n");
+      then
+        {};
+    case ((Algorithm.FOR(type_ = _) :: rest),vars)
+      equation 
+        print("incidence_row_stmts on FOR not implemented\n");
+      then
+        {};
+    case ((Algorithm.WHILE(exp = _) :: rest),vars)
+      equation 
+        print("incidence_row_stmts on WHILE not implemented\n");
+      then
+        {};
+    case ((Algorithm.WHEN(exp = e) :: rest),vars)
+      equation 
+        print("incidence_row_stmts on WHEN not implemented\n");
+      then
+        {};
+    case ((Algorithm.ASSERT(cond = _) :: rest),vars)
+      equation 
+        print("incidence_row_stmts on ASSERT not implemented\n");
+      then
+        {};
+  end matchcontinue;
+end incidenceRowStmts;
+
+protected function incidenceRowExp "function: incidenceRowExp
+  author: PA
+ 
+  Helper function to incidence_row, investigates expressions for
+  variables, returning variable indexes.
+"
+  input Exp.Exp inExp;
+  input DAELow.Variables inVariables;
+  output list<String> outStringLst;
+algorithm 
+  outStringLst:=
+  matchcontinue (inExp,inVariables)
+    local
+      DAE.Flow flow_;
+      list<DAELow.Value> p,p_1;
+      list<String> pStr,s1,s2,res,s3,lst_1;
+      String s;
+      list<list<String>> lst;
+      Exp.ComponentRef cr;
+      DAELow.Variables vars;
+      Exp.Exp e1,e2,e,e3;
+      list<Exp.Exp> expl;
+    case (Exp.CREF(componentRef = cr),vars)
+      equation 
+        ((DAELow.VAR(_,DAELow.STATE(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),p) = DAELow.getVar(cr, vars) "If variable x is a state, der(x) is a variable in incidence matrix,
+	 x is inserted as negative value, since it is needed by debugging and index
+	 reduction using dummy derivatives" ;
+        p_1 = Util.listMap1r(p, int_sub, 0);
+        pStr = Util.listMap(p_1, intString);
+      then
+        pStr;
+    case (Exp.CREF(componentRef = cr),vars)
+      equation 
+        ((DAELow.VAR(_,DAELow.VARIABLE(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),p) = DAELow.getVar(cr, vars);
+        pStr = Util.listMap(p, intString);
+      then
+        pStr;
+    case (Exp.CREF(componentRef = cr),vars)
+      equation 
+        ((DAELow.VAR(_,DAELow.DISCRETE(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),p) = DAELow.getVar(cr, vars);
+        pStr = Util.listMap(p, intString);
+      then
+        pStr;
+    case (Exp.CREF(componentRef = cr),vars)
+      equation 
+        ((DAELow.VAR(_,DAELow.DUMMY_DER(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),p) = DAELow.getVar(cr, vars);
+        pStr = Util.listMap(p, intString);
+      then
+        pStr;
+    case (Exp.CREF(componentRef = cr),vars)
+      equation 
+        ((DAELow.VAR(_,DAELow.DUMMY_STATE(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),p) = DAELow.getVar(cr, vars);
+        pStr = Util.listMap(p, intString);
+      then
+        pStr;
+    case (Exp.BINARY(exp1 = e1,exp2 = e2),vars)
+      equation 
+        s1 = incidenceRowExp(e1, vars);
+        s2 = incidenceRowExp(e2, vars);
+        pStr = listAppend(s1, s2);
+      then
+        pStr;
+    case (Exp.UNARY(exp = e),vars)
+      equation 
+        pStr = incidenceRowExp(e, vars);
+      then
+        pStr;
+    case (Exp.LBINARY(exp1 = e1,exp2 = e2),vars)
+      equation 
+        s1 = incidenceRowExp(e1, vars);
+        s2 = incidenceRowExp(e2, vars);
+        pStr = listAppend(s1, s2);
+      then
+        pStr;
+    case (Exp.LUNARY(exp = e),vars)
+      equation 
+        pStr = incidenceRowExp(e, vars);
+      then
+        pStr;
+    case (Exp.RELATION(exp1 = e1,exp2 = e2),vars)
+      equation 
+        s1 = incidenceRowExp(e1, vars);
+        s2 = incidenceRowExp(e2, vars);
+        pStr = listAppend(s1, s2);
+      then
+        pStr;
+    case (Exp.IFEXP(expCond = e1 as Exp.RELATION(exp1 = ee1, operator = op1, exp2 =ee2),expThen = e2,expElse = e3),vars) /* if expressions. */
+      local String ss, ss1, ss2, ss3, opStr;
+        Exp.Exp ee1,ee2;
+        Exp.Operator op1;
+      equation
+        opStr = Exp.relopSymbol(op1);
+        s = printExpStr(ee2);
+        s1 = incidenceRowExp(e1, vars);
+        ss1 = getIncidenceRow(s1);
+        s2 = incidenceRowExp(e2, vars);
+        ss2 = getIncidenceRow(s2);  
+        s3 = incidenceRowExp(e3, vars);
+        ss3 = getIncidenceRow(s3);
+        // build the string now
+        ss = Util.stringAppendList({"{'if', ",s,",'", opStr, "' {",ss1,"}",",{", ss2, "},", ss3, "}"});
+        pStr = {ss}; 
+      then
+        pStr;
+    // if-expressions with different conditions than relations
+    case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3),vars) /* if expressions. */ 
+      equation 
+        s1 = incidenceRowExp(e1, vars);
+        s2 = incidenceRowExp(e2, vars);
+        s3 = incidenceRowExp(e3, vars);
+        pStr = Util.listFlatten({s1,s2,s3});
+      then
+        pStr;        
+    case (Exp.CALL(path = Absyn.IDENT(name = "der"),expLst = {Exp.CREF(componentRef = cr)}),vars)
+      equation 
+        ((DAELow.VAR(_,DAELow.STATE(),_,_,_,_,_,_,_,_,_,_,flow_) :: _),p) = DAELow.getVar(cr, vars);
+        pStr = Util.listMap(p, intString);
+      then
+        pStr;
+    case (Exp.CALL(path = Absyn.IDENT(name = "der"),expLst = {Exp.CREF(componentRef = cr)}),vars)
+      equation 
+        (_,p) = DAELow.getVar(cr, vars);
+        pStr = Util.listMap(p, intString);
+      then
+        {};
+    case (Exp.CALL(path = Absyn.IDENT(name = "pre"),expLst = {Exp.CREF(componentRef = cr)}),vars) then {};  /* pre(v) is considered a known variable */ 
+    case (Exp.CALL(expLst = expl),vars)
+      equation 
+        lst = Util.listMap1(expl, incidenceRowExp, vars);
+        pStr = Util.listFlatten(lst);
+      then
+        pStr;
+    case (Exp.ARRAY(array = expl),vars)
+      equation 
+        lst = Util.listMap1(expl, incidenceRowExp, vars);
+        pStr = Util.listFlatten(lst);        
+      then
+        pStr;
+    case (Exp.MATRIX(scalar = expl),vars)
+      local list<list<tuple<Exp.Exp, Boolean>>> expl;
+      equation 
+        pStr = incidenceRowMatrixExp(expl, vars);
+      then
+        pStr;
+    case (Exp.TUPLE(PR = expl),vars)
+      equation 
+        print("incidence_row_exp TUPLE not impl. yet.");
+      then
+        {};
+    case (Exp.CAST(exp = e),vars)
+      equation 
+        pStr = incidenceRowExp(e, vars);
+      then
+        pStr;
+    case (Exp.ASUB(exp = e),vars)
+      equation 
+        pStr = incidenceRowExp(e, vars);
+      then
+        pStr;
+    case (Exp.REDUCTION(expr = e1,range = e2),vars)
+      equation 
+        s1 = incidenceRowExp(e1, vars);
+        s2 = incidenceRowExp(e2, vars);
+        pStr = listAppend(s1, s2);
+      then
+        pStr;
+    case (_,_) then {}; 
+  end matchcontinue;
+end incidenceRowExp;
+
+protected function incidenceRowMatrixExp "function: incidenceRowMatrixExp
+  author: PA
+ 
+  Traverses matrix expressions for building incidence matrix.
+"
+  input list<list<tuple<Exp.Exp, Boolean>>> inTplExpExpBooleanLstLst;
+  input DAELow.Variables inVariables;
+  output list<String> outStringLst;
+algorithm 
+  outStringLst:=
+  matchcontinue (inTplExpExpBooleanLstLst,inVariables)
+    local
+      list<Exp.Exp> expl_1;
+      list<list<String>> res1;
+      list<tuple<Exp.Exp, Boolean>> expl;
+      list<list<tuple<Exp.Exp, Boolean>>> es;
+      list<String> pStr, res1_1, res2;
+      DAELow.Variables vars;
+    case ({},_) then {}; 
+    case ((expl :: es),vars)
+      equation 
+        expl_1 = Util.listMap(expl, Util.tuple21);
+        res1 = Util.listMap1(expl_1, incidenceRowExp, vars);
+        res2 = incidenceRowMatrixExp(es, vars);
+        res1_1 = Util.listFlatten(res1);
+        pStr = listAppend(res1_1, res2);
+      then
+        pStr;
+  end matchcontinue;
+end incidenceRowMatrixExp;
+
+protected function printExpStr "function: printExpStr
+  This function prints a complete expression."
+  input Exp.Exp e;
+  output String s;
+algorithm 
+  s := printExp2Str(e);
+end printExpStr;
+
+protected function printExp2Str
+"function: printExp2Str 
+  Helper function to print_exp_str."
+  input Exp.Exp inExp;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inExp)
+    local
+      Exp.Ident s,s_1,s_2,sym,s1,s2,s3,s4,s_3,ifstr,thenstr,elsestr,res,fs,argstr,s5,s_4,s_5,res2,str,crstr,dimstr,expstr,iterstr,id;
+      Exp.Ident s1_1,s2_1,s1_2,s2_2,cs,ts,fs,cs_1,ts_1,fs_1,s3_1;
+      Integer x,pri2_1,pri2,pri3,pri1,ival,i,pe1,p1,p2,pc,pt,pf,p,pstop,pstart,pstep;
+      Real rval;
+      Exp.ComponentRef c;
+      Exp.Type t,ty,ty2,tp;
+      Exp.Exp e1,e2,e21,e22,e,f,start,stop,step,cr,dim,exp,iterexp,cond,tb,fb;
+      Exp.Operator op;
+      Absyn.Path fcn;
+      list<Exp.Exp> args,es;
+    case (Exp.END()) then "end"; 
+    case (Exp.ICONST(integer = x))
+      equation 
+        s = intString(x);
+      then
+        s;
+    case (Exp.RCONST(real = x))
+      local Real x;
+      equation 
+        s = realString(x);
+      then
+        s;
+    case (Exp.SCONST(string = s))
+      equation 
+        s_1 = stringAppend("\'", s);//changed, Matlab can't read "
+        s_2 = stringAppend(s_1, "\'");
+      then
+        s_2;
+    case (Exp.BCONST(bool = false)) then "false"; 
+    case (Exp.BCONST(bool = true)) then "true"; 
+    case (Exp.CREF(componentRef = c,ty = t))
+      equation 
+        s = Exp.printComponentRefStr(c);
+      then
+        s;
+    case (e as Exp.BINARY(e1,op,e2))
+      equation 
+        sym = Exp.binopSymbol(op);
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
+        p = Exp.expPriority(e);
+        p1 = Exp.expPriority(e1);
+        p2 = Exp.expPriority(e2);
+        s1_1 = Exp.parenthesize(s1, p1, p);
+        s2_1 = Exp.parenthesize(s2, p2, p);
+        s = stringAppend(s1_1, sym);
+        s_1 = stringAppend(s, s2_1);
+      then
+        s_1;
+     case ((e as Exp.UNARY(op,e1)))
+      equation 
+        sym = Exp.unaryopSymbol(op);
+        s = printExpStr(e1);
+        p = Exp.expPriority(e);
+        p1 = Exp.expPriority(e1);
+        s_1 = Exp.parenthesize(s, p1, p);
+        s_2 = stringAppend(sym, s_1);
+      then
+        s_2;
+   case ((e as Exp.LBINARY(e1,op,e2)))
+      equation 
+        sym = Exp.lbinopSymbol(op);
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
+        p = Exp.expPriority(e);
+        p1 = Exp.expPriority(e1);
+        p2 = Exp.expPriority(e2);
+        s1_1 = Exp.parenthesize(s1, p1, p);
+        s2_1 = Exp.parenthesize(s2, p2, p);
+        s = stringAppend(s1_1, sym);
+        s_1 = stringAppend(s, s2_1);
+      then
+        s_1;
+   case ((e as Exp.LUNARY(op,e1)))
+      equation 
+        sym = Exp.lunaryopSymbol(op);
+        s = printExpStr(e1);
+        p = Exp.expPriority(e);
+        p1 = Exp.expPriority(e1);
+        s_1 = Exp.parenthesize(s, p1, p);
+        s_2 = stringAppend(sym, s_1);
+      then
+        s_2;
+   case ((e as Exp.RELATION(e1,op,e2)))
+      equation 
+        sym = Exp.relopSymbol(op);
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
+        p = Exp.expPriority(e);
+        p1 = Exp.expPriority(e1);
+        p2 = Exp.expPriority(e2);
+        s1_1 = Exp.parenthesize(s1, p1, p);
+        s2_1 = Exp.parenthesize(s2, p1, p);
+        s = stringAppend(s1_1, sym);
+        s_1 = stringAppend(s, s2_1);
+      then
+        s_1;
+    case ((e as Exp.IFEXP(cond,tb,fb)))
+      equation 
+        cs = printExpStr(cond);
+        ts = printExpStr(tb);
+        fs = printExpStr(fb);
+        p = Exp.expPriority(e);
+        pc = Exp.expPriority(cond);
+        pt = Exp.expPriority(tb);
+        pf = Exp.expPriority(fb);
+        cs_1 = Exp.parenthesize(cs, pc, p);
+        ts_1 = Exp.parenthesize(ts, pt, p);
+        fs_1 = Exp.parenthesize(fs, pf, p);
+        str = Util.stringAppendList({"if ",cs_1," then ",ts_1," else ",fs_1});
+      then
+        str;
+    case (Exp.CALL(path = fcn,expLst = args))
+      equation 
+        fs = Absyn.pathString(fcn);
+        argstr = Exp.printListStr(args, printExpStr, ",");
+        s = stringAppend(fs, "(");
+        s_1 = stringAppend(s, argstr);
+        s_2 = stringAppend(s_1, ")");
+      then
+        s_2;
+    case (Exp.ARRAY(array = es,ty=tp))
+      local Exp.Type tp; String s3; 
+      equation 
+        s3 = Exp.typeString(tp);
+        s = Exp.printListStr(es, printExpStr, ",");
+        s_2 = Util.stringAppendList({"{",s,"}"});
+      then
+        s_2;
+    case (Exp.TUPLE(PR = es))
+      equation 
+        s = Exp.printListStr(es, printExpStr, ",");
+        s_1 = stringAppend("(", s);
+        s_2 = stringAppend(s_1, ")");
+      then
+        s_2;
+    case (Exp.MATRIX(scalar = es,ty=tp))
+      local list<list<tuple<Exp.Exp, Boolean>>> es;
+        Exp.Type tp; String s3;        
+      equation 
+        s3 = Exp.typeString(tp);
+        s = Exp.printListStr(es, Exp.printRowStr, "},{");
+        s_2 = Util.stringAppendList({"{{",s,"}}"}); 
+      then
+        s_2;
+    case (e as Exp.RANGE(_,start,NONE,stop))
+      equation 
+        s1 = printExpStr(start);
+        s3 = printExpStr(stop);
+        p = Exp.expPriority(e);
+        pstart = Exp.expPriority(start);
+        pstop = Exp.expPriority(stop);
+        s1_1 = Exp.parenthesize(s1, pstart, p);
+        s3_1 = Exp.parenthesize(s3, pstop, p);
+        s = Util.stringAppendList({s1_1,":",s3_1});
+      then
+        s;
+    case ((e as Exp.RANGE(_,start,SOME(step),stop)))
+      equation 
+        s1 = printExpStr(start);
+        s2 = printExpStr(step);
+        s3 = printExpStr(stop);
+        p = Exp.expPriority(e);
+        pstart = Exp.expPriority(start);
+        pstop = Exp.expPriority(stop);
+        pstep = Exp.expPriority(step);
+        s1_1 = Exp.parenthesize(s1, pstart, p);
+        s3_1 = Exp.parenthesize(s3, pstop, p);
+        s2_1 = Exp.parenthesize(s2, pstep, p);
+        s = Util.stringAppendList({s1_1,":",s2_1,":",s3_1});
+      then
+        s;
+    case (Exp.CAST(ty = Exp.REAL(),exp = Exp.ICONST(integer = ival)))
+      equation 
+        false = RTOpts.modelicaOutput();
+        rval = intReal(ival);
+        res = realString(rval);
+      then
+        res;
+    case (Exp.CAST(ty = Exp.REAL(),exp = Exp.UNARY(operator = Exp.UMINUS(ty = _),exp = Exp.ICONST(integer = ival))))
+      equation 
+        false = RTOpts.modelicaOutput();
+        rval = intReal(ival);
+        res = realString(rval);
+        res2 = stringAppend("-", res);
+      then
+        res2;
+    case (Exp.CAST(ty = Exp.REAL(),exp = e))
+      equation 
+        false = RTOpts.modelicaOutput();
+        s = printExpStr(e);
+        s_2 = Util.stringAppendList({"Real(",s,")"});
+      then
+        s_2;
+    case (Exp.CAST(ty = Exp.REAL(),exp = e))
+      equation 
+        true = RTOpts.modelicaOutput();
+        s = printExpStr(e);
+      then
+        s;
+    case (Exp.CAST(ty = tp,exp = e))
+      equation 
+        str = Exp.typeString(tp);
+        s = printExpStr(e);
+        res = Util.stringAppendList({"CAST(",str,", ",s,")"});
+      then
+        res;
+    case (e as Exp.ASUB(exp = e1,sub = i))
+      equation 
+        p = Exp.expPriority(e);
+        pe1 = Exp.expPriority(e1);
+        s1 = printExp2Str(e1);
+        s1_1 = Exp.parenthesize(s1, pe1, p);
+        s4 = intString(i);
+        s_4 = Util.stringAppendList({s1_1,"[",s4,"]"});
+      then
+        s_4;
+    case (Exp.SIZE(exp = cr,sz = SOME(dim)))
+      equation 
+        crstr = printExpStr(cr);
+        dimstr = printExpStr(dim);
+        str = Util.stringAppendList({"size(",crstr,",",dimstr,")"});
+      then
+        str;
+    case (Exp.SIZE(exp = cr,sz = NONE))
+      equation 
+        crstr = printExpStr(cr);
+        str = Util.stringAppendList({"size(",crstr,")"});
+      then
+        str;
+    case (Exp.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp))
+      equation 
+        fs = Absyn.pathString(fcn);
+        expstr = printExpStr(exp);
+        iterstr = printExpStr(iterexp);
+        str = Util.stringAppendList({"<reduction>",fs,"(",expstr," for ",id," in ",iterstr,")"});
+      then
+        str;    
+      
+      // MetaModelica list  
+    case (Exp.LIST(_,es))
+      local list<Exp.Exp> es;
+      equation 
+        s = Exp.printListStr(es, printExpStr, ",");
+        s_1 = stringAppend("list(", s);
+        s_2 = stringAppend(s_1, ")");
+      then
+        s_2;
+        
+        // MetaModelica list cons 
+    case (Exp.CONS(_,e1,e2))
+      equation   
+        s1 = printExpStr(e1);
+        s2 = printExpStr(e2);
+        s_2 = Util.stringAppendList({"cons(",s1,",",s2,")"});
+      then
+        s_2;      
+        
+    case (_) then "#UNKNOWN EXPRESSION# ----eee "; 
+  end matchcontinue;
+end printExp2Str;
 
 end DAEQuery;

@@ -6646,7 +6646,7 @@ algorithm
   end matchcontinue;
 end printExp2Str;
 
-protected function parenthesize "function: parenthesize
+public function parenthesize "function: parenthesize
  
   Adds parentheisis to a string if expression and parent expression 
   priorities requires it.
@@ -6672,12 +6672,10 @@ algorithm
 end parenthesize;
 
 
-protected function expPriority "function: expPriority
-
+public function expPriority "function: expPriority
  Returns a priority number for an expression.
  This function is used to output parenthesis when needed, e.g., 3(1+2) should output 3(1+2) 
- and not 31+2.
-"
+ and not 31+2."
   input Exp inExp;
   output Integer outInteger;
 algorithm 
