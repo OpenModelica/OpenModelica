@@ -17,7 +17,7 @@ string_array.*   - how arrays of strings are represented in C.
 index_spec.c     - keep track of dimensionsizes of arrays.
 memory_pool.c	 - memory allocation for local variables.
 read_write.*	 - reading and writing of data to file.
-utility.c	 - utility functions
+utility.c	     - utility functions
 
 
 libsim.a
