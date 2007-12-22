@@ -33,7 +33,7 @@ package DAEQuery
   package:     DAEQuery
   description: DAEQuery contains functionality for query of Incidence Matrix.
  
-  RCS: $Id: DAEQuery.mo 2798 2007-05-23 07:47:52Z adrpo $"
+  RCS: $Id$"
 
 public 
 import DAELow;  

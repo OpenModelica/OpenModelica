@@ -36,7 +36,7 @@ package Convert
   It converts uniontypes located in Exp to similiar uniontypes located in DAE
   and vise versa.
   
-  RCS: $Id: Convert.mo 2760 2007-03-27 22:28:07Z adrpo $"
+  RCS: $Id$"
 
 public import Exp;
 public import Algorithm;

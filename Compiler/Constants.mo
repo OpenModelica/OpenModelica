@@ -33,7 +33,7 @@ package Constants
   package:     Constants
   description: definition of a set of constants
  
-  RCS: $Id: Constants.mo 2760 2007-03-27 22:28:07Z adrpo $
+  RCS: $Id$
  
   Constants defined in here (Constants.mo) are used in Interactive.mo"
   

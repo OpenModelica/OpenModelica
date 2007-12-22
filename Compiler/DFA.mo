@@ -34,7 +34,7 @@ package DFA
   package:     DFA
   description: DFA intermediate form
   
-  RCS: $Id: DFA.mo 2790 2007-05-08 11:50:06Z adrpo $
+  RCS: $Id$
   
   DFA (Deterministic Finite Automaton) provides the datatypes and functions for working with states. 
   It is used in the pattern matching algorithm from Paternm.mo"
