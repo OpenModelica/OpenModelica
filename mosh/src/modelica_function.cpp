@@ -1,23 +1,32 @@
-/*
-    Copyright PELAB, Linkoping University
-
-    This file is part of Open Source Modelica (OSM).
-
-    OSM is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    OSM is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with Foobar; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
-*/
+/* 
+ * This file is part of OpenModelica.
+ * 
+ * Copyright (c) 1998-2008, Linköpings University,
+ * Department of Computer and Information Science, 
+ * SE-58183 Linköping, Sweden. 
+ * 
+ * All rights reserved.
+ * 
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
+ * PUBLIC LICENSE. 
+ * 
+ * The OpenModelica software and the Open Source Modelica 
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained 
+ * from Linköpings University, either from the above address, 
+ * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * and in the OpenModelica distribution.
+ * 
+ * This program is distributed  WITHOUT ANY WARRANTY; without 
+ * even the implied warranty of  MERCHANTABILITY or FITNESS 
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
+ * OF OSMC-PL. 
+ * 
+ * See the full OSMC Public License conditions for more details.
+ * 
+ */
 
 #include "modelica_function.hpp"
 
