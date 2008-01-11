@@ -1,29 +1,181 @@
-/* 
- * This file is part of OpenModelica.
- * 
- * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
- * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
- * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
- * See the full OSMC Public License conditions for more details.
- * 
- */
+--- Start of  of OSMC Public License Header ---
+Copyright (c) 1998-CurrentYear, 
+Linköpings universitet, Department of Computer and Information Science, 
+SE-58183 Linköping, Sweden. All rights reserved.
+
+THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC LICENSE (OSMC-PL). 
+ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S 
+ACCEPTANCE OF THE OSMC PUBLIC LICENSE. 
+
+The OpenModelica software and the OSMC (Open Source Modelica Consortium) 
+Public License (OSMC-PL) are obtained from Linköpings universitet, either 
+from the above address, from the URL: http://www.ida.liu.se/projects/OpenModelica, 
+and in the OpenModelica distribution.
+
+This program is distributed  WITHOUT ANY WARRANTY; without even the implied warranty 
+of  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
+IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL. 
+
+See the full OSMC Public License conditions for more details.
+--- End of OSMC Public License Header ---
+
+The OSMC-PL is an Open Source license for OpenModelica with three modes/alternatives 
+(OSMC-GPL, OSMC-Internal-EPL, OSMC-External-EPL) for use and redistribution, in source 
+and/or binary/object-code form:
+* Any party (member or non-member of OSMC) may only use and redistribute OpenModelica under OSMC-GPL conditions.
+* Level 1 members of OSMC may also use and redistribute OpenModelica under OSMC-Internal-EPL conditions.
+* Level 2 members of OSMC may also use and redistribute OpenModelica under OSMC-Internal-EPL or OSMC-External-EPL conditions.
+
+
+Definitions of OSMC Public licence modes:
+* OSMC-GPL = These OSMC Public license conditions together with Strict GPL3, i.e. GPL 
+  version 3 with the additional conditions that an application program (i.e., not an 
+  operating system) that integrates and calls parts of OpenModelica (also including 
+  the case of executing parts of OpenModelica as another process), must be made freely 
+  available and easily accessible as open source. 
+  [Comment: note that the OSMC Public License, also its OSMC-GPL mode, is different from 
+   and incompatible with GPL. Therefore it is not possible to include any GPL-licensed 
+   contribution into OpenModelica.]
+* OSMC-Internal-EPL = These OSMC Public license conditions together with Internally 
+  restricted EPL, i.e., EPL version 1.0 with the Additional Condition that use and 
+  redistribution by an OSMC member is only allowed within the OSMC member's own 
+  organization (i.e., its own legal entity).
+* OSMC-External-EPL = These OSMC Public license conditions together with Externally 
+  restricted EPL, i.e., EPL version 1.0 with the Additional Condition that use and 
+  redistribution by an OSMC member to parties external to the OSMC member’s own 
+  organization (i.e., its own legal entity), is only allowed in binary/object-code 
+  form, except the case of redistribution to other OSMC members to which source is 
+  also allowed to be distributed. 
+  [This has the consequence that an external party who wishes to use OpenModelica in 
+   source form together with its own proprietary software in all cases must be a member of OSMC].
+
+In all cases of usage and redistribution by recipients, the following conditions also apply:
+a) Redistributions of source code must retain the above copyright notice, all definitions, and conditions. 
+   It is sufficient if the OSMC-PL Header is present in each source file, if the full OSMC-PL is available 
+   in a prominent and easily located place in the redistribution.
+b) Redistributions in binary/object-code form must reproduce the above copyright notice, all definitions, 
+   and conditions. It is sufficient if the OSMC-PL Header and the location in the redistribution of the 
+   full OSMC-PL is present in the documentation and/or other materials provided with the redistribution, 
+   if the full OSMC-PL is available in a prominent and easily located place in the redistribution.
+c) A recipient must clearly indicate its chosen usage mode of OSMC-PL, in accompanying documentation and 
+   in a text file OSMC-USAGE-MODE.txt, provided with the distribution.
+d) Contributor(s) making a Contribution to OpenModelica thereby also makes a Transfer of Contribution Copyright. 
+   In return, upon the effective date of the transfer, OSMC grants the Contributor(s) a Contribution License of 
+   the Contribution. OSMC has the right to accept or refuse Contributions.
+
+Definitions:
+"Subsidiary license conditions" means: 
+ The additional license conditions depending on the by the recipient chosen mode of OSMC-PL, 
+ defined by GPL version 3.0 for OSMC-GPL, and by EPL for OSMC-Internal-EPL and OSMC-External-EPL.
+
+"OSMC-PL" means: 
+ Open Source Modelica Consortium Public License version 1.0, i.e., the license defined here 
+ (the text between "--- Start of Definition of OSMC Public License ---" 
+ and "--- End of Definition of OSMC Public License ---"), or later versions thereof.
+
+"OSMC-PL Header" means: 
+ Open Source Modelica Consortium Public License Header version 1.0, i.e., the text between 
+ "--- Start of Definition of OSMC Public License ---" and 
+ "--- End of OSMC Public License Header ---", or later versions thereof.
+
+"Contribution" means: 
+  a) in the case of the initial Contributor, the initial 
+     code and documentation distributed under OSMC-PL, and
+  b) in the case of each subsequent Contributor:
+       i) changes to OpenModelica, and
+       ii) additions to OpenModelica;
+     where such changes and/or additions to OpenModelica originate from and are distributed by 
+     that particular Contributor. A Contribution 'originates' from a Contributor if it was added 
+     to OpenModelica by such Contributor itself or anyone acting on such Contributor's behalf. 
+
+For Contributors licencing OpenModelica under OSMC-Internal-EPL or OSMC-External-EPL conditions, 
+the following conditions also hold:  
+  Contributions do not include additions to the distributed Program which: 
+   (i)   are separate modules of software distributed in conjunction 
+         with OpenModelica under their own license agreement, 
+   (ii)  are separate modules which are not derivative works of OpenModelica, and
+   (iii) are separate modules of software distributed in conjunction with OpenModelica 
+         under their own license agreement where these separate modules are merged with 
+         (weaved together with) modules of OpenModelica to form new modules that are 
+         distributed as object code or source code under their own license agreement, 
+         as allowed under the Additional Condition of internal distribution according 
+         to OSMC-Internal-EPL and/or Additional Condition for external distribution 
+         according to OSMC-External-EPL.
+
+"Transfer of Contribution Copyright" means that 
+ the Contributors of a Contribution transfer the ownership and the copyright of the Contribution 
+ to Linköpings universitet, the OpenModelica Copyright owner, for inclusion in OpenModelica. 
+ The transfer takes place upon the effective date when the Contribution is made available on 
+ the OSMC web site under OSMC-PL, by such Contributors themselves or anyone acting on such 
+ Contributors' behalf. The transfer is free of charge. If the Contributors or OSMC so wish, 
+ an optional Copyright transfer agreement can be signed between OSMC and the Contributors, 
+ as specified in an Appendix of the OSMC Bylaws.
+
+"Contribution License" means a license from OSMC to the Contributors of the Contribution, effective 
+ on the date of the Transfer of Contribution Copyright, where OSMC grants the Contributors a non-exclusive, 
+ world-wide, transferable, free of charge, perpetual license, including sublicensing rights, to use, 
+ have used, modify, have modified, reproduce and or have reproduced the contributed material, for 
+ business and other purposes, including but not limited to evaluation, development, testing, 
+ integration and merging with other software and distribution. The warranty and liability disclaimers 
+ of OSMC-PL applies to this license.
+
+"Contributor" means any person or entity that distributes (part of) OpenModelica.
+
+"The Program" means the Contributions distributed in accordance with OSMC-PL. 
+
+"OpenModelica" means the Contributions distributed in accordance with OSMC-PL. 
+
+"Recipient" means anyone who receives OpenModelica under OSMC-PL, including all Contributors. 
+
+NO WARRANTY 
+EXCEPT AS EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
+OF OSMC-PL, OPENMODELICA IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
+OF ANY KIND, EITHER EXPRESS OR IMPLIED INCLUDING, WITHOUT LIMITATION, ANY WARRANTIES OR 
+CONDITIONS OF TITLE, NON-INFRINGEMENT, MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
+Each Recipient is solely responsible for determining the appropriateness of using and distributing 
+OPENMODELICA and assumes all risks associated with its exercise of rights under OSMC-PL, 
+including but not limited to the risks and costs of program errors, compliance with applicable 
+laws, damage to or loss of data, programs or equipment, and unavailability or interruption of operations. 
+
+DISCLAIMER OF LIABILITY 
+EXCEPT AS EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL, 
+NEITHER RECIPIENT NOR ANY CONTRIBUTORS SHALL HAVE ANY LIABILITY FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING WITHOUT LIMITATION LOST PROFITS), HOWEVER CAUSED 
+AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OR DISTRIBUTION OF OPENMODELICA OR THE EXERCISE OF 
+ANY RIGHTS GRANTED HEREUNDER, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. 
+
+A Contributor licensing OpenModelica under OSMC-Internal-EPL or OSMC-External-EPL 
+may choose to distribute (parts of) OpenModelica in object code form under its own 
+license agreement, provided that: 
+  a) it complies with the terms and conditions of OSMC-PL; or for the case of redistribution of OpenModelica 
+     together with proprietary code it is a dual license where the OpenModelica parts are distributed under 
+     OSMC-PL compatible conditions and the proprietary code is distributed under proprietary license conditions; and
+  b) its license agreement:
+      i)   effectively disclaims on behalf of all Contributors all warranties and conditions, express and implied, 
+           including warranties or conditions of title and non-infringement, and implied warranties or conditions 
+           of merchantability and fitness for a particular purpose; 
+      ii)  effectively excludes on behalf of all Contributors all liability for damages, including direct, indirect, 
+           special, incidental and consequential damages, such as lost profits; 
+      iii) states that any provisions which differ from OSMC-PL are offered by that Contributor alone and not by 
+           any other party; and
+      iv)  states from where the source code for OpenModelica is available, and informs licensees how to obtain 
+           it in a reasonable manner on or through a medium customarily used for software exchange. 
+
+When OPENMODELICA is made available in source code form: 
+  a) it must be made available under OSMC-PL; and 
+  b) a copy of OSMC-PL must be included with each copy of OPENMODELICA. 
+  c) a copy of the subsidiary license associated with the selected mode of 
+     OSMC-PL must be included with each copy of OPENMODELICA. 
+
+Contributors may not remove or alter any copyright notices contained within OPENMODELICA. 
+If there is a conflict between OSMC-PL and the subsidiary license conditions, OSMC-PL have priority.
+This Agreement is governed by the laws of Sweden. The place of jurisdiction for all disagreements 
+related to this Agreement, is Linköping, Sweden.
+
+The EPL 1.0 license definition has been obtained from: http://www.eclipse.org/legal/epl-v10.html. 
+It is also reproduced in Appendix B of the OSMC Bylaws, and in the OpenModelica distribution.
+The GPL Version 3 license definition has been obtained from http://www.gnu.org/copyleft/gpl.html. 
+It is also reproduced in Appendix C of the OSMC Bylaws, and in the OpenModelica distribution.
+
+--- End of Definition of OSMC Public License ---
