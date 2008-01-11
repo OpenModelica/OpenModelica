@@ -2530,7 +2530,7 @@ algorithm
       list<Exp.Exp> expl,exp_2;
       Types.ArrayDim d1,d2;
       tuple<Types.TType, Option<Absyn.Path>> eltp,newtp;
-      Integer dim1;
+      Integer dim1,dim2,dimMax;
       Types.Properties prop;
       list<Env.Frame> env;
       Absyn.Exp matexp;
@@ -2554,7 +2554,9 @@ algorithm
         (cache,Exp.MATRIX(tp,sc,expl),Types.PROP((Types.T_ARRAY(d1,(Types.T_ARRAY(d2,eltp),_)),_),_),_) 
         	= elabExp(cache,env, matexp, impl, NONE,true);
         dim1 = Types.arraydimInt(d1);
-        exp_2 = elabBuiltinTranspose3(expl, 1, dim1);
+        dim2 = Types.arraydimInt(d2);
+        dimMax = intMax(dim1, dim2);
+        exp_2 = elabBuiltinTranspose3(expl, 1, dimMax);
         newtp = (Types.T_ARRAY(d2,(Types.T_ARRAY(d1,eltp),NONE)),NONE);
         prop = Types.PROP(newtp,Types.C_VAR());
       then
