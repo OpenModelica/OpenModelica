@@ -2241,7 +2241,7 @@ algorithm
       then
 					(cache,Values.STRING("Error reading the simulation result."),st);
 
-    case (cache,env,
+    case (cache,env, //plot2({x,y})
       Exp.CALL(
         path = Absyn.IDENT(name = "plot2"),
         expLst = {Exp.ARRAY(array = vars), 
@@ -2633,6 +2633,42 @@ algorithm
       then
         (cache,Values.STRING("Unknown error while plotting"),st);
             
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "enableSendData"),expLst = {Exp.BCONST(bool = b)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      local
+        Boolean b;
+      equation 
+//        print("enableSendData\n");
+//        print(Util.boolString(b));
+//        print("\n");
+        System.enableSendData(b);
+      then
+        (cache,Values.BOOL(true),st);
+
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "setDataPort"),expLst = {Exp.ICONST(integer = i)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      local
+        Integer i;
+      equation 
+//        print("setDataPort\n");
+//        print(intString(i));
+//        print("\n");
+        System.setDataPort(i);
+      then
+        (cache,Values.BOOL(true),st);
+        //{Exp.ARRAY(array = strings)}
+    case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "setVariableFilter"),expLst = {Exp.ARRAY(array=strings)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      local
+        list<Exp.Exp> strings;
+      equation 
+        vars_1 = Util.listMap(strings, Exp.printExpStr);
+//        print("setVariableFilter\n");
+//        print(Util.stringAppendList(vars_1));
+ //       print("\n");
+//        _ = Values.setVariableFilter(vars_1);
+        _=System.setVariableFilter(Util.stringAppendList(vars_1));
+      then
+        (cache,Values.BOOL(true),st);        
+
+
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "timing"),expLst = {exp}),st,msg)  
       equation 

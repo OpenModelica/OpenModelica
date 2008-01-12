@@ -57,6 +57,7 @@ void errmsg()
     cerr << "OMC is compiled without Qt. Check the QTHOME environment variable and recompile." << endl;
 }
 
+bool Static::enabled_ = false;
 
 bool ellipse(double x0, double y0, double x1, double y1, const char* color, int colorR, int colorG, int colorB, const char* fillColor, int fillColorR, int fillColorG, int fillColorB)
 {
@@ -104,4 +105,53 @@ bool plt(const char* var, const char* model, const char* title, const char* xLab
 {
 	errmsg();
         return true;
+}
+
+void setVariableFilter(const char* variables)
+{
+	errmsg();
+        return;
+}
+
+void setDataPort(int port)
+{
+	errmsg();
+        return;
+}
+
+void enableSendData(int enable)
+{
+	errmsg();
+        return;
+}
+
+	//void initSendData(int variableCount, const char* variableNames);
+void initSendData(int variableCount1, int variableCount2, char** statesNames, char** stateDerivativesNames,  char** algebraicsNames)
+{
+	errmsg();
+        return;
+}
+
+void sendPacket(const char* data)
+{
+	errmsg();
+        return;
+}
+
+
+void closeSendData()
+{
+	errmsg();
+        return;
+}
+
+bool pltTable(double*, size_t r, size_t c) //, const char*, int size);
+{
+	errmsg();
+        return true;
+}	
+
+bool Static::enabled()
+{
+	return false;	
 }

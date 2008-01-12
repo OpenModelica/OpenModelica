@@ -174,6 +174,7 @@ void System_5finit(void)
 	char* newPath;
 	char* omhome;
 	char* mingwpath;
+	char* qthome;
 	set_cc("gcc");
 	set_cflags("-I%OPENMODELICAHOME%\\include -L%OPENMODELICAHOME%\\lib -lc_runtime %MODELICAUSERCFLAGS%");
 	path = getenv("PATH");
@@ -189,6 +190,19 @@ void System_5finit(void)
 		}
 		free(mingwpath);
 	}
+	
+	
+	
+//	qthome = getenv("QTHOME");
+//	if(qthome && strlen(qthome))
+if(1)
+	{
+//		char senddatalibs[] = "SENDDATALIBS= -lsendData -lQtNetwork -lQtCore -lQtGui -luuid -lole32 -lws2_32";
+		_putenv("SENDDATALIBS=-lsendData -lQtNetwork -lQtCore -lQtGui -luuid -lole32 -lws2_32");
+//		_putenv(senddatalibs);
+	}
+	
+	
 }
 
 
@@ -1266,6 +1280,46 @@ RML_BEGIN_LABEL(System__sendData)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__enableSendData)
+{
+	int enable = RML_UNTAGFIXNUM(rmlA0);
+	if(enable)
+		_putenv("enableSendData=1");
+	else
+		_putenv("enableSendData=0");
+		
+	
+//	enableSendData(enable);
+	  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__setDataPort)
+{
+	int port = RML_UNTAGFIXNUM(rmlA0);
+
+		char* dataport = malloc(25);
+		sprintf(dataport,"sendDataPort=%s", port); 
+		_putenv(dataport);
+		free(dataport);
+//	setDataPort(port);
+	  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+RML_BEGIN_LABEL(System__setVariableFilter)
+{
+	char * variables = RML_STRINGDATA(rmlA0);
+	char* filter=malloc(strlen(variables)+20);
+	sprintf(filter, "sendDataFilter=%s",variables);
+	_putenv(filter);
+	free(filter);
+//	setVariableFilter(variables);
+	RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+
+
 RML_BEGIN_LABEL(System__getFileModificationTime)
 {
   char* fileName = RML_STRINGDATA(rmlA0);
@@ -1529,6 +1583,12 @@ void System_5finit(void)
     
   set_cflags("-I$OPENMODELICAHOME/include -L$OPENMODELICAHOME/lib -lc_runtime -lm $MODELICAUSERCFLAGS");
   
+	qthome = getenv("QTHOME");
+	if(qthome && strlen(qthome))
+	{
+		char senddatalibs[] = "SENDDATALIBS= -lsendData -lQtNetwork -lQtCore -lQtGui -luuid";
+		_putenv(senddatalibs);
+	}
   
 }
 
@@ -2575,11 +2635,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__sendData)
 {
- 
-
- 
-
-  	
+   	
   char* data = RML_STRINGDATA(rmlA0);
   char* interpolation = RML_STRINGDATA(rmlA1);
  char* title = RML_STRINGDATA(rmlA2);
@@ -2603,6 +2659,39 @@ RML_BEGIN_LABEL(System__sendData)
 //	emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, "linear");
        
   RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__enableSendData)
+{
+	int enable = RML_UNTAGFIXNUM(rmlA0);
+	if(enable)
+		setenv("enableSendData", "1");
+	else
+		setenv("enableSendData", "0");
+//	enableSendData(enable);
+	  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__setDataPort)
+{
+	int port = RML_UNTAGFIXNUM(rmlA0);
+	char* p = malloc(10);
+	sprintf(p, "%s", port);
+	setenv("sendDataPort", p);
+	free(p);
+	setDataPort(port);
+	  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+RML_BEGIN_LABEL(System__setVariableFilter)
+{
+	char * variables = RML_STRINGDATA(A0);
+	
+	setenv("sendDataFilter", variables);
+//	setVariableFilter(variables);
+	RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 

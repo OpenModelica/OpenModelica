@@ -5512,6 +5512,24 @@ algorithm
         (cache,Exp.CALL(Absyn.IDENT("plotParametric2"),
           vars_1,false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
 
+    case (cache,env,Absyn.CREF_IDENT(name = "enableSendData"),{Absyn.BOOL(value = enabled)},{},impl,SOME(st))
+      local
+        Boolean enabled;
+       then (cache, Exp.CALL(Absyn.IDENT("enableSendData"),{Exp.BCONST(enabled)},false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st)); 
+
+    case (cache,env,Absyn.CREF_IDENT(name = "setDataPort"),{Absyn.INTEGER(value = port)},{},impl,SOME(st))
+      local
+        Integer port;
+       then (cache, Exp.CALL(Absyn.IDENT("setDataPort"),{Exp.ICONST(port)},false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st)); 
+
+    case (cache,env,Absyn.CREF_IDENT(name = "setVariableFilter"),{Absyn.ARRAY(arrayExp = strings)},{},impl,SOME(st))
+      local
+        list<Absyn.Exp> strings;
+        equation
+          vars_1 = elabVariablenames(strings);
+//        Exp.ARRAY(Exp.OTHER(),false,vars_1)
+       then (cache, Exp.CALL(Absyn.IDENT("setVariableFilter"),{Exp.ARRAY(Exp.STRING(), false, vars_1)},false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st)); 
+
 
     case (cache,env,Absyn.CREF_IDENT(name = "timing"),{exp},{},impl,SOME(st))
       equation 
@@ -5723,6 +5741,13 @@ algorithm
         xs_1 = elabVariablenames(xs);
       then
         (Exp.CODE(Absyn.C_VARIABLENAME(cr),Exp.OTHER()) :: xs_1);
+
+    case ((Absyn.STRING(value = str) :: xs))
+      equation 
+        
+        xs_1 = elabVariablenames(xs);
+      then
+        (Exp.SCONST(str) :: xs_1);        
   end matchcontinue;
 end elabVariablenames;
 

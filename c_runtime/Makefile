@@ -65,7 +65,7 @@ libsim.a : $(SIMOBJS)
 libf2c.a :
 	cd libf2c && $(MAKE) -f makefile.u
 
-libsendData.a : sendData/sendData.cpp sendData/sendData.h sendData/sendData.pro
+libsendData.a : sendData/sendData.cpp sendData/sendData.h sendData/sendData.pro sendData/humbug.h sendData/humbug.cpp
 #	cd ./sendData && \
 #	$(QTHOME)/bin/qmake && \
 #	sed -e's/QtNetwork /QtNetwork4 /' -e's/QtGui /QtGui4 /' -e's/QtCore /QtCore4 /' Makefile.Release > Makefile && \

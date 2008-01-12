@@ -152,6 +152,24 @@ public function sendData
   external "C" ;
 end sendData;
 
+public function enableSendData
+  input Boolean enable;
+  external "C";
+end enableSendData;
+
+public function setDataPort
+  input Integer port;
+  external "C";
+end setDataPort;
+
+public function setVariableFilter
+  input String variables;
+  output Boolean b;
+  external "C";
+  
+end setVariableFilter;
+
+
 public function writeFile
   input String inString1;
   input String inString2;

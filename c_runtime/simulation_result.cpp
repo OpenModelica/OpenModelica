@@ -44,6 +44,8 @@
  #include <limits> /* adrpo - for std::numeric_limits in MSVC */
  #include "simulation_result.h"
  #include "simulation_runtime.h"
+ #include "sendData/sendData.h"
+ #include <sstream>
  
  double* simulationResultData=0; 
  long currentPos=0;
@@ -80,19 +82,48 @@ void add_result(double *data, long *actualPoints)
   //save time first
   //cerr << "adding result for time: " << time;
   //cerr.flush();
-  data[currentPos++] = globalData->timeValue;
+  if(Static::enabled())
+  {
+  std::ostringstream ss;
+  ss << "time" << endl;
+  ss << (data[currentPos++] = globalData->timeValue) << endl;
   // .. then states..
   for (int i = 0; i < globalData->nStates; i++, currentPos++) {
-    data[currentPos] = globalData->states[i];
+ 	ss << globalData->statesNames[i] << endl;
+    ss << (data[currentPos] = globalData->states[i]) << endl;
   }
   // ..followed by derivatives..
   for (int i = 0; i < globalData->nStates; i++, currentPos++) {
-    data[currentPos] = globalData->statesDerivatives[i];
+  	ss << globalData->stateDerivativesNames[i] << endl;
+    ss << (data[currentPos] = globalData->statesDerivatives[i]) << endl;
   }
   // .. and last alg. vars.
   for (int i = 0; i < globalData->nAlgebraic; i++, currentPos++) {
-    data[currentPos] = globalData->algebraics[i];
+  	ss << globalData->algebraicsNames[i] << endl;
+    ss << (data[currentPos] = globalData->algebraics[i]) << endl;
   }
+  
+  sendPacket(ss.str().c_str());
+  }
+  else
+  {
+
+  (data[currentPos++] = globalData->timeValue);
+  // .. then states..
+  for (int i = 0; i < globalData->nStates; i++, currentPos++) {
+ 	(data[currentPos] = globalData->states[i]);
+  }
+  // ..followed by derivatives..
+  for (int i = 0; i < globalData->nStates; i++, currentPos++) {
+    (data[currentPos] = globalData->statesDerivatives[i]);
+  }
+  // .. and last alg. vars.
+  for (int i = 0; i < globalData->nAlgebraic; i++, currentPos++) {
+    (data[currentPos] = globalData->algebraics[i]);
+  }
+  	
+  }
+  
   //cerr << "  ... done" << endl;
   (*actualPoints)++;
 }
@@ -124,6 +155,13 @@ int initializeResult(long numpoints,long nx, long ny, long np)
     return -1;
   }
   currentPos = 0;
+  char* enabled = getenv("enableSendData");
+  if(enabled != NULL)
+  {
+  	Static::enabled_ = !strcmp(enabled, "1");
+  }
+  if(Static::enabled)
+  	initSendData(globalData->nStates, globalData->nAlgebraic, globalData->statesNames, globalData->stateDerivativesNames, globalData->algebraicsNames);
   
   return 0;
 }
@@ -188,5 +226,8 @@ int deinitializeResult(const char * filename)
     cerr << "Error, couldn't write to output file " << filename << endl;
     return -1;
   }
+  
+  if(Static::enabled())
+  	closeSendData();
   return 0;
 }
