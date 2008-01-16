@@ -160,7 +160,7 @@ int initializeResult(long numpoints,long nx, long ny, long np)
   {
   	Static::enabled_ = !strcmp(enabled, "1");
   }
-  if(Static::enabled)
+  if(Static::enabled())
   	initSendData(globalData->nStates, globalData->nAlgebraic, globalData->statesNames, globalData->stateDerivativesNames, globalData->algebraicsNames);
   
   return 0;
