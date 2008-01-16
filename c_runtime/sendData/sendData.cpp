@@ -652,7 +652,7 @@ void initSendData(int variableCount1, int variableCount2, char** statesNames, ch
 
 		*Static::out << QString("time");
 
-	for(unsigned int i = 0; i < variableCount1; ++i)
+	for(int i = 0; i < variableCount1; ++i)
 	{
 		if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(statesNames[i])))
 			continue;
@@ -663,7 +663,7 @@ void initSendData(int variableCount1, int variableCount2, char** statesNames, ch
 	}
 
 
-	for(unsigned int i = 0; i < variableCount1; ++i)
+	for(int i = 0; i < variableCount1; ++i)
 	{
 		if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(stateDerivativesNames[i])))
 			continue;
@@ -672,7 +672,7 @@ void initSendData(int variableCount1, int variableCount2, char** statesNames, ch
 		++N;
 	}
 
-	for(unsigned int i = 0; i < variableCount2; ++i)
+	for(int i = 0; i < variableCount2; ++i)
 	{
 		if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(algebraicsNames[i])))
 			continue;
