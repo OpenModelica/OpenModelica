@@ -284,7 +284,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Settings__setEcho)
 {
-  echo = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA0));
+  echo = (int)RML_UNTAGFIXNUM(rmlA0);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
