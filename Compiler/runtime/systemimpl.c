@@ -1579,17 +1579,17 @@ char* _replace(char* source_str,char* search_str,char* replace_str)
  
 void System_5finit(void)
 {
-  set_cc("gcc");
+	char* qthome;	
+	set_cc("gcc");
     
-  set_cflags("-I$OPENMODELICAHOME/include -L$OPENMODELICAHOME/lib -lc_runtime -lm $MODELICAUSERCFLAGS");
+	set_cflags("-I$OPENMODELICAHOME/include -L$OPENMODELICAHOME/lib -lc_runtime -lm $MODELICAUSERCFLAGS");
   
 	qthome = getenv("QTHOME");
 	if(qthome && strlen(qthome))
 	{
 		char senddatalibs[] = "SENDDATALIBS= -lsendData -lQtNetwork -lQtCore -lQtGui -luuid";
-		_putenv(senddatalibs);
+		putenv(senddatalibs);
 	}
-  
 }
 
 RML_BEGIN_LABEL(System__strtok)
@@ -2666,9 +2666,9 @@ RML_BEGIN_LABEL(System__enableSendData)
 {
 	int enable = RML_UNTAGFIXNUM(rmlA0);
 	if(enable)
-		setenv("enableSendData", "1");
+		setenv("enableSendData", "1", 1 /* overwrite */);
 	else
-		setenv("enableSendData", "0");
+		setenv("enableSendData", "0", 1 /* overwrite */);
 //	enableSendData(enable);
 	  RML_TAILCALLK(rmlSC);
 }
@@ -2679,7 +2679,7 @@ RML_BEGIN_LABEL(System__setDataPort)
 	int port = RML_UNTAGFIXNUM(rmlA0);
 	char* p = malloc(10);
 	sprintf(p, "%s", port);
-	setenv("sendDataPort", p);
+	setenv("sendDataPort", p, 1 /* overwrite */);
 	free(p);
 	setDataPort(port);
 	  RML_TAILCALLK(rmlSC);
@@ -2687,9 +2687,8 @@ RML_BEGIN_LABEL(System__setDataPort)
 RML_END_LABEL
 RML_BEGIN_LABEL(System__setVariableFilter)
 {
-	char * variables = RML_STRINGDATA(A0);
-	
-	setenv("sendDataFilter", variables);
+	char * variables = RML_STRINGDATA(rmlA0);	
+	setenv("sendDataFilter", variables, 1 /* overwrite */);
 //	setVariableFilter(variables);
 	RML_TAILCALLK(rmlSC);
 }
