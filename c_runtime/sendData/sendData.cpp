@@ -644,7 +644,7 @@ void initSendData(int variableCount1, int variableCount2, char** statesNames, ch
 */
 	Static::out->device()->seek(0);
 	*Static::out << (quint32)0;
-	qint64 pos = Static::out->device()->pos();
+//	qint64 pos = Static::out->device()->pos();
 
 	
 	*Static::out << (quint32)25;//(2*variableCount1 + variableCount2);
