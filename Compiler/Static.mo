@@ -5123,6 +5123,8 @@ algorithm
           args, Exp.RCONST(1.0));
         (cache,numberOfIntervals) = getOptionalNamedArg(cache,env, SOME(st), impl, "numberOfIntervals", 
           (Types.T_INTEGER({}),NONE), args, Exp.ICONST(500));
+        (cache,tolerance) = getOptionalNamedArg(cache,env, SOME(st), impl, "tolerance", (Types.T_REAL({}),NONE), 
+          args, Exp.RCONST(1e-10));          
         (cache,method) = getOptionalNamedArg(cache,env, SOME(st), impl, "method", (Types.T_STRING({}),NONE), 
           args, Exp.SCONST("dassl"));
         cname_str = Absyn.pathString(className);
@@ -5133,7 +5135,7 @@ algorithm
       then
         (cache,Exp.CALL(Absyn.IDENT("buildModel"),
           {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),startTime,stopTime,
-          numberOfIntervals,method,filenameprefix,storeInTemp},false,true,Exp.OTHER()),Types.PROP(
+          numberOfIntervals,tolerance,method,filenameprefix,storeInTemp},false,true,Exp.OTHER()),Types.PROP(
           (
           Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE),Types.C_VAR()),SOME(st));
 
