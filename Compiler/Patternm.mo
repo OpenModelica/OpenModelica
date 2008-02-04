@@ -42,12 +42,10 @@ public import Absyn;
 public import DFA;
 public import Env;
 public import SCode;
-public import Types;
+//public import Types;
 
 protected import Lookup;
 protected import Util;
-//protected import Debug; 
-//protected import Dump;
 
 //Some type simplifications
 type RenamedPat = DFA.RenamedPat;
@@ -63,8 +61,7 @@ type AsList = list<Absyn.AlgorithmItem>;
 type AsArray = AsList[:];  
 type ArcName = Absyn.Ident;
 
-
-protected function ASTtoDFAForm "function: ASTtoDFAForm
+protected function ASTtoMatrixForm "function: ASTtoMatrixForm
 	author: KS	
  	Transforms the Abstract Syntax Tree of a matchcontinue expression into matrix form.
  	The patterns in each case-branch ends up in a matrix and all the right-hand sides
@@ -108,24 +105,23 @@ algorithm
         false = (varListLength == 0); // If there are no input variables, the function will fail
         
         // Create pattern matrix. The as-bindings (  ... case (var1 as 3) ...)
-        // are first collected in the fillDFA function and then 
+        // are first collected in the fillMatrix function and then 
         // assignments of these variables are added to the RightHandSide list
         patMat = fill({},varListLength);
         asBindings = fill({},listLength(rhsList));   
         (localCache,patMat,asBindings,_) = 
-        fillDFA(1,asBindings,varList,patList,patMat,localCache,localEnv,(1,{})); 
+        fillMatrix(1,asBindings,varList,patList,patMat,localCache,localEnv,(1,{})); 
         rhsList = addAsBindings(rhsList,arrayList(asBindings));	 // Add the as-bindings (assignments) 
                                                                  // to the right hand-sides.
-        //true = patternCheck(arrayList(patMat));
         
       then (localCache,varList,declList,rhsList,rhsListLight,patMat,elseRhSide);
     case (exp,_,_) local Absyn.Exp exp;  
       equation 
-        // Debug.fprint("failtrace", "- ASTtoDFAForm failed, non-matching patterns in matchcase or zero input variables\n");
+        // Debug.fprint("failtrace", "- ASTtoMatrixForm failed, non-matching patterns in matchcase or zero input variables\n");
        // Debug.fcall("failtrace", Dump.printExp, exp);  
       then fail();
   end matchcontinue; 
-end ASTtoDFAForm;
+end ASTtoMatrixForm;
 
 
 protected function extractListFromTuple "function: extractListFromTuple
@@ -231,7 +227,7 @@ protected function extractFromMatchAST "function: extractFromMatchAST
   output RightHandList rhListOut;
   output RightHandList rhListLightOut;
   output list<Absyn.Exp> patListOut; // All the patterns are collected in a list.
-  output Option<RightHandSide> elseRhSide; // A matchcontinue expression may contain an else-case
+  output Option<RightHandSide> elseRhSide; // A matchcontinue expression may contain an else-case  
 algorithm
   (outCache,rhListOut,rhListLightOut,patListOut,elseRhSide) :=
   matchcontinue (matchCases,rhListIn,rhListLightIn,patListIn,caseNumber,cache,env)
@@ -268,7 +264,7 @@ algorithm
 end extractFromMatchAST;
 
 
-protected function fillDFA "function: fillDFA
+protected function fillMatrix "function: fillMatrix
 	author: KS
 	Fill the matrix with renamed patterns (patterns of the form path=pattern, where
 	path is a path-variable and pattern is a renamed expression)
@@ -328,16 +324,16 @@ algorithm
         
         // Add the rest of the rows to the matrix	  
         (localCache,temp2,temp4,localConstTagEnv) =
-        fillDFA(localRowNum+1,localAsBindings,localVarList,rest,localPatMat,
+        fillMatrix(localRowNum+1,localAsBindings,localVarList,rest,localPatMat,
           localCache,localEnv,localConstTagEnv);   	
       then (localCache,temp2,temp4,localConstTagEnv);  
     case (_,_,_,e :: _,_,_,_,_)  local Absyn.Exp e; 
       equation
-       // Debug.fprint("failtrace", "- fillDFA failed, wrong number of patterns in case?\n");
+       // Debug.fprint("failtrace", "- fillMatrix failed, wrong number of patterns in case?\n");
       //  Debug.fcall("failtrace", Dump.printExp, e);  
       then fail();
   end matchcontinue;
-end fillDFA;
+end fillMatrix;
 
 protected function addRow "function: addRow 
 	author: KS
@@ -374,13 +370,14 @@ algorithm
     case (localAsBindings,_,_,{},localPatMat,localCache,_,localConstTagEnv) 
       equation 
       then (localCache,localPatMat,localAsBindings,localConstTagEnv);
-    case(localAsBindings,Absyn.CREF(Absyn.CREF_IDENT(firstVar,{})) :: restVar,localPivot,firstPat :: restPat,
+    case(localAsBindings,Absyn.CREF(cRef) :: restVar,localPivot,firstPat :: restPat,
         localPatMat,localCache,localEnv,localConstTagEnv)     
       local
         RenamedPat pat;
         list<Absyn.Ident> localPathVars2;
         AsList asBinds;
         String str;
+        Absyn.ComponentRef cRef;
         
         //Temp variables
         RenamedPatMatrix temp2;
@@ -388,6 +385,7 @@ algorithm
         RenamedPatList temp5;
       equation 
         str = "";
+        firstVar = Absyn.pathString(Absyn.crefToPath(cRef));
         
         //Rename a pattern, that is, transform it into path=pattern form
         (localCache,pat,asBinds,localConstTagEnv) = 
@@ -495,12 +493,13 @@ algorithm
         // Will be interpretated as: case (var AS _)
         // This expression is transformed into a wildcard but we store the variable
         // reference as well as an AS-binding.
-    case (Absyn.CREF(Absyn.CREF_IDENT(var,_)),localVar,localAsBinds,localCache,_,localConstTagEnv)
+    case (Absyn.CREF(cr),localVar,localAsBinds,localCache,_,localConstTagEnv)
       local 
         Absyn.Ident var;   
         RenamedPat pat;
+        Absyn.ComponentRef cr;
       equation
-        localAsBinds2 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT(var,{})),
+        localAsBinds2 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(cr),
           Absyn.CREF(Absyn.CREF_IDENT(localVar,{}))),NONE())};
         localAsBinds = listAppend(localAsBinds,localAsBinds2);
           
@@ -534,7 +533,7 @@ algorithm
         AsList localAsBinds2; 
         Integer constTag;
       equation
-        (constTag,localConstTagEnv) = getUniqueConstTag("CONS",localConstTagEnv);
+        (constTag,localConstTagEnv) = getUniqueConstTag(Absyn.IDENT("CONS"),localConstTagEnv);
         localVar2 = stringAppend(localVar,"_"); 
         localVar2 = stringAppend(localVar2,intString(constTag));  
         
@@ -550,17 +549,19 @@ algorithm
         // This is a builtin functioncall, all the function arguments are renamed
         // We also must transform named function arguments into positional function 
         // arguments.
-    case (Absyn.CALL(compRef as Absyn.CREF_IDENT(recName,{}),Absyn.FUNCTIONARGS(funcArgs,{})),localVar,  
+    case (Absyn.CALL(compRef,Absyn.FUNCTIONARGS(funcArgs,{})),localVar,  
         localAsBinds,localCache,localEnv,localConstTagEnv)
       local
         Absyn.ComponentRef compRef; 
-        Absyn.Ident recName;
+        Absyn.Path recName;
         list<Absyn.Exp> funcArgs;	  
         RenamedPatList renamedPatList; 
         RenamedPat pat;
         AsList localAsBinds2;  
         Integer constTag;
       equation
+        recName = Absyn.crefToPath(compRef);
+        
         (constTag,localConstTagEnv) = getUniqueConstTag(recName,localConstTagEnv);
         localVar2 = stringAppend(localVar,"_"); 
         localVar2 = stringAppend(localVar2,intString(constTag));  
@@ -571,7 +572,7 @@ algorithm
         
       then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv);
         // CALL EXPRESSION
-    case (Absyn.CALL(compRef as Absyn.CREF_IDENT(recName,{}),Absyn.FUNCTIONARGS({},namedArgList)),  
+    case (Absyn.CALL(compRef,Absyn.FUNCTIONARGS({},namedArgList)),  
         localVar,localAsBinds,localCache,localEnv,localConstTagEnv)
       local
         Absyn.ComponentRef compRef;
@@ -579,20 +580,21 @@ algorithm
         RenamedPatList renamedPatList;
         RenamedPat pat;
         AsList localAsBinds2;
-        Absyn.Ident recName;
+        Absyn.Path recName;
         SCode.Class sClass;
         Absyn.Path pathName;
         list<Absyn.Ident> fieldNameList;
         list<Absyn.Exp> funcArgs; 
         Integer constTag;
       equation
+        recName = Absyn.crefToPath(compRef);
+        
         (constTag,localConstTagEnv) = getUniqueConstTag(recName,localConstTagEnv);
         localVar2 = stringAppend(localVar,"_"); 
         localVar2 = stringAppend(localVar2,intString(constTag));  
           
         // Fetch the names of the fields
-        pathName = Absyn.IDENT(recName);
-        (localCache,sClass,_) = Lookup.lookupClass(localCache,localEnv,pathName,true);
+        (localCache,sClass,_) = Lookup.lookupClass(localCache,localEnv,recName,true);
         (fieldNameList,_) = DFA.extractFieldNamesAndTypes(sClass);
         
         //Sorting of named arguments
@@ -603,20 +605,54 @@ algorithm
         pat = DFA.RP_CALL(localVar,compRef,renamedPatList);
         
       then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv);    
-        // EMPTY LIST EXPRESSION
     case (Absyn.ARRAY({}),localVar,localAsBinds,localCache,_,localConstTagEnv)
       local  
         RenamedPat pat;
       equation
         pat = DFA.RP_EMPTYLIST(localVar);
       then (localCache,pat,localAsBinds,localConstTagEnv);    
+    case (Absyn.ARRAY(expList),localVar,localAsBinds,localCache,localEnv,localConstTagEnv)
+      local 
+        list<Absyn.Exp> expList;
+        RenamedPat pat;
+        Absyn.Exp exp;
+      equation
+        exp = createConsFromList(expList);
+        (localCache,pat,localAsBinds,localConstTagEnv) = 
+        renameMain(exp,localVar,localAsBinds,localCache,localEnv,localConstTagEnv);
+      then (localCache,pat,localAsBinds,localConstTagEnv);
+        // EMPTY LIST EXPRESSION
     case (e,_,_,_,_,_)  local Absyn.Exp e; 
       equation
-      //  Debug.fprint("failtrace", "- renameMain failed, unvalid pattern\n");
+      //  Debug.fprint("failtrace", "- renameMain failed, invalid pattern\n");
       //  Debug.fcall("failtrace", Dump.printExp, e);  
       then fail();   
   end matchcontinue;	     
 end renameMain;
+
+protected function createConsFromList "function: 
+A function that takes a list of expressions and creates nested cons-cells
+"
+  input list<Absyn.Exp> inList;
+  output Absyn.Exp outExp;
+algorithm
+  outExp :=
+  matchcontinue (inList)
+    local 
+      Absyn.Exp firstElem;
+      list<Absyn.Exp> restElem;
+    case (firstElem :: {}) 
+    then Absyn.CONS(firstElem,Absyn.ARRAY({}));
+    case (firstElem :: restElem)
+      local
+        Absyn.Exp localExp;       
+      equation
+        localExp = createConsFromList(restElem);
+        localExp = Absyn.CONS(firstElem,localExp);     
+      then localExp;  
+  end matchcontinue;
+end createConsFromList;
+
 
 protected function renamePatList "function: renamePatList
 	author: KS
@@ -682,11 +718,11 @@ end renamePatList;
 public function matchMain "function: matchMain
 	author: KS
  	The main function for the patternmatch algorithm.
- 	Calls the ASTtoDFAForm function for the generation of the pattern
+ 	Calls the ASTtoMatrixForm function for the generation of the pattern
 	matrix. Then calls matchFuncHelper for the generation of the DFA
 "
   input Absyn.Exp matchCont;
-  input list<Absyn.Exp> resultVarList; // These is a list of lhs component refs, (var1,var2,...) = matchcontinue (...) ...
+  input list<Absyn.Exp> resultVarList; // This is a list of lhs component refs, (var1,var2,...) = matchcontinue (...) ...
   input Env.Cache cache;
   input Env.Env env; 
   output Env.Cache outCache;
@@ -701,7 +737,7 @@ algorithm
         list<Absyn.ElementItem> declList;
         list<Absyn.Exp> localResultVarList,inputVarList;
         Option<RightHandSide> elseRhSide;
-        Integer stampTemp;
+        Integer stampTemp,context;
         DFA.State dfaState;
         DFA.Dfa dfaRec;
         Absyn.Exp localMatchCont,expr;
@@ -709,25 +745,50 @@ algorithm
         Env.Cache localCache;
         Env.Env localEnv; 
         Integer nCases; 
-        list<DFA.SimpleState> simpleStateList;
+        Boolean lightVs;
       equation	
         // Get the pattern matrix, etc.
-        (localCache,inputVarList,declList,rhList2,rhList,patMat,elseRhSide) = ASTtoDFAForm(localMatchCont,localCache,localEnv);
+        (localCache,inputVarList,declList,rhList2,rhList,patMat,elseRhSide) = 
+        ASTtoMatrixForm(localMatchCont,localCache,localEnv);
         patMat2 = arrayList(patMat);
         
         // A small fix.
         patMat2 = DFA.matrixFix(patMat2);      
+       
+        // ------------------- 
+        // ---Type Checking---
+        // -------------------
+        // Two sorts of type checkings are performed:
+        // - The type of the input variables are looked up
+        //   and matched against the patterns in each case clause
+        // - The type of the return variables are looked up
+        //   and matched against the return expression of each case clause
+        // Check to make sure that the number of patterns in each case-clause
+        // equals the number of input variables is done in the function fillMatrix
+        // -------------
+        //typeCheck1(localCache,localEnv,patMat2,inputVarList);
+        //typeCheck2(localCache,localEnv,rhList2,localResultVarList);
+        // -------------
         
         // Start the pattern matching
         // The rhList version is a "light" version of the rightHandSides so that
         // we do not have to carry around a lot of extra code in the pattern match algorithm
-        (dfaState,stampTemp,simpleStateList) = matchFuncHelper(patMat2,rhList,DFA.STATE(1,0,{},NONE()),1,{});
+        (dfaState,stampTemp,_) = matchFuncHelper(patMat2,rhList,DFA.STATE(1,0,{},NONE()),1,{});
         //print("Done with the matching"); 
         nCases = listLength(rhList);
         dfaRec = DFA.DFArec(declList,{},NONE(),dfaState,stampTemp,nCases);
         
+        // Light version or not ---------------------
+        // In a light version state labels will not be generated.
+        // Light versions are generated when there is only one case-clause
+        // which is the case for instance when we have rhs pattern matching
+        // such as (_,var1,5) = func(...);
+        lightVs = Util.if_((nCases == 1),true,false);
+        //-------------------------------------------
+        
         // Transform the DFA into a valueblock with nested if-elseif-else statements.
-        (localCache,expr) = DFA.fromDFAtoIfNodes(dfaRec,inputVarList,localResultVarList,localCache,localEnv,rhList2);
+        (localCache,expr) = 
+        DFA.fromDFAtoIfNodes(dfaRec,inputVarList,localResultVarList,localCache,localEnv,rhList2,lightVs);
       then (localCache,expr); 
     case (exp,_,_,_)   
       local  
@@ -770,7 +831,7 @@ end matchMain;
  		
  Otherwise: create an arc and state for each constant as well, in the same way as for the constructors.
  		Create a new arc and state for all the wildcards. 
- */
+*/
 
 
 protected function matchFuncHelper "function: matchFuncHelper
@@ -1090,7 +1151,6 @@ algorithm
   end matchcontinue;
 end matchCase3;
 
-
 protected function findConstAndWildcards "function: findConstAndWildcards
 	author: KS	
 	Get the indices of all the const and wildcards from a pattern list.
@@ -1316,10 +1376,13 @@ algorithm
   matchcontinue (constPat)
     case DFA.RP_CONS(_,_,_) equation then "CONS";
     case DFA.RP_TUPLE(_,_) equation then "TUPLE";  
-    case DFA.RP_CALL(_,Absyn.CREF_IDENT(val,_),_) 
+    case DFA.RP_CALL(_,cref,_) 
     local 
       Absyn.Ident val;
-      equation then val;  
+      Absyn.ComponentRef cref;
+      equation 
+       val = Absyn.pathString(Absyn.crefToPath(cref)); 
+      then val;  
   end matchcontinue;     	
 end getConstructorName;
 
@@ -2255,92 +2318,19 @@ algorithm
   end matchcontinue;
 end selectRightHandSides;
 
-//-----------------------------------------------
-// Some simple "type checking"
-/*
-public function patternCheck 
-  input RenamedPatMatrix2 mat;
-  output Boolean b;   
-algorithm
-  b := 
-  matchcontinue (mat)    
-    case ({}) then true; 
-    case ({{}}) then true;  
-    case (firstRow :: restRows) 
-      local 
-        RenamedPatMatrix2 restRows;
-        RenamedPatList firstRow;
-        RenamedPat pat; 
-        Boolean b2; 
-      equation  
-        pat = Util.listFirst(firstRow);
-        b2 = patternCheck2(pat,firstRow); 
-        true = b2; 
-        b2 = patternCheck(restRows);
-      then b2;
-    case (_) then fail(); 
-  end matchcontinue;
-end patternCheck; 
-
-public function patternCheck2 
-  input RenamedPat pat;  
-  input RenamedPatList pList; 
-  output Boolean outB;
-algorithm 
-  outB := 
-  matchcontinue (pat,pList)
-    case (_,{}) then true;  
-    case (p,firstP :: restP) 
-      local  
-      equation  
-        true = twoPatternMatch(p,firstP); 
-        b = patternCheck2(firstP,restP);
-      then b; 
-    case (_,_) fail();
-  end matchcontinue;
-end patternCheck2;  
-
-public function twoPatternMatch 
-  input RenamedPat pat1; 
-  input RenamedPat pat2;
-  output Boolean outB; 
-algorithm  
-  outB := 
-  matchcontinue (pat1,pat2) 
-    case (DFA.RP_WILDCARD(_),_) then true;      
-    case (_,DFA.RP_WILDCARD(_)) then true;
-    case (DFA.RP_EMPTYLIST(_),DFA.RP_EMPTYLIST(_)) then true;    
-    case (DFA.RP_INTEGER(_),DFA.RP_INTEGER(_)) then true;    
-    case (DFA.RP_REAL(_),DFA.RP_REAL(_)) then true;    
-    case (DFA.RP_BOOL(_),DFA.RP_BOOL(_)) then true;    
-    case (DFA.RP_STRING(_),DFA.RP_STRING(_)) then true;
-    case (DFA.RP_CALL(_,_,_),DFA.RP_CALL(_,_,_)) then true;  
-    case (DFA.RP_CREF(_,_),DFA.RP_CREF(_,_)) then true;  
-    case (DFA.RP_TUPLE(_,_),DFA.RP_TUPLE(_,_)) then true;  
-    case (DFA.RP_CONS(_,_,_),DFA.RP_CONS(_,_,_)) then true;  
-    case (p1,p2)
-      local  RenamedPat p1; RenamedPat p2;
-      equation
-        Debug.fprint("failtrace", "- twoPatternMatch failed, non-matching patterns\n"); 
-        print("Non matching patterns");
-        DFA.printPattern(p1); print(",");
-        DFA.printPattern(p2); print("\n");  
-      then fail();  
-  end matchcontinue; 
-end twoPatternMatch; */
 
 // The following two functions are used to assign a unique tag 
 // to a Constructor name. The tags of constructors that have already 
 // been assigned are kept in an environment. 
 protected function findConstTag "function: findConstTag"
-  input Absyn.Ident constName; 
+  input String constName; 
   input list<Absyn.Ident,Integer> inList; 
   output Integer outTag;  
 algorithm 
   outTag := 
   matchcontinue (constName,inList) 
     local
-      Absyn.Ident id; 
+      String id; 
       list<Absyn.Ident,Integer> restList;
     case (_,{}) then 0; 
     case (id,(firstName,firstNum) :: restList) 
@@ -2360,7 +2350,7 @@ algorithm
 end findConstTag; 
 
 protected function getUniqueConstTag "function: getUniqueConstTag"
-  input Absyn.Ident constName;  
+  input Absyn.Path constName;  
   input tuple<Integer,list<Absyn.Ident,Integer>> inEnv; 
   output Integer outTag; 
   output tuple<Integer,list<Absyn.Ident,Integer>> outEnv; 
@@ -2368,16 +2358,18 @@ algorithm
   (outTag,outEnv) := 
   matchcontinue (constName,inEnv) 
     local
-      Absyn.Ident localName; 
+      Absyn.Path localName; 
       Integer i; 
       list<Absyn.Ident,Integer> tagList;
+      String s;
     case (localName,env as (i,tagList)) 
       local
         tuple<Integer,list<Absyn.Ident,Integer>> env; 
         Integer tagNum;
       equation
+        s = Absyn.pathString(localName);
         // Returns 0 if not found
-        tagNum = findConstTag(localName,tagList);
+        tagNum = findConstTag(s,tagList);
         false = (tagNum == 0);  
       then (tagNum,env);
         // Constructor not found
@@ -2385,12 +2377,12 @@ algorithm
       local 
         tuple<Integer,list<Absyn.Ident,Integer>> newEnv;
       equation
-        tagList = listAppend(tagList,{(localName,i)}); 
+        s = Absyn.pathString(localName);
+        tagList = listAppend(tagList,{(s,i)}); 
         newEnv = (i+1,tagList);      
       then (i,newEnv);      
   end matchcontinue;   
 end getUniqueConstTag;
-
 
 protected function doOptimization "function: doOptimization"
   input list<DFA.SimpleState> oldSavedStates; 
@@ -2435,7 +2427,7 @@ end doOptimization;
 
 
 
-// Go through all the old states and see if any one matches the one
+// Go through all the old states and see if any-one matches the one
 // created.
 protected function findEqualState "function: findEqualState"
   input DFA.SimpleStateArray savedStates; // All states  
@@ -2635,8 +2627,7 @@ algorithm
         
         ... is transformed into ...
         
-        DUMMIE__ := exp;
-        if (DUMMIE__ != true)
+        if (exp != true)
         	throw();
         	*/      	
         algItem1 = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE())};
@@ -2665,48 +2656,54 @@ algorithm
       since the expressions should be "matched" against the return 
       values of the function */
       
-      case (Absyn.EQ_EQUALS(Absyn.TUPLE(expL),funcCall as Absyn.CALL(cRef,_)),localCache,localEnv)    
+    case (Absyn.EQ_EQUALS(e,funcCall as Absyn.CALL(cRef,_)),localCache,localEnv)    
       local
-        list<Absyn.Exp> expL;
-        Absyn.Exp funcCall;
+        list<Absyn.Exp> expL,varList;
+        Absyn.Exp funcCall,matchExp,e;
         Absyn.ComponentRef cRef;
-        Absyn.FunctionArgs funcArgs;
-        list<Types.Type> typeList;
         Absyn.Path p;
-        list<Absyn.AlgorithmItem> algItem;
+        list<Absyn.AlgorithmItem> algItem,algItem2;
+        SCode.Element cl;
+        list<SCode.Element> elemList;
+        list<Absyn.ElementItem> elemList2;
+        SCode.Class cl1;
+        Absyn.Exp lhsExp;
       equation
+        expL = extractListFromTuple(e);
         false = onlyCrefExpressions(expL);
         
       /*
-      DUMMIE__ := 
+      _ := 
       valueblock(
       var1,...,varN;
       
       (var1,...,varN) := func(...);
-      DUMMIE__ :=
+      _ :=
       valueblock(
       
       
       ) 
       
-      if (DUMMIE__) 
-      	return true;
-      else
-      	throw();	
-      )
       */
-       /* p = Absyn.crefToPath(cRef);
-        (localCache,typeList) = Lookup.lookupFunctionsInEnv(localCache,localEnv,p);
-        (varList,elemList) = createElements(typeList);
-        matchExp = createMatchContinue(expL,varList);
-        (localCache,matchExp) = matchMain(matchExp,{Absyn.CREF(Absyn.CREF_IDENT("DUMMIE__"),{})},localCache,localEnv);
-        algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(varList,funcCall),NONE()),
-          Absyn.ALGORITHMITEM(Absyn.ASSIGN(Absyn.CREF(Absyn.CREF_IDENT("DUMMIE__"),{}),
-          matchExp,NONE())};
-        algItem = {Absyn.ALGORITHMITEM(Absyn.ASSIGN(Absyn.CREF(Absyn.CREF_IDENT("DUMMIE__"),{}),
-        Absyn.VALUEBLOCK(elemList,algItem2,Absyn.BOOL(true))),NONE())}; */
-         algItem = {};
-                
+      
+        p = Absyn.crefToPath(cRef);
+        (localCache,SCode.CLASS(parts=SCode.PARTS(elementLst = elemList)),localEnv)
+         = Lookup.lookupClass(localCache,localEnv, p, true);
+        (elemList2,varList) = extractOutputVars(elemList,1,{},{}); 
+              
+        matchExp = 
+        Absyn.MATCHEXP(Absyn.MATCHCONTINUE(),Absyn.TUPLE(varList),{},
+          Absyn.CASE(Absyn.TUPLE(expL),{},{},Absyn.BOOL(true),NONE()) :: {},NONE());
+        
+        lhsExp = createLhsExp(varList);
+        
+        algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(lhsExp,funcCall),NONE()),
+          Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT("DUMMIE__",{})),
+            matchExp),NONE())};
+            
+        algItem = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT("DUMMIE__",{})),
+        Absyn.VALUEBLOCK(elemList2,Absyn.VALUEBLOCKALGORITHMS(algItem2),Absyn.BOOL(true))),NONE())};  
+             
       then (localCache,algItem); 
       /*---------------------------------------*/
       
@@ -2720,6 +2717,62 @@ algorithm
   end matchcontinue;
 end fromEquationToAlgAssignment;
 
+
+protected function createLhsExp "function: createLhsExp"
+  input list<Absyn.Exp> inList;
+  output Absyn.Exp outExp;
+algorithm
+  outExp :=
+  matchcontinue (inList)
+    case (firstExp :: {}) local Absyn.Exp firstExp; equation then firstExp;
+    case (lst) local list<Absyn.Exp> lst; equation then Absyn.TUPLE(lst);
+  end matchcontinue; 
+end createLhsExp;
+
+protected function extractOutputVars "function: extractOutputVars"
+  input list<SCode.Element> inList;
+  input Integer cnt;
+  input list<Absyn.ElementItem> accList1;
+  input list<Absyn.Exp> accList2;
+  output list<Absyn.ElementItem> outList1;
+  output list<Absyn.Exp> outList2;
+algorithm
+  (outList1,outList2) :=
+  matchcontinue (inList,cnt,accList1,accList2)
+    local
+      list<Absyn.ElementItem> localAccList1;
+      list<SCode.Element> rest;
+      list<Absyn.Exp> localAccList2;
+      Integer localCnt;
+    case ({},localCnt,localAccList1,localAccList2) 
+    then (localAccList1,localAccList2);
+    case (SCode.COMPONENT(attributes = SCode.ATTR(input_ = Absyn.OUTPUT()),typeSpec = tSpec) :: rest,
+      localCnt,localAccList1,localAccList2)    
+      local 
+        Absyn.TypeSpec tSpec;
+        Absyn.Ident n1,n2; 
+        Absyn.ElementItem elem1;
+        Absyn.Exp elem2;
+      equation       
+        n1 = "var";
+        n2 = stringAppend(n1,intString(localCnt));
+        elem1 = Absyn.ELEMENTITEM(Absyn.ELEMENT(
+          false,NONE(),Absyn.UNSPECIFIED(),"component",
+          Absyn.COMPONENTS(Absyn.ATTR(false,Absyn.VAR(),Absyn.BIDIR(),{}),
+            tSpec,{Absyn.COMPONENTITEM(Absyn.COMPONENT(n2,{},NONE()),NONE(),NONE())}),
+            Absyn.INFO("f",false,0,0,0,0),NONE()));
+        elem2 = Absyn.CREF(Absyn.CREF_IDENT(n2,{}));
+        localAccList1 = listAppend(localAccList1,{elem1});
+        localAccList2 = listAppend(localAccList2,{elem2});  
+        (localAccList1,localAccList2) = extractOutputVars(rest,localCnt+1,localAccList1,localAccList2);
+      then (localAccList1,localAccList2);   
+    case (_ :: rest,localCnt,localAccList1,localAccList2)
+      equation
+        (localAccList1,localAccList2) = extractOutputVars(rest,localCnt,localAccList1,localAccList2);
+      then (localAccList1,localAccList2);     
+  end matchcontinue;
+end extractOutputVars;
+
 protected function onlyCrefExpressions "function: onlyCrefExpressions"
   input list<Absyn.Exp> expList; 
   output Boolean boolVal;
@@ -2728,6 +2781,7 @@ algorithm
   matchcontinue (expList) 
     case ({}) 
       then true;
+    case (Absyn.CREF(Absyn.WILD()) :: _) then false;    
     case (Absyn.CREF(_) :: restList)
       local 
         list<Absyn.Exp> restList; 
@@ -2738,5 +2792,153 @@ algorithm
     case (_) then false;      
   end matchcontinue;
 end onlyCrefExpressions; 
+
+//--------------------//
+// Some Type Checking //
+//--------------------//
+
+/*protected function typeCheck1 "function: typeCheck1" 
+  input Env.Cache cache;
+  input Env.Env env;
+  input RenamedPatMatrix2 patMat;
+  input list<Absyn.Exp> expList;
+  output Boolean bool;
+algorithm  
+  bool := 
+  matchcontinue (cache,env,patMat,expList) 
+    case (localCache,localEnv,localPatMat,localExpList)
+      local 
+        RenamedPatList patList; 
+        RenamedPatMatrix2 localPatMat;
+        Env.Cache localCache;
+        Env.Env localEnv; 
+        list<Absyn.Exp> localExpList; Boolean b;
+      equation 
+        patList = getVarTypes(localExpList,{});
+        b = patternCheck(localPatMat,patList);
+      then b;    
+  end matchcontinue;      
+end typeCheck1;
+    
+protected function getVarTypes "function: getVarTypes"
+  input Env.Cache cache;
+  input Env.Env env;
+  input list<Absyn.Exp> expList;  
+  input RenamedPatList inList;
+  output Env.Cache outCache;
+  output RenamedPatList outList;
+algorithm
+  (outCache,outList) :=
+  matchcontinue (cache,env,expList,inList)
+    local 
+      RenamedPatList localAccList;
+    case (localCache,_,{},localAccList) then (localCache,localAccList);
+    case (localCache,localEnv,Absyn.CREF(Absyn.CREF_IDENT(id,{})) :: restExp,localAccList)
+      local 
+        Absyn.Ident id; list<Absyn.Exp> restExp; 
+        Types.Type t; RenamedPat rp; 
+        Env.Cache localCache; Env.Env localEnv;
+      equation
+        (_,t,_)=
+        Lookup.lookupVar(localCache,localEnv,Exp.CREF_IDENT(id,{}));
+        rp = fromTypeToRenamedPat(t);
+        localAccList = listAppend(localAccList,{rp});
+        (localCache,localAccList) = getVarTypes(restExp,localAccList);
+      then (localCache,localAccList);
+  end matchcontinue;
+end getVarTypes;
+
+protected function fromTypeToRenamedPat "function: fromTypeToRenamedPat"
+  input Types.Type t;
+  output RenamedPat rp;
+algorithm
+  rp :=
+  matchcontinue (t)
+    case ((Types.T_INTEGER(_),_))
+    then DFA.RP_INTEGER("a",1);
+    
+    case ((Types.T_STRING(_),_))
+    then DFA.RP_STRING("a","a");
+   
+    case ((Types.T_BOOL(_),_)) 
+    then DFA.RP_BOOL("a",true);
+   
+    case ((Types.T_LIST(_),_)) 
+    then DFA.RP_CONS("a",DFA.RP_WILDCARD("a"),DFA.RP_WILDCARD("a")); 
+  end matchcontinue;
+end fromTypeToRenamedPat;  
+
+public function patternCheck "function: patternCheck"
+  input RenamedPatMatrix2 mat;
+  input RenamedPatList lst;  
+  output Boolean b;
+algorithm
+  b := 
+  matchcontinue (mat,lst)    
+    case ({},l) then true; 
+    case ({{}},l) then true;  
+    case (firstRow :: restRows,l) 
+      local 
+        RenamedPatMatrix2 restRows;
+        RenamedPatList firstRow;
+        RenamedPat pat; 
+        Boolean b2; 
+      equation  
+        pat = Util.listFirst(firstRow);
+        b2 = patternCheck2(pat,firstRow); 
+        true = b2; 
+        b2 = patternCheck(restRows);
+      then b2;
+    case (_,_) then fail(); 
+  end matchcontinue;
+end patternCheck; 
+
+public function patternCheck2 "function: patterCheck2"
+  input RenamedPat pat;  
+  input RenamedPatList pList; 
+  output Boolean outB;
+algorithm 
+  outB := 
+  matchcontinue (pat,pList)
+    case (_,{}) then true;  
+    case (p,firstP :: restP) 
+      local  
+      equation  
+        true = twoPatternMatch(p,firstP); 
+        b = patternCheck2(firstP,restP);
+      then b; 
+    case (_,_) then fail();
+  end matchcontinue;
+end patternCheck2;  
+
+public function twoPatternMatch "function: twoPatternMatch"
+  input RenamedPat pat1; 
+  input RenamedPat pat2;
+  output Boolean outB; 
+algorithm  
+  outB := 
+  matchcontinue (pat1,pat2) 
+    case (DFA.RP_WILDCARD(_),_) then true;      
+    case (_,DFA.RP_WILDCARD(_)) then true;
+    case (DFA.RP_EMPTYLIST(_),DFA.RP_EMPTYLIST(_)) then true;    
+    case (DFA.RP_INTEGER(_),DFA.RP_INTEGER(_)) then true;    
+    case (DFA.RP_REAL(_),DFA.RP_REAL(_)) then true;    
+    case (DFA.RP_BOOL(_),DFA.RP_BOOL(_)) then true;    
+    case (DFA.RP_STRING(_),DFA.RP_STRING(_)) then true;
+    case (DFA.RP_CALL(_,_,_),DFA.RP_CALL(_,_,_)) then true;  
+    case (DFA.RP_CREF(_,_),DFA.RP_CREF(_,_)) then true;  
+    case (DFA.RP_TUPLE(_,_),DFA.RP_TUPLE(_,_)) then true;  
+    case (DFA.RP_CONS(_,_,_),DFA.RP_CONS(_,_,_)) then true;  
+    case (p1,p2)
+      local  RenamedPat p1; RenamedPat p2;
+      equation
+        Debug.fprint("failtrace", "- twoPatternMatch failed, non-matching patterns\n"); 
+        print("Non matching patterns");
+        DFA.printPattern(p1); print(",");
+        DFA.printPattern(p2); print("\n");  
+      then fail();  
+  end matchcontinue; 
+end twoPatternMatch; */
+//------------------
 
 end Patternm;

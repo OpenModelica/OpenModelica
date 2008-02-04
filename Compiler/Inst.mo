@@ -3673,7 +3673,7 @@ algorithm
         ty = MetaUtil.createListType(ty,numberOfLists);  
         dae = MetaUtil.addListTypeToDAE(dae,ty);
         //---------------------------------
-        
+
 				//The environment is extended (updated) with the new variable binding. 
         (cache,binding) = makeBinding(cache,env2_1, attr, mod_1, ty) ;
 
@@ -4146,6 +4146,39 @@ algorithm
       Option<Absyn.Comment> comment;
       Env.Cache cache;
       Boolean prot,listBool;
+      
+      //------------------------------------------------------------------------
+      // MetaModelica list type, part of MetaModelica extension. KS
+      //------------------------------------------------------------------------
+      case (cache,env,ci_state,mod,pre,csets,n,SCode.CLASS(parts = SCode.DERIVED(
+      Absyn.TCOMPLEX(Absyn.IDENT("list"),tSpec :: _,_),_)),
+        attr,prot,dims,idxs,inst_dims,impl,comment,io)
+        local 
+          Integer numberOfLists;
+          Absyn.Path t;
+          Absyn.TypeSpec tSpec;
+        equation 
+       true = RTOpts.acceptMetaModelicaGrammar();
+        
+        // Derive the basic type of the list and the number of lists (since a list can be nested)
+        //------------------------------------------------
+        (t,numberOfLists) = MetaUtil.evalTypeSpec(tSpec,1);
+        //------------------------------------------------
+        
+        (cache,cl,env) = Lookup.lookupClass(cache,env,t,true);
+        
+        //Instantiate the component 
+        (cache,compenv,dae,csets_1,ty) = instVar(cache,env,ci_state,mod,pre,csets,n,cl,attr,prot,dims,{},inst_dims,impl,comment,io);    
+
+        //---------------------------------
+        // Add the list type to the dae 
+        ty = MetaUtil.createListType(ty,numberOfLists);  
+        dae = MetaUtil.addListTypeToDAE(dae,ty);
+        //---------------------------------
+        
+          then 
+            (cache,compenv,dae,csets_1,ty);         
+  
    	// impl component environment dae elements for component Variables of userdefined type, 
    	// e.g. Point p => Real p{3}; These must be handled separately since even if they do not 
 	 	// appear to be an array, they can. Therefore we need to collect
@@ -8267,37 +8300,14 @@ algorithm
       then
         (cache,stmt);
 
-        // v1 := matchcontinue(...). Part of MetaModelica extension. KS
-   case (cache,env,pre,Absyn.ALG_ASSIGN(Absyn.CREF(cr),e as Absyn.MATCHEXP(_,_,_,_,_)),impl) 
+        // MetaModelica Matchcontinue
+   case (cache,env,pre,e as Absyn.ALG_ASSIGN(_,Absyn.MATCHEXP(_,_,_,_,_)),impl) 
      local
+       Absyn.Algorithm e;
      equation 
-        (cache,cre,cprop,acc) = Static.elabCref(cache,env, cr, impl,false);
-        (cache,Exp.CREF(ce,t)) = Prefix.prefixExp(cache,env, cre, pre);        
-       
-       expl = {Absyn.CREF(cr)};       
-       (cache,e) = Patternm.matchMain(e,expl,cache,env);
-        (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);        
-       (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);                
-
-       stmt = Algorithm.makeAssignment(Exp.CREF(ce,t), cprop, e_2, eprop, acc);
-      then
-        (cache,stmt);
-        
-        // (v1,v2,..,vn) := matchcontinue(...). Part of MetaModelica extension. KS
-   case (cache,env,pre,Absyn.ALG_ASSIGN(Absyn.TUPLE(expl),e as Absyn.MATCHEXP(_,_,_,_,_)),impl)
-     local
-     equation  
-       Absyn.CREF(cr) = Util.listFirst(expl);
-       (cache,cre,cprop,acc) = Static.elabCref(cache,env, cr, impl,false);
-       (cache,Exp.CREF(ce,t)) = Prefix.prefixExp(cache,env, cre, pre);        
-              
-       (cache,e) = Patternm.matchMain(e,expl,cache,env);
-       (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);        
-       (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);                
-
-       stmt = Algorithm.makeAssignment(Exp.CREF(ce,t), cprop, e_2, eprop, acc);
-      then
-        (cache,stmt);   
+       true = RTOpts.acceptMetaModelicaGrammar();	
+       (cache,stmt) = createMatchStatement(cache,env,pre,e,impl);
+     then (cache,stmt);
         
         // (v1,v2,..,vn) := func(...)
     case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),impl)
@@ -8475,6 +8485,91 @@ algorithm
   end matchcontinue;
 end instStatement;
 
+
+/* MetaModelica Language Extension */
+protected function createMatchStatement "function: createMatchStatement
+Author: KS
+Function called by instStatement
+"
+  input Env.Cache cache;
+  input Env.Env env;
+  input Prefix pre;
+  input Absyn.Algorithm alg;
+  input Boolean inBoolean;
+  output Env.Cache outCache;
+  output Algorithm.Statement outStmt;
+algorithm
+  (outCache,outStmt) :=
+  matchcontinue (cache,env,pre,alg,inBoolean) 
+    local 
+      Types.Properties cprop,eprop;
+      Algorithm.Statement stmt;
+      Env.Cache localCache;
+      Env.Env localEnv;
+      Prefix localPre;
+      Absyn.Exp exp,e;
+      Exp.ComponentRef ce; 
+      Exp.Exp cre;
+      Boolean impl;
+      SCode.Accessibility acc;
+      Absyn.ComponentRef cr;
+      Exp.Type t;
+      list<Absyn.Exp> expl;
+      
+      // _ := matchcontinue(...) ...
+    case (localCache,localEnv,localPre,
+      Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.WILD()),e as Absyn.MATCHEXP(_,_,_,_,_)),impl)
+      local 
+        Absyn.Exp exp;
+        Exp.Exp e_1,e_2;
+      equation
+        expl = {};
+        (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv);
+        (localCache,e_1,eprop,_) = Static.elabExp(localCache,localEnv, e, impl, NONE,true);        
+        (localCache,e_2) = Prefix.prefixExp(localCache,localEnv, e_1, localPre); 
+        stmt = Algorithm.ASSIGN(Exp.OTHER(),Exp.CREF_IDENT("WILDCARD__",{}),e_2);
+      then (localCache,stmt); 
+        
+      // v1 := matchcontinue(...). Part of MetaModelica extension. KS
+   case (localCache,localEnv,localPre,
+     Absyn.ALG_ASSIGN(Absyn.CREF(cr),e as Absyn.MATCHEXP(_,_,_,_,_)),impl) 
+     local
+       Exp.Exp e_1,e_2;
+     equation 
+       //(localCache,cre,cprop,acc) = Static.elabCref(localCache,localEnv, cr, impl,false);
+       //(localCache,Exp.CREF(ce,t)) = Prefix.prefixExp(localCache,localEnv, cre, localPre);        
+       
+       expl = {Absyn.CREF(cr)};       
+       (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv);
+       (localCache,e_1,eprop,_) = Static.elabExp(localCache,localEnv, e, impl, NONE,true);        
+       (localCache,e_2) = Prefix.prefixExp(localCache,localEnv, e_1, localPre);                
+
+       //stmt = Algorithm.makeAssignment(Exp.CREF(ce,t), cprop, e_2, eprop, acc);
+       stmt = Algorithm.ASSIGN(Exp.OTHER(),Exp.CREF_IDENT("WILDCARD__",{}),e_2);
+      then
+        (localCache,stmt);
+        
+        // (v1,v2,..,vn) := matchcontinue(...). Part of MetaModelica extension. KS
+   case (localCache,localEnv,localPre,
+     Absyn.ALG_ASSIGN(Absyn.TUPLE(expl),e as Absyn.MATCHEXP(_,_,_,_,_)),impl)
+     local
+       Exp.Exp e_1,e_2;
+     equation  
+       //Absyn.CREF(cr) = Util.listFirst(expl);
+       //(localCache,cre,cprop,acc) = Static.elabCref(localCache,localEnv, cr, impl,false);
+       //(localCache,Exp.CREF(ce,t)) = Prefix.prefixExp(localCache,localEnv, cre, localPre);        
+              
+       (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv);
+       (localCache,e_1,eprop,_) = Static.elabExp(localCache,localEnv, e, impl, NONE,true);        
+       (localCache,e_2) = Prefix.prefixExp(localCache,localEnv, e_1, localPre);                
+       
+        stmt = Algorithm.ASSIGN(Exp.OTHER(),Exp.CREF_IDENT("WILDCARD__",{}),e_2);
+      then
+        (localCache,stmt);   
+  end matchcontinue;
+end createMatchStatement;
+  
+  
 protected function instElseifs "function: instElseifs
  
   This function helps `inst_statement\' to handle `elseif\' parts.

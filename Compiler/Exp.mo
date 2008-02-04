@@ -239,6 +239,148 @@ uniontype Exp "Expressions
   
 end Exp;
 
+public 
+uniontype Operator "Operators which are overloaded in the abstract syntax are here
+    made type-specific.  The integer addition operator (`ADD(INT)\')
+    and the real addition operator (`ADD(REAL)\') are two distinct
+    operators."
+  record ADD
+    Type ty;
+  end ADD;
+
+  record SUB
+    Type ty;
+  end SUB;
+
+  record MUL
+    Type ty;
+  end MUL;
+
+  record DIV
+    Type ty;
+  end DIV;
+
+  record POW
+    Type ty;
+  end POW;
+
+  record UMINUS
+    Type ty;
+  end UMINUS;
+
+  record UPLUS
+    Type ty;
+  end UPLUS;
+
+  record UMINUS_ARR
+    Type ty;
+  end UMINUS_ARR;
+
+  record UPLUS_ARR
+    Type ty;
+  end UPLUS_ARR;
+
+  record ADD_ARR
+    Type ty;
+  end ADD_ARR;
+
+  record SUB_ARR
+    Type ty;
+  end SUB_ARR;
+
+  record MUL_SCALAR_ARRAY
+    Type ty "a  { b, c }" ;
+  end MUL_SCALAR_ARRAY;
+
+  record MUL_ARRAY_SCALAR
+    Type ty "{a, b}  c" ;
+  end MUL_ARRAY_SCALAR;
+
+  record MUL_SCALAR_PRODUCT
+    Type ty "{a, b}  {c, d}" ;
+  end MUL_SCALAR_PRODUCT;
+
+  record MUL_MATRIX_PRODUCT
+    Type ty "{{..},..}  {{..},{..}}" ;
+  end MUL_MATRIX_PRODUCT;
+
+  record DIV_ARRAY_SCALAR
+    Type ty "{a, b} / c" ;
+  end DIV_ARRAY_SCALAR;
+
+  record POW_ARR
+    Type ty;
+  end POW_ARR;
+
+  record AND end AND;
+
+  record OR end OR;
+
+  record NOT end NOT;
+
+  record LESS
+    Type ty;
+  end LESS;
+
+  record LESSEQ
+    Type ty;
+  end LESSEQ;
+
+  record GREATER
+    Type ty;
+  end GREATER;
+
+  record GREATEREQ
+    Type ty;
+  end GREATEREQ;
+
+  record EQUAL
+    Type ty;
+  end EQUAL;
+
+  record NEQUAL
+    Type ty;
+  end NEQUAL;
+
+  record USERDEFINED
+    Absyn.Path fqName "The FQ name of the overloaded operator function" ;
+  end USERDEFINED;
+
+end Operator;
+
+public 
+uniontype ComponentRef "- Component references
+    CREF_QUAL(...) is used for qualified component names, e.g. a.b.c
+    CREF_IDENT(..) is used for non-qualifed component names, e.g. x 
+"
+  record CREF_QUAL
+    Ident ident;
+    list<Subscript> subscriptLst;
+    ComponentRef componentRef;
+  end CREF_QUAL;
+
+  record CREF_IDENT
+    Ident ident;
+    list<Subscript> subscriptLst;
+  end CREF_IDENT;
+
+end ComponentRef;
+
+public 
+uniontype Subscript "The `Subscript\' and `ComponentRef\' datatypes are simple
+  translations of the corresponding types in the `Absyn\' module."
+  record WHOLEDIM "a{:,1}" end WHOLEDIM;
+
+  record SLICE
+    Exp exp "a{1:3,1}, a{1:2:10,2}" ;
+  end SLICE;
+
+  record INDEX
+    Exp exp "a[i+1]" ;
+  end INDEX;
+
+end Subscript;
+
 //----------------------------------------------------------------------
 // From types.mo - Part of a work-around to avoid circular dependencies
 //                 (used by the valueblock expression)
@@ -819,148 +961,6 @@ end Else;
 //-------------------------------------------
 // END OF WORKAROUND
 //-------------------------------------------
-
-public 
-uniontype Operator "Operators which are overloaded in the abstract syntax are here
-    made type-specific.  The integer addition operator (`ADD(INT)\')
-    and the real addition operator (`ADD(REAL)\') are two distinct
-    operators."
-  record ADD
-    Type ty;
-  end ADD;
-
-  record SUB
-    Type ty;
-  end SUB;
-
-  record MUL
-    Type ty;
-  end MUL;
-
-  record DIV
-    Type ty;
-  end DIV;
-
-  record POW
-    Type ty;
-  end POW;
-
-  record UMINUS
-    Type ty;
-  end UMINUS;
-
-  record UPLUS
-    Type ty;
-  end UPLUS;
-
-  record UMINUS_ARR
-    Type ty;
-  end UMINUS_ARR;
-
-  record UPLUS_ARR
-    Type ty;
-  end UPLUS_ARR;
-
-  record ADD_ARR
-    Type ty;
-  end ADD_ARR;
-
-  record SUB_ARR
-    Type ty;
-  end SUB_ARR;
-
-  record MUL_SCALAR_ARRAY
-    Type ty "a  { b, c }" ;
-  end MUL_SCALAR_ARRAY;
-
-  record MUL_ARRAY_SCALAR
-    Type ty "{a, b}  c" ;
-  end MUL_ARRAY_SCALAR;
-
-  record MUL_SCALAR_PRODUCT
-    Type ty "{a, b}  {c, d}" ;
-  end MUL_SCALAR_PRODUCT;
-
-  record MUL_MATRIX_PRODUCT
-    Type ty "{{..},..}  {{..},{..}}" ;
-  end MUL_MATRIX_PRODUCT;
-
-  record DIV_ARRAY_SCALAR
-    Type ty "{a, b} / c" ;
-  end DIV_ARRAY_SCALAR;
-
-  record POW_ARR
-    Type ty;
-  end POW_ARR;
-
-  record AND end AND;
-
-  record OR end OR;
-
-  record NOT end NOT;
-
-  record LESS
-    Type ty;
-  end LESS;
-
-  record LESSEQ
-    Type ty;
-  end LESSEQ;
-
-  record GREATER
-    Type ty;
-  end GREATER;
-
-  record GREATEREQ
-    Type ty;
-  end GREATEREQ;
-
-  record EQUAL
-    Type ty;
-  end EQUAL;
-
-  record NEQUAL
-    Type ty;
-  end NEQUAL;
-
-  record USERDEFINED
-    Absyn.Path fqName "The FQ name of the overloaded operator function" ;
-  end USERDEFINED;
-
-end Operator;
-
-public 
-uniontype ComponentRef "- Component references
-    CREF_QUAL(...) is used for qualified component names, e.g. a.b.c
-    CREF_IDENT(..) is used for non-qualifed component names, e.g. x 
-"
-  record CREF_QUAL
-    Ident ident;
-    list<Subscript> subscriptLst;
-    ComponentRef componentRef;
-  end CREF_QUAL;
-
-  record CREF_IDENT
-    Ident ident;
-    list<Subscript> subscriptLst;
-  end CREF_IDENT;
-
-end ComponentRef;
-
-public 
-uniontype Subscript "The `Subscript\' and `ComponentRef\' datatypes are simple
-  translations of the corresponding types in the `Absyn\' module."
-  record WHOLEDIM "a{:,1}" end WHOLEDIM;
-
-  record SLICE
-    Exp exp "a{1:3,1}, a{1:2:10,2}" ;
-  end SLICE;
-
-  record INDEX
-    Exp exp "a[i+1]" ;
-  end INDEX;
-
-end Subscript;
 
 protected import RTOpts;
 protected import Util;

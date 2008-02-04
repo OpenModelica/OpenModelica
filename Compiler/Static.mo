@@ -7464,7 +7464,7 @@ algorithm
       Boolean impl;
       Ident s,scope;
       Env.Cache cache;
-      Boolean doVect;
+      Boolean doVect;  
     case (cache,env,c,impl,doVect) /* impl */ 
       local String str;
          Types.Properties props;
