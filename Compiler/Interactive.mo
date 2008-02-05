@@ -104,9 +104,9 @@ uniontype LoadedFile
    A file entry holder, needed to cache the file information 
    so files are not loaded if not really necessary"
   record FILE
-    String  fileName            "The path of the file";
-    Real    loadTime            "The time the file was loaded";
-    String  classNamesQualified "The names of the classes from the file";
+    String                  fileName            "The path of the file";
+    Real                    loadTime            "The time the file was loaded";
+    String                  classNamesQualified "The names of the classes from the file";    
   end FILE;
 end LoadedFile;  
 
@@ -120,7 +120,7 @@ uniontype InteractiveSymbolTable "- Interactive Symbol Table"
     list<tuple<Absyn.Path, Types.Type>> compiledFunctions "compiledFunctions ; List of compiled functions, F.Q name + type" ;
     list<LoadedFile> loadedFiles "The list of the loaded files with their load time." ;
   end SYMBOLTABLE;
-
+  
 end InteractiveSymbolTable;
 
 public 
@@ -1392,6 +1392,14 @@ algorithm
         resstr = stringAppend(resstr, "\"");
       then
         (resstr,st);
+
+    case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "parseFile"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
+      st)  
+      equation 
+        (top_names_str, newst) = parseFile(name, st);
+      then
+        (top_names_str,newst);
         
   end matchcontinue;
 end evaluateGraphicalApi2;
@@ -16217,26 +16225,27 @@ protected function checkLoadedFiles
  - if not, load it, add the info to cache"
   input String fileName                   "Filename to load";
   input list<LoadedFile> loadedFiles      "The already loaded files";
-  input Absyn.Program ast                 "The program from the symboltable"; 
+  input Absyn.Program ast                 "The program from the symboltable";
+  input Boolean shouldUpdateProgram       "Should the program be pushed into the AST?"; 
   output String topClassNamesQualified    "The names of the classes from file, qualified!";
   output list<LoadedFile> newLoadedFiles  "The new loaded files";
   output Absyn.Program newAst             "The new program to put it in the symboltable"; 
 algorithm
-  (topClassNamesQualified, newLoadedFiles, newAst) := matchcontinue (fileName, loadedFiles, ast)
+  (topClassNamesQualified, newLoadedFiles, newAst) := matchcontinue (fileName, loadedFiles, ast, shouldUpdateProgram)
     local
       String f;
       String topNamesStr;
       Absyn.Program pAst,newP,parsed;
       list<LoadedFile> lf, newLF;
       Integer result;
-    case (f, lf, pAst)
+    case (f, lf, pAst, _)
       equation
         // did the file was loaded since it was last saved? 
         SOME(topNamesStr) = getLoadedFileInfo(f, lf);
       then
         (topNamesStr, lf, pAst); // not worth loading 
         
-    case (f, lf, pAst)
+    case (f, lf, pAst, true)
       equation 
         // it seems the file was not loaded yet or the one on the disk is newer
         NONE = getLoadedFileInfo(f, lf);
@@ -16250,7 +16259,20 @@ algorithm
       then
         (topNamesStr, newLF, newP); // loading
         
-    case (f, lf, pAst)
+    case (f, lf, pAst, false)
+      equation 
+        // it seems the file was not loaded yet or the one on the disk is newer
+        NONE = getLoadedFileInfo(f, lf);
+        // fall back to basis :)
+        parsed = Parser.parse(f);
+        parsed = expandUnionTypes(parsed);
+        topNamesStr = getTopQualifiedClassnames(parsed);
+        // fix the modification and topNames in the list<LoadedFile> cache
+        newLF = updateLoadedFiles(f, lf, topNamesStr, {});
+      then
+        (topNamesStr, newLF, pAst); // loading
+        
+    case (f, lf, pAst, _)
       equation          
         failure(p1 = Parser.parse(f)); // failed to parse!
       then
@@ -16291,10 +16313,50 @@ algorithm
     // check if we have the stuff in the loadedFiles!
     case (file, s as SYMBOLTABLE(pAst,eAst,ic,iv,cf,lf))
       equation
-        (topNamesStr,newLF,newP) = checkLoadedFiles(file, lf, pAst);
+        (topNamesStr,newLF,newP) = checkLoadedFiles(file, lf, pAst, true);
       then
         (topNamesStr, SYMBOLTABLE(newP,eAst,ic,iv,cf,lf));        
   end matchcontinue;
 end loadFileInteractiveQualified;
+
+protected function parseFile
+"@author adrpo
+ This function just parses a file and report contents ONLY if the 
+ file is newer than the one already loaded."
+  input  String fileName               "Filename to load";
+  input  InteractiveSymbolTable st     "The symboltable where to load the file";
+  output String topClassNamesQualified "The names of the classes from file, qualified!";
+  output InteractiveSymbolTable newst  "The new interactive symboltable";
+algorithm
+  (topClassNamesQualified, newst) := matchcontinue (fileName, st)
+    local
+      String file               "Filename to load";
+      InteractiveSymbolTable s  "The symboltable where to load the file";
+      String topNamesStr;
+      Absyn.Program pAst,newP;
+      list<SCode.Class> eAst;
+      list<InstantiatedClass> ic;
+      list<InteractiveVariable> iv;
+      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+      list<LoadedFile> lf, newLF;
+      Integer result;
+
+    // See that the file exists
+    case (file, s as SYMBOLTABLE(pAst,eAst,ic,iv,cf,lf))
+      equation
+        result = System.regularFileExists(file);
+        (result > 0) = true;
+      then
+        ("error",s);
+    
+    // check if we have the stuff in the loadedFiles!
+    case (file, s as SYMBOLTABLE(pAst,eAst,ic,iv,cf,lf))
+      equation
+        (topNamesStr,newLF,newP) = checkLoadedFiles(file, lf, pAst, false);
+      then
+        (topNamesStr, SYMBOLTABLE(newP,eAst,ic,iv,cf,lf));        
+  end matchcontinue;
+end parseFile;
+
 
 end Interactive;

@@ -264,7 +264,6 @@ algorithm
         //Debug.fprintln("insttr", str2);
         (cache,lnofunc) = instProgram(cache,envimpl_1, pnofunc);
         l = listAppend(lfunc, lnofunc);
-
       then
         (cache,DAE.DAE(l));
     case (_,_)
@@ -757,9 +756,9 @@ algorithm
         fail();
     case (cache,env,{(c as SCode.CLASS(name = n))})
       equation 
-        //Debug.fprint("insttr", "inst_program1: ");
-        //Debug.fprint("insttr", n);
-        //Debug.fprintln("insttr", "");
+        Debug.fprint("insttr", "inst_program1: ");
+        Debug.fprint("insttr", n);
+        Debug.fprintln("insttr", "");
         (cache,dae,env_1,csets,_,_) = instClass(cache,env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
           {}, false, TOP_CALL()) ;
       then
@@ -767,7 +766,7 @@ algorithm
     case (cache,env,(c :: (cs as (_ :: _))))
          local String str;
       equation  
-        //Debug.fprintln("insttr", "inst_program2");
+        Debug.fprintln("insttr", "inst_program2");
         (cache,env_1,dae1) = instClassDecl(cache,env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {}) ;
 
         //str = SCode.printClassStr(c); print("------------------- CLASS instProgram-----------------\n");print(str);print("\n===============================================\n");
@@ -779,7 +778,7 @@ algorithm
         (cache,dae);
     case (_,_,_)
       equation 
-        //Debug.fprintln("failtrace", "- inst_program failed");
+        Debug.fprintln("failtrace", "- inst_program failed");
       then
         fail();
   end matchcontinue;
@@ -889,7 +888,7 @@ algorithm
         /* Instantiation of a class. Create new scope and call instClassIn.
         	Then generate equations from connects.
         */
-    case (cache,env,mod,pre,csets,(c as SCode.CLASS(name = n,encapsulated_ = encflag,restriction = r)),inst_dims,impl,callscope)
+    case (cache,env,mod,pre,csets,(c as SCode.CLASS(name = n,encapsulated_ = encflag,restriction = r, partial_ = false)),inst_dims,impl,callscope)
       local String str;
       equation 
         //print("\n---- CLASS: "); print(n); print(" ----\n"); print(SCode.printClassStr(c)); //Print out the input SCode class
@@ -917,9 +916,9 @@ algorithm
 
     case (_,_,_,_,_,SCode.CLASS(name = n),_,impl,_)
       equation 
-        //Debug.fprint("failtrace", "- inst_class ");
-        //Debug.fprint("failtrace", n);
-        //Debug.fprint("failtrace", " failed\n");
+        Debug.fprint("failtrace", "- inst_class ");
+        Debug.fprint("failtrace", n);
+        Debug.fprint("failtrace", " failed\n");
       then
         fail();
   end matchcontinue; 
@@ -1081,13 +1080,13 @@ algorithm
         bc = arrayBasictypeBaseclass(inst_dims, (Types.T_BOOL(tys),NONE));        
       then (cache,{},env,Connect.SETS({},crs),ci_state,tys,NONE);           
   
-   	/* Ignore functions if not implicit instantiation */ 
+   	/* Ignore functions if not implicit instantiation */   
     case (cache,env,mods,pre,Connect.SETS(connection = crs),ci_state,cls,_,_,(impl as false)) 
       equation 
         true = SCode.isFunction(cls);
-        clsname = SCode.className(cls);
+        clsname = SCode.className(cls);        
       then
-        (cache,{},env,Connect.SETS({},crs),ci_state,{},NONE);
+        (cache,{},env,Connect.SETS({},crs),ci_state,{},NONE);        
          
     case (cache,env,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,parts = d)),prot,inst_dims,impl)
       local String s; Absyn.Path fullPath;
@@ -1418,11 +1417,9 @@ algorithm
 end arrayBasictypeBaseclass2;
 
 public function partialInstClassIn "function: partialInstClassIn
- 
   This function is used when instantiating classes in lookup of other classes.
   The only work performed by this function is to instantiate local classes and
-  inherited classes.
-"
+  inherited classes."
   input Env.Cache inCache;
   input Env inEnv;
   input Mod inMod;
@@ -1461,7 +1458,7 @@ algorithm
         Real t1,t2,time; String s,s2; Boolean b;
       equation 
        	t1 = clock();
-        (cache,env_1,ci_state_1) = partialInstClassdef(cache,env, mods, pre, csets, ci_state, d, r, prot, inst_dims);
+        (cache,env_1,ci_state_1) = partialInstClassdef(cache,env, mods, pre, csets, ci_state, d, r, prot, inst_dims, n);
         t2 = clock();
         time = t2 -. t1;
         b=realGt(time,0.05);
@@ -1604,7 +1601,8 @@ algorithm
         extendselts = extendsElts(els);
         env1 = addClassdefsToEnv(env, cdefelts, impl) "1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)" ;
 
-        (cache,env2,emods,extcomps,eqs2,initeqs2,alg2,initalg2) = instExtendsList(cache,env1, mods, extendselts, ci_state, impl) "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations." ;
+        (cache,env2,emods,extcomps,eqs2,initeqs2,alg2,initalg2) = instExtendsList(cache,env1, mods, extendselts, ci_state, className, impl) 
+        "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations." ;
              
         compelts_1 = addNomod(compelts) "Problem. Modifiers on inherited components are unelabed, loosing their 
 	   type information. This will not work, since the modifier type can not always be found.
@@ -1678,7 +1676,16 @@ algorithm
       
         /* This rule describes how to instantiate a derived class definition */ 
     case (cache,env,mods,pre,csets,ci_state,className,SCode.DERIVED(Absyn.TPATH(path = cn,arrayDim = ad),mod = mod),re,prot,inst_dims,impl) 
-      equation 
+      equation
+        // adrpo - here we need to check if we don't have recursive extends of the form:
+        // package Icons
+        //   extends Icons.BaseLibrary;
+        //        model BaseLibrary "Icon for base library" 
+        //        end BaseLibrary;
+        // end Icons;
+        // if we don't check that, then the compiler enters an infinite loop!
+        // what we do is removing Icons from extends Icons.BaseLibrary;
+        cn = removeSelfReference(className, cn);
         (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = Lookup.lookupClass(cache,env, cn, true);
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
         (cache,mod_1) = Mod.elabMod(cache,env, pre, mod, impl);
@@ -1726,6 +1733,34 @@ algorithm
         fail();
   end matchcontinue;
 end instClassdef;
+
+protected function removeSelfReference 
+"@author adrpo
+ Removes self reference from a path if it exists.
+ Examples: 
+   removeSelfReference('Icons', 'Icons.BaseLibrary') => 'BaseLibrary'
+   removeSelfReference('Icons', 'BlaBla.BaseLibrary') => 'BlaBla.BaseLibrary'"
+  input  String     className;
+  input  Absyn.Path path;
+  output Absyn.Path outPath;
+algorithm
+  outPath := matchcontinue (className, path)
+    local
+      String clsName;
+      Absyn.Path p, newPath;
+    case(clsName, p) // self reference, remove the first.
+      equation
+        true = stringEqual(clsName, Absyn.pathFirstIdent(p));
+        newPath = Absyn.removePrefix(Absyn.IDENT(clsName), p);
+      then
+        newPath;
+    case(clsName, p) // not self reference, return the same.
+      equation
+        false = stringEqual(clsName, Absyn.pathFirstIdent(p));        
+      then
+        p;
+  end matchcontinue;
+end removeSelfReference;
 
 protected function changeOuterReferences "Changes the outer references in a dae to the corresponding
 inner reference, given that an inner reference exist in the DAE."
@@ -2227,10 +2262,8 @@ algorithm
 end filterConnectionSetCrefs;
 
 protected function partialInstClassdef "function: partialInstClassdef
- 
-  This function is used by partial_inst_class_in for instantiating local
-  class definitons and inherited class definitions only.
-"
+  This function is used by partialInstClassIn for instantiating local
+  class definitons and inherited class definitions only."
   input Env.Cache inCache;
   input Env inEnv;
   input Mod inMod;
@@ -2241,12 +2274,13 @@ protected function partialInstClassdef "function: partialInstClassdef
   input SCode.Restriction inRestriction;
   input Boolean inBoolean;
   input InstDims inInstDims;
+  input String inClassName "the class name that contains the elements we are instanting";
 	output Env.Cache outCache;
   output Env outEnv;
   output ClassInf.State outState;
 algorithm 
   (outCache,outEnv,outState):=
-  matchcontinue (inCache,inEnv,inMod,inPrefix,inSets,inState,inClassDef,inRestriction,inBoolean,inInstDims)
+  matchcontinue (inCache,inEnv,inMod,inPrefix,inSets,inState,inClassDef,inRestriction,inBoolean,inInstDims,inClassName)
     local
       ClassInf.State ci_state1,ci_state,new_ci_state,new_ci_state_1,ci_state2;
       list<SCode.Element> cdefelts,extendselts,els,allEls;
@@ -2261,21 +2295,23 @@ algorithm
       Boolean prot,enc2;
       InstDims inst_dims;
       SCode.Class c;
-      String cn2,cns,scope_str;
+      String cn2,cns,scope_str,className;
       Absyn.Path cn;
       Option<list<Absyn.Subscript>> ad;
       SCode.Mod mod;
       Env.Cache cache;
     case (cache,env,mods,pre,csets,ci_state,SCode.PARTS(elementLst = els,equationLst = eqs,initialEquation = initeqs,
-      		algorithmLst = alg,initialAlgorithm = initalg),re,prot,inst_dims)
-      		  local String str,str2,str3;
+      		algorithmLst = alg,initialAlgorithm = initalg),re,prot,inst_dims,className)
+      local String str,str2,str3;
       		  Real t1,t2,time; Boolean b;
       equation 
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         cdefelts = classdefAndImpElts(els);
         extendselts = extendsElts(els);
         env1 = addClassdefsToEnv(env, cdefelts, true) " CLASSDEF & IMPORT nodes are added to env" ;
-        (cache,env2,emods,extcomps,eqs2,initeqs2,alg2,initalg2) = partialInstExtendsList(cache,env1, mods, extendselts, ci_state, true) "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations." ;
+        (cache,env2,emods,extcomps,eqs2,initeqs2,alg2,initalg2) = 
+        partialInstExtendsList(cache,env1, mods, extendselts, ci_state, className, true) 
+        "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations." ;
 				allEls = listAppend(extendselts,els);
 				allEls2=addNomod(allEls);
 				lst_constantEls = constantEls(allEls2) " Retrieve all constants";
@@ -2286,9 +2322,10 @@ algorithm
       then
         (cache,env3,ci_state2);
         
-    case (cache,env,mods,pre,csets,ci_state,SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),mod = mod),re,prot,inst_dims) /* This rule describes how to instantiate a derived class definition */ 
+    case (cache,env,mods,pre,csets,ci_state,SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),mod = mod),re,prot,inst_dims,className) 
+      /* This rule describes how to instantiate a derived class definition */ 
       equation 
-        (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = Lookup.lookupClass(cache,env, cn, true);
+        (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = Lookup.lookupClass(cache,env, cn, true);        
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
         (cache,mod_1) = Mod.elabMod(cache,env, pre, mod, false) "FIXME: impl" ;
         new_ci_state = ClassInf.start(r, cn2);
@@ -2297,7 +2334,10 @@ algorithm
           inst_dims);
       then
         (cache,env_2,new_ci_state_1);
-    case (cache,env,mods,pre,csets,ci_state,SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),mod = mod),re,prot,inst_dims) /* If the class is derived from a class that can not be found in the environment, this rule prints an error message. */ 
+    case (cache,env,mods,pre,csets,ci_state,
+      SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),mod = mod),re,prot,inst_dims,className) 
+      /* If the class is derived from a class that can not be found in the environment, 
+      this rule prints an error message. */ 
       equation 
         failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
         cns = Absyn.pathString(cn);
@@ -2413,6 +2453,7 @@ protected function instExtendsList "function: instExtendsList
   input Mod inMod;
   input list<SCode.Element> inSCodeElementLst;
   input ClassInf.State inState;
+  input String inClassName; // the class name whose elements are getting instantiated.
   input Boolean inBoolean;
 	output Env.Cache outCache;
   output Env outEnv1;
@@ -2424,10 +2465,10 @@ protected function instExtendsList "function: instExtendsList
   output list<SCode.Algorithm> outSCodeAlgorithmLst7;
 algorithm 
   (outCache,outEnv1,outMod2,outTplSCodeElementModLst3,outSCodeEquationLst4,outSCodeEquationLst5,outSCodeAlgorithmLst6,outSCodeAlgorithmLst7):=
-  matchcontinue (inCache,inEnv,inMod,inSCodeElementLst,inState,inBoolean)
+  matchcontinue (inCache,inEnv,inMod,inSCodeElementLst,inState,inClassName,inBoolean)
     local
       SCode.Class c;
-      String cn,s,scope_str;
+      String cn,s,scope_str,className;
       Boolean encf,impl;
       SCode.Restriction r;
       list<Env.Frame> cenv,cenv1,cenv3,env2,env,env_1;
@@ -2441,8 +2482,18 @@ algorithm
       SCode.Mod emod;
       SCode.Element elt;
       Env.Cache cache;
-    case (cache,env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,impl) 
+    case (cache,env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,className,impl) 
       equation 
+        // adrpo - here we need to check if we don't have recursive extends of the form:
+        // package Icons
+        //   extends Icons.BaseLibrary;
+        //        model BaseLibrary "Icon for base library" 
+        //        end BaseLibrary;
+        // end Icons;
+        // if we don't check that, then the compiler enters an infinite loop!
+        // what we do is removing Icons from extends Icons.BaseLibrary;        
+        tp = removeSelfReference(className, tp);
+        // print("InstantiateExtendsClass:" +& Absyn.pathString(tp) +& " mod:" +& SCode.printModStr(emod) +& "\n");
         (cache,(c as SCode.CLASS(cn,_,encf,r,_)),cenv) = Lookup.lookupClass(cache,env, tp, false);
         outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
         (cache,cenv1,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv, outermod, c, impl);
@@ -2456,9 +2507,19 @@ algorithm
         new_ci_state = ClassInf.start(r, cn);
         mod_1 = Mod.elabUntypedMod(emod, cenv3, Prefix.NOPRE());
         mod_2 = Mod.merge(outermod, mod_1, cenv3, Prefix.NOPRE());
-        (cache,_,mods,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsList(cache,cenv1, outermod, els_1, ci_state, impl) "recurse to fully flatten extends elements env" ;
-        (cache,env2,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env, mod, rest, ci_state, impl) "continue with next element in list" ;
-        emod_1 = Mod.elabUntypedMod(emod, env2, Prefix.NOPRE()) "corresponding elements. But emod is Absyn.Mod and can not Must merge(mod,emod) here and then apply the bindings to the be elaborated, because for instance extends A(x=y) can reference a variable y defined in A and will thus not be found. On the other hand: A(n=4), n might be a structural parameter that must be set to instantiate A. How could this be solved? Solution: made new function elab_untyped_mod which transforms to a Mod, but set the type information to unknown. We can then perform the merge, and update untyped modifications later (using update_mod), when we are instantiating the components." ;
+        (cache,_,mods,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsList(cache,cenv1, outermod, els_1, ci_state, className, impl) 
+        "recurse to fully flatten extends elements env" ;
+        (cache,env2,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env, mod, rest, ci_state, className, impl) 
+        "continue with next element in list" ;
+        emod_1 = Mod.elabUntypedMod(emod, env2, Prefix.NOPRE()) 
+        "corresponding elements. But emod is Absyn.Mod and can not Must merge(mod,emod) 
+         here and then apply the bindings to the be elaborated, because for instance extends 
+         A(x=y) can reference a variable y defined in A and will thus not be found. 
+         On the other hand: A(n=4), n might be a structural parameter that must be set 
+         to instantiate A. How could this be solved? Solution: made new function elab_untyped_mod 
+         which transforms to a Mod, but set the type information to unknown. We can then perform the 
+         merge, and update untyped modifications later (using update_mod), when we are instantiating 
+         the components." ;
         mod_1 = Mod.merge(mod, mods_1, env2, Prefix.NOPRE());
         mods_1 = Mod.merge(mod_1, emod_1, env2, Prefix.NOPRE());
         compelts = listAppend(compelts1, compelts2);
@@ -2469,7 +2530,7 @@ algorithm
         ialg = Util.listFlatten({ialg1_1,ialg2,ialg3});
       then
         (cache,env2,mods_1,compelts3,eq,ieq,alg,ialg);
-    case (cache,env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,impl) /* base class not found */ 
+    case (cache,env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,className,impl) /* base class not found */ 
       equation 
         failure((_,(c as SCode.CLASS(cn,_,encf,r,_)),cenv) = Lookup.lookupClass(cache,env, tp, false));
         s = Absyn.pathString(tp);
@@ -2477,18 +2538,19 @@ algorithm
         Error.addMessage(Error.LOOKUP_BASECLASS_ERROR, {s,scope_str});
       then
         fail();
-    case (cache,env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,impl)
+    case (cache,env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,className,impl)
       equation 
         //print("instExtendsList failed on extends ");print(Absyn.pathString(tp));print("\n");
       then
         fail();
-    case (cache,env,mod,(elt :: rest),ci_state,impl) /* Components that are not EXTENDS */ 
+    case (cache,env,mod,(elt :: rest),ci_state,className,impl) /* Components that are not EXTENDS */ 
       equation 
-        (cache,env_1,mods,compelts2,eq2,initeq2,alg2,ialg2) = instExtendsList(cache,env, mod, rest, ci_state, impl);
+        (cache,env_1,mods,compelts2,eq2,initeq2,alg2,ialg2) = 
+        instExtendsList(cache,env, mod, rest, ci_state, className, impl);
       then
         (cache,env_1,mods,((elt,Types.NOMOD()) :: compelts2),eq2,initeq2,alg2,ialg2);
-    case (cache,env,mod,{},ci_state,impl) then (cache,env,mod,{},{},{},{},{}); 
-    case (_,_,_,_,_,_)
+    case (cache,env,mod,{},ci_state,className,impl) then (cache,env,mod,{},{},{},{},{}); 
+    case (_,_,_,_,_,_,_)
       equation 
         Debug.fprint("failtrace", "- inst_extends_list failed\n");
       then
@@ -2498,14 +2560,13 @@ end instExtendsList;
 
 protected function partialInstExtendsList "function: partialInstExtendsList 
   author: PA
-  
-  This function is the same as instExtendsList, except that it does partial instantiation.
-"
+  This function is the same as instExtendsList, except that it does partial instantiation."
   input Env.Cache inCache;
   input Env inEnv;
   input Mod inMod;
   input list<SCode.Element> inSCodeElementLst;
   input ClassInf.State inState;
+  input String inClassName "the class name that holds the elements to be instantiated";
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Env outEnv1;
@@ -2517,10 +2578,10 @@ protected function partialInstExtendsList "function: partialInstExtendsList
   output list<SCode.Algorithm> outSCodeAlgorithmLst7;
 algorithm 
   (outCache,outEnv1,outMod2,outTplSCodeElementModLst3,outSCodeEquationLst4,outSCodeEquationLst5,outSCodeAlgorithmLst6,outSCodeAlgorithmLst7):=
-  matchcontinue (inCache,inEnv,inMod,inSCodeElementLst,inState,inBoolean)
+  matchcontinue (inCache,inEnv,inMod,inSCodeElementLst,inState,inClassName,inBoolean)
     local
       SCode.Class c;
-      String cn,s,scope_str;
+      String cn,s,scope_str,className;
       Boolean encf,impl;
       SCode.Restriction r;
       list<Env.Frame> cenv,cenv1,cenv3,env2,env,env_1;
@@ -2534,8 +2595,18 @@ algorithm
       SCode.Mod emod;
       SCode.Element elt;
       Env.Cache cache;
-    case (cache,env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,impl) /* inherited initial equations inherited algorithms inherited initial algorithms */ 
-      equation 
+    case (cache,env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,className,impl) 
+      /* inherited initial equations inherited algorithms inherited initial algorithms */ 
+      equation
+        // adrpo - here we need to check if we don't have recursive extends of the form:
+        // package Icons
+        //   extends Icons.BaseLibrary;
+        //        model BaseLibrary "Icon for base library" 
+        //        end BaseLibrary;
+        // end Icons;
+        // if we don't check that, then the compiler enters an infinite loop!
+        // what we do is removing Icons from extends Icons.BaseLibrary;        
+        tp = removeSelfReference(className, tp);
         (cache,(c as SCode.CLASS(cn,_,encf,r,_)),cenv) = Lookup.lookupClass(cache,env, tp, true);
         outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
         (cache,cenv1,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv, outermod, c, impl);
@@ -2545,38 +2616,46 @@ algorithm
         new_ci_state = ClassInf.start(r, cn);
         mod_1 = Mod.elabUntypedMod(emod, cenv3, Prefix.NOPRE());
         mod_2 = Mod.merge(outermod, mod_1, cenv3, Prefix.NOPRE());
-        (cache,_,mods,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsList(cache,cenv1, outermod, els_1, ci_state, impl) "recurse to fully flatten extends elements env" ;
-        (cache,env2,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env, mod, rest, ci_state, impl) "continue with next element in list" ;
-        emod_1 = Mod.elabUntypedMod(emod, env2, Prefix.NOPRE()) "corresponding elements. But emod is Absyn.Mod and can not Must merge(mod,emod) here and then apply the bindings to the be elaborated, because for instance extends A(x=y) can reference a variable y defined in A and will thus not be found. On the other hand: A(n=4), n might be a structural parameter that must be set to instantiate A. How could this be solved? Solution: made new function elab_untyped_mod which transforms to a Mod, but set the type information to unknown. We can then perform the merge, and update untyped modifications later (using update_mod), when we are instantiating the components." ;
+        (cache,_,mods,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsList(cache,cenv1, outermod, els_1, ci_state, className, impl) 
+        "recurse to fully flatten extends elements env" ;
+        (cache,env2,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env, mod, rest, ci_state, className, impl) 
+        "continue with next element in list" ;
+        emod_1 = Mod.elabUntypedMod(emod, env2, Prefix.NOPRE()) 
+        "corresponding elements. But emod is Absyn.Mod and can not Must merge(mod,emod) here and then apply the 
+         bindings to the be elaborated, because for instance extends A(x=y) can reference a variable y defined in 
+         A and will thus not be found. On the other hand: A(n=4), n might be a structural parameter that must be 
+         set to instantiate A. How could this be solved? Solution: made new function elab_untyped_mod which transforms 
+         to a Mod, but set the type information to unknown. We can then perform the merge, and update untyped 
+         modifications later (using update_mod), when we are instantiating the components." ;
         mod_1 = Mod.merge(mod, mods_1, env2, Prefix.NOPRE());
         mods_1 = Mod.merge(mod_1, emod_1, env2, Prefix.NOPRE());
         compelts = listAppend(compelts2, compelts1);
         compelts3 = updateComponents(compelts, mods_1, env2) "update components with new merged modifiers" ;
       then
         (cache,env2,mods_1,compelts3,{},{},{},{});
-    case (cache,env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,impl) /* base class not found */ 
-      equation 
+    case (cache,env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,className,impl) /* base class not found */ 
+      equation         
         failure((_,(c as SCode.CLASS(cn,_,encf,r,_)),cenv) = Lookup.lookupClass(cache,env, tp, true));
         s = Absyn.pathString(tp);
         scope_str = Env.printEnvPathStr(env);
         Error.addMessage(Error.LOOKUP_BASECLASS_ERROR, {s,scope_str});
       then
         fail();
-    case (cache,env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,impl)
+    case (cache,env,mod,(SCode.EXTENDS(path = tp,mod = emod) :: rest),ci_state,_,impl)
       equation 
-        //Debug.fprint("failtrace", "Failed inst_extends_list on EXTENDS\n env:");
+        //Debug.fprint("failtrace", "Failed Inst.partialInstExtendsList on EXTENDS\n env:");
         Env.printEnv(env);
       then
         fail();
-    case (cache,env,mod,(elt :: rest),ci_state,impl) /* Components that are not EXTENDS */ 
+    case (cache,env,mod,(elt :: rest),ci_state,className,impl) /* Components that are not EXTENDS */ 
       equation 
-        (cache,env_1,mods,compelts2,eq2,initeq2,alg2,ialg2) = instExtendsList(cache,env, mod, rest, ci_state, impl);
+        (cache,env_1,mods,compelts2,eq2,initeq2,alg2,ialg2) = instExtendsList(cache,env, mod, rest, ci_state, className, impl);
       then
         (cache,env_1,mods,((elt,Types.NOMOD()) :: compelts2),eq2,initeq2,alg2,ialg2);
-    case (cache,env,mod,{},ci_state,impl) then (cache,env,mod,{},{},{},{},{}); 
-    case (_,_,_,_,_,_)
+    case (cache,env,mod,{},ci_state,className,impl) then (cache,env,mod,{},{},{},{},{}); 
+    case (_,_,_,_,_,_,_)
       equation 
-        Debug.fprint("failtrace", "- inst_extends_list failed\n");
+        Debug.fprint("failtrace", "- Inst.partialInstExtendsList failed\n");
       then
         fail();
   end matchcontinue;
@@ -6024,6 +6103,7 @@ algorithm
         (cache,extdecl) = instExtDecl(cache,tempenv, n, parts, true) "impl" ;
       then
         (cache,env_1,{DAE.EXTFUNCTION(fpath,DAE.DAE(dae),ty1,extdecl)});
+        /* Instantiate overloaded functions */
     case (cache,env,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = (restr as SCode.R_FUNCTION()),parts = SCode.OVERLOAD(absynPathLst = funcnames))),inst_dims)
       equation 
         (cache,env_1,daefuncs) = instOverloadedFunctions(cache,env, n, funcnames) "Overloaded functions" ;
@@ -6054,7 +6134,7 @@ public function implicitFunctionTypeInstantiation "function implicitFunctionType
  
   When looking up a function type it is sufficient to only instantiate the 
   input  and output arguments of the function. 
-  The implicit_function_instantiation function will instantiate the function
+  The implicitFunctionInstantiation function will instantiate the function
   body, resulting in a DAE for the body. This function does not do that. 
   Therefore this function is the only solution available for recursive 
   functions, where the function body contain a call to the function itself.
@@ -6078,8 +6158,9 @@ algorithm
       Env.Cache cache;
     case (cache,env,SCode.CLASS(name = id,partial_ = p,encapsulated_ = e,restriction = r,parts = SCode.PARTS(elementLst = elts,used=extDecl))) /* The function type can be determined without the body. */ 
       equation 
-        stripped_class = SCode.CLASS(id,p,e,r,SCode.PARTS(elts,{},{},{},{},extDecl));
-        (cache,env_1,_) = implicitFunctionInstantiation(cache,env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, stripped_class, {});
+        stripped_class = SCode.CLASS(id,p,e,r,SCode.PARTS(elts,{},{},{},{},extDecl));        
+        (cache,env_1,_ /* ignore the produced DAE, use only the type put in the env_1 */) = 
+        implicitFunctionInstantiation(cache,env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, stripped_class, {});
       then
         (cache,env_1);
   end matchcontinue;
@@ -6107,7 +6188,7 @@ algorithm
       String id,overloadname;
       Boolean encflag;
       list<DAE.Element> dae,dae1;
-      list<tuple<String, tuple<Types.TType, Option<Absyn.Path>>>> args;
+      list<tuple<String, tuple<Types.TType, Option<Absyn.Path>>>> args; 
       tuple<Types.TType, Option<Absyn.Path>> tp,ty;
       ClassInf.State st;
       Absyn.Path fpath,ovlfpath,fn;

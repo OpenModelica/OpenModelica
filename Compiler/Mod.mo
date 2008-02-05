@@ -64,15 +64,13 @@ protected import Util;
 protected import Ceval;
 protected import Error;
 protected import Print;
-//protected import Interactive;
 
-public function elabMod "function: elabMod
- 
+public function elabMod 
+"function: elabMod 
   This function elaborates on the expressions in a modification and
   turns them into global expressions.  This is done because the
   expressions in modifications must be elaborated on in the context
-  they are provided in, and not the context they are used in.
-"
+  they are provided in, and not the context they are used in."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Prefix.Prefix inPrefix;
@@ -134,7 +132,7 @@ algorithm
         (cache,Types.REDECL(final_,elist_1));
     case (cache,_,pre,mod,impl)
       equation 
-        Debug.fprint("failtrace", "#-- elab_mod ");
+        Debug.fprint("failtrace", "#-- Mod.elabMod ");
         str = SCode.printModStr(mod);
         Debug.fprint("failtrace", str);
         Debug.fprint("failtrace", " failed\n");

@@ -157,7 +157,7 @@ void CheckForInitialEvents(double *t)
                         globalData->states,
                         &globalData->nZeroCrossing,gout,0,0);
   for (long i=0;i<globalData->nZeroCrossing;i++) {
-  	//printf("gout[%d]=%f\n",i,gout[i]);
+	  if (sim_verbose) printf("gout[%ld]=%f\n",i,gout[i]);
     if (gout[i] < 0  || zeroCrossingEnabled[i]==0) { // check also zero crossings that are on zero.
     	if (sim_verbose) {
     		cout << "adding event " << i << " at initialization" << endl;
@@ -213,6 +213,14 @@ void AddEvent(long index)
 bool
 ExecuteNextEvent(double *t)
 {
+  if (sim_verbose)
+  {
+    cout << "Events in the queue:";
+    for (list<long>::const_iterator it = EventQueue.begin(); it != EventQueue.end(); ++it) {
+      cout << *it << ", ";
+    }
+    cout << endl;
+  }
   if (EventQueue.begin() != EventQueue.end()) {
     long nextEvent = EventQueue.front();
     if (sim_verbose) { 
@@ -319,23 +327,46 @@ double GreaterEq(double a, double b)
     return b-a;
 }
 
-double Sample(double t, double start ,double interval)
+double Sample(double t, double start, double interval)
 {
   double pipi = atan(1.0)*8.0;
   if (t<(start-interval*.25)) return -1.0;
   return sin(pipi*(t-start)/interval);
 }
 
-double sample(double start ,double interval)
+/*
+ * Returns true and triggers time events at time instants 
+ * start + i*interval (i=0,1,...). 
+ * During continuous integration the operator returns always false. 
+ * The starting time start and the sample interval interval need to 
+ * be parameter expressions and need to be a subtype of Real or Integer.
+ */
+double sample(double start, double interval)
 {
   //  double sloop = 4.0/interval;
   if (inSample == 0) return 0;
   double tmp = ((globalData->timeValue - start)/interval);
   tmp-= floor(tmp);
-  if (tmp >= 0 && tmp < 0.1) 
+  /* adrpo - 2008-01-15 
+   * comparison was tmp >= 0 fails sometimes on x86 due to extended precision in registers
+   * TODO - fix the simulation runtime so that the sample event is generated at EXACTLY that time. 
+   * below should be: if (tmp >= -0.0001 && tmp < 0.0001) but needs more testing as some models from
+   * testsuite fail.
+   */  
+  if (tmp >= 0 && tmp < 0.1)
+  {
+    if (sim_verbose) 
+      cout << "Calling sample(" << start << ", " << interval << ")\n" 
+           << "+generating an event at time:" << globalData->timeValue << " tmp: " << tmp << endl; 
   	return 1;
-  else  
+  }
+  else
+  {
+    if (sim_verbose)    
+      cout << "Calling sample(" << start << ", " << interval << ")\n" 
+           << "-NO an event at time:" << globalData->timeValue << " tmp: " << tmp << endl;
     return 0;
+  }
 }
 
 void saveall()

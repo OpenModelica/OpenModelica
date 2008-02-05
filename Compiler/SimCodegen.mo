@@ -1716,7 +1716,7 @@ algorithm
           output_arr, output_comment_arr, num_output_2, param_arr, param_comment_arr, 
           num_param_2, 
           stralg_arr,stralg_comment_arr,num_stralg,strparam_arr,strparam_comment_arr,num_strparam,
-          get_name_function_ifs, var_defines_1);
+          get_name_function_ifs_1, var_defines_1);
         num_state_2 = nx " TODO: CHECK THE RETURN TO BE THE SAME INSTEAD OF SETTING WITH let " ;
         num_derivative_2 = nx;
         num_algvars_2 = ny;
@@ -1790,7 +1790,7 @@ algorithm
       				     
       	// generate #defines for each variable
         
-        get_name_function_ifs_1 = Util.stringAppendList(get_name_function_ifs) "generate getName function" ;
+        get_name_function_ifs_1 = Util.stringAppendList(get_name_function_ifs_1) "generate getName function" ;
         get_name_function = Util.stringAppendList(
           {"char* getName( double* ",paramInGetNameFunction,")\n",
           "{\n",get_name_function_ifs_1,"\n  return \"\";\n}\n"});
@@ -2196,8 +2196,7 @@ algorithm
       /* Non-string variables*/
     case (DAELow.VAR(varName = cr,varKind = kind,varDirection = dir,varType = typeVar,arryDim = inst_dims,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_),name_arr,comment_arr,n_vars,stralg_arr,stralg_comment_arr,num_stralg,get_name_function_ifs,var_defines) 
       equation 
-        kind_lst = {DAELow.VARIABLE(),DAELow.DISCRETE(),DAELow.DUMMY_DER(),
-          DAELow.DUMMY_STATE()};
+        kind_lst = {DAELow.VARIABLE(),DAELow.DISCRETE(),DAELow.DUMMY_DER(),DAELow.DUMMY_STATE()};
         _ = Util.listGetMember(kind, kind_lst);
         origname_str = Exp.printComponentRefStr(origname) "if this fails then the var is not added to list" ;
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
@@ -2771,8 +2770,7 @@ algorithm
       DAELow.EventInfo ev;
     case (DAELow.DAELOW(orderedVars = vars,knownVars = knvars,orderedEqs = eqns,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = ev)) /* code */ 
       equation 
-        param_func = Codegen.cMakeFunction("int", "bound_parameters", {}, 
-          {""});
+        param_func = Codegen.cMakeFunction("int", "bound_parameters", {}, {""});
         knvars_lst = DAELow.varList(knvars);
         (param_assigns,_) = generateParameterAssignments(knvars_lst, 0);
         param_assigns = addMemoryManagement(param_assigns);
@@ -2934,8 +2932,8 @@ algorithm
     local
       list<DAELow.Var> vars_lst,knvars_lst;
       list<DAELow.Equation> initial_eqns2;
-      Codegen.CFunction start_assigns,param_assigns,init_func_1,init_func,res;
-      Integer cg_id,cg_id_1;
+      Codegen.CFunction start_assigns1,start_assigns2,param_assigns,init_func_1,init_func,res;
+      Integer cg_id,cg_id_1,cg_id_2;
       String str;
       DAELow.Variables vars,knvars;
       DAELow.EquationArray eqns,se,ie;
@@ -2946,20 +2944,21 @@ algorithm
       equation 
         vars_lst = DAELow.varList(vars);
         knvars_lst = DAELow.varList(knvars);
-        initial_eqns2 = generateInitialEquationsFromStart(vars_lst) "DAELow.equation_list(ie) => {} &" ;
-        (start_assigns,cg_id) = generateInitialAssignmentsFromStart(vars_lst, 0);
-        (param_assigns,cg_id_1) = generateParameterAssignments(knvars_lst, cg_id);
-        init_func_1 = Codegen.cMakeFunction("int", "initial_function", {}, 
-          {""});
+        // not used: initial_eqns2 = generateInitialEquationsFromStart(vars_lst);
+        (start_assigns1,cg_id)   = generateInitialAssignmentsFromStart(vars_lst, 0);
+        (start_assigns2,cg_id_1) = generateInitialAssignmentsFromStart(knvars_lst, cg_id);
+        (param_assigns,cg_id_2)  = generateParameterAssignments(knvars_lst, cg_id_1);
+        init_func_1 = Codegen.cMakeFunction("int", "initial_function", {}, {""});
         init_func = Codegen.cAddCleanups(init_func_1, {"return 0;"});
-        res = Codegen.cMergeFns({init_func,start_assigns,param_assigns});
+        // adrpo changed the order below, before was: start_assigns, param_assigns
+        // i think parameters should be set before as start assignments may depend on them.
+        res = Codegen.cMergeFns({init_func, param_assigns, start_assigns1, start_assigns2}); 
         str = Codegen.cPrintFunctionsStr({res});
       then
         str;
     case (_)
       equation 
-        init_func_1 = Codegen.cMakeFunction("int", "initial_function", {}, 
-          {""});
+        init_func_1 = Codegen.cMakeFunction("int", "initial_function", {}, {""});
         init_func = Codegen.cAddCleanups(init_func_1, {"return 0;"});
         str = Codegen.cPrintFunctionsStr({init_func});
       then
@@ -3056,14 +3055,15 @@ algorithm
     local
       Integer cg_id,cg_id_1,cg_id_2;
       Codegen.CFunction func,exp_func,func_1,func_2;
-      String cr_str,startv_str,stmt;
-      Exp.ComponentRef cr;
+      String cr_str,startv_str,stmt1,stmt2;
+      Exp.ComponentRef cr,origname;
       DAELow.VarKind kind;
       Exp.Exp startv;
       Option<DAE.VariableAttributes> attr;
       list<DAELow.Var> vars;
+      String origname_str;
     case ({},cg_id) then (Codegen.cEmptyFunction,cg_id);  /* cg var_id cg var_id */ 
-    case ((DAELow.VAR(varName = cr,varKind = kind,values = attr) :: vars),cg_id) /* also add an assignment for variables that have non-constant
+    case ((DAELow.VAR(varName = cr,varKind = kind,values = attr, origVarName = origname) :: vars),cg_id) /* also add an assignment for variables that have non-constant
 	    expressions, e.g. parameter values, as start.
 	   NOTE: such start attributes can then not be changed in the text
 	   file, since the initial calc. will override those entries!
@@ -3072,10 +3072,13 @@ algorithm
         startv = DAE.getStartAttr(attr);
         false = Exp.isConst(startv);
         (func,cg_id_1) = generateInitialAssignmentsFromStart(vars, cg_id);
+        origname_str = Exp.printComponentRefStr(origname);
         cr_str = Exp.printComponentRefStr(cr);
         (exp_func,startv_str,cg_id_2) = Codegen.generateExpression(startv, cg_id_1, Codegen.simContext);
-        stmt = Util.stringAppendList({cr_str," = ",startv_str,";"});
-        func_1 = Codegen.cAddStatements(func, {stmt});
+        stmt1 = Util.stringAppendList({cr_str," = ",startv_str,";"});
+        stmt2 = Util.stringAppendList({"if (sim_verbose) { printf(\"Setting variable start value:%s(start=%f)\\n\", \"", origname_str, "\", ", 
+                startv_str,"); }"});
+        func_1 = Codegen.cAddStatements(func, stmt1::{stmt2});
         func_2 = Codegen.cMergeFns({exp_func,func_1});
       then
         (func_2,cg_id_2);

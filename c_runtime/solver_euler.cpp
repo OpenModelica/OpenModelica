@@ -64,7 +64,13 @@ int euler_main( int argc, char** argv,double &start,  double &stop, double &step
   	cout << "Internal error, allocating result data structures"  << endl;
     return -1;
   }
-  
+
+ if(bound_parameters()) {
+   printf("Error calculating bound parameters\n");
+   return -1;
+ }
+ if (sim_verbose) { cout << "Calculated bound parameters" << endl; }   
+ 
   // Calculate initial values from (fixed) start attributes 
   globalData->init=1;
   initial_function();

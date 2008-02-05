@@ -226,13 +226,11 @@ algorithm
   outFrame := FRAME(NONE,ht,httypes,{},{},({},Exp.CREF_IDENT("",{})),enc);
 end newFrame;
 
-public function openScope "function: openScope
- 
+public function openScope "function: openScope 
   Opening a new scope in the environment means adding a new frame on
   top of the stack of frames. If the scope is not the top scope a classname
   of the scope should be provided such that a name for the scope can be
-  derived, see name_scope.
-"
+  derived, see name_scope."
   input Env inEnv;
   input Boolean inBoolean;
   input Option<Ident> inIdentOption;
@@ -248,7 +246,7 @@ algorithm
     case (env,encflag,SOME(id)) /* encapsulated classname */ 
       equation 
         frame = newFrame(encflag);
-        env_1 = nameScope((frame :: env), id);
+        env_1 = nameScope((frame :: env), id);        
       then
         env_1;
     case (env,encflag,NONE)
@@ -260,7 +258,6 @@ algorithm
 end openScope;
 
 protected function nameScope "function: nameScope
- 
   This function names the current scope, giving it an identifier.
   Scopes needs to be named for several reasons. First, it is needed for
   debugging purposes, since it is easier to follow the environment if we 
@@ -270,8 +267,7 @@ protected function nameScope "function: nameScope
   flattening of the inheritance hiergearchy. The reason for this is that types
   of inherited components needs to be expanded such that the types can be 
   looked up from the environment of the base class.
-  See also openScope, getScopeName.
-"
+  See also openScope, getScopeName."
   input Env inEnv;
   input Ident inIdent;
   output Env outEnv;
@@ -285,7 +281,8 @@ algorithm
       tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
       Boolean encflag;
       Ident id;
-    case ((FRAME(list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: res),id) then (FRAME(SOME(id),ht,httypes,imps,bcframes,crs,encflag) :: res); 
+    case ((FRAME(list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: res),id) 
+      then (FRAME(SOME(id),ht,httypes,imps,bcframes,crs,encflag) :: res); 
   end matchcontinue;
 end nameScope;
 
@@ -628,10 +625,9 @@ algorithm
   end matchcontinue;
 end getEnvPath;
 
-public function printEnvPathStr "function: printEnvPathStr
- 
-  Retrive the environment path as a string, see get_env_path.
-"
+public function printEnvPathStr 
+"function: printEnvPathStr
+ Retrive the environment path as a string, see getEnvPath."
   input Env inEnv;
   output String outString;
 algorithm 
@@ -651,11 +647,10 @@ algorithm
   end matchcontinue;
 end printEnvPathStr;
 
-public function printEnvPath "function: printEnvPath
- 
+public function printEnvPath 
+"function: printEnvPath
   Print the environment path to the Print buffer. 
-  See also get_env_path
-"
+  See also getEnvPath"
   input Env inEnv;
 algorithm 
   _:=
@@ -679,10 +674,9 @@ algorithm
   end matchcontinue;
 end printEnvPath;
 
-public function printEnvStr "function: printEnvStr
- 
-  Print the environment as a string.
-"
+public function printEnvStr 
+"function: printEnvStr
+  Print the environment as a string."
   input Env inEnv;
   output String outString;
 algorithm 
@@ -703,10 +697,9 @@ algorithm
   end matchcontinue;
 end printEnvStr;
 
-public function printEnv "function: printEnv
- 
-  Print the environment to the Print buffer.
-"
+public function printEnv 
+"function: printEnv 
+ Print the environment to the Print buffer."
   input Env e;
   Ident s;
 algorithm 
@@ -714,10 +707,9 @@ algorithm
   Print.printBuf(s);
 end printEnv;
 
-protected function printFrameStr "function: printFrameStr
- 
-  Print a Frame to a string.
-"
+protected function printFrameStr 
+"function: printFrameStr
+ Print a Frame to a string."
   input Frame inFrame;
   output String outString;
 algorithm 

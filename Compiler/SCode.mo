@@ -1563,7 +1563,7 @@ algorithm
       equation 
         mod_str = printModStr(mod);
         str = printSubsStr(subs);
-        res = Util.stringAppendList({"n",mod_str,", ",str});
+        res = Util.stringAppendList({n, mod_str, ", ", str});
       then
         res;
     case {IDXMOD(subscriptLst = ss,an = mod)}
@@ -1683,10 +1683,12 @@ algorithm
       Absyn.TypeSpec tySpec;
       Option<Absyn.Comment> comment;
       Attributes attr;
+      String modStr;
     case EXTENDS(path = path,mod = mod)
       equation 
         str = Absyn.pathString(path);
-        res = Util.stringAppendList({"EXTENDS(",str,")"});
+        modStr = printModStr(mod);
+        res = Util.stringAppendList({"EXTENDS(",str,", modification=",modStr,")"});
       then
         res;
     case CLASSDEF(name = n,final_ = final_,replaceable_ = repl,class_ = cl,baseclass = SOME(path))
