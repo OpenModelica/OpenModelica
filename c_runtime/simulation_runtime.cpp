@@ -171,7 +171,7 @@ double old2(double* ptr)
 	return 0.0;
 }
 
- /* \brief determine verboselevel by investigating flag -vl=flags 
+ /* \brief determine verboselevel by investigating flag -lv=flags 
    * 
    * Flags are or'ed to a returnvalue.
    * Valid flags: LOG_EVENTS, LOG_NONLIN_SYS
@@ -204,7 +204,7 @@ int main(int argc, char**argv)
 {
    int retVal=-1;
   if (argc == 2 && flagSet("?",argc,argv)) {
-    cout << "usage: " << argv[0]  << " <-f initfile> <-r result file> -m solver:{dassl, euler}" << endl;
+    cout << "usage: " << argv[0]  << " <-f initfile> <-r result file> -m solver:{dassl, euler} -v" << endl;
     exit(0);
   }
   globalData = initializeDataStruc(ALL);
