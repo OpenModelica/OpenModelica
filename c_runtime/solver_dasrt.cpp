@@ -165,8 +165,10 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
   // sections
   globalData->init=1;
   initial_function(); // calculates e.g. start values depending on e.g parameters.
+  saveall(); // adrpo: -> save the initial values to have them in pre(var); 
   storeExtrapolationData();
   storeExtrapolationData();
+  
   if (initialize(init_method)) {
 	throw TerminateSimulationException(globalData->timeValue,
 	  string("Error in initialization. Storing results and exiting.\n"));    
