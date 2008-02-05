@@ -10,14 +10,15 @@ libc_runtime.a
 c_runtime is used for executing Modelica functions that has been
 generated C code for. It consists of the following files.
 
-boolean_array.*  - how arrays of booleans are represented in C.
-integer_array.*  - how arrays of integers are represented in C.
-real_array.*	 - how arrays of reals are represented in C.
-string_array.*   - how arrays of strings are represented in C.
-index_spec.c     - keep track of dimensionsizes of arrays.
-memory_pool.c	 - memory allocation for local variables.
-read_write.*	 - reading and writing of data to file.
-utility.c	     - utility functions
+boolean_array.*   - how arrays of booleans are represented in C.
+integer_array.*   - how arrays of integers are represented in C.
+real_array.*	  - how arrays of reals are represented in C.
+string_array.*    - how arrays of strings are represented in C.
+index_spec.c      - keep track of dimension sizes of arrays.
+memory_pool.c	  - memory allocation for local variables.
+read_write.*	  - reading and writing of data to file.
+utility.*	      - utility functions
+modelica_string.* - string functions
 
 
 libsim.a
@@ -25,7 +26,9 @@ libsim.a
 libsim.a is the runtime for simulations, it contains solvers and a
 main function for the simulation. The following files are included:
 
-simulation_runtime.* 	- Includes the main function, solver wrappers,etc.
+simulation_runtime.* 	- Includes the main function and calls to solvers.
+tables.*                - implementation for tables omcTableTimeIni, etc
+solver_dasrt.*          - wrapper for 
 daux.f 			- auxilary Fortran functions
 ddasrt.f		- DDASRT solver
 ddassl.f		- DASSL solver
