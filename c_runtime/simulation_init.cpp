@@ -205,6 +205,7 @@ int initialize(const std::string*method)
   }
 	
 	if (sim_verbose) {
+		cout << "Initialization by method: " << init_method << endl;
 		cout << "fixed attribute for states:" << endl;
 		for(int i=0;i<globalData->nStates; i++) {
 			cout <<	getName(&globalData->states[i]) << "(fixed=" << (globalData->initFixed[i]?"true":"false") << ")"
