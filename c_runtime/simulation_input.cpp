@@ -126,20 +126,20 @@ void read_commented_value(ifstream &f, char **str);
  for(int i = 0; i < simData->nParameters; i++) { // Read parameter values
     read_commented_value(file,&simData->parameters[i]);
     if (sim_verbose) {
-    cout << "read" << getName(&simData->parameters[i]) << " = " 
+    cout << "read " << getName(&simData->parameters[i]) << " = " 
     << simData->parameters[i] << " from init file." << endl;
     }
   }
   for(int i=0; i < simData->stringVariables.nParameters; i++) { // Read string parameter values
     read_commented_value(file,&simData->stringVariables.parameters[i]);
     if (sim_verbose) {
-    cout << "read" <<simData->stringVariables.parameters[i] << " from init file." << endl;
+    cout << "read " <<simData->stringVariables.parameters[i] << " from init file." << endl;
     }
   }
   for(int i=0; i < simData->stringVariables.nAlgebraic; i++) { // Read string parameter values
     read_commented_value(file,&simData->stringVariables.algebraics[i]);
     if (sim_verbose) {
-    cout << "read" <<simData->stringVariables.algebraics[i] << " from init file." << endl;
+    cout << "read " <<simData->stringVariables.algebraics[i] << " from init file." << endl;
     }
   }
  file.close();
