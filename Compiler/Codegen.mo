@@ -5733,9 +5733,9 @@ algorithm
   outCFunction:=
   matchcontinue (inString1,inDAEElementLst2,inString3,inDAEElementLst4,inExternalDecl5,inDAEElementLst6,inType7)
     local
-      Integer tnr,tnr_invars1,tnr_invars,tnr_bivars1,tnr_bivars,tnr_extcall;
+      Integer tnr,tnr_invars1,tnr_invars,tnr_bivars1,tnr_bivars,tnr_extcall,tnr_ret;
       list<Lib> arg_strs;
-      CFunction cfn1,cfn1_1,cfn31,cfn32,cfn33,cfn34,cfn3,extcall,cfn_1,cfn;
+      CFunction cfn1,cfn31,cfn32,cfn33,cfn34,cfn3,extcall,cfn_1,cfn,allocstmts_1,allocstmts;
       Lib out_decl,fnname,retstr,extfnname,lang;
       list<DAE.Element> vars_1,vars,outvars,invars,bivars;
       DAE.ExternalDecl extdecl;
@@ -5750,16 +5750,17 @@ algorithm
         arg_strs = Util.listMap(args, generateFunctionArg);
         cfn1 = cMakeFunction(retstr, fnname, {}, arg_strs);
         out_decl = Util.stringAppendList({retstr," out;"});
-        cfn1_1 = cAddVariables(cfn1, {out_decl});
-        (cfn31,tnr_invars1) = generateVarDecls(invars, isRcwInput, tnr, funContext);
+        (allocstmts_1,tnr_ret) = generateAllocOutvarsExt(outvars, "out", 1,tnr, extdecl);
+        allocstmts = cAddVariables(allocstmts_1, {out_decl});
+        (cfn31,tnr_invars1) = generateVarDecls(invars, isRcwInput, tnr_ret, funContext);
         (cfn32,tnr_invars) = generateVarInits(invars, isRcwInput, 1,tnr_invars1, "", funContext);
         (cfn33,tnr_bivars1) = generateVarDecls(bivars, isRcwBidir, tnr_invars, funContext);
         (cfn34,tnr_bivars) = generateVarInits(bivars, isRcwBidir, 1,tnr_bivars1, "", funContext);
-        cfn3 = cMergeFns({cfn1_1,cfn31,cfn32,cfn33,cfn34});
+        cfn3 = cMergeFns({allocstmts,cfn31,cfn32,cfn33,cfn34});
         vars_1 = listAppend(invars, outvars);
         vars = listAppend(vars_1, bivars);
         (extcall,tnr_extcall) = generateExtCall(vars, extdecl, tnr_bivars);
-        cfn_1 = cMergeFns({cfn1_1,extcall});
+        cfn_1 = cMergeFns({cfn1,allocstmts,extcall});
         cfn = cAddCleanups(cfn_1, {"return out;"});
       then
         cfn;
