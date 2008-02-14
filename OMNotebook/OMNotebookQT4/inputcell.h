@@ -161,8 +161,10 @@ namespace IAEX
 		static int numEvals_;
 		int oldHeight_;										// Added 2006-04-10 AF
 
+	public:
 		QTextBrowser *input_;
 		QTextBrowser *output_;
+	private:
 		QTextBrowser *chaptercounter_;
 
 		InputCellDelegate *delegate_;

@@ -66,7 +66,8 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtGui/QResizeEvent>
 #include <QtCore/QEvent>
 #include "../Pltpkg2/compoundWidget.h"
-
+#include <QPushButton>
+#include <QTemporaryFile>
 //IAEX Headers
 #include "cell.h"
 #include "inputcelldelegate.h"
@@ -74,6 +75,8 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 //#include "highlighter.h"
 #include "document.h"
 //#include <QToolBar>
+
+class IndentationState;
 
 namespace IAEX
 {   
@@ -144,6 +147,7 @@ namespace IAEX
 		virtual void setFocus(const bool focus);
 		virtual void setFocusOutput(const bool focus);	// Added 2006-02-03 AF
 		void setExpr(QString);
+		void showVariableButton(bool);
 		
 		void delegateFinished();
 		void setState(int state);
@@ -177,8 +181,10 @@ namespace IAEX
 		static int numEvals_;
 		int oldHeight_;										// Added 2006-04-10 AF
 
+	public:
 		MyTextEdit2* input_;
 		QTextBrowser *output_;
+	private:
 		QTextBrowser *chaptercounter_;
 
 //		GraphCellDelegate *delegate_;
@@ -191,6 +197,10 @@ namespace IAEX
 //		GraphWidget* graphwidget;
 	public:
 		CompoundWidget* compoundwidget;
+		bool showGraph;
+		QPushButton* variableButton;
+		QTemporaryFile* imageFile;
+
 //		QToolBar *toolbar;
 		//		QSlider* slider;
 	};
@@ -213,6 +223,9 @@ namespace IAEX
 		void goToPos(const QUrl&);
 		void updatePosition();
 		void setModified();
+		void indentText();
+		bool lessIndented(QString);
+		void setAutoIndent(bool);
 
 	signals:
 		void clickOnCell();					// Added 2005-11-01 AF
@@ -224,6 +237,7 @@ namespace IAEX
 		void forwardAction( int );			// Added 2006-04-27 AF
 		void updatePos(int, int);
 		void setState(int);
+		void showVariableButton(bool);
 
 	protected:
 		void mousePressEvent(QMouseEvent *event);			// Added 2005-11-01 AF
@@ -231,9 +245,14 @@ namespace IAEX
 		void keyPressEvent(QKeyEvent *event );				// Added 2005-12-15 AF
 		void insertFromMimeData(const QMimeData *source);	// Added 2006-01-23 AF
 		void focusInEvent(QFocusEvent* event);
+
 	private:
 		bool inCommand;						// Added 2005-12-15 AF
 		bool stopHighlighter;				// Added 2006-01-16 AF
+		int indentationLevel(QString, bool b=true);
+		bool autoIndent;
+		QMap<int, IndentationState*> indentationStates;
+
 	};
 
 	class MyAction: public QAction

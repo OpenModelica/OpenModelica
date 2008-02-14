@@ -85,6 +85,7 @@ namespace IAEX
 			ui.heightEdit->setText( height );
 
 			//set fixed size
+			
 			setMinimumHeight( this->height() );
 			setMaximumHeight( this->height() );
 			setMinimumWidth( this->width() );

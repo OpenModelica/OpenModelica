@@ -65,6 +65,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtCore/QFile>
 #include <QtGui/QApplication>
 #include <QtXml/QDomNode>
+#include <QSettings>
 
 //IAEX Headers
 #include "xmlparser.h"
@@ -74,6 +75,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "celldocument.h"
 #include "graphcell.h"
 #include <QMessageBox>
+#include <QPushButton>
 #include "../Pltpkg2/LegendLabel.h"
 
 using namespace std;
@@ -148,6 +150,40 @@ namespace IAEX
 			}
 		}
 
+		if(ba.indexOf("<InputCell") != -1)
+		{
+			QSettings s("PELAB", "OMNotebook");
+			bool alwaysConvert = s.value("AlwaysConvert", false).toBool();
+			QMessageBox m;
+			int i;
+			if(!alwaysConvert)
+			{
+				m.setWindowTitle("OMNotebook");
+				m.setText("Do you want to convert this file to the current document version?");
+				m.setIcon(QMessageBox::Question);
+				m.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+				QPushButton* always = m.addButton("Always convert old documents", QMessageBox::YesRole );
+
+				i = m.exec();
+/*
+				if(i == QMessageBox::Yes ||m.clickedButton() == always)
+				{
+					ba = ba.replace("<InputCell", "<GraphCell").replace("/InputCell>", "/GraphCell>").replace("style=\"Input\"", "style=\"Graph\"");
+
+				}
+*/
+				if(m.clickedButton() == always)
+				{
+					s.setValue("AlwaysConvert", true);
+					alwaysConvert = true;
+				}
+			}
+
+			if(alwaysConvert || i == QMessageBox::Yes)
+				ba = ba.replace("<InputCell", "<GraphCell").replace("/InputCell>", "/GraphCell>").replace("style=\"Input\"", "style=\"Graph\"");
+
+			
+		}
 
 		if(!domdoc.setContent(ba))
 		{
@@ -596,7 +632,7 @@ namespace IAEX
 						interpolation_= INTERPOLATION_NONE;
 					}
 
-					LegendLabel *ll = new LegendLabel(color, yVar, gCell->compoundwidget->gwMain->legendFrame, !(interpolation_ == INTERPOLATION_NONE), points, 21);
+					LegendLabel *ll = new LegendLabel(color, yVar, gCell->compoundwidget->gwMain->legendFrame, !(interpolation_ == INTERPOLATION_NONE), points, 12);
 					ll->graphWidget = gCell->compoundwidget->gwMain;
 					gCell->compoundwidget->gwMain->legendFrame->setMinimumWidth(max(ll->fontMetrics().width(yVar)+41+4, gCell->compoundwidget->gwMain->legendFrame->minimumWidth()));
 //					ll->setMaximumHeight(21);
@@ -719,6 +755,17 @@ namespace IAEX
 			gCell->compoundwidget->gwMain->antiAliasing = true;
 			gCell->compoundwidget->gwMain->aaAction->setChecked(true);
 		}
+		bool showGraphics = (element.attribute(XML_GRAPHCELL_SHOWGRAPH, XML_FALSE) == XML_TRUE)?true:false;
+		if(showGraphics)
+		{
+			gCell->showGraph = true;
+			gCell->showGraphics();
+		}
+		else
+			gCell->compoundwidget->hide();
+
+
+
 		// 2006-01-17 AF, check if the inputcell is open or closed
 		QString closed = element.attribute( XML_CLOSED, XML_FALSE );
 
@@ -730,11 +777,12 @@ namespace IAEX
 		}
 		else if( closed == XML_FALSE )
 		{
+/*
 			gCell->setHeight(gCell->height() +200); 
 			gCell->compoundwidget->show();
 			gCell->compoundwidget->setMinimumHeight(200);
 			gCell->setEvaluated(true);		
-
+*/
 			gCell->setClosed( false,true );
 		}
 		else

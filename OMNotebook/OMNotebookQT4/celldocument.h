@@ -75,6 +75,7 @@ class QUrl;
 
 namespace IAEX
 {
+	
 	class CellDocument : public Document
 	{
 		Q_OBJECT
@@ -133,7 +134,7 @@ namespace IAEX
 		virtual QImage *getImage( QString name );
 
 		// Added 2005-12-05 AF, Link operations
-		virtual void textcursorInsertLink( QString filepath );
+		virtual void textcursorInsertLink( QString filepath, QTextCursor& cursor);
 
 		//State operations
 		virtual bool hasChanged() const;
@@ -153,6 +154,8 @@ namespace IAEX
 		//Traversals.
 		void runVisitor(Visitor &v);
 
+		virtual void setAutoIndent2(bool);
+
 		//observer
 		QFrame *getState();
 
@@ -171,9 +174,14 @@ namespace IAEX
 //		void anchorClicked(const QUrl *url);
 		virtual void cursorMoveAfter(Cell *aCell, const bool open);
 		void showHTML(bool b);
-		
+
 
 	signals:
+		virtual void copyAvailable(bool);
+		virtual void undoAvailable(bool);
+		virtual void redoAvailable(bool);
+		virtual void setAutoIndent(bool);
+
 		void updatePos(int, int);
 		void newState(QString);
 		void setStatusMenu(QList<QAction*>);
@@ -183,6 +191,7 @@ namespace IAEX
 		void contentChanged();				// Added 2005-11-29 AF
 		void hoverOverFile( QString );		// Added 2006-02-10 AF
 		void forwardAction( int );			// Added 2006-04-27 AF
+		
 
 	protected:
 		void setWorkspace(Cell *newWorkspace);
@@ -204,6 +213,8 @@ namespace IAEX
 		Cell *workspace_;				//This should alwas be a cellgroup. 
 		Cell *lastClickedCell_;			// Added 2006-04-25 AF
 		QFrame *mainFrame_;
+
+
 		QScrollArea *scroll_;			// Added 2005-11-01 AF
 		QGridLayout *mainLayout_;
 
@@ -212,8 +223,10 @@ namespace IAEX
 
 		vector<Cell*> selectedCells_;
 
+	public:
 		observers_t observers_;
-
+		bool autoIndent;
+	private:
 		QHash<QString, QImage*> images_;		// Added 2005-11-19 AF
 		int currentImageNo_;					// Added 2005-11-19 AF
 	};

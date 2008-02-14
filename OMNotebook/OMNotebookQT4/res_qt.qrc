@@ -1,5 +1,22 @@
 <RCC>
     <qresource prefix="/" >
         <file>Resources/omnotebook_png.png</file>
+        <file>Resources/toolbarIcons/editcopy.png</file>
+        <file>Resources/toolbarIcons/editcut.png</file>
+        <file>Resources/toolbarIcons/editpaste.png</file>
+        <file>Resources/toolbarIcons/exit.png</file>
+        <file>Resources/toolbarIcons/filenew.png</file>
+        <file>Resources/toolbarIcons/fileopen.png</file>
+        <file>Resources/toolbarIcons/fileprint.png</file>
+        <file>Resources/toolbarIcons/filesave.png</file>
+        <file>Resources/toolbarIcons/find.png</file>
+        <file>Resources/toolbarIcons/redo.png</file>
+        <file>Resources/toolbarIcons/undo.png</file>
+        <file>Resources/toolbarIcons/text_under.png</file>
+        <file>Resources/toolbarIcons/text_right.png</file>
+        <file>Resources/toolbarIcons/image.png</file>
+        <file>Resources/toolbarIcons/apply.png</file>
+        
+        
     </qresource>
 </RCC>

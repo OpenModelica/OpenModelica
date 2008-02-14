@@ -60,6 +60,8 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtGui/QTextTable>
 #include <QtGui/QTextTableCell>
 #include <QtGui/QTextTableFormat>
+#include <QPrinter>
+#include <QMessageBox>
 
 //IAEX Headers
 #include "printervisitor.h"
@@ -95,11 +97,13 @@ namespace IAEX
 	 * change remade large part of this function (and the rest of the
 	 * class).
 	 */
-	PrinterVisitor::PrinterVisitor( QTextDocument* doc )
-		: ignore_(false), firstChild_(true), closedCell_(0), currentTableRow_(0)
+	PrinterVisitor::PrinterVisitor( QTextDocument* doc, QPrinter* printer )
+		: ignore_(false), firstChild_(true), closedCell_(0), currentTableRow_(0), printer_(printer)
 	{
 		printEditor_ = new QTextEdit();
 		printEditor_->setDocument( doc );
+
+
 
 		// set table format
 		QTextTableFormat tableFormat;
@@ -173,6 +177,7 @@ namespace IAEX
 					QTextCursor cursor( tableCell.firstCursorPosition() );
 					cursor.insertFragment( QTextDocumentFragment::fromHtml(
 						node->ChapterCounterHtml() ));
+		
 				}
 			}
 
@@ -189,12 +194,15 @@ namespace IAEX
 					tableFormatExpression.setBorder( 0 );
 					tableFormatExpression.setColumns( 1 );
 					tableFormatExpression.setCellPadding( 5 );
-					tableFormatExpression.setBackground( QColor(235, 235, 220) ); // 180, 180, 180
+//					tableFormatExpression.setBackground( QColor(235, 235, 220) ); // 180, 180, 180
+					tableFormatExpression.setBackground( QColor(235, 0, 0) ); // 180, 180, 180
+
 					QVector<QTextLength> constraints;
 					constraints << QTextLength(QTextLength::PercentageLength, 100);
 					tableFormatExpression.setColumnWidthConstraints(constraints);
 					
 					cursor.insertTable( 1, 1, tableFormatExpression );
+	QMessageBox::information(0,"uu2", node->text());
 
 					QString html = node->textHtml();
 					html += "<br><br>";
@@ -205,7 +213,10 @@ namespace IAEX
 					QString html = node->textHtml();
 					html += "<br><br>";
 					html.remove( "file:///" );
-					cursor.insertFragment( QTextDocumentFragment::fromHtml( html ));
+					QTextDocumentFragment frgmnt;
+					printEditor_->document()->setTextWidth(700);
+					cursor.insertFragment(QTextDocumentFragment::fromHtml( html ));
+					QMessageBox::information(0, "uu3", node->text());
 				}
 			}
 
@@ -250,12 +261,14 @@ namespace IAEX
 				tableFormatInput.setColumns( 1 );
 				tableFormatInput.setCellPadding( 8 );
 				tableFormatInput.setBackground( QColor(245, 245, 255) ); // 200, 200, 255
+
 				QVector<QTextLength> constraints;
 				constraints << QTextLength(QTextLength::PercentageLength, 100);
                 tableFormatInput.setColumnWidthConstraints(constraints);
 				cursor.insertTable( 1, 1, tableFormatInput );
 			
 				QString html = node->textHtml();
+	QMessageBox::information(0, "uu1", node->text());
 				html += "<br>";
 				if( !node->isEvaluated() || node->isClosed() )
 					html += "<br>";
@@ -305,6 +318,7 @@ namespace IAEX
 	{
 		if( !ignore_ || firstChild_ )
 		{
+			
 			++currentTableRow_;
 			table_->insertRows( currentTableRow_, 1 );
 			
@@ -343,6 +357,7 @@ namespace IAEX
 				if( !node->isEvaluated() || node->isClosed() )
 					html += "<br>";
 				cursor.insertFragment( QTextDocumentFragment::fromHtml( html ));
+				
 
 				// output table
 				if( node->isEvaluated() && !node->isClosed() )
@@ -364,7 +379,7 @@ namespace IAEX
 					r2.setWidth(r2.width()-1);
 					r2.setHeight(r2.height()-2);
 
-
+/*
 					QImage qi(r2.size(), QImage::Format_RGB32);
 
 					QPainter qp;
@@ -392,9 +407,13 @@ namespace IAEX
 
 					
 					qi.save(QString("u77.bmp"),"BMP");					
+*/
 
-
-
+//
+//					QMessageBox::information(0, "uu", QVariant(node->compoundwidget->rect().width()).toString());
+//					QMessageBox::information(0, "uu2", QVariant(printer_->pageRect().width()).toString());
+//					QMessageBox::information(0, "uu2", QVariant(printer_->pageRect().height()).toString());
+					
 					QImage i3(node->compoundwidget->rect().size(),  QImage::Format_RGB32);
 					i3.fill(QColor(Qt::white).rgb());
 					QPainter p(&i3);
@@ -419,11 +438,19 @@ namespace IAEX
 					for(int i = 0; i < l.size(); ++i)
 						l[i]->render(&p, l[i]->pos()+node->compoundwidget->legendFrame->pos());
 
-					i3.save(QString("u78.bmp"), "BMP"); //TODO: generate unique file names and delete when finished
+					if(node->imageFile)
+						delete node->imageFile;
 
+					node->imageFile = new QTemporaryFile("tmpImage_XXXXXX.bmp");
+					node->imageFile->open();
+					if(i3.width() < printer_->pageRect().width()/8)
+						i3.save(node->imageFile, "BMP");
+					else
+						i3.scaledToWidth(printer_->pageRect().width()/8, Qt::SmoothTransformation).save(node->imageFile, "BMP");
 
+					cursor.insertImage(node->imageFile->fileName());
+					node->imageFile->close();
 
-					cursor.insertImage(QString("u78.bmp"));
 				}
 			}
 

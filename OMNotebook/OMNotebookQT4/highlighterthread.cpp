@@ -59,6 +59,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtGui/QTextCursor>
 #include <QtGui/QTextBrowser>
 #include <QtGui/QTextEdit>
+#include <QMessageBox>
 
 //IAEX Headers
 #include "highlighterthread.h"
@@ -154,15 +155,17 @@ namespace IAEX
 			if( !stack_.isEmpty() )
 			{
 				QTextEdit *editor = stack_.pop();
+
 				//if( editor->isVisible() )
 				//{
 					highlighter_->highlight( editor->document() );
 
+
 					// force text to be updated
-					//editor->update();
-					//QCoreApplication::processEvents();
-					//QTextCursor cursor = editor->textCursor();
-					//editor->setTextCursor( cursor );
+//					editor->update();
+//					QCoreApplication::processEvents();
+//					QTextCursor cursor = editor->textCursor();
+//					editor->setTextCursor( cursor );
 				//}
 				//else
 				//{

@@ -297,6 +297,7 @@ namespace IAEX
 		graphcell.setAttribute( XML_GRAPHCELL_GRIDMAJORY, QVariant(node->compoundwidget->gwMain->yMajorDist).toString() );
 		graphcell.setAttribute( XML_GRAPHCELL_GRIDMINORX, QVariant(node->compoundwidget->gwMain->xMinorDist).toString());
 		graphcell.setAttribute( XML_GRAPHCELL_GRIDMINORY, QVariant(node->compoundwidget->gwMain->yMinorDist).toString());
+		graphcell.setAttribute( XML_GRAPHCELL_SHOWGRAPH, node->showGraph?XML_TRUE:XML_FALSE);
 
 
 

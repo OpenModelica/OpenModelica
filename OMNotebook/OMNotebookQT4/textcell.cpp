@@ -1,3 +1,4 @@
+#define QT_NO_DEBUG_OUTPUT
 /*
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
@@ -122,6 +123,7 @@ namespace IAEX
 	{
 		QTextBrowser::mousePressEvent(event);
 
+		
 		if( event->modifiers() == Qt::ShiftModifier || 
 			textCursor().hasSelection() )
 		{

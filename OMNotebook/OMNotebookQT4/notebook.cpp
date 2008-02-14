@@ -1,3 +1,4 @@
+#define QT_NO_DEBUG_OUTPUT
 /*
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
@@ -80,6 +81,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtGui/QToolBar>
 #include <QtGui/QLabel>
 #include <QSettings>
+#include <QToolButton>
 
 //IAEX Headers
 #include "command.h"
@@ -150,8 +152,8 @@ namespace IAEX
 		if( filename_ != QString::null )
 			qDebug( filename_.toStdString().c_str() );
 
-		subject_->attach(this);
-		setMinimumSize( 150, 220 );		//AF
+//		subject_->attach(this);
+//		setMinimumSize( 150, 220 );		//AF
 
 		toolBar = new QToolBar("Show toolbar", this);
 	
@@ -171,8 +173,13 @@ namespace IAEX
 		createWindowMenu();
 		createAboutMenu();
 
-//		addToolBar(toolBar); //Add icons, update the edit menu etc.
+		toolBar->addSeparator();
+		toolBar->addAction(quitWindowAction);
+		addToolBar(toolBar); //Add icons, update the edit menu etc.
 		
+		subject_->attach(this);
+		setMinimumSize( 150, 220 );		//AF
+
 
 		// 2006-01-16 AF, Added an icon to the window
 //		setWindowIcon( QIcon("./omnotebook_png.png") );
@@ -381,14 +388,29 @@ namespace IAEX
 	/*! 
 	 * \author Ingemar Axelsson
 	 */
+
+	//class Frame: public QFrame
+	//{
+	//protected:
+	//	void paintEvent(QPaintEvent *event)
+	//	{
+	//		QPainter p(this);
+	//		p.save();
+	//		p.setMatrix(QMatrix(.5, 1, .3, .7,1,1));
+	//		QFrame::paintEvent(event);
+	//		p.restore();
+	//	}
+	//};
 	void NotebookWindow::update()
 	{
 		QFrame *mainWidget = subject_->getState();
 		
 		mainWidget->setParent(this);
 		mainWidget->move( QPoint(0,0) );
+	
 
 		setCentralWidget(mainWidget);
+//		mainWidget->setMaximumHeight(250);
 		mainWidget->show();
 	}
 
@@ -428,17 +450,26 @@ namespace IAEX
 		newAction->setShortcut( tr("Ctrl+N") );
 		newAction->setStatusTip( tr("Create a new document") );
 		connect(newAction, SIGNAL(triggered()), this, SLOT(newFile()));
-//		newAction->setIcon(QIcon("./ico/new.png"));
+		newAction->setIcon(QIcon(":/Resources/toolbarIcons/filenew.png"));
  
 		toolBar->addAction(newAction);	
+
+
+		recentMenu = new QMenu("Recent &Files", this);
 
 		// OPEN FILE
 		openFileAction = new QAction( tr("&Open"), this );
 		openFileAction->setShortcut( tr("Ctrl+O") );
 		openFileAction->setStatusTip( tr("Open a file") );
 		connect(openFileAction, SIGNAL(triggered()), this, SLOT(openFile()));
-//		openFileAction->setIcon(QIcon("./ico/open.png"));
-		toolBar->addAction(openFileAction);	
+		openFileAction->setIcon(QIcon(":/Resources/toolbarIcons/fileopen.png"));
+
+		QToolButton *b = new QToolButton(this);
+		b->setDefaultAction(openFileAction);
+		b->setMenu(recentMenu);
+		b->setPopupMode(QToolButton::ToolButtonPopupMode::MenuButtonPopup);
+//		toolBar->addAction(openFileAction);	
+		toolBar->addWidget(b);
 
 		// SAVE AS
 		saveAsAction = new QAction( tr("Save &As..."), this );
@@ -451,9 +482,10 @@ namespace IAEX
 		saveAction->setShortcut( tr("Ctrl+S") );
 		saveAction->setStatusTip( tr("Save the document") );
 		connect(saveAction, SIGNAL(triggered()), this, SLOT(save()));
-//		saveAction->setIcon(QIcon("./ico/save.png"));
+		saveAction->setIcon(QIcon(":/Resources/toolbarIcons/filesave.png"));
 		toolBar->addAction(saveAction);	
 
+		toolBar->addSeparator();
 
 		// CLOSE FILE
 		closeFileAction = new QAction( tr("&Close"), this );
@@ -466,7 +498,10 @@ namespace IAEX
 		printAction->setShortcut( tr("Ctrl+P") );
 		printAction->setStatusTip( tr("Print the document") );
 		connect(printAction, SIGNAL(triggered()), this, SLOT(print()));
+		printAction->setIcon(QIcon(":/Resources/toolbarIcons/fileprint.png"));
 		toolBar->addAction(printAction);	
+
+		toolBar->addSeparator();
 
 
 
@@ -474,6 +509,8 @@ namespace IAEX
 		quitWindowAction = new QAction( tr("&Quit"), this );
 		quitWindowAction->setShortcut( tr("Ctrl+Q") );
 		quitWindowAction->setStatusTip( tr("Quit OMNotebook") );
+		quitWindowAction->setIcon(QIcon(":/Resources/toolbarIcons/exit.png"));
+
 		connect(quitWindowAction, SIGNAL(triggered()), this, SLOT(quitOMNotebook())); 
 
 		// CREATE MENU
@@ -488,7 +525,8 @@ namespace IAEX
 		fileMenu->addSeparator();
 
 		// RECENT FILES
-		recentMenu = fileMenu->addMenu("Recent &Files"); 
+//		recentMenu = fileMenu->addMenu("Recent &Files"); 
+		fileMenu->addMenu(recentMenu);
 
 		QSettings s("PELAB", "OMNotebook");
 		QString recentFile;
@@ -550,6 +588,8 @@ namespace IAEX
 		connect( undoAction, SIGNAL( triggered() ),
 			this, SLOT( undoEdit() ));
 
+		undoAction->setEnabled(false);
+		undoAction->setIcon(QIcon(":/Resources/toolbarIcons/undo.png"));
 		toolBar->addAction(undoAction);	
 
 
@@ -561,8 +601,11 @@ namespace IAEX
 		connect( redoAction, SIGNAL( triggered() ),
 			this, SLOT( redoEdit() ));
 
+		redoAction->setEnabled(false);
+		redoAction->setIcon(QIcon(":/Resources/toolbarIcons/redo.png"));
 		toolBar->addAction(redoAction);	
 
+		toolBar->addSeparator();
 
 		// CUT
 		cutAction = new QAction( tr("Cu&t"), this);
@@ -571,7 +614,8 @@ namespace IAEX
 		connect( cutAction, SIGNAL( triggered() ),
 			this, SLOT( cutEdit() ));
 
-//		cutAction->setIcon(QIcon("./ico/cut.png"));
+		cutAction->setEnabled(false);
+		cutAction->setIcon(QIcon(":/Resources/toolbarIcons/editcut.png"));
 		toolBar->addAction(cutAction);	
 
 		// COPY
@@ -581,7 +625,8 @@ namespace IAEX
 		connect( copyAction, SIGNAL( triggered() ),
 			this, SLOT( copyEdit() ));
 
-//		copyAction->setIcon(QIcon("./ico/copy.png"));
+		copyAction->setEnabled(false);
+		copyAction->setIcon(QIcon(":/Resources/toolbarIcons/editcopy.png"));
 		toolBar->addAction(copyAction);	
 
 
@@ -592,8 +637,12 @@ namespace IAEX
 		connect( pasteAction, SIGNAL( triggered() ),
 			this, SLOT( pasteEdit() ));
 		
-//		pasteAction->setIcon(QIcon("./ico/paste.png"));
+
+		pasteAction->setIcon(QIcon(":/Resources/toolbarIcons/editpaste.png"));
 		toolBar->addAction(pasteAction);	
+
+		toolBar->addSeparator();
+
 
 		// FIND
 		findAction = new QAction( tr("&Find"), this);
@@ -602,7 +651,9 @@ namespace IAEX
 		connect( findAction, SIGNAL( triggered() ),
 			this, SLOT( findEdit() ));
 
+		findAction->setIcon(QIcon(":/Resources/toolbarIcons/find.png"));
 		toolBar->addAction(findAction);	
+		toolBar->addSeparator();
 
 		// REPLACE, added 2006-08-24 AF
 		replaceAction = new QAction( tr("Re&place"), this);
@@ -649,8 +700,8 @@ namespace IAEX
 		*/
 
 		
-		QObject::connect(editMenu, SIGNAL(aboutToShow()),
-			this, SLOT(updateEditMenu()));
+//		QObject::connect(editMenu, SIGNAL(aboutToShow()),  //HE 071119
+//			this, SLOT(updateEditMenu()));		           // -''-
 	}
 
 	/*! 
@@ -1438,7 +1489,8 @@ namespace IAEX
 
 		formatMenu->addSeparator();
 		formatMenu->addAction(toolBar->toggleViewAction());
-		
+
+
 //		showToolBarAction = new QAction(formatMenu, "Show toolbar", true);
 //		connect(showToolBarAction, SIGNAL(toggled(bool)), toolBar, SLOT(setVisible(bool)));
 //		connect(toolBar->toggleViewAction(), SIGNAL(toggled(bool)), showToolBarAction
@@ -1459,6 +1511,8 @@ namespace IAEX
 		insertImageAction->setStatusTip( tr("Insert a image into the cell") );
 		connect( insertImageAction, SIGNAL( triggered() ),
 			this, SLOT( insertImage() ));
+		insertImageAction->setIcon(QIcon(":/Resources/toolbarIcons/image.png"));
+		toolBar->addAction(insertImageAction);
 
 		// LINK
 		insertLinkAction = new QAction( tr("&Link"), this );
@@ -1466,7 +1520,49 @@ namespace IAEX
 		insertLinkAction->setStatusTip( tr("Insert a link to the selected text") );
 		connect( insertLinkAction, SIGNAL( triggered() ),
 			this, SLOT( insertLink() ));
+		insertLinkAction->setIcon(QIcon(":/Resources/toolbarIcons/text_under.png"));
+		toolBar->addAction(insertLinkAction);
+
+		toolBar->addSeparator();
+
+		//INDENT
+		indentAction = new QAction(tr("Indent"), this);
+		indentAction->setStatusTip(tr("Indent the code in the selected cell"));
+		indentAction->setIcon(QIcon(":/Resources/toolbarIcons/text_right.png"));
+		connect(indentAction, SIGNAL(triggered()), this, SLOT(indent()));
+
+
+		QToolButton * b = new QToolButton;
+		b->setDefaultAction(indentAction);
+		indentMenu = new QMenu(this);
+		autoIndentAction = new QAction("Autoindent", this);
+		autoIndentAction->setStatusTip(tr("Tries to move the cursor to the right position when return is pressed"));
+		autoIndentAction->setCheckable(true);
+//		autoIndentAction->setChecked(true);
+
+		b->hide(); //Disable indentation button
+
+		QSettings s("PELAB", "OMNotebook");
+		autoIndentAction->setChecked(s.value("AutoIndent", true).toBool());
+		setAutoIndent(autoIndentAction->isChecked());
+
+		connect(autoIndentAction, SIGNAL(toggled(bool)), this, SLOT(setAutoIndent(bool)));
+
+
+		indentMenu->addAction(autoIndentAction);
+		b->setMenu(indentMenu);
+		b->setPopupMode(QToolButton::MenuButtonPopup);
+		toolBar->addWidget(b);
 		
+
+		//EVAL
+
+		evalAction = new QAction(tr("Evaluate"), this);
+		evalAction->setStatusTip(tr("Evaluate the selected cell"));
+		evalAction->setIcon(QIcon(":/Resources/toolbarIcons/apply.png"));
+		connect(evalAction, SIGNAL(triggered()), this, SLOT(eval()));
+		toolBar->addAction(evalAction);
+
 		// MENU
 		insertMenu = menuBar()->addMenu( tr("&Insert") );
 		insertMenu->addAction( insertImageAction );
@@ -2368,6 +2464,7 @@ namespace IAEX
 			}
 
 			subject_ = new CellDocument(app_, QString::null);
+			dynamic_cast<CellDocument*>(subject_)->autoIndent = autoIndentAction->isChecked();
 			subject_->executeCommand(new NewFileCommand());
 			subject_->attach(this);
 
@@ -2437,8 +2534,10 @@ namespace IAEX
 				else
 				{
 					subject_ = new CellDocument(app_, QString::null);
+
 					subject_->executeCommand(new OpenFileCommand(filename_));
 					subject_->attach(this);
+
 				}
 			}
 			else
@@ -2557,9 +2656,9 @@ namespace IAEX
 	void NotebookWindow::aboutQTNotebook()
 	{
 		QString version = OmcInteractiveEnvironment::OMCVersion();
-		QString abouttext = QString("OMNotebook version 2.0 (for OpenModelica ") + version + 
-			QString(")\r\n") + QString("Copyright 2004-2007, PELAB, Linkoping University\r\n\r\n") + 
-			QString("Created by Ingemar Axelsson (2004-2005), Anders Fernström (2005-2006) and Henrik Eriksson (2006-2007) as part of their final theses.");
+		QString abouttext = QString("OMNotebook version 3.0 (for OpenModelica ") + version + 
+			QString(")\r\n") + QString("Copyright 2004-2007, PELAB, Link" + QString(QChar(246, 0)) +"ping University\r\n\r\n") + 
+			QString("Created by Ingemar Axelsson (2004-2005), Anders Fernstr" + QString(QChar(246, 0)) +"m (2005-2006) and Henrik Eriksson (2006-2007) as part of their final theses.");
 
 		QMessageBox::about( this, "OMNotebook", abouttext );
 	}
@@ -3415,7 +3514,7 @@ namespace IAEX
 					// 2006-03-01 AF, Update linkDir_
 					linkDir_ = QFileInfo( filepath ).absolutePath();
 
-					subject_->textcursorInsertLink( filepath );
+					subject_->textcursorInsertLink( filepath, cursor );
 				}
 			}
 			else
@@ -3425,6 +3524,16 @@ namespace IAEX
 					"OK" );
 			}
 		}
+	}
+
+	void NotebookWindow::indent()
+	{
+		GraphCell* g;
+		if(g = dynamic_cast<GraphCell*>(subject_->getCursor()->currentCell()))
+		{
+			g->input_->indentText();
+		}
+
 	}
 
 	/*! 
@@ -3654,6 +3763,26 @@ namespace IAEX
 		QObject* s = QObject::sender();
 		if(s)
 			emit openFile(static_cast<QAction*>(s)->text());
+	}
+
+	void NotebookWindow::setAutoIndent(bool b)
+	{
+		//		if(CellDocument* d = dynamic_cast<CellDocument*>(subject_))
+		subject_->setAutoIndent2(b);
+
+		QSettings s("PELAB", "OMNotebook");
+		s.setValue("AutoIndent", b);
+
+	}
+
+	void NotebookWindow::eval()
+	{
+		if(GraphCell *g = dynamic_cast<GraphCell*>(subject_->getCursor()->currentCell()))
+			g->eval();
+		else if(InputCell *g = dynamic_cast<InputCell*>(subject_->getCursor()->currentCell()))
+			g->eval();
+
+
 	}
 
 

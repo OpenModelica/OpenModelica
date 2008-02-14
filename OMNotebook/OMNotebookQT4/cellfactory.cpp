@@ -66,6 +66,8 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "cellgroup.h"
 #include "cellcursor.h"
 #include "stylesheet.h"
+#include "celldocument.h"
+#include "notebook.h"
 
 #include <string>
 #include "graphcell.h"
@@ -150,8 +152,24 @@ namespace IAEX
 			QObject::connect( text, SIGNAL( forwardAction(int) ),
 				doc_, SIGNAL( forwardAction(int) ));
 
-			
+//			CellDocument* d = dynamic_cast<CellDocument*>(doc_);
+//			DocumentView* d2 = d->observers_[0];
+//			NotebookWindow *d3 = dynamic_cast<NotebookWindow*>(d2);
+			QObject::connect(text->input_, SIGNAL(copyAvailable(bool)), doc_, SIGNAL(copyAvailable(bool)));
+			QObject::connect(text->input_, SIGNAL(undoAvailable(bool)), doc_, SIGNAL(undoAvailable(bool)));
+			QObject::connect(text->input_, SIGNAL(redoAvailable(bool)), doc_, SIGNAL(redoAvailable(bool)));
+			QObject::connect(text->output_, SIGNAL(copyAvailable(bool)), doc_, SIGNAL(copyAvailable(bool)));
 
+			QObject::connect(doc_, SIGNAL(evaluate()), text->input_, SIGNAL(eval()));
+
+/*
+			QObject::connect(text->input_, SIGNAL(copyAvailable(bool)), d3->copyAction, SLOT(setEnabled(bool)));
+			QObject::connect(text->input_, SIGNAL(copyAvailable(bool)), d3->cutAction, SLOT(setEnabled(bool)));
+			QObject::connect(text->input_, SIGNAL(undoAvailable(bool)), d3->undoAction, SLOT(setEnabled(bool)));
+			QObject::connect(text->input_, SIGNAL(redoAvailable(bool)), d3->redoAction, SLOT(setEnabled(bool)));
+
+			QObject::connect(text->output_, SIGNAL(copyAvailable(bool)), d3->copyAction, SLOT(setEnabled(bool)));
+*/
 			return text;
 		}
 		else if( style == "cursor")
@@ -217,10 +235,40 @@ namespace IAEX
 			QObject::connect( text, SIGNAL( forwardAction(int) ),
 				doc_, SIGNAL( forwardAction(int) ));
 
+
 			QObject::connect( text, SIGNAL( updatePos(int, int)), doc_, SIGNAL(updatePos(int, int)));
 			QObject::connect( text, SIGNAL( newState(QString)), doc_, SIGNAL(newState(QString)));
 			QObject::connect(text, SIGNAL( setStatusMenu(QList<QAction*>)), doc_, SIGNAL(setStatusMenu(QList<QAction*>)));
 
+
+			QObject::connect(text->input_, SIGNAL(copyAvailable(bool)), doc_, SIGNAL(copyAvailable(bool)));
+			QObject::connect(text->input_, SIGNAL(undoAvailable(bool)), doc_, SIGNAL(undoAvailable(bool)));
+			QObject::connect(text->input_, SIGNAL(redoAvailable(bool)), doc_, SIGNAL(redoAvailable(bool)));
+			QObject::connect(text->output_, SIGNAL(copyAvailable(bool)), doc_, SIGNAL(copyAvailable(bool)));
+
+//			if(CellDocument* d = dynamic_cast<CellDocument*>(doc_))
+				QObject::connect(doc_, SIGNAL(setAutoIndent(bool)), text->input_, SLOT(setAutoIndent(bool)));
+				QObject::connect(doc_, SIGNAL(evaluate()), text->input_, SIGNAL(eval()));
+				text->input_->setAutoIndent(dynamic_cast<CellDocument*>(doc_)->autoIndent);
+/*
+			if(d)
+			{
+				if(d->observers_.size())
+				{
+
+					
+					DocumentView* d2 = d->observers_[0];
+
+					NotebookWindow *d3 = dynamic_cast<NotebookWindow*>(d2);
+					QObject::connect(text->input_, SIGNAL(copyAvailable(bool)), d3->copyAction, SLOT(setEnabled(bool)));
+					QObject::connect(text->input_, SIGNAL(copyAvailable(bool)), d3->cutAction, SLOT(setEnabled(bool)));
+					QObject::connect(text->input_, SIGNAL(undoAvailable(bool)), d3->undoAction, SLOT(setEnabled(bool)));
+					QObject::connect(text->input_, SIGNAL(redoAvailable(bool)), d3->redoAction, SLOT(setEnabled(bool)));
+
+					QObject::connect(text->output_, SIGNAL(copyAvailable(bool)), d3->copyAction, SLOT(setEnabled(bool)));
+				}
+				}
+				*/
 			return text;
 		}
 		else //All other styles will be implemented with a TextCell.
@@ -233,6 +281,8 @@ namespace IAEX
 				style_ = QString("Text");
 
 			text->setStyle( style_ );
+
+
 
 			QObject::connect(text, SIGNAL(cellselected(Cell *, Qt::KeyboardModifiers)),
 				doc_, SLOT(selectedACell(Cell*, Qt::KeyboardModifiers)));
@@ -257,6 +307,20 @@ namespace IAEX
 			QObject::connect( text, SIGNAL( forwardAction(int) ),
 				doc_, SIGNAL( forwardAction(int) ));
 
+			QObject::connect(text->text_, SIGNAL(copyAvailable(bool)), doc_, SIGNAL(copyAvailable(bool)));
+			QObject::connect(text->text_, SIGNAL(undoAvailable(bool)), doc_, SIGNAL(undoAvailable(bool)));
+			QObject::connect(text->text_, SIGNAL(redoAvailable(bool)), doc_, SIGNAL(redoAvailable(bool)));
+//			QObject::connect(text->output_, SIGNAL(copyAvailable(bool)), this, SLOT(copyAvailable(bool)));
+/*
+
+			CellDocument* d = dynamic_cast<CellDocument*>(doc_);
+			DocumentView* d2 = d->observers_[0];
+			NotebookWindow *d3 = dynamic_cast<NotebookWindow*>(d2);
+			QObject::connect(text->text_, SIGNAL(copyAvailable(bool)), d3->copyAction, SLOT(setEnabled(bool)));
+			QObject::connect(text->text_, SIGNAL(copyAvailable(bool)), d3->cutAction, SLOT(setEnabled(bool)));
+			QObject::connect(text->text_, SIGNAL(undoAvailable(bool)), d3->undoAction, SLOT(setEnabled(bool)));
+			QObject::connect(text->text_, SIGNAL(redoAvailable(bool)), d3->redoAction, SLOT(setEnabled(bool)));
+*/
 			return text; 
 		}
 	}

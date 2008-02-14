@@ -15,6 +15,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Pltpkg2", "..\Pltpkg2\Pltpk
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ext", "..\ext\ext.vcproj", "{79F27DD3-82FE-3AAD-80B3-1255DC2DB9D9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D98C1DD4-008F-34B2-A980-0998ECF8427E} = {D98C1DD4-008F-34B2-A980-0998ECF8427E}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
@@ -35,6 +40,10 @@ Global
 		{D98C1DD4-008F-34B2-A980-0998ECF8427E}.Debug.Build.0 = Debug|Win32
 		{D98C1DD4-008F-34B2-A980-0998ECF8427E}.Release.ActiveCfg = Release|Win32
 		{D98C1DD4-008F-34B2-A980-0998ECF8427E}.Release.Build.0 = Release|Win32
+		{79F27DD3-82FE-3AAD-80B3-1255DC2DB9D9}.Debug.ActiveCfg = Debug|Win32
+		{79F27DD3-82FE-3AAD-80B3-1255DC2DB9D9}.Debug.Build.0 = Debug|Win32
+		{79F27DD3-82FE-3AAD-80B3-1255DC2DB9D9}.Release.ActiveCfg = Release|Win32
+		{79F27DD3-82FE-3AAD-80B3-1255DC2DB9D9}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionItems) = postSolution
 		trunk.vsd = trunk.vsd

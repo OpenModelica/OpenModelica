@@ -129,8 +129,9 @@ namespace IAEX
 		void createTextWidget();
 		void createChapterCounter();
 
-	private:
+	public:
 		QTextBrowser *text_;
+	private:
 		QTextBrowser *chaptercounter_;						// Added 2006-03-02 AF
 
 		QString oldHoverLink_;								// Added 2006-02-10 AF

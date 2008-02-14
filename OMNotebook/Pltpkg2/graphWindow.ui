@@ -17,18 +17,28 @@
     <string>background-color: white</string>
    </property>
    <layout class="QGridLayout" >
-    <property name="margin" >
+    <property name="leftMargin" >
      <number>9</number>
     </property>
-    <property name="spacing" >
+    <property name="topMargin" >
+     <number>9</number>
+    </property>
+    <property name="rightMargin" >
+     <number>9</number>
+    </property>
+    <property name="bottomMargin" >
+     <number>9</number>
+    </property>
+    <property name="horizontalSpacing" >
+     <number>6</number>
+    </property>
+    <property name="verticalSpacing" >
      <number>6</number>
     </property>
     <item row="0" column="0" >
      <widget class="CompoundWidget" name="graphicsView" >
       <property name="sizePolicy" >
-       <sizepolicy>
-        <hsizetype>7</hsizetype>
-        <vsizetype>7</vsizetype>
+       <sizepolicy vsizetype="Expanding" hsizetype="Expanding" >
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
@@ -105,7 +115,10 @@
     <enum>Qt::Horizontal</enum>
    </property>
    <attribute name="toolBarArea" >
-    <number>4</number>
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak" >
+    <bool>false</bool>
    </attribute>
    <addaction name="actionOpen" />
    <addaction name="actionSave" />
@@ -120,63 +133,7 @@
    <addaction name="separator" />
    <addaction name="actionPreferences" />
    <addaction name="separator" />
-  </widget>
-  <widget class="QDockWidget" name="dockWidget" >
-   <property name="sizePolicy" >
-    <sizepolicy>
-     <hsizetype>0</hsizetype>
-     <vsizetype>1</vsizetype>
-     <horstretch>0</horstretch>
-     <verstretch>0</verstretch>
-    </sizepolicy>
-   </property>
-   <property name="minimumSize" >
-    <size>
-     <width>150</width>
-     <height>150</height>
-    </size>
-   </property>
-   <property name="floating" >
-    <bool>false</bool>
-   </property>
-   <property name="windowTitle" >
-    <string>Available data</string>
-   </property>
-   <attribute name="dockWidgetArea" >
-    <number>1</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents" >
-    <layout class="QGridLayout" >
-     <property name="margin" >
-      <number>9</number>
-     </property>
-     <property name="spacing" >
-      <number>6</number>
-     </property>
-     <item row="0" column="0" >
-      <widget class="QListWidget" name="listWidget" >
-       <property name="sizePolicy" >
-        <sizepolicy>
-         <hsizetype>7</hsizetype>
-         <vsizetype>7</vsizetype>
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <item>
-        <property name="text" >
-         <string>x(time)</string>
-        </property>
-       </item>
-       <item>
-        <property name="text" >
-         <string>y(time)</string>
-        </property>
-       </item>
-      </widget>
-     </item>
-    </layout>
-   </widget>
+   <addaction name="actionActive" />
   </widget>
   <action name="actionOpen" >
    <property name="enabled" >
@@ -257,7 +214,7 @@
     <bool>true</bool>
    </property>
    <property name="checked" >
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="text" >
     <string>Grid</string>
@@ -277,6 +234,9 @@
    <property name="checkable" >
     <bool>true</bool>
    </property>
+   <property name="checked" >
+    <bool>true</bool>
+   </property>
    <property name="text" >
     <string>Zoom</string>
    </property>
@@ -294,10 +254,21 @@
     <bool>true</bool>
    </property>
    <property name="checked" >
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
    <property name="text" >
     <string>Select</string>
+   </property>
+  </action>
+  <action name="actionActive" >
+   <property name="checkable" >
+    <bool>true</bool>
+   </property>
+   <property name="checked" >
+    <bool>true</bool>
+   </property>
+   <property name="text" >
+    <string>Active</string>
    </property>
   </action>
  </widget>

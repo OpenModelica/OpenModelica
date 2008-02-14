@@ -63,6 +63,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtCore/QTextStream>
 #include <QtGui/QTextDocument>
 #include <QtXml/qdom.h>
+#include <QMessageBox>
 
 //IAEX Headers
 #include "command.h"
@@ -78,6 +79,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "cellgroup.h"
 #include "highlighterthread.h"
 #include <QDataStream>
+#include <QTextOption>
 
 using namespace std;
 
@@ -130,6 +132,7 @@ namespace IAEX
 					// 2005-11-30 AF, Changed DomDocument name from 
 					// 'qtNotebook' to 'OMNotebook'.
 					QDomDocument doc( "OMNotebook" );
+					
 
 					QFile file( filename_ );
 					if(file.open(QIODevice::WriteOnly))
@@ -289,8 +292,17 @@ namespace IAEX
 			try
 			{
 				QTextDocument* printDocument = new QTextDocument();
-				PrinterVisitor visitor( printDocument );
+				QTextOption opt;
+				opt.setAlignment(Qt::AlignRight);
+				opt.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+				printDocument->setDefaultTextOption(opt);
+				printDocument->setTextWidth(700);
+			
+				PrinterVisitor visitor( printDocument, printer_ );
 				doc_->runVisitor( visitor );
+				printDocument->setTextWidth(700);
+
+				QMessageBox::information(0, QVariant(printDocument->size().width()).toString(), QVariant(printDocument->idealWidth()).toString());
 				printDocument->print( printer_ );
 
 				// 2006-03-16 AF

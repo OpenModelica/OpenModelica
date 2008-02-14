@@ -60,6 +60,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtGui/QTextDocumentFragment>
 #include <QtGui/QTextEdit>
 #include <QtGui/QTextFrame>
+#include <QVariant>
 
 #include <exception>
 #include <stdexcept>
@@ -429,6 +430,7 @@ namespace IAEX
 		QTextCursor cursor( document()->getCursor()->currentCell()->textCursor() );
 		if( !cursor.isNull() )
 		{
+
 			QTextCharFormat format = cursor.charFormat();
 			format.setVerticalAlignment( (QTextCharFormat::VerticalAlignment)alignment_ );
 			
@@ -588,8 +590,10 @@ namespace IAEX
      * \brief Command for inserting an link
      */
 	void TextCursorInsertLink::execute()
+
 	{
-		QTextCursor cursor( document()->getCursor()->currentCell()->textCursor() );
+
+//		QTextCursor cursor( document()->getCursor()->currentCell()->textCursor() );
 		if( !cursor.isNull() )
 		{
 			if( cursor.hasSelection() )
@@ -602,7 +606,6 @@ namespace IAEX
 				// check if dir exist
 				if( !dir.exists() )
 					return;
-
 				// get the relative link path
 				QString relativepath = dir.relativeFilePath( filepath_ );
 

@@ -51,6 +51,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QByteArray>
 #include <QMessageBox>
 #include <QVariant>
+#include <QtDebug>
 
 //IAEX headers
 #include "variableData.h"

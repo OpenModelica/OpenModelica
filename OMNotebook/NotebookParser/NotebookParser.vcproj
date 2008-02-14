@@ -67,7 +67,8 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="3"/>
+				DebugInformationFormat="3"
+				DisableSpecificWarnings="4311; 4312"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool

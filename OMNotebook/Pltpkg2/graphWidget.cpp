@@ -89,6 +89,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "LegendLabel.h"
 #include "curve.h"
 #include "focusRect.h"
+#include "variablewindow.h"
 
 #include <QtOpengL/QGLWidget>
 using namespace std;
@@ -103,9 +104,11 @@ GraphWidget::GraphWidget(QWidget* parent): QGraphicsView(parent)
 	setScene(graphicsScene);
 	scale(1, -1);
 	server = new QTcpServer(this);
-	server->setMaxPendingConnections(500);
+//	server->setMaxPendingConnections(500);
+	graphicsServer = new QTcpServer(this);
 	nr = 0;
 	activeSocket = 0;
+	graphicsSocket = 0;
 	gridVisible = false;
 	pan = false;
 	stretch = true;
@@ -190,6 +193,9 @@ GraphWidget::GraphWidget(QWidget* parent): QGraphicsView(parent)
 
 	contextMenu->addSeparator();
 
+	tmp=contextMenu->addAction("Simulation data");
+	connect(tmp, SIGNAL(triggered()), this, SLOT(showVariables()));
+
 	tmp=contextMenu->addAction("Preferences");
 	connect(tmp, SIGNAL(triggered()), this, SLOT(showPreferences()));
 
@@ -215,11 +221,12 @@ GraphWidget::GraphWidget(QWidget* parent): QGraphicsView(parent)
 
 	setZoom(true);
 	
-
+/*
 	#if QT_VERSION >= 0x040300
 		setOptimizationFlags(QGraphicsView::DontAdjustForAntialiasing|QGraphicsView::DontSavePainterState);
 	//	setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
 	#endif
+*/
 }
 
 void GraphWidget::setExpr(QString expr)
@@ -403,16 +410,28 @@ GraphWidget::~GraphWidget()
 
 
 	qDeleteAll(curves);
-	qDeleteAll(variableData);
+	//	qDeleteAll(variableData); //This is handled by the variableData destructor..
 
 }
 
-void GraphWidget::setServerState(bool listen)
+void GraphWidget::enableServers(bool b)
 {
+		setServerState(b, true);
+		setServerState(b, false);
+}
+
+void GraphWidget::setServerState(bool listen, bool graphics)
+{
+//	if(server->isListening() && graphicsServer->isListening())
+//		return;
+
 	if(listen)
 	{
 
 		if(!getServerState())
+		{
+
+
 			if(!server->listen(QHostAddress::Any, quint16(7778)))
 			{
 				QTcpSocket s(this);
@@ -434,22 +453,59 @@ void GraphWidget::setServerState(bool listen)
 
 					qApp->processEvents();
 					server->listen(QHostAddress::Any, quint16(7778));
+					//					graphicsServer->listen(QHostAddress::Any, quint16(7779));
 					qApp->processEvents();
 
 				}
 			}
+			if(!graphicsServer->listen(QHostAddress::Any, quint16(7779)))
+			{
+				QTcpSocket s(this);
+				s.connectToHost("localhost", quint16(7779));
+				if(s.waitForConnected(2000))
+				{
+					QByteArray b;
 
-			emit newMessage("Listening for connections");
+					QDataStream ds(&b, QIODevice::WriteOnly);
+					ds.setVersion(QDataStream::Qt_4_2);
+					ds << quint32(0);
+					ds << QString("closeGraphicsServer");
+					ds.device()->seek(0);
+					ds << quint32(b.size()-sizeof(quint32));
+					s.write(b);
+					s.flush();
 
-			emit serverState(server->isListening());
-			if(!connect(server, SIGNAL(newConnection()), this, SLOT(acCon())))
-				QMessageBox::critical(0, QString("fel!"), QString("fel"));
+					s.disconnect();
+
+					qApp->processEvents();
+					//					server->listen(QHostAddress::Any, quint16(7779));
+					graphicsServer->listen(QHostAddress::Any, quint16(7779));
+					qApp->processEvents();
+
+				}
+			}
+		}
+		emit newMessage("Listening for connections");
+
+		emit serverState(server->isListening());
+		if(!connect(server, SIGNAL(newConnection()), this, SLOT(acCon())))
+			QMessageBox::critical(0, QString("fel!"), QString("fel"));
+		connect(graphicsServer, SIGNAL(newConnection()), this, SLOT(acCon()));
 	}
 	else
 	{
-		server->close();
-		emit newMessage("Port closed");
+		//		if(!graphics)
+		//			server->close();
+		//		else
+		//			graphicsServer->close();
+		if(graphics)
+			graphicsServer->close();
+		else
+			server->close();
+
 		emit serverState(false);
+		emit newMessage("Port closed");
+
 	}
 }
 
@@ -458,9 +514,18 @@ void GraphWidget::showPreferences()
 	emit showPreferences2();
 }
 
+void GraphWidget::showVariables()
+{
+	VariableWindow* i = new VariableWindow(this);
+	connect(i, SIGNAL(showGraphics()), this, SIGNAL(showGraphics()));
+	i->setAttribute(Qt::WA_DeleteOnClose, true);
+	i->show();
+
+}
+
 bool GraphWidget::getServerState()
 {
-	return server->isListening();
+	return server->isListening() && graphicsServer->isListening();
 }
 /*
 void GraphWidget::plotVariables(const QString& xVar, const QString& yVar)
@@ -487,8 +552,11 @@ fitInView(graphicsScene->sceneRect());
 
 void GraphWidget::getData()
 {
-	disconnect(activeSocket, SIGNAL(readyRead()), 0, 0);
-	connect(activeSocket, SIGNAL(readyRead()), this, SLOT(getData()));
+	if(activeSocket)
+	{
+		disconnect(activeSocket, SIGNAL(readyRead()), 0, 0);
+		connect(activeSocket, SIGNAL(readyRead()), this, SLOT(getData()));
+	}
 
 	while(activeSocket->bytesAvailable())
 	{
@@ -535,8 +603,32 @@ void GraphWidget::getData()
 		else if(command == QString("closeServer"))
 		{
 			setServerState(false);
-			activeSocket->disconnect();
-			activeSocket->disconnectFromHost();
+//			setServerState(false, true);
+			if(activeSocket)
+			{
+				activeSocket->disconnect();
+				activeSocket->disconnectFromHost();
+			}
+//			if(graphicsSocket)
+//			{
+//				graphicsSocket->disconnect();
+//				graphicsSocket->disconnectFromHost();
+//			}
+		}
+		else if(command == QString("closeGraphicsServer"))
+		{
+//			setServerState(false);
+			setServerState(false, true);
+//			if(activeSocket)
+//			{
+//				activeSocket->disconnect();
+//				activeSocket->disconnectFromHost();
+//			}
+			if(graphicsSocket)
+			{
+				graphicsSocket->disconnect();
+				graphicsSocket->disconnectFromHost();
+			}
 		}
 		//		else if(command == QString("testSocket"))
 		//			;
@@ -554,7 +646,7 @@ void GraphWidget::getData()
 			if(!hold)
 				clear();
 
-			emit newMessage("Recieving streaming data...");
+			emit newMessage("Receiving streaming data...");
 			disconnect(activeSocket, SIGNAL(readyRead()), 0, 0);
 
 			connect(activeSocket, SIGNAL(readyRead()), this, SLOT(plotPtolemyDataStream()));
@@ -566,6 +658,34 @@ void GraphWidget::getData()
 			
 			return;
 		}
+		else if(command == QString("graphicsStream"))
+		{
+			disconnect(graphicsSocket, SIGNAL(readyRead()), 0, 0);
+
+			connect(graphicsSocket, SIGNAL(readyRead()), this, SLOT(drawGraphics()));
+			connect(graphicsSocket, SIGNAL(disconnected()), this, SLOT(graphicsStreamClosed()));
+
+//			variableCount = 0;
+			packetSize2 = 0;
+			drawGraphics();
+			return;
+
+		}
+		else if (command == QString("simulationDataStream"))
+		{
+			emit newMessage("Receiving streaming data...");
+			disconnect(activeSocket, SIGNAL(readyRead()), 0, 0);
+
+			connect(activeSocket, SIGNAL(readyRead()), this, SLOT(receiveDataStream()));
+			connect(activeSocket, SIGNAL(disconnected()), this, SLOT(dataStreamClosed()));
+
+			variableCount = 0;
+			packetSize = 0;
+
+			receiveDataStream();
+			return;
+
+		}
 
 		blockSize = 0;
 	}
@@ -576,9 +696,11 @@ void GraphWidget::getData()
 
 void GraphWidget::acCon()
 {
-	while(server && server->hasPendingConnections())
+//	QMessageBox::information(0, "uu", "acCon");
+	
+	while(server && (server->hasPendingConnections() || graphicsServer->hasPendingConnections() ))
 	{
-		if( (activeSocket && (activeSocket->state() == QAbstractSocket::UnconnectedState) || !activeSocket))
+		if( (server->hasPendingConnections() && activeSocket && (activeSocket->state() == QAbstractSocket::UnconnectedState) || !activeSocket))
 		{
 
 			emit newMessage("New connection accepted");
@@ -590,6 +712,23 @@ void GraphWidget::acCon()
 			blockSize = 0;
 
 			connect(activeSocket, SIGNAL(readyRead()), this, SLOT(getData()));
+		}
+
+		if( graphicsServer->hasPendingConnections() && (activeSocket && (activeSocket->state() == QAbstractSocket::UnconnectedState) || !activeSocket))
+		{
+
+			emit newMessage("New connection (graphics) accepted");
+
+			graphicsSocket = graphicsServer->nextPendingConnection();
+			ds2.setDevice(graphicsSocket);
+			ds2.setVersion(QDataStream::Qt_4_2);
+
+			//blockSize = 0;
+
+			connect(graphicsSocket, SIGNAL(readyRead()), this, SLOT(drawGraphics()));
+			connect(graphicsSocket, SIGNAL(disconnected()), this, SLOT(graphicsStreamClosed()));
+			packetSize2 = 0;
+			drawGraphics();
 		}
 
 		qApp->processEvents();
@@ -1484,6 +1623,16 @@ void GraphWidget::readPtolemyDataStream()
 	while(activeSocket->bytesAvailable() >= sizeof(quint32));
 }
 
+void GraphWidget::graphicsStreamClosed()
+{
+	if(graphicsSocket)
+		graphicsSocket->disconnectFromHost();
+		//		delete graphicsSocket;
+
+	setServerState(false, true);
+
+}
+
 void GraphWidget::ptolemyDataStreamClosed()
 {
 	for(map<QString, Curve*>::iterator i = temporaryCurves.begin(); i != temporaryCurves.end(); ++i)
@@ -1499,7 +1648,7 @@ void GraphWidget::ptolemyDataStreamClosed()
 
 	//	cc->visible;
 
-	variables.clear();
+//	variables.clear();
 
 
 
@@ -1544,9 +1693,19 @@ void GraphWidget::ptolemyDataStreamClosed()
 //	if(b)
 		showGrid(b);
 
-	setServerState(false);
+//	setServerState(false, false); //fjass080214
 
 	emit newMessage("Connection closed");
+}
+
+void GraphWidget::dataStreamClosed()
+{
+
+//	setServerState(false, false); //fjass080214
+
+	emit showVariableButton(true);
+	emit newMessage("Connection closed");
+//	QMessageBox::information(0, "uu", "dataStreamClosed");
 }
 
 void GraphWidget::setLogarithmic(bool b)
@@ -1687,6 +1846,59 @@ void GraphWidget::setLogarithmic(bool b)
 
 }
 
+void GraphWidget::drawGraphics()
+{
+	QString commandV, command, version;
+
+
+
+	//	QString command;
+	do
+	{
+		if(packetSize2 == 0)
+		{
+			if(ds2.device()->bytesAvailable() >= sizeof(quint32))
+				ds2 >> packetSize2;
+			else
+				return;
+		}
+
+		if(ds2.device()->bytesAvailable() < packetSize2)
+			return;
+
+		//		ds2 >> command;
+		ds2 >> commandV;
+		command = commandV.section("-", 0, 0);
+		version = commandV.section("-", 1, 1);
+
+		if(command == QString("drawEllipse"))
+			drawEllipse(ds2);
+		else if(command == QString("drawLine"))
+			drawLine(ds2);
+		else if(command == QString("drawRect"))
+			drawRect(ds2);
+		else if(command == QString("drawText"))
+			drawText(ds2);
+		else if(command == QString("hold"))
+			setHold(ds2);
+		else if(command == QString("closeServer"))
+		{
+			setServerState(false);
+			setServerState(false, true);
+			activeSocket->disconnect();
+			activeSocket->disconnectFromHost();
+			graphicsSocket->disconnect();
+			graphicsSocket->disconnectFromHost();
+
+//			server->close();
+//			graphicsServer->close();
+		}
+
+		packetSize2 = 0;
+
+	}
+	while(graphicsSocket->bytesAvailable() >= sizeof(quint32));
+}
 
 void GraphWidget::plotPtolemyDataStream()
 {
@@ -1793,21 +2005,22 @@ void GraphWidget::plotPtolemyDataStream()
 
 
 						yVars.push_back(tmp); 
-						ll = new LegendLabel(color, tmp,legendFrame, !(interpolation_ == INTERPOLATION_NONE), points, 21);
+						//						ll = new LegendLabel(color, tmp,legendFrame, !(interpolation_ == INTERPOLATION_NONE), points, 21);
+						ll = new LegendLabel(color, tmp,legendFrame, !(interpolation_ == INTERPOLATION_NONE), points, 12);
 						ll->graphWidget = this;
 
-//						ll->setMaximumHeight(21);
-//						ll->setMinimumWidth(0);
+						//						ll->setMaximumHeight(21);
+						//						ll->setMinimumWidth(0);
 
-//						if(!legendLayout->count() || true)
-//						{
-//							legendFrame->setMinimumWidth(ll->minimumWidth()+5);
-							legendFrame->setMinimumWidth(max(ll->fontMetrics().width(tmp)+41+4, legendFrame->minimumWidth()));
-				//										QMessageBox::information(0, QVariant(legendFrame->minimumWidth()).toString(), QVariant(legendFrame->width()).toString());					
-//						}
+						//						if(!legendLayout->count() || true)
+						//						{
+						//							legendFrame->setMinimumWidth(ll->minimumWidth()+5);
+						legendFrame->setMinimumWidth(max(ll->fontMetrics().width(tmp)+41+4, legendFrame->minimumWidth()));
+						//										QMessageBox::information(0, QVariant(legendFrame->minimumWidth()).toString(), QVariant(legendFrame->width()).toString());					
+						//						}
 						legendLayout->addWidget(ll);
 						ll->show(); 
-						
+
 
 
 						temporaryCurves[tmp] = (new Curve(variables[currentXVar], variables[tmp], color, ll));
@@ -1993,4 +2206,68 @@ void GraphWidget::plotPtolemyDataStream()
 
 	if(activeSocket->state() != QAbstractSocket::ConnectedState)
 		ptolemyDataStreamClosed();
+}
+
+void GraphWidget::receiveDataStream()
+{
+
+	QString tmp;
+	double d;
+	quint32 it = 0;
+
+	do
+	{
+		if(packetSize == 0)
+		{
+			if(ds.device()->bytesAvailable() >= sizeof(quint32))
+			{
+				ds >> packetSize;
+			}
+
+			else
+				return;
+		}
+
+		if(ds.device()->bytesAvailable() < packetSize)
+			return;
+
+		if(variableCount == 0)
+		{
+
+			ds >> variableCount;
+
+			for(quint32 i = 0; i < variableCount; ++i)
+			{
+				ds >> tmp;
+				tmp = tmp.trimmed();
+				if(variables.find(tmp) != variables.end())
+					delete variables[tmp];
+				variables[tmp] = new VariableData(tmp);
+				//				QMessageBox::information(0, "uu", tmp);
+			}
+
+			packetSize = 0;
+			//			variableCount = 0;
+
+			continue;
+		}
+
+		//		ds >> variableCount;
+
+		for(quint32 i = 0; i < variableCount; ++i)
+		{
+			ds >> tmp;
+			ds >> d;
+			variables[tmp]->push_back(d); 
+		}
+
+
+		packetSize = 0;
+		++it;
+
+	}
+	while(activeSocket->bytesAvailable() >= sizeof(quint32));
+
+	if(activeSocket->state() != QAbstractSocket::ConnectedState)
+		dataStreamClosed();
 }

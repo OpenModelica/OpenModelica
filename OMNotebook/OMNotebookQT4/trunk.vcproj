@@ -43,7 +43,8 @@
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
-				CallingConvention="0"/>
+				CallingConvention="0"
+				DisableSpecificWarnings="4100; 4189; 4101; 4100"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
@@ -112,7 +113,8 @@
 				ProgramDataBaseFileName=".\"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"/>
+				DebugInformationFormat="3"
+				DisableSpecificWarnings="4100"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
@@ -203,6 +205,9 @@
 			</File>
 			<File
 				RelativePath=".\highlighterthread.cpp">
+			</File>
+			<File
+				RelativePath=".\indent.cpp">
 			</File>
 			<File
 				RelativePath="inputcell.cpp">
@@ -546,6 +551,9 @@
 			</File>
 			<File
 				RelativePath=".\imagesizedlg.h">
+			</File>
+			<File
+				RelativePath=".\indent.h">
 			</File>
 			<File
 				RelativePath="inputcell.h">
@@ -983,6 +991,26 @@
 			</File>
 			<File
 				RelativePath=".\res_qt.qrc">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Compiling resources..."
+						CommandLine="$(QTHOME)\bin\rcc.exe -o generatedfiles/qrc_res_qt.cpp res_qt.qrc
+"
+						AdditionalDependencies="res_qt.qrc"
+						Outputs="generatedfiles/qrc_res_qt.cpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Compiling resources..."
+						CommandLine="$(QTHOME)\bin\rcc.exe -o generatedfiles/qrc_res_qt.cpp res_qt.qrc
+"
+						AdditionalDependencies="res_qt.qrc"
+						Outputs="generatedfiles/qrc_res_qt.cpp"/>
+				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter

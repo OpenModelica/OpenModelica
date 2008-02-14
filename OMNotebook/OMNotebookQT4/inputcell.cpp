@@ -1,3 +1,4 @@
+#define QT_NO_DEBUG_OUTPUT
 /*
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.

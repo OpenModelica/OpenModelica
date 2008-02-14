@@ -68,7 +68,8 @@ namespace IAEX
       CellDocumentView(Document *subject) : subject_(subject)
       {
 		 //Connect view to document.
-		 subject_->attach(this);
+
+		  subject_->attach(this);
       }
       
       virtual ~CellDocumentView(){}
@@ -79,7 +80,7 @@ namespace IAEX
 		 {
 			//remove currentwidget.
 		 }
-		 
+		
 		 //Update with new widget.
 		 setCentralWidget(subject_->getState());
       }

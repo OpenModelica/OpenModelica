@@ -161,15 +161,6 @@
 				RelativePath="lineGroup.cpp">
 			</File>
 			<File
-				RelativePath="release\moc_compoundWidget.cpp">
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="debug\moc_compoundWidget.cpp">
 				<FileConfiguration
 					Name="Release|Win32"
@@ -179,7 +170,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="release\moc_graphWidget.cpp">
+				RelativePath="release\moc_compoundWidget.cpp">
 				<FileConfiguration
 					Name="Debug|Win32"
 					ExcludedFromBuild="TRUE">
@@ -191,6 +182,15 @@
 				RelativePath="debug\moc_graphWidget.cpp">
 				<FileConfiguration
 					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="release\moc_graphWidget.cpp">
+				<FileConfiguration
+					Name="Debug|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -215,15 +215,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\debug\moc_legendLabel.cpp">
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath=".\release\moc_legendLabel.cpp">
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -240,9 +231,9 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\release\moc_preferenceWindow.cpp">
+				RelativePath=".\debug\moc_legendLabel.cpp">
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release|Win32"
 					ExcludedFromBuild="TRUE">
 					<Tool
 						Name="VCCLCompilerTool"/>
@@ -265,6 +256,40 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\release\moc_preferenceWindow.cpp">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\debug\moc_variablewindow.cpp">
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\release\moc_variablewindow.cpp">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="Point.cpp">
 			</File>
 			<File
@@ -272,6 +297,9 @@
 			</File>
 			<File
 				RelativePath="variableData.cpp">
+			</File>
+			<File
+				RelativePath=".\variablewindow.cpp">
 			</File>
 		</Filter>
 		<Filter
@@ -421,6 +449,29 @@
 				RelativePath="variableData.h">
 			</File>
 			<File
+				RelativePath=".\variablewindow.h">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="MOC variablewindow.h"
+						CommandLine="$(QTHOME)\bin\moc.exe -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;debug&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot; variablewindow.h -o debug\moc_variablewindow.cpp
+
+"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="debug\moc_variablewindow.cpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="MOC variablewindow.h"
+						CommandLine="$(QTHOME)\bin\moc.exe -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;debug&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot; variablewindow.h -o release\moc_variablewindow.cpp"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="release\moc_variablewindow.cpp"/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath=".\verticalLabel.h">
 			</File>
 		</Filter>
@@ -494,6 +545,28 @@
 "
 						AdditionalDependencies="$(QTHOME)\bin\uic.exe;graphWidget.h"
 						Outputs="ui_graphWindow.h"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\newgraph.ui">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="UIC newgraph.ui"
+						CommandLine="$(QTHOME)\bin\uic.exe newgraph.ui -o ui_newgraph.h
+"
+						AdditionalDependencies="$(QTHOME)\bin\uic.exe"
+						Outputs="ui_newgraph.h"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="UIC newgraph.ui"
+						CommandLine="$(QTHOME)\bin\uic.exe newgraph.ui -o ui_newgraph.h"
+						AdditionalDependencies="$(QTHOME)\bin\uic.exe"
+						Outputs="ui_newgraph.h"/>
 				</FileConfiguration>
 			</File>
 			<File

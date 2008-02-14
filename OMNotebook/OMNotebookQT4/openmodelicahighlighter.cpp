@@ -1,3 +1,4 @@
+#define QT_NO_DEBUG_OUTPUT
 /*
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
@@ -70,6 +71,8 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QtGui/QTextDocument>
 #include <QtGui/QTextLayout>
 #include <QtXml/QDomDocument>
+#include <QMessageBox>
+#include <QDebug>
 
 // IAEX Headers
 #include "openmodelicahighlighter.h"
@@ -129,18 +132,22 @@ namespace IAEX
 	{
 		//2005-12-29 AF, add block signal
 		doc->blockSignals( true );
-		
+
 		QTextBlock block = doc->begin();
 
 		insideString_ = false;
 		insideComment_ = false;
 
 		// loop thought blocks
+
 		while( block.isValid() )
 		{
+
 			highlightBlock(block);
 			block = block.next();
 		}
+
+		
 
 		//2005-12-29 AF, add block signal
 		doc->blockSignals( false );
@@ -156,176 +163,195 @@ namespace IAEX
 	 */
 	void OpenModelicaHighlighter::highlightBlock( QTextBlock block )
 	{
-		QTextLayout *layout = block.layout();
-		const QString text = block.text();
-		QList<QTextLayout::FormatRange> overrides;
 
-		bool wholeBlock = false;
-		int startPos = 0;
-
-		if( insideString_ )
+		try //071115 HE, this crashes too often
 		{
-			int end = text.indexOf( stringEnd_, startPos );
 
-			if( end >= 0 )
-			{ // found end in this block
-				startPos = end + stringEnd_.matchedLength();
-				insideString_ = false;
+			QTextLayout *layout = block.layout();
+			const QString text = block.text();
+			QList<QTextLayout::FormatRange> overrides;
 
-				QTextLayout::FormatRange range;
-				range.start = 0;
-				range.length = startPos;
-				range.format = stringFormat_;
-				overrides << range;
-			}
-			else
-			{ // found no end, syntax highlight whole block
-				wholeBlock = true;
+			bool wholeBlock = false;
+			int startPos = 0;
 
-				QTextLayout::FormatRange range;
-				range.start = 0;
-				range.length = block.length();
-				range.format = stringFormat_;
-				overrides << range;
-			}
-		}
-		else if( insideComment_ )
-		{
-			int end = text.indexOf( commentEnd_, startPos );
+			if( insideString_ )
+			{
 			
-			if( end >= 0 )
-			{ // found end in this block
-				startPos = end + commentEnd_.matchedLength();
-				insideComment_ = false;
+				int end = text.indexOf( stringEnd_, startPos );
 
-				QTextLayout::FormatRange range;
-				range.start = 0;
-				range.length = startPos;
-				range.format = commentFormat_;
-				overrides << range;
-			}
-			else
-			{ // found no end, syntax highlight whole block
-				wholeBlock = true;
+				if( end >= 0 )
+				{ // found end in this block
+			
+					startPos = end + stringEnd_.matchedLength();
+					insideString_ = false;
 
-				QTextLayout::FormatRange range;
-				range.start = 0;
-				range.length = block.length();
-				range.format = commentFormat_;
-				overrides << range;
-			}
-		}
-		
-		
-		if( !wholeBlock )
-		{
-			foreach( QString pattern, mappings_.keys() ) 
-			{
-				QRegExp expression( pattern );
-				int i = text.indexOf( expression, startPos );
-
-				while( i >= 0 ) 
-				{
 					QTextLayout::FormatRange range;
-					range.start = i;
-					range.length = expression.matchedLength();
-					range.format = mappings_[pattern];
+					range.start = 0;
+					range.length = startPos;
+					range.format = stringFormat_;
 					overrides << range;
-
-					i = text.indexOf(expression, i + expression.matchedLength());
-				}
-			}
-		
-
-			while( true )
-			{
-				int firstString = -1;
-				int firstComment = -1;
-				int firstCommentLine = -1;
-
-
-				if( !stringStart_.isEmpty() )
-					firstString = text.indexOf( stringStart_, startPos );
-				if( !commentStart_.isEmpty() )
-					firstComment = text.indexOf( commentStart_, startPos );
-				if( !commentLine_.isEmpty() )
-					firstCommentLine = text.indexOf( commentLine_, startPos );
-
-
-				if( firstString >= 0 && 
-					( (firstString < firstComment) || (firstComment < 0) ) && 
-					( (firstString < firstCommentLine) || (firstCommentLine < 0) ))
-				{
-					int end = text.indexOf( stringEnd_, 
-						firstString + stringStart_.matchedLength() );
-					if( end >= 0 )
-					{
-						startPos = end + stringEnd_.matchedLength();
-
-						QTextLayout::FormatRange range;
-						range.start = firstString;
-						range.length = startPos - firstString;
-						range.format = stringFormat_;
-						overrides << range;
-					}
-					else
-					{ // found no end, syntax highlight to the end of the block
-						QTextLayout::FormatRange range;
-						range.start = firstString;
-						range.length = block.length() - firstString;
-						range.format = stringFormat_;
-						overrides << range;
-						insideString_ = true;
-						break;
-					}
-				}
-				else if( firstComment >= 0 && 
-					( (firstComment < firstString) || (firstString < 0) ) &&
-					( (firstComment < firstCommentLine) || (firstCommentLine < 0) ))
-				{
-					int end = text.indexOf( commentEnd_, 
-						firstComment + commentStart_.matchedLength() );
-					if( end >= 0 )
-					{
-						startPos = end + commentEnd_.matchedLength();
-
-						QTextLayout::FormatRange range;
-						range.start = firstComment;
-						range.length = startPos - firstComment;
-						range.format = commentFormat_;
-						overrides << range;
-					}
-					else
-					{ // found no end, syntax highlight to the end of the block
-						QTextLayout::FormatRange range;
-						range.start = firstComment;
-						range.length = block.length() - firstComment;
-						range.format = commentFormat_;
-						overrides << range;
-						insideComment_ = true;
-						break;
-					}
-				}
-				else if( firstCommentLine >= 0 && 
-					( (firstCommentLine < firstString) || (firstString < 0) ) &&
-					( (firstCommentLine < firstComment) || (firstComment < 0) ))
-				{
-					QTextLayout::FormatRange range;
-					range.start = firstCommentLine;
-					range.length = (block.length() - firstCommentLine);
-					range.format = commentFormat_;
-					overrides << range;
-					break;
 				}
 				else
-					break;
+				{ // found no end, syntax highlight whole block
+					wholeBlock = true;
+			
+
+					QTextLayout::FormatRange range;
+					range.start = 0;
+					range.length = block.length();
+					range.format = stringFormat_;
+					overrides << range;
+				}
 			}
+			else if( insideComment_ )
+			{
+				
+
+				int end = text.indexOf( commentEnd_, startPos );
+
+				if( end >= 0 )
+				{ // found end in this block
+			
+
+					startPos = end + commentEnd_.matchedLength();
+					insideComment_ = false;
+
+					QTextLayout::FormatRange range;
+					range.start = 0;
+					range.length = startPos;
+					range.format = commentFormat_;
+					overrides << range;
+				}
+				else
+				{ // found no end, syntax highlight whole block
+					wholeBlock = true;
+				
+
+					QTextLayout::FormatRange range;
+					range.start = 0;
+					range.length = block.length();
+					range.format = commentFormat_;
+					overrides << range;
+				}
+			}
+
+
+			if( !wholeBlock )
+			{
+			
+				foreach( QString pattern, mappings_.keys() ) 
+				{
+					QRegExp expression( pattern );
+					int i = text.indexOf( expression, startPos );
+
+					while( i >= 0 ) 
+					{
+						QTextLayout::FormatRange range;
+						range.start = i;
+						range.length = expression.matchedLength();
+						range.format = mappings_[pattern];
+						overrides << range;
+
+						i = text.indexOf(expression, i + expression.matchedLength());
+					}
+				}
+
+
+				while( true )
+				{
+					int firstString = -1;
+					int firstComment = -1;
+					int firstCommentLine = -1;
+
+
+					if( !stringStart_.isEmpty() )
+						firstString = text.indexOf( stringStart_, startPos );
+					if( !commentStart_.isEmpty() )
+						firstComment = text.indexOf( commentStart_, startPos );
+					if( !commentLine_.isEmpty() )
+						firstCommentLine = text.indexOf( commentLine_, startPos );
+
+
+					if( firstString >= 0 && 
+						( (firstString < firstComment) || (firstComment < 0) ) && 
+						( (firstString < firstCommentLine) || (firstCommentLine < 0) ))
+					{
+						int end = text.indexOf( stringEnd_, 
+							firstString + stringStart_.matchedLength() );
+						if( end >= 0 )
+						{
+							startPos = end + stringEnd_.matchedLength();
+
+							QTextLayout::FormatRange range;
+							range.start = firstString;
+							range.length = startPos - firstString;
+							range.format = stringFormat_;
+							overrides << range;
+						}
+						else
+						{ // found no end, syntax highlight to the end of the block
+							QTextLayout::FormatRange range;
+							range.start = firstString;
+							range.length = block.length() - firstString;
+							range.format = stringFormat_;
+							overrides << range;
+							insideString_ = true;
+							break;
+						}
+					}
+					else if( firstComment >= 0 && 
+						( (firstComment < firstString) || (firstString < 0) ) &&
+						( (firstComment < firstCommentLine) || (firstCommentLine < 0) ))
+					{
+						int end = text.indexOf( commentEnd_, 
+							firstComment + commentStart_.matchedLength() );
+						if( end >= 0 )
+						{
+							startPos = end + commentEnd_.matchedLength();
+
+							QTextLayout::FormatRange range;
+							range.start = firstComment;
+							range.length = startPos - firstComment;
+							range.format = commentFormat_;
+							overrides << range;
+						}
+						else
+						{ // found no end, syntax highlight to the end of the block
+							QTextLayout::FormatRange range;
+							range.start = firstComment;
+							range.length = block.length() - firstComment;
+							range.format = commentFormat_;
+							overrides << range;
+							insideComment_ = true;
+							break;
+						}
+					}
+					else if( firstCommentLine >= 0 && 
+						( (firstCommentLine < firstString) || (firstString < 0) ) &&
+						( (firstCommentLine < firstComment) || (firstComment < 0) ))
+					{
+						QTextLayout::FormatRange range;
+						range.start = firstCommentLine;
+						range.length = (block.length() - firstCommentLine);
+						range.format = commentFormat_;
+						overrides << range;
+						break;
+					}
+					else
+						break;
+				}
+			}
+
+			layout->setAdditionalFormats( overrides );
+		}
+		catch(...)
+		{
+			qDebug() << "openModelicaHighligter: crash" << endl;
 		}
 
-		layout->setAdditionalFormats( overrides );
 		// 2006-05-11 AF, removed
 		//const_cast<QTextDocument *>(block.document())->markContentsDirty(
-        //block.position(), block.length());
+		//block.position(), block.length());
 	}
 
 

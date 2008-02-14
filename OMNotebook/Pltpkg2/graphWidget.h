@@ -90,6 +90,7 @@ public:
 public slots:
 	void getData();
 	void acCon();
+	void drawGraphics();
 	void drawLine(QDataStream& ds);
 	void drawPoint(QDataStream& ds);
 	void drawText(QDataStream& ds);
@@ -98,9 +99,12 @@ public slots:
 	void readPtolemyDataStream();
 	void ptolemyDataStreamClosed();
 	void plotPtolemyDataStream();
+	void dataStreamClosed();
+	void graphicsStreamClosed();
+	void receiveDataStream();
 
 	void setLogarithmic(bool);
-	void setServerState(bool listen);
+	void setServerState(bool listen, bool graphics = false);
 	void setStretch(bool b) {stretch = b;}
 
 	void newWindow();
@@ -151,6 +155,7 @@ public slots:
 
 	void setArea(const QRectF& r);
 	void showPreferences();
+	void showVariables();
 	void setAntiAliasing(bool);
 	void setHold(bool);
 	void setHold(QDataStream& ds);
@@ -158,6 +163,7 @@ public slots:
 	void originalZoom();
 	void addFocusBox();
 	void syncCall();
+	void enableServers(bool);
 
 signals:
 	void showPreferences2();
@@ -172,6 +178,8 @@ signals:
 	void holdSet(bool);
 	void newExpr(QString);
 	void showGraphics();
+	void showVariableButton(bool);
+//	void serverState(bool);
 
 public:
 	GraphScene* graphicsScene;
@@ -186,16 +194,16 @@ protected:
 	void showEvent(QShowEvent* event);
 	quint32 blockSize;
 
-	QTcpServer* server;
-	QTcpSocket* activeSocket;
-	QDataStream ds;
+	QTcpServer* server, *graphicsServer;
+	QTcpSocket* activeSocket, *graphicsSocket;
+	QDataStream ds, ds2;
 
 	int tmpint;
 
 	int nr;
 	bool getNames;
 	quint32 variableCount;
-	quint32 packetSize;
+	quint32 packetSize, packetSize2;
 
 	void createGrid(bool numbersOnly = false);
 	qreal gridDist(qreal &min, qreal &max, qreal dist = -1);

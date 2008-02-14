@@ -1,3 +1,5 @@
+#define QT_NO_DEBUG_OUTPUT
+
 /*
 ------------------------------------------------------------------------------------
 This file is part of OpenModelica.
@@ -81,6 +83,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "documentview.h"
 #include "xmlparser.h"
 #include "cursorposvisitor.h"
+#include "notebook.h"
 
 
 namespace IAEX
@@ -145,6 +148,7 @@ namespace IAEX
 		lastClickedCell_(0)
 	{
 		mainFrame_ = new QFrame();
+
 		mainFrame_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, 
 			QSizePolicy::Expanding));
 
@@ -202,6 +206,8 @@ namespace IAEX
 			++i_iter;
 		}
 	}
+
+
 
 	/*! 
 	 * \author Ingemar Axelsson and Anders Fernström
@@ -301,6 +307,7 @@ namespace IAEX
 		//?? Should this be done by the factory?
 		current_ = dynamic_cast<CellCursor*>(factory_->createCell("cursor", workspace_));
 
+		
 		//Make the cursor visible at all time.
 		//QObject::connect(current_, SIGNAL(positionChanged(int, int, int, int)),
 		//	vp_, SLOT(ensureVisible(int, int, int, int)));
@@ -717,9 +724,9 @@ namespace IAEX
 	 *
 	 * \param filepath The linkpath to another docuement
 	 */
-	void CellDocument::textcursorInsertLink( QString filepath )
+	void CellDocument::textcursorInsertLink( QString filepath, QTextCursor& cursor )
 	{
-		executeCommand( new TextCursorInsertLink( filepath ));
+		executeCommand( new TextCursorInsertLink( filepath, cursor ));
 	}
 
 	/*! 
@@ -815,13 +822,14 @@ namespace IAEX
 					// cell height
 					int height = cursor->currentCell()->height();
 
-					
+#ifndef QT_NO_DEBUG_OUTPUT
+
 					cout << "*********************************************" << endl;
 					cout << "SCROLL TOP: " << scrollTop << endl;
 					cout << "SCROLL BOTTOM: " << scrollBottom << endl;
 					cout << "CELL CURSOR: " << pos << endl;
 					cout << "CELL HEIGHT: " << height << endl;
-					
+#endif					
 					
 					
 
@@ -836,7 +844,9 @@ namespace IAEX
 					else if( pos > (scroll_->widget()->height() - 2 ) &&
 						scrollBottom > (scroll_->widget()->height() - 2 ) )
 					{
+#ifndef QT_NO_DEBUG_OUTPUT
 						cout << "END OF DOCUMENT, widget height(" << scroll_->widget()->height() << ")" << endl;
+#endif
 						// 2006-03-03 AF, ignore if cursor at end of document
 						return;
 					}
@@ -870,7 +880,9 @@ namespace IAEX
 						
 						if( pos >= scroll_->verticalScrollBar()->maximum() )
 						{
+#ifndef QT_NO_DEBUG_OUTPUT
 							cout << "more then max!" << endl;
+#endif
 							scroll_->verticalScrollBar()->triggerAction( QAbstractSlider::SliderToMaximum );
 							//pos = scroll_->verticalScrollBar()->maximum();
 						
@@ -881,7 +893,9 @@ namespace IAEX
 						else
 						{
 							// set new scrollvalue
+#ifndef QT_NO_DEBUG_OUTPUT
 							cout << "DOWN: old(" << scroll_->verticalScrollBar()->value() << "), new(" << pos << ")" << endl;
+#endif
 							scroll_->verticalScrollBar()->setValue( pos );
 						}
 					}
@@ -1377,6 +1391,13 @@ namespace IAEX
 	void CellDocument::attach(DocumentView *d)
 	{
 		observers_.push_back(d);
+		NotebookWindow *w = dynamic_cast<NotebookWindow*>(d);
+		connect(this, SIGNAL(copyAvailable(bool)), w->copyAction, SLOT(setEnabled(bool)));
+		connect(this, SIGNAL(copyAvailable(bool)), w->cutAction, SLOT(setEnabled(bool)));
+		connect(this, SIGNAL(undoAvailable(bool)), w->undoAction, SLOT(setEnabled(bool)));
+		connect(this, SIGNAL(redoAvailable(bool)), w->redoAction, SLOT(setEnabled(bool)));
+
+
 	}
 
 	void CellDocument::detach(DocumentView *d)
@@ -1409,5 +1430,15 @@ namespace IAEX
 	void CellDocument::showHTML(bool b)
 	{
 		getCursor()->currentCell()->viewExpression(b);
+
 	}
+
+
+	void CellDocument::setAutoIndent2(bool b)
+	{
+		emit setAutoIndent(b);
+		autoIndent = b;
+	}
+
+
 };

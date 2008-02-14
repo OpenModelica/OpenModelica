@@ -57,6 +57,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <exception>
 #include <stdexcept>
 #include <sstream>
+#include <cmath>
 
 //QT Headers
 #include <QtCore/QDir>
@@ -75,6 +76,9 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QAction>
 #include <QActionGroup>
 #include <QTextDocumentFragment>
+#include <QTextStream>
+#include <QRegExp>
+#include <QPushButton>
 
 //IAEX Headers
 #include "graphcell.h"
@@ -85,6 +89,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "omcinteractiveenvironment.h"
 #include "../Pltpkg2/graphWidget.h"
 #include "../Pltpkg2/compoundWidget.h"
+#include "indent.h"
 
 #include "evalthread.h"
 
@@ -119,12 +124,17 @@ namespace IAEX
 	MyTextEdit2::MyTextEdit2(QWidget *parent)
 		: QTextBrowser(parent),
 		inCommand(false),
-		stopHighlighter(false)
+		stopHighlighter(false), autoIndent(true)
 	{
+
 	}
 
 	MyTextEdit2::~MyTextEdit2()
 	{
+		for(QMap<int, IndentationState*>::iterator i = indentationStates.begin(); i != indentationStates.end(); ++i)
+		{
+			delete i.value();
+		}
 	}
 
 	bool MyTextEdit2::isStopingHighlighter()
@@ -160,6 +170,7 @@ namespace IAEX
 		if(state != ERROR)
 			emit setState(MODIFIED);
 
+
 	}
 
 	/*! 
@@ -178,6 +189,8 @@ namespace IAEX
 
 	void MyTextEdit2::focusInEvent(QFocusEvent* event)
 	{
+		emit undoAvailable(document()->isUndoAvailable());
+		emit redoAvailable(document()->isRedoAvailable());
 		setModified();
 		QTextBrowser::focusInEvent(event);
 	}
@@ -193,6 +206,7 @@ namespace IAEX
 	 */
 	void MyTextEdit2::keyPressEvent(QKeyEvent *event )
 	{
+		emit showVariableButton(false);
 		// EVAL, key: SHIFT + RETURN || SHIFT + ENTER
 		if( event->modifiers() == Qt::ShiftModifier && 
 			(event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) )
@@ -294,6 +308,61 @@ namespace IAEX
 			event->ignore();
 			emit forwardAction( 3 );
 		}
+		else if(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_W)
+		{
+			inCommand = false;
+			stopHighlighter = false;
+			indentText();
+			event->ignore();
+//			QTextBrowser::keyPressEvent( event );
+			//			update();
+			
+		}
+
+		else if(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_E)
+		{
+			inCommand = false;
+			stopHighlighter = false;
+//			QMessageBox::information(0, "uu6", QVariant(textCursor().block().userState()).toString());
+//			Indent a(toPlainText());
+//			setText(a.indentedText(&indentationStates));
+//
+//			int i = 1;
+//			for(QTextBlock b =this->document()->begin(); b != this->document()->end(); b = b.next())
+//			{
+//				b.setUserState(++i);
+////				if(i > 5)
+////					QMessageBox::information(0,  "uu5", QVariant(b.previous().userState()).toString());
+//				//				QMessageBox::information(0, "uu5", b.text());
+//			}
+
+						indentText();
+//			event->ignore();
+//			QTextBrowser::keyPressEvent( event );
+			//			update();
+			
+		}
+
+		else if(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_K)
+		{
+			inCommand = false;
+			stopHighlighter = true;
+			QTextCursor tc(textCursor());
+			int i = toPlainText().indexOf(QRegExp("\\n|$"), tc.position());
+
+			if(i -tc.position() > 0)
+                tc.setPosition(i, QTextCursor::MoveMode::KeepAnchor);
+			else
+				tc.setPosition(i +1, QTextCursor::MoveMode::KeepAnchor);
+
+			tc.insertText("");
+//			int i = toPlainText().indexOf("\n", tc.position());
+
+
+//			event->ignore();
+			QTextBrowser::keyPressEvent( event );
+//						update();
+		}
 		// TAB
 		else if( event->key() == Qt::Key_Tab )
 		{
@@ -301,6 +370,146 @@ namespace IAEX
 			stopHighlighter = false;
 
             textCursor().insertText( "  " );
+		}
+		else if( event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return )
+		{
+
+			if(autoIndent)
+			{
+				/*
+				QString prevLine, currentLine=toPlainText().left(textCursor().position());
+				int i = currentLine.lastIndexOf("\n");
+				int i2 = currentLine.lastIndexOf("\n", i-1);
+				prevLine = currentLine.mid(i2+1, i-i2-1);
+				currentLine = currentLine.right(currentLine.size() - i -1); 
+
+				int currentLevel = currentLine.indexOf(QRegExp("\\S|$"));
+				int prevLevel = prevLine.indexOf(QRegExp("\\S|$"));
+				int ilevel = 2*indentationLevel(currentLine, true);
+
+				if(currentLevel > prevLevel && ilevel < 0)
+				{
+				QTextCursor t(textCursor());
+				t.clearSelection();
+				t.setPosition(i+1);
+				t.setPosition(i+1 +currentLevel-prevLevel-2 -ilevel, QTextCursor::MoveMode::KeepAnchor);
+				if(t.selection().toPlainText().indexOf(QRegExp("\\S"))< 0)
+				t.insertText("");
+				//				currentLevel += ilevel;
+				currentLevel -= (currentLevel -prevLevel -2 + -ilevel);
+				}
+				else if(currentLevel == prevLevel && ilevel <0)
+				{
+				QTextCursor t(textCursor());
+				t.clearSelection();
+				t.setPosition(i+1);
+				t.setPosition(i+1 -ilevel, QTextCursor::MoveMode::KeepAnchor);
+				if(t.selection().toPlainText().indexOf(QRegExp("\\S"))< 0)
+				t.insertText("");
+				currentLevel += ilevel;
+				}
+				else if(ilevel > 0)
+				{
+				currentLevel += ilevel;
+				}
+
+				if(currentLevel > 1 && lessIndented(currentLine))
+				{
+				QTextCursor t(textCursor());
+				t.clearSelection();
+				t.setPosition(i+1);
+				t.setPosition(i+1 +currentLevel-prevLevel +2, QTextCursor::MoveMode::KeepAnchor);
+				if(t.selection().toPlainText().indexOf(QRegExp("\\S"))< 0)
+				t.insertText("");
+
+				currentLevel = prevLevel;
+				}
+				//			textCursor().insertText(QString(currentLevel +2*indentationLevel(currentLine, false), ' '));
+				QTextBrowser::keyPressEvent(event);
+				textCursor().insertText(QString(currentLevel, ' '));
+				}
+				else
+				QTextBrowser::keyPressEvent(event);
+				*/
+
+				//			QMessageBox::information(0, "uu", textCursor().block().text());
+				QTextCursor t(textCursor());
+				QString tmp, tmp2;
+//				tmp = t.block().text();
+				int k2 = t.blockNumber();
+				QTextBlock b = t.block();
+				int k = b.userState();
+				int prevLevel = b.text().indexOf(QRegExp("\\S"));//tmp.indexOf(QRegExp("\\S")) ;
+
+				while(k2 >= 0 && !indentationStates.contains(k))
+				{
+					tmp = b.text() + "\n" + tmp;
+					b = b.previous();
+					--k2;
+					k = b.userState();
+//					QMessageBox::information(0, "uu", QVariant(k).toString());
+				}
+//				QMessageBox::information(0, "uu", QVariant(k).toString());
+//				QMessageBox::information(0, "uu2", tmp);
+				//				Indent i(toPlainText().left(t.position()));
+				Indent i(tmp);
+				if(indentationStates.contains(k))
+				{
+					IndentationState* s = indentationStates[k];
+					i.ism.level = s->level;
+					i.ism.equation = s->equation;
+					i.ism.equationSection = s->equationSection;
+					i.ism.lMod = s->lMod;
+					i.ism.loopBlock = s->loopBlock;
+					i.ism.nextMod = s->nextMod;
+					i.ism.skipNext = s->skipNext;
+					i.ism.state = s->state;
+					i.current = s->current;
+//					QMessageBox::information(0, "uu3", s->current);
+					i.next = s->next;
+
+				}
+
+
+
+
+			//}
+				//			tmp = tmp.right(tmp.size() - tmp.lastIndexOf("\n"));
+
+				i.indentedText();
+
+//				QMessageBox::information(0, "uu1", QString("%1, %2").arg(prevLevel).arg(2*i.level()));
+//				if(prevLevel >= 0 && 2*(i.level()) != prevLevel )
+				if(prevLevel > 2*i.level())
+				{
+					int j = t.position();
+/*
+					t.setPosition(t.block().position());
+					QMessageBox::information(0, "uu3", t.block().text());
+					t.setPosition(t.block().position() + max(0,t.block().text().indexOf(QRegExp("\\S"))), QTextCursor::KeepAnchor);
+					t.insertText(QString(2*i.level(), '_'));
+					QMessageBox::information(0, "uu", t.selection().toPlainText());
+					//					t.setPosition(t.block().position() + t.block().text().size());
+
+					t.setPosition(t.block().position() + t.block().text().size()+1);
+*/
+					
+					t.setPosition(t.block().position());
+					t.setPosition(t.block().position() + prevLevel-2*(i.level()),QTextCursor::KeepAnchor);
+					if(!t.selection().toPlainText().trimmed().size())
+						t.insertText("");
+					//			t.setPosition(t.block().position() + t.block().length());
+					t.setPosition(t.block().position() + t.block().length() -1);
+					
+				}
+
+				QTextBrowser::keyPressEvent(event);
+				t.insertText(QString(2*i.level(), ' '));
+
+			}		
+			else
+                QTextBrowser::keyPressEvent(event);
+
 		}
 		else
 		{
@@ -310,9 +519,14 @@ namespace IAEX
 			QTextBrowser::keyPressEvent( event );
 		}
 
-		
+
 		updatePosition();
 
+	}
+
+	void MyTextEdit2::setAutoIndent(bool b)
+	{
+		autoIndent = b;
 	}
 
 	void MyTextEdit2::setModified()
@@ -454,13 +668,19 @@ namespace IAEX
 		createOutputCell();
 		createCompoundWidget();		
 
+		connect(compoundwidget->gwMain, SIGNAL(showVariableButton(bool)), this, SLOT(showVariableButton(bool)));
+		connect(input_, SIGNAL(showVariableButton(bool)), this, SLOT(showVariableButton(bool)));
+		connect(variableButton, SIGNAL(clicked()), compoundwidget->gwMain, SLOT(showVariables()));
  
 		connect(compoundwidget->gwMain, SIGNAL(newExpr(QString)), this, SLOT(setExpr(QString)));
 		connect(this, SIGNAL(newExpr(QString)), compoundwidget->gwMain, SLOT(setExpr(QString)));
 		connect(compoundwidget->gwMain, SIGNAL(showGraphics()), this, SLOT(showGraphics()));
-
+		
 		connect(output_, SIGNAL(anchorClicked(const QUrl&)), input_, SLOT(goToPos(const QUrl&)));
 
+		showGraph = false;
+
+		imageFile=0;
 	}
 
 	/*! 
@@ -494,6 +714,8 @@ namespace IAEX
 
 		delete input_;
 		delete output_;
+		if(imageFile)
+			delete imageFile;
 		//delete syntaxHighlighter_;
 	}
 
@@ -515,8 +737,20 @@ namespace IAEX
 	void GraphCell::createGraphCell()
 	{
 		input_ = new MyTextEdit2( mainWidget() );
-		layout_->addWidget( input_, 1, 1 );
+		variableButton = new QPushButton("D",input_);
+		variableButton->setToolTip("New simulation data available");
 
+//		QHBoxLayout *lo = new QHBoxLayout();
+//		lo->addItem(new QSpacerItem(1, 1), 1, 1);
+		
+//		lo->addWidget(l, 1, Qt::AlignRight);
+//		input_->setLayout(lo);
+		//		l->setFrameShape(QFrame::Box);
+		variableButton->setMaximumWidth(25);
+		//l->setFrameStyle(QFrame::Sunken | QFrame::Box);
+		layout_->addWidget( input_, 1, 1 );
+		layout_->addWidget(variableButton, 1, 2);
+		variableButton->hide();
 		// 2006-03-02 AF, Add a chapter counter
 		createChapterCounter();
 
@@ -536,6 +770,7 @@ namespace IAEX
 //		palette.setColor(input_->backgroundRole(), QColor(Qt::green));
 		input_->setPalette(palette);
 
+		variableButton->setPalette(palette);
 		// is this needed, don't know /AF
 		input_->installEventFilter(this);
 		
@@ -573,6 +808,14 @@ namespace IAEX
 
 	}
 
+
+	void GraphCell::showVariableButton(bool b)
+	{
+		if(b)
+			variableButton->show();
+		else
+			variableButton->hide();
+	}
 
 	/*! 
 	 * \author Anders Fernström and Ingemar Axelsson
@@ -636,6 +879,127 @@ namespace IAEX
 
 
 
+
+	}
+
+	bool MyTextEdit2::lessIndented(QString s)
+	{
+		QRegExp l("\\b(equation|algorithm|public|protected|else|elseif)\\b");
+
+		return s.indexOf(l) >= 0;
+	}
+	int MyTextEdit2::indentationLevel(QString s, bool includeNegative)
+	{
+		QRegExp e1("\\b(model|class|type|connector|block|record|function|record|for|when|package|if)\\b");
+		QRegExp e1b("end\\s+(model|class|type|connector|block|record|function|record|for|when|package|if)\\b");
+		QRegExp e2("\\b(end|then)\\b");
+
+		QRegExp newLineEnd("^end\\b");
+
+//		return s.count(e1) - includeNegative?(s.count(e2) + s.count(e1b)):0;
+		if(includeNegative)
+			return s.count(e1) - s.count(e2) - s.count(e1b);// - s.count(lessIndented);
+		else
+			return s.count(e1) - s.count(e1b);//- s.count(lessIndented);
+	}
+
+	void MyTextEdit2::indentText()
+	{
+
+		
+			Indent a(toPlainText());
+			setText(a.indentedText(&indentationStates));
+
+			int i = 1;
+			for(QTextBlock b =this->document()->begin(); b != this->document()->end(); b = b.next())
+			{
+				b.setUserState(++i);
+//				if(i > 5)
+//					QMessageBox::information(0,  "uu5", QVariant(b.previous().userState()).toString());
+				//				QMessageBox::information(0, "uu5", b.text());
+			}
+		
+		
+		
+		
+		
+		
+		
+		//		stopHighlighter = true;
+	
+//		int level = 0;
+//		QString s =  toPlainText();
+//
+//		QTextStream ts(&s);
+//		QRegExp e1("\\b(model|class|type|connector|block|record|function|record|for|when|package|if)\\b");
+//		QRegExp e1b("end\\s+(model|class|type|connector|block|record|function|record|for|when|package|if)\\b");
+//		QRegExp e1c("\\b(else\\s+if|else\\s+[\\S]+[\\s]*;|then\\s+[\\S]+[\\s]*;)\\b");
+//		QRegExp e1c2("\\b(else\\b[\\S]+[\\s]*;)\\b");
+//		QRegExp e1c3("b\\s+else");
+//		//QRegExp e1c3("\\b(else\\bif|else\\b[\\S]+[\\s]*;|then\\b[\\S]+[\\s]*;)\\b");
+//
+//		e1c.setMinimal(true);
+//		QRegExp e2("\\bend\\b");
+//		QRegExp lessIndented("\\b(equation|algorithm|public|protected|else|elseif)\\b");
+//		QRegExp newLineEnd("^end\\b");
+//		QString tmp, res;
+//		int levelMod = 0;
+//		QMessageBox::information(0, "uu", QVariant(QString("a b else ; ").indexOf(e1c3)).toString());
+//		while(!ts.atEnd())
+//		{
+//			level=max(0, level);
+//			levelMod = 0;
+//			tmp = ts.readLine();
+//
+//
+//			if(tmp.trimmed().left(2) == QString("//"))
+//			{
+////				tmp = QString( 2*(level + levelMod), ' ') + tmp + "\n";
+//				res = res +tmp +"\n";
+//				continue;
+//			}
+//			tmp = tmp.trimmed();
+//
+//			if(tmp.indexOf(lessIndented) >= 0)
+//				--levelMod;
+//
+////			if(tmp.left(2) != QString("//"))
+//
+////			level -= tmp.count(newLineEnd);
+//			if(tmp.indexOf(newLineEnd) >= 0)
+//				--levelMod;
+//
+//			/*
+//			if(tmp.indexOf(newLineEnd) >= 0)
+//				levelMod = -1;
+//			else
+//				levelMod = 0;
+//*/
+////			QMessageBox::information(0, tmp, QVariant(level+levelMod).toString());
+//			//			QMessageBox::information(0, "uu",QString("_") + tmp + "_");
+//			tmp = QString( 2*(level + levelMod), ' ') + tmp + "\n";
+////			QMessageBox::information(0, "uu",QString("_") + tmp + "_");
+//
+////			if(tmp.left(2) != QString("//"))
+//				level = level + tmp.count(e1) - tmp.count(e2) - tmp.count(e1b) -tmp.count(e1c);
+////				if(tmp.indexOf(newLineEnd) >= 0)
+////					++level ; 
+//
+//			res += tmp;
+//		}
+//		
+//		QTextCursor t(textCursor());
+////		t.setPosition(0);
+////		t.select(QTextCursor::SelectionType::Document);
+//		
+//		setText(res.trimmed());
+//		
+
+//		t.insertText(res);
+		emit textChanged();
+	//		setText(res.trimmed());
+
+//		stopHighlighter = false;
 
 	}
 	/*! 
@@ -842,7 +1206,9 @@ namespace IAEX
 
 		// 2005-12-16 AF, unblock signals and tell highlighter to highlight
 		input_->document()->blockSignals(false);
-//		input_->document()->setHtml( input_->toHtml() );
+
+//		input_->document()->setHtml( input_->toHtml() ); //uu
+//		input_->document()->setPlainText(tmp);
 
 		bool b = input_->document()->isEmpty();
 /*
@@ -1052,23 +1418,30 @@ namespace IAEX
 	 */
 	void GraphCell::setReadOnly(const bool readonly)
 	{
-		if( readonly )
+		try
 		{
-			QTextCursor cursor = input_->textCursor();
-			cursor.clearSelection();
-			input_->setTextCursor( cursor );
+			if( readonly )
+			{
+				QTextCursor cursor = input_->textCursor();
+				cursor.clearSelection();
+				input_->setTextCursor( cursor );
 
-			cursor = output_->textCursor();
-			cursor.clearSelection();
-			output_->setTextCursor( cursor );
+				cursor = output_->textCursor();
+				cursor.clearSelection();
+				output_->setTextCursor( cursor );
 
-			// 2006-03-02 AF, clear selection in chapter counter
-			cursor = chaptercounter_->textCursor();
-			cursor.clearSelection();
-			chaptercounter_->setTextCursor( cursor );
+				// 2006-03-02 AF, clear selection in chapter counter
+				cursor = chaptercounter_->textCursor();
+				cursor.clearSelection();
+				chaptercounter_->setTextCursor( cursor );
+			}
+
+			input_->setReadOnly(readonly);
 		}
-
-		input_->setReadOnly(readonly);
+		catch(...)
+		{
+			qDebug() << "setReadOnly: crash" << endl;
+		}
 	}
 
 	/*!
@@ -1108,7 +1481,8 @@ namespace IAEX
 			if( evaluated_ )
 			{
 				output_->show();
-//				compoundwidget->show();
+				if(showGraph)
+					compoundwidget->show();
 			}
 		}
 
@@ -1284,6 +1658,7 @@ namespace IAEX
 	void GraphCell::showGraphics()
 	{
 		compoundwidget->show();
+		showGraph = true;
 
 
 		if(!compoundwidget->isVisible())
@@ -1411,7 +1786,7 @@ namespace IAEX
 				setClosed(false);
 
 //				showGraphics();
-		if(!compoundwidget->gwMain->getServerState())
+//		if(!compoundwidget->gwMain->getServerState())
 			compoundwidget->gwMain->setServerState(true);
 
 /*
@@ -1931,7 +2306,7 @@ namespace IAEX
 				actions.push_back(a);				
 
 /*
-				QMessageBox::information(0, "uu2", "ii");
+
 
 				f.setAnchorName(e.cap(2));
 				output_->textCursor().setPosition(p);
@@ -2108,8 +2483,8 @@ namespace IAEX
 	 */
 	void GraphCell::addToHighlighter()
 	{
+//		QMessageBox::information(0, "uu3", "addToHighlighter");
 		emit textChanged(true);
-
 		if( input_->toPlainText().isEmpty() )
 			return;
 
@@ -2118,6 +2493,8 @@ namespace IAEX
 		// text (backspace or delete).
 		if( dynamic_cast<MyTextEdit2 *>(input_)->isStopingHighlighter() )
 			return;
+
+//		QMessageBox::information(0,"uu3", "add2");
 		
 		HighlighterThread *thread = HighlighterThread::instance();
 		thread->addEditor( input_ );

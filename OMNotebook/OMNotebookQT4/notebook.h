@@ -178,6 +178,9 @@ namespace IAEX
 		void textCellsAction();
 		void updateRecentFiles(QString);
 
+		void indent();
+		void setAutoIndent(bool);
+		void eval();
 	private:
 		void createFileMenu();
 		void createEditMenu();
@@ -220,6 +223,7 @@ namespace IAEX
 		// 2005-11-21 AF, added for export pure text
 		QMenu *exportMenu;
 
+		QMenu *indentMenu;
 		// 2005-10-07 AF, Porting, Added this actions
 		// 2005-11-03/04/07 AF, Added some more for text setting changes
 		QActionGroup *stylesgroup;
@@ -240,11 +244,15 @@ namespace IAEX
 		QAction *printAction;				// Added 2005-12-19 AF
 		QAction *closeFileAction;
 		QAction *quitWindowAction;
-
+		QAction *indentAction;
+		QAction *autoIndentAction;
+		QAction *evalAction;
+public:
 		QAction *undoAction;
 		QAction *redoAction;
 		QAction *cutAction;
 		QAction *copyAction;
+private:
 		QAction *pasteAction;
 		QAction *findAction;				// Changed 2006-08-24 AF
 		QAction *replaceAction;				// Added 2006-08-24 AF

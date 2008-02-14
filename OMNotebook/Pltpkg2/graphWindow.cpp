@@ -78,6 +78,9 @@ GraphWindow::GraphWindow(QWidget* parent): QMainWindow(parent)
 
 	connect(actionPreferences, SIGNAL(triggered()), compoundWidget, SLOT(showPreferences()));
 
+	connect(actionActive, SIGNAL(toggled(bool)), graphicsView->gwMain, SLOT(enableServers(bool)));
+	connect(graphicsView->gwMain, SIGNAL(serverState(bool)), actionActive, SLOT(setChecked(bool)));
+
 	QActionGroup* ag = new QActionGroup(this);
 	ag->addAction(actionPan);
 	ag->addAction(actionSelect);

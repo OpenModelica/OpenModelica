@@ -60,6 +60,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 // forward declaration
 class QTextEdit;
 class QTextTable;
+class QPrinter;
 
 
 using namespace std;
@@ -69,7 +70,7 @@ namespace IAEX
 	{
 
 	public:
-		PrinterVisitor( QTextDocument* doc );
+		PrinterVisitor( QTextDocument* doc, QPrinter* printer );
 		virtual ~PrinterVisitor();
 
 		virtual void visitCellNodeBefore(Cell *node);
@@ -96,6 +97,7 @@ namespace IAEX
 		bool ignore_;
 		bool firstChild_;
 		CellGroup *closedCell_;
+		QPrinter* printer_;
 
 		int currentTableRow_;
 	};

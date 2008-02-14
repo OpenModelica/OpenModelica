@@ -255,14 +255,15 @@ namespace IAEX
 	class TextCursorInsertLink : public Command
 	{
 	public:
-		TextCursorInsertLink( QString filepath )
-			: filepath_(filepath){}
+		TextCursorInsertLink( QString filepath, QTextCursor& cursor_ )
+			: filepath_(filepath), cursor(cursor_){}
 		virtual ~TextCursorInsertLink(){}
 		virtual QString commandName(){ return QString("TextCursorInsertLink"); }
 		void execute();
 
 	private:
 		QString filepath_;
+		QTextCursor cursor;
 	};
 }
 

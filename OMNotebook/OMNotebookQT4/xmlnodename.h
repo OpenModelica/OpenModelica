@@ -113,7 +113,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #define XML_GRAPHCELL_GRIDMAJORY "MajorY"
 #define XML_GRAPHCELL_GRIDMINORX "MinorX"
 #define XML_GRAPHCELL_GRIDMINORY "MinorY"
-
+#define XML_GRAPHCELL_SHOWGRAPH "ShowGraph"
 #define XML_GRAPHCELL_SHAPETYPE "Type"
 #define XML_GRAPHCELL_SHAPEDATA "Shapedata"
 

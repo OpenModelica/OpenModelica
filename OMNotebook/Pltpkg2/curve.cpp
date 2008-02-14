@@ -65,6 +65,9 @@ Curve::~Curve()
 {
 	delete line;
 	delete label;
+
+//	foreach(Point* p, dataPoints)
+//			delete p;
 	dataPoints.clear();
 }
 
