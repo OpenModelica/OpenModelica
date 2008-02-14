@@ -7939,7 +7939,7 @@ algorithm
   outExp:=
   matchcontinue (inExp1,inExp2,inExp3)
     local
-      Exp crexp,rhs,lhs,res,res_1,cr,e1,e2,e3;
+      Exp crexp,rhs,lhs,res,res_1,cr,e1,e2,e3,tb,fb,cond;
       ComponentRef cr1,cr2;
     case ((crexp as CREF(componentRef = cr1)),rhs,CREF(componentRef = cr2)) /* lhs, rhs, solve for Special case when already solved, cr1 = rhs
 	    otherwise division by zero when dividing with derivative */ 
@@ -7961,6 +7961,12 @@ algorithm
         res_1 = simplify1(res);
       then
         res_1;
+    case (e1,IFEXP(cond,tb,fb),e2)
+      equation
+        res = solve(e1,tb,e2);
+        res_1 = solve(e1,fb,e2);
+        then    
+          IFEXP(cond,res,res_1);
     case (e1,e2,e3)
       equation 
         Debug.fprint("failtrace", "solve failed\n");

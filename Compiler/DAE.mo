@@ -4107,8 +4107,15 @@ algorithm
         result;
     case (DAE(elementLst = (el :: rest)))
       equation 
+        subresult = ifEqInWhenToExpr(el);
         DAE(res2) = transformIfEqToExpr(DAE(rest));
-        res1 = ifEqToExpr(el);
+        res = subresult::res2;
+      then
+        DAE(res);        
+    case (DAE(elementLst = (el :: rest)))
+      equation 
+        DAE(res2) = transformIfEqToExpr(DAE(rest));
+        res1 = ifEqToExprCommonLHS(el);
         res = listAppend(res1, res2);
       then
         DAE(res);
@@ -4119,6 +4126,126 @@ algorithm
         DAE((el :: res));
   end matchcontinue;
 end transformIfEqToExpr;
+
+protected function ifEqInWhenToExpr "Transforms if-equations inside when-clauses to if expressions."
+  input Element inElement;
+  output Element outElement;
+algorithm
+  outElement:=
+  matchcontinue (inElement)
+    local
+      Exp.Exp cond;
+      list<Element> equations2,res;
+      Element elseElement,elseElementRes;
+    case (WHEN_EQUATION(condition = cond, equations = equations2,elsewhen_ = NONE))
+      equation 
+        DAE(res) = transformIfEqToExpr(DAE(equations2));
+      then
+        WHEN_EQUATION(cond,res,NONE);
+    case (WHEN_EQUATION(condition = cond, equations = equations2,elsewhen_ = SOME(elseElement)))
+      equation 
+        DAE(res) = transformIfEqToExpr(DAE(equations2));
+        elseElementRes = ifEqInWhenToExpr(elseElement);
+      then
+        WHEN_EQUATION(cond,res,SOME(elseElementRes));
+  end matchcontinue;
+end ifEqInWhenToExpr;
+
+protected function matchCommonLHS ""
+  input list<Element> inTrueBranch;
+  input list<Element> inFalseBranch;
+  output list<Element> outTrueBranch;
+  output list<Element> outFalseBranch;
+algorithm
+  (outTrueBranch,outFalseBranch) :=
+  matchcontinue (inTrueBranch,inFalseBranch)
+    local
+      list<Element> res1,res2;
+      list<Element> trueBranch,falseBranch,tb1,tb2,fb1,fb2;
+      list<Element> sameLeftHandSide;
+    case (trueBranch, falseBranch)
+      equation
+//        print("------\n");
+//        print(dumpElementsStr(trueBranch));
+//        print(dumpElementsStr(falseBranch));
+        sameLeftHandSide = Util.listIntersectionOnTrue(trueBranch, falseBranch, sameLHS);
+        tb1 = Util.listMap2(sameLeftHandSide, Util.listGetMemberOnTrue, trueBranch,sameLHS);
+        fb1 = Util.listMap2(sameLeftHandSide, Util.listGetMemberOnTrue, falseBranch,sameLHS);
+        tb2 = Util.listSetDifferenceOnTrue(trueBranch, tb1, sameLHS);
+        fb2 = Util.listSetDifferenceOnTrue(falseBranch, fb1, sameLHS);
+        res1 = listAppend(tb1,tb2);
+        res2 = listAppend(fb1,fb2);
+//        print(dumpElementsStr(res1));
+//        print(dumpElementsStr(res2));
+      then
+        (res1,res2);
+  end matchcontinue;
+end matchCommonLHS;  
+
+protected function sameLHS
+  input Element inElement1;
+  input Element inElement2;
+  output Boolean outBool;
+algorithm 
+  outBool := matchcontinue (inElement1,inElement2)
+    local
+      Exp.Exp exp1,exp2;
+      case (EQUATION(exp1,_),EQUATION(exp2,_))
+        then Exp.expEqual(exp1, exp2);
+      case (_,_)
+        then false;
+  end matchcontinue;
+end sameLHS;
+
+protected function ifEqToExprCommonLHS ""
+  input Element inElement;
+  output list<Element> outElementLst;
+algorithm
+  outElementLst:=
+  matchcontinue (inElement)
+    local
+      Integer true_eq,false_eq;
+      Ident elt_str;
+      Element elt;
+      Exp.Exp cond;
+      list<Element> true_branch,false_branch,true_branch2,false_branch2,true_branch3,false_branch3,equations;
+    case ((elt as IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch)))
+      equation 
+        DAE(true_branch2) = transformIfEqToExpr(DAE(true_branch));
+        DAE(false_branch2) = transformIfEqToExpr(DAE(false_branch));
+        true_eq = listLength(true_branch2);
+        false_eq = listLength(false_branch2);
+        (true_eq == false_eq) = false;
+        elt_str = dumpEquationsStr({elt});
+        Error.addMessage(Error.DIFFERENT_NO_EQUATION_IF_BRANCHES, {elt_str});
+      then
+        {};
+    case (IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch))
+      equation 
+        DAE(true_branch2) = transformIfEqToExpr(DAE(true_branch));
+        DAE(false_branch2) = transformIfEqToExpr(DAE(false_branch));
+        true_eq = listLength(true_branch2);
+        false_eq = listLength(false_branch2);
+        (true_eq == false_eq) = true;
+        (true_branch3,false_branch3) = matchCommonLHS(true_branch2,false_branch2);
+        equations = makeEquationsFromIfCommonLHS(cond, true_branch3, false_branch3);
+      then
+        equations;
+    case (IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch))
+      equation 
+        DAE(true_branch2) = transformIfEqToExpr(DAE(true_branch));
+        DAE(false_branch2) = transformIfEqToExpr(DAE(false_branch));
+        true_eq = listLength(true_branch2);
+        false_eq = listLength(false_branch2);
+        (true_eq == false_eq) = true;
+        (true_branch3,false_branch3) = matchCommonLHS(true_branch2,false_branch2);
+        equations = makeEquationsFromIf(cond, true_branch3, false_branch3);
+      then
+        equations;
+    case (_) then fail(); 
+  end matchcontinue;
+end ifEqToExprCommonLHS;
+
 
 protected function ifEqToExpr "function: ifEqToExpr
   Transform one if-equation into equations involving if-expressions
@@ -4133,11 +4260,13 @@ algorithm
       Ident elt_str;
       Element elt;
       Exp.Exp cond;
-      list<Element> true_branch,false_branch,equations;
+      list<Element> true_branch,false_branch,true_branch2,false_branch2,true_branch3,false_branch3,equations;
     case ((elt as IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch)))
       equation 
-        true_eq = listLength(true_branch);
-        false_eq = listLength(false_branch);
+        DAE(true_branch2) = transformIfEqToExpr(DAE(true_branch));
+        DAE(false_branch2) = transformIfEqToExpr(DAE(false_branch));
+        true_eq = listLength(true_branch2);
+        false_eq = listLength(false_branch2);
         (true_eq == false_eq) = false;
         elt_str = dumpEquationsStr({elt});
         Error.addMessage(Error.DIFFERENT_NO_EQUATION_IF_BRANCHES, {elt_str});
@@ -4145,10 +4274,13 @@ algorithm
         {};
     case (IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch))
       equation 
-        true_eq = listLength(true_branch);
-        false_eq = listLength(false_branch);
+        DAE(true_branch2) = transformIfEqToExpr(DAE(true_branch));
+        DAE(false_branch2) = transformIfEqToExpr(DAE(false_branch));
+        true_eq = listLength(true_branch2);
+        false_eq = listLength(false_branch2);
         (true_eq == false_eq) = true;
-        equations = makeEquationsFromIf(cond, true_branch, false_branch);
+        (true_branch3,false_branch3) = matchCommonLHS(true_branch2,false_branch2);
+        equations = makeEquationsFromIf(cond, true_branch3, false_branch3);
       then
         equations;
     case (_) then fail(); 
@@ -4170,6 +4302,14 @@ algorithm
     case (_,{},{}) then {}; 
     case (cond,(EQUATION(exp = exp1,scalar = exp2) :: rest1),(EQUATION(exp = exp3,scalar = exp4) :: rest2))
       equation 
+        rest_res = makeEquationsFromIfCommonLHS(cond, rest1, rest2);
+        tb = Exp.BINARY(exp1,Exp.SUB(Exp.REAL()),exp2);
+        fb = Exp.BINARY(exp3,Exp.SUB(Exp.REAL()),exp4);
+        eq = EQUATION(Exp.RCONST(0.0),Exp.IFEXP(cond,tb,fb));
+      then
+        (eq :: rest_res);
+    case (cond,(EQUATION(exp = exp1,scalar = exp2) :: rest1),(EQUATION(exp = exp3,scalar = exp4) :: rest2))
+      equation 
         rest_res = makeEquationsFromIf(cond, rest1, rest2);
         tb = Exp.BINARY(exp1,Exp.SUB(Exp.REAL()),exp2);
         fb = Exp.BINARY(exp3,Exp.SUB(Exp.REAL()),exp4);
@@ -4178,5 +4318,31 @@ algorithm
         (eq :: rest_res);
   end matchcontinue;
 end makeEquationsFromIf;
+
+protected function makeEquationsFromIfCommonLHS
+  input Exp.Exp inExp1;
+  input list<Element> inElementLst2;
+  input list<Element> inElementLst3;
+  output list<Element> outElementLst;
+algorithm 
+  
+  // TODO: sort on lhs componentref
+  
+  outElementLst:=
+  matchcontinue (inExp1,inElementLst2,inElementLst3)
+    local
+      list<Element> rest_res,rest1,rest2;
+      Exp.Exp tb,fb,cond,exp1,exp2,exp3,exp4;
+      Element eq;
+    case (_,{},{}) then {}; 
+    case (cond,(EQUATION(exp = exp1,scalar = exp2) :: rest1),(EQUATION(exp = exp3,scalar = exp4) :: rest2))
+      equation 
+        rest_res = makeEquationsFromIfCommonLHS(cond, rest1, rest2);
+        true = Exp.expEqual(exp1,exp3);
+        eq = EQUATION(exp1,Exp.IFEXP(cond,exp2,exp4));
+      then
+        (eq :: rest_res);
+  end matchcontinue;
+end makeEquationsFromIfCommonLHS;
 end DAE;
 
