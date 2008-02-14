@@ -101,7 +101,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="TRUE"
-				AdditionalDependencies="c:\Qt\4.3.2-vc\lib\qtmain.lib c:\Qt\4.3.2-vc\lib\QtGui4.lib c:\Qt\4.3.2-vc\lib\QtCore4.lib c:\Qt\4.3.2-vc\lib\QtNetwork4.lib ..\Pltpkg2\release\pltpkg2.lib"
+				AdditionalDependencies="$(QTHOME)\lib\qtmain.lib $(QTHOME)\lib\QtGui4.lib $(QTHOME)\lib\QtCore4.lib $(QTHOME)\lib\QtNetwork4.lib ..\Pltpkg2\release\pltpkg2.lib"
 				OutputFile="release\ext.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
