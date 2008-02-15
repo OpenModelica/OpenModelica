@@ -97,7 +97,7 @@ void array_alloc_scalar_boolean_array(boolean_array_t* dest,int n,modelica_boole
   put_boolean_element(first,0,dest);
   for (i = 1; i < n; ++i)
     {
-      put_boolean_element(va_arg(ap,modelica_boolean),i,dest);
+      put_boolean_element(va_arg(ap,int),i,dest);
     }
   va_end(ap);
 }
@@ -114,5 +114,62 @@ void put_boolean_element(modelica_boolean value,int i1,boolean_array_t* dest)
   /* Assert that dest has correct dimension */
   /* Assert that i1 is a valid index */
   dest->data[i1] = value;
+}
+
+void free_boolean_array_data(boolean_array_t* a)
+{
+  size_t array_size;
+
+  assert(boolean_array_ok(a));
+
+  array_size = boolean_array_nr_of_elements(a);
+  boolean_free(array_size);
+}
+
+/* One based index*/
+m_boolean* calc_boolean_index_va(boolean_array_t* source,int ndims,va_list ap)
+{
+  int i;
+  int index;
+  int dim_i;
+
+  index = 0;
+  for (i = 0; i < ndims; ++i)
+    {
+      dim_i = va_arg(ap,int)-1;
+      index = index*source->dim_size[i]+dim_i;
+    }
+
+  return source->data+index;
+}
+
+m_boolean* boolean_array_element_addr(boolean_array_t* source,int ndims,...)
+{
+  va_list ap;
+  m_boolean* tmp;
+
+  va_start(ap,ndims);
+  tmp = calc_boolean_index_va(source,ndims,ap);
+  va_end(ap);
+  
+  return tmp;
+}
+
+m_boolean* boolean_array_element_addr1(boolean_array_t* source,int ndims,int dim1)
+{
+  return source->data+dim1-1;
+}
+
+m_boolean* boolean_array_element_addr2(boolean_array_t* source,int ndims,int dim1,int dim2)
+{
+  return source->data+(dim1-1)*source->dim_size[1]+dim2-1;
+}
+
+int size_of_dimension_boolean_array(boolean_array_t a, int i)
+{
+  assert(boolean_array_ok(&a));
+  assert((i > 0) && (i <= a.ndims));
+
+  return a.dim_size[i-1];
 }
 

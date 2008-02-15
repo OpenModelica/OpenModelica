@@ -37,7 +37,7 @@
 #include <stdarg.h>
 #include <math.h>
 
-typedef double modelica_boolean;
+typedef signed char modelica_boolean;
 
 struct boolean_array_s
 {
@@ -55,6 +55,16 @@ void array_alloc_scalar_boolean_array(boolean_array_t* dest,int n,modelica_boole
 void simple_alloc_1d_boolean_array(boolean_array_t* dest, int n);
 void put_boolean_element(modelica_boolean value,int i1,boolean_array_t* dest);
 
+m_boolean* calc_boolean_index_va(boolean_array_t* source,int ndims,va_list ap);
+
+m_boolean* boolean_array_element_addr(boolean_array_t* source,int ndims,...);
+m_boolean* boolean_array_element_addr1(boolean_array_t* source,int ndims,int dim1);
+m_boolean* boolean_array_element_addr2(boolean_array_t* source,int ndims,int dim1,int dim2);
+
+int size_of_dimension_boolean_array(boolean_array_t a, int i);
+
+/*Frees memory*/
+void free_boolean_array_data(boolean_array_t*);
 
 void clone_boolean_array_spec(boolean_array_t* source, boolean_array_t* dest);
 

@@ -37,41 +37,61 @@
 #include <errno.h>
 #include "modelica.h"
 
-#define PRE_VARIABLES FILE *in_file,*out_file;int close_file;
-#define PRE_OPEN_FILE(fv,fn,m,df) if(strcmp("-",fn)==0){fv=df;close_file=0;}else{fv=fopen(fn,m);close_file=1;if(!fv){return errno;}}
-
-#define PRE_OPEN_INFILE PRE_OPEN_FILE(in_file,in_filename,"r",stdin)
-#define PRE_OPEN_OUTFILE PRE_OPEN_FILE(out_file,out_filename,"w",stdout)
-#define PRE_READ_DONE if (close_file) fclose(in_file);
-#define PRE_WRITE_DONE if (close_file) fclose(out_file);
+enum type_desc_e {
+  TYPE_DESC_NONE,
+  TYPE_DESC_REAL,
+  TYPE_DESC_REAL_ARRAY,
+  TYPE_DESC_INT,
+  TYPE_DESC_INT_ARRAY,
+  TYPE_DESC_BOOL,
+  TYPE_DESC_BOOL_ARRAY,
+  TYPE_DESC_STRING,
+  TYPE_DESC_TUPLE,
+  TYPE_DESC_COMPLEX
+};
 
 struct type_desc_s {
-  char type;
-  int ndims;
-  int *dim_size;
+  enum type_desc_e type;
+  int retval : 1;
+  union {
+    modelica_real real;
+    real_array_t real_array;
+    modelica_integer integer;
+    integer_array_t int_array;
+    modelica_boolean boolean;
+    boolean_array_t bool_array;
+    modelica_string_t string;
+    struct {
+      size_t elements;
+      struct type_desc_s *element;
+    } tuple;
+    modelica_complex complex;
+  } data;
 };
 
 typedef struct type_desc_s type_description;
 
-int read_modelica_real(FILE*,modelica_real*);
-int read_real_array(FILE*,real_array_t*);
-int write_modelica_real(FILE*,modelica_real*);
-int write_real_array(FILE*,real_array_t*);
+void init_type_description(type_description *);
+void free_type_description(type_description *);
 
-int read_modelica_integer(FILE*,modelica_integer*);
-int read_integer_array(FILE*,integer_array_t*);
-int write_modelica_integer(FILE*,modelica_integer*);
-int write_integer_array(FILE*,integer_array_t*);
+int read_modelica_real(type_description **, modelica_real *);
+int read_real_array(type_description **, real_array_t *);
+void write_modelica_real(type_description *, modelica_real *);
+void write_real_array(type_description *, real_array_t *);
 
-int read_modelica_boolean(FILE*,modelica_boolean*);
-int read_boolean_array(FILE*,boolean_array_t*);
-int write_modelica_boolean(FILE*,modelica_boolean*);
-int write_boolean_array(FILE*,boolean_array_t*);
+int read_modelica_integer(type_description **, modelica_integer *);
+int read_integer_array(type_description **, integer_array_t *);
+void write_modelica_integer(type_description *, modelica_integer *);
+void write_integer_array(type_description *, integer_array_t *);
 
-int read_modelica_string(FILE*,modelica_string_t*);
-int write_modelica_string(FILE*,modelica_string_t*);
-int read_type_description(FILE*, type_description*);
+int read_modelica_boolean(type_description **, modelica_boolean *);
+int read_boolean_array(type_description **, boolean_array_t *);
+void write_modelica_boolean(type_description *, modelica_boolean *);
+void write_boolean_array(type_description *, boolean_array_t *);
 
-int read_modelica_complex(FILE*, modelica_complex);
+int read_modelica_string(type_description **, modelica_string_t *);
+void write_modelica_string(type_description *, modelica_string_t *);
+
+int read_modelica_complex(type_description **, modelica_complex);
 
 #endif

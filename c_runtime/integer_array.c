@@ -182,7 +182,7 @@ void free_integer_array_data(integer_array_t* a)
 
   assert(integer_array_ok(a));
 
-  array_size = integer_array_nr_of_elements(a) * sizeof(modelica_integer);
+  array_size = integer_array_nr_of_elements(a);
   integer_free(array_size);
 }
 
@@ -192,7 +192,7 @@ void clone_integer_array_spec(integer_array_t* source, integer_array_t* dest)
   assert(integer_array_ok(source));
 
   dest->ndims = source->ndims;
-  dest->dim_size = size_alloc(dest->ndims*sizeof(int));
+  dest->dim_size = size_alloc(dest->ndims);
   assert(dest->dim_size);
   
   for (i = 0; i < dest->ndims; ++i)

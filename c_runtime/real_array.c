@@ -258,7 +258,7 @@ void free_real_array_data(real_array_t* a)
 
   assert(real_array_ok(a));
 
-  array_size = real_array_nr_of_elements(a) * sizeof(modelica_real);
+  array_size = real_array_nr_of_elements(a);
   real_free(array_size);
   /*  free(a->data);
       a->data = 0;*/
@@ -270,7 +270,7 @@ void clone_real_array_spec(real_array_t* source, real_array_t* dest)
   assert(real_array_ok(source));
 
   dest->ndims = source->ndims;
-  dest->dim_size = size_alloc(dest->ndims*sizeof(int));
+  dest->dim_size = size_alloc(dest->ndims);
   assert(dest->dim_size);
   
   for (i = 0; i < dest->ndims; ++i)

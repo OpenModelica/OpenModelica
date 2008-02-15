@@ -89,7 +89,6 @@ end Slot;
 protected import ClassInf;
 protected import Dump;
 protected import Print;
-protected import System;
 protected import Lookup;
 protected import Debug;
 protected import Inst;
@@ -102,6 +101,7 @@ protected import Prefix;
 protected import Ceval;
 protected import Connect;
 protected import Error;
+protected import System;
 
 
 public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. lists of expressions."
@@ -5904,7 +5904,7 @@ algorithm
       Types.Properties prop;
       Interactive.InteractiveSymbolTable st;
       Absyn.Program p;
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cflist;
+      list<Interactive.CompiledCFunction> cflist;
       SCode.Class cdef,cls;
       Ident fid,pathstr,filename,str1,str2;
       Option<Absyn.ExternalDecl> extdecl;
@@ -5914,7 +5914,6 @@ algorithm
       list<SCode.Class> p_1,a;
       list<DAE.Element> d;
       DAE.DAElist d_1;
-      list<Ident> libs;
       tuple<Types.TType, Option<Absyn.Path>> t;
       list<Interactive.InstantiatedClass> b;
       list<Interactive.InteractiveVariable> c;
@@ -5924,7 +5923,8 @@ algorithm
       equation 
         Debug.fprintln("sei", "generate_compiled_function: start1");
         pfn = Absyn.crefToPath(fn);
-        true = isFunctionInCflist(cflist, pfn);
+        (true,_) = isFunctionInCflist(cflist, pfn);
+        Debug.fprintln("sei", "function is in Cflist");
       then
         (cache,SOME(st));
     case (cache,env,fn,e,prop,st) /* Don not compile if is \"known\" external function, e.g. math lib. */ 
@@ -5935,13 +5935,16 @@ algorithm
         SCode.CLASS(name = fid,restriction = SCode.R_EXT_FUNCTION(),parts = SCode.PARTS(used = extdecl)) = cdef;
         SOME(Absyn.EXTERNALDECL(id,lan,out,args,_)) = extdecl;
         Ceval.isKnownExternalFunc(fid, id);
+        Debug.fprintln("sei", "function is known external func");
       then
         (cache,st);
     case (cache,env,fn,e,prop,SOME((st as Interactive.SYMBOLTABLE(p,a,b,c,cflist,lf))))
+      local Integer libHandle, funcHandle;
+            String funcstr;
       equation 
         Debug.fprintln("sei", "generate_compiled_function: start2");
         path = Absyn.crefToPath(fn);
-        false = isFunctionInCflist(cflist, path);
+        (false,_) = isFunctionInCflist(cflist, path);
         (cache,false) = isExternalObjectFunction(cache,env,path);
         p_1 = SCode.elaborate(p);
         Debug.fprintln("sei", "generate_compiled_function: elaborated");
@@ -5952,23 +5955,16 @@ algorithm
         Debug.fprintln("sei", "generate_compiled_function: function instantiated");
         Print.clearBuf();
         d_1 = ModUtil.stringPrefixParams(DAE.DAE(d));
-        libs = Codegen.generateFunctions(d_1);
+        _ = Codegen.generateFunctions(d_1);
         Debug.fprintln("sei", "generate_compiled_function: function generated");
-        pathstr = ModUtil.pathString2(path, "_");
-        filename = stringAppend(pathstr, ".c");
-        Print.printBuf(
-          "#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n");
-        Print.printBuf(
-          "\nint main(int argc, char** argv)\n{\n\n  if (argc != 3)\n    {\n      fprintf(stderr,\"# Incorrrect number of arguments\\n\");\n      return 1;\n    }\n");
-        Print.printBuf("    _");
-        Print.printBuf(pathstr);
-        Print.printBuf("_read_call_write(argv[1],argv[2]);\n  return 0;\n}\n");
-        Print.writeBuf(filename);
-        Print.clearBuf();
-        System.compileCFile(filename);
+        cache = Ceval.cevalGenerateFunction(cache,env,path);
         t = Types.getPropType(prop) "	& Debug.fprintln(\"sei\", \"generate_compiled_function: compiled\")" ;
+        funcstr = ModUtil.pathString2(path, "_");
+        libHandle = System.loadLibrary(funcstr);
+        funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
+        System.freeLibrary(libHandle);        
       then
-        (cache,SOME(Interactive.SYMBOLTABLE(p,a,b,c,((path,t) :: cflist),lf)));
+        (cache,SOME(Interactive.SYMBOLTABLE(p,a,b,c,(Interactive.CFunction(path,t,funcHandle) :: cflist),lf)));
     case (cache,env,fn,e,prop,NONE) /* PROP_TUPLE? */ 
       equation 
         Debug.fprintln("sei", "generate_compiled_function: start3");
@@ -6001,31 +5997,34 @@ public function isFunctionInCflist "function: isFunctionInCflist
  
   This function returns true if a function, named by an Absyn.Path, 
   is present in the list of precompiled functions that can be executed
-  in the interactive mode.
+  in the interactive mode. If it returns true, it also returns the
+  functionHandle stored in the cflist.
 "
-  input list<tuple<Absyn.Path, Types.Type>> inTplAbsynPathTypesTypeLst;
+  input list<Interactive.CompiledCFunction> inTplAbsynPathTypesTypeLst;
   input Absyn.Path inPath;
   output Boolean outBoolean;
+  output Integer outFuncHandle;
 algorithm 
-  outBoolean:=
+  (outBoolean,outFuncHandle):=
   matchcontinue (inTplAbsynPathTypesTypeLst,inPath)
     local
       Absyn.Path path1,path2;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> rest;
-      Boolean res;
-    case ({},_) then false; 
-    case (((path1,ty) :: rest),path2)
+      Types.Type ty;
+      list<Interactive.CompiledCFunction> rest;
+      Boolean res;      
+      Integer handle;
+    case ({},_) then (false, -1); 
+    case ((Interactive.CFunction(path1,ty,handle) :: rest),path2)
       equation 
         true = ModUtil.pathEqual(path1, path2);
       then
-        true;
-    case (((path1,ty) :: rest),path2)
+        (true, handle);
+    case ((Interactive.CFunction(path1,ty,_) :: rest),path2)
       equation 
         false = ModUtil.pathEqual(path1, path2);
-        res = isFunctionInCflist(rest, path2);
+        (res,handle) = isFunctionInCflist(rest, path2);
       then
-        res;
+        (res,handle);
   end matchcontinue;
 end isFunctionInCflist;
 

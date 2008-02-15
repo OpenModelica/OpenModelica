@@ -257,7 +257,7 @@ algorithm
       Integer x,dim,l,lhv,rhv,res,start_1,stop_1,step_1,i,indx_1,indx;
       Option<Interactive.InteractiveSymbolTable> st,st_1,st_2,st_3;
       Real lhvr,rhvr,resr,sum,div,diff,r;
-      String funcstr,infilename,outfilename,str,lh_str,rh_str,iter;
+      String funcstr,str,lh_str,rh_str,iter;
       Boolean impl,builtin,b,b_1;
       Absyn.Exp exp_1,exp;
       list<Env.Frame> env;
@@ -271,7 +271,7 @@ algorithm
       Exp.Exp lh,rh,e,lhs,rhs,start,stop,step,e1,e2,iterexp;
       Absyn.Path funcpath,func;
       Absyn.Program p;
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cflist;
+      list<Interactive.CompiledCFunction> cflist;
       Exp.Operator relop;
       Env.Cache cache;
     case (cache,_,Exp.ICONST(integer = x),_,st,_,_) then (cache,Values.INTEGER(x),st); 
@@ -361,16 +361,6 @@ algorithm
       then
         (cache,v,st_1);
 
-    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),impl,st,_,msg) 
-      /* Call functions FIXME: functions are always generated. Put back the check
-	  and write another rule for the false case that generates the function */ 
-	  local String s; list<String> ss;
-      equation
-        (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
-        (cache,newval)= cevalCallFunction(cache,env, e, vallst, msg);
-      then
-        (cache,newval,st);
-
     case (cache,env,(e as Exp.CALL(path = _)),(impl as false),NONE,_,NO_MSG()) then fail(); 
 
     case (cache,env,(e as Exp.CALL(path = _)),(impl as true),SOME(st),_,msg)
@@ -391,16 +381,23 @@ algorithm
 
     case (cache,env,(e as Exp.CALL(path = func,expLst = expl)),(impl as true),
       (st as SOME(Interactive.SYMBOLTABLE(p,_,_,_,cflist,_))),_,msg)
+      local Integer funcHandle;
       equation 
-        true = Static.isFunctionInCflist(cflist, func) "Call externally implemented functions." ;
+        (true, funcHandle) = Static.isFunctionInCflist(cflist, func) "Call externally implemented functions." ;
         (cache,false) = Static.isExternalObjectFunction(cache,env,func);
         (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
         funcstr = ModUtil.pathString2(func, "_");
-        infilename = stringAppend(funcstr, "_in.txt");
-        outfilename = stringAppend(funcstr, "_out.txt");
-        Values.writeToFileAsArgs(vallst, infilename);
-        System.executeFunction(funcstr);
-        newval = System.readValuesFromFile(outfilename);
+        Debug.fprintln("dynload", "CALL: about to execute: " +& funcstr);
+        newval = System.executeFunction(funcHandle, vallst);
+      then
+        (cache,newval,st);
+    
+    case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),impl,st,_,msg) 
+      /* Is this case really necessary? */
+      local String s; list<String> ss;
+      equation
+        (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
+        (cache,newval)= cevalCallFunction(cache,env, e, vallst, msg);
       then
         (cache,newval,st);
 
@@ -815,8 +812,7 @@ end ceval;
 protected function cevalCallFunction "function: cevalCallFunction
   This function evaluates CALL expressions, i.e. function calls.
   They are currently evaluated by generating code for the function and
-  then write the function input to a file and execute the generated code. 
-  Finally, the result is read back from the ressult file and returned."
+  then dynamicly load the function and call it."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Exp.Exp inExp;
@@ -836,7 +832,7 @@ algorithm
       Boolean builtin;
       list<Values.Value> vallst;
       Msg msg;
-      String funcstr,infilename,outfilename,str;
+      String funcstr,str;
       Env.Cache cache;
    /* 
    External functions that are "known" should be evaluated without
@@ -857,16 +853,18 @@ algorithm
         cevalIsExternalObjectConstructor(cache,funcpath,env);
         then fail();
     case (cache,env,(e as Exp.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,msg) /* Call functions in non-interactive mode. FIXME: functions are always generated. Put back the check
-	 and write another rule for the false case that generates the function */ 
+	 and write another rule for the false case that generates the function */
+	    local Integer libHandle, funcHandle;
       equation
  				failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
         cache = cevalGenerateFunction(cache,env, funcpath);
-        funcstr = ModUtil.pathString2(funcpath, "_");
-        infilename = stringAppend(funcstr, "_in.txt");
-        outfilename = stringAppend(funcstr, "_out.txt");
-        Values.writeToFileAsArgs(vallst, infilename);
-        System.executeFunction(funcstr);
-        newval = System.readValuesFromFile(outfilename);
+        funcstr = ModUtil.pathString2(funcpath, "_");        
+        Debug.fprintln("dynload", "cevalCallFunction: about to execute " +& funcstr);
+        libHandle = System.loadLibrary(funcstr);
+        funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
+        newval = System.executeFunction(funcHandle, vallst);
+        System.freeFunction(funcHandle);
+        System.freeLibrary(libHandle);
       then
         (cache,newval);
     case (cache,env,e,_,_)
@@ -1523,7 +1521,7 @@ algorithm
       Absyn.Program p,pnew,newp;
       list<Interactive.InstantiatedClass> ic,ic_1;
       list<Interactive.InteractiveVariable> iv;
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+      list<Interactive.CompiledCFunction> cf;
       Msg msg;
       tuple<Types.TType, Option<Absyn.Path>> tp,simType;
       Absyn.Class class_;
@@ -1916,7 +1914,7 @@ algorithm
 
         cit = winCitation();
         pd = System.pathDelimiter();
-        executableSuffixedExe = stringAppend(executable, ".exe");
+        executableSuffixedExe = stringAppend(executable, System.getExeExt());
         sim_call = Util.stringAppendList(
           {cit,executableSuffixedExe,cit," > output.log 2>&1"});
         0 = System.systemCall(sim_call);
@@ -2792,13 +2790,15 @@ algorithm
         loadedFiles = lf)),msg) /* add path to symboltable for compiled functions
 	  Interactive.SYMBOLTABLE(p,sp,ic,iv,(path,t)::cf),
 	  but where to get t? */ 
-      local Absyn.Program p_1;
+      local 
+        Absyn.Program p_1;
+        list<Interactive.CompiledCFunction> newCF, newCF_1;
       equation 
         mp = Settings.getModelicaPath();
-        pnew = ClassLoader.loadClass(path, mp);
-        p_1 = Interactive.updateProgram(pnew, p);
+        (pnew, newCF) = ClassLoader.loadClass(path, mp, cf);
+        (p_1, newCF_1) = Interactive.updateProgram(pnew, p, newCF);
         str = Print.getString();
-        newst = Interactive.SYMBOLTABLE(p_1,sp,{},iv,cf,lf);
+        newst = Interactive.SYMBOLTABLE(p_1,sp,{},iv,newCF_1,lf);
       then
         (cache,Values.BOOL(true),newst);
 
@@ -2820,12 +2820,14 @@ algorithm
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
-      local Absyn.Program p1;
+      local
+        Absyn.Program p1;
+        list<Interactive.CompiledCFunction> newCF, newCF_1;
       equation 
-        p1 = ClassLoader.loadFile(name) "System.regularFileExists(name) => 0 & Parser.parse(name) => p1 &" ;
-        newp = Interactive.updateProgram(p1, p);
+        (p1, newCF) = ClassLoader.loadFile(name, cf) "System.regularFileExists(name) => 0 & Parser.parse(name) => p1 &" ;
+        (newp,newCF_1) = Interactive.updateProgram(p1, p, newCF);
       then
-        (cache,Values.BOOL(true),Interactive.SYMBOLTABLE(newp,sp,ic,iv,cf,lf));
+        (cache,Values.BOOL(true),Interactive.SYMBOLTABLE(newp,sp,ic,iv,newCF_1,lf));
 
     case (cache,env,Exp.CALL(path = Absyn.IDENT(name = "loadFile"),expLst = {Exp.SCONST(string = name)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* (Values.BOOL(true),Interactive.SYMBOLTABLE(newp,sp,{},iv,cf)) it the rule above have failed then check if file exists without this omc crashes */ 
       equation 
@@ -3018,7 +3020,7 @@ algorithm
       Interactive.InteractiveSymbolTable st;
       Absyn.Program p;
       list<Interactive.InteractiveVariable> iv;
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+      list<Interactive.CompiledCFunction> cf;
       Msg msg;
       Exp.Exp fileprefix;
       Env.Cache cache;
@@ -3080,10 +3082,11 @@ algorithm
       Interactive.InteractiveSymbolTable st;
       Absyn.Program p;
       list<Interactive.InteractiveVariable> iv;
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+      list<Interactive.CompiledCFunction> cf;
       Msg msg;
       Exp.Exp fileprefix;
       Env.Cache cache;
+      String MakefileHeader;
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,fileprefix) /* mo file directory */ 
       equation
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
@@ -3109,6 +3112,7 @@ algorithm
         Debug.fcall("bltdump", DAELow.dumpMatching, ass1);
         cname_str = Absyn.pathString(className);
         filename = Util.stringAppendList({filenameprefix,".cpp"});
+        Debug.fprintln("dynload", "translateModel: Generating simultaion code and functions.");
         funcfilename = Util.stringAppendList({filenameprefix,"_functions.cpp"});
         makefilename = generateMakefilename(filenameprefix);
         a_cref = Absyn.pathToCref(className);
@@ -3156,7 +3160,7 @@ algorithm
       Interactive.InteractiveSymbolTable st;
       Absyn.Program p;
       list<Interactive.InteractiveVariable> iv;
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+      list<Interactive.CompiledCFunction> cf;
       Msg msg;
       Exp.Exp fileprefix;
       Env.Cache cache;
@@ -3228,7 +3232,7 @@ algorithm
       Interactive.InteractiveSymbolTable st;
       Absyn.Program p;
       list<Interactive.InteractiveVariable> iv;
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+      list<Interactive.CompiledCFunction> cf;
       Msg msg;
       Exp.Exp fileprefix;
       Env.Cache cache;
@@ -3241,15 +3245,16 @@ algorithm
         Absyn.Within within_;
         Integer elimLevel;
         Absyn.Program p1;
+        list<Interactive.CompiledCFunction> newCF;
       equation         
 	  		cls = Interactive.getPathedClassInProgram(className, p);        
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
         within_ = Interactive.buildWithin(className);
-        p1 = Interactive.updateProgram(Absyn.PROGRAM({refactoredClass}, within_), p);
+        (p1,newCF) = Interactive.updateProgram(Absyn.PROGRAM({refactoredClass}, within_), p, cf);
         s1 = Absyn.pathString(className);
 				retStr=Util.stringAppendList({"Translation of ",s1," successful.\n"});
       then
-        (cache,Values.STRING(retStr),Interactive.SYMBOLTABLE(p1,sp,ic,iv,cf,lf));
+        (cache,Values.STRING(retStr),Interactive.SYMBOLTABLE(p1,sp,ic,iv,newCF,lf));
     case (cache,_,_,st,_) local
       String errorMsg; Boolean strEmpty;
       equation
@@ -3284,7 +3289,7 @@ algorithm
       list<SCode.Class> sp;
       list<Interactive.InstantiatedClass> ic;
       list<Interactive.InteractiveVariable> iv;
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+      list<Interactive.CompiledCFunction> cf;
       Msg msg;
       Env.Cache cache;
     case (cache,env,filenameprefix,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
@@ -3328,7 +3333,7 @@ algorithm
       list<SCode.Class> sp;
       list<Interactive.InstantiatedClass> ic;
       list<Interactive.InteractiveVariable> iv;
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+      list<Interactive.CompiledCFunction> cf;
       Msg msg;
       Env.Cache cache;
       Absyn.Path className;
@@ -3387,7 +3392,7 @@ algorithm
       list<SCode.Class> sp;
       list<Interactive.InstantiatedClass> ic;
       list<Interactive.InteractiveVariable> iv;
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+      list<Interactive.CompiledCFunction> cf;
       Msg msg;
       Env.Cache cache;
       Boolean cdToTemp;
@@ -3406,7 +3411,9 @@ algorithm
         SimCodegen.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename, 
           starttime_r, stoptime_r, interval_r, tolerance_r, method_str);
         makefilename = generateMakefilename(filenameprefix);
+        Debug.fprintln("dynload", "buildModel: about to compile model " +& filenameprefix +& ", " +& file_dir);
         compileModel(filenameprefix, libs, file_dir);
+        Debug.fprintln("dynload", "buildModel: Compiling done.");
         _ = System.cd(oldDir);
  
         // s_call = Util.stringAppendList({"make -f ",cname_str, ".makefile\n"});
@@ -3479,11 +3486,11 @@ end getFileDir;
 protected function compileModel "function: compileModel
   author: PA, x02lucpo
   Compiles a model given a file-prefix, helper function to buildModel."
-  input String inString1;
-  input list<String> inStringLst2;
-  input String inString3;
+  input String inFilePrefix;
+  input list<String> inLibsList;
+  input String inFileDir;
 algorithm 
-  _:= matchcontinue (inString1,inStringLst2,inString3)
+  _:= matchcontinue (inFilePrefix,inLibsList,inFileDir)
     local
       String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,s_call,fileprefix,file_dir,command,filename,str;
       list<String> libs;
@@ -3501,6 +3508,7 @@ algorithm
         System.writeFile(libsfilename, libs_str);
         s_call = Util.stringAppendList({"set OPENMODELICAHOME=",omhome_1,"&& \"",
           omhome_1,pd,"bin",pd,"Compile","\""," ",fileprefix});
+        Debug.fprintln("dynload", "compileModel: running " +& s_call);
         0 = System.systemCall(s_call)  ;
       then
         ();
@@ -3517,6 +3525,7 @@ algorithm
         System.writeFile(libsfilename, libs_str);
         s_call = Util.stringAppendList({"set OPENMODELICAHOME=",omhome_1,"&& ",command," ",fileprefix});
         // print(s_call);
+        Debug.fprintln("dynload", "compileModel: running " +& s_call);
         0 = System.systemCall(s_call) ;
       then
         ();     
@@ -3610,7 +3619,7 @@ algorithm
       list<SCode.Class> sp,p_1;
       list<Interactive.InstantiatedClass> ic,ic_1;
       list<Interactive.InteractiveVariable> vars;
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+      list<Interactive.CompiledCFunction> cf;
       SCode.Class c;
       Boolean encflag;
       SCode.Restriction r;
@@ -5517,7 +5526,39 @@ algorithm
   end matchcontinue;
 end cevalBuiltinInteger;
 
-protected function cevalGenerateFunction "function: cevalGenerateFunction
+public function generateMakefileHeader
+  output String hdr;
+  //omhome = System.trim(omhome, "\"");
+algorithm       
+  hdr := matchcontinue ()
+    local
+      String omhome,header,ccompiler,cxxcompiler,linker,exeext,dllext,cflags,ldflags;    
+    case()
+      equation
+        ccompiler = System.getCCompiler();
+        cxxcompiler = System.getCXXCompiler();
+        linker = System.getLinker();
+        exeext = System.getExeExt();
+        dllext = System.getDllExt();
+        omhome = Settings.getInstallationDirectoryPath();
+        omhome = System.trim(omhome, "\""); //Remove any quotation marks from omhome.
+        cflags = System.getCFlags();
+        ldflags = System.getLDFlags();
+        header = Util.stringAppendList({
+          "#Makefile generated by OpenModelica\n\n",
+          "CC=",ccompiler,"\n",
+          "CXX=",cxxcompiler,"\n",
+          "LINK=",linker,"\n",
+          "EXEEXT=",exeext,"\n",
+          "DLLEXT=",dllext,"\n",
+          "CFLAGS=-I\"",omhome,"/include\" ", cflags ,"\n",
+          "LDFLAGS=-L\"",omhome,"/lib\" ", ldflags ,"\n"   
+          });
+    then header;
+  end matchcontinue;
+end generateMakefileHeader;
+
+public function cevalGenerateFunction "function: cevalGenerateFunction
   Generates code for a given function name."
 	input Env.Cache inCache;
   input Env.Env inEnv;
@@ -5527,29 +5568,36 @@ algorithm
   outCache :=
   matchcontinue (inCache,inEnv,inPath)
     local
-      String pathstr,gencodestr,filename;
+      String pathstr,gencodestr,cfilename,makefilename,omhome,str;
       list<Env.Frame> env;
       Absyn.Path path;
       Env.Cache cache;
+      String MakefileHeader;
     case (cache,env,path)
       equation 
          (cache,false) = Static.isExternalObjectFunction(cache,env,path); //ext objs functions not possible to ceval.
         Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunction starting*/");
         pathstr = ModUtil.pathString2(path, "_");
         (cache,gencodestr,_) = cevalGenerateFunctionStr(cache,path, env, {});
-        filename = stringAppend(pathstr, ".c");
-        Print.clearBuf();
-        Print.printBuf("#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n");
-        Print.printBuf(gencodestr);
-        Print.printBuf("\nint main(int argc, char** argv)\n");
-        Print.printBuf("{\n\n  if (argc != 3)\n");
-        Print.printBuf("{\n      fprintf(stderr,\"# Incorrect number of arguments\\n\");\n");
-        Print.printBuf("return 1;\n    }\n");
-        Print.printBuf("_");
-        Print.printBuf(pathstr);
-        Print.printBuf("_read_call_write(argv[1],argv[2]);\n  return 0;\n}\n");
-        Print.writeBuf(filename);
-        System.compileCFile(filename);
+        cfilename = stringAppend(pathstr, ".c");
+        str = Util.stringAppendList(
+          {"#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n",
+           gencodestr});
+        System.writeFile(cfilename, str);
+        Debug.fprintln("dynload", "cevalGenerateFunction: generating makefile for " +& pathstr);
+        makefilename = generateMakefilename(pathstr);
+        omhome = Settings.getInstallationDirectoryPath();
+        omhome = System.trim(omhome, "\""); //Remove any quotation marks from omhome.
+        MakefileHeader = generateMakefileHeader();
+        str = Util.stringAppendList(
+          {MakefileHeader,"\n.PHONY: ",pathstr,"\n",
+          pathstr,": ",cfilename,"\n","\t $(LINK)",
+          " $(CFLAGS)",
+          " -o ",pathstr,"$(DLLEXT) ",cfilename,
+          " $(LDFLAGS)",
+          " -lm\n"});    
+        System.writeFile(makefilename, str);
+        compileModel(pathstr, {}, "");
       then
         (cache);
     case (cache,_,_)

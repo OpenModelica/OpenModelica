@@ -621,20 +621,6 @@ algorithm
   end matchcontinue;
 end unparseDimSizes;
 
-public function writeToFileAsArgs "function: writeToFileAsArgs
- 
-  Write a list of Values to a file. This function is used when 
-  writing the formal input arguments of a function call to a file before
-  executing the function.
-"
-  input list<Value> vallst;
-  input String filename;
-  String str;
-algorithm 
-  str := unparseValues(vallst);
-  System.writeFile(filename, str);
-end writeToFileAsArgs;
-
 public function addElementwiseArrayelt "function: addElementwiseArrayelt
  
   Perform elementwise addition of two arrays.

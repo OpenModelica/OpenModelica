@@ -1,97 +1,146 @@
-/*
-This file is part of OpenModelica.
-
-Copyright (c) 1998-2006, Linköpings universitet, Department of
-Computer and Information Science, PELAB
-
-All rights reserved.
-
-(The new BSD license, see also
-http://www.opensource.org/licenses/bsd-license.php)
-
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-* Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright
-  notice, this list of conditions and the following disclaimer in
-  the documentation and/or other materials provided with the
-  distribution.
-
-* Neither the name of Linköpings universitet nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+/* 
+ * This file is part of OpenModelica.
+ * 
+ * Copyright (c) 1998-2008, Linköpings University,
+ * Department of Computer and Information Science, 
+ * SE-58183 Linköping, Sweden. 
+ * 
+ * All rights reserved.
+ * 
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
+ * PUBLIC LICENSE. 
+ * 
+ * The OpenModelica software and the Open Source Modelica 
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained 
+ * from Linköpings University, either from the above address, 
+ * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * and in the OpenModelica distribution.
+ * 
+ * This program is distributed  WITHOUT ANY WARRANTY; without 
+ * even the implied warranty of  MERCHANTABILITY or FITNESS 
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
+ * OF OSMC-PL. 
+ * 
+ * See the full OSMC Public License conditions for more details.
+ * 
+ */
 
 /*
  * adrpo 2007-05-09
  * UNCOMMENT THIS ONLY IF YOU COMPILE OMC IN DEBUG MODE!!!!!
  * #define RML_DEBUG
- */ 
+ */
 
-// windows and mingw32
-#if defined(__MINGW32__) || defined(_MSC_VER)
+/*
+ * x08joekl 2008-01-24
+ * functions and globals common to both win32 and *nix
+ */
 
+#if defined(_MSC_VER)
+ #define WIN32_LEAN_AND_MEAN
+ #include <Windows.h>
+#endif
 #include <stdlib.h>
-#include <direct.h>
-#include <assert.h>
 #include <string.h>
-#include <time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <stdio.h>
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 #include "read_write.h"
-#include "rml.h"
-#include "../Values.h"
-#include "../absyn_builder/yacclib.h"
 
-#define MAXPATHLEN MAX_PATH
+static char * cc=NULL;
+static char * cxx=NULL;
+static char * linker=NULL;
+static char * cflags=NULL;
+static char * ldflags=NULL;
 
-char * cc=NULL;
-char * cflags=NULL;
-
-void * read_ptolemy_dataset(char*filename, int size,char**vars,int datasize);
+void * read_ptolemy_dataset(char*filename, int size,char**vars,
+                            int datasize);
 int read_ptolemy_dataset_size(char*filename);
-void * generate_array(char,int,type_description *,void *data);
-double next_realelt(double*);
-int next_intelt(int*);
+static double next_realelt(double *arr);
+static int next_intelt(int *arr);
+static void *generate_array(enum type_desc_e type, int curdim, int ndims,
+                            int *dim_size, void **data);
+static void *type_desc_to_value(type_description *desc);
+static int execute_function(void *in_arg, void **out_arg,
+                            int (* func)(type_description *,
+                                         type_description *));
 
-void set_cc(char *str)
+typedef struct modelica_ptr_s *modelica_ptr_t;
+
+#define MAX_PTR_INDEX 10000
+
+#if defined(_MSC_VER)
+#define inline __inline
+#else // Linux & MinGW 
+#define inline inline
+#endif
+
+static inline modelica_integer alloc_ptr();
+static inline modelica_ptr_t lookup_ptr(modelica_integer index);
+static inline void free_ptr(modelica_integer index);
+static void free_library(modelica_ptr_t lib);
+static void free_function(modelica_ptr_t func);
+
+typedef int (* function_t)(type_description *, type_description *);
+
+static int set_cc(char *str)
 {
+  size_t len = strlen(str);
   if (cc != NULL) {
     free(cc);
   }
-  cc = (char*)malloc(strlen(str)+1);
-  assert(cc != NULL);
-  memcpy(cc,str,strlen(str)+1);
+  cc = (char*)malloc(len+1);
+  if (cc == NULL) return -1;
+  memcpy(cc,str,len+1);
+  return 0;
 }
 
-void set_cflags(char *str)
+static int set_cxx(char *str)
 {
+  size_t len = strlen(str);
+  if (cxx != NULL) {
+    free(cxx);
+  }
+  cxx = (char*)malloc(len+1);
+  if (cxx == NULL) return -1;
+  memcpy(cxx,str,len+1);
+  return 0;
+}
+
+static int set_linker(char *str)
+{
+  size_t len = strlen(str);
+  if (linker != NULL) {
+    free(linker);
+  }
+  linker = (char*)malloc(len+1);
+  if (linker == NULL) return -1;
+  memcpy(linker,str,len+1);
+  return 0;
+}
+
+static int set_cflags(char *str)
+{
+  size_t len = strlen(str);
   if (cflags != NULL) {
     free(cflags);
   }
-  cflags = (char*)malloc(strlen(str)+1);
-  assert(cflags != NULL);
-  memcpy(cflags,str,strlen(str)+1);
+  cflags = (char*)malloc(len+1);
+  if (cflags == NULL) return -1;
+  memcpy(cflags,str,len+1);
+  return 0;
+}
+
+static int set_ldflags(char *str)
+{
+  size_t len = strlen(str);
+  if (ldflags != NULL) {
+    free(ldflags);
+  }
+  ldflags = (char*)malloc(len+1);
+  if (ldflags == NULL) return -1;
+  memcpy(ldflags,str,len+1);
+  return 0;
 }
 
 /*
@@ -109,64 +158,109 @@ void set_cflags(char *str)
 *   text pointed to by 'replace_str'.
 */
 
-char* _replace(char* source_str,char* search_str,char* replace_str)
+static char *_strcat(char *buf, size_t *buf_size, char **ptr,
+                     const char *addon, size_t addon_len)
 {
-  char *ostr, *nstr = NULL, *pdest = "";
-  int length, nlen;
-  unsigned int nstr_allocated;
-  unsigned int ostr_allocated;
-  
-  if(!source_str || !search_str || !replace_str){
+  size_t pos = (*ptr) - buf;
+  char *ret = buf;
+  if ((pos + addon_len) > (*buf_size)) {
+    (*buf_size) = (pos + addon_len);
+    ret = realloc(buf, (*buf_size) + 1);
+    if (ret == NULL) {
+      free(buf);
+      return NULL;
+    }
+    *ptr = ret + pos;
+  }
+  memcpy(*ptr, addon, addon_len);
+  (*ptr) += addon_len;
+  return ret;
+}
+
+char* _replace(const char* source_str,
+               const char* search_str,
+               const char* replace_str)
+{
+  char *ostr, *out = NULL;
+  const char *pos = NULL, *last = NULL;
+  const size_t nreplace = strlen(replace_str);
+  const size_t nsearch = strlen(search_str);
+  size_t ostr_allocated;
+
+  if (!source_str || !search_str || !replace_str) {
     printf("Not enough arguments\n");
     return NULL;
   }
-  ostr_allocated = sizeof(char) * (strlen(source_str)+1);
-  ostr = malloc( sizeof(char) * (strlen(source_str)+1));
-  if(!ostr){
+
+  ostr_allocated = strlen(source_str);
+  ostr = malloc(ostr_allocated + 1);
+  if (!ostr) {
     printf("Insufficient memory available\n");
     return NULL;
   }
-  strcpy(ostr, source_str);
 
-  while(pdest)
-    {
-      pdest = strstr( ostr, search_str );
-      length = (int)(pdest - ostr);
-
-      if ( pdest != NULL )
-        {
-          ostr[length]='\0';
-          nlen = strlen(ostr)+strlen(replace_str)+strlen( strchr(ostr,0)+strlen(search_str) )+1;
-          if( !nstr || /* _msize( nstr ) */ nstr_allocated < sizeof(char) * nlen){
-            nstr_allocated = sizeof(char) * nlen;
-            nstr = malloc( sizeof(char) * nlen );
-          }
-          if(!nstr){
-            printf("Insufficient memory available\n");
-            return NULL;
-          }
-
-          strcpy(nstr, ostr);
-          strcat(nstr, replace_str);
-          strcat(nstr, strchr(ostr,0)+strlen(search_str));
-
-          if( /* _msize(ostr) */ ostr_allocated < sizeof(char)*strlen(nstr)+1 ){
-            ostr_allocated = sizeof(char)*strlen(nstr)+1;
-            ostr = malloc(sizeof(char)*strlen(nstr)+1 );
-          }
-          if(!ostr){
-            printf("Insufficient memory available\n");
-            return NULL;
-          }
-          strcpy(ostr, nstr);
-        }
+  last = source_str;
+  out = ostr;
+  while((pos = strstr(last, search_str)) != NULL) {
+    if (last < pos) {
+      ostr = _strcat(ostr, &ostr_allocated, &out, last, pos - last);
+      if (ostr == NULL) {
+        printf("Insufficient memory available\n");
+        return NULL;
+      }
     }
-  if(nstr)
-    free(nstr);
+
+    ostr = _strcat(ostr, &ostr_allocated, &out, replace_str, nreplace);
+    if (ostr == NULL) {
+      printf("Insufficient memory available\n");
+      return NULL;
+    }
+
+    last = pos + nsearch;
+  }
+
+  if (*last != '\0') {
+    ostr = _strcat(ostr, &ostr_allocated, &out, last, strlen(last));
+    if (ostr == NULL) {
+      printf("Insufficient memory available\n");
+      return NULL;
+    }
+  }
+
+  *out = '\0';
+
   return ostr;
 }
 
- 
+// windows and mingw32
+#if defined(__MINGW32__) || defined(_MSC_VER)
+
+#include <direct.h>
+#include <assert.h>
+#include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include "rml.h"
+#include "../Values.h"
+#include "../absyn_builder/yacclib.h"
+
+#define MAXPATHLEN MAX_PATH
+
+struct modelica_ptr_s {
+  union {
+    struct {
+      function_t handle;
+      modelica_integer lib;
+    } func;
+    HMODULE lib;
+  } data;
+  unsigned int cnt;
+};
+static struct modelica_ptr_s ptr_vector[MAX_PTR_INDEX];
+static modelica_integer last_ptr_index = -1;
 
 void System_5finit(void)
 {
@@ -175,34 +269,36 @@ void System_5finit(void)
 	char* omhome;
 	char* mingwpath;
 	char* qthome;
+
+    last_ptr_index = -1;
+    memset(ptr_vector, 0, sizeof(ptr_vector));
+
 	set_cc("gcc");
-	set_cflags("-I%OPENMODELICAHOME%\\include -L%OPENMODELICAHOME%\\lib -lc_runtime %MODELICAUSERCFLAGS%");
+    set_cxx("g++");
+    set_linker("gcc -shared -export-dynamic");
+    set_cflags("${MODELICAUSERCFLAGS}");
+    set_ldflags("-lc_runtime");
 	path = getenv("PATH");
 	omhome = getenv("OPENMODELICAHOME");
 	if (omhome) {
 		mingwpath = malloc(2*strlen(omhome)+25);
-		sprintf(mingwpath,"%s\\mingw\\bin;%s\\lib", omhome, omhome); 
-		if (strncmp(mingwpath,path,strlen(mingwpath))!=0) {
-			newPath = malloc(strlen(path)+strlen(mingwpath)+10);
-			sprintf(newPath,"PATH=%s;%s",mingwpath,path);
+		sprintf(mingwpath,"%s\\mingw\\bin;%s\\lib", omhome, omhome);
+		if (strncmp(mingwpath, path, strlen(mingwpath)) != 0) {
+			newPath = malloc(strlen(path) + strlen(mingwpath) + 10);
+			sprintf(newPath, "PATH=%s;%s", mingwpath, path);
 			_putenv(newPath);
 			free(newPath);
 		}
 		free(mingwpath);
 	}
-	
-	
-	
+
 //	qthome = getenv("QTHOME");
 //	if(qthome && strlen(qthome))
-if(1)
-	{
+    if (1) {
 //		char senddatalibs[] = "SENDDATALIBS= -lsendData -lQtNetwork -lQtCore -lQtGui -luuid -lole32 -lws2_32";
 		_putenv("SENDDATALIBS=-lsendData -lQtNetwork -lQtCore -lQtGui -luuid -lole32 -lws2_32");
 //		_putenv(senddatalibs);
 	}
-	
-	
 }
 
 
@@ -418,9 +514,13 @@ RML_BEGIN_LABEL(System__stringReplace)
   /* adrpo 2006-05-15 
    * if source and target are the same this function
    * cycles, get rid of that here
+   * x08joekl 2008-02-5
+   * fixed so that _replace handles target having source as a substring.
    */
+  /*
    if (!strcmp(source, target)) 
    	RML_TAILCALLK(rmlSC);
+  */
   /* end adrpo */
 
   res = _replace(str,source,target);
@@ -436,71 +536,183 @@ RML_BEGIN_LABEL(System__stringReplace)
 }
 RML_END_LABEL
 
-
-RML_BEGIN_LABEL(System__compileCFile)
-{
-  char* str = RML_STRINGDATA(rmlA0);
-  char command[255];
-  char exename[255];
-  char *tmp;
-
-  assert(strlen(str) < 255);
-  if (strlen(str) >= 255) {
-    RML_TAILCALLK(rmlFC);    
-  }
-  if (cc == NULL||cflags == NULL) {
-    RML_TAILCALLK(rmlFC);
-  }
-  memcpy(exename,str,strlen(str)-2);
-  exename[strlen(str)-2]='\0';
-
-  sprintf(command,"%s %s -o %s %s > compilelog.txt 2>&1",cc,str,exename,cflags);
-  //printf("compile using: %s\n",command);
-  _putenv("GCC_EXEC_PREFIX="); 
-  tmp = getenv("MODELICAUSERCFLAGS");
-  if (tmp == NULL || tmp[0] == '\0'  ) {
-	  _putenv("MODELICAUSERCFLAGS=  ");
-  }
-  if (system(command) != 0) {
-    RML_TAILCALLK(rmlFC);
-  }
-       
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL 
-
 RML_BEGIN_LABEL(System__setCCompiler)
 {
   char* str = RML_STRINGDATA(rmlA0);
-  set_cc(str);
+  if (set_cc(str)) {
+    RML_TAILCALLK(rmlFC);
+  }
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__getCCompiler)
+{
+  if (cc == NULL)
+    RML_TAILCALLK(rmlFC);
+  rmlA0 = (void*) mk_scon(cc);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__setCXXCompiler)
+{
+  char* str = RML_STRINGDATA(rmlA0);
+  if (set_cxx(str)) {
+    RML_TAILCALLK(rmlFC);
+  }
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getCXXCompiler)
+{
+  if (cxx == NULL)
+    RML_TAILCALLK(rmlFC);
+  rmlA0 = (void*) mk_scon(cxx);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__setLinker)
+{
+  char* str = RML_STRINGDATA(rmlA0);
+  if (set_linker(str)) {
+    RML_TAILCALLK(rmlFC);
+  }
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getLinker)
+{
+  if (linker == NULL)
+    RML_TAILCALLK(rmlFC);
+  rmlA0 = (void*) mk_scon(linker);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 RML_BEGIN_LABEL(System__setCFlags)
 {
   char* str = RML_STRINGDATA(rmlA0);
-  set_cflags(str);
+  if (set_cflags(str)) {
+    RML_TAILCALLK(rmlFC);
+  }
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__executeFunction)
+RML_BEGIN_LABEL(System__getCFlags)
+{
+  if (cflags == NULL)
+    RML_TAILCALLK(rmlFC);
+  rmlA0 = (void*) mk_scon(cflags);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__setLDFlags)
 {
   char* str = RML_STRINGDATA(rmlA0);
-  char command[255];
-  int ret_val;
-  sprintf(command,".\\%s %s_in.txt %s_out.txt",str,str,str);
-  ret_val = system(command);
-  
-  if (ret_val != 0) {
+  if (set_ldflags(str)) {
+    RML_TAILCALLK(rmlFC);
+  }
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getLDFlags)
+{
+  if (ldflags == NULL)
+    RML_TAILCALLK(rmlFC);
+  rmlA0 = (void*) mk_scon(ldflags);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getExeExt)
+{
+  rmlA0 = (void*) mk_scon(".exe");
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getDllExt)
+{
+  rmlA0 = (void*) mk_scon(".dll");
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__loadLibrary)
+{
+  const char *str = RML_STRINGDATA(rmlA0);
+  char libname[MAXPATHLEN];
+  modelica_ptr_t lib = NULL;
+  modelica_integer libIndex;
+  HMODULE h;
+#if defined(_MSC_VER)
+  _snprintf(libname, MAXPATHLEN, "./%s.dll", str);
+#else
+  snprintf(libname, MAXPATHLEN, "./%s.dll", str);
+#endif
+	  
+  h = LoadLibrary(libname);
+  if (h == NULL) {
+    fprintf(stderr, "Unable to load `%s': %lu.\n", libname, GetLastError());
+    RML_TAILCALLK(rmlFC);
+  }
+  libIndex = alloc_ptr();
+  if (libIndex < 0) {
+    FreeLibrary(h);
+    RML_TAILCALLK(rmlFC);
+  }
+  lib = lookup_ptr(libIndex);
+  lib->data.lib = h;
+  rmlA0 = (void*) mk_icon(libIndex);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+void free_library(modelica_ptr_t lib)
+{
+  FreeLibrary(lib->data.lib);
+}
+
+RML_BEGIN_LABEL(System__lookupFunction)
+{
+  modelica_integer libIndex = RML_UNTAGFIXNUM(rmlA0), funcIndex;
+  const char *str = RML_STRINGDATA(rmlA1);
+  modelica_ptr_t lib = NULL, func = NULL;
+  function_t funcptr;
+
+  lib = lookup_ptr(libIndex);
+
+  if (lib == NULL)
+    RML_TAILCALLK(rmlFC);
+
+  funcptr = (void*)GetProcAddress(lib->data.lib, str);
+
+  if (funcptr == NULL) {
+    fprintf(stderr, "Unable to find `%s': %lu.\n", str, GetLastError());
     RML_TAILCALLK(rmlFC);
   }
 
+  funcIndex = alloc_ptr();
+  func = lookup_ptr(funcIndex);
+  func->data.func.handle = funcptr;
+  func->data.func.lib = libIndex;
+  ++(lib->cnt);
+  rmlA0 = (void*) mk_icon(funcIndex);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+void free_function(modelica_ptr_t func)
+{
+  /* noop */
+}
 
 RML_BEGIN_LABEL(System__systemCall)
 {
@@ -731,133 +943,6 @@ RML_BEGIN_LABEL(System__moFiles)
 	rmlA0 = (void*)res;
 	RML_TAILCALLK(rmlSC);
 }
-RML_END_LABEL
-
-void* read_one_value_from_file(FILE* file, type_description* desc)
-{
-  void *res=NULL;
-  int ival;
-  double rval;
-  double *rval_arr;
-  int *ival_arr;
-  int size;
-  if (desc->ndims == 0) /* Scalar value */ 
-  {
-    if (desc->type == 'i') {
-      fscanf(file,"%d",&ival);
-      res =(void*) Values__INTEGER(mk_icon(ival));
-    } else if (desc->type == 'r') {
-      fscanf(file,"%le",&rval);
-      res = (void*) Values__REAL(mk_rcon(rval));
-    }
-  } else if (desc->ndims == 1 && desc->type == 's') { /* Scalar String */   
-    int i;
-    char* tmp;
-    tmp = malloc(sizeof(char)*(desc->dim_size[0]+1));
-    if (!tmp) return NULL;
-    for(i=0;i<desc->dim_size[0];i++) {
-      tmp[i] = fgetc(file);
-      if (tmp[i] == EOF) {
-	return NULL;
-      }
-    }
-    tmp[i]='\0';
-    res = (void*) Values__STRING(mk_scon(tmp));
-  }
-  else  /* Array value */
-    {
-      int currdim,el,i;
-      if (desc->type == 'r') {
-	/* Create array to hold inserted values, max dimension as size */
-	size = 1;
-	for (currdim=0;currdim < desc->ndims; currdim++) {
-	  size *= desc->dim_size[currdim];
-	}
-	rval_arr = (double*)malloc(sizeof(double)*size);
-	if(rval_arr == NULL) {
-	  return NULL;
-	}
-	/* Fill the array in reversed order */
-	for(i=size-1;i>=0;i--) {
-	  fscanf(file,"%le",&rval_arr[i]);
-	}
-	
-	next_realelt(NULL);
-	/* 1 is current dimension (start value) */
-	res =(void*) Values__ARRAY(generate_array('r',1,desc,(void*)rval_arr)); 
-      }
-      
-      if (desc->type == 'i') {
-	int currdim,el,i;
-	/* Create array to hold inserted values, mult of dimensions as size */
-	size = 1;
-	for (currdim=0;currdim < desc->ndims; currdim++) {
-	  size *= desc->dim_size[currdim];
-	}
-	ival_arr = (int*)malloc(sizeof(int)*size);
-	if(rval_arr==NULL) {
-	  return NULL;
-	}
-	/* Fill the array in reversed order */
-	for(i=size-1;i>=0;i--) {
-	  fscanf(file,"%f",&ival_arr[i]);
-	}
-	next_intelt(NULL);
-	res = (void*) Values__ARRAY(generate_array('i',1,desc,(void*)ival_arr));	
-      }  
-      if (desc->type == 's') {
-	printf("Error, array of strings not impl. yet.\n");
-      }
-    }
-  return res;
-}
-
-RML_BEGIN_LABEL(System__readValuesFromFile)
-{
-  int stat=0;
-  int varcount=0;
-  type_description desc;
-  void *lst = (void*)mk_nil();
-  void *res = NULL;
-  char* filename = RML_STRINGDATA(rmlA0);
-  FILE * file=NULL;
-  file = fopen(filename,"r");
-  if (file == NULL) {
-    RML_TAILCALLK(rmlFC);
-  }
-  
-  /* Read the first value */
-  stat = read_type_description(file,&desc);
-  if (stat != 0) {
-    printf("Error reading values from file\n");
-    RML_TAILCALLK(rmlFC);
-  }
-
-  while (stat == 0) { /* Loop for tuples. At the end of while, we try to read another description */
-    res = read_one_value_from_file(file, &desc);
-    if (res == NULL) {
-      printf("Error reading values from file2\n");
-      RML_TAILCALLK(rmlFC);
-    }
-    lst = (void*)mk_cons(res, lst);
-    varcount++;
-    read_to_eol(file);
-    stat = read_type_description(file,&desc);
-    /*
-    printf("varcount is : %d\n", varcount);
-    printf("stat is : %d\n", stat);
-    */
-  }
-  if (varcount > 1) { /* if tuple */
-    rmlA0 = lst;
-    rml_prim_once(RML__list_5freverse);
-    rmlA0 = (void*) Values__TUPLE(rmlA0);
-  }
-  else {
-    rmlA0 = (void*)res;
-  }
-  RML_TAILCALLK(rmlSC);
-}   
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__readPtolemyplotDataset)
@@ -1091,57 +1176,6 @@ RML_BEGIN_LABEL(System__tanh)
 }
 RML_END_LABEL
 
-double next_realelt(double *arr)
-{
-  static int curpos;
-  
-  if(arr == NULL) {
-    curpos = 0;
-    return 0.0;
-  }
-  else {
-    return arr[curpos++];
-  }
-}
-
-int next_intelt(int *arr)
-{
-  static int curpos;
-  
-  if(arr == NULL) {
-    curpos = 0;
-    return 0;
-  }
-  else return arr[curpos++];
-}
-
-void * generate_array(char type, int curdim, type_description *desc, void *data)
-
-{
-  void *lst;
-  double rval;
-  int ival;
-  int i;
-  lst = (void*)mk_nil();
-  if (curdim == desc->ndims) {
-    for (i=0; i< desc->dim_size[curdim-1]; i++) {
-      if (type == 'r') {
-	rval = next_realelt((double*)data);
-	lst = (void*)mk_cons(Values__REAL(mk_rcon(rval)),lst);
-	
-      } else if (type == 'i') {
-	ival = next_intelt((int*)data);
-	lst = (void*)mk_cons(Values__INTEGER(mk_icon(ival)),lst);
-      }
-    }
-  } else {
-    for (i=0; i< desc->dim_size[curdim-1]; i++) {
-      lst = (void*)mk_cons(Values__ARRAY(generate_array(type,curdim+1,desc,data)),lst);
-    }
-  }
-  return lst;
-}
-
 char* class_names_for_simulation = NULL;
 RML_BEGIN_LABEL(System__getClassnamesForSimulation)
 {
@@ -1370,8 +1404,6 @@ RML_END_LABEL
 
 #include <time.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -1386,7 +1418,6 @@ RML_END_LABEL
 #include <sys/malloc.h>
 #endif
 
-#include "read_write.h"
 #include "rml.h"
 #include "../Values.h"
 #include "../absyn_builder/yacclib.h"
@@ -1466,131 +1497,41 @@ int scandir(const char* dirname,
 
 #endif /* 0 */
 
-char * cc=NULL;
-char * cflags=NULL;
-
-void * read_ptolemy_dataset(char*filename, int size,char**vars,int datasize);
-int read_ptolemy_dataset_size(char*filename);
-void * generate_array(char,int,type_description *,void *data);
-double next_realelt(double*);
-int next_intelt(int*);
-
-int set_cc(char *str)
-{
-  if (cc != NULL) {
-    free(cc);
-  }
-  cc = (char*)malloc(strlen(str)+1);
-  if (cc == NULL) return -1;
-  memcpy(cc,str,strlen(str)+1);
-  return 0;
-}
-
-int set_cflags(char *str)
-{
-  if (cflags != NULL) {
-    free(cflags);
-  }
-  cflags = (char*)malloc(strlen(str)+1);
-  if (cflags == NULL) { return -1; }
-  memcpy(cflags,str,strlen(str)+1);
-  return 0;
-}
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <dlfcn.h>
 
+struct modelica_ptr_s {
+  union {
+    struct {
+      function_t handle;
+      modelica_integer lib;
+    } func;
+    void *lib;
+  } data;
+  unsigned int cnt;
+};
+static struct modelica_ptr_s ptr_vector[MAX_PTR_INDEX];
+static modelica_integer last_ptr_index = -1;
 
-/*
-* Description:
-*   Find and replace text within a string.
-*
-* Parameters:
-*   source_src  (in) - pointer to source string
-*   search_str (in) - pointer to search text
-*   replace_str   (in) - pointer to replacement text
-*
-* Returns:
-*   Returns a pointer to dynamically-allocated memory containing string
-*   with occurences of the text pointed to by 'search_str' replaced by with the
-*   text pointed to by 'replace_str'.
-*/
-
-
-char* _replace(char* source_str,char* search_str,char* replace_str)
-{
-  char *ostr, *nstr = NULL, *pdest = "";
-  int length, nlen;
-  unsigned int nstr_allocated;
-  unsigned int ostr_allocated;
-  
-  if(!source_str || !search_str || !replace_str){
-    printf("Not enough arguments\n");
-    return NULL;
-  }
-  ostr_allocated = sizeof(char) * (strlen(source_str)+1);
-  ostr = malloc( sizeof(char) * (strlen(source_str)+1));
-  if(!ostr){
-    printf("Insufficient memory available\n");
-    return NULL;
-  }
-  strcpy(ostr, source_str);
-
-  while(pdest)
-    {
-      pdest = strstr( ostr, search_str );
-      length = (int)(pdest - ostr);
-
-      if ( pdest != NULL )
-        {
-          ostr[length]='\0';
-          nlen = strlen(ostr)+strlen(replace_str)+strlen( strchr(ostr,0)+strlen(search_str) )+1;
-          if( !nstr || /* _msize( nstr ) */ nstr_allocated < sizeof(char) * nlen){
-            nstr_allocated = sizeof(char) * nlen;
-            nstr = malloc( sizeof(char) * nlen );
-          }
-          if(!nstr){
-            printf("Insufficient memory available\n");
-            return NULL;
-          }
-
-          strcpy(nstr, ostr);
-          strcat(nstr, replace_str);
-          strcat(nstr, strchr(ostr,0)+strlen(search_str));
-
-          if( /* _msize(ostr) */ ostr_allocated < sizeof(char)*strlen(nstr)+1 ){
-            ostr_allocated = sizeof(char)*strlen(nstr)+1;
-            ostr = malloc(sizeof(char)*strlen(nstr)+1 );
-          }
-          if(!ostr){
-            printf("Insufficient memory available\n");
-            return NULL;
-          }
-          strcpy(ostr, nstr);
-        }
-    }
-  if(nstr)
-    free(nstr);
-  return ostr;
-}
-
- 
 void System_5finit(void)
 {
-	char* qthome;	
+	char* qthome;
+
+    last_ptr_index = -1;
+    memset(ptr_vector, 0, sizeof(ptr_vector));
+
 	set_cc("gcc");
-    
-	set_cflags("-I$OPENMODELICAHOME/include -L$OPENMODELICAHOME/lib -lc_runtime -lm $MODELICAUSERCFLAGS");
-  
+    set_cxx("g++");
+    set_linker("gcc -export-dynamic -shared");
+	set_cflags("${MODELICAUSERCFLAGS}");
+    set_ldflags("-lc_runtime");
+
 	qthome = getenv("QTHOME");
-	if(qthome && strlen(qthome))
-	{
+	if (qthome && strlen(qthome)) {
 		putenv("SENDDATALIBS=-lsendData -lQtNetwork -lQtCore -lQtGui -luuid");
-	}
-	else
-	{
+	} else {
 		putenv("SENDDATALIBS=-lsendData");
 	}
 }
@@ -1803,14 +1744,18 @@ RML_BEGIN_LABEL(System__stringReplace)
   char *target = RML_STRINGDATA(rmlA2);
   char * res=0;
 
-  /* adrpo 2006-05-15 
+  /* adrpo 2006-05-15
    * if source and target are the same this function
    * cycles, get rid of that here
+   * x08joekl 2008-02-5
+   * fixed so that _replace handles target having source as a substring.
    */
-   if (!strcmp(source, target)) 
+  /*
+   if (!strcmp(source, target))
    	RML_TAILCALLK(rmlSC);
+  */
   /* end adrpo */
-  
+
   res = _replace(str,source,target);
 
   if (res == NULL) {
@@ -1822,50 +1767,62 @@ RML_BEGIN_LABEL(System__stringReplace)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__compileCFile)
-{
-  char* str = RML_STRINGDATA(rmlA0);
-  char command[255];
-  char exename[255];
-  char *tmp;
-
-  if (strlen(str) >= 255) {
-    RML_TAILCALLK(rmlFC);    
-  }
-  if (cc == NULL||cflags == NULL) {
-    RML_TAILCALLK(rmlFC);
-  }
-  memcpy(exename,str,strlen(str)-2);
-  exename[strlen(str)-2]='\0';
-
-  sprintf(command,"%s %s -o %s %s",cc,str,exename,cflags);
-  /* printf("compiled using: %s\n",command); */
-  
-#ifndef __APPLE_CC__  /* seems that we need to disable this on MacOS */
-  /* putenv("GCC_EXEC_PREFIX="); */
-#endif
-  tmp = getenv("MODELICAUSERCFLAGS");
-  if (tmp == NULL || tmp[0] == '\0'  ) {
-	  putenv("MODELICAUSERCFLAGS=  ");
-  }
-  if (system(command) != 0) {
-    RML_TAILCALLK(rmlFC);
-  }
-       
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL 
-
 RML_BEGIN_LABEL(System__setCCompiler)
 {
   char* str = RML_STRINGDATA(rmlA0);
-  if(set_cc(str))  { 
-    RML_TAILCALLK(rmlFC); 
+  if (set_cc(str)) {
+    RML_TAILCALLK(rmlFC);
   }
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__getCCompiler)
+{
+  if (cc == NULL)
+    RML_TAILCALLK(rmlFC);
+  rmlA0 = (void*) mk_scon(cc);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__setCXXCompiler)
+{
+  char* str = RML_STRINGDATA(rmlA0);
+  if (set_cxx(str)) {
+    RML_TAILCALLK(rmlFC);
+  }
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getCXXCompiler)
+{
+  if (cxx == NULL)
+    RML_TAILCALLK(rmlFC);
+  rmlA0 = (void*) mk_scon(cxx);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__setLinker)
+{
+  char* str = RML_STRINGDATA(rmlA0);
+  if (set_linker(str)) {
+    RML_TAILCALLK(rmlFC);
+  }
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getLinker)
+{
+  if (linker == NULL)
+    RML_TAILCALLK(rmlFC);
+  rmlA0 = (void*) mk_scon(linker);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 RML_BEGIN_LABEL(System__setCFlags)
 {
@@ -1877,20 +1834,111 @@ RML_BEGIN_LABEL(System__setCFlags)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__executeFunction)
+RML_BEGIN_LABEL(System__getCFlags)
 {
-  char* str = RML_STRINGDATA(rmlA0);
-  char command[255];
-  int ret_val;
-  sprintf(command,"./%s %s_in.txt %s_out.txt",str,str,str);
-  ret_val = system(command);  
-  if (ret_val != 0) {
+  if (cflags == NULL)
     RML_TAILCALLK(rmlFC);
-  }
-
+  rmlA0 = (void*) mk_scon(cflags);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__setLDFlags)
+{
+  char* str = RML_STRINGDATA(rmlA0);
+  if (set_ldflags(str)) {
+    RML_TAILCALLK(rmlFC);
+  }
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getLDFlags)
+{
+  if (ldflags == NULL)
+    RML_TAILCALLK(rmlFC);
+  rmlA0 = (void*) mk_scon(ldflags);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getExeExt)
+{
+  rmlA0 = (void*) mk_scon("");
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getDllExt)
+{
+  rmlA0 = (void*) mk_scon(".so");
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__loadLibrary)
+{
+  const char *str = RML_STRINGDATA(rmlA0);
+  char libname[MAXPATHLEN];
+  modelica_ptr_t lib = NULL;
+  modelica_integer libIndex;
+  void *h;
+  snprintf(libname, MAXPATHLEN, "./%s.so", str);
+  h = dlopen(libname, RTLD_LOCAL | RTLD_NOW);
+  if (h == NULL) {
+    fprintf(stderr, "Unable to load `%s': %s.\n", libname, dlerror());
+    RML_TAILCALLK(rmlFC);
+  }
+  libIndex = alloc_ptr();
+  if (libIndex < 0) {
+    dlclose(h);
+    RML_TAILCALLK(rmlFC);
+  }
+  lib = lookup_ptr(libIndex);
+  lib->data.lib = h;
+  rmlA0 = (void*) mk_icon(libIndex);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+void free_library(modelica_ptr_t lib)
+{
+  dlclose(lib->data.lib);
+}
+
+RML_BEGIN_LABEL(System__lookupFunction)
+{
+  modelica_integer libIndex = RML_UNTAGFIXNUM(rmlA0), funcIndex;
+  const char *str = RML_STRINGDATA(rmlA1);
+  modelica_ptr_t lib = NULL, func = NULL;
+  function_t funcptr;
+
+  lib = lookup_ptr(libIndex);
+
+  if (lib == NULL)
+    RML_TAILCALLK(rmlFC);
+
+  funcptr = dlsym(lib->data.lib, str);
+
+  if (funcptr == NULL) {
+    fprintf(stderr, "Unable to find `%s': %s.\n", str, dlerror());
+    RML_TAILCALLK(rmlFC);
+  }
+
+  funcIndex = alloc_ptr();
+  func = lookup_ptr(funcIndex);
+  func->data.func.handle = funcptr;
+  func->data.func.lib = libIndex;
+  ++(lib->cnt);
+  rmlA0 = (void*) mk_icon(funcIndex);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+void free_function(modelica_ptr_t func)
+{
+  /* noop */
+}
 
 RML_BEGIN_LABEL(System__systemCall)
 {
@@ -2120,133 +2168,6 @@ RML_BEGIN_LABEL(System__moFiles)
   rmlA0 = (void*) res;
   RML_TAILCALLK(rmlSC);
 }
-RML_END_LABEL
-
-void* read_one_value_from_file(FILE* file, type_description* desc)
-{
-  void *res=NULL;
-  int ival;
-  double rval;
-  double *rval_arr;
-  int *ival_arr;
-  int size;
-  if (desc->ndims == 0) /* Scalar value */ 
-  {
-    if (desc->type == 'i') {
-      fscanf(file,"%d",&ival);
-      res =(void*) Values__INTEGER(mk_icon(ival));
-    } else if (desc->type == 'r') {
-      fscanf(file,"%le",&rval);
-      res = (void*) Values__REAL(mk_rcon(rval));
-    }
-  } else if (desc->ndims == 1 && desc->type == 's') { /* Scalar String */   
-    int i;
-    char* tmp;
-    tmp = malloc(sizeof(char)*(desc->dim_size[0]+1));
-    if (!tmp) return NULL;
-    for(i=0;i<desc->dim_size[0];i++) {
-      tmp[i] = fgetc(file);
-      if (tmp[i] == EOF) {
-	return NULL;
-      }
-    }
-    tmp[i]='\0';
-    res = (void*) Values__STRING(mk_scon(tmp));
-  }
-  else  /* Array value */
-    {
-      int currdim,el,i;
-      if (desc->type == 'r') {
-	/* Create array to hold inserted values, max dimension as size */
-	size = 1;
-	for (currdim=0;currdim < desc->ndims; currdim++) {
-	  size *= desc->dim_size[currdim];
-	}
-	rval_arr = (double*)malloc(sizeof(double)*size);
-	if(rval_arr == NULL) {
-	  return NULL;
-	}
-	/* Fill the array in reversed order */
-	for(i=size-1;i>=0;i--) {
-	  fscanf(file,"%le",&rval_arr[i]);
-	}
-	
-	next_realelt(NULL);
-	/* 1 is current dimension (start value) */
-	res =(void*) Values__ARRAY(generate_array('r',1,desc,(void*)rval_arr)); 
-      }
-      
-      if (desc->type == 'i') {
-	int currdim,el,i;
-	/* Create array to hold inserted values, mult of dimensions as size */
-	size = 1;
-	for (currdim=0;currdim < desc->ndims; currdim++) {
-	  size *= desc->dim_size[currdim];
-	}
-	ival_arr = (int*)malloc(sizeof(int)*size);
-	if(rval_arr==NULL) {
-	  return NULL;
-	}
-	/* Fill the array in reversed order */
-	for(i=size-1;i>=0;i--) {
-	  fscanf(file,"%f",&ival_arr[i]);
-	}
-	next_intelt(NULL);
-	res = (void*) Values__ARRAY(generate_array('i',1,desc,(void*)ival_arr));	
-      }  
-      if (desc->type == 's') {
-	printf("Error, array of strings not impl. yet.\n");
-      }
-    }
-  return res;
-}
-
-RML_BEGIN_LABEL(System__readValuesFromFile)
-{
-  int stat=0;
-  int varcount=0;
-  type_description desc;
-  void *lst = (void*)mk_nil();
-  void *res = NULL;
-  char* filename = RML_STRINGDATA(rmlA0);
-  FILE * file=NULL;
-  file = fopen(filename,"r");
-  if (file == NULL) {
-    RML_TAILCALLK(rmlFC);
-  }
-  
-  /* Read the first value */
-  stat = read_type_description(file,&desc);
-  if (stat != 0) {
-    printf("Error reading values from file\n");
-    RML_TAILCALLK(rmlFC);
-  }
-
-  while (stat == 0) { /* Loop for tuples. At the end of while, we try to read another description */
-    res = read_one_value_from_file(file, &desc);
-    if (res == NULL) {
-      printf("Error reading values from file2\n");
-      RML_TAILCALLK(rmlFC);
-    }
-    lst = (void*)mk_cons(res, lst);
-    varcount++;
-    read_to_eol(file);
-    stat = read_type_description(file,&desc);
-    /*
-    printf("varcount is : %d\n", varcount);
-    printf("stat is : %d\n", stat);
-    */
-  }
-  if (varcount > 1) { /* if tuple */
-    rmlA0 = lst;
-    rml_prim_once(RML__list_5freverse);
-    rmlA0 = (void*) Values__TUPLE(rmlA0);
-  }
-  else {
-    rmlA0 = (void*)res;
-  }
-  RML_TAILCALLK(rmlSC);
-}   
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__readPtolemyplotDataset)
@@ -2480,57 +2401,6 @@ RML_BEGIN_LABEL(System__tanh)
 }
 RML_END_LABEL
 
-double next_realelt(double *arr)
-{
-  static int curpos;
-  
-  if(arr == NULL) {
-    curpos = 0;
-    return 0.0;
-  }
-  else {
-    return arr[curpos++];
-  }
-}
-
-int next_intelt(int *arr)
-{
-  static int curpos;
-  
-  if(arr == NULL) {
-    curpos = 0;
-    return 0;
-  }
-  else return arr[curpos++];
-}
-
-void * generate_array(char type, int curdim, type_description *desc, void *data)
-
-{
-  void *lst;
-  double rval;
-  int ival;
-  int i;
-  lst = (void*)mk_nil();
-  if (curdim == desc->ndims) {
-    for (i=0; i< desc->dim_size[curdim-1]; i++) {
-      if (type == 'r') {
-	rval = next_realelt((double*)data);
-	lst = (void*)mk_cons(Values__REAL(mk_rcon(rval)),lst);
-	
-      } else if (type == 'i') {
-	ival = next_intelt((int*)data);
-	lst = (void*)mk_cons(Values__INTEGER(mk_icon(ival)),lst);
-      }
-    }
-  } else {
-    for (i=0; i< desc->dim_size[curdim-1]; i++) {
-      lst = (void*)mk_cons(Values__ARRAY(generate_array(type,curdim+1,desc,data)),lst);
-    }
-  }
-  return lst;
-}
-
 char* class_names_for_simulation = NULL;
 RML_BEGIN_LABEL(System__getClassnamesForSimulation)
 {
@@ -2747,3 +2617,555 @@ RML_END_LABEL
 
 #endif /* MINGW32 */
 
+inline modelica_integer alloc_ptr()
+{
+  const modelica_integer start = last_ptr_index;
+  modelica_integer index;
+  index = start;
+  for (;;) {
+    ++index;
+    if (index >= MAX_PTR_INDEX)
+      index = 0;
+    if (index == start)
+      return -1;
+    if (ptr_vector[index].cnt == 0)
+      break;
+  }
+  ptr_vector[index].cnt = 1;
+  return index;
+}
+
+inline modelica_ptr_t lookup_ptr(modelica_integer index)
+{
+  assert(index < MAX_PTR_INDEX);
+  return ptr_vector + index;
+}
+
+inline void free_ptr(modelica_integer index)
+{
+  assert(index < MAX_PTR_INDEX);
+  ptr_vector[index].cnt = 0;
+  memset(&(ptr_vector[index].data), 0, sizeof(ptr_vector[index].data));
+}
+
+RML_BEGIN_LABEL(System__freeFunction)
+{
+  modelica_integer funcIndex = RML_UNTAGFIXNUM(rmlA0);
+  modelica_ptr_t func = NULL, lib = NULL;
+
+  func = lookup_ptr(funcIndex);
+
+  if (func == NULL)
+    RML_TAILCALLK(rmlFC);
+
+  lib = lookup_ptr(func->data.func.lib);
+
+  if (lib == NULL) {
+    free_function(func);
+    free_ptr(funcIndex);
+    RML_TAILCALLK(rmlFC);
+  }
+
+  if (lib->cnt <= 1) {
+    free_library(lib);
+    free_ptr(func->data.func.lib);
+  } else {
+    --(lib->cnt);
+  }
+
+  free_function(func);
+  free_ptr(funcIndex);
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__freeLibrary)
+{
+  modelica_integer libIndex = RML_UNTAGFIXNUM(rmlA0);
+  modelica_ptr_t lib = NULL;
+
+  lib = lookup_ptr(libIndex);
+
+  if (lib == NULL)
+    RML_TAILCALLK(rmlFC);
+
+  if (lib->cnt <= 1) {
+    free_library(lib);
+    free_ptr(libIndex);
+  } else {
+    --(lib->cnt);
+  }
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__executeFunction)
+{
+  modelica_integer funcIndex = RML_UNTAGFIXNUM(rmlA0);
+  modelica_ptr_t func = NULL;
+  int retval = -1;
+  void *retarg = NULL;
+
+  func = lookup_ptr(funcIndex);
+
+  if (func == NULL)
+    RML_TAILCALLK(rmlFC);
+
+  retval = execute_function(rmlA1, &retarg, func->data.func.handle);
+
+  if (retval) {
+    RML_TAILCALLK(rmlFC);
+  } else {
+    if (retarg)
+      rmlA0 = retarg;
+    RML_TAILCALLK(rmlSC);
+  }
+}
+RML_END_LABEL
+
+void *generate_array(enum type_desc_e type, int curdim, int ndims,
+                     int *dim_size, void **data)
+{
+  void *lst = (void *) mk_nil();
+  int i, cur_dim_size = dim_size[curdim - 1];
+
+  if (curdim == ndims) {
+    type_description tmp;
+    tmp.type = type;
+
+    switch (type) {
+    case TYPE_DESC_REAL: {
+      modelica_real *ptr = *data;
+      for (i = 0; i < cur_dim_size; ++i, --ptr) {
+        tmp.data.real = *ptr;
+        lst = (void *) mk_cons(type_desc_to_value(&tmp), lst);
+      }
+      *data = ptr;
+    }; break;
+    case TYPE_DESC_INT: {
+      modelica_integer *ptr = *data;
+      for (i = 0; i < cur_dim_size; ++i, --ptr) {
+        tmp.data.integer = *ptr;
+        lst = (void *) mk_cons(type_desc_to_value(&tmp), lst);
+      }
+      *data = ptr;
+    }; break;
+    case TYPE_DESC_BOOL: {
+      modelica_boolean *ptr = *data;
+      for (i = 0; i < cur_dim_size; ++i, --ptr) {
+        tmp.data.boolean = *ptr;
+        lst = (void *) mk_cons(type_desc_to_value(&tmp), lst);
+      }
+      *data = ptr;
+    }; break;
+    default:
+      assert(0);
+      return NULL;
+    }
+  } else {
+    for (i = 0; i < cur_dim_size; ++i) {
+      lst = (void *) mk_cons(generate_array(type, curdim + 1, ndims, dim_size,
+                                            data), lst);
+    }
+  }
+
+  return Values__ARRAY(lst);
+}
+
+void *type_desc_to_value(type_description *desc)
+{
+  switch (desc->type) {
+  case TYPE_DESC_NONE:
+    return NULL;
+  case TYPE_DESC_REAL:
+    return (void *) Values__REAL(mk_rcon(desc->data.real));
+  case TYPE_DESC_INT:
+    return (void *) Values__INTEGER(mk_icon(desc->data.integer));
+  case TYPE_DESC_BOOL:
+    return (void *) Values__BOOL(RML_PRIM_MKBOOL(desc->data.boolean));
+  case TYPE_DESC_STRING:
+    return (void *) Values__STRING(mk_scon(desc->data.string));
+  case TYPE_DESC_TUPLE: {
+    type_description *e = desc->data.tuple.element + desc->data.tuple.elements;
+    void *lst = (void *) mk_nil();
+    while (e > desc->data.tuple.element) {
+      void *t = type_desc_to_value(--e);
+      if (t == NULL)
+        return NULL;
+      lst = mk_cons(t, lst);
+    }
+    return (void *) Values__TUPLE(lst);
+  };
+  case TYPE_DESC_REAL_ARRAY: {
+    void *ptr = desc->data.real_array.data
+      + real_array_nr_of_elements(&(desc->data.real_array)) - 1;
+    return generate_array(TYPE_DESC_REAL, 1, desc->data.real_array.ndims,
+                          desc->data.real_array.dim_size, &ptr);
+  };
+  case TYPE_DESC_INT_ARRAY: {
+    void *ptr = desc->data.int_array.data
+      + integer_array_nr_of_elements(&(desc->data.int_array)) - 1;
+    return generate_array(TYPE_DESC_INT, 1, desc->data.int_array.ndims,
+                          desc->data.int_array.dim_size, &ptr);
+  };
+  case TYPE_DESC_BOOL_ARRAY: {
+    void *ptr = desc->data.bool_array.data
+      + boolean_array_nr_of_elements(&(desc->data.bool_array)) - 1;
+    return generate_array(TYPE_DESC_BOOL, 1, desc->data.bool_array.ndims,
+                          desc->data.bool_array.dim_size, &ptr);
+  };
+  case TYPE_DESC_COMPLEX:
+    return NULL;
+  }
+
+  assert(0);
+  return NULL;
+}
+
+static int get_array_type_and_dims(type_description *desc, void *arrdata)
+{
+  void *item = NULL;
+
+  if (RML_GETHDR(arrdata) == RML_NILHDR) {
+    /* Empty arrays automaticly get to be real arrays */
+    desc->type = TYPE_DESC_REAL_ARRAY;
+    return 1;
+  }
+
+  item = RML_CAR(arrdata);
+  switch (RML_HDRCTOR(RML_GETHDR(item))) {
+  case Values__INTEGER_3dBOX1:
+    desc->type = TYPE_DESC_INT_ARRAY;
+    return 1;
+  case Values__REAL_3dBOX1:
+    desc->type = TYPE_DESC_REAL_ARRAY;
+    return 1;
+  case Values__BOOL_3dBOX1:
+    desc->type = TYPE_DESC_BOOL_ARRAY;
+    return 1;
+  case Values__ARRAY_3dBOX1:
+    return (1 + get_array_type_and_dims(desc, RML_STRUCTDATA(item)[0]));
+  case Values__STRING_3dBOX1:
+    return -1;
+  case Values__ENUM_3dBOX1:
+  case Values__LIST_3dBOX1:
+  case Values__TUPLE_3dBOX1:
+  case Values__RECORD_3dBOX3:
+  case Values__CODE_3dBOX1:
+    return -1;
+  default:
+    return -1;
+  }
+}
+
+static int get_array_sizes(int curdim, int dims, int *dim_size, void *arrdata)
+{
+  int size = 0;
+  void *ptr = arrdata;
+
+  assert(curdim > 0 && curdim <= dims);
+
+  while (RML_GETHDR(ptr) != RML_NILHDR) {
+    ++size;
+    ptr = RML_CDR(ptr);
+  }
+
+  dim_size[curdim - 1] = size;
+
+  if (size > 0) {
+    void *item = RML_CAR(arrdata);
+    if (RML_HDRCTOR(RML_GETHDR(item)) == Values__ARRAY_3dBOX1) {
+      return get_array_sizes(curdim + 1, dims, dim_size,
+                             RML_STRUCTDATA(item)[0]);
+    }
+  }
+
+  return 0;
+}
+
+static int get_array_data(int curdim, int dims, const int *dim_size,
+                          void *arrdata, enum type_desc_e type, void **data)
+{
+  void *ptr = arrdata;
+  assert(curdim > 0 && curdim <= dims);
+  if (curdim == dims) {
+    while (RML_GETHDR(ptr) != RML_NILHDR) {
+      void *item = RML_CAR(ptr);
+
+      switch (type) {
+      case TYPE_DESC_REAL: {
+        modelica_real *ptr = *data;
+        if (RML_HDRCTOR(RML_GETHDR(item)) != Values__REAL_3dBOX1)
+          return -1;
+        *ptr = rml_prim_get_real(RML_STRUCTDATA(item)[0]);
+        *data = ++ptr;
+      }; break;
+      case TYPE_DESC_INT: {
+        modelica_integer *ptr = *data;
+        if (RML_HDRCTOR(RML_GETHDR(item)) != Values__INTEGER_3dBOX1)
+          return -1;
+        *ptr = RML_UNTAGFIXNUM(RML_STRUCTDATA(item)[0]);
+        *data = ++ptr;
+      }; break;
+      case TYPE_DESC_BOOL: {
+        modelica_boolean *ptr = *data;
+        if (RML_HDRCTOR(RML_GETHDR(item)) != Values__BOOL_3dBOX1)
+          return -1;
+        *ptr = (RML_STRUCTDATA(item)[0] == RML_TRUE);
+        *data = ++ptr;
+      }; break;
+      default:
+        assert(0);
+        return -1;
+      }
+
+      ptr = RML_CDR(ptr);
+    }
+  } else {
+    while (RML_GETHDR(ptr) != RML_NILHDR) {
+      void *item = RML_CAR(ptr);
+      if (RML_HDRCTOR(RML_GETHDR(item)) != Values__ARRAY_3dBOX1)
+        return -1;
+
+      if (get_array_data(curdim + 1, dims, dim_size, RML_STRUCTDATA(item)[0],
+                         type, data))
+        return -1;
+
+      ptr = RML_CDR(ptr);
+    }
+  }
+
+  return 0;
+}
+
+static int parse_array(type_description *desc, void *arrdata)
+{
+  int dims, *dim_size;
+  void *data;
+  assert(desc->type == TYPE_DESC_NONE);
+  dims = get_array_type_and_dims(desc, arrdata);
+  if (dims < 1) {
+    printf("dims: %d\n", dims);
+    return -1;
+  }
+  dim_size = malloc(sizeof(int) * dims);
+  switch (desc->type) {
+  case TYPE_DESC_REAL_ARRAY:
+    desc->data.real_array.ndims = dims;
+    desc->data.real_array.dim_size = dim_size;
+    break;
+  case TYPE_DESC_INT_ARRAY:
+    desc->data.int_array.ndims = dims;
+    desc->data.int_array.dim_size = dim_size;
+    break;
+  case TYPE_DESC_BOOL_ARRAY:
+    desc->data.bool_array.ndims = dims;
+    desc->data.bool_array.dim_size = dim_size;
+    break;
+  default:
+    assert(0);
+    return -1;
+  }
+  if (get_array_sizes(1, dims, dim_size, arrdata))
+    return -1;
+  switch (desc->type) {
+  case TYPE_DESC_REAL_ARRAY:
+    alloc_real_array_data(&(desc->data.real_array));
+    data = desc->data.real_array.data;
+    return get_array_data(1, dims, dim_size, arrdata, TYPE_DESC_REAL, &data);
+  case TYPE_DESC_INT_ARRAY:
+    alloc_integer_array_data(&(desc->data.int_array));
+    data = desc->data.int_array.data;
+    return get_array_data(1, dims, dim_size, arrdata, TYPE_DESC_INT, &data);
+  case TYPE_DESC_BOOL_ARRAY:
+    alloc_boolean_array_data(&(desc->data.bool_array));
+    data = desc->data.bool_array.data;
+    return get_array_data(1, dims, dim_size, arrdata, TYPE_DESC_BOOL, &data);
+  default:
+    break;
+  }
+
+  assert(0);
+  return -1;
+}
+#if 0 /* only used for debug */
+static void puttype(const type_description *desc)
+{
+  switch (desc->type) {
+  case TYPE_DESC_REAL:
+    fprintf(stderr, "REAL: %g\n", desc->data.real);
+    break;
+  case TYPE_DESC_INT:
+    fprintf(stderr, "INT: %d\n", desc->data.integer);
+    break;
+  case TYPE_DESC_BOOL:
+    fprintf(stderr, "BOOL: %c\n", desc->data.boolean ? 't' : 'f');
+    break;
+  case TYPE_DESC_STRING:
+    fprintf(stderr, "STR: `%s'\n", desc->data.string);
+    break;
+  case TYPE_DESC_TUPLE: {
+    size_t e;
+    fprintf(stderr, "TUPLE (%u):\n", desc->data.tuple.elements);
+    for (e = 0; e < desc->data.tuple.elements; ++e) {
+      fprintf(stderr, "\t");
+      puttype(desc->data.tuple.element + e);
+    }
+  }; break;
+  case TYPE_DESC_REAL_ARRAY: {
+    int d;
+    fprintf(stderr, "REAL ARRAY [%d] (", desc->data.real_array.ndims);
+    for (d = 0; d < desc->data.real_array.ndims; ++d)
+      fprintf(stderr, "%d, ", desc->data.real_array.dim_size[d]);
+    fprintf(stderr, ")\n");
+    if (desc->data.real_array.ndims == 1) {
+      int e;
+      fprintf(stderr, "\t[");
+      for (e = 0; e < desc->data.real_array.dim_size[0]; ++e)
+        fprintf(stderr, "%g, ", desc->data.real_array.data[e]);
+      fprintf(stderr, "]\n");
+    }
+  }; break;
+  case TYPE_DESC_INT_ARRAY: {
+    int d;
+    fprintf(stderr, "INT ARRAY [%d] (", desc->data.int_array.ndims);
+    for (d = 0; d < desc->data.int_array.ndims; ++d)
+      fprintf(stderr, "%d, ", desc->data.int_array.dim_size[d]);
+    fprintf(stderr, ")\n");
+    if (desc->data.int_array.ndims == 1) {
+      int e;
+      fprintf(stderr, "\t[");
+      for (e = 0; e < desc->data.int_array.dim_size[0]; ++e)
+        fprintf(stderr, "%d, ", desc->data.int_array.data[e]);
+      fprintf(stderr, "]\n");
+    }
+  }; break;
+  case TYPE_DESC_BOOL_ARRAY: {
+    int d;
+    fprintf(stderr, "BOOL ARRAY [%d] (", desc->data.bool_array.ndims);
+    for (d = 0; d < desc->data.bool_array.ndims; ++d)
+      fprintf(stderr, "%d, ", desc->data.bool_array.dim_size[d]);
+    fprintf(stderr, ")\n");
+    if (desc->data.bool_array.ndims == 1) {
+      int e;
+      fprintf(stderr, "\t[");
+      for (e = 0; e < desc->data.bool_array.dim_size[0]; ++e)
+        fprintf(stderr, "%g, ", desc->data.bool_array.data[e]);
+      fprintf(stderr, "]\n");
+    }
+  }; break;
+  case TYPE_DESC_COMPLEX:
+    fprintf(stderr, "COMPLEX\n");
+    break;
+  case TYPE_DESC_NONE:
+    fprintf(stderr, "NONE\n");
+    break;
+  }
+}
+#endif
+static int execute_function(void *in_arg, void **out_arg,
+                            int (* func)(type_description *,
+                                         type_description *))
+{
+  type_description arglst[RML_NUM_ARGS + 1], *arg = NULL;
+  type_description retarg;
+  void *v = NULL;
+  int retval;
+  state mem_state;
+
+  mem_state = get_memory_state();
+
+  v = in_arg;
+  arg = arglst;
+
+  while (RML_GETHDR(v) != RML_NILHDR) {
+    void *val = RML_CAR(v);
+
+    init_type_description(arg);
+
+    switch (RML_HDRCTOR(RML_GETHDR(val))) {
+    case Values__INTEGER_3dBOX1: {
+      void *data = RML_STRUCTDATA(val)[0];
+      arg->type = TYPE_DESC_INT;
+      arg->data.integer = RML_UNTAGFIXNUM(data);
+    }; break;
+    case Values__REAL_3dBOX1: {
+      void *data = RML_STRUCTDATA(val)[0];
+      arg->type = TYPE_DESC_REAL;
+      arg->data.real = rml_prim_get_real(data);
+    }; break;
+    case Values__BOOL_3dBOX1: {
+      void *data = RML_STRUCTDATA(val)[0];
+      arg->type = TYPE_DESC_BOOL;
+      arg->data.boolean = (data == RML_TRUE);
+    }; break;
+    case Values__STRING_3dBOX1: {
+      void *data = RML_STRUCTDATA(val)[0];
+      int len = RML_HDRSTRLEN(RML_GETHDR(data));
+      arg->type = TYPE_DESC_STRING;
+      alloc_modelica_string(&(arg->data.string), len);
+      memcpy(arg->data.string, RML_STRINGDATA(data), len + 1);
+    }; break;
+    case Values__ARRAY_3dBOX1: {
+      void *data = RML_STRUCTDATA(val)[0];
+      if (parse_array(arg, data)) {
+        printf("Parsing of array failed\n");
+        restore_memory_state(mem_state);
+        return -1;
+      }
+    }; break;
+    case Values__ENUM_3dBOX1:
+    case Values__LIST_3dBOX1:
+    case Values__TUPLE_3dBOX1:
+    case Values__RECORD_3dBOX3:
+    case Values__CODE_3dBOX1:
+      /* unsupported (for now) */
+      restore_memory_state(mem_state);
+      return -1;
+    default:
+      restore_memory_state(mem_state);
+      return -1;
+    }
+    /*
+    puttype(arg);
+    */
+    ++arg;
+    v = RML_CDR(v);
+  }
+
+  init_type_description(arg);
+  init_type_description(&retarg);
+  retarg.retval = 1;
+
+  retval = func(arglst, &retarg);
+
+  arg = arglst;
+  while (arg->type != TYPE_DESC_NONE) {
+    free_type_description(arg);
+    ++arg;
+  }
+
+  restore_memory_state(mem_state);
+
+  if (retval) {
+    return 1;
+  } else {
+    /*
+      fprintf(stderr, "X - Retarg:\n");
+      puttype(&retarg);
+    */
+
+    (*out_arg) = type_desc_to_value(&retarg);
+    /* out_arg doesn't seem to get freed, something we can do anything about?*/
+    free_type_description(&retarg);
+
+    if ((*out_arg) == NULL) {
+      printf("Unable to parse returned values.\n");
+      return -1;
+    }
+
+    return 0;
+  }
+}

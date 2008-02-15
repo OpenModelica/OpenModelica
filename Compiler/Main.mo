@@ -62,7 +62,6 @@ protected import TaskGraphExt;
 protected import SimCodegen;
 protected import ErrorExt;
 protected import Error;
-protected import Types;
 protected import Ceval;
 protected import Env;
 protected import Settings;
@@ -190,7 +189,7 @@ algorithm
       Interactive.InteractiveSymbolTable isymb,newisymb;
       Absyn.Program p,p_1,newprog,iprog;
       list<Interactive.InteractiveVariable> vars_1,vars;
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf_1,cf;
+      list<Interactive.CompiledCFunction> cf_1,cf,cf_2;
       list<SCode.Class> a;
       list<Interactive.InstantiatedClass> b;
       Interactive.InteractiveStmts exp;
@@ -216,8 +215,8 @@ algorithm
         Interactive.typeCheckFunction(p, isymb) "fails here if the string is not \"Ok\"" ;
         p_1 = Interactive.addScope(p, vars);
         vars_1 = Interactive.updateScope(p, vars);
-        newprog = Interactive.updateProgram(p_1, iprog);
-        cf_1 = Interactive.removeCompiledFunctions(p, cf);
+        (newprog, cf_1) = Interactive.updateProgram(p_1, iprog, cf);
+        cf_2 = Interactive.removeCompiledFunctions(p, cf_1);
         Debug.fprint("dump", 
           "\n--------------- Parsed program ---------------\n");
         Debug.fcall("dumpgraphviz", DumpGraphviz.dump, newprog);
@@ -225,7 +224,7 @@ algorithm
         res_1 = makeDebugResult("dump", "Ok");
         res = makeDebugResult("dumpgraphviz", res_1);
       then
-        (true,res,Interactive.SYMBOLTABLE(newprog,a,b,vars_1,cf_1,lf));
+        (true,res,Interactive.SYMBOLTABLE(newprog,a,b,vars_1,cf_2,lf));
     case (str,isymb) /* Interactively evaluate an algorithm statement or expression */ 
       equation 
         //debug_print("Command: don't typeCheck", str);      

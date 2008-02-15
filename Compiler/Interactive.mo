@@ -53,6 +53,23 @@ public import Values;
 public import Env;
 public import Settings;
 
+/*
+** CompiledCFunction
+** Absyn.Path = ie object path in class hierarcy
+** Types.Type = The type of the return value
+** Integer = functionHandler 
+*/
+//type CompiledCFunction = tuple<Absyn.Path, Types.Type, Integer>;
+
+public
+uniontype CompiledCFunction
+  record CFunction
+    Absyn.Path path;
+    Types.Type retType;
+    Integer funcHandle;
+  end CFunction;
+end CompiledCFunction;
+
 public 
 uniontype InteractiveStmt 
 "An Statement given in the interactive environment can either be 
@@ -117,7 +134,7 @@ uniontype InteractiveSymbolTable "- Interactive Symbol Table"
     SCode.Program explodedAst "explodedAst ; The exploded ast" ;
     list<InstantiatedClass> instClsLst "instClsLst ;  List of instantiated classes" ;
     list<InteractiveVariable> lstVarVal "lstVarVal ; List of variables with values" ;
-    list<tuple<Absyn.Path, Types.Type>> compiledFunctions "compiledFunctions ; List of compiled functions, F.Q name + type" ;
+    list<CompiledCFunction> compiledFunctions "compiledFunctions ; List of compiled functions, F.Q name + type + functionhandler" ;
     list<LoadedFile> loadedFiles "The list of the loaded files with their load time." ;
   end SYMBOLTABLE;
   
@@ -406,9 +423,9 @@ algorithm
       Absyn.Exp cond,msg,exp,rexp;
       Absyn.Program p;
       String str,ident;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      Types.Type t;
       Values.Value value;
-      list<tuple<Types.TType, Option<Absyn.Path>>> types;
+      list<Types.Type> types;
       list<String> idents;
       list<Values.Value> values;
       list<Absyn.Exp> crefexps;
@@ -621,7 +638,7 @@ algorithm
       Absyn.Exp exp;
       list<Absyn.AlgorithmItem> algitemlst;
       String estr,tstr;
-      tuple<Types.TType, Option<Absyn.Path>> vtype;
+      Types.Type vtype;
     case (Values.BOOL(boolean = false),_,_,st) 
       equation
       then 
@@ -670,7 +687,7 @@ algorithm
       list<Absyn.AlgorithmItem> algitemlst;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> algrest;
       String estr,tstr;
-      tuple<Types.TType, Option<Absyn.Path>> vtype;
+      Types.Type vtype;
       Values.Value value;
       Absyn.Exp exp;
     case (Values.BOOL(boolean = exp_val),_,algitemlst,_,st)
@@ -908,7 +925,7 @@ algorithm
   matchcontinue (inIdent,inInteractiveVariableLst)
     local
       String id,varid;
-      tuple<Types.TType, Option<Absyn.Path>> tp;
+      Types.Type tp;
       list<InteractiveVariable> rest;
     case (id,{}) then fail(); 
     case (varid,(IVAR(varIdent = id,type_ = tp) :: rest))
@@ -944,8 +961,8 @@ algorithm
       list<String> idrest;
       Values.Value v;
       list<Values.Value> vrest;
-      tuple<Types.TType, Option<Absyn.Path>> t;
-      list<tuple<Types.TType, Option<Absyn.Path>>> trest;
+      Types.Type t;
+      list<Types.Type> trest;
     case ({},_,_,st) then st; 
     case ((id :: idrest),(v :: vrest),(t :: trest),st)
       equation 
@@ -972,11 +989,11 @@ algorithm
       list<InteractiveVariable> vars_1,vars;
       String ident;
       Values.Value v;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      Types.Type t;
       Absyn.Program p;
       list<SCode.Class> sp;
       list<InstantiatedClass> id;
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+      list<CompiledCFunction> cf;
       list<LoadedFile> lf;
     case (ident,v,t,
       SYMBOLTABLE(
@@ -1010,11 +1027,11 @@ algorithm
       list<InteractiveVariable> vars_1,vars;
       String ident;
       Values.Value v;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      Types.Type t;
       Absyn.Program p;
       list<SCode.Class> sp;
       list<InstantiatedClass> id;
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+      list<CompiledCFunction> cf;
       list<LoadedFile> lf;
     case (ident,v,t,
       SYMBOLTABLE(
@@ -1046,7 +1063,7 @@ algorithm
       Absyn.Program p;
       list<SCode.Class> sp;
       list<InstantiatedClass> id;
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+      list<CompiledCFunction> cf;
       list<LoadedFile> lf;
     case (ident,
       SYMBOLTABLE(
@@ -1106,7 +1123,7 @@ algorithm
     local
       String ident,id2;
       Values.Value v,val2;
-      tuple<Types.TType, Option<Absyn.Path>> t,t2;
+      Types.Type t,t2;
       list<InteractiveVariable> rest,rest_1;
     case (ident,v,t,(IVAR(varIdent = id2) :: rest))
       equation 
@@ -1140,7 +1157,7 @@ algorithm
       Absyn.Program p;
       list<InstantiatedClass> ic;
       list<InteractiveVariable> vars;
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+      list<CompiledCFunction> cf;
       list<LoadedFile> lf;
     case (
       SYMBOLTABLE(ast = p, explodedAst = sp, instClsLst = ic, lstVarVal = vars, compiledFunctions = cf))
@@ -1167,7 +1184,7 @@ algorithm
       list<Env.Frame> env_1,env_2,env;
       String id;
       Values.Value v;
-      tuple<Types.TType, Option<Absyn.Path>> tp;
+      Types.Type tp;
       list<InteractiveVariable> rest;
     case ((IVAR(varIdent = id,value = v,type_ = tp) :: rest),env)
       equation 
@@ -1214,7 +1231,7 @@ algorithm
       list<SCode.Class> s;
       list<InstantiatedClass> ic;
       list<InteractiveVariable> iv;
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+      list<CompiledCFunction> cf;
       Absyn.Path p_class;
       Boolean final_,flow_,protected_,repl,dref1,dref2;
       Integer rest;
@@ -1427,7 +1444,7 @@ algorithm
       list<SCode.Class> s,s_1;
       list<InstantiatedClass> ic;
       list<InteractiveVariable> iv;
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+      list<CompiledCFunction> cf, newCF, newCF_1;
       Absyn.Modification mod;
       Absyn.Path path_1,wpath;
       Integer rest,count,n;
@@ -1521,12 +1538,12 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)))
       equation 
-        newp = updateProgram(
+        (newp, newCF) = updateProgram(
           Absyn.PROGRAM(
           {
           Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),
-          Absyn.PARTS({Absyn.PUBLIC({})},NONE),Absyn.INFO("",false,0,0,0,0))},Absyn.TOP()), p);
-        newst = SYMBOLTABLE(newp,s,ic,iv,cf,lf);
+          Absyn.PARTS({Absyn.PUBLIC({})},NONE),Absyn.INFO("",false,0,0,0,0))},Absyn.TOP()), p, cf);
+        newst = SYMBOLTABLE(newp,s,ic,iv,newCF,lf);
       then
         ("true",newst);
 
@@ -1541,12 +1558,12 @@ algorithm
         path_1 = Absyn.crefToPath(path);
         name = Absyn.pathLastIdent(path_1);
         wpath = Absyn.stripLast(path_1);
-        newp = updateProgram(
+        (newp, newCF) = updateProgram(
           Absyn.PROGRAM(
           {
           Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),
-          Absyn.PARTS({Absyn.PUBLIC({})},NONE),Absyn.INFO("",false,0,0,0,0))},Absyn.WITHIN(wpath)), p);
-        newst = SYMBOLTABLE(newp,s,ic,iv,cf,lf);
+          Absyn.PARTS({Absyn.PUBLIC({})},NONE),Absyn.INFO("",false,0,0,0,0))},Absyn.WITHIN(wpath)), p, cf);
+        newst = SYMBOLTABLE(newp,s,ic,iv,newCF,lf);
       then
         ("true",newst);
 
@@ -1560,12 +1577,12 @@ algorithm
       local Absyn.Path path;
       equation 
         path = Absyn.crefToPath(cr);
-        newp = updateProgram(
+        (newp, newCF) = updateProgram(
           Absyn.PROGRAM(
           {
           Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),
-          Absyn.PARTS({Absyn.PUBLIC({})},NONE),Absyn.INFO("",false,0,0,0,0))},Absyn.WITHIN(path)), p);
-        newst = SYMBOLTABLE(newp,s,ic,iv,cf,lf);
+          Absyn.PARTS({Absyn.PUBLIC({})},NONE),Absyn.INFO("",false,0,0,0,0))},Absyn.WITHIN(path)), p, cf);
+        newst = SYMBOLTABLE(newp,s,ic,iv,newCF,lf);
         resstr = stringAppend(name, "\n");
       then
         ("true",newst);
@@ -1577,11 +1594,11 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)))
       equation 
-        p1 = ClassLoader.loadFile(name) "System.regularFileExists(name) => 0 & 	 Parser.parse(name) => p1 &" ;
-        newp = updateProgram(p1, p);
+        (p1, newCF) = ClassLoader.loadFile(name, cf) "System.regularFileExists(name) => 0 & 	 Parser.parse(name) => p1 &" ;
+        (newp, newCF_1) = updateProgram(p1, p, newCF);
         top_names_str = getTopClassnames(p1);
       then
-        (top_names_str,SYMBOLTABLE(newp,s,ic,iv,cf,lf));
+        (top_names_str,SYMBOLTABLE(newp,s,ic,iv,newCF_1,lf));
 
     case (ISTMTS(interactiveStmtLst = 
       {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractive"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
@@ -1613,9 +1630,9 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)))
       equation 
-        (resstr,newp) = deleteClass(cr, p);
+        (resstr,newp,newCF) = deleteClass(cr, p, cf);
       then
-        (resstr,SYMBOLTABLE(newp,s,ic,iv,cf,lf));
+        (resstr,SYMBOLTABLE(newp,s,ic,iv,newCF,lf));
 
     case (ISTMTS(interactiveStmtLst = 
       {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "addComponent"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = name)),
@@ -1639,10 +1656,10 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)))
       equation 
-        (newp,res) = updateComponent(name, tp, model_, nargs, p) "delete_component(name,model,p) => (newp,resstr) &
+        (newp,newCF,res) = updateComponent(name, tp, model_, nargs, p, cf) "delete_component(name,model,p) => (newp,resstr) &
 	 add_component(name,tp,model,nargs,newp) => (newp2,resstr)" ;
       then
-        (res,SYMBOLTABLE(newp,s,ic,iv,cf,lf));
+        (res,SYMBOLTABLE(newp,s,ic,iv,newCF,lf));
 
     case (ISTMTS(interactiveStmtLst = 
       {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "deleteComponent"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = name)),
@@ -1652,11 +1669,11 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)))
       equation 
-        (newp,resstr) = deleteComponent(name, model_, p);
+        (newp,newCF,resstr) = deleteComponent(name, model_, p, cf);
         str = Print.getString();
         resstr_1 = stringAppend(resstr, str);
       then
-        ("true",SYMBOLTABLE(newp,s,ic,iv,cf,lf));
+        ("true",SYMBOLTABLE(newp,s,ic,iv,newCF,lf));
 
     case (ISTMTS(interactiveStmtLst = 
       {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "addClassAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)},argNames = nargs)))}),
@@ -1665,8 +1682,8 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)))
       equation 
-        newp = addClassAnnotation(cr, nargs, p);
-        newst = SYMBOLTABLE(newp,s,ic,iv,cf,lf);
+        (newp, newCF) = addClassAnnotation(cr, nargs, p, cf);
+        newst = SYMBOLTABLE(newp,s,ic,iv,newCF,lf);
       then
         ("true",newst);
 
@@ -1945,7 +1962,7 @@ algorithm
 	  		cls = getPathedClassInProgram(path, p);
         
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
-        p = updateProgram(Absyn.PROGRAM({refactoredClass}, Absyn.TOP), p);
+        (p, cf) = updateProgram(Absyn.PROGRAM({refactoredClass}, Absyn.TOP), p, cf);
 	 			resstr = Dump.unparseStr(Absyn.PROGRAM({refactoredClass},Absyn.TOP())) ",false";
       then
         (resstr,SYMBOLTABLE(p,s,ic,iv,cf,lf));
@@ -4736,7 +4753,7 @@ algorithm
         cdef = getPathedClassInProgram(p_class, p);
         cdef_1 = setComponentPropertiesInClass(cdef, varname, final_, flow_, prot, repl, variability, 
           dyn_ref, causality);
-        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
+        (newp,_) = updateProgram(Absyn.PROGRAM({cdef_1},within_), p, {});
       then
         ("Ok",newp); 
     case (_,_,_,_,_,_,_,_,_,p) then ("Error",p); 
@@ -5537,7 +5554,7 @@ algorithm
         cdef = getPathedClassInProgram(p_class, p);
         within_ = buildWithin(p_class);
         cdef_1 = Absyn.setClassFilename(cdef, filename);
-        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
+        (newp,_) = updateProgram(Absyn.PROGRAM({cdef_1},within_), p, {});
       then
         ("Ok",newp);
     case (_,_,p) then ("Error",p); 
@@ -5585,7 +5602,7 @@ algorithm
         cdef = getPathedClassInProgram(p_class, p);
         env = getClassEnv(p, p_class);
         cdef_1 = setExtendsSubmodifierInClass(cdef, inherit_class, subident, mod, env);
-        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
+        (newp, _) = updateProgram(Absyn.PROGRAM({cdef_1},within_), p, {});
       then
         (newp,"Ok");
     case (_,_,_,_,p) then (p,"Error"); 
@@ -6074,7 +6091,7 @@ algorithm
         within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
         cdef_1 = setComponentSubmodifierInClass(cdef, varname, subident, mod);
-        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
+        (newp,_) = updateProgram(Absyn.PROGRAM({cdef_1},within_), p, {});
       then
         (newp,"Ok");
     case (_,_,_,_,p) then (p,"Error"); 
@@ -6788,7 +6805,7 @@ algorithm
         within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
         cdef_1 = setVariableBindingInClass(cdef, varname, exp);
-        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
+        (newp, _) = updateProgram(Absyn.PROGRAM({cdef_1},within_), p, {});
       then
         (newp,"Ok");
     case (_,_,_,p) then (p,"Error"); 
@@ -7826,19 +7843,22 @@ protected function deleteClass "function: deleteClass
 "
   input Absyn.ComponentRef inComponentRef;
   input Absyn.Program inProgram;
+  input list<CompiledCFunction> inCompiledFunctions;
   output String outString;
   output Absyn.Program outProgram;
+  output list<CompiledCFunction> outCompiledFunctions;
 algorithm 
-  (outString,outProgram):=
-  matchcontinue (inComponentRef,inProgram)
+  (outString,outProgram,outCompiledFunctions):=
+  matchcontinue (inComponentRef,inProgram,inCompiledFunctions)
     local
       Absyn.Path cpath,parentcpath,parentparentcpath;
       Absyn.Class cdef,parentcdef,parentcdef_1;
       Absyn.Program newp,p;
       Absyn.ComponentRef class_;
       list<Absyn.Class> clist,clist_1;
+      list<CompiledCFunction> cf, newCF, newCF_1;
       Absyn.Within w;
-    case (class_,(p as Absyn.PROGRAM(classes = clist,within_ = w)))
+    case (class_,(p as Absyn.PROGRAM(classes = clist,within_ = w)),cf)
       equation 
         cpath = Absyn.crefToPath(class_) "Class inside another class, inside another class" ;
         parentcpath = Absyn.stripLast(cpath);
@@ -7846,28 +7866,31 @@ algorithm
         cdef = getPathedClassInProgram(cpath, p);
         parentcdef = getPathedClassInProgram(parentcpath, p);
         parentcdef_1 = removeInnerClass(cdef, parentcdef);
-        newp = updateProgram(
-          Absyn.PROGRAM({parentcdef_1},Absyn.WITHIN(parentparentcpath)), p);
+        newCF = removeAnySubFunctions(cpath,cdef,cf);
+        (newp,newCF_1) = updateProgram(
+          Absyn.PROGRAM({parentcdef_1},Absyn.WITHIN(parentparentcpath)), p, newCF);
       then
-        ("true",newp);
-    case (class_,(p as Absyn.PROGRAM(classes = clist,within_ = w)))
+        ("true",newp,newCF_1);
+    case (class_,(p as Absyn.PROGRAM(classes = clist,within_ = w)),cf)
       equation 
         cpath = Absyn.crefToPath(class_) "Class inside other class" ;
         parentcpath = Absyn.stripLast(cpath);
         cdef = getPathedClassInProgram(cpath, p);
         parentcdef = getPathedClassInProgram(parentcpath, p);
         parentcdef_1 = removeInnerClass(cdef, parentcdef);
-        newp = updateProgram(Absyn.PROGRAM({parentcdef_1},Absyn.TOP()), p);
+        newCF = removeAnySubFunctions(cpath,cdef,cf);
+        (newp, newCF_1) = updateProgram(Absyn.PROGRAM({parentcdef_1},Absyn.TOP()), p, newCF);
       then
-        ("true",newp);
-    case (class_,(p as Absyn.PROGRAM(classes = clist,within_ = w)))
+        ("true",newp,newCF_1);
+    case (class_,(p as Absyn.PROGRAM(classes = clist,within_ = w)),cf)
       equation 
         cpath = Absyn.crefToPath(class_) "Top level class" ;
         cdef = getPathedClassInProgram(cpath, p);
         clist_1 = deleteClassFromList(cdef, clist);
+        newCF = removeAnySubFunctions(cpath,cdef,cf);
       then
-        ("true",Absyn.PROGRAM(clist_1,w));
-    case (_,p) then ("false",p); 
+        ("true",Absyn.PROGRAM(clist_1,w),newCF);
+    case (_,p,cf) then ("false",p,cf); 
   end matchcontinue;
 end deleteClass;
 
@@ -7931,7 +7954,7 @@ algorithm
         within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
         cdef_1 = setClassCommentInClass(cdef, str);
-        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
+        (newp, _) = updateProgram(Absyn.PROGRAM({cdef_1},within_), p, {});
       then
         (newp,"Ok");
     case (_,_,p) then (p,"Error"); 
@@ -8686,50 +8709,165 @@ public function removeCompiledFunctions "function: removeCompiledFunctions
    A Compiled function should be removed if its definition is updated.
 "
   input Absyn.Program inProgram;
-  input list<tuple<Absyn.Path, Types.Type>> inTplAbsynPathTypesTypeLst;
-  output list<tuple<Absyn.Path, Types.Type>> outTplAbsynPathTypesTypeLst;
+  input list<CompiledCFunction> inTplAbsynPathTypesTypeLst;
+  output list<CompiledCFunction> outTplAbsynPathTypesTypeLst;
 algorithm 
   outTplAbsynPathTypesTypeLst:=
   matchcontinue (inProgram,inTplAbsynPathTypesTypeLst)
     local
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cfs_1,cfs;
+      list<CompiledCFunction> cfs_1,cfs;
       String id;
     case (Absyn.PROGRAM(classes = {Absyn.CLASS(name = id,restriction = Absyn.R_FUNCTION())}),cfs)
       equation 
-        cfs_1 = removeCf(id, cfs);
+        cfs_1 = removeCf(Absyn.IDENT(id), cfs);
       then
         cfs_1;
     case (_,cfs) then cfs; 
   end matchcontinue;
 end removeCompiledFunctions;
 
+protected function removeAnySubFunctions "function: removeAnySubFunctions
+
+	Will remove any functions contain within the class from cflist.
+"
+  input Absyn.Path inPath;
+  input Absyn.Class inClass;
+  input list<CompiledCFunction> inCompiledFunctions;
+  output list<CompiledCFunction> outCompiledFunctions;
+algorithm
+  outCompiledFunctions:=
+  matchcontinue (inPath,inClass,inCompiledFunctions)
+    local
+      list<CompiledCFunction> cf, newCF;
+      Absyn.Path p;
+      list<Absyn.ClassPart> parts;
+    case (p, Absyn.CLASS(restriction = Absyn.R_FUNCTION()), cf)
+      equation
+        newCF = removeCf(p, cf);
+      then
+        newCF; 
+    case (p, Absyn.CLASS(body = Absyn.PARTS(classParts = parts)), cf)
+      equation
+        newCF = removeAnyPartsFunctions(p, parts, cf);
+      then
+        newCF;
+    case (_, _, cf) then cf;
+  end matchcontinue;
+end removeAnySubFunctions;
+
+protected function removeAnyPartsFunctions "function: removeAnyPartsFunctions
+
+	Helperfunction to removeAnyBodyFunctions.
+"
+  input Absyn.Path inPath;
+  input list<Absyn.ClassPart> inParts;
+  input list<CompiledCFunction> inCompiledFunctions;
+  output list<CompiledCFunction> outCompiledFunctions;
+algorithm
+ outCompiledFunctions:=
+ matchcontinue (inPath,inParts,inCompiledFunctions)
+   local 
+     list<Absyn.ClassPart> rest;
+     list<Absyn.ElementItem> elts;
+     list<CompiledCFunction> cf, newCF, newCF_1;
+     Absyn.Path p;
+   case (_,{},cf) then cf;
+   case (p, (Absyn.PUBLIC(contents = elts) :: rest), cf)
+     equation 
+       newCF = removeAnyPartsFunctions(p, rest, cf);
+       newCF_1 = removeAnyEltsFunctions(p, elts, newCF);
+     then
+       newCF_1;
+   case (p, (Absyn.PROTECTED(contents = elts) :: rest), cf)
+     equation 
+       newCF = removeAnyPartsFunctions(p, rest, cf);
+       newCF_1 = removeAnyEltsFunctions(p, elts, newCF);
+     then
+       newCF_1;
+   case (p,Absyn.EXTERNAL(externalDecl = Absyn.EXTERNALDECL(funcName = SOME(id))) :: rest, cf)
+     local
+       String id;
+       Absyn.Path p1;
+     equation
+       p1 = Absyn.joinPaths(p, Absyn.IDENT(id));
+       newCF = removeCf(p1, cf);
+       newCF_1 = removeAnyPartsFunctions(p, rest, newCF);
+     then
+       newCF_1;
+   case (p, (_ :: rest), cf)
+     equation 
+        newCF = removeAnyPartsFunctions(p, rest, cf);
+     then
+       newCF;
+ end matchcontinue;
+end removeAnyPartsFunctions;
+
+function removeAnyEltsFunctions "function: removeAnyEltsFunctions
+
+  Helperfunction to removeAnyPartsFunctions.
+"
+  input Absyn.Path inPath;
+  input list<Absyn.ElementItem> inAbsynElementItemLst;
+  input list<CompiledCFunction> inCompiledFunctions;
+  output list<CompiledCFunction> outCompiledFunctions;
+algorithm
+  outCompiledFunctions:=
+  matchcontinue (inPath, inAbsynElementItemLst, inCompiledFunctions)
+    local
+      list<CompiledCFunction> cf, newCF, newCF_1;      
+      Absyn.Class class_;
+      list<Absyn.ElementItem> rest;
+      Absyn.Path p;
+      Absyn.Ident id;
+    case (_,{},cf) then cf; 
+    case (p,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = (class_ as Absyn.CLASS(name = id))),constrainClass = NONE)) :: rest), cf)
+      local Absyn.Path p1;
+      equation 
+        p1 = Absyn.joinPaths(p, Absyn.IDENT(id)); 
+        newCF = removeAnySubFunctions(p1, class_, cf);
+        newCF_1 = removeAnyEltsFunctions(p, rest, newCF);
+      then
+        newCF_1;
+    case (p,(_ :: rest),cf)
+      equation 
+        newCF = removeAnyEltsFunctions(p, rest, cf);
+      then
+        newCF;
+  end matchcontinue;
+end removeAnyEltsFunctions;
+
 protected function removeCf "function: removeCf
  
-  Helperfunction to remove_compiled_functions.
+  Helperfunction to remove_compiled_functions and removeAnySubFunctions.
 "
-  input Absyn.Ident inIdent;
-  input list<tuple<Absyn.Path, Types.Type>> inTplAbsynPathTypesTypeLst;
-  output list<tuple<Absyn.Path, Types.Type>> outTplAbsynPathTypesTypeLst;
+  input Absyn.Path inPath;
+  input list<CompiledCFunction> inTplAbsynPathTypesTypeLst;
+  output list<CompiledCFunction> outTplAbsynPathTypesTypeLst;
 algorithm 
   outTplAbsynPathTypesTypeLst:=
-  matchcontinue (inIdent,inTplAbsynPathTypesTypeLst)
+  matchcontinue (inPath,inTplAbsynPathTypesTypeLst)
     local
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> res,rest;
-      String id1,id2;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      list<CompiledCFunction> res,rest;
+      Absyn.Path p1,p2;
+      Types.Type t;
+      Integer funcHandle;
     case (_,{}) then {}; 
-    case (id1,((Absyn.IDENT(name = id2),t) :: rest))
+      //t as (Types.T_FUNCTION(fargs,(outtype as (Types.T_COMPLEX(ClassInf.RECORD(_),_,_),_))),_)),env_1) 
+    case (p1,(CFunction(p2,t,funcHandle) :: rest))
+      local String tmp;
       equation 
-        equality(id1 = id2);
-        res = removeCf(id1, rest);
+        true = ModUtil.pathEqual(p1, p2);
+        tmp = ModUtil.pathString2(p1, "_");
+        System.freeFunction(funcHandle);
+        res = removeCf(p1, rest);
       then
         res;
-    case (id1,((Absyn.IDENT(name = id2),t) :: rest))
+    case (p1,(item :: rest))
+      local CompiledCFunction item;
       equation 
-        failure(equality(id1 = id2));
-        res = removeCf(id1, rest);
+        res = removeCf(p1, rest);
       then
-        ((Absyn.IDENT(id2),t) :: res);
+        (item :: res);
   end matchcontinue;
 end removeCf;
 
@@ -8738,15 +8876,19 @@ public function updateProgram "function: updateProgram
    Thisfunction takes an old program (second argument), i.e. the old 
    symboltable, and a new program (first argument), i.e. a new set of
    classes and updates the old program with the definitions in the new one.
+   It also takes in the current symboltable and returns a new one with any
+   replaced functions cache cleared.
 "
   input Absyn.Program inProgram1;
   input Absyn.Program inProgram2;
+  input list<CompiledCFunction> inCompiledFunctions;
   output Absyn.Program outProgram;
+  output list<CompiledCFunction> outCompiledFunctions;
 algorithm 
-  outProgram:=
-  matchcontinue (inProgram1,inProgram2)
+  (outProgram,outCompiledFunctions):=
+  matchcontinue (inProgram1,inProgram2,inCompiledFunctions)
     local
-      Absyn.Program prg,newp,oldp,pnew,p2,pnew_1,a,b, p1;
+      Absyn.Program prg,newp,oldp,p2,newp_1,a,b, p1;
       Absyn.Class newclass,c1,cdef,newcdef;
       String name;
       Absyn.Restriction restr;
@@ -8755,50 +8897,51 @@ algorithm
       list<Absyn.Class> c2,c3;
       Absyn.Within w2;
       Absyn.ElementSpec elt;
-    case (Absyn.PROGRAM(classes = {}),prg) then prg; 
-    case (Absyn.BEGIN_DEFINITION(path = Absyn.IDENT(name = name),restriction = restr,partial_ = p,encapsulated_ = e),oldp)
+      list<CompiledCFunction> cf, newCF, newCF_1;
+    case (Absyn.PROGRAM(classes = {}),prg,cf) then (prg,cf); 
+    case (Absyn.BEGIN_DEFINITION(path = Absyn.IDENT(name = name),restriction = restr,partial_ = p,encapsulated_ = e),oldp,cf)
       equation 
         newclass = Absyn.CLASS(name,p,false,e,restr,Absyn.PARTS({Absyn.PUBLIC({})},NONE),
           Absyn.INFO("",false,0,0,0,0)) "For split definitions at top, when introducing new model, eg. \"package A\"" ;
-        newp = updateProgram(Absyn.PROGRAM({newclass},Absyn.TOP()), oldp);
+        (newp, newCF) = updateProgram(Absyn.PROGRAM({newclass},Absyn.TOP()), oldp, cf);
       then
-        newp;
-    case (Absyn.BEGIN_DEFINITION(path = (path as Absyn.QUALIFIED(name = _)),restriction = restr,partial_ = p,encapsulated_ = e),oldp)
+        (newp, newCF);
+    case (Absyn.BEGIN_DEFINITION(path = (path as Absyn.QUALIFIED(name = _)),restriction = restr,partial_ = p,encapsulated_ = e),oldp,cf)
       equation 
         w = Absyn.stripLast(path) "For split definitions not at top,  eg. \"package A.B\"" ;
         name = Absyn.pathLastIdent(path);
         newclass = Absyn.CLASS(name,p,false,e,restr,Absyn.PARTS({Absyn.PUBLIC({})},NONE),
           Absyn.INFO("",false,0,0,0,0));
-        newp = updateProgram(Absyn.PROGRAM({newclass},Absyn.WITHIN(w)), oldp);
+        (newp, newCF) = updateProgram(Absyn.PROGRAM({newclass},Absyn.WITHIN(w)), oldp, cf);
       then
-        newp;
-    case (p1 as Absyn.PROGRAM(classes = ((c1 as Absyn.CLASS(name = name)) :: c2),within_ = (w as Absyn.TOP())),(p2 as Absyn.PROGRAM(classes = c3,within_ = w2)))
+        (newp, newCF);
+    case (p1 as Absyn.PROGRAM(classes = ((c1 as Absyn.CLASS(name = name)) :: c2),within_ = (w as Absyn.TOP())),(p2 as Absyn.PROGRAM(classes = c3,within_ = w2)),cf)
       local Absyn.Within w;
       equation        
         //debug_print("name", name); 
         //Dump.dump(p1);        
         false = classInProgram(name, p2);
-        pnew = updateProgram(Absyn.PROGRAM(c2,w), Absyn.PROGRAM((c1 :: c3),w2));
+        (newp, newCF)  = updateProgram(Absyn.PROGRAM(c2,w), Absyn.PROGRAM((c1 :: c3),w2),cf);
       then
-        pnew;
-    case (p1 as Absyn.PROGRAM(classes = ((c1 as Absyn.CLASS(name = name)) :: c2),within_ = (w as Absyn.TOP())),p2)
+        (newp, newCF);
+    case (p1 as Absyn.PROGRAM(classes = ((c1 as Absyn.CLASS(name = name)) :: c2),within_ = (w as Absyn.TOP())),p2,cf)
       local Absyn.Within w;
       equation 
         //debug_print("name", name);         
         //Dump.dump(p1);
         true = classInProgram(name, p2);
-        pnew = updateProgram(Absyn.PROGRAM(c2,w), p2);
-        pnew_1 = replaceClassInProgram(c1, pnew);
+        (newp, newCF) = updateProgram(Absyn.PROGRAM(c2,w), p2, cf);
+        (newp_1, newCF_1) = replaceClassInProgram(c1, newp, newCF);
       then
-        pnew_1;
-    case (Absyn.PROGRAM(classes = (c1 :: c2),within_ = (w as Absyn.WITHIN(path = path))),p2)
+        (newp_1, newCF_1);
+    case (Absyn.PROGRAM(classes = (c1 :: c2),within_ = (w as Absyn.WITHIN(path = path))),p2,cf)
       local Absyn.Within w;
       equation 
-        pnew = insertClassInProgram(c1, w, p2);
-        pnew_1 = updateProgram(Absyn.PROGRAM(c2,w), pnew);
+        newp = insertClassInProgram(c1, w, p2);
+        (newp_1, newCF) = updateProgram(Absyn.PROGRAM(c2,w), newp, cf);
       then
-        pnew_1;
-    case (Absyn.COMP_DEFINITION(element = elt,insertInto = SOME((path as Absyn.QUALIFIED(_,_)))),p)
+        (newp_1, newCF);
+    case (Absyn.COMP_DEFINITION(element = elt,insertInto = SOME((path as Absyn.QUALIFIED(_,_)))),p,cf)
       local Absyn.Program p;
       equation 
         cdef = getPathedClassInProgram(path, p) "nested packages (of form A.B)" ;
@@ -8807,10 +8950,10 @@ algorithm
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"",elt,
           Absyn.INFO("",false,0,0,0,0),NONE)));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
+        (newp, newCF) = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p, cf);
       then
-        newp;
-    case (Absyn.COMP_DEFINITION(element = elt,insertInto = SOME((path as Absyn.IDENT(_)))),p)
+        (newp, newCF);
+    case (Absyn.COMP_DEFINITION(element = elt,insertInto = SOME((path as Absyn.IDENT(_)))),p, cf)
       local Absyn.Program p;
       equation 
         cdef = getPathedClassInProgram(path, p) "top package" ;
@@ -8818,10 +8961,10 @@ algorithm
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"",elt,
           Absyn.INFO("",false,0,0,0,0),NONE)));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
+        (newp, newCF) = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p, cf);
       then
-        newp;
-    case (Absyn.IMPORT_DEFINITION(importElementFor = elt,insertInto = SOME((path as Absyn.QUALIFIED(_,_)))),p)
+        (newp, newCF);
+    case (Absyn.IMPORT_DEFINITION(importElementFor = elt,insertInto = SOME((path as Absyn.QUALIFIED(_,_)))),p,cf)
       local Absyn.Program p;
       equation 
         cdef = getPathedClassInProgram(path, p) "nested packages ( e.g. A.B )" ;
@@ -8830,10 +8973,10 @@ algorithm
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"",elt,
           Absyn.INFO("",false,0,0,0,0),NONE)));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
+        (newp, newCF) = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p, cf);
       then
-        newp;
-    case (Absyn.IMPORT_DEFINITION(importElementFor = elt,insertInto = SOME((path as Absyn.IDENT(_)))),p)
+        (newp, newCF);
+    case (Absyn.IMPORT_DEFINITION(importElementFor = elt,insertInto = SOME((path as Absyn.IDENT(_)))),p,cf)
       local Absyn.Program p;
       equation 
         cdef = getPathedClassInProgram(path, p) "top level package e.g. A" ;
@@ -8841,14 +8984,14 @@ algorithm
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(false,NONE,Absyn.UNSPECIFIED(),"",elt,
           Absyn.INFO("",false,0,0,0,0),NONE)));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
+        (newp, newCF) = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p, cf);
       then
-        newp;
-    case (a,b)
+        (newp, newCF);
+    case (a,b,cf)
       equation 
         Print.printBuf("Further program merging not implemented yet\n");
       then
-        b;
+        (b,cf);
   end matchcontinue;
 end updateProgram;
 
@@ -9093,11 +9236,13 @@ protected function deleteComponent "function: deleteComponent
   input String inString;
   input Absyn.ComponentRef inComponentRef;
   input Absyn.Program inProgram;
+  input list<CompiledCFunction> inCompiledFunctions;
   output Absyn.Program outProgram;
+  output list<CompiledCFunction> outCompiledFunctions;
   output String outString;
 algorithm 
   (outProgram,outString):=
-  matchcontinue (inString,inComponentRef,inProgram)
+  matchcontinue (inString,inComponentRef,inProgram,inCompiledFunctions)
     local
       Absyn.Path modelpath,modelwithin;
       String name;
@@ -9105,30 +9250,31 @@ algorithm
       Absyn.Program p,newp;
       Absyn.Class cdef,newcdef;
       Absyn.Within w;
-    case (name,model_,p)
+      list<CompiledCFunction> cf, newCF, newCF_1;
+    case (name,model_,p,cf)
       equation 
         modelpath = Absyn.crefToPath(model_);
         failure(_ = getPathedClassInProgram(modelpath, p));
       then
-        (p,"false\n");
-    case (name,(model_ as Absyn.CREF_QUAL(name = _)),(p as Absyn.PROGRAM(within_ = w)))
+        (p,cf,"false\n");
+    case (name,(model_ as Absyn.CREF_QUAL(name = _)),(p as Absyn.PROGRAM(within_ = w)),cf)
       equation 
         modelpath = Absyn.crefToPath(model_);
         modelwithin = Absyn.stripLast(modelpath);
         cdef = getPathedClassInProgram(modelpath, p);
-        newcdef = deleteComponentFromClass(name, cdef);
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
+        (newcdef, newCF) = deleteComponentFromClass(name, cdef, cf);
+        (newp, newCF_1) = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p, newCF);
       then
-        (newp,"true\n");
-    case (name,(model_ as Absyn.CREF_IDENT(name = _)),(p as Absyn.PROGRAM(within_ = w)))
+        (newp,newCF_1,"true\n");
+    case (name,(model_ as Absyn.CREF_IDENT(name = _)),(p as Absyn.PROGRAM(within_ = w)),cf)
       equation 
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
-        newcdef = deleteComponentFromClass(name, cdef);
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
+        (newcdef, newCF) = deleteComponentFromClass(name, cdef, cf);
+        (newp, newCF_1) = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p, newCF);
       then
-        (newp,"true\n");
-    case (_,_,p) then (p,"false\n"); 
+        (newp,newCF_1,"true\n");
+    case (_,_,p,cf) then (p,cf,"false\n"); 
   end matchcontinue;
 end deleteComponent;
 
@@ -9140,10 +9286,12 @@ protected function deleteComponentFromClass "function: deleteComponentFromClass
 "
   input String inString;
   input Absyn.Class inClass;
+  input list<CompiledCFunction> inCompiledFunctions;
   output Absyn.Class outClass;
+  output list<CompiledCFunction> outCompiledFunctions;
 algorithm 
-  outClass:=
-  matchcontinue (inString,inClass)
+  (outClass,outCompiledFunctions):=
+  matchcontinue (inString,inClass,inCompiledFunctions)
     local
       list<Absyn.ElementItem> publst,publst2,protlst,protlst2;
       Integer l2,l1,l1_1;
@@ -9153,7 +9301,20 @@ algorithm
       Absyn.Restriction r;
       Option<String> cmt;
       Absyn.Info file_info;
-    case (name,Absyn.CLASS(name = i,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = Absyn.PARTS(classParts = parts,comment = cmt),info = file_info))
+      list<CompiledCFunction> cf, newCF;
+    case (name,Absyn.CLASS(name = i,partial_ = p,final_ = f,encapsulated_ = e,restriction = Absyn.R_FUNCTION(),body = Absyn.PARTS(classParts = parts,comment = cmt),info = file_info),cf)
+      equation 
+        publst = getPublicList(parts) "Search in public list" ;
+        publst2 = deleteComponentFromElementitems(name, publst);
+        newCF = removeCf(Absyn.IDENT(i), cf);
+        l2 = listLength(publst2);
+        l1 = listLength(publst);
+        l1_1 = l1 - 1;
+        equality(l1_1 = l2);
+        parts2 = replacePublicList(parts, publst2);
+      then
+        (Absyn.CLASS(i,p,f,e,Absyn.R_FUNCTION(),Absyn.PARTS(parts2,cmt),file_info),newCF);
+    case (name,Absyn.CLASS(name = i,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = Absyn.PARTS(classParts = parts,comment = cmt),info = file_info),cf)
       equation 
         publst = getPublicList(parts) "Search in public list" ;
         publst2 = deleteComponentFromElementitems(name, publst);
@@ -9163,8 +9324,20 @@ algorithm
         equality(l1_1 = l2);
         parts2 = replacePublicList(parts, publst2);
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt),file_info);
-    case (name,Absyn.CLASS(name = i,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = Absyn.PARTS(classParts = parts,comment = cmt),info = file_info)) /* Search in protected list */ 
+        (Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt),file_info),cf);
+    case (name,Absyn.CLASS(name = i,partial_ = p,final_ = f,encapsulated_ = e,restriction = Absyn.R_FUNCTION(),body = Absyn.PARTS(classParts = parts,comment = cmt),info = file_info),cf) /* Search in protected list */ 
+      equation 
+        protlst = getProtectedList(parts);
+        protlst2 = deleteComponentFromElementitems(name, protlst);
+        newCF = removeCf(Absyn.IDENT(i), cf);
+        l2 = listLength(protlst2);
+        l1 = listLength(protlst);
+        l1_1 = l1 - 1;
+        equality(l1_1 = l2);
+        parts2 = replaceProtectedList(parts, protlst2);
+      then
+        (Absyn.CLASS(i,p,f,e,Absyn.R_FUNCTION(),Absyn.PARTS(parts2,cmt),file_info),newCF);
+    case (name,Absyn.CLASS(name = i,partial_ = p,final_ = f,encapsulated_ = e,restriction = r,body = Absyn.PARTS(classParts = parts,comment = cmt),info = file_info),cf) /* Search in protected list */ 
       equation 
         protlst = getProtectedList(parts);
         protlst2 = deleteComponentFromElementitems(name, protlst);
@@ -9174,7 +9347,7 @@ algorithm
         equality(l1_1 = l2);
         parts2 = replaceProtectedList(parts, protlst2);
       then
-        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt),file_info);
+        (Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts2,cmt),file_info),cf);
   end matchcontinue;
 end deleteComponentFromClass;
 
@@ -9268,7 +9441,7 @@ algorithm
           Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,NONE),
           {
           Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),NONE,annotation_)}),Absyn.INFO("",false,0,0,0,0),NONE)));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
+        (newp,_) = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p, {});
       then
         (newp,"Ok\n");
     case (name,tp,(model_ as Absyn.CREF_IDENT(name = _)),nargs,(p as Absyn.PROGRAM(within_ = w))) /* Adding component to model that resides on top level */ 
@@ -9285,7 +9458,7 @@ algorithm
           Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,NONE),
           {
           Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),NONE,annotation_)}),Absyn.INFO("",false,0,0,0,0),NONE)));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
+        (newp,_) = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p, {});
       then
         (newp,"Ok\n");
     case (_,_,_,_,p) then (p,"Error"); 
@@ -9389,11 +9562,13 @@ protected function updateComponent "function: updateComponent
   input Absyn.ComponentRef inComponentRef3;
   input list<Absyn.NamedArg> inAbsynNamedArgLst4;
   input Absyn.Program inProgram5;
+  input list<CompiledCFunction> inCompiledFunctions;
   output Absyn.Program outProgram;
+  output list<CompiledCFunction> outCompiledFunctions;
   output String outString;
 algorithm 
-  (outProgram,outString):=
-  matchcontinue (inString1,inComponentRef2,inComponentRef3,inAbsynNamedArgLst4,inProgram5)
+  (outProgram,outCompiledFunctions,outString):=
+  matchcontinue (inString1,inComponentRef2,inComponentRef3,inAbsynNamedArgLst4,inProgram5,inCompiledFunctions)
     local
       Absyn.Path modelpath,modelwithin,tp,tppath;
       Option<Absyn.ArrayDim> x;
@@ -9415,11 +9590,12 @@ algorithm
       Absyn.ComponentRef model_;
       list<Absyn.NamedArg> nargs;
       Absyn.Within w;
-    case (name,tp,(model_ as Absyn.CREF_QUAL(name = _)),nargs,(p as Absyn.PROGRAM(within_ = w)))
+      list<CompiledCFunction> cf, newCF, newCF_1;
+    case (name,tp,(model_ as Absyn.CREF_QUAL(name = _)),nargs,(p as Absyn.PROGRAM(within_ = w)),cf)
       equation 
         modelpath = Absyn.crefToPath(model_) "Updating a public component to model that resides inside package" ;
         modelwithin = Absyn.stripLast(modelpath);
-        (p_1,_) = deleteComponent(name, model_, p);
+        (p_1,newCF,_) = deleteComponent(name, model_, p, cf);
         Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_) = getPathedClassInProgram(modelpath, p);
         cdef = getPathedClassInProgram(modelpath, p_1);
         publst = getPublicList(parts);
@@ -9431,16 +9607,15 @@ algorithm
           Absyn.ELEMENTITEM(
           Absyn.ELEMENT(final_,repl,inout,id,
           Absyn.COMPONENTS(attr,Absyn.TPATH(tp,x),
-          {
-          Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),cond,annotation_)}),info,constr)));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
+            {Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),cond,annotation_)}),info,constr)));
+        (newp, newCF_1) = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p, newCF);
       then
-        (newp,"true");
-    case (name,tp,(model_ as Absyn.CREF_QUAL(name = _)),nargs,(p as Absyn.PROGRAM(within_ = w)))
+        (newp,newCF_1,"true");
+    case (name,tp,(model_ as Absyn.CREF_QUAL(name = _)),nargs,(p as Absyn.PROGRAM(within_ = w)),cf)
       equation 
         modelpath = Absyn.crefToPath(model_) "Updating a protected component to model that resides inside package" ;
         modelwithin = Absyn.stripLast(modelpath);
-        (p_1,_) = deleteComponent(name, model_, p);
+        (p_1,newCF,_) = deleteComponent(name, model_, p, cf);
         Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_) = getPathedClassInProgram(modelpath, p);
         cdef = getPathedClassInProgram(modelpath, p_1);
         protlst = getProtectedList(parts);
@@ -9454,15 +9629,15 @@ algorithm
           Absyn.COMPONENTS(attr,Absyn.TPATH(tp,x),
           {
           Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),cond,annotation_)}),info,constr)));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
+        (newp, newCF_1) = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p, newCF);
       then
-        (newp,"true");
-    case (name,tp,(model_ as Absyn.CREF_IDENT(name = _)),nargs,(p as Absyn.PROGRAM(within_ = w)))
+        (newp,newCF_1,"true");
+    case (name,tp,(model_ as Absyn.CREF_IDENT(name = _)),nargs,(p as Absyn.PROGRAM(within_ = w)),cf)
       equation 
         modelpath = Absyn.crefToPath(model_) "Updating a public component to model that resides on top level" ;
         cdef = getPathedClassInProgram(modelpath, p);
         tppath = Absyn.crefToPath(tp);
-        (p_1,_) = deleteComponent(name, model_, p);
+        (p_1,newCF,_) = deleteComponent(name, model_, p, cf);
         cdef = getPathedClassInProgram(modelpath, p_1);
         Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_) = getPathedClassInProgram(modelpath, p);
         publst = getPublicList(parts);
@@ -9476,15 +9651,15 @@ algorithm
           Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),
           {
           Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),cond,annotation_)}),info,constr)));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
+        (newp, newCF_1) = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p, newCF);
       then
-        (newp,"true");
-    case (name,tp,(model_ as Absyn.CREF_IDENT(name = _)),nargs,(p as Absyn.PROGRAM(within_ = w)))
+        (newp,newCF_1,"true");
+    case (name,tp,(model_ as Absyn.CREF_IDENT(name = _)),nargs,(p as Absyn.PROGRAM(within_ = w)),cf)
       equation 
         modelpath = Absyn.crefToPath(model_) "Updating a protected component to model that resides on top level" ;
         cdef = getPathedClassInProgram(modelpath, p);
         tppath = Absyn.crefToPath(tp);
-        (p_1,_) = deleteComponent(name, model_, p);
+        (p_1,newCF,_) = deleteComponent(name, model_, p, cf);
         cdef = getPathedClassInProgram(modelpath, p_1);
         Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(parts,_),_) = getPathedClassInProgram(modelpath, p);
         protlst = getProtectedList(parts);
@@ -9498,9 +9673,9 @@ algorithm
           Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),
           {
           Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),cond,annotation_)}),info,constr)));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
+        (newp, newCF_1) = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p, newCF);
       then
-        (newp,"true");
+        (newp,newCF_1,"true");
   end matchcontinue;
 end updateComponent;
 
@@ -9513,33 +9688,36 @@ protected function addClassAnnotation "function:addClassAnnotation
   input Absyn.ComponentRef inComponentRef;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Absyn.Program inProgram;
+  input list<CompiledCFunction> inCompiledFunctions;
   output Absyn.Program outProgram;
+  output list<CompiledCFunction> outCompiledFunctions;
 algorithm 
-  outProgram:=
-  matchcontinue (inComponentRef,inAbsynNamedArgLst,inProgram)
+  (outProgram,outCompiledFunctions):=
+  matchcontinue (inComponentRef,inAbsynNamedArgLst,inProgram,inCompiledFunctions)
     local
       Absyn.Path modelpath,modelwithin;
       Absyn.Class cdef,cdef_1;
       Absyn.Program newp,p;
       Absyn.ComponentRef model_;
       list<Absyn.NamedArg> nargs;
-    case ((model_ as Absyn.CREF_QUAL(name = _)),nargs,p)
+      list<CompiledCFunction> cf, newCF;
+    case ((model_ as Absyn.CREF_QUAL(name = _)),nargs,p,cf)
       equation 
         modelpath = Absyn.crefToPath(model_) "Class inside other class" ;
         modelwithin = Absyn.stripLast(modelpath);
         cdef = getPathedClassInProgram(modelpath, p);
         cdef_1 = addClassAnnotationToClass(cdef, nargs);
-        newp = updateProgram(Absyn.PROGRAM({cdef_1},Absyn.WITHIN(modelwithin)), p);
+        (newp,newCF) = updateProgram(Absyn.PROGRAM({cdef_1},Absyn.WITHIN(modelwithin)), p, cf);
       then
-        newp;
-    case ((model_ as Absyn.CREF_IDENT(name = _)),nargs,p)
+        (newp, newCF);
+    case ((model_ as Absyn.CREF_IDENT(name = _)),nargs,p,cf)
       equation 
         modelpath = Absyn.crefToPath(model_) "Class on top level" ;
         cdef = getPathedClassInProgram(modelpath, p);
         cdef_1 = addClassAnnotationToClass(cdef, nargs);
-        newp = updateProgram(Absyn.PROGRAM({cdef_1},Absyn.TOP()), p);
+        (newp, newCF) = updateProgram(Absyn.PROGRAM({cdef_1},Absyn.TOP()), p, cf);
       then
-        newp;
+        (newp, newCF);
   end matchcontinue;
 end addClassAnnotation;
 
@@ -10374,7 +10552,7 @@ algorithm
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),NONE));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},w), p);
+        (newp,_) = updateProgram(Absyn.PROGRAM({newcdef},w), p, {});
       then
         ("Ok",newp);
     case ((model_ as Absyn.CREF_QUAL(name = _)),c1,c2,{},(p as Absyn.PROGRAM(within_ = w)))
@@ -10383,7 +10561,7 @@ algorithm
         cdef = getPathedClassInProgram(modelpath, p);
         package_ = Absyn.stripLast(modelpath);
         newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),NONE));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
+        (newp,_) = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p, {});
       then
         ("Ok",newp);
     case ((model_ as Absyn.CREF_IDENT(name = _)),c1,c2,nargs,(p as Absyn.PROGRAM(within_ = w)))
@@ -10392,7 +10570,7 @@ algorithm
         cdef = getPathedClassInProgram(modelpath, p);
         cmt = annotationListToAbsynComment(nargs, NONE);
         newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),cmt));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},w), p);
+        (newp,_) = updateProgram(Absyn.PROGRAM({newcdef},w), p, {});
       then
         ("Ok",newp);
     case ((model_ as Absyn.CREF_QUAL(name = _)),c1,c2,nargs,(p as Absyn.PROGRAM(within_ = w)))
@@ -10402,7 +10580,7 @@ algorithm
         package_ = Absyn.stripLast(modelpath);
         cmt = annotationListToAbsynComment(nargs, NONE);
         newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),cmt));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
+        (newp,_) = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p, {});
       then
         ("Ok",newp);
   end matchcontinue;
@@ -10439,7 +10617,7 @@ algorithm
         modelwithin = Absyn.stripLast(modelpath);
         cdef = getPathedClassInProgram(modelpath, p);
         newcdef = deleteEquationInClass(cdef, c1, c2);
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
+        (newp, _) = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p, {});
       then
         ("Ok",newp);
     case (model_,c1,c2,(p as Absyn.PROGRAM(within_ = w)))
@@ -10447,7 +10625,7 @@ algorithm
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         newcdef = deleteEquationInClass(cdef, c1, c2);
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
+        (newp, _) = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p, {});
       then
         ("Ok",newp);
     case (model_,c1,c2,(p as Absyn.PROGRAM(within_ = w))) then ("Error",p); 
@@ -10552,7 +10730,7 @@ algorithm
         within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
         cdef_1 = setComponentCommentInClass(cdef, cr1, cmt);
-        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
+        (newp, _) = updateProgram(Absyn.PROGRAM({cdef_1},within_), p, {});
       then
         ("Ok",newp);
     case (class_,cr1,cmt,p) then ("Error",p); 
@@ -10758,7 +10936,7 @@ algorithm
         within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
         cdef_1 = setConnectionCommentInClass(cdef, cr1, cr2, cmt);
-        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
+        (newp,_) = updateProgram(Absyn.PROGRAM({cdef_1},within_), p, {});
       then
         (newp,"Ok");
     case (_,_,_,_,p) then (p,"Error"); 
@@ -12775,7 +12953,7 @@ algorithm
       Types.Mod mod_2;
       list<DAE.Element> dae,dae_1;
       Connect.Sets cs;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      Types.Type t;
       ClassInf.State state;
       String gexpstr,gexpstr_1;
       list<String> res;
@@ -12972,7 +13150,7 @@ algorithm
       Types.Mod mod_2;
       list<DAE.Element> dae,dae_1;
       Connect.Sets cs;
-      tuple<Types.TType, Option<Absyn.Path>> t;
+      Types.Type t;
       ClassInf.State state;
       String str,gexpstr,s1,totstr,anncname;
       Exp.Exp graphicexp2;
@@ -13930,37 +14108,71 @@ algorithm
   end matchcontinue;
 end addToEquation;
 
+protected function buildPath "function: buildPath
+
+	Helperfunction to replaceClassInProgram. Takes a programs 'within' and
+	a ident, and creates a path out of it.
+"
+  input Absyn.Within inWithin;
+  input Absyn.Path inPath;
+  output Absyn.Path outPath;
+algorithm
+  outPath :=
+  matchcontinue (inWithin,inPath)
+    local Absyn.Path p, p1, p2;
+    case (Absyn.TOP(), p) then p; 
+    case (Absyn.WITHIN(path = p),p1)
+      equation
+        p2 = Absyn.joinPaths(p, p1);
+      then
+        p2;       
+  end matchcontinue;    
+end buildPath;
+
 protected function replaceClassInProgram "function: replaceClassInProgram
   
    Thisfunction takes a `Class\' and a `Program\' and replaces the class 
    definition at the top level in the program by the class definition of 
-   the `Class\'.
+   the `Class\'. It also updates the functionlist for the symboltable if needed.
 "
   input Absyn.Class inClass;
   input Absyn.Program inProgram;
+  input list<CompiledCFunction> inCompiledFunctions;
   output Absyn.Program outProgram;
+  output list<CompiledCFunction> outCompiledFunctions;
 algorithm 
-  outProgram:=
-  matchcontinue (inClass,inProgram)
+  (outProgram, outCompiledFunctions) :=
+  matchcontinue (inClass,inProgram,inCompiledFunctions)
     local
       Absyn.Class c,c1;
       Absyn.Within w;
       String name1,name2;
       list<Absyn.Class> clst,newclst;
       Absyn.Program p;
-    case (c,Absyn.PROGRAM(classes = {},within_ = w)) then Absyn.PROGRAM({c},w); 
-    case ((c as Absyn.CLASS(name = name1)),Absyn.PROGRAM(classes = (Absyn.CLASS(name = name2) :: clst),within_ = w))
+      list<CompiledCFunction> cf, newCF;
+      Absyn.Path cp; 
+    case (c,Absyn.PROGRAM(classes = {},within_ = w),cf) then (Absyn.PROGRAM({c},w),cf);
+    case ((c as Absyn.CLASS(name = name1)),Absyn.PROGRAM(classes = (Absyn.CLASS(name = name2, restriction = Absyn.R_FUNCTION()) :: clst),within_ = w),cf)
       equation 
         equality(name1 = name2);
+        cp = buildPath(w, Absyn.IDENT(name2));
+        newCF = removeCf(cp, cf);
       then
-        Absyn.PROGRAM((c :: clst),w);
-    case ((c as Absyn.CLASS(name = name1)),Absyn.PROGRAM(classes = ((c1 as Absyn.CLASS(name = name2)) :: clst),within_ = w))
+        (Absyn.PROGRAM((c :: clst),w),newCF);
+    case ((c as Absyn.CLASS(name = name1)),Absyn.PROGRAM(classes = ((c1 as Absyn.CLASS(name = name2)) :: clst),within_ = w),cf)
+      equation 
+        equality(name1 = name2);        
+        cp = buildPath(w, Absyn.IDENT(name2));
+        newCF = removeAnySubFunctions(cp, c1, cf);
+      then
+        (Absyn.PROGRAM((c :: clst),w),newCF);
+    case ((c as Absyn.CLASS(name = name1)),Absyn.PROGRAM(classes = ((c1 as Absyn.CLASS(name = name2)) :: clst),within_ = w),cf)
       equation 
         failure(equality(name1 = name2));
-        Absyn.PROGRAM(newclst,w) = replaceClassInProgram(c, Absyn.PROGRAM(clst,w));
+        (Absyn.PROGRAM(newclst,w),newCF) = replaceClassInProgram(c, Absyn.PROGRAM(clst,w), cf);
       then
-        Absyn.PROGRAM((c1 :: newclst),w);
-    case (c,p)
+        (Absyn.PROGRAM((c1 :: newclst),w),newCF);
+    case (c,p,_)
       equation 
         Print.printBuf("replace_class_in_program failed \n class:");
         Debug.fcall("dump", Dump.dump, Absyn.PROGRAM({c},Absyn.TOP()));
@@ -13993,14 +14205,14 @@ algorithm
       equation 
         c2 = getClassInProgram(n1, p);
         c3 = insertClassInClass(c1, w, c2);
-        pnew = updateProgram(Absyn.PROGRAM({c3},Absyn.TOP()), p);
+        (pnew,_) = updateProgram(Absyn.PROGRAM({c3},Absyn.TOP()), p, {});
       then
         pnew;
     case (c1,(w as Absyn.WITHIN(path = Absyn.IDENT(name = n1))),p)
       equation 
         c2 = getClassInProgram(n1, p);
         c3 = insertClassInClass(c1, w, c2);
-        pnew = updateProgram(Absyn.PROGRAM({c3},Absyn.TOP()), p);
+        (pnew,_) = updateProgram(Absyn.PROGRAM({c3},Absyn.TOP()), p, {});
       then
         pnew;
     case ((c1 as Absyn.CLASS(name = name)),w,p)
@@ -14588,7 +14800,7 @@ algorithm
         c1 = getClassInProgram(str, p);
       then
         c1;
-         case (Absyn.FULLYQUALIFIED(path),(p))
+    case (Absyn.FULLYQUALIFIED(path),(p))
       local String c1;
       equation 
         res = getPathedClassInProgram(path,p);
@@ -16225,41 +16437,45 @@ protected function checkLoadedFiles
  - if not, load it, add the info to cache"
   input String fileName                   "Filename to load";
   input list<LoadedFile> loadedFiles      "The already loaded files";
+  input list<CompiledCFunction> compiledFunctions "Compiled functions from the symboltable";
   input Absyn.Program ast                 "The program from the symboltable";
   input Boolean shouldUpdateProgram       "Should the program be pushed into the AST?"; 
   output String topClassNamesQualified    "The names of the classes from file, qualified!";
   output list<LoadedFile> newLoadedFiles  "The new loaded files";
+  output list<CompiledCFunction> newCompiledFunctions "The new compiled functions to put in the symboltable";
   output Absyn.Program newAst             "The new program to put it in the symboltable"; 
 algorithm
-  (topClassNamesQualified, newLoadedFiles, newAst) := matchcontinue (fileName, loadedFiles, ast, shouldUpdateProgram)
+  (topClassNamesQualified, newLoadedFiles, newCompiledFunctions, newAst) := 
+  matchcontinue (fileName, loadedFiles, compiledFunctions, ast, shouldUpdateProgram)
     local
       String f;
       String topNamesStr;
       Absyn.Program pAst,newP,parsed;
       list<LoadedFile> lf, newLF;
+      list<CompiledCFunction> cf, newCF;
       Integer result;
-    case (f, lf, pAst, _)
+    case (f, lf, cf, pAst, _)
       equation
         // did the file was loaded since it was last saved? 
         SOME(topNamesStr) = getLoadedFileInfo(f, lf);
       then
-        (topNamesStr, lf, pAst); // not worth loading 
+        (topNamesStr, lf, cf, pAst); // not worth loading 
         
-    case (f, lf, pAst, true)
+    case (f, lf, cf, pAst, true)
       equation 
         // it seems the file was not loaded yet or the one on the disk is newer
         NONE = getLoadedFileInfo(f, lf);
         // fall back to basis :)
         parsed = Parser.parse(f);
         parsed = expandUnionTypes(parsed);
-        newP = updateProgram(parsed, pAst);
+        (newP, newCF) = updateProgram(parsed, pAst, cf);
         topNamesStr = getTopQualifiedClassnames(parsed);
         // fix the modification and topNames in the list<LoadedFile> cache
         newLF = updateLoadedFiles(f, lf, topNamesStr, {});
       then
-        (topNamesStr, newLF, newP); // loading
+        (topNamesStr, newLF, newCF, newP); // loading
         
-    case (f, lf, pAst, false)
+    case (f, lf, cf, pAst, false)
       equation 
         // it seems the file was not loaded yet or the one on the disk is newer
         NONE = getLoadedFileInfo(f, lf);
@@ -16270,13 +16486,13 @@ algorithm
         // fix the modification and topNames in the list<LoadedFile> cache
         newLF = updateLoadedFiles(f, lf, topNamesStr, {});
       then
-        (topNamesStr, newLF, pAst); // loading
+        (topNamesStr, newLF, cf, pAst); // loading
         
-    case (f, lf, pAst, _)
+    case (f, lf, cf, pAst, _)
       equation          
         failure(p1 = Parser.parse(f)); // failed to parse!
       then
-        ("error",lf,pAst); // return error    
+        ("error",lf,cf,pAst); // return error    
   end matchcontinue;
 end checkLoadedFiles;
 
@@ -16298,7 +16514,7 @@ algorithm
       list<SCode.Class> eAst;
       list<InstantiatedClass> ic;
       list<InteractiveVariable> iv;
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+      list<CompiledCFunction> cf, newCF;
       list<LoadedFile> lf, newLF;
       Integer result;
 
@@ -16313,9 +16529,9 @@ algorithm
     // check if we have the stuff in the loadedFiles!
     case (file, s as SYMBOLTABLE(pAst,eAst,ic,iv,cf,lf))
       equation
-        (topNamesStr,newLF,newP) = checkLoadedFiles(file, lf, pAst, true);
+        (topNamesStr,newLF,newCF,newP) = checkLoadedFiles(file, lf, cf, pAst, true);
       then
-        (topNamesStr, SYMBOLTABLE(newP,eAst,ic,iv,cf,lf));        
+        (topNamesStr, SYMBOLTABLE(newP,eAst,ic,iv,newCF,lf));        
   end matchcontinue;
 end loadFileInteractiveQualified;
 
@@ -16337,7 +16553,7 @@ algorithm
       list<SCode.Class> eAst;
       list<InstantiatedClass> ic;
       list<InteractiveVariable> iv;
-      list<tuple<Absyn.Path, tuple<Types.TType, Option<Absyn.Path>>>> cf;
+      list<CompiledCFunction> cf, newCF;
       list<LoadedFile> lf, newLF;
       Integer result;
 
@@ -16352,9 +16568,10 @@ algorithm
     // check if we have the stuff in the loadedFiles!
     case (file, s as SYMBOLTABLE(pAst,eAst,ic,iv,cf,lf))
       equation
-        (topNamesStr,newLF,newP) = checkLoadedFiles(file, lf, pAst, false);
+        (topNamesStr,newLF,newCF,newP) = checkLoadedFiles(file, lf, cf, pAst, false);
       then
-        (topNamesStr, SYMBOLTABLE(newP,eAst,ic,iv,cf,lf));        
+        /* shouldn't newLF be used here? */
+        (topNamesStr, SYMBOLTABLE(newP,eAst,ic,iv,newCF,lf));        
   end matchcontinue;
 end parseFile;
 

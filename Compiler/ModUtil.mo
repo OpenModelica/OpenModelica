@@ -50,6 +50,7 @@ protected import RTOpts;
 protected import Util;
 protected import Algorithm;
 protected import Types;
+protected import System;
 
 protected function stringPrefixComponentRefs ""
   input String inString;
@@ -513,14 +514,21 @@ algorithm
   outString:=
   matchcontinue (inPath,inString)
     local
-      String s,ns,s1,ss,str;
+      String s,ns,s1,ss,str,dstr,safe_s;
       Absyn.Path n;
-    case (Absyn.IDENT(name = s),_) then s; 
+    case (Absyn.IDENT(name = s),str)
+      equation
+        dstr = stringAppend(str, str);
+        safe_s = System.stringReplace(s, str, dstr);
+      then
+        safe_s; 
     case(Absyn.FULLYQUALIFIED(n),str) then pathString2(n,str);
     case (Absyn.QUALIFIED(name = s,path = n),str)
       equation 
         ns = pathString2(n, str);
-        s1 = stringAppend(s, str);
+        dstr = stringAppend(str, str);
+        safe_s = System.stringReplace(s, str, dstr);
+        s1 = stringAppend(safe_s, str);
         ss = stringAppend(s1, ns);
       then
         ss;

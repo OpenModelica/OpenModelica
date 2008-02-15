@@ -113,17 +113,17 @@ public function strtok
   external "C" ;
 end strtok;
 
-public function compileCFile
-  input String inString;
-
-  external "C" ;
-end compileCFile;
-
 public function setCCompiler
   input String inString;
 
   external "C" ;
 end setCCompiler;
+
+public function getCCompiler
+  output String outString;
+  
+  external "C" ;
+end getCCompiler;
 
 public function setCFlags
   input String inString;
@@ -131,8 +131,91 @@ public function setCFlags
   external "C" ;
 end setCFlags;
 
-public function executeFunction
+public function getCFlags
+  output String outString;
+  
+  external "C" ;
+end getCFlags;
+
+public function setCXXCompiler
   input String inString;
+  
+  external "C" ;
+end setCXXCompiler;
+
+public function getCXXCompiler
+  output String outString;
+  
+  external "C" ;
+end getCXXCompiler;
+
+public function setLinker
+  input String inString;
+  
+  external "C" ;
+end setLinker;
+
+public function getLinker
+  output String outString;
+  
+  external "C" ;
+end getLinker;
+
+public function setLDFlags
+  input String inString;
+  
+  external "C" ;
+end setLDFlags;
+
+public function getLDFlags
+  output String outString;
+  
+  external "C" ;
+end getLDFlags;
+
+public function getExeExt
+  output String outString;
+  
+  external "C" ;
+end getExeExt;
+
+public function getDllExt
+  output String outString;
+  
+  external "C" ;
+end getDllExt;
+
+public function loadLibrary
+  input String inLib;
+  output Integer outLibHandle;
+  
+  external "C" ;
+end loadLibrary;
+
+public function lookupFunction
+  input Integer inLibHandle;
+  input String inFunc;
+  output Integer outFuncHandle;
+  
+  external "C" ;
+end lookupFunction;
+
+public function freeFunction
+  input Integer inFuncHandle;
+  
+  external "C" ;
+end freeFunction;
+
+public function freeLibrary
+  input Integer inLibHandle;
+  
+  external "C" ;
+end freeLibrary;
+
+public function executeFunction
+  input Integer inFuncHandle;
+  input list<Values.Value> inValLst;
+  output Values.Value outVal;
 
   external "C" ;
 end executeFunction;
@@ -183,13 +266,6 @@ public function readFile
 
   external "C" ;
 end readFile;
-
-public function readValuesFromFile
-  input String inString;
-  output Values.Value outValue;
-
-  external "C" ;
-end readValuesFromFile;
 
 public function readPtolemyplotDataset
   input String inString;

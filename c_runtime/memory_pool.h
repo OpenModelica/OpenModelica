@@ -42,7 +42,7 @@
 typedef double m_real;
 typedef int m_integer;
 typedef const char* m_string;
-typedef double m_boolean;
+typedef signed char m_boolean;
 typedef int _index_t; 
 
 extern m_real real_buffer[NR_REAL_ELEMENTS];

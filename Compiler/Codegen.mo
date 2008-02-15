@@ -879,9 +879,9 @@ algorithm
       equation 
         Debug.fprintln("cgtr", "generate_function_bodies");
         cfns = generateFunctionsElist(elist);
-        Print.printBuf("\n/* body part */\n");
+        Print.printBuf("\n/* Body */\n");
         cPrintFunctions(cfns);
-        Print.printBuf("\n");
+        Print.printBuf("/* End Body */\n");
       then
         ();
     case _
@@ -910,10 +910,9 @@ algorithm
         Debug.fprintln("cgtr", "generate_function_headers");
         cfns = generateFunctionsElist(elist);
         Print.printBuf("/* header part */\n");
-        Print.printBuf("#include \"modelica.h\"\n");
         libs = cPrintFunctionIncludes(cfns) ;
         cPrintFunctionHeaders(cfns);
-        Print.printBuf("\n");
+        Print.printBuf("/* End of header part */\n");
       then
         libs;
     case _
@@ -5693,27 +5692,25 @@ protected function generateReadCallWrite "function  generateReadCallWrite
   input String retstr;
   input list<DAE.Element> invars;
   output CFunction cfn;
-  Lib rcw_fnname,out_decl,in_args,fn_call;
+  Lib out_decl,in_args,fn_call;
   CFunction cfn1,cfn1_1,cfn31,cfn32,cfn3,cfn3_1,cfn4,cfn4_1,cfn5,cfn5_1;
   Integer tnr21,tnr2;
   list<Lib> in_names;
 algorithm 
+  cfn1 := cMakeFunction("int", "in" +& fnname, {}, 
+    {"type_description * inArgs","type_description * outVar"});
   Debug.fprintln("cgtr", "generate_read_call_write");
-  rcw_fnname := stringAppend(fnname, "_read_call_write");
-  cfn1 := cMakeFunction("int", rcw_fnname, {}, 
-          {"char const* in_filename","char const* out_filename"});
   out_decl := Util.stringAppendList({retstr," out;"});
-  cfn1_1 := cAddInits(cfn1, {"PRE_VARIABLES",out_decl});
+  cfn1_1 := cAddInits(cfn1, {out_decl});
   (cfn3,tnr21) := generateVarDecls(invars, isRcwInput, 1, funContext);
-  cfn3_1 := cAddInits(cfn3, {"PRE_OPEN_INFILE"});
   in_names := invarNames(invars);
   in_args := Util.stringDelimitList(in_names, ", ");
   cfn4 := generateRead(invars);
   fn_call := Util.stringAppendList({"out = ",fnname,"(",in_args,");"});
-  cfn4_1 := cAddStatements(cfn4, {"PRE_READ_DONE",fn_call,"PRE_OPEN_OUTFILE"});
+  cfn4_1 := cAddStatements(cfn4, {fn_call});
   cfn5 := generateWriteOutvars(outvars,1);
-  cfn5_1 := cAddStatements(cfn5, {"PRE_WRITE_DONE","return 0;"});
-  cfn := cMergeFns({cfn1_1,cfn3_1,cfn4_1,cfn5_1});
+  cfn5_1 := cAddStatements(cfn5, {"return 0;"});
+  cfn := cMergeFns({cfn1_1,cfn3,cfn4_1,cfn5_1});
 end generateReadCallWrite;
  
 protected function generateExternalWrapperCall "function: generateExternalWrapperCall
@@ -5789,7 +5786,7 @@ algorithm
   matchcontinue (inString1,inDAEElementLst2,inString3,inDAEElementLst4,inExternalDecl5,inDAEElementLst6)
     local
       Integer tnr,tnr_ret,tnr_bialloc_1,tnr_bialloc,tnr_mem,tnr_invars1,tnr_invars,tnr_bivars1,tnr_bivars,tnr_extcall;
-      Lib rcw_fnname,out_decl,mem_decl,mem_var,get_mem_stmt,rest_mem_stmt,fnname,retstr;
+      Lib out_decl,mem_decl,mem_var,get_mem_stmt,rest_mem_stmt,fnname,retstr;
       CFunction cfn1,cfn1_1,allocstmts_1,allocstmts,biallocstmts,cfnoutinit,cfnoutbialloc,mem_fn_1,mem_fn_2,mem_fn,cfn31,cfn32,cfn33,cfn34,cfn3,cfn3_1,readinvars,readdone,extcall,cfn4_1,cfn5,cfn5_1,cfn_1,cfn;
       list<DAE.Element> vars_1,vars,outvars,invars,bivars;
       DAE.ExternalDecl extdecl;
@@ -5797,11 +5794,10 @@ algorithm
       equation 
         Debug.fprintln("cgtr", "generate_read_call_write_external");
         tnr = 1;
-        rcw_fnname = stringAppend(fnname, "_read_call_write");
-        cfn1 = cMakeFunction("int", rcw_fnname, {}, 
-          {"char const* in_filename","char const* out_filename"});
+        cfn1 = cMakeFunction("int", "in" +& fnname, {}, 
+          {"type_description * inArgs","type_description * outVar"});
         out_decl = Util.stringAppendList({retstr," out;"});
-        cfn1_1 = cAddInits(cfn1, {"PRE_VARIABLES"});
+        cfn1_1 = cAddInits(cfn1,{});
         (allocstmts_1,tnr_ret) = generateAllocOutvarsExt(outvars, "out", 1,tnr, extdecl) "generate_vars(outvars,is_rcw_output,1) => (cfn2,tnr1) &" ;
         allocstmts = cAddVariables(allocstmts_1, {out_decl});
         (biallocstmts,tnr_bialloc_1) = generateAllocOutvarsExt(bivars, "", 1,tnr_ret, extdecl);
@@ -5818,16 +5814,15 @@ algorithm
         (cfn33,tnr_bivars1) = generateVarDecls(bivars, isRcwBidir, tnr_invars, funContext);
         (cfn34,tnr_bivars) = generateVarInits(bivars, isRcwBidir, 1,tnr_bivars1, "", funContext);
         cfn3 = cMergeFns({cfn31,cfn32,cfn33,cfn34});
-        cfn3_1 = cAddInits(cfn3, {"PRE_OPEN_INFILE"});
+        cfn3_1 = cAddInits(cfn3, {});
         readinvars = generateRead(invars);
-        readdone = cAddInits(readinvars, {"PRE_READ_DONE"});
+        readdone = cAddInits(readinvars, {});
         vars_1 = listAppend(invars, outvars);
         vars = listAppend(vars_1, bivars);
         (extcall,tnr_extcall) = generateExtCall(vars, extdecl, tnr_bivars);
-        cfn4_1 = cAddStatements(extcall, {"PRE_OPEN_OUTFILE"});
+        cfn4_1 = cAddStatements(extcall,{});
         cfn5 = generateWriteOutvars(outvars,1);
-        cfn5_1 = cAddStatements(cfn5, {"PRE_WRITE_DONE"});
-        cfn_1 = cMergeFns({cfn1_1,cfn3_1,readdone,mem_fn,cfn4_1,cfn5_1});
+        cfn_1 = cMergeFns({cfn1_1,cfn3_1,readdone,mem_fn,cfn4_1,cfn5});
         cfn = cAddCleanups(cfn_1, {rest_mem_stmt,"return 0;"});
       then
         cfn;
@@ -7159,7 +7154,7 @@ algorithm
         (cref_str,_) = compRefCstr(id);
         type_string = daeTypeStr(t, false);
         stmt = Util.stringAppendList(
-          {"if(read_",type_string,"(in_file, &",cref_str,
+          {"if(read_",type_string,"(&inArgs, &",cref_str,
           ")) return 1;"});
         cfn1 = cAddInits(cEmptyFunction, {stmt});
         cfn2 = generateRead(r);
@@ -7171,7 +7166,7 @@ algorithm
         (cref_str,_) = compRefCstr(id);
         type_string = daeTypeStr(t, true);
         stmt = Util.stringAppendList(
-          {"if(read_",type_string,"(in_file, &",cref_str,
+          {"if(read_",type_string,"(&inArgs, &",cref_str,
           ")) return 1;"});
         cfn1 = cAddInits(cEmptyFunction, {stmt});
         cfn2 = generateRead(r);
@@ -7209,7 +7204,7 @@ algorithm
       equation 
         iStr = intString(i);
         type_string = daeTypeStr(t, false);
-        stmt = Util.stringAppendList({"write_",type_string,"(out_file, &out.","targ",iStr,");"});
+        stmt = Util.stringAppendList({"write_",type_string,"(outVar, &out.","targ",iStr,");"});
         cfn1 = cAddStatements(cEmptyFunction, {stmt});
         cfn2 = generateWriteOutvars(r,i+1);
         cfn = cMergeFn(cfn1, cfn2);
@@ -7219,7 +7214,7 @@ algorithm
       equation 
         iStr = intString(i);
         type_string = daeTypeStr(t, true);
-        stmt = Util.stringAppendList({"write_",type_string,"(out_file, &out.","targ",iStr,");"});
+        stmt = Util.stringAppendList({"write_",type_string,"(outVar, &out.","targ",iStr,");"});
         cfn1 = cAddStatements(cEmptyFunction, {stmt});
         cfn2 = generateWriteOutvars(r,i+1);
         cfn = cMergeFn(cfn1, cfn2);
