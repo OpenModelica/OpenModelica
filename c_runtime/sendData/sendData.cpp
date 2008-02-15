@@ -86,16 +86,23 @@ Connection::~Connection()
 
 QTcpSocket* Connection::newConnection(bool graphics)
 {
+	char* omdir = getenv("OPENMODELICAHOME");
+	QString path(omdir);
+	if(path.endsWith("/") || path.endsWith("\\"))
+		path += "bin/ext.exe";
+	else
+		path += "/bin/ext.exe";
+
 	socket = new QTcpSocket;
 	socket->connectToHost(QHostAddress::LocalHost, Static::port1);
 	if(socket->waitForConnected(100))
 		return socket;
-	else if(QFile::exists("ext.exe"))
+	else if(QFile::exists(path))
 	{
 
 		//		QProcess* p = new QProcess;
 
-		QProcess::startDetached("ext.exe");
+		QProcess::startDetached(path);
 		//		p->waitForStarted(5000);
 
 		socket->connectToHost(QHostAddress::LocalHost, graphics?7779:7778);
@@ -122,6 +129,14 @@ bool Static::connect(bool graphics)
 //	ofstream ofs("uu3u.txt", ios::app);
 	
 //	ofs << 1 << endl;	
+
+	char* omdir = getenv("OPENMODELICAHOME");
+	QString path(omdir);
+	if(path.endsWith("/") || path.endsWith("\\"))
+		path += "bin/ext.exe";
+	else
+		path += "/bin/ext.exe";
+
 	if(graphics)
 	{
 //	ofs << 2 << endl;	
@@ -140,10 +155,11 @@ bool Static::connect(bool graphics)
 
 		if(socket2.waitForConnected(500))
 			return true;	
+
 		
-		if(QFile::exists("ext.exe"))
+		if(QFile::exists(path))
 		{
-			QProcess::startDetached("ext.exe");
+			QProcess::startDetached(path);
 			socket2.connectToHost(QHostAddress::LocalHost, Static::port2);
 			if(socket2.waitForConnected(2500))
 				return true;	
@@ -174,9 +190,9 @@ bool Static::connect(bool graphics)
 		if(socket1.waitForConnected(500))
 			return true;	
 		
-		if(QFile::exists("ext.exe"))
+		if(QFile::exists(path))
 		{
-			QProcess::startDetached("ext.exe");
+			QProcess::startDetached(path);
 			socket1.connectToHost(QHostAddress::LocalHost, Static::port1);
 			if(socket1.waitForConnected(2500))
 				return true;	
@@ -436,11 +452,13 @@ bool pltTable(double* table, size_t r, size_t c) //, const char* legend, int siz
 //	size_t size = 3; 
 	size_t size = c; 
 
-	Connection C;
-	QTcpSocket* socket = C.newConnection();
-	if(!socket)
-		return false;
+//	Connection C;
+//	QTcpSocket* socket = C.newConnection();
+//	if(!socket)
+//		return false;
 
+	if(Static::connect(false))
+	{
 	QByteArray block;
 	QDataStream out(&block, QIODevice::WriteOnly);
 	out.setVersion(QDataStream::Qt_4_2);
@@ -450,9 +468,9 @@ bool pltTable(double* table, size_t r, size_t c) //, const char* legend, int siz
 	out.device()->seek(0);
 	out << (quint32)(block.size() - sizeof(quint32));
 
-	socket->write(block);
-	socket->flush();
-	socket->waitForBytesWritten(-1);
+	Static::socket1.write(block);
+	Static::socket1.flush();
+	Static::socket1.waitForBytesWritten(-1);
 
 	block.clear();
 
@@ -495,9 +513,9 @@ bool pltTable(double* table, size_t r, size_t c) //, const char* legend, int siz
 	out.device()->seek(0);
 	out << (quint32)(block.size() - sizeof(quint32));
 
-	socket->write(block);
-	socket->flush();
-	socket->waitForBytesWritten(-1);
+	Static::socket1.write(block);
+	Static::socket1.flush();
+	Static::socket1.waitForBytesWritten(-1);
 
 	block.clear();
 
@@ -516,30 +534,32 @@ bool pltTable(double* table, size_t r, size_t c) //, const char* legend, int siz
 		out.device()->seek(0);
 		out << (quint32)(block.size() - sizeof(quint32));
 
-		socket->write(block);
-		socket->flush();
-		socket->waitForBytesWritten(-1);
+		Static::socket1.write(block);
+		Static::socket1.flush();
+		Static::socket1.waitForBytesWritten(-1);
 		
 		block.clear();
 
 if(!(i%100))
-	socket->flush();
+	Static::socket1.flush();
 	
 	}
 
-	socket->flush();
+	Static::socket1.flush();
 
 
 
-	socket->waitForBytesWritten(-1);
-	socket->disconnectFromHost();
-	if(socket->state() == QAbstractSocket::ConnectedState)
-		socket->waitForDisconnected(-1);
-	if(socket)
-		delete socket;
+	Static::socket1.waitForBytesWritten(-1);
+	Static::socket1.disconnectFromHost();
+	if(Static::socket1.state() == QAbstractSocket::ConnectedState)
+		Static::socket1.waitForDisconnected(-1);
+//	if(socket)
+//		delete socket;
 
-
-	return true;
+		return true;
+	}
+//	return true;
+	return false;
 }
 
 QTcpSocket Static::socket1;
@@ -738,6 +758,13 @@ void closeSendData()
 		Static::socket->waitForDisconnected(-1);
 	if(Static::socket)
 		delete Static::socket;
+	if(Static::block)
+		delete Static::block;
+	if(Static::out)
+		delete Static::out;
+	if(Static::c)
+		delete Static::c;
+	
 	
 	
 	
@@ -749,6 +776,9 @@ void emulateStreamData(const char* data, const char* title, const char* xLabel, 
 
 	QTcpSocket* socket = c.newConnection();
 
+	if(!socket)
+		return;
+		
 	QString data_(data);
 	QTextStream ts(&data_);
 	QString tmp;
