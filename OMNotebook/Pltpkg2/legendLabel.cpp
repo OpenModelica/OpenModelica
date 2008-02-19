@@ -55,6 +55,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 LegendLabel::LegendLabel(QColor color_, QString& s, QWidget* parent, bool showline, bool showpoints, int maxHeight): QLabel(s, parent), color(color_)
 {
+	curve = 0;
 	state = true;
 	setContextMenuPolicy(Qt::ActionsContextMenu);
 	QAction* tmp;
@@ -72,9 +73,16 @@ LegendLabel::LegendLabel(QColor color_, QString& s, QWidget* parent, bool showli
 	connect(this, SIGNAL(showPoints(bool)), tmp, SLOT(setChecked(bool)));
 	addAction(tmp);
 
-	tmp = new QAction("Change color", this);
+	tmp = new QAction("Change color...", this);
 	connect(tmp, SIGNAL(triggered()), this, SLOT(selectColor()));
 	addAction(tmp);
+	tmp = new QAction(this);
+	tmp->setSeparator(true);
+	addAction(tmp);
+	tmp = new QAction("Delete", this);
+	connect(tmp, SIGNAL(triggered()), this, SLOT(deleteCurve()));
+	addAction(tmp);
+
 
 	setMaximumHeight(maxHeight);
 	
@@ -89,6 +97,20 @@ LegendLabel::~LegendLabel()
 {
 
 }
+
+void LegendLabel::deleteCurve()
+{
+
+	int t = graphWidget->curves.indexOf(curve);
+	if(t != -1)
+		graphWidget->curves.removeAt(t);
+	qDeleteAll(curve->dataPoints);
+
+	delete curve;
+//	delete menu;
+	deleteLater();
+}
+
 
 void LegendLabel::selectColor()
 {

@@ -1671,7 +1671,7 @@ namespace IAEX
 	}
 	bool GraphCell::isPlot2(QString text)
 	{
-		QRegExp exp("plot2\\(.*\\)|plotParametric2\\(.*\\)|simulate" );
+		QRegExp exp("plot2\\(.*\\)|plotParametric2\\(.*\\)|simulate|plotAll" );
 
 		if( text.isNull() )
 		{

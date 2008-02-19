@@ -141,8 +141,8 @@ GraphWidget::GraphWidget(QWidget* parent): QGraphicsView(parent)
 	tmp = ag->addAction(contextMenu->addAction("Pan"));
 	connect(tmp, SIGNAL(toggled(bool)), this, SLOT(setPan(bool)));
 
-	tmp = ag->addAction(contextMenu->addAction("Select"));
-	connect(tmp, SIGNAL(toggled(bool)), this, SLOT(setSelect(bool)));
+//	tmp = ag->addAction(contextMenu->addAction("Select"));
+//	connect(tmp, SIGNAL(toggled(bool)), this, SLOT(setSelect(bool)));
 
 	tmp = ag->addAction(contextMenu->addAction("Zoom"));
 	connect(tmp, SIGNAL(toggled(bool)), this, SLOT(setZoom(bool)));
@@ -177,7 +177,7 @@ GraphWidget::GraphWidget(QWidget* parent): QGraphicsView(parent)
 	*/
 	tmp=contextMenu->addAction("New window");
 	connect(tmp, SIGNAL(triggered()), this, SLOT(newWindow()));
-	tmp->setVisible(false);
+//	tmp->setVisible(false);
 
 
 	//	connect(this, SIGNAL(scrolled()), this, SLOT(updateGrid()));
@@ -193,10 +193,10 @@ GraphWidget::GraphWidget(QWidget* parent): QGraphicsView(parent)
 
 	contextMenu->addSeparator();
 
-	tmp=contextMenu->addAction("Simulation data");
+	tmp=contextMenu->addAction("Simulation data...");
 	connect(tmp, SIGNAL(triggered()), this, SLOT(showVariables()));
 
-	tmp=contextMenu->addAction("Preferences");
+	tmp=contextMenu->addAction("Preferences...");
 	connect(tmp, SIGNAL(triggered()), this, SLOT(showPreferences()));
 
 
@@ -348,7 +348,8 @@ void GraphWidget::syncCall()
 
 void GraphWidget::originalZoom()
 {
-
+//	this->setMinimumHeight(height() + 50);
+	
 
 }
 

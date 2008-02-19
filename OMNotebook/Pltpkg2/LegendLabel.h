@@ -84,6 +84,7 @@ public slots:
 	void setLineVisible(bool b);
 	void setPointsVisible(bool b);
 	void selectColor();
+	void deleteCurve();
 
 protected:
 	void paintEvent ( QPaintEvent * event );

@@ -59,7 +59,8 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "graphWindow.h"
 #include "dataSelect.h"
 #include "preferenceWindow.h"
-
+#include "LegendLabel.h"
+#include "variablewindow.h"
 using namespace std;
 
 GraphWindow::GraphWindow(QWidget* parent): QMainWindow(parent)
@@ -77,9 +78,12 @@ GraphWindow::GraphWindow(QWidget* parent): QMainWindow(parent)
 	QObject::connect(actionZoom, SIGNAL(toggled(bool)), graphicsView->gwMain, SLOT(setZoom(bool)));
 
 	connect(actionPreferences, SIGNAL(triggered()), compoundWidget, SLOT(showPreferences()));
+	connect(actionSimulationData, SIGNAL(triggered()), this, SLOT(showSimulationData()));
 
 	connect(actionActive, SIGNAL(toggled(bool)), graphicsView->gwMain, SLOT(enableServers(bool)));
 	connect(graphicsView->gwMain, SIGNAL(serverState(bool)), actionActive, SLOT(setChecked(bool)));
+
+	connect(actionImage, SIGNAL(activated()), this, SLOT(saveImage()));
 
 	QActionGroup* ag = new QActionGroup(this);
 	ag->addAction(actionPan);
@@ -102,6 +106,14 @@ void GraphWindow::showPreferences()
 	pw->show();
 }
 
+void GraphWindow::showSimulationData()
+{
+	VariableWindow* vw = new VariableWindow(compoundWidget->gwMain, 0);
+	vw->setAttribute(Qt::WA_DeleteOnClose);
+	vw->show();
+}
+
+
 void GraphWindow::showMessage(QString message)
 {
 	statusbar->showMessage(message);
@@ -110,4 +122,49 @@ void GraphWindow::showMessage(QString message)
 void GraphWindow::sceneDestroyed()
 {
 
+}
+
+void GraphWindow::saveImage()
+{
+
+	QString filename = QFileDialog::getSaveFileName(this, "Export image", "untitled", "Portable Network Graphics (*.png);;Windows Bitmap (*.bmp);;Joint Photographic Experts Group (*.jpg)");  
+
+	if(!filename.size())
+		return;
+
+	QImage i3(compoundWidget->rect().size(),  QImage::Format_RGB32);
+	i3.fill(QColor(Qt::white).rgb());
+	QPainter p(&i3);
+	QRectF target = QRectF(compoundWidget->gwMain->rect());
+	target.moveTo(compoundWidget->gwMain->pos());
+	compoundWidget->gwMain->render(&p, target);
+
+	p.drawRect(target);
+
+	target = QRectF(compoundWidget->gvLeft->rect());
+	target.moveTo(compoundWidget->gvLeft->pos());
+	compoundWidget->gvLeft->render(&p, target);
+
+	target = QRectF(compoundWidget->gvBottom->rect());
+	target.moveTo(compoundWidget->gvBottom->pos());
+	compoundWidget->gvBottom->render(&p, target);
+
+	compoundWidget->yLabel->render(&p, compoundWidget->yLabel->pos());
+	compoundWidget->xLabel->render(&p, compoundWidget->xLabel->pos());
+	compoundWidget->plotTitle->render(&p, compoundWidget->plotTitle->pos());
+
+
+	QList<LegendLabel*> l = compoundWidget->legendFrame->findChildren<LegendLabel*>();
+	for(int i = 0; i < l.size(); ++i)
+		l[i]->render(&p, l[i]->pos()+compoundWidget->legendFrame->pos());
+
+
+	if(filename.endsWith("png"))
+		i3.save(filename, "PNG");
+	else if(filename.endsWith("bmp"))
+		i3.save(filename, "BMP");
+	else if(filename.endsWith("jpg") || filename.endsWith("jpeg"))
+		i3.save(filename, "JPG");
+	else
+		i3.save(filename+".bmp", "BMP");
 }

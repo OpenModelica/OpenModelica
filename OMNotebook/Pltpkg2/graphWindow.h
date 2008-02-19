@@ -70,6 +70,8 @@ public slots:
 	void showMessage(QString message);
 	void sceneDestroyed();
 	void showPreferences();
+	void showSimulationData();
+	void saveImage();
 
 public:
 	CompoundWidget* compoundWidget;

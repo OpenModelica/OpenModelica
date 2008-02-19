@@ -421,6 +421,8 @@ namespace IAEX
 					target.moveTo(node->compoundwidget->gwMain->pos());
 					node->compoundwidget->gwMain->render(&p, target);
 
+					p.drawRect(target);
+
 					target = QRectF(node->compoundwidget->gvLeft->rect());
 					target.moveTo(node->compoundwidget->gvLeft->pos());
 					node->compoundwidget->gvLeft->render(&p, target);
