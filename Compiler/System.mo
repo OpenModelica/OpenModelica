@@ -276,6 +276,13 @@ public function readPtolemyplotDataset
   external "C" ;
 end readPtolemyplotDataset;
 
+public function getVariableNames
+  input String modelname;
+  output String variables;
+  
+  external "C";
+end getVariableNames;
+
 public function readPtolemyplotDatasetSize
   input String inString;
   output Values.Value outValue;

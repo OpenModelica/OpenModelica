@@ -921,7 +921,7 @@ if(!(i%100))
 bool plt(const char* var, const char* model, const char* title, const char* xLabel, const char* yLabel, bool legend, bool grid, bool logX, bool logY, const char* interpolation, bool drawPoints, const char* range)
 {
 	QDir dir(QString(getenv("OPENMODELICAHOME")));
-	dir.cd("bin");
+	dir.cd("tmp");
 
 	QString filename;
 
@@ -995,4 +995,61 @@ bool plt(const char* var, const char* model, const char* title, const char* xLab
 bool Static::enabled()
 {
 	return enabled_;	
+}
+
+
+int getVariableListSize(const char* model)
+{
+	QDir dir(QString(getenv("OPENMODELICAHOME")));
+
+	QString file = dir.path() + "/tmp/" + model;		
+
+	if(!QFile::exists(file))
+		return 0;
+		
+	QFile f(file);
+	f.open(QIODevice::ReadOnly);
+	QTextStream ts(&f);
+	QString str;
+
+	int N = 0;
+	while(!ts.atEnd())
+	{
+		str = ts.readLine();
+		if(str.startsWith("DataSet: "))
+			N += str.size() - 8; //reserve space for a separator 
+
+		
+	}	
+
+	f.close();
+	return N;
+		
+}
+
+bool getVariableList(const char* model, char* lst)
+{
+	QDir dir(QString(getenv("OPENMODELICAHOME")));
+
+	QString file = dir.path() + "/tmp/" + model;		
+
+	if(!QFile::exists(file))
+		return false;
+		
+	QFile f(file);
+	f.open(QIODevice::ReadOnly);
+	QTextStream ts(&f);
+	QString str;
+	
+	QString L;
+	while(!ts.atEnd())
+	{
+		str = ts.readLine();
+		if(str.startsWith("DataSet: "))
+			L += str.right(str.size() - 8);
+	}	
+
+	f.close();
+	strcpy(lst, L.trimmed().toStdString().c_str());;
+	return true;		
 }

@@ -5211,6 +5211,81 @@ algorithm
         (cache,Exp.CALL(Absyn.IDENT("plot"),{Exp.ARRAY(Exp.OTHER(),false,vars_1)},
           false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
 
+//plotAll(model)
+  case (cache,env,Absyn.CREF_IDENT(name = "plotAll"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */ 
+    local Absyn.Path className; Exp.Exp storeInTemp;
+      		Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
+        
+      equation 
+//        vars_1 = elabVariablenames({cr2});
+				className = Absyn.crefToPath(cr);
+        (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("linear"));
+        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("Plot by OpenModelica"));
+        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(false));
+        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(false));
+       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("time"));          
+        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST(""));
+        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(false));
+          
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
+          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
+          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));          
+    
+          
+      then
+        (cache,Exp.CALL(Absyn.IDENT("plotAll"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
+          false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
+
+//plotAll()
+  case (cache,env,Absyn.CREF_IDENT(name = "plotAll"),{},args,impl,SOME(st)) /* Fill in rest of defaults here */ 
+    local Absyn.Path className; Exp.Exp storeInTemp;
+      		Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
+        
+      equation 
+//        vars_1 = elabVariablenames({cr2});
+//				className = Absyn.crefToPath(cr);
+        (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("linear"));
+        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("Plot by OpenModelica"));
+        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(true));
+        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(false));
+        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(false));
+       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("time"));          
+        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST(""));
+        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
+          args, Exp.BCONST(false));
+          
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
+          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
+          args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));          
+    
+          
+      then
+        (cache,Exp.CALL(Absyn.IDENT("plotAll"),{interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
+          false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
+          
+          
 //plot2(model, x)
   case (cache,env,Absyn.CREF_IDENT(name = "plot2"),{Absyn.CREF(componentReg = cr), cr2 as Absyn.CREF(componentReg = _)},args,impl,SOME(st)) /* Fill in rest of defaults here */ 
     local Absyn.Path className; Exp.Exp storeInTemp; Absyn.Exp cr2;
@@ -5236,7 +5311,7 @@ algorithm
         (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (Types.T_STRING({}),NONE), 
           args, Exp.SCONST(""));
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
-          args, Exp.BCONST(true));
+          args, Exp.BCONST(false));
           
         (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
           args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
@@ -5275,7 +5350,7 @@ algorithm
         (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (Types.T_STRING({}),NONE), 
           args, Exp.SCONST(""));
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
-          args, Exp.BCONST(true));
+          args, Exp.BCONST(false));
 
         (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
           args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
@@ -5312,7 +5387,7 @@ algorithm
         (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (Types.T_STRING({}),NONE), 
           args, Exp.SCONST(""));
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
-          args, Exp.BCONST(true));
+          args, Exp.BCONST(false));
           
         (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
           args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
@@ -5346,7 +5421,7 @@ algorithm
         (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (Types.T_STRING({}),NONE), 
           args, Exp.SCONST(""));
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
-          args, Exp.BCONST(true));
+          args, Exp.BCONST(false));
           
         (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
           args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
@@ -5422,7 +5497,7 @@ algorithm
         (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (Types.T_STRING({}),NONE), 
           args, Exp.SCONST(""));          
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
-          args, Exp.BCONST(true));
+          args, Exp.BCONST(false));
           
         (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
           args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
@@ -5465,7 +5540,7 @@ algorithm
         (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (Types.T_STRING({}),NONE), 
           args, Exp.SCONST(""));               
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
-          args, Exp.BCONST(true));
+          args, Exp.BCONST(false));
         
         (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
           args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));
@@ -5503,7 +5578,7 @@ algorithm
         (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (Types.T_STRING({}),NONE), 
           args, Exp.SCONST(""));
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (Types.T_BOOL({}),NONE), 
-          args, Exp.BCONST(true));
+          args, Exp.BCONST(false));
           
         (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_REAL({}), NONE)),NONE), 
           args, Exp.ARRAY(Exp.REAL(), false, {Exp.RCONST(0.0), Exp.RCONST(0.0)}));// Exp.ARRAY(Exp.REAL(), false, {0, 0}));

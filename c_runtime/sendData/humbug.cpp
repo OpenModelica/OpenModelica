@@ -141,3 +141,18 @@ bool Static::enabled()
 {
 	return false;	
 }
+
+
+int getVariableListSize(const char* model)
+{
+	errmsg();
+	return 0;
+
+}
+
+bool getVariableList(const char* model, char* lst)
+{
+	errmsg();
+	return false;
+		
+}

@@ -945,6 +945,22 @@ RML_BEGIN_LABEL(System__moFiles)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__getVariableNames)
+{
+	char* model = RML_STRINGDATA(rmlA0);
+	int size = getVariableListSize(model);
+
+	if(!size)
+		RML_TAILCALLK(rmlFC);
+		
+	char* lst = (char*)malloc(sizeof(char)*size +1);
+	
+	getVariableList(model, lst);
+	rmlA0 = (void*)mk_scon(lst);
+	RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__readPtolemyplotDataset)
 {
   rml_sint_t i,size;
@@ -2167,6 +2183,22 @@ RML_BEGIN_LABEL(System__moFiles)
   }
   rmlA0 = (void*) res;
   RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getVariableNames)
+{
+	char* model = RML_STRINGDATA(rmlA0);
+	int size = getVariableListSize(model);
+
+	if(!size)
+		RML_TAILCALLK(rmlFC);
+		
+	char* lst = (char*)malloc(sizeof(char)*size +1);
+	
+	getVariableList(model, lst);
+	rmlA0 = (void*)mk_scon(lst);
+	RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 

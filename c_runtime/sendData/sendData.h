@@ -108,6 +108,9 @@ extern "C"
 
 	QColor* stringToColor(const char* str_);
 	QColor* getColor(const char* color, int colorR, int colorG, int colorB);
+	
+	int getVariableListSize(const char* model);
+	bool getVariableList(const char* model, char* lst);
 
 #ifdef __cplusplus
 }
