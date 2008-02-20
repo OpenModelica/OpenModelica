@@ -50,19 +50,20 @@ import RTOpts;
 public function writeIncidenceMatrix
   input DAELow.DAELow dlow;
   input String fileNamePrefix;
+  input String flatModelicaStr;
   output String fileName;
 algorithm
-  fileName := matchcontinue(dlow, fileNamePrefix)
+  fileName := matchcontinue(dlow, fileNamePrefix, flatModelicaStr)
     local 
-      String file, strIMatrix, strVariables;
+      String file, strIMatrix, strVariables, flatStr;
       list<String>[:] m;
-    case (dlow, fileNamePrefix)
+    case (dlow, fileNamePrefix, flatStr)
       equation
         file = stringAppend(fileNamePrefix, "_imatrix.m");
         m = incidenceMatrix(dlow);
         strIMatrix = getIncidenceMatrix(m);
         strVariables = getVariables(dlow);
-        strIMatrix = Util.stringAppendList({strIMatrix, "\n", strVariables});
+        strIMatrix = Util.stringAppendList({strIMatrix, "\n", strVariables, "\n\n\n", flatStr});
         System.writeFile(file, strIMatrix);
       then
         file;
@@ -678,13 +679,38 @@ algorithm
         pStr = {ss}; 
       then
         pStr;
-    // if-expressions with different conditions than relations
-    case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3),vars) /* if expressions. */ 
+    // if-expressions with a variable
+    case (Exp.IFEXP(expCond = e1 as Exp.CREF(componentRef = cref1),expThen = e2,expElse = e3),vars) /* if expressions. */ 
+      local String ss,sb;
+        String ss, ss1, ss2, ss3;
+        Exp.ComponentRef cref1;
       equation 
+        sb = printExpStr(e1);
         s1 = incidenceRowExp(e1, vars);
+        ss1 = getIncidenceRow(s1);
         s2 = incidenceRowExp(e2, vars);
+        ss2 = getIncidenceRow(s2);  
         s3 = incidenceRowExp(e3, vars);
-        pStr = Util.listFlatten({s1,s2,s3});
+        ss3 = getIncidenceRow(s3);
+        ss = Util.stringAppendList({"{'if', ","'", sb, "' {",ss1,"}",",{", ss2, "},", ss3, "}"});
+        pStr = {ss}; 
+      then
+        pStr;
+    // if-expressions with any other alternative than what we handled until now
+    case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3),vars) /* if expressions. */ 
+      local String ss,sb;
+        String ss, ss1, ss2, ss3;
+        Exp.ComponentRef cref1;
+      equation 
+        sb = printExpStr(e1);
+        s1 = incidenceRowExp(e1, vars);
+        ss1 = getIncidenceRow(s1);
+        s2 = incidenceRowExp(e2, vars);
+        ss2 = getIncidenceRow(s2);  
+        s3 = incidenceRowExp(e3, vars);
+        ss3 = getIncidenceRow(s3);
+        ss = Util.stringAppendList({"{'if', ","'", sb, "' {",ss1,"}",",{", ss2, "},", ss3, "}"});
+        pStr = {ss}; 
       then
         pStr;        
     case (Exp.CALL(path = Absyn.IDENT(name = "der"),expLst = {Exp.CREF(componentRef = cr)}),vars)
@@ -699,7 +725,15 @@ algorithm
         pStr = Util.listMap(p, intString);
       then
         {};
-    case (Exp.CALL(path = Absyn.IDENT(name = "pre"),expLst = {Exp.CREF(componentRef = cr)}),vars) then {};  /* pre(v) is considered a known variable */ 
+    case (Exp.CALL(path = Absyn.IDENT(name = "pre"),expLst = {Exp.CREF(componentRef = cr)}),vars) /* pre(v) is considered a known variable */ //IS IT???? 
+      local String ss;
+      equation
+        (_,p) = DAELow.getVar(cr, vars);
+        pStr = Util.listMap(p, intString);
+        //ss = printExpStr(cr, vars);
+        //pStr = ss;
+      then
+        pStr;               
     case (Exp.CALL(expLst = expl),vars)
       equation 
         lst = Util.listMap1(expl, incidenceRowExp, vars);

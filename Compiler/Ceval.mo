@@ -3177,7 +3177,9 @@ algorithm
       Exp.Exp fileprefix;
       Env.Cache cache;
       Integer elimLevel;
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,fileprefix) /* mo file directory */ 
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,fileprefix) /* mo file directory */
+      local 
+        String flatModelicaStr; 
       equation 
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
         p_1 = SCode.elaborate(p);
@@ -3190,7 +3192,12 @@ algorithm
         RTOpts.setEliminationLevel(0); // No variable eliminiation            
         dlow = DAELow.lower(dae, false, false);
         RTOpts.setEliminationLevel(elimLevel); // Reset elimination level
-        filename = DAEQuery.writeIncidenceMatrix(dlow, filenameprefix);
+        flatModelicaStr = DAE.dumpStr(dae);
+        flatModelicaStr = stringAppend("EqStr={'", flatModelicaStr);
+        flatModelicaStr = System.stringReplace(flatModelicaStr, "\n", "%##%");
+        flatModelicaStr = System.stringReplace(flatModelicaStr, "%##%", "','");
+        flatModelicaStr = stringAppend(flatModelicaStr,"'}");
+        filename = DAEQuery.writeIncidenceMatrix(dlow, filenameprefix, flatModelicaStr);
         str = stringAppend("The equation system was dumped to Matlab file:", filename);
       then
         (cache,Values.STRING(str),st,file_dir);
