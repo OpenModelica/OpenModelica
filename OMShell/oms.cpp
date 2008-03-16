@@ -691,8 +691,8 @@ eval:
 		// get Error text
 		try
 		{
-		  QString getErrorString = "getErrorString";
-			delegate_->evalExpression( getErrorString);
+		  QString getErrorString = "getErrorString()";
+			delegate_->evalExpression(getErrorString);
 		}
 		catch( exception &e )
 		{
