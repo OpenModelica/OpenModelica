@@ -408,7 +408,7 @@ extends_clause :
 		;
 
 constraining_clause :
-		extends_clause
+		extends_clause | CONSTRAINEDBY^ name_path ( class_modification )?
 		;
 
 /*

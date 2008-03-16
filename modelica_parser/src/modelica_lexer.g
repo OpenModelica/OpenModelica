@@ -68,7 +68,8 @@ tokens {
 	EQUATION	= "equation"	;
 	ENCAPSULATED	= "encapsulated";
     EXPANDABLE  = "expandable";
-	EXTENDS		= "extends"	;
+	EXTENDS		= "extends" ;
+	CONSTRAINEDBY =  "constrainedby" ;
 	EXTERNAL	= "external"	;
 	FALSE		= "false"	;
 	FINAL		= "final"	;

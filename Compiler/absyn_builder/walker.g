@@ -856,8 +856,22 @@ extends_clause returns [void* ast]
 		)
 	;
 
-constraining_clause returns [void *ast] :
-		(ast = extends_clause)
+constraining_clause returns [void *ast] 
+{
+	void* path;
+	void* mod = 0;
+}
+    :
+		  (ast = extends_clause)
+		| (#(e:CONSTRAINEDBY 
+				path = name_path 
+				( mod = class_modification )? 
+			)
+			{
+				if (!mod) mod = mk_nil();
+				ast = Absyn__EXTENDS(path,mod);
+			}
+		)		
 	;
 
 // returns datatype ElementSpec
