@@ -39,7 +39,7 @@
 
 using namespace std;
 
-void errmsg()
+void _errmesg()
 {
     cerr << "OMC is compiled without Qt. Check the QTHOME environment variable and recompile." << endl;
 }
@@ -49,7 +49,7 @@ bool Static::enabled_ = false;
 bool ellipse(double x0, double y0, double x1, double y1, const char* color, int colorR, int colorG, int colorB, const char* fillColor, int fillColorR, int fillColorG, int fillColorB)
 {
 
-	errmsg();
+	_errmesg();
 	return true;
 }
 
@@ -57,13 +57,13 @@ bool rect(double x0, double y0, double x1, double y1, const char* color, int col
 {
 
 
-	errmsg();
+	_errmesg();
 	return true;
 }
 
 bool line(double x0, double y0, double x1, double y1, const char* color, int colorR, int colorG, int colorB, const char* fillColor, int fillColorR, int fillColorG, int fillColorB)
 {
-	errmsg();
+	_errmesg();
 	return true;
 }
 
@@ -71,69 +71,69 @@ bool line(double x0, double y0, double x1, double y1, const char* color, int col
 bool hold(int status)
 {
 
-	errmsg();
+	_errmesg();
 	return true;
 }
 
 bool pltWait(unsigned long msecs)
 {
 
-	errmsg();
+	_errmesg();
 	return true;
 }
 
 void emulateStreamData(const char* data, const char* title, const char* xLabel, const char* yLabel, const char* interpolation5, int legend, int grid, int logX, int logY, int drawPoints, const char* range)
 {
-	errmsg();
+	_errmesg();
 }
 
 bool plt(const char* var, const char* model, const char* title, const char* xLabel, const char* yLabel, bool legend, bool grid, double xmin, double xmax, double ymin, double ymax, bool logX, bool logY, const char* interpolation, bool drawPoints, const char* range)
 {
-	errmsg();
+	_errmesg();
         return true;
 }
 
 void setVariableFilter(const char* variables)
 {
-	errmsg();
+	_errmesg();
         return;
 }
 
 void setDataPort(int port)
 {
-	errmsg();
+	_errmesg();
         return;
 }
 
 void enableSendData(int enable)
 {
-	errmsg();
+	_errmesg();
         return;
 }
 
 	//void initSendData(int variableCount, const char* variableNames);
 void initSendData(int variableCount1, int variableCount2, char** statesNames, char** stateDerivativesNames,  char** algebraicsNames)
 {
-	errmsg();
+	_errmesg();
         return;
 }
 
 void sendPacket(const char* data)
 {
-	errmsg();
+	_errmesg();
         return;
 }
 
 
 void closeSendData()
 {
-	errmsg();
+	_errmesg();
         return;
 }
 
 bool pltTable(double*, size_t r, size_t c) //, const char*, int size);
 {
-	errmsg();
+	_errmesg();
         return true;
 }	
 
@@ -145,14 +145,14 @@ bool Static::enabled()
 
 int getVariableListSize(const char* model)
 {
-	errmsg();
+	_errmesg();
 	return 0;
 
 }
 
 bool getVariableList(const char* model, char* lst)
 {
-	errmsg();
+	_errmesg();
 	return false;
 		
 }
