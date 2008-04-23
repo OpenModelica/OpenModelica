@@ -456,28 +456,6 @@ algorithm
   end matchcontinue;
 end transformArrayNodesToListNodes;  
 
-
-public function evalTypeSpec "function: evalTypeSpec"
-  input Absyn.TypeSpec typeSpec; 
-  input Integer numLists;
-  output Absyn.Path outPath; 
-  output Integer outNumLists;
-algorithm 
-  (outPath,outNumLists) := 
-  matchcontinue (typeSpec,numLists) 
-    local 
-      Absyn.Path tpath; 
-      Integer n;
-    case (Absyn.TPATH(tpath, _),n) then (tpath,n); 
-    case (Absyn.TCOMPLEX(Absyn.IDENT("list"),tSpec :: _,_),n) 
-      local  
-        Absyn.TypeSpec tSpec;  
-      equation   
-        (tpath,n) = evalTypeSpec(tSpec,n+1);    
-      then (tpath,n);  
-  end matchcontinue;
-end evalTypeSpec;   
-
 public function createListType "function: createListType"
   input Types.Type inType;
   input Integer numLists;   
@@ -500,34 +478,17 @@ algorithm
 end createListType;   
 
 
-public function addListTypeToDAE "function: addListTypeToDAE"
-  input list<DAE.Element> daeElem;  
-  input Types.Type inType;
-  output list<DAE.Element> outElem; 
-algorithm 
-  outElem :=   
-  matchcontinue (daeElem,inType)
-    case (DAE.VAR(vn,kind,dir,prot,_,e,inst_dims,fl,lPath,dae_var_attr,comment,io,_) :: restList,t) 
-      local 
-        list<DAE.Element> daeE,restList; 
-        Exp.ComponentRef vn;
-        DAE.VarKind kind;
-        DAE.VarDirection dir;
-        DAE.VarProtection prot;
-        Option<Exp.Exp> e;
-        DAE.InstDims inst_dims;
-        DAE.Flow fl;
-        list<Absyn.Path> lPath;
-        Option<DAE.VariableAttributes> dae_var_attr;
-        Option<Absyn.Comment> comment;
-        Absyn.InnerOuter io;
-        Types.Type t;
-      equation
-        daeE = (DAE.VAR(vn,kind,dir,prot,DAE.LIST(),e,inst_dims,fl,lPath,dae_var_attr,comment,io,t) :: restList);
-      then daeE; 
-  end matchcontinue;
-end addListTypeToDAE;
 
+public function getTypeFromProp "function: getTypeFromProp"
+  input Types.Properties inProp;
+  output Types.Type outType;
+algorithm
+  outType :=
+  matchcontinue (inProp)
+    case (Types.PROP(t,_)) 
+      local Types.Type t; equation then t;
+  end matchcontinue;
+end getTypeFromProp;
 
 /*
 public function typeMatching

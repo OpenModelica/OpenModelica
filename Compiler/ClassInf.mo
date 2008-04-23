@@ -117,6 +117,20 @@ uniontype State "- Machine states, the string contains the classname."
 	record EXTERNAL_OBJ
 	  Absyn.Path fullClassName;
 	end EXTERNAL_OBJ;
+	
+	/* MetaModelica extension */
+	record META_TUPLE
+	  String string;
+  end META_TUPLE;
+  
+  record META_LIST
+    String string;
+  end META_LIST;
+  
+  record META_OPTION
+    String string;
+  end META_OPTION;
+  /*---------------------*/
 end State;
 
 public 

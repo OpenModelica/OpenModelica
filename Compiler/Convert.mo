@@ -303,7 +303,9 @@ algorithm
     case (DAE.BOOL()) equation then Exp.BOOLEXP();
     case (DAE.STRING()) equation then Exp.STRINGEXP();
     case (DAE.ENUM()) equation then Exp.ENUMEXP();
-    case (DAE.LIST()) equation then Exp.LISTEXP();  
+    case (DAE.LIST()) equation then Exp.LISTEXP();
+    case (DAE.METATUPLE()) equation then Exp.METATUPLEEXP();  
+    case (DAE.METAOPTION()) equation then Exp.METAOPTIONEXP();  
     case (DAE.EXT_OBJECT(p)) equation then Exp.EXT_OBJECTEXP(p);  
   end matchcontinue;
 end typeConvert;
@@ -872,6 +874,8 @@ algorithm
     case (Exp.BOOLEXP()) equation then DAE.BOOL();
     case (Exp.STRINGEXP()) equation then DAE.STRING();
     case (Exp.LISTEXP()) equation then DAE.LIST();  
+    case (Exp.METATUPLEEXP()) equation then DAE.METATUPLE(); 
+    case (Exp.METAOPTIONEXP()) equation then DAE.METAOPTION();     
     case (Exp.EXT_OBJECTEXP(p)) equation then DAE.EXT_OBJECT(p);   
   end matchcontinue;
 end typeConvert2; 
@@ -1253,6 +1257,24 @@ algorithm
       lType2 = fromTypeTypesToType(lType);
     	ret = ((Types.T_LIST(lType2),p));
     then ret;  
+      
+   	case ((Exp.T_METAOPTIONTYPES(lType),p))
+	  local
+    	Exp.TypeTypes lType;
+    	Types.Type lType2;
+    equation
+      lType2 = fromTypeTypesToType(lType);
+    	ret = ((Types.T_METAOPTION(lType2),p));
+    then ret;  
+
+   	case ((Exp.T_METATUPLETYPES(lType),p))
+	  local
+    	list<Exp.TypeTypes> lType;
+    	list<Types.Type> lType2;
+    equation
+      lType2 = Util.listMap(lType,fromTypeTypesToType);
+    	ret = ((Types.T_METATUPLE(lType2),p));
+    then ret;
       
 	  case ((Exp.T_ENUMTYPES(),p))
     equation
@@ -1725,6 +1747,24 @@ algorithm
     equation
       lType2 = fromTypeToTypeTypes(lType);
     	ret = ((Exp.T_LISTTYPES(lType2),p));
+    then ret; 
+      
+    case ((Types.T_METAOPTION(lType),p))
+	  local
+    	Exp.TypeTypes lType2;
+    	Types.Type lType;
+    equation
+      lType2 = fromTypeToTypeTypes(lType);
+    	ret = ((Exp.T_METAOPTIONTYPES(lType2),p));
+    then ret;   
+      
+    case ((Types.T_METATUPLE(lType),p))
+	  local
+    	list<Exp.TypeTypes> lType2;
+    	list<Types.Type> lType;
+    equation
+      lType2 = Util.listMap(lType,fromTypeToTypeTypes);
+    	ret = ((Exp.T_METATUPLETYPES(lType2),p));
     then ret; 
       
 	  case ((Types.T_ENUM(),p))

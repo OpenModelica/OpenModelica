@@ -84,6 +84,10 @@ uniontype Type
   
   record LIST end LIST; // MetaModelica list. KS
   
+  record METATUPLE end METATUPLE;  // MetaModelica tuple. KS
+    
+  record METAOPTION end METAOPTION;  // MetaModelica option. KS
+  
   record ENUMERATION
     list<String> stringLst;
   end ENUMERATION;

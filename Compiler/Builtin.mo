@@ -2464,12 +2464,17 @@ protected constant tuple<Types.TType, Option<Type_a>> array9dimbool2array1dimint
               Types.T_ARRAY(Types.DIM(SOME(1)),(Types.T_INTEGER({}),NONE)),NONE)),NONE);  
 
 // MetaModelica extension. KS
-
 protected constant tuple<Types.TType, Option<Type_a>> list2list=(
           Types.T_FUNCTION({("x",(Types.T_LIST((Types.T_NOTYPE(),NONE)),NONE))},(Types.T_LIST((Types.T_NOTYPE(),NONE)),NONE)),NONE);
 
 protected constant tuple<Types.TType, Option<Type_a>> list2boolean=(
           Types.T_FUNCTION({("x",(Types.T_LIST((Types.T_NOTYPE(),NONE)),NONE))},(Types.T_BOOL({}),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> option2boolean=(
+          Types.T_FUNCTION({("x",(Types.T_METAOPTION((Types.T_NOTYPE(),NONE)),NONE))},(Types.T_BOOL({}),NONE)),NONE);
+
+protected constant tuple<Types.TType, Option<Type_a>> anyInteger2any=(
+          Types.T_FUNCTION({("x1",(Types.T_NOTYPE(),NONE)),("x2",(Types.T_INTEGER({}),NONE))},(Types.T_NOTYPE(),NONE)),NONE);
 //----
 
 public function simpleInitialEnv "
@@ -2555,6 +2560,8 @@ algorithm
       env = Env.extendFrameT(env, "listCar", list2list); // Should be list2any; easier this way. See also rule in Types.subType. 
       env = Env.extendFrameT(env, "listCdr", list2list);   
       env = Env.extendFrameT(env, "emptyListTest", list2boolean);   
+      env = Env.extendFrameT(env, "emptyOptionTest", option2boolean);
+      env = Env.extendFrameT(env, "metaMGetField", anyInteger2any);
       //----
          
       env = Env.extendFrameT(env, "initial", nil2real) "non-functions" ;

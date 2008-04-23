@@ -1334,6 +1334,8 @@ algorithm
     case DAE.BOOL() then Exp.BOOL(); 
     case DAE.ENUM() then Exp.ENUM();  
     case DAE.LIST() then Exp.T_LIST(Exp.OTHER()); // MetaModelica list
+    case DAE.METATUPLE() then Exp.T_METATUPLE({}); // MetaModelica tuple
+    case DAE.METAOPTION() then Exp.T_METAOPTION(Exp.OTHER()); // MetaModelica tuple
     case _ then Exp.OTHER(); 
   end matchcontinue;
 end daeExpType;
@@ -1393,12 +1395,23 @@ algorithm
       Lib tstr,str;
       Exp.Type t;   
  
-      //MetaModelica list		     
+      // MetaModelica extension		     
     case (Exp.T_LIST(_),_) 
       equation  
         str = "void*";  
       then str;
- 
+        
+    case (Exp.T_METATUPLE(_),_) 
+      equation  
+        str = "void*";  
+      then str;
+        
+    case (Exp.T_METAOPTION(_),_) 
+      equation  
+        str = "void*";  
+      then str;
+    // ---
+    
     case (t,false) /* array */ 
       equation 
         tstr = expShortTypeStr(t);
@@ -1448,6 +1461,8 @@ algorithm
     case ((Types.T_BOOL(varLstBool = _),_)) then "modelica_boolean";  
     
     case ((Types.T_LIST(_),_)) then "void*";  // MetaModelica list
+    case ((Types.T_METATUPLE(_),_)) then "void*"; // MetaModelica tuple 
+    case ((Types.T_METAOPTION(_),_)) then "void*"; // MetaModelica tuple 
       
     case ty
       equation 
@@ -1476,6 +1491,8 @@ algorithm
     case ((Types.T_BOOL(varLstBool = _),_)) then "int";  
       
     case ((Types.T_LIST(_),_)) then "void*";  // MetaModelica list
+    case ((Types.T_METATUPLE(_),_)) then "void*"; // MetaModelica tuple
+    case ((Types.T_METAOPTION(_),_)) then "void*"; // MetaModelica option
       
     case ((Types.T_ARRAY(arrayDim = dim,arrayType = ty),_))
       equation 
@@ -1611,6 +1628,8 @@ algorithm
         t_str;   
     
     case ((Types.T_LIST(_),_)) then "void*"; // MetaModelica list    
+    case ((Types.T_METATUPLE(_),_)) then "void*"; // MetaModelica tuple
+    case ((Types.T_METAOPTION(_),_)) then "void*"; // MetaModelica option  
         
     case ty
       equation 
@@ -3838,7 +3857,7 @@ algorithm
         fail();  
      
      //---------------------------------------------   
-     // MetaModelica list. MetaModelica extension   
+     // MetaModelica extension   
      //---------------------------------------------        
     case (Exp.CONS(_,e1,e2),tnr,context)
       equation 
@@ -3863,7 +3882,31 @@ algorithm
         cfn1_2 = cAddStatements(cfn1_1, {stmt});
       then
         (cfn1_2,tvar,tnr1_1);
-     //---------------------------------------------
+        
+    case (Exp.META_TUPLE(elist),tnr,context)
+      equation 
+        (cfn1,vars1,tnr1) = generateExpressions(elist, tnr, context);
+        (decl,tvar,tnr1_1) = generateTempDecl("void*", tnr1);
+        s = MetaUtil.listToConsCell(vars1,elist);
+        stmt = Util.stringAppendList({tvar," = ",s,";"});
+        cfn1_1 = cAddVariables(cfn1,{decl}); 
+        cfn1_2 = cAddStatements(cfn1_1, {stmt});
+      then
+        (cfn1_2,tvar,tnr1_1); 
+        
+    case (Exp.META_OPTION(NONE()),tnr,context)
+      equation 
+        var1 = "mmc_mk_nil()";
+      then
+        (cEmptyFunction,var1,tnr);
+        
+    case (Exp.META_OPTION(SOME(e1)),tnr,context)
+      equation 
+        (cfn1,var1,tnr_1) = generateExpression(e1,tnr,context);
+        var1 = MetaUtil.createConstantCExp(e1,var1);
+      then
+        (cfn1,var1,tnr_1);
+        //---------------------------------------------
         
     case (e,_,_)
       equation 
@@ -4128,7 +4171,6 @@ algorithm
       then
         (cfn,tvar,tnr1);
                 
-        
         // MetaModelica extension   
      case (Exp.CALL(path = Absyn.IDENT(name = "listCar"),expLst = {s1 as Exp.CREF(_,Exp.T_LIST(t))},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */ 
       local String cref_str; Exp.Exp s,minlen,leftjust,signdig; Boolean needCast; String var1,var2,var3,var4;
@@ -4171,6 +4213,32 @@ algorithm
         cfn = cMergeFns({cfn1,cfn});
       then
         (cfn,tvar,tnr2);  
+      
+    case (Exp.CALL(path = Absyn.IDENT(name = "emptyOptionTest"),expLst = {s1},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */ 
+      local String cref_str; Exp.Exp s,minlen,leftjust,signdig; Boolean needCast; String var1,var2,var3,var4;
+      equation  
+        (cfn1,var1,tnr1) = generateExpression(s1, tnr, context);
+        (tdecl,tvar,tnr2) = generateTempDecl("modelica_boolean", tnr1);
+        cfn = cAddVariables(cEmptyFunction, {tdecl});
+        stmt = Util.stringAppendList({tvar," = MMC_NILTEST(",var1,");"});
+        cfn = cAddStatements(cfn, {stmt});
+        cfn = cMergeFns({cfn1,cfn});
+      then
+        (cfn,tvar,tnr2);    
+        
+    case (Exp.CALL(path = Absyn.IDENT(name = "metaMGetField"),expLst = {s1,Exp.ICONST(i)},tuple_ = false,builtin = true),tnr,context) 
+      local String cref_str; Exp.Exp s,minlen,leftjust,signdig; Boolean needCast; String var1,var2;
+      Integer i;
+      equation  
+        (cfn1,var1,tnr1) = generateExpression(s1, tnr, context);
+        (tdecl,tvar,tnr2) = generateTempDecl("void*", tnr1);
+        cfn = cAddVariables(cEmptyFunction, {tdecl});
+        var2=intString(i);
+        stmt = Util.stringAppendList({tvar," = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(",var1,"),",var2,"));"});
+        cfn = cAddStatements(cfn, {stmt});
+        cfn = cMergeFns({cfn1,cfn});
+      then
+        (cfn,tvar,tnr2);   
         //----
   end matchcontinue;
 end generateBuiltinFunction;

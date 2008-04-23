@@ -134,6 +134,14 @@ uniontype TType "-TType contains the actual type"
     Type listType "listType";    
   end T_LIST;
   
+  record T_METATUPLE "MetaModelica tuple type"
+    list<Type> types;
+  end T_METATUPLE; 
+  
+  record T_METAOPTION "MetaModelica option type"
+    Type optionType;   
+  end T_METAOPTION;
+  
   record T_COMPLEX
     ClassInf.State complexClassType "complexClassType ; The type of. a class" ;
     list<Var> complexVarLst "complexVarLst ; The variables of a complex type" ;
@@ -741,6 +749,8 @@ algorithm
     case ((T_COMPLEX(complexClassType = _),_)) then false; 
     case ((T_ENUMERATION(names = _),_)) then false;  
     case ((T_LIST(_),_)) then false;  // MetaModelica list type
+    case ((T_METAOPTION(_),_)) then false;  // MetaModelica option type
+    case ((T_METATUPLE(_),_)) then false;  // MetaModelica tuple type
   end matchcontinue;
 end basicType;
 
@@ -882,10 +892,19 @@ algorithm
     case ((T_LIST((T_NOTYPE(),_)),_),(T_LIST(_),_)) then true;   // The empty list is represented with NO_TYPE()
     case ((T_LIST(_),_),(T_LIST((T_NOTYPE(),_)),_)) then true;    
     case ((T_LIST(t1),_),(T_LIST(t2),_)) then subtype(t1,t2); 
-    case ((T_LIST((T_NOTYPE(),_)),_),_) then true; //Used for the function listCar
-    case (_,(T_LIST((T_NOTYPE(),_)),_)) then true; //Used for the function listCar
-    
-    case (t1,t2) then false;   
+    case ((T_LIST((T_NOTYPE(),_)),_),_) then true; //Used by the function listCar
+    case (_,(T_LIST((T_NOTYPE(),_)),_)) then true; //Used by the function listCar
+    case ((T_METATUPLE(tList1),_),(T_METATUPLE(tList2),_))
+      local list<Type> tList1,tList2; Boolean ret; equation
+        ret = subtypeTypelist(tList1,tList2);
+      then ret;  
+    case ((T_METAOPTION((T_NOTYPE(),_)),_),(T_METAOPTION(_),_)) then true;    
+    case ((T_METAOPTION(_),_),(T_METAOPTION((T_NOTYPE(),_)),_)) then true;       
+    case ((T_METAOPTION(t1),_),(T_METAOPTION(t2),_)) then subtype(t1,t2);    
+    case ((T_NOTYPE(),_),_) then true;    
+    case (_,(T_NOTYPE(),_)) then true;  
+       
+    case (_,_) then false;   
   end matchcontinue;
 end subtype;
 
@@ -2555,11 +2574,24 @@ algorithm
     case ( (T_COMPLEX(_,_,SOME(t)),_))
     then elabType(t);
     
-        // MetaModelica list 	    
+        // MetaModelica extension 	    
     case ((T_LIST(t),_))    
       equation
         t_1 = elabType(t);  
       then Exp.T_LIST(t_1);
+        
+    case ((T_METAOPTION(t),_))    
+      equation
+        t_1 = elabType(t);  
+      then Exp.T_METAOPTION(t_1);
+        
+    case ((T_METATUPLE(t_l),_)) 
+      local 
+        list<Exp.Type> t_l2;   
+        list<Type> t_l;
+      equation
+        t_l2 = Util.listMap(t_l,elabType);  
+      then Exp.T_METATUPLE(t_l2);        
         
     case ((_,_)) then Exp.OTHER(); 
   end matchcontinue;

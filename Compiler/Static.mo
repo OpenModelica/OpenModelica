@@ -71,6 +71,7 @@ public import Interactive;
 public import Algorithm;
 public import Convert;
 public import MetaUtil;
+public import RTOpts;
 
 public 
 type Ident = String;
@@ -319,6 +320,18 @@ algorithm
     case (cache,_,Absyn.END(),impl,st,doVect) 
     then (cache,Exp.END(),Types.PROP((Types.T_INTEGER({}),NONE),Types.C_CONST()),st); 
       
+       /*--------------------------------*/ 
+       /* Part of MetaModelica extension. KS */
+        case (cache,env,Absyn.CREF(Absyn.CREF_IDENT("NONE",{})),impl,st,doVect)
+      local Exp.Exp e;
+      equation 
+        true = RTOpts.acceptMetaModelicaGrammar();
+        e = Exp.META_OPTION(NONE());
+        prop1 = Types.PROP((Types.T_METAOPTION((Types.T_NOTYPE(),NONE)),NONE()),Types.C_VAR()); 
+      then
+        (cache,e,prop1,st);    
+      /*-------------------------------------*/
+   
     case (cache,env,Absyn.CREF(componentReg = cr),impl,st,doVect)
       equation 
         (cache,exp,prop,_) = elabCref(cache,env, cr, impl,doVect);
@@ -397,7 +410,26 @@ algorithm
         (cache,e,prop,st_3);
         
        /*--------------------------------*/ 
-       /* Part of MetaModelica extension. KS */ 
+       /* Part of MetaModelica extension. KS */
+    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("SOME",_),functionArgs = Absyn.FUNCTIONARGS(args = (e1 :: _),argNames = _)),impl,st,doVect)
+      local Exp.Exp e;
+      equation 
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (cache,e,Types.PROP(t,_),st_1) = elabExp(cache,env, e1, impl, st,doVect);
+        e = Exp.META_OPTION(SOME(e));
+        prop1 = Types.PROP((Types.T_METAOPTION(t),NONE()),Types.C_VAR());
+      then
+        (cache,e,prop1,st);  
+
+    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("NONE",_),functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = _)),impl,st,doVect)
+      local Exp.Exp e;
+      equation 
+        true = RTOpts.acceptMetaModelicaGrammar();
+        e = Exp.META_OPTION(NONE());
+        prop1 = Types.PROP((Types.T_METAOPTION((Types.T_NOTYPE(),NONE)),NONE()),Types.C_VAR()); 
+      then
+        (cache,e,prop1,st);       
+        
       /*  case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect)
       local Exp.Exp e;
           equation 
@@ -422,36 +454,6 @@ algorithm
         Debug.fprintln("sei", "elab_exp CALL done");
       then
         (cache,e_1,prop_1,st_1);  
-      
-      /* Array For iterator expression */  
-    /*case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("array",{}),functionArgs = Absyn.FOR_ITER_FARG(e1,rangeList)),impl,st,doVect)
-      local Exp.Exp e; 
-        list<Absyn.Ident> idList;  
-        Absyn.Exp e1,vb;
-        Absyn.ForIterators rangeList;
-        Absyn.Algorithm absynStmt,temp;
-        list<Absyn.Ident> tempLoopVarNames;  
-        Absyn.ComponentRef c1,c2;
-        list<Absyn.ElementItem> declList,tempLoopVars;
-        list<Absyn.AlgorithmItem> vb_body;
-      equation   
-        (tempLoopVarNames,tempLoopVars) = Inst.createTempLoopVars(rangeList,{},{},1);
-        
-        // Create temporary array to store the result from the for-iterator construct
-        (cache,declList) = Inst.createForIteratorArray(cache,env,e1,rangeList,impl);
-        
-        declList = listAppend(declList,tempLoopVars);
-        
-        // Create for-statements
-        temp = Inst.createForIteratorAlgorithm(e1,rangeList,tempLoopVarNames,tempLoopVarNames,Absyn.CREF_IDENT("VEC__",{}));
-        
-        vb_body = Util.listCreate(Absyn.ALGORITHMITEM(temp,NONE())); 
-        vb = Absyn.VALUEBLOCK(declList,Absyn.VALUEBLOCKALGORITHMS(vb_body),
-        Absyn.CREF(Absyn.CREF_IDENT("VEC__",{})));   
-        
-        (cache,e_1,prop_1,st_1) = elabExp(cache,env,vb,impl,st,doVect);
-      then
-      (cache,e_1,prop_1,st_1); */
         
     case (cache,env,Absyn.TUPLE(expressions = (e as (e1 :: rest))),impl,st,doVect) /* PR. Get the properties for each expression in the tuple. 
 	 Each expression has its own constflag.
@@ -660,14 +662,27 @@ algorithm
        
       then (cache,Exp.VALUEBLOCK(tp_1,dae2,b_alg_dae,res2),prop,st); 
  
-    //-------------------------------------	
-       // Part of the MetaModelica extension. KS  
-       // MetaModelica list cons	      
-  case (cache,env,Absyn.CONS(e1,e2),impl,st,doVect)
+       //-------------------------------------	
+       // Part of the MetaModelica extension. KS        
+   case (cache,env,Absyn.ARRAY(es),impl,st,doVect)
+     local equation
+       true = RTOpts.acceptMetaModelicaGrammar();
+       (cache,exp,prop,st) = elabExp(cache,env,Absyn.LIST(es),impl,st,doVect);      
+     then (cache,exp,prop,st);  
+       
+   case (cache,env,Absyn.TUPLE(es),impl,st,doVect)
+     local list<Absyn.Exp> e; list<Types.Type> tList; list<Types.Properties> propList; equation
+       true = RTOpts.acceptMetaModelicaGrammar();
+       (cache,es_1,propList,st) = elabExpList(cache,env, es, impl, st,doVect); 
+       tList = Util.listMap(propList,MetaUtil.getTypeFromProp);
+       prop = Types.PROP((Types.T_METATUPLE(tList),NONE()),Types.C_VAR()); 
+     then (cache,Exp.META_TUPLE(es_1),prop,st);
+      
+   case (cache,env,Absyn.CONS(e1,e2),impl,st,doVect)
      local  
        Boolean correctTypes;
        Types.Type t;
-    equation     
+     equation     
       (e1 :: _) = MetaUtil.transformArrayNodesToListNodes({e1},{});
       (e2 :: _) = MetaUtil.transformArrayNodesToListNodes({e2},{});
       
@@ -724,8 +739,8 @@ algorithm
   end matchcontinue;
 end elabExp;
 
-/* ------------------------------- */
-// MetaModelica 
+
+// Part of MetaModelica extension
 public function elabListExp "function: elabListExp
 Function that elaborates the MetaModelica list type, 
 for instance list<Integer>.

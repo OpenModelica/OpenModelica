@@ -99,7 +99,7 @@ algorithm
       equation
         // Extract from matchcontinue Abstract Syntax Tree       
         (localCache,rhsList,rhsListLight,patList,elseRhSide) = extractFromMatchAST(localCases,{},{},{},1,localCache,localEnv);
-        varList = extractListFromTuple(varList2);
+        varList = extractListFromTuple(varList2,0);
         varListLength = listLength(varList);
         
         false = (varListLength == 0); // If there are no input variables, the function will fail
@@ -129,16 +129,22 @@ protected function extractListFromTuple "function: extractListFromTuple
  Given an Absyn.Exp, this function will extract the list of expressions if the
  expression is a tuple, otherwise a list of length one is created"
   input Absyn.Exp inExp;
+  input Integer numOfExps;
   output list<Absyn.Exp> outList;
 algorithm
   outList :=
-  matchcontinue (inExp)
-    case(Absyn.TUPLE(l))
+  matchcontinue (inExp,numOfExps)
+    case(Absyn.TUPLE(l),1)
       local 
         list<Absyn.Exp> l;
       equation 
-      then l;  
-    case(exp)
+      then {Absyn.TUPLE(l)};  
+    case(Absyn.TUPLE(l),_)
+      local 
+        list<Absyn.Exp> l;
+      equation 
+      then l;    
+    case(exp,_)
       local 
         Absyn.Exp exp;
       equation
@@ -307,8 +313,10 @@ algorithm
         
         Env.Env localEnv;
         Env.Cache localCache;
+        Integer i;
       equation  
-        first = extractListFromTuple(first2);
+        i = listLength(localVarList);
+        first = extractListFromTuple(first2,i);
         
         // Add a row to the matrix, rename each pattern as well
         (localCache,localPatMat,asBinds,localConstTagEnv) = addRow({},localVarList,1,first, 
@@ -489,6 +497,10 @@ algorithm
         (localCache,temp1,temp3,localConstTagEnv) = renameMain(expr,localVar,localAsBinds,localCache,localEnv,localConstTagEnv);        	    
       then (localCache,temp1,temp3,localConstTagEnv);        
         
+        // NONE EXPRESSION	
+    case (Absyn.CREF(Absyn.CREF_IDENT("NONE",_)),localVar,localAsBinds,localCache,localEnv,localConstTagEnv)
+    then (localCache,DFA.RP_NONE(localVar),localAsBinds,localConstTagEnv);
+        
         // COMPONENT REFERENCE EXPRESSION
         // Will be interpretated as: case (var AS _)
         // This expression is transformed into a wildcard but we store the variable
@@ -510,14 +522,19 @@ algorithm
         // This is a builtin functioncall, all the function arguments are renamed       
     case (Absyn.TUPLE(funcArgs),localVar,localAsBinds,localCache,localEnv,localConstTagEnv)
       local
-        Absyn.ComponentRef compRef;
-        list<Absyn.Exp> funcArgs,funcArgs2;	  
-        RenamedPatList renamedPatList;
-        RenamedPat pat;
-        AsList localAsBinds2;
+        list<Absyn.Exp> funcArgs;	  
+        RenamedPatList renamedPatList; 
+        RenamedPat pat,first2,second2;
+        AsList localAsBinds2; 
+        Integer constTag;
       equation
+        (constTag,localConstTagEnv) = getUniqueConstTag(Absyn.IDENT("TUPLE"),localConstTagEnv);
+        localVar2 = stringAppend(localVar,"_"); 
+        localVar2 = stringAppend(localVar2,intString(constTag));  
+        
         (localCache,renamedPatList,localAsBinds2,localConstTagEnv) = renamePatList(funcArgs
-          ,localVar,1,{},{},localCache,localEnv,localConstTagEnv);
+          ,localVar2,1,{},{},localCache,localEnv,localConstTagEnv);
+        
         pat = DFA.RP_TUPLE(localVar,renamedPatList);
         
       then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv);
@@ -528,7 +545,6 @@ algorithm
       local
         Absyn.Exp first,second;	  
         RenamedPatList renamedPatList;
-        list<Absyn.Ident> paths;  
         RenamedPat pat,first2,second2;
         AsList localAsBinds2; 
         Integer constTag;
@@ -544,7 +560,35 @@ algorithm
         
         pat = DFA.RP_CONS(localVar,first2,second2);
         
-      then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv);   
+      then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv);  
+        
+        // NONE EXPRESSION
+    case (Absyn.CALL(Absyn.CREF_IDENT("NONE",_),Absyn.FUNCTIONARGS({},{})),localVar,  
+        localAsBinds,localCache,localEnv,localConstTagEnv)
+         then (localCache,DFA.RP_NONE(localVar),localAsBinds,localConstTagEnv);
+           
+      // SOME EXPRESSION    
+    case (Absyn.CALL(Absyn.CREF_IDENT("SOME",_),Absyn.FUNCTIONARGS(first :: _,{})),localVar,  
+        localAsBinds,localCache,localEnv,localConstTagEnv)
+      local
+        Absyn.Exp first;
+        RenamedPatList renamedPatList;
+        RenamedPat pat,first2;
+        AsList localAsBinds2; 
+        Integer constTag;
+      equation
+        (constTag,localConstTagEnv) = getUniqueConstTag(Absyn.IDENT("SOME"),localConstTagEnv);
+        localVar2 = stringAppend(localVar,"_"); 
+        localVar2 = stringAppend(localVar2,intString(constTag));  
+        
+        (localCache,renamedPatList,localAsBinds2,localConstTagEnv) = renamePatList({first}
+          ,localVar2,1,{},{},localCache,localEnv,localConstTagEnv);
+        first2 = Util.listFirst(renamedPatList);
+        
+        pat = DFA.RP_SOME(localVar,first2);
+        
+      then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv);  
+           
         // CALL EXPRESSION
         // This is a builtin functioncall, all the function arguments are renamed
         // We also must transform named function arguments into positional function 
@@ -604,7 +648,8 @@ algorithm
           ,localVar2,1,{},{},localCache,localEnv,localConstTagEnv);
         pat = DFA.RP_CALL(localVar,compRef,renamedPatList);
         
-      then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv);    
+      then (localCache,pat,listAppend(localAsBinds,localAsBinds2),localConstTagEnv);
+        // EMPTY LIST EXPRESSION    
     case (Absyn.ARRAY({}),localVar,localAsBinds,localCache,_,localConstTagEnv)
       local  
         RenamedPat pat;
@@ -621,7 +666,6 @@ algorithm
         (localCache,pat,localAsBinds,localConstTagEnv) = 
         renameMain(exp,localVar,localAsBinds,localCache,localEnv,localConstTagEnv);
       then (localCache,pat,localAsBinds,localConstTagEnv);
-        // EMPTY LIST EXPRESSION
     case (e,_,_,_,_,_)  local Absyn.Exp e; 
       equation
       //  Debug.fprint("failtrace", "- renameMain failed, invalid pattern\n");
@@ -1376,6 +1420,7 @@ algorithm
   matchcontinue (constPat)
     case DFA.RP_CONS(_,_,_) equation then "CONS";
     case DFA.RP_TUPLE(_,_) equation then "TUPLE";  
+    case DFA.RP_SOME(_,_) equation then "SOME";  
     case DFA.RP_CALL(_,cref,_) 
     local 
       Absyn.Ident val;
@@ -1410,7 +1455,8 @@ algorithm
     local 
       String val;
       equation then val;   
-    case DFA.RP_EMPTYLIST(_) then "EmptyList";    
+    case DFA.RP_EMPTYLIST(_) then "EmptyList";
+    case DFA.RP_NONE(_) then "NONE";      
   end matchcontinue;     	
 end getConstantName;
 
@@ -1730,6 +1776,17 @@ algorithm
         wcList = generateWildcardList(localVarList,{}); 
         tuplePat = DFA.RP_TUPLE(pathVar,wcList);
       then tuplePat;
+    case (DFA.RP_SOME(pathVar,_),localVarList)
+      local
+        RenamedPat somePat;
+        Absyn.Ident pathVar;
+        RenamedPatList wcList;
+        RenamedPat wc;
+      equation
+        wcList = generateWildcardList(localVarList,{}); 
+        wc = Util.listFirst(wcList);
+        somePat = DFA.RP_SOME(pathVar,wc);
+      then somePat; 
     case (DFA.RP_CALL(pathVar,callName,_),localVarList)      
       local
         Absyn.Ident pathVar;
@@ -1813,6 +1870,14 @@ algorithm
       equation
         tempList = getPathVarsFromConstructHelper(l,{}); 
       then tempList;
+    case (DFA.RP_SOME(pathVar,rp))
+    local
+      Absyn.Ident pathVar;
+      list<Absyn.Ident> tempList;
+      DFA.RenamedPat rp;
+      equation
+        tempList = getPathVarsFromConstructHelper({rp},{}); 
+      then tempList;            
     case (DFA.RP_CONS(pathVar,p1,p2))
     local
       Absyn.Ident pathVar;
@@ -1957,6 +2022,13 @@ algorithm
       local 
         RenamedPatList l;
       equation 
+      then l;
+    case (DFA.RP_SOME(_,first)) 
+      local
+        RenamedPat first;
+        RenamedPatList l;
+      equation
+        l = {first};    
       then l;
     case (DFA.RP_CONS(_,first,second)) 
       local
@@ -2174,7 +2246,8 @@ algorithm
     case (DFA.RP_REAL(_,_))
       equation
       then true;      
-    case (DFA.RP_EMPTYLIST(_)) then true;       
+    case (DFA.RP_EMPTYLIST(_)) then true;  
+    case (DFA.RP_NONE(_)) then true;       
     case (DFA.RP_CREF(_,_))
       equation
       then true;
@@ -2194,18 +2267,11 @@ protected function constructorOrNot "function: constructorOrNot
 algorithm
   val :=
   matchcontinue (pat)
-    case (DFA.RP_CONS(_,_,_))
-      equation
-      then true;
-    case (DFA.RP_TUPLE(_,_))
-      equation
-      then true;
-    case (DFA.RP_CALL(_,_,_))
-      equation
-      then true;
-    case (_)
-      equation
-      then false;
+    case (DFA.RP_CONS(_,_,_)) then true;
+    case (DFA.RP_TUPLE(_,_)) then true;
+    case (DFA.RP_SOME(_,_)) then true;   
+    case (DFA.RP_CALL(_,_,_)) then true;
+    case (_) then false;
   end matchcontinue;    
 end constructorOrNot;
 
@@ -2669,7 +2735,10 @@ algorithm
         SCode.Class cl1;
         Absyn.Exp lhsExp;
       equation
-        expL = extractListFromTuple(e);
+        // This one should be after we looked up the class for the function.
+        // If we have a statement such as: ((a,b)) = func(...); this
+        // is not the same as (a,b) = func(...);
+        expL = extractListFromTuple(e,0);
         false = onlyCrefExpressions(expL);
         
       /*

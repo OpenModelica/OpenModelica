@@ -1612,7 +1612,7 @@ algorithm
 	   Integer n=2;
 	   B b(ni=n);
 	   end test;
-	   The modifier (n=n) will be untypes when B is instantiated and the variable n can not be 
+	   The modifier (n=n) will be unt9ypes when B is instantiated and the variable n can not be 
 	   found, since the component b is instantiated in env of B.
 	   Solution:
 	   Redesign inst_extends_list to return (SCode.Element, Mod) list and
@@ -1701,6 +1701,34 @@ algorithm
         ClassInf.assertValid(ci_state_1, re) "Check for restriction violations" ;
       then
         (cache,dae,env_2,csets_1,ci_state_1,tys,bc);
+      
+      /* MetaModelica extension */
+    case (cache,env,mods,pre,csets,ci_state,className,SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("list"),tSpecs,_),mod = mod),re,prot,inst_dims,impl) 
+      local list<Absyn.TypeSpec> tSpecs; list<Types.Type> tys; Types.Type ty;
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();  
+        (cache,cenv,tys,csets) = instClassDefHelper(cache,env,tSpecs,pre,inst_dims,impl,{},csets);
+        ty = Util.listFirst(tys);
+        bc = SOME((Types.T_LIST(ty),NONE));
+      then (cache,{},env,csets,ClassInf.META_LIST(""),{},bc);
+
+    case (cache,env,mods,pre,csets,ci_state,className,SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("Option"),tSpecs,_),mod = mod),re,prot,inst_dims,impl) 
+      local list<Absyn.TypeSpec> tSpecs; list<Types.Type> tys; Types.Type ty;
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();  
+        (cache,cenv,tys,csets) = instClassDefHelper(cache,env,tSpecs,pre,inst_dims,impl,{},csets);
+        ty = Util.listFirst(tys);
+        bc = SOME((Types.T_METAOPTION(ty),NONE));
+      then (cache,{},env,csets,ClassInf.META_OPTION(""),{},bc);
+
+    case (cache,env,mods,pre,csets,ci_state,className,SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("tuple"),tSpecs,_),mod = mod),re,prot,inst_dims,impl) 
+      local list<Absyn.TypeSpec> tSpecs; list<Types.Type> tys; 
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();  
+        (cache,cenv,tys,csets) = instClassDefHelper(cache,env,tSpecs,pre,inst_dims,impl,{},csets);
+        bc = SOME((Types.T_METATUPLE(tys),NONE));
+      then (cache,{},env,csets,ClassInf.META_TUPLE(""),{},bc);
+        /* ----------------------- */
         
         /* If the class is derived from a class that can not be found in the environment, this rule prints an error message. */ 
    
@@ -1858,6 +1886,54 @@ algorithm
     case(cr1,cr2) then (cr1,cr2);
   end matchcontinue;
 end stripCommonCrefPart;
+
+protected function instClassDefHelper "Function: instClassDefHelper"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.TypeSpec> inSpecs;
+  input Prefix.Prefix inPre;
+  input InstDims inDims;
+  input Boolean inImpl;  
+  input list<Types.Type> accTypes;
+  input Connect.Sets inCSets;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output list<Types.Type> outType;
+  output Connect.Sets outSets;
+algorithm
+  (outCache,outEnv,outType,outSets) :=
+  matchcontinue (inCache,inEnv,inSpecs,inPre,inDims,inImpl,accTypes,inCSets)
+    local
+      Env.Cache cache; Env.Env env; Prefix.Prefix pre; InstDims dims; Boolean impl;
+      list<Types.Type> localAccTypes;
+      list<Absyn.TypeSpec> restTypeSpecs; Connect.Sets csets;
+    case (cache,env,{},_,_,_,localAccTypes,csets) then (cache,env,localAccTypes,csets);
+              
+    case (cache,env, Absyn.TPATH(cn,_) :: restTypeSpecs,pre,dims,impl,localAccTypes,csets)      
+      local
+        Absyn.Path cn; SCode.Class c; 
+        Env.Env cenv; Types.Type ty; 
+      equation
+        (cache,(c as SCode.CLASS(_,_,_,_,_)),cenv) = Lookup.lookupClass(cache,env, cn, true);
+        (cache,_,cenv,csets,ty,_)=instClass(cache,cenv,Types.NOMOD(),pre,csets,c,dims,impl,INNER_CALL());
+        localAccTypes = listAppend(localAccTypes,{ty});
+        (cache,env,localAccTypes,csets) = instClassDefHelper(cache,env,restTypeSpecs,pre,dims,impl,localAccTypes,csets);  
+      then (cache,env,localAccTypes,csets);
+              
+    case (cache,env, (tSpec as Absyn.TCOMPLEX(p,_,_)) :: restTypeSpecs,pre,dims,impl,localAccTypes,csets)      
+      local
+        Absyn.Path p; SCode.Class c; 
+        Env.Env cenv; Types.Type ty; 
+        Absyn.Ident id; Absyn.TypeSpec tSpec;
+      equation
+        id=Absyn.pathString(p);
+        c = SCode.CLASS(id,false,false,SCode.R_TYPE(),SCode.DERIVED(tSpec,SCode.NOMOD()));
+        (cache,_,cenv,csets,ty,_)=instClass(cache,env,Types.NOMOD(),pre,csets,c,dims,impl,INNER_CALL());
+        localAccTypes = listAppend(localAccTypes,{ty});
+        (cache,env,localAccTypes,csets) = instClassDefHelper(cache,env,restTypeSpecs,pre,dims,impl,localAccTypes,csets);  
+      then (cache,env,localAccTypes,csets);
+  end matchcontinue;
+end instClassDefHelper;
 
 protected function instantiateExternalObject
 " instantiate an external object. This is done by instantiating the destructor and constructor
@@ -3671,27 +3747,23 @@ algorithm
         (cache,dae,env_1,csets_1,ci_state,vars);
 
         //------------------------------------------------------------------------
-        // The "MetaModelica list" case, part of MetaModelica extension. KS
+        // MetaModelica Complex Types. Part of MetaModelica extension.
         //------------------------------------------------------------------------
     case (cache,env,mods,pre,csets,ci_state,((comp as SCode.COMPONENT(component = n,innerOuter=io,final_ = final_,replaceable_ = repl,protected_ = prot,
       		attributes = (attr as SCode.ATTR(arrayDim = ad,flow_ = flow_,RW = acc,parameter_ = param,input_ = dir)),
-      		typeSpec = Absyn.TCOMPLEX(Absyn.IDENT("list"),tSpec :: _,_), mod = m,baseclass = bc,this = comment)),cmod),inst_dims,impl)  
+      		typeSpec = (tSpec as Absyn.TCOMPLEX(typeName,_,_)), mod = m,baseclass = bc,this = comment)),cmod),inst_dims,impl)  
       local String s;
         Boolean allreadyDeclared;
         list<Types.Var> vars;  
         Absyn.TypeSpec tSpec;  
-        Integer numberOfLists;
+        Absyn.Path typeName;
+        Absyn.Ident id;
       equation 
         true = RTOpts.acceptMetaModelicaGrammar();  
         
-        // Derive the basic type of the list and the number of lists (since a list can be nested)
-        //------------------------------------------------
-        (t,numberOfLists) = MetaUtil.evalTypeSpec(tSpec,1);
-        //------------------------------------------------
-        
         // Fails if multiple decls not identical
         allreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl); 
-        checkRecursiveDefinition(env,t);
+        //checkRecursiveDefinition(env,t);
         vn = Prefix.prefixCref(pre, Exp.CREF_IDENT(n,{})); 
         //Debug.fprint(\"insttr\", \"Instantiating component \") &
 				//Debug.fprint(\"insttr\", n) & //Debug.fprint(\"insttr\", \"\\n\") &" 
@@ -3703,58 +3775,60 @@ algorithm
 				//in the variable `mm\', and the modification that is included in the variable declaration 
 				//is in the variable `m\'.  All of these are merged so that the correct precedence 
 				//rules are followed." 
-        classmod = Mod.lookupModificationP(mods, t) ;
-        mm = Mod.lookupCompModification(mods, n);
+        //classmod = Mod.lookupModificationP(mods, t) ;
+        //mm = Mod.lookupCompModification(mods, n);
         
         //The types in the environment does not have correct Binding.
 	   		//We must update those variables that is found in m into a new environment.
         owncref = Absyn.CREF_IDENT(n,{})  ;
-        crefs = getCrefFromMod(m);
-        crefs2 = getCrefFromDim(ad);
-        crefs_1 = Util.listFlatten({crefs,crefs2});
-        crefs_2 = removeCrefFromCrefs(crefs_1, owncref);
-        (cache,env) = getDerivedEnv(cache,env, bc);
-        (cache,env2,csets) = updateComponentsInEnv(cache,mods, crefs_2, env, ci_state, csets, impl);
+        //crefs = getCrefFromMod(m);
+        //crefs2 = getCrefFromDim(ad);
+        //crefs_1 = Util.listFlatten({crefs,crefs2});
+        //crefs_2 = removeCrefFromCrefs(crefs_1, owncref);
+        //(cache,env) = getDerivedEnv(cache,env, bc);
+        //(cache,env2,csets) = updateComponentsInEnv(cache,mods, crefs_2, env, ci_state, csets, impl);
 				//Update the untyped modifiers to typed ones, and extract class and 
 				//component modifiers again. 
-        (cache,mods_1) = Mod.updateMod(cache,env2, pre, mods, impl) ;
+        //(cache,mods_1) = Mod.updateMod(cache,env2, pre, mods, impl) ;
 
         //Refetch the component from environment, since attributes, etc.
 		  	//might have changed.. comp used in redeclare_type below...	  
-        (cache,_,SOME((comp,_)),_,_) = Lookup.lookupIdentLocal(cache,env2, n);
-        classmod_1 = Mod.lookupModificationP(mods_1, t);
-        mm_1 = Mod.lookupCompModification(mods_1, n);
-        (cache,m) = removeSelfModReference(cache,n,m); // Remove self-reference i.e. A a(x=a.y);
-        (cache,m_1) = Mod.elabMod(cache,env2, pre, m, impl);
-        mod = Mod.merge(classmod_1, mm_1, env2, pre);
-        mod1 = Mod.merge(mod, m_1, env2, pre);
-        mod1_1 = Mod.merge(cmod, mod1, env2, pre); 
+        //(cache,_,SOME((comp,_)),_,_) = Lookup.lookupIdentLocal(cache,env2, n);
+        //classmod_1 = Mod.lookupModificationP(mods_1, t);
+        //mm_1 = Mod.lookupCompModification(mods_1, n);
+        //(cache,m) = removeSelfModReference(cache,n,m); // Remove self-reference i.e. A a(x=a.y);
+        //(cache,m_1) = Mod.elabMod(cache,env2, pre, m, impl);
+        //mod = Mod.merge(classmod_1, mm_1, env2, pre);
+        //mod1 = Mod.merge(mod, m_1, env2, pre);
+        //mod1_1 = Mod.merge(cmod, mod1, env2, pre); 
 
 				/* Apply redeclaration modifier to component */
-        (cache,SCode.COMPONENT(n,io,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,acc,param,dir)),_,m,bc,comment),mod_1,env2_1,csets) 
-        = redeclareType(cache,mod1_1, comp, env2, pre, ci_state, csets, impl); 
+        //(cache,SCode.COMPONENT(n,io,final_,repl,prot,(attr as SCode.ATTR(ad,flow_,acc,param,dir)),_,m,bc,comment),mod_1,env2_1,csets) 
+        //= redeclareType(cache,mod1_1, comp, env2, pre, ci_state, csets, impl); 
                  
         (cache,env_1) = getDerivedEnv(cache,env, bc);
-        (cache,cl,cenv) = Lookup.lookupClass(cache,env_1, t, true);
+        
+        //---------
+        // We build up a class structure for the complex type
+        id=Absyn.pathString(typeName);
+        cl = SCode.CLASS(id,false,false,SCode.R_TYPE(),SCode.DERIVED(tSpec,SCode.NOMOD())); 
+        //(cache,cl,cenv) = Lookup.lookupClass(cache,env_1, Absyn.IDENT("Integer"), true);
+				
 				//If the element is `protected\', and an external modification 
 				//is applied, it is an error. 
-        checkProt(prot, mm_1, vn) ;
-        eq = Mod.modEquation(mod_1);
+        //checkProt(prot, mm_1, vn) ;
+        //eq = Mod.modEquation(mod);
 				
 				// The variable declaration and the (optional) equation modification are inspected for array dimensions.
-        (cache,dims) = elabArraydim(cache,env2_1, owncref, t,ad, eq, impl, NONE,true)  ;
+        // Gather all the dimensions
+        // (Absyn.IDENT("Integer") is used as a dummie)
+        (cache,dims) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"),ad, NONE, impl, NONE,true)  ;
         
         //Instantiate the component 
-        (cache,compenv,dae,csets_1,ty) = instVar(cache,cenv, ci_state, mod_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io);    
-        
-        //---------------------------------
-        // Add the list type to the dae 
-        ty = MetaUtil.createListType(ty,numberOfLists);  
-        dae = MetaUtil.addListTypeToDAE(dae,ty);
-        //---------------------------------
+        (cache,compenv,dae,csets_1,ty) = instVar(cache,env, ci_state, Types.NOMOD(), pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io);    
 
 				//The environment is extended (updated) with the new variable binding. 
-        (cache,binding) = makeBinding(cache,env2_1, attr, mod_1, ty) ;
+        (cache,binding) = makeBinding(cache,env, attr, Types.NOMOD(), ty) ;
 
         //true in update_frame means the variable is now instantiated. 
         new_var = Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding) ;
@@ -3762,7 +3836,7 @@ algorithm
         //type info present Now we can also put the binding into the dae.
         //If the type is one of the simple, predifined types a simple variable 
         //declaration is added to the DAE. 
-        env_1 = Env.updateFrameV(env2_1, new_var, Env.VAR_DAE(), compenv)  ;
+        env_1 = Env.updateFrameV(env, new_var, Env.VAR_DAE(), compenv)  ;
         vars = Util.if_(allreadyDeclared,{},{Types.VAR(n,Types.ATTR(flow_,acc,param,dir),prot,ty,binding)});
         dae = Util.if_(allreadyDeclared,{},dae);
         dae = Util.if_(ModUtil.isOuter(io),DAE.removeEquations(dae),dae);
@@ -4225,38 +4299,6 @@ algorithm
       Option<Absyn.Comment> comment;
       Env.Cache cache;
       Boolean prot,listBool;
-      
-      //------------------------------------------------------------------------
-      // MetaModelica list type, part of MetaModelica extension. KS
-      //------------------------------------------------------------------------
-      case (cache,env,ci_state,mod,pre,csets,n,SCode.CLASS(parts = SCode.DERIVED(
-      Absyn.TCOMPLEX(Absyn.IDENT("list"),tSpec :: _,_),_)),
-        attr,prot,dims,idxs,inst_dims,impl,comment,io)
-        local 
-          Integer numberOfLists;
-          Absyn.Path t;
-          Absyn.TypeSpec tSpec;
-        equation 
-       true = RTOpts.acceptMetaModelicaGrammar();
-        
-        // Derive the basic type of the list and the number of lists (since a list can be nested)
-        //------------------------------------------------
-        (t,numberOfLists) = MetaUtil.evalTypeSpec(tSpec,1);
-        //------------------------------------------------
-        
-        (cache,cl,env) = Lookup.lookupClass(cache,env,t,true);
-        
-        //Instantiate the component 
-        (cache,compenv,dae,csets_1,ty) = instVar(cache,env,ci_state,mod,pre,csets,n,cl,attr,prot,dims,{},inst_dims,impl,comment,io);    
-
-        //---------------------------------
-        // Add the list type to the dae 
-        ty = MetaUtil.createListType(ty,numberOfLists);  
-        dae = MetaUtil.addListTypeToDAE(dae,ty);
-        //---------------------------------
-        
-          then 
-            (cache,compenv,dae,csets_1,ty);         
   
    	// impl component environment dae elements for component Variables of userdefined type, 
    	// e.g. Point p => Real p{3}; These must be handled separately since even if they do not 
@@ -4597,7 +4639,38 @@ algorithm
     case (cache,_,_,_,SCode.CLASS(name = "Real"),_,_) then (cache,{});  /* impl */ 
     case (cache,_,_,_,SCode.CLASS(name = "Integer"),_,_) then (cache,{}); 
     case (cache,_,_,_,SCode.CLASS(name = "String"),_,_) then (cache,{}); 
-    case (cache,_,_,_,SCode.CLASS(name = "Boolean"),_,_) then (cache,{}); 
+    case (cache,_,_,_,SCode.CLASS(name = "Boolean"),_,_) then (cache,{});
+    
+    /*------------------------*/
+    /* MetaModelica extension */
+    case (cache,env,_,_,SCode.CLASS(name = id,parts = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("list"),_,arrayDim = ad),mod = mod)),dims,impl)  
+      local equation
+        true=RTOpts.acceptMetaModelicaGrammar();
+        owncref = Absyn.CREF_IDENT(id,{});
+        ad_1 = getOptionArraydim(ad);
+        // Absyn.IDENT("Integer") used as a dummie
+        (cache,dim1) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"), ad_1, NONE, impl, NONE,true);
+      then (cache,dim1);
+        
+    case (cache,env,_,_,SCode.CLASS(name = id,parts = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("tuple"),_,arrayDim = ad),mod = mod)),dims,impl)  
+      local equation
+        true=RTOpts.acceptMetaModelicaGrammar();
+        owncref = Absyn.CREF_IDENT(id,{});
+        ad_1 = getOptionArraydim(ad);
+        // Absyn.IDENT("Integer") used as a dummie
+        (cache,dim1) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"), ad_1, NONE, impl, NONE,true);
+      then (cache,dim1);
+        
+    case (cache,env,_,_,SCode.CLASS(name = id,parts = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("option"),_,arrayDim = ad),mod = mod)),dims,impl)  
+      local equation
+        true =RTOpts.acceptMetaModelicaGrammar();
+        owncref = Absyn.CREF_IDENT(id,{});
+        ad_1 = getOptionArraydim(ad);
+        // Absyn.IDENT("Integer") used as a dummie
+        (cache,dim1) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"), ad_1, NONE, impl, NONE,true);
+      then (cache,dim1);
+      /*----------------------*/
+       
     case (cache,env,mods,pre,SCode.CLASS(name = id,restriction = SCode.R_TYPE(),parts = SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),mod = mod)),dims,impl) /* Derived classes with restriction type, e.g. type Point = Real{3}; */ 
       equation 
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, cn, true);
@@ -6021,7 +6094,13 @@ algorithm
         NONE = Env.getEnvPath(env);
       then
         (cache,path);
-           
+        
+        /* MetaModelica extension */
+    case (cache,_,path as Absyn.IDENT("list")) equation true=RTOpts.acceptMetaModelicaGrammar(); then (cache,path);       
+    case (cache,_,path as Absyn.IDENT("Option")) equation true=RTOpts.acceptMetaModelicaGrammar(); then (cache,path);
+    case (cache,_,path as Absyn.IDENT("tuple")) equation true=RTOpts.acceptMetaModelicaGrammar(); then (cache,path);
+        /*-------------------------*/   
+        
     case (cache,env,path) /* To make a class fully qualified, the class path
 	  is looked up in the environment.
 	  The FQ path consist of the simple class name
@@ -7045,6 +7124,20 @@ algorithm
           dae_var_attr,comment,io,ty)}; 
     case (vn,ty as(Types.T_ENUM(),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) then {}; 
 
+      /* MetaModelica extension */
+    case (vn,ty as(Types.T_LIST(_),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) then {
+          DAE.VAR(vn,kind,dir,prot,DAE.LIST(),e,inst_dims,fl,{},dae_var_attr,
+          comment,io,ty)}; 
+          
+    case (vn,ty as(Types.T_METATUPLE(_),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) then {
+          DAE.VAR(vn,kind,dir,prot,DAE.METATUPLE(),e,inst_dims,fl,{},dae_var_attr,
+          comment,io,ty)}; 
+
+    case (vn,ty as(Types.T_METAOPTION(_),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) then {
+          DAE.VAR(vn,kind,dir,prot,DAE.METAOPTION(),e,inst_dims,fl,{},dae_var_attr,
+          comment,io,ty)}; 
+      /*----------------------------*/
+      
 			/* We should not declare each enumeration value of an enumeration when instantiating,
   		e.g Myenum my !=> constant EnumType my.enum1,... {DAE.VAR(vn, kind, dir, DAE.ENUM, e, inst_dims)} 
   		instantiation of complex type extending from basic type */ 
@@ -8358,6 +8451,15 @@ algorithm
       then
         (cache,stmt); 
  
+        // MetaModelica Matchcontinue	
+   case (cache,env,pre,e as Absyn.ALG_ASSIGN(_,Absyn.MATCHEXP(_,_,_,_,_)),impl) 
+     local
+       Absyn.Algorithm e;
+     equation 
+       true = RTOpts.acceptMetaModelicaGrammar();	
+       (cache,stmt) = createMatchStatement(cache,env,pre,e,impl);
+     then (cache,stmt);
+ 
         /* v := expr; */       
     case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e),impl) 
       equation 
@@ -8380,15 +8482,6 @@ algorithm
         stmt = Algorithm.makeAssignment(cre2, cprop, e_2, eprop, acc);
       then
         (cache,stmt);
-
-        // MetaModelica Matchcontinue
-   case (cache,env,pre,e as Absyn.ALG_ASSIGN(_,Absyn.MATCHEXP(_,_,_,_,_)),impl) 
-     local
-       Absyn.Algorithm e;
-     equation 
-       true = RTOpts.acceptMetaModelicaGrammar();	
-       (cache,stmt) = createMatchStatement(cache,env,pre,e,impl);
-     then (cache,stmt);
         
         // (v1,v2,..,vn) := func(...)
     case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),impl)
@@ -9161,6 +9254,13 @@ algorithm
         enumtype = Types.makeEnumerationType(p, v1);
       then
         enumtype;
+        
+        /* MetaModelica extension */
+    case (p,ClassInf.META_TUPLE(_),_,SOME(bc2))local Types.Type bc2; equation then bc2;
+    case (p,ClassInf.META_OPTION(_),_,SOME(bc2)) local Types.Type bc2; equation then bc2;
+    case (p,ClassInf.META_LIST(_),_,SOME(bc2)) local Types.Type bc2; equation then bc2;
+        /*------------------------*/
+        
     case (p,st,l,bc)
       equation 
         somep = getOptPath(p);

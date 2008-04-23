@@ -87,10 +87,18 @@ uniontype Type "- Basic types
     list<Option<Integer>> arrayDimensions "arrayDimensions" ;
   end T_ARRAY;  
   
-  // MetaModelica list type. MetaModelica extension. KS
+  // MetaModelica extension. KS
   record T_LIST 
     Type ty;
   end T_LIST;
+
+  record T_METATUPLE 
+    list<Type> ty;
+  end T_METATUPLE;
+  
+  record T_METAOPTION
+    Type ty;
+  end T_METAOPTION;
 
 end Type;
 
@@ -236,6 +244,15 @@ uniontype Exp "Expressions
     Exp car; 
     Exp cdr;
   end CONS;   
+  
+  record META_TUPLE
+    list<Exp> listExp; 
+  end META_TUPLE;
+  
+  record META_OPTION
+    Option<Exp> exp;
+  end META_OPTION;   
+  /* --- */
   
 end Exp;
 
@@ -448,6 +465,14 @@ uniontype TTypeTypes "-TType contains the actual type"
     TypeTypes listType "listType" ;
   end T_LISTTYPES;
   
+ record T_METATUPLETYPES
+    list<TypeTypes> listType "listType" ;
+  end T_METATUPLETYPES;
+  
+ record T_METAOPTIONTYPES
+    TypeTypes listType "listType" ;
+  end T_METAOPTIONTYPES; 
+    
   record T_ENUMTYPES end T_ENUMTYPES;
 
   record T_ENUMERATIONTYPES
@@ -594,6 +619,10 @@ uniontype TypeExp
   
   record LISTEXP end LISTEXP;
 
+  record METATUPLEEXP end METATUPLEEXP;
+    
+  record METAOPTIONEXP end METAOPTIONEXP;
+     
   record ENUMEXP end ENUMEXP;
     
   record ENUMERATIONEXP
@@ -8369,6 +8398,13 @@ algorithm
         res = Util.listMap(expl, getCrefFromExp);
         res2 = Util.listFlatten(res);
       then res2;
+        
+/*    case  (METATUPLE(expl))  
+      local list<list<ComponentRef>> res;
+      equation
+        res = Util.listMap(expl, getCrefFromExp);
+        res2 = Util.listFlatten(res);
+      then res2; */
         /* --------------------- */    
         
     case (_) then {}; 
@@ -8500,6 +8536,10 @@ algorithm
         res = getFunctionCallsList(elist);
       then res; 
         
+/*    case (METATUPLE(elist))
+      equation
+        res = getFunctionCallsList(elist);
+      then res; */
         /* --------------------- */
         
     case (_) then {}; 
@@ -8764,7 +8804,25 @@ algorithm
         ((e_1,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((LIST(tp,expl_1),ext_arg_2));  
+
+    case ((e as META_TUPLE(expl)),rel,ext_arg)
+      equation
+        (expl_1,ext_arg_1) = Util.listFoldMap(expl, rel, ext_arg);
+        ((e_1,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((META_TUPLE(expl_1),ext_arg_2));
         
+    case ((e as META_OPTION(NONE())),rel,ext_arg)
+      equation
+      then
+        ((META_OPTION(NONE()),ext_arg));
+        
+    case ((e as META_OPTION(SOME(e1))),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
+        ((e_1,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((META_OPTION(SOME(e1_1)),ext_arg_2));
         /* --------------------- */     
         
     case (e,rel,ext_arg)
