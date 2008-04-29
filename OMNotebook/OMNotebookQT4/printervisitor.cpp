@@ -75,7 +75,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QPainter>
 #include <QTemporaryFile>
 #include <QGraphicsRectItem>
-#include "../Pltpkg2/LegendLabel.h"
+#include "../Pltpkg2/legendLabel.h"
 namespace IAEX
 {
 	/*! 

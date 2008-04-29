@@ -86,7 +86,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "variableData.h"
 #include "graphWindow.h"
 #include "point.h"
-#include "LegendLabel.h"
+#include "legendLabel.h"
 #include "curve.h"
 #include "focusRect.h"
 #include "variablewindow.h"

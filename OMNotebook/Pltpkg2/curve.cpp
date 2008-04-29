@@ -51,7 +51,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 //IAEX headers
 #include "curve.h"
 #include "point.h"
-#include "LegendLabel.h"
+#include "legendLabel.h"
 #include "line2D.h"
 
 

@@ -50,7 +50,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <QColorDialog>
 
 //IAEX headers
-#include "LegendLabel.h"
+#include "legendLabel.h"
 #include "curve.h"
 
 LegendLabel::LegendLabel(QColor color_, QString& s, QWidget* parent, bool showline, bool showpoints, int maxHeight): QLabel(s, parent), color(color_)

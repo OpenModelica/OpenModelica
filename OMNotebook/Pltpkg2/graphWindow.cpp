@@ -59,7 +59,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "graphWindow.h"
 #include "dataSelect.h"
 #include "preferenceWindow.h"
-#include "LegendLabel.h"
+#include "legendLabel.h"
 #include "variablewindow.h"
 using namespace std;
 

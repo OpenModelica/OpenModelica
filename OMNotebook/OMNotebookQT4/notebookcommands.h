@@ -135,8 +135,9 @@ namespace IAEX
 					
 
 					QFile file( filename_ );
-					if(file.open(QIODevice::WriteOnly))
-					{
+
+//					if(file.open(QIODevice::WriteOnly))  //Don't overwrite old files before the document has been serialized
+//					{
 						// 2005-12-05 AF, update links
 						try
 						{
@@ -176,14 +177,18 @@ namespace IAEX
 //						QTextStream filestream(&file);
 //						QDataStream filestream(&file);
 
-						if(filename_.endsWith("onbz", Qt::CaseInsensitive)) 
-//							filestream << qCompress(doc.toByteArray());
-							file.write(qCompress(doc.toByteArray(), 9));
-						else
-							//filestream << doc.toByteArray();
-							file.write(doc.toByteArray());
+						if(doc.toByteArray().size() && file.open(QIODevice::WriteOnly))
+						{
 
-						file.close();
+							if(filename_.endsWith("onbz", Qt::CaseInsensitive)) 
+								//							filestream << qCompress(doc.toByteArray());
+								file.write(qCompress(doc.toByteArray(), 9));
+							else
+								//filestream << doc.toByteArray();
+								file.write(doc.toByteArray());
+
+							file.close();
+						
 
 						// AF, Added this
 						doc_->setFilename( filename_ );
