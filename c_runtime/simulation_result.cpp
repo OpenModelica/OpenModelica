@@ -50,7 +50,8 @@
  double* simulationResultData=0; 
  long currentPos=0;
  long actualPoints=0; // the number of actual points saved
- int maxPoints;
+ long maxPoints;
+ long dataSize = 0;
  
  void add_result(double *data, long *actualPoints);
  
@@ -68,8 +69,22 @@ int emit()
     return 0;
   }
   else {
-    cout << "Too many points: " << actualPoints << " max points: " << maxPoints << endl;
-    return -1;
+    /* increase the maxPoints by (maxPoints-actualPoints) + 2000 */
+    maxPoints = maxPoints + (maxPoints-actualPoints) + 2000;
+    /*
+     * cerr << "realloc simulationResultData to a size of " << maxPoints * dataSize * sizeof(double) << endl;
+     */
+    simulationResultData = (double*)realloc(simulationResultData, maxPoints * dataSize * sizeof(double));
+    if (!simulationResultData) {
+          cerr << "Error allocating simulation result data of size " << maxPoints * dataSize << endl;
+          return -1;
+    }
+    add_result(simulationResultData,&actualPoints);
+    return 0;    
+    /* adrpo - realloc the result array instead of fixed size! 
+     * cout << "Too many points: " << actualPoints << " max points: " << maxPoints << endl;
+     * return -1;
+     */
   }
 }
  
@@ -147,11 +162,10 @@ int initializeResult(long numpoints,long nx, long ny, long np)
 	numpoints = abs(numpoints);
 	maxPoints = abs(numpoints);   	
   }
-  
-  simulationResultData = new double[numpoints*(nx*2+ny+1)];
+  dataSize = (nx*2+ny+1);
+  simulationResultData = (double*)malloc(numpoints * dataSize * sizeof(double));
   if (!simulationResultData) {
-    cerr << "Error allocating simulation result data of size " << numpoints *(nx*2+ny)
-	      << endl;
+    cerr << "Error allocating simulation result data of size " << numpoints * dataSize << endl;
     return -1;
   }
   currentPos = 0;
