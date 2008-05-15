@@ -29,8 +29,7 @@
  */
 
 package Main 
-"  
-  file:        Main.mo
+" file:        Main.mo
   package:     Main
   description: Modelica main program
  
@@ -67,12 +66,10 @@ protected import Env;
 protected import Settings;
 
 
-protected function serverLoop "function: serverLoop
- 
-  This function is the main loop of the server listening to a port
-  which recieves modelica expressions.  
-"
-
+protected function serverLoop 
+"function: serverLoop 
+  This function is the main loop of the server listening 
+  to a port which recieves modelica expressions."
   input Integer inInteger;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
@@ -86,8 +83,7 @@ algorithm
     case (shandle,isymb)
       equation 
         str = Socket.handlerequest(shandle);
-        Debug.fprint("interactivedump", 
-          "------- Recieved Data from client -----\n");
+        Debug.fprint("interactivedump", "------- Recieved Data from client -----\n");
         Debug.fprint("interactivedump", str);
         Debug.fprint("interactivedump", "------- End recieved Data-----\n");
         Print.clearBuf();
@@ -99,8 +95,7 @@ algorithm
     case (shandle,isymb)
       equation 
         str = Socket.handlerequest(shandle) "2004-11-27 - adrpo added this part to make the loop deterministic" ;
-        Debug.fprint("interactivedump", 
-          "------- Recieved Data from client -----\n");
+        Debug.fprint("interactivedump", "------- Recieved Data from client -----\n");
         Debug.fprint("interactivedump", str);
         Debug.fprint("interactivedump", "------- End recieved Data-----\n");
         Print.clearBuf() "Print.clearErrorBuf &" ;
@@ -170,12 +165,11 @@ algorithm
   res_1 := Util.if_(dumpflag, res_with_debug, res);
 end makeDebugResult;
 
-protected function handleCommand "function handleCommand
- 
+protected function handleCommand 
+"function handleCommand 
   This function handles the commands in form of strings send to the server
   If the command is quit, the function returns false, otherwise it sends 
-  the string to the parse function and returns true.
-"
+  the string to the parse function and returns true."
   input String inString;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   output Boolean outBoolean;
@@ -268,10 +262,9 @@ algorithm
   end matchcontinue;
 end handleCommand;
 
-protected function isModelicaFile "function: isModelicaFile
- 
-  Succeeds if filename ends with .mo or .mof
-"
+protected function isModelicaFile 
+"function: isModelicaFile 
+  Succeeds if filename ends with .mo or .mof"
   input String inString;
 algorithm 
   _:=
@@ -296,10 +289,9 @@ algorithm
   end matchcontinue;
 end isModelicaFile;
 
-protected function isFlatModelicaFile "function: isFlatModelicaFile
- 
-  Succeeds if filename ends with .mof
-"
+protected function isFlatModelicaFile 
+"function: isFlatModelicaFile 
+  Succeeds if filename ends with .mof"
   input String filename;
   list<String> lst;
   String last;
@@ -309,10 +301,9 @@ algorithm
   equality(last := "mof");
 end isFlatModelicaFile;
 
-protected function isModelicaScriptFile "function: isModelicaScriptFile
- 
-  Succeeds if filname end with .mos
-"
+protected function isModelicaScriptFile 
+"function: isModelicaScriptFile 
+  Succeeds if filname end with .mos"
   input String filename;
   list<String> lst;
   String last;
@@ -331,11 +322,32 @@ algorithm
   end matchcontinue;
 end versionRequest;
 
-protected function translateFile "function: translateFile
- 
+protected function showErrors
+  input String errorString;
+  input String errorMessages;  
+algorithm
+  _ := matchcontinue(errorString, errorMessages)
+    case("", "") then ();
+    case(errorString, "")
+      equation
+        print(errorString); print("\n"); 
+      then ();  
+    case("", errorMessages)
+      equation
+        print(errorMessages); print("\n"); 
+      then ();  
+    case(errorString, errorMessages)
+      equation
+        print(errorString); print("\n"); 
+        print(errorMessages); print("\n"); 
+      then ();  
+ end matchcontinue;     
+end showErrors;  
+
+protected function translateFile 
+"function: translateFile
   This function invokes the translator on a source file.  The
-  argument should be a list with a single file name.
-"
+  argument should be a list with a single file name."
   input list<String> inStringLst;
 algorithm 
   _:=
@@ -362,6 +374,9 @@ algorithm
       equation 
         isModelicaFile(f);
         p = Parser.parse(f);
+        // show parse errors if there are any
+        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());  
+                
         Debug.fprint("dump", "\n--------------- Parsed program ---------------\n");
         Debug.fcall("dumpgraphviz", DumpGraphviz.dump, p);
         Debug.fcall("dump", Dump.dump, p);
@@ -376,19 +391,12 @@ algorithm
         (_,d_2) = Inst.instantiate(Env.emptyCache,p_1);
         d_1 = DAE.transformIfEqToExpr(d_2);
         Debug.fprint("beforefixmodout", "Explicit part:\n");
-        Debug.fcall("beforefixmodout", DAE.dumpDebug, d_1) "	& Inst.instantiate_implicit(pfunc\') => dimpl\'
-	& Debug.fprint (\"beforefixmodout\", \"Implicit part:\\n\")
-	& Debug.fcall (\"beforefixmodout\", DAE.dump_debug, dimpl\')
-" ;
-        d = fixModelicaOutput(d_1) "	& fix_modelica_output (dimpl\') => dimpl
-" ;
+        Debug.fcall("beforefixmodout", DAE.dumpDebug, d_1);
+        d = fixModelicaOutput(d_1);
         Print.clearBuf();
         Debug.fprint("info", "---dumping\n");
         s = Debug.fcallret("flatmodelica", DAE.dumpStr, d, "");
-        Debug.fcall("flatmodelica", Print.printBuf, s) "
-	& Debug.fprint (\"flatmodelica\", \"Implicit:\\n\")
-	& Debug.fcall (\"flatmodelica\", DAE.dump, dimpl)
-" ;
+        Debug.fcall("flatmodelica", Print.printBuf, s);
         s = Debug.fcallret("none", DAE.dumpStr, d, "");
         Debug.fcall("none", Print.printBuf, s);
         Debug.fcall("daedump", DAE.dump, d);
@@ -400,24 +408,38 @@ algorithm
         silent = RTOpts.silent();
         notsilent = boolNot(silent);
         Debug.bcall(notsilent, print, str);
-        optimizeDae(p_1, p, d, d, cname);
+        optimizeDae(p_1, p, d, d, cname);        
       then
         ();
     case {f} /* Modelica script file .mos */ 
       equation 
         isModelicaScriptFile(f);
         stmts = Parser.parseexp(f);
+        // are there any errors?
+        // show errors if there are any
+        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());  
         (res,newst) = Interactive.evaluate(stmts, Interactive.emptySymboltable, true);
         print(res);
       then
         ();
+    case {f}
+      local Integer r;  
+      equation
+        r = System.regularFileExists(f);
+        (r > 0) = true;  //could not found file
+        print("File does not exist: "); print(f); print("\n"); 
+        // show errors if there are any
+        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());  
+      then
+        fail();
     case {f}  
-      local String s;
-      equation 
-        s = Print.getErrorString();
-        Debug.fcall("failtrace",print,s);
-        str = ErrorExt.printMessagesStr();
-        print(str);
+      local Integer r;  
+      equation
+        r = System.regularFileExists(f);
+        (r == 0) = true;  //found file but could not process
+        print("Error processing file:"); print(f); print("\n"); 
+        // show errors if there are any
+        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());  
       then
         fail();
     case (_ :: (_ :: _))
@@ -437,22 +459,19 @@ algorithm
         Print.printBuf("+d=flags, set flags: \n");
         Print.printBuf("    blt               apply blt transformation\n");
         Print.printBuf("    interactive       run in interactive mode\n");
-        Print.printBuf(
-          "    interactiveCorba  run in interactive mode using Corba\n");
+        Print.printBuf("    interactiveCorba  run in interactive mode using Corba\n");
         Print.printBuf("    ..., see DEBUG.TXT for further flags\n");
       then
         fail();
   end matchcontinue;
 end translateFile;
 
-protected function transformFlatProgram "Transforms the variables in equations to have the same 
-format as for variables, i.e. a.b[3].c[2] becomes CREF_IDENT(\"a.b[3].c\",[INDEX(ICONST(2))])
-
-"
-input Absyn.Program p;
-input String filename;
-output Absyn.Program outP;
-
+protected function transformFlatProgram 
+"Transforms the variables in equations to have the same format as for variables, 
+i.e. a.b[3].c[2] becomes CREF_IDENT(\"a.b[3].c\",[INDEX(ICONST(2))])"
+  input Absyn.Program p;
+  input String filename;
+  output Absyn.Program outP;
 algorithm
   outP := matchcontinue(p,filename)
     case(p,filename) equation
@@ -463,15 +482,11 @@ algorithm
   end matchcontinue;
 end transformFlatProgram;
 
-
-
-
-protected function runBackendQ "function: runt_backend_q
- 
+protected function runBackendQ 
+"function: runBackendQ 
   Determine if backend, i.e. BLT etc. should be run.
   It should be run if either \"blt\" flag is set or if 
-  parallelization is enabled by giving flag -n=<no proc.>
-"
+  parallelization is enabled by giving flag -n=<no proc.>"
   output Boolean res_1;
   Boolean bltflag,sim_cg,par,res,res_1;
   Integer n;
@@ -484,10 +499,9 @@ algorithm
   res_1 := boolOr(res, sim_cg);
 end runBackendQ;
 
-protected function optimizeDae "function: optimizeDae
-  
-  Run the backend. Used for both parallization and for normal execution.
-"
+protected function optimizeDae 
+"function: optimizeDae  
+  Run the backend. Used for both parallization and for normal execution."
   input SCode.Program inProgram1;
   input Absyn.Program inProgram2;
   input DAE.DAElist inDAElist3;
@@ -543,10 +557,9 @@ algorithm
   end matchcontinue;
 end optimizeDae;
 
-protected function modpar "function: modpar
- 
-  The automatic paralellzation module.
-"
+protected function modpar 
+"function: modpar 
+  The automatic paralellzation module."
   input DAELow.DAELow inDAELow1;
   input Integer[:] inIntegerArray2;
   input Integer[:] inIntegerArray3;
@@ -605,10 +618,9 @@ algorithm
   end matchcontinue;
 end modpar;
 
-protected function simcodegen "function simcodegen
- 
-  Genereates simulation code using the SimCodegen module
-"
+protected function simcodegen 
+"function simcodegen 
+  Genereates simulation code using the SimCodegen module"
   input Absyn.Path inPath1;
   input SCode.Program inProgram2;
   input Absyn.Program inProgram3;
@@ -670,10 +682,9 @@ algorithm
   end matchcontinue;
 end simcodegen;
 
-protected function runModparQ "function: runModparQ
- 
-  Returns true if parallelization should be run.
-"
+protected function runModparQ 
+"function: runModparQ 
+  Returns true if parallelization should be run."
   output Boolean res;
   Integer n;
 algorithm 
@@ -681,11 +692,10 @@ algorithm
   res := (n > 0);
 end runModparQ;
 
-protected function fixModelicaOutput "function: fixModelicaOutput
- 
+protected function fixModelicaOutput 
+"function: fixModelicaOutput 
   Transform the dae, replacing dots with underscore in variables and 
-  equations.
-"
+  equations."
   input DAE.DAElist inDAElist;
   output DAE.DAElist outDAElist;
 algorithm 
@@ -708,10 +718,9 @@ algorithm
   end matchcontinue;
 end fixModelicaOutput;
 
-protected function interactivemode "function: interactivemode
- 
-  Initiate the interactive mode using socket communication.
-"
+protected function interactivemode 
+"function: interactivemode 
+  Initiate the interactive mode using socket communication."
   input list<String> inStringLst;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
 algorithm 
@@ -728,10 +737,9 @@ algorithm
   end matchcontinue;
 end interactivemode;
 
-protected function interactivemodeCorba "function: interactivemodeCorba
- 
-  Initiate the interactive mode using corba communication.
-"
+protected function interactivemodeCorba 
+"function: interactivemodeCorba 
+  Initiate the interactive mode using corba communication."
   input list<String> inStringLst;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
 algorithm 
@@ -756,10 +764,9 @@ algorithm
 end interactivemodeCorba;
 
 
-protected function serverLoopCorba "function: serverLoopCorba
- 
-  This function is the main loop of the server for a CORBA impl.
-"
+protected function serverLoopCorba 
+"function: serverLoopCorba 
+  This function is the main loop of the server for a CORBA impl."
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
 algorithm 
@@ -791,12 +798,12 @@ algorithm
 end serverLoopCorba;
 
 
-protected function readSettings "function: readSettings
+protected function readSettings 
+"function: readSettings
  author: x02lucpo
  Checks if 'settings.mos' exist and uses handleCommand with runScript(...) to execute it.
  Checks if '-s <file>.mos' has been 
- returns Interactive.InteractiveSymbolTable which is used in the rest of the loop
-"
+ returns Interactive.InteractiveSymbolTable which is used in the rest of the loop"
   input list<String> inStringLst;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
 algorithm
@@ -827,10 +834,9 @@ end readSettings;
 
 
 protected function readSettingsFile
- input String filePath;
+  input String filePath;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
-
 algorithm
  outInteractiveSymbolTable :=
   matchcontinue (filePath,inInteractiveSymbolTable)
@@ -907,17 +913,18 @@ algorithm
       equation 
         args_1 = RTOpts.args(args);
         //Env.globalCache = fill(Env.emptyCache,1);
+        //debug_show_depth(5);
         symbolTable = readSettings(args);
         ismode = RTOpts.debugFlag("interactive");
         icmode = RTOpts.debugFlag("interactiveCorba");
         imode = boolOr(ismode, icmode);
         imode_1 = boolNot(imode);
+        // see if the interactive Socket mode is active
         Debug.bcall2(ismode, interactivemode, args_1,symbolTable);
+        // see if the interactive Corba mode is active
         Debug.bcall2(icmode, interactivemodeCorba, args_1,symbolTable);
-
+        // non of the interactive mode was set, flatten the file
         Debug.bcall(imode_1, translateFile, args_1);
-        errstr = Print.getErrorString();
-        Debug.fcall("errorbuf", print, errstr);
       then
         ();
     case _
@@ -925,8 +932,9 @@ algorithm
         print("# Error encountered! Exiting...\n");
         print("# Please check the error message and the flags.\n");
         errstr = Print.getErrorString();
-        Debug.fcall("errorbuf", print, "\n\n----\n\nError buffer:\n\n");
-        Debug.fcall("errorbuf", print, errstr);
+        Print.printBuf("\n\n----\n\nError buffer:\n\n");
+        print(errstr);
+        print(ErrorExt.printMessagesStr()); print("\n");
       then
         fail();
   end matchcontinue;
