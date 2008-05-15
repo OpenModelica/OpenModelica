@@ -352,9 +352,7 @@ extern "C"
 			if (lex) delete lex;
 			if (flat_lex) delete flat_lex;
 
-			if (!ast) {
-			  RML_TAILCALLK(rmlFC); 
-			}
+			if (!ast) { RML_TAILCALLK(rmlFC);	}
 			RML_TAILCALLK(rmlSC); 
 		}    
 		else 
@@ -458,8 +456,9 @@ extern "C"
 		}
 		catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException &e) 
 		{
-			stringStream << "[" << e.getLine() << ":" << e.getColumn() 
-				<< "]: error: " << e.getMessage() << std::endl;
+			stringStream << "[" << 
+			e.getLine() << ":" << e.getColumn() << "]: error: " 
+			<< e.getMessage() << std::endl;
 			//		std::cerr << stringStream.str().c_str();
 			rmlA0 = mk_nil(); a0set=true;
 			rmlA1 = mk_scon((getStringHolder = get_string(stringStream))); a1set=true;
@@ -517,7 +516,7 @@ extern "C"
 	RML_END_LABEL
 
 
-		RML_BEGIN_LABEL(Parser__parsestringexp)
+	RML_BEGIN_LABEL(Parser__parsestringexp)
 	{
 		char* str = RML_STRINGDATA(rmlA0);
 		std::ostringstream stringStream;
@@ -604,29 +603,44 @@ extern "C"
 		*/
 		if (getStringHolder) delete [] getStringHolder; 
 
-
 		RML_TAILCALLK(rmlSC);
 	}
 	RML_END_LABEL
 
 
-		RML_BEGIN_LABEL(Parser__parseexp)
+	RML_BEGIN_LABEL(Parser__parseexp)
 	{
 		char * filename = RML_STRINGDATA(rmlA0);
 		bool debug = check_debug_flag("parsedump");
-
+    string filestring(filename);
 		/* 2004-10-05 adrpo moved this declaration here to 
 		* have the ast initialized before getting 
 		* into the code. This way, if this relation fails at least the 
 		* ast is initialized */
 		void* ast = mk_nil();
+    modelicafileReadOnly = false;     
+    std::ifstream stream(filename);
+    if (!stream) 
+    {
+      std::list<std::string> tokens;
+      tokens.push_back(std::string(filename));
+      add_message(85, /* Error opening file,see Error.rml*/
+            "TRANSLATION",
+            "ERROR",
+            "Error opening file %s",
+            tokens);
+      RML_TAILCALLK(rmlFC);
+    }    
+    // Set global filename, used to populate elements with
+    // corresponding file name.
+    modelicafilename = filestring;
+    // lexer & parser
+    modelica_lexer lex(stream);
+    lex.setFilename(filename);
+    modelica_expression_parser parse(lex);
 
 		try 
 		{
-			std::ifstream stream(filename);
-			modelicafileReadOnly = false;
-			modelica_lexer lex(stream);
-			modelica_expression_parser parse(lex);
 			ANTLR_USE_NAMESPACE(antlr)ASTFactory factory;
 			parse.initializeASTFactory(factory);
 			parse.setASTFactory(&factory);
@@ -637,7 +651,6 @@ extern "C"
 			{
 				if (debug) 
 				{
-					//std::cerr << "parsedump not implemented for interactiveStmt yet"<<endl;
 					parse_tree_dumper dumper(std::cerr);
 					dumper.dump(t);
 				}
@@ -657,14 +670,77 @@ extern "C"
 				RML_TAILCALLK(rmlSC); 
 			}    
 		} 
-		catch (std::exception &e) 
-		{
-			std::cerr << "Error while parsing expression:\n" << e.what() << "\n";
-		}
-		catch (...) 
-		{
-			std::cerr << "Error while parsing expression: Unknown exception\n";
-		}
+    catch (ANTLR_USE_NAMESPACE(antlr)CharStreamException &e) 
+    {
+      std::cerr << "Lexical error. CharStreamException. "  << std::endl;
+    }
+    catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamRecognitionException &e) 
+    {
+      std::list<std::string> tokens;
+      tokens.push_back(std::string(lex.getText()));
+      add_source_message(1, /* syntax error, see Error.rml */
+             "SYNTAX", "ERROR", "Syntax error near: %s",
+             tokens,
+             lex.getLine(), lex.getColumn(),
+             lex.getLine(),lex.getColumn(),
+             false, filename);
+    }
+    catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException &e) 
+    {
+      std::list<std::string> tokens;
+      tokens.push_back(std::string(e.getMessage()));
+      add_source_message(2, /* Grammar error, see Error.rml */
+             "GRAMMAR", "ERROR", "Parse error: %s",
+             tokens,
+             e.getLine(), e.getColumn(),
+             e.getLine(), e.getColumn(),
+             false, filename);
+    }
+    catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamException &e) 
+    {
+      std::list<std::string> tokens;
+      tokens.push_back(std::string(e.getMessage()));
+      add_source_message(2, /* Grammar error, see Error.rml */
+             "GRAMMAR", "ERROR", "Parse error: %s",
+             tokens,
+             0, 0,
+             0, 0,
+             false, filename);
+    }
+    catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e) 
+    {
+      std::list<std::string> tokens;
+      tokens.push_back(std::string("while parsing:")+
+           std::string(e.getMessage()));
+      add_source_message(63, /* Internal error, see Error.rml */
+             "TRANSLATION", "ERROR", "Internal error %s",
+             tokens,
+             0, 0,
+             0, 0,
+             false, filename);
+    }
+    catch (std::exception &e) 
+    {
+      std::list<std::string> tokens;
+      tokens.push_back(std::string("while parsing:"));
+      add_source_message(63, /* Internal error, see Error.rml */
+             "TRANSLATION", "ERROR", "Internal error %s",
+             tokens,
+             0, 0,
+             0, 0,
+             false, filename);
+    }
+    catch (...) 
+    {
+      std::list<std::string> tokens;
+      tokens.push_back(std::string("while parsing expression in file:"));
+      add_source_message(63, /* Internal error, see Error.rml */
+             "TRANSLATION", "ERROR", "Internal error %s",
+             tokens,
+             0, 0,
+             0, 0,
+             false, filename);
+    }
 		rmlA0 = mk_nil();
 		RML_TAILCALLK(rmlFC);
 	}
