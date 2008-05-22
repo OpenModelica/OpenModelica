@@ -1,8 +1,8 @@
 TEMPLATE = app
 
 DEPENDPATH += .
-INCLUDEPATH += /home/adrpo/dev/mico-2.3.12/include
-LIBS+=-L/home/adrpo/dev/mico-2.3.12/lib -lmico2.3.12   -lssl -lcrypto -ldl -lbsd -lm  -lpthread
+INCLUDEPATH += /home/openmodelica/dev/mico/include
+LIBS+=-L/home/openmodelica/dev/mico/lib -lmico2.3.12  -lm  -lpthread
 CONFIG += warn_on
 QT += network xml 
 
@@ -18,3 +18,4 @@ SOURCES += commandcompletion.cpp \
            oms.cpp \
            main.cpp
 
+RESOURCES += oms.qrc

@@ -283,7 +283,7 @@ OMS::OMS( QWidget* parent )
 
 	// sett start message
 	cursor_.insertText( QString("OpenModelica ") + omc_version_ + "\n", textFormat_ );
-	cursor_.insertText( "Copyright 2002-2006, PELAB, Linkoping University\n\n", textFormat_ );
+	cursor_.insertText( "Copyright 2002-2008, PELAB, Linkoping University\n\n", textFormat_ );
 	cursor_.insertText( "To get help on using OMShell and OpenModelica, type \"help()\" and press enter.\n", textFormat_ );
 
 
