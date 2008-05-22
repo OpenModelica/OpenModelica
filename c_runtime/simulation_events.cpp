@@ -353,7 +353,7 @@ double sample(double start, double interval)
    * below should be: if (tmp >= -0.0001 && tmp < 0.0001) but needs more testing as some models from
    * testsuite fail.
    */  
-  if (tmp >= 0 && tmp < 0.1)
+  if (tmp >= -0.0001 && tmp < 0.0001)
   {
     if (sim_verbose) 
       cout << "Calling sample(" << start << ", " << interval << ")\n" 

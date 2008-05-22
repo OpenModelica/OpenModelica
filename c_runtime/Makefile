@@ -5,8 +5,11 @@ builddir_inc=$(top_builddir)/build/include
 
 CC = gcc
 FC = g77
-AR = ar -ru 
-CFLAGS = -O -fexceptions -Wall -ansi -pedantic -I$(top_builddir)/mosh/src/ $(EXTRA_CFLAGS)
+AR = ar -ru
+UNAME := $(shell uname -m)
+CMDFPUFLAGS := `case ${UNAME} in i[3456]86) echo "-msse2 -mfpmath=sse";; x86_64) echo "-msse2 -mfpmath=sse";; *) echo "";; esac`
+FPUFLAGS := ${CMDFPUFLAGS}
+CFLAGS = -Wall -O3 ${FPUFLAGS} -fexceptions -ansi -pedantic -I$(top_builddir)/mosh/src/ $(EXTRA_CFLAGS)
 CPPFLAGS = $(CFLAGS)
 FFLAGS  = -O -fexceptions
 # P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.
@@ -14,10 +17,9 @@ FFLAGS  = -O -fexceptions
 # - please leave makefile.u as if you don't it breaks the compilation on UNIX/LINUX
 # - use make -f Makefile.omdev.mingw if you want to compile on MinGW
 
-
-
 OBJS = $(FOBJS) boolean_array.o index_spec.o integer_array.o memory_pool.o \
-real_array.o string_array.o read_write.o utility.o modelica_string.o bigden.o \
+base_array.o real_array.o string_array.o read_write.o utility.o \
+modelica_string.o bigden.o \
 ddasrt.o  dlinpk.o  enorm.o   hybrd1.o  nelmead.o  qform.o   r1updt.o \
 biglag.o  ddassl.o  dogleg.o  fdjac1.o  hybrj.o   newuoa.o   qrfac.o   trsapp.o \
 daux.o    dlamch.o  dpmpar.o  hybrd.o   lsame.o   newuob.o   r1mpyq.o  update.o $(EXTRA_OBJS)
@@ -26,7 +28,8 @@ SIMOBJS = $(FOBJS) simulation_runtime.o simulation_init.o simulation_input.o sim
 solver_dasrt.o solver_euler.o simulation_result.o tables.o ../mosh/src/options.o dgesv_aux.o meta_modelica.o $(EXTRA_SIMOBJS)
 
 HFILES = blaswrap.h f2c.h integer_array.h memory_pool.h modelica_string.h \
-	real_array.h string_array.h boolean_array.h index_spec.h matrix.h \
+	base_array.h inline.h real_array.h string_array.h boolean_array.h \
+    index_spec.h matrix.h \
 	modelica.h read_write.h simulation_runtime.h simulation_events.h utility.h \
 	simulation_init.h simulation_input.h solver_dasrt.h solver_euler.h simulation_result.h \
 	meta_modelica.h
@@ -71,7 +74,7 @@ libsendData.a : sendData/sendData.cpp sendData/sendData.h sendData/sendData.pro 
 #	sed -e's/QtNetwork /QtNetwork4 /' -e's/QtGui /QtGui4 /' -e's/QtCore /QtCore4 /' Makefile.Release > Makefile && \
 #	$(MAKE) -f Makefile 
 	$(PLTPKGCMD)
-	
+
 clean : 
 	cd ./libf2c && $(MAKE) -f makefile.u clean
 	rm -f libc_runtime.a
