@@ -615,6 +615,7 @@ type_description *add_tuple_item(type_description *desc)
     struct type_desc_s tmp;
     memcpy(&tmp, desc, sizeof(tmp));
     desc->type = TYPE_DESC_TUPLE;
+    desc->retval = tmp.retval;
     desc->data.tuple.elements = 2;
     desc->data.tuple.element = malloc(2 * sizeof(struct type_desc_s));
     memcpy(desc->data.tuple.element, &tmp, sizeof(tmp));
