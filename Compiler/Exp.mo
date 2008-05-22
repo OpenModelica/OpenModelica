@@ -82,6 +82,10 @@ uniontype Type "- Basic types
 
   record OTHER "e.g. complex types, etc." end OTHER;
 
+  record T_RECORD
+    Ident name;
+  end T_RECORD;
+
   record T_ARRAY
     Type ty;
     list<Option<Integer>> arrayDimensions "arrayDimensions" ;
@@ -1015,8 +1019,8 @@ end IntOp;
    
 
 public function realToIntIfPossible 
-  "converts to ICONST if possible. If it does not fit, a
-  RCONST is returned instead."  
+"converts to ICONST if possible. If it does 
+ not fit, a RCONST is returned instead."  
 	input Real inVal;
 	output Exp outVal;
 algorithm
@@ -1114,12 +1118,11 @@ algorithm
 end dumpExp;
 
 
-public function crefToPath "function: crefToPath
- 
-  This function converts a `ComponentRef\' to a `Path\', if possible.
+public function crefToPath 
+"function: crefToPath 
+  This function converts a ComponentRef to a Path, if possible.
   If the component reference contains subscripts, it will silently
-  fail.
-"
+  fail."
   input ComponentRef inComponentRef;
   output Absyn.Path outPath;
 algorithm 
@@ -1138,10 +1141,9 @@ algorithm
   end matchcontinue;
 end crefToPath;
 
-public function pathToCref "function: pathToCref
- 
-  This function converts a `Absyn.Path\' to a `ComponentRef\'.
-"
+public function pathToCref 
+"function: pathToCref 
+  This function converts a Absyn.Path to a ComponentRef."
   input Absyn.Path inPath;
   output ComponentRef outComponentRef;
 algorithm 
@@ -1161,10 +1163,9 @@ algorithm
   end matchcontinue;
 end pathToCref;
 
-public function crefStr "function: crefStr
- 
-  This function simply converts a `ComponentRef\' to a `string\'.
-"
+public function crefStr 
+"function: crefStr 
+  This function simply converts a ComponentRef to a string."
   input ComponentRef inComponentRef;
   output String outString;
 algorithm 
@@ -1184,10 +1185,9 @@ algorithm
   end matchcontinue;
 end crefStr;
 
-public function crefModelicaStr "function: crefModelicaStr
- 
-  Same as cre_str, but uses \'_\' instead of \'.\' 
-"
+public function crefModelicaStr 
+"function: crefModelicaStr 
+  Same as crefStr, but uses _ instead of . "
   input ComponentRef inComponentRef;
   output String outString;
 algorithm 
@@ -1207,11 +1207,10 @@ algorithm
   end matchcontinue;
 end crefModelicaStr;
 
-public function crefLastIdent "function: crefLastIdent
-  author: PA
- 
-  Returns the last identfifier of a \'ComponentRef\'.
-"
+public function crefLastIdent 
+"function: crefLastIdent
+  author: PA 
+  Returns the last identfifier of a ComponentRef."
   input ComponentRef inComponentRef;
   output Ident outIdent;
 algorithm 
@@ -1229,10 +1228,9 @@ algorithm
   end matchcontinue;
 end crefLastIdent;
 
-public function crefLastSubs "function: crefLastSubs
- 
-  Return the last subscripts of a ComponentRef
-"
+public function crefLastSubs 
+"function: crefLastSubs 
+  Return the last subscripts of a ComponentRef"
   input ComponentRef inComponentRef;
   output list<Subscript> outSubscriptLst;
 algorithm 
@@ -1251,8 +1249,8 @@ algorithm
   end matchcontinue;
 end crefLastSubs;
 
-public function crefStripPrefix "Strips a prefix/cref from a component reference
-"
+public function crefStripPrefix 
+"Strips a prefix/cref from a component reference"
   input ComponentRef cref;
   input ComponentRef prefix;
   output ComponentRef outCref;
@@ -1275,26 +1273,25 @@ algorithm
 	end matchcontinue;
 end crefStripPrefix;
 
-public function crefStripLastIdent "Strips the last part of a component reference, i.e ident and subs"
+public function crefStripLastIdent 
+"Strips the last part of a component reference, i.e ident and subs"
   input ComponentRef inCr;
   output ComponentRef outCr;
 algorithm
   outCr := matchcontinue(inCr)
   local Ident id; 
     list<Subscript> subs;
-    ComponentRef cr1,cr;
-    
-    case( CREF_QUAL(id,subs,CREF_IDENT(_,_))) then CREF_IDENT(id,subs);    
-    
+    ComponentRef cr1,cr;    
+    case( CREF_QUAL(id,subs,CREF_IDENT(_,_))) then CREF_IDENT(id,subs);        
     case(CREF_QUAL(id,subs,cr)) equation
       cr1 = crefStripLastIdent(cr);
     then CREF_QUAL(id,subs,cr1);
   end matchcontinue;
 end crefStripLastIdent;
 
-public function crefStripFirstIdent "Strips the first part of a component reference, 
-i.e the identifier and eventual subscripts
-"
+public function crefStripFirstIdent 
+"Strips the first part of a component reference, 
+ i.e the identifier and eventual subscripts"
   input ComponentRef inCr;
   output ComponentRef outCr;
 algorithm
@@ -1306,9 +1303,8 @@ algorithm
   end matchcontinue;
 end crefStripFirstIdent;
 
-public function crefFirstIdent "Returns the first part of a component reference, 
-i.e the identifier 
-"
+public function crefFirstIdent 
+"Returns the first part of a component reference, i.e the identifier "
   input ComponentRef inCr;
   output ComponentRef outCr;
 algorithm
@@ -1322,10 +1318,9 @@ algorithm
 end crefFirstIdent;
 
 
-public function crefStripLastSubs "function: crefStripLastSubs
- 
-  Strips the last subscripts of a ComponentRef
-"
+public function crefStripLastSubs 
+"function: crefStripLastSubs 
+  Strips the last subscripts of a ComponentRef"
   input ComponentRef inComponentRef;
   output ComponentRef outComponentRef;
 algorithm 
@@ -1344,12 +1339,11 @@ algorithm
   end matchcontinue;
 end crefStripLastSubs;
 
-public function crefStripLastSubsStringified "function crefStripLastSubsStringified
-  author: PA
- 
-  Same as cref_strip_last_subs but works on a stringified component ref
-  instead.
-"
+public function crefStripLastSubsStringified 
+"function crefStripLastSubsStringified
+  author: PA 
+  Same as crefStripLastSubs but works on 
+  a stringified component ref instead."
   input ComponentRef inComponentRef;
   output ComponentRef outComponentRef;
 algorithm 
@@ -1371,12 +1365,11 @@ algorithm
   end matchcontinue;
 end crefStripLastSubsStringified;
 
-public function crefContainedIn "function: crefContainedIn
-  author: PA
- 
+public function crefContainedIn 
+"function: crefContainedIn
+  author: PA 
   Returns true if y is a sub component ref of x.
-  For instance, b.c. is a sub_component of a.b.c.
-"
+  For instance, b.c. is a sub component of a.b.c."
   input ComponentRef inComponentRef1;
   input ComponentRef inComponentRef2;
   output Boolean outBoolean;
@@ -1400,7 +1393,9 @@ algorithm
   end matchcontinue;
 end crefContainedIn;
 
-public function crefIsIdent "returns true if ComponentRef is an ident, i.e a => true , a.b => false"
+public function crefIsIdent 
+"returns true if ComponentRef is an ident, 
+ i.e a => true , a.b => false"
 input ComponentRef cr;
 output Boolean res;
 algorithm
@@ -1410,12 +1405,11 @@ algorithm
   end matchcontinue;
 end crefIsIdent;
 
-public function crefPrefixOf "function: crefPrefixOf
-  author: PA
-  
+public function crefPrefixOf 
+"function: crefPrefixOf
+  author: PA  
   Returns true if y is a prefix of x
-  For example, a.b is a prefix of a.b.c
-"
+  For example, a.b is a prefix of a.b.c"
   input ComponentRef inComponentRef1;
   input ComponentRef inComponentRef2;
   output Boolean outBoolean;
@@ -1449,11 +1443,10 @@ algorithm
   end matchcontinue;
 end crefPrefixOf;
 
-public function identEqual "function: identEqual
-  author: PA
- 
-  Compares two \'Ident\'.
-"
+public function identEqual 
+"function: identEqual
+  author: PA 
+  Compares two Ident."
   input Ident inIdent1;
   input Ident inIdent2;
   output Boolean outBoolean;
@@ -1470,10 +1463,9 @@ algorithm
   end matchcontinue;
 end identEqual;
 
-public function isRange "function: isRange
- 
-  Returns true if expression is a range expression.
-"
+public function isRange 
+"function: isRange 
+  Returns true if expression is a range expression."
   input Exp inExp;
   output Boolean outBoolean;
 algorithm 
@@ -1484,11 +1476,10 @@ algorithm
   end matchcontinue;
 end isRange;
 
-public function isOne "function: isOne
- 
-  Returns true íf an expression is constant and has the value one, 
-  otherwise false
-"
+public function isOne 
+"function: isOne 
+  Returns true íf an expression is constant 
+  and has the value one, otherwise false"
   input Exp inExp;
   output Boolean outBoolean;
 algorithm 
@@ -1520,11 +1511,10 @@ algorithm
   end matchcontinue;
 end isOne;
 
-public function isZero "function: isZero
- 
-  Returns true íf an expression is constant and has the value zero, 
-  otherwise false
-"
+public function isZero 
+"function: isZero 
+  Returns true íf an expression is constant 
+  and has the value zero, otherwise false"
   input Exp inExp;
   output Boolean outBoolean;
 algorithm 
@@ -1556,11 +1546,10 @@ algorithm
   end matchcontinue;
 end isZero;
 
-public function isConst "function: isConst
- 
-  Returns true íf an expression is constant 
-  otherwise false
-"
+public function isConst 
+"function: isConst 
+  Returns true íf an expression 
+  is constant otherwise false"
   input Exp inExp;
   output Boolean outBoolean;
 algorithm 
@@ -1599,11 +1588,10 @@ algorithm
   end matchcontinue;
 end isConst;
 
-public function isNotConst "function isNotConst
-  author: PA
- 
-  Check if expression is not constant.
-"
+public function isNotConst 
+"function isNotConst
+  author: PA 
+  Check if expression is not constant."
   input Exp e;
   output Boolean nb;
   Boolean b;
@@ -1612,10 +1600,9 @@ algorithm
   nb := boolNot(b);
 end isNotConst;
 
-public function isRelation "function: isRelation
- 
-  Returns true if expression is a function expression.
-"
+public function isRelation 
+"function: isRelation 
+  Returns true if expression is a function expression."
   input Exp inExp;
   output Boolean outBoolean;
 algorithm 
@@ -1637,10 +1624,9 @@ algorithm
   end matchcontinue;
 end isRelation;
 
-public function getRelations "function: getRelations
- 
-  Retrieve all function sub expressions in an expression.
-"
+public function getRelations 
+"function: getRelations 
+  Retrieve all function sub expressions in an expression."
   input Exp inExp;
   output list<Exp> outExpLst;
 algorithm 
@@ -1701,10 +1687,9 @@ algorithm
   end matchcontinue;
 end getRelations;
 
-public function joinCrefs "function: joinCrefs
- 
-  Join two component references by concatenating them.
-"
+public function joinCrefs 
+"function: joinCrefs 
+  Join two component references by concatenating them."
   input ComponentRef inComponentRef1;
   input ComponentRef inComponentRef2;
   output ComponentRef outComponentRef;
@@ -1715,7 +1700,8 @@ algorithm
       Ident id;
       list<Subscript> sub;
       ComponentRef cr2,cr_1,cr;
-    case (CREF_IDENT(ident = id,subscriptLst = sub),cr2) then CREF_QUAL(id,sub,cr2); 
+    case (CREF_IDENT(ident = id,subscriptLst = sub),cr2) 
+      then CREF_QUAL(id,sub,cr2); 
     case (CREF_QUAL(ident = id,subscriptLst = sub,componentRef = cr),cr2)
       equation 
         cr_1 = joinCrefs(cr, cr2);
@@ -1724,10 +1710,9 @@ algorithm
   end matchcontinue;
 end joinCrefs;
 
-public function crefEqual "function: crefEqual
- 
-  Returns true if two component references are equal
-"
+public function crefEqual 
+"function: crefEqual 
+  Returns true if two component references are equal"
   input ComponentRef inComponentRef1;
   input ComponentRef inComponentRef2;
   output Boolean outBoolean;
@@ -1737,7 +1722,7 @@ algorithm
     local
       Ident n1,n2,s1,s2;
       list<Subscript> idx1,idx2;
-      ComponentRef cr1,cr2;
+      ComponentRef cr1,cr2, c1, c2;
     case (CREF_IDENT(ident = n1,subscriptLst = idx1),CREF_IDENT(ident = n2,subscriptLst = idx2))
       equation 
         equality(n1 = n2);
@@ -1753,9 +1738,10 @@ algorithm
         true;
     case (cr1,cr2)
       equation 
-        s1 = printComponentRefStr(cr1) "There is a bug here somewhere or in MetaModelica Compiler (MMC).
-	  Therefore as a last resort, print the strings and compare.
-	" ;
+        s1 = printComponentRefStr(cr1) 
+        "There is a bug here somewhere or in 
+         MetaModelica Compiler (MMC).
+	       Therefore as a last resort, print the strings and compare." ;
         s2 = printComponentRefStr(cr2);
         equality(s1 = s2);
       then
@@ -1764,16 +1750,16 @@ algorithm
   end matchcontinue;
 end crefEqual;
 
-public function prependSubscriptExp "Prepends a subscript to a CREF expression
-
-For instance a.b[1,2] with subscript 'i' becomes a.b[i,1,2]."
-input Exp exp;
-input Subscript subscr;
-output Exp outExp;
+public function prependSubscriptExp 
+"Prepends a subscript to a CREF expression
+ For instance a.b[1,2] with subscript 'i' becomes a.b[i,1,2]."
+  input Exp exp;
+  input Subscript subscr;
+  output Exp outExp;
 algorithm
   outexp := matchcontinue(exp,subscr)
-  local Type t; ComponentRef cr,cr1,cr2;
-    list<Subscript> subs;
+    local Type t; ComponentRef cr,cr1,cr2;
+      list<Subscript> subs;
     case(CREF(cr,t),subscr) equation
       cr1 = crefStripLastSubs(cr);
       subs = crefLastSubs(cr);
@@ -1782,12 +1768,11 @@ algorithm
   end matchcontinue;
 end prependSubscriptExp;    
 
-public function crefEqualReturn "function: crefEqualReturn
-  author: PA
- 
-  Checks if two crefs are equal and if so returns the cref,
-  otherwise fail.
-"
+public function crefEqualReturn 
+"function: crefEqualReturn
+  author: PA 
+  Checks if two crefs are equal and if 
+  so returns the cref, otherwise fail."
   input ComponentRef cr;
   input ComponentRef cr2;
   output ComponentRef cr;
@@ -1795,11 +1780,10 @@ algorithm
   true := crefEqual(cr, cr2);
 end crefEqualReturn;
 
-public function subscriptExp "function: subscriptExp
- 
-  Returns the expression in a subscript index. If the subscript is not 
-  an index the function fails.x
-"
+public function subscriptExp 
+"function: subscriptExp 
+  Returns the expression in a subscript index. 
+  If the subscript is not an index the function fails."
   input Subscript inSubscript;
   output Exp outExp;
 algorithm 
@@ -1810,10 +1794,9 @@ algorithm
   end matchcontinue;
 end subscriptExp;
 
-protected function subscriptEqual "function: subscriptEqual
-  
-  Returns true if two subscript lists are equal.
-"
+protected function subscriptEqual 
+"function: subscriptEqual  
+  Returns true if two subscript lists are equal."
   input list<Subscript> inSubscriptLst1;
   input list<Subscript> inSubscriptLst2;
   output Boolean outBoolean;
@@ -1846,12 +1829,11 @@ algorithm
   end matchcontinue;
 end subscriptEqual;
 
-public function prependStringCref "function: prependStringCref
- 
+public function prependStringCref 
+"function: prependStringCref 
   Prepend a string to a component reference.
-  For qualified named, this means prepending a string to the 
-  first identifier.
-"
+  For qualified named, this means prepending a 
+  string to the first identifier."
   input String inString;
   input ComponentRef inComponentRef;
   output ComponentRef outComponentRef;
@@ -1875,13 +1857,12 @@ algorithm
   end matchcontinue;
 end prependStringCref;
 
-public function extendCref "function: extendCref
- 
-  The `extend_cref\' function extends a `ComponentRef\' by appending
-  an identifier and a (possibly empty) list of subscripts.  Adding
-  the identifier `a\' to the component reference `x.y{10}\' would
-  produce the component reference `x.y{10}.a\', for instance.
-"
+public function extendCref 
+"function: extendCref 
+  The extendCref function extends a ComponentRef by appending
+  an identifier and a (possibly empty) list of subscripts. Adding
+  the identifier A to the component reference x.y[10] would
+  produce the component reference x.y[10].A, for instance."
   input ComponentRef inComponentRef;
   input Ident inIdent;
   input list<Subscript> inSubscriptLst;
@@ -1902,12 +1883,11 @@ algorithm
   end matchcontinue;
 end extendCref;
 
-public function subscriptCref "function: subscriptCref
- 
-  The \'subscript_cref\' function adds a subscript to the \'ComponentRef\'
-  For instance \'a.b\' with subscript 10 becomes \'a.b{10} and \'c.d{1,2} with subscript 
-  3,4 becomes \'c.d{1,2,3,4}\' 
-"
+public function subscriptCref 
+"function: subscriptCref 
+  The subscriptCref function adds a subscript to the ComponentRef
+  For instance a.b with subscript 10 becomes a.b[10] and c.d[1,2] 
+  with subscript 3,4 becomes c.d[1,2,3,4]"
   input ComponentRef inComponentRef;
   input list<Subscript> inSubscriptLst;
   output ComponentRef outComponentRef;
@@ -1931,16 +1911,15 @@ algorithm
   end matchcontinue;
 end subscriptCref;
 
-public function intSubscripts "- Utility functions
- 
-  These are utility functions used in some of the other
-  functions.
-  function: intSubscripts
- 
+/*Utility functions 
+  These are utility functions used 
+  in some of the other functions. */
+  
+public function intSubscripts 
+"function: intSubscripts
   This function describes the function between a list of integers
-  and a list of `Exp.Subscript\' where each integer is converted to
-  an integer indexing expression.
-"
+  and a list of Exp.Subscript where each integer is converted to
+  an integer indexing expression."
   input list<Integer> inIntegerLst;
   output list<Subscript> outSubscriptLst;
 algorithm 
@@ -1959,12 +1938,11 @@ algorithm
   end matchcontinue;
 end intSubscripts;
 
-public function subscriptsInt "function: subscriptsInt
-  author: PA
- 
-  This function creates a list of ints from a subscript list,
-  see also int_subscripts.
-"
+public function subscriptsInt 
+"function: subscriptsInt
+  author: PA 
+  This function creates a list of ints from 
+  a subscript list, see also intSubscripts."
   input list<Subscript> inSubscriptLst;
   output list<Integer> outIntegerLst;
 algorithm 
@@ -1983,8 +1961,9 @@ algorithm
   end matchcontinue;
 end subscriptsInt;
 
-public function simplify " Simplifies expressions
-"
+public function simplify 
+"function simplifty
+  Simplifies expressions"
   input Exp inExp;
   output Exp outExp;
 algorithm 
@@ -1992,12 +1971,10 @@ algorithm
   outExp:= simplify2(outExp); // Advanced (global) simplifications 
  end simplify;
 
-protected function simplify1 "function: simplify1
- 
-  This function does some very basic simplification on expressions, like 0*a = a
-  {1}[1] => 1, etc.
- 
-"
+protected function simplify1 
+"function: simplify1 
+  This function does some very basic simplification 
+  on expressions, like 0*a = 0, a{1}[1] => 1, etc."
   input Exp inExp;
   output Exp outExp;
 algorithm 
@@ -2018,7 +1995,7 @@ algorithm
       Operator op;
       String before, after;
       Real time1,time2;
-//case ASUB(exp = e,sub = i) /* Array and Matrix stuff */ 
+    //case ASUB(exp = e,sub = i) /* Array and Matrix stuff */ 
     case (CAST(ty = REAL(),exp=e ))
       local Exp e; Real v;
       equation
@@ -2032,6 +2009,7 @@ algorithm
         rv = intReal(v);
       then
         RCONST(rv);
+        
     case (CAST(ty = tp,exp = e)) /* cast of array */ 
       equation 
         ARRAY(t,b,exps) = simplify1(e);
@@ -2041,6 +2019,7 @@ algorithm
         res = ARRAY(tp,b,exps_1);
       then
         res;
+        
     case (CAST(ty = tp,exp = e))
       local list<list<tuple<Exp, Boolean>>> exps,exps_1;
       equation 
@@ -2052,9 +2031,9 @@ algorithm
       then
         res;
         
-        // If expression alreay is has specified cast type.
-	    case (CAST(ty = tp,exp = e))
-	      local ComponentRef cr; Exp e1; Type t1,t2;
+    // If expression alreay is has specified cast type.
+    case (CAST(ty = tp,exp = e))
+      local ComponentRef cr; Exp e1; Type t1,t2;
       equation 
         t1 = arrayEltType(tp);
 				e1 = simplify1(e);
@@ -2070,6 +2049,7 @@ algorithm
         exp = listNth(exps, i_1);
       then
         exp;
+        
     case ASUB(exp = e,sub = i)
       local list<list<tuple<Exp, Boolean>>> exps;
       equation 
@@ -2081,6 +2061,7 @@ algorithm
         b = Util.boolAndList(bls);
       then
         ARRAY(t1,b,expl_1);
+
     case ASUB(exp = e,sub = i)
       local Exp t;
       equation 
@@ -2089,13 +2070,24 @@ algorithm
         f_1 = simplify1(ASUB(f,i));
       then
         IFEXP(c,t_1,f_1);
+
     case ASUB(exp = e,sub = i)
       //local Ident n;
       equation 
         CREF(CREF_IDENT(idn,s),t) = simplify1(e);
+        T_ARRAY(_, _) = t; // Is it an array? If it is then add the subscript, otherwise NO!
         s_1 = subscriptsAppend(s, i);
       then
         CREF(CREF_IDENT(idn,s_1),t);
+
+    case ASUB(exp = e,sub = i)
+      //local Ident n;
+      equation 
+        CREF(CREF_IDENT(idn,s),t) = simplify1(e);
+        failure(T_ARRAY(_, _) = t); // verify that the type is basic (no array)        
+      then
+        CREF(CREF_IDENT(idn,s),t);
+        
     case ASUB(exp = e,sub = i)
       local
         //Ident n;
@@ -2105,11 +2097,13 @@ algorithm
         CREF(c_1,t) = simplify1(ASUB(CREF(c,t),i));
       then
         CREF(CREF_QUAL(idn,s,c_1),t);
+
     case ASUB(exp = e,sub = i)
       equation 
         e = simplifyAsub(e, i) "For arbitrary vector operations, e.g (a+b-c){1} => a{1}+b{1}-c{1}" ;
       then
         e;
+
     case ((exp as UNARY(operator = op,exp = e1))) /* Operations */ 
       equation 
         e1_1 = simplify1(e1);
@@ -2117,11 +2111,13 @@ algorithm
         e = simplifyUnary(exp_1, op, e1_1);
       then
         e;
+
     case ((exp as BINARY(exp1 = e1,operator = op,exp2 = e2))) /* binary array and matrix expressions */ 
       equation 
         e_1 = simplifyBinaryArray(e1, op, e2);
       then
         e_1;
+
     case ((exp as BINARY(exp1 = e1,operator = op,exp2 = e2))) /* binary scalar simplifications */ 
       local String s1,s2; Boolean b;
       equation
@@ -2133,6 +2129,7 @@ algorithm
         e_1 = simplifyBinary(exp_1, op, e1_1, e2_1);
       then
         e_1;
+
     case ((exp as RELATION(exp1 = e1,operator = op,exp2 = e2)))
       equation 
         e1_1 = simplify1(e1);
@@ -2141,6 +2138,7 @@ algorithm
         e = simplifyBinary(exp_1, op, e1_1, e2_1);
       then
         e;
+
     case ((exp as LUNARY(operator = op,exp = e1)))
       equation 
         e1_1 = simplify1(e1);
@@ -2148,6 +2146,7 @@ algorithm
         e = simplifyUnary(exp_1, op, e1_1);
       then
         e;
+
     case ((exp as LBINARY(exp1 = e1,operator = op,exp2 = e2)))
       equation 
         e1_1 = simplify1(e1);
@@ -2156,6 +2155,7 @@ algorithm
         e = simplifyBinary(exp_1, op, e1_1, e2_1);
       then
         e;
+
     case (IFEXP(expCond = e1,expThen = e2,expElse = e3))
       equation 
         e1_1 = simplify1(e1);
@@ -2165,6 +2165,7 @@ algorithm
         res = Util.if_(remove_if, e2_1, IFEXP(e1,e2_1,e3_1));
       then
         res;
+
     case CREF(componentRef = c_1 as CREF_IDENT(idn,s),ty=t) 
       local        
         Integer lInt;
@@ -2174,25 +2175,24 @@ algorithm
         exp1 = simplifyCref(c_1,t);
       then
         exp1;
+
     case e 
       then 
         e;
   end matchcontinue;
 end simplify1;
 
-protected function simplifyCref " Function for simplifying 
-x[{y,z,q}] to {x[y], x[z], x[q]}
-"
-input ComponentRef inCREF;
-input Type inType;
-output Exp exp;
-
+protected function simplifyCref 
+" Function for simplifying 
+  x[{y,z,q}] to {x[y], x[z], x[q]}"
+  input ComponentRef inCREF;
+  input Type inType;
+  output Exp exp;
 algorithm
   outExpLst := matchcontinue(inCREF, inType)
-  local 
-    Type t;
-    list<Subscript> ssl;
-
+    local 
+      Type t;
+      list<Subscript> ssl;
     case(CREF_IDENT(idn,(ssl as ((SLICE(ARRAY(_,_,expl_1))) :: _))),t) 
       local
         Ident idn;
@@ -2204,32 +2204,27 @@ algorithm
   end matchcontinue;
 end simplifyCref;
 
-protected function simplifyCref2 " helper function for simplifyCref
-Does the recursion.
-"
-input Exp inExp;
-input list<Subscript> inSsl;
-output Exp outExp;
-
+protected function simplifyCref2 
+"helper function for simplifyCref
+ Does the recursion."
+  input Exp inExp;
+  input list<Subscript> inSsl;
+  output Exp outExp;
 algorithm  
   outExp := matchcontinue(inExp,inSsl)
-
-    case(exp_1,{})
-      local Exp exp_1;
-      then
-        exp_1;
-
+    local 
+      Ident idn;
+      Type t;
+      Exp exp_1, crefExp, exp;
+      list<Exp> expl_1,expl;
+      Subscript ss;
+      list<Subscript> ssl,ssl_2,subs;
+      list<ComponentRef> crefs;
+      ComponentRef cr;
+      Integer dim;  
+    case(exp_1,{}) then exp_1;
+      
     case(CREF(cr as CREF_IDENT(idn,ssl_2),t), ((ss as (SLICE(ARRAY(_,_,(expl_1))))) :: ssl))
-      local
-        Ident idn;
-        Type t;
-        Exp exp_1, crefExp, exp;
-        list<Exp> expl_1,expl;
-        Subscript ss;
-        list<Subscript> ssl,ssl_2,subs;
-        list<ComponentRef> crefs;
-        ComponentRef cr;
-        Integer dim;
       equation
         subs = Util.listMap(expl_1,makeIndexSubscript); 
         crefs = Util.listMap1r(Util.listMap(subs,Util.listCreate),subscriptCref,cr);
@@ -2238,22 +2233,24 @@ algorithm
         exp = simplifyCref2(ARRAY(T_ARRAY(t,{SOME(dim)}),true,expl),ssl);
       then
         exp;
- 	case(crefExp as ARRAY(tp,sc,expl), ssl )
- 	  local
- 	    Exp crefExp;
- 	    list<Exp> expl;
- 	    Boolean sc;
- 	    Type tp;
- 	    list<Subscript> ssl;
- 	  equation
-     expl = Util.listMap1(expl,simplifyCref2,ssl);
-   then 
-     ARRAY(tp,sc,expl);
- 
+        
+    case(crefExp as ARRAY(tp,sc,expl), ssl )
+      local
+        Exp crefExp;
+        list<Exp> expl;
+        Boolean sc;
+        Type tp;
+        list<Subscript> ssl;
+      equation
+        expl = Util.listMap1(expl,simplifyCref2,ssl);
+      then 
+        ARRAY(tp,sc,expl);
   end matchcontinue;
 end simplifyCref2;
 
-protected function simplify2 " Advanced simplifications covering several terms or factors, like a +2a +3a = 5a "
+protected function simplify2 
+"Advanced simplifications covering several 
+ terms or factors, like a + 2a + 3a = 5a "
   input Exp inExp;
   output Exp outExp;
 algorithm
@@ -2275,10 +2272,10 @@ algorithm
   end matchcontinue;
 end simplify2;
 
-protected function simplifyBinaryArray "function: simplifyBinaryArray
- 
-  Simplifies binary array expressions, e.g. matrix multiplication, etc.
-"
+protected function simplifyBinaryArray 
+"function: simplifyBinaryArray 
+  Simplifies binary array expressions, 
+  e.g. matrix multiplication, etc."
   input Exp inExp1;
   input Operator inOperator2;
   input Exp inExp3;
@@ -2305,9 +2302,8 @@ algorithm
         tp = typeof(e1);
         res = simplifyVectorBinary(e1, SUB(tp), e2);
       then
-        res;
-        
-        // v1 - -v2 => v1 + v2
+        res;        
+    // v1 - -v2 => v1 + v2
     case(e1,SUB_ARR(ty=tp),e2)
       equation
         (UNARY(_,e2)) = simplify1(e2);
@@ -2340,7 +2336,7 @@ algorithm
         atp2 = unliftArray(atp);
         b = typeBuiltin(atp2);
         op2 = Util.if_(b,MUL(tp),MUL_ARRAY_SCALAR(atp2));
-        res = simplifyVectorScalar(s1, op2, a1);        
+        res = simplifyVectorScalar(a1, op2, s1);        
       then
         res;
     case (a1,DIV_ARRAY_SCALAR(ty = tp),s1)
@@ -2368,12 +2364,12 @@ algorithm
   end matchcontinue;
 end simplifyBinaryArray;
 
-protected function simplifyScalarProduct "function: simplifyScalarProduct
-  author: PA
-  
-  Simplifies scalar product: v1v2, M  v1 and v1  M 
-  for vectors v1,v2 and matrix M.
-"
+protected function simplifyScalarProduct 
+"function: simplifyScalarProduct
+  author: PA  
+  Simplifies scalar product: 
+    v1v2, M  v1 and v1  M 
+  for vectors v1,v2 and matrix M."
   input Exp inExp1;
   input Exp inExp2;
   output Exp outExp;
@@ -2407,11 +2403,9 @@ algorithm
   end matchcontinue;
 end simplifyScalarProduct;
 
-protected function simplifyScalarProductMatrixVector "function: simplifyScalarProductMatrixVector
- 
-  
-  Simplifies scalar product of matrix  vector.
-"
+protected function simplifyScalarProductMatrixVector 
+"function: simplifyScalarProductMatrixVector  
+  Simplifies scalar product of matrix  vector."
   input list<list<tuple<Exp, Boolean>>> inTplExpBooleanLstLst;
   input list<Exp> inExpLst;
   output list<Exp> outExpLst;
@@ -2435,10 +2429,9 @@ algorithm
   end matchcontinue;
 end simplifyScalarProductMatrixVector;
 
-protected function simplifyScalarProductVectorMatrix "function: simplifyScalarProductVectorMatrix
-
-  Simplifies scalar product of vector  matrix 
-"
+protected function simplifyScalarProductVectorMatrix 
+"function: simplifyScalarProductVectorMatrix
+  Simplifies scalar product of vector  matrix"
   input list<Exp> inExpLst;
   input list<list<tuple<Exp, Boolean>>> inTplExpBooleanLstLst;
   output list<Exp> outExpLst;
@@ -2477,10 +2470,9 @@ algorithm
   end matchcontinue;
 end simplifyScalarProductVectorMatrix;
 
-protected function simplifyVectorScalar "function: simplifyVectorScalar
- 
-  Simplifies vector scalar operations.
-"
+protected function simplifyVectorScalar 
+"function: simplifyVectorScalar 
+  Simplifies vector scalar operations."
   input Exp inExp1;
   input Operator inOperator2;
   input Exp inExp3;
@@ -2495,15 +2487,19 @@ algorithm
       Boolean sc;
       list<Exp> es_1,es;
       /* scalar operator array */ 
-    case (s1,op,ARRAY(ty = tp,scalar = sc,array = {e1})) then ARRAY(tp,sc,{BINARY(s1,op,e1)});  
+    case (s1,op,ARRAY(ty = tp,scalar = sc,array = {e1})) 
+      then ARRAY(tp,sc,{BINARY(s1,op,e1)});
+          
     case (s1,op,ARRAY(ty = tp,scalar = sc,array = (e1 :: es)))
       equation 
         ARRAY(_,_,es_1) = simplifyVectorScalar(s1, op, ARRAY(tp,sc,es));
       then
         ARRAY(tp,sc,(BINARY(s1,op,e1) :: es_1));
 
-        /* array operator scalar */ 
-    case (ARRAY(ty = tp,scalar = sc,array = {e1}),op,s1) then ARRAY(tp,sc,{BINARY(e1,op,s1)});  
+    /* array operator scalar */ 
+    case (ARRAY(ty = tp,scalar = sc,array = {e1}),op,s1) 
+      then ARRAY(tp,sc,{BINARY(e1,op,s1)});
+          
     case (ARRAY(ty = tp,scalar = sc,array = (e1 :: es)),op,s1)
       equation 
         ARRAY(_,_,es_1) = simplifyVectorScalar(ARRAY(tp,sc,es),op,s1);
@@ -2513,11 +2509,10 @@ algorithm
   end matchcontinue;
 end simplifyVectorScalar;
 
-protected function simplifyVectorBinary "function: simlify_binary_array
-  author: PA
- 
-  Simplifies vector addition and subtraction
-"
+protected function simplifyVectorBinary 
+"function: simlify_binary_array
+  author: PA 
+  Simplifies vector addition and subtraction"
   input Exp inExp1;
   input Operator inOperator2;
   input Exp inExp3;
@@ -2531,8 +2526,14 @@ algorithm
       Exp e1,e2;
       Operator op;
       list<Exp> es_1,es1,es2;
-    case (ARRAY(ty = tp1,scalar = scalar1,array = {e1}),op,ARRAY(ty = tp2,scalar = scalar2,array = {e2})) then ARRAY(tp1,scalar1,{BINARY(e1,op,e2)});  /* resulting operator */ 
-    case (ARRAY(ty = tp1,scalar = scalar1,array = (e1 :: es1)),op,ARRAY(ty = tp2,scalar = scalar2,array = (e2 :: es2)))
+    case (ARRAY(ty = tp1,scalar = scalar1,array = {e1}),
+          op,
+          ARRAY(ty = tp2,scalar = scalar2,array = {e2})) 
+      then ARRAY(tp1,scalar1,{BINARY(e1,op,e2)});  /* resulting operator */ 
+
+    case (ARRAY(ty = tp1,scalar = scalar1,array = (e1 :: es1)),
+          op,
+          ARRAY(ty = tp2,scalar = scalar2,array = (e2 :: es2)))
       equation 
         ARRAY(_,_,es_1) = simplifyVectorBinary(ARRAY(tp1,scalar1,es1), op, ARRAY(tp2,scalar2,es2));
       then
@@ -2540,11 +2541,10 @@ algorithm
   end matchcontinue;
 end simplifyVectorBinary;
 
-protected function simplifyMatrixProduct "function: simplifyMatrixProduct
-  author: PA
-  
-  Simplifies matrix products A  B for matrices A and B.
-"
+protected function simplifyMatrixProduct 
+"function: simplifyMatrixProduct
+  author: PA  
+  Simplifies matrix products A  B for matrices A and B."
   input Exp inExp1;
   input Exp inExp2;
   output Exp outExp;
@@ -2555,7 +2555,8 @@ algorithm
       list<list<tuple<Exp, Boolean>>> expl_1,expl1,expl2;
       Type tp1,tp2;
       Integer size1,size2;
-    case (MATRIX(ty = tp1,integer = size1,scalar = expl1),MATRIX(ty = tp2,integer = size2,scalar = expl2)) /* A B */ 
+    case (MATRIX(ty = tp1,integer = size1,scalar = expl1),
+          MATRIX(ty = tp2,integer = size2,scalar = expl2)) /* A B */ 
       equation 
         expl_1 = simplifyMatrixProduct2(expl1, expl2);
       then
@@ -2563,11 +2564,10 @@ algorithm
   end matchcontinue;
 end simplifyMatrixProduct;
 
-protected function simplifyMatrixProduct2 "function: simplifyMatrixProduct2
-  author: PA
-  
-  Helper function to simplify_matrix_product.
-"
+protected function simplifyMatrixProduct2 
+"function: simplifyMatrixProduct2
+  author: PA  
+  Helper function to simplifyMatrixProduct."
   input list<list<tuple<Exp, Boolean>>> inTplExpBooleanLstLst1;
   input list<list<tuple<Exp, Boolean>>> inTplExpBooleanLstLst2;
   output list<list<tuple<Exp, Boolean>>> outTplExpBooleanLstLst;
@@ -2587,13 +2587,12 @@ algorithm
   end matchcontinue;
 end simplifyMatrixProduct2;
 
-protected function simplifyMatrixProduct3 "function: simplifyMatrixProduct3
-  author: PA
- 
-  Helper function to simplify_matrix_product2. Extract each column at
-  a time from the second matrix to calculate vector products with the first
-  argument.
-"
+protected function simplifyMatrixProduct3 
+"function: simplifyMatrixProduct3
+  author: PA 
+  Helper function to simplifyMatrixProduct2. Extract each column at
+  a time from the second matrix to calculate vector products with the 
+  first argument."
   input list<tuple<Exp, Boolean>> inTplExpBooleanLst;
   input list<list<tuple<Exp, Boolean>>> inTplExpBooleanLstLst;
   output list<tuple<Exp, Boolean>> outTplExpBooleanLst;
@@ -2621,11 +2620,11 @@ algorithm
   end matchcontinue;
 end simplifyMatrixProduct3;
 
-protected function simplifyMatrixProduct4 "function simplifyMatrixProduct4 
-  author: PA
- 
-  Helper function to simplify_matrix3, performs a scalar mult of vectors
-"
+protected function simplifyMatrixProduct4 
+"function simplifyMatrixProduct4 
+  author: PA 
+  Helper function to simplifyMatrix3, 
+  performs a scalar mult of vectors"
   input list<tuple<Exp, Boolean>> inTplExpBooleanLst1;
   input list<tuple<Exp, Boolean>> inTplExpBooleanLst2;
   output Exp outExp;
@@ -2653,10 +2652,9 @@ algorithm
   end matchcontinue;
 end simplifyMatrixProduct4;
 
-protected function addCast "function: addCast
- 
-  Adds a cast of a Type to an expression.
-"
+protected function addCast 
+"function: addCast 
+  Adds a cast of a Type to an expression."
   input Exp inExp;
   input Type inType;
   output Exp outExp;
@@ -2670,12 +2668,12 @@ algorithm
   end matchcontinue;
 end addCast;
 
-protected function simplifyBinarySortConstants "function: simplifyBinarySortConstants
-  author: PA
- 
-  Sorts all constants of a sum or product to the beginning of the expression.
-  Also combines expressions like 2a+4a and aaa+3a^3.
-"
+protected function simplifyBinarySortConstants 
+"function: simplifyBinarySortConstants
+  author: PA 
+  Sorts all constants of a sum or product to the 
+  beginning of the expression.
+  Also combines expressions like 2a+4a and aaa+3a^3."
   input Exp inExp;
   output Exp outExp;
 algorithm 
@@ -2717,11 +2715,10 @@ algorithm
   end matchcontinue;
 end simplifyBinarySortConstants;
 
-protected function simplifyBinaryCoeff "function: simplifyBinaryCoeff
-  author: PA
- 
-  Combines expressions like 2a+4a and aaa+3a^3, etc
-"
+protected function simplifyBinaryCoeff 
+"function: simplifyBinaryCoeff
+  author: PA 
+  Combines expressions like 2a+4a and aaa+3a^3, etc"
   input Exp inExp;
   output Exp outExp;
 algorithm 
@@ -2759,11 +2756,10 @@ algorithm
   end matchcontinue;
 end simplifyBinaryCoeff;
 
-protected function trySimplifyBinary "function: trySimplifyBinary
-  author: PA
- 
-  Helper function to simplify. Tries to call simplify binary.
-"
+protected function trySimplifyBinary 
+"function: trySimplifyBinary
+  author: PA 
+  Helper function to simplify. Tries to call simplify binary."
   input Exp inExp;
   output Exp outExp;
 algorithm 
@@ -2781,11 +2777,10 @@ algorithm
   end matchcontinue;
 end trySimplifyBinary;
 
-protected function simplifyBinaryAddConstants "function: simplifyBinaryAddConstants
-  author: PA
- 
-  Adds all expressions in the list, given that they are constant.
-"
+protected function simplifyBinaryAddConstants 
+"function: simplifyBinaryAddConstants
+  author: PA 
+  Adds all expressions in the list, given that they are constant."
   input list<Exp> inExpLst;
   output list<Exp> outExpLst;
 algorithm 
@@ -2804,17 +2799,16 @@ algorithm
         {e_1};
     case (_)
       equation 
-        Debug.fprint("failtrace","simplify_binary_add_constants failed\n");
+        Debug.fprint("failtrace","-Exp.simplifyBinaryAddConstants failed\n");
       then
         fail();
   end matchcontinue;
 end simplifyBinaryAddConstants;
 
-protected function simplifyBinaryMulConstants "function: simplify_binary_add_constants
+protected function simplifyBinaryMulConstants 
+"function: simplifyBinaryAddConstants
   author: PA
- 
-  Multiplies all expressions in the list, given that they are constant.
-"
+  Multiplies all expressions in the list, given that they are constant."
   input list<Exp> inExpLst;
   output list<Exp> outExpLst;
 algorithm 
@@ -2836,30 +2830,24 @@ algorithm
   end matchcontinue;
 end simplifyBinaryMulConstants;
 
-protected function simplifyMul "function: simplifyMul
+protected function simplifyMul 
+"function: simplifyMul
   author: PA
- 
-  Simplifies expressions like a*a*a*b*a*b*a
-"
+  Simplifies expressions like a*a*a*b*a*b*a"
   input list<Exp> expl;
   output list<Exp> expl_1;
-//   list<Ident> sl;
-//   Ident s;
   list<tuple<Exp, Real>> exp_const,exp_const_1;
   list<Exp> expl_1;
 algorithm 
-//   sl := Util.listMap(expl, printExpStr);
-//   s := Util.stringDelimitList(sl, ", ");
   exp_const := simplifyMul2(expl);
   exp_const_1 := simplifyMulJoinFactors(exp_const);
   expl_1 := simplifyMulMakePow(exp_const_1);
 end simplifyMul;
 
-protected function simplifyMul2 "function: simplifyMul2
-  author: PA
-  
-  Helper function to simplify_mul.
-"
+protected function simplifyMul2 
+"function: simplifyMul2
+  author: PA  
+  Helper function to simplifyMul."
   input list<Exp> inExpLst;
   output list<tuple<Exp, Real>> outTplExpRealLst;
 algorithm 
@@ -2880,12 +2868,12 @@ algorithm
   end matchcontinue;
 end simplifyMul2;
 
-protected function simplifyMulJoinFactors "function: simplifyMulJoinFactors
- author: PA
- 
-  Helper function to simplify_mul. Joins expressions that have the same
-  base. E.g. {(a,2), (a,4),(b,2)} => {(a,6),(b,2)}
-"
+protected function simplifyMulJoinFactors 
+"function: simplifyMulJoinFactors
+ author: PA 
+  Helper function to simplify_mul. 
+  Joins expressions that have the same base. 
+  E.g. {(a,2), (a,4), (b,2)} => {(a,6), (b,2)}"
   input list<tuple<Exp, Real>> inTplExpRealLst;
   output list<tuple<Exp, Real>> outTplExpRealLst;
 algorithm 
@@ -2906,12 +2894,11 @@ algorithm
   end matchcontinue;
 end simplifyMulJoinFactors;
 
-protected function simplifyMulJoinFactorsFind "function: simplifyMulJoinFactorsFind
-  author: PA
- 
-  Helper function to simplify_mul_join_factors. Searches rest of list
-  to find all occurences of a base.
-"
+protected function simplifyMulJoinFactorsFind 
+"function: simplifyMulJoinFactorsFind
+  author: PA 
+  Helper function to simplifyMulJoinFactors. 
+  Searches rest of list to find all occurences of a base."
   input Exp inExp;
   input list<tuple<Exp, Real>> inTplExpRealLst;
   output Real outReal;
@@ -2939,7 +2926,7 @@ algorithm
         coeff3 = coeff -. coeff2;
       then
         (coeff3,res);
-    case (e,((e2,coeff) :: rest)) /* not exp_equal */ 
+    case (e,((e2,coeff) :: rest)) /* not expEqual */ 
       equation 
         (coeff2,res) = simplifyMulJoinFactorsFind(e, rest);
       then
@@ -2947,12 +2934,12 @@ algorithm
   end matchcontinue;
 end simplifyMulJoinFactorsFind;
 
-protected function simplifyMulMakePow "function: simplifyMulMakePow
-  author: PA
-  
-  Helper function to simplify_mul. Makes each item in the list into
-  a pow expression, except when exponent is 1.0.
-"
+protected function simplifyMulMakePow 
+"function: simplifyMulMakePow
+  author: PA  
+  Helper function to simplifyMul. 
+  Makes each item in the list into a pow 
+  expression, except when exponent is 1.0."
   input list<tuple<Exp, Real>> inTplExpRealLst;
   output list<Exp> outExpLst;
 algorithm 
@@ -2972,18 +2959,18 @@ algorithm
       then
         (e :: res);
     case (((e,r) :: xs))
-      equation 
+      equation
+        //(r ==. 1.0) = false; 
         res = simplifyMulMakePow(xs);
       then
         (BINARY(e,POW(REAL()),RCONST(r)) :: res);
   end matchcontinue;
 end simplifyMulMakePow;
 
-protected function simplifyAdd "function: simplifyAdd
-  author: PA
- 
-  Simplifies ters like 2a+4b+2a+a+b
-"
+protected function simplifyAdd 
+"function: simplifyAdd
+  author: PA 
+  Simplifies terms like 2a+4b+2a+a+b"
   input list<Exp> inExpLst;
   output list<Exp> outExpLst;
 algorithm 
@@ -3001,17 +2988,16 @@ algorithm
         expl_1;
     case (_)
       equation 
-        Debug.fprint("failtrace","-simplify_add failed\n");
+        Debug.fprint("failtrace","-Exp.simplifyAdd failed\n");
       then
         fail();
   end matchcontinue;
 end simplifyAdd;
 
-protected function simplifyAdd2 "function: simplifyAdd2
-  author: PA
-  
-  Helper function to simplify_add
-"
+protected function simplifyAdd2 
+"function: simplifyAdd2
+  author: PA  
+  Helper function to simplifyAdd"
   input list<Exp> inExpLst;
   output list<tuple<Exp, Real>> outTplExpRealLst;
 algorithm 
@@ -3031,18 +3017,18 @@ algorithm
         ((e_1,coeff) :: rest);
     case (_)
       equation 
-        Debug.fprint("failtrace","simplify_add2 failed\n");
+        Debug.fprint("failtrace","-Exp.simplifyAdd2 failed\n");
       then
         fail();
   end matchcontinue;
 end simplifyAdd2;
 
-protected function simplifyAddJoinTerms "function: simplifyAddJoinTerms
-  author: PA
- 
-  Helper function to simplify_add. Join all terms with the same expression.
-  i.e. 2a+4a gives an element  (a,6) in the list.
-"
+protected function simplifyAddJoinTerms 
+"function: simplifyAddJoinTerms
+  author: PA 
+  Helper function to simplifyAdd. 
+  Join all terms with the same expression.
+  i.e. 2a+4a gives an element (a,6) in the list."
   input list<tuple<Exp, Real>> inTplExpRealLst;
   output list<tuple<Exp, Real>> outTplExpRealLst;
 algorithm 
@@ -3063,11 +3049,10 @@ algorithm
   end matchcontinue;
 end simplifyAddJoinTerms;
 
-protected function simplifyAddJoinTermsFind "function: simplifyAddJoinTermsFind
-  author: PA
-  
-  Helper function to simplify_add_join_terms, finds all occurences of exp.
-"
+protected function simplifyAddJoinTermsFind 
+"function: simplifyAddJoinTermsFind
+  author: PA  
+  Helper function to simplifyAddJoinTerms, finds all occurences of exp."
   input Exp inExp;
   input list<tuple<Exp, Real>> inTplExpRealLst;
   output Real outReal;
@@ -3087,7 +3072,7 @@ algorithm
         coeff3 = coeff +. coeff2;
       then
         (coeff3,res);
-    case (e,((e2,coeff) :: rest)) /* not exp_equal */ 
+    case (e,((e2,coeff) :: rest)) /* not expEqual */ 
       equation 
         (coeff2,res) = simplifyAddJoinTermsFind(e, rest);
       then
@@ -3095,12 +3080,11 @@ algorithm
   end matchcontinue;
 end simplifyAddJoinTermsFind;
 
-protected function simplifyAddMakeMul "function: simplifyAddMakeMul
+protected function simplifyAddMakeMul 
+"function: simplifyAddMakeMul
   author: PA
- 
-  Makes multiplications of each element in the list, except for 
-  coefficient 1.0
-"
+  Makes multiplications of each element 
+  in the list, except for coefficient 1.0"
   input list<tuple<Exp, Real>> inTplExpRealLst;
   output list<Exp> outExpLst;
 algorithm 
@@ -3135,12 +3119,11 @@ algorithm
   end matchcontinue;
 end simplifyAddMakeMul;
 
-protected function makeFactorDivision "function: makeFactorDivision
-  author: PA
- 
-  Takes two expression lists (factors) and makes a division of the two
-  If the second list is empty, no division node is created.
-"
+protected function makeFactorDivision 
+"function: makeFactorDivision
+  author: PA 
+  Takes two expression lists (factors) and makes a division of 
+  the two. If the second list is empty, no division node is created."
   input list<Exp> inExpLst1;
   input list<Exp> inExpLst2;
   output Exp outExp;
@@ -3192,13 +3175,12 @@ algorithm
   end matchcontinue;
 end makeFactorDivision;
 
-protected function removeCommonFactors "function: removeCommonFactors
+protected function removeCommonFactors 
+"function: removeCommonFactors
   author: PA
- 
-  Takes two lists of expressions (factors) and removes the factors common
-  to both lists. The special case of the ident^exp is treated by subtraction 
-  of the exponentials.
-"
+  Takes two lists of expressions (factors) and removes the 
+  factors common to both lists. The special case of the 
+  ident^exp is treated by subtraction of the exponentials."
   input list<Exp> inExpLst1;
   input list<Exp> inExpLst2;
   output list<Exp> outExpLst1;
@@ -3211,13 +3193,15 @@ algorithm
       list<Exp> es2_1,es1_1,es2_2,es1,es2;
       ComponentRef cr;
       Type tp;
-    case ((BINARY(exp1 = CREF(componentRef = cr,ty = tp),operator = POW(ty = _),exp2 = e1) :: es1),es2)
+    case ((BINARY(exp1 = CREF(componentRef = cr,ty = tp),
+          operator = POW(ty = _),exp2 = e1) :: es1),es2)
       equation 
         (BINARY(_,POW(_),e2),es2_1) = findPowFactor(cr, es2);
         (es1_1,es2_2) = removeCommonFactors(es1, es2_1);
         pow_e = simplify1(BINARY(CREF(cr,tp),POW(REAL()),BINARY(e1,SUB(REAL()),e2)));
       then
         ((pow_e :: es1_1),es2_2);
+        
     case ((e :: es1),es2)
       equation 
         _ = Util.listGetMemberOnTrue(e, es2, expEqual);
@@ -3225,21 +3209,22 @@ algorithm
         (es1_1,es2_2) = removeCommonFactors(es1, es2_1);
       then
         (es1_1,es2_2);
+        
     case ((e :: es1),es2)
       equation 
         (es1_1,es2_1) = removeCommonFactors(es1, es2);
       then
         ((e :: es1_1),es2_1);
+        
     case ({},es2) then ({},es2); 
   end matchcontinue;
 end removeCommonFactors;
 
-protected function findPowFactor "function findPowFactor
-  author: PA
-  
-  Helper function to remove_common_factors. Finds a POW expression in
-  a list of factors.
-"
+protected function findPowFactor 
+"function findPowFactor
+  author: PA  
+  Helper function to removeCommonFactors. 
+  Finds a POW expression in a list of factors."
   input ComponentRef inComponentRef;
   input list<Exp> inExpLst;
   output Exp outExp;
@@ -3251,7 +3236,8 @@ algorithm
       ComponentRef cr,cr2;
       Exp e,pow_e;
       list<Exp> es;
-    case (cr,((e as BINARY(exp1 = CREF(componentRef = cr2),operator = POW(ty = _))) :: es))
+    case (cr,((e as BINARY(exp1 = CREF(componentRef = cr2),
+                           operator = POW(ty = _))) :: es))
       equation 
         true = crefEqual(cr, cr2);
       then
@@ -3264,10 +3250,9 @@ algorithm
   end matchcontinue;
 end findPowFactor;
 
-protected function simplifyBinaryAddCoeff2 "function: simplifyBinaryAddCoeff2
- 
-  This function checks for x+x+x+x and returns (x,4.0)
-"
+protected function simplifyBinaryAddCoeff2 
+"function: simplifyBinaryAddCoeff2 
+  This function checks for x+x+x+x and returns (x,4.0)"
   input Exp inExp;
   output Exp outExp;
   output Real outReal;
@@ -3279,8 +3264,10 @@ algorithm
       Real coeff,coeff_1;
       Type tp;
     case ((exp as CREF(componentRef = _))) then (exp,1.0); 
-    case (BINARY(exp1 = RCONST(real = coeff),operator = MUL(ty = _),exp2 = e1)) then (e1,coeff); 
-    case (BINARY(exp1 = e1,operator = MUL(ty = _),exp2 = RCONST(real = coeff))) then (e1,coeff); 
+    case (BINARY(exp1 = RCONST(real = coeff),operator = MUL(ty = _),exp2 = e1)) 
+      then (e1,coeff); 
+    case (BINARY(exp1 = e1,operator = MUL(ty = _),exp2 = RCONST(real = coeff))) 
+      then (e1,coeff); 
     case (BINARY(exp1 = e1,operator = MUL(ty = _),exp2 = ICONST(integer = coeff)))
       local Integer coeff;
       equation 
@@ -3302,11 +3289,10 @@ algorithm
   end matchcontinue;
 end simplifyBinaryAddCoeff2;
 
-protected function simplifyBinaryMulCoeff2 "function: simplifyBinaryMulCoeff2
- 
-  This function takes an expression XXXXX and return (X,5.0)
-  to be used for X^5.
-"
+protected function simplifyBinaryMulCoeff2 
+"function: simplifyBinaryMulCoeff2 
+  This function takes an expression XXXXX 
+  and return (X,5.0) to be used for X^5."
   input Exp inExp;
   output Exp outExp;
   output Real outReal;
@@ -3318,8 +3304,10 @@ algorithm
       ComponentRef cr;
       Real coeff,coeff_1,coeff_2;
       Type tp;
-    case ((e as CREF(componentRef = cr))) then (e,1.0); 
-    case (BINARY(exp1 = e1,operator = POW(ty = _),exp2 = RCONST(real = coeff))) then (e1,coeff); 
+    case ((e as CREF(componentRef = cr))) 
+      then (e,1.0); 
+    case (BINARY(exp1 = e1,operator = POW(ty = _),exp2 = RCONST(real = coeff))) 
+      then (e1,coeff); 
     case (BINARY(exp1 = e1,operator = POW(ty = _),exp2 = UNARY(operator = UMINUS(ty = tp),exp = RCONST(real = coeff))))
       equation 
         coeff_1 = 0.0 -. coeff;
@@ -3353,10 +3341,9 @@ algorithm
   end matchcontinue;
 end simplifyBinaryMulCoeff2;
 
-protected function simplifyAsub "function: simplifyAsub
- 
-  This function simplifies array subscripts on vector operations
-"
+protected function simplifyAsub 
+"function: simplifyAsub 
+  This function simplifies array subscripts on vector operations"
   input Exp inExp;
   input Integer inInteger;
   output Exp outExp;
@@ -3414,7 +3401,7 @@ algorithm
         e2_1 = simplify1(e2);
         t2 = typeof(e1_1);
         b = typeBuiltin(t2);
-        op = Util.if_(b,MUL(t2),MUL_SCALAR_ARRAY(t2));
+        op = Util.if_(b,MUL(t2),MUL_ARRAY_SCALAR(t2));
       then
         BINARY(e1_1,op,e2_1);
     case (BINARY(exp1 = e1,operator = DIV_ARRAY_SCALAR(ty = t),exp2 = e2),indx)
@@ -3477,11 +3464,10 @@ algorithm
   end matchcontinue;
 end simplifyAsubOperator;
 
-protected function divide "function: divide
-  author: PA
- 
-  divides two expressions.
-"
+protected function divide 
+"function: divide
+  author: PA 
+  divides two expressions."
   input Exp inExp1;
   input Exp inExp2;
   output Exp outExp;
@@ -3493,10 +3479,9 @@ algorithm
   end matchcontinue;
 end divide;
 
-protected function removeFactor "function: removeFactor
- 
-  Remove the factor from the expression (factorize it out)
-"
+protected function removeFactor 
+"function: removeFactor 
+  Remove the factor from the expression (factorize it out)"
   input Exp inExp1;
   input Exp inExp2;
   output Exp outExp;
@@ -3532,7 +3517,7 @@ algorithm
       equation 
         fs = printExpStr(factor);
         es = printExpStr(expr);
-        Debug.fprint("failtrace","remove_factor failed, factor:");
+        Debug.fprint("failtrace","-Exp.removeFactor failed, factor:");
         Debug.fprint("failtrace",fs);
         Debug.fprint("failtrace"," expr:");
         Debug.fprint("failtrace",es);
@@ -3548,12 +3533,11 @@ algorithm
   end matchcontinue;
 end removeFactor;
 
-protected function gcd "function: gcd
- 
+protected function gcd 
+"function: gcd
   Return the greatest common divisor expression from two expressions.
-  If no common divisor besides a numerical expression can be found, the 
-  function fails.
-"
+  If no common divisor besides a numerical expression can be found, 
+  the function fails."
   input Exp e1;
   input Exp e2;
   output Exp product;
@@ -3565,13 +3549,12 @@ algorithm
   product := makeProductLst(factor);
 end gcd;
 
-protected function noFactors "function noFactors
- 
+protected function noFactors 
+"function noFactors 
   Helper function to factors.
   If a factor list is empty, the expression has no subfactors.
-  But the complete expression is then a factor for larger expressions,
-  returned by this function.
-"
+  But the complete expression is then a factor for larger 
+  expressions, returned by this function."
   input list<Exp> inExpLst;
   input Exp inExp;
   output list<Exp> outExpLst;
@@ -3586,11 +3569,10 @@ algorithm
   end matchcontinue;
 end noFactors;
 
-protected function negate "function: negate
+protected function negate 
+"function: negate
   author: PA
- 
-  Negates an expression.
-"
+  Negates an expression."
   input Exp e;
   output Exp outExp;
   Type t;
@@ -3599,9 +3581,10 @@ algorithm
   outExp := UNARY(UMINUS(t),e);
 end negate;
 
-public function allTerms "simliar to terms, but also perform expansion of multiplications to reveal more terms,
-like for instance allTerms((a+b)*(b+c)) => {a*b,a*c,b*b,b*c}"
-     
+public function allTerms 
+"simliar to terms, but also perform expansion of 
+ multiplications to reveal more terms, like for instance: 
+ allTerms((a+b)*(b+c)) => {a*b,a*c,b*b,b*c}"
   input Exp inExp;
   output list<Exp> outExpLst;
 algorithm 
@@ -3629,14 +3612,14 @@ algorithm
      then
        res;     
        
-       /* terms( a*(b+c)) => {a*b, c*b} */
+   /* terms( a*(b+c)) => {a*b, c*b} */
    case (e as BINARY(e1,MUL(tp),e2)) equation
      (f1 as _::_::_) = allTerms(e2);
      f1 = Util.listMap1(f1,makeProduct,e1);
      f1 = Util.listFlatten(Util.listMap(f1,allTerms));
    then f1;
      
-     /* terms( (b+c)*a) => {b*a, c*a} */
+   /* terms( (b+c)*a) => {b*a, c*a} */
    case (e as BINARY(e1,MUL(tp),e2)) equation
      (f1 as _::_::_) = allTerms(e1);
      f1 = Util.listMap1(f1,makeProduct,e2);
@@ -3663,11 +3646,10 @@ algorithm
   end matchcontinue;
 end allTerms;
   
-public function terms "function: terms
-  author: PA
- 
-  Returns the terms of the expression if any as a list of expressiosn
-"
+public function terms 
+"function: terms
+  author: PA 
+  Returns the terms of the expression if any as a list of expressions"
   input Exp inExp;
   output list<Exp> outExpLst;
 algorithm 
@@ -3714,12 +3696,11 @@ algorithm
   end matchcontinue;
 end terms;
 
-public function quotient "function: quotient
-  author: PA
- 
+public function quotient 
+"function: quotient
+  author: PA 
   Returns the quotient of an expression.
-  For instance e = p/q returns (p,q) for nominator p and denominator q.
-"
+  For instance e = p/q returns (p,q) for nominator p and denominator q."
   input Exp inExp;
   output Exp outExp1;
   output Exp outExp2;
@@ -3745,10 +3726,9 @@ algorithm
   end matchcontinue;
 end quotient;
 
-public function factors "function: factors
- 
-  Returns the factors of the expression if any as a list of expressions
-"
+public function factors 
+"function: factors 
+  Returns the factors of the expression if any as a list of expressions"
   input Exp inExp;
   output list<Exp> outExpLst;
 algorithm 
@@ -3796,12 +3776,11 @@ algorithm
   end matchcontinue;
 end factors;
 
-protected function inverseFactors "function inverseFactors
- 
-  Takes a list of expressions and returns each expression in the list 
-  inversed.
-  For example inverse_factors {a,3+b} => {1/a, 1/3+b}
-"
+protected function inverseFactors 
+"function inverseFactors 
+  Takes a list of expressions and returns 
+  each expression in the list inversed.
+  For example: inverseFactors {a, 3+b} => {1/a, 1/3+b}"
   input list<Exp> inExpLst;
   output list<Exp> outExpLst;
 algorithm 
@@ -3833,7 +3812,8 @@ algorithm
   end matchcontinue;
 end inverseFactors;
 
-public function makeProduct "Makes a product of two expressions"
+public function makeProduct 
+"Makes a product of two expressions"
   input Exp e1;
   input Exp e2;
   output Exp product;
@@ -3841,11 +3821,10 @@ algorithm
   product := makeProductLst({e1,e2});
 end makeProduct;
 
-public function makeProductLst "function: makeProductLst
- 
-  Takes a list of expressions an makes a product expression multiplying all 
-  elements in the list.
-"
+public function makeProductLst 
+"function: makeProductLst 
+  Takes a list of expressions an makes a product 
+  expression multiplying all elements in the list."
   input list<Exp> inExpLst;
   output Exp outExp;
 algorithm 
@@ -3917,7 +3896,7 @@ algorithm
 				res;
     case (lst)
       equation 
-        Debug.fprint("failtrace","-make_product failed, exp lst:");
+        Debug.fprint("failtrace","-Exp.makeProductLst failed, exp lst:");
         explst = Util.listMap(lst, printExpStr);
         str = Util.stringDelimitList(explst, ", ");
         Debug.fprint("failtrace",str);
@@ -3927,11 +3906,13 @@ algorithm
   end matchcontinue;
 end makeProductLst;
 
-protected function checkIfOther "Checks if a type is OTHER and in that case returns REAL instead.
-THis is used to make proper transformations in case OTHER is retrieved from subexpression where it should instead be 
-REAL or INT"
-input Type inTp;
-output Type outTp;
+protected function checkIfOther 
+"Checks if a type is OTHER and in that case returns REAL instead.
+ This is used to make proper transformations in case OTHER is 
+ retrieved from subexpression where it should instead be REAL 
+ or INT"
+  input Type inTp;
+  output Type outTp;
 algorithm
   outTp := matchcontinue(inTp)
     case (OTHER()) then REAL();
@@ -3939,7 +3920,9 @@ algorithm
   end matchcontinue;
 end checkIfOther;
 
-public function makeDiff "Takes two expressions and create the difference between them"
+public function makeDiff 
+"Takes two expressions and create 
+ the difference between them"
   input Exp e1;
   input Exp e2;
   output Exp res;
@@ -3957,11 +3940,10 @@ algorithm
   end matchcontinue;
 end makeDiff;
 
-public function makeSum "function: makeSum
- 
-  Takes a list of expressions an makes a sum expression adding all 
-  elements in the list.
-"
+public function makeSum 
+"function: makeSum 
+  Takes a list of expressions an makes a sum 
+  expression adding all elements in the list."
   input list<Exp> inExpLst;
   output Exp outExp;
 algorithm 
@@ -3995,7 +3977,7 @@ algorithm
         res;
     case (lst)
       equation 
-        Debug.fprint("failtrace","-make_sum failed, exp lst:");
+        Debug.fprint("failtrace","-Exp.makeSum failed, exp lst:");
         explst = Util.listMap(lst, printExpStr);
         str = Util.stringDelimitList(explst, ", ");
         Debug.fprint("failtrace",str);
@@ -4005,11 +3987,10 @@ algorithm
   end matchcontinue;
 end makeSum;
 
-public function abs "function: abs
-  author: PA
- 
-  Makes the expression absolute. i.e. non-negative.
-"
+public function abs 
+"function: abs
+  author: PA 
+  Makes the expression absolute. i.e. non-negative."
   input Exp inExp;
   output Exp outExp;
 algorithm 
@@ -4046,7 +4027,8 @@ algorithm
   end matchcontinue;
 end abs;
 
-public function arrayTypeDimensions "Return the array dimensions of a type."
+public function arrayTypeDimensions 
+"Return the array dimensions of a type."
 	input Type tp;
 	output list<Option<Integer>> dims;
 algorithm
@@ -4055,10 +4037,9 @@ algorithm
   end matchcontinue;
 end arrayTypeDimensions;
 
-public function typeBuiltin "function: typeBuiltin
- 
-  Returns true if type is one of the builtin types.
-"
+public function typeBuiltin 
+"function: typeBuiltin 
+  Returns true if type is one of the builtin types."
   input Type inType;
   output Boolean outBoolean;
 algorithm 
@@ -4072,10 +4053,9 @@ algorithm
   end matchcontinue;
 end typeBuiltin;
 
-public function arrayEltType "function: arrayEltType
- 
-  Returns the element type of an array expression.
-"
+public function arrayEltType 
+"function: arrayEltType 
+  Returns the element type of an array expression."
   input Type inType;
   output Type outType;
 algorithm 
@@ -4087,7 +4067,8 @@ algorithm
   end matchcontinue;
 end arrayEltType;
 
-public function liftArray "Converts a type into an array type with dimension n"
+public function liftArray 
+"Converts a type into an array type with dimension n"
   input Type tp;
   input Option<Integer> n; 
   output Type outTp;
@@ -4099,19 +4080,17 @@ algorithm
       
     case(T_ARRAY(elt_tp,dims),n) 
       equation
-      dims = listAppend(dims,{n});
+        dims = listAppend(dims,{n});
       then T_ARRAY(elt_tp,dims);
-      
-    case(tp,n)
-    then T_ARRAY(tp,{n});      
-      
+        
+    case(tp,n) then T_ARRAY(tp,{n});      
+        
   end matchcontinue;
 end liftArray;
 
-public function unliftArray "function: unliftArray
- 
-  Converts an array type into its element type.
-"
+public function unliftArray 
+"function: unliftArray 
+  Converts an array type into its element type."
   input Type inType;
   output Type outType;
 algorithm 
@@ -4121,16 +4100,17 @@ algorithm
       Type tp,t;
       Option<Integer> d;
       list<Option<Integer>> ds;
-    case (T_ARRAY(ty = tp,arrayDimensions = {_})) then tp; 
-    case (T_ARRAY(ty = tp,arrayDimensions = (d :: ds))) then T_ARRAY(tp,ds); 
+    case (T_ARRAY(ty = tp,arrayDimensions = {_})) 
+      then tp; 
+    case (T_ARRAY(ty = tp,arrayDimensions = (d :: ds))) 
+      then T_ARRAY(tp,ds); 
     case (t) then t; 
   end matchcontinue;
 end unliftArray;
 
-public function typeof "function typeof
- 
-  Retrieves the Type of the Expression
-"
+public function typeof 
+"function typeof 
+  Retrieves the Type of the Expression"
   input Exp inExp;
   output Type outType;
 algorithm 
@@ -4195,16 +4175,16 @@ algorithm
     case (SIZE(_,NONE)) then INT();
     case (SIZE(_,SOME(_))) then T_ARRAY(INT(),{NONE}); 
       
-        //MetaModelica extension 
+    //MetaModelica extension 
     case (LIST(ty = tp)) then tp; 
     case (CONS(ty = tp)) then tp;  
           
   end matchcontinue;
 end typeof;
 
-public function liftArrayRight "
-This function has the same functionality as Types.liftArrayType but for Exp.Type
-"
+public function liftArrayRight 
+"This function has the same functionality 
+ as Types.liftArrayType but for Exp.Type"
   input Type inType;
   input Option<Integer> inIntegerOption;
   output Type outType;
@@ -4227,10 +4207,9 @@ algorithm
   end matchcontinue;
 end liftArrayRight;
 
-protected function typeofOp "function: typeofOp
- 
-  Helper function to typeof
-"
+protected function typeofOp 
+"function: typeofOp 
+  Helper function to typeof"
   input Operator inOperator;
   output Type outType;
 algorithm 
@@ -4269,9 +4248,8 @@ algorithm
   end matchcontinue;
 end typeofOp;
 
-public function isConstFalse "  
-  Return true if expression is false
-"
+public function isConstFalse 
+"Return true if expression is false"
   input Exp inExp;
   output Boolean outBoolean;
 algorithm 
@@ -4282,9 +4260,8 @@ algorithm
   end matchcontinue;
 end isConstFalse;
 
-public function isConstTrue "  
-  Return true if expression is true
-"
+public function isConstTrue 
+"Return true if expression is true"
   input Exp inExp;
   output Boolean outBoolean;
 algorithm 
@@ -4295,10 +4272,9 @@ algorithm
   end matchcontinue;
 end isConstTrue;
 
-protected function isConstOne "function: isConstOne
-  
-  Return true if expression is 1
-"
+protected function isConstOne 
+"function: isConstOne  
+  Return true if expression is 1"
   input Exp inExp;
   output Boolean outBoolean;
 algorithm 
@@ -4318,10 +4294,9 @@ algorithm
   end matchcontinue;
 end isConstOne;
 
-protected function isConstMinusOne "function: isConstMinusOne
- 
-  Return true if expression is -1
-"
+protected function isConstMinusOne 
+"function: isConstMinusOne 
+  Return true if expression is -1"
   input Exp inExp;
   output Boolean outBoolean;
 algorithm 
@@ -4339,7 +4314,8 @@ algorithm
   end matchcontinue;
 end isConstMinusOne;
 
-public function makeConstZero "Generates a zero constant"
+public function makeConstZero 
+"Generates a zero constant"
 	input Type inType;
 	output Exp const;
 algorithm
@@ -4349,18 +4325,18 @@ algorithm
   end matchcontinue;
 end makeConstZero;
 
-public function makeIntegerExp "creates an integer constant expression given the integer input."
+public function makeIntegerExp 
+"Creates an integer constant expression given the integer input."
   input Integer i;
   output Exp e;
 algorithm
   e:=ICONST(i);
 end makeIntegerExp;
 
-public function makeConstOne "function makeConstOne
-  author: PA
- 
-  Create the constant value one, given a type that is INT or REAL
-"
+public function makeConstOne 
+"function makeConstOne
+  author: PA 
+  Create the constant value one, given a type that is INT or REAL"
   input Type inType;
   output Exp outExp;
 algorithm 
@@ -4371,10 +4347,9 @@ algorithm
   end matchcontinue;
 end makeConstOne;
 
-protected function simplifyBinaryConst "function: simplifyBinaryConst
- 
-  This function evaluates constant binary expressions.
-"
+protected function simplifyBinaryConst 
+"function: simplifyBinaryConst
+  This function evaluates constant binary expressions."
   input Operator inOperator1;
   input Exp inExp2;
   input Exp inExp3;
@@ -4528,10 +4503,9 @@ algorithm
   end matchcontinue;
 end simplifyBinaryConst;
 
-protected function simplifyBinary "function: simplifyBinary
-  
-  This function simplifies binary expressions.
-"
+protected function simplifyBinary 
+"function: simplifyBinary  
+  This function simplifies binary expressions."
   input Exp inExp1;
   input Operator inOperator2;
   input Exp inExp3;
@@ -4556,7 +4530,7 @@ algorithm
       then
         e3; 
 
-        /* (a+b)/c1 => a/c1+b/c1, for constant c1 */ 
+    /* (a+b)/c1 => a/c1+b/c1, for constant c1 */ 
     case (_,DIV(ty = ty),BINARY(exp1 = e1,operator = ADD(ty = ty2),exp2 = e2),e3) 
       equation 
         true = isConst(e3);
@@ -4565,7 +4539,7 @@ algorithm
       then
         res;
 
-        /* (a-b)/c1 => a/c1-b/c1, for constant c1 */ 
+    /* (a-b)/c1 => a/c1-b/c1, for constant c1 */ 
     case (_,DIV(ty = ty),BINARY(exp1 = e1,operator = SUB(ty = ty2),exp2 = e2),e3) 
       equation 
         true = isConst(e3);
@@ -4574,7 +4548,7 @@ algorithm
       then
         res;
         
-        /* (a+b)c1 => ac1+bc1, for constant c1 */ 
+    /* (a+b)c1 => ac1+bc1, for constant c1 */ 
     case (_,MUL(ty = ty),BINARY(exp1 = e1,operator = ADD(ty = ty2),exp2 = e2),e3) 
       equation 
         true = isConst(e3);
@@ -4583,7 +4557,7 @@ algorithm
       then
         res;
 
-        /* (a-b)c1 => a/c1-b/c1, for constant c1 */ 
+    /* (a-b)c1 => a/c1-b/c1, for constant c1 */ 
     case (_,MUL(ty = ty),BINARY(exp1 = e1,operator = SUB(ty = ty2),exp2 = e2),e3) 
       equation 
         true = isConst(e3);
@@ -4592,28 +4566,28 @@ algorithm
       then
         res;
 
-        /* a+(-b) */ 
+    /* a+(-b) */ 
     case (_,ADD(ty = tp),e1,UNARY(operator = UMINUS(ty = tp2),exp = e2)) 
       equation 
         e = simplify1(BINARY(e1,SUB(tp),e2));
       then
         e;
 
-        /* (-b)+a */ 
+    /* (-b)+a */ 
     case (_,ADD(ty = tp),UNARY(operator = UMINUS(ty = tp2),exp = e2), e1) 
       equation 
         e1 = simplify1(BINARY(e1,SUB(tp),e2));
       then
         e1;
 
-        /* a/b/c => (ac)/b)*/
+    /* a/b/c => (ac)/b)*/
     case (_,DIV(ty = tp),e1,BINARY(exp1 = e2,operator = DIV(ty = tp2),exp2 = e3))
       equation 
         e = simplify1(BINARY(BINARY(e1,MUL(tp),e3),DIV(tp2),e2))  ;
       then
         e;
 
-        /* (a/b)/c => a/(bc)) */
+    /* (a/b)/c => a/(bc)) */
     case (_,DIV(ty = tp),BINARY(exp1 = e1,operator = DIV(ty = tp2),exp2 = e2),e3)
       equation 
         e = simplify1(BINARY(e1,DIV(tp2),BINARY(e2,MUL(tp),e3)));
@@ -4662,14 +4636,14 @@ algorithm
       then
         e;
 
-        /* (e1/e2)e3 => (e1e3)/e2 */ 
+    /* (e1/e2)e3 => (e1e3)/e2 */ 
     case (_,MUL(ty = tp),BINARY(exp1 = e1,operator = DIV(ty = tp2),exp2 = e2),e3) 
       equation 
         res = simplify1(BINARY(BINARY(e1,MUL(tp),e3),DIV(tp2),e2));
       then
         res;
 
-        /* e1(e2/e3) => (e1e2)/e3 */ 
+    /* e1(e2/e3) => (e1e2)/e3 */ 
     case (_,MUL(ty = tp),e1,BINARY(exp1 = e2,operator = DIV(ty = tp2),exp2 = e3)) 
       equation 
         res = simplify1(BINARY(BINARY(e1,MUL(tp),e2),DIV(tp2),e3));
@@ -4771,6 +4745,7 @@ algorithm
         e2_1 = simplify1(e2);
       then
         BINARY(e1_1,DIV(ty),e2_1);
+        
     /* e2*e3 / e1 => e3/e1 * e2 */
     case (_,DIV(ty = tp2),BINARY(exp1 = e2,operator = MUL(ty = tp),exp2 = e3),e1)
       equation 
@@ -4779,7 +4754,8 @@ algorithm
         e = simplify1(BINARY(BINARY(e3,DIV(tp2),e1),MUL(tp),e2));
       then
         e;
-        /* e2*e3 / e1 => e2 / e1 * e3 */
+        
+    /* e2*e3 / e1 => e2 / e1 * e3 */
     case (_,DIV(ty = tp2),BINARY(exp1 = e2,operator = MUL(ty = tp),exp2 = e3),e1)
       equation 
         true = isConst(e2) ;
@@ -4833,12 +4809,11 @@ algorithm
   end matchcontinue;
 end simplifyBinary;
 
-protected function simplifyBinaryDistributePow "function simplifyBinaryDistributePow
-  author: PA
- 
+protected function simplifyBinaryDistributePow 
+"function simplifyBinaryDistributePow
+  author: PA 
   Distributes the pow operator over a list of expressions.
-  ({e1,e2,..,en} , pow_e) =>  {e1^pow_e, e2^pow_e,..,en^pow_e}
-"
+  ({e1,e2,..,en} , pow_e) =>  {e1^pow_e, e2^pow_e,..,en^pow_e}"
   input list<Exp> inExpLst;
   input Exp inExp;
   output list<Exp> outExpLst;
@@ -4867,9 +4842,9 @@ algorithm
   end matchcontinue;
 end simplifyBinaryDistributePow;
 
-protected function createConstOne "function: createConstOne
-  Creates a constant value one, given a type INT or REAL
-"
+protected function createConstOne 
+"function: createConstOne
+  Creates a constant value one, given a type INT or REAL"
   input Type inType;
   output Exp outExp;
 algorithm 
@@ -4885,10 +4860,9 @@ algorithm
   end matchcontinue;
 end createConstOne;
 
-protected function simplifyUnary "function: simplifyUnary
- 
-  Simplifies unary expressions.
-"
+protected function simplifyUnary 
+"function: simplifyUnary
+  Simplifies unary expressions."
   input Exp inExp1;
   input Operator inOperator2;
   input Exp inExp3;
@@ -4954,11 +4928,11 @@ algorithm
   end matchcontinue;
 end simplifyUnary;
 
-public function containVectorFunctioncall "  Returns true if expression or subexpression is a functioncall that returns an array.
-  otherwise false.
-  Note: the \'der\' operator is represented as a function call but still return 
-  false."
-
+public function containVectorFunctioncall 
+"Returns true if expression or subexpression is a 
+ functioncall that returns an array, otherwise false.
+ Note: the der operator is represented as a 
+       function call but still return false."
   input Exp inExp;
   output Boolean outBoolean;
 algorithm 
@@ -5082,12 +5056,12 @@ end containVectorFunctioncall;
 
 
 
-public function containFunctioncall "function: containFunctioncall
-  Returns true if expression or subexpression is a functioncall.
-  otherwise false.
-  Note: the der and pre operators are represented as function calls but still returns 
-  false.
-"
+public function containFunctioncall 
+"function: containFunctioncall
+  Returns true if expression or subexpression 
+  is a functioncall, otherwise false.
+  Note: the der and pre operators are represented 
+        as function calls but still returns false."
   input Exp inExp;
   output Boolean outBoolean;
 algorithm 
@@ -5209,12 +5183,11 @@ algorithm
   end matchcontinue;
 end containFunctioncall;
 
-public function unelabExp "function: unelabExp
- 
+public function unelabExp 
+"function: unelabExp 
   Transform an Exp into Absyn.Exp. 
-  Note: This function currently only works for constants and component 
-  references.
-"
+  Note: This function currently only works for 
+        constants and component references."
   input Exp inExp;
   output Absyn.Exp outExp;
 algorithm 
@@ -5247,10 +5220,9 @@ algorithm
   end matchcontinue;
 end unelabExp;
 
-public function unelabCref "function: unelabCref
- 
-  Helper function to unelab_exp, handles component references.
-"
+public function unelabCref 
+"function: unelabCref 
+  Helper function to unelabExp, handles component references."
   input ComponentRef inComponentRef;
   output Absyn.ComponentRef outComponentRef;
 algorithm 
@@ -5276,10 +5248,9 @@ algorithm
   end matchcontinue;
 end unelabCref;
 
-protected function unelabSubscripts "function: unelabSubscripts
- 
-  Helper function to unelab_cref, handles subscripts.
-"
+protected function unelabSubscripts 
+"function: unelabSubscripts 
+  Helper function to unelabCref, handles subscripts."
   input list<Subscript> inSubscriptLst;
   output list<Absyn.Subscript> outAbsynSubscriptLst;
 algorithm 
@@ -5311,11 +5282,10 @@ algorithm
   end matchcontinue;
 end unelabSubscripts;
 
-public function toExpCref "function: toExpCref
- 
+public function toExpCref 
+"function: toExpCref 
   Translate an Absyn.ComponentRef into a ComponentRef.
-  Note: Only support for indexed subscripts of integers
-"
+  Note: Only support for indexed subscripts of integers"
   input Absyn.ComponentRef inComponentRef;
   output ComponentRef outComponentRef;
 algorithm 
@@ -5341,10 +5311,9 @@ algorithm
   end matchcontinue;
 end toExpCref;
 
-protected function toExpCrefSubs "function: toExpCrefSubs
- 
-  Helper function to to_exp_cref.
-"
+protected function toExpCrefSubs 
+"function: toExpCrefSubs 
+  Helper function to toExpCref."
   input list<Absyn.Subscript> inAbsynSubscriptLst;
   output list<Subscript> outSubscriptLst;
 algorithm 
@@ -5382,13 +5351,12 @@ algorithm
   end matchcontinue;
 end toExpCrefSubs;
 
-protected function subscriptsAppend "function: subscriptsAppend
- 
+protected function subscriptsAppend 
+"function: subscriptsAppend 
   This function takes a subscript list and adds a new subscript.
   But there are a few special cases.  When the last existing
-  subscript is a slice, it is replaced by the slice indexed by the
-  new subscript.
-"
+  subscript is a slice, it is replaced by the slice indexed by 
+  the new subscript."
   input list<Subscript> inSubscriptLst;
   input Integer inInteger;
   output list<Subscript> outSubscriptLst;
@@ -5416,13 +5384,15 @@ algorithm
   end matchcontinue;
 end subscriptsAppend;
 
-public function typeString "
-  - Printing expressions
- 
-  This module provides some functions to print data to the standard
-  output.  This is used for error messages, and for debugging the
-  semantic description.
-"
+/*
+ * - Printing expressions 
+ *   This module provides some functions to print data to the standard
+ *   output.  This is used for error messages, and for debugging the
+ *   semantic description.
+ */
+public function typeString 
+"function typeString
+  Converts a type into a String"
   input Type inType;
   output String outString;
 algorithm 
@@ -5441,6 +5411,11 @@ algorithm
     case BOOL() then "BOOL"; 
     case STRING() then "STRING"; 
     case OTHER() then "OTHER"; 
+    case (T_RECORD(name = s1))
+      equation
+        s2 = stringAppend("RECORD ", s1);
+      then
+        s2;
     case (T_ARRAY(ty = t,arrayDimensions = dims))
       equation 
         ss = Util.listMap(Util.listMap1(dims, Util.applyOption,int_string),Util.stringOption);
@@ -5452,10 +5427,9 @@ algorithm
   end matchcontinue;
 end typeString;
 
-public function printComponentRef "function: printComponentRef
- 
-  Print a `ComponentRef\'.
-"
+public function printComponentRef 
+"function: printComponentRef 
+  Print a ComponentRef."
   input ComponentRef inComponentRef;
 algorithm 
   _:=
@@ -5488,10 +5462,9 @@ algorithm
   end matchcontinue;
 end printComponentRef;
 
-protected function printComponentRef2 "function: printComponentRef2
- 
-  Helper function to print_component_ref
-"
+protected function printComponentRef2 
+"function: printComponentRef2 
+  Helper function to printComponentRef"
   input String inString;
   input list<Subscript> inSubscriptLst;
 algorithm 
@@ -5526,10 +5499,9 @@ algorithm
   end matchcontinue;
 end printComponentRef2;
 
-public function printSubscript "function: printSubscript
- 
-  Print a `Subscript\'.
-"
+public function printSubscript 
+"function: printSubscript 
+  Print a Subscript."
   input Subscript inSubscript;
 algorithm 
   _:=
@@ -5553,19 +5525,17 @@ algorithm
   end matchcontinue;
 end printSubscript;
 
-public function printExp "function: printExp
- 
-  This function prints a complete expression.
-"
+public function printExp 
+"function: printExp 
+  This function prints a complete expression."
   input Exp e;
 algorithm 
   printExp2(e, 0);
 end printExp;
 
-protected function printExp2 "function: printExp2
- 
-  Helper function to print_exp.
-"
+protected function printExp2 
+"function: printExp2 
+  Helper function to printExp."
   input Exp inExp;
   input Integer inInteger;
 algorithm 
@@ -5703,7 +5673,8 @@ algorithm
         ();
     case (ARRAY(array = es),_)
       equation 
-        Print.printBuf("{") "Print.printBuf \"This an array: \" &" ;
+        Print.printBuf("{") 
+        "Print.printBuf \"This an array: \" &" ;
         printList(es, printExp, ",");
         Print.printBuf("}");
       then
@@ -5799,7 +5770,7 @@ algorithm
       then
         ();  
       
-        // MetaModelica list 
+    // MetaModelica list 
     case (LIST(_,es),_)
       local list<Exp> es;
       equation 
@@ -5809,7 +5780,7 @@ algorithm
       then
         ();  
         
-        // MetaModelica list cons 
+    // MetaModelica list cons 
     case (CONS(_,e1,e2),_)
       equation 
         Print.printBuf("cons(");
@@ -5828,10 +5799,9 @@ algorithm
   end matchcontinue;
 end printExp2;
 
-protected function printLeftpar "function: printLeftpar
- 
-  Print a left paranthesis if priorities require it.
-"
+protected function printLeftpar 
+"function: printLeftpar 
+  Print a left paranthesis if priorities require it."
   input Integer inInteger1;
   input Integer inInteger2;
   output Integer outInteger;
@@ -5849,10 +5819,9 @@ algorithm
   end matchcontinue;
 end printLeftpar;
 
-protected function printRightpar "function: print_leftpar
- 
-  Print a left paranthesis if priorities require it.
-"
+protected function printRightpar 
+"function: printRightpar 
+  Print a left paranthesis if priorities require it."
   input Integer inInteger1;
   input Integer inInteger2;
 algorithm 
@@ -5869,18 +5838,17 @@ algorithm
   end matchcontinue;
 end printRightpar;
 
-public function binopPriority "function: binopPriority
- 
-  Returns a priority number for each operator. Used to determine when
-  parenthesis in expressions is required.
-  priorities:
- 
+public function binopPriority 
+"function: binopPriority 
+  Returns a priority number for each operator. 
+  Used to determine when parenthesis in expressions is required.
+  Priorities:
     and, or		10
     not		11
     <, >, =, != etc.	21
     bin +		32
     bin -		33
-    			35
+    *			35
     /			36
     unary +, unary -	37
     ^			38
@@ -5888,12 +5856,11 @@ public function binopPriority "function: binopPriority
     {}		51
  
   LS: Changed precedence for unary +-
-   which must be higher than binary operators but lower than power
-   according to e.g. matlab 
+      which must be higher than binary operators but lower than power
+      according to e.g. matlab 
  
   LS: Changed precedence for binary - , should be higher than + and also
-   itself, but this is specially handled in print_exp2 and print_exp2_str 
-"
+      itself, but this is specially handled in printExp2 and printExp2Str"
   input Operator inOperator;
   output Integer outInteger;
 algorithm 
@@ -5914,10 +5881,9 @@ algorithm
   end matchcontinue;
 end binopPriority;
 
-public function unaryopPriority "function: unaryopPriority
- 
-  Determine unary operator priorities, see binop_priority.
-"
+public function unaryopPriority 
+"function: unaryopPriority 
+  Determine unary operator priorities, see binopPriority."
   input Operator inOperator;
   output Integer outInteger;
 algorithm 
@@ -5930,10 +5896,10 @@ algorithm
   end matchcontinue;
 end unaryopPriority;
 
-public function lbinopPriority "function: lbinopPriority
- 
-  Determine logical binary operator priorities, see binop_priority.
-"
+public function lbinopPriority 
+"function: lbinopPriority 
+  Determine logical binary operator 
+  priorities, see binopPriority."
   input Operator inOperator;
   output Integer outInteger;
 algorithm 
@@ -5944,10 +5910,10 @@ algorithm
   end matchcontinue;
 end lbinopPriority;
 
-public function lunaryopPriority "function: lunaryopPriority
- 
-  Determine logical unary operator priorities, see binop_priority.
-"
+public function lunaryopPriority 
+"function: lunaryopPriority
+  Determine logical unary operator 
+  priorities, see binopPriority."
   input Operator inOperator;
   output Integer outInteger;
 algorithm 
@@ -5957,10 +5923,10 @@ algorithm
   end matchcontinue;
 end lunaryopPriority;
 
-public function relopPriority "function: relopPriority
- 
-  Determine function operator priorities, see binop_priority.
-"
+public function relopPriority 
+"function: relopPriority 
+  Determine function operator 
+  priorities, see binopPriority."
   input Operator inOperator;
   output Integer outInteger;
 algorithm 
@@ -5975,9 +5941,9 @@ algorithm
   end matchcontinue;
 end relopPriority;
 
-public function makeRealAdd "function: makeRealAdd
-  Construct an add node of the two expressions of type REAL
-"
+public function makeRealAdd 
+"function: makeRealAdd
+  Construct an add node of the two expressions of type REAL."
   input Exp inExp1;
   input Exp inExp2;
   output Exp outExp;
@@ -5989,10 +5955,9 @@ algorithm
   end matchcontinue;
 end makeRealAdd;
 
-public function makeRealArray "function: makeRealArray
- 
-  Construct an array node of an Exp list of type REAL
-"
+public function makeRealArray 
+"function: makeRealArray
+  Construct an array node of an Exp list of type REAL."
   input list<Exp> inExpLst;
   output Exp outExp;
 algorithm 
@@ -6003,10 +5968,9 @@ algorithm
   end matchcontinue;
 end makeRealArray;
 
-public function binopSymbol "function: binopSymbol
- 
-  Return a string representation of the Operator.
-"
+public function binopSymbol 
+"function: binopSymbol
+  Return a string representation of the Operator."
   input Operator inOperator;
   output String outString;
 algorithm 
@@ -6030,10 +5994,9 @@ algorithm
   end matchcontinue;
 end binopSymbol;
 
-public function binopSymbol1 "function: binopSymbol1
- 
-  Helper function to binop_symbol
-"
+public function binopSymbol1 
+"function: binopSymbol1 
+  Helper function to binopSymbol"
   input Operator inOperator;
   output String outString;
 algorithm 
@@ -6054,10 +6017,9 @@ algorithm
   end matchcontinue;
 end binopSymbol1;
 
-protected function binopSymbol2 "function: binopSymbol2
- 
-  Helper function to binop_symbol.
-"
+protected function binopSymbol2 
+"function: binopSymbol2 
+  Helper function to binopSymbol."
   input Operator inOperator;
   output String outString;
 algorithm 
@@ -6103,10 +6065,9 @@ algorithm
   end matchcontinue;
 end binopSymbol2;
 
-public function unaryopSymbol "function: unaryopSymbol
- 
-  Return string representation of unary operators.
-"
+public function unaryopSymbol 
+"function: unaryopSymbol 
+  Return string representation of unary operators."
   input Operator inOperator;
   output String outString;
 algorithm 
@@ -6119,10 +6080,9 @@ algorithm
   end matchcontinue;
 end unaryopSymbol;
 
-public function lbinopSymbol "function: lbinopSymbol
- 
-  Return string representation of logical binary operator.
-"
+public function lbinopSymbol 
+"function: lbinopSymbol 
+  Return string representation of logical binary operator."
   input Operator inOperator;
   output String outString;
 algorithm 
@@ -6133,12 +6093,9 @@ algorithm
   end matchcontinue;
 end lbinopSymbol;
 
-
-
-public function lunaryopSymbol "function: lunaryopSymbol
- 
-  Return string representation of logical unary operator.
-"
+public function lunaryopSymbol 
+"function: lunaryopSymbol 
+  Return string representation of logical unary operator."
   input Operator inOperator;
   output String outString;
 algorithm 
@@ -6148,13 +6105,9 @@ algorithm
   end matchcontinue;
 end lunaryopSymbol;
 
-
-
-
-public function relopSymbol "function: relopSymbol
- 
-  Return string representation of function operator.
-"
+public function relopSymbol 
+"function: relopSymbol 
+  Return string representation of function operator."
   input Operator inOperator;
   output String outString;
 algorithm 
@@ -6169,13 +6122,10 @@ algorithm
   end matchcontinue;
 end relopSymbol;
 
-
-
-public function printList "function: printList
- 
-  Print a list of values given a print-function and a separator
-  string.
-"
+public function printList 
+"function: printList 
+  Print a list of values given a print 
+  function and a separator string."
   input list<Type_a> inTypeALst;
   input FuncTypeType_aTo inFuncTypeTypeATo;
   input String inString;
@@ -6207,10 +6157,9 @@ algorithm
   end matchcontinue;
 end printList;
 
-protected function printRow "function: printRow
- 
-  Print a list of expressions to the Print buffer.
-"
+protected function printRow 
+"function: printRow 
+  Print a list of expressions to the Print buffer."
   input list<tuple<Exp, Boolean>> es;
   list<Exp> es_1;
 algorithm 
@@ -6218,24 +6167,17 @@ algorithm
   printList(es_1, printExp, ",");
 end printRow;
 
-
-
-public function printComponentRefStr "function: print_component_ref
- 
-  Print a `ComponentRef\'.
- 
- 
+public function printComponentRefStr 
+"function: print_component_ref 
+  Print a ComponentRef.
   LS: print functions that return a string instead of printing 
-  Had to duplicate the huge print_exp2 and modify              
-  An alternative would be to implement \"sprint\" somehow        
-  which would need internal state, with reset and              
-  get_string methods                                           
-                                                               
-  Once these are tested and ok, the print_exp above can be    
-  replaced by a call to these _str functions and printing      
-  the result.                                                  
- 
-"
+      Had to duplicate the huge printExp2 and modify.              
+      An alternative would be to implement sprint somehow        
+      which would need internal state, with reset and              
+      getString methods.                                           
+      Once these are tested and ok, the printExp above can 
+      be replaced by a call to these _str functions and 
+      printing the result."
   input ComponentRef inComponentRef;
   output String outString;
 algorithm 
@@ -6273,10 +6215,9 @@ algorithm
   end matchcontinue;
 end printComponentRefStr;
 
-protected function printComponentRef2Str "function: printComponentRef2Str
- 
-  Helper function to print_component_ref_str.
-"
+protected function printComponentRef2Str 
+"function: printComponentRef2Str 
+  Helper function to printComponentRefStr."
   input Ident inIdent;
   input list<Subscript> inSubscriptLst;
   output String outString;
@@ -6308,11 +6249,10 @@ algorithm
   end matchcontinue;
 end printComponentRef2Str;
 
-public function printListStr "function: printListStr
- 
-  Same as print_list, except it returns a string
-  instead of printing
-"
+public function printListStr 
+"function: printListStr 
+  Same as printList, except it returns 
+  a string instead of printing."
   input list<Type_a> inTypeALst;
   input FuncTypeType_aToString inFuncTypeTypeAToString;
   input String inString;
@@ -6347,10 +6287,9 @@ algorithm
   end matchcontinue;
 end printListStr;
 
-public function printSubscriptStr "function: printSubscriptStr
- 
-  Print a `Subscript\'.
-"
+public function printSubscriptStr 
+"function: printSubscriptStr 
+  Print a Subscript into a String."
   input Subscript inSubscript;
   output String outString;
 algorithm 
@@ -6373,27 +6312,27 @@ algorithm
   end matchcontinue;
 end printSubscriptStr;
 
-public function printExpListStr "prints a list of expressions with commas between expressions."
+public function printExpListStr 
+"functionExpListStr
+ prints a list of expressions with commas between expressions."
   input list<Exp> expl;
   output String res;
 algorithm
   res := Util.stringDelimitList(Util.listMap(expl,printExpStr),", ");  
 end printExpListStr;
   
-public function printExpStr "function: printExpStr
- 
-  This function prints a complete expression.
-"
+public function printExpStr 
+"function: printExpStr
+  This function prints a complete expression."
   input Exp e;
   output String s;
 algorithm 
   s := printExp2Str(e);
 end printExpStr;
 
-protected function printExp2Str "function: printExp2Str
- 
-  Helper function to print_exp_str.
-"
+protected function printExp2Str 
+"function: printExp2Str 
+  Helper function to printExpStr."
   input Exp inExp;
   output String outString;
 algorithm 
@@ -6662,11 +6601,10 @@ algorithm
   end matchcontinue;
 end printExp2Str;
 
-public function parenthesize "function: parenthesize
- 
-  Adds parentheisis to a string if expression and parent expression 
-  priorities requires it.
-"
+public function parenthesize 
+"function: parenthesize 
+  Adds parentheisis to a string if expression 
+  and parent expression priorities requires it."
   input String inString1;
   input Integer inInteger2;
   input Integer inInteger3;
@@ -6687,11 +6625,12 @@ algorithm
   end matchcontinue;
 end parenthesize;
 
-
-public function expPriority "function: expPriority
- Returns a priority number for an expression.
- This function is used to output parenthesis when needed, e.g., 3(1+2) should output 3(1+2) 
- and not 31+2."
+public function expPriority 
+"function: expPriority
+  Returns a priority number for an expression.
+  This function is used to output parenthesis 
+  when needed, e.g., 3(1+2) should output 3(1+2) 
+                     and not 31+2."
   input Exp inExp;
   output Integer outInteger;
 algorithm 
@@ -6742,10 +6681,9 @@ algorithm
 end expPriority;
 
 
-public function printRowStr "function: printRowStr
- 
-  Prints a list of expressions to a string.
-"
+public function printRowStr 
+"function: printRowStr 
+  Prints a list of expressions to a string."
   input list<tuple<Exp, Boolean>> es;
   output String s;
   list<Exp> es_1;
@@ -6754,13 +6692,9 @@ algorithm
   s := printListStr(es_1, printExpStr, ",");
 end printRowStr;
 
-
-
-
-public function printLeftparStr "function: printLeftparStr
- 
-  Print a left parenthesis to a string if priorities require it.
-"
+public function printLeftparStr 
+"function: printLeftparStr 
+  Print a left parenthesis to a string if priorities require it."
   input Integer inInteger1;
   input Integer inInteger2;
   output String outString;
@@ -6778,10 +6712,10 @@ algorithm
   end matchcontinue;
 end printLeftparStr;
 
-public function printRightparStr "function: printRightparStr
- 
-  Print a right parenthesis to a string if priorities require it.
-"
+public function printRightparStr 
+"function: printRightparStr
+  Print a right parenthesis to a 
+  string if priorities require it."
   input Integer inInteger1;
   input Integer inInteger2;
   output String outString;
@@ -6798,10 +6732,30 @@ algorithm
   end matchcontinue;
 end printRightparStr;
 
-public function expEqual "function: expEqual
- 
-  Returns true if the two expressions are equal.
-"
+/*
+public function expEqual 
+"function: expEqual 
+  Returns true if the two expressions are equal."
+  input Exp inExp1;
+  input Exp inExp2;
+  output Boolean outBoolean;
+algorithm 
+  outBoolean:= matchcontinue (inExp1,inExp2)
+    case (inExp1,inExp2)
+      equation
+        equality(inExp1 = inExp2);
+      then true; 
+    case (inExp1,inExp2)
+      equation
+        failure(equality(inExp1 = inExp2));
+      then false; 
+  end matchcontinue;
+end expEqual;
+*/
+
+public function expEqual 
+"function: expEqual 
+  Returns true if the two expressions are equal."
   input Exp inExp1;
   input Exp inExp2;
   output Boolean outBoolean;
@@ -6906,9 +6860,16 @@ algorithm
         res = Util.boolAndList(bs);
       then
         res;
-    case (MATRIX(ty = _),MATRIX(ty = _))
+    case (e1 as MATRIX(ty = _), e2 as MATRIX(ty = _))
       equation 
-        Debug.fprint("failtrace","exp_equal for MATRIX not impl. yet.\n");
+        equality(e1 = e2);
+        //Debug.fprint("failtrace","exp_equal for MATRIX not impl. yet.\n");
+      then
+        true;
+    case (e1 as MATRIX(ty = _), e2 as MATRIX(ty = _))
+      equation 
+        failure(equality(e1 = e2));
+        //Debug.fprint("failtrace","exp_equal for MATRIX not impl. yet.\n");
       then
         false;
     case (RANGE(ty = tp1,exp = e11,expOption = NONE,range = e13),RANGE(ty = tp2,exp = e21,expOption = NONE,range = e23))
@@ -6976,10 +6937,9 @@ algorithm
   end matchcontinue;
 end expEqual;
 
-protected function operatorEqual "function: operatorEqual
- 
-  Helper function to exp_equal.
-"
+protected function operatorEqual 
+"function: operatorEqual 
+  Helper function to expEqual."
   input Operator inOperator1;
   input Operator inOperator2;
   output Boolean outBoolean;
@@ -7023,7 +6983,8 @@ algorithm
   end matchcontinue;
 end operatorEqual;
 
-public function replaceExpListOpt "similar to replaceExpList but with Option<Exp> instead of Exp."
+public function replaceExpListOpt 
+"similar to replaceExpList but with Option<Exp> instead of Exp."
   input Option<Exp> inExp1;
   input list<Exp> s;
   input list<Exp> t;
@@ -7040,13 +7001,13 @@ algorithm
   end matchcontinue; 
 end replaceExpListOpt;  
 
-public function replaceExpList "function: replaceExpList.
- 
+public function replaceExpList 
+"function: replaceExpList. 
   Replaces an expression with a list of several expressions. 
-  NOTE: Not repreteadly applied, so the source and target lists must be 
-  disjunct Useful for instance when replacing several variables at once 
-  in an expression. 
-"
+  NOTE: Not repreteadly applied, so the source and target 
+        lists must be disjunct.
+  Useful for instance when replacing several 
+  variables at once in an expression."
   input Exp inExp1;
   input list<Exp> inExpLst2;
   input list<Exp> inExpLst3;
@@ -7070,10 +7031,9 @@ algorithm
   end matchcontinue;
 end replaceExpList;
 
-public function replaceExp "function: replaceExp
- 
-  Helper function to replace_exp_list.
-"
+public function replaceExp 
+"function: replaceExp 
+  Helper function to replaceExpList."
   input Exp inExp1;
   input Exp inExp2;
   input Exp inExp3;
@@ -7209,7 +7169,7 @@ algorithm
     case (CODE(code = a,ty = b),source,target)
       local Type b;
       equation 
-        Debug.fprint("failtrace","replace_exp on CODE not impl.\n");
+        Debug.fprint("failtrace","-Exp.replaceExp on CODE not implemented.\n");
       then
         (CODE(a,b),0);
     case (REDUCTION(path = p,expr = e,ident = id,range = r),source,target)
@@ -7223,11 +7183,11 @@ algorithm
   end matchcontinue;
 end replaceExp;
 
-protected function replaceExpMatrix "function: replaceExpMatrix
-  author: PA
- 
-  Helper function to replace_exp, traverses Matrix expression list.
-"
+protected function replaceExpMatrix 
+"function: replaceExpMatrix
+  author: PA 
+  Helper function to replaceExp, 
+  traverses Matrix expression list."
   input list<list<tuple<Exp, Boolean>>> inTplExpBooleanLstLst1;
   input Exp inExp2;
   input Exp inExp3;
@@ -7251,17 +7211,16 @@ algorithm
         ((e_1 :: es_1),c);
     case (_,_,_)
       equation 
-        Debug.fprint("failtrace", "-replace_exp_matrix failed\n");
+        Debug.fprint("failtrace", "-Exp.replaceExpMatrix failed\n");
       then
         fail();
   end matchcontinue;
 end replaceExpMatrix;
 
-protected function replaceExpMatrix2 "function: replaceExpMatrix2
-  author: PA
- 
-  Helper function to replace_exp_matrix
-"
+protected function replaceExpMatrix2 
+"function: replaceExpMatrix2
+  author: PA 
+  Helper function to replaceExpMatrix"
   input list<tuple<Exp, Boolean>> inTplExpBooleanLst1;
   input Exp inExp2;
   input Exp inExp3;
@@ -7286,13 +7245,12 @@ algorithm
   end matchcontinue;
 end replaceExpMatrix2;
 
-public function crefIsFirstArrayElt "function: crefIsFirstArrayElt
- 
+public function crefIsFirstArrayElt 
+"function: crefIsFirstArrayElt 
   This function returns true for component references that
   are arrays and references the first element of the array.
   like for instance a.b{1,1} and a{1} returns true but
-  a.b{1,2} or a{2} returns false.
-"
+  a.b{1,2} or a{2} returns false."
   input ComponentRef inComponentRef;
   output Boolean outBoolean;
 algorithm 
@@ -7315,13 +7273,11 @@ algorithm
   end matchcontinue;
 end crefIsFirstArrayElt;
 
-public function stringifyComponentRef "function: stringifyComponentRef
- 
-  Translates a ComponentRef into a CREF_IDENT by putting the string
-  representation of the ComponentRef into it.
-  
-  See also stringigy_crefs.
-"
+public function stringifyComponentRef 
+"function: stringifyComponentRef 
+  Translates a ComponentRef into a CREF_IDENT by putting 
+  the string representation of the ComponentRef into it.  
+  See also stringigyCrefs."
   input ComponentRef cr;
   output ComponentRef outComponentRef;
   list<Subscript> subs;
@@ -7334,13 +7290,12 @@ algorithm
   outComponentRef := CREF_IDENT(crs,subs);
 end stringifyComponentRef;
 
-public function stringifyCrefs "function: stringifyCrefs
- 
-  This function takes an expression and transforms all component reference 
-  names contained in the expression to a simpler form.
+public function stringifyCrefs 
+"function: stringifyCrefs 
+  This function takes an expression and transforms all component 
+  reference names contained in the expression to a simpler form.
   For instance CREF_QUAL(\"a\",{}, CREF_IDENT(\"b\",{})) becomes
-  CREF_IDENT(\"a.b\",{})
-"
+  CREF_IDENT(\"a.b\",{})"
   input Exp inExp;
   output Exp outExp;
 algorithm 
@@ -7470,11 +7425,11 @@ algorithm
   end matchcontinue;
 end stringifyCrefs;
 
-protected function stringifyCrefsMatrix "function: stringifyCrefsMatrix
-  author: PA
- 
-  Helper function to stringify_crefs. Handles matrix expresion list.
-"
+protected function stringifyCrefsMatrix 
+"function: stringifyCrefsMatrix
+  author: PA 
+  Helper function to stringifyCrefs. 
+  Handles matrix expresion list."
   input list<list<tuple<Exp, Boolean>>> inTplExpBooleanLstLst;
   output list<list<tuple<Exp, Boolean>>> outTplExpBooleanLstLst;
 algorithm 
@@ -7493,11 +7448,10 @@ algorithm
   end matchcontinue;
 end stringifyCrefsMatrix;
 
-protected function stringifyCrefsMatrix2 "function: stringifyCrefsMatrix2
-  author: PA
- 
-  Helper function to stringify_crefs_matrix
-"
+protected function stringifyCrefsMatrix2 
+"function: stringifyCrefsMatrix2
+  author: PA 
+  Helper function to stringifyCrefsMatrix"
   input list<tuple<Exp, Boolean>> inTplExpBooleanLst;
   output list<tuple<Exp, Boolean>> outTplExpBooleanLst;
 algorithm 
@@ -7517,10 +7471,9 @@ algorithm
   end matchcontinue;
 end stringifyCrefsMatrix2;
 
-public function dumpExpGraphviz "function: dumpExpGraphviz
- 
-  Creates a Graphviz Node from an Expression.
-"
+public function dumpExpGraphviz 
+"function: dumpExpGraphviz 
+  Creates a Graphviz Node from an Expression."
   input Exp inExp;
   output Graphviz.Node outNode;
 algorithm 
@@ -7676,10 +7629,9 @@ algorithm
   end matchcontinue;
 end dumpExpGraphviz;
 
-protected function genStringNTime "function:get_string_n_time
- 
-  Appends the string to itself n times.
-"
+protected function genStringNTime 
+"function:getStringNTime 
+  Appends the string to itself n times."
   input String inString;
   input Integer inInteger;
   output String outString;
@@ -7700,10 +7652,9 @@ algorithm
   end matchcontinue;
 end genStringNTime;
 
-public function dumpExpStr "function: dumpExpStr
- 
-  Dumps expression to a string.
-"
+public function dumpExpStr 
+"function: dumpExpStr 
+  Dumps expression to a string."
   input Exp inExp;
   input Integer inInteger;
   output String outString;
@@ -7954,12 +7905,11 @@ algorithm
   end matchcontinue;
 end dumpExpStr;
 
-public function solve "function: solve
- 
-  Solves an equation consisting of a right hand side (rhs) and a left hand 
-  side (lhs), with respect to the expression given as third argument, 
-  usually a variable. 
-"
+public function solve 
+"function: solve 
+  Solves an equation consisting of a right hand side (rhs) and a 
+  left hand side (lhs), with respect to the expression given as 
+  third argument, usually a variable."
   input Exp inExp1;
   input Exp inExp2;
   input Exp inExp3;
@@ -7970,15 +7920,17 @@ algorithm
     local
       Exp crexp,rhs,lhs,res,res_1,cr,e1,e2,e3,tb,fb,cond;
       ComponentRef cr1,cr2;
-    case ((crexp as CREF(componentRef = cr1)),rhs,CREF(componentRef = cr2)) /* lhs, rhs, solve for Special case when already solved, cr1 = rhs
-	    otherwise division by zero when dividing with derivative */ 
+    case ((crexp as CREF(componentRef = cr1)),rhs,CREF(componentRef = cr2)) 
+      /* lhs, rhs, solve for Special case when already solved, cr1 = rhs
+	       otherwise division by zero when dividing with derivative */ 
       equation 
         true = crefEqual(cr1, cr2);
         false = expContains(rhs, crexp);
       then
         rhs;
-    case (lhs,(crexp as CREF(componentRef = cr1)),CREF(componentRef = cr2)) /* Special case when already solved, lhs = cr1
- 	  otherwise division by zero  when dividing with derivative */ 
+    case (lhs,(crexp as CREF(componentRef = cr1)),CREF(componentRef = cr2)) 
+      /* Special case when already solved, lhs = cr1
+         otherwise division by zero  when dividing with derivative */ 
       equation 
         true = crefEqual(cr1, cr2);
         false = expContains(lhs, crexp);
@@ -7998,17 +7950,16 @@ algorithm
           IFEXP(cond,res,res_1);
     case (e1,e2,e3)
       equation 
-        Debug.fprint("failtrace", "solve failed\n");
+        Debug.fprint("failtrace", "-Exp.solve failed\n");
       then
         fail();
   end matchcontinue;
 end solve;
 
-protected function solve2 "function: solve2
- 
-  This function solves an equation e1 = e2 with respect to the variable
-  given as an expression e3 
-"
+protected function solve2 
+"function: solve2
+  This function solves an equation e1 = e2 with 
+  respect to the variable given as an expression e3"
   input Exp inExp1;
   input Exp inExp2;
   input Exp inExp3;
@@ -8042,7 +7993,7 @@ algorithm
         lhsder = Derive.differentiateExpCont(lhs, cr);
         lhsder_1 = simplify(lhsder);
         true = expContains(lhsder_1, crexp);
-        Print.printBuf("solve2 failed: Not linear: ");
+        Print.printBuf("-Exp.solve2 failed: Not linear: ");
         printExp(e1);
         Print.printBuf(" = ");
         printExp(e2);
@@ -8059,7 +8010,7 @@ algorithm
         lhs = BINARY(e1,SUB(REAL()),e2);
         lhsder = Derive.differentiateExpCont(lhs, cr);
         lhsder_1 = simplify(lhsder);
-        Print.printBuf("solve2 failed: ");
+        Print.printBuf("-Exp.solve2 failed: ");
         printExp(e1);
         Print.printBuf(" = ");
         printExp(e2);
@@ -8073,11 +8024,10 @@ algorithm
   end matchcontinue;
 end solve2;
 
-public function getTermsContainingX "function getTermsContainingX
- 
-  Retrieves all terms of an expression containng a variable, given
-  as second argument (in the form of an Exp)
-"
+public function getTermsContainingX 
+"function getTermsContainingX 
+  Retrieves all terms of an expression containng a variable, 
+  given as second argument (in the form of an Exp)"
   input Exp inExp1;
   input Exp inExp2;
   output Exp outExp1;
@@ -8128,7 +8078,7 @@ algorithm
         (xt,nonxt);
     case (e,cr)
       equation 
-        Print.printBuf("get_terms_containing_x failed: ");
+        Print.printBuf("-Exp.getTermsContainingX failed: ");
         printExp(e);
         Print.printBuf("\nsolving for: ");
         printExp(cr);
@@ -8138,13 +8088,13 @@ algorithm
   end matchcontinue;
 end getTermsContainingX;
 
-public function expContains "function: expContains
-  
-  Returns true if first expression contains the second one as a sub
-  expression.
-  Only component references can be checked so far,
-   i.e. check whether an expression contains a given component reference 
-"
+public function expContains 
+"function: expContains  
+  Returns true if first expression contains the 
+  second one as a sub expression. Only component 
+  references can be checked so far, i.e. check 
+  whether an expression contains a given component 
+  reference "
   input Exp inExp1;
   input Exp inExp2;
   output Boolean outBoolean;
@@ -8255,7 +8205,7 @@ algorithm
         res;
     case (e,cr)
       equation 
-        Debug.fprint("failtrace", "-exp_contains failed\n");
+        Debug.fprint("failtrace", "-Exp.expContains failed\n");
         s = printExpStr(e);
         str = Util.stringAppendList({"exp = ",s,"\n"});
         Debug.fprint("failtrace", str);
@@ -8264,11 +8214,10 @@ algorithm
   end matchcontinue;
 end expContains;
 
-public function getCrefFromExp "function: getCrefFromExp
- 
-  Return a list of all component references occuring in the
-  expression.
-"
+public function getCrefFromExp 
+"function: getCrefFromExp 
+  Return a list of all component 
+  references occuring in the expression."
   input Exp inExp;
   output list<ComponentRef> outComponentRefLst;
 algorithm 
@@ -8369,7 +8318,8 @@ algorithm
         res;
     case (TUPLE(PR = expl))
       equation 
-        Print.printBuf("Not implemented yet\n") "Util.list_map(expl,get_cref_from_exp) => res" ;
+        Print.printBuf("Exp.getCrefFromExp(Exp.TUPLE(...)): Not implemented yet\n") 
+        "Util.list_map(expl,get_cref_from_exp) => res" ;
       then
         {};
     case (CAST(exp = e))
@@ -8383,7 +8333,7 @@ algorithm
       then
         res; 
            
-        /* MetaModelica list */
+    /* MetaModelica list */
     case (CONS(_,e1,e2))     
       local list<list<ComponentRef>> res;
       equation 
@@ -8411,10 +8361,9 @@ algorithm
   end matchcontinue;
 end getCrefFromExp;
 
-public function getFunctionCallsList "function: getFunctionCallsList
- 
-  calls get_function_calls for a list of exps
-"
+public function getFunctionCallsList 
+"function: getFunctionCallsList 
+  calls getFunctionCalls for a list of exps"
   input list<Exp> exps;
   output list<Exp> res;
   list<list<Exp>> explists;
@@ -8423,13 +8372,13 @@ algorithm
   res := Util.listFlatten(explists);
 end getFunctionCallsList;
 
-public function getFunctionCalls "function: getFunctionCalls
- 
+public function getFunctionCalls 
+"function: getFunctionCalls 
   Return all exps that are function calls.
-  Inner call exps are returned separately but not extracted from the exp they
-  are in, e.g. CALL(foo, {CALL(bar)}) will return
-  {CALL(foo, {CALL(bar)}), CALL(bar,{})}
-"
+  Inner call exps are returned separately but not 
+  extracted from the exp they are in, e.g. 
+    CALL(foo, {CALL(bar)}) will return
+    {CALL(foo, {CALL(bar)}), CALL(bar,{})}"
   input Exp inExp;
   output list<Exp> outExpLst;
 algorithm 
@@ -8546,11 +8495,10 @@ algorithm
   end matchcontinue;
 end getFunctionCalls;
 
-public function nthArrayExp "function: nthArrayExp
-  author: PA
- 
-  Returns the nth expression of an array expression.
-"
+public function nthArrayExp 
+"function: nthArrayExp
+  author: PA 
+  Returns the nth expression of an array expression."
   input Exp inExp;
   input Integer inInteger;
   output Exp outExp;
@@ -8569,11 +8517,10 @@ algorithm
   end matchcontinue;
 end nthArrayExp;
 
-public function expAdd "function: expAdd
-  author: PA
-  
-  Adds two scalar expressions.
-"
+public function expAdd 
+"function: expAdd
+  author: PA  
+  Adds two scalar expressions."
   input Exp e1;
   input Exp e2;
   output Exp outExp;
@@ -8584,11 +8531,10 @@ algorithm
   outExp := BINARY(e1,ADD(tp),e2);
 end expAdd;
 
-protected function expMul "function: expMul
-  author: PA
-  
-  Multiplies two scalar expressions.
-"
+protected function expMul 
+"function: expMul
+  author: PA  
+  Multiplies two scalar expressions."
   input Exp e1;
   input Exp e2;
   output Exp outExp;
@@ -8599,7 +8545,9 @@ algorithm
   outExp := BINARY(e1,MUL(tp),e2);
 end expMul;
 
-public function makeCrefExp "makes an expression of a component reference, given also a type"
+public function makeCrefExp 
+"makes an expression of a component 
+ reference, given also a type"
   input ComponentRef cref;
   input Type tp;
   output Exp e;
@@ -8607,17 +8555,17 @@ algorithm
   e := CREF(cref,tp);
 end makeCrefExp;
 
-public function makeIndexSubscript "Creates a Subscript INDEX from an Exp."
+public function makeIndexSubscript 
+"Creates a Subscript INDEX from an Exp."
   input Exp exp;
   output Subscript subscript;
 algorithm
   subscript := INDEX(exp);
 end makeIndexSubscript;
 
-public function expCref "function: expCref
- 
-  Returns the componentref if exp is a CREF,
-"
+public function expCref 
+"function: expCref 
+  Returns the componentref if exp is a CREF,"
   input Exp inExp;
   output ComponentRef outComponentRef;
 algorithm 
@@ -8628,10 +8576,9 @@ algorithm
   end matchcontinue;
 end expCref;
 
-public function expCrefTuple "function: expCrefTuple
- 
-  Returns the componentref if the expression in inTuple is a CREF,
-"
+public function expCrefTuple 
+"function: expCrefTuple 
+  Returns the componentref if the expression in inTuple is a CREF."
   input tuple<Exp, Boolean> inTuple;
   output ComponentRef outComponentRef;
 algorithm 
@@ -8643,11 +8590,10 @@ algorithm
 end expCrefTuple;
 
 
-public function traverseExp "function traverseExp
- 
+public function traverseExp 
+"function traverseExp 
   Traverses all subexpressions of an expression.
-  Takes a function and an extra argument passed through the traversal.
-"
+  Takes a function and an extra argument passed through the traversal."
   input Exp inExp;
   input FuncTypeTplExpType_aToTplExpType_a inFuncTypeTplExpTypeAToTplExpTypeA;
   input Type_a inTypeA;
@@ -8833,11 +8779,10 @@ algorithm
   end matchcontinue;
 end traverseExp;
 
-protected function traverseExpMatrix "function: traverseExpMatrix
-  author: PA
-  
-   Helper function to traverse_exp, traverses matrix expressions.
-"
+protected function traverseExpMatrix 
+"function: traverseExpMatrix
+  author: PA  
+   Helper function to traverseExp, traverses matrix expressions."
   input list<list<tuple<Exp, Boolean>>> inTplExpBooleanLstLst;
   input FuncTypeTplExpType_aToTplExpType_a inFuncTypeTplExpTypeAToTplExpTypeA;
   input Type_a inTypeA;
@@ -8867,11 +8812,10 @@ algorithm
   end matchcontinue;
 end traverseExpMatrix;
 
-protected function traverseExpMatrix2 "function: traverseExpMatrix2
-  author: PA
- 
-  Helper function to traverse_exp_matrix.
-"
+protected function traverseExpMatrix2 
+"function: traverseExpMatrix2
+  author: PA 
+  Helper function to traverseExpMatrix."
   input list<tuple<Exp, Boolean>> inTplExpBooleanLst;
   input FuncTypeTplExpType_aToTplExpType_a inFuncTypeTplExpTypeAToTplExpTypeA;
   input Type_a inTypeA;
@@ -8902,12 +8846,11 @@ algorithm
   end matchcontinue;
 end traverseExpMatrix2;
 
-protected function matrixExpMap1 "function: matrixExpMap1
-  author: PA
-  
-  Maps a function, taking one extra argument over a MATRIX expression
-  list.
-"
+protected function matrixExpMap1 
+"function: matrixExpMap1
+  author: PA  
+  Maps a function, taking one extra 
+  argument over a MATRIX expression list."
   input list<list<tuple<Exp, Boolean>>> inTplExpBooleanLstLst;
   input FuncTypeExpType_bToExp inFuncTypeExpTypeBToExp;
   input Type_b inTypeB;
@@ -8937,10 +8880,9 @@ algorithm
   end matchcontinue;
 end matrixExpMap1;
 
-protected function matrixExpMap1Help "function: matrixExpMap1Help
- 
-  Helper function to matrix_exp_map_1.
-"
+protected function matrixExpMap1Help 
+"function: matrixExpMap1Help 
+  Helper function to matrixExpMap1."
   input list<tuple<Exp, Boolean>> inTplExpBooleanLst;
   input FuncTypeExpType_bToExp inFuncTypeExpTypeBToExp;
   input Type_b inTypeB;

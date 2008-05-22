@@ -12,7 +12,7 @@
  * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
  * PUBLIC LICENSE. 
  * 
- * The OpenModelica software and the Open Source Modelica 
+ * The OpenModelica software and the Open Source 	Modelica 
  * Consortium (OSMC) Public License (OSMC-PL) are obtained 
  * from Linköpings University, either from the above address, 
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
@@ -477,7 +477,8 @@ algorithm
         (cache,DAE.DAE(dae),env);
     case (_,_,path)
       equation 
-        print("-instantiateFunctionImplicit ");print(Absyn.pathString(path));print(" failed\n");
+        name = Absyn.pathString(path);
+        Debug.fprint("failtrace", stringAppend("instantiateFunctionImplicit - failed to instantiate: ", name));        
       then
         fail();
   end matchcontinue;
@@ -7144,6 +7145,10 @@ algorithm
     case (vn,ty as(Types.T_ENUMERATION(names = l),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io) 
       then {DAE.VAR(vn,kind,dir,prot,DAE.ENUMERATION(l),e,inst_dims,fl,{}, dae_var_attr,comment,io,ty)};  
 
+          /* Complex type that is Record*/
+     case (vn, ty as (Types.T_COMPLEX(complexClassType = ClassInf.RECORD(string = s)),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io)
+       then {DAE.VAR(vn,kind,dir,prot,DAE.RECORD(s),e,inst_dims,fl,{},dae_var_attr,comment,io,ty)};
+
           /* Complex type that is ExternalObject*/
      case (vn, ty as (Types.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_),fl,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io)    
        local Absyn.Path path;
@@ -9039,16 +9044,6 @@ algorithm
       then
         (cache,sets_1,{});
         
-        /* flow - with arrays */ 
-    case (cache,sets,env,pre,c1,f1,(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(dim1)),arrayType = t1),_),c2,f2,(Types.T_ARRAY(arrayType = t2),_),true)
-      equation 
-        ((Types.T_REAL(_),_)) = Types.arrayElementType(t1);
-        ((Types.T_REAL(_),_)) = Types.arrayElementType(t2);
-        c1_1 = Prefix.prefixCref(pre, c1);
-        c2_1 = Prefix.prefixCref(pre, c2);
-        sets_1 = Connect.addArrayFlow(sets, c1_1,f1, c2_1,f2,dim1);
-      then
-        (cache,sets_1,{});
     case (cache,sets,env,pre,c1,f1,(_,_),c2,f2,(_,_),false) /* Non-flow type Parameters and constants generate assert statements */ 
       equation 
         c1_1 = Prefix.prefixCref(pre, c1);
@@ -9092,14 +9087,14 @@ algorithm
         sets_1 = Connect.addEqu(sets, c1_1, c2_1);
       then
         (cache,sets_1,{});
-    case (cache,sets,env,pre,c1,f1,(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(dim1)),arrayType = t1),_),c2,f2,(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(dim2)),arrayType = t2),_),false)
+        
+        /* Arrays */ 
+    case (cache,sets,env,pre,c1,f1,(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(dim1)),arrayType = t1),_),c2,f2,(Types.T_ARRAY(arrayDim = Types.DIM(integerOption = SOME(dim2)),arrayType = t2),_),flow_)
       equation 
-        c1_1 = Prefix.prefixCref(pre, c1);
-        c2_1 = Prefix.prefixCref(pre, c2);
         equality(dim1 = dim2);
-        sets_1 = Connect.addArrayEqu(sets, c1_1, c2_1, dim1);
+        (cache,sets_1,dae) = connectArrays(cache,sets, env, pre, c1, f1, t1, c2, f2, t2, flow_, dim1);
       then
-        (cache,sets_1,{});
+        (cache,sets_1,dae);
      
         /* Complex types extending basetype */ 
     case (cache,sets,env,pre,c1,f1,(Types.T_COMPLEX(complexVarLst = l1,complexTypeOption = SOME(bc_tp1)),_),c2,f2,t2,flow_) 
@@ -9141,6 +9136,59 @@ algorithm
         fail();
   end matchcontinue;
 end connectComponents;
+
+protected function connectArrays "function: connectArrays
+ 
+  This function connects two arrays by connecting each corresponding
+  pair of elements.
+"
+	input Env.Cache inCache;
+  input Connect.Sets inSets1;
+  input Env inEnv2;
+  input Prefix inPrefix3;
+  input Exp.ComponentRef inComponentRef4;
+  input Connect.Face inFace5;
+  input Types.Type inType6;
+  input Exp.ComponentRef inComponentRef7;
+  input Connect.Face inFace8;
+  input Types.Type inType9;
+  input Boolean inBoolean10;
+  input Integer inDimension;
+  output Env.Cache outCache;
+  output Connect.Sets outSets;
+  output list<DAE.Element> outDAEElementLst;
+algorithm 
+  (outCache,outSets,outDAEElementLst):=
+  matchcontinue (inCache,inSets1,inEnv2,inPrefix3,inComponentRef4,inFace5,inType6,inComponentRef7,inFace8,inType9,inBoolean10,inDimension)
+    local
+      Exp.ComponentRef c1_1,c2_1,c1,c2;
+      Connect.Sets sets, s1, s2;
+      list<Env.Frame> env;
+      Prefix.Prefix pre;
+      Connect.Face f1,f2;
+      tuple<Types.TType, Option<Absyn.Path>> t1,t2;
+      Integer dim;
+      list<DAE.Element> dae1, dae2, dae;
+      list<Types.Var> l1,l2;
+      Boolean flow_;      
+      Types.Type t1, t2;
+      Env.Cache cache, oCache, oCache2;      
+      
+    case (cache,sets,_,_,_,_,_,_,_,_,_,0)
+      then 
+        (cache,sets,{});
+        
+    case (cache,sets,env,pre,c1,f1,t1,c2,f2,t2,flow_,dim) 
+      equation 
+        c1_1 = Exp.subscriptCref(c1, {Exp.INDEX(Exp.ICONST(dim))});
+        c2_1 = Exp.subscriptCref(c2, {Exp.INDEX(Exp.ICONST(dim))});
+        (oCache, s1, dae1) = connectComponents(cache, sets, env, pre, c1_1, f1, t1, c2_1, f2, t2, flow_);
+        (oCache2, s2, dae2) = connectArrays(oCache, s1, env, pre, c1, f1, t1, c2, f2, t2, flow_,dim-1);
+        dae = listAppend(dae1, dae2);
+      then
+        (oCache2, s2, dae);
+  end matchcontinue;
+end connectArrays;
 
 protected function connectVars "function: connectVars
  

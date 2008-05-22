@@ -68,10 +68,10 @@ public uniontype ReplacePattern
   end REPLACEPATTERN;
 end ReplacePattern;
 
-protected constant list<ReplacePattern> replaceStringPatterns={REPLACEPATTERN(".","$point"),
-          REPLACEPATTERN("[","$leftBracket"),REPLACEPATTERN("]","$rightBracket"),
-          REPLACEPATTERN("(","$leftParanthesis"),REPLACEPATTERN(")","$rightParanthesis"),
-          REPLACEPATTERN(",","$comma")};
+protected constant list<ReplacePattern> replaceStringPatterns={REPLACEPATTERN(".","$P"),
+          REPLACEPATTERN("[","$lB"),REPLACEPATTERN("]","$rB"),
+          REPLACEPATTERN("(","$lP"),REPLACEPATTERN(")","$rP"),
+          REPLACEPATTERN(",","$c")};
 
 protected import System;
 protected import Print;
@@ -485,12 +485,15 @@ public function listMap "function: listMap
   end FuncTypeType_aToType_b;
   replaceable type Type_b subtypeof Any;
 algorithm 
-  /* implementation 0 - adrpo: seems to be the fastest */
-  outTypeBLst := listApplyAndFold(inTypeALst, applyAndAppend, inFuncTypeTypeAToTypeB, {});
+  /* implementation 0 - adrpo: seems to be the fastest 
+  outTypeBLst := listApplyAndFold(inTypeALst, applyAndAppend, inFuncTypeTypeAToTypeB, {}); */
   /* implementation 1 
-  outTypeBLst := listReverse(listApplyAndFold(inTypeALst, applyAndCons, inFuncTypeTypeAToTypeB, {}));
-  */
-  /* implementation 2
+  outTypeBLst := listReverse(listApplyAndFold(inTypeALst, applyAndCons, inFuncTypeTypeAToTypeB, {})); */
+  /* implementation 2 - adrpo: after some tests:
+     http://www.ida.liu.se/~adrpo/omc/listMapBenchmark/ 
+     THIS ONE SEEMS TO BE THE FASTESTS!!   */
+  outTypeBLst := listMap_impl_2(inTypeALst, {}, inFuncTypeTypeAToTypeB);
+  /* implementation 3 
   outTypeBLst := 
   matchcontinue (inTypeALst,inFuncTypeTypeAToTypeB)
     local
@@ -506,9 +509,39 @@ algorithm
         r_1 = listMap(r, fn);
       then
         (f_1::r_1);
-  end matchcontinue;
-  */
+  end matchcontinue; */
 end listMap;
+
+function listMap_impl_2
+"@author adrpo
+ this will work in O(2n) due to listReverse"
+  replaceable type TypeVarA subtypeof Any;
+  replaceable type TypeVarB subtypeof Any;
+  input  list<TypeVarA> inLst;
+  input  list<TypeVarB> accumulator;
+  input  FuncTypeTypeVarAToTypeVarB fn;  
+  output list<TypeVarB> outLst;
+  partial function FuncTypeTypeVarAToTypeVarB
+    input TypeVarA inTypeA;
+    output TypeVarB outTypeB;
+    replaceable type TypeVarA subtypeof Any;
+    replaceable type TypeVarB subtypeof Any;    
+  end FuncTypeTypeVarAToTypeVarB;
+algorithm
+  outLst := matchcontinue(inLst, accumulator, fn)
+    local
+      TypeVarA hd;  TypeVarB hdChanged;
+      list<TypeVarA> rest;  list<TypeVarB> l, result;
+    case ({}, l, _) then listReverse(l);
+    case (hd::rest, l, fn)
+      equation
+        hdChanged = fn(hd);
+        l = hdChanged::l;
+        result = listMap_impl_2(rest, l, fn);
+    then 
+        result;
+  end matchcontinue;
+end listMap_impl_2;
 
 public function listMap_2 "function listMap_2
   Takes a list and a function over the elements returning a tuple of 
@@ -531,8 +564,10 @@ public function listMap_2 "function listMap_2
   end FuncTypeType_aToType_bType_c;
   replaceable type Type_b subtypeof Any;
   replaceable type Type_c subtypeof Any;
-algorithm 
-  (outTypeBLst,outTypeCLst):=
+algorithm   
+  /* adrpo - tail recursive fast implementation */
+  (outTypeBLst,outTypeCLst):= listMap_2_tail(inTypeALst,inFuncTypeTypeAToTypeBTypeC, {}, {});
+  /* 
   matchcontinue (inTypeALst,inFuncTypeTypeAToTypeBTypeC)
     local
       Type_b f1_1;
@@ -550,7 +585,45 @@ algorithm
       then
         ((f1_1 :: r1_1),(f2_1 :: r2_1));
   end matchcontinue;
+  */
 end listMap_2;
+
+function listMap_2_tail
+"@author adrpo
+ this will work in O(2n) due to listReverse"
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  input  list<Type_a> inLst;
+  input FuncTypeType_aToType_bType_c fn;
+  input  list<Type_b> accumulator1;
+  input  list<Type_c> accumulator2;
+  output list<Type_b> outTypeBLst;
+  output list<Type_c> outTypeCLst;
+  partial function FuncTypeType_aToType_bType_c
+    input Type_a inTypeA;
+    output Type_b outTypeB;
+    output Type_c outTypeC;
+    replaceable type Type_b subtypeof Any;
+    replaceable type Type_c subtypeof Any;
+  end FuncTypeType_aToType_bType_c;
+algorithm
+  outLst := matchcontinue(inLst, fn, accumulator1, accumulator2)
+    local
+      Type_a hd; Type_b hdChanged1; Type_c hdChanged2;
+      list<Type_a> rest;  list<Type_b> l1, result1; list<Type_c> l2, result2;
+    case ({}, _, l1, l2) then (listReverse(l1), listReverse(l2));
+    case (hd::rest, fn, l1, l2)
+      equation
+        (hdChanged1, hdChanged2) = fn(hd);
+        l1 = hdChanged1::l1;
+        l2 = hdChanged2::l2;
+        (result1, result2) = listMap_2_tail(rest, fn, l1, l2);
+    then 
+        (result1, result2);
+  end matchcontinue;
+end listMap_2_tail;
+
 
 public function listMap1 "function listMap1
   Takes a list and a function over the list plus an extra argument sent to the function.
@@ -620,11 +693,11 @@ algorithm
       list<Type_a> r;
       FuncTypeType_aType_bToType_c fn;
       Type_b extraarg;
-    case ({},_,_,accTypeCLst) then accTypeCLst; 
+    case ({},_,_,accTypeCLst) then listReverse(accTypeCLst); 
     case ((f :: r),fn,extraarg,accTypeCLst)
       equation 
         f_1 = fn(f, extraarg);
-        accTypeCLst = listAppend(accTypeCLst, {f_1});
+        accTypeCLst = f_1::accTypeCLst;
         r_1 = listMap1_tail(r, fn, extraarg, accTypeCLst);
       then
         r_1;
@@ -697,11 +770,11 @@ algorithm
       list<Type_a> r;
       FuncTypeType_bType_aToType_c fn;
       Type_b extraarg;
-    case ({},_,_,accTypeCLst) then accTypeCLst; 
+    case ({},_,_,accTypeCLst) then listReverse(accTypeCLst); 
     case ((f :: r),fn,extraarg,accTypeCLst)
       equation 
         f_1 = fn(extraarg, f);
-        accTypeCLst = listAppend(accTypeCLst, {f_1});
+        accTypeCLst = f_1::accTypeCLst;
         r_1 = listMap1r_tail(r, fn, extraarg, accTypeCLst);
       then
         (r_1);
@@ -735,7 +808,8 @@ public function listMap2 "function listMap2
   replaceable type Type_c subtypeof Any;
   replaceable type Type_d subtypeof Any;
 algorithm 
-  outTypeDLst:=
+  outTypeDLst:= listMap2_tail(inTypeALst,inFuncTypeTypeATypeBTypeCToTypeD,inTypeB,inTypeC, {});
+  /*
   matchcontinue (inTypeALst,inFuncTypeTypeATypeBTypeCToTypeD,inTypeB,inTypeC)
     local
       Type_d f_1;
@@ -753,7 +827,48 @@ algorithm
       then
         (f_1 :: r_1);
   end matchcontinue;
+  */
 end listMap2;
+
+function listMap2_tail
+"@author adrpo
+ this will work in O(2n) due to listReverse"
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aType_bType_cToType_d fn;
+  input Type_b inTypeB;
+  input Type_c inTypeC;
+  input  list<Type_d> accumulator;  
+  output list<Type_d> outTypeDLst;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aType_bType_cToType_d
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_c inTypeC;
+    output Type_d outTypeD;
+    replaceable type Type_b subtypeof Any;
+    replaceable type Type_c subtypeof Any;
+    replaceable type Type_d subtypeof Any;
+  end FuncTypeType_aType_bType_cToType_d;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+algorithm
+  outLst := matchcontinue(inTypeALst, fn, inTypeB, inTypeC, accumulator)
+    local
+      Type_a hd; Type_d hdChanged;
+      list<Type_a> rest;  list<Type_d> l, result;
+      Type_b extraarg1;
+      Type_c extraarg2;
+    case ({}, _, _, _, l) then listReverse(l);
+    case (hd::rest, fn, extraarg1, extraarg2, l)
+      equation
+        hdChanged = fn(hd, extraarg1, extraarg2);
+        l = hdChanged::l;
+        result = listMap2_tail(rest, fn, extraarg1, extraarg2, l);
+    then 
+        result;
+  end matchcontinue;
+end listMap2_tail;
 
 public function listMap3 "function listMap3
   Takes a list and a function and three extra arguments passed to the function.
@@ -2398,7 +2513,8 @@ public function stringAppendList "function stringAppendList
   input list<String> inStringLst;
   output String outString;
 algorithm 
-  outString:=
+  outString:= stringAppendList_tail(inStringLst, "");
+  /*
   matchcontinue (inStringLst)
     local
       String f,r_1,str;
@@ -2412,7 +2528,30 @@ algorithm
       then
         str;
   end matchcontinue;
+  */
 end stringAppendList;
+
+public function stringAppendList_tail 
+"@author adrpo
+ tail recursive implmentation for stringAppendList"
+  input list<String> inStringLst;
+  input String accumulator;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inStringLst, accumulator)
+    local
+      String f,str,a;
+      list<String> r;
+    case ({}, a) then a;  
+    case (f :: r, a)
+      equation         
+        a = stringAppend(a, f);
+        str = stringAppendList_tail(r, a);
+      then
+        str;
+  end matchcontinue;
+end stringAppendList_tail;
 
 public function stringDelimitList "function stringDelimitList
   Takes a list of strings and a string delimiter and appends all 
@@ -3291,6 +3430,77 @@ algorithm
         (retString);
   end matchcontinue;
 end  rawStringToInputString;
+
+public function listProduct
+"@author adrpo
+ given 2 lists, generate a product out of them.
+ Example:
+  lst1 = {{1}, {2}}, lst2 = {{1}, {2}, {3}}
+  result = { {1, 1}, {1, 2}, {1, 3}, {2, 1}, {2, 2}, {2, 3} }"
+  input  list<list<Type_a>> inTypeALstLst1;
+  input  list<list<Type_a>> inTypeALstLst2;
+  output list<list<Type_a>> outTypeALstLst;
+  replaceable type Type_a subtypeof Any;
+algorithm 
+  outTypeALstlst := matchcontinue (inTypeALstLst1, inTypeALstLst2)
+    local
+      list<list<Type_a>> out;
+    case (inTypeALstLst1, inTypeALstLst2)
+      equation
+        out = listProduct_acc(inTypeALstLst1, inTypeALstLst2, {});       
+      then
+        out;
+  end matchcontinue;
+end listProduct;
+
+public function listProduct_acc
+"@author adrpo
+ given 2 lists, generate a product out of them in the empty accumulator given as input.
+ Example1:
+  lst1 = {{1}, {2}}, lst2 = {{1}, {2}, {3}}
+  result = { {1, 1}, {1, 2}, {1, 3}, {2, 1}, {2, 2}, {2, 3} }
+ Example2:
+  lst1 = {{1}, {2}}, lst2 = {}
+  result = { {1}, {2}, {3} }"
+  input  list<list<Type_a>> inTypeALst1;
+  input  list<list<Type_a>> inTypeALst2;
+  input  list<list<Type_a>> inTypeALstLst;
+  output list<list<Type_a>> outTypeALstLst;
+  replaceable type Type_a subtypeof Any;
+algorithm 
+  outTypeALst:=
+  matchcontinue (inTypeALst1, inTypeALst2, inTypeALstLst)
+    local
+      list<list<Type_a>> out, out1, out2, tail1, tail2;
+      list<Type_a> hd1, hd2, res;
+    case (hd1::{}, {}, inTypeALstLst)
+      equation
+        out = listMap(hd1, listCreate); 
+      then 
+        out;
+      
+    case ({}, _, inTypeALstLst)
+      equation
+         //debug_print("1 - inTypeALstLst", inTypeALstLst);
+      then 
+        inTypeALstLst;
+                       
+    case (hd1::tail1, inTypeALst2, inTypeALstLst)
+      equation
+        //debug_print("2 - hd1", hd1);
+        //debug_print("2 - tail1", tail1);
+        //debug_print("2 - inTypeALst2", inTypeALst2);
+        //debug_print("2 - inTypeALstLst", inTypeALstLst);
+        // append each element from inTypeALst2 to hd1 => { {hd1, el21}, {hd1, el22} ... } 
+        out1  = listMap1(inTypeALst2, listAppend, hd1);
+        // do the same for the rest of the elements in the list
+        out2  = listProduct_acc(tail1, inTypeALst2, out1);
+        out   = listAppend(out1, out2);
+        out   = listAppend(inTypeALstLst, out);
+      then
+        out;
+  end matchcontinue;
+end listProduct_acc;
 
 end Util;
 
