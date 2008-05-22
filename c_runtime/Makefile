@@ -39,7 +39,6 @@ LIBS = libc_runtime.a libsim.a
 ifdef QTHOME
 PLTPKGCMD =	cd ./sendData && \
 	$(QTHOME)/bin/qmake && \
-	sed -e's/QtNetwork /QtNetwork4 /' -e's/QtGui /QtGui4 /' -e's/QtCore /QtCore4 /' Makefile.Release > Makefile && \
 	$(MAKE) -f Makefile
 else
 PLTPKGCMD = mkdir -p sendData/release && \
