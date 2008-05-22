@@ -1652,10 +1652,9 @@ algorithm
   end matchcontinue;
 end printElementList;
 
-public function printElement "function: printElement
- 
-  Print Element to Print buffer.
-"
+public function printElement 
+"function: printElement 
+  Print Element to Print buffer."
   input Element elt;
   String str;
 algorithm 
@@ -1663,10 +1662,9 @@ algorithm
   Print.printBuf(str);
 end printElement;
 
-public function printElementStr "function: printElementStr
- 
-  Print Element to a string.
-"
+public function printElementStr 
+"function: printElementStr
+  Print Element to a string."
   input Element inElement;
   output String outString;
 algorithm 
@@ -1705,7 +1703,7 @@ algorithm
         str = Absyn.pathString(path);
         str2 = innerouterString(io);
         res = Util.stringAppendList(
-          {"COMPONENT(",n,mod_str,s," ",str2,"var :",vs,", from baseclass: ",
+          {"COMPONENT(",n, " ", mod_str, " ", s, " ",str2," var :",vs,", from baseclass: ",
           str,")"});
       then
         res;
@@ -1720,7 +1718,7 @@ algorithm
         mod_str = printModStr(mod);
         s = Dump.unparseTypeSpec(tySpec);
         str2 = innerouterString(io);        
-        res = Util.stringAppendList({"COMPONENT(",n," ",str2," mod:",mod_str,", tp: ",s,")"});
+        res = Util.stringAppendList({"COMPONENT(",n," ",str2," mod: ",mod_str,", tp: ",s,")"});
       then
         res;
     case (IMPORT(import_ = _)) then "IMPORT(_)"; 

@@ -214,6 +214,14 @@ protected constant tuple<Types.TType, Option<Type_a>> realReal2bool=(
           Types.T_FUNCTION(
           {("x",(Types.T_REAL({}),NONE)),("y",(Types.T_REAL({}),NONE))},(Types.T_BOOL({}),NONE)),NONE);
 
+// for semiLinear and delay
+protected constant tuple<Types.TType, Option<Type_a>> realRealReal2real=(
+          Types.T_FUNCTION(
+          {("x",(Types.T_REAL({}),NONE)),
+           ("y",(Types.T_REAL({}),NONE)),
+           ("z",(Types.T_REAL({}),NONE))},
+          (Types.T_REAL({}),NONE)),NONE);
+
 protected constant tuple<Types.TType, Option<Type_a>> anyconnector2int=(
           Types.T_FUNCTION(
           {
@@ -3004,7 +3012,11 @@ algorithm
       env = Env.extendFrameT(env, "skew", array1dimint2array3dimint);
       env = Env.extendFrameT(env, "skew", array1dimreal2array3dimreal);
       env = Env.extendFrameT(env, "sqrt", int2real);
-      env = Env.extendFrameT(env, "sqrt", real2real) "Debug.	Print.printBuf \"\\n Just AFTER the built in array functions part.\"" ;
+      env = Env.extendFrameT(env, "sqrt", real2real);
+      env = Env.extendFrameT(env, "semiLinear", realRealReal2real);
+      env = Env.extendFrameT(env, "delay", realReal2real);
+      env = Env.extendFrameT(env, "delay", realRealReal2real); 
+      // "Debug.	Print.printBuf \"\\n Just AFTER the built in array functions part.\"" ;      
       cache = Env.setCachedInitialEnv(cache,env);
     then (cache,env);
   end matchcontinue;

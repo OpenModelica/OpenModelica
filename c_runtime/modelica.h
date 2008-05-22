@@ -67,6 +67,7 @@ typedef real_array_t real_array;
 typedef integer_array_t integer_array;
 typedef modelica_string_t modelica_string;
 typedef boolean_array_t boolean_array;
+typedef string_array_t string_array;
 
 typedef modelica_integer size_real_array_rettype;
 typedef modelica_integer size_integer_array_rettype;

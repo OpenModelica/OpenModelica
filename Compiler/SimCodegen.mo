@@ -112,23 +112,22 @@ protected import Types;
 protected import Env;
 protected import Ceval;
 
-public function generateMakefile "function: generateMakefile
- 
+public function generateMakefile 
+"function: generateMakefile 
   This function generates a makefile for the simulation code.
-         It uses:
-         - OPENMODELICAHOME/include as a reference to includes and
-         - OPENMODELICAHOME/lib as a reference to library files 
-         "
-         input String inMakefileName;
-         input String inFilenamePrefix;
-         input list<String> inLibs;
-         input String inFileDir;
-       algorithm 
-         _:=
-           matchcontinue (inMakefileName,inFilenamePrefix,inLibs,inFileDir)
-           local
-             String cpp_file,libs_1,omhome_1,omhome,str,filename,cname,file_dir,MakefileHeader;
-             list<String> libs;
+  It uses:
+   - OPENMODELICAHOME/include as a reference to includes and
+   - OPENMODELICAHOME/lib as a reference to library files"
+  input String inMakefileName;
+  input String inFilenamePrefix;
+  input list<String> inLibs;
+  input String inFileDir;
+algorithm 
+  _:=
+  matchcontinue (inMakefileName,inFilenamePrefix,inLibs,inFileDir)
+    local
+      String cpp_file,libs_1,omhome_1,omhome,str,filename,cname,file_dir,MakefileHeader;
+      list<String> libs;
     case (filename,cname,libs,"") /* filename classname libs directory for mo-file */ 
       equation 
         MakefileHeader = Ceval.generateMakefileHeader();
@@ -149,7 +148,6 @@ public function generateMakefile "function: generateMakefile
           libs_1,
           "\n"}); 
         System.writeFile(filename, str);
-
       then
         ();
     case (filename,cname,libs,file_dir)
@@ -175,14 +173,12 @@ public function generateMakefile "function: generateMakefile
           libs_1,
           "\n"});
         System.writeFile(filename, str);
-
       then
         ();
   end matchcontinue;
 end generateMakefile;
 
 public function generateSimulationCode "function: generateSimulationCode
- 
   Outputs simulation code from a DAELow suitable for connection to DASSL.
   The state calculations are generated on residual form, i.e. 
   g(\\dot{x},x,y,t) = 0.
@@ -2085,7 +2081,11 @@ algorithm
       DAE.Flow flow_;
       list<String> name_arr,comment_arr,get_name_function_ifs,var_defines;
       DAE.Type tp;
-    case ((var as DAELow.VAR(varName = cr,varKind = kind,varDirection = dir,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_,varType = tp)),name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines) /* the variable to checked the old number of variables generated get_name_function_ifs\' #define a$pointb x{1} name of the from \"a\" comment of the from \"a afhalk\" number of generated strings #define a$pointb x{1} */ 
+    case ((var as DAELow.VAR(varName = cr,varKind = kind,varDirection = dir,index = indx,origVarName = origname,values = dae_var_attr,comment = comment,flow_ = flow_,varType = tp)),name_arr,comment_arr,n_vars,get_name_function_ifs,var_defines) 
+      /* the variable to checked the old number of variables generated 
+         get_name_function_ifs\' #define a$Pb x{1} name of the from \"a\" 
+         comment of the from \"a afhalk\" number of generated strings 
+         #define a$Pb x{1} */ 
       equation 
         true = DAELow.isVarOnTopLevelAndInput(var);
         origname_str = Exp.printComponentRefStr(origname);
@@ -4645,7 +4645,7 @@ algorithm
         ((DAELow.VAR(cr,_,_,_,_,_,_,_,origname,_,_,_,_) :: _)) = DAELow.varList(vars);
         // We need to strip subs from origname since they are removed in cr.
         cr_1 = Exp.crefStripLastSubs(origname);
-        // Since we use origname we need to replace '.' with '$point' manually.
+        // Since we use origname we need to replace '.' with '$P' manually.
         cr_1_str = stringAppend("$",Util.modelicaStringToCStr(Exp.printComponentRefStr(cr_1)));
         cr_1 = Exp.CREF_IDENT(cr_1_str,{});
         (e1,e2) = solveTrivialArrayEquation(cr_1,e1,e2);
@@ -4654,9 +4654,7 @@ algorithm
         (s1,cg_id_1,f1);
     case (_,_,_)
       equation 
-                Error.addMessage(Error.INTERNAL_ERROR, 
-          {
-          "array equations currently only supported on form v = functioncall(...)"});
+        Error.addMessage(Error.INTERNAL_ERROR,{"array equations currently only supported on form v = functioncall(...)"});
       then
         fail();
   end matchcontinue;
@@ -8108,7 +8106,7 @@ end defineStringToModelicaString;
 
 protected function generateDivisionMacro "function generateDivisionMacro
   this generates a division macro of the form:
-  \"DIVISION(1.0,a$point$bc,\"1.0/a.bc\")\"
+  \"DIVISION(1.0,a$P$bc,\"1.0/a.bc\")\"
   author x02lucpo
 "
   input String s1;
@@ -8212,7 +8210,7 @@ algorithm
         (s1,pri3) = Exp.printLeftparStr(pri1, pri2);
         s2 = printExp2Str(e1, pri3);
         s4 = Exp.printRightparStr(pri1, pri2);
-        res = Util.stringAppendList({s1,s2,"*",s2,s4});
+        res = Util.stringAppendList({s1, s2, " * ", s2, s4});
       then
         res;
 

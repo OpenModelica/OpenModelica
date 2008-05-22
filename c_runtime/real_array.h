@@ -31,26 +31,18 @@
 #ifndef REAL_ARRAY_H_
 #define REAL_ARRAY_H_
 
-#include "integer_array.h"
+#include "base_array.h"
 #include "index_spec.h"
 #include "memory_pool.h"
-#include <stdio.h>
+#include "integer_array.h"
 #include <stdarg.h>
-#include <math.h>
 
 typedef double modelica_real;
 
-struct real_array_s
-{
-  int ndims;
-  int* dim_size;
-  modelica_real* data;
-};
-
-typedef struct real_array_s real_array_t;
+typedef base_array_t real_array_t;
 
 /* Setting the fields of a real_array */
-void real_array_create(real_array_t*dst, modelica_real *data, int ndims,...);
+void real_array_create(real_array_t *dst, modelica_real *data, int ndims, ...);
 
 /* Allocation of a vector */
 void simple_alloc_1d_real_array(real_array_t* dest, int n);
@@ -67,7 +59,8 @@ void alloc_real_array_data(real_array_t*);
 void free_real_array_data(real_array_t*);
 
 /* Clones data*/
-void clone_real_array_spec(real_array_t* source, real_array_t* dest);
+static inline void clone_real_array_spec(real_array_t *src, real_array_t* dst)
+{ clone_base_array_spec(src, dst); }
 
 /* Copy real data*/
 void copy_real_array_data(real_array_t* source, real_array_t* dest);
@@ -78,7 +71,7 @@ void copy_real_array_data_mem(real_array_t* source, modelica_real* dest);
 /* Copy real array*/
 void copy_real_array(real_array_t* source, real_array_t* dest);
 
-m_real* calc_real_index(int ndims,size_t* idx_vec,real_array_t* arr);
+m_real* calc_real_index(int ndims, int* idx_vec, real_array_t* arr);
 m_real* calc_real_index_va(real_array_t* source,int ndims,va_list ap);
 
 void put_real_element(m_real value,int i1,real_array_t* dest);
@@ -91,15 +84,14 @@ void print_real_array(real_array_t* source);
  a[1:3] := b;
 
 */
-void indexed_assign_real_array(real_array_t* source, 
+void indexed_assign_real_array(real_array_t* source,
 			       real_array_t* dest,
-
 			       index_spec_t* spec);
-void simple_indexed_assign_real_array1(real_array_t* source, 
-				       int, 
+void simple_indexed_assign_real_array1(real_array_t* source,
+				       int,
 				       real_array_t* dest);
-void simple_indexed_assign_real_array2(real_array_t* source, 
-				       int, int, 
+void simple_indexed_assign_real_array2(real_array_t* source,
+				       int, int,
 				       real_array_t* dest);
 
 /*
@@ -107,21 +99,22 @@ void simple_indexed_assign_real_array2(real_array_t* source,
  a := b[1:3];
 
 */
-void index_real_array(real_array_t* source, 
-			       index_spec_t* spec, 
-			       real_array_t* dest);
-void index_alloc_real_array(real_array_t* source, 
-			       index_spec_t* spec, 
-			       real_array_t* dest);
+void index_real_array(real_array_t* source,
+                      index_spec_t* spec,
+                      real_array_t* dest);
+void index_alloc_real_array(real_array_t* source,
+                            index_spec_t* spec,
+                            real_array_t* dest);
 
-void simple_index_alloc_real_array1(real_array_t* source,int i1,real_array_t* dest);
+void simple_index_alloc_real_array1(real_array_t* source, int i1,
+                                    real_array_t* dest);
 
-void simple_index_real_array1(real_array_t* source, 
-				       int, 
-				       real_array_t* dest);
-void simple_index_real_array2(real_array_t* source, 
-				       int, int, 
-				       real_array_t* dest);
+void simple_index_real_array1(real_array_t* source,
+                              int,
+                              real_array_t* dest);
+void simple_index_real_array2(real_array_t* source,
+                              int, int,
+                              real_array_t* dest);
 
 /* array(A,B,C) for arrays A,B,C */
 void array_real_array(real_array_t* dest,int n,real_array_t* first,...);
@@ -138,7 +131,8 @@ m_real* real_array_element_addr2(real_array_t* source,int ndims,int dim1,int dim
 void cat_real_array(int k,real_array_t* dest, int n, real_array_t* first,...);
 void cat_alloc_real_array(int k,real_array_t* dest, int n, real_array_t* first,...);
 
-void range_alloc_real_array(m_real start,m_real stop,m_real inc,real_array_t* dest);
+void range_alloc_real_array(m_real start,m_real stop,m_real inc,
+                            real_array_t* dest);
 void range_real_array(m_real start,m_real stop, m_real inc,real_array_t* dest);
 
 void add_alloc_real_array(real_array_t* a, real_array_t* b,real_array_t* dest);
@@ -147,59 +141,76 @@ void add_real_array(real_array_t* a, real_array_t* b, real_array_t* dest);
 void sub_real_array(real_array_t* a, real_array_t* b, real_array_t* dest);
 void sub_alloc_real_array(real_array_t* a, real_array_t* b, real_array_t* dest);
 
-void sub_real_array_data_mem(real_array_t* a, real_array_t* b, modelica_real* dest);
+void sub_real_array_data_mem(real_array_t* a, real_array_t* b,
+                             modelica_real* dest);
 
 void mul_scalar_real_array(modelica_real a,real_array_t* b,real_array_t* dest);
-void mul_alloc_scalar_real_array(modelica_real a,real_array_t* b,real_array_t* dest);
+void mul_alloc_scalar_real_array(modelica_real a,real_array_t* b,
+                                 real_array_t* dest);
 
 void mul_real_array_scalar(real_array_t* a,modelica_real b,real_array_t* dest);
-void mul_alloc_real_array_scalar(real_array_t* a,modelica_real b,real_array_t* dest);
+void mul_alloc_real_array_scalar(real_array_t* a,modelica_real b,
+                                 real_array_t* dest);
 
-double mul_real_scalar_product(real_array_t* a, real_array_t* b);
+modelica_real mul_real_scalar_product(real_array_t* a, real_array_t* b);
 
 void mul_real_matrix_product(real_array_t*a,real_array_t*b,real_array_t*dest);
-void mul_real_matrix_vector(real_array_t* a, real_array_t* b,real_array_t* dest);
-void mul_real_vector_matrix(real_array_t* a, real_array_t* b,real_array_t* dest);
-void mul_alloc_real_matrix_product_smart(real_array_t* a, real_array_t* b, real_array_t* dest);
+void mul_real_matrix_vector(real_array_t* a, real_array_t* b,
+                            real_array_t* dest);
+void mul_real_vector_matrix(real_array_t* a, real_array_t* b,
+                            real_array_t* dest);
+void mul_alloc_real_matrix_product_smart(real_array_t* a, real_array_t* b,
+                                         real_array_t* dest);
 
 void div_real_array_scalar(real_array_t* a,modelica_real b,real_array_t* dest);
-void div_alloc_real_array_scalar(real_array_t* a,modelica_real b,real_array_t* dest);
+void div_alloc_real_array_scalar(real_array_t* a,modelica_real b,
+                                 real_array_t* dest);
 
 void exp_real_array(real_array_t* a, modelica_integer b, real_array_t* dest);
-void exp_alloc_real_array(real_array_t* a, modelica_integer b, real_array_t* dest);
+void exp_alloc_real_array(real_array_t* a, modelica_integer b,
+                          real_array_t* dest);
 
 void promote_real_array(real_array_t* a, int n,real_array_t* dest);
-void promote_scalar_real_array(double s,int n,real_array_t* dest);
+void promote_scalar_real_array(modelica_real s,int n,real_array_t* dest);
 void promote_alloc_real_array(real_array_t* a, int n, real_array_t* dest);
 
-int ndims_real_array(real_array_t* a);
-int size_of_dimension_real_array(real_array_t a, int i);
+static inline int ndims_real_array(real_array_t* a)
+{ return ndims_base_array(a); }
+static inline int size_of_dimension_real_array(real_array_t a, int i)
+{ return size_of_dimension_base_array(a, i); }
 typedef modelica_integer size_of_dimension_real_array_rettype;
+static inline modelica_real *data_of_real_array(real_array_t *a)
+{ return (modelica_real *) a->data; }
 
 void size_real_array(real_array_t* a,real_array_t* dest);
-double scalar_real_array(real_array_t* a);
+m_real scalar_real_array(real_array_t* a);
 void vector_real_array(real_array_t* a, real_array_t* dest);
-void vector_real_scalar(double a,real_array_t* dest);
+void vector_real_scalar(modelica_real a,real_array_t* dest);
 void matrix_real_array(real_array_t* a, real_array_t* dest);
-void matrix_real_scalar(double a,real_array_t* dest);
+void matrix_real_scalar(modelica_real a,real_array_t* dest);
 void transpose_alloc_real_array(real_array_t* a, real_array_t* dest);
 void transpose_real_array(real_array_t* a, real_array_t* dest);
-void outer_product_real_array(real_array_t* v1,real_array_t* v2,real_array_t* dest);
+void outer_product_real_array(real_array_t* v1,real_array_t* v2,
+                              real_array_t* dest);
 void identity_real_array(int n, real_array_t* dest);
 void diagonal_real_array(real_array_t* v,real_array_t* dest);
 void fill_real_array(real_array_t* dest,modelica_real s);
-void linspace_real_array(double x1,double x2,int n,real_array_t* dest);
-double min_real_array(real_array_t* a);
-double max_real_array(real_array_t* a);
-double sum_real_array(real_array_t* a);
-double product_real_array(real_array_t* a);
+void linspace_real_array(modelica_real x1,modelica_real x2,int n,
+                         real_array_t* dest);
+modelica_real min_real_array(real_array_t* a);
+modelica_real max_real_array(real_array_t* a);
+modelica_real sum_real_array(real_array_t* a);
+modelica_real product_real_array(real_array_t* a);
 void symmetric_real_array(real_array_t* a,real_array_t* dest);
 void cross_real_array(real_array_t* x,real_array_t* y, real_array_t* dest);
 void skew_real_array(real_array_t* x,real_array_t* dest);
 
-size_t real_array_nr_of_elements(real_array_t* a);
+static inline size_t real_array_nr_of_elements(real_array_t *a)
+{ return base_array_nr_of_elements(a); }
 
-void clone_reverse_real_array_spec(real_array_t* source, real_array_t* dest);
+static inline void clone_reverse_real_array_spec(real_array_t *source,
+                                                 real_array_t *dest)
+{ clone_reverse_base_array_spec(source, dest); }
 void convert_alloc_real_array_to_f77(real_array_t* a, real_array_t* dest);
 void convert_alloc_real_array_from_f77(real_array_t* a, real_array_t* dest);
 

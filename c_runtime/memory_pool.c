@@ -97,7 +97,7 @@ m_real* real_alloc(int n)
 
   assert(n>=0);
   assert(current_state.real_buffer_ptr +n < NR_REAL_ELEMENTS);
-  
+
   start = current_state.real_buffer_ptr;
   current_state.real_buffer_ptr += n;
   return real_buffer+start;
@@ -112,7 +112,7 @@ m_integer* integer_alloc(int n)
 
   assert(n>=0);
   assert(current_state.integer_buffer_ptr +n < NR_INTEGER_ELEMENTS);
-  
+
   start = current_state.integer_buffer_ptr;
   current_state.integer_buffer_ptr += n;
 
@@ -128,7 +128,7 @@ m_string* string_alloc(int n)
 
   assert(n>=0);
   assert(current_state.string_buffer_ptr +n < NR_STRING_ELEMENTS);
-  
+
   start = current_state.string_buffer_ptr;
   current_state.string_buffer_ptr += n;
 
@@ -144,7 +144,7 @@ m_boolean* boolean_alloc(int n)
 
   assert(n>=0);
   assert(current_state.boolean_buffer_ptr +n < NR_BOOLEAN_ELEMENTS);
-  
+
   start = current_state.boolean_buffer_ptr;
   current_state.boolean_buffer_ptr += n;
 
@@ -156,10 +156,10 @@ m_boolean* boolean_alloc(int n)
 int* size_alloc(int n)
 {
   _index_t start;
-  
+
   assert(n>=0);
   assert(n + current_state.size_buffer_ptr < NR_SIZE_ELEMENTS);
- 
+
   start = current_state.size_buffer_ptr;
   current_state.size_buffer_ptr += n;
   return size_buffer+start;
@@ -170,10 +170,10 @@ int* size_alloc(int n)
 int** index_alloc(int n)
 {
   _index_t start;
-  
+
   assert(n>=0);
   assert(n + current_state.index_buffer_ptr < NR_SIZE_ELEMENTS);
- 
+
   start = current_state.index_buffer_ptr;
   current_state.index_buffer_ptr += n;
   return index_buffer+start;
@@ -184,10 +184,10 @@ int** index_alloc(int n)
 char* char_alloc(int n)
 {
   _index_t start;
-  
+
   assert(n>=0);
   assert(n + current_state.char_buffer_ptr < NR_CHAR_ELEMENTS);
- 
+
   start = current_state.char_buffer_ptr;
   current_state.char_buffer_ptr += n;
   return char_buffer+start;
@@ -198,62 +198,62 @@ char* char_alloc(int n)
 _index_t real_free(int n)
 {
   assert(n>=0);
-  assert(current_state.real_buffer_ptr-n>=0);
-  
+  assert(current_state.real_buffer_ptr>=n);
+
   current_state.real_buffer_ptr -= n;
-  return current_state.real_buffer_ptr; 
+  return current_state.real_buffer_ptr;
 }
 
 _index_t integer_free(int n)
 {
   assert(n>=0);
-  assert(current_state.integer_buffer_ptr-n>=0);
-  
+  assert(current_state.integer_buffer_ptr>=n);
+
   current_state.integer_buffer_ptr -= n;
-  return current_state.integer_buffer_ptr; 
+  return current_state.integer_buffer_ptr;
 }
 
 _index_t string_free(int n)
 {
   assert(n>=0);
-  assert(current_state.string_buffer_ptr-n>=0);
-  
+  assert(current_state.string_buffer_ptr>=n);
+
   current_state.string_buffer_ptr -= n;
-  return current_state.string_buffer_ptr; 
+  return current_state.string_buffer_ptr;
 }
 
 _index_t boolean_free(int n)
 {
   assert(n>=0);
-  assert(current_state.boolean_buffer_ptr-n>=0);
-  
+  assert(current_state.boolean_buffer_ptr>=n);
+
   current_state.boolean_buffer_ptr -= n;
-  return current_state.boolean_buffer_ptr; 
+  return current_state.boolean_buffer_ptr;
 }
 
 _index_t size_free(int n)
 {
   assert(n>=0);
-  assert(current_state.size_buffer_ptr-n>=0);
-  
+  assert(current_state.size_buffer_ptr>=n);
+
   current_state.size_buffer_ptr -= n;
-  return current_state.size_buffer_ptr; 
+  return current_state.size_buffer_ptr;
 }
 
 _index_t index_free(int n)
 {
   assert(n>=0);
-  assert(current_state.index_buffer_ptr-n>=0);
-  
+  assert(current_state.index_buffer_ptr>=n);
+
   current_state.index_buffer_ptr -= n;
-  return current_state.index_buffer_ptr; 
+  return current_state.index_buffer_ptr;
 }
 
 _index_t char_free(int n)
 {
   assert(n>=0);
-  assert(current_state.char_buffer_ptr-n>=0);
-  
+  assert(current_state.char_buffer_ptr>=n);
+
   current_state.char_buffer_ptr -= n;
-  return current_state.char_buffer_ptr; 
+  return current_state.char_buffer_ptr;
 }

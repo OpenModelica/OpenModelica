@@ -1707,10 +1707,9 @@ algorithm
   end matchcontinue;
 end unparseVarAttr;
 
-public function unparseVar "function: unparseVar
- 
-  Prints a variable to a string.
-"
+public function unparseVar 
+"function: unparseVar 
+  Prints a variable to a string."
   input Var inVar;
   output String outString;
 algorithm 
@@ -1725,7 +1724,7 @@ algorithm
     case VAR(name = n,attributes = attr,protected_ = prot,type_ = typ,binding = bind)
       equation 
         t = unparseType(typ);
-        res = Util.stringAppendList({t," ",n,";\n"});
+        res = Util.stringAppendList({t," ",n,"; "});
       then
         res;
   end matchcontinue;
@@ -2911,7 +2910,7 @@ algorithm
     case (exp,t1,t2)
       equation 
         Debug.fprint("tcvt", "- type conversion failed: ");
-         str = Exp.printExpStr(exp);
+        str = Exp.printExpStr(exp);
         Debug.fprint("tcvt", str);
         Debug.fprint("tcvt", "  ");
         str = printTypeStr(t1);

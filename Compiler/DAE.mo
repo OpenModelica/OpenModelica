@@ -83,6 +83,10 @@ uniontype Type
   record ENUM end ENUM;
   
   record LIST end LIST; // MetaModelica list. KS
+
+  record RECORD
+    String name;
+  end RECORD;
   
   record METATUPLE end METATUPLE;  // MetaModelica tuple. KS
     
@@ -1487,6 +1491,7 @@ algorithm
   _:=
   matchcontinue (inType)
     local list<Ident> l;
+          Ident i;
     case INT()
       equation 
         Print.printBuf("Integer ");
@@ -1507,6 +1512,14 @@ algorithm
         Print.printBuf("String  ");
       then
         ();
+/*
+    case RECORD(name = i)
+      equation
+        Print.printBuf("Record ");
+        Print.printBuf(i);
+      then
+        ();
+*/
     case ENUM()
       equation 
         Print.printBuf("Enum ");
@@ -1544,6 +1557,13 @@ algorithm
     case BOOL() then "Boolean "; 
     case STRING() then "String "; 
     case ENUM() then "Enum "; 
+/*
+    case RECORD(name = s1)
+      equation
+        s2 = stringAppend("Record ", s1);
+      then
+        s2;
+*/
     case ENUMERATION(stringLst = l)
       equation 
         s1 = Util.stringDelimitList(l, ", ");

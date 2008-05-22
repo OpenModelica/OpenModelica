@@ -221,6 +221,8 @@ algorithm
     case "identity" then cevalBuiltinIdentity; 
     case "promote" then cevalBuiltinPromote; 
     case "String" then cevalBuiltinString;  
+    //case "semiLinear" then cevalBuiltinSemiLinear;
+    //case "delay" then cevalBuiltinDelay;      
     case id
       equation 
         Debug.fprint("ceval", "No Ceval.cevalBuiltinHandler found for: ");
@@ -5710,8 +5712,8 @@ algorithm
           "LINK=",linker,"\n",
           "EXEEXT=",exeext,"\n",
           "DLLEXT=",dllext,"\n",
-          "CFLAGS=-I\"",omhome,"/include\" ", cflags ,"\n",
-          "LDFLAGS=-L\"",omhome,"/lib\" ", ldflags ,"\n"   
+          "CFLAGS= -I\"",omhome,"/include\" ", cflags ,"\n",
+          "LDFLAGS= -L\"",omhome,"/lib\" ", ldflags ,"\n"   
           });
     then header;
   end matchcontinue;
@@ -5727,17 +5729,18 @@ algorithm
   outCache :=
   matchcontinue (inCache,inEnv,inPath)
     local
-      String pathstr,gencodestr,cfilename,makefilename,omhome,str;
+      String pathstr,gencodestr,cfilename,makefilename,omhome,str,libsstr;
       list<Env.Frame> env;
       Absyn.Path path;
       Env.Cache cache;
       String MakefileHeader;
+      list<String> libs;
     case (cache,env,path)
       equation 
          (cache,false) = Static.isExternalObjectFunction(cache,env,path); //ext objs functions not possible to ceval.
         Debug.fprintln("ceval", "/*- Ceval.cevalGenerateFunction starting*/");
         pathstr = ModUtil.pathString2(path, "_");
-        (cache,gencodestr,_) = cevalGenerateFunctionStr(cache,path, env, {});
+        (cache,gencodestr,_,libs) = cevalGenerateFunctionStr(cache,path, env, {});
         cfilename = stringAppend(pathstr, ".c");
         str = Util.stringAppendList(
           {"#include \"modelica.h\"\n#include <stdio.h>\n#include <stdlib.h>\n#include <errno.h>\n",
@@ -5748,13 +5751,14 @@ algorithm
         omhome = Settings.getInstallationDirectoryPath();
         omhome = System.trim(omhome, "\""); //Remove any quotation marks from omhome.
         MakefileHeader = generateMakefileHeader();
+        libsstr = Util.stringDelimitList(libs, " ");
         str = Util.stringAppendList(
           {MakefileHeader,"\n.PHONY: ",pathstr,"\n",
           pathstr,": ",cfilename,"\n","\t $(LINK)",
           " $(CFLAGS)",
           " -o ",pathstr,"$(DLLEXT) ",cfilename,
           " $(LDFLAGS)",
-          " -lm\n"});    
+          " ",libsstr," -lm \n"});    
         System.writeFile(makefilename, str);
         compileModel(pathstr, {}, "");
       then
@@ -5778,8 +5782,9 @@ protected function cevalGenerateFunctionStr "function: cevalGenerateFunctionStr
   output Env.Cache outCache;
   output String outString;
   output list<Absyn.Path> outAbsynPathLst;
+  output list<String> outLibs;
 algorithm 
-  (outCache,outString,outAbsynPathLst):=
+  (outCache,outString,outAbsynPathLst,outLibs):=
   matchcontinue (inCache,inPath,inEnv,inAbsynPathLst)
     local
       Absyn.Path gfmember,path;
@@ -5787,7 +5792,7 @@ algorithm
       list<Absyn.Path> gflist,calledfuncs,gflist_1;
       SCode.Class cls;
       list<DAE.Element> d;
-      list<String> debugfuncs,calledfuncsstrs,libs,calledfuncsstrs_1;
+      list<String> debugfuncs,calledfuncsstrs,libs,libs_2,calledfuncsstrs_1;
       String debugfuncsstr,funcname,funccom,thisfuncstr,resstr;
       DAE.DAElist d_1;
       Env.Cache cache;
@@ -5795,7 +5800,7 @@ algorithm
       equation 
         gfmember = Util.listGetMemberOnTrue(path, gflist, ModUtil.pathEqual);
       then
-        (cache,"",gflist);
+        (cache,"",gflist,{});
     case (cache,path,env,gflist) /* If getmember fails, path is not in generated functions list, hence generate it */ 
       equation 
         failure(_ = Util.listGetMemberOnTrue(path, gflist, ModUtil.pathEqual));
@@ -5810,7 +5815,7 @@ algorithm
         debugfuncsstr = Util.stringDelimitList(debugfuncs, ", ");
         Debug.fprint("ceval", debugfuncsstr);
         Debug.fprintln("ceval", "*/");
-        (cache,calledfuncsstrs,gflist_1) = cevalGenerateFunctionStrList(cache,calledfuncs, env, gflist);
+        (cache,calledfuncsstrs,gflist_1,libs_2) = cevalGenerateFunctionStrList(cache,calledfuncs, env, gflist);
         Debug.fprint("ceval", "/*- Ceval.cevalGenerateFunctionStr prefixing dae */");
         d_1 = ModUtil.stringPrefixParams(DAE.DAE(d));
         Print.clearBuf();
@@ -5822,8 +5827,9 @@ algorithm
         thisfuncstr = Print.getString();
         calledfuncsstrs_1 = Util.listAppendElt(thisfuncstr, calledfuncsstrs);
         resstr = Util.stringDelimitList(calledfuncsstrs_1, "\n\n");
+        libs = listAppend(libs, libs_2);
       then
-        (cache,resstr,(path :: gflist));
+        (cache,resstr,(path :: gflist),libs);
     case (_,_,env,_)
       equation 
         Debug.fprint("failtrace", "/*- Ceval.cevalGenerateFunctionStr failed*/\n");
@@ -5841,8 +5847,9 @@ protected function cevalGenerateFunctionStrList "function: cevalGenerateFunction
   output Env.Cache outCache;
   output list<String> outStringLst;
   output list<Absyn.Path> outAbsynPathLst;
+  output list<String> outLibs;
 algorithm 
-  (outCache,outStringLst,outAbsynPathLst):=
+  (outCache,outStringLst,outAbsynPathLst,outLibs):=
   matchcontinue (inCache,inAbsynPathLst1,inEnv2,inAbsynPathLst3)
     local
       list<Env.Frame> env;
@@ -5851,13 +5858,15 @@ algorithm
       list<String> reststr;
       Absyn.Path first;
       Env.Cache cache;
-    case (cache,{},env,gflist) then (cache,{},gflist); 
+      list<String> libs_1,libs_2;
+    case (cache,{},env,gflist) then (cache,{},gflist,{}); 
     case (cache,(first :: rest),env,gflist)
       equation 
-        (cache,firststr,gflist_1) = cevalGenerateFunctionStr(cache,first, env, gflist);
-        (cache,reststr,gflist_2) = cevalGenerateFunctionStrList(cache,rest, env, gflist_1);
+        (cache,firststr,gflist_1,libs_1) = cevalGenerateFunctionStr(cache,first, env, gflist);
+        (cache,reststr,gflist_2,libs_2) = cevalGenerateFunctionStrList(cache,rest, env, gflist_1);
+        libs_1 = listAppend(libs_1, libs_2);
       then
-        (cache,(firststr :: reststr),gflist_2);
+        (cache,(firststr :: reststr),gflist_2,libs_1);
   end matchcontinue;
 end cevalGenerateFunctionStrList;
 

@@ -196,10 +196,9 @@ algorithm
   end matchcontinue;
 end nthArrayelt;
 
-public function unparseValues "function: unparseValues
- 
-  Prints a list of Value to a string.
-"
+public function unparseValues 
+"function: unparseValues 
+  Prints a list of Value to a string."
   input list<Value> inValueLst;
   output String outString;
 algorithm 
@@ -214,7 +213,7 @@ algorithm
         s1 = unparseDescription({v});
         s2 = unparseValueNumbers({v});
         s3 = unparseValues(vallst);
-        str = Util.stringAppendList({s1,s2,"\n",s3});
+        str = Util.stringAppendList({s1, s2, " ", s3});
       then
         str;
     case ({}) then ""; 
@@ -1038,10 +1037,9 @@ algorithm
   end matchcontinue;
 end multMatrix;
 
-public function divArrayeltScalar "function: divArrayeltScalar
- 
-  Divide each array element with a scalar.
-"
+public function divArrayeltScalar 
+"function: divArrayeltScalar 
+  Divide each array element with a scalar."
   input Value inValue;
   input list<Value> inValueLst;
   output list<Value> outValueLst;

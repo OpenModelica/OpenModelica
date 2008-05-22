@@ -74,6 +74,11 @@ int print_error_buf_impl(char *str)
 RML_BEGIN_LABEL(Print__printErrorBuf)
 {
   char* str = RML_STRINGDATA(rmlA0);
+  if (rml_trace_enabled)
+  {
+    fprintf(stderr, "Print.printErrorBuf - printing error buffer: %s\n", str);
+    fflush(stderr);
+  }
   if (print_error_buf_impl(str) != 0) {
     RML_TAILCALLK(rmlFC);
   }
@@ -87,6 +92,11 @@ RML_END_LABEL
 RML_BEGIN_LABEL(Print__clearErrorBuf)
 {
   errorNfilled=0;
+  if (rml_trace_enabled)
+  {
+    fprintf(stderr, "Print.clearErrorBuf - error buffer cleared\n");
+    fflush(stderr);
+  }
   if (errorBuf != 0) {
     errorBuf[0]='\0';
   }
@@ -97,12 +107,16 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__getErrorString)
 {
+  if (rml_trace_enabled)
+  {  
+    fprintf(stderr, "Print.getErrorString - string: %s\n", errorBuf);
+    fflush(stderr);
+  }
   if (errorBuf == 0) {
     if(error_increase_buffer() != 0) {
       RML_TAILCALLK(rmlFC);
     }
   }
-
   rmlA0=(void*)mk_scon(errorBuf);
   RML_TAILCALLK(rmlSC);
 }
@@ -112,6 +126,11 @@ RML_END_LABEL
 RML_BEGIN_LABEL(Print__printBuf)
 {
   char* str = RML_STRINGDATA(rmlA0);
+  if (rml_trace_enabled)
+  {
+    fprintf(stderr, "Print.printBuf - string: %s\n", str);
+    fflush(stderr);
+  }
   /*  printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str));*/
     
   while (nfilled + strlen(str)+1 > cursize) {
@@ -132,6 +151,11 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__clearBuf)
 {
+  if (rml_trace_enabled)
+  {
+    fprintf(stderr, "Print.clearBuf - clearing print buffer\n");
+    fflush(stderr);
+  }
   nfilled=0;
   if (buf != 0) {
     buf[0]='\0';
@@ -143,6 +167,11 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__getString)
 {
+  if (rml_trace_enabled)
+  {
+    fprintf(stderr, "Print.getString - getting the print buffer: %s\n", buf);
+    fflush(stderr);
+  }
   if (buf == 0) {
     if (increase_buffer() != 0) {
       RML_TAILCALLK(rmlFC);
@@ -158,10 +187,15 @@ RML_BEGIN_LABEL(Print__writeBuf)
 {
   char * filename = RML_STRINGDATA(rmlA0);
   FILE * file;
+  if (rml_trace_enabled)
+  {
+    fprintf(stderr, "Print.writeBuf - writing to file: %s the buffer: %s \n", filename, buf);
+    fflush(stderr);
+  }
 
   file = fopen(filename,"w");
   
-  if (file == NULL||buf == NULL || buf[0]=='\0') {
+  if (file == NULL || buf == NULL || buf[0]=='\0') {
     /* HOWTO: RML fail */    
     /* RML_TAILCALLK(rmlFC); */
   }

@@ -810,16 +810,15 @@ algorithm
       equation 
         s1 = printFrameElementStr(("",e));
         s2 = printImportsStr(rst);
-        res = Util.stringAppendList({s1,", ",s2});
+        res = Util.stringAppendList({s1,", \n",s2});
       then
         res;
   end matchcontinue;
 end printImportsStr;
 
-protected function printFrameElementStr "function: printFrameElementStr
- 
-  Print frame element to a string
-"
+protected function printFrameElementStr 
+"function: printFrameElementStr
+  Print frame element to a string"
   input tuple<Ident, Item> inTplIdentItem;
   output String outString;
 algorithm 
@@ -847,8 +846,8 @@ algorithm
         frame_str = printFrameVarsStr(compframe);
         bind_str = Types.printBindingStr(bind);
         res = Util.stringAppendList(
-          {"v:",n," ",s,"(",elt_str,") [",tp_str,"] {",var_str,
-          "}, binding:",bind_str});
+          {"v: ",n," ",s,"(",elt_str,") [",tp_str,"] {",var_str,
+          "}, binding: ", bind_str, "\n"});
       then
         res;
     case ((n,VAR(instantiated = (tv as Types.VAR(attributes = Types.ATTR(parameter_ = var),type_ = tp)),declaration = SOME((elt,_)),instStatus = i,env = {})))
@@ -858,31 +857,31 @@ algorithm
         tp_str = Types.unparseType(tp);
         var_str = Types.unparseVar(tv);
         res = Util.stringAppendList(
-          {"v:",n," ",s,"(",elt_str,") [",tp_str,"] {",var_str,
-          "}, compframe: []"});
+          {"v: ",n," ",s,"(",elt_str,") [",tp_str,"] {",var_str,
+          "}, compframe: []\n"});
       then
         res;
     case ((n,VAR(instantiated = Types.VAR(binding = bnd),declaration = NONE,instStatus = i,env = env)))
       equation 
-        res = Util.stringAppendList({"v:",n,"\n"});
+        res = Util.stringAppendList({"v: ", n, "\n"});
       then
         res;
     case ((n,CLASS(class_ = _)))
       equation 
-        res = Util.stringAppendList({"c:",n,"\n"});
+        res = Util.stringAppendList({"c: ", n, "\n"});
       then
         res;
     case ((n,TYPE(list_ = lst)))
       equation 
         len = listLength(lst);
         lenstr = intString(len);
-        res = Util.stringAppendList({"t:",n," (",lenstr,")\n"});
+        res = Util.stringAppendList({"t: ", n, " (", lenstr, ")\n"});
       then
         res;
     case ((n,IMPORT(import_ = imp)))
       equation 
         s = Dump.unparseImportStr(imp);
-        res = Util.stringAppendList({"imp:",s,"\n"});
+        res = Util.stringAppendList({"imp: ", s, "\n"});
       then
         res;
   end matchcontinue;

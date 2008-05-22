@@ -247,14 +247,13 @@ algorithm
   end matchcontinue;
 end cevalIfConstant;
 
-public function elabExp "function: elabExp
- 
+public function elabExp 
+"function: elabExp
   Static analysis of expressions means finding out the properties of
   the expression.  These properties are described by the
   `Types.Properties\' type, and include the type and the variability of the
   expression.  This function performs analysis, and returns an
-  `Exp.Exp\' and the properties.
-"
+  `Exp.Exp\' and the properties."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Exp inExp;
@@ -7291,13 +7290,11 @@ algorithm
   end matchcontinue;
 end printSlotsStr;
 
-protected function elabPositionalInputArgs "function: elabPositionalInputArgs
- 
+protected function elabPositionalInputArgs 
+"function: elabPositionalInputArgs 
   This function elaborates the positional input arguments of a function.
   A list of slots is filled from the beginning with types of each 
-  positional argument.
-  
-"
+  positional argument."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -7343,8 +7340,8 @@ algorithm
       equation 
         (cache,e_1,Types.PROP(t,c1),_) = elabExp(cache,env, e, impl, NONE,true);
         (e_2,_,ds) = Types.vectorizableType(e_1, t, vt);
-        (cache,slots_1,clist) = elabPositionalInputArgs(cache,env, es, vs, slots,checkTypes, impl);
-        newslots = fillSlot(farg, e_2, ds, slots_1,checkTypes);
+        (cache,slots_1,clist) = elabPositionalInputArgs(cache,env, es, vs, slots, checkTypes, impl);
+        newslots = fillSlot(farg, e_2, ds, slots_1, checkTypes);
       then
         (cache,newslots,(c1 :: clist));
 
@@ -7522,7 +7519,6 @@ algorithm
 end fillSlot;
 
 public function elabCref "function: elabCref
- 
   Elaborate on a component reference.  Check the type of the
   component referred to, and check if the environment contains
   either a constant binding for that variable, or if it contains an

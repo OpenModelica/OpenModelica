@@ -30,7 +30,8 @@
 
 #ifndef INDEX_SPEC_H_
 #define INDEX_SPEC_H_
-#include <stdio.h>
+
+#include "inline.h"
 
 /* This structure holds indexes when subscripting an array.
  * ndims - number of subscripts, E.g. A[1,{2,3},:] => ndims = 3
@@ -54,8 +55,10 @@ int index_spec_ok(index_spec_t* s);
 void alloc_index_spec(index_spec_t* s);
 void create_index_spec(index_spec_t* dest, int nridx, ...);
 int* make_index_array(int nridx,...);
-int imax(int i,int j);
-int next_index(int ndims, size_t* idx, size_t* size);
+static inline int imax(int i, int j)
+{ return ((i < j) ? j : i); }
+int next_index(int ndims, int* idx, int* size);
+
 void print_index_spec(index_spec_t* spec);
 
 #endif

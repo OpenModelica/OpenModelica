@@ -878,7 +878,7 @@ algorithm
     case DAE.DAE(elementLst = elist)
       equation 
         Debug.fprintln("cgtr", "generate_function_bodies");
-        cfns = generateFunctionsElist(elist);
+        (cfns,_) = generateFunctionsElist(elist,{});
         Print.printBuf("\n/* Body */\n");
         cPrintFunctions(cfns);
         Print.printBuf("/* End Body */\n");
@@ -908,7 +908,7 @@ algorithm
     case DAE.DAE(elementLst = elist)
       equation 
         Debug.fprintln("cgtr", "generate_function_headers");
-        cfns = generateFunctionsElist(elist);
+        (cfns,_) = generateFunctionsElist(elist, {});
         Print.printBuf("/* header part */\n");
         libs = cPrintFunctionIncludes(cfns) ;
         cPrintFunctionHeaders(cfns);
@@ -928,14 +928,16 @@ protected function generateFunctionsElist "function: generateFunctionsElist
   Helper function. Generates code from the Elements of a DAE.
 "
   input list<DAE.Element> els;
+  input list<String> rt;
   output list<CFunction> cfns;
+  output list<String> rt_1;
   list<DAE.Element> fns;
 algorithm 
   Debug.fprintln("cgtr", "generate_functions_elist");
   Debug.fprintln("cgtrdumpdae", "Dumping DAE:");
   Debug.fcall("cgtrdumpdae", DAE.dump2, DAE.DAE(els));
   fns := Util.listFilter(els, DAE.isFunction);
-  cfns := generateFunctionsElist2(fns);
+  (cfns,rt_1) := generateFunctionsElist2(fns,rt);
 end generateFunctionsElist;
 
 protected function generateFunctionsElist2 "function: generateFunctionsElist2
@@ -943,27 +945,30 @@ protected function generateFunctionsElist2 "function: generateFunctionsElist2
   Helper function to generate_functions_elist.
 "
   input list<DAE.Element> inDAEElementLst;
+  input list<String> inRecordTypes;
   output list<CFunction> outCFunctionLst;
+  output list<String> outRecordTypes;
 algorithm 
-  outCFunctionLst:=
-  matchcontinue (inDAEElementLst)
+  (outCFunctionLst,outRecordTypes):=
+  matchcontinue (inDAEElementLst,inRecordTypes)
     local
       list<CFunction> cfns1,cfns2,cfns;
+      list<String> rt, rt_1, rt_2;
       DAE.Element f;
       list<DAE.Element> rest;
-    case {}
+    case ({},rt)
       equation 
         Debug.fprintln("cgtr", "generate_functions_elist2");
       then
-        {};
-    case (f :: rest)
+        ({},rt);
+    case ((f :: rest),rt)
       equation 
         Debug.fprintln("cgtr", "generate_functions_elist2");
-        cfns1 = generateFunction(f);
-        cfns2 = generateFunctionsElist2(rest);
+        (cfns1,rt_1) = generateFunction(f, rt);
+        (cfns2,rt_2) = generateFunctionsElist2(rest, rt_1);
         cfns = listAppend(cfns1, cfns2);
       then
-        cfns;
+        (cfns, rt_2);
   end matchcontinue;
 end generateFunctionsElist2;
 
@@ -974,26 +979,29 @@ protected function generateFunction "function: generateFunction
   one for normal Modelica functions and one for external Modelica functions.
 "
   input DAE.Element inElement;
+  input list<String> inRecordTypes;
   output list<CFunction> outCFunctionLst;
+  output list<String> outRecordTypes;
 algorithm 
-  outCFunctionLst:=
-  matchcontinue (inElement)
+  (outCFunctionLst,outRecordTypes):=
+  matchcontinue (inElement,inRecordTypes)
     local
       Lib fn_name_str,retstr,extfnname,lang,retstructtype,extfnname_1,n;
       list<DAE.Element> outvars,invars,dae,bivars,orgdae,daelist;
-      list<Lib> struct_strs,arg_strs,includes,libs;
+      list<Lib> struct_strs,arg_strs,includes,libs,struct_strs_1;
       CFunction head_cfn,body_cfn,cfn,rcw_fn,func_decl,ext_decl;
       Absyn.Path fpath;
-      list<tuple<Lib, tuple<Types.TType, Option<Absyn.Path>>>> args;
-      tuple<Types.TType, Option<Absyn.Path>> restype,tp;
+      list<tuple<Lib, Types.Type>> args;
+      Types.Type restype,tp;
       list<DAE.ExtArg> extargs;
       DAE.ExtArg extretarg;
       Option<Absyn.Annotation> ann;
       DAE.ExternalDecl extdecl;
       list<CFunction> cfns;
       DAE.Element comp;
-    case DAE.FUNCTION(path = fpath,dAElist = DAE.DAE(elementLst = dae),type_ = (Types.T_FUNCTION(funcArg = args,funcResultType = restype),_)) /* Modelica functions External functions */ 
-      equation 
+      list<String> rt, rt_1;
+    case (DAE.FUNCTION(path = fpath,dAElist = DAE.DAE(elementLst = dae),type_ = (Types.T_FUNCTION(funcArg = args,funcResultType = restype),_)),rt) /* Modelica functions External functions */
+      equation
         fn_name_str = generateFunctionName(fpath);
         fn_name_str = stringAppend("_", fn_name_str);
         Debug.fprintl("cgtr", {"generating function ",fn_name_str,"\n"});
@@ -1001,7 +1009,9 @@ algorithm
         Debug.fcall("cgtrdumpdae3", DAE.dump2, DAE.DAE(dae));
         outvars = DAE.getOutputVars(dae);
         invars = DAE.getInputVars(dae);
-        struct_strs = generateResultStruct(outvars, fpath);
+        (struct_strs,rt_1) = generateStructsForRecords(dae, rt);
+        struct_strs_1 = generateResultStruct(outvars, fpath);
+        struct_strs = listAppend(struct_strs, struct_strs_1);
         retstr = generateReturnType(fpath);
         arg_strs = Util.listMap(args, generateFunctionArg);
         head_cfn = cMakeFunction(retstr, fn_name_str, struct_strs, arg_strs);
@@ -1009,9 +1019,9 @@ algorithm
         cfn = cMergeFn(head_cfn, body_cfn);
         rcw_fn = generateReadCallWrite(fn_name_str, outvars, retstr, invars);
       then
-        {cfn,rcw_fn};
-    case DAE.EXTFUNCTION(path = fpath,dAElist = DAE.DAE(elementLst = orgdae),type_ = (tp as (Types.T_FUNCTION(funcArg = args,funcResultType = restype),_)),externalDecl = extdecl) /* External functions */ 
-      equation 
+        ({cfn,rcw_fn},rt_1);
+    case (DAE.EXTFUNCTION(path = fpath,dAElist = DAE.DAE(elementLst = orgdae),type_ = (tp as (Types.T_FUNCTION(funcArg = args,funcResultType = restype),_)),externalDecl = extdecl),rt) /* External functions */
+      equation
         fn_name_str = generateFunctionName(fpath);
         fn_name_str = stringAppend("_", fn_name_str);
         Debug.fprintl("cgtr", {"generating external function ",fn_name_str,"\n"});
@@ -1024,7 +1034,9 @@ algorithm
         outvars = DAE.getOutputVars(dae);
         invars = DAE.getInputVars(dae);
         bivars = DAE.getBidirVars(dae);
-        struct_strs = generateResultStruct(outvars, fpath);
+        (struct_strs,rt_1) = generateStructsForRecords(dae, rt);
+        struct_strs_1 = generateResultStruct(outvars, fpath);
+        struct_strs = listAppend(struct_strs, struct_strs_1);
         retstructtype = generateReturnType(fpath);
         retstr = generateExtReturnType(extretarg);
         extfnname_1 = generateExtFunctionName(extfnname, lang);
@@ -1036,13 +1048,13 @@ algorithm
         ext_decl = generateExternalWrapperCall(fn_name_str, outvars, retstructtype, invars, extdecl, 
           bivars, tp);
       then
-        {func_decl,rcw_fn,ext_decl};
-    case DAE.COMP(ident = n,dAElist = DAE.DAE(elementLst = daelist))
+        ({func_decl,rcw_fn,ext_decl},rt_1);
+    case (DAE.COMP(ident = n,dAElist = DAE.DAE(elementLst = daelist)),rt)
       equation 
-        cfns = generateFunctionsElist(daelist);
+        (cfns,rt_1) = generateFunctionsElist(daelist,rt);
       then
-        cfns;
-    case comp
+        (cfns,rt_1);
+    case (comp,rt)
       equation 
         Debug.fprint("failtrace", "-generate_function failed\n");
       then
@@ -1136,6 +1148,92 @@ algorithm
         fail();
   end matchcontinue;
 end generateExtFunctionName;
+
+protected function generateVarDeclaration "function generateVarDeclaration
+
+  Helper function to generateVarListDeclarations.
+"
+   input Types.Var inVar;
+   output String outStr;
+algorithm
+  outStr :=
+  matchcontinue (inVar)
+    local
+      Types.Ident name;
+      Types.Type t;
+      String type_str, decl_str;
+    case Types.VAR(name = name, type_ = t)
+      equation
+        type_str = generateType(t);
+        decl_str = Util.stringAppendList({type_str," ",name,";"});
+      then
+        decl_str;
+    case Types.VAR(name = name)
+      equation
+        decl_str = Util.stringAppendList({"/* ",name," is an odd member. */"});
+      then decl_str;
+    case (_)
+      then "/* generateVarDeclaration failed. */";
+  end matchcontinue;
+end generateVarDeclaration;
+
+protected function generateRecordDeclarations "function generateRecordDeclarations
+
+  Helper function to generateStructsForRecords.
+"
+  input Types.Type inRecordType;
+  output list<String> outStrs;
+algorithm
+  outStrs :=
+  matchcontinue (inRecordType)
+    local
+      list<Types.Var> varlst;
+      list<String> strs;
+    case ((Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = varlst),_))
+      equation
+        strs = Util.listMap(varlst, generateVarDeclaration);
+      then strs;
+    case ((_,_)) then { "/* An odd record this. */" };
+  end matchcontinue;
+end generateRecordDeclarations;
+
+protected function generateStructsForRecords "function generateStructsForRecords
+
+  Translate all records used by varlist to structs.
+"
+  input list<DAE.Element> inVars;
+  input list<String> inReturnTypes;
+  output list<String> outStrs;
+  output list<String> outReturnTypes;
+algorithm
+  (outStrs,outReturnTypes) :=
+  matchcontinue (inVars,inReturnTypes)
+    local
+      DAE.Element var;
+      list<DAE.Element> rest;
+      String name, first_str, last_str;
+      Types.Type ft;
+      list<String> strs,rest_strs,decl_strs;
+      list<String> rt, rt_1;
+    case ({},rt) then ({},rt);
+    case (((var as DAE.VAR(input_ = DAE.RECORD(name = name), fullType = ft)) :: rest),rt)
+      equation
+        failure(_ = Util.listGetMember(name,rt));
+        first_str = Util.stringAppendList({"struct ",name," {"});
+        decl_strs = generateRecordDeclarations(ft);
+        last_str = "};";
+        strs = Util.listFlatten({{first_str},decl_strs,{last_str}});
+        (rest_strs,rt_1) = generateStructsForRecords(rest,(name :: rt));
+        strs = listAppend(strs, rest_strs);
+      then
+        (strs,rt_1);
+    case ((_ :: rest),rt)
+      equation
+        (strs,rt_1) = generateStructsForRecords(rest,rt);
+      then
+        (strs,rt_1);
+  end matchcontinue;
+end generateStructsForRecords;
 
 protected function generateResultStruct "function generate_results_struct
  
@@ -1334,8 +1432,12 @@ algorithm
     case DAE.BOOL() then Exp.BOOL(); 
     case DAE.ENUM() then Exp.ENUM();  
     case DAE.LIST() then Exp.T_LIST(Exp.OTHER()); // MetaModelica list
+    case DAE.RECORD(name = name)
+      local String name;
+      then Exp.T_RECORD(name);
     case DAE.METATUPLE() then Exp.T_METATUPLE({}); // MetaModelica tuple
     case DAE.METAOPTION() then Exp.T_METAOPTION(Exp.OTHER()); // MetaModelica tuple
+
     case _ then Exp.OTHER(); 
   end matchcontinue;
 end daeExpType;
@@ -1377,6 +1479,12 @@ algorithm
         res = expShortTypeStr(t);
       then
         res;
+    case Exp.T_RECORD(name = name)
+      local String name;
+      equation
+        res = stringAppend("struct ", name);
+      then
+        res;
   end matchcontinue;
 end expShortTypeStr;
 
@@ -1400,7 +1508,13 @@ algorithm
       equation  
         str = "void*";  
       then str;
-        
+
+    case ((t as Exp.T_RECORD(_)),_)
+      equation
+        str = expShortTypeStr(t);
+      then
+        str;
+
     case (Exp.T_METATUPLE(_),_) 
       equation  
         str = "void*";  
@@ -1438,8 +1552,8 @@ algorithm
   matchcontinue (inType)
     local
       Lib ty_str;
-      list<tuple<Types.TType, Option<Absyn.Path>>> tys;
-      tuple<Types.TType, Option<Absyn.Path>> arrayty,ty;
+      list<Types.Type> tys;
+      Types.Type arrayty,ty;
       list<Integer> dims;
     case ((Types.T_TUPLE(tupleType = tys),_))
       equation 
@@ -1448,7 +1562,7 @@ algorithm
       then
         ty_str;
     case ((tys as (Types.T_ARRAY(arrayDim = _),_)))
-      local tuple<Types.TType, Option<Absyn.Path>> tys;
+      local Types.Type tys;
       equation 
         Debug.fprintln("cgtr", "generate_type");
         (arrayty,dims) = Types.flattenArrayType(tys);
@@ -1459,13 +1573,18 @@ algorithm
     case ((Types.T_REAL(varLstReal = _),_)) then "modelica_real"; 
     case ((Types.T_STRING(varLstString = _),_)) then "modelica_string"; 
     case ((Types.T_BOOL(varLstBool = _),_)) then "modelica_boolean";  
-    
+    case ((Types.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_))
+      local String name;
+      equation
+        ty_str = stringAppend("struct ", name);
+      then
+        ty_str;
     case ((Types.T_LIST(_),_)) then "void*";  // MetaModelica list
     case ((Types.T_METATUPLE(_),_)) then "void*"; // MetaModelica tuple 
     case ((Types.T_METAOPTION(_),_)) then "void*"; // MetaModelica tuple 
       
-    case ty
-      equation 
+    case (ty)
+      equation
         Debug.fprint("failtrace", "#-- generate_type failed\n");
       then
         fail();
@@ -1574,16 +1693,16 @@ algorithm
   matchcontinue (inTypesTypeLst)
     local
       Lib str,str_1,str_2,str_3;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
-      list<tuple<Types.TType, Option<Absyn.Path>>> tys;
+      Types.Type ty;
+      list<Types.Type> tys;
     case {ty}
-      equation 
+      equation
         Debug.fprintln("cgtr", "generate_tuple_type_1");
         str = generateSimpleType(ty);
       then
         str;
-    case ((ty :: tys))
-      equation 
+    case (ty :: tys)
+      equation
         Debug.fprintln("cgtr", "generate_tuple_type_2");
         str = generateSimpleType(ty);
         str_1 = generateTupleType(tys);
@@ -1605,23 +1724,23 @@ algorithm
   outString:=
   matchcontinue (inType)
     local
-      Lib n_1,n_2,n,t_str;
-      tuple<Types.TType, Option<Absyn.Path>> t_1,t,ty;
+      Lib t_str;
+      Types.Type t_1,t,ty;
     case ((Types.T_INTEGER(varLstInt = _),_)) then "modelica_integer"; 
     case ((Types.T_REAL(varLstReal = _),_)) then "modelica_real"; 
     case ((Types.T_STRING(varLstString = _),_)) then "modelica_string"; 
     case ((Types.T_BOOL(varLstBool = _),_)) then "modelica_boolean"; 
-    case ((Types.T_COMPLEX(complexClassType = ClassInf.RECORD(string = n)),_))
-      equation 
-        n_1 = stringAppend("const ", n);
-        n_2 = stringAppend(n_1, "&");
+    case ((Types.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_))
+      local String name;
+      equation
+        t_str = stringAppend("struct ", name);
       then
-        n_2;
+        t_str;
     case ((Types.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),_))
       then
         "void *";
     case ((t as (Types.T_ARRAY(arrayDim = _),_)))
-      equation 
+      equation
         t_1 = Types.arrayElementType(t);
         t_str = arrayTypeString(t_1);
       then
@@ -1631,7 +1750,7 @@ algorithm
     case ((Types.T_METATUPLE(_),_)) then "void*"; // MetaModelica tuple
     case ((Types.T_METAOPTION(_),_)) then "void*"; // MetaModelica option  
         
-    case ty
+    case (ty)
       equation 
         Debug.fprint("failtrace", "#--generate_simple_type failed\n");
       then
@@ -1710,9 +1829,9 @@ algorithm
   matchcontinue (inFuncArg)
     local
       Lib str,str_1,str_2,name;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
+      Types.Type ty;
     case ((name,ty))
-      equation 
+      equation
         str = generateTupleType({ty});
         str_1 = stringAppend(str, " ");
         str_2 = stringAppend(str_1, name);
@@ -1741,6 +1860,14 @@ algorithm
         str = generateTypeExternal(ty);
       then
         str;
+    case (Types.ATTR(direction = Absyn.INPUT()),ty)
+      equation 
+        true = Types.isArray(ty);
+        ((Types.T_STRING(_),_)) = Types.arrayElementType(ty);
+        str = generateTypeExternal(ty);
+        resstr = Util.stringAppendList({str," const *"});
+      then
+        resstr;
     case (Types.ATTR(direction = Absyn.INPUT()),ty)
       equation 
         true = Types.isArray(ty);
@@ -2250,14 +2377,14 @@ protected function generateAllocArrayF77 "function: generateAllocArrayF77
  
   Generates code for allocating an array in fortran.
 "
-  input String inString;
+  input String inCref;
   input Types.Type inType;
   output CFunction outCFunction;
 algorithm 
   outCFunction:=
-  matchcontinue (inString,inType)
+  matchcontinue (inCref,inType)
     local
-      tuple<Types.TType, Option<Absyn.Path>> elty,ty;
+      Types.Type elty,ty;
       list<Integer> dims;
       list<Exp.Subscript> dimsubs;
       Integer tnr,tnr1,ndims;
@@ -3906,7 +4033,7 @@ algorithm
         var1 = MetaUtil.createConstantCExp(e1,var1);
       then
         (cfn1,var1,tnr_1);
-        //---------------------------------------------
+     //---------------------------------------------
         
     case (e,_,_)
       equation 
@@ -5174,7 +5301,7 @@ algorithm
     case Exp.CREF_QUAL(ident = id,subscriptLst = subs,componentRef = cref)
       equation 
         (cref_str,cref_subs) = compRefCstr(cref);
-        cref_str_1 = Util.stringAppendList({id,"__",cref_str});
+        cref_str_1 = Util.stringAppendList({id,".",cref_str});
         subs_1 = Util.listFlatten({subs,cref_subs});
       then
         (cref_str_1,subs_1);
@@ -6584,7 +6711,7 @@ algorithm
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
         true = Types.isArray(ty);
         name = varNameArray(cref, attr,i);
-        res = stringAppend(name, ".data");
+        res = generateArrayDataCall(name, ty);
       then
         res;
 
@@ -6688,7 +6815,7 @@ algorithm
         true = Types.isInputAttr(attr);
         true = Types.isArray(ty);
         name = varNameExternal(cref);
-        res = stringAppend(name, ".data");
+        res = generateArrayDataCall(name, ty);
       then
         res;
 
@@ -6699,7 +6826,7 @@ algorithm
         true = Types.isOutputAttr(attr);
         true = Types.isArray(ty);
         name = varNameExternal(cref);
-        res = stringAppend(name, ".data");
+        res = generateArrayDataCall(name, ty);
       then
         res;
 
@@ -6709,7 +6836,7 @@ algorithm
         DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty) = arg;
         true = Types.isArray(ty);
         name = varNameExternal(cref);
-        res = stringAppend(name, ".data");
+        res = generateArrayDataCall(name, ty);
       then
         res;
 
@@ -6746,6 +6873,51 @@ algorithm
   end matchcontinue;
 end generateExtCallFcallArgF77;
 
+protected function generateArrayDataCall "function: generateArrayDataCall
+
+"
+  input String inName;
+  input Types.Type inType;
+  output String outString;
+algorithm
+  outString:=
+  matchcontinue (inName, inType)
+    local
+      String name, str;
+      Types.Type ty;
+    case (name, ty)
+      equation
+        ((Types.T_INTEGER(_),_)) = Types.arrayElementType(ty);
+        str = Util.stringAppendList({"data_of_integer_array(&(",name,"))"});
+      then
+        str;
+    case (name, ty)
+      equation
+        ((Types.T_REAL(_),_)) = Types.arrayElementType(ty);
+        str = Util.stringAppendList({"data_of_real_array(&(",name,"))"});
+      then
+        str;
+    case (name, ty)
+      equation
+        ((Types.T_BOOL(_),_)) = Types.arrayElementType(ty);
+        str = Util.stringAppendList({"data_of_boolean_array(&(",name,"))"});
+      then
+        str;
+    case (name, ty)
+      equation
+        ((Types.T_STRING(_),_)) = Types.arrayElementType(ty);
+        str = Util.stringAppendList({"data_of_string_array(&(",name,"))"});
+      then
+        str;
+    case (_, _)
+      equation
+        Debug.fprint("failtrace",
+          "#-- generate_array_data_call failed\n");
+      then
+        fail();
+  end matchcontinue;
+end generateArrayDataCall;
+
 protected function generateArraySizeCall "function: generateArraySizeCall
  
 "
@@ -6776,6 +6948,24 @@ algorithm
         crstr = varNameArray(cr, attr,1);
         dimstr = Exp.printExpStr(dim);
         str = Util.stringAppendList({"size_of_dimension_real_array(",crstr,", ",dimstr,")"});
+      then
+        str;
+    case DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
+      equation 
+        ((Types.T_BOOL(_),_)) = Types.arrayElementType(ty);
+        /* 1 is dummy since can not be output*/
+        crstr = varNameArray(cr, attr,1);
+        dimstr = Exp.printExpStr(dim);
+        str = Util.stringAppendList({"size_of_dimension_boolean_array(",crstr,", ",dimstr,")"});
+      then
+        str;
+    case DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
+      equation 
+        ((Types.T_STRING(_),_)) = Types.arrayElementType(ty);
+        /* 1 is dummy since can not be output*/
+        crstr = varNameArray(cr, attr,1);
+        dimstr = Exp.printExpStr(dim);
+        str = Util.stringAppendList({"size_of_dimension_string_array(",crstr,", ",dimstr,")"});
       then
         str;
     case _
@@ -6817,6 +7007,24 @@ algorithm
         crstr = varNameArray(cr, attr,1);
         dimstr = Exp.printExpStr(dim);
         str = Util.stringAppendList({"size_of_dimension_real_array(",crstr,", ",dimstr,")"});
+      then
+        str;
+    case DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
+      equation 
+        ((Types.T_BOOL(_),_)) = Types.arrayElementType(ty);
+        /* 1 is dummy since can not be output*/
+        crstr = varNameArray(cr, attr,1);
+        dimstr = Exp.printExpStr(dim);
+        str = Util.stringAppendList({"size_of_dimension_boolean_array(",crstr,", ",dimstr,")"});
+      then
+        str;
+    case DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
+      equation 
+        ((Types.T_STRING(_),_)) = Types.arrayElementType(ty);
+        /* 1 is dummy since can not be output*/
+        crstr = varNameArray(cr, attr,1);
+        dimstr = Exp.printExpStr(dim);
+        str = Util.stringAppendList({"size_of_dimension_string_array(",crstr,", ",dimstr,")"});
       then
         str;
     case _
@@ -6943,13 +7151,13 @@ algorithm
       CFunction res;
       Exp.ComponentRef cref;
       Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;      
+      Types.Type ty;
     case (DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty),i)
       equation 
         false = Types.isArray(ty);
         true = Types.isOutputAttr(attr);
         name = varNameExternal(cref);
-				iStr = intString(i);	
+		iStr = intString(i);	
         typcast = generateType(ty);
         str = Util.stringAppendList({"out.","targ",iStr," = (",typcast,")",name,";"});
         res = cAddStatements(cEmptyFunction, {str});
@@ -6961,7 +7169,7 @@ algorithm
         true = Types.isOutputAttr(attr);
       then
         cEmptyFunction;
-    case( DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty),_) then cEmptyFunction; 
+    case(DAE.EXTARG(componentRef = cref,attributes = attr,type_ = ty),_) then cEmptyFunction; 
     case (_,_)
       equation 
         Debug.fprint("failtrace", "#-- generate_extcall_varcopy_single failed\n");
@@ -6983,7 +7191,7 @@ algorithm
     local
       Exp.ComponentRef cref;
       Types.Attributes attr;
-      tuple<Types.TType, Option<Absyn.Path>> ty;
+      Types.Type ty;
       Lib name,orgname,converter,str,typcast,tystr;
       CFunction res;
       DAE.ExtArg extarg;
@@ -7005,7 +7213,7 @@ algorithm
         false = Types.isArray(ty);
         true = Types.isOutputAttr(attr);
         name = varNameExternal(cref);
-				iStr = intString(i);
+		iStr = intString(i);
         typcast = generateType(ty);
         str = Util.stringAppendList({"out.","targ",iStr," = (",typcast,")",name,";"});
         res = cAddStatements(cEmptyFunction, {str});
@@ -7201,6 +7409,53 @@ algorithm
   end matchcontinue;
 end varArgNamesExternal;
 
+protected function makeRecordRef "function: makeRecordRef
+
+"
+  input String inArg;
+  input String inRecord;
+  output String outRef;
+algorithm
+  outRef := Util.stringAppendList({"&(",inRecord,".",inArg,")"});
+end makeRecordRef;
+
+protected function generateVarName "function: generateVarName
+
+"
+  input Types.Var inVar;
+  output String outName;
+algorithm
+  outName :=
+  matchcontinue (inVar)
+    local
+      Types.Ident name;
+    case Types.VAR(name = name)
+      then name;
+    case (_)
+      then "NULL";
+  end matchcontinue;
+end generateVarName;
+
+protected function generateRecordMembers "function: generateRecordMembers
+
+"
+  input Types.Type inRecordType;
+  output list<String> outMembers;
+algorithm
+  outMembers :=
+  matchcontinue (inRecordType)
+    local
+      list<Types.Var> varlst;
+      list<String> names;
+    case ((Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = varlst),_))
+      equation
+        names = Util.listMap(varlst, generateVarName);
+      then
+        names;
+    case (_) then {};
+  end matchcontinue;
+end generateRecordMembers;
+
 protected function generateRead "function: generateRead
  
 "
@@ -7217,6 +7472,23 @@ algorithm
       DAE.Type t;
       list<DAE.Element> r;
     case {} then cEmptyFunction; 
+    case (DAE.VAR(componentRef = id,varible = vk,variable = DAE.INPUT(),input_ = DAE.RECORD(_),binding = {},fullType = rt) :: r)
+      local
+        list<String> args;
+        String arg_str;
+        Types.Type rt;
+      equation 
+        (cref_str,_) = compRefCstr(id);
+        args = generateRecordMembers(rt);
+        args = Util.listMap1(args,makeRecordRef,cref_str);
+        arg_str = Util.stringDelimitList(args,",");
+        stmt = Util.stringAppendList(
+          {"if(read_modelica_record(&inArgs, ",arg_str,")) return 1;"});
+        cfn1 = cAddInits(cEmptyFunction, {stmt});
+        cfn2 = generateRead(r);
+        cfn = cMergeFn(cfn1, cfn2);
+      then
+        cfn;
     case (DAE.VAR(componentRef = id,varible = vk,variable = DAE.INPUT(),input_ = t,binding = {}) :: r)
       equation 
         (cref_str,_) = compRefCstr(id);
@@ -7249,6 +7521,99 @@ algorithm
   end matchcontinue;
 end generateRead;
 
+protected function generateRWType "function: generateRWType
+
+"
+  input Types.Type inType;
+  output String outType;
+algorithm
+  outType :=
+  matchcontinue (inType)
+    case ((Types.T_INTEGER(_), _)) then "TYPE_DESC_INT";
+    case ((Types.T_REAL(_), _)) then "TYPE_DESC_REAL";
+    case ((Types.T_STRING(_), _)) then "TYPE_DESC_STRING";
+    case ((Types.T_BOOL(_), _)) then "TYPE_DESC_BOOL";
+    case ((Types.T_ARRAY(arrayType = t), _))
+      local
+        Types.Type t;
+        String ret;
+      equation
+        ret = generateRWType(t);
+        ret = stringAppend(ret, "_ARRAY");
+      then
+        ret;
+    case ((Types.T_TUPLE(_), _)) then "TYPE_DESC_TUPLE";
+    case (_) then "TYPE_DESC_COMPLEX";
+  end matchcontinue;
+end generateRWType;
+
+protected function generateVarType "function: generateVarType
+
+"
+  input Types.Var inVar;
+  output String outType;
+algorithm
+  outType :=
+  matchcontinue (inVar)
+    local
+      Types.Type t;
+      String ret;
+    case (Types.VAR(type_ = t))
+      equation
+        ret = generateRWType(t);
+      then
+        ret;
+    case (_) then "TYPE_DESC_NONE";
+  end matchcontinue;
+end generateVarType;
+
+protected function generateOutVar "function: generateOutVar
+
+"
+  input Types.Var inVar;
+  input String inRecordBase;
+  output String outArgs;
+  String type_arg,name_arg,ref_arg,namestr_arg;
+algorithm
+  type_arg := generateVarType(inVar);
+  name_arg := generateVarName(inVar);
+  ref_arg := makeRecordRef(name_arg,inRecordBase);
+  namestr_arg := Util.stringAppendList({"\"",name_arg,"\""});
+  outArgs := Util.stringDelimitList({type_arg,namestr_arg,ref_arg}, ",");
+end generateOutVar;
+
+protected function generateOutRecordMembers "function: generateOutRecordMembers
+
+"
+  input Types.Type inRecordType;
+  input String inRecordBase;
+  output String outRecordType;
+  output list<String> outMembers;
+algorithm
+  (outRecordType,outMembers) :=
+  matchcontinue (inRecordType,inRecordBase)
+    local
+      list<Types.Var> varlst;
+      list<String> args;
+      String base_str, path_str;
+      Absyn.Path path;
+    case ((Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = varlst), SOME(path)),base_str)
+      equation
+        args = Util.listMap1(varlst, generateOutVar, base_str);
+        path_str = ModUtil.pathString2(path, "_");
+        path_str = Util.stringAppendList({"\"",path_str,"\""});
+      then
+        (path_str, args);
+    case ((Types.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = varlst), _),base_str)
+      equation
+        args = Util.listMap1(varlst, generateOutVar, base_str);
+      then
+        ("", args);
+    case ((_,_),_)
+      then ("", {});
+  end matchcontinue;
+end generateOutRecordMembers;
+
 protected function generateWriteOutvars "function: generateWriteOutvars
  
  generates code for writing output variables in return struct to file.
@@ -7267,7 +7632,27 @@ algorithm
       DAE.Type t;
       list<DAE.Element> r;
       String iStr;
-    case ({},_) then cEmptyFunction; 
+    case ({},_) then cEmptyFunction;
+    case (DAE.VAR(componentRef = id,varible = vk,variable = DAE.OUTPUT(),input_ = (t as DAE.RECORD(_)),binding = {},fullType = rt) :: r,i)
+      local
+        Types.Type rt;
+        list<String> args;
+        String arg_str, base_str, path_str;
+      equation
+        iStr = intString(i);
+        base_str = stringAppend("out.targ",iStr);
+
+        (path_str,args) = generateOutRecordMembers(rt,base_str);
+        args = listAppend(args, {"TYPE_DESC_NONE"});
+        arg_str = Util.stringDelimitList(args,",");
+
+        stmt = Util.stringAppendList({"write_modelica_record(outVar, ",
+                                      path_str,", ",arg_str,");"});
+        cfn1 = cAddStatements(cEmptyFunction, {stmt});
+        cfn2 = generateWriteOutvars(r,i+1);
+        cfn = cMergeFn(cfn1, cfn2);
+      then
+        cfn;
     case (DAE.VAR(componentRef = id,varible = vk,variable = DAE.OUTPUT(),input_ = t,binding = {}) :: r,i)
       equation 
         iStr = intString(i);

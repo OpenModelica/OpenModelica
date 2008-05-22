@@ -56,10 +56,9 @@ static char * ldflags=NULL;
 void * read_ptolemy_dataset(char*filename, int size,char**vars,
                             int datasize);
 int read_ptolemy_dataset_size(char*filename);
-static double next_realelt(double *arr);
-static int next_intelt(int *arr);
 static void *generate_array(enum type_desc_e type, int curdim, int ndims,
                             int *dim_size, void **data);
+static int parse_array(type_description *desc, void *arrdata);
 static void *type_desc_to_value(type_description *desc);
 static int execute_function(void *in_arg, void **out_arg,
                             int (* func)(type_description *,
@@ -69,11 +68,13 @@ typedef struct modelica_ptr_s *modelica_ptr_t;
 
 #define MAX_PTR_INDEX 10000
 
+/*
 #if defined(_MSC_VER)
 #define inline __inline
 #else // Linux & MinGW 
 #define inline inline
 #endif
+*/
 
 static inline modelica_integer alloc_ptr();
 static inline modelica_ptr_t lookup_ptr(modelica_integer index);
@@ -245,6 +246,7 @@ char* _replace(const char* source_str,
 #include <windows.h>
 #include "rml.h"
 #include "../Values.h"
+#include "../Absyn.h"
 #include "../absyn_builder/yacclib.h"
 
 #define MAXPATHLEN MAX_PATH
@@ -274,10 +276,18 @@ void System_5finit(void)
     memset(ptr_vector, 0, sizeof(ptr_vector));
 
 	set_cc("gcc");
-    set_cxx("g++");
-    set_linker("gcc -shared -export-dynamic");
-    set_cflags("${MODELICAUSERCFLAGS}");
-    set_ldflags("-lc_runtime");
+  set_cxx("g++");
+  set_linker("gcc -shared -export-dynamic");
+#if defined(__i386__) || defined(__x86_64__)
+  /* 
+   * if we are on i386 or x86_64 then use the 
+   * SSE instructions, not the normal i387 FPU 
+   */
+  set_cflags("-Wall -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}");
+#else
+  set_cflags("${MODELICAUSERCFLAGS}");
+#endif
+  set_ldflags("-lc_runtime");
 	path = getenv("PATH");
 	omhome = getenv("OPENMODELICAHOME");
 	if (omhome) {
@@ -1034,7 +1044,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__hash)
 {
   char *str = RML_STRINGDATA(rmlA0);
-  int res=0,i=0;
+  int res=0,i=0,len=strlen(str);
   while( str[i]&& i<4)
     res+=(int)str[i++];
 
@@ -1425,6 +1435,7 @@ RML_END_LABEL
 #include <sys/stat.h>
 #include <dirent.h>
 #include <sys/param.h> /* MAXPATHLEN */
+#include <ctype.h>
 
 /* MacOS malloc.h is in sys */
 #ifndef __APPLE_CC__
@@ -1435,6 +1446,7 @@ RML_END_LABEL
 #endif
 
 #include "rml.h"
+#include "../Absyn.h"
 #include "../Values.h"
 #include "../absyn_builder/yacclib.h"
 
@@ -1539,10 +1551,23 @@ void System_5finit(void)
     memset(ptr_vector, 0, sizeof(ptr_vector));
 
 	set_cc("gcc");
-    set_cxx("g++");
-    set_linker("gcc -export-dynamic -shared");
+  set_cxx("g++");
+#if defined(__sparc__)
+  set_linker("gcc -G");
+#else
+  set_linker("gcc -shared -export-dynamic");
+#endif /* __sparc__ */
+
+#if defined(__i386__) || defined(__x86_64__)
+  /* 
+   * if we are on i386 or x86_64 then use the 
+   * SSE instructions, not the normal i387 FPU 
+   */
+  set_cflags("-Wall -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}");
+#else
 	set_cflags("${MODELICAUSERCFLAGS}");
-    set_ldflags("-lc_runtime");
+#endif
+  set_ldflags("-lc_runtime");
 
 	qthome = getenv("QTHOME");
 	if (qthome && strlen(qthome)) {
@@ -1606,7 +1631,6 @@ RML_BEGIN_LABEL(System__removeFirstAndLastChar)
   char *str = RML_STRINGDATA(rmlA0);
   char *res = "";
   int length=strlen(str);
-  int i;
   if(length > 1)
     {
       res=malloc(length-1);
@@ -2275,7 +2299,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__hash)
 {
   char *str = RML_STRINGDATA(rmlA0);
-  rml_sint_t res=0,i=0;
+  rml_sint_t res=0,i=0,len=strlen(str);
   while( str[i]&& i<4)
     res+=(rml_sint_t)str[i++];
 
@@ -2792,6 +2816,14 @@ void *generate_array(enum type_desc_e type, int curdim, int ndims,
       }
       *data = ptr;
     }; break;
+    case TYPE_DESC_STRING: {
+      modelica_string_t *ptr = *data;
+      for (i = 0; i < cur_dim_size; ++i, --ptr) {
+        tmp.data.string = *ptr;
+        lst = (void *) mk_cons(type_desc_to_value(&tmp), lst);
+      }
+      *data = ptr;
+    }; break;
     default:
       assert(0);
       return NULL;
@@ -2804,6 +2836,129 @@ void *generate_array(enum type_desc_e type, int curdim, int ndims,
   }
 
   return Values__ARRAY(lst);
+}
+
+static int value_to_type_desc(void *value, type_description *desc)
+{
+  init_type_description(desc);
+
+  switch (RML_HDRCTOR(RML_GETHDR(value))) {
+  case Values__INTEGER_3dBOX1: {
+    void *data = RML_STRUCTDATA(value)[0];
+    desc->type = TYPE_DESC_INT;
+    desc->data.integer = RML_UNTAGFIXNUM(data);
+  }; break;
+  case Values__REAL_3dBOX1: {
+    void *data = RML_STRUCTDATA(value)[0];
+    desc->type = TYPE_DESC_REAL;
+    desc->data.real = rml_prim_get_real(data);
+  }; break;
+  case Values__BOOL_3dBOX1: {
+    void *data = RML_STRUCTDATA(value)[0];
+    desc->type = TYPE_DESC_BOOL;
+    desc->data.boolean = (data == RML_TRUE);
+  }; break;
+  case Values__STRING_3dBOX1: {
+    void *data = RML_STRUCTDATA(value)[0];
+    int len = RML_HDRSTRLEN(RML_GETHDR(data));
+    desc->type = TYPE_DESC_STRING;
+    alloc_modelica_string(&(desc->data.string), len);
+    memcpy(desc->data.string, RML_STRINGDATA(data), len + 1);
+  }; break;
+  case Values__ARRAY_3dBOX1: {
+    void *data = RML_STRUCTDATA(value)[0];
+    if (parse_array(desc, data)) {
+      printf("Parsing of array failed\n");
+      return -1;
+    }
+  }; break;
+  case Values__RECORD_3dBOX3: {
+    void *data = RML_STRUCTDATA(value)[1];
+    void *names = RML_STRUCTDATA(value)[2];
+    desc->type = TYPE_DESC_RECORD;
+    while ((RML_GETHDR(names) != RML_NILHDR)
+           &&
+           (RML_GETHDR(data) != RML_NILHDR)) {
+      type_description *elem;
+      void *nptr;
+
+      nptr = RML_CAR(names);
+      elem = add_modelica_record_member(desc, RML_STRINGDATA(nptr),
+                                        RML_HDRSTRLEN(RML_GETHDR(nptr)));
+
+      if (value_to_type_desc(RML_CAR(data), elem)) {
+        return -1;
+      }
+      data = RML_CDR(data);
+      names = RML_CDR(names);
+    }
+  }; break;
+  case Values__TUPLE_3dBOX1: {
+    void *data = RML_STRUCTDATA(value)[0];
+    desc->type = TYPE_DESC_TUPLE;
+    while (RML_GETHDR(data) != RML_NILHDR) {
+      type_description *elem;
+
+      elem = add_tuple_member(desc);
+
+      if (value_to_type_desc(RML_CAR(data), elem)) {
+        return -1;
+      }
+      data = RML_CDR(data);
+    }
+  }; break;
+  case Values__ENUM_3dBOX1:
+  case Values__LIST_3dBOX1:
+  case Values__CODE_3dBOX1:
+    /* unsupported */
+    return -1;
+  default:
+    return -1;
+  }
+
+  return 0;
+}
+
+static void *name_to_path(const char *name)
+{
+  const char *last = name, *pos = NULL;
+  char *tmp;
+  void *ident = NULL;
+  int need_replace = 0;
+  while ((pos = strchr(last, '_')) != NULL) {
+    if (pos[1] == '_') {
+      last = pos + 2;
+      need_replace = 1;
+      continue;
+    } else
+      break;
+  }
+
+  if (pos == NULL) {
+    if (need_replace) {
+      tmp = _replace(name, "__", "_");
+      ident = mk_scon(tmp);
+      free(tmp);
+    } else {
+      memcpy(&tmp, &name, sizeof(char *)); /* don't try this at home */
+      ident = mk_scon(tmp);
+    }
+    return Absyn__IDENT(ident);
+  } else {
+    size_t len = pos - name;
+    tmp = malloc(len + 1);
+    memcpy(tmp, name, len);
+    tmp[len] = '\0';
+    if (need_replace) {
+      char *tmp2 = _replace(tmp, "__", "_");
+      ident = mk_scon(tmp2);
+      free(tmp2);
+    } else {
+      ident = mk_scon(tmp);
+    }
+    free(tmp);
+    return Absyn__QUALIFIED(ident, name_to_path(pos + 1));
+  }
 }
 
 void *type_desc_to_value(type_description *desc)
@@ -2830,23 +2985,48 @@ void *type_desc_to_value(type_description *desc)
     }
     return (void *) Values__TUPLE(lst);
   };
+  case TYPE_DESC_RECORD: {
+    char **name = desc->data.record.name + desc->data.record.elements;
+    type_description *e = desc->data.record.element + desc->data.record.elements;
+    void *namelst = (void *) mk_nil();
+    void *varlst = (void *) mk_nil();
+    while (e > desc->data.record.element) {
+      void *n, *t;
+      --name;
+      --e;
+      n = mk_scon(*name);
+      t = type_desc_to_value(e);
+      if (n == NULL || t == NULL)
+        return NULL;
+      namelst = mk_cons(n, namelst);
+      varlst = mk_cons(t, varlst);
+    }
+    return (void *) Values__RECORD(name_to_path(desc->data.record.record_name),
+                                   varlst, namelst);
+  };
   case TYPE_DESC_REAL_ARRAY: {
-    void *ptr = desc->data.real_array.data
+    void *ptr = (modelica_real *) desc->data.real_array.data
       + real_array_nr_of_elements(&(desc->data.real_array)) - 1;
     return generate_array(TYPE_DESC_REAL, 1, desc->data.real_array.ndims,
                           desc->data.real_array.dim_size, &ptr);
   };
   case TYPE_DESC_INT_ARRAY: {
-    void *ptr = desc->data.int_array.data
+    void *ptr = (modelica_integer *) desc->data.int_array.data
       + integer_array_nr_of_elements(&(desc->data.int_array)) - 1;
     return generate_array(TYPE_DESC_INT, 1, desc->data.int_array.ndims,
                           desc->data.int_array.dim_size, &ptr);
   };
   case TYPE_DESC_BOOL_ARRAY: {
-    void *ptr = desc->data.bool_array.data
+    void *ptr = (modelica_boolean *) desc->data.bool_array.data
       + boolean_array_nr_of_elements(&(desc->data.bool_array)) - 1;
     return generate_array(TYPE_DESC_BOOL, 1, desc->data.bool_array.ndims,
                           desc->data.bool_array.dim_size, &ptr);
+  };
+  case TYPE_DESC_STRING_ARRAY: {
+    void *ptr = (modelica_string_t *) desc->data.string_array.data
+      + string_array_nr_of_elements(&(desc->data.string_array)) - 1;
+    return generate_array(TYPE_DESC_STRING, 1, desc->data.string_array.ndims,
+                          desc->data.string_array.dim_size, &ptr);
   };
   case TYPE_DESC_COMPLEX:
     return NULL;
@@ -2877,10 +3057,11 @@ static int get_array_type_and_dims(type_description *desc, void *arrdata)
   case Values__BOOL_3dBOX1:
     desc->type = TYPE_DESC_BOOL_ARRAY;
     return 1;
+  case Values__STRING_3dBOX1:
+    desc->type = TYPE_DESC_STRING_ARRAY;
+    return 1;
   case Values__ARRAY_3dBOX1:
     return (1 + get_array_type_and_dims(desc, RML_STRUCTDATA(item)[0]));
-  case Values__STRING_3dBOX1:
-    return -1;
   case Values__ENUM_3dBOX1:
   case Values__LIST_3dBOX1:
   case Values__TUPLE_3dBOX1:
@@ -2948,6 +3129,18 @@ static int get_array_data(int curdim, int dims, const int *dim_size,
         *ptr = (RML_STRUCTDATA(item)[0] == RML_TRUE);
         *data = ++ptr;
       }; break;
+      case TYPE_DESC_STRING: {
+        modelica_string_t *ptr = *data;
+        int len;
+        void *str;
+        if (RML_HDRCTOR(RML_GETHDR(item)) != Values__STRING_3dBOX1)
+          return -1;
+        str = RML_STRUCTDATA(item)[0];
+        len = RML_HDRSTRLEN(RML_GETHDR(str));
+        alloc_modelica_string(ptr, len);
+        memcpy(*ptr, RML_STRINGDATA(str), len + 1);
+        *data = ++ptr;
+      }; break;
       default:
         assert(0);
         return -1;
@@ -2972,7 +3165,7 @@ static int get_array_data(int curdim, int dims, const int *dim_size,
   return 0;
 }
 
-static int parse_array(type_description *desc, void *arrdata)
+int parse_array(type_description *desc, void *arrdata)
 {
   int dims, *dim_size;
   void *data;
@@ -2996,6 +3189,10 @@ static int parse_array(type_description *desc, void *arrdata)
     desc->data.bool_array.ndims = dims;
     desc->data.bool_array.dim_size = dim_size;
     break;
+  case TYPE_DESC_STRING_ARRAY:
+    desc->data.string_array.ndims = dims;
+    desc->data.string_array.dim_size = dim_size;
+    break;
   default:
     assert(0);
     return -1;
@@ -3015,6 +3212,10 @@ static int parse_array(type_description *desc, void *arrdata)
     alloc_boolean_array_data(&(desc->data.bool_array));
     data = desc->data.bool_array.data;
     return get_array_data(1, dims, dim_size, arrdata, TYPE_DESC_BOOL, &data);
+  case TYPE_DESC_STRING_ARRAY:
+    alloc_string_array_data(&(desc->data.string_array));
+    data = desc->data.string_array.data;
+    return get_array_data(1, dims, dim_size, arrdata, TYPE_DESC_STRING, &data);
   default:
     break;
   }
@@ -3056,7 +3257,8 @@ static void puttype(const type_description *desc)
       int e;
       fprintf(stderr, "\t[");
       for (e = 0; e < desc->data.real_array.dim_size[0]; ++e)
-        fprintf(stderr, "%g, ", desc->data.real_array.data[e]);
+        fprintf(stderr, "%g, ",
+                ((modelica_real *) desc->data.real_array.data)[e]);
       fprintf(stderr, "]\n");
     }
   }; break;
@@ -3070,7 +3272,8 @@ static void puttype(const type_description *desc)
       int e;
       fprintf(stderr, "\t[");
       for (e = 0; e < desc->data.int_array.dim_size[0]; ++e)
-        fprintf(stderr, "%d, ", desc->data.int_array.data[e]);
+        fprintf(stderr, "%d, ",
+                ((modelica_integer *) desc->data.int_array.data)[e]);
       fprintf(stderr, "]\n");
     }
   }; break;
@@ -3084,7 +3287,23 @@ static void puttype(const type_description *desc)
       int e;
       fprintf(stderr, "\t[");
       for (e = 0; e < desc->data.bool_array.dim_size[0]; ++e)
-        fprintf(stderr, "%g, ", desc->data.bool_array.data[e]);
+        fprintf(stderr, "%c, ",
+                ((modelica_boolean *) desc->data.bool_array.data)[e] ? 'T':'F');
+      fprintf(stderr, "]\n");
+    }
+  }; break;
+  case TYPE_DESC_STRING_ARRAY: {
+    int d;
+    fprintf(stderr, "STRING ARRAY [%d] (", desc->data.string_array.ndims);
+    for (d = 0; d < desc->data.string_array.ndims; ++d)
+      fprintf(stderr, "%d, ", desc->data.string_array.dim_size[d]);
+    fprintf(stderr, ")\n");
+    if (desc->data.string_array.ndims == 1) {
+      int e;
+      fprintf(stderr, "\t[");
+      for (e = 0; e < desc->data.string_array.dim_size[0]; ++e)
+        fprintf(stderr, "%s, ",
+                ((modelica_string_t *) desc->data.string_array.data)[e]);
       fprintf(stderr, "]\n");
     }
   }; break;
@@ -3115,54 +3334,13 @@ static int execute_function(void *in_arg, void **out_arg,
   while (RML_GETHDR(v) != RML_NILHDR) {
     void *val = RML_CAR(v);
 
-    init_type_description(arg);
-
-    switch (RML_HDRCTOR(RML_GETHDR(val))) {
-    case Values__INTEGER_3dBOX1: {
-      void *data = RML_STRUCTDATA(val)[0];
-      arg->type = TYPE_DESC_INT;
-      arg->data.integer = RML_UNTAGFIXNUM(data);
-    }; break;
-    case Values__REAL_3dBOX1: {
-      void *data = RML_STRUCTDATA(val)[0];
-      arg->type = TYPE_DESC_REAL;
-      arg->data.real = rml_prim_get_real(data);
-    }; break;
-    case Values__BOOL_3dBOX1: {
-      void *data = RML_STRUCTDATA(val)[0];
-      arg->type = TYPE_DESC_BOOL;
-      arg->data.boolean = (data == RML_TRUE);
-    }; break;
-    case Values__STRING_3dBOX1: {
-      void *data = RML_STRUCTDATA(val)[0];
-      int len = RML_HDRSTRLEN(RML_GETHDR(data));
-      arg->type = TYPE_DESC_STRING;
-      alloc_modelica_string(&(arg->data.string), len);
-      memcpy(arg->data.string, RML_STRINGDATA(data), len + 1);
-    }; break;
-    case Values__ARRAY_3dBOX1: {
-      void *data = RML_STRUCTDATA(val)[0];
-      if (parse_array(arg, data)) {
-        printf("Parsing of array failed\n");
-        restore_memory_state(mem_state);
-        return -1;
-      }
-    }; break;
-    case Values__ENUM_3dBOX1:
-    case Values__LIST_3dBOX1:
-    case Values__TUPLE_3dBOX1:
-    case Values__RECORD_3dBOX3:
-    case Values__CODE_3dBOX1:
-      /* unsupported (for now) */
-      restore_memory_state(mem_state);
-      return -1;
-    default:
+    if (value_to_type_desc(val, arg)) {
       restore_memory_state(mem_state);
       return -1;
     }
-    /*
-    puttype(arg);
-    */
+
+    /* puttype(arg); */
+
     ++arg;
     v = RML_CDR(v);
   }

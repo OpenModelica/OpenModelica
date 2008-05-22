@@ -2855,7 +2855,7 @@ algorithm
       equation 
         indx_str = intString(indx);
         var_str=Util.stringDelimitList(Util.listMap(expl,Exp.printExpStr),", ");
-        res = Util.stringAppendList({"Array eqn no: ",indx_str,"for variables:",var_str,"\n"});
+        res = Util.stringAppendList({"Array eqn no: ",indx_str," for variables:",var_str,"\n"});
       then
         res;
     case (SOLVED_EQUATION(componentRef = cr,exp = e2))
@@ -6606,6 +6606,11 @@ algorithm
       Exp.ComponentRef cr,cr2;
       Value v,res;
       list<CrefIndex> vs;
+    case (cr,{})
+      equation 
+        Debug.fprint("failtrace", "-DAELow.getVar3 failed on:" +& Exp.printComponentRefStr(cr) +& "\n");
+      then
+        fail();      
     case (cr,(CREFINDEX(cref = cr2,index = v) :: _))
       equation 
         true = Exp.crefEqual(cr, cr2);
@@ -10307,8 +10312,8 @@ public function translateDae "function: translateDae
   - y for algebraic variables 
   - p for parameters
   
-  This is done by creating defines for each variable. For instance, #define a$pointb$pointc xd[3]
-  All dots and subscripts in variable names are replaced by $point, etc.
+  This is done by creating defines for each variable. For instance, #define a$Pb$Pc xd[3]
+  All dots and subscripts in variable names are replaced by $P, etc.
    The equations are updated with the new variable names.
 "
   input DAELow inDAELow;

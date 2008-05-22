@@ -43,8 +43,7 @@ public import Lookup;
 public import Debug; 
 public import Env;
 public import Absyn; 
-public import SCode; 
-public import DAE;
+public import SCode;
 
 public function isList "function: isList
 	author: KS

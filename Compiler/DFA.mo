@@ -42,7 +42,6 @@ package DFA
 public import Absyn;
 public import Env;
 public import Types;
-public import ClassInf;
 public import SCode;
 
 type Stamp = Integer;

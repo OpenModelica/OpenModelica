@@ -35,6 +35,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+
+typedef struct type_desc_s type_description;
+
 #include "modelica.h"
 
 enum type_desc_e {
@@ -46,8 +49,10 @@ enum type_desc_e {
   TYPE_DESC_BOOL,
   TYPE_DESC_BOOL_ARRAY,
   TYPE_DESC_STRING,
+  TYPE_DESC_STRING_ARRAY,
   TYPE_DESC_TUPLE,
-  TYPE_DESC_COMPLEX
+  TYPE_DESC_COMPLEX,
+  TYPE_DESC_RECORD
 };
 
 struct type_desc_s {
@@ -61,15 +66,20 @@ struct type_desc_s {
     modelica_boolean boolean;
     boolean_array_t bool_array;
     modelica_string_t string;
+    string_array_t string_array;
     struct {
       size_t elements;
       struct type_desc_s *element;
     } tuple;
     modelica_complex complex;
+    struct {
+      const char *record_name;
+      size_t elements;
+      char **name;
+      struct type_desc_s *element;
+    } record;
   } data;
 };
-
-typedef struct type_desc_s type_description;
 
 void init_type_description(type_description *);
 void free_type_description(type_description *);
@@ -90,8 +100,19 @@ void write_modelica_boolean(type_description *, modelica_boolean *);
 void write_boolean_array(type_description *, boolean_array_t *);
 
 int read_modelica_string(type_description **, modelica_string_t *);
+int read_string_array(type_description **, string_array_t *);
 void write_modelica_string(type_description *, modelica_string_t *);
+void write_string_array(type_description *, string_array_t *);
 
-int read_modelica_complex(type_description **, modelica_complex);
+int read_modelica_complex(type_description **, modelica_complex *);
+void write_modelica_complex(type_description *, modelica_complex *);
+
+int read_modelica_record(type_description **, ...);
+void write_modelica_record(type_description *, const char *name, ...);
+
+type_description *add_modelica_record_member(type_description *desc,
+                                             const char *name, size_t nlen);
+
+type_description *add_tuple_member(type_description *desc);
 
 #endif
