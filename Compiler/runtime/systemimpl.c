@@ -278,10 +278,11 @@ void System_5finit(void)
 	set_cc("gcc");
   set_cxx("g++");
   set_linker("gcc -shared -export-dynamic");
-#if defined(__i386__) || defined(__x86_64__)
+#if defined(__i386__) || defined(__x86_64__) || defined(_MSC_VER)
   /* 
-   * if we are on i386 or x86_64 then use the 
-   * SSE instructions, not the normal i387 FPU 
+   * if we are on i386 or x86_64 or compiling with 
+   * Visual Studio then use the SSE instructions, 
+   * not the normal i387 FPU 
    */
   set_cflags("-Wall -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}");
 #else
@@ -959,11 +960,12 @@ RML_BEGIN_LABEL(System__getVariableNames)
 {
 	char* model = RML_STRINGDATA(rmlA0);
 	int size = getVariableListSize(model);
+	char* lst = 0;
 
 	if(!size)
 		RML_TAILCALLK(rmlFC);
 		
-	char* lst = (char*)malloc(sizeof(char)*size +1);
+	lst = (char*)malloc(sizeof(char)*size +1);
 	
 	getVariableList(model, lst);
 	rmlA0 = (void*)mk_scon(lst);
