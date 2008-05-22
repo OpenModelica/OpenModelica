@@ -3,7 +3,7 @@
 ######################################################################
 
 TEMPLATE = lib
-TARGET = 
+TARGET = release/sendData
 DEPENDPATH += .
 INCLUDEPATH += .
 #CONFIG += dll
