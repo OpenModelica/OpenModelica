@@ -1571,7 +1571,7 @@ void System_5finit(void)
 
 	qthome = getenv("QTHOME");
 	if (qthome && strlen(qthome)) {
-		putenv("SENDDATALIBS=-lsendData -lQtNetwork -lQtCore -lQtGui -luuid");
+		putenv("SENDDATALIBS=-lsendData -lQtNetwork -lQtCore -lQtGui");
 	} else {
 		putenv("SENDDATALIBS=-lsendData");
 	}
@@ -2584,7 +2584,9 @@ RML_BEGIN_LABEL(System__sendData)
 
 //  emulateStreamData(data, 7778, title, "time", "", legend, grid, 0, 0, 0, 0, logX, logY, interpolation, 1);
 // emulateStreamData(data, title, xLabel, yLabel , interpolation, legend, grid, logX, logY, points, range); 
-  emulateStreamData(data, 7778, title, xLabel, yLabel , interpolation, legend, grid, 0, 0, 0, 0, logX, logY, points, range);
+ // emulateStreamData(data, 7778, title, xLabel, yLabel , interpolation, legend, grid, 0, 0, 0, 0, logX, logY, points, range);
+
+  emulateStreamData(data, title, xLabel, yLabel , interpolation, legend, grid, logX, logY, points, range);
   
 //	emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, "linear");
        
