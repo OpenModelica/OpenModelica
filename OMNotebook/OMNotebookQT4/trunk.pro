@@ -8,25 +8,26 @@ INCLUDEPATH += . \
 #OBJECTS += 
 
 unix:LIBS += -L${ANTLRHOME}/src -lantlr \
-             -rdynamic -L/home/adrpo/dev/mico-2.3.12//lib -lmico2.3.12   -lssl -lcrypto -ldl -lm  -lpthread
+             `${MICOHOME}/bin/mico-config --libs`
 
-TARGET = qtnotebook
+TARGET = OMNotebook
 
 ## For debugging
-QMAKE_CFLAGS+=-pg
-QMAKE_CXXFLAGS+=-pg
-QMAKE_LFLAGS+=-pg
+QMAKE_CFLAGS+=
+QMAKE_CXXFLAGS+=
+QMAKE_LFLAGS+=
 
 #If omc is installed on system. Set includepath and objects
 #correctly. If omc not is installed on the system. Comment out
 #theese three lines below.
 DEFINES += OMC
-INCLUDEPATH += /home/adrpo/dev/trunk/Compiler/runtime\
+INCLUDEPATH += /home/openmodelica/dev/OpenModelica/Compiler/runtime\
                ${ANTLRHOME} \
                ${MICOHOME}/include \
-               ../NotebookParser
-OBJECTS += /home/adrpo/dev/trunk/Compiler/runtime/omc_communication.o
-unix:LIBS += -lmico -lantlr
+               ../NotebookParser \
+               ../Pltpkg2
+OBJECTS += /home/openmodelica/dev/OpenModelica/Compiler/runtime/omc_communication.o
+unix:LIBS += 
 QT += network xml
 
 # Input
@@ -88,6 +89,25 @@ HEADERS += ../NotebookParser/AntlrNotebookLexer.hpp\
            commandcompletion.h \
            notebook.h \
            searchform.h \
+           graphcell.h \
+           evalthread.h \
+           indent.h \
+	   ../Pltpkg2/legendLabel.h \
+	   ../Pltpkg2/compoundWidget.h \
+	   ../Pltpkg2/dataSelect.h \
+           ../Pltpkg2/graphWindow.h \
+           ../Pltpkg2/curve.h \
+	   ../Pltpkg2/point.h \ 
+	   ../Pltpkg2/label.h \
+	   ../Pltpkg2/focusRect.h \
+	   ../Pltpkg2/graphScene.h \
+	   ../Pltpkg2/graphWidget.h \
+	   ../Pltpkg2/line2D.h \
+	   ../Pltpkg2/lineGroup.h \
+	   ../Pltpkg2/preferenceWindow.h \
+	   ../Pltpkg2/variableData.h \
+	   ../Pltpkg2/verticalLabel.h \
+           ../Pltpkg2/variablewindow.h
            
 SOURCES += ../NotebookParser/AntlrNotebookLexer.cpp\
            ../NotebookParser/AntlrNotebookParser.cpp\
@@ -124,10 +144,32 @@ SOURCES += ../NotebookParser/AntlrNotebookLexer.cpp\
            cellgroup.cpp \
            notebooksocket.cpp \
            serializingvisitor.cpp \
+           graphcell.cpp \
+           evalthread.cpp \
+           indent.cpp \
+	   ../Pltpkg2/compoundWidget.cpp \
+	   ../Pltpkg2/dataSelect.cpp \
+           ../Pltpkg2/graphWindow.cpp \
+           ../Pltpkg2/curve.cpp \
+	   ../Pltpkg2/point.cpp \
+	   ../Pltpkg2/legendLabel.cpp \
+	   ../Pltpkg2/graphWidget.cpp \
+	   ../Pltpkg2/line2D.cpp \
+	   ../Pltpkg2/lineGroup.cpp \
+	   ../Pltpkg2/preferenceWindow.cpp \
+	   ../Pltpkg2/variableData.cpp \
+           ../Pltpkg2/variablewindow.cpp
 
 FORMS += ImageSizeDlg.ui \
          OtherDlg.ui \
-         searchform.ui
+         searchform.ui \
+         ../Pltpkg2/compoundWidget.ui\
+         ../Pltpkg2/dataSelect.ui\
+         ../Pltpkg2/graphWindow.ui\
+         ../Pltpkg2/preferences.ui \
+         ../Pltpkg2/newgraph.ui
 
 RESOURCES += res_qt.qrc
+
+CONFIG += warn_off
 

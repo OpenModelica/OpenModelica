@@ -91,7 +91,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "focusRect.h"
 #include "variablewindow.h"
 
-#include <QtOpengL/QGLWidget>
+#include <QtOpenGL/QGLWidget>
 using namespace std;
 
 GraphWidget::GraphWidget(QWidget* parent): QGraphicsView(parent)
@@ -754,34 +754,32 @@ void GraphWidget::mousePressEvent ( QMouseEvent * event )
 }
 
 
-void GraphWidget::updatePointSizes(QRect& r)
+void GraphWidget::updatePointSizes(QRect r)
 {
-	if( r == QRect())
-		r = rect();
+  if(r == QRect())
+    r = rect();
+  
+  QList<QGraphicsItem*> g3;
 
-	QList<QGraphicsItem*> g3;
-
-	if(r.x() < 0)
-		g3 = items();
-	else
-		g3 = items(rect());
-
-	Point* p;
-
-	double xScale = matrix().m11()/125;
-	double yScale = -matrix().m22()/200;
-
-	for(int i = 0; i < g3.size(); ++i)
+  if(r.x() < 0)
+    g3 = items();
+  else
+    g3 = items(rect());
+  
+  Point* p;
+  
+  double xScale = matrix().m11()/125;
+  double yScale = -matrix().m22()/200;
+  
+  for(int i = 0; i < g3.size(); ++i)
+    {
+      if((p = dynamic_cast<Point*>(g3.at(i))))	
+	//		if(p)
 	{
-		if((p = dynamic_cast<Point*>(g3.at(i))))	
-			//		if(p)
-		{
-
-
-			p->move(-.03/xScale/2., -.03/yScale/2.); 
-			p->setRect(p->xPos, p->yPos, .03/xScale, .03 /yScale);
-		}
+	  p->move(-.03/xScale/2., -.03/yScale/2.); 
+	  p->setRect(p->xPos, p->yPos, .03/xScale, .03 /yScale);
 	}
+    }
 }
 
 void GraphWidget::resetZoom()

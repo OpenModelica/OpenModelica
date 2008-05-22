@@ -1184,15 +1184,17 @@ namespace IAEX
 			else
 				openmodelica += "/tmp/";
 
-			//QDir dir( openmodelica );
-			QDir dir = QDir::current();
-			dir.setPath( openmodelica );
 			QString imagename = "omc_tmp_plot.png";
 
-			QString filename = dir.absolutePath();
-			if( !filename.endsWith( "/" ) )
-				filename += "/";
-			filename += imagename;
+			QDir dir1 = QDir::current();
+			QString filename1 = dir1.absolutePath();
+
+			QDir dir2 = QDir::current(); dir2.setPath( openmodelica );
+			QString filename2 = dir2.absolutePath();
+			if( !filename1.endsWith( "/" ) ) filename1 += "/";
+			filename1 += imagename;
+			if( !filename2.endsWith( "/" ) ) filename2 += "/";
+			filename2 += imagename;
 
 			// 2006-02-17 AF, 
 			evaluated_ = true;
@@ -1212,8 +1214,10 @@ namespace IAEX
 			// old plot.
 			if( isPlot(input_->toPlainText()) )
 			{
-				if( dir.exists( imagename ))
-					dir.remove( imagename );
+				if( dir1.exists( imagename ))
+					dir1.remove( imagename );
+				if( dir2.exists( imagename ))
+					dir2.remove( imagename );
 			}
 
 			// 2006-02-02 AF, Added try-catch
@@ -1272,7 +1276,13 @@ namespace IAEX
 				bool firstTry = true;
 				while( true )
 				{
-					if( dir.exists( imagename ))
+				        QString filename = "";
+					bool foundIt = false;
+					/* Search BOTH $OPENMODELICA/tmp and the current directory! */
+				        if( dir1.exists( imagename )) { filename = filename1; foundIt = true; }
+					else if( dir2.exists( imagename )) { filename = filename2; foundIt = true; }
+
+					if (foundIt)
 					{
 						QImage *image = new QImage( filename );
 						if( !image->isNull() )
@@ -1304,8 +1314,8 @@ namespace IAEX
 							else
 							{
 								output_->selectAll();
-								output_->textCursor().insertText( "[Error] Unable to read plot image \"" + filename + "\". Please retry." );
-								//output_->setPlainText( "[Error] Unable to read plot image \"" + imagename + "\". Please retry." );
+								output_->textCursor().insertText( "[Error] Unable to read plot image \"" + 
+												  filename1 + " or " + filename2 + "\". Please retry." );
 								break;
 							}
 						}
@@ -1314,8 +1324,8 @@ namespace IAEX
 					if( sleepTime > 25 )
 					{
 						output_->selectAll();
-						output_->textCursor().insertText( "[Error] Unable to find plot image \"" + filename + "\"" );
-//						output_->setPlainText( "[Error] Unable to found plot image \"" + imagename + "\"" );
+						output_->textCursor().insertText( "[Error] Unable to find plot image \"" + 
+										  filename1 + " or " + filename2 + "\"" );
 						break;
 					}
 					
@@ -1339,8 +1349,11 @@ namespace IAEX
 			}
 
 			++numEvals_;
-			dir.remove( imagename );
-
+			/* remove the image */
+			if( dir1.exists( imagename ))
+			  dir1.remove( imagename );
+			if( dir2.exists( imagename ))
+			  dir2.remove( imagename );
 
 			contentChanged();
 

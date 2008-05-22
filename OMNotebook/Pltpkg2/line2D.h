@@ -54,10 +54,12 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 class Line2D: public QGraphicsLineItem
 {
-//	Q_OBJECT
+  //	Q_OBJECT
 public:
-	Line2D(qreal x1, qreal y1, qreal x2, qreal y2, QPen& pen = QPen(Qt::blue), QGraphicsItem*	parent=0, QGraphicsScene* scene=0);
-	~Line2D();
+  Line2D(qreal x1, qreal y1, qreal x2, qreal y2, 
+	 QPen pen = QPen(Qt::blue), 
+	 QGraphicsItem*	parent=0, QGraphicsScene* scene=0);
+  ~Line2D();
 
 };
 

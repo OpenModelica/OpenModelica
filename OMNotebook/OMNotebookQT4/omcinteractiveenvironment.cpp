@@ -245,12 +245,12 @@ namespace IAEX
 				OMCPath = "";
 			else
 			{
-				string msg = "Unable to find OMC, searched in:\n" +
-					OMCPath + "/bin/\n" +
-					OMCPath + "\n" +
-					dir.absolutePath().toStdString();
+				QString msg = "Unable to find OMC, searched in:\n" +
+				  OMCPath + "/bin/\n" +
+				  OMCPath + "\n" +
+				  dir.absolutePath();
 
-				throw std::runtime_error( msg.c_str() );
+				throw std::runtime_error( msg.toStdString().c_str() );
 			}
 #endif
 			

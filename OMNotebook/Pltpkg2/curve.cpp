@@ -55,7 +55,8 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include "line2D.h"
 
 
-Curve::Curve(VariableData* x_, VariableData* y_, QColor& color, LegendLabel* ll): x(x_), y(y_), color_(color), label(ll)
+Curve::Curve(VariableData* x_, VariableData* y_, QColor& color, LegendLabel* ll): 
+x(x_), y(y_), color_(color), label(ll)
 {
 	line = new QGraphicsItemGroup;
 

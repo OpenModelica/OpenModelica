@@ -74,7 +74,7 @@ PreferenceWindow::PreferenceWindow(CompoundWidget* cw, QWidget *parent): QDialog
 	hAutoGrid->setChecked(!compoundWidget->gwMain->fixedXSize);
 	vAutoGrid->setChecked(!compoundWidget->gwMain->fixedYSize);
 
-	showGrid->setChecked(compoundWidget->gwMain->showGrid);
+	showGrid->setChecked(compoundWidget->gwMain->gridVisible);
 	showLegend->setChecked(compoundWidget->legendFrame->isVisible());
 	plotTitle->setText(compoundWidget->plotTitle->text());
 	vLabel->setText(compoundWidget->yLabel->text());
@@ -154,3 +154,4 @@ void PreferenceWindow::apply()
 	compoundWidget->gwMain->graphicsScene->update(compoundWidget->gwMain->currentArea());
 	compoundWidget->gwMain->update();
 }
+

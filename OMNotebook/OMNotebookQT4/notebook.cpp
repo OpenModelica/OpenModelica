@@ -467,7 +467,7 @@ namespace IAEX
 		QToolButton *b = new QToolButton(this);
 		b->setDefaultAction(openFileAction);
 		b->setMenu(recentMenu);
-		b->setPopupMode(QToolButton::ToolButtonPopupMode::MenuButtonPopup);
+		b->setPopupMode(QToolButton::MenuButtonPopup);
 //		toolBar->addAction(openFileAction);	
 		toolBar->addWidget(b);
 

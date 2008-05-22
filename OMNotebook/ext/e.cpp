@@ -1,5 +1,5 @@
 #include <QApplication>
-#include "../Pltpkg2/GraphWindow.h" 
+#include "../Pltpkg2/graphWindow.h" 
 using namespace std;
 
 int main(int argc, char** argv)

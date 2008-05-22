@@ -351,9 +351,9 @@ namespace IAEX
 			int i = toPlainText().indexOf(QRegExp("\\n|$"), tc.position());
 
 			if(i -tc.position() > 0)
-                tc.setPosition(i, QTextCursor::MoveMode::KeepAnchor);
+			  tc.setPosition(i, QTextCursor::KeepAnchor);
 			else
-				tc.setPosition(i +1, QTextCursor::MoveMode::KeepAnchor);
+			  tc.setPosition(i +1, QTextCursor::KeepAnchor);
 
 			tc.insertText("");
 //			int i = toPlainText().indexOf("\n", tc.position());
@@ -1742,15 +1742,18 @@ namespace IAEX
 			else
 				openmodelica += "/tmp/";
 
-			//QDir dir( openmodelica );
-			QDir dir;
-			dir.setPath( openmodelica );
 			QString imagename = "omc_tmp_plot.png";
 
-			QString filename = dir.absolutePath();
-			if( !filename.endsWith( "/" ) )
-				filename += "/";
-			filename += imagename;
+			QDir dir1 = QDir::current();
+			QString filename1 = dir1.absolutePath();
+
+			QDir dir2 = QDir::current(); dir2.setPath( openmodelica );
+			QString filename2 = dir2.absolutePath();
+			if( !filename1.endsWith( "/" ) ) filename1 += "/";
+			filename1 += imagename;
+			if( !filename2.endsWith( "/" ) ) filename2 += "/";
+			filename2 += imagename;
+
 
 			// 2006-02-17 AF, 
 			evaluated_ = true;
@@ -1775,8 +1778,10 @@ namespace IAEX
 			{
 				setClosed(false);
 
-				if( dir.exists( imagename ))
-					dir.remove( imagename );
+				if( dir1.exists( imagename ))
+					dir1.remove( imagename );
+				if( dir2.exists( imagename ))
+					dir2.remove( imagename );
 
 				compoundwidget->hide();
 
@@ -1879,7 +1884,13 @@ namespace IAEX
 					bool firstTry = true;
 					while( true )
 					{
-						if( dir.exists( imagename ))
+				                QString filename = "";
+						bool foundIt = false;
+						/* Search BOTH $OPENMODELICA/tmp and the current directory! */
+						if( dir1.exists( imagename )) { filename = filename1; foundIt = true; }
+						else if( dir2.exists( imagename )) { filename = filename2; foundIt = true; }
+
+						if (foundIt)
 						{
 							QImage *image = new QImage( filename );
 							if( !image->isNull() )
@@ -1911,9 +1922,9 @@ namespace IAEX
 								else
 								{
 									output_->selectAll();
-									output_->textCursor().insertText( "[Error] Unable to read plot image \"" + filename + "\". Please retry." );
+									output_->textCursor().insertText( "[Error] Unable to read plot image \"" + 
+													  filename1 + "or " + filename2 + "\". Please retry." );
 									setState(ERROR);
-									//output_->setPlainText( "[Error] Unable to read plot image \"" + imagename + "\". Please retry." );
 									break;
 								}
 							}
@@ -1922,9 +1933,9 @@ namespace IAEX
 						if( sleepTime > 25 )
 						{
 							output_->selectAll();
-							output_->textCursor().insertText( "[Error] Unable to find plot image \"" + filename + "\"" );
+							output_->textCursor().insertText( "[Error] Unable to find plot image \"" + 
+											  filename1 + " or " + filename2  + "\"" );
 							setState(ERROR);
-							//						output_->setPlainText( "[Error] Unable to found plot image \"" + imagename + "\"" );
 							break;
 						}
 
@@ -1962,8 +1973,11 @@ namespace IAEX
 				}
 
 				++numEvals_;
-				dir.remove( imagename );
-
+				/* remove the image */
+				if( dir1.exists( imagename ))
+				  dir1.remove( imagename );
+				if( dir2.exists( imagename ))
+				  dir2.remove( imagename );
 
 				contentChanged();
 

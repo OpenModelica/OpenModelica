@@ -213,7 +213,7 @@ public:
 	map<QString, VariableData*> variables;
 	map<QString, Curve*> temporaryCurves;
 
-	void updatePointSizes(QRect& r = QRect());
+	void updatePointSizes(QRect r = QRect());
 
 	QRectF currentArea()
 	{

@@ -55,34 +55,37 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 //IAEX headers
 #include "point.h"
-#include "GraphWidget.h"
+#include "graphWidget.h"
 
 using namespace std;
 
-Point::Point(qreal x1, qreal y1,qreal h, qreal w, QColor& color_, const GraphWidget* graphwidget_, QGraphicsItem* parent, QGraphicsScene* scene, const QString& label): QGraphicsEllipseItem(x1, y1, h, w, parent, scene), graphwidget(graphwidget_)
+Point::Point(qreal x1, qreal y1,qreal h, qreal w, QColor color_, const GraphWidget* graphwidget_, 
+	     QGraphicsItem* parent, QGraphicsScene* scene, const QString& label): 
+  QGraphicsEllipseItem(x1, y1, h, w, parent, scene), graphwidget(graphwidget_)
 {
-
-	color = color_;
-	graphwidget = graphwidget_;
-	xPos = x1;
-	yPos = y1;
-	hgt = h;
-	wdt = w;
-	dx = dy = 0;
-
-	setAcceptsHoverEvents(true);
-	QPen qp;
-	qp.setColor(color);
-	setPen(qp);
-
-	if(label.size())
-		setToolTip(label);
-	else
-		setToolTip(graphwidget->currentXVar + QString(": ") + QVariant(x1).toString() + QString("\n") + graphwidget->currentYVar +QString(": ") + QVariant(y1).toString());
-
-
-
-//	setFlag(QGraphicsItem::ItemIgnoresTransformations);
+  
+  color = color_;
+  graphwidget = graphwidget_;
+  xPos = x1;
+  yPos = y1;
+  hgt = h;
+  wdt = w;
+  dx = dy = 0;
+  
+  setAcceptsHoverEvents(true);
+  QPen qp;
+  qp.setColor(color);
+  setPen(qp);
+  
+  if(label.size())
+    setToolTip(label);
+  else
+    setToolTip(graphwidget->currentXVar + QString(": ") + QVariant(x1).toString() + QString("\n") + 
+	       graphwidget->currentYVar +QString(": ") + QVariant(y1).toString());
+  
+  
+  
+  //	setFlag(QGraphicsItem::ItemIgnoresTransformations);
 	
 }
 
@@ -136,3 +139,4 @@ void Point::hoverLeaveEvent ( QGraphicsSceneHoverEvent * event )
 void Point::mousePressEvent ( QGraphicsSceneMouseEvent * event )
 {
 }
+

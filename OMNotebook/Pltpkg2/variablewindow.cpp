@@ -175,3 +175,4 @@ void VariableWindow::removeCurve()
 
 
 }
+

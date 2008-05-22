@@ -150,6 +150,7 @@ namespace IAEX
 			}
 		}
 
+		/* -- no freaking conversion 	      
 		if(ba.indexOf("<InputCell") != -1)
 		{
 			QSettings s("PELAB", "OMNotebook");
@@ -165,13 +166,7 @@ namespace IAEX
 				QPushButton* always = m.addButton("Always convert old documents", QMessageBox::YesRole );
 
 				i = m.exec();
-/*
-				if(i == QMessageBox::Yes ||m.clickedButton() == always)
-				{
-					ba = ba.replace("<InputCell", "<GraphCell").replace("/InputCell>", "/GraphCell>").replace("style=\"Input\"", "style=\"Graph\"");
 
-				}
-*/
 				if(m.clickedButton() == always)
 				{
 					s.setValue("AlwaysConvert", true);
@@ -184,6 +179,7 @@ namespace IAEX
 
 			
 		}
+		*/
 
 		if(!domdoc.setContent(ba))
 		{
