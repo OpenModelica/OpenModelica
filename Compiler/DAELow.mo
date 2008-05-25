@@ -1397,9 +1397,10 @@ algorithm
     case (Exp.CREF(componentRef = cr),vars,knvars)
       equation 
         failure((_,_) = getVar(cr, vars));
-        (_,_) = getVar(cr,knvars);
+        ((VAR(cr,kind,dir,vartype,bind,value,dims,ind,orig,clname,attr,comment,flow_) :: _),_) = getVar(cr, knvars);
+        res = isKindDiscrete(kind);
       then
-        true;        
+        res;        
     case (Exp.BINARY(exp1 = e1,operator = op,exp2 = e2),vars,knvars)
       equation 
         b1 = isDiscreteExp(e1, vars,knvars);

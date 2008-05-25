@@ -7371,12 +7371,12 @@ and after a discrete event."
 algorithm
   (contBlocks,discBlocks) := matchcontinue(dlow,ass1,ass2,m,mT,blocks)
     local DAELow.Variables vars,vars2,knvars;
-      list<DAELow.Var> varLst;
+      list<DAELow.Var> varLst, varLstDiscrete;
       DAELow.EquationArray eqns;
     case (dlow as DAELow.DAELOW(orderedVars=vars,knownVars = knvars,orderedEqs=eqns),ass1,ass2,m,mT,blocks) equation
       varLst = DAELow.varList(vars);
-      varLst = Util.listSelect(varLst,DAELow.isVarDiscrete);
-      vars2 = DAELow.listVar(varLst);
+      varLstDiscrete = Util.listSelect(varLst,DAELow.isVarDiscrete);
+      vars2 = DAELow.listVar(varLstDiscrete);
       (contBlocks,discBlocks,_) = splitOutputBlocks2(vars2,vars,knvars,eqns,ass1,ass2,m,mT,blocks);
     then (contBlocks,discBlocks);  
   end matchcontinue;
@@ -7436,7 +7436,7 @@ algorithm
       
       /* Equation has variablity discrete time */
     case(discVars,vars,knvars,eqns,blck,ass2,mT) equation
-      (eqn_lst,var_lst) = Util.listMap32(blck, getEquationAndSolvedVar, eqns, vars, ass2);
+      (eqn_lst,var_lst) = Util.listMap32(blck, getEquationAndSolvedVar, eqns, discVars, ass2);
       var_lst = Util.listMap1(var_lst,DAELow.setVarKind,DAELow.DISCRETE());
       discVars = DAELow.addVars(var_lst,discVars);              
       _::_ = Util.listSelect2(eqn_lst,discVars,knvars,DAELow.isDiscreteEquation);
