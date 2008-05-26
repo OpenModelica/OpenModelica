@@ -572,7 +572,7 @@ relation makeNAFARGS =
 		makeNAFARGS(exps, names, C(_,flags,_,_,_)) => (newExps,newNArgs)
 
   (* this is the default *)
-  default
+  (* default *)
   rule  makeAllNAFARGS(exps, names) => (newExps,newNArgs)
 		----------------------------------------------------------------
 		makeNAFARGS(exps, names, C(_,flags,_,_,_)) => (newExps,newNArgs)

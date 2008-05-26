@@ -112,7 +112,7 @@ relation insertEntry: ('a dictEntry, string, 'a value, int) => 'a dictEntry =
 		 int_eq(ind, len) => true &
 		 (* if the index in the string is exactly  
 		    the string lenght we have found it, update the entry *)
-		 print "DICT: Updating key:" & print s & print "\n" &
+		 print "DICT: Updating key:" & print s & print "\n" 
 		 (*
 		 print "Already existing value. UPDATING!\n" &
 		 print "Use Dictionary.update(dict, key, updatedvalue instead)!\n" 
