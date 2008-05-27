@@ -6178,18 +6178,17 @@ algorithm
     case (cache,env,fn,args,nargs,impl,st) /* ..Other functions */ 
       local Exp.Type tp;
       equation 
-        (cache,typelist as _::_) = Lookup.lookupFunctionsInEnv(cache,env, fn) "PR. A function can have several types. Taking an array with
-	 different dimensions as parameter for example. Because of this we
-	 cannot just lookup the function name and trust that it
-	 returns the correct function. It returns just one
-	 functiontype of several possibilites. The solution is to send
-	 in the funktion type of the user function and check both the
-	 funktion name and the function\'s type. 
-	" ;			
-        (cache,args_1,constlist,restype,functype,vect_dims,slots) = elabTypes(cache,env, args,nargs, typelist, true/* Check types*/,impl) "The constness of a function depends on the inputs. If all inputs are
-	  constant the call itself is constant.
-	" ;
-	
+        (cache,typelist as _::_) = Lookup.lookupFunctionsInEnv(cache,env, fn) 
+        "PR. A function can have several types. Taking an array with
+	       different dimensions as parameter for example. Because of this we
+	       cannot just lookup the function name and trust that it
+	       returns the correct function. It returns just one
+	       functiontype of several possibilites. The solution is to send
+	       in the funktion type of the user function and check both the
+	       function name and the function\'s type." ;			
+        (cache,args_1,constlist,restype,functype,vect_dims,slots) = elabTypes(cache,env, args,nargs, typelist, true/* Check types*/,impl) 
+        "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
+        
         fn_1 = deoverloadFuncname(fn, functype);
         tuple_ = isTuple(restype);
         (cache,builtin) = isBuiltinFunc(cache,fn_1);

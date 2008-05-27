@@ -97,8 +97,9 @@ public uniontype Cache
 end Cache;
 
 public uniontype EnvCache 
- record ENVCACHE "Cache for environments. The cache consists of a tree of environments from which lookup
- 		can be performed."
+ record ENVCACHE 
+   "Cache for environments. The cache consists of a tree 
+    of environments from which lookupcan be performed."
    		CacheTree envTree;
   end ENVCACHE;
 end EnvCache;
@@ -111,23 +112,26 @@ public uniontype CacheTree
   end CACHETREE;
 end CacheTree;
 
+type CSetsType = tuple<list<Exp.ComponentRef>,Exp.ComponentRef>;
+
 public 
 uniontype Frame
   record FRAME
-    Option<Ident> class_1 "Class name" ;
-    BinTree list_2 "List of uniquely named classes and variables" ;
-    BinTree list_3 "List of types, which DOES NOT be uniquely named, eg. size have several types" ;
-    list<Item> list_4 "list of unnamed items (imports)" ;
-    list<Frame> list_5 "list of frames for inherited elements" ;
-    tuple<list<Exp.ComponentRef>,Exp.ComponentRef> current6 "current connection set crefs" ;
-    Boolean encapsulated_7 "encapsulated bool=true means that FRAME is created due to encapsulated class" ;
+    Option<Ident> optName        "Optional class name" ;
+    BinTree       clsAndVars     "List of uniquely named classes and variables" ;
+    BinTree       types          "List of types, which DOES NOT be uniquely named, eg. size have several types" ;
+    list<Item>    imports        "list of unnamed items (imports)" ;
+    list<Frame>   inherited      "list of frames for inherited elements" ;
+    CSetsType     connectionSet  "current connection set crefs" ;
+    Boolean       isEncapsulated "encapsulated bool=true means that FRAME is created due to encapsulated class" ;
   end FRAME;
 
 end Frame;
 
-public uniontype InstStatus "Used to distinguish between different phases of the instantiation of a component
-A component is first added to environment untyped. It can thereafter be instantiated to get its type 
-and finally instantiated to produce the DAE. These three states are indicated by this datatype."
+public uniontype InstStatus 
+"Used to distinguish between different phases of the instantiation of a component
+ A component is first added to environment untyped. It can thereafter be instantiated to get its type 
+ and finally instantiated to produce the DAE. These three states are indicated by this datatype."
 
   record VAR_UNTYPED "Untyped variables, initially added to env"
   end VAR_UNTYPED;
@@ -135,8 +139,9 @@ and finally instantiated to produce the DAE. These three states are indicated by
   record VAR_TYPED "Typed variables, when instantiation to get type has been performed"
   end VAR_TYPED;
   
-  record VAR_DAE "Typed variables that also have been instantiated to generate dae. Required to distinguish
-                  between typed variables without DAE to know when to skip multiply declared dae elements"
+  record VAR_DAE 
+    "Typed variables that also have been instantiated to generate dae. Required to distinguish
+     between typed variables without DAE to know when to skip multiply declared dae elements"
   end VAR_DAE;                  
 end InstStatus;
 
@@ -146,9 +151,7 @@ uniontype Item
     Types.Var instantiated "instantiated component" ;
     Option<tuple<SCode.Element, Types.Mod>> declaration "declaration if not fully instantiated." ;
     InstStatus instStatus "if it untyped, typed or fully instantiated (dae)" ;
-    Env env "The environment of the instantiated component
-			       Contains e.g. all sub components 
-			" ;
+    Env env "The environment of the instantiated component Contains e.g. all sub components" ;
   end VAR;
 
   record CLASS
@@ -170,11 +173,12 @@ public
 type Env = list<Frame>;
 
 public 
-uniontype BinTree "The binary tree data structure
-  ==============================
-  The binary tree data structure used for the environment is generic and can 
-  be used in any MetaModelica Compiler (MMC) application.
-  The Tree data structure BinTree is defined as:"
+uniontype BinTree 
+  "The binary tree data structure
+   ==============================
+   The binary tree data structure used for the environment is generic 
+   and can be used in any MetaModelica Compiler (MMC) application.
+   The Tree data structure BinTree is defined as:"
   record TREENODE
     Option<TreeValue> value "Value" ;
     Option<BinTree> left "left subtree" ;
@@ -211,12 +215,10 @@ public constant Env emptyEnv={} "- Values" ;
 
 public constant Cache emptyCache = CACHE(NONE,NONE);
 
-public function newFrame "- Relations
-  function: newFrame
- 
-  This function creates a new frame, which includes setting up the 
-  hashtable for the frame.
-"
+public function newFrame 
+"function: newFrame
+  This function creates a new frame, which 
+  includes setting up the hashtable for the frame."
   input Boolean enc;
   output Frame outFrame;
   BinTree ht,httypes;
@@ -226,7 +228,8 @@ algorithm
   outFrame := FRAME(NONE,ht,httypes,{},{},({},Exp.CREF_IDENT("",{})),enc);
 end newFrame;
 
-public function openScope "function: openScope 
+public function openScope 
+"function: openScope 
   Opening a new scope in the environment means adding a new frame on
   top of the stack of frames. If the scope is not the top scope a classname
   of the scope should be provided such that a name for the scope can be
@@ -257,7 +260,8 @@ algorithm
   end matchcontinue;
 end openScope;
 
-protected function nameScope "function: nameScope
+protected function nameScope 
+"function: nameScope
   This function names the current scope, giving it an identifier.
   Scopes needs to be named for several reasons. First, it is needed for
   debugging purposes, since it is easier to follow the environment if we 
@@ -281,28 +285,27 @@ algorithm
       tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
       Boolean encflag;
       Ident id;
-    case ((FRAME(list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: res),id) 
+    case ((FRAME(clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag) :: res),id) 
       then (FRAME(SOME(id),ht,httypes,imps,bcframes,crs,encflag) :: res); 
   end matchcontinue;
 end nameScope;
 
-public function getScopeName "function: getScopeName
- Returns the name of a scope, if no name exist, the function fails.
-"
+public function getScopeName 
+"function: getScopeName
+ Returns the name of a scope, if no name exist, the function fails."
   input Env inEnv;
   output Ident name;
 algorithm 
   name:=
   matchcontinue (inEnv)
-    case ((FRAME(class_1 = SOME(name))::_)) then (name); 
+    case ((FRAME(optName = SOME(name))::_)) then (name); 
   end matchcontinue;
 end getScopeName;
 
 
-public function extendFrameC "function: extendFrameC
- 
-  This function adds a class definition to the environment.
-"
+public function extendFrameC 
+"function: extendFrameC 
+  This function adds a class definition to the environment."
   input Env inEnv;
   input SCode.Class inClass;
   output Env outEnv;
@@ -318,23 +321,31 @@ algorithm
       Boolean encflag;
       SCode.Class c;
       Ident n;
-    case ((env as (FRAME(class_1 = id,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs)),(c as SCode.CLASS(name = n)))
+    case ((env as 
+      (FRAME(
+        optName = id,
+        clsAndVars = ht,
+        types = httypes,
+        imports = imps,
+        inherited = bcframes,
+        connectionSet = crs,
+        isEncapsulated = encflag) :: fs)),
+      (c as SCode.CLASS(name = n)))
       equation 
         (ht_1) = treeAdd(ht, n, CLASS(c,env), System.hash);
       then
         (FRAME(id,ht_1,httypes,imps,bcframes,crs,encflag) :: fs);
     case (_,_)
       equation 
-        print("extend_frame_c FAILED\n");
+        print("-Env.extendFrameC FAILED\n");
       then
         fail();
   end matchcontinue;
 end extendFrameC;
 
-public function extendFrameClasses "function: extendFrameClasses
- 
-  Adds all clases in a Program to the environment.
-"
+public function extendFrameClasses 
+"function: extendFrameClasses 
+  Adds all clases in a Program to the environment."
   input Env inEnv;
   input SCode.Program inProgram;
   output Env outEnv;
@@ -355,10 +366,9 @@ algorithm
   end matchcontinue;
 end extendFrameClasses;
 
-public function extendFrameV "function: extendFrameV
- 
-  This function adds a component to the environment.
-"
+public function extendFrameV 
+"function: extendFrameV 
+  This function adds a component to the environment."
   input Env inEnv1;
   input Types.Var inVar2;
   input Option<tuple<SCode.Element, Types.Mod>> inTplSCodeElementTypesModOption3;
@@ -379,15 +389,21 @@ algorithm
       Types.Var v;
       Ident n;
       Option<tuple<SCode.Element, Types.Mod>> c;
-    case ((FRAME(class_1 = id,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs),(v as Types.VAR(name = n)),c,i,env) /* environment of component */ 
+    case ((FRAME(optName = id,clsAndVars = ht,types = httypes,
+                 imports = imps,inherited = bcframes,
+                 connectionSet = crs,isEncapsulated = encflag) :: fs),
+      (v as Types.VAR(name = n)),c,i,env) /* environment of component */ 
       equation 
         failure((_)= treeGet(ht, n, System.hash)); 
         (ht_1) = treeAdd(ht, n, VAR(v,c,i,env), System.hash);
       then
         (FRAME(id,ht_1,httypes,imps,bcframes,crs,encflag) :: fs);
 
-        // Variable already added, perhaps from baseclass
-    case (remember as (FRAME(class_1 = id,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs),
+    // Variable already added, perhaps from baseclass
+    case (remember as (
+      FRAME(optName = id,clsAndVars = ht,types = httypes,
+            imports = imps,inherited = bcframes,
+            connectionSet = crs,isEncapsulated = encflag) :: fs),
           (v as Types.VAR(name = n)),c,i,env) /* environment of component */ 
       equation 
         (_)= treeGet(ht, n, System.hash); 
@@ -396,12 +412,11 @@ algorithm
   end matchcontinue;
 end extendFrameV;
 
-public function updateFrameV "function: updateFrameV
- 
+public function updateFrameV 
+"function: updateFrameV 
   This function updates a component already added to the environment, but 
   that prior to the update did not have any binding. I.e this function is
-  called in the second stage of instantiation with declare before use.
-"
+  called in the second stage of instantiation with declare before use."
   input Env inEnv1;
   input Types.Var inVar2;
   input InstStatus instStatus;
@@ -422,45 +437,54 @@ algorithm
       Types.Var v;
       Ident n,id;
     case ({},_,i,_) then {};  /* fully instantiated env of component */ 
-    case ((FRAME(class_1 = sid,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs),(v as Types.VAR(name = n)),i,env)
+    case ((FRAME(optName = sid,clsAndVars = ht,types = httypes,
+                 imports = imps,inherited = bcframes,
+                 connectionSet = crs,isEncapsulated = encflag) :: fs),(v as Types.VAR(name = n)),i,env)
       equation 
         VAR(_,c,_,_) = treeGet(ht, n, System.hash);
         (ht_1) = treeAdd(ht, n, VAR(v,c,i,env), System.hash);
       then
         (FRAME(sid,ht_1,httypes,imps,bcframes,crs,encflag) :: fs);
-    case ((FRAME(class_1 = sid,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs),(v as Types.VAR(name = n)),i,env) /* Also check frames above, e.g. when variable is in base class */ 
+        
+    /* Also check frames above, e.g. when variable is in base class */
+    case ((FRAME(optName = sid,clsAndVars = ht,types = httypes,
+                 imports = imps,inherited = bcframes,
+                 connectionSet = crs,isEncapsulated = encflag) :: fs),(v as Types.VAR(name = n)),i,env)  
       equation 
         frames = updateFrameV(fs, v, i, env);
       then
         (FRAME(sid,ht,httypes,imps,bcframes,crs,encflag) :: frames);
-    case ((FRAME(class_1 = sid,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs),Types.VAR(name = n),_,_)
+        
+    case ((FRAME(optName = sid,clsAndVars = ht,types = httypes,
+                 imports = imps,inherited = bcframes,
+                 connectionSet = crs,isEncapsulated = encflag) :: fs),Types.VAR(name = n),_,_)
       equation 
-        Print.printBuf("- update_frame_v, variable ");
+        Print.printBuf("- Env.updateFrameV, variable ");
         Print.printBuf(n);
         Print.printBuf(" not found\n rest of env:");
         printEnv(fs);
         Print.printBuf("\n");
       then
         (FRAME(sid,ht,httypes,imps,bcframes,crs,encflag) :: fs);
+        
     case (_,(v as Types.VAR(name = id)),_,_)
       equation 
-        print("- update_frame_v failed\n");
-        print("  - variable: ");
-        print(Types.printVarStr(v));
+        print("- Env.updateFrameV failed\n");
+        print("  + variable: "); 
+        print(Types.printVarStr(v)); 
         print("\n");
       then
         fail();
   end matchcontinue;
 end updateFrameV;
 
-public function extendFrameT "function: extendFrameT
- 
+public function extendFrameT 
+"function: extendFrameT 
   This function adds a type to the environment.  Types in the
   environment are used for looking up constants etc. inside class
   definitions, such as packages.  For each type in the environment,
   there is a class definition with the same name in the
-  environment.
-"
+  environment."
   input Env inEnv;
   input Ident inIdent;
   input Types.Type inType;
@@ -478,13 +502,19 @@ algorithm
       Boolean encflag;
       Ident n;
       tuple<Types.TType, Option<Absyn.Path>> t;
-    case ((FRAME(class_1 = sid,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs),n,t)
+      
+    case ((FRAME(optName = sid,clsAndVars = ht,types = httypes,
+                 imports = imps,inherited = bcframes,
+                 connectionSet = crs,isEncapsulated = encflag) :: fs),n,t)
       equation 
         TYPE(tps) = treeGet(httypes, n, System.hash) "Other types with that name allready exist, add this type as well" ;
         (httypes_1) = treeAdd(httypes, n, TYPE((t :: tps)), System.hash);
       then
         (FRAME(sid,ht,httypes_1,imps,bcframes,crs,encflag) :: fs);
-    case ((FRAME(class_1 = sid,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs),n,t)
+        
+    case ((FRAME(optName = sid,clsAndVars = ht,types = httypes,
+                 imports = imps,inherited = bcframes,
+                 connectionSet = crs,isEncapsulated = encflag) :: fs),n,t)
       equation 
         failure(TYPE(_) = treeGet(httypes, n, System.hash)) "No other types exists" ;
         (httypes_1) = treeAdd(httypes, n, TYPE({t}), System.hash);
@@ -493,10 +523,9 @@ algorithm
   end matchcontinue;
 end extendFrameT;
 
-public function extendFrameI "function: extends_frame_i
- 
-  Adds an import statement to the environment.
-"
+public function extendFrameI 
+"function: extendsFrameI
+  Adds an import statement to the environment."
   input Env inEnv;
   input Absyn.Import inImport;
   output Env outEnv;
@@ -512,7 +541,10 @@ algorithm
       Boolean encflag;
       Absyn.Import imp;
       Env env;
-    case ((FRAME(class_1 = sid,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) :: fs),imp) 
+      
+    case ((FRAME(optName = sid,clsAndVars = ht,types = httypes,
+                 imports = imps,inherited = bcframes,
+                 connectionSet = crs,isEncapsulated = encflag) :: fs),imp) 
       equation
         false = memberImportList(imps,imp);
     then (FRAME(sid,ht,httypes,(IMPORT(imp) :: imps),bcframes,crs,encflag) :: fs);
@@ -520,34 +552,34 @@ algorithm
   end matchcontinue;
 end extendFrameI;
 
-protected function memberImportList "Returns true if import exist in imps"
+protected function memberImportList 
+"Returns true if import exist in the import statements"
 	input list<Item> imps;
 	input Absyn.Import imp;
   output Boolean res "true if import exist in imps, false otherwise";	
 algorithm
   res := matchcontinue (imps,imp) 
-  	local 
-  	  list<Item> ims;
-  		Absyn.Import imp2;
-  		Boolean res;
+    local 
+      list<Item> ims;
+      Absyn.Import imp2;
+      Boolean res;      
     case (IMPORT(imp2)::ims,imp) 
       equation
-     		equality(imp2 = imp); 
-    then true;
-   
-    case (_::ims,imp) equation 
-       res=memberImportList(ims,imp);
-    then res;
+        equality(imp2 = imp); 
+      then true;        
+    case (_::ims,imp) 
+      equation 
+        res=memberImportList(ims,imp);
+      then res;
     case (_,_) then false;
-   end matchcontinue;
+  end matchcontinue;
 end memberImportList;
 
-public function addBcFrame "function: addBcFrame
-  author: PA
- 
+public function addBcFrame 
+"function: addBcFrame
+  author: PA 
   Adds a baseclass frame to the environment from the baseclass environment
-  to the list of base classes of the top frame of the passed environment.
-"
+  to the list of base classes of the top frame of the passed environment."
   input Env inEnv1;
   input Env inEnv2;
   output Env outEnv;
@@ -561,16 +593,17 @@ algorithm
       Env bc,fs;
       tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crefs;
       Boolean enc;
-      Frame f;
-    case ((FRAME(class_1 = sid,list_2 = cls,list_3 = tps,list_4 = imps,list_5 = bc,current6 = crefs,encapsulated_7 = enc) :: fs),(f :: _)) 
+      Frame f;      
+    case ((FRAME(optName = sid,clsAndVars = cls,types = tps,
+                 imports = imps,inherited = bc,
+                 connectionSet = crefs,isEncapsulated = enc) :: fs),(f :: _)) 
       then (FRAME(sid,cls,tps,imps,(f :: bc),crefs,enc) :: fs);  /* env bc env */ 
   end matchcontinue;
 end addBcFrame;
 
-public function topFrame "function: topFrame
- 
-  Returns the top frame.
-"
+public function topFrame 
+"function: topFrame 
+  Returns the top frame."
   input Env inEnv;
   output Frame outFrame;
 algorithm 
@@ -589,22 +622,23 @@ algorithm
 end topFrame;
 
 public function getClassName
+"function getClassName
+  Fetch the class name from the Frame"
   input Env inEnv;
   output Ident name;
 algorithm
    name := matchcontinue (inEnv) 
    	local Ident n;
-   	case FRAME(class_1 = SOME(n))::_ then n;
+   	case FRAME(optName = SOME(n))::_ then n;
   end matchcontinue;
 end getClassName;    	
 
-public function getEnvPath "function: getEnvPath
- 
+public function getEnvPath 
+"function: getEnvPath 
   This function returns all partially instantiated parents as an Absyn.Path 
   option I.e. it collects all identifiers of each frame until it reaches 
   the topmost unnamed frame. If the environment is only the topmost frame, 
-  NONE is returned.
-"
+  NONE is returned."
   input Env inEnv;
   output Option<Absyn.Path> outAbsynPathOption;
 algorithm 
@@ -614,8 +648,8 @@ algorithm
       Ident id;
       Absyn.Path path,path_1;
       Env rest;
-    case ({FRAME(class_1 = SOME(id)),FRAME(class_1 = NONE)}) then SOME(Absyn.IDENT(id)); 
-    case ((FRAME(class_1 = SOME(id)) :: rest))
+    case ({FRAME(optName = SOME(id)),FRAME(optName = NONE)}) then SOME(Absyn.IDENT(id)); 
+    case ((FRAME(optName = SOME(id)) :: rest))
       equation 
         SOME(path) = getEnvPath(rest);
         path_1 = Absyn.joinPaths(path, Absyn.IDENT(id));
@@ -722,7 +756,7 @@ algorithm
       Env bcframes;
       tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
       Boolean encflag;
-    case FRAME(class_1 = SOME(sid),list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag)
+    case FRAME(optName = SOME(sid),clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag)
       equation 
         s1 = printBintreeStr(ht);
         s2 = printBintreeStr(httypes);
@@ -730,11 +764,16 @@ algorithm
         encflag_str = Util.boolString(encflag);
         s4 = printEnvStr(bcframes);
         res = Util.stringAppendList(
-          {"FRAME: ",sid," (enc=",encflag_str,
-          ") \nclasses and vars:\n=============\n",s1,"   Types:\n======\n",s2,"   Imports:\n=======\n",s3,"baseclass:\n======\n",s4,"end baseclass\n"});
+          {"FRAME: ",sid," (enc=",encflag_str,") \nclasses and vars:\n=============\n",
+           s1,"   Types:\n======\n",
+           s2,"   Imports:\n=======\n",
+           s3,"   Baseclass:\n======\n",
+           s4,"end baseclass\n"});
       then
         res;
-    case FRAME(class_1 = NONE,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag)
+    case FRAME(optName = NONE,clsAndVars = ht,types = httypes,
+               imports = imps,inherited = bcframes,
+               connectionSet = crs,isEncapsulated = encflag)
       equation 
         s1 = printBintreeStr(ht);
         s2 = printBintreeStr(httypes);
@@ -742,17 +781,19 @@ algorithm
         s4 = printEnvStr(bcframes);
         encflag_str = Util.boolString(encflag);
         res = Util.stringAppendList(
-          {"FRAME: unnamed (enc=",encflag_str,
-          ") \nclasses and vars:\n=============\n",s1,"   Types:\n======\n",s2,"   Imports:\n=======\n",s3,"baseclass:\n======\n",s4,"end baseclass\n"});
+          {"FRAME: unnamed (enc=",encflag_str,") \nclasses and vars:\n=============\n",
+           s1,"   Types:\n======\n",
+           s2,"   Imports:\n=======\n",
+           s3,"   Baseclass:\n======\n",
+           s4,"end baseclass\n"});
       then
         res;
   end matchcontinue;
 end printFrameStr;
 
-protected function printFrameVarsStr "function: printFrameVarsStr
- 
-  Print only the variables in a Frame to a string.
-"
+protected function printFrameVarsStr 
+"function: printFrameVarsStr 
+  Print only the variables in a Frame to a string."
   input Frame inFrame;
   output String outString;
 algorithm 
@@ -765,32 +806,29 @@ algorithm
       Env bcframes;
       tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
       Boolean encflag;
-    case FRAME(class_1 = SOME(sid),list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag)
+    case FRAME(optName = SOME(sid),clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag)
       equation 
         s1 = printBintreeStr(ht);
         encflag_str = Util.boolString(encflag);
         res = Util.stringAppendList(
-          {"FRAME: ",sid," (enc=",encflag_str,
-          ") \nclasses and vars:\n=============\n",s1,"\n\n\n"});
+          {"FRAME: ",sid," (enc=",encflag_str,") \nclasses and vars:\n=============\n",s1,"\n\n\n"});
       then
         res;
-    case FRAME(class_1 = NONE,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag)
+    case FRAME(optName = NONE,clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag)
       equation 
         s1 = printBintreeStr(ht);
         encflag_str = Util.boolString(encflag);
         res = Util.stringAppendList(
-          {"FRAME: unnamed (enc=",encflag_str,
-          ") \nclasses and vars:\n=============\n",s1,"\n\n\n"});
+          {"FRAME: unnamed (enc=",encflag_str,") \nclasses and vars:\n=============\n",s1,"\n\n\n"});
       then
         res;
     case _ then ""; 
   end matchcontinue;
 end printFrameVarsStr;
 
-protected function printImportsStr "function: printImportsStr
- 
-  Print import statements to a string.
-"
+protected function printImportsStr 
+"function: printImportsStr 
+  Print import statements to a string."
   input list<Item> inItemLst;
   output String outString;
 algorithm 
@@ -837,7 +875,9 @@ algorithm
       Integer len;
       list<tuple<Types.TType, Option<Absyn.Path>>> lst;
       Absyn.Import imp;
-    case ((n,VAR(instantiated = (tv as Types.VAR(attributes = Types.ATTR(parameter_ = var),type_ = tp,binding = bind)),declaration = SOME((elt,_)),instStatus = i,env = (compframe :: _))))
+    case ((n,
+      VAR(instantiated = (tv as Types.VAR(attributes = Types.ATTR(parameter_ = var), type_ = tp,binding = bind)),
+          declaration = SOME((elt,_)),instStatus = i,env = (compframe :: _))))
       equation 
         s = SCode.variabilityString(var);
         elt_str = SCode.printElementStr(elt);
@@ -846,19 +886,19 @@ algorithm
         frame_str = printFrameVarsStr(compframe);
         bind_str = Types.printBindingStr(bind);
         res = Util.stringAppendList(
-          {"v: ",n," ",s,"(",elt_str,") [",tp_str,"] {",var_str,
-          "}, binding: ", bind_str, "\n"});
+          {"v: ",n," ",s,"(",elt_str,") [",tp_str,"] {",var_str,"}, binding: ",bind_str,"\n"});
       then
         res;
-    case ((n,VAR(instantiated = (tv as Types.VAR(attributes = Types.ATTR(parameter_ = var),type_ = tp)),declaration = SOME((elt,_)),instStatus = i,env = {})))
+    case ((n,
+      VAR(instantiated = (tv as Types.VAR(attributes = Types.ATTR(parameter_ = var),type_ = tp)),
+          declaration = SOME((elt,_)),instStatus = i,env = {})))
       equation 
         s = SCode.variabilityString(var);
         elt_str = SCode.printElementStr(elt);
         tp_str = Types.unparseType(tp);
         var_str = Types.unparseVar(tv);
         res = Util.stringAppendList(
-          {"v: ",n," ",s,"(",elt_str,") [",tp_str,"] {",var_str,
-          "}, compframe: []\n"});
+          {"v: ",n," ",s,"(",elt_str,") [",tp_str,"] {",var_str,"}, compframe: []\n"});
       then
         res;
     case ((n,VAR(instantiated = Types.VAR(binding = bnd),declaration = NONE,instStatus = i,env = env)))
@@ -887,10 +927,9 @@ algorithm
   end matchcontinue;
 end printFrameElementStr;
 
-public function printEnvGraphviz "function: printEnvGraphviz
- 
-  Print the environment in Graphviz format to the Print buffer.
-"
+public function printEnvGraphviz 
+"function: printEnvGraphviz 
+  Print the environment in Graphviz format to the Print buffer."
   input tuple<Env, String> inTplEnvString;
 algorithm 
   _:=
@@ -908,10 +947,9 @@ algorithm
   end matchcontinue;
 end printEnvGraphviz;
 
-protected function buildEnvGraphviz "function: buildEnvGraphviz
- 
-  Build the graphviz graph from an Env.
-"
+protected function buildEnvGraphviz 
+"function: buildEnvGraphviz 
+  Build the graphviz graph from an Env."
   input tuple<Env, String> inTplEnvString;
   output Graphviz.Node outNode;
 algorithm 
@@ -930,10 +968,9 @@ algorithm
   end matchcontinue;
 end buildEnvGraphviz;
 
-protected function buildEnvGraphviz2 "function: buildEnvGraphviz2
- 
-  Helper function to build_env_graphviz.
-"
+protected function buildEnvGraphviz2 
+"function: buildEnvGraphviz2 
+  Helper function to buildEnvGraphviz."
   input Env inEnv;
   output list<Graphviz.Node> outGraphvizNodeLst;
 algorithm 
@@ -954,10 +991,9 @@ algorithm
   end matchcontinue;
 end buildEnvGraphviz2;
 
-protected function isVarItem "function: isVarItem
- 
-  Succeeds if item is a VAR.
-"
+protected function isVarItem 
+"function: isVarItem
+  Succeeds if item is a VAR."
   input tuple<Type_a, Item> inTplTypeAItem;
   replaceable type Type_a subtypeof Any;
 algorithm 
@@ -967,10 +1003,9 @@ algorithm
   end matchcontinue;
 end isVarItem;
 
-protected function isClassItem "function: isClassItem
- 
-  Succeeds if item is a CLASS.
-"
+protected function isClassItem 
+"function: isClassItem 
+  Succeeds if item is a CLASS."
   input tuple<Type_a, Item> inTplTypeAItem;
   replaceable type Type_a subtypeof Any;
 algorithm 
@@ -980,10 +1015,9 @@ algorithm
   end matchcontinue;
 end isClassItem;
 
-protected function isTypeItem "function: isTypeItem
- 
-  Succeds if item is a TYPE.
-"
+protected function isTypeItem 
+"function: isTypeItem 
+  Succeds if item is a TYPE."
   input tuple<Type_a, Item> inTplTypeAItem;
   replaceable type Type_a subtypeof Any;
 algorithm 
@@ -993,10 +1027,9 @@ algorithm
   end matchcontinue;
 end isTypeItem;
 
-protected function buildFrameGraphviz "function: buildFrameGraphviz
- 
-  Build a Grapviz Node from a Frame.
-"
+protected function buildFrameGraphviz 
+"function: buildFrameGraphviz 
+  Build a Grapviz Node from a Frame."
   input Frame inFrame;
   output Graphviz.Node outNode;
 algorithm 
@@ -1009,15 +1042,17 @@ algorithm
       Env bcframes;
       tuple<list<Exp.ComponentRef>,Exp.ComponentRef> crs;
       Boolean encflag;
-    case FRAME(class_1 = sid,list_2 = ht,list_3 = httypes,list_4 = imps,list_5 = bcframes,current6 = crs,encapsulated_7 = encflag) then Graphviz.NODE("FRAME",{},{}); 
+    case FRAME(optName = sid,clsAndVars = ht,types = httypes,
+               imports = imps,inherited = bcframes,
+               connectionSet = crs,isEncapsulated = encflag) 
+      then Graphviz.NODE("FRAME",{},{}); 
   end matchcontinue;
 end buildFrameGraphviz;
 
-protected function buildItemListnode "function: buildItemListnode
- 
-  Build a Graphviz Node from a list of items, selected by a condition
-  function among the input list.
-"
+protected function buildItemListnode 
+"function: buildItemListnode 
+  Build a Graphviz Node from a list of items, selected 
+  by a condition function among the input list."
   input list<tuple<Ident, Item>> items;
   input FuncTypeTplIdentItemTo cond;
   input String name;
@@ -1033,10 +1068,9 @@ algorithm
   outNode := Graphviz.NODE(name,{},{node});
 end buildItemListnode;
 
-protected function buildItemListnode2 "function: buildItemListnode2
- 
-  Helper function to build_item_listnode.
-"
+protected function buildItemListnode2 
+"function: buildItemListnode2 
+  Helper function to buildItemListnode."
   input list<tuple<Ident, Item>> inTplIdentItemLst;
   input Integer inInteger;
   output Graphviz.Node outNode;
@@ -1066,10 +1100,9 @@ algorithm
   end matchcontinue;
 end buildItemListnode2;
 
-protected function buildItemStr "function: buildItemStr
- 
-  Helper function to build_item_listnode_2, creates a string from an item.
-"
+protected function buildItemStr 
+"function: buildItemStr 
+  Helper function to buildItemListnode2, creates a string from an item."
   input tuple<Ident, Item> inTplIdentItem;
   output String outString;
 algorithm 
@@ -1097,22 +1130,23 @@ algorithm
   end matchcontinue;
 end buildItemStr;
 
-public function myhash "BinTree implementation
-  function: myhash
+/*
+ * BinTree implementation
+ */
  
-  Hash function for binary tree implementation, using standard string
-  hashing.
-"
+public function myhash 
+"function: myhash
+  Hash function for binary tree implementation, 
+  using standard string hashing."
   input Key str;
   output Integer res;
 algorithm 
   res := System.hash(str);
 end myhash;
 
-protected function treeNew "function: treeNew
- 
-  Create a new binary tree.
-"
+protected function treeNew 
+"function: treeNew 
+  Create a new binary tree."
   output BinTree outBinTree;
 algorithm 
   outBinTree:=
@@ -1121,10 +1155,9 @@ algorithm
   end matchcontinue;
 end treeNew;
 
-public function treeAdd "function: treeAdd
- 
+public function treeAdd 
+"function: treeAdd 
   Add a tree to a binary tree."
-
   input BinTree inBinTree;
   input Key inKey;
   input Value inValue;
@@ -1141,10 +1174,9 @@ algorithm
 	outBinTree := treeAdd2(inBinTree,inKey,inValue,hashfunc,hashVal);
 end treeAdd;
 
-public function treeAdd2 "function: treeAdd
- 
-  Add a tree to a binary tree.
-"
+public function treeAdd2 
+"function: treeAdd 
+  Add a tree to a binary tree."
   input BinTree inBinTree;
   input Key inKey;
   input Value inValue;
@@ -1169,7 +1201,7 @@ algorithm
       FuncTypeStringToInteger hashfunc;
       Integer rhval;
       BinTree t_1,t,right_1,left_1;
-      /* empty tree*/
+    /* empty tree*/
     case (TREENODE(value = NONE,left = NONE,right = NONE),key,value,_,_) 
     	then TREENODE(SOME(TREEVALUE(key,value)),NONE,NONE);  
 		
@@ -1180,7 +1212,7 @@ algorithm
       then
         TREENODE(SOME(TREEVALUE(rkey,value)),left,right);
 
-        /* Insert to right subtree */         
+    /* Insert to right subtree */         
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = (right as SOME(t))),key,value,hashfunc,hval) 
       equation 
         rhval = hashfunc(rkey);
@@ -1189,7 +1221,7 @@ algorithm
       then
         TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(t_1));
 
-        /* Insert to right node */         
+    /* Insert to right node */         
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = (right as NONE)),key,value,hashfunc,hval) 
       equation 
         rhval = hashfunc(rkey);
@@ -1198,7 +1230,7 @@ algorithm
       then
         TREENODE(SOME(TREEVALUE(rkey,rval)),left,SOME(right_1));
         
-        /* Insert to left subtree */ 
+    /* Insert to left subtree */ 
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = (left as SOME(t)),right = right),key,value,hashfunc,hval) 
       equation 
         rhval = hashfunc(rkey);
@@ -1207,7 +1239,7 @@ algorithm
       then
         TREENODE(SOME(TREEVALUE(rkey,rval)),SOME(t_1),right);
         
-        /* Insert to left node */ 
+    /* Insert to left node */ 
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = (left as NONE),right = right),key,value,hashfunc,hval) 
       equation 
         rhval = hashfunc(rkey);
@@ -1218,50 +1250,55 @@ algorithm
 
     case (_,_,_,_,_)
       equation 
-        print("tree_add failed\n");
+        print("- Env.treeAdd2 failed\n");
       then
         fail();
   end matchcontinue;
 end treeAdd2;
 
-public function getCachedInitialEnv "get the initial environment from the cache"
+public function getCachedInitialEnv 
+"function getCachedInitialEnv
+  get the initial environment from the cache"
   input Cache cache;
   output Env env;
 algorithm	
   env := matchcontinue(cache) 
     //case (_) then fail();
-    case (CACHE(_,SOME(env))) equation
-    //	print("getCachedInitialEnv\n");
+    case (CACHE(_,SOME(env))) 
+      equation
+        // print("getCachedInitialEnv\n");
       then env;
   end matchcontinue;
 end getCachedInitialEnv;  
 
-public function setCachedInitialEnv "set the initial environment in the cache"
+public function setCachedInitialEnv 
+"function setCachedInitialEnv
+  set the initial environment in the cache"
   input Cache inCache;
   input Env env;
   output Cache outCache;
 algorithm	
   outCache := matchcontinue(inCache,env) 
-  local
-    	Option<EnvCache> envCache;
-
-    case (CACHE(envCache,_),env) equation 
- //    	print("setCachedInitialEnv\n");
+    local Option<EnvCache> envCache;      
+    case (CACHE(envCache,_),env) 
+      equation 
+        // print("setCachedInitialEnv\n");
       then CACHE(envCache,SOME(env));
   end matchcontinue;
 end setCachedInitialEnv;  
     
-public function cacheGet "Get an environment from the cache."
+public function cacheGet 
+"function cacheGet
+  get an environment from the cache."
   input Absyn.Path scope;
   input Absyn.Path path;
   input Cache cache;
   output Env env;
 algorithm
   env:= matchcontinue(scope,path,cache)
-  local CacheTree tree;
-   case (scope,path,CACHE(SOME(ENVCACHE(tree)),_))
+    local CacheTree tree;
+    case (scope,path,CACHE(SOME(ENVCACHE(tree)),_))
       equation
-        
         env = cacheGetEnv(scope,path,tree);
         //print("got cached env for ");print(Absyn.pathString(path)); print("\n");
       then env;          
@@ -1269,17 +1306,17 @@ algorithm
   end matchcontinue;
 end cacheGet;
 
-
-public function cacheAdd "Add an environment to the cache."
+public function cacheAdd 
+"function cacheAdd
+  add an environment to the cache."
   input Absyn.Path fullpath "Fully qualified path to the environment";
   input Cache inCache ;
   input Env env "environment";
   output Cache outCache;
 algorithm
   outCache := matchcontinue(fullpath,inCache,env)
-  local CacheTree tree;
-    Option<Env> ie;
-      
+    local CacheTree tree;
+      Option<Env> ie;      
     case (fullpath,CACHE(NONE,ie),env) 
       equation
         tree = cacheAddEnv(fullpath,CACHETREE("$global",emptyEnv,{}),env);
@@ -1287,116 +1324,114 @@ algorithm
       then CACHE(SOME(ENVCACHE(tree)),ie);
     case (fullpath,CACHE(SOME(ENVCACHE(tree)),ie),env) 
       equation
-       // print(" about to Adding ");print(Absyn.pathString(fullpath));print(" to cache:\n");
-      tree = cacheAddEnv(fullpath,tree,env);
-      
-       //print("Adding ");print(Absyn.pathString(fullpath));print(" to cache\n");
+        // print(" about to Adding ");print(Absyn.pathString(fullpath));print(" to cache:\n");
+        tree = cacheAddEnv(fullpath,tree,env);
+        //print("Adding ");print(Absyn.pathString(fullpath));print(" to cache\n");
         //print(printCacheStr(CACHE(SOME(ENVCACHE(tree)),ie)));
       then CACHE(SOME(ENVCACHE(tree)),ie);
     case (_,_,_) equation print("cacheAdd failed\n"); then fail();
   end matchcontinue;
 end cacheAdd;
 
-protected function cacheGetEnv "get an environment from the tree cache."
+protected function cacheGetEnv 
+"function cacheGetEnv
+  get an environment from the tree cache."
 	input Absyn.Path scope;
 	input Absyn.Path path;
 	input CacheTree tree;
 	output Env env;
 algorithm
   env := matchcontinue(scope,path,tree)
-  local
-    	Absyn.Path path2;
-    	Ident id;
-    	list<CacheTree> children;
-    	
-			// Search only current scope. Since scopes higher up might not be cached, we cannot search upwards.
+    local
+      Absyn.Path path2;
+      Ident id;
+      list<CacheTree> children;
+    // Search only current scope. Since scopes higher up might not be cached, we cannot search upwards.
     case (path2,path,tree)
       equation
         env = cacheGetEnv2(path2,path,tree);
         //print("found ");print(Absyn.pathString(path));print(" in cache at scope");
-				//print(Absyn.pathString(path2));print("\n");
+        //print(Absyn.pathString(path2));print("\n");
       then env;
   end matchcontinue;
 end cacheGetEnv;
  
-protected function cacheGetEnv2 "Help function to cacheGetEnv. Searches in one scope by 
+protected function cacheGetEnv2 
+"function cacheGetEnv2
+  Help function to cacheGetEnv. Searches in one scope by 
   first looking up the scope and then search from there."
   input Absyn.Path scope;
   input Absyn.Path path;
   input CacheTree tree;
   output Env env;
-  
 algorithm
    env := matchcontinue(scope,path,tree)
-	local 	
-	  	Env env2;
-	  	Ident id,id2;
-	  	list<CacheTree> children,children2;
-	  	Absyn.Path path2;
-
-	  //	Simple name found in children, search for model from this scope.
+     local 	
+       Env env2;
+       Ident id,id2;
+       list<CacheTree> children,children2;
+       Absyn.Path path2;              
+     //	Simple name found in children, search for model from this scope.
      case (Absyn.IDENT(id),path,CACHETREE(_,_,CACHETREE(id2,env2,children2)::_))
        equation 
          equality(id = id2);
          //print("found (1) ");print(id); print("\n");
          env=cacheGetEnv3(path,children2); 
        then env;
-         
-         //	Simple name. try next.
+     //	Simple name. try next.
      case (Absyn.IDENT(id),path,CACHETREE(id2,env2,_::children))
        equation 
          //print("try next ");print(id);print("\n");
          env=cacheGetEnv2(Absyn.IDENT(id),path,CACHETREE(id2,env2,children));
        then env;
-         
-    // for qualified name, found first matching identifier in child
+     // for qualified name, found first matching identifier in child
      case (Absyn.QUALIFIED(id,path2),path,CACHETREE(_,_,CACHETREE(id2,env2,children2)::_))
        equation
          equality(id=id2);
          //print("found qualified (1) ");print(id);print("\n");
          env = cacheGetEnv2(path2,path,CACHETREE(id2,env2,children2));
        then env;
-           
-    // for qualified name, try next
+     // for qualified name, try next
      case (Absyn.QUALIFIED(id,path2),path,CACHETREE(id2,env2,_::children2))
        equation
          //print("try next qualified ");print(id);print("\n");
          env = cacheGetEnv2(path2,path,CACHETREE(id2,env2,children2));
        then env;
-   end matchcontinue;  
+  end matchcontinue;  
 end cacheGetEnv2;
 
-protected function cacheGetEnv3 "Help function to cacheGetEnv2, searches down in tree for env."
+protected function cacheGetEnv3 
+"function cacheGetEnv3
+  Help function to cacheGetEnv2, searches down in tree for env."
   input Absyn.Path path;
   input list<CacheTree> children;
   output Env env;
 algorithm
   env := matchcontinue(path,children)
-
     local
       Ident id,id2;
-
 		//found matching simple name
     case (Absyn.IDENT(id),CACHETREE(id2,env,_)::_)
       equation
-        equality(id =id2); then env;
-     
+        equality(id =id2); 
+      then env;     
      // found matching qualified name
     case (Absyn.QUALIFIED(id,path),CACHETREE(id2,_,children)::_) 
       equation
         equality(id =id2);
-        	env = cacheGetEnv3(path,children);
-         then env;
-
+        env = cacheGetEnv3(path,children);
+      then env;
      // try next      
     case (path,_::children) 
       equation
-        	env = cacheGetEnv3(path,children);
-         then env;
+        env = cacheGetEnv3(path,children);
+      then env;
   end matchcontinue;
 end cacheGetEnv3;
 
-public function cacheAddEnv "Add an environment to the cache"
+public function cacheAddEnv 
+"function cacheAddEnv
+  Add an environment to the cache"
   input Absyn.Path fullpath "Fully qualified path to the environment";
   input CacheTree tree ;
   input Env env "environment";
@@ -1409,34 +1444,38 @@ algorithm
       Env globalEnv,oldEnv;
       list<CacheTree> children,children2;
       CacheTree child;
-      // simple names already added
-      case (Absyn.IDENT(id),(tree as CACHETREE(globalID,globalEnv,CACHETREE(id2,oldEnv,children)::children2)),env) 
-        equation
-          //print(id);print(" already added\n");
-          equality(id=id2);
-          then tree;
-            
-       // simple names try next
-      case (Absyn.IDENT(id),tree as CACHETREE(globalID,globalEnv,child::children),env) 
-        equation
-          CACHETREE(globalID,globalEnv,children) = cacheAddEnv(Absyn.IDENT(id),CACHETREE(globalID,globalEnv,children),env);
-          then CACHETREE(globalID,globalEnv,child::children);
-                        
-      // Simple names, not found
+    // simple names already added
+    case (Absyn.IDENT(id),(tree as CACHETREE(globalID,globalEnv,CACHETREE(id2,oldEnv,children)::children2)),env) 
+      equation
+        //print(id);print(" already added\n");
+        equality(id=id2);
+      then tree;
+        
+    // simple names try next
+    case (Absyn.IDENT(id),tree as CACHETREE(globalID,globalEnv,child::children),env) 
+      equation
+        CACHETREE(globalID,globalEnv,children) = cacheAddEnv(Absyn.IDENT(id),CACHETREE(globalID,globalEnv,children),env);
+      then CACHETREE(globalID,globalEnv,child::children);
+        
+    // Simple names, not found
     case (Absyn.IDENT(id),CACHETREE(globalID,globalEnv,{}),env) 
     then CACHETREE(globalID,globalEnv,{CACHETREE(id,env,{})});
-      
-      // Qualified names.
+        
+    // Qualified names.
     case (path as Absyn.QUALIFIED(_,_),CACHETREE(globalID,globalEnv,children),env)
       equation
         children=cacheAddEnv2(path,children,env);
       then CACHETREE(globalID,globalEnv,children);
-    case (path,_,_) equation print("cacheAddEnv path=");print(Absyn.pathString(path));print(" failed\n");
-      then fail();
+        
+    case (path,_,_) 
+      equation print("cacheAddEnv path=");print(Absyn.pathString(path));print(" failed\n");
+    then fail();
   end matchcontinue;
 end cacheAddEnv;
 
 protected function cacheAddEnv2
+"function cacheAddEnv2
+  helper to function cacheAddEnv"
   input Absyn.Path path;
   input list<CacheTree> inChildren;
   input Env env;
@@ -1450,7 +1489,7 @@ algorithm
       CacheTree child;
       Env env2;
       
-      // qualified name, found matching    
+    // qualified name, found matching    
     case(Absyn.QUALIFIED(id,path),CACHETREE(id2,env2,children2)::children,env)
       equation
         equality(id=id2);
@@ -1464,7 +1503,7 @@ algorithm
         //print("single name, found matching\n");
       then CACHETREE(id2,env2,children2)::children;
         
-        // try next
+    // try next
     case(path,child::children,env)
       equation
         //print("try next\n");
@@ -1484,7 +1523,9 @@ algorithm
         //print("simple name no child found, create one.\n");
       then {CACHETREE(id,env,{})};
         
-    case (_,_,_) equation print("cacheAddEnv2 failed\n"); then fail();
+    case (_,_,_) 
+      equation print("- Env.cacheAddEnv2 failed\n"); 
+      then fail();
   end matchcontinue;
 end cacheAddEnv2;  
 
@@ -1500,7 +1541,8 @@ algorithm
       s = printCacheTreeStr(tree,1); 
       str = Util.stringAppendList({"Cache:\n",s,"\n"});
       then str;
-    case CACHE(NONE,_) then "EMPTY CACHE\n";
+    case CACHE(NONE,_) 
+      then "EMPTY CACHE\n";
   end matchcontinue;
 end printCacheStr;
 
@@ -1523,10 +1565,9 @@ algorithm
 	end matchcontinue;
 end printCacheTreeStr;
 
-public function localOutsideConnectorFlowvars "function: localOutsideConnectorFlowvars
- 
-  Return the outside connector variables that are flow in the local scope.
-"
+public function localOutsideConnectorFlowvars 
+"function: localOutsideConnectorFlowvars 
+  Return the outside connector variables that are flow in the local scope."
   input Env inEnv;
   output list<Exp.ComponentRef> outExpComponentRefLst;
 algorithm 
@@ -1536,7 +1577,7 @@ algorithm
       list<Exp.ComponentRef> res;
       Option<Ident> sid;
       BinTree ht;
-    case ((FRAME(class_1 = sid,list_2 = ht) :: _))
+    case ((FRAME(optName = sid,clsAndVars = ht) :: _))
       equation 
         res = localOutsideConnectorFlowvars2(SOME(ht));
       then
@@ -1544,10 +1585,9 @@ algorithm
   end matchcontinue;
 end localOutsideConnectorFlowvars;
 
-protected function localOutsideConnectorFlowvars2 "function: localOutsideConnectorFlowvars2
- 
-  Helper function to local_outside_connector_flowvars
-"
+protected function localOutsideConnectorFlowvars2 
+"function: localOutsideConnectorFlowvars2 
+  Helper function to localOutsideConnectorFlowvars"
   input Option<BinTree> inBinTreeOption;
   output list<Exp.ComponentRef> outExpComponentRefLst;
 algorithm 
@@ -1577,10 +1617,9 @@ algorithm
   end matchcontinue;
 end localOutsideConnectorFlowvars2;
 
-public function localInsideConnectorFlowvars "function: localInsideConnectorFlowvars
- 
-  Returns the inside connector variables that are flow from the local scope.
-"
+public function localInsideConnectorFlowvars 
+"function: localInsideConnectorFlowvars 
+  Returns the inside connector variables that are flow from the local scope."
   input Env inEnv;
   output list<Exp.ComponentRef> outExpComponentRefLst;
 algorithm 
@@ -1590,7 +1629,7 @@ algorithm
       list<Exp.ComponentRef> res;
       Option<Ident> sid;
       BinTree ht;
-    case ((FRAME(class_1 = sid,list_2 = ht) :: _))
+    case ((FRAME(optName = sid,clsAndVars = ht) :: _))
       equation 
         res = localInsideConnectorFlowvars2(SOME(ht));
       then
@@ -1598,10 +1637,9 @@ algorithm
   end matchcontinue;
 end localInsideConnectorFlowvars;
 
-protected function localInsideConnectorFlowvars2 "function: localInsideConnectorFlowvars2
-  
-  Helper function to local_inside_connector_flowvars
-"
+protected function localInsideConnectorFlowvars2 
+"function: localInsideConnectorFlowvars2  
+  Helper function to localInsideConnectorFlowvars"
   input Option<BinTree> inBinTreeOption;
   output list<Exp.ComponentRef> outExpComponentRefLst;
 algorithm 
@@ -1614,14 +1652,16 @@ algorithm
       list<Types.Var> vars;
       tuple<Types.TType, Option<Absyn.Path>> t;
     case (NONE) then {}; 
-    case (SOME(TREENODE(SOME(TREEVALUE(_,VAR(Types.VAR(id,_,_,(Types.T_COMPLEX(ClassInf.CONNECTOR(_),_,_),_),_),_,_,_))),l,r))) /* If CONNECTOR then  outside and not inside, skip.. */ 
+    /* If CONNECTOR is outside and not inside, skip.. */
+    case (SOME(TREENODE(SOME(TREEVALUE(_,VAR(Types.VAR(id,_,_,(Types.T_COMPLEX(ClassInf.CONNECTOR(_),_,_),_),_),_,_,_))),l,r))) 
       equation 
         lst1 = localInsideConnectorFlowvars2(l);
         lst2 = localInsideConnectorFlowvars2(r);
         res = listAppend(lst1, lst2);
       then
         res;
-    case (SOME(TREENODE(SOME(TREEVALUE(_,VAR(Types.VAR(id,_,_,(Types.T_COMPLEX(_,vars,_),_),_),_,_,_))),l,r))) /* ... else retrieve connectors as subcomponents */ 
+    /* ... else retrieve connectors as subcomponents */ 
+    case (SOME(TREENODE(SOME(TREEVALUE(_,VAR(Types.VAR(id,_,_,(Types.T_COMPLEX(_,vars,_),_),_),_,_,_))),l,r))) 
       equation 
         lst1 = localInsideConnectorFlowvars3(vars, id);
         lst2 = localInsideConnectorFlowvars2(l);
@@ -1629,7 +1669,8 @@ algorithm
         res = Util.listFlatten({lst1,lst2,lst3});
       then
         res;
-    case (SOME(TREENODE(SOME(TREEVALUE(_,VAR(Types.VAR(id,_,_,t,_),_,_,_))),l,r))) /* if not complex, skip */ 
+    /* if not complex, skip */    
+    case (SOME(TREENODE(SOME(TREEVALUE(_,VAR(Types.VAR(id,_,_,t,_),_,_,_))),l,r))) 
       equation 
         lst1 = localInsideConnectorFlowvars2(l);
         lst2 = localInsideConnectorFlowvars2(r);
@@ -1639,10 +1680,9 @@ algorithm
   end matchcontinue;
 end localInsideConnectorFlowvars2;
 
-protected function localInsideConnectorFlowvars3 "function: localInsideConnectorFlowvars3
- 
-  Helper function to local_inside_connector_flowvars2
-"
+protected function localInsideConnectorFlowvars3 
+"function: localInsideConnectorFlowvars3 
+  Helper function to localInsideConnectorFlowvars2"
   input list<Types.Var> inTypesVarLst;
   input Ident inIdent;
   output list<Exp.ComponentRef> outExpComponentRefLst;
@@ -1669,10 +1709,9 @@ algorithm
   end matchcontinue;
 end localInsideConnectorFlowvars3;
 
-public function treeGet "function: treeGet
- 
-  Get a value from the binary tree given a key.
-"
+public function treeGet 
+"function: treeGet 
+  Get a value from the binary tree given a key."
   input BinTree inBinTree;
   input Key inKey;
   input HashFuncType hashFunc;
@@ -1688,8 +1727,9 @@ algorithm
   outValue:= treeGet2(inBinTree,inKey,hashFunc,hval);
 end treeGet;
 
-public function treeGet2 "  Get a value from the binary tree given a key.
-"
+public function treeGet2 
+"function treeGet2
+  Get a value from the binary tree given a key."
   input BinTree inBinTree;
   input Key inKey;
   input FuncTypeKeyToInteger inFuncTypeKeyToInteger;
@@ -1712,14 +1752,14 @@ algorithm
       Option<BinTree> left,right;
       FuncTypeStringToInteger hashfunc;
       Integer rhval;
-      /* hash func Search to the right */ 
+    /* hash func Search to the right */ 
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = right),key,hashfunc,hval) 
       equation 
         equality(rkey = key);
       then
         rval;
         
-        /* Search to the right */ 
+    /* Search to the right */ 
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = left,right = SOME(right)),key,hashfunc,hval) 
       local BinTree right;
       equation
@@ -1729,7 +1769,7 @@ algorithm
       then
         res;
 
-        /* Search to the left */         
+    /* Search to the left */         
     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),left = SOME(left),right = right),key,hashfunc,hval) 
       local BinTree left;
       equation 
@@ -1741,10 +1781,9 @@ algorithm
   end matchcontinue;
 end treeGet2;
 
-protected function printBintreeStr "function: printBintreeStr
- 
-  Prints the binary tree to a string
-"
+protected function printBintreeStr 
+"function: printBintreeStr 
+  Prints the binary tree to a string"
   input BinTree inBinTree;
   output String outString;
 algorithm 
@@ -1771,5 +1810,6 @@ algorithm
         res;
   end matchcontinue;
 end printBintreeStr;
+
 end Env;
 

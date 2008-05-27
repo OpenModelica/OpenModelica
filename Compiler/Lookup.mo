@@ -60,7 +60,7 @@ protected import ModUtil;
 protected import Static;
 protected import Connect;
 protected import Error;
-//protected import Util;
+protected import System;
 
 /*   - Lookup functions
  
@@ -893,7 +893,7 @@ algorithm
       Env.Frame frame;
       Exp.ComponentRef ref;
       Env.Cache cache;
-    case (cache,((frame as Env.FRAME(class_1 = sid,list_2 = ht,list_4 = imps)) :: fs),ref)
+    case (cache,((frame as Env.FRAME(optName = sid,clsAndVars = ht,imports = imps)) :: fs),ref)
       equation 
         (cache,attr,ty,binding) = lookupVarF(cache,ht, ref);
       then
@@ -1009,7 +1009,7 @@ algorithm
         (cache,env,attr,ty,bind);
         
         /* Search base classes */
-    case (cache,Env.FRAME(list_5 = (bcframes as (_ :: _)))::fs,cref) 
+    case (cache,Env.FRAME(inherited = (bcframes as (_ :: _)))::fs,cref) 
       equation 
         //print("searching base classes for ");print(Exp.printComponentRefStr(cref));print("\n");
         (cache,attr,ty,bind) = lookupVar(cache,bcframes, cref);
@@ -1017,14 +1017,14 @@ algorithm
       then
         (cache,bcframes,attr,ty,bind);
         /* Search among qualified imports, e.g. import A.B; or import D=A.B; */
-    case (cache,(env as (Env.FRAME(class_1 = sid,list_4 = items) :: _)),(cr as Exp.CREF_IDENT(ident = id,subscriptLst = sb)))
+    case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),(cr as Exp.CREF_IDENT(ident = id,subscriptLst = sb)))
       equation 
         (cache,p_env,attr,ty,bind) = lookupQualifiedImportedVarInFrame(cache,items, env, id);
       then
         (cache,p_env,attr,ty,bind);
         
         /* Search among unqualified imports, e.g. import A.B.* */
-    case (cache,(env as (Env.FRAME(class_1 = sid,list_4 = items) :: _)),(cr as Exp.CREF_IDENT(ident = id,subscriptLst = sb)))
+    case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),(cr as Exp.CREF_IDENT(ident = id,subscriptLst = sb)))
       local Boolean unique;
       equation 
         (cache,p_env,attr,ty,bind,unique) = lookupUnqualifiedImportedVarInFrame(cache,items, env, id);
@@ -1078,13 +1078,13 @@ algorithm
       Exp.ComponentRef cref;
       Env.Cache cache;
       /* Lookup in frame */
-    case (cache,(Env.FRAME(class_1 = sid,list_2 = ht) :: fs),cref)
+    case (cache,(Env.FRAME(optName = sid,clsAndVars = ht) :: fs),cref)
       equation 
         (cache,attr,ty,binding) = lookupVarF(cache,ht, cref);
       then
         (cache,attr,ty,binding);
         
-    case (cache,(Env.FRAME(class_1 = SOME("$for loop scope$")) :: env),cref)
+    case (cache,(Env.FRAME(optName = SOME("$for loop scope$")) :: env),cref)
       equation 
         (cache,attr,ty,binding) = lookupVarLocal(cache,env, cref) "Exception, when in for loop scope allow search of next scope" ;
       then
@@ -1116,7 +1116,7 @@ algorithm
       Env.BinTree ht;
       String id;
       Env.Cache cache;
-    case (cache,env as (Env.FRAME(class_1 = sid,list_2 = ht) :: fs),id) /* component environment */ 
+    case (cache,env as (Env.FRAME(optName = sid,clsAndVars = ht) :: fs),id) /* component environment */ 
       equation 
         //print("lookupIdentLocal ");print(id);print(" , fs =");print(Env.printEnvStr(env));print("\n");
         (cache,fv,c,i,env) = lookupVar2(cache,ht, id);
@@ -1194,14 +1194,14 @@ algorithm
       String id;
       list<Env.Frame> rest;
       Env.Cache cache;
-    case (cache,(Env.FRAME(class_1 = sid,list_2 = ht) :: _),id)
+    case (cache,(Env.FRAME(optName = sid,clsAndVars = ht) :: _),id)
       equation 
         (cache,fv,c,i,_) = lookupVar2(cache,ht, id);
       then
         (cache,fv,c,i);
     case (cache,(_ :: rest),id)
       equation 
-        (cache,fv,c,i) = lookupIdent(cache,rest, id);
+        (cache,fv,c,i) = lookupIdent(cache, rest, id);
       then
         (cache,fv,c,i);
   end matchcontinue;
@@ -1256,7 +1256,7 @@ algorithm
       then
         (cache,reslist);
     /* Simple name, search frame */
-    case (cache,(env as (Env.FRAME(class_1 = sid,list_2 = ht,list_3 = httypes) :: fs)),(iid as Absyn.IDENT(name = id)))
+    case (cache,(env as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes) :: fs)),(iid as Absyn.IDENT(name = id)))
       local String id,s;
       equation 
         (cache,c1 as _::_)= lookupFunctionsInFrame(cache,ht, httypes, env, id);
@@ -1269,14 +1269,14 @@ algorithm
       equation 
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,f::fs, iid, false);
         true = SCode.isFunctionOrExtFunction(restr);
-        (cache,(env_2 as (Env.FRAME(class_1 = sid,list_2 = ht,list_3 = httypes)::_))) 
+        (cache,(env_2 as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes)::_))) 
            = Inst.implicitFunctionTypeInstantiation(cache,env_1, c);
         (cache,c1 as _::_)= lookupFunctionsInFrame(cache,ht, httypes, env_2, id);
       then
         (cache,c1);
       
       /*For qualified function names, e.g. Modelica.Math.sin */  
-    case (cache,(env as (Env.FRAME(class_1 = sid,list_2 = ht,list_3 = httypes) :: fs)),(iid as Absyn.QUALIFIED(name = pack,path = path)))
+    case (cache,(env as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes) :: fs)),(iid as Absyn.QUALIFIED(name = pack,path = path)))
       local String id,s;
       equation 
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,env, Absyn.IDENT(pack), false) ;
@@ -1352,7 +1352,7 @@ algorithm
       String id;
       Env.Frame f;
       Env.Cache cache;
-    case (cache,(env as (Env.FRAME(class_1 = sid,list_2 = ht,list_3 = httypes) :: fs)),Absyn.IDENT(name = id))
+    case (cache,(env as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes) :: fs)),Absyn.IDENT(name = id))
       equation 
         (cache,c,env_1) = lookupTypeInFrame(cache,ht, httypes, env, id);
       then
@@ -1392,19 +1392,19 @@ algorithm
       Env.Cache cache;
     case (cache,ht,httypes,env,id) /* Classes and vars types */ 
       equation 
-        Env.TYPE((t :: _)) = Env.treeGet(httypes, id, Env.myhash);
+        Env.TYPE((t :: _)) = Env.treeGet(httypes, id, System.hash);
       then
         (cache,t,env);
     case (cache,ht,httypes,env,id)
       equation 
-        Env.VAR(_,_,_,_) = Env.treeGet(ht, id, Env.myhash);
+        Env.VAR(_,_,_,_) = Env.treeGet(ht, id, System.hash);
         Error.addMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id});
       then
         fail();
         /* Record constructor function*/
     case (cache,ht,httypes,env,id)
       equation 
-        Env.CLASS((cdef as SCode.CLASS(n,_,_,SCode.R_RECORD(),_)),_) = Env.treeGet(ht, id, Env.myhash) "Each time a record constructor function is looked up, this rule will create the function. An improvement (perhaps needing lot of code) is to add the function to the environment, which is returned from this function." ;
+        Env.CLASS((cdef as SCode.CLASS(n,_,_,SCode.R_RECORD(),_)),_) = Env.treeGet(ht, id, System.hash) "Each time a record constructor function is looked up, this rule will create the function. An improvement (perhaps needing lot of code) is to add the function to the environment, which is returned from this function." ;
         (cache,fpath) = Inst.makeFullyQualified(cache,env, Absyn.IDENT(n));
         (cache,varlst) = buildRecordConstructorVarlst(cache,cdef, env);
         ftype = Types.makeFunctionType(fpath, varlst);
@@ -1414,7 +1414,7 @@ algorithm
     case (cache,ht,httypes,env,id)
       local SCode.Restriction restr;
       equation 
-        Env.CLASS((cdef as SCode.CLASS(_,_,_,restr,_)),cenv) = Env.treeGet(ht, id, Env.myhash);
+        Env.CLASS((cdef as SCode.CLASS(_,_,_,restr,_)),cenv) = Env.treeGet(ht, id, System.hash);
         true = SCode.isFunctionOrExtFunction(restr);
         (cache,env_1,_) = Inst.implicitFunctionInstantiation(cache,cenv, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           cdef, {});
@@ -1452,12 +1452,12 @@ algorithm
       Env.Cache cache;
     case (cache,ht,httypes,env,id) /* Classes and vars Types */ 
       equation 
-        Env.TYPE(tps) = Env.treeGet(httypes, id, Env.myhash);
+        Env.TYPE(tps) = Env.treeGet(httypes, id, System.hash);
       then
         (cache,tps);
     case (cache,ht,httypes,env,id)
       equation 
-        Env.VAR(_,_,_,_) = Env.treeGet(ht, id, Env.myhash);
+        Env.VAR(_,_,_,_) = Env.treeGet(ht, id, System.hash);
         Error.addMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id});
       then
         fail();
@@ -1465,7 +1465,7 @@ algorithm
         /* Records, create record constructor function*/
     case (cache,ht,httypes,env,id) 
       equation 
-        Env.CLASS((cdef as SCode.CLASS(n,_,_,SCode.R_RECORD(),_)),cenv) = Env.treeGet(ht, id, Env.myhash);
+        Env.CLASS((cdef as SCode.CLASS(n,_,_,SCode.R_RECORD(),_)),cenv) = Env.treeGet(ht, id, System.hash);
         (cache,varlst) = buildRecordConstructorVarlst(cache,cdef, env);
         (cache,fpath) = Inst.makeFullyQualified(cache,cenv, Absyn.IDENT(n));
         ftype = Types.makeFunctionType(fpath, varlst);
@@ -1475,7 +1475,7 @@ algorithm
         /* Found class that is function, instantiate to get type*/
 /*    case (cache,ht,httypes,env,id) local SCode.Restriction restr;
       equation 
-        Env.CLASS((cdef as SCode.CLASS(_,_,_,restr,_)),cenv) = Env.treeGet(ht, id, Env.myhash) "If found class that is function." ;        
+        Env.CLASS((cdef as SCode.CLASS(_,_,_,restr,_)),cenv) = Env.treeGet(ht, id, System.hash) "If found class that is function." ;        
         true = SCode.isFunctionOrExtFunction(restr);
         (cache,env_1) = Inst.implicitFunctionTypeInstantiation(cache,cenv, cdef);
         (cache,tps) = lookupFunctionsInEnv(cache,env_1, Absyn.IDENT(id)); 
@@ -1486,7 +1486,7 @@ algorithm
      case (cache,ht,httypes,env,id)  
         local String s;
         equation
-          Env.CLASS(cdef,cenv) = Env.treeGet(ht, id, Env.myhash);
+          Env.CLASS(cdef,cenv) = Env.treeGet(ht, id, System.hash);
 	        true = Inst.classIsExternalObject(cdef);
 	        (cache,_,env_1,_,t,_) = Inst.instClass(cache,cenv, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, 
          	 {}, false, Inst.TOP_CALL());
@@ -1519,7 +1519,7 @@ algorithm
       list<Env.Item> imps;
       String id;
       Env.Frame f;
-    case ((env as (Env.FRAME(class_1 = sid,list_2 = ht,list_4 = imps) :: fs)),Absyn.IDENT(name = id))
+    case ((env as (Env.FRAME(optName = sid,clsAndVars = ht,imports = imps) :: fs)),Absyn.IDENT(name = id))
       equation 
         (c,_) = lookupRecconstInFrame(ht, env, id);
       then
@@ -1553,13 +1553,13 @@ algorithm
       SCode.Class cdef;
     case (ht,env,id)
       equation 
-        Env.VAR(_,_,_,_) = Env.treeGet(ht, id, Env.myhash);
+        Env.VAR(_,_,_,_) = Env.treeGet(ht, id, System.hash);
         Error.addMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id});
       then
         fail();
     case (ht,env,id)
       equation 
-        Env.CLASS((cdef as SCode.CLASS(_,_,_,SCode.R_RECORD(),_)),_) = Env.treeGet(ht, id, Env.myhash);
+        Env.CLASS((cdef as SCode.CLASS(_,_,_,SCode.R_RECORD(),_)),_) = Env.treeGet(ht, id, System.hash);
         cdef = buildRecordConstructorClass(cdef, env);
       then
         (cdef,env);
@@ -1812,7 +1812,7 @@ algorithm
         (cache,c,env_1) = lookupClassInFrame(cache,frame, (frame :: fs), id, msg) "print \"looking in env for \" & print id & print \"\\n\" &" ;
       then
         (cache,c,env_1);
-    case (cache,(env as (Env.FRAME(class_1 = SOME(sid),encapsulated_7 = true) :: fs)),(aid as Absyn.IDENT(name = id)),_)
+    case (cache,(env as (Env.FRAME(optName = SOME(sid),isEncapsulated = true) :: fs)),(aid as Absyn.IDENT(name = id)),_)
       equation 
         equality(id = sid) "Special case if looking up the class that -is- encapsulated. That must be allowed." ;
         (cache,c,env) = lookupClassInEnv(cache,fs, aid, true);
@@ -1821,7 +1821,7 @@ algorithm
         
         /* lookup stops at encapsulated classes except for builtin
 	    scope, if not found in builtin scope, error */ 
-    case (cache,(env as (Env.FRAME(class_1 = SOME(sid),encapsulated_7 = true) :: fs)),(aid as Absyn.IDENT(name = id)),true) 
+    case (cache,(env as (Env.FRAME(optName = SOME(sid),isEncapsulated = true) :: fs)),(aid as Absyn.IDENT(name = id)),true) 
       equation 
         (cache,i_env) = Builtin.initialEnv(cache);
         failure((_,_,_) = lookupClassInEnv(cache,i_env, aid, false));
@@ -1830,14 +1830,14 @@ algorithm
       then
         fail();
    
-    case (cache,(Env.FRAME(class_1 = sid,encapsulated_7 = true) :: fs),(aid as Absyn.IDENT(name = id)),msgflag) /* lookup stops at encapsulated classes, except for builtin scope */ 
+    case (cache,(Env.FRAME(optName = sid,isEncapsulated = true) :: fs),(aid as Absyn.IDENT(name = id)),msgflag) /* lookup stops at encapsulated classes, except for builtin scope */ 
       local Option<String> sid;
       equation 
         (cache,i_env) = Builtin.initialEnv(cache);
         (cache,c,env_1) = lookupClassInEnv(cache,i_env, aid, msgflag);
       then
         (cache,c,env_1);
-    case (cache,((f as Env.FRAME(class_1 = sid,encapsulated_7 = false)) :: fs),id,msgflag) /* if not found and not encapsulated, look in next enclosing scope */ 
+    case (cache,((f as Env.FRAME(optName = sid,isEncapsulated = false)) :: fs),id,msgflag) /* if not found and not encapsulated, look in next enclosing scope */ 
       local
         Option<String> sid;
         Absyn.Path id;
@@ -1873,36 +1873,36 @@ algorithm
       list<Env.Item> items;
       Env.Cache cache;
       /* Check this scope for class */
-    case (cache,Env.FRAME(class_1 = sid,list_2 = ht),totenv,id,_)
+    case (cache,Env.FRAME(optName = sid,clsAndVars = ht),totenv,id,_)
       equation 
-        Env.CLASS(c,env) = Env.treeGet(ht, id, Env.myhash) ;
+        Env.CLASS(c,env) = Env.treeGet(ht, id, System.hash) ;
       then
         (cache,c,totenv);
         
         /* Searching for class, found component*/
-    case (cache,Env.FRAME(class_1 = sid,list_2 = ht),_,id,true)
+    case (cache,Env.FRAME(optName = sid,clsAndVars = ht),_,id,true)
       equation 
-        Env.VAR(_,_,_,_) = Env.treeGet(ht, id, Env.myhash);
+        Env.VAR(_,_,_,_) = Env.treeGet(ht, id, System.hash);
         Error.addMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id});
       then
         fail();
         
         /* Search base classes */ 
-    case (cache,Env.FRAME(list_5 = (bcframes as (_ :: _))),totenv,name,_) 
+    case (cache,Env.FRAME(inherited = (bcframes as (_ :: _))),totenv,name,_) 
       equation 
         (cache,c,env) = lookupClass2(cache,bcframes, Absyn.IDENT(name), false);
       then
         (cache,c,env);
         
         /* Search among the qualified imports, e.g. import A.B; or import D=A.B; */
-    case (cache,Env.FRAME(class_1 = sid,list_4 = items),totenv,name,_)
+    case (cache,Env.FRAME(optName = sid,imports = items),totenv,name,_)
       equation 
         (cache,c,env_1) = lookupQualifiedImportedClassInFrame(cache,items, totenv, name);
       then
         (cache,c,env_1);
         
         /* Search among the unqualified imports, e.g. import A.B.*; */
-    case (cache,Env.FRAME(class_1 = sid,list_4 = items),totenv,name,_)
+    case (cache,Env.FRAME(optName = sid,imports = items),totenv,name,_)
       local Boolean unique;
       equation 
         (cache,c,env_1,unique) = lookupUnqualifiedImportedClassInFrame(cache,items, totenv, name) "unique" ;
@@ -1952,7 +1952,7 @@ algorithm
       Env.Cache cache;
     case (cache,ht,id)
       equation 
-        Env.VAR(fv,c,i,env) = Env.treeGet(ht, id, Env.myhash);
+        Env.VAR(fv,c,i,env) = Env.treeGet(ht, id, System.hash);
       then
         (cache,fv,c,i,env);
   end matchcontinue;

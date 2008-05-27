@@ -4366,7 +4366,7 @@ algorithm
       Absyn.Path path;
       Exp.ComponentRef prefix,currentPrefix;
       Absyn.Ident currentPrefixIdent;
-    case (cache,(Env.FRAME(current6 = (crs,prefix)) :: _),cr)
+    case (cache,(Env.FRAME(connectionSet = (crs,prefix)) :: _),cr)
       equation 
         cr_lst = Util.listSelect1(crs, cr, Exp.crefContainedIn);
         currentPrefixIdent= Exp.crefLastIdent(prefix);

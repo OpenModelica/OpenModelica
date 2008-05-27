@@ -760,8 +760,7 @@ algorithm
         Debug.fprint("insttr", "inst_program1: ");
         Debug.fprint("insttr", n);
         Debug.fprintln("insttr", "");
-        (cache,dae,env_1,csets,_,_) = instClass(cache,env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
-          {}, false, TOP_CALL()) ;
+        (cache,dae,env_1,csets,_,_) = instClass(cache,env, Types.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {}, false, TOP_CALL()) ;
       then
         (cache,{DAE.COMP(n,DAE.DAE(dae))});
     case (cache,env,(c :: (cs as (_ :: _))))
@@ -2259,23 +2258,24 @@ algorithm
       Exp.ComponentRef prefix_cr;
       list<Env.Frame> bc,fs;
       Boolean enc;
-    case (Connect.SETS(connection = crs),prefix,(Env.FRAME(class_1 = n,list_2 = bt1,list_3 = bt2,list_4 = imp,list_5 = bc,encapsulated_7 = enc) :: fs))       
+    case (Connect.SETS(connection = crs),prefix,
+      (Env.FRAME(optName = n,clsAndVars = bt1,types = bt2,imports = imp,inherited = bc,isEncapsulated = enc) :: fs))       
       equation
         prefix_cr = Prefix.prefixToCref(prefix);
     then (Env.FRAME(n,bt1,bt2,imp,bc,(crs,prefix_cr),enc) :: fs); 
-    case (Connect.SETS(connection = crs),prefix,(Env.FRAME(class_1 = n,list_2 = bt1,list_3 = bt2,list_4 = imp,list_5 = bc,encapsulated_7 = enc) :: fs))       
+    case (Connect.SETS(connection = crs),prefix,
+      (Env.FRAME(optName = n,clsAndVars = bt1,types = bt2,imports = imp,inherited = bc,isEncapsulated = enc) :: fs))       
       equation
     then (Env.FRAME(n,bt1,bt2,imp,bc,(crs,Exp.CREF_IDENT("",{})),enc) :: fs); 
  
   end matchcontinue;
 end addConnectionSetToEnv;
 
-protected function addConnectionCrefs "function: addConnectionCrefs
-  author: PA
- 
-  This function adds the connection component references from local
-  equations to the connection sets.
-"
+protected function addConnectionCrefs 
+"function: addConnectionCrefs
+  author: PA 
+  This function adds the connection component references 
+  from local equations to the connection sets."
   input Connect.Sets inSets;
   input list<SCode.Equation> inSCodeEquationLst;
   output Connect.Sets outSets;
@@ -2294,10 +2294,11 @@ algorithm
       equation 
         cr1_1 = Exp.toExpCref(cr1);
         cr2_1 = Exp.toExpCref(cr2);
-        crs_1 = listAppend(crs, {cr1_1,cr2_1}) "	Exp.print_component_ref_str cr1\' => s1 &
-	Exp.print_component_ref_str cr2\' => s2 &
-	print \"Adding cr :\" & print s1 & print \" and cr: \" & print s2 & 
-	print \"\\n\" &" ;
+        crs_1 = listAppend(crs, {cr1_1,cr2_1}) 
+        "Exp.print_component_ref_str cr1\' => s1 &
+	       Exp.print_component_ref_str cr2\' => s2 &
+	       print \"Adding cr :\" & print s1 & print \" and cr: \" & print s2 & 
+	       print \"\\n\" &" ;
         sets_1 = addConnectionCrefs(Connect.SETS(sets,crs_1), es);
       then
         sets_1;
@@ -2388,7 +2389,7 @@ algorithm
         env1 = addClassdefsToEnv(env, cdefelts, true) " CLASSDEF & IMPORT nodes are added to env" ;
         (cache,env2,emods,extcomps,eqs2,initeqs2,alg2,initalg2) = 
         partialInstExtendsList(cache,env1, mods, extendselts, ci_state, className, true) 
-        "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations." ;
+        "2. EXTENDS Nodes instExtendsList only flatten inhteritance structure. It does not perform component instantiations." ;
 				allEls = listAppend(extendselts,els);
 				allEls2=addNomod(allEls);
 				lst_constantEls = constantEls(allEls2) " Retrieve all constants";
@@ -4101,7 +4102,7 @@ algorithm
       	If in scope A.B and searching for A.B.C.D, look for C.D directly in the scope. Otherwise, A.B 
       	will be instantiated over and over again, see testcase packages2.mo
       		*/      		
-    case (cache,(env as (Env.FRAME(class_1 = id,list_2 = cl,list_3 = tps,list_4 = imps,current6 = crs,encapsulated_7 = enc) :: fs)),SOME(tp)) 
+    case (cache,(env as (Env.FRAME(optName = id,clsAndVars = cl,types = tps,imports = imps,connectionSet = crs,isEncapsulated = enc) :: fs)),SOME(tp)) 
       local Absyn.Path newTp;
       equation
 				SOME(envpath) = Env.getEnvPath(env);
@@ -4114,7 +4115,7 @@ algorithm
       /* Base classes are fully qualified names, search from top scope.
        This is needed since the environment can be encapsulated, but inherited classes are not affected 
        by this and therefore should search from top scope directly. */ 
-    case (cache,(env as (Env.FRAME(class_1 = id,list_2 = cl,list_3 = tps,list_4 = imps,current6 = crs,encapsulated_7 = enc) :: fs)),SOME(tp)) 
+    case (cache,(env as (Env.FRAME(optName = id,clsAndVars = cl,types = tps,imports = imps,connectionSet = crs,isEncapsulated = enc) :: fs)),SOME(tp)) 
       equation 
         top_frame = Env.topFrame(env);
         (cache,env_2) = Lookup.lookupAndInstantiate(cache,{top_frame},tp,true);
