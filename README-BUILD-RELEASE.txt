@@ -3,7 +3,7 @@
 ---------------------------------------------------------------------------
 
            
-             Last update 2007-09-07 Adrian Pop, adrpo@ida.liu.se
+             Last update 2008-05-28 Adrian Pop, adrpo@ida.liu.se
 
 The following step-by-step guides explain how to 
 build the OpenModelica release .msi file on Windows 
@@ -40,7 +40,7 @@ using the Microsoft Visual Studio .NET 2003
 
 04. Open the trunk/Compiler/VC7/omc/omc.snl
 
-05. Build the project Ctrl+Shit+B
+05. Build the project Ctrl+Shift+B
 
 06. Open Setup, go to a file, right click on it and say->Properties Window
     Then, click on Setup and in the Properties change:
