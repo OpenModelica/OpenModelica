@@ -77,7 +77,7 @@ namespace IAEX
    public:
       TreeView(QWidget *parent=0);
       
-      void TreeView::setBackgroundColor(const QColor col);
+      void setBackgroundColor(const QColor col);
       
       const bool selected() const;
       const bool isClosed() const;
