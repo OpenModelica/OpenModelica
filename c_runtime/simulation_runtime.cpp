@@ -228,7 +228,7 @@ int main(int argc, char**argv)
   double stop = 5.0;
   double stepSize = 0.05;
   long outputSteps = 500;
-  double tolerance = 1e-10;
+  double tolerance = 1e-6;
   string method;
   read_input(argc,argv,
              globalData,
