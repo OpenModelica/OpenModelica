@@ -7,7 +7,7 @@
 RML=$(OMDEV)\tools\rml\bin\rml
 RMLCFLAGS=-Eplain -ftrace
 CFLAGS=/Od /I "./VC7/rmlRuntime/runtime/plain" /D "WIN32" /D "_DEBUG" /D "_CONSOLE"\
-	/D "_MBCS" /Gm /EHsc /RTC1 /MTd /TC /Fd"VC7/Debug/omcrml.pdb" /W3 /nologo /ZI
+	/D "_MBCS" /Gm /EHsc /RTC1 /MTd /TC /Fd"VC7/Debug/omcrml.pdb" /W3 /nologo /Z7
 
 SRCC=	$(SRCMO:.mo=.c)
 SRCH=	$(SRCMO:.mo=.h)

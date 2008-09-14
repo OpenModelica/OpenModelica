@@ -62,7 +62,6 @@ extern "C"
 {
 #include <assert.h>
 #include "rml.h"
-#include "../absyn_builder/yacclib.h"
 
 // Number of processors, defined in rtopts.c
 extern int nproc;

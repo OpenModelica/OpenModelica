@@ -33,7 +33,6 @@
 #include <stdlib.h>
 #include <errno.h>
 #include "rml.h"
-#include "../absyn_builder/yacclib.h"
 
 static int type_info;
 static int split_arrays;

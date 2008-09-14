@@ -51,7 +51,7 @@ exprparsegen = modelica_expression_parser.cpp modelica_expression_parser.hpp
 exprparsesrcs=$(filter %.cpp,$(exprparsegen))
 exprparseobjs=$(exprparsesrcs:.cpp=.o)
 
-OBJS += $(walkerobjs) $(exprparseobjs) $(PARSER_OBJS) parse.o yacclib.o
+OBJS += $(walkerobjs) $(exprparseobjs) $(PARSER_OBJS) parse.o 
 
 ANTLR = java -cp $(ANTLR_HOME) antlr.Tool
 

@@ -247,7 +247,6 @@ char* _replace(const char* source_str,
 #include "rml.h"
 #include "../Values.h"
 #include "../Absyn.h"
-#include "../absyn_builder/yacclib.h"
 
 #define MAXPATHLEN MAX_PATH
 
@@ -1450,7 +1449,6 @@ RML_END_LABEL
 #include "rml.h"
 #include "../Absyn.h"
 #include "../Values.h"
-#include "../absyn_builder/yacclib.h"
 
 #ifndef _IFDIR
 # ifdef S_IFDIR
@@ -2944,8 +2942,8 @@ static void *name_to_path(const char *name)
       ident = mk_scon(tmp);
       free(tmp);
     } else {
-      memcpy(&tmp, &name, sizeof(char *)); /* don't try this at home */
-      ident = mk_scon(tmp);
+      /* memcpy(&tmp, &name, sizeof(char *)); */ /* don't try this at home */
+      ident = mk_scon((char*)name);
     }
     return Absyn__IDENT(ident);
   } else {
@@ -3241,7 +3239,7 @@ static void puttype(const type_description *desc)
     fprintf(stderr, "BOOL: %c\n", desc->data.boolean ? 't' : 'f');
     break;
   case TYPE_DESC_STRING:
-    fprintf(stderr, "STR: `%s'\n", desc->data.string);
+    fprintf(stderr, "STR: '%s'\n", desc->data.string);
     break;
   case TYPE_DESC_TUPLE: {
     size_t e;
@@ -3317,7 +3315,19 @@ static void puttype(const type_description *desc)
   case TYPE_DESC_NONE:
     fprintf(stderr, "NONE\n");
     break;
+  case TYPE_DESC_RECORD:
+	  {
+		  int i;
+		  fprintf(stderr, "RECORD: %s\n", desc->data.record.record_name);
+          for (i = 0; i < desc->data.record.elements; i++)
+		  {
+			  fprintf(stderr, "NAME: %s\n", desc->data.record.name[i]);
+              puttype(&(desc->data.record.element[i]));
+		  }
+	  }
+    break;
   }
+  fflush(stderr);
 }
 #endif
 static int execute_function(void *in_arg, void **out_arg,
@@ -3357,6 +3367,7 @@ static int execute_function(void *in_arg, void **out_arg,
 
   arg = arglst;
   while (arg->type != TYPE_DESC_NONE) {
+	/* puttype(arg); */
     free_type_description(arg);
     ++arg;
   }
@@ -3373,6 +3384,7 @@ static int execute_function(void *in_arg, void **out_arg,
 
     (*out_arg) = type_desc_to_value(&retarg);
     /* out_arg doesn't seem to get freed, something we can do anything about?*/
+	/* puttype(&retarg); */
     free_type_description(&retarg);
 
     if ((*out_arg) == NULL) {

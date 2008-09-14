@@ -45,7 +45,6 @@ header "post_include_hpp" {
     
     extern "C" {
 		#include <stdio.h>
-		#include "yacclib.h"
 		#include "rml.h"
 		#include "../Absyn.h"
 		#include "../Interactive.h"
@@ -201,7 +200,7 @@ tokens {
         	cond = p->data[0];
         	then = p->data[1];
             l = Absyn__IFEXP(cond, then, l, mk_nil());
-            free(p);
+            /* free(p); */
             s.pop();
         }   
         return l;

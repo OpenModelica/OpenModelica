@@ -32,7 +32,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include "rml.h"
-#include "../absyn_builder/yacclib.h"
 
 #define GROWTH_FACTOR 1.4  /* According to some roumours of buffer growth */
 #define INITIAL_BUFSIZE 4000 /* Seems reasonable */
@@ -83,7 +82,7 @@ RML_BEGIN_LABEL(Print__printErrorBuf)
     RML_TAILCALLK(rmlFC);
   }
 
-  /* printf("%s",str); */
+  /* fprintf(stderr, "%s", str); */
 
   RML_TAILCALLK(rmlSC);
 }
@@ -143,7 +142,7 @@ RML_BEGIN_LABEL(Print__printBuf)
   sprintf((char*)(buf+strlen(buf)),"%s",str);
   nfilled=strlen(buf);
 
-  /*  printf("%s",str);*/
+  /* printf("%s", str); */
 
   RML_TAILCALLK(rmlSC);
 }

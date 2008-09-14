@@ -437,7 +437,7 @@ algorithm
       equation
         r = System.regularFileExists(f);
         (r == 0) = true;  //found file but could not process
-        print("Error processing file:"); print(f); print("\n"); 
+        print("Error processing file: "); print(f); print("\n"); 
         // show errors if there are any
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());  
       then
@@ -665,7 +665,7 @@ algorithm
         SimCodegen.generateSimulationCode(dae, indexed_dlow_1, ass1, ass2, m, mt, comps, classname, 
           filename, funcfilename,file_dir);
         SimCodegen.generateInitData(indexed_dlow_1, classname, cname_str, init_filename, 0.0, 
-          1.0, 500.0, 1e-10, "dassl");
+          1.0, 500.0, 1e-6, "dassl");
         SimCodegen.generateMakefile(makefilename, cname_str, libs, file_dir);
       then
         ();
@@ -911,9 +911,8 @@ algorithm
       then ();
     case args
       equation 
-        args_1 = RTOpts.args(args);
-        //Env.globalCache = fill(Env.emptyCache,1);
-        //debug_show_depth(5);
+        args_1 = RTOpts.args(args);        
+        // debug_show_depth(6);
         symbolTable = readSettings(args);
         ismode = RTOpts.debugFlag("interactive");
         icmode = RTOpts.debugFlag("interactiveCorba");

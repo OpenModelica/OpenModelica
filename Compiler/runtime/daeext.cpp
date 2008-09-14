@@ -42,8 +42,6 @@ extern "C"
 {
 #include <assert.h>
 #include "rml.h"
-#include "../absyn_builder/yacclib.h"
-
 
   std::set<int> e_mark;
   std::set<int> differentiated_mark;

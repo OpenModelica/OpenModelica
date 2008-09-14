@@ -40,7 +40,6 @@
 #include <malloc.h>
 #endif
 
-#include "../absyn_builder/yacclib.h"
 #include "rml.h"
 
 #ifdef WIN32
