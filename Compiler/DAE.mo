@@ -3427,7 +3427,7 @@ algorithm
         str;
     case (((v as VAR(componentRef = cr,one = NONE)) :: (lst as (_ :: _))))
       equation 
-        s1 = "-,";
+        s1 = " ,";
         s2 = getBindingsStr(lst);
         str = stringAppend(s1, s2);
       then
