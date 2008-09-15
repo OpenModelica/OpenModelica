@@ -94,7 +94,7 @@ protected import Error;
 protected import Settings;
 protected import Refactor;
 protected import DAEQuery;
-
+protected import XMLDump;
 
 protected function cevalBuiltin "function: cevalBuiltin
  
@@ -3109,6 +3109,51 @@ algorithm
         setEcho(bval);
       then
         (cache,v,st);
+    case (cache,env,(exp as 
+      Exp.CALL(
+        path = Absyn.IDENT(name = "dumpXMLDAE"),
+        expLst = 
+        {Exp.CODE(Absyn.C_TYPENAME(className),_),
+         starttime,
+         stoptime,
+         interval,
+         tolerance,
+         method,
+         filenameprefix,
+         storeInTemp})),
+      (st_1 as Interactive.SYMBOLTABLE(
+        ast = p,
+        explodedAst = sp,
+        instClsLst = ic,
+        lstVarVal = iv,
+        compiledFunctions = cf)),msg)
+        local
+          String xml_filename,xml_contents;
+      equation 
+        (cache,st,xml_filename,xml_contents) = dumpXMLDAE(cache,env, exp, st_1, msg);
+      then
+        (cache,Values.ARRAY({Values.STRING(xml_filename),Values.STRING(xml_contents)}),st);
+
+    case (cache,env,(exp as 
+      Exp.CALL(
+        path = Absyn.IDENT(name = "dumpXMLDAE"),
+        expLst = 
+        {
+        Exp.CODE(Absyn.C_TYPENAME(className),_),
+        starttime,
+        stoptime,
+        interval,
+        tolerance,
+        method,
+        filenameprefix,
+        storeInTemp})),
+      (st_1 as Interactive.SYMBOLTABLE(
+        ast = p,
+        explodedAst = sp,
+        instClsLst = ic,
+        lstVarVal = iv,
+        compiledFunctions = cf)),msg) /* failing build_model */  
+    then (cache,Values.ARRAY({Values.STRING("Xml dump error"),Values.STRING("")}),st_1);         
   end matchcontinue;
 end cevalInteractiveFunctions;
 
@@ -6694,5 +6739,83 @@ algorithm
   end matchcontinue;
 end cevalSubscript;
 
+//Functions added by fildo:
+public function dumpXMLDAE "function buildModel
+ author: x02lucpo
+ translates and builds the model by running compiler script on the generated makefile"
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Exp.Exp inExp;
+  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable3;
+  output String xml_filename "initFileName";
+  output String xml_contents;
+algorithm 
+  (outCache,outInteractiveSymbolTable3,xml_filename,xml_contents):=
+  matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg)
+    local
+      Values.Value ret_val;
+      Interactive.InteractiveSymbolTable st,st_1;
+      DAELow.DAELow indexed_dlow_1;
+      list<String> libs;
+      String file_dir,cname_str,init_filename,method_str,filenameprefix,makefilename,oldDir,tempDir;
+      Absyn.Path classname;
+      Real starttime_r,stoptime_r,interval_r,tolerance_r;
+      list<Env.Frame> env;
+      Exp.Exp exp,starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp;
+      Exp.ComponentRef cr;
+      Absyn.Program p;
+      list<SCode.Class> sp;
+      list<Interactive.InstantiatedClass> ic;
+      list<Interactive.InteractiveVariable> iv;
+      list<Interactive.CompiledCFunction> cf;
+      Msg msg;
+      Env.Cache cache;
+      Boolean cdToTemp;
+    case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = _),
+      expLst = {Exp.CODE(Absyn.C_TYPENAME(classname),_),starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp})),
+      (st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      equation 
+        _ = Error.getMessagesStr() "Clear messages";
+        (cache,Values.BOOL(cdToTemp),SOME(st)) = ceval(cache,env, storeInTemp, true, SOME(st_1), NONE, msg);
+        oldDir = System.pwd();
+        changeToTempDirectory(cdToTemp);
+        (cache,ret_val,st,indexed_dlow_1,libs,file_dir) = translateModel(cache,env, classname, st_1, msg, fileprefix);
+        cname_str = Absyn.pathString(classname);
+        (cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str) = calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
+        (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
+        
+        (cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str) = calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
+        
+        xml_filename = Util.stringAppendList({filenameprefix,"_dump.xml"});
+        Print.clearBuf();
+        XMLDump.dumpDAELow(indexed_dlow_1);
+        xml_contents = Print.getString();
+        Print.clearBuf();
+        System.writeFile(xml_filename,xml_contents);
+        
+        /*
+        cname_str = Absyn.pathString(classname);
+        (cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str) = calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
+        (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
+        SimCodegen.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename, 
+          starttime_r, stoptime_r, interval_r, tolerance_r, method_str);
+        makefilename = generateMakefilename(filenameprefix);
+        Debug.fprintln("dynload", "buildModel: about to compile model " +& filenameprefix +& ", " +& file_dir);
+        compileModel(filenameprefix, libs, file_dir);
+        Debug.fprintln("dynload", "buildModel: Compiling done.");
+        _ = System.cd(oldDir);
+        */
+        // s_call = Util.stringAppendList({"make -f ",cname_str, ".makefile\n"});
+      then
+        
+        (cache,st,xml_filename,xml_contents);
+    case (_,_,_,_,_)
+      then
+        fail();
+  end matchcontinue;
+end dumpXMLDAE;
 end Ceval;
 

@@ -37,7 +37,8 @@ SRCMO= Absyn.mo \
 	Values.mo \
 	VarTransform.mo \
 	Refactor.mo \
-	DAEQuery.mo
+	DAEQuery.mo \
+	XMLDump.mo
 
 ALLMO = $(SRCMO) \
 	DAEEXT.mo \

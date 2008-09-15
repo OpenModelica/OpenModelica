@@ -5798,6 +5798,32 @@ algorithm
         (cache,bool_exp_1,prop,st_1) = elabExp(cache,env, bool_exp, impl, SOME(st),true);
       then
         (cache,Exp.CALL(Absyn.IDENT("echo"),{bool_exp_1},false,true,Exp.STRING()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_CONST()),SOME(st));
+
+case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
+      local Absyn.Path className; Exp.Exp storeInTemp;
+      equation 
+        className = Absyn.crefToPath(cr); 
+        (cache,startTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "startTime", (Types.T_REAL({}),NONE), 
+          args, Exp.RCONST(0.0));
+        (cache,stopTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "stopTime", (Types.T_REAL({}),NONE), 
+          args, Exp.RCONST(1.0));
+        (cache,numberOfIntervals) = getOptionalNamedArg(cache,env, SOME(st), impl, "numberOfIntervals", 
+          (Types.T_INTEGER({}),NONE), args, Exp.ICONST(500));
+        (cache,tolerance) = getOptionalNamedArg(cache,env, SOME(st), impl, "tolerance", (Types.T_REAL({}),NONE), 
+          args, Exp.RCONST(1e-10));          
+        (cache,method) = getOptionalNamedArg(cache,env, SOME(st), impl, "method", (Types.T_STRING({}),NONE), 
+          args, Exp.SCONST("dassl"));
+        cname_str = Absyn.pathString(className);
+        (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix", 
+          (Types.T_STRING({}),NONE), args, Exp.SCONST(cname_str));
+        (cache,storeInTemp) = getOptionalNamedArg(cache,env, SOME(st), impl, "storeInTemp", 
+          (Types.T_BOOL({}),NONE), args, Exp.BCONST(false));  
+      then
+        (cache,Exp.CALL(Absyn.IDENT("dumpXMLDAE"),
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),startTime,stopTime,
+          numberOfIntervals,tolerance,method,filenameprefix,storeInTemp},false,true,Exp.OTHER()),Types.PROP(
+          (
+          Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE),Types.C_VAR()),SOME(st));
   end matchcontinue;
 end elabCallInteractive;
 
