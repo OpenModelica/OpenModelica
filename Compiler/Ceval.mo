@@ -3243,7 +3243,7 @@ algorithm
         flatModelicaStr = stringAppend("EqStr={'", flatModelicaStr);
         flatModelicaStr = System.stringReplace(flatModelicaStr, "\n", "%##%");
         flatModelicaStr = System.stringReplace(flatModelicaStr, "%##%", "','");
-        flatModelicaStr = stringAppend(flatModelicaStr,"'}");
+        flatModelicaStr = stringAppend(flatModelicaStr,"'};");
         filename = DAEQuery.writeIncidenceMatrix(dlow, filenameprefix, flatModelicaStr);
         str = stringAppend("The equation system was dumped to Matlab file:", filename);
       then

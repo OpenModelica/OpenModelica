@@ -276,7 +276,13 @@ void System_5finit(void)
 
 	set_cc("gcc");
   set_cxx("g++");
+#if defined(__x86_64__)
+  /* -fPIC needed on x86_64! */
+  set_linker("gcc -shared -export-dynamic -fPIC");
+#else 
   set_linker("gcc -shared -export-dynamic");
+#endif
+  
 #if defined(__i386__) || defined(__x86_64__) || defined(_MSC_VER)
   /* 
    * if we are on i386 or x86_64 or compiling with 
@@ -1554,7 +1560,10 @@ void System_5finit(void)
   set_cxx("g++");
 #if defined(__sparc__)
   set_linker("gcc -G");
-#else
+#elif defined(__x86_64__)
+  /* -fPIC needed on x86_64! */
+  set_linker("gcc -shared -export-dynamic -fPIC");
+#else 
   set_linker("gcc -shared -export-dynamic");
 #endif /* __sparc__ */
 

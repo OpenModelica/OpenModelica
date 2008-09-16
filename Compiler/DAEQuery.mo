@@ -46,7 +46,7 @@ import Absyn;
 import DAE;
 import Algorithm;
 import RTOpts;
-  
+   
 public function writeIncidenceMatrix
   input DAELow.DAELow dlow;
   input String fileNamePrefix;
@@ -680,8 +680,8 @@ algorithm
       then
         pStr;
     // if-expressions with a variable
-    case (Exp.IFEXP(expCond = e1 as Exp.CREF(componentRef = cref1),expThen = e2,expElse = e3),vars) /* if expressions. */ 
-      local String ss,sb;
+//    case (Exp.IFEXP(expCond = e1 as Exp.CREF(componentRef = cref1),expThen = e2,expElse = e3),vars) /* if expressions. */ 
+/*      local String ss,sb;
         String ss, ss1, ss2, ss3;
         Exp.ComponentRef cref1;
       equation 
@@ -696,6 +696,49 @@ algorithm
         pStr = {ss}; 
       then
         pStr;
+*/
+
+        // If expression with logic sentence.
+    case (Exp.IFEXP(expCond = e1 as Exp.LBINARY(exp1 = ee1, operator = op1, exp2 =ee2),expThen = e2,expElse = e3),vars) /* if expressions. */ 
+      local String ss, ss1, ss2, ss3, opStr, sb;
+        Exp.Exp ee1,ee2;
+        Exp.Operator op1;
+      equation
+        opStr = printExpStr(e1);
+        //opStr = Exp.relopSymbol(op1);
+        //s = printExpStr(ee2);
+        sb = Util.stringAppendList({"'true',","'=='"});
+        s1 = incidenceRowExp(e1, vars);
+        ss1 = getIncidenceRow(s1);
+        s2 = incidenceRowExp(e2, vars);
+        ss2 = getIncidenceRow(s2);  
+        s3 = incidenceRowExp(e3, vars);
+        ss3 = getIncidenceRow(s3);
+        // build the string now
+        ss = Util.stringAppendList({"{'if', ",sb,",", "{",ss1,"}",",{", ss2, "},", ss3, "}"});
+        pStr = {ss}; 
+      then
+        pStr;
+    // if-expressions with a variable (Bool)
+    case (Exp.IFEXP(expCond = e1 as Exp.CREF(componentRef = cref1), expThen = e2, expElse = e3),vars) /* if expressions. */ 
+      local String ss,sb;
+        String ss, ss1, ss2, ss3;
+        Exp.ComponentRef cref1;
+      equation 
+        //sb = printExpStr(e1);
+       
+        sb = Util.stringAppendList({"'true',","'=='"});
+        s1 = incidenceRowExp(e1, vars);
+        ss1 = getIncidenceRow(s1);
+        s2 = incidenceRowExp(e2, vars);
+        ss2 = getIncidenceRow(s2);  
+        s3 = incidenceRowExp(e3, vars);
+        ss3 = getIncidenceRow(s3);
+        ss = Util.stringAppendList({"{'if', ", sb, " {",ss1,"}",",{", ss2, "},", ss3, "}"});
+        pStr = {ss}; 
+      then
+        pStr;
+ 
     // if-expressions with any other alternative than what we handled until now
     case (Exp.IFEXP(expCond = e1,expThen = e2,expElse = e3),vars) /* if expressions. */ 
       local String ss,sb;
