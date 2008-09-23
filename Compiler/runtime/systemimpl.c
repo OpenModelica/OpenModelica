@@ -922,7 +922,7 @@ RML_BEGIN_LABEL(System__subDirectories)
 			}
 			more = FindNextFile(sh, &FileData);
 		}
-		CloseHandle(sh);
+		if (sh != INVALID_HANDLE_VALUE) FindClose(sh);
 	}
 	rmlA0 = (void*)res;
 	RML_TAILCALLK(rmlSC);
@@ -954,7 +954,7 @@ RML_BEGIN_LABEL(System__moFiles)
 			}
 			more = FindNextFile(sh, &FileData);
 		}
-		CloseHandle(sh);
+		if (sh != INVALID_HANDLE_VALUE) FindClose(sh);
 	}
 	rmlA0 = (void*)res;
 	RML_TAILCALLK(rmlSC);
