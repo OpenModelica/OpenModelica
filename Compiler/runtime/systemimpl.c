@@ -1564,7 +1564,11 @@ void System_5finit(void)
   /* -fPIC needed on x86_64! */
   set_linker("gcc -shared -export-dynamic -fPIC");
 #else 
+#ifdef __APPLE_CC__
+  set_linker("gcc -single_module -dynamiclib -flat_namespace");
+#else
   set_linker("gcc -shared -export-dynamic");
+#endif
 #endif /* __sparc__ */
 
 #if defined(__i386__) || defined(__x86_64__)
