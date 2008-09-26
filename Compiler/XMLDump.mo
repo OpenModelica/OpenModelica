@@ -1,9 +1,9 @@
 /* 
  * This file is a  part of OpenModelica.
  * 
- * Copyright (c) 1998-2008, Link�pings University,
+ * Copyright (c) 1998-2008, Linköpings University,
  * Department of Computer and Information Science, 
- * SE-58183 Link�ping, Sweden. 
+ * SE-58183 Linköping, Sweden. 
  * 
  * This program is distributed  WITHOUT ANY WARRANTY; without 
  * even the implied warranty of  MERCHANTABILITY or FITNESS 
@@ -20,7 +20,7 @@
  * 
  * The OpenModelica software and the Open Source Modelica 
  * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Link�pings University, either from the above address, 
+ * from Linköpings University, either from the above address, 
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  * 
