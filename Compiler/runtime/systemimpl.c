@@ -2293,6 +2293,24 @@ RML_BEGIN_LABEL(System__readPtolemyplotDataset)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__readPtolemyplotVariables)
+{
+  rml_sint_t i,size;
+  char* filename = RML_STRINGDATA(rmlA0);
+  char* visvars = RML_STRINGDATA(rmlA1);
+  void* p;
+
+  rmlA0 = (void*)read_ptolemy_variables(filename, visvars);
+  if (rmlA0 == NULL) {
+    RML_TAILCALLK(rmlFC);
+  }
+
+//  rml_prim_once(Values__reverseMatrix);
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__readPtolemyplotDatasetSize)
 {
   int size;
