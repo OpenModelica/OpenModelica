@@ -7,7 +7,7 @@
  * modified to fit OMNotebook
  */
 
-#define IAEX_SOCKET_PORT		2643
+#define IAEX_SOCKET_PORT		7777
 
 // STD Headers
 #include <iostream>

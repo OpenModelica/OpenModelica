@@ -76,8 +76,7 @@ namespace IAEX
 	*
 	* \brief Implements evaluation for modelica code. 
 	*/
-	OmcInteractiveEnvironment::OmcInteractiveEnvironment()
-		: comm_(OmcCommunicator::getInstance()),result_("")
+	OmcInteractiveEnvironment::OmcInteractiveEnvironment():comm_(OmcCommunicator::getInstance()),result_(""),error_("")
 	{
 		//Communicate with Omc.
 		if(!comm_.isConnected())
@@ -103,27 +102,8 @@ namespace IAEX
 	 *\brief Method for get error message from OMC
 	 */
 	QString OmcInteractiveEnvironment::getError()
-	{
-		QString error;
-
-		try
-		{
-			error = comm_.callOmc( "getErrorString()" );
-		}
-		catch( exception &e )
-		{
-			throw e;
-		}
-		 
-
-		if( error.size() > 2 )
-		{
-			error = QString( "OMC-ERROR: \n" ) + error;
-		}
-		else
-			error.clear();
-
-		return error;
+	{		
+    return error_;
 	}
 
 	/*! 
@@ -134,12 +114,23 @@ namespace IAEX
 	 *
 	 * 2006-02-02 AF, Added try-catch statement
 	 */
-	void OmcInteractiveEnvironment::evalExpression(QString &expr)
+	void OmcInteractiveEnvironment::evalExpression(const QString expr)
 	{
 		// 2006-02-02 AF, Added try-catch
 		try
 		{
+      error_.clear(); // clear any error!
+      // call OMC with expression
 			result_ = comm_.callOmc(expr);
+      // see if there are any errors
+			error_ = comm_.callOmc( "getErrorString()" );	
+      cerr << "result:" << result_.toStdString() << " error:" << error_.toStdString() << endl; 
+		  if( error_.size() > 2 )
+		  {
+			  error_ = QString( "OMC-ERROR: \n" ) + error_;
+		  }
+		  else // no errors, clear the error.
+			  error_.clear();
 		}
 		catch( exception &e )
 		{
@@ -273,7 +264,7 @@ namespace IAEX
 			omcProcess->start( omc, parameters );
 
 			// give time to start up..
-			if( omcProcess->waitForStarted(2000) )
+			if( omcProcess->waitForStarted(20000) )
 				flag = true;
 			else
 				flag = false;

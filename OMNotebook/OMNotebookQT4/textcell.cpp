@@ -124,8 +124,7 @@ namespace IAEX
 		QTextBrowser::mousePressEvent(event);
 
 		
-		if( event->modifiers() == Qt::ShiftModifier || 
-			textCursor().hasSelection() )
+		if( event->modifiers() == Qt::ShiftModifier || textCursor().hasSelection() )
 		{
 			return; //fjass3
 		}

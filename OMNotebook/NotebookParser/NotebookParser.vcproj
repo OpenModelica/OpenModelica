@@ -1,97 +1,149 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.10"
+	Version="9,00"
 	Name="NotebookParser"
 	ProjectGUID="{3700A59E-E33B-4AC7-8385-35D486AEE4E0}"
-	Keyword="Win32Proj">
+	RootNamespace="NotebookParser"
+	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
+	>
 	<Platforms>
 		<Platform
-			Name="Win32"/>
+			Name="Win32"
+		/>
 	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="Debug"
 			IntermediateDirectory="Debug"
 			ConfigurationType="4"
-			CharacterSet="2">
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			CharacterSet="0"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(QNBHOME)\OMNotebookQT4&quot;;&quot;$(QTHOME)\include&quot;;&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(OMDEV)\include\&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
-				MinimalRebuild="TRUE"
+				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="4"/>
+				Detect64BitPortabilityProblems="false"
+				DebugInformationFormat="4"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/NotebookParser.lib"/>
+				OutputFile="$(OutDir)/NotebookParser.lib"
+			/>
 			<Tool
-				Name="VCMIDLTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCXDCMakeTool"
+			/>
 			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCBscMakeTool"
+			/>
 			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCFxCopTool"
+			/>
 			<Tool
-				Name="VCResourceCompilerTool"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="Release"
 			IntermediateDirectory="Release"
 			ConfigurationType="4"
-			CharacterSet="2">
+			CharacterSet="0"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories="&quot;$(QNBHOME)\OMNotebookQT4&quot;;&quot;$(QTHOME)\include&quot;;&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(OMDEV)\include\&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="TRUE"
+				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
-				DisableSpecificWarnings="4311; 4312"/>
+				DisableSpecificWarnings="4311; 4312"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/NotebookParser.lib"/>
+				OutputFile="$(OutDir)/NotebookParser.lib"
+			/>
 			<Tool
-				Name="VCMIDLTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCXDCMakeTool"
+			/>
 			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCBscMakeTool"
+			/>
 			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCFxCopTool"
+			/>
 			<Tool
-				Name="VCResourceCompilerTool"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 	</Configurations>
 	<References>
@@ -100,118 +152,140 @@
 		<Filter
 			Name="Source Files"
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
-			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
+			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
+			>
 			<File
-				RelativePath="AntlrNotebookLexer.cpp">
+				RelativePath="AntlrNotebookLexer.cpp"
+				>
 			</File>
 			<File
-				RelativePath="AntlrNotebookParser.cpp">
+				RelativePath="AntlrNotebookParser.cpp"
+				>
 			</File>
 			<File
-				RelativePath="AntlrNotebookTreeParser.cpp">
+				RelativePath="AntlrNotebookTreeParser.cpp"
+				>
 			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
-			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
+			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
+			>
 			<File
-				RelativePath="AntlrNotebookLexer.hpp">
+				RelativePath="AntlrNotebookLexer.hpp"
+				>
 			</File>
 			<File
-				RelativePath="AntlrNotebookParser.hpp">
+				RelativePath="AntlrNotebookParser.hpp"
+				>
 			</File>
 			<File
-				RelativePath="AntlrNotebookParserTokenTypes.hpp">
+				RelativePath="AntlrNotebookParserTokenTypes.hpp"
+				>
 			</File>
 			<File
-				RelativePath="AntlrNotebookTreeParser.hpp">
+				RelativePath="AntlrNotebookTreeParser.hpp"
+				>
 			</File>
 			<File
-				RelativePath="AntlrNotebookTreeParserTokenTypes.hpp">
+				RelativePath="AntlrNotebookTreeParserTokenTypes.hpp"
+				>
 			</File>
 			<File
-				RelativePath="notebookgrammarTokenTypes.hpp">
+				RelativePath="notebookgrammarTokenTypes.hpp"
+				>
 			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"
-			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}">
+			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
+			>
 		</Filter>
 		<Filter
 			Name="Grammar Files"
-			Filter="">
+			>
 			<File
-				RelativePath="lexer.g">
+				RelativePath="lexer.g"
+				>
 				<FileConfiguration
-					Name="Debug|Win32">
+					Name="Debug|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Performing custom build for Lexer"
-						CommandLine="java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool $(InputName).g
-"
-						Outputs="AntlrNotebookLexer.hpp;AntlrNotebookLexer.cpp;notebookgrammarTokenTypes.hpp;notebookgrammarTokenTypes.txt"/>
+						CommandLine="java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool $(InputName).g&#x0D;&#x0A;"
+						Outputs="AntlrNotebookLexer.hpp;AntlrNotebookLexer.cpp;notebookgrammarTokenTypes.hpp;notebookgrammarTokenTypes.txt"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Performing custom build for Lexer"
-						CommandLine="java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool $(InputName).g
-"
-						Outputs="AntlrNotebookLexer.hpp;AntlrNotebookLexer.cpp;notebookgrammarTokenTypes.hpp;notebookgrammarTokenTypes.txt"/>
+						CommandLine="java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool $(InputName).g&#x0D;&#x0A;"
+						Outputs="AntlrNotebookLexer.hpp;AntlrNotebookLexer.cpp;notebookgrammarTokenTypes.hpp;notebookgrammarTokenTypes.txt"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="parser.g">
+				RelativePath="parser.g"
+				>
 				<FileConfiguration
-					Name="Debug|Win32">
+					Name="Debug|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Performing Custom Build Step for Parser"
-						CommandLine="java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool $(InputName).g
-"
+						CommandLine="java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool $(InputName).g&#x0D;&#x0A;"
 						AdditionalDependencies="notebookgrammarTokenTypes.txt"
-						Outputs="AntlrNotebookParser.hpp;AntlrNotebookParser.cpp;AntlrNotebookParserTokenTypes.hpp;AntlrNotebookParserTokenTypes.txt"/>
+						Outputs="AntlrNotebookParser.hpp;AntlrNotebookParser.cpp;AntlrNotebookParserTokenTypes.hpp;AntlrNotebookParserTokenTypes.txt"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Performing Custom Build Step for Parser"
-						CommandLine="java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool $(InputName).g
-"
+						CommandLine="java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool $(InputName).g&#x0D;&#x0A;"
 						AdditionalDependencies="notebookgrammarTokenTypes.txt"
-						Outputs="AntlrNotebookParser.hpp;AntlrNotebookParser.cpp;AntlrNotebookParserTokenTypes.hpp;AntlrNotebookParserTokenTypes.txt"/>
+						Outputs="AntlrNotebookParser.hpp;AntlrNotebookParser.cpp;AntlrNotebookParserTokenTypes.hpp;AntlrNotebookParserTokenTypes.txt"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="walker.g">
+				RelativePath="walker.g"
+				>
 				<FileConfiguration
-					Name="Debug|Win32">
+					Name="Debug|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Performing Custom Build Step walker"
-						CommandLine="java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool $(InputName).g
-"
+						CommandLine="java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool $(InputName).g&#x0D;&#x0A;"
 						AdditionalDependencies="AntlrNotebookParserTokenTypes.txt;notebookgrammarTokenTypes.txt"
-						Outputs="AntlrNotebookTreeParser.cpp;AntlrNotebookTreeParser.hpp;AntlrNotebookTreeParserTokenTypes.hpp;AntlrNotebookTreeParserTokenTypes.txt"/>
+						Outputs="AntlrNotebookTreeParser.cpp;AntlrNotebookTreeParser.hpp;AntlrNotebookTreeParserTokenTypes.hpp;AntlrNotebookTreeParserTokenTypes.txt"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Performing Custom Build Step walker"
-						CommandLine="java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool $(InputName).g
-"
+						CommandLine="java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool $(InputName).g&#x0D;&#x0A;"
 						AdditionalDependencies="AntlrNotebookParserTokenTypes.txt;notebookgrammarTokenTypes.txt"
-						Outputs="AntlrNotebookTreeParser.cpp;AntlrNotebookTreeParser.hpp;AntlrNotebookTreeParserTokenTypes.hpp;AntlrNotebookTreeParserTokenTypes.txt"/>
+						Outputs="AntlrNotebookTreeParser.cpp;AntlrNotebookTreeParser.hpp;AntlrNotebookTreeParserTokenTypes.hpp;AntlrNotebookTreeParserTokenTypes.txt"
+					/>
 				</FileConfiguration>
 			</File>
 		</Filter>
 		<File
-			RelativePath=".\ReadMe.txt">
+			RelativePath=".\ReadMe.txt"
+			>
 		</File>
 	</Files>
 	<Globals>

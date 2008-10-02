@@ -1,68 +1,98 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.10"
+	Version="9,00"
 	Name="Pltpkg2"
-	ProjectGUID="{D98C1DD4-008F-34B2-A980-0998ECF8427E}">
+	ProjectGUID="{D98C1DD4-008F-34B2-A980-0998ECF8427E}"
+	RootNamespace="Pltpkg2"
+	TargetFrameworkVersion="131072"
+	>
 	<Platforms>
 		<Platform
-			Name="Win32"/>
+			Name="Win32"
+		/>
 	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="debug\"
 			IntermediateDirectory="debug\"
 			ConfigurationType="4"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="0"
+			>
 			<Tool
-				Name="VCCLCompilerTool"
-				AdditionalOptions="-Zm200 -EHsc"
-				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(QTHOME)\include\QtGui&quot;;&quot;$(QTHOME)\include&quot;;.;&quot;$(QTHOME)\include\ActiveQt&quot;;debug;&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot;;"
-				PreprocessorDefinitions="_WINDOWS,UNICODE,QT_LARGEFILE_SUPPORT,WIN32,QT_DLL,QT_GUI_LIB,QT_CORE_LIB,QT_THREAD_SUPPORT"
-				GeneratePreprocessedFile="0"
-				MinimalRebuild="FALSE"
-				ExceptionHandling="TRUE"
-				RuntimeLibrary="3"
-				BufferSecurityCheck="FALSE"
-				RuntimeTypeInfo="TRUE"
-				AssemblerListingLocation="debug\"
-				ObjectFile="debug\"
-				ProgramDataBaseFileName=".\"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"/>
+				Name="VCPreBuildEventTool"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCCustomBuildTool"
+			/>
 			<Tool
-				Name="VCLibrarianTool"
-				AdditionalDependencies=""
-				AdditionalLibraryDirectories=""
-				IgnoreAllDefaultLibraries="TRUE"/>
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
 			<Tool
 				Name="VCMIDLTool"
 				WarningLevel="0"
 				DefaultCharType="0"
-				EnableErrorChecks="1"/>
+				EnableErrorChecks="1"
+			/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCCLCompilerTool"
+				AdditionalOptions="-Zm200 -EHsc"
+				Optimization="0"
+				AdditionalIncludeDirectories="&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(QTHOME)\include\QtGui&quot;;&quot;$(QTHOME)\include&quot;;.;&quot;$(QTHOME)\include\ActiveQt&quot;;debug;&quot;$(QTHOME)\mkspecs\win32-msvc2008&quot;;&quot;$(COINDIR)\include\&quot;"
+				PreprocessorDefinitions="_WINDOWS,UNICODE,QT_LARGEFILE_SUPPORT,WIN32,QT_DLL,QT_GUI_LIB,QT_CORE_LIB,QT_THREAD_SUPPORT,SOQT_DLL,COIN_DLL"
+				GeneratePreprocessedFile="0"
+				MinimalRebuild="false"
+				ExceptionHandling="1"
+				RuntimeLibrary="3"
+				BufferSecurityCheck="false"
+				RuntimeTypeInfo="true"
+				AssemblerListingLocation="debug\"
+				ObjectFile="debug\"
+				ProgramDataBaseFileName=".\"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+			/>
 			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG"/>
+				PreprocessorDefinitions="NDEBUG"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
+				Name="VCLibrarianTool"
+				AdditionalDependencies=""
+				AdditionalLibraryDirectories=""
+				IgnoreAllDefaultLibraries="true"
+			/>
 			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
@@ -70,57 +100,78 @@
 			IntermediateDirectory="release\"
 			ConfigurationType="4"
 			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="0"
+			>
 			<Tool
-				Name="VCCLCompilerTool"
-				AdditionalOptions="-Zm200 -EHsc"
-				Optimization="2"
-				GlobalOptimizations="TRUE"
-				InlineFunctionExpansion="2"
-				ImproveFloatingPointConsistency="FALSE"
-				FavorSizeOrSpeed="1"
-				OptimizeForProcessor="0"
-				AdditionalIncludeDirectories="&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(QTHOME)\include\QtGui&quot;;&quot;$(QTHOME)\include&quot;;.;&quot;$(QTHOME)\include\ActiveQt&quot;;debug;&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot;"
-				PreprocessorDefinitions="NDEBUG,_WINDOWS,UNICODE,QT_LARGEFILE_SUPPORT,WIN32,QT_DLL,QT_NO_DEBUG,QT_GUI_LIB,QT_CORE_LIB,QT_THREAD_SUPPORT"
-				GeneratePreprocessedFile="0"
-				ExceptionHandling="TRUE"
-				RuntimeLibrary="2"
-				BufferSecurityCheck="FALSE"
-				RuntimeTypeInfo="TRUE"
-				AssemblerListingLocation="release\"
-				ObjectFile="release\"
-				ProgramDataBaseFileName=".\"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"/>
+				Name="VCPreBuildEventTool"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCCustomBuildTool"
+			/>
 			<Tool
-				Name="VCLibrarianTool"
-				AdditionalLibraryDirectories=""
-				IgnoreAllDefaultLibraries="TRUE"/>
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
 			<Tool
 				Name="VCMIDLTool"
 				WarningLevel="0"
 				DefaultCharType="0"
-				EnableErrorChecks="1"/>
+				EnableErrorChecks="1"
+			/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCCLCompilerTool"
+				AdditionalOptions="-Zm200 -EHsc"
+				Optimization="2"
+				InlineFunctionExpansion="2"
+				FavorSizeOrSpeed="1"
+				WholeProgramOptimization="true"
+				AdditionalIncludeDirectories="&quot;$(QTHOME)\include\QtCore&quot;;&quot;$(QTHOME)\include\QtGui&quot;;&quot;$(QTHOME)\include&quot;;.;&quot;$(QTHOME)\include\ActiveQt&quot;;Release;&quot;$(QTHOME)\mkspecs\win32-msvc2008&quot;;&quot;$(COINDIR)\include\&quot;"
+				PreprocessorDefinitions="NDEBUG,_WINDOWS,UNICODE,QT_LARGEFILE_SUPPORT,WIN32,QT_DLL,QT_NO_DEBUG,QT_GUI_LIB,QT_CORE_LIB,QT_THREAD_SUPPORT,COIN_DLL,SOQT_DLL"
+				GeneratePreprocessedFile="0"
+				ExceptionHandling="1"
+				RuntimeLibrary="2"
+				BufferSecurityCheck="false"
+				RuntimeTypeInfo="true"
+				AssemblerListingLocation="release\"
+				ObjectFile="release\"
+				ProgramDataBaseFileName=".\"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+			/>
 			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG"/>
+				PreprocessorDefinitions="NDEBUG"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
+				Name="VCLibrarianTool"
+				AdditionalLibraryDirectories=""
+				IgnoreAllDefaultLibraries="true"
+			/>
 			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 	</Configurations>
 	<References>
@@ -128,468 +179,571 @@
 	<Files>
 		<Filter
 			Name="Source Files"
-			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx">
+			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
+			>
 			<File
-				RelativePath="compoundWidget.cpp">
+				RelativePath="compoundWidget.cpp"
+				>
 			</File>
 			<File
-				RelativePath=".\curve.cpp">
+				RelativePath=".\curve.cpp"
+				>
 			</File>
 			<File
-				RelativePath="dataSelect.cpp">
+				RelativePath="dataSelect.cpp"
+				>
 			</File>
 			<File
-				RelativePath="graphWidget.cpp">
-				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						MinimalRebuild="FALSE"
-						BufferSecurityCheck="TRUE"/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="graphWindow.cpp">
-			</File>
-			<File
-				RelativePath=".\legendLabel.cpp">
-			</File>
-			<File
-				RelativePath="line2D.cpp">
-			</File>
-			<File
-				RelativePath="lineGroup.cpp">
-			</File>
-			<File
-				RelativePath="debug\moc_compoundWidget.cpp">
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="release\moc_compoundWidget.cpp">
+				RelativePath="graphWidget.cpp"
+				>
 				<FileConfiguration
 					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
+					>
 					<Tool
-						Name="VCCLCompilerTool"/>
+						Name="VCCLCompilerTool"
+						MinimalRebuild="false"
+						BufferSecurityCheck="true"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="debug\moc_graphWidget.cpp">
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
+				RelativePath="graphWindow.cpp"
+				>
 			</File>
 			<File
-				RelativePath="release\moc_graphWidget.cpp">
+				RelativePath=".\legendLabel.cpp"
+				>
+			</File>
+			<File
+				RelativePath="line2D.cpp"
+				>
+			</File>
+			<File
+				RelativePath="lineGroup.cpp"
+				>
+			</File>
+			<File
+				RelativePath="release\moc_compoundWidget.cpp"
+				>
 				<FileConfiguration
 					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
+					ExcludedFromBuild="true"
+					>
 					<Tool
-						Name="VCCLCompilerTool"/>
+						Name="VCCLCompilerTool"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="debug\moc_graphWindow.cpp">
+				RelativePath="debug\moc_compoundWidget.cpp"
+				>
 				<FileConfiguration
 					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="release\moc_graphWindow.cpp">
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
-					<Tool
-						Name="VCCLCompilerTool"/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\release\moc_legendLabel.cpp">
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
+					ExcludedFromBuild="true"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\debug\moc_legendLabel.cpp">
+				RelativePath="release\moc_graphWidget.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="debug\moc_graphWidget.cpp"
+				>
 				<FileConfiguration
 					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
+					ExcludedFromBuild="true"
+					>
 					<Tool
-						Name="VCCLCompilerTool"/>
+						Name="VCCLCompilerTool"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\debug\moc_preferenceWindow.cpp">
+				RelativePath="debug\moc_graphWindow.cpp"
+				>
 				<FileConfiguration
-					Name="Debug|Win32">
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="release\moc_graphWindow.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\debug\moc_legendLabel.cpp"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\release\moc_legendLabel.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)/$(InputName)1.obj"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
+					>
 					<Tool
 						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+						ObjectFile="$(IntDir)/$(InputName)1.obj"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\release\moc_preferenceWindow.cpp">
+				RelativePath=".\release\moc_preferenceWindow.cpp"
+				>
 				<FileConfiguration
 					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
+					ExcludedFromBuild="true"
+					>
 					<Tool
-						Name="VCCLCompilerTool"/>
+						Name="VCCLCompilerTool"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\debug\moc_variablewindow.cpp">
+				RelativePath=".\debug\moc_preferenceWindow.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)/$(InputName)1.obj"
+					/>
+				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32"
-					ExcludedFromBuild="TRUE">
+					ExcludedFromBuild="true"
+					>
 					<Tool
-						Name="VCCLCompilerTool"/>
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)/$(InputName)1.obj"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\release\moc_variablewindow.cpp">
+				RelativePath=".\debug\moc_variablewindow.cpp"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\release\moc_variablewindow.cpp"
+				>
 				<FileConfiguration
 					Name="Debug|Win32"
-					ExcludedFromBuild="TRUE">
+					ExcludedFromBuild="true"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+						ObjectFile="$(IntDir)/$(InputName)1.obj"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)/$(InputName)1.obj"/>
+						ObjectFile="$(IntDir)/$(InputName)1.obj"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="Point.cpp">
+				RelativePath="Point.cpp"
+				>
 			</File>
 			<File
-				RelativePath=".\preferenceWindow.cpp">
+				RelativePath=".\preferenceWindow.cpp"
+				>
 			</File>
 			<File
-				RelativePath="variableData.cpp">
+				RelativePath="variableData.cpp"
+				>
 			</File>
 			<File
-				RelativePath=".\variablewindow.cpp">
+				RelativePath=".\variablewindow.cpp"
+				>
 			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
-			Filter="h;hpp;hxx;hm;inl;inc;xsd">
+			Filter="h;hpp;hxx;hm;inl;inc;xsd"
+			>
 			<File
-				RelativePath="compoundWidget.h">
+				RelativePath="compoundWidget.h"
+				>
 				<FileConfiguration
-					Name="Debug|Win32">
+					Name="Debug|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC compoundWidget.h"
-						CommandLine="$(QTHOME)\bin\moc.exe -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;debug&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot; compoundWidget.h -o debug\moc_compoundWidget.cpp
-"
+						CommandLine="$(QTHOME)\bin\moc.exe -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;debug&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc2008&quot; compoundWidget.h -o debug\moc_compoundWidget.cpp&#x0D;&#x0A;"
 						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
-						Outputs="debug\moc_compoundWidget.cpp"/>
+						Outputs="debug\moc_compoundWidget.cpp"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC compoundWidget.h"
-						CommandLine="$(QTHOME)\bin\moc.exe -DNDEBUG -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;release&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot; compoundWidget.h -o release\moc_compoundWidget.cpp
-"
+						CommandLine="$(QTHOME)\bin\moc.exe -DNDEBUG -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;release&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc2008&quot; compoundWidget.h -o release\moc_compoundWidget.cpp&#x0D;&#x0A;"
 						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
-						Outputs="release\moc_compoundWidget.cpp"/>
+						Outputs="release\moc_compoundWidget.cpp"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\curve.h">
+				RelativePath=".\curve.h"
+				>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
-						Name="VCCustomBuildTool"/>
+						Name="VCCustomBuildTool"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="dataSelect.h">
+				RelativePath="dataSelect.h"
+				>
 			</File>
 			<File
-				RelativePath=".\focusRect.h">
+				RelativePath=".\focusRect.h"
+				>
 			</File>
 			<File
-				RelativePath=".\graphScene.h">
+				RelativePath=".\graphScene.h"
+				>
 			</File>
 			<File
-				RelativePath="graphWidget.h">
+				RelativePath="graphWidget.h"
+				>
 				<FileConfiguration
-					Name="Debug|Win32">
+					Name="Debug|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC graphWidget.h"
-						CommandLine="$(QTHOME)\bin\moc.exe -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;debug&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot; graphWidget.h -o debug\moc_graphWidget.cpp
-"
+						CommandLine="$(QTHOME)\bin\moc.exe -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;debug&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc2008&quot; graphWidget.h -o debug\moc_graphWidget.cpp&#x0D;&#x0A;"
 						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
-						Outputs="debug\moc_graphWidget.cpp"/>
+						Outputs="debug\moc_graphWidget.cpp"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC graphWidget.h"
-						CommandLine="$(QTHOME)\bin\moc.exe -DNDEBUG -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;release&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot; graphWidget.h -o release\moc_graphWidget.cpp
-"
+						CommandLine="$(QTHOME)\bin\moc.exe -DNDEBUG -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;release&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc2008&quot; graphWidget.h -o release\moc_graphWidget.cpp&#x0D;&#x0A;"
 						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
-						Outputs="release\moc_graphWidget.cpp"/>
+						Outputs="release\moc_graphWidget.cpp"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="graphWindow.h">
+				RelativePath="graphWindow.h"
+				>
 				<FileConfiguration
-					Name="Debug|Win32">
+					Name="Debug|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC graphWindow.h"
-						CommandLine="$(QTHOME)\bin\moc.exe -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;debug&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot; graphWindow.h -o debug\moc_graphWindow.cpp
-"
+						CommandLine="$(QTHOME)\bin\moc.exe -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;debug&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc2008&quot; graphWindow.h -o debug\moc_graphWindow.cpp&#x0D;&#x0A;"
 						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
-						Outputs="debug\moc_graphWindow.cpp"/>
+						Outputs="debug\moc_graphWindow.cpp"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC graphWindow.h"
-						CommandLine="$(QTHOME)\bin\moc.exe -DNDEBUG -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;release&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot; graphWindow.h -o release\moc_graphWindow.cpp
-"
+						CommandLine="$(QTHOME)\bin\moc.exe -DNDEBUG -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;release&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc2008&quot; graphWindow.h -o release\moc_graphWindow.cpp&#x0D;&#x0A;"
 						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
-						Outputs="release\moc_graphWindow.cpp"/>
+						Outputs="release\moc_graphWindow.cpp"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\LegendLabel.h">
+				RelativePath=".\LegendLabel.h"
+				>
 				<FileConfiguration
-					Name="Debug|Win32">
+					Name="Debug|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="$(QTHOME)\bin\moc.exe -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;debug&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot; legendLabel.h -o debug\moc_legendLabel.cpp
-"
+						CommandLine="$(QTHOME)\bin\moc.exe -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;debug&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc2008&quot; legendLabel.h -o debug\moc_legendLabel.cpp&#x0D;&#x0A;"
 						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
-						Outputs="debug\moc_legendLabel.cpp"/>
+						Outputs="debug\moc_legendLabel.cpp"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="$(QTHOME)\bin\moc.exe -DNDEBUG -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;release&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot; legendLabel.h -o release\moc_legendLabel.cpp
-"
+						CommandLine="$(QTHOME)\bin\moc.exe -DNDEBUG -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;release&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc2008&quot; legendLabel.h -o release\moc_legendLabel.cpp&#x0D;&#x0A;"
 						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
-						Outputs="release\moc_legendLabel.cpp"/>
+						Outputs="release\moc_legendLabel.cpp"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="line2D.h">
+				RelativePath="line2D.h"
+				>
 			</File>
 			<File
-				RelativePath="lineGroup.h">
+				RelativePath="lineGroup.h"
+				>
 			</File>
 			<File
-				RelativePath="point.h">
+				RelativePath="point.h"
+				>
 			</File>
 			<File
-				RelativePath=".\preferenceWindow.h">
+				RelativePath=".\preferenceWindow.h"
+				>
 				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="MOC preferenceWindow.h"
-						CommandLine="$(QTHOME)\bin\moc.exe -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;debug&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot; preferenceWindow.h -o debug\moc_preferenceWindow.cpp
-
-"
-						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
-						Outputs="debug\moc_preferenceWindow.cpp"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32">
+					Name="Debug|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC preferenceWindow.h"
-						CommandLine="$(QTHOME)\bin\moc.exe -DNDEBUG -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;release&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot; preferenceWindow.h -o release\moc_preferenceWindow.cpp
-"
+						CommandLine="$(QTHOME)\bin\moc.exe -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;debug&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc2008&quot; preferenceWindow.h -o debug\moc_preferenceWindow.cpp&#x0D;&#x0A;&#x0D;&#x0A;"
 						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
-						Outputs="release\moc_preferenceWindow.cpp"/>
+						Outputs="debug\moc_preferenceWindow.cpp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="MOC preferenceWindow.h"
+						CommandLine="$(QTHOME)\bin\moc.exe -DNDEBUG -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;release&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc2008&quot; preferenceWindow.h -o release\moc_preferenceWindow.cpp&#x0D;&#x0A;"
+						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
+						Outputs="release\moc_preferenceWindow.cpp"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="variableData.h">
+				RelativePath="variableData.h"
+				>
 			</File>
 			<File
-				RelativePath=".\variablewindow.h">
+				RelativePath=".\variablewindow.h"
+				>
 				<FileConfiguration
-					Name="Debug|Win32">
+					Name="Debug|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC variablewindow.h"
-						CommandLine="$(QTHOME)\bin\moc.exe -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;debug&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot; variablewindow.h -o debug\moc_variablewindow.cpp
-
-"
+						CommandLine="$(QTHOME)\bin\moc.exe -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;debug&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc2008&quot; variablewindow.h -o debug\moc_variablewindow.cpp&#x0D;&#x0A;&#x0D;&#x0A;"
 						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
-						Outputs="debug\moc_variablewindow.cpp"/>
+						Outputs="debug\moc_variablewindow.cpp"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="MOC variablewindow.h"
-						CommandLine="$(QTHOME)\bin\moc.exe -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;debug&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc.net&quot; variablewindow.h -o release\moc_variablewindow.cpp"
+						CommandLine="$(QTHOME)\bin\moc.exe -D_WINDOWS -DUNICODE -DQT_LARGEFILE_SUPPORT -DWIN32 -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT  -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtCore&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include\QtGui&quot; -I &quot;$(QTHOME)\include&quot; -I &quot;.&quot; -I &quot;$(QTHOME)\include\ActiveQt&quot; -I &quot;debug&quot; -I &quot;.&quot; -I&quot;$(QTHOME)\mkspecs\win32-msvc2008&quot; variablewindow.h -o release\moc_variablewindow.cpp&#x0D;&#x0A;"
 						AdditionalDependencies="$(QTHOME)\bin\moc.exe"
-						Outputs="release\moc_variablewindow.cpp"/>
+						Outputs="release\moc_variablewindow.cpp"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\verticalLabel.h">
+				RelativePath=".\verticalLabel.h"
+				>
 			</File>
 		</Filter>
 		<Filter
 			Name="Form Files"
-			Filter="ui">
+			Filter="ui"
+			>
 			<File
-				RelativePath="compoundWidget.ui">
+				RelativePath="compoundWidget.ui"
+				>
 				<FileConfiguration
-					Name="Debug|Win32">
+					Name="Debug|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="UIC compoundWidget.ui"
-						CommandLine="$(QTHOME)\bin\uic.exe compoundWidget.ui -o ui_compoundWidget.h
-"
+						CommandLine="$(QTHOME)\bin\uic.exe compoundWidget.ui -o ui_compoundWidget.h&#x0D;&#x0A;"
 						AdditionalDependencies="$(QTHOME)\bin\uic.exe;graphWidget.h"
-						Outputs="ui_compoundWidget.h"/>
+						Outputs="ui_compoundWidget.h"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="UIC compoundWidget.ui"
-						CommandLine="$(QTHOME)\bin\uic.exe compoundWidget.ui -o ui_compoundWidget.h
-"
+						CommandLine="$(QTHOME)\bin\uic.exe compoundWidget.ui -o ui_compoundWidget.h&#x0D;&#x0A;"
 						AdditionalDependencies="$(QTHOME)\bin\uic.exe;graphWidget.h"
-						Outputs="ui_compoundWidget.h"/>
+						Outputs="ui_compoundWidget.h"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="dataSelect.ui">
+				RelativePath="dataSelect.ui"
+				>
 				<FileConfiguration
-					Name="Debug|Win32">
+					Name="Debug|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="UIC dataSelect.ui"
-						CommandLine="$(QTHOME)\bin\uic.exe dataSelect.ui -o ui_dataSelect.h
-"
+						CommandLine="$(QTHOME)\bin\uic.exe dataSelect.ui -o ui_dataSelect.h&#x0D;&#x0A;"
 						AdditionalDependencies="$(QTHOME)\bin\uic.exe"
-						Outputs="ui_dataSelect.h"/>
+						Outputs="ui_dataSelect.h"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="UIC dataSelect.ui"
-						CommandLine="$(QTHOME)\bin\uic.exe dataSelect.ui -o ui_dataSelect.h
-"
+						CommandLine="$(QTHOME)\bin\uic.exe dataSelect.ui -o ui_dataSelect.h&#x0D;&#x0A;"
 						AdditionalDependencies="$(QTHOME)\bin\uic.exe"
-						Outputs="ui_dataSelect.h"/>
+						Outputs="ui_dataSelect.h"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="graphWindow.ui">
+				RelativePath="graphWindow.ui"
+				>
 				<FileConfiguration
-					Name="Debug|Win32">
+					Name="Debug|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="UIC graphWindow.ui"
-						CommandLine="$(QTHOME)\bin\uic.exe graphWindow.ui -o ui_graphWindow.h
-"
+						CommandLine="$(QTHOME)\bin\uic.exe graphWindow.ui -o ui_graphWindow.h&#x0D;&#x0A;"
 						AdditionalDependencies="$(QTHOME)\bin\uic.exe;graphWidget.h"
-						Outputs="ui_graphWindow.h"/>
+						Outputs="ui_graphWindow.h"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="UIC graphWindow.ui"
-						CommandLine="$(QTHOME)\bin\uic.exe graphWindow.ui -o ui_graphWindow.h
-"
+						CommandLine="$(QTHOME)\bin\uic.exe graphWindow.ui -o ui_graphWindow.h&#x0D;&#x0A;"
 						AdditionalDependencies="$(QTHOME)\bin\uic.exe;graphWidget.h"
-						Outputs="ui_graphWindow.h"/>
+						Outputs="ui_graphWindow.h"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\newgraph.ui">
+				RelativePath=".\newgraph.ui"
+				>
 				<FileConfiguration
-					Name="Debug|Win32">
+					Name="Debug|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="UIC newgraph.ui"
-						CommandLine="$(QTHOME)\bin\uic.exe newgraph.ui -o ui_newgraph.h
-"
+						CommandLine="$(QTHOME)\bin\uic.exe newgraph.ui -o ui_newgraph.h&#x0D;&#x0A;"
 						AdditionalDependencies="$(QTHOME)\bin\uic.exe"
-						Outputs="ui_newgraph.h"/>
+						Outputs="ui_newgraph.h"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="UIC newgraph.ui"
-						CommandLine="$(QTHOME)\bin\uic.exe newgraph.ui -o ui_newgraph.h"
+						CommandLine="$(QTHOME)\bin\uic.exe newgraph.ui -o ui_newgraph.h&#x0D;&#x0A;"
 						AdditionalDependencies="$(QTHOME)\bin\uic.exe"
-						Outputs="ui_newgraph.h"/>
+						Outputs="ui_newgraph.h"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\preferences.ui">
+				RelativePath=".\preferences.ui"
+				>
 				<FileConfiguration
-					Name="Debug|Win32">
+					Name="Debug|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="UIC preferences.ui"
-						CommandLine="$(QTHOME)\bin\uic.exe preferences.ui -o ui_preferences.h
-"
+						CommandLine="$(QTHOME)\bin\uic.exe preferences.ui -o ui_preferences.h&#x0D;&#x0A;"
 						AdditionalDependencies="$(QTHOME)\bin\uic.exe"
-						Outputs="ui_preferences.h"/>
+						Outputs="ui_preferences.h"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="UIC preferences.ui"
-						CommandLine="$(QTHOME)\bin\uic.exe preferences.ui -o ui_preferences.h
-"
+						CommandLine="$(QTHOME)\bin\uic.exe preferences.ui -o ui_preferences.h&#x0D;&#x0A;"
 						AdditionalDependencies="$(QTHOME)\bin\uic.exe"
-						Outputs="ui_preferences.h"/>
+						Outputs="ui_preferences.h"
+					/>
 				</FileConfiguration>
 			</File>
 		</Filter>

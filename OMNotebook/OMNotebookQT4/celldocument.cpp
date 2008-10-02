@@ -142,11 +142,11 @@ namespace IAEX
 		: changed_(false),
 		open_(false), 
 		saved_(false), 
-		app_(a), 
-		filename_(filename),
+		app_(a), 		
 		currentImageNo_(0),
 		lastClickedCell_(0)
 	{
+    filename_ = filename;
 		mainFrame_ = new QFrame();
 
 		mainFrame_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, 
@@ -156,6 +156,8 @@ namespace IAEX
 		mainLayout_->setMargin(0);
 		mainLayout_->setSpacing(0);
 		
+		//Initialize SoQT
+		SoQt::init(mainFrame_);
 
 		//Initialize workspace.
 		factory_ = new CellFactory(this);
@@ -1056,6 +1058,8 @@ namespace IAEX
 //	void CellDocument::anchorClicked(const QUrl *link)
 	{ 
 		// 2006-02-10 AF, check if path is empty
+    fprintf(stderr, "receive link: %s\n", link->toString().toStdString().c_str());
+    fflush(stderr); fflush(stdout);
 		if( !link->path().isEmpty() )
 		{
 			// 2005-12-05 AF, check if filename exists, otherwise use work dir

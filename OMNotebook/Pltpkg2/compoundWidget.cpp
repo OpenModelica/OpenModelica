@@ -51,6 +51,13 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 
 CompoundWidget::CompoundWidget(QWidget* parent):  QWidget(parent)
 {
+//	this->resize(672, 784);
+//	this->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+	plotWidget = new QWidget(this);
+	plotWidget->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+//	plotWidget->setMinimumHeight(784);
+//	plotWidget->setMinimumWidth(672);
+
 	setupUi(this);
 
 	QFont f("Arial",10);
@@ -80,6 +87,13 @@ CompoundWidget::CompoundWidget(QWidget* parent):  QWidget(parent)
 	gwMain->legendFrame = legendFrame;
 
 	gwMain->compoundwidget = this;
+
+  //Initialize SoQT
+	SoQt::init(this);
+
+	visWidget = new IAEX::VisualizationWidget(this);
+	visWidget->hide();
+	
 }
 
 CompoundWidget::~CompoundWidget()
@@ -107,4 +121,14 @@ void CompoundWidget::resizeY(quint32 w)
 {
 	gvLeft->setMinimumWidth(w+5);
 	gvLeft->update();
+}
+
+void CompoundWidget::showVis() {
+	visWidget->show();
+	plotWidget->hide();
+}
+
+void CompoundWidget::hideVis() {
+	visWidget->hide();
+	plotWidget->show();
 }

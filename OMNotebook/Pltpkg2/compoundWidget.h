@@ -56,6 +56,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 //IAEX headers
 #include "ui_compoundWidget.h"
 #include "graphWidget.h"
+#include "../3Dpkg/VisualizationWidget.h"
 
 using namespace std;
 
@@ -66,6 +67,8 @@ class CompoundWidget: public QWidget, public Ui::CompoundWidget
 public:
 	CompoundWidget(QWidget* parent = 0); 
 	~CompoundWidget(); 
+	void showVis();
+	void hideVis();	
 
 public slots:
 	void resizeY(quint32 w);
@@ -73,6 +76,8 @@ public slots:
 
 public:
 	QVBoxLayout* layout;
+	IAEX::VisualizationWidget* visWidget;
+	QWidget* plotWidget;	
 };
 
 

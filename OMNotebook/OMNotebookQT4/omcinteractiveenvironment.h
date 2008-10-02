@@ -63,7 +63,7 @@ namespace IAEX
 
 		virtual QString getResult();
 		virtual QString getError();					// Added 2006-02-02 AF
-		virtual void evalExpression(QString &expr);
+		virtual void evalExpression(const QString expr);
 		virtual void closeConnection();				// Added 2006-02-02 AF
 		virtual void reconnect();					// Added 2006-02-02 AF
 		virtual bool startDelegate();				// Added 2006-02-09 AF
@@ -75,6 +75,7 @@ namespace IAEX
 	private:
 		OmcCommunicator &comm_;
 		QString result_;
+    QString error_;
 	};
 }
 #endif

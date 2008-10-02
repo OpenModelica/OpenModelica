@@ -17,16 +17,16 @@ Redistribution and use in source and binary forms, with or without
 modification,
 are permitted provided that the following conditions are met:
 
-    * Redistributions of source code must retain the above copyright notice,
-      this list of conditions and the following disclaimer.
-    
-	* Redistributions in binary form must reproduce the above copyright notice,
-      this list of conditions and the following disclaimer in the documentation
-      and/or other materials provided with the distribution.
+* Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
 
-    * Neither the name of Linköpings universitet nor the names of its contributors
-      may be used to endorse or promote products derived from this software without
-      specific prior written permission.
+* Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+
+* Neither the name of Linköpings universitet nor the names of its contributors
+may be used to endorse or promote products derived from this software without
+specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -56,6 +56,7 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 #include <sstream>
 #include <exception>
 #include <stdexcept>
+#include <QDir>
 
 // MME includes
 //#include "annotation.hpp"
@@ -84,29 +85,29 @@ licence: http://www.trolltech.com/products/qt/licensing.html
 using namespace std;
 
 /**
- * \brief
- * Creates and initializes the Omc communicator.
- */
+* \brief
+* Creates and initializes the Omc communicator.
+*/
 OmcCommunicator::OmcCommunicator()
-  : QObject(),
-    omc_(0) //,
-    //compiler_(new AnnotationCompiler())
+: QObject(),
+omc_(0) //,
+//compiler_(new AnnotationCompiler())
 {
 }
 
 /**
- * \brief
- * Destroys the Omc communicator.
- */
+* \brief
+* Destroys the Omc communicator.
+*/
 OmcCommunicator::~OmcCommunicator()
 {
-   //delete compiler_;
+  //delete compiler_;
 }
 
 /**
- * \brief
- * Returns a reference to the Omc communicator.
- */
+* \brief
+* Returns a reference to the Omc communicator.
+*/
 OmcCommunicator& OmcCommunicator::getInstance()
 {
   static OmcCommunicator instance;
@@ -122,181 +123,189 @@ OmcCommunicator& OmcCommunicator::getInstance()
 */
 bool OmcCommunicator::establishConnection()
 {
-	if (omc_) 
-	{
-		return true;
-	}
+  if (omc_) 
+  {
+    return true;
+  }
 
-	// ORB initialization.
-	int argc(0); char* argv = new char[1];
-	CORBA::ORB_var orb = CORBA::ORB_init(argc, &argv);
+  try {
+    // ORB initialization.
+    int argc = 4; 
+    char* argv[] = { "OMNotebook", "-ORBNoResolve", "-ORBIIOPAddr", "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
+    CORBA::ORB_var orb = CORBA::ORB_init(argc, argv);
 
-	QFile objectRefFile;
+    QFile objectRefFile;
 
-#ifdef WIN32 // Win32
+#if defined(WIN32) || defined(_WIN32) || defined(_MSC_VER) // Win32
 
-	// Win32 + Cygwin?
-	//Cygwin support is removed due to missing code.
-	//Ingemar Axelsson 2005-09-14.
+    // Win32 + Cygwin?
+    //Cygwin support is removed due to missing code.
+    //Ingemar Axelsson 2005-09-14.
 
-	//   if ((dynamic_cast<Application*>(qApp))->inCygwinMode()) {
-	//      char *user(getenv("USERNAME"));
-	//      if (!user) { user = "nobody"; }
-	//      
-	//      char *cygwinPath(getenv("CYGWINHOME"));
-	//      if (!cygwinPath) { cygwinPath = "c:/cygwin"; }
+    //   if ((dynamic_cast<Application*>(qApp))->inCygwinMode()) {
+    //      char *user(getenv("USERNAME"));
+    //      if (!user) { user = "nobody"; }
+    //      
+    //      char *cygwinPath(getenv("CYGWINHOME"));
+    //      if (!cygwinPath) { cygwinPath = "c:/cygwin"; }
 
-	// There seems to be a bug in the QString(const char*) constructor which makes QString free the
-	// memory pointed to by its argument when the QString object gets destroyed. Therefore it is
-	// neccessary to create the QString objects on the heap and just leave them there.
-	//      objectRefFile.setName(*(new QString(cygwinPath)) + "/tmp/openmodelica." + *(new QString(user)) + ".objid");
-	//   }
-	// Pure Win32
-	//   else
-	//   {
-	char tempDirectory[1024];
-	GetTempPath(1024, tempDirectory);
-	//GetTempPath(1024, (LPWSTR)tempDirectory);
-	
-	
-	// PORT >> objectRefFile.setName(*(new QString(tempDirectory)) + "openmodelica.objid");
-	objectRefFile.setFileName(*(new QString(tempDirectory)) + "openmodelica.objid");
-	
-	//   }
+    // There seems to be a bug in the QString(const char*) constructor which makes QString free the
+    // memory pointed to by its argument when the QString object gets destroyed. Therefore it is
+    // neccessary to create the QString objects on the heap and just leave them there.
+    //      objectRefFile.setName(*(new QString(cygwinPath)) + "/tmp/openmodelica." + *(new QString(user)) + ".objid");
+    //   }
+    // Pure Win32
+    //   else
+    //   {
+    // char tempDirectory[1024];
+    // GetTempPath(1024, tempDirectory);
+    //GetTempPath(1024, (LPWSTR)tempDirectory);
+    // use QDir::tempPath () now!
+
+
+    // PORT >> objectRefFile.setName(*(new QString(tempDirectory)) + "openmodelica.objid");
+    QString corbaIORfile = QDir::tempPath() + QDir::separator() + QString("openmodelica.objid");
+    objectRefFile.setFileName(corbaIORfile);
+
+    //   }
 
 #else	// UNIX environment
 
-	char *user = getenv("USER");
-	if (!user) { user = "nobody"; }
+    char *user = getenv("USER");
+    if (!user) { user = "nobody"; }
 
-	objectRefFile.setFileName("/tmp/openmodelica." + *(new QString(user)) + ".objid");
+    objectRefFile.setFileName("/tmp/openmodelica." + *(new QString(user)) + ".objid");
 
 #endif
 
-	if (!objectRefFile.exists()) 
-		return false;
+    fprintf(stderr, "trying to read the corba IOR file %s\n", objectRefFile.fileName().toStdString().c_str());
 
-	objectRefFile.open(QIODevice::ReadOnly);
+    if (!objectRefFile.exists()) 
+      return false;
 
-	// 2005-10-10 AF, Porting, changes
-	//objectRefFile.readLine( uri, 1024); //org
-	//qint64 length = objectRefFile.readLine( ((char*)uri.ascii()), 1024);
+    objectRefFile.open(QIODevice::ReadOnly);
 
-	char buf[1024];
-	objectRefFile.readLine( buf, sizeof(buf) );
-	QString uri( (const char*)buf );
+    // 2005-10-10 AF, Porting, changes
+    //objectRefFile.readLine( uri, 1024); //org
+    //qint64 length = objectRefFile.readLine( ((char*)uri.ascii()), 1024);
 
-	// 2005-10-10 AF, Porting, changes
-	//CORBA::Object_var obj = orb->string_to_object(uri.stripWhiteSpace().latin1()); //org
-	CORBA::Object_var obj = orb->string_to_object( uri.trimmed().toLatin1() );
+    char buf[1024];
+    objectRefFile.readLine( buf, sizeof(buf) );
+    QString uri( (const char*)buf );
 
-	omc_ = OmcCommunication::_narrow(obj);
+    // 2005-10-10 AF, Porting, changes
+    //CORBA::Object_var obj = orb->string_to_object(uri.stripWhiteSpace().latin1()); //org
+    CORBA::Object_var obj = orb->string_to_object( uri.trimmed().toLatin1() );
+
+    omc_ = OmcCommunication::_narrow(obj);
 
 
 
-	// Test if we have a connection.
-	try {
-		omc_->sendExpression("getClassNames()");
-	}
-	catch (CORBA::Exception&) {
-		omc_ = 0;
-		return false;
-	}
+    // Test if we have a connection.
+    omc_->sendExpression("getClassNames()");
+  }
+  catch (CORBA::Exception& e) {
+    omc_ = 0;
+    e._print_stack_trace(cerr);
+    return false;
+  }
 
-	return true;
+  return true;
 }
 
 /**
- * \brief
- * Returns true if a connection has been established to Omc, false otherwise.
- */
+* \brief
+* Returns true if a connection has been established to Omc, false otherwise.
+*/
 bool OmcCommunicator::isConnected() const
 {
-	return omc_ != 0;
+  return omc_ != 0;
 }
 
 /**
- * \brief
- * Closes the connection to Omc. Omc is not terminated by closing the connection.
- */
+* \brief
+* Closes the connection to Omc. Omc is not terminated by closing the connection.
+*/
 void OmcCommunicator::closeConnection()
 {
-	// 2006-02-02 AF, added this code:
-	omc_ = 0;
+  // 2006-02-02 AF, added this code:
+  omc_ = 0;
 }
 
 
 /**
- * \brief Executes the specified Omc function and returns the return
- * value received from Omc.
- *
- * \throw OmcError if the Omc function call fails.
- * \throw OmcConnectionLost if the connection to Omc is lost.
- */
+* \brief Executes the specified Omc function and returns the return
+* value received from Omc.
+*
+* \throw OmcError if the Omc function call fails.
+* \throw OmcConnectionLost if the connection to Omc is lost.
+*/
 QString OmcCommunicator::callOmc(const QString& fnCall)
 {
-	if (!omc_) 
-	{
-		//throw OmcError(fnCall);
+  if (!omc_) 
+  {
+    //throw OmcError(fnCall);
 
-		// 2006-02-02 AF, Added throw exception
-		string msg = string("OMC-ERROR in function call: ") + fnCall.toStdString();
-		throw runtime_error( msg.c_str() );
-	}
+    // 2006-02-02 AF, Added throw exception
+    string msg = string("OMC-ERROR in function call: ") + fnCall.toStdString();
+    throw runtime_error( msg.c_str() );
+  }
 
-	//emit omcInput(fnCall + "\n");
-	//qDebug(QString(fnCall).replace("%"," "));
+  //emit omcInput(fnCall + "\n");
+  //qDebug(QString(fnCall).replace("%"," "));
 
-	QString returnString;
-	while (true) 
-	{
-		try 
-		{
-			returnString = omc_->sendExpression( fnCall.toLatin1() );
-			break;
-		}
-		catch (CORBA::Exception&) 
-		{
-			// 2005-11-24 AF, added otherwise it crashes when command quit() is called.
-			// ignore if quit() is the first in the function call
-			if( 0 != fnCall.indexOf( "quit()", 0, Qt::CaseInsensitive ))
-			{
-				// 2006-02-02 AF, Added throw exception
-				throw runtime_error("OMC is not responding");
-			}
-			else
-				break;
-		}
-	}
+  QString returnString;
+  while (true) 
+  {
+    try 
+    {
+      returnString = omc_->sendExpression( fnCall.toLatin1() );
+      cerr << "sendExpression(" << fnCall.toStdString() << ") => " << returnString.toStdString() << endl;
+      break;
+    }
+    catch (CORBA::Exception& e) 
+    {
+      e._print_stack_trace(cerr);
+      // 2005-11-24 AF, added otherwise it crashes when command quit() is called.
+      // ignore if quit() is the first in the function call
+      if( 0 != fnCall.indexOf( "quit()", 0, Qt::CaseInsensitive ))
+      {
+        // 2006-02-02 AF, Added throw exception
+        throw runtime_error("OMC is not responding");
+      }
+      else
+        break;
+    }
+  }
 
-	// PORT >> returnString = returnString.stripWhiteSpace();
-	returnString = returnString.trimmed();
-	if (fnCall.startsWith("list(")) {
-		//emit omcOutput("...");
-		// qDebug("...");
-	} else {
-		//emit omcOutput(returnString);
-		//qDebug(QString(returnString).replace("%"," "));
-	}
+  // PORT >> returnString = returnString.stripWhiteSpace();
+  returnString = returnString.trimmed();
+  if (fnCall.startsWith("list(")) {
+    //emit omcOutput("...");
+    // qDebug("...");
+  } else {
+    //emit omcOutput(returnString);
+    //qDebug(QString(returnString).replace("%"," "));
+  }
 
-	if (returnString == "-1") {
-		string tmp = "[Internal Error] OmcCommunicator::callOmc():\nOmc call \"" 
-			+ fnCall.toStdString() + "\" failed!\n\n";
+  if (returnString == "-1") {
+    string tmp = "[Internal Error] OmcCommunicator::callOmc():\nOmc call \"" 
+      + fnCall.toStdString() + "\" failed!\n\n";
 
-		qWarning( tmp.c_str() );
-		//throw OmcError(fnCall, returnString);
-		cout << "OmcError(" << fnCall.toStdString() << ", " << returnString.toStdString() << ")" << endl;
-	}
+    qWarning( tmp.c_str() );
+    //throw OmcError(fnCall, returnString);
+    cout << "OmcError(" << fnCall.toStdString() << ", " << returnString.toStdString() << ")" << endl;
+  }
 
-	return returnString;
+  return returnString;
 }
 
 /** NOT USED ********************************************************/
 
 /**
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // void ModeqCommunicator::loadFile(const QString& file)
 // {
 //   QString fnCall("loadFile(\"" + file + "\")");
@@ -308,15 +317,15 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Loads the specified Modelica class by looking up the correct file to load in the
- * environment variable OPENMODELICALIBRARY.
- *
- * \return true if a file with the specified Modelica class was found, false otherwise.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \brief
+* Loads the specified Modelica class by looking up the correct file to load in the
+* environment variable OPENMODELICALIBRARY.
+*
+* \return true if a file with the specified Modelica class was found, false otherwise.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // bool ModeqCommunicator::loadClass(const QString& ref)
 // {
 // 	QString fnCall("loadModel(" + ref + ")");
@@ -332,9 +341,9 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // void ModeqCommunicator::saveClass(const QString& file, const QString& ref)
 // {
 //   QString fnCall("saveModel(\"" + file + "\"," + ref + ")");
@@ -346,9 +355,9 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // void ModeqCommunicator::createConnector(const QString& ref,
 // 																				const QStringList& baseClassRefs,
 // 																				const QString& comment, 
@@ -374,9 +383,9 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // void ModeqCommunicator::createModel(const QString& ref,
 // 																		const QStringList& baseClassRefs,
 // 																		const QString& comment, 
@@ -402,9 +411,9 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // void ModeqCommunicator::createBlock(const QString& ref,
 // 																		const QStringList& baseClassRefs,
 // 																		const QString& comment, 
@@ -431,9 +440,9 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 
 
 /**
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // void ModeqCommunicator::createRecord(const QString& ref,
 // 																		const QStringList& baseClassRefs,
 // 																		const QString& comment, 
@@ -460,9 +469,9 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 
 
 /**
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // void ModeqCommunicator::createFunction(const QString& ref,
 // 																		const QStringList& baseClassRefs,
 // 																		const QString& comment, 
@@ -489,9 +498,9 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 
 
 /**
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // void ModeqCommunicator::createPackage(const QString& ref,
 // 																			const QStringList& baseClassRefs,
 // 																			const QString& comment, 
@@ -517,9 +526,9 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Deletes the specified Modelica class in Modeq.
- */
+* \brief
+* Deletes the specified Modelica class in Modeq.
+*/
 // bool ModeqCommunicator::deleteClass(const QString& ref)
 // {
 //   QString fnCall("deleteClass(" + ref + ")");
@@ -535,14 +544,14 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Returns true if the specified Modelica class exists, false otherwise.
- *
- * The class reference must not be empty.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \brief
+* Returns true if the specified Modelica class exists, false otherwise.
+*
+* The class reference must not be empty.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // bool ModeqCommunicator::existsClass(const QString& ref)
 // {
 //   QString fnCall("existClass(" + ref + ")");
@@ -558,13 +567,13 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Returns true if \a ref is a reference to a restricted Modelica class of type Block, false
- * otherwise.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \brief
+* Returns true if \a ref is a reference to a restricted Modelica class of type Block, false
+* otherwise.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // bool ModeqCommunicator::isBlock(const QString& ref)
 // {
 //   QString fnCall("isBlock(" + ref + ")");
@@ -580,17 +589,17 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Returns true if \a ref is a reference to an unrestricted Modelica class, false otherwise.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \brief
+* Returns true if \a ref is a reference to an unrestricted Modelica class, false otherwise.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // bool ModeqCommunicator::isClass(const QString& ref)
 // {
 //   QString fnCall("isClass(" + ref + ")");
 //   QString returnString(callModeq(fnCall));
-  
+
 //   if (returnString == "false") {
 //     return false;
 //   } else if (returnString == "true") {
@@ -601,13 +610,13 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Returns true if \a ref is a reference to a restricted Modelica class of type Connector, false
- * otherwise.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \brief
+* Returns true if \a ref is a reference to a restricted Modelica class of type Connector, false
+* otherwise.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // bool ModeqCommunicator::isConnector(const QString& ref)
 // {
 //   QString fnCall("isConnector(" + ref + ")");
@@ -623,13 +632,13 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Returns true if \a ref is a reference to a restricted Modelica class of type Function, false
- * otherwise.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \brief
+* Returns true if \a ref is a reference to a restricted Modelica class of type Function, false
+* otherwise.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // bool ModeqCommunicator::isFunction(const QString& ref)
 // {
 //   QString fnCall("isFunction(" + ref + ")");
@@ -645,13 +654,13 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Returns true if \a ref is a reference to a restricted Modelica class of type Model, false
- * otherwise.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \brief
+* Returns true if \a ref is a reference to a restricted Modelica class of type Model, false
+* otherwise.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // bool ModeqCommunicator::isModel(const QString& ref)
 // {
 //   QString fnCall("isModel(" + ref + ")");
@@ -667,13 +676,13 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Returns true if \a ref is a reference to a restricted Modelica class of type Package, false
- * otherwise.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \brief
+* Returns true if \a ref is a reference to a restricted Modelica class of type Package, false
+* otherwise.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // bool ModeqCommunicator::isPackage(const QString& ref)
 // {
 //   QString fnCall("isPackage(" + ref + ")");
@@ -689,13 +698,13 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Returns true if \a ref is a reference to a restricted Modelica class of type Record, false
- * otherwise.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \brief
+* Returns true if \a ref is a reference to a restricted Modelica class of type Record, false
+* otherwise.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // bool ModeqCommunicator::isRecord(const QString& ref)
 // {
 //   QString fnCall("isRecord(" + ref + ")");
@@ -711,13 +720,13 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Returns true if \a ref is a reference to a restricted Modelica class of type Type, false
- * otherwise.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \brief
+* Returns true if \a ref is a reference to a restricted Modelica class of type Type, false
+* otherwise.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // bool ModeqCommunicator::isType(const QString& ref)
 // {
 //   QString fnCall("isType(" + ref + ")");
@@ -733,19 +742,19 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Returns true if \a ref is a Modelica primitive type, false otherwise.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \brief
+* Returns true if \a ref is a Modelica primitive type, false otherwise.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // bool ModeqCommunicator::isPrimitive(const QString& ref)
 // {
 // 	// Real and Integer are known primitives. No need to ask Modeq.
 // 	if (ref == "Real" || ref == "Integer") {
 // 		return true;
 // 	}
-  
+
 // 	QString fnCall("isPrimitive(" + ref + ")");
 //   QString returnString(callModeq(fnCall));
 
@@ -759,13 +768,13 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Returns a comma separated list (surrounded with braces) with the names of all class definitions
- * in the specified Modelica class.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \brief
+* Returns a comma separated list (surrounded with braces) with the names of all class definitions
+* in the specified Modelica class.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // QString ModeqCommunicator::getClassNames(const QString& ref)
 // {
 //   QString fnCall("getClassNames(" + ref + ")");
@@ -776,20 +785,20 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Returns the icon layer annotation stored in Modeq of the specified Modelica class.
- *
- * A null pointer is returned if no annotation exists. The annotation returned is the one available
- * in Modeq and is not neccessarly up to date. Use the functions of the ModelicaClass object to
- * obtain the latest version of the annotation.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- * \throw SyntaxError if the compilation of the icon layer annotation fails.
- *
- * \see ModelicaClass::getIconLayerAnnotation()
- * \see ModelicaClass::getLayerAnnotation()
- */
+* \brief
+* Returns the icon layer annotation stored in Modeq of the specified Modelica class.
+*
+* A null pointer is returned if no annotation exists. The annotation returned is the one available
+* in Modeq and is not neccessarly up to date. Use the functions of the ModelicaClass object to
+* obtain the latest version of the annotation.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+* \throw SyntaxError if the compilation of the icon layer annotation fails.
+*
+* \see ModelicaClass::getIconLayerAnnotation()
+* \see ModelicaClass::getLayerAnnotation()
+*/
 // IconLayerAnnotation* ModeqCommunicator::getIconLayerAnnotation(const QString& ref)
 // {
 //   QString fnCall("getIconAnnotation(" + ref + ")");
@@ -803,20 +812,20 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Returns the diagram layer annotation stored in Modeq of the specified Modelica class.
- *
- * A null pointer is returned if no annotation exists. The annotation returned is the one
- * available in Modeq and is not neccessarly up to date. Use the functions of the ModelicaClass
- * object to obtain the latest version of the annotation.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- * \throw SyntaxError if the compilation of the diagram layer annotation fails.
- *
- * \see ModelicaClass::getDiagramLayerAnnotation()
- * \see ModelicaClass::getLayerAnnotation()
- */
+* \brief
+* Returns the diagram layer annotation stored in Modeq of the specified Modelica class.
+*
+* A null pointer is returned if no annotation exists. The annotation returned is the one
+* available in Modeq and is not neccessarly up to date. Use the functions of the ModelicaClass
+* object to obtain the latest version of the annotation.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+* \throw SyntaxError if the compilation of the diagram layer annotation fails.
+*
+* \see ModelicaClass::getDiagramLayerAnnotation()
+* \see ModelicaClass::getLayerAnnotation()
+*/
 // DiagramLayerAnnotation* ModeqCommunicator::getDiagramLayerAnnotation(const QString& ref)
 // {
 //   QString fnCall("getDiagramAnnotation(" + ref + ")");
@@ -830,9 +839,9 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // void ModeqCommunicator::setClassLayerAnnotation(const QString& ref, const QString& annotation)
 // {
 //   QString fnCall("addClassAnnotation(" + ref + "," + annotation + ")");
@@ -844,12 +853,12 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Returns the number of classes inherited by the the specified Modelica class.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \brief
+* Returns the number of classes inherited by the the specified Modelica class.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // int ModeqCommunicator::getInheritanceCount(const QString& ref)
 // {
 //   QString fnCall("getInheritanceCount(" + ref + ")");
@@ -865,9 +874,9 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // QString ModeqCommunicator::getNthInheritedClass(const QString& ref, int index)
 // {
 //   QString fnCall("getNthInheritedClass(" + ref + "," + QString::number(index) + ")");
@@ -875,9 +884,9 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // void ModeqCommunicator::addComponent(const QString& name,
 // 																		 const QString& type,
 // 																		 const QString& ref,
@@ -897,9 +906,9 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // void ModeqCommunicator::updateComponent(const QString& name,
 // 																				const QString& type,
 // 																				const QString& ref,
@@ -925,14 +934,14 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * Deletes the specified component from the specified Modelica class.
- *
- * \param name the name of the component to delete.
- * \param ref the reference to the Modelica class in which the component exists.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* Deletes the specified component from the specified Modelica class.
+*
+* \param name the name of the component to delete.
+* \param ref the reference to the Modelica class in which the component exists.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // void ModeqCommunicator::deleteComponent(const QString& name, const QString& ref)
 // {
 //   QString fnCall("deleteComponent(" + name + "," + ref + ")");
@@ -944,14 +953,14 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * Returns true if the specified component is protected, false otherwise.
- *
- * \param name the name of the component.
- * \param ref the reference to the Modelica class in which the component exists.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* Returns true if the specified component is protected, false otherwise.
+*
+* \param name the name of the component.
+* \param ref the reference to the Modelica class in which the component exists.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // bool ModeqCommunicator::isProtected(const QString& name, const QString& ref)
 // {
 //   QString fnCall("isProtected(" + name + "," + ref + ")");
@@ -967,12 +976,12 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Returns the number of components of the specified Modelica class.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \brief
+* Returns the number of components of the specified Modelica class.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // int ModeqCommunicator::getComponentCount(const QString& ref)
 // {
 //   QString fnCall("getComponentCount(" + ref + ")");
@@ -986,14 +995,14 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 
 //   return count;
 // }
- 
+
 /**
- * \brief
- * Returns all component declarations in the Modelica class specifed by \a ref.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \brief
+* Returns all component declarations in the Modelica class specifed by \a ref.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // std::vector<ComponentDeclaration> ModeqCommunicator::getComponents(const QString& ref)
 // {
 //   QString fnCall("getComponents(" + ref + ")");
@@ -1039,19 +1048,19 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Returns the placement annotations for the components in the Modelica class specified by \a ref.
- *
- * The annotations returned are the one available in Modeq. Use the functions of the
- * ModelicaComponent object to obtain the local version of the annotations.
- *
- * \param ref the reference to the Modelica class.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- *
- * \see ModelicaComponent::getPlacementAnnotation()
- */
+* \brief
+* Returns the placement annotations for the components in the Modelica class specified by \a ref.
+*
+* The annotations returned are the one available in Modeq. Use the functions of the
+* ModelicaComponent object to obtain the local version of the annotations.
+*
+* \param ref the reference to the Modelica class.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*
+* \see ModelicaComponent::getPlacementAnnotation()
+*/
 // std::vector<PlacementAnnotation*> ModeqCommunicator::getComponentAnnotations(const QString& ref)
 // {
 //   QString fnCall("getComponentAnnotations(" + ref + ")");
@@ -1081,7 +1090,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // 				QMessageBox::critical(0, tr("Modelica Kernel Error"),
 // 					tr(QString("<NOBR><B>A function call to the Modelica kernel failed.</B><BR><BR>") +
 // 					"The editor and kernel might be in an inconsistent state.<BR>Please restart the editor."));
-				
+
 // 				componentAnnotations.push_back(0);
 // 			}
 // 		}
@@ -1091,19 +1100,19 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Returns the modification of the component with the given index in the Modelica class specified
- * by \a ref.
- *
- * \param ref the reference to the Modelica class.
- * \param index the index of the component in the Modelica class.
- * \param name the name of the component with the specified index.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- *
- * \see setNthComponentModification()
- */
+* \brief
+* Returns the modification of the component with the given index in the Modelica class specified
+* by \a ref.
+*
+* \param ref the reference to the Modelica class.
+* \param index the index of the component in the Modelica class.
+* \param name the name of the component with the specified index.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*
+* \see setNthComponentModification()
+*/
 // Modification* ModeqCommunicator::getNthComponentModification(const QString& ref, int index, const QString& name)
 // {
 // 	QString fnCall("getNthComponentModification(" + ref + "," + QString::number(index) + ")");
@@ -1163,7 +1172,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // 	else {
 // 		QString componentReference("");
 // 		QString value("");
-		
+
 // 		while (!modificationString.isEmpty()) {
 // 			// Remove any occurence of each and final.
 // 			while (true) {
@@ -1179,7 +1188,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 
 // 			// Take care of the case (unit="m")=2, (unit="m") is removed
 // 			if( modificationString.startsWith("(") && !modificationString.endsWith(")") ){
-				
+
 // 				while(!modificationString.isEmpty())
 // 				{
 // 					if (modificationString.startsWith("(")) { ++pDepth; }
@@ -1190,7 +1199,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // 					}
 // 					modificationString = modificationString.remove(0, 1);
 // 				}
-				
+
 // 				pDepth = 0;
 // 			}
 
@@ -1220,7 +1229,7 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // 					}
 // 					break;
 // 				}
-				
+
 // 				componentReference += modificationString.at(0);
 // 				modificationString = modificationString.remove(0, 1);
 // 			}
@@ -1254,9 +1263,9 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // void ModeqCommunicator::addConnection(const QString& sourceConnectorRef,
 // 																			const QString& destinationConnectorRef,
 // 																			const QString& ref,
@@ -1272,9 +1281,9 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // void ModeqCommunicator::updateConnection(const QString& sourceConnectorRef,
 // 																				 const QString& destinationConnectorRef,
 // 																				 const QString& ref,
@@ -1290,9 +1299,9 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // void ModeqCommunicator::deleteConnection(const QString& sourceConnectorRef,
 // 																				 const QString& destinationConnectorRef,
 // 																				 const QString& ref)
@@ -1306,12 +1315,12 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Returns the number of connections of the specified Modelica class.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \brief
+* Returns the number of connections of the specified Modelica class.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // int ModeqCommunicator::getConnectionCount(const QString& ref)
 // {
 //   QString fnCall("getConnectionCount(" + ref + ")");
@@ -1325,9 +1334,9 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // QString ModeqCommunicator::getNthConnection(const QString& ref, int index)
 // {
 //   QString fnCall("getNthConnection(" + ref + "," + QString::number(index) + ")");
@@ -1335,23 +1344,23 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Returns the connection annotation of the connection with the given index in the Modelica class
- * specified by \a ref.
- *
- * A null pointer is returned if no annotation exists. The annotation returned is the one available
- * in Modeq and is not neccessarly up to date. Use the functions of the ModelicaConnection object to
- * obtain the latest version of the annotation.
- *
- * \param ref the reference to the Modelica class.
- * \param index the index of the connection in the Modelica class.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- * \throw SyntaxError if the compilation of the connection annotation fails.
- *
- * \see ModelicaConnection::getConnectionLine()
- */
+* \brief
+* Returns the connection annotation of the connection with the given index in the Modelica class
+* specified by \a ref.
+*
+* A null pointer is returned if no annotation exists. The annotation returned is the one available
+* in Modeq and is not neccessarly up to date. Use the functions of the ModelicaConnection object to
+* obtain the latest version of the annotation.
+*
+* \param ref the reference to the Modelica class.
+* \param index the index of the connection in the Modelica class.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+* \throw SyntaxError if the compilation of the connection annotation fails.
+*
+* \see ModelicaConnection::getConnectionLine()
+*/
 // Line* ModeqCommunicator::getNthConnectionAnnotation(const QString& ref, int index)
 // {
 //   QString fnCall("getNthConnectionAnnotation(" + ref + "," + QString::number(index) + ")");
@@ -1365,12 +1374,12 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Returns the class definition of the specified Modelica class.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \brief
+* Returns the class definition of the specified Modelica class.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // QString ModeqCommunicator::list(const QString& ref)
 // {
 //   QString fnCall("list(" + ref + ")");
@@ -1381,12 +1390,12 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Quits Modeq.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- */
+* \brief
+* Quits Modeq.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+*/
 // void ModeqCommunicator::quit()
 // {
 //   QString fnCall("quit()");
@@ -1394,18 +1403,18 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 // }
 
 /**
- * \brief
- * Updates the specified Modelica class with the given class definition.
- *
- * Never call this function directly, use the setClassDefinition() function of the
- * ModelicaClassManager, it will also update the internal caches of the editor.
- *
- * \throw ModeqError if the Modeq function call fails.
- * \throw ModeqConnectionLost if the connection to Modeq is lost.
- * \throw SyntaxError if the parsing of the specified class definition fails.
- *
- * \see ModelicaClassManager::setClassDefinition()
- */
+* \brief
+* Updates the specified Modelica class with the given class definition.
+*
+* Never call this function directly, use the setClassDefinition() function of the
+* ModelicaClassManager, it will also update the internal caches of the editor.
+*
+* \throw ModeqError if the Modeq function call fails.
+* \throw ModeqConnectionLost if the connection to Modeq is lost.
+* \throw SyntaxError if the parsing of the specified class definition fails.
+*
+* \see ModelicaClassManager::setClassDefinition()
+*/
 // void ModeqCommunicator::updateClassDefinition(const QString& ref,
 // 																							const QString& definition)
 // {
