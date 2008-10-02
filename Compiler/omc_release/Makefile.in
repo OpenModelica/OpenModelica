@@ -38,7 +38,7 @@ ifeq ($(OSTYP),$(OS_MSYS))
 	LIBSOCKET=
 	CORBALIB=-L$(CORBAHOME)/lib -lmico -lwsock32
 else
-	CORBALIB=-L$(CORBAHOME)/lib -lmico -lcrypto -lssl -lpthread
+	CORBALIB=`mico-config --libs`
 endif
 
 ifdef USE_CORBA
