@@ -1,4 +1,0 @@
-meshdata=PDE2D.FEMExternalSolver2.Mesh.Data(4,{{0,0},{1,0},{1,1},{0,1}},filename="foomesh.txt");
-import PDE2D.FEMExternalSolver2.FEMSolver.*;
-formsize=getFormSize("default_mesh2d.txt",79)
-form=getForm_gradgrad("default_mesh2d.txt",79,formsize);

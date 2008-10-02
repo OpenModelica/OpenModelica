@@ -1,5 +1,0 @@
-translateModel("PDE2D.FEMExternalSolver.Mesh.generate");
-translateModel("PDE2D.FEMExternalSolver.Mesh.get_s");
-translateModel("PDE2D.FEMExternalSolver.Mesh.get_v");
-translateModel("PDE2D.FEMExternalSolver.Mesh.get_e");
-translateModel("PDE2D.FEMExternalSolver.Mesh.get_t");

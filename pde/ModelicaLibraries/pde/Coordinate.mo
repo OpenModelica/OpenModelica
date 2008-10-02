@@ -1,1 +1,0 @@
-type Coordinate = SI.Position;
