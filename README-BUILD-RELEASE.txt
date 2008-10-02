@@ -3,11 +3,11 @@
 ---------------------------------------------------------------------------
 
            
-             Last update 2008-05-28 Adrian Pop, adrpo@ida.liu.se
+             Last update 2008-10-02 Adrian Pop, adrpo@ida.liu.se
 
 The following step-by-step guides explain how to 
 build the OpenModelica release .msi file on Windows 
-using the Microsoft Visual Studio .NET 2003
+using the Microsoft Visual Studio .NET 2008
 
 00. Update the version number:
     in trunk/Compiler/runtime/settings.c to "x.y.z"
@@ -30,7 +30,7 @@ using the Microsoft Visual Studio .NET 2003
       trunk\OMNotebook\OMNotebookQT4\Release\OMNotebook.exe
       Also, you need to put these files in the directory:
       trunk\OMNotebook\OMNotebookQT4\Release\  
-      QtCore4.dll, QtGui4.dll, QtNetwork4.dll, QtXml4.dll, commands.xml, modelicacolors.xml, stylesheet.xml
+      commands.xml, modelicacolors.xml, stylesheet.xml
       OMNotebookHelp.onb, pltplot.jar (from trunk/Compiler/VC7/Setup/bin/ptplot.jar) 
       
 03. Update the version into:
@@ -57,7 +57,8 @@ using the Microsoft Visual Studio .NET 2003
 
 10. You get a Setup.msi into trunk\Compiler\VC7\Setup\Release
 
-11. DO NOT FORGET THIS FOR WINDOWS VISTA!!
+11. DO NOT FORGET THIS FOR WINDOWS VISTA IF YOU BUILD THE RELEASE
+    WITH MSVC less than 2008!
     For Windows Vista release you have to edit the Setup.msi with Orca.exe: 
     http://msdn2.microsoft.com/en-us/library/Aa370557.aspx
     http://download.microsoft.com/download/platformsdk/sdk/update/win98mexp/en-us/3790.0/msisdk-common.3.0.cab

@@ -6,8 +6,8 @@
 
 RML=$(OMDEV)\tools\rml\bin\rml
 RMLCFLAGS=-Eplain -ftrace
-CFLAGS=	/Ob2 /Ox /O2 /Og /Ot /Oy /I "./VC7/rmlRuntime/runtime/plain" /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
-	 /D "_MBCS" /FD /EHsc /MT /W3 /nologo /c /Wp64 /TC /wd4311 /wd4312  /Fd"VC7/Release/omcrml.pdb" 
+CFLAGS=	/Ob2 /Ox /O2 /Ot /Oy /GL /I "./VC7/rmlRuntime/runtime/plain" /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
+	 /D "_MBCS" /FD /EHsc /MT /W3 /nologo /c /TC /wd4311 /wd4312  /Fd"VC7/Release/omcrml.pdb" 
 
 SRCC=	$(SRCMO:.mo=.c)
 SRCH=	$(SRCMO:.mo=.h)
@@ -23,7 +23,7 @@ SRZS=    $(ALLMO:.mo=.srz)
 all: VC7\Release\main.obj VC7\Release\omcrml.lib
 
 VC7\Release\omcrml.lib: $(OBJS)
-	lib /NOLOGO /OUT:VC7\Release\omcrml.lib $(OBJS)
+	lib /LTCG /NOLOGO /OUT:VC7\Release\omcrml.lib $(OBJS)
 
 .mo.obj:
 	$(RML) $(RMLCFLAGS) $<
