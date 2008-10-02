@@ -9,7 +9,7 @@ AR = ar -ru
 UNAME := $(shell uname -m)
 CMDFPUFLAGS := `case ${UNAME} in i[3456]86) echo "-msse2 -mfpmath=sse";; x86_64) echo "-msse2 -mfpmath=sse";; *) echo "";; esac`
 FPUFLAGS := ${CMDFPUFLAGS}
-CFLAGS = -Wall -O3 ${FPUFLAGS} -fexceptions -ansi -pedantic -I$(top_builddir)/mosh/src/ $(EXTRA_CFLAGS)
+CFLAGS = -Wall -O3 ${FPUFLAGS} -fexceptions -ansi -pedantic -I. $(EXTRA_CFLAGS)
 CPPFLAGS = $(CFLAGS)
 FFLAGS  = -O -fexceptions
 # P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.
@@ -25,7 +25,7 @@ biglag.o  ddassl.o  dogleg.o  fdjac1.o  hybrj.o   newuoa.o   qrfac.o   trsapp.o 
 daux.o    dlamch.o  dpmpar.o  hybrd.o   lsame.o   newuob.o   r1mpyq.o  update.o $(EXTRA_OBJS)
 
 SIMOBJS = $(FOBJS) simulation_runtime.o simulation_init.o simulation_input.o simulation_events.o \
-solver_dasrt.o solver_euler.o simulation_result.o tables.o ../mosh/src/options.o dgesv_aux.o meta_modelica.o $(EXTRA_SIMOBJS)
+solver_dasrt.o solver_euler.o simulation_result.o tables.o options.o dgesv_aux.o meta_modelica.o $(EXTRA_SIMOBJS)
 
 HFILES = blaswrap.h f2c.h integer_array.h memory_pool.h modelica_string.h \
 	base_array.h inline.h real_array.h string_array.h boolean_array.h \

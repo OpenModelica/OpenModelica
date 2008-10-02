@@ -107,10 +107,10 @@ void free_type_description(type_description *desc)
   case TYPE_DESC_RECORD: {
     size_t i;
     type_description *e = desc->data.record.element;
-    char **n = desc->data.record.name;
-    for (i = 0; i < desc->data.record.elements; ++i, ++e, ++n) {
-      free(*n);
-      free_type_description(e);
+    /* char **n = desc->data.record.name; */
+    for (i = 0; i < desc->data.record.elements; i++, e++) {
+      free(desc->data.record.name[i]);
+	  free_type_description(e);
     }
     if (desc->data.record.elements > 0) {
       free(desc->data.record.element);
@@ -516,7 +516,11 @@ type_description *add_modelica_record_member(type_description *desc,
                                       * (desc->data.record.elements + 1));
   elem = desc->data.record.element + desc->data.record.elements;
   desc->data.record.name[desc->data.record.elements] = malloc(nlen + 1);
-  memcpy(desc->data.record.name[desc->data.record.elements], name, nlen + 1);
+  memcpy(desc->data.record.name[desc->data.record.elements], name, nlen + 1); 
+  /*
+   * strdup is not ansi! 
+   * desc->data.record.name[desc->data.record.elements] = strdup(name);
+   */
   ++desc->data.record.elements;
   init_type_description(elem);
   return elem;
