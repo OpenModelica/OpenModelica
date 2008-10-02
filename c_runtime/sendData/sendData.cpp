@@ -32,6 +32,10 @@
  * 
  */
 
+#if defined(_MSC_VER)
+#define _CRT_SECURE_NO_WARNINGS
+#endif 
+
 //Qt headeers
 //#include <QCoreApplication>
 #include <QtNetwork/QTcpSocket>
@@ -1053,3 +1057,176 @@ bool getVariableList(const char* model, char* lst)
 	strcpy(lst, L.trimmed().toStdString().c_str());;
 	return true;		
 }
+
+
+void emulateStreamData2(const char *info, const char* data, int port)
+{
+	Connection c;
+	QTcpSocket* socket = c.newConnection();
+
+	QString info_str(info);
+	QString data_(data);
+	QTextStream ts(&data_);
+	QString tmp;
+	vector<vector<double>*> variableValues;
+	vector<QString> variableNames;
+
+	variableValues.push_back(new vector<double>);
+	variableNames.push_back(QString("time"));
+
+	bool timeFinished = false;
+
+	while(!ts.atEnd())
+	{
+		do
+		{
+			if(ts.atEnd())
+				break;
+
+			tmp = ts.readLine().trimmed();
+		}
+		while(tmp.size() == 0);
+
+		if(tmp.trimmed().size() == 0)
+			break;
+
+		if(tmp.startsWith("#"))
+			continue;
+		else if(tmp.startsWith("TitleText"))
+			continue;
+		else if(tmp.startsWith("DataSet"))
+		{
+			if(variableValues[0]->size())
+				timeFinished = true;
+
+			variableValues.push_back(new vector<double>);
+			variableNames.push_back(tmp.section(": ", -1));
+//			cerr << "added " << tmp.section(": ", -1).toStdString() << endl;
+		}
+		else
+		{
+			if(!timeFinished)
+				variableValues[0]->push_back(tmp.section(',', 0, 0).toDouble());
+
+			variableValues[variableNames.size()-1]->push_back(tmp.section(',',-1).toDouble());
+		}
+	}
+	
+	QByteArray block;
+	QDataStream out(&block, QIODevice::WriteOnly);
+	out.setVersion(QDataStream::Qt_4_2);
+
+	out << (quint32)0;
+	out << QString("ptolemyDataStream");
+	out.device()->seek(0);
+	out << (quint32)(block.size() - sizeof(quint32));
+
+	socket->write(block);
+	socket->flush();
+	socket->waitForBytesWritten(-1);
+
+
+	block.clear();
+	out.device()->seek(0);
+	out << (quint32)0;
+	out << info_str;
+//	cout << "var size: " << variableNames.size() << endl;
+	out << (quint32)variableNames.size();
+
+	for(unsigned int i = 0; i < variableNames.size(); ++i)
+	{
+
+//		cout << "name: " << variableNames[i].toStdString() << endl;
+		out << variableNames[i];
+	}
+
+	out.device()->seek(0);
+	out << (quint32)(block.size() - sizeof(quint32));
+
+	socket->write(block);
+	socket->flush();
+	socket->waitForBytesWritten(-1);
+
+	block.clear();
+
+//	cout << "varvals[0]->size = " << variableValues[0]->size() << endl;
+	
+	for(quint32 i = 0; i < variableValues[0]->size(); ++i)
+	{
+		out.device()->seek(0);
+		out << (quint32)0;
+		out << (quint32)variableNames.size();
+
+		for(quint32 j = 0; j < variableNames.size(); ++j)
+		{
+			out << variableNames[j];
+			out << (*variableValues[j])[i];
+
+		}
+		out.device()->seek(0);
+		out << (quint32)(block.size() - sizeof(quint32));
+
+		socket->write(block);
+		socket->flush();
+		socket->waitForBytesWritten(-1);
+		
+		block.clear();
+//		cout << "i: " << i << endl;
+		//_sleep(500);
+if(!(i%100))
+	socket->flush();
+	
+	}
+
+	socket->flush();
+
+	for(quint32 i = 0; i < variableValues.size(); ++i)
+		delete variableValues[i];
+
+	socket->waitForBytesWritten(-1);
+	socket->disconnectFromHost();
+	if(socket->state() == QAbstractSocket::ConnectedState)
+		socket->waitForDisconnected(-1);
+	if(socket)
+		delete socket;
+
+	/*	for(quint32 i = 0; i < variableValues[0]->size(); ++i)
+	{
+		out.device()->seek(0);
+		out << (quint32)0;
+		out << (quint32)variableNames.size();
+		cout << "i = " << i;
+
+		for(quint32 j = 0; j < variableNames.size(); ++j)
+		{
+//			cout << variableNames[j].toStdString() << ": " << (*variableValues[j])[i] << endl; 
+			out << variableNames[j];
+			out << (*variableValues[j])[i];
+			cout << ".";
+		}
+		cout << "!";
+		out.device()->seek(0);
+		out << (quint32)(block.size() - sizeof(quint32));
+		cout << (quint32)(block.size() - sizeof(quint32));
+		
+		socket->write(block);
+		block.clear();
+		cout << "!" << endl;
+	    socket->flush();
+        socket->waitForBytesWritten(-1);
+		_sleep(100);
+ 	 }
+
+	 socket->flush();
+
+	 for(quint32 i = 0; i < variableValues.size(); ++i)
+	 	 delete variableValues[i];
+
+	 socket->disconnectFromHost();
+	 if(socket->state() == QAbstractSocket::ConnectedState)
+		 socket->waitForDisconnected(-1);
+	 if(socket)
+		 delete socket;
+
+*/
+ }

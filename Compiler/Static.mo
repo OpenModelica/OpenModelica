@@ -5224,6 +5224,22 @@ algorithm
       then
         (cache,Exp.CALL(Absyn.IDENT("plot"),{Exp.ARRAY(Exp.OTHER(),false,vars_1)},
           false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
+          
+//visualize(model)
+  case (cache,env,Absyn.CREF_IDENT(name = "visualize"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */ 
+    local Absyn.Path className; Exp.Exp storeInTemp; Absyn.Exp cr2;
+      		Exp.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points;
+//      		String vars;        
+      equation 
+        //vars_1 = elabVariablenames({cr2});
+				className = Absyn.crefToPath(cr);
+//				vars = Interactive.getElementsOfVisType(cr);
+//				print("Tjo:" +& vars +& "\n");
+      then
+        (cache,Exp.CALL(Absyn.IDENT("visualize"),{Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER())},
+        //(cache,Exp.CALL(Absyn.IDENT("visualize"),{Exp.CODE(Absyn.CREF(cr),Exp.OTHER())},
+          false,true,Exp.BOOL()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_VAR()),SOME(st));
+          
 
 //plotAll(model)
   case (cache,env,Absyn.CREF_IDENT(name = "plotAll"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */ 

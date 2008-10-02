@@ -193,12 +193,14 @@ algorithm
         true = Util.strncmp("quit()", str, 6);
       then
         (false,"Ok\n",isymb);
+    /* Add a class or function to the interactive symbol table.
+	   * If it is a function, type check it. 
+	   */        
     case (str,
     (isymb as Interactive.SYMBOLTABLE(
       ast = iprog,explodedAst = a,instClsLst = b,
       lstVarVal = vars,compiledFunctions = cf,
-      loadedFiles = lf))) /* Add a class or function to the interactive symbol table.
-	   If it is a function, type check it. */ 
+      loadedFiles = lf)))  
       equation 
         //debug_print("Command: typeCheck", str);
         Debug.fcall0("dump", Print.clearBuf);
@@ -229,8 +231,7 @@ algorithm
         (exp,msg) = Parser.parsestringexp(str);
         equality(msg = "Ok") "always succeeds, check msg for errors" ;
         (evalstr,newisymb) = Interactive.evaluate(exp, isymb, false);
-        Debug.fprint("dump", 
-          "\n--------------- Parsed expression ---------------\n");
+        Debug.fprint("dump", "\n--------------- Parsed expression ---------------\n");
         Debug.fcall("dump", Dump.dumpIstmt, exp);
         res_1 = makeDebugResult("dump", evalstr);
         res = makeDebugResult("dumpgraphviz", res_1);

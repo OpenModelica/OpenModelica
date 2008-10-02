@@ -252,6 +252,20 @@ public function setVariableFilter
   
 end setVariableFilter;
 
+public function sendData2
+  input String inString1;
+  input String inString2;
+
+  external "C" ;
+end sendData2;
+
+public function readPtolemyplotVariables
+  input String inString;
+  input String inVisVars;
+  output list<String> outStringLst;
+
+  external "C" ;
+end readPtolemyplotVariables;
 
 public function writeFile
   input String inString1;

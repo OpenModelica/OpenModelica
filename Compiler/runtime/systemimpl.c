@@ -1,31 +1,31 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
+ *
  */
 
 /*
@@ -71,7 +71,7 @@ typedef struct modelica_ptr_s *modelica_ptr_t;
 /*
 #if defined(_MSC_VER)
 #define inline __inline
-#else // Linux & MinGW 
+#else // Linux & MinGW
 #define inline inline
 #endif
 */
@@ -279,15 +279,15 @@ void System_5finit(void)
 #if defined(__x86_64__)
   /* -fPIC needed on x86_64! */
   set_linker("gcc -shared -export-dynamic -fPIC");
-#else 
+#else
   set_linker("gcc -shared -export-dynamic");
 #endif
-  
+
 #if defined(__i386__) || defined(__x86_64__) || defined(_MSC_VER)
-  /* 
-   * if we are on i386 or x86_64 or compiling with 
-   * Visual Studio then use the SSE instructions, 
-   * not the normal i387 FPU 
+  /*
+   * if we are on i386 or x86_64 or compiling with
+   * Visual Studio then use the SSE instructions,
+   * not the normal i387 FPU
    */
   set_cflags("-Wall -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}");
 #else
@@ -326,23 +326,23 @@ RML_BEGIN_LABEL(System__strtok)
 
   void * res = (void*)mk_nil();
   s=strtok(str,delimit);
-  if (s == NULL) 
+  if (s == NULL)
   {
 	  /* adrpo added 2004-10-27 */
-	  free(str);	  
-	  rmlA0=res; RML_TAILCALLK(rmlFC); 
+	  free(str);
+	  rmlA0=res; RML_TAILCALLK(rmlFC);
   }
   res = (void*)mk_cons(mk_scon(s),res);
-  while (s=strtok(NULL,delimit)) 
+  while (s=strtok(NULL,delimit))
   {
     res = (void*)mk_cons(mk_scon(s),res);
   }
   rmlA0=res;
 
   /* adrpo added 2004-10-27 */
-  free(str);	  
+  free(str);
 
-  /* adrpo changed 2004-10-29 
+  /* adrpo changed 2004-10-29
   rml_prim_once(RML__list_5freverse);
   RML_TAILCALLK(rmlSC);
   */
@@ -354,7 +354,7 @@ RML_BEGIN_LABEL(System__toupper)
 {
   char *str = strdup(RML_STRINGDATA(rmlA0));
   char *res=str;
-  while (*str!= '\0') 
+  while (*str!= '\0')
   {
     *str=toupper(*str++);
   }
@@ -378,12 +378,12 @@ RML_BEGIN_LABEL(System__removeFirstAndLastChar)
       res=malloc(length-1);
       strncpy(res,str + 1,length-2);
 
-      res[length-1] = '\0';  
+      res[length-1] = '\0';
     }
   rmlA0 = (void*) mk_scon(res);
   /* adrpo added 2004-10-29 */
-  free(res); 
-  
+  free(res);
+
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -399,7 +399,7 @@ int str_contain_char( const char* chars, const char chr)
     }
   return 0;
 }
- 
+
 
 /*  this removes chars in second from the beginning and end of the first
     string and returns it */
@@ -425,7 +425,7 @@ RML_BEGIN_LABEL(System__trim)
         }
 
 
-      res[length] = '\0';  
+      res[length] = '\0';
     }
   if(start_pos < end_pos)
     {
@@ -433,9 +433,9 @@ RML_BEGIN_LABEL(System__trim)
       rmlA0 = (void*) mk_scon(&res[start_pos]);
     } else {
       rmlA0 = (void*) mk_scon("");
-    }      
+    }
 
-  free(res); 
+  free(res);
 
 
   RML_TAILCALLK(rmlSC);
@@ -465,7 +465,7 @@ RML_BEGIN_LABEL(System__trimChar)
     rmlA0 = (void*) mk_scon(res);
     free(res);
     RML_TAILCALLK(rmlSC);
-    
+
   }else{
     rmlA0 = (void*) mk_scon("");
     RML_TAILCALLK(rmlSC);
@@ -494,15 +494,15 @@ RML_BEGIN_LABEL(System__stringFind)
   int strLen = strlen(str);
   int strSearchLen = strlen(searchStr);
   int i,retVal=-1;
-  
+
   for (i=0; i< strLen - strSearchLen+1; i++) {
-  	if (strncmp(&str[i],searchStr,strSearchLen) == 0) { 
-  		retVal = i; 
+  	if (strncmp(&str[i],searchStr,strSearchLen) == 0) {
+  		retVal = i;
   		break;
   	}
   }
-  rmlA0 = (void*) mk_icon(retVal);	
-  RML_TAILCALLK(rmlSC);  
+  rmlA0 = (void*) mk_icon(retVal);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -527,20 +527,20 @@ RML_BEGIN_LABEL(System__stringReplace)
   char * res=0;
 /*   printf("in '%s' replace '%s' with '%s'\n",str,source,target); */
 
-  /* adrpo 2006-05-15 
+  /* adrpo 2006-05-15
    * if source and target are the same this function
    * cycles, get rid of that here
    * x08joekl 2008-02-5
    * fixed so that _replace handles target having source as a substring.
    */
   /*
-   if (!strcmp(source, target)) 
+   if (!strcmp(source, target))
    	RML_TAILCALLK(rmlSC);
   */
   /* end adrpo */
 
   res = _replace(str,source,target);
-  if (res == NULL) 
+  if (res == NULL)
   {
 /*      printf("res == NULL\n");  */
     RML_TAILCALLK(rmlFC);
@@ -673,7 +673,7 @@ RML_BEGIN_LABEL(System__loadLibrary)
 #else
   snprintf(libname, MAXPATHLEN, "./%s.dll", str);
 #endif
-	  
+
   h = LoadLibrary(libname);
   if (h == NULL) {
     fprintf(stderr, "Unable to load `%s': %lu.\n", libname, GetLastError());
@@ -776,12 +776,12 @@ RML_BEGIN_LABEL(System__pwd)
   LPTSTR bufPtr=buf;
   DWORD bufLen = MAXPATHLEN;
   GetCurrentDirectory(bufLen,bufPtr);
-  
+
   /* Make sure windows paths use fronslash and not backslash */
   buf2=_replace(buf,"\\","/");
-  
+
   rmlA0 = (void*) mk_scon(buf2);
-  free(buf2);	
+  free(buf2);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -792,7 +792,7 @@ RML_BEGIN_LABEL(System__writeFile)
   char* filename = RML_STRINGDATA(rmlA0);
   FILE * file=NULL;
   file = fopen(filename,"w");
-  if (file == NULL) { 
+  if (file == NULL) {
     char *c_tokens[1]={filename};
     c_add_message(21, /* WRITING_FILE_ERROR */
 		  "SCRIPTING",
@@ -801,8 +801,8 @@ RML_BEGIN_LABEL(System__writeFile)
 		  c_tokens,
 		  1);
     RML_TAILCALLK(rmlFC);
-  } 
-  /* adrpo changed 2006-10-06 
+  }
+  /* adrpo changed 2006-10-06
    * fprintf(file,"%s",data);
    */
   fwrite(RML_STRINGDATA(rmlA1), RML_HDRSTRLEN(RML_GETHDR(rmlA1)), 1, file);
@@ -836,7 +836,7 @@ RML_BEGIN_LABEL(System__readFile)
 
   file = fopen(filename,"rb");
   buf = malloc(statstr.st_size+1);
- 
+
   if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size)
   {
 	/* adrpo added 2004-10-26 */
@@ -860,7 +860,7 @@ RML_END_LABEL
 /*   char *path = getenv("OPENMODELICALIBRARY"); */
 /*   if (path == NULL)  */
 /*       RML_TAILCALLK(rmlFC); */
-  
+
 /*   rmlA0 = (void*) mk_scon(path); */
 /*   RML_TAILCALLK(rmlSC); */
 /* } */
@@ -888,7 +888,7 @@ RML_BEGIN_LABEL(System__setEnv)
   int setenv_result = 0;
   char *temp = (char*)malloc(strlen(envname)+strlen(envvalue)+2);
   sprintf(temp,"%s=%s", envname, envvalue);
-  setenv_result = _putenv(temp); 
+  setenv_result = _putenv(temp);
   rmlA0 = (void*) mk_icon(setenv_result);
   RML_TAILCALLK(rmlSC);
 }
@@ -914,9 +914,9 @@ RML_BEGIN_LABEL(System__subDirectories)
 	sh = FindFirstFile(pattern, &FileData);
 	if (sh != INVALID_HANDLE_VALUE) {
 		while(more) {
-			if (strcmp(FileData.cFileName,"..") != 0 && 
+			if (strcmp(FileData.cFileName,"..") != 0 &&
 				strcmp(FileData.cFileName,".") != 0 &&
-				(FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) 
+				(FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
 			{
 			    res = (void*)mk_cons(mk_scon(FileData.cFileName),res);
 			}
@@ -969,9 +969,9 @@ RML_BEGIN_LABEL(System__getVariableNames)
 
 	if(!size)
 		RML_TAILCALLK(rmlFC);
-		
+
 	lst = (char*)malloc(sizeof(char)*size +1);
-	
+
 	getVariableList(model, lst);
 	rmlA0 = (void*)mk_scon(lst);
 	RML_TAILCALLK(rmlSC);
@@ -989,7 +989,7 @@ RML_BEGIN_LABEL(System__readPtolemyplotDataset)
   rmlA0 = lst;
   rml_prim_once(RML__list_5flength);
   size = RML_UNTAGFIXNUM(rmlA0);
-  
+
   vars = (char**)malloc(sizeof(char*)*size);
   for (i=0,p=lst;i<size;i++) {
     vars[i]=RML_STRINGDATA(RML_CAR(p));
@@ -1003,7 +1003,25 @@ RML_BEGIN_LABEL(System__readPtolemyplotDataset)
   rml_prim_once(Values__reverseMatrix);
 
   RML_TAILCALLK(rmlSC);
-}   
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__readPtolemyplotVariables)
+{
+  rml_sint_t i,size;
+  char* filename = RML_STRINGDATA(rmlA0);
+  char* visvars = RML_STRINGDATA(rmlA1);
+  void* p;
+
+  rmlA0 = (void*)read_ptolemy_variables(filename, visvars);
+  if (rmlA0 == NULL) {
+    RML_TAILCALLK(rmlFC);
+  }
+
+//  rml_prim_once(Values__reverseMatrix);
+
+  RML_TAILCALLK(rmlSC);
+}
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__readPtolemyplotDatasetSize)
@@ -1013,23 +1031,23 @@ RML_BEGIN_LABEL(System__readPtolemyplotDatasetSize)
   void* p;
 
   size=read_ptolemy_dataset_size(filename);
-  
+
   rmlA0 = (void*)Values__INTEGER(mk_icon(size));
   if (rmlA0 == NULL) {
     RML_TAILCALLK(rmlFC);
   }
   RML_TAILCALLK(rmlSC);
-}   
+}
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__writePtolemyplotDataset)
 {
   char *filename = RML_STRINGDATA(rmlA0);
   void *value = rmlA1;
-  
+
 
   RML_TAILCALLK(rmlSC);
-}   
+}
 RML_END_LABEL
 
 
@@ -1037,9 +1055,9 @@ RML_BEGIN_LABEL(System__time)
 {
   double _time;
   clock_t cl;
-  
+
   cl=clock();
-  
+
   _time = (double)cl / (double)CLOCKS_PER_SEC;
   /*  printf("clock : %d\n",cl); */
   /* printf("returning time: %f\n",time);  */
@@ -1235,28 +1253,28 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__getVariableValue)
 {
   double timeStamp 	= rml_prim_get_real(rmlA0);
-  void *timeValues 	= rmlA1;  
+  void *timeValues 	= rmlA1;
   void *varValues 	= rmlA2;
-  
+
   // values to find the correct range
   double preValue 	= 0.0;
   double preTime 	= 0.0;
   double nowValue 	= 0.0;
   double nowTime 	= 0.0;
-  
+
   // linjear interpolation data
   double timedif 			= 0.0;
   double valuedif			= 0.0;
   double valueSlope			= 0.0;
   double timeDifTimeStamp	= 0.0;
-  
+
   // break loop and return value
   int valueFound = 0;
   double returnValue = 0.0;
 
 for(; RML_GETHDR(timeValues) == RML_CONSHDR && valueFound == 0; timeValues = RML_CDR(timeValues), varValues = RML_CDR(varValues)) {
-  
-  
+
+
     nowValue 	= rml_prim_get_real(RML_CAR(varValues));
   	nowTime 	=  rml_prim_get_real(RML_CAR(timeValues));
 
@@ -1264,7 +1282,7 @@ for(; RML_GETHDR(timeValues) == RML_CONSHDR && valueFound == 0; timeValues = RML
 	if(timeStamp == nowTime){
     	valueFound 	= 1;
     	returnValue = nowValue;
-    	
+
     } else if (timeStamp >= preTime && timeStamp <= nowTime) { // need to do interpolation
     	valueFound 			= 1;
     	timedif 			= nowTime - preTime;
@@ -1282,7 +1300,7 @@ for(; RML_GETHDR(timeValues) == RML_CONSHDR && valueFound == 0; timeValues = RML
     	printf("\n");
     	printf("preValue: %f", preValue);
     	printf("\n");
-    	
+
 		printf("timedif: %f", timedif);
     	printf("\n");
     	printf("valuedif: %f", valuedif);
@@ -1297,7 +1315,7 @@ for(; RML_GETHDR(timeValues) == RML_CONSHDR && valueFound == 0; timeValues = RML
 	} else {
 		preValue 	= nowValue;
   		preTime 	= nowTime;
-		
+
 	}
 
   }
@@ -1306,7 +1324,7 @@ for(; RML_GETHDR(timeValues) == RML_CONSHDR && valueFound == 0; timeValues = RML
 		printf("\n WARNING: timestamp outside simulation timeline \n");
 		RML_TAILCALLK(rmlFC);
 	} else {
-  
+
   		rmlA0 = (void*)mk_rcon(returnValue);
   		RML_TAILCALLK(rmlSC);
   }
@@ -1315,18 +1333,18 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__sendData)
 {
- 
 
- 
 
-  	
+
+
+
   char* data = RML_STRINGDATA(rmlA0);
   char* interpolation = RML_STRINGDATA(rmlA1);
  char* title = RML_STRINGDATA(rmlA2);
  int legend = RML_UNTAGFIXNUM(rmlA3); //RML_STRINGDATA(rmlA3);
- int grid = RML_UNTAGFIXNUM(rmlA4); //RML_STRINGDATA(rmlA4); 
- int logX = RML_UNTAGFIXNUM(rmlA5); //RML_STRINGDATA(rmlA5);	
- int logY = RML_UNTAGFIXNUM(rmlA6); //RML_STRINGDATA(rmlA6);	 
+ int grid = RML_UNTAGFIXNUM(rmlA4); //RML_STRINGDATA(rmlA4);
+ int logX = RML_UNTAGFIXNUM(rmlA5); //RML_STRINGDATA(rmlA5);
+ int logY = RML_UNTAGFIXNUM(rmlA6); //RML_STRINGDATA(rmlA6);
  char* xLabel = RML_STRINGDATA(rmlA7);
  char* yLabel = RML_STRINGDATA(rmlA8);
  int points = RML_UNTAGFIXNUM(rmlA9);
@@ -1340,9 +1358,9 @@ RML_BEGIN_LABEL(System__sendData)
 
 //  emulateStreamData(data, 7778, title, "time", "", legend, grid, 0, 0, 0, 0, logX, logY, interpolation, 1);
   emulateStreamData(data, title, xLabel, yLabel , interpolation, legend, grid, logX, logY, points, range);
-  
+
 //	emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, "linear");
-       
+
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -1354,8 +1372,8 @@ RML_BEGIN_LABEL(System__enableSendData)
 		_putenv("enableSendData=1");
 	else
 		_putenv("enableSendData=0");
-		
-	
+
+
 //	enableSendData(enable);
 	  RML_TAILCALLK(rmlSC);
 }
@@ -1366,7 +1384,7 @@ RML_BEGIN_LABEL(System__setDataPort)
 	int port = RML_UNTAGFIXNUM(rmlA0);
 
 		char* dataport = malloc(25);
-		sprintf(dataport,"sendDataPort=%s", port); 
+		sprintf(dataport,"sendDataPort=%s", port);
 		_putenv(dataport);
 		free(dataport);
 //	setDataPort(port);
@@ -1385,7 +1403,15 @@ RML_BEGIN_LABEL(System__setVariableFilter)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__sendData2)
+{
+  char* info = RML_STRINGDATA(rmlA0);
+  char* data = RML_STRINGDATA(rmlA1);
+  emulateStreamData2(info, data, 7778);
 
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 RML_BEGIN_LABEL(System__getFileModificationTime)
 {
@@ -1393,17 +1419,17 @@ RML_BEGIN_LABEL(System__getFileModificationTime)
   struct _stat attrib;			  // create a file attribute structure
   double elapsedTime;             // the time elapsed as double
   int result;					  // the result of the function call
-  
+
   result = _stat( fileName, &attrib );
-  
+
   if( result != 0 )
   {
   	rmlA0 = mk_none();     // we couldn't get the time, return NONE
-  }  
+  }
   else
   {
-    rmlA0 = mk_some(mk_rcon(difftime(attrib.st_mtime, 0))); // the file modification time 
-  }  
+    rmlA0 = mk_some(mk_rcon(difftime(attrib.st_mtime, 0))); // the file modification time
+  }
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -1413,21 +1439,21 @@ RML_BEGIN_LABEL(System__getCurrentTime)
   time_t t;
   double elapsedTime;             // the time elapsed as double
   time( &t );
-  rmlA0 = mk_rcon(difftime(t, 0)); // the file modification time  
+  rmlA0 = mk_rcon(difftime(t, 0)); // the file modification time
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
-/* 
+/*
  * @author adrpo
  * this function sets the depth of variable showing in Eclipse.
  * it has no effect if is called within source not compiled in debug mode
  */
 RML_BEGIN_LABEL(System__setDebugShowDepth)
 {
-#ifdef RML_DEBUG   
+#ifdef RML_DEBUG
   rmldb_depth_of_variable_print = RML_UNTAGFIXNUM(rmlA0);
-#endif  
+#endif
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -1472,8 +1498,8 @@ typedef int _file_compar_func_type(const struct dirent **, const struct dirent *
 
 
 
-void reallocdirents(struct dirent ***entries, 
-		    unsigned int oldsize, 
+void reallocdirents(struct dirent ***entries,
+		    unsigned int oldsize,
 		    unsigned int newsize) {
   struct dirent **newentries;
   if (newsize<=oldsize)
@@ -1492,12 +1518,12 @@ void reallocdirents(struct dirent ***entries,
 }
 
 
-/* 
+/*
  * compar function is ignored
  */
-int scandir(const char* dirname, 
-	    struct dirent ***entries, 
-	    _file_select_func_type select, 
+int scandir(const char* dirname,
+	    struct dirent ***entries,
+	    _file_select_func_type select,
 	    _file_compar_func_type compar)
 {
   DIR *dir = opendir(dirname);
@@ -1516,12 +1542,12 @@ int scandir(const char* dirname,
 	unsigned int oldmaxents = maxents;
 	maxents = maxents * 2;
 	reallocdirents(entries, oldmaxents, maxents);
-      }	
+      }
       (*entries)[count] = entcopy;
       count++;
     }
   } while (count < maxents); /* shouldn't be needed */
-  /* 
+  /*
      write code for calling qsort using compar for sorting the
      entries.
   */
@@ -1563,7 +1589,7 @@ void System_5finit(void)
 #elif defined(__x86_64__)
   /* -fPIC needed on x86_64! */
   set_linker("gcc -shared -export-dynamic -fPIC");
-#else 
+#else
 #ifdef __APPLE_CC__
   set_linker("gcc -single_module -dynamiclib -flat_namespace");
 #else
@@ -1572,9 +1598,9 @@ void System_5finit(void)
 #endif /* __sparc__ */
 
 #if defined(__i386__) || defined(__x86_64__)
-  /* 
-   * if we are on i386 or x86_64 then use the 
-   * SSE instructions, not the normal i387 FPU 
+  /*
+   * if we are on i386 or x86_64 then use the
+   * SSE instructions, not the normal i387 FPU
    */
   set_cflags("-Wall -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}");
 #else
@@ -1598,23 +1624,23 @@ RML_BEGIN_LABEL(System__strtok)
 
   void * res = (void*)mk_nil();
   s=strtok(str,delimit);
-  if (s == NULL) 
+  if (s == NULL)
   {
 	  /* adrpo added 2004-10-27 */
-	  free(str);	  
-	  rmlA0=res; RML_TAILCALLK(rmlFC); 
+	  free(str);
+	  rmlA0=res; RML_TAILCALLK(rmlFC);
   }
   res = (void*)mk_cons(mk_scon(s),res);
-  while (s=strtok(NULL,delimit)) 
+  while (s=strtok(NULL,delimit))
   {
     res = (void*)mk_cons(mk_scon(s),res);
   }
   rmlA0=res;
 
   /* adrpo added 2004-10-27 */
-  free(str);	  
+  free(str);
 
-  /* adrpo changed 2004-10-29 
+  /* adrpo changed 2004-10-29
   rml_prim_once(RML__list_5freverse);
   RML_TAILCALLK(rmlSC);
   */
@@ -1626,7 +1652,7 @@ RML_BEGIN_LABEL(System__toupper)
 {
   char *str = strdup(RML_STRINGDATA(rmlA0));
   char *res=str;
-  while (*str!= '\0') 
+  while (*str!= '\0')
   {
     *str=toupper(*str++);
   }
@@ -1649,12 +1675,12 @@ RML_BEGIN_LABEL(System__removeFirstAndLastChar)
       res=malloc(length-1);
       strncpy(res,str + 1,length-2);
 
-      res[length-1] = '\0';  
+      res[length-1] = '\0';
     }
   rmlA0 = (void*) mk_scon(res);
   /* adrpo added 2004-10-29 */
-  free(res); 
-  
+  free(res);
+
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -1670,7 +1696,7 @@ int str_contain_char( const char* chars, const char chr)
     }
   return 0;
 }
- 
+
 
 /*  this removes chars in second from the beginning and end of the first
     string and returns it */
@@ -1696,7 +1722,7 @@ RML_BEGIN_LABEL(System__trim)
         }
 
 
-      res[length] = '\0';  
+      res[length] = '\0';
     }
   if(start_pos < end_pos)
     {
@@ -1704,9 +1730,9 @@ RML_BEGIN_LABEL(System__trim)
       rmlA0 = (void*) mk_scon(&res[start_pos]);
     } else {
       rmlA0 = (void*) mk_scon("");
-    }      
+    }
 
-  free(res); 
+  free(res);
 
 
   RML_TAILCALLK(rmlSC);
@@ -1736,7 +1762,7 @@ RML_BEGIN_LABEL(System__trimChar)
     rmlA0 = (void*) mk_scon(res);
     free(res);
     RML_TAILCALLK(rmlSC);
-    
+
   }else{
     rmlA0 = (void*) mk_scon("");
     RML_TAILCALLK(rmlSC);
@@ -1764,15 +1790,15 @@ RML_BEGIN_LABEL(System__stringFind)
   int strLen = strlen(str);
   int strSearchLen = strlen(searchStr);
   int i,retVal=-1;
-  
+
   for (i=0; i< strLen - strSearchLen+1; i++) {
-    if (strncmp(&str[i],searchStr,strSearchLen) == 0) { 
-        retVal = i; 
+    if (strncmp(&str[i],searchStr,strSearchLen) == 0) {
+        retVal = i;
         break;
     }
   }
-  rmlA0 = (void*) mk_icon(retVal);  
-  RML_TAILCALLK(rmlSC);  
+  rmlA0 = (void*) mk_icon(retVal);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -2042,7 +2068,7 @@ RML_BEGIN_LABEL(System__writeFile)
 		  1);
     RML_TAILCALLK(rmlFC);
   }
-  /* adrpo changed 2006-10-06 
+  /* adrpo changed 2006-10-06
    * fprintf(file,"%s",data);
    */
   fwrite(RML_STRINGDATA(rmlA1), RML_HDRSTRLEN(RML_GETHDR(rmlA1)), 1, file);
@@ -2076,7 +2102,7 @@ RML_BEGIN_LABEL(System__readFile)
 
   file = fopen(filename,"rb");
   buf = malloc(statstr.st_size+1);
- 
+
   if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size)
   {
 	/* adrpo added 2004-10-26 */
@@ -2100,7 +2126,7 @@ RML_END_LABEL
 /*   char *path = getenv("OPENMODELICALIBRARY"); */
 /*   if (path == NULL)  */
 /*       RML_TAILCALLK(rmlFC); */
-  
+
 /*   rmlA0 = (void*) mk_scon(path); */
 
 /*   RML_TAILCALLK(rmlSC); */
@@ -2111,7 +2137,7 @@ RML_BEGIN_LABEL(System__readEnv)
 {
   char* envname = RML_STRINGDATA(rmlA0);
   char *envvalue = getenv(envname);
-  if (envvalue == NULL) 
+  if (envvalue == NULL)
   {
     RML_TAILCALLK(rmlFC);
   }
@@ -2168,7 +2194,7 @@ RML_BEGIN_LABEL(System__subDirectories)
   select_from_dir = directory;
   count = scandir(directory, &files, file_select_directories, NULL);
   res = (void*)mk_nil();
-  for (i=0; i<count; i++) 
+  for (i=0; i<count; i++)
   {
     res = (void*)mk_cons(mk_scon(files[i]->d_name),res);
     /* adrpo added 2004-10-28 */
@@ -2211,7 +2237,7 @@ RML_BEGIN_LABEL(System__moFiles)
   select_from_dir = directory;
   count = scandir(directory, &files, file_select_mo, NULL);
   res = (void*)mk_nil();
-  for (i=0; i<count; i++) 
+  for (i=0; i<count; i++)
   {
     res = (void*)mk_cons(mk_scon(files[i]->d_name),res);
     /* adrpo added 2004-10-28 */
@@ -2230,9 +2256,9 @@ RML_BEGIN_LABEL(System__getVariableNames)
 
 	if(!size)
 		RML_TAILCALLK(rmlFC);
-		
+
 	char* lst = (char*)malloc(sizeof(char)*size +1);
-	
+
 	getVariableList(model, lst);
 	rmlA0 = (void*)mk_scon(lst);
 	RML_TAILCALLK(rmlSC);
@@ -2250,7 +2276,7 @@ RML_BEGIN_LABEL(System__readPtolemyplotDataset)
   rmlA0 = lst;
   rml_prim_once(RML__list_5flength);
   size = RML_UNTAGFIXNUM(rmlA0);
-  
+
   vars = (char**)malloc(sizeof(char*)*size);
   for (i=0,p=lst;i<size;i++) {
     vars[i]=RML_STRINGDATA(RML_CAR(p));
@@ -2264,7 +2290,7 @@ RML_BEGIN_LABEL(System__readPtolemyplotDataset)
   rml_prim_once(Values__reverseMatrix);
 
   RML_TAILCALLK(rmlSC);
-}   
+}
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__readPtolemyplotDatasetSize)
@@ -2274,23 +2300,23 @@ RML_BEGIN_LABEL(System__readPtolemyplotDatasetSize)
   void* p;
 
   size=read_ptolemy_dataset_size(filename);
-  
+
   rmlA0 = (void*)Values__INTEGER(mk_icon(size));
   if (rmlA0 == NULL) {
     RML_TAILCALLK(rmlFC);
   }
   RML_TAILCALLK(rmlSC);
-}   
+}
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__writePtolemyplotDataset)
 {
   char *filename = RML_STRINGDATA(rmlA0);
   void *value = rmlA1;
-  
+
 
   RML_TAILCALLK(rmlSC);
-}   
+}
 RML_END_LABEL
 
 
@@ -2298,9 +2324,9 @@ RML_BEGIN_LABEL(System__time)
 {
   double time;
   clock_t cl;
-  
+
   cl=clock();
-  
+
   time = (double)cl / (double)CLOCKS_PER_SEC;
   /*  printf("clock : %d\n",cl); */
   /* printf("returning time: %f\n",time);  */
@@ -2342,10 +2368,10 @@ RML_BEGIN_LABEL(System__directoryExists)
   char* str = RML_STRINGDATA(rmlA0);
   int ret_val;
   struct stat buf;
-  
+
   if (str == NULL)
   	RML_TAILCALLK(rmlFC);
-		  
+
   ret_val = stat(str, &buf);
   if (ret_val != 0 ) {
     rmlA0 = (void*) mk_icon(1);
@@ -2390,8 +2416,8 @@ RML_BEGIN_LABEL(System__platform)
   rmlA0 = (void*) mk_scon("WIN32");
   RML_TAILCALLK(rmlSC);
 }
-RML_END_LABEL 
-#elif defined CYGWIN 
+RML_END_LABEL
+#elif defined CYGWIN
 RML_BEGIN_LABEL(System__platform)
 {
   rmlA0 = (void*) mk_scon("CYGWIN");
@@ -2497,28 +2523,28 @@ char* compile_command = NULL;
 RML_BEGIN_LABEL(System__getVariableValue)
 {
   double timeStamp 	= rml_prim_get_real(rmlA0);
-  void *timeValues 	= rmlA1;  
+  void *timeValues 	= rmlA1;
   void *varValues 	= rmlA2;
-  
+
   // values to find the correct range
   double preValue 	= 0.0;
   double preTime 	= 0.0;
   double nowValue 	= 0.0;
   double nowTime 	= 0.0;
-  
+
   // linjear interpolation data
   double timedif 			= 0.0;
   double valuedif			= 0.0;
   double valueSlope			= 0.0;
   double timeDifTimeStamp	= 0.0;
-  
+
   // break loop and return value
   int valueFound = 0;
   double returnValue = 0.0;
 
 for(; RML_GETHDR(timeValues) == RML_CONSHDR && valueFound == 0; timeValues = RML_CDR(timeValues), varValues = RML_CDR(varValues)) {
-  
-  
+
+
     nowValue 	= rml_prim_get_real(RML_CAR(varValues));
   	nowTime 	=  rml_prim_get_real(RML_CAR(timeValues));
 
@@ -2526,7 +2552,7 @@ for(; RML_GETHDR(timeValues) == RML_CONSHDR && valueFound == 0; timeValues = RML
 	if(timeStamp == nowTime){
     	valueFound 	= 1;
     	returnValue = nowValue;
-    	
+
     } else if (timeStamp >= preTime && timeStamp <= nowTime) { // need to do interpolation
     	valueFound 			= 1;
     	timedif 			= nowTime - preTime;
@@ -2544,7 +2570,7 @@ for(; RML_GETHDR(timeValues) == RML_CONSHDR && valueFound == 0; timeValues = RML
     	printf("\n");
     	printf("preValue: %f", preValue);
     	printf("\n");
-    	
+
 		printf("timedif: %f", timedif);
     	printf("\n");
     	printf("valuedif: %f", valuedif);
@@ -2559,7 +2585,7 @@ for(; RML_GETHDR(timeValues) == RML_CONSHDR && valueFound == 0; timeValues = RML
 	} else {
 		preValue 	= nowValue;
   		preTime 	= nowTime;
-		
+
 	}
 
   }
@@ -2568,7 +2594,7 @@ for(; RML_GETHDR(timeValues) == RML_CONSHDR && valueFound == 0; timeValues = RML
 		printf("\n WARNING: timestamp outside simulation timeline \n");
 		RML_TAILCALLK(rmlFC);
 	} else {
-  
+
   		rmlA0 = (void*)mk_rcon(returnValue);
   		RML_TAILCALLK(rmlSC);
   }
@@ -2577,14 +2603,14 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__sendData)
 {
-   	
+
   char* data = RML_STRINGDATA(rmlA0);
   char* interpolation = RML_STRINGDATA(rmlA1);
  char* title = RML_STRINGDATA(rmlA2);
  int legend = RML_UNTAGFIXNUM(rmlA3); //RML_STRINGDATA(rmlA3);
- int grid = RML_UNTAGFIXNUM(rmlA4); //RML_STRINGDATA(rmlA4); 
- int logX = RML_UNTAGFIXNUM(rmlA5); //RML_STRINGDATA(rmlA5);	
- int logY = RML_UNTAGFIXNUM(rmlA6); //RML_STRINGDATA(rmlA6);	 
+ int grid = RML_UNTAGFIXNUM(rmlA4); //RML_STRINGDATA(rmlA4);
+ int logX = RML_UNTAGFIXNUM(rmlA5); //RML_STRINGDATA(rmlA5);
+ int logY = RML_UNTAGFIXNUM(rmlA6); //RML_STRINGDATA(rmlA6);
  char* xLabel = RML_STRINGDATA(rmlA7);
  char* yLabel = RML_STRINGDATA(rmlA8);
  int points = RML_UNTAGFIXNUM(rmlA9);
@@ -2596,13 +2622,13 @@ RML_BEGIN_LABEL(System__sendData)
 ///  emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, interpolation, 1);
 
 //  emulateStreamData(data, 7778, title, "time", "", legend, grid, 0, 0, 0, 0, logX, logY, interpolation, 1);
-// emulateStreamData(data, title, xLabel, yLabel , interpolation, legend, grid, logX, logY, points, range); 
+// emulateStreamData(data, title, xLabel, yLabel , interpolation, legend, grid, logX, logY, points, range);
  // emulateStreamData(data, 7778, title, xLabel, yLabel , interpolation, legend, grid, 0, 0, 0, 0, logX, logY, points, range);
 
   emulateStreamData(data, title, xLabel, yLabel , interpolation, legend, grid, logX, logY, points, range);
-  
+
 //	emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, "linear");
-       
+
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -2632,13 +2658,22 @@ RML_BEGIN_LABEL(System__setDataPort)
 RML_END_LABEL
 RML_BEGIN_LABEL(System__setVariableFilter)
 {
-	char * variables = RML_STRINGDATA(rmlA0);	
+	char * variables = RML_STRINGDATA(rmlA0);
 	setenv("sendDataFilter", variables, 1 /* overwrite */);
 //	setVariableFilter(variables);
 	RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__sendData2)
+{
+  char* info = RML_STRINGDATA(rmlA0);
+  char* data = RML_STRINGDATA(rmlA1);
+  emulateStreamData2(info, data, 7778);
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 RML_BEGIN_LABEL(System__getFileModificationTime)
 {
@@ -2646,18 +2681,18 @@ RML_BEGIN_LABEL(System__getFileModificationTime)
   struct stat attrib;			      // create a file attribute structure
   double elapsedTime;                 // the time elapsed as double
   int result;					      // the result of the function call
-  
+
   result =   stat(fileName, &attrib); // get the attributes of the file
-  
+
   if( result != 0 )
   {
   	rmlA0 = mk_none();     // we couldn't get the time, return NONE
-  }  
+  }
   else
   {
-    rmlA0 = mk_some(mk_rcon(difftime(attrib.st_mtime, 0))); // the file modification time 
-  }  
-  
+    rmlA0 = mk_some(mk_rcon(difftime(attrib.st_mtime, 0))); // the file modification time
+  }
+
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -2667,21 +2702,21 @@ RML_BEGIN_LABEL(System__getCurrentTime)
   time_t t;
   double elapsedTime;             // the time elapsed as double
   time( &t );
-  rmlA0 = mk_rcon(difftime(t, 0)); // the file modification time  
+  rmlA0 = mk_rcon(difftime(t, 0)); // the file modification time
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
-/* 
+/*
  * @author adrpo
  * this function sets the depth of variable showing in Eclipse.
  * it has no effect if is called within source not compiled in debug mode
  */
 RML_BEGIN_LABEL(System__setDebugShowDepth)
 {
-#ifdef RML_DEBUG   
+#ifdef RML_DEBUG
   rmldb_depth_of_variable_print = RML_UNTAGFIXNUM(rmlA0);
-#endif  
+#endif
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

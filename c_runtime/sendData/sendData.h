@@ -93,6 +93,7 @@ extern "C"
 	void closeSendData();
 
 	void emulateStreamData(const char* data, const char* title="Plot by OpenModelica", const char* xLabel = "time", const char* yLabel = "", const char* interpolation="linear", int legend = 1, int grid = 1, int logX=0, int logY=0, int drawPoints = 1, const char* range = "0.0,0.0 0.0,0.0");
+	void emulateStreamData2(const char* info, const char* data, int port=7778);	
 	
 	bool pltTable(double*, size_t r, size_t c); //, const char*, int size);
 	bool plt(const char* var, const char* mdl, const char* title, const char* xLabel, const char* yLabel, bool legend, bool grid, double xmin, double xmax, double ymin, double ymax, bool logX, bool logY, const char* interpolation, bool drawPoints, const char* range);

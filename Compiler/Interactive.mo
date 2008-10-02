@@ -352,12 +352,26 @@ algorithm
   (outString,outInteractiveSymbolTable):=
   matchcontinue (inInteractiveStmts,inInteractiveSymbolTable)
     local
-      String vars,str,str_1;
+      String varsStr,str,str_1;
       InteractiveSymbolTable st,newst,st_1;
       InteractiveStmts stmts;
       Absyn.AlgorithmItem algitem;
       Boolean outres;
       Absyn.Exp exp;
+      list<InteractiveVariable> vars; 
+    /* intercept getVersion() */
+    case 
+      (ISTMTS(
+      interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getVersion"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = {})))}),
+      (st as SYMBOLTABLE(lstVarVal = vars)))
+      equation 
+        str = Settings.getVersionNr();
+        str = stringAppend("\"", str);
+        str = stringAppend(str,"\"");
+      then
+        (str,st);      
     case 
       (ISTMTS(
       interactiveStmtLst = 
@@ -365,8 +379,8 @@ algorithm
       functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = {})))}),
       (st as SYMBOLTABLE(lstVarVal = vars)))
       equation 
-        vars = getVariableNames(vars);
-        str = stringAppend(vars, "\n");
+        varsStr = getVariableNames(vars);
+        str = stringAppend(varsStr, "\n");
       then
         (str,st);
     case ((stmts as ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = _))})),st)
@@ -1327,6 +1341,19 @@ algorithm
         resstr = getElementsInfo(cr, p);
       then
         (resstr,st);
+        
+   case (ISTMTS(interactiveStmtLst = 
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getElementsOfVisType"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr)})))}),
+      (st as SYMBOLTABLE(
+        ast = p,explodedAst = s,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf))) /* he-mag */ 
+      equation 
+        resstr = getElementsOfVisType(Absyn.crefToPath(cr), p);
+        //print(resstr +& "\n");
+      then
+        (resstr,st);
+                
     case (ISTMTS(interactiveStmtLst = 
       {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getEnvironmentVar"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
       (st as SYMBOLTABLE(
@@ -16284,5 +16311,353 @@ algorithm
   end matchcontinue;
 end parseFile;
 
+//he-mag begin
+protected function getElementName " 
+"
+  input Absyn.ElementSpec inElementSpec;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inElementSpec)
+    local
+      String path_str,str,import_str,typename,flow_str,variability_str,dir_str,names_str;
+      Absyn.Path path;
+      Absyn.TypeSpec typeSpec;
+      Absyn.Import import_;
+      list<String> names;
+      Absyn.ElementAttributes attr;
+      list<Absyn.ComponentItem> lst;
+ /*   case (Absyn.EXTENDS(path = path))
+      equation 
+        path_str = Absyn.pathString(path);
+        str = Util.stringAppendList({"elementtype=extends, path=",path_str});
+      then
+        str;
+    case (Absyn.IMPORT(import_ = import_))
+      equation 
+        import_str = getImportString(import_);
+        str = Util.stringAppendList({"elementtype=import, ",import_str});
+      then
+        str;*/
+    case (Absyn.COMPONENTS(attributes = attr,typeSpec = typeSpec,components = lst))
+      equation 
+//        str = Dump.unparseTypeSpec(typeSpec);
+        names = getComponentitemsName(lst);
+        str = Util.stringDelimitList(names, ", ");
+        print("names: " +& str +& "\n");        
+      then
+        str;
+  end matchcontinue;
+end getElementName;
+
+protected function getElementTypeName " 
+"
+  input Absyn.ElementSpec inElementSpec;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inElementSpec)
+    local
+      String path_str,str,import_str,typename,flow_str,variability_str,dir_str,names_str;
+      Absyn.Path path;
+      Absyn.TypeSpec typeSpec;
+      Absyn.Import import_;
+      list<String> names;
+      Absyn.ElementAttributes attr;
+      list<Absyn.ComponentItem> lst;
+ /*   case (Absyn.EXTENDS(path = path))
+      equation 
+        path_str = Absyn.pathString(path);
+        str = Util.stringAppendList({"elementtype=extends, path=",path_str});
+      then
+        str;
+    case (Absyn.IMPORT(import_ = import_))
+      equation 
+        import_str = getImportString(import_);
+        str = Util.stringAppendList({"elementtype=import, ",import_str});
+      then
+        str;*/
+    case (Absyn.COMPONENTS(attributes = attr,typeSpec = typeSpec,components = lst))
+      equation 
+        str = Dump.unparseTypeSpec(typeSpec);
+//        names = getComponentitemsName(lst);
+      then
+        str;
+  end matchcontinue;
+end getElementTypeName;
+
+public function getElementVisString ""
+	input Absyn.ElementItem inElement;
+	input Absyn.Program inProgram;
+	output String outString;
+algorithm
+  outString:=
+  matchcontinue (inElement,inProgram)
+    local
+      String desc, tmpStr;
+      list<String> compList, valList;
+      Absyn.Element el;
+      list<Absyn.ComponentItem> comps;
+      Boolean f;
+      Option<Absyn.RedeclareKeywords> r;
+      Absyn.InnerOuter inout;
+      Absyn.Ident id;
+      Absyn.ElementSpec elementSpec;
+      Absyn.Info inf;
+      Option<Absyn.ConstrainClass> c;
+      Absyn.Class cl;
+      Absyn.Program p;
+      Absyn.Path p_class; 
+    case (Absyn.ELEMENTITEM(element = el),p)
+      equation
+        Absyn.ELEMENT(final_ = f, redeclareKeywords = r, innerOuter = inout, name = id, specification = elementSpec, info = inf, constrainClass = c) = el;
+        //p_class = Absyn.crefToPath(id);
+//        Absyn.IDENT(name) = Absyn.crefToPath(ident);
+        //cl = getPathedClassInProgram(p_class, p);
+        //comps = getComponentsInClass(cl);      
+        Absyn.COMPONENTS(components = comps) = elementSpec;
+//        Absyn.CLASSDEF(class_ = cl) = elementSpec;    
+        //comps = getComponentsInClass(cl);        
+        desc = getElementName(elementSpec);
+        desc = desc +& ":" +& getElementTypeName(elementSpec);//getElementInfo(elitem);
+      then
+        desc;           
+  end matchcontinue;
+end getElementVisString;
+
+protected function getDescIfVis "
+"
+  input String in_type;
+  input Absyn.ElementItem inElement;
+  input Absyn.Program inProgram;
+  //output Absyn.ElementItem outElement;
+  output String outString;
+algorithm
+  outString:=
+  matchcontinue (in_type, inElement, inProgram)      
+    local 
+      Absyn.ElementItem tmp;
+      Absyn.Program p;
+      String res;
+    case ("SimpleVisual.Position", tmp, p)
+      equation
+        res = getElementVisString(tmp, p);
+      then 
+        res; 
+    case ("SimpleVisual.PositionSize", tmp, p)
+      equation
+        res = getElementVisString(tmp, p);
+      then 
+        res; 
+    case ("SimpleVisual.PositionRotation", tmp,p) 
+      equation
+        res = getElementVisString(tmp,p);
+      then 
+        res; 
+    case ("SimpleVisual.PositionRotationSize", tmp,p) 
+      equation
+        res = getElementVisString(tmp,p);
+      then 
+        res; 
+    case ("SimpleVisual.PositionRotationSizeOffset", tmp,p) 
+      equation
+        res = getElementVisString(tmp,p);
+      then 
+        res; 
+/*    case ("SimpleVisual.Cube", tmp,p) 
+      equation
+        res = getElementVisString(tmp,p);
+      then 
+        res;           
+    case ("SimpleVisual.Sphere", tmp,p) 
+      equation
+        res = getElementVisString(tmp,p);
+      then 
+        res;*/ 
+  end matchcontinue;
+end getDescIfVis;
+
+protected function getNameFromElementIfVisType " 
+"
+  input Absyn.ElementItem inElementItem;
+  input Absyn.Program inProgram;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inElementItem, inProgram)
+    local
+      String final_,repl,inout_str,str_restriction,element_str,sline_str,scol_str,eline_str,ecol_str,readonly_str,str,id,file;
+      Boolean r_1,f,p,fi,e,isReadOnly;
+      Option<Absyn.RedeclareKeywords> r;
+      Absyn.InnerOuter inout;
+      Absyn.Restriction restr;
+      Integer sline,scol,eline,ecol;
+      Absyn.ElementSpec elementSpec;
+      Absyn.Info info;
+      String typename_str, varname_str, str;
+      list<String> tmp;
+      Absyn.Program prog;
+    case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(final_ = f,redeclareKeywords = r,innerOuter = inout,specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(name = id,partial_ = p,final_ = fi,encapsulated_ = e,restriction = restr,info = Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol))))),prog) /* ok, first see if is a classdef if is not a classdef, just follow the normal stuff */ 
+      then
+       "";
+    case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(final_ = f,redeclareKeywords = r,innerOuter = inout,name = id,specification = elementSpec,info = (info as Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol)))),prog) /* if is not a classdef, just follow the normal stuff */ 
+      equation 
+        typename_str = getElementTypeName(elementSpec);
+        varname_str = getElementName(elementSpec);
+        tmp = Util.stringSplitAtChar(varname_str, ",");
+        varname_str = Util.listFirst(tmp);       
+        str = getDescIfVis(typename_str, inElementItem,prog);
+      then
+        str;
+    case (_,prog) then "";  /* for annotations we don\'t care */ 
+  end matchcontinue;
+end getNameFromElementIfVisType;
+
+protected function constructVisTypesList "
+	visualization /he-mag
+"
+  input list<Absyn.ElementItem> inAbsynElementItemLst;
+  input Absyn.Program inProgram;
+  output list<String> outList;
+algorithm 
+  outList:=
+  matchcontinue (inAbsynElementItemLst, inProgram)
+    local
+      String type_str, s1;
+      list<String> res_list, list2;
+      Absyn.ElementItem current, tmp;
+      list<Absyn.ElementItem> rest;//, res_list, list2;
+      Absyn.Program p;
+    case ({}, p) /* Util.string_append_list({\"{ elementvisibility=\", visibility_str,\" }\"}) => res */
+      equation
+        s1 = "";
+        res_list = Util.listCreate(s1);
+      then 
+        {};
+    case ((current :: {}),p) /* deal with the last element */ 
+      equation 
+        s1 = getNameFromElementIfVisType(current,p);
+        res_list = Util.listCreate(s1);//, res_list);
+      then
+        res_list;
+    case ((current :: rest),p)
+      equation 
+        s1 = getNameFromElementIfVisType(current,p);
+        res_list = Util.listCreate(s1);
+        list2 = constructVisTypesList(rest,p);
+        res_list = Util.listUnion(list2, res_list);
+      then
+        res_list;
+  end matchcontinue;
+end constructVisTypesList;
+
+public function getElementsOfVisType "
+	For visualization! /he-mag
+"
+  //input Absyn.ComponentRef inComponentRef;
+  input Absyn.Path inPath;
+  input Absyn.Program inProgram;
+  //output list<Absyn.ElementItem> outList;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inPath,inProgram)
+    local
+//      Absyn.Path modelpath;
+      String i,public_str,protected_str,elements_str,str;
+      Boolean p,f,e;
+      Absyn.Restriction r;
+      list<Absyn.ClassPart> parts;
+      list<Absyn.ElementItem> public_elementitem_list,protected_elementitem_list;
+      Absyn.Path modelPath_;
+      list<String> public_list, protected_list;
+      list<String> strList, all_list;
+      Absyn.Program prog;
+    case (modelPath_,prog)
+      equation 
+//        modelpath = Absyn.crefToPath(model_);
+//        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_),_) = getPathedClassInProgram(modelpath, p);
+        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_),_) = getPathedClassInProgram(modelPath_, prog);
+        public_elementitem_list = getPublicList(parts);
+        protected_elementitem_list = getProtectedList(parts);
+        public_list = constructVisTypesList(public_elementitem_list, prog);
+        protected_list = constructVisTypesList(protected_elementitem_list, prog);
+//        elements_str = appendNonEmptyStrings(public_str, protected_str, ", ");
+        all_list = Util.listUnion(public_list, protected_list);
+        //strList = Util.listMap(all_list, getElementVisString);
+        str = Util.stringDelimitList(all_list,"\n");
+        print("elementsofvistype:\n" +& str);
+      then
+        str;
+/*    case (model_,p)
+      equation 
+        modelpath = Absyn.crefToPath(model_);
+        Absyn.CLASS(i,p,f,e,r,_,_) = getPathedClassInProgram(modelpath, p) "there are no elements in DERIVED, ENUMERATION, OVERLOAD, CLASS_EXTENDS and PDER
+		    maybe later we can give info about that also" ;
+      then
+        "{ }";*/
+//    case (_,_) then "Error"; 
+  end matchcontinue;
+end getElementsOfVisType;
+
+protected function getComponentBindingMapable "function: getComponentBindingMapable
+  
+   Returns the value of a component in a class.
+   
+   For example, the component
+   Real x=1; 
+   returns 1.
+  This can be used for both parameters, constants and variables.
+  
+   inputs: (Absyn.ComponentRef, /* variable name */
+              Absyn.ComponentRef, /* class name */
+              Absyn.Program)
+   outputs: string
+"
+  input Absyn.ComponentRef inComponentRef1;
+  input Absyn.ComponentRef inComponentRef2;
+  input Absyn.Program inProgram3;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inComponentRef1,inComponentRef2,inProgram3)
+    local
+      Absyn.Path p_class;
+      String name,res;
+      Absyn.Class cdef;
+      list<Absyn.Element> comps,comps_1;
+      list<list<Absyn.ComponentItem>> compelts;
+      list<Absyn.ComponentItem> compelts_1;
+      Absyn.ComponentItem compitem;
+      Absyn.Exp exp;
+      Absyn.ComponentRef class_;
+      Absyn.Program p;
+    case (name,class_,p)
+      equation 
+        p_class = Absyn.crefToPath(class_);
+        Absyn.IDENT(name) = Absyn.crefToPath(name);
+        cdef = getPathedClassInProgram(p_class, p);
+        comps = getComponentsInClass(cdef);
+        compelts = Util.listMap(comps, getComponentitemsInElement);
+        compelts_1 = Util.listFlatten(compelts);
+        {compitem} = Util.listSelect1(compelts_1, name, componentitemNamed);
+        exp = getVariableBindingInComponentitem(compitem);
+        res = Dump.printExpStr(exp);
+      then
+        res;
+      case (name,class_,p)
+      equation 
+        p_class = Absyn.crefToPath(class_);
+        Absyn.IDENT(name) = Absyn.crefToPath(name);
+        cdef = getPathedClassInProgram(p_class, p);
+        comps = getComponentsInClass(cdef);
+        compelts = Util.listMap(comps, getComponentitemsInElement);
+        compelts_1 = Util.listFlatten(compelts);
+        {compitem} = Util.listSelect1(compelts_1, name, componentitemNamed);
+        failure(_ = getVariableBindingInComponentitem(compitem));
+      then "";
+    case (_,_,_) then "Error"; 
+  end matchcontinue;
+end getComponentBindingMapable;
 
 end Interactive;
