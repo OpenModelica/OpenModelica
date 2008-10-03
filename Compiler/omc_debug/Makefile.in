@@ -1,7 +1,7 @@
 #
 # Makefile for omc
 #
-# David Kågedal <x97davka@ida.liu.se>
+# David Kï¿½gedal <x97davka@ida.liu.se>
 #
 # $Id$
 #
@@ -10,6 +10,8 @@ ANTLR_HOME = @antlrhome@
 
 ANTLR_INCP = -I@antlrinc@
 ANTLR_LIBP = -L@antlrlib@
+OSTYP=$(OSTYPE)
+OS_MSYS=msys
 LIBSOCKET = @LIBSOCKET@
 
 SHELL	= /bin/sh
