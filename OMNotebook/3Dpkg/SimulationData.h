@@ -1,10 +1,10 @@
 #pragma once
 
-#include <QT/qdom.h>
-#include <QTCore/QString.h>
-#include <QTCore/QFile.h>
-#include <QTCore/QVector.h>
-#include <QTCore/QHash.h>
+#include <Qt/qdom.h>
+#include <QtCore/QString>
+#include <QtCore/QFile>
+#include <QtCore/QVector>
+#include <QtCore/QHash>
 
 #include <Inventor/nodes/SoSeparator.h>
 #include <Inventor/nodes/SoTranslation.h> 
