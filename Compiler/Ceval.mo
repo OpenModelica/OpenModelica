@@ -1,9 +1,9 @@
 /* 
  * This file is part of OpenModelica.
  * 
- * Copyright (c) 1998-2008, Linköpings University,
+ * Copyright (c) 1998-2008, LinkÃ¶pings University,
  * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
+ * SE-58183 LinkÃ¶pings, Sweden. 
  * 
  * All rights reserved.
  * 
@@ -14,7 +14,7 @@
  * 
  * The OpenModelica software and the Open Source Modelica 
  * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ * from LinkÃ¶pings University, either from the above address, 
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  * 
@@ -1536,7 +1536,7 @@ algorithm
       list<Integer>[:] m,mt;
       Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
       Values.Value ret_val,simValue,size_value,value,v;
-      Exp.Exp filenameprefix,exp,starttime,stoptime,tolerance,interval,method,size_expression,funcref,bool_exp,storeInTemp;
+      Exp.Exp filenameprefix,exp,starttime,stoptime,tolerance,interval,method,size_expression,funcref,bool_exp,storeInTemp,asInSimulationCode;
       Absyn.ComponentRef cr_1;
       Integer size,length,rest;
       list<String> vars_1,vars_2,args;
@@ -2517,11 +2517,11 @@ algorithm
       equation
         print("visualize(model)\n");      
         
-        //Här ska jag komma in, bygga en vettig argumentlista till readptol...
+        //HÃ¤r ska jag komma in, bygga en vettig argumentlista till readptol...
         
-        //Jag måste få readptol att skicka alla variabler i .plt-filen, och en idé är         
-        //att göra en egen enkel funktion som i princip är en grep på DataSet: i filen..
-        //Kolla på senddata:emulateStreamData
+        //Jag mÃ¥ste fÃ¥ readptol att skicka alla variabler i .plt-filen, och en idÃ© Ã¤r         
+        //att gÃ¶ra en egen enkel funktion som i princip Ã¤r en grep pÃ¥ DataSet: i filen..
+        //Kolla pÃ¥ senddata:emulateStreamData
         
         //vars = Util.listMap(vars,Exp.CodeVarToCref);
         //vars = Util.listMap(vars, Exp.printExpStr) "plot" ;
@@ -2590,7 +2590,7 @@ algorithm
 				Boolean legend, logX, logY, points;
 				Boolean grid;
       equation
-        print("hittaderättigen\n");
+        print("hittaderÃ¤ttigen\n");
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
         vars_2 = Util.listUnionElt("time", vars_1);
@@ -3295,11 +3295,7 @@ algorithm
         path = Absyn.IDENT(name = "dumpXMLDAE"),
         expLst = 
         {Exp.CODE(Absyn.C_TYPENAME(className),_),
-         starttime,
-         stoptime,
-         interval,
-         tolerance,
-         method,
+         asInSimulationCode,
          filenameprefix,
          storeInTemp})),
       (st_1 as Interactive.SYMBOLTABLE(
@@ -3321,11 +3317,7 @@ algorithm
         expLst = 
         {
         Exp.CODE(Absyn.C_TYPENAME(className),_),
-        starttime,
-        stoptime,
-        interval,
-        tolerance,
-        method,
+        asInSimulationCode,
         filenameprefix,
         storeInTemp})),
       (st_1 as Interactive.SYMBOLTABLE(
@@ -3337,6 +3329,7 @@ algorithm
     then (cache,Values.ARRAY({Values.STRING("Xml dump error"),Values.STRING("")}),st_1);         
   end matchcontinue;
 end cevalInteractiveFunctions;
+    
 
 protected function setEcho 
   input Boolean echo;
@@ -3486,9 +3479,7 @@ algorithm
         Debug.fcall("bltdump", DAELow.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);
-        (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, 
-          (DAELow.INDEX_REDUCTION(),DAELow.EXACT(),
-          DAELow.REMOVE_SIMPLE_EQN()));
+        (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()));
         (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
         indexed_dlow = DAELow.translateDae(dlow_1);
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
@@ -3505,8 +3496,7 @@ algorithm
         a_cref = Absyn.pathToCref(className);
         file_dir = getFileDir(a_cref, p);
         libs = SimCodegen.generateFunctions(p_1, dae, indexed_dlow_1, className, funcfilename);
-        SimCodegen.generateSimulationCode(dae, indexed_dlow_1, ass1, ass2, m, mT, comps, className, 
-          filename, funcfilename,file_dir);
+        SimCodegen.generateSimulationCode(dae, indexed_dlow_1, ass1, ass2, m, mT, comps, className, filename, funcfilename,file_dir);
         SimCodegen.generateMakefile(makefilename, filenameprefix, libs, file_dir);
         /* 
         s_call = Util.stringAppendList({"make -f ",cname_str, ".makefile\n"}) 
@@ -6920,10 +6910,11 @@ algorithm
   end matchcontinue;
 end cevalSubscript;
 
-//Functions added by fildo:
-public function dumpXMLDAE "function buildModel
- author: x02lucpo
- translates and builds the model by running compiler script on the generated makefile"
+
+
+public function dumpXMLDAE "function dumpXMLDAE
+ author: fildo
+ This function outputs the DAE system corresponding to a specific model."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input Exp.Exp inExp;
@@ -6937,66 +6928,103 @@ algorithm
   (outCache,outInteractiveSymbolTable3,xml_filename,xml_contents):=
   matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg)
     local
-      Values.Value ret_val;
-      Interactive.InteractiveSymbolTable st,st_1;
-      DAELow.DAELow indexed_dlow_1;
-      list<String> libs;
-      String file_dir,cname_str,init_filename,method_str,filenameprefix,makefilename,oldDir,tempDir;
-      Absyn.Path classname;
+      Boolean cdToTemp,asInSimulationCode;
       Real starttime_r,stoptime_r,interval_r,tolerance_r;
-      list<Env.Frame> env;
-      Exp.Exp exp,starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp;
-      Exp.ComponentRef cr;
-      Absyn.Program p;
+      String file_dir,cname_str,init_filename,method_str,filenameprefix,makefilename,oldDir,tempDir;
+      list<String> libs;
       list<SCode.Class> sp;
       list<Interactive.InstantiatedClass> ic;
       list<Interactive.InteractiveVariable> iv;
       list<Interactive.CompiledCFunction> cf;
-      Msg msg;
+      list<Env.Frame> env;
+      Absyn.Path classname;
+      Absyn.Program p;
+      DAELow.DAELow indexed_dlow_1;
       Env.Cache cache;
-      Boolean cdToTemp;
+      Exp.Exp exp,fileprefix,storeInTemp;
+      Exp.ComponentRef cr;
+      Interactive.InteractiveSymbolTable st,st_1;
+      Msg msg;
+      Values.Value ret_val;
     case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = _),
-      expLst = {Exp.CODE(Absyn.C_TYPENAME(classname),_),starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp})),
+      expLst = {Exp.CODE(Absyn.C_TYPENAME(classname),_),Exp.BCONST(bool=true),fileprefix,storeInTemp})),
       (st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      equation 
+      local 
+        Boolean x;
+        Integer[:] ass1,ass2;
+        DAE.DAElist dae_1,dae;
+        DAELow.DAELow dlow,dlow_1,indexed_dlow,indexed_dlow_1;        
+        list<Integer>[:] m,mT;
+        list<DAE.Element> dael;
+        list<Interactive.InstantiatedClass> ic_1,ic;
+        list<SCode.Class> p_1,sp;
+        list<list<Integer>> comps;        
+      equation
+        //asInSimulationCode==true => it's necessary to do all the translation's steps before dumping with xml
         _ = Error.getMessagesStr() "Clear messages";
         (cache,Values.BOOL(cdToTemp),SOME(st)) = ceval(cache,env, storeInTemp, true, SOME(st_1), NONE, msg);
         oldDir = System.pwd();
         changeToTempDirectory(cdToTemp);
-        (cache,ret_val,st,indexed_dlow_1,libs,file_dir) = translateModel(cache,env, classname, st_1, msg, fileprefix);
-        cname_str = Absyn.pathString(classname);
-        (cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str) = calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
-        
-        (cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str) = calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
-        
-        xml_filename = Util.stringAppendList({filenameprefix,"_dump.xml"});
+        cname_str = Absyn.pathString(classname);
+        p_1 = SCode.elaborate(p);
+        (cache,dae_1,env) = Inst.instantiateClass(cache,p_1, classname);
+        ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1);
+        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dael,env));
+        dlow = DAELow.lower(dae, true, true);
+        m = DAELow.incidenceMatrix(dlow);
+        mT = DAELow.transposeMatrix(m);
+        (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()));
+        (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
+        indexed_dlow = DAELow.translateDae(dlow_1);
+        indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
+        xml_filename = Util.stringAppendList({filenameprefix,".xml"});
         Print.clearBuf();
         XMLDump.dumpDAELow(indexed_dlow_1);
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);
-        
-        /*
-        cname_str = Absyn.pathString(classname);
-        (cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str) = calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
-        (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
-        SimCodegen.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename, 
-          starttime_r, stoptime_r, interval_r, tolerance_r, method_str);
-        makefilename = generateMakefilename(filenameprefix);
-        Debug.fprintln("dynload", "buildModel: about to compile model " +& filenameprefix +& ", " +& file_dir);
-        compileModel(filenameprefix, libs, file_dir);
-        Debug.fprintln("dynload", "buildModel: Compiling done.");
-        _ = System.cd(oldDir);
-        */
-        // s_call = Util.stringAppendList({"make -f ",cname_str, ".makefile\n"});
       then
-        
-        (cache,st,xml_filename,xml_contents);
+        (cache,st,xml_contents,stringAppend("The model has been dumped to xml file: ",xml_filename));        
+    case (cache,env,(exp as Exp.CALL(path = Absyn.IDENT(name = _),
+      expLst = {Exp.CODE(Absyn.C_TYPENAME(classname),_),Exp.BCONST(bool=false),fileprefix,storeInTemp})),
+      (st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)      
+      local 
+        Boolean x;
+        DAE.DAElist dae_1,dae;
+        DAELow.DAELow dlow,dlow_1;
+        list<Integer>[:] m,mT;
+        list<DAE.Element> dael;
+        list<Interactive.InstantiatedClass> ic_1,ic;
+        list<SCode.Class> p_1,sp;        
+      equation
+        //asInSimulationCode==false => it's NOT necessary to do all the translation's steps before dumping with xml         
+        _ = Error.getMessagesStr() "Clear messages";
+        (cache,Values.BOOL(cdToTemp),SOME(st)) = ceval(cache,env, storeInTemp, true, SOME(st_1), NONE, msg);
+        oldDir = System.pwd();
+        changeToTempDirectory(cdToTemp);
+        (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
+        cname_str = Absyn.pathString(classname);
+        p_1 = SCode.elaborate(p);
+        (cache,dae_1,env) = Inst.instantiateClass(cache,p_1, classname);
+        ((dae as DAE.DAE(dael))) = DAE.transformIfEqToExpr(dae_1);
+        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dael,env));
+        dlow = DAELow.lower(dae, true, true);
+        m = DAELow.incidenceMatrix(dlow);
+        mT = DAELow.transposeMatrix(m);
+        (_,_,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()));
+        xml_filename = Util.stringAppendList({filenameprefix,".xml"});
+        Print.clearBuf();
+        XMLDump.dumpDAELow(dlow_1);
+        xml_contents = Print.getString();
+        Print.clearBuf();
+        System.writeFile(xml_filename,xml_contents);
+      then
+        (cache,st,xml_contents,stringAppend("The model has been dumped to xml file: ",xml_filename));        
     case (_,_,_,_,_)
       then
         fail();
   end matchcontinue;
 end dumpXMLDAE;
-end Ceval;
 
+end Ceval;

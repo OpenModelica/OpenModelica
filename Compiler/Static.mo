@@ -1,9 +1,9 @@
 /* 
  * This file is part of OpenModelica.
  * 
- * Copyright (c) 1998-2008, Linköpings University,
+ * Copyright (c) 1998-2008, LinkÃ¶pings University,
  * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
+ * SE-58183 LinkÃ¶pings, Sweden. 
  * 
  * All rights reserved.
  * 
@@ -14,7 +14,7 @@
  * 
  * The OpenModelica software and the Open Source Modelica 
  * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ * from LinkÃ¶pings University, either from the above address, 
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  * 
@@ -5816,32 +5816,24 @@ algorithm
         (cache,Exp.CALL(Absyn.IDENT("echo"),{bool_exp_1},false,true,Exp.STRING()),Types.PROP((Types.T_BOOL({}),NONE),Types.C_CONST()),SOME(st));
 
 case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
-      local Absyn.Path className; Exp.Exp storeInTemp;
+      local Absyn.Path className; Exp.Exp storeInTemp,asInSimulationCode;
       equation 
         className = Absyn.crefToPath(cr); 
-        (cache,startTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "startTime", (Types.T_REAL({}),NONE), 
-          args, Exp.RCONST(0.0));
-        (cache,stopTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "stopTime", (Types.T_REAL({}),NONE), 
-          args, Exp.RCONST(1.0));
-        (cache,numberOfIntervals) = getOptionalNamedArg(cache,env, SOME(st), impl, "numberOfIntervals", 
-          (Types.T_INTEGER({}),NONE), args, Exp.ICONST(500));
-        (cache,tolerance) = getOptionalNamedArg(cache,env, SOME(st), impl, "tolerance", (Types.T_REAL({}),NONE), 
-          args, Exp.RCONST(1e-10));          
-        (cache,method) = getOptionalNamedArg(cache,env, SOME(st), impl, "method", (Types.T_STRING({}),NONE), 
-          args, Exp.SCONST("dassl"));
         cname_str = Absyn.pathString(className);
+        (cache,asInSimulationCode) = getOptionalNamedArg(cache,env, SOME(st), impl, "asInSimulationCode", 
+          (Types.T_BOOL({}),NONE), args, Exp.BCONST(false));
         (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix", 
           (Types.T_STRING({}),NONE), args, Exp.SCONST(cname_str));
         (cache,storeInTemp) = getOptionalNamedArg(cache,env, SOME(st), impl, "storeInTemp", 
-          (Types.T_BOOL({}),NONE), args, Exp.BCONST(false));  
+          (Types.T_BOOL({}),NONE), args, Exp.BCONST(false));
       then
         (cache,Exp.CALL(Absyn.IDENT("dumpXMLDAE"),
-          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),startTime,stopTime,
-          numberOfIntervals,tolerance,method,filenameprefix,storeInTemp},false,true,Exp.OTHER()),Types.PROP(
+          {Exp.CODE(Absyn.C_TYPENAME(className),Exp.OTHER()),asInSimulationCode,filenameprefix,storeInTemp},false,true,Exp.OTHER()),Types.PROP(
           (
           Types.T_ARRAY(Types.DIM(SOME(2)),(Types.T_STRING({}),NONE)),NONE),Types.C_VAR()),SOME(st));
-  end matchcontinue;
+  end matchcontinue;  
 end elabCallInteractive;
+
 
 protected function elabVariablenames "function: elabVariablenames
   This function elaborates variablenames to Exp.Exp. A variablename can
