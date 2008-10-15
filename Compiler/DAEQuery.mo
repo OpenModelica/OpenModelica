@@ -147,7 +147,7 @@ algorithm
         s2 = Exp.printExpStr(e2);
         DAELow.WHEN_CLAUSE(condition, _, _) = listNth(wcLst,i);
         s3 = Exp.printExpStr(condition);
-        res = Util.stringAppendList({"'when ", s3, " then " , s1," = ",s2," end when;'"});
+        res = Util.stringAppendList({"'when ", s3, " then " , s1," = ",s2,"; end when;'"});
       then
         res;
     case (DAELow.RESIDUAL_EQUATION(exp = e),_)
