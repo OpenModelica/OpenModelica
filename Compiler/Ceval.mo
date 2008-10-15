@@ -3414,7 +3414,7 @@ algorithm
         dlow = DAELow.lower(dae, false, false);
         RTOpts.setEliminationLevel(elimLevel); // Reset elimination level
         flatModelicaStr = DAE.dumpStr(dae);
-        flatModelicaStr = stringAppend("EqStr={'", flatModelicaStr);
+        flatModelicaStr = stringAppend("OldEqStr={'", flatModelicaStr);
         flatModelicaStr = System.stringReplace(flatModelicaStr, "\n", "%##%");
         flatModelicaStr = System.stringReplace(flatModelicaStr, "%##%", "','");
         flatModelicaStr = stringAppend(flatModelicaStr,"'};");

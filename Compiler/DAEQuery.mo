@@ -55,7 +55,7 @@ public function writeIncidenceMatrix
 algorithm
   fileName := matchcontinue(dlow, fileNamePrefix, flatModelicaStr)
     local 
-      String file, strIMatrix, strVariables, flatStr;
+      String file, strIMatrix, strVariables, flatStr, strEquations;
       list<String>[:] m;
     case (dlow, fileNamePrefix, flatStr)
       equation
@@ -63,13 +63,107 @@ algorithm
         m = incidenceMatrix(dlow);
         strIMatrix = getIncidenceMatrix(m);
         strVariables = getVariables(dlow);
-        strIMatrix = Util.stringAppendList({strIMatrix, "\n", strVariables, "\n\n\n", flatStr});
+        strEquations = getEquations(dlow);
+        strIMatrix = Util.stringAppendList({strIMatrix, "\n", strVariables, "\n\n\n", strEquations, "\n\n\n", flatStr});
         System.writeFile(file, strIMatrix);
       then
         file;
   end matchcontinue;   
 end writeIncidenceMatrix;
-  
+
+public function getEquations 
+"function: getEquations
+ @author adrpo
+  This function returns the equations"
+  input DAELow.DAELow inDAELow;
+  output String strEqs;
+algorithm 
+  strEqs:=
+  matchcontinue (inDAELow)
+    local
+      list<DAELow.Var> vars,knvars,extvars;
+      Integer varlen,eqnlen;
+      String varlen_str,eqnlen_str,s,s1,s2,s3;
+      list<String> ls1,ls2,ls3;
+      list<DAELow.Equation> eqnsl,reqnsl,ieqnsl;
+      list<String> ss;
+      list<DAELow.MultiDimEquation> ae_lst;
+      DAELow.Variables vars1,vars2,vars3;
+      DAELow.EquationArray eqns,reqns,ieqns;
+      DAELow.MultiDimEquation[:] ae;
+      Algorithm.Algorithm[:] algs;
+      list<DAELow.ZeroCrossing> zc;
+      DAELow.ExternalObjectClasses extObjCls;
+      list<DAELow.WhenClause> wcLst;
+    case (DAELow.DAELOW(vars1,vars2,vars3,eqns,reqns,ieqns,ae,algs,DAELow.EVENT_INFO(whenClauseLst = wcLst),extObjCls))
+      equation 
+        eqnsl = DAELow.equationList(eqns);
+        ls1 = Util.listMap1(eqnsl, equationStr, wcLst);  s1 = Util.stringDelimitList(ls1, ",");
+        s = "EqStr = {" +& s1 +& "};";
+      then
+        s;
+  end matchcontinue;
+end getEquations;  
+
+public function equationStr 
+"function: equationStr 
+  Helper function to getEqustions."
+  input DAELow.Equation inEquation;
+  input list<DAELow.WhenClause> wcLst;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inEquation, wcLst)
+    local
+      String s1,s2,s3,res,indx_str,is,var_str;
+      Exp.Exp e1,e2,e,condition;
+      DAELow.Value indx,i;
+      list<Exp.Exp> expl;
+      Exp.ComponentRef cr;
+    case (DAELow.EQUATION(exp = e1,scalar = e2), _)
+      equation 
+        s1 = Exp.printExpStr(e1);
+        s2 = Exp.printExpStr(e2);
+        res = Util.stringAppendList({"'", s1," = ",s2, ";'"});
+      then
+        res;
+    case (DAELow.ARRAY_EQUATION(index = indx,crefOrDerCref = expl), _)
+      equation 
+        indx_str = intString(indx);
+        var_str=Util.stringDelimitList(Util.listMap(expl,Exp.printExpStr),", ");
+        res = Util.stringAppendList({"Array eqn no: ",indx_str," for variables: ",var_str,"\n"});
+      then
+        res;
+    case (DAELow.SOLVED_EQUATION(componentRef = cr,exp = e2), _)
+      equation 
+        s1 = Exp.printComponentRefStr(cr);
+        s2 = Exp.printExpStr(e2);
+        res = Util.stringAppendList({"'",s1," = ",s2,";'"});
+      then
+        res;
+    case (DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(index = i,left = cr,right = e2)), wcLst)
+      equation 
+        s1 = Exp.printComponentRefStr(cr);
+        s2 = Exp.printExpStr(e2);
+        DAELow.WHEN_CLAUSE(condition, _, _) = listNth(wcLst,i);
+        s3 = Exp.printExpStr(condition);
+        res = Util.stringAppendList({"'when ", s3, " then " , s1," = ",s2," end when;'"});
+      then
+        res;
+    case (DAELow.RESIDUAL_EQUATION(exp = e),_)
+      equation 
+        s1 = Exp.printExpStr(e);
+        res = Util.stringAppendList({"'", s1,"= 0", ";'"});
+      then
+        res;
+    case (DAELow.ALGORITHM(index = i),_)
+      equation 
+        is = intString(i);
+        res = Util.stringAppendList({"Algorithm no: ",is,"\n"});
+      then
+        res;
+  end matchcontinue;
+end equationStr;
   
 protected function getIncidenceMatrix "function: getIncidenceMatrix
   gets the incidence matrix as a string
@@ -143,7 +237,6 @@ algorithm
         s;
   end matchcontinue;
 end getIncidenceRow;
-
 
 public function getVariables "function: getVariables
   This function returns the variables
