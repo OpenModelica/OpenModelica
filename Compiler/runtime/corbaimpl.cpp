@@ -80,7 +80,7 @@ PortableServer::POA_var omcpoa;
 CORBA::PolicyList pl;
 CORBA::Object_var ref;
 CORBA::String_var str;
-PortableServer::ObjectId_var oid;
+PortableServer::ObjectId_var *oid;
 OmcCommunication_impl* server;
 #endif // NOMICO
 
@@ -193,24 +193,24 @@ Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit
 	  pl[0] = poa->create_id_assignment_policy (PortableServer::USER_ID);
 	  omcpoa = poa->create_POA ("OMCPOA", mgr, pl);
 	  
-	  oid = PortableServer::string_to_ObjectId (corbaSessionName);
+	  oid = new PortableServer::ObjectId_var(PortableServer::string_to_ObjectId (corbaSessionName));
 	  server = new OmcCommunication_impl();
-	  omcpoa->activate_object_with_id(*oid, server);
+    omcpoa->activate_object_with_id(*oid, server);
 	  /* 
 	   * build the reference to store in the file
 	   */  
-	  ref = omcpoa->id_to_reference (oid.in());
+	  ref = omcpoa->id_to_reference (oid->in());
 	  objref_file << tempPath << "openmodelica.objid." << corbaSessionName;
   }  
   else /* we don't have a session name, start OMC normaly */
   {
       server = new OmcCommunication_impl(); 
-  	  oid = poa->activate_object(server);
-  	  ref = poa->id_to_reference (oid.in());
+      oid = new PortableServer::ObjectId_var(poa->activate_object(server));
+  	  ref = poa->id_to_reference (oid->in());
   	  objref_file << tempPath << "openmodelica.objid";	  
   }
 
-  str = orb->object_to_string (ref.in());
+  str = (const char*)orb->object_to_string (ref.in());
   /* Write reference to file */
   ofstream of (objref_file.str().c_str());
   of << str.in() << endl;
@@ -243,8 +243,11 @@ DWORD WINAPI runOrb(void* arg) {
 		// run can throw exception when other side closes.
 	}
 
-  poa->destroy(TRUE,TRUE);
-  delete server;
+  if (poa) 
+    poa->destroy(TRUE,TRUE);
+  if (server) 
+    delete server;
+
 #endif // NOMICO
   return 0;
 }
