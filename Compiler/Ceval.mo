@@ -2093,7 +2093,7 @@ algorithm
 
     case (cache,env,
       Exp.CALL(
-        path = Absyn.IDENT(name = "plot"),
+        path = Absyn.IDENT(name = "plot2"),
         expLst = {Exp.ARRAY(array = vars)}),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -2104,7 +2104,7 @@ algorithm
         list<Exp.Exp> vars;
       equation 
         vars = Util.listMap(vars,Exp.CodeVarToCref);
-        vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
+        vars_1 = Util.listMap(vars, Exp.printExpStr) "plot2" ;
         vars_2 = Util.listUnionElt("time", vars_1);
         
     
@@ -2128,7 +2128,7 @@ algorithm
 
     case (cache,env,
       Exp.CALL(
-        path = Absyn.IDENT(name = "plot"),
+        path = Absyn.IDENT(name = "plot2"),
         expLst = {Exp.ARRAY(array = vars)}),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -2147,7 +2147,7 @@ algorithm
 
     case (cache,env,
       Exp.CALL(
-        path = Absyn.IDENT(name = "plot"),
+        path = Absyn.IDENT(name = "plot2"),
         expLst = {Exp.ARRAY(array = vars)}),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -2165,7 +2165,7 @@ algorithm
 
     case (cache,env,
       Exp.CALL(
-        path = Absyn.IDENT(name = "plot"),
+        path = Absyn.IDENT(name = "plot2"),
         expLst = {Exp.ARRAY(array = vars)}),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
@@ -2197,7 +2197,7 @@ algorithm
       equation
 
 //        vars = Util.listMap(vars,Exp.CodeVarToCref);
-//        vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
+//        vars_1 = Util.listMap(vars, Exp.printExpStr) "plotAll" ;
 //        vars_2 = Util.listUnionElt("time", vars_1);
 
 				filename = Absyn.pathString(className);
@@ -2242,7 +2242,7 @@ algorithm
       equation
 
 //        vars = Util.listMap(vars,Exp.CodeVarToCref);
-//        vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
+//        vars_1 = Util.listMap(vars, Exp.printExpStr) "plotAll" ;
 //        vars_2 = Util.listUnionElt("time", vars_1);
 
 				filename = Absyn.pathString(className);
@@ -2330,7 +2330,7 @@ algorithm
 // plot(model, x)
     case (cache,env,
       Exp.CALL(
-        path = Absyn.IDENT(name = "plot2"),
+        path = Absyn.IDENT(name = "plot"),
         expLst = {
         Exp.CODE(Absyn.C_TYPENAME(className),_),
         Exp.ARRAY(array = vars),
@@ -2363,7 +2363,7 @@ algorithm
 
     case (cache,env,
       Exp.CALL(
-        path = Absyn.IDENT(name = "plot2"),
+        path = Absyn.IDENT(name = "plot"),
         expLst = {
         Exp.CODE(Absyn.C_TYPENAME(className),_),
         Exp.ARRAY(array = vars),
@@ -2395,7 +2395,7 @@ algorithm
 
     case (cache,env, //plot2({x,y})
       Exp.CALL(
-        path = Absyn.IDENT(name = "plot2"),
+        path = Absyn.IDENT(name = "plot"),
         expLst = {Exp.ARRAY(array = vars), 
   			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points), xRange, yRange
         }),
@@ -2424,7 +2424,7 @@ algorithm
 
     case (cache,env,
       Exp.CALL(
-        path = Absyn.IDENT(name = "plot2"),
+        path = Absyn.IDENT(name = "plot"),
         expLst = {Exp.ARRAY(array = vars),
   			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points), xRange, yRange
         }),
@@ -2452,7 +2452,7 @@ algorithm
 
     case (cache,env,
       Exp.CALL(
-        path = Absyn.IDENT(name = "plot2"),
+        path = Absyn.IDENT(name = "plot"),
         expLst = {Exp.ARRAY(array = vars), 
   			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points), xRange, yRange
         }),
@@ -2478,7 +2478,7 @@ algorithm
 
     case (cache,env,
       Exp.CALL(
-        path = Absyn.IDENT(name = "plot2"),
+        path = Absyn.IDENT(name = "plot"),
         expLst = {Exp.ARRAY(array = vars),
   			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points), xRange, yRange
         }),
@@ -2713,9 +2713,46 @@ algorithm
         tV = Values.valueReals(timeValues);
         vV = Values.valueReals(varValues);  
         val = System.getVariableValue(timeStamp, tV, vV);
-        
       then
         (cache,Values.REAL(val),st);
+
+    case (cache,env,
+      Exp.CALL(
+        path = Absyn.IDENT(name = "val"),
+        expLst = {Exp.ARRAY(array = {varName, varTimeStamp})}),
+      (st as Interactive.SYMBOLTABLE(
+        ast = p,explodedAst = sp,instClsLst = ic,
+        lstVarVal = iv,compiledFunctions = cf,
+        loadedFiles = lf)),msg)
+      local 
+        Exp.Exp varName, varTimeStamp;
+        String var;
+        Integer res;
+        Integer timeStamp;
+        list<Values.Value> varValues, timeValues;
+        list<Real> tV, vV; 
+        Real val;
+      equation 
+        
+        {varName} = Util.listMap({varName},Exp.CodeVarToCref);
+        vars_1 = Util.listMap({varName}, Exp.printExpStr);
+        // Util.listMap0(vars_1,print);
+        
+        (cache,Values.INTEGER(timeStamp),SOME(st)) = ceval(cache,env, varTimeStamp, true, SOME(st), NONE, msg);
+        
+        (cache,Values.RECORD(_,{Values.STRING(filename)},_),_) = ceval(cache,env, 
+        Exp.CREF(Exp.CREF_IDENT("currentSimulationResult",{}),Exp.OTHER()), true, SOME(st), NONE, msg);
+
+        Values.ARRAY({Values.ARRAY(varValues)}) = System.readPtolemyplotDataset(filename, vars_1, 0);
+        Values.ARRAY({Values.ARRAY(timeValues)}) = System.readPtolemyplotDataset(filename, {"time"}, 0); 
+
+				
+        tV = Values.valueReals(timeValues);
+        vV = Values.valueReals(varValues);  
+        val = System.getVariableValue(intReal(timeStamp), tV, vV);        
+      then
+        (cache,Values.REAL(val),st);
+
         
     case (cache,env,
       Exp.CALL(
@@ -2735,7 +2772,7 @@ algorithm
      *  is given as an argument  
      */
     case (cache,env,
-      Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = vars),
+      Exp.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = vars),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -2765,7 +2802,7 @@ algorithm
         (cache,Values.BOOL(true),st);
 
     case (cache,env,
-      Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = vars),
+      Exp.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = vars),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -2781,7 +2818,7 @@ algorithm
         (cache,Values.STRING("Error: Less than two variables given to plotParametric."),st);
 
     case (cache,env,
-      Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = vars),
+      Exp.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = vars),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -2797,7 +2834,7 @@ algorithm
         (cache,Values.STRING("Error reading the simulation result."),st);
 
     case (cache,env,
-      Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = vars),
+      Exp.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = vars),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -2812,7 +2849,7 @@ algorithm
         (cache,Values.STRING("No simulation result to plot."),st);
 
     case (cache,env,
-      Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = vars),
+      Exp.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = vars),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -2824,7 +2861,7 @@ algorithm
 
 //plotParametric2(modell, x,y,interpolation)
     case (cache,env,
-      Exp.CALL(path = Absyn.IDENT(name = "plotParametric2"),
+      Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),
       expLst = {   Exp.CODE(Absyn.C_TYPENAME(className),_),
         Exp.ARRAY(array = vars), 
   			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points), xRange, yRange
@@ -2862,7 +2899,7 @@ algorithm
         
 //plotParametric2(x,y,interpolation)
    case (cache,env,
-      Exp.CALL(path = Absyn.IDENT(name = "plotParametric2"),
+      Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),
       expLst = {Exp.ARRAY(array = vars), 
   			Exp.SCONST(string = interpolation), Exp.SCONST(string = title), Exp.BCONST(bool = legend), Exp.BCONST(bool = grid), Exp.BCONST(bool = logX), Exp.BCONST(bool = logY), Exp.SCONST(string = xLabel), Exp.SCONST(string = yLabel), Exp.BCONST(bool = points), xRange, yRange
       
@@ -2892,7 +2929,7 @@ algorithm
         (cache,Values.BOOL(true),st);
 
     case (cache,env,
-      Exp.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = vars),
+      Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = vars),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -2910,7 +2947,7 @@ algorithm
 
 
     case (cache,env,
-      Exp.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = vars),
+      Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = vars),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -2926,7 +2963,7 @@ algorithm
         (cache,Values.STRING("Error: Less than two variables given to plotParametric."),st);
 
     case (cache,env,
-      Exp.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = vars),
+      Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = vars),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -2942,7 +2979,7 @@ algorithm
         (cache,Values.STRING("Error reading the simulation result."),st);
 
     case (cache,env,
-      Exp.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = vars),
+      Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = vars),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
@@ -2957,7 +2994,7 @@ algorithm
         (cache,Values.STRING("No simulation result to plot."),st);
 
     case (cache,env,
-      Exp.CALL(path = Absyn.IDENT(name = "plotParametric2"),expLst = vars),
+      Exp.CALL(path = Absyn.IDENT(name = "plotParametric"),expLst = vars),
       (st as Interactive.SYMBOLTABLE(
         ast = p,explodedAst = sp,instClsLst = ic,
         lstVarVal = iv,compiledFunctions = cf,
