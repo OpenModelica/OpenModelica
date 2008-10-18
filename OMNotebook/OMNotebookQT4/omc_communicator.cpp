@@ -280,22 +280,22 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
 
   // PORT >> returnString = returnString.stripWhiteSpace();
   returnString = returnString.trimmed();
-  if (fnCall.startsWith("list(")) {
-    //emit omcOutput("...");
-    // qDebug("...");
-  } else {
-    //emit omcOutput(returnString);
-    //qDebug(QString(returnString).replace("%"," "));
-  }
+  //if (fnCall.startsWith("list(")) {
+  //  //emit omcOutput("...");
+  //  // qDebug("...");
+  //} else {
+  //  //emit omcOutput(returnString);
+  //  //qDebug(QString(returnString).replace("%"," "));
+  //}
 
-  if (returnString == "-1") {
-    string tmp = "[Internal Error] OmcCommunicator::callOmc():\nOmc call \"" 
-      + fnCall.toStdString() + "\" failed!\n\n";
+  //if (returnString == "-1") {
+  //  string tmp = "[Internal Error] OmcCommunicator::callOmc():\nOmc call \"" 
+  //    + fnCall.toStdString() + "\" failed!\n\n";
 
-    qWarning( tmp.c_str() );
-    //throw OmcError(fnCall, returnString);
-    cout << "OmcError(" << fnCall.toStdString() << ", " << returnString.toStdString() << ")" << endl;
-  }
+  //  qWarning( tmp.c_str() );
+  //  //throw OmcError(fnCall, returnString);
+  //  cout << "OmcError(" << fnCall.toStdString() << ", " << returnString.toStdString() << ")" << endl;
+  //}
 
   return returnString;
 }

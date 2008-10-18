@@ -64,7 +64,11 @@
 		<field name="$1">var2</field>
 		<helptext>Plot var2 relative to var1 from the most recently simulated model. Ex: plotParametric(x,y).</helptext>
 	</command>
-	<command name="readFile($0)">
+  <command name="plotAll($0)">
+    <field name="$0">className</field>
+    <helptext>Plot all variables from the specified model. Ex: plotAll(Class).</helptext>
+  </command>
+  <command name="readFile($0)">
 		<field name="$0">str</field>
 		<helptext>Load file given as string and return a string of the file content. Ex: readFile("myModel/myModelr.mo").</helptext>
 	</command>

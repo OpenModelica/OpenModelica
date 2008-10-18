@@ -25,6 +25,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ext", "..\ext\ext.vcproj", 
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "3Dpkg", "..\3Dpkg\3Dpkg.vcproj", "{286F13C0-0E92-4179-A57E-E8C949054F46}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "xml", "xml", "{1D94A336-1A53-4554-B9BA-5A875920F4FB}"
+	ProjectSection(SolutionItems) = preProject
+		commands.xml = commands.xml
+		modelicacolors.xml = modelicacolors.xml
+		stylesheet.xml = stylesheet.xml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32

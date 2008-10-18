@@ -1638,7 +1638,7 @@ namespace IAEX
   bool GraphCell::isPlot(QString text)
   {
     //		QRegExp exp( "plot\\((.*)|plotParametric\\((.*)|simulate" );
-    QRegExp exp( "plot\\((.*)|plotParametric\\((.*)" );
+    QRegExp exp( "plot2\\((.*)|plotParametric2\\((.*)" );
     if( text.isNull() )
     {
       if( 0 <= input_->toPlainText().indexOf( exp, 0 ) )
@@ -1672,7 +1672,7 @@ namespace IAEX
   }
   bool GraphCell::isPlot2(QString text)
   {
-    QRegExp exp("plot2\\(.*\\)|plotParametric2\\(.*\\)|simulate|plotAll" );
+    QRegExp exp("plot\\(.*\\)|plotParametric\\(.*\\)|plotAll" );
 
     if( text.isNull() )
     {
@@ -2331,7 +2331,7 @@ namespace IAEX
     {
     output_->selectAll();
     output_->textCursor().insertText( "[Error] Unable to find plot image \"" + filename + "\"" );
-    //						output_->setPlainText( "[Error] Unable to found plot image \"" + imagename + "\"" );
+    //						output_->setPlainText( "[Error] Unable to find plot image \"" + imagename + "\"" );
     break;
     }
 

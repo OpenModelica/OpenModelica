@@ -1122,7 +1122,7 @@ namespace IAEX
 	 */
 	bool InputCell::isPlot(QString text)
 	{
-		QRegExp exp( "plot\\((.*)|plotParametric\\((.*)" );
+		QRegExp exp( "plot2\\((.*)|plotParametric2\\((.*)" );
 
 
 		if( text.isNull() )
