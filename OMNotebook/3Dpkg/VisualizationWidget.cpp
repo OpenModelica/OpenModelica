@@ -4,6 +4,7 @@ namespace IAEX {
 
 	VisualizationWidget::VisualizationWidget(QWidget *parent) : QWidget(parent)
 	{
+#ifndef __APPLE_CC__	
 		this->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 		this->setMinimumHeight(300);
 		this->setMinimumWidth(500);
@@ -68,7 +69,7 @@ namespace IAEX {
 		server = new QTcpServer(this);
 		server->setMaxPendingConnections(500);
 		activeSocket = 0;
-
+#endif
 
 	}
 
@@ -77,14 +78,17 @@ namespace IAEX {
 	}
 
 	void VisualizationWidget::sliderChanged(int val) {
+#ifndef __APPLE_CC__
 		currentTime_ = val;
 		QString num;
 		num.setNum(currentTime_/1000.0);
 		label_->setText(num);
 		simdata_->setFrame(currentTime_/1000.0);
+#endif		
 	}
 
 	void VisualizationWidget::nextFrame() {
+#ifndef __APPLE_CC__
 		currentTime_ += 25; // FIIIIX!
 		if (currentTime_ > 1000*simdata_->get_end_time()) {
 			currentTime_ = 0;
@@ -95,10 +99,12 @@ namespace IAEX {
 		label_->setText(num);
 		slider_->setValue(currentTime_);
 		simdata_->setFrame(currentTime_/1000.0);
+#endif
 	}
 
 	void  VisualizationWidget::setServerState(bool listen)
 	{
+#ifndef __APPLE_CC__
 		if(listen)
 		{
 
@@ -141,15 +147,21 @@ namespace IAEX {
 			emit newMessage("Port closed");
 			emit serverState(false);
 		}
+#endif
 	}
 
 	bool VisualizationWidget::getServerState()
 	{
+#ifndef __APPLE_CC__	
 		return server->isListening();
+#else
+        return 0;
+#endif
 	}
 
 	void VisualizationWidget::acceptConnection()
 	{
+#ifndef __APPLE_CC__	
 		while(server && server->hasPendingConnections())
 		{
 			if( (activeSocket && (activeSocket->state() == QAbstractSocket::UnconnectedState) || !activeSocket))
@@ -168,9 +180,11 @@ namespace IAEX {
 
 			qApp->processEvents();
 		}
+#endif		
 	}
 
 	void VisualizationWidget::getData()	{
+#ifndef __APPLE_CC__
 		disconnect(activeSocket, SIGNAL(readyRead()), 0, 0);
 		connect(activeSocket, SIGNAL(readyRead()), this, SLOT(getData()));
 
@@ -215,11 +229,13 @@ namespace IAEX {
 		}
 
 		connect(activeSocket, SIGNAL(readyRead()), this, SLOT(getData()));
+#endif
 	}
 
 
 
 	void VisualizationWidget::readPtolemyDataStream() {
+#ifndef __APPLE_CC__
 		QString tmp;
 		//qint32 variableCount = 0;
   //  	qint32 packetSize = 0;
@@ -322,9 +338,11 @@ namespace IAEX {
 
 		if(activeSocket->state() != QAbstractSocket::ConnectedState)
 			ptolemyDataStreamClosed();
+#endif
 	}	
 
 	void VisualizationWidget::ptolemyDataStreamClosed()	{
+#ifndef __APPLE_CC__
 		slider_->setRange(1000*simdata_->get_start_time(), 1000*simdata_->get_end_time());
 		slider_->setValue(0);
 		//for(map<QString, VariableData*>::iterator i = variables.begin(); i != variables.end(); ++i)
@@ -336,5 +354,7 @@ namespace IAEX {
 		cam->viewAll(simdata_->getSceneGraph(), eviewer_->getViewportRegion());
 
 		emit newMessage("Connection closed");
-	}
+#endif
+    }
+
 }

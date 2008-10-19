@@ -27,7 +27,9 @@ HEADERS += ../Pltpkg2/legendLabel.h \
 	   ../Pltpkg2/preferenceWindow.h \
 	   ../Pltpkg2/variableData.h \
 	   ../Pltpkg2/verticalLabel.h \
-           ../Pltpkg2/variablewindow.h
+       ../Pltpkg2/variablewindow.h \
+        ../3Dpkg/VisualizationWidget.h
+
 
 SOURCES += e.cpp \
 	   ../Pltpkg2/compoundWidget.cpp \
@@ -41,7 +43,8 @@ SOURCES += e.cpp \
 	   ../Pltpkg2/lineGroup.cpp \
 	   ../Pltpkg2/preferenceWindow.cpp \
 	   ../Pltpkg2/variableData.cpp \
-           ../Pltpkg2/variablewindow.cpp
+           ../Pltpkg2/variablewindow.cpp \
+           ../3Dpkg/VisualizationWidget.cpp
 
 FORMS += ../Pltpkg2/compoundWidget.ui\
          ../Pltpkg2/dataSelect.ui\
