@@ -1610,7 +1610,11 @@ void System_5finit(void)
 
 	qthome = getenv("QTHOME");
 	if (qthome && strlen(qthome)) {
+#ifdef __APPLE_CC__	
+		putenv("SENDDATALIBS=-lsendData -lQtNetwork -lQtCore -lQtGui -lz -framework Carbon");
+#else
 		putenv("SENDDATALIBS=-lsendData -lQtNetwork -lQtCore -lQtGui");
+#endif
 	} else {
 		putenv("SENDDATALIBS=-lsendData");
 	}
