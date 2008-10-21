@@ -6151,6 +6151,22 @@ algorithm
   end matchcontinue;
 end isFunctionInCflist;
 
+protected function calculateConstantness
+"@author adrpo
+ not always you get a list of constantness as function might not have any parameters.
+ this function deals with that case"
+  input list<Types.Const> constlist;
+  output Types.Const out;  
+algorithm
+  out := matchcontinue (constlist)
+    case ({}) then Types.C_VAR();
+    case (constlist)
+      equation 
+        out = Util.listReduce(constlist, Types.constAnd);
+      then out;
+  end matchcontinue;
+end calculateConstantness;
+
 protected function elabCallArgs "function: elabCallArgs
  
   Given the name of a function and two lists of expression and 
@@ -6201,7 +6217,7 @@ algorithm
         	= Lookup.lookupType(cache,env, fn, true);
         slots = makeEmptySlots(fargs);
         (cache,args_1,newslots,constlist) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl);
-        const = Util.listReduce(constlist, Types.constAnd);
+        const = calculateConstantness(constlist);
         tyconst = elabConsts(outtype, const);
         prop = getProperties(outtype, tyconst);
         (cl,env_2) = Lookup.lookupRecordConstructorClass(env_1, fn);
@@ -6212,6 +6228,7 @@ algorithm
     case (cache,env,fn,args,nargs,impl,st) /* ..Other functions */ 
       local Exp.Type tp;
       equation 
+        Debug.fprintln("failtrace", "Static.elabCallArgs[" +& Absyn.pathString(fn) +& "] - no records, before Lookup.lookupFunctionsInEnv(cache,env, fn)");        
         (cache,typelist as _::_) = Lookup.lookupFunctionsInEnv(cache,env, fn) 
         "PR. A function can have several types. Taking an array with
 	       different dimensions as parameter for example. Because of this we
@@ -6219,22 +6236,31 @@ algorithm
 	       returns the correct function. It returns just one
 	       functiontype of several possibilites. The solution is to send
 	       in the funktion type of the user function and check both the
-	       function name and the function\'s type." ;			
+	       function name and the function\'s type." ;
+	      Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before elabTypes");   			
         (cache,args_1,constlist,restype,functype,vect_dims,slots) = elabTypes(cache,env, args,nargs, typelist, true/* Check types*/,impl) 
         "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
-        
+        Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before deoverloadFuncname");
         fn_1 = deoverloadFuncname(fn, functype);
+        Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before isTuple");
         tuple_ = isTuple(restype);
+        Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before isBuiltinFunc");
         (cache,builtin) = isBuiltinFunc(cache,fn_1);
-        const = Util.listReduce(constlist, Types.constAnd);
+        Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before Util.listReduce");
+        const = calculateConstantness(constlist); 
+        Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before determineConstSpecialFunc");
         (cache,const) = determineConstSpecialFunc(cache,env,const,fn);
+        Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before elabConsts");
         tyconst = elabConsts(restype, const);
+        Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before getProperties");        
         prop = getProperties(restype, tyconst);
+        Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before Types.elabType");        
  	      tp = Types.elabType(restype);
+        Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before addDefaultArgs"); 	      
  	      (cache,args_2,slots2) = addDefaultArgs(cache,env,args_1,fn,slots,impl);
-         
-        (call_exp,prop_1) = vectorizeCall(Exp.CALL(fn_1,args_2,tuple_,builtin,tp), restype, vect_dims, 
-          slots2, prop);
+        Debug.fprintln("failtrace", "Static.elabCallArgs - no records, before vectorizeCall");         
+        (call_exp,prop_1) = vectorizeCall(Exp.CALL(fn_1,args_2,tuple_,builtin,tp), restype, vect_dims, slots2, prop);
+        Debug.fprintln("failtrace", "Static.elabCallArgs - no records, after vectorizeCall");
       then
         (cache,call_exp,prop_1);
         

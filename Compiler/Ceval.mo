@@ -4345,10 +4345,10 @@ algorithm
     case (cache,env,exp,dim,impl,st,MSG())
       local Exp.Exp dim;
       equation 
-        Print.printErrorBuf("#-- Ceval.cevalBuiltinSize failed: ");
+        Debug.fprint("failtrace", "#-- Ceval.cevalBuiltinSize failed: ");
         expstr = Exp.printExpStr(exp);
-        Print.printErrorBuf(expstr);
-        Print.printErrorBuf("\n");
+        Debug.fprint("failtrace", expstr);
+        Debug.fprint("failtrace", "\n");
       then
         fail();
   end matchcontinue;

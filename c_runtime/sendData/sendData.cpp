@@ -1,40 +1,40 @@
-/* 
+/*
  * This file is part of OpenModelica.
- * 
+ *
  * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science, 
- * SE-58183 Linköping, Sweden. 
- * 
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
  * All rights reserved.
- * 
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC 
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF 
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC 
- * PUBLIC LICENSE. 
- * 
- * The OpenModelica software and the Open Source Modelica 
- * Consortium (OSMC) Public License (OSMC-PL) are obtained 
- * from Linköpings University, either from the above address, 
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
- * 
- * This program is distributed  WITHOUT ANY WARRANTY; without 
- * even the implied warranty of  MERCHANTABILITY or FITNESS 
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH 
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS 
- * OF OSMC-PL. 
- * 
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
  * See the full OSMC Public License conditions for more details.
- * 
- * 
+ *
+ *
  * For more information about the Qt-library visit TrollTech:s webpage regarding
  * licence: http://www.trolltech.com/products/qt/licensing.html
- * 
+ *
  */
 
 #if defined(_MSC_VER)
 #define _CRT_SECURE_NO_WARNINGS
-#endif 
+#endif
 
 //Qt headeers
 //#include <QCoreApplication>
@@ -86,7 +86,7 @@ Connection::~Connection()
 
 	//   if(socket)
 	//      delete socket;
-}   
+}
 
 QTcpSocket* Connection::newConnection(bool graphics)
 {
@@ -126,13 +126,13 @@ QTcpSocket* Connection::newConnection(bool graphics)
 	}
 	else
 		return 0;
-}   
+}
 
 bool Static::connect(bool graphics)
 {
 //	ofstream ofs("uu3u.txt", ios::app);
-	
-//	ofs << 1 << endl;	
+
+//	ofs << 1 << endl;
 
 	char* omdir = getenv("OPENMODELICAHOME");
 	QString path(omdir);
@@ -143,45 +143,45 @@ bool Static::connect(bool graphics)
 
 	if(graphics)
 	{
-//	ofs << 2 << endl;	
+//	ofs << 2 << endl;
 
 		if(socket2.state() != QAbstractSocket::UnconnectedState)
 		{
-//		ofs << 3 << endl;	
+//		ofs << 3 << endl;
 
 			return true;
 //			socket2.disconnectFromHost();
 //			socket2.waitForDisconnected(1000);
 		}
-		
+
 		socket2.connectToHost(QHostAddress::LocalHost, Static::port2);
-//	ofs << 4 << endl;	
+//	ofs << 4 << endl;
 
 		if(socket2.waitForConnected(500))
-			return true;	
+			return true;
 
-		
+
 		if(QFile::exists(path))
 		{
 			QProcess::startDetached(path);
 			socket2.connectToHost(QHostAddress::LocalHost, Static::port2);
 			if(socket2.waitForConnected(2500))
-				return true;	
+				return true;
 
 			socket2.connectToHost(QHostAddress::LocalHost, Static::port2);
 			if(socket2.waitForConnected(3500))
-				return true;	
+				return true;
 		}
-//	ofs << 5 << endl;	
-		
+//	ofs << 5 << endl;
+
 		return false;
-//	ofs << 1 << endl;	
-		
-		
+//	ofs << 1 << endl;
+
+
 	}
 	else
 	{
-//	ofs << 6 << endl;	
+//	ofs << 6 << endl;
 
 		if(socket1.state() != QAbstractSocket::UnconnectedState)
 		{
@@ -189,26 +189,26 @@ bool Static::connect(bool graphics)
 //			socket1.disconnectFromHost();
 //			socket1.waitForDisconnected(1000);
 		}
-		
+
 		socket1.connectToHost(QHostAddress::LocalHost, Static::port1);
 		if(socket1.waitForConnected(500))
-			return true;	
-		
+			return true;
+
 		if(QFile::exists(path))
 		{
 			QProcess::startDetached(path);
 			socket1.connectToHost(QHostAddress::LocalHost, Static::port1);
 			if(socket1.waitForConnected(2500))
-				return true;	
+				return true;
 
 			socket1.connectToHost(QHostAddress::LocalHost, Static::port1);
 			if(socket1.waitForConnected(3500))
-				return true;	
+				return true;
 		}
-		
+
 		return false;
-		
-		
+
+
 	}
 
 }
@@ -216,7 +216,7 @@ bool Static::connect(bool graphics)
 QColor* stringToColor(const char* str_)
 {
 	QString str = QString(str_).toLower();
-	
+
 	if(str == "white")
 		return new QColor(Qt::white);
 	else if(str == "black")
@@ -272,7 +272,7 @@ bool ellipse(double x0, double y0, double x1, double y1, const char* color, int 
 	int colorR = colorRGB[0];
 	int colorG = colorRGB[1];
 	int colorB = colorRGB[2];
-	
+
 	int fillColorR = fillColorRGB[0];
 	int fillColorG = fillColorRGB[1];
 	int fillColorB = fillColorRGB[2];
@@ -280,8 +280,8 @@ bool ellipse(double x0, double y0, double x1, double y1, const char* color, int 
 
 //	Connection c;
 //	QTcpSocket* socket = c.newConnection();
-	
-	
+
+
 
 	if(Static::connect(true))
 	{
@@ -332,7 +332,7 @@ bool rect(double x0, double y0, double x1, double y1, const char* color, int col
 		out << QString("drawRect-1.1");
 		out << x0 << y0 << x1 << y1;
 
-		QColor* c = getColor(color, colorR, colorG, colorB); 
+		QColor* c = getColor(color, colorR, colorG, colorB);
 		out << *c;
 		delete c;
 		c = getColor(fillColor, fillColorR, fillColorG, fillColorB);
@@ -372,7 +372,7 @@ bool line(double x0, double y0, double x1, double y1, const char* color, int col
 		out << QString("drawLine-1.1");
 		out << x0 << y0 << x1 << y1;
 
-		QColor* c = getColor(color, colorR, colorG, colorB);   
+		QColor* c = getColor(color, colorR, colorG, colorB);
 		out << *c;
 		delete c;
 		c = getColor(fillColor, fillColorR, fillColorG, fillColorB);
@@ -453,8 +453,8 @@ bool pltTable(double* table, size_t r, size_t c) //, const char* legend, int siz
 {
 
 	char* legend[] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"};
-//	size_t size = 3; 
-	size_t size = c; 
+//	size_t size = 3;
+	size_t size = c;
 
 //	Connection C;
 //	QTcpSocket* socket = C.newConnection();
@@ -489,7 +489,7 @@ bool pltTable(double* table, size_t r, size_t c) //, const char* legend, int siz
 	QString interpolation5 = QString("linear");
 	bool drawPoints = true;
 	QString range = QString("0.0,0.0,0.0,0.0");
-	
+
 	out.device()->seek(0);
 	out << (quint32)0;
 	out << QString("title");
@@ -511,7 +511,7 @@ bool pltTable(double* table, size_t r, size_t c) //, const char* legend, int siz
 
 		out << QString(legend[i]);
 		out << QColor(Qt::color0);
-		
+
 	}
 
 	out.device()->seek(0);
@@ -533,7 +533,7 @@ bool pltTable(double* table, size_t r, size_t c) //, const char* legend, int siz
 		{
 			out << QString(legend[j]);
 			out << table[i*c+j];
-			
+
 		}
 		out.device()->seek(0);
 		out << (quint32)(block.size() - sizeof(quint32));
@@ -541,12 +541,12 @@ bool pltTable(double* table, size_t r, size_t c) //, const char* legend, int siz
 		Static::socket1.write(block);
 		Static::socket1.flush();
 		Static::socket1.waitForBytesWritten(-1);
-		
+
 		block.clear();
 
 if(!(i%100))
 	Static::socket1.flush();
-	
+
 	}
 
 	Static::socket1.flush();
@@ -590,14 +590,14 @@ void setVariableFilter(const char* variables)
 	string str;
 	while(ss.good() && ss >> str)
 	{
-		Static::filterVariables->push_back(QString(str.c_str()));	
-	}	
+		Static::filterVariables->push_back(QString(str.c_str()));
+	}
 }
 	void setDataPort(int port)
 	{
-		Static::port1 = port;	
+		Static::port1 = port;
 	}
-	
+
 	void enableSendData(int enable)
 	{
 		Static::enabled_ = enable;
@@ -613,7 +613,7 @@ void initSendData(int variableCount1, int variableCount2, char** statesNames, ch
 		setVariableFilter(filter);
 	else
 		setVariableFilter("");
-		
+
 	if(Static::socket)
 	{
 		delete Static::socket;
@@ -622,7 +622,7 @@ void initSendData(int variableCount1, int variableCount2, char** statesNames, ch
 	Static::block = new QByteArray;
 	Static::out = new QDataStream(Static::block, QIODevice::WriteOnly);
 	Static::out->setVersion(QDataStream::Qt_4_2);
-	
+
 	Static::c = new Connection;
 	Static::socket = Static::c->newConnection();
 
@@ -670,7 +670,7 @@ void initSendData(int variableCount1, int variableCount2, char** statesNames, ch
 	*Static::out << (quint32)0;
 //	qint64 pos = Static::out->device()->pos();
 
-	
+
 	*Static::out << (quint32)25;//(2*variableCount1 + variableCount2);
 	quint32 N = 1;
 
@@ -704,7 +704,7 @@ void initSendData(int variableCount1, int variableCount2, char** statesNames, ch
 //		*Static::out << QColor(Qt::color0);
 		++N;
 	}
-//	Static::out->device()->seek(pos);	
+//	Static::out->device()->seek(pos);
 	Static::out->device()->seek(0);
 	*Static::out << (quint32)(Static::block->size() - sizeof(quint32));
 	*Static::out << (quint32)N;
@@ -742,7 +742,7 @@ void sendPacket(const char* data)
 	}
 
 //	cout << "sendPacket:" << endl << data << endl << endl;
-	
+
 	Static::out->device()->seek(0);
 	*Static::out << (quint32)(Static::block->size() - sizeof(quint32));
 
@@ -754,7 +754,7 @@ void sendPacket(const char* data)
 void closeSendData()
 {
 //	cout << "closeSendData" << endl;
-	
+
 	Static::socket->flush();
 	Static::socket->waitForBytesWritten(-1);
 	Static::socket->disconnectFromHost();
@@ -768,11 +768,11 @@ void closeSendData()
 		delete Static::out;
 	if(Static::c)
 		delete Static::c;
-	
-	
-	
-	
-	
+
+
+
+
+
 }
 void emulateStreamData(const char* data, const char* title, const char* xLabel, const char* yLabel, const char* interpolation5, int legend, int grid, int logX, int logY, int drawPoints, const char* range)
 {
@@ -782,7 +782,7 @@ void emulateStreamData(const char* data, const char* title, const char* xLabel, 
 
 	if(!socket)
 		return;
-		
+
 	QString data_(data);
 	QTextStream ts(&data_);
 	QString tmp;
@@ -897,12 +897,12 @@ void emulateStreamData(const char* data, const char* title, const char* xLabel, 
 		socket->write(block);
 		socket->flush();
 		socket->waitForBytesWritten(-1);
-		
+
 		block.clear();
 
 if(!(i%100))
 	socket->flush();
-	
+
 	}
 
 	socket->flush();
@@ -998,7 +998,7 @@ bool plt(const char* var, const char* model, const char* title, const char* xLab
 
 bool Static::enabled()
 {
-	return enabled_;	
+	return enabled_;
 }
 
 
@@ -1006,11 +1006,11 @@ int getVariableListSize(const char* model)
 {
 	QDir dir(QString(getenv("OPENMODELICAHOME")));
 
-	QString file = dir.path() + "/tmp/" + model;		
+	QString file = dir.path() + "/tmp/" + model;
 
 	if(!QFile::exists(file))
 		return 0;
-		
+
 	QFile f(file);
 	f.open(QIODevice::ReadOnly);
 	QTextStream ts(&f);
@@ -1021,41 +1021,41 @@ int getVariableListSize(const char* model)
 	{
 		str = ts.readLine();
 		if(str.startsWith("DataSet: "))
-			N += str.size() - 8; //reserve space for a separator 
+			N += str.size() - 8; //reserve space for a separator
 
-		
-	}	
+
+	}
 
 	f.close();
 	return N;
-		
+
 }
 
 bool getVariableList(const char* model, char* lst)
 {
 	QDir dir(QString(getenv("OPENMODELICAHOME")));
 
-	QString file = dir.path() + "/tmp/" + model;		
+	QString file = dir.path() + "/tmp/" + model;
 
 	if(!QFile::exists(file))
 		return false;
-		
+
 	QFile f(file);
 	f.open(QIODevice::ReadOnly);
 	QTextStream ts(&f);
 	QString str;
-	
+
 	QString L;
 	while(!ts.atEnd())
 	{
 		str = ts.readLine();
 		if(str.startsWith("DataSet: "))
 			L += str.right(str.size() - 8);
-	}	
+	}
 
 	f.close();
 	strcpy(lst, L.trimmed().toStdString().c_str());;
-	return true;		
+	return true;
 }
 
 
@@ -1111,7 +1111,7 @@ void emulateStreamData2(const char *info, const char* data, int port)
 			variableValues[variableNames.size()-1]->push_back(tmp.section(',',-1).toDouble());
 		}
 	}
-	
+
 	QByteArray block;
 	QDataStream out(&block, QIODevice::WriteOnly);
 	out.setVersion(QDataStream::Qt_4_2);
@@ -1150,7 +1150,7 @@ void emulateStreamData2(const char *info, const char* data, int port)
 	block.clear();
 
 //	cout << "varvals[0]->size = " << variableValues[0]->size() << endl;
-	
+
 	for(quint32 i = 0; i < variableValues[0]->size(); ++i)
 	{
 		out.device()->seek(0);
@@ -1169,13 +1169,13 @@ void emulateStreamData2(const char *info, const char* data, int port)
 		socket->write(block);
 		socket->flush();
 		socket->waitForBytesWritten(-1);
-		
+
 		block.clear();
 //		cout << "i: " << i << endl;
 		//_sleep(500);
 if(!(i%100))
 	socket->flush();
-	
+
 	}
 
 	socket->flush();
@@ -1199,7 +1199,7 @@ if(!(i%100))
 
 		for(quint32 j = 0; j < variableNames.size(); ++j)
 		{
-//			cout << variableNames[j].toStdString() << ": " << (*variableValues[j])[i] << endl; 
+//			cout << variableNames[j].toStdString() << ": " << (*variableValues[j])[i] << endl;
 			out << variableNames[j];
 			out << (*variableValues[j])[i];
 			cout << ".";
@@ -1208,7 +1208,7 @@ if(!(i%100))
 		out.device()->seek(0);
 		out << (quint32)(block.size() - sizeof(quint32));
 		cout << (quint32)(block.size() - sizeof(quint32));
-		
+
 		socket->write(block);
 		block.clear();
 		cout << "!" << endl;
